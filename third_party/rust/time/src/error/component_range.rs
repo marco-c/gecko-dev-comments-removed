@@ -1,13 +1,13 @@
 
 
-use core::fmt;
+use core::{fmt, hash};
 
 use crate::error;
 
 
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, Eq)]
 pub struct ComponentRange {
     
     pub(crate) name: &'static str,
@@ -19,7 +19,7 @@ pub struct ComponentRange {
     pub(crate) value: i64,
     
     
-    pub(crate) conditional_range: bool,
+    pub(crate) conditional_message: Option<&'static str>,
 }
 
 impl ComponentRange {
@@ -31,7 +31,29 @@ impl ComponentRange {
     
     
     pub const fn is_conditional(self) -> bool {
-        self.conditional_range
+        self.conditional_message.is_some()
+    }
+}
+
+impl PartialEq for ComponentRange {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+        && self.minimum == other.minimum
+        && self.maximum == other.maximum
+        && self.value == other.value
+        
+        && self.conditional_message.is_some() == other.conditional_message.is_some()
+    }
+}
+
+impl hash::Hash for ComponentRange {
+    fn hash<H: hash::Hasher>(&self, state: &mut H) {
+        self.name.hash(state);
+        self.minimum.hash(state);
+        self.maximum.hash(state);
+        self.value.hash(state);
+        
+        self.conditional_message.is_some().hash(state);
     }
 }
 
@@ -43,8 +65,8 @@ impl fmt::Display for ComponentRange {
             self.name, self.minimum, self.maximum
         )?;
 
-        if self.conditional_range {
-            f.write_str(", given values of other parameters")?;
+        if let Some(message) = self.conditional_message {
+            write!(f, " {message}")?;
         }
 
         Ok(())

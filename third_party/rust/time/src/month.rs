@@ -7,7 +7,7 @@ use core::str::FromStr;
 use powerfmt::smart_display::{FormatterOptions, Metadata, SmartDisplay};
 
 use self::Month::*;
-use crate::error;
+use crate::{error, util};
 
 
 #[repr(u8)]
@@ -59,10 +59,20 @@ impl Month {
                 name: "month",
                 minimum: 1,
                 maximum: 12,
-                value: n as _,
-                conditional_range: false,
+                value: n as i64,
+                conditional_message: None,
             }),
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    pub const fn length(self, year: i32) -> u8 {
+        util::days_in_month(self, year)
     }
 
     
@@ -241,7 +251,7 @@ impl FromStr for Month {
 
 impl From<Month> for u8 {
     fn from(month: Month) -> Self {
-        month as _
+        month as Self
     }
 }
 
@@ -256,7 +266,7 @@ impl TryFrom<u8> for Month {
                 minimum: 1,
                 maximum: 12,
                 value: 0,
-                conditional_range: false,
+                conditional_message: None,
             }),
         }
     }

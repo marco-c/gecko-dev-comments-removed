@@ -15,7 +15,7 @@ use crate::parsing::{Parsed, ParsedItem};
 use crate::{error, Date, Month, OffsetDateTime, Time, UtcOffset, Weekday};
 
 
-#[cfg_attr(__time_03_docs, doc(notable_trait))]
+#[cfg_attr(docsrs, doc(notable_trait))]
 #[doc(alias = "Parseable")]
 pub trait Parsable: sealed::Sealed {}
 impl Parsable for BorrowedFormatItem<'_> {}
@@ -34,7 +34,7 @@ impl<T: Deref> Parsable for T where T::Target: Parsable {}
 mod sealed {
     #[allow(clippy::wildcard_imports)]
     use super::*;
-    use crate::PrimitiveDateTime;
+    use crate::{PrimitiveDateTime, UtcDateTime};
 
     
     pub trait Sealed {
@@ -86,12 +86,16 @@ mod sealed {
         }
 
         
+        fn parse_utc_date_time(&self, input: &[u8]) -> Result<UtcDateTime, error::Parse> {
+            Ok(self.parse(input)?.try_into()?)
+        }
+
+        
         fn parse_offset_date_time(&self, input: &[u8]) -> Result<OffsetDateTime, error::Parse> {
             Ok(self.parse(input)?.try_into()?)
         }
     }
 }
-
 
 impl sealed::Sealed for BorrowedFormatItem<'_> {
     fn parse_into<'a>(
@@ -147,8 +151,6 @@ where
         self.deref().parse_into(input, parsed)
     }
 }
-
-
 
 impl sealed::Sealed for Rfc2822 {
     fn parse_into<'a>(
@@ -274,10 +276,9 @@ impl sealed::Sealed for Rfc2822 {
             false,
         )(input)
         .or_else(|| match input {
-            [
-                b'a'..=b'i' | b'k'..=b'z' | b'A'..=b'I' | b'K'..=b'Z',
-                rest @ ..,
-            ] => Some(ParsedItem(rest, 0)),
+            [b'a'..=b'i' | b'k'..=b'z' | b'A'..=b'I' | b'K'..=b'Z', rest @ ..] => {
+                Some(ParsedItem(rest, 0))
+            }
             _ => None,
         });
         if let Some(zone_literal) = zone_literal {
@@ -424,10 +425,9 @@ impl sealed::Sealed for Rfc2822 {
             false,
         )(input)
         .or_else(|| match input {
-            [
-                b'a'..=b'i' | b'k'..=b'z' | b'A'..=b'I' | b'K'..=b'Z',
-                rest @ ..,
-            ] => Some(ParsedItem(rest, 0)),
+            [b'a'..=b'i' | b'k'..=b'z' | b'A'..=b'I' | b'K'..=b'Z', rest @ ..] => {
+                Some(ParsedItem(rest, 0))
+            }
             _ => None,
         });
 
@@ -485,7 +485,7 @@ impl sealed::Sealed for Rfc2822 {
                     minimum: 0,
                     maximum: 59,
                     value: 60,
-                    conditional_range: true,
+                    conditional_message: Some("because leap seconds are not supported"),
                 },
             )));
         }
@@ -520,9 +520,16 @@ impl sealed::Sealed for Rfc3339 {
         let input = exactly_n_digits::<2, _>(input)
             .and_then(|item| item.consume_value(|value| parsed.set_day(value)))
             .ok_or(InvalidComponent("day"))?;
-        let input = ascii_char_ignore_case::<b'T'>(input)
-            .ok_or(InvalidLiteral)?
-            .into_inner();
+
+        
+        
+        
+        
+        
+        
+        
+        let input = input.get(1..).ok_or(InvalidComponent("separator"))?;
+
         let input = exactly_n_digits::<2, _>(input)
             .and_then(|item| item.consume_value(|value| parsed.set_hour_24(value)))
             .ok_or(InvalidComponent("hour"))?;
@@ -618,9 +625,16 @@ impl sealed::Sealed for Rfc3339 {
         let input = dash(input).ok_or(InvalidLiteral)?.into_inner();
         let ParsedItem(input, day) =
             exactly_n_digits::<2, _>(input).ok_or(InvalidComponent("day"))?;
-        let input = ascii_char_ignore_case::<b'T'>(input)
-            .ok_or(InvalidLiteral)?
-            .into_inner();
+
+        
+        
+        
+        
+        
+        
+        
+        let input = input.get(1..).ok_or(InvalidComponent("separator"))?;
+
         let ParsedItem(input, hour) =
             exactly_n_digits::<2, _>(input).ok_or(InvalidComponent("hour"))?;
         let input = colon(input).ok_or(InvalidLiteral)?.into_inner();
@@ -716,7 +730,7 @@ impl sealed::Sealed for Rfc3339 {
                     minimum: 0,
                     maximum: 59,
                     value: 60,
-                    conditional_range: true,
+                    conditional_message: Some("because leap seconds are not supported"),
                 },
             )));
         }
@@ -784,4 +798,3 @@ impl<const CONFIG: EncodedConfig> sealed::Sealed for Iso8601<CONFIG> {
         Ok(input)
     }
 }
-

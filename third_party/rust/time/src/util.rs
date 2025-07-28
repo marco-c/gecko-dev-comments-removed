@@ -20,80 +20,86 @@ pub(crate) enum DateAdjustment {
 
 
 
-pub const fn days_in_year_month(year: i32, month: Month) -> u8 {
-    use Month::*;
-    match month {
-        January | March | May | July | August | October | December => 31,
-        April | June | September | November => 30,
-        February if is_leap_year(year) => 29,
-        February => 28,
-    }
+pub const fn days_in_month(month: Month, year: i32) -> u8 {
+    time_core::util::days_in_month(month as u8, year)
 }
 
+
+
+
+
+
+
+
+#[deprecated(
+    since = "0.3.37",
+    note = "use `days_in_month` or `Month::length` instead"
+)]
+pub const fn days_in_year_month(year: i32, month: Month) -> u8 {
+    days_in_month(month, year)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[cfg(feature = "local-offset")]
+pub unsafe fn refresh_tz_unchecked() {
+    
+    unsafe { crate::sys::refresh_tz_unchecked() };
+}
 
+
+
+
+#[cfg(feature = "local-offset")]
+pub fn refresh_tz() -> Option<()> {
+    crate::sys::refresh_tz()
+}
+
+#[doc(hidden)]
+#[cfg(feature = "local-offset")]
+#[allow(clippy::missing_const_for_fn)]
+#[deprecated(since = "0.3.37", note = "no longer needed; TZ is refreshed manually")]
 pub mod local_offset {
-    use core::sync::atomic::{AtomicBool, Ordering};
-
-    
-    static LOCAL_OFFSET_IS_SOUND: AtomicBool = AtomicBool::new(true);
-
-    
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub enum Soundness {
-        
-        
         Sound,
-        
-        
-        
         Unsound,
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub unsafe fn set_soundness(soundness: Soundness) {
-        LOCAL_OFFSET_IS_SOUND.store(soundness == Soundness::Sound, Ordering::Release);
-    }
+    pub unsafe fn set_soundness(_: Soundness) {}
 
-    
-    
     pub fn get_soundness() -> Soundness {
-        match LOCAL_OFFSET_IS_SOUND.load(Ordering::Acquire) {
-            false => Soundness::Unsound,
-            true => Soundness::Sound,
-        }
+        Soundness::Sound
     }
 }

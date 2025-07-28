@@ -1,4 +1,4 @@
-use crate::{IsoWeek, Weekday};
+use crate::{IsoWeek, Month, Weekday};
 
 
 
@@ -265,6 +265,18 @@ pub trait Datelike: Sized {
         ndays += ((year * 1461) >> 2) - div_100 + (div_100 >> 2);
         ndays + self.ordinal() as i32
     }
+
+    
+    fn num_days_in_month(&self) -> u8 {
+        use num_traits::FromPrimitive;
+        
+        
+        let month = Month::from_u32(self.month()).unwrap();
+        
+        
+        
+        month.num_days(self.year()).unwrap()
+    }
 }
 
 
@@ -389,5 +401,15 @@ mod tests {
                 mid_year
             );
         }
+    }
+
+    #[test]
+    fn test_num_days_in_month() {
+        let feb_leap_year = NaiveDate::from_ymd_opt(2004, 2, 1).unwrap();
+        assert_eq!(feb_leap_year.num_days_in_month(), 29);
+        let feb = feb_leap_year.with_year(2005).unwrap();
+        assert_eq!(feb.num_days_in_month(), 28);
+        let march = feb.with_month(3).unwrap();
+        assert_eq!(march.num_days_in_month(), 31);
     }
 }

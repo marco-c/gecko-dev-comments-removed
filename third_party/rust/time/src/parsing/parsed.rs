@@ -3,8 +3,9 @@
 use core::num::{NonZeroU16, NonZeroU8};
 
 use deranged::{
-    OptionRangedI128, OptionRangedI32, OptionRangedI8, OptionRangedU16, OptionRangedU32,
-    OptionRangedU8, RangedI128, RangedI32, RangedI8, RangedU16, RangedU32, RangedU8,
+    OptionRangedI128, OptionRangedI16, OptionRangedI32, OptionRangedI8, OptionRangedU16,
+    OptionRangedU32, OptionRangedU8, RangedI128, RangedI16, RangedI32, RangedI8, RangedU16,
+    RangedU32, RangedU8,
 };
 use num_conv::prelude::*;
 
@@ -21,7 +22,9 @@ use crate::parsing::component::{
     parse_subsecond, parse_unix_timestamp, parse_week_number, parse_weekday, parse_year, Period,
 };
 use crate::parsing::ParsedItem;
-use crate::{error, Date, Month, OffsetDateTime, PrimitiveDateTime, Time, UtcOffset, Weekday};
+use crate::{
+    error, Date, Month, OffsetDateTime, PrimitiveDateTime, Time, UtcDateTime, UtcOffset, Weekday,
+};
 
 
 mod sealed {
@@ -116,9 +119,13 @@ pub struct Parsed {
     
     year: OptionRangedI32<{ MIN_YEAR }, { MAX_YEAR }>,
     
+    year_century: OptionRangedI16<{ (MIN_YEAR / 100) as i16 }, { (MAX_YEAR / 100) as i16 }>,
+    
     year_last_two: OptionRangedU8<0, 99>,
     
     iso_year: OptionRangedI32<{ MIN_YEAR }, { MAX_YEAR }>,
+    
+    iso_year_century: OptionRangedI16<{ (MIN_YEAR / 100) as i16 }, { (MAX_YEAR / 100) as i16 }>,
     
     iso_year_last_two: OptionRangedU8<0, 99>,
     
@@ -143,7 +150,6 @@ pub struct Parsed {
     
     hour_12_is_pm: Option<bool>,
     
-    
     minute: OptionRangedU8<0, { Minute::per(Hour) - 1 }>,
     
     
@@ -154,10 +160,10 @@ pub struct Parsed {
     offset_hour: OptionRangedI8<-23, 23>,
     
     offset_minute:
-        OptionRangedI8<{ -((Minute::per(Hour) - 1) as i8) }, { (Minute::per(Hour) - 1) as _ }>,
+        OptionRangedI8<{ -((Minute::per(Hour) - 1) as i8) }, { (Minute::per(Hour) - 1) as i8 }>,
     
     offset_second:
-        OptionRangedI8<{ -((Second::per(Minute) - 1) as i8) }, { (Second::per(Minute) - 1) as _ }>,
+        OptionRangedI8<{ -((Second::per(Minute) - 1) as i8) }, { (Second::per(Minute) - 1) as i8 }>,
     
     unix_timestamp_nanos: OptionRangedI128<
         {
@@ -171,7 +177,13 @@ pub struct Parsed {
     >,
     
     
-    offset_is_negative: Option<bool>,
+    offset_is_negative: bool,
+    
+    
+    year_century_is_negative: bool,
+    
+    
+    iso_year_century_is_negative: bool,
     
     
     pub(super) leap_second_allowed: bool,
@@ -188,8 +200,10 @@ impl Parsed {
     pub const fn new() -> Self {
         Self {
             year: OptionRangedI32::None,
+            year_century: OptionRangedI16::None,
             year_last_two: OptionRangedU8::None,
             iso_year: OptionRangedI32::None,
+            iso_year_century: OptionRangedI16::None,
             iso_year_last_two: OptionRangedU8::None,
             month: None,
             sunday_week_number: OptionRangedU8::None,
@@ -208,7 +222,9 @@ impl Parsed {
             offset_minute: OptionRangedI8::None,
             offset_second: OptionRangedI8::None,
             unix_timestamp_nanos: OptionRangedI128::None,
-            offset_is_negative: None,
+            offset_is_negative: false,
+            year_century_is_negative: false,
+            iso_year_century_is_negative: false,
             leap_second_allowed: false,
         }
     }
@@ -292,14 +308,20 @@ impl Parsed {
                 Ok(remaining)
             }
             Component::Year(modifiers) => {
-                let ParsedItem(remaining, value) =
+                let ParsedItem(remaining, (value, is_negative)) =
                     parse_year(input, modifiers).ok_or(InvalidComponent("year"))?;
                 match (modifiers.iso_week_based, modifiers.repr) {
                     (false, modifier::YearRepr::Full) => self.set_year(value),
+                    (false, modifier::YearRepr::Century) => {
+                        self.set_year_century(value.truncate(), is_negative)
+                    }
                     (false, modifier::YearRepr::LastTwo) => {
                         self.set_year_last_two(value.cast_unsigned().truncate())
                     }
                     (true, modifier::YearRepr::Full) => self.set_iso_year(value),
+                    (true, modifier::YearRepr::Century) => {
+                        self.set_iso_year_century(value.truncate(), is_negative)
+                    }
                     (true, modifier::YearRepr::LastTwo) => {
                         self.set_iso_year_last_two(value.cast_unsigned().truncate())
                     }
@@ -336,7 +358,7 @@ impl Parsed {
                 .and_then(|parsed| {
                     parsed.consume_value(|(value, is_negative)| {
                         self.set_offset_hour(value)?;
-                        self.offset_is_negative = Some(is_negative);
+                        self.offset_is_negative = is_negative;
                         Some(())
                     })
                 })
@@ -374,6 +396,25 @@ impl Parsed {
     }
 
     
+    
+    
+    
+    pub const fn year_century(&self) -> Option<i16> {
+        self.year_century.get_primitive()
+    }
+
+    
+    
+    
+    
+    pub const fn year_century_is_negative(&self) -> Option<bool> {
+        match self.year_century() {
+            Some(_) => Some(self.year_century_is_negative),
+            None => None,
+        }
+    }
+
+    
     pub const fn year_last_two(&self) -> Option<u8> {
         self.year_last_two.get_primitive()
     }
@@ -381,6 +422,25 @@ impl Parsed {
     
     pub const fn iso_year(&self) -> Option<i32> {
         self.iso_year.get_primitive()
+    }
+
+    
+    
+    
+    
+    pub const fn iso_year_century(&self) -> Option<i16> {
+        self.iso_year_century.get_primitive()
+    }
+
+    
+    
+    
+    
+    pub const fn iso_year_century_is_negative(&self) -> Option<bool> {
+        match self.iso_year_century() {
+            Some(_) => Some(self.iso_year_century_is_negative),
+            None => None,
+        }
     }
 
     
@@ -468,7 +528,7 @@ impl Parsed {
     
     pub const fn offset_minute_signed(&self) -> Option<i8> {
         match (self.offset_minute.get_primitive(), self.offset_is_negative) {
-            (Some(offset_minute), Some(true)) => Some(-offset_minute),
+            (Some(offset_minute), true) => Some(-offset_minute),
             (Some(offset_minute), _) => Some(offset_minute),
             (None, _) => None,
         }
@@ -484,7 +544,7 @@ impl Parsed {
     
     pub const fn offset_second_signed(&self) -> Option<i8> {
         match (self.offset_second.get_primitive(), self.offset_is_negative) {
-            (Some(offset_second), Some(true)) => Some(-offset_second),
+            (Some(offset_second), true) => Some(-offset_second),
             (Some(offset_second), _) => Some(offset_second),
             (None, _) => None,
         }
@@ -499,7 +559,7 @@ impl Parsed {
 
 macro_rules! setters {
     ($($name:ident $setter:ident $builder:ident $type:ty;)*) => {$(
-        #[doc = concat!("Set the `", stringify!($setter), "` component.")]
+        #[doc = concat!("Set the `", stringify!($name), "` component.")]
         pub fn $setter(&mut self, value: $type) -> Option<()> {
             *self = self.$builder(value)?;
             Some(())
@@ -514,9 +574,43 @@ macro_rules! setters {
 impl Parsed {
     setters! {
         year set_year with_year i32;
+    }
+
+    
+    
+    
+    
+    pub fn set_year_century(&mut self, value: i16, is_negative: bool) -> Option<()> {
+        self.year_century = OptionRangedI16::Some(const_try_opt!(RangedI16::new(value)));
+        if value != 0 {
+            self.year_century_is_negative = value.is_negative();
+        } else {
+            self.year_century_is_negative = is_negative;
+        }
+        Some(())
+    }
+
+    setters! {
         year_last_two set_year_last_two with_year_last_two u8;
         iso_year set_iso_year with_iso_year i32;
         iso_year_last_two set_iso_year_last_two with_iso_year_last_two u8;
+    }
+
+    
+    
+    
+    
+    pub fn set_iso_year_century(&mut self, value: i16, is_negative: bool) -> Option<()> {
+        self.iso_year_century = OptionRangedI16::Some(const_try_opt!(RangedI16::new(value)));
+        if value != 0 {
+            self.iso_year_century_is_negative = value.is_negative();
+        } else {
+            self.iso_year_century_is_negative = is_negative;
+        }
+        Some(())
+    }
+
+    setters! {
         month set_month with_month Month;
         sunday_week_number set_sunday_week_number with_sunday_week_number u8;
         monday_week_number set_monday_week_number with_monday_week_number u8;
@@ -577,6 +671,20 @@ impl Parsed {
     }
 
     
+    
+    
+    
+    pub const fn with_year_century(mut self, value: i16, is_negative: bool) -> Option<Self> {
+        self.year_century = OptionRangedI16::Some(const_try_opt!(RangedI16::new(value)));
+        if value != 0 {
+            self.year_century_is_negative = value.is_negative();
+        } else {
+            self.year_century_is_negative = is_negative;
+        }
+        Some(self)
+    }
+
+    
     pub const fn with_year_last_two(mut self, value: u8) -> Option<Self> {
         self.year_last_two = OptionRangedU8::Some(const_try_opt!(RangedU8::new(value)));
         Some(self)
@@ -585,6 +693,20 @@ impl Parsed {
     
     pub const fn with_iso_year(mut self, value: i32) -> Option<Self> {
         self.iso_year = OptionRangedI32::Some(const_try_opt!(RangedI32::new(value)));
+        Some(self)
+    }
+
+    
+    
+    
+    
+    pub const fn with_iso_year_century(mut self, value: i16, is_negative: bool) -> Option<Self> {
+        self.iso_year_century = OptionRangedI16::Some(const_try_opt!(RangedI16::new(value)));
+        if value != 0 {
+            self.iso_year_century_is_negative = value.is_negative();
+        } else {
+            self.iso_year_century_is_negative = is_negative;
+        }
         Some(self)
     }
 
@@ -688,7 +810,7 @@ impl Parsed {
         if value > i8::MAX as u8 {
             None
         } else {
-            self.with_offset_minute_signed(value as _)
+            self.with_offset_minute_signed(value as i8)
         }
     }
 
@@ -708,7 +830,7 @@ impl Parsed {
         if value > i8::MAX as u8 {
             None
         } else {
-            self.with_offset_second_signed(value as _)
+            self.with_offset_second_signed(value as i8)
         }
     }
 
@@ -728,7 +850,7 @@ impl Parsed {
 impl TryFrom<Parsed> for Date {
     type Error = error::TryFromParsed;
 
-    fn try_from(parsed: Parsed) -> Result<Self, Self::Error> {
+    fn try_from(mut parsed: Parsed) -> Result<Self, Self::Error> {
         
         macro_rules! match_ {
             (_ => $catch_all:expr $(,)?) => {
@@ -760,6 +882,32 @@ impl TryFrom<Parsed> for Date {
 
         
         
+        if let (None, Some(century), Some(is_negative), Some(last_two)) = (
+            parsed.year(),
+            parsed.year_century(),
+            parsed.year_century_is_negative(),
+            parsed.year_last_two(),
+        ) {
+            let year = if is_negative {
+                100 * century.extend::<i32>() - last_two.cast_signed().extend::<i32>()
+            } else {
+                100 * century.extend::<i32>() + last_two.cast_signed().extend::<i32>()
+            };
+            parsed.year = OptionRangedI32::from(RangedI32::new(year));
+        }
+        if let (None, Some(century), Some(is_negative), Some(last_two)) = (
+            parsed.iso_year(),
+            parsed.iso_year_century(),
+            parsed.iso_year_century_is_negative(),
+            parsed.iso_year_last_two(),
+        ) {
+            let iso_year = if is_negative {
+                100 * century.extend::<i32>() - last_two.cast_signed().extend::<i32>()
+            } else {
+                100 * century.extend::<i32>() + last_two.cast_signed().extend::<i32>()
+            };
+            parsed.iso_year = OptionRangedI32::from(RangedI32::new(iso_year));
+        }
 
         match_! {
             (year, ordinal) => Ok(Self::from_ordinal_date(year, ordinal.get())?),
@@ -824,25 +972,43 @@ impl TryFrom<Parsed> for Time {
     }
 }
 
+fn utc_offset_try_from_parsed<const REQUIRED: bool>(
+    parsed: Parsed,
+) -> Result<UtcOffset, error::TryFromParsed> {
+    let hour = match (REQUIRED, parsed.offset_hour()) {
+        
+        (true, None) => return Err(InsufficientInformation),
+        
+        
+        (false, None) => return Ok(UtcOffset::UTC),
+        
+        (_, Some(hour)) => hour,
+    };
+    let minute = parsed.offset_minute_signed();
+    
+    let second = minute.and_then(|_| parsed.offset_second_signed());
+
+    let minute = minute.unwrap_or(0);
+    let second = second.unwrap_or(0);
+
+    UtcOffset::from_hms(hour, minute, second).map_err(|mut err| {
+        
+        if err.name == "hours" {
+            err.name = "offset hour";
+        } else if err.name == "minutes" {
+            err.name = "offset minute";
+        } else if err.name == "seconds" {
+            err.name = "offset second";
+        }
+        err.into()
+    })
+}
+
 impl TryFrom<Parsed> for UtcOffset {
     type Error = error::TryFromParsed;
 
     fn try_from(parsed: Parsed) -> Result<Self, Self::Error> {
-        let hour = parsed.offset_hour().ok_or(InsufficientInformation)?;
-        let minute = parsed.offset_minute_signed().unwrap_or(0);
-        let second = parsed.offset_second_signed().unwrap_or(0);
-
-        Self::from_hms(hour, minute, second).map_err(|mut err| {
-            
-            if err.name == "hours" {
-                err.name = "offset hour";
-            } else if err.name == "minutes" {
-                err.name = "offset minute";
-            } else if err.name == "seconds" {
-                err.name = "offset second";
-            }
-            err.into()
-        })
+        utc_offset_try_from_parsed::<true>(parsed)
     }
 }
 
@@ -851,6 +1017,55 @@ impl TryFrom<Parsed> for PrimitiveDateTime {
 
     fn try_from(parsed: Parsed) -> Result<Self, Self::Error> {
         Ok(Self::new(parsed.try_into()?, parsed.try_into()?))
+    }
+}
+
+impl TryFrom<Parsed> for UtcDateTime {
+    type Error = error::TryFromParsed;
+
+    fn try_from(mut parsed: Parsed) -> Result<Self, Self::Error> {
+        if let Some(timestamp) = parsed.unix_timestamp_nanos() {
+            let mut value = Self::from_unix_timestamp_nanos(timestamp)?;
+            if let Some(subsecond) = parsed.subsecond() {
+                value = value.replace_nanosecond(subsecond)?;
+            }
+            return Ok(value);
+        }
+
+        
+        
+        
+        let leap_second_input = if parsed.leap_second_allowed && parsed.second() == Some(60) {
+            if parsed.set_second(59).is_none() {
+                bug!("59 is a valid second");
+            }
+            if parsed.set_subsecond(999_999_999).is_none() {
+                bug!("999_999_999 is a valid subsecond");
+            }
+            true
+        } else {
+            false
+        };
+
+        let dt = OffsetDateTime::new_in_offset(
+            Date::try_from(parsed)?,
+            Time::try_from(parsed)?,
+            utc_offset_try_from_parsed::<false>(parsed)?,
+        )
+        .to_utc();
+
+        if leap_second_input && !dt.is_valid_leap_second_stand_in() {
+            return Err(error::TryFromParsed::ComponentRange(
+                error::ComponentRange {
+                    name: "second",
+                    minimum: 0,
+                    maximum: 59,
+                    value: 60,
+                    conditional_message: Some("because leap seconds are not supported"),
+                },
+            ));
+        }
+        Ok(dt)
     }
 }
 
@@ -894,7 +1109,7 @@ impl TryFrom<Parsed> for OffsetDateTime {
                     minimum: 0,
                     maximum: 59,
                     value: 60,
-                    conditional_range: true,
+                    conditional_message: Some("because leap seconds are not supported"),
                 },
             ));
         }

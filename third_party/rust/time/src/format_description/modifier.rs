@@ -3,7 +3,6 @@
 use core::num::NonZeroU16;
 
 
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Day {
@@ -102,7 +101,24 @@ pub enum YearRepr {
     
     Full,
     
+    Century,
+    
     LastTwo,
+}
+
+
+
+
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum YearRange {
+    
+    Standard,
+    
+    
+    
+    
+    Extended,
 }
 
 
@@ -114,12 +130,12 @@ pub struct Year {
     
     pub repr: YearRepr,
     
+    pub range: YearRange,
+    
     pub iso_week_based: bool,
     
     pub sign_is_mandatory: bool,
 }
-
-
 
 
 #[non_exhaustive]
@@ -195,8 +211,6 @@ pub struct Subsecond {
 }
 
 
-
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct OffsetHour {
@@ -221,7 +235,6 @@ pub struct OffsetSecond {
     
     pub padding: Padding,
 }
-
 
 
 #[non_exhaustive]
@@ -361,12 +374,15 @@ impl_const_default! {
     };
     /// Creates a modifier that indicates the value uses the [`Full`](Self::Full) representation.
     YearRepr => Self::Full;
+    /// Creates a modifier that indicates the value uses the [`Extended`](Self::Extended) range.
+    YearRange => Self::Extended;
     /// Creates a modifier that indicates the value uses the [`Full`](YearRepr::Full)
     /// representation, is [padded with zeroes](Padding::Zero), uses the Gregorian calendar as its
     /// base, and only includes the year's sign if necessary.
     @pub Year => Self {
         padding: Padding::Zero,
         repr: YearRepr::Full,
+        range: YearRange::Extended,
         iso_week_based: false,
         sign_is_mandatory: false,
     };

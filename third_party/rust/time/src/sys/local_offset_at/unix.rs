@@ -2,48 +2,15 @@
 
 use core::mem::MaybeUninit;
 
-use crate::util::local_offset::{self, Soundness};
 use crate::{OffsetDateTime, UtcOffset};
 
 
-
-
-
-const OS_HAS_THREAD_SAFE_ENVIRONMENT: bool = match std::env::consts::OS.as_bytes() {
-    
-    b"illumos"
-    
-    
-    | b"netbsd"
-    => true,
-    _ => false,
-};
-
-
-
-
-
-
-
-
-
-
-unsafe fn timestamp_to_tm(timestamp: i64) -> Option<libc::tm> {
-    extern "C" {
-        #[cfg_attr(target_os = "netbsd", link_name = "__tzset50")]
-        fn tzset();
-    }
-
+fn timestamp_to_tm(timestamp: i64) -> Option<libc::tm> {
     
     #[allow(clippy::useless_conversion)]
     let timestamp = timestamp.try_into().ok()?;
 
     let mut tm = MaybeUninit::uninit();
-
-    
-    
-    
-    unsafe { tzset() };
 
     
     
@@ -128,27 +95,7 @@ fn tm_to_offset(unix_timestamp: i64, tm: libc::tm) -> Option<UtcOffset> {
 
 
 pub(super) fn local_offset_at(datetime: OffsetDateTime) -> Option<UtcOffset> {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    if OS_HAS_THREAD_SAFE_ENVIRONMENT
-        || local_offset::get_soundness() == Soundness::Unsound
-        || num_threads::is_single_threaded() == Some(true)
-    {
-        let unix_timestamp = datetime.unix_timestamp();
-        
-        
-        let tm = unsafe { timestamp_to_tm(unix_timestamp) }?;
-        tm_to_offset(unix_timestamp, tm)
-    } else {
-        None
-    }
+    let unix_timestamp = datetime.unix_timestamp();
+    let tm = timestamp_to_tm(unix_timestamp)?;
+    tm_to_offset(unix_timestamp, tm)
 }
