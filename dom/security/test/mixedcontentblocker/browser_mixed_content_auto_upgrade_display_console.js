@@ -18,10 +18,7 @@ add_task(async function () {
 
   
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["security.mixed_content.upgrade_display_content", true],
-      ["security.mixed_content.upgrade_display_content.image", true],
-    ],
+    set: [["security.mixed_content.upgrade_display_content", true]],
   });
   Services.console.registerListener(on_auto_upgrade_message);
 

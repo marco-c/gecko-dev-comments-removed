@@ -337,12 +337,11 @@ LoadInfo::LoadInfo(
     }
 
     if (nsMixedContentBlocker::IsUpgradableContentType(
-            mInternalContentPolicyType,  false)) {
+            mInternalContentPolicyType)) {
       
       if (mLoadingPrincipal->GetIsOriginPotentiallyTrustworthy() &&
           !mLoadingPrincipal->GetIsLoopbackHost()) {
-        if (nsMixedContentBlocker::IsUpgradableContentType(
-                mInternalContentPolicyType,  true)) {
+        if (StaticPrefs::security_mixed_content_upgrade_display_content()) {
           mBrowserUpgradeInsecureRequests = true;
         } else {
           mBrowserWouldUpgradeInsecureRequests = true;

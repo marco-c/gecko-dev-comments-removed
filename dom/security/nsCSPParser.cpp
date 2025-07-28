@@ -1077,13 +1077,7 @@ nsCSPDirective* nsCSPParser::directiveName() {
     
     
     if (mozilla::StaticPrefs::
-            security_mixed_content_upgrade_display_content() &&
-        mozilla::StaticPrefs::
-            security_mixed_content_upgrade_display_content_image() &&
-        mozilla::StaticPrefs::
-            security_mixed_content_upgrade_display_content_audio() &&
-        mozilla::StaticPrefs::
-            security_mixed_content_upgrade_display_content_video()) {
+            security_mixed_content_upgrade_display_content()) {
       
       
       AutoTArray<nsString, 1> params = {mCurToken};
