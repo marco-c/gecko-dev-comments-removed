@@ -1,6 +1,9 @@
 
 
 
+unsetgczeal("CheckHeapBeforeMinorGC");
+
+
 
 
 let state = 0;
