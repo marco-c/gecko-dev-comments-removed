@@ -15,13 +15,14 @@ TEST(TestTextDirective, ComputeWordBoundaryDistancesLTR)
   nsTArray<uint32_t> wordEndDistances =
       TextDirectiveUtil::ComputeWordBoundaryDistances<TextScanDirection::Right>(
           text);
-  EXPECT_EQ(wordEndDistances.Length(), 6u);
+  EXPECT_EQ(wordEndDistances.Length(), 7u);
   EXPECT_EQ(wordEndDistances[0], 5u);   
   EXPECT_EQ(wordEndDistances[1], 12u);  
   EXPECT_EQ(wordEndDistances[2], 18u);  
   EXPECT_EQ(wordEndDistances[3], 21u);  
   EXPECT_EQ(wordEndDistances[4], 23u);  
   EXPECT_EQ(wordEndDistances[5], 28u);  
+  EXPECT_EQ(wordEndDistances[6], 29u);  
 }
 
 TEST(TestTextDirective, ComputeWordBoundaryDistancesRTL)
@@ -37,4 +38,24 @@ TEST(TestTextDirective, ComputeWordBoundaryDistancesRTL)
   EXPECT_EQ(wordBeginDistances[3], 15u);  
   EXPECT_EQ(wordBeginDistances[4], 22u);  
   EXPECT_EQ(wordBeginDistances[5], 29u);  
+}
+
+TEST(TestTextDirective, ComputeWordBoundaryDistancesPunctuationOnly)
+{
+  nsString text(u": , .");
+  nsTArray<uint32_t> wordEndDistances =
+      TextDirectiveUtil::ComputeWordBoundaryDistances<TextScanDirection::Right>(
+          text);
+  EXPECT_EQ(wordEndDistances.Length(), 1u);
+  EXPECT_EQ(wordEndDistances[0], 5u);
+}
+
+TEST(TestTextDirective, ComputeWordBoundaryDistancesWithEmptyString)
+{
+  nsString text(u"");
+  nsTArray<uint32_t> wordEndDistances =
+      TextDirectiveUtil::ComputeWordBoundaryDistances<TextScanDirection::Right>(
+          text);
+  EXPECT_EQ(wordEndDistances.Length(), 1u);
+  EXPECT_EQ(wordEndDistances[0], 0u);
 }

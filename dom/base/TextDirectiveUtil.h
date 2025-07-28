@@ -206,6 +206,9 @@ class TextDirectiveUtil final {
 
 
 
+
+
+
   template <TextScanDirection direction>
   static nsTArray<uint32_t> ComputeWordBoundaryDistances(
       const nsAString& aString);
@@ -531,6 +534,10 @@ template <TextScanDirection direction>
     wordBoundaryDistances.AppendElement(direction == TextScanDirection::Left
                                             ? aString.Length() - wordBegin
                                             : wordEnd);
+  }
+  if (wordBoundaryDistances.IsEmpty() ||
+      wordBoundaryDistances.LastElement() != aString.Length()) {
+    wordBoundaryDistances.AppendElement(aString.Length());
   }
   return std::move(wordBoundaryDistances);
 }
