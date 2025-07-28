@@ -136,6 +136,11 @@ class WaylandSurface final {
 
   
   
+  void RemoveFinishedWaylandTransactionLocked(WaylandSurfaceLock& aSurfaceLock,
+                                              BufferTransaction* aTransaction);
+
+  
+  
 
   
   
