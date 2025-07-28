@@ -115,7 +115,8 @@ void resolve_request_device_promise(ffi::WGPUWebGPUChildPtr child,
     RefPtr<Device> device =
         new Device(pending_promise.adapter, pending_promise.device_id,
                    pending_promise.queue_id, pending_promise.features,
-                   pending_promise.limits, pending_promise.adapter_info);
+                   pending_promise.limits, pending_promise.adapter_info,
+                   pending_promise.lost_promise);
     device->SetLabel(pending_promise.label);
     pending_promise.promise->MaybeResolve(device);
   } else {
@@ -337,7 +338,7 @@ void WebGPUChild::FlushQueuedMessages() {
   mQueuedHandles.Clear();
 
   if (!sent) {
-    ClearAllPendingPromises();
+    ClearActorState();
   }
 }
 
@@ -348,51 +349,48 @@ ipc::IPCResult WebGPUChild::RecvUncapturedError(RawId aDeviceId,
     const auto itr = mDeviceMap.find(aDeviceId);
     if (itr != mDeviceMap.end()) {
       device = itr->second.get();
-      MOZ_ASSERT(device);
     }
   }
-  if (!device) {
-    JsWarning(nullptr, aMessage);
-  } else {
-    
-    if (device->CheckNewWarning(aMessage)) {
-      JsWarning(device->GetOwnerGlobal(), aMessage);
+  
+  if (device->CheckNewWarning(aMessage)) {
+    JsWarning(device->GetOwnerGlobal(), aMessage);
 
-      dom::GPUUncapturedErrorEventInit init;
-      init.mError = new ValidationError(device->GetParentObject(), aMessage);
-      RefPtr<mozilla::dom::GPUUncapturedErrorEvent> event =
-          dom::GPUUncapturedErrorEvent::Constructor(
-              device, u"uncapturederror"_ns, init);
-      device->DispatchEvent(*event);
-    }
+    dom::GPUUncapturedErrorEventInit init;
+    init.mError = new ValidationError(device->GetParentObject(), aMessage);
+    RefPtr<mozilla::dom::GPUUncapturedErrorEvent> event =
+        dom::GPUUncapturedErrorEvent::Constructor(device, u"uncapturederror"_ns,
+                                                  init);
+    device->DispatchEvent(*event);
   }
   return IPC_OK();
 }
 
-bool WebGPUChild::ResolveLostForDeviceId(RawId aDeviceId, uint8_t aReason,
-                                         const nsAString& aMessage) {
-  RefPtr<Device> device;
-  const auto itr = mDeviceMap.find(aDeviceId);
-  if (itr != mDeviceMap.end()) {
-    device = itr->second.get();
-    MOZ_ASSERT(device);
-  }
-  if (!device) {
-    
-    return false;
-  }
-
-  dom::GPUDeviceLostReason reason =
-      static_cast<dom::GPUDeviceLostReason>(aReason);
-  device->ResolveLost(reason, aMessage);
-
-  return true;
-}
-
 ipc::IPCResult WebGPUChild::RecvDeviceLost(RawId aDeviceId, uint8_t aReason,
                                            const nsACString& aMessage) {
-  auto message = NS_ConvertUTF8toUTF16(aMessage);
-  ResolveLostForDeviceId(aDeviceId, aReason, message);
+  
+  
+  
+  auto device_lost_promise_entry =
+      mPendingDeviceLostPromises.extract(aDeviceId);
+  if (!device_lost_promise_entry.empty()) {
+    auto promise = std::move(device_lost_promise_entry.mapped());
+    RefPtr<DeviceLostInfo> info = new DeviceLostInfo(
+        promise->GetParentObject(), dom::GPUDeviceLostReason::Destroyed,
+        u"Device destroyed"_ns);
+    promise->MaybeResolve(info);
+  } else {
+    auto message = NS_ConvertUTF8toUTF16(aMessage);
+
+    const auto itr = mDeviceMap.find(aDeviceId);
+    if (itr != mDeviceMap.end()) {
+      auto* device = itr->second.get();
+
+      dom::GPUDeviceLostReason reason =
+          static_cast<dom::GPUDeviceLostReason>(aReason);
+      device->ResolveLost(reason, message);
+    }
+  }
+
   return IPC_OK();
 }
 
@@ -419,27 +417,13 @@ void WebGPUChild::UnregisterDevice(RawId aDeviceId) {
   mDeviceMap.erase(aDeviceId);
 }
 
-void WebGPUChild::ActorDestroy(ActorDestroyReason) {
+void WebGPUChild::ActorDestroy(ActorDestroyReason) { ClearActorState(); }
+
+void WebGPUChild::ClearActorState() {
   
   
   
-  const auto deviceMap = std::move(mDeviceMap);
-  mDeviceMap.clear();
 
-  for (const auto& targetIter : deviceMap) {
-    RefPtr<Device> device = targetIter.second.get();
-    MOZ_ASSERT(device);
-    
-    
-    
-    device->ResolveLost(dom::GPUDeviceLostReason::Unknown,
-                        u"WebGPUChild destroyed"_ns);
-  }
-
-  ClearAllPendingPromises();
-}
-
-void WebGPUChild::ClearAllPendingPromises() {
   
   {
     while (!mPendingRequestAdapterPromises.empty()) {
@@ -458,11 +442,37 @@ void WebGPUChild::ClearAllPendingPromises() {
       RefPtr<Device> device =
           new Device(pending_promise.adapter, pending_promise.device_id,
                      pending_promise.queue_id, pending_promise.features,
-                     pending_promise.limits, pending_promise.adapter_info);
+                     pending_promise.limits, pending_promise.adapter_info,
+                     pending_promise.lost_promise);
       device->SetLabel(pending_promise.label);
       device->ResolveLost(dom::GPUDeviceLostReason::Unknown,
                           u"WebGPUChild destroyed"_ns);
       pending_promise.promise->MaybeResolve(device);
+    }
+  }
+  
+  
+  {
+    while (!mPendingDeviceLostPromises.empty()) {
+      auto pending_promise_entry = mPendingDeviceLostPromises.begin();
+      auto pending_promise = std::move(pending_promise_entry->second);
+      mPendingDeviceLostPromises.erase(pending_promise_entry->first);
+
+      RefPtr<DeviceLostInfo> info = new DeviceLostInfo(
+          pending_promise->GetParentObject(),
+          dom::GPUDeviceLostReason::Destroyed, u"Device destroyed"_ns);
+      pending_promise->MaybeResolve(info);
+    }
+  }
+  
+  {
+    while (!mDeviceMap.empty()) {
+      auto device_map_entry = mDeviceMap.begin();
+      auto device = std::move(device_map_entry->second);
+      mDeviceMap.erase(device_map_entry->first);
+
+      device->ResolveLost(dom::GPUDeviceLostReason::Unknown,
+                          u"WebGPUChild destroyed"_ns);
     }
   }
   
