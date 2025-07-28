@@ -81,12 +81,19 @@ struct MOZ_STACK_CLASS BindContext final {
     MOZ_ASSERT(mInComposedDoc, "Binding NAC in a disconnected subtree?");
   }
 
+  void SetIsMove(bool aIsMove) { mIsMove = aIsMove; }
+
+  bool IsMove() const { return mIsMove; }
+
  private:
   
   
   bool IsSameOriginAsTop() const;
 
   Document& mDoc;
+
+  
+  bool mIsMove = false;
 
   const bool mInComposedDoc;
   const bool mInUncomposedDoc;

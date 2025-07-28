@@ -182,7 +182,7 @@ nsresult nsGenericHTMLFrameElement::BindToTree(BindContext& aContext,
   nsresult rv = nsGenericHTMLElement::BindToTree(aContext, aParent);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (IsInComposedDoc()) {
+  if (IsInComposedDoc() && !mFrameLoader) {
     NS_ASSERTION(!nsContentUtils::IsSafeToRunScript(),
                  "Missing a script blocker!");
 
@@ -199,7 +199,7 @@ nsresult nsGenericHTMLFrameElement::BindToTree(BindContext& aContext,
 }
 
 void nsGenericHTMLFrameElement::UnbindFromTree(UnbindContext& aContext) {
-  if (mFrameLoader) {
+  if (mFrameLoader && !aContext.IsMove()) {
     
     
     
