@@ -3201,10 +3201,13 @@ function FeatureHighlight({
     className: "message-icon"
   }, icon), external_React_default().createElement("p", {
     className: "content-wrapper"
-  }, message), external_React_default().createElement("button", {
+  }, message), external_React_default().createElement("moz-button", {
+    type: "icon ghost",
+    size: "small",
     "data-l10n-id": "feature-highlight-dismiss-button",
-    className: "icon icon-dismiss",
-    onClick: onDismissClick
+    iconsrc: "chrome://global/skin/icons/close.svg",
+    onClick: onDismissClick,
+    onKeyDown: onDismissClick
   })));
 }
 ;
@@ -9027,7 +9030,183 @@ TopSiteImpressionWrapper.defaultProps = {
   tile: null
 };
 ;
+
+
+
+
+
+
+
+
+
+
+
+
+
+function MessageWrapper({
+  children,
+  dispatch,
+  hiddenOverride,
+  onDismiss
+}) {
+  const message = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Messages);
+  const [isIntersecting, setIsIntersecting] = (0,external_React_namespaceObject.useState)(false);
+  const [tabIsVisible, setTabIsVisible] = (0,external_React_namespaceObject.useState)(() => typeof document !== "undefined" && document.visibilityState === "visible");
+  const [hasRun, setHasRun] = (0,external_React_namespaceObject.useState)();
+  const handleIntersection = (0,external_React_namespaceObject.useCallback)(() => {
+    setIsIntersecting(true);
+    
+    if (tabIsVisible && message.messageData.id && !hasRun) {
+      setHasRun(true);
+      dispatch(actionCreators.AlsoToMain({
+        type: actionTypes.MESSAGE_IMPRESSION,
+        data: message.messageData
+      }));
+    }
+  }, [dispatch, message, tabIsVisible, hasRun]);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    
+    if (message.isVisible && tabIsVisible) {
+      dispatch(actionCreators.AlsoToMain({
+        type: actionTypes.MESSAGE_NOTIFY_VISIBILITY,
+        data: true
+      }));
+    }
+  }, [message, dispatch, tabIsVisible]);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    const handleVisibilityChange = () => {
+      setTabIsVisible(document.visibilityState === "visible");
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+  const ref = useIntersectionObserver(handleIntersection);
+  const handleClose = (0,external_React_namespaceObject.useCallback)(() => {
+    const action = {
+      type: actionTypes.MESSAGE_TOGGLE_VISIBILITY,
+      data: false 
+    };
+    if (message.portID) {
+      dispatch(actionCreators.OnlyToOneContent(action, message.portID));
+    } else {
+      dispatch(actionCreators.AlsoToMain(action));
+    }
+    dispatch(actionCreators.AlsoToMain({
+      type: actionTypes.MESSAGE_NOTIFY_VISIBILITY,
+      data: false
+    }));
+    onDismiss?.();
+  }, [dispatch, message, onDismiss]);
+  function handleDismiss() {
+    const {
+      id
+    } = message.messageData;
+    if (id) {
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.MESSAGE_DISMISS,
+        data: {
+          message: message.messageData
+        }
+      }));
+    }
+    handleClose();
+  }
+  function handleBlock() {
+    const {
+      id
+    } = message.messageData;
+    if (id) {
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.MESSAGE_BLOCK,
+        data: id
+      }));
+    }
+  }
+  function handleClick(elementId) {
+    const {
+      id
+    } = message.messageData;
+    if (id) {
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.MESSAGE_CLICK,
+        data: {
+          message: message.messageData,
+          source: elementId || ""
+        }
+      }));
+    }
+  }
+  if (!message || !hiddenOverride && !message.isVisible) {
+    return null;
+  }
+
+  
+  return external_React_default().createElement("div", {
+    ref: el => {
+      ref.current = [el];
+    },
+    className: "message-wrapper"
+  }, external_React_default().cloneElement(children, {
+    isIntersecting,
+    handleDismiss,
+    handleClick,
+    handleBlock,
+    handleClose
+  }));
+}
+
+;
+
+
+
+
+
+
+function ShortcutFeatureHighlight({
+  position,
+  dispatch,
+  handleDismiss,
+  handleBlock,
+  feature
+}) {
+  const onDismiss = (0,external_React_namespaceObject.useCallback)(() => {
+    handleDismiss();
+    handleBlock();
+  }, [handleDismiss, handleBlock]);
+  return external_React_default().createElement("div", {
+    className: "shortcut-feature-highlight"
+  }, external_React_default().createElement(FeatureHighlight, {
+    position: position,
+    feature: feature,
+    dispatch: dispatch,
+    message: external_React_default().createElement("div", {
+      className: "shortcut-feature-highlight-content"
+    }, external_React_default().createElement("img", {
+      src: "chrome://global/skin/icons/open-in-new.svg",
+      width: "24",
+      height: "24",
+      alt: ""
+    }), external_React_default().createElement("div", {
+      className: "shortcut-feature-highlight-copy"
+    }, external_React_default().createElement("p", {
+      className: "title",
+      "data-l10n-id": "newtab-shortcuts-highlight-title"
+    }), external_React_default().createElement("p", {
+      className: "subtitle",
+      "data-l10n-id": "newtab-shortcuts-highlight-subtitle"
+    }))),
+    openedOverride: true,
+    showButtonIcon: false,
+    dismissCallback: onDismiss,
+    outsideClickCallback: handleDismiss
+  }));
+}
+;
 function TopSite_extends() { return TopSite_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, TopSite_extends.apply(null, arguments); }
+
+
 
 
 
@@ -9061,6 +9240,7 @@ class TopSiteLink extends (external_React_default()).PureComponent {
     };
     this.onDragEvent = this.onDragEvent.bind(this);
     this.onKeyPress = this.onKeyPress.bind(this);
+    this.shouldShowOMCHighlight = this.shouldShowOMCHighlight.bind(this);
   }
 
   
@@ -9253,6 +9433,13 @@ class TopSiteLink extends (external_React_default()).PureComponent {
       selectedColor
     };
   }
+  shouldShowOMCHighlight(componentId) {
+    const messageData = this.props.Messages?.messageData;
+    if (!messageData || Object.keys(messageData).length === 0) {
+      return false;
+    }
+    return messageData?.content?.messageType === componentId;
+  }
   render() {
     const {
       children,
@@ -9392,7 +9579,14 @@ class TopSiteLink extends (external_React_default()).PureComponent {
     }), title || external_React_default().createElement("br", null)), external_React_default().createElement("span", {
       className: "sponsored-label",
       "data-l10n-id": "newtab-topsite-sponsored"
-    }))), children, impressionStats));
+    }))), isAddButton && this.shouldShowOMCHighlight("ShortcutHighlight") && external_React_default().createElement(MessageWrapper, {
+      dispatch: this.props.dispatch,
+      onClick: e => e.stopPropagation()
+    }, external_React_default().createElement(ShortcutFeatureHighlight, {
+      dispatch: this.props.dispatch,
+      feature: "FEATURE_SHORTCUT_HIGHLIGHT",
+      position: "inset-block-end inset-inline-start"
+    })), children, impressionStats));
   }
 }
 TopSiteLink.defaultProps = {
@@ -9875,7 +10069,8 @@ class _TopSiteList extends (external_React_default()).PureComponent {
           tabIndex: i === this.state.focusedIndex ? 0 : -1,
           onFocus: () => {
             this.onTopsiteFocus(i);
-          }
+          },
+          Messages: this.props.Messages
         }));
       } else {
         topSiteLink = external_React_default().createElement(TopSite, TopSite_extends({
@@ -9912,6 +10107,7 @@ class _TopSiteList extends (external_React_default()).PureComponent {
 }
 const TopSiteList = (0,external_ReactRedux_namespaceObject.connect)(state => ({
   App: state.App,
+  Messages: state.Messages,
   Prefs: state.Prefs
 }))(_TopSiteList);
 ;
@@ -11517,134 +11713,6 @@ function FollowSectionButtonHighlight({
     outsideClickCallback: handleDismiss
   }));
 }
-;
-
-
-
-
-
-
-
-
-
-
-
-
-
-function MessageWrapper({
-  children,
-  dispatch,
-  hiddenOverride,
-  onDismiss
-}) {
-  const message = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Messages);
-  const [isIntersecting, setIsIntersecting] = (0,external_React_namespaceObject.useState)(false);
-  const [tabIsVisible, setTabIsVisible] = (0,external_React_namespaceObject.useState)(() => typeof document !== "undefined" && document.visibilityState === "visible");
-  const [hasRun, setHasRun] = (0,external_React_namespaceObject.useState)();
-  const handleIntersection = (0,external_React_namespaceObject.useCallback)(() => {
-    setIsIntersecting(true);
-    
-    if (tabIsVisible && message.messageData.id && !hasRun) {
-      setHasRun(true);
-      dispatch(actionCreators.AlsoToMain({
-        type: actionTypes.MESSAGE_IMPRESSION,
-        data: message.messageData
-      }));
-    }
-  }, [dispatch, message, tabIsVisible, hasRun]);
-  (0,external_React_namespaceObject.useEffect)(() => {
-    
-    if (message.isVisible && tabIsVisible) {
-      dispatch(actionCreators.AlsoToMain({
-        type: actionTypes.MESSAGE_NOTIFY_VISIBILITY,
-        data: true
-      }));
-    }
-  }, [message, dispatch, tabIsVisible]);
-  (0,external_React_namespaceObject.useEffect)(() => {
-    const handleVisibilityChange = () => {
-      setTabIsVisible(document.visibilityState === "visible");
-    };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, []);
-  const ref = useIntersectionObserver(handleIntersection);
-  const handleClose = (0,external_React_namespaceObject.useCallback)(() => {
-    const action = {
-      type: actionTypes.MESSAGE_TOGGLE_VISIBILITY,
-      data: false 
-    };
-    if (message.portID) {
-      dispatch(actionCreators.OnlyToOneContent(action, message.portID));
-    } else {
-      dispatch(actionCreators.AlsoToMain(action));
-    }
-    dispatch(actionCreators.AlsoToMain({
-      type: actionTypes.MESSAGE_NOTIFY_VISIBILITY,
-      data: false
-    }));
-    onDismiss?.();
-  }, [dispatch, message, onDismiss]);
-  function handleDismiss() {
-    const {
-      id
-    } = message.messageData;
-    if (id) {
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.MESSAGE_DISMISS,
-        data: {
-          message: message.messageData
-        }
-      }));
-    }
-    handleClose();
-  }
-  function handleBlock() {
-    const {
-      id
-    } = message.messageData;
-    if (id) {
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.MESSAGE_BLOCK,
-        data: id
-      }));
-    }
-  }
-  function handleClick(elementId) {
-    const {
-      id
-    } = message.messageData;
-    if (id) {
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.MESSAGE_CLICK,
-        data: {
-          message: message.messageData,
-          source: elementId || ""
-        }
-      }));
-    }
-  }
-  if (!message || !hiddenOverride && !message.isVisible) {
-    return null;
-  }
-
-  
-  return external_React_default().createElement("div", {
-    ref: el => {
-      ref.current = [el];
-    },
-    className: "message-wrapper"
-  }, external_React_default().cloneElement(children, {
-    isIntersecting,
-    handleDismiss,
-    handleClick,
-    handleBlock,
-    handleClose
-  }));
-}
-
 ;
 
 
