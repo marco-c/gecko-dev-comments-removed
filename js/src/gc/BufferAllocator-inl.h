@@ -44,7 +44,8 @@ using MediumBufferSize = EncodedSize<MediumAllocGranularityShift>;
 
 
 static constexpr size_t MaxSmallAllocSize = MinMediumAllocSize - 128;
-static constexpr size_t MaxMediumAllocSize = MinLargeAllocSize / 2;
+static constexpr size_t MaxMediumAllocSize = MinLargeAllocSize - (64 * 1024);
+static constexpr size_t MaxAlignedAllocSize = MinLargeAllocSize / 4;
 
 
 
