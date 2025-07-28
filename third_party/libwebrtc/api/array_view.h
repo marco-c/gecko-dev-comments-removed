@@ -334,6 +334,7 @@ inline ArrayView<U, Size> reinterpret_array_view(ArrayView<T, Size> view) {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 template <typename T,
           std::ptrdiff_t Size = webrtc::array_view_internal::kArrayViewVarSize>
@@ -341,5 +342,6 @@ using ArrayView = ::webrtc::ArrayView<T, Size>;
 using ::webrtc::MakeArrayView;
 using ::webrtc::reinterpret_array_view;
 }  
+#endif  
 
 #endif  

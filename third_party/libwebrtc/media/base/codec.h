@@ -265,6 +265,7 @@ RTC_EXPORT void AddH264ConstrainedBaselineProfileToSupportedFormats(
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 
 using FeedbackParam ABSL_DEPRECATE_AND_INLINE() = webrtc::FeedbackParam;
@@ -353,5 +354,6 @@ inline std::vector<const webrtc::Codec*> FindAllMatchingCodecs(
 }
 
 }  
+#endif
 
 #endif

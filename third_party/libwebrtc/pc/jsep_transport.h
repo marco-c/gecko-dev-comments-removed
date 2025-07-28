@@ -331,9 +331,11 @@ class JsepTransport {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::JsepTransport;
 using ::webrtc::JsepTransportDescription;
 }  
+#endif  
 
 #endif  

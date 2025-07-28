@@ -44,7 +44,9 @@ class HistogramPercentileCounter {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::HistogramPercentileCounter;
 }  
+#endif  
 #endif  

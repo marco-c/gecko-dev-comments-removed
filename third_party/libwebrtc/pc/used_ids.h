@@ -187,10 +187,12 @@ class UsedRtpHeaderExtensionIds : public UsedIds<RtpExtension> {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::UsedIds;
 using ::webrtc::UsedPayloadTypes;
 using ::webrtc::UsedRtpHeaderExtensionIds;
 }  
+#endif  
 
 #endif  

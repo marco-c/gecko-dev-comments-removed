@@ -482,8 +482,10 @@ class VirtualSocketServer : public SocketServer {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::VirtualSocketServer;
 }
+#endif  
 
 #endif  

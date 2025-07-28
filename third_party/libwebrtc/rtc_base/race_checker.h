@@ -64,9 +64,11 @@ class RTC_SCOPED_LOCKABLE RaceCheckerScopeDoNothing {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::RaceChecker;
 }  
+#endif  
 
 #define RTC_CHECK_RUNS_SERIALIZED(x) RTC_CHECK_RUNS_SERIALIZED_NEXT(x, __LINE__)
 

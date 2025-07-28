@@ -83,9 +83,11 @@ class VideoSourceBaseGuarded : public VideoSourceInterface<VideoFrame> {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::VideoSourceBase;
 using ::webrtc::VideoSourceBaseGuarded;
 }  
+#endif  
 
 #endif  

@@ -505,10 +505,12 @@ class WebRtcVoiceReceiveChannel final
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::WebRtcVoiceEngine;
 using ::webrtc::WebRtcVoiceReceiveChannel;
 using ::webrtc::WebRtcVoiceSendChannel;
 }  
+#endif  
 
 #endif  

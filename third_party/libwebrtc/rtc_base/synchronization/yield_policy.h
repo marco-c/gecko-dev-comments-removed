@@ -37,9 +37,11 @@ class ScopedYieldPolicy final {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::ScopedYieldPolicy;
 using ::webrtc::YieldInterface;
 }  
+#endif  
 
 #endif  

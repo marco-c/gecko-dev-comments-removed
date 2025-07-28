@@ -749,6 +749,7 @@ inline const char* AdaptString(const std::string& str) {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::LoggingSeverity;
 using ::webrtc::LogLineRef;
@@ -760,6 +761,7 @@ using ::webrtc::LS_NONE;
 using ::webrtc::LS_VERBOSE;
 using ::webrtc::LS_WARNING;
 }  
+#endif  
 
 #pragma GCC diagnostic pop
 #if defined(__clang__)

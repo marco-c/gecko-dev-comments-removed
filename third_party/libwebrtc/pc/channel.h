@@ -503,10 +503,12 @@ class VideoChannel : public BaseChannel {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::BaseChannel;
 using ::webrtc::VideoChannel;
 using ::webrtc::VoiceChannel;
 }  
+#endif  
 
 #endif  

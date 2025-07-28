@@ -204,6 +204,7 @@ void CopySocketInformationToPacketInfo(size_t packet_size_bytes,
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::AsyncListenSocket;
 using ::webrtc::AsyncPacketSocket;
@@ -211,5 +212,6 @@ using ::webrtc::CopySocketInformationToPacketInfo;
 using ::webrtc::PacketTimeUpdateParams;
 using PacketOptions = ::webrtc::AsyncSocketPacketOptions;
 }  
+#endif  
 
 #endif

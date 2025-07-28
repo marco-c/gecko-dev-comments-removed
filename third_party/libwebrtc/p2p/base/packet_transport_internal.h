@@ -117,8 +117,10 @@ class RTC_EXPORT PacketTransportInternal : public sigslot::has_slots<> {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::PacketTransportInternal;
 }  
-
 #endif  
+
+#endif

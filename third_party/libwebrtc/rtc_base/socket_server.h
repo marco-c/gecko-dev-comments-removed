@@ -68,8 +68,10 @@ class SocketServer : public SocketFactory {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::SocketServer;
 }  
+#endif  
 
 #endif  

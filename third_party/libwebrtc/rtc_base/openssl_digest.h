@@ -50,8 +50,10 @@ class OpenSSLDigest final : public MessageDigest {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::OpenSSLDigest;
 }  
+#endif  
 
 #endif  

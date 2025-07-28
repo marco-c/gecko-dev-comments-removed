@@ -27,9 +27,11 @@ int64_t GetThreadCpuTimeNanos();
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::GetProcessCpuTimeNanos;
 using ::webrtc::GetThreadCpuTimeNanos;
 }  
+#endif  
 
 #endif  

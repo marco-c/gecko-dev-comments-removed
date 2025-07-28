@@ -106,8 +106,10 @@ class RTC_EXPORT AdaptedVideoTrackSource
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::AdaptedVideoTrackSource;
 }  
+#endif  
 
 #endif  

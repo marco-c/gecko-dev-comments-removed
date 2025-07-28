@@ -41,8 +41,10 @@ class NetworkMonitorFactory {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::NetworkMonitorFactory;
 }  
+#endif  
 
 #endif  

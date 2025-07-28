@@ -88,9 +88,11 @@ class FinalRefCountedObject final : public T {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::FinalRefCountedObject;
 using ::webrtc::RefCountedObject;
 }  
+#endif  
 
 #endif  

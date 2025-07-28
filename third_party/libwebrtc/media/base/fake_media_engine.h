@@ -958,6 +958,7 @@ class FakeMediaEngine : public CompositeMediaEngine {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::CompareDtmfInfo;
 using ::webrtc::FakeMediaEngine;
@@ -970,5 +971,6 @@ using ::webrtc::FakeVoiceMediaSendChannel;
 using ::webrtc::RtpReceiveChannelHelper;
 using ::webrtc::RtpSendChannelHelper;
 }  
+#endif  
 
 #endif  

@@ -240,6 +240,7 @@ std::vector<RtpExtension> GetDefaultEnabledRtpHeaderExtensions(
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::CheckRtpParametersInvalidModificationAndValues;
 using ::webrtc::CheckRtpParametersValues;
@@ -253,5 +254,6 @@ using ::webrtc::RtpHeaderExtensionQueryInterface;
 using ::webrtc::VideoEngineInterface;
 using ::webrtc::VoiceEngineInterface;
 }  
+#endif  
 
 #endif  

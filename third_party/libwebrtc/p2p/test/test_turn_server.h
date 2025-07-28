@@ -167,11 +167,13 @@ class TestTurnServer : public TurnAuthInterface {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::kTestRealm;
 using ::webrtc::kTestSoftware;
 using ::webrtc::TestTurnRedirector;
 using ::webrtc::TestTurnServer;
 }  
+#endif  
 
 #endif  

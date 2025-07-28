@@ -144,11 +144,13 @@ class FakeWebRtcVideoEncoderFactory : public VideoEncoderFactory {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::FakeWebRtcVideoDecoder;
 using ::webrtc::FakeWebRtcVideoDecoderFactory;
 using ::webrtc::FakeWebRtcVideoEncoder;
 using ::webrtc::FakeWebRtcVideoEncoderFactory;
 }  
+#endif  
 
 #endif  

@@ -171,6 +171,7 @@ extern const char kTransportSpecificBandwidth[];
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::kApplicationSpecificBandwidth;
 using ::webrtc::kAv1CodecName;
@@ -269,5 +270,6 @@ using ::webrtc::kVp8CodecName;
 using ::webrtc::kVp9CodecName;
 using ::webrtc::kVP9ProfileId;
 }  
+#endif  
 
 #endif  

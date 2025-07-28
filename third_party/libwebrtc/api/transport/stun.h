@@ -761,6 +761,7 @@ class IceMessage : public StunMessage {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::ComputeStunCredentialHash;
 using ::webrtc::CopyStunAttribute;
@@ -901,5 +902,6 @@ using ::webrtc::TurnErrorType;
 using ::webrtc::TurnMessage;
 using ::webrtc::TurnMessageType;
 }  
+#endif  
 
 #endif  

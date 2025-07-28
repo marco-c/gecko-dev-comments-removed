@@ -152,6 +152,7 @@ class SctpTransportInternal {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::kMaxSctpSid;
 using ::webrtc::kMaxSctpStreams;
@@ -161,5 +162,6 @@ using ::webrtc::kSpecMaxSctpSid;
 using ::webrtc::SctpErrorCauseCode;
 using ::webrtc::SctpTransportInternal;
 }  
+#endif  
 
 #endif  

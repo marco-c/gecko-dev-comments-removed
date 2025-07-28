@@ -139,11 +139,13 @@ class SSLCertificateVerifier {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::SSLCertChain;
 using ::webrtc::SSLCertificate;
 using ::webrtc::SSLCertificateStats;
 using ::webrtc::SSLCertificateVerifier;
 }  
+#endif  
 
 #endif  

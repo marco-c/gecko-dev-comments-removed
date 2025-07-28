@@ -60,8 +60,10 @@ class SampleCounterWithVariance : public SampleCounter {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::SampleCounter;
 using ::webrtc::SampleCounterWithVariance;
 }  
+#endif  
 #endif  

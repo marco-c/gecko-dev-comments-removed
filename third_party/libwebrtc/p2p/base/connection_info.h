@@ -88,10 +88,12 @@ typedef std::vector<ConnectionInfo> ConnectionInfos;
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::ConnectionInfo;
 using ::webrtc::ConnectionInfos;
 using ::webrtc::IceCandidatePairState;
 }  
+#endif  
 
 #endif  

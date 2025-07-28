@@ -132,6 +132,7 @@ bool ComputeHmac(absl::string_view alg,
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::ComputeDigest;
 using ::webrtc::ComputeHmac;
@@ -146,5 +147,6 @@ using ::webrtc::MD5;
 using ::webrtc::MessageDigest;
 using ::webrtc::MessageDigestFactory;
 }  
+#endif  
 
 #endif  

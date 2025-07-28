@@ -568,11 +568,13 @@ class AutoSocketServerThread : public Thread {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::AutoSocketServerThread;
 using ::webrtc::AutoThread;
 using ::webrtc::Thread;
 using ::webrtc::ThreadManager;
 }  
+#endif  
 
 #endif  

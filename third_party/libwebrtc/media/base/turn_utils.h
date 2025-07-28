@@ -29,8 +29,10 @@ bool RTC_EXPORT UnwrapTurnPacket(const uint8_t* packet,
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::UnwrapTurnPacket;
 }  
+#endif  
 
 #endif  

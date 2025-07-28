@@ -209,10 +209,12 @@ class ByteBufferReader {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::ByteBufferReader;
 using ::webrtc::ByteBufferWriter;
 using ::webrtc::ByteBufferWriterT;
 }  
+#endif  
 
 #endif  

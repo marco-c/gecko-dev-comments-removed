@@ -20,9 +20,11 @@ RTC_EXPORT bool HasIPv6Enabled();
 
 }  
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using webrtc::HasIPv4Enabled;
 using webrtc::HasIPv6Enabled;
 }
+#endif  
 
 #endif  

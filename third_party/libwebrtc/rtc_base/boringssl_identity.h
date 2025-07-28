@@ -76,8 +76,10 @@ class BoringSSLIdentity final : public SSLIdentity {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::BoringSSLIdentity;
 }  
+#endif  
 
 #endif  

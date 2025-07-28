@@ -679,11 +679,13 @@ class FakeIceTransportWrapper : public IceTransportInterface {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::FakeIceTransport;
 using ::webrtc::FakeIceTransportWrapper;
 using ::webrtc::SafeTask;
 using ::webrtc::TimeDelta;
 }  
+#endif  
 
 #endif  

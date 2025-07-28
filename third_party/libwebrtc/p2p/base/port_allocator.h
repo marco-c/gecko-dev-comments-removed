@@ -645,6 +645,7 @@ class RTC_EXPORT PortAllocator : public sigslot::has_slots<> {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::CF_ALL;
 using ::webrtc::CF_HOST;
@@ -677,5 +678,6 @@ using ::webrtc::RelayCredentials;
 using ::webrtc::RelayServerConfig;
 using ::webrtc::TlsCertPolicy;
 }  
+#endif  
 
 #endif  

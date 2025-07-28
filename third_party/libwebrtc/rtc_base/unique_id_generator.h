@@ -149,10 +149,12 @@ bool UniqueNumberGenerator<TIntegral>::AddKnownId(TIntegral value) {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::UniqueNumberGenerator;
 using ::webrtc::UniqueRandomIdGenerator;
 using ::webrtc::UniqueStringGenerator;
 }  
+#endif  
 
 #endif  

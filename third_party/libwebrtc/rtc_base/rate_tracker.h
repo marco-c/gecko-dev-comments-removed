@@ -71,8 +71,10 @@ class RateTracker {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::RateTracker;
 }  
+#endif  
 
 #endif  

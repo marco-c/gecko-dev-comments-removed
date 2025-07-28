@@ -291,6 +291,7 @@ class RTC_EXPORT Candidate {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::Candidate;
 using ::webrtc::kMaxTurnServers;
@@ -299,5 +300,6 @@ using ::webrtc::PRFLX_PORT_TYPE;
 using ::webrtc::RELAY_PORT_TYPE;
 using ::webrtc::STUN_PORT_TYPE;
 }  
+#endif  
 
 #endif  

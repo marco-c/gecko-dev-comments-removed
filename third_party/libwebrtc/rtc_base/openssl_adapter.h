@@ -237,10 +237,12 @@ std::string TransformAlpnProtocols(const std::vector<std::string>& protos);
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::OpenSSLAdapter;
 using ::webrtc::OpenSSLAdapterFactory;
 using ::webrtc::TransformAlpnProtocols;
 }  
+#endif  
 
 #endif  

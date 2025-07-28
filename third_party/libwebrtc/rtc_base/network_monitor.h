@@ -137,6 +137,7 @@ class NetworkMonitorInterface {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::NetworkBinderInterface;
 using ::webrtc::NetworkBindingResult;
@@ -144,5 +145,6 @@ using ::webrtc::NetworkMonitorInterface;
 using ::webrtc::NetworkPreference;
 using ::webrtc::NetworkPreferenceToString;
 }  
+#endif  
 
 #endif  

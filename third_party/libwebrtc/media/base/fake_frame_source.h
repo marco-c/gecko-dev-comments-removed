@@ -51,8 +51,10 @@ class FakeFrameSource {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::FakeFrameSource;
 }  
+#endif  
 
 #endif  

@@ -69,8 +69,10 @@ class EventBasedExponentialMovingAverage {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::EventBasedExponentialMovingAverage;
 }  
+#endif  
 
 #endif  

@@ -33,6 +33,7 @@ int GetProtocolOverhead(absl::string_view protocol);
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::GetProtocolOverhead;
 using ::webrtc::kTcpHeaderSize;
@@ -42,5 +43,6 @@ using ::webrtc::TCP_PROTOCOL_NAME;
 using ::webrtc::TLS_PROTOCOL_NAME;
 using ::webrtc::UDP_PROTOCOL_NAME;
 }  
+#endif  
 
 #endif  

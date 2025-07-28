@@ -46,6 +46,7 @@ class NAT {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::NAT;
 using ::webrtc::NAT_ADDR_RESTRICTED;
@@ -54,5 +55,6 @@ using ::webrtc::NAT_PORT_RESTRICTED;
 using ::webrtc::NAT_SYMMETRIC;
 using ::webrtc::NATType;
 }  
+#endif  
 
 #endif  

@@ -85,6 +85,7 @@ std::string JsonValueToString(const Json::Value& json);
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::BoolVectorToJsonArray;
 using ::webrtc::DoubleVectorToJsonArray;
@@ -117,5 +118,6 @@ using ::webrtc::StringVectorToJsonArray;
 using ::webrtc::UIntVectorToJsonArray;
 using ::webrtc::ValueVectorToJsonArray;
 }  
+#endif  
 
 #endif  

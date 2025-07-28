@@ -128,6 +128,7 @@ class FirewallManager {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::FD_ANY;
 using ::webrtc::FD_IN;
@@ -140,5 +141,6 @@ using ::webrtc::FP_ANY;
 using ::webrtc::FP_TCP;
 using ::webrtc::FP_UDP;
 }  
+#endif  
 
 #endif  

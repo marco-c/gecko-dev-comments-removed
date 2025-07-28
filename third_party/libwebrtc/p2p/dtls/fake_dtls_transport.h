@@ -335,8 +335,10 @@ class FakeDtlsTransport : public DtlsTransportInternal {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::FakeDtlsTransport;
 }  
+#endif  
 
 #endif  

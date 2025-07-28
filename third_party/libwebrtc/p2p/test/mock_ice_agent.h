@@ -50,8 +50,10 @@ class MockIceAgent : public IceAgentInterface {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::MockIceAgent;
 }  
+#endif  
 
 #endif  

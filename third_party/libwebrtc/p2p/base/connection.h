@@ -545,11 +545,13 @@ class ProxyConnection : public Connection {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::Connection;
 using ::webrtc::kGoogPingVersion;
 using ::webrtc::kMaxStunBindingLength;
 using ::webrtc::ProxyConnection;
 }  
+#endif  
 
 #endif  

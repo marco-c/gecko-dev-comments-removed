@@ -335,10 +335,12 @@ R2 SafeClamp(T x, L min, H max) {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::SafeClamp;
 using ::webrtc::SafeMax;
 using ::webrtc::SafeMin;
 }  
+#endif  
 
 #endif  

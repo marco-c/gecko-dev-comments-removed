@@ -30,8 +30,10 @@ std::string StringFormat(const char* fmt, ...) RTC_PRINTF_FORMAT(1, 2);
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::StringFormat;
 }  
+#endif  
 
 #endif  

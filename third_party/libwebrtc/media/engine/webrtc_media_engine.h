@@ -43,10 +43,12 @@ BitrateConstraints GetBitrateConfigForCodec(const Codec& codec);
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::FilterRtpExtensions;
 using ::webrtc::GetBitrateConfigForCodec;
 using ::webrtc::ValidateRtpExtensions;
 }  
+#endif  
 
 #endif  

@@ -67,9 +67,11 @@ class StunServer {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::STUN_SERVER_PORT;
 using ::webrtc::StunServer;
 }  
+#endif  
 
 #endif  

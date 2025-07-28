@@ -151,6 +151,7 @@ class RTC_EXPORT StreamInterface {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::SE_CLOSE;
 using ::webrtc::SE_OPEN;
@@ -168,5 +169,6 @@ using ::webrtc::StreamInterface;
 using ::webrtc::StreamResult;
 using ::webrtc::StreamState;
 }  
+#endif  
 
 #endif  

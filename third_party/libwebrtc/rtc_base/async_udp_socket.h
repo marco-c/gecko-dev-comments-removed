@@ -79,8 +79,10 @@ class AsyncUDPSocket : public AsyncPacketSocket {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::AsyncUDPSocket;
 }  
+#endif  
 
 #endif  

@@ -134,6 +134,7 @@ constexpr auto MakeCompileTimeString(const char (&a)[N]) {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::AbslStringViewCmp;
 using ::webrtc::MakeCompileTimeString;
@@ -141,5 +142,6 @@ using ::webrtc::SIZE_UNKNOWN;
 using ::webrtc::strcpyn;
 using ::webrtc::ToHex;
 }  
+#endif  
 
 #endif  

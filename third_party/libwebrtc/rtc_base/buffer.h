@@ -451,6 +451,7 @@ using ZeroOnFreeBuffer = BufferT<T, true>;
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 template <typename T, bool ZeroOnFree = false>
 using BufferT = ::webrtc::BufferT<T, ZeroOnFree>;
@@ -458,5 +459,6 @@ using ::webrtc::Buffer;
 template <typename T>
 using ZeroOnFreeBuffer = ::webrtc::ZeroOnFreeBuffer<T>;
 }  
+#endif  
 
 #endif  

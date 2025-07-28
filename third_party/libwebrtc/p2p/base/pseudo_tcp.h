@@ -295,9 +295,11 @@ class RTC_EXPORT PseudoTcp {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::IPseudoTcpNotify;
 using ::webrtc::PseudoTcp;
 }  
+#endif  
 
 #endif  

@@ -117,8 +117,10 @@ void MovingMaxCounter<T>::RollWindow(int64_t new_time_ms) {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::MovingMaxCounter;
 }  
+#endif  
 
 #endif  

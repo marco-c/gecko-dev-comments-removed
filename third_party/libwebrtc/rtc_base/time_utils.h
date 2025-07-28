@@ -139,6 +139,7 @@ RTC_EXPORT int64_t TimeUTCMillis();
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::ClockInterface;
 using ::webrtc::GetClockForTesting;
@@ -165,5 +166,6 @@ using ::webrtc::TimeUTCMicros;
 using ::webrtc::TimeUTCMillis;
 using ::webrtc::TmToSeconds;
 }  
+#endif  
 
 #endif  

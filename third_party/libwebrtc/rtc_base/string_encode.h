@@ -98,6 +98,7 @@ static inline T FromString(absl::string_view str) {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::FromString;
 using ::webrtc::hex_decode;
@@ -145,5 +146,6 @@ inline auto ToString(T value) ->
 }
 
 }  
+#endif  
 
 #endif  

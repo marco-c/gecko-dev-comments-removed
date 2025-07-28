@@ -89,8 +89,10 @@ class RTC_EXPORT ReceivedIpPacket {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ReceivedPacket = ::webrtc::ReceivedIpPacket;
 }  
+#endif  
 
 #endif  

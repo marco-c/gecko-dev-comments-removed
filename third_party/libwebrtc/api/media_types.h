@@ -49,6 +49,7 @@ extern const char kMediaTypeData[];
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 
 using MediaType ABSL_DEPRECATE_AND_INLINE() = webrtc::MediaType;
@@ -66,5 +67,6 @@ using webrtc::MediaTypeToString;
     webrtc::MediaType::UNSUPPORTED;
 
 }  
+#endif  
 
 #endif  

@@ -27,8 +27,10 @@ class SocketFactory {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::SocketFactory;
 }  
+#endif  
 
 #endif  

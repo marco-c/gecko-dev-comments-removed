@@ -139,8 +139,10 @@ static_assert(!std::is_abstract_v<MockVoiceMediaReceiveChannelInterface>, "");
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::MockVoiceMediaReceiveChannelInterface;
 }  
+#endif  
 
 #endif  

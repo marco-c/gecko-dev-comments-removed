@@ -108,8 +108,10 @@ struct MediaConfig {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::MediaConfig;
 }  
+#endif  
 
 #endif  

@@ -83,8 +83,10 @@ class VideoBroadcaster : public VideoSourceBase,
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::VideoBroadcaster;
 }  
+#endif  
 
 #endif  

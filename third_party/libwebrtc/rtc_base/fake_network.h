@@ -143,10 +143,12 @@ class FakeNetworkManager : public NetworkManagerBase {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::FakeNetworkManager;
 using ::webrtc::kFakeIPv4NetworkPrefixLength;
 using ::webrtc::kFakeIPv6NetworkPrefixLength;
 }  
+#endif  
 
 #endif  

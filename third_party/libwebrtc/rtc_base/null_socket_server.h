@@ -36,8 +36,10 @@ class RTC_EXPORT NullSocketServer : public SocketServer {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::NullSocketServer;
 }  
+#endif  
 
 #endif  

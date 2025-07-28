@@ -311,6 +311,7 @@ class SocketDispatcher : public Dispatcher, public PhysicalSocket {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::DE_ACCEPT;
 using ::webrtc::DE_CLOSE;
@@ -323,5 +324,6 @@ using ::webrtc::PhysicalSocket;
 using ::webrtc::PhysicalSocketServer;
 using ::webrtc::SocketDispatcher;
 }  
+#endif  
 
 #endif  

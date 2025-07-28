@@ -95,8 +95,10 @@ class WrappingActiveIceController : public ActiveIceControllerInterface {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::WrappingActiveIceController;
 }  
+#endif  
 
 #endif  

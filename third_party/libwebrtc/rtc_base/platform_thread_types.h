@@ -63,6 +63,7 @@ void SetCurrentThreadName(const char* name);
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::CurrentThreadId;
 using ::webrtc::CurrentThreadRef;
@@ -71,5 +72,6 @@ using ::webrtc::PlatformThreadId;
 using ::webrtc::PlatformThreadRef;
 using ::webrtc::SetCurrentThreadName;
 }  
+#endif  
 
 #endif  

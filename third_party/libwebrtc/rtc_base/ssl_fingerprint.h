@@ -76,8 +76,10 @@ struct RTC_EXPORT SSLFingerprint {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::SSLFingerprint;
 }  
+#endif  
 
 #endif  

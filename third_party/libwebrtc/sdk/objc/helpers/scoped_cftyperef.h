@@ -116,11 +116,13 @@ static ScopedCFTypeRef<T> ScopedCF(T cftype) {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::AdoptCF;
 using ::webrtc::RetainPolicy;
 using ::webrtc::ScopedCF;
 using ::webrtc::ScopedCFTypeRef;
 }  
+#endif  
 
 #endif  

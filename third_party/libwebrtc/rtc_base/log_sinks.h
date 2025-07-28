@@ -79,9 +79,11 @@ class CallSessionFileRotatingLogSink : public FileRotatingLogSink {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::CallSessionFileRotatingLogSink;
 using ::webrtc::FileRotatingLogSink;
 }  
+#endif  
 
 #endif  

@@ -132,6 +132,7 @@ class NATServer {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::AddrCmp;
 using ::webrtc::NAT_SERVER_TCP_PORT;
@@ -139,5 +140,6 @@ using ::webrtc::NAT_SERVER_UDP_PORT;
 using ::webrtc::NATServer;
 using ::webrtc::RouteCmp;
 }  
+#endif  
 
 #endif  

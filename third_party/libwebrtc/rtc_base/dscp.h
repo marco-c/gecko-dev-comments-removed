@@ -44,6 +44,7 @@ enum DiffServCodePoint {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::DiffServCodePoint;
 using ::webrtc::DSCP_AF11;
@@ -70,5 +71,6 @@ using ::webrtc::DSCP_DEFAULT;
 using ::webrtc::DSCP_EF;
 using ::webrtc::DSCP_NO_CHANGE;
 }  
+#endif  
 
 #endif  

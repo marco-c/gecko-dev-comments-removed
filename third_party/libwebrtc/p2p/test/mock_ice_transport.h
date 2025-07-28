@@ -95,8 +95,10 @@ class MockIceTransport : public IceTransportInternal {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::MockIceTransport;
 }  
+#endif  
 
 #endif  

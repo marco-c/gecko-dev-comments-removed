@@ -59,6 +59,7 @@ CRYPTO_BUFFER_POOL* GetBufferPool();
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 namespace openssl {
 
@@ -76,5 +77,6 @@ using ::webrtc::openssl::ParseCertificate;
 
 }  
 }  
+#endif  
 
 #endif  

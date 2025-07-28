@@ -140,11 +140,13 @@ static_assert(!IsIntlike<S>::value, "");
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 template <typename DS, typename T>
 using HasDataAndSize = ::webrtc::HasDataAndSize<DS, T>;
 template <typename T>
 using IsIntlike = ::webrtc::IsIntlike<T>;
 }  
+#endif  
 
 #endif  

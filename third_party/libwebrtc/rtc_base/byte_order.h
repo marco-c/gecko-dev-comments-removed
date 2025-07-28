@@ -213,6 +213,7 @@ inline uint64_t NetworkToHost64(uint64_t n) {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::Get8;
 using ::webrtc::GetBE16;
@@ -236,5 +237,6 @@ using ::webrtc::SetLE16;
 using ::webrtc::SetLE32;
 using ::webrtc::SetLE64;
 }  
+#endif  
 
 #endif  

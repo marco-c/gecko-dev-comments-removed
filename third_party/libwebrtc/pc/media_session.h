@@ -227,6 +227,7 @@ SctpDataContentDescription* GetFirstSctpDataContentDescription(
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::GetFirstAudioContent;
 using ::webrtc::GetFirstAudioContentDescription;
@@ -242,5 +243,6 @@ using ::webrtc::IsUnsupportedContent;
 using ::webrtc::IsVideoContent;
 using ::webrtc::MediaSessionDescriptionFactory;
 }  
+#endif  
 
 #endif  

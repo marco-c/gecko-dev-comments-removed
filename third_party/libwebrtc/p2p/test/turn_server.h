@@ -370,6 +370,7 @@ class TurnServer : public sigslot::has_slots<> {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::kMaxTurnChannelNumber;
 using ::webrtc::kMinTurnChannelNumber;
@@ -381,5 +382,6 @@ using ::webrtc::TurnServer;
 using ::webrtc::TurnServerAllocation;
 using ::webrtc::TurnServerConnection;
 }  
+#endif  
 
 #endif  

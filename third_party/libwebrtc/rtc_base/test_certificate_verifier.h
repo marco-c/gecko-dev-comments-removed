@@ -33,8 +33,10 @@ class TestCertificateVerifier : public SSLCertificateVerifier {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::TestCertificateVerifier;
 }  
+#endif  
 
 #endif  

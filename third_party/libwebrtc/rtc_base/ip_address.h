@@ -198,6 +198,7 @@ int CountIPMaskBits(const IPAddress& mask);
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::CountIPMaskBits;
 using ::webrtc::GetAnyIP;
@@ -229,5 +230,6 @@ using ::webrtc::IPV6_ADDRESS_FLAG_TEMPORARY;
 using ::webrtc::IPv6AddressFlag;
 using ::webrtc::TruncateIP;
 }  
+#endif  
 
 #endif  

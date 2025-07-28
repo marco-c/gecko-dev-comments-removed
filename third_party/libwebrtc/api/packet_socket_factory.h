@@ -80,9 +80,11 @@ class RTC_EXPORT PacketSocketFactory {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::PacketSocketFactory;
 using ::webrtc::PacketSocketTcpOptions;
 }  
+#endif  
 
 #endif  

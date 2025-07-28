@@ -34,8 +34,10 @@ void ExplicitZeroMemory(ArrayView<T> a) {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::ExplicitZeroMemory;
 }  
+#endif  
 
 #endif  

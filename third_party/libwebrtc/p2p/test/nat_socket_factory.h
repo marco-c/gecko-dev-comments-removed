@@ -181,6 +181,7 @@ size_t UnpackAddressFromNAT(ArrayView<const uint8_t> buf,
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::kNATEncodedIPv4AddressSize;
 using ::webrtc::kNATEncodedIPv6AddressSize;
@@ -190,5 +191,6 @@ using ::webrtc::NATSocketServer;
 using ::webrtc::PackAddressForNAT;
 using ::webrtc::UnpackAddressFromNAT;
 }  
+#endif  
 
 #endif  

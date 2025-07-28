@@ -73,11 +73,13 @@ inline constexpr Dst saturated_cast(Src value) {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::checked_cast;
 using ::webrtc::dchecked_cast;
 using ::webrtc::IsValueInRangeForNumericType;
 using ::webrtc::saturated_cast;
 }  
+#endif  
 
 #endif  

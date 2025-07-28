@@ -38,9 +38,11 @@ typedef std::vector<TransportInfo> TransportInfos;
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::TransportInfo;
 using ::webrtc::TransportInfos;
 }  
+#endif  
 
 #endif  

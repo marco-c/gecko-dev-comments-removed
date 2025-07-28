@@ -74,8 +74,10 @@ class OpenSSLIdentity final : public SSLIdentity {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::OpenSSLIdentity;
 }  
+#endif  
 
 #endif  

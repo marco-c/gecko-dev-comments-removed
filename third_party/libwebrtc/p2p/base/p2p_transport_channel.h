@@ -523,10 +523,12 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::IceCredentialsChanged;
 using ::webrtc::P2PTransportChannel;
 using ::webrtc::RemoteCandidate;
 }  
+#endif  
 
 #endif  

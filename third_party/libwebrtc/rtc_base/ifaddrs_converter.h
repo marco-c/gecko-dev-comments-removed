@@ -46,9 +46,11 @@ IfAddrsConverter* CreateIfAddrsConverter();
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::CreateIfAddrsConverter;
 using ::webrtc::IfAddrsConverter;
 }  
+#endif  
 
 #endif  

@@ -320,8 +320,10 @@ class RTC_EXPORT CopyOnWriteBuffer {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::CopyOnWriteBuffer;
 }  
+#endif  
 
 #endif  

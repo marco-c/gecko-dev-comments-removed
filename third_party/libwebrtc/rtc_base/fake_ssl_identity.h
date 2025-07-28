@@ -84,9 +84,11 @@ class FakeSSLIdentity : public SSLIdentity {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::FakeSSLCertificate;
 using ::webrtc::FakeSSLIdentity;
 }  
+#endif  
 
 #endif  

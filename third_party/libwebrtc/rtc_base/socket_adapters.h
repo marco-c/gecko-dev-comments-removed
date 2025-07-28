@@ -78,9 +78,11 @@ class AsyncSSLSocket : public BufferedReadAdapter {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::AsyncSSLSocket;
 using ::webrtc::BufferedReadAdapter;
 }  
+#endif  
 
 #endif  

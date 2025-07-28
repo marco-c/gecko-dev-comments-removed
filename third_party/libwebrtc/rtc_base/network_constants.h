@@ -71,6 +71,7 @@ constexpr AdapterType kAllAdapterTypes[] = {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::ADAPTER_TYPE_ANY;
 using ::webrtc::ADAPTER_TYPE_CELLULAR;
@@ -98,5 +99,6 @@ using ::webrtc::kNetworkCostMin;
 using ::webrtc::kNetworkCostUnknown;
 using ::webrtc::kNetworkCostVpn;
 }  
+#endif  
 
 #endif  

@@ -171,8 +171,10 @@ class RTC_EXPORT VideoAdapter {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::VideoAdapter;
 }  
+#endif  
 
 #endif  

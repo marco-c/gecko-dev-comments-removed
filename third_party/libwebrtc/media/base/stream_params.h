@@ -320,6 +320,7 @@ inline bool RemoveStreamByIds(StreamParamsVec* streams, const std::string& id) {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::GetStream;
 using ::webrtc::GetStreamByIds;
@@ -337,5 +338,6 @@ using ::webrtc::StreamParams;
 using ::webrtc::StreamParamsVec;
 using ::webrtc::StreamSelector;
 }  
+#endif  
 
 #endif  

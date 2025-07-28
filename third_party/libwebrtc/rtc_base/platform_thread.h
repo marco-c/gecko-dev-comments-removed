@@ -127,10 +127,12 @@ class PlatformThread final {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::PlatformThread;
 using ::webrtc::ThreadAttributes;
 using ::webrtc::ThreadPriority;
 }  
+#endif  
 
 #endif  

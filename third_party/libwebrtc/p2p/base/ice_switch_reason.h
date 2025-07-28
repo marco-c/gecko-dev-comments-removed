@@ -42,9 +42,11 @@ RTC_EXPORT std::string IceSwitchReasonToString(IceSwitchReason reason);
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::IceSwitchReason;
 using ::webrtc::IceSwitchReasonToString;
 }  
+#endif  
 
 #endif  

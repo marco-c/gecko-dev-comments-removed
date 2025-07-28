@@ -42,8 +42,10 @@ class SocketAddressPair {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::SocketAddressPair;
 }  
+#endif  
 
 #endif  

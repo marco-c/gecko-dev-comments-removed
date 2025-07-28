@@ -92,9 +92,11 @@ class ProxyServer : public sigslot::has_slots<> {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::ProxyBinding;
 using ::webrtc::ProxyServer;
 }  
+#endif  
 
 #endif  

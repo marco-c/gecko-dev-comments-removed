@@ -121,10 +121,12 @@ absl_nonnull scoped_refptr<FinalRefCountedObject<T>> make_ref_counted(
 
 }  
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 
 
 using ::webrtc::make_ref_counted;
 }  
+#endif  
 
 #endif  

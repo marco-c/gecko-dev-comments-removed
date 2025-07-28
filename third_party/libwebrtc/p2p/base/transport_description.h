@@ -137,6 +137,7 @@ struct TransportDescription {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::ConnectionRole;
 using ::webrtc::CONNECTIONROLE_ACTIVE;
@@ -158,5 +159,6 @@ using ::webrtc::ICEROLE_UNKNOWN;
 using ::webrtc::StringToConnectionRole;
 using ::webrtc::TransportDescription;
 }  
+#endif  
 
 #endif  

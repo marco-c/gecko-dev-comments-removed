@@ -42,9 +42,11 @@ class IceControllerFactoryInterface {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::IceControllerFactoryArgs;
 using ::webrtc::IceControllerFactoryInterface;
 }  
+#endif  
 
 #endif  

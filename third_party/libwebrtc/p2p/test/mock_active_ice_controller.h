@@ -86,9 +86,11 @@ class MockActiveIceControllerFactory
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::MockActiveIceController;
 using ::webrtc::MockActiveIceControllerFactory;
 }  
+#endif  
 
 #endif  

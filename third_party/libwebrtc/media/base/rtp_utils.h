@@ -78,6 +78,7 @@ ApplyPacketOptions(uint8_t* data,
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::ApplyPacketOptions;
 using ::webrtc::GetRtcpSsrc;
@@ -101,5 +102,6 @@ using ::webrtc::RtpPacketTypeToString;
 using ::webrtc::UpdateRtpAbsSendTimeExtension;
 using ::webrtc::ValidateRtpHeader;
 }  
+#endif  
 
 #endif  

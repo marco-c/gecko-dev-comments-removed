@@ -50,8 +50,10 @@ static_assert(!std::is_abstract_v<MockPacketSocketFactory>, "");
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::MockPacketSocketFactory;
 }  
+#endif  
 
 #endif  

@@ -65,7 +65,9 @@ class MovingAverage {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::MovingAverage;
 }  
+#endif  
 #endif  

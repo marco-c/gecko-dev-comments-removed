@@ -176,9 +176,11 @@ class RTC_EXPORT Socket {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::IsBlockingError;
 using ::webrtc::Socket;
 }  
+#endif  
 
 #endif  

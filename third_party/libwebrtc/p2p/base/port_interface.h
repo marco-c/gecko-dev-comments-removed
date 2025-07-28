@@ -207,6 +207,7 @@ class PortInterface {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::PortInterface;
 using ::webrtc::PROTO_LAST;
@@ -216,5 +217,6 @@ using ::webrtc::PROTO_TLS;
 using ::webrtc::PROTO_UDP;
 using ::webrtc::ProtocolType;
 }  
+#endif  
 
 #endif  

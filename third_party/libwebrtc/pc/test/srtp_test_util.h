@@ -55,11 +55,13 @@ static int rtcp_auth_tag_len(int crypto_suite) {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::kTestKey1;
 using ::webrtc::kTestKey2;
 using ::webrtc::rtcp_auth_tag_len;
 using ::webrtc::rtp_auth_tag_len;
 }  
+#endif  
 
 #endif  

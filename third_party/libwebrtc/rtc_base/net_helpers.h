@@ -32,9 +32,11 @@ int inet_pton(int af, absl::string_view src, void* dst);
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::inet_ntop;
 using ::webrtc::inet_pton;
 }  
+#endif  
 
 #endif  

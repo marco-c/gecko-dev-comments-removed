@@ -418,6 +418,7 @@ class AllocationSequence {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::AllocationSequence;
 using ::webrtc::BasicPortAllocator;
@@ -425,5 +426,6 @@ using ::webrtc::BasicPortAllocatorSession;
 using ::webrtc::PortConfiguration;
 using ::webrtc::SessionState;
 }  
+#endif  
 
 #endif  

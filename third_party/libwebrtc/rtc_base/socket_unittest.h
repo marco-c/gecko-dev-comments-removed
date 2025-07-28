@@ -112,9 +112,11 @@ bool IsUnspecOrEmptyIP(const IPAddress& address);
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::IsUnspecOrEmptyIP;
 using ::webrtc::SocketTest;
 }  
+#endif  
 
 #endif  

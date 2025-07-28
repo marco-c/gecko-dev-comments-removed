@@ -224,6 +224,7 @@ ABSL_DEPRECATE_AND_INLINE() int LeastCommonMultiple(int a, int b);
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::CanonicalFourCC;
 using ::webrtc::FourCC;
@@ -279,5 +280,6 @@ using ::webrtc::LeastCommonMultiple;
 using ::webrtc::VideoFormat;
 using ::webrtc::VideoFormatPod;
 }  
+#endif  
 
 #endif  

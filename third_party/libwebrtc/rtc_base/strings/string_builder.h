@@ -165,9 +165,11 @@ class StringBuilder {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::SimpleStringBuilder;
 using ::webrtc::StringBuilder;
 }  
+#endif  
 
 #endif  

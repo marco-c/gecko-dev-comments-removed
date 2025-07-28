@@ -93,9 +93,11 @@ class RTC_EXPORT RTCCertificate final
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::RTCCertificate;
 using ::webrtc::RTCCertificatePEM;
 }  
+#endif  
 
 #endif  

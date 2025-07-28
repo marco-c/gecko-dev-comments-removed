@@ -42,9 +42,11 @@ class AsyncSSLServerSocket : public BufferedReadAdapter {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::AsyncProxyServerSocket;
 using ::webrtc::AsyncSSLServerSocket;
 }  
+#endif  
 
 #endif  

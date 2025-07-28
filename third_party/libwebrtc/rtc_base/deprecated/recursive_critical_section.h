@@ -106,9 +106,11 @@ class RTC_SCOPED_LOCKABLE CritScope {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::CritScope;
 using ::webrtc::RecursiveCriticalSection;
 }  
+#endif  
 
 #endif  

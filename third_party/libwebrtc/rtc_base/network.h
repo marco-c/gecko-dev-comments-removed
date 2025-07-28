@@ -580,6 +580,7 @@ class RTC_EXPORT BasicNetworkManager : public NetworkManagerBase,
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::BasicNetworkManager;
 using ::webrtc::DefaultLocalAddressProvider;
@@ -594,5 +595,6 @@ using ::webrtc::NetworkManager;
 using ::webrtc::NetworkManagerBase;
 using ::webrtc::NetworkMask;
 }  
+#endif  
 
 #endif  

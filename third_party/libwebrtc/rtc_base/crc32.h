@@ -36,9 +36,11 @@ inline uint32_t ComputeCrc32(absl::string_view str) {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::ComputeCrc32;
 using ::webrtc::UpdateCrc32;
 }  
+#endif  
 
 #endif  

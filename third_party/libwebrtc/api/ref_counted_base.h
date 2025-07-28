@@ -98,10 +98,12 @@ class RefCountedNonVirtual {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using RefCountedBase = webrtc::RefCountedBase;
 template <typename T>
 using RefCountedNonVirtual = webrtc::RefCountedNonVirtual<T>;
 }  
+#endif  
 
 #endif  

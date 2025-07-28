@@ -219,10 +219,12 @@ bool operator<(const scoped_refptr<T>& a, const scoped_refptr<U>& b) {
 
 }  
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 
 
 using ::webrtc::scoped_refptr;
 }  
+#endif  
 
 #endif  

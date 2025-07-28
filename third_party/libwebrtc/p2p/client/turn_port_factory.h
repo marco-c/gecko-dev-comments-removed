@@ -36,8 +36,10 @@ class TurnPortFactory : public RelayPortFactoryInterface {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::TurnPortFactory;
 }  
+#endif  
 
 #endif  

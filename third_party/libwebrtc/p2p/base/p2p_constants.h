@@ -128,6 +128,7 @@ enum IcePriorityValue : uint8_t {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::BACKUP_CONNECTION_PING_INTERVAL;
 using ::webrtc::CN_AUDIO;
@@ -176,5 +177,6 @@ using ::webrtc::WEAK_CONNECTION_RECEIVE_TIMEOUT;
 using ::webrtc::WEAK_OR_STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL;
 using ::webrtc::WEAK_PING_INTERVAL;
 }  
+#endif  
 
 #endif  

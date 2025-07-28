@@ -53,10 +53,12 @@ struct TransportStats {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::TransportChannelStats;
 using ::webrtc::TransportChannelStatsList;
 using ::webrtc::TransportStats;
 }  
+#endif  
 
 #endif  

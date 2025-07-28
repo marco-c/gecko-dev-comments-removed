@@ -879,6 +879,7 @@ class WebRtcVideoChannel : public WebRtcVideoSendChannel {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::MergeInfoAboutOutboundRtpSubstreamsForTesting;
 using ::webrtc::VideoCodecSettings;
@@ -887,5 +888,6 @@ using ::webrtc::WebRtcVideoEngine;
 using ::webrtc::WebRtcVideoReceiveChannel;
 using ::webrtc::WebRtcVideoSendChannel;
 }  
+#endif  
 
 #endif  

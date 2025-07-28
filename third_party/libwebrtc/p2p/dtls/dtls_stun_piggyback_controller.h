@@ -108,8 +108,10 @@ class DtlsStunPiggybackController {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::DtlsStunPiggybackController;
 }  
+#endif  
 
 #endif  

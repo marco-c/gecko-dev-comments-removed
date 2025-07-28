@@ -1018,6 +1018,7 @@ class VideoMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using RtcpParameters = ::webrtc::MediaChannelParameters::RtcpParameters;
 using ::webrtc::AudioReceiverParameters;
@@ -1054,5 +1055,6 @@ using ::webrtc::VoiceMediaSendInfo;
 using ::webrtc::VoiceReceiverInfo;
 using ::webrtc::VoiceSenderInfo;
 }  
+#endif  
 
 #endif  

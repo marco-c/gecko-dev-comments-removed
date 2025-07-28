@@ -104,8 +104,10 @@ StringToNumber(absl::string_view str, int  = 10) {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::StringToNumber;
 }  
+#endif  
 
 #endif  

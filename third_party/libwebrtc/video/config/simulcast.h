@@ -53,11 +53,13 @@ std::vector<VideoStream> GetSimulcastConfig(
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::BoostMaxSimulcastLayer;
 using ::webrtc::GetSimulcastConfig;
 using ::webrtc::GetTotalMaxBitrate;
 using ::webrtc::LimitSimulcastLayerCount;
 }  
+#endif  
 
 #endif  

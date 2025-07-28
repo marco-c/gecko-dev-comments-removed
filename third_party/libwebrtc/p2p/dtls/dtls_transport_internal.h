@@ -157,11 +157,13 @@ class DtlsTransportInternal : public PacketTransportInternal {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::DtlsTransportInternal;
 using ::webrtc::PacketFlags;
 using ::webrtc::PF_NORMAL;
 using ::webrtc::PF_SRTP_BYPASS;
 }  
+#endif  
 
 #endif  

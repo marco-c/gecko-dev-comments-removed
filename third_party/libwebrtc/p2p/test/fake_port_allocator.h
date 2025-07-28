@@ -269,10 +269,12 @@ class FakePortAllocator : public PortAllocator {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::FakePortAllocator;
 using ::webrtc::FakePortAllocatorSession;
 using ::webrtc::TestUDPPort;
 }  
+#endif  
 
 #endif  

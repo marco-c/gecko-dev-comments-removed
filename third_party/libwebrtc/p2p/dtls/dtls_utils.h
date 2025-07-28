@@ -73,6 +73,7 @@ class PacketStash {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::GetDtlsHandshakeAcks;
 using ::webrtc::IsDtlsClientHelloPacket;
@@ -81,5 +82,6 @@ using ::webrtc::IsDtlsPacket;
 using ::webrtc::kDtlsRecordHeaderLen;
 using ::webrtc::kMaxDtlsPacketLen;
 }  
+#endif  
 
 #endif  

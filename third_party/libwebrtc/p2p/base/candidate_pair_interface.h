@@ -39,9 +39,11 @@ struct CandidatePair final : public CandidatePairInterface {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::CandidatePair;
 using ::webrtc::CandidatePairInterface;
 }  
+#endif  
 
 #endif  

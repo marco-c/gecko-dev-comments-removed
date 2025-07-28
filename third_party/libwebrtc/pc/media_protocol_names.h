@@ -46,6 +46,7 @@ bool IsDtlsRtp(absl::string_view protocol);
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::IsDtlsRtp;
 using ::webrtc::IsDtlsSctp;
@@ -61,5 +62,6 @@ using ::webrtc::kMediaProtocolSctp;
 using ::webrtc::kMediaProtocolTcpDtlsSctp;
 using ::webrtc::kMediaProtocolUdpDtlsSctp;
 }  
+#endif  
 
 #endif  

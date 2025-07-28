@@ -198,10 +198,12 @@ SocketAddress EmptySocketAddressWithFamily(int family);
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::EmptySocketAddressWithFamily;
 using ::webrtc::SocketAddress;
 using ::webrtc::SocketAddressFromSockAddrStorage;
 }  
+#endif  
 
 #endif  

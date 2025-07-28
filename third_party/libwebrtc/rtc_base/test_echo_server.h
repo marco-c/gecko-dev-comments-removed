@@ -76,8 +76,10 @@ class TestEchoServer : public sigslot::has_slots<> {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::TestEchoServer;
 }  
+#endif  
 
 #endif  

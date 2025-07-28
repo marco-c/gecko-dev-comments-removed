@@ -169,11 +169,13 @@ class StunRequest {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::kAllRequestsForTest;
 using ::webrtc::STUN_TOTAL_TIMEOUT;
 using ::webrtc::StunRequest;
 using ::webrtc::StunRequestManager;
 }  
+#endif  
 
 #endif  

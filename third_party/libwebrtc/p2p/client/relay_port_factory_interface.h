@@ -66,9 +66,11 @@ class RelayPortFactoryInterface {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::CreateRelayPortArgs;
 using ::webrtc::RelayPortFactoryInterface;
 }  
+#endif  
 
 #endif  

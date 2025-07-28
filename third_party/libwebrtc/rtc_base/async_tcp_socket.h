@@ -125,10 +125,12 @@ class AsyncTcpListenSocket : public AsyncListenSocket {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::AsyncTcpListenSocket;
 using ::webrtc::AsyncTCPSocket;
 using ::webrtc::AsyncTCPSocketBase;
 }  
+#endif  
 
 #endif  

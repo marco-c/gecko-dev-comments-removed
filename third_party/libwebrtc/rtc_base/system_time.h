@@ -26,8 +26,10 @@ int64_t SystemTimeNanos();
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::SystemTimeNanos;
 }
+#endif  
 
 #endif  

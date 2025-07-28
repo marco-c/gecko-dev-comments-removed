@@ -87,6 +87,7 @@ double CreateRandomDouble();
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::CreateRandomData;
 using ::webrtc::CreateRandomDouble;
@@ -101,5 +102,6 @@ using ::webrtc::SetDefaultRandomGenerator;
 using ::webrtc::SetRandomGenerator;
 using ::webrtc::SetRandomTestMode;
 }  
+#endif  
 
 #endif  

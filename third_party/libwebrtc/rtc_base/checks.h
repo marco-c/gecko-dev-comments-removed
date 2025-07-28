@@ -492,9 +492,11 @@ inline T CheckedDivExact(T a, T b) {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::CheckedDivExact;
 }  
+#endif  
 
 #else  
 

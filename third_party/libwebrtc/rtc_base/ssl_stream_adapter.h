@@ -285,6 +285,7 @@ class SSLStreamAdapter : public StreamInterface {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::GetSrtpKeyAndSaltLengths;
 using ::webrtc::IsGcmCryptoSuite;
@@ -326,5 +327,6 @@ using ::webrtc::SSLProtocolVersion;
 using ::webrtc::SSLRole;
 using ::webrtc::SSLStreamAdapter;
 }  
+#endif  
 
 #endif  

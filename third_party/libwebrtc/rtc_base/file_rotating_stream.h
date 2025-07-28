@@ -171,11 +171,13 @@ class CallSessionFileRotatingStreamReader : public FileRotatingStreamReader {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::CallSessionFileRotatingStream;
 using ::webrtc::CallSessionFileRotatingStreamReader;
 using ::webrtc::FileRotatingStream;
 using ::webrtc::FileRotatingStreamReader;
 }  
+#endif  
 
 #endif  

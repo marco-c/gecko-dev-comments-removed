@@ -721,7 +721,7 @@ void* Thread::PreRun(void* pv) {
 #else
   return nullptr;
 #endif
-}  
+}
 
 void Thread::Run() {
   ProcessMessages(kForever);

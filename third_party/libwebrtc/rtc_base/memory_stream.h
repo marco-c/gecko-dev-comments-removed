@@ -61,8 +61,10 @@ class MemoryStream final : public StreamInterface {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::MemoryStream;
 }  
+#endif  
 
 #endif  

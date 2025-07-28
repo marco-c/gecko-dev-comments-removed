@@ -57,8 +57,10 @@ class AudioSource {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::AudioSource;
 }  
+#endif  
 
 #endif  

@@ -127,11 +127,13 @@ RTC_EXPORT bool CleanupSSL();
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::CleanupSSL;
 using ::webrtc::InitializeSSL;
 using ::webrtc::SSLAdapter;
 using ::webrtc::SSLAdapterFactory;
 }  
+#endif  
 
 #endif  

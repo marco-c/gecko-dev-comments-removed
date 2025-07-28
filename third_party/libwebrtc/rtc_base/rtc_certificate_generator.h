@@ -83,9 +83,11 @@ class RTC_EXPORT RTCCertificateGenerator
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::RTCCertificateGenerator;
 using ::webrtc::RTCCertificateGeneratorInterface;
 }  
+#endif  
 
 #endif  

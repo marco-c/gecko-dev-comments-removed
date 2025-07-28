@@ -70,10 +70,12 @@ class OpenSSLCertificate final : public SSLCertificate {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 
 using ::webrtc::OpenSSLCertificate;
 
 }
+#endif  
 
 #endif  

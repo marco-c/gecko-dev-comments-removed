@@ -70,8 +70,10 @@ class FakeVideoRenderer : public VideoSinkInterface<VideoFrame> {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::FakeVideoRenderer;
 }  
+#endif  
 
 #endif  

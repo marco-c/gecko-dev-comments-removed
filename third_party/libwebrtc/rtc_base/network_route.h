@@ -95,9 +95,11 @@ struct NetworkRoute {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::NetworkRoute;
 using ::webrtc::RouteEndpoint;
 }  
+#endif  
 
 #endif  

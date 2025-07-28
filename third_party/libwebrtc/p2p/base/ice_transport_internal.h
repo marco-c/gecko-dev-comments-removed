@@ -439,6 +439,7 @@ class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::Candidates;
 using ::webrtc::ContinualGatheringPolicy;
@@ -462,5 +463,6 @@ using ::webrtc::VerifyCandidates;
 
 using IceTransportState = ::webrtc::IceTransportStateInternal;
 }  
+#endif  
 
 #endif  

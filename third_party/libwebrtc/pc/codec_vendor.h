@@ -121,9 +121,11 @@ class CodecLookupHelper {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::CodecLookupHelper;
 using ::webrtc::CodecVendor;
 }  
+#endif  
 
 #endif  

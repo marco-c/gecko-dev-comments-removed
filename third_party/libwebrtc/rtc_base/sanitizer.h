@@ -161,6 +161,7 @@ inline void MsanCheckInitialized(const T& mem) {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::AsanPoison;
 using ::webrtc::AsanUnpoison;
@@ -168,6 +169,7 @@ using ::webrtc::MsanCheckInitialized;
 using ::webrtc::MsanMarkUninitialized;
 using ::webrtc::MsanUninitialized;
 }  
+#endif  
 
 #endif  
 

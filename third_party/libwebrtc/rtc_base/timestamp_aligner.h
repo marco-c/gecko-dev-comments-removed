@@ -92,8 +92,10 @@ class RTC_EXPORT TimestampAligner {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::TimestampAligner;
 }  
+#endif  
 
 #endif  

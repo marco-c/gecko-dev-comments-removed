@@ -327,9 +327,11 @@ class DtlsTransportInternalImpl : public webrtc::DtlsTransportInternal {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using DtlsTransport = ::webrtc::DtlsTransportInternalImpl;
 using ::webrtc::StreamInterfaceChannel;
 }  
+#endif  
 
 #endif  

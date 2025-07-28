@@ -604,6 +604,7 @@ enum ContentSource { CS_LOCAL, CS_REMOTE };
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::AudioContentDescription;
 using ::webrtc::ContentGroup;
@@ -629,5 +630,6 @@ using ::webrtc::SessionDescription;
 using ::webrtc::UnsupportedContentDescription;
 using ::webrtc::VideoContentDescription;
 }  
+#endif  
 
 #endif  

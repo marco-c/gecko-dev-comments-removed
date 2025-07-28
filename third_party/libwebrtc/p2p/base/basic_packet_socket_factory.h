@@ -57,8 +57,10 @@ class RTC_EXPORT BasicPacketSocketFactory : public PacketSocketFactory {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::BasicPacketSocketFactory;
 }  
+#endif  
 
 #endif  

@@ -271,11 +271,13 @@ class StunPort : public UDPPort {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::HIGH_COST_PORT_KEEPALIVE_LIFETIME;
 using ::webrtc::INFINITE_LIFETIME;
 using ::webrtc::StunPort;
 using ::webrtc::UDPPort;
 }  
+#endif  
 
 #endif  

@@ -136,8 +136,10 @@ class VideoSourceInterface {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::VideoSinkWants;
 using ::webrtc::VideoSourceInterface;
 }  
+#endif  
 #endif  

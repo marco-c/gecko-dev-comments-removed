@@ -203,9 +203,11 @@ class TCPConnection : public Connection, public sigslot::has_slots<> {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::TCPConnection;
 using ::webrtc::TCPPort;
 }  
+#endif  
 
 #endif  

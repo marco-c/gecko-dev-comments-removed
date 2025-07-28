@@ -167,6 +167,7 @@ extern const char kPemTypeEcPrivateKey[];
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::ASN1TimeToSec;
 using ::webrtc::EC_LAST;
@@ -191,5 +192,6 @@ using ::webrtc::RSAParams;
 using ::webrtc::SSLIdentity;
 using ::webrtc::SSLIdentityParams;
 }  
+#endif  
 
 #endif  

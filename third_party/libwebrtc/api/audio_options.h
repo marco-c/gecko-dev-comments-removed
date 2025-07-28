@@ -72,8 +72,10 @@ struct RTC_EXPORT AudioOptions {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::AudioOptions;
 }  
+#endif  
 
 #endif  

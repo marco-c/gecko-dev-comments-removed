@@ -126,8 +126,10 @@ class Base64 {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::Base64;
 }  
+#endif  
 
 #endif 

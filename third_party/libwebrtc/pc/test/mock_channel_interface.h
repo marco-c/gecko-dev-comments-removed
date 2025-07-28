@@ -90,8 +90,10 @@ class MockChannelInterface : public ChannelInterface {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::MockChannelInterface;
 }  
+#endif  
 
 #endif  

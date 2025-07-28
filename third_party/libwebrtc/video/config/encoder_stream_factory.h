@@ -67,8 +67,10 @@ class EncoderStreamFactory
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::EncoderStreamFactory;
 }  
+#endif  
 
 #endif  

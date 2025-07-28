@@ -174,6 +174,7 @@ RTC_SAFECMP_MAKE_FUN(Ge)
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::SafeEq;
 using ::webrtc::SafeGe;
@@ -182,5 +183,6 @@ using ::webrtc::SafeLe;
 using ::webrtc::SafeLt;
 using ::webrtc::SafeNe;
 }  
+#endif  
 
 #endif

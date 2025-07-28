@@ -165,9 +165,11 @@ class SrtpSession {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::ProhibitLibsrtpInitialization;
 using ::webrtc::SrtpSession;
 }  
+#endif  
 
 #endif  

@@ -528,6 +528,7 @@ class FakeCall final : public Call, public PacketReceiver {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::FakeAudioReceiveStream;
 using ::webrtc::FakeAudioSendStream;
@@ -536,4 +537,5 @@ using ::webrtc::FakeFlexfecReceiveStream;
 using ::webrtc::FakeVideoReceiveStream;
 using ::webrtc::FakeVideoSendStream;
 }  
+#endif  
 #endif  

@@ -98,8 +98,10 @@ class BitBufferWriter {
 
 
 
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::BitBufferWriter;
 }  
+#endif  
 
 #endif  
