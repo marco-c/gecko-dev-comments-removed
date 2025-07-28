@@ -18071,7 +18071,7 @@ void Document::NotifyUserGestureActivation(
 
   
   
-  SetUserHasInteracted();
+  SetSHEntryHasUserInteraction(true);
 }
 
 bool Document::HasBeenUserGestureActivated() {
