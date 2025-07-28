@@ -2492,29 +2492,6 @@ JSObject* js::GetOrCreateModuleMetaObject(JSContext* cx,
   return metaObject;
 }
 
-ModuleObject* js::CallModuleResolveHook(JSContext* cx,
-                                        HandleValue referencingPrivate,
-                                        HandleObject moduleRequest) {
-  JS::ModuleResolveHook moduleResolveHook = cx->runtime()->moduleResolveHook;
-  if (!moduleResolveHook) {
-    JS_ReportErrorASCII(cx, "Module resolve hook not set");
-    return nullptr;
-  }
-
-  RootedObject result(cx,
-                      moduleResolveHook(cx, referencingPrivate, moduleRequest));
-  if (!result) {
-    return nullptr;
-  }
-
-  if (!result->is<ModuleObject>()) {
-    JS_ReportErrorASCII(cx, "Module resolve hook did not return Module object");
-    return nullptr;
-  }
-
-  return &result->as<ModuleObject>();
-}
-
 bool ModuleObject::topLevelCapabilityResolve(JSContext* cx,
                                              Handle<ModuleObject*> module) {
   RootedValue rval(cx);
@@ -2672,15 +2649,9 @@ JSObject* js::StartDynamicModuleImport(JSContext* cx, HandleScript script,
 
   Handle<PromiseObject*> promise = promiseObject.as<PromiseObject>();
 
-  JS::ModuleDynamicImportHook importHook =
-      cx->runtime()->moduleDynamicImportHook;
-
-  if (!importHook) {
-    
-    
-    JS_ReportErrorASCII(
-        cx,
-        "Dynamic module import is disabled or not supported in this context");
+  JS::ModuleLoadHook moduleLoadHook = cx->runtime()->moduleLoadHook;
+  if (!moduleLoadHook) {
+    JS_ReportErrorASCII(cx, "Module load hook not set");
     if (!RejectPromiseWithPendingError(cx, promise)) {
       return nullptr;
     }
@@ -2721,16 +2692,13 @@ JSObject* js::StartDynamicModuleImport(JSContext* cx, HandleScript script,
   }
 
   RootedValue referencingPrivate(cx, script->sourceObject()->getPrivate());
-  if (!importHook(cx, referencingPrivate, moduleRequest, promise)) {
-    
-    
-    if (!cx->isExceptionPending() ||
-        !RejectPromiseWithPendingError(cx, promise)) {
-      return nullptr;
-    }
-    return promise;
-  }
-
+  
+  
+  
+  
+  
+  std::ignore = moduleLoadHook(cx,  nullptr, referencingPrivate,
+                               moduleRequest, UndefinedHandleValue, promise);
   return promise;
 }
 
