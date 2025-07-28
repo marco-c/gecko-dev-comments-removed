@@ -33,6 +33,7 @@ from pylib.base import base_test_result
 from pylib.results import json_results  
 
 sys.path.insert(0, os.path.join(CHROMIUM_SRC_PATH, 'build', 'util'))
+
 from lib.results import result_sink  
 
 assert not six.PY2, 'Py2 not supported for this file.'
@@ -572,7 +573,7 @@ class GTestTest(RemoteTest):
     if self._trace_dir:
       device_test_script_contents.extend([
           'rm -rf %s' % device_trace_dir,
-          'su chronos -c -- "mkdir -p %s"' % device_trace_dir,
+          'sudo -E -u chronos -- /bin/bash -c "mkdir -p %s"' % device_trace_dir,
       ])
       test_invocation += ' --trace-dir=%s' % device_trace_dir
 
@@ -586,7 +587,8 @@ class GTestTest(RemoteTest):
       
       
       
-      test_invocation = 'su chronos -c -- "%s"' % test_invocation
+      test_invocation = (
+          'sudo -E -u chronos -- /bin/bash -c "%s"' % test_invocation)
       
       
       device_test_script_contents.append('chown -R chronos: ../..')

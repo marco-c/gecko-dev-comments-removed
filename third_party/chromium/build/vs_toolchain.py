@@ -37,6 +37,8 @@ from gn_helpers import ToGNString
 
 
 
+
+
 TOOLCHAIN_HASH = '27370823e7'
 SDK_VERSION = '10.0.22621.0'
 

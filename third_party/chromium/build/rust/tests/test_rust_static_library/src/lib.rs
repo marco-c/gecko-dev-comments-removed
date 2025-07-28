@@ -2,6 +2,10 @@
 
 
 
+
+
+
+#[allow(unsafe_op_in_unsafe_fn)]
 #[cxx::bridge]
 mod ffi {
     pub struct SomeStruct {

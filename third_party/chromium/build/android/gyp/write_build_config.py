@@ -1223,6 +1223,9 @@ def main(argv):
       '--base-module-build-config',
       help='Path to the base module\'s build config '
       'if this is a feature module.')
+  parser.add_option('--parent-module-build-config',
+                    help='Path to the parent module\'s build config '
+                    'when not using base module as parent.')
 
   parser.add_option(
       '--module-build-configs',
@@ -1367,6 +1370,10 @@ def main(argv):
   if options.base_module_build_config:
     base_module_build_config = GetDepConfigRoot(
         options.base_module_build_config)
+  parent_module_build_config = base_module_build_config
+  if options.parent_module_build_config:
+    parent_module_build_config = GetDepConfigRoot(
+        options.parent_module_build_config)
 
   
   
@@ -2128,15 +2135,23 @@ def main(argv):
   
   
   
+  
+  
+  
+  
+  
+  
+  
   if base_module_build_config:
-    base = base_module_build_config
-    RemoveObjDups(config, base, 'deps_info', 'dependency_zips')
-    RemoveObjDups(config, base, 'deps_info', 'dependency_zip_overlays')
-    RemoveObjDups(config, base, 'deps_info', 'extra_package_names')
-    RemoveObjDups(config, base, 'deps_info', 'javac_full_classpath')
-    RemoveObjDups(config, base, 'deps_info', 'javac_full_interface_classpath')
-    RemoveObjDups(config, base, 'deps_info', 'jni_all_source')
-    RemoveObjDups(config, base, 'extra_android_manifests')
+    ancestors = [base_module_build_config]
+    if parent_module_build_config is not base_module_build_config:
+      ancestors += [parent_module_build_config]
+    for ancestor in ancestors:
+      RemoveObjDups(config, ancestor, 'deps_info', 'dependency_zips')
+      RemoveObjDups(config, ancestor, 'deps_info', 'dependency_zip_overlays')
+      RemoveObjDups(config, ancestor, 'deps_info', 'extra_package_names')
+      RemoveObjDups(config, ancestor, 'deps_info', 'jni_all_source')
+      RemoveObjDups(config, ancestor, 'extra_android_manifests')
 
   if is_java_target:
     jar_to_target = {}
@@ -2144,6 +2159,8 @@ def main(argv):
     _AddJarMapping(jar_to_target, all_deps)
     if base_module_build_config:
       _AddJarMapping(jar_to_target, [base_module_build_config['deps_info']])
+      if parent_module_build_config is not base_module_build_config:
+        _AddJarMapping(jar_to_target, [parent_module_build_config['deps_info']])
     if options.tested_apk_config:
       _AddJarMapping(jar_to_target, [tested_apk_config])
       for jar, target in zip(tested_apk_config['javac_full_classpath'],

@@ -277,11 +277,10 @@ def _OptimizeWithR8(options,
 
     if options.disable_checks:
       cmd += ['--map-diagnostics:CheckDiscardDiagnostic', 'error', 'none']
-    else:
-      cmd += ['--map-diagnostics', 'info', 'warning']
-      
-      
-      cmd += ['--map-diagnostics', 'error', 'warning']
+    cmd += ['--map-diagnostics', 'info', 'warning']
+    
+    
+    cmd += ['--map-diagnostics', 'error', 'warning']
 
     if options.min_api:
       cmd += ['--min-api', options.min_api]
