@@ -9,12 +9,6 @@
 
 #include "ServiceWorkerJob.h"
 
-namespace mozilla {
-template <typename ResolveValueT, typename RejectValueT, bool IsExclusive>
-class MozPromise;
-using GenericPromise = MozPromise<bool, nsresult,  true>;
-}  
-
 namespace mozilla::dom {
 
 class ServiceWorkerUnregisterJob final : public ServiceWorkerJob {
@@ -29,10 +23,7 @@ class ServiceWorkerUnregisterJob final : public ServiceWorkerJob {
 
   virtual ~ServiceWorkerUnregisterJob();
 
-  already_AddRefed<GenericPromise> ClearNotifications();
-  already_AddRefed<GenericPromise> ClearPushSubscriptions();
-
-  void AsyncExecute() override;
+  virtual void AsyncExecute() override;
 
   void Unregister();
 
