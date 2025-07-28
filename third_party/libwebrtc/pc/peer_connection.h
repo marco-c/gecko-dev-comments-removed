@@ -394,7 +394,6 @@ class PeerConnection : public PeerConnectionInternal,
   
   
   bool IsUnifiedPlan() const override {
-    RTC_DCHECK_RUN_ON(signaling_thread());
     return is_unified_plan_;
   }
   bool ValidateBundleSettings(const SessionDescription* desc,
