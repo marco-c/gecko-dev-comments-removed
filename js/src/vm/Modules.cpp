@@ -460,10 +460,6 @@ using ResolveSet = GCVector<ResolveSetEntry, 0, SystemAllocPolicy>;
 using ModuleSet =
     GCHashSet<ModuleObject*, DefaultHasher<ModuleObject*>, SystemAllocPolicy>;
 
-static ModuleObject* HostResolveImportedModule(
-    JSContext* cx, Handle<ModuleObject*> module,
-    Handle<ModuleRequestObject*> moduleRequest,
-    ModuleStatus expectedMinimumStatus);
 static bool CyclicModuleResolveExport(JSContext* cx,
                                       Handle<ModuleObject*> module,
                                       Handle<JSAtom*> exportName,
@@ -558,6 +554,29 @@ static bool SyntheticModuleGetExportedNames(
 }
 
 
+static ModuleObject* GetImportedModule(
+    JSContext* cx, Handle<ModuleObject*> referrer,
+    Handle<ModuleRequestObject*> moduleRequest) {
+  MOZ_ASSERT(referrer);
+  MOZ_ASSERT(moduleRequest);
+
+  
+  
+  
+  
+  
+  
+  
+  auto record = referrer->loadedModules().lookup(moduleRequest);
+  MOZ_ASSERT(record);
+
+  
+  
+  
+  return record->value();
+}
+
+
 
 static bool ModuleGetExportedNames(
     JSContext* cx, Handle<ModuleObject*> module,
@@ -612,11 +631,11 @@ static bool ModuleGetExportedNames(
     
     
     moduleRequest = e.moduleRequest();
-    requestedModule = HostResolveImportedModule(cx, module, moduleRequest,
-                                                ModuleStatus::Unlinked);
+    requestedModule = GetImportedModule(cx, module, moduleRequest);
     if (!requestedModule) {
       return false;
     }
+    MOZ_ASSERT(requestedModule->status() >= ModuleStatus::Unlinked);
 
     
     
@@ -649,27 +668,6 @@ static bool ModuleGetExportedNames(
 static void ThrowUnexpectedModuleStatus(JSContext* cx, ModuleStatus status) {
   JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                            JSMSG_BAD_MODULE_STATUS, ModuleStatusName(status));
-}
-
-static ModuleObject* HostResolveImportedModule(
-    JSContext* cx, Handle<ModuleObject*> module,
-    Handle<ModuleRequestObject*> moduleRequest,
-    ModuleStatus expectedMinimumStatus) {
-  MOZ_ASSERT(module);
-  MOZ_ASSERT(moduleRequest);
-
-  Rooted<Value> referencingPrivate(cx, JS::GetModulePrivate(module));
-  Rooted<ModuleObject*> requestedModule(cx);
-  requestedModule =
-      CallModuleResolveHook(cx, referencingPrivate, moduleRequest);
-  if (!requestedModule) {
-    return nullptr;
-  }
-  if (requestedModule->status() < expectedMinimumStatus) {
-    ThrowUnexpectedModuleStatus(cx, requestedModule->status());
-    return nullptr;
-  }
-  return requestedModule;
 }
 
 static bool ModuleResolveExportImpl(JSContext* cx, Handle<ModuleObject*> module,
@@ -707,8 +705,10 @@ static bool ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
                                 MutableHandle<Value> result,
                                 ModuleErrorInfo* errorInfoOut = nullptr) {
   
-  Rooted<ResolveSet> resolveSet(cx);
+  MOZ_ASSERT(module->status() != ModuleStatus::New);
 
+  
+  Rooted<ResolveSet> resolveSet(cx);
   return ModuleResolveExportImpl(cx, module, exportName, &resolveSet, result,
                                  errorInfoOut);
 }
@@ -776,13 +776,16 @@ static bool CyclicModuleResolveExport(JSContext* cx,
     
     if (exportName == e.exportName()) {
       
+      MOZ_ASSERT(e.moduleRequest());
+
+      
       
       moduleRequest = e.moduleRequest();
-      importedModule = HostResolveImportedModule(cx, module, moduleRequest,
-                                                 ModuleStatus::Unlinked);
+      importedModule = GetImportedModule(cx, module, moduleRequest);
       if (!importedModule) {
         return false;
       }
+      MOZ_ASSERT(importedModule->status() >= ModuleStatus::Unlinked);
 
       
       if (!e.importName()) {
@@ -793,7 +796,6 @@ static bool CyclicModuleResolveExport(JSContext* cx,
         name = cx->names().star_namespace_star_;
         return CreateResolvedBindingObject(cx, importedModule, name, result);
       } else {
-        
         
         
         
@@ -828,13 +830,16 @@ static bool CyclicModuleResolveExport(JSContext* cx,
   Rooted<ResolvedBindingObject*> binding(cx);
   for (const ExportEntry& e : module->starExportEntries()) {
     
+    MOZ_ASSERT(e.moduleRequest());
+
+    
     
     moduleRequest = e.moduleRequest();
-    importedModule = HostResolveImportedModule(cx, module, moduleRequest,
-                                               ModuleStatus::Unlinked);
+    importedModule = GetImportedModule(cx, module, moduleRequest);
     if (!importedModule) {
       return false;
     }
+    MOZ_ASSERT(importedModule->status() >= ModuleStatus::Unlinked);
 
     
     
@@ -859,7 +864,6 @@ static bool CyclicModuleResolveExport(JSContext* cx,
       if (!starResolution) {
         starResolution = binding;
       } else {
-        
         
         
         
@@ -1209,11 +1213,11 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
     
     
     moduleRequest = in.moduleRequest();
-    importedModule = HostResolveImportedModule(cx, module, moduleRequest,
-                                               ModuleStatus::Linking);
+    importedModule = GetImportedModule(cx, module, moduleRequest);
     if (!importedModule) {
       return false;
     }
+    MOZ_ASSERT(importedModule->status() >= ModuleStatus::Linking);
 
     localName = in.localName();
     importName = in.importName();
@@ -1421,17 +1425,17 @@ static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
 
   
   
-  Rooted<ModuleRequestObject*> moduleRequest(cx);
+  Rooted<ModuleRequestObject*> required(cx);
   Rooted<ModuleObject*> requiredModule(cx);
   for (const RequestedModule& request : module->requestedModules()) {
-    moduleRequest = request.moduleRequest();
+    required = request.moduleRequest();
 
     
     
     
-    if (moduleRequest->hasFirstUnsupportedAttributeKey()) {
+    if (required->hasFirstUnsupportedAttributeKey()) {
       UniqueChars printableKey = AtomToPrintableString(
-          cx, moduleRequest->getFirstUnsupportedAttributeKey());
+          cx, required->getFirstUnsupportedAttributeKey());
       JS_ReportErrorNumberASCII(
           cx, GetErrorMessage, nullptr,
           JSMSG_IMPORT_ATTRIBUTES_STATIC_IMPORT_UNSUPPORTED_ATTRIBUTE,
@@ -1441,12 +1445,11 @@ static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
     }
 
     
-    
-    requiredModule = HostResolveImportedModule(cx, module, moduleRequest,
-                                               ModuleStatus::Unlinked);
+    requiredModule = GetImportedModule(cx, module, required);
     if (!requiredModule) {
       return false;
     }
+    MOZ_ASSERT(requiredModule->status() >= ModuleStatus::Unlinked);
 
     
     
@@ -1740,18 +1743,17 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
   Rooted<ModuleRequestObject*> required(cx);
   Rooted<ModuleObject*> requiredModule(cx);
   for (const RequestedModule& request : module->requestedModules()) {
+    
+    
+    
+    
+    
     required = request.moduleRequest();
-
-    
-    
-    
-    
-    
-    requiredModule =
-        HostResolveImportedModule(cx, module, required, ModuleStatus::Linked);
+    requiredModule = GetImportedModule(cx, module, required);
     if (!requiredModule) {
       return false;
     }
+    MOZ_ASSERT(requiredModule->status() >= ModuleStatus::Linked);
 
     
     
