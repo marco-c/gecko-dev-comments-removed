@@ -394,11 +394,20 @@ class AsyncGeneratorObject : public AbstractGeneratorObject {
     
     
     
+
+    
+    
+    
     State_AwaitingReturn,
 
     
     
+    
     State_Completed
+
+    
+    
+    
   };
 
   State state() const {
