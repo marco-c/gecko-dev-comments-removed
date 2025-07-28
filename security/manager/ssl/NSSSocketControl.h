@@ -10,6 +10,7 @@
 #include "CommonSocketControl.h"
 #include "TLSClientAuthCertSelection.h"
 #include "mozilla/Casting.h"
+#include "mozilla/Maybe.h"
 #include "nsNSSIOLayer.h"
 #include "nsThreadUtils.h"
 
@@ -205,6 +206,7 @@ class NSSSocketControl final : public CommonSocketControl {
     COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
     return mCertVerificationState == WaitingForCertVerification;
   }
+
   void AddPlaintextBytesRead(uint64_t val) {
     COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
     mPlaintextBytesRead += val;
@@ -284,39 +286,24 @@ class NSSSocketControl final : public CommonSocketControl {
   void SetPreliminaryHandshakeInfo(const SSLChannelInfo& channelInfo,
                                    const SSLCipherSuiteInfo& cipherInfo);
 
-  void SetPendingSelectClientAuthCertificate(
-      nsCOMPtr<nsIRunnable>&& selectClientAuthCertificate) {
+  
+  bool CancelIfNotClaimed() {
     COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
-    MOZ_LOG(
-        gPIPNSSLog, mozilla::LogLevel::Debug,
-        ("[%p] setting pending select client auth certificate", (void*)mFd));
-    
-    
-    
-    
-    
-    
-    
     if (!mClaimed) {
       SetCanceled(PR_CONNECT_RESET_ERROR);
-    } else {
-      mPendingSelectClientAuthCertificate =
-          std::move(selectClientAuthCertificate);
     }
+    return !mClaimed;
   }
 
-  void MaybeDispatchSelectClientAuthCertificate() {
+  void SetClientAuthCertificateRequest(
+      mozilla::UniqueCERTCertificate&& serverCertificate,
+      nsTArray<nsTArray<uint8_t>>&& caNames) {
     COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
-    if (!IsWaitingForCertVerification() && mClaimed &&
-        mPendingSelectClientAuthCertificate) {
-      MOZ_LOG(gPIPNSSLog, mozilla::LogLevel::Debug,
-              ("[%p] dispatching pending select client auth certificate",
-               (void*)mFd));
-      mozilla::Unused << NS_DispatchToMainThread(
-          mPendingSelectClientAuthCertificate);
-      mPendingSelectClientAuthCertificate = nullptr;
-    }
+    mClientAuthCertificateRequest.emplace(ClientAuthCertificateRequest{
+        std::move(serverCertificate), std::move(caNames)});
   }
+
+  void MaybeSelectClientAuthCertificate();
 
  private:
   ~NSSSocketControl() = default;
@@ -373,8 +360,19 @@ class NSSSocketControl final : public CommonSocketControl {
   mozilla::TimeStamp mSocketCreationTimestamp;
   uint64_t mPlaintextBytesRead;
 
+  
+  
   bool mClaimed;
-  nsCOMPtr<nsIRunnable> mPendingSelectClientAuthCertificate;
+  
+  
+  
+  
+  
+  struct ClientAuthCertificateRequest {
+    mozilla::UniqueCERTCertificate mServerCertificate;
+    nsTArray<nsTArray<uint8_t>> mCANames;
+  };
+  mozilla::Maybe<ClientAuthCertificateRequest> mClientAuthCertificateRequest;
 
   
   

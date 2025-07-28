@@ -24,6 +24,12 @@ SECStatus SSLGetClientAuthDataHook(void* arg, PRFileDesc* socket,
 
 
 
+void DoSelectClientAuthCertificate(NSSSocketControl* info,
+                                   mozilla::UniqueCERTCertificate&& serverCert,
+                                   nsTArray<nsTArray<uint8_t>>&& caNames);
+
+
+
 class ClientAuthCertificateSelectedBase : public mozilla::Runnable {
  public:
   ClientAuthCertificateSelectedBase()

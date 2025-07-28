@@ -24,6 +24,14 @@
 
 
 
+
+
+
+
+
+
+
+
 #include "TLSClientAuthCertSelection.h"
 #include "cert_storage/src/cert_storage.h"
 #include "mozilla/Logging.h"
@@ -747,7 +755,7 @@ SECStatus SSLGetClientAuthDataHook(void* arg, PRFileDesc* socket,
                                    CERTCertificate** pRetCert,
                                    SECKEYPrivateKey** pRetKey) {
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-          ("[%p] SSLGetClientAuthDataHook", socket));
+          ("[%p][%p] SSLGetClientAuthDataHook", socket, arg));
 
   if (!arg || !socket || !caNamesDecoded || !pRetCert || !pRetKey) {
     PR_SetError(PR_INVALID_ARGUMENT_ERROR, 0);
@@ -776,19 +784,43 @@ SECStatus SSLGetClientAuthDataHook(void* arg, PRFileDesc* socket,
     return SECSuccess;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  if (info->CancelIfNotClaimed()) {
+    MOZ_LOG(
+        gPIPNSSLog, LogLevel::Debug,
+        ("[%p] Cancelling unclaimed connection with client certificate request",
+         socket));
+    return SECSuccess;
+  }
+
   UniqueCERTCertificate serverCert(SSL_PeerCertificate(socket));
   if (!serverCert) {
     PR_SetError(SSL_ERROR_NO_CERTIFICATE, 0);
     return SECFailure;
   }
 
+  nsTArray<nsTArray<uint8_t>> caNames(CollectCANames(caNamesDecoded));
+  info->SetClientAuthCertificateRequest(std::move(serverCert),
+                                        std::move(caNames));
+  PR_SetError(PR_WOULD_BLOCK_ERROR, 0);
+  return SECWouldBlock;
+}
+
+void DoSelectClientAuthCertificate(NSSSocketControl* info,
+                                   UniqueCERTCertificate&& serverCert,
+                                   nsTArray<nsTArray<uint8_t>>&& caNames) {
+  MOZ_ASSERT(info);
   uint64_t browserId;
   if (NS_FAILED(info->GetBrowserId(&browserId))) {
-    PR_SetError(SEC_ERROR_LIBRARY_FAILURE, 0);
-    return SECFailure;
+    info->SetCanceled(SEC_ERROR_LIBRARY_FAILURE);
+    return;
   }
-
-  nsTArray<nsTArray<uint8_t>> caNames(CollectCANames(caNamesDecoded));
 
   RefPtr<ClientAuthCertificateSelected> continuation(
       new ClientAuthCertificateSelected(info));
@@ -849,10 +881,8 @@ SECStatus SSLGetClientAuthDataHook(void* arg, PRFileDesc* socket,
                 return;
               }
             }));
-    info->SetPendingSelectClientAuthCertificate(
-        std::move(remoteSelectClientAuthCertificate));
-    PR_SetError(PR_WOULD_BLOCK_ERROR, 0);
-    return SECWouldBlock;
+    (void)NS_DispatchToMainThread(remoteSelectClientAuthCertificate);
+    return;
   }
 
   ClientAuthInfo authInfo(info->GetHostName(), info->GetOriginAttributes(),
@@ -866,13 +896,8 @@ SECStatus SSLGetClientAuthDataHook(void* arg, PRFileDesc* socket,
                              rememberedCertBytes, rememberedCertChainBytes)) {
     continuation->SetSelectedClientAuthData(
         std::move(rememberedCertBytes), std::move(rememberedCertChainBytes));
-    nsresult rv = NS_DispatchToCurrentThread(continuation);
-    if (NS_FAILED(rv)) {
-      PR_SetError(SEC_ERROR_LIBRARY_FAILURE, 0);
-      return SECFailure;
-    }
-    PR_SetError(PR_WOULD_BLOCK_ERROR, 0);
-    return SECWouldBlock;
+    (void)NS_DispatchToCurrentThread(continuation);
+    return;
   }
 
   
@@ -883,8 +908,9 @@ SECStatus SSLGetClientAuthDataHook(void* arg, PRFileDesc* socket,
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
             ("[%p] FindClientCertificatesWithPrivateKeys() returned null (out "
              "of memory?)",
-             socket));
-    return SECSuccess;
+             &info));
+    info->SetCanceled(SEC_ERROR_LIBRARY_FAILURE);
+    return;
   }
 
   nsTArray<nsTArray<nsTArray<uint8_t>>> potentialClientCertificateChains;
@@ -897,24 +923,23 @@ SECStatus SSLGetClientAuthDataHook(void* arg, PRFileDesc* socket,
                                              caNames, enterpriseCertificates,
                                              potentialClientCertificateChains);
   if (CERT_LIST_EMPTY(potentialClientCertificates)) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-            ("[%p] no client certificates available after filtering by CA",
-             socket));
-    return SECSuccess;
+    MOZ_LOG(
+        gPIPNSSLog, LogLevel::Debug,
+        ("[%p] no client certificates available after filtering by CA", &info));
+    
+    
+    (void)NS_DispatchToCurrentThread(continuation);
+    return;
   }
 #endif  
+
   nsCOMPtr<nsIRunnable> selectClientAuthCertificate(
       new SelectClientAuthCertificate(
           std::move(authInfo), std::move(serverCert),
           std::move(potentialClientCertificates),
           std::move(potentialClientCertificateChains), std::move(caNames),
           continuation, browserId));
-  info->SetPendingSelectClientAuthCertificate(
-      std::move(selectClientAuthCertificate));
-
-  
-  PR_SetError(PR_WOULD_BLOCK_ERROR, 0);
-  return SECWouldBlock;
+  (void)NS_DispatchToMainThread(selectClientAuthCertificate);
 }
 
 
