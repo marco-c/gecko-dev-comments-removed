@@ -62,8 +62,9 @@ class AndroidSharedBlitGL final {
 
     
     sContext->SetEGLSurfaceOverride(mTargetSurface);
-    DebugOnly<bool> rv = sContext->BlitHelper()->Blit(surfaceTexture, imageSize,
-                                                      OriginPos::TopLeft);
+    DebugOnly<bool> rv = sContext->BlitHelper()->Blit(
+        surfaceTexture, imageSize, gfx::IntRect(gfx::IntPoint(0, 0), imageSize),
+        OriginPos::TopLeft);
     MOZ_ASSERT(rv);
     sContext->SwapBuffers();
     

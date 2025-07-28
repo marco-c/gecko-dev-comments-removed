@@ -4477,23 +4477,21 @@ void ClientWebGLContext::TexImage(uint8_t funcDims, GLenum imageTarget,
     bool sameColorSpace = (srcColorSpace == dstColorSpace);
 
     const auto fallbackReason = [&]() -> Maybe<std::string> {
-      const bool canUploadViaSd = contextInfo.uploadableSdTypes[sdType];
       
       
       
       
       
       const bool allowConversion =
-          canUploadViaSd &&
           sdType == layers::SurfaceDescriptor::TSurfaceDescriptorCanvasSurface;
-      auto fallbackReason =
-          BlitPreventReason(level, offset, respecFormat, pi, *desc,
-                            contextInfo.optionalRenderableFormatBits,
-                            sameColorSpace, allowConversion);
-      if (fallbackReason) {
-        return fallbackReason;
+      if (const char* fallbackReason =
+              BlitPreventReason(imageTarget, level, offset, respecFormat, pi,
+                                *desc, contextInfo.optionalRenderableFormatBits,
+                                sameColorSpace, allowConversion)) {
+        return Some(std::string(fallbackReason));
       }
 
+      const bool canUploadViaSd = contextInfo.uploadableSdTypes[sdType];
       if (!canUploadViaSd) {
         const nsPrintfCString msg(
             "Fast uploads for resource type %i not implemented.", int(sdType));
@@ -4565,18 +4563,6 @@ void ClientWebGLContext::TexImage(uint8_t funcDims, GLenum imageTarget,
                 "SurfaceDescriptorCanvasSurface works only in GPU process."});
           }
         } break;
-      }
-
-      switch (respecFormat) {
-        case LOCAL_GL_SRGB:
-        case LOCAL_GL_SRGB8:
-        case LOCAL_GL_SRGB_ALPHA:
-        case LOCAL_GL_SRGB8_ALPHA8: {
-          const nsPrintfCString msg(
-              "srgb-encoded formats (like %s) are not supported.",
-              EnumString(respecFormat).c_str());
-          return Some(ToString(msg));
-        }
       }
 
       if (StaticPrefs::webgl_disable_DOM_blit_uploads()) {

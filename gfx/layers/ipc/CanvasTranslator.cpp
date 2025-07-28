@@ -31,6 +31,7 @@
 #include "mozilla/TaskQueue.h"
 #include "GLContext.h"
 #include "HostWebGLContext.h"
+#include "SharedSurface.h"
 #include "WebGLParent.h"
 #include "RecordedCanvasEventImpl.h"
 
@@ -391,16 +392,16 @@ void CanvasTranslator::GetDataSurface(uint64_t aSurfaceRef) {
   }
 }
 
-already_AddRefed<gfx::DataSourceSurface> CanvasTranslator::WaitForSurface(
-    uintptr_t aId) {
+already_AddRefed<gfx::SourceSurface> CanvasTranslator::WaitForSurface(
+    uintptr_t aId, Maybe<layers::SurfaceDescriptor>* aDesc) {
   
   if (!gfx::gfxVars::UseAcceleratedCanvas2D() ||
       !UsePendingCanvasTranslatorEvents() || !IsInTaskQueue()) {
     return nullptr;
   }
   ReferencePtr idRef(aId);
-  auto* surf = LookupExportSurface(idRef);
-  if (!surf) {
+  ExportSurface* surf = LookupExportSurface(idRef);
+  if (!surf || !surf->mData) {
     if (!HasPendingEvent()) {
       return nullptr;
     }
@@ -415,12 +416,30 @@ already_AddRefed<gfx::DataSourceSurface> CanvasTranslator::WaitForSurface(
     
     
     surf = LookupExportSurface(idRef);
-    if (!surf) {
+    if (!surf || !surf->mData) {
       return nullptr;
     }
   }
   
-  return surf->GetDataSurface();
+  
+  if (aDesc && mWebglTextureType != TextureType::Unknown && mSharedContext &&
+      !mSharedContext->IsContextLost()) {
+    surf->mSharedSurface =
+        mSharedContext->ExportSharedSurface(mWebglTextureType, surf->mData);
+    if (surf->mSharedSurface) {
+      surf->mSharedSurface->BeginRead();
+      *aDesc = surf->mSharedSurface->ToSurfaceDescriptor();
+      surf->mSharedSurface->EndRead();
+    }
+  }
+  return do_AddRef(surf->mData);
+}
+
+void CanvasTranslator::RemoveExportSurface(gfx::ReferencePtr aRefPtr) {
+  auto it = mExportSurfaces.find(aRefPtr);
+  if (it != mExportSurfaces.end()) {
+    mExportSurfaces.erase(it);
+  }
 }
 
 void CanvasTranslator::RecycleBuffer() {
@@ -1675,14 +1694,28 @@ mozilla::ipc::IPCResult CanvasTranslator::RecvSnapshotExternalCanvas(
 
   
   
-  RefPtr<gfx::SourceSurface> surf;
+  ExternalSnapshot snapshot;
   if (auto* actor = gfx::CanvasManagerParent::GetCanvasActor(
           mContentId, aManagerId, aCanvasId)) {
     switch (actor->GetProtocolId()) {
       case ProtocolId::PWebGLMsgStart:
         if (auto* hostContext =
                 static_cast<dom::WebGLParent*>(actor)->GetHostWebGLContext()) {
-          surf = hostContext->GetWebGLContext()->GetBackBufferSnapshot(true);
+          if (auto* webgl = hostContext->GetWebGLContext()) {
+            if (mWebglTextureType != TextureType::Unknown) {
+              snapshot.mSharedSurface =
+                  webgl->GetBackBufferSnapshotSharedSurface(mWebglTextureType,
+                                                            true, true, true);
+              if (snapshot.mSharedSurface) {
+                snapshot.mWebgl = webgl;
+                snapshot.mDescriptor =
+                    snapshot.mSharedSurface->ToSurfaceDescriptor();
+              }
+            }
+            if (!snapshot.mDescriptor) {
+              snapshot.mData = webgl->GetBackBufferSnapshot(true);
+            }
+          }
         }
         break;
       default:
@@ -1691,22 +1724,25 @@ mozilla::ipc::IPCResult CanvasTranslator::RecvSnapshotExternalCanvas(
     }
   }
 
-  if (surf) {
-    mExternalSnapshots.InsertOrUpdate(aSyncId, surf);
-  }
-
-  
-  SyncTranslation(aSyncId);
-
-  if (!surf) {
+  if (!snapshot.mDescriptor && !snapshot.mData) {
+    
+    
+    SyncTranslation(aSyncId);
     return IPC_FAIL(this, "SnapshotExternalCanvas failed to get surface.");
   }
 
+  mExternalSnapshots.insert({aSyncId, std::move(snapshot)});
+
+  
+  SyncTranslation(aSyncId);
   return IPC_OK();
 }
 
-already_AddRefed<gfx::SourceSurface> CanvasTranslator::LookupExternalSnapshot(
-    uint64_t aSyncId) {
+bool CanvasTranslator::ResolveExternalSnapshot(uint64_t aSyncId,
+                                               ReferencePtr aRefPtr,
+                                               const IntSize& aSize,
+                                               SurfaceFormat aFormat,
+                                               DrawTarget* aDT) {
   MOZ_ASSERT(IsInTaskQueue());
   uint64_t prevSyncId = mLastSyncId;
   if (NS_WARN_IF(aSyncId > mLastSyncId)) {
@@ -1714,21 +1750,58 @@ already_AddRefed<gfx::SourceSurface> CanvasTranslator::LookupExternalSnapshot(
     
     SyncTranslation(aSyncId);
   }
-  RefPtr<gfx::SourceSurface> surf;
+
   
   
-  if (mExternalSnapshots.Remove(aSyncId, getter_AddRefs(surf))) {
-    return surf.forget();
+  auto it = mExternalSnapshots.find(aSyncId);
+  if (it == mExternalSnapshots.end()) {
+    
+    
+    
+    if (aSyncId > prevSyncId) {
+      gfxCriticalNoteOnce
+          << "External canvas snapshot resolved before creation.";
+    } else {
+      gfxCriticalNoteOnce << "Exernal canvas snapshot already resolved.";
+    }
+    return false;
   }
-  
-  
-  
-  if (aSyncId > prevSyncId) {
-    gfxCriticalNoteOnce << "External canvas snapshot resolved before creation.";
-  } else {
-    gfxCriticalNoteOnce << "Exernal canvas snapshot already resolved.";
+
+  ExternalSnapshot snapshot = std::move(it->second);
+  mExternalSnapshots.erase(it);
+
+  RefPtr<gfx::SourceSurface> resolved;
+  if (snapshot.mSharedSurface) {
+    snapshot.mSharedSurface->BeginRead();
   }
-  return nullptr;
+  if (snapshot.mDescriptor) {
+    if (aDT) {
+      resolved =
+          aDT->ImportSurfaceDescriptor(*snapshot.mDescriptor, aSize, aFormat);
+    }
+    if (!resolved && gfx::gfxVars::UseAcceleratedCanvas2D() &&
+        EnsureSharedContextWebgl()) {
+      
+      
+      resolved = mSharedContext->ImportSurfaceDescriptor(*snapshot.mDescriptor,
+                                                         aSize, aFormat);
+    }
+  }
+  if (snapshot.mSharedSurface) {
+    snapshot.mSharedSurface->EndRead();
+    if (snapshot.mWebgl) {
+      snapshot.mWebgl->RecycleSnapshotSharedSurface(snapshot.mSharedSurface);
+    }
+  }
+  if (!resolved) {
+    
+    resolved = snapshot.mData;
+  }
+  if (resolved) {
+    AddSourceSurface(aRefPtr, resolved);
+    return true;
+  }
+  return false;
 }
 
 already_AddRefed<gfx::GradientStops> CanvasTranslator::GetOrCreateGradientStops(

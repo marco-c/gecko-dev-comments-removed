@@ -60,6 +60,28 @@ struct ReferencePtr {
 
   explicit operator uintptr_t() const { return uintptr_t(mLongPtr); }
 
+  
+  
+  bool operator<(const ReferencePtr& aOther) const {
+    return mLongPtr < aOther.mLongPtr;
+  }
+
+  bool operator>(const ReferencePtr& aOther) const {
+    return mLongPtr > aOther.mLongPtr;
+  }
+
+  bool operator==(const ReferencePtr& aOther) const {
+    return mLongPtr == aOther.mLongPtr;
+  }
+
+  bool operator!=(const ReferencePtr& aOther) const {
+    return !(*this == aOther);
+  }
+
+  bool operator>=(const ReferencePtr& aOther) const {
+    return mLongPtr >= aOther.mLongPtr;
+  }
+
   uint64_t mLongPtr;
 };
 
@@ -546,5 +568,14 @@ class RecordedEventDerived : public RecordedEvent {
 
 }  
 }  
+
+
+
+template <>
+struct std::hash<mozilla::gfx::ReferencePtr> {
+  std::size_t operator()(const mozilla::gfx::ReferencePtr& aRef) const {
+    return std::hash<uint64_t>{}(aRef.mLongPtr);
+  }
+};
 
 #endif
