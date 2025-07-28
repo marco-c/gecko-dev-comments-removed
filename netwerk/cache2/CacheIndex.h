@@ -22,7 +22,6 @@
 #include "mozilla/EndianUtils.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
-#include "gtest/MozGtestFriend.h"
 
 class nsIFile;
 class nsIDirectoryEnumerator;
@@ -702,11 +701,6 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
   NS_DECL_NSIRUNNABLE
 
   CacheIndex();
-  FRIEND_TEST(FrecencyStorageTest, AppendRemoveRecordTest);
-  FRIEND_TEST(FrecencyStorageTest, ReplaceRecordTest);
-  FRIEND_TEST(FrecencyStorageTest, ClearTest);
-  FRIEND_TEST(FrecencyStorageTest, GetSortedSnapshotForEvictionTest);
-  FRIEND_TEST(FrecencyStorageTest, PerformanceTest);
 
   static nsresult Init(nsIFile* aCacheDirectory);
   static nsresult PreShutdown();
@@ -754,9 +748,6 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
   enum EntryStatus { EXISTS = 0, DOES_NOT_EXIST = 1, DO_NOT_KNOW = 2 };
 
   
-  using EvictionSortedSnapshot = nsTArray<RefPtr<CacheIndexRecordWrapper>>;
-
-  
   
   
   
@@ -771,12 +762,8 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
   
   
   
-  static nsresult GetEntryForEviction(EvictionSortedSnapshot& aSnapshot,
-                                      bool aIgnoreEmptyEntries,
+  static nsresult GetEntryForEviction(bool aIgnoreEmptyEntries,
                                       SHA1Sum::Hash* aHash, uint32_t* aCnt);
-
-  
-  static EvictionSortedSnapshot GetSortedSnapshotForEviction();
 
   
   
@@ -1191,43 +1178,71 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
   
   
   
-  class FrecencyStorage final {
-    FRIEND_TEST(FrecencyStorageTest, AppendRemoveRecordTest);
-    FRIEND_TEST(FrecencyStorageTest, ReplaceRecordTest);
-    FRIEND_TEST(FrecencyStorageTest, ClearTest);
-    FRIEND_TEST(FrecencyStorageTest, GetSortedSnapshotForEvictionTest);
-    FRIEND_TEST(FrecencyStorageTest, PerformanceTest);
+  
+  
+  
+  class FrecencyArray {
+    class Iterator {
+     public:
+      explicit Iterator(nsTArray<RefPtr<CacheIndexRecordWrapper>>* aRecs)
+          : mRecs(aRecs), mIdx(0) {
+        while (!Done() && !(*mRecs)[mIdx]) {
+          mIdx++;
+        }
+      }
+
+      bool Done() const { return mIdx == mRecs->Length(); }
+
+      CacheIndexRecordWrapper* Get() const {
+        MOZ_ASSERT(!Done());
+        return (*mRecs)[mIdx];
+      }
+
+      void Next() {
+        MOZ_ASSERT(!Done());
+        ++mIdx;
+        while (!Done() && !(*mRecs)[mIdx]) {
+          mIdx++;
+        }
+      }
+
+     private:
+      nsTArray<RefPtr<CacheIndexRecordWrapper>>* mRecs;
+      uint32_t mIdx;
+    };
 
    public:
-    FrecencyStorage() = default;
+    Iterator Iter() { return Iterator(&mRecs); }
+
+    FrecencyArray() = default;
 
     
     void AppendRecord(CacheIndexRecordWrapper* aRecord,
                       const StaticMutexAutoLock& aProofOfLock);
-
     void RemoveRecord(CacheIndexRecordWrapper* aRecord,
                       const StaticMutexAutoLock& aProofOfLock);
-
     void ReplaceRecord(CacheIndexRecordWrapper* aOldRecord,
                        CacheIndexRecordWrapper* aNewRecord,
                        const StaticMutexAutoLock& aProofOfLock);
-
+    void SortIfNeeded(const StaticMutexAutoLock& aProofOfLock);
     bool RecordExistedUnlocked(CacheIndexRecordWrapper* aRecord);
 
-    
-    
-    EvictionSortedSnapshot GetSortedSnapshotForEviction();
-
-    size_t Length() const { return mRecs.Count(); }
-
+    size_t Length() const { return mRecs.Length() - mRemovedElements; }
     void Clear(const StaticMutexAutoLock& aProofOfLock) { mRecs.Clear(); }
 
    private:
     friend class CacheIndex;
-    nsTHashtable<nsRefPtrHashKey<CacheIndexRecordWrapper>> mRecs;
+
+    nsTArray<RefPtr<CacheIndexRecordWrapper>> mRecs;
+    uint32_t mUnsortedElements{0};
+    
+    
+    
+    
+    uint32_t mRemovedElements{0};
   };
 
-  FrecencyStorage mFrecencyStorage MOZ_GUARDED_BY(sLock);
+  FrecencyArray mFrecencyArray MOZ_GUARDED_BY(sLock);
 
   nsTArray<CacheIndexIterator*> mIterators MOZ_GUARDED_BY(sLock);
 

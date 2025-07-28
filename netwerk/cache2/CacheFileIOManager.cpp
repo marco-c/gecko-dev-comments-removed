@@ -2943,7 +2943,6 @@ nsresult CacheFileIOManager::OverLimitEvictionInternal() {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  auto frecencySnapshot = CacheIndex::GetSortedSnapshotForEviction();
   while (true) {
     int64_t freeSpace;
     rv = mCacheDirectory->GetDiskSpaceAvailable(&freeSpace);
@@ -3012,9 +3011,9 @@ nsresult CacheFileIOManager::OverLimitEvictionInternal() {
     }
 
     SHA1Sum::Hash hash;
-    uint32_t cnt = 0;
+    uint32_t cnt;
     static uint32_t consecutiveFailures = 0;
-    rv = CacheIndex::GetEntryForEviction(frecencySnapshot, false, &hash, &cnt);
+    rv = CacheIndex::GetEntryForEviction(false, &hash, &cnt);
     NS_ENSURE_SUCCESS(rv, rv);
 
     rv = DoomFileByKeyInternal(&hash);
@@ -3042,7 +3041,23 @@ nsresult CacheFileIOManager::OverLimitEvictionInternal() {
            "DoomFileByKeyInternal() failed. [rv=0x%08" PRIx32 "]",
            static_cast<uint32_t>(rv)));
 
-      if (++consecutiveFailures >= cnt) {
+      
+      
+      
+      
+      
+      rv = CacheIndex::EnsureEntryExists(&hash);
+      NS_ENSURE_SUCCESS(rv, rv);
+
+      
+      
+      uint32_t frecency = 0;
+      rv = CacheIndex::UpdateEntry(&hash, &frecency, nullptr, nullptr, nullptr,
+                                   nullptr, nullptr);
+      NS_ENSURE_SUCCESS(rv, rv);
+
+      consecutiveFailures++;
+      if (consecutiveFailures >= cnt) {
         
         
         
@@ -4073,8 +4088,8 @@ nsresult CacheFileIOManager::OpenNSPRHandle(CacheFileHandle* aHandle,
 
       SHA1Sum::Hash hash;
       uint32_t cnt;
-      auto snapshot = CacheIndex::GetSortedSnapshotForEviction();
-      rv = CacheIndex::GetEntryForEviction(snapshot, true, &hash, &cnt);
+
+      rv = CacheIndex::GetEntryForEviction(true, &hash, &cnt);
       if (NS_SUCCEEDED(rv)) {
         rv = DoomFileByKeyInternal(&hash);
       }
