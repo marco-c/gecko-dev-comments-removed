@@ -209,6 +209,19 @@ class TextDirectiveUtil final {
   template <TextScanDirection direction>
   static nsTArray<uint32_t> ComputeWordBoundaryDistances(
       const nsAString& aString);
+
+  
+
+
+
+
+
+
+
+
+  static bool WordIsJustWhitespaceOrPunctuation(const nsAString& aString,
+                                                uint32_t aWordBegin,
+                                                uint32_t aWordEnd);
 };
 
 class TimeoutWatchdog final {
@@ -505,13 +518,19 @@ template <TextScanDirection direction>
   
   while (pos < aString.Length()) {
     auto [wordBegin, wordEnd] = intl::WordBreaker::FindWord(aString, pos);
-    if constexpr (direction == TextScanDirection::Left) {
-      wordBoundaryDistances.AppendElement(aString.Length() - wordBegin);
-      pos = wordBegin - 1;
-    } else {
-      wordBoundaryDistances.AppendElement(wordEnd);
-      pos = wordEnd + 1;
+    pos = direction == TextScanDirection::Left ? wordBegin - 1 : wordEnd + 1;
+    if (WordIsJustWhitespaceOrPunctuation(aString, wordBegin, wordEnd)) {
+      
+      
+      
+      
+      
+      continue;
     }
+
+    wordBoundaryDistances.AppendElement(direction == TextScanDirection::Left
+                                            ? aString.Length() - wordBegin
+                                            : wordEnd);
   }
   return std::move(wordBoundaryDistances);
 }
