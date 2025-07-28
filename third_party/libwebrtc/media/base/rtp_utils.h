@@ -45,7 +45,7 @@ bool GetRtcpType(const void* data, size_t len, int* value);
 bool GetRtcpSsrc(const void* data, size_t len, uint32_t* value);
 
 
-RtpPacketType InferRtpPacketType(rtc::ArrayView<const uint8_t> packet);
+RtpPacketType InferRtpPacketType(ArrayView<const uint8_t> packet);
 
 bool IsValidRtpPayloadType(int payload_type);
 

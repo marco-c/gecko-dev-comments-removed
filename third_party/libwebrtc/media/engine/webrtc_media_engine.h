@@ -25,8 +25,8 @@ namespace webrtc {
 
 
 
-bool ValidateRtpExtensions(rtc::ArrayView<const RtpExtension> extennsions,
-                           rtc::ArrayView<const RtpExtension> old_extensions);
+bool ValidateRtpExtensions(ArrayView<const RtpExtension> extennsions,
+                           ArrayView<const RtpExtension> old_extensions);
 
 
 

@@ -204,7 +204,7 @@ class WebRtcVideoSendChannel : public MediaChannelUtil,
   void FillBitrateInfo(BandwidthEstimationInfo* bwe_info) override;
   bool GetStats(VideoMediaSendInfo* info) override;
 
-  void OnPacketSent(const rtc::SentPacket& sent_packet) override;
+  void OnPacketSent(const SentPacketInfo& sent_packet) override;
   void OnReadyToSend(bool ready) override;
   void OnNetworkRouteChanged(absl::string_view transport_name,
                              const NetworkRoute& network_route) override;
@@ -312,7 +312,7 @@ class WebRtcVideoSendChannel : public MediaChannelUtil,
   
   
   static void ExtractCodecInformation(
-      rtc::ArrayView<const VideoCodecSettings> recv_codecs,
+      ArrayView<const VideoCodecSettings> recv_codecs,
       std::map<int, int>& rtx_associated_payload_types,
       std::set<int>& raw_payload_types,
       std::vector<VideoReceiveStreamInterface::Decoder>& decoders);

@@ -175,7 +175,7 @@ absl::string_view RtpPacketTypeToString(RtpPacketType packet_type) {
   RTC_CHECK_NOTREACHED();
 }
 
-RtpPacketType InferRtpPacketType(rtc::ArrayView<const uint8_t> packet) {
+RtpPacketType InferRtpPacketType(ArrayView<const uint8_t> packet) {
   if (webrtc::IsRtcpPacket(packet)) {
     return RtpPacketType::kRtcp;
   }
@@ -379,7 +379,7 @@ bool ApplyPacketOptions(uint8_t* data,
   }
 
   
-  auto packet = rtc::MakeArrayView(data + rtp_start_pos, rtp_length);
+  auto packet = MakeArrayView(data + rtp_start_pos, rtp_length);
   if (!webrtc::IsRtpPacket(packet) ||
       !ValidateRtpHeader(data + rtp_start_pos, rtp_length, nullptr)) {
     RTC_DCHECK_NOTREACHED();
