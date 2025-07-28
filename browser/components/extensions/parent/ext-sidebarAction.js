@@ -14,9 +14,6 @@ var { ExtensionError } = ExtensionUtils;
 
 var { IconDetails } = ExtensionParent;
 
-var { SidebarManager } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/sidebar/SidebarManager.sys.mjs"
-);
 
 let sidebarActionMap = new WeakMap();
 
@@ -73,21 +70,11 @@ this.sidebarAction = class extends ExtensionAPI {
     this.build();
   }
 
-  
-
-
-
-
-
-
-
-
   onShutdown(isAppShutdown) {
-    if (!sidebarActionMap.delete(this.extension)) {
-      
-      return;
-    }
+    sidebarActionMap.delete(this.extension);
+
     this.tabContext.shutdown();
+
     
     
     if (isAppShutdown) {
@@ -96,9 +83,6 @@ this.sidebarAction = class extends ExtensionAPI {
 
     for (let window of windowTracker.browserWindows()) {
       let { SidebarController } = window;
-      
-      
-      
       SidebarController.removeExtension(this.id);
     }
     windowTracker.removeOpenListener(this.windowOpenListener);
@@ -106,9 +90,6 @@ this.sidebarAction = class extends ExtensionAPI {
 
   static onUninstall(id) {
     const sidebarId = `${makeWidgetId(id)}-sidebar-action`;
-
-    SidebarManager.cleanupPrefs(id);
-
     for (let window of windowTracker.browserWindows()) {
       let { SidebarController } = window;
       if (SidebarController.lastOpenedId === sidebarId) {
