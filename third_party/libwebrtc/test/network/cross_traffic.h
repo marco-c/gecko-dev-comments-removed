@@ -14,11 +14,11 @@
 #include <cmath>
 #include <cstddef>
 #include <deque>
-#include <functional>
 #include <list>
 #include <map>
 #include <set>
 
+#include "absl/functional/any_invocable.h"
 #include "api/sequence_checker.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/test/network_emulation/cross_traffic.h"
@@ -97,14 +97,15 @@ class TcpMessageRouteImpl final : public TcpMessageRoute {
   
   
   
-  void SendMessage(size_t size, std::function<void()> on_received) override;
+  void SendMessage(size_t size,
+                   absl::AnyInvocable<void()> on_received) override;
 
  private:
   
   
   
   struct Message {
-    std::function<void()> handler;
+    absl::AnyInvocable<void()> handler;
     std::set<int> pending_fragment_ids;
   };
   

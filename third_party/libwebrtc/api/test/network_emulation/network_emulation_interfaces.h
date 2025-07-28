@@ -12,11 +12,11 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <functional>
 #include <map>
 #include <optional>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "api/numerics/samples_stats_counter.h"
 #include "api/test/network_emulation/ecn_marking_counter.h"
 #include "api/transport/ecn_marking.h"
@@ -310,7 +310,8 @@ class TcpMessageRoute {
   
   
   
-  virtual void SendMessage(size_t size, std::function<void()> on_received) = 0;
+  virtual void SendMessage(size_t size,
+                           absl::AnyInvocable<void()> on_received) = 0;
 
  protected:
   ~TcpMessageRoute() = default;
