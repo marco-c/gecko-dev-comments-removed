@@ -245,7 +245,7 @@ class PeerConnectionEncodingsIntegrationTest : public ::testing::Test {
       rtc::scoped_refptr<PeerConnectionTestWrapper> remote,
       std::vector<SimulcastLayer> init_layers) {
     rtc::scoped_refptr<MediaStreamInterface> stream = local->GetUserMedia(
-        false, cricket::AudioOptions(), true,
+        false, AudioOptions(), true,
         {.width = 1280, .height = 720});
     rtc::scoped_refptr<VideoTrackInterface> track = stream->GetVideoTracks()[0];
 

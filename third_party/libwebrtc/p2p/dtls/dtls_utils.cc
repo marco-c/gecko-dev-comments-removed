@@ -30,7 +30,7 @@ const uint8_t kSequenceNumberBitmask = 0b00001000;
 const uint8_t kLengthPresentBitmask = 0b00000100;
 }  
 
-namespace cricket {
+namespace webrtc {
 
 bool IsDtlsPacket(rtc::ArrayView<const uint8_t> payload) {
   const uint8_t* u = payload.data();
@@ -61,7 +61,7 @@ bool IsDtlsHandshakePacket(rtc::ArrayView<const uint8_t> payload) {
 std::optional<std::vector<uint16_t>> GetDtlsHandshakeAcks(
     rtc::ArrayView<const uint8_t> dtls_packet) {
   std::vector<uint16_t> acks;
-  webrtc::ByteBufferReader record_buf(dtls_packet);
+  ByteBufferReader record_buf(dtls_packet);
   
   while (record_buf.Length() >= kDtlsRecordHeaderLen) {
     uint8_t content_type;
@@ -113,8 +113,7 @@ std::optional<std::vector<uint16_t>> GetDtlsHandshakeAcks(
     }
 
     
-    webrtc::ByteBufferReader handshake_buf(
-        record_buf.DataView().subview(0, len));
+    ByteBufferReader handshake_buf(record_buf.DataView().subview(0, len));
     while (handshake_buf.Length() > 0) {
       uint16_t msg_seq;
       uint32_t fragment_len;

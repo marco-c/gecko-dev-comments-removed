@@ -535,7 +535,7 @@ void PeerConnectionE2EQualityTest::SetupCallOnSignalingThread(
       transceiver_params.direction = RtpTransceiverDirection::kSendOnly;
       
       
-      if (alice_->params().video_codecs[0].name == cricket::kVp8CodecName) {
+      if (alice_->params().video_codecs[0].name == kVp8CodecName) {
         
         
         

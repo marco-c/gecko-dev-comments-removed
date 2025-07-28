@@ -198,10 +198,10 @@ TEST_F(DataChannelControllerTest, MaxChannels) {
 
   
   
-  for (channel_id = 0; channel_id <= cricket::kMaxSctpStreams; ++channel_id) {
+  for (channel_id = 0; channel_id <= kMaxSctpStreams; ++channel_id) {
     auto ret = dcc.InternalCreateDataChannelWithProxy(
         "label", InternalDataChannelInit(DataChannelInit()));
-    if (channel_id == cricket::kMaxSctpStreams) {
+    if (channel_id == kMaxSctpStreams) {
       
       EXPECT_FALSE(ret.ok());
     } else {

@@ -18,7 +18,7 @@
 #include "p2p/base/ice_switch_reason.h"
 #include "p2p/base/transport_description.h"
 
-namespace cricket {
+namespace webrtc {
 
 
 
@@ -78,6 +78,12 @@ class IceAgentInterface {
       rtc::ArrayView<const Connection* const> connections) = 0;
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::IceAgentInterface;
 }  
 
 #endif  

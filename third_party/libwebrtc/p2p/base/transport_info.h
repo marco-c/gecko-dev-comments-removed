@@ -16,7 +16,7 @@
 
 #include "p2p/base/transport_description.h"
 
-namespace cricket {
+namespace webrtc {
 
 
 
@@ -34,6 +34,13 @@ struct TransportInfo {
 
 typedef std::vector<TransportInfo> TransportInfos;
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::TransportInfo;
+using ::webrtc::TransportInfos;
 }  
 
 #endif  

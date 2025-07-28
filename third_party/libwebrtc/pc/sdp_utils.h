@@ -34,7 +34,7 @@ CloneSessionDescriptionAsType(const SessionDescriptionInterface* sdesc,
 
 
 typedef std::function<bool(const webrtc::ContentInfo*,
-                           const cricket::TransportInfo*)>
+                           const webrtc::TransportInfo*)>
     SdpContentPredicate;
 
 
@@ -47,7 +47,7 @@ bool SdpContentsNone(SdpContentPredicate pred, const SessionDescription* desc);
 
 
 
-typedef std::function<void(webrtc::ContentInfo*, cricket::TransportInfo*)>
+typedef std::function<void(webrtc::ContentInfo*, webrtc::TransportInfo*)>
     SdpContentMutator;
 
 

@@ -38,7 +38,7 @@ namespace webrtc {
 class SctpTransport : public SctpTransportInterface,
                       public DataChannelTransportInterface {
  public:
-  SctpTransport(std::unique_ptr<cricket::SctpTransportInternal> internal,
+  SctpTransport(std::unique_ptr<SctpTransportInternal> internal,
                 rtc::scoped_refptr<DtlsTransport> dtls_transport);
 
   
@@ -68,12 +68,12 @@ class SctpTransport : public SctpTransportInterface,
   
   
   
-  cricket::SctpTransportInternal* internal() {
+  SctpTransportInternal* internal() {
     RTC_DCHECK_RUN_ON(owner_thread_);
     return internal_sctp_transport_.get();
   }
 
-  const cricket::SctpTransportInternal* internal() const {
+  const SctpTransportInternal* internal() const {
     RTC_DCHECK_RUN_ON(owner_thread_);
     return internal_sctp_transport_.get();
   }
@@ -87,14 +87,14 @@ class SctpTransport : public SctpTransportInterface,
   void OnAssociationChangeCommunicationUp();
   void OnInternalClosingProcedureStartedRemotely(int sid);
   void OnInternalClosingProcedureComplete(int sid);
-  void OnDtlsStateChange(cricket::DtlsTransportInternal* transport,
+  void OnDtlsStateChange(DtlsTransportInternal* transport,
                          DtlsTransportState state);
 
   
   
   Thread* const owner_thread_;
   SctpTransportInformation info_ RTC_GUARDED_BY(owner_thread_);
-  std::unique_ptr<cricket::SctpTransportInternal> internal_sctp_transport_
+  std::unique_ptr<SctpTransportInternal> internal_sctp_transport_
       RTC_GUARDED_BY(owner_thread_);
   SctpTransportObserverInterface* observer_ RTC_GUARDED_BY(owner_thread_) =
       nullptr;

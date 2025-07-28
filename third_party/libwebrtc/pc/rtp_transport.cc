@@ -285,24 +285,22 @@ void RtpTransport::OnReadPacket(PacketTransportInternal* transport,
 
   
   
-  cricket::RtpPacketType packet_type =
-      cricket::InferRtpPacketType(received_packet.payload());
+  RtpPacketType packet_type = InferRtpPacketType(received_packet.payload());
   
-  if (packet_type == cricket::RtpPacketType::kUnknown) {
+  if (packet_type == RtpPacketType::kUnknown) {
     return;
   }
 
   
-  if (!cricket::IsValidRtpPacketSize(packet_type,
-                                     received_packet.payload().size())) {
+  if (!IsValidRtpPacketSize(packet_type, received_packet.payload().size())) {
     RTC_LOG(LS_ERROR) << "Dropping incoming "
-                      << cricket::RtpPacketTypeToString(packet_type)
+                      << RtpPacketTypeToString(packet_type)
                       << " packet: wrong size="
                       << received_packet.payload().size();
     return;
   }
 
-  if (packet_type == cricket::RtpPacketType::kRtcp) {
+  if (packet_type == RtpPacketType::kRtcp) {
     OnRtcpPacketReceived(received_packet);
   } else {
     OnRtpPacketReceived(received_packet);

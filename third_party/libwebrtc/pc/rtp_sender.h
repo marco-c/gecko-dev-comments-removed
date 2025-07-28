@@ -56,8 +56,7 @@ class RtpSenderInternal : public RtpSenderInterface {
   
   
   
-  virtual void SetMediaChannel(
-      cricket::MediaSendChannelInterface* media_channel) = 0;
+  virtual void SetMediaChannel(MediaSendChannelInterface* media_channel) = 0;
 
   
   
@@ -123,8 +122,7 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   
   
   
-  void SetMediaChannel(
-      cricket::MediaSendChannelInterface* media_channel) override;
+  void SetMediaChannel(MediaSendChannelInterface* media_channel) override;
 
   bool SetTrack(MediaStreamTrackInterface* track) override;
   rtc::scoped_refptr<MediaStreamTrackInterface> track() const override {
@@ -277,7 +275,7 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   
   
   
-  cricket::MediaSendChannelInterface* media_channel_ = nullptr;
+  MediaSendChannelInterface* media_channel_ = nullptr;
   rtc::scoped_refptr<MediaStreamTrackInterface> track_;
 
   rtc::scoped_refptr<DtlsTransportInterface> dtls_transport_;
@@ -304,7 +302,7 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
 
 
 class LocalAudioSinkAdapter : public AudioTrackSinkInterface,
-                              public cricket::AudioSource {
+                              public AudioSource {
  public:
   LocalAudioSinkAdapter();
   virtual ~LocalAudioSinkAdapter();
@@ -333,9 +331,9 @@ class LocalAudioSinkAdapter : public AudioTrackSinkInterface,
   int NumPreferredChannels() const override { return num_preferred_channels_; }
 
   
-  void SetSink(cricket::AudioSource::Sink* sink) override;
+  void SetSink(AudioSource::Sink* sink) override;
 
-  cricket::AudioSource::Sink* sink_;
+  AudioSource::Sink* sink_;
   
   Mutex lock_;
   int num_preferred_channels_ = -1;
@@ -392,7 +390,7 @@ class AudioRtpSender : public DtmfProviderInterface, public RtpSenderBase {
   void RemoveTrackFromStats() override;
 
  private:
-  cricket::VoiceMediaSendChannelInterface* voice_media_channel() {
+  VoiceMediaSendChannelInterface* voice_media_channel() {
     return media_channel_->AsVoiceSendChannel();
   }
   rtc::scoped_refptr<AudioTrackInterface> audio_track() const {
@@ -450,7 +448,7 @@ class VideoRtpSender : public RtpSenderBase {
   void AttachTrack() override;
 
  private:
-  cricket::VideoMediaSendChannelInterface* video_media_channel() {
+  VideoMediaSendChannelInterface* video_media_channel() {
     return media_channel_->AsVideoSendChannel();
   }
   rtc::scoped_refptr<VideoTrackInterface> video_track() const {

@@ -20,13 +20,14 @@
 #include "p2p/base/connection.h"
 #include "p2p/base/ice_switch_reason.h"
 #include "p2p/base/ice_transport_internal.h"
+#include "p2p/base/p2p_transport_channel_ice_field_trials.h"
 #include "p2p/base/transport_description.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/system/rtc_export.h"
 
-namespace cricket {
+namespace webrtc {
 
-struct IceFieldTrials;  
+
 
 struct RTC_EXPORT IceRecheckEvent {
   IceRecheckEvent(IceSwitchReason _reason, int _recheck_delay_ms)
@@ -98,7 +99,7 @@ class IceControllerInterface {
   virtual ~IceControllerInterface() = default;
 
   
-  virtual void SetIceConfig(const webrtc::IceConfig& config) = 0;
+  virtual void SetIceConfig(const IceConfig& config) = 0;
   virtual void SetSelectedConnection(const Connection* selected_connection) = 0;
   virtual void AddConnection(const Connection* connection) = 0;
   virtual void OnConnectionDestroyed(const Connection* connection) = 0;
@@ -126,7 +127,7 @@ class IceControllerInterface {
 
   
   virtual bool GetUseCandidateAttr(const Connection* conn,
-                                   webrtc::NominationMode mode,
+                                   NominationMode mode,
                                    IceMode remote_ice_mode) const = 0;
 
   
@@ -147,6 +148,13 @@ class IceControllerInterface {
   virtual std::vector<const Connection*> PruneConnections() = 0;
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::IceControllerInterface;
+using ::webrtc::IceRecheckEvent;
 }  
 
 #endif  

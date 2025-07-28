@@ -10,7 +10,7 @@
 
 #include "p2p/base/connection_info.h"
 
-namespace cricket {
+namespace webrtc {
 
 ConnectionInfo::ConnectionInfo()
     : best_connection(false),

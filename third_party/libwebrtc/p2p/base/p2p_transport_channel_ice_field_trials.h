@@ -13,7 +13,7 @@
 
 #include <optional>
 
-namespace cricket {
+namespace webrtc {
 
 
 
@@ -76,6 +76,12 @@ struct IceFieldTrials {
   bool answer_goog_delta = true;  
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::IceFieldTrials;
 }  
 
 #endif  

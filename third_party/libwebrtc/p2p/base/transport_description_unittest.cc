@@ -17,7 +17,7 @@
 
 using webrtc::RTCErrorType;
 
-namespace cricket {
+namespace webrtc {
 
 TEST(IceParameters, SuccessfulParse) {
   auto result = IceParameters::Parse("ufrag", "22+characters+long+pwd");

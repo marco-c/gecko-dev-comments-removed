@@ -50,8 +50,7 @@ std::string GetFmtpParameterOrDefault(const CodecParameterMap& params,
 std::string H264GetPacketizationModeOrDefault(const CodecParameterMap& params) {
   
   
-  return GetFmtpParameterOrDefault(params, cricket::kH264FmtpPacketizationMode,
-                                   "0");
+  return GetFmtpParameterOrDefault(params, kH264FmtpPacketizationMode, "0");
 }
 
 bool H264IsSamePacketizationMode(const CodecParameterMap& left,
@@ -63,7 +62,7 @@ bool H264IsSamePacketizationMode(const CodecParameterMap& left,
 std::string AV1GetTierOrDefault(const CodecParameterMap& params) {
   
   
-  return GetFmtpParameterOrDefault(params, cricket::kAv1FmtpTier, "0");
+  return GetFmtpParameterOrDefault(params, kAv1FmtpTier, "0");
 }
 
 bool AV1IsSameTier(const CodecParameterMap& left,
@@ -74,7 +73,7 @@ bool AV1IsSameTier(const CodecParameterMap& left,
 std::string AV1GetLevelIdxOrDefault(const CodecParameterMap& params) {
   
   
-  return GetFmtpParameterOrDefault(params, cricket::kAv1FmtpLevelIdx, "5");
+  return GetFmtpParameterOrDefault(params, kAv1FmtpLevelIdx, "5");
 }
 
 bool AV1IsSameLevelIdx(const CodecParameterMap& left,
@@ -86,7 +85,7 @@ bool AV1IsSameLevelIdx(const CodecParameterMap& left,
 std::string GetH265TxModeOrDefault(const CodecParameterMap& params) {
   
   
-  return GetFmtpParameterOrDefault(params, cricket::kH265FmtpTxMode, "SRST");
+  return GetFmtpParameterOrDefault(params, kH265FmtpTxMode, "SRST");
 }
 
 bool IsSameH265TxMode(const CodecParameterMap& left,
@@ -207,7 +206,7 @@ bool operator==(const SdpVideoFormat& a, const SdpVideoFormat& b) {
 }
 
 const SdpVideoFormat SdpVideoFormat::VP8() {
-  return SdpVideoFormat(cricket::kVp8CodecName, {});
+  return SdpVideoFormat(kVp8CodecName, {});
 }
 
 const SdpVideoFormat SdpVideoFormat::H264() {
@@ -215,53 +214,53 @@ const SdpVideoFormat SdpVideoFormat::H264() {
   
   
   
-  return SdpVideoFormat(cricket::kH264CodecName, {});
+  return SdpVideoFormat(kH264CodecName, {});
 }
 
 const SdpVideoFormat SdpVideoFormat::H265() {
-  return SdpVideoFormat(cricket::kH265CodecName, {});
+  return SdpVideoFormat(kH265CodecName, {});
 }
 
 const SdpVideoFormat SdpVideoFormat::VP9Profile0() {
   return SdpVideoFormat(
-      cricket::kVp9CodecName,
+      kVp9CodecName,
       {{kVP9FmtpProfileId, VP9ProfileToString(VP9Profile::kProfile0)}});
 }
 
 const SdpVideoFormat SdpVideoFormat::VP9Profile1() {
   return SdpVideoFormat(
-      cricket::kVp9CodecName,
+      kVp9CodecName,
       {{kVP9FmtpProfileId, VP9ProfileToString(VP9Profile::kProfile1)}});
 }
 
 const SdpVideoFormat SdpVideoFormat::VP9Profile2() {
   return SdpVideoFormat(
-      cricket::kVp9CodecName,
+      kVp9CodecName,
       {{kVP9FmtpProfileId, VP9ProfileToString(VP9Profile::kProfile2)}});
 }
 
 const SdpVideoFormat SdpVideoFormat::VP9Profile3() {
   return SdpVideoFormat(
-      cricket::kVp9CodecName,
+      kVp9CodecName,
       {{kVP9FmtpProfileId, VP9ProfileToString(VP9Profile::kProfile3)}});
 }
 
 const SdpVideoFormat SdpVideoFormat::AV1Profile0() {
   
-  return SdpVideoFormat(cricket::kAv1CodecName,
-                        {{cricket::kAv1FmtpProfile,
-                          AV1ProfileToString(AV1Profile::kProfile0).data()},
-                         {cricket::kAv1FmtpLevelIdx, "5"},
-                         {cricket::kAv1FmtpTier, "0"}});
+  return SdpVideoFormat(
+      kAv1CodecName,
+      {{kAv1FmtpProfile, AV1ProfileToString(AV1Profile::kProfile0).data()},
+       {kAv1FmtpLevelIdx, "5"},
+       {kAv1FmtpTier, "0"}});
 }
 
 const SdpVideoFormat SdpVideoFormat::AV1Profile1() {
   
-  return SdpVideoFormat(cricket::kAv1CodecName,
-                        {{cricket::kAv1FmtpProfile,
-                          AV1ProfileToString(AV1Profile::kProfile1).data()},
-                         {cricket::kAv1FmtpLevelIdx, "5"},
-                         {cricket::kAv1FmtpTier, "0"}});
+  return SdpVideoFormat(
+      kAv1CodecName,
+      {{kAv1FmtpProfile, AV1ProfileToString(AV1Profile::kProfile1).data()},
+       {kAv1FmtpLevelIdx, "5"},
+       {kAv1FmtpTier, "0"}});
 }
 
 std::optional<SdpVideoFormat> FuzzyMatchSdpVideoFormat(

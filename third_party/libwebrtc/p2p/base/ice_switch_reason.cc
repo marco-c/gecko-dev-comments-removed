@@ -12,7 +12,7 @@
 
 #include <string>
 
-namespace cricket {
+namespace webrtc {
 
 std::string IceSwitchReasonToString(IceSwitchReason reason) {
   switch (reason) {

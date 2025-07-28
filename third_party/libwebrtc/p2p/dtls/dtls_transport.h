@@ -47,7 +47,7 @@
 #include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/thread_annotations.h"
 
-namespace cricket {
+namespace webrtc {
 
 
 
@@ -56,7 +56,7 @@ class StreamInterfaceChannel : public rtc::StreamInterface {
   explicit StreamInterfaceChannel(webrtc::IceTransportInternal* ice_transport);
 
   void SetDtlsStunPiggybackController(
-      DtlsStunPiggybackController* dtls_stun_piggyback_controller);
+      webrtc::DtlsStunPiggybackController* dtls_stun_piggyback_controller);
 
   StreamInterfaceChannel(const StreamInterfaceChannel&) = delete;
   StreamInterfaceChannel& operator=(const StreamInterfaceChannel&) = delete;
@@ -78,7 +78,7 @@ class StreamInterfaceChannel : public rtc::StreamInterface {
 
  private:
   webrtc::IceTransportInternal* const ice_transport_;  
-  DtlsStunPiggybackController* dtls_stun_piggyback_controller_ =
+  webrtc::DtlsStunPiggybackController* dtls_stun_piggyback_controller_ =
       nullptr;  
   rtc::StreamState state_ RTC_GUARDED_BY(callback_sequence_);
   webrtc::BufferQueue packets_ RTC_GUARDED_BY(callback_sequence_);
@@ -112,7 +112,7 @@ class StreamInterfaceChannel : public rtc::StreamInterface {
 
 
 
-class DtlsTransport : public DtlsTransportInternal {
+class DtlsTransportInternalImpl : public webrtc::DtlsTransportInternal {
  public:
   
   
@@ -122,16 +122,17 @@ class DtlsTransport : public DtlsTransportInternal {
   
   
   
-  DtlsTransport(
+  DtlsTransportInternalImpl(
       webrtc::IceTransportInternal* ice_transport,
       const webrtc::CryptoOptions& crypto_options,
       webrtc::RtcEventLog* event_log,
       webrtc::SSLProtocolVersion max_version = webrtc::SSL_PROTOCOL_DTLS_12);
 
-  ~DtlsTransport() override;
+  ~DtlsTransportInternalImpl() override;
 
-  DtlsTransport(const DtlsTransport&) = delete;
-  DtlsTransport& operator=(const DtlsTransport&) = delete;
+  DtlsTransportInternalImpl(const DtlsTransportInternalImpl&) = delete;
+  DtlsTransportInternalImpl& operator=(const DtlsTransportInternalImpl&) =
+      delete;
 
   webrtc::DtlsTransportState dtls_state() const override;
   const std::string& transport_name() const override;
@@ -307,7 +308,7 @@ class DtlsTransport : public DtlsTransportInternal {
   bool dtls_in_stun_ = false;
 
   
-  DtlsStunPiggybackController dtls_stun_piggyback_controller_;
+  webrtc::DtlsStunPiggybackController dtls_stun_piggyback_controller_;
 
   absl::AnyInvocable<void(webrtc::PacketTransportInternal*,
                           const rtc::ReceivedPacket&)>
@@ -321,6 +322,13 @@ class DtlsTransport : public DtlsTransportInternal {
   webrtc::ScopedTaskSafetyDetached safety_flag_;
 };
 
+}  
+
+
+
+namespace cricket {
+using DtlsTransport = ::webrtc::DtlsTransportInternalImpl;
+using ::webrtc::StreamInterfaceChannel;
 }  
 
 #endif  

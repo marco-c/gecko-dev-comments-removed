@@ -44,8 +44,7 @@ class RtpReceiverInternal : public RtpReceiverInterface {
   
   
   
-  virtual void SetMediaChannel(
-      cricket::MediaReceiveChannelInterface* media_channel) = 0;
+  virtual void SetMediaChannel(MediaReceiveChannelInterface* media_channel) = 0;
 
   
   

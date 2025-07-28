@@ -130,7 +130,7 @@ static const char kTurnPassword[] = "test";
 
 
 
-static const int kStunTimeoutMs = cricket::STUN_TOTAL_TIMEOUT;
+static const int kStunTimeoutMs = webrtc::STUN_TOTAL_TIMEOUT;
 
 namespace {
 
@@ -143,7 +143,7 @@ void CheckStunKeepaliveIntervalOfAllReadyPorts(
         (port->Type() == IceCandidateType::kHost &&
          port->GetProtocol() == webrtc::PROTO_UDP)) {
       EXPECT_EQ(
-          static_cast<const cricket::UDPPort*>(port)->stun_keepalive_delay(),
+          static_cast<const webrtc::UDPPort*>(port)->stun_keepalive_delay(),
           expected);
     }
   }
@@ -151,24 +151,22 @@ void CheckStunKeepaliveIntervalOfAllReadyPorts(
 
 }  
 
-namespace cricket {
+namespace webrtc {
 
 class BasicPortAllocatorTestBase : public ::testing::Test,
                                    public sigslot::has_slots<> {
  public:
   BasicPortAllocatorTestBase()
-      : vss_(new webrtc::VirtualSocketServer()),
-        fss_(new webrtc::FirewallSocketServer(vss_.get())),
+      : vss_(new VirtualSocketServer()),
+        fss_(new FirewallSocketServer(vss_.get())),
         socket_factory_(fss_.get()),
         thread_(fss_.get()),
         
         
         nat_factory_(vss_.get(), kNatUdpAddr, kNatTcpAddr),
-        nat_socket_factory_(
-            new webrtc::BasicPacketSocketFactory(&nat_factory_)),
-        stun_server_(
-            webrtc::TestStunServer::Create(fss_.get(), kStunAddr, thread_)),
-        turn_server_(webrtc::Thread::Current(),
+        nat_socket_factory_(new BasicPacketSocketFactory(&nat_factory_)),
+        stun_server_(TestStunServer::Create(fss_.get(), kStunAddr, thread_)),
+        turn_server_(Thread::Current(),
                      fss_.get(),
                      kTurnUdpIntAddr,
                      kTurnUdpExtAddr),
@@ -189,7 +187,7 @@ class BasicPortAllocatorTestBase : public ::testing::Test,
   }
   void AddInterface(const SocketAddress& addr,
                     absl::string_view if_name,
-                    rtc::AdapterType type) {
+                    AdapterType type) {
     network_manager_.AddInterface(addr, if_name, type);
   }
   
@@ -217,25 +215,24 @@ class BasicPortAllocatorTestBase : public ::testing::Test,
     allocator_->set_step_delay(webrtc::kMinimumStepDelay);
   }
   
-  void ResetWithStunServerAndNat(const webrtc::SocketAddress& stun_server) {
+  void ResetWithStunServerAndNat(const SocketAddress& stun_server) {
     ResetWithStunServer(stun_server, true);
   }
   
-  void ResetWithStunServerNoNat(const webrtc::SocketAddress& stun_server) {
+  void ResetWithStunServerNoNat(const SocketAddress& stun_server) {
     ResetWithStunServer(stun_server, false);
   }
   
-  void ResetWithTurnServersNoNat(const webrtc::SocketAddress& udp_turn,
-                                 const webrtc::SocketAddress& tcp_turn) {
+  void ResetWithTurnServersNoNat(const SocketAddress& udp_turn,
+                                 const SocketAddress& tcp_turn) {
     ResetWithNoServersOrNat();
     AddTurnServers(udp_turn, tcp_turn);
   }
 
-  webrtc::RelayServerConfig CreateTurnServers(
-      const webrtc::SocketAddress& udp_turn,
-      const webrtc::SocketAddress& tcp_turn) {
-    webrtc::RelayServerConfig turn_server;
-    webrtc::RelayCredentials credentials(kTurnUsername, kTurnPassword);
+  RelayServerConfig CreateTurnServers(const SocketAddress& udp_turn,
+                                      const SocketAddress& tcp_turn) {
+    RelayServerConfig turn_server;
+    RelayCredentials credentials(kTurnUsername, kTurnPassword);
     turn_server.credentials = credentials;
 
     if (!udp_turn.IsNil()) {
@@ -247,10 +244,9 @@ class BasicPortAllocatorTestBase : public ::testing::Test,
     return turn_server;
   }
 
-  void AddTurnServers(const webrtc::SocketAddress& udp_turn,
-                      const webrtc::SocketAddress& tcp_turn) {
-    webrtc::RelayServerConfig turn_server =
-        CreateTurnServers(udp_turn, tcp_turn);
+  void AddTurnServers(const SocketAddress& udp_turn,
+                      const SocketAddress& tcp_turn) {
+    RelayServerConfig turn_server = CreateTurnServers(udp_turn, tcp_turn);
     allocator_->AddTurnServerForTesting(turn_server);
   }
 
@@ -270,26 +266,25 @@ class BasicPortAllocatorTestBase : public ::testing::Test,
     return true;
   }
 
-  std::unique_ptr<webrtc::PortAllocatorSession> CreateSession(
-      absl::string_view sid,
-      int component) {
+  std::unique_ptr<PortAllocatorSession> CreateSession(absl::string_view sid,
+                                                      int component) {
     return CreateSession(sid, kContentName, component);
   }
 
-  std::unique_ptr<webrtc::PortAllocatorSession> CreateSession(
+  std::unique_ptr<PortAllocatorSession> CreateSession(
       absl::string_view sid,
       absl::string_view content_name,
       int component) {
     return CreateSession(sid, content_name, component, kIceUfrag0, kIcePwd0);
   }
 
-  std::unique_ptr<webrtc::PortAllocatorSession> CreateSession(
+  std::unique_ptr<PortAllocatorSession> CreateSession(
       absl::string_view sid,
       absl::string_view content_name,
       int component,
       absl::string_view ice_ufrag,
       absl::string_view ice_pwd) {
-    std::unique_ptr<webrtc::PortAllocatorSession> session =
+    std::unique_ptr<PortAllocatorSession> session =
         allocator_->CreateSession(content_name, component, ice_ufrag, ice_pwd);
     session->SignalPortReady.connect(this,
                                      &BasicPortAllocatorTestBase::OnPortReady);
@@ -318,9 +313,9 @@ class BasicPortAllocatorTestBase : public ::testing::Test,
 
   
   
-  static int CountPorts(const std::vector<webrtc::PortInterface*>& ports,
+  static int CountPorts(const std::vector<PortInterface*>& ports,
                         IceCandidateType type,
-                        webrtc::ProtocolType protocol,
+                        ProtocolType protocol,
                         const SocketAddress& client_addr) {
     return absl::c_count_if(
         ports, [type, protocol, client_addr](PortInterface* port) {
@@ -330,11 +325,11 @@ class BasicPortAllocatorTestBase : public ::testing::Test,
   }
 
   
-  static bool FindCandidate(const std::vector<webrtc::Candidate>& candidates,
+  static bool FindCandidate(const std::vector<Candidate>& candidates,
                             IceCandidateType type,
                             absl::string_view proto,
                             const SocketAddress& addr,
-                            webrtc::Candidate* found) {
+                            Candidate* found) {
     auto it =
         absl::c_find_if(candidates, [type, proto, addr](const Candidate& c) {
           return c.type() == type && c.protocol() == proto &&
@@ -347,7 +342,7 @@ class BasicPortAllocatorTestBase : public ::testing::Test,
   }
 
   
-  static bool HasCandidate(const std::vector<webrtc::Candidate>& candidates,
+  static bool HasCandidate(const std::vector<Candidate>& candidates,
                            IceCandidateType type,
                            absl::string_view proto,
                            const SocketAddress& addr) {
@@ -356,7 +351,7 @@ class BasicPortAllocatorTestBase : public ::testing::Test,
 
   
   static bool HasCandidateWithRelatedAddr(
-      const std::vector<webrtc::Candidate>& candidates,
+      const std::vector<Candidate>& candidates,
       IceCandidateType type,
       absl::string_view proto,
       const SocketAddress& addr,
@@ -369,14 +364,12 @@ class BasicPortAllocatorTestBase : public ::testing::Test,
         });
   }
 
-  static bool CheckPort(const webrtc::SocketAddress& addr,
-                        int min_port,
-                        int max_port) {
+  static bool CheckPort(const SocketAddress& addr, int min_port, int max_port) {
     return (addr.port() >= min_port && addr.port() <= max_port);
   }
 
-  static bool HasNetwork(const std::vector<const webrtc::Network*>& networks,
-                         const webrtc::Network& to_be_found) {
+  static bool HasNetwork(const std::vector<const Network*>& networks,
+                         const Network& to_be_found) {
     auto it =
         absl::c_find_if(networks, [to_be_found](const rtc::Network* network) {
           return network->description() == to_be_found.description() &&
@@ -386,7 +379,7 @@ class BasicPortAllocatorTestBase : public ::testing::Test,
     return it != networks.end();
   }
 
-  void OnCandidatesAllocationDone(webrtc::PortAllocatorSession* session) {
+  void OnCandidatesAllocationDone(PortAllocatorSession* session) {
     
     
     if (session == session_.get()) {
@@ -399,35 +392,33 @@ class BasicPortAllocatorTestBase : public ::testing::Test,
   
   
   void CheckSendBufferSizesOfAllPorts(int expected) {
-    std::vector<webrtc::PortInterface*>::iterator it;
+    std::vector<PortInterface*>::iterator it;
     for (it = ports_.begin(); it < ports_.end(); ++it) {
       int send_buffer_size;
       if (expected == -1) {
-        EXPECT_EQ(SOCKET_ERROR, (*it)->GetOption(webrtc::Socket::OPT_SNDBUF,
-                                                 &send_buffer_size));
+        EXPECT_EQ(SOCKET_ERROR,
+                  (*it)->GetOption(Socket::OPT_SNDBUF, &send_buffer_size));
       } else {
-        EXPECT_EQ(
-            0, (*it)->GetOption(webrtc::Socket::OPT_SNDBUF, &send_buffer_size));
+        EXPECT_EQ(0, (*it)->GetOption(Socket::OPT_SNDBUF, &send_buffer_size));
         ASSERT_EQ(expected, send_buffer_size);
       }
     }
   }
 
-  webrtc::VirtualSocketServer* virtual_socket_server() { return vss_.get(); }
+  VirtualSocketServer* virtual_socket_server() { return vss_.get(); }
 
  protected:
   BasicPortAllocator& allocator() { return *allocator_; }
 
-  void OnPortReady(webrtc::PortAllocatorSession* ses,
-                   webrtc::PortInterface* port) {
+  void OnPortReady(PortAllocatorSession* ses, PortInterface* port) {
     RTC_LOG(LS_INFO) << "OnPortReady: " << port->ToString();
     ports_.push_back(port);
     
     auto ready_ports = ses->ReadyPorts();
     EXPECT_THAT(ready_ports, Contains(port));
   }
-  void OnPortsPruned(webrtc::PortAllocatorSession* ses,
-                     const std::vector<webrtc::PortInterface*>& pruned_ports) {
+  void OnPortsPruned(PortAllocatorSession* ses,
+                     const std::vector<PortInterface*>& pruned_ports) {
     RTC_LOG(LS_INFO) << "Number of ports pruned: " << pruned_ports.size();
     auto ready_ports = ses->ReadyPorts();
     auto new_end = ports_.end();
@@ -439,8 +430,8 @@ class BasicPortAllocatorTestBase : public ::testing::Test,
     ports_.erase(new_end, ports_.end());
   }
 
-  void OnCandidatesReady(webrtc::PortAllocatorSession* ses,
-                         const std::vector<webrtc::Candidate>& candidates) {
+  void OnCandidatesReady(PortAllocatorSession* ses,
+                         const std::vector<Candidate>& candidates) {
     for (const Candidate& candidate : candidates) {
       RTC_LOG(LS_INFO) << "OnCandidatesReady: " << candidate.ToString();
       
@@ -454,9 +445,8 @@ class BasicPortAllocatorTestBase : public ::testing::Test,
     }
   }
 
-  void OnCandidatesRemoved(
-      webrtc::PortAllocatorSession* session,
-      const std::vector<webrtc::Candidate>& removed_candidates) {
+  void OnCandidatesRemoved(PortAllocatorSession* session,
+                           const std::vector<Candidate>& removed_candidates) {
     auto new_end = std::remove_if(
         candidates_.begin(), candidates_.end(),
         [removed_candidates](Candidate& candidate) {
@@ -472,7 +462,7 @@ class BasicPortAllocatorTestBase : public ::testing::Test,
 
   bool HasRelayAddress(const ProtocolAddress& proto_addr) {
     for (size_t i = 0; i < allocator_->turn_servers().size(); ++i) {
-      webrtc::RelayServerConfig server_config = allocator_->turn_servers()[i];
+      RelayServerConfig server_config = allocator_->turn_servers()[i];
       PortList::const_iterator relay_port;
       for (relay_port = server_config.ports.begin();
            relay_port != server_config.ports.end(); ++relay_port) {
@@ -484,18 +474,17 @@ class BasicPortAllocatorTestBase : public ::testing::Test,
     return false;
   }
 
-  void ResetWithStunServer(const webrtc::SocketAddress& stun_server,
-                           bool with_nat) {
+  void ResetWithStunServer(const SocketAddress& stun_server, bool with_nat) {
     if (with_nat) {
-      nat_server_.reset(new webrtc::NATServer(
+      nat_server_.reset(new NATServer(
           rtc::NAT_OPEN_CONE, thread_, vss_.get(), kNatUdpAddr, kNatTcpAddr,
-          thread_, vss_.get(), webrtc::SocketAddress(kNatUdpAddr.ipaddr(), 0)));
+          thread_, vss_.get(), SocketAddress(kNatUdpAddr.ipaddr(), 0)));
     } else {
       nat_socket_factory_ =
-          std::make_unique<webrtc::BasicPacketSocketFactory>(fss_.get());
+          std::make_unique<BasicPacketSocketFactory>(fss_.get());
     }
 
-    ServerAddresses stun_servers;
+    cricket::ServerAddresses stun_servers;
     if (!stun_server.IsNil()) {
       stun_servers.insert(stun_server);
     }
@@ -508,20 +497,20 @@ class BasicPortAllocatorTestBase : public ::testing::Test,
   }
 
   Environment env_ = CreateEnvironment();
-  std::unique_ptr<webrtc::VirtualSocketServer> vss_;
-  std::unique_ptr<webrtc::FirewallSocketServer> fss_;
-  webrtc::BasicPacketSocketFactory socket_factory_;
-  webrtc::AutoSocketServerThread thread_;
-  std::unique_ptr<webrtc::NATServer> nat_server_;
-  webrtc::NATSocketFactory nat_factory_;
-  std::unique_ptr<webrtc::BasicPacketSocketFactory> nat_socket_factory_;
-  webrtc::TestStunServer::StunServerPtr stun_server_;
-  webrtc::TestTurnServer turn_server_;
-  webrtc::FakeNetworkManager network_manager_;
+  std::unique_ptr<VirtualSocketServer> vss_;
+  std::unique_ptr<FirewallSocketServer> fss_;
+  BasicPacketSocketFactory socket_factory_;
+  AutoSocketServerThread thread_;
+  std::unique_ptr<NATServer> nat_server_;
+  NATSocketFactory nat_factory_;
+  std::unique_ptr<BasicPacketSocketFactory> nat_socket_factory_;
+  TestStunServer::StunServerPtr stun_server_;
+  TestTurnServer turn_server_;
+  FakeNetworkManager network_manager_;
   std::optional<BasicPortAllocator> allocator_;
-  std::unique_ptr<webrtc::PortAllocatorSession> session_;
-  std::vector<webrtc::PortInterface*> ports_;
-  std::vector<webrtc::Candidate> candidates_;
+  std::unique_ptr<PortAllocatorSession> session_;
+  std::vector<PortInterface*> ports_;
+  std::vector<Candidate> candidates_;
   bool candidate_allocation_done_;
 };
 
@@ -530,7 +519,7 @@ class BasicPortAllocatorTestWithRealClock : public BasicPortAllocatorTestBase {
 
 class FakeClockBase {
  public:
-  webrtc::ScopedFakeClock fake_clock;
+  ScopedFakeClock fake_clock;
 };
 
 class BasicPortAllocatorTest : public FakeClockBase,
@@ -543,12 +532,12 @@ class BasicPortAllocatorTest : public FakeClockBase,
   
   void CheckDisableAdapterEnumeration(
       uint32_t total_ports,
-      const webrtc::IPAddress& host_candidate_addr,
-      const webrtc::IPAddress& stun_candidate_addr,
-      const webrtc::IPAddress& relay_candidate_udp_transport_addr,
-      const webrtc::IPAddress& relay_candidate_tcp_transport_addr) {
+      const IPAddress& host_candidate_addr,
+      const IPAddress& stun_candidate_addr,
+      const IPAddress& relay_candidate_udp_transport_addr,
+      const IPAddress& relay_candidate_tcp_transport_addr) {
     network_manager_.set_default_local_addresses(kPrivateAddr.ipaddr(),
-                                                 webrtc::IPAddress());
+                                                 IPAddress());
     if (!session_) {
       ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
     }
@@ -557,42 +546,40 @@ class BasicPortAllocatorTest : public FakeClockBase,
                         webrtc::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
     allocator().set_allow_tcp_listen(false);
     session_->StartGettingPorts();
-    EXPECT_THAT(
-        webrtc::WaitUntil(
-            [&] { return candidate_allocation_done_; }, IsTrue(),
-            {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-             .clock = &fake_clock}),
-        webrtc::IsRtcOk());
+    EXPECT_THAT(webrtc::WaitUntil(
+                    [&] { return candidate_allocation_done_; }, IsTrue(),
+                    {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                     .clock = &fake_clock}),
+                webrtc::IsRtcOk());
 
     uint32_t total_candidates = 0;
     if (!host_candidate_addr.IsNil()) {
-      EXPECT_TRUE(
-          HasCandidate(candidates_, IceCandidateType::kHost, "udp",
-                       webrtc::SocketAddress(kPrivateAddr.ipaddr(), 0)));
+      EXPECT_TRUE(HasCandidate(candidates_, IceCandidateType::kHost, "udp",
+                               SocketAddress(kPrivateAddr.ipaddr(), 0)));
       ++total_candidates;
     }
     if (!stun_candidate_addr.IsNil()) {
-      webrtc::SocketAddress related_address(host_candidate_addr, 0);
+      SocketAddress related_address(host_candidate_addr, 0);
       if (host_candidate_addr.IsNil()) {
         related_address.SetIP(webrtc::GetAnyIP(stun_candidate_addr.family()));
       }
       EXPECT_TRUE(HasCandidateWithRelatedAddr(
           candidates_, IceCandidateType::kSrflx, "udp",
-          webrtc::SocketAddress(stun_candidate_addr, 0), related_address));
+          SocketAddress(stun_candidate_addr, 0), related_address));
       ++total_candidates;
     }
     if (!relay_candidate_udp_transport_addr.IsNil()) {
       EXPECT_TRUE(HasCandidateWithRelatedAddr(
           candidates_, IceCandidateType::kRelay, "udp",
-          webrtc::SocketAddress(relay_candidate_udp_transport_addr, 0),
-          webrtc::SocketAddress(stun_candidate_addr, 0)));
+          SocketAddress(relay_candidate_udp_transport_addr, 0),
+          SocketAddress(stun_candidate_addr, 0)));
       ++total_candidates;
     }
     if (!relay_candidate_tcp_transport_addr.IsNil()) {
       EXPECT_TRUE(HasCandidateWithRelatedAddr(
           candidates_, IceCandidateType::kRelay, "udp",
-          webrtc::SocketAddress(relay_candidate_tcp_transport_addr, 0),
-          webrtc::SocketAddress(stun_candidate_addr, 0)));
+          SocketAddress(relay_candidate_tcp_transport_addr, 0),
+          SocketAddress(stun_candidate_addr, 0)));
       ++total_candidates;
     }
 
@@ -610,8 +597,8 @@ class BasicPortAllocatorTest : public FakeClockBase,
     allocator_->SetConfiguration(allocator_->stun_servers(),
                                  allocator_->turn_servers(), 0,
                                  webrtc::PRUNE_BASED_ON_PRIORITY);
-    AddTurnServers(kTurnUdpIntIPv6Addr, webrtc::SocketAddress());
-    AddTurnServers(kTurnUdpIntAddr, webrtc::SocketAddress());
+    AddTurnServers(kTurnUdpIntIPv6Addr, SocketAddress());
+    AddTurnServers(kTurnUdpIntAddr, SocketAddress());
 
     allocator_->set_step_delay(webrtc::kMinimumStepDelay);
     allocator_->set_flags(
@@ -620,12 +607,11 @@ class BasicPortAllocatorTest : public FakeClockBase,
 
     ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
     session_->StartGettingPorts();
-    EXPECT_THAT(
-        webrtc::WaitUntil(
-            [&] { return candidate_allocation_done_; }, IsTrue(),
-            {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-             .clock = &fake_clock}),
-        webrtc::IsRtcOk());
+    EXPECT_THAT(webrtc::WaitUntil(
+                    [&] { return candidate_allocation_done_; }, IsTrue(),
+                    {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                     .clock = &fake_clock}),
+                webrtc::IsRtcOk());
     
     EXPECT_EQ(3U, session_->ReadyPorts().size());
     EXPECT_EQ(3U, ports_.size());
@@ -641,19 +627,17 @@ class BasicPortAllocatorTest : public FakeClockBase,
     
     
     EXPECT_EQ(3U, candidates_.size());
-    const std::vector<webrtc::Candidate>& ready_candidates =
+    const std::vector<Candidate>& ready_candidates =
         session_->ReadyCandidates();
     EXPECT_EQ(3U, ready_candidates.size());
     EXPECT_TRUE(HasCandidate(ready_candidates, IceCandidateType::kHost, "udp",
                              kClientAddr));
-    EXPECT_TRUE(
-        HasCandidate(ready_candidates, IceCandidateType::kRelay, "udp",
-                     webrtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0)));
+    EXPECT_TRUE(HasCandidate(ready_candidates, IceCandidateType::kRelay, "udp",
+                             SocketAddress(kTurnUdpExtAddr.ipaddr(), 0)));
   }
 
-  void TestTurnPortPrunesWithUdpAndTcpPorts(
-      webrtc::PortPrunePolicy prune_policy,
-      bool tcp_pruned) {
+  void TestTurnPortPrunesWithUdpAndTcpPorts(PortPrunePolicy prune_policy,
+                                            bool tcp_pruned) {
     turn_server_.AddInternalSocket(kTurnTcpIntAddr, webrtc::PROTO_TCP);
     AddInterface(kClientAddr);
     allocator_.emplace(env_, &network_manager_, &socket_factory_);
@@ -668,12 +652,11 @@ class BasicPortAllocatorTest : public FakeClockBase,
 
     ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
     session_->StartGettingPorts();
-    EXPECT_THAT(
-        webrtc::WaitUntil(
-            [&] { return candidate_allocation_done_; }, IsTrue(),
-            {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-             .clock = &fake_clock}),
-        webrtc::IsRtcOk());
+    EXPECT_THAT(webrtc::WaitUntil(
+                    [&] { return candidate_allocation_done_; }, IsTrue(),
+                    {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                     .clock = &fake_clock}),
+                webrtc::IsRtcOk());
     
     EXPECT_EQ(2U, session_->ReadyPorts().size());
     
@@ -694,16 +677,15 @@ class BasicPortAllocatorTest : public FakeClockBase,
     EXPECT_EQ(2U, candidates_.size());
     
     
-    const std::vector<webrtc::Candidate>& ready_candidates =
+    const std::vector<Candidate>& ready_candidates =
         session_->ReadyCandidates();
     EXPECT_EQ(2U, ready_candidates.size());
     EXPECT_TRUE(HasCandidate(ready_candidates, IceCandidateType::kHost, "udp",
                              kClientAddr));
 
     
-    EXPECT_TRUE(
-        HasCandidate(ready_candidates, IceCandidateType::kRelay, "udp",
-                     webrtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0)));
+    EXPECT_TRUE(HasCandidate(ready_candidates, IceCandidateType::kRelay, "udp",
+                             SocketAddress(kTurnUdpExtAddr.ipaddr(), 0)));
   }
 
   void TestEachInterfaceHasItsOwnTurnPorts() {
@@ -731,12 +713,11 @@ class BasicPortAllocatorTest : public FakeClockBase,
                           webrtc::PORTALLOCATOR_ENABLE_IPV6_ON_WIFI);
     ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
     session_->StartGettingPorts();
-    EXPECT_THAT(
-        webrtc::WaitUntil(
-            [&] { return candidate_allocation_done_; }, IsTrue(),
-            {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-             .clock = &fake_clock}),
-        webrtc::IsRtcOk());
+    EXPECT_THAT(webrtc::WaitUntil(
+                    [&] { return candidate_allocation_done_; }, IsTrue(),
+                    {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                     .clock = &fake_clock}),
+                webrtc::IsRtcOk());
     
     
     EXPECT_EQ(10U, session_->ReadyPorts().size());
@@ -765,7 +746,7 @@ class BasicPortAllocatorTest : public FakeClockBase,
     
     
     EXPECT_EQ(10U, candidates_.size());
-    const std::vector<webrtc::Candidate>& ready_candidates =
+    const std::vector<Candidate>& ready_candidates =
         session_->ReadyCandidates();
     EXPECT_EQ(10U, ready_candidates.size());
     EXPECT_TRUE(HasCandidate(ready_candidates, IceCandidateType::kHost, "udp",
@@ -784,9 +765,8 @@ class BasicPortAllocatorTest : public FakeClockBase,
                              kClientIPv6Addr));
     EXPECT_TRUE(HasCandidate(ready_candidates, IceCandidateType::kHost, "tcp",
                              kClientIPv6Addr2));
-    EXPECT_TRUE(
-        HasCandidate(ready_candidates, IceCandidateType::kRelay, "udp",
-                     webrtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0)));
+    EXPECT_TRUE(HasCandidate(ready_candidates, IceCandidateType::kRelay, "udp",
+                             SocketAddress(kTurnUdpExtAddr.ipaddr(), 0)));
   }
 };
 
@@ -817,12 +797,11 @@ TEST_F(BasicPortAllocatorTest, TestIgnoreOnlyLoopbackNetworkByDefault) {
                       webrtc::PORTALLOCATOR_DISABLE_RELAY |
                       webrtc::PORTALLOCATOR_DISABLE_TCP);
   session_->StartGettingPorts();
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_EQ(4U, candidates_.size());
   for (const Candidate& candidate : candidates_) {
     EXPECT_LT(candidate.address().ip(), 0x12345604U);
@@ -844,12 +823,11 @@ TEST_F(BasicPortAllocatorTest, TestIgnoreNetworksAccordingToIgnoreMask) {
                       webrtc::PORTALLOCATOR_DISABLE_RELAY |
                       webrtc::PORTALLOCATOR_DISABLE_TCP);
   session_->StartGettingPorts();
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_EQ(1U, candidates_.size());
   EXPECT_EQ(0x12345602U, candidates_[0].address().ip());
 }
@@ -867,14 +845,13 @@ TEST_F(BasicPortAllocatorTest,
                         webrtc::PORTALLOCATOR_DISABLE_RELAY |
                         webrtc::PORTALLOCATOR_DISABLE_TCP |
                         webrtc::PORTALLOCATOR_DISABLE_COSTLY_NETWORKS);
-  ASSERT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   
   EXPECT_EQ(1U, candidates_.size());
   EXPECT_TRUE(HasCandidate(candidates_, IceCandidateType::kHost, "udp", wifi));
@@ -897,14 +874,13 @@ TEST_F(BasicPortAllocatorTest,
                         webrtc::PORTALLOCATOR_DISABLE_RELAY |
                         webrtc::PORTALLOCATOR_DISABLE_TCP |
                         webrtc::PORTALLOCATOR_DISABLE_COSTLY_NETWORKS);
-  ASSERT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   
   EXPECT_EQ(2U, candidates_.size());
   EXPECT_TRUE(
@@ -931,14 +907,13 @@ TEST_F(BasicPortAllocatorTest,
                         webrtc::PORTALLOCATOR_DISABLE_RELAY |
                         webrtc::PORTALLOCATOR_DISABLE_TCP |
                         webrtc::PORTALLOCATOR_DISABLE_COSTLY_NETWORKS);
-  ASSERT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   
   EXPECT_EQ(1U, candidates_.size());
   EXPECT_TRUE(HasCandidate(candidates_, IceCandidateType::kHost, "udp", wifi));
@@ -956,14 +931,13 @@ TEST_F(BasicPortAllocatorTest,
                         webrtc::PORTALLOCATOR_DISABLE_RELAY |
                         webrtc::PORTALLOCATOR_DISABLE_TCP |
                         webrtc::PORTALLOCATOR_DISABLE_COSTLY_NETWORKS);
-  ASSERT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   
   EXPECT_EQ(1U, candidates_.size());
   EXPECT_TRUE(
@@ -984,14 +958,13 @@ TEST_F(BasicPortAllocatorTest,
                         webrtc::PORTALLOCATOR_DISABLE_RELAY |
                         webrtc::PORTALLOCATOR_DISABLE_TCP |
                         webrtc::PORTALLOCATOR_DISABLE_COSTLY_NETWORKS);
-  ASSERT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   
   EXPECT_EQ(2U, candidates_.size());
   EXPECT_TRUE(HasCandidate(candidates_, IceCandidateType::kHost, "udp",
@@ -1017,14 +990,13 @@ TEST_F(BasicPortAllocatorTest,
                         webrtc::PORTALLOCATOR_DISABLE_RELAY |
                         webrtc::PORTALLOCATOR_DISABLE_TCP |
                         webrtc::PORTALLOCATOR_DISABLE_COSTLY_NETWORKS);
-  ASSERT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   
   EXPECT_EQ(2U, candidates_.size());
   EXPECT_TRUE(HasCandidate(candidates_, IceCandidateType::kHost, "udp", wifi));
@@ -1045,12 +1017,11 @@ TEST_F(BasicPortAllocatorTest,
                         webrtc::PORTALLOCATOR_DISABLE_TCP);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  ASSERT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  ASSERT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   
   
   ASSERT_EQ(2U, ports_.size());
@@ -1072,14 +1043,13 @@ TEST_F(BasicPortAllocatorTest, MaxIpv6NetworksLimitEnforced) {
       webrtc::PORTALLOCATOR_ENABLE_IPV6 | webrtc::PORTALLOCATOR_DISABLE_TCP |
       webrtc::PORTALLOCATOR_DISABLE_STUN | webrtc::PORTALLOCATOR_DISABLE_RELAY);
 
-  ASSERT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_EQ(2U, candidates_.size());
   
   EXPECT_TRUE(HasCandidate(candidates_, IceCandidateType::kHost, "udp",
@@ -1103,14 +1073,13 @@ TEST_F(BasicPortAllocatorTest, MaxIpv6NetworksLimitDoesNotImpactIpv4Networks) {
       webrtc::PORTALLOCATOR_ENABLE_IPV6 | webrtc::PORTALLOCATOR_DISABLE_TCP |
       webrtc::PORTALLOCATOR_DISABLE_STUN | webrtc::PORTALLOCATOR_DISABLE_RELAY);
 
-  ASSERT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_EQ(3U, candidates_.size());
   
   
@@ -1131,12 +1100,11 @@ TEST_F(BasicPortAllocatorTest, TestLoopbackNetworkInterface) {
                       webrtc::PORTALLOCATOR_DISABLE_RELAY |
                       webrtc::PORTALLOCATOR_DISABLE_TCP);
   session_->StartGettingPorts();
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_EQ(1U, candidates_.size());
 }
 
@@ -1145,12 +1113,11 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsWithMinimumStepDelay) {
   AddInterface(kClientAddr);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  ASSERT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  ASSERT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_EQ(3U, candidates_.size());
   EXPECT_EQ(3U, ports_.size());
   EXPECT_TRUE(
@@ -1169,12 +1136,11 @@ TEST_F(BasicPortAllocatorTest, TestSameNetworkDownAndUpWhenSessionNotStopped) {
   AddInterface(kClientAddr, if_name);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  ASSERT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  ASSERT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_EQ(3U, candidates_.size());
   EXPECT_EQ(3U, ports_.size());
   candidate_allocation_done_ = false;
@@ -1197,12 +1163,11 @@ TEST_F(BasicPortAllocatorTest, TestSameNetworkDownAndUpWhenSessionNotStopped) {
   fss_->set_tcp_sockets_enabled(true);
   fss_->set_udp_sockets_enabled(true);
   AddInterface(kClientAddr, if_name);
-  ASSERT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  ASSERT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_EQ(3U, candidates_.size());
   EXPECT_EQ(3U, ports_.size());
 }
@@ -1215,12 +1180,11 @@ TEST_F(BasicPortAllocatorTest, TestSameNetworkDownAndUpWhenSessionStopped) {
   AddInterface(kClientAddr, if_name);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  ASSERT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  ASSERT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_EQ(3U, candidates_.size());
   EXPECT_EQ(3U, ports_.size());
   session_->StopGettingPorts();
@@ -1257,12 +1221,11 @@ TEST_F(BasicPortAllocatorTest, CandidatesRegatheredAfterBindingFails) {
   fss_->set_udp_sockets_enabled(false);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  ASSERT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  ASSERT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   
   
   
@@ -1276,12 +1239,11 @@ TEST_F(BasicPortAllocatorTest, CandidatesRegatheredAfterBindingFails) {
   fss_->set_tcp_sockets_enabled(true);
   fss_->set_udp_sockets_enabled(true);
   AddInterface(kClientAddr, if_name);
-  ASSERT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  ASSERT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   
   ASSERT_EQ(2U, candidates_.size());
   EXPECT_TRUE(
@@ -1323,12 +1285,11 @@ TEST_F(BasicPortAllocatorTest, TestSetupVideoRtpPortsWithNormalSendBuffers) {
   AddInterface(kClientAddr);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP, CN_VIDEO));
   session_->StartGettingPorts();
-  ASSERT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  ASSERT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_EQ(3U, candidates_.size());
   
   session_->StopGettingPorts();
@@ -1343,20 +1304,18 @@ TEST_F(BasicPortAllocatorTest, TestStopGetAllPorts) {
   AddInterface(kClientAddr);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  ASSERT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidates_.size(); }, Eq(2U),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  ASSERT_THAT(webrtc::WaitUntil(
+                  [&] { return candidates_.size(); }, Eq(2U),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_EQ(2U, ports_.size());
   session_->StopGettingPorts();
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
 }
 
 
@@ -1372,12 +1331,11 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsPortRange) {
   EXPECT_TRUE(SetPortRange(kMinPort, kMaxPort));
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  ASSERT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  ASSERT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_EQ(3U, candidates_.size());
   EXPECT_EQ(3U, ports_.size());
 
@@ -1403,12 +1361,11 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsNoAdapters) {
   AddTurnServers(kTurnUdpIntIPv6Addr, kTurnTcpIntIPv6Addr);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_EQ(4U, ports_.size());
   EXPECT_EQ(1, CountPorts(ports_, IceCandidateType::kSrflx, webrtc::PROTO_UDP,
                           kAnyAddr));
@@ -1424,10 +1381,10 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsNoAdapters) {
   
   EXPECT_EQ(3U, candidates_.size());
   EXPECT_TRUE(HasCandidate(candidates_, IceCandidateType::kSrflx, "udp",
-                           webrtc::SocketAddress(kNatUdpAddr.ipaddr(), 0)));
+                           SocketAddress(kNatUdpAddr.ipaddr(), 0)));
   
   
-  webrtc::SocketAddress addr(kTurnUdpExtAddr.ipaddr(), 0);
+  SocketAddress addr(kTurnUdpExtAddr.ipaddr(), 0);
   EXPECT_EQ(2, absl::c_count_if(candidates_, [&](const Candidate& c) {
               return c.is_relay() && c.protocol() == "udp" &&
                      AddressMatch(c.address(), addr);
@@ -1441,8 +1398,8 @@ TEST_F(BasicPortAllocatorTest,
   ResetWithStunServerNoNat(kStunAddr);
   allocator().SetCandidateFilter(webrtc::CF_RELAY);
   
-  CheckDisableAdapterEnumeration(0U, webrtc::IPAddress(), webrtc::IPAddress(),
-                                 webrtc::IPAddress(), webrtc::IPAddress());
+  CheckDisableAdapterEnumeration(0U, IPAddress(), IPAddress(), IPAddress(),
+                                 IPAddress());
 }
 
 
@@ -1453,7 +1410,7 @@ TEST_F(BasicPortAllocatorTest,
   AddInterface(kPrivateAddr);
   AddInterface(kPrivateAddr2);
   ResetWithStunServerAndNat(kStunAddr);
-  AddTurnServers(kTurnUdpIntAddr, webrtc::SocketAddress());
+  AddTurnServers(kTurnUdpIntAddr, SocketAddress());
 
   
   
@@ -1466,7 +1423,7 @@ TEST_F(BasicPortAllocatorTest,
   
   CheckDisableAdapterEnumeration(5U, kPrivateAddr.ipaddr(),
                                  kNatUdpAddr.ipaddr(), kTurnUdpExtAddr.ipaddr(),
-                                 webrtc::IPAddress());
+                                 IPAddress());
 }
 
 
@@ -1489,8 +1446,8 @@ TEST_F(BasicPortAllocatorTest,
        TestDisableAdapterEnumerationWithoutNatOrServers) {
   ResetWithNoServersOrNat();
   
-  CheckDisableAdapterEnumeration(2U, kPrivateAddr.ipaddr(), webrtc::IPAddress(),
-                                 webrtc::IPAddress(), webrtc::IPAddress());
+  CheckDisableAdapterEnumeration(2U, kPrivateAddr.ipaddr(), IPAddress(),
+                                 IPAddress(), IPAddress());
 }
 
 
@@ -1503,8 +1460,8 @@ TEST_F(BasicPortAllocatorTest,
   session_->set_flags(webrtc::PORTALLOCATOR_DISABLE_DEFAULT_LOCAL_CANDIDATE);
   
   
-  CheckDisableAdapterEnumeration(2U, webrtc::IPAddress(), webrtc::IPAddress(),
-                                 webrtc::IPAddress(), webrtc::IPAddress());
+  CheckDisableAdapterEnumeration(2U, IPAddress(), IPAddress(), IPAddress(),
+                                 IPAddress());
 }
 
 
@@ -1520,8 +1477,8 @@ TEST_F(BasicPortAllocatorTest,
   session_->set_flags(webrtc::PORTALLOCATOR_DISABLE_DEFAULT_LOCAL_CANDIDATE);
   
   
-  CheckDisableAdapterEnumeration(2U, webrtc::IPAddress(), kClientAddr.ipaddr(),
-                                 webrtc::IPAddress(), webrtc::IPAddress());
+  CheckDisableAdapterEnumeration(2U, IPAddress(), kClientAddr.ipaddr(),
+                                 IPAddress(), IPAddress());
 }
 
 
@@ -1533,8 +1490,8 @@ TEST_F(BasicPortAllocatorTest,
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->set_flags(webrtc::PORTALLOCATOR_DISABLE_DEFAULT_LOCAL_CANDIDATE);
   
-  CheckDisableAdapterEnumeration(2U, webrtc::IPAddress(), kNatUdpAddr.ipaddr(),
-                                 webrtc::IPAddress(), webrtc::IPAddress());
+  CheckDisableAdapterEnumeration(2U, IPAddress(), kNatUdpAddr.ipaddr(),
+                                 IPAddress(), IPAddress());
 }
 
 
@@ -1551,18 +1508,17 @@ TEST_F(BasicPortAllocatorTest, TestDisableUdpTurn) {
                       webrtc::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
 
   session_->StartGettingPorts();
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
 
   
   
   EXPECT_EQ(2U, ports_.size());
   EXPECT_EQ(2U, candidates_.size());
-  webrtc::Candidate turn_candidate;
+  Candidate turn_candidate;
   EXPECT_TRUE(FindCandidate(candidates_, IceCandidateType::kRelay, "udp",
                             kTurnUdpExtAddr, &turn_candidate));
   
@@ -1592,12 +1548,11 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsNoUdpSockets) {
   fss_->set_udp_sockets_enabled(false);
   ASSERT_TRUE(CreateSession(1));
   session_->StartGettingPorts();
-  ASSERT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  ASSERT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_EQ(1U, candidates_.size());
   EXPECT_EQ(1U, ports_.size());
   EXPECT_TRUE(
@@ -1613,12 +1568,11 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsNoUdpSocketsNoTcpListen) {
   fss_->set_tcp_listen_enabled(false);
   ASSERT_TRUE(CreateSession(1));
   session_->StartGettingPorts();
-  ASSERT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  ASSERT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_EQ(1U, candidates_.size());
   EXPECT_EQ(1U, ports_.size());
   EXPECT_TRUE(
@@ -1645,12 +1599,11 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsNoUdpAllowed) {
   AddInterface(kClientAddr);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidates_.size(); }, Eq(2U),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidates_.size(); }, Eq(2U),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_EQ(2U, ports_.size());
   EXPECT_TRUE(
       HasCandidate(candidates_, IceCandidateType::kHost, "udp", kClientAddr));
@@ -1659,10 +1612,9 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsNoUdpAllowed) {
   
   
   EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(cricket::STUN_TOTAL_TIMEOUT),
-           .clock = &fake_clock}),
+      webrtc::WaitUntil([&] { return candidate_allocation_done_; }, IsTrue(),
+                        {.timeout = TimeDelta::Millis(STUN_TOTAL_TIMEOUT),
+                         .clock = &fake_clock}),
       webrtc::IsRtcOk());
   
   EXPECT_EQ(2U, candidates_.size());
@@ -1678,12 +1630,11 @@ TEST_F(BasicPortAllocatorTest, TestCandidatePriorityOfMultipleInterfaces) {
                         webrtc::PORTALLOCATOR_DISABLE_RELAY);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   ASSERT_EQ(2U, candidates_.size());
   EXPECT_EQ(2U, ports_.size());
   
@@ -1695,12 +1646,11 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsRestarts) {
   AddInterface(kClientAddr);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_EQ(3U, candidates_.size());
   EXPECT_EQ(3U, ports_.size());
   
@@ -1718,12 +1668,11 @@ TEST_F(BasicPortAllocatorTest, TestSessionUsesOwnCandidateFilter) {
   session_->StartGettingPorts();
   
   
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_EQ(3U, candidates_.size());
   EXPECT_EQ(3U, ports_.size());
 }
@@ -1736,18 +1685,17 @@ TEST_F(BasicPortAllocatorTest, TestSessionUsesOwnCandidateFilter) {
 TEST_F(BasicPortAllocatorTest, TestCandidateFilterWithRelayOnly) {
   AddInterface(kClientAddr);
   
-  ResetWithTurnServersNoNat(kTurnUdpIntAddr, webrtc::SocketAddress());
+  ResetWithTurnServersNoNat(kTurnUdpIntAddr, SocketAddress());
   allocator().SetCandidateFilter(webrtc::CF_RELAY);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_TRUE(HasCandidate(candidates_, IceCandidateType::kRelay, "udp",
-                           webrtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0)));
+                           SocketAddress(kTurnUdpExtAddr.ipaddr(), 0)));
 
   EXPECT_EQ(1U, candidates_.size());
   EXPECT_EQ(1U, ports_.size());  
@@ -1763,12 +1711,11 @@ TEST_F(BasicPortAllocatorTest, TestCandidateFilterWithHostOnly) {
   allocator().SetCandidateFilter(webrtc::CF_HOST);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_EQ(2U, candidates_.size());  
   EXPECT_EQ(2U, ports_.size());       
   for (const Candidate& candidate : candidates_) {
@@ -1785,12 +1732,11 @@ TEST_F(BasicPortAllocatorTest, TestCandidateFilterWithReflexiveOnly) {
   allocator().SetCandidateFilter(webrtc::CF_REFLEXIVE);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   
   
   EXPECT_EQ(1U, candidates_.size());  
@@ -1808,12 +1754,11 @@ TEST_F(BasicPortAllocatorTest, TestCandidateFilterWithReflexiveOnlyAndNoNAT) {
   allocator().SetCandidateFilter(webrtc::CF_REFLEXIVE);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   
   EXPECT_EQ(2U, candidates_.size());  
   EXPECT_EQ(2U, ports_.size());  
@@ -1827,12 +1772,11 @@ TEST_F(BasicPortAllocatorTest, TestEnableSharedUfrag) {
   AddInterface(kClientAddr);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  ASSERT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  ASSERT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_EQ(3U, candidates_.size());
   EXPECT_TRUE(
       HasCandidate(candidates_, IceCandidateType::kHost, "udp", kClientAddr));
@@ -1857,21 +1801,19 @@ TEST_F(BasicPortAllocatorTest, TestSharedSocketWithoutNat) {
                         webrtc::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  ASSERT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidates_.size(); }, Eq(2U),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  ASSERT_THAT(webrtc::WaitUntil(
+                  [&] { return candidates_.size(); }, Eq(2U),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_EQ(2U, ports_.size());
   EXPECT_TRUE(
       HasCandidate(candidates_, IceCandidateType::kHost, "udp", kClientAddr));
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
 }
 
 
@@ -1885,23 +1827,21 @@ TEST_F(BasicPortAllocatorTest, TestSharedSocketWithNat) {
                         webrtc::PORTALLOCATOR_ENABLE_SHARED_SOCKET);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  ASSERT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidates_.size(); }, Eq(3U),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  ASSERT_THAT(webrtc::WaitUntil(
+                  [&] { return candidates_.size(); }, Eq(3U),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   ASSERT_EQ(2U, ports_.size());
   EXPECT_TRUE(
       HasCandidate(candidates_, IceCandidateType::kHost, "udp", kClientAddr));
   EXPECT_TRUE(HasCandidate(candidates_, IceCandidateType::kSrflx, "udp",
-                           webrtc::SocketAddress(kNatUdpAddr.ipaddr(), 0)));
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+                           SocketAddress(kNatUdpAddr.ipaddr(), 0)));
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_EQ(3U, candidates_.size());
 }
 
@@ -1922,20 +1862,19 @@ TEST_F(BasicPortAllocatorTest, TestSharedSocketWithoutNatUsingTurn) {
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
 
-  ASSERT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  ASSERT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   ASSERT_EQ(3U, candidates_.size());
   ASSERT_EQ(3U, ports_.size());
   EXPECT_TRUE(
       HasCandidate(candidates_, IceCandidateType::kHost, "udp", kClientAddr));
   EXPECT_TRUE(HasCandidate(candidates_, IceCandidateType::kRelay, "udp",
-                           webrtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0)));
+                           SocketAddress(kTurnUdpExtAddr.ipaddr(), 0)));
   EXPECT_TRUE(HasCandidate(candidates_, IceCandidateType::kRelay, "udp",
-                           webrtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0)));
+                           SocketAddress(kTurnUdpExtAddr.ipaddr(), 0)));
 }
 
 
@@ -2046,16 +1985,16 @@ TEST_F(BasicPortAllocatorTestWithRealClock,
   
   
   MAYBE_SKIP_IPV4;
-  turn_server_.AddInternalSocket(webrtc::SocketAddress("127.0.0.1", 3478),
+  turn_server_.AddInternalSocket(SocketAddress("127.0.0.1", 3478),
                                  webrtc::PROTO_UDP);
   AddInterface(kClientAddr);
   allocator_.emplace(env_, &network_manager_, &socket_factory_);
   allocator_->Initialize();
-  webrtc::RelayServerConfig turn_server;
-  webrtc::RelayCredentials credentials(kTurnUsername, kTurnPassword);
+  RelayServerConfig turn_server;
+  RelayCredentials credentials(kTurnUsername, kTurnPassword);
   turn_server.credentials = credentials;
-  turn_server.ports.push_back(ProtocolAddress(
-      webrtc::SocketAddress("localhost", 3478), webrtc::PROTO_UDP));
+  turn_server.ports.push_back(
+      ProtocolAddress(SocketAddress("localhost", 3478), webrtc::PROTO_UDP));
   allocator_->AddTurnServerForTesting(turn_server);
 
   allocator_->set_step_delay(webrtc::kMinimumStepDelay);
@@ -2066,11 +2005,10 @@ TEST_F(BasicPortAllocatorTestWithRealClock,
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
 
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return ports_.size(); }, Eq(2U),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout)}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return ports_.size(); }, Eq(2U),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout)}),
+              webrtc::IsRtcOk());
 }
 
 
@@ -2080,7 +2018,7 @@ TEST_F(BasicPortAllocatorTest, TestSharedSocketWithNatUsingTurn) {
   AddInterface(kClientAddr);
   ResetWithStunServerAndNat(kStunAddr);
 
-  AddTurnServers(kTurnUdpIntAddr, webrtc::SocketAddress());
+  AddTurnServers(kTurnUdpIntAddr, SocketAddress());
 
   allocator_->set_flags(allocator().flags() |
                         webrtc::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
@@ -2089,26 +2027,24 @@ TEST_F(BasicPortAllocatorTest, TestSharedSocketWithNatUsingTurn) {
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
 
-  ASSERT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  ASSERT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_EQ(3U, candidates_.size());
   ASSERT_EQ(2U, ports_.size());
   EXPECT_TRUE(
       HasCandidate(candidates_, IceCandidateType::kHost, "udp", kClientAddr));
   EXPECT_TRUE(HasCandidate(candidates_, IceCandidateType::kSrflx, "udp",
-                           webrtc::SocketAddress(kNatUdpAddr.ipaddr(), 0)));
+                           SocketAddress(kNatUdpAddr.ipaddr(), 0)));
   EXPECT_TRUE(HasCandidate(candidates_, IceCandidateType::kRelay, "udp",
-                           webrtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0)));
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+                           SocketAddress(kTurnUdpExtAddr.ipaddr(), 0)));
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   
   
   
@@ -2123,7 +2059,7 @@ TEST_F(BasicPortAllocatorTest, TestSharedSocketWithNatUsingTurnAsStun) {
   AddInterface(kClientAddr);
   
   ResetWithStunServerAndNat(SocketAddress());
-  AddTurnServers(kTurnUdpIntAddr, webrtc::SocketAddress());
+  AddTurnServers(kTurnUdpIntAddr, SocketAddress());
 
   
   
@@ -2137,23 +2073,21 @@ TEST_F(BasicPortAllocatorTest, TestSharedSocketWithNatUsingTurnAsStun) {
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
 
-  ASSERT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  ASSERT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_EQ(3U, candidates_.size());
   EXPECT_TRUE(
       HasCandidate(candidates_, IceCandidateType::kHost, "udp", kClientAddr));
-  webrtc::Candidate stun_candidate;
+  Candidate stun_candidate;
   EXPECT_TRUE(FindCandidate(candidates_, IceCandidateType::kSrflx, "udp",
-                            webrtc::SocketAddress(kNatUdpAddr.ipaddr(), 0),
+                            SocketAddress(kNatUdpAddr.ipaddr(), 0),
                             &stun_candidate));
   EXPECT_TRUE(HasCandidateWithRelatedAddr(
       candidates_, IceCandidateType::kRelay, "udp",
-      webrtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0),
-      stun_candidate.address()));
+      SocketAddress(kTurnUdpExtAddr.ipaddr(), 0), stun_candidate.address()));
 
   
   
@@ -2168,8 +2102,8 @@ TEST_F(BasicPortAllocatorTest, TestSharedSocketWithNatUsingTurnAsStun) {
 TEST_F(BasicPortAllocatorTest, TestSharedSocketWithNatUsingTurnTcpOnly) {
   turn_server_.AddInternalSocket(kTurnTcpIntAddr, webrtc::PROTO_TCP);
   AddInterface(kClientAddr);
-  ResetWithStunServerAndNat(webrtc::SocketAddress());
-  AddTurnServers(webrtc::SocketAddress(), kTurnTcpIntAddr);
+  ResetWithStunServerAndNat(SocketAddress());
+  AddTurnServers(SocketAddress(), kTurnTcpIntAddr);
 
   allocator_->set_flags(allocator().flags() |
                         webrtc::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
@@ -2178,18 +2112,17 @@ TEST_F(BasicPortAllocatorTest, TestSharedSocketWithNatUsingTurnTcpOnly) {
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
 
-  ASSERT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  ASSERT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_EQ(2U, candidates_.size());
   ASSERT_EQ(2U, ports_.size());
   EXPECT_TRUE(
       HasCandidate(candidates_, IceCandidateType::kHost, "udp", kClientAddr));
   EXPECT_TRUE(HasCandidate(candidates_, IceCandidateType::kRelay, "udp",
-                           webrtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0)));
+                           SocketAddress(kTurnUdpExtAddr.ipaddr(), 0)));
   EXPECT_EQ(1U, ports_[0]->Candidates().size());
   EXPECT_EQ(1U, ports_[1]->Candidates().size());
 }
@@ -2203,7 +2136,7 @@ TEST_F(BasicPortAllocatorTest, TestNonSharedSocketWithNatUsingTurnAsStun) {
   AddInterface(kClientAddr);
   
   ResetWithStunServerAndNat(SocketAddress());
-  AddTurnServers(kTurnUdpIntAddr, webrtc::SocketAddress());
+  AddTurnServers(kTurnUdpIntAddr, SocketAddress());
 
   allocator_->set_flags(allocator().flags() |
                         webrtc::PORTALLOCATOR_DISABLE_TCP);
@@ -2211,23 +2144,22 @@ TEST_F(BasicPortAllocatorTest, TestNonSharedSocketWithNatUsingTurnAsStun) {
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
 
-  ASSERT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  ASSERT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_EQ(3U, candidates_.size());
   ASSERT_EQ(3U, ports_.size());
   EXPECT_TRUE(
       HasCandidate(candidates_, IceCandidateType::kHost, "udp", kClientAddr));
-  webrtc::Candidate stun_candidate;
+  Candidate stun_candidate;
   EXPECT_TRUE(FindCandidate(candidates_, IceCandidateType::kSrflx, "udp",
-                            webrtc::SocketAddress(kNatUdpAddr.ipaddr(), 0),
+                            SocketAddress(kNatUdpAddr.ipaddr(), 0),
                             &stun_candidate));
-  webrtc::Candidate turn_candidate;
+  Candidate turn_candidate;
   EXPECT_TRUE(FindCandidate(candidates_, IceCandidateType::kRelay, "udp",
-                            webrtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0),
+                            SocketAddress(kTurnUdpExtAddr.ipaddr(), 0),
                             &turn_candidate));
   
   
@@ -2246,7 +2178,7 @@ TEST_F(BasicPortAllocatorTest, TestSharedSocketWithNatUsingTurnAndStun) {
   
   ResetWithStunServerAndNat(kStunAddr);
   stun_server_.reset();
-  AddTurnServers(kTurnUdpIntAddr, webrtc::SocketAddress());
+  AddTurnServers(kTurnUdpIntAddr, SocketAddress());
 
   allocator_->set_flags(allocator().flags() |
                         webrtc::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
@@ -2255,22 +2187,20 @@ TEST_F(BasicPortAllocatorTest, TestSharedSocketWithNatUsingTurnAndStun) {
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
 
-  ASSERT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidates_.size(); }, Eq(3U),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  ASSERT_THAT(webrtc::WaitUntil(
+                  [&] { return candidates_.size(); }, Eq(3U),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_TRUE(
       HasCandidate(candidates_, IceCandidateType::kHost, "udp", kClientAddr));
-  webrtc::Candidate stun_candidate;
+  Candidate stun_candidate;
   EXPECT_TRUE(FindCandidate(candidates_, IceCandidateType::kSrflx, "udp",
-                            webrtc::SocketAddress(kNatUdpAddr.ipaddr(), 0),
+                            SocketAddress(kNatUdpAddr.ipaddr(), 0),
                             &stun_candidate));
   EXPECT_TRUE(HasCandidateWithRelatedAddr(
       candidates_, IceCandidateType::kRelay, "udp",
-      webrtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0),
-      stun_candidate.address()));
+      SocketAddress(kTurnUdpExtAddr.ipaddr(), 0), stun_candidate.address()));
 
   
   
@@ -2288,20 +2218,19 @@ TEST_F(BasicPortAllocatorTest, TestSharedSocketNoUdpAllowed) {
   AddInterface(kClientAddr);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  ASSERT_THAT(
-      webrtc::WaitUntil(
-          [&] { return ports_.size(); }, Eq(1U),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  ASSERT_THAT(webrtc::WaitUntil(
+                  [&] { return ports_.size(); }, Eq(1U),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_EQ(1U, candidates_.size());
   EXPECT_TRUE(
       HasCandidate(candidates_, IceCandidateType::kHost, "udp", kClientAddr));
   
   EXPECT_THAT(
-      webrtc::WaitUntil([&] { return candidate_allocation_done_; }, IsTrue(),
-                        {.timeout = webrtc::TimeDelta::Millis(kStunTimeoutMs),
-                         .clock = &fake_clock}),
+      webrtc::WaitUntil(
+          [&] { return candidate_allocation_done_; }, IsTrue(),
+          {.timeout = TimeDelta::Millis(kStunTimeoutMs), .clock = &fake_clock}),
       webrtc::IsRtcOk());
   EXPECT_EQ(1U, candidates_.size());
 }
@@ -2311,9 +2240,9 @@ TEST_F(BasicPortAllocatorTest, TestSharedSocketNoUdpAllowed) {
 
 TEST_F(BasicPortAllocatorTest, TestNetworkPermissionBlocked) {
   network_manager_.set_default_local_addresses(kPrivateAddr.ipaddr(),
-                                               webrtc::IPAddress());
+                                               IPAddress());
   network_manager_.set_enumeration_permission(
-      webrtc::NetworkManager::ENUMERATION_BLOCKED);
+      NetworkManager::ENUMERATION_BLOCKED);
   allocator().set_flags(allocator().flags() |
                         webrtc::PORTALLOCATOR_DISABLE_RELAY |
                         webrtc::PORTALLOCATOR_DISABLE_TCP |
@@ -2324,12 +2253,11 @@ TEST_F(BasicPortAllocatorTest, TestNetworkPermissionBlocked) {
   EXPECT_EQ(0U, session_->flags() &
                     webrtc::PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION);
   session_->StartGettingPorts();
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return ports_.size(); }, Eq(1U),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return ports_.size(); }, Eq(1U),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_EQ(1U, candidates_.size());
   EXPECT_TRUE(
       HasCandidate(candidates_, IceCandidateType::kHost, "udp", kPrivateAddr));
@@ -2348,12 +2276,11 @@ TEST_F(BasicPortAllocatorTest, TestEnableIPv6Addresses) {
   allocator_->set_step_delay(webrtc::kMinimumStepDelay);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  ASSERT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  ASSERT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_EQ(4U, ports_.size());
   EXPECT_EQ(4U, candidates_.size());
   EXPECT_TRUE(HasCandidate(candidates_, IceCandidateType::kHost, "udp",
@@ -2417,12 +2344,11 @@ TEST_F(BasicPortAllocatorTest, TestClearGettingPorts) {
                                 {.clock = &fake_clock}),
               webrtc::IsRtcOk());
   EXPECT_EQ(2U, ports_.size());
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
 }
 
 
@@ -2433,13 +2359,12 @@ TEST_F(BasicPortAllocatorTest, TestTransportInformationUpdated) {
   allocator_->SetConfiguration(allocator_->stun_servers(),
                                allocator_->turn_servers(), pool_size,
                                webrtc::NO_PRUNE);
-  const webrtc::PortAllocatorSession* peeked_session =
-      allocator_->GetPooledSession();
+  const PortAllocatorSession* peeked_session = allocator_->GetPooledSession();
   ASSERT_NE(nullptr, peeked_session);
   EXPECT_THAT(
       webrtc::WaitUntil(
           [&] { return peeked_session->CandidatesAllocationDone(); }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
+          {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
            .clock = &fake_clock}),
       webrtc::IsRtcOk());
   
@@ -2475,13 +2400,12 @@ TEST_F(BasicPortAllocatorTest, TestSetCandidateFilterAfterCandidatesGathered) {
   allocator_->SetConfiguration(allocator_->stun_servers(),
                                allocator_->turn_servers(), pool_size,
                                webrtc::NO_PRUNE);
-  const webrtc::PortAllocatorSession* peeked_session =
-      allocator_->GetPooledSession();
+  const PortAllocatorSession* peeked_session = allocator_->GetPooledSession();
   ASSERT_NE(nullptr, peeked_session);
   EXPECT_THAT(
       webrtc::WaitUntil(
           [&] { return peeked_session->CandidatesAllocationDone(); }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
+          {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
            .clock = &fake_clock}),
       webrtc::IsRtcOk());
   size_t initial_candidates_size = peeked_session->ReadyCandidates().size();
@@ -2521,7 +2445,7 @@ TEST_F(BasicPortAllocatorTest,
   AddInterface(kPrivateAddr);
   ResetWithStunServerAndNat(kStunAddr);
 
-  AddTurnServers(kTurnUdpIntAddr, webrtc::SocketAddress());
+  AddTurnServers(kTurnUdpIntAddr, SocketAddress());
 
   allocator_->set_flags(allocator().flags() |
                         webrtc::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
@@ -2530,45 +2454,41 @@ TEST_F(BasicPortAllocatorTest,
   allocator_->SetCandidateFilter(webrtc::CF_NONE);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_TRUE(candidates_.empty());
   EXPECT_TRUE(ports_.empty());
 
   
   session_->SetCandidateFilter(webrtc::CF_RELAY);
-  ASSERT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidates_.size(); }, Eq(1u),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  ASSERT_THAT(webrtc::WaitUntil(
+                  [&] { return candidates_.size(); }, Eq(1u),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_TRUE(candidates_.back().is_relay());
   EXPECT_EQ(1u, ports_.size());
 
   
   session_->SetCandidateFilter(webrtc::CF_RELAY | webrtc::CF_REFLEXIVE);
-  ASSERT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidates_.size(); }, Eq(2u),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  ASSERT_THAT(webrtc::WaitUntil(
+                  [&] { return candidates_.size(); }, Eq(2u),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_TRUE(candidates_.back().is_stun());
   EXPECT_EQ(2u, ports_.size());
 
   
   session_->SetCandidateFilter(webrtc::CF_ALL);
-  ASSERT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidates_.size(); }, Eq(3u),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  ASSERT_THAT(webrtc::WaitUntil(
+                  [&] { return candidates_.size(); }, Eq(3u),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_TRUE(candidates_.back().is_local());
   EXPECT_EQ(2u, ports_.size());
 }
@@ -2587,7 +2507,7 @@ TEST_F(
   AddInterface(kPrivateAddr);
   ResetWithStunServerAndNat(kStunAddr);
 
-  AddTurnServers(kTurnUdpIntAddr, webrtc::SocketAddress());
+  AddTurnServers(kTurnUdpIntAddr, SocketAddress());
 
   allocator_->set_flags(allocator().flags() |
                         webrtc::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
@@ -2596,45 +2516,41 @@ TEST_F(
   allocator_->SetCandidateFilter(webrtc::CF_NONE);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_TRUE(candidates_.empty());
   EXPECT_TRUE(ports_.empty());
 
   
   session_->SetCandidateFilter(webrtc::CF_RELAY);
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidates_.size(); }, Eq(1u),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidates_.size(); }, Eq(1u),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_TRUE(candidates_.back().is_relay());
   EXPECT_EQ(1u, ports_.size());
 
   
   session_->SetCandidateFilter(webrtc::CF_REFLEXIVE);
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidates_.size(); }, Eq(2u),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidates_.size(); }, Eq(2u),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_TRUE(candidates_.back().is_stun());
   EXPECT_EQ(2u, ports_.size());
 
   
   session_->SetCandidateFilter(webrtc::CF_HOST);
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidates_.size(); }, Eq(3u),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidates_.size(); }, Eq(3u),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_TRUE(candidates_.back().is_local());
   
   EXPECT_EQ(2u, ports_.size());
@@ -2648,7 +2564,7 @@ TEST_F(BasicPortAllocatorTest,
   AddInterface(kPrivateAddr);
   ResetWithStunServerAndNat(kStunAddr);
 
-  AddTurnServers(kTurnUdpIntAddr, webrtc::SocketAddress());
+  AddTurnServers(kTurnUdpIntAddr, SocketAddress());
 
   allocator_->set_flags(allocator().flags() |
                         webrtc::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
@@ -2657,12 +2573,11 @@ TEST_F(BasicPortAllocatorTest,
   allocator_->SetCandidateFilter(webrtc::CF_NONE);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   auto test_invariants = [this]() {
     EXPECT_TRUE(candidates_.empty());
     EXPECT_TRUE(ports_.empty());
@@ -2697,7 +2612,7 @@ TEST_F(BasicPortAllocatorTest, SetStunKeepaliveIntervalForPorts) {
   EXPECT_THAT(
       webrtc::WaitUntil(
           [&] { return pooled_session->CandidatesAllocationDone(); }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
+          {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
            .clock = &fake_clock}),
       webrtc::IsRtcOk());
   CheckStunKeepaliveIntervalOfAllReadyPorts(pooled_session,
@@ -2716,7 +2631,7 @@ TEST_F(BasicPortAllocatorTest,
   EXPECT_THAT(
       webrtc::WaitUntil(
           [&] { return pooled_session->CandidatesAllocationDone(); }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
+          {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
            .clock = &fake_clock}),
       webrtc::IsRtcOk());
   const int expected_stun_keepalive_interval = 321;
@@ -2739,12 +2654,11 @@ TEST_F(BasicPortAllocatorTest,
       webrtc::NO_PRUNE, nullptr, expected_stun_keepalive_interval);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   CheckStunKeepaliveIntervalOfAllReadyPorts(session_.get(),
                                             expected_stun_keepalive_interval);
 }
@@ -2761,12 +2675,11 @@ TEST_F(BasicPortAllocatorTest,
       webrtc::NO_PRUNE, nullptr, expected_stun_keepalive_interval);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   CheckStunKeepaliveIntervalOfAllReadyPorts(session_.get(),
                                             expected_stun_keepalive_interval);
 }
@@ -2784,16 +2697,15 @@ TEST_F(BasicPortAllocatorTest, HostCandidateAddressIsReplacedByHostname) {
 
   ASSERT_EQ(&network_manager_, allocator().network_manager());
   network_manager_.set_mdns_responder(
-      std::make_unique<webrtc::FakeMdnsResponder>(webrtc::Thread::Current()));
+      std::make_unique<FakeMdnsResponder>(Thread::Current()));
   AddInterface(kClientAddr);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  ASSERT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  ASSERT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_EQ(5u, candidates_.size());
   int num_host_udp_candidates = 0;
   int num_host_tcp_candidates = 0;
@@ -2832,10 +2744,10 @@ TEST_F(BasicPortAllocatorTest, HostCandidateAddressIsReplacedByHostname) {
 }
 
 TEST_F(BasicPortAllocatorTest, TestUseTurnServerAsStunSever) {
-  ServerAddresses stun_servers;
+  cricket::ServerAddresses stun_servers;
   stun_servers.insert(kStunAddr);
   PortConfiguration port_config(stun_servers, "", "");
-  webrtc::RelayServerConfig turn_servers =
+  RelayServerConfig turn_servers =
       CreateTurnServers(kTurnUdpIntAddr, kTurnTcpIntAddr);
   port_config.AddRelay(turn_servers);
 
@@ -2843,13 +2755,13 @@ TEST_F(BasicPortAllocatorTest, TestUseTurnServerAsStunSever) {
 }
 
 TEST_F(BasicPortAllocatorTest, TestDoNotUseTurnServerAsStunSever) {
-  webrtc::test::ScopedKeyValueConfig field_trials(
+  test::ScopedKeyValueConfig field_trials(
       "WebRTC-UseTurnServerAsStunServer/Disabled/");
-  ServerAddresses stun_servers;
+  cricket::ServerAddresses stun_servers;
   stun_servers.insert(kStunAddr);
   PortConfiguration port_config(stun_servers, "" ,
                                 "" , &field_trials);
-  webrtc::RelayServerConfig turn_servers =
+  RelayServerConfig turn_servers =
       CreateTurnServers(kTurnUdpIntAddr, kTurnTcpIntAddr);
   port_config.AddRelay(turn_servers);
 
@@ -2870,12 +2782,11 @@ TEST_F(BasicPortAllocatorTest, AssignsUniqueLocalPreferencetoRelayCandidates) {
   AddInterface(kClientAddr);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  ASSERT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  ASSERT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
   EXPECT_EQ(3u, candidates_.size());
   EXPECT_GT((candidates_[0].priority() >> 8) & 0xFFFF,
             (candidates_[1].priority() >> 8) & 0xFFFF);
@@ -2886,14 +2797,13 @@ TEST_F(BasicPortAllocatorTest, AssignsUniqueLocalPreferencetoRelayCandidates) {
 
 
 TEST_F(BasicPortAllocatorTest, TwoIPv6AreSelectedBecauseOfMaxIpv6Limit) {
-  webrtc::Network wifi1("wifi1", "Test NetworkAdapter 1",
-                        kClientIPv6Addr.ipaddr(), 64, rtc::ADAPTER_TYPE_WIFI);
-  webrtc::Network ethe1("ethe1", "Test NetworkAdapter 2",
-                        kClientIPv6Addr2.ipaddr(), 64,
-                        rtc::ADAPTER_TYPE_ETHERNET);
-  webrtc::Network wifi2("wifi2", "Test NetworkAdapter 3",
-                        kClientIPv6Addr3.ipaddr(), 64, rtc::ADAPTER_TYPE_WIFI);
-  std::vector<const webrtc::Network*> networks = {&wifi1, &ethe1, &wifi2};
+  Network wifi1("wifi1", "Test NetworkAdapter 1", kClientIPv6Addr.ipaddr(), 64,
+                rtc::ADAPTER_TYPE_WIFI);
+  Network ethe1("ethe1", "Test NetworkAdapter 2", kClientIPv6Addr2.ipaddr(), 64,
+                rtc::ADAPTER_TYPE_ETHERNET);
+  Network wifi2("wifi2", "Test NetworkAdapter 3", kClientIPv6Addr3.ipaddr(), 64,
+                rtc::ADAPTER_TYPE_WIFI);
+  std::vector<const Network*> networks = {&wifi1, &ethe1, &wifi2};
 
   
   EXPECT_EQ(2U, BasicPortAllocatorSession::SelectIPv6Networks(
@@ -2904,12 +2814,11 @@ TEST_F(BasicPortAllocatorTest, TwoIPv6AreSelectedBecauseOfMaxIpv6Limit) {
 
 
 TEST_F(BasicPortAllocatorTest, AllIPv6AreSelected) {
-  webrtc::Network wifi1("wifi1", "Test NetworkAdapter 1",
-                        kClientIPv6Addr.ipaddr(), 64, rtc::ADAPTER_TYPE_WIFI);
-  webrtc::Network ethe1("ethe1", "Test NetworkAdapter 2",
-                        kClientIPv6Addr2.ipaddr(), 64,
-                        rtc::ADAPTER_TYPE_ETHERNET);
-  std::vector<const webrtc::Network*> networks = {&wifi1, &ethe1};
+  Network wifi1("wifi1", "Test NetworkAdapter 1", kClientIPv6Addr.ipaddr(), 64,
+                rtc::ADAPTER_TYPE_WIFI);
+  Network ethe1("ethe1", "Test NetworkAdapter 2", kClientIPv6Addr2.ipaddr(), 64,
+                rtc::ADAPTER_TYPE_ETHERNET);
+  std::vector<const Network*> networks = {&wifi1, &ethe1};
 
   
   EXPECT_EQ(2U, BasicPortAllocatorSession::SelectIPv6Networks(
@@ -2920,22 +2829,18 @@ TEST_F(BasicPortAllocatorTest, AllIPv6AreSelected) {
 
 
 TEST_F(BasicPortAllocatorTest, TwoIPv6WifiAreSelectedIfThereAreTwo) {
-  webrtc::Network wifi1("wifi1", "Test NetworkAdapter 1",
-                        kClientIPv6Addr.ipaddr(), 64, rtc::ADAPTER_TYPE_WIFI);
-  webrtc::Network ethe1("ethe1", "Test NetworkAdapter 2",
-                        kClientIPv6Addr2.ipaddr(), 64,
-                        rtc::ADAPTER_TYPE_ETHERNET);
-  webrtc::Network ethe2("ethe2", "Test NetworkAdapter 3",
-                        kClientIPv6Addr3.ipaddr(), 64,
-                        rtc::ADAPTER_TYPE_ETHERNET);
-  webrtc::Network unknown1("unknown1", "Test NetworkAdapter 4",
-                           kClientIPv6Addr2.ipaddr(), 64,
-                           rtc::ADAPTER_TYPE_UNKNOWN);
-  webrtc::Network cell1("cell1", "Test NetworkAdapter 5",
-                        kClientIPv6Addr3.ipaddr(), 64,
-                        rtc::ADAPTER_TYPE_CELLULAR_4G);
-  std::vector<const webrtc::Network*> networks = {&wifi1, &ethe1, &ethe2,
-                                                  &unknown1, &cell1};
+  Network wifi1("wifi1", "Test NetworkAdapter 1", kClientIPv6Addr.ipaddr(), 64,
+                rtc::ADAPTER_TYPE_WIFI);
+  Network ethe1("ethe1", "Test NetworkAdapter 2", kClientIPv6Addr2.ipaddr(), 64,
+                rtc::ADAPTER_TYPE_ETHERNET);
+  Network ethe2("ethe2", "Test NetworkAdapter 3", kClientIPv6Addr3.ipaddr(), 64,
+                rtc::ADAPTER_TYPE_ETHERNET);
+  Network unknown1("unknown1", "Test NetworkAdapter 4",
+                   kClientIPv6Addr2.ipaddr(), 64, rtc::ADAPTER_TYPE_UNKNOWN);
+  Network cell1("cell1", "Test NetworkAdapter 5", kClientIPv6Addr3.ipaddr(), 64,
+                rtc::ADAPTER_TYPE_CELLULAR_4G);
+  std::vector<const Network*> networks = {&wifi1, &ethe1, &ethe2, &unknown1,
+                                          &cell1};
 
   networks = BasicPortAllocatorSession::SelectIPv6Networks(
       networks, 4);
@@ -2953,23 +2858,18 @@ TEST_F(BasicPortAllocatorTest, TwoIPv6WifiAreSelectedIfThereAreTwo) {
 
 TEST_F(BasicPortAllocatorTest, IPv6WithSameTypeAreSelectedIfNoOtherOption) {
   
-  webrtc::Network cell1("cell1", "Test NetworkAdapter 1",
-                        kClientIPv6Addr.ipaddr(), 64,
-                        rtc::ADAPTER_TYPE_CELLULAR_2G);
-  webrtc::Network cell2("cell2", "Test NetworkAdapter 2",
-                        kClientIPv6Addr2.ipaddr(), 64,
-                        rtc::ADAPTER_TYPE_CELLULAR_3G);
-  webrtc::Network cell3("cell3", "Test NetworkAdapter 3",
-                        kClientIPv6Addr3.ipaddr(), 64,
-                        rtc::ADAPTER_TYPE_CELLULAR_4G);
-  webrtc::Network cell4("cell4", "Test NetworkAdapter 4",
-                        kClientIPv6Addr2.ipaddr(), 64,
-                        rtc::ADAPTER_TYPE_CELLULAR_5G);
-  webrtc::Network cell5("cell5", "Test NetworkAdapter 5",
-                        kClientIPv6Addr3.ipaddr(), 64,
-                        rtc::ADAPTER_TYPE_CELLULAR_3G);
-  std::vector<const webrtc::Network*> networks = {&cell1, &cell2, &cell3,
-                                                  &cell4, &cell5};
+  Network cell1("cell1", "Test NetworkAdapter 1", kClientIPv6Addr.ipaddr(), 64,
+                rtc::ADAPTER_TYPE_CELLULAR_2G);
+  Network cell2("cell2", "Test NetworkAdapter 2", kClientIPv6Addr2.ipaddr(), 64,
+                rtc::ADAPTER_TYPE_CELLULAR_3G);
+  Network cell3("cell3", "Test NetworkAdapter 3", kClientIPv6Addr3.ipaddr(), 64,
+                rtc::ADAPTER_TYPE_CELLULAR_4G);
+  Network cell4("cell4", "Test NetworkAdapter 4", kClientIPv6Addr2.ipaddr(), 64,
+                rtc::ADAPTER_TYPE_CELLULAR_5G);
+  Network cell5("cell5", "Test NetworkAdapter 5", kClientIPv6Addr3.ipaddr(), 64,
+                rtc::ADAPTER_TYPE_CELLULAR_3G);
+  std::vector<const Network*> networks = {&cell1, &cell2, &cell3, &cell4,
+                                          &cell5};
 
   
   EXPECT_EQ(4U, BasicPortAllocatorSession::SelectIPv6Networks(
@@ -2978,14 +2878,13 @@ TEST_F(BasicPortAllocatorTest, IPv6WithSameTypeAreSelectedIfNoOtherOption) {
 }
 
 TEST_F(BasicPortAllocatorTest, IPv6EthernetHasHigherPriorityThanWifi) {
-  webrtc::Network wifi1("wifi1", "Test NetworkAdapter 1",
-                        kClientIPv6Addr.ipaddr(), 64, rtc::ADAPTER_TYPE_WIFI);
-  webrtc::Network ethe1("ethe1", "Test NetworkAdapter 2",
-                        kClientIPv6Addr2.ipaddr(), 64,
-                        rtc::ADAPTER_TYPE_ETHERNET);
-  webrtc::Network wifi2("wifi2", "Test NetworkAdapter 3",
-                        kClientIPv6Addr3.ipaddr(), 64, rtc::ADAPTER_TYPE_WIFI);
-  std::vector<const webrtc::Network*> networks = {&wifi1, &ethe1, &wifi2};
+  Network wifi1("wifi1", "Test NetworkAdapter 1", kClientIPv6Addr.ipaddr(), 64,
+                rtc::ADAPTER_TYPE_WIFI);
+  Network ethe1("ethe1", "Test NetworkAdapter 2", kClientIPv6Addr2.ipaddr(), 64,
+                rtc::ADAPTER_TYPE_ETHERNET);
+  Network wifi2("wifi2", "Test NetworkAdapter 3", kClientIPv6Addr3.ipaddr(), 64,
+                rtc::ADAPTER_TYPE_WIFI);
+  std::vector<const Network*> networks = {&wifi1, &ethe1, &wifi2};
 
   networks = BasicPortAllocatorSession::SelectIPv6Networks(
       networks, 1);
@@ -2996,21 +2895,18 @@ TEST_F(BasicPortAllocatorTest, IPv6EthernetHasHigherPriorityThanWifi) {
 }
 
 TEST_F(BasicPortAllocatorTest, IPv6EtherAndWifiHaveHigherPriorityThanOthers) {
-  webrtc::Network cell1("cell1", "Test NetworkAdapter 1",
-                        kClientIPv6Addr.ipaddr(), 64,
-                        rtc::ADAPTER_TYPE_CELLULAR_3G);
-  webrtc::Network ethe1("ethe1", "Test NetworkAdapter 2",
-                        kClientIPv6Addr2.ipaddr(), 64,
-                        rtc::ADAPTER_TYPE_ETHERNET);
-  webrtc::Network wifi1("wifi1", "Test NetworkAdapter 3",
-                        kClientIPv6Addr3.ipaddr(), 64, rtc::ADAPTER_TYPE_WIFI);
-  webrtc::Network unknown("unknown", "Test NetworkAdapter 4",
-                          kClientIPv6Addr2.ipaddr(), 64,
-                          rtc::ADAPTER_TYPE_UNKNOWN);
-  webrtc::Network vpn1("vpn1", "Test NetworkAdapter 5",
-                       kClientIPv6Addr3.ipaddr(), 64, rtc::ADAPTER_TYPE_VPN);
-  std::vector<const webrtc::Network*> networks = {&cell1, &ethe1, &wifi1,
-                                                  &unknown, &vpn1};
+  Network cell1("cell1", "Test NetworkAdapter 1", kClientIPv6Addr.ipaddr(), 64,
+                rtc::ADAPTER_TYPE_CELLULAR_3G);
+  Network ethe1("ethe1", "Test NetworkAdapter 2", kClientIPv6Addr2.ipaddr(), 64,
+                rtc::ADAPTER_TYPE_ETHERNET);
+  Network wifi1("wifi1", "Test NetworkAdapter 3", kClientIPv6Addr3.ipaddr(), 64,
+                rtc::ADAPTER_TYPE_WIFI);
+  Network unknown("unknown", "Test NetworkAdapter 4", kClientIPv6Addr2.ipaddr(),
+                  64, rtc::ADAPTER_TYPE_UNKNOWN);
+  Network vpn1("vpn1", "Test NetworkAdapter 5", kClientIPv6Addr3.ipaddr(), 64,
+               rtc::ADAPTER_TYPE_VPN);
+  std::vector<const Network*> networks = {&cell1, &ethe1, &wifi1, &unknown,
+                                          &vpn1};
 
   networks = BasicPortAllocatorSession::SelectIPv6Networks(
       networks, 2);
@@ -3035,14 +2931,13 @@ TEST_F(BasicPortAllocatorTest, Select2DifferentIntefaces) {
       webrtc::PORTALLOCATOR_DISABLE_STUN | webrtc::PORTALLOCATOR_DISABLE_RELAY |
       webrtc::PORTALLOCATOR_ENABLE_IPV6_ON_WIFI);
 
-  ASSERT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
 
   EXPECT_EQ(2U, candidates_.size());
   
@@ -3066,14 +2961,13 @@ TEST_F(BasicPortAllocatorTest, Select3DifferentIntefaces) {
       webrtc::PORTALLOCATOR_DISABLE_STUN | webrtc::PORTALLOCATOR_DISABLE_RELAY |
       webrtc::PORTALLOCATOR_ENABLE_IPV6_ON_WIFI);
 
-  ASSERT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
 
   EXPECT_EQ(3U, candidates_.size());
   
@@ -3099,14 +2993,13 @@ TEST_F(BasicPortAllocatorTest, Select4DifferentIntefaces) {
       webrtc::PORTALLOCATOR_DISABLE_STUN | webrtc::PORTALLOCATOR_DISABLE_RELAY |
       webrtc::PORTALLOCATOR_ENABLE_IPV6_ON_WIFI);
 
-  ASSERT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return candidate_allocation_done_; }, IsTrue(),
-          {.timeout = webrtc::TimeDelta::Millis(kDefaultAllocationTimeout),
-           .clock = &fake_clock}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(webrtc::WaitUntil(
+                  [&] { return candidate_allocation_done_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kDefaultAllocationTimeout),
+                   .clock = &fake_clock}),
+              webrtc::IsRtcOk());
 
   EXPECT_EQ(4U, candidates_.size());
   

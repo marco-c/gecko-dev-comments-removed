@@ -71,7 +71,7 @@ class RTC_EXPORT AdaptedVideoTrackSource
   
   bool apply_rotation();
 
-  cricket::VideoAdapter* video_adapter() { return &video_adapter_; }
+  VideoAdapter* video_adapter() { return &video_adapter_; }
 
  private:
   
@@ -94,7 +94,7 @@ class RTC_EXPORT AdaptedVideoTrackSource
   void ProcessConstraints(
       const VideoTrackSourceConstraints& constraints) override;
 
-  cricket::VideoAdapter video_adapter_;
+  VideoAdapter video_adapter_;
 
   Mutex stats_mutex_;
   std::optional<Stats> stats_ RTC_GUARDED_BY(stats_mutex_);

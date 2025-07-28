@@ -14,10 +14,10 @@
 
 #include "p2p/base/ice_switch_reason.h"
 
-namespace cricket {
+namespace webrtc {
 
 std::string IceRecheckEvent::ToString() const {
-  std::string str = IceSwitchReasonToString(reason);
+  std::string str = webrtc::IceSwitchReasonToString(reason);
   if (recheck_delay_ms) {
     str += " (after delay: " + std::to_string(recheck_delay_ms) + ")";
   }

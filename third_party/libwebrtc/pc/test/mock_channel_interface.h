@@ -34,27 +34,24 @@ class MockChannelInterface : public cricket::ChannelInterface {
   MOCK_METHOD(MediaType, media_type, (), (const, override));
   MOCK_METHOD(VideoChannel*, AsVideoChannel, (), (override));
   MOCK_METHOD(VoiceChannel*, AsVoiceChannel, (), (override));
-  MOCK_METHOD(cricket::MediaSendChannelInterface*,
-              media_send_channel,
-              (),
-              (override));
-  MOCK_METHOD(cricket::VoiceMediaSendChannelInterface*,
+  MOCK_METHOD(MediaSendChannelInterface*, media_send_channel, (), (override));
+  MOCK_METHOD(VoiceMediaSendChannelInterface*,
               voice_media_send_channel,
               (),
               (override));
-  MOCK_METHOD(cricket::VideoMediaSendChannelInterface*,
+  MOCK_METHOD(VideoMediaSendChannelInterface*,
               video_media_send_channel,
               (),
               (override));
-  MOCK_METHOD(cricket::MediaReceiveChannelInterface*,
+  MOCK_METHOD(MediaReceiveChannelInterface*,
               media_receive_channel,
               (),
               (override));
-  MOCK_METHOD(cricket::VoiceMediaReceiveChannelInterface*,
+  MOCK_METHOD(VoiceMediaReceiveChannelInterface*,
               voice_media_receive_channel,
               (),
               (override));
-  MOCK_METHOD(cricket::VideoMediaReceiveChannelInterface*,
+  MOCK_METHOD(VideoMediaReceiveChannelInterface*,
               video_media_receive_channel,
               (),
               (override));

@@ -16,6 +16,7 @@
 
 #include "api/environment/environment.h"
 #include "api/packet_socket_factory.h"
+#include "p2p/base/port.h"
 #include "p2p/base/port_allocator.h"
 #include "rtc_base/async_packet_socket.h"
 #include "rtc_base/network.h"
@@ -26,21 +27,19 @@ class TurnCustomizer;
 class FieldTrialsView;
 }  
 
-namespace cricket {
-class Port;
-struct ProtocolAddress;
+namespace webrtc {
 
 
 struct CreateRelayPortArgs {
-  webrtc::Environment env;
-  webrtc::Thread* network_thread;
-  webrtc::PacketSocketFactory* socket_factory;
-  const webrtc::Network* network;
+  Environment env;
+  Thread* network_thread;
+  PacketSocketFactory* socket_factory;
+  const Network* network;
   const ProtocolAddress* server_address;
-  const webrtc::RelayServerConfig* config;
+  const RelayServerConfig* config;
   std::string username;
   std::string password;
-  webrtc::TurnCustomizer* turn_customizer = nullptr;
+  TurnCustomizer* turn_customizer = nullptr;
   
   
   
@@ -54,9 +53,8 @@ class RelayPortFactoryInterface {
 
   
   
-  virtual std::unique_ptr<Port> Create(
-      const CreateRelayPortArgs& args,
-      webrtc::AsyncPacketSocket* udp_socket) = 0;
+  virtual std::unique_ptr<Port> Create(const CreateRelayPortArgs& args,
+                                       AsyncPacketSocket* udp_socket) = 0;
 
   
   virtual std::unique_ptr<Port> Create(const CreateRelayPortArgs& args,
@@ -64,6 +62,13 @@ class RelayPortFactoryInterface {
                                        int max_port) = 0;
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::CreateRelayPortArgs;
+using ::webrtc::RelayPortFactoryInterface;
 }  
 
 #endif  

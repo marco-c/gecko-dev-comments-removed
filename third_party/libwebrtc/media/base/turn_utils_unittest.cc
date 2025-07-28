@@ -15,7 +15,7 @@
 
 #include "test/gtest.h"
 
-namespace cricket {
+namespace webrtc {
 
 
 

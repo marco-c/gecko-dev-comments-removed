@@ -264,7 +264,7 @@ class RTC_EXPORT AudioSourceInterface : public MediaSourceInterface {
   
   
   
-  virtual const cricket::AudioOptions options() const;
+  virtual const AudioOptions options() const;
 };
 
 

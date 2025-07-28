@@ -26,7 +26,7 @@
 #include "p2p/dtls/dtls_transport_internal.h"
 #include "rtc_base/copy_on_write_buffer.h"
 
-namespace cricket {
+namespace webrtc {
 
 
 
@@ -77,18 +77,18 @@ class SctpTransportInternal {
   virtual ~SctpTransportInternal() {}
 
   virtual void SetOnConnectedCallback(std::function<void()> callback) = 0;
-  virtual void SetDataChannelSink(webrtc::DataChannelSink* sink) = 0;
+  virtual void SetDataChannelSink(DataChannelSink* sink) = 0;
 
   
   
-  virtual void SetDtlsTransport(cricket::DtlsTransportInternal* transport) = 0;
+  virtual void SetDtlsTransport(DtlsTransportInternal* transport) = 0;
 
   
   
   
   
   
-  virtual bool Start(const webrtc::SctpOptions& options) = 0;
+  virtual bool Start(const SctpOptions& options) = 0;
   
   
   
@@ -112,7 +112,7 @@ class SctpTransportInternal {
   
   
   
-  virtual bool OpenStream(int sid, webrtc::PriorityValue priority) = 0;
+  virtual bool OpenStream(int sid, PriorityValue priority) = 0;
   
   
   
@@ -121,9 +121,9 @@ class SctpTransportInternal {
   
   
   
-  virtual webrtc::RTCError SendData(int sid,
-                                    const webrtc::SendDataParams& params,
-                                    const rtc::CopyOnWriteBuffer& payload) = 0;
+  virtual RTCError SendData(int sid,
+                            const SendDataParams& params,
+                            const CopyOnWriteBuffer& payload) = 0;
 
   
   
@@ -148,6 +148,18 @@ class SctpTransportInternal {
   virtual void set_debug_name_for_testing(const char* debug_name) = 0;
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::kMaxSctpSid;
+using ::webrtc::kMaxSctpStreams;
+using ::webrtc::kMinSctpSid;
+using ::webrtc::kSctpDefaultPort;
+using ::webrtc::kSpecMaxSctpSid;
+using ::webrtc::SctpErrorCauseCode;
+using ::webrtc::SctpTransportInternal;
 }  
 
 #endif  

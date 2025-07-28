@@ -15,7 +15,7 @@
 
 #include "rtc_base/system/rtc_export.h"
 
-namespace cricket {
+namespace webrtc {
 
 enum class IceSwitchReason {
   UNKNOWN,
@@ -38,6 +38,13 @@ enum class IceSwitchReason {
 
 RTC_EXPORT std::string IceSwitchReasonToString(IceSwitchReason reason);
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::IceSwitchReason;
+using ::webrtc::IceSwitchReasonToString;
 }  
 
 #endif  

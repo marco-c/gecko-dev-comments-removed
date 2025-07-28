@@ -16,7 +16,7 @@
 
 #include "rtc_base/system/rtc_export.h"
 
-namespace cricket {
+namespace webrtc {
 
 
 
@@ -68,6 +68,12 @@ struct RTC_EXPORT AudioOptions {
   std::optional<bool> init_recording_on_send;
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::AudioOptions;
 }  
 
 #endif  

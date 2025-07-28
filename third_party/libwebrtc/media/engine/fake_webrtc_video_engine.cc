@@ -263,7 +263,7 @@ std::unique_ptr<VideoEncoder> FakeWebRtcVideoEncoderFactory::Create(
   MutexLock lock(&mutex_);
   std::unique_ptr<VideoEncoder> encoder;
   if (format.IsCodecInList(formats_)) {
-    if (absl::EqualsIgnoreCase(format.name, cricket::kVp8CodecName) &&
+    if (absl::EqualsIgnoreCase(format.name, kVp8CodecName) &&
         !vp8_factory_mode_) {
       
       

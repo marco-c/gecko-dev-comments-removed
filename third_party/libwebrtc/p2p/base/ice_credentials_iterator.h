@@ -15,7 +15,7 @@
 
 #include "p2p/base/transport_description.h"
 
-namespace cricket {
+namespace webrtc {
 
 class IceCredentialsIterator {
  public:
@@ -32,6 +32,12 @@ class IceCredentialsIterator {
   std::vector<IceParameters> pooled_ice_credentials_;
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::IceCredentialsIterator;
 }  
 
 #endif  

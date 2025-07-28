@@ -16,7 +16,7 @@
 
 #include "rtc_base/system/rtc_export.h"
 
-namespace cricket {
+namespace webrtc {
 
 
 
@@ -25,6 +25,12 @@ bool RTC_EXPORT UnwrapTurnPacket(const uint8_t* packet,
                                  size_t* content_position,
                                  size_t* content_size);
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::UnwrapTurnPacket;
 }  
 
 #endif  

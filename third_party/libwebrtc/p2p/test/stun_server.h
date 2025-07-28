@@ -39,26 +39,24 @@ class StunServer {
   void OnPacket(AsyncPacketSocket* socket, const rtc::ReceivedPacket& packet);
 
   
-  virtual void OnBindingRequest(cricket::StunMessage* msg,
-                                const SocketAddress& addr);
-  void OnAllocateRequest(cricket::StunMessage* msg, const SocketAddress& addr);
-  void OnSharedSecretRequest(cricket::StunMessage* msg,
-                             const SocketAddress& addr);
-  void OnSendRequest(cricket::StunMessage* msg, const SocketAddress& addr);
+  virtual void OnBindingRequest(StunMessage* msg, const SocketAddress& addr);
+  void OnAllocateRequest(StunMessage* msg, const SocketAddress& addr);
+  void OnSharedSecretRequest(StunMessage* msg, const SocketAddress& addr);
+  void OnSendRequest(StunMessage* msg, const SocketAddress& addr);
 
   
-  void SendErrorResponse(const cricket::StunMessage& msg,
+  void SendErrorResponse(const StunMessage& msg,
                          const SocketAddress& addr,
                          int error_code,
                          absl::string_view error_desc);
 
   
-  void SendResponse(const cricket::StunMessage& msg, const SocketAddress& addr);
+  void SendResponse(const StunMessage& msg, const SocketAddress& addr);
 
   
-  void GetStunBindResponse(cricket::StunMessage* message,
+  void GetStunBindResponse(StunMessage* message,
                            const SocketAddress& remote_addr,
-                           cricket::StunMessage* response) const;
+                           StunMessage* response) const;
 
  private:
   SequenceChecker sequence_checker_;

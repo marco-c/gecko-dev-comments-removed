@@ -17,7 +17,7 @@
 #include "p2p/base/ice_transport_internal.h"
 #include "p2p/base/transport_description.h"
 
-namespace cricket {
+namespace webrtc {
 
 
 
@@ -34,7 +34,7 @@ class ActiveIceControllerInterface {
   virtual ~ActiveIceControllerInterface() = default;
 
   
-  virtual void SetIceConfig(const webrtc::IceConfig& config) = 0;
+  virtual void SetIceConfig(const IceConfig& config) = 0;
 
   
   virtual void OnConnectionAdded(const Connection* connection) = 0;
@@ -59,7 +59,7 @@ class ActiveIceControllerInterface {
 
   
   virtual bool GetUseCandidateAttribute(const Connection* connection,
-                                        webrtc::NominationMode mode,
+                                        NominationMode mode,
                                         IceMode remote_ice_mode) const = 0;
 
   
@@ -78,6 +78,12 @@ class ActiveIceControllerInterface {
   virtual const Connection* FindNextPingableConnection() = 0;
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::ActiveIceControllerInterface;
 }  
 
 #endif  

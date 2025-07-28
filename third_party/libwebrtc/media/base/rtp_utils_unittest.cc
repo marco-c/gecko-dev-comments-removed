@@ -20,7 +20,7 @@
 #include "rtc_base/async_packet_socket.h"
 #include "test/gtest.h"
 
-namespace cricket {
+namespace webrtc {
 
 static const uint8_t kInvalidPacket[] = {0x80, 0x00};
 
@@ -187,7 +187,7 @@ TEST(RtpUtilsTest, UpdateAbsSendTimeExtensionInTurnSendIndication) {
 
 
 TEST(RtpUtilsTest, ApplyPacketOptionsWithDefaultValues) {
-  webrtc::PacketTimeUpdateParams packet_time_params;
+  PacketTimeUpdateParams packet_time_params;
   std::vector<uint8_t> rtp_packet(
       kRtpMsgWithOneByteAbsSendTimeExtension,
       kRtpMsgWithOneByteAbsSendTimeExtension +
@@ -208,7 +208,7 @@ TEST(RtpUtilsTest, ApplyPacketOptionsWithDefaultValues) {
 
 
 TEST(RtpUtilsTest, ApplyPacketOptionsWithAuthParams) {
-  webrtc::PacketTimeUpdateParams packet_time_params;
+  PacketTimeUpdateParams packet_time_params;
   packet_time_params.srtp_auth_key.assign(kTestKey,
                                           kTestKey + sizeof(kTestKey));
   packet_time_params.srtp_auth_tag_len = 4;
@@ -265,7 +265,7 @@ TEST(RtpUtilsTest, UpdateTwoByteAbsSendTimeExtensionInRtpPacket) {
 
 
 TEST(RtpUtilsTest, ApplyPacketOptionsWithAuthParamsAndAbsSendTime) {
-  webrtc::PacketTimeUpdateParams packet_time_params;
+  PacketTimeUpdateParams packet_time_params;
   packet_time_params.srtp_auth_key.assign(kTestKey,
                                           kTestKey + sizeof(kTestKey));
   packet_time_params.srtp_auth_tag_len = 4;

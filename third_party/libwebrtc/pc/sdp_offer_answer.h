@@ -459,7 +459,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   
   
-  void UpdateLocalSenders(const std::vector<cricket::StreamParams>& streams,
+  void UpdateLocalSenders(const std::vector<StreamParams>& streams,
                           webrtc::MediaType media_type);
 
   
@@ -468,11 +468,10 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   
   
-  void UpdateRemoteSendersList(
-      const std::vector<cricket::StreamParams>& streams,
-      bool default_track_needed,
-      webrtc::MediaType media_type,
-      StreamCollection* new_streams);
+  void UpdateRemoteSendersList(const std::vector<StreamParams>& streams,
+                               bool default_track_needed,
+                               webrtc::MediaType media_type,
+                               StreamCollection* new_streams);
 
   
   
@@ -562,7 +561,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
 
   
   
-  cricket::MediaEngineInterface* media_engine() const;
+  MediaEngineInterface* media_engine() const;
   TransceiverList* transceivers();
   const TransceiverList* transceivers() const;
   DataChannelController* data_channel_controller();
@@ -580,8 +579,8 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   const JsepTransportController* transport_controller_n() const
       RTC_RUN_ON(network_thread());
   
-  const cricket::AudioOptions& audio_options() { return audio_options_; }
-  const cricket::VideoOptions& video_options() { return video_options_; }
+  const AudioOptions& audio_options() { return audio_options_; }
+  const VideoOptions& video_options() { return video_options_; }
   bool ConfiguredForMedia() const;
 
   PeerConnectionSdpMethods* const pc_;
@@ -668,8 +667,8 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   std::string session_error_desc_ RTC_GUARDED_BY(signaling_thread());
 
   
-  cricket::AudioOptions audio_options_ RTC_GUARDED_BY(signaling_thread());
-  cricket::VideoOptions video_options_ RTC_GUARDED_BY(signaling_thread());
+  AudioOptions audio_options_ RTC_GUARDED_BY(signaling_thread());
+  VideoOptions video_options_ RTC_GUARDED_BY(signaling_thread());
 
   
   

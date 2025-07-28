@@ -19,7 +19,7 @@
 #include "api/candidate.h"
 #include "api/units/timestamp.h"
 
-namespace cricket {
+namespace webrtc {
 
 
 enum class IceCandidatePairState {
@@ -62,10 +62,8 @@ struct ConnectionInfo {
   size_t packets_received;     
   size_t recv_ping_requests;   
   size_t recv_ping_responses;  
-  webrtc::Candidate
-      local_candidate;  
-  webrtc::Candidate
-      remote_candidate;        
+  Candidate local_candidate;   
+  Candidate remote_candidate;  
   void* key;                   
   
   IceCandidatePairState state;
@@ -79,13 +77,21 @@ struct ConnectionInfo {
   std::optional<uint32_t> current_round_trip_time_ms;
 
   
-  std::optional<webrtc::Timestamp> last_data_received;
-  std::optional<webrtc::Timestamp> last_data_sent;
+  std::optional<Timestamp> last_data_received;
+  std::optional<Timestamp> last_data_sent;
 };
 
 
 typedef std::vector<ConnectionInfo> ConnectionInfos;
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::ConnectionInfo;
+using ::webrtc::ConnectionInfos;
+using ::webrtc::IceCandidatePairState;
 }  
 
 #endif  

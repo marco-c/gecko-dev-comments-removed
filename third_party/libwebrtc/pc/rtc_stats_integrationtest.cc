@@ -82,8 +82,8 @@ class RTCStatsIntegrationTest : public ::testing::Test {
     PeerConnectionTestWrapper::Connect(caller_.get(), callee_.get());
 
     
-    caller_->GetAndAddUserMedia(true, cricket::AudioOptions(), true);
-    callee_->GetAndAddUserMedia(true, cricket::AudioOptions(), true);
+    caller_->GetAndAddUserMedia(true, AudioOptions(), true);
+    callee_->GetAndAddUserMedia(true, AudioOptions(), true);
 
     
     DataChannelInit init;

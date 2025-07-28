@@ -613,7 +613,7 @@ VideoStream VideoQualityTest::DefaultVideoStream(const Params& params,
   stream.min_bitrate_bps = params.video[video_idx].min_bitrate_bps;
   stream.target_bitrate_bps = params.video[video_idx].target_bitrate_bps;
   stream.max_bitrate_bps = params.video[video_idx].max_bitrate_bps;
-  stream.max_qp = cricket::kDefaultVideoMaxQpVpx;
+  stream.max_qp = kDefaultVideoMaxQpVpx;
   stream.num_temporal_layers = params.video[video_idx].num_temporal_layers;
   stream.active = true;
   return stream;
@@ -628,7 +628,7 @@ VideoStream VideoQualityTest::DefaultThumbnailStream() {
   stream.min_bitrate_bps = 7500;
   stream.target_bitrate_bps = 37500;
   stream.max_bitrate_bps = 50000;
-  stream.max_qp = cricket::kDefaultVideoMaxQpVpx;
+  stream.max_qp = kDefaultVideoMaxQpVpx;
   return stream;
 }
 
@@ -919,7 +919,7 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
                 VideoEncoderConfig::Vp9EncoderSpecificSettings>(vp9_settings);
       } else if (params_.video[video_idx].codec == "H264") {
         
-      } else if (params_.video[video_idx].codec == cricket::kAv1CodecName) {
+      } else if (params_.video[video_idx].codec == kAv1CodecName) {
         
         
         

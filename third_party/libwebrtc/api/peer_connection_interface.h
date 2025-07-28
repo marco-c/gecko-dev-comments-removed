@@ -516,7 +516,7 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
     
     
     
-    struct cricket::MediaConfig media_config;
+    struct MediaConfig media_config;
 
     
     
@@ -1329,7 +1329,7 @@ class PeerConnectionObserver {
 
   
   virtual void OnIceSelectedCandidatePairChanged(
-      const cricket::CandidatePairChangeEvent& ) {}
+      const CandidatePairChangeEvent& ) {}
 
   
   
@@ -1561,7 +1561,7 @@ class RTC_EXPORT PeerConnectionFactoryInterface
   
   
   virtual rtc::scoped_refptr<AudioSourceInterface> CreateAudioSource(
-      const cricket::AudioOptions& options) = 0;
+      const AudioOptions& options) = 0;
 
   
   

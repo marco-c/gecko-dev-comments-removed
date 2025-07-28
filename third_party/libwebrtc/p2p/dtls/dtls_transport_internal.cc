@@ -10,7 +10,7 @@
 
 #include "p2p/dtls/dtls_transport_internal.h"
 
-namespace cricket {
+namespace webrtc {
 
 DtlsTransportInternal::DtlsTransportInternal() = default;
 

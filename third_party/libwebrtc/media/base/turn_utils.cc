@@ -16,7 +16,7 @@
 #include "api/transport/stun.h"
 #include "rtc_base/byte_order.h"
 
-namespace cricket {
+namespace webrtc {
 
 namespace {
 

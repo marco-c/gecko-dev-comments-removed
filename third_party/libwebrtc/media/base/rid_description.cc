@@ -12,7 +12,7 @@
 
 #include <string>
 
-namespace cricket {
+namespace webrtc {
 
 RidDescription::RidDescription() = default;
 RidDescription::RidDescription(const std::string& rid, RidDirection direction)

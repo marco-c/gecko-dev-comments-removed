@@ -17,7 +17,7 @@
 #include "p2p/client/relay_port_factory_interface.h"
 #include "rtc_base/async_packet_socket.h"
 
-namespace cricket {
+namespace webrtc {
 
 
 class TurnPortFactory : public RelayPortFactoryInterface {
@@ -25,13 +25,19 @@ class TurnPortFactory : public RelayPortFactoryInterface {
   ~TurnPortFactory() override;
 
   std::unique_ptr<Port> Create(const CreateRelayPortArgs& args,
-                               webrtc::AsyncPacketSocket* udp_socket) override;
+                               AsyncPacketSocket* udp_socket) override;
 
   std::unique_ptr<Port> Create(const CreateRelayPortArgs& args,
                                int min_port,
                                int max_port) override;
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::TurnPortFactory;
 }  
 
 #endif  

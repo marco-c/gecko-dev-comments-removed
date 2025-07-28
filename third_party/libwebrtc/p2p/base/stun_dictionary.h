@@ -23,7 +23,7 @@
 #include "api/rtc_error.h"
 #include "api/transport/stun.h"
 
-namespace cricket {
+namespace webrtc {
 
 
 
@@ -75,7 +75,7 @@ class StunDictionaryView {
   
   
   
-  webrtc::RTCErrorOr<
+  RTCErrorOr<
       std::pair<std::unique_ptr<StunUInt64Attribute>, std::vector<uint16_t>>>
   ApplyDelta(const StunByteStringAttribute& delta);
 
@@ -86,7 +86,7 @@ class StunDictionaryView {
       int key,
       std::optional<StunAttributeValueType> = std::nullopt) const;
   size_t GetLength(int key) const;
-  static webrtc::RTCErrorOr<
+  static RTCErrorOr<
       std::pair<uint64_t, std::deque<std::unique_ptr<StunAttribute>>>>
   ParseDelta(const StunByteStringAttribute& delta);
 
@@ -202,6 +202,13 @@ class StunDictionaryWriter {
   std::map<uint16_t, std::unique_ptr<StunAttribute>> tombstones_;
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::StunDictionaryView;
+using ::webrtc::StunDictionaryWriter;
 }  
 
 #endif  

@@ -39,7 +39,7 @@
 namespace webrtc {
 
 
-class FakeNetworkInterface : public cricket::MediaChannelNetworkInterface {
+class FakeNetworkInterface : public MediaChannelNetworkInterface {
  public:
   FakeNetworkInterface()
       : thread_(Thread::Current()),
@@ -49,9 +49,7 @@ class FakeNetworkInterface : public cricket::MediaChannelNetworkInterface {
         recvbuf_size_(-1),
         dscp_(rtc::DSCP_NO_CHANGE) {}
 
-  void SetDestination(cricket::MediaReceiveChannelInterface* dest) {
-    dest_ = dest;
-  }
+  void SetDestination(MediaReceiveChannelInterface* dest) { dest_ = dest; }
 
   
   
@@ -213,7 +211,7 @@ class FakeNetworkInterface : public cricket::MediaChannelNetworkInterface {
   }
 
   TaskQueueBase* thread_;
-  cricket::MediaReceiveChannelInterface* dest_;
+  MediaReceiveChannelInterface* dest_;
   bool conf_;
   
   std::vector<uint32_t> conf_sent_ssrcs_;

@@ -26,7 +26,7 @@ class TypedCodecVendor {
   
   
   TypedCodecVendor() {}
-  TypedCodecVendor(cricket::MediaEngineInterface* media_engine,
+  TypedCodecVendor(MediaEngineInterface* media_engine,
                    MediaType type,
                    bool is_sender,
                    bool rtx_enabled,

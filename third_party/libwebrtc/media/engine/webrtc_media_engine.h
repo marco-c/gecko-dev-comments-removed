@@ -20,26 +20,33 @@
 #include "api/transport/bitrate_settings.h"
 #include "media/base/codec.h"
 
-namespace cricket {
+namespace webrtc {
 
 
 
 
-bool ValidateRtpExtensions(
-    rtc::ArrayView<const webrtc::RtpExtension> extennsions,
-    rtc::ArrayView<const webrtc::RtpExtension> old_extensions);
+bool ValidateRtpExtensions(rtc::ArrayView<const RtpExtension> extennsions,
+                           rtc::ArrayView<const RtpExtension> old_extensions);
 
 
 
 
-std::vector<webrtc::RtpExtension> FilterRtpExtensions(
-    const std::vector<webrtc::RtpExtension>& extensions,
+std::vector<RtpExtension> FilterRtpExtensions(
+    const std::vector<RtpExtension>& extensions,
     bool (*supported)(absl::string_view),
     bool filter_redundant_extensions,
-    const webrtc::FieldTrialsView& trials);
+    const FieldTrialsView& trials);
 
-webrtc::BitrateConstraints GetBitrateConfigForCodec(const webrtc::Codec& codec);
+BitrateConstraints GetBitrateConfigForCodec(const Codec& codec);
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::FilterRtpExtensions;
+using ::webrtc::GetBitrateConfigForCodec;
+using ::webrtc::ValidateRtpExtensions;
 }  
 
 #endif  

@@ -149,7 +149,7 @@ struct RelayCredentials {
   std::string password;
 };
 
-typedef std::vector<cricket::ProtocolAddress> PortList;
+typedef std::vector<ProtocolAddress> PortList;
 
 struct RTC_EXPORT RelayServerConfig {
   RelayServerConfig();
@@ -271,8 +271,7 @@ class RTC_EXPORT PortAllocatorSession : public sigslot::has_slots<> {
       SignalPortsPruned;
   sigslot::signal2<PortAllocatorSession*, const std::vector<Candidate>&>
       SignalCandidatesReady;
-  sigslot::signal2<PortAllocatorSession*,
-                   const cricket::IceCandidateErrorEvent&>
+  sigslot::signal2<PortAllocatorSession*, const IceCandidateErrorEvent&>
       SignalCandidateError;
   
   
@@ -434,7 +433,7 @@ class RTC_EXPORT PortAllocator : public sigslot::has_slots<> {
   
   
   const PortAllocatorSession* GetPooledSession(
-      const cricket::IceParameters* ice_credentials = nullptr) const;
+      const IceParameters* ice_credentials = nullptr) const;
 
   
   void DiscardCandidatePool();
@@ -571,7 +570,7 @@ class RTC_EXPORT PortAllocator : public sigslot::has_slots<> {
       cricket::CandidateStatsList* candidate_stats_list);
 
   
-  std::vector<cricket::IceParameters> GetPooledIceCredentials();
+  std::vector<IceParameters> GetPooledIceCredentials();
 
   
   sigslot::signal2<uint32_t , uint32_t >
@@ -636,8 +635,7 @@ class RTC_EXPORT PortAllocator : public sigslot::has_slots<> {
   
   
   std::vector<std::unique_ptr<PortAllocatorSession>>::const_iterator
-  FindPooledSession(
-      const cricket::IceParameters* ice_credentials = nullptr) const;
+  FindPooledSession(const IceParameters* ice_credentials = nullptr) const;
 
   
   uint64_t tiebreaker_;

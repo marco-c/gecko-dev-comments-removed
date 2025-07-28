@@ -17,7 +17,7 @@
 
 #include "media/base/codec.h"
 
-namespace cricket {
+namespace webrtc {
 
 enum class RidDirection { kSend, kReceive };
 
@@ -79,7 +79,7 @@ struct RidDescription final {
   
   
   
-  std::vector<webrtc::Codec> codecs;
+  std::vector<Codec> codecs;
 
   
   
@@ -92,6 +92,13 @@ struct RidDescription final {
   std::map<std::string, std::string> restrictions;
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::RidDescription;
+using ::webrtc::RidDirection;
 }  
 
 #endif  

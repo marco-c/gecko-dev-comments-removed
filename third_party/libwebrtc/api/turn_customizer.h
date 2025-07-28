@@ -22,9 +22,8 @@ class TurnCustomizer {
  public:
   
   
-  virtual void MaybeModifyOutgoingStunMessage(
-      PortInterface* port,
-      cricket::StunMessage* message) = 0;
+  virtual void MaybeModifyOutgoingStunMessage(PortInterface* port,
+                                              StunMessage* message) = 0;
 
   
   

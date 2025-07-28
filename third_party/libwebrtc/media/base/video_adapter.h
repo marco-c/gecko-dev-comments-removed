@@ -25,7 +25,7 @@
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/thread_annotations.h"
 
-namespace cricket {
+namespace webrtc {
 
 
 
@@ -100,8 +100,7 @@ class RTC_EXPORT VideoAdapter {
   
   
   
-  void OnSinkWants(const webrtc::VideoSinkWants& sink_wants)
-      RTC_LOCKS_EXCLUDED(mutex_);
+  void OnSinkWants(const VideoSinkWants& sink_wants) RTC_LOCKS_EXCLUDED(mutex_);
 
   
   
@@ -149,8 +148,7 @@ class RTC_EXPORT VideoAdapter {
   int resolution_request_target_pixel_count_ RTC_GUARDED_BY(mutex_);
   int resolution_request_max_pixel_count_ RTC_GUARDED_BY(mutex_);
   int max_framerate_request_ RTC_GUARDED_BY(mutex_);
-  std::optional<webrtc::Resolution> scale_resolution_down_to_
-      RTC_GUARDED_BY(mutex_);
+  std::optional<Resolution> scale_resolution_down_to_ RTC_GUARDED_BY(mutex_);
 
   
   
@@ -163,12 +161,18 @@ class RTC_EXPORT VideoAdapter {
   std::optional<OutputFormatRequest> stashed_output_format_request_
       RTC_GUARDED_BY(mutex_);
 
-  webrtc::FramerateController framerate_controller_ RTC_GUARDED_BY(mutex_);
+  FramerateController framerate_controller_ RTC_GUARDED_BY(mutex_);
 
   
-  mutable webrtc::Mutex mutex_;
+  mutable Mutex mutex_;
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::VideoAdapter;
 }  
 
 #endif  

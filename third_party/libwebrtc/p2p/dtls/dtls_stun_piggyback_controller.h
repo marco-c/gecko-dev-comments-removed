@@ -25,7 +25,7 @@
 #include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/thread_annotations.h"
 
-namespace cricket {
+namespace webrtc {
 
 
 
@@ -86,22 +86,27 @@ class DtlsStunPiggybackController {
  private:
   State state_ RTC_GUARDED_BY(sequence_checker_) = State::TENTATIVE;
   bool writing_packets_ RTC_GUARDED_BY(sequence_checker_) = false;
-  rtc::Buffer pending_packet_ RTC_GUARDED_BY(sequence_checker_);
+  Buffer pending_packet_ RTC_GUARDED_BY(sequence_checker_);
   absl::AnyInvocable<void(rtc::ArrayView<const uint8_t>)> dtls_data_callback_;
   absl::AnyInvocable<void()> disable_piggybacking_callback_;
 
   std::set<uint16_t> handshake_messages_received_
       RTC_GUARDED_BY(sequence_checker_);
-  webrtc::ByteBufferWriter handshake_ack_writer_
-      RTC_GUARDED_BY(sequence_checker_);
+  ByteBufferWriter handshake_ack_writer_ RTC_GUARDED_BY(sequence_checker_);
 
   
   int data_recv_count_ = 0;
 
   
-  RTC_NO_UNIQUE_ADDRESS webrtc::SequenceChecker sequence_checker_;
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker sequence_checker_;
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::DtlsStunPiggybackController;
 }  
 
 #endif  

@@ -54,7 +54,7 @@ const std::vector<uint8_t> dtls_flight4 = {
 const std::vector<uint8_t> empty = {};
 }  
 
-namespace cricket {
+namespace webrtc {
 
 using ::testing::MockFunction;
 using State = DtlsStunPiggybackController::State;

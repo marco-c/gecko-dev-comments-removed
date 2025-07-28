@@ -46,9 +46,9 @@ namespace webrtc {
 
 
 
-class FakeDtlsTransport : public cricket::DtlsTransportInternal {
+class FakeDtlsTransport : public DtlsTransportInternal {
  public:
-  explicit FakeDtlsTransport(cricket::FakeIceTransport* ice_transport)
+  explicit FakeDtlsTransport(FakeIceTransport* ice_transport)
       : ice_transport_(ice_transport),
         transport_name_(ice_transport->transport_name()),
         component_(ice_transport->component()),
@@ -63,7 +63,7 @@ class FakeDtlsTransport : public cricket::DtlsTransportInternal {
         this, &FakeDtlsTransport::OnNetworkRouteChanged);
   }
 
-  explicit FakeDtlsTransport(std::unique_ptr<cricket::FakeIceTransport> ice)
+  explicit FakeDtlsTransport(std::unique_ptr<FakeIceTransport> ice)
       : owned_ice_transport_(std::move(ice)),
         transport_name_(owned_ice_transport_->transport_name()),
         component_(owned_ice_transport_->component()),
@@ -81,15 +81,14 @@ class FakeDtlsTransport : public cricket::DtlsTransportInternal {
   
   
   FakeDtlsTransport(const std::string& name, int component)
-      : FakeDtlsTransport(
-            std::make_unique<cricket::FakeIceTransport>(name, component)) {}
+      : FakeDtlsTransport(std::make_unique<FakeIceTransport>(name, component)) {
+  }
   FakeDtlsTransport(const std::string& name,
                     int component,
                     Thread* network_thread)
-      : FakeDtlsTransport(
-            std::make_unique<cricket::FakeIceTransport>(name,
-                                                        component,
-                                                        network_thread)) {}
+      : FakeDtlsTransport(std::make_unique<FakeIceTransport>(name,
+                                                             component,
+                                                             network_thread)) {}
 
   ~FakeDtlsTransport() override {
     if (dest_ && dest_->dest_ == this) {
@@ -99,7 +98,7 @@ class FakeDtlsTransport : public cricket::DtlsTransportInternal {
   }
 
   
-  cricket::FakeIceTransport* fake_ice_transport() { return ice_transport_; }
+  FakeIceTransport* fake_ice_transport() { return ice_transport_; }
 
   
   
@@ -150,8 +149,7 @@ class FakeDtlsTransport : public cricket::DtlsTransportInternal {
       }
       SetDtlsState(DtlsTransportState::kConnected);
       ice_transport_->SetDestination(
-          static_cast<cricket::FakeIceTransport*>(dest->ice_transport()),
-          asymmetric);
+          static_cast<FakeIceTransport*>(dest->ice_transport()), asymmetric);
     } else {
       
       dest_ = nullptr;
@@ -268,7 +266,7 @@ class FakeDtlsTransport : public cricket::DtlsTransportInternal {
                  const rtc::PacketOptions& options,
                  int flags) override {
     
-    if (flags != cricket::PF_SRTP_BYPASS && flags != 0) {
+    if (flags != PF_SRTP_BYPASS && flags != 0) {
       return -1;
     }
     return ice_transport_->SendPacket(data, len, options, flags);
@@ -314,8 +312,8 @@ class FakeDtlsTransport : public cricket::DtlsTransportInternal {
     SignalNetworkRouteChanged(network_route);
   }
 
-  cricket::FakeIceTransport* ice_transport_;
-  std::unique_ptr<cricket::FakeIceTransport> owned_ice_transport_;
+  FakeIceTransport* ice_transport_;
+  std::unique_ptr<FakeIceTransport> owned_ice_transport_;
   std::string transport_name_;
   int component_;
   FakeDtlsTransport* dest_ = nullptr;

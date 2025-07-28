@@ -50,6 +50,7 @@
 #include "api/video_codecs/scalability_mode.h"
 #include "api/video_codecs/video_encoder_factory.h"
 #include "common_video/include/quality_limitation_reason.h"
+#include "media/base/audio_source.h"
 #include "media/base/codec.h"
 #include "media/base/stream_params.h"
 #include "modules/rtp_rtcp/include/report_block_data.h"
@@ -64,14 +65,8 @@
 
 namespace webrtc {
 class VideoFrame;
-}  
-
-namespace cricket {
-
-class AudioSource;
-class VideoCapturer;
-struct RtpHeader;
 struct VideoFormat;
+
 class VideoMediaSendChannelInterface;
 class VideoMediaReceiveChannelInterface;
 class VoiceMediaSendChannelInterface;
@@ -190,7 +185,7 @@ class MediaSendChannelInterface {
 
   
   
-  virtual bool AddSendStream(const StreamParams& sp) = 0;
+  virtual bool AddSendStream(const webrtc::StreamParams& sp) = 0;
   
   
   
@@ -263,7 +258,7 @@ class MediaReceiveChannelInterface {
   
   
   
-  virtual bool AddRecvStream(const StreamParams& sp) = 0;
+  virtual bool AddRecvStream(const webrtc::StreamParams& sp) = 0;
   
   
   
@@ -569,7 +564,7 @@ struct VideoSenderInfo : public MediaSenderInfo {
   VideoSenderInfo();
   ~VideoSenderInfo();
   std::optional<size_t> encoding_index;
-  std::vector<SsrcGroup> ssrc_groups;
+  std::vector<webrtc::SsrcGroup> ssrc_groups;
   std::optional<std::string> encoder_implementation_name;
   int firs_received = 0;
   int plis_received = 0;
@@ -613,7 +608,7 @@ struct VideoSenderInfo : public MediaSenderInfo {
 struct VideoReceiverInfo : public MediaReceiverInfo {
   VideoReceiverInfo();
   ~VideoReceiverInfo();
-  std::vector<SsrcGroup> ssrc_groups;
+  std::vector<webrtc::SsrcGroup> ssrc_groups;
   std::optional<std::string> decoder_implementation_name;
   std::optional<bool> power_efficient_decoder;
   int packets_concealed = 0;
@@ -820,11 +815,6 @@ struct VideoMediaInfo {
   RtpCodecParametersMap receive_codecs;
 };
 
-struct RtcpParameters {
-  bool reduced_size = false;
-  bool remote_estimate = false;
-};
-
 struct MediaChannelParameters {
   virtual ~MediaChannelParameters() = default;
   
@@ -839,7 +829,10 @@ struct MediaChannelParameters {
   bool is_stream_active = true;
 
   
-  RtcpParameters rtcp;
+  struct RtcpParameters {
+    bool reduced_size = false;
+    bool remote_estimate = false;
+  } rtcp;
 
   std::string ToString() const {
     rtc::StringBuilder ost;
@@ -880,7 +873,7 @@ struct SenderParameters : MediaChannelParameters {
 struct AudioSenderParameter : SenderParameters {
   AudioSenderParameter();
   ~AudioSenderParameter() override;
-  AudioOptions options;
+  webrtc::AudioOptions options;
 
  protected:
   std::map<std::string, std::string> ToStringMap() const override;
@@ -896,8 +889,8 @@ class VoiceMediaSendChannelInterface : public MediaSendChannelInterface {
   
   virtual bool SetAudioSend(uint32_t ssrc,
                             bool enable,
-                            const AudioOptions* options,
-                            AudioSource* source) = 0;
+                            const webrtc::AudioOptions* options,
+                            webrtc::AudioSource* source) = 0;
   
   virtual bool CanInsertDtmf() = 0;
   
@@ -1019,9 +1012,49 @@ class VideoMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
                                              bool nack_enabled,
                                              webrtc::RtcpMode rtcp_mode,
                                              std::optional<int> rtx_time) = 0;
-  virtual bool AddDefaultRecvStreamForTesting(const StreamParams& sp) = 0;
+  virtual bool AddDefaultRecvStreamForTesting(
+      const webrtc::StreamParams& sp) = 0;
 };
 
+}  
+
+
+
+namespace cricket {
+using RtcpParameters = ::webrtc::MediaChannelParameters::RtcpParameters;
+using ::webrtc::AudioReceiverParameters;
+using ::webrtc::AudioSenderParameter;
+using ::webrtc::BandwidthEstimationInfo;
+using ::webrtc::kScreencastDefaultFps;
+using ::webrtc::MediaChannelNetworkInterface;
+using ::webrtc::MediaChannelParameters;
+using ::webrtc::MediaReceiveChannelInterface;
+using ::webrtc::MediaReceiverInfo;
+using ::webrtc::MediaSendChannelInterface;
+using ::webrtc::MediaSenderInfo;
+using ::webrtc::RtpCodecParametersMap;
+using ::webrtc::SenderParameters;
+using ::webrtc::SsrcReceiverInfo;
+using ::webrtc::SsrcSenderInfo;
+using ::webrtc::ToStringIfSet;
+using ::webrtc::VectorToString;
+using ::webrtc::VideoMediaInfo;
+using ::webrtc::VideoMediaReceiveChannelInterface;
+using ::webrtc::VideoMediaReceiveInfo;
+using ::webrtc::VideoMediaSendChannelInterface;
+using ::webrtc::VideoMediaSendInfo;
+using ::webrtc::VideoOptions;
+using ::webrtc::VideoReceiverInfo;
+using ::webrtc::VideoReceiverParameters;
+using ::webrtc::VideoSenderInfo;
+using ::webrtc::VideoSenderParameters;
+using ::webrtc::VoiceMediaInfo;
+using ::webrtc::VoiceMediaReceiveChannelInterface;
+using ::webrtc::VoiceMediaReceiveInfo;
+using ::webrtc::VoiceMediaSendChannelInterface;
+using ::webrtc::VoiceMediaSendInfo;
+using ::webrtc::VoiceReceiverInfo;
+using ::webrtc::VoiceSenderInfo;
 }  
 
 #endif  

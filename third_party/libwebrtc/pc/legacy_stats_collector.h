@@ -148,9 +148,8 @@ class LegacyStatsCollector : public LegacyStatsCollectorInterface {
 
   
   
-  StatsReport* AddCandidateReport(
-      const cricket::CandidateStats& candidate_stats,
-      bool local);
+  StatsReport* AddCandidateReport(const CandidateStats& candidate_stats,
+                                  bool local);
 
   
   
@@ -161,7 +160,7 @@ class LegacyStatsCollector : public LegacyStatsCollectorInterface {
                                        int component,
                                        int connection_id,
                                        const StatsReport::Id& channel_report_id,
-                                       const cricket::ConnectionInfo& info);
+                                       const ConnectionInfo& info);
 
   void ExtractDataInfo_n(StatsCollection* reports);
 

@@ -15,7 +15,7 @@
 #include <cstdint>
 #include <optional>
 
-namespace cricket {
+namespace webrtc {
 
 
 
@@ -53,6 +53,12 @@ class AudioSource {
   virtual ~AudioSource() {}
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::AudioSource;
 }  
 
 #endif  

@@ -36,7 +36,7 @@
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/weak_ptr.h"
 
-namespace cricket {
+namespace webrtc {
 
 class TCPConnection;
 
@@ -59,7 +59,7 @@ class TCPPort : public Port {
 
   ~TCPPort() override;
 
-  Connection* CreateConnection(const webrtc::Candidate& address,
+  Connection* CreateConnection(const Candidate& address,
                                CandidateOrigin origin) override;
 
   void PrepareAddress() override;
@@ -67,11 +67,11 @@ class TCPPort : public Port {
   
   
   
-  int GetOption(webrtc::Socket::Option opt, int* value) override;
-  int SetOption(webrtc::Socket::Option opt, int value) override;
+  int GetOption(Socket::Option opt, int* value) override;
+  int SetOption(Socket::Option opt, int value) override;
   int GetError() override;
   bool SupportsProtocol(absl::string_view protocol) const override;
-  webrtc::ProtocolType GetProtocol() const override;
+  ProtocolType GetProtocol() const override;
 
  protected:
   TCPPort(const PortParametersRef& args,
@@ -82,41 +82,41 @@ class TCPPort : public Port {
   
   int SendTo(const void* data,
              size_t size,
-             const webrtc::SocketAddress& addr,
+             const SocketAddress& addr,
              const rtc::PacketOptions& options,
              bool payload) override;
 
   
-  void OnNewConnection(webrtc::AsyncListenSocket* socket,
-                       webrtc::AsyncPacketSocket* new_socket);
+  void OnNewConnection(AsyncListenSocket* socket,
+                       AsyncPacketSocket* new_socket);
 
  private:
   struct Incoming {
-    webrtc::SocketAddress addr;
-    webrtc::AsyncPacketSocket* socket;
+    SocketAddress addr;
+    AsyncPacketSocket* socket;
   };
 
   void TryCreateServerSocket();
 
-  webrtc::AsyncPacketSocket* GetIncoming(const webrtc::SocketAddress& addr,
-                                         bool remove = false);
+  AsyncPacketSocket* GetIncoming(const SocketAddress& addr,
+                                 bool remove = false);
 
   
-  void OnReadPacket(webrtc::AsyncPacketSocket* socket,
+  void OnReadPacket(AsyncPacketSocket* socket,
                     const rtc::ReceivedPacket& packet);
 
-  void OnSentPacket(webrtc::AsyncPacketSocket* socket,
+  void OnSentPacket(AsyncPacketSocket* socket,
                     const rtc::SentPacket& sent_packet) override;
 
-  void OnReadyToSend(webrtc::AsyncPacketSocket* socket);
+  void OnReadyToSend(AsyncPacketSocket* socket);
 
   bool allow_listen_;
-  std::unique_ptr<webrtc::AsyncListenSocket> listen_socket_;
+  std::unique_ptr<AsyncListenSocket> listen_socket_;
   
   
   
   
-  webrtc::flat_map<webrtc::Socket::Option, int> socket_options_;
+  flat_map<Socket::Option, int> socket_options_;
 
   int error_;
   std::list<Incoming> incoming_;
@@ -127,9 +127,9 @@ class TCPPort : public Port {
 class TCPConnection : public Connection, public sigslot::has_slots<> {
  public:
   
-  TCPConnection(rtc::WeakPtr<Port> tcp_port,
-                const webrtc::Candidate& candidate,
-                webrtc::AsyncPacketSocket* socket = nullptr);
+  TCPConnection(WeakPtr<Port> tcp_port,
+                const Candidate& candidate,
+                AsyncPacketSocket* socket = nullptr);
   ~TCPConnection() override;
 
   int Send(const void* data,
@@ -137,7 +137,7 @@ class TCPConnection : public Connection, public sigslot::has_slots<> {
            const rtc::PacketOptions& options) override;
   int GetError() override;
 
-  webrtc::AsyncPacketSocket* socket() { return socket_.get(); }
+  AsyncPacketSocket* socket() { return socket_.get(); }
 
   
   int reconnection_timeout() const { return reconnection_timeout_; }
@@ -160,19 +160,19 @@ class TCPConnection : public Connection, public sigslot::has_slots<> {
 
   void CreateOutgoingTcpSocket() RTC_RUN_ON(network_thread());
 
-  void ConnectSocketSignals(webrtc::AsyncPacketSocket* socket)
+  void ConnectSocketSignals(AsyncPacketSocket* socket)
       RTC_RUN_ON(network_thread());
 
-  void DisconnectSocketSignals(webrtc::AsyncPacketSocket* socket)
+  void DisconnectSocketSignals(AsyncPacketSocket* socket)
       RTC_RUN_ON(network_thread());
 
-  void OnConnect(webrtc::AsyncPacketSocket* socket);
-  void OnClose(webrtc::AsyncPacketSocket* socket, int error);
-  void OnSentPacket(webrtc::AsyncPacketSocket* socket,
+  void OnConnect(AsyncPacketSocket* socket);
+  void OnClose(AsyncPacketSocket* socket, int error);
+  void OnSentPacket(AsyncPacketSocket* socket,
                     const rtc::SentPacket& sent_packet);
-  void OnReadPacket(webrtc::AsyncPacketSocket* socket,
+  void OnReadPacket(AsyncPacketSocket* socket,
                     const rtc::ReceivedPacket& packet);
-  void OnReadyToSend(webrtc::AsyncPacketSocket* socket);
+  void OnReadyToSend(AsyncPacketSocket* socket);
   void OnDestroyed(Connection* c);
 
   TCPPort* tcp_port() {
@@ -180,7 +180,7 @@ class TCPConnection : public Connection, public sigslot::has_slots<> {
     return static_cast<TCPPort*>(port());
   }
 
-  std::unique_ptr<webrtc::AsyncPacketSocket> socket_;
+  std::unique_ptr<AsyncPacketSocket> socket_;
   int error_;
   const bool outgoing_;
 
@@ -198,9 +198,16 @@ class TCPConnection : public Connection, public sigslot::has_slots<> {
   
   int reconnection_timeout_;
 
-  webrtc::ScopedTaskSafety network_safety_;
+  ScopedTaskSafety network_safety_;
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::TCPConnection;
+using ::webrtc::TCPPort;
 }  
 
 #endif  

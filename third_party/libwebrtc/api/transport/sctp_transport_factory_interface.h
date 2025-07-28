@@ -16,12 +16,11 @@
 #include "api/environment/environment.h"
 
 
-namespace cricket {
-class SctpTransportInternal;
-class DtlsTransportInternal;
-}  
 
 namespace webrtc {
+
+class DtlsTransportInternal;
+class SctpTransportInternal;
 
 
 
@@ -32,9 +31,9 @@ class SctpTransportFactoryInterface {
   virtual ~SctpTransportFactoryInterface() = default;
 
   
-  virtual std::unique_ptr<cricket::SctpTransportInternal> CreateSctpTransport(
+  virtual std::unique_ptr<SctpTransportInternal> CreateSctpTransport(
       const Environment& env,
-      cricket::DtlsTransportInternal* channel) = 0;
+      DtlsTransportInternal* channel) = 0;
 };
 
 }  

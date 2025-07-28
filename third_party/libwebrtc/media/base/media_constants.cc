@@ -12,7 +12,7 @@
 
 #include <cstddef>
 
-namespace cricket {
+namespace webrtc {
 
 const int kVideoCodecClockrate = 90000;
 

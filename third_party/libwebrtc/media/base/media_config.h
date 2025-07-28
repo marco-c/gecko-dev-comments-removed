@@ -11,7 +11,7 @@
 #ifndef MEDIA_BASE_MEDIA_CONFIG_H_
 #define MEDIA_BASE_MEDIA_CONFIG_H_
 
-namespace cricket {
+namespace webrtc {
 
 
 
@@ -104,6 +104,12 @@ struct MediaConfig {
   bool operator!=(const MediaConfig& o) const { return !(*this == o); }
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::MediaConfig;
 }  
 
 #endif  

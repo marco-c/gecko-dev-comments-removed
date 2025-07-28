@@ -50,8 +50,7 @@ RTCError CheckInputConsistency(const std::vector<Codec>& codecs) {
         break;
       case Codec::ResiliencyType::kRtx: {
         
-        const auto apt_it =
-            codec.params.find(cricket::kCodecParamAssociatedPayloadType);
+        const auto apt_it = codec.params.find(kCodecParamAssociatedPayloadType);
         
         
         

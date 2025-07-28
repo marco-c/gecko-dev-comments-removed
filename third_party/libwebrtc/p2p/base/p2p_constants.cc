@@ -13,7 +13,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace cricket {
+namespace webrtc {
 
 const char CN_AUDIO[] = "audio";
 const char CN_VIDEO[] = "video";

@@ -359,7 +359,7 @@ struct AudioConfig {
   std::optional<std::string> output_dump_file_name;
 
   
-  cricket::AudioOptions audio_options;
+  AudioOptions audio_options;
   
   int sampling_frequency_in_hz = 48000;
   
