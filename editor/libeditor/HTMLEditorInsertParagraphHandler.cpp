@@ -2012,6 +2012,44 @@ HTMLEditor::AutoInsertParagraphHandler::HandleInListItemElement(
   const EditorDOMPoint pointToSplit =
       GetBetterPointToSplitParagraph(aListItemElement, aPointToSplit);
   MOZ_ASSERT(pointToSplit.IsInContentNodeAndValidInComposedDoc());
+
+  
+  
+  
+  
+  if (aListItemElement.IsAnyOfHTMLElements(nsGkAtoms::dt, nsGkAtoms::dd) &&
+      SplitPointIsEndOfSplittingBlock(aListItemElement, pointToSplit,
+                                      IgnoreBlockBoundaries::Yes) &&
+      
+      !SplitPointIsStartOfSplittingBlock(aListItemElement, pointToSplit,
+                                         IgnoreBlockBoundaries::Yes)) {
+    nsStaticAtom& oppositeTypeListItemTag =
+        aListItemElement.IsHTMLElement(nsGkAtoms::dt) ? *nsGkAtoms::dd
+                                                      : *nsGkAtoms::dt;
+    
+    
+    Result<CreateElementResult, nsresult>
+        insertOppositeTypeListItemResultOrError =
+            mHTMLEditor.CreateAndInsertElement(
+                WithTransaction::Yes, MOZ_KnownLive(oppositeTypeListItemTag),
+                EditorDOMPoint::After(aListItemElement),
+                HTMLEditor::InsertNewBRElement);
+    if (MOZ_UNLIKELY(insertOppositeTypeListItemResultOrError.isErr())) {
+      NS_WARNING(
+          "HTMLEditor::CreateAndInsertElement(WithTransaction::Yes) failed");
+      return insertOppositeTypeListItemResultOrError.propagateErr();
+    }
+    CreateElementResult insertOppositeTypeListItemResult =
+        insertOppositeTypeListItemResultOrError.unwrap();
+    insertOppositeTypeListItemResult.IgnoreCaretPointSuggestion();
+    RefPtr<Element> oppositeTypeListItemElement =
+        insertOppositeTypeListItemResult.UnwrapNewNode();
+    EditorDOMPoint startOfOppositeTypeListItem(oppositeTypeListItemElement, 0u);
+    MOZ_ASSERT(oppositeTypeListItemElement);
+    return InsertParagraphResult(std::move(oppositeTypeListItemElement),
+                                 std::move(startOfOppositeTypeListItem));
+  }
+
   
   
   
@@ -2038,70 +2076,71 @@ HTMLEditor::AutoInsertParagraphHandler::HandleInListItemElement(
         "split the listitem");
     return Err(NS_ERROR_FAILURE);
   }
-  
-  
-  
-  auto& leftListItemElement =
-      *splitListItemElement.GetPreviousContentAs<Element>();
-  auto& rightListItemElement =
-      *splitListItemElement.GetNextContentAs<Element>();
+  auto* const rightListItemElement =
+      splitListItemElement.GetNextContentAs<Element>();
+  return InsertParagraphResult(rightListItemElement,
+                               std::move(pointToPutCaret));
+}
 
-  
-  
-  
-  if (HTMLEditUtils::IsEmptyNode(
-          leftListItemElement,
-          {EmptyCheckOption::TreatNonEditableContentAsInvisible})) {
-    return InsertParagraphResult(&rightListItemElement,
-                                 std::move(pointToPutCaret));
-  }
 
-  if (aListItemElement.IsHTMLElement(nsGkAtoms::li) ||
-      !HTMLEditUtils::IsEmptyNode(
-          rightListItemElement,
-          {EmptyCheckOption::TreatNonEditableContentAsInvisible})) {
-    return InsertParagraphResult(&rightListItemElement,
-                                 std::move(pointToPutCaret));
+bool HTMLEditor::AutoInsertParagraphHandler::SplitPointIsStartOfSplittingBlock(
+    const Element& aBlockElementToSplit, const EditorDOMPoint& aPointToSplit,
+    IgnoreBlockBoundaries aIgnoreBlockBoundaries) {
+  EditorRawDOMPoint pointToSplit = aPointToSplit.To<EditorRawDOMPoint>();
+  while (true) {
+    const WSScanResult prevVisibleThing =
+        WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
+            WSRunScanner::Scan::All, pointToSplit,
+            BlockInlineCheck::UseComputedDisplayOutsideStyle);
+    if (!prevVisibleThing.ReachedCurrentBlockBoundary()) {
+      return false;
+    }
+    if (prevVisibleThing.ElementPtr() == &aBlockElementToSplit) {
+      return true;
+    }
+    if (!static_cast<bool>(aIgnoreBlockBoundaries)) {
+      return false;
+    }
+    pointToSplit = pointToSplit.ParentPoint();
   }
+}
 
-  
-  
-  
-  
-  
-  MOZ_ASSERT(
-      aListItemElement.IsAnyOfHTMLElements(nsGkAtoms::dd, nsGkAtoms::dt));
-  nsStaticAtom& nextDefinitionListItemTagName =
-      aListItemElement.IsHTMLElement(nsGkAtoms::dt) ? *nsGkAtoms::dd
-                                                    : *nsGkAtoms::dt;
-  
-  
-  Result<CreateElementResult, nsresult> createNewListItemElementResult =
-      mHTMLEditor.CreateAndInsertElement(
-          WithTransaction::Yes, MOZ_KnownLive(nextDefinitionListItemTagName),
-          EditorDOMPoint::After(rightListItemElement),
-          HTMLEditor::InsertNewBRElement);
-  if (MOZ_UNLIKELY(createNewListItemElementResult.isErr())) {
-    NS_WARNING(
-        "HTMLEditor::CreateAndInsertElement(WithTransaction::Yes) failed");
-    return createNewListItemElementResult.propagateErr();
+
+bool HTMLEditor::AutoInsertParagraphHandler::SplitPointIsEndOfSplittingBlock(
+    const Element& aBlockElementToSplit, const EditorDOMPoint& aPointToSplit,
+    IgnoreBlockBoundaries aIgnoreBlockBoundaries) {
+  bool maybeFollowedByInvisibleBRElement = true;
+  EditorRawDOMPoint pointToSplit = aPointToSplit.To<EditorRawDOMPoint>();
+  while (true) {
+    WSScanResult nextVisibleThing =
+        WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
+            WSRunScanner::Scan::All, pointToSplit,
+            BlockInlineCheck::UseComputedDisplayOutsideStyle,
+            &aBlockElementToSplit);
+    if (maybeFollowedByInvisibleBRElement &&
+        (nextVisibleThing.ReachedBRElement() ||
+         nextVisibleThing.ReachedPreformattedLineBreak())) {
+      nextVisibleThing =
+          WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
+              WSRunScanner::Scan::All,
+              nextVisibleThing.PointAfterReachedContent<EditorRawDOMPoint>(),
+              BlockInlineCheck::UseComputedDisplayOutsideStyle,
+              &aBlockElementToSplit);
+    }
+    if (!nextVisibleThing.ReachedCurrentBlockBoundary()) {
+      return false;
+    }
+    if (nextVisibleThing.ElementPtr() == &aBlockElementToSplit) {
+      return true;
+    }
+    if (!static_cast<bool>(aIgnoreBlockBoundaries)) {
+      return false;
+    }
+    pointToSplit = pointToSplit.AfterContainer();
+    
+    
+    maybeFollowedByInvisibleBRElement = false;
   }
-  CreateElementResult unwrappedCreateNewListItemElementResult =
-      createNewListItemElementResult.unwrap();
-  unwrappedCreateNewListItemElementResult.IgnoreCaretPointSuggestion();
-  RefPtr<Element> newListItemElement =
-      unwrappedCreateNewListItemElementResult.UnwrapNewNode();
-  MOZ_ASSERT(newListItemElement);
-  
-  
-  nsresult rv = mHTMLEditor.DeleteNodeWithTransaction(
-      MOZ_KnownLive(rightListItemElement));
-  if (NS_FAILED(rv)) {
-    NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
-    return Err(rv);
-  }
-  return InsertParagraphResult(std::move(newListItemElement),
-                               EditorDOMPoint(newListItemElement, 0u));
 }
 
 }  

@@ -737,6 +737,58 @@ class MOZ_STACK_CLASS HTMLEditor::AutoInsertParagraphHandler final {
       const Element& aBlockElementToSplit,
       const EditorDOMPoint& aCandidatePointToSplit);
 
+  enum class IgnoreBlockBoundaries : bool { No, Yes };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] static bool SplitPointIsStartOfSplittingBlock(
+      const Element& aBlockElementToSplit, const EditorDOMPoint& aPointToSplit,
+      IgnoreBlockBoundaries aIgnoreBlockBoundaries);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] static bool SplitPointIsEndOfSplittingBlock(
+      const Element& aBlockElementToSplit, const EditorDOMPoint& aPointToSplit,
+      IgnoreBlockBoundaries aIgnoreBlockBoundaries);
+
   MOZ_KNOWN_LIVE HTMLEditor& mHTMLEditor;
   MOZ_KNOWN_LIVE const Element& mEditingHost;
   MOZ_KNOWN_LIVE nsStaticAtom& mDefaultParagraphSeparatorTagName;
