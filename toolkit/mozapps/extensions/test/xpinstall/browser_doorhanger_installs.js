@@ -393,6 +393,51 @@ function setupRedirect(aSettings) {
   req.send(null);
 }
 
+async function installAddonWithPrivateBrowsingAccess(xpiUrl, addonId) {
+  
+  
+  
+  await ExtensionPermissions.add(addonId, {
+    permissions: ["internal:privateBrowsingAllowed"],
+    origins: [],
+  });
+
+  let progressPromise = waitForProgressNotification();
+  let dialogPromise = waitForInstallDialog();
+
+  gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+  gURLBar.value = xpiUrl;
+  gURLBar.focus();
+  EventUtils.synthesizeKey("KEY_Enter");
+
+  await progressPromise;
+  let installDialog = await dialogPromise;
+
+  testInstallDialogIncognitoCheckbox(installDialog, {
+    incognitoHidden: false,
+    
+    incognitoChecked: false,
+    toggleIncognito: true,
+  });
+  let notificationPromise = acceptAppMenuNotificationWhenShown(
+    "addon-installed",
+    addonId
+  );
+  let readyPromise = AddonTestUtils.promiseWebExtensionStartup(addonId);
+  installDialog.button.click();
+  await notificationPromise;
+  let installs = await AddonManager.getAllInstalls();
+  is(installs.length, 0, "Should be no pending installs");
+
+  await readyPromise;
+
+  let policy = WebExtensionPolicy.getByID(addonId);
+  ok(policy.privateBrowsingAllowed, "private browsing permission granted");
+
+  await removeTabAndWaitForNotificationClose();
+}
+
 var TESTS = [
   async function test_disabledInstall() {
     await SpecialPowers.pushPrefEnv({
@@ -777,6 +822,9 @@ var TESTS = [
       "amosigned-xpi@tests.mozilla.org",
       { dismiss: true }
     );
+    let readyPromise = AddonTestUtils.promiseWebExtensionStartup(
+      "amosigned-xpi@tests.mozilla.org"
+    );
     acceptInstallDialog(installDialog);
 
     await notificationPromise;
@@ -788,9 +836,15 @@ var TESTS = [
       "amosigned-xpi@tests.mozilla.org"
     );
 
+    await readyPromise;
+    let readyPromise2 = AddonTestUtils.promiseWebExtensionStartup(
+      "amosigned-xpi@tests.mozilla.org"
+    );
+
     
     
     await addon.reload();
+    await readyPromise2;
     let policy = WebExtensionPolicy.getByID(addon.id);
     ok(
       !policy.privateBrowsingAllowed,
@@ -1323,17 +1377,16 @@ var TESTS = [
     await SpecialPowers.popPrefEnv();
   },
 
+  
+  
   async function test_incognito_checkbox() {
     
-    const permissionName = "internal:privateBrowsingAllowed";
-    let incognitoPermission = {
-      permissions: [permissionName],
-      origins: [],
-    };
-    await ExtensionPermissions.add(
-      "amosigned-xpi@tests.mozilla.org",
-      incognitoPermission
+    await installAddonWithPrivateBrowsingAccess(
+      TESTROOT + "amosigned.xpi",
+      "amosigned-xpi@tests.mozilla.org"
     );
+    
+    
 
     let progressPromise = waitForProgressNotification();
     let dialogPromise = waitForInstallDialog();
@@ -1357,6 +1410,9 @@ var TESTS = [
       "addon-installed",
       "amosigned-xpi@tests.mozilla.org"
     );
+    let readyPromise = AddonTestUtils.promiseWebExtensionStartup(
+      "amosigned-xpi@tests.mozilla.org"
+    );
     installDialog.button.click();
     await notificationPromise;
 
@@ -1366,6 +1422,8 @@ var TESTS = [
     let addon = await AddonManager.getAddonByID(
       "amosigned-xpi@tests.mozilla.org"
     );
+
+    await readyPromise;
 
     
     let policy = WebExtensionPolicy.getByID(addon.id);
@@ -1377,18 +1435,16 @@ var TESTS = [
   },
 
   async function test_incognito_checkbox_new_window() {
+    
+    await installAddonWithPrivateBrowsingAccess(
+      TESTROOT + "amosigned.xpi",
+      "amosigned-xpi@tests.mozilla.org"
+    );
+    
+    
+
     let win = await BrowserTestUtils.openNewBrowserWindow();
     await SimpleTest.promiseFocus(win);
-    
-    const permissionName = "internal:privateBrowsingAllowed";
-    let incognitoPermission = {
-      permissions: [permissionName],
-      origins: [],
-    };
-    await ExtensionPermissions.add(
-      "amosigned-xpi@tests.mozilla.org",
-      incognitoPermission
-    );
 
     let panelEventPromise = new Promise(resolve => {
       win.PopupNotifications.panel.addEventListener(
@@ -1447,6 +1503,9 @@ var TESTS = [
       "amosigned-xpi@tests.mozilla.org",
       { global: win }
     );
+    let readyPromise = AddonTestUtils.promiseWebExtensionStartup(
+      "amosigned-xpi@tests.mozilla.org"
+    );
     acceptInstallDialog(installDialog);
     await notificationPromise;
 
@@ -1456,6 +1515,8 @@ var TESTS = [
     let addon = await AddonManager.getAddonByID(
       "amosigned-xpi@tests.mozilla.org"
     );
+
+    await readyPromise;
 
     
     let policy = WebExtensionPolicy.getByID(addon.id);
