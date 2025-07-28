@@ -114,13 +114,13 @@ class BoundSocket : public webrtc::EmulatedNetworkReceiverInterface {
     dest_address_ = socket.source_address_;
   }
 
-  void SetReceiver(std::function<void(rtc::CopyOnWriteBuffer)> receiver) {
+  void SetReceiver(std::function<void(webrtc::CopyOnWriteBuffer)> receiver) {
     receiver_ = std::move(receiver);
   }
 
-  void SendPacket(rtc::ArrayView<const uint8_t> data) {
+  void SendPacket(webrtc::ArrayView<const uint8_t> data) {
     endpoint_->SendPacket(source_address_, dest_address_,
-                          rtc::CopyOnWriteBuffer(data.data(), data.size()));
+                          webrtc::CopyOnWriteBuffer(data.data(), data.size()));
   }
 
  private:
@@ -129,7 +129,7 @@ class BoundSocket : public webrtc::EmulatedNetworkReceiverInterface {
     receiver_(std::move(packet.data));
   }
 
-  std::function<void(rtc::CopyOnWriteBuffer)> receiver_;
+  std::function<void(webrtc::CopyOnWriteBuffer)> receiver_;
   webrtc::EmulatedEndpoint* endpoint_ = nullptr;
   webrtc::SocketAddress source_address_;
   webrtc::SocketAddress dest_address_;
@@ -153,7 +153,7 @@ class SctpActor : public DcSctpSocketCallbacks {
         random_(GetUniqueSeed()),
         sctp_socket_(name, *this, nullptr, sctp_options),
         last_bandwidth_printout_(Now()) {
-    emulated_socket.SetReceiver([this](rtc::CopyOnWriteBuffer buf) {
+    emulated_socket.SetReceiver([this](webrtc::CopyOnWriteBuffer buf) {
       
       
       thread_->PostTask([this, buf] { this->sctp_socket_.ReceivePacket(buf); });
@@ -181,7 +181,7 @@ class SctpActor : public DcSctpSocketCallbacks {
     }
   }
 
-  void SendPacket(rtc::ArrayView<const uint8_t> data) override {
+  void SendPacket(webrtc::ArrayView<const uint8_t> data) override {
     emulated_socket_.SendPacket(data);
   }
 
@@ -218,14 +218,14 @@ class SctpActor : public DcSctpSocketCallbacks {
   void OnConnectionRestarted() override {}
 
   void OnStreamsResetFailed(
-      rtc::ArrayView<const StreamID> ,
+      webrtc::ArrayView<const StreamID> ,
       absl::string_view ) override {}
 
   void OnStreamsResetPerformed(
-      rtc::ArrayView<const StreamID> ) override {}
+      webrtc::ArrayView<const StreamID> ) override {}
 
   void OnIncomingStreamsReset(
-      rtc::ArrayView<const StreamID> ) override {}
+      webrtc::ArrayView<const StreamID> ) override {}
 
   void NotifyOutgoingMessageBufferEmpty() override {}
 

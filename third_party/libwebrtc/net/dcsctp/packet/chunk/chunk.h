@@ -52,7 +52,7 @@ class Chunk {
 
 
 
-std::string DebugConvertChunkToString(rtc::ArrayView<const uint8_t> data);
+std::string DebugConvertChunkToString(webrtc::ArrayView<const uint8_t> data);
 
 struct ChunkConfig {
   static constexpr int kTypeSizeInBytes = 1;

@@ -42,11 +42,11 @@ class SctpPacket {
   struct ChunkDescriptor {
     ChunkDescriptor(uint8_t type,
                     uint8_t flags,
-                    rtc::ArrayView<const uint8_t> data)
+                    webrtc::ArrayView<const uint8_t> data)
         : type(type), flags(flags), data(data) {}
     uint8_t type;
     uint8_t flags;
-    rtc::ArrayView<const uint8_t> data;
+    webrtc::ArrayView<const uint8_t> data;
   };
 
   SctpPacket(SctpPacket&& other) = default;
@@ -89,14 +89,14 @@ class SctpPacket {
   };
 
   
-  static std::optional<SctpPacket> Parse(rtc::ArrayView<const uint8_t> data,
+  static std::optional<SctpPacket> Parse(webrtc::ArrayView<const uint8_t> data,
                                          const DcSctpOptions& options);
 
   
   const CommonHeader& common_header() const { return common_header_; }
 
   
-  rtc::ArrayView<const ChunkDescriptor> descriptors() const {
+  webrtc::ArrayView<const ChunkDescriptor> descriptors() const {
     return descriptors_;
   }
 

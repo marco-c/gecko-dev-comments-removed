@@ -83,7 +83,7 @@ class DcSctpSocket : public DcSctpSocketInterface {
   DcSctpSocket& operator=(const DcSctpSocket&) = delete;
 
   
-  void ReceivePacket(rtc::ArrayView<const uint8_t> data) override;
+  void ReceivePacket(webrtc::ArrayView<const uint8_t> data) override;
   void HandleTimeout(TimeoutID timeout_id) override;
   void Connect() override;
   void RestoreFromState(const DcSctpSocketHandoverState& state) override;
@@ -91,10 +91,10 @@ class DcSctpSocket : public DcSctpSocketInterface {
   void Close() override;
   SendStatus Send(DcSctpMessage message,
                   const SendOptions& send_options) override;
-  std::vector<SendStatus> SendMany(rtc::ArrayView<DcSctpMessage> messages,
+  std::vector<SendStatus> SendMany(webrtc::ArrayView<DcSctpMessage> messages,
                                    const SendOptions& send_options) override;
   ResetStreamsStatus ResetStreams(
-      rtc::ArrayView<const StreamID> outgoing_streams) override;
+      webrtc::ArrayView<const StreamID> outgoing_streams) override;
   SocketState state() const override;
   const DcSctpOptions& options() const override { return options_; }
   void SetMaxMessageSize(size_t max_message_size) override;
@@ -158,7 +158,7 @@ class DcSctpSocket : public DcSctpSocketInterface {
   webrtc::TimeDelta OnInitTimerExpiry();
   webrtc::TimeDelta OnCookieTimerExpiry();
   webrtc::TimeDelta OnShutdownTimerExpiry();
-  void OnSentPacket(rtc::ArrayView<const uint8_t> packet,
+  void OnSentPacket(webrtc::ArrayView<const uint8_t> packet,
                     SendPacketStatus status);
   
   
@@ -181,7 +181,7 @@ class DcSctpSocket : public DcSctpSocketInterface {
   bool ValidatePacket(const SctpPacket& packet);
   
   
-  void DebugPrintOutgoing(rtc::ArrayView<const uint8_t> payload);
+  void DebugPrintOutgoing(webrtc::ArrayView<const uint8_t> payload);
   
   
   void MaybeDeliverMessages();

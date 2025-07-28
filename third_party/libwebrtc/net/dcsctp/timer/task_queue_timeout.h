@@ -72,7 +72,8 @@ class TaskQueueTimeoutFactory {
     
     
     
-    rtc::scoped_refptr<webrtc::PendingTaskSafetyFlag> pending_task_safety_flag_;
+    webrtc::scoped_refptr<webrtc::PendingTaskSafetyFlag>
+        pending_task_safety_flag_;
     
     
     webrtc::Timestamp posted_task_expiration_ =

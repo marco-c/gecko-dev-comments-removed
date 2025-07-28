@@ -25,12 +25,12 @@ class PacketObserver {
   
   
   virtual void OnSentPacket(TimeMs now,
-                            rtc::ArrayView<const uint8_t> payload) = 0;
+                            webrtc::ArrayView<const uint8_t> payload) = 0;
 
   
   
   virtual void OnReceivedPacket(TimeMs now,
-                                rtc::ArrayView<const uint8_t> payload) = 0;
+                                webrtc::ArrayView<const uint8_t> payload) = 0;
 };
 }  
 

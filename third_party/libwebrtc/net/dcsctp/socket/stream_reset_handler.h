@@ -100,7 +100,7 @@ class StreamResetHandler {
   
   
   
-  void ResetStreams(rtc::ArrayView<const StreamID> outgoing_streams);
+  void ResetStreams(webrtc::ArrayView<const StreamID> outgoing_streams);
 
   
   

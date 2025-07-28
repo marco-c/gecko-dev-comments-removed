@@ -49,7 +49,7 @@ class StateCookie {
 
   
   static std::optional<StateCookie> Deserialize(
-      rtc::ArrayView<const uint8_t> cookie);
+      webrtc::ArrayView<const uint8_t> cookie);
 
   VerificationTag peer_tag() const { return peer_tag_; }
   VerificationTag my_tag() const { return my_tag_; }

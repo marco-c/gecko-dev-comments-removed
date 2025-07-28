@@ -287,14 +287,14 @@ class DcSctpSocketCallbacks {
   
   
   
-  virtual void SendPacket(rtc::ArrayView<const uint8_t> ) {}
+  virtual void SendPacket(webrtc::ArrayView<const uint8_t> ) {}
 
   
   
   
   
   virtual SendPacketStatus SendPacketWithStatus(
-      rtc::ArrayView<const uint8_t> data) {
+      webrtc::ArrayView<const uint8_t> data) {
     SendPacket(data);
     return SendPacketStatus::kSuccess;
   }
@@ -403,21 +403,21 @@ class DcSctpSocketCallbacks {
   
   
   virtual void OnStreamsResetFailed(
-      rtc::ArrayView<const StreamID> outgoing_streams,
+      webrtc::ArrayView<const StreamID> outgoing_streams,
       absl::string_view reason) = 0;
 
   
   
   
   virtual void OnStreamsResetPerformed(
-      rtc::ArrayView<const StreamID> outgoing_streams) = 0;
+      webrtc::ArrayView<const StreamID> outgoing_streams) = 0;
 
   
   
   
   
   virtual void OnIncomingStreamsReset(
-      rtc::ArrayView<const StreamID> incoming_streams) = 0;
+      webrtc::ArrayView<const StreamID> incoming_streams) = 0;
 
   
   
@@ -523,7 +523,7 @@ class DcSctpSocketInterface {
   virtual ~DcSctpSocketInterface() = default;
 
   
-  virtual void ReceivePacket(rtc::ArrayView<const uint8_t> data) = 0;
+  virtual void ReceivePacket(webrtc::ArrayView<const uint8_t> data) = 0;
 
   
   
@@ -585,7 +585,7 @@ class DcSctpSocketInterface {
   
   
   virtual std::vector<SendStatus> SendMany(
-      rtc::ArrayView<DcSctpMessage> messages,
+      webrtc::ArrayView<DcSctpMessage> messages,
       const SendOptions& send_options) = 0;
 
   
@@ -604,7 +604,7 @@ class DcSctpSocketInterface {
   
   
   virtual ResetStreamsStatus ResetStreams(
-      rtc::ArrayView<const StreamID> outgoing_streams) = 0;
+      webrtc::ArrayView<const StreamID> outgoing_streams) = 0;
 
   
   

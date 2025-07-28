@@ -26,17 +26,17 @@ class TextPcapPacketObserver : public dcsctp::PacketObserver {
 
   
   void OnSentPacket(dcsctp::TimeMs now,
-                    rtc::ArrayView<const uint8_t> payload) override;
+                    webrtc::ArrayView<const uint8_t> payload) override;
 
   void OnReceivedPacket(dcsctp::TimeMs now,
-                        rtc::ArrayView<const uint8_t> payload) override;
+                        webrtc::ArrayView<const uint8_t> payload) override;
 
   
   
   static void PrintPacket(absl::string_view prefix,
                           absl::string_view socket_name,
                           dcsctp::TimeMs now,
-                          rtc::ArrayView<const uint8_t> payload);
+                          webrtc::ArrayView<const uint8_t> payload);
 
  private:
   const std::string name_;

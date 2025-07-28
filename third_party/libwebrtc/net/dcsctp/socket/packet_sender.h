@@ -21,7 +21,7 @@ namespace dcsctp {
 class PacketSender {
  public:
   PacketSender(DcSctpSocketCallbacks& callbacks,
-               std::function<void(rtc::ArrayView<const uint8_t>,
+               std::function<void(webrtc::ArrayView<const uint8_t>,
                                   SendPacketStatus)> on_sent_packet);
 
   
@@ -32,7 +32,7 @@ class PacketSender {
 
   
   
-  std::function<void(rtc::ArrayView<const uint8_t>, SendPacketStatus)>
+  std::function<void(webrtc::ArrayView<const uint8_t>, SendPacketStatus)>
       on_sent_packet_;
 };
 }  

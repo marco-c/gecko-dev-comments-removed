@@ -87,7 +87,7 @@ class OutstandingData {
 
   AckInfo HandleSack(
       UnwrappedTSN cumulative_tsn_ack,
-      rtc::ArrayView<const SackChunk::GapAckBlock> gap_ack_blocks,
+      webrtc::ArrayView<const SackChunk::GapAckBlock> gap_ack_blocks,
       bool is_in_fast_recovery);
 
   
@@ -308,9 +308,10 @@ class OutstandingData {
 
   
   
-  void AckGapBlocks(UnwrappedTSN cumulative_tsn_ack,
-                    rtc::ArrayView<const SackChunk::GapAckBlock> gap_ack_blocks,
-                    AckInfo& ack_info);
+  void AckGapBlocks(
+      UnwrappedTSN cumulative_tsn_ack,
+      webrtc::ArrayView<const SackChunk::GapAckBlock> gap_ack_blocks,
+      AckInfo& ack_info);
 
   
   
@@ -318,7 +319,7 @@ class OutstandingData {
   
   void NackBetweenAckBlocks(
       UnwrappedTSN cumulative_tsn_ack,
-      rtc::ArrayView<const SackChunk::GapAckBlock> gap_ack_blocks,
+      webrtc::ArrayView<const SackChunk::GapAckBlock> gap_ack_blocks,
       bool is_in_fast_recovery,
       OutstandingData::AckInfo& ack_info);
 

@@ -90,16 +90,17 @@ class ReassemblyQueue {
   
   void HandleForwardTsn(
       TSN new_cumulative_tsn,
-      rtc::ArrayView<const AnyForwardTsnChunk::SkippedStream> skipped_streams);
+      webrtc::ArrayView<const AnyForwardTsnChunk::SkippedStream>
+          skipped_streams);
 
   
   
   void ResetStreamsAndLeaveDeferredReset(
-      rtc::ArrayView<const StreamID> stream_ids);
+      webrtc::ArrayView<const StreamID> stream_ids);
 
   
   void EnterDeferredReset(TSN sender_last_assigned_tsn,
-                          rtc::ArrayView<const StreamID> streams);
+                          webrtc::ArrayView<const StreamID> streams);
 
   
   
@@ -138,7 +139,7 @@ class ReassemblyQueue {
   };
 
   bool IsConsistent() const;
-  void AddReassembledMessage(rtc::ArrayView<const UnwrappedTSN> tsns,
+  void AddReassembledMessage(webrtc::ArrayView<const UnwrappedTSN> tsns,
                              DcSctpMessage message);
 
   const absl::string_view log_prefix_;
