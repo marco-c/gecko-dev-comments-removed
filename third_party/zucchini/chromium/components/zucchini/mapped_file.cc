@@ -23,8 +23,14 @@ MappedFileReader::MappedFileReader(base::File file) {
 
 MappedFileWriter::MappedFileWriter(const base::FilePath& file_path,
                                    base::File file,
+#if defined(MOZ_ZUCCHINI)
+                                   size_t length,
+                                   bool keep)
+    : file_path_(file_path), delete_behavior_(keep ? kKeep : kManualDeleteOnClose) {
+#else
                                    size_t length)
     : file_path_(file_path), delete_behavior_(kManualDeleteOnClose) {
+#endif  
   if (!file.IsValid()) {
     error_ = "Invalid file.";
     return;  
@@ -32,12 +38,18 @@ MappedFileWriter::MappedFileWriter(const base::FilePath& file_path,
 
 #if BUILDFLAG(IS_WIN)
   file_handle_ = file.Duplicate();
-  
+#if defined(MOZ_ZUCCHINI)
+  if (!keep) {
+#endif
+
   if (file_handle_.DeleteOnClose(true)) {
     delete_behavior_ = kAutoDeleteOnClose;
   } else {
     error_ = "Failed to mark file for delete-on-close.";
   }
+#if defined(MOZ_ZUCCHINI)
+  }
+#endif  
 #endif  
 
   bool is_ok = buffer_.Initialize(std::move(file), {0, length},
