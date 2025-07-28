@@ -863,6 +863,8 @@ struct drm_color_lut {
 
 
 
+
+
 struct drm_plane_size_hint {
 	__u16 width;
 	__u16 height;
