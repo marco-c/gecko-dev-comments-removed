@@ -35,6 +35,7 @@
 #include "js/experimental/TypedData.h"  
 #include "js/friend/ErrorMessages.h"  
 #include "js/Object.h"                
+#include "js/Prefs.h"                 
 #include "js/PropertyAndElement.h"    
 #include "js/SavedFrameAPI.h"
 #include "js/Stack.h"
@@ -533,8 +534,11 @@ bool JS::ErrorReportBuilder::init(JSContext* cx,
   
   
   
+  
+  
   const char* filename_str = "filename";
-  if (!reportp && exnObject && sniffingBehavior == WithSideEffects &&
+  if (JS::Prefs::ducktyped_errors() && !reportp && exnObject &&
+      sniffingBehavior == WithSideEffects &&
       IsDuckTypedErrorObject(cx, exnObject, &filename_str)) {
     
     RootedValue val(cx);
