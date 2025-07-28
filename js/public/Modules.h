@@ -124,17 +124,6 @@ extern JS_PUBLIC_API void SetModuleMetadataHook(JSRuntime* rt,
 
 
 
-
-
-extern JS_PUBLIC_API bool FinishDynamicModuleImport(
-    JSContext* cx, Handle<JSObject*> evaluationPromise,
-    Handle<Value> referencingPrivate, Handle<JSObject*> moduleRequest,
-    Handle<JSObject*> promise);
-
-
-
-
-
 extern JS_PUBLIC_API JSObject* CompileModule(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     SourceText<char16_t>& srcBuf);
