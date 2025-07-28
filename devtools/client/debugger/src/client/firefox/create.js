@@ -247,7 +247,11 @@ function createSourceObject({
   isHTML = false,
   generatedSource = null,
 }) {
-  const displayURL = getDisplayURL(url, extensionName);
+  
+  const displayURL = getDisplayURL(
+    isPrettyPrinted ? url.replace(/:formatted$/, "") : url,
+    extensionName
+  );
   return {
     
     

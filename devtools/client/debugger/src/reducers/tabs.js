@@ -47,12 +47,17 @@ function update(state = initialTabState(), action) {
 }
 
 function matchesSource(tab, source) {
-  return tab.source?.id === source.id || matchesUrl(tab, source);
-}
-
-function matchesUrl(tab, source) {
   return (
-    source.url && tab.url === source.url && tab.isOriginal == source.isOriginal
+    tab.source?.id === source.id ||
+    (source.url &&
+      tab.url === source.url &&
+      tab.isOriginal == source.isOriginal) ||
+    
+    
+    (source.isPrettyPrinted && tab.source == source.generatedSource) ||
+    
+    
+    (tab.isPrettyPrinted && tab.url == `${source.url}:formatted`)
   );
 }
 
@@ -63,7 +68,7 @@ function addVisibleTabsForSourceActors(state, sourceActors) {
   
   const tabs = state.tabs.map(tab => {
     const sourceActor = sourceActors.find(actor =>
-      matchesUrl(tab, actor.sourceObject)
+      matchesSource(tab, actor.sourceObject)
     );
     if (!sourceActor) {
       return tab;
@@ -90,19 +95,25 @@ function addVisibleTabsForOriginalSources(
   
   
   const tabs = state.tabs.map(tab => {
-    const source = sources.find(s => matchesUrl(tab, s));
+    const source = sources.find(s => matchesSource(tab, s));
     if (!source) {
       return tab;
     }
     changed = true;
     return {
       ...tab,
+
+      
+      
+      url: source.url,
+      isOriginal: source.isPrettyPrinted ? true : tab.isOriginal,
+      isPrettyPrinted: source.isPrettyPrinted || tab.isPrettyPrinted,
+
       source,
       
       sourceActor: generatedSourceActor,
     };
   });
-
   return changed ? { tabs } : state;
 }
 
@@ -114,7 +125,6 @@ function removeSourcesFromTabList(state, { sources }) {
   if (newTabs.length == state.tabs.length) {
     return state;
   }
-
   return { tabs: newTabs };
 }
 
@@ -130,6 +140,18 @@ function resetTabsForRemovedSources(state, { sources }) {
       return tab;
     }
     changed = true;
+    
+    
+    if (tab.source.isPrettyPrinted) {
+      return {
+        ...tab,
+        isOriginal: false,
+        isPrettyPrinted: false,
+        source: tab.source.generatedSource,
+        
+        url: tab.source.generatedSource.url,
+      };
+    }
     return {
       ...tab,
       source: null,
@@ -144,8 +166,41 @@ function resetTabsForRemovedSources(state, { sources }) {
 
 
 function updateTabList(state, source, sourceActor) {
-  const { url } = source;
-  const isOriginal = source.isOriginal;
+  
+  
+  
+  if (source.isPrettyPrinted) {
+    const { generatedSource } = source;
+    const idx = state.tabs.findIndex(tab => tab.source == generatedSource);
+    if (idx == -1) {
+      const newTab = {
+        url: source.url,
+        source,
+        isOriginal: true,
+        isPrettyPrinted: true,
+        sourceActor,
+      };
+
+      
+      let newTabs = Array.from(state.tabs);
+      newTabs = [newTab, ...state.tabs];
+      return { ...state, tabs: newTabs };
+    }
+
+    const newTabs = Array.from(state.tabs);
+    newTabs[idx] = {
+      ...newTabs[idx],
+      isOriginal: true,
+      isPrettyPrinted: true,
+      source,
+      sourceActor,
+      
+      url: source.url,
+    };
+    return { ...state, tabs: newTabs };
+  }
+
+  const { url, isOriginal } = source;
 
   let { tabs } = state;
   
@@ -154,18 +209,21 @@ function updateTabList(state, source, sourceActor) {
     ? tabs.findIndex(tab => isSimilarTab(tab, url, isOriginal))
     : -1;
 
-  if (currentIndex === -1) {
-    const newTab = {
-      url,
-      source,
-      isOriginal,
-      sourceActor,
-    };
-    
-    tabs = [newTab, ...tabs];
-  } else {
+  
+  if (currentIndex !== -1) {
     return state;
   }
+
+  const newTab = {
+    url,
+    source,
+    isOriginal,
+    isPrettyPrinted: false,
+    sourceActor,
+  };
+
+  
+  tabs = [newTab, ...tabs];
 
   return { ...state, tabs };
 }

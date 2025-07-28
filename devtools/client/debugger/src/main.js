@@ -68,11 +68,35 @@ function setPauseOnExceptions() {
   );
 }
 
+
+
+
+
+
+function sanitizeTabs(tabs) {
+  
+  const minimizedSourceUrlsForPrettyPrintedTabs = tabs
+    .filter(t => t.url.endsWith(":formatted"))
+    .map(tab => tab.url.replace(":formatted", ""));
+
+  return tabs
+    .filter(tab => {
+      
+      return !minimizedSourceUrlsForPrettyPrintedTabs.includes(tab.url);
+    })
+    .map(tab => {
+      
+      return tab.url.endsWith(":formatted") && !tab.isPrettyPrinted
+        ? { ...tab, isPrettyPrinted: true }
+        : tab;
+    });
+}
+
 async function loadInitialState(commands) {
   const pendingBreakpoints = sanitizeBreakpoints(
     await asyncStore.pendingBreakpoints
   );
-  const tabs = { tabs: await asyncStore.tabs };
+  const tabs = { tabs: sanitizeTabs(await asyncStore.tabs) };
   const xhrBreakpoints = await asyncStore.xhrBreakpoints;
   const blackboxedRanges = await asyncStore.blackboxedRanges;
   const eventListenerBreakpoints = await asyncStore.eventListenerBreakpoints;

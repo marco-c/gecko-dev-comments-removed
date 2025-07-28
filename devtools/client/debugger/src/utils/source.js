@@ -343,25 +343,12 @@ export function getTextAtPosition(sourceId, asyncContent, location) {
 
 
 
-
-
-export function getSourceClassnames(
-  source,
-  isBlackBoxed,
-  hasPrettyTab = false
-) {
+export function getSourceClassnames(source, isBlackBoxed) {
   
   const defaultClassName = "file";
 
   if (!source || !source.url) {
     return defaultClassName;
-  }
-
-  
-  
-  
-  if (source.isPrettyPrinted || hasPrettyTab) {
-    return "prettyPrint";
   }
 
   if (isBlackBoxed) {
