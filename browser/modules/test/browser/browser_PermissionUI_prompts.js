@@ -29,6 +29,11 @@ add_task(async function test_localhost_permission_prompt() {
 });
 
 
+add_task(async function test_local_network_permission_prompt() {
+  await testPrompt(PermissionUI.LocalNetworkPermissionPrompt);
+});
+
+
 add_task(async function test_xr_permission_prompt() {
   await testPrompt(PermissionUI.XRPermissionPrompt);
 });
