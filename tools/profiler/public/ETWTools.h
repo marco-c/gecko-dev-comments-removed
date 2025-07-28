@@ -12,6 +12,31 @@
 #include "mozilla/TimeStamp.h"
 #include "nsString.h"
 
+namespace ETW {
+
+
+template <typename T, typename = void>
+struct MarkerHasPayload : std::false_type {};
+template <typename T>
+struct MarkerHasPayload<T, std::void_t<decltype(T::PayloadFields)>>
+    : std::true_type {};
+
+
+template <typename T, typename = void>
+struct MarkerSupportsETW : std::false_type {};
+template <typename T>
+struct MarkerSupportsETW<T, std::void_t<decltype(T::Name)>> : std::true_type {};
+
+
+template <typename T, typename = void>
+struct MarkerHasTranslator : std::false_type {};
+template <typename T>
+struct MarkerHasTranslator<
+    T, std::void_t<decltype(T::TranslateMarkerInputToSchema)>>
+    : std::true_type {};
+
+}  
+
 #if defined(XP_WIN) && !defined(RUST_BINDGEN) && !defined(__MINGW32__)
 #  include "mozilla/ProfilerState.h"
 
@@ -35,12 +60,6 @@ static inline bool IsProfilingGroup(
     mozilla::MarkerSchema::ETWMarkerGroup aGroup) {
   return gETWCollectionMask & uint64_t(aGroup);
 }
-
-template <typename T, typename = void>
-struct MarkerHasPayload : std::false_type {};
-template <typename T>
-struct MarkerHasPayload<T, std::void_t<decltype(T::PayloadFields)>>
-    : std::true_type {};
 
 
 
@@ -274,18 +293,6 @@ void CreateDataDescForPayload(PayloadBuffer& aBuffer,
   EventDataDescCreate(&aDescriptor, aPayload, N + 1);
 }
 
-template <typename T, typename = void>
-struct MarkerSupportsETW : std::false_type {};
-template <typename T>
-struct MarkerSupportsETW<T, std::void_t<decltype(T::Name)>> : std::true_type {};
-
-template <typename T, typename = void>
-struct MarkerHasTranslator : std::false_type {};
-template <typename T>
-struct MarkerHasTranslator<
-    T, std::void_t<decltype(T::TranslateMarkerInputToSchema)>>
-    : std::true_type {};
-
 struct BaseEventStorage {
   uint64_t mStartTime;
   uint64_t mEndTime;
@@ -430,6 +437,23 @@ static inline void EmitETWMarker(const mozilla::ProfilerString8View& aName,
                                  const mozilla::MarkerOptions& aOptions,
                                  MarkerType aMarkerType,
                                  const PayloadArguments&... aPayloadArguments) {
+  
+  
+  
+  if constexpr (MarkerHasPayload<MarkerType>::value) {
+    if constexpr (MarkerHasTranslator<MarkerType>::value) {
+      
+      
+      MarkerType::TranslateMarkerInputToSchema(nullptr, aPayloadArguments...);
+    } else {
+      const size_t argCount = sizeof...(PayloadArguments);
+      static_assert(
+          argCount == std::extent_v<decltype(MarkerType::PayloadFields)>,
+          "Number and type of fields must be equal to number and type of "
+          "payload arguments. If this is not the case a "
+          "TranslateMarkerInputToSchema function must be defined.");
+    }
+  }
 }
 template <typename MarkerType, typename... PayloadArguments>
 void OutputMarkerSchema(void* aContext, MarkerType aMarkerType,
