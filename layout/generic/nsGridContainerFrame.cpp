@@ -5826,7 +5826,7 @@ static nscoord ContentContribution(const GridItemInfo& aGridItem,
                                    const LogicalSize& aPercentageBasis,
                                    IntrinsicISizeType aConstraint,
                                    nscoord aMinSizeClamp = NS_MAXSIZE,
-                                   uint32_t aFlags = 0) {
+                                   const StyleSizeOverrides& aOverrides = {}) {
   nsIFrame* child = aGridItem.mFrame;
 
   const WritingMode gridWM = aGridRI.mWM;
@@ -5881,7 +5881,7 @@ static nscoord ContentContribution(const GridItemInfo& aGridItem,
   PhysicalAxis axis = gridWM.PhysicalAxis(aAxis);
   nscoord size = nsLayoutUtils::IntrinsicForAxis(
       axis, rc, child, aConstraint, Some(aPercentageBasis),
-      aFlags | nsLayoutUtils::BAIL_IF_REFLOW_NEEDED, aMinSizeClamp);
+      nsLayoutUtils::BAIL_IF_REFLOW_NEEDED, aMinSizeClamp, aOverrides);
   auto childWM = child->GetWritingMode();
   const bool isOrthogonal = childWM.IsOrthogonalTo(gridWM);
   auto childAxis = isOrthogonal ? GetOrthogonalAxis(aAxis) : aAxis;
@@ -6153,11 +6153,27 @@ struct CachedIntrinsicSizes {
               (isAuto && !child->StyleDisplay()->IsScrollableOverflow())) {
             
             
+            
+            
+            
+            
+            
+            
+            
+            
+            StyleSizeOverrides overrides;
+            if (axisInItemWM == LogicalAxis::Inline) {
+              overrides.mStyleISize.emplace(*styleMinSize.get());
+            } else {
+              overrides.mStyleBSize.emplace(*styleMinSize.get());
+            }
+            
+            
             MOZ_ASSERT(isAuto || s == NS_UNCONSTRAINEDSIZE);
-            s = std::min(s, ContentContribution(
-                                aGridItem, aGridRI, aAxis, aPercentageBasis,
-                                IntrinsicISizeType::MinISize, aMinSizeClamp,
-                                nsLayoutUtils::MIN_INTRINSIC_ISIZE));
+            s = std::min(s, ContentContribution(aGridItem, aGridRI, aAxis,
+                                                aPercentageBasis,
+                                                IntrinsicISizeType::MinISize,
+                                                aMinSizeClamp, overrides));
           }
         }
         return s;
