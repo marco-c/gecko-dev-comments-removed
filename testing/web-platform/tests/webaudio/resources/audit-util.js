@@ -239,6 +239,15 @@ function assert_array_equals_exact(actual, expected, message) {
 
 
 
+
+
+
+
+
+
+
+
+
 function assert_not_constant_value(array, constantValue, message) {
   const notAllSame = array.some(value => value !== constantValue);
   assert_true(notAllSame, message);
@@ -253,4 +262,29 @@ function assert_not_constant_value(array, constantValue, message) {
 function assert_strict_constant_value(array, constantValue, message) {
   const allSame = array.every(value => value === constantValue);
   assert_true(allSame, message);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function assert_array_approximately_equals(
+    actual, expected, threshold, message) {
+      assert_equals(
+          actual.length,
+          expected.length,
+          `${message} - buffer lengths must match`);
+      for (let i = 0; i < actual.length; ++i) {
+        assert_approx_equals(
+            actual[i], expected[i], threshold,
+            `${message} at index ${i}`);
+      }
 }
