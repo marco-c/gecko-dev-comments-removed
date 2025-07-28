@@ -37,11 +37,31 @@ class Response;
 
 namespace cache {
 
+class CacheChild;
+class CacheStorageChild;
 class CacheQueryParams;
 class CacheReadStream;
 class CacheRequest;
 class CacheResponse;
 class HeadersEntry;
+
+
+class Listener {
+ public:
+  virtual ~Listener() = default;
+};
+
+
+class CacheChildListener : public Listener {
+ public:
+  virtual void OnActorDestroy(CacheChild* aActor) = 0;
+};
+
+
+class CacheStorageChildListener : public Listener {
+ public:
+  virtual void OnActorDestroy(CacheStorageChild* aActor) = 0;
+};
 
 class TypeUtils {
  public:

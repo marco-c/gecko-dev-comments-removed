@@ -506,7 +506,7 @@ JSObject* CacheStorage::WrapObject(JSContext* aContext,
   return mozilla::dom::CacheStorage_Binding::Wrap(aContext, this, aGivenProto);
 }
 
-void CacheStorage::DestroyInternal(CacheStorageChild* aActor) {
+void CacheStorage::OnActorDestroy(CacheStorageChild* aActor) {
   NS_ASSERT_OWNINGTHREAD(CacheStorage);
   MOZ_DIAGNOSTIC_ASSERT(mActor);
   MOZ_DIAGNOSTIC_ASSERT(mActor == aActor);

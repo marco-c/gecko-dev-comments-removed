@@ -17,7 +17,7 @@ namespace mozilla::dom::cache {
 
 void DeallocPCacheStorageChild(PCacheStorageChild* aActor) { delete aActor; }
 
-CacheStorageChild::CacheStorageChild(CacheStorage* aListener,
+CacheStorageChild::CacheStorageChild(CacheStorageChildListener* aListener,
                                      SafeRefPtr<CacheWorkerRef> aWorkerRef)
     : mListener(aListener), mDelayedDestroy(false) {
   MOZ_COUNT_CTOR(cache::CacheStorageChild);
@@ -54,7 +54,7 @@ void CacheStorageChild::StartDestroyFromListener() {
 }
 
 void CacheStorageChild::DestroyInternal() {
-  RefPtr<CacheStorage> listener = mListener;
+  CacheStorageChildListener* listener = mListener;
 
   
   
@@ -64,7 +64,7 @@ void CacheStorageChild::DestroyInternal() {
     return;
   }
 
-  listener->DestroyInternal(this);
+  listener->OnActorDestroy(this);
 
   
   MOZ_DIAGNOSTIC_ASSERT(!mListener);
@@ -93,9 +93,9 @@ void CacheStorageChild::NoteDeletedActor() {
 
 void CacheStorageChild::ActorDestroy(ActorDestroyReason aReason) {
   NS_ASSERT_OWNINGTHREAD(CacheStorageChild);
-  RefPtr<CacheStorage> listener = mListener;
+  CacheStorageChildListener* listener = mListener;
   if (listener) {
-    listener->DestroyInternal(this);
+    listener->OnActorDestroy(this);
     
     MOZ_DIAGNOSTIC_ASSERT(!mListener);
   }

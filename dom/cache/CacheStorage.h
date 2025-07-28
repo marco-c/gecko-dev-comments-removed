@@ -40,7 +40,8 @@ class CacheWorkerRef;
 
 class CacheStorage final : public nsISupports,
                            public nsWrapperCache,
-                           public TypeUtils {
+                           public TypeUtils,
+                           public CacheStorageChildListener {
   using PBackgroundChild = mozilla::ipc::PBackgroundChild;
 
  public:
@@ -78,7 +79,8 @@ class CacheStorage final : public nsISupports,
                                JS::Handle<JSObject*> aGivenProto) override;
 
   
-  void DestroyInternal(CacheStorageChild* aActor);
+  
+  void OnActorDestroy(CacheStorageChild* aActor) override;
 
   
   virtual nsIGlobalObject* GetGlobalObject() const override;

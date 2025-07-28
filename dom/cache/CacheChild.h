@@ -31,7 +31,7 @@ class CacheChild final : public PCacheChild, public ActorChild {
 
   CacheChild();
 
-  void SetListener(Cache* aListener);
+  void SetListener(CacheChildListener* aListener);
 
   
   
@@ -73,7 +73,8 @@ class CacheChild final : public PCacheChild, public ActorChild {
   
   
   
-  Cache* MOZ_NON_OWNING_REF mListener;
+  CacheChildListener* MOZ_NON_OWNING_REF mListener;
+
   bool mLocked;
   bool mDelayedDestroy;
 };

@@ -34,7 +34,7 @@ CacheChild::~CacheChild() {
   MOZ_DIAGNOSTIC_ASSERT(!mLocked);
 }
 
-void CacheChild::SetListener(Cache* aListener) {
+void CacheChild::SetListener(CacheChildListener* aListener) {
   NS_ASSERT_OWNINGTHREAD(CacheChild);
   MOZ_DIAGNOSTIC_ASSERT(!mListener);
   mListener = aListener;
@@ -66,7 +66,7 @@ void CacheChild::StartDestroyFromListener() {
 }
 
 void CacheChild::DestroyInternal() {
-  RefPtr<Cache> listener = mListener;
+  CacheChildListener* listener = mListener;
 
   
   
@@ -75,7 +75,7 @@ void CacheChild::DestroyInternal() {
     return;
   }
 
-  listener->DestroyInternal(this);
+  listener->OnActorDestroy(this);
 
   
   MOZ_DIAGNOSTIC_ASSERT(!mListener);
@@ -97,9 +97,9 @@ void CacheChild::StartDestroy() {
 
 void CacheChild::ActorDestroy(ActorDestroyReason aReason) {
   NS_ASSERT_OWNINGTHREAD(CacheChild);
-  RefPtr<Cache> listener = mListener;
+  CacheChildListener* listener = mListener;
   if (listener) {
-    listener->DestroyInternal(this);
+    listener->OnActorDestroy(this);
     
     MOZ_DIAGNOSTIC_ASSERT(!mListener);
   }

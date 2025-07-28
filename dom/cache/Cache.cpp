@@ -493,7 +493,7 @@ JSObject* Cache::WrapObject(JSContext* aContext,
   return Cache_Binding::Wrap(aContext, this, aGivenProto);
 }
 
-void Cache::DestroyInternal(CacheChild* aActor) {
+void Cache::OnActorDestroy(CacheChild* aActor) {
   MOZ_DIAGNOSTIC_ASSERT(mActor);
   MOZ_DIAGNOSTIC_ASSERT(mActor == aActor);
   mActor->ClearListener();

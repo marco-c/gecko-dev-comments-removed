@@ -28,7 +28,7 @@ class CacheStorageChild final : public PCacheStorageChild, public ActorChild {
   friend class PCacheStorageChild;
 
  public:
-  CacheStorageChild(CacheStorage* aListener,
+  CacheStorageChild(CacheStorageChildListener* aListener,
                     SafeRefPtr<CacheWorkerRef> aWorkerRef);
 
   
@@ -68,7 +68,7 @@ class CacheStorageChild final : public PCacheStorageChild, public ActorChild {
   
   
   
-  CacheStorage* MOZ_NON_OWNING_REF mListener;
+  CacheStorageChildListener* MOZ_NON_OWNING_REF mListener;
   bool mDelayedDestroy;
 };
 

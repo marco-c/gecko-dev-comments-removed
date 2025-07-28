@@ -40,7 +40,8 @@ class CacheChild;
 
 class Cache final : public nsISupports,
                     public nsWrapperCache,
-                    public TypeUtils {
+                    public TypeUtils,
+                    public CacheChildListener {
  public:
   Cache(nsIGlobalObject* aGlobal, CacheChild* aActor, Namespace aNamespace);
 
@@ -78,7 +79,8 @@ class Cache final : public nsISupports,
                                JS::Handle<JSObject*> aGivenProto) override;
 
   
-  void DestroyInternal(CacheChild* aActor);
+  
+  void OnActorDestroy(CacheChild* aActor) override;
 
   
   virtual nsIGlobalObject* GetGlobalObject() const override;
