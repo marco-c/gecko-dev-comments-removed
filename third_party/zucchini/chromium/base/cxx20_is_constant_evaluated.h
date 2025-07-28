@@ -5,6 +5,10 @@
 #ifndef BASE_CXX20_IS_CONSTANT_EVALUATED_H_
 #define BASE_CXX20_IS_CONSTANT_EVALUATED_H_
 
+#if defined(MOZ_ZUCCHINI)
+#include "base/compiler_specific.h"
+#endif  
+
 namespace base {
 
 
@@ -13,7 +17,11 @@ namespace base {
 
 
 constexpr bool is_constant_evaluated() noexcept {
+#if !defined(MOZ_ZUCCHINI) || HAS_BUILTIN(__builtin_is_constant_evaluated)
   return __builtin_is_constant_evaluated();
+#else
+  return false;
+#endif  
 }
 
 }  
