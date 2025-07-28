@@ -37,23 +37,19 @@ class CompatibilityView {
 
     this.inspector.store.injectReducer("compatibility", compatibilityReducer);
 
-    this._parseMarkup = this._parseMarkup.bind(this);
-    this._onChangeAdded = this._onChangeAdded.bind(this);
-    this._onPanelSelected = this._onPanelSelected.bind(this);
-    this._onSelectedNodeChanged = this._onSelectedNodeChanged.bind(this);
-    this._onTopLevelTargetChanged = this._onTopLevelTargetChanged.bind(this);
-    this._onResourceAvailable = this._onResourceAvailable.bind(this);
-    this._onMarkupMutation = this._onMarkupMutation.bind(this);
-
-    this._init();
+    this.#init();
   }
+
+  #isChangeAddedWhileHidden;
+  #previousChangedSelector;
+  #updateNodesTimeoutId;
 
   destroy() {
     try {
       this.resourceCommand.unwatchResources(
         [this.resourceCommand.TYPES.CSS_CHANGE],
         {
-          onAvailable: this._onResourceAvailable,
+          onAvailable: this.#onResourceAvailable,
         }
       );
     } catch (e) {
@@ -61,12 +57,12 @@ class CompatibilityView {
       
     }
 
-    this.inspector.off("new-root", this._onTopLevelTargetChanged);
-    this.inspector.off("markupmutation", this._onMarkupMutation);
-    this.inspector.selection.off("new-node-front", this._onSelectedNodeChanged);
+    this.inspector.off("new-root", this.#onTopLevelTargetChanged);
+    this.inspector.off("markupmutation", this.#onMarkupMutation);
+    this.inspector.selection.off("new-node-front", this.#onSelectedNodeChanged);
     this.inspector.sidebar.off(
       "compatibilityview-selected",
-      this._onPanelSelected
+      this.#onPanelSelected
     );
     this.inspector = null;
   }
@@ -75,7 +71,7 @@ class CompatibilityView {
     return this.inspector.toolbox.resourceCommand;
   }
 
-  async _init() {
+  async #init() {
     const { setSelectedNode } = this.inspector.getCommonComponentProps();
     const compatibilityApp = new CompatibilityApp({
       setSelectedNode,
@@ -90,7 +86,7 @@ class CompatibilityView {
       LocalizationProvider(
         {
           bundles: this.inspector.fluentL10n.getBundles(),
-          parseMarkup: this._parseMarkup,
+          parseMarkup: this.#parseMarkup,
         },
         compatibilityApp
       )
@@ -100,20 +96,20 @@ class CompatibilityView {
     
     
     
-    this._onPanelSelected();
+    this.#onPanelSelected();
 
-    this.inspector.on("new-root", this._onTopLevelTargetChanged);
-    this.inspector.on("markupmutation", this._onMarkupMutation);
-    this.inspector.selection.on("new-node-front", this._onSelectedNodeChanged);
+    this.inspector.on("new-root", this.#onTopLevelTargetChanged);
+    this.inspector.on("markupmutation", this.#onMarkupMutation);
+    this.inspector.selection.on("new-node-front", this.#onSelectedNodeChanged);
     this.inspector.sidebar.on(
       "compatibilityview-selected",
-      this._onPanelSelected
+      this.#onPanelSelected
     );
 
     await this.resourceCommand.watchResources(
       [this.resourceCommand.TYPES.CSS_CHANGE],
       {
-        onAvailable: this._onResourceAvailable,
+        onAvailable: this.#onResourceAvailable,
         
         
         ignoreExistingResources: true,
@@ -123,7 +119,7 @@ class CompatibilityView {
     this.inspector.emitForTests("compatibilityview-initialized");
   }
 
-  _isAvailable() {
+  #isAvailable() {
     return (
       this.inspector &&
       this.inspector.sidebar &&
@@ -133,39 +129,39 @@ class CompatibilityView {
     );
   }
 
-  _parseMarkup() {
+  #parseMarkup = () => {
     
     
     throw new Error(
       "The inspector cannot use tags in ftl strings because it does not run in a BrowserLoader"
     );
-  }
+  };
 
-  _onChangeAdded({ selector }) {
-    if (!this._isAvailable()) {
+  #onChangeAdded = ({ selector }) => {
+    if (!this.#isAvailable()) {
       
-      this._isChangeAddedWhileHidden = true;
+      this.#isChangeAddedWhileHidden = true;
       return;
     }
 
-    this._isChangeAddedWhileHidden = false;
+    this.#isChangeAddedWhileHidden = false;
 
     
     
-    if (this._previousChangedSelector === selector) {
-      clearTimeout(this._updateNodesTimeoutId);
+    if (this.#previousChangedSelector === selector) {
+      clearTimeout(this.#updateNodesTimeoutId);
     }
-    this._previousChangedSelector = selector;
+    this.#previousChangedSelector = selector;
 
-    this._updateNodesTimeoutId = setTimeout(() => {
+    this.#updateNodesTimeoutId = setTimeout(() => {
       
       
       
       this.inspector.store.dispatch(updateNodes(selector));
     }, 500);
-  }
+  };
 
-  _onMarkupMutation(mutations) {
+  #onMarkupMutation = mutations => {
     const attributeMutation = mutations.filter(
       mutation =>
         mutation.type === "attributes" &&
@@ -180,13 +176,13 @@ class CompatibilityView {
       return;
     }
 
-    if (!this._isAvailable()) {
+    if (!this.#isAvailable()) {
       
-      this._isChangeAddedWhileHidden = true;
+      this.#isChangeAddedWhileHidden = true;
       return;
     }
 
-    this._isChangeAddedWhileHidden = false;
+    this.#isChangeAddedWhileHidden = false;
 
     
     
@@ -216,62 +212,62 @@ class CompatibilityView {
     if (cleanupDestroyedNodes) {
       this.inspector.store.dispatch(clearDestroyedNodes());
     }
-  }
+  };
 
-  _onPanelSelected() {
+  #onPanelSelected = () => {
     const { selectedNode, topLevelTarget } =
       this.inspector.store.getState().compatibility;
 
     
     if (
       this.inspector.selection.nodeFront !== selectedNode ||
-      this._isChangeAddedWhileHidden
+      this.#isChangeAddedWhileHidden
     ) {
-      this._onSelectedNodeChanged();
+      this.#onSelectedNodeChanged();
     }
 
     
     if (
       this.inspector.toolbox.target !== topLevelTarget ||
-      this._isChangeAddedWhileHidden
+      this.#isChangeAddedWhileHidden
     ) {
-      this._onTopLevelTargetChanged();
+      this.#onTopLevelTargetChanged();
     }
 
-    this._isChangeAddedWhileHidden = false;
-  }
+    this.#isChangeAddedWhileHidden = false;
+  };
 
-  _onSelectedNodeChanged() {
-    if (!this._isAvailable()) {
+  #onSelectedNodeChanged = () => {
+    if (!this.#isAvailable()) {
       return;
     }
 
     this.inspector.store.dispatch(
       updateSelectedNode(this.inspector.selection.nodeFront)
     );
-  }
+  };
 
-  _onResourceAvailable(resources) {
+  #onResourceAvailable = resources => {
     for (const resource of resources) {
       
       
       
       
       if (resource.source?.type !== "element") {
-        this._onChangeAdded(resource);
+        this.#onChangeAdded(resource);
       }
     }
-  }
+  };
 
-  _onTopLevelTargetChanged() {
-    if (!this._isAvailable()) {
+  #onTopLevelTargetChanged = () => {
+    if (!this.#isAvailable()) {
       return;
     }
 
     this.inspector.store.dispatch(
       updateTopLevelTarget(this.inspector.toolbox.target)
     );
-  }
+  };
 }
 
 module.exports = CompatibilityView;
