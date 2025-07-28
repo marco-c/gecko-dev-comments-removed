@@ -690,6 +690,8 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
   
   
 
+  MOZ_ASSERT(!generator->isSuspendedStart() && !generator->isSuspendedYield());
+
   
   
   while (!generator->isQueueEmpty()) {
@@ -702,31 +704,6 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 
     
     CompletionKind completionKind = next->completionKind();
-
-    
-    if (completionKind != CompletionKind::Normal) {
-      if (generator->isSuspendedStart()) {
-        generator->setCompleted();
-      }
-    }
-    
-    if (!generator->isCompleted()) {
-      MOZ_ASSERT(generator->isSuspendedStart() ||
-                 generator->isSuspendedYield());
-
-      RootedValue argument(cx, next->completionValue());
-
-      if (completionKind == CompletionKind::Return) {
-        generator->setAwaitingYieldReturn();
-
-        return InternalAsyncGeneratorAwait(
-            cx, generator, argument,
-            PromiseHandler::AsyncGeneratorYieldReturnAwaitedFulfilled,
-            PromiseHandler::AsyncGeneratorYieldReturnAwaitedRejected);
-      }
-
-      return AsyncGeneratorResume(cx, generator, completionKind, argument);
-    }
 
     
     if (completionKind == CompletionKind::Return) {
