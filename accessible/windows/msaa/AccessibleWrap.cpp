@@ -12,7 +12,6 @@
 #include "nsIAccessibleEvent.h"
 #include "nsIWidget.h"
 #include "nsWindowsHelpers.h"
-#include "mozilla/a11y/HyperTextAccessibleBase.h"
 #include "ServiceProvider.h"
 #include "sdnAccessible.h"
 #include "LocalAccessible-inl.h"
@@ -74,34 +73,4 @@ bool AccessibleWrap::IsRootForHWND() {
   MOZ_ASSERT(parent);
   HWND parentHwnd = MsaaAccessible::GetHWNDFor(parent);
   return thisHwnd != parentHwnd;
-}
-
-
-void AccessibleWrap::UpdateSystemCaretFor(Accessible* aAccessible) {
-  
-  
-  ::DestroyCaret();
-  HyperTextAccessibleBase* text = aAccessible->AsHyperTextBase();
-  if (!text) {
-    return;
-  }
-  auto [caretRect, widget] = text->GetCaretRect();
-  if (caretRect.IsEmpty() || !widget) {
-    return;
-  }
-  HWND caretWnd =
-      reinterpret_cast<HWND>(widget->GetNativeData(NS_NATIVE_WINDOW));
-  if (!caretWnd) {
-    return;
-  }
-  
-  
-  nsAutoBitmap caretBitMap(CreateBitmap(1, caretRect.Height(), 1, 1, nullptr));
-  if (::CreateCaret(caretWnd, caretBitMap, 1,
-                    caretRect.Height())) {  
-    ::ShowCaret(caretWnd);
-    POINT clientPoint{caretRect.X(), caretRect.Y()};
-    ::ScreenToClient(caretWnd, &clientPoint);
-    ::SetCaretPos(clientPoint.x, clientPoint.y);
-  }
 }

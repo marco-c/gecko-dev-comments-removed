@@ -8,10 +8,10 @@
 
 #include "AccEvent.h"
 #include "Compatibility.h"
-#include "HyperTextAccessible.h"
 #include "MsaaAccessible.h"
 #include "nsWinUtils.h"
 #include "mozilla/a11y/DocAccessibleParent.h"
+#include "mozilla/a11y/HyperTextAccessibleBase.h"
 #include "mozilla/a11y/RemoteAccessible.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/WindowsVersion.h"
@@ -30,6 +30,42 @@ using namespace mozilla::a11y;
 using namespace mozilla::mscom;
 
 static StaticRefPtr<nsIFile> gInstantiator;
+
+
+
+
+
+
+
+
+static void UpdateSystemCaretFor(Accessible* aAccessible) {
+  
+  
+  ::DestroyCaret();
+  HyperTextAccessibleBase* text = aAccessible->AsHyperTextBase();
+  if (!text) {
+    return;
+  }
+  auto [caretRect, widget] = text->GetCaretRect();
+  if (caretRect.IsEmpty() || !widget) {
+    return;
+  }
+  HWND caretWnd =
+      reinterpret_cast<HWND>(widget->GetNativeData(NS_NATIVE_WINDOW));
+  if (!caretWnd) {
+    return;
+  }
+  
+  
+  nsAutoBitmap caretBitMap(CreateBitmap(1, caretRect.Height(), 1, 1, nullptr));
+  if (::CreateCaret(caretWnd, caretBitMap, 1,
+                    caretRect.Height())) {  
+    ::ShowCaret(caretWnd);
+    POINT clientPoint{caretRect.X(), caretRect.Y()};
+    ::ScreenToClient(caretWnd, &clientPoint);
+    ::SetCaretPos(clientPoint.x, clientPoint.y);
+  }
+}
 
 void a11y::PlatformInit() {
   nsWinUtils::MaybeStartWindowEmulation();
@@ -100,7 +136,7 @@ void a11y::PlatformFocusEvent(Accessible* aTarget,
     return;
   }
 
-  AccessibleWrap::UpdateSystemCaretFor(aTarget);
+  UpdateSystemCaretFor(aTarget);
   MsaaAccessible::FireWinEvent(aTarget, nsIAccessibleEvent::EVENT_FOCUS);
   uiaRawElmProvider::RaiseUiaEventForGeckoEvent(
       aTarget, nsIAccessibleEvent::EVENT_FOCUS);
@@ -111,7 +147,7 @@ void a11y::PlatformCaretMoveEvent(Accessible* aTarget, int32_t aOffset,
                                   int32_t aGranularity,
                                   const LayoutDeviceIntRect& aCaretRect,
                                   bool aFromUser) {
-  AccessibleWrap::UpdateSystemCaretFor(aTarget);
+  UpdateSystemCaretFor(aTarget);
   MsaaAccessible::FireWinEvent(aTarget,
                                nsIAccessibleEvent::EVENT_TEXT_CARET_MOVED);
   uiaRawElmProvider::RaiseUiaEventForGeckoEvent(
