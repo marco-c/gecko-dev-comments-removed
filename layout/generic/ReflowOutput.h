@@ -21,8 +21,8 @@ struct ReflowInput;
 
 enum class OverflowType : uint8_t { Ink, Scrollable };
 constexpr auto AllOverflowTypes() {
-  return mozilla::MakeInclusiveEnumeratedRange(OverflowType::Ink,
-                                               OverflowType::Scrollable);
+  return MakeInclusiveEnumeratedRange(OverflowType::Ink,
+                                      OverflowType::Scrollable);
 }
 
 struct OverflowAreas {
@@ -176,32 +176,28 @@ class CollapsingMargin final {
 
 class ReflowOutput {
  public:
-  explicit ReflowOutput(mozilla::WritingMode aWritingMode)
+  explicit ReflowOutput(WritingMode aWritingMode)
       : mSize(aWritingMode), mWritingMode(aWritingMode) {}
 
   
   explicit ReflowOutput(const ReflowInput& aReflowInput);
 
-  nscoord ISize(mozilla::WritingMode aWritingMode) const {
+  nscoord ISize(WritingMode aWritingMode) const {
     return mSize.ISize(aWritingMode);
   }
-  nscoord BSize(mozilla::WritingMode aWritingMode) const {
+  nscoord BSize(WritingMode aWritingMode) const {
     return mSize.BSize(aWritingMode);
   }
-  mozilla::LogicalSize Size(mozilla::WritingMode aWritingMode) const {
+  LogicalSize Size(WritingMode aWritingMode) const {
     return mSize.ConvertTo(aWritingMode, mWritingMode);
   }
 
-  nscoord& ISize(mozilla::WritingMode aWritingMode) {
-    return mSize.ISize(aWritingMode);
-  }
-  nscoord& BSize(mozilla::WritingMode aWritingMode) {
-    return mSize.BSize(aWritingMode);
-  }
+  nscoord& ISize(WritingMode aWritingMode) { return mSize.ISize(aWritingMode); }
+  nscoord& BSize(WritingMode aWritingMode) { return mSize.BSize(aWritingMode); }
 
   
   
-  void SetSize(mozilla::WritingMode aWM, mozilla::LogicalSize aSize) {
+  void SetSize(WritingMode aWM, LogicalSize aSize) {
     mSize = aSize.ConvertTo(mWritingMode, aWM);
   }
 
@@ -261,7 +257,7 @@ class ReflowOutput {
   
   void UnionOverflowAreasWithDesiredBounds();
 
-  mozilla::WritingMode GetWritingMode() const { return mWritingMode; }
+  WritingMode GetWritingMode() const { return mWritingMode; }
 
  private:
   
@@ -270,7 +266,7 @@ class ReflowOutput {
   
   nscoord mBlockStartAscent = ASK_FOR_BASELINE;
 
-  mozilla::WritingMode mWritingMode;
+  WritingMode mWritingMode;
 };
 
 }  
