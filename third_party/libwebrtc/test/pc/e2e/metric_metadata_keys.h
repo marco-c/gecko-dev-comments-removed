@@ -10,7 +10,6 @@
 #ifndef TEST_PC_E2E_METRIC_METADATA_KEYS_H_
 #define TEST_PC_E2E_METRIC_METADATA_KEYS_H_
 
-#include <string>
 
 namespace webrtc {
 namespace webrtc_pc_e2e {
@@ -30,13 +29,6 @@ class MetricMetadataKey {
   static constexpr char kVideoStreamMetadataKey[] = "video_stream";
   
   static constexpr char kPeerSyncGroupMetadataKey[] = "peer_sync_group";
-  
-  
-  
-  
-  
-  static constexpr char kExperimentalTestNameMetadataKey[] =
-      "experimental_test_name";
   
   static constexpr char kSpatialLayerMetadataKey[] = "spatial_layer";
 
