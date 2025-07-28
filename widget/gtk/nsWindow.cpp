@@ -2303,16 +2303,14 @@ void nsWindow::NativeMoveResizeWaylandPopup(bool aMove, bool aResize) {
   mResizedAfterMoveToRect = false;
 
   bool trackedInHierarchy = WaylandPopupConfigure();
-
   
   
   
   
   
-  if (aMove) {
+  if (aMove || !mPopupMoveToRectParams.mAnchorSet) {
     mPopupMoveToRectParams = WaylandPopupGetPositionFromLayout();
   }
-
   if (!trackedInHierarchy) {
     WaylandPopupSetDirectPosition();
     return;
