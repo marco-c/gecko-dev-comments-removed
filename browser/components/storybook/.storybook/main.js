@@ -34,6 +34,8 @@ module.exports = {
     
     `${projectRoot}/toolkit/components/satchel/megalist/content/**/*.stories.mjs`,
     
+    `${projectRoot}/browser/components/webrtc/content/**/*.stories.mjs`,
+    
     "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx|md)",
     
     `${projectRoot}/toolkit/themes/shared/design-system/**/*.stories.@(js|jsx|mjs|ts|tsx|md)`,
