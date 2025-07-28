@@ -2,19 +2,13 @@
 
 
 
-const SCOTCH_BONNET_PREF = "browser.urlbar.scotchBonnet.enableOverride";
-
 function test() {
   waitForExplicitFinish();
-  Services.prefs.setBoolPref(SCOTCH_BONNET_PREF, false);
 
   ok(PopupNotifications, "PopupNotifications object exists");
   ok(PopupNotifications.panel, "PopupNotifications panel exists");
 
   setup();
-  registerCleanupFunction(() => {
-    Services.prefs.clearUserPref(SCOTCH_BONNET_PREF);
-  });
 }
 
 var tests = [
