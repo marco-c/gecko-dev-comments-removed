@@ -890,9 +890,13 @@
         flushes.push(TabStateFlusher.flush(tab.linkedBrowser));
       });
       Promise.allSettled(flushes).then(() => {
-        saveAndCloseGroup.disabled = !SessionStore.shouldSaveTabsToGroup(
-          this.activeGroup.tabs
-        );
+        
+        
+        if (this.activeGroup?.tabs) {
+          saveAndCloseGroup.disabled = !SessionStore.shouldSaveTabsToGroup(
+            this.activeGroup.tabs
+          );
+        }
       });
     }
 
