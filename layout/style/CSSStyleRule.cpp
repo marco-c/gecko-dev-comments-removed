@@ -12,6 +12,7 @@
 #include "mozilla/ServoBindings.h"
 #include "mozilla/dom/CSSStyleRuleBinding.h"
 #include "mozilla/dom/ShadowRoot.h"
+#include "mozilla/dom/StylePropertyMap.h"
 #include "nsCSSPseudoElements.h"
 #include "nsISupports.h"
 
@@ -125,11 +126,19 @@ NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN_INHERITED(CSSStyleRule, GroupRule)
   
   
   
+  
+  
+
+  
+  
+  
   tmp->mDecls.TraceWrapper(aCallbacks, aClosure);
 NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(CSSStyleRule)
   
+
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mStyleMap)
 
   
   
@@ -140,18 +149,26 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_END_INHERITED(GroupRule)
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(CSSStyleRule, GroupRule)
   
+
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mStyleMap)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 bool CSSStyleRule::IsCCLeaf() const {
   if (!GroupRule::IsCCLeaf()) {
     return false;
   }
+
+  if (mStyleMap) {
+    return false;
+  }
+
   return !mDecls.PreservingWrapper();
 }
 
 size_t CSSStyleRule::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
   size_t n = aMallocSizeOf(this);
 
+  
   
   
   
@@ -327,6 +344,14 @@ already_AddRefed<nsINodeList> CSSStyleRule::QuerySelectorAll(nsINode& aRoot) {
                                false);
   Servo_SelectorList_Drop(list);
   return contentList.forget();
+}
+
+StylePropertyMap* CSSStyleRule::StyleMap() {
+  if (!mStyleMap) {
+    mStyleMap = MakeRefPtr<StylePropertyMap>(this);
+  }
+
+  return mStyleMap;
 }
 
 
