@@ -9,7 +9,9 @@
 
 #include "mozilla/dom/cache/ActorChild.h"
 #include "mozilla/dom/cache/Types.h"
+#include "mozilla/dom/cache/TypeUtils.h"
 #include "mozilla/dom/cache/PCacheStorageChild.h"
+#include "mozilla/dom/cache/CacheOpChild.h"
 
 class nsIGlobalObject;
 
@@ -29,7 +31,8 @@ class CacheStorageChild final : public PCacheStorageChild, public CacheActorChil
 
  public:
   CacheStorageChild(CacheStorageChildListener* aListener,
-                    SafeRefPtr<CacheWorkerRef> aWorkerRef);
+                    SafeRefPtr<CacheWorkerRef> aWorkerRef,
+                    ActorChild* aParentActor = nullptr);
 
   
   
@@ -37,8 +40,14 @@ class CacheStorageChild final : public PCacheStorageChild, public CacheActorChil
   
   void ClearListener();
 
-  void ExecuteOp(nsIGlobalObject* aGlobal, Promise* aPromise,
-                 nsISupports* aParent, const CacheOpArgs& aArgs);
+  template <typename PromiseType>
+  void ExecuteOp(nsIGlobalObject* aGlobal, PromiseType& aPromise,
+                 nsISupports* aParent, const CacheOpArgs& aArgs) {
+    Unused << SendPCacheOpConstructor(
+        new CacheOpChild(GetWorkerRefPtr().clonePtr(), aGlobal, aParent,
+                         aPromise, this),
+        aArgs);
+  }
 
   
   void StartDestroyFromListener();
@@ -64,6 +73,8 @@ class CacheStorageChild final : public PCacheStorageChild, public CacheActorChil
 
   
   inline uint32_t NumChildActors() { return ManagedPCacheOpChild().Count(); }
+
+  ActorChild* mParentActor;
 
   
   

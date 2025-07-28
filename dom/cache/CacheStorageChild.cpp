@@ -18,8 +18,11 @@ namespace mozilla::dom::cache {
 void DeallocPCacheStorageChild(PCacheStorageChild* aActor) { delete aActor; }
 
 CacheStorageChild::CacheStorageChild(CacheStorageChildListener* aListener,
-                                     SafeRefPtr<CacheWorkerRef> aWorkerRef)
-    : mListener(aListener), mDelayedDestroy(false) {
+                                     SafeRefPtr<CacheWorkerRef> aWorkerRef,
+                                     ActorChild* aParentActor)
+    : mParentActor(aParentActor)
+    , mListener(aListener)
+    , mDelayedDestroy(false) {
   MOZ_COUNT_CTOR(cache::CacheStorageChild);
   MOZ_DIAGNOSTIC_ASSERT(mListener);
 
@@ -36,15 +39,6 @@ void CacheStorageChild::ClearListener() {
   NS_ASSERT_OWNINGTHREAD(CacheStorageChild);
   MOZ_DIAGNOSTIC_ASSERT(mListener);
   mListener = nullptr;
-}
-
-void CacheStorageChild::ExecuteOp(nsIGlobalObject* aGlobal, Promise* aPromise,
-                                  nsISupports* aParent,
-                                  const CacheOpArgs& aArgs) {
-  Unused << SendPCacheOpConstructor(
-      new CacheOpChild(GetWorkerRefPtr().clonePtr(), aGlobal, aParent, aPromise,
-                       this),
-      aArgs);
 }
 
 void CacheStorageChild::StartDestroyFromListener() {
@@ -88,7 +82,9 @@ void CacheStorageChild::NoteDeletedActor() {
   
   
   
-  if (NumChildActors() == 0 && mDelayedDestroy) DestroyInternal();
+  if (NumChildActors() == 0 && mDelayedDestroy) {
+    DestroyInternal();
+  }
 }
 
 void CacheStorageChild::ActorDestroy(ActorDestroyReason aReason) {
@@ -98,6 +94,10 @@ void CacheStorageChild::ActorDestroy(ActorDestroyReason aReason) {
     listener->OnActorDestroy(this);
     
     MOZ_DIAGNOSTIC_ASSERT(!mListener);
+  }
+
+  if (mParentActor) {
+    mParentActor->NoteDeletedActor();
   }
 
   RemoveWorkerRef();

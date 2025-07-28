@@ -67,8 +67,6 @@ struct CacheStorage::Entry final {
   SafeRefPtr<InternalRequest> mRequest;
 };
 
-namespace {
-
 bool IsTrusted(const PrincipalInfo& aPrincipalInfo, bool aTestingPrefEnabled) {
   
 
@@ -129,8 +127,6 @@ bool IsTrusted(const PrincipalInfo& aPrincipalInfo, bool aTestingPrefEnabled) {
   return nsMixedContentBlocker::IsPotentiallyTrustworthyLoopbackHost(
       nsDependentCSubstring(url + authPos + hostPos, hostLen));
 }
-
-}  
 
 
 already_AddRefed<CacheStorage> CacheStorage::CreateOnMainThread(
