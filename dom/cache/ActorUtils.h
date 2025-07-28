@@ -34,7 +34,10 @@ class PCacheStorageParent;
 
 
 
-already_AddRefed<PCacheChild> AllocPCacheChild(ActorChild* aParentActor = nullptr);
+
+
+already_AddRefed<PCacheChild> AllocPCacheChild(
+    ActorChild* aParentActor = nullptr);
 
 
 void DeallocPCacheChild(PCacheChild* aActor);
@@ -43,7 +46,9 @@ void DeallocPCacheChild(PCacheChild* aActor);
 void DeallocPCacheParent(PCacheParent* aActor);
 
 
-already_AddRefed<PCacheStreamControlChild> AllocPCacheStreamControlChild(ActorChild* aParentActor = nullptr);
+
+already_AddRefed<PCacheStreamControlChild> AllocPCacheStreamControlChild(
+    ActorChild* aParentActor = nullptr);
 
 void DeallocPCacheStreamControlParent(PCacheStreamControlParent* aActor);
 
@@ -55,10 +60,11 @@ void DeallocPCacheStreamControlParent(PCacheStreamControlParent* aActor);
 
 
 
+
+
 already_AddRefed<PCacheStorageParent> AllocPCacheStorageParent(
     mozilla::ipc::PBackgroundParent* aBackgroundIPCActor,
-    PBoundStorageKeyParent* aBoundStorageKeyActor,
-    Namespace aNamespace,
+    PBoundStorageKeyParent* aBoundStorageKeyActor, Namespace aNamespace,
     const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
 
 

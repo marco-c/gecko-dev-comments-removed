@@ -62,8 +62,7 @@ class BoundStorageKeyChild final : public PBoundStorageKeyChild,
 
   
   inline uint32_t NumChildActors() {
-    return ManagedPCacheStorageChild().Count() +
-           ManagedPCacheChild().Count() +
+    return ManagedPCacheStorageChild().Count() + ManagedPCacheChild().Count() +
            ManagedPCacheStreamControlChild().Count();
   }
 

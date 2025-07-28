@@ -57,6 +57,7 @@ void BoundStorageKeyChild::DestroyInternal() {
 
 void BoundStorageKeyChild::StartDestroy() {
   
+  
   NS_ASSERT_OWNINGTHREAD(BoundStorageKeyChild);
 
   if (NumChildActors() != 0) {

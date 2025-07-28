@@ -43,6 +43,7 @@ using CachePromise = MozPromiseBase;
 
 
 
+
 class BoundStorageKeyCache final : public nsISupports,
                                    public TypeUtils,
                                    public CacheChildListener {
@@ -87,10 +88,10 @@ class BoundStorageKeyCache final : public nsISupports,
                                      const RequestOrUTF8String& aRequest,
                                      CallerType aCallerType, ErrorResult& aRv);
 
-  already_AddRefed<CachePromise> AddAll(JSContext* aContext,
-                                        const Sequence<OwningRequestOrUTF8String>& aRequestList,
-                                        CallerType aCallerType,
-                                        ErrorResult& aRv);
+  already_AddRefed<CachePromise> AddAll(
+      JSContext* aContext,
+      const Sequence<OwningRequestOrUTF8String>& aRequestList,
+      CallerType aCallerType, ErrorResult& aRv);
 
   already_AddRefed<CachePromise> Put(JSContext* aCx,
                                      const RequestOrUTF8String& aRequest,
@@ -121,8 +122,8 @@ class BoundStorageKeyCache final : public nsISupports,
   
   void DisconnectFromActor();
 
-  void ExecuteOp(AutoChildOpArgs& aOpArgs,
-                 RefPtr<CachePromise>& aPromise, ErrorResult& aRv);
+  void ExecuteOp(AutoChildOpArgs& aOpArgs, RefPtr<CachePromise>& aPromise,
+                 ErrorResult& aRv);
 
   already_AddRefed<CachePromise> AddAll(
       const GlobalObject& aGlobal, nsTArray<SafeRefPtr<Request>>&& aRequestList,

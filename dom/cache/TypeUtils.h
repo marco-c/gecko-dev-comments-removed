@@ -59,15 +59,17 @@ class CacheChildListener : public Listener {
 };
 
 
+
 class CacheStorageChildListener : public Listener {
  public:
   virtual void OnActorDestroy(CacheStorageChild* aActor) = 0;
 };
 
 
+
 class BoundStorageKeyChildListener : public Listener {
  public:
-   virtual void OnActorDestroy(BoundStorageKeyChild* aActor) = 0;
+  virtual void OnActorDestroy(BoundStorageKeyChild* aActor) = 0;
 };
 
 class TypeUtils {

@@ -43,7 +43,8 @@ using mozilla::ipc::PrincipalInfo;
 
 
 
-class BoundStorageKey : public nsISupports, public BoundStorageKeyChildListener {
+class BoundStorageKey : public nsISupports,
+                        public BoundStorageKeyChildListener {
  public:
   using PBackgroundChild = ::mozilla::ipc::PBackgroundChild;
 
@@ -60,8 +61,7 @@ class BoundStorageKey : public nsISupports, public BoundStorageKeyChildListener 
   
   
   
-  nsresult Init(Namespace aNamespace,
-                const PrincipalInfo& aPrincipalInfo,
+  nsresult Init(Namespace aNamespace, const PrincipalInfo& aPrincipalInfo,
                 nsISerialEventTarget* aTarget = GetCurrentSerialEventTarget());
 
   RefPtr<BoundStorageKeyChild> mActor;
@@ -95,6 +95,8 @@ using MatchResultPromise =
 
 
 
+
+
 class BoundStorageKeyCacheStorage final : public BoundStorageKey,
                                           public TypeUtils,
                                           public CacheStorageChildListener {
@@ -112,8 +114,7 @@ class BoundStorageKeyCacheStorage final : public BoundStorageKey,
   inline void AssertOwningThread() const {}
 #endif
 
-  nsresult Init(WorkerPrivate* aWorkerPrivate,
-                Namespace aNamespace,
+  nsresult Init(WorkerPrivate* aWorkerPrivate, Namespace aNamespace,
                 const PrincipalInfo& aPrincipalInfo,
                 nsISerialEventTarget* aTarget = GetCurrentSerialEventTarget());
 
@@ -123,11 +124,11 @@ class BoundStorageKeyCacheStorage final : public BoundStorageKey,
       JSContext* aCx, const RequestOrUTF8String& aRequest,
       const MultiCacheQueryOptions& aOptions, ErrorResult& aRv);
   already_AddRefed<CacheStoragePromise> Has(const nsAString& aKey,
-                                               ErrorResult& aRv);
+                                            ErrorResult& aRv);
   already_AddRefed<CacheStoragePromise> Open(const nsAString& aKey,
-                                                ErrorResult& aRv);
+                                             ErrorResult& aRv);
   already_AddRefed<CacheStoragePromise> Delete(const nsAString& aKey,
-                                                  ErrorResult& aRv);
+                                               ErrorResult& aRv);
   already_AddRefed<CacheStoragePromise> Keys(ErrorResult& aRv);
 
   nsIGlobalObject* GetGlobalObject() const override { return mGlobal; }
@@ -142,10 +143,12 @@ class BoundStorageKeyCacheStorage final : public BoundStorageKey,
   template <typename PromiseType>
   struct Entry;
 
-  BoundStorageKeyCacheStorage(Namespace aNamespace, nsIGlobalObject* aGlobal,
-                              const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
+  BoundStorageKeyCacheStorage(
+      Namespace aNamespace, nsIGlobalObject* aGlobal,
+      const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
 
-  already_AddRefed<CacheStorageChild> CreateCacheStorageChild(WorkerPrivate* aWorkerPrivate);
+  already_AddRefed<CacheStorageChild> CreateCacheStorageChild(
+      WorkerPrivate* aWorkerPrivate);
   ~BoundStorageKeyCacheStorage() override;
 
   template <typename EntryType>
