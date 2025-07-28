@@ -206,6 +206,12 @@ class RTC_EXPORT DesktopCaptureOptions {
   
   bool allow_wgc_zero_hertz() const { return allow_wgc_zero_hertz_; }
   void set_allow_wgc_zero_hertz(bool allow) { allow_wgc_zero_hertz_ = allow; }
+
+  
+  
+  
+  bool wgc_require_border() const { return wgc_require_border_; }
+  void set_wgc_require_border(bool require) { wgc_require_border_ = require; }
 #endif  
 #endif  
 
@@ -264,6 +270,7 @@ class RTC_EXPORT DesktopCaptureOptions {
   bool allow_wgc_window_capturer_ = false;
   bool allow_wgc_capturer_fallback_ = false;
   bool allow_wgc_zero_hertz_ = false;
+  bool wgc_require_border_ = false;
 #endif
 #endif
 #if defined(WEBRTC_USE_X11)
