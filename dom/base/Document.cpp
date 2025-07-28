@@ -17972,6 +17972,19 @@ void Document::SetSHEntryHasUserInteraction(bool aHasInteraction) {
     
     Unused << topWc->SetSHEntryHasUserInteraction(aHasInteraction);
   }
+
+  
+  
+  nsIDocShell* docShell = GetDocShell();
+  if (docShell) {
+    nsCOMPtr<nsISHEntry> currentEntry;
+    bool oshe;
+    nsresult rv =
+        docShell->GetCurrentSHEntry(getter_AddRefs(currentEntry), &oshe);
+    if (!NS_WARN_IF(NS_FAILED(rv)) && currentEntry) {
+      currentEntry->SetHasUserInteraction(aHasInteraction);
+    }
+  }
 }
 
 bool Document::GetSHEntryHasUserInteraction() {
@@ -17998,16 +18011,6 @@ void Document::SetUserHasInteracted() {
   
   
   if (!GetSHEntryHasUserInteraction()) {
-    nsIDocShell* docShell = GetDocShell();
-    if (docShell) {
-      nsCOMPtr<nsISHEntry> currentEntry;
-      bool oshe;
-      nsresult rv =
-          docShell->GetCurrentSHEntry(getter_AddRefs(currentEntry), &oshe);
-      if (!NS_WARN_IF(NS_FAILED(rv)) && currentEntry) {
-        currentEntry->SetHasUserInteraction(true);
-      }
-    }
     SetSHEntryHasUserInteraction(true);
   }
 
