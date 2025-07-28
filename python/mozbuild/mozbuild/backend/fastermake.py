@@ -209,7 +209,7 @@ class FasterMakeBackend(MakeBackend, PartialBackend):
 
         
         python_deps = [
-            "$(TOPSRCDIR)/third_party/python/moz.l10n/moz/l10n/bin/build_file.py",
+            "$(TOPSRCDIR)/third_party/python/moz_l10n/moz/l10n/bin/build_file.py",
         ]
         
         for target, deps in sorted(self._l10n_dependencies.items()):
