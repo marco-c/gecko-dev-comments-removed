@@ -487,14 +487,7 @@ Arena* GCRuntime::allocateArena(ArenaChunk* chunk, Zone* zone,
 
   Arena* arena = chunk->allocateArena(this, zone, thingKind);
 
-  if (IsBufferAllocKind(thingKind)) {
-    
-    
-    size_t usableSize = ArenaSize - Arena::firstThingOffset(thingKind);
-    zone->mallocHeapSize.addBytes(usableSize);
-  } else {
-    zone->gcHeapSize.addGCArena(heapSize);
-  }
+  zone->gcHeapSize.addGCArena(heapSize);
 
   
   if (checkThresholds != ShouldCheckThresholds::DontCheckThresholds) {

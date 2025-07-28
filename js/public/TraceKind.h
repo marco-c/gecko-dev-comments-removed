@@ -22,9 +22,6 @@ class PropMap;
 class RegExpShared;
 class Shape;
 class Scope;
-namespace gc {
-class SmallBuffer;
-}  
 namespace jit {
 class JitCode;
 }  
@@ -65,8 +62,7 @@ enum class TraceKind {
   Scope,
   RegExpShared,
   GetterSetter,
-  PropMap,
-  SmallBuffer
+  PropMap
 };
 
 
@@ -105,8 +101,7 @@ struct MapTypeToTraceKind {
   D(BigInt,       JS::BigInt,          false,     false)       \
   D(RegExpShared, js::RegExpShared,    true,      true)        \
   D(GetterSetter, js::GetterSetter,    true,      true)        \
-  D(PropMap,      js::PropMap,         false,     false)       \
-  D(SmallBuffer,  js::gc::SmallBuffer, false,     false)
+  D(PropMap,      js::PropMap,         false,     false)
 
 
 

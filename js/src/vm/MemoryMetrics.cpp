@@ -526,13 +526,6 @@ static void StatsCellCallback(JSRuntime* rt, void* data, JS::GCCellPtr cellptr,
       break;
     }
 
-    case JS::TraceKind::SmallBuffer: {
-      
-      
-      zStats->smallBuffersGCHeap += thingSize;
-      break;
-    }
-
     default:
       MOZ_CRASH("invalid traceKind in StatsCellCallback");
   }
