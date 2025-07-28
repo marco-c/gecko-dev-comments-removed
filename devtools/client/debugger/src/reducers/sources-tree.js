@@ -476,9 +476,7 @@ function addSource(threadItems, source, sourceActor) {
   if (lastDirectoryItem?.path == parentPath) {
     directoryItem = lastDirectoryItem;
   } else {
-    const { url } = displayURL;
-    const parentUrl = url.substring(0, url.lastIndexOf("/"));
-    directoryItem = addOrGetParentDirectory(groupItem, parentPath, parentUrl);
+    directoryItem = addOrGetParentDirectory(groupItem, parentPath);
     lastDirectoryItem = directoryItem;
   }
 
@@ -625,9 +623,7 @@ export function sortThreads(a, b) {
 
 
 
-
-
-function addOrGetParentDirectory(groupItem, path, url) {
+function addOrGetParentDirectory(groupItem, path) {
   
   if (!path) {
     return groupItem;
@@ -640,15 +636,10 @@ function addOrGetParentDirectory(groupItem, path, url) {
   
   
   const parentPath = path.substring(0, path.lastIndexOf("/"));
-  const parentUrl = url.substring(0, url.lastIndexOf("/"));
-  const parentDirectory = addOrGetParentDirectory(
-    groupItem,
-    parentPath,
-    parentUrl
-  );
+  const parentDirectory = addOrGetParentDirectory(groupItem, parentPath);
 
   
-  const directory = createDirectoryTreeItem(path, url, parentDirectory);
+  const directory = createDirectoryTreeItem(path, parentDirectory);
   
   
   parentDirectory.children = [...parentDirectory.children];
@@ -715,7 +706,7 @@ function createGroupTreeItem(groupName, origin, parent, source) {
     groupName,
 
     
-    url: origin,
+    origin,
 
     
     
@@ -728,7 +719,7 @@ function createGroupTreeItem(groupName, origin, parent, source) {
     _allGroupDirectoryItems: new Map(),
   };
 }
-function createDirectoryTreeItem(path, url, parent) {
+function createDirectoryTreeItem(path, parent) {
   
   const pathSeparator = parent.type == "directory" ? "/" : "|";
 
@@ -755,9 +746,6 @@ function createDirectoryTreeItem(path, url, parent) {
     
     
     path,
-
-    
-    url,
   };
 }
 function createSourceTreeItem(source, sourceActor, parent) {
