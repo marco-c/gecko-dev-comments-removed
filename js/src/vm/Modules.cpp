@@ -351,17 +351,6 @@ JS_PUBLIC_API JSString* JS::GetRequestedModuleSpecifier(
     return nullptr;
   }
 
-  
-  
-  
-  
-  
-  if (moduleRequest->moduleType() == JS::ModuleType::Unknown) {
-    JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,
-                              JSMSG_BAD_MODULE_TYPE);
-    return nullptr;
-  }
-
   return moduleRequest->specifier();
 }
 
