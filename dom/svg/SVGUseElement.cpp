@@ -580,8 +580,7 @@ void SVGUseElement::LookupHref() {
 
   
   
-  if (targetURI->SchemeIs("data") &&
-      !StaticPrefs::svg_use_element_data_url_href_allowed()) {
+  if (targetURI->SchemeIs("data")) {
     return;
   }
 
