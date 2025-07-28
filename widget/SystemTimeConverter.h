@@ -200,9 +200,17 @@ class SystemTimeConverter {
     TimeDuration timeStampDelta = (aTimeStamp - mReferenceTimeStamp);
     int64_t wholeMillis = static_cast<int64_t>(timeStampDelta.ToMilliseconds());
     Time wrappedTimeStampDelta = wholeMillis;  
+    
+    const Time shift = (static_cast<Time>(0) - static_cast<Time>(1)) / 2;
+    
+    
+    
+    
+    Time wrappedTimeStampDeltaShifted = wrappedTimeStampDelta + shift;
 
-    int64_t timeToTimeStamp = static_cast<int64_t>(wrappedTimeStampDelta) -
-                              static_cast<int64_t>(timeDelta);
+    int64_t timeToTimeStamp =
+        static_cast<int64_t>(wrappedTimeStampDeltaShifted) -
+        static_cast<int64_t>(timeDelta) - static_cast<int64_t>(shift);
     bool isNewer = false;
     if (timeToTimeStamp == 0) {
       
