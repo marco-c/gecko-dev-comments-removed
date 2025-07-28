@@ -38,7 +38,7 @@ class PretenuringNursery;
 
 
 
-static constexpr size_t NurseryTraceKinds = 3;
+static constexpr size_t NurseryTraceKinds = 4;
 
 
 

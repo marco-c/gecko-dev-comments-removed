@@ -751,6 +751,9 @@ MOZ_ALWAYS_INLINE bool IsInsideNursery(const JSString* str) {
 MOZ_ALWAYS_INLINE bool IsInsideNursery(const JS::BigInt* bi) {
   return IsInsideNursery(reinterpret_cast<const Cell*>(bi));
 }
+MOZ_ALWAYS_INLINE bool IsInsideNursery(const js::GetterSetter* gs) {
+  return IsInsideNursery(reinterpret_cast<const Cell*>(gs));
+}
 MOZ_ALWAYS_INLINE bool InCollectedNurseryRegion(const JSObject* obj) {
   return InCollectedNurseryRegion(reinterpret_cast<const Cell*>(obj));
 }

@@ -1227,6 +1227,17 @@ static bool WouldDefinePastNonwritableLength(ArrayObject* arr, uint32_t index) {
   return !arr->lengthIsWritable() && index >= arr->length();
 }
 
+static bool CheckForNonFunctionGetterSetter(JSContext* cx,
+                                            Handle<GetterSetter*> gs,
+                                            Handle<NativeObject*> obj) {
+  bool nonFunctionGetter = gs->getter() && !gs->getter()->is<JSFunction>();
+  bool nonFunctionSetter = gs->setter() && !gs->setter()->is<JSFunction>();
+  if (MOZ_UNLIKELY(nonFunctionGetter || nonFunctionSetter)) {
+    return JSObject::setHasNonFunctionAccessor(cx, obj);
+  }
+  return true;
+}
+
 static bool ChangeProperty(JSContext* cx, Handle<NativeObject*> obj,
                            HandleId id, HandleObject getter,
                            HandleObject setter, PropertyFlags flags,
@@ -1248,8 +1259,11 @@ static bool ChangeProperty(JSContext* cx, Handle<NativeObject*> obj,
   }
 
   if (!gs) {
-    gs = GetterSetter::create(cx, getter, setter);
+    gs = GetterSetter::create(cx, obj, getter, setter);
     if (!gs) {
+      return false;
+    }
+    if (!CheckForNonFunctionGetterSetter(cx, gs, obj)) {
       return false;
     }
   }
@@ -1336,10 +1350,14 @@ static MOZ_ALWAYS_INLINE bool AddOrChangeProperty(
   if constexpr (AddOrChange == IsAddOrChange::Add) {
     if (desc.isAccessorDescriptor()) {
       Rooted<GetterSetter*> gs(
-          cx, GetterSetter::create(cx, desc.getter(), desc.setter()));
+          cx, GetterSetter::create(cx, obj, desc.getter(), desc.setter()));
       if (!gs) {
         return false;
       }
+      if (!CheckForNonFunctionGetterSetter(cx, gs, obj)) {
+        return false;
+      }
+
       if (!NativeObject::addProperty(cx, obj, id, flags, &slot)) {
         return false;
       }

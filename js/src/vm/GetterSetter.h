@@ -54,7 +54,7 @@ namespace js {
 
 
 
-class GetterSetter : public gc::TenuredCellWithGCPointer<JSObject> {
+class GetterSetter : public gc::CellWithGCPointer<JSObject> {
   friend class gc::CellAllocator;
 
  public:
@@ -72,14 +72,22 @@ class GetterSetter : public gc::TenuredCellWithGCPointer<JSObject> {
   GetterSetter(HandleObject getter, HandleObject setter);
 
  public:
-  static GetterSetter* create(JSContext* cx, HandleObject getter,
-                              HandleObject setter);
+  static GetterSetter* create(JSContext* cx, Handle<NativeObject*> owner,
+                              HandleObject getter, HandleObject setter);
 
   JSObject* setter() const { return setter_; }
 
   static const JS::TraceKind TraceKind = JS::TraceKind::GetterSetter;
 
+  js::gc::AllocKind getAllocKind() const {
+    return js::gc::AllocKind::GETTER_SETTER;
+  }
+  void fixupAfterMovingGC() {}
+
   static constexpr size_t offsetOfGetter() { return offsetOfHeaderPtr(); }
+  static constexpr size_t offsetOfSetter() {
+    return offsetof(GetterSetter, setter_);
+  }
 
   void traceChildren(JSTracer* trc);
 };
