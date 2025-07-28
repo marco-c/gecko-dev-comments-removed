@@ -188,7 +188,9 @@ inline void* ClearPacBits(void* ptr) {
   
   
   
-  asm("xpaclri" : "+r"(x30));
+#define ABSL_XPACLRI_HINT "hint #0x7;"
+  asm(ABSL_XPACLRI_HINT : "+r"(x30));  
+#undef ABSL_XPACLRI_HINT
   return x30;
 }
 

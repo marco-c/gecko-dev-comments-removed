@@ -126,4 +126,16 @@ TEST(PredictTest, ExplicitBoolConversion) {
   if (ABSL_PREDICT_FALSE(is_false)) ADD_FAILURE();
 }
 
+
+
+TEST(AbslAssume, Compiles) {
+  int x = 0;
+  ABSL_ASSUME(x >= 0);
+  EXPECT_EQ(x, 0);
+
+  
+  ABSL_ASSUME(x >= 0), (x >= 0) ? ++x : --x;
+  EXPECT_EQ(x, 1);
+}
+
 }  

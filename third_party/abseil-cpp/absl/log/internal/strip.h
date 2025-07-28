@@ -31,15 +31,6 @@
 
 #if defined(STRIP_LOG) && STRIP_LOG
 
-
-
-
-
-
-
-
-#define ABSL_LOG_INTERNAL_ATTRIBUTE_UNUSED_IF_STRIP_LOG ABSL_ATTRIBUTE_UNUSED
-
 #define ABSL_LOGGING_INTERNAL_LOG_INFO ::absl::log_internal::NullStream()
 #define ABSL_LOGGING_INTERNAL_LOG_WARNING ::absl::log_internal::NullStream()
 #define ABSL_LOGGING_INTERNAL_LOG_ERROR ::absl::log_internal::NullStream()
@@ -61,8 +52,6 @@
   ABSL_LOGGING_INTERNAL_LOG_QFATAL
 
 #else  
-
-#define ABSL_LOG_INTERNAL_ATTRIBUTE_UNUSED_IF_STRIP_LOG
 
 #define ABSL_LOGGING_INTERNAL_LOG_INFO \
   ::absl::log_internal::LogMessage(    \

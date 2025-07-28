@@ -210,6 +210,7 @@
 #include "absl/container/internal/hash_policy_traits.h"
 #include "absl/container/internal/hashtable_debug_hooks.h"
 #include "absl/container/internal/hashtablez_sampler.h"
+#include "absl/functional/function_ref.h"
 #include "absl/hash/hash.h"
 #include "absl/memory/memory.h"
 #include "absl/meta/type_traits.h"
@@ -1226,6 +1227,9 @@ class RawHashSetLayout {
   
   
   size_t alloc_size(size_t slot_size) const {
+    ABSL_SWISSTABLE_ASSERT(
+        slot_size <=
+        ((std::numeric_limits<size_t>::max)() - slot_offset_) / capacity_);
     return slot_offset_ + capacity_ * slot_size;
   }
 
@@ -1302,6 +1306,9 @@ struct HeapPtrs {
 };
 
 
+constexpr size_t MaxSooSlotSize() { return sizeof(HeapPtrs); }
+
+
 
 union HeapOrSoo {
   HeapOrSoo() = default;
@@ -1327,7 +1334,7 @@ union HeapOrSoo {
   }
 
   HeapPtrs heap;
-  unsigned char soo_data[sizeof(HeapPtrs)];
+  unsigned char soo_data[MaxSooSlotSize()];
 };
 
 
@@ -1396,9 +1403,10 @@ class CommonFields : public CommonFieldsGenerationInfo {
     size_ += size_t{1} << HasInfozShift();
   }
   void decrement_size() {
-    ABSL_SWISSTABLE_ASSERT(size() > 0);
+    ABSL_SWISSTABLE_ASSERT(!empty());
     size_ -= size_t{1} << HasInfozShift();
   }
+  bool empty() const { return size() == 0; }
 
   
   size_t capacity() const { return capacity_; }
@@ -1543,6 +1551,15 @@ void ConvertDeletedToEmptyAndFullToDeleted(ctrl_t* ctrl, size_t capacity);
 inline size_t NormalizeCapacity(size_t n) {
   return n ? ~size_t{} >> countl_zero(n) : 1;
 }
+
+template <size_t kSlotSize>
+size_t MaxValidCapacity() {
+  return NormalizeCapacity((std::numeric_limits<size_t>::max)() / 4 /
+                           kSlotSize);
+}
+
+
+[[noreturn]] void HashTableSizeOverflow();
 
 
 
@@ -1902,56 +1919,12 @@ inline void* SlotAddress(void* slot_array, size_t slot, size_t slot_size) {
 
 
 
-template <class SlotType, class Callback>
-ABSL_ATTRIBUTE_ALWAYS_INLINE inline void IterateOverFullSlots(
-    const CommonFields& c, SlotType* slot, Callback cb) {
-  const size_t cap = c.capacity();
-  const ctrl_t* ctrl = c.control();
-  if (is_small(cap)) {
-    
-    
-    
 
-    
-    
-    
-    ABSL_SWISSTABLE_ASSERT(cap <= GroupPortableImpl::kWidth &&
-                           "unexpectedly large small capacity");
-    static_assert(Group::kWidth >= GroupPortableImpl::kWidth,
-                  "unexpected group width");
-    
-    
-    const auto mask = GroupPortableImpl(ctrl + cap).MaskFull();
-    --ctrl;
-    --slot;
-    for (uint32_t i : mask) {
-      cb(ctrl + i, slot + i);
-    }
-    return;
-  }
-  size_t remaining = c.size();
-  ABSL_ATTRIBUTE_UNUSED const size_t original_size_for_assert = remaining;
-  while (remaining != 0) {
-    for (uint32_t i : GroupFullEmptyOrDeleted(ctrl).MaskFull()) {
-      ABSL_SWISSTABLE_ASSERT(IsFull(ctrl[i]) &&
-                             "hash table was modified unexpectedly");
-      cb(ctrl + i, slot + i);
-      --remaining;
-    }
-    ctrl += Group::kWidth;
-    slot += Group::kWidth;
-    ABSL_SWISSTABLE_ASSERT(
-        (remaining == 0 || *(ctrl - 1) != ctrl_t::kSentinel) &&
-        "hash table was modified unexpectedly");
-  }
-  
-  
-  ABSL_SWISSTABLE_ASSERT(original_size_for_assert >= c.size() &&
-                         "hash table was modified unexpectedly");
-}
+void IterateOverFullSlots(const CommonFields& c, size_t slot_size,
+                          absl::FunctionRef<void(const ctrl_t*, void*)> cb);
 
 template <typename CharAlloc>
-constexpr bool ShouldSampleHashtablezInfo() {
+constexpr bool ShouldSampleHashtablezInfoForAlloc() {
   
   
   
@@ -1961,23 +1934,159 @@ constexpr bool ShouldSampleHashtablezInfo() {
 }
 
 template <bool kSooEnabled>
-HashtablezInfoHandle SampleHashtablezInfo(size_t sizeof_slot, size_t sizeof_key,
-                                          size_t sizeof_value,
-                                          size_t old_capacity, bool was_soo,
-                                          HashtablezInfoHandle forced_infoz,
-                                          CommonFields& c) {
-  if (forced_infoz.IsSampled()) return forced_infoz;
+bool ShouldSampleHashtablezInfoOnResize(bool force_sampling,
+                                        bool is_hashtablez_eligible,
+                                        size_t old_capacity, CommonFields& c) {
+  if (!is_hashtablez_eligible) return false;
   
-  
-  if (kSooEnabled && was_soo && c.size() == 0) {
-    return Sample(sizeof_slot, sizeof_key, sizeof_value, SooCapacity());
+  ABSL_SWISSTABLE_ASSERT(kSooEnabled || !force_sampling);
+  if (kSooEnabled && force_sampling) {
+    return true;
   }
   
   
+  if (kSooEnabled && old_capacity == SooCapacity() && c.empty()) {
+    return ShouldSampleNextTable();
+  }
   if (!kSooEnabled && old_capacity == 0) {
-    return Sample(sizeof_slot, sizeof_key, sizeof_value, 0);
+    return ShouldSampleNextTable();
   }
-  return c.infoz();
+  return false;
+}
+
+
+template <size_t AlignOfBackingArray, typename CharAlloc>
+ABSL_ATTRIBUTE_NOINLINE void* AllocateBackingArray(void* alloc, size_t n) {
+  return Allocate<AlignOfBackingArray>(static_cast<CharAlloc*>(alloc), n);
+}
+
+template <size_t AlignOfBackingArray, typename CharAlloc>
+ABSL_ATTRIBUTE_NOINLINE void DeallocateBackingArray(
+    void* alloc, size_t capacity, ctrl_t* ctrl, size_t slot_size,
+    size_t slot_align, bool had_infoz) {
+  RawHashSetLayout layout(capacity, slot_align, had_infoz);
+  void* backing_array = ctrl - layout.control_offset();
+  const size_t alloc_size = layout.alloc_size(slot_size);
+  
+  SanitizerUnpoisonMemoryRegion(backing_array, alloc_size);
+  Deallocate<AlignOfBackingArray>(static_cast<CharAlloc*>(alloc), backing_array,
+                                  alloc_size);
+}
+
+
+
+
+
+struct PolicyFunctions {
+  uint32_t slot_size;
+  uint32_t slot_align;
+
+  
+  const void* (*hash_fn)(const CommonFields& common);
+
+  
+  size_t (*hash_slot)(const void* hash_fn, void* slot);
+
+  
+  void (*transfer)(void* set, void* dst_slot, void* src_slot);
+
+  
+  void* (*alloc)(void* alloc, size_t n);
+
+  
+  void (*dealloc)(void* alloc, size_t capacity, ctrl_t* ctrl, size_t slot_size,
+                  size_t slot_align, bool had_infoz);
+
+  
+  
+  void (*resize)(CommonFields& common, size_t new_capacity, bool force_infoz);
+};
+
+
+
+
+
+
+constexpr size_t SooSlotIndex() { return 1; }
+
+
+
+
+constexpr size_t MaxSmallAfterSooCapacity() { return 7; }
+
+
+
+ABSL_ATTRIBUTE_ALWAYS_INLINE inline void InitializeSmallControlBytesAfterSoo(
+    size_t hash, ctrl_t* new_ctrl, size_t new_capacity) {
+  ABSL_SWISSTABLE_ASSERT(is_single_group(new_capacity));
+  ABSL_SWISSTABLE_ASSERT(new_capacity <= MaxSmallAfterSooCapacity());
+  static_assert(SooSlotIndex() == 1, "");
+
+  if (Group::kWidth == 16) {
+    
+    
+    static_assert(MaxSmallAfterSooCapacity() <= 7, "");
+    absl::little_endian::Store64(new_ctrl + new_capacity + 8, kMsbs8Bytes);
+  }
+  static constexpr uint64_t kAllEmptyExceptSoo =
+      kMsbs8Bytes ^ (static_cast<uint64_t>(static_cast<uint8_t>(ctrl_t::kEmpty))
+                     << (8 * SooSlotIndex()));
+  
+  
+  
+  
+  const uint64_t first_ctrl_bytes =
+      kAllEmptyExceptSoo ^
+      (static_cast<uint64_t>(static_cast<uint8_t>(H2(hash)))
+       << (8 * SooSlotIndex()));
+  absl::little_endian::Store64(new_ctrl, first_ctrl_bytes);
+  
+  
+  
+  const uint64_t mirrored_ctrl_bytes =
+      (first_ctrl_bytes << 8) ^
+      static_cast<uint64_t>(static_cast<uint8_t>(ctrl_t::kSentinel));
+  absl::little_endian::Store64(new_ctrl + new_capacity, mirrored_ctrl_bytes);
+
+  
+  
+  
+  
+
+  
+  
+  
+  
+}
+
+
+
+
+
+
+
+
+
+
+constexpr size_t OptimalMemcpySizeForSooSlotTransfer(bool transfer_uses_memcpy,
+                                                     bool soo_enabled,
+                                                     size_t slot_size) {
+  if (!transfer_uses_memcpy || !soo_enabled) {
+    return 0;
+  }
+  if (slot_size == 1) {
+    return 1;
+  }
+  if (slot_size <= 3) {
+    return 4;
+  }
+  
+  
+  if (slot_size <= 8) {
+    return 8;
+  }
+  static_assert(MaxSooSlotSize() <= 16, "unexpectedly large SOO slot size");
+  return 16;
 }
 
 
@@ -1987,12 +2096,13 @@ HashtablezInfoHandle SampleHashtablezInfo(size_t sizeof_slot, size_t sizeof_key,
 class HashSetResizeHelper {
  public:
   explicit HashSetResizeHelper(CommonFields& c, bool was_soo, bool had_soo_slot,
-                               HashtablezInfoHandle forced_infoz)
+                               bool force_infoz, bool is_hashtablez_eligible)
       : old_capacity_(c.capacity()),
         had_infoz_(c.has_infoz()),
         was_soo_(was_soo),
         had_soo_slot_(had_soo_slot),
-        forced_infoz_(forced_infoz) {}
+        force_infoz_(force_infoz),
+        is_hashtablez_eligible_(is_hashtablez_eligible) {}
 
   
   
@@ -2005,7 +2115,6 @@ class HashSetResizeHelper {
                                               size_t old_capacity, size_t hash);
 
   HeapOrSoo& old_heap_or_soo() { return old_heap_or_soo_; }
-  void* old_soo_data() { return old_heap_or_soo_.get_soo_data(); }
   ctrl_t* old_ctrl() const {
     ABSL_SWISSTABLE_ASSERT(!was_soo_);
     return old_heap_or_soo_.control();
@@ -2021,8 +2130,6 @@ class HashSetResizeHelper {
   
   
   
-  static size_t SooSlotIndex() { return 1; }
-
   
   
   
@@ -2054,57 +2161,103 @@ class HashSetResizeHelper {
   
   
   
-  
-  
-  template <typename Alloc, size_t SizeOfSlot, bool TransferUsesMemcpy,
-            bool SooEnabled, size_t AlignOfSlot>
-  ABSL_ATTRIBUTE_NOINLINE bool InitializeSlots(CommonFields& c, Alloc alloc,
-                                               ctrl_t soo_slot_h2,
+  template <size_t SooSlotMemcpySize, bool TransferUsesMemcpy, bool SooEnabled>
+  ABSL_ATTRIBUTE_NOINLINE bool InitializeSlots(CommonFields& c, void* alloc,
+                                               size_t soo_slot_hash,
                                                size_t key_size,
-                                               size_t value_size) {
+                                               size_t value_size,
+                                               const PolicyFunctions& policy) {
     ABSL_SWISSTABLE_ASSERT(c.capacity());
-    HashtablezInfoHandle infoz =
-        ShouldSampleHashtablezInfo<Alloc>()
-            ? SampleHashtablezInfo<SooEnabled>(SizeOfSlot, key_size, value_size,
-                                               old_capacity_, was_soo_,
-                                               forced_infoz_, c)
-            : HashtablezInfoHandle{};
-
+    const size_t slot_size = policy.slot_size;
+    const size_t slot_align = policy.slot_align;
+    HashtablezInfoHandle infoz = c.infoz();
+    const bool should_sample = ShouldSampleHashtablezInfoOnResize<SooEnabled>(
+        force_infoz_, is_hashtablez_eligible_, old_capacity_, c);
+    if (ABSL_PREDICT_FALSE(should_sample)) {
+      infoz = ForcedTrySample(slot_size, key_size, value_size,
+                              SooEnabled ? SooCapacity() : 0);
+    }
     const bool has_infoz = infoz.IsSampled();
-    RawHashSetLayout layout(c.capacity(), AlignOfSlot, has_infoz);
-    char* mem = static_cast<char*>(Allocate<BackingArrayAlignment(AlignOfSlot)>(
-        &alloc, layout.alloc_size(SizeOfSlot)));
+
+    RawHashSetLayout layout(c.capacity(), slot_align, has_infoz);
+    char* mem =
+        static_cast<char*>(policy.alloc(alloc, layout.alloc_size(slot_size)));
     const GenerationType old_generation = c.generation();
     c.set_generation_ptr(
         reinterpret_cast<GenerationType*>(mem + layout.generation_offset()));
     c.set_generation(NextGeneration(old_generation));
-    c.set_control(reinterpret_cast<ctrl_t*>(mem + layout.control_offset()));
-    c.set_slots(mem + layout.slot_offset());
-    ResetGrowthLeft(c);
 
-    const bool grow_single_group =
-        IsGrowingIntoSingleGroupApplicable(old_capacity_, layout.capacity());
-    if (SooEnabled && was_soo_ && grow_single_group) {
-      InitControlBytesAfterSoo(c.control(), soo_slot_h2, layout.capacity());
-      if (TransferUsesMemcpy && had_soo_slot_) {
-        TransferSlotAfterSoo(c, SizeOfSlot);
-      }
-      
-    } else if ((SooEnabled || old_capacity_ != 0) && grow_single_group) {
-      if (TransferUsesMemcpy) {
-        GrowSizeIntoSingleGroupTransferable(c, SizeOfSlot);
-        DeallocateOld<AlignOfSlot>(alloc, SizeOfSlot);
+    
+    
+    ctrl_t* new_ctrl = reinterpret_cast<ctrl_t*>(mem + layout.control_offset());
+    void* new_slots = mem + layout.slot_offset();
+
+    bool grow_single_group = true;
+    if (SooEnabled && was_soo_) {
+      if (!had_soo_slot_) {
+        c.set_control(new_ctrl);
+        c.set_slots(new_slots);
+        ResetCtrl(c, slot_size);
+      } else if (ABSL_PREDICT_TRUE(layout.capacity() <=
+                                   MaxSmallAfterSooCapacity())) {
+        if (TransferUsesMemcpy) {
+          InsertOldSooSlotAndInitializeControlBytesSmall(
+              c, soo_slot_hash, new_ctrl, new_slots, slot_size,
+              [&](void* target_slot, void* source_slot) {
+                
+                
+                
+                static_assert(SooSlotIndex() == 1, "");
+                static_assert(SooSlotMemcpySize <= MaxSooSlotSize(), "");
+                ABSL_SWISSTABLE_ASSERT(SooSlotMemcpySize != 0 &&
+                                       SooSlotMemcpySize <= 2 * slot_size);
+                ABSL_SWISSTABLE_ASSERT(SooSlotMemcpySize >= slot_size);
+                void* next_slot = SlotAddress(target_slot, 1, slot_size);
+                SanitizerUnpoisonMemoryRegion(next_slot,
+                                              SooSlotMemcpySize - slot_size);
+                std::memcpy(target_slot, source_slot, SooSlotMemcpySize);
+                SanitizerPoisonMemoryRegion(next_slot,
+                                            SooSlotMemcpySize - slot_size);
+              });
+        } else {
+          InsertOldSooSlotAndInitializeControlBytesSmall(
+              c, soo_slot_hash, new_ctrl, new_slots, slot_size,
+              [&](void* target_slot, void* source_slot) {
+                policy.transfer(&c, target_slot, source_slot);
+              });
+        }
       } else {
-        GrowIntoSingleGroupShuffleControlBytes(c.control(), layout.capacity());
+        InsertOldSooSlotAndInitializeControlBytesLarge(
+            c, soo_slot_hash, new_ctrl, new_slots, policy);
       }
     } else {
-      ResetCtrl(c, SizeOfSlot);
+      old_heap_or_soo() = c.heap_or_soo();
+      c.set_control(new_ctrl);
+      c.set_slots(new_slots);
+      grow_single_group =
+          IsGrowingIntoSingleGroupApplicable(old_capacity_, layout.capacity());
+      
+      if ((SooEnabled || old_capacity_ != 0) && grow_single_group) {
+        if (TransferUsesMemcpy) {
+          GrowSizeIntoSingleGroupTransferable(c, slot_size);
+          (*policy.dealloc)(alloc, old_capacity_, old_ctrl(), slot_size,
+                            slot_align, had_infoz_);
+        } else {
+          GrowIntoSingleGroupShuffleControlBytes(c.control(),
+                                                 layout.capacity());
+        }
+      } else {
+        ResetCtrl(c, slot_size);
+      }
     }
 
+    ResetGrowthLeft(c);
     c.set_has_infoz(has_infoz);
     if (has_infoz) {
       infoz.RecordStorageChanged(c.size(), layout.capacity());
-      if ((SooEnabled && was_soo_) || grow_single_group || old_capacity_ == 0) {
+      
+      
+      if (grow_single_group || old_capacity_ == 0) {
         infoz.RecordRehash(0);
       }
       c.set_infoz(infoz);
@@ -2140,12 +2293,9 @@ class HashSetResizeHelper {
 
   
   template <size_t AlignOfSlot, class CharAlloc>
-  void DeallocateOld(CharAlloc alloc_ref, size_t slot_size) {
-    SanitizerUnpoisonMemoryRegion(old_slots(), slot_size * old_capacity_);
-    auto layout = RawHashSetLayout(old_capacity_, AlignOfSlot, had_infoz_);
-    Deallocate<BackingArrayAlignment(AlignOfSlot)>(
-        &alloc_ref, old_ctrl() - layout.control_offset(),
-        layout.alloc_size(slot_size));
+  void DeallocateOld(CharAlloc alloc, size_t slot_size) {
+    DeallocateBackingArray<BackingArrayAlignment(AlignOfSlot), CharAlloc>(
+        &alloc, old_capacity_, old_ctrl(), slot_size, AlignOfSlot, had_infoz_);
   }
 
  private:
@@ -2165,7 +2315,34 @@ class HashSetResizeHelper {
   
   
   
-  void TransferSlotAfterSoo(CommonFields& c, size_t slot_size);
+  
+  template <typename TransferFn>
+  ABSL_ATTRIBUTE_ALWAYS_INLINE void
+  InsertOldSooSlotAndInitializeControlBytesSmall(CommonFields& c, size_t hash,
+                                                 ctrl_t* new_ctrl,
+                                                 void* new_slots,
+                                                 size_t slot_size,
+                                                 TransferFn transfer) {
+    ABSL_SWISSTABLE_ASSERT(had_soo_slot_);
+    size_t new_capacity = c.capacity();
+    ABSL_SWISSTABLE_ASSERT(is_single_group(new_capacity));
+    ABSL_SWISSTABLE_ASSERT(new_capacity <= MaxSmallAfterSooCapacity());
+    static_assert(SooSlotIndex() == 1, "");
+    InitializeSmallControlBytesAfterSoo(hash, new_ctrl, new_capacity);
+
+    SanitizerPoisonMemoryRegion(new_slots, slot_size * new_capacity);
+    void* target_slot = SlotAddress(new_slots, SooSlotIndex(), slot_size);
+    SanitizerUnpoisonMemoryRegion(target_slot, slot_size);
+    transfer(target_slot, c.soo_data());
+    c.set_control(new_ctrl);
+    c.set_slots(new_slots);
+  }
+
+  
+  
+  void InsertOldSooSlotAndInitializeControlBytesLarge(
+      CommonFields& c, size_t hash, ctrl_t* new_ctrl, void* new_slots,
+      const PolicyFunctions& policy);
 
   
   
@@ -2200,13 +2377,6 @@ class HashSetResizeHelper {
   
   
   
-  void InitControlBytesAfterSoo(ctrl_t* new_ctrl, ctrl_t h2,
-                                size_t new_capacity);
-
-  
-  
-  
-  
   
   
   
@@ -2226,7 +2396,7 @@ class HashSetResizeHelper {
   
   
   
-  void PoisonSingleGroupEmptySlots(CommonFields& c, size_t slot_size) const {
+  static void PoisonSingleGroupEmptySlots(CommonFields& c, size_t slot_size) {
     
     for (size_t i = 0; i < c.capacity(); ++i) {
       if (!IsFull(c.control()[i])) {
@@ -2242,7 +2412,9 @@ class HashSetResizeHelper {
   bool was_soo_;
   bool had_soo_slot_;
   
-  HashtablezInfoHandle forced_infoz_;
+  
+  bool force_infoz_;
+  bool is_hashtablez_eligible_;
 };
 
 inline void PrepareInsertCommon(CommonFields& common) {
@@ -2257,54 +2429,11 @@ size_t PrepareInsertAfterSoo(size_t hash, size_t slot_size,
 
 
 
-
-struct PolicyFunctions {
-  size_t slot_size;
-
-  
-  const void* (*hash_fn)(const CommonFields& common);
-
-  
-  size_t (*hash_slot)(const void* hash_fn, void* slot);
-
-  
-  void (*transfer)(void* set, void* dst_slot, void* src_slot);
-
-  
-  void (*dealloc)(CommonFields& common, const PolicyFunctions& policy);
-
-  
-  
-  void (*resize)(CommonFields& common, size_t new_capacity,
-                 HashtablezInfoHandle forced_infoz);
-};
-
-
-
-
 void ClearBackingArray(CommonFields& c, const PolicyFunctions& policy,
-                       bool reuse, bool soo_enabled);
+                       void* alloc, bool reuse, bool soo_enabled);
 
 
 void EraseMetaOnly(CommonFields& c, size_t index, size_t slot_size);
-
-
-
-
-
-template <size_t AlignOfSlot>
-ABSL_ATTRIBUTE_NOINLINE void DeallocateStandard(CommonFields& common,
-                                                const PolicyFunctions& policy) {
-  
-  SanitizerUnpoisonMemoryRegion(common.slot_array(),
-                                policy.slot_size * common.capacity());
-
-  std::allocator<char> alloc;
-  common.infoz().Unregister();
-  Deallocate<BackingArrayAlignment(AlignOfSlot)>(
-      &alloc, common.backing_array_start(),
-      common.alloc_size(policy.slot_size, AlignOfSlot));
-}
 
 
 
@@ -2381,6 +2510,7 @@ class raw_hash_set {
   using const_pointer = typename absl::allocator_traits<
       allocator_type>::template rebind_traits<value_type>::const_pointer;
 
+ private:
   
   
   
@@ -2388,7 +2518,6 @@ class raw_hash_set {
   template <class K>
   using key_arg = typename KeyArgImpl::template type<K, key_type>;
 
- private:
   
   
   
@@ -2645,6 +2774,10 @@ class raw_hash_set {
       : settings_(CommonFields::CreateDefault<SooEnabled()>(), hash, eq,
                   alloc) {
     if (bucket_count > DefaultCapacity()) {
+      if (ABSL_PREDICT_FALSE(bucket_count >
+                             MaxValidCapacity<sizeof(slot_type)>())) {
+        HashTableSizeOverflow();
+      }
       resize(NormalizeCapacity(bucket_count));
     }
   }
@@ -2762,8 +2895,7 @@ class raw_hash_set {
       ABSL_SWISSTABLE_ASSERT(size == 1);
       common().set_full_soo();
       emplace_at(soo_iterator(), *that.begin());
-      const HashtablezInfoHandle infoz = try_sample_soo();
-      if (infoz.IsSampled()) resize_with_soo_infoz(infoz);
+      if (should_sample_soo()) resize_with_soo_sample();
       return;
     }
     ABSL_SWISSTABLE_ASSERT(!that.is_soo());
@@ -2781,9 +2913,9 @@ class raw_hash_set {
     const size_t shift =
         is_single_group(cap) ? (PerTableSalt(control()) | 1) : 0;
     IterateOverFullSlots(
-        that.common(), that.slot_array(),
-        [&](const ctrl_t* that_ctrl,
-            slot_type* that_slot) ABSL_ATTRIBUTE_ALWAYS_INLINE {
+        that.common(), sizeof(slot_type),
+        [&](const ctrl_t* that_ctrl, void* that_slot_void) {
+          slot_type* that_slot = static_cast<slot_type*>(that_slot_void);
           if (shift == 0) {
             
             
@@ -2917,7 +3049,9 @@ class raw_hash_set {
     ABSL_ASSUME(cap >= kDefaultCapacity);
     return cap;
   }
-  size_t max_size() const { return (std::numeric_limits<size_t>::max)(); }
+  size_t max_size() const {
+    return CapacityToGrowth(MaxValidCapacity<sizeof(slot_type)>());
+  }
 
   ABSL_ATTRIBUTE_REINITIALIZES void clear() {
     if (SwisstableGenerationsEnabled() &&
@@ -2940,8 +3074,7 @@ class raw_hash_set {
       common().set_empty_soo();
     } else {
       destroy_slots();
-      ClearBackingArray(common(), GetPolicyFunctions(), cap < 128,
-                        SooEnabled());
+      clear_backing_array(cap < 128);
     }
     common().set_reserved_growth(0);
     common().set_reservation_size(0);
@@ -3207,31 +3340,6 @@ class raw_hash_set {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   void erase(const_iterator cit) { erase(cit.inner_); }
 
   
@@ -3264,8 +3372,7 @@ class raw_hash_set {
       
       
       destroy_slots();
-      ClearBackingArray(common(), GetPolicyFunctions(), true,
-                        SooEnabled());
+      clear_backing_array(true);
       common().set_reserved_growth(common().reservation_size());
       return end();
     }
@@ -3345,8 +3452,7 @@ class raw_hash_set {
     if (n == 0) {
       if (cap == 0 || is_soo()) return;
       if (empty()) {
-        ClearBackingArray(common(), GetPolicyFunctions(), false,
-                          SooEnabled());
+        clear_backing_array(false);
         return;
       }
       if (fits_in_soo(size())) {
@@ -3363,8 +3469,7 @@ class raw_hash_set {
         alignas(slot_type) unsigned char slot_space[sizeof(slot_type)];
         slot_type* tmp_slot = to_slot(slot_space);
         transfer(tmp_slot, begin().slot());
-        ClearBackingArray(common(), GetPolicyFunctions(), false,
-                          SooEnabled());
+        clear_backing_array(false);
         transfer(soo_slot(), tmp_slot);
         common().set_full_soo();
         return;
@@ -3376,6 +3481,9 @@ class raw_hash_set {
     auto m = NormalizeCapacity(n | GrowthToLowerboundCapacity(size()));
     
     if (n == 0 || m > cap) {
+      if (ABSL_PREDICT_FALSE(m > MaxValidCapacity<sizeof(slot_type)>())) {
+        HashTableSizeOverflow();
+      }
       resize(m);
 
       
@@ -3388,6 +3496,9 @@ class raw_hash_set {
     const size_t max_size_before_growth =
         is_soo() ? SooCapacity() : size() + growth_left();
     if (n > max_size_before_growth) {
+      if (ABSL_PREDICT_FALSE(n > max_size())) {
+        HashTableSizeOverflow();
+      }
       size_t m = GrowthToLowerboundCapacity(n);
       resize(NormalizeCapacity(m));
 
@@ -3644,33 +3755,41 @@ class raw_hash_set {
   
   
   
-  inline HashtablezInfoHandle try_sample_soo() {
+  bool should_sample_soo() {
     ABSL_SWISSTABLE_ASSERT(is_soo());
-    if (!ShouldSampleHashtablezInfo<CharAlloc>()) return HashtablezInfoHandle{};
-    return Sample(sizeof(slot_type), sizeof(key_type), sizeof(value_type),
-                  SooCapacity());
+    if (!ShouldSampleHashtablezInfoForAlloc<CharAlloc>()) return false;
+    return ShouldSampleNextTable();
   }
 
-  inline void destroy_slots() {
+  void clear_backing_array(bool reuse) {
+    ABSL_SWISSTABLE_ASSERT(capacity() > DefaultCapacity());
+    CharAlloc alloc(alloc_ref());
+    ClearBackingArray(common(), GetPolicyFunctions(), &alloc, reuse,
+                      SooEnabled());
+  }
+
+  void destroy_slots() {
     ABSL_SWISSTABLE_ASSERT(!is_soo());
     if (PolicyTraits::template destroy_is_trivial<Alloc>()) return;
-    IterateOverFullSlots(
-        common(), slot_array(),
-        [&](const ctrl_t*, slot_type* slot)
-            ABSL_ATTRIBUTE_ALWAYS_INLINE { this->destroy(slot); });
+    IterateOverFullSlots(common(), sizeof(slot_type),
+                         [&](const ctrl_t*, void* slot) {
+                           this->destroy(static_cast<slot_type*>(slot));
+                         });
   }
 
-  inline void dealloc() {
-    ABSL_SWISSTABLE_ASSERT(capacity() != 0);
+  void dealloc() {
+    ABSL_SWISSTABLE_ASSERT(capacity() > DefaultCapacity());
     
     SanitizerUnpoisonMemoryRegion(slot_array(), sizeof(slot_type) * capacity());
     infoz().Unregister();
-    Deallocate<BackingArrayAlignment(alignof(slot_type))>(
-        &alloc_ref(), common().backing_array_start(),
-        common().alloc_size(sizeof(slot_type), alignof(slot_type)));
+    CharAlloc alloc(alloc_ref());
+    DeallocateBackingArray<BackingArrayAlignment(alignof(slot_type)),
+                           CharAlloc>(&alloc, capacity(), control(),
+                                      sizeof(slot_type), alignof(slot_type),
+                                      common().has_infoz());
   }
 
-  inline void destructor_impl() {
+  void destructor_impl() {
     if (SwisstableGenerationsEnabled() &&
         capacity() >= InvalidCapacity::kMovedFrom) {
       return;
@@ -3710,63 +3829,51 @@ class raw_hash_set {
   
   
   void resize(size_t new_capacity) {
-    raw_hash_set::resize_impl(common(), new_capacity, HashtablezInfoHandle{});
+    raw_hash_set::resize_impl(common(), new_capacity, false);
   }
 
   
   
-  
-  void resize_with_soo_infoz(HashtablezInfoHandle forced_infoz) {
-    ABSL_SWISSTABLE_ASSERT(forced_infoz.IsSampled());
+  void resize_with_soo_sample() {
     raw_hash_set::resize_impl(common(), NextCapacity(SooCapacity()),
-                              forced_infoz);
+                              true);
   }
 
   
   
-  ABSL_ATTRIBUTE_NOINLINE static void resize_impl(
-      CommonFields& common, size_t new_capacity,
-      HashtablezInfoHandle forced_infoz) {
+  ABSL_ATTRIBUTE_NOINLINE static void resize_impl(CommonFields& common,
+                                                  size_t new_capacity,
+                                                  bool force_infoz) {
     raw_hash_set* set = reinterpret_cast<raw_hash_set*>(&common);
     ABSL_SWISSTABLE_ASSERT(IsValidCapacity(new_capacity));
     ABSL_SWISSTABLE_ASSERT(!set->fits_in_soo(new_capacity));
+    ABSL_SWISSTABLE_ASSERT(!force_infoz || SooEnabled());
     const bool was_soo = set->is_soo();
     const bool had_soo_slot = was_soo && !set->empty();
-    const ctrl_t soo_slot_h2 =
-        had_soo_slot ? static_cast<ctrl_t>(H2(set->hash_of(set->soo_slot())))
-                     : ctrl_t::kEmpty;
-    HashSetResizeHelper resize_helper(common, was_soo, had_soo_slot,
-                                      forced_infoz);
-    
-    
-    
-    
-    
-    if (PolicyTraits::transfer_uses_memcpy() || !had_soo_slot) {
-      resize_helper.old_heap_or_soo() = common.heap_or_soo();
-    } else {
-      set->transfer(set->to_slot(resize_helper.old_soo_data()),
-                    set->soo_slot());
-    }
+    const size_t soo_slot_hash =
+        had_soo_slot ? set->hash_of(set->soo_slot()) : 0;
+    HashSetResizeHelper resize_helper(
+        common, was_soo, had_soo_slot, force_infoz,
+        ShouldSampleHashtablezInfoForAlloc<CharAlloc>());
     common.set_capacity(new_capacity);
     
     
     
+    CharAlloc alloc(set->alloc_ref());
     const bool grow_single_group =
-        resize_helper.InitializeSlots<CharAlloc, sizeof(slot_type),
+        resize_helper.InitializeSlots<OptimalMemcpySizeForSooSlotTransfer(
+                                          PolicyTraits::transfer_uses_memcpy(),
+                                          SooEnabled(), sizeof(slot_type)),
                                       PolicyTraits::transfer_uses_memcpy(),
-                                      SooEnabled(), alignof(slot_type)>(
-            common, CharAlloc(set->alloc_ref()), soo_slot_h2, sizeof(key_type),
-            sizeof(value_type));
+                                      SooEnabled()>(
+            common, &alloc, soo_slot_hash, sizeof(key_type), sizeof(value_type),
+            GetPolicyFunctions());
 
-    
-    if (!SooEnabled() && resize_helper.old_capacity() == 0) {
+    if (resize_helper.old_capacity() == DefaultCapacity()) {
       
       return;
     }
     ABSL_SWISSTABLE_ASSERT(resize_helper.old_capacity() > 0);
-    
-    if (was_soo && !had_soo_slot) return;
 
     slot_type* new_slots = set->slot_array();
     if (grow_single_group) {
@@ -3774,16 +3881,10 @@ class raw_hash_set {
         
         return;
       }
-      if (was_soo) {
-        set->transfer(new_slots + resize_helper.SooSlotIndex(),
-                      to_slot(resize_helper.old_soo_data()));
-        return;
-      } else {
-        
-        
-        resize_helper.GrowSizeIntoSingleGroup<PolicyTraits>(common,
-                                                            set->alloc_ref());
-      }
+      
+      
+      resize_helper.GrowSizeIntoSingleGroup<PolicyTraits>(common,
+                                                          set->alloc_ref());
     } else {
       
       const auto insert_slot = [&](slot_type* slot) {
@@ -3794,19 +3895,14 @@ class raw_hash_set {
         set->transfer(new_slots + target.offset, slot);
         return target.probe_length;
       };
-      if (was_soo) {
-        insert_slot(to_slot(resize_helper.old_soo_data()));
-        return;
-      } else {
-        auto* old_slots = static_cast<slot_type*>(resize_helper.old_slots());
-        size_t total_probe_length = 0;
-        for (size_t i = 0; i != resize_helper.old_capacity(); ++i) {
-          if (IsFull(resize_helper.old_ctrl()[i])) {
-            total_probe_length += insert_slot(old_slots + i);
-          }
+      auto* old_slots = static_cast<slot_type*>(resize_helper.old_slots());
+      size_t total_probe_length = 0;
+      for (size_t i = 0; i != resize_helper.old_capacity(); ++i) {
+        if (IsFull(resize_helper.old_ctrl()[i])) {
+          total_probe_length += insert_slot(old_slots + i);
         }
-        common.infoz().RecordRehash(total_probe_length);
       }
+      common.infoz().RecordRehash(total_probe_length);
     }
     resize_helper.DeallocateOld<alignof(slot_type)>(CharAlloc(set->alloc_ref()),
                                                     sizeof(slot_type));
@@ -3920,9 +4016,8 @@ class raw_hash_set {
   template <class K>
   std::pair<iterator, bool> find_or_prepare_insert_soo(const K& key) {
     if (empty()) {
-      const HashtablezInfoHandle infoz = try_sample_soo();
-      if (infoz.IsSampled()) {
-        resize_with_soo_infoz(infoz);
+      if (should_sample_soo()) {
+        resize_with_soo_sample();
       } else {
         common().set_full_soo();
         return {soo_iterator(), true};
@@ -4017,8 +4112,9 @@ class raw_hash_set {
     if (empty()) return;
 
     const size_t hash_of_arg = hash_ref()(key);
-    const auto assert_consistent = [&](const ctrl_t*, slot_type* slot) {
-      const value_type& element = PolicyTraits::element(slot);
+    const auto assert_consistent = [&](const ctrl_t*, void* slot) {
+      const value_type& element =
+          PolicyTraits::element(static_cast<slot_type*>(slot));
       const bool is_key_equal =
           PolicyTraits::apply(EqualElement<K>{key, eq_ref()}, element);
       if (!is_key_equal) return;
@@ -4038,7 +4134,7 @@ class raw_hash_set {
     }
     
     if (capacity() > 16) return;
-    IterateOverFullSlots(common(), slot_array(), assert_consistent);
+    IterateOverFullSlots(common(), sizeof(slot_type), assert_consistent);
   }
 
   
@@ -4159,23 +4255,14 @@ class raw_hash_set {
     auto* h = static_cast<raw_hash_set*>(set);
     h->transfer(static_cast<slot_type*>(dst), static_cast<slot_type*>(src));
   }
-  
-  static void dealloc_fn(CommonFields& common, const PolicyFunctions&) {
-    auto* set = reinterpret_cast<raw_hash_set*>(&common);
-
-    
-    SanitizerUnpoisonMemoryRegion(common.slot_array(),
-                                  sizeof(slot_type) * common.capacity());
-
-    common.infoz().Unregister();
-    Deallocate<BackingArrayAlignment(alignof(slot_type))>(
-        &set->alloc_ref(), common.backing_array_start(),
-        common.alloc_size(sizeof(slot_type), alignof(slot_type)));
-  }
 
   static const PolicyFunctions& GetPolicyFunctions() {
+    static_assert(sizeof(slot_type) <= (std::numeric_limits<uint32_t>::max)());
+    static_assert(alignof(slot_type) <= (std::numeric_limits<uint32_t>::max)());
+    static constexpr size_t kBackingArrayAlignment =
+        BackingArrayAlignment(alignof(slot_type));
     static constexpr PolicyFunctions value = {
-        sizeof(slot_type),
+        sizeof(slot_type), alignof(slot_type),
         
         
         std::is_empty<hasher>::value ? &GetHashRefForEmptyHasher
@@ -4184,11 +4271,9 @@ class raw_hash_set {
         PolicyTraits::transfer_uses_memcpy()
             ? TransferRelocatable<sizeof(slot_type)>
             : &raw_hash_set::transfer_slot_fn,
-        (std::is_same<SlotAlloc, std::allocator<slot_type>>::value
-             ? &DeallocateStandard<alignof(slot_type)>
-             : &raw_hash_set::dealloc_fn),
-        &raw_hash_set::resize_impl
-    };
+        &AllocateBackingArray<kBackingArrayAlignment, CharAlloc>,
+        &DeallocateBackingArray<kBackingArrayAlignment, CharAlloc>,
+        &raw_hash_set::resize_impl};
     return value;
   }
 
@@ -4221,8 +4306,11 @@ struct HashtableFreeFunctionsAccess {
     }
     ABSL_ATTRIBUTE_UNUSED const size_t original_size_for_assert = c->size();
     size_t num_deleted = 0;
+    using SlotType = typename Set::slot_type;
     IterateOverFullSlots(
-        c->common(), c->slot_array(), [&](const ctrl_t* ctrl, auto* slot) {
+        c->common(), sizeof(SlotType),
+        [&](const ctrl_t* ctrl, void* slot_void) {
+          auto* slot = static_cast<SlotType*>(slot_void);
           if (pred(Set::PolicyTraits::element(slot))) {
             c->destroy(slot);
             EraseMetaOnly(c->common(), static_cast<size_t>(ctrl - c->control()),
@@ -4247,10 +4335,12 @@ struct HashtableFreeFunctionsAccess {
       cb(*c->soo_iterator());
       return;
     }
+    using SlotType = typename Set::slot_type;
     using ElementTypeWithConstness = decltype(*c->begin());
     IterateOverFullSlots(
-        c->common(), c->slot_array(), [&cb](const ctrl_t*, auto* slot) {
-          ElementTypeWithConstness& element = Set::PolicyTraits::element(slot);
+        c->common(), sizeof(SlotType), [&cb](const ctrl_t*, void* slot) {
+          ElementTypeWithConstness& element =
+              Set::PolicyTraits::element(static_cast<SlotType*>(slot));
           cb(element);
         });
   }

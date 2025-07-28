@@ -1123,7 +1123,7 @@ TEST(StringViewTest, ConstexprCompiles) {
 #endif
 
 
-#if defined(_MSC_VER) && _MSC_VER >= 1910
+#if defined(_MSC_VER)
 #define ABSL_HAVE_CONSTEXPR_STRING_VIEW_FROM_CSTR 1
 #endif
 
@@ -1159,10 +1159,6 @@ TEST(StringViewTest, ConstexprCompiles) {
 #endif
 #endif
 
-#if !defined(__clang__) || 3 < __clang_major__ || \
-  (3 == __clang_major__ && 4 < __clang_minor__)
-  
-  
   constexpr absl::string_view::iterator const_begin_empty = sp.begin();
   constexpr absl::string_view::iterator const_end_empty = sp.end();
   EXPECT_EQ(const_begin_empty, const_end_empty);
@@ -1171,7 +1167,6 @@ TEST(StringViewTest, ConstexprCompiles) {
   constexpr absl::string_view::iterator const_begin_nullptr = cstr.begin();
   constexpr absl::string_view::iterator const_end_nullptr = cstr.end();
   EXPECT_EQ(const_begin_nullptr, const_end_nullptr);
-#endif  
 #endif  
 
   constexpr absl::string_view::iterator const_begin = cstr_len.begin();

@@ -25,6 +25,8 @@
 
 
 
+
+
 #ifndef ABSL_BASE_OPTIMIZATION_H_
 #define ABSL_BASE_OPTIMIZATION_H_
 
@@ -271,20 +273,14 @@
 #elif defined(_MSC_VER)
 #define ABSL_ASSUME(cond) __assume(cond)
 #elif defined(__cpp_lib_unreachable) && __cpp_lib_unreachable >= 202202L
-#define ABSL_ASSUME(cond)            \
-  do {                               \
-    if (!(cond)) std::unreachable(); \
-  } while (false)
+#define ABSL_ASSUME(cond) ((cond) ? void() : std::unreachable())
 #elif defined(__GNUC__) || ABSL_HAVE_BUILTIN(__builtin_unreachable)
-#define ABSL_ASSUME(cond)                 \
-  do {                                    \
-    if (!(cond)) __builtin_unreachable(); \
-  } while (false)
+#define ABSL_ASSUME(cond) ((cond) ? void() : __builtin_unreachable())
+#elif ABSL_INTERNAL_CPLUSPLUS_LANG >= 202002L
+
+#define ABSL_ASSUME(expr) (decltype((expr) ? void() : void())())
 #else
-#define ABSL_ASSUME(cond)               \
-  do {                                  \
-    static_cast<void>(false && (cond)); \
-  } while (false)
+#define ABSL_ASSUME(expr) (false ? ((expr) ? void() : void()) : void())
 #endif
 
 

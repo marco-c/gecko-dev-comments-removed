@@ -270,34 +270,45 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define LOG_EVERY_N(severity, n) \
   ABSL_LOG_INTERNAL_LOG_EVERY_N_IMPL(_##severity, n)
-
-
-
-
-
-
 #define LOG_FIRST_N(severity, n) \
   ABSL_LOG_INTERNAL_LOG_FIRST_N_IMPL(_##severity, n)
-
-
-
-
-
-
 #define LOG_EVERY_POW_2(severity) \
   ABSL_LOG_INTERNAL_LOG_EVERY_POW_2_IMPL(_##severity)
-
-
-
-
-
-
-
-
-
-
 #define LOG_EVERY_N_SEC(severity, n_seconds) \
   ABSL_LOG_INTERNAL_LOG_EVERY_N_SEC_IMPL(_##severity, n_seconds)
 
@@ -327,13 +338,6 @@
   ABSL_LOG_INTERNAL_VLOG_EVERY_POW_2_IMPL(severity)
 #define VLOG_EVERY_N_SEC(severity, n_seconds) \
   ABSL_LOG_INTERNAL_VLOG_EVERY_N_SEC_IMPL(severity, n_seconds)
-
-
-
-
-
-
-
 
 #define LOG_IF_EVERY_N(severity, condition, n) \
   ABSL_LOG_INTERNAL_LOG_IF_EVERY_N_IMPL(_##severity, condition, n)

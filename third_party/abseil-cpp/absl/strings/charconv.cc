@@ -364,11 +364,8 @@ bool HandleEdgeCase(const strings_internal::ParsedFloat& input, bool negative,
     
     
     
-    
-    
     constexpr ptrdiff_t kNanBufferSize = 128;
-#if (defined(__GNUC__) && !defined(__clang__)) || \
-    (defined(__clang__) && __clang_major__ < 7)
+#if (defined(__GNUC__) && !defined(__clang__))
     volatile char n_char_sequence[kNanBufferSize];
 #else
     char n_char_sequence[kNanBufferSize];

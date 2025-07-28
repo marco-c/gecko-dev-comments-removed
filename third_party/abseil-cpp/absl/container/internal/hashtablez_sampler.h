@@ -220,21 +220,40 @@ extern ABSL_PER_THREAD_TLS_KEYWORD SamplingState global_next_sample;
 #endif  
 
 
-inline HashtablezInfoHandle Sample(
-    ABSL_ATTRIBUTE_UNUSED size_t inline_element_size,
-    ABSL_ATTRIBUTE_UNUSED size_t key_size,
-    ABSL_ATTRIBUTE_UNUSED size_t value_size,
-    ABSL_ATTRIBUTE_UNUSED uint16_t soo_capacity) {
+
+
+
+inline bool ShouldSampleNextTable() {
 #if defined(ABSL_INTERNAL_HASHTABLEZ_SAMPLE)
   if (ABSL_PREDICT_TRUE(--global_next_sample.next_sample > 0)) {
+    return false;
+  }
+  return true;
+#else
+  return false;
+#endif  
+}
+
+
+
+
+HashtablezInfoHandle ForcedTrySample(size_t inline_element_size,
+                                     size_t key_size, size_t value_size,
+                                     uint16_t soo_capacity);
+
+
+
+
+void TestOnlyRefreshSamplingStateForCurrentThread();
+
+
+inline HashtablezInfoHandle Sample(size_t inline_element_size, size_t key_size,
+                                   size_t value_size, uint16_t soo_capacity) {
+  if (ABSL_PREDICT_TRUE(!ShouldSampleNextTable())) {
     return HashtablezInfoHandle(nullptr);
   }
-  return HashtablezInfoHandle(SampleSlow(global_next_sample,
-                                         inline_element_size, key_size,
-                                         value_size, soo_capacity));
-#else
-  return HashtablezInfoHandle(nullptr);
-#endif  
+  return ForcedTrySample(inline_element_size, key_size, value_size,
+                         soo_capacity);
 }
 
 using HashtablezSampler =

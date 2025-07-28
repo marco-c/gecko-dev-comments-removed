@@ -75,15 +75,6 @@ namespace absl {
 ABSL_NAMESPACE_BEGIN
 
 
-
-
-#if ABSL_INTERNAL_CPLUSPLUS_LANG >= 201703L
-#define ABSL_INTERNAL_NOEXCEPT_SPEC(noex) noexcept(noex)
-#else
-#define ABSL_INTERNAL_NOEXCEPT_SPEC(noex)
-#endif
-
-
 template <class Sig>
 class AnyInvocable;
 
@@ -110,10 +101,13 @@ struct IsAnyInvocable<AnyInvocable<Sig>> : std::true_type {};
 
 
 template <class T>
-using IsStoredLocally = std::integral_constant<
-    bool, sizeof(T) <= kStorageSize && alignof(T) <= kAlignment &&
-              kAlignment % alignof(T) == 0 &&
-              std::is_nothrow_move_constructible<T>::value>;
+constexpr bool IsStoredLocally() {
+  if constexpr (sizeof(T) <= kStorageSize && alignof(T) <= kAlignment &&
+                kAlignment % alignof(T) == 0) {
+    return std::is_nothrow_move_constructible<T>::value;
+  }
+  return false;
+}
 
 
 template <class T>
@@ -231,14 +225,14 @@ T& ObjectInLocalStorage(TypeErasedState* const state) {
 
 
 using ManagerType = void(FunctionToCall ,
-                         TypeErasedState* , TypeErasedState* )
-    ABSL_INTERNAL_NOEXCEPT_SPEC(true);
+                         TypeErasedState* ,
+                         TypeErasedState* ) noexcept(true);
 
 
 
 template <bool SigIsNoexcept, class ReturnType, class... P>
-using InvokerType = ReturnType(TypeErasedState*, ForwardedParameterType<P>...)
-    ABSL_INTERNAL_NOEXCEPT_SPEC(SigIsNoexcept);
+using InvokerType = ReturnType(
+    TypeErasedState*, ForwardedParameterType<P>...) noexcept(SigIsNoexcept);
 
 
 inline void EmptyManager(FunctionToCall ,
@@ -275,7 +269,7 @@ template <class T>
 void LocalManagerNontrivial(FunctionToCall operation,
                             TypeErasedState* const from,
                             TypeErasedState* const to) noexcept {
-  static_assert(IsStoredLocally<T>::value,
+  static_assert(IsStoredLocally<T>(),
                 "Local storage must only be used for supported types.");
   static_assert(!std::is_trivially_copyable<T>::value,
                 "Locally stored types must be trivially copyable.");
@@ -303,7 +297,7 @@ ReturnType LocalInvoker(
     ForwardedParameterType<P>... args) noexcept(SigIsNoexcept) {
   using RawT = RemoveCVRef<QualTRef>;
   static_assert(
-      IsStoredLocally<RawT>::value,
+      IsStoredLocally<RawT>(),
       "Target object must be in local storage in order to be invoked from it.");
 
   auto& f = (ObjectInLocalStorage<RawT>)(state);
@@ -338,7 +332,7 @@ template <class T>
 void RemoteManagerNontrivial(FunctionToCall operation,
                              TypeErasedState* const from,
                              TypeErasedState* const to) noexcept {
-  static_assert(!IsStoredLocally<T>::value,
+  static_assert(!IsStoredLocally<T>(),
                 "Remote storage must only be used for types that do not "
                 "qualify for local storage.");
 
@@ -360,7 +354,7 @@ ReturnType RemoteInvoker(
     TypeErasedState* const state,
     ForwardedParameterType<P>... args) noexcept(SigIsNoexcept) {
   using RawT = RemoveCVRef<QualTRef>;
-  static_assert(!IsStoredLocally<RawT>::value,
+  static_assert(!IsStoredLocally<RawT>(),
                 "Target object must be in remote storage in order to be "
                 "invoked from it.");
 
@@ -440,13 +434,6 @@ class CoreImpl {
 
   CoreImpl() noexcept : manager_(EmptyManager), invoker_(nullptr) {}
 
-  enum class TargetType {
-    kPointer,
-    kCompatibleAnyInvocable,
-    kIncompatibleAnyInvocable,
-    kOther,
-  };
-
   
   
   
@@ -454,19 +441,48 @@ class CoreImpl {
   explicit CoreImpl(TypedConversionConstruct<QualDecayedTRef>, F&& f) {
     using DecayedT = RemoveCVRef<QualDecayedTRef>;
 
-    constexpr TargetType kTargetType =
-        (std::is_pointer<DecayedT>::value ||
-         std::is_member_pointer<DecayedT>::value)
-            ? TargetType::kPointer
-        : IsCompatibleAnyInvocable<DecayedT>::value
-            ? TargetType::kCompatibleAnyInvocable
-        : IsAnyInvocable<DecayedT>::value
-            ? TargetType::kIncompatibleAnyInvocable
-            : TargetType::kOther;
-    
-    
-    
-    Initialize<kTargetType, QualDecayedTRef>(std::forward<F>(f));
+    if constexpr (std::is_pointer<DecayedT>::value ||
+                  std::is_member_pointer<DecayedT>::value) {
+      
+      
+      
+      
+      
+      
+      
+#if !defined(__clang__) && defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpragmas"
+#pragma GCC diagnostic ignored "-Waddress"
+#pragma GCC diagnostic ignored "-Wnonnull-compare"
+#endif
+      if (static_cast<DecayedT>(f) == nullptr) {
+#if !defined(__clang__) && defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
+        manager_ = EmptyManager;
+        invoker_ = nullptr;
+      } else {
+        InitializeStorage<QualDecayedTRef>(std::forward<F>(f));
+      }
+    } else if constexpr (IsCompatibleAnyInvocable<DecayedT>::value) {
+      
+      f.manager_(FunctionToCall::relocate_from_to, &f.state_, &state_);
+      manager_ = f.manager_;
+      invoker_ = f.invoker_;
+
+      f.manager_ = EmptyManager;
+      f.invoker_ = nullptr;
+    } else if constexpr (IsAnyInvocable<DecayedT>::value) {
+      if (f.HasValue()) {
+        InitializeStorage<QualDecayedTRef>(std::forward<F>(f));
+      } else {
+        manager_ = EmptyManager;
+        invoker_ = nullptr;
+      }
+    } else {
+      InitializeStorage<QualDecayedTRef>(std::forward<F>(f));
+    }
   }
 
   
@@ -517,85 +533,24 @@ class CoreImpl {
     invoker_ = nullptr;
   }
 
-  template <TargetType target_type, class QualDecayedTRef, class F,
-            absl::enable_if_t<target_type == TargetType::kPointer, int> = 0>
-  void Initialize(F&& f) {
+  
+  template <class QualTRef, class... Args>
+  void InitializeStorage(Args&&... args) {
+    if constexpr (IsStoredLocally<RemoveCVRef<QualTRef>>()) {
+      using RawT = RemoveCVRef<QualTRef>;
+      ::new (static_cast<void*>(&state_.storage))
+          RawT(std::forward<Args>(args)...);
 
-
-
-
-
-#if !defined(__clang__) && defined(__GNUC__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpragmas"
-#pragma GCC diagnostic ignored "-Waddress"
-#pragma GCC diagnostic ignored "-Wnonnull-compare"
-#endif
-    if (static_cast<RemoveCVRef<QualDecayedTRef>>(f) == nullptr) {
-#if !defined(__clang__) && defined(__GNUC__)
-#pragma GCC diagnostic pop
-#endif
-      manager_ = EmptyManager;
-      invoker_ = nullptr;
-      return;
-    }
-    InitializeStorage<QualDecayedTRef>(std::forward<F>(f));
-  }
-
-  template <TargetType target_type, class QualDecayedTRef, class F,
-            absl::enable_if_t<
-                target_type == TargetType::kCompatibleAnyInvocable, int> = 0>
-  void Initialize(F&& f) {
-    
-    f.manager_(FunctionToCall::relocate_from_to, &f.state_, &state_);
-    manager_ = f.manager_;
-    invoker_ = f.invoker_;
-
-    f.manager_ = EmptyManager;
-    f.invoker_ = nullptr;
-  }
-
-  template <TargetType target_type, class QualDecayedTRef, class F,
-            absl::enable_if_t<
-                target_type == TargetType::kIncompatibleAnyInvocable, int> = 0>
-  void Initialize(F&& f) {
-    if (f.HasValue()) {
-      InitializeStorage<QualDecayedTRef>(std::forward<F>(f));
+      invoker_ = LocalInvoker<SigIsNoexcept, ReturnType, QualTRef, P...>;
+      
+      InitializeLocalManager<RawT>();
     } else {
-      manager_ = EmptyManager;
-      invoker_ = nullptr;
+      InitializeRemoteManager<RemoveCVRef<QualTRef>>(
+          std::forward<Args>(args)...);
+      
+      
+      invoker_ = RemoteInvoker<SigIsNoexcept, ReturnType, QualTRef, P...>;
     }
-  }
-
-  template <TargetType target_type, class QualDecayedTRef, class F,
-            typename = absl::enable_if_t<target_type == TargetType::kOther>>
-  void Initialize(F&& f) {
-    InitializeStorage<QualDecayedTRef>(std::forward<F>(f));
-  }
-
-  
-  template <class QualTRef, class... Args,
-            typename = absl::enable_if_t<
-                IsStoredLocally<RemoveCVRef<QualTRef>>::value>>
-  void InitializeStorage(Args&&... args) {
-    using RawT = RemoveCVRef<QualTRef>;
-    ::new (static_cast<void*>(&state_.storage))
-        RawT(std::forward<Args>(args)...);
-
-    invoker_ = LocalInvoker<SigIsNoexcept, ReturnType, QualTRef, P...>;
-    
-    InitializeLocalManager<RawT>();
-  }
-
-  
-  template <class QualTRef, class... Args,
-            absl::enable_if_t<!IsStoredLocally<RemoveCVRef<QualTRef>>::value,
-                              int> = 0>
-  void InitializeStorage(Args&&... args) {
-    InitializeRemoteManager<RemoveCVRef<QualTRef>>(std::forward<Args>(args)...);
-    
-    
-    invoker_ = RemoteInvoker<SigIsNoexcept, ReturnType, QualTRef, P...>;
   }
 
   template <class T,
@@ -781,7 +736,7 @@ using CanAssignReferenceWrapper = TrueAlias<
 
 #define ABSL_INTERNAL_ANY_INVOCABLE_IMPL_(cv, ref, inv_quals, noex)            \
   template <class ReturnType, class... P>                                      \
-  class Impl<ReturnType(P...) cv ref ABSL_INTERNAL_NOEXCEPT_SPEC(noex)>        \
+  class Impl<ReturnType(P...) cv ref noexcept(noex)>                           \
       : public CoreImpl<noex, ReturnType, P...> {                              \
    public:                                                                     \
     /*The base class, which contains the datamembers and core operations*/     \
@@ -822,8 +777,7 @@ using CanAssignReferenceWrapper = TrueAlias<
                                                                                \
     /*Raises a fatal error when the AnyInvocable is invoked after a move*/     \
     static ReturnType InvokedAfterMove(                                        \
-      TypeErasedState*,                                                        \
-      ForwardedParameterType<P>...) noexcept(noex) {                           \
+        TypeErasedState*, ForwardedParameterType<P>...) noexcept(noex) {       \
       ABSL_HARDENING_ASSERT(false && "AnyInvocable use-after-move");           \
       std::terminate();                                                        \
     }                                                                          \
@@ -853,16 +807,9 @@ using CanAssignReferenceWrapper = TrueAlias<
 
 
 
-#if ABSL_INTERNAL_CPLUSPLUS_LANG >= 201703L
-
-
 #define ABSL_INTERNAL_ANY_INVOCABLE_IMPL(cv, ref, inv_quals)    \
   ABSL_INTERNAL_ANY_INVOCABLE_IMPL_(cv, ref, inv_quals, false); \
   ABSL_INTERNAL_ANY_INVOCABLE_IMPL_(cv, ref, inv_quals, true)
-#else
-#define ABSL_INTERNAL_ANY_INVOCABLE_IMPL(cv, ref, inv_quals) \
-  ABSL_INTERNAL_ANY_INVOCABLE_IMPL_(cv, ref, inv_quals, false)
-#endif
 
 
 ABSL_INTERNAL_ANY_INVOCABLE_IMPL(, , &);
@@ -882,7 +829,6 @@ ABSL_INTERNAL_ANY_INVOCABLE_IMPL(const, &&, const&&);
 #undef ABSL_INTERNAL_ANY_INVOCABLE_NOEXCEPT_CONSTRAINT_false
 #undef ABSL_INTERNAL_ANY_INVOCABLE_NOEXCEPT_CONSTRAINT_true
 #undef ABSL_INTERNAL_ANY_INVOCABLE_NOEXCEPT_CONSTRAINT
-#undef ABSL_INTERNAL_NOEXCEPT_SPEC
 
 }  
 ABSL_NAMESPACE_END

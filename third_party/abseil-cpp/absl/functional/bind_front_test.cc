@@ -210,13 +210,9 @@ TEST(BindTest, ConstExpr) {
   constexpr auto plus5 = absl::bind_front(Plus, five);
   EXPECT_EQ(plus5(1), 6);
 
-  
-  
-#if !(defined(_MSC_VER) && _MSC_VER < 1910)
   static constexpr char data[] = "DEF";
   constexpr auto g = absl::bind_front(CharAt, data);
   EXPECT_EQ(g(1), 'E');
-#endif
 }
 
 struct ManglingCall {

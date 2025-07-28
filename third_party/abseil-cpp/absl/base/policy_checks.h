@@ -73,12 +73,12 @@
 
 
 #if defined(_MSVC_LANG)
-#if _MSVC_LANG < 201402L
-#error "C++ versions less than C++14 are not supported."
+#if _MSVC_LANG < 201703L
+#error "C++ versions less than C++17 are not supported."
 #endif  
 #elif defined(__cplusplus)
-#if __cplusplus < 201402L
-#error "C++ versions less than C++14 are not supported."
+#if __cplusplus < 201703L
+#error "C++ versions less than C++17 are not supported."
 #endif  
 #endif
 

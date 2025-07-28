@@ -558,7 +558,6 @@
 
 
 
-
 #if ABSL_HAVE_ATTRIBUTE(unused) || (defined(__GNUC__) && !defined(__clang__))
 #undef ABSL_ATTRIBUTE_UNUSED
 #define ABSL_ATTRIBUTE_UNUSED __attribute__((__unused__))
@@ -757,6 +756,76 @@
 #define ABSL_CONST_INIT [[clang::require_constant_initialization]]
 #else
 #define ABSL_CONST_INIT
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifdef __cplusplus
+#if ABSL_HAVE_CPP_ATTRIBUTE(clang::require_explicit_initialization)
+
+#define ABSL_REQUIRE_EXPLICIT_INIT \
+  [[clang::require_explicit_initialization]] = \
+    AbslInternal_YouForgotToExplicitlyInitializeAField::v
+#else
+#define ABSL_REQUIRE_EXPLICIT_INIT \
+  = AbslInternal_YouForgotToExplicitlyInitializeAField::v
+#endif
+
+#else
+
+#if ABSL_HAVE_ATTRIBUTE(require_explicit_initialization)
+#define ABSL_REQUIRE_EXPLICIT_INIT \
+  __attribute__((require_explicit_initialization))
+#else
+#define ABSL_REQUIRE_EXPLICIT_INIT
+
+#endif
+
+#endif
+
+#ifdef __cplusplus
+struct AbslInternal_YouForgotToExplicitlyInitializeAField {
+  
+  
+  
+  template <class T>
+#if !defined(SWIG)
+  constexpr
+#endif
+  operator T() const  {
+    const void *volatile deliberately_volatile_ptr = nullptr;
+    
+    for (;;) {
+      
+      
+      deliberately_volatile_ptr = this;  
+      (void)deliberately_volatile_ptr;
+    }
+  }
+  
+  static AbslInternal_YouForgotToExplicitlyInitializeAField v;
+};
 #endif
 
 
