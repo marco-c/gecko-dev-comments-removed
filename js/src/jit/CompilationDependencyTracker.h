@@ -12,6 +12,8 @@
 #include "jstypes.h"
 #include "NamespaceImports.h"
 
+#include "jit/JitAllocPolicy.h"
+
 struct JSContext;
 
 namespace js::jit {
@@ -19,7 +21,7 @@ namespace js::jit {
 class IonScriptKey;
 class MIRGenerator;
 
-struct CompilationDependency {
+struct CompilationDependency : public TempObject {
   enum class Type {
     GetIterator,
     ArraySpecies,
@@ -41,7 +43,7 @@ struct CompilationDependency {
   [[nodiscard]] virtual bool registerDependency(
       JSContext* cx, const IonScriptKey& ionScript) = 0;
 
-  virtual UniquePtr<CompilationDependency> clone() const = 0;
+  virtual CompilationDependency* clone(TempAllocator& alloc) const = 0;
   virtual ~CompilationDependency() = default;
 };
 
@@ -49,10 +51,10 @@ struct CompilationDependency {
 
 
 struct CompilationDependencyTracker {
-  mozilla::Vector<UniquePtr<CompilationDependency>, 8, SystemAllocPolicy>
-      dependencies;
+  mozilla::Vector<CompilationDependency*, 8, SystemAllocPolicy> dependencies;
 
-  [[nodiscard]] bool addDependency(const CompilationDependency& dep) {
+  [[nodiscard]] bool addDependency(TempAllocator& alloc,
+                                   const CompilationDependency& dep) {
     
     
     MOZ_ASSERT(dependencies.length() <= 32);
@@ -62,12 +64,12 @@ struct CompilationDependencyTracker {
       }
     }
 
-    auto clone = dep.clone();
+    auto* clone = dep.clone(alloc);
     if (!clone) {
       return false;
     }
 
-    return dependencies.append(std::move(clone));
+    return dependencies.append(clone);
   }
 
   
