@@ -4,6 +4,10 @@
 
 #include "base/hash/hash.h"
 
+#include <string_view>
+
+#include "base/check_op.h"
+#include "base/notreached.h"
 #include "base/rand_util.h"
 #include "base/third_party/cityhash/city.h"
 #include "build/build_config.h"
@@ -20,13 +24,13 @@ namespace {
 size_t FastHashImpl(base::span<const uint8_t> data) {
   
   
-#if defined(ARCH_CPU_64_BITS)
-  return base::internal::cityhash_v111::CityHash64(
-      reinterpret_cast<const char*>(data.data()), data.size());
-#else
-  return base::internal::cityhash_v111::CityHash32(
-      reinterpret_cast<const char*>(data.data()), data.size());
-#endif
+  if constexpr (sizeof(size_t) > 4) {
+    return base::internal::cityhash_v111::CityHash64(
+        reinterpret_cast<const char*>(data.data()), data.size());
+  } else {
+    return base::internal::cityhash_v111::CityHash32(
+        reinterpret_cast<const char*>(data.data()), data.size());
+  }
 }
 
 
@@ -128,10 +132,6 @@ uint32_t Hash(const std::string& str) {
   return PersistentHash(as_bytes(make_span(str)));
 }
 
-uint32_t Hash(const string16& str) {
-  return PersistentHash(as_bytes(make_span(str)));
-}
-
 uint32_t PersistentHash(span<const uint8_t> data) {
   
   
@@ -147,18 +147,13 @@ uint32_t PersistentHash(const void* data, size_t length) {
   return PersistentHash(make_span(static_cast<const uint8_t*>(data), length));
 }
 
-uint32_t PersistentHash(const std::string& str) {
-  return PersistentHash(str.data(), str.size());
+uint32_t PersistentHash(std::string_view str) {
+  return PersistentHash(as_bytes(make_span(str)));
 }
 
 size_t HashInts32(uint32_t value1, uint32_t value2) {
   return Scramble(HashInts32Impl(value1, value2));
 }
-
-
-
-
-
 
 size_t HashInts64(uint64_t value1, uint64_t value2) {
   return Scramble(HashInts64Impl(value1, value2));

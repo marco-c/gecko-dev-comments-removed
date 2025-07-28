@@ -4,13 +4,13 @@
 
 #include "sandbox/win/src/resolver.h"
 
+#include <windows.h>
+
 #include <stddef.h>
 
 
 
 #include <new>
-
-#include "sandbox/win/src/sandbox_nt_util.h"
 
 namespace {
 

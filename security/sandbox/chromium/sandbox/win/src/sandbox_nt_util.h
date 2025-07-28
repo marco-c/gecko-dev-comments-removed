@@ -2,17 +2,19 @@
 
 
 
-#ifndef SANDBOX_SRC_SANDBOX_NT_UTIL_H_
-#define SANDBOX_SRC_SANDBOX_NT_UTIL_H_
+#ifndef SANDBOX_WIN_SRC_SANDBOX_NT_UTIL_H_
+#define SANDBOX_WIN_SRC_SANDBOX_NT_UTIL_H_
 
 #include <intrin.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <memory>
 
-#include "base/macros.h"
+#include "base/containers/span.h"
+#include "base/memory/raw_ptr_exclusion.h"
 #include "sandbox/win/src/nt_internals.h"
 #include "sandbox/win/src/sandbox_nt_types.h"
+#include "third_party/abseil-cpp/absl/types/optional.h"
 
 
 void* __cdecl operator new(size_t size,
@@ -103,7 +105,13 @@ struct NtAllocDeleter {
 void* GetGlobalIPCMemory();
 
 
-void* GetGlobalPolicyMemory();
+void* GetGlobalPolicyMemoryForTesting();
+
+
+absl::optional<base::span<const uint8_t>> GetGlobalDelegateData();
+
+
+const NtExports* GetNtExports();
 
 enum RequiredAccess { READ, WRITE };
 
@@ -116,15 +124,22 @@ bool ValidParameter(void* buffer, size_t size, RequiredAccess intent);
 NTSTATUS CopyData(void* destination, const void* source, size_t bytes);
 
 
+
+
+NTSTATUS CopyNameAndAttributes(
+    const OBJECT_ATTRIBUTES* in_object,
+    std::unique_ptr<wchar_t, NtAllocDeleter>* out_name,
+    size_t* out_name_len,
+    uint32_t* attributes = nullptr);
+
+
 NTSTATUS AllocAndCopyName(const OBJECT_ATTRIBUTES* in_object,
                           std::unique_ptr<wchar_t, NtAllocDeleter>* out_name,
-                          uint32_t* attributes,
-                          HANDLE* root);
+                          uint32_t* attributes, HANDLE* root);
 
 
 NTSTATUS AllocAndGetFullPath(
-    HANDLE root,
-    const wchar_t* path,
+    HANDLE root, const wchar_t* path,
     std::unique_ptr<wchar_t, NtAllocDeleter>* full_path);
 
 
@@ -192,6 +207,9 @@ class AutoProtectMemory {
   AutoProtectMemory()
       : changed_(false), address_(nullptr), bytes_(0), old_protect_(0) {}
 
+  AutoProtectMemory(const AutoProtectMemory&) = delete;
+  AutoProtectMemory& operator=(const AutoProtectMemory&) = delete;
+
   ~AutoProtectMemory() { RevertProtection(); }
 
   
@@ -202,11 +220,11 @@ class AutoProtectMemory {
 
  private:
   bool changed_;
-  void* address_;
+  
+  
+  RAW_PTR_EXCLUSION void* address_;
   size_t bytes_;
   ULONG old_protect_;
-
-  DISALLOW_COPY_AND_ASSIGN(AutoProtectMemory);
 };
 
 
@@ -214,6 +232,9 @@ class AutoProtectMemory {
 bool IsSupportedRenameCall(FILE_RENAME_INFORMATION* file_info,
                            DWORD length,
                            uint32_t file_info_class);
+
+
+CLIENT_ID GetCurrentClientId();
 
 
 __forceinline void Memset(void* ptr, int value, size_t num_bytes) {

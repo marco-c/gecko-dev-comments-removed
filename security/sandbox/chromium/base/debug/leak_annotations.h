@@ -5,7 +5,6 @@
 #ifndef BASE_DEBUG_LEAK_ANNOTATIONS_H_
 #define BASE_DEBUG_LEAK_ANNOTATIONS_H_
 
-#include "base/macros.h"
 #include "build/build_config.h"
 
 
@@ -19,16 +18,19 @@
 
 
 
-#if defined(LEAK_SANITIZER) && !defined(OS_NACL)
+#if defined(LEAK_SANITIZER) && !BUILDFLAG(IS_NACL)
 
 #include <sanitizer/lsan_interface.h>
 
 class ScopedLeakSanitizerDisabler {
  public:
   ScopedLeakSanitizerDisabler() { __lsan_disable(); }
+
+  ScopedLeakSanitizerDisabler(const ScopedLeakSanitizerDisabler&) = delete;
+  ScopedLeakSanitizerDisabler& operator=(const ScopedLeakSanitizerDisabler&) =
+      delete;
+
   ~ScopedLeakSanitizerDisabler() { __lsan_enable(); }
- private:
-  DISALLOW_COPY_AND_ASSIGN(ScopedLeakSanitizerDisabler);
 };
 
 #define ANNOTATE_SCOPED_MEMORY_LEAK \

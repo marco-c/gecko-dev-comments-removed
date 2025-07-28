@@ -5,13 +5,11 @@
 #ifndef BASE_THREADING_THREAD_COLLISION_WARNER_H_
 #define BASE_THREADING_THREAD_COLLISION_WARNER_H_
 
-#include <memory>
-
 #include "base/atomicops.h"
 #include "base/base_export.h"
 #include "base/compiler_specific.h"
-#include "base/macros.h"
-
+#include "base/macros/uniquify.h"
+#include "base/memory/raw_ptr.h"
 
 
 
@@ -101,28 +99,22 @@
 
 #if !defined(NDEBUG)
 
-#define DFAKE_UNIQUE_VARIABLE_CONCAT(a, b) a##b
-
-#define DFAKE_UNIQUE_VARIABLE_CONCAT1(a, b) DFAKE_UNIQUE_VARIABLE_CONCAT(a, b)
-#define DFAKE_UNIQUE_VARIABLE_NAME(a) DFAKE_UNIQUE_VARIABLE_CONCAT1(a, __LINE__)
-
 
 
 #define DFAKE_MUTEX(obj) \
      mutable base::ThreadCollisionWarner obj
 
 
-#define DFAKE_SCOPED_LOCK(obj)                                         \
-  base::ThreadCollisionWarner::ScopedCheck DFAKE_UNIQUE_VARIABLE_NAME( \
-      s_check_)(&obj)
+#define DFAKE_SCOPED_LOCK(obj) \
+  base::ThreadCollisionWarner::ScopedCheck BASE_UNIQUIFY(s_check_)(&obj)
 
 
-#define DFAKE_SCOPED_RECURSIVE_LOCK(obj)            \
-  base::ThreadCollisionWarner::ScopedRecursiveCheck \
-      DFAKE_UNIQUE_VARIABLE_NAME(sr_check)(&obj)
+#define DFAKE_SCOPED_RECURSIVE_LOCK(obj)                                     \
+  base::ThreadCollisionWarner::ScopedRecursiveCheck BASE_UNIQUIFY(sr_check)( \
+      &obj)
 
 #define DFAKE_SCOPED_LOCK_THREAD_LOCKED(obj) \
-  base::ThreadCollisionWarner::Check DFAKE_UNIQUE_VARIABLE_NAME(check_)(&obj)
+  base::ThreadCollisionWarner::Check BASE_UNIQUIFY(check_)(&obj)
 
 #else
 
@@ -157,9 +149,10 @@ class BASE_EXPORT ThreadCollisionWarner {
         counter_(0),
         asserter_(asserter) {}
 
-  ~ThreadCollisionWarner() {
-    delete asserter_;
-  }
+  ThreadCollisionWarner(const ThreadCollisionWarner&) = delete;
+  ThreadCollisionWarner& operator=(const ThreadCollisionWarner&) = delete;
+
+  ~ThreadCollisionWarner() { asserter_.ClearAndDelete(); }
 
   
   
@@ -173,12 +166,13 @@ class BASE_EXPORT ThreadCollisionWarner {
       warner_->EnterSelf();
     }
 
+    Check(const Check&) = delete;
+    Check& operator=(const Check&) = delete;
+
     ~Check() = default;
 
    private:
-    ThreadCollisionWarner* warner_;
-
-    DISALLOW_COPY_AND_ASSIGN(Check);
+    raw_ptr<ThreadCollisionWarner> warner_;
   };
 
   
@@ -190,14 +184,15 @@ class BASE_EXPORT ThreadCollisionWarner {
       warner_->Enter();
     }
 
+    ScopedCheck(const ScopedCheck&) = delete;
+    ScopedCheck& operator=(const ScopedCheck&) = delete;
+
     ~ScopedCheck() {
       warner_->Leave();
     }
 
    private:
-    ThreadCollisionWarner* warner_;
-
-    DISALLOW_COPY_AND_ASSIGN(ScopedCheck);
+    raw_ptr<ThreadCollisionWarner> warner_;
   };
 
   
@@ -209,14 +204,15 @@ class BASE_EXPORT ThreadCollisionWarner {
       warner_->EnterSelf();
     }
 
+    ScopedRecursiveCheck(const ScopedRecursiveCheck&) = delete;
+    ScopedRecursiveCheck& operator=(const ScopedRecursiveCheck&) = delete;
+
     ~ScopedRecursiveCheck() {
       warner_->Leave();
     }
 
    private:
-    ThreadCollisionWarner* warner_;
-
-    DISALLOW_COPY_AND_ASSIGN(ScopedRecursiveCheck);
+    raw_ptr<ThreadCollisionWarner> warner_;
   };
 
  private:
@@ -242,9 +238,7 @@ class BASE_EXPORT ThreadCollisionWarner {
 
   
   
-  AsserterBase* asserter_;
-
-  DISALLOW_COPY_AND_ASSIGN(ThreadCollisionWarner);
+  raw_ptr<AsserterBase> asserter_;
 };
 
 }  

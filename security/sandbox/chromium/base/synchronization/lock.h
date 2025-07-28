@@ -6,12 +6,14 @@
 #define BASE_SYNCHRONIZATION_LOCK_H_
 
 #include "base/base_export.h"
-#include "base/logging.h"
-#include "base/macros.h"
+#include "base/dcheck_is_on.h"
 #include "base/synchronization/lock_impl.h"
 #include "base/thread_annotations.h"
-#include "base/threading/platform_thread.h"
 #include "build/build_config.h"
+
+#if DCHECK_IS_ON()
+#include "base/threading/platform_thread_ref.h"
+#endif
 
 namespace base {
 
@@ -23,22 +25,24 @@ class LOCKABLE BASE_EXPORT Lock {
 #if !DCHECK_IS_ON()
   
   Lock() : lock_() {}
+
+  Lock(const Lock&) = delete;
+  Lock& operator=(const Lock&) = delete;
+
   ~Lock() {}
 
-  
-  
-  
-  void Acquire() { lock_.Lock(); }
-  void Release() { lock_.Unlock(); }
+  void Acquire() EXCLUSIVE_LOCK_FUNCTION() { lock_.Lock(); }
+  void Release() UNLOCK_FUNCTION() { lock_.Unlock(); }
 
   
   
   
   
-  bool Try() { return lock_.Try(); }
+  bool Try() EXCLUSIVE_TRYLOCK_FUNCTION(true) { return lock_.Try(); }
 
   
   void AssertAcquired() const ASSERT_EXCLUSIVE_LOCK() {}
+  void AssertNotHeld() const {}
 #else
   Lock();
   ~Lock();
@@ -46,16 +50,16 @@ class LOCKABLE BASE_EXPORT Lock {
   
   
   
-  void Acquire() {
+  void Acquire() EXCLUSIVE_LOCK_FUNCTION() {
     lock_.Lock();
     CheckUnheldAndMark();
   }
-  void Release() {
+  void Release() UNLOCK_FUNCTION() {
     CheckHeldAndUnmark();
     lock_.Unlock();
   }
 
-  bool Try() {
+  bool Try() EXCLUSIVE_TRYLOCK_FUNCTION(true) {
     bool rv = lock_.Try();
     if (rv) {
       CheckUnheldAndMark();
@@ -64,17 +68,18 @@ class LOCKABLE BASE_EXPORT Lock {
   }
 
   void AssertAcquired() const ASSERT_EXCLUSIVE_LOCK();
+  void AssertNotHeld() const;
 #endif  
 
   
   
   static bool HandlesMultipleThreadPriorities() {
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
     
     
     
     return true;
-#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
+#elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
     
     
     return internal::LockImpl::PriorityInheritanceAvailable();
@@ -105,12 +110,14 @@ class LOCKABLE BASE_EXPORT Lock {
 
   
   internal::LockImpl lock_;
-
-  DISALLOW_COPY_AND_ASSIGN(Lock);
 };
 
 
 using AutoLock = internal::BasicAutoLock<Lock>;
+
+
+
+using AutoTryLock = internal::BasicAutoTryLock<Lock>;
 
 
 

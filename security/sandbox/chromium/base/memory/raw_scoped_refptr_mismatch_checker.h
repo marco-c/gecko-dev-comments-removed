@@ -7,6 +7,8 @@
 
 #include <type_traits>
 
+#include "base/memory/raw_ptr.h"
+#include "base/memory/raw_ref.h"
 #include "base/template_util.h"
 
 
@@ -27,22 +29,23 @@ struct IsRefCountedType : std::false_type {};
 
 template <typename T>
 struct IsRefCountedType<T,
-                        void_t<decltype(std::declval<T*>()->AddRef()),
-                               decltype(std::declval<T*>()->Release())>>
+                        std::void_t<decltype(std::declval<T*>()->AddRef()),
+                                    decltype(std::declval<T*>()->Release())>>
     : std::true_type {};
 
-template <typename T>
-struct NeedsScopedRefptrButGetsRawPtr {
-  static_assert(!std::is_reference<T>::value,
-                "NeedsScopedRefptrButGetsRawPtr requires non-reference type.");
 
-  enum {
-    
-    
-    
-    value = std::is_pointer<T>::value &&
-            IsRefCountedType<std::remove_pointer_t<T>>::value
-  };
+
+template <typename T>
+struct NeedsScopedRefptrButGetsRawPtr
+    : std::disjunction<
+          
+          
+          std::conjunction<base::IsRawRef<T>,
+                           IsRefCountedType<base::RemoveRawRefT<T>>>,
+          std::conjunction<base::IsPointer<T>,
+                           IsRefCountedType<base::RemovePointerT<T>>>> {
+  static_assert(!std::is_reference_v<T>,
+                "NeedsScopedRefptrButGetsRawPtr requires non-reference type.");
 };
 
 }  

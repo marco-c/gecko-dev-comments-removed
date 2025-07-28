@@ -7,6 +7,9 @@
 
 #include <stdint.h>
 
+#include "base/memory/raw_ptr.h"
+#include "base/memory/raw_ptr_exclusion.h"
+
 namespace sandbox {
 
 const wchar_t kNtdllName[] = L"ntdll.dll";
@@ -38,7 +41,7 @@ class CountedBuffer {
 
  private:
   uint32_t size_;
-  void* buffer_;
+  raw_ptr<void> buffer_;
 };
 
 
@@ -58,7 +61,9 @@ class IPCInt {
 
  private:
   union U {
-    void* vp;
+    
+    
+    RAW_PTR_EXCLUSION void* vp;
     uint32_t i32;
   } buffer_;
 };

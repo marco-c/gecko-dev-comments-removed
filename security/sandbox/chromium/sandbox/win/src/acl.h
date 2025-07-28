@@ -2,62 +2,35 @@
 
 
 
-#ifndef SANDBOX_SRC_ACL_H_
-#define SANDBOX_SRC_ACL_H_
+#ifndef SANDBOX_WIN_SRC_ACL_H_
+#define SANDBOX_WIN_SRC_ACL_H_
 
-#include <accctrl.h>
-#include <windows.h>
-
-#include <memory>
-
-#include "base/memory/free_deleter.h"
-#include "sandbox/win/src/sid.h"
+#include "base/win/security_descriptor.h"
+#include "base/win/windows_types.h"
+#include "sandbox/win/src/security_level.h"
 
 namespace sandbox {
 
 
-bool GetDefaultDacl(
-    HANDLE token,
-    std::unique_ptr<TOKEN_DEFAULT_DACL, base::FreeDeleter>* default_dacl);
+
+absl::optional<DWORD> GetIntegrityLevelRid(IntegrityLevel integrity_level);
 
 
 
 
-bool AddSidToDacl(const Sid& sid,
-                  ACL* old_dacl,
-                  ACCESS_MODE access_mode,
-                  ACCESS_MASK access,
-                  ACL** new_dacl);
-
-
-
-bool AddSidToDefaultDacl(HANDLE token,
-                         const Sid& sid,
-                         ACCESS_MODE access_mode,
-                         ACCESS_MASK access);
-
-
-bool RevokeLogonSidFromDefaultDacl(HANDLE token);
-
-
-
-bool AddUserSidToDefaultDacl(HANDLE token, ACCESS_MASK access);
-
-
-
-bool AddKnownSidToObject(HANDLE object,
-                         SE_OBJECT_TYPE object_type,
-                         const Sid& sid,
-                         ACCESS_MODE access_mode,
-                         ACCESS_MASK access);
 
 
 
 
-bool ReplacePackageSidInDacl(HANDLE object,
-                             SE_OBJECT_TYPE object_type,
-                             const Sid& package_sid,
-                             ACCESS_MASK access);
+
+
+
+
+
+DWORD SetObjectIntegrityLabel(HANDLE handle,
+                              base::win::SecurityObjectType object_type,
+                              DWORD mandatory_policy,
+                              IntegrityLevel integrity_level);
 
 }  
 

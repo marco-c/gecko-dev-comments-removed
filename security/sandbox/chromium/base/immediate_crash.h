@@ -39,9 +39,11 @@
 
 
 
+
+
 #if defined(COMPILER_GCC)
 
-#if defined(OS_NACL)
+#if BUILDFLAG(IS_NACL)
 
 
 #define TRAP_SEQUENCE1_() __builtin_trap()
@@ -55,7 +57,7 @@
 
 #define TRAP_SEQUENCE1_() asm volatile("int3")
 
-#if defined(OS_MACOSX)
+#if BUILDFLAG(IS_APPLE)
 
 
 #define TRAP_SEQUENCE2_() asm volatile("")
@@ -130,39 +132,23 @@
 
 
 
-
-
-
-
-#if !defined(COMPILER_GCC)
-
-#define WRAPPED_TRAP_SEQUENCE_() TRAP_SEQUENCE_()
-
+#if defined(COMPILER_GCC)
+#define IMMEDIATE_CRASH_ALWAYS_INLINE inline __attribute__((__always_inline__))
+#elif defined(COMPILER_MSVC)
+#define IMMEDIATE_CRASH_ALWAYS_INLINE __forceinline
 #else
+#define IMMEDIATE_CRASH_ALWAYS_INLINE inline
+#endif
 
-#define WRAPPED_TRAP_SEQUENCE_() \
-  do {                           \
-    [] { TRAP_SEQUENCE_(); }();  \
-  } while (false)
+namespace base {
 
-#endif  
-
+[[noreturn]] IMMEDIATE_CRASH_ALWAYS_INLINE void ImmediateCrash() {
+  TRAP_SEQUENCE_();
 #if defined(__clang__) || defined(COMPILER_GCC)
-
-
-
-#define IMMEDIATE_CRASH()     \
-  ({                          \
-    WRAPPED_TRAP_SEQUENCE_(); \
-    __builtin_unreachable();  \
-  })
-
-#else
-
-
-
-#define IMMEDIATE_CRASH() WRAPPED_TRAP_SEQUENCE_()
-
+  __builtin_unreachable();
 #endif  
+}
+
+}  
 
 #endif  

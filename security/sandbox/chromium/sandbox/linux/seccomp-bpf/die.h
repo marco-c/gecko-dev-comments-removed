@@ -5,7 +5,6 @@
 #ifndef SANDBOX_LINUX_SECCOMP_BPF_DIE_H__
 #define SANDBOX_LINUX_SECCOMP_BPF_DIE_H__
 
-#include "base/macros.h"
 #include "sandbox/sandbox_export.h"
 
 namespace sandbox {
@@ -23,6 +22,10 @@ namespace sandbox {
 
 class SANDBOX_EXPORT Die {
  public:
+  Die() = delete;
+  Die(const Die&) = delete;
+  Die& operator=(const Die&) = delete;
+
   
   
   
@@ -59,8 +62,6 @@ class SANDBOX_EXPORT Die {
  private:
   static bool simple_exit_;
   static bool suppress_info_;
-
-  DISALLOW_IMPLICIT_CONSTRUCTORS(Die);
 };
 
 }  

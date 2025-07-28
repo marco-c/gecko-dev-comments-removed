@@ -6,6 +6,7 @@
 #define BASE_NO_DESTRUCTOR_H_
 
 #include <new>
+#include <type_traits>
 #include <utility>
 
 namespace base {
@@ -44,9 +45,42 @@ namespace base {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 template <typename T>
 class NoDestructor {
  public:
+  static_assert(
+      !std::is_trivially_destructible_v<T>,
+      "T is trivially destructible; please use a function-local static "
+      "of type T directly instead");
+
   
   
   template <typename... Args>

@@ -6,11 +6,13 @@
 
 
 
-#ifndef SANDBOX_SRC_INTERCEPTION_AGENT_H__
-#define SANDBOX_SRC_INTERCEPTION_AGENT_H__
+#ifndef SANDBOX_WIN_SRC_INTERCEPTION_AGENT_H_
+#define SANDBOX_WIN_SRC_INTERCEPTION_AGENT_H_
 
-#include "base/macros.h"
-#include "sandbox/win/src/nt_internals.h"
+#include <windows.h>
+#include <winternl.h>
+
+#include "base/memory/raw_ptr_exclusion.h"
 #include "sandbox/win/src/sandbox_types.h"
 
 namespace sandbox {
@@ -35,8 +37,13 @@ class ResolverThunk;
 
 class InterceptionAgent {
  public:
+  InterceptionAgent() = delete;
+
   
   static InterceptionAgent* GetInterceptionAgent();
+
+  InterceptionAgent(const InterceptionAgent&) = delete;
+  InterceptionAgent& operator=(const InterceptionAgent&) = delete;
 
   
   
@@ -72,14 +79,14 @@ class InterceptionAgent {
   ResolverThunk* GetResolver(InterceptionType type);
 
   
-  SharedMemory* interceptions_;
+  
+  
+  RAW_PTR_EXCLUSION SharedMemory* interceptions_;
 
   
   
   
   DllInterceptionData* dlls_[1];
-
-  DISALLOW_IMPLICIT_CONSTRUCTORS(InterceptionAgent);
 };
 
 }  

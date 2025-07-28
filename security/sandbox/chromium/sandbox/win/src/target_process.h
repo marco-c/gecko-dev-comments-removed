@@ -5,68 +5,54 @@
 #ifndef SANDBOX_WIN_SRC_TARGET_PROCESS_H_
 #define SANDBOX_WIN_SRC_TARGET_PROCESS_H_
 
-#include <windows.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
 #include <memory>
-#include <vector>
 
-#include "base/macros.h"
+#include "base/containers/span.h"
 #include "base/environment.h"
+#include "base/gtest_prod_util.h"
 #include "base/memory/free_deleter.h"
+#include "base/memory/raw_ptr.h"
+#include "base/strings/string_util.h"
+#include "base/win/access_token.h"
 #include "base/win/scoped_handle.h"
 #include "base/win/scoped_process_information.h"
-#include "sandbox/win/src/crosscall_server.h"
+#include "base/win/sid.h"
+#include "base/win/windows_types.h"
 #include "sandbox/win/src/sandbox_types.h"
-
-namespace base {
-namespace win {
-
-class StartupInformation;
-
-}  
-}  
 
 namespace sandbox {
 
+class Dispatcher;
 class SharedMemIPCServer;
-class Sid;
-class ThreadProvider;
+class ThreadPool;
+class StartupInformationHelper;
 
 
 
 class TargetProcess {
  public:
-  
-  TargetProcess(base::win::ScopedHandle initial_token,
-                base::win::ScopedHandle lockdown_token,
-                HANDLE job,
-                ThreadProvider* thread_pool,
-                const std::vector<Sid>& impersonation_capabilities);
-  ~TargetProcess();
+  TargetProcess() = delete;
 
   
-  
-  
-  
-  void AddRef() {}
-  void Release() {}
+  TargetProcess(base::win::AccessToken initial_token,
+                base::win::AccessToken lockdown_token,
+                ThreadPool* thread_pool);
+
+  TargetProcess(const TargetProcess&) = delete;
+  TargetProcess& operator=(const TargetProcess&) = delete;
+
+  ~TargetProcess();
 
   
   ResultCode Create(const wchar_t* exe_path,
                     const wchar_t* command_line,
-                    bool inherit_handles,
-                    const base::win::StartupInformation& startup_info,
+                    std::unique_ptr<StartupInformationHelper> startup_info,
                     base::win::ScopedProcessInformation* target_info,
                     base::EnvironmentMap& env_map,
                     DWORD* win_error);
-
-  
-  
-  
-  ResultCode AssignLowBoxToken(const base::win::ScopedHandle& token);
 
   
   void Terminate();
@@ -74,16 +60,13 @@ class TargetProcess {
   
   
   ResultCode Init(Dispatcher* ipc_dispatcher,
-                  void* policy,
+                  absl::optional<base::span<const uint8_t>> policy,
+                  absl::optional<base::span<const uint8_t>> delegate_data,
                   uint32_t shared_IPC_size,
-                  uint32_t shared_policy_size,
                   DWORD* win_error);
 
   
   HANDLE Process() const { return sandbox_process_info_.process_handle(); }
-
-  
-  HANDLE Job() const { return job_; }
 
   
   
@@ -101,42 +84,53 @@ class TargetProcess {
   HANDLE MainThread() const { return sandbox_process_info_.thread_handle(); }
 
   
-  ResultCode TransferVariable(const char* name, void* address, size_t size);
+  ResultCode TransferVariable(const char* name,
+                              const void* address,
+                              size_t size);
+
+  
+  static std::unique_ptr<TargetProcess> MakeTargetProcessForTesting(
+      HANDLE process,
+      HMODULE base_address);
 
  private:
+  FRIEND_TEST_ALL_PREFIXES(TargetProcessTest, FilterEnvironment);
+
+  
+  void* GetChildAddress(const char* name, const void* address);
+
+  
+  ResultCode VerifySentinels();
+
+  
+  
+  static std::wstring FilterEnvironment(
+      const wchar_t* env,
+      const base::span<const base::WStringPiece> to_keep);
+
   
   base::win::ScopedProcessInformation sandbox_process_info_;
   
   
-  base::win::ScopedHandle lockdown_token_;
+  base::win::AccessToken lockdown_token_;
   
   
-  base::win::ScopedHandle initial_token_;
+  base::win::AccessToken initial_token_;
   
   base::win::ScopedHandle shared_section_;
   
-  HANDLE job_;
-  
   std::unique_ptr<SharedMemIPCServer> ipc_server_;
   
-  ThreadProvider* thread_pool_;
+  raw_ptr<ThreadPool> thread_pool_;
   
-  void* base_address_;
+  
+  
+  
+  
+  RAW_PTR_EXCLUSION void* base_address_;
   
   std::unique_ptr<wchar_t, base::FreeDeleter> exe_name_;
-  
-  std::vector<Sid> impersonation_capabilities_;
-
-  
-  friend TargetProcess* MakeTestTargetProcess(HANDLE process,
-                                              HMODULE base_address);
-
-  DISALLOW_IMPLICIT_CONSTRUCTORS(TargetProcess);
 };
-
-
-
-TargetProcess* MakeTestTargetProcess(HANDLE process, HMODULE base_address);
 
 }  
 

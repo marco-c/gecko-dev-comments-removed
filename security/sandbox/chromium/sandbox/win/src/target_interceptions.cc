@@ -4,14 +4,14 @@
 
 #include "sandbox/win/src/target_interceptions.h"
 
+#include <ntstatus.h>
+
 #include "base/win/static_constants.h"
 #include "sandbox/win/src/interception_agent.h"
 #include "sandbox/win/src/sandbox_factory.h"
 #include "sandbox/win/src/sandbox_nt_util.h"
 
 namespace sandbox {
-
-SANDBOX_INTERCEPT NtExports g_nt;
 
 const char KERNEL32_DLL_NAME[] = "kernel32.dll";
 
@@ -55,8 +55,8 @@ TargetNtMapViewOfSection(NtMapViewOfSectionFunction orig_MapViewOfSection,
       
       __try {
         if (ansi_module_name &&
-            (g_nt._strnicmp(ansi_module_name, KERNEL32_DLL_NAME,
-                            sizeof(KERNEL32_DLL_NAME)) == 0)) {
+            (GetNtExports()->_strnicmp(ansi_module_name, KERNEL32_DLL_NAME,
+                                       sizeof(KERNEL32_DLL_NAME)) == 0)) {
           s_state = kAfterKernel32;
         }
       } __except (EXCEPTION_EXECUTE_HANDLER) {
@@ -91,7 +91,7 @@ TargetNtMapViewOfSection(NtMapViewOfSectionFunction orig_MapViewOfSection,
     if (agent) {
       if (!agent->OnDllLoad(file_name, module_name, *base)) {
         
-        g_nt.UnmapViewOfSection(process, *base);
+        GetNtExports()->UnmapViewOfSection(process, *base);
         *base = nullptr;
         ret = STATUS_UNSUCCESSFUL;
       }

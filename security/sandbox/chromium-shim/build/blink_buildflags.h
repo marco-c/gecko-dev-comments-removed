@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef BUILD_BLINK_BUILDFLAGS_H_
+#define BUILD_BLINK_BUILDFLAGS_H_
+
+#include "build/buildflag.h" 
+
+#define BUILDFLAG_INTERNAL_USE_BLINK() (0)
+
+#endif  

@@ -10,7 +10,8 @@
 
 #include <map>
 
-#include "base/macros.h"
+#include "base/memory/raw_ptr.h"
+#include "base/memory/raw_ptr_exclusion.h"
 #include "sandbox/linux/bpf_dsl/trap_registry.h"
 #include "sandbox/linux/system_headers/linux_signal.h"
 #include "sandbox/sandbox_export.h"
@@ -27,8 +28,12 @@ namespace sandbox {
 
 class SANDBOX_EXPORT Trap : public bpf_dsl::TrapRegistry {
  public:
-  uint16_t Add(TrapFnc fnc, const void* aux, bool safe) override;
+  
+  
+  Trap(const Trap&) = delete;
+  Trap& operator=(const Trap&) = delete;
 
+  uint16_t Add(const Handler& handler) override;
   bool EnableUnsafeTraps() override;
 
   
@@ -40,15 +45,7 @@ class SANDBOX_EXPORT Trap : public bpf_dsl::TrapRegistry {
   static bool SandboxDebuggingAllowedByUser();
 
  private:
-  struct TrapKey {
-    TrapKey() : fnc(NULL), aux(NULL), safe(false) {}
-    TrapKey(TrapFnc f, const void* a, bool s) : fnc(f), aux(a), safe(s) {}
-    TrapFnc fnc;
-    const void* aux;
-    bool safe;
-    bool operator<(const TrapKey&) const;
-  };
-  typedef std::map<TrapKey, uint16_t> TrapIds;
+  using HandlerToIdMap = std::map<TrapRegistry::Handler, uint16_t>;
 
   
   
@@ -64,21 +61,23 @@ class SANDBOX_EXPORT Trap : public bpf_dsl::TrapRegistry {
   
   void SigSys(int nr, LinuxSigInfo* info, ucontext_t* ctx)
       __attribute__((noinline));
+
   
   
   
   
   static Trap* global_trap_;
 
-  TrapIds trap_ids_;            
-  TrapKey* trap_array_;         
-  size_t trap_array_size_;      
-  size_t trap_array_capacity_;  
-  bool has_unsafe_traps_;       
+  HandlerToIdMap trap_ids_;  
 
   
   
-  DISALLOW_COPY_AND_ASSIGN(Trap);
+  
+  
+  RAW_PTR_EXCLUSION TrapRegistry::Handler* trap_array_ = nullptr;
+  size_t trap_array_size_ = 0;      
+  size_t trap_array_capacity_ = 0;  
+  bool has_unsafe_traps_ = false;   
 };
 
 }  

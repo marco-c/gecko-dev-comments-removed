@@ -2,8 +2,8 @@
 
 
 
-#ifndef BASE_CONTAINERS_VECTOR_BUFFERS_H_
-#define BASE_CONTAINERS_VECTOR_BUFFERS_H_
+#ifndef BASE_CONTAINERS_VECTOR_BUFFER_H_
+#define BASE_CONTAINERS_VECTOR_BUFFER_H_
 
 #include <stdlib.h>
 #include <string.h>
@@ -11,13 +11,14 @@
 #include <type_traits>
 #include <utility>
 
+#include "base/check.h"
+#include "base/check_op.h"
+#include "base/compiler_specific.h"
 #include "base/containers/util.h"
-#include "base/logging.h"
-#include "base/macros.h"
+#include "base/memory/raw_ptr_exclusion.h"
 #include "base/numerics/checked_math.h"
 
-namespace base {
-namespace internal {
+namespace base::internal {
 
 
 
@@ -57,6 +58,9 @@ class VectorBuffer {
     other.capacity_ = 0;
   }
 
+  VectorBuffer(const VectorBuffer&) = delete;
+  VectorBuffer& operator=(const VectorBuffer&) = delete;
+
   ~VectorBuffer() { free(buffer_); }
 
   VectorBuffer& operator=(VectorBuffer&& other) {
@@ -93,15 +97,13 @@ class VectorBuffer {
 
   
   template <typename T2 = T,
-            typename std::enable_if<std::is_trivially_destructible<T2>::value,
-                                    int>::type = 0>
+            std::enable_if_t<std::is_trivially_destructible_v<T2>, int> = 0>
   void DestructRange(T* begin, T* end) {}
 
   
   
   template <typename T2 = T,
-            typename std::enable_if<!std::is_trivially_destructible<T2>::value,
-                                    int>::type = 0>
+            std::enable_if_t<!std::is_trivially_destructible_v<T2>, int> = 0>
   void DestructRange(T* begin, T* end) {
     CHECK_LE(begin, end);
     while (begin != end) {
@@ -121,11 +123,19 @@ class VectorBuffer {
 
   
   
+
+  
+  
+
+  template <typename T2>
+  static inline constexpr bool is_trivially_copyable_or_relocatable =
+      std::is_trivially_copyable_v<T2> || IS_TRIVIALLY_RELOCATABLE(T2);
+
   template <typename T2 = T,
-            typename std::enable_if<base::is_trivially_copyable<T2>::value,
-                                    int>::type = 0>
+            std::enable_if_t<is_trivially_copyable_or_relocatable<T2>, int> = 0>
   static void MoveRange(T* from_begin, T* from_end, T* to) {
     CHECK(!RangesOverlap(from_begin, from_end, to));
+
     memcpy(
         to, from_begin,
         CheckSub(get_uintptr(from_end), get_uintptr(from_begin)).ValueOrDie());
@@ -134,9 +144,9 @@ class VectorBuffer {
   
   
   template <typename T2 = T,
-            typename std::enable_if<std::is_move_constructible<T2>::value &&
-                                        !base::is_trivially_copyable<T2>::value,
-                                    int>::type = 0>
+            std::enable_if_t<std::is_move_constructible_v<T2> &&
+                                 !is_trivially_copyable_or_relocatable<T2>,
+                             int> = 0>
   static void MoveRange(T* from_begin, T* from_end, T* to) {
     CHECK(!RangesOverlap(from_begin, from_end, to));
     while (from_begin != from_end) {
@@ -150,9 +160,9 @@ class VectorBuffer {
   
   
   template <typename T2 = T,
-            typename std::enable_if<!std::is_move_constructible<T2>::value &&
-                                        !base::is_trivially_copyable<T2>::value,
-                                    int>::type = 0>
+            std::enable_if_t<!std::is_move_constructible_v<T2> &&
+                                 !is_trivially_copyable_or_relocatable<T2>,
+                             int> = 0>
   static void MoveRange(T* from_begin, T* from_end, T* to) {
     CHECK(!RangesOverlap(from_begin, from_end, to));
     while (from_begin != from_end) {
@@ -176,13 +186,12 @@ class VectorBuffer {
                 .ValueOrDie() <= from_begin_uintptr);
   }
 
-  T* buffer_ = nullptr;
+  
+  
+  RAW_PTR_EXCLUSION T* buffer_ = nullptr;
   size_t capacity_ = 0;
-
-  DISALLOW_COPY_AND_ASSIGN(VectorBuffer);
 };
 
-}  
 }  
 
 #endif  

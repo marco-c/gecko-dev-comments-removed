@@ -9,26 +9,44 @@
 
 #include <cassert>
 #include <cstdint>
-#include <cstring>
 #include <sstream>
 #include <string>
-#include <type_traits>
-#include <utility>
+#include <string_view>
 
 #include "base/base_export.h"
-#include "base/callback_forward.h"
 #include "base/compiler_specific.h"
-#include "base/immediate_crash.h"
+#include "base/dcheck_is_on.h"
+#include "base/functional/callback_forward.h"
 #include "base/logging_buildflags.h"
-#include "base/macros.h"
 #include "base/scoped_clear_last_error.h"
 #include "base/strings/string_piece_forward.h"
-#include "base/template_util.h"
+#include "base/strings/utf_ostream_operators.h"
 #include "build/build_config.h"
+#include "build/chromeos_buildflags.h"
 
-#if defined(OS_CHROMEOS)
+#if BUILDFLAG(IS_CHROMEOS)
 #include <cstdio>
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -167,9 +185,9 @@
 namespace logging {
 
 
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
 typedef wchar_t PathChar;
-#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
+#elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 typedef char PathChar;
 #endif
 
@@ -180,10 +198,10 @@ using LoggingDestination = uint32_t;
 
 
 enum : uint32_t {
-  LOG_NONE                = 0,
-  LOG_TO_FILE             = 1 << 0,
+  LOG_NONE = 0,
+  LOG_TO_FILE = 1 << 0,
   LOG_TO_SYSTEM_DEBUG_LOG = 1 << 1,
-  LOG_TO_STDERR           = 1 << 2,
+  LOG_TO_STDERR = 1 << 2,
 
   LOG_TO_ALL = LOG_TO_FILE | LOG_TO_SYSTEM_DEBUG_LOG | LOG_TO_STDERR,
 
@@ -191,11 +209,11 @@ enum : uint32_t {
 
 
 
-#if defined(OS_FUCHSIA) || defined(OS_NACL)
+#if BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_NACL)
   LOG_DEFAULT = LOG_TO_SYSTEM_DEBUG_LOG,
-#elif defined(OS_WIN)
+#elif BUILDFLAG(IS_WIN)
   LOG_DEFAULT = LOG_TO_FILE,
-#elif defined(OS_POSIX)
+#elif BUILDFLAG(IS_POSIX)
   LOG_DEFAULT = LOG_TO_SYSTEM_DEBUG_LOG | LOG_TO_STDERR,
 #endif
 };
@@ -213,6 +231,13 @@ enum LogLockingState { LOCK_LOG_FILE, DONT_LOCK_LOG_FILE };
 
 enum OldFileDeletionState { DELETE_OLD_LOG_FILE, APPEND_TO_OLD_LOG_FILE };
 
+#if BUILDFLAG(IS_CHROMEOS)
+
+
+
+enum class BASE_EXPORT LogFormat { LOG_FORMAT_CHROME, LOG_FORMAT_SYSLOG };
+#endif
+
 struct BASE_EXPORT LoggingSettings {
   
   
@@ -223,12 +248,14 @@ struct BASE_EXPORT LoggingSettings {
   const PathChar* log_file_path = nullptr;
   LogLockingState lock_log = LOCK_LOG_FILE;
   OldFileDeletionState delete_old = APPEND_TO_OLD_LOG_FILE;
-#if defined(OS_CHROMEOS)
+#if BUILDFLAG(IS_CHROMEOS)
   
   
   
   
   FILE* log_file = nullptr;
+  
+  LogFormat log_format = LogFormat::LOG_FORMAT_SYSLOG;
 #endif
 };
 
@@ -264,6 +291,8 @@ BASE_EXPORT bool BaseInitLoggingImpl(const LoggingSettings& settings);
 inline bool InitLogging(const LoggingSettings& settings) {
   return BaseInitLoggingImpl(settings);
 }
+
+
 
 
 
@@ -323,10 +352,9 @@ using LogAssertHandlerFunction =
 class BASE_EXPORT ScopedLogAssertHandler {
  public:
   explicit ScopedLogAssertHandler(LogAssertHandlerFunction handler);
+  ScopedLogAssertHandler(const ScopedLogAssertHandler&) = delete;
+  ScopedLogAssertHandler& operator=(const ScopedLogAssertHandler&) = delete;
   ~ScopedLogAssertHandler();
-
- private:
-  DISALLOW_COPY_AND_ASSIGN(ScopedLogAssertHandler);
 };
 
 
@@ -338,71 +366,55 @@ typedef bool (*LogMessageHandlerFunction)(int severity,
 BASE_EXPORT void SetLogMessageHandler(LogMessageHandlerFunction handler);
 BASE_EXPORT LogMessageHandlerFunction GetLogMessageHandler();
 
+using LogSeverity = int;
+constexpr LogSeverity LOGGING_VERBOSE = -1;  
+
+
+constexpr LogSeverity LOGGING_INFO = 0;
+constexpr LogSeverity LOGGING_WARNING = 1;
+constexpr LogSeverity LOGGING_ERROR = 2;
+constexpr LogSeverity LOGGING_FATAL = 3;
+constexpr LogSeverity LOGGING_NUM_SEVERITIES = 4;
 
 
 
-
-
-
-
-#if defined(__clang_analyzer__)
-
-inline constexpr bool AnalyzerNoReturn() __attribute__((analyzer_noreturn)) {
-  return false;
-}
-
-inline constexpr bool AnalyzerAssumeTrue(bool arg) {
-  
-  
-  return arg || AnalyzerNoReturn();
-}
-
-#define ANALYZER_ASSUME_TRUE(arg) logging::AnalyzerAssumeTrue(!!(arg))
-#define ANALYZER_SKIP_THIS_PATH() \
-  static_cast<void>(::logging::AnalyzerNoReturn())
-#define ANALYZER_ALLOW_UNUSED(var) static_cast<void>(var);
-
-#else  
-
-#define ANALYZER_ASSUME_TRUE(arg) (arg)
-#define ANALYZER_SKIP_THIS_PATH()
-#define ANALYZER_ALLOW_UNUSED(var) static_cast<void>(var);
-
-#endif  
-
-typedef int LogSeverity;
-const LogSeverity LOG_VERBOSE = -1;  
-
-
-const LogSeverity LOG_INFO = 0;
-const LogSeverity LOG_WARNING = 1;
-const LogSeverity LOG_ERROR = 2;
-const LogSeverity LOG_FATAL = 3;
-const LogSeverity LOG_NUM_SEVERITIES = 4;
-
-
-#if defined(NDEBUG)
-const LogSeverity LOG_DFATAL = LOG_ERROR;
+#if DCHECK_IS_ON()
+constexpr LogSeverity LOGGING_DFATAL = LOGGING_FATAL;
 #else
-const LogSeverity LOG_DFATAL = LOG_FATAL;
+constexpr LogSeverity LOGGING_DFATAL = LOGGING_ERROR;
 #endif
 
 
 
 
-#define COMPACT_GOOGLE_LOG_EX_INFO(ClassName, ...) \
-  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOG_INFO, ##__VA_ARGS__)
-#define COMPACT_GOOGLE_LOG_EX_WARNING(ClassName, ...)              \
-  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOG_WARNING, \
+constexpr LogSeverity LOG_VERBOSE = LOGGING_VERBOSE;
+constexpr LogSeverity LOG_INFO = LOGGING_INFO;
+constexpr LogSeverity LOG_WARNING = LOGGING_WARNING;
+constexpr LogSeverity LOG_ERROR = LOGGING_ERROR;
+constexpr LogSeverity LOG_FATAL = LOGGING_FATAL;
+constexpr LogSeverity LOG_DFATAL = LOGGING_DFATAL;
+
+
+
+
+#define COMPACT_GOOGLE_LOG_EX_INFO(ClassName, ...)                  \
+  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_INFO, \
                        ##__VA_ARGS__)
-#define COMPACT_GOOGLE_LOG_EX_ERROR(ClassName, ...) \
-  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOG_ERROR, ##__VA_ARGS__)
-#define COMPACT_GOOGLE_LOG_EX_FATAL(ClassName, ...) \
-  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOG_FATAL, ##__VA_ARGS__)
-#define COMPACT_GOOGLE_LOG_EX_DFATAL(ClassName, ...) \
-  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOG_DFATAL, ##__VA_ARGS__)
-#define COMPACT_GOOGLE_LOG_EX_DCHECK(ClassName, ...) \
-  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOG_DCHECK, ##__VA_ARGS__)
+#define COMPACT_GOOGLE_LOG_EX_WARNING(ClassName, ...)                  \
+  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_WARNING, \
+                       ##__VA_ARGS__)
+#define COMPACT_GOOGLE_LOG_EX_ERROR(ClassName, ...)                  \
+  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_ERROR, \
+                       ##__VA_ARGS__)
+#define COMPACT_GOOGLE_LOG_EX_FATAL(ClassName, ...)                  \
+  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_FATAL, \
+                       ##__VA_ARGS__)
+#define COMPACT_GOOGLE_LOG_EX_DFATAL(ClassName, ...)                  \
+  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_DFATAL, \
+                       ##__VA_ARGS__)
+#define COMPACT_GOOGLE_LOG_EX_DCHECK(ClassName, ...)                  \
+  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_DCHECK, \
+                       ##__VA_ARGS__)
 
 #define COMPACT_GOOGLE_LOG_INFO COMPACT_GOOGLE_LOG_EX_INFO(LogMessage)
 #define COMPACT_GOOGLE_LOG_WARNING COMPACT_GOOGLE_LOG_EX_WARNING(LogMessage)
@@ -411,7 +423,7 @@ const LogSeverity LOG_DFATAL = LOG_FATAL;
 #define COMPACT_GOOGLE_LOG_DFATAL COMPACT_GOOGLE_LOG_EX_DFATAL(LogMessage)
 #define COMPACT_GOOGLE_LOG_DCHECK COMPACT_GOOGLE_LOG_EX_DCHECK(LogMessage)
 
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
 
 
 
@@ -422,14 +434,54 @@ const LogSeverity LOG_DFATAL = LOG_FATAL;
   COMPACT_GOOGLE_LOG_EX_ERROR(ClassName , ##__VA_ARGS__)
 #define COMPACT_GOOGLE_LOG_0 COMPACT_GOOGLE_LOG_ERROR
 
-const LogSeverity LOG_0 = LOG_ERROR;
+constexpr LogSeverity LOGGING_0 = LOGGING_ERROR;
 #endif
 
 
 
 
 #define LOG_IS_ON(severity) \
-  (::logging::ShouldCreateLogMessage(::logging::LOG_##severity))
+  (::logging::ShouldCreateLogMessage(::logging::LOGGING_##severity))
+
+#if !BUILDFLAG(USE_RUNTIME_VLOG)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+BASE_EXPORT int GetDisableAllVLogLevel();
+
+
+
+#if !defined(ENABLED_VLOG_LEVEL)
+#define ENABLED_VLOG_LEVEL (logging::GetDisableAllVLogLevel())
+#endif  
+
+#define VLOG_IS_ON(verboselevel) ((verboselevel) <= (ENABLED_VLOG_LEVEL))
+
+#else  
+
 
 
 
@@ -437,6 +489,8 @@ const LogSeverity LOG_0 = LOG_ERROR;
 
 #define VLOG_IS_ON(verboselevel) \
   ((verboselevel) <= ::logging::GetVlogLevel(__FILE__))
+
+#endif  
 
 
 
@@ -459,7 +513,7 @@ const LogSeverity LOG_0 = LOG_ERROR;
 
 
 #define VLOG_STREAM(verbose_level) \
-  ::logging::LogMessage(__FILE__, __LINE__, -verbose_level).stream()
+  ::logging::LogMessage(__FILE__, __LINE__, -(verbose_level)).stream()
 
 #define VLOG(verbose_level) \
   LAZY_STREAM(VLOG_STREAM(verbose_level), VLOG_IS_ON(verbose_level))
@@ -468,13 +522,13 @@ const LogSeverity LOG_0 = LOG_ERROR;
   LAZY_STREAM(VLOG_STREAM(verbose_level), \
       VLOG_IS_ON(verbose_level) && (condition))
 
-#if defined (OS_WIN)
+#if BUILDFLAG(IS_WIN)
 #define VPLOG_STREAM(verbose_level) \
-  ::logging::Win32ErrorLogMessage(__FILE__, __LINE__, -verbose_level, \
+  ::logging::Win32ErrorLogMessage(__FILE__, __LINE__, -(verbose_level), \
     ::logging::GetLastSystemErrorCode()).stream()
-#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
+#elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 #define VPLOG_STREAM(verbose_level) \
-  ::logging::ErrnoLogMessage(__FILE__, __LINE__, -verbose_level, \
+  ::logging::ErrnoLogMessage(__FILE__, __LINE__, -(verbose_level), \
     ::logging::GetLastSystemErrorCode()).stream()
 #endif
 
@@ -491,11 +545,11 @@ const LogSeverity LOG_0 = LOG_ERROR;
   LOG_IF(FATAL, !(ANALYZER_ASSUME_TRUE(condition))) \
       << "Assert failed: " #condition ". "
 
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
 #define PLOG_STREAM(severity) \
   COMPACT_GOOGLE_LOG_EX_ ## severity(Win32ErrorLogMessage, \
       ::logging::GetLastSystemErrorCode()).stream()
-#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
+#elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 #define PLOG_STREAM(severity) \
   COMPACT_GOOGLE_LOG_EX_ ## severity(ErrnoLogMessage, \
       ::logging::GetLastSystemErrorCode()).stream()
@@ -524,203 +578,6 @@ BASE_EXPORT extern std::ostream* g_swallow_stream;
 #define EAT_STREAM_PARAMETERS \
   true ? (void)0              \
        : ::logging::LogMessageVoidify() & (*::logging::g_swallow_stream)
-
-
-
-class CheckOpResult {
- public:
-  
-  constexpr CheckOpResult(std::string* message) : message_(message) {}
-  
-  constexpr operator bool() const { return !message_; }
-  
-  std::string* message() { return message_; }
-
- private:
-  std::string* message_;
-};
-
-
-
-
-
-
-
-
-#if defined(OFFICIAL_BUILD) && defined(NDEBUG)
-
-
-
-
-
-
-
-#define CHECK(condition) \
-  UNLIKELY(!(condition)) ? IMMEDIATE_CRASH() : EAT_STREAM_PARAMETERS
-
-
-
-
-
-#define PCHECK(condition)                                  \
-  LAZY_STREAM(PLOG_STREAM(FATAL), UNLIKELY(!(condition))); \
-  EAT_STREAM_PARAMETERS
-
-#define CHECK_OP(name, op, val1, val2) CHECK((val1) op (val2))
-
-#else  
-
-
-#define CHECK(condition)                                                      \
-  LAZY_STREAM(::logging::LogMessage(__FILE__, __LINE__, #condition).stream(), \
-              !ANALYZER_ASSUME_TRUE(condition))
-
-#define PCHECK(condition)                                           \
-  LAZY_STREAM(PLOG_STREAM(FATAL), !ANALYZER_ASSUME_TRUE(condition)) \
-      << "Check failed: " #condition ". "
-
-
-
-
-
-
-
-#define CHECK_OP(name, op, val1, val2)                                         \
-  switch (0) case 0: default:                                                  \
-  if (::logging::CheckOpResult true_if_passed =                                \
-      ::logging::Check##name##Impl((val1), (val2),                             \
-                                   #val1 " " #op " " #val2))                   \
-   ;                                                                           \
-  else                                                                         \
-    ::logging::LogMessage(__FILE__, __LINE__, true_if_passed.message()).stream()
-
-#endif  
-
-
-
-template <typename T>
-inline typename std::enable_if<
-    base::internal::SupportsOstreamOperator<const T&>::value &&
-        !std::is_function<typename std::remove_pointer<T>::type>::value,
-    void>::type
-MakeCheckOpValueString(std::ostream* os, const T& v) {
-  (*os) << v;
-}
-
-
-template <typename T>
-inline typename std::enable_if<
-    !base::internal::SupportsOstreamOperator<const T&>::value &&
-        base::internal::SupportsToString<const T&>::value,
-    void>::type
-MakeCheckOpValueString(std::ostream* os, const T& v) {
-  (*os) << v.ToString();
-}
-
-
-
-
-
-
-template <typename T>
-inline typename std::enable_if<
-    std::is_function<typename std::remove_pointer<T>::type>::value,
-    void>::type
-MakeCheckOpValueString(std::ostream* os, const T& v) {
-  (*os) << reinterpret_cast<const void*>(v);
-}
-
-
-
-template <typename T>
-inline typename std::enable_if<
-    !base::internal::SupportsOstreamOperator<const T&>::value &&
-        std::is_enum<T>::value,
-    void>::type
-MakeCheckOpValueString(std::ostream* os, const T& v) {
-  (*os) << static_cast<typename std::underlying_type<T>::type>(v);
-}
-
-
-BASE_EXPORT void MakeCheckOpValueString(std::ostream* os, std::nullptr_t p);
-
-
-
-
-
-template<class t1, class t2>
-std::string* MakeCheckOpString(const t1& v1, const t2& v2, const char* names) {
-  std::ostringstream ss;
-  ss << names << " (";
-  MakeCheckOpValueString(&ss, v1);
-  ss << " vs. ";
-  MakeCheckOpValueString(&ss, v2);
-  ss << ")";
-  std::string* msg = new std::string(ss.str());
-  return msg;
-}
-
-
-
-extern template BASE_EXPORT std::string* MakeCheckOpString<int, int>(
-    const int&, const int&, const char* names);
-extern template BASE_EXPORT
-std::string* MakeCheckOpString<unsigned long, unsigned long>(
-    const unsigned long&, const unsigned long&, const char* names);
-extern template BASE_EXPORT
-std::string* MakeCheckOpString<unsigned long, unsigned int>(
-    const unsigned long&, const unsigned int&, const char* names);
-extern template BASE_EXPORT
-std::string* MakeCheckOpString<unsigned int, unsigned long>(
-    const unsigned int&, const unsigned long&, const char* names);
-extern template BASE_EXPORT
-std::string* MakeCheckOpString<std::string, std::string>(
-    const std::string&, const std::string&, const char* name);
-
-
-
-
-
-
-
-
-
-#define DEFINE_CHECK_OP_IMPL(name, op)                                 \
-  template <class t1, class t2>                                        \
-  constexpr std::string* Check##name##Impl(const t1& v1, const t2& v2, \
-                                           const char* names) {        \
-    if (ANALYZER_ASSUME_TRUE(v1 op v2))                                \
-      return nullptr;                                                  \
-    else                                                               \
-      return ::logging::MakeCheckOpString(v1, v2, names);              \
-  }                                                                    \
-  constexpr std::string* Check##name##Impl(int v1, int v2,             \
-                                           const char* names) {        \
-    if (ANALYZER_ASSUME_TRUE(v1 op v2))                                \
-      return nullptr;                                                  \
-    else                                                               \
-      return ::logging::MakeCheckOpString(v1, v2, names);              \
-  }
-DEFINE_CHECK_OP_IMPL(EQ, ==)
-DEFINE_CHECK_OP_IMPL(NE, !=)
-DEFINE_CHECK_OP_IMPL(LE, <=)
-DEFINE_CHECK_OP_IMPL(LT, < )
-DEFINE_CHECK_OP_IMPL(GE, >=)
-DEFINE_CHECK_OP_IMPL(GT, > )
-#undef DEFINE_CHECK_OP_IMPL
-
-#define CHECK_EQ(val1, val2) CHECK_OP(EQ, ==, val1, val2)
-#define CHECK_NE(val1, val2) CHECK_OP(NE, !=, val1, val2)
-#define CHECK_LE(val1, val2) CHECK_OP(LE, <=, val1, val2)
-#define CHECK_LT(val1, val2) CHECK_OP(LT, < , val1, val2)
-#define CHECK_GE(val1, val2) CHECK_OP(GE, >=, val1, val2)
-#define CHECK_GT(val1, val2) CHECK_OP(GT, > , val1, val2)
-
-#if defined(NDEBUG) && !defined(DCHECK_ALWAYS_ON)
-#define DCHECK_IS_ON() false
-#else
-#define DCHECK_IS_ON() true
-#endif
 
 
 
@@ -760,121 +617,11 @@ DEFINE_CHECK_OP_IMPL(GT, > )
 
 
 
-#if DCHECK_IS_ON()
-
-#if defined(DCHECK_IS_CONFIGURABLE)
-BASE_EXPORT extern LogSeverity LOG_DCHECK;
+#if BUILDFLAG(DCHECK_IS_CONFIGURABLE)
+BASE_EXPORT extern LogSeverity LOGGING_DCHECK;
 #else
-const LogSeverity LOG_DCHECK = LOG_FATAL;
+constexpr LogSeverity LOGGING_DCHECK = LOGGING_FATAL;
 #endif  
-
-#else  
-
-
-
-const LogSeverity LOG_DCHECK = LOG_FATAL;
-
-#endif  
-
-
-
-
-
-
-
-
-
-
-#if DCHECK_IS_ON()
-
-#define DCHECK(condition)                                           \
-  LAZY_STREAM(LOG_STREAM(DCHECK), !ANALYZER_ASSUME_TRUE(condition)) \
-      << "Check failed: " #condition ". "
-#define DPCHECK(condition)                                           \
-  LAZY_STREAM(PLOG_STREAM(DCHECK), !ANALYZER_ASSUME_TRUE(condition)) \
-      << "Check failed: " #condition ". "
-
-#else
-
-#define DCHECK(condition) EAT_STREAM_PARAMETERS << !(condition)
-#define DPCHECK(condition) EAT_STREAM_PARAMETERS << !(condition)
-
-#endif
-
-
-
-
-
-
-
-#if DCHECK_IS_ON()
-
-#define DCHECK_OP(name, op, val1, val2)                                \
-  switch (0) case 0: default:                                          \
-  if (::logging::CheckOpResult true_if_passed =                        \
-      ::logging::Check##name##Impl((val1), (val2),                     \
-                                   #val1 " " #op " " #val2))           \
-   ;                                                                   \
-  else                                                                 \
-    ::logging::LogMessage(__FILE__, __LINE__, ::logging::LOG_DCHECK,   \
-                          true_if_passed.message()).stream()
-
-#else  
-
-
-
-
-
-
-
-
-
-#define DCHECK_OP(name, op, val1, val2)                             \
-  EAT_STREAM_PARAMETERS << (::logging::MakeCheckOpValueString(      \
-                                ::logging::g_swallow_stream, val1), \
-                            ::logging::MakeCheckOpValueString(      \
-                                ::logging::g_swallow_stream, val2), \
-                            (val1)op(val2))
-
-#endif  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define DCHECK_EQ(val1, val2) DCHECK_OP(EQ, ==, val1, val2)
-#define DCHECK_NE(val1, val2) DCHECK_OP(NE, !=, val1, val2)
-#define DCHECK_LE(val1, val2) DCHECK_OP(LE, <=, val1, val2)
-#define DCHECK_LT(val1, val2) DCHECK_OP(LT, < , val1, val2)
-#define DCHECK_GE(val1, val2) DCHECK_OP(GE, >=, val1, val2)
-#define DCHECK_GT(val1, val2) DCHECK_OP(GT, > , val1, val2)
-
-#if BUILDFLAG(ENABLE_LOG_ERROR_NOT_REACHED)
-
-
-void LogErrorNotReached(const char* file, int line);
-#define NOTREACHED()                                       \
-  true ? ::logging::LogErrorNotReached(__FILE__, __LINE__) \
-       : EAT_STREAM_PARAMETERS
-#else
-#define NOTREACHED() DCHECK(false)
-#endif
 
 
 #undef assert
@@ -895,40 +642,47 @@ class BASE_EXPORT LogMessage {
 
   
   LogMessage(const char* file, int line, const char* condition);
-
-  
-  
-  LogMessage(const char* file, int line, std::string* result);
-
-  
-  LogMessage(const char* file, int line, LogSeverity severity,
-             std::string* result);
-
-  ~LogMessage();
+  LogMessage(const LogMessage&) = delete;
+  LogMessage& operator=(const LogMessage&) = delete;
+  virtual ~LogMessage();
 
   std::ostream& stream() { return stream_; }
 
-  LogSeverity severity() { return severity_; }
-  std::string str() { return stream_.str(); }
+  LogSeverity severity() const { return severity_; }
+  std::string str() const { return stream_.str(); }
+  const char* file() const { return file_; }
+  int line() const { return line_; }
+
+  
+  std::string BuildCrashString() const;
 
  private:
   void Init(const char* file, int line);
 
-  LogSeverity severity_;
+  const LogSeverity severity_;
   std::ostringstream stream_;
   size_t message_start_;  
                           
   
-  const char* file_;
+  const char* const file_;
   const int line_;
-  const char* file_basename_;
 
   
   
   
-  base::internal::ScopedClearLastError last_error_;
+  base::ScopedClearLastError last_error_;
 
-  DISALLOW_COPY_AND_ASSIGN(LogMessage);
+#if BUILDFLAG(IS_CHROMEOS)
+  void InitWithSyslogPrefix(base::StringPiece filename,
+                            int line,
+                            uint64_t tick_count,
+                            const char* log_severity_name_c_str,
+                            const char* log_prefix,
+                            bool enable_process_id,
+                            bool enable_thread_id,
+                            bool enable_timestamp,
+                            bool enable_tickcount);
+#endif
 };
 
 
@@ -942,9 +696,9 @@ class LogMessageVoidify {
   void operator&(std::ostream&) { }
 };
 
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
 typedef unsigned long SystemErrorCode;
-#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
+#elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 typedef int SystemErrorCode;
 #endif
 
@@ -953,45 +707,37 @@ typedef int SystemErrorCode;
 BASE_EXPORT SystemErrorCode GetLastSystemErrorCode();
 BASE_EXPORT std::string SystemErrorCodeToString(SystemErrorCode error_code);
 
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
 
-class BASE_EXPORT Win32ErrorLogMessage {
+class BASE_EXPORT Win32ErrorLogMessage : public LogMessage {
  public:
   Win32ErrorLogMessage(const char* file,
                        int line,
                        LogSeverity severity,
                        SystemErrorCode err);
-
+  Win32ErrorLogMessage(const Win32ErrorLogMessage&) = delete;
+  Win32ErrorLogMessage& operator=(const Win32ErrorLogMessage&) = delete;
   
-  ~Win32ErrorLogMessage();
-
-  std::ostream& stream() { return log_message_.stream(); }
+  ~Win32ErrorLogMessage() override;
 
  private:
   SystemErrorCode err_;
-  LogMessage log_message_;
-
-  DISALLOW_COPY_AND_ASSIGN(Win32ErrorLogMessage);
 };
-#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
+#elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 
-class BASE_EXPORT ErrnoLogMessage {
+class BASE_EXPORT ErrnoLogMessage : public LogMessage {
  public:
   ErrnoLogMessage(const char* file,
                   int line,
                   LogSeverity severity,
                   SystemErrorCode err);
-
+  ErrnoLogMessage(const ErrnoLogMessage&) = delete;
+  ErrnoLogMessage& operator=(const ErrnoLogMessage&) = delete;
   
-  ~ErrnoLogMessage();
-
-  std::ostream& stream() { return log_message_.stream(); }
+  ~ErrnoLogMessage() override;
 
  private:
   SystemErrorCode err_;
-  LogMessage log_message_;
-
-  DISALLOW_COPY_AND_ASSIGN(ErrnoLogMessage);
 };
 #endif  
 
@@ -1001,7 +747,7 @@ class BASE_EXPORT ErrnoLogMessage {
 
 BASE_EXPORT void CloseLogFile();
 
-#if defined(OS_CHROMEOS)
+#if BUILDFLAG(IS_CHROMEOS_ASH)
 
 
 
@@ -1013,16 +759,9 @@ BASE_EXPORT FILE* DuplicateLogFILE();
 BASE_EXPORT void RawLog(int level, const char* message);
 
 #define RAW_LOG(level, message) \
-  ::logging::RawLog(::logging::LOG_##level, message)
+  ::logging::RawLog(::logging::LOGGING_##level, message)
 
-#define RAW_CHECK(condition)                               \
-  do {                                                     \
-    if (!(condition))                                      \
-      ::logging::RawLog(::logging::LOG_FATAL,              \
-                        "Check failed: " #condition "\n"); \
-  } while (0)
-
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
 
 BASE_EXPORT bool IsLoggingToFileEnabled();
 
@@ -1031,47 +770,5 @@ BASE_EXPORT std::wstring GetLogFileFullPath();
 #endif
 
 }  
-
-
-
-
-
-
-
-
-
-namespace std {
-
-
-
-
-
-
-BASE_EXPORT std::ostream& operator<<(std::ostream& out, const wchar_t* wstr);
-inline std::ostream& operator<<(std::ostream& out, const std::wstring& wstr) {
-  return out << wstr.c_str();
-}
-}  
-
-
-
-
-
-#if defined(COMPILER_GCC)
-
-
-#define NOTIMPLEMENTED_MSG "Not implemented reached in " << __PRETTY_FUNCTION__
-#else
-#define NOTIMPLEMENTED_MSG "NOT IMPLEMENTED"
-#endif
-
-#define NOTIMPLEMENTED() DLOG(ERROR) << NOTIMPLEMENTED_MSG
-#define NOTIMPLEMENTED_LOG_ONCE()                       \
-  do {                                                  \
-    static bool logged_once = false;                    \
-    DLOG_IF(ERROR, !logged_once) << NOTIMPLEMENTED_MSG; \
-    logged_once = true;                                 \
-  } while (0);                                          \
-  EAT_STREAM_PARAMETERS
 
 #endif  

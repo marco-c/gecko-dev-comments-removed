@@ -7,18 +7,13 @@
 
 #include <stdint.h>
 
-#include "base/macros.h"
+#include <tuple>
+
+#include "base/check.h"
+#include "sandbox/linux/system_headers/linux_seccomp.h"
 #include "sandbox/sandbox_export.h"
 
 namespace sandbox {
-
-
-struct arch_seccomp_data {
-  int nr;
-  uint32_t arch;
-  uint64_t instruction_pointer;
-  uint64_t args[6];
-};
 
 namespace bpf_dsl {
 
@@ -41,11 +36,30 @@ class SANDBOX_EXPORT TrapRegistry {
   
   typedef intptr_t (*TrapFnc)(const struct arch_seccomp_data& args, void* aux);
 
+  struct Handler {
+    Handler() = default;
+    Handler(TrapFnc f, const void* a, bool s)
+        : fnc(f), aux(reinterpret_cast<uintptr_t>(a)), safe(s) {
+      DCHECK(fnc);
+    }
+
+    bool operator<(const Handler& that) const {
+      return std::tie(fnc, aux, safe) < std::tie(that.fnc, that.aux, that.safe);
+    }
+
+    TrapFnc fnc = nullptr;
+    uintptr_t aux = 0;  
+    bool safe = false;
+  };
+
+  TrapRegistry(const TrapRegistry&) = delete;
+  TrapRegistry& operator=(const TrapRegistry&) = delete;
+
   
   
   
   
-  virtual uint16_t Add(TrapFnc fnc, const void* aux, bool safe) = 0;
+  virtual uint16_t Add(const Handler& handler) = 0;
 
   
   
@@ -63,8 +77,6 @@ class SANDBOX_EXPORT TrapRegistry {
   
   
   ~TrapRegistry() {}
-
-  DISALLOW_COPY_AND_ASSIGN(TrapRegistry);
 };
 
 }  

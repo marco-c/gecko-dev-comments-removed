@@ -5,9 +5,6 @@
 #ifndef SANDBOX_LINUX_BPF_DSL_BPF_DSL_IMPL_H_
 #define SANDBOX_LINUX_BPF_DSL_BPF_DSL_IMPL_H_
 
-#include <memory>
-
-#include "base/macros.h"
 #include "sandbox/linux/bpf_dsl/codegen.h"
 #include "sandbox/sandbox_export.h"
 
@@ -20,6 +17,9 @@ namespace internal {
 
 class BoolExprImpl {
  public:
+  BoolExprImpl(const BoolExprImpl&) = delete;
+  BoolExprImpl& operator=(const BoolExprImpl&) = delete;
+
   
   
   
@@ -30,14 +30,14 @@ class BoolExprImpl {
  protected:
   BoolExprImpl() {}
   virtual ~BoolExprImpl() {}
-
- private:
-  DISALLOW_COPY_AND_ASSIGN(BoolExprImpl);
 };
 
 
 class ResultExprImpl {
  public:
+  ResultExprImpl(const ResultExprImpl&) = delete;
+  ResultExprImpl& operator=(const ResultExprImpl&) = delete;
+
   
   
   virtual CodeGen::Node Compile(PolicyCompiler* pc) const = 0;
@@ -55,9 +55,6 @@ class ResultExprImpl {
  protected:
   ResultExprImpl() {}
   virtual ~ResultExprImpl() {}
-
- private:
-  DISALLOW_COPY_AND_ASSIGN(ResultExprImpl);
 };
 
 }  

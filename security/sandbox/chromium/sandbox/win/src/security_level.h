@@ -2,8 +2,8 @@
 
 
 
-#ifndef SANDBOX_SRC_SECURITY_LEVEL_H_
-#define SANDBOX_SRC_SECURITY_LEVEL_H_
+#ifndef SANDBOX_WIN_SRC_SECURITY_LEVEL_H_
+#define SANDBOX_WIN_SRC_SECURITY_LEVEL_H_
 
 #include <stdint.h>
 
@@ -80,22 +80,12 @@ enum IntegrityLevel {
 
 
 
-
-
-
-
-
-
-
-
-
 enum TokenLevel {
   USER_LOCKDOWN = 0,
   USER_RESTRICTED,
   USER_LIMITED,
   USER_INTERACTIVE,
   USER_RESTRICTED_NON_ADMIN,
-  USER_NON_ADMIN,
   USER_RESTRICTED_SAME_ACCESS,
   USER_UNPROTECTED,
   USER_LAST
@@ -133,22 +123,7 @@ enum TokenLevel {
 
 
 
-
-
-
-
-
-
-
-
-enum JobLevel {
-  JOB_LOCKDOWN = 0,
-  JOB_RESTRICTED,
-  JOB_LIMITED_USER,
-  JOB_INTERACTIVE,
-  JOB_UNPROTECTED,
-  JOB_NONE
-};
+enum class JobLevel { kLockdown = 0, kLimitedUser, kInteractive, kUnprotected };
 
 
 
@@ -281,6 +256,34 @@ const MitigationFlags MITIGATION_IMAGE_LOAD_PREFER_SYS32 = 0x00100000;
 
 const MitigationFlags MITIGATION_RESTRICT_INDIRECT_BRANCH_PREDICTION =
     0x00200000;
+
+
+
+
+
+const MitigationFlags MITIGATION_CET_DISABLED = 0x00400000;
+
+
+
+const MitigationFlags MITIGATION_KTM_COMPONENT = 0x00800000;
+
+
+
+
+
+
+
+const MitigationFlags MITIGATION_CET_ALLOW_DYNAMIC_APIS = 0x01000000;
+
+
+
+
+const MitigationFlags MITIGATION_CET_STRICT_MODE = 0x02000000;
+
+
+
+
+const MitigationFlags MITIGATION_FSCTL_DISABLED = 0x04000000;
 
 
 

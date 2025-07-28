@@ -5,30 +5,26 @@
 #ifndef BASE_LOCATION_H_
 #define BASE_LOCATION_H_
 
-#include <stddef.h>
-
-#include <cassert>
-#include <functional>
 #include <string>
 
 #include "base/base_export.h"
-#include "base/debug/debugging_buildflags.h"
-#include "base/hash/hash.h"
+#include "base/memory/raw_ptr_exclusion.h"
+#include "base/trace_event/base_tracing_forward.h"
 #include "build/build_config.h"
 
 namespace base {
 
 #if defined(__has_builtin)
 
-#define SUPPORTS_LOCATION_BUILTINS                                       \
-  (__has_builtin(__builtin_FUNCTION) && __has_builtin(__builtin_FILE) && \
-   __has_builtin(__builtin_LINE))
+#  define SUPPORTS_LOCATION_BUILTINS                                       \
+    (__has_builtin(__builtin_FUNCTION) && __has_builtin(__builtin_FILE) && \
+     __has_builtin(__builtin_LINE))
 #elif defined(COMPILER_GCC) && __GNUC__ >= 7
 
 
-#define SUPPORTS_LOCATION_BUILTINS 1
+#  define SUPPORTS_LOCATION_BUILTINS 1
 #else
-#define SUPPORTS_LOCATION_BUILTINS 0
+#  define SUPPORTS_LOCATION_BUILTINS 0
 #endif
 
 
@@ -37,24 +33,26 @@ class BASE_EXPORT Location {
  public:
   Location();
   Location(const Location& other);
+  Location(Location&& other) noexcept;
+  Location& operator=(const Location& other);
 
-  
-  
-  
-  Location(const char* file_name, const void* program_counter);
-
-  
-  
-  
-  Location(const char* function_name,
-           const char* file_name,
-           int line_number,
-           const void* program_counter);
+  static Location CreateForTesting(const char* function_name,
+                                   const char* file_name,
+                                   int line_number,
+                                   const void* program_counter) {
+    return Location(function_name, file_name, line_number, program_counter);
+  }
 
   
   
   bool operator==(const Location& other) const {
     return program_counter_ == other.program_counter_;
+  }
+
+  
+  
+  bool operator<(const Location& other) const {
+    return program_counter_ < other.program_counter_;
   }
 
   
@@ -83,59 +81,43 @@ class BASE_EXPORT Location {
   
   std::string ToString() const;
 
-  static Location CreateFromHere(const char* file_name);
-  static Location CreateFromHere(const char* function_name,
-                                 const char* file_name,
-                                 int line_number);
+  
+  void WriteIntoTrace(perfetto::TracedValue context) const;
 
-#if SUPPORTS_LOCATION_BUILTINS && BUILDFLAG(ENABLE_LOCATION_SOURCE)
+#if SUPPORTS_LOCATION_BUILTINS
   static Location Current(const char* function_name = __builtin_FUNCTION(),
                           const char* file_name = __builtin_FILE(),
                           int line_number = __builtin_LINE());
-#elif SUPPORTS_LOCATION_BUILTINS
-  static Location Current(const char* file_name = __builtin_FILE());
 #else
   static Location Current();
 #endif
 
  private:
+  
+  
+  
+  Location(const char* file_name, const void* program_counter);
+
+  
+  
+  
+  Location(const char* function_name,
+           const char* file_name,
+           int line_number,
+           const void* program_counter);
+
   const char* function_name_ = nullptr;
   const char* file_name_ = nullptr;
   int line_number_ = -1;
-  const void* program_counter_ = nullptr;
+
+  
+  
+  RAW_PTR_EXCLUSION const void* program_counter_ = nullptr;
 };
 
 BASE_EXPORT const void* GetProgramCounter();
 
-
-#if BUILDFLAG(ENABLE_LOCATION_SOURCE)
-
-
-#define FROM_HERE FROM_HERE_WITH_EXPLICIT_FUNCTION(__func__)
-#define FROM_HERE_WITH_EXPLICIT_FUNCTION(function_name) \
-  ::base::Location::CreateFromHere(function_name, __FILE__, __LINE__)
-
-#else
-
-
-#define FROM_HERE ::base::Location::CreateFromHere(__FILE__)
-#define FROM_HERE_WITH_EXPLICIT_FUNCTION(function_name) \
-  ::base::Location::CreateFromHere(function_name, __FILE__, -1)
-
-#endif
-
-}  
-
-namespace std {
-
-
-template <>
-struct hash<::base::Location> {
-  std::size_t operator()(const ::base::Location& loc) const {
-    const void* program_counter = loc.program_counter();
-    return base::FastHash(base::as_bytes(base::make_span(&program_counter, 1)));
-  }
-};
+#define FROM_HERE ::base::Location::Current()
 
 }  
 

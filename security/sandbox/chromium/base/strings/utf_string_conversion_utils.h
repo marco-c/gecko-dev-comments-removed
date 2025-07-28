@@ -11,29 +11,44 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <limits>
+#include <string>
+#include <string_view>
+
 #include "base/base_export.h"
-#include "base/strings/string16.h"
+#include "base/third_party/icu/icu_utf.h"
+#include "build/build_config.h"
+#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace base {
 
-inline bool IsValidCodepoint(uint32_t code_point) {
+inline bool IsValidCodepoint(base_icu::UChar32 code_point) {
   
   
   
   
   
-  return code_point < 0xD800u ||
-         (code_point >= 0xE000u && code_point <= 0x10FFFFu);
+  return (code_point >= 0 && code_point < 0xD800) ||
+         (code_point >= 0xE000 && code_point <= 0x10FFFF);
 }
 
-inline bool IsValidCharacter(uint32_t code_point) {
+inline bool IsValidCharacter(base_icu::UChar32 code_point) {
   
   
   
-  return code_point < 0xD800u || (code_point >= 0xE000u &&
-      code_point < 0xFDD0u) || (code_point > 0xFDEFu &&
-      code_point <= 0x10FFFFu && (code_point & 0xFFFEu) != 0xFFFEu);
+  return (code_point >= 0 && code_point < 0xD800) ||
+         (code_point >= 0xE000 && code_point < 0xFDD0) ||
+         (code_point > 0xFDEF && code_point <= 0x10FFFF &&
+          (code_point & 0xFFFE) != 0xFFFE);
 }
+
+
+
+
+
+BASE_EXPORT absl::optional<size_t> CountUnicodeCharacters(
+    std::string_view text,
+    size_t limit = std::numeric_limits<size_t>::max());
 
 
 
@@ -45,41 +60,43 @@ inline bool IsValidCharacter(uint32_t code_point) {
 
 
 BASE_EXPORT bool ReadUnicodeCharacter(const char* src,
-                                      int32_t src_len,
-                                      int32_t* char_index,
-                                      uint32_t* code_point_out);
+                                      size_t src_len,
+                                      size_t* char_index,
+                                      base_icu::UChar32* code_point_out);
 
 
-BASE_EXPORT bool ReadUnicodeCharacter(const char16* src,
-                                      int32_t src_len,
-                                      int32_t* char_index,
-                                      uint32_t* code_point);
+BASE_EXPORT bool ReadUnicodeCharacter(const char16_t* src,
+                                      size_t src_len,
+                                      size_t* char_index,
+                                      base_icu::UChar32* code_point);
 
 #if defined(WCHAR_T_IS_UTF32)
 
 BASE_EXPORT bool ReadUnicodeCharacter(const wchar_t* src,
-                                      int32_t src_len,
-                                      int32_t* char_index,
-                                      uint32_t* code_point);
+                                      size_t src_len,
+                                      size_t* char_index,
+                                      base_icu::UChar32* code_point);
 #endif  
 
 
 
 
 
-BASE_EXPORT size_t WriteUnicodeCharacter(uint32_t code_point,
+BASE_EXPORT size_t WriteUnicodeCharacter(base_icu::UChar32 code_point,
                                          std::string* output);
 
 
 
-BASE_EXPORT size_t WriteUnicodeCharacter(uint32_t code_point, string16* output);
+BASE_EXPORT size_t WriteUnicodeCharacter(base_icu::UChar32 code_point,
+                                         std::u16string* output);
 
 #if defined(WCHAR_T_IS_UTF32)
 
 
-inline size_t WriteUnicodeCharacter(uint32_t code_point, std::wstring* output) {
+inline size_t WriteUnicodeCharacter(base_icu::UChar32 code_point,
+                                    std::wstring* output) {
   
-  output->push_back(code_point);
+  output->push_back(static_cast<wchar_t>(code_point));
   return 1;
 }
 #endif  

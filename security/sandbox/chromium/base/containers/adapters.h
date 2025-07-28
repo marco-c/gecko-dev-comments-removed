@@ -10,7 +10,7 @@
 #include <iterator>
 #include <utility>
 
-#include "base/macros.h"
+#include "base/memory/raw_ptr_exclusion.h"
 
 namespace base {
 
@@ -24,14 +24,16 @@ class ReversedAdapter {
 
   explicit ReversedAdapter(T& t) : t_(t) {}
   ReversedAdapter(const ReversedAdapter& ra) : t_(ra.t_) {}
+  ReversedAdapter& operator=(const ReversedAdapter&) = delete;
 
   Iterator begin() const { return std::rbegin(t_); }
   Iterator end() const { return std::rend(t_); }
 
  private:
-  T& t_;
-
-  DISALLOW_ASSIGN(ReversedAdapter);
+  
+  
+  
+  RAW_PTR_EXCLUSION T& t_;
 };
 
 }  

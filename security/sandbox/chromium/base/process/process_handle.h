@@ -8,35 +8,38 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#include <iosfwd>
+
 #include "base/base_export.h"
-#include "base/files/file_path.h"
 #include "build/build_config.h"
 
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
 #include "base/win/windows_types.h"
 #endif
 
-#if defined(OS_FUCHSIA)
+#if BUILDFLAG(IS_FUCHSIA)
 #include <zircon/types.h>
 #endif
 
 namespace base {
 
+class FilePath;
 
 
 
-#if defined(OS_WIN)
+
+#if BUILDFLAG(IS_WIN)
 typedef HANDLE ProcessHandle;
 typedef DWORD ProcessId;
 typedef HANDLE UserTokenHandle;
 const ProcessHandle kNullProcessHandle = NULL;
 const ProcessId kNullProcessId = 0;
-#elif defined(OS_FUCHSIA)
+#elif BUILDFLAG(IS_FUCHSIA)
 typedef zx_handle_t ProcessHandle;
 typedef zx_koid_t ProcessId;
 const ProcessHandle kNullProcessHandle = ZX_HANDLE_INVALID;
 const ProcessId kNullProcessId = ZX_KOID_INVALID;
-#elif defined(OS_POSIX)
+#elif BUILDFLAG(IS_POSIX)
 
 typedef pid_t ProcessHandle;
 typedef pid_t ProcessId;
@@ -47,7 +50,7 @@ const ProcessId kNullProcessId = 0;
 
 
 
-#if defined(OS_WIN) || defined(OS_FUCHSIA)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_FUCHSIA)
 #define CrPRIdPid "ld"
 #else
 #define CrPRIdPid "d"
@@ -103,7 +106,7 @@ BASE_EXPORT ProcessId GetCurrentProcId();
 
 BASE_EXPORT UniqueProcId GetUniqueIdForProcess();
 
-#if defined(OS_LINUX)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 
 
 
@@ -125,14 +128,14 @@ BASE_EXPORT ProcessHandle GetCurrentProcessHandle();
 
 BASE_EXPORT ProcessId GetProcId(ProcessHandle process);
 
-#if !defined(OS_FUCHSIA)
+#if !BUILDFLAG(IS_FUCHSIA)
 
 
 
 BASE_EXPORT ProcessId GetParentProcessId(ProcessHandle process);
 #endif  
 
-#if defined(OS_POSIX)
+#if BUILDFLAG(IS_POSIX)
 
 BASE_EXPORT FilePath GetProcessExecutablePath(ProcessHandle process);
 #endif

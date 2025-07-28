@@ -11,9 +11,9 @@
 
 #include "base/base_export.h"
 #include "base/gtest_prod_util.h"
-#include "base/macros.h"
 #include "base/version.h"
 
+using DWORD = unsigned long;  
 using HANDLE = void*;
 struct _OSVERSIONINFOEXW;
 struct _SYSTEM_INFO;
@@ -31,29 +31,34 @@ namespace win {
 
 
 
-
-
-
 enum class Version {
   PRE_XP = 0,  
   XP = 1,
-  SERVER_2003 = 2,  
-  VISTA = 3,        
-  WIN7 = 4,         
-  WIN8 = 5,         
-  WIN8_1 = 6,       
-  WIN10 = 7,        
-  WIN10_TH2 = 8,    
-  WIN10_RS1 = 9,    
-  WIN10_RS2 = 10,   
-  WIN10_RS3 = 11,   
-  WIN10_RS4 = 12,   
-  WIN10_RS5 = 13,   
-  WIN10_19H1 = 14,  
-  WIN10_20H1 = 15,  
-  
-  
-  WIN_LAST,  
+  SERVER_2003 = 2,   
+  VISTA = 3,         
+  WIN7 = 4,          
+  WIN8 = 5,          
+  WIN8_1 = 6,        
+  WIN10 = 7,         
+  WIN10_TH2 = 8,     
+  WIN10_RS1 = 9,     
+                     
+  WIN10_RS2 = 10,    
+  WIN10_RS3 = 11,    
+  WIN10_RS4 = 12,    
+  WIN10_RS5 = 13,    
+                     
+  WIN10_19H1 = 14,   
+  WIN10_19H2 = 15,   
+  WIN10_20H1 = 16,   
+  WIN10_20H2 = 17,   
+  WIN10_21H1 = 18,   
+  WIN10_21H2 = 19,   
+  WIN10_22H2 = 20,   
+  SERVER_2022 = 21,  
+  WIN11 = 22,        
+  WIN11_22H2 = 23,   
+  WIN_LAST,          
 };
 
 
@@ -66,6 +71,7 @@ enum VersionType {
   SUITE_SERVER,
   SUITE_ENTERPRISE,
   SUITE_EDUCATION,
+  SUITE_EDUCATION_PRO,
   SUITE_LAST,
 };
 
@@ -75,10 +81,10 @@ enum VersionType {
 class BASE_EXPORT OSInfo {
  public:
   struct VersionNumber {
-    int major;
-    int minor;
-    int build;
-    int patch;
+    uint32_t major;
+    uint32_t minor;
+    uint32_t build;
+    uint32_t patch;
   };
 
   struct ServicePack {
@@ -99,56 +105,110 @@ class BASE_EXPORT OSInfo {
     OTHER_ARCHITECTURE,
   };
 
-  
-  
-  
-  
-  
-  enum WOW64Status {
-    WOW64_DISABLED,
-    WOW64_ENABLED,
-    WOW64_UNKNOWN,
-  };
-
   static OSInfo* GetInstance();
+
+  OSInfo(const OSInfo&) = delete;
+  OSInfo& operator=(const OSInfo&) = delete;
 
   
   
   static WindowsArchitecture GetArchitecture();
-
   
   
-  static WOW64Status GetWOW64StatusForProcess(HANDLE process_handle);
+  
+  
+  static bool IsRunningEmulatedOnArm64();
 
+  
   const Version& version() const { return version_; }
-  Version Kernel32Version() const;
-  Version UcrtVersion() const;
-  base::Version Kernel32BaseVersion() const;
+
   
   const VersionNumber& version_number() const { return version_number_; }
+
+  
+  
+  
+  static Version Kernel32Version();
+  static VersionNumber Kernel32VersionNumber();
+  static base::Version Kernel32BaseVersion();
+
+  
+  
+  bool IsWowDisabled() const;    
+  bool IsWowX86OnAMD64() const;  
+  bool IsWowX86OnARM64() const;  
+  bool IsWowAMD64OnARM64()
+      const;                     
+  bool IsWowX86OnOther() const;  
+
+  
+  
   const VersionType& version_type() const { return version_type_; }
   const ServicePack& service_pack() const { return service_pack_; }
   const std::string& service_pack_str() const { return service_pack_str_; }
+
+  
   const int& processors() const { return processors_; }
+
+  
+  
   const size_t& allocation_granularity() const {
     return allocation_granularity_;
   }
-  const WOW64Status& wow64_status() const { return wow64_status_; }
+
+  
   std::string processor_model_name();
+
+  
   const std::string& release_id() const { return release_id_; }
 
  private:
   friend class base::test::ScopedOSInfoOverride;
   FRIEND_TEST_ALL_PREFIXES(OSInfo, MajorMinorBuildToVersion);
+
+  
+  
+  enum class WowProcessMachine {
+    kDisabled,  
+    kX86,       
+    kARM32,     
+    kOther,     
+    kUnknown,
+  };
+
+  
+  
+  enum class WowNativeMachine {
+    kARM64,  
+    kAMD64,  
+    kOther,  
+    kUnknown,
+  };
+
+  
+  
   static OSInfo** GetInstanceStorage();
 
   OSInfo(const _OSVERSIONINFOEXW& version_info,
          const _SYSTEM_INFO& system_info,
-         int os_type);
+         DWORD os_type);
   ~OSInfo();
 
   
-  static Version MajorMinorBuildToVersion(int major, int minor, int build);
+  static Version MajorMinorBuildToVersion(uint32_t major,
+                                          uint32_t minor,
+                                          uint32_t build);
+
+  
+  WowProcessMachine GetWowProcessMachineArchitecture(const int process_machine);
+
+  
+  
+  WowNativeMachine GetWowNativeMachineArchitecture(const int native_machine);
+
+  void InitializeWowStatusValuesFromLegacyApi(HANDLE process_handle);
+
+  void InitializeWowStatusValuesForProcess(HANDLE process_handle);
 
   Version version_;
   VersionNumber version_number_;
@@ -171,10 +231,9 @@ class BASE_EXPORT OSInfo {
   std::string service_pack_str_;
   int processors_;
   size_t allocation_granularity_;
-  WOW64Status wow64_status_;
+  WowProcessMachine wow_process_machine_;
+  WowNativeMachine wow_native_machine_;
   std::string processor_model_name_;
-
-  DISALLOW_COPY_AND_ASSIGN(OSInfo);
 };
 
 

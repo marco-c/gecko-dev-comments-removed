@@ -6,11 +6,12 @@
 
 
 
-#ifndef SANDBOX_SRC_INTERCEPTION_INTERNAL_H_
-#define SANDBOX_SRC_INTERCEPTION_INTERNAL_H_
+#ifndef SANDBOX_WIN_SRC_INTERCEPTION_INTERNAL_H_
+#define SANDBOX_WIN_SRC_INTERCEPTION_INTERNAL_H_
 
 #include <stddef.h>
 
+#include "base/memory/raw_ptr_exclusion.h"
 #include "sandbox/win/src/interceptors.h"
 #include "sandbox/win/src/sandbox_types.h"
 
@@ -31,7 +32,8 @@ struct FunctionInfo {
   size_t record_bytes;  
   InterceptionType type;
   InterceptorId id;
-  const void* interceptor_address;
+  
+  RAW_PTR_EXCLUSION const void* interceptor_address;
   char function[1];  
   
 };
@@ -40,7 +42,7 @@ struct FunctionInfo {
 struct DllPatchInfo {
   size_t record_bytes;  
   size_t offset_to_functions;
-  int num_functions;
+  size_t num_functions;
   bool unload_module;
   wchar_t dll_name[1];  
   
@@ -48,8 +50,9 @@ struct DllPatchInfo {
 
 
 struct SharedMemory {
-  int num_intercepted_dlls;
-  void* interceptor_base;
+  size_t num_intercepted_dlls;
+  
+  RAW_PTR_EXCLUSION void* interceptor_base;
   DllPatchInfo dll_list[1];  
 };
 
@@ -62,7 +65,8 @@ struct ThunkData {
 struct DllInterceptionData {
   size_t data_bytes;
   size_t used_bytes;
-  void* base;
+  
+  RAW_PTR_EXCLUSION void* base;
   int num_thunks;
 #if defined(_WIN64)
   int dummy;  

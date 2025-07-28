@@ -6,28 +6,47 @@
 #define BASE_PROCESS_PROCESS_H_
 
 #include "base/base_export.h"
-#include "base/macros.h"
 #include "base/process/process_handle.h"
+#include "base/strings/string_piece.h"
 #include "base/time/time.h"
+#include "build/blink_buildflags.h"
 #include "build/build_config.h"
+#include "build/chromeos_buildflags.h"
 
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
 #include "base/win/scoped_handle.h"
 #endif
 
-#if defined(OS_FUCHSIA)
+#if BUILDFLAG(IS_FUCHSIA)
 #include <lib/zx/process.h>
 #endif
 
-#if defined(OS_MACOSX)
+#if BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_WIN)
 #include "base/feature_list.h"
+#endif  
+
+#if BUILDFLAG(IS_APPLE)
 #include "base/process/port_provider_mac.h"
-#endif
+#endif  
 
 namespace base {
 
-#if defined(OS_MACOSX)
-extern const Feature kMacAllowBackgroundingProcesses;
+#if BUILDFLAG(IS_CHROMEOS)
+
+
+
+
+BASE_EXPORT BASE_DECLARE_FEATURE(kOneGroupPerRenderer);
+
+
+
+
+
+BASE_EXPORT BASE_DECLARE_FEATURE(kSetThreadBgForBgProcess);
+#endif
+
+#if BUILDFLAG(IS_WIN)
+BASE_EXPORT BASE_DECLARE_FEATURE(kUseEcoQoSForBackgroundProcess);
 #endif
 
 
@@ -51,6 +70,9 @@ class BASE_EXPORT Process {
 
   Process(Process&& other);
 
+  Process(const Process&) = delete;
+  Process& operator=(const Process&) = delete;
+
   
   ~Process();
 
@@ -67,7 +89,7 @@ class BASE_EXPORT Process {
   
   static Process OpenWithExtraPrivileges(ProcessId pid);
 
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
   
   
   static Process OpenWithAccess(ProcessId pid, DWORD desired_access);
@@ -75,12 +97,7 @@ class BASE_EXPORT Process {
 
   
   
-  
-  
-  static Process DeprecatedGetProcessFromHandle(ProcessHandle handle);
-
-  
-  static bool CanBackgroundProcesses();
+  static bool CanSetPriority();
 
   
   [[noreturn]] static void TerminateCurrentProcessImmediately(int exit_code);
@@ -96,9 +113,14 @@ class BASE_EXPORT Process {
   Process Duplicate() const;
 
   
+  
+  
+  [[nodiscard]] ProcessHandle Release();
+
+  
   ProcessId Pid() const;
 
-#if !defined(OS_ANDROID)
+  
   
   
   
@@ -106,10 +128,15 @@ class BASE_EXPORT Process {
   
   
   Time CreationTime() const;
-#endif  
 
   
   bool is_current() const;
+
+#if BUILDFLAG(IS_CHROMEOS)
+  
+  
+  const std::string& unique_token() const { return unique_token_; }
+#endif
 
   
   void Close();
@@ -118,7 +145,7 @@ class BASE_EXPORT Process {
   
   
   
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
   bool IsRunning() const {
     return !WaitForExitWithTimeout(base::TimeDelta(), nullptr);
   }
@@ -130,6 +157,21 @@ class BASE_EXPORT Process {
   
   
   bool Terminate(int exit_code, bool wait) const;
+
+#if BUILDFLAG(IS_WIN)
+  enum class WaitExitStatus {
+    PROCESS_EXITED,
+    STOP_EVENT_SIGNALED,
+    FAILED,
+  };
+
+  
+  
+  
+  WaitExitStatus WaitForExitOrEvent(
+      const base::win::ScopedHandle& stop_event_handle,
+      int* exit_code) const;
+#endif  
 
   
   
@@ -151,70 +193,126 @@ class BASE_EXPORT Process {
   
   void Exited(int exit_code) const;
 
-#if defined(OS_MACOSX)
+  
+  
+  
+  enum class Priority {
+    
+    
+    kBestEffort,
+
+    
+    
+    kUserVisible,
+
+    
+    
+    
+    kUserBlocking,
+  };
+
+#if BUILDFLAG(IS_MAC) || (BUILDFLAG(IS_IOS) && BUILDFLAG(USE_BLINK))
   
   
   
   
+
   
   
-  
-  
-  
-  
-  bool IsProcessBackgrounded(PortProvider* port_provider) const;
+  Priority GetPriority(PortProvider* port_provider) const;
 
   
   
   
-  
-  
-  
-  
-  bool SetProcessBackgrounded(PortProvider* port_provider, bool value);
+  bool SetPriority(PortProvider* port_provider, Priority priority);
 #else
   
   
-  bool IsProcessBackgrounded() const;
+  Priority GetPriority() const;
 
   
   
-  
-  
-  bool SetProcessBackgrounded(bool value);
+  bool SetPriority(Priority priority);
 #endif  
-  
-  
-  int GetPriority() const;
 
-#if defined(OS_CHROMEOS)
+  
+  
+  int GetOSPriority() const;
+
+#if BUILDFLAG(IS_CHROMEOS_ASH)
   
   
   
   ProcessId GetPidInNamespace() const;
 #endif
 
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+  
+  bool IsSeccompSandboxed();
+#endif  
+
+#if BUILDFLAG(IS_CHROMEOS)
+  
+  static bool OneGroupPerRendererEnabledForTesting();
+
+  
+  
+  
+  static void CleanUpStaleProcessStates();
+
+  
+  
+  
+  
+  void InitializePriority();
+#endif  
+
+#if BUILDFLAG(IS_APPLE)
+  
+  static void SetCurrentTaskDefaultRole();
+#endif  
+
  private:
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_CHROMEOS)
+  
+  
+  
+  void CleanUpProcess(int remaining_retries) const;
+
+  
+  void CleanUpProcessAsync() const;
+
+  
+  
+  static void CleanUpProcessScheduled(Process process, int remaining_retries);
+#endif  
+
+#if BUILDFLAG(IS_WIN)
   win::ScopedHandle process_;
-#elif defined(OS_FUCHSIA)
+#elif BUILDFLAG(IS_FUCHSIA)
   zx::process process_;
 #else
   ProcessHandle process_;
 #endif
 
-#if defined(OS_WIN) || defined(OS_FUCHSIA)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_FUCHSIA)
   bool is_current_process_;
 #endif
 
-  DISALLOW_COPY_AND_ASSIGN(Process);
+#if BUILDFLAG(IS_CHROMEOS)
+  
+  
+  
+  
+  std::string unique_token_;
+#endif
 };
 
-#if defined(OS_CHROMEOS)
+#if BUILDFLAG(IS_CHROMEOS)
 
 
 
-BASE_EXPORT bool IsProcessBackgroundedCGroup(
+BASE_EXPORT Process::Priority GetProcessPriorityCGroup(
     const StringPiece& cgroup_contents);
 #endif  
 

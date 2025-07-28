@@ -7,10 +7,13 @@
 
 #include <stddef.h>
 
+#include <iosfwd>
 #include <memory>
+#include <type_traits>
 
 #include "base/base_export.h"
-#include "base/macros.h"
+#include "base/memory/raw_ptr.h"
+#include "base/strings/string_number_conversions.h"
 #include "base/strings/string_piece.h"
 
 namespace base {
@@ -32,13 +35,48 @@ namespace debug {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 enum class CrashKeySize {
   Size32 = 32,
   Size64 = 64,
   Size256 = 256,
+  Size1024 = 1024,
 };
 
 struct CrashKeyString;
+
+
+
+
 
 
 
@@ -57,17 +95,89 @@ BASE_EXPORT void SetCrashKeyString(CrashKeyString* crash_key,
 BASE_EXPORT void ClearCrashKeyString(CrashKeyString* crash_key);
 
 
+BASE_EXPORT void OutputCrashKeysToStream(std::ostream& out);
+
+
 
 class BASE_EXPORT ScopedCrashKeyString {
  public:
   ScopedCrashKeyString(CrashKeyString* crash_key, base::StringPiece value);
+  ScopedCrashKeyString(ScopedCrashKeyString&& other);
   ~ScopedCrashKeyString();
 
- private:
-  CrashKeyString* const crash_key_;
+  
+  ScopedCrashKeyString(const ScopedCrashKeyString&) = delete;
+  ScopedCrashKeyString& operator=(const ScopedCrashKeyString&) = delete;
 
-  DISALLOW_COPY_AND_ASSIGN(ScopedCrashKeyString);
+  
+  
+  
+  ScopedCrashKeyString& operator=(ScopedCrashKeyString&&) = delete;
+
+ private:
+  raw_ptr<CrashKeyString> crash_key_;
 };
+
+
+
+
+
+
+
+
+
+
+#define SCOPED_CRASH_KEY_STRING_INTERNAL2(category, name, nonce, data,  \
+                                          key_size)                     \
+  static_assert(::std::size(category "-" name) < 40,                    \
+                "Crash key names must be shorter than 40 characters."); \
+  static_assert(::base::StringPiece(category "-" name).find(':') ==     \
+                    ::base::StringPiece::npos,                          \
+                "Crash key names must not contain the ':' character."); \
+  ::base::debug::ScopedCrashKeyString scoped_crash_key_helper##nonce(   \
+      [] {                                                              \
+        static auto* const key = ::base::debug::AllocateCrashKeyString( \
+            category "-" name, key_size);                               \
+        return key;                                                     \
+      }(),                                                              \
+      (data))
+
+
+#define SCOPED_CRASH_KEY_STRING_INTERNAL(category, name, nonce, data, \
+                                         key_size)                    \
+  SCOPED_CRASH_KEY_STRING_INTERNAL2(category, name, nonce, data, key_size)
+
+
+
+
+
+
+
+
+
+#define SCOPED_CRASH_KEY_STRING32(category, name, data)                 \
+  SCOPED_CRASH_KEY_STRING_INTERNAL(category, name, __COUNTER__, (data), \
+                                   ::base::debug::CrashKeySize::Size32)
+
+#define SCOPED_CRASH_KEY_STRING64(category, name, data)                 \
+  SCOPED_CRASH_KEY_STRING_INTERNAL(category, name, __COUNTER__, (data), \
+                                   ::base::debug::CrashKeySize::Size64)
+
+#define SCOPED_CRASH_KEY_STRING256(category, name, data)                \
+  SCOPED_CRASH_KEY_STRING_INTERNAL(category, name, __COUNTER__, (data), \
+                                   ::base::debug::CrashKeySize::Size256)
+
+#define SCOPED_CRASH_KEY_STRING1024(category, name, data)               \
+  SCOPED_CRASH_KEY_STRING_INTERNAL(category, name, __COUNTER__, (data), \
+                                   ::base::debug::CrashKeySize::Size1024)
+
+#define SCOPED_CRASH_KEY_BOOL(category, name, data)                       \
+  static_assert(std::is_same_v<std::decay_t<decltype(data)>, bool>,       \
+                "SCOPED_CRASH_KEY_BOOL must be passed a boolean value."); \
+  SCOPED_CRASH_KEY_STRING32(category, name, (data) ? "true" : "false")
+
+#define SCOPED_CRASH_KEY_NUMBER(category, name, data) \
+  SCOPED_CRASH_KEY_STRING32(category, name, ::base::NumberToString(data))
 
 
 
@@ -83,6 +193,7 @@ class CrashKeyImplementation {
   virtual CrashKeyString* Allocate(const char name[], CrashKeySize size) = 0;
   virtual void Set(CrashKeyString* crash_key, base::StringPiece value) = 0;
   virtual void Clear(CrashKeyString* crash_key) = 0;
+  virtual void OutputCrashKeysToStream(std::ostream& out) = 0;
 };
 
 

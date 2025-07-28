@@ -45,11 +45,7 @@ HANDLE CreateNamedPipeHelper(HANDLE target_process,
 namespace sandbox {
 
 bool NamedPipePolicy::GenerateRules(const wchar_t* name,
-                                    TargetPolicy::Semantics semantics,
                                     LowLevelPolicy* policy) {
-  if (TargetPolicy::NAMEDPIPES_ALLOW_ANY != semantics) {
-    return false;
-  }
   PolicyRule pipe(ASK_BROKER);
   if (!pipe.AddStringMatch(IF, NameBased::NAME, name, CASE_INSENSITIVE)) {
     return false;

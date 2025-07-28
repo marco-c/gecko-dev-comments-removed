@@ -2,10 +2,9 @@
 
 
 
-#ifndef SANDBOX_SRC_SANDBOX_FACTORY_H__
-#define SANDBOX_SRC_SANDBOX_FACTORY_H__
+#ifndef SANDBOX_WIN_SRC_SANDBOX_FACTORY_H_
+#define SANDBOX_WIN_SRC_SANDBOX_FACTORY_H_
 
-#include "base/macros.h"
 #include "sandbox/win/src/sandbox.h"
 
 
@@ -35,6 +34,10 @@ namespace sandbox {
 
 class SandboxFactory {
  public:
+  SandboxFactory() = delete;
+  SandboxFactory(const SandboxFactory&) = delete;
+  SandboxFactory& operator=(const SandboxFactory&) = delete;
+
   
   
   static BrokerServices* GetBrokerServices();
@@ -42,9 +45,6 @@ class SandboxFactory {
   
   
   static TargetServices* GetTargetServices();
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(SandboxFactory);
 };
 
 }  

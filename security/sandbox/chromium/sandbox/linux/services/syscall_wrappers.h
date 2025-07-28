@@ -17,6 +17,8 @@ struct sock_fprog;
 struct rlimit64;
 struct cap_hdr;
 struct cap_data;
+struct kernel_stat;
+struct kernel_stat64;
 
 namespace sandbox {
 
@@ -83,6 +85,19 @@ SANDBOX_EXPORT int sys_sigprocmask(int how,
 SANDBOX_EXPORT int sys_sigaction(int signum,
                                  const struct sigaction* act,
                                  struct sigaction* oldact);
+
+
+
+
+SANDBOX_EXPORT int sys_stat(const char* path, struct kernel_stat* stat_buf);
+SANDBOX_EXPORT int sys_lstat(const char* path, struct kernel_stat* stat_buf);
+
+
+
+SANDBOX_EXPORT int sys_fstatat64(int dirfd,
+                                 const char* pathname,
+                                 struct kernel_stat64* stat_buf,
+                                 int flags);
 
 }  
 

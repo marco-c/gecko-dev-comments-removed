@@ -7,16 +7,14 @@
 #include <windows.h>
 
 namespace base {
-namespace internal {
 
 ScopedClearLastError::ScopedClearLastError()
-    : last_system_error_(::GetLastError()) {
-  ::SetLastError(0);
+    : ScopedClearLastErrorBase(), last_system_error_(GetLastError()) {
+  SetLastError(0);
 }
 
 ScopedClearLastError::~ScopedClearLastError() {
-  ::SetLastError(last_system_error_);
+  SetLastError(last_system_error_);
 }
 
-}  
 }  

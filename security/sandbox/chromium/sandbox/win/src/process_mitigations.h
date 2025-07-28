@@ -2,8 +2,8 @@
 
 
 
-#ifndef SANDBOX_SRC_WIN_PROCESS_MITIGATIONS_H_
-#define SANDBOX_SRC_WIN_PROCESS_MITIGATIONS_H_
+#ifndef SANDBOX_WIN_SRC_PROCESS_MITIGATIONS_H_
+#define SANDBOX_WIN_SRC_PROCESS_MITIGATIONS_H_
 
 #include <windows.h>
 
@@ -15,7 +15,20 @@ namespace sandbox {
 
 
 
-bool ApplyProcessMitigationsToCurrentProcess(MitigationFlags flags);
+
+
+
+
+
+
+
+
+void SetStartingMitigations(MitigationFlags starting_flags);
+bool RatchetDownSecurityMitigations(MitigationFlags additional_flags);
+
+
+
+bool LockDownSecurityMitigations(MitigationFlags additional_flags);
 
 
 
@@ -33,6 +46,11 @@ MitigationFlags FilterPostStartupProcessMitigations(MitigationFlags flags);
 void ConvertProcessMitigationsToPolicy(MitigationFlags flags,
                                        DWORD64* policy_flags,
                                        size_t* size);
+
+
+
+void ConvertProcessMitigationsToComponentFilter(MitigationFlags flags,
+                                                COMPONENT_FILTER* filter);
 
 
 

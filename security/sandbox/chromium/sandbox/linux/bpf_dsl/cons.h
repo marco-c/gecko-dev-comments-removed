@@ -7,7 +7,6 @@
 
 #include <memory>
 
-#include "base/macros.h"
 #include "sandbox/sandbox_export.h"
 
 namespace sandbox {
@@ -75,6 +74,9 @@ class Cell {
  public:
   Cell(const T& head, List<T> tail) : head_(head), tail_(std::move(tail)) {}
 
+  Cell(const Cell&) = delete;
+  Cell& operator=(const Cell&) = delete;
+
   
   const T& head() const { return head_; }
 
@@ -84,8 +86,6 @@ class Cell {
  private:
   T head_;
   List<T> tail_;
-
-  DISALLOW_COPY_AND_ASSIGN(Cell);
 };
 
 

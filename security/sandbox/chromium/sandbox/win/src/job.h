@@ -2,17 +2,15 @@
 
 
 
-#ifndef SANDBOX_SRC_JOB_H_
-#define SANDBOX_SRC_JOB_H_
+#ifndef SANDBOX_WIN_SRC_JOB_H_
+#define SANDBOX_WIN_SRC_JOB_H_
 
 #include <stddef.h>
 
-#include "base/macros.h"
 #include "base/win/scoped_handle.h"
-#include "sandbox/win/src/restricted_token_utils.h"
 
 namespace sandbox {
-
+enum class JobLevel;
 
 
 
@@ -21,6 +19,9 @@ namespace sandbox {
 class Job {
  public:
   Job();
+
+  Job(const Job&) = delete;
+  Job& operator=(const Job&) = delete;
 
   ~Job();
 
@@ -31,34 +32,20 @@ class Job {
   
   
   
-  
-  DWORD Init(JobLevel security_level,
-             const wchar_t* job_name,
-             DWORD ui_exceptions,
-             size_t memory_limit);
+  DWORD Init(JobLevel security_level, DWORD ui_exceptions, size_t memory_limit);
 
   
-  
-  
-  
-  DWORD AssignProcessToJob(HANDLE process_handle);
+  bool IsValid();
 
   
-  
-  
-  
-  
-  DWORD UserHandleGrantAccess(HANDLE handle);
+  HANDLE GetHandle();
 
   
-  
-  base::win::ScopedHandle Take();
+  DWORD SetActiveProcessLimit(DWORD processes);
 
  private:
   
   base::win::ScopedHandle job_handle_;
-
-  DISALLOW_COPY_AND_ASSIGN(Job);
 };
 
 }  

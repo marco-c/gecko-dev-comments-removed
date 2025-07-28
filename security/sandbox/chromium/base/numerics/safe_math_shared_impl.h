@@ -16,16 +16,17 @@
 #include <type_traits>
 
 #include "base/numerics/safe_conversions.h"
+#include "build/build_config.h"
 
-#ifdef __asmjs__
+#if BUILDFLAG(IS_ASMJS)
 
 #define BASE_HAS_OPTIMIZED_SAFE_MATH (0)
 
-#elif !defined(__native_client__) &&                         \
-      ((defined(__clang__) &&                                \
-        ((__clang_major__ > 3) ||                            \
-         (__clang_major__ == 3 && __clang_minor__ >= 4))) || \
-       (defined(__GNUC__) && __GNUC__ >= 5))
+#elif !defined(__native_client__) &&                       \
+    ((defined(__clang__) &&                                \
+      ((__clang_major__ > 3) ||                            \
+       (__clang_major__ == 3 && __clang_minor__ >= 4))) || \
+     (defined(__GNUC__) && __GNUC__ >= 5))
 #include "base/numerics/safe_math_clang_gcc_impl.h"
 #define BASE_HAS_OPTIMIZED_SAFE_MATH (1)
 #else
@@ -114,8 +115,8 @@ struct ClampedNegFastOp {
 
 
 template <typename Numeric,
-          bool IsInteger = std::is_integral<Numeric>::value,
-          bool IsFloat = std::is_floating_point<Numeric>::value>
+          bool IsInteger = std::is_integral_v<Numeric>,
+          bool IsFloat = std::is_floating_point_v<Numeric>>
 struct UnsignedOrFloatForSize;
 
 template <typename Numeric>
@@ -133,36 +134,29 @@ struct UnsignedOrFloatForSize<Numeric, false, true> {
 
 
 
-template <typename T,
-          typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+template <typename T, std::enable_if_t<std::is_integral_v<T>>* = nullptr>
 constexpr T NegateWrapper(T value) {
   using UnsignedT = typename std::make_unsigned<T>::type;
   
   return static_cast<T>(UnsignedT(0) - static_cast<UnsignedT>(value));
 }
 
-template <
-    typename T,
-    typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr>
+template <typename T, std::enable_if_t<std::is_floating_point_v<T>>* = nullptr>
 constexpr T NegateWrapper(T value) {
   return -value;
 }
 
-template <typename T,
-          typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+template <typename T, std::enable_if_t<std::is_integral_v<T>>* = nullptr>
 constexpr typename std::make_unsigned<T>::type InvertWrapper(T value) {
   return ~value;
 }
 
-template <typename T,
-          typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+template <typename T, std::enable_if_t<std::is_integral_v<T>>* = nullptr>
 constexpr T AbsWrapper(T value) {
   return static_cast<T>(SafeUnsignedAbs(value));
 }
 
-template <
-    typename T,
-    typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr>
+template <typename T, std::enable_if_t<std::is_floating_point_v<T>>* = nullptr>
 constexpr T AbsWrapper(T value) {
   return value < 0 ? -value : value;
 }
@@ -179,36 +173,11 @@ struct MathWrapper {
 
 
 
-template <template <typename, typename, typename> class M,
-          typename L,
-          typename R,
-          typename... Args>
-struct ResultType;
-
-template <template <typename, typename, typename> class M,
-          typename L,
-          typename R>
-struct ResultType<M, L, R> {
-  using type = typename MathWrapper<M, L, R>::type;
-};
-
-template <template <typename, typename, typename> class M,
-          typename L,
-          typename R,
-          typename... Args>
-struct ResultType {
-  using type =
-      typename ResultType<M, typename ResultType<M, L, R>::type, Args...>::type;
-};
-
-
-
 
 #define BASE_NUMERIC_ARITHMETIC_VARIADIC(CLASS, CL_ABBR, OP_NAME)       \
   template <typename L, typename R, typename... Args>                   \
-  constexpr CLASS##Numeric<                                             \
-      typename ResultType<CLASS##OP_NAME##Op, L, R, Args...>::type>     \
-      CL_ABBR##OP_NAME(const L lhs, const R rhs, const Args... args) {  \
+  constexpr auto CL_ABBR##OP_NAME(const L lhs, const R rhs,             \
+                                  const Args... args) {                 \
     return CL_ABBR##MathOp<CLASS##OP_NAME##Op, L, R, Args...>(lhs, rhs, \
                                                               args...); \
   }
@@ -216,8 +185,7 @@ struct ResultType {
 #define BASE_NUMERIC_ARITHMETIC_OPERATORS(CLASS, CL_ABBR, OP_NAME, OP, CMP_OP)
           \
   template <typename L, typename R,                                            \
-            typename std::enable_if<Is##CLASS##Op<L, R>::value>::type* =       \
-                nullptr>                                                       \
+            std::enable_if_t<Is##CLASS##Op<L, R>::value>* = nullptr>           \
   constexpr CLASS##Numeric<                                                    \
       typename MathWrapper<CLASS##OP_NAME##Op, L, R>::type>                    \
   operator OP(const L lhs, const R rhs) {                                      \

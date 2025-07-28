@@ -19,28 +19,26 @@
 #ifndef SANDBOX_WIN_SRC_SANDBOX_H_
 #define SANDBOX_WIN_SRC_SANDBOX_H_
 
-#if !defined(SANDBOX_FUZZ_TARGET)
-#include <windows.h>
-#else
-#include "sandbox/win/fuzzer/fuzzer_types.h"
-#endif
-
 #include <stddef.h>
 #include <memory>
 #include <vector>
 
-#include "base/memory/ref_counted.h"
+#include "base/containers/span.h"
+#include "base/strings/string_piece.h"
+#include "base/win/windows_types.h"
 #include "sandbox/win/src/sandbox_policy.h"
 #include "sandbox/win/src/sandbox_types.h"
+#include "third_party/abseil-cpp/absl/types/optional.h"
 
 
 namespace sandbox {
 
-class BrokerServices;
+class BrokerServicesTargetTracker;
 class PolicyDiagnosticsReceiver;
 class ProcessState;
 class TargetPolicy;
 class TargetServices;
+enum class Desktop;
 
 
 
@@ -55,7 +53,10 @@ class TargetServices;
 
 
 
-class BrokerServices {
+
+
+
+class [[clang::lto_visibility_public]] BrokerServices {
  public:
   
   
@@ -65,11 +66,45 @@ class BrokerServices {
 
   
   
-  
-  virtual scoped_refptr<TargetPolicy> CreatePolicy() = 0;
+  virtual ResultCode InitForTesting(
+      std::unique_ptr<BrokerServicesTargetTracker> target_tracker) = 0;
 
   
   
+  [[nodiscard]] virtual ResultCode CreateAlternateDesktop(Desktop desktop) = 0;
+  
+  virtual void DestroyDesktops() = 0;
+  
+  
+  
+  virtual std::wstring GetDesktopName(Desktop desktop) = 0;
+
+  
+  
+  
+  virtual std::unique_ptr<TargetPolicy> CreatePolicy() = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual std::unique_ptr<TargetPolicy> CreatePolicy(base::StringPiece tag) = 0;
+
   
   
   
@@ -90,17 +125,9 @@ class BrokerServices {
   virtual ResultCode SpawnTarget(const wchar_t* exe_path,
                                  const wchar_t* command_line,
                                  base::EnvironmentMap& env_map,
-                                 scoped_refptr<TargetPolicy> policy,
-                                 ResultCode* last_warning,
+                                 std::unique_ptr<TargetPolicy> policy,
                                  DWORD* last_error,
                                  PROCESS_INFORMATION* target) = 0;
-
-  
-  
-  
-  
-  
-  virtual ResultCode WaitForAllTargets() = 0;
 
   
   
@@ -113,6 +140,19 @@ class BrokerServices {
   
   virtual ResultCode GetPolicyDiagnostics(
       std::unique_ptr<PolicyDiagnosticsReceiver> receiver) = 0;
+
+  
+  
+  
+  virtual void SetStartingMitigations(MitigationFlags starting_mitigations) = 0;
+
+  
+  
+  
+  
+  
+  virtual bool RatchetDownSecurityMitigations(
+      MitigationFlags additional_flags) = 0;
 
   
   virtual bool DeriveCapabilitySidFromName(const wchar_t* name,
@@ -146,13 +186,21 @@ class BrokerServices {
 
 
 
-class TargetServices {
+class [[clang::lto_visibility_public]] TargetServices {
  public:
   
   
   
   
   virtual ResultCode Init() = 0;
+
+  
+  
+  
+  
+  
+  
+  virtual absl::optional<base::span<const uint8_t>> GetDelegateData() = 0;
 
   
   
@@ -171,7 +219,7 @@ class TargetServices {
   ~TargetServices() {}
 };
 
-class PolicyInfo {
+class [[clang::lto_visibility_public]] PolicyInfo {
  public:
   
   
@@ -181,7 +229,7 @@ class PolicyInfo {
 
 
 
-class PolicyList {
+class [[clang::lto_visibility_public]] PolicyList {
  public:
   virtual std::vector<std::unique_ptr<PolicyInfo>>::iterator begin() = 0;
   virtual std::vector<std::unique_ptr<PolicyInfo>>::iterator end() = 0;
@@ -190,7 +238,7 @@ class PolicyList {
 };
 
 
-class PolicyDiagnosticsReceiver {
+class [[clang::lto_visibility_public]] PolicyDiagnosticsReceiver {
  public:
   
   
@@ -199,6 +247,18 @@ class PolicyDiagnosticsReceiver {
   
   virtual void OnError(ResultCode code) = 0;
   virtual ~PolicyDiagnosticsReceiver() {}
+};
+
+
+
+
+class [[clang::lto_visibility_public]] BrokerServicesTargetTracker {
+ public:
+  
+  virtual void OnTargetAdded() = 0;
+  
+  virtual void OnTargetRemoved() = 0;
+  virtual ~BrokerServicesTargetTracker() {}
 };
 
 }  

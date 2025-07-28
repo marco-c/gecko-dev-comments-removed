@@ -48,6 +48,17 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 #ifndef BASE_TIME_TIME_H_
 #define BASE_TIME_TIME_H_
 
@@ -56,97 +67,91 @@
 
 #include <iosfwd>
 #include <limits>
+#include <ostream>
+#include <type_traits>
 
 #include "base/base_export.h"
+#include "base/check.h"
+#include "base/check_op.h"
 #include "base/compiler_specific.h"
-#include "base/logging.h"
-#include "base/numerics/safe_math.h"
+#include "base/numerics/clamped_math.h"
 #include "build/build_config.h"
+#include "build/chromeos_buildflags.h"
 
-#if defined(OS_FUCHSIA)
+#if BUILDFLAG(IS_FUCHSIA)
 #include <zircon/types.h>
 #endif
 
-#if defined(OS_MACOSX)
+#if BUILDFLAG(IS_APPLE)
 #include <CoreFoundation/CoreFoundation.h>
+#include <mach/mach_time.h>
 
 #undef TYPE_BOOL
 #endif
 
-#if defined(OS_ANDROID)
+#if BUILDFLAG(IS_ANDROID)
 #include <jni.h>
 #endif
 
-#if defined(OS_POSIX) || defined(OS_FUCHSIA)
+#if BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 #include <unistd.h>
 #include <sys/time.h>
 #endif
 
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
 #include "base/gtest_prod_util.h"
 #include "base/win/windows_types.h"
-#endif
 
 namespace ABI {
 namespace Windows {
 namespace Foundation {
 struct DateTime;
+struct TimeSpan;
 }  
 }  
 }  
+#endif
 
 namespace base {
 
 class PlatformThreadHandle;
 class TimeDelta;
 
+template <typename T>
+constexpr TimeDelta Microseconds(T n);
+
+namespace {
 
 
 
-namespace time_internal {
+constexpr bool isnan(double d) {
+  return d != d;
+}
 
-
-
-
-
-BASE_EXPORT constexpr int64_t SaturatedAdd(int64_t value, TimeDelta delta);
-BASE_EXPORT constexpr int64_t SaturatedSub(int64_t value, TimeDelta delta);
-
-}  
+}
 
 
 
 class BASE_EXPORT TimeDelta {
  public:
-  constexpr TimeDelta() : delta_(0) {}
+  constexpr TimeDelta() = default;
 
-  
-  
-  
-  
-  static constexpr TimeDelta FromDays(int days);
-  static constexpr TimeDelta FromHours(int hours);
-  static constexpr TimeDelta FromMinutes(int minutes);
-  static constexpr TimeDelta FromSeconds(int64_t secs);
-  static constexpr TimeDelta FromMilliseconds(int64_t ms);
-  static constexpr TimeDelta FromMicroseconds(int64_t us);
-  static constexpr TimeDelta FromNanoseconds(int64_t ns);
-  static constexpr TimeDelta FromSecondsD(double secs);
-  static constexpr TimeDelta FromMillisecondsD(double ms);
-  static constexpr TimeDelta FromMicrosecondsD(double us);
-  static constexpr TimeDelta FromNanosecondsD(double ns);
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
   static TimeDelta FromQPCValue(LONGLONG qpc_value);
   
   
   static TimeDelta FromFileTime(FILETIME ft);
   static TimeDelta FromWinrtDateTime(ABI::Windows::Foundation::DateTime dt);
-#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
+  static TimeDelta FromWinrtTimeSpan(ABI::Windows::Foundation::TimeSpan ts);
+#elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
   static TimeDelta FromTimeSpec(const timespec& ts);
 #endif
-#if defined(OS_FUCHSIA)
+#if BUILDFLAG(IS_FUCHSIA)
   static TimeDelta FromZxDuration(zx_duration_t nanos);
 #endif
+#if BUILDFLAG(IS_APPLE)
+  static TimeDelta FromMachTime(uint64_t mach_time);
+#endif  
 
   
   
@@ -161,12 +166,24 @@ class BASE_EXPORT TimeDelta {
   
   
   
+  
+  
+  
+  
   static constexpr TimeDelta Max();
 
   
   
   
   static constexpr TimeDelta Min();
+
+  
+  
+  static constexpr TimeDelta FiniteMax();
+
+  
+  
+  static constexpr TimeDelta FiniteMin();
 
   
   
@@ -177,63 +194,60 @@ class BASE_EXPORT TimeDelta {
   constexpr int64_t ToInternalValue() const { return delta_; }
 
   
-  constexpr TimeDelta magnitude() const {
-    
-    
-    
-    const int64_t mask = delta_ >> (sizeof(delta_) * 8 - 1);
-    return TimeDelta((delta_ + mask) ^ mask);
-  }
+  constexpr TimeDelta magnitude() const { return TimeDelta(delta_.Abs()); }
 
   
   constexpr bool is_zero() const { return delta_ == 0; }
+  constexpr bool is_positive() const { return delta_ > 0; }
+  constexpr bool is_negative() const { return delta_ < 0; }
 
   
-  constexpr bool is_max() const {
-    return delta_ == std::numeric_limits<int64_t>::max();
-  }
-  constexpr bool is_min() const {
-    return delta_ == std::numeric_limits<int64_t>::min();
-  }
+  constexpr bool is_max() const { return *this == Max(); }
+  constexpr bool is_min() const { return *this == Min(); }
+  constexpr bool is_inf() const { return is_min() || is_max(); }
 
-#if defined(OS_POSIX) || defined(OS_FUCHSIA)
+#if BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
   struct timespec ToTimeSpec() const;
 #endif
-#if defined(OS_FUCHSIA)
+#if BUILDFLAG(IS_FUCHSIA)
   zx_duration_t ToZxDuration() const;
 #endif
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
   ABI::Windows::Foundation::DateTime ToWinrtDateTime() const;
+  ABI::Windows::Foundation::TimeSpan ToWinrtTimeSpan() const;
 #endif
 
   
   
-  
-  
-  
-  
-  
-  
-  int InDays() const;
-  int InDaysFloored() const;
-  int InHours() const;
-  int InMinutes() const;
-  double InSecondsF() const;
-  int64_t InSeconds() const;
-  double InMillisecondsF() const;
-  int64_t InMilliseconds() const;
-  int64_t InMillisecondsRoundedUp() const;
-  constexpr int64_t InMicroseconds() const { return delta_; }
-  double InMicrosecondsF() const;
-  int64_t InNanoseconds() const;
+  constexpr double ToHz() const;
 
   
-  constexpr TimeDelta operator+(TimeDelta other) const {
-    return TimeDelta(time_internal::SaturatedAdd(delta_, other));
-  }
-  constexpr TimeDelta operator-(TimeDelta other) const {
-    return TimeDelta(time_internal::SaturatedSub(delta_, other));
-  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  constexpr int InDays() const;
+  constexpr int InDaysFloored() const;
+  constexpr int InHours() const;
+  constexpr int InMinutes() const;
+  constexpr double InSecondsF() const;
+  constexpr int64_t InSeconds() const;
+  constexpr int64_t InSecondsFloored() const;
+  constexpr double InMillisecondsF() const;
+  constexpr int64_t InMilliseconds() const;
+  constexpr int64_t InMillisecondsRoundedUp() const;
+  constexpr int64_t InMicroseconds() const { return delta_; }
+  constexpr double InMicrosecondsF() const;
+  constexpr int64_t InNanoseconds() const;
+
+  
+  constexpr TimeDelta operator+(TimeDelta other) const;
+  constexpr TimeDelta operator-(TimeDelta other) const;
 
   constexpr TimeDelta& operator+=(TimeDelta other) {
     return *this = (*this + other);
@@ -241,31 +255,20 @@ class BASE_EXPORT TimeDelta {
   constexpr TimeDelta& operator-=(TimeDelta other) {
     return *this = (*this - other);
   }
-  constexpr TimeDelta operator-() const { return TimeDelta(-delta_); }
+  constexpr TimeDelta operator-() const {
+    if (!is_inf())
+      return TimeDelta(-delta_);
+    return (delta_ < 0) ? Max() : Min();
+  }
 
   
   template <typename T>
   constexpr TimeDelta operator*(T a) const {
-    CheckedNumeric<int64_t> rv(delta_);
-    rv *= a;
-    if (rv.IsValid())
-      return TimeDelta(rv.ValueOrDie());
-    
-    if ((delta_ < 0) ^ (a < 0))
-      return TimeDelta(std::numeric_limits<int64_t>::min());
-    return TimeDelta(std::numeric_limits<int64_t>::max());
+    return TimeDelta(int64_t{delta_ * a});
   }
   template <typename T>
   constexpr TimeDelta operator/(T a) const {
-    CheckedNumeric<int64_t> rv(delta_);
-    rv /= a;
-    if (rv.IsValid())
-      return TimeDelta(rv.ValueOrDie());
-    
-    
-    if ((delta_ < 0) ^ (a <= 0))
-      return TimeDelta(std::numeric_limits<int64_t>::min());
-    return TimeDelta(std::numeric_limits<int64_t>::max());
+    return TimeDelta(int64_t{delta_ / a});
   }
   template <typename T>
   constexpr TimeDelta& operator*=(T a) {
@@ -276,12 +279,40 @@ class BASE_EXPORT TimeDelta {
     return *this = (*this / a);
   }
 
-  constexpr int64_t operator/(TimeDelta a) const { return delta_ / a.delta_; }
+  
+  
+  
+  
+  constexpr double operator/(TimeDelta a) const {
+    
+    
+    
+    
+    CHECK(!is_zero() || !a.is_zero());
+    CHECK(!is_inf() || !a.is_inf());
+
+    return ToDouble() / a.ToDouble();
+  }
+  constexpr int64_t IntDiv(TimeDelta a) const {
+    if (!is_inf() && !a.is_zero())
+      return int64_t{delta_ / a.delta_};
+
+    
+    
+    CHECK(!is_zero() || !a.is_zero());
+    CHECK(!is_inf() || !a.is_inf());
+    return ((delta_ < 0) == (a.delta_ < 0))
+               ? std::numeric_limits<int64_t>::max()
+               : std::numeric_limits<int64_t>::min();
+  }
 
   constexpr TimeDelta operator%(TimeDelta a) const {
-    return TimeDelta(delta_ % a.delta_);
+    return TimeDelta(
+        (is_inf() || a.is_zero() || a.is_inf()) ? delta_ : (delta_ % a.delta_));
   }
-  TimeDelta& operator%=(TimeDelta other) { return *this = (*this % other); }
+  constexpr TimeDelta& operator%=(TimeDelta other) {
+    return *this = (*this % other);
+  }
 
   
   constexpr bool operator==(TimeDelta other) const {
@@ -303,27 +334,50 @@ class BASE_EXPORT TimeDelta {
     return delta_ >= other.delta_;
   }
 
- private:
-  friend constexpr int64_t time_internal::SaturatedAdd(int64_t value,
-                                                       TimeDelta delta);
-  friend constexpr int64_t time_internal::SaturatedSub(int64_t value,
-                                                       TimeDelta delta);
+  
+  
+  TimeDelta CeilToMultiple(TimeDelta interval) const;
+  TimeDelta FloorToMultiple(TimeDelta interval) const;
+  TimeDelta RoundToMultiple(TimeDelta interval) const;
 
+ private:
   
   
   
   constexpr explicit TimeDelta(int64_t delta_us) : delta_(delta_us) {}
+  constexpr explicit TimeDelta(ClampedNumeric<int64_t> delta_us)
+      : delta_(delta_us) {}
 
   
-  static constexpr TimeDelta FromDouble(double value);
+  
+  constexpr double ToDouble() const {
+    if (!is_inf())
+      return static_cast<double>(delta_);
+    return (delta_ < 0) ? -std::numeric_limits<double>::infinity()
+                        : std::numeric_limits<double>::infinity();
+  }
 
   
-  
-  static constexpr TimeDelta FromProduct(int64_t value, int64_t positive_value);
-
-  
-  int64_t delta_;
+  ClampedNumeric<int64_t> delta_ = 0;
 };
+
+constexpr TimeDelta TimeDelta::operator+(TimeDelta other) const {
+  if (!other.is_inf())
+    return TimeDelta(delta_ + other.delta_);
+
+  
+  CHECK(!is_inf() || (delta_ == other.delta_));
+  return other;
+}
+
+constexpr TimeDelta TimeDelta::operator-(TimeDelta other) const {
+  if (!other.is_inf())
+    return TimeDelta(delta_ - other.delta_);
+
+  
+  CHECK_NE(int64_t{delta_}, int64_t{other.delta_});
+  return (other.delta_ < 0) ? Max() : Min();
+}
 
 template <typename T>
 constexpr TimeDelta operator*(T a, TimeDelta td) {
@@ -336,37 +390,9 @@ BASE_EXPORT std::ostream& operator<<(std::ostream& os, TimeDelta time_delta);
 
 
 
+
+
 namespace time_internal {
-
-constexpr int64_t SaturatedAdd(int64_t value, TimeDelta delta) {
-  
-  
-  if (delta.is_max()) {
-    CHECK_GT(value, std::numeric_limits<int64_t>::min());
-    return std::numeric_limits<int64_t>::max();
-  } else if (delta.is_min()) {
-    CHECK_LT(value, std::numeric_limits<int64_t>::max());
-    return std::numeric_limits<int64_t>::min();
-  }
-
-  return base::ClampAdd(value, delta.delta_);
-}
-
-constexpr int64_t SaturatedSub(int64_t value, TimeDelta delta) {
-  
-  
-  if (delta.is_max()) {
-    CHECK_LT(value, std::numeric_limits<int64_t>::max());
-    return std::numeric_limits<int64_t>::min();
-  } else if (delta.is_min()) {
-    CHECK_GT(value, std::numeric_limits<int64_t>::min());
-    return std::numeric_limits<int64_t>::max();
-  }
-
-  return base::ClampSub(value, delta.delta_);
-}
-
-
 
 
 
@@ -377,15 +403,19 @@ class TimeBase {
  public:
   static constexpr int64_t kHoursPerDay = 24;
   static constexpr int64_t kSecondsPerMinute = 60;
-  static constexpr int64_t kSecondsPerHour = 60 * kSecondsPerMinute;
+  static constexpr int64_t kMinutesPerHour = 60;
+  static constexpr int64_t kSecondsPerHour =
+      kSecondsPerMinute * kMinutesPerHour;
   static constexpr int64_t kMillisecondsPerSecond = 1000;
   static constexpr int64_t kMillisecondsPerDay =
-      kMillisecondsPerSecond * 60 * 60 * kHoursPerDay;
+      kMillisecondsPerSecond * kSecondsPerHour * kHoursPerDay;
   static constexpr int64_t kMicrosecondsPerMillisecond = 1000;
   static constexpr int64_t kMicrosecondsPerSecond =
       kMicrosecondsPerMillisecond * kMillisecondsPerSecond;
-  static constexpr int64_t kMicrosecondsPerMinute = kMicrosecondsPerSecond * 60;
-  static constexpr int64_t kMicrosecondsPerHour = kMicrosecondsPerMinute * 60;
+  static constexpr int64_t kMicrosecondsPerMinute =
+      kMicrosecondsPerSecond * kSecondsPerMinute;
+  static constexpr int64_t kMicrosecondsPerHour =
+      kMicrosecondsPerMinute * kMinutesPerHour;
   static constexpr int64_t kMicrosecondsPerDay =
       kMicrosecondsPerHour * kHoursPerDay;
   static constexpr int64_t kMicrosecondsPerWeek = kMicrosecondsPerDay * 7;
@@ -398,15 +428,16 @@ class TimeBase {
   
   
   
+  
+  
+  
+  
   constexpr bool is_null() const { return us_ == 0; }
 
   
-  constexpr bool is_max() const {
-    return us_ == std::numeric_limits<int64_t>::max();
-  }
-  constexpr bool is_min() const {
-    return us_ == std::numeric_limits<int64_t>::min();
-  }
+  constexpr bool is_max() const { return *this == Max(); }
+  constexpr bool is_min() const { return *this == Min(); }
+  constexpr bool is_inf() const { return is_min() || is_max(); }
 
   
   
@@ -422,8 +453,6 @@ class TimeBase {
   
   
   
-  
-  
   constexpr int64_t ToInternalValue() const { return us_; }
 
   
@@ -432,27 +461,17 @@ class TimeBase {
   
   
   
-  constexpr TimeDelta since_origin() const {
-    return TimeDelta::FromMicroseconds(us_);
-  }
-
-  constexpr TimeClass& operator=(TimeClass other) {
-    us_ = other.us_;
-    return *(static_cast<TimeClass*>(this));
-  }
+  constexpr TimeDelta since_origin() const;
 
   
-  constexpr TimeDelta operator-(TimeClass other) const {
-    return TimeDelta::FromMicroseconds(us_ - other.us_);
-  }
+#if !defined(__aarch64__) && BUILDFLAG(IS_ANDROID)
+  NOINLINE  
+#endif
+  constexpr TimeDelta operator-(const TimeBase<TimeClass>& other) const;
 
   
-  constexpr TimeClass operator+(TimeDelta delta) const {
-    return TimeClass(time_internal::SaturatedAdd(us_, delta));
-  }
-  constexpr TimeClass operator-(TimeDelta delta) const {
-    return TimeClass(time_internal::SaturatedSub(us_, delta));
-  }
+  constexpr TimeClass operator+(TimeDelta delta) const;
+  constexpr TimeClass operator-(TimeDelta delta) const;
 
   
   constexpr TimeClass& operator+=(TimeDelta delta) {
@@ -463,19 +482,46 @@ class TimeBase {
   }
 
   
-  constexpr bool operator==(TimeClass other) const { return us_ == other.us_; }
-  constexpr bool operator!=(TimeClass other) const { return us_ != other.us_; }
-  constexpr bool operator<(TimeClass other) const { return us_ < other.us_; }
-  constexpr bool operator<=(TimeClass other) const { return us_ <= other.us_; }
-  constexpr bool operator>(TimeClass other) const { return us_ > other.us_; }
-  constexpr bool operator>=(TimeClass other) const { return us_ >= other.us_; }
+  constexpr bool operator==(const TimeBase<TimeClass>& other) const {
+    return us_ == other.us_;
+  }
+  constexpr bool operator!=(const TimeBase<TimeClass>& other) const {
+    return us_ != other.us_;
+  }
+  constexpr bool operator<(const TimeBase<TimeClass>& other) const {
+    return us_ < other.us_;
+  }
+  constexpr bool operator<=(const TimeBase<TimeClass>& other) const {
+    return us_ <= other.us_;
+  }
+  constexpr bool operator>(const TimeBase<TimeClass>& other) const {
+    return us_ > other.us_;
+  }
+  constexpr bool operator>=(const TimeBase<TimeClass>& other) const {
+    return us_ >= other.us_;
+  }
 
  protected:
   constexpr explicit TimeBase(int64_t us) : us_(us) {}
 
   
-  int64_t us_;
+  ClampedNumeric<int64_t> us_;
 };
+
+#if BUILDFLAG(IS_WIN)
+#if defined(ARCH_CPU_ARM64)
+
+
+
+#else
+
+[[nodiscard]] BASE_EXPORT bool HasConstantRateTSC();
+
+
+
+[[nodiscard]] BASE_EXPORT double TSCTicksPerSecond();
+#endif
+#endif  
 
 }  
 
@@ -499,7 +545,7 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
   static constexpr int64_t kTimeTToMicrosecondsOffset =
       INT64_C(11644473600000000);
 
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
   
   
   
@@ -511,16 +557,19 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
 
 
 
-#if defined(OS_WIN)
+
+
+
+#if BUILDFLAG(IS_WIN)
   static constexpr int kExplodedMinYear = 1601;
   static constexpr int kExplodedMaxYear = 30827;
-#elif defined(OS_IOS) && !__LP64__
+#elif BUILDFLAG(IS_IOS) && !__LP64__
   static constexpr int kExplodedMinYear = std::numeric_limits<int>::min();
   static constexpr int kExplodedMaxYear = std::numeric_limits<int>::max();
-#elif defined(OS_MACOSX)
+#elif BUILDFLAG(IS_APPLE)
   static constexpr int kExplodedMinYear = 1902;
   static constexpr int kExplodedMaxYear = std::numeric_limits<int>::max();
-#elif defined(OS_ANDROID)
+#elif BUILDFLAG(IS_ANDROID)
   
   
   
@@ -533,6 +582,17 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
       (sizeof(time_t) == 4 ? 2037 : std::numeric_limits<int>::max());
 #endif
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -554,10 +614,18 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
   };
 
   
+  
+  
+  
+  
+  
+  
+  
+  
   constexpr Time() : TimeBase(0) {}
 
   
-  static Time UnixEpoch();
+  static constexpr Time UnixEpoch() { return Time(kTimeTToMicrosecondsOffset); }
 
   
   
@@ -581,63 +649,90 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
   
   
   
-  static Time FromDeltaSinceWindowsEpoch(TimeDelta delta);
-  TimeDelta ToDeltaSinceWindowsEpoch() const;
+  
+  
+  
+  
+  
+  static constexpr Time FromDeltaSinceWindowsEpoch(TimeDelta delta) {
+    return Time(delta.InMicroseconds());
+  }
+
+  constexpr TimeDelta ToDeltaSinceWindowsEpoch() const {
+    return Microseconds(us_);
+  }
 
   
-  static Time FromTimeT(time_t tt);
-  time_t ToTimeT() const;
+  static constexpr Time FromTimeT(time_t tt);
+  constexpr time_t ToTimeT() const;
 
   
   
   
   
   
-  static Time FromDoubleT(double dt);
-  double ToDoubleT() const;
+  
+  static constexpr Time FromSecondsSinceUnixEpoch(double dt);
+  constexpr double InSecondsFSinceUnixEpoch() const;
 
-#if defined(OS_POSIX) || defined(OS_FUCHSIA)
+#if BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
   
   
   
   
-  static Time FromTimeSpec(const timespec& ts);
+  static constexpr Time FromTimeSpec(const timespec& ts);
 #endif
 
   
   
   
+  static constexpr Time FromMillisecondsSinceUnixEpoch(int64_t dt);
+  static constexpr Time FromMillisecondsSinceUnixEpoch(double dt);
+  
+  
+  
+  
+  template <typename T,
+            typename = std::enable_if_t<
+                std::is_integral_v<T> && !std::is_same_v<T, int64_t> &&
+                (sizeof(T) < sizeof(int64_t) ||
+                 (sizeof(T) == sizeof(int64_t) && std::is_signed_v<T>))>>
+  static constexpr Time FromMillisecondsSinceUnixEpoch(T ms_since_epoch) {
+    return FromMillisecondsSinceUnixEpoch(int64_t{ms_since_epoch});
+  }
+  constexpr int64_t InMillisecondsSinceUnixEpoch() const;
   
   
   
   
   
-  static Time FromJsTime(double ms_since_epoch);
-  double ToJsTime() const;
-  double ToJsTimeIgnoringNull() const;
+  
+  
+  
+  
+  constexpr double InMillisecondsFSinceUnixEpoch() const;
+  constexpr double InMillisecondsFSinceUnixEpochIgnoringNull() const;
 
-  
-  
-  
-  static Time FromJavaTime(int64_t ms_since_epoch);
-  int64_t ToJavaTime() const;
-
-#if defined(OS_POSIX) || defined(OS_FUCHSIA)
+#if BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
   static Time FromTimeVal(struct timeval t);
   struct timeval ToTimeVal() const;
 #endif
 
-#if defined(OS_FUCHSIA)
+#if BUILDFLAG(IS_FUCHSIA)
   static Time FromZxTime(zx_time_t time);
   zx_time_t ToZxTime() const;
 #endif
 
-#if defined(OS_MACOSX)
+#if BUILDFLAG(IS_APPLE)
   static Time FromCFAbsoluteTime(CFAbsoluteTime t);
   CFAbsoluteTime ToCFAbsoluteTime() const;
+#if defined(__OBJC__)
+  static Time FromNSDate(NSDate* date);
+  NSDate* ToNSDate() const;
+#endif
 #endif
 
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
   static Time FromFileTime(FILETIME ft);
   FILETIME ToFileTime() const;
 
@@ -648,11 +743,6 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
 
   
   static void EnableHighResolutionTimer(bool enable);
-
-  
-  
-  
-  static void ReadMinTimerIntervalLowResMs();
 
   
   
@@ -684,12 +774,15 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
   
   
   
-  static bool FromUTCExploded(const Exploded& exploded,
-                              Time* time) WARN_UNUSED_RESULT {
+  
+  
+  
+  [[nodiscard]] static bool FromUTCExploded(const Exploded& exploded,
+                                            Time* time) {
     return FromExploded(false, exploded, time);
   }
-  static bool FromLocalExploded(const Exploded& exploded,
-                                Time* time) WARN_UNUSED_RESULT {
+  [[nodiscard]] static bool FromLocalExploded(const Exploded& exploded,
+                                              Time* time) {
     return FromExploded(true, exploded, time);
   }
 
@@ -707,29 +800,38 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
   
   
   
-  static bool FromString(const char* time_string,
-                         Time* parsed_time) WARN_UNUSED_RESULT {
+  [[nodiscard]] static bool FromString(const char* time_string,
+                                       Time* parsed_time) {
     return FromStringInternal(time_string, true, parsed_time);
   }
-  static bool FromUTCString(const char* time_string,
-                            Time* parsed_time) WARN_UNUSED_RESULT {
+  [[nodiscard]] static bool FromUTCString(const char* time_string,
+                                          Time* parsed_time) {
     return FromStringInternal(time_string, false, parsed_time);
   }
 
+#if !defined(MOZ_SANDBOX)
   
   
-  void UTCExplode(Exploded* exploded) const {
-    return Explode(false, exploded);
-  }
-  void LocalExplode(Exploded* exploded) const {
-    return Explode(true, exploded);
-  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void UTCExplode(Exploded* exploded) const { Explode(false, exploded); }
+  void LocalExplode(Exploded* exploded) const { Explode(true, exploded); }
 
   
   
   Time UTCMidnight() const { return Midnight(false); }
   Time LocalMidnight() const { return Midnight(true); }
+#endif
 
+  
+  
   
   
   
@@ -753,9 +855,19 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
   
   
   
-  static bool FromExploded(bool is_local,
-                           const Exploded& exploded,
-                           Time* time) WARN_UNUSED_RESULT;
+  [[nodiscard]] static bool FromExploded(bool is_local,
+                                         const Exploded& exploded,
+                                         Time* time);
+
+  
+  
+  static void ExplodeUsingIcu(int64_t millis_since_unix_epoch,
+                              bool is_local,
+                              Exploded* exploded);
+  [[nodiscard]] static bool FromExplodedUsingIcu(
+      bool is_local,
+      const Exploded& exploded,
+      int64_t* millis_since_unix_epoch);
 
   
   
@@ -768,18 +880,19 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
   
   
   
-  static bool FromStringInternal(const char* time_string,
-                                 bool is_local,
-                                 Time* parsed_time) WARN_UNUSED_RESULT;
+  [[nodiscard]] static bool FromStringInternal(const char* time_string,
+                                               bool is_local,
+                                               Time* parsed_time);
 
   
-  static bool ExplodedMostlyEquals(const Exploded& lhs,
-                                   const Exploded& rhs) WARN_UNUSED_RESULT;
+  [[nodiscard]] static bool ExplodedMostlyEquals(const Exploded& lhs,
+                                                 const Exploded& rhs);
 
   
   
-  static bool FromMillisecondsSinceUnixEpoch(int64_t unix_milliseconds,
-                                             Time* time) WARN_UNUSED_RESULT;
+  [[nodiscard]] static bool FromMillisecondsSinceUnixEpoch(
+      int64_t unix_milliseconds,
+      Time* time);
 
   
   
@@ -787,64 +900,145 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
 };
 
 
-constexpr TimeDelta TimeDelta::FromDays(int days) {
-  return days == std::numeric_limits<int>::max()
-             ? Max()
-             : TimeDelta(days * Time::kMicrosecondsPerDay);
+
+
+
+
+template <typename T>
+constexpr TimeDelta Days(T n) {
+  return TimeDelta::FromInternalValue(MakeClampedNum(n) *
+                                      Time::kMicrosecondsPerDay);
+}
+template <typename T>
+constexpr TimeDelta Hours(T n) {
+  return TimeDelta::FromInternalValue(MakeClampedNum(n) *
+                                      Time::kMicrosecondsPerHour);
+}
+template <typename T>
+constexpr TimeDelta Minutes(T n) {
+  return TimeDelta::FromInternalValue(MakeClampedNum(n) *
+                                      Time::kMicrosecondsPerMinute);
+}
+template <typename T>
+constexpr TimeDelta Seconds(T n) {
+  return TimeDelta::FromInternalValue(MakeClampedNum(n) *
+                                      Time::kMicrosecondsPerSecond);
+}
+template <typename T>
+constexpr TimeDelta Milliseconds(T n) {
+  return TimeDelta::FromInternalValue(MakeClampedNum(n) *
+                                      Time::kMicrosecondsPerMillisecond);
+}
+template <typename T>
+constexpr TimeDelta Microseconds(T n) {
+  return TimeDelta::FromInternalValue(MakeClampedNum(n));
+}
+template <typename T>
+constexpr TimeDelta Nanoseconds(T n) {
+  return TimeDelta::FromInternalValue(MakeClampedNum(n) /
+                                      Time::kNanosecondsPerMicrosecond);
+}
+template <typename T>
+constexpr TimeDelta Hertz(T n) {
+  return n ? TimeDelta::FromInternalValue(Time::kMicrosecondsPerSecond /
+                                          MakeClampedNum(n))
+           : TimeDelta::Max();
 }
 
 
-constexpr TimeDelta TimeDelta::FromHours(int hours) {
-  return hours == std::numeric_limits<int>::max()
-             ? Max()
-             : TimeDelta(hours * Time::kMicrosecondsPerHour);
+
+constexpr double TimeDelta::ToHz() const {
+  return Seconds(1) / *this;
 }
 
-
-constexpr TimeDelta TimeDelta::FromMinutes(int minutes) {
-  return minutes == std::numeric_limits<int>::max()
-             ? Max()
-             : TimeDelta(minutes * Time::kMicrosecondsPerMinute);
+constexpr int TimeDelta::InDays() const {
+  if (!is_inf()) {
+    return static_cast<int>(delta_ / Time::kMicrosecondsPerDay);
+  }
+  return (delta_ < 0) ? std::numeric_limits<int>::min()
+                      : std::numeric_limits<int>::max();
 }
 
-
-constexpr TimeDelta TimeDelta::FromSeconds(int64_t secs) {
-  return FromProduct(secs, Time::kMicrosecondsPerSecond);
+constexpr int TimeDelta::InDaysFloored() const {
+  if (!is_inf()) {
+    const int result = delta_ / Time::kMicrosecondsPerDay;
+    
+    return (result * Time::kMicrosecondsPerDay > delta_) ? (result - 1)
+                                                         : result;
+  }
+  return (delta_ < 0) ? std::numeric_limits<int>::min()
+                      : std::numeric_limits<int>::max();
 }
 
-
-constexpr TimeDelta TimeDelta::FromMilliseconds(int64_t ms) {
-  return FromProduct(ms, Time::kMicrosecondsPerMillisecond);
+constexpr int TimeDelta::InHours() const {
+  
+  
+  return saturated_cast<int>(delta_ / Time::kMicrosecondsPerHour);
 }
 
-
-constexpr TimeDelta TimeDelta::FromMicroseconds(int64_t us) {
-  return TimeDelta(us);
+constexpr int TimeDelta::InMinutes() const {
+  
+  
+  return saturated_cast<int>(delta_ / Time::kMicrosecondsPerMinute);
 }
 
-
-constexpr TimeDelta TimeDelta::FromNanoseconds(int64_t ns) {
-  return TimeDelta(ns / Time::kNanosecondsPerMicrosecond);
+constexpr double TimeDelta::InSecondsF() const {
+  if (!is_inf())
+    return static_cast<double>(delta_) / Time::kMicrosecondsPerSecond;
+  return (delta_ < 0) ? -std::numeric_limits<double>::infinity()
+                      : std::numeric_limits<double>::infinity();
 }
 
-
-constexpr TimeDelta TimeDelta::FromSecondsD(double secs) {
-  return FromDouble(secs * Time::kMicrosecondsPerSecond);
+constexpr int64_t TimeDelta::InSeconds() const {
+  return is_inf() ? delta_ : (delta_ / Time::kMicrosecondsPerSecond);
 }
 
-
-constexpr TimeDelta TimeDelta::FromMillisecondsD(double ms) {
-  return FromDouble(ms * Time::kMicrosecondsPerMillisecond);
+constexpr int64_t TimeDelta::InSecondsFloored() const {
+  if (!is_inf()) {
+    const int64_t result = delta_ / Time::kMicrosecondsPerSecond;
+    
+    return (result * Time::kMicrosecondsPerSecond > delta_) ? (result - 1)
+                                                            : result;
+  }
+  return delta_;
 }
 
-
-constexpr TimeDelta TimeDelta::FromMicrosecondsD(double us) {
-  return FromDouble(us);
+constexpr double TimeDelta::InMillisecondsF() const {
+  if (!is_inf()) {
+    return static_cast<double>(delta_) / Time::kMicrosecondsPerMillisecond;
+  }
+  return (delta_ < 0) ? -std::numeric_limits<double>::infinity()
+                      : std::numeric_limits<double>::infinity();
 }
 
+constexpr int64_t TimeDelta::InMilliseconds() const {
+  if (!is_inf()) {
+    return delta_ / Time::kMicrosecondsPerMillisecond;
+  }
+  return (delta_ < 0) ? std::numeric_limits<int64_t>::min()
+                      : std::numeric_limits<int64_t>::max();
+}
 
-constexpr TimeDelta TimeDelta::FromNanosecondsD(double ns) {
-  return FromDouble(ns / Time::kNanosecondsPerMicrosecond);
+constexpr int64_t TimeDelta::InMillisecondsRoundedUp() const {
+  if (!is_inf()) {
+    const int64_t result = delta_ / Time::kMicrosecondsPerMillisecond;
+    
+    return (delta_ > result * Time::kMicrosecondsPerMillisecond) ? (result + 1)
+                                                                 : result;
+  }
+  return delta_;
+}
+
+constexpr double TimeDelta::InMicrosecondsF() const {
+  if (!is_inf()) {
+    return static_cast<double>(delta_);
+  }
+  return (delta_ < 0) ? -std::numeric_limits<double>::infinity()
+                      : std::numeric_limits<double>::infinity();
+}
+
+constexpr int64_t TimeDelta::InNanoseconds() const {
+  return base::ClampMul(delta_, Time::kNanosecondsPerMicrosecond);
 }
 
 
@@ -858,19 +1052,134 @@ constexpr TimeDelta TimeDelta::Min() {
 }
 
 
-constexpr TimeDelta TimeDelta::FromDouble(double value) {
-  return TimeDelta(saturated_cast<int64_t>(value));
+constexpr TimeDelta TimeDelta::FiniteMax() {
+  return TimeDelta(std::numeric_limits<int64_t>::max() - 1);
 }
 
 
-constexpr TimeDelta TimeDelta::FromProduct(int64_t value,
-                                           int64_t positive_value) {
-  DCHECK(positive_value > 0);  
-  return value > std::numeric_limits<int64_t>::max() / positive_value
+constexpr TimeDelta TimeDelta::FiniteMin() {
+  return TimeDelta(std::numeric_limits<int64_t>::min() + 1);
+}
+
+
+namespace time_internal {
+
+template <class TimeClass>
+constexpr TimeDelta TimeBase<TimeClass>::since_origin() const {
+  return Microseconds(us_);
+}
+
+template <class TimeClass>
+constexpr TimeDelta TimeBase<TimeClass>::operator-(
+    const TimeBase<TimeClass>& other) const {
+  return Microseconds(us_ - other.us_);
+}
+
+template <class TimeClass>
+constexpr TimeClass TimeBase<TimeClass>::operator+(TimeDelta delta) const {
+  return TimeClass((Microseconds(us_) + delta).InMicroseconds());
+}
+
+template <class TimeClass>
+constexpr TimeClass TimeBase<TimeClass>::operator-(TimeDelta delta) const {
+  return TimeClass((Microseconds(us_) - delta).InMicroseconds());
+}
+
+}  
+
+
+
+
+constexpr Time Time::FromTimeT(time_t tt) {
+  if (tt == 0)
+    return Time();  
+  return (tt == std::numeric_limits<time_t>::max())
              ? Max()
-             : value < std::numeric_limits<int64_t>::min() / positive_value
-                   ? Min()
-                   : TimeDelta(value * positive_value);
+             : (UnixEpoch() + Seconds(tt));
+}
+
+constexpr time_t Time::ToTimeT() const {
+  if (is_null()) {
+    return 0;  
+  }
+  if (!is_inf()) {
+    return saturated_cast<time_t>((*this - UnixEpoch()).InSecondsFloored());
+  }
+  return (us_ < 0) ? std::numeric_limits<time_t>::min()
+                   : std::numeric_limits<time_t>::max();
+}
+
+
+constexpr Time Time::FromSecondsSinceUnixEpoch(double dt) {
+  
+  
+  
+  
+  
+  
+  return (dt == 0 || isnan(dt)) ? Time() : (UnixEpoch() + Seconds(dt));
+}
+
+constexpr double Time::InSecondsFSinceUnixEpoch() const {
+  
+  if (is_null()) {
+    return 0;
+  }
+  if (!is_inf()) {
+    return (*this - UnixEpoch()).InSecondsF();
+  }
+  return (us_ < 0) ? -std::numeric_limits<double>::infinity()
+                   : std::numeric_limits<double>::infinity();
+}
+
+#if BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
+
+constexpr Time Time::FromTimeSpec(const timespec& ts) {
+  return FromSecondsSinceUnixEpoch(ts.tv_sec + static_cast<double>(ts.tv_nsec) /
+                                                   kNanosecondsPerSecond);
+}
+#endif
+
+
+constexpr Time Time::FromMillisecondsSinceUnixEpoch(int64_t dt) {
+  
+  
+  
+  
+  
+  
+  return UnixEpoch() + Milliseconds(dt);
+}
+
+
+constexpr Time Time::FromMillisecondsSinceUnixEpoch(double dt) {
+  return isnan(dt) ? Time() : (UnixEpoch() + Milliseconds(dt));
+}
+
+constexpr int64_t Time::InMillisecondsSinceUnixEpoch() const {
+  
+  if (is_null()) {
+    return 0;
+  }
+  if (!is_inf()) {
+    return (*this - UnixEpoch()).InMilliseconds();
+  }
+  return (us_ < 0) ? std::numeric_limits<int64_t>::min()
+                   : std::numeric_limits<int64_t>::max();
+}
+
+constexpr double Time::InMillisecondsFSinceUnixEpoch() const {
+  
+  return is_null() ? 0 : InMillisecondsFSinceUnixEpochIgnoringNull();
+}
+
+constexpr double Time::InMillisecondsFSinceUnixEpochIgnoringNull() const {
+  
+  if (!is_inf()) {
+    return (*this - UnixEpoch()).InMillisecondsF();
+  }
+  return (us_ < 0) ? -std::numeric_limits<double>::infinity()
+                   : std::numeric_limits<double>::infinity();
 }
 
 
@@ -903,39 +1212,67 @@ class BASE_EXPORT TimeTicks : public time_internal::TimeBase<TimeTicks> {
   
   
   
-  static bool IsHighResolution() WARN_UNUSED_RESULT;
+  [[nodiscard]] static bool IsHighResolution();
 
   
   
   
   
   
-  static bool IsConsistentAcrossProcesses() WARN_UNUSED_RESULT;
+  [[nodiscard]] static bool IsConsistentAcrossProcesses();
 
-#if defined(OS_FUCHSIA)
+#if BUILDFLAG(IS_FUCHSIA)
   
   static TimeTicks FromZxTime(zx_time_t nanos_since_boot);
   zx_time_t ToZxTime() const;
 #endif
 
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
   
   
   
   static TimeTicks FromQPCValue(LONGLONG qpc_value);
 #endif
 
-#if defined(OS_MACOSX) && !defined(OS_IOS)
+#if BUILDFLAG(IS_APPLE)
   static TimeTicks FromMachAbsoluteTime(uint64_t mach_absolute_time);
+
+  
+  static mach_timebase_info_data_t SetMachTimebaseInfoForTesting(
+      mach_timebase_info_data_t timebase);
+
 #endif  
 
-#if defined(OS_ANDROID) || defined(OS_CHROMEOS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_CHROMEOS_ASH)
   
   
   
   
   static TimeTicks FromUptimeMillis(int64_t uptime_millis_value);
-#endif
+
+#endif  
+
+#if BUILDFLAG(IS_ANDROID)
+  
+  
+  
+  
+  static TimeTicks FromJavaNanoTime(int64_t nano_time_value);
+
+  
+  
+  jlong ToUptimeMillis() const;
+
+  
+  
+  
+  
+  
+  
+  
+  jlong ToUptimeMicros() const;
+
+#endif  
 
   
   
@@ -946,6 +1283,8 @@ class BASE_EXPORT TimeTicks : public time_internal::TimeBase<TimeTicks> {
   
   
   static TimeTicks UnixEpoch();
+
+  static void SetSharedUnixEpoch(TimeTicks);
 
   
   
@@ -965,12 +1304,14 @@ class BASE_EXPORT TimeTicks : public time_internal::TimeBase<TimeTicks> {
   
   
   
+  
+  
   static constexpr TimeTicks FromInternalValue(int64_t us) {
     return TimeTicks(us);
   }
 
  protected:
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
   typedef DWORD (*TickFunctionType)(void);
   static TickFunctionType SetMockTickFunction(TickFunctionType ticker);
 #endif
@@ -990,17 +1331,34 @@ BASE_EXPORT std::ostream& operator<<(std::ostream& os, TimeTicks time_ticks);
 
 
 
+
+class BASE_EXPORT LiveTicks : public time_internal::TimeBase<LiveTicks> {
+ public:
+  constexpr LiveTicks() : TimeBase(0) {}
+  static LiveTicks Now();
+
+ private:
+  friend class time_internal::TimeBase<LiveTicks>;
+
+  
+  
+  constexpr explicit LiveTicks(int64_t us) : TimeBase(us) {}
+};
+
+
+
+
+
 class BASE_EXPORT ThreadTicks : public time_internal::TimeBase<ThreadTicks> {
  public:
   constexpr ThreadTicks() : TimeBase(0) {}
 
   
-  static bool IsSupported() WARN_UNUSED_RESULT {
+  [[nodiscard]] static bool IsSupported() {
 #if (defined(_POSIX_THREAD_CPUTIME) && (_POSIX_THREAD_CPUTIME >= 0)) || \
-    (defined(OS_MACOSX) && !defined(OS_IOS)) || defined(OS_ANDROID) ||  \
-    defined(OS_FUCHSIA)
+    BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA)
     return true;
-#elif defined(OS_WIN)
+#elif BUILDFLAG(IS_WIN)
     return IsSupportedWin();
 #else
     return false;
@@ -1010,7 +1368,7 @@ class BASE_EXPORT ThreadTicks : public time_internal::TimeBase<ThreadTicks> {
   
   
   static void WaitUntilInitialized() {
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
     WaitUntilInitializedWin();
 #endif
   }
@@ -1024,13 +1382,15 @@ class BASE_EXPORT ThreadTicks : public time_internal::TimeBase<ThreadTicks> {
   
   static ThreadTicks Now();
 
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
   
   
   
   static ThreadTicks GetForThread(const PlatformThreadHandle& thread_handle);
 #endif
 
+  
+  
   
   
   
@@ -1049,22 +1409,8 @@ class BASE_EXPORT ThreadTicks : public time_internal::TimeBase<ThreadTicks> {
   
   constexpr explicit ThreadTicks(int64_t us) : TimeBase(us) {}
 
-#if defined(OS_WIN)
-  FRIEND_TEST_ALL_PREFIXES(TimeTicks, TSCTicksPerSecond);
-
-#if defined(ARCH_CPU_ARM64)
-  
-  
-  
-#else
-  
-  
-  
-  
-  static double TSCTicksPerSecond();
-#endif
-
-  static bool IsSupportedWin() WARN_UNUSED_RESULT;
+#if BUILDFLAG(IS_WIN)
+  [[nodiscard]] static bool IsSupportedWin();
   static void WaitUntilInitializedWin();
 #endif
 };

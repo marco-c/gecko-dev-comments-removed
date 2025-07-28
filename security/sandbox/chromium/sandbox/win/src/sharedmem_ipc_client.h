@@ -2,12 +2,13 @@
 
 
 
-#ifndef SANDBOX_SRC_SHAREDMEM_IPC_CLIENT_H__
-#define SANDBOX_SRC_SHAREDMEM_IPC_CLIENT_H__
+#ifndef SANDBOX_WIN_SRC_SHAREDMEM_IPC_CLIENT_H_
+#define SANDBOX_WIN_SRC_SHAREDMEM_IPC_CLIENT_H_
 
 #include <stddef.h>
 #include <stdint.h>
 
+#include "base/memory/raw_ptr_exclusion.h"
 #include "sandbox/win/src/crosscall_params.h"
 #include "sandbox/win/src/ipc_tags.h"
 #include "sandbox/win/src/sandbox.h"
@@ -130,9 +131,10 @@ class SharedMemIPCClient {
   size_t LockFreeChannel(bool* severe_failure);
   
   size_t ChannelIndexFromBuffer(const void* buffer);
-  IPCControl* control_;
   
-  char* first_base_;
+  RAW_PTR_EXCLUSION IPCControl* control_;
+  
+  RAW_PTR_EXCLUSION char* first_base_;
 };
 
 }  

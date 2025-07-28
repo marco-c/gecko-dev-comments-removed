@@ -2,29 +2,17 @@
 
 
 
-#ifndef SANDBOX_SRC_RESTRICTED_TOKEN_H_
-#define SANDBOX_SRC_RESTRICTED_TOKEN_H_
+#ifndef SANDBOX_WIN_SRC_RESTRICTED_TOKEN_H_
+#define SANDBOX_WIN_SRC_RESTRICTED_TOKEN_H_
 
-#include <windows.h>
-
-#include <tuple>
 #include <vector>
 
-#include <string>
-
-#include "base/macros.h"
-#include "base/win/scoped_handle.h"
-#include "sandbox/win/src/restricted_token_utils.h"
+#include "base/win/access_control_list.h"
+#include "base/win/access_token.h"
+#include "base/win/sid.h"
+#include "base/win/windows_types.h"
 #include "sandbox/win/src/security_level.h"
-#include "sandbox/win/src/sid.h"
-
-
-#ifndef SE_GROUP_INTEGRITY
-#define SE_GROUP_INTEGRITY (0x00000020L)
-#endif
-#ifndef SE_GROUP_INTEGRITY_ENABLED
-#define SE_GROUP_INTEGRITY_ENABLED (0x00000040L)
-#endif
+#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace sandbox {
 
@@ -39,39 +27,18 @@ namespace sandbox {
 
 
 
-
-
-
-
-
-
 class RestrictedToken {
  public:
-  
   RestrictedToken();
+
+  RestrictedToken(const RestrictedToken&) = delete;
+  RestrictedToken& operator=(const RestrictedToken&) = delete;
+
   ~RestrictedToken();
 
   
   
-  
-  DWORD Init(HANDLE effective_token);
-
-  
-  
-  
-  
-  DWORD GetRestrictedToken(base::win::ScopedHandle* token) const;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  DWORD GetRestrictedTokenForImpersonation(
-      base::win::ScopedHandle* token) const;
+  absl::optional<base::win::AccessToken> GetRestrictedToken() const;
 
   
   
@@ -84,41 +51,28 @@ class RestrictedToken {
   
   
   
-  
-  
-  
-  
-  
-  DWORD AddAllSidsForDenyOnly(std::vector<Sid>* exceptions);
+  void AddAllSidsForDenyOnly(const std::vector<base::win::Sid>& exceptions);
 
   
   
   
   
   
-  
-  DWORD AddSidForDenyOnly(const Sid& sid);
+  void AddSidForDenyOnly(const base::win::Sid& sid);
 
   
   
   
   
-  DWORD AddUserSidForDenyOnly();
+  void AddSidForDenyOnly(base::win::WellKnownSid known_sid);
+
+  
+  void AddUserSidForDenyOnly();
 
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  DWORD DeleteAllPrivileges(const std::vector<std::wstring>* exceptions);
+  void DeleteAllPrivileges(bool remove_traversal_privilege);
 
   
   
@@ -129,8 +83,10 @@ class RestrictedToken {
   
   
   
+  void AddRestrictingSid(const base::win::Sid& sid);
+
   
-  DWORD DeletePrivilege(const wchar_t* privilege);
+  
 
   
   
@@ -138,38 +94,22 @@ class RestrictedToken {
   
   
   
-  
-  
-  
-  
-  DWORD AddRestrictingSid(const Sid& sid);
+  void AddRestrictingSid(base::win::WellKnownSid known_sid);
 
   
   
-  
-  
-  
-  
-  DWORD AddRestrictingSidLogonSession();
+  void AddRestrictingSidLogonSession();
 
   
   
+  void AddRestrictingSidCurrentUser();
+
   
-  
-  
-  
-  DWORD AddRestrictingSidCurrentUser();
+  void AddRestrictingSidAllSids();
 
   
   
-  
-  
-  
-  DWORD AddRestrictingSidAllSids();
-
-  
-  
-  DWORD SetIntegrityLevel(IntegrityLevel integrity_level);
+  void SetIntegrityLevel(IntegrityLevel integrity_level);
 
   
   
@@ -177,29 +117,57 @@ class RestrictedToken {
 
   
   
-  DWORD AddDefaultDaclSid(const Sid& sid,
-                          ACCESS_MODE access_mode,
-                          ACCESS_MASK access);
+  void AddDefaultDaclSid(const base::win::Sid& sid,
+                         base::win::SecurityAccessMode access_mode,
+                         ACCESS_MASK access);
+
+  
+  
+  void AddDefaultDaclSid(base::win::WellKnownSid known_sid,
+                         base::win::SecurityAccessMode access_mode,
+                         ACCESS_MASK access);
+
+  
+  
+  absl::optional<base::win::AccessToken> GetRestrictedTokenForTesting(
+      base::win::AccessToken& token);
 
  private:
-  
-  std::vector<Sid> sids_to_restrict_;
-  
-  std::vector<LUID> privileges_to_disable_;
-  
-  std::vector<Sid> sids_for_deny_only_;
-  
-  std::vector<std::tuple<Sid, ACCESS_MODE, ACCESS_MASK>> sids_for_default_dacl_;
-  
-  base::win::ScopedHandle effective_token_;
-  
-  IntegrityLevel integrity_level_;
-  
-  bool init_;
-  
-  bool lockdown_default_dacl_;
+  std::vector<base::win::Sid> BuildDenyOnlySids(
+      const base::win::AccessToken& token) const;
+  std::vector<base::win::Sid> BuildRestrictedSids(
+      const base::win::AccessToken& token) const;
+  absl::optional<base::win::AccessToken> CreateRestricted(
+      const base::win::AccessToken& token) const;
 
-  DISALLOW_COPY_AND_ASSIGN(RestrictedToken);
+  
+  std::vector<base::win::Sid> sids_to_restrict_;
+  
+  std::vector<base::win::Sid> sids_for_deny_only_;
+  
+  std::vector<base::win::ExplicitAccessEntry> sids_for_default_dacl_;
+  
+  absl::optional<base::win::AccessToken> effective_token_;
+  
+  absl::optional<DWORD> integrity_rid_;
+  
+  bool lockdown_default_dacl_ = false;
+  
+  bool delete_all_privileges_ = false;
+  
+  bool remove_traversal_privilege_ = false;
+  
+  bool add_all_sids_for_deny_only_ = false;
+  
+  std::vector<base::win::Sid> add_all_exceptions_;
+  
+  bool add_user_sid_for_deny_only_ = false;
+  
+  bool add_restricting_sid_logon_session_ = false;
+  
+  bool add_restricting_sid_current_user_ = false;
+  
+  bool add_restricting_sid_all_sids_ = false;
 };
 
 }  

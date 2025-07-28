@@ -75,11 +75,11 @@ class SandboxBroker {
   bool IsWin32kLockedDown();
 
   
-  void ApplyLoggingPolicy();
+  void ApplyLoggingConfig();
 
  private:
   static bool sRunningFromNetworkDrive;
-  sandbox::TargetPolicy* mPolicy;
+  std::unique_ptr<sandbox::TargetPolicy> mPolicy;
 };
 
 }  

@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+#include "stack_trace.h"
+
+#include <ostream>
+
+namespace base {
+namespace debug {
+
+std::ostream& operator<<(std::ostream& os, const StackTrace& s) {
+  os << "StackTrace::OutputToStream not implemented.";
+  return os;
+}
+
+}  
+}  

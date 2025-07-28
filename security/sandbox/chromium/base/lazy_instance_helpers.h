@@ -2,12 +2,13 @@
 
 
 
-#ifndef BASE_LAZY_INSTANCE_INTERNAL_H_
-#define BASE_LAZY_INSTANCE_INTERNAL_H_
+#ifndef BASE_LAZY_INSTANCE_HELPERS_H_
+#define BASE_LAZY_INSTANCE_HELPERS_H_
 
-#include "base/atomicops.h"
+#include <atomic>
+#include <cstdint>
 #include "base/base_export.h"
-#include "base/logging.h"
+#include "base/check.h"
 
 
 
@@ -17,18 +18,18 @@ namespace internal {
 
 
 
-constexpr subtle::AtomicWord kLazyInstanceStateCreating = 1;
+constexpr uintptr_t kLazyInstanceStateCreating = 1;
 
 
 
 
-BASE_EXPORT bool NeedsLazyInstance(subtle::AtomicWord* state);
+BASE_EXPORT bool NeedsLazyInstance(std::atomic<uintptr_t>& state);
 
 
 
 
-BASE_EXPORT void CompleteLazyInstance(subtle::AtomicWord* state,
-                                      subtle::AtomicWord new_instance,
+BASE_EXPORT void CompleteLazyInstance(std::atomic<uintptr_t>& state,
+                                      uintptr_t new_instance,
                                       void (*destructor)(void*),
                                       void* destructor_arg);
 
@@ -55,17 +56,16 @@ namespace subtle {
 
 
 template <typename Type>
-Type* GetOrCreateLazyPointer(subtle::AtomicWord* state,
+Type* GetOrCreateLazyPointer(std::atomic<uintptr_t>& state,
                              Type* (*creator_func)(void*),
                              void* creator_arg,
                              void (*destructor)(void*),
                              void* destructor_arg) {
-  DCHECK(state);
   DCHECK(creator_func);
 
   
   
-  constexpr subtle::AtomicWord kLazyInstanceCreatedMask =
+  constexpr uintptr_t kLazyInstanceCreatedMask =
       ~internal::kLazyInstanceStateCreating;
 
   
@@ -74,20 +74,19 @@ Type* GetOrCreateLazyPointer(subtle::AtomicWord* state,
   
   
   
-  subtle::AtomicWord instance = subtle::Acquire_Load(state);
+  uintptr_t instance = state.load(std::memory_order_acquire);
   if (!(instance & kLazyInstanceCreatedMask)) {
     if (internal::NeedsLazyInstance(state)) {
       
       
-      instance =
-          reinterpret_cast<subtle::AtomicWord>((*creator_func)(creator_arg));
+      instance = reinterpret_cast<uintptr_t>((*creator_func)(creator_arg));
       internal::CompleteLazyInstance(state, instance, destructor,
                                      destructor_arg);
     } else {
       
       
       
-      instance = subtle::Acquire_Load(state);
+      instance = state.load(std::memory_order_acquire);
       DCHECK(instance & kLazyInstanceCreatedMask);
     }
   }

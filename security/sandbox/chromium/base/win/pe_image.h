@@ -15,14 +15,15 @@
 
 #include <stdint.h>
 
-#if defined(_WIN32_WINNT_WIN8)
-
-#undef FACILITY_VISUALCPP
-#endif
 #include <delayimp.h>
 
 namespace base {
 namespace win {
+
+
+
+
+
 
 
 
@@ -111,7 +112,7 @@ class PEImage {
 
   
   
-  PIMAGE_SECTION_HEADER GetSectionHeader(UINT section) const;
+  PIMAGE_SECTION_HEADER GetSectionHeader(WORD section) const;
 
   
   

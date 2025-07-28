@@ -8,6 +8,7 @@
 #ifndef BASE_PROCESS_KILL_H_
 #define BASE_PROCESS_KILL_H_
 
+#include "base/base_export.h"
 #include "base/files/file_path.h"
 #include "base/process/process.h"
 #include "base/process/process_handle.h"
@@ -18,7 +19,7 @@ namespace base {
 
 class ProcessFilter;
 
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
 namespace win {
 
 
@@ -53,11 +54,11 @@ enum TerminationStatus {
   TERMINATION_STATUS_PROCESS_WAS_KILLED,   
   TERMINATION_STATUS_PROCESS_CRASHED,      
   TERMINATION_STATUS_STILL_RUNNING,        
-#if defined(OS_CHROMEOS)
+#if BUILDFLAG(IS_CHROMEOS)
   
   TERMINATION_STATUS_PROCESS_WAS_KILLED_BY_OOM,
 #endif
-#if defined(OS_ANDROID)
+#if BUILDFLAG(IS_ANDROID)
   
   
   
@@ -66,7 +67,7 @@ enum TerminationStatus {
 #endif
   TERMINATION_STATUS_LAUNCH_FAILED,        
   TERMINATION_STATUS_OOM,                  
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
   
   TERMINATION_STATUS_INTEGRITY_FAILURE,
 #endif
@@ -83,12 +84,6 @@ BASE_EXPORT bool KillProcesses(const FilePath::StringType& executable_name,
                                int exit_code,
                                const ProcessFilter* filter);
 
-#if defined(OS_POSIX)
-
-
-BASE_EXPORT bool KillProcessGroup(ProcessHandle process_group_id);
-#endif  
-
 
 
 
@@ -99,7 +94,7 @@ BASE_EXPORT bool KillProcessGroup(ProcessHandle process_group_id);
 BASE_EXPORT TerminationStatus GetTerminationStatus(ProcessHandle handle,
                                                    int* exit_code);
 
-#if defined(OS_POSIX)
+#if BUILDFLAG(IS_POSIX)
 
 
 
@@ -118,7 +113,7 @@ BASE_EXPORT TerminationStatus GetTerminationStatus(ProcessHandle handle,
 BASE_EXPORT TerminationStatus GetKnownDeadTerminationStatus(
     ProcessHandle handle, int* exit_code);
 
-#if defined(OS_LINUX)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 
 
 BASE_EXPORT void EnsureProcessGetsReaped(Process process);
@@ -135,7 +130,7 @@ BASE_EXPORT void EnsureProcessTerminated(Process process);
 
 
 
-#if !defined(OS_FUCHSIA)
+#if !BUILDFLAG(IS_FUCHSIA)
 
 
 

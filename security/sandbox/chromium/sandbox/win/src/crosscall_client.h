@@ -2,12 +2,15 @@
 
 
 
-#ifndef SANDBOX_SRC_CROSSCALL_CLIENT_H_
-#define SANDBOX_SRC_CROSSCALL_CLIENT_H_
+#ifndef SANDBOX_WIN_SRC_CROSSCALL_CLIENT_H_
+#define SANDBOX_WIN_SRC_CROSSCALL_CLIENT_H_
 
 #include <stddef.h>
 #include <stdint.h>
 
+#include "base/compiler_specific.h"
+#include "base/memory/raw_ptr_exclusion.h"
+#include "base/memory/raw_ref.h"
 #include "sandbox/win/src/crosscall_params.h"
 #include "sandbox/win/src/sandbox.h"
 
@@ -53,10 +56,10 @@ enum class IpcTag;
 template <typename T>
 class CopyHelper {
  public:
-  CopyHelper(const T& t) : t_(t) {}
+  explicit CopyHelper(const T& t) : t_(t) {}
 
   
-  const void* GetStart() const { return &t_; }
+  const void* GetStart() const { return &*t_; }
 
   
   
@@ -78,7 +81,7 @@ class CopyHelper {
   }
 
  private:
-  const T& t_;
+  const raw_ref<const T> t_;
 };
 
 
@@ -86,7 +89,7 @@ class CopyHelper {
 template <>
 class CopyHelper<void*> {
  public:
-  CopyHelper(void* t) : t_(t) {}
+  explicit CopyHelper(void* t) : t_(t) {}
 
   
   const void* GetStart() const { return &t_; }
@@ -108,7 +111,8 @@ class CopyHelper<void*> {
   ArgType GetType() { return VOIDPTR_TYPE; }
 
  private:
-  const void* t_;
+  
+  RAW_PTR_EXCLUSION const void* t_;
 };
 
 
@@ -116,7 +120,7 @@ class CopyHelper<void*> {
 template <>
 class CopyHelper<const wchar_t*> {
  public:
-  CopyHelper(const wchar_t* t) : t_(t) {}
+  explicit CopyHelper(const wchar_t* t) : t_(t) {}
 
   
   const void* GetStart() const { return t_; }
@@ -164,7 +168,7 @@ template <>
 class CopyHelper<wchar_t*> : public CopyHelper<const wchar_t*> {
  public:
   typedef CopyHelper<const wchar_t*> Base;
-  CopyHelper(wchar_t* t) : Base(t) {}
+  explicit CopyHelper(wchar_t* t) : Base(t) {}
 
   const void* GetStart() const { return Base::GetStart(); }
 
@@ -184,7 +188,7 @@ class CopyHelper<const wchar_t[n]> : public CopyHelper<const wchar_t*> {
  public:
   typedef const wchar_t array[n];
   typedef CopyHelper<const wchar_t*> Base;
-  CopyHelper(array t) : Base(t) {}
+  explicit CopyHelper(array t) : Base(t) {}
 
   const void* GetStart() const { return Base::GetStart(); }
 
@@ -237,7 +241,7 @@ class CopyHelper<CountedBuffer> {
 template <>
 class CopyHelper<InOutCountedBuffer> {
  public:
-  CopyHelper(const InOutCountedBuffer t) : t_(t) {}
+  explicit CopyHelper(const InOutCountedBuffer t) : t_(t) {}
 
   
   const void* GetStart() const { return t_.Buffer(); }

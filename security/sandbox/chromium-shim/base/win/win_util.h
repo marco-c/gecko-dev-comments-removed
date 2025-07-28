@@ -17,8 +17,17 @@
 namespace base {
 namespace win {
 
+inline HANDLE Uint32ToHandle(uint32_t h) {
+  return reinterpret_cast<HANDLE>(
+      static_cast<uintptr_t>(static_cast<int32_t>(h)));
+}
+
 
 BASE_EXPORT std::wstring GetWindowObjectName(HANDLE handle);
+
+
+
+BASE_EXPORT bool IsAppVerifierLoaded();
 
 }  
 }  

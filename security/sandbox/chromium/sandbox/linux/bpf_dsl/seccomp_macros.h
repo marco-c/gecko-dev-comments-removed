@@ -10,9 +10,7 @@
 
 
 #if !defined(__BIONIC__) || defined(__x86_64__)
-#if !defined(__native_client_nonsfi__)
 #include <sys/user.h>
-#endif
 #if defined(__mips__)
 
 #include <stddef.h>
@@ -51,8 +49,7 @@
 #define SECCOMP_ARG_LSB_IDX(nr) (offsetof(struct arch_seccomp_data, args) +   \
                                  8*(nr) + 0)
 
-
-#if defined(__BIONIC__) || defined(__native_client_nonsfi__)
+#if defined(__BIONIC__)
 
 
 
@@ -151,7 +148,7 @@ typedef user_regs_struct regs_struct;
 #define SECCOMP_ARG_LSB_IDX(nr) (offsetof(struct arch_seccomp_data, args) +   \
                                  8*(nr) + 0)
 
-#if defined(__BIONIC__) || defined(__native_client_nonsfi__)
+#if defined(__BIONIC__)
 
 
 

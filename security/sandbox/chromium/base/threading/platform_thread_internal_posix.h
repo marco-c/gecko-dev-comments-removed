@@ -6,54 +6,67 @@
 #define BASE_THREADING_PLATFORM_THREAD_INTERNAL_POSIX_H_
 
 #include "base/base_export.h"
-#include "base/optional.h"
 #include "base/threading/platform_thread.h"
 #include "build/build_config.h"
+#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace base {
 
 namespace internal {
 
-struct ThreadPriorityToNiceValuePair {
-  ThreadPriority priority;
+struct ThreadTypeToNiceValuePair {
+  ThreadType thread_type;
+  int nice_value;
+};
+
+struct ThreadPriorityToNiceValuePairForTest {
+  ThreadPriorityForTest priority;
   int nice_value;
 };
 
 
 
-BASE_EXPORT extern
-const ThreadPriorityToNiceValuePair kThreadPriorityToNiceValueMap[4];
 
-
-
-int ThreadPriorityToNiceValue(ThreadPriority priority);
-
-
-
-BASE_EXPORT ThreadPriority NiceValueToThreadPriority(int nice_value);
-
-
-
-Optional<bool> CanIncreaseCurrentThreadPriorityForPlatform(
-    ThreadPriority priority);
+extern const ThreadTypeToNiceValuePair kThreadTypeToNiceValueMap[7];
 
 
 
 
-
-bool SetCurrentThreadPriorityForPlatform(ThreadPriority priority);
-
-
-
-Optional<ThreadPriority> GetCurrentThreadPriorityForPlatform();
-
-#if defined(OS_LINUX)
+extern const ThreadPriorityToNiceValuePairForTest
+    kThreadPriorityToNiceValueMapForTest[7];
 
 
 
+int ThreadTypeToNiceValue(ThreadType thread_type);
 
-BASE_EXPORT void ClearTidCache();
+
+
+bool CanSetThreadTypeToRealtimeAudio();
+
+
+
+
+
+bool SetCurrentThreadTypeForPlatform(ThreadType thread_type,
+                                     MessagePumpType pump_type_hint);
+
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+
+
+
+
+
+BASE_EXPORT void InvalidateTidCache();
 #endif  
+
+
+
+ThreadPriorityForTest NiceValueToThreadPriorityForTest(int nice_value);
+
+absl::optional<ThreadPriorityForTest>
+GetCurrentThreadPriorityForPlatformForTest();
+
+int GetCurrentThreadNiceValue();
 
 }  
 

@@ -6,18 +6,24 @@
 
 #include <stddef.h>
 
-#include "base/debug/activity_tracker.h"
+#include <string>
+
+#include "base/allocator/partition_allocator/src/partition_alloc/partition_alloc_buildflags.h"
 #include "base/debug/alias.h"
 #include "base/debug/crash_logging.h"
 #include "base/debug/profiler.h"
+#include "base/feature_list.h"
 #include "base/logging.h"
+#include "base/memory/raw_ptr.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/process/memory.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/threading/scoped_blocking_call.h"
+#include "base/threading/scoped_thread_priority.h"
 #include "base/threading/thread_id_name_manager.h"
 #include "base/threading/thread_restrictions.h"
+#include "base/threading/threading_features.h"
 #include "base/time/time_override.h"
 #include "base/win/scoped_handle.h"
 #include "base/win/windows_version.h"
@@ -25,21 +31,39 @@
 
 #include <windows.h>
 
+#if BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC) && BUILDFLAG(USE_STARSCAN)
+#include "base/allocator/partition_allocator/src/partition_alloc/starscan/pcscan.h"
+#include "base/allocator/partition_allocator/src/partition_alloc/starscan/stack/stack.h"
+#endif
+
 namespace base {
+
+BASE_FEATURE(kUseThreadPriorityLowest,
+             "UseThreadPriorityLowest",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+BASE_FEATURE(kAboveNormalCompositingBrowserWin,
+             "AboveNormalCompositingBrowserWin",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+
+BASE_FEATURE(kBackgroundThreadNormalMemoryPriorityWin,
+             "BackgroundThreadNormalMemoryPriorityWin",
+             base::FEATURE_DISABLED_BY_DEFAULT);
 
 namespace {
 
 
 
-constexpr int kWin7BackgroundThreadModePriority = 4;
+std::atomic<bool> g_use_thread_priority_lowest{false};
 
 
+std::atomic<bool> g_above_normal_compositing_browser{true};
 
-constexpr int kWin7NormalPriority = 3;
+
+std::atomic<bool> g_background_thread_normal_memory_priority_win{false};
 
 
-constexpr int kWinNormalPriority1 = 5;
-constexpr int kWinNormalPriority2 = 6;
+constexpr int kWinDisplayPriority1 = 5;
+constexpr int kWinDisplayPriority2 = 6;
 
 
 
@@ -67,27 +91,30 @@ void SetNameInternal(PlatformThreadId thread_id, const char* name) {
   info.dwFlags = 0;
 
   __try {
-    RaiseException(kVCThreadNameException, 0, sizeof(info)/sizeof(DWORD),
-                   reinterpret_cast<DWORD_PTR*>(&info));
-  } __except(EXCEPTION_CONTINUE_EXECUTION) {
+    RaiseException(kVCThreadNameException, 0, sizeof(info) / sizeof(ULONG_PTR),
+                   reinterpret_cast<ULONG_PTR*>(&info));
+  } __except (EXCEPTION_EXECUTE_HANDLER) {
   }
 #endif
 }
 
+#if !defined(MOZ_SANDBOX)
 struct ThreadParams {
-  PlatformThread::Delegate* delegate;
+  raw_ptr<PlatformThread::Delegate> delegate;
   bool joinable;
-  ThreadPriority priority;
+  ThreadType thread_type;
+  MessagePumpType message_pump_type;
 };
 
 DWORD __stdcall ThreadFunc(void* params) {
   ThreadParams* thread_params = static_cast<ThreadParams*>(params);
   PlatformThread::Delegate* delegate = thread_params->delegate;
   if (!thread_params->joinable)
-    base::ThreadRestrictions::SetSingletonAllowed(false);
+    base::DisallowSingleton();
 
-  if (thread_params->priority != ThreadPriority::NORMAL)
-    PlatformThread::SetCurrentThreadPriority(thread_params->priority);
+  if (thread_params->thread_type != ThreadType::kDefault)
+    internal::SetCurrentThreadType(thread_params->thread_type,
+                                   thread_params->message_pump_type);
 
   
   
@@ -100,23 +127,37 @@ DWORD __stdcall ThreadFunc(void* params) {
                                 FALSE,
                                 DUPLICATE_SAME_ACCESS);
 
+#if BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC) && BUILDFLAG(USE_STARSCAN)
+  partition_alloc::internal::PCScan::NotifyThreadCreated(
+      partition_alloc::internal::GetStackPointer());
+#endif
+
   win::ScopedHandle scoped_platform_handle;
 
   if (did_dup) {
     scoped_platform_handle.Set(platform_handle);
     ThreadIdNameManager::GetInstance()->RegisterThread(
-        scoped_platform_handle.Get(),
-        PlatformThread::CurrentId());
+        scoped_platform_handle.get(), PlatformThread::CurrentId());
   }
 
   delete thread_params;
   delegate->ThreadMain();
 
   if (did_dup) {
-    ThreadIdNameManager::GetInstance()->RemoveName(
-        scoped_platform_handle.Get(),
-        PlatformThread::CurrentId());
+    ThreadIdNameManager::GetInstance()->RemoveName(scoped_platform_handle.get(),
+                                                   PlatformThread::CurrentId());
   }
+
+#if BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC) && BUILDFLAG(USE_STARSCAN)
+  partition_alloc::internal::PCScan::NotifyThreadDestroyed();
+#endif
+
+  
+  
+  
+  
+  if (::GetThreadPriority(::GetCurrentThread()) < THREAD_PRIORITY_NORMAL)
+    PlatformThread::SetCurrentThreadType(ThreadType::kDefault);
 
   return 0;
 }
@@ -127,7 +168,8 @@ DWORD __stdcall ThreadFunc(void* params) {
 bool CreateThreadInternal(size_t stack_size,
                           PlatformThread::Delegate* delegate,
                           PlatformThreadHandle* out_thread_handle,
-                          ThreadPriority priority) {
+                          ThreadType thread_type,
+                          MessagePumpType message_pump_type) {
   unsigned int flags = 0;
   if (stack_size > 0) {
     flags = STACK_SIZE_PARAM_IS_A_RESERVATION;
@@ -137,14 +179,26 @@ bool CreateThreadInternal(size_t stack_size,
     
     
     flags = STACK_SIZE_PARAM_IS_A_RESERVATION;
-    stack_size = 1024 * 1024;
+    static BOOL is_wow64 = -1;
+    if (is_wow64 == -1 && !IsWow64Process(GetCurrentProcess(), &is_wow64))
+      is_wow64 = FALSE;
+    
+    
+    
+    
+    
+    if (is_wow64)
+      stack_size = 1024 * 1024;
+    else
+      stack_size = 512 * 1024;
 #endif
   }
 
   ThreadParams* params = new ThreadParams;
   params->delegate = delegate;
   params->joinable = out_thread_handle != nullptr;
-  params->priority = priority;
+  params->thread_type = thread_type;
+  params->message_pump_type = message_pump_type;
 
   
   
@@ -182,6 +236,7 @@ bool CreateThreadInternal(size_t stack_size,
     CloseHandle(thread_handle);
   return true;
 }
+#endif
 
 }  
 
@@ -193,10 +248,7 @@ void AssertMemoryPriority(HANDLE thread, int memory_priority) {
       reinterpret_cast<decltype(&::GetThreadInformation)>(::GetProcAddress(
           ::GetModuleHandle(L"Kernel32.dll"), "GetThreadInformation"));
 
-  if (!get_thread_information_fn) {
-    DCHECK_EQ(win::GetVersion(), win::Version::WIN7);
-    return;
-  }
+  DCHECK(get_thread_information_fn);
 
   MEMORY_PRIORITY_INFORMATION memory_priority_information = {};
   DCHECK(get_thread_information_fn(thread, ::ThreadMemoryPriority,
@@ -245,7 +297,7 @@ void PlatformThread::Sleep(TimeDelta duration) {
 
 
 void PlatformThread::SetName(const std::string& name) {
-  ThreadIdNameManager::GetInstance()->SetName(name);
+  SetNameCommon(name);
 
   
   static auto set_thread_description_func =
@@ -269,27 +321,32 @@ const char* PlatformThread::GetName() {
   return ThreadIdNameManager::GetInstance()->GetName(CurrentId());
 }
 
+#if !defined(MOZ_SANDBOX)
 
-bool PlatformThread::CreateWithPriority(size_t stack_size, Delegate* delegate,
-                                        PlatformThreadHandle* thread_handle,
-                                        ThreadPriority priority) {
+bool PlatformThread::CreateWithType(size_t stack_size,
+                                    Delegate* delegate,
+                                    PlatformThreadHandle* thread_handle,
+                                    ThreadType thread_type,
+                                    MessagePumpType pump_type_hint) {
   DCHECK(thread_handle);
-  return CreateThreadInternal(stack_size, delegate, thread_handle, priority);
+  return CreateThreadInternal(stack_size, delegate, thread_handle, thread_type,
+                              pump_type_hint);
 }
 
 
 bool PlatformThread::CreateNonJoinable(size_t stack_size, Delegate* delegate) {
-  return CreateNonJoinableWithPriority(stack_size, delegate,
-                                       ThreadPriority::NORMAL);
+  return CreateNonJoinableWithType(stack_size, delegate, ThreadType::kDefault);
 }
 
 
-bool PlatformThread::CreateNonJoinableWithPriority(size_t stack_size,
-                                                   Delegate* delegate,
-                                                   ThreadPriority priority) {
+bool PlatformThread::CreateNonJoinableWithType(size_t stack_size,
+                                               Delegate* delegate,
+                                               ThreadType thread_type,
+                                               MessagePumpType pump_type_hint) {
   return CreateThreadInternal(stack_size, delegate, nullptr ,
-                              priority);
+                              thread_type, pump_type_hint);
 }
+#endif
 
 
 void PlatformThread::Join(PlatformThreadHandle thread_handle) {
@@ -304,9 +361,6 @@ void PlatformThread::Join(PlatformThreadHandle thread_handle) {
   
   base::debug::Alias(&thread_id);
   base::debug::Alias(&last_error);
-
-  
-  base::debug::ScopedThreadJoinActivity thread_activity(&thread_handle);
 
   base::internal::ScopedBlockingCallWithBaseSyncPrimitives scoped_blocking_call(
       FROM_HERE, base::BlockingType::MAY_BLOCK);
@@ -324,25 +378,39 @@ void PlatformThread::Detach(PlatformThreadHandle thread_handle) {
 }
 
 
-bool PlatformThread::CanIncreaseThreadPriority(ThreadPriority priority) {
+bool PlatformThread::CanChangeThreadType(ThreadType from, ThreadType to) {
   return true;
 }
 
+#if !defined(MOZ_SANDBOX)
+namespace {
 
-void PlatformThread::SetCurrentThreadPriorityImpl(ThreadPriority priority) {
+void SetCurrentThreadPriority(ThreadType thread_type,
+                              MessagePumpType pump_type_hint) {
+  if (thread_type == ThreadType::kCompositing &&
+      pump_type_hint == MessagePumpType::UI &&
+      !g_above_normal_compositing_browser) {
+    
+    
+    
+    return;
+  }
+
   PlatformThreadHandle::Handle thread_handle =
       PlatformThread::CurrentHandle().platform_handle();
 
-  if (priority != ThreadPriority::BACKGROUND) {
+  if (!g_use_thread_priority_lowest && thread_type != ThreadType::kBackground) {
     
     
     ::SetThreadPriority(thread_handle, THREAD_MODE_BACKGROUND_END);
-    internal::AssertMemoryPriority(thread_handle, MEMORY_PRIORITY_NORMAL);
+    
+    
+    
   }
 
   int desired_priority = THREAD_PRIORITY_ERROR_RETURN;
-  switch (priority) {
-    case ThreadPriority::BACKGROUND:
+  switch (thread_type) {
+    case ThreadType::kBackground:
       
       
       
@@ -350,49 +418,107 @@ void PlatformThread::SetCurrentThreadPriorityImpl(ThreadPriority priority) {
       
       
       
-      desired_priority = THREAD_MODE_BACKGROUND_BEGIN;
+      desired_priority =
+          g_use_thread_priority_lowest.load(std::memory_order_relaxed)
+              ? THREAD_PRIORITY_LOWEST
+              : THREAD_MODE_BACKGROUND_BEGIN;
       break;
-    case ThreadPriority::NORMAL:
+    case ThreadType::kUtility:
+      desired_priority = THREAD_PRIORITY_BELOW_NORMAL;
+      break;
+    case ThreadType::kResourceEfficient:
+    case ThreadType::kDefault:
       desired_priority = THREAD_PRIORITY_NORMAL;
       break;
-    case ThreadPriority::DISPLAY:
+    case ThreadType::kCompositing:
+    case ThreadType::kDisplayCritical:
       desired_priority = THREAD_PRIORITY_ABOVE_NORMAL;
       break;
-    case ThreadPriority::REALTIME_AUDIO:
+    case ThreadType::kRealtimeAudio:
       desired_priority = THREAD_PRIORITY_TIME_CRITICAL;
-      break;
-    default:
-      NOTREACHED() << "Unknown priority.";
       break;
   }
   DCHECK_NE(desired_priority, THREAD_PRIORITY_ERROR_RETURN);
 
-#if DCHECK_IS_ON()
-  const BOOL success =
-#endif
+  [[maybe_unused]] const BOOL cpu_priority_success =
       ::SetThreadPriority(thread_handle, desired_priority);
-  DPLOG_IF(ERROR, !success) << "Failed to set thread priority to "
-                            << desired_priority;
+  DPLOG_IF(ERROR, !cpu_priority_success)
+      << "Failed to set thread priority to " << desired_priority;
 
-  if (priority == ThreadPriority::BACKGROUND) {
+  if (g_background_thread_normal_memory_priority_win &&
+      desired_priority == THREAD_MODE_BACKGROUND_BEGIN) {
+    
+    MEMORY_PRIORITY_INFORMATION memory_priority{.MemoryPriority =
+                                                    MEMORY_PRIORITY_NORMAL};
+    [[maybe_unused]] const BOOL memory_priority_success =
+        SetThreadInformation(thread_handle, ::ThreadMemoryPriority,
+                             &memory_priority, sizeof(memory_priority));
+    DPLOG_IF(ERROR, !memory_priority_success)
+        << "Set thread memory priority failed.";
+  }
+
+  if (!g_use_thread_priority_lowest && thread_type == ThreadType::kBackground) {
     
     
     
     
-    if (GetCurrentThreadPriority() != ThreadPriority::BACKGROUND) {
+    if (PlatformThread::GetCurrentThreadPriorityForTest() !=
+        ThreadPriorityForTest::kBackground) {
       ::SetThreadPriority(thread_handle, THREAD_PRIORITY_LOWEST);
       
       
       
-      internal::AssertMemoryPriority(thread_handle, MEMORY_PRIORITY_VERY_LOW);
     }
   }
-
-  DCHECK_EQ(GetCurrentThreadPriority(), priority);
 }
 
+void SetCurrentThreadQualityOfService(ThreadType thread_type) {
+  
+  bool desire_ecoqos = false;
+  switch (thread_type) {
+    case ThreadType::kBackground:
+    case ThreadType::kUtility:
+    case ThreadType::kResourceEfficient:
+      desire_ecoqos = true;
+      break;
+    case ThreadType::kDefault:
+    case ThreadType::kCompositing:
+    case ThreadType::kDisplayCritical:
+    case ThreadType::kRealtimeAudio:
+      desire_ecoqos = false;
+      break;
+  }
 
-ThreadPriority PlatformThread::GetCurrentThreadPriority() {
+  THREAD_POWER_THROTTLING_STATE thread_power_throttling_state{
+      .Version = THREAD_POWER_THROTTLING_CURRENT_VERSION,
+      .ControlMask =
+          desire_ecoqos ? THREAD_POWER_THROTTLING_EXECUTION_SPEED : 0ul,
+      .StateMask =
+          desire_ecoqos ? THREAD_POWER_THROTTLING_EXECUTION_SPEED : 0ul,
+  };
+  [[maybe_unused]] const BOOL success = ::SetThreadInformation(
+      ::GetCurrentThread(), ::ThreadPowerThrottling,
+      &thread_power_throttling_state, sizeof(thread_power_throttling_state));
+  
+  DPLOG_IF(ERROR, !success && win::GetVersion() >= win::Version::WIN10_RS3)
+      << "Failed to set EcoQoS to " << std::boolalpha << desire_ecoqos;
+}
+
+}  
+
+namespace internal {
+
+void SetCurrentThreadTypeImpl(ThreadType thread_type,
+                              MessagePumpType pump_type_hint) {
+  SetCurrentThreadPriority(thread_type, pump_type_hint);
+  SetCurrentThreadQualityOfService(thread_type);
+}
+
+}  
+#endif
+
+
+ThreadPriorityForTest PlatformThread::GetCurrentThreadPriorityForTest() {
   static_assert(
       THREAD_PRIORITY_IDLE < 0,
       "THREAD_PRIORITY_IDLE is >= 0 and will incorrectly cause errors.");
@@ -405,19 +531,19 @@ ThreadPriority PlatformThread::GetCurrentThreadPriority() {
   static_assert(
       THREAD_PRIORITY_NORMAL == 0,
       "The logic below assumes that THREAD_PRIORITY_NORMAL is zero. If it is "
-      "not, ThreadPriority::BACKGROUND may be incorrectly detected.");
+      "not, ThreadPriorityForTest::kBackground may be incorrectly detected.");
   static_assert(THREAD_PRIORITY_ABOVE_NORMAL >= 0,
                 "THREAD_PRIORITY_ABOVE_NORMAL is < 0 and will incorrectly be "
-                "translated to ThreadPriority::BACKGROUND.");
+                "translated to ThreadPriorityForTest::kBackground.");
   static_assert(THREAD_PRIORITY_HIGHEST >= 0,
                 "THREAD_PRIORITY_HIGHEST is < 0 and will incorrectly be "
-                "translated to ThreadPriority::BACKGROUND.");
+                "translated to ThreadPriorityForTest::kBackground.");
   static_assert(THREAD_PRIORITY_TIME_CRITICAL >= 0,
                 "THREAD_PRIORITY_TIME_CRITICAL is < 0 and will incorrectly be "
-                "translated to ThreadPriority::BACKGROUND.");
+                "translated to ThreadPriorityForTest::kBackground.");
   static_assert(THREAD_PRIORITY_ERROR_RETURN >= 0,
                 "THREAD_PRIORITY_ERROR_RETURN is < 0 and will incorrectly be "
-                "translated to ThreadPriority::BACKGROUND.");
+                "translated to ThreadPriorityForTest::kBackground.");
 
   const int priority =
       ::GetThreadPriority(PlatformThread::CurrentHandle().platform_handle());
@@ -426,33 +552,41 @@ ThreadPriority PlatformThread::GetCurrentThreadPriority() {
   
   
   
-  if (priority < THREAD_PRIORITY_NORMAL)
-    return ThreadPriority::BACKGROUND;
+  if (priority < THREAD_PRIORITY_BELOW_NORMAL)
+    return ThreadPriorityForTest::kBackground;
 
   switch (priority) {
-    case kWin7BackgroundThreadModePriority:
-      DCHECK_EQ(win::GetVersion(), win::Version::WIN7);
-      return ThreadPriority::BACKGROUND;
-    case kWin7NormalPriority:
-      DCHECK_EQ(win::GetVersion(), win::Version::WIN7);
-      FALLTHROUGH;
+    case THREAD_PRIORITY_BELOW_NORMAL:
+      return ThreadPriorityForTest::kUtility;
     case THREAD_PRIORITY_NORMAL:
-      return ThreadPriority::NORMAL;
-    case kWinNormalPriority1:
-      FALLTHROUGH;
-    case kWinNormalPriority2:
-      return ThreadPriority::NORMAL;
+      return ThreadPriorityForTest::kNormal;
+    case kWinDisplayPriority1:
+      [[fallthrough]];
+    case kWinDisplayPriority2:
+      return ThreadPriorityForTest::kDisplay;
     case THREAD_PRIORITY_ABOVE_NORMAL:
     case THREAD_PRIORITY_HIGHEST:
-      return ThreadPriority::DISPLAY;
+      return ThreadPriorityForTest::kDisplay;
     case THREAD_PRIORITY_TIME_CRITICAL:
-      return ThreadPriority::REALTIME_AUDIO;
+      return ThreadPriorityForTest::kRealtimeAudio;
     case THREAD_PRIORITY_ERROR_RETURN:
       DPCHECK(false) << "::GetThreadPriority error";
   }
 
   NOTREACHED() << "::GetThreadPriority returned " << priority << ".";
-  return ThreadPriority::NORMAL;
+  return ThreadPriorityForTest::kNormal;
+}
+
+void InitializePlatformThreadFeatures() {
+  g_use_thread_priority_lowest.store(
+      FeatureList::IsEnabled(kUseThreadPriorityLowest),
+      std::memory_order_relaxed);
+  g_above_normal_compositing_browser.store(
+      FeatureList::IsEnabled(kAboveNormalCompositingBrowserWin),
+      std::memory_order_relaxed);
+  g_background_thread_normal_memory_priority_win.store(
+      FeatureList::IsEnabled(kBackgroundThreadNormalMemoryPriorityWin),
+      std::memory_order_relaxed);
 }
 
 

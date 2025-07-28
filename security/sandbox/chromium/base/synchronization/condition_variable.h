@@ -62,17 +62,18 @@
 #ifndef BASE_SYNCHRONIZATION_CONDITION_VARIABLE_H_
 #define BASE_SYNCHRONIZATION_CONDITION_VARIABLE_H_
 
-#if defined(OS_POSIX) || defined(OS_FUCHSIA)
+#include "base/dcheck_is_on.h"
+#include "base/memory/raw_ptr.h"
+#include "build/build_config.h"
+
+#if BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 #include <pthread.h>
 #endif
 
 #include "base/base_export.h"
-#include "base/logging.h"
-#include "base/macros.h"
 #include "base/synchronization/lock.h"
-#include "build/build_config.h"
 
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
 #include "base/win/windows_types.h"
 #endif
 
@@ -85,13 +86,22 @@ class BASE_EXPORT ConditionVariable {
   
   explicit ConditionVariable(Lock* user_lock);
 
+  ConditionVariable(const ConditionVariable&) = delete;
+  ConditionVariable& operator=(const ConditionVariable&) = delete;
+
   ~ConditionVariable();
+
+#if BUILDFLAG(IS_APPLE)
+  
+  
+  static void InitializeFeatures();
+#endif
 
   
   
   
-  void Wait();
-  void TimedWait(const TimeDelta& max_time);
+  NOT_TAIL_CALLED void Wait();
+  NOT_TAIL_CALLED void TimedWait(const TimeDelta& max_time);
 
   
   
@@ -109,25 +119,23 @@ class BASE_EXPORT ConditionVariable {
   void declare_only_used_while_idle() { waiting_is_blocking_ = false; }
 
  private:
-
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
   CHROME_CONDITION_VARIABLE cv_;
-  CHROME_SRWLOCK* const srwlock_;
-#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
+  const raw_ptr<CHROME_SRWLOCK> srwlock_;
+#elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
   pthread_cond_t condition_;
-  pthread_mutex_t* user_mutex_;
+  raw_ptr<pthread_mutex_t> user_mutex_;
 #endif
 
 #if DCHECK_IS_ON()
-  base::Lock* const user_lock_;  
+  const raw_ptr<base::Lock>
+      user_lock_;  
 #endif
 
   
   
   
   bool waiting_is_blocking_ = true;
-
-  DISALLOW_COPY_AND_ASSIGN(ConditionVariable);
 };
 
 }  

@@ -5,14 +5,20 @@
 #ifndef BASE_THREADING_THREAD_CHECKER_IMPL_H_
 #define BASE_THREADING_THREAD_CHECKER_IMPL_H_
 
+#include <memory>
+
 #include "base/base_export.h"
-#include "base/compiler_specific.h"
 #include "base/sequence_token.h"
 #include "base/synchronization/lock.h"
 #include "base/thread_annotations.h"
-#include "base/threading/platform_thread.h"
+#include "base/threading/platform_thread_ref.h"
 
 namespace base {
+namespace debug {
+class StackTrace;
+}
+
+class SequenceCheckerImpl;
 
 
 
@@ -24,6 +30,8 @@ namespace base {
 
 class LOCKABLE BASE_EXPORT ThreadCheckerImpl {
  public:
+  static void EnableStackLogging();
+
   ThreadCheckerImpl();
   ~ThreadCheckerImpl();
 
@@ -36,20 +44,43 @@ class LOCKABLE BASE_EXPORT ThreadCheckerImpl {
   ThreadCheckerImpl(ThreadCheckerImpl&& other);
   ThreadCheckerImpl& operator=(ThreadCheckerImpl&& other);
 
-  bool CalledOnValidThread() const WARN_UNUSED_RESULT;
+  
+  
+  
+  
+  [[nodiscard]] bool CalledOnValidThread(
+      std::unique_ptr<debug::StackTrace>* out_bound_at = nullptr) const
+      LOCKS_EXCLUDED(lock_);
 
   
   
   
-  void DetachFromThread();
+  void DetachFromThread() LOCKS_EXCLUDED(lock_);
 
  private:
-  void EnsureAssignedLockRequired() const EXCLUSIVE_LOCKS_REQUIRED(lock_);
+  
+  friend class SequenceCheckerImpl;
+
+  [[nodiscard]] bool CalledOnValidThreadInternal(
+      std::unique_ptr<debug::StackTrace>* out_bound_at) const
+      EXCLUSIVE_LOCKS_REQUIRED(lock_);
+
+  
+  
+  
+  std::unique_ptr<debug::StackTrace> GetBoundAt() const
+      EXCLUSIVE_LOCKS_REQUIRED(lock_);
+
+  void EnsureAssigned() const EXCLUSIVE_LOCKS_REQUIRED(lock_);
 
   
 
   
   mutable base::Lock lock_;
+
+  
+  
+  mutable std::unique_ptr<debug::StackTrace> bound_at_ GUARDED_BY(lock_);
 
   
   mutable PlatformThreadRef thread_id_ GUARDED_BY(lock_);
@@ -62,6 +93,9 @@ class LOCKABLE BASE_EXPORT ThreadCheckerImpl {
   
   mutable TaskToken task_token_ GUARDED_BY(lock_);
 
+  
+  
+  
   
   
   

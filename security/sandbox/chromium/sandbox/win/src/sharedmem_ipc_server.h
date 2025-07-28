@@ -2,8 +2,8 @@
 
 
 
-#ifndef SANDBOX_SRC_SHAREDMEM_IPC_SERVER_H_
-#define SANDBOX_SRC_SHAREDMEM_IPC_SERVER_H_
+#ifndef SANDBOX_WIN_SRC_SHAREDMEM_IPC_SERVER_H_
+#define SANDBOX_WIN_SRC_SHAREDMEM_IPC_SERVER_H_
 
 #include <stdint.h>
 
@@ -11,11 +11,12 @@
 #include <memory>
 
 #include "base/gtest_prod_util.h"
-#include "base/macros.h"
+#include "base/memory/raw_ptr.h"
 #include "base/win/scoped_handle.h"
 #include "sandbox/win/src/crosscall_params.h"
 #include "sandbox/win/src/crosscall_server.h"
 #include "sandbox/win/src/sharedmem_ipc_client.h"
+#include "sandbox/win/src/threadpool.h"
 
 
 
@@ -51,8 +52,11 @@ class SharedMemIPCServer {
   
   SharedMemIPCServer(HANDLE target_process,
                      DWORD target_process_id,
-                     ThreadProvider* thread_provider,
+                     ThreadPool* thread_pool,
                      Dispatcher* dispatcher);
+
+  SharedMemIPCServer(const SharedMemIPCServer&) = delete;
+  SharedMemIPCServer& operator=(const SharedMemIPCServer&) = delete;
 
   ~SharedMemIPCServer();
 
@@ -98,14 +102,14 @@ class SharedMemIPCServer {
     
     uint32_t channel_size;
     
-    char* channel_buffer;
+    raw_ptr<char, AllowPtrArithmetic | DanglingUntriaged> channel_buffer;
     
-    char* shared_base;
+    raw_ptr<char, AllowPtrArithmetic | DanglingUntriaged> shared_base;
     
     
-    ChannelControl* channel;
+    raw_ptr<ChannelControl> channel;
     
-    Dispatcher* dispatcher;
+    raw_ptr<Dispatcher> dispatcher;
     
     ClientInfo target_info;
   };
@@ -117,14 +121,17 @@ class SharedMemIPCServer {
 
   
   
-  IPCControl* client_control_;
+  
+  
+  
+  RAW_PTR_EXCLUSION IPCControl* client_control_;
 
   
   std::list<std::unique_ptr<ServerControl>> server_contexts_;
 
   
   
-  ThreadProvider* thread_provider_;
+  raw_ptr<ThreadPool> thread_pool_;
 
   
   HANDLE target_process_;
@@ -133,9 +140,10 @@ class SharedMemIPCServer {
   DWORD target_process_id_;
 
   
-  Dispatcher* call_dispatcher_;
-
-  DISALLOW_COPY_AND_ASSIGN(SharedMemIPCServer);
+  
+  
+  
+  RAW_PTR_EXCLUSION Dispatcher* call_dispatcher_;
 };
 
 }  

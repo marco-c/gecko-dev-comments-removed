@@ -8,12 +8,14 @@
 #include <memory>
 
 #include "base/base_export.h"
-#include "base/compiler_specific.h"
-#include "base/macros.h"
 #include "base/synchronization/lock.h"
 #include "base/thread_annotations.h"
+#include "base/threading/thread_checker_impl.h"
 
 namespace base {
+namespace debug {
+class StackTrace;
+}
 
 
 
@@ -23,10 +25,12 @@ namespace base {
 
 
 
-class LOCKABLE BASE_EXPORT SequenceCheckerImpl {
+class THREAD_ANNOTATION_ATTRIBUTE__(capability("context"))
+    BASE_EXPORT SequenceCheckerImpl {
  public:
+  static void EnableStackLogging();
+
   SequenceCheckerImpl();
-  ~SequenceCheckerImpl();
 
   
   
@@ -36,26 +40,27 @@ class LOCKABLE BASE_EXPORT SequenceCheckerImpl {
   
   SequenceCheckerImpl(SequenceCheckerImpl&& other);
   SequenceCheckerImpl& operator=(SequenceCheckerImpl&& other);
+  SequenceCheckerImpl(const SequenceCheckerImpl&) = delete;
+  SequenceCheckerImpl& operator=(const SequenceCheckerImpl&) = delete;
+  ~SequenceCheckerImpl();
 
   
   
-  bool CalledOnValidSequence() const WARN_UNUSED_RESULT;
+  
+  
+  
+  
+  
+  [[nodiscard]] bool CalledOnValidSequence(
+      std::unique_ptr<debug::StackTrace>* out_bound_at = nullptr) const;
 
   
   
   void DetachFromSequence();
 
  private:
-  class Core;
-
   
-  
-  static bool HasThreadLocalStorageBeenDestroyed();
-
-  mutable Lock lock_;
-  mutable std::unique_ptr<Core> core_ GUARDED_BY(lock_);
-
-  DISALLOW_COPY_AND_ASSIGN(SequenceCheckerImpl);
+  ThreadCheckerImpl thread_checker_;
 };
 
 }  

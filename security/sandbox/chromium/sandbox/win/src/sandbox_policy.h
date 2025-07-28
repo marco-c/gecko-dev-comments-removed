@@ -8,73 +8,52 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <string>
-
+#include "base/containers/span.h"
 #include "base/memory/scoped_refptr.h"
 #include "sandbox/win/src/sandbox_types.h"
 #include "sandbox/win/src/security_level.h"
 
 namespace sandbox {
 
-class AppContainerProfile;
+class AppContainer;
 
-class TargetPolicy {
+
+enum class Desktop {
+  
+  kDefault,
+  
+  kAlternateDesktop,
+  
+  kAlternateWinstation,
+};
+
+
+enum class FileSemantics {
+  kAllowAny,       
+                   
+  kAllowReadonly,  
+                   
+  kAllowQuery,     
+};
+
+
+
+
+
+
+
+
+
+class [[clang::lto_visibility_public]] TargetConfig {
  public:
-  
-  
-  
-  
-  enum SubSystem {
-    SUBSYS_FILES,            
-    SUBSYS_NAMED_PIPES,      
-    SUBSYS_PROCESS,          
-    SUBSYS_REGISTRY,         
-    SUBSYS_SYNC,             
-    SUBSYS_WIN32K_LOCKDOWN,  
-    SUBSYS_SIGNED_BINARY,    
-    SUBSYS_LINE_BREAK        
-  };
-
-  
-  enum Semantics {
-    FILES_ALLOW_ANY,       
-                           
-    FILES_ALLOW_READONLY,  
-    FILES_ALLOW_QUERY,     
-    FILES_ALLOW_DIR_ANY,   
-                           
-    NAMEDPIPES_ALLOW_ANY,  
-    PROCESS_MIN_EXEC,      
-                           
-                           
-                           
-    PROCESS_ALL_EXEC,      
-                           
-                           
-                           
-    EVENTS_ALLOW_ANY,      
-    EVENTS_ALLOW_READONLY,  
-    REG_ALLOW_READONLY,     
-    REG_ALLOW_ANY,          
-    FAKE_USER_GDI_INIT,     
-                            
-                            
-    IMPLEMENT_OPM_APIS,     
-                            
-                            
-    SIGNED_ALLOW_LOAD,      
-    LINE_BREAK_ALLOW        
-  };
-
-  
-  
-  virtual void AddRef() = 0;
+  virtual ~TargetConfig() {}
 
   
   
   
   
-  virtual void Release() = 0;
+  
+  virtual bool IsConfigured() const = 0;
 
   
   
@@ -96,7 +75,8 @@ class TargetPolicy {
   
   
   
-  virtual ResultCode SetTokenLevel(TokenLevel initial, TokenLevel lockdown) = 0;
+  [[nodiscard]] virtual ResultCode SetTokenLevel(TokenLevel initial,
+                                                 TokenLevel lockdown) = 0;
 
   
   virtual TokenLevel GetInitialTokenLevel() const = 0;
@@ -110,7 +90,13 @@ class TargetPolicy {
   virtual void SetDoNotUseRestrictingSIDs() = 0;
 
   
+  virtual bool GetUseRestrictingSIDs() = 0;
+
+  
   virtual void SetAllowEveryoneForUserRestricted() = 0;
+
+  
+  virtual bool GetAllowEveryoneForUserRestricted() = 0;
 
   
   
@@ -145,8 +131,8 @@ class TargetPolicy {
   
   
   
-  virtual ResultCode SetJobLevel(JobLevel job_level,
-                                 uint32_t ui_exceptions) = 0;
+  [[nodiscard]] virtual ResultCode SetJobLevel(JobLevel job_level,
+                                               uint32_t ui_exceptions) = 0;
 
   
   virtual JobLevel GetJobLevel() const = 0;
@@ -154,29 +140,63 @@ class TargetPolicy {
   
   
   
-  virtual ResultCode SetJobMemoryLimit(size_t memory_limit) = 0;
-
-  
-  
-  
-  virtual ResultCode SetAlternateDesktop(bool alternate_winstation) = 0;
-
-  
-  
-  
-  virtual std::wstring GetAlternateDesktop() const = 0;
-
-  
-  virtual ResultCode CreateAlternateDesktop(bool alternate_winstation) = 0;
-
-  
-  virtual void DestroyAlternateDesktop() = 0;
+  virtual void SetJobMemoryLimit(size_t memory_limit) = 0;
 
   
   
   
   
-  virtual ResultCode SetIntegrityLevel(IntegrityLevel level) = 0;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  [[nodiscard]] virtual ResultCode AllowFileAccess(FileSemantics semantics,
+                                                   const wchar_t* pattern) = 0;
+
+  
+  
+  
+  
+  
+  [[nodiscard]] virtual ResultCode AllowNamedPipes(const wchar_t* pattern) = 0;
+
+  
+  
+  
+  
+  
+  
+  [[nodiscard]] virtual ResultCode AllowRegistryRead(
+      const wchar_t* pattern) = 0;
+
+  
+  
+  
+  [[nodiscard]] virtual ResultCode AllowExtraDlls(const wchar_t* pattern) = 0;
+
+  
+  
+  [[nodiscard]] virtual ResultCode SetFakeGdiInit() = 0;
+
+  
+  [[nodiscard]] virtual ResultCode AllowLineBreaking() = 0;
+
+  
+  
+  
+  virtual void AddDllToUnload(const wchar_t* dll_name) = 0;
+
+  
+  
+  
+  
+  [[nodiscard]] virtual ResultCode SetIntegrityLevel(IntegrityLevel level) = 0;
 
   
   virtual IntegrityLevel GetIntegrityLevel() const = 0;
@@ -186,38 +206,93 @@ class TargetPolicy {
   
   
   
-  virtual ResultCode SetDelayedIntegrityLevel(IntegrityLevel level) = 0;
+  virtual void SetDelayedIntegrityLevel(IntegrityLevel level) = 0;
 
   
   
-  virtual ResultCode SetLowBox(const wchar_t* sid) = 0;
+  [[nodiscard]] virtual ResultCode SetLowBox(const wchar_t* sid) = 0;
 
   
   
   
   
-  virtual ResultCode SetProcessMitigations(MitigationFlags flags) = 0;
+  [[nodiscard]] virtual ResultCode SetProcessMitigations(
+      MitigationFlags flags) = 0;
 
   
   virtual MitigationFlags GetProcessMitigations() = 0;
 
   
   
-  virtual ResultCode SetDelayedProcessMitigations(MitigationFlags flags) = 0;
+  [[nodiscard]] virtual ResultCode SetDelayedProcessMitigations(
+      MitigationFlags flags) = 0;
 
   
   virtual MitigationFlags GetDelayedProcessMitigations() const = 0;
 
   
   
-  virtual ResultCode SetDisconnectCsrss() = 0;
+  virtual void AddRestrictingRandomSid() = 0;
+
+  
+  
+  
+  virtual void SetLockdownDefaultDacl() = 0;
+
+  
+  
+  
+  
+  [[nodiscard]] virtual ResultCode AddAppContainerProfile(
+      const wchar_t* package_name,
+      bool create_profile) = 0;
+
+  
+  virtual scoped_refptr<AppContainer> GetAppContainer() = 0;
+
+  
+  
+  
+  [[nodiscard]] virtual ResultCode AddKernelObjectToClose(
+      const wchar_t* handle_type,
+      const wchar_t* handle_name) = 0;
+
+  
+  
+  [[nodiscard]] virtual ResultCode SetDisconnectCsrss() = 0;
+
+  
+  
+  
+  virtual void SetDesktop(Desktop desktop) = 0;
 
   
   
   
   
   
-  virtual void SetStrictInterceptions() = 0;
+  
+  
+  
+  virtual void SetFilterEnvironment(bool filter) = 0;
+
+  
+  
+  virtual bool GetEnvironmentFiltered() = 0;
+
+  
+  virtual void SetZeroAppShim() = 0;
+};
+
+
+
+
+class [[clang::lto_visibility_public]] TargetPolicy {
+ public:
+  virtual ~TargetPolicy() {}
+
+  
+  virtual TargetConfig* GetConfig() = 0;
 
   
   
@@ -229,65 +304,12 @@ class TargetPolicy {
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual ResultCode AddRule(SubSystem subsystem,
-                             Semantics semantics,
-                             const wchar_t* pattern) = 0;
-
-  
-  
-  
-  virtual ResultCode AddDllToUnload(const wchar_t* dll_name) = 0;
-
-  
-  
-  
-  virtual ResultCode AddKernelObjectToClose(const wchar_t* handle_type,
-                                            const wchar_t* handle_name) = 0;
-
-  
-  
   virtual void AddHandleToShare(HANDLE handle) = 0;
 
   
   
   
-  virtual void SetLockdownDefaultDacl() = 0;
-
-  
-  
-  virtual void AddRestrictingRandomSid() = 0;
-
-  
-  virtual void SetEnableOPMRedirection() = 0;
-  
-  virtual bool GetEnableOPMRedirection() = 0;
-
-  
-  
-  
-  
-  virtual ResultCode AddAppContainerProfile(const wchar_t* package_name,
-                                            bool create_profile) = 0;
-
-  
-  virtual scoped_refptr<AppContainerProfile> GetAppContainerProfile() = 0;
-
-  
-  
-  
-  virtual void SetEffectiveToken(HANDLE token) = 0;
-
- protected:
-  ~TargetPolicy() {}
+  virtual void AddDelegateData(base::span<const uint8_t> data) = 0;
 };
 
 }  

@@ -45,13 +45,15 @@
 #ifndef BASE_LAZY_INSTANCE_H_
 #define BASE_LAZY_INSTANCE_H_
 
+#include <atomic>
 #include <new>  
 
-#include "base/atomicops.h"
+#include "base/check_op.h"
+#include "base/dcheck_is_on.h"
 #include "base/debug/leak_annotations.h"
 #include "base/lazy_instance_helpers.h"
-#include "base/logging.h"
 #include "base/threading/thread_restrictions.h"
+#include "build/build_config.h"
 
 
 
@@ -151,11 +153,11 @@ class LazyInstance {
   Type* Pointer() {
 #if DCHECK_IS_ON()
     if (!Traits::kAllowedToAccessOnNonjoinableThread)
-      ThreadRestrictions::AssertSingletonAllowed();
+      internal::AssertSingletonAllowed();
 #endif
 
     return subtle::GetOrCreateLazyPointer(
-        &private_instance_, &Traits::New, private_buf_,
+        private_instance_, &Traits::New, private_buf_,
         Traits::kRegisterOnExit ? OnExit : nullptr, this);
   }
 
@@ -166,32 +168,33 @@ class LazyInstance {
     
     
     
-    return 0 != subtle::NoBarrier_Load(&private_instance_);
+    return 0 != private_instance_.load(std::memory_order_relaxed);
   }
 
   
   
   
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
 #pragma warning(push)
-#pragma warning(disable: 4324)
+#pragma warning(disable : 4324)
 #endif
 
   
   
   
-  subtle::AtomicWord private_instance_;
+  std::atomic<uintptr_t> private_instance_;
 
   
   alignas(Type) char private_buf_[sizeof(Type)];
 
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
 #pragma warning(pop)
 #endif
 
  private:
   Type* instance() {
-    return reinterpret_cast<Type*>(subtle::NoBarrier_Load(&private_instance_));
+    return reinterpret_cast<Type*>(
+        private_instance_.load(std::memory_order_relaxed));
   }
 
   
@@ -201,7 +204,7 @@ class LazyInstance {
     LazyInstance<Type, Traits>* me =
         reinterpret_cast<LazyInstance<Type, Traits>*>(lazy_instance);
     Traits::Delete(me->instance());
-    subtle::NoBarrier_Store(&me->private_instance_, 0);
+    me->private_instance_.store(0, std::memory_order_relaxed);
   }
 };
 

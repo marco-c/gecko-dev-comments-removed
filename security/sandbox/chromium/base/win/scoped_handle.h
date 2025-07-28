@@ -5,14 +5,15 @@
 #ifndef BASE_WIN_SCOPED_HANDLE_H_
 #define BASE_WIN_SCOPED_HANDLE_H_
 
-#include "base/win/windows_types.h"
+#include <ostream>
 
 #include "base/base_export.h"
-#include "base/compiler_specific.h"
+#include "base/check_op.h"
+#include "base/dcheck_is_on.h"
 #include "base/gtest_prod_util.h"
 #include "base/location.h"
-#include "base/logging.h"
-#include "base/macros.h"
+#include "base/win/windows_types.h"
+#include "build/build_config.h"
 
 
 #if defined(COMPILER_MSVC)
@@ -25,6 +26,16 @@
 
 namespace base {
 namespace win {
+
+enum class HandleOperation {
+  kHandleAlreadyTracked,
+  kCloseHandleNotTracked,
+  kCloseHandleNotOwner,
+  kCloseHandleHook,
+  kDuplicateHandleHook
+};
+
+std::ostream& operator<<(std::ostream& os, HandleOperation operation);
 
 
 
@@ -51,9 +62,15 @@ class GenericScopedHandle {
     Set(other.Take());
   }
 
+  GenericScopedHandle(const GenericScopedHandle&) = delete;
+  GenericScopedHandle& operator=(const GenericScopedHandle&) = delete;
+
   ~GenericScopedHandle() { Close(); }
 
-  bool IsValid() const { return Traits::IsHandleValid(handle_); }
+  bool is_valid() const { return Traits::IsHandleValid(handle_); }
+
+  
+  bool IsValid() const { return is_valid(); }
 
   GenericScopedHandle& operator=(GenericScopedHandle&& other) {
     DCHECK_NE(this, &other);
@@ -76,10 +93,13 @@ class GenericScopedHandle {
     }
   }
 
-  Handle Get() const { return handle_; }
+  Handle get() const { return handle_; }
 
   
-  Handle Take() WARN_UNUSED_RESULT {
+  Handle Get() const { return get(); }
+
+  
+  [[nodiscard]] Handle release() {
     Handle temp = handle_;
     handle_ = Traits::NullHandle();
     if (Traits::IsHandleValid(temp)) {
@@ -88,6 +108,9 @@ class GenericScopedHandle {
     }
     return temp;
   }
+
+  
+  [[nodiscard]] Handle Take() { return release(); }
 
   
   void Close() {
@@ -101,11 +124,10 @@ class GenericScopedHandle {
   }
 
  private:
-  FRIEND_TEST_ALL_PREFIXES(ScopedHandleTest, ActiveVerifierWrongOwner);
-  FRIEND_TEST_ALL_PREFIXES(ScopedHandleTest, ActiveVerifierUntrackedHandle);
+  FRIEND_TEST_ALL_PREFIXES(ScopedHandleDeathTest, HandleVerifierWrongOwner);
+  FRIEND_TEST_ALL_PREFIXES(ScopedHandleDeathTest,
+                           HandleVerifierUntrackedHandle);
   Handle handle_;
-
-  DISALLOW_COPY_AND_ASSIGN(GenericScopedHandle);
 };
 
 #undef BASE_WIN_GET_CALLER
@@ -114,6 +136,10 @@ class GenericScopedHandle {
 class HandleTraits {
  public:
   using Handle = HANDLE;
+
+  HandleTraits() = delete;
+  HandleTraits(const HandleTraits&) = delete;
+  HandleTraits& operator=(const HandleTraits&) = delete;
 
   
   static bool BASE_EXPORT CloseHandle(HANDLE handle);
@@ -125,15 +151,16 @@ class HandleTraits {
 
   
   static HANDLE NullHandle() { return nullptr; }
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(HandleTraits);
 };
 
 
 class DummyVerifierTraits {
  public:
   using Handle = HANDLE;
+
+  DummyVerifierTraits() = delete;
+  DummyVerifierTraits(const DummyVerifierTraits&) = delete;
+  DummyVerifierTraits& operator=(const DummyVerifierTraits&) = delete;
 
   static void StartTracking(HANDLE handle,
                             const void* owner,
@@ -143,15 +170,16 @@ class DummyVerifierTraits {
                            const void* owner,
                            const void* pc1,
                            const void* pc2) {}
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(DummyVerifierTraits);
 };
 
 
 class BASE_EXPORT VerifierTraits {
  public:
   using Handle = HANDLE;
+
+  VerifierTraits() = delete;
+  VerifierTraits(const VerifierTraits&) = delete;
+  VerifierTraits& operator=(const VerifierTraits&) = delete;
 
   static void StartTracking(HANDLE handle,
                             const void* owner,
@@ -161,12 +189,17 @@ class BASE_EXPORT VerifierTraits {
                            const void* owner,
                            const void* pc1,
                            const void* pc2);
-
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(VerifierTraits);
 };
 
-using ScopedHandle = GenericScopedHandle<HandleTraits, VerifierTraits>;
+using UncheckedScopedHandle =
+    GenericScopedHandle<HandleTraits, DummyVerifierTraits>;
+using CheckedScopedHandle = GenericScopedHandle<HandleTraits, VerifierTraits>;
+
+#if DCHECK_IS_ON()
+using ScopedHandle = CheckedScopedHandle;
+#else
+using ScopedHandle = UncheckedScopedHandle;
+#endif
 
 
 
@@ -177,7 +210,8 @@ BASE_EXPORT void DisableHandleVerifier();
 
 
 
-BASE_EXPORT void OnHandleBeingClosed(HANDLE handle);
+BASE_EXPORT void OnHandleBeingClosed(HANDLE handle, HandleOperation operation);
+
 }  
 }  
 

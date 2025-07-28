@@ -12,11 +12,13 @@
 #include <sys/syscall.h>
 
 #include <algorithm>
+#include <atomic>
 #include <limits>
 #include <tuple>
 
 #include "base/compiler_specific.h"
 #include "base/logging.h"
+#include "base/memory/raw_ptr_exclusion.h"
 #include "build/build_config.h"
 #include "sandbox/linux/bpf_dsl/seccomp_macros.h"
 #include "sandbox/linux/seccomp-bpf/die.h"
@@ -28,7 +30,9 @@
 namespace {
 
 struct arch_sigsys {
-  void* ip;
+  
+  
+  RAW_PTR_EXCLUSION void* ip;
   int nr;
   unsigned int arch;
 };
@@ -60,7 +64,7 @@ bool GetIsInSigHandler(const ucontext_t* ctx) {
 void SetIsInSigHandler() {
   sigset_t mask;
   if (sigemptyset(&mask) || sigaddset(&mask, LINUX_SIGBUS) ||
-      sandbox::sys_sigprocmask(LINUX_SIG_BLOCK, &mask, NULL)) {
+      sandbox::sys_sigprocmask(LINUX_SIG_BLOCK, &mask, nullptr)) {
     SANDBOX_DIE("Failed to block SIGBUS");
   }
 }
@@ -76,11 +80,7 @@ bool IsDefaultSignalAction(const struct sigaction& sa) {
 
 namespace sandbox {
 
-Trap::Trap()
-    : trap_array_(NULL),
-      trap_array_size_(0),
-      trap_array_capacity_(0),
-      has_unsafe_traps_(false) {
+Trap::Trap() {
   
   struct sigaction sa = {};
   
@@ -104,7 +104,7 @@ Trap::Trap()
   
   sigset_t mask;
   if (sigemptyset(&mask) || sigaddset(&mask, LINUX_SIGSYS) ||
-      sys_sigprocmask(LINUX_SIG_UNBLOCK, &mask, NULL)) {
+      sys_sigprocmask(LINUX_SIG_UNBLOCK, &mask, nullptr)) {
     SANDBOX_DIE("Failed to configure SIGSYS handler");
   }
 }
@@ -166,7 +166,7 @@ void Trap::SigSys(int nr, LinuxSigInfo* info, ucontext_t* ctx) {
 
   
   struct arch_sigsys sigsys;
-#if defined(si_call_addr) && !defined(__native_client_nonsfi__)
+#if defined(si_call_addr)
   sigsys.ip = info->si_call_addr;
   sigsys.nr = info->si_syscall;
   sigsys.arch = info->si_arch;
@@ -227,7 +227,7 @@ void Trap::SigSys(int nr, LinuxSigInfo* info, ucontext_t* ctx) {
                        SECCOMP_PARM6(ctx));
 #endif  
   } else {
-    const TrapKey& trap = trap_array_[info->si_errno - 1];
+    const auto& trap = trap_array_[info->si_errno - 1];
     if (!trap.safe) {
       SetIsInSigHandler();
     }
@@ -248,7 +248,7 @@ void Trap::SigSys(int nr, LinuxSigInfo* info, ucontext_t* ctx) {
 
     
     
-    rc = trap.fnc(data, const_cast<void*>(trap.aux));
+    rc = trap.fnc(data, reinterpret_cast<void*>(trap.aux));
   }
 
   
@@ -260,12 +260,8 @@ void Trap::SigSys(int nr, LinuxSigInfo* info, ucontext_t* ctx) {
   return;
 }
 
-bool Trap::TrapKey::operator<(const TrapKey& o) const {
-  return std::tie(fnc, aux, safe) < std::tie(o.fnc, o.aux, o.safe);
-}
-
-uint16_t Trap::Add(TrapFnc fnc, const void* aux, bool safe) {
-  if (!safe && !SandboxDebuggingAllowedByUser()) {
+uint16_t Trap::Add(const Handler& handler) {
+  if (!handler.safe && !SandboxDebuggingAllowedByUser()) {
     
     
     
@@ -280,16 +276,10 @@ uint16_t Trap::Add(TrapFnc fnc, const void* aux, bool safe) {
     SANDBOX_DIE(
         "Cannot use unsafe traps unless CHROME_SANDBOX_DEBUGGING "
         "is enabled");
-
-    return 0;
   }
 
   
   
-  TrapKey key(fnc, aux, safe);
-
-  
-  
   
   
   
@@ -297,7 +287,7 @@ uint16_t Trap::Add(TrapFnc fnc, const void* aux, bool safe) {
   
   
 
-  TrapIds::const_iterator iter = trap_ids_.find(key);
+  auto iter = trap_ids_.find(handler);
   if (iter != trap_ids_.end()) {
     
     
@@ -330,34 +320,21 @@ uint16_t Trap::Add(TrapFnc fnc, const void* aux, bool safe) {
   
   if (trap_array_size_ >= trap_array_capacity_) {
     trap_array_capacity_ += kCapacityIncrement;
-    TrapKey* old_trap_array = trap_array_;
-    TrapKey* new_trap_array = new TrapKey[trap_array_capacity_];
+    auto* old_trap_array = trap_array_;
+    auto* new_trap_array = new TrapRegistry::Handler[trap_array_capacity_];
     std::copy_n(old_trap_array, trap_array_size_, new_trap_array);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    asm volatile("" : "=r"(new_trap_array) : "0"(new_trap_array) : "memory");
     trap_array_ = new_trap_array;
-    asm volatile("" : "=r"(trap_array_) : "0"(trap_array_) : "memory");
-
+    
+    
+    
+    std::atomic_signal_fence(std::memory_order_release);
     delete[] old_trap_array;
   }
 
   uint16_t id = trap_array_size_ + 1;
-  trap_ids_[key] = id;
-  trap_array_[trap_array_size_] = key;
+  trap_ids_[handler] = id;
+  trap_array_[trap_array_size_] = handler;
   trap_array_size_++;
   return id;
 }

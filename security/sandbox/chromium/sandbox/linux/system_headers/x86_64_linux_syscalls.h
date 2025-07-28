@@ -1431,10 +1431,6 @@
 #define __NR_mount_setattr 442
 #endif
 
-#if !defined(__NR_quotactl_fd)
-#define __NR_quotactl_fd 443
-#endif
-
 #if !defined(__NR_landlock_create_ruleset)
 #define __NR_landlock_create_ruleset 444
 #endif

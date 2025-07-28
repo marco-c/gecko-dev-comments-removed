@@ -7,7 +7,9 @@
 #include <errno.h>
 #include <stdint.h>
 
-#include "base/logging.h"
+#include <ostream>
+
+#include "base/check_op.h"
 #include "build/build_config.h"
 #include "sandbox/linux/bpf_dsl/seccomp_macros.h"
 
@@ -118,14 +120,14 @@ asm(
     ".cfi_endproc\n"
     "9:.size SyscallAsm, 9b-SyscallAsm\n"
 #elif defined(__arm__)
-    
-    
-    
-    
-    
-    
-    
-    
+      
+      
+      
+      
+      
+      
+      
+      
     ".text\n"
     ".align 2\n"
     ".type SyscallAsm, %function\n"
@@ -135,12 +137,10 @@ asm(
     ".arm\n"
 #endif
     "SyscallAsm:\n"
-#if !defined(__native_client_nonsfi__)
-    
-    
+
     
     ".fnstart\n"
-#endif
+
     "@ args = 0, pretend = 0, frame = 8\n"
     "@ frame_needed = 1, uses_anonymous_args = 0\n"
 #if defined(__thumb__)
@@ -183,11 +183,9 @@ asm(
 #else
     "2:ldmfd sp!, {fp, pc}\n"
 #endif
-#if !defined(__native_client_nonsfi__)
-    
-    
+
     ".fnend\n"
-#endif
+
     "9:.size SyscallAsm, 9b-SyscallAsm\n"
 #elif (defined(ARCH_CPU_MIPS_FAMILY) && defined(ARCH_CPU_32_BITS))
     ".text\n"

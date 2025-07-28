@@ -2,43 +2,30 @@
 
 
 
-#ifndef SANDBOX_SRC_WIN_UTILS_H_
-#define SANDBOX_SRC_WIN_UTILS_H_
+#ifndef SANDBOX_WIN_SRC_WIN_UTILS_H_
+#define SANDBOX_WIN_SRC_WIN_UTILS_H_
 
-#include <stddef.h>
-#include <windows.h>
+#include <stdlib.h>
+
+#include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
-#include "base/macros.h"
-#include "base/stl_util.h"
-#include "sandbox/win/src/nt_internals.h"
+#include "base/win/windows_types.h"
+#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace sandbox {
 
 
 const wchar_t kNTPrefix[] = L"\\??\\";
-const size_t kNTPrefixLen = base::size(kNTPrefix) - 1;
+const size_t kNTPrefixLen = std::size(kNTPrefix) - 1;
 
 const wchar_t kNTDevicePrefix[] = L"\\Device\\";
-const size_t kNTDevicePrefixLen = base::size(kNTDevicePrefix) - 1;
+const size_t kNTDevicePrefixLen = std::size(kNTDevicePrefix) - 1;
 
 
-
-class AutoLock {
- public:
-  
-  explicit AutoLock(CRITICAL_SECTION* lock) : lock_(lock) {
-    ::EnterCriticalSection(lock);
-  }
-
-  
-  ~AutoLock() { ::LeaveCriticalSection(lock_); }
-
- private:
-  CRITICAL_SECTION* lock_;
-  DISALLOW_IMPLICIT_CONSTRUCTORS(AutoLock);
-};
+using ProcessHandleMap = std::map<std::wstring, std::vector<HANDLE>>;
 
 
 
@@ -70,15 +57,6 @@ class SingletonBase {
 
 
 
-struct LocalFreeDeleter {
-  inline void operator()(void* ptr) const { ::LocalFree(ptr); }
-};
-
-
-
-
-
-
 bool ConvertToLongPath(std::wstring* path,
                        const std::wstring* drive_letter = nullptr);
 
@@ -93,31 +71,20 @@ DWORD IsReparsePoint(const std::wstring& full_path);
 bool SameObject(HANDLE handle, const wchar_t* full_path);
 
 
-bool GetPathFromHandle(HANDLE handle, std::wstring* path);
+absl::optional<std::wstring> GetPathFromHandle(HANDLE handle);
 
 
 
-bool GetNtPathFromWin32Path(const std::wstring& path, std::wstring* nt_path);
+absl::optional<std::wstring> GetNtPathFromWin32Path(const std::wstring& path);
 
 
-
-
-HKEY GetReservedKeyFromName(const std::wstring& name);
+absl::optional<std::wstring> GetTypeNameFromHandle(HANDLE handle);
 
 
 
 
 
-bool ResolveRegistryName(std::wstring name, std::wstring* resolved_name);
-
-
-
-
-bool WriteProtectedChildMemory(HANDLE child_process,
-                               void* address,
-                               const void* buffer,
-                               size_t length,
-                               DWORD writeProtection = PAGE_WRITECOPY);
+absl::optional<std::wstring> ResolveRegistryName(std::wstring name);
 
 
 
@@ -143,9 +110,10 @@ void* GetProcessBaseAddress(HANDLE process);
 
 
 
-DWORD GetTokenInformation(HANDLE token,
-                          TOKEN_INFORMATION_CLASS info_class,
-                          std::unique_ptr<BYTE[]>* buffer);
+
+
+
+absl::optional<ProcessHandleMap> GetCurrentProcessHandles();
 
 }  
 

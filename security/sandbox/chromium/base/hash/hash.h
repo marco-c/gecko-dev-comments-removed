@@ -10,12 +10,11 @@
 
 #include <limits>
 #include <string>
+#include <string_view>
 #include <utility>
 
 #include "base/base_export.h"
 #include "base/containers/span.h"
-#include "base/logging.h"
-#include "base/strings/string16.h"
 #include "base/strings/string_piece.h"
 
 namespace base {
@@ -29,7 +28,6 @@ namespace base {
 
 BASE_EXPORT uint32_t Hash(const void* data, size_t length);
 BASE_EXPORT uint32_t Hash(const std::string& str);
-BASE_EXPORT uint32_t Hash(const string16& str);
 
 
 
@@ -50,7 +48,7 @@ inline size_t FastHash(StringPiece str) {
 
 BASE_EXPORT uint32_t PersistentHash(base::span<const uint8_t> data);
 BASE_EXPORT uint32_t PersistentHash(const void* data, size_t length);
-BASE_EXPORT uint32_t PersistentHash(const std::string& str);
+BASE_EXPORT uint32_t PersistentHash(std::string_view str);
 
 
 BASE_EXPORT size_t HashInts32(uint32_t value1, uint32_t value2);

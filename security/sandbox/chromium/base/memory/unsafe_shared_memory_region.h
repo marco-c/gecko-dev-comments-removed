@@ -5,10 +5,12 @@
 #ifndef BASE_MEMORY_UNSAFE_SHARED_MEMORY_REGION_H_
 #define BASE_MEMORY_UNSAFE_SHARED_MEMORY_REGION_H_
 
-#include "base/gtest_prod_util.h"
-#include "base/macros.h"
+#include "base/base_export.h"
+#include "base/check.h"
 #include "base/memory/platform_shared_memory_region.h"
 #include "base/memory/shared_memory_mapping.h"
+
+#include <stdint.h>
 
 namespace base {
 
@@ -29,12 +31,6 @@ namespace base {
 class BASE_EXPORT UnsafeSharedMemoryRegion {
  public:
   using MappingType = WritableSharedMemoryMapping;
-  
-  
-  
-  
-  
-  
   
   
   static UnsafeSharedMemoryRegion Create(size_t size);
@@ -63,6 +59,9 @@ class BASE_EXPORT UnsafeSharedMemoryRegion {
   UnsafeSharedMemoryRegion(UnsafeSharedMemoryRegion&&);
   UnsafeSharedMemoryRegion& operator=(UnsafeSharedMemoryRegion&&);
 
+  UnsafeSharedMemoryRegion(const UnsafeSharedMemoryRegion&) = delete;
+  UnsafeSharedMemoryRegion& operator=(const UnsafeSharedMemoryRegion&) = delete;
+
   
   
   ~UnsafeSharedMemoryRegion();
@@ -78,13 +77,22 @@ class BASE_EXPORT UnsafeSharedMemoryRegion {
   
   
   
-  WritableSharedMemoryMapping Map() const;
+  
+  WritableSharedMemoryMapping Map(SharedMemoryMapper* mapper = nullptr) const;
 
   
   
   
   
-  WritableSharedMemoryMapping MapAt(off_t offset, size_t size) const;
+  
+  
+  
+  
+  
+  
+  WritableSharedMemoryMapping MapAt(uint64_t offset,
+                                    size_t size,
+                                    SharedMemoryMapper* mapper = nullptr) const;
 
   
   bool IsValid() const;
@@ -103,7 +111,7 @@ class BASE_EXPORT UnsafeSharedMemoryRegion {
 
   
   
-  subtle::PlatformSharedMemoryRegion::PlatformHandle GetPlatformHandle() const {
+  subtle::PlatformSharedMemoryHandle GetPlatformHandle() const {
     DCHECK(IsValid());
     return handle_.GetPlatformHandle();
   }
@@ -118,8 +126,6 @@ class BASE_EXPORT UnsafeSharedMemoryRegion {
   static CreateFunction* create_hook_;
 
   subtle::PlatformSharedMemoryRegion handle_;
-
-  DISALLOW_COPY_AND_ASSIGN(UnsafeSharedMemoryRegion);
 };
 
 }  

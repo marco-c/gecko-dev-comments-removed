@@ -5,8 +5,8 @@
 #ifndef BASE_SEQUENCE_TOKEN_H_
 #define BASE_SEQUENCE_TOKEN_H_
 
+#include "base/auto_reset.h"
 #include "base/base_export.h"
-#include "base/macros.h"
 
 namespace base {
 
@@ -15,7 +15,7 @@ namespace base {
 class BASE_EXPORT SequenceToken {
  public:
   
-  SequenceToken() = default;
+  constexpr SequenceToken() = default;
 
   
   SequenceToken(const SequenceToken& other) = default;
@@ -58,7 +58,7 @@ class BASE_EXPORT SequenceToken {
 class BASE_EXPORT TaskToken {
  public:
   
-  TaskToken() = default;
+  constexpr TaskToken() = default;
 
   
   TaskToken(const TaskToken& other) = default;
@@ -93,21 +93,25 @@ class BASE_EXPORT TaskToken {
 };
 
 
-class BASE_EXPORT ScopedSetSequenceTokenForCurrentThread {
+class BASE_EXPORT
+    [[maybe_unused, nodiscard]] ScopedSetSequenceTokenForCurrentThread {
  public:
   
   
   
   
   
-  ScopedSetSequenceTokenForCurrentThread(const SequenceToken& sequence_token);
+  explicit ScopedSetSequenceTokenForCurrentThread(
+      const SequenceToken& sequence_token);
+  ScopedSetSequenceTokenForCurrentThread(
+      const ScopedSetSequenceTokenForCurrentThread&) = delete;
+  ScopedSetSequenceTokenForCurrentThread& operator=(
+      const ScopedSetSequenceTokenForCurrentThread&) = delete;
   ~ScopedSetSequenceTokenForCurrentThread();
 
  private:
-  const SequenceToken sequence_token_;
-  const TaskToken task_token_;
-
-  DISALLOW_COPY_AND_ASSIGN(ScopedSetSequenceTokenForCurrentThread);
+  const AutoReset<SequenceToken> sequence_token_resetter_;
+  const AutoReset<TaskToken> task_token_resetter_;
 };
 
 }  

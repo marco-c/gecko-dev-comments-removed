@@ -2,20 +2,20 @@
 
 
 
-#ifndef SANDBOX_SRC_SERVICE_RESOLVER_H__
-#define SANDBOX_SRC_SERVICE_RESOLVER_H__
+#ifndef SANDBOX_WIN_SRC_SERVICE_RESOLVER_H_
+#define SANDBOX_WIN_SRC_SERVICE_RESOLVER_H_
 
 #include <stddef.h>
 
-#include "base/macros.h"
-#include "sandbox/win/src/nt_internals.h"
+#include "base/win/windows_types.h"
 #include "sandbox/win/src/resolver.h"
 
 namespace sandbox {
 
 
 
-class ServiceResolverThunk : public ResolverThunk {
+class [[clang::lto_visibility_public]] ServiceResolverThunk
+    : public ResolverThunk {
  public:
   
   ServiceResolverThunk(HANDLE process, bool relaxed)
@@ -23,6 +23,10 @@ class ServiceResolverThunk : public ResolverThunk {
         process_(process),
         relaxed_(relaxed),
         relative_jump_(0) {}
+
+  ServiceResolverThunk(const ServiceResolverThunk&) = delete;
+  ServiceResolverThunk& operator=(const ServiceResolverThunk&) = delete;
+
   ~ServiceResolverThunk() override {}
 
   
@@ -49,29 +53,41 @@ class ServiceResolverThunk : public ResolverThunk {
   size_t GetThunkSize() const override;
 
   
-  virtual void AllowLocalPatches();
+  void AllowLocalPatches();
 
   
   
   
-  virtual NTSTATUS CopyThunk(const void* target_module,
-                             const char* target_name,
-                             BYTE* thunk_storage,
-                             size_t storage_bytes,
-                             size_t* storage_used);
+  NTSTATUS CopyThunk(const void* target_module,
+                     const char* target_name,
+                     BYTE* thunk_storage,
+                     size_t storage_bytes,
+                     size_t* storage_used);
 
- protected:
+  
+  
+  
+  bool VerifyJumpTargetForTesting(void* thunk_storage) const;
+
+ private:
   
   HMODULE ntdll_base_;
 
   
   HANDLE process_;
 
- private:
   
   
   
-  virtual bool IsFunctionAService(void* local_thunk) const;
+  static bool WriteProtectedChildMemory(HANDLE child_process,
+                                        void* address,
+                                        const void* buffer,
+                                        size_t length);
+
+  
+  
+  
+  bool IsFunctionAService(void* local_thunk) const;
 
   
   
@@ -79,7 +95,7 @@ class ServiceResolverThunk : public ResolverThunk {
   
   
   
-  virtual NTSTATUS PerformPatch(void* local_thunk, void* remote_thunk);
+  NTSTATUS PerformPatch(void* local_thunk, void* remote_thunk);
 
   
   
@@ -89,68 +105,6 @@ class ServiceResolverThunk : public ResolverThunk {
   
   bool relaxed_;
   ULONG relative_jump_;
-
-  DISALLOW_COPY_AND_ASSIGN(ServiceResolverThunk);
-};
-
-
-
-class Wow64ResolverThunk : public ServiceResolverThunk {
- public:
-  
-  Wow64ResolverThunk(HANDLE process, bool relaxed)
-      : ServiceResolverThunk(process, relaxed) {}
-  ~Wow64ResolverThunk() override {}
-
- private:
-  bool IsFunctionAService(void* local_thunk) const override;
-
-  DISALLOW_COPY_AND_ASSIGN(Wow64ResolverThunk);
-};
-
-
-
-class Wow64W8ResolverThunk : public ServiceResolverThunk {
- public:
-  
-  Wow64W8ResolverThunk(HANDLE process, bool relaxed)
-      : ServiceResolverThunk(process, relaxed) {}
-  ~Wow64W8ResolverThunk() override {}
-
- private:
-  bool IsFunctionAService(void* local_thunk) const override;
-
-  DISALLOW_COPY_AND_ASSIGN(Wow64W8ResolverThunk);
-};
-
-
-
-class Win8ResolverThunk : public ServiceResolverThunk {
- public:
-  
-  Win8ResolverThunk(HANDLE process, bool relaxed)
-      : ServiceResolverThunk(process, relaxed) {}
-  ~Win8ResolverThunk() override {}
-
- private:
-  bool IsFunctionAService(void* local_thunk) const override;
-
-  DISALLOW_COPY_AND_ASSIGN(Win8ResolverThunk);
-};
-
-
-
-class Wow64W10ResolverThunk : public ServiceResolverThunk {
- public:
-  
-  Wow64W10ResolverThunk(HANDLE process, bool relaxed)
-      : ServiceResolverThunk(process, relaxed) {}
-  ~Wow64W10ResolverThunk() override {}
-
- private:
-  bool IsFunctionAService(void* local_thunk) const override;
-
-  DISALLOW_COPY_AND_ASSIGN(Wow64W10ResolverThunk);
 };
 
 }  

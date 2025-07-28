@@ -12,12 +12,45 @@
 #include <string>
 
 #include "base/base_export.h"
+#include "base/compiler_specific.h"
+#include "base/gtest_prod_util.h"
 #include "build/build_config.h"
+
+#if !BUILDFLAG(IS_NACL) && !defined(MOZ_SANDBOX)
+#include "third_party/boringssl/src/include/openssl/rand.h"
+#endif
+
+namespace memory_simulator {
+class MemoryHolder;
+}
 
 namespace base {
 
+class TimeDelta;
+
+namespace internal {
+
+#if BUILDFLAG(IS_ANDROID)
+
+
+void ConfigureRandBytesFieldTrial();
+#endif
+
+#if !BUILDFLAG(IS_NACL) && !defined(MOZ_SANDBOX)
+void ConfigureBoringSSLBackedRandBytesFieldTrial();
+#endif
+
+
+
+BASE_EXPORT double RandDoubleAvoidAllocation();
+
+}  
+
 
 BASE_EXPORT uint64_t RandUint64();
+
+
+
 
 
 BASE_EXPORT int RandInt(int min, int max);
@@ -29,8 +62,25 @@ BASE_EXPORT uint64_t RandGenerator(uint64_t range);
 BASE_EXPORT double RandDouble();
 
 
+BASE_EXPORT float RandFloat();
+
+
+
+
+BASE_EXPORT TimeDelta RandTimeDelta(TimeDelta start, TimeDelta limit);
+
+
+
+
+BASE_EXPORT TimeDelta RandTimeDeltaUpTo(TimeDelta limit);
+
+
 
 BASE_EXPORT double BitsToOpenEndedUnitInterval(uint64_t bits);
+
+
+
+BASE_EXPORT float BitsToOpenEndedUnitIntervalF(uint64_t bits);
 
 
 
@@ -51,7 +101,6 @@ BASE_EXPORT void RandBytes(void* output, size_t output_length);
 BASE_EXPORT std::string RandBytesAsString(size_t length);
 
 
-
 class RandomBitGenerator {
  public:
   using result_type = uint64_t;
@@ -63,15 +112,110 @@ class RandomBitGenerator {
   ~RandomBitGenerator() = default;
 };
 
+#if !BUILDFLAG(IS_NACL) && !defined(MOZ_SANDBOX)
+class NonAllocatingRandomBitGenerator {
+ public:
+  using result_type = uint64_t;
+  static constexpr result_type min() { return 0; }
+  static constexpr result_type max() { return UINT64_MAX; }
+  result_type operator()() const {
+    uint64_t result;
+    RAND_get_system_entropy_for_custom_prng(reinterpret_cast<uint8_t*>(&result),
+                                            sizeof(result));
+    return result;
+  }
+
+  NonAllocatingRandomBitGenerator() = default;
+  ~NonAllocatingRandomBitGenerator() = default;
+};
+#endif
+
 
 template <typename Itr>
 void RandomShuffle(Itr first, Itr last) {
   std::shuffle(first, last, RandomBitGenerator());
 }
 
-#if defined(OS_POSIX)
+#if BUILDFLAG(IS_POSIX)
 BASE_EXPORT int GetUrandomFD();
 #endif
+
+class MetricsSubSampler;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class BASE_EXPORT InsecureRandomGenerator {
+ public:
+  
+  void ReseedForTesting(uint64_t seed);
+
+  uint32_t RandUint32();
+  uint64_t RandUint64();
+  
+  double RandDouble();
+
+ private:
+  InsecureRandomGenerator();
+  
+  uint64_t a_ = 0, b_ = 0;
+
+  
+  
+  
+
+  
+  
+  
+  friend class memory_simulator::MemoryHolder;
+  
+  friend class MetricsSubSampler;
+
+  FRIEND_TEST_ALL_PREFIXES(RandUtilTest,
+                           InsecureRandomGeneratorProducesBothValuesOfAllBits);
+  FRIEND_TEST_ALL_PREFIXES(RandUtilTest, InsecureRandomGeneratorChiSquared);
+  FRIEND_TEST_ALL_PREFIXES(RandUtilTest, InsecureRandomGeneratorRandDouble);
+  FRIEND_TEST_ALL_PREFIXES(RandUtilPerfTest, InsecureRandomRandUint64);
+};
+
+class BASE_EXPORT MetricsSubSampler {
+ public:
+  MetricsSubSampler();
+  bool ShouldSample(double probability);
+
+  
+  class BASE_EXPORT ScopedDisableForTesting {
+   public:
+    ScopedDisableForTesting();
+    ~ScopedDisableForTesting();
+  };
+
+ private:
+  InsecureRandomGenerator generator_;
+};
 
 }  
 

@@ -12,7 +12,7 @@
 #include "build/build_config.h"
 
 
-#if defined(OS_AIX)
+#if BUILDFLAG(IS_AIX)
 #if defined(RLIMIT_NICE)
 #error Assumption about OS_AIX is incorrect
 #endif
@@ -28,8 +28,9 @@ bool CanLowerNiceTo(int nice_value) {
   
 
   
-  if (geteuid() == 0)
+  if (geteuid() == 0) {
     return true;
+  }
 
   
   
@@ -47,8 +48,9 @@ bool CanLowerNiceTo(int nice_value) {
   
   
   struct rlimit rlim;
-  if (getrlimit(RLIMIT_NICE, &rlim) != 0)
+  if (getrlimit(RLIMIT_NICE, &rlim) != 0) {
     return false;
+  }
   const int lowest_nice_allowed = NZERO - static_cast<int>(rlim.rlim_cur);
 
   

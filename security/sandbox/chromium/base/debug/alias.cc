@@ -3,7 +3,8 @@
 
 
 #include "base/debug/alias.h"
-#include "build/build_config.h"
+
+#include "base/compiler_specific.h"
 
 namespace base {
 namespace debug {

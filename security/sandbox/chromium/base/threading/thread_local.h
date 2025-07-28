@@ -6,75 +6,20 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef BASE_THREADING_THREAD_LOCAL_H_
 #define BASE_THREADING_THREAD_LOCAL_H_
 
 #include <memory>
 
-#include "base/logging.h"
-#include "base/macros.h"
+#include "base/dcheck_is_on.h"
+#include "base/memory/ptr_util.h"
 #include "base/threading/thread_local_internal.h"
 #include "base/threading/thread_local_storage.h"
 
 namespace base {
 
-template <typename T>
-class ThreadLocalPointer {
- public:
-  ThreadLocalPointer() = default;
-  ~ThreadLocalPointer() = default;
 
-  T* Get() const { return static_cast<T*>(slot_.Get()); }
 
-  void Set(T* ptr) {
-    slot_.Set(const_cast<void*>(static_cast<const void*>(ptr)));
-  }
-
- private:
-  ThreadLocalStorage::Slot slot_;
-
-  DISALLOW_COPY_AND_ASSIGN(ThreadLocalPointer);
-};
 
 
 
@@ -94,6 +39,9 @@ class ThreadLocalOwnedPointer {
  public:
   ThreadLocalOwnedPointer() = default;
 
+  ThreadLocalOwnedPointer(const ThreadLocalOwnedPointer&) = delete;
+  ThreadLocalOwnedPointer& operator=(const ThreadLocalOwnedPointer&) = delete;
+
   ~ThreadLocalOwnedPointer() {
     
     
@@ -102,34 +50,21 @@ class ThreadLocalOwnedPointer {
 
   T* Get() const { return static_cast<T*>(slot_.Get()); }
 
-  void Set(std::unique_ptr<T> ptr) {
-    delete Get();
+  
+  std::unique_ptr<T> Set(std::unique_ptr<T> ptr) {
+    auto existing = WrapUnique(Get());
     slot_.Set(const_cast<void*>(static_cast<const void*>(ptr.release())));
+    return existing;
   }
+
+  T& operator*() { return *Get(); }
 
  private:
   static void DeleteTlsPtr(void* ptr) { delete static_cast<T*>(ptr); }
 
   ThreadLocalStorage::Slot slot_{&DeleteTlsPtr};
-
-  DISALLOW_COPY_AND_ASSIGN(ThreadLocalOwnedPointer);
 };
 #endif  
-
-class ThreadLocalBoolean {
- public:
-  ThreadLocalBoolean() = default;
-  ~ThreadLocalBoolean() = default;
-
-  bool Get() const { return tlp_.Get() != nullptr; }
-
-  void Set(bool val) { tlp_.Set(val ? this : nullptr); }
-
- private:
-  ThreadLocalPointer<void> tlp_;
-
-  DISALLOW_COPY_AND_ASSIGN(ThreadLocalBoolean);
-};
 
 }  
 

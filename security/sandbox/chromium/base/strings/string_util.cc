@@ -4,7 +4,6 @@
 
 #include "base/strings/string_util.h"
 
-#include <ctype.h>
 #include <errno.h>
 #include <math.h>
 #include <stdarg.h>
@@ -14,71 +13,23 @@
 #include <string.h>
 #include <time.h>
 #include <wchar.h>
-#include <wctype.h>
 
-#include <algorithm>
 #include <limits>
+#include <type_traits>
 #include <vector>
 
-#include "base/logging.h"
+#include "base/check_op.h"
 #include "base/no_destructor.h"
-#include "base/stl_util.h"
+#include "base/ranges/algorithm.h"
+#include "base/strings/string_util_impl_helpers.h"
+#include "base/strings/string_util_internal.h"
 #include "base/strings/utf_string_conversion_utils.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/third_party/icu/icu_utf.h"
 #include "build/build_config.h"
+#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace base {
-
-namespace {
-
-
-
-
-
-template <typename string_type>
-inline void AppendToString(string_type* target, const string_type& source) {
-  target->append(source);
-}
-
-template <typename string_type>
-inline void AppendToString(string_type* target,
-                           const BasicStringPiece<string_type>& source) {
-  source.AppendToString(target);
-}
-
-
-
-using MachineWord = uintptr_t;
-
-inline bool IsMachineWordAligned(const void* pointer) {
-  return !(reinterpret_cast<MachineWord>(pointer) & (sizeof(MachineWord) - 1));
-}
-
-template <typename CharacterType>
-struct NonASCIIMask;
-template <>
-struct NonASCIIMask<char> {
-  static constexpr MachineWord value() {
-    return static_cast<MachineWord>(0x8080808080808080ULL);
-  }
-};
-template <>
-struct NonASCIIMask<char16> {
-  static constexpr MachineWord value() {
-    return static_cast<MachineWord>(0xFF80FF80FF80FF80ULL);
-  }
-};
-#if defined(WCHAR_T_IS_UTF32)
-template <>
-struct NonASCIIMask<wchar_t> {
-  static constexpr MachineWord value() {
-    return static_cast<MachineWord>(0xFFFFFF80FFFFFF80ULL);
-  }
-};
-#endif  
-
-}  
 
 bool IsWprintfFormatPortable(const wchar_t* format) {
   for (const wchar_t* position = format; *position != '\0'; ++position) {
@@ -115,89 +66,20 @@ bool IsWprintfFormatPortable(const wchar_t* format) {
   return true;
 }
 
-namespace {
-
-template<typename StringType>
-StringType ToLowerASCIIImpl(BasicStringPiece<StringType> str) {
-  StringType ret;
-  ret.reserve(str.size());
-  for (size_t i = 0; i < str.size(); i++)
-    ret.push_back(ToLowerASCII(str[i]));
-  return ret;
-}
-
-template<typename StringType>
-StringType ToUpperASCIIImpl(BasicStringPiece<StringType> str) {
-  StringType ret;
-  ret.reserve(str.size());
-  for (size_t i = 0; i < str.size(); i++)
-    ret.push_back(ToUpperASCII(str[i]));
-  return ret;
-}
-
-}  
-
 std::string ToLowerASCII(StringPiece str) {
-  return ToLowerASCIIImpl<std::string>(str);
+  return internal::ToLowerASCIIImpl(str);
 }
 
-string16 ToLowerASCII(StringPiece16 str) {
-  return ToLowerASCIIImpl<string16>(str);
+std::u16string ToLowerASCII(StringPiece16 str) {
+  return internal::ToLowerASCIIImpl(str);
 }
 
 std::string ToUpperASCII(StringPiece str) {
-  return ToUpperASCIIImpl<std::string>(str);
+  return internal::ToUpperASCIIImpl(str);
 }
 
-string16 ToUpperASCII(StringPiece16 str) {
-  return ToUpperASCIIImpl<string16>(str);
-}
-
-template<class StringType>
-int CompareCaseInsensitiveASCIIT(BasicStringPiece<StringType> a,
-                                 BasicStringPiece<StringType> b) {
-  
-  
-  
-  size_t i = 0;
-  while (i < a.length() && i < b.length()) {
-    typename StringType::value_type lower_a = ToLowerASCII(a[i]);
-    typename StringType::value_type lower_b = ToLowerASCII(b[i]);
-    if (lower_a < lower_b)
-      return -1;
-    if (lower_a > lower_b)
-      return 1;
-    i++;
-  }
-
-  
-  
-  if (a.length() == b.length())
-    return 0;
-
-  if (a.length() < b.length())
-    return -1;
-  return 1;
-}
-
-int CompareCaseInsensitiveASCII(StringPiece a, StringPiece b) {
-  return CompareCaseInsensitiveASCIIT<std::string>(a, b);
-}
-
-int CompareCaseInsensitiveASCII(StringPiece16 a, StringPiece16 b) {
-  return CompareCaseInsensitiveASCIIT<string16>(a, b);
-}
-
-bool EqualsCaseInsensitiveASCII(StringPiece a, StringPiece b) {
-  if (a.length() != b.length())
-    return false;
-  return CompareCaseInsensitiveASCIIT<std::string>(a, b) == 0;
-}
-
-bool EqualsCaseInsensitiveASCII(StringPiece16 a, StringPiece16 b) {
-  if (a.length() != b.length())
-    return false;
-  return CompareCaseInsensitiveASCIIT<string16>(a, b) == 0;
+std::u16string ToUpperASCII(StringPiece16 str) {
+  return internal::ToUpperASCIIImpl(str);
 }
 
 const std::string& EmptyString() {
@@ -205,112 +87,61 @@ const std::string& EmptyString() {
   return *s;
 }
 
-const string16& EmptyString16() {
-  static const base::NoDestructor<string16> s16;
+const std::u16string& EmptyString16() {
+  static const base::NoDestructor<std::u16string> s16;
   return *s16;
 }
 
-template <class StringType>
-bool ReplaceCharsT(const StringType& input,
-                   BasicStringPiece<StringType> find_any_of_these,
-                   BasicStringPiece<StringType> replace_with,
-                   StringType* output);
-
-bool ReplaceChars(const string16& input,
+bool ReplaceChars(StringPiece16 input,
                   StringPiece16 replace_chars,
                   StringPiece16 replace_with,
-                  string16* output) {
-  return ReplaceCharsT(input, replace_chars, replace_with, output);
+                  std::u16string* output) {
+  return internal::ReplaceCharsT(input, replace_chars, replace_with, output);
 }
 
-bool ReplaceChars(const std::string& input,
+bool ReplaceChars(StringPiece input,
                   StringPiece replace_chars,
                   StringPiece replace_with,
                   std::string* output) {
-  return ReplaceCharsT(input, replace_chars, replace_with, output);
+  return internal::ReplaceCharsT(input, replace_chars, replace_with, output);
 }
 
-bool RemoveChars(const string16& input,
+bool RemoveChars(StringPiece16 input,
                  StringPiece16 remove_chars,
-                 string16* output) {
-  return ReplaceCharsT(input, remove_chars, StringPiece16(), output);
+                 std::u16string* output) {
+  return internal::ReplaceCharsT(input, remove_chars, StringPiece16(), output);
 }
 
-bool RemoveChars(const std::string& input,
+bool RemoveChars(StringPiece input,
                  StringPiece remove_chars,
                  std::string* output) {
-  return ReplaceCharsT(input, remove_chars, StringPiece(), output);
-}
-
-template <typename Str>
-TrimPositions TrimStringT(BasicStringPiece<Str> input,
-                          BasicStringPiece<Str> trim_chars,
-                          TrimPositions positions,
-                          Str* output) {
-  
-  
-  
-  
-  const size_t last_char = input.length() - 1;
-  const size_t first_good_char =
-      (positions & TRIM_LEADING) ? input.find_first_not_of(trim_chars) : 0;
-  const size_t last_good_char = (positions & TRIM_TRAILING)
-                                    ? input.find_last_not_of(trim_chars)
-                                    : last_char;
-
-  
-  
-  
-  if (input.empty() || first_good_char == Str::npos ||
-      last_good_char == Str::npos) {
-    bool input_was_empty = input.empty();  
-    output->clear();
-    return input_was_empty ? TRIM_NONE : positions;
-  }
-
-  
-  output->assign(input.data() + first_good_char,
-                 last_good_char - first_good_char + 1);
-
-  
-  return static_cast<TrimPositions>(
-      (first_good_char == 0 ? TRIM_NONE : TRIM_LEADING) |
-      (last_good_char == last_char ? TRIM_NONE : TRIM_TRAILING));
+  return internal::ReplaceCharsT(input, remove_chars, StringPiece(), output);
 }
 
 bool TrimString(StringPiece16 input,
                 StringPiece16 trim_chars,
-                string16* output) {
-  return TrimStringT(input, trim_chars, TRIM_ALL, output) != TRIM_NONE;
+                std::u16string* output) {
+  return internal::TrimStringT(input, trim_chars, TRIM_ALL, output) !=
+         TRIM_NONE;
 }
 
 bool TrimString(StringPiece input,
                 StringPiece trim_chars,
                 std::string* output) {
-  return TrimStringT(input, trim_chars, TRIM_ALL, output) != TRIM_NONE;
-}
-
-template<typename Str>
-BasicStringPiece<Str> TrimStringPieceT(BasicStringPiece<Str> input,
-                                       BasicStringPiece<Str> trim_chars,
-                                       TrimPositions positions) {
-  size_t begin = (positions & TRIM_LEADING) ?
-      input.find_first_not_of(trim_chars) : 0;
-  size_t end = (positions & TRIM_TRAILING) ?
-      input.find_last_not_of(trim_chars) + 1 : input.size();
-  return input.substr(begin, end - begin);
+  return internal::TrimStringT(input, trim_chars, TRIM_ALL, output) !=
+         TRIM_NONE;
 }
 
 StringPiece16 TrimString(StringPiece16 input,
                          StringPiece16 trim_chars,
                          TrimPositions positions) {
-  return TrimStringPieceT(input, trim_chars, positions);
+  return internal::TrimStringPieceT(input, trim_chars, positions);
 }
 
 StringPiece TrimString(StringPiece input,
                        StringPiece trim_chars,
                        TrimPositions positions) {
-  return TrimStringPieceT(input, trim_chars, positions);
+  return internal::TrimStringPieceT(input, trim_chars, positions);
 }
 
 void TruncateUTF8ToByteSize(const std::string& input,
@@ -335,9 +166,9 @@ void TruncateUTF8ToByteSize(const std::string& input,
   while (char_index >= 0) {
     int32_t prev = char_index;
     base_icu::UChar32 code_point = 0;
-    CBU8_NEXT(data, char_index, truncation_length, code_point);
-    if (!IsValidCharacter(code_point) ||
-        !IsValidCodepoint(code_point)) {
+    CBU8_NEXT(reinterpret_cast<const uint8_t*>(data), char_index,
+              truncation_length, code_point);
+    if (!IsValidCharacter(code_point)) {
       char_index = prev - 1;
     } else {
       break;
@@ -345,82 +176,44 @@ void TruncateUTF8ToByteSize(const std::string& input,
   }
 
   if (char_index >= 0 )
-    *output = input.substr(0, char_index);
+    *output = input.substr(0, static_cast<size_t>(char_index));
   else
     output->clear();
 }
 
 TrimPositions TrimWhitespace(StringPiece16 input,
                              TrimPositions positions,
-                             string16* output) {
-  return TrimStringT(input, StringPiece16(kWhitespaceUTF16), positions, output);
+                             std::u16string* output) {
+  return internal::TrimStringT(input, StringPiece16(kWhitespaceUTF16),
+                               positions, output);
 }
 
 StringPiece16 TrimWhitespace(StringPiece16 input,
                              TrimPositions positions) {
-  return TrimStringPieceT(input, StringPiece16(kWhitespaceUTF16), positions);
+  return internal::TrimStringPieceT(input, StringPiece16(kWhitespaceUTF16),
+                                    positions);
 }
 
 TrimPositions TrimWhitespaceASCII(StringPiece input,
                                   TrimPositions positions,
                                   std::string* output) {
-  return TrimStringT(input, StringPiece(kWhitespaceASCII), positions, output);
+  return internal::TrimStringT(input, StringPiece(kWhitespaceASCII), positions,
+                               output);
 }
 
 StringPiece TrimWhitespaceASCII(StringPiece input, TrimPositions positions) {
-  return TrimStringPieceT(input, StringPiece(kWhitespaceASCII), positions);
+  return internal::TrimStringPieceT(input, StringPiece(kWhitespaceASCII),
+                                    positions);
 }
 
-template<typename STR>
-STR CollapseWhitespaceT(const STR& text,
-                        bool trim_sequences_with_line_breaks) {
-  STR result;
-  result.resize(text.size());
-
-  
-  
-  bool in_whitespace = true;
-  bool already_trimmed = true;
-
-  int chars_written = 0;
-  for (typename STR::const_iterator i(text.begin()); i != text.end(); ++i) {
-    if (IsUnicodeWhitespace(*i)) {
-      if (!in_whitespace) {
-        
-        in_whitespace = true;
-        result[chars_written++] = L' ';
-      }
-      if (trim_sequences_with_line_breaks && !already_trimmed &&
-          ((*i == '\n') || (*i == '\r'))) {
-        
-        already_trimmed = true;
-        --chars_written;
-      }
-    } else {
-      
-      in_whitespace = false;
-      already_trimmed = false;
-      result[chars_written++] = *i;
-    }
-  }
-
-  if (in_whitespace && !already_trimmed) {
-    
-    --chars_written;
-  }
-
-  result.resize(chars_written);
-  return result;
+std::u16string CollapseWhitespace(StringPiece16 text,
+                                  bool trim_sequences_with_line_breaks) {
+  return internal::CollapseWhitespaceT(text, trim_sequences_with_line_breaks);
 }
 
-string16 CollapseWhitespace(const string16& text,
-                            bool trim_sequences_with_line_breaks) {
-  return CollapseWhitespaceT(text, trim_sequences_with_line_breaks);
-}
-
-std::string CollapseWhitespaceASCII(const std::string& text,
+std::string CollapseWhitespaceASCII(StringPiece text,
                                     bool trim_sequences_with_line_breaks) {
-  return CollapseWhitespaceT(text, trim_sequences_with_line_breaks);
+  return internal::CollapseWhitespaceT(text, trim_sequences_with_line_breaks);
 }
 
 bool ContainsOnlyChars(StringPiece input, StringPiece characters) {
@@ -431,218 +224,63 @@ bool ContainsOnlyChars(StringPiece16 input, StringPiece16 characters) {
   return input.find_first_not_of(characters) == StringPiece16::npos;
 }
 
-template <class Char>
-inline bool DoIsStringASCII(const Char* characters, size_t length) {
-  if (!length)
-    return true;
-  constexpr MachineWord non_ascii_bit_mask = NonASCIIMask<Char>::value();
-  MachineWord all_char_bits = 0;
-  const Char* end = characters + length;
-
-  
-  while (!IsMachineWordAligned(characters) && characters < end)
-    all_char_bits |= *characters++;
-  if (all_char_bits & non_ascii_bit_mask)
-    return false;
-
-  
-  constexpr size_t chars_per_word = sizeof(MachineWord) / sizeof(Char);
-  constexpr int batch_count = 16;
-  while (characters <= end - batch_count * chars_per_word) {
-    all_char_bits = 0;
-    for (int i = 0; i < batch_count; ++i) {
-      all_char_bits |= *(reinterpret_cast<const MachineWord*>(characters));
-      characters += chars_per_word;
-    }
-    if (all_char_bits & non_ascii_bit_mask)
-      return false;
-  }
-
-  
-  all_char_bits = 0;
-  while (characters <= end - chars_per_word) {
-    all_char_bits |= *(reinterpret_cast<const MachineWord*>(characters));
-    characters += chars_per_word;
-  }
-
-  
-  while (characters < end)
-    all_char_bits |= *characters++;
-
-  return !(all_char_bits & non_ascii_bit_mask);
-}
 
 bool IsStringASCII(StringPiece str) {
-  return DoIsStringASCII(str.data(), str.length());
+  return internal::DoIsStringASCII(str.data(), str.length());
 }
 
 bool IsStringASCII(StringPiece16 str) {
-  return DoIsStringASCII(str.data(), str.length());
+  return internal::DoIsStringASCII(str.data(), str.length());
 }
 
 #if defined(WCHAR_T_IS_UTF32)
 bool IsStringASCII(WStringPiece str) {
-  return DoIsStringASCII(str.data(), str.length());
+  return internal::DoIsStringASCII(str.data(), str.length());
 }
 #endif
 
-template <bool (*Validator)(uint32_t)>
-inline static bool DoIsStringUTF8(StringPiece str) {
-  const char* src = str.data();
-  int32_t src_len = static_cast<int32_t>(str.length());
-  int32_t char_index = 0;
-
-  while (char_index < src_len) {
-    int32_t code_point;
-    CBU8_NEXT(src, char_index, src_len, code_point);
-    if (!Validator(code_point))
-      return false;
-  }
-  return true;
-}
-
 bool IsStringUTF8(StringPiece str) {
-  return DoIsStringUTF8<IsValidCharacter>(str);
+  return internal::DoIsStringUTF8<IsValidCharacter>(str);
 }
 
 bool IsStringUTF8AllowingNoncharacters(StringPiece str) {
-  return DoIsStringUTF8<IsValidCodepoint>(str);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template<typename Str>
-static inline bool DoLowerCaseEqualsASCII(BasicStringPiece<Str> str,
-                                          StringPiece lowercase_ascii) {
-  if (str.size() != lowercase_ascii.size())
-    return false;
-  for (size_t i = 0; i < str.size(); i++) {
-    if (ToLowerASCII(str[i]) != lowercase_ascii[i])
-      return false;
-  }
-  return true;
-}
-
-bool LowerCaseEqualsASCII(StringPiece str, StringPiece lowercase_ascii) {
-  return DoLowerCaseEqualsASCII<std::string>(str, lowercase_ascii);
-}
-
-bool LowerCaseEqualsASCII(StringPiece16 str, StringPiece lowercase_ascii) {
-  return DoLowerCaseEqualsASCII<string16>(str, lowercase_ascii);
+  return internal::DoIsStringUTF8<IsValidCodepoint>(str);
 }
 
 bool EqualsASCII(StringPiece16 str, StringPiece ascii) {
-  if (str.length() != ascii.length())
-    return false;
-  return std::equal(ascii.begin(), ascii.end(), str.begin());
-}
-
-template<typename Str>
-bool StartsWithT(BasicStringPiece<Str> str,
-                 BasicStringPiece<Str> search_for,
-                 CompareCase case_sensitivity) {
-  if (search_for.size() > str.size())
-    return false;
-
-  BasicStringPiece<Str> source = str.substr(0, search_for.size());
-
-  switch (case_sensitivity) {
-    case CompareCase::SENSITIVE:
-      return source == search_for;
-
-    case CompareCase::INSENSITIVE_ASCII:
-      return std::equal(
-          search_for.begin(), search_for.end(),
-          source.begin(),
-          CaseInsensitiveCompareASCII<typename Str::value_type>());
-
-    default:
-      NOTREACHED();
-      return false;
-  }
+  return ranges::equal(ascii, str);
 }
 
 bool StartsWith(StringPiece str,
                 StringPiece search_for,
                 CompareCase case_sensitivity) {
-  return StartsWithT<std::string>(str, search_for, case_sensitivity);
+  return internal::StartsWithT(str, search_for, case_sensitivity);
 }
 
 bool StartsWith(StringPiece16 str,
                 StringPiece16 search_for,
                 CompareCase case_sensitivity) {
-  return StartsWithT<string16>(str, search_for, case_sensitivity);
-}
-
-template <typename Str>
-bool EndsWithT(BasicStringPiece<Str> str,
-               BasicStringPiece<Str> search_for,
-               CompareCase case_sensitivity) {
-  if (search_for.size() > str.size())
-    return false;
-
-  BasicStringPiece<Str> source = str.substr(str.size() - search_for.size(),
-                                            search_for.size());
-
-  switch (case_sensitivity) {
-    case CompareCase::SENSITIVE:
-      return source == search_for;
-
-    case CompareCase::INSENSITIVE_ASCII:
-      return std::equal(
-          source.begin(), source.end(),
-          search_for.begin(),
-          CaseInsensitiveCompareASCII<typename Str::value_type>());
-
-    default:
-      NOTREACHED();
-      return false;
-  }
+  return internal::StartsWithT(str, search_for, case_sensitivity);
 }
 
 bool EndsWith(StringPiece str,
               StringPiece search_for,
               CompareCase case_sensitivity) {
-  return EndsWithT<std::string>(str, search_for, case_sensitivity);
+  return internal::EndsWithT(str, search_for, case_sensitivity);
 }
 
 bool EndsWith(StringPiece16 str,
               StringPiece16 search_for,
               CompareCase case_sensitivity) {
-  return EndsWithT<string16>(str, search_for, case_sensitivity);
+  return internal::EndsWithT(str, search_for, case_sensitivity);
 }
 
-char HexDigitToInt(wchar_t c) {
+char HexDigitToInt(char c) {
   DCHECK(IsHexDigit(c));
   if (c >= '0' && c <= '9')
     return static_cast<char>(c - '0');
-  if (c >= 'A' && c <= 'F')
-    return static_cast<char>(c - 'A' + 10);
-  if (c >= 'a' && c <= 'f')
-    return static_cast<char>(c - 'a' + 10);
-  return 0;
-}
-
-bool IsUnicodeWhitespace(wchar_t c) {
-  
-  for (const wchar_t* cur = kWhitespaceWide; *cur; ++cur) {
-    if (*cur == c)
-      return true;
-  }
-  return false;
+  return (c >= 'A' && c <= 'F') ? static_cast<char>(c - 'A' + 10)
+                                : static_cast<char>(c - 'a' + 10);
 }
 
 static const char* const kByteStringsUnlocalized[] = {
@@ -654,404 +292,152 @@ static const char* const kByteStringsUnlocalized[] = {
   " PB"
 };
 
-string16 FormatBytesUnlocalized(int64_t bytes) {
+std::u16string FormatBytesUnlocalized(int64_t bytes) {
   double unit_amount = static_cast<double>(bytes);
   size_t dimension = 0;
   const int kKilo = 1024;
   while (unit_amount >= kKilo &&
-         dimension < base::size(kByteStringsUnlocalized) - 1) {
+         dimension < std::size(kByteStringsUnlocalized) - 1) {
     unit_amount /= kKilo;
     dimension++;
   }
 
   char buf[64];
   if (bytes != 0 && dimension > 0 && unit_amount < 100) {
-    base::snprintf(buf, base::size(buf), "%.1lf%s", unit_amount,
+    base::snprintf(buf, std::size(buf), "%.1lf%s", unit_amount,
                    kByteStringsUnlocalized[dimension]);
   } else {
-    base::snprintf(buf, base::size(buf), "%.0lf%s", unit_amount,
+    base::snprintf(buf, std::size(buf), "%.0lf%s", unit_amount,
                    kByteStringsUnlocalized[dimension]);
   }
 
   return ASCIIToUTF16(buf);
 }
 
-
-template <class StringType>
-struct SubstringMatcher {
-  BasicStringPiece<StringType> find_this;
-
-  size_t Find(const StringType& input, size_t pos) {
-    return input.find(find_this.data(), pos, find_this.length());
-  }
-  size_t MatchSize() { return find_this.length(); }
-};
-
-
-template <class StringType>
-struct CharacterMatcher {
-  BasicStringPiece<StringType> find_any_of_these;
-
-  size_t Find(const StringType& input, size_t pos) {
-    return input.find_first_of(find_any_of_these.data(), pos,
-                               find_any_of_these.length());
-  }
-  constexpr size_t MatchSize() { return 1; }
-};
-
-enum class ReplaceType { REPLACE_ALL, REPLACE_FIRST };
-
-
-
-
-
-
-template <class StringType, class Matcher>
-bool DoReplaceMatchesAfterOffset(StringType* str,
-                                 size_t initial_offset,
-                                 Matcher matcher,
-                                 BasicStringPiece<StringType> replace_with,
-                                 ReplaceType replace_type) {
-  using CharTraits = typename StringType::traits_type;
-
-  const size_t find_length = matcher.MatchSize();
-  if (!find_length)
-    return false;
-
-  
-  size_t first_match = matcher.Find(*str, initial_offset);
-  if (first_match == StringType::npos)
-    return false;
-
-  
-  
-  const size_t replace_length = replace_with.length();
-  if (replace_type == ReplaceType::REPLACE_FIRST) {
-    str->replace(first_match, find_length, replace_with.data(), replace_length);
-    return true;
-  }
-
-  
-  
-  if (find_length == replace_length) {
-    auto* buffer = &((*str)[0]);
-    for (size_t offset = first_match; offset != StringType::npos;
-         offset = matcher.Find(*str, offset + replace_length)) {
-      CharTraits::copy(buffer + offset, replace_with.data(), replace_length);
-    }
-    return true;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  size_t str_length = str->length();
-  size_t expansion = 0;
-  if (replace_length > find_length) {
-    
-    
-    const size_t expansion_per_match = (replace_length - find_length);
-    size_t num_matches = 0;
-    for (size_t match = first_match; match != StringType::npos;
-         match = matcher.Find(*str, match + find_length)) {
-      expansion += expansion_per_match;
-      ++num_matches;
-    }
-    const size_t final_length = str_length + expansion;
-
-    if (str->capacity() < final_length) {
-      
-      
-      StringType src(str->get_allocator());
-      str->swap(src);
-      str->reserve(final_length);
-
-      size_t pos = 0;
-      for (size_t match = first_match;; match = matcher.Find(src, pos)) {
-        str->append(src, pos, match - pos);
-        str->append(replace_with.data(), replace_length);
-        pos = match + find_length;
-
-        
-        
-        if (!--num_matches)
-          break;
-      }
-
-      
-      str->append(src, pos, str_length - pos);
-      return true;
-    }
-
-    
-    
-    
-    size_t shift_src = first_match + find_length;
-    size_t shift_dst = shift_src + expansion;
-
-    
-    
-    if (shift_dst > str_length)
-      str->resize(shift_dst);
-
-    str->replace(shift_dst, str_length - shift_src, *str, shift_src,
-                 str_length - shift_src);
-    str_length = final_length;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  auto* buffer = &((*str)[0]);
-  size_t write_offset = first_match;
-  size_t read_offset = first_match + expansion;
-  do {
-    if (replace_length) {
-      CharTraits::copy(buffer + write_offset, replace_with.data(),
-                       replace_length);
-      write_offset += replace_length;
-    }
-    read_offset += find_length;
-
-    
-    size_t match = std::min(matcher.Find(*str, read_offset), str_length);
-
-    size_t length = match - read_offset;
-    if (length) {
-      CharTraits::move(buffer + write_offset, buffer + read_offset, length);
-      write_offset += length;
-      read_offset += length;
-    }
-  } while (read_offset < str_length);
-
-  
-  str->resize(write_offset);
-  return true;
-}
-
-template <class StringType>
-bool ReplaceCharsT(const StringType& input,
-                   BasicStringPiece<StringType> find_any_of_these,
-                   BasicStringPiece<StringType> replace_with,
-                   StringType* output) {
-  
-  
-  *output = input;
-
-  return DoReplaceMatchesAfterOffset(
-      output, 0, CharacterMatcher<StringType>{find_any_of_these}, replace_with,
-      ReplaceType::REPLACE_ALL);
-}
-
-void ReplaceFirstSubstringAfterOffset(string16* str,
+void ReplaceFirstSubstringAfterOffset(std::u16string* str,
                                       size_t start_offset,
                                       StringPiece16 find_this,
                                       StringPiece16 replace_with) {
-  DoReplaceMatchesAfterOffset(str, start_offset,
-                              SubstringMatcher<string16>{find_this},
-                              replace_with, ReplaceType::REPLACE_FIRST);
+  internal::DoReplaceMatchesAfterOffset(
+      str, start_offset, internal::MakeSubstringMatcher(find_this),
+      replace_with, internal::ReplaceType::REPLACE_FIRST);
 }
 
 void ReplaceFirstSubstringAfterOffset(std::string* str,
                                       size_t start_offset,
                                       StringPiece find_this,
                                       StringPiece replace_with) {
-  DoReplaceMatchesAfterOffset(str, start_offset,
-                              SubstringMatcher<std::string>{find_this},
-                              replace_with, ReplaceType::REPLACE_FIRST);
+  internal::DoReplaceMatchesAfterOffset(
+      str, start_offset, internal::MakeSubstringMatcher(find_this),
+      replace_with, internal::ReplaceType::REPLACE_FIRST);
 }
 
-void ReplaceSubstringsAfterOffset(string16* str,
+void ReplaceSubstringsAfterOffset(std::u16string* str,
                                   size_t start_offset,
                                   StringPiece16 find_this,
                                   StringPiece16 replace_with) {
-  DoReplaceMatchesAfterOffset(str, start_offset,
-                              SubstringMatcher<string16>{find_this},
-                              replace_with, ReplaceType::REPLACE_ALL);
+  internal::DoReplaceMatchesAfterOffset(
+      str, start_offset, internal::MakeSubstringMatcher(find_this),
+      replace_with, internal::ReplaceType::REPLACE_ALL);
 }
 
 void ReplaceSubstringsAfterOffset(std::string* str,
                                   size_t start_offset,
                                   StringPiece find_this,
                                   StringPiece replace_with) {
-  DoReplaceMatchesAfterOffset(str, start_offset,
-                              SubstringMatcher<std::string>{find_this},
-                              replace_with, ReplaceType::REPLACE_ALL);
-}
-
-template <class string_type>
-inline typename string_type::value_type* WriteIntoT(string_type* str,
-                                                    size_t length_with_null) {
-  DCHECK_GE(length_with_null, 1u);
-  str->reserve(length_with_null);
-  str->resize(length_with_null - 1);
-  return &((*str)[0]);
+  internal::DoReplaceMatchesAfterOffset(
+      str, start_offset, internal::MakeSubstringMatcher(find_this),
+      replace_with, internal::ReplaceType::REPLACE_ALL);
 }
 
 char* WriteInto(std::string* str, size_t length_with_null) {
-  return WriteIntoT(str, length_with_null);
+  return internal::WriteIntoT(str, length_with_null);
 }
 
-char16* WriteInto(string16* str, size_t length_with_null) {
-  return WriteIntoT(str, length_with_null);
+char16_t* WriteInto(std::u16string* str, size_t length_with_null) {
+  return internal::WriteIntoT(str, length_with_null);
 }
 
-#if defined(_MSC_VER) && !defined(__clang__)
-
-#pragma optimize("", off)
-#endif
-
-
-
-
-
-template <typename list_type, typename string_type>
-static string_type JoinStringT(const list_type& parts,
-                               BasicStringPiece<string_type> sep) {
-  if (parts.size() == 0)
-    return string_type();
-
-  
-  
-  size_t total_size = (parts.size() - 1) * sep.size();
-  for (const auto& part : parts)
-    total_size += part.size();
-  string_type result;
-  result.reserve(total_size);
-
-  auto iter = parts.begin();
-  DCHECK(iter != parts.end());
-  AppendToString(&result, *iter);
-  ++iter;
-
-  for (; iter != parts.end(); ++iter) {
-    sep.AppendToString(&result);
-    
-    
-    
-    AppendToString(&result, *iter);
-  }
-
-  
-  DCHECK_EQ(total_size, result.size());
-
-  return result;
+std::string JoinString(span<const std::string> parts, StringPiece separator) {
+  return internal::JoinStringT(parts, separator);
 }
 
-std::string JoinString(const std::vector<std::string>& parts,
-                       StringPiece separator) {
-  return JoinStringT(parts, separator);
+std::u16string JoinString(span<const std::u16string> parts,
+                          StringPiece16 separator) {
+  return internal::JoinStringT(parts, separator);
 }
 
-string16 JoinString(const std::vector<string16>& parts,
-                    StringPiece16 separator) {
-  return JoinStringT(parts, separator);
+std::string JoinString(span<const StringPiece> parts, StringPiece separator) {
+  return internal::JoinStringT(parts, separator);
 }
 
-#if defined(_MSC_VER) && !defined(__clang__)
-
-#pragma optimize("", on)
-#endif
-
-std::string JoinString(const std::vector<StringPiece>& parts,
-                       StringPiece separator) {
-  return JoinStringT(parts, separator);
-}
-
-string16 JoinString(const std::vector<StringPiece16>& parts,
-                    StringPiece16 separator) {
-  return JoinStringT(parts, separator);
+std::u16string JoinString(span<const StringPiece16> parts,
+                          StringPiece16 separator) {
+  return internal::JoinStringT(parts, separator);
 }
 
 std::string JoinString(std::initializer_list<StringPiece> parts,
                        StringPiece separator) {
-  return JoinStringT(parts, separator);
+  return internal::JoinStringT(parts, separator);
 }
 
-string16 JoinString(std::initializer_list<StringPiece16> parts,
-                    StringPiece16 separator) {
-  return JoinStringT(parts, separator);
+std::u16string JoinString(std::initializer_list<StringPiece16> parts,
+                          StringPiece16 separator) {
+  return internal::JoinStringT(parts, separator);
 }
 
-#if defined(OS_WIN) && defined(BASE_STRING16_IS_STD_U16STRING)
+std::u16string ReplaceStringPlaceholders(
+    StringPiece16 format_string,
+    const std::vector<std::u16string>& subst,
+    std::vector<size_t>* offsets) {
+  absl::optional<std::u16string> replacement =
+      internal::DoReplaceStringPlaceholders(
+          format_string, subst,
+           u'$',
+           true,
+           false, offsets);
 
-TrimPositions TrimWhitespace(WStringPiece input,
-                             TrimPositions positions,
-                             std::wstring* output) {
-  return TrimStringT(input, WStringPiece(kWhitespaceWide), positions, output);
+  DCHECK(replacement);
+  return replacement.value();
 }
 
-WStringPiece TrimWhitespace(WStringPiece input, TrimPositions positions) {
-  return TrimStringPieceT(input, WStringPiece(kWhitespaceWide), positions);
+std::string ReplaceStringPlaceholders(StringPiece format_string,
+                                      const std::vector<std::string>& subst,
+                                      std::vector<size_t>* offsets) {
+  absl::optional<std::string> replacement =
+      internal::DoReplaceStringPlaceholders(
+          format_string, subst,
+           '$',
+           true,
+           false, offsets);
+
+  DCHECK(replacement);
+  return replacement.value();
 }
 
-bool TrimString(WStringPiece input,
-                WStringPiece trim_chars,
-                std::wstring* output) {
-  return TrimStringT(input, trim_chars, TRIM_ALL, output) != TRIM_NONE;
+std::u16string ReplaceStringPlaceholders(const std::u16string& format_string,
+                                         const std::u16string& a,
+                                         size_t* offset) {
+  std::vector<size_t> offsets;
+  std::u16string result =
+      ReplaceStringPlaceholders(format_string, {a}, &offsets);
+
+  DCHECK_EQ(1U, offsets.size());
+  if (offset)
+    *offset = offsets[0];
+  return result;
 }
-
-WStringPiece TrimString(WStringPiece input,
-                        WStringPiece trim_chars,
-                        TrimPositions positions) {
-  return TrimStringPieceT(input, trim_chars, positions);
-}
-
-wchar_t* WriteInto(std::wstring* str, size_t length_with_null) {
-  return WriteIntoT(str, length_with_null);
-}
-
-#endif
-
-
-
-
-
-namespace {
-
-template <typename CHAR>
-size_t lcpyT(CHAR* dst, const CHAR* src, size_t dst_size) {
-  for (size_t i = 0; i < dst_size; ++i) {
-    if ((dst[i] = src[i]) == 0)  
-      return i;
-  }
-
-  
-  if (dst_size != 0)
-    dst[dst_size - 1] = 0;
-
-  
-  while (src[dst_size]) ++dst_size;
-  return dst_size;
-}
-
-}  
 
 size_t strlcpy(char* dst, const char* src, size_t dst_size) {
-  return lcpyT<char>(dst, src, dst_size);
+  return internal::lcpyT(dst, src, dst_size);
 }
+
+size_t u16cstrlcpy(char16_t* dst, const char16_t* src, size_t dst_size) {
+  return internal::lcpyT(dst, src, dst_size);
+}
+
 size_t wcslcpy(wchar_t* dst, const wchar_t* src, size_t dst_size) {
-  return lcpyT<wchar_t>(dst, src, dst_size);
+  return internal::lcpyT(dst, src, dst_size);
 }
 
 }  

@@ -2,8 +2,8 @@
 
 
 
-#ifndef SANDBOX_SRC_FILESYSTEM_POLICY_H__
-#define SANDBOX_SRC_FILESYSTEM_POLICY_H__
+#ifndef SANDBOX_WIN_SRC_FILESYSTEM_POLICY_H_
+#define SANDBOX_WIN_SRC_FILESYSTEM_POLICY_H_
 
 #include <stdint.h>
 
@@ -16,8 +16,6 @@
 
 namespace sandbox {
 
-enum IsBroker { BROKER_FALSE, BROKER_TRUE };
-
 
 class FileSystemPolicy {
  public:
@@ -27,11 +25,8 @@ class FileSystemPolicy {
   
   
   static bool GenerateRules(const wchar_t* name,
-                            TargetPolicy::Semantics semantics,
+                            FileSemantics semantics,
                             LowLevelPolicy* policy);
-
-  
-  static bool SetInitialRules(LowLevelPolicy* policy);
 
   
   

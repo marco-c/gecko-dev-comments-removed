@@ -5,6 +5,7 @@
 #ifndef SANDBOX_WIN_SRC_SANDBOX_TYPES_H_
 #define SANDBOX_WIN_SRC_SANDBOX_TYPES_H_
 
+#include "base/memory/raw_ptr.h"
 #include "base/process/kill.h"
 #include "base/process/launch.h"
 
@@ -114,11 +115,11 @@ enum ResultCode : int {
   
   SBOX_ERROR_CANNOT_FIND_BASE_ADDRESS = 43,
   
-  SBOX_ERROR_CREATE_APPCONTAINER_PROFILE = 44,
+  SBOX_ERROR_CREATE_APPCONTAINER = 44,
   
-  SBOX_ERROR_CREATE_APPCONTAINER_PROFILE_ACCESS_CHECK = 45,
+  SBOX_ERROR_CREATE_APPCONTAINER_ACCESS_CHECK = 45,
   
-  SBOX_ERROR_CREATE_APPCONTAINER_PROFILE_CAPABILITY = 46,
+  SBOX_ERROR_CREATE_APPCONTAINER_CAPABILITY = 46,
   
   SBOX_ERROR_CANNOT_INIT_JOB = 47,
   
@@ -146,6 +147,37 @@ enum ResultCode : int {
   
   SBOX_ERROR_CANNOT_INIT_BROKERSERVICES = 59,
   
+  SBOX_ERROR_CANNOT_UPDATE_JOB_PROCESS_LIMIT = 60,
+  
+  SBOX_ERROR_CANNOT_CREATE_LOWBOX_IMPERSONATION_TOKEN = 61,
+  
+  SBOX_ERROR_UNSANDBOXED_PROCESS = 62,
+  
+  
+  SBOX_ERROR_CANNOT_LAUNCH_UNSANDBOXED_PROCESS = 63,
+  
+  
+  SBOX_ERROR_INVALID_LINK_STATE = 64,
+  
+  
+  
+  SBOX_ERROR_INVALID_TARGET_BASE_ADDRESS = 65,
+  
+  SBOX_ERROR_CANNOT_READ_SENTINEL_VALUE = 66,
+  
+  SBOX_ERROR_INVALID_READ_SENTINEL_SIZE = 67,
+  
+  SBOX_ERROR_MISMATCH_SENTINEL_VALUE = 68,
+  
+  SBOX_ERROR_FAILED_TO_FREEZE_CONFIG = 69,
+  
+  SBOX_ERROR_CANNOT_OBTAIN_ENVIRONMENT = 70,
+  
+  SBOX_ERROR_DELEGATE_INITIALIZE_CONFIG = 71,
+  
+  SBOX_ERROR_DISABLING_APPHELP = 72,
+  
+  
   SBOX_ERROR_LAST
 };
 
@@ -163,19 +195,17 @@ enum TerminationCodes {
   SBOX_FATAL_LAST
 };
 
-#if !defined(SANDBOX_FUZZ_TARGET)
 static_assert(SBOX_FATAL_MEMORY_EXCEEDED ==
                   base::win::kSandboxFatalMemoryExceeded,
               "Value for SBOX_FATAL_MEMORY_EXCEEDED must match base.");
-#endif  
 
 class BrokerServices;
 class TargetServices;
 
 
 struct SandboxInterfaceInfo {
-  BrokerServices* broker_services;
-  TargetServices* target_services;
+  raw_ptr<BrokerServices> broker_services;
+  raw_ptr<TargetServices> target_services;
 };
 
 #if SANDBOX_EXPORTS
@@ -188,10 +218,8 @@ enum InterceptionType {
   INTERCEPTION_INVALID = 0,
   INTERCEPTION_SERVICE_CALL,  
   INTERCEPTION_EAT,
-  INTERCEPTION_SIDESTEP,        
-  INTERCEPTION_SMART_SIDESTEP,  
-  INTERCEPTION_UNLOAD_MODULE,   
-  INTERCEPTION_LAST             
+  INTERCEPTION_UNLOAD_MODULE,  
+  INTERCEPTION_LAST            
 };
 
 }  

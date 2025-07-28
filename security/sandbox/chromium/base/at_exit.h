@@ -6,9 +6,10 @@
 #define BASE_AT_EXIT_H_
 
 #include "base/base_export.h"
-#include "base/callback.h"
 #include "base/containers/stack.h"
-#include "base/macros.h"
+#include "base/dcheck_is_on.h"
+#include "base/functional/callback.h"
+#include "base/memory/raw_ptr.h"
 #include "base/synchronization/lock.h"
 #include "base/thread_annotations.h"
 
@@ -33,6 +34,8 @@ class BASE_EXPORT AtExitManager {
   typedef void (*AtExitCallbackType)(void*);
 
   AtExitManager();
+  AtExitManager(const AtExitManager&) = delete;
+  AtExitManager& operator=(const AtExitManager&) = delete;
 
   
   
@@ -70,9 +73,7 @@ class BASE_EXPORT AtExitManager {
 #endif
 
   
-  AtExitManager* const next_manager_;
-
-  DISALLOW_COPY_AND_ASSIGN(AtExitManager);
+  const raw_ptr<AtExitManager, DanglingUntriaged> next_manager_;
 };
 
 #if defined(UNIT_TEST)

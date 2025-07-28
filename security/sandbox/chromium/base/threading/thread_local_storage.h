@@ -7,20 +7,14 @@
 
 #include <stdint.h>
 
-#include "base/atomicops.h"
 #include "base/base_export.h"
-#include "base/macros.h"
 #include "build/build_config.h"
 
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
 #include "base/win/windows_types.h"
-#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
+#elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 #include <pthread.h>
 #endif
-
-namespace ui {
-class TLSDestructionCheckerForX11;
-}
 
 namespace base {
 
@@ -43,14 +37,12 @@ class ThreadLocalStorageTestInternal;
 
 
 
-
 class BASE_EXPORT PlatformThreadLocalStorage {
  public:
-
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
   typedef unsigned long TLSKey;
   enum : unsigned { TLS_KEY_OUT_OF_INDEXES = TLS_OUT_OF_INDEXES };
-#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
+#elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
   typedef pthread_key_t TLSKey;
   
   
@@ -73,9 +65,9 @@ class BASE_EXPORT PlatformThreadLocalStorage {
   static void FreeTLS(TLSKey key);
   static void SetTLSValue(TLSKey key, void* value);
   static void* GetTLSValue(TLSKey key) {
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
     return TlsGetValue(key);
-#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
+#elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
     return pthread_getspecific(key);
 #endif
   }
@@ -88,11 +80,11 @@ class BASE_EXPORT PlatformThreadLocalStorage {
   
   
   
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
   
   
   static void OnThreadExit();
-#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
+#elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
   
   
   
@@ -125,6 +117,10 @@ class BASE_EXPORT ThreadLocalStorage {
     
     
     explicit Slot(TLSDestructorFunc destructor = nullptr);
+
+    Slot(const Slot&) = delete;
+    Slot& operator=(const Slot&) = delete;
+
     
     
     ~Slot();
@@ -141,12 +137,13 @@ class BASE_EXPORT ThreadLocalStorage {
     void Initialize(TLSDestructorFunc destructor);
     void Free();
 
-    static constexpr int kInvalidSlotValue = -1;
-    int slot_ = kInvalidSlotValue;
+    static constexpr size_t kInvalidSlotValue = static_cast<size_t>(-1);
+    size_t slot_ = kInvalidSlotValue;
     uint32_t version_ = 0;
-
-    DISALLOW_COPY_AND_ASSIGN(Slot);
   };
+
+  ThreadLocalStorage(const ThreadLocalStorage&) = delete;
+  ThreadLocalStorage& operator=(const ThreadLocalStorage&) = delete;
 
  private:
   
@@ -164,10 +161,7 @@ class BASE_EXPORT ThreadLocalStorage {
   friend class internal::ThreadLocalStorageTestInternal;
   friend class trace_event::MallocDumpProvider;
   friend class debug::GlobalActivityTracker;
-  friend class ui::TLSDestructionCheckerForX11;
   static bool HasBeenDestroyed();
-
-  DISALLOW_COPY_AND_ASSIGN(ThreadLocalStorage);
 };
 
 }  

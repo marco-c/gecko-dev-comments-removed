@@ -5,34 +5,102 @@
 #include "base/rand_util.h"
 
 #include <windows.h>
+
 #include <stddef.h>
 #include <stdint.h>
 
-
-
-
-#define SystemFunction036 NTAPI SystemFunction036
-#include <ntsecapi.h>
-#undef SystemFunction036
-
 #include <algorithm>
+#include <atomic>
 #include <limits>
 
-#include "base/logging.h"
+#include "base/check.h"
+#include "base/feature_list.h"
+#if !defined(MOZ_SANDBOX)
+#include "third_party/boringssl/src/include/openssl/crypto.h"
+#include "third_party/boringssl/src/include/openssl/rand.h"
+#endif
+
+
+
+extern "C" {
+BOOL WINAPI ProcessPrng(PBYTE pbData, SIZE_T cbData);
+}
 
 namespace base {
 
-void RandBytes(void* output, size_t output_length) {
-  char* output_ptr = static_cast<char*>(output);
-  while (output_length > 0) {
-    const ULONG output_bytes_this_pass = static_cast<ULONG>(std::min(
-        output_length, static_cast<size_t>(std::numeric_limits<ULONG>::max())));
-    const bool success =
-        RtlGenRandom(output_ptr, output_bytes_this_pass) != FALSE;
-    CHECK(success);
-    output_length -= output_bytes_this_pass;
-    output_ptr += output_bytes_this_pass;
-  }
+#if !defined(MOZ_SANDBOX)
+namespace internal {
+
+namespace {
+
+
+
+std::atomic<bool> g_use_boringssl;
+
+BASE_FEATURE(kUseBoringSSLForRandBytes,
+             "UseBoringSSLForRandBytes",
+             FEATURE_DISABLED_BY_DEFAULT);
+
+}  
+
+void ConfigureBoringSSLBackedRandBytesFieldTrial() {
+  g_use_boringssl.store(FeatureList::IsEnabled(kUseBoringSSLForRandBytes),
+                        std::memory_order_relaxed);
 }
+
+bool UseBoringSSLForRandBytes() {
+  return g_use_boringssl.load(std::memory_order_relaxed);
+}
+
+}  
+#endif
+
+namespace {
+
+
+
+decltype(&ProcessPrng) GetProcessPrng() {
+  HMODULE hmod = LoadLibraryW(L"bcryptprimitives.dll");
+  CHECK(hmod);
+  decltype(&ProcessPrng) process_prng_fn =
+      reinterpret_cast<decltype(&ProcessPrng)>(
+          GetProcAddress(hmod, "ProcessPrng"));
+  CHECK(process_prng_fn);
+  return process_prng_fn;
+}
+
+void RandBytes(void* output, size_t output_length, bool avoid_allocation) {
+#if !defined(MOZ_SANDBOX)
+  if (!avoid_allocation && internal::UseBoringSSLForRandBytes()) {
+    
+    CRYPTO_library_init();
+    
+    (void)RAND_bytes(static_cast<uint8_t*>(output), output_length);
+    return;
+  }
+#endif
+
+  static decltype(&ProcessPrng) process_prng_fn = GetProcessPrng();
+  BOOL success = process_prng_fn(static_cast<BYTE*>(output), output_length);
+  
+  CHECK(success);
+}
+
+}  
+
+void RandBytes(void* output, size_t output_length) {
+  RandBytes(output, output_length, false);
+}
+
+namespace internal {
+
+double RandDoubleAvoidAllocation() {
+  uint64_t number;
+  RandBytes(&number, sizeof(number), true);
+  
+  return (number >> 11) * 0x1.0p-53;
+}
+
+}  
 
 }  

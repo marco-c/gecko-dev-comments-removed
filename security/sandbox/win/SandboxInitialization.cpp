@@ -28,7 +28,8 @@ static WindowsDllInterceptor::FuncHookType<DuplicateHandle_func>
 
 static BOOL WINAPI patched_CloseHandle(HANDLE hObject) {
   
-  base::win::OnHandleBeingClosed(hObject);
+  base::win::OnHandleBeingClosed(hObject,
+                                 base::win::HandleOperation::kCloseHandleHook);
   return stub_CloseHandle(hObject);
 }
 
@@ -40,7 +41,8 @@ static BOOL WINAPI patched_DuplicateHandle(
   
   if ((dwOptions & DUPLICATE_CLOSE_SOURCE) &&
       (GetProcessId(hSourceProcessHandle) == ::GetCurrentProcessId())) {
-    base::win::OnHandleBeingClosed(hSourceHandle);
+    base::win::OnHandleBeingClosed(
+        hSourceHandle, base::win::HandleOperation::kDuplicateHandleHook);
   }
 
   return stub_DuplicateHandle(hSourceProcessHandle, hSourceHandle,
@@ -174,8 +176,10 @@ static sandbox::BrokerServices* InitializeBrokerServices() {
   
   
   
-  scoped_refptr<sandbox::TargetPolicy> policy = brokerServices->CreatePolicy();
-  policy->CreateAlternateDesktop(true);
+  Unused << brokerServices->CreateAlternateDesktop(
+      sandbox::Desktop::kAlternateWinstation);
+  Unused << brokerServices->CreateAlternateDesktop(
+      sandbox::Desktop::kAlternateDesktop);
 
   
   mozilla::sandboxing::ApplyParentProcessMitigations();
@@ -193,7 +197,7 @@ sandbox::BrokerServices* GetInitializedBrokerServices() {
 void ApplyParentProcessMitigations() {
   
   
-  sandbox::ApplyProcessMitigationsToCurrentProcess(
+  sandbox::RatchetDownSecurityMitigations(
       sandbox::MITIGATION_DEP | sandbox::MITIGATION_DEP_NO_ATL_THUNK |
       sandbox::MITIGATION_HARDEN_TOKEN_IL_POLICY);
 }

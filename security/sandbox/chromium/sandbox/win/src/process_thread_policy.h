@@ -2,12 +2,10 @@
 
 
 
-#ifndef SANDBOX_SRC_PROCESS_THREAD_POLICY_H_
-#define SANDBOX_SRC_PROCESS_THREAD_POLICY_H_
+#ifndef SANDBOX_WIN_SRC_PROCESS_THREAD_POLICY_H_
+#define SANDBOX_WIN_SRC_PROCESS_THREAD_POLICY_H_
 
 #include <stdint.h>
-
-#include <string>
 
 #include "sandbox/win/src/crosscall_server.h"
 #include "sandbox/win/src/policy_low_level.h"
@@ -23,35 +21,10 @@ class ProcessPolicy {
   
   
   
-  static bool GenerateRules(const wchar_t* name,
-                            TargetPolicy::Semantics semantics,
-                            LowLevelPolicy* policy);
-
-  
-  
-  
-  
-  
   static NTSTATUS OpenThreadAction(const ClientInfo& client_info,
                                    uint32_t desired_access,
                                    uint32_t thread_id,
                                    HANDLE* handle);
-
-  
-  
-  
-  static NTSTATUS OpenProcessAction(const ClientInfo& client_info,
-                                    uint32_t desired_access,
-                                    uint32_t process_id,
-                                    HANDLE* handle);
-
-  
-  
-  
-  static NTSTATUS OpenProcessTokenAction(const ClientInfo& client_info,
-                                         HANDLE process,
-                                         uint32_t desired_access,
-                                         HANDLE* handle);
 
   
   
@@ -64,25 +37,11 @@ class ProcessPolicy {
 
   
   
-  
-  
-  
-  
-  static DWORD CreateProcessWAction(EvalResult eval_result,
-                                    const ClientInfo& client_info,
-                                    const std::wstring& app_name,
-                                    const std::wstring& command_line,
-                                    const std::wstring& current_dir,
-                                    PROCESS_INFORMATION* process_info);
-
-  
-  
   static DWORD CreateThreadAction(const ClientInfo& client_info,
                                   SIZE_T stack_size,
                                   LPTHREAD_START_ROUTINE start_address,
                                   PVOID parameter,
                                   DWORD creation_flags,
-                                  LPDWORD thread_id,
                                   HANDLE* handle);
 };
 

@@ -10,9 +10,8 @@
 #include <vector>
 
 #include "base/base_export.h"
-#include "base/callback.h"
-#include "base/macros.h"
-#include "base/observer_list.h"
+#include "base/functional/callback.h"
+#include "base/memory/raw_ptr.h"
 #include "base/synchronization/lock.h"
 #include "base/threading/platform_thread.h"
 
@@ -24,6 +23,9 @@ struct DefaultSingletonTraits;
 class BASE_EXPORT ThreadIdNameManager {
  public:
   static ThreadIdNameManager* GetInstance();
+
+  ThreadIdNameManager(const ThreadIdNameManager&) = delete;
+  ThreadIdNameManager& operator=(const ThreadIdNameManager&) = delete;
 
   static const char* GetDefaultInternedString();
 
@@ -58,6 +60,10 @@ class BASE_EXPORT ThreadIdNameManager {
   
   void RemoveName(PlatformThreadHandle::Handle handle, PlatformThreadId id);
 
+  
+  
+  std::vector<PlatformThreadId> GetIds();
+
  private:
   friend struct DefaultSingletonTraits<ThreadIdNameManager>;
 
@@ -79,14 +85,12 @@ class BASE_EXPORT ThreadIdNameManager {
   ThreadHandleToInternedNameMap thread_handle_to_interned_name_;
 
   
-  std::string* main_process_name_;
+  raw_ptr<std::string> main_process_name_;
   PlatformThreadId main_process_id_;
 
   
   
   std::vector<Observer*> observers_;
-
-  DISALLOW_COPY_AND_ASSIGN(ThreadIdNameManager);
 };
 
 }  

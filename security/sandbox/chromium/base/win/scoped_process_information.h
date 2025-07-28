@@ -8,7 +8,6 @@
 #include <windows.h>
 
 #include "base/base_export.h"
-#include "base/macros.h"
 #include "base/win/scoped_handle.h"
 
 namespace base {
@@ -20,6 +19,10 @@ class BASE_EXPORT ScopedProcessInformation {
  public:
   ScopedProcessInformation();
   explicit ScopedProcessInformation(const PROCESS_INFORMATION& process_info);
+
+  ScopedProcessInformation(const ScopedProcessInformation&) = delete;
+  ScopedProcessInformation& operator=(const ScopedProcessInformation&) = delete;
+
   ~ScopedProcessInformation();
 
   
@@ -49,10 +52,10 @@ class BASE_EXPORT ScopedProcessInformation {
   HANDLE TakeThreadHandle();
 
   
-  HANDLE process_handle() const { return process_handle_.Get(); }
+  HANDLE process_handle() const { return process_handle_.get(); }
 
   
-  HANDLE thread_handle() const { return thread_handle_.Get(); }
+  HANDLE thread_handle() const { return thread_handle_.get(); }
 
   
   DWORD process_id() const { return process_id_; }
@@ -65,8 +68,6 @@ class BASE_EXPORT ScopedProcessInformation {
   ScopedHandle thread_handle_;
   DWORD process_id_ = 0;
   DWORD thread_id_ = 0;
-
-  DISALLOW_COPY_AND_ASSIGN(ScopedProcessInformation);
 };
 
 }  

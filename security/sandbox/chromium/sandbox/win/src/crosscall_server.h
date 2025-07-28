@@ -2,16 +2,16 @@
 
 
 
-#ifndef SANDBOX_SRC_CROSSCALL_SERVER_H_
-#define SANDBOX_SRC_CROSSCALL_SERVER_H_
+#ifndef SANDBOX_WIN_SRC_CROSSCALL_SERVER_H_
+#define SANDBOX_WIN_SRC_CROSSCALL_SERVER_H_
 
 #include <stdint.h>
 
 #include <string>
 #include <vector>
 
-#include "base/callback.h"
-#include "base/macros.h"
+#include "base/functional/callback.h"
+#include "base/memory/raw_ptr.h"
 #include "sandbox/win/src/crosscall_params.h"
 #include "sandbox/win/src/ipc_tags.h"
 
@@ -51,46 +51,6 @@ class InterceptionManager;
 
 
 
-
-typedef void(__stdcall* CrossCallIPCCallback)(void* context,
-                                              unsigned char reason);
-
-
-
-
-
-
-
-
-
-
-
-
-class ThreadProvider {
- public:
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual bool RegisterWait(const void* client,
-                            HANDLE waitable_object,
-                            CrossCallIPCCallback callback,
-                            void* context) = 0;
-
-  
-  
-  virtual bool UnRegisterWaits(void* cookie) = 0;
-  virtual ~ThreadProvider() {}
-};
-
-
-
-
 class CrossCallParamsEx : public CrossCallParams {
  public:
   
@@ -100,6 +60,9 @@ class CrossCallParamsEx : public CrossCallParams {
   static CrossCallParamsEx* CreateFromBuffer(void* buffer_base,
                                              uint32_t buffer_size,
                                              uint32_t* output_size);
+
+  CrossCallParamsEx(const CrossCallParamsEx&) = delete;
+  CrossCallParamsEx& operator=(const CrossCallParamsEx&) = delete;
 
   
   
@@ -132,7 +95,6 @@ class CrossCallParamsEx : public CrossCallParams {
   CrossCallParamsEx();
 
   ParamInfo param_info_[1];
-  DISALLOW_COPY_AND_ASSIGN(CrossCallParamsEx);
 };
 
 
@@ -153,7 +115,7 @@ struct ClientInfo {
 
 struct IPCInfo {
   IpcTag ipc_tag;
-  const ClientInfo* client_info;
+  raw_ptr<const ClientInfo> client_info;
   CrossCallReturn return_info;
 };
 
@@ -175,7 +137,7 @@ struct IPCParams {
 
 
 
-class Dispatcher {
+class [[clang::lto_visibility_public]] Dispatcher {
  public:
   
   typedef bool (Dispatcher::*CallbackGeneric)();

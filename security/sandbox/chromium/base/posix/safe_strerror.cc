@@ -2,14 +2,6 @@
 
 
 
-#if defined(__ANDROID__)
-
-
-
-
-#undef _GNU_SOURCE
-#endif
-
 #include "base/posix/safe_strerror.h"
 
 #include <errno.h>
@@ -20,29 +12,25 @@
 
 namespace base {
 
-#if defined(__GLIBC__) || defined(OS_NACL)
-#define USE_HISTORICAL_STRERRO_R 1
+#if defined(__GLIBC__) || BUILDFLAG(IS_NACL)
+#define USE_HISTORICAL_STRERROR_R 1
+
+
+
+#elif defined(__BIONIC__) && defined(_GNU_SOURCE) && __ANDROID_API__ >= 23
+#define USE_HISTORICAL_STRERROR_R 1
 #else
-#define USE_HISTORICAL_STRERRO_R 0
+#define USE_HISTORICAL_STRERROR_R 0
 #endif
 
-#if USE_HISTORICAL_STRERRO_R && defined(__GNUC__)
+#if USE_HISTORICAL_STRERROR_R
 
 
 
-#define POSSIBLY_UNUSED __attribute__((unused))
-#else
-#define POSSIBLY_UNUSED
-#endif
-
-#if USE_HISTORICAL_STRERRO_R
-
-
-
-static void POSSIBLY_UNUSED wrap_posix_strerror_r(
-    char *(*strerror_r_ptr)(int, char *, size_t),
+[[maybe_unused]] static void wrap_posix_strerror_r(
+    char* (*strerror_r_ptr)(int, char*, size_t),
     int err,
-    char *buf,
+    char* buf,
     size_t len) {
   
   char *rc = (*strerror_r_ptr)(err, buf, len);
@@ -62,10 +50,10 @@ static void POSSIBLY_UNUSED wrap_posix_strerror_r(
 
 
 
-static void POSSIBLY_UNUSED wrap_posix_strerror_r(
-    int (*strerror_r_ptr)(int, char *, size_t),
+[[maybe_unused]] static void wrap_posix_strerror_r(
+    int (*strerror_r_ptr)(int, char*, size_t),
     int err,
-    char *buf,
+    char* buf,
     size_t len) {
   int old_errno = errno;
   

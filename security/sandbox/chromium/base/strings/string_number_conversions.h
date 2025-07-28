@@ -13,13 +13,8 @@
 
 #include "base/base_export.h"
 #include "base/containers/span.h"
-#include "base/strings/string16.h"
 #include "base/strings/string_piece.h"
 #include "build/build_config.h"
-
-
-
-
 
 
 
@@ -43,19 +38,19 @@ namespace base {
 
 
 BASE_EXPORT std::string NumberToString(int value);
-BASE_EXPORT string16 NumberToString16(int value);
+BASE_EXPORT std::u16string NumberToString16(int value);
 BASE_EXPORT std::string NumberToString(unsigned int value);
-BASE_EXPORT string16 NumberToString16(unsigned int value);
+BASE_EXPORT std::u16string NumberToString16(unsigned int value);
 BASE_EXPORT std::string NumberToString(long value);
-BASE_EXPORT string16 NumberToString16(long value);
+BASE_EXPORT std::u16string NumberToString16(long value);
 BASE_EXPORT std::string NumberToString(unsigned long value);
-BASE_EXPORT string16 NumberToString16(unsigned long value);
+BASE_EXPORT std::u16string NumberToString16(unsigned long value);
 BASE_EXPORT std::string NumberToString(long long value);
-BASE_EXPORT string16 NumberToString16(long long value);
+BASE_EXPORT std::u16string NumberToString16(long long value);
 BASE_EXPORT std::string NumberToString(unsigned long long value);
-BASE_EXPORT string16 NumberToString16(unsigned long long value);
+BASE_EXPORT std::u16string NumberToString16(unsigned long long value);
 BASE_EXPORT std::string NumberToString(double value);
-BASE_EXPORT string16 NumberToString16(double value);
+BASE_EXPORT std::u16string NumberToString16(double value);
 
 
 
@@ -115,6 +110,22 @@ BASE_EXPORT std::string HexEncode(base::span<const uint8_t> bytes);
 
 
 
+inline void AppendHexEncodedByte(uint8_t byte,
+                                 std::string& output,
+                                 bool uppercase = true) {
+  static constexpr char kHexCharsUpper[] = {'0', '1', '2', '3', '4', '5',
+                                            '6', '7', '8', '9', 'A', 'B',
+                                            'C', 'D', 'E', 'F'};
+  static constexpr char kHexCharsLower[] = {'0', '1', '2', '3', '4', '5',
+                                            '6', '7', '8', '9', 'a', 'b',
+                                            'c', 'd', 'e', 'f'};
+  const char* const hex_chars = uppercase ? kHexCharsUpper : kHexCharsLower;
+  output.append({hex_chars[byte >> 4], hex_chars[byte & 0xf]});
+}
+
+
+
+
 BASE_EXPORT bool HexStringToInt(StringPiece input, int* output);
 
 
@@ -153,5 +164,9 @@ BASE_EXPORT bool HexStringToString(StringPiece input, std::string* output);
 BASE_EXPORT bool HexStringToSpan(StringPiece input, base::span<uint8_t> output);
 
 }  
+
+#if BUILDFLAG(IS_WIN)
+#include "base/strings/string_number_conversions_win.h"
+#endif
 
 #endif  

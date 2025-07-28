@@ -6,77 +6,17 @@
 #define BASE_TEMPLATE_UTIL_H_
 
 #include <stddef.h>
+
 #include <iosfwd>
 #include <iterator>
 #include <type_traits>
 #include <utility>
-#include <vector>
 
-#include "build/build_config.h"
-
-
-
-
-
-
-
-
-#define CR_GLIBCXX_5_0_0 20150123
-#if (defined(__GNUC__) && __GNUC__ < 5) || \
-    (defined(__GLIBCXX__) && __GLIBCXX__ == CR_GLIBCXX_5_0_0)
-#define CR_USE_FALLBACKS_FOR_OLD_EXPERIMENTAL_GLIBCXX
-#endif
-
-
-
-
-
-
-#if !defined(__clang__) && defined(_LIBCPP_VERSION)
-#define CR_USE_FALLBACKS_FOR_GCC_WITH_LIBCXX
-#endif
+#include "base/compiler_specific.h"
 
 namespace base {
 
-template <class T> struct is_non_const_reference : std::false_type {};
-template <class T> struct is_non_const_reference<T&> : std::true_type {};
-template <class T> struct is_non_const_reference<const T&> : std::false_type {};
-
 namespace internal {
-
-
-template <typename...>
-struct make_void {
-  using type = void;
-};
-
-}  
-
-
-
-
-
-
-
-template <typename... Ts>
-using void_t = typename ::base::internal::make_void<Ts...>::type;
-
-namespace internal {
-
-
-template <typename T, typename = void>
-struct SupportsOstreamOperator : std::false_type {};
-template <typename T>
-struct SupportsOstreamOperator<T,
-                               decltype(void(std::declval<std::ostream&>()
-                                             << std::declval<T>()))>
-    : std::true_type {};
-
-template <typename T, typename = void>
-struct SupportsToString : std::false_type {};
-template <typename T>
-struct SupportsToString<T, decltype(void(std::declval<T>().ToString()))>
-    : std::true_type {};
 
 
 
@@ -85,82 +25,40 @@ template <typename T, typename = void>
 struct is_iterator : std::false_type {};
 
 template <typename T>
-struct is_iterator<T,
-                   void_t<typename std::iterator_traits<T>::iterator_category>>
+struct is_iterator<
+    T,
+    std::void_t<typename std::iterator_traits<T>::iterator_category>>
     : std::true_type {};
 
+
+
+
+template <size_t I>
+struct priority_tag : priority_tag<I - 1> {};
+
+template <>
+struct priority_tag<0> {};
+
+}  
+
+namespace internal {
+
+
+
+template <typename T, bool = std::is_enum_v<T>>
+struct IsScopedEnumImpl : std::false_type {};
+
+template <typename T>
+struct IsScopedEnumImpl<T, true>
+    : std::negation<std::is_convertible<T, std::underlying_type_t<T>>> {};
+
 }  
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if defined(CR_USE_FALLBACKS_FOR_OLD_EXPERIMENTAL_GLIBCXX) || \
-    defined(CR_USE_FALLBACKS_FOR_GCC_WITH_LIBCXX)
 template <typename T>
-struct is_trivially_copyable {
-
-
-
-#if _GNUC_VER >= 501
-  static constexpr bool value = __is_trivially_copyable(T);
-#else
-  static constexpr bool value =
-      __has_trivial_copy(T) && __has_trivial_destructor(T);
-#endif
-};
-#else
-template <class T>
-using is_trivially_copyable = std::is_trivially_copyable<T>;
-#endif
-
-#if defined(__GNUC__) && !defined(__clang__) && __GNUC__ <= 7
-
-
-
-
-template <typename T>
-struct is_trivially_copy_constructible
-    : std::is_trivially_copy_constructible<T> {};
-
-template <typename... T>
-struct is_trivially_copy_constructible<std::vector<T...>> : std::false_type {};
-#else
-
-template <typename T>
-using is_trivially_copy_constructible = std::is_trivially_copy_constructible<T>;
-#endif
-
-
-
-
-
-
-
-struct in_place_t {};
-constexpr in_place_t in_place = {};
-
-
+struct is_scoped_enum : internal::IsScopedEnumImpl<T> {};
 
 
 
@@ -168,21 +66,81 @@ constexpr in_place_t in_place = {};
 
 
 template <typename T>
-struct in_place_type_t {};
-
-template <typename T>
-struct is_in_place_type_t {
-  static constexpr bool value = false;
+struct remove_cvref {
+  using type = std::remove_cv_t<std::remove_reference_t<T>>;
 };
 
-template <typename... Ts>
-struct is_in_place_type_t<in_place_type_t<Ts...>> {
-  static constexpr bool value = true;
+
+
+
+
+
+template <typename T>
+using remove_cvref_t = typename remove_cvref<T>::type;
+
+
+
+
+
+
+
+template <typename Iter>
+struct IterValueImpl {
+  using value_type = typename std::iterator_traits<Iter>::value_type;
+};
+
+template <typename T, bool Cond = false>
+struct IterValuePointerImpl {
+  
+  
+};
+template <typename T>
+struct IterValuePointerImpl<T*, true> {
+  using value_type = typename std::iterator_traits<T*>::value_type;
+};
+
+template <typename T>
+struct IterValueImpl<T*> {
+  using value_type =
+      typename IterValuePointerImpl<T*, std::is_object_v<T>>::value_type;
+};
+
+template <typename Iter>
+using iter_value_t = typename IterValueImpl<remove_cvref_t<Iter>>::value_type;
+
+
+
+
+
+
+template <typename Iter>
+using iter_reference_t = decltype(*std::declval<Iter&>());
+
+
+
+
+
+
+template <typename Func, typename... Iters>
+using indirect_result_t =
+    std::invoke_result_t<Func, iter_reference_t<Iters>...>;
+
+
+
+
+
+
+
+
+template <typename Iter,
+          typename Proj,
+          typename IndirectResultT = indirect_result_t<Proj, Iter>>
+struct projected {
+  using value_type = remove_cvref_t<IndirectResultT>;
+
+  IndirectResultT operator*() const;  
 };
 
 }  
-
-#undef CR_USE_FALLBACKS_FOR_GCC_WITH_LIBCXX
-#undef CR_USE_FALLBACKS_FOR_OLD_EXPERIMENTAL_GLIBCXX
 
 #endif  

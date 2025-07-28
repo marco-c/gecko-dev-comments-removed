@@ -8,8 +8,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "base/logging.h"
-#include "base/macros.h"
+#include "base/memory/raw_ptr.h"
 #include "base/numerics/safe_conversions.h"
 #include "sandbox/win/src/policy_engine_params.h"
 
@@ -75,7 +74,7 @@ enum EvalResult {
 };
 
 
-enum OpcodeID {
+enum OpcodeID : uint16_t {
   OP_ALWAYS_FALSE,        
   OP_ALWAYS_TRUE,         
   OP_NUMBER_MATCH,        
@@ -196,7 +195,7 @@ class PolicyOpcode {
   void SetOptions(uint32_t options) { options_ = options; }
 
   
-  uint16_t GetParameter() const { return parameter_; }
+  uint8_t GetParameter() const { return parameter_; }
 
  private:
   static const size_t kArgumentCount = 4;  
@@ -214,7 +213,10 @@ class PolicyOpcode {
   EvalResult EvaluateHelper(const ParameterSet* parameters,
                             MatchContext* match);
   OpcodeID opcode_id_;
-  int16_t parameter_;
+  
+  uint8_t has_param_;
+  
+  uint8_t parameter_;
   uint32_t options_;
   OpcodeArgument arguments_[PolicyOpcode::kArgumentCount];
 };
@@ -282,11 +284,11 @@ class OpcodeFactory {
     memory_bottom_ = &memory_top_[memory_size];
   }
 
+  OpcodeFactory(const OpcodeFactory&) = delete;
+  OpcodeFactory& operator=(const OpcodeFactory&) = delete;
+
   
-  size_t memory_size() const {
-    DCHECK_GE(memory_bottom_, memory_top_);
-    return memory_bottom_ - memory_top_;
-  }
+  size_t memory_size() const;
 
   
   PolicyOpcode* MakeOpAlwaysFalse(uint32_t options);
@@ -302,7 +304,7 @@ class OpcodeFactory {
   
   
   
-  PolicyOpcode* MakeOpNumberMatch(int16_t selected_param,
+  PolicyOpcode* MakeOpNumberMatch(uint8_t selected_param,
                                   uint32_t match,
                                   uint32_t options);
 
@@ -310,7 +312,7 @@ class OpcodeFactory {
   
   
   
-  PolicyOpcode* MakeOpVoidPtrMatch(int16_t selected_param,
+  PolicyOpcode* MakeOpVoidPtrMatch(uint8_t selected_param,
                                    const void* match,
                                    uint32_t options);
 
@@ -318,7 +320,7 @@ class OpcodeFactory {
   
   
   
-  PolicyOpcode* MakeOpNumberMatchRange(int16_t selected_param,
+  PolicyOpcode* MakeOpNumberMatchRange(uint8_t selected_param,
                                        uint32_t lower_bound,
                                        uint32_t upper_bound,
                                        uint32_t options);
@@ -336,7 +338,7 @@ class OpcodeFactory {
   
   
   
-  PolicyOpcode* MakeOpWStringMatch(int16_t selected_param,
+  PolicyOpcode* MakeOpWStringMatch(uint8_t selected_param,
                                    const wchar_t* match_str,
                                    int start_position,
                                    StringMatchOptions match_opts,
@@ -346,17 +348,17 @@ class OpcodeFactory {
   
   
   
-  PolicyOpcode* MakeOpNumberAndMatch(int16_t selected_param,
+  PolicyOpcode* MakeOpNumberAndMatch(uint8_t selected_param,
                                      uint32_t match,
                                      uint32_t options);
 
  private:
   
   
-  
+  PolicyOpcode* MakeBase(OpcodeID opcode_id, uint32_t options);
   PolicyOpcode* MakeBase(OpcodeID opcode_id,
                          uint32_t options,
-                         int16_t selected_param);
+                         uint8_t selected_param);
 
   
   
@@ -364,14 +366,12 @@ class OpcodeFactory {
 
   
   
-  char* memory_top_;
+  raw_ptr<char, AllowPtrArithmetic | DanglingUntriaged> memory_top_;
 
   
   
   
-  char* memory_bottom_;
-
-  DISALLOW_COPY_AND_ASSIGN(OpcodeFactory);
+  raw_ptr<char, AllowPtrArithmetic | DanglingUntriaged> memory_bottom_;
 };
 
 }  

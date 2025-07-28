@@ -5,8 +5,6 @@
 #ifndef SANDBOX_WIN_SRC_SANDBOX_POLICY_BASE_H_
 #define SANDBOX_WIN_SRC_SANDBOX_POLICY_BASE_H_
 
-#include <windows.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -16,97 +14,202 @@
 #include <vector>
 
 #include "base/compiler_specific.h"
-#include "base/macros.h"
+#include "base/containers/span.h"
+#include "base/dcheck_is_on.h"
+#include "base/memory/raw_ptr.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/process/launch.h"
-#include "base/win/scoped_handle.h"
-#include "sandbox/win/src/app_container_profile_base.h"
-#include "sandbox/win/src/crosscall_server.h"
+#include "base/strings/string_piece.h"
+#include "base/synchronization/lock.h"
+#include "base/win/access_token.h"
+#include "base/win/windows_types.h"
+#include "sandbox/win/src/app_container_base.h"
 #include "sandbox/win/src/handle_closer.h"
 #include "sandbox/win/src/ipc_tags.h"
+#include "sandbox/win/src/job.h"
 #include "sandbox/win/src/policy_engine_opcodes.h"
 #include "sandbox/win/src/policy_engine_params.h"
 #include "sandbox/win/src/sandbox_policy.h"
-#include "sandbox/win/src/win_utils.h"
+#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace sandbox {
 
+class BrokerServicesBase;
+class Dispatcher;
 class LowLevelPolicy;
 class PolicyDiagnostic;
 class TargetProcess;
 struct PolicyGlobal;
 
-class PolicyBase final : public TargetPolicy {
- public:
-  PolicyBase();
 
-  
-  void AddRef() override;
-  void Release() override;
+
+
+
+class ConfigBase final : public TargetConfig {
+ public:
+  ConfigBase() noexcept;
+  ~ConfigBase() override;
+
+  ConfigBase(const ConfigBase&) = delete;
+  ConfigBase& operator=(const ConfigBase&) = delete;
+
+  bool IsConfigured() const override;
+
   ResultCode SetTokenLevel(TokenLevel initial, TokenLevel lockdown) override;
   TokenLevel GetInitialTokenLevel() const override;
   TokenLevel GetLockdownTokenLevel() const override;
   void SetDoNotUseRestrictingSIDs() final;
+  bool GetUseRestrictingSIDs() final;
   void SetAllowEveryoneForUserRestricted() final;
+  bool GetAllowEveryoneForUserRestricted() final;
   ResultCode SetJobLevel(JobLevel job_level, uint32_t ui_exceptions) override;
   JobLevel GetJobLevel() const override;
-  ResultCode SetJobMemoryLimit(size_t memory_limit) override;
-  ResultCode SetAlternateDesktop(bool alternate_winstation) override;
-  std::wstring GetAlternateDesktop() const override;
-  ResultCode CreateAlternateDesktop(bool alternate_winstation) override;
-  void DestroyAlternateDesktop() override;
+  void SetJobMemoryLimit(size_t memory_limit) override;
+  ResultCode AllowFileAccess(FileSemantics semantics,
+                             const wchar_t* pattern) override;
+  ResultCode AllowNamedPipes(const wchar_t* pattern) override;
+  ResultCode AllowRegistryRead(const wchar_t* pattern) final;
+  ResultCode AllowExtraDlls(const wchar_t* pattern) override;
+  ResultCode SetFakeGdiInit() override;
+  ResultCode AllowLineBreaking() final;
+  void AddDllToUnload(const wchar_t* dll_name) override;
   ResultCode SetIntegrityLevel(IntegrityLevel integrity_level) override;
   IntegrityLevel GetIntegrityLevel() const override;
-  ResultCode SetDelayedIntegrityLevel(IntegrityLevel integrity_level) override;
+  void SetDelayedIntegrityLevel(IntegrityLevel integrity_level) override;
   ResultCode SetLowBox(const wchar_t* sid) override;
   ResultCode SetProcessMitigations(MitigationFlags flags) override;
   MitigationFlags GetProcessMitigations() override;
   ResultCode SetDelayedProcessMitigations(MitigationFlags flags) override;
   MitigationFlags GetDelayedProcessMitigations() const override;
-  ResultCode SetDisconnectCsrss() override;
-  void SetStrictInterceptions() override;
-  ResultCode SetStdoutHandle(HANDLE handle) override;
-  ResultCode SetStderrHandle(HANDLE handle) override;
-  ResultCode AddRule(SubSystem subsystem,
-                     Semantics semantics,
-                     const wchar_t* pattern) override;
-  ResultCode AddDllToUnload(const wchar_t* dll_name) override;
-  ResultCode AddKernelObjectToClose(const wchar_t* handle_type,
-                                    const wchar_t* handle_name) override;
-  void AddHandleToShare(HANDLE handle) override;
-  void SetLockdownDefaultDacl() override;
   void AddRestrictingRandomSid() override;
-  void SetEnableOPMRedirection() override;
-  bool GetEnableOPMRedirection() override;
+  void SetLockdownDefaultDacl() override;
   ResultCode AddAppContainerProfile(const wchar_t* package_name,
                                     bool create_profile) override;
-  scoped_refptr<AppContainerProfile> GetAppContainerProfile() override;
-  void SetEffectiveToken(HANDLE token) override;
+  scoped_refptr<AppContainer> GetAppContainer() override;
+  ResultCode AddKernelObjectToClose(const wchar_t* handle_type,
+                                    const wchar_t* handle_name) override;
+  ResultCode SetDisconnectCsrss() override;
+  void SetDesktop(Desktop desktop) override;
+  void SetFilterEnvironment(bool filter) override;
+  bool GetEnvironmentFiltered() override;
+  void SetZeroAppShim() override;
 
+ private:
   
-  scoped_refptr<AppContainerProfileBase> GetAppContainerProfileBase();
-
+  friend class BrokerServicesBase;
   
+  friend class PolicyDiagnostic;
   
-  ResultCode MakeJobObject(base::win::ScopedHandle* job);
-
-  
-  
-  
-  ResultCode MakeTokens(base::win::ScopedHandle* initial,
-                        base::win::ScopedHandle* lockdown,
-                        base::win::ScopedHandle* lowbox);
-
-  PSID GetLowBoxSid() const;
-
-  
-  
-  ResultCode AddTarget(TargetProcess* target);
+  friend class PolicyBase;
 
   
   
+  bool Freeze();
+
   
-  bool OnJobEmpty(HANDLE job);
+  bool IsOnCreatingThread() const;
+
+  
+  
+  LowLevelPolicy* PolicyMaker();
+
+#if DCHECK_IS_ON()
+  
+  uint32_t creating_thread_id_;
+#endif  
+
+  
+  bool configured_ = false;
+
+  
+  PolicyGlobal* policy();
+  absl::optional<base::span<const uint8_t>> policy_span();
+  std::vector<std::wstring>& blocklisted_dlls();
+  AppContainerBase* app_container();
+  IntegrityLevel integrity_level() { return integrity_level_; }
+  IntegrityLevel delayed_integrity_level() { return delayed_integrity_level_; }
+  bool add_restricting_random_sid() { return add_restricting_random_sid_; }
+  bool lockdown_default_dacl() { return lockdown_default_dacl_; }
+  bool is_csrss_connected() { return is_csrss_connected_; }
+  size_t memory_limit() { return memory_limit_; }
+  uint32_t ui_exceptions() { return ui_exceptions_; }
+  Desktop desktop() { return desktop_; }
+  
+  HandleCloser* handle_closer() { return handle_closer_.get(); }
+  bool zero_appshim() { return zero_appshim_; }
+
+  TokenLevel lockdown_level_;
+  TokenLevel initial_level_;
+  bool use_restricting_sids_ = true;
+  bool allow_everyone_for_user_restricted_ = false;
+  JobLevel job_level_;
+  IntegrityLevel integrity_level_;
+  IntegrityLevel delayed_integrity_level_;
+  MitigationFlags mitigations_;
+  MitigationFlags delayed_mitigations_;
+  bool add_restricting_random_sid_;
+  bool lockdown_default_dacl_;
+  bool is_csrss_connected_;
+  size_t memory_limit_;
+  uint32_t ui_exceptions_;
+  Desktop desktop_;
+  bool filter_environment_;
+  bool zero_appshim_;
+
+  
+  
+  std::unique_ptr<LowLevelPolicy> policy_maker_;
+  
+  raw_ptr<PolicyGlobal> policy_;
+  
+  
+  
+  
+  std::unique_ptr<HandleCloser> handle_closer_;
+  
+  std::vector<std::wstring> blocklisted_dlls_;
+  
+  scoped_refptr<AppContainerBase> app_container_;
+};
+
+class PolicyBase final : public TargetPolicy {
+ public:
+  PolicyBase(base::StringPiece key);
+  ~PolicyBase() override;
+
+  PolicyBase(const PolicyBase&) = delete;
+  PolicyBase& operator=(const PolicyBase&) = delete;
+
+  
+  TargetConfig* GetConfig() override;
+  ResultCode SetStdoutHandle(HANDLE handle) override;
+  ResultCode SetStderrHandle(HANDLE handle) override;
+  void AddHandleToShare(HANDLE handle) override;
+  void AddDelegateData(base::span<const uint8_t> data) override;
+
+  
+  
+  ResultCode InitJob();
+
+  
+  
+  HANDLE GetJobHandle();
+
+  
+  bool HasJob();
+
+  
+  
+  ResultCode DropActiveProcessLimit();
+
+  
+  
+  ResultCode MakeTokens(absl::optional<base::win::AccessToken>& initial,
+                        absl::optional<base::win::AccessToken>& lockdown);
+
+  
+  
+  ResultCode ApplyToTarget(std::unique_ptr<TargetProcess> target);
 
   EvalResult EvalPolicy(IpcTag service, CountedParameterSetBase* params);
 
@@ -118,81 +221,50 @@ class PolicyBase final : public TargetPolicy {
 
  private:
   
+  friend class sandbox::BrokerServicesBase;
+  
   friend class PolicyDiagnostic;
-  ~PolicyBase();
 
   
-  ResultCode SetupAllInterceptions(TargetProcess* target);
+  ResultCode SetupAllInterceptions(TargetProcess& target);
 
   
-  bool SetupHandleCloser(TargetProcess* target);
-
-  ResultCode AddRuleInternal(SubSystem subsystem,
-                             Semantics semantics,
-                             const wchar_t* pattern);
+  bool SetupHandleCloser(TargetProcess& target);
 
   
-  CRITICAL_SECTION lock_;
+  bool SetConfig(TargetConfig* config);
+
+  
+  ConfigBase* config();
+  
+  std::string tag_;
+  
+  std::unique_ptr<ConfigBase> config_;
+  
+  raw_ptr<ConfigBase> config_ptr_;
+
   
   
-  typedef std::list<TargetProcess*> TargetSet;
-  TargetSet targets_;
+
   
-  volatile LONG ref_count;
+  absl::optional<base::span<const uint8_t>> delegate_data_span();
+
   
-  TokenLevel lockdown_level_;
-  TokenLevel initial_level_;
-  bool use_restricting_sids_ = true;
-  bool allow_everyone_for_user_restricted_ = false;
-  JobLevel job_level_;
-  uint32_t ui_exceptions_;
-  size_t memory_limit_;
-  bool use_alternate_desktop_;
-  bool use_alternate_winstation_;
-  
-  bool file_system_init_;
-  bool relaxed_interceptions_;
   HANDLE stdout_handle_;
   HANDLE stderr_handle_;
-  IntegrityLevel integrity_level_;
-  IntegrityLevel delayed_integrity_level_;
-  MitigationFlags mitigations_;
-  MitigationFlags delayed_mitigations_;
-  bool is_csrss_connected_;
   
-  LowLevelPolicy* policy_maker_;
-  
-  PolicyGlobal* policy_;
-  
-  std::vector<std::wstring> blocklisted_dlls_;
-  
-  
-  
-  HandleCloser handle_closer_;
-  PSID lowbox_sid_;
-  base::win::ScopedHandle lowbox_directory_;
-  std::unique_ptr<Dispatcher> dispatcher_;
-  bool lockdown_default_dacl_;
-  bool add_restricting_random_sid_;
+  std::unique_ptr<const std::vector<uint8_t>> delegate_data_;
 
-  static HDESK alternate_desktop_handle_;
-  static HWINSTA alternate_winstation_handle_;
-  static HDESK alternate_desktop_local_winstation_handle_;
-  static IntegrityLevel alternate_desktop_integrity_level_label_;
-  static IntegrityLevel
-      alternate_desktop_local_winstation_integrity_level_label_;
+  std::unique_ptr<Dispatcher> dispatcher_;
 
   
   
   
   base::HandlesToInheritVector handles_to_share_;
-  bool enable_opm_redirection_;
+  Job job_;
 
-  scoped_refptr<AppContainerProfileBase> app_container_profile_;
-
-  HANDLE effective_token_;
-
-  DISALLOW_COPY_AND_ASSIGN(PolicyBase);
+  
+  std::unique_ptr<TargetProcess> target_;
 };
 
 }  

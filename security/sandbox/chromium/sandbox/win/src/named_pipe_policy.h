@@ -2,14 +2,13 @@
 
 
 
-#ifndef SANDBOX_SRC_NAMED_PIPE_POLICY_H__
-#define SANDBOX_SRC_NAMED_PIPE_POLICY_H__
+#ifndef SANDBOX_WIN_SRC_NAMED_PIPE_POLICY_H_
+#define SANDBOX_WIN_SRC_NAMED_PIPE_POLICY_H_
 
 #include <string>
 
 #include "sandbox/win/src/crosscall_server.h"
 #include "sandbox/win/src/policy_low_level.h"
-#include "sandbox/win/src/sandbox_policy.h"
 
 namespace sandbox {
 
@@ -22,7 +21,6 @@ class NamedPipePolicy {
   
   
   static bool GenerateRules(const wchar_t* name,
-                            TargetPolicy::Semantics semantics,
                             LowLevelPolicy* policy);
 
   

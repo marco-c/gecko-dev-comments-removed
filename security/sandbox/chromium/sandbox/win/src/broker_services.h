@@ -5,22 +5,24 @@
 #ifndef SANDBOX_WIN_SRC_BROKER_SERVICES_H_
 #define SANDBOX_WIN_SRC_BROKER_SERVICES_H_
 
-#include <list>
 #include <map>
 #include <memory>
 #include <set>
+#include <string>
 #include <utility>
 
 #include "base/compiler_specific.h"
+#include "base/containers/flat_map.h"
 #include "base/environment.h"
-#include "base/macros.h"
+#include "base/memory/raw_ptr.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/win/scoped_handle.h"
+#include "sandbox/win/src/alternate_desktop.h"
 #include "sandbox/win/src/crosscall_server.h"
-#include "sandbox/win/src/job.h"
 #include "sandbox/win/src/sandbox.h"
+#include "sandbox/win/src/sandbox_policy_base.h"
 #include "sandbox/win/src/sharedmem_ipc_server.h"
-#include "sandbox/win/src/win2k_threadpool.h"
+#include "sandbox/win/src/threadpool.h"
 #include "sandbox/win/src/win_utils.h"
 
 namespace sandbox {
@@ -37,45 +39,64 @@ class BrokerServicesBase final : public BrokerServices,
  public:
   BrokerServicesBase();
 
+  BrokerServicesBase(const BrokerServicesBase&) = delete;
+  BrokerServicesBase& operator=(const BrokerServicesBase&) = delete;
+
   ~BrokerServicesBase();
 
   
   ResultCode Init() override;
-  scoped_refptr<TargetPolicy> CreatePolicy() override;
+  ResultCode InitForTesting(
+      std::unique_ptr<BrokerServicesTargetTracker> target_tracker) override;
+  ResultCode CreateAlternateDesktop(Desktop desktop) override;
+  void DestroyDesktops() override;
+  std::unique_ptr<TargetPolicy> CreatePolicy() override;
+  std::unique_ptr<TargetPolicy> CreatePolicy(base::StringPiece key) override;
+
   ResultCode SpawnTarget(const wchar_t* exe_path,
                          const wchar_t* command_line,
                          base::EnvironmentMap& env_map,
-                         scoped_refptr<TargetPolicy> policy,
-                         ResultCode* last_warning,
+                         std::unique_ptr<TargetPolicy> policy,
                          DWORD* last_error,
                          PROCESS_INFORMATION* target) override;
-  ResultCode WaitForAllTargets() override;
   ResultCode GetPolicyDiagnostics(
       std::unique_ptr<PolicyDiagnosticsReceiver> receiver) override;
+  void SetStartingMitigations(MitigationFlags starting_mitigations) override;
+  bool RatchetDownSecurityMitigations(
+      MitigationFlags additional_flags) override;
+  std::wstring GetDesktopName(Desktop desktop) override;
+
+  static void FreezeTargetConfigForTesting(TargetConfig* config);
 
   bool DeriveCapabilitySidFromName(const wchar_t* name, PSID derived_sid,
                                    DWORD sid_buffer_length) override;
 
  private:
   
+  ResultCode Init(std::unique_ptr<BrokerServicesTargetTracker> target_tracker);
+
   
-  static DWORD WINAPI TargetEventsThread(PVOID param);
+  ResultCode UpdateDesktopIntegrity(Desktop desktop, IntegrityLevel integrity);
 
   
   
   base::win::ScopedHandle job_port_;
 
   
-  
-  base::win::ScopedHandle no_targets_;
-
-  
   base::win::ScopedHandle job_thread_;
 
   
-  std::unique_ptr<ThreadProvider> thread_pool_;
+  
+  raw_ptr<ThreadPool, DanglingUntriaged> thread_pool_ = nullptr;
 
-  DISALLOW_COPY_AND_ASSIGN(BrokerServicesBase);
+  
+  std::unique_ptr<AlternateDesktop> alt_winstation_;
+  
+  std::unique_ptr<AlternateDesktop> alt_desktop_;
+
+  
+  
+  base::flat_map<std::string, std::unique_ptr<TargetConfig>> config_cache_;
 };
 
 }  

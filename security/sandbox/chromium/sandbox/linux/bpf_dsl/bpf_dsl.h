@@ -8,11 +8,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <initializer_list>
 #include <memory>
 #include <utility>
 #include <vector>
 
-#include "base/macros.h"
 #include "sandbox/linux/bpf_dsl/bpf_dsl_forward.h"
 #include "sandbox/linux/bpf_dsl/cons.h"
 #include "sandbox/linux/bpf_dsl/trap_registry.h"
@@ -121,6 +121,12 @@ SANDBOX_EXPORT ResultExpr
     UnsafeTrap(TrapRegistry::TrapFnc trap_func, const void* aux);
 
 
+
+
+
+SANDBOX_EXPORT ResultExpr UserNotify();
+
+
 SANDBOX_EXPORT BoolExpr BoolConst(bool value);
 
 
@@ -149,6 +155,8 @@ class SANDBOX_EXPORT Arg {
 
   Arg(const Arg& arg) : num_(arg.num_), mask_(arg.mask_) {}
 
+  Arg& operator=(const Arg&) = delete;
+
   
   
   friend Arg operator&(const Arg& lhs, uint64_t rhs) {
@@ -170,8 +178,6 @@ class SANDBOX_EXPORT Arg {
 
   int num_;
   uint64_t mask_;
-
-  DISALLOW_ASSIGN(Arg);
 };
 
 
@@ -181,6 +187,9 @@ SANDBOX_EXPORT Elser If(BoolExpr cond, ResultExpr then_result);
 class SANDBOX_EXPORT Elser {
  public:
   Elser(const Elser& elser);
+
+  Elser& operator=(const Elser&) = delete;
+
   ~Elser();
 
   
@@ -201,7 +210,6 @@ class SANDBOX_EXPORT Elser {
   friend Elser If(BoolExpr, ResultExpr);
   template <typename T>
   friend Caser<T> Switch(const Arg<T>&);
-  DISALLOW_ASSIGN(Elser);
 };
 
 
@@ -213,16 +221,16 @@ template <typename T>
 class SANDBOX_EXPORT Caser {
  public:
   Caser(const Caser<T>& caser) : arg_(caser.arg_), elser_(caser.elser_) {}
-  ~Caser() {}
+
+  Caser& operator=(const Caser&) = delete;
+
+  ~Caser() = default;
 
   
   Caser<T> Case(T value, ResultExpr result) const;
 
   
-  
-  
-  template <typename... Values>
-  Caser<T> CasesImpl(ResultExpr result, const Values&... values) const;
+  Caser<T> Cases(std::initializer_list<T> values, ResultExpr result) const;
 
   
   ResultExpr Default(ResultExpr result) const;
@@ -235,19 +243,7 @@ class SANDBOX_EXPORT Caser {
 
   template <typename U>
   friend Caser<U> Switch(const Arg<U>&);
-  DISALLOW_ASSIGN(Caser);
 };
-
-
-
-
-
-
-#define SANDBOX_BPF_DSL_CASES(values, result) \
-  CasesImpl(result, SANDBOX_BPF_DSL_CASES_HELPER values)
-
-
-#define SANDBOX_BPF_DSL_CASES_HELPER(...) __VA_ARGS__
 
 
 
@@ -303,18 +299,23 @@ SANDBOX_EXPORT Caser<T> Switch(const Arg<T>& arg) {
 
 template <typename T>
 Caser<T> Caser<T>::Case(T value, ResultExpr result) const {
-  return SANDBOX_BPF_DSL_CASES((value), std::move(result));
+  return Cases({value}, std::move(result));
 }
 
 template <typename T>
-template <typename... Values>
-Caser<T> Caser<T>::CasesImpl(ResultExpr result, const Values&... values) const {
+Caser<T> Caser<T>::Cases(std::initializer_list<T> values,
+                         ResultExpr result) const {
   
   
   
 
+  BoolExpr values_expr(BoolConst(false));
+  for (T value : values) {
+    values_expr = AnyOf(values_expr, arg_ == value);
+  }
+
   return Caser<T>(arg_,
-                  elser_.ElseIf(AnyOf((arg_ == values)...), std::move(result)));
+                  elser_.ElseIf(std::move(values_expr), std::move(result)));
 }
 
 template <typename T>

@@ -4,6 +4,7 @@
 
 #include "sandbox/win/src/signed_interception.h"
 
+#include <ntstatus.h>
 #include <stdint.h>
 
 #include "sandbox/win/src/crosscall_client.h"
@@ -62,8 +63,9 @@ TargetNtCreateSection(NtCreateSectionFunction orig_CreateSection,
     OBJECT_NAME_INFORMATION* path =
         reinterpret_cast<OBJECT_NAME_INFORMATION*>(path_buffer);
     ULONG out_buffer_size = 0;
-    NTSTATUS status = g_nt.QueryObject(file_handle, ObjectNameInformation, path,
-                                       path_buffer_size, &out_buffer_size);
+    NTSTATUS status =
+        GetNtExports()->QueryObject(file_handle, ObjectNameInformation, path,
+                                    path_buffer_size, &out_buffer_size);
 
     if (!NT_SUCCESS(status)) {
       break;

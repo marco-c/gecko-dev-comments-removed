@@ -11,11 +11,16 @@
 #include <type_traits>
 #include <utility>
 
+#include "base/check.h"
 #include "base/containers/vector_buffer.h"
-#include "base/logging.h"
-#include "base/macros.h"
-#include "base/stl_util.h"
+#include "base/dcheck_is_on.h"
+#include "base/memory/raw_ptr_exclusion.h"
+#include "base/ranges/algorithm.h"
 #include "base/template_util.h"
+
+#if DCHECK_IS_ON()
+#include <ostream>
+#endif
 
 
 
@@ -203,7 +208,8 @@ class circular_deque_const_iterator {
   friend std::ptrdiff_t operator-(const circular_deque_const_iterator& lhs,
                                   const circular_deque_const_iterator& rhs) {
     lhs.CheckComparable(rhs);
-    return lhs.OffsetFromBegin() - rhs.OffsetFromBegin();
+    return static_cast<std::ptrdiff_t>(lhs.OffsetFromBegin() -
+                                       rhs.OffsetFromBegin());
   }
 
   
@@ -297,23 +303,28 @@ class circular_deque_const_iterator {
     
     
     
-    DCHECK_EQ(created_generation_, parent_deque_->generation_)
+    DCHECK(created_generation_ == parent_deque_->generation_)
         << "circular_deque iterator dereferenced after mutation.";
   }
   void CheckComparable(const circular_deque_const_iterator& other) const {
-    DCHECK_EQ(parent_deque_, other.parent_deque_);
+    DCHECK(parent_deque_ == other.parent_deque_);
     
     
     
     
-    DCHECK_EQ(created_generation_, other.created_generation_);
+    DCHECK(created_generation_ == other.created_generation_);
   }
 #else
   inline void CheckUnstableUsage() const {}
   inline void CheckComparable(const circular_deque_const_iterator&) const {}
 #endif  
 
-  const circular_deque<T>* parent_deque_;
+  
+  
+  
+  
+  RAW_PTR_EXCLUSION const circular_deque<T>* parent_deque_;
+
   size_t index_;
 
 #if DCHECK_IS_ON()
@@ -421,7 +432,7 @@ class circular_deque {
   constexpr circular_deque() = default;
 
   
-  circular_deque(size_type count) { resize(count); }
+  explicit circular_deque(size_type count) { resize(count); }
   circular_deque(size_type count, const T& value) { resize(count, value); }
 
   
@@ -492,8 +503,7 @@ class circular_deque {
 
   
   template <typename InputIterator>
-  typename std::enable_if<::base::internal::is_iterator<InputIterator>::value,
-                          void>::type
+  std::enable_if_t<::base::internal::is_iterator<InputIterator>::value, void>
   assign(InputIterator first, InputIterator last) {
     
     
@@ -522,11 +532,11 @@ class circular_deque {
     return buffer_[i - right_size];
   }
   value_type& at(size_type i) {
-    return const_cast<value_type&>(as_const(*this).at(i));
+    return const_cast<value_type&>(std::as_const(*this).at(i));
   }
 
   value_type& operator[](size_type i) {
-    return const_cast<value_type&>(as_const(*this)[i]);
+    return const_cast<value_type&>(std::as_const(*this)[i]);
   }
 
   const value_type& operator[](size_type i) const { return at(i); }
@@ -708,14 +718,16 @@ class circular_deque {
   
   
   template <class InputIterator>
-  typename std::enable_if<::base::internal::is_iterator<InputIterator>::value,
-                          void>::type
+  std::enable_if_t<::base::internal::is_iterator<InputIterator>::value, void>
   insert(const_iterator pos, InputIterator first, InputIterator last) {
     ValidateIterator(pos);
 
-    size_t inserted_items = std::distance(first, last);
-    if (inserted_items == 0)
+    const difference_type inserted_items_signed = std::distance(first, last);
+    if (inserted_items_signed == 0)
       return;  
+    CHECK(inserted_items_signed > 0);
+    const size_type inserted_items =
+        static_cast<size_type>(inserted_items_signed);
 
     
     iterator insert_cur;
@@ -1096,15 +1108,19 @@ class circular_deque {
 
 
 template <class T, class Value>
-void Erase(circular_deque<T>& container, const Value& value) {
-  container.erase(std::remove(container.begin(), container.end(), value),
-                  container.end());
+size_t Erase(circular_deque<T>& container, const Value& value) {
+  auto it = ranges::remove(container, value);
+  size_t removed = std::distance(it, container.end());
+  container.erase(it, container.end());
+  return removed;
 }
 
 template <class T, class Predicate>
-void EraseIf(circular_deque<T>& container, Predicate pred) {
-  container.erase(std::remove_if(container.begin(), container.end(), pred),
-                  container.end());
+size_t EraseIf(circular_deque<T>& container, Predicate pred) {
+  auto it = ranges::remove_if(container, pred);
+  size_t removed = std::distance(it, container.end());
+  container.erase(it, container.end());
+  return removed;
 }
 
 }  

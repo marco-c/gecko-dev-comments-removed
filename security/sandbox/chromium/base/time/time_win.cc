@@ -35,18 +35,21 @@
 
 #include <windows.foundation.h>
 #include <windows.h>
+
 #include <mmsystem.h>
 #include <stdint.h>
 
-#include "base/atomicops.h"
+#include <atomic>
+#include <ostream>
+
 #include "base/bit_cast.h"
+#include "base/check_op.h"
 #include "base/cpu.h"
-#include "base/feature_list.h"
-#include "base/logging.h"
+#include "base/notreached.h"
 #include "base/synchronization/lock.h"
 #include "base/threading/platform_thread.h"
 #include "base/time/time_override.h"
-#include "base/time/time_win_features.h"
+#include "build/build_config.h"
 
 namespace base {
 
@@ -61,13 +64,17 @@ int64_t FileTimeToMicroseconds(const FILETIME& ft) {
   return bit_cast<int64_t, FILETIME>(ft) / 10;
 }
 
-void MicrosecondsToFileTime(int64_t us, FILETIME* ft) {
-  DCHECK_GE(us, 0LL) << "Time is less than 0, negative values are not "
-      "representable in FILETIME";
+bool CanConvertToFileTime(int64_t us) {
+  return us >= 0 && us <= (std::numeric_limits<int64_t>::max() / 10);
+}
+
+FILETIME MicrosecondsToFileTime(int64_t us) {
+  DCHECK(CanConvertToFileTime(us)) << "Out-of-range: Cannot convert " << us
+                                   << " microseconds to FILETIME units.";
 
   
   
-  *ft = bit_cast<FILETIME, int64_t>(us * 10);
+  return bit_cast<FILETIME, int64_t>(us * 10);
 }
 
 int64_t CurrentWallclockMicroseconds() {
@@ -77,7 +84,7 @@ int64_t CurrentWallclockMicroseconds() {
 }
 
 
-constexpr TimeDelta kMaxTimeToAvoidDrift = TimeDelta::FromSeconds(60);
+constexpr TimeDelta kMaxTimeToAvoidDrift = Seconds(60);
 
 int64_t g_initial_time = 0;
 TimeTicks g_initial_ticks;
@@ -87,8 +94,6 @@ void InitializeClock() {
   g_initial_time = CurrentWallclockMicroseconds();
 }
 
-
-UINT g_battery_power_interval_ms = 4;
 
 
 
@@ -120,16 +125,12 @@ Lock* GetHighResLock() {
 
 
 
-UINT MinTimerIntervalHighResMs() {
-  return 1;
-}
+constexpr UINT kMinTimerIntervalHighResMs = 1;
 
 
 
 
-UINT MinTimerIntervalLowResMs() {
-  return g_battery_power_interval_ms;
-}
+constexpr UINT kMinTimerIntervalLowResMs = 8;
 
 
 
@@ -137,8 +138,8 @@ UINT GetIntervalMs() {
   if (!g_high_res_timer_count)
     return 0;  
   if (g_high_res_timer_enabled)
-    return MinTimerIntervalHighResMs();
-  return MinTimerIntervalLowResMs();
+    return kMinTimerIntervalHighResMs;
+  return kMinTimerIntervalLowResMs;
 }
 
 
@@ -164,7 +165,7 @@ void UpdateTimerIntervalLocked() {
 }
 
 
-uint64_t QPCNowRaw() {
+int64_t QPCNowRaw() {
   LARGE_INTEGER perf_counter_now = {};
   
   
@@ -210,14 +211,14 @@ Time TimeNowIgnoringOverride() {
       continue;
     }
 
-    return Time() + elapsed + TimeDelta::FromMicroseconds(g_initial_time);
+    return Time() + elapsed + Microseconds(g_initial_time);
   }
 }
 
 Time TimeNowFromSystemTimeIgnoringOverride() {
   
   InitializeClock();
-  return Time() + TimeDelta::FromMicroseconds(g_initial_time);
+  return Time() + Microseconds(g_initial_time);
 }
 }  
 
@@ -240,17 +241,7 @@ FILETIME Time::ToFileTime() const {
     result.dwLowDateTime = std::numeric_limits<DWORD>::max();
     return result;
   }
-  FILETIME utc_ft;
-  MicrosecondsToFileTime(us_, &utc_ft);
-  return utc_ft;
-}
-
-void Time::ReadMinTimerIntervalLowResMs() {
-  AutoLock lock(*GetHighResLock());
-  
-  g_battery_power_interval_ms =
-      base::FeatureList::IsEnabled(base::kSlowDCTimerInterruptsWin) ? 8 : 4;
-  UpdateTimerIntervalLocked();
+  return MicrosecondsToFileTime(us_);
 }
 
 
@@ -295,7 +286,7 @@ bool Time::ActivateHighResolutionTimer(bool activating) {
 
 bool Time::IsHighResolutionTimerInUse() {
   AutoLock lock(*GetHighResLock());
-  return g_last_interval_requested_ms == MinTimerIntervalHighResMs();
+  return g_last_interval_requested_ms == kMinTimerIntervalHighResMs;
 }
 
 
@@ -324,7 +315,7 @@ double Time::GetHighResolutionTimerUsage() {
     
     used_time += now - g_high_res_timer_last_activation;
   }
-  return used_time.InMillisecondsF() / elapsed_time.InMillisecondsF() * 100;
+  return used_time / elapsed_time * 100;
 }
 
 
@@ -356,25 +347,18 @@ bool Time::FromExploded(bool is_local, const Exploded& exploded, Time* time) {
     success = !!SystemTimeToFileTime(&st, &ft);
   }
 
-  if (!success) {
-    *time = Time(0);
-    return false;
-  }
-
-  *time = Time(FileTimeToMicroseconds(ft));
-  return true;
+  *time = Time(success ? FileTimeToMicroseconds(ft) : 0);
+  return success;
 }
 
 void Time::Explode(bool is_local, Exploded* exploded) const {
-  if (us_ < 0LL) {
+  if (!CanConvertToFileTime(us_)) {
     
     ZeroMemory(exploded, sizeof(*exploded));
     return;
   }
 
-  
-  FILETIME utc_ft;
-  MicrosecondsToFileTime(us_, &utc_ft);
+  const FILETIME utc_ft = MicrosecondsToFileTime(us_);
 
   
   bool success = true;
@@ -393,7 +377,6 @@ void Time::Explode(bool is_local, Exploded* exploded) const {
   }
 
   if (!success) {
-    NOTREACHED() << "Unable to convert time, don't know why";
     ZeroMemory(exploded, sizeof(*exploded));
     return;
   }
@@ -425,7 +408,7 @@ DWORD (*g_tick_function)(void) = &timeGetTimeWrapper;
 
 union LastTimeAndRolloversState {
   
-  subtle::Atomic32 as_opaque_32;
+  std::atomic<int32_t> as_opaque_32{0};
 
   
   struct {
@@ -441,7 +424,7 @@ union LastTimeAndRolloversState {
     uint16_t rollovers;
   } as_values;
 };
-subtle::Atomic32 g_last_time_and_rollovers = 0;
+std::atomic<int32_t> g_last_time_and_rollovers = 0;
 static_assert(
     sizeof(LastTimeAndRolloversState) <= sizeof(g_last_time_and_rollovers),
     "LastTimeAndRolloversState does not fit in a single atomic word");
@@ -460,7 +443,8 @@ TimeTicks RolloverProtectedNow() {
     
     
     
-    int32_t original = subtle::Acquire_Load(&g_last_time_and_rollovers);
+    int32_t original =
+        g_last_time_and_rollovers.load(std::memory_order_acquire);
     state.as_opaque_32 = original;
     now = g_tick_function();
     uint8_t now_8 = static_cast<uint8_t>(now >> 24);
@@ -474,17 +458,17 @@ TimeTicks RolloverProtectedNow() {
 
     
     
-    int32_t check = subtle::Release_CompareAndSwap(
-        &g_last_time_and_rollovers, original, state.as_opaque_32);
-    if (check == original)
+    bool success = g_last_time_and_rollovers.compare_exchange_strong(
+        original, state.as_opaque_32, std::memory_order_release);
+    if (success)
       break;
 
     
   }
 
   return TimeTicks() +
-         TimeDelta::FromMilliseconds(
-             now + (static_cast<uint64_t>(state.as_values.rollovers) << 32));
+         Milliseconds(now +
+                      (static_cast<uint64_t>(state.as_values.rollovers) << 32));
 }
 
 
@@ -526,36 +510,30 @@ TimeTicks InitialNowFunction();
 
 
 
-TimeTicksNowFunction g_time_ticks_now_ignoring_override_function =
-    &InitialNowFunction;
+std::atomic<TimeTicksNowFunction> g_time_ticks_now_ignoring_override_function{
+    &InitialNowFunction};
 int64_t g_qpc_ticks_per_second = 0;
-
-
-
-
-#define ATOMIC_THREAD_FENCE(memory_order) _ReadWriteBarrier();
 
 TimeDelta QPCValueToTimeDelta(LONGLONG qpc_value) {
   
   
-  ATOMIC_THREAD_FENCE(memory_order_acquire);
+  std::atomic_thread_fence(std::memory_order_acquire);
 
   DCHECK_GT(g_qpc_ticks_per_second, 0);
 
   
   
   if (qpc_value < Time::kQPCOverflowThreshold) {
-    return TimeDelta::FromMicroseconds(
-        qpc_value * Time::kMicrosecondsPerSecond / g_qpc_ticks_per_second);
+    return Microseconds(qpc_value * Time::kMicrosecondsPerSecond /
+                        g_qpc_ticks_per_second);
   }
   
   
   int64_t whole_seconds = qpc_value / g_qpc_ticks_per_second;
   int64_t leftover_ticks = qpc_value - (whole_seconds * g_qpc_ticks_per_second);
-  return TimeDelta::FromMicroseconds(
-      (whole_seconds * Time::kMicrosecondsPerSecond) +
-      ((leftover_ticks * Time::kMicrosecondsPerSecond) /
-       g_qpc_ticks_per_second));
+  return Microseconds((whole_seconds * Time::kMicrosecondsPerSecond) +
+                      ((leftover_ticks * Time::kMicrosecondsPerSecond) /
+                       g_qpc_ticks_per_second));
 }
 
 TimeTicks QPCNow() {
@@ -577,14 +555,13 @@ void InitializeNowFunctionPointer() {
   
   
   
-  TimeTicksNowFunction now_function;
   CPU cpu;
-  if (ticks_per_sec.QuadPart <= 0 || !cpu.has_non_stop_time_stamp_counter()) {
-    now_function = &RolloverProtectedNow;
-  } else {
-    now_function = &QPCNow;
-  }
+  const TimeTicksNowFunction now_function =
+      (ticks_per_sec.QuadPart <= 0 || !cpu.has_non_stop_time_stamp_counter())
+          ? &RolloverProtectedNow
+          : &QPCNow;
 
+  
   
   
   
@@ -595,20 +572,23 @@ void InitializeNowFunctionPointer() {
   
   
   g_qpc_ticks_per_second = ticks_per_sec.QuadPart;
-  ATOMIC_THREAD_FENCE(memory_order_release);
+  std::atomic_thread_fence(std::memory_order_release);
   
   
   
-  if (internal::g_time_ticks_now_function ==
-      &subtle::TimeTicksNowIgnoringOverride) {
-    internal::g_time_ticks_now_function = now_function;
-  }
-  g_time_ticks_now_ignoring_override_function = now_function;
+  
+  base::TimeTicksNowFunction initial_time_ticks_now_function =
+      &subtle::TimeTicksNowIgnoringOverride;
+  internal::g_time_ticks_now_function.compare_exchange_strong(
+      initial_time_ticks_now_function, now_function, std::memory_order_relaxed);
+  g_time_ticks_now_ignoring_override_function.store(now_function,
+                                                    std::memory_order_relaxed);
 }
 
 TimeTicks InitialNowFunction() {
   InitializeNowFunctionPointer();
-  return g_time_ticks_now_ignoring_override_function();
+  return g_time_ticks_now_ignoring_override_function.load(
+      std::memory_order_relaxed)();
 }
 
 }  
@@ -618,13 +598,14 @@ TimeTicks::TickFunctionType TimeTicks::SetMockTickFunction(
     TickFunctionType ticker) {
   TickFunctionType old = g_tick_function;
   g_tick_function = ticker;
-  subtle::NoBarrier_Store(&g_last_time_and_rollovers, 0);
+  g_last_time_and_rollovers.store(0, std::memory_order_relaxed);
   return old;
 }
 
 namespace subtle {
 TimeTicks TimeTicksNowIgnoringOverride() {
-  return g_time_ticks_now_ignoring_override_function();
+  return g_time_ticks_now_ignoring_override_function.load(
+      std::memory_order_relaxed)();
 }
 }  
 
@@ -657,9 +638,21 @@ bool TimeTicks::IsConsistentAcrossProcesses() {
 
 
 TimeTicks::Clock TimeTicks::GetClock() {
-  return IsHighResolution() ?
-      Clock::WIN_QPC : Clock::WIN_ROLLOVER_PROTECTED_TIME_GET_TIME;
+  return IsHighResolution() ? Clock::WIN_QPC
+                            : Clock::WIN_ROLLOVER_PROTECTED_TIME_GET_TIME;
 }
+
+
+
+namespace subtle {
+LiveTicks LiveTicksNowIgnoringOverride() {
+  ULONGLONG unbiased_interrupt_time;
+  QueryUnbiasedInterruptTimePrecise(&unbiased_interrupt_time);
+  
+  
+  return LiveTicks() + Nanoseconds(unbiased_interrupt_time * 100);
+}
+}  
 
 
 
@@ -685,42 +678,96 @@ ThreadTicks ThreadTicks::GetForThread(
   ::GetThreadTimes(thread_handle.platform_handle(), &creation_time, &exit_time,
                    &kernel_time, &user_time);
 
-  int64_t us = FileTimeToMicroseconds(user_time);
-  return ThreadTicks(us);
+  const int64_t us = FileTimeToMicroseconds(user_time);
 #else
   
   ULONG64 thread_cycle_time = 0;
   ::QueryThreadCycleTime(thread_handle.platform_handle(), &thread_cycle_time);
 
   
-  double tsc_ticks_per_second = TSCTicksPerSecond();
+  const double tsc_ticks_per_second = time_internal::TSCTicksPerSecond();
   if (tsc_ticks_per_second == 0)
     return ThreadTicks();
 
   
-  double thread_time_seconds = thread_cycle_time / tsc_ticks_per_second;
-  return ThreadTicks(
-      static_cast<int64_t>(thread_time_seconds * Time::kMicrosecondsPerSecond));
+  const double thread_time_seconds = thread_cycle_time / tsc_ticks_per_second;
+  const int64_t us =
+      static_cast<int64_t>(thread_time_seconds * Time::kMicrosecondsPerSecond);
 #endif
+
+  return ThreadTicks(us);
 }
 
 
 bool ThreadTicks::IsSupportedWin() {
-  static bool is_supported = CPU().has_non_stop_time_stamp_counter();
-  return is_supported;
+#if defined(ARCH_CPU_ARM64)
+  
+  
+  return true;
+#else
+  return time_internal::HasConstantRateTSC();
+#endif
 }
 
 
 void ThreadTicks::WaitUntilInitializedWin() {
 #if !defined(ARCH_CPU_ARM64)
-  while (TSCTicksPerSecond() == 0)
+  while (time_internal::TSCTicksPerSecond() == 0)
     ::Sleep(10);
 #endif
 }
 
+
+TimeTicks TimeTicks::FromQPCValue(LONGLONG qpc_value) {
+  return TimeTicks() + QPCValueToTimeDelta(qpc_value);
+}
+
+
+
+
+TimeDelta TimeDelta::FromQPCValue(LONGLONG qpc_value) {
+  return QPCValueToTimeDelta(qpc_value);
+}
+
+
+TimeDelta TimeDelta::FromFileTime(FILETIME ft) {
+  return Microseconds(FileTimeToMicroseconds(ft));
+}
+
+
+TimeDelta TimeDelta::FromWinrtDateTime(ABI::Windows::Foundation::DateTime dt) {
+  
+  return Microseconds(dt.UniversalTime / 10);
+}
+
+ABI::Windows::Foundation::DateTime TimeDelta::ToWinrtDateTime() const {
+  ABI::Windows::Foundation::DateTime date_time;
+  date_time.UniversalTime = InMicroseconds() * 10;
+  return date_time;
+}
+
+
+TimeDelta TimeDelta::FromWinrtTimeSpan(ABI::Windows::Foundation::TimeSpan ts) {
+  
+  return Microseconds(ts.Duration / 10);
+}
+
+ABI::Windows::Foundation::TimeSpan TimeDelta::ToWinrtTimeSpan() const {
+  ABI::Windows::Foundation::TimeSpan time_span;
+  time_span.Duration = InMicroseconds() * 10;
+  return time_span;
+}
+
 #if !defined(ARCH_CPU_ARM64)
-double ThreadTicks::TSCTicksPerSecond() {
-  DCHECK(IsSupported());
+namespace time_internal {
+
+bool HasConstantRateTSC() {
+  static bool is_supported = CPU().has_non_stop_time_stamp_counter();
+  return is_supported;
+}
+
+double TSCTicksPerSecond() {
+  DCHECK(HasConstantRateTSC());
   
   
   
@@ -732,19 +779,19 @@ double ThreadTicks::TSCTicksPerSecond() {
 
   
   
-  int previous_priority = ::GetThreadPriority(::GetCurrentThread());
+  const int previous_priority = ::GetThreadPriority(::GetCurrentThread());
   ::SetThreadPriority(::GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
 
   
   
 
   static const uint64_t tsc_initial = __rdtsc();
-  static const uint64_t perf_counter_initial = QPCNowRaw();
+  static const int64_t perf_counter_initial = QPCNowRaw();
 
   
   
-  uint64_t tsc_now = __rdtsc();
-  uint64_t perf_counter_now = QPCNowRaw();
+  const uint64_t tsc_now = __rdtsc();
+  const int64_t perf_counter_now = QPCNowRaw();
 
   
   ::SetThreadPriority(::GetCurrentThread(), previous_priority);
@@ -761,50 +808,23 @@ double ThreadTicks::TSCTicksPerSecond() {
   LARGE_INTEGER perf_counter_frequency = {};
   ::QueryPerformanceFrequency(&perf_counter_frequency);
   DCHECK_GE(perf_counter_now, perf_counter_initial);
-  uint64_t perf_counter_ticks = perf_counter_now - perf_counter_initial;
-  double elapsed_time_seconds =
+  const int64_t perf_counter_ticks = perf_counter_now - perf_counter_initial;
+  const double elapsed_time_seconds =
       perf_counter_ticks / static_cast<double>(perf_counter_frequency.QuadPart);
 
-  static constexpr double kMinimumEvaluationPeriodSeconds = 0.05;
+  constexpr double kMinimumEvaluationPeriodSeconds = 0.05;
   if (elapsed_time_seconds < kMinimumEvaluationPeriodSeconds)
     return 0;
 
   
   DCHECK_GE(tsc_now, tsc_initial);
-  uint64_t tsc_ticks = tsc_now - tsc_initial;
+  const uint64_t tsc_ticks = tsc_now - tsc_initial;
   tsc_ticks_per_second = tsc_ticks / elapsed_time_seconds;
 
   return tsc_ticks_per_second;
 }
+
+}  
 #endif  
-
-
-TimeTicks TimeTicks::FromQPCValue(LONGLONG qpc_value) {
-  return TimeTicks() + QPCValueToTimeDelta(qpc_value);
-}
-
-
-
-
-TimeDelta TimeDelta::FromQPCValue(LONGLONG qpc_value) {
-  return QPCValueToTimeDelta(qpc_value);
-}
-
-
-TimeDelta TimeDelta::FromFileTime(FILETIME ft) {
-  return TimeDelta::FromMicroseconds(FileTimeToMicroseconds(ft));
-}
-
-
-TimeDelta TimeDelta::FromWinrtDateTime(ABI::Windows::Foundation::DateTime dt) {
-  
-  return TimeDelta::FromMicroseconds(dt.UniversalTime / 10);
-}
-
-ABI::Windows::Foundation::DateTime TimeDelta::ToWinrtDateTime() const {
-  ABI::Windows::Foundation::DateTime date_time;
-  date_time.UniversalTime = InMicroseconds() * 10;
-  return date_time;
-}
 
 }  

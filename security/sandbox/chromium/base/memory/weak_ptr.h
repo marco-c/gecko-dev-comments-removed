@@ -66,20 +66,31 @@
 
 
 
+
+
 #ifndef BASE_MEMORY_WEAK_PTR_H_
 #define BASE_MEMORY_WEAK_PTR_H_
 
 #include <cstddef>
 #include <type_traits>
+#include <utility>
 
 #include "base/base_export.h"
-#include "base/logging.h"
-#include "base/macros.h"
+#include "base/check.h"
+#include "base/compiler_specific.h"
+#include "base/dcheck_is_on.h"
+#include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
+#include "base/memory/safe_ref_traits.h"
 #include "base/sequence_checker.h"
 #include "base/synchronization/atomic_flag.h"
+#include "base/types/pass_key.h"
 
 namespace base {
+
+namespace sequence_manager::internal {
+class TaskQueueImpl;
+}
 
 template <typename T> class SupportsWeakPtr;
 template <typename T> class WeakPtr;
@@ -88,7 +99,7 @@ namespace internal {
 
 
 
-class BASE_EXPORT WeakReference {
+class BASE_EXPORT TRIVIAL_ABI WeakReference {
  public:
   
   
@@ -101,7 +112,10 @@ class BASE_EXPORT WeakReference {
 
     bool MaybeValid() const;
 
+#if DCHECK_IS_ON()
     void DetachFromSequence();
+    void BindToCurrentSequence();
+#endif
 
    private:
     friend class base::RefCountedThreadSafe<Flag>;
@@ -116,12 +130,24 @@ class BASE_EXPORT WeakReference {
   explicit WeakReference(const scoped_refptr<Flag>& flag);
   ~WeakReference();
 
-  WeakReference(WeakReference&& other) noexcept;
   WeakReference(const WeakReference& other);
-  WeakReference& operator=(WeakReference&& other) noexcept = default;
-  WeakReference& operator=(const WeakReference& other) = default;
+  WeakReference& operator=(const WeakReference& other);
 
+  WeakReference(WeakReference&& other) noexcept;
+  WeakReference& operator=(WeakReference&& other) noexcept;
+
+  void Reset();
+  
+  
+  
   bool IsValid() const;
+  
+  
+  
+  
+  
+  
+  
   bool MaybeValid() const;
 
  private:
@@ -138,38 +164,10 @@ class BASE_EXPORT WeakReferenceOwner {
   bool HasRefs() const { return !flag_->HasOneRef(); }
 
   void Invalidate();
+  void BindToCurrentSequence();
 
  private:
   scoped_refptr<WeakReference::Flag> flag_;
-};
-
-
-
-
-
-class BASE_EXPORT WeakPtrBase {
- public:
-  WeakPtrBase();
-  ~WeakPtrBase();
-
-  WeakPtrBase(const WeakPtrBase& other) = default;
-  WeakPtrBase(WeakPtrBase&& other) noexcept = default;
-  WeakPtrBase& operator=(const WeakPtrBase& other) = default;
-  WeakPtrBase& operator=(WeakPtrBase&& other) noexcept = default;
-
-  void reset() {
-    ref_ = internal::WeakReference();
-    ptr_ = 0;
-  }
-
- protected:
-  WeakPtrBase(const WeakReference& ref, uintptr_t ptr);
-
-  WeakReference ref_;
-
-  
-  
-  uintptr_t ptr_;
 };
 
 
@@ -185,23 +183,37 @@ class SupportsWeakPtrBase {
   
   template<typename Derived>
   static WeakPtr<Derived> StaticAsWeakPtr(Derived* t) {
-    static_assert(
-        std::is_base_of<internal::SupportsWeakPtrBase, Derived>::value,
-        "AsWeakPtr argument must inherit from SupportsWeakPtr");
-    return AsWeakPtrImpl<Derived>(t);
+    static_assert(std::is_base_of_v<internal::SupportsWeakPtrBase, Derived>,
+                  "AsWeakPtr argument must inherit from SupportsWeakPtr");
+    using Base = typename decltype(ExtractSinglyInheritedBase(t))::Base;
+    
+    
+    WeakPtr<Base> weak = static_cast<SupportsWeakPtr<Base>*>(t)->AsWeakPtr();
+    return WeakPtr<Derived>(weak.CloneWeakReference(),
+                            static_cast<Derived*>(weak.ptr_));
   }
 
  private:
   
   
-  
-  template <typename Derived, typename Base>
-  static WeakPtr<Derived> AsWeakPtrImpl(SupportsWeakPtr<Base>* t) {
-    WeakPtr<Base> ptr = t->AsWeakPtr();
-    return WeakPtr<Derived>(
-        ptr.ref_, static_cast<Derived*>(reinterpret_cast<Base*>(ptr.ptr_)));
-  }
+  template <typename T>
+  struct ExtractSinglyInheritedBase;
+  template <typename T>
+  struct ExtractSinglyInheritedBase<SupportsWeakPtr<T>> {
+    using Base = T;
+    explicit ExtractSinglyInheritedBase(SupportsWeakPtr<T>*);
+  };
+#if !defined(MOZ_SANDBOX)
+  template <typename T>
+  ExtractSinglyInheritedBase(SupportsWeakPtr<T>*)
+      -> ExtractSinglyInheritedBase<SupportsWeakPtr<T>>;
+#endif
 };
+
+
+template <typename T>
+SafeRef<T> MakeSafeRefFromWeakPtrInternals(internal::WeakReference&& ref,
+                                           T* ptr);
 
 }  
 
@@ -221,43 +233,68 @@ template <typename T> class WeakPtrFactory;
 
 
 template <typename T>
-class WeakPtr : public internal::WeakPtrBase {
+class TRIVIAL_ABI WeakPtr {
  public:
   WeakPtr() = default;
+  
   WeakPtr(std::nullptr_t) {}
 
   
   
-  template <typename U>
-  WeakPtr(const WeakPtr<U>& other) : WeakPtrBase(other) {
-    
-    
-    T* t = reinterpret_cast<U*>(other.ptr_);
-    ptr_ = reinterpret_cast<uintptr_t>(t);
-  }
-  template <typename U>
-  WeakPtr(WeakPtr<U>&& other) noexcept : WeakPtrBase(std::move(other)) {
-    
-    
-    T* t = reinterpret_cast<U*>(other.ptr_);
-    ptr_ = reinterpret_cast<uintptr_t>(t);
+  template <typename U,
+            typename = std::enable_if_t<std::is_convertible_v<U*, T*>>>
+  
+  WeakPtr(const WeakPtr<U>& other) : ref_(other.ref_), ptr_(other.ptr_) {}
+  template <typename U,
+            typename = std::enable_if_t<std::is_convertible_v<U*, T*>>>
+  
+  WeakPtr& operator=(const WeakPtr<U>& other) {
+    ref_ = other.ref_;
+    ptr_ = other.ptr_;
+    return *this;
   }
 
-  T* get() const {
-    return ref_.IsValid() ? reinterpret_cast<T*>(ptr_) : nullptr;
+  template <typename U,
+            typename = std::enable_if_t<std::is_convertible_v<U*, T*>>>
+  
+  WeakPtr(WeakPtr<U>&& other)
+      : ref_(std::move(other.ref_)), ptr_(std::move(other.ptr_)) {}
+  template <typename U,
+            typename = std::enable_if_t<std::is_convertible_v<U*, T*>>>
+  
+  WeakPtr& operator=(WeakPtr<U>&& other) {
+    ref_ = std::move(other.ref_);
+    ptr_ = std::move(other.ptr_);
+    return *this;
   }
 
+  T* get() const { return ref_.IsValid() ? ptr_ : nullptr; }
+
+  
+  
   T& operator*() const {
-    DCHECK(get() != nullptr);
-    return *get();
+    CHECK(ref_.IsValid());
+    return *ptr_;
   }
+
+  
+  
   T* operator->() const {
-    DCHECK(get() != nullptr);
-    return get();
+    CHECK(ref_.IsValid());
+    return ptr_;
   }
 
   
   explicit operator bool() const { return get() != nullptr; }
+
+  
+  
+  
+  
+  void reset() {
+    ref_.Reset();
+    ptr_ = nullptr;
+  }
 
   
   
@@ -278,9 +315,24 @@ class WeakPtr : public internal::WeakPtrBase {
   template <typename U> friend class WeakPtr;
   friend class SupportsWeakPtr<T>;
   friend class WeakPtrFactory<T>;
+  friend class WeakPtrFactory<std::remove_const_t<T>>;
 
-  WeakPtr(const internal::WeakReference& ref, T* ptr)
-      : WeakPtrBase(ref, reinterpret_cast<uintptr_t>(ptr)) {}
+  WeakPtr(internal::WeakReference&& ref, T* ptr)
+      : ref_(std::move(ref)), ptr_(ptr) {
+    DCHECK(ptr);
+  }
+
+  internal::WeakReference CloneWeakReference() const { return ref_; }
+
+  internal::WeakReference ref_;
+
+  
+  
+  
+  
+  
+  
+  RAW_PTR_EXCLUSION T* ptr_ = nullptr;
 };
 
 
@@ -319,14 +371,48 @@ class BASE_EXPORT WeakPtrFactoryBase {
 template <class T>
 class WeakPtrFactory : public internal::WeakPtrFactoryBase {
  public:
+  WeakPtrFactory() = delete;
+
   explicit WeakPtrFactory(T* ptr)
       : WeakPtrFactoryBase(reinterpret_cast<uintptr_t>(ptr)) {}
 
+  WeakPtrFactory(const WeakPtrFactory&) = delete;
+  WeakPtrFactory& operator=(const WeakPtrFactory&) = delete;
+
   ~WeakPtrFactory() = default;
 
+  WeakPtr<const T> GetWeakPtr() const {
+    return WeakPtr<const T>(weak_reference_owner_.GetRef(),
+                            reinterpret_cast<const T*>(ptr_));
+  }
+
+  template <int&... ExplicitArgumentBarrier,
+            typename U = T,
+            typename = std::enable_if_t<!std::is_const_v<U>>>
   WeakPtr<T> GetWeakPtr() {
     return WeakPtr<T>(weak_reference_owner_.GetRef(),
                       reinterpret_cast<T*>(ptr_));
+  }
+
+  template <int&... ExplicitArgumentBarrier,
+            typename U = T,
+            typename = std::enable_if_t<!std::is_const_v<U>>>
+  WeakPtr<T> GetMutableWeakPtr() const {
+    return WeakPtr<T>(weak_reference_owner_.GetRef(),
+                      reinterpret_cast<T*>(ptr_));
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  SafeRef<T> GetSafeRef() const {
+    return internal::MakeSafeRefFromWeakPtrInternals(
+        weak_reference_owner_.GetRef(), reinterpret_cast<T*>(ptr_));
   }
 
   
@@ -341,8 +427,13 @@ class WeakPtrFactory : public internal::WeakPtrFactoryBase {
     return weak_reference_owner_.HasRefs();
   }
 
- private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(WeakPtrFactory);
+  
+  
+  
+  void BindToCurrentSequence(
+      PassKey<sequence_manager::internal::TaskQueueImpl>) {
+    weak_reference_owner_.BindToCurrentSequence();
+  }
 };
 
 
@@ -355,6 +446,9 @@ class SupportsWeakPtr : public internal::SupportsWeakPtrBase {
  public:
   SupportsWeakPtr() = default;
 
+  SupportsWeakPtr(const SupportsWeakPtr&) = delete;
+  SupportsWeakPtr& operator=(const SupportsWeakPtr&) = delete;
+
   WeakPtr<T> AsWeakPtr() {
     return WeakPtr<T>(weak_reference_owner_.GetRef(), static_cast<T*>(this));
   }
@@ -364,7 +458,6 @@ class SupportsWeakPtr : public internal::SupportsWeakPtrBase {
 
  private:
   internal::WeakReferenceOwner weak_reference_owner_;
-  DISALLOW_COPY_AND_ASSIGN(SupportsWeakPtr);
 };
 
 

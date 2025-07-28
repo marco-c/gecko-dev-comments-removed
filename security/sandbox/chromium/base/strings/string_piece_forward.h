@@ -4,20 +4,21 @@
 
 
 
+
+
+
 #ifndef BASE_STRINGS_STRING_PIECE_FORWARD_H_
 #define BASE_STRINGS_STRING_PIECE_FORWARD_H_
 
-#include <string>
-
-#include "base/strings/string16.h"
+#include <string_view>
 
 namespace base {
 
-template <typename STRING_TYPE>
-class BasicStringPiece;
-typedef BasicStringPiece<std::string> StringPiece;
-typedef BasicStringPiece<string16> StringPiece16;
-typedef BasicStringPiece<std::wstring> WStringPiece;
+template <typename CharT, typename Traits = std::char_traits<CharT>>
+using BasicStringPiece = std::basic_string_view<CharT, Traits>;
+using StringPiece = std::string_view;
+using StringPiece16 = std::u16string_view;
+using WStringPiece = std::wstring_view;
 
 }  
 

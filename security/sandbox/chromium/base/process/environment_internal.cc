@@ -6,6 +6,12 @@
 
 #include <stddef.h>
 
+#include "build/build_config.h"
+
+#if BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
+#include <string.h>
+#endif
+
 #include <vector>
 
 namespace base {
@@ -13,7 +19,7 @@ namespace internal {
 
 namespace {
 
-#if defined(OS_POSIX) || defined(OS_FUCHSIA) || defined(OS_WIN)
+#if BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_WIN)
 
 
 
@@ -34,7 +40,7 @@ size_t ParseEnvLine(const NativeEnvironmentString::value_type* input,
 
 }  
 
-#if defined(OS_POSIX) || defined(OS_FUCHSIA)
+#if BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 
 std::unique_ptr<char* []> AlterEnvironment(const char* const* const env,
                                            const EnvironmentMap& changes) {
@@ -85,7 +91,7 @@ std::unique_ptr<char* []> AlterEnvironment(const char* const* const env,
   return result;
 }
 
-#elif defined(OS_WIN)
+#elif BUILDFLAG(IS_WIN)
 
 NativeEnvironmentString AlterEnvironment(const wchar_t* env,
                                          const EnvironmentMap& changes) {

@@ -2,15 +2,15 @@
 
 
 
-#ifndef SANDBOX_SRC_RESTRICTED_TOKEN_UTILS_H__
-#define SANDBOX_SRC_RESTRICTED_TOKEN_UTILS_H__
+#ifndef SANDBOX_WIN_SRC_RESTRICTED_TOKEN_UTILS_H_
+#define SANDBOX_WIN_SRC_RESTRICTED_TOKEN_UTILS_H_
 
-#include <accctrl.h>
-#include <windows.h>
-
-#include "base/win/scoped_handle.h"
+#include "base/win/access_token.h"
+#include "base/win/sid.h"
+#include "base/win/windows_types.h"
 #include "sandbox/win/src/restricted_token.h"
 #include "sandbox/win/src/security_level.h"
+#include "third_party/abseil-cpp/absl/types/optional.h"
 
 
 
@@ -18,7 +18,7 @@
 namespace sandbox {
 
 
-enum TokenType { IMPERSONATION = 0, PRIMARY };
+enum class TokenType { kImpersonation, kPrimary };
 
 
 
@@ -33,48 +33,15 @@ enum TokenType { IMPERSONATION = 0, PRIMARY };
 
 
 
-DWORD CreateRestrictedToken(HANDLE effective_token,
-                            TokenLevel security_level,
-                            IntegrityLevel integrity_level,
-                            TokenType token_type,
-                            bool lockdown_default_dacl,
-                            PSID unique_restricted_sid,
-                            bool use_restricting_sids,
-                            bool allow_everyone_for_user_restricted,
-                            base::win::ScopedHandle* token);
 
-
-DWORD SetObjectIntegrityLabel(HANDLE handle,
-                              SE_OBJECT_TYPE type,
-                              const wchar_t* ace_access,
-                              const wchar_t* integrity_level_sid);
-
-
-
-
-DWORD SetTokenIntegrityLevel(HANDLE token, IntegrityLevel integrity_level);
-
-
-
-const wchar_t* GetIntegrityLevelString(IntegrityLevel integrity_level);
-
-
-
-
-DWORD SetProcessIntegrityLevel(IntegrityLevel integrity_level);
-
-
-
-
-
-DWORD HardenTokenIntegrityLevelPolicy(HANDLE token);
-
-
-
-
-
-
-DWORD HardenProcessIntegrityLevelPolicy();
+absl::optional<base::win::AccessToken> CreateRestrictedToken(
+    TokenLevel security_level,
+    IntegrityLevel integrity_level,
+    TokenType token_type,
+    bool lockdown_default_dacl,
+    const absl::optional<base::win::Sid>& unique_restricted_sid,
+    bool use_restricting_sids,
+    bool allow_everyone_for_user_restricted);
 
 
 
@@ -84,22 +51,7 @@ DWORD HardenProcessIntegrityLevelPolicy();
 
 
 
-
-DWORD CreateLowBoxToken(HANDLE base_token,
-                        TokenType token_type,
-                        PSECURITY_CAPABILITIES security_capabilities,
-                        PHANDLE saved_handles,
-                        DWORD saved_handles_count,
-                        base::win::ScopedHandle* token);
-
-
-
-
-
-
-DWORD CreateLowBoxObjectDirectory(PSID lowbox_sid,
-                                  bool open_directory,
-                                  base::win::ScopedHandle* directory);
+DWORD HardenTokenIntegrityLevelPolicy(const base::win::AccessToken& token);
 
 }  
 

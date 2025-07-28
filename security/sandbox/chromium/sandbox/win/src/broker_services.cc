@@ -4,28 +4,31 @@
 
 #include "sandbox/win/src/broker_services.h"
 
-#include <aclapi.h>
-
 #include <stddef.h>
 
 #include <utility>
-
-#include "base/logging.h"
-#include "base/macros.h"
+#include "base/check_op.h"
+#include "base/containers/contains.h"
 #include "base/memory/ptr_util.h"
+#include "base/notreached.h"
 #include "base/threading/platform_thread.h"
+#include "base/win/access_token.h"
+#include "base/win/current_module.h"
 #include "base/win/scoped_handle.h"
 #include "base/win/scoped_process_information.h"
-#include "base/win/startup_information.h"
+#include "base/win/sid.h"
 #include "base/win/windows_version.h"
-#include "sandbox/win/src/app_container_profile.h"
+#include "build/build_config.h"
+#include "sandbox/win/src/app_container.h"
 #include "sandbox/win/src/process_mitigations.h"
 #include "sandbox/win/src/sandbox.h"
 #include "sandbox/win/src/sandbox_policy_base.h"
 #include "sandbox/win/src/sandbox_policy_diagnostic.h"
+#include "sandbox/win/src/startup_information_helper.h"
 #include "sandbox/win/src/target_process.h"
-#include "sandbox/win/src/win2k_threadpool.h"
+#include "sandbox/win/src/threadpool.h"
 #include "sandbox/win/src/win_utils.h"
+#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace {
 
@@ -41,91 +44,50 @@ bool AssociateCompletionPort(HANDLE job, HANDLE port, void* key) {
 
 
 
-sandbox::ResultCode SpawnCleanup(sandbox::TargetProcess* target) {
-  target->Terminate();
-  delete target;
-  return sandbox::SBOX_ERROR_GENERIC;
-}
-
-
-
 enum {
   THREAD_CTRL_NONE,
   THREAD_CTRL_NEW_JOB_TRACKER,
-  THREAD_CTRL_NEW_PROCESS_TRACKER,
-  THREAD_CTRL_PROCESS_SIGNALLED,
   THREAD_CTRL_GET_POLICY_INFO,
   THREAD_CTRL_QUIT,
   THREAD_CTRL_LAST,
 };
 
 
-
-struct JobTracker {
-  JobTracker(base::win::ScopedHandle job,
-             scoped_refptr<sandbox::PolicyBase> policy,
-             DWORD process_id)
-      : job(std::move(job)), policy(policy), process_id(process_id) {}
-  ~JobTracker() { FreeResources(); }
-
+struct TargetEventsThreadParams {
+  TargetEventsThreadParams(
+      HANDLE iocp,
+      std::unique_ptr<sandbox::BrokerServicesTargetTracker> target_tracker,
+      std::unique_ptr<sandbox::ThreadPool> thread_pool)
+      : iocp(iocp),
+        target_tracker_(std::move(target_tracker)),
+        thread_pool(std::move(thread_pool)) {}
+  ~TargetEventsThreadParams() {}
   
-  
-  void FreeResources();
-
-  base::win::ScopedHandle job;
-  scoped_refptr<sandbox::PolicyBase> policy;
-  DWORD process_id;
-};
-
-void JobTracker::FreeResources() {
-  if (policy) {
-    bool res = ::TerminateJobObject(job.Get(), sandbox::SBOX_ALL_OK);
-    DCHECK(res);
-    
-    
-    HANDLE stale_job_handle = job.Get();
-    job.Close();
-
-    
-    policy->OnJobEmpty(stale_job_handle);
-    policy = nullptr;
-  }
-}
-
-
-struct ProcessTracker {
-  ProcessTracker(scoped_refptr<sandbox::PolicyBase> policy,
-                 DWORD process_id,
-                 base::win::ScopedHandle process)
-      : policy(policy), process_id(process_id), process(std::move(process)) {}
-  ~ProcessTracker() { FreeResources(); }
-
-  void FreeResources();
-
-  scoped_refptr<sandbox::PolicyBase> policy;
-  DWORD process_id;
-  base::win::ScopedHandle process;
-  
-  HANDLE wait_handle;
   
   HANDLE iocp;
+  
+  
+  std::unique_ptr<sandbox::BrokerServicesTargetTracker> target_tracker_;
+  
+  
+  
+  std::unique_ptr<sandbox::ThreadPool> thread_pool;
 };
 
-void ProcessTracker::FreeResources() {
-  if (policy) {
-    policy->OnJobEmpty(nullptr);
-    policy = nullptr;
+
+
+struct JobTracker {
+  JobTracker(std::unique_ptr<sandbox::PolicyBase> policy, DWORD process_id)
+      : policy(std::move(policy)), process_id(process_id) {}
+  ~JobTracker() {
+    
+    
+    ::TerminateJobObject(policy->GetJobHandle(), sandbox::SBOX_ALL_OK);
   }
-}
 
-
-void WINAPI ProcessEventCallback(PVOID param, BOOLEAN ignored) {
-  
-  ProcessTracker* tracker = reinterpret_cast<ProcessTracker*>(param);
-  
-  ::PostQueuedCompletionStatus(tracker->iocp, 0, THREAD_CTRL_PROCESS_SIGNALLED,
-                               reinterpret_cast<LPOVERLAPPED>(tracker));
-}
+  std::unique_ptr<sandbox::PolicyBase> policy;
+  DWORD process_id;
+};
 
 
 class PolicyDiagnosticList final : public sandbox::PolicyList {
@@ -147,6 +109,145 @@ class PolicyDiagnosticList final : public sandbox::PolicyList {
   std::vector<std::unique_ptr<sandbox::PolicyInfo>> internal_list_;
 };
 
+
+
+
+
+DWORD WINAPI TargetEventsThread(PVOID param) {
+  if (!param)
+    return 1;
+
+  base::PlatformThread::SetName("BrokerEvent");
+
+  
+  std::unique_ptr<TargetEventsThreadParams> params(
+      reinterpret_cast<TargetEventsThreadParams*>(param));
+
+  std::list<std::unique_ptr<JobTracker>> jobs;
+
+  while (true) {
+    DWORD event = 0;
+    ULONG_PTR key = 0;
+    LPOVERLAPPED ovl = nullptr;
+
+    if (!::GetQueuedCompletionStatus(params->iocp, &event, &key, &ovl,
+                                     INFINITE)) {
+      
+      
+      
+      return 1;
+    }
+
+    if (key > THREAD_CTRL_LAST) {
+      
+      
+      JobTracker* tracker = reinterpret_cast<JobTracker*>(key);
+
+      
+      
+      
+      
+      
+      if (!base::Contains(jobs, tracker, &std::unique_ptr<JobTracker>::get)) {
+        
+        CHECK_NE(static_cast<int>(event), JOB_OBJECT_MSG_ACTIVE_PROCESS_ZERO);
+        
+        continue;
+      }
+
+      switch (event) {
+        case JOB_OBJECT_MSG_ACTIVE_PROCESS_ZERO: {
+          
+          
+          
+          
+          jobs.erase(std::remove_if(
+                         jobs.begin(), jobs.end(),
+                         [&](auto&& p) -> bool { return p.get() == tracker; }),
+                     jobs.end());
+          break;
+        }
+
+        case JOB_OBJECT_MSG_NEW_PROCESS: {
+          
+          if (params->target_tracker_) {
+            params->target_tracker_->OnTargetAdded();
+          }
+          break;
+        }
+
+        case JOB_OBJECT_MSG_EXIT_PROCESS:
+        case JOB_OBJECT_MSG_ABNORMAL_EXIT_PROCESS: {
+          if (params->target_tracker_) {
+            params->target_tracker_->OnTargetRemoved();
+          }
+          break;
+        }
+
+        case JOB_OBJECT_MSG_ACTIVE_PROCESS_LIMIT: {
+          
+          
+          
+          
+          
+          if (params->target_tracker_) {
+            params->target_tracker_->OnTargetAdded();
+          }
+          break;
+        }
+
+        case JOB_OBJECT_MSG_PROCESS_MEMORY_LIMIT: {
+          bool res = ::TerminateJobObject(tracker->policy->GetJobHandle(),
+                                          sandbox::SBOX_FATAL_MEMORY_EXCEEDED);
+          DCHECK(res);
+          
+          if (params->target_tracker_) {
+            params->target_tracker_->OnTargetRemoved();
+          }
+          break;
+        }
+
+        default: {
+          NOTREACHED();
+          break;
+        }
+      }
+    } else if (THREAD_CTRL_NEW_JOB_TRACKER == key) {
+      std::unique_ptr<JobTracker> tracker;
+      tracker.reset(reinterpret_cast<JobTracker*>(ovl));
+      DCHECK(tracker->policy->HasJob());
+
+      jobs.push_back(std::move(tracker));
+    } else if (THREAD_CTRL_GET_POLICY_INFO == key) {
+      
+      std::unique_ptr<sandbox::PolicyDiagnosticsReceiver> receiver;
+      receiver.reset(static_cast<sandbox::PolicyDiagnosticsReceiver*>(
+          reinterpret_cast<void*>(ovl)));
+      
+      auto policy_list = std::make_unique<PolicyDiagnosticList>();
+      for (auto&& job_tracker : jobs) {
+        if (job_tracker->policy) {
+          policy_list->push_back(std::make_unique<sandbox::PolicyDiagnostic>(
+              job_tracker->policy.get()));
+        }
+      }
+      
+      receiver->ReceiveDiagnostics(std::move(policy_list));
+
+    } else if (THREAD_CTRL_QUIT == key) {
+      
+      
+      return 0;
+    } else {
+      
+      NOTREACHED();
+    }
+  }
+
+  NOTREACHED();
+  return 0;
+}
+
 }  
 
 namespace sandbox {
@@ -155,7 +256,8 @@ BrokerServicesBase::BrokerServicesBase() {}
 
 
 
-ResultCode BrokerServicesBase::Init() {
+ResultCode BrokerServicesBase::Init(
+    std::unique_ptr<BrokerServicesTargetTracker> target_tracker) {
   if (job_port_.IsValid() || thread_pool_)
     return SBOX_ERROR_UNEXPECTED_CALL;
 
@@ -163,17 +265,48 @@ ResultCode BrokerServicesBase::Init() {
   if (!job_port_.IsValid())
     return SBOX_ERROR_CANNOT_INIT_BROKERSERVICES;
 
-  no_targets_.Set(::CreateEventW(nullptr, true, false, nullptr));
+  
+  auto params = std::make_unique<TargetEventsThreadParams>(
+      job_port_.Get(), std::move(target_tracker),
+      std::make_unique<ThreadPool>());
 
-  job_thread_.Set(::CreateThread(nullptr, 0,  
-                                 TargetEventsThread, this, 0, nullptr));
-  if (!job_thread_.IsValid())
+  
+  
+  thread_pool_ = params->thread_pool.get();
+
+#if defined(ARCH_CPU_32_BITS)
+  
+  
+  constexpr unsigned flags = STACK_SIZE_PARAM_IS_A_RESERVATION;
+  constexpr size_t stack_size = 128 * 1024;
+#else
+  constexpr unsigned int flags = 0;
+  constexpr size_t stack_size = 0;
+#endif
+  job_thread_.Set(::CreateThread(nullptr, stack_size,  
+                                 TargetEventsThread, params.get(), flags,
+                                 nullptr));
+  if (!job_thread_.IsValid()) {
+    thread_pool_ = nullptr;
+    
     return SBOX_ERROR_CANNOT_INIT_BROKERSERVICES;
+  }
 
   if (!SharedMemIPCServer::CreateBrokerAliveMutex())
     return SBOX_ERROR_CANNOT_INIT_BROKERSERVICES;
 
+  params.release();
   return SBOX_ALL_OK;
+}
+
+ResultCode BrokerServicesBase::Init() {
+  return BrokerServicesBase::Init(nullptr);
+}
+
+
+ResultCode BrokerServicesBase::InitForTesting(
+    std::unique_ptr<BrokerServicesTargetTracker> target_tracker) {
+  return BrokerServicesBase::Init(std::move(target_tracker));
 }
 
 
@@ -193,219 +326,38 @@ BrokerServicesBase::~BrokerServicesBase() {
   ::PostQueuedCompletionStatus(job_port_.Get(), 0, THREAD_CTRL_QUIT, nullptr);
 
   if (job_thread_.IsValid() &&
-      WAIT_TIMEOUT == ::WaitForSingleObject(job_thread_.Get(), 1000)) {
+      WAIT_TIMEOUT == ::WaitForSingleObject(job_thread_.Get(), 5000)) {
     
     NOTREACHED();
     return;
   }
-  thread_pool_.reset();
 }
 
-scoped_refptr<TargetPolicy> BrokerServicesBase::CreatePolicy() {
-  
-  
-  scoped_refptr<TargetPolicy> policy(new PolicyBase);
-  
-  policy->Release();
-  return policy;
+std::unique_ptr<TargetPolicy> BrokerServicesBase::CreatePolicy() {
+  return CreatePolicy("");
 }
 
-
-
-
-
-DWORD WINAPI BrokerServicesBase::TargetEventsThread(PVOID param) {
-  if (!param)
-    return 1;
-
-  base::PlatformThread::SetName("BrokerEvent");
-
-  BrokerServicesBase* broker = reinterpret_cast<BrokerServicesBase*>(param);
-  HANDLE port = broker->job_port_.Get();
-  HANDLE no_targets = broker->no_targets_.Get();
-
-  std::set<DWORD> child_process_ids;
-  std::list<std::unique_ptr<JobTracker>> jobs;
-  std::list<std::unique_ptr<ProcessTracker>> processes;
-  int target_counter = 0;
-  int untracked_target_counter = 0;
-  ::ResetEvent(no_targets);
-
-  while (true) {
-    DWORD events = 0;
-    ULONG_PTR key = 0;
-    LPOVERLAPPED ovl = nullptr;
-
-    if (!::GetQueuedCompletionStatus(port, &events, &key, &ovl, INFINITE)) {
-      
-      
-      
-      return 1;
-    }
-
-    if (key > THREAD_CTRL_LAST) {
-      
-      
-      JobTracker* tracker = reinterpret_cast<JobTracker*>(key);
-
-      
-      
-      
-      
-      if (std::find_if(jobs.begin(), jobs.end(), [&](auto&& p) -> bool {
-            return p.get() == tracker;
-          }) == jobs.end()) {
-        CHECK(false);
-      }
-
-      switch (events) {
-        case JOB_OBJECT_MSG_ACTIVE_PROCESS_ZERO: {
-          
-          
-          
-          
-          HANDLE job_handle = tracker->job.Get();
-
-          
-          jobs.erase(std::remove_if(jobs.begin(), jobs.end(),
-                                    [&](auto&& p) -> bool {
-                                      return p->job.Get() == job_handle;
-                                    }),
-                     jobs.end());
-          break;
-        }
-
-        case JOB_OBJECT_MSG_NEW_PROCESS: {
-          
-          DWORD process_id =
-              static_cast<DWORD>(reinterpret_cast<uintptr_t>(ovl));
-          size_t count = child_process_ids.count(process_id);
-          if (count == 0)
-            untracked_target_counter++;
-          ++target_counter;
-          if (1 == target_counter) {
-            ::ResetEvent(no_targets);
-          }
-          break;
-        }
-
-        case JOB_OBJECT_MSG_EXIT_PROCESS:
-        case JOB_OBJECT_MSG_ABNORMAL_EXIT_PROCESS: {
-          size_t erase_result = child_process_ids.erase(
-              static_cast<DWORD>(reinterpret_cast<uintptr_t>(ovl)));
-          if (erase_result != 1U) {
-            
-            --untracked_target_counter;
-            DCHECK(untracked_target_counter >= 0);
-          }
-          --target_counter;
-          if (0 == target_counter)
-            ::SetEvent(no_targets);
-
-          DCHECK(target_counter >= 0);
-          break;
-        }
-
-        case JOB_OBJECT_MSG_ACTIVE_PROCESS_LIMIT: {
-          
-          
-          untracked_target_counter++;
-          target_counter++;
-          break;
-        }
-
-        case JOB_OBJECT_MSG_PROCESS_MEMORY_LIMIT: {
-          bool res = ::TerminateJobObject(tracker->job.Get(),
-                                          SBOX_FATAL_MEMORY_EXCEEDED);
-          DCHECK(res);
-          break;
-        }
-
-        default: {
-          NOTREACHED();
-          break;
-        }
-      }
-    } else if (THREAD_CTRL_NEW_JOB_TRACKER == key) {
-      std::unique_ptr<JobTracker> tracker;
-      tracker.reset(reinterpret_cast<JobTracker*>(ovl));
-      DCHECK(tracker->job.IsValid());
-
-      child_process_ids.insert(tracker->process_id);
-      jobs.push_back(std::move(tracker));
-
-    } else if (THREAD_CTRL_NEW_PROCESS_TRACKER == key) {
-      std::unique_ptr<ProcessTracker> tracker;
-      tracker.reset(reinterpret_cast<ProcessTracker*>(ovl));
-
-      if (child_process_ids.empty()) {
-        ::SetEvent(broker->no_targets_.Get());
-      }
-
-      tracker->iocp = port;
-      if (!::RegisterWaitForSingleObject(&(tracker->wait_handle),
-                                         tracker->process.Get(),
-                                         ProcessEventCallback, tracker.get(),
-                                         INFINITE, WT_EXECUTEONLYONCE)) {
-        
-        tracker->wait_handle = INVALID_HANDLE_VALUE;
-      }
-      processes.push_back(std::move(tracker));
-
-    } else if (THREAD_CTRL_PROCESS_SIGNALLED == key) {
-      ProcessTracker* tracker =
-          static_cast<ProcessTracker*>(reinterpret_cast<void*>(ovl));
-
-      ::UnregisterWait(tracker->wait_handle);
-      tracker->wait_handle = INVALID_HANDLE_VALUE;
-      
-      
-      const DWORD process_id = tracker->process_id;
-      
-      processes.erase(std::remove_if(processes.begin(), processes.end(),
-                                     [&](auto&& p) -> bool {
-                                       return p->process_id == process_id;
-                                     }),
-                      processes.end());
-    } else if (THREAD_CTRL_GET_POLICY_INFO == key) {
-      
-      std::unique_ptr<PolicyDiagnosticsReceiver> receiver;
-      receiver.reset(static_cast<PolicyDiagnosticsReceiver*>(
-          reinterpret_cast<void*>(ovl)));
-      
-      auto policy_list = std::make_unique<PolicyDiagnosticList>();
-      for (auto&& process_tracker : processes) {
-        if (process_tracker->policy) {
-          policy_list->push_back(std::make_unique<PolicyDiagnostic>(
-              process_tracker->policy.get()));
-        }
-      }
-      for (auto&& job_tracker : jobs) {
-        if (job_tracker->policy) {
-          policy_list->push_back(
-              std::make_unique<PolicyDiagnostic>(job_tracker->policy.get()));
-        }
-      }
-      
-      receiver->ReceiveDiagnostics(std::move(policy_list));
-
-    } else if (THREAD_CTRL_QUIT == key) {
-      
-      for (auto&& tracker : processes) {
-        ::UnregisterWait(tracker->wait_handle);
-        tracker->wait_handle = INVALID_HANDLE_VALUE;
-      }
-      
-      
-      return 0;
+std::unique_ptr<TargetPolicy> BrokerServicesBase::CreatePolicy(
+    base::StringPiece tag) {
+  
+  
+  auto policy = std::make_unique<PolicyBase>(tag);
+  
+  
+  if (!tag.empty()) {
+    
+    auto found = config_cache_.find(tag);
+    ConfigBase* shared_config = nullptr;
+    if (found == config_cache_.end()) {
+      auto new_config = std::make_unique<ConfigBase>();
+      shared_config = new_config.get();
+      config_cache_[std::string(tag)] = std::move(new_config);
+      policy->SetConfig(shared_config);
     } else {
-      
-      NOTREACHED();
+      policy->SetConfig(found->second.get());
     }
   }
-
-  NOTREACHED();
-  return 0;
+  return policy;
 }
 
 
@@ -413,15 +365,33 @@ DWORD WINAPI BrokerServicesBase::TargetEventsThread(PVOID param) {
 ResultCode BrokerServicesBase::SpawnTarget(const wchar_t* exe_path,
                                            const wchar_t* command_line,
                                            base::EnvironmentMap& env_map,
-                                           scoped_refptr<TargetPolicy> policy,
-                                           ResultCode* last_warning,
+                                           std::unique_ptr<TargetPolicy> policy,
                                            DWORD* last_error,
                                            PROCESS_INFORMATION* target_info) {
   if (!exe_path)
     return SBOX_ERROR_BAD_PARAMS;
 
+  
+  
+  HMODULE exe_module = nullptr;
+  CHECK(::GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                            nullptr, &exe_module));
+  if (CURRENT_MODULE() != exe_module)
+    return SBOX_ERROR_INVALID_LINK_STATE;
+
   if (!policy)
     return SBOX_ERROR_BAD_PARAMS;
+
+  
+  std::unique_ptr<PolicyBase> policy_base;
+  policy_base.reset(static_cast<PolicyBase*>(policy.release()));
+  
+
+  ConfigBase* config_base = static_cast<ConfigBase*>(policy_base->GetConfig());
+  if (!config_base->IsConfigured()) {
+    if (!config_base->Freeze())
+      return SBOX_ERROR_FAILED_TO_FREEZE_CONFIG;
+  }
 
   
   
@@ -430,7 +400,6 @@ ResultCode BrokerServicesBase::SpawnTarget(const wchar_t* exe_path,
   
   static DWORD thread_id = ::GetCurrentThreadId();
   DCHECK(thread_id == ::GetCurrentThreadId());
-  *last_warning = SBOX_ALL_OK;
 
   
   
@@ -444,237 +413,103 @@ ResultCode BrokerServicesBase::SpawnTarget(const wchar_t* exe_path,
   }
 
   
-  scoped_refptr<PolicyBase> policy_base(static_cast<PolicyBase*>(policy.get()));
-
   
-  
-  base::win::ScopedHandle initial_token;
-  base::win::ScopedHandle lockdown_token;
-  base::win::ScopedHandle lowbox_token;
+  absl::optional<base::win::AccessToken> initial_token;
+  absl::optional<base::win::AccessToken> lockdown_token;
   ResultCode result = SBOX_ALL_OK;
 
-  result =
-      policy_base->MakeTokens(&initial_token, &lockdown_token, &lowbox_token);
-  if (SBOX_ALL_OK != result)
-    return result;
-  if (lowbox_token.IsValid() &&
-      base::win::GetVersion() < base::win::Version::WIN8) {
-    
-    return SBOX_ERROR_BAD_PARAMS;
-  }
-
-  base::win::ScopedHandle job;
-  result = policy_base->MakeJobObject(&job);
+  result = policy_base->MakeTokens(initial_token, lockdown_token);
   if (SBOX_ALL_OK != result)
     return result;
 
-  
-  base::win::StartupInformation startup_info;
+  result = UpdateDesktopIntegrity(config_base->desktop(),
+                                  config_base->integrity_level());
+  if (result != SBOX_ALL_OK)
+    return result;
+
+  result = policy_base->InitJob();
+  if (SBOX_ALL_OK != result)
+    return result;
 
   
-  startup_info.startup_info()->dwFlags |= STARTF_FORCEOFFFEEDBACK;
+  auto startup_info = std::make_unique<StartupInformationHelper>();
 
   
-  
-  
-  
-  
-  DWORD64 mitigations[2];
-  std::vector<HANDLE> inherited_handle_list;
-  DWORD child_process_creation = PROCESS_CREATION_CHILD_PROCESS_RESTRICTED;
+  startup_info->UpdateFlags(STARTF_FORCEOFFFEEDBACK);
+  startup_info->SetDesktop(GetDesktopName(config_base->desktop()));
+  startup_info->SetMitigations(config_base->GetProcessMitigations());
+  startup_info->SetFilterEnvironment(config_base->GetEnvironmentFiltered());
 
-  std::wstring desktop = policy_base->GetAlternateDesktop();
-  if (!desktop.empty()) {
-    startup_info.startup_info()->lpDesktop =
-        const_cast<wchar_t*>(desktop.c_str());
-  }
-
-  bool inherit_handles = false;
-
-  int attribute_count = 0;
-
-  size_t mitigations_size;
-  ConvertProcessMitigationsToPolicy(policy_base->GetProcessMitigations(),
-                                    &mitigations[0], &mitigations_size);
-  if (mitigations[0] || mitigations[1])
-    ++attribute_count;
-
-  bool restrict_child_process_creation = false;
   if (base::win::GetVersion() >= base::win::Version::WIN10_TH2 &&
-      policy_base->GetJobLevel() <= JOB_LIMITED_USER) {
-    restrict_child_process_creation = true;
-    ++attribute_count;
+      config_base->GetJobLevel() <= JobLevel::kLimitedUser) {
+    startup_info->SetRestrictChildProcessCreation(true);
   }
 
-  HANDLE stdout_handle = policy_base->GetStdoutHandle();
-  HANDLE stderr_handle = policy_base->GetStderrHandle();
-
-  if (stdout_handle != INVALID_HANDLE_VALUE)
-    inherited_handle_list.push_back(stdout_handle);
-
   
-  if (stderr_handle != stdout_handle && stderr_handle != INVALID_HANDLE_VALUE)
-    inherited_handle_list.push_back(stderr_handle);
-
+  startup_info->SetStdHandles(policy_base->GetStdoutHandle(),
+                              policy_base->GetStderrHandle());
+  
   const auto& policy_handle_list = policy_base->GetHandlesBeingShared();
-
   for (HANDLE handle : policy_handle_list)
-    inherited_handle_list.push_back(handle);
+    startup_info->AddInheritedHandle(handle);
 
-  if (inherited_handle_list.size())
-    ++attribute_count;
+  scoped_refptr<AppContainer> container = config_base->GetAppContainer();
+  if (container)
+    startup_info->SetAppContainer(container);
 
-  scoped_refptr<AppContainerProfileBase> profile =
-      policy_base->GetAppContainerProfileBase();
-  if (profile) {
-    if (base::win::GetVersion() < base::win::Version::WIN8)
-      return SBOX_ERROR_BAD_PARAMS;
-    ++attribute_count;
-    if (profile->GetEnableLowPrivilegeAppContainer()) {
-      
-      if (base::win::GetVersion() < base::win::Version::WIN10_RS1)
-        return SBOX_ERROR_BAD_PARAMS;
-      ++attribute_count;
-    }
-  }
+  startup_info->AddJobToAssociate(policy_base->GetJobHandle());
 
-  if (!startup_info.InitializeProcThreadAttributeList(attribute_count))
+  if (!startup_info->BuildStartupInformation())
     return SBOX_ERROR_PROC_THREAD_ATTRIBUTES;
-
-  if (mitigations[0] || mitigations[1]) {
-    if (!startup_info.UpdateProcThreadAttribute(
-            PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY, &mitigations[0],
-            mitigations_size)) {
-      return SBOX_ERROR_PROC_THREAD_ATTRIBUTES;
-    }
-  }
-
-  if (restrict_child_process_creation) {
-    if (!startup_info.UpdateProcThreadAttribute(
-            PROC_THREAD_ATTRIBUTE_CHILD_PROCESS_POLICY, &child_process_creation,
-            sizeof(child_process_creation))) {
-      return SBOX_ERROR_PROC_THREAD_ATTRIBUTES;
-    }
-  }
-
-  if (inherited_handle_list.size()) {
-    if (!startup_info.UpdateProcThreadAttribute(
-            PROC_THREAD_ATTRIBUTE_HANDLE_LIST, &inherited_handle_list[0],
-            sizeof(HANDLE) * inherited_handle_list.size())) {
-      return SBOX_ERROR_PROC_THREAD_ATTRIBUTES;
-    }
-    startup_info.startup_info()->dwFlags |= STARTF_USESTDHANDLES;
-    startup_info.startup_info()->hStdInput = INVALID_HANDLE_VALUE;
-    startup_info.startup_info()->hStdOutput = stdout_handle;
-    startup_info.startup_info()->hStdError = stderr_handle;
-    
-    
-    inherit_handles = true;
-  }
-
-  
-  std::unique_ptr<SecurityCapabilities> security_capabilities;
-  DWORD all_applications_package_policy =
-      PROCESS_CREATION_ALL_APPLICATION_PACKAGES_OPT_OUT;
-
-  if (profile) {
-    security_capabilities = profile->GetSecurityCapabilities();
-    if (!startup_info.UpdateProcThreadAttribute(
-            PROC_THREAD_ATTRIBUTE_SECURITY_CAPABILITIES,
-            security_capabilities.get(), sizeof(SECURITY_CAPABILITIES))) {
-      return SBOX_ERROR_PROC_THREAD_ATTRIBUTES;
-    }
-    if (profile->GetEnableLowPrivilegeAppContainer()) {
-      if (!startup_info.UpdateProcThreadAttribute(
-              PROC_THREAD_ATTRIBUTE_ALL_APPLICATION_PACKAGES_POLICY,
-              &all_applications_package_policy,
-              sizeof(all_applications_package_policy))) {
-        return SBOX_ERROR_PROC_THREAD_ATTRIBUTES;
-      }
-    }
-  }
-
-  
-  
-  if (!thread_pool_)
-    thread_pool_ = std::make_unique<Win2kThreadPool>();
 
   
   
   base::win::ScopedProcessInformation process_info;
-  TargetProcess* target = new TargetProcess(
-      std::move(initial_token), std::move(lockdown_token), job.Get(),
-      thread_pool_.get(),
-      profile ? profile->GetImpersonationCapabilities() : std::vector<Sid>());
+  std::unique_ptr<TargetProcess> target = std::make_unique<TargetProcess>(
+      std::move(*initial_token), std::move(*lockdown_token), thread_pool_);
 
-  result = target->Create(exe_path, command_line, inherit_handles, startup_info,
+  result = target->Create(exe_path, command_line, std::move(startup_info),
                           &process_info, env_map, last_error);
 
   if (result != SBOX_ALL_OK) {
-    SpawnCleanup(target);
+    target->Terminate();
     return result;
   }
 
-  if (lowbox_token.IsValid()) {
-    *last_warning = target->AssignLowBoxToken(lowbox_token);
+  if (config_base->GetJobLevel() <= JobLevel::kLimitedUser) {
     
     
     
-    if (*last_warning != SBOX_ALL_OK)
-      *last_error = ::GetLastError();
+    result = policy_base->DropActiveProcessLimit();
+    if (result != SBOX_ALL_OK) {
+      target->Terminate();
+      return result;
+    }
   }
 
   
-  result = policy_base->AddTarget(target);
+  
+  result = policy_base->ApplyToTarget(std::move(target));
 
   if (result != SBOX_ALL_OK) {
     *last_error = ::GetLastError();
-    SpawnCleanup(target);
     return result;
   }
 
-  if (job.IsValid()) {
-    JobTracker* tracker =
-        new JobTracker(std::move(job), policy_base, process_info.process_id());
+  HANDLE job_handle = policy_base->GetJobHandle();
+  JobTracker* tracker =
+      new JobTracker(std::move(policy_base), process_info.process_id());
 
-    
-    
-    CHECK(::PostQueuedCompletionStatus(
-        job_port_.Get(), 0, THREAD_CTRL_NEW_JOB_TRACKER,
-        reinterpret_cast<LPOVERLAPPED>(tracker)));
-    
-    
-    CHECK(
-        AssociateCompletionPort(tracker->job.Get(), job_port_.Get(), tracker));
-  } else {
-    
-    
-    HANDLE tmp_process_handle = INVALID_HANDLE_VALUE;
-    if (!::DuplicateHandle(::GetCurrentProcess(), process_info.process_handle(),
-                           ::GetCurrentProcess(), &tmp_process_handle,
-                           SYNCHRONIZE, false, 0 )) {
-      *last_error = ::GetLastError();
-      
-      
-      target->Terminate();
-      return SBOX_ERROR_CANNOT_DUPLICATE_PROCESS_HANDLE;
-    }
-    base::win::ScopedHandle dup_process_handle(tmp_process_handle);
-    ProcessTracker* tracker = new ProcessTracker(
-        policy_base, process_info.process_id(), std::move(dup_process_handle));
-    
-    ::PostQueuedCompletionStatus(job_port_.Get(), 0,
-                                 THREAD_CTRL_NEW_PROCESS_TRACKER,
-                                 reinterpret_cast<LPOVERLAPPED>(tracker));
-  }
+  
+  
+  CHECK(::PostQueuedCompletionStatus(job_port_.Get(), 0,
+                                     THREAD_CTRL_NEW_JOB_TRACKER,
+                                     reinterpret_cast<LPOVERLAPPED>(tracker)));
+  
+  CHECK(AssociateCompletionPort(job_handle, job_port_.Get(), tracker));
 
   *target_info = process_info.Take();
   return result;
-}
-
-ResultCode BrokerServicesBase::WaitForAllTargets() {
-  ::WaitForSingleObject(no_targets_.Get(), INFINITE);
-  return SBOX_ALL_OK;
 }
 
 ResultCode BrokerServicesBase::GetPolicyDiagnostics(
@@ -693,11 +528,91 @@ ResultCode BrokerServicesBase::GetPolicyDiagnostics(
   return SBOX_ALL_OK;
 }
 
+void BrokerServicesBase::SetStartingMitigations(
+    sandbox::MitigationFlags starting_mitigations) {
+  sandbox::SetStartingMitigations(starting_mitigations);
+}
+
+bool BrokerServicesBase::RatchetDownSecurityMitigations(
+    MitigationFlags additional_flags) {
+  return sandbox::RatchetDownSecurityMitigations(additional_flags);
+}
+
+std::wstring BrokerServicesBase::GetDesktopName(Desktop desktop) {
+  switch (desktop) {
+    case Desktop::kDefault:
+      
+      return std::wstring();
+    case Desktop::kAlternateWinstation:
+      return alt_winstation_->GetDesktopName();
+    case Desktop::kAlternateDesktop:
+      return alt_desktop_->GetDesktopName();
+  }
+}
+
+ResultCode BrokerServicesBase::UpdateDesktopIntegrity(
+    Desktop desktop,
+    IntegrityLevel integrity) {
+  
+  
+  
+  
+  if (integrity == INTEGRITY_LEVEL_LAST)
+    return SBOX_ALL_OK;
+  switch (desktop) {
+    case Desktop::kDefault:
+      return SBOX_ALL_OK;
+    case Desktop::kAlternateWinstation:
+      return alt_winstation_->UpdateDesktopIntegrity(integrity);
+    case Desktop::kAlternateDesktop:
+      return alt_desktop_->UpdateDesktopIntegrity(integrity);
+  }
+}
+
+ResultCode BrokerServicesBase::CreateAlternateDesktop(Desktop desktop) {
+  switch (desktop) {
+    case Desktop::kAlternateWinstation: {
+      
+      if (alt_winstation_)
+        return SBOX_ALL_OK;
+      alt_winstation_ = std::make_unique<AlternateDesktop>();
+      ResultCode result = alt_winstation_->Initialize(true);
+      if (result != SBOX_ALL_OK)
+        alt_winstation_.reset();
+      return result;
+    };
+    case Desktop::kAlternateDesktop: {
+      
+      if (alt_desktop_)
+        return SBOX_ALL_OK;
+      alt_desktop_ = std::make_unique<AlternateDesktop>();
+      ResultCode result = alt_desktop_->Initialize(false);
+      if (result != SBOX_ALL_OK)
+        alt_desktop_.reset();
+      return result;
+    };
+    case Desktop::kDefault:
+      
+      return SBOX_ALL_OK;
+  }
+}
+
+void BrokerServicesBase::DestroyDesktops() {
+  alt_winstation_.reset();
+  alt_desktop_.reset();
+}
+
+
+void BrokerServicesBase::FreezeTargetConfigForTesting(TargetConfig* config) {
+  CHECK(!config->IsConfigured());
+  static_cast<ConfigBase*>(config)->Freeze();
+}
+
 bool BrokerServicesBase::DeriveCapabilitySidFromName(const wchar_t* name,
                                                      PSID derived_sid,
                                                      DWORD sid_buffer_length) {
   return ::CopySid(sid_buffer_length, derived_sid,
-                   Sid::FromNamedCapability(name).GetPSID());
+                   base::win::Sid::FromNamedCapability(name).GetPSID());
 }
 
 }  

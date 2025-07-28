@@ -2,8 +2,8 @@
 
 
 
-#ifndef SANDBOX_SRC_POLICY_LOW_LEVEL_H__
-#define SANDBOX_SRC_POLICY_LOW_LEVEL_H__
+#ifndef SANDBOX_WIN_SRC_POLICY_LOW_LEVEL_H_
+#define SANDBOX_WIN_SRC_POLICY_LOW_LEVEL_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -12,7 +12,7 @@
 
 #include <string>
 
-#include "base/macros.h"
+#include "base/memory/raw_ptr.h"
 #include "sandbox/win/src/ipc_tags.h"
 #include "sandbox/win/src/policy_engine_opcodes.h"
 #include "sandbox/win/src/policy_engine_params.h"
@@ -79,9 +79,14 @@ class PolicyRule;
 
 class LowLevelPolicy {
  public:
+  LowLevelPolicy() = delete;
+
   
   
   explicit LowLevelPolicy(PolicyGlobal* policy_store);
+
+  LowLevelPolicy(const LowLevelPolicy&) = delete;
+  LowLevelPolicy& operator=(const LowLevelPolicy&) = delete;
 
   
   ~LowLevelPolicy();
@@ -98,12 +103,11 @@ class LowLevelPolicy {
 
  private:
   struct RuleNode {
-    const PolicyRule* rule;
+    raw_ptr<const PolicyRule, DanglingUntriaged> rule;
     IpcTag service;
   };
   std::list<RuleNode> rules_;
-  PolicyGlobal* policy_store_;
-  DISALLOW_IMPLICIT_CONSTRUCTORS(LowLevelPolicy);
+  raw_ptr<PolicyGlobal, DanglingUntriaged> policy_store_;
 };
 
 
@@ -136,7 +140,7 @@ class PolicyRule {
   
   
   bool AddStringMatch(RuleType rule_type,
-                      int16_t parameter,
+                      uint8_t parameter,
                       const wchar_t* string,
                       StringMatchOptions match_opts);
 
@@ -146,7 +150,7 @@ class PolicyRule {
   
   
   bool AddNumberMatch(RuleType rule_type,
-                      int16_t parameter,
+                      uint8_t parameter,
                       uint32_t number,
                       RuleOp comparison_op);
 
@@ -164,7 +168,7 @@ class PolicyRule {
   
   bool GenStringOpcode(RuleType rule_type,
                        StringMatchOptions match_opts,
-                       uint16_t parameter,
+                       uint8_t parameter,
                        int state,
                        bool last_call,
                        int* skip_count,
@@ -178,8 +182,8 @@ class PolicyRule {
                   size_t opcode_size,
                   char* data_start,
                   size_t* data_size) const;
-  PolicyBuffer* buffer_;
-  OpcodeFactory* opcode_factory_;
+  raw_ptr<PolicyBuffer> buffer_;
+  raw_ptr<OpcodeFactory> opcode_factory_;
   EvalResult action_;
   bool done_;
 };

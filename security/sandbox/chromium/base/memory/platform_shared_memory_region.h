@@ -5,29 +5,18 @@
 #ifndef BASE_MEMORY_PLATFORM_SHARED_MEMORY_REGION_H_
 #define BASE_MEMORY_PLATFORM_SHARED_MEMORY_REGION_H_
 
-#include <utility>
-
-#include "base/compiler_specific.h"
+#include "base/base_export.h"
+#include "base/containers/span.h"
 #include "base/gtest_prod_util.h"
-#include "base/macros.h"
+#include "base/memory/platform_shared_memory_handle.h"
+#include "base/memory/shared_memory_mapper.h"
 #include "base/unguessable_token.h"
 #include "build/build_config.h"
+#include "third_party/abseil-cpp/absl/types/optional.h"
 
-#if defined(OS_MACOSX) && !defined(OS_IOS)
-#include <mach/mach.h>
-#include "base/mac/scoped_mach_port.h"
-#elif defined(OS_FUCHSIA)
-#include <lib/zx/vmo.h>
-#elif defined(OS_WIN)
-#include "base/win/scoped_handle.h"
-#include "base/win/windows_types.h"
-#elif defined(OS_POSIX)
-#include <sys/types.h>
-#include "base/file_descriptor_posix.h"
-#include "base/files/scoped_file.h"
-#endif
+#include <stdint.h>
 
-#if defined(OS_LINUX)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 namespace content {
 class SandboxIPCHandler;
 }
@@ -35,33 +24,6 @@ class SandboxIPCHandler;
 
 namespace base {
 namespace subtle {
-
-#if defined(OS_POSIX) && (!defined(OS_MACOSX) || defined(OS_IOS)) && \
-    !defined(OS_ANDROID)
-
-
-struct BASE_EXPORT FDPair {
-  
-  
-  int fd;
-  
-  
-  int readonly_fd;
-};
-
-struct BASE_EXPORT ScopedFDPair {
-  ScopedFDPair();
-  ScopedFDPair(ScopedFD in_fd, ScopedFD in_readonly_fd);
-  ScopedFDPair(ScopedFDPair&&);
-  ScopedFDPair& operator=(ScopedFDPair&&);
-  ~ScopedFDPair();
-
-  FDPair get() const;
-
-  ScopedFD fd;
-  ScopedFD readonly_fd;
-};
-#endif
 
 
 
@@ -121,7 +83,7 @@ class BASE_EXPORT PlatformSharedMemoryRegion {
     kMaxValue = GET_SHMEM_TEMP_DIR_FAILURE
   };
 
-#if defined(OS_LINUX)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
   
   struct ExecutableRegion {
    private:
@@ -141,24 +103,6 @@ class BASE_EXPORT PlatformSharedMemoryRegion {
   };
 #endif
 
-
-#if defined(OS_MACOSX) && !defined(OS_IOS)
-  using PlatformHandle = mach_port_t;
-  using ScopedPlatformHandle = mac::ScopedMachSendRight;
-#elif defined(OS_FUCHSIA)
-  using PlatformHandle = zx::unowned_vmo;
-  using ScopedPlatformHandle = zx::vmo;
-#elif defined(OS_WIN)
-  using PlatformHandle = HANDLE;
-  using ScopedPlatformHandle = win::ScopedHandle;
-#elif defined(OS_ANDROID)
-  using PlatformHandle = int;
-  using ScopedPlatformHandle = ScopedFD;
-#else
-  using PlatformHandle = FDPair;
-  using ScopedPlatformHandle = ScopedFDPair;
-#endif
-
   
   
   enum { kMapMinimumAlignment = 32 };
@@ -175,12 +119,12 @@ class BASE_EXPORT PlatformSharedMemoryRegion {
   
   
   
-  static PlatformSharedMemoryRegion Take(ScopedPlatformHandle handle,
-                                         Mode mode,
-                                         size_t size,
-                                         const UnguessableToken& guid);
-#if defined(OS_POSIX) && !defined(OS_ANDROID) && \
-    !(defined(OS_MACOSX) && !defined(OS_IOS))
+  static PlatformSharedMemoryRegion Take(
+      ScopedPlatformSharedMemoryHandle handle,
+      Mode mode,
+      size_t size,
+      const UnguessableToken& guid);
+#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_APPLE)
   
   
   static PlatformSharedMemoryRegion Take(ScopedFD handle,
@@ -196,6 +140,9 @@ class BASE_EXPORT PlatformSharedMemoryRegion {
   
   PlatformSharedMemoryRegion(PlatformSharedMemoryRegion&&);
   PlatformSharedMemoryRegion& operator=(PlatformSharedMemoryRegion&&);
+  PlatformSharedMemoryRegion(const PlatformSharedMemoryRegion&) = delete;
+  PlatformSharedMemoryRegion& operator=(const PlatformSharedMemoryRegion&) =
+      delete;
 
   
   
@@ -205,11 +152,11 @@ class BASE_EXPORT PlatformSharedMemoryRegion {
   
   
   
-  ScopedPlatformHandle PassPlatformHandle() WARN_UNUSED_RESULT;
+  [[nodiscard]] ScopedPlatformSharedMemoryHandle PassPlatformHandle();
 
   
   
-  PlatformHandle GetPlatformHandle() const;
+  PlatformSharedMemoryHandle GetPlatformHandle() const;
 
   
   bool IsValid() const;
@@ -226,7 +173,7 @@ class BASE_EXPORT PlatformSharedMemoryRegion {
   
   
   bool ConvertToReadOnly();
-#if defined(OS_MACOSX) && !defined(OS_IOS)
+#if BUILDFLAG(IS_APPLE)
   
   
   
@@ -247,11 +194,13 @@ class BASE_EXPORT PlatformSharedMemoryRegion {
   
   
   
+  absl::optional<span<uint8_t>> MapAt(uint64_t offset,
+                                      size_t size,
+                                      SharedMemoryMapper* mapper) const;
+
   
-  bool MapAt(off_t offset,
-             size_t size,
-             void** memory,
-             size_t* mapped_size) const;
+  
+  static void Unmap(span<uint8_t> mapping, SharedMemoryMapper* mapper);
 
   const UnguessableToken& GetGUID() const { return guid_; }
 
@@ -266,33 +215,26 @@ class BASE_EXPORT PlatformSharedMemoryRegion {
                            CheckPlatformHandlePermissionsCorrespondToMode);
   static PlatformSharedMemoryRegion Create(Mode mode,
                                            size_t size
-#if defined(OS_LINUX)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
                                            ,
                                            bool executable = false
 #endif
   );
 
   static bool CheckPlatformHandlePermissionsCorrespondToMode(
-      PlatformHandle handle,
+      PlatformSharedMemoryHandle handle,
       Mode mode,
       size_t size);
 
-  PlatformSharedMemoryRegion(ScopedPlatformHandle handle,
+  PlatformSharedMemoryRegion(ScopedPlatformSharedMemoryHandle handle,
                              Mode mode,
                              size_t size,
                              const UnguessableToken& guid);
 
-  bool MapAtInternal(off_t offset,
-                     size_t size,
-                     void** memory,
-                     size_t* mapped_size) const;
-
-  ScopedPlatformHandle handle_;
+  ScopedPlatformSharedMemoryHandle handle_;
   Mode mode_ = Mode::kReadOnly;
   size_t size_ = 0;
   UnguessableToken guid_;
-
-  DISALLOW_COPY_AND_ASSIGN(PlatformSharedMemoryRegion);
 };
 
 }  

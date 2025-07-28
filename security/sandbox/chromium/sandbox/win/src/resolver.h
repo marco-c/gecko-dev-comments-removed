@@ -11,17 +11,21 @@
 
 #include <stddef.h>
 
-#include "base/macros.h"
-#include "sandbox/win/src/nt_internals.h"
+#include "base/memory/raw_ptr_exclusion.h"
+#include "base/win/windows_types.h"
 
 namespace sandbox {
 
 
 
 
-class ResolverThunk {
+class [[clang::lto_visibility_public]] ResolverThunk {
  public:
   ResolverThunk() {}
+
+  ResolverThunk(const ResolverThunk&) = delete;
+  ResolverThunk& operator=(const ResolverThunk&) = delete;
+
   virtual ~ResolverThunk() {}
 
   
@@ -95,11 +99,13 @@ class ResolverThunk {
                         const void* original_function, const void* interceptor);
 
   
-  void* target_;
   
-  const void* interceptor_;
-
-  DISALLOW_COPY_AND_ASSIGN(ResolverThunk);
+  
+  RAW_PTR_EXCLUSION void* target_;
+  
+  
+  
+  RAW_PTR_EXCLUSION const void* interceptor_;
 };
 
 }  

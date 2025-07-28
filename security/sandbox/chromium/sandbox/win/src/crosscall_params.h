@@ -2,28 +2,20 @@
 
 
 
-#ifndef SANDBOX_SRC_CROSSCALL_PARAMS_H__
-#define SANDBOX_SRC_CROSSCALL_PARAMS_H__
+#ifndef SANDBOX_WIN_SRC_CROSSCALL_PARAMS_H_
+#define SANDBOX_WIN_SRC_CROSSCALL_PARAMS_H_
 
-#if !defined(SANDBOX_FUZZ_TARGET)
 #include <windows.h>
 
 #include <lmaccess.h>
-#else
-#include "sandbox/win/fuzzer/fuzzer_types.h"
-#endif
 
 #include <stddef.h>
 #include <stdint.h>
 
-#include <memory>
-
-#include "base/macros.h"
+#include "base/memory/raw_ptr_exclusion.h"
 #include "sandbox/win/src/internal_types.h"
-#if !defined(SANDBOX_FUZZ_TARGET)
-#include "sandbox/win/src/sandbox_nt_types.h"
-#endif
 #include "sandbox/win/src/ipc_tags.h"
+#include "sandbox/win/src/sandbox_nt_types.h"
 #include "sandbox/win/src/sandbox_types.h"
 
 
@@ -77,7 +69,9 @@ const size_t kExtendedReturnCount = 8;
 
 union MultiType {
   uint32_t unsigned_int;
-  void* pointer;
+  
+  
+  RAW_PTR_EXCLUSION void* pointer;
   HANDLE handle;
   ULONG_PTR ulong_ptr;
 };
@@ -133,6 +127,9 @@ struct CrossCallReturn {
 
 class CrossCallParams {
  public:
+  CrossCallParams(const CrossCallParams&) = delete;
+  CrossCallParams& operator=(const CrossCallParams&) = delete;
+
   
   IpcTag GetTag() const { return tag_; }
 
@@ -167,7 +164,6 @@ class CrossCallParams {
   uint32_t is_in_out_;
   CrossCallReturn call_return;
   const uint32_t params_count_;
-  DISALLOW_COPY_AND_ASSIGN(CrossCallParams);
 };
 
 
@@ -224,6 +220,9 @@ class ActualCallParams : public CrossCallParams {
     param_info_[0].offset_ =
         static_cast<uint32_t>(parameters_ - reinterpret_cast<char*>(this));
   }
+
+  ActualCallParams(const ActualCallParams&) = delete;
+  ActualCallParams& operator=(const ActualCallParams&) = delete;
 
   static constexpr size_t MaxParamsSize() {
     return sizeof(
@@ -301,7 +300,6 @@ class ActualCallParams : public CrossCallParams {
   ParamInfo param_info_[NUMBER_PARAMS + 1];
   char parameters_[BLOCK_SIZE - sizeof(CrossCallParams) -
                    sizeof(ParamInfo) * (NUMBER_PARAMS + 1)];
-  DISALLOW_COPY_AND_ASSIGN(ActualCallParams);
 
   friend uint32_t GetMinDeclaredActualCallParamsSize(uint32_t param_count);
 };

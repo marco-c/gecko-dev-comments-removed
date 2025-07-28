@@ -19,9 +19,7 @@ class LineBreakPolicy {
  public:
   
   
-  static bool GenerateRules(const wchar_t* type_name,
-                            TargetPolicy::Semantics semantics,
-                            LowLevelPolicy* policy);
+  static bool GenerateRules(LowLevelPolicy* policy);
 
   
   static DWORD GetComplexLineBreaksProxyAction(EvalResult eval_result,

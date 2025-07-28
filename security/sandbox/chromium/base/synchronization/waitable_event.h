@@ -8,22 +8,21 @@
 #include <stddef.h>
 
 #include "base/base_export.h"
-#include "base/macros.h"
+#include "base/compiler_specific.h"
 #include "build/build_config.h"
 
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
 #include "base/win/scoped_handle.h"
-#elif defined(OS_MACOSX)
+#elif BUILDFLAG(IS_APPLE)
 #include <mach/mach.h>
 
 #include <list>
 #include <memory>
 
-#include "base/callback_forward.h"
-#include "base/mac/scoped_mach_port.h"
+#include "base/apple/scoped_mach_port.h"
+#include "base/functional/callback_forward.h"
 #include "base/memory/ref_counted.h"
-#include "base/synchronization/lock.h"
-#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
+#elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 #include <list>
 #include <utility>
 
@@ -66,12 +65,15 @@ class BASE_EXPORT WaitableEvent {
   WaitableEvent(ResetPolicy reset_policy = ResetPolicy::MANUAL,
                 InitialState initial_state = InitialState::NOT_SIGNALED);
 
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
   
   
   
   explicit WaitableEvent(win::ScopedHandle event_handle);
 #endif
+
+  WaitableEvent(const WaitableEvent&) = delete;
+  WaitableEvent& operator=(const WaitableEvent&) = delete;
 
   ~WaitableEvent();
 
@@ -94,7 +96,7 @@ class BASE_EXPORT WaitableEvent {
   
   
   
-  void Wait();
+  NOT_TAIL_CALLED void Wait();
 
   
   
@@ -102,10 +104,10 @@ class BASE_EXPORT WaitableEvent {
   
   
   
-  bool TimedWait(const TimeDelta& wait_delta);
+  NOT_TAIL_CALLED bool TimedWait(TimeDelta wait_delta);
 
-#if defined(OS_WIN)
-  HANDLE handle() const { return handle_.Get(); }
+#if BUILDFLAG(IS_WIN)
+  HANDLE handle() const { return handle_.get(); }
 #endif
 
   
@@ -114,7 +116,9 @@ class BASE_EXPORT WaitableEvent {
   
   
   
-  void declare_only_used_while_idle() { waiting_is_blocking_ = false; }
+  
+  
+  void declare_only_used_while_idle() { only_used_while_idle_ = true; }
 
   
   
@@ -128,7 +132,8 @@ class BASE_EXPORT WaitableEvent {
   
   
   
-  static size_t WaitMany(WaitableEvent** waitables, size_t count);
+  NOT_TAIL_CALLED static size_t WaitMany(WaitableEvent** waitables,
+                                         size_t count);
 
   
 
@@ -165,19 +170,14 @@ class BASE_EXPORT WaitableEvent {
  private:
   friend class WaitableEventWatcher;
 
-#if defined(OS_WIN)
-  win::ScopedHandle handle_;
-#elif defined(OS_MACOSX)
   
   
-  
-  
-  
-  
-  
-  
-  static bool UseSlowWatchList(ResetPolicy policy);
+  void SignalImpl();
+  bool TimedWaitImpl(TimeDelta wait_delta);
 
+#if BUILDFLAG(IS_WIN)
+  win::ScopedHandle handle_;
+#elif BUILDFLAG(IS_APPLE)
   
   
   
@@ -192,36 +192,18 @@ class BASE_EXPORT WaitableEvent {
   
   class ReceiveRight : public RefCountedThreadSafe<ReceiveRight> {
    public:
-    ReceiveRight(mach_port_t name, bool create_slow_watch_list);
+    explicit ReceiveRight(mach_port_t name);
+
+    ReceiveRight(const ReceiveRight&) = delete;
+    ReceiveRight& operator=(const ReceiveRight&) = delete;
 
     mach_port_t Name() const { return right_.get(); }
-
-    
-    
-    struct WatchList {
-      WatchList();
-      ~WatchList();
-
-      
-      
-      
-      Lock lock;
-      std::list<OnceClosure> list;
-    };
-
-    WatchList* SlowWatchList() const { return slow_watch_list_.get(); }
 
    private:
     friend class RefCountedThreadSafe<ReceiveRight>;
     ~ReceiveRight();
 
-    mac::ScopedMachReceiveRight right_;
-
-    
-    
-    std::unique_ptr<WatchList> slow_watch_list_;
-
-    DISALLOW_COPY_AND_ASSIGN(ReceiveRight);
+    apple::ScopedMachReceiveRight right_;
   };
 
   const ResetPolicy policy_;
@@ -232,8 +214,8 @@ class BASE_EXPORT WaitableEvent {
   
   
   
-  mac::ScopedMachSendRight send_right_;
-#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
+  apple::ScopedMachSendRight send_right_;
+#elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
   
   
   
@@ -281,9 +263,9 @@ class BASE_EXPORT WaitableEvent {
 
   
   
-  bool waiting_is_blocking_ = true;
-
-  DISALLOW_COPY_AND_ASSIGN(WaitableEvent);
+  
+  
+  bool only_used_while_idle_ = false;
 };
 
 }  

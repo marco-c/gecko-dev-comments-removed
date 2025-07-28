@@ -25,6 +25,21 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef BASE_ATOMICOPS_H_
 #define BASE_ATOMICOPS_H_
 
@@ -36,7 +51,6 @@
 
 #include <cstddef>
 
-#include "base/base_export.h"
 #include "build/build_config.h"
 
 namespace base {
@@ -46,7 +60,7 @@ typedef int32_t Atomic32;
 #ifdef ARCH_CPU_64_BITS
 
 
-#if defined(__ILP32__) || defined(OS_NACL)
+#if defined(__ILP32__) || BUILDFLAG(IS_NACL)
 
 
 typedef int64_t Atomic64;
@@ -100,12 +114,10 @@ Atomic32 Release_CompareAndSwap(volatile Atomic32* ptr,
                                 Atomic32 new_value);
 
 void NoBarrier_Store(volatile Atomic32* ptr, Atomic32 value);
-void Acquire_Store(volatile Atomic32* ptr, Atomic32 value);
 void Release_Store(volatile Atomic32* ptr, Atomic32 value);
 
 Atomic32 NoBarrier_Load(volatile const Atomic32* ptr);
 Atomic32 Acquire_Load(volatile const Atomic32* ptr);
-Atomic32 Release_Load(volatile const Atomic32* ptr);
 
 
 #ifdef ARCH_CPU_64_BITS
@@ -122,28 +134,19 @@ Atomic64 Acquire_CompareAndSwap(volatile Atomic64* ptr,
 Atomic64 Release_CompareAndSwap(volatile Atomic64* ptr,
                                 Atomic64 old_value,
                                 Atomic64 new_value);
-void NoBarrier_Store(volatile Atomic64* ptr, Atomic64 value);
-void Acquire_Store(volatile Atomic64* ptr, Atomic64 value);
 void Release_Store(volatile Atomic64* ptr, Atomic64 value);
 Atomic64 NoBarrier_Load(volatile const Atomic64* ptr);
 Atomic64 Acquire_Load(volatile const Atomic64* ptr);
-Atomic64 Release_Load(volatile const Atomic64* ptr);
 #endif  
 
 }  
 }  
 
-#if defined(OS_WIN) && defined(ARCH_CPU_X86_FAMILY)
-
-
-#  include "base/atomicops_internals_x86_msvc.h"
-#else
-#  include "base/atomicops_internals_portable.h"
-#endif
+#include "base/atomicops_internals_portable.h"
 
 
 
-#if defined(OS_MACOSX) || defined(OS_OPENBSD)
+#if BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_OPENBSD)
 #include "base/atomicops_internals_atomicword_compat.h"
 #endif
 

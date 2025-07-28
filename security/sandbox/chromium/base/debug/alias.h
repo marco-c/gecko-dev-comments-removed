@@ -5,9 +5,9 @@
 #ifndef BASE_DEBUG_ALIAS_H_
 #define BASE_DEBUG_ALIAS_H_
 
+#include <stddef.h>
+
 #include "base/base_export.h"
-#include "base/stl_util.h"
-#include "base/strings/string_util.h"
 
 namespace base {
 namespace debug {
@@ -28,17 +28,94 @@ namespace debug {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void BASE_EXPORT Alias(const void* var);
 
 }  
+
+
+
+
+
+
+BASE_EXPORT size_t strlcpy(char* dst, const char* src, size_t dst_size);
+BASE_EXPORT size_t u16cstrlcpy(char16_t* dst,
+                               const char16_t* src,
+                               size_t dst_size);
+BASE_EXPORT size_t wcslcpy(wchar_t* dst, const wchar_t* src, size_t dst_size);
+
 }  
 
 
 
 
-#define DEBUG_ALIAS_FOR_CSTR(var_name, c_str, char_count)   \
-  char var_name[char_count];                                \
-  ::base::strlcpy(var_name, (c_str), base::size(var_name)); \
-  ::base::debug::Alias(var_name);
+#define DEBUG_ALIAS_FOR_CSTR(var_name, c_str, array_size)  \
+  char var_name[array_size] = {};                          \
+  ::base::strlcpy(var_name, (c_str), std::size(var_name)); \
+  ::base::debug::Alias(var_name)
+
+#define DEBUG_ALIAS_FOR_U16CSTR(var_name, c_str, array_size)   \
+  char16_t var_name[array_size] = {};                          \
+  ::base::u16cstrlcpy(var_name, (c_str), std::size(var_name)); \
+  ::base::debug::Alias(var_name)
+
+#define DEBUG_ALIAS_FOR_WCHARCSTR(var_name, c_str, array_size) \
+  wchar_t var_name[array_size] = {};                           \
+  ::base::wcslcpy(var_name, (c_str), std::size(var_name));     \
+  ::base::debug::Alias(var_name)
+
+
+
+
+
+
+
+
+
+
+
+
+#define NO_CODE_FOLDING()           \
+  const int line_number = __LINE__; \
+  base::debug::Alias(&line_number)
 
 #endif  

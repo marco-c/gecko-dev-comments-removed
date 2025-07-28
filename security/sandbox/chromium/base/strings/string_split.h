@@ -10,7 +10,6 @@
 #include <vector>
 
 #include "base/base_export.h"
-#include "base/strings/string16.h"
 #include "base/strings/string_piece.h"
 #include "build/build_config.h"
 
@@ -46,42 +45,41 @@ enum SplitResult {
 
 
 
-
-BASE_EXPORT std::vector<std::string> SplitString(StringPiece input,
-                                                 StringPiece separators,
-                                                 WhitespaceHandling whitespace,
-                                                 SplitResult result_type)
-    WARN_UNUSED_RESULT;
-BASE_EXPORT std::vector<string16> SplitString(StringPiece16 input,
-                                              StringPiece16 separators,
-                                              WhitespaceHandling whitespace,
-                                              SplitResult result_type)
-    WARN_UNUSED_RESULT;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-BASE_EXPORT std::vector<StringPiece> SplitStringPiece(
+[[nodiscard]] BASE_EXPORT std::vector<std::string> SplitString(
     StringPiece input,
     StringPiece separators,
     WhitespaceHandling whitespace,
-    SplitResult result_type) WARN_UNUSED_RESULT;
-BASE_EXPORT std::vector<StringPiece16> SplitStringPiece(
+    SplitResult result_type);
+[[nodiscard]] BASE_EXPORT std::vector<std::u16string> SplitString(
     StringPiece16 input,
     StringPiece16 separators,
     WhitespaceHandling whitespace,
-    SplitResult result_type) WARN_UNUSED_RESULT;
+    SplitResult result_type);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[[nodiscard]] BASE_EXPORT std::vector<StringPiece> SplitStringPiece(
+    StringPiece input,
+    StringPiece separators,
+    WhitespaceHandling whitespace,
+    SplitResult result_type);
+[[nodiscard]] BASE_EXPORT std::vector<StringPiece16> SplitStringPiece(
+    StringPiece16 input,
+    StringPiece16 separators,
+    WhitespaceHandling whitespace,
+    SplitResult result_type);
 
 using StringPairs = std::vector<std::pair<std::string, std::string>>;
 
@@ -104,16 +102,16 @@ BASE_EXPORT bool SplitStringIntoKeyValuePairsUsingSubstr(
 
 
 
-BASE_EXPORT std::vector<string16> SplitStringUsingSubstr(
+[[nodiscard]] BASE_EXPORT std::vector<std::u16string> SplitStringUsingSubstr(
     StringPiece16 input,
     StringPiece16 delimiter,
     WhitespaceHandling whitespace,
-    SplitResult result_type) WARN_UNUSED_RESULT;
-BASE_EXPORT std::vector<std::string> SplitStringUsingSubstr(
+    SplitResult result_type);
+[[nodiscard]] BASE_EXPORT std::vector<std::string> SplitStringUsingSubstr(
     StringPiece input,
     StringPiece delimiter,
     WhitespaceHandling whitespace,
-    SplitResult result_type) WARN_UNUSED_RESULT;
+    SplitResult result_type);
 
 
 
@@ -127,43 +125,21 @@ BASE_EXPORT std::vector<std::string> SplitStringUsingSubstr(
 
 
 
-BASE_EXPORT std::vector<StringPiece16> SplitStringPieceUsingSubstr(
-    StringPiece16 input,
-    StringPiece16 delimiter,
-    WhitespaceHandling whitespace,
-    SplitResult result_type) WARN_UNUSED_RESULT;
-BASE_EXPORT std::vector<StringPiece> SplitStringPieceUsingSubstr(
+[[nodiscard]] BASE_EXPORT std::vector<StringPiece16>
+SplitStringPieceUsingSubstr(StringPiece16 input,
+                            StringPiece16 delimiter,
+                            WhitespaceHandling whitespace,
+                            SplitResult result_type);
+[[nodiscard]] BASE_EXPORT std::vector<StringPiece> SplitStringPieceUsingSubstr(
     StringPiece input,
     StringPiece delimiter,
     WhitespaceHandling whitespace,
-    SplitResult result_type) WARN_UNUSED_RESULT;
-
-#if defined(OS_WIN) && defined(BASE_STRING16_IS_STD_U16STRING)
-BASE_EXPORT std::vector<std::wstring> SplitString(WStringPiece input,
-                                                  WStringPiece separators,
-                                                  WhitespaceHandling whitespace,
-                                                  SplitResult result_type)
-    WARN_UNUSED_RESULT;
-
-BASE_EXPORT std::vector<WStringPiece> SplitStringPiece(
-    WStringPiece input,
-    WStringPiece separators,
-    WhitespaceHandling whitespace,
-    SplitResult result_type) WARN_UNUSED_RESULT;
-
-BASE_EXPORT std::vector<std::wstring> SplitStringUsingSubstr(
-    WStringPiece input,
-    WStringPiece delimiter,
-    WhitespaceHandling whitespace,
-    SplitResult result_type) WARN_UNUSED_RESULT;
-
-BASE_EXPORT std::vector<WStringPiece> SplitStringPieceUsingSubstr(
-    WStringPiece input,
-    WStringPiece delimiter,
-    WhitespaceHandling whitespace,
-    SplitResult result_type) WARN_UNUSED_RESULT;
-#endif
+    SplitResult result_type);
 
 }  
+
+#if BUILDFLAG(IS_WIN)
+#include "base/strings/string_split_win.h"
+#endif
 
 #endif  

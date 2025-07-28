@@ -10,13 +10,14 @@
 
 #include <memory>
 
+#include "base/base_export.h"
 #include "base/environment.h"
 #include "build/build_config.h"
 
 namespace base {
 namespace internal {
 
-#if defined(OS_POSIX) || defined(OS_FUCHSIA)
+#if BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 
 
 
@@ -31,7 +32,7 @@ namespace internal {
 BASE_EXPORT std::unique_ptr<char*[]> AlterEnvironment(
     const char* const* env,
     const EnvironmentMap& changes);
-#elif defined(OS_WIN)
+#elif BUILDFLAG(IS_WIN)
 
 
 

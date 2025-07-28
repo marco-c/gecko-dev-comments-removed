@@ -2,12 +2,11 @@
 
 
 
-#ifndef SANDBOX_SRC_HANDLE_CLOSER_AGENT_H_
-#define SANDBOX_SRC_HANDLE_CLOSER_AGENT_H_
+#ifndef SANDBOX_WIN_SRC_HANDLE_CLOSER_AGENT_H_
+#define SANDBOX_WIN_SRC_HANDLE_CLOSER_AGENT_H_
 
 #include <string>
 
-#include "base/macros.h"
 #include "base/win/scoped_handle.h"
 #include "sandbox/win/src/handle_closer.h"
 #include "sandbox/win/src/sandbox_types.h"
@@ -19,6 +18,10 @@ namespace sandbox {
 class HandleCloserAgent {
  public:
   HandleCloserAgent();
+
+  HandleCloserAgent(const HandleCloserAgent&) = delete;
+  HandleCloserAgent& operator=(const HandleCloserAgent&) = delete;
+
   ~HandleCloserAgent();
 
   
@@ -37,8 +40,6 @@ class HandleCloserAgent {
 
   HandleMap handles_to_close_;
   base::win::ScopedHandle dummy_handle_;
-
-  DISALLOW_COPY_AND_ASSIGN(HandleCloserAgent);
 };
 
 }  

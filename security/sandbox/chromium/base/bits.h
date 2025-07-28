@@ -12,21 +12,18 @@
 
 #include <type_traits>
 
+#include "base/check.h"
 #include "base/compiler_specific.h"
-#include "base/logging.h"
 #include "build/build_config.h"
-
-#if defined(COMPILER_MSVC)
-#include <intrin.h>
-#endif
 
 namespace base {
 namespace bits {
 
 
-template <typename T,
-          typename = typename std::enable_if<std::is_integral<T>::value>>
-constexpr inline bool IsPowerOfTwo(T value) {
+
+
+template <typename T, typename = std::enable_if_t<std::is_integral_v<T>>>
+constexpr bool IsPowerOfTwo(T value) {
   
   
   
@@ -37,121 +34,58 @@ constexpr inline bool IsPowerOfTwo(T value) {
 }
 
 
-inline size_t Align(size_t size, size_t alignment) {
-  DCHECK(IsPowerOfTwo(alignment));
-  return (size + alignment - 1) & ~(alignment - 1);
-}
-
-
-inline size_t AlignDown(size_t size, size_t alignment) {
+template <typename T, typename = std::enable_if_t<std::is_integral_v<T>>>
+constexpr T AlignDown(T size, T alignment) {
   DCHECK(IsPowerOfTwo(alignment));
   return size & ~(alignment - 1);
 }
 
 
 
-
-
-
-
-
-
-
-
-
-
-#if defined(COMPILER_MSVC)
-
-template <typename T, unsigned bits = sizeof(T) * 8>
-ALWAYS_INLINE
-    typename std::enable_if<std::is_unsigned<T>::value && sizeof(T) <= 4,
-                            unsigned>::type
-    CountLeadingZeroBits(T x) {
-  static_assert(bits > 0, "invalid instantiation");
-  unsigned long index;
-  return LIKELY(_BitScanReverse(&index, static_cast<uint32_t>(x)))
-             ? (31 - index - (32 - bits))
-             : bits;
+template <typename T, typename = std::enable_if_t<sizeof(T) == 1>>
+inline T* AlignDown(T* ptr, uintptr_t alignment) {
+  return reinterpret_cast<T*>(
+      AlignDown(reinterpret_cast<uintptr_t>(ptr), alignment));
 }
 
-template <typename T, unsigned bits = sizeof(T) * 8>
-ALWAYS_INLINE
-    typename std::enable_if<std::is_unsigned<T>::value && sizeof(T) == 8,
-                            unsigned>::type
-    CountLeadingZeroBits(T x) {
-  static_assert(bits > 0, "invalid instantiation");
-  unsigned long index;
 
-#if defined(ARCH_CPU_64_BITS)
-  return LIKELY(_BitScanReverse64(&index, static_cast<uint64_t>(x)))
-             ? (63 - index)
-             : 64;
-#else
-  uint32_t left = static_cast<uint32_t>(x >> 32);
-  if (LIKELY(_BitScanReverse(&index, left)))
-    return 31 - index;
-
-  uint32_t right = static_cast<uint32_t>(x);
-  if (LIKELY(_BitScanReverse(&index, right)))
-    return 63 - index;
-
-  return 64;
-#endif
+template <typename T, typename = std::enable_if_t<std::is_integral_v<T>>>
+constexpr T AlignUp(T size, T alignment) {
+  DCHECK(IsPowerOfTwo(alignment));
+  return (size + alignment - 1) & ~(alignment - 1);
 }
 
-template <typename T, unsigned bits = sizeof(T) * 8>
-ALWAYS_INLINE
-    typename std::enable_if<std::is_unsigned<T>::value && sizeof(T) <= 4,
-                            unsigned>::type
-    CountTrailingZeroBits(T x) {
-  static_assert(bits > 0, "invalid instantiation");
-  unsigned long index;
-  return LIKELY(_BitScanForward(&index, static_cast<uint32_t>(x))) ? index
-                                                                   : bits;
+
+
+template <typename T, typename = std::enable_if_t<sizeof(T) == 1>>
+inline T* AlignUp(T* ptr, uintptr_t alignment) {
+  return reinterpret_cast<T*>(
+      AlignUp(reinterpret_cast<uintptr_t>(ptr), alignment));
 }
 
-template <typename T, unsigned bits = sizeof(T) * 8>
-ALWAYS_INLINE
-    typename std::enable_if<std::is_unsigned<T>::value && sizeof(T) == 8,
-                            unsigned>::type
-    CountTrailingZeroBits(T x) {
-  static_assert(bits > 0, "invalid instantiation");
-  unsigned long index;
-
-#if defined(ARCH_CPU_64_BITS)
-  return LIKELY(_BitScanForward64(&index, static_cast<uint64_t>(x))) ? index
-                                                                     : 64;
-#else
-  uint32_t right = static_cast<uint32_t>(x);
-  if (LIKELY(_BitScanForward(&index, right)))
-    return index;
-
-  uint32_t left = static_cast<uint32_t>(x >> 32);
-  if (LIKELY(_BitScanForward(&index, left)))
-    return 32 + index;
-
-  return 64;
-#endif
-}
-
-ALWAYS_INLINE uint32_t CountLeadingZeroBits32(uint32_t x) {
-  return CountLeadingZeroBits(x);
-}
-
-ALWAYS_INLINE uint64_t CountLeadingZeroBits64(uint64_t x) {
-  return CountLeadingZeroBits(x);
-}
-
-#elif defined(COMPILER_GCC)
 
 
 
 
 
-template <typename T, unsigned bits = sizeof(T) * 8>
-ALWAYS_INLINE
-    typename std::enable_if<std::is_unsigned<T>::value && sizeof(T) <= 8,
-                            unsigned>::type
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T, int bits = sizeof(T) * 8>
+ALWAYS_INLINE constexpr
+    typename std::enable_if<std::is_unsigned_v<T> && sizeof(T) <= 8, int>::type
     CountLeadingZeroBits(T value) {
   static_assert(bits > 0, "invalid instantiation");
   return LIKELY(value)
@@ -161,10 +95,9 @@ ALWAYS_INLINE
              : bits;
 }
 
-template <typename T, unsigned bits = sizeof(T) * 8>
-ALWAYS_INLINE
-    typename std::enable_if<std::is_unsigned<T>::value && sizeof(T) <= 8,
-                            unsigned>::type
+template <typename T, int bits = sizeof(T) * 8>
+ALWAYS_INLINE constexpr
+    typename std::enable_if<std::is_unsigned_v<T> && sizeof(T) <= 8, int>::type
     CountTrailingZeroBits(T value) {
   return LIKELY(value) ? bits == 64
                              ? __builtin_ctzll(static_cast<uint64_t>(value))
@@ -172,35 +105,33 @@ ALWAYS_INLINE
                        : bits;
 }
 
-ALWAYS_INLINE uint32_t CountLeadingZeroBits32(uint32_t x) {
-  return CountLeadingZeroBits(x);
-}
-
-ALWAYS_INLINE uint64_t CountLeadingZeroBits64(uint64_t x) {
-  return CountLeadingZeroBits(x);
-}
-
-#endif
-
-ALWAYS_INLINE size_t CountLeadingZeroBitsSizeT(size_t x) {
-  return CountLeadingZeroBits(x);
-}
-
-ALWAYS_INLINE size_t CountTrailingZeroBitsSizeT(size_t x) {
-  return CountTrailingZeroBits(x);
-}
 
 
-inline int Log2Floor(uint32_t n) {
+
+
+
+
+
+constexpr int Log2Floor(uint32_t n) {
   return 31 - CountLeadingZeroBits(n);
 }
 
 
-inline int Log2Ceiling(uint32_t n) {
+constexpr int Log2Ceiling(uint32_t n) {
   
   
   
   return (n ? 32 : -1) - CountLeadingZeroBits(n - 1);
+}
+
+
+
+template <typename T>
+constexpr T LeftmostBit() {
+  static_assert(std::is_integral_v<T>,
+                "This function can only be used with integral types.");
+  T one(1u);
+  return one << (8 * sizeof(T) - 1);
 }
 
 }  

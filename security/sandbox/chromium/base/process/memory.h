@@ -7,6 +7,7 @@
 
 #include <stddef.h>
 
+#include "base/allocator/partition_allocator/src/partition_alloc/oom.h"
 #include "base/base_export.h"
 #include "base/process/process_handle.h"
 #include "build/build_config.h"
@@ -22,11 +23,10 @@ BASE_EXPORT void EnableTerminationOnOutOfMemory();
 
 
 
-BASE_EXPORT void TerminateBecauseOutOfMemory(size_t size);
+using partition_alloc::TerminateBecauseOutOfMemory;
 
-#if defined(OS_LINUX) || defined(OS_ANDROID) || defined(OS_AIX)
-BASE_EXPORT extern size_t g_oom_size;
-
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
+    BUILDFLAG(IS_AIX)
 
 const int kMaxOomScore = 1000;
 
@@ -46,27 +46,14 @@ namespace internal {
 bool ReleaseAddressSpaceReservation();
 }  
 
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
 namespace win {
 
-
-
-
-
-
-
-const DWORD kOomExceptionCode = 0xe0000008;
+using partition_alloc::win::kOomExceptionCode;
 
 }  
 #endif
 
-namespace internal {
-
-
-
-BASE_EXPORT void OnNoMemoryInternal(size_t size);
-
-}  
 
 
 
@@ -78,11 +65,31 @@ BASE_EXPORT void OnNoMemoryInternal(size_t size);
 
 
 
-BASE_EXPORT WARN_UNUSED_RESULT bool UncheckedMalloc(size_t size,
-                                                    void** result);
-BASE_EXPORT WARN_UNUSED_RESULT bool UncheckedCalloc(size_t num_items,
-                                                    size_t size,
-                                                    void** result);
+
+
+
+[[nodiscard]] BASE_EXPORT bool UncheckedMalloc(size_t size, void** result);
+[[nodiscard]] BASE_EXPORT bool UncheckedCalloc(size_t num_items,
+                                               size_t size,
+                                               void** result);
+
+
+
+
+BASE_EXPORT void UncheckedFree(void* ptr);
+
+
+
+
+
+
+
+
+
+
+struct UncheckedFreeDeleter {
+  inline void operator()(void* ptr) const { UncheckedFree(ptr); }
+};
 
 }  
 

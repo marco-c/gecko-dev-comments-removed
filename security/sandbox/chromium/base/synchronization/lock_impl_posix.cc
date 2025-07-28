@@ -4,12 +4,11 @@
 
 #include "base/synchronization/lock_impl.h"
 
+#include <ostream>
 #include <string>
 
-#include "base/debug/activity_tracker.h"
-#include "base/logging.h"
+#include "base/check_op.h"
 #include "base/posix/safe_strerror.h"
-#include "base/strings/stringprintf.h"
 #include "base/synchronization/lock.h"
 #include "base/synchronization/synchronization_buildflags.h"
 #include "build/build_config.h"
@@ -41,6 +40,17 @@ std::string SystemErrorCodeToString(int error_code) {
 
 }  
 
+#if DCHECK_IS_ON()
+
+void dcheck_trylock_result(int rv) {
+  DCHECK(rv == 0 || rv == EBUSY)
+      << ". " << base::internal::SystemErrorCodeToString(rv);
+}
+
+void dcheck_unlock_result(int rv) {
+  DCHECK_EQ(rv, 0) << ". " << strerror(rv);
+}
+#endif
 
 
 
@@ -48,7 +58,8 @@ std::string SystemErrorCodeToString(int error_code) {
 
 
 
-#if defined(OS_NACL) || defined(OS_ANDROID) || defined(OS_FUCHSIA)
+
+#if BUILDFLAG(IS_NACL) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA)
 #define PRIORITY_INHERITANCE_LOCKS_POSSIBLE() 0
 #else
 #define PRIORITY_INHERITANCE_LOCKS_POSSIBLE() 1
@@ -80,25 +91,7 @@ LockImpl::~LockImpl() {
   DCHECK_EQ(rv, 0) << ". " << SystemErrorCodeToString(rv);
 }
 
-bool LockImpl::Try() {
-  int rv = pthread_mutex_trylock(&native_handle_);
-  DCHECK(rv == 0 || rv == EBUSY) << ". " << SystemErrorCodeToString(rv);
-  return rv == 0;
-}
-
-void LockImpl::Lock() {
-  
-  
-  
-  
-  
-  
-  
-  if (base::debug::GlobalActivityTracker::IsEnabled())
-    if (Try())
-      return;
-
-  base::debug::ScopedLockAcquireActivity lock_activity(this);
+void LockImpl::LockInternal() {
   int rv = pthread_mutex_lock(&native_handle_);
   DCHECK_EQ(rv, 0) << ". " << SystemErrorCodeToString(rv);
 }
@@ -107,7 +100,7 @@ void LockImpl::Lock() {
 bool LockImpl::PriorityInheritanceAvailable() {
 #if BUILDFLAG(ENABLE_MUTEX_PRIORITY_INHERITANCE)
   return true;
-#elif PRIORITY_INHERITANCE_LOCKS_POSSIBLE() && defined(OS_MACOSX)
+#elif PRIORITY_INHERITANCE_LOCKS_POSSIBLE() && BUILDFLAG(IS_APPLE)
   return true;
 #else
   

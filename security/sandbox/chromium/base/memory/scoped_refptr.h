@@ -11,9 +11,9 @@
 #include <type_traits>
 #include <utility>
 
+#include "base/check.h"
 #include "base/compiler_specific.h"
-#include "base/logging.h"
-#include "base/macros.h"
+#include "base/memory/raw_ptr_exclusion.h"
 
 template <class T>
 class scoped_refptr;
@@ -24,17 +24,12 @@ template <class, typename>
 class RefCounted;
 template <class, typename>
 class RefCountedThreadSafe;
+template <class>
+class RefCountedDeleteOnSequence;
 class SequencedTaskRunner;
-class WrappedPromise;
 
 template <typename T>
 scoped_refptr<T> AdoptRef(T* t);
-
-namespace internal {
-
-class BasePromise;
-
-}  
 
 namespace subtle {
 
@@ -42,24 +37,78 @@ enum AdoptRefTag { kAdoptRefTag };
 enum StartRefCountFromZeroTag { kStartRefCountFromZeroTag };
 enum StartRefCountFromOneTag { kStartRefCountFromOneTag };
 
+template <typename TagType>
+struct RefCountPreferenceTagTraits;
+
+template <>
+struct RefCountPreferenceTagTraits<StartRefCountFromZeroTag> {
+  static constexpr StartRefCountFromZeroTag kTag = kStartRefCountFromZeroTag;
+};
+
+template <>
+struct RefCountPreferenceTagTraits<StartRefCountFromOneTag> {
+  static constexpr StartRefCountFromOneTag kTag = kStartRefCountFromOneTag;
+};
+
+template <typename T, typename Tag = typename T::RefCountPreferenceTag>
+constexpr Tag GetRefCountPreference() {
+  return RefCountPreferenceTagTraits<Tag>::kTag;
+}
+
+
+
+
+
 template <typename T, typename U, typename V>
 constexpr bool IsRefCountPreferenceOverridden(const T*,
                                               const RefCounted<U, V>*) {
-  return !std::is_same<std::decay_t<decltype(T::kRefCountPreference)>,
-                       std::decay_t<decltype(U::kRefCountPreference)>>::value;
+  return !std::is_same_v<std::decay_t<decltype(GetRefCountPreference<T>())>,
+                         std::decay_t<decltype(GetRefCountPreference<U>())>>;
 }
 
 template <typename T, typename U, typename V>
 constexpr bool IsRefCountPreferenceOverridden(
     const T*,
     const RefCountedThreadSafe<U, V>*) {
-  return !std::is_same<std::decay_t<decltype(T::kRefCountPreference)>,
-                       std::decay_t<decltype(U::kRefCountPreference)>>::value;
+  return !std::is_same_v<std::decay_t<decltype(GetRefCountPreference<T>())>,
+                         std::decay_t<decltype(GetRefCountPreference<U>())>>;
+}
+
+template <typename T, typename U>
+constexpr bool IsRefCountPreferenceOverridden(
+    const T*,
+    const RefCountedDeleteOnSequence<U>*) {
+  return !std::is_same_v<std::decay_t<decltype(GetRefCountPreference<T>())>,
+                         std::decay_t<decltype(GetRefCountPreference<U>())>>;
 }
 
 constexpr bool IsRefCountPreferenceOverridden(...) {
   return false;
 }
+
+template <typename T, typename U, typename V>
+constexpr void AssertRefCountBaseMatches(const T*, const RefCounted<U, V>*) {
+  static_assert(std::is_base_of_v<U, T>,
+                "T implements RefCounted<U>, but U is not a base of T.");
+}
+
+template <typename T, typename U, typename V>
+constexpr void AssertRefCountBaseMatches(const T*,
+                                         const RefCountedThreadSafe<U, V>*) {
+  static_assert(
+      std::is_base_of_v<U, T>,
+      "T implements RefCountedThreadSafe<U>, but U is not a base of T.");
+}
+
+template <typename T, typename U>
+constexpr void AssertRefCountBaseMatches(const T*,
+                                         const RefCountedDeleteOnSequence<U>*) {
+  static_assert(
+      std::is_base_of_v<U, T>,
+      "T implements RefCountedDeleteOnSequence<U>, but U is not a base of T.");
+}
+
+constexpr void AssertRefCountBaseMatches(...) {}
 
 }  
 
@@ -68,8 +117,8 @@ constexpr bool IsRefCountPreferenceOverridden(...) {
 
 template <typename T>
 scoped_refptr<T> AdoptRef(T* obj) {
-  using Tag = std::decay_t<decltype(T::kRefCountPreference)>;
-  static_assert(std::is_same<subtle::StartRefCountFromOneTag, Tag>::value,
+  using Tag = std::decay_t<decltype(subtle::GetRefCountPreference<T>())>;
+  static_assert(std::is_same_v<subtle::StartRefCountFromOneTag, Tag>,
                 "Use AdoptRef only if the reference count starts from one.");
 
   DCHECK(obj);
@@ -97,7 +146,7 @@ scoped_refptr<T> AdoptRefIfNeeded(T* obj, StartRefCountFromOneTag) {
 template <typename T, typename... Args>
 scoped_refptr<T> MakeRefCounted(Args&&... args) {
   T* obj = new T(std::forward<Args>(args)...);
-  return subtle::AdoptRefIfNeeded(obj, T::kRefCountPreference);
+  return subtle::AdoptRefIfNeeded(obj, subtle::GetRefCountPreference<T>());
 }
 
 
@@ -172,7 +221,7 @@ scoped_refptr<T> WrapRefCounted(T* t) {
 
 
 template <class T>
-class scoped_refptr {
+class TRIVIAL_ABI scoped_refptr {
  public:
   typedef T element_type;
 
@@ -198,8 +247,7 @@ class scoped_refptr {
 
   
   template <typename U,
-            typename = typename std::enable_if<
-                std::is_convertible<U*, T*>::value>::type>
+            typename = std::enable_if_t<std::is_convertible_v<U*, T*>>>
   scoped_refptr(const scoped_refptr<U>& r) : scoped_refptr(r.ptr_) {}
 
   
@@ -208,8 +256,7 @@ class scoped_refptr {
 
   
   template <typename U,
-            typename = typename std::enable_if<
-                std::is_convertible<U*, T*>::value>::type>
+            typename = std::enable_if_t<std::is_convertible_v<U*, T*>>>
   scoped_refptr(scoped_refptr<U>&& r) noexcept : ptr_(r.ptr_) {
     r.ptr_ = nullptr;
   }
@@ -253,6 +300,10 @@ class scoped_refptr {
   
   void reset() { scoped_refptr().swap(*this); }
 
+  
+  
+  [[nodiscard]] T* release();
+
   void swap(scoped_refptr& r) noexcept { std::swap(ptr_, r.ptr_); }
 
   explicit operator bool() const { return ptr_ != nullptr; }
@@ -273,21 +324,14 @@ class scoped_refptr {
   }
 
  protected:
-  T* ptr_ = nullptr;
+  
+  
+  RAW_PTR_EXCLUSION T* ptr_ = nullptr;
 
  private:
   template <typename U>
   friend scoped_refptr<U> base::AdoptRef(U*);
   friend class ::base::SequencedTaskRunner;
-
-  
-  
-  friend class ::base::internal::BasePromise;
-  friend class ::base::WrappedPromise;
-
-  
-  
-  T* release();
 
   scoped_refptr(T* p, base::subtle::AdoptRefTag) : ptr_(p) {}
 
@@ -313,12 +357,14 @@ T* scoped_refptr<T>::release() {
 
 template <typename T>
 void scoped_refptr<T>::AddRef(T* ptr) {
+  base::subtle::AssertRefCountBaseMatches(ptr, ptr);
   ptr->AddRef();
 }
 
 
 template <typename T>
 void scoped_refptr<T>::Release(T* ptr) {
+  base::subtle::AssertRefCountBaseMatches(ptr, ptr);
   ptr->Release();
 }
 

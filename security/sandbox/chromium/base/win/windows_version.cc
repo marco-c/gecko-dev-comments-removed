@@ -10,20 +10,24 @@
 #include <tuple>
 #include <utility>
 
+#include "base/check_op.h"
 #include "base/file_version_info_win.h"
 #include "base/files/file_path.h"
 #include "base/logging.h"
 #include "base/no_destructor.h"
+#include "base/notreached.h"
 #include "base/strings/string_util.h"
 #include "base/strings/utf_string_conversions.h"
+#include "base/threading/thread_restrictions.h"
 #include "base/win/registry.h"
+#include "build/build_config.h"
 
 #if !defined(__clang__) && _MSC_FULL_VER < 191125507
 #error VS 2017 Update 3.2 or higher is required
 #endif
 
-#if !defined(NTDDI_WIN10_RS4)
-#error Windows 10.0.17134.0 SDK or higher required.
+#if !defined(NTDDI_WIN10_NI)
+#error Windows 10.0.22621.0 SDK or higher required.
 #endif
 
 namespace base {
@@ -48,19 +52,24 @@ std::pair<int, std::string> GetVersionData() {
   if (key.Open(HKEY_LOCAL_MACHINE, kRegKeyWindowsNTCurrentVersion,
                KEY_QUERY_VALUE) == ERROR_SUCCESS) {
     key.ReadValueDW(L"UBR", &ubr);
-    key.ReadValue(L"ReleaseId", &release_id);
+    
+    
+    key.ReadValue(L"DisplayVersion", &release_id);
+    
+    if (release_id.empty())
+      key.ReadValue(L"ReleaseId", &release_id);
   }
 
   return std::make_pair(static_cast<int>(ubr), WideToUTF8(release_id));
 }
 
 const _SYSTEM_INFO& GetSystemInfoStorage() {
-  static const NoDestructor<_SYSTEM_INFO> system_info([] {
+  static const _SYSTEM_INFO system_info = [] {
     _SYSTEM_INFO info = {};
     ::GetNativeSystemInfo(&info);
     return info;
-  }());
-  return *system_info;
+  }();
+  return system_info;
 }
 
 }  
@@ -71,7 +80,18 @@ OSInfo** OSInfo::GetInstanceStorage() {
   
   static OSInfo* info = []() {
     _OSVERSIONINFOEXW version_info = {sizeof(version_info)};
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    
+    
+    
+    
+    
+    
+    
     ::GetVersionEx(reinterpret_cast<_OSVERSIONINFOW*>(&version_info));
+#pragma clang diagnostic pop
 
     DWORD os_type = 0;
     ::GetProductInfo(version_info.dwMajorVersion, version_info.dwMinorVersion,
@@ -104,22 +124,54 @@ OSInfo::WindowsArchitecture OSInfo::GetArchitecture() {
   }
 }
 
+
+
+
+bool OSInfo::IsRunningEmulatedOnArm64() {
+#if defined(ARCH_CPU_ARM64)
+  
+  return false;
+#else
+  using IsWow64Process2Function = decltype(&IsWow64Process2);
+
+  IsWow64Process2Function is_wow64_process2 =
+      reinterpret_cast<IsWow64Process2Function>(::GetProcAddress(
+          ::GetModuleHandleA("kernel32.dll"), "IsWow64Process2"));
+  if (!is_wow64_process2) {
+    return false;
+  }
+  USHORT process_machine;
+  USHORT native_machine;
+  bool retval = is_wow64_process2(::GetCurrentProcess(), &process_machine,
+                                  &native_machine);
+  if (!retval) {
+    return false;
+  }
+  if (native_machine == IMAGE_FILE_MACHINE_ARM64) {
+    return true;
+  }
+  return false;
+#endif
+}
+
 OSInfo::OSInfo(const _OSVERSIONINFOEXW& version_info,
                const _SYSTEM_INFO& system_info,
-               int os_type)
+               DWORD os_type)
     : version_(Version::PRE_XP),
-      wow64_status_(GetWOW64StatusForProcess(GetCurrentProcess())) {
+      wow_process_machine_(WowProcessMachine::kUnknown),
+      wow_native_machine_(WowNativeMachine::kUnknown) {
   version_number_.major = version_info.dwMajorVersion;
   version_number_.minor = version_info.dwMinorVersion;
   version_number_.build = version_info.dwBuildNumber;
   std::tie(version_number_.patch, release_id_) = GetVersionData();
   version_ = MajorMinorBuildToVersion(
       version_number_.major, version_number_.minor, version_number_.build);
+  InitializeWowStatusValuesForProcess(GetCurrentProcess());
   service_pack_.major = version_info.wServicePackMajor;
   service_pack_.minor = version_info.wServicePackMinor;
   service_pack_str_ = WideToUTF8(version_info.szCSDVersion);
 
-  processors_ = system_info.dwNumberOfProcessors;
+  processors_ = static_cast<int>(system_info.dwNumberOfProcessors);
   allocation_granularity_ = system_info.dwAllocationGranularity;
 
   if (version_info.dwMajorVersion == 6 || version_info.dwMajorVersion == 10) {
@@ -154,6 +206,10 @@ OSInfo::OSInfo(const _OSVERSIONINFOEXW& version_info,
       case PRODUCT_BUSINESS:
       case PRODUCT_BUSINESS_N:
         version_type_ = SUITE_ENTERPRISE;
+        break;
+      case PRODUCT_PRO_FOR_EDUCATION:
+      case PRODUCT_PRO_FOR_EDUCATION_N:
+        version_type_ = SUITE_EDUCATION_PRO;
         break;
       case PRODUCT_EDUCATION:
       case PRODUCT_EDUCATION_N:
@@ -190,7 +246,7 @@ OSInfo::OSInfo(const _OSVERSIONINFOEXW& version_info,
 
 OSInfo::~OSInfo() = default;
 
-Version OSInfo::Kernel32Version() const {
+Version OSInfo::Kernel32Version() {
   static const Version kernel32_version =
       MajorMinorBuildToVersion(Kernel32BaseVersion().components()[0],
                                Kernel32BaseVersion().components()[1],
@@ -198,24 +254,26 @@ Version OSInfo::Kernel32Version() const {
   return kernel32_version;
 }
 
-Version OSInfo::UcrtVersion() const {
-  auto ucrt_version_info = FileVersionInfoWin::CreateFileVersionInfoWin(
-      FilePath(FILE_PATH_LITERAL("ucrtbase.dll")));
-  if (ucrt_version_info) {
-    auto ucrt_components = ucrt_version_info->GetFileVersion().components();
-    if (ucrt_components.size() == 4) {
-      return MajorMinorBuildToVersion(ucrt_components[0], ucrt_components[1],
-                                      ucrt_components[2]);
-    }
-  }
-  return Version();
+OSInfo::VersionNumber OSInfo::Kernel32VersionNumber() {
+  DCHECK_EQ(Kernel32BaseVersion().components().size(), 4u);
+  static const VersionNumber version = {
+      .major = Kernel32BaseVersion().components()[0],
+      .minor = Kernel32BaseVersion().components()[1],
+      .build = Kernel32BaseVersion().components()[2],
+      .patch = Kernel32BaseVersion().components()[3]};
+  return version;
 }
 
 
 
 
-base::Version OSInfo::Kernel32BaseVersion() const {
+base::Version OSInfo::Kernel32BaseVersion() {
   static const NoDestructor<base::Version> version([] {
+    
+    
+    
+    
+    base::ScopedAllowBlocking allow_blocking;
     std::unique_ptr<FileVersionInfoWin> file_version_info =
         FileVersionInfoWin::CreateFileVersionInfoWin(
             FilePath(FILE_PATH_LITERAL("kernel32.dll")));
@@ -232,6 +290,39 @@ base::Version OSInfo::Kernel32BaseVersion() const {
   return *version;
 }
 
+bool OSInfo::IsWowDisabled() const {
+  return (wow_process_machine_ == WowProcessMachine::kDisabled);
+}
+
+bool OSInfo::IsWowX86OnAMD64() const {
+  return (wow_process_machine_ == WowProcessMachine::kX86 &&
+          wow_native_machine_ == WowNativeMachine::kAMD64);
+}
+
+bool OSInfo::IsWowX86OnARM64() const {
+  return (wow_process_machine_ == WowProcessMachine::kX86 &&
+          wow_native_machine_ == WowNativeMachine::kARM64);
+}
+
+bool OSInfo::IsWowAMD64OnARM64() const {
+#if defined(ARCH_CPU_X86_64)
+  
+  
+  
+  
+  
+  return (wow_process_machine_ == WowProcessMachine::kDisabled &&
+          wow_native_machine_ == WowNativeMachine::kARM64);
+#else
+  return false;
+#endif
+}
+
+bool OSInfo::IsWowX86OnOther() const {
+  return (wow_process_machine_ == WowProcessMachine::kX86 &&
+          wow_native_machine_ == WowNativeMachine::kOther);
+}
+
 std::string OSInfo::processor_model_name() {
   if (processor_model_name_.empty()) {
     const wchar_t kProcessorNameString[] =
@@ -245,34 +336,67 @@ std::string OSInfo::processor_model_name() {
 }
 
 
-OSInfo::WOW64Status OSInfo::GetWOW64StatusForProcess(HANDLE process_handle) {
-  BOOL is_wow64 = FALSE;
-  if (!::IsWow64Process(process_handle, &is_wow64))
-    return WOW64_UNKNOWN;
-  return is_wow64 ? WOW64_ENABLED : WOW64_DISABLED;
-}
 
 
+Version OSInfo::MajorMinorBuildToVersion(uint32_t major,
+                                         uint32_t minor,
+                                         uint32_t build) {
+  if (major == 11) {
+    
+    
+    
+    return Version::WIN11;
+  }
 
-
-Version OSInfo::MajorMinorBuildToVersion(int major, int minor, int build) {
   if (major == 10) {
-    if (build >= 19041)
+    if (build >= 22621) {
+      return Version::WIN11_22H2;
+    }
+    if (build >= 22000) {
+      return Version::WIN11;
+    }
+    if (build >= 20348) {
+      return Version::SERVER_2022;
+    }
+    if (build >= 19045) {
+      return Version::WIN10_22H2;
+    }
+    if (build >= 19044) {
+      return Version::WIN10_21H2;
+    }
+    if (build >= 19043) {
+      return Version::WIN10_21H1;
+    }
+    if (build >= 19042) {
+      return Version::WIN10_20H2;
+    }
+    if (build >= 19041) {
       return Version::WIN10_20H1;
-    if (build >= 18362)
+    }
+    if (build >= 18363) {
+      return Version::WIN10_19H2;
+    }
+    if (build >= 18362) {
       return Version::WIN10_19H1;
-    if (build >= 17763)
+    }
+    if (build >= 17763) {
       return Version::WIN10_RS5;
-    if (build >= 17134)
+    }
+    if (build >= 17134) {
       return Version::WIN10_RS4;
-    if (build >= 16299)
+    }
+    if (build >= 16299) {
       return Version::WIN10_RS3;
-    if (build >= 15063)
+    }
+    if (build >= 15063) {
       return Version::WIN10_RS2;
-    if (build >= 14393)
+    }
+    if (build >= 14393) {
       return Version::WIN10_RS1;
-    if (build >= 10586)
+    }
+    if (build >= 10586) {
       return Version::WIN10_TH2;
+    }
     return Version::WIN10;
   }
 
@@ -291,7 +415,7 @@ Version OSInfo::MajorMinorBuildToVersion(int major, int minor, int build) {
       case 2:
         return Version::WIN8;
       default:
-        DCHECK_EQ(minor, 3);
+        DCHECK_EQ(minor, 3u);
         return Version::WIN8_1;
     }
   }
@@ -307,6 +431,62 @@ Version OSInfo::MajorMinorBuildToVersion(int major, int minor, int build) {
 
 Version GetVersion() {
   return OSInfo::GetInstance()->version();
+}
+
+OSInfo::WowProcessMachine OSInfo::GetWowProcessMachineArchitecture(
+    const int process_machine) {
+  switch (process_machine) {
+    case IMAGE_FILE_MACHINE_UNKNOWN:
+      return OSInfo::WowProcessMachine::kDisabled;
+    case IMAGE_FILE_MACHINE_I386:
+      return OSInfo::WowProcessMachine::kX86;
+    case IMAGE_FILE_MACHINE_ARM:
+    case IMAGE_FILE_MACHINE_THUMB:
+    case IMAGE_FILE_MACHINE_ARMNT:
+      return OSInfo::WowProcessMachine::kARM32;
+  }
+  return OSInfo::WowProcessMachine::kOther;
+}
+
+OSInfo::WowNativeMachine OSInfo::GetWowNativeMachineArchitecture(
+    const int native_machine) {
+  switch (native_machine) {
+    case IMAGE_FILE_MACHINE_ARM64:
+      return OSInfo::WowNativeMachine::kARM64;
+    case IMAGE_FILE_MACHINE_AMD64:
+      return OSInfo::WowNativeMachine::kAMD64;
+  }
+  return OSInfo::WowNativeMachine::kOther;
+}
+
+void OSInfo::InitializeWowStatusValuesFromLegacyApi(HANDLE process_handle) {
+  BOOL is_wow64 = FALSE;
+  if (!::IsWow64Process(process_handle, &is_wow64))
+    return;
+  if (is_wow64) {
+    wow_process_machine_ = WowProcessMachine::kX86;
+    wow_native_machine_ = WowNativeMachine::kAMD64;
+  } else {
+    wow_process_machine_ = WowProcessMachine::kDisabled;
+  }
+}
+
+void OSInfo::InitializeWowStatusValuesForProcess(HANDLE process_handle) {
+  static const auto is_wow64_process2 =
+      reinterpret_cast<decltype(&IsWow64Process2)>(::GetProcAddress(
+          ::GetModuleHandle(L"kernel32.dll"), "IsWow64Process2"));
+  if (!is_wow64_process2) {
+    InitializeWowStatusValuesFromLegacyApi(process_handle);
+    return;
+  }
+
+  USHORT process_machine = IMAGE_FILE_MACHINE_UNKNOWN;
+  USHORT native_machine = IMAGE_FILE_MACHINE_UNKNOWN;
+  if (!is_wow64_process2(process_handle, &process_machine, &native_machine)) {
+    return;
+  }
+  wow_process_machine_ = GetWowProcessMachineArchitecture(process_machine);
+  wow_native_machine_ = GetWowNativeMachineArchitecture(native_machine);
 }
 
 }  

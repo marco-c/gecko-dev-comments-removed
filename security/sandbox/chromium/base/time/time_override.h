@@ -5,13 +5,18 @@
 #ifndef BASE_TIME_TIME_OVERRIDE_H_
 #define BASE_TIME_TIME_OVERRIDE_H_
 
+#include <atomic>
+
 #include "base/base_export.h"
 #include "base/time/time.h"
+#include "build/build_config.h"
+#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace base {
 
 using TimeNowFunction = decltype(&Time::Now);
 using TimeTicksNowFunction = decltype(&TimeTicks::Now);
+using LiveTicksNowFunction = decltype(&LiveTicks::Now);
 using ThreadTicksNowFunction = decltype(&ThreadTicks::Now);
 
 
@@ -23,12 +28,22 @@ namespace subtle {
 
 
 
+
+
+
+
+
+
 class BASE_EXPORT ScopedTimeClockOverrides {
  public:
   
   ScopedTimeClockOverrides(TimeNowFunction time_override,
                            TimeTicksNowFunction time_ticks_override,
-                           ThreadTicksNowFunction thread_ticks_override);
+                           ThreadTicksNowFunction thread_ticks_override,
+                           LiveTicksNowFunction live_ticks_override = nullptr);
+
+  ScopedTimeClockOverrides(const ScopedTimeClockOverrides&) = delete;
+  ScopedTimeClockOverrides& operator=(const ScopedTimeClockOverrides&) = delete;
 
   
   ~ScopedTimeClockOverrides();
@@ -37,8 +52,6 @@ class BASE_EXPORT ScopedTimeClockOverrides {
 
  private:
   static bool overrides_active_;
-
-  DISALLOW_COPY_AND_ASSIGN(ScopedTimeClockOverrides);
 };
 
 
@@ -49,7 +62,14 @@ class BASE_EXPORT ScopedTimeClockOverrides {
 BASE_EXPORT Time TimeNowIgnoringOverride();
 BASE_EXPORT Time TimeNowFromSystemTimeIgnoringOverride();
 BASE_EXPORT TimeTicks TimeTicksNowIgnoringOverride();
+BASE_EXPORT LiveTicks LiveTicksNowIgnoringOverride();
 BASE_EXPORT ThreadTicks ThreadTicksNowIgnoringOverride();
+
+#if BUILDFLAG(IS_POSIX)
+
+
+BASE_EXPORT absl::optional<TimeTicks> MaybeTimeTicksNowIgnoringOverride();
+#endif
 
 }  
 
@@ -62,10 +82,11 @@ namespace internal {
 
 
 
-extern TimeNowFunction g_time_now_function;
-extern TimeNowFunction g_time_now_from_system_time_function;
-extern TimeTicksNowFunction g_time_ticks_now_function;
-extern ThreadTicksNowFunction g_thread_ticks_now_function;
+extern std::atomic<TimeNowFunction> g_time_now_function;
+extern std::atomic<TimeNowFunction> g_time_now_from_system_time_function;
+extern std::atomic<TimeTicksNowFunction> g_time_ticks_now_function;
+extern std::atomic<LiveTicksNowFunction> g_live_ticks_now_function;
+extern std::atomic<ThreadTicksNowFunction> g_thread_ticks_now_function;
 
 }  
 

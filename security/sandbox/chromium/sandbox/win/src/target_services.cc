@@ -4,16 +4,22 @@
 
 #include "sandbox/win/src/target_services.h"
 
+#include <windows.h>
+#include <winsock2.h>
+
 #include <new>
 
 #include <process.h>
 #include <stdint.h>
 
-#include "base/win/windows_version.h"
+#include "base/containers/span.h"
+#include "base/logging.h"
+#include "base/win/access_token.h"
+#include "sandbox/win/src/acl.h"
 #include "sandbox/win/src/crosscall_client.h"
 #include "sandbox/win/src/handle_closer_agent.h"
-#include "sandbox/win/src/heap_helper.h"
 #include "sandbox/win/src/line_break_interception.h"
+#include "sandbox/win/src/heap_helper.h"
 #include "sandbox/win/src/ipc_tags.h"
 #include "sandbox/win/src/process_mitigations.h"
 #include "sandbox/win/src/restricted_token_utils.h"
@@ -21,6 +27,7 @@
 #include "sandbox/win/src/sandbox_nt_util.h"
 #include "sandbox/win/src/sandbox_types.h"
 #include "sandbox/win/src/sharedmem_ipc_client.h"
+#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace sandbox {
 namespace {
@@ -108,6 +115,30 @@ bool WarmupWindowsLocales() {
   return (0 != ::GetUserDefaultLocaleName(localeName, LOCALE_NAME_MAX_LENGTH));
 }
 
+bool SetProcessIntegrityLevel(IntegrityLevel integrity_level) {
+  absl::optional<DWORD> rid = GetIntegrityLevelRid(integrity_level);
+  if (!rid) {
+    
+    return true;
+  }
+
+  
+  
+  
+  DWORD rv = SetObjectIntegrityLabel(::GetCurrentProcess(),
+                                     base::win::SecurityObjectType::kKernel,
+                                     0, integrity_level);
+  DCHECK(rv == ERROR_SUCCESS);
+
+  absl::optional<base::win::AccessToken> token =
+      base::win::AccessToken::FromCurrentProcess(false,
+                                                 TOKEN_ADJUST_DEFAULT);
+  if (!token) {
+    return false;
+  }
+  return token->SetIntegrityLevel(*rid);
+}
+
 
 
 
@@ -117,9 +148,8 @@ TargetServicesBase* g_target_services = nullptr;
 
 }  
 
-SANDBOX_INTERCEPT IntegrityLevel g_shared_delayed_integrity_level =
-    INTEGRITY_LEVEL_LAST;
-SANDBOX_INTERCEPT MitigationFlags g_shared_delayed_mitigations = 0;
+SANDBOX_INTERCEPT IntegrityLevel g_shared_delayed_integrity_level;
+SANDBOX_INTERCEPT MitigationFlags g_shared_delayed_mitigations;
 
 TargetServicesBase::TargetServicesBase() {}
 
@@ -128,11 +158,17 @@ ResultCode TargetServicesBase::Init() {
   return SBOX_ALL_OK;
 }
 
+absl::optional<base::span<const uint8_t>>
+TargetServicesBase::GetDelegateData() {
+  CHECK(process_state_.InitCalled());
+  return sandbox::GetGlobalDelegateData();
+}
+
 
 void TargetServicesBase::LowerToken() {
-  if (ERROR_SUCCESS !=
-      SetProcessIntegrityLevel(g_shared_delayed_integrity_level))
+  if (!SetProcessIntegrityLevel(g_shared_delayed_integrity_level)) {
     ::TerminateProcess(::GetCurrentProcess(), SBOX_FATAL_INTEGRITY);
+  }
   process_state_.SetRevertedToSelf();
   
   
@@ -150,8 +186,9 @@ void TargetServicesBase::LowerToken() {
   process_state_.SetCsrssConnected(is_csrss_connected);
   
   if (g_shared_delayed_mitigations &&
-      !ApplyProcessMitigationsToCurrentProcess(g_shared_delayed_mitigations))
+      !LockDownSecurityMitigations(g_shared_delayed_mitigations)) {
     ::TerminateProcess(::GetCurrentProcess(), SBOX_FATAL_MITIGATION);
+  }
 }
 
 ProcessState* TargetServicesBase::GetState() {

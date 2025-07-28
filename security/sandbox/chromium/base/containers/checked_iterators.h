@@ -9,8 +9,10 @@
 #include <memory>
 #include <type_traits>
 
+#include "base/check_op.h"
 #include "base/containers/util.h"
-#include "base/logging.h"
+#include "base/memory/raw_ptr_exclusion.h"
+#include "build/build_config.h"
 
 namespace base {
 
@@ -22,19 +24,30 @@ class CheckedContiguousIterator {
   using pointer = T*;
   using reference = T&;
   using iterator_category = std::random_access_iterator_tag;
+#if defined(__cpp_lib_ranges)
+  using iterator_concept = std::contiguous_iterator_tag;
+#endif
 
   
   template <typename U>
   friend class CheckedContiguousIterator;
 
+  
+  
+  template <typename Ptr>
+  friend struct std::pointer_traits;
+
   constexpr CheckedContiguousIterator() = default;
+
   constexpr CheckedContiguousIterator(T* start, const T* end)
       : CheckedContiguousIterator(start, start, end) {}
+
   constexpr CheckedContiguousIterator(const T* start, T* current, const T* end)
       : start_(start), current_(current), end_(end) {
     CHECK_LE(start, current);
     CHECK_LE(current, end);
   }
+
   constexpr CheckedContiguousIterator(const CheckedContiguousIterator& other) =
       default;
 
@@ -45,7 +58,7 @@ class CheckedContiguousIterator {
   
   template <
       typename U,
-      std::enable_if_t<std::is_convertible<U (*)[], T (*)[]>::value>* = nullptr>
+      std::enable_if_t<std::is_convertible_v<U (*)[], T (*)[]>>* = nullptr>
   constexpr CheckedContiguousIterator(const CheckedContiguousIterator<U>& other)
       : start_(other.start_), current_(other.current_), end_(other.end_) {
     
@@ -60,34 +73,39 @@ class CheckedContiguousIterator {
   constexpr CheckedContiguousIterator& operator=(
       const CheckedContiguousIterator& other) = default;
 
-  constexpr bool operator==(const CheckedContiguousIterator& other) const {
-    CheckComparable(other);
-    return current_ == other.current_;
+  friend constexpr bool operator==(const CheckedContiguousIterator& lhs,
+                                   const CheckedContiguousIterator& rhs) {
+    lhs.CheckComparable(rhs);
+    return lhs.current_ == rhs.current_;
   }
 
-  constexpr bool operator!=(const CheckedContiguousIterator& other) const {
-    CheckComparable(other);
-    return current_ != other.current_;
+  friend constexpr bool operator!=(const CheckedContiguousIterator& lhs,
+                                   const CheckedContiguousIterator& rhs) {
+    lhs.CheckComparable(rhs);
+    return lhs.current_ != rhs.current_;
   }
 
-  constexpr bool operator<(const CheckedContiguousIterator& other) const {
-    CheckComparable(other);
-    return current_ < other.current_;
+  friend constexpr bool operator<(const CheckedContiguousIterator& lhs,
+                                  const CheckedContiguousIterator& rhs) {
+    lhs.CheckComparable(rhs);
+    return lhs.current_ < rhs.current_;
   }
 
-  constexpr bool operator<=(const CheckedContiguousIterator& other) const {
-    CheckComparable(other);
-    return current_ <= other.current_;
+  friend constexpr bool operator<=(const CheckedContiguousIterator& lhs,
+                                   const CheckedContiguousIterator& rhs) {
+    lhs.CheckComparable(rhs);
+    return lhs.current_ <= rhs.current_;
+  }
+  friend constexpr bool operator>(const CheckedContiguousIterator& lhs,
+                                  const CheckedContiguousIterator& rhs) {
+    lhs.CheckComparable(rhs);
+    return lhs.current_ > rhs.current_;
   }
 
-  constexpr bool operator>(const CheckedContiguousIterator& other) const {
-    CheckComparable(other);
-    return current_ > other.current_;
-  }
-
-  constexpr bool operator>=(const CheckedContiguousIterator& other) const {
-    CheckComparable(other);
-    return current_ >= other.current_;
+  friend constexpr bool operator>=(const CheckedContiguousIterator& lhs,
+                                   const CheckedContiguousIterator& rhs) {
+    lhs.CheckComparable(rhs);
+    return lhs.current_ >= rhs.current_;
   }
 
   constexpr CheckedContiguousIterator& operator++() {
@@ -130,6 +148,12 @@ class CheckedContiguousIterator {
     return it;
   }
 
+  constexpr friend CheckedContiguousIterator operator+(
+      difference_type lhs,
+      const CheckedContiguousIterator& rhs) {
+    return rhs + lhs;
+  }
+
   constexpr CheckedContiguousIterator& operator-=(difference_type rhs) {
     if (rhs < 0) {
       CHECK_LE(-rhs, end_ - current_);
@@ -149,8 +173,7 @@ class CheckedContiguousIterator {
   constexpr friend difference_type operator-(
       const CheckedContiguousIterator& lhs,
       const CheckedContiguousIterator& rhs) {
-    CHECK_EQ(lhs.start_, rhs.start_);
-    CHECK_EQ(lhs.end_, rhs.end_);
+    lhs.CheckComparable(rhs);
     return lhs.current_ - rhs.current_;
   }
 
@@ -170,10 +193,10 @@ class CheckedContiguousIterator {
     return current_[rhs];
   }
 
-  static bool IsRangeMoveSafe(const CheckedContiguousIterator& from_begin,
-                              const CheckedContiguousIterator& from_end,
-                              const CheckedContiguousIterator& to)
-      WARN_UNUSED_RESULT {
+  [[nodiscard]] static bool IsRangeMoveSafe(
+      const CheckedContiguousIterator& from_begin,
+      const CheckedContiguousIterator& from_end,
+      const CheckedContiguousIterator& to) {
     if (from_end < from_begin)
       return false;
     const auto from_begin_uintptr = get_uintptr(from_begin.current_);
@@ -192,13 +215,84 @@ class CheckedContiguousIterator {
     CHECK_EQ(end_, other.end_);
   }
 
-  const T* start_ = nullptr;
-  T* current_ = nullptr;
-  const T* end_ = nullptr;
+  
+  
+  RAW_PTR_EXCLUSION const T* start_ = nullptr;
+  
+  
+  RAW_PTR_EXCLUSION T* current_ = nullptr;
+  
+  
+  RAW_PTR_EXCLUSION const T* end_ = nullptr;
 };
 
 template <typename T>
 using CheckedContiguousConstIterator = CheckedContiguousIterator<const T>;
+
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if defined(_LIBCPP_VERSION)
+
+
+
+_LIBCPP_BEGIN_NAMESPACE_STD
+
+
+
+
+template <typename T>
+struct __is_cpp17_contiguous_iterator;
+template <typename T>
+struct __is_cpp17_contiguous_iterator<::base::CheckedContiguousIterator<T>>
+    : true_type {};
+
+template <typename T>
+struct __libcpp_is_contiguous_iterator;
+template <typename T>
+struct __libcpp_is_contiguous_iterator<::base::CheckedContiguousIterator<T>>
+    : true_type {};
+
+_LIBCPP_END_NAMESPACE_STD
+
+#endif
+
+namespace std {
+
+template <typename T>
+struct pointer_traits<::base::CheckedContiguousIterator<T>> {
+  using pointer = ::base::CheckedContiguousIterator<T>;
+  using element_type = T;
+  using difference_type = ptrdiff_t;
+
+  template <typename U>
+  using rebind = ::base::CheckedContiguousIterator<U>;
+
+  static constexpr pointer pointer_to(element_type& r) noexcept {
+    return pointer(&r, &r);
+  }
+
+  static constexpr element_type* to_address(pointer p) noexcept {
+    return p.current_;
+  }
+};
 
 }  
 

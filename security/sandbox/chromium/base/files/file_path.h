@@ -102,25 +102,21 @@
 #ifndef BASE_FILES_FILE_PATH_H_
 #define BASE_FILES_FILE_PATH_H_
 
-#include <stddef.h>
-
-#include <functional>
+#include <cstddef>
 #include <iosfwd>
 #include <string>
 #include <vector>
 
 #include "base/base_export.h"
-#include "base/compiler_specific.h"
-#include "base/stl_util.h"
-#include "base/strings/string16.h"
 #include "base/strings/string_piece.h"
+#include "base/trace_event/base_tracing_forward.h"
 #include "build/build_config.h"
 
 
 
 
 
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
 #define FILE_PATH_USES_DRIVE_LETTERS
 #define FILE_PATH_USES_WIN_SEPARATORS
 #endif  
@@ -128,21 +124,29 @@
 
 
 
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
 #define PRFilePath "ls"
-#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
+#elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 #define PRFilePath "s"
 #endif  
 
 
-#if defined(OS_WIN)
-#define FILE_PATH_LITERAL(x) L##x
-#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
+#if BUILDFLAG(IS_WIN)
+
+
+
+
+
+#define FILE_PATH_LITERAL_INTERNAL(x) L##x
+#define FILE_PATH_LITERAL(x) FILE_PATH_LITERAL_INTERNAL(x)
+
+#elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 #define FILE_PATH_LITERAL(x) x
 #endif  
 
 namespace base {
 
+class SafeBaseName;
 class Pickle;
 class PickleIterator;
 
@@ -150,37 +154,42 @@ class PickleIterator;
 
 class BASE_EXPORT FilePath {
  public:
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
   
   
   typedef std::wstring StringType;
-#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
+#elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
   
   
   
   typedef std::string StringType;
 #endif  
 
-  typedef BasicStringPiece<StringType> StringPieceType;
   typedef StringType::value_type CharType;
+  typedef BasicStringPiece<CharType> StringPieceType;
 
   
   
   
-  
-  static const CharType kSeparators[];
+  static constexpr CharType kSeparators[] =
+#if defined(FILE_PATH_USES_WIN_SEPARATORS)
+      FILE_PATH_LITERAL("\\/");
+#else
+      FILE_PATH_LITERAL("/");
+#endif
+
+
+
+  static constexpr size_t kSeparatorsLength = std::size(kSeparators);
 
   
-  static const size_t kSeparatorsLength;
+  static constexpr CharType kCurrentDirectory[] = FILE_PATH_LITERAL(".");
 
   
-  static const CharType kCurrentDirectory[];
+  static constexpr CharType kParentDirectory[] = FILE_PATH_LITERAL("..");
 
   
-  static const CharType kParentDirectory[];
-
-  
-  static const CharType kExtensionSeparator;
+  static constexpr CharType kExtensionSeparator = FILE_PATH_LITERAL('.');
 
   FilePath();
   FilePath(const FilePath& that);
@@ -193,7 +202,7 @@ class BASE_EXPORT FilePath {
   FilePath(FilePath&& that) noexcept;
   
   
-  FilePath& operator=(FilePath&& that);
+  FilePath& operator=(FilePath&& that) noexcept;
 
   bool operator==(const FilePath& that) const;
 
@@ -206,7 +215,7 @@ class BASE_EXPORT FilePath {
 
   const StringType& value() const { return path_; }
 
-  bool empty() const { return path_.empty(); }
+  [[nodiscard]] bool empty() const { return path_.empty(); }
 
   void clear() { path_.clear(); }
 
@@ -223,7 +232,7 @@ class BASE_EXPORT FilePath {
   
   
   
-  void GetComponents(std::vector<FilePath::StringType>* components) const;
+  std::vector<FilePath::StringType> GetComponents() const;
 
   
   
@@ -249,25 +258,13 @@ class BASE_EXPORT FilePath {
   
   
   
-  FilePath DirName() const WARN_UNUSED_RESULT;
+  [[nodiscard]] FilePath DirName() const;
 
   
   
   
   
-  FilePath BaseName() const WARN_UNUSED_RESULT;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  StringType Extension() const WARN_UNUSED_RESULT;
+  [[nodiscard]] FilePath BaseName() const;
 
   
   
@@ -276,17 +273,6 @@ class BASE_EXPORT FilePath {
   
   
   
-  StringType FinalExtension() const WARN_UNUSED_RESULT;
-
-  
-  
-  
-  FilePath RemoveExtension() const WARN_UNUSED_RESULT;
-
-  
-  
-  FilePath RemoveFinalExtension() const WARN_UNUSED_RESULT;
-
   
   
   
@@ -294,24 +280,64 @@ class BASE_EXPORT FilePath {
   
   
   
-  FilePath InsertBeforeExtension(
-      StringPieceType suffix) const WARN_UNUSED_RESULT;
-  FilePath InsertBeforeExtensionASCII(
-      StringPiece suffix) const WARN_UNUSED_RESULT;
-
   
   
-  FilePath AddExtension(StringPieceType extension) const WARN_UNUSED_RESULT;
-
   
   
-  FilePath AddExtensionASCII(StringPiece extension) const WARN_UNUSED_RESULT;
+  
+  
+  
+  
+  
+  
+  [[nodiscard]] StringType Extension() const;
 
   
   
   
   
-  FilePath ReplaceExtension(StringPieceType extension) const WARN_UNUSED_RESULT;
+  
+  
+  
+  
+  
+  
+  
+  
+  [[nodiscard]] StringType FinalExtension() const;
+
+  
+  
+  
+  [[nodiscard]] FilePath RemoveExtension() const;
+
+  
+  
+  [[nodiscard]] FilePath RemoveFinalExtension() const;
+
+  
+  
+  
+  
+  
+  
+  
+  [[nodiscard]] FilePath InsertBeforeExtension(StringPieceType suffix) const;
+  [[nodiscard]] FilePath InsertBeforeExtensionASCII(StringPiece suffix) const;
+
+  
+  
+  [[nodiscard]] FilePath AddExtension(StringPieceType extension) const;
+
+  
+  
+  [[nodiscard]] FilePath AddExtensionASCII(StringPiece extension) const;
+
+  
+  
+  
+  
+  [[nodiscard]] FilePath ReplaceExtension(StringPieceType extension) const;
 
   
   
@@ -319,12 +345,7 @@ class BASE_EXPORT FilePath {
 
   
   
-  
-  
-  
-  
-  FilePath Append(StringPieceType component) const WARN_UNUSED_RESULT;
-  FilePath Append(const FilePath& component) const WARN_UNUSED_RESULT;
+  bool MatchesFinalExtension(StringPieceType extension) const;
 
   
   
@@ -332,7 +353,17 @@ class BASE_EXPORT FilePath {
   
   
   
-  FilePath AppendASCII(StringPiece component) const WARN_UNUSED_RESULT;
+  [[nodiscard]] FilePath Append(StringPieceType component) const;
+  [[nodiscard]] FilePath Append(const FilePath& component) const;
+  [[nodiscard]] FilePath Append(const SafeBaseName& component) const;
+
+  
+  
+  
+  
+  
+  
+  [[nodiscard]] FilePath AppendASCII(StringPiece component) const;
 
   
   
@@ -341,15 +372,19 @@ class BASE_EXPORT FilePath {
   bool IsAbsolute() const;
 
   
-  bool EndsWithSeparator() const WARN_UNUSED_RESULT;
+  
+  bool IsNetwork() const;
+
+  
+  [[nodiscard]] bool EndsWithSeparator() const;
 
   
   
-  FilePath AsEndingWithSeparator() const WARN_UNUSED_RESULT;
+  [[nodiscard]] FilePath AsEndingWithSeparator() const;
 
   
   
-  FilePath StripTrailingSeparators() const WARN_UNUSED_RESULT;
+  [[nodiscard]] FilePath StripTrailingSeparators() const;
 
   
   
@@ -359,7 +394,7 @@ class BASE_EXPORT FilePath {
   
   
   
-  string16 LossyDisplayName() const;
+  std::u16string LossyDisplayName() const;
 
   
   
@@ -382,7 +417,10 @@ class BASE_EXPORT FilePath {
   std::string AsUTF8Unsafe() const;
 
   
-  string16 AsUTF16Unsafe() const;
+  std::u16string AsUTF16Unsafe() const;
+
+  
+  static FilePath FromASCII(StringPiece ascii);
 
   
   
@@ -402,11 +440,11 @@ class BASE_EXPORT FilePath {
 
   
   
-  FilePath NormalizePathSeparators() const;
+  [[nodiscard]] FilePath NormalizePathSeparators() const;
 
   
   
-  FilePath NormalizePathSeparatorsTo(CharType separator) const;
+  [[nodiscard]] FilePath NormalizePathSeparatorsTo(CharType separator) const;
 
   
   
@@ -427,7 +465,10 @@ class BASE_EXPORT FilePath {
     return CompareIgnoreCase(string1, string2) < 0;
   }
 
-#if defined(OS_MACOSX)
+  
+  void WriteIntoTrace(perfetto::TracedValue context) const;
+
+#if BUILDFLAG(IS_APPLE)
   
   
   
@@ -443,7 +484,7 @@ class BASE_EXPORT FilePath {
                                    StringPieceType string2);
 #endif
 
-#if defined(OS_ANDROID)
+#if BUILDFLAG(IS_ANDROID)
   
   
   
@@ -451,6 +492,9 @@ class BASE_EXPORT FilePath {
   
   bool IsContentUri() const;
 #endif
+
+  
+  
 
  private:
   

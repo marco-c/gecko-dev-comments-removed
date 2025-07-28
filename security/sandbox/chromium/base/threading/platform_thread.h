@@ -11,18 +11,27 @@
 
 #include <stddef.h>
 
-#include "base/base_export.h"
-#include "base/macros.h"
-#include "base/time/time.h"
-#include "build/build_config.h"
+#include <iosfwd>
+#include <type_traits>
 
-#if defined(OS_WIN)
+#include "base/base_export.h"
+#include "base/message_loop/message_pump_type.h"
+#include "base/process/process_handle.h"
+#include "base/sequence_checker_impl.h"
+#include "base/threading/platform_thread_ref.h"
+#include "base/time/time.h"
+#include "base/types/strong_alias.h"
+#include "build/build_config.h"
+#include "build/chromeos_buildflags.h"
+#include "third_party/abseil-cpp/absl/types/optional.h"
+
+#if BUILDFLAG(IS_WIN)
 #include "base/win/windows_types.h"
-#elif defined(OS_FUCHSIA)
+#elif BUILDFLAG(IS_FUCHSIA)
 #include <zircon/types.h>
-#elif defined(OS_MACOSX)
+#elif BUILDFLAG(IS_APPLE)
 #include <mach/mach_types.h>
-#elif defined(OS_POSIX)
+#elif BUILDFLAG(IS_POSIX)
 #include <pthread.h>
 #include <unistd.h>
 #endif
@@ -30,54 +39,23 @@
 namespace base {
 
 
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
 typedef DWORD PlatformThreadId;
-#elif defined(OS_FUCHSIA)
+#elif BUILDFLAG(IS_FUCHSIA)
 typedef zx_handle_t PlatformThreadId;
-#elif defined(OS_MACOSX)
+#elif BUILDFLAG(IS_APPLE)
 typedef mach_port_t PlatformThreadId;
-#elif defined(OS_POSIX)
+#elif BUILDFLAG(IS_POSIX)
 typedef pid_t PlatformThreadId;
 #endif
-
-
-
-
-
-
-
-
-
-class PlatformThreadRef {
- public:
-#if defined(OS_WIN)
-  typedef DWORD RefType;
-#else  
-  typedef pthread_t RefType;
-#endif
-  constexpr PlatformThreadRef() : id_(0) {}
-
-  explicit constexpr PlatformThreadRef(RefType id) : id_(id) {}
-
-  bool operator==(PlatformThreadRef other) const {
-    return id_ == other.id_;
-  }
-
-  bool operator!=(PlatformThreadRef other) const { return id_ != other.id_; }
-
-  bool is_null() const {
-    return id_ == 0;
-  }
- private:
-  RefType id_;
-};
+static_assert(std::is_integral_v<PlatformThreadId>, "Always an integer value.");
 
 
 class PlatformThreadHandle {
  public:
-#if defined(OS_WIN)
+#if BUILDFLAG(IS_WIN)
   typedef void* Handle;
-#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
+#elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
   typedef pthread_t Handle;
 #endif
 
@@ -105,19 +83,60 @@ const PlatformThreadId kInvalidThreadId(0);
 
 
 
-enum class ThreadPriority : int {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+enum class ThreadType : int {
   
-  BACKGROUND,
   
-  NORMAL,
+  kBackground,
   
-  DISPLAY,
   
-  REALTIME_AUDIO,
+  kUtility,
+  
+  
+  
+  kResourceEfficient,
+  
+  
+  
+  kDefault,
+  
+  
+  kCompositing,
+  
+  kDisplayCritical,
+  
+  kRealtimeAudio,
+  kMaxValue = kRealtimeAudio,
 };
 
 
-class BASE_EXPORT PlatformThread {
+
+enum class ThreadPriorityForTest : int {
+  kBackground,
+  kUtility,
+  kResourceEfficient,
+  kNormal,
+  kCompositing,
+  kDisplay,
+  kRealtimeAudio,
+  kMaxValue = kRealtimeAudio,
+};
+
+
+class BASE_EXPORT PlatformThreadBase {
  public:
   
   
@@ -125,9 +144,22 @@ class BASE_EXPORT PlatformThread {
    public:
     virtual void ThreadMain() = 0;
 
+#if BUILDFLAG(IS_APPLE)
+    
+    
+    
+    
+    
+    virtual TimeDelta GetRealtimePeriod();
+#endif
+
    protected:
     virtual ~Delegate() = default;
   };
+
+  PlatformThreadBase() = delete;
+  PlatformThreadBase(const PlatformThreadBase&) = delete;
+  PlatformThreadBase& operator=(const PlatformThreadBase&) = delete;
 
   
   static PlatformThreadId CurrentId();
@@ -142,6 +174,12 @@ class BASE_EXPORT PlatformThread {
   
   static PlatformThreadHandle CurrentHandle();
 
+  
+  
+  
+  
+  
+  
   
   static void YieldCurrentThread();
 
@@ -159,6 +197,7 @@ class BASE_EXPORT PlatformThread {
   
   static const char* GetName();
 
+#if !defined(MOZ_SANDBOX)
   
   
   
@@ -170,15 +209,21 @@ class BASE_EXPORT PlatformThread {
   static bool Create(size_t stack_size,
                      Delegate* delegate,
                      PlatformThreadHandle* thread_handle) {
-    return CreateWithPriority(stack_size, delegate, thread_handle,
-                              ThreadPriority::NORMAL);
+    return CreateWithType(stack_size, delegate, thread_handle,
+                          ThreadType::kDefault);
   }
 
   
   
-  static bool CreateWithPriority(size_t stack_size, Delegate* delegate,
-                                 PlatformThreadHandle* thread_handle,
-                                 ThreadPriority priority);
+  
+  
+  
+  static bool CreateWithType(
+      size_t stack_size,
+      Delegate* delegate,
+      PlatformThreadHandle* thread_handle,
+      ThreadType thread_type,
+      MessagePumpType pump_type_hint = MessagePumpType::DEFAULT);
 
   
   
@@ -187,9 +232,14 @@ class BASE_EXPORT PlatformThread {
 
   
   
-  static bool CreateNonJoinableWithPriority(size_t stack_size,
-                                            Delegate* delegate,
-                                            ThreadPriority priority);
+  
+  
+  static bool CreateNonJoinableWithType(
+      size_t stack_size,
+      Delegate* delegate,
+      ThreadType thread_type,
+      MessagePumpType pump_type_hint = MessagePumpType::DEFAULT);
+#endif
 
   
   
@@ -202,57 +252,147 @@ class BASE_EXPORT PlatformThread {
 
   
   
-  static bool CanIncreaseThreadPriority(ThreadPriority priority);
+  static bool CanChangeThreadType(ThreadType from, ThreadType to);
 
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  static void SetCurrentThreadPriority(ThreadPriority priority);
+  static void SetCurrentThreadType(ThreadType thread_type);
 
-  static ThreadPriority GetCurrentThreadPriority();
+  
+  
+  static ThreadType GetCurrentThreadType();
 
-#if defined(OS_LINUX)
   
+  static TimeDelta GetRealtimePeriod(Delegate* delegate);
+
   
-  
-  
-  
-  
-  
-  
-  
-  static void SetThreadPriority(PlatformThreadId thread_id,
-                                ThreadPriority priority);
-#endif
+  static absl::optional<TimeDelta> GetThreadLeewayOverride();
 
   
   
   static size_t GetDefaultThreadStackSize();
 
- private:
-  static void SetCurrentThreadPriorityImpl(ThreadPriority priority);
+  static ThreadPriorityForTest GetCurrentThreadPriorityForTest();
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(PlatformThread);
+  protected:
+  static void SetNameCommon(const std::string& name);
 };
 
+#if BUILDFLAG(IS_APPLE)
+class BASE_EXPORT PlatformThreadApple : public PlatformThreadBase {
+ public:
+  
+  static void SetCurrentThreadRealtimePeriodValue(TimeDelta realtime_period);
+
+  
+  
+  
+  
+  static void InitFeaturesPostFieldTrial();
+};
+#endif  
+
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+class ThreadTypeDelegate;
+using IsViaIPC = base::StrongAlias<class IsViaIPCTag, bool>;
+
+class BASE_EXPORT PlatformThreadLinux : public PlatformThreadBase {
+ public:
+  static constexpr struct sched_param kRealTimeAudioPrio = {8};
+  static constexpr struct sched_param kRealTimeDisplayPrio = {6};
+
+  
+  
+  static void SetThreadTypeDelegate(ThreadTypeDelegate* delegate);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static void SetThreadType(PlatformThreadId process_id,
+                            PlatformThreadId thread_id,
+                            ThreadType thread_type,
+                            IsViaIPC via_ipc);
+
+  
+  
+  static void SetThreadCgroupsForThreadType(PlatformThreadId thread_id,
+                                            ThreadType thread_type);
+
+  
+  
+  static bool IsThreadBackgroundedForTest(PlatformThreadId thread_id);
+};
+#endif  
+
+#if BUILDFLAG(IS_CHROMEOS)
+
+class BASE_EXPORT PlatformThreadChromeOS : public PlatformThreadLinux {
+ public:
+  
+  
+  static void InitFeaturesPostFieldTrial();
+
+  
+  
+  
+  static void SetThreadType(PlatformThreadId process_id,
+                            PlatformThreadId thread_id,
+                            ThreadType thread_type,
+                            IsViaIPC via_ipc);
+
+  
+  static bool IsThreadsBgFeatureEnabled();
+
+  
+  static bool IsDisplayThreadsRtFeatureEnabled();
+
+  
+  
+  
+  static void SetThreadBackgrounded(ProcessId process_id,
+                                    PlatformThreadId thread_id,
+                                    bool backgrounded);
+
+  
+  static absl::optional<ThreadType> GetThreadTypeFromThreadId(
+      ProcessId process_id,
+      PlatformThreadId thread_id);
+
+  
+  
+  static SequenceCheckerImpl& GetCrossProcessThreadPrioritySequenceChecker();
+};
+#endif  
+
+
+#if BUILDFLAG(IS_APPLE)
+using PlatformThread = PlatformThreadApple;
+#elif BUILDFLAG(IS_CHROMEOS)
+using PlatformThread = PlatformThreadChromeOS;
+#elif BUILDFLAG(IS_LINUX)
+using PlatformThread = PlatformThreadLinux;
+#else
+using PlatformThread = PlatformThreadBase;
+#endif
+
+#if !defined(MOZ_SANDBOX)
 namespace internal {
 
+void SetCurrentThreadType(ThreadType thread_type,
+                          MessagePumpType pump_type_hint);
 
-
-
-void InitializeThreadPrioritiesFeature();
+void SetCurrentThreadTypeImpl(ThreadType thread_type,
+                              MessagePumpType pump_type_hint);
 
 }  
+#endif
 
 }  
 

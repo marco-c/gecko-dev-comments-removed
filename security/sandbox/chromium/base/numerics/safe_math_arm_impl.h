@@ -6,7 +6,6 @@
 #define BASE_NUMERICS_SAFE_MATH_ARM_IMPL_H_
 
 #include <cassert>
-#include <limits>
 #include <type_traits>
 
 #include "base/numerics/safe_conversions.h"
@@ -17,8 +16,9 @@ namespace internal {
 template <typename T, typename U>
 struct CheckedMulFastAsmOp {
   static const bool is_supported =
-      FastIntegerArithmeticPromotion<T, U>::is_contained;
+      kEnableAsmCode && FastIntegerArithmeticPromotion<T, U>::is_contained;
 
+  
   
   
   
@@ -31,20 +31,22 @@ struct CheckedMulFastAsmOp {
   
   
   template <typename V>
-  __attribute__((always_inline)) static bool Do(T x, U y, V* result) {
+  static constexpr bool Do(T x, U y, V* result) {
     using Promotion = typename FastIntegerArithmeticPromotion<T, U>::type;
     Promotion presult;
 
     presult = static_cast<Promotion>(x) * static_cast<Promotion>(y);
+    if (!IsValueInRangeForNumericType<V>(presult))
+      return false;
     *result = static_cast<V>(presult);
-    return IsValueInRangeForNumericType<V>(presult);
+    return true;
   }
 };
 
 template <typename T, typename U>
 struct ClampedAddFastAsmOp {
   static const bool is_supported =
-      BigEnoughPromotion<T, U>::is_contained &&
+      kEnableAsmCode && BigEnoughPromotion<T, U>::is_contained &&
       IsTypeInRangeForNumericType<
           int32_t,
           typename BigEnoughPromotion<T, U>::type>::value;
@@ -54,7 +56,7 @@ struct ClampedAddFastAsmOp {
     
     
     if (IsIntegerArithmeticSafe<int, T, U>::value)
-      return saturated_cast<V>(x + y);
+      return saturated_cast<V>(static_cast<int>(x) + static_cast<int>(y));
 
     int32_t result;
     int32_t x_i32 = checked_cast<int32_t>(x);
@@ -70,7 +72,7 @@ struct ClampedAddFastAsmOp {
 template <typename T, typename U>
 struct ClampedSubFastAsmOp {
   static const bool is_supported =
-      BigEnoughPromotion<T, U>::is_contained &&
+      kEnableAsmCode && BigEnoughPromotion<T, U>::is_contained &&
       IsTypeInRangeForNumericType<
           int32_t,
           typename BigEnoughPromotion<T, U>::type>::value;
@@ -80,7 +82,7 @@ struct ClampedSubFastAsmOp {
     
     
     if (IsIntegerArithmeticSafe<int, T, U>::value)
-      return saturated_cast<V>(x - y);
+      return saturated_cast<V>(static_cast<int>(x) - static_cast<int>(y));
 
     int32_t result;
     int32_t x_i32 = checked_cast<int32_t>(x);
@@ -95,7 +97,8 @@ struct ClampedSubFastAsmOp {
 
 template <typename T, typename U>
 struct ClampedMulFastAsmOp {
-  static const bool is_supported = CheckedMulFastAsmOp<T, U>::is_supported;
+  static const bool is_supported =
+      kEnableAsmCode && CheckedMulFastAsmOp<T, U>::is_supported;
 
   template <typename V>
   __attribute__((always_inline)) static V Do(T x, U y) {
@@ -104,9 +107,9 @@ struct ClampedMulFastAsmOp {
     if (!IsIntegerArithmeticSafe<int32_t, T, U>::value &&
         !IsIntegerArithmeticSafe<uint32_t, T, U>::value) {
       V result;
-      if (CheckedMulFastAsmOp<T, U>::Do(x, y, &result))
-        return result;
-      return CommonMaxOrMin<V>(IsValueNegative(x) ^ IsValueNegative(y));
+      return CheckedMulFastAsmOp<T, U>::Do(x, y, &result)
+                 ? result
+                 : CommonMaxOrMin<V>(IsValueNegative(x) ^ IsValueNegative(y));
     }
 
     assert((FastIntegerArithmeticPromotion<T, U>::is_contained));

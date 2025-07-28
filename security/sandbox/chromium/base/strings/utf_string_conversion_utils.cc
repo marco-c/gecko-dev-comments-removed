@@ -11,16 +11,29 @@ namespace base {
 
 
 
+absl::optional<size_t> CountUnicodeCharacters(std::string_view text,
+                                              size_t limit) {
+  base_icu::UChar32 unused = 0;
+  size_t count = 0;
+  for (size_t index = 0; count < limit && index < text.size();
+       ++count, ++index) {
+    if (!ReadUnicodeCharacter(text.data(), text.size(), &index, &unused)) {
+      return absl::nullopt;
+    }
+  }
+  return count;
+}
+
+
+
 bool ReadUnicodeCharacter(const char* src,
-                          int32_t src_len,
-                          int32_t* char_index,
-                          uint32_t* code_point_out) {
-  
-  
-  
-  int32_t code_point;
-  CBU8_NEXT(src, *char_index, src_len, code_point);
-  *code_point_out = static_cast<uint32_t>(code_point);
+                          size_t src_len,
+                          size_t* char_index,
+                          base_icu::UChar32* code_point_out) {
+  base_icu::UChar32 code_point;
+  CBU8_NEXT(reinterpret_cast<const uint8_t*>(src), *char_index, src_len,
+            code_point);
+  *code_point_out = code_point;
 
   
   
@@ -30,14 +43,13 @@ bool ReadUnicodeCharacter(const char* src,
   return IsValidCodepoint(code_point);
 }
 
-bool ReadUnicodeCharacter(const char16* src,
-                          int32_t src_len,
-                          int32_t* char_index,
-                          uint32_t* code_point) {
+bool ReadUnicodeCharacter(const char16_t* src,
+                          size_t src_len,
+                          size_t* char_index,
+                          base_icu::UChar32* code_point) {
   if (CBU16_IS_SURROGATE(src[*char_index])) {
-    if (!CBU16_IS_SURROGATE_LEAD(src[*char_index]) ||
-        *char_index + 1 >= src_len ||
-        !CBU16_IS_TRAIL(src[*char_index + 1])) {
+    if (!CBU16_IS_SURROGATE_LEAD(src[*char_index]) || !src_len ||
+        *char_index >= src_len - 1 || !CBU16_IS_TRAIL(src[*char_index + 1])) {
       
       return false;
     }
@@ -56,11 +68,11 @@ bool ReadUnicodeCharacter(const char16* src,
 
 #if defined(WCHAR_T_IS_UTF32)
 bool ReadUnicodeCharacter(const wchar_t* src,
-                          int32_t src_len,
-                          int32_t* char_index,
-                          uint32_t* code_point) {
+                          size_t src_len,
+                          size_t* char_index,
+                          base_icu::UChar32* code_point) {
   
-  *code_point = src[*char_index];
+  *code_point = static_cast<base_icu::UChar32>(src[*char_index]);
 
   
   return IsValidCodepoint(*code_point);
@@ -69,20 +81,21 @@ bool ReadUnicodeCharacter(const wchar_t* src,
 
 
 
-size_t WriteUnicodeCharacter(uint32_t code_point, std::string* output) {
-  if (code_point <= 0x7f) {
+size_t WriteUnicodeCharacter(base_icu::UChar32 code_point,
+                             std::string* output) {
+  if (code_point >= 0 && code_point <= 0x7f) {
     
     output->push_back(static_cast<char>(code_point));
     return 1;
   }
-
 
   
   size_t char_offset = output->length();
   size_t original_char_offset = char_offset;
   output->resize(char_offset + CBU8_MAX_LENGTH);
 
-  CBU8_APPEND_UNSAFE(&(*output)[0], char_offset, code_point);
+  CBU8_APPEND_UNSAFE(reinterpret_cast<uint8_t*>(output->data()), char_offset,
+                     code_point);
 
   
   
@@ -90,10 +103,11 @@ size_t WriteUnicodeCharacter(uint32_t code_point, std::string* output) {
   return char_offset - original_char_offset;
 }
 
-size_t WriteUnicodeCharacter(uint32_t code_point, string16* output) {
+size_t WriteUnicodeCharacter(base_icu::UChar32 code_point,
+                             std::u16string* output) {
   if (CBU16_LENGTH(code_point) == 1) {
     
-    output->push_back(static_cast<char16>(code_point));
+    output->push_back(static_cast<char16_t>(code_point));
     return 1;
   }
   
@@ -122,11 +136,11 @@ void PrepareForUTF8Output(const CHAR* src,
 }
 
 
-#if !defined(OS_WIN)
+#if !BUILDFLAG(IS_WIN)
 
 template void PrepareForUTF8Output(const wchar_t*, size_t, std::string*);
 #endif
-template void PrepareForUTF8Output(const char16*, size_t, std::string*);
+template void PrepareForUTF8Output(const char16_t*, size_t, std::string*);
 
 template<typename STRING>
 void PrepareForUTF16Or32Output(const char* src,
@@ -146,10 +160,10 @@ void PrepareForUTF16Or32Output(const char* src,
 }
 
 
-#if !defined(OS_WIN)
+#if !BUILDFLAG(IS_WIN)
 
 template void PrepareForUTF16Or32Output(const char*, size_t, std::wstring*);
 #endif
-template void PrepareForUTF16Or32Output(const char*, size_t, string16*);
+template void PrepareForUTF16Or32Output(const char*, size_t, std::u16string*);
 
 }  

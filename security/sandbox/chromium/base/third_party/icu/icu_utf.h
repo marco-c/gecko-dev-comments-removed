@@ -65,6 +65,25 @@ typedef int32_t UChar32;
 
 
 
+#ifndef CBUPRV_BLOCK_MACRO_BEGIN
+#define CBUPRV_BLOCK_MACRO_BEGIN do
+#endif
+
+
+
+
+
+
+#ifndef CBUPRV_BLOCK_MACRO_END
+#define CBUPRV_BLOCK_MACRO_END while (0)
+#endif
+
+
+
+
+
+
+
 
 
 
@@ -99,7 +118,7 @@ typedef int32_t UChar32;
 
 
 
-#define CBU_IS_SURROGATE(c) (((c)&0xfffff800)==0xd800)
+#define CBU_IS_SURROGATE(c) (((uint32_t)(c)&0xfffff800) == 0xd800)
 
 
 
@@ -145,21 +164,6 @@ typedef int32_t UChar32;
 
 
 #define CBU8_IS_VALID_LEAD4_AND_T1(lead, t1) (CBU8_LEAD4_T1_BITS[(uint8_t)(t1)>>4]&(1<<((lead)&7)))
-
-
-
-
-
-
-
-
-
-
-
-
-
-UChar32
-utf8_nextCharSafeBody(const uint8_t *s, int32_t *pi, int32_t length, ::base_icu::UChar32 c, ::base_icu::UBool strict);
 
 
 
@@ -230,29 +234,36 @@ utf8_nextCharSafeBody(const uint8_t *s, int32_t *pi, int32_t length, ::base_icu:
 
 
 
-#define CBU8_NEXT(s, i, length, c) { \
+#define CBU8_NEXT(s, i, length, c) CBU8_INTERNAL_NEXT_OR_SUB(s, i, length, c, CBU_SENTINEL)
+
+
+#define CBU8_INTERNAL_NEXT_OR_SUB(s, i, length, c, sub) CBUPRV_BLOCK_MACRO_BEGIN { \
     (c)=(uint8_t)(s)[(i)++]; \
     if(!CBU8_IS_SINGLE(c)) { \
-        uint8_t __t1, __t2; \
-        if( /* handle U+0800..U+FFFF inline */ \
-                (0xe0<=(c) && (c)<0xf0) && \
-                (((i)+1)<(length) || (length)<0) && \
-                CBU8_IS_VALID_LEAD3_AND_T1((c), __t1=(s)[i]) && \
-                (__t2=(s)[(i)+1]-0x80)<=0x3f) { \
-            (c)=(((c)&0xf)<<12)|((__t1&0x3f)<<6)|__t2; \
-            (i)+=2; \
-        } else if( /* handle U+0080..U+07FF inline */ \
-                ((c)<0xe0 && (c)>=0xc2) && \
-                ((i)!=(length)) && \
-                (__t1=(s)[i]-0x80)<=0x3f) { \
-            (c)=(((c)&0x1f)<<6)|__t1; \
-            ++(i); \
+        uint8_t __t = 0; \
+        if((i)!=(length) && \
+            /* fetch/validate/assemble all but last trail byte */ \
+            ((c)>=0xe0 ? \
+                ((c)<0xf0 ?  /* U+0800..U+FFFF except surrogates */ \
+                    CBU8_LEAD3_T1_BITS[(c)&=0xf]&(1<<((__t=(s)[i])>>5)) && \
+                    (__t&=0x3f, 1) \
+                :  /* U+10000..U+10FFFF */ \
+                    ((c)-=0xf0)<=4 && \
+                    CBU8_LEAD4_T1_BITS[(__t=(s)[i])>>4]&(1<<(c)) && \
+                    ((c)=((c)<<6)|(__t&0x3f), ++(i)!=(length)) && \
+                    (__t=(s)[i]-0x80)<=0x3f) && \
+                /* valid second-to-last trail byte */ \
+                ((c)=((c)<<6)|__t, ++(i)!=(length)) \
+            :  /* U+0080..U+07FF */ \
+                (c)>=0xc2 && ((c)&=0x1f, 1)) && \
+            /* last trail byte */ \
+            (__t=(s)[i]-0x80)<=0x3f && \
+            ((c)=((c)<<6)|__t, ++(i), 1)) { \
         } else { \
-            /* function call for "complicated" and error cases */ \
-            (c)=::base_icu::utf8_nextCharSafeBody((const uint8_t *)s, &(i), (length), c, -1); \
+            (c)=(sub);  /* ill-formed*/ \
         } \
     } \
-}
+} CBUPRV_BLOCK_MACRO_END
 
 
 
@@ -267,24 +278,27 @@ utf8_nextCharSafeBody(const uint8_t *s, int32_t *pi, int32_t length, ::base_icu:
 
 
 
-#define CBU8_APPEND_UNSAFE(s, i, c) { \
-    if((uint32_t)(c)<=0x7f) { \
-        (s)[(i)++]=(uint8_t)(c); \
-    } else { \
-        if((uint32_t)(c)<=0x7ff) { \
-            (s)[(i)++]=(uint8_t)(((c)>>6)|0xc0); \
-        } else { \
-            if((uint32_t)(c)<=0xffff) { \
-                (s)[(i)++]=(uint8_t)(((c)>>12)|0xe0); \
-            } else { \
-                (s)[(i)++]=(uint8_t)(((c)>>18)|0xf0); \
-                (s)[(i)++]=(uint8_t)((((c)>>12)&0x3f)|0x80); \
-            } \
-            (s)[(i)++]=(uint8_t)((((c)>>6)&0x3f)|0x80); \
-        } \
-        (s)[(i)++]=(uint8_t)(((c)&0x3f)|0x80); \
-    } \
-}
+#define CBU8_APPEND_UNSAFE(s, i, c)                             \
+  CBUPRV_BLOCK_MACRO_BEGIN {                                    \
+    uint32_t __uc = (uint32_t)(c);                              \
+    if (__uc <= 0x7f) {                                         \
+      (s)[(i)++] = (uint8_t)__uc;                               \
+    } else {                                                    \
+      if (__uc <= 0x7ff) {                                      \
+        (s)[(i)++] = (uint8_t)((__uc >> 6) | 0xc0);             \
+      } else {                                                  \
+        if (__uc <= 0xffff) {                                   \
+          (s)[(i)++] = (uint8_t)((__uc >> 12) | 0xe0);          \
+        } else {                                                \
+          (s)[(i)++] = (uint8_t)((__uc >> 18) | 0xf0);          \
+          (s)[(i)++] = (uint8_t)(((__uc >> 12) & 0x3f) | 0x80); \
+        }                                                       \
+        (s)[(i)++] = (uint8_t)(((__uc >> 6) & 0x3f) | 0x80);    \
+      }                                                         \
+      (s)[(i)++] = (uint8_t)((__uc & 0x3f) | 0x80);             \
+    }                                                           \
+  }                                                             \
+  CBUPRV_BLOCK_MACRO_END
 
 
 
@@ -302,7 +316,7 @@ utf8_nextCharSafeBody(const uint8_t *s, int32_t *pi, int32_t length, ::base_icu:
 
 
 
-#define CBU16_IS_LEAD(c) (((c)&0xfffffc00)==0xd800)
+#define CBU16_IS_LEAD(c) (((uint32_t)(c)&0xfffffc00) == 0xd800)
 
 
 
@@ -310,7 +324,7 @@ utf8_nextCharSafeBody(const uint8_t *s, int32_t *pi, int32_t length, ::base_icu:
 
 
 
-#define CBU16_IS_TRAIL(c) (((c)&0xfffffc00)==0xdc00)
+#define CBU16_IS_TRAIL(c) (((uint32_t)(c)&0xfffffc00) == 0xdc00)
 
 
 
@@ -404,7 +418,46 @@ utf8_nextCharSafeBody(const uint8_t *s, int32_t *pi, int32_t length, ::base_icu:
 
 
 
-#define CBU16_NEXT(s, i, length, c) { \
+
+
+#define CBU16_GET(s, start, i, length, c) CBUPRV_BLOCK_MACRO_BEGIN { \
+    (c)=(s)[i]; \
+    if(CBU16_IS_SURROGATE(c)) { \
+        uint16_t __c2; \
+        if(CBU16_IS_SURROGATE_LEAD(c)) { \
+            if((i)+1!=(length) && CBU16_IS_TRAIL(__c2=(s)[(i)+1])) { \
+                (c)=CBU16_GET_SUPPLEMENTARY((c), __c2); \
+            } \
+        } else { \
+            if((i)>(start) && CBU16_IS_LEAD(__c2=(s)[(i)-1])) { \
+                (c)=CBU16_GET_SUPPLEMENTARY(__c2, (c)); \
+            } \
+        } \
+    } \
+} CBUPRV_BLOCK_MACRO_END
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define CBU16_NEXT(s, i, length, c) CBUPRV_BLOCK_MACRO_BEGIN { \
     (c)=(s)[(i)++]; \
     if(CBU16_IS_LEAD(c)) { \
         uint16_t __c2; \
@@ -413,7 +466,7 @@ utf8_nextCharSafeBody(const uint8_t *s, int32_t *pi, int32_t length, ::base_icu:
             (c)=CBU16_GET_SUPPLEMENTARY((c), __c2); \
         } \
     } \
-}
+} CBUPRV_BLOCK_MACRO_END
 
 
 
@@ -428,14 +481,88 @@ utf8_nextCharSafeBody(const uint8_t *s, int32_t *pi, int32_t length, ::base_icu:
 
 
 
-#define CBU16_APPEND_UNSAFE(s, i, c) { \
+#define CBU16_APPEND_UNSAFE(s, i, c) CBUPRV_BLOCK_MACRO_BEGIN { \
     if((uint32_t)(c)<=0xffff) { \
         (s)[(i)++]=(uint16_t)(c); \
     } else { \
         (s)[(i)++]=(uint16_t)(((c)>>10)+0xd7c0); \
         (s)[(i)++]=(uint16_t)(((c)&0x3ff)|0xdc00); \
     } \
-}
+} CBUPRV_BLOCK_MACRO_END
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define CBU16_SET_CP_START(s, start, i) CBUPRV_BLOCK_MACRO_BEGIN { \
+    if(CBU16_IS_TRAIL((s)[i]) && (i)>(start) && CBU16_IS_LEAD((s)[(i)-1])) { \
+        --(i); \
+    } \
+} CBUPRV_BLOCK_MACRO_END
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define CBU16_PREV(s, start, i, c) CBUPRV_BLOCK_MACRO_BEGIN { \
+    (c)=(s)[--(i)]; \
+    if(CBU16_IS_TRAIL(c)) { \
+        uint16_t __c2; \
+        if((i)>(start) && CBU16_IS_LEAD(__c2=(s)[(i)-1])) { \
+            --(i); \
+            (c)=CBU16_GET_SUPPLEMENTARY(__c2, (c)); \
+        } \
+    } \
+} CBUPRV_BLOCK_MACRO_END
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define CBU16_SET_CP_LIMIT(s, start, i, length) CBUPRV_BLOCK_MACRO_BEGIN { \
+    if((start)<(i) && ((i)<(length) || (length)<0) && CBU16_IS_LEAD((s)[(i)-1]) && CBU16_IS_TRAIL((s)[i])) { \
+        ++(i); \
+    } \
+} CBUPRV_BLOCK_MACRO_END
 
 }  
 

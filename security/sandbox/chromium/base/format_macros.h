@@ -26,51 +26,28 @@
 
 #include "build/build_config.h"
 
-#if (defined(OS_POSIX) || defined(OS_FUCHSIA)) && \
+#if (BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)) && \
     (defined(_INTTYPES_H) || defined(_INTTYPES_H_)) && !defined(PRId64)
 #error "inttypes.h has already been included before this header file, but "
 #error "without __STDC_FORMAT_MACROS defined."
 #endif
 
-#if (defined(OS_POSIX) || defined(OS_FUCHSIA)) && !defined(__STDC_FORMAT_MACROS)
+#if (BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)) && \
+    !defined(__STDC_FORMAT_MACROS)
 #define __STDC_FORMAT_MACROS
 #endif
 
 #include <inttypes.h>
 
-#if defined(OS_WIN)
-
-#if !defined(PRId64) || !defined(PRIu64) || !defined(PRIx64)
-#error "inttypes.h provided by win toolchain should define these."
-#endif
-
-#define WidePRId64 L"I64d"
-#define WidePRIu64 L"I64u"
-#define WidePRIx64 L"I64x"
-
-#if !defined(PRIuS)
-#define PRIuS "Iu"
-#endif
-
-#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
-
-
-
-#define WidePRId64 PRId64
-#define WidePRIu64 PRIu64
-#define WidePRIx64 PRIx64
-
 #if !defined(PRIuS)
 #define PRIuS "zu"
 #endif
 
-#endif  
 
 
 
 
-
-#if defined(OS_MACOSX)
+#if BUILDFLAG(IS_APPLE)
 #if defined(ARCH_CPU_64_BITS)
 #if !defined(PRIdNS)
 #define PRIdNS "ld"

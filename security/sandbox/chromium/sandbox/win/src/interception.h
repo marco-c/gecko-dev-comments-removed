@@ -6,8 +6,8 @@
 
 
 
-#ifndef SANDBOX_SRC_INTERCEPTION_H_
-#define SANDBOX_SRC_INTERCEPTION_H_
+#ifndef SANDBOX_WIN_SRC_INTERCEPTION_H_
+#define SANDBOX_WIN_SRC_INTERCEPTION_H_
 
 #include <stddef.h>
 
@@ -15,7 +15,8 @@
 #include <string>
 
 #include "base/gtest_prod_util.h"
-#include "base/macros.h"
+#include "base/memory/raw_ptr_exclusion.h"
+#include "base/memory/raw_ref.h"
 #include "sandbox/win/src/interceptors.h"
 #include "sandbox/win/src/sandbox_types.h"
 
@@ -70,7 +71,11 @@ class InterceptionManager {
   
   
   
-  InterceptionManager(TargetProcess* child_process, bool relaxed);
+  InterceptionManager(TargetProcess& child_process);
+
+  InterceptionManager(const InterceptionManager&) = delete;
+  InterceptionManager& operator=(const InterceptionManager&) = delete;
+
   ~InterceptionManager();
 
   
@@ -145,18 +150,13 @@ class InterceptionManager {
     std::wstring dll;                 
     std::string function;             
     std::string interceptor;          
-    const void* interceptor_address;  
+    
+    
+    RAW_PTR_EXCLUSION const void* interceptor_address;
   };
 
   
   size_t GetBufferSize() const;
-
-  
-  
-  
-  static inline size_t RoundUpToMultiple(size_t value, size_t alignment) {
-    return ((value + alignment - 1) / alignment) * alignment;
-  }
 
   
   
@@ -195,13 +195,6 @@ class InterceptionManager {
   
   
   
-  ResultCode CopyDataToChild(const void* local_buffer,
-                             size_t buffer_bytes,
-                             void** remote_buffer) const;
-
-  
-  
-  
   
   
   ResultCode PatchNtdll(bool hot_patch_needed);
@@ -215,18 +208,13 @@ class InterceptionManager {
                                   DllInterceptionData* dll_data);
 
   
-  TargetProcess* child_;
+  const raw_ref<TargetProcess> child_;
   
   
   std::list<InterceptionData> interceptions_;
 
   
   bool names_used_;
-
-  
-  bool relaxed_;
-
-  DISALLOW_COPY_AND_ASSIGN(InterceptionManager);
 };
 
 

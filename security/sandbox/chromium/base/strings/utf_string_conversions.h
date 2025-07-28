@@ -10,8 +10,9 @@
 #include <string>
 
 #include "base/base_export.h"
-#include "base/strings/string16.h"
 #include "base/strings/string_piece.h"
+#include "base/types/always_false.h"
+#include "build/build_config.h"
 
 namespace base {
 
@@ -23,31 +24,75 @@ namespace base {
 
 BASE_EXPORT bool WideToUTF8(const wchar_t* src, size_t src_len,
                             std::string* output);
-BASE_EXPORT std::string WideToUTF8(WStringPiece wide) WARN_UNUSED_RESULT;
+[[nodiscard]] BASE_EXPORT std::string WideToUTF8(WStringPiece wide);
 BASE_EXPORT bool UTF8ToWide(const char* src, size_t src_len,
                             std::wstring* output);
-BASE_EXPORT std::wstring UTF8ToWide(StringPiece utf8) WARN_UNUSED_RESULT;
+[[nodiscard]] BASE_EXPORT std::wstring UTF8ToWide(StringPiece utf8);
 
-BASE_EXPORT bool WideToUTF16(const wchar_t* src, size_t src_len,
-                             string16* output);
-BASE_EXPORT string16 WideToUTF16(WStringPiece wide) WARN_UNUSED_RESULT;
-BASE_EXPORT bool UTF16ToWide(const char16* src, size_t src_len,
+BASE_EXPORT bool WideToUTF16(const wchar_t* src,
+                             size_t src_len,
+                             std::u16string* output);
+[[nodiscard]] BASE_EXPORT std::u16string WideToUTF16(WStringPiece wide);
+BASE_EXPORT bool UTF16ToWide(const char16_t* src,
+                             size_t src_len,
                              std::wstring* output);
-BASE_EXPORT std::wstring UTF16ToWide(StringPiece16 utf16) WARN_UNUSED_RESULT;
+[[nodiscard]] BASE_EXPORT std::wstring UTF16ToWide(StringPiece16 utf16);
 
-BASE_EXPORT bool UTF8ToUTF16(const char* src, size_t src_len, string16* output);
-BASE_EXPORT string16 UTF8ToUTF16(StringPiece utf8) WARN_UNUSED_RESULT;
-BASE_EXPORT bool UTF16ToUTF8(const char16* src, size_t src_len,
+BASE_EXPORT bool UTF8ToUTF16(const char* src,
+                             size_t src_len,
+                             std::u16string* output);
+[[nodiscard]] BASE_EXPORT std::u16string UTF8ToUTF16(StringPiece utf8);
+BASE_EXPORT bool UTF16ToUTF8(const char16_t* src,
+                             size_t src_len,
                              std::string* output);
-BASE_EXPORT std::string UTF16ToUTF8(StringPiece16 utf16) WARN_UNUSED_RESULT;
+[[nodiscard]] BASE_EXPORT std::string UTF16ToUTF8(StringPiece16 utf16);
 
 
 
-BASE_EXPORT string16 ASCIIToUTF16(StringPiece ascii) WARN_UNUSED_RESULT;
+[[nodiscard]] BASE_EXPORT std::u16string ASCIIToUTF16(StringPiece ascii);
 
 
 
-BASE_EXPORT std::string UTF16ToASCII(StringPiece16 utf16) WARN_UNUSED_RESULT;
+[[nodiscard]] BASE_EXPORT std::string UTF16ToASCII(StringPiece16 utf16);
+
+#if defined(WCHAR_T_IS_UTF16)
+
+
+[[nodiscard]] BASE_EXPORT std::wstring ASCIIToWide(StringPiece ascii);
+
+
+
+[[nodiscard]] BASE_EXPORT std::string WideToASCII(WStringPiece wide);
+#endif  
+
+
+
+
+
+template <size_t N>
+[[noreturn]] std::u16string WideToUTF16(const wchar_t (&str)[N]) {
+  static_assert(AlwaysFalse<decltype(N)>,
+                "Error: Use u\"...\" to create a std::u16string literal.");
+}
+
+template <size_t N>
+[[noreturn]] std::u16string UTF8ToUTF16(const char (&str)[N]) {
+  static_assert(AlwaysFalse<decltype(N)>,
+                "Error: Use u\"...\" to create a std::u16string literal.");
+}
+
+template <size_t N>
+[[noreturn]] std::u16string ASCIIToUTF16(const char (&str)[N]) {
+  static_assert(AlwaysFalse<decltype(N)>,
+                "Error: Use u\"...\" to create a std::u16string literal.");
+}
+
+
+
+template <size_t N>
+std::u16string ASCIIToUTF16(char (&str)[N]) {
+  return ASCIIToUTF16(StringPiece(str));
+}
 
 }  
 

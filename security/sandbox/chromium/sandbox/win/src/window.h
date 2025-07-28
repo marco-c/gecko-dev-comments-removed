@@ -2,13 +2,12 @@
 
 
 
-#ifndef SANDBOX_SRC_WINDOW_H_
-#define SANDBOX_SRC_WINDOW_H_
-
-#include <windows.h>
+#ifndef SANDBOX_WIN_SRC_WINDOW_H_
+#define SANDBOX_WIN_SRC_WINDOW_H_
 
 #include <string>
 
+#include "base/win/windows_types.h"
 #include "sandbox/win/src/sandbox_types.h"
 
 namespace sandbox {

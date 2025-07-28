@@ -11,13 +11,14 @@
 #include <tuple>
 
 #include "base/base_export.h"
-#include "base/hash/hash.h"
-#include "base/logging.h"
+#include "base/check.h"
+#include "base/containers/span.h"
 #include "base/token.h"
 
 namespace base {
 
 struct UnguessableTokenHash;
+
 
 
 
@@ -60,11 +61,18 @@ class BASE_EXPORT UnguessableToken {
   
   
   
-  static UnguessableToken Deserialize(uint64_t high, uint64_t low);
+  
+  static absl::optional<UnguessableToken> Deserialize(uint64_t high,
+                                                      uint64_t low);
 
   
   
   constexpr UnguessableToken() = default;
+
+  constexpr UnguessableToken(const UnguessableToken&) = default;
+  constexpr UnguessableToken& operator=(const UnguessableToken&) = default;
+  constexpr UnguessableToken(UnguessableToken&&) noexcept = default;
+  constexpr UnguessableToken& operator=(UnguessableToken&&) = default;
 
   
   uint64_t GetHighForSerialization() const {
@@ -78,24 +86,32 @@ class BASE_EXPORT UnguessableToken {
     return token_.low();
   }
 
-  bool is_empty() const { return token_.is_zero(); }
+  constexpr bool is_empty() const { return token_.is_zero(); }
 
   
   std::string ToString() const { return token_.ToString(); }
 
-  explicit operator bool() const { return !is_empty(); }
+  explicit constexpr operator bool() const { return !is_empty(); }
 
-  bool operator<(const UnguessableToken& other) const {
+  span<const uint8_t, 16> AsBytes() const { return token_.AsBytes(); }
+
+  constexpr bool operator<(const UnguessableToken& other) const {
     return token_ < other.token_;
   }
 
-  bool operator==(const UnguessableToken& other) const {
-    return token_ == other.token_;
-  }
+  bool operator==(const UnguessableToken& other) const;
 
   bool operator!=(const UnguessableToken& other) const {
     return !(*this == other);
   }
+
+#if defined(UNIT_TEST)
+  static UnguessableToken CreateForTesting(uint64_t high, uint64_t low) {
+    absl::optional<UnguessableToken> token = Deserialize(high, low);
+    DCHECK(token.has_value());
+    return token.value();
+  }
+#endif
 
  private:
   friend struct UnguessableTokenHash;
