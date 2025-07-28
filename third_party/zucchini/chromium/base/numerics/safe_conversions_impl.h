@@ -10,6 +10,10 @@
 #include <limits>
 #include <type_traits>
 
+#if defined(MOZ_ZUCCHINI)
+#include "base/compiler_specific.h"
+#endif  
+
 #if defined(__GNUC__) || defined(__clang__)
 #define BASE_NUMERICS_LIKELY(x) __builtin_expect(!!(x), 1)
 #define BASE_NUMERICS_UNLIKELY(x) __builtin_expect(!!(x), 0)
@@ -88,7 +92,11 @@ constexpr typename std::make_unsigned<T>::type SafeUnsignedAbs(T value) {
 
 
 
+#if !defined(MOZ_ZUCCHINI) || HAS_BUILTIN(__builtin_is_constant_evaluated)
 #define IsConstantEvaluated() (__builtin_is_constant_evaluated())
+#else
+#define IsConstantEvaluated() false
+#endif  
 
 
 

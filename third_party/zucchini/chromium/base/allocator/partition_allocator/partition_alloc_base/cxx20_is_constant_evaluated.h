@@ -17,13 +17,21 @@ using std::is_constant_evaluated;
 
 #else
 
+#if defined(MOZ_ZUCCHINI)
+#include "base/compiler_specific.h"
+#endif  
+
 
 
 
 
 
 constexpr bool is_constant_evaluated() noexcept {
+#if !defined(MOZ_ZUCCHINI) || HAS_BUILTIN(__builtin_is_constant_evaluated)
   return __builtin_is_constant_evaluated();
+#else
+  return false;
+#endif  
 }
 
 #endif
