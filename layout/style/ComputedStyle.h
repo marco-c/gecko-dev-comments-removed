@@ -130,11 +130,6 @@ class ComputedStyle {
   }
 
   
-  bool HasAuthorSpecifiedMarginAndFontSize() const {
-    return bool(Flags() & Flag::HAS_AUTHOR_SPECIFIED_MARGIN_AND_FONT_SIZE);
-  }
-
-  
   
   
   
