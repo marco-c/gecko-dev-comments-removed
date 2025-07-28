@@ -186,6 +186,7 @@
 
     async setAlign() {
       const hostElement = this.parentElement || this.getRootNode().host;
+
       if (!hostElement) {
         
         
@@ -297,9 +298,18 @@
         this.setAttribute("align", align);
         this.setAttribute("valign", valign);
         hostElement.style.overflow = "";
-
-        this.style.left = `${leftOffset + winScrollX}px`;
-        this.style.top = `${topOffset + winScrollY}px`;
+        
+        const offsetParentIsBody = this.offsetParent === document?.body;
+        if (offsetParentIsBody) {
+          
+          this.style.left = `${leftOffset + winScrollX}px`;
+          this.style.top = `${topOffset + winScrollY}px`;
+        } else {
+          
+          const offsetParentRect = this.offsetParent.getBoundingClientRect();
+          this.style.left = `${leftOffset - offsetParentRect.left + winScrollX}px`;
+          this.style.top = `${topOffset - offsetParentRect.top + winScrollY}px`;
+        }
       }
 
       this.style.minWidth = this.hasAttribute("min-width-from-anchor")
