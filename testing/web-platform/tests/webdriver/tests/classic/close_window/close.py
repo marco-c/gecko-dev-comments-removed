@@ -73,8 +73,15 @@ def test_close_last_browsing_context(session):
 
     assert_success(response, [])
 
-    
-    session.session_id = None
+    try:
+        
+        with pytest.raises(error.InvalidSessionIdException):
+            session.handles
+
+    finally:
+        
+        
+        session.end()
 
 
 def test_element_usage_after_closing_browsing_context(session, inline):
