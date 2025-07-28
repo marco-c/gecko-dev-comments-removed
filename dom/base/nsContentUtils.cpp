@@ -12466,6 +12466,18 @@ nsIContent* nsContentUtils::AttachDeclarativeShadowRoot(nsIContent* aHost,
   return shadowRoot;
 }
 
+
+ bool nsContentUtils::NavigationMustBeAReplace(
+    nsIURI& aURI, const Document& aDocument) {
+  
+  
+  
+  
+  return aURI.SchemeIs("javascript") ||
+         (NS_IsAboutBlank(aDocument.GetDocumentURI()) &&
+          aDocument.IsInitialDocument());
+}
+
 template int32_t nsContentUtils::CompareTreePosition<TreeKind::DOM>(
     const nsINode*, const nsINode*, const nsINode*, NodeIndexCache*);
 template int32_t nsContentUtils::CompareTreePosition<TreeKind::Flat>(
