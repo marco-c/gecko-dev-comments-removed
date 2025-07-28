@@ -853,13 +853,6 @@ static bool intrinsic_GeneratorSetClosed(JSContext* cx, unsigned argc,
   return true;
 }
 
-static void AssertNonNegativeInteger(const Value& v) {
-  MOZ_ASSERT(v.isNumber());
-  MOZ_ASSERT(v.toNumber() >= 0);
-  MOZ_ASSERT(v.toNumber() < DOUBLE_INTEGRAL_PRECISION_LIMIT);
-  MOZ_ASSERT(JS::ToInteger(v.toNumber()) == v.toNumber());
-}
-
 static bool intrinsic_IsTypedArrayConstructor(JSContext* cx, unsigned argc,
                                               Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -1027,127 +1020,6 @@ static bool intrinsic_TypedArrayIsAutoLength(JSContext* cx, unsigned argc,
   bool isAutoLength = obj->is<ResizableTypedArrayObject>() &&
                       obj->as<ResizableTypedArrayObject>().isAutoLength();
   args.rval().setBoolean(isAutoLength);
-  return true;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-static TypedArrayObject* DangerouslyUnwrapTypedArray(JSContext* cx,
-                                                     JSObject* obj) {
-  
-  
-  TypedArrayObject* unwrapped = obj->maybeUnwrapAs<TypedArrayObject>();
-  if (!unwrapped) {
-    ReportAccessDenied(cx);
-    return nullptr;
-  }
-
-  
-  
-  
-  return unwrapped;
-}
-
-static bool intrinsic_TypedArrayBitwiseSlice(JSContext* cx, unsigned argc,
-                                             Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  MOZ_ASSERT(args.length() == 4);
-  MOZ_ASSERT(args[0].isObject());
-  MOZ_ASSERT(args[1].isObject());
-  AssertNonNegativeInteger(args[2]);
-  AssertNonNegativeInteger(args[3]);
-
-  Rooted<TypedArrayObject*> source(cx,
-                                   &args[0].toObject().as<TypedArrayObject>());
-
-  auto sourceLength = source->length();
-  if (!sourceLength) {
-    if (source->hasDetachedBuffer()) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_TYPED_ARRAY_DETACHED);
-    } else {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_TYPED_ARRAY_RESIZED_BOUNDS);
-    }
-    return false;
-  }
-  MOZ_ASSERT(!source->hasDetachedBuffer());
-
-  
-  
-  Rooted<TypedArrayObject*> unsafeTypedArrayCrossCompartment(cx);
-  unsafeTypedArrayCrossCompartment =
-      DangerouslyUnwrapTypedArray(cx, &args[1].toObject());
-  if (!unsafeTypedArrayCrossCompartment) {
-    return false;
-  }
-  MOZ_ASSERT(!unsafeTypedArrayCrossCompartment->hasDetachedBuffer());
-
-  
-  
-  
-  
-  Scalar::Type sourceType = source->type();
-  if (!CanUseBitwiseCopy(unsafeTypedArrayCrossCompartment->type(),
-                         sourceType)) {
-    args.rval().setBoolean(false);
-    return true;
-  }
-
-  size_t sourceOffset = size_t(args[2].toNumber());
-  size_t count = size_t(args[3].toNumber());
-
-  MOZ_ASSERT(count > 0);
-  MOZ_ASSERT(count <= unsafeTypedArrayCrossCompartment->length().valueOr(0));
-
-  size_t elementSize = TypedArrayElemSize(sourceType);
-  MOZ_ASSERT(elementSize ==
-             TypedArrayElemSize(unsafeTypedArrayCrossCompartment->type()));
-
-  SharedMem<uint8_t*> sourceData =
-      source->dataPointerEither().cast<uint8_t*>() + sourceOffset * elementSize;
-
-  SharedMem<uint8_t*> unsafeTargetDataCrossCompartment =
-      unsafeTypedArrayCrossCompartment->dataPointerEither().cast<uint8_t*>();
-
-  size_t byteLength = std::min(count, *sourceLength) * elementSize;
-
-  
-  
-  
-  
-  
-  
-  
-  if (!TypedArrayObject::sameBuffer(source, unsafeTypedArrayCrossCompartment)) {
-    if (source->isSharedMemory() ||
-        unsafeTypedArrayCrossCompartment->isSharedMemory()) {
-      jit::AtomicOperations::memcpySafeWhenRacy(
-          unsafeTargetDataCrossCompartment, sourceData, byteLength);
-    } else {
-      memcpy(unsafeTargetDataCrossCompartment.unwrapUnshared(),
-             sourceData.unwrapUnshared(), byteLength);
-    }
-  } else {
-    using namespace jit;
-
-    for (; byteLength > 0; byteLength--) {
-      AtomicOperations::storeSafeWhenRacy(
-          unsafeTargetDataCrossCompartment++,
-          AtomicOperations::loadSafeWhenRacy(sourceData++));
-    }
-  }
-
-  args.rval().setBoolean(true);
   return true;
 }
 
@@ -2011,7 +1883,6 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_INLINABLE_FN("ToObject", intrinsic_ToObject, 1, 0, IntrinsicToObject),
     JS_FN("ToPropertyKey", intrinsic_ToPropertyKey, 1, 0),
     JS_FN("ToSource", intrinsic_ToSource, 1, 0),
-    JS_FN("TypedArrayBitwiseSlice", intrinsic_TypedArrayBitwiseSlice, 4, 0),
     JS_FN("TypedArrayBuffer", intrinsic_TypedArrayBuffer, 1, 0),
     JS_INLINABLE_FN("TypedArrayByteOffset", intrinsic_TypedArrayByteOffset, 1,
                     0, IntrinsicTypedArrayByteOffset),

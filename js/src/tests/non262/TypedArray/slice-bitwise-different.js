@@ -1,6 +1,10 @@
 
 
 
+if (typeof supportDifferentialTesting !== "function") {
+    var {supportDifferentialTesting} = SpecialPowers.Cu.getJSTestingFunctions();
+}
+
 
 
 const float32Constructors = anyTypedArrayConstructors.filter(isFloatConstructor)
@@ -78,8 +82,10 @@ for (let [sourceConstructor, targetConstructor] of p(float32Constructors, float6
     assertEq(ri32.length, 2 * len);
 
     
-    for (let i = 0; i < len; ++i) {
-        assertEqArray(geti64(ri32, i), cNaN.Float64);
+    if (supportDifferentialTesting()) {
+        for (let i = 0; i < len; ++i) {
+            assertEqArray(geti64(ri32, i), cNaN.Float64);
+        }
     }
 }
 
@@ -101,8 +107,10 @@ for (let [sourceConstructor, targetConstructor] of p(float64Constructors, float3
     assertEq(ri32.length, len);
 
     
-    for (let i = 0; i < len; ++i) {
-        assertEqArray(ri32[i], cNaN.Float32);
+    if (supportDifferentialTesting()) {
+        for (let i = 0; i < len; ++i) {
+            assertEqArray(ri32[i], cNaN.Float32);
+        }
     }
 }
 
