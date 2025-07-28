@@ -5,19 +5,6 @@ use alloc::string::String;
 #[cfg(feature = "alloc")]
 use core::fmt;
 
-
-
-
-
-#[cfg(doc)]
-#[deprecated(
-    since = "0.3.35",
-    note = "use `BorrowedFormatItem` instead for clarity"
-)]
-pub type FormatItem<'a> = BorrowedFormatItem<'a>;
-
-#[cfg(not(doc))]
-pub use self::BorrowedFormatItem as FormatItem;
 use crate::error;
 use crate::format_description::Component;
 

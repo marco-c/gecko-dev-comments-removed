@@ -132,6 +132,8 @@ impl ChildMetricMeta {
 pub(crate) mod profiler_utils {
     use std::marker::PhantomData;
 
+    use chrono::{DateTime, FixedOffset, Local};
+
     use crate::private::{MetricMetadataGetter, MetricNamer};
 
     use super::max_string_byte_length;
@@ -144,54 +146,11 @@ pub(crate) mod profiler_utils {
     pub const TelemetryProfilerCategory: gecko_profiler::ProfilingCategoryPair =
         gecko_profiler::ProfilingCategoryPair::Telemetry(None);
 
-    
-    
-    
-    
-    
-    
-    
-    #[allow(deprecated)] 
-    pub(crate) fn local_now_with_offset() -> chrono::DateTime<chrono::FixedOffset> {
-        use chrono::{DateTime, Local};
-        #[cfg(target_os = "windows")]
-        {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-
-            use chrono::{FixedOffset, Utc};
-
-            
-            let tm = time::now();
-            
-            
-            let offset = tm.tm_utcoff;
-            if let None = FixedOffset::east_opt(offset) {
-                log::warn!(
-                    "Detected invalid timezone offset: {}. Using UTC fallback.",
-                    offset
-                );
-                let now: DateTime<Utc> = Utc::now();
-                let utc_offset = FixedOffset::east(0);
-                return now.with_timezone(&utc_offset);
-            }
-        }
-
+    pub(crate) fn local_now_with_offset() -> DateTime<FixedOffset> {
+        
+        
+        
+        
         let now: DateTime<Local> = Local::now();
         now.with_timezone(now.offset())
     }

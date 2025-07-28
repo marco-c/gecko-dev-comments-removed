@@ -56,7 +56,7 @@ impl TimespanMetric {
     
     
     pub fn start(&self) {
-        let start_time = time::precise_time_ns();
+        let start_time = zeitstempel::now();
 
         let metric = self.clone();
         crate::launch_with_glean(move |glean| metric.set_start(glean, start_time));
@@ -88,7 +88,7 @@ impl TimespanMetric {
     
     
     pub fn stop(&self) {
-        let stop_time = time::precise_time_ns();
+        let stop_time = zeitstempel::now();
 
         let metric = self.clone();
         crate::launch_with_glean(move |glean| metric.set_stop(glean, stop_time));

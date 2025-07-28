@@ -9,8 +9,6 @@ use core::ops::{Add, AddAssign, Sub, SubAssign};
 use core::time::Duration as StdDuration;
 #[cfg(feature = "formatting")]
 use std::io;
-#[cfg(feature = "std")]
-use std::time::SystemTime;
 
 use deranged::RangedI64;
 use num_conv::prelude::*;
@@ -26,13 +24,12 @@ use crate::internal_macros::{
 };
 #[cfg(feature = "parsing")]
 use crate::parsing::Parsable;
-use crate::{error, util, Date, Duration, Month, PrimitiveDateTime, Time, UtcOffset, Weekday};
+use crate::{
+    error, util, Date, Duration, Month, PrimitiveDateTime, Time, UtcDateTime, UtcOffset, Weekday,
+};
 
 
-
-#[allow(clippy::undocumented_unsafe_blocks)]
-const UNIX_EPOCH_JULIAN_DAY: i32 =
-    unsafe { Date::__from_ordinal_date_unchecked(1970, 1) }.to_julian_day();
+const UNIX_EPOCH_JULIAN_DAY: i32 = OffsetDateTime::UNIX_EPOCH.to_julian_day();
 
 
 
@@ -91,7 +88,6 @@ impl OffsetDateTime {
     
     
     
-    
     #[cfg(feature = "std")]
     pub fn now_utc() -> Self {
         #[cfg(all(
@@ -108,7 +104,7 @@ impl OffsetDateTime {
             not(any(target_os = "emscripten", target_os = "wasi")),
             feature = "wasm-bindgen"
         )))]
-        SystemTime::now().into()
+        std::time::SystemTime::now().into()
     }
 
     
@@ -125,7 +121,6 @@ impl OffsetDateTime {
         let t = Self::now_utc();
         Ok(t.to_offset(UtcOffset::local_offset_at(t)?))
     }
-    
 
     
     
@@ -239,6 +234,58 @@ impl OffsetDateTime {
 
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub const fn to_utc(self) -> UtcDateTime {
+        self.to_offset(UtcOffset::UTC).local_date_time.as_utc()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(
+        feature = "large-dates",
+        doc = "    datetime!(+999999-12-31 23:59:59 -1).checked_to_utc(),"
+    )]
+    #[cfg_attr(
+        not(feature = "large-dates"),
+        doc = "    datetime!(9999-12-31 23:59:59 -1).checked_to_utc(),"
+    )]
+    
+    
+    
+    pub const fn checked_to_utc(self) -> Option<UtcDateTime> {
+        Some(
+            const_try_opt!(self.checked_to_offset(UtcOffset::UTC))
+                .local_date_time
+                .as_utc(),
+        )
+    }
+
+    
+    
     pub(crate) const fn to_offset_raw(self, offset: UtcOffset) -> (i32, u16, Time) {
         let from = self.offset;
         let to = offset;
@@ -273,20 +320,19 @@ impl OffsetDateTime {
 
         (
             year,
-            ordinal as _,
+            ordinal as u16,
             
             unsafe {
                 Time::__from_hms_nanos_unchecked(
-                    hour as _,
-                    minute as _,
-                    second as _,
+                    hour as u8,
+                    minute as u8,
+                    second as u8,
                     self.nanosecond(),
                 )
             },
         )
     }
 
-    
     
     
     
@@ -328,17 +374,20 @@ impl OffsetDateTime {
         ensure_ranged!(Timestamp: timestamp);
 
         
-        let date = Date::from_julian_day_unchecked(
-            UNIX_EPOCH_JULIAN_DAY + div_floor!(timestamp, Second::per(Day) as i64) as i32,
-        );
+        
+        let date = unsafe {
+            Date::from_julian_day_unchecked(
+                UNIX_EPOCH_JULIAN_DAY + div_floor!(timestamp, Second::per(Day) as i64) as i32,
+            )
+        };
 
-        let seconds_within_day = timestamp.rem_euclid(Second::per(Day) as _);
+        let seconds_within_day = timestamp.rem_euclid(Second::per(Day) as i64);
         
         let time = unsafe {
             Time::__from_hms_nanos_unchecked(
-                (seconds_within_day / Second::per(Hour) as i64) as _,
-                ((seconds_within_day % Second::per(Hour) as i64) / Minute::per(Hour) as i64) as _,
-                (seconds_within_day % Second::per(Minute) as i64) as _,
+                (seconds_within_day / Second::per(Hour) as i64) as u8,
+                ((seconds_within_day % Second::per(Hour) as i64) / Minute::per(Hour) as i64) as u8,
+                (seconds_within_day % Second::per(Minute) as i64) as u8,
                 0,
             )
         };
@@ -375,15 +424,13 @@ impl OffsetDateTime {
                     datetime.hour(),
                     datetime.minute(),
                     datetime.second(),
-                    timestamp.rem_euclid(Nanosecond::per(Second) as _) as u32,
+                    timestamp.rem_euclid(Nanosecond::per(Second) as i128) as u32,
                 )
             },
             UtcOffset::UTC,
         ))
     }
-    
 
-    
     
     
     
@@ -427,7 +474,7 @@ impl OffsetDateTime {
     }
 
     
-    const fn date_time(self) -> PrimitiveDateTime {
+    pub(crate) const fn date_time(self) -> PrimitiveDateTime {
         self.local_date_time
     }
 
@@ -463,7 +510,6 @@ impl OffsetDateTime {
         self.date_time().time()
     }
 
-    
     
     
     
@@ -664,9 +710,7 @@ impl OffsetDateTime {
     pub const fn to_julian_day(self) -> i32 {
         self.date().to_julian_day()
     }
-    
 
-    
     
     
     
@@ -830,10 +874,7 @@ impl OffsetDateTime {
     pub const fn nanosecond(self) -> u32 {
         self.time().nanosecond()
     }
-    
-    
 
-    
     
     
     
@@ -873,9 +914,7 @@ impl OffsetDateTime {
     pub const fn checked_sub(self, duration: Duration) -> Option<Self> {
         Some(const_try_opt!(self.date_time().checked_sub(duration)).assume_offset(self.offset()))
     }
-    
 
-    
     
     
     
@@ -985,9 +1024,7 @@ impl OffsetDateTime {
             PrimitiveDateTime::MIN.assume_offset(self.offset())
         }
     }
-    
 }
-
 
 
 impl OffsetDateTime {
@@ -1233,15 +1270,13 @@ impl OffsetDateTime {
     }
 }
 
-
-
 #[cfg(feature = "formatting")]
 impl OffsetDateTime {
     
     
     pub fn format_into(
         self,
-        output: &mut impl io::Write,
+        output: &mut (impl io::Write + ?Sized),
         format: &(impl Formattable + ?Sized),
     ) -> Result<usize, error::Format> {
         format.format_into(
@@ -1317,7 +1352,7 @@ impl OffsetDateTime {
         time.hour() == 23
             && time.minute() == 59
             && time.second() == 59
-            && date.day() == util::days_in_year_month(year, date.month())
+            && date.day() == date.month().length(year)
     }
 }
 
@@ -1353,8 +1388,6 @@ impl fmt::Debug for OffsetDateTime {
         fmt::Display::fmt(self, f)
     }
 }
-
-
 
 impl Add<Duration> for OffsetDateTime {
     type Output = Self;
@@ -1476,143 +1509,3 @@ impl Sub for OffsetDateTime {
         base - adjustment
     }
 }
-
-#[cfg(feature = "std")]
-impl Sub<SystemTime> for OffsetDateTime {
-    type Output = Duration;
-
-    
-    
-    
-    fn sub(self, rhs: SystemTime) -> Self::Output {
-        self - Self::from(rhs)
-    }
-}
-
-#[cfg(feature = "std")]
-impl Sub<OffsetDateTime> for SystemTime {
-    type Output = Duration;
-
-    
-    
-    
-    fn sub(self, rhs: OffsetDateTime) -> Self::Output {
-        OffsetDateTime::from(self) - rhs
-    }
-}
-
-#[cfg(feature = "std")]
-impl Add<Duration> for SystemTime {
-    type Output = Self;
-
-    fn add(self, duration: Duration) -> Self::Output {
-        if duration.is_zero() {
-            self
-        } else if duration.is_positive() {
-            self + duration.unsigned_abs()
-        } else {
-            debug_assert!(duration.is_negative());
-            self - duration.unsigned_abs()
-        }
-    }
-}
-
-crate::internal_macros::impl_add_assign!(SystemTime: #[cfg(feature = "std")] Duration);
-
-#[cfg(feature = "std")]
-impl Sub<Duration> for SystemTime {
-    type Output = Self;
-
-    fn sub(self, duration: Duration) -> Self::Output {
-        (OffsetDateTime::from(self) - duration).into()
-    }
-}
-
-crate::internal_macros::impl_sub_assign!(SystemTime: #[cfg(feature = "std")] Duration);
-
-#[cfg(feature = "std")]
-impl PartialEq<SystemTime> for OffsetDateTime {
-    fn eq(&self, rhs: &SystemTime) -> bool {
-        self == &Self::from(*rhs)
-    }
-}
-
-#[cfg(feature = "std")]
-impl PartialEq<OffsetDateTime> for SystemTime {
-    fn eq(&self, rhs: &OffsetDateTime) -> bool {
-        &OffsetDateTime::from(*self) == rhs
-    }
-}
-
-#[cfg(feature = "std")]
-impl PartialOrd<SystemTime> for OffsetDateTime {
-    fn partial_cmp(&self, other: &SystemTime) -> Option<Ordering> {
-        self.partial_cmp(&Self::from(*other))
-    }
-}
-
-#[cfg(feature = "std")]
-impl PartialOrd<OffsetDateTime> for SystemTime {
-    fn partial_cmp(&self, other: &OffsetDateTime) -> Option<Ordering> {
-        OffsetDateTime::from(*self).partial_cmp(other)
-    }
-}
-
-#[cfg(feature = "std")]
-impl From<SystemTime> for OffsetDateTime {
-    fn from(system_time: SystemTime) -> Self {
-        match system_time.duration_since(SystemTime::UNIX_EPOCH) {
-            Ok(duration) => Self::UNIX_EPOCH + duration,
-            Err(err) => Self::UNIX_EPOCH - err.duration(),
-        }
-    }
-}
-
-#[cfg(feature = "std")]
-impl From<OffsetDateTime> for SystemTime {
-    fn from(datetime: OffsetDateTime) -> Self {
-        let duration = datetime - OffsetDateTime::UNIX_EPOCH;
-
-        if duration.is_zero() {
-            Self::UNIX_EPOCH
-        } else if duration.is_positive() {
-            Self::UNIX_EPOCH + duration.unsigned_abs()
-        } else {
-            debug_assert!(duration.is_negative());
-            Self::UNIX_EPOCH - duration.unsigned_abs()
-        }
-    }
-}
-
-#[cfg(all(
-    target_family = "wasm",
-    not(any(target_os = "emscripten", target_os = "wasi")),
-    feature = "wasm-bindgen"
-))]
-impl From<js_sys::Date> for OffsetDateTime {
-    
-    
-    
-    fn from(js_date: js_sys::Date) -> Self {
-        
-        let timestamp_nanos = (js_date.get_time() * Nanosecond::per(Millisecond) as f64) as i128;
-        Self::from_unix_timestamp_nanos(timestamp_nanos)
-            .expect("invalid timestamp: Timestamp cannot fit in range")
-    }
-}
-
-#[cfg(all(
-    target_family = "wasm",
-    not(any(target_os = "emscripten", target_os = "wasi")),
-    feature = "wasm-bindgen"
-))]
-impl From<OffsetDateTime> for js_sys::Date {
-    fn from(datetime: OffsetDateTime) -> Self {
-        
-        let timestamp = (datetime.unix_timestamp_nanos()
-            / Nanosecond::per(Millisecond).cast_signed().extend::<i128>())
-            as f64;
-        Self::new(&timestamp.into())
-    }
-}
-

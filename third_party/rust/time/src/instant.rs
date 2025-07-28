@@ -28,13 +28,16 @@ use crate::Duration;
 
 
 
-#[deprecated(since = "0.3.35", note = "import `time::ext::InstantExt` instead")]
+#[doc(hidden)]
+#[deprecated(
+    since = "0.3.35",
+    note = "import `std::time::Instant` and `time::ext::InstantExt` instead"
+)]
 #[repr(transparent)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Instant(pub StdInstant);
 
 impl Instant {
-    
     
     
     
@@ -60,9 +63,7 @@ impl Instant {
     pub fn elapsed(self) -> Duration {
         Self::now() - self
     }
-    
 
-    
     
     
     
@@ -106,7 +107,6 @@ impl Instant {
             self.0.checked_add(duration.unsigned_abs()).map(Self)
         }
     }
-    
 
     
     
@@ -120,7 +120,6 @@ impl Instant {
         self.0
     }
 }
-
 
 impl From<StdInstant> for Instant {
     fn from(instant: StdInstant) -> Self {
@@ -286,4 +285,3 @@ impl Borrow<StdInstant> for Instant {
         &self.0
     }
 }
-

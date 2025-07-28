@@ -35,7 +35,7 @@ impl<'a, T> ParsedItem<'a, T> {
     
     
     
-    pub(crate) fn filter(self, f: impl FnOnce(&T) -> bool) -> Option<ParsedItem<'a, T>> {
+    pub(crate) fn filter(self, f: impl FnOnce(&T) -> bool) -> Option<Self> {
         f(&self.1).then_some(self)
     }
 }

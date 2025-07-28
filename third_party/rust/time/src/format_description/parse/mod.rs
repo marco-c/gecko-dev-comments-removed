@@ -3,6 +3,7 @@
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 
+pub use self::strftime::{parse_strftime_borrowed, parse_strftime_owned};
 use crate::{error, format_description};
 
 
@@ -15,7 +16,6 @@ macro_rules! version {
 
 macro_rules! validate_version {
     ($version:ident) => {
-        #[allow(clippy::let_unit_value)]
         let _ = $crate::format_description::parse::Version::<$version>::IS_VALID;
     };
 }
@@ -23,6 +23,7 @@ macro_rules! validate_version {
 mod ast;
 mod format_item;
 mod lexer;
+mod strftime;
 
 
 struct Version<const N: usize>;
@@ -85,6 +86,19 @@ pub fn parse_owned<const VERSION: usize>(
 }
 
 
+fn attach_location<'item>(
+    iter: impl Iterator<Item = &'item u8>,
+) -> impl Iterator<Item = (&'item u8, Location)> {
+    let mut byte_pos = 0;
+
+    iter.map(move |byte| {
+        let location = Location { byte: byte_pos };
+        byte_pos += 1;
+        (byte, location)
+    })
+}
+
+
 #[derive(Clone, Copy)]
 struct Location {
     
@@ -95,6 +109,14 @@ impl Location {
     
     const fn to(self, end: Self) -> Span {
         Span { start: self, end }
+    }
+
+    
+    const fn to_self(self) -> Span {
+        Span {
+            start: self,
+            end: self,
+        }
     }
 
     
@@ -122,9 +144,7 @@ impl Location {
 
 #[derive(Clone, Copy)]
 struct Span {
-    #[allow(clippy::missing_docs_in_private_items)]
     start: Location,
-    #[allow(clippy::missing_docs_in_private_items)]
     end: Location,
 }
 
