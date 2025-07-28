@@ -427,8 +427,9 @@ void ProfilerChild::GatherProfileThreadFunction(
                 SharedLibraryInfo sharedLibraryInfo =
                     SharedLibraryInfo::GetInfoForSelf();
                 parameters->resolver(IPCProfileAndAdditionalInformation{
-                    shmem, Some(ProfileGenerationAdditionalInformation{
-                               std::move(sharedLibraryInfo)})});
+                    std::move(shmem),
+                    Some(ProfileGenerationAdditionalInformation{
+                        std::move(sharedLibraryInfo)})});
                 
                 
                 
