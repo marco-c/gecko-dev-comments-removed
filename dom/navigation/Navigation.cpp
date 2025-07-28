@@ -540,6 +540,11 @@ void Navigation::Navigate(JSContext* aCx, const nsAString& aUrl,
   
   
 
+  RefPtr bc = document->GetBrowsingContext();
+  MOZ_DIAGNOSTIC_ASSERT(bc);
+  bc->Navigate(urlRecord, *document->NodePrincipal(),
+                IgnoreErrors());
+
   
   
   if (mUpcomingNonTraverseAPIMethodTracker == apiMethodTracker) {
