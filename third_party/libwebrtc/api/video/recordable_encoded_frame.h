@@ -46,11 +46,7 @@ class RecordableEncodedFrame {
 
   
   
-  
-  
-  virtual std::optional<webrtc::VideoRotation> video_rotation() const {
-    return std::nullopt;
-  }
+  virtual std::optional<webrtc::VideoRotation> video_rotation() const = 0;
 
   
   virtual VideoCodecType codec() const = 0;
