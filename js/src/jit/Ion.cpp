@@ -1355,7 +1355,8 @@ bool OptimizeMIR(MIRGenerator* mir) {
     }
   }
 
-  if (mir->optimizationInfo().eaaEnabled()) {
+  
+  if (mir->compilingWasm() && mir->optimizationInfo().eaaEnabled()) {
     EffectiveAddressAnalysis eaa(mir, graph);
     JitSpewCont(JitSpew_EAA, "\n");
     if (!eaa.analyze()) {

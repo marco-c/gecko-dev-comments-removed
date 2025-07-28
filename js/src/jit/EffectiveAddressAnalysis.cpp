@@ -11,219 +11,129 @@
 #include "jit/MIR.h"
 #include "jit/MIRGenerator.h"
 #include "jit/MIRGraph.h"
-#include "util/CheckedArithmetic.h"
 
 using namespace js;
 using namespace jit;
 
-static void AnalyzeLsh(TempAllocator& alloc, MLsh* lsh) {
-  if (lsh->type() != MIRType::Int32) {
-    return;
-  }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static std::pair<MDefinition*, int32_t> IsShiftBy123(MDefinition* def) {
+  MOZ_ASSERT(def->type() == MIRType::Int32);
+  if (!def->isLsh()) {
+    return std::pair(nullptr, 0);
+  }
+  MLsh* lsh = def->toLsh();
   if (lsh->isRecoveredOnBailout()) {
-    return;
+    return std::pair(nullptr, 0);
   }
-
-  MDefinition* index = lsh->lhs();
-  MOZ_ASSERT(index->type() == MIRType::Int32);
-
-  MConstant* shiftValue = lsh->rhs()->maybeConstantValue();
-  if (!shiftValue) {
-    return;
+  MDefinition* shamt = lsh->rhs();
+  MOZ_ASSERT(shamt->type() == MIRType::Int32);
+  MConstant* con = shamt->maybeConstantValue();
+  if (!con || con->toInt32() < 1 || con->toInt32() > 3) {
+    return std::pair(nullptr, 0);
   }
+  return std::pair(lsh->lhs(), con->toInt32());
+}
 
-  if (shiftValue->type() != MIRType::Int32 ||
-      !IsShiftInScaleRange(shiftValue->toInt32())) {
-    return;
-  }
 
-  Scale scale = ShiftToScale(shiftValue->toInt32());
 
-  int32_t displacement = 0;
-  MInstruction* last = lsh;
+
+static void TryMatchShiftAdd(TempAllocator& alloc, MAdd* root) {
+  MOZ_ASSERT(root->isAdd());
+  MOZ_ASSERT(root->type() == MIRType::Int32);
+  MOZ_ASSERT(root->hasUses());
+
+  
+  
+  
+  
+  
+  
+
   MDefinition* base = nullptr;
-  while (true) {
-    if (!last->hasOneUse()) {
-      break;
-    }
+  MDefinition* index = nullptr;
+  int32_t shift = 0;
 
-    MUseIterator use = last->usesBegin();
-    if (!use->consumer()->isDefinition() ||
-        !use->consumer()->toDefinition()->isAdd()) {
-      break;
-    }
-
-    MAdd* add = use->consumer()->toDefinition()->toAdd();
-    if (add->type() != MIRType::Int32 || !add->isTruncated()) {
-      break;
-    }
-
-    MDefinition* other = add->getOperand(1 - add->indexOf(*use));
-
-    if (MConstant* otherConst = other->maybeConstantValue()) {
-      displacement += otherConst->toInt32();
-    } else {
-      if (base) {
-        break;
-      }
-      base = other;
-    }
-
-    last = add;
-    if (last->isRecoveredOnBailout()) {
-      return;
+  auto pair = IsShiftBy123(root->rhs());
+  MOZ_ASSERT((pair.first == nullptr) == (pair.second == 0));
+  if (pair.first) {
+    base = root->lhs();
+    index = pair.first;
+    shift = pair.second;
+  } else {
+    pair = IsShiftBy123(root->lhs());
+    MOZ_ASSERT((pair.first == nullptr) == (pair.second == 0));
+    if (pair.first) {
+      base = root->rhs();
+      index = pair.first;
+      shift = pair.second;
     }
   }
 
   if (!base) {
-    uint32_t elemSize = 1 << ScaleToShift(scale);
-    if (displacement % elemSize != 0) {
+    return;
+  }
+  MOZ_ASSERT(shift >= 1 && shift <= 3);
+
+  
+  
+  if (root->isRecoveredOnBailout()) {
+    return;
+  }
+
+  
+  Scale scale = ShiftToScale(shift);
+  MOZ_ASSERT(scale != TimesOne);
+
+  MInstruction* replacement = nullptr;
+  if (base->maybeConstantValue()) {
+    int32_t baseValue = base->maybeConstantValue()->toInt32();
+    if (baseValue == 0) {
+      
+      
       return;
     }
-
-    if (!last->hasOneUse()) {
-      return;
-    }
-
-    MUseIterator use = last->usesBegin();
-    if (!use->consumer()->isDefinition() ||
-        !use->consumer()->toDefinition()->isBitAnd()) {
-      return;
-    }
-
-    MBitAnd* bitAnd = use->consumer()->toDefinition()->toBitAnd();
-    if (bitAnd->isRecoveredOnBailout()) {
-      return;
-    }
-
-    MDefinition* other = bitAnd->getOperand(1 - bitAnd->indexOf(*use));
-    MConstant* otherConst = other->maybeConstantValue();
-    if (!otherConst || otherConst->type() != MIRType::Int32) {
-      return;
-    }
-
-    uint32_t bitsClearedByShift = elemSize - 1;
-    uint32_t bitsClearedByMask = ~uint32_t(otherConst->toInt32());
-    if ((bitsClearedByShift & bitsClearedByMask) != bitsClearedByMask) {
-      return;
-    }
-
-    bitAnd->replaceAllUsesWith(last);
-    return;
+    replacement = MEffectiveAddress2::New(alloc, index, scale, baseValue);
+  } else {
+    replacement = MEffectiveAddress3::New(alloc, base, index, scale, 0);
   }
 
-  if (base->isRecoveredOnBailout()) {
-    return;
-  }
+  root->replaceAllUsesWith(replacement);
+  root->block()->insertAfter(root, replacement);
 
-  MEffectiveAddress3* eaddr =
-      MEffectiveAddress3::New(alloc, base, index, scale, displacement);
-  last->replaceAllUsesWith(eaddr);
-  last->block()->insertAfter(last, eaddr);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static void AnalyzeLoadUnboxedScalar(MLoadUnboxedScalar* load) {
-  if (load->isRecoveredOnBailout()) {
-    return;
-  }
-
-  if (!load->getOperand(1)->isAdd()) {
-    return;
-  }
-
-  JitSpew(JitSpew_EAA, "analyze: %s%u", load->opName(), load->id());
-
-  MAdd* add = load->getOperand(1)->toAdd();
-
-  if (add->type() != MIRType::Int32 || !add->hasUses() ||
-      add->truncateKind() != TruncateKind::Truncate) {
-    return;
-  }
-
-  MDefinition* lhs = add->lhs();
-  MDefinition* rhs = add->rhs();
-  MDefinition* constant = nullptr;
-  MDefinition* node = nullptr;
-
-  if (lhs->isConstant()) {
-    constant = lhs;
-    node = rhs;
-  } else if (rhs->isConstant()) {
-    constant = rhs;
-    node = lhs;
-  } else
-    return;
-
-  MOZ_ASSERT(constant->type() == MIRType::Int32);
-
-  size_t storageSize = Scalar::byteSize(load->storageType());
-  int32_t c1 = load->offsetAdjustment();
-  int32_t c2 = 0;
-  if (!SafeMul(constant->maybeConstantValue()->toInt32(), storageSize, &c2)) {
-    return;
-  }
-
-  int32_t offset = 0;
-  if (!SafeAdd(c1, c2, &offset)) {
-    return;
-  }
-
-  JitSpew(JitSpew_EAA, "set offset: %d + %d = %d on: %s%u", c1, c2, offset,
-          load->opName(), load->id());
-  load->setOffsetAdjustment(offset);
-  load->replaceOperand(1, node);
-
-  if (!add->hasLiveDefUses() && DeadIfUnused(add) &&
-      add->canRecoverOnBailout()) {
-    JitSpew(JitSpew_EAA, "mark as recovered on bailout: %s%u", add->opName(),
-            add->id());
-    add->setRecoveredOnBailoutUnchecked();
+  if (JitSpewEnabled(JitSpew_EAA)) {
+    JitSpewCont(JitSpew_EAA, "  create: '");
+    DumpMIRDefinition(JitSpewPrinter(), replacement, false);
+    JitSpewCont(JitSpew_EAA, "'\n");
   }
 }
-
-template <typename AsmJSMemoryAccess>
-void EffectiveAddressAnalysis::analyzeAsmJSHeapAccess(AsmJSMemoryAccess* ins) {
-  MDefinition* base = ins->base();
-
-  if (base->isConstant()) {
-    
-    
-    
-    int32_t imm = base->toConstant()->toInt32();
-    if (imm >= 0) {
-      int32_t end = (uint32_t)imm + ins->byteSize();
-      if (end >= imm && (uint32_t)end <= mir_->minWasmMemory0Length()) {
-        ins->removeBoundsCheck();
-      }
-    }
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -231,27 +141,36 @@ void EffectiveAddressAnalysis::analyzeAsmJSHeapAccess(AsmJSMemoryAccess* ins) {
 
 bool EffectiveAddressAnalysis::analyze() {
   JitSpew(JitSpew_EAA, "Begin");
+
   for (ReversePostorderIterator block(graph_.rpoBegin());
        block != graph_.rpoEnd(); block++) {
-    for (MInstructionIterator i = block->begin(); i != block->end(); i++) {
-      if (!graph_.alloc().ensureBallast()) {
-        return false;
+    
+    
+    
+
+    MInstructionReverseIterator ri(block->rbegin());
+    while (ri != block->rend()) {
+      
+      
+      MInstruction* curr = *ri;
+      ri++;
+
+      if (MOZ_LIKELY(!curr->isAdd())) {
+        continue;
+      }
+      if (curr->type() != MIRType::Int32 || !curr->hasUses()) {
+        continue;
       }
 
       
-      
-      
-      
-      if (i->isLsh()) {
-        AnalyzeLsh(graph_.alloc(), i->toLsh());
-      } else if (i->isLoadUnboxedScalar()) {
-        AnalyzeLoadUnboxedScalar(i->toLoadUnboxedScalar());
-      } else if (i->isAsmJSLoadHeap()) {
-        analyzeAsmJSHeapAccess(i->toAsmJSLoadHeap());
-      } else if (i->isAsmJSStoreHeap()) {
-        analyzeAsmJSHeapAccess(i->toAsmJSStoreHeap());
+      if (MOZ_UNLIKELY(!graph_.alloc().ensureBallast())) {
+        return false;
       }
+
+      TryMatchShiftAdd(graph_.alloc(), curr->toAdd());
     }
   }
+
+  JitSpew(JitSpew_EAA, "End");
   return true;
 }
