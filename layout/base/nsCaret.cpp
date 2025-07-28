@@ -605,7 +605,7 @@ void nsCaret::ResetBlinking() {
   
   
   static const auto kBlinkTimerSlack = TimeDuration::FromMilliseconds(50);
-
+  const bool wasBlinkOn = mIsBlinkOn;
   mIsBlinkOn = true;
 
   if (mReadOnly || !IsVisible()) {
@@ -618,6 +618,10 @@ void nsCaret::ResetBlinking() {
   if (mBlinkTime <= 0) {
     StopBlinking();
     return;
+  }
+
+  if (!wasBlinkOn) {
+    SchedulePaint();
   }
 
   mBlinkCount = LookAndFeel::CaretBlinkCount();
