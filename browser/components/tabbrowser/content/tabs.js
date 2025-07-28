@@ -77,6 +77,9 @@
       this.pinnedDropIndicator = document.getElementById(
         "pinned-drop-indicator"
       );
+      this.dragToPinPromoCard = document.getElementById(
+        "drag-to-pin-promo-card"
+      );
       
       
       this.arrowScrollbox._getScrollableElements = () => {
@@ -1226,21 +1229,20 @@
           }
         }
 
+        const dragToPinTargets = [
+          this.pinnedTabsContainer,
+          this.pinnedDropIndicator,
+          this.dragToPinPromoCard,
+        ];
         let shouldPin =
           isTab(draggedTab) &&
           !draggedTab.pinned &&
           ((withinPinnedBounds && !numPinned) ||
-            this.pinnedTabsContainer.contains(event.target) ||
-            ["pinned-tabs-container", "pinned-drop-indicator"].includes(
-              event.target.id
-            ));
+            dragToPinTargets.some(el => el.contains(event.target)));
         let shouldUnpin =
           isTab(draggedTab) &&
           draggedTab.pinned &&
-          this.arrowScrollbox.contains(event.target) &&
-          !["pinned-tabs-container", "pinned-drop-indicator"].includes(
-            event.target.id
-          );
+          this.arrowScrollbox.contains(event.target);
 
         let shouldTranslate =
           !gReduceMotion &&
@@ -2266,7 +2268,14 @@
       
       
       
-      let position = 0;
+      const startingPosition = this.dragToPinPromoCard.shouldRender
+        ? window.windowUtils.getBoundsWithoutFlushing(this.dragToPinPromoCard)
+            .height
+        : 0;
+      
+      
+      
+      let position = startingPosition;
       
       for (let movingTab of movingTabs.slice(movingTabsIndex)) {
         if (isTabGroupLabel(tab)) {
@@ -2307,7 +2316,7 @@
       }
       
       if (this.verticalMode) {
-        position = 0 - rect.height;
+        position = startingPosition - rect.height;
       } else if (this.#rtlMode) {
         position = 0 + rect.width;
       } else {
@@ -3150,7 +3159,7 @@
             !this.pinnedDropIndicator.hasAttribute("interactive")))
       ) {
         
-        if (!gBrowser.pinnedTabCount) {
+        if (!gBrowser.pinnedTabCount && !this.dragToPinPromoCard.shouldRender) {
           let tabbrowserTabsRect =
             window.windowUtils.getBoundsWithoutFlushing(this);
           if (!this.verticalMode) {
