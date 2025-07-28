@@ -63,6 +63,9 @@ enum class SkipTransitionReason : uint8_t {
   PseudoUpdateFailure,
   Resize,
   PageSwap,
+  
+  
+  ResetRendering,
 };
 
 
