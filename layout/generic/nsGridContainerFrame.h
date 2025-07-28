@@ -565,7 +565,7 @@ class nsGridContainerFrame final : public nsContainerFrame,
   UsedTrackSizes* GetUsedTrackSizes() const;
 
   
-  void StoreUsedTrackSizes(LogicalAxis aAxis, const nsTArray<TrackSize>& aSizes);
+  void StoreUsedTrackSizes(LogicalAxis aAxis, const TrackPlan& aSizes);
 
   
   void AddImplicitNamedAreasInternal(LineNameList& aNameList,
