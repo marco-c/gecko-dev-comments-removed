@@ -12,8 +12,7 @@
 #include "nsIAccessibleEvent.h"
 #include "nsIWidget.h"
 #include "nsWindowsHelpers.h"
-#include "mozilla/a11y/HyperTextAccessible.h"
-#include "mozilla/a11y/RemoteAccessible.h"
+#include "mozilla/a11y/HyperTextAccessibleBase.h"
 #include "ServiceProvider.h"
 #include "sdnAccessible.h"
 #include "LocalAccessible-inl.h"
@@ -77,64 +76,32 @@ bool AccessibleWrap::IsRootForHWND() {
   return thisHwnd != parentHwnd;
 }
 
-static void UpdateSystemCaretForHwnd(HWND aCaretWnd,
-                                     const LayoutDeviceIntRect& aCaretRect) {
-  if (!aCaretWnd || aCaretRect.IsEmpty()) {
-    return;
-  }
 
-  
-  
-  nsAutoBitmap caretBitMap(CreateBitmap(1, aCaretRect.Height(), 1, 1, nullptr));
-  if (::CreateCaret(aCaretWnd, caretBitMap, 1,
-                    aCaretRect.Height())) {  
-    ::ShowCaret(aCaretWnd);
-    POINT clientPoint{aCaretRect.X(), aCaretRect.Y()};
-    ::ScreenToClient(aCaretWnd, &clientPoint);
-    ::SetCaretPos(clientPoint.x, clientPoint.y);
-  }
-}
-
-
-void AccessibleWrap::UpdateSystemCaretFor(
-    Accessible* aAccessible, const LayoutDeviceIntRect& aCaretRect) {
-  if (LocalAccessible* localAcc = aAccessible->AsLocal()) {
-    
-    
-    
-    UpdateSystemCaretFor(localAcc);
-  } else {
-    UpdateSystemCaretFor(aAccessible->AsRemote(), aCaretRect);
-  }
-}
-
-
-void AccessibleWrap::UpdateSystemCaretFor(LocalAccessible* aAccessible) {
+void AccessibleWrap::UpdateSystemCaretFor(Accessible* aAccessible) {
   
   
   ::DestroyCaret();
-
-  HyperTextAccessible* text = aAccessible->AsHyperText();
-  if (!text) return;
-
-  auto [caretRect, widget] = text->GetCaretRect();
-
-  if (!widget) {
+  HyperTextAccessibleBase* text = aAccessible->AsHyperTextBase();
+  if (!text) {
     return;
   }
-
+  auto [caretRect, widget] = text->GetCaretRect();
+  if (caretRect.IsEmpty() || !widget) {
+    return;
+  }
   HWND caretWnd =
       reinterpret_cast<HWND>(widget->GetNativeData(NS_NATIVE_WINDOW));
-  UpdateSystemCaretForHwnd(caretWnd, caretRect);
-}
-
-
-void AccessibleWrap::UpdateSystemCaretFor(
-    RemoteAccessible* aProxy, const LayoutDeviceIntRect& aCaretRect) {
-  ::DestroyCaret();
-
+  if (!caretWnd) {
+    return;
+  }
   
   
-  LocalAccessible* outerDoc = aProxy->OuterDocOfRemoteBrowser();
-  UpdateSystemCaretForHwnd(MsaaAccessible::GetHWNDFor(outerDoc), aCaretRect);
+  nsAutoBitmap caretBitMap(CreateBitmap(1, caretRect.Height(), 1, 1, nullptr));
+  if (::CreateCaret(caretWnd, caretBitMap, 1,
+                    caretRect.Height())) {  
+    ::ShowCaret(caretWnd);
+    POINT clientPoint{caretRect.X(), caretRect.Y()};
+    ::ScreenToClient(caretWnd, &clientPoint);
+    ::SetCaretPos(clientPoint.x, clientPoint.y);
+  }
 }
