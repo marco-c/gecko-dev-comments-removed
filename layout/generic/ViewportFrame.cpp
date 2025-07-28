@@ -220,6 +220,12 @@ nsDisplayWrapList* ViewportFrame::BuildDisplayListForContentTopLayer(
     if (!frame) {
       continue;
     }
+    if (frame->GetContent() != elem->AsContent()) {
+      
+      
+      
+      continue;
+    }
 
     if (frame->IsHiddenByContentVisibilityOnAnyAncestor(
             nsIFrame::IncludeContentVisibility::Hidden)) {
