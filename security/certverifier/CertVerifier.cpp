@@ -685,15 +685,6 @@ Result CertVerifier::VerifyCert(
         if (issuerSources) {
           *issuerSources = trustDomain.GetIssuerSources();
         }
-        if (rv != Success && !IsFatalError(rv) &&
-            rv != Result::ERROR_REVOKED_CERTIFICATE &&
-            trustDomain.GetIsErrorDueToDistrustedCAPolicy()) {
-          
-          
-          
-          
-          rv = Result::ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED;
-        }
         if (rv == Success) {
           rv = VerifyCertificateTransparencyPolicy(trustDomain, builtChain,
                                                    sctsFromTLSInput, time,
