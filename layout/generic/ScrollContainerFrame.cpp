@@ -73,7 +73,6 @@
 #include "mozilla/layers/ScrollingInteractionContext.h"
 #include "nsBidiPresUtils.h"
 #include "nsBidiUtils.h"
-#include "nsBlockFrame.h"
 #include "nsCOMPtr.h"
 #include "nsContainerFrame.h"
 #include "nsContentCreatorFunctions.h"
@@ -1417,11 +1416,9 @@ Maybe<nscoord> ScrollContainerFrame::GetNaturalBaselineBOffset(
   
   
   if (aExportContext == BaselineExportContext::LineLayout &&
-      aBaselineGroup == BaselineSharingGroup::Last) {
-    if (nsBlockFrame* bf = do_QueryFrame(mScrolledFrame);
-        bf && !bf->IsButtonLike()) {
-      return Some(SynthesizeFallbackBaseline(aWM, aBaselineGroup));
-    }
+      aBaselineGroup == BaselineSharingGroup::Last &&
+      mScrolledFrame->IsBlockFrameOrSubclass()) {
+    return Some(SynthesizeFallbackBaseline(aWM, aBaselineGroup));
   }
 
   if (StyleDisplay()->IsContainLayout()) {
