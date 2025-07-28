@@ -91,8 +91,8 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   VideoStreamEncoder(const VideoStreamEncoder&) = delete;
   VideoStreamEncoder& operator=(const VideoStreamEncoder&) = delete;
 
-  void AddAdaptationResource(rtc::scoped_refptr<Resource> resource) override;
-  std::vector<rtc::scoped_refptr<Resource>> GetAdaptationResources() override;
+  void AddAdaptationResource(scoped_refptr<Resource> resource) override;
+  std::vector<scoped_refptr<Resource>> GetAdaptationResources() override;
 
   void SetSource(VideoSourceInterface<VideoFrame>* source,
                  const DegradationPreference& degradation_preference) override;
@@ -140,12 +140,12 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   void OnVideoSourceRestrictionsUpdated(
       VideoSourceRestrictions restrictions,
       const VideoAdaptationCounters& adaptation_counters,
-      rtc::scoped_refptr<Resource> reason,
+      scoped_refptr<Resource> reason,
       const VideoSourceRestrictions& unfiltered_restrictions) override;
 
   
   
-  void InjectAdaptationResource(rtc::scoped_refptr<Resource> resource,
+  void InjectAdaptationResource(scoped_refptr<Resource> resource,
                                 VideoAdaptationReason reason);
   void InjectAdaptationConstraint(AdaptationConstraint* adaptation_constraint);
 
@@ -402,7 +402,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   
   VideoStreamEncoderResourceManager stream_resource_manager_
       RTC_GUARDED_BY(encoder_queue_);
-  std::vector<rtc::scoped_refptr<Resource>> additional_resources_
+  std::vector<scoped_refptr<Resource>> additional_resources_
       RTC_GUARDED_BY(encoder_queue_);
   
   

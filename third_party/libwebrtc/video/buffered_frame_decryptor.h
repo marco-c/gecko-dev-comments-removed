@@ -70,7 +70,7 @@ class BufferedFrameDecryptor final {
   
   
   void SetFrameDecryptor(
-      rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor);
+      scoped_refptr<FrameDecryptorInterface> frame_decryptor);
 
   
   
@@ -94,7 +94,7 @@ class BufferedFrameDecryptor final {
   bool first_frame_decrypted_ = false;
   FrameDecryptorInterface::Status last_status_ =
       FrameDecryptorInterface::Status::kUnknown;
-  rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor_;
+  scoped_refptr<FrameDecryptorInterface> frame_decryptor_;
   OnDecryptedFrameCallback* const decrypted_frame_callback_;
   OnDecryptionStatusChangeCallback* const decryption_status_change_callback_;
   std::deque<std::unique_ptr<RtpFrameObject>> stashed_frames_;

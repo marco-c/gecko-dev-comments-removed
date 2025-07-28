@@ -458,6 +458,7 @@ TEST_F(SendStatisticsProxyTest,
   
   
   
+  
   ScopedFakeClock fake_global_clock;
   fake_global_clock.SetTime(
       Timestamp::Millis(fake_clock_.TimeInMilliseconds()));

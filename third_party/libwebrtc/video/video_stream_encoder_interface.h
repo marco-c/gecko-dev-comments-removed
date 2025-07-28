@@ -67,9 +67,8 @@ class VideoStreamEncoderInterface {
   
   
   
-  virtual void AddAdaptationResource(rtc::scoped_refptr<Resource> resource) = 0;
-  virtual std::vector<rtc::scoped_refptr<Resource>>
-  GetAdaptationResources() = 0;
+  virtual void AddAdaptationResource(scoped_refptr<Resource> resource) = 0;
+  virtual std::vector<scoped_refptr<Resource>> GetAdaptationResources() = 0;
 
   
   

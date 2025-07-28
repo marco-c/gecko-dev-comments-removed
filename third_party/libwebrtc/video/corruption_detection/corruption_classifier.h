@@ -42,8 +42,8 @@ class CorruptionClassifier {
   
   
   double CalculateCorruptionProbability(
-      rtc::ArrayView<const FilteredSample> filtered_original_samples,
-      rtc::ArrayView<const FilteredSample> filtered_compressed_samples,
+      ArrayView<const FilteredSample> filtered_original_samples,
+      ArrayView<const FilteredSample> filtered_compressed_samples,
       int luma_threshold,
       int chroma_threshold) const;
 
@@ -61,11 +61,10 @@ class CorruptionClassifier {
 
   
   
-  double GetScore(
-      rtc::ArrayView<const FilteredSample> filtered_original_samples,
-      rtc::ArrayView<const FilteredSample> filtered_compressed_samples,
-      int luma_threshold,
-      int chroma_threshold) const;
+  double GetScore(ArrayView<const FilteredSample> filtered_original_samples,
+                  ArrayView<const FilteredSample> filtered_compressed_samples,
+                  int luma_threshold,
+                  int chroma_threshold) const;
 
   const std::variant<ScalarConfig, LogisticFunctionConfig> config_;
 };

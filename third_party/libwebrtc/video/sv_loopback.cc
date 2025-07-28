@@ -703,7 +703,7 @@ int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
   absl::ParseCommandLine(argc, argv);
 
-  rtc::LogMessage::SetLogToStderr(absl::GetFlag(FLAGS_logs));
+  webrtc::LogMessage::SetLogToStderr(absl::GetFlag(FLAGS_logs));
 
   
   

@@ -28,7 +28,7 @@ const int kThrottleRatio = 100000;
 
 class EncodedImageBufferWrapper : public EncodedImageBufferInterface {
  public:
-  explicit EncodedImageBufferWrapper(rtc::Buffer&& buffer)
+  explicit EncodedImageBufferWrapper(Buffer&& buffer)
       : buffer_(std::move(buffer)) {}
 
   const uint8_t* data() const override { return buffer_.data(); }
@@ -36,7 +36,7 @@ class EncodedImageBufferWrapper : public EncodedImageBufferInterface {
   size_t size() const override { return buffer_.size(); }
 
  private:
-  rtc::Buffer buffer_;
+  Buffer buffer_;
 };
 
 }  
@@ -205,13 +205,11 @@ void FrameEncodeMetadataWriter::UpdateBitstream(
 
   
   const EncodedImage& buffer = *encoded_image;
-  rtc::Buffer modified_buffer =
-      SpsVuiRewriter::ParseOutgoingBitstreamAndRewrite(
-          buffer, encoded_image->ColorSpace());
+  Buffer modified_buffer = SpsVuiRewriter::ParseOutgoingBitstreamAndRewrite(
+      buffer, encoded_image->ColorSpace());
 
   encoded_image->SetEncodedData(
-      rtc::make_ref_counted<EncodedImageBufferWrapper>(
-          std::move(modified_buffer)));
+      make_ref_counted<EncodedImageBufferWrapper>(std::move(modified_buffer)));
 }
 
 void FrameEncodeMetadataWriter::Reset() {
