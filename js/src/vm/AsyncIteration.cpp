@@ -651,12 +651,7 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 
   
   
-  if (generator->isQueueEmpty()) {
-    
-    return true;
-  }
-
-  while (true) {
+  while (!generator->isQueueEmpty()) {
     
     Rooted<AsyncGeneratorRequest*> next(
         cx, AsyncGeneratorObject::peekRequest(generator));
@@ -730,16 +725,12 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
       
       return true;
     }
-
-    if (generator->isQueueEmpty()) {
-      
-      return true;
-    }
   }
 
   
   
   
+  return true;
 }
 
 
