@@ -1462,9 +1462,9 @@ HRESULT MFTEncoder::UpdateOutputType() {
   MOZ_ASSERT(mEncoder);
   
   
-  IMFMediaType* outputType = nullptr;
-  MFT_RETURN_IF_FAILED(
-      mEncoder->GetOutputAvailableType(mOutputStreamID, 0, &outputType));
+  RefPtr<IMFMediaType> outputType;
+  MFT_RETURN_IF_FAILED(mEncoder->GetOutputAvailableType(
+      mOutputStreamID, 0, getter_AddRefs(outputType)));
   MFT_RETURN_IF_FAILED(mEncoder->SetOutputType(mOutputStreamID, outputType, 0));
   MFT_ENC_LOGW("stream format has been renegotiated for output stream %lu",
                mOutputStreamID);
