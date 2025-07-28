@@ -846,7 +846,14 @@ void ModuleLoaderBase::StartFetchingModuleDependencies(
   bool result = false;
 
   
-  if (aRequest->HasScriptLoadContext()) {
+  
+  
+  
+  bool isSync = aRequest->mURI->SchemeIs("chrome") ||
+                aRequest->mURI->SchemeIs("resource");
+
+  
+  if (aRequest->HasScriptLoadContext() && !isSync) {
     Rooted<JSFunction*> onResolved(
         cx, js::NewFunctionWithReserved(cx, OnLoadRequestedModulesResolved,
                                         OnLoadRequestedModulesResolvedNumArgs,
