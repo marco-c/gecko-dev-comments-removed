@@ -95,7 +95,6 @@ class Mitmproxy(Playback):
         
         if self.config.get("obj_path") is not None:
             self.mozproxy_dir = self.config.get("obj_path")
-            self.upload_dir = os.environ.get("MOZ_UPLOAD_DIR", self.mozproxy_dir)
         else:
             
             
@@ -104,10 +103,8 @@ class Mitmproxy(Playback):
                 os.path.dirname(os.environ["MOZ_UPLOAD_DIR"])
             )
 
-            
-            self.upload_dir = os.environ.get("MOZ_INTERNAL_UPLOAD_DIR")
-
         self.mozproxy_dir = os.path.join(self.mozproxy_dir, "testing", "mozproxy")
+        self.upload_dir = os.environ.get("MOZ_UPLOAD_DIR", self.mozproxy_dir)
 
         LOG.info(
             "mozproxy_dir used for mitmproxy downloads and exe files: %s"
