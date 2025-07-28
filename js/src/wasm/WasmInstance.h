@@ -45,6 +45,8 @@ class WasmGcObject;
 class WasmStructObject;
 class WasmArrayObject;
 
+struct AllocationMetadataBuilder;
+
 namespace gc {
 class StoreBuffer;
 }  
@@ -219,6 +221,7 @@ class alignas(16) Instance {
 #ifdef JS_GC_ZEAL
   const void* addressOfGCZealModeBits_;
 #endif
+  const js::AllocationMetadataBuilder* allocationMetadataBuilder_;
 
   
   
@@ -328,6 +331,9 @@ class alignas(16) Instance {
   static constexpr size_t offsetOfAllocSites() {
     return offsetof(Instance, allocSites_);
   }
+  static constexpr size_t offsetOfAllocationMetadataBuilder() {
+    return offsetof(Instance, allocationMetadataBuilder_);
+  }
   static constexpr size_t offsetOfAddressOfLastBufferedWholeCell() {
     return offsetof(Instance, addressOfLastBufferedWholeCell_);
   }
@@ -399,6 +405,11 @@ class alignas(16) Instance {
 
   void setTemporaryStackLimit(JS::NativeStackLimit limit);
   void resetTemporaryStackLimit(JSContext* cx);
+
+  void setAllocationMetadataBuilder(
+      const js::AllocationMetadataBuilder* allocationMetadataBuilder) {
+    allocationMetadataBuilder_ = allocationMetadataBuilder;
+  }
 
   int32_t computeInitialHotnessCounter(uint32_t funcIndex,
                                        size_t codeSectionSize);
