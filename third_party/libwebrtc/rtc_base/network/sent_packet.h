@@ -56,28 +56,28 @@ struct RTC_EXPORT PacketInfo {
   size_t ip_overhead_bytes = 0;
 };
 
+struct RTC_EXPORT SentPacketInfo {
+  SentPacketInfo();
+  SentPacketInfo(int64_t packet_id, int64_t send_time_ms);
+  SentPacketInfo(int64_t packet_id,
+                 int64_t send_time_ms,
+                 const PacketInfo& info);
+
+  int64_t packet_id = -1;
+  int64_t send_time_ms = -1;
+  PacketInfo info;
+};
+
 }  
 
 
 
 namespace rtc {
 using ::webrtc::PacketInfo;
+using SentPacket = ::webrtc::SentPacketInfo;
 using ::webrtc::PacketInfoProtocolType;
 using ::webrtc::PacketType;
 }  
 
-namespace rtc {
-struct RTC_EXPORT SentPacket {
-  SentPacket();
-  SentPacket(int64_t packet_id, int64_t send_time_ms);
-  SentPacket(int64_t packet_id,
-             int64_t send_time_ms,
-             const rtc::PacketInfo& info);
-
-  int64_t packet_id = -1;
-  int64_t send_time_ms = -1;
-  rtc::PacketInfo info;
-};
-}  
 
 #endif  

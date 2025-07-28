@@ -13,7 +13,8 @@
 #define SDK_OBJC_HELPERS_SCOPED_CFTYPEREF_H_
 
 #include <CoreFoundation/CoreFoundation.h>
-namespace rtc {
+
+namespace webrtc {
 
 
 
@@ -111,6 +112,15 @@ static ScopedCFTypeRef<T> ScopedCF(T cftype) {
   return ScopedCFTypeRef<T>(cftype);
 }
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::AdoptCF;
+using ::webrtc::RetainPolicy;
+using ::webrtc::ScopedCF;
+using ::webrtc::ScopedCFTypeRef;
 }  
 
 #endif  

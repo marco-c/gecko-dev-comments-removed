@@ -41,10 +41,11 @@
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 
-namespace cricket {
+namespace webrtc {
 
 
-enum class IceTransportState {
+
+enum class IceTransportStateInternal {
   STATE_INIT,
   STATE_CONNECTING,  
   STATE_COMPLETED,
@@ -58,10 +59,6 @@ enum IceConnectionState {
                             
   kIceConnectionCompleted,
 };
-
-}  
-
-namespace webrtc {
 
 struct IceTransportStats {
   cricket::CandidateStatsList candidate_stats_list;
@@ -264,7 +261,7 @@ class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
 
   
   
-  virtual cricket::IceTransportState GetState() const = 0;
+  virtual IceTransportStateInternal GetState() const = 0;
   virtual IceTransportState GetIceTransportState() const = 0;
 
   virtual int component() const = 0;
@@ -448,15 +445,22 @@ using ::webrtc::ContinualGatheringPolicy;
 using ::webrtc::GATHER_CONTINUALLY;
 using ::webrtc::GATHER_ONCE;
 using ::webrtc::IceConfig;
+using ::webrtc::IceConnectionState;
 using ::webrtc::IceGatheringState;
 using ::webrtc::IceTransportInternal;
 using ::webrtc::IceTransportStats;
+using ::webrtc::kIceConnectionCompleted;
+using ::webrtc::kIceConnectionConnected;
+using ::webrtc::kIceConnectionConnecting;
+using ::webrtc::kIceConnectionFailed;
 using ::webrtc::kIceGatheringComplete;
 using ::webrtc::kIceGatheringGathering;
 using ::webrtc::kIceGatheringNew;
 using ::webrtc::NominationMode;
 using ::webrtc::VerifyCandidate;
 using ::webrtc::VerifyCandidates;
+
+using IceTransportState = ::webrtc::IceTransportStateInternal;
 }  
 
 #endif  

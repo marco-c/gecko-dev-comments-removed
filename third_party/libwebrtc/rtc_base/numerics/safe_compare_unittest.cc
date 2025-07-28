@@ -16,7 +16,7 @@
 
 #include "test/gtest.h"
 
-namespace rtc {
+namespace webrtc {
 
 namespace {
 

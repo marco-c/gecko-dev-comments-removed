@@ -41,7 +41,7 @@ class DesktopFrameProvider {
   
   
   void InvalidateIOSurface(CGDirectDisplayID display_id,
-                           rtc::ScopedCFTypeRef<IOSurfaceRef> io_surface);
+                           ScopedCFTypeRef<IOSurfaceRef> io_surface);
 
   
   void Release();

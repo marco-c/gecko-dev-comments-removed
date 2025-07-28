@@ -17,7 +17,7 @@
 
 #include "rtc_base/win32.h"
 
-namespace rtc {
+namespace webrtc {
 
 class WinsockInitializer {
  public:

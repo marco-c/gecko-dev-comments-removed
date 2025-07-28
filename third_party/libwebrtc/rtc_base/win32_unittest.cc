@@ -19,7 +19,7 @@
 #error Only for Windows
 #endif
 
-namespace rtc {
+namespace webrtc {
 
 class Win32Test : public ::testing::Test {
  public:

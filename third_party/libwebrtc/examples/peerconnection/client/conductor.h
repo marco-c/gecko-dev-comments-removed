@@ -32,10 +32,6 @@ namespace webrtc {
 class VideoCaptureModule;
 }  
 
-namespace cricket {
-class VideoRenderer;
-}  
-
 class Conductor : public webrtc::PeerConnectionObserver,
                   public webrtc::CreateSessionDescriptionObserver,
                   public PeerConnectionClientObserver,

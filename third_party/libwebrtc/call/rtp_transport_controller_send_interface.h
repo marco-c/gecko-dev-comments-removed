@@ -35,12 +35,9 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/network_route.h"
 
-namespace rtc {
-struct SentPacket;
-
-}  
 namespace webrtc {
 
+struct SentPacketInfo;
 class FrameEncryptorInterface;
 class TargetTransferRateObserver;
 class Transport;
@@ -144,7 +141,7 @@ class RtpTransportControllerSendInterface {
   
   
   
-  virtual void OnSentPacket(const rtc::SentPacket& sent_packet) = 0;
+  virtual void OnSentPacket(const SentPacketInfo& sent_packet) = 0;
 
   virtual void OnReceivedPacket(const ReceivedPacket& received_packet) = 0;
 

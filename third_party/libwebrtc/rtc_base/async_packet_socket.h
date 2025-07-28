@@ -46,17 +46,13 @@ struct PacketTimeUpdateParams {
   int64_t srtp_packet_index = -1;  
 };
 
-}  
-
-namespace rtc {
 
 
-
-struct RTC_EXPORT PacketOptions {
-  PacketOptions();
-  explicit PacketOptions(DiffServCodePoint dscp);
-  PacketOptions(const PacketOptions& other);
-  ~PacketOptions();
+struct RTC_EXPORT AsyncSocketPacketOptions {
+  AsyncSocketPacketOptions();
+  explicit AsyncSocketPacketOptions(DiffServCodePoint dscp);
+  AsyncSocketPacketOptions(const AsyncSocketPacketOptions& other);
+  ~AsyncSocketPacketOptions();
 
   DiffServCodePoint dscp = DSCP_NO_CHANGE;
 
@@ -78,9 +74,6 @@ struct RTC_EXPORT PacketOptions {
   
   bool last_packet_in_batch = false;
 };
-}  
-
-namespace webrtc {
 
 
 
@@ -110,11 +103,11 @@ class RTC_EXPORT AsyncPacketSocket : public sigslot::has_slots<> {
   
   virtual int Send(const void* pv,
                    size_t cb,
-                   const rtc::PacketOptions& options) = 0;
+                   const AsyncSocketPacketOptions& options) = 0;
   virtual int SendTo(const void* pv,
                      size_t cb,
                      const SocketAddress& addr,
-                     const rtc::PacketOptions& options) = 0;
+                     const AsyncSocketPacketOptions& options) = 0;
 
   
   virtual int Close() = 0;
@@ -216,6 +209,7 @@ using ::webrtc::AsyncListenSocket;
 using ::webrtc::AsyncPacketSocket;
 using ::webrtc::CopySocketInformationToPacketInfo;
 using ::webrtc::PacketTimeUpdateParams;
+using PacketOptions = ::webrtc::AsyncSocketPacketOptions;
 }  
 
 #endif

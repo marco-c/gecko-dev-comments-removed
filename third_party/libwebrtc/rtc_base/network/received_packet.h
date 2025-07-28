@@ -10,22 +10,23 @@
 #ifndef RTC_BASE_NETWORK_RECEIVED_PACKET_H_
 #define RTC_BASE_NETWORK_RECEIVED_PACKET_H_
 
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 
 #include "api/array_view.h"
+#include "api/transport/ecn_marking.h"
 #include "api/units/timestamp.h"
-#include "rtc_base/network/ecn_marking.h"
 #include "rtc_base/socket_address.h"
 #include "rtc_base/system/rtc_export.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
 
 
-class RTC_EXPORT ReceivedPacket {
+class RTC_EXPORT ReceivedIpPacket {
  public:
   enum DecryptionInfo {
     kNotDecrypted,   
@@ -36,13 +37,13 @@ class RTC_EXPORT ReceivedPacket {
 
   
   
-  ReceivedPacket(rtc::ArrayView<const uint8_t> payload,
-                 const webrtc::SocketAddress& source_address,
-                 std::optional<webrtc::Timestamp> arrival_time = std::nullopt,
-                 EcnMarking ecn = EcnMarking::kNotEct,
-                 DecryptionInfo decryption = kNotDecrypted);
+  ReceivedIpPacket(rtc::ArrayView<const uint8_t> payload,
+                   const webrtc::SocketAddress& source_address,
+                   std::optional<webrtc::Timestamp> arrival_time = std::nullopt,
+                   EcnMarking ecn = EcnMarking::kNotEct,
+                   DecryptionInfo decryption = kNotDecrypted);
 
-  ReceivedPacket CopyAndSet(DecryptionInfo decryption_info) const;
+  ReceivedIpPacket CopyAndSet(DecryptionInfo decryption_info) const;
 
   
   const webrtc::SocketAddress& source_address() const {
@@ -61,7 +62,7 @@ class RTC_EXPORT ReceivedPacket {
 
   const DecryptionInfo& decryption_info() const { return decryption_info_; }
 
-  static ReceivedPacket CreateFromLegacy(
+  static ReceivedIpPacket CreateFromLegacy(
       const char* data,
       size_t size,
       int64_t packet_time_us,
@@ -70,7 +71,7 @@ class RTC_EXPORT ReceivedPacket {
                             packet_time_us, addr);
   }
 
-  static ReceivedPacket CreateFromLegacy(
+  static ReceivedIpPacket CreateFromLegacy(
       const uint8_t* data,
       size_t size,
       int64_t packet_time_us,
@@ -85,4 +86,11 @@ class RTC_EXPORT ReceivedPacket {
 };
 
 }  
+
+
+
+namespace rtc {
+using ReceivedPacket = ::webrtc::ReceivedIpPacket;
+}  
+
 #endif  
