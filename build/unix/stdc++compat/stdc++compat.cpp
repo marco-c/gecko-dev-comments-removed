@@ -33,6 +33,26 @@
 
 
 
+
+#define _GLIBCXX_THREAD_ABI_COMPAT 1
+#include <thread>
+
+#if !defined(__aarch64__)
+
+
+
+
+
+
+
+
+
+
+extern "C" int __cxa_thread_atexit_impl(void (*dtor)(void*), void* obj,
+                                        void* dso_handle) {
+  return __cxxabiv1::__cxa_thread_atexit(dtor, obj, dso_handle);
+}
+
 namespace std {
 
 
@@ -60,14 +80,19 @@ extern "C" void __attribute__((weak)) __cxa_throw_bad_array_new_length() {
 }
 }  
 
-#if _GLIBCXX_RELEASE >= 11
 namespace std {
 
 
-void __attribute__((weak)) __throw_bad_array_new_length() { MOZ_CRASH(); }
-
+template basic_ios<char, char_traits<char>>::operator bool() const;
 }  
-#endif
+
+#  if !defined(MOZ_ASAN) && !defined(MOZ_TSAN)
+
+
+void operator delete(void* ptr, size_t size) noexcept(true) {
+  ::operator delete(ptr);
+}
+#  endif
 
 
 
@@ -82,10 +107,6 @@ __attribute__((weak)) invalid_argument::invalid_argument(char const* s)
     : invalid_argument(std::string(s)) {}
 }  
 
-
-#define _GLIBCXX_THREAD_ABI_COMPAT 1
-#include <thread>
-
 namespace std {
 
 
@@ -99,7 +120,11 @@ __attribute__((weak)) void thread::_M_start_thread(shared_ptr<_Impl_base> impl,
                                                    void (*)()) {
   _M_start_thread(std::move(impl));
 }
+}  
 
+#endif  
+
+namespace std {
 
 
 
@@ -139,23 +164,6 @@ _ZNSt19_Sp_make_shared_tag5_S_eqERKSt9type_info(const type_info*) noexcept {
 }
 #endif
 
-}  
-
-namespace std {
-
-
-template basic_ios<char, char_traits<char>>::operator bool() const;
-}  
-
-#if !defined(MOZ_ASAN) && !defined(MOZ_TSAN)
-
-
-void operator delete(void* ptr, size_t size) noexcept(true) {
-  ::operator delete(ptr);
-}
-#endif
-
-namespace std {
 
 
 template basic_string<char, char_traits<char>, allocator<char>>::basic_string(
@@ -176,21 +184,8 @@ template void basic_string<char, char_traits<char>, allocator<char>>::reserve();
 
 template void
 basic_string<wchar_t, char_traits<wchar_t>, allocator<wchar_t>>::reserve();
+
+void __attribute__((weak)) __throw_bad_array_new_length() { MOZ_CRASH(); }
 #endif
 
 }  
-
-
-
-
-
-
-
-
-
-
-
-extern "C" int __cxa_thread_atexit_impl(void (*dtor)(void*), void* obj,
-                                        void* dso_handle) {
-  return __cxxabiv1::__cxa_thread_atexit(dtor, obj, dso_handle);
-}
