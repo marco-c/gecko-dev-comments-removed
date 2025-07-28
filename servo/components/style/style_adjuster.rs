@@ -919,11 +919,13 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
         E: TElement,
     {
         if cfg!(debug_assertions) {
-            if element.map_or(false, |e| e.is_pseudo_element()) {
-                
-                
-                
-                debug_assert!(self.style.pseudo.is_some(), "Someone really messed up");
+            if let Some(e) = element {
+                if let Some(p) = e.implemented_pseudo_element() {
+                    
+                    
+                    
+                    debug_assert!(self.style.pseudo.is_some(), "Someone really messed up (no pseudo style for {e:?}, {p:?})");
+                }
             }
         }
         

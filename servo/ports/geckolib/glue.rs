@@ -6448,8 +6448,12 @@ pub extern "C" fn Servo_ReparentStyle(
     let guard = global_style_data.shared_lock.read();
     let doc_data = raw_data.borrow();
     let inputs = CascadeInputs::new_from_style(style_to_reparent);
-    let pseudo = style_to_reparent.pseudo();
     let element = element.map(GeckoElement);
+    
+    
+    let pseudo = style_to_reparent
+        .pseudo()
+        .or_else(|| element.and_then(|e| e.implemented_pseudo_element()));
 
     doc_data
         .stylist
