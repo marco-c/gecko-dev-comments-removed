@@ -12,31 +12,6 @@
 #include "mozilla/TimeStamp.h"
 #include "nsString.h"
 
-namespace ETW {
-
-
-template <typename T, typename = void>
-struct MarkerHasPayload : std::false_type {};
-template <typename T>
-struct MarkerHasPayload<T, std::void_t<decltype(T::PayloadFields)>>
-    : std::true_type {};
-
-
-template <typename T, typename = void>
-struct MarkerSupportsETW : std::false_type {};
-template <typename T>
-struct MarkerSupportsETW<T, std::void_t<decltype(T::Name)>> : std::true_type {};
-
-
-template <typename T, typename = void>
-struct MarkerHasTranslator : std::false_type {};
-template <typename T>
-struct MarkerHasTranslator<
-    T, std::void_t<decltype(T::TranslateMarkerInputToSchema)>>
-    : std::true_type {};
-
-}  
-
 #if defined(XP_WIN) && !defined(RUST_BINDGEN) && !defined(__MINGW32__)
 #  include "mozilla/ProfilerState.h"
 
@@ -60,6 +35,12 @@ static inline bool IsProfilingGroup(
     mozilla::MarkerSchema::ETWMarkerGroup aGroup) {
   return gETWCollectionMask & uint64_t(aGroup);
 }
+
+template <typename T, typename = void>
+struct MarkerHasPayload : std::false_type {};
+template <typename T>
+struct MarkerHasPayload<T, std::void_t<decltype(T::PayloadFields)>>
+    : std::true_type {};
 
 
 
@@ -88,7 +69,7 @@ template <typename T>
 constexpr std::size_t GetPackingSpace() {
   size_t length = 0;
   if constexpr (MarkerHasPayload<T>::value) {
-    for (size_t i = 0; i < std::extent_v<decltype(T::PayloadFields)>; i++) {
+    for (size_t i = 0; i < std::size(T::PayloadFields); i++) {
       length += std::string_view{T::PayloadFields[i].Key}.size() + 1;
       length += sizeof(uint8_t);
     }
@@ -150,8 +131,7 @@ struct StaticMetaData {
     }
 
     size_t pos = 0;
-    for (uint32_t i = 0;
-         i < std::extent_v<decltype(BaseMarkerDescription::PayloadFields)>;
+    for (uint32_t i = 0; i < std::size(BaseMarkerDescription::PayloadFields);
          i++) {
       for (size_t c = 0;
            c < std::string_view{BaseMarkerDescription::PayloadFields[i].Key}
@@ -170,7 +150,7 @@ struct StaticMetaData {
       fieldStorage[pos++] = TlgInANSISTRING;
     }
     if constexpr (MarkerHasPayload<T>::value) {
-      for (uint32_t i = 0; i < std::extent_v<decltype(T::PayloadFields)>; i++) {
+      for (uint32_t i = 0; i < std::size(T::PayloadFields); i++) {
         for (size_t c = 0;
              c < std::string_view{T::PayloadFields[i].Key}.size() + 1; c++) {
           fieldStorage[pos++] = T::PayloadFields[i].Key[c];
@@ -294,6 +274,18 @@ void CreateDataDescForPayload(PayloadBuffer& aBuffer,
   EventDataDescCreate(&aDescriptor, aPayload, N + 1);
 }
 
+template <typename T, typename = void>
+struct MarkerSupportsETW : std::false_type {};
+template <typename T>
+struct MarkerSupportsETW<T, std::void_t<decltype(T::Name)>> : std::true_type {};
+
+template <typename T, typename = void>
+struct MarkerHasTranslator : std::false_type {};
+template <typename T>
+struct MarkerHasTranslator<
+    T, std::void_t<decltype(T::TranslateMarkerInputToSchema)>>
+    : std::true_type {};
+
 struct BaseEventStorage {
   uint64_t mStartTime;
   uint64_t mEndTime;
@@ -331,13 +323,12 @@ static inline void StoreBaseEventDataDesc(
 
 template <typename MarkerType>
 constexpr size_t GetETWDescriptorCount() {
-  size_t count =
-      2 + std::extent_v<decltype(BaseMarkerDescription::PayloadFields)>;
+  size_t count = 2 + std::size(BaseMarkerDescription::PayloadFields);
   if (MarkerType::StoreName) {
     count++;
   }
   if constexpr (MarkerHasPayload<MarkerType>::value) {
-    count += std::extent_v<decltype(MarkerType::PayloadFields)>;
+    count += std::size(MarkerType::PayloadFields);
   }
   return count;
 }
@@ -382,22 +373,20 @@ static inline void EmitETWMarker(const mozilla::ProfilerString8View& aName,
         
         
         
-        buffer.mDescriptors =
-            descriptors.data() + 2 +
-            std::extent_v<decltype(BaseMarkerDescription::PayloadFields)> +
-            (MarkerType::StoreName ? 1 : 0);
+        buffer.mDescriptors = descriptors.data() + 2 +
+                              std::size(BaseMarkerDescription::PayloadFields) +
+                              (MarkerType::StoreName ? 1 : 0);
 
         MarkerType::TranslateMarkerInputToSchema(&buffer, aPayloadArguments...);
       } else {
         const size_t argCount = sizeof...(PayloadArguments);
         static_assert(
-            argCount == std::extent_v<decltype(MarkerType::PayloadFields)>,
+            argCount == std::size(MarkerType::PayloadFields),
             "Number and type of fields must be equal to number and type of "
             "payload arguments. If this is not the case a "
             "TranslateMarkerInputToSchema function must be defined.");
-        size_t i =
-            2 + std::extent_v<decltype(BaseMarkerDescription::PayloadFields)> +
-            (MarkerType::StoreName ? 1 : 0);
+        size_t i = 2 + std::size(BaseMarkerDescription::PayloadFields) +
+                   (MarkerType::StoreName ? 1 : 0);
         (CreateDataDescForPayload(buffer, descriptors[i++], aPayloadArguments),
          ...);
       }
@@ -416,7 +405,7 @@ template <typename MarkerType, typename... PayloadArguments>
 void OutputMarkerSchema(void* aContext, MarkerType aMarkerType,
                         const PayloadArguments&... aPayloadArguments) {
   const size_t argCount = sizeof...(PayloadArguments);
-  static_assert(argCount == std::extent_v<decltype(MarkerType::PayloadFields)>,
+  static_assert(argCount == std::size(MarkerType::PayloadFields),
                 "Number and type of fields must be equal to number and type of "
                 "payload arguments.");
 
@@ -441,23 +430,6 @@ static inline void EmitETWMarker(const mozilla::ProfilerString8View& aName,
                                  const mozilla::MarkerOptions& aOptions,
                                  MarkerType aMarkerType,
                                  const PayloadArguments&... aPayloadArguments) {
-  
-  
-  
-  if constexpr (MarkerHasPayload<MarkerType>::value) {
-    if constexpr (MarkerHasTranslator<MarkerType>::value) {
-      
-      
-      MarkerType::TranslateMarkerInputToSchema(nullptr, aPayloadArguments...);
-    } else {
-      const size_t argCount = sizeof...(PayloadArguments);
-      static_assert(
-          argCount == std::extent_v<decltype(MarkerType::PayloadFields)>,
-          "Number and type of fields must be equal to number and type of "
-          "payload arguments. If this is not the case a "
-          "TranslateMarkerInputToSchema function must be defined.");
-    }
-  }
 }
 template <typename MarkerType, typename... PayloadArguments>
 void OutputMarkerSchema(void* aContext, MarkerType aMarkerType,
