@@ -252,14 +252,14 @@ void Candidate::ComputeFoundation(const SocketAddress& base_address,
   
   
   
-  sb << rtc::ToString(tie_breaker);
-  foundation_ = rtc::ToString(webrtc::ComputeCrc32(sb.Release()));
+  sb << absl::StrCat(tie_breaker);
+  foundation_ = absl::StrCat(webrtc::ComputeCrc32(sb.Release()));
 }
 
 void Candidate::ComputePrflxFoundation() {
   RTC_DCHECK(is_prflx());
   RTC_DCHECK(!id_.empty());
-  foundation_ = rtc::ToString(webrtc::ComputeCrc32(id_));
+  foundation_ = absl::StrCat(webrtc::ComputeCrc32(id_));
 }
 
 void Candidate::Assign(std::string& s, absl::string_view view) {

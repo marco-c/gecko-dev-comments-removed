@@ -564,7 +564,7 @@ PeerConnection::PeerConnection(
       
       
       
-      session_id_(rtc::ToString(CreateRandomId64() & LLONG_MAX)),
+      session_id_(absl::StrCat(CreateRandomId64() & LLONG_MAX)),
       data_channel_controller_(this),
       message_handler_(signaling_thread()),
       codec_lookup_helper_(

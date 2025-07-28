@@ -1369,7 +1369,7 @@ TEST_F(PeerConnectionSignalingUnifiedPlanTest, RtxReofferApt) {
   auto apt_it = codecs[1].params.find("apt");
   ASSERT_NE(apt_it, codecs[1].params.end());
   
-  EXPECT_EQ(apt_it->second, rtc::ToString(codecs[0].id));
+  EXPECT_EQ(apt_it->second, absl::StrCat(codecs[0].id));
   EXPECT_EQ(apt_it->second, "102");
 }
 

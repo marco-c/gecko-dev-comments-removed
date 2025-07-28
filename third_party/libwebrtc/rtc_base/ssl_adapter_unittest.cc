@@ -378,7 +378,7 @@ TEST_F(SSLAdapterTestTLS_RSA, TestTLSTransferWithBlockedSocket) {
   
   
   for (int i = 0; i < 1024; ++i) {
-    std::string message = "Hello, world: " + rtc::ToString(i);
+    std::string message = "Hello, world: " + absl::StrCat(i);
     rv = client_->Send(message);
     if (rv != static_cast<int>(message.size())) {
       
