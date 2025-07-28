@@ -13,22 +13,32 @@ namespace mozilla::dom::cache {
 
 class CacheWorkerRef;
 
+
+
+
+
+
 class ActorChild {
  public:
   virtual void StartDestroy() = 0;
   virtual void NoteDeletedActor() {  }
 
-  void SetWorkerRef(SafeRefPtr<CacheWorkerRef> aWorkerRef);
+ protected:
+  ActorChild() = default;
+  ~ActorChild() = default;
+};
 
+
+
+class CacheActorChild : public ActorChild {
+ public:
+  void SetWorkerRef(SafeRefPtr<CacheWorkerRef> aWorkerRef);
+  const SafeRefPtr<CacheWorkerRef>& GetWorkerRefPtr() const;
   void RemoveWorkerRef();
 
-  const SafeRefPtr<CacheWorkerRef>& GetWorkerRefPtr() const;
-
-  bool WorkerRefNotified() const;
-
  protected:
-  ActorChild();
-  ~ActorChild();
+  CacheActorChild() = default;
+  ~CacheActorChild();
 
  private:
   SafeRefPtr<CacheWorkerRef> mWorkerRef;

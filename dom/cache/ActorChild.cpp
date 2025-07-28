@@ -11,7 +11,7 @@
 
 namespace mozilla::dom::cache {
 
-void ActorChild::SetWorkerRef(SafeRefPtr<CacheWorkerRef> aWorkerRef) {
+void CacheActorChild::SetWorkerRef(SafeRefPtr<CacheWorkerRef> aWorkerRef) {
   
   
   
@@ -30,7 +30,7 @@ void ActorChild::SetWorkerRef(SafeRefPtr<CacheWorkerRef> aWorkerRef) {
   }
 }
 
-void ActorChild::RemoveWorkerRef() {
+void CacheActorChild::RemoveWorkerRef() {
   MOZ_ASSERT_IF(!NS_IsMainThread(), mWorkerRef);
   if (mWorkerRef) {
     mWorkerRef->RemoveActor(*this);
@@ -38,16 +38,10 @@ void ActorChild::RemoveWorkerRef() {
   }
 }
 
-const SafeRefPtr<CacheWorkerRef>& ActorChild::GetWorkerRefPtr() const {
+const SafeRefPtr<CacheWorkerRef>& CacheActorChild::GetWorkerRefPtr() const {
   return mWorkerRef;
 }
 
-bool ActorChild::WorkerRefNotified() const {
-  return mWorkerRef && mWorkerRef->Notified();
-}
-
-ActorChild::ActorChild() = default;
-
-ActorChild::~ActorChild() { MOZ_DIAGNOSTIC_ASSERT(!mWorkerRef); }
+CacheActorChild::~CacheActorChild() { MOZ_DIAGNOSTIC_ASSERT(!mWorkerRef); }
 
 }  
