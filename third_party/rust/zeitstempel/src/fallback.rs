@@ -16,14 +16,6 @@ pub fn now_including_suspend() -> u64 {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
     let now = Instant::now();
     now.checked_duration_since(*INIT_TIME)
         .and_then(|diff| diff.as_nanos().try_into().ok())

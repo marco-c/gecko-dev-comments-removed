@@ -1,42 +1,53 @@
 
 
+use std::mem;
+use std::sync::OnceLock;
 
+use winapi::um::profileapi::{QueryPerformanceCounter, QueryPerformanceFrequency};
+use winapi::um::winnt::LARGE_INTEGER;
 
-#![cfg(feature = "win10plus")]
+fn i64_to_large_integer(i: i64) -> LARGE_INTEGER {
+    unsafe {
+        let mut large_integer: LARGE_INTEGER = mem::zeroed();
+        *large_integer.QuadPart_mut() = i;
+        large_integer
+    }
+}
 
+fn large_integer_to_i64(l: LARGE_INTEGER) -> i64 {
+    unsafe { *l.QuadPart() }
+}
 
+fn frequency() -> i64 {
+    static FREQUENCY: OnceLock<i64> = OnceLock::new();
 
-
-
-type PULONGLONG = *mut u64;
-
-
-#[link(name = "mincore")]
-extern "system" {
-    
-    
-    
-    
-    
-    
-    
-    fn QueryInterruptTime(InterruptTime: PULONGLONG);
+    *FREQUENCY.get_or_init(|| unsafe {
+        let mut l = i64_to_large_integer(0);
+        QueryPerformanceFrequency(&mut l);
+        large_integer_to_i64(l)
+    })
 }
 
 
-const SYSTEM_TIME_UNIT: u64 = 100;
 
 
+fn mul_div_i64(value: i64, numer: i64, denom: i64) -> i64 {
+    let q = value / denom;
+    let r = value % denom;
+    
+    
+    
+    q * numer + r * numer / denom
+}
 
 
 
 
 
 pub fn now_including_suspend() -> u64 {
-    let mut interrupt_time = 0;
+    let mut ticks = i64_to_large_integer(0);
     unsafe {
-        QueryInterruptTime(&mut interrupt_time);
+        assert!(QueryPerformanceCounter(&mut ticks) == 1);
     }
-
-    interrupt_time * SYSTEM_TIME_UNIT
+    mul_div_i64(large_integer_to_i64(ticks), 1000000000, frequency()) as u64
 }
