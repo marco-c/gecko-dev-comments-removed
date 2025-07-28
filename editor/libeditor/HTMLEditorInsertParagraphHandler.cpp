@@ -1107,133 +1107,53 @@ Result<InsertParagraphResult, nsresult>
 HTMLEditor::AutoInsertParagraphHandler::HandleInHeadingElement(
     Element& aHeadingElement, const EditorDOMPoint& aPointToSplit) {
   
-  auto splitHeadingResult =
-      [this, &aPointToSplit, &aHeadingElement]()
-          MOZ_CAN_RUN_SCRIPT -> Result<SplitNodeResult, nsresult> {
-    
-    
-    
-    
-    Result<EditorDOMPoint, nsresult> preparationResult =
-        WhiteSpaceVisibilityKeeper::PrepareToSplitBlockElement(
-            mHTMLEditor, aPointToSplit, aHeadingElement);
-    if (MOZ_UNLIKELY(preparationResult.isErr())) {
-      NS_WARNING(
-          "WhiteSpaceVisibilityKeeper::PrepareToSplitBlockElement() "
-          "failed");
-      return preparationResult.propagateErr();
-    }
-    EditorDOMPoint pointToSplit = preparationResult.unwrap();
-    MOZ_ASSERT(pointToSplit.IsInContentNode());
+  
+  const EditorDOMPoint pointToSplit =
+      GetBetterPointToSplitParagraph(aHeadingElement, aPointToSplit);
+  MOZ_ASSERT(pointToSplit.IsInContentNodeAndValidInComposedDoc());
 
-    
-    Result<SplitNodeResult, nsresult> splitResult =
-        mHTMLEditor.SplitNodeDeepWithTransaction(
-            aHeadingElement, pointToSplit,
-            SplitAtEdges::eAllowToCreateEmptyContainer);
+  
+  
+  if (SplitPointIsEndOfSplittingBlock(aHeadingElement, pointToSplit,
+                                      IgnoreBlockBoundaries::Yes)) {
+    Result<InsertParagraphResult, nsresult>
+        handleAtEndOfHeadingElementResultOrError =
+            HandleAtEndOfHeadingElement(aHeadingElement);
     NS_WARNING_ASSERTION(
-        splitResult.isOk(),
-        "HTMLEditor::SplitNodeDeepWithTransaction(aHeadingElement, "
-        "SplitAtEdges::eAllowToCreateEmptyContainer) failed");
-    return splitResult;
-  }();
-  if (MOZ_UNLIKELY(splitHeadingResult.isErr())) {
-    NS_WARNING("Failed to splitting aHeadingElement");
-    return splitHeadingResult.propagateErr();
+        handleAtEndOfHeadingElementResultOrError.isOk(),
+        "AutoInsertParagraphHandler::HandleAtEndOfHeadingElement() failed");
+    return handleAtEndOfHeadingElementResultOrError;
   }
-  SplitNodeResult unwrappedSplitHeadingResult = splitHeadingResult.unwrap();
-  unwrappedSplitHeadingResult.IgnoreCaretPointSuggestion();
-  if (MOZ_UNLIKELY(!unwrappedSplitHeadingResult.DidSplit())) {
+
+  Result<SplitNodeResult, nsresult> splitHeadingResultOrError =
+      SplitParagraphWithTransaction(aHeadingElement, pointToSplit);
+  if (MOZ_UNLIKELY(splitHeadingResultOrError.isErr())) {
     NS_WARNING(
-        "HTMLEditor::SplitNodeDeepWithTransaction(SplitAtEdges::"
-        "eAllowToCreateEmptyContainer) didn't split aHeadingElement");
+        "AutoInsertParagraphHandler::SplitParagraphWithTransaction() failed");
+    return splitHeadingResultOrError.propagateErr();
+  }
+  SplitNodeResult splitHeadingResult = splitHeadingResultOrError.unwrap();
+  splitHeadingResult.IgnoreCaretPointSuggestion();
+  if (MOZ_UNLIKELY(!splitHeadingResult.DidSplit())) {
+    NS_WARNING(
+        "AutoInsertParagraphHandler::SplitParagraphWithTransaction() didn't "
+        "split aHeadingElement");
     return Err(NS_ERROR_FAILURE);
   }
 
   
-  
-  
-  
-  auto* const leftHeadingElement =
-      unwrappedSplitHeadingResult.GetPreviousContentAs<Element>();
-  MOZ_ASSERT(leftHeadingElement,
-             "SplitNodeResult::GetPreviousContent() should return something if "
-             "DidSplit() returns true");
-  MOZ_DIAGNOSTIC_ASSERT(HTMLEditUtils::IsHeader(*leftHeadingElement));
-  if (HTMLEditUtils::IsEmptyNode(
-          *leftHeadingElement,
-          {EmptyCheckOption::TreatSingleBRElementAsVisible,
-           EmptyCheckOption::TreatNonEditableContentAsInvisible})) {
-    Result<CreateElementResult, nsresult> insertPaddingBRElementResult =
-        mHTMLEditor.InsertPaddingBRElementForEmptyLastLineWithTransaction(
-            EditorDOMPoint(leftHeadingElement, 0u));
-    if (MOZ_UNLIKELY(insertPaddingBRElementResult.isErr())) {
-      NS_WARNING(
-          "HTMLEditor::InsertPaddingBRElementForEmptyLastLineWithTransaction("
-          ") failed");
-      return insertPaddingBRElementResult.propagateErr();
-    }
-    insertPaddingBRElementResult.inspect().IgnoreCaretPointSuggestion();
-  }
-
-  
   auto* const rightHeadingElement =
-      unwrappedSplitHeadingResult.GetNextContentAs<Element>();
+      splitHeadingResult.GetNextContentAs<Element>();
   MOZ_ASSERT(rightHeadingElement,
              "SplitNodeResult::GetNextContent() should return something if "
              "DidSplit() returns true");
-  if (!HTMLEditUtils::IsEmptyBlockElement(
-          *rightHeadingElement,
-          {EmptyCheckOption::TreatNonEditableContentAsInvisible},
-          BlockInlineCheck::UseComputedDisplayOutsideStyle)) {
-    return InsertParagraphResult(rightHeadingElement,
-                                 EditorDOMPoint(rightHeadingElement, 0u));
-  }
+  return InsertParagraphResult(rightHeadingElement,
+                               splitHeadingResult.UnwrapCaretPoint());
+}
 
-  
-  
-  
-  
-  
-  nsresult rv = mHTMLEditor.DeleteNodeWithTransaction(
-      MOZ_KnownLive(*rightHeadingElement));
-  if (NS_FAILED(rv)) {
-    NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
-    return Err(rv);
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (rightHeadingElement->GetNextSibling()) {
-    
-    
-    nsIContent* nextEditableSibling =
-        HTMLEditUtils::GetNextSibling(*rightHeadingElement->GetNextSibling(),
-                                      {WalkTreeOption::IgnoreNonEditableNode});
-    if (nextEditableSibling &&
-        nextEditableSibling->IsHTMLElement(nsGkAtoms::br)) {
-      auto afterEditableBRElement = EditorDOMPoint::After(*nextEditableSibling);
-      if (NS_WARN_IF(!afterEditableBRElement.IsSet())) {
-        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-      }
-      
-      return InsertParagraphResult::NotHandled(
-          std::move(afterEditableBRElement));
-    }
-  }
-
-  if (MOZ_UNLIKELY(!leftHeadingElement->IsInComposedDoc())) {
-    NS_WARNING("The left heading element was unexpectedly removed");
-    return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-  }
-
+Result<InsertParagraphResult, nsresult>
+HTMLEditor::AutoInsertParagraphHandler::HandleAtEndOfHeadingElement(
+    Element& aHeadingElement) {
   
   
   
@@ -1248,11 +1168,14 @@ HTMLEditor::AutoInsertParagraphHandler::HandleInHeadingElement(
           : mDefaultParagraphSeparatorTagName;
   
   
+  
+  
+  
   Result<CreateElementResult, nsresult> createNewParagraphElementResult =
-      mHTMLEditor.CreateAndInsertElement(
-          WithTransaction::Yes, MOZ_KnownLive(newParagraphTagName),
-          EditorDOMPoint::After(*leftHeadingElement),
-          HTMLEditor::InsertNewBRElement);
+      mHTMLEditor.CreateAndInsertElement(WithTransaction::Yes,
+                                         MOZ_KnownLive(newParagraphTagName),
+                                         EditorDOMPoint::After(aHeadingElement),
+                                         HTMLEditor::InsertNewBRElement);
   if (MOZ_UNLIKELY(createNewParagraphElementResult.isErr())) {
     NS_WARNING(
         "HTMLEditor::CreateAndInsertElement(WithTransaction::Yes) failed");

@@ -637,6 +637,12 @@ class MOZ_STACK_CLASS HTMLEditor::AutoInsertParagraphHandler final {
   
 
 
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<InsertParagraphResult, nsresult>
+  HandleAtEndOfHeadingElement(Element& aHeadingElement);
+
+  
+
+
 
 
 
