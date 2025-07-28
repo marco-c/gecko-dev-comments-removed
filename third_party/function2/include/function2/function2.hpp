@@ -1084,7 +1084,9 @@ struct internal_capacity {
     
     data_accessor accessor_;
     
-    std::aligned_storage_t<Capacity::capacity, Capacity::alignment> capacity_;
+    struct alignas(Capacity::alignment) {
+      unsigned char data[Capacity::capacity];
+    } capacity_;
   } type;
 };
 template <typename Capacity>
