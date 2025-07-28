@@ -46,15 +46,15 @@ namespace cricket {
 
 webrtc::RTCError CheckScalabilityModeValues(
     const webrtc::RtpParameters& new_parameters,
-    rtc::ArrayView<cricket::Codec> send_codecs,
-    std::optional<cricket::Codec> send_codec);
+    rtc::ArrayView<webrtc::Codec> send_codecs,
+    std::optional<webrtc::Codec> send_codec);
 
 
 
 webrtc::RTCError CheckRtpParametersValues(
     const webrtc::RtpParameters& new_parameters,
-    rtc::ArrayView<cricket::Codec> send_codecs,
-    std::optional<cricket::Codec> send_codec,
+    rtc::ArrayView<webrtc::Codec> send_codecs,
+    std::optional<webrtc::Codec> send_codec,
     const webrtc::FieldTrialsView& field_trials);
 
 
@@ -62,8 +62,8 @@ webrtc::RTCError CheckRtpParametersValues(
 webrtc::RTCError CheckRtpParametersInvalidModificationAndValues(
     const webrtc::RtpParameters& old_parameters,
     const webrtc::RtpParameters& new_parameters,
-    rtc::ArrayView<cricket::Codec> send_codecs,
-    std::optional<cricket::Codec> send_codec,
+    rtc::ArrayView<webrtc::Codec> send_codecs,
+    std::optional<webrtc::Codec> send_codec,
     const webrtc::FieldTrialsView& field_trials);
 
 
@@ -130,8 +130,8 @@ class VoiceEngineInterface : public RtpHeaderExtensionQueryInterface {
   [[deprecated]] inline const std::vector<Codec>& recv_codecs() const {
     return LegacyRecvCodecs();
   }
-  virtual const std::vector<Codec>& LegacySendCodecs() const = 0;
-  virtual const std::vector<Codec>& LegacyRecvCodecs() const = 0;
+  virtual const std::vector<webrtc::Codec>& LegacySendCodecs() const = 0;
+  virtual const std::vector<webrtc::Codec>& LegacyRecvCodecs() const = 0;
 
   virtual webrtc::AudioEncoderFactory* encoder_factory() const = 0;
   virtual webrtc::AudioDecoderFactory* decoder_factory() const = 0;
@@ -182,14 +182,16 @@ class VideoEngineInterface : public RtpHeaderExtensionQueryInterface {
   [[deprecated]] inline std::vector<Codec> recv_codecs() const {
     return LegacyRecvCodecs();
   }
-  virtual std::vector<Codec> LegacySendCodecs() const = 0;
-  virtual std::vector<Codec> LegacyRecvCodecs() const = 0;
+  virtual std::vector<webrtc::Codec> LegacySendCodecs() const = 0;
+  virtual std::vector<webrtc::Codec> LegacyRecvCodecs() const = 0;
   
   [[deprecated]] inline std::vector<Codec> send_codecs(bool include_rtx) const {
     return LegacySendCodecs(include_rtx);
   }
-  virtual std::vector<Codec> LegacySendCodecs(bool include_rtx) const = 0;
-  virtual std::vector<Codec> LegacyRecvCodecs(bool include_rtx) const = 0;
+  virtual std::vector<webrtc::Codec> LegacySendCodecs(
+      bool include_rtx) const = 0;
+  virtual std::vector<webrtc::Codec> LegacyRecvCodecs(
+      bool include_rtx) const = 0;
   [[deprecated]] inline std::vector<Codec> recv_codecs(bool include_rtx) const {
     return LegacyRecvCodecs(include_rtx);
   }

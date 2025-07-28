@@ -37,8 +37,6 @@ namespace webrtc {
 
 namespace {
 
-using cricket::Codec;
-
 
 
 std::string GetFmtpParameterOrDefault(const CodecParameterMap& params,

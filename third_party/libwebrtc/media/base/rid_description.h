@@ -79,7 +79,7 @@ struct RidDescription final {
   
   
   
-  std::vector<Codec> codecs;
+  std::vector<webrtc::Codec> codecs;
 
   
   

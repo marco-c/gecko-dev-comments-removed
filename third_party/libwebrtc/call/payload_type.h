@@ -54,12 +54,12 @@ class PayloadTypeSuggester {
   
   
   virtual RTCErrorOr<PayloadType> SuggestPayloadType(const std::string& mid,
-                                                     cricket::Codec codec) = 0;
+                                                     Codec codec) = 0;
   
   
   virtual RTCError AddLocalMapping(const std::string& mid,
                                    PayloadType payload_type,
-                                   const cricket::Codec& codec) = 0;
+                                   const Codec& codec) = 0;
 };
 
 }  

@@ -290,11 +290,11 @@ std::string SimulcastSdpSerializer::SerializeRidDescription(
   
   
   std::vector<int> payload_types;
-  for (const cricket::Codec& codec : rid_description.codecs) {
+  for (const Codec& codec : rid_description.codecs) {
     RtpCodec rtp_codec = codec.ToCodecParameters();
     const auto it = std::find_if(
         media_desc.codecs().begin(), media_desc.codecs().end(),
-        [&rtp_codec](const cricket::Codec& m_section_codec) {
+        [&rtp_codec](const Codec& m_section_codec) {
           return IsSameRtpCodecIgnoringLevel(m_section_codec, rtp_codec);
         });
     
@@ -302,7 +302,7 @@ std::string SimulcastSdpSerializer::SerializeRidDescription(
     if (it == media_desc.codecs().end()) {
       break;
     }
-    if (it->id == cricket::Codec::kIdNotSet) {
+    if (it->id == Codec::kIdNotSet) {
       RTC_DCHECK_NOTREACHED();
       break;
     }
@@ -428,7 +428,7 @@ RTCErrorOr<RidDescription> SimulcastSdpSerializer::DeserializeRidDescription(
   for (const int& payload_type : rid_payload_types) {
     const auto it =
         std::find_if(media_desc.codecs().begin(), media_desc.codecs().end(),
-                     [&payload_type](const cricket::Codec& m_section_codec) {
+                     [&payload_type](const Codec& m_section_codec) {
                        return m_section_codec.id == payload_type;
                      });
     if (it == media_desc.codecs().end()) {

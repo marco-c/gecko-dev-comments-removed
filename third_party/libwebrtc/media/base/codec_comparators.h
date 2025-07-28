@@ -20,33 +20,30 @@
 namespace webrtc {
 
 
-bool MatchesWithCodecRules(const cricket::Codec& left_codec,
-                           const cricket::Codec& codec);
+bool MatchesWithCodecRules(const Codec& left_codec, const Codec& codec);
 
 
 
-bool MatchesWithReferenceAttributes(const cricket::Codec& left_codec,
-                                    const cricket::Codec& right_codec);
-
-
-
+bool MatchesWithReferenceAttributes(const Codec& left_codec,
+                                    const Codec& right_codec);
 
 
 
 
 
-std::optional<cricket::Codec> FindMatchingCodec(
-    const std::vector<cricket::Codec>& codecs1,
-    const std::vector<cricket::Codec>& codecs2,
-    const cricket::Codec& codec_to_match);
 
 
 
-bool IsSameRtpCodec(const cricket::Codec& codec, const RtpCodec& rtp_codec);
+std::optional<Codec> FindMatchingCodec(const std::vector<Codec>& codecs1,
+                                       const std::vector<Codec>& codecs2,
+                                       const Codec& codec_to_match);
 
 
-bool IsSameRtpCodecIgnoringLevel(const cricket::Codec& codec,
-                                 const RtpCodec& rtp_codec);
+
+bool IsSameRtpCodec(const Codec& codec, const RtpCodec& rtp_codec);
+
+
+bool IsSameRtpCodecIgnoringLevel(const Codec& codec, const RtpCodec& rtp_codec);
 }  
 
 #endif  

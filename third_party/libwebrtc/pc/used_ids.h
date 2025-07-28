@@ -90,15 +90,15 @@ class UsedIds {
 
 
 
-class UsedPayloadTypes : public UsedIds<cricket::Codec> {
+class UsedPayloadTypes : public UsedIds<Codec> {
  public:
   UsedPayloadTypes()
-      : UsedIds<cricket::Codec>(kFirstDynamicPayloadTypeLowerRange,
-                                kLastDynamicPayloadTypeUpperRange) {}
+      : UsedIds<Codec>(kFirstDynamicPayloadTypeLowerRange,
+                       kLastDynamicPayloadTypeUpperRange) {}
 
   
   
-  static bool IsIdValid(cricket::Codec codec, bool rtcp_mux) {
+  static bool IsIdValid(Codec codec, bool rtcp_mux) {
     if (rtcp_mux && (codec.id > kLastDynamicPayloadTypeLowerRange &&
                      codec.id < kFirstDynamicPayloadTypeUpperRange)) {
       return false;
@@ -112,7 +112,7 @@ class UsedPayloadTypes : public UsedIds<cricket::Codec> {
     if (new_id > kLastDynamicPayloadTypeLowerRange &&
         new_id < kFirstDynamicPayloadTypeUpperRange)
       return true;
-    return UsedIds<cricket::Codec>::IsIdUsed(new_id);
+    return UsedIds<Codec>::IsIdUsed(new_id);
   }
 
  private:

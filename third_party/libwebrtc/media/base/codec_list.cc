@@ -21,7 +21,7 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/string_encode.h"
 
-namespace cricket {
+namespace webrtc {
 
 using webrtc::RTCError;
 using webrtc::RTCErrorOr;
@@ -43,14 +43,15 @@ RTCError CheckInputConsistency(const std::vector<Codec>& codecs) {
       }
     }
   }
-  for (const Codec& codec : codecs) {
+  for (const webrtc::Codec& codec : codecs) {
     switch (codec.GetResiliencyType()) {
       case Codec::ResiliencyType::kRed:
         
         break;
       case Codec::ResiliencyType::kRtx: {
         
-        const auto apt_it = codec.params.find(kCodecParamAssociatedPayloadType);
+        const auto apt_it =
+            codec.params.find(cricket::kCodecParamAssociatedPayloadType);
         
         
         

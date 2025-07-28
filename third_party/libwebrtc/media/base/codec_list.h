@@ -17,7 +17,7 @@
 #include "api/rtc_error.h"
 #include "media/base/codec.h"
 
-namespace cricket {
+namespace webrtc {
 
 class CodecList {
  public:
@@ -35,7 +35,7 @@ class CodecList {
 
   
   
-  static webrtc::RTCErrorOr<CodecList> Create(const std::vector<Codec>& codecs);
+  static RTCErrorOr<CodecList> Create(const std::vector<Codec>& codecs);
   
   
   static CodecList CreateFromTrustedData(const std::vector<Codec>& codecs) {
@@ -83,6 +83,12 @@ class CodecList {
   std::vector<Codec> codecs_;
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::CodecList;
 }  
 
 #endif  

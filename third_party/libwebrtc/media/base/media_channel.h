@@ -186,7 +186,7 @@ class MediaSendChannelInterface {
   virtual webrtc::MediaType media_type() const = 0;
 
   
-  virtual std::optional<Codec> GetSendCodec() const = 0;
+  virtual std::optional<webrtc::Codec> GetSendCodec() const = 0;
 
   
   
@@ -832,7 +832,7 @@ struct MediaChannelParameters {
   
   std::string mid;
 
-  std::vector<Codec> codecs;
+  std::vector<webrtc::Codec> codecs;
   std::vector<webrtc::RtpExtension> extensions;
   
   

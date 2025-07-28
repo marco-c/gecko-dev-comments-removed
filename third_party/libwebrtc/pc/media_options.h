@@ -72,7 +72,7 @@ struct MediaDescriptionOptions {
   std::vector<RtpHeaderExtensionCapability> header_extensions;
   
   
-  std::vector<cricket::Codec> codecs_to_include;
+  std::vector<Codec> codecs_to_include;
 
  private:
   
