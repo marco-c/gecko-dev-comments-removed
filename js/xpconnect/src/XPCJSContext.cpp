@@ -18,6 +18,7 @@
 #include "mozJSModuleLoader.h"
 #include "nsNetUtil.h"
 #include "nsThreadUtils.h"
+#include "ExecutionTracerIntegration.h"
 
 #include "nsIObserverService.h"
 #include "nsIDebug2.h"
@@ -1401,6 +1402,10 @@ nsresult XPCJSContext::Initialize() {
     
     MOZ_CRASH("InitSelfHostedCode failed");
   }
+
+#ifdef MOZ_EXECUTION_TRACING
+  JS_SetCustomObjectSummaryCallback(cx, ExecutionTracerIntegration::Callback);
+#endif
 
   MOZ_RELEASE_ASSERT(Runtime()->InitializeStrings(cx),
                      "InitializeStrings failed");
