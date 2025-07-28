@@ -36,9 +36,6 @@ add_setup(async () => {
 
   await AddonTestUtils.promiseStartupManager();
   AddonTestUtils.usePrivilegedSignatures = false;
-
-  
-  Services.prefs.setBoolPref("extensions.userScripts.mv3.enabled", true);
 });
 
 

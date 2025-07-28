@@ -17,8 +17,6 @@ AddonTestUtils.init(this);
 AddonTestUtils.overrideCertDB();
 
 add_setup(async () => {
-  Services.prefs.setBoolPref("extensions.userScripts.mv3.enabled", true);
-
   
   Services.prefs.setBoolPref(
     "extensions.webextOptionalPermissionPrompts",
