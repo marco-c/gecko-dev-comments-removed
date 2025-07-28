@@ -24,6 +24,17 @@ namespace logging {
 
 static int g_min_log_level = 0;
 
+
+LogMessageHandlerFunction g_log_message_handler = nullptr;
+
+void SetLogMessageHandler(LogMessageHandlerFunction handler) {
+  g_log_message_handler = handler;
+}
+
+LogMessageHandlerFunction GetLogMessageHandler() {
+  return g_log_message_handler;
+}
+
 bool ShouldCreateLogMessage(int severity) {
   return severity >= g_min_log_level;
 }
@@ -50,21 +61,62 @@ static bool ShouldLogToStderr(int severity) {
   return severity >= kAlwaysPrintErrorLevel;
 }
 
+const char* const log_severity_names[] = {"INFO", "WARNING", "ERROR", "FATAL"};
+static_assert(LOGGING_NUM_SEVERITIES == std::size(log_severity_names),
+              "Incorrect number of log_severity_names");
+
+const char* log_severity_name(int severity) {
+  if (severity >= 0 && severity < LOGGING_NUM_SEVERITIES) {
+    return log_severity_names[severity];
+  }
+  return "UNKNOWN";
+}
+
 LogMessage::LogMessage(const char* file, int line, LogSeverity severity)
     : severity_(severity), file_(file), line_(line) {
+  
+  base::ScopedClearLastError scoped_clear_last_error;
+
+  
+  
+  
+  
+  
+  
+
+  {
+    stream_ << "[zucchini:";
+    if (severity_ >= 0) {
+      stream_ << log_severity_name(severity_);
+    } else {
+      stream_ << "VERBOSE" << -severity_;
+    }
+    stream_ << ":" << file << ":" << line << "] ";
+  }
+  message_start_ = stream_.str().length();
 }
 
 LogMessage::~LogMessage() {
   
   base::ScopedClearLastError scoped_clear_last_error;
 
-  stream_ << ' ' << '(' << file_ << ':' << line_ << ')' << std::endl;
-  std::string str_newline(stream_.str());
-  if (ShouldLogToStderr(severity_)) {
-    fputs(str_newline.c_str(), stderr);
-  }
-  else {
-    puts(str_newline.c_str());
+  
+  
+  
+  std::string str(stream_.str());
+
+  
+  bool handled = g_log_message_handler &&
+    g_log_message_handler(severity_, file_, line_, message_start_, str);
+  if (!handled) {
+    if (ShouldLogToStderr(severity_)) {
+      fputs(str.c_str(), stderr);
+      fputc('\n', stderr);
+    }
+    else {
+      
+      puts(str.c_str());
+    }
   }
 
   if (severity_ == LOGGING_FATAL) {
