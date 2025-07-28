@@ -8,8 +8,7 @@
 #include "CompositableHost.h"        
 #include "CompositorBridgeParent.h"  
 #include "mozilla/Assertions.h"      
-#include "mozilla/Logging.h"
-#include "mozilla/RefPtr.h"  
+#include "mozilla/RefPtr.h"          
 #include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/layers/ImageBridgeParent.h"  
 #include "mozilla/layers/LayersSurfaces.h"     
@@ -23,9 +22,6 @@
 
 namespace mozilla {
 namespace layers {
-
-mozilla::LazyLogModule gCompositableTextureParentLog(
-    "CompositableTextureParent");
 
 bool CompositableParentManager::ReceiveCompositableUpdate(
     const CompositableOperation& aEdit) {
@@ -66,14 +62,6 @@ bool CompositableParentManager::ReceiveCompositableUpdate(
 
       AutoTArray<CompositableHost::TimedTexture, 4> textures;
       for (auto& timedTexture : op.textures()) {
-        MOZ_LOG_FMT(gCompositableTextureParentLog, LogLevel::Debug,
-#ifdef DEBUG
-                    "ReceiveCompositableUpdate:TOpUseTexture ts={} id={}",
-                    timedTexture.timeStamp().GetValue(),
-#else
-                    "ReceiveCompositableUpdate:TOpUseTexture id={}",
-#endif
-                    timedTexture.frameID());
         CompositableHost::TimedTexture* t = textures.AppendElement();
         t->mTexture =
             TextureHost::AsTextureHost(timedTexture.texture().AsParent());
