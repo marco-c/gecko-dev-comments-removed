@@ -24,6 +24,8 @@ namespace js::gc {
 
 static constexpr size_t MinAllocSize = MinCellSize;  
 
+static constexpr size_t MinSmallAllocSize =
+    1 << BufferAllocator::MinSmallAllocShift;
 static constexpr size_t MaxSmallAllocSize =
     1 << (BufferAllocator::MinMediumAllocShift - 1);
 static constexpr size_t MinMediumAllocSize =
