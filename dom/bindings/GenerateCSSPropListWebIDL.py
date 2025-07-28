@@ -44,8 +44,14 @@ interface """
         if ruleType not in p.rules:
             continue
 
+        pref = p.pref
+
         if p.type() == "alias":
-            if p.pref == propsData[p.prop_id].pref:
+            if p.method == "MozAppearance":
+                
+                
+                pref = "layout.css.moz-appearance.webidl.enabled"
+            elif p.pref == propsData[p.prop_id].pref:
                 
                 continue
 
@@ -59,16 +65,14 @@ interface """
             "SetterNeedsSubjectPrincipal=NonSystem",
         ]
 
-        if p.pref != "":
+        if pref != "":
             assert "Internal" not in p.flags
             
             
             if p.method == "BackdropFilter":
                 extendedAttrs.append('Func="nsCSSProps::IsBackdropFilterAvailable"')
-            
-            
-            elif p.method not in ["MozTransform", "MozTransformOrigin"]:
-                extendedAttrs.append('Pref="%s"' % p.pref)
+            else:
+                extendedAttrs.append('Pref="%s"' % pref)
         elif "EnabledInUASheetsAndChrome" in p.flags:
             extendedAttrs.append("ChromeOnly")
         elif "Internal" in p.flags:
