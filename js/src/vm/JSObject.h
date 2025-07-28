@@ -210,6 +210,13 @@ class JSObject
     return setFlag(cx, obj, js::ObjectFlag::HasFuseProperty);
   }
 
+  bool hasNonFunctionAccessor() const {
+    return hasFlag(js::ObjectFlag::HasNonFunctionAccessor);
+  }
+  static bool setHasNonFunctionAccessor(JSContext* cx, JS::HandleObject obj) {
+    return setFlag(cx, obj, js::ObjectFlag::HasNonFunctionAccessor);
+  }
+
   
   
   
@@ -331,7 +338,7 @@ class JSObject
   
   
   
-  size_t sizeOfIncludingThisInNursery() const;
+  size_t sizeOfIncludingThisInNursery(mozilla::MallocSizeOf mallocSizeOf) const;
 
 #ifdef DEBUG
   static void debugCheckNewObject(js::Shape* shape, js::gc::AllocKind allocKind,
