@@ -537,29 +537,6 @@ class ModuleLoaderBase : public nsISupports {
   void FinishDynamicImportAndReject(ModuleLoadRequest* aRequest,
                                     nsresult aResult);
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static void FinishDynamicImport(JSContext* aCx, ModuleLoadRequest* aRequest,
-                                  nsresult aResult,
-                                  JS::Handle<JSObject*> aEvaluationPromise);
-
   void RemoveDynamicImport(ModuleLoadRequest* aRequest);
 
   nsresult CreateModuleScript(ModuleLoadRequest* aRequest);
