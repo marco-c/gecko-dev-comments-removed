@@ -798,6 +798,7 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 
 
 
+#if 0 
 #ifdef ABSL_HAVE_LEAK_SANITIZER
 #error "ABSL_HAVE_LEAK_SANITIZER cannot be directly set."
 #elif defined(LEAK_SANITIZER)
@@ -811,6 +812,7 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 #elif defined(ABSL_HAVE_ADDRESS_SANITIZER)
 
 #define ABSL_HAVE_LEAK_SANITIZER 1
+#endif
 #endif
 
 
