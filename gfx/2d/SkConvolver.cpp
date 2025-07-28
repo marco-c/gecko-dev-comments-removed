@@ -16,6 +16,9 @@
 
 namespace skia {
 
+using mozilla::gfx::IsOpaque;
+using mozilla::gfx::SurfaceFormat;
+
 
 
 static inline unsigned char ClampTo8(int a) {
@@ -147,6 +150,68 @@ void ConvolveVertically(
   }
 }
 
+
+
+void ConvolveHorizontallyA8(const unsigned char* srcData,
+                            const SkConvolutionFilter1D& filter,
+                            unsigned char* outRow) {
+  
+  int numValues = filter.numValues();
+  for (int outX = 0; outX < numValues; outX++) {
+    
+    int filterOffset, filterLength;
+    const SkConvolutionFilter1D::ConvolutionFixed* filterValues =
+        filter.FilterForValue(outX, &filterOffset, &filterLength);
+
+    
+    
+    const unsigned char* rowToFilter = &srcData[filterOffset];
+
+    
+    int accum = 0;
+    for (int filterX = 0; filterX < filterLength; filterX++) {
+      SkConvolutionFilter1D::ConvolutionFixed curFilter = filterValues[filterX];
+      accum += curFilter * rowToFilter[filterX];
+    }
+
+    
+    
+    accum >>= SkConvolutionFilter1D::kShiftBits;
+
+    
+    outRow[outX] = ClampTo8(accum);
+  }
+}
+
+
+
+
+
+
+
+void ConvolveVerticallyA8(
+    const SkConvolutionFilter1D::ConvolutionFixed* filterValues,
+    int filterLength, unsigned char* const* sourceDataRows, int pixelWidth,
+    unsigned char* outRow) {
+  
+  
+  for (int outX = 0; outX < pixelWidth; outX++) {
+    
+    int accum = 0;
+    for (int filterY = 0; filterY < filterLength; filterY++) {
+      SkConvolutionFilter1D::ConvolutionFixed curFilter = filterValues[filterY];
+      accum += curFilter * sourceDataRows[filterY][outX];
+    }
+
+    
+    
+    accum >>= SkConvolutionFilter1D::kShiftBits;
+
+    
+    outRow[outX] = ClampTo8(accum);
+  }
+}
+
 #ifdef USE_SSE2
 void convolve_vertically_avx2(const int16_t* filter, int filterLen,
                               uint8_t* const* srcRows, int width, uint8_t* out,
@@ -168,7 +233,13 @@ void convolve_vertically_neon(const int16_t* filter, int filterLen,
 
 void convolve_horizontally(const unsigned char* srcData,
                            const SkConvolutionFilter1D& filter,
-                           unsigned char* outRow, bool hasAlpha) {
+                           unsigned char* outRow, SurfaceFormat format) {
+  if (format == SurfaceFormat::A8) {
+    ConvolveHorizontallyA8(srcData, filter, outRow);
+    return;
+  }
+
+  bool hasAlpha = !IsOpaque(format);
 #ifdef USE_SSE2
   if (mozilla::supports_sse2()) {
     convolve_horizontally_sse2(srcData, filter, outRow, hasAlpha);
@@ -190,7 +261,14 @@ void convolve_horizontally(const unsigned char* srcData,
 void convolve_vertically(
     const SkConvolutionFilter1D::ConvolutionFixed* filterValues,
     int filterLength, unsigned char* const* sourceDataRows, int pixelWidth,
-    unsigned char* outRow, bool hasAlpha) {
+    unsigned char* outRow, SurfaceFormat format) {
+  if (format == SurfaceFormat::A8) {
+    ConvolveVerticallyA8(filterValues, filterLength, sourceDataRows, pixelWidth,
+                         outRow);
+    return;
+  }
+
+  bool hasAlpha = !IsOpaque(format);
 #ifdef USE_SSE2
   if (mozilla::supports_avx2()) {
     convolve_vertically_avx2(filterValues, filterLength, sourceDataRows,
@@ -488,7 +566,7 @@ bool SkConvolutionFilter1D::ComputeFilterValues(
 
 
 bool BGRAConvolve2D(const unsigned char* sourceData, int sourceByteRowStride,
-                    bool sourceHasAlpha, const SkConvolutionFilter1D& filterX,
+                    SurfaceFormat format, const SkConvolutionFilter1D& filterX,
                     const SkConvolutionFilter1D& filterY,
                     int outputByteRowStride, unsigned char* output) {
   int maxYFilterSize = filterY.maxFilter();
@@ -553,7 +631,7 @@ bool BGRAConvolve2D(const unsigned char* sourceData, int sourceByteRowStride,
     while (nextXRow < filterOffset + filterLength) {
       convolve_horizontally(
           &sourceData[(uint64_t)nextXRow * sourceByteRowStride], filterX,
-          rowBuffer.advanceRow(), sourceHasAlpha);
+          rowBuffer.advanceRow(), format);
       nextXRow++;
     }
 
@@ -570,7 +648,7 @@ bool BGRAConvolve2D(const unsigned char* sourceData, int sourceByteRowStride,
         &rowsToConvolve[filterOffset - firstRowInCircularBuffer];
 
     convolve_vertically(filterValues, filterLength, firstRowForFilter,
-                        filterX.numValues(), curOutputRow, sourceHasAlpha);
+                        filterX.numValues(), curOutputRow, format);
   }
   return true;
 }
