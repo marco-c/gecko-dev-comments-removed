@@ -26,11 +26,11 @@ namespace wait_until_internal {
 
 
 template <typename T, typename M>
-bool ExplainMatchResult(
-    const M& matcher,
-    const T& value,
-    absl::Nonnull<::testing::StringMatchResultListener*> listener,
-    absl::string_view value_name) {
+bool ExplainMatchResult(const M& matcher,
+                        const T& value,
+                        ::testing::StringMatchResultListener* absl_nonnull
+                            listener,
+                        absl::string_view value_name) {
   
   
   ::testing::Matcher<const T&> safe_matcher =

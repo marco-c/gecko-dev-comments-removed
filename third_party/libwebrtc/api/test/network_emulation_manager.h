@@ -337,7 +337,7 @@ class NetworkEmulationManager {
   
   
   
-  virtual absl::Nonnull<EmulatedNetworkManagerInterface*>
+  virtual EmulatedNetworkManagerInterface* absl_nonnull
   CreateEmulatedNetworkManagerInterface(
       const std::vector<EmulatedEndpoint*>& endpoints) = 0;
 

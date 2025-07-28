@@ -45,7 +45,7 @@ class AudioDecoderFactory : public RefCountInterface {
   
   
   
-  virtual absl::Nullable<std::unique_ptr<AudioDecoder>> Create(
+  virtual absl_nullable std::unique_ptr<AudioDecoder> Create(
       const Environment& env,
       const SdpAudioFormat& format,
       std::optional<AudioCodecPairId> codec_pair_id) = 0;

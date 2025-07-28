@@ -79,7 +79,7 @@ class RTC_EXPORT BuiltinAudioProcessingBuilder
   
   
   
-  absl::Nullable<scoped_refptr<AudioProcessing>> Build(
+  absl_nullable scoped_refptr<AudioProcessing> Build(
       const Environment& env) override;
 
  private:
