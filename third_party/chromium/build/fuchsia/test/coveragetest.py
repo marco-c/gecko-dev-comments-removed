@@ -4,27 +4,37 @@
 
 """Ensure files in the directory are thoroughly tested."""
 
+import importlib
 import io
 import sys
 import unittest
 
 import coverage  
 
+COVERED_FILES = [
+    'flash_device.py', 'log_manager.py', 'publish_package.py', 'serve_repo.py',
+    'test_server.py'
+]
+
 
 def main():
     """Gather coverage data, ensure included files are 100% covered."""
+
     cov = coverage.coverage(data_file=None,
-                            include='publish_package.py',
+                            include=COVERED_FILES,
                             config_file=True)
     cov.start()
-    
-    
-    import publish_package_unittests
-    
-    suite = unittest.TestLoader().loadTestsFromModule(
-        publish_package_unittests)
-    if not unittest.TextTestRunner().run(suite).wasSuccessful():
-        return 1
+
+    for file in COVERED_FILES:
+        
+        
+        module = importlib.import_module(file.replace('.py', '_unittests'))
+        
+
+        tests = unittest.TestLoader().loadTestsFromModule(module)
+        if not unittest.TextTestRunner().run(tests).wasSuccessful():
+            return 1
+
     cov.stop()
     outf = io.StringIO()
     percentage = cov.report(file=outf, show_missing=True)

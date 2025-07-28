@@ -84,7 +84,7 @@ def handle_shard_failures_with(on_failure):
   return decorator
 
 
-def place_nomedia_on_device(dev, device_root):
+def place_nomedia_on_device(dev, device_root, run_as=None, as_root=False):
   """Places .nomedia file in test data root.
 
   This helps to prevent system from scanning media files inside test data.
@@ -94,8 +94,14 @@ def place_nomedia_on_device(dev, device_root):
     device_root: Base path on device to place .nomedia file.
   """
 
-  dev.RunShellCommand(['mkdir', '-p', device_root], check_return=True)
-  dev.WriteFile('%s/.nomedia' % device_root, 'https://crbug.com/796640')
+  dev.RunShellCommand(['mkdir', '-p', device_root],
+                      run_as=run_as,
+                      as_root=as_root,
+                      check_return=True)
+  dev.WriteFile('%s/.nomedia' % device_root,
+                'https://crbug.com/796640',
+                run_as=run_as,
+                as_root=as_root)
 
 
 
@@ -127,6 +133,7 @@ class LocalDeviceEnvironment(environment.Environment):
     self._trace_all = None
     if hasattr(args, 'trace_all'):
       self._trace_all = args.trace_all
+    self._use_persistent_shell = args.use_persistent_shell
 
     devil_chromium.Initialize(
         output_directory=constants.GetOutDirectory(),
@@ -166,7 +173,8 @@ class LocalDeviceEnvironment(environment.Environment):
         enable_device_files_cache=self._enable_device_cache,
         default_retries=self._max_tries - 1,
         device_arg=device_arg,
-        abis=self._preferred_abis)
+        abis=self._preferred_abis,
+        persistent_shell=self._use_persistent_shell)
 
     if self._logcat_output_file:
       self._logcat_output_dir = tempfile.mkdtemp()

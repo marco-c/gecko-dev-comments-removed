@@ -11,7 +11,9 @@ import subprocess
 import sys
 
 
-MAX_ALLOWED_GLIBC_VERSION = [2, 17]
+
+
+MAX_ALLOWED_GLIBC_VERSION = [2, 26]
 
 VERSION_PATTERN = re.compile('GLIBC_([0-9\.]+)')
 SECTION_PATTERN = re.compile(r'^ *\[ *[0-9]+\] +(\S+) +\S+ + ([0-9a-f]+) .*$')
@@ -60,12 +62,17 @@ for line in stdout.decode("utf-8").split('\n'):
   
   is_default = len(name) > 2
 
-  match = re.match(VERSION_PATTERN, version)
-  
-  if not match:
-    continue
+  if version.startswith('XCRYPT_'):
+    
+    
+    version = [float('inf')]
+  else:
+    match = re.match(VERSION_PATTERN, version)
+    
+    if not match:
+      continue
+    version = [int(part) for part in match.group(1).split('.')]
 
-  version = [int(part) for part in match.group(1).split('.')]
   if version < MAX_ALLOWED_GLIBC_VERSION:
     old_supported_version = supported_version.get(base_name, ([-1], -1))
     supported_version[base_name] = max((version, index), old_supported_version)

@@ -26,6 +26,7 @@ from devil.android import device_errors
 from devil.android import device_temp_file
 from devil.android import flag_changer
 from devil.android.sdk import shared_prefs
+from devil.android.sdk import version_codes
 from devil.android import logcat_monitor
 from devil.android.tools import system_app
 from devil.android.tools import webview_app
@@ -98,6 +99,9 @@ EXTRA_TRACE_FILE = ('org.chromium.base.test.BaseJUnit4ClassRunner.TraceFile')
 _EXTRA_TEST_LIST = (
     'org.chromium.base.test.BaseChromiumAndroidJUnitRunner.TestList')
 
+_EXTRA_TEST_IS_UNIT = (
+    'org.chromium.base.test.BaseChromiumAndroidJUnitRunner.IsUnitTest')
+
 _EXTRA_PACKAGE_UNDER_TEST = ('org.chromium.chrome.test.pagecontroller.rules.'
                              'ChromeUiApplicationTestRule.PackageUnderTest')
 
@@ -111,7 +115,7 @@ _DEVICE_GOLD_DIR = 'skia_gold'
 
 RENDER_TEST_MODEL_SDK_CONFIGS = {
     
-    'Android SDK built for x86': [23],
+    'Android SDK built for x86': [23, 24],
     
     
     
@@ -119,7 +123,7 @@ RENDER_TEST_MODEL_SDK_CONFIGS = {
 }
 
 _BATCH_SUFFIX = '_batch'
-_TEST_BATCH_MAX_GROUP_SIZE = 256
+_TEST_BATCH_MAX_GROUP_SIZE = 200
 
 
 @contextlib.contextmanager
@@ -138,12 +142,14 @@ def _LogTestEndpoints(device, test_name):
 @contextlib.contextmanager
 def _VoiceInteractionService(device, use_voice_interaction_service):
   def set_voice_interaction_service(service):
-    device.RunShellCommand('settings put secure voice_interaction_service %s' %
-                           service)
+    device.RunShellCommand(
+        ['settings', 'put', 'secure', 'voice_interaction_service', service])
 
+  default_voice_interaction_service = None
   try:
     default_voice_interaction_service = device.RunShellCommand(
-        'settings get secure voice_interaction_service', single_line=True)
+        ['settings', 'get', 'secure', 'voice_interaction_service'],
+        single_line=True)
 
     set_voice_interaction_service(use_voice_interaction_service)
     yield
@@ -187,14 +193,22 @@ class LocalDeviceInstrumentationTestRun(
     self._shared_prefs_to_restore = []
     self._skia_gold_session_manager = None
     self._skia_gold_work_dir = None
+    self._target_package = _GetTargetPackageName(test_instance.test_apk)
 
   
   def TestPackage(self):
     return self._test_instance.suite
 
+  def _GetDataStorageRootDirectory(self, device):
+    if self._test_instance.store_data_in_app_directory:
+      
+      
+      
+      return device.GetApplicationDataDirectory(self._target_package)
+    return device.GetExternalStoragePath()
+
   
   def SetUp(self):
-    target_package = _GetTargetPackageName(self._test_instance.test_apk)
 
     @local_device_environment.handle_shard_failures_with(
         self._env.DenylistDevice)
@@ -261,6 +275,15 @@ class LocalDeviceInstrumentationTestRun(
 
         return install_helper_internal
 
+      def install_apex_helper(apex):
+        @instrumentation_tracing.no_tracing
+        @trace_event.traced
+        def install_helper_internal(d, apk_path=None):
+          
+          d.InstallApex(apex)
+
+        return install_helper_internal
+
       def incremental_install_helper(apk, json_path, permissions):
 
         @trace_event.traced
@@ -269,6 +292,14 @@ class LocalDeviceInstrumentationTestRun(
           installer.Install(d, json_path, apk=apk, permissions=permissions)
 
         return incremental_install_helper_internal
+
+      steps.extend(
+          install_apex_helper(apex)
+          for apex in self._test_instance.additional_apexs)
+
+      steps.extend(
+          install_helper(apk, instant_app=self._test_instance.IsApkInstant(apk))
+          for apk in self._test_instance.additional_apks)
 
       permissions = self._test_instance.test_apk.GetPermissions()
       if self._test_instance.test_apk_incremental_install_json:
@@ -286,10 +317,6 @@ class LocalDeviceInstrumentationTestRun(
             install_helper(self._test_instance.test_apk,
                            permissions=permissions,
                            instant_app=self._test_instance.test_apk_as_instant))
-
-      steps.extend(
-          install_helper(apk, instant_app=self._test_instance.IsApkInstant(apk))
-          for apk in self._test_instance.additional_apks)
 
       
       
@@ -359,6 +386,17 @@ class LocalDeviceInstrumentationTestRun(
                              self._test_instance.fake_modules, permissions,
                              self._test_instance.additional_locales))
 
+      
+      if self._test_instance.run_setup_commands:
+
+        @trace_event.traced
+        def run_setup_commands(dev):
+          for cmd in self._test_instance.run_setup_commands:
+            logging.info('Running custom setup shell command: %s', cmd)
+            dev.RunShellCommand(cmd, shell=True, check_return=True)
+
+        steps.append(run_setup_commands)
+
       @trace_event.traced
       def set_debug_app(dev):
         
@@ -366,7 +404,7 @@ class LocalDeviceInstrumentationTestRun(
         cmd = ['am', 'set-debug-app', '--persistent']
         if self._test_instance.wait_for_java_debugger:
           cmd.append('-w')
-        cmd.append(target_package)
+        cmd.append(self._target_package)
         dev.RunShellCommand(cmd, check_return=True)
 
       @trace_event.traced
@@ -383,6 +421,10 @@ class LocalDeviceInstrumentationTestRun(
               shared_pref, setting)
 
       @trace_event.traced
+      def approve_app_links(dev):
+        self._ToggleAppLinks(dev, 'STATE_APPROVED')
+
+      @trace_event.traced
       def set_vega_permissions(dev):
         
         
@@ -397,20 +439,32 @@ class LocalDeviceInstrumentationTestRun(
 
       @instrumentation_tracing.no_tracing
       def push_test_data(dev):
-        device_root = posixpath.join(dev.GetExternalStoragePath(),
-                                     'chromium_tests_root')
+        test_data_root_dir = posixpath.join(
+            self._GetDataStorageRootDirectory(dev), 'chromium_tests_root')
         host_device_tuples_substituted = [
-            (h, local_device_test_run.SubstituteDeviceRoot(d, device_root))
-            for h, d in host_device_tuples]
+            (h,
+             local_device_test_run.SubstituteDeviceRoot(d, test_data_root_dir))
+            for h, d in host_device_tuples
+        ]
         logging.info('Pushing data dependencies.')
         for h, d in host_device_tuples_substituted:
           logging.debug('  %r -> %r', h, d)
-        local_device_environment.place_nomedia_on_device(dev, device_root)
+
+        as_root = self._test_instance.store_data_in_app_directory
+        local_device_environment.place_nomedia_on_device(dev,
+                                                         test_data_root_dir,
+                                                         as_root=as_root)
         dev.PushChangedFiles(host_device_tuples_substituted,
-                             delete_device_stale=True)
+                             delete_device_stale=True,
+                             as_root=as_root)
+
         if not host_device_tuples_substituted:
-          dev.RunShellCommand(['rm', '-rf', device_root], check_return=True)
-          dev.RunShellCommand(['mkdir', '-p', device_root], check_return=True)
+          dev.RunShellCommand(['rm', '-rf', test_data_root_dir],
+                              check_return=True,
+                              as_root=as_root)
+          dev.RunShellCommand(['mkdir', '-p', test_data_root_dir],
+                              check_return=True,
+                              as_root=as_root)
 
       @trace_event.traced
       def create_flag_changer(dev):
@@ -424,8 +478,8 @@ class LocalDeviceInstrumentationTestRun(
             dev, self._test_instance.timeout_scale)
 
       steps += [
-          set_debug_app, edit_shared_prefs, push_test_data, create_flag_changer,
-          set_vega_permissions, DismissCrashDialogs
+          set_debug_app, edit_shared_prefs, approve_app_links, push_test_data,
+          create_flag_changer, set_vega_permissions, DismissCrashDialogs
       ]
 
       def bind_crash_handler(step, dev):
@@ -472,7 +526,7 @@ class LocalDeviceInstrumentationTestRun(
     if self._test_instance.wait_for_java_debugger:
       logging.warning('*' * 80)
       logging.warning('Waiting for debugger to attach to process: %s',
-                      target_package)
+                      self._target_package)
       logging.warning('*' * 80)
 
   
@@ -498,6 +552,11 @@ class LocalDeviceInstrumentationTestRun(
       
       dev.RunShellCommand(['am', 'clear-debug-app'], check_return=True)
 
+      
+      for cmd in self._test_instance.run_teardown_commands:
+        logging.info('Running custom teardown shell command: %s', cmd)
+        dev.RunShellCommand(cmd, shell=True, check_return=True)
+
       valgrind_tools.SetChromeTimeoutScale(dev, None)
 
       
@@ -508,6 +567,9 @@ class LocalDeviceInstrumentationTestRun(
         pref_to_restore.Commit(force_commit=True)
 
       
+      self._ToggleAppLinks(dev, 'STATE_NO_RESPONSE')
+
+      
       
       for context in reversed(self._context_managers[str(dev)]):
         
@@ -516,6 +578,24 @@ class LocalDeviceInstrumentationTestRun(
         
 
     self._env.parallel_devices.pMap(individual_device_tear_down)
+
+  def _ToggleAppLinks(self, dev, state):
+    
+    
+    
+    if dev.build_version_sdk < version_codes.S:
+      return
+
+    package = self._test_instance.approve_app_links_package
+    domain = self._test_instance.approve_app_links_domain
+
+    if not package or not domain:
+      return
+
+    cmd = [
+        'pm', 'set-app-links', '--package', package, state, domain
+    ]
+    dev.RunShellCommand(cmd, check_return=True)
 
   def _CreateFlagChangerIfNeeded(self, device):
     if str(device) not in self._flag_changers:
@@ -530,7 +610,16 @@ class LocalDeviceInstrumentationTestRun(
           device, cmdline_file)
 
   
-  def _CreateShards(self, tests):
+  def _CreateShardsForDevices(self, tests):
+    """Create shards of tests to run on devices.
+
+    Args:
+      tests: List containing tests or test batches.
+
+    Returns:
+      List of tests or batches.
+    """
+    
     return tests
 
   
@@ -544,6 +633,14 @@ class LocalDeviceInstrumentationTestRun(
         tests, self._test_instance.external_shard_index,
         self._test_instance.total_external_shards)
     return tests
+
+  
+  def GetTestsForListing(self):
+    
+    
+    test_dicts = self._GetTests()
+    test_dicts = local_device_test_run.FlattenTestList(test_dicts)
+    return sorted('{}#{}'.format(d['class'], d['method']) for d in test_dicts)
 
   
   def _GroupTests(self, tests):
@@ -575,9 +672,7 @@ class LocalDeviceInstrumentationTestRun(
             batch_name += '|cmd_line_remove:' + ','.join(
                 sorted(annotations['CommandLineFlags$Remove']['value']))
 
-        if not batch_name in batched_tests:
-          batched_tests[batch_name] = []
-        batched_tests[batch_name].append(test)
+        batched_tests.setdefault(batch_name, []).append(test)
       else:
         other_tests.append(test)
 
@@ -610,6 +705,9 @@ class LocalDeviceInstrumentationTestRun(
   
   def _RunTest(self, device, test):
     extras = {}
+
+    if self._test_instance.is_unit_test:
+      extras[_EXTRA_TEST_IS_UNIT] = 'true'
 
     
     if self._test_instance.apk_under_test:
@@ -744,6 +842,9 @@ class LocalDeviceInstrumentationTestRun(
     if flags_to_add:
       self._CreateFlagChangerIfNeeded(device)
       self._flag_changers[str(device)].PushFlags(add=flags_to_add)
+
+    if self._test_instance.store_data_in_app_directory:
+      extras.update({'fetchTestDataFromAppDataDir': 'true'})
 
     time_ms = lambda: int(time.time() * 1e3)
     start_ms = time_ms()
@@ -923,9 +1024,9 @@ class LocalDeviceInstrumentationTestRun(
       self._SaveScreenshot(device, screenshot_device_file, test_display_name,
                            results, 'post_test_screenshot')
 
-      logging.info('detected failure in %s. raw output:', test_display_name)
+      logging.error('detected failure in %s. raw output:', test_display_name)
       for l in output:
-        logging.info('  %s', l)
+        logging.error('  %s', l)
       if not self._env.skip_clear_data:
         if self._test_instance.package_info:
           permissions = (self._test_instance.apk_under_test.GetPermissions()
@@ -1031,11 +1132,15 @@ class LocalDeviceInstrumentationTestRun(
       logging.info('Could not get tests from pickle: %s', e)
     logging.info('Getting tests by having %s list them.',
                  self._test_instance.junit4_runner_class)
+    
+    
+    
+    
+    
+    
+    
     def list_tests(d):
       def _run(dev):
-        
-        
-        
         with device_temp_file.DeviceTempFile(
             dev.adb, suffix='.json',
             dir=dev.GetAppWritablePath()) as dev_test_list_json:
@@ -1188,42 +1293,6 @@ class LocalDeviceInstrumentationTestRun(
       return
     self._ProcessSkiaGoldRenderTestResults(device, results)
 
-  def _IsRetryWithoutPatch(self):
-    """Checks whether this test run is a retry without a patch/CL.
-
-    Returns:
-      True iff this is being run on a trybot and the current step is a retry
-      without the patch applied, otherwise False.
-    """
-    is_tryjob = self._test_instance.skia_gold_properties.IsTryjobRun()
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    has_filter = bool(self._test_instance.test_filter)
-    has_batch_limit = self._test_instance.test_launcher_batch_limit is not None
-    return is_tryjob and has_filter and has_batch_limit
-
-  def _IsFlakeEndorserRun(self):
-    """Checks whether this test run is part of the flake endorser.
-
-    Returns:
-      True iff this is being run on a trybot and the current step is part of the
-      flake endorser.
-    """
-    is_tryjob = self._test_instance.skia_gold_properties.IsTryjobRun()
-    
-    
-    
-    has_filter = bool(self._test_instance.test_filter)
-    has_batch_limit = self._test_instance.test_launcher_batch_limit is not None
-    return is_tryjob and has_filter and not has_batch_limit
-
   def _ProcessSkiaGoldRenderTestResults(self, device, results):
     gold_dir = posixpath.join(self._render_tests_device_output_dir,
                               _DEVICE_GOLD_DIR)
@@ -1301,40 +1370,17 @@ class LocalDeviceInstrumentationTestRun(
         gold_session = self._skia_gold_session_manager.GetSkiaGoldSession(
             keys_input=json_path)
 
-        
-        
-        
-        
-        
-        
-        should_force_dryrun = (self._IsRetryWithoutPatch()
-                               or self._IsFlakeEndorserRun())
-        should_redo_on_failed_dryrun = self._IsFlakeEndorserRun()
-
         try:
           status, error = gold_session.RunComparison(
               name=render_name,
               png_file=image_path,
               output_manager=self._env.output_manager,
               use_luci=use_luci,
-              optional_keys=optional_dict,
-              force_dryrun=should_force_dryrun)
+              optional_keys=optional_dict)
         except Exception as e:  
-          error = e
-          if should_redo_on_failed_dryrun:
-            try:
-              status, error = gold_session.RunComparison(
-                  name=render_name,
-                  png_file=image_path,
-                  output_manager=self._env.output_manager,
-                  use_luci=use_luci,
-                  optional_keys=optional_dict,
-                  force_dryrun=False)
-            except Exception as inner_e:  
-              error = inner_e
           _FailTestIfNecessary(results, full_test_name)
           _AppendToLog(results, full_test_name,
-                       'Skia Gold comparison raised exception: %s' % error)
+                       'Skia Gold comparison raised exception: %s' % e)
           continue
 
         if not status:
@@ -1438,7 +1484,13 @@ class LocalDeviceInstrumentationTestRun(
     return True
 
   
-  def _ShouldShard(self):
+  def _ShouldShardTestsForDevices(self):
+    """Shard tests across several devices.
+
+    Returns:
+      True if tests should be sharded across several devices,
+      False otherwise.
+    """
     return True
 
   @classmethod

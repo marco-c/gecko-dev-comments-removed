@@ -61,6 +61,21 @@ class LocalMachineJunitTestRun(test_run.TestRun):
   def SetUp(self):
     pass
 
+  def _GetFilterArgs(self, test_filter_override=None):
+    ret = []
+    if test_filter_override:
+      ret += ['-gtest-filter', ':'.join(test_filter_override)]
+    elif self._test_instance.test_filters:
+      for test_filter in self._test_instance.test_filters:
+        ret += ['-gtest-filter', test_filter]
+
+    if self._test_instance.package_filter:
+      ret += ['-package-filter', self._test_instance.package_filter]
+    if self._test_instance.runner_filter:
+      ret += ['-runner-filter', self._test_instance.runner_filter]
+
+    return ret
+
   def _CreateJarArgsList(self, json_result_file_paths, group_test_list, shards):
     
     
@@ -69,34 +84,30 @@ class LocalMachineJunitTestRun(test_run.TestRun):
     jar_args_list = [['-json-results-file', result_file]
                      for result_file in json_result_file_paths]
     for index, jar_arg in enumerate(jar_args_list):
-      if shards > 1:
-        jar_arg.extend(['-gtest-filter', ':'.join(group_test_list[index])])
-      elif self._test_instance.test_filter:
-        jar_arg.extend(['-gtest-filter', self._test_instance.test_filter])
-
-      if self._test_instance.package_filter:
-        jar_arg.extend(['-package-filter', self._test_instance.package_filter])
-      if self._test_instance.runner_filter:
-        jar_arg.extend(['-runner-filter', self._test_instance.runner_filter])
+      test_filter_override = group_test_list[index] if shards > 1 else None
+      jar_arg += self._GetFilterArgs(test_filter_override)
 
     return jar_args_list
 
-  def _CreateJvmArgsList(self):
+  def _CreateJvmArgsList(self, for_listing=False):
     
     jvm_args = [
         '-Drobolectric.dependency.dir=%s' %
         self._test_instance.robolectric_runtime_deps_dir,
         '-Ddir.source.root=%s' % constants.DIR_SOURCE_ROOT,
+        
+        '-Drobolectric.offline=true',
         '-Drobolectric.resourcesMode=binary',
         '-Drobolectric.logging=stdout',
+        '-Djava.library.path=%s' % self._test_instance.native_libs_dir,
     ]
-    if self._test_instance.debug_socket:
+    if self._test_instance.debug_socket and not for_listing:
       jvm_args += [
           '-agentlib:jdwp=transport=dt_socket'
           ',server=y,suspend=y,address=%s' % self._test_instance.debug_socket
       ]
 
-    if self._test_instance.coverage_dir:
+    if self._test_instance.coverage_dir and not for_listing:
       if not os.path.exists(self._test_instance.coverage_dir):
         os.makedirs(self._test_instance.coverage_dir)
       elif not os.path.isdir(self._test_instance.coverage_dir):
@@ -120,35 +131,54 @@ class LocalMachineJunitTestRun(test_run.TestRun):
 
     return jvm_args
 
+  @property
+  def _wrapper_path(self):
+    return os.path.join(constants.GetOutDirectory(), 'bin', 'helper',
+                        self._test_instance.suite)
+
+  
+  def GetTestsForListing(self):
+    with tempfile_ext.NamedTemporaryDirectory() as temp_dir:
+      cmd = [self._wrapper_path, '--list-tests'] + self._GetFilterArgs()
+      jvm_args = self._CreateJvmArgsList(for_listing=True)
+      if jvm_args:
+        cmd += ['--jvm-args', '"%s"' % ' '.join(jvm_args)]
+      AddPropertiesJar([cmd], temp_dir, self._test_instance.resource_apk)
+      lines = subprocess.check_output(cmd, encoding='utf8').splitlines()
+
+    PREFIX = '#TEST# '
+    prefix_len = len(PREFIX)
+    
+    return sorted(l[prefix_len:] for l in lines if l.startswith(PREFIX))
+
   
   def RunTests(self, results, raw_logs_fh=None):
-    wrapper_path = os.path.join(constants.GetOutDirectory(), 'bin', 'helper',
-                                self._test_instance.suite)
-
     
     
     
     
-    if (self._test_instance.shards == 1 or self._test_instance.test_filter
+    if (self._test_instance.shards == 1 or self._test_instance.test_filters
         or self._test_instance.suite in _EXCLUDED_SUITES):
       test_classes = []
       shards = 1
     else:
-      test_classes = _GetTestClasses(wrapper_path)
+      test_classes = _GetTestClasses(self._wrapper_path)
       shards = ChooseNumOfShards(test_classes, self._test_instance.shards)
 
     logging.info('Running tests on %d shard(s).', shards)
     group_test_list = GroupTestsForShard(shards, test_classes)
 
     with tempfile_ext.NamedTemporaryDirectory() as temp_dir:
-      cmd_list = [[wrapper_path] for _ in range(shards)]
+      cmd_list = [[self._wrapper_path] for _ in range(shards)]
       json_result_file_paths = [
           os.path.join(temp_dir, 'results%d.json' % i) for i in range(shards)
       ]
       jar_args_list = self._CreateJarArgsList(json_result_file_paths,
                                               group_test_list, shards)
-      for i in range(shards):
-        cmd_list[i].extend(['--jar-args', '"%s"' % ' '.join(jar_args_list[i])])
+      if jar_args_list:
+        for i in range(shards):
+          cmd_list[i].extend(
+              ['--jar-args', '"%s"' % ' '.join(jar_args_list[i])])
 
       jvm_args = self._CreateJvmArgsList()
       if jvm_args:
@@ -202,9 +232,14 @@ def AddPropertiesJar(cmd_list, temp_dir, resource_apk):
   properties_jar_path = os.path.join(temp_dir, 'properties.jar')
   with zipfile.ZipFile(properties_jar_path, 'w') as z:
     z.writestr('com/android/tools/test_config.properties',
-               'android_resource_apk=%s' % resource_apk)
-    z.writestr('robolectric.properties',
-               'application = android.app.Application')
+               'android_resource_apk=%s\n' % resource_apk)
+    props = [
+        'application = android.app.Application',
+        'sdk = 28',
+        ('shadows = org.chromium.testing.local.'
+         'CustomShadowApplicationPackageManager'),
+    ]
+    z.writestr('robolectric.properties', '\n'.join(props))
 
   for cmd in cmd_list:
     cmd.extend(['--classpath', properties_jar_path])

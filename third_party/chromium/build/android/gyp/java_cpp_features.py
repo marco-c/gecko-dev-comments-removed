@@ -19,8 +19,7 @@ class FeatureParserDelegate(java_cpp_utils.CppConstantParser.Delegate):
   
   
   
-  FEATURE_RE = re.compile(
-      r'\s*const(?:\s+\w+_EXPORT)? (?:base::)?Feature\s+k(\w+)\s*(?:=\s*)?')
+  FEATURE_RE = re.compile(r'BASE_FEATURE\(k([^,]+),')
   VALUE_RE = re.compile(r'\s*("(?:\"|[^"])*")\s*,')
 
   def ExtractConstantName(self, line):

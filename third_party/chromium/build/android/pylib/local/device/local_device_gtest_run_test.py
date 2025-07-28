@@ -32,21 +32,27 @@ class LocalDeviceGtestRunTest(unittest.TestCase):
 
   def testExtractTestsFromFilter(self):
     
-    self.assertEqual([
-        'b17',
-        'm4e3',
-        'p51',
-    ], local_device_gtest_run._ExtractTestsFromFilter('b17:m4e3:p51'))
+    self.assertEqual(
+        set([
+            'm4e3',
+            'p51',
+            'b17',
+        ]),
+        set(local_device_gtest_run._ExtractTestsFromFilters(['b17:m4e3:p51'])))
     
-    self.assertIsNone(local_device_gtest_run._ExtractTestsFromFilter('-mk2'))
+    self.assertIsNone(local_device_gtest_run._ExtractTestsFromFilters(['-mk2']))
     
     self.assertIsNone(
-        local_device_gtest_run._ExtractTestsFromFilter('.mk2*:.M67*'))
+        local_device_gtest_run._ExtractTestsFromFilters(['.mk2*:.M67*']))
     
-    self.assertIsNone(local_device_gtest_run._ExtractTestsFromFilter('M67*'))
+    self.assertIsNone(local_device_gtest_run._ExtractTestsFromFilters(['M67*']))
     
     self.assertEqual(['.M67*'],
-                     local_device_gtest_run._ExtractTestsFromFilter('.M67*'))
+                     local_device_gtest_run._ExtractTestsFromFilters(['.M67*']))
+    
+    self.assertEqual(['m4e3'],
+                     local_device_gtest_run._ExtractTestsFromFilters(
+                         ['b17:m4e3:p51', 'b17:m4e3', 'm4e3:p51']))
 
   def testGetLLVMProfilePath(self):
     path = local_device_gtest_run._GetLLVMProfilePath('test_dir', 'sr71', '5')

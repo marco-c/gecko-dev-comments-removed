@@ -10,7 +10,50 @@ import sys
 import tempfile
 
 
+def fix_module_imports(header_path, output_path):
+  """Convert modules import to work without -fmodules support.
+
+  The Swift compiler assumes that the generated Objective-C header will be
+  imported from code compiled with module support enabled (-fmodules). The
+  generated code thus uses @import and provides no fallback if modules are
+  not enabled.
+
+  This function converts the generated header to instead use #import. It
+  assumes that `@import Foo;` can be replaced by `#import <Foo/Foo.h>`.
+
+  The header is read at `header_path` and written to `output_path`.
+  """
+
+  header_contents = []
+  with open(header_path, 'r') as header_file:
+    for line in header_file:
+      if line == '#if __has_feature(modules)\n':
+        header_contents.append('#if 1  // #if __has_feature(modules)\n')
+        nesting_level = 1
+        for line in header_file:
+          if line == '#endif\n':
+            nesting_level -= 1
+          elif line.startswith('@import'):
+            name = line.split()[1].split(';')[0]
+            if name != 'ObjectiveC':
+              header_contents.append(f'#import <{name}/{name}.h>  ')
+            header_contents.append('// ')
+          elif line.startswith('#if'):
+            nesting_level += 1
+
+          header_contents.append(line)
+          if nesting_level == 0:
+            break
+      else:
+        header_contents.append(line)
+
+  with open(output_path, 'w') as header_file:
+    for line in header_contents:
+      header_file.write(line)
+
+
 def compile_module(module, sources, settings, extras, tmpdir):
+  """Compile `module` from `sources` using `settings`."""
   output_file_map = {}
   if settings.whole_module_optimization:
     output_file_map[''] = {
@@ -58,6 +101,12 @@ def compile_module(module, sources, settings, extras, tmpdir):
     output_file_map_file.flush()
 
   extra_args = []
+  if settings.file_compilation_dir:
+    extra_args.extend([
+        '-file-compilation-dir',
+        settings.file_compilation_dir,
+    ])
+
   if settings.bridge_header:
     extra_args.extend([
         '-import-objc-header',
@@ -117,14 +166,23 @@ def compile_module(module, sources, settings, extras, tmpdir):
   
   
   
+  module_cache_path = os.path.join(tmpdir, settings.swiftc_version,
+                                   'ModuleCache')
+
+  
+  
+  if settings.fix_module_imports:
+    header_path = os.path.join(tmpdir, f'{module}.h')
+  else:
+    header_path = settings.header_path
+
   process = subprocess.Popen([
-      'xcrun',
-      '--toolchain',
-      'swift',
-      'swiftc',
+      settings.swift_toolchain_path + '/usr/bin/swiftc',
       '-parse-as-library',
       '-module-name',
       module,
+      '-module-cache-path',
+      module_cache_path,
       '-emit-object',
       '-emit-dependencies',
       '-emit-module',
@@ -132,7 +190,7 @@ def compile_module(module, sources, settings, extras, tmpdir):
       settings.module_path,
       '-emit-objc-header',
       '-emit-objc-header-path',
-      settings.header_path,
+      header_path,
       '-output-file-map',
       output_file_map_path,
       '-pch-output-dir',
@@ -142,6 +200,9 @@ def compile_module(module, sources, settings, extras, tmpdir):
   process.communicate()
   if process.returncode:
     sys.exit(process.returncode)
+
+  if settings.fix_module_imports:
+    fix_module_imports(header_path, settings.header_path)
 
   
   
@@ -239,10 +300,30 @@ def main(args):
                       action='store',
                       required=True,
                       help='path to the root of the repository')
+  parser.add_argument('-swift-toolchain-path',
+                      default='',
+                      action='store',
+                      dest='swift_toolchain_path',
+                      help='path to the root of the Swift toolchain')
+  parser.add_argument('-file-compilation-dir',
+                      default='',
+                      action='store',
+                      help='compilation directory to embed in the debug info')
   parser.add_argument('-enable-cxx-interop',
                       dest='enable_cxx_interop',
                       action='store_true',
                       help='allow importing C++ modules into Swift')
+  parser.add_argument('-fix-module-imports',
+                      action='store_true',
+                      help='enable hack to fix module imports')
+  parser.add_argument('-swiftc-version',
+                      default='',
+                      action='store',
+                      help='version of swiftc compiler')
+  parser.add_argument('-xcode-version',
+                      default='',
+                      action='store',
+                      help='version of xcode')
 
   parsed, extras = parser.parse_known_args(args)
   with tempfile.TemporaryDirectory() as tmpdir:

@@ -67,6 +67,17 @@ OBJECT_PATH_LTO = 'object_path_lto'
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 class LinkerDriver(object):
     def __init__(self, args):
         """Creates a new linker driver.
@@ -90,6 +101,7 @@ class LinkerDriver(object):
             ('unstripped,', self.run_save_unstripped),
             ('strippath,', self.set_strip_path),
             ('strip,', self.run_strip),
+            ('clean_objects', self.run_clean_objects),
         ]
 
         
@@ -99,6 +111,10 @@ class LinkerDriver(object):
 
         
         self._linker_output = None
+        
+        
+        self._object_path_lto_temp = None
+        
         
         
         self._object_path_lto = None
@@ -124,7 +140,7 @@ class LinkerDriver(object):
 
         if self._object_path_lto is not None:
             compiler_driver_args.append('-Wl,-object_path_lto,{}'.format(
-                self._object_path_lto.name))
+                self._object_path_lto))
         if self._get_linker_output() is None:
             raise ValueError(
                 'Could not find path to linker output (-o or --output)')
@@ -183,8 +199,16 @@ class LinkerDriver(object):
         
         
         if sub_arg == OBJECT_PATH_LTO:
-            self._object_path_lto = tempfile.TemporaryDirectory(
+            self._object_path_lto_temp = tempfile.TemporaryDirectory(
                 dir=os.getcwd())
+            self._object_path_lto = self._object_path_lto_temp.name
+            return (OBJECT_PATH_LTO, lambda: [])
+        elif sub_arg.startswith(OBJECT_PATH_LTO):
+            assert sub_arg[len(OBJECT_PATH_LTO):] == ',persist'
+            output = self._get_linker_output()
+            assert output
+            self._object_path_lto = output + '.lto_objects'
+            os.mkdir(self._object_path_lto)
             return (OBJECT_PATH_LTO, lambda: [])
 
         for driver_action in self._actions:
@@ -327,6 +351,25 @@ class LinkerDriver(object):
             No output - this step is run purely for its side-effect.
         """
         self._strip_cmd = [strip_path]
+        return []
+
+    def run_clean_objects(self, args_string):
+        """Linker driver action for -Wcrl,clean_objects,<arguments>.
+
+        For each argument, looks for a directory called "${argument}.lto_objects
+        and deletes it.
+
+        Args:
+            arguments: string, Comma-separated prefixes of LTO object
+            directories to clean up
+
+        Returns:
+            No output
+        """
+        for output in args_string.lstrip(',').split(','):
+            name = output + '.lto_objects'
+            assert os.path.isdir(name)
+            shutil.rmtree(name)
         return []
 
 

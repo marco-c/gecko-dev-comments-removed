@@ -91,6 +91,14 @@ class _Group:
     self.track_stripped = track_stripped
     self.track_compressed = track_compressed
 
+  def __eq__(self, other):
+    """Overrides the default implementation"""
+    if isinstance(other, _Group):
+      return (self.paths == other.paths) & (self.title == other.title) & (
+          self.track_stripped == other.track_stripped) & (
+              self.track_compressed == other.track_compressed)
+    return False
+
 
 
 
@@ -105,6 +113,8 @@ _TRACKED_GROUPS = [
            title='File: chrome_crashpad_handler'),
     _Group(paths=['icudtl.dat'], title='File: icudtl.dat'),
     _Group(paths=['icudtl.dat.hash'], title='File: icudtl.dat.hash'),
+    _Group(paths=['libEGL.so'], title='File: libEGL.so'),
+    _Group(paths=['libGLESv2.so'], title='File: libGLESv2.so'),
     _Group(paths=['nacl_helper'], title='File: nacl_helper'),
     _Group(paths=['resources.pak'], title='File: resources.pak'),
     _Group(paths=[
@@ -298,7 +308,11 @@ def _run_resource_sizes(args):
     tracked_groups.append(
         _Group(paths=['nacl_helper_bootstrap'],
                title='File: nacl_helper_bootstrap'))
-
+  
+  
+  elif args.arch == 'arm64':
+    tracked_groups.remove(
+        _Group(paths=['nacl_helper'], title='File: nacl_helper'))
   for g in tracked_groups:
     sizes = sum(
         map(_get_catagorized_filesizes, _visit_paths(args.out_dir, g.paths)),
@@ -328,7 +342,8 @@ def main():
   argparser.add_argument('--arch',
                          required=True,
                          type=str,
-                         help='The architecture of lacros.')
+                         help='The architecture of lacros, valid values: amd64,'
+                         ' arm32, arm64')
 
   output_group = argparser.add_mutually_exclusive_group()
 

@@ -498,8 +498,7 @@ def Update(force=False, no_download=False):
     
     
     if sys.platform.startswith('linux') and not os.path.ismount(toolchain_dir):
-      import distutils.spawn
-      ciopfs = distutils.spawn.find_executable('ciopfs')
+      ciopfs = shutil.which('ciopfs')
       if not ciopfs:
         
         ciopfs = os.path.join(script_dir, 'ciopfs')

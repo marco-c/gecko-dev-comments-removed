@@ -22,7 +22,6 @@ STABLE_TEST_SUITES = [
     'android_webview_unittests',
     'base_unittests',
     'blink_unittests',
-    'breakpad_unittests',
     'cc_unittests',
     'components_unittests',
     'content_browsertests',
@@ -48,7 +47,6 @@ STABLE_TEST_SUITES = [
 
 
 ASAN_EXCLUDED_TEST_SUITES = [
-    'breakpad_unittests',
     'sandbox_linux_unittests',
 
     

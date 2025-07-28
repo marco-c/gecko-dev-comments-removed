@@ -22,9 +22,6 @@ from util import diff_utils
 from util import zipalign
 
 
-zipalign.ApplyZipFileZipAlignFix()
-
-
 
 _NO_COMPRESS_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.gif', '.wav', '.mp2',
                            '.mp3', '.ogg', '.aac', '.mpg', '.mpeg', '.mid',

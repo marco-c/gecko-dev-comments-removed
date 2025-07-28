@@ -6,6 +6,8 @@ package org.chromium.bytecode;
 
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
+import static org.objectweb.asm.Opcodes.ACC_PROTECTED;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ASM7;
 
 import org.objectweb.asm.ClassVisitor;
@@ -19,7 +21,7 @@ import java.util.ArrayList;
 
 
 class ParentMethodCheckerClassAdapter extends ClassVisitor {
-    private static final String OBJECT_CLASS_DESCRIPTOR = "java.lang.Object";
+    private static final String OBJECT_CLASS_DESCRIPTOR = "java/lang/Object";
 
     private final ArrayList<MethodDescription> mMethodsToCheck;
     private final ClassLoader mJarClassLoader;
@@ -62,8 +64,12 @@ class ParentMethodCheckerClassAdapter extends ClassVisitor {
             
             boolean isMethodPrivate = (access & ACC_PRIVATE) == ACC_PRIVATE;
             boolean isMethodFinal = (access & ACC_FINAL) == ACC_FINAL;
+            boolean isMethodPackagePrivate =
+                    (access & (ACC_PUBLIC | ACC_PROTECTED | ACC_PRIVATE)) == 0;
+
             
-            methodToCheck.shouldCreateOverride = !isMethodPrivate && !isMethodFinal;
+            methodToCheck.shouldCreateOverride =
+                    !isMethodPrivate && !isMethodFinal && !isMethodPackagePrivate;
         }
 
         return super.visitMethod(access, name, descriptor, signature, exceptions);
@@ -72,6 +78,15 @@ class ParentMethodCheckerClassAdapter extends ClassVisitor {
     @Override
     public void visitEnd() {
         if (mIsCheckingObjectClass) {
+            
+            
+            
+            
+            for (MethodDescription method : mMethodsToCheck) {
+                if (method.shouldCreateOverride == null) {
+                    method.shouldCreateOverride = false;
+                }
+            }
             return;
         }
 

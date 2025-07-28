@@ -95,29 +95,39 @@ def _GenerateSequentialFileNames(filename):
     yield '%s_%d%s' % (base, i, ext)
 
 
-def _ExtractTestsFromFilter(gtest_filter):
-  """Returns the list of tests specified by the given filter.
+def _ExtractTestsFromFilters(gtest_filters):
+  """Returns the list of tests specified by the given filters.
 
   Returns:
     None if the device should be queried for the test list instead.
   """
   
-  if not gtest_filter or '-' in gtest_filter:
+  for gtest_filter in gtest_filters:
+    if '-' in gtest_filter:
+      return None
+  
+  if not any(gtest_filters):
     return None
 
-  patterns = gtest_filter.split(':')
-  
-  
-  
-  
-  if len(patterns) == 1 and patterns[0].endswith('*'):
-    no_suffix = patterns[0].rstrip('*')
-    if '*' not in no_suffix and '.' in no_suffix:
-      return patterns
+  if len(gtest_filters) == 1:
+    patterns = gtest_filters[0].split(':')
+    
+    
+    
+    
+    if len(patterns) == 1 and patterns[0].endswith('*'):
+      no_suffix = patterns[0].rstrip('*')
+      if '*' not in no_suffix and '.' in no_suffix:
+        return patterns
 
-  if '*' in gtest_filter:
-    return None
-  return patterns
+  all_patterns = set(gtest_filters[0].split(':'))
+  for gtest_filter in gtest_filters:
+    patterns = gtest_filter.split(':')
+    for pattern in patterns:
+      if '*' in pattern:
+        return None
+    all_patterns = all_patterns.intersection(set(patterns))
+  return list(all_patterns)
 
 
 def _GetDeviceTimeoutMultiplier():
@@ -272,8 +282,8 @@ class _ApkDelegate:
           reinstall=True,
           permissions=self._permissions)
 
-  def ResultsDirectory(self, device):
-    return device.GetApplicationDataDirectory(self._package)
+  def ResultsDirectory(self, device):  
+    return device.GetExternalStoragePath()
 
   def Run(self, test, device, flags=None, **kwargs):
     extras = dict(self._extras)
@@ -546,15 +556,6 @@ class LocalDeviceGtestRun(local_device_test_run.LocalDeviceTestRun):
       def bind_crash_handler(step, dev):
         return lambda: crash_handler.RetryOnSystemCrash(step, dev)
 
-      
-      
-      
-      
-      
-      
-      
-      device.EnableRoot()
-
       steps = [
           bind_crash_handler(s, device)
           for s in (install_apk, push_test_data, init_tool_and_start_servers)]
@@ -569,11 +570,25 @@ class LocalDeviceGtestRun(local_device_test_run.LocalDeviceTestRun):
         self._test_instance.GetDataDependencies())
 
   
-  def _ShouldShard(self):
+  def _ShouldShardTestsForDevices(self):
+    """Shard tests across several devices.
+
+    Returns:
+      True if tests should be sharded across several devices,
+      False otherwise.
+    """
     return True
 
   
-  def _CreateShards(self, tests):
+  def _CreateShardsForDevices(self, tests):
+    """Create shards of tests to run on devices.
+
+    Args:
+      tests: List containing tests or test batches.
+
+    Returns:
+      List of test batches.
+    """
     
     
     
@@ -602,7 +617,7 @@ class LocalDeviceGtestRun(local_device_test_run.LocalDeviceTestRun):
       
       
       
-      tests = _ExtractTestsFromFilter(self._test_instance.gtest_filter)
+      tests = _ExtractTestsFromFilters(self._test_instance.gtest_filters)
       if tests:
         return tests
 
@@ -618,8 +633,10 @@ class LocalDeviceGtestRun(local_device_test_run.LocalDeviceTestRun):
         timeout = None
 
       flags = [
-          f for f in self._test_instance.flags
-          if f not in ['--wait-for-debugger', '--wait-for-java-debugger']
+          f for f in self._test_instance.flags if f not in [
+              '--wait-for-debugger', '--wait-for-java-debugger',
+              '--gtest_also_run_disabled_tests'
+          ]
       ]
       flags.append('--gtest_list_tests')
 

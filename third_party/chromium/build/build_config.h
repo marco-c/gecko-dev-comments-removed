@@ -49,7 +49,7 @@
 #ifndef BUILD_BUILD_CONFIG_H_
 #define BUILD_BUILD_CONFIG_H_
 
-#include "build/buildflag.h"
+#include "build/buildflag.h"  
 
 
 #if defined(__native_client__)
@@ -243,6 +243,12 @@
 #define BUILDFLAG_INTERNAL_IS_WIN() (1)
 #else
 #define BUILDFLAG_INTERNAL_IS_WIN() (0)
+#endif
+
+#if defined(USE_OZONE)
+#define BUILDFLAG_INTERNAL_IS_OZONE() (1)
+#else
+#define BUILDFLAG_INTERNAL_IS_OZONE() (0)
 #endif
 
 

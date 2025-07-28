@@ -4,15 +4,18 @@
 
 package org.chromium.build;
 
+import com.android.tools.r8.DiagnosticsHandler;
+import com.android.tools.r8.retrace.ProguardMappingSupplier;
+import com.android.tools.r8.retrace.Retrace;
+import com.android.tools.r8.retrace.RetraceCommand;
+import com.android.tools.r8.retrace.StackTraceSupplier;
+
 import java.io.BufferedReader;
-import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.LineNumberReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-
-import proguard.retrace.ReTrace;
+import java.util.Collections;
+import java.util.List;
 
 
 
@@ -40,6 +43,9 @@ public class FlushingReTrace {
             
             
             + "(?:.*?(?::|\\bat)\\s+%c\\.%m\\s*\\(\\s*%s(?:\\s*:\\s*%l\\s*)?\\))|"
+            
+            
+            + "(?:.*?\\(\\s*%s(?:\\s*:\\s*%l\\s*)?\\)\\s*%c\\.%m)|"
             
             
             + "(?:.*java\\.lang\\.NullPointerException.*[\"']%t\\s*%c\\.(?:%f|%m\\(%a\\))[\"'].*)|"
@@ -93,24 +99,48 @@ public class FlushingReTrace {
             usage();
         }
 
-        File mappingFile = new File(args[0]);
         try {
-            LineNumberReader reader = new LineNumberReader(
-                    new BufferedReader(new InputStreamReader(System.in, "UTF-8")));
+            ProguardMappingSupplier mappingSupplier =
+                    ProguardMappingSupplier.builder()
+                            .setProguardMapProducer(() -> new FileInputStream(args[0]))
+                            .build();
+            
+            
+            
+            mappingSupplier.createRetracer(new DiagnosticsHandler() {});
 
             
-            boolean autoFlush = true;
-            PrintWriter writer =
-                    new PrintWriter(new OutputStreamWriter(System.out, "UTF-8"), autoFlush);
+            RetraceCommand retraceCommand =
+                    RetraceCommand.builder()
+                            .setMappingSupplier(mappingSupplier)
+                            .setRetracedStackTraceConsumer(
+                                    retraced -> retraced.forEach(System.out::println))
+                            .setRegularExpression(LINE_PARSE_REGEX)
+                            .setStackTrace(new StackTraceSupplier() {
+                                final BufferedReader mReader = new BufferedReader(
+                                        new InputStreamReader(System.in, "UTF-8"));
 
-            boolean verbose = false;
-            new ReTrace(LINE_PARSE_REGEX, verbose, mappingFile).retrace(reader, writer);
+                                @Override
+                                public List<String> get() {
+                                    try {
+                                        String line = mReader.readLine();
+                                        if (line == null) {
+                                            return null;
+                                        }
+                                        return Collections.singletonList(line);
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                        return null;
+                                    }
+                                }
+                            })
+                            .build();
+            Retrace.run(retraceCommand);
         } catch (IOException ex) {
             
             ex.printStackTrace();
             System.exit(1);
         }
-
         System.exit(0);
     }
 }

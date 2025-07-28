@@ -4,13 +4,17 @@
 """Common methods and variables used by Cr-Fuchsia testing infrastructure."""
 
 import json
+import logging
 import os
 import platform
 import re
 import subprocess
+import time
 
 from argparse import ArgumentParser
 from typing import Iterable, List, Optional
+
+from compatible_utils import get_ssh_prefix
 
 DIR_SRC_ROOT = os.path.abspath(
     os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, os.pardir))
@@ -33,6 +37,62 @@ SDK_TOOLS_DIR = os.path.join(SDK_ROOT, 'tools', get_host_arch())
 _FFX_TOOL = os.path.join(SDK_TOOLS_DIR, 'ffx')
 
 
+
+_FFX_ISOLATE_DIR = None
+
+
+def set_ffx_isolate_dir(isolate_dir: str) -> None:
+    """Overwrites |_FFX_ISOLATE_DIR|."""
+
+    global _FFX_ISOLATE_DIR  
+    _FFX_ISOLATE_DIR = isolate_dir
+
+
+def _get_daemon_status():
+    """Determines daemon status via `ffx daemon socket`.
+
+    Returns:
+      dict of status of the socket. Status will have a key Running or
+      NotRunning to indicate if the daemon is running.
+    """
+    status = json.loads(
+        run_ffx_command(['--machine', 'json', 'daemon', 'socket'],
+                        check=True,
+                        capture_output=True,
+                        suppress_repair=True).stdout.strip())
+    return status.get('pid', {}).get('status', {'NotRunning': True})
+
+
+def _is_daemon_running():
+    return 'Running' in _get_daemon_status()
+
+
+def _wait_for_daemon(start=True, timeout_seconds=100):
+    """Waits for daemon to reach desired state in a polling loop.
+
+    Sleeps for 5s between polls.
+
+    Args:
+      start: bool. Indicates to wait for daemon to start up. If False,
+        indicates waiting for daemon to die.
+      timeout_seconds: int. Number of seconds to wait for the daemon to reach
+        the desired status.
+    Raises:
+      TimeoutError: if the daemon does not reach the desired state in time.
+    """
+    wanted_status = 'start' if start else 'stop'
+    sleep_period_seconds = 5
+    attempts = int(timeout_seconds / sleep_period_seconds)
+    for i in range(attempts):
+        if _is_daemon_running() == start:
+            return
+        if i != attempts:
+            logging.info('Waiting for daemon to %s...', wanted_status)
+            time.sleep(sleep_period_seconds)
+
+    raise TimeoutError(f'Daemon did not {wanted_status} in time.')
+
+
 def _run_repair_command(output):
     """Scans |output| for a self-repair command to run and, if found, runs it.
 
@@ -48,6 +108,8 @@ def _run_repair_command(output):
 
     try:
         run_ffx_command(args, suppress_repair=True)
+        
+        _wait_for_daemon(start=True)
     except subprocess.CalledProcessError:
         return False  
     return True  
@@ -57,6 +119,7 @@ def run_ffx_command(cmd: Iterable[str],
                     target_id: Optional[str] = None,
                     check: bool = True,
                     suppress_repair: bool = False,
+                    configs: Optional[List[str]] = None,
                     **kwargs) -> subprocess.CompletedProcess:
     """Runs `ffx` with the given arguments, waiting for it to exit.
 
@@ -74,6 +137,7 @@ def run_ffx_command(cmd: Iterable[str],
             exit code.
         suppress_repair: If True, do not attempt to find and run a repair
             command.
+        configs: A list of configs to be applied to the current command.
     Returns:
         A CompletedProcess instance
     Raises:
@@ -83,11 +147,32 @@ def run_ffx_command(cmd: Iterable[str],
     ffx_cmd = [_FFX_TOOL]
     if target_id:
         ffx_cmd.extend(('--target', target_id))
+    if configs:
+        for config in configs:
+            ffx_cmd.extend(('--config', config))
     ffx_cmd.extend(cmd)
+    env = os.environ
+    if _FFX_ISOLATE_DIR:
+        env['FFX_ISOLATE_DIR'] = _FFX_ISOLATE_DIR
+
     try:
-        return subprocess.run(ffx_cmd, check=check, encoding='utf-8', **kwargs)
+        if not suppress_repair:
+            
+            
+            output_captured = kwargs.get('capture_output') or (
+                kwargs.get('stdout') and kwargs.get('stderr'))
+            if not output_captured:
+                
+                kwargs['stdout'] = subprocess.PIPE
+                kwargs['stderr'] = subprocess.STDOUT
+        return subprocess.run(ffx_cmd,
+                              check=check,
+                              encoding='utf-8',
+                              env=env,
+                              **kwargs)
     except subprocess.CalledProcessError as cpe:
-        if suppress_repair or not _run_repair_command(cpe.output):
+        if suppress_repair or (cpe.output
+                               and not _run_repair_command(cpe.output)):
             raise
 
     
@@ -135,6 +220,7 @@ def register_device_args(parser: ArgumentParser) -> None:
     """Register device arguments."""
     device_args = parser.add_argument_group('device', 'device arguments')
     device_args.add_argument('--target-id',
+                             default=os.environ.get('FUCHSIA_NODENAME'),
                              help=('Specify the target device. This could be '
                                    'a node-name (e.g. fuchsia-emulator) or an '
                                    'an ip address along with an optional port '
@@ -160,16 +246,28 @@ def get_component_uri(package: str) -> str:
 def resolve_packages(packages: List[str], target_id: Optional[str]) -> None:
     """Ensure that all |packages| are installed on a device."""
     for package in packages:
-        
         run_ffx_command(
-            ['component', 'destroy', f'/core/ffx-laboratory:{package}'],
+            ['component', 'reload', f'/core/ffx-laboratory:{package}'],
             target_id,
             check=False)
 
-        run_ffx_command([
-            'component', 'create', f'/core/ffx-laboratory:{package}',
-            f'fuchsia-pkg://{REPO_ALIAS}/{package}#meta/{package}.cm'
-        ], target_id)
-        run_ffx_command(
-            ['component', 'resolve', f'/core/ffx-laboratory:{package}'],
-            target_id)
+
+def get_ssh_address(target_id: Optional[str]) -> str:
+    """Determines SSH address for given target."""
+    return run_ffx_command(('target', 'get-ssh-address'),
+                           target_id,
+                           capture_output=True).stdout.strip()
+
+
+
+
+def resolve_v1_packages(packages: List[str], target_id: Optional[str]) -> None:
+    """Ensure that all cfv1 packages are installed on a device."""
+    for package in packages:
+        resolve_cmd = [
+            '--', 'pkgctl', 'resolve',
+            'fuchsia-pkg://%s/%s' % (REPO_ALIAS, package)
+        ]
+        subprocess.run(get_ssh_prefix(get_ssh_address(target_id)) +
+                       resolve_cmd,
+                       check=True)

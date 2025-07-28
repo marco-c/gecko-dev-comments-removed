@@ -35,6 +35,9 @@ def main():
       '--export-java-symbols',
       action='store_true',
       help='Export Java_* JNI methods')
+  parser.add_argument('--export-fortesting-java-symbols',
+                      action='store_true',
+                      help='Export Java_*_ForTesting JNI methods')
   parser.add_argument(
       '--export-symbol-allowlist-file',
       action='append',
@@ -48,13 +51,38 @@ def main():
       help='Export JNI_OnLoad_* methods')
   options = parser.parse_args()
 
+  if options.export_fortesting_java_symbols:
+    assert options.export_java_symbols, ('Must export java symbols if exporting'
+                                         'fortesting java symbols.')
+
   
   
   
   symbol_list = ['CrashpadHandlerMain', 'JNI_OnLoad']
 
   if options.export_java_symbols:
-    symbol_list.append('Java_*')
+    if options.export_fortesting_java_symbols:
+      symbol_list.append('Java_*')
+    else:
+      
+      
+      
+      symbol_list.append('Java_*[!F]orTesting')
+      symbol_list.append('Java_*[!o]rTesting')
+      symbol_list.append('Java_*[!r]Testing')
+      symbol_list.append('Java_*[!T]esting')
+      symbol_list.append('Java_*[!e]sting')
+      symbol_list.append('Java_*[!s]ting')
+      symbol_list.append('Java_*[!t]ing')
+      symbol_list.append('Java_*[!i]ng')
+      symbol_list.append('Java_*[!n]g')
+      symbol_list.append('Java_*[!F]orTest')
+      symbol_list.append('Java_*[!o]rTest')
+      symbol_list.append('Java_*[!r]Test')
+      symbol_list.append('Java_*[!T]est')
+      symbol_list.append('Java_*[!e]st')
+      symbol_list.append('Java_*[!s]t')
+      symbol_list.append('Java_*[!gt]')
 
   if options.export_feature_registrations:
     symbol_list.append('JNI_OnLoad_*')

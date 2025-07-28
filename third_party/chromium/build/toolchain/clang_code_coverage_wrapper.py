@@ -97,8 +97,8 @@ _COVERAGE_EXCLUSION_LIST_MAP = {
         
         
         '../../chrome/browser/media/router/providers/cast/cast_internal_message_util.cc',  
-        '../../components/cast_channel/cast_channel_enum.cc',
-        '../../components/cast_channel/cast_message_util.cc',
+        '../../components/media_router/common/providers/cast/channel/cast_channel_enum.cc',  
+        '../../components/media_router/common/providers/cast/channel/cast_message_util.cc',  
         '../../components/media_router/common/providers/cast/cast_media_source.cc',  
         '../../ui/events/keycodes/dom/keycode_converter.cc',
         

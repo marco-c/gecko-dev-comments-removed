@@ -40,24 +40,15 @@ class JavacOutputProcessor:
                                 r'(?P<full_message> (?P<message>.*))$')
     self._marker_re = re.compile(r'\s*(?P<marker>\^)\s*$')
 
-    
-    
-    
-    self._please_add_dep_re = re.compile(r'(?P<full_message>Hint:.*)$')
-
-    
-    
     self._symbol_not_found_re_list = [
         
         
-        (True,
-         re.compile(fileline_prefix +
-                    r'( error: package [\w.]+ does not exist)$')),
+        re.compile(fileline_prefix +
+                   r'( error: package [\w.]+ does not exist)$'),
         
-        (False, re.compile(fileline_prefix + r'( error: cannot find symbol)$')),
+        re.compile(fileline_prefix + r'( error: cannot find symbol)$'),
         
-        (True,
-         re.compile(fileline_prefix + r'( error: symbol not found [\w.]+)$')),
+        re.compile(fileline_prefix + r'( error: symbol not found [\w.]+)$'),
     ]
 
     
@@ -85,8 +76,14 @@ class JavacOutputProcessor:
     for line in lines:
       yield self._ApplyColors(line)
     if self._suggested_deps:
+
+      def yellow(text):
+        return colorama.Fore.YELLOW + text + colorama.Fore.RESET
+
       
-      yield "Full list of deps to add to {}:".format(self._target_name)
+      yield yellow('Hint:') + ' One or more errors due to missing GN deps.'
+      yield (yellow('Hint:') + ' Try adding the following to ' +
+             yellow(self._target_name))
       for dep in sorted(self._suggested_deps):
         yield '    "{}",'.format(dep)
 
@@ -108,16 +105,15 @@ class JavacOutputProcessor:
     line = next(lines, None)
     while previous_line != None:
       try:
-        elaborated_lines = self._ElaborateLineForUnknownSymbol(
-            previous_line, line)
+        self._LookForUnknownSymbol(previous_line, line)
       except Exception:
-        elaborated_lines = ["Error in _ElaborateLineForUnknownSymbol ---"]
+        elaborated_lines = ['Error in _LookForUnknownSymbol ---']
         elaborated_lines += traceback.format_exc().splitlines()
-        elaborated_lines += ["--- end _ElaborateLineForUnknownSymbol error"]
-        elaborated_lines += [previous_line]
-      for elaborated_line in elaborated_lines:
-        yield elaborated_line
+        elaborated_lines += ['--- end _LookForUnknownSymbol error']
+        for elaborated_line in elaborated_lines:
+          yield elaborated_line
 
+      yield previous_line
       previous_line = line
       line = next(lines, None)
 
@@ -127,73 +123,62 @@ class JavacOutputProcessor:
       line = self._Colorize(line, self._warning_re, self._warning_color)
     elif self._error_re.match(line):
       line = self._Colorize(line, self._error_re, self._error_color)
-    elif self._please_add_dep_re.match(line):
-      line = self._Colorize(line, self._please_add_dep_re, self._error_color)
     elif self._marker_re.match(line):
       line = self._Colorize(line, self._marker_re, self._marker_color)
     return line
 
-  def _ElaborateLineForUnknownSymbol(self, line, next_line):
+  def _LookForUnknownSymbol(self, line, next_line):
     if not next_line:
-      return [line]
+      return
 
     import_re_match = self._import_re.match(next_line)
     if not import_re_match:
-      return [line]
+      return
 
-    symbol_missing = False
-    has_missing_symbol_in_error_msg = False
-    for symbol_in_error_msg, regex in self._symbol_not_found_re_list:
+    for regex in self._symbol_not_found_re_list:
       if regex.match(line):
-        symbol_missing = True
-        has_missing_symbol_in_error_msg = symbol_in_error_msg
         break
+    else:
+      return
 
-    if not symbol_missing:
-      return [line]
+    if self._class_lookup_index is None:
+      self._class_lookup_index = lookup_dep.ClassLookupIndex(
+          pathlib.Path(os.getcwd()),
+          should_build=False,
+      )
 
     class_to_lookup = import_re_match.group('imported_class')
-    if self._class_lookup_index == None:
-      self._class_lookup_index = lookup_dep.ClassLookupIndex(pathlib.Path(
-          os.getcwd()),
-                                                             should_build=False)
     suggested_deps = self._class_lookup_index.match(class_to_lookup)
 
-    if len(suggested_deps) != 1:
-      suggested_deps = self._FindFactoryDep(suggested_deps)
-      if len(suggested_deps) != 1:
-        return [line]
+    if not suggested_deps:
+      return
 
-    suggested_target = suggested_deps[0].target
+    suggested_deps = self._DisambiguateDeps(suggested_deps)
+    suggested_deps_str = ', '.join(s.target for s in suggested_deps)
 
-    if not has_missing_symbol_in_error_msg:
-      line = "{} {}".format(line, class_to_lookup)
+    if len(suggested_deps) > 1:
+      suggested_deps_str = 'one of: ' + suggested_deps_str
 
-    self._suggested_deps.add(suggested_target)
-    return [
-        line,
-        'Hint: Add "{}" to deps of {}'.format(suggested_target,
-                                              self._target_name),
-    ]
+    self._suggested_deps.add(suggested_deps_str)
 
   @staticmethod
-  def _FindFactoryDep(class_entries):
-    """Find the android_library_factory() GN target."""
-    if len(class_entries) != 2:
-      return []
+  def _DisambiguateDeps(class_entries):
+    if len(class_entries) == 1:
+      return class_entries
 
     
     
     
     
     
-    if class_entries[0].low_classpath_priority == class_entries[
-        1].low_classpath_priority:
-      return []
+    
+    low_entries = [x for x in class_entries if x.low_classpath_priority]
+    class_entries = low_entries or class_entries
 
-    if class_entries[0].low_classpath_priority:
-      return [class_entries[0]]
-    return [class_entries[1]]
+    
+    jsr_entries = [x for x in class_entries if 'jsr' in x.target]
+    class_entries = jsr_entries or class_entries
+    return class_entries
 
   @staticmethod
   def _RemoveSuffixesIfPresent(suffixes, text):

@@ -13,10 +13,10 @@ from devil.utils import reraiser_thread
 from pylib import constants
 
 
-_MINIUMUM_TIMEOUT = 3.0
-_PER_LINE_TIMEOUT = .002  
-_PROCESS_START_TIMEOUT = 10.0
-_MAX_RESTARTS = 10  
+_MINIUMUM_TIMEOUT = 10.0
+_PER_LINE_TIMEOUT = .005  
+_PROCESS_START_TIMEOUT = 20.0
+_MAX_RESTARTS = 4  
 
 
 class Deobfuscator:
@@ -110,7 +110,18 @@ class Deobfuscator:
               'deobfuscator: Close() called by another thread during join().')
           return lines
         if reader_thread.is_alive():
-          logging.error('deobfuscator: Timed out.')
+          logging.error('deobfuscator: Timed out after %f seconds with input:',
+                        timeout)
+          
+          
+          
+          for l in lines:
+            logging.error(l)
+          logging.error('deobfuscator: End of timed out input.')
+          logging.error('deobfuscator: Timed out output was:')
+          for l in out_lines:
+            logging.error(l)
+          logging.error('deobfuscator: End of timed out output.')
           self.Close()
           return lines
         return out_lines

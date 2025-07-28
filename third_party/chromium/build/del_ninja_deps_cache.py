@@ -2,9 +2,9 @@
 
 
 
-"""Delete .ninja_deps if it references files inside libc++'s __string dir,
-which has since been reverted back to a file, and would cause Ninja fail on
-Windows. See crbug.com/1337238 ..."""
+"""Delete .ninja_deps if it references files inside a libc++ dir which has
+since been reverted back to a file, and would cause Ninja fail on Windows. See
+crbug.com/1337238"""
 
 import os
 import sys
@@ -13,27 +13,25 @@ import sys
 def main():
   os.chdir(os.path.join(os.path.dirname(__file__), '..'))
 
-  if os.path.isdir('buildtools/third_party/libc++/trunk/include/__string'):
-    
-    return 0
+  
+  bad_dirs = [
+      'buildtools/third_party/libc++/trunk/include/__string',
+      'buildtools/third_party/libc++/trunk/include/__tuple',
+  ]
 
-  for d in os.listdir('out'):
-    obj_file = os.path.join(
-        'out', d,
-        'obj/buildtools/third_party/libc++/libc++/legacy_debug_handler.obj')
-    if not os.path.exists(obj_file):
+  for bad_dir in bad_dirs:
+    if os.path.isdir(bad_dir):
       
       continue
 
-    try:
-      deps = os.path.join('out', d, '.ninja_deps')
-      if b'__string/char_traits.h' in open(deps, 'rb').read():
-        print('Deleting ', deps)
-        os.remove(deps)
-        print('Deleting ', obj_file)
-        os.remove(obj_file)
-    except FileNotFoundError:
-      pass
+    for out_dir in os.listdir('out'):
+      ninja_deps = os.path.join('out', out_dir, '.ninja_deps')
+      try:
+        if str.encode(bad_dir) + b'/' in open(ninja_deps, 'rb').read():
+          print('Deleting', ninja_deps)
+          os.remove(ninja_deps)
+      except FileNotFoundError:
+        pass
 
   return 0
 

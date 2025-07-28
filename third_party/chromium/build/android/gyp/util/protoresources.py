@@ -4,7 +4,7 @@
 """Functions that modify resources in protobuf format.
 
 Format reference:
-https://cs.android.com/android/platform/superproject/+/master:frameworks/base/tools/aapt2/Resources.proto
+https://cs.android.com/search?q=f:aapt2.*Resources.proto
 """
 
 import logging

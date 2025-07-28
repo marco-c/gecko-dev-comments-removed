@@ -10,6 +10,7 @@ import logging
 import os
 import re
 import shutil
+import shlex
 import sys
 import tempfile
 import zipfile
@@ -23,32 +24,31 @@ _DEX_XMX = '2G'
 
 _IGNORE_WARNINGS = (
     
-    r'Type `libcore.io.Memory` was not found',
     
-    r'Type `dalvik.system.VMStack` was not found',
-    r'Type `sun.misc.JavaLangAccess` was not found',
-    r'Type `sun.misc.SharedSecrets` was not found',
-    
-    r'Type `java.lang.management.ManagementFactory` was not found',
-    
-    r'Missing class sun.misc.Unsafe',
     
     r'Missing class org.chromium.build.NativeLibraries',
-    
-    r'Missing class com.google.errorprone.annotations.RestrictedInheritance',
     
     r'referenced from: com.google.protobuf.GeneratedMessageLite$GeneratedExtension',  
     
     
     
-    r'Warning: Cannot emulate interface ',
+    
+    r'Warning: Specification conversion: The following',
     
     
     
     
-    r'Warning: Specification conversion: The following prefixes do not match any type:',  
+    
+    
+    r'GeneratedExtensionRegistryLite.CONTAINING_TYPE_',
     
     r'Ignoring -shrinkunusedprotofields since the protobuf-lite runtime is',
+    
+    r'/third_party/.*Proguard configuration rule does not match anything',
+    
+    r'Proguard configuration rule does not match anything:.*class android\.',
+    
+    r'Proguard configuration rule does not match anything:',
 )
 
 _SKIPPED_CLASS_FILE_NAMES = (
@@ -125,6 +125,8 @@ def _ParseArgs(args):
   parser.add_argument('--force-enable-assertions',
                       action='store_true',
                       help='Forcefully enable javac generated assertion code.')
+  parser.add_argument('--assertion-handler',
+                      help='The class name of the assertion handler class.')
   parser.add_argument('--warnings-as-errors',
                       action='store_true',
                       help='Treat all warnings as errors.')
@@ -136,6 +138,10 @@ def _ParseArgs(args):
 
   if options.main_dex_rules_path and not options.multi_dex:
     parser.error('--main-dex-rules-path is unused if multidex is not enabled')
+
+  if options.force_enable_assertions and options.assertion_handler:
+    parser.error('Cannot use both --force-enable-assertions and '
+                 '--assertion-handler')
 
   options.class_inputs = build_utils.ParseGnList(options.class_inputs)
   options.class_inputs_filearg = build_utils.ParseGnList(
@@ -151,40 +157,27 @@ def _ParseArgs(args):
 
 def CreateStderrFilter(show_desugar_default_interface_warnings):
   def filter_stderr(output):
+    
+    if os.environ.get('R8_SHOW_ALL_OUTPUT', '0') != '0':
+      return output
+
+    warnings = re.split(r'^(?=Warning)', output, flags=re.MULTILINE)
+    preamble, *warnings = warnings
+
     patterns = list(_IGNORE_WARNINGS)
 
-    
-    
-    
-    
     
     
     if not show_desugar_default_interface_warnings:
       patterns += ['default or static interface methods']
 
     combined_pattern = '|'.join(re.escape(p) for p in patterns)
-    output = build_utils.FilterLines(output, combined_pattern)
+    preamble = build_utils.FilterLines(preamble, combined_pattern)
 
-    
-    
-    
-    
-    
-    
-    output = re.sub(r'^Warning in .*?:\n(?!  )', '', output, flags=re.MULTILINE)
+    compiled_re = re.compile(combined_pattern, re.DOTALL)
+    warnings = [w for w in warnings if not compiled_re.search(w)]
 
-    
-    
-    
-    
-    
-    output = re.sub(
-        r'Rule matches the static final field `java\.lang\.String '
-        'com\.google\.protobuf.*\{\n.*?\n\}\n?',
-        '',
-        output,
-        flags=re.DOTALL)
-    return output
+    return preamble + ''.join(warnings)
 
   return filter_stderr
 
@@ -202,6 +195,7 @@ def _RunD8(dex_cmd, input_paths, output_path, warnings_as_errors,
   with tempfile.NamedTemporaryFile(mode='w', delete=not is_debug) as flag_file:
     
     MAX_ARGS = 50
+    orig_dex_cmd = dex_cmd
     if len(dex_cmd) > MAX_ARGS:
       
       
@@ -215,9 +209,14 @@ def _RunD8(dex_cmd, input_paths, output_path, warnings_as_errors,
 
     
     
-    build_utils.CheckOutput(dex_cmd,
-                            stderr_filter=stderr_filter,
-                            fail_on_output=warnings_as_errors)
+    try:
+      build_utils.CheckOutput(dex_cmd,
+                              stderr_filter=stderr_filter,
+                              fail_on_output=warnings_as_errors)
+    except Exception:
+      if orig_dex_cmd is not dex_cmd:
+        sys.stderr.write('Full command: ' + shlex.join(orig_dex_cmd) + '\n')
+      raise
 
 
 def _ZipAligned(dex_files, output_path):
@@ -513,6 +512,8 @@ def main(args):
   if options.desugar_jdk_libs_json:
     dex_cmd += ['--desugared-lib', options.desugar_jdk_libs_json]
     input_paths += [options.desugar_jdk_libs_json]
+  if options.assertion_handler:
+    dex_cmd += ['--force-assertions-handler:' + options.assertion_handler]
   if options.force_enable_assertions:
     dex_cmd += ['--force-enable-assertions']
 
@@ -522,7 +523,7 @@ def main(args):
       lambda changes: _OnStaleMd5(changes, options, final_dex_inputs, dex_cmd),
       options,
       input_paths=input_paths,
-      input_strings=dex_cmd + [bool(options.incremental_dir)],
+      input_strings=dex_cmd + [str(bool(options.incremental_dir))],
       output_paths=output_paths,
       pass_changes=True,
       track_subpaths_allowlist=track_subpaths_allowlist,

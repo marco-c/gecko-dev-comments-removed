@@ -122,7 +122,7 @@ def UnquoteString(s):
     while pos + count < size and s[pos + count] == '\\':
       count += 1
 
-    result += '\\' * (count / 2)
+    result += '\\' * (count // 2)
     start = pos + count
     if count & 1:
       if start < size:
@@ -381,7 +381,7 @@ assert _RE_BUNDLE_STRING_DEFAULT_VALUE.match(
 _RE_BUNDLE_STRING_LOCALIZED_VALUE = re.compile(
     r'^\s+locale: "([0-9a-zA-Z-]+)" - \[STR\] "(.*)"$')
 assert _RE_BUNDLE_STRING_LOCALIZED_VALUE.match(
-    u'        locale: "ar" - [STR] "گزینه\u200cهای بیشتر"'.encode('utf-8'))
+    '        locale: "ar" - [STR] "گزینه\u200cهای بیشتر"')
 
 
 def ParseBundleResources(bundle_tool_jar_path, bundle_path):
@@ -536,7 +536,11 @@ def ParseApkResources(aapt_path, apk_path):
   current_resource_name = None
   need_value = False
   while True:
-    line = p.stdout.readline().rstrip()
+    try:
+      line = p.stdout.readline().rstrip().decode('utf8')
+    except UnicodeDecodeError:
+      continue
+
     if not line:
       break
     m = _RE_AAPT_CONFIG.match(line)
