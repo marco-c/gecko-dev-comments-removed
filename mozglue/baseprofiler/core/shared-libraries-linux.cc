@@ -843,30 +843,25 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
   
   dl_iterate_phdr(dl_iterate_callback, &libInfoList);
 
-  for (const auto& libInfo : libInfoList) {
-    info.AddSharedLibrary(
-        SharedLibraryAtPath(libInfo.mName.c_str(), libInfo.mFirstMappingStart,
-                            libInfo.mLastMappingEnd,
-                            libInfo.mFirstMappingStart - libInfo.mBaseAddress));
-  }
-
 #if defined(GP_OS_linux)
-  
-  
-  
-  
-  for (size_t i = 0; i < info.GetSize(); i++) {
-    SharedLibrary& lib = info.GetMutableEntry(i);
-    if (lib.GetStart() <= exeExeAddr && exeExeAddr <= lib.GetEnd() &&
-        lib.GetDebugPath().empty()) {
-      lib = SharedLibraryAtPath(exeName, lib.GetStart(), lib.GetEnd(),
-                                lib.GetOffset());
-
-      
-      break;
-    }
-  }
+  bool exeNameAssigned = false;
 #endif
+  for (const auto& libInfo : libInfoList) {
+    const char* libraryName = libInfo.mName.c_str();
+#if defined(GP_OS_linux)
+    
+    
+    if (!exeNameAssigned && libInfo.mFirstMappingStart <= exeExeAddr &&
+        exeExeAddr <= libInfo.mLastMappingEnd && libInfo.mName.empty()) {
+      libraryName = exeName;
+      exeNameAssigned = true;
+    }
+#endif
+
+    info.AddSharedLibrary(SharedLibraryAtPath(
+        libraryName, libInfo.mFirstMappingStart, libInfo.mLastMappingEnd,
+        libInfo.mFirstMappingStart - libInfo.mBaseAddress));
+  }
 
   return info;
 }
