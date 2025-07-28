@@ -2195,8 +2195,6 @@ pref("browser.ml.linkPreview.recentTypingMs", 1000);
 pref("browser.ml.linkPreview.shift", true);
 pref("browser.ml.linkPreview.shiftAlt", false);
 
-pref("browser.ml.pageAssist.enabled", false);
-
 
 pref("security.mixed_content.block_active_content", true);
 
