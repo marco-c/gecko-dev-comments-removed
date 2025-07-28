@@ -82,12 +82,6 @@ struct SrtpCipherMapEntry {
 };
 
 
-struct SslCipherMapEntry {
-  uint32_t openssl_id;
-  const char* rfc_name;
-};
-
-
 constexpr SrtpCipherMapEntry kSrtpCipherMap[] = {
     {"SRTP_AES128_CM_SHA1_80", webrtc::kSrtpAes128CmSha1_80},
     {"SRTP_AES128_CM_SHA1_32", webrtc::kSrtpAes128CmSha1_32},
