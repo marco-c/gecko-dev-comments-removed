@@ -190,6 +190,156 @@ TEST(HTMLEditUtilsTest, GetDeepestEditableStartPointOf)
                u"   def",
                3  
            },
+           
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><table><td><br></table></div></div>",
+               "div[contenteditable] > div",
+               {},
+               "div[contenteditable] td",
+               nullptr,
+               0  
+           },
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><table><td><br></table></div></div>",
+               "div[contenteditable] > div",
+               {EditablePointOption::StopAtTableElement},
+               "div[contenteditable] > div",
+               nullptr,
+               0  
+           },
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><table><td><br></table></div></div>",
+               "div[contenteditable] > div",
+               {EditablePointOption::StopAtAnyTableElement},
+               "div[contenteditable] > div",
+               nullptr,
+               0  
+           },
+           
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><table><td><br></table></div></div>",
+               "div[contenteditable] table",
+               {},
+               "div[contenteditable] td",
+               nullptr,
+               0  
+           },
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><table><td><br></table></div></div>",
+               "div[contenteditable] table",
+               {EditablePointOption::StopAtTableElement},
+               "div[contenteditable] td",
+               nullptr,
+               0  
+           },
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><table><td><br></table></div></div>",
+               "div[contenteditable] table",
+               {EditablePointOption::StopAtAnyTableElement},
+               "div[contenteditable] table",
+               nullptr,
+               0  
+           },
+           
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><ul><li><br></li></ul></div></div>",
+               "div[contenteditable] > div",
+               {},
+               "div[contenteditable] li",
+               nullptr,
+               0  
+           },
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><ul><li><br></li></ul></div></div>",
+               "div[contenteditable] > div",
+               {EditablePointOption::StopAtListItemElement},
+               "div[contenteditable] ul",
+               nullptr,
+               0  
+           },
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><ul><li><br></li></ul></div></div>",
+               "div[contenteditable] > div",
+               {EditablePointOption::StopAtListElement},
+               "div[contenteditable] > div",
+               nullptr,
+               0  
+           },
+           
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><ol><li><br></li></ol></div></div>",
+               "div[contenteditable] > div",
+               {},
+               "div[contenteditable] li",
+               nullptr,
+               0  
+           },
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><ol><li><br></li></ol></div></div>",
+               "div[contenteditable] > div",
+               {EditablePointOption::StopAtListItemElement},
+               "div[contenteditable] ol",
+               nullptr,
+               0  
+           },
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><ol><li><br></li></ol></div></div>",
+               "div[contenteditable] > div",
+               {EditablePointOption::StopAtListElement},
+               "div[contenteditable] > div",
+               nullptr,
+               0  
+           },
+           
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><dl><dt><br></dt></dl></div></div>",
+               "div[contenteditable] > div",
+               {},
+               "div[contenteditable] dt",
+               nullptr,
+               0  
+           },
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><dl><dt><br></dt></dl></div></div>",
+               "div[contenteditable] > div",
+               {EditablePointOption::StopAtListItemElement},
+               "div[contenteditable] dl",
+               nullptr,
+               0  
+           },
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><dl><dt><br></dt></dl></div></div>",
+               "div[contenteditable] > div",
+               {EditablePointOption::StopAtListElement},
+               "div[contenteditable] > div",
+               nullptr,
+               0  
+           },
+           
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><dl><dd><br></dd></dl></div></div>",
+               "div[contenteditable] > div",
+               {},
+               "div[contenteditable] dd",
+               nullptr,
+               0  
+           },
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><dl><dd><br></dd></dl></div></div>",
+               "div[contenteditable] > div",
+               {EditablePointOption::StopAtListItemElement},
+               "div[contenteditable] dl",
+               nullptr,
+               0  
+           },
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><dl><dd><br></dd></dl></div></div>",
+               "div[contenteditable] > div",
+               {EditablePointOption::StopAtListElement},
+               "div[contenteditable] > div",
+               nullptr,
+               0  
+           },
        }) {
     body->SetInnerHTMLTrusted(nsDependentString(testData.mInnerHTML),
                               doc->NodePrincipal(), IgnoreErrors());
@@ -349,6 +499,156 @@ TEST(HTMLEditUtilsTest, GetDeepestEditableEndPointOf)
                "div[contenteditable] > div > b > span",
                u"abc   ",
                3  
+           },
+           
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><table><td><br></table></div></div>",
+               "div[contenteditable] > div",
+               {},
+               "div[contenteditable] td",
+               nullptr,
+               1  
+           },
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><table><td><br></table></div></div>",
+               "div[contenteditable] > div",
+               {EditablePointOption::StopAtTableElement},
+               "div[contenteditable] > div",
+               nullptr,
+               1  
+           },
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><table><td><br></table></div></div>",
+               "div[contenteditable] > div",
+               {EditablePointOption::StopAtAnyTableElement},
+               "div[contenteditable] > div",
+               nullptr,
+               1  
+           },
+           
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><table><td><br></table></div></div>",
+               "div[contenteditable] table",
+               {},
+               "div[contenteditable] td",
+               nullptr,
+               1  
+           },
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><table><td><br></table></div></div>",
+               "div[contenteditable] table",
+               {EditablePointOption::StopAtTableElement},
+               "div[contenteditable] td",
+               nullptr,
+               1  
+           },
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><table><td><br></table></div></div>",
+               "div[contenteditable] table",
+               {EditablePointOption::StopAtAnyTableElement},
+               "div[contenteditable] table",
+               nullptr,
+               1  
+           },
+           
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><ul><li><br></li></ul></div></div>",
+               "div[contenteditable] > div",
+               {},
+               "div[contenteditable] li",
+               nullptr,
+               1  
+           },
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><ul><li><br></li></ul></div></div>",
+               "div[contenteditable] > div",
+               {EditablePointOption::StopAtListItemElement},
+               "div[contenteditable] ul",
+               nullptr,
+               1  
+           },
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><ul><li><br></li></ul></div></div>",
+               "div[contenteditable] > div",
+               {EditablePointOption::StopAtListElement},
+               "div[contenteditable] > div",
+               nullptr,
+               1  
+           },
+           
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><ol><li><br></li></ol></div></div>",
+               "div[contenteditable] > div",
+               {},
+               "div[contenteditable] li",
+               nullptr,
+               1  
+           },
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><ol><li><br></li></ol></div></div>",
+               "div[contenteditable] > div",
+               {EditablePointOption::StopAtListItemElement},
+               "div[contenteditable] ol",
+               nullptr,
+               1  
+           },
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><ol><li><br></li></ol></div></div>",
+               "div[contenteditable] > div",
+               {EditablePointOption::StopAtListElement},
+               "div[contenteditable] > div",
+               nullptr,
+               1  
+           },
+           
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><dl><dt><br></dt></dl></div></div>",
+               "div[contenteditable] > div",
+               {},
+               "div[contenteditable] dt",
+               nullptr,
+               1  
+           },
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><dl><dt><br></dt></dl></div></div>",
+               "div[contenteditable] > div",
+               {EditablePointOption::StopAtListItemElement},
+               "div[contenteditable] dl",
+               nullptr,
+               1  
+           },
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><dl><dt><br></dt></dl></div></div>",
+               "div[contenteditable] > div",
+               {EditablePointOption::StopAtListElement},
+               "div[contenteditable] > div",
+               nullptr,
+               1  
+           },
+           
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><dl><dd><br></dd></dl></div></div>",
+               "div[contenteditable] > div",
+               {},
+               "div[contenteditable] dd",
+               nullptr,
+               1  
+           },
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><dl><dd><br></dd></dl></div></div>",
+               "div[contenteditable] > div",
+               {EditablePointOption::StopAtListItemElement},
+               "div[contenteditable] dl",
+               nullptr,
+               1  
+           },
+           DeepestEditablePointTest{
+               u"<div contenteditable><div><dl><dd><br></dd></dl></div></div>",
+               "div[contenteditable] > div",
+               {EditablePointOption::StopAtListElement},
+               "div[contenteditable] > div",
+               nullptr,
+               1  
            },
        }) {
     body->SetInnerHTMLTrusted(nsDependentString(testData.mInnerHTML),
