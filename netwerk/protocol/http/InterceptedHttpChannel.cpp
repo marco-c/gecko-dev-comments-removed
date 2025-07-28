@@ -1522,14 +1522,6 @@ InterceptedHttpChannel::SetCacheKey(uint32_t key) {
   return NS_ERROR_NOT_AVAILABLE;
 }
 
-NS_IMETHODIMP
-InterceptedHttpChannel::GetCacheDisposition(CacheDisposition* aDisposition) {
-  if (mSynthesizedCacheInfo) {
-    return mSynthesizedCacheInfo->GetCacheDisposition(aDisposition);
-  }
-  return NS_ERROR_NOT_AVAILABLE;
-}
-
 
 InterceptedHttpChannel::InterceptionTimeStamps::InterceptionTimeStamps()
     : mStage(InterceptedHttpChannel::InterceptionTimeStamps::InterceptionStart),
