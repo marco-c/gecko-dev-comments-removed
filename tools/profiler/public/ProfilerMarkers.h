@@ -264,13 +264,28 @@ using Tracing = mozilla::baseprofiler::markers::Tracing;
     }                                                                         \
   } while (false)
 
+
+namespace mozilla {
+template <>
+constexpr MarkerSchema::InputType
+MarkerSchema::getDefaultInputTypeForType<nsCString>() {
+  return InputType::CString;
+}
+
+template <>
+constexpr MarkerSchema::Format
+MarkerSchema::getDefaultFormatForType<nsCString>() {
+  return Format::SanitizedString;
+}
+}  
+
 namespace geckoprofiler::markers {
 
 
 template <const char* ArgName, typename ArgType>
 struct FieldDescription {
   static constexpr const char* name = ArgName;
-  static constexpr ArgType var = {};
+  using type = ArgType;
 };
 
 
@@ -284,11 +299,13 @@ struct SimplePayloadMarkerTemplate
 
   using MS = mozilla::MarkerSchema;
 
-  static constexpr MS::PayloadField PayloadFields[] = {
+  
+  
+  static constexpr MS::PayloadField PayloadFields[sizeof...(ArgTypes)] = {
       {ArgTypes::name,
-       MS::getDefaultInputTypeForType<decltype(ArgTypes::var)>(),
+       MS::getDefaultInputTypeForType<typename ArgTypes::type>(),
        ArgTypes::name,
-       MS::getDefaultFormatForType<decltype(ArgTypes::var)>()}...};
+       MS::getDefaultFormatForType<typename ArgTypes::type>()}...};
 
   static constexpr const char* TableLabel = ArgTableLabel;
 
@@ -297,7 +314,7 @@ struct SimplePayloadMarkerTemplate
 
   static void StreamJSONMarkerData(
       mozilla::baseprofiler::SpliceableJSONWriter& aWriter,
-      const decltype(ArgTypes::var)&... args) {
+      const typename ArgTypes::type&... args) {
     mozilla::BaseMarkerType<
         SimplePayloadMarkerTemplate<ArgName, ArgTableLabel, ArgTypes...>>::
         StreamJSONMarkerDataImpl(aWriter, args...);
