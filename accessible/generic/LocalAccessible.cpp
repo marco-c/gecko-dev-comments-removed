@@ -1037,16 +1037,9 @@ nsresult LocalAccessible::HandleAccEvent(AccEvent* aEvent) {
     }
     case nsIAccessibleEvent::EVENT_TEXT_CARET_MOVED: {
       AccCaretMoveEvent* event = downcast_accEvent(aEvent);
-      LayoutDeviceIntRect rect;
-      
-      
-      
-      
-      
-      
-      PlatformCaretMoveEvent(
-          target, event->GetCaretOffset(), event->IsSelectionCollapsed(),
-          event->GetGranularity(), rect, event->IsFromUserInput());
+      PlatformCaretMoveEvent(target, event->GetCaretOffset(),
+                             event->IsSelectionCollapsed(),
+                             event->GetGranularity(), event->IsFromUserInput());
       break;
     }
     case nsIAccessibleEvent::EVENT_TEXT_INSERTED:
@@ -1067,11 +1060,7 @@ nsresult LocalAccessible::HandleAccEvent(AccEvent* aEvent) {
       break;
     }
     case nsIAccessibleEvent::EVENT_FOCUS: {
-      LayoutDeviceIntRect rect;
-      if (HyperTextAccessible* text = target->AsHyperText()) {
-        rect = text->GetCaretRect().first;
-      }
-      PlatformFocusEvent(target, rect);
+      PlatformFocusEvent(target);
       break;
     }
 #if defined(ANDROID)
