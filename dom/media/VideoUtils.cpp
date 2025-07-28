@@ -1125,10 +1125,10 @@ bool IsAACCodecString(const nsAString& aCodec) {
              "mp4a.40.02") ||  
          aCodec.EqualsLiteral("mp4a.40.5") ||  
          aCodec.EqualsLiteral(
-             "mp4a.40.05") ||                 
-         aCodec.EqualsLiteral("mp4a.67") ||   
+             "mp4a.40.05") ||                
+         aCodec.EqualsLiteral("mp4a.67") ||  
          aCodec.EqualsLiteral("mp4a.40.29") ||  
-         aCodec.EqualsLiteral("mp4a.40.42");  
+         aCodec.EqualsLiteral("mp4a.40.42");    
 }
 
 bool IsVP8CodecString(const nsAString& aCodec) {
