@@ -615,7 +615,13 @@ RTCError RtpSenderBase::DisableEncodingLayers(
 
   RTCError result = SetParametersInternalWithAllLayers(parameters);
   if (result.ok()) {
-    disabled_rids_.insert(disabled_rids_.end(), rids.begin(), rids.end());
+    for (const auto& rid : rids) {
+      
+      if (std::find(disabled_rids_.begin(), disabled_rids_.end(), rid) ==
+          disabled_rids_.end()) {
+        disabled_rids_.push_back(rid);
+      }
+    }
     
     last_transaction_id_.reset();
   }
