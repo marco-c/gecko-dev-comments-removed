@@ -291,6 +291,8 @@ class ModuleLoaderBase : public nsISupports {
   explicit ModuleLoaderBase(ScriptLoaderInterface* aLoader,
                             nsIGlobalObject* aGlobalObject);
 
+  void CancelFetchingModules();
+
   
   void Shutdown();
 
