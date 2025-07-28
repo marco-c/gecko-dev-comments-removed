@@ -75,13 +75,13 @@ class RTC_EXPORT RtpTransceiverInterface : public webrtc::RefCountInterface {
   
   
   
-  virtual rtc::scoped_refptr<RtpSenderInterface> sender() const = 0;
+  virtual scoped_refptr<RtpSenderInterface> sender() const = 0;
 
   
   
   
   
-  virtual rtc::scoped_refptr<RtpReceiverInterface> receiver() const = 0;
+  virtual scoped_refptr<RtpReceiverInterface> receiver() const = 0;
 
   
   
@@ -146,7 +146,7 @@ class RTC_EXPORT RtpTransceiverInterface : public webrtc::RefCountInterface {
   
   
   virtual RTCError SetCodecPreferences(
-      rtc::ArrayView<RtpCodecCapability> codecs) = 0;
+      ArrayView<RtpCodecCapability> codecs) = 0;
   virtual std::vector<RtpCodecCapability> codec_preferences() const = 0;
 
   
@@ -166,7 +166,7 @@ class RTC_EXPORT RtpTransceiverInterface : public webrtc::RefCountInterface {
   
   
   virtual webrtc::RTCError SetHeaderExtensionsToNegotiate(
-      rtc::ArrayView<const RtpHeaderExtensionCapability> header_extensions) = 0;
+      ArrayView<const RtpHeaderExtensionCapability> header_extensions) = 0;
 
  protected:
   ~RtpTransceiverInterface() override = default;

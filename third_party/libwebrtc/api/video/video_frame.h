@@ -105,7 +105,7 @@ class RTC_EXPORT VideoFrame {
 
     VideoFrame build();
     Builder& set_video_frame_buffer(
-        const rtc::scoped_refptr<VideoFrameBuffer>& buffer);
+        const scoped_refptr<VideoFrameBuffer>& buffer);
     Builder& set_timestamp_ms(int64_t timestamp_ms);
     Builder& set_timestamp_us(int64_t timestamp_us);
     [[deprecated("Use set_presentation_timestamp instead")]] Builder&
@@ -127,7 +127,7 @@ class RTC_EXPORT VideoFrame {
 
    private:
     uint16_t id_ = kNotSetId;
-    rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer_;
+    scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer_;
     int64_t timestamp_us_ = 0;
     std::optional<Timestamp> presentation_timestamp_;
     std::optional<Timestamp> reference_time_;
@@ -141,10 +141,10 @@ class RTC_EXPORT VideoFrame {
   };
 
   
-  VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
+  VideoFrame(const scoped_refptr<VideoFrameBuffer>& buffer,
              webrtc::VideoRotation rotation,
              int64_t timestamp_us);
-  VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
+  VideoFrame(const scoped_refptr<VideoFrameBuffer>& buffer,
              uint32_t timestamp_rtp,
              int64_t render_time_ms,
              VideoRotation rotation);
@@ -241,10 +241,9 @@ class RTC_EXPORT VideoFrame {
 
   
   
-  rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer() const;
+  scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer() const;
 
-  void set_video_frame_buffer(
-      const rtc::scoped_refptr<VideoFrameBuffer>& buffer);
+  void set_video_frame_buffer(const scoped_refptr<VideoFrameBuffer>& buffer);
 
   
   bool is_texture() const {
@@ -286,7 +285,7 @@ class RTC_EXPORT VideoFrame {
 
  private:
   VideoFrame(uint16_t id,
-             const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
+             const scoped_refptr<VideoFrameBuffer>& buffer,
              int64_t timestamp_us,
              const std::optional<Timestamp>& presentation_timestamp,
              const std::optional<Timestamp>& reference_time,
@@ -300,7 +299,7 @@ class RTC_EXPORT VideoFrame {
 
   uint16_t id_;
   
-  rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer_;
+  scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer_;
   uint32_t timestamp_rtp_;
   int64_t ntp_time_ms_;
   int64_t timestamp_us_;

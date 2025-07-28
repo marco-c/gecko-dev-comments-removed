@@ -182,7 +182,7 @@ class AudioEncoderFactoryT : public AudioEncoderFactory {
 
 
 template <typename... Ts>
-rtc::scoped_refptr<AudioEncoderFactory> CreateAudioEncoderFactory() {
+scoped_refptr<AudioEncoderFactory> CreateAudioEncoderFactory() {
   
   
   
@@ -190,7 +190,7 @@ rtc::scoped_refptr<AudioEncoderFactory> CreateAudioEncoderFactory() {
   static_assert(sizeof...(Ts) >= 1,
                 "Caller must give at least one template parameter");
 
-  return rtc::make_ref_counted<
+  return make_ref_counted<
       audio_encoder_factory_template_impl::AudioEncoderFactoryT<Ts...>>();
 }
 

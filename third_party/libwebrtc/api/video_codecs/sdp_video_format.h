@@ -55,8 +55,7 @@ struct RTC_EXPORT SdpVideoFormat {
   
   
   bool IsSameCodec(const SdpVideoFormat& other) const;
-  bool IsCodecInList(
-      rtc::ArrayView<const webrtc::SdpVideoFormat> formats) const;
+  bool IsCodecInList(ArrayView<const webrtc::SdpVideoFormat> formats) const;
 
   std::string ToString() const;
 
@@ -93,7 +92,7 @@ struct RTC_EXPORT SdpVideoFormat {
 
 
 std::optional<SdpVideoFormat> FuzzyMatchSdpVideoFormat(
-    rtc::ArrayView<const SdpVideoFormat> supported_formats,
+    ArrayView<const SdpVideoFormat> supported_formats,
     const SdpVideoFormat& format);
 
 }  

@@ -54,12 +54,12 @@ class RTC_EXPORT RtpSenderInterface : public webrtc::RefCountInterface,
   
   
   virtual bool SetTrack(MediaStreamTrackInterface* track) = 0;
-  virtual rtc::scoped_refptr<MediaStreamTrackInterface> track() const = 0;
+  virtual scoped_refptr<MediaStreamTrackInterface> track() const = 0;
 
   
   
   
-  virtual rtc::scoped_refptr<DtlsTransportInterface> dtls_transport() const = 0;
+  virtual scoped_refptr<DtlsTransportInterface> dtls_transport() const = 0;
 
   
   
@@ -105,24 +105,23 @@ class RTC_EXPORT RtpSenderInterface : public webrtc::RefCountInterface,
   virtual void SetObserver(RtpSenderObserverInterface* ) {}
 
   
-  virtual rtc::scoped_refptr<DtmfSenderInterface> GetDtmfSender() const = 0;
+  virtual scoped_refptr<DtmfSenderInterface> GetDtmfSender() const = 0;
 
   
   
   
   
   virtual void SetFrameEncryptor(
-      rtc::scoped_refptr<FrameEncryptorInterface> frame_encryptor) = 0;
+      scoped_refptr<FrameEncryptorInterface> frame_encryptor) = 0;
 
   
   
-  virtual rtc::scoped_refptr<FrameEncryptorInterface> GetFrameEncryptor()
-      const = 0;
+  virtual scoped_refptr<FrameEncryptorInterface> GetFrameEncryptor() const = 0;
 
   
   
   virtual void SetEncoderToPacketizerFrameTransformer(
-      rtc::scoped_refptr<FrameTransformerInterface> frame_transformer) {
+      scoped_refptr<FrameTransformerInterface> frame_transformer) {
     SetFrameTransformer(std::move(frame_transformer));
   }
 
@@ -134,7 +133,7 @@ class RTC_EXPORT RtpSenderInterface : public webrtc::RefCountInterface,
 
   
   
-  void SetFrameTransformer(rtc::scoped_refptr<FrameTransformerInterface>
+  void SetFrameTransformer(scoped_refptr<FrameTransformerInterface>
                            ) override {}
 
  protected:

@@ -27,9 +27,8 @@ class VoipNetwork {
   
   
   
-  virtual VoipResult ReceivedRTPPacket(
-      ChannelId channel_id,
-      rtc::ArrayView<const uint8_t> rtp_packet) = 0;
+  virtual VoipResult ReceivedRTPPacket(ChannelId channel_id,
+                                       ArrayView<const uint8_t> rtp_packet) = 0;
 
   
   
@@ -37,7 +36,7 @@ class VoipNetwork {
   
   virtual VoipResult ReceivedRTCPPacket(
       ChannelId channel_id,
-      rtc::ArrayView<const uint8_t> rtcp_packet) = 0;
+      ArrayView<const uint8_t> rtcp_packet) = 0;
 
  protected:
   virtual ~VoipNetwork() = default;

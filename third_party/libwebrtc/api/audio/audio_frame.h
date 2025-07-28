@@ -212,7 +212,7 @@ class AudioFrame {
   
   
   
-  static rtc::ArrayView<const int16_t> zeroed_data();
+  static ArrayView<const int16_t> zeroed_data();
 
   std::array<int16_t, kMaxDataSizeSamples> data_;
   bool muted_ = true;

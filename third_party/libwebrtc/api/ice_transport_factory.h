@@ -25,7 +25,7 @@ namespace webrtc {
 
 
 
-RTC_EXPORT rtc::scoped_refptr<IceTransportInterface> CreateIceTransport(
+RTC_EXPORT scoped_refptr<IceTransportInterface> CreateIceTransport(
     PortAllocator* port_allocator);
 
 
@@ -36,7 +36,7 @@ RTC_EXPORT rtc::scoped_refptr<IceTransportInterface> CreateIceTransport(
 
 
 
-RTC_EXPORT rtc::scoped_refptr<IceTransportInterface> CreateIceTransport(
+RTC_EXPORT scoped_refptr<IceTransportInterface> CreateIceTransport(
     IceTransportInit);
 
 }  

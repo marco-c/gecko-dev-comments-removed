@@ -26,7 +26,7 @@ class BitstreamParser {
   virtual ~BitstreamParser() = default;
 
   
-  virtual void ParseBitstream(rtc::ArrayView<const uint8_t> bitstream) = 0;
+  virtual void ParseBitstream(ArrayView<const uint8_t> bitstream) = 0;
 
   
   

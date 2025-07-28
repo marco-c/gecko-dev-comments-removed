@@ -590,7 +590,7 @@ class RTC_EXPORT AudioProcessing : public RefCountInterface {
   
   
   virtual bool GetLinearAecOutput(
-      rtc::ArrayView<std::array<float, 160>> linear_output) const = 0;
+      ArrayView<std::array<float, 160>> linear_output) const = 0;
 
   
   
@@ -878,11 +878,10 @@ class EchoDetector : public RefCountInterface {
                           int num_render_channels) = 0;
 
   
-  virtual void AnalyzeRenderAudio(rtc::ArrayView<const float> render_audio) = 0;
+  virtual void AnalyzeRenderAudio(ArrayView<const float> render_audio) = 0;
 
   
-  virtual void AnalyzeCaptureAudio(
-      rtc::ArrayView<const float> capture_audio) = 0;
+  virtual void AnalyzeCaptureAudio(ArrayView<const float> capture_audio) = 0;
 
   struct Metrics {
     std::optional<double> echo_likelihood;

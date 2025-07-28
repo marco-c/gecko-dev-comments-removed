@@ -88,7 +88,7 @@ class VideoQualityAnalyzerInterface
   
   
   virtual void Start(std::string ,
-                     rtc::ArrayView<const std::string> ,
+                     ArrayView<const std::string> ,
                      int ) {}
 
   
@@ -147,7 +147,7 @@ class VideoQualityAnalyzerInterface
   
   void OnStatsReports(
       absl::string_view ,
-      const rtc::scoped_refptr<const RTCStatsReport>& ) override {}
+      const scoped_refptr<const RTCStatsReport>& ) override {}
 
   
   virtual void RegisterParticipantInCall(absl::string_view ) {}

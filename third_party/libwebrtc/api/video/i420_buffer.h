@@ -26,35 +26,35 @@ namespace webrtc {
 
 class RTC_EXPORT I420Buffer : public I420BufferInterface {
  public:
-  static rtc::scoped_refptr<I420Buffer> Create(int width, int height);
-  static rtc::scoped_refptr<I420Buffer> Create(int width,
-                                               int height,
-                                               int stride_y,
-                                               int stride_u,
-                                               int stride_v);
+  static scoped_refptr<I420Buffer> Create(int width, int height);
+  static scoped_refptr<I420Buffer> Create(int width,
+                                          int height,
+                                          int stride_y,
+                                          int stride_u,
+                                          int stride_v);
 
   
-  static rtc::scoped_refptr<I420Buffer> Copy(const I420BufferInterface& buffer);
+  static scoped_refptr<I420Buffer> Copy(const I420BufferInterface& buffer);
   
-  static rtc::scoped_refptr<I420Buffer> Copy(const VideoFrameBuffer& buffer) {
+  static scoped_refptr<I420Buffer> Copy(const VideoFrameBuffer& buffer) {
     return Copy(*buffer.GetI420());
   }
 
-  static rtc::scoped_refptr<I420Buffer> Copy(int width,
-                                             int height,
-                                             const uint8_t* data_y,
-                                             int stride_y,
-                                             const uint8_t* data_u,
-                                             int stride_u,
-                                             const uint8_t* data_v,
-                                             int stride_v);
+  static scoped_refptr<I420Buffer> Copy(int width,
+                                        int height,
+                                        const uint8_t* data_y,
+                                        int stride_y,
+                                        const uint8_t* data_u,
+                                        int stride_u,
+                                        const uint8_t* data_v,
+                                        int stride_v);
 
   
-  static rtc::scoped_refptr<I420Buffer> Rotate(const I420BufferInterface& src,
-                                               VideoRotation rotation);
+  static scoped_refptr<I420Buffer> Rotate(const I420BufferInterface& src,
+                                          VideoRotation rotation);
   
-  static rtc::scoped_refptr<I420Buffer> Rotate(const VideoFrameBuffer& src,
-                                               VideoRotation rotation) {
+  static scoped_refptr<I420Buffer> Rotate(const VideoFrameBuffer& src,
+                                          VideoRotation rotation) {
     return Rotate(*src.GetI420(), rotation);
   }
 

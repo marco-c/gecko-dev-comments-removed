@@ -25,8 +25,7 @@ namespace webrtc {
 
 
 
-class FakeFrameEncryptor
-    : public rtc::RefCountedObject<FrameEncryptorInterface> {
+class FakeFrameEncryptor : public RefCountedObject<FrameEncryptorInterface> {
  public:
   
   explicit FakeFrameEncryptor(uint8_t fake_key = 0xAA,
@@ -35,9 +34,9 @@ class FakeFrameEncryptor
   
   int Encrypt(webrtc::MediaType media_type,
               uint32_t ssrc,
-              rtc::ArrayView<const uint8_t> additional_data,
-              rtc::ArrayView<const uint8_t> frame,
-              rtc::ArrayView<uint8_t> encrypted_frame,
+              ArrayView<const uint8_t> additional_data,
+              ArrayView<const uint8_t> frame,
+              ArrayView<uint8_t> encrypted_frame,
               size_t* bytes_written) override;
   
   size_t GetMaxCiphertextByteSize(webrtc::MediaType media_type,

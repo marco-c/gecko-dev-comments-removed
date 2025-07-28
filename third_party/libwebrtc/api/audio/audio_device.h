@@ -61,11 +61,11 @@ class AudioDeviceModule : public webrtc::RefCountInterface {
 
  public:
   
-  static rtc::scoped_refptr<AudioDeviceModule> Create(
+  static scoped_refptr<AudioDeviceModule> Create(
       AudioLayer audio_layer, TaskQueueFactory* task_queue_factory);
   
   
-  static rtc::scoped_refptr<AudioDeviceModuleForTest> CreateForTest(
+  static scoped_refptr<AudioDeviceModuleForTest> CreateForTest(
       AudioLayer audio_layer, TaskQueueFactory* task_queue_factory);
 
   

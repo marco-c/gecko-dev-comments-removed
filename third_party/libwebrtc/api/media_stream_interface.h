@@ -306,14 +306,14 @@ class RTC_EXPORT AudioTrackInterface : public MediaStreamTrackInterface {
   
   
   
-  virtual rtc::scoped_refptr<AudioProcessorInterface> GetAudioProcessor();
+  virtual scoped_refptr<AudioProcessorInterface> GetAudioProcessor();
 
  protected:
   ~AudioTrackInterface() override = default;
 };
 
-typedef std::vector<rtc::scoped_refptr<AudioTrackInterface> > AudioTrackVector;
-typedef std::vector<rtc::scoped_refptr<VideoTrackInterface> > VideoTrackVector;
+typedef std::vector<scoped_refptr<AudioTrackInterface> > AudioTrackVector;
+typedef std::vector<scoped_refptr<VideoTrackInterface> > VideoTrackVector;
 
 
 
@@ -330,27 +330,25 @@ class MediaStreamInterface : public webrtc::RefCountInterface,
 
   virtual AudioTrackVector GetAudioTracks() = 0;
   virtual VideoTrackVector GetVideoTracks() = 0;
-  virtual rtc::scoped_refptr<AudioTrackInterface> FindAudioTrack(
+  virtual scoped_refptr<AudioTrackInterface> FindAudioTrack(
       const std::string& track_id) = 0;
-  virtual rtc::scoped_refptr<VideoTrackInterface> FindVideoTrack(
+  virtual scoped_refptr<VideoTrackInterface> FindVideoTrack(
       const std::string& track_id) = 0;
 
   
   
   
   
-  virtual bool AddTrack(rtc::scoped_refptr<AudioTrackInterface> ) {
+  virtual bool AddTrack(scoped_refptr<AudioTrackInterface> ) {
     RTC_CHECK_NOTREACHED();
   }
-  virtual bool AddTrack(rtc::scoped_refptr<VideoTrackInterface> ) {
+  virtual bool AddTrack(scoped_refptr<VideoTrackInterface> ) {
     RTC_CHECK_NOTREACHED();
   }
-  virtual bool RemoveTrack(
-      rtc::scoped_refptr<AudioTrackInterface> ) {
+  virtual bool RemoveTrack(scoped_refptr<AudioTrackInterface> ) {
     RTC_CHECK_NOTREACHED();
   }
-  virtual bool RemoveTrack(
-      rtc::scoped_refptr<VideoTrackInterface> ) {
+  virtual bool RemoveTrack(scoped_refptr<VideoTrackInterface> ) {
     RTC_CHECK_NOTREACHED();
   }
 

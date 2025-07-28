@@ -430,7 +430,7 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
     IceTransportsType type = kAll;
     BundlePolicy bundle_policy = kBundlePolicyBalanced;
     RtcpMuxPolicy rtcp_mux_policy = kRtcpMuxPolicyRequire;
-    std::vector<rtc::scoped_refptr<RTCCertificate>> certificates;
+    std::vector<scoped_refptr<RTCCertificate>> certificates;
     int ice_candidate_pool_size = 0;
 
     
@@ -761,12 +761,12 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   
   
   
-  virtual rtc::scoped_refptr<StreamCollectionInterface> local_streams() = 0;
+  virtual scoped_refptr<StreamCollectionInterface> local_streams() = 0;
 
   
   
   
-  virtual rtc::scoped_refptr<StreamCollectionInterface> remote_streams() = 0;
+  virtual scoped_refptr<StreamCollectionInterface> remote_streams() = 0;
 
   
   
@@ -798,8 +798,8 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   
   
   
-  virtual RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>> AddTrack(
-      rtc::scoped_refptr<MediaStreamTrackInterface> track,
+  virtual RTCErrorOr<scoped_refptr<RtpSenderInterface>> AddTrack(
+      scoped_refptr<MediaStreamTrackInterface> track,
       const std::vector<std::string>& stream_ids) = 0;
 
   
@@ -807,8 +807,8 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   
   
   
-  virtual RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>> AddTrack(
-      rtc::scoped_refptr<MediaStreamTrackInterface> track,
+  virtual RTCErrorOr<scoped_refptr<RtpSenderInterface>> AddTrack(
+      scoped_refptr<MediaStreamTrackInterface> track,
       const std::vector<std::string>& stream_ids,
       const std::vector<RtpEncodingParameters>& init_send_encodings) = 0;
 
@@ -827,7 +827,7 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   
   
   virtual RTCError RemoveTrackOrError(
-      rtc::scoped_refptr<RtpSenderInterface> ) {
+      scoped_refptr<RtpSenderInterface> ) {
     RTC_CHECK_NOTREACHED();
     return RTCError();
   }
@@ -856,21 +856,21 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   
   
   
-  virtual RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>>
-  AddTransceiver(rtc::scoped_refptr<MediaStreamTrackInterface> track) = 0;
-  virtual RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>>
-  AddTransceiver(rtc::scoped_refptr<MediaStreamTrackInterface> track,
-                 const RtpTransceiverInit& init) = 0;
+  virtual RTCErrorOr<scoped_refptr<RtpTransceiverInterface>> AddTransceiver(
+      scoped_refptr<MediaStreamTrackInterface> track) = 0;
+  virtual RTCErrorOr<scoped_refptr<RtpTransceiverInterface>> AddTransceiver(
+      scoped_refptr<MediaStreamTrackInterface> track,
+      const RtpTransceiverInit& init) = 0;
 
   
   
   
   
-  virtual RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>>
-  AddTransceiver(webrtc::MediaType media_type) = 0;
-  virtual RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>>
-  AddTransceiver(webrtc::MediaType media_type,
-                 const RtpTransceiverInit& init) = 0;
+  virtual RTCErrorOr<scoped_refptr<RtpTransceiverInterface>> AddTransceiver(
+      webrtc::MediaType media_type) = 0;
+  virtual RTCErrorOr<scoped_refptr<RtpTransceiverInterface>> AddTransceiver(
+      webrtc::MediaType media_type,
+      const RtpTransceiverInit& init) = 0;
 
   
   
@@ -886,7 +886,7 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   
   
   
-  virtual rtc::scoped_refptr<RtpSenderInterface> CreateSender(
+  virtual scoped_refptr<RtpSenderInterface> CreateSender(
       const std::string& kind,
       const std::string& stream_id) = 0;
 
@@ -896,8 +896,7 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   
   
   
-  virtual std::vector<rtc::scoped_refptr<RtpSenderInterface>> GetSenders()
-      const = 0;
+  virtual std::vector<scoped_refptr<RtpSenderInterface>> GetSenders() const = 0;
 
   
   
@@ -907,7 +906,7 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   
   
   
-  virtual std::vector<rtc::scoped_refptr<RtpReceiverInterface>> GetReceivers()
+  virtual std::vector<scoped_refptr<RtpReceiverInterface>> GetReceivers()
       const = 0;
 
   
@@ -915,8 +914,8 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   
   
   
-  virtual std::vector<rtc::scoped_refptr<RtpTransceiverInterface>>
-  GetTransceivers() const = 0;
+  virtual std::vector<scoped_refptr<RtpTransceiverInterface>> GetTransceivers()
+      const = 0;
 
   
   
@@ -948,14 +947,12 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   virtual void GetStats(RTCStatsCollectorCallback* callback) = 0;
   
   
-  virtual void GetStats(
-      rtc::scoped_refptr<RtpSenderInterface> selector,
-      rtc::scoped_refptr<RTCStatsCollectorCallback> callback) = 0;
+  virtual void GetStats(scoped_refptr<RtpSenderInterface> selector,
+                        scoped_refptr<RTCStatsCollectorCallback> callback) = 0;
   
   
-  virtual void GetStats(
-      rtc::scoped_refptr<RtpReceiverInterface> selector,
-      rtc::scoped_refptr<RTCStatsCollectorCallback> callback) = 0;
+  virtual void GetStats(scoped_refptr<RtpReceiverInterface> selector,
+                        scoped_refptr<RTCStatsCollectorCallback> callback) = 0;
   
   virtual void ClearStatsCache() {}
 
@@ -966,7 +963,7 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   
   
   
-  virtual RTCErrorOr<rtc::scoped_refptr<DataChannelInterface>>
+  virtual RTCErrorOr<scoped_refptr<DataChannelInterface>>
   CreateDataChannelOrError(const std::string& ,
                            const DataChannelInit* ) {
     return RTCError(RTCErrorType::INTERNAL_ERROR, "dummy function called");
@@ -974,7 +971,7 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   
   
   ABSL_DEPRECATED("Use CreateDataChannelOrError")
-  virtual rtc::scoped_refptr<DataChannelInterface> CreateDataChannel(
+  virtual scoped_refptr<DataChannelInterface> CreateDataChannel(
       const std::string& label,
       const DataChannelInit* config) {
     auto result = CreateDataChannelOrError(label, config);
@@ -1038,16 +1035,14 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   
   virtual void SetLocalDescription(
       std::unique_ptr<SessionDescriptionInterface> ,
-      rtc::scoped_refptr<SetLocalDescriptionObserverInterface> ) {
-  }
+      scoped_refptr<SetLocalDescriptionObserverInterface> ) {}
   
   
   
   
   
   virtual void SetLocalDescription(
-      rtc::scoped_refptr<SetLocalDescriptionObserverInterface> ) {
-  }
+      scoped_refptr<SetLocalDescriptionObserverInterface> ) {}
   
   
   
@@ -1069,7 +1064,7 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   
   virtual void SetRemoteDescription(
       std::unique_ptr<SessionDescriptionInterface> desc,
-      rtc::scoped_refptr<SetRemoteDescriptionObserverInterface> observer) = 0;
+      scoped_refptr<SetRemoteDescriptionObserverInterface> observer) = 0;
   
   
   
@@ -1169,12 +1164,11 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   
   
   
-  virtual rtc::scoped_refptr<DtlsTransportInterface> LookupDtlsTransportByMid(
+  virtual scoped_refptr<DtlsTransportInterface> LookupDtlsTransportByMid(
       const std::string& mid) = 0;
 
   
-  virtual rtc::scoped_refptr<SctpTransportInterface> GetSctpTransport()
-      const = 0;
+  virtual scoped_refptr<SctpTransportInterface> GetSctpTransport() const = 0;
 
   
   virtual SignalingState signaling_state() = 0;
@@ -1202,7 +1196,7 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   
   
   
-  virtual void AddAdaptationResource(rtc::scoped_refptr<Resource> resource) = 0;
+  virtual void AddAdaptationResource(scoped_refptr<Resource> resource) = 0;
 
   
   
@@ -1259,16 +1253,15 @@ class PeerConnectionObserver {
       PeerConnectionInterface::SignalingState new_state) = 0;
 
   
-  virtual void OnAddStream(
-      rtc::scoped_refptr<MediaStreamInterface> ) {}
+  virtual void OnAddStream(scoped_refptr<MediaStreamInterface> ) {}
 
   
   virtual void OnRemoveStream(
-      rtc::scoped_refptr<MediaStreamInterface> ) {}
+      scoped_refptr<MediaStreamInterface> ) {}
 
   
   virtual void OnDataChannel(
-      rtc::scoped_refptr<DataChannelInterface> data_channel) = 0;
+      scoped_refptr<DataChannelInterface> data_channel) = 0;
 
   
   
@@ -1337,9 +1330,8 @@ class PeerConnectionObserver {
   
   
   virtual void OnAddTrack(
-      rtc::scoped_refptr<RtpReceiverInterface> ,
-      const std::vector<
-          rtc::scoped_refptr<MediaStreamInterface>>& ) {}
+      scoped_refptr<RtpReceiverInterface> ,
+      const std::vector<scoped_refptr<MediaStreamInterface>>& ) {}
 
   
   
@@ -1351,7 +1343,7 @@ class PeerConnectionObserver {
   
   
   virtual void OnTrack(
-      rtc::scoped_refptr<RtpTransceiverInterface> ) {}
+      scoped_refptr<RtpTransceiverInterface> ) {}
 
   
   
@@ -1362,7 +1354,7 @@ class PeerConnectionObserver {
   
   
   virtual void OnRemoveTrack(
-      rtc::scoped_refptr<RtpReceiverInterface> ) {}
+      scoped_refptr<RtpReceiverInterface> ) {}
 
   
   
@@ -1467,10 +1459,10 @@ struct RTC_EXPORT PeerConnectionFactoryDependencies final {
   std::unique_ptr<Metronome> encode_metronome;
 
   
-  rtc::scoped_refptr<AudioDeviceModule> adm;
-  rtc::scoped_refptr<AudioEncoderFactory> audio_encoder_factory;
-  rtc::scoped_refptr<AudioDecoderFactory> audio_decoder_factory;
-  rtc::scoped_refptr<AudioMixer> audio_mixer;
+  scoped_refptr<AudioDeviceModule> adm;
+  scoped_refptr<AudioEncoderFactory> audio_encoder_factory;
+  scoped_refptr<AudioDecoderFactory> audio_decoder_factory;
+  scoped_refptr<AudioMixer> audio_mixer;
   
   
   [[deprecated]] scoped_refptr<AudioProcessing> audio_processing;
@@ -1538,7 +1530,7 @@ class RTC_EXPORT PeerConnectionFactoryInterface
 
   
   
-  virtual RTCErrorOr<rtc::scoped_refptr<PeerConnectionInterface>>
+  virtual RTCErrorOr<scoped_refptr<PeerConnectionInterface>>
   CreatePeerConnectionOrError(
       const PeerConnectionInterface::RTCConfiguration& configuration,
       PeerConnectionDependencies dependencies) = 0;
@@ -1555,29 +1547,29 @@ class RTC_EXPORT PeerConnectionFactoryInterface
   virtual RtpCapabilities GetRtpReceiverCapabilities(
       webrtc::MediaType kind) const = 0;
 
-  virtual rtc::scoped_refptr<MediaStreamInterface> CreateLocalMediaStream(
+  virtual scoped_refptr<MediaStreamInterface> CreateLocalMediaStream(
       const std::string& stream_id) = 0;
 
   
   
-  virtual rtc::scoped_refptr<AudioSourceInterface> CreateAudioSource(
+  virtual scoped_refptr<AudioSourceInterface> CreateAudioSource(
       const AudioOptions& options) = 0;
 
   
   
-  virtual rtc::scoped_refptr<VideoTrackInterface> CreateVideoTrack(
-      rtc::scoped_refptr<VideoTrackSourceInterface> source,
+  virtual scoped_refptr<VideoTrackInterface> CreateVideoTrack(
+      scoped_refptr<VideoTrackSourceInterface> source,
       absl::string_view label) = 0;
   ABSL_DEPRECATED("Use version with scoped_refptr")
-  virtual rtc::scoped_refptr<VideoTrackInterface> CreateVideoTrack(
+  virtual scoped_refptr<VideoTrackInterface> CreateVideoTrack(
       const std::string& label,
       VideoTrackSourceInterface* source) {
-    return CreateVideoTrack(
-        rtc::scoped_refptr<VideoTrackSourceInterface>(source), label);
+    return CreateVideoTrack(scoped_refptr<VideoTrackSourceInterface>(source),
+                            label);
   }
 
   
-  virtual rtc::scoped_refptr<AudioTrackInterface> CreateAudioTrack(
+  virtual scoped_refptr<AudioTrackInterface> CreateAudioTrack(
       const std::string& label,
       AudioSourceInterface* source) = 0;
 
@@ -1620,7 +1612,7 @@ class RTC_EXPORT PeerConnectionFactoryInterface
 
 
 
-RTC_EXPORT rtc::scoped_refptr<PeerConnectionFactoryInterface>
+RTC_EXPORT scoped_refptr<PeerConnectionFactoryInterface>
 CreateModularPeerConnectionFactory(
     PeerConnectionFactoryDependencies dependencies);
 

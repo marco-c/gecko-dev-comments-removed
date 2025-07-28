@@ -151,8 +151,8 @@ class AudioEncoder {
   
   
   EncodedInfo Encode(uint32_t rtp_timestamp,
-                     rtc::ArrayView<const int16_t> audio,
-                     rtc::Buffer* encoded);
+                     ArrayView<const int16_t> audio,
+                     Buffer* encoded);
 
   
   
@@ -197,8 +197,7 @@ class AudioEncoder {
   
   
   
-  virtual rtc::ArrayView<std::unique_ptr<AudioEncoder>>
-  ReclaimContainedEncoders();
+  virtual ArrayView<std::unique_ptr<AudioEncoder>> ReclaimContainedEncoders();
 
   
   virtual bool EnableAudioNetworkAdaptor(const std::string& config_string,
@@ -263,8 +262,8 @@ class AudioEncoder {
   
   
   virtual EncodedInfo EncodeImpl(uint32_t rtp_timestamp,
-                                 rtc::ArrayView<const int16_t> audio,
-                                 rtc::Buffer* encoded) = 0;
+                                 ArrayView<const int16_t> audio,
+                                 Buffer* encoded) = 0;
 };
 }  
 #endif  

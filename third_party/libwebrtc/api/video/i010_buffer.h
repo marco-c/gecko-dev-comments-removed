@@ -26,20 +26,20 @@ namespace webrtc {
 class I010Buffer : public I010BufferInterface {
  public:
   
-  static rtc::scoped_refptr<I010Buffer> Create(int width, int height);
+  static scoped_refptr<I010Buffer> Create(int width, int height);
 
   
-  static rtc::scoped_refptr<I010Buffer> Copy(const I010BufferInterface& buffer);
+  static scoped_refptr<I010Buffer> Copy(const I010BufferInterface& buffer);
 
   
-  static rtc::scoped_refptr<I010Buffer> Copy(const I420BufferInterface& buffer);
+  static scoped_refptr<I010Buffer> Copy(const I420BufferInterface& buffer);
 
   
-  static rtc::scoped_refptr<I010Buffer> Rotate(const I010BufferInterface& src,
-                                               VideoRotation rotation);
+  static scoped_refptr<I010Buffer> Rotate(const I010BufferInterface& src,
+                                          VideoRotation rotation);
 
   
-  rtc::scoped_refptr<I420BufferInterface> ToI420() override;
+  scoped_refptr<I420BufferInterface> ToI420() override;
 
   
   int width() const override;

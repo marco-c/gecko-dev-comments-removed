@@ -21,7 +21,7 @@ namespace webrtc {
 
 
 
-rtc::scoped_refptr<AudioEncoderFactory> CreateBuiltinAudioEncoderFactory();
+scoped_refptr<AudioEncoderFactory> CreateBuiltinAudioEncoderFactory();
 
 }  
 

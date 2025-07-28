@@ -39,14 +39,13 @@ class RTC_EXPORT SctpTransportInformation {
   SctpTransportInformation() = default;
   SctpTransportInformation(const SctpTransportInformation&) = default;
   explicit SctpTransportInformation(SctpTransportState state);
-  SctpTransportInformation(
-      SctpTransportState state,
-      rtc::scoped_refptr<DtlsTransportInterface> dtls_transport,
-      std::optional<double> max_message_size,
-      std::optional<int> max_channels);
+  SctpTransportInformation(SctpTransportState state,
+                           scoped_refptr<DtlsTransportInterface> dtls_transport,
+                           std::optional<double> max_message_size,
+                           std::optional<int> max_channels);
   ~SctpTransportInformation();
   
-  rtc::scoped_refptr<DtlsTransportInterface> dtls_transport() const {
+  scoped_refptr<DtlsTransportInterface> dtls_transport() const {
     return dtls_transport_;
   }
   SctpTransportState state() const { return state_; }
@@ -55,7 +54,7 @@ class RTC_EXPORT SctpTransportInformation {
 
  private:
   SctpTransportState state_ = SctpTransportState::kNew;
-  rtc::scoped_refptr<DtlsTransportInterface> dtls_transport_;
+  scoped_refptr<DtlsTransportInterface> dtls_transport_;
   std::optional<double> max_message_size_;
   std::optional<int> max_channels_;
 };
@@ -79,7 +78,7 @@ class SctpTransportObserverInterface {
 class SctpTransportInterface : public webrtc::RefCountInterface {
  public:
   
-  virtual rtc::scoped_refptr<DtlsTransportInterface> dtls_transport() const = 0;
+  virtual scoped_refptr<DtlsTransportInterface> dtls_transport() const = 0;
   
   
   virtual SctpTransportInformation Information() const = 0;

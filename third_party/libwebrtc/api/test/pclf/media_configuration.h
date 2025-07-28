@@ -394,9 +394,9 @@ class VideoSubscription {
   
   
   static std::optional<VideoResolution> GetMaxResolution(
-      rtc::ArrayView<const VideoConfig> video_configs);
+      ArrayView<const VideoConfig> video_configs);
   static std::optional<VideoResolution> GetMaxResolution(
-      rtc::ArrayView<const VideoResolution> resolutions);
+      ArrayView<const VideoResolution> resolutions);
 
   bool operator==(const VideoSubscription& other) const;
   bool operator!=(const VideoSubscription& other) const;

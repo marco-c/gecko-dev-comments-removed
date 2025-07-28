@@ -37,7 +37,7 @@ class RecordableEncodedFrame {
   virtual ~RecordableEncodedFrame() = default;
 
   
-  virtual rtc::scoped_refptr<const EncodedImageBufferInterface> encoded_buffer()
+  virtual scoped_refptr<const EncodedImageBufferInterface> encoded_buffer()
       const = 0;
 
   

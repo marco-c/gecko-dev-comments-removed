@@ -66,13 +66,13 @@ struct PeerConnectionFactoryComponents {
 
   std::unique_ptr<VideoEncoderFactory> video_encoder_factory;
   std::unique_ptr<VideoDecoderFactory> video_decoder_factory;
-  rtc::scoped_refptr<webrtc::AudioEncoderFactory> audio_encoder_factory;
-  rtc::scoped_refptr<webrtc::AudioDecoderFactory> audio_decoder_factory;
+  scoped_refptr<webrtc::AudioEncoderFactory> audio_encoder_factory;
+  scoped_refptr<webrtc::AudioDecoderFactory> audio_decoder_factory;
 
   std::unique_ptr<FieldTrialsView> trials;
 
-  rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing;
-  rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer;
+  scoped_refptr<webrtc::AudioProcessing> audio_processing;
+  scoped_refptr<webrtc::AudioMixer> audio_mixer;
 };
 
 

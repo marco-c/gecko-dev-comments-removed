@@ -255,7 +255,7 @@ class StunMessage {
 
   
   
-  static bool IsStunMethod(rtc::ArrayView<int> methods,
+  static bool IsStunMethod(ArrayView<int> methods,
                            const char* data,
                            size_t size);
 
@@ -522,8 +522,8 @@ class StunByteStringAttribute : public StunAttribute {
   }
   
   
-  rtc::ArrayView<uint8_t> array_view() const {
-    return rtc::MakeArrayView(bytes_, length());
+  ArrayView<uint8_t> array_view() const {
+    return MakeArrayView(bytes_, length());
   }
 
   [[deprecated]] std::string GetString() const {

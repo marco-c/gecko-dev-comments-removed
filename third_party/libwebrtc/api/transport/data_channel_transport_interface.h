@@ -67,7 +67,7 @@ class DataChannelSink {
   
   virtual void OnDataReceived(int channel_id,
                               DataMessageType type,
-                              const rtc::CopyOnWriteBuffer& buffer) = 0;
+                              const CopyOnWriteBuffer& buffer) = 0;
 
   
   
@@ -109,7 +109,7 @@ class DataChannelTransportInterface {
   
   virtual RTCError SendData(int channel_id,
                             const SendDataParams& params,
-                            const rtc::CopyOnWriteBuffer& buffer) = 0;
+                            const CopyOnWriteBuffer& buffer) = 0;
 
   
   

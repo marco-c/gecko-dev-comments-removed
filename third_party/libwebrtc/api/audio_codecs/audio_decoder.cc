@@ -1,12 +1,12 @@
-/*
- *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
- *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree. An additional intellectual property rights grant can be found
- *  in the file PATENTS.  All contributing project authors may
- *  be found in the AUTHORS file in the root of the source tree.
- */
+
+
+
+
+
+
+
+
+
 
 #include "api/audio_codecs/audio_decoder.h"
 
@@ -29,7 +29,7 @@ namespace {
 
 class OldStyleEncodedFrame final : public AudioDecoder::EncodedAudioFrame {
  public:
-  OldStyleEncodedFrame(AudioDecoder* decoder, rtc::Buffer&& payload)
+  OldStyleEncodedFrame(AudioDecoder* decoder, Buffer&& payload)
       : decoder_(decoder), payload_(std::move(payload)) {}
 
   size_t Duration() const override {
@@ -38,7 +38,7 @@ class OldStyleEncodedFrame final : public AudioDecoder::EncodedAudioFrame {
   }
 
   std::optional<DecodeResult> Decode(
-      rtc::ArrayView<int16_t> decoded) const override {
+      ArrayView<int16_t> decoded) const override {
     auto speech_type = AudioDecoder::kSpeech;
     const int ret = decoder_->Decode(
         payload_.data(), payload_.size(), decoder_->SampleRateHz(),
@@ -50,10 +50,10 @@ class OldStyleEncodedFrame final : public AudioDecoder::EncodedAudioFrame {
 
  private:
   AudioDecoder* const decoder_;
-  const rtc::Buffer payload_;
+  const Buffer payload_;
 };
 
-}  // namespace
+}  
 
 bool AudioDecoder::EncodedAudioFrame::IsDtxPacket() const {
   return false;
@@ -74,7 +74,7 @@ AudioDecoder::ParseResult& AudioDecoder::ParseResult::operator=(
     ParseResult&& b) = default;
 
 std::vector<AudioDecoder::ParseResult> AudioDecoder::ParsePayload(
-    rtc::Buffer&& payload,
+    Buffer&& payload,
     uint32_t timestamp) {
   std::vector<ParseResult> results;
   std::unique_ptr<EncodedAudioFrame> frame(
@@ -90,7 +90,7 @@ int AudioDecoder::Decode(const uint8_t* encoded,
                          int16_t* decoded,
                          SpeechType* speech_type) {
   TRACE_EVENT0("webrtc", "AudioDecoder::Decode");
-  MsanCheckInitialized(rtc::MakeArrayView(encoded, encoded_len));
+  MsanCheckInitialized(MakeArrayView(encoded, encoded_len));
   int duration = PacketDuration(encoded, encoded_len);
   if (duration >= 0 &&
       duration * Channels() * sizeof(int16_t) > max_decoded_bytes) {
@@ -107,7 +107,7 @@ int AudioDecoder::DecodeRedundant(const uint8_t* encoded,
                                   int16_t* decoded,
                                   SpeechType* speech_type) {
   TRACE_EVENT0("webrtc", "AudioDecoder::DecodeRedundant");
-  MsanCheckInitialized(rtc::MakeArrayView(encoded, encoded_len));
+  MsanCheckInitialized(MakeArrayView(encoded, encoded_len));
   int duration = PacketDurationRedundant(encoded, encoded_len);
   if (duration >= 0 &&
       duration * Channels() * sizeof(int16_t) > max_decoded_bytes) {
@@ -130,37 +130,37 @@ bool AudioDecoder::HasDecodePlc() const {
   return false;
 }
 
-size_t AudioDecoder::DecodePlc(size_t /* num_frames */,
-                               int16_t* /* decoded */) {
+size_t AudioDecoder::DecodePlc(size_t ,
+                               int16_t* ) {
   return 0;
 }
 
-// TODO(bugs.webrtc.org/9676): Remove default implementation.
-void AudioDecoder::GeneratePlc(size_t /*requested_samples_per_channel*/,
-                               rtc::BufferT<int16_t>* /*concealment_audio*/) {}
+
+void AudioDecoder::GeneratePlc(size_t ,
+                               BufferT<int16_t>* ) {}
 
 int AudioDecoder::ErrorCode() {
   return 0;
 }
 
-int AudioDecoder::PacketDuration(const uint8_t* /* encoded */,
-                                 size_t /* encoded_len */) const {
+int AudioDecoder::PacketDuration(const uint8_t* ,
+                                 size_t ) const {
   return kNotImplemented;
 }
 
-int AudioDecoder::PacketDurationRedundant(const uint8_t* /* encoded */,
-                                          size_t /* encoded_len */) const {
+int AudioDecoder::PacketDurationRedundant(const uint8_t* ,
+                                          size_t ) const {
   return kNotImplemented;
 }
 
-bool AudioDecoder::PacketHasFec(const uint8_t* /* encoded */,
-                                size_t /* encoded_len */) const {
+bool AudioDecoder::PacketHasFec(const uint8_t* ,
+                                size_t ) const {
   return false;
 }
 
 AudioDecoder::SpeechType AudioDecoder::ConvertSpeechType(int16_t type) {
   switch (type) {
-    case 0:  // TODO(hlundin): Both iSAC and Opus return 0 for speech.
+    case 0:  
     case 1:
       return kSpeech;
     case 2:
@@ -172,4 +172,4 @@ AudioDecoder::SpeechType AudioDecoder::ConvertSpeechType(int16_t type) {
 }
 
 constexpr int AudioDecoder::kMaxNumberOfChannels;
-}  // namespace webrtc
+}  

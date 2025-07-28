@@ -62,9 +62,9 @@ class FrameDecryptorInterface : public RefCountInterface {
   
   virtual Result Decrypt(webrtc::MediaType media_type,
                          const std::vector<uint32_t>& csrcs,
-                         rtc::ArrayView<const uint8_t> additional_data,
-                         rtc::ArrayView<const uint8_t> encrypted_frame,
-                         rtc::ArrayView<uint8_t> frame) = 0;
+                         ArrayView<const uint8_t> additional_data,
+                         ArrayView<const uint8_t> encrypted_frame,
+                         ArrayView<uint8_t> frame) = 0;
 
   
   

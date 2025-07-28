@@ -227,9 +227,9 @@ void AudioFrame::SetSampleRateAndChannelSize(int sample_rate) {
 }
 
 
-rtc::ArrayView<const int16_t> AudioFrame::zeroed_data() {
+ArrayView<const int16_t> AudioFrame::zeroed_data() {
   static int16_t* null_data = new int16_t[kMaxDataSizeSamples]();
-  return rtc::ArrayView<const int16_t>(null_data, kMaxDataSizeSamples);
+  return ArrayView<const int16_t>(null_data, kMaxDataSizeSamples);
 }
 
 }  

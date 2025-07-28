@@ -141,7 +141,7 @@ TEST_P(TaskQueueTest, PostMultipleDelayed) {
         TimeDelta::Millis(i));
   }
 
-  for (rtc::Event& e : events)
+  for (Event& e : events)
     EXPECT_TRUE(e.Wait(TimeDelta::Seconds(1)));
 }
 

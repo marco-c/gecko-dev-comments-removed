@@ -186,14 +186,14 @@ class NetEq {
   virtual ~NetEq() {}
 
   virtual int InsertPacket(const RTPHeader& rtp_header,
-                           rtc::ArrayView<const uint8_t> payload) {
+                           ArrayView<const uint8_t> payload) {
     return InsertPacket(rtp_header, payload,
                         Timestamp::MinusInfinity());
   }
 
   
   virtual int InsertPacket(const RTPHeader& rtp_header,
-                           rtc::ArrayView<const uint8_t> payload,
+                           ArrayView<const uint8_t> payload,
                            Timestamp receive_time) {
     return InsertPacket(rtp_header, payload,
                         RtpPacketInfo(rtp_header, receive_time));
@@ -203,7 +203,7 @@ class NetEq {
   
   
   virtual int InsertPacket(const RTPHeader& rtp_header,
-                           rtc::ArrayView<const uint8_t> payload,
+                           ArrayView<const uint8_t> payload,
                            const RtpPacketInfo& ) {
     return InsertPacket(rtp_header, payload);
   }

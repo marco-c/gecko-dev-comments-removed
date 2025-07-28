@@ -62,7 +62,7 @@ class AudioDecoder {
     
     
     virtual std::optional<DecodeResult> Decode(
-        rtc::ArrayView<int16_t> decoded) const = 0;
+        ArrayView<int16_t> decoded) const = 0;
   };
 
   struct ParseResult {
@@ -90,7 +90,7 @@ class AudioDecoder {
   
   
   
-  virtual std::vector<ParseResult> ParsePayload(rtc::Buffer&& payload,
+  virtual std::vector<ParseResult> ParsePayload(Buffer&& payload,
                                                 uint32_t timestamp);
 
   
@@ -140,7 +140,7 @@ class AudioDecoder {
   
   
   virtual void GeneratePlc(size_t requested_samples_per_channel,
-                           rtc::BufferT<int16_t>* concealment_audio);
+                           BufferT<int16_t>* concealment_audio);
 
   
   virtual void Reset() = 0;

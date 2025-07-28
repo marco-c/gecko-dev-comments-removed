@@ -49,13 +49,13 @@ class RtpReceiverObserverInterface {
 class RTC_EXPORT RtpReceiverInterface : public webrtc::RefCountInterface,
                                         public FrameTransformerHost {
  public:
-  virtual rtc::scoped_refptr<MediaStreamTrackInterface> track() const = 0;
+  virtual scoped_refptr<MediaStreamTrackInterface> track() const = 0;
 
   
   
   
   
-  virtual rtc::scoped_refptr<DtlsTransportInterface> dtls_transport() const;
+  virtual scoped_refptr<DtlsTransportInterface> dtls_transport() const;
 
   
   
@@ -65,7 +65,7 @@ class RTC_EXPORT RtpReceiverInterface : public webrtc::RefCountInterface,
   
   
   virtual std::vector<std::string> stream_ids() const;
-  virtual std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams() const;
+  virtual std::vector<scoped_refptr<MediaStreamInterface>> streams() const;
 
   
   virtual webrtc::MediaType media_type() const = 0;
@@ -106,12 +106,12 @@ class RTC_EXPORT RtpReceiverInterface : public webrtc::RefCountInterface,
   
   
   virtual void SetFrameDecryptor(
-      rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor);
+      scoped_refptr<FrameDecryptorInterface> frame_decryptor);
 
   
   
   
-  virtual rtc::scoped_refptr<FrameDecryptorInterface> GetFrameDecryptor() const;
+  virtual scoped_refptr<FrameDecryptorInterface> GetFrameDecryptor() const;
 
   
   
@@ -119,14 +119,14 @@ class RTC_EXPORT RtpReceiverInterface : public webrtc::RefCountInterface,
   
   
   virtual void SetDepacketizerToDecoderFrameTransformer(
-      rtc::scoped_refptr<FrameTransformerInterface> frame_transformer) {
+      scoped_refptr<FrameTransformerInterface> frame_transformer) {
     SetFrameTransformer(std::move(frame_transformer));
   }
 
   
   
   void SetFrameTransformer(
-      rtc::scoped_refptr<FrameTransformerInterface> frame_transformer) override;
+      scoped_refptr<FrameTransformerInterface> frame_transformer) override;
 
  protected:
   ~RtpReceiverInterface() override = default;

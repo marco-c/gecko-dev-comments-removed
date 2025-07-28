@@ -19,7 +19,7 @@ namespace webrtc {
 
 
 
-rtc::scoped_refptr<AudioDecoderFactory> CreateOpusAudioDecoderFactory();
+scoped_refptr<AudioDecoderFactory> CreateOpusAudioDecoderFactory();
 
 }  
 

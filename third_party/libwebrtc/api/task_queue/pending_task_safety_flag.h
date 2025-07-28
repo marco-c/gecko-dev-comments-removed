@@ -61,23 +61,23 @@ namespace webrtc {
 
 
 class RTC_EXPORT PendingTaskSafetyFlag final
-    : public rtc::RefCountedNonVirtual<PendingTaskSafetyFlag> {
+    : public RefCountedNonVirtual<PendingTaskSafetyFlag> {
  public:
-  static rtc::scoped_refptr<PendingTaskSafetyFlag> Create();
+  static scoped_refptr<PendingTaskSafetyFlag> Create();
 
   
   
-  static rtc::scoped_refptr<PendingTaskSafetyFlag> CreateDetached();
+  static scoped_refptr<PendingTaskSafetyFlag> CreateDetached();
 
   
   
-  static rtc::scoped_refptr<PendingTaskSafetyFlag> CreateAttachedToTaskQueue(
+  static scoped_refptr<PendingTaskSafetyFlag> CreateAttachedToTaskQueue(
       bool alive,
       TaskQueueBase* absl_nonnull attached_queue);
 
   
   
-  static rtc::scoped_refptr<PendingTaskSafetyFlag> CreateDetachedInactive();
+  static scoped_refptr<PendingTaskSafetyFlag> CreateDetachedInactive();
 
   ~PendingTaskSafetyFlag() = default;
 
@@ -106,7 +106,7 @@ class RTC_EXPORT PendingTaskSafetyFlag final
       : alive_(alive), main_sequence_(attached_queue) {}
 
  private:
-  static rtc::scoped_refptr<PendingTaskSafetyFlag> CreateInternal(bool alive);
+  static scoped_refptr<PendingTaskSafetyFlag> CreateInternal(bool alive);
 
   bool alive_ = true;
   RTC_NO_UNIQUE_ADDRESS SequenceChecker main_sequence_;
@@ -129,23 +129,22 @@ class RTC_EXPORT PendingTaskSafetyFlag final
 class RTC_EXPORT ScopedTaskSafety final {
  public:
   ScopedTaskSafety() = default;
-  explicit ScopedTaskSafety(rtc::scoped_refptr<PendingTaskSafetyFlag> flag)
+  explicit ScopedTaskSafety(scoped_refptr<PendingTaskSafetyFlag> flag)
       : flag_(std::move(flag)) {}
   ~ScopedTaskSafety() { flag_->SetNotAlive(); }
 
   
-  rtc::scoped_refptr<PendingTaskSafetyFlag> flag() const { return flag_; }
+  scoped_refptr<PendingTaskSafetyFlag> flag() const { return flag_; }
 
   
-  void reset(rtc::scoped_refptr<PendingTaskSafetyFlag> new_flag =
+  void reset(scoped_refptr<PendingTaskSafetyFlag> new_flag =
                  PendingTaskSafetyFlag::Create()) {
     flag_->SetNotAlive();
     flag_ = std::move(new_flag);
   }
 
  private:
-  rtc::scoped_refptr<PendingTaskSafetyFlag> flag_ =
-      PendingTaskSafetyFlag::Create();
+  scoped_refptr<PendingTaskSafetyFlag> flag_ = PendingTaskSafetyFlag::Create();
 };
 
 
@@ -156,15 +155,15 @@ class RTC_EXPORT ScopedTaskSafetyDetached final {
   ~ScopedTaskSafetyDetached() { flag_->SetNotAlive(); }
 
   
-  rtc::scoped_refptr<PendingTaskSafetyFlag> flag() const { return flag_; }
+  scoped_refptr<PendingTaskSafetyFlag> flag() const { return flag_; }
 
  private:
-  rtc::scoped_refptr<PendingTaskSafetyFlag> flag_ =
+  scoped_refptr<PendingTaskSafetyFlag> flag_ =
       PendingTaskSafetyFlag::CreateDetached();
 };
 
 inline absl::AnyInvocable<void() &&> SafeTask(
-    rtc::scoped_refptr<PendingTaskSafetyFlag> flag,
+    scoped_refptr<PendingTaskSafetyFlag> flag,
     absl::AnyInvocable<void() &&> task) {
   return [flag = std::move(flag), task = std::move(task)]() mutable {
     if (flag->alive()) {

@@ -24,7 +24,7 @@ class MetricsExporter {
 
   
   
-  virtual bool Export(rtc::ArrayView<const Metric> metrics) = 0;
+  virtual bool Export(ArrayView<const Metric> metrics) = 0;
 };
 
 }  

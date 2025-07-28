@@ -103,7 +103,7 @@ class SamplesStatsCounter {
   
   
   
-  rtc::ArrayView<const StatsSample> GetTimedSamples() const { return samples_; }
+  ArrayView<const StatsSample> GetTimedSamples() const { return samples_; }
   std::vector<double> GetSamples() const {
     std::vector<double> out;
     out.reserve(samples_.size());

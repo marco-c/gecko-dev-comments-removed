@@ -72,15 +72,14 @@ class PeerConfigurer {
   PeerConfigurer* SetVideoDecoderFactory(
       std::unique_ptr<VideoDecoderFactory> video_decoder_factory);
   PeerConfigurer* SetAudioEncoderFactory(
-      rtc::scoped_refptr<webrtc::AudioEncoderFactory> audio_encoder_factory);
+      scoped_refptr<webrtc::AudioEncoderFactory> audio_encoder_factory);
   PeerConfigurer* SetAudioDecoderFactory(
-      rtc::scoped_refptr<webrtc::AudioDecoderFactory> audio_decoder_factory);
+      scoped_refptr<webrtc::AudioDecoderFactory> audio_decoder_factory);
   
   PeerConfigurer* SetNetEqFactory(std::unique_ptr<NetEqFactory> neteq_factory);
   PeerConfigurer* SetAudioProcessing(
-      rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing);
-  PeerConfigurer* SetAudioMixer(
-      rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer);
+      scoped_refptr<webrtc::AudioProcessing> audio_processing);
+  PeerConfigurer* SetAudioMixer(scoped_refptr<webrtc::AudioMixer> audio_mixer);
 
   
   
