@@ -94,6 +94,13 @@ sandbox::bpf_dsl::ResultExpr SandboxPolicyBase::EvaluateSyscall(
       DISPATCH_SOCKETCALL(__NR_accept4,     SYS_ACCEPT4);
       DISPATCH_SOCKETCALL(__NR_recvmmsg,    SYS_RECVMMSG);
       DISPATCH_SOCKETCALL(__NR_sendmmsg,    SYS_SENDMMSG);
+#  ifdef __NR_recvmmsg_time64
+      
+      
+      
+      
+      DISPATCH_SOCKETCALL(__NR_recvmmsg_time64, SYS_RECVMMSG);
+#  endif
 #undef DISPATCH_SOCKETCALL
 #ifndef __NR_socketcall
 #ifndef ANDROID
