@@ -138,6 +138,10 @@ class OpenSSLStreamAdapter final : public SSLStreamAdapter {
   
   int GetRetransmissionCount() const override { return retransmission_count_; }
 
+  
+  
+  uint16_t GetSslGroupIdForTesting() const override;
+
  private:
   enum SSLState {
     
@@ -255,6 +259,9 @@ class OpenSSLStreamAdapter final : public SSLStreamAdapter {
   const int force_dtls_13_ = 0;
 
   int retransmission_count_ = 0;
+
+  
+  const bool enable_dtls_pqc_ = false;
 };
 
 

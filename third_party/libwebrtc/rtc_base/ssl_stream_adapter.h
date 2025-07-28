@@ -268,6 +268,10 @@ class SSLStreamAdapter : public StreamInterface {
   
   virtual int GetRetransmissionCount() const = 0;
 
+  
+  
+  virtual uint16_t GetSslGroupIdForTesting() const = 0;
+
  private:
   
   
