@@ -307,6 +307,7 @@ class ModuleNamespaceObject : public ProxyObject {
 
 
 enum class ModuleStatus : int8_t {
+  New,
   Unlinked,
   Linking,
   Linked,

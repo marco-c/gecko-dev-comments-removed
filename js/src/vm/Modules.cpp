@@ -431,7 +431,8 @@ JS_PUBLIC_API void JS::ClearModuleEnvironment(JSObject* moduleObj) {
 
 JS_PUBLIC_API bool JS::ModuleIsLinked(JSObject* moduleObj) {
   AssertHeapIsIdle();
-  return moduleObj->as<ModuleObject>().status() != ModuleStatus::Unlinked;
+  return moduleObj->as<ModuleObject>().status() != ModuleStatus::New &&
+         moduleObj->as<ModuleObject>().status() != ModuleStatus::Unlinked;
 }
 
 
@@ -490,6 +491,8 @@ static bool GatherAvailableModuleAncestors(
 
 static const char* ModuleStatusName(ModuleStatus status) {
   switch (status) {
+    case ModuleStatus::New:
+      return "New";
     case ModuleStatus::Unlinked:
       return "Unlinked";
     case ModuleStatus::Linking:
@@ -921,7 +924,8 @@ ModuleNamespaceObject* js::GetOrCreateModuleNamespace(
     JSContext* cx, Handle<ModuleObject*> module) {
   
   
-  MOZ_ASSERT(module->status() != ModuleStatus::Unlinked);
+  MOZ_ASSERT(module->status() != ModuleStatus::New ||
+             module->status() != ModuleStatus::Unlinked);
 
   
   Rooted<ModuleNamespaceObject*> ns(cx, module->namespace_());
@@ -1315,8 +1319,10 @@ static bool ModuleLink(JSContext* cx, Handle<ModuleObject*> module) {
   }
 
   
+  
   ModuleStatus status = module->status();
-  if (status == ModuleStatus::Linking || status == ModuleStatus::Evaluating) {
+  if (status == ModuleStatus::New || status == ModuleStatus::Linking ||
+      status == ModuleStatus::Evaluating) {
     ThrowUnexpectedModuleStatus(cx, status);
     return false;
   }
