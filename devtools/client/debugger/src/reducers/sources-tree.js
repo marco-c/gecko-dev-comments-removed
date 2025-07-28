@@ -418,16 +418,30 @@ function addSortedItem(array, newValue, comparator) {
   array.splice(index, 0, newValue);
 }
 
+
+
+let lastThreadItem = null;
+let lastGroupItem = null;
+let lastDirectoryItem = null;
+
 function addSource(threadItems, source, sourceActor) {
   
-  let threadItem = threadItems.find(item => {
-    return item.threadActorID == sourceActor.thread;
-  });
-  if (!threadItem) {
-    threadItem = createThreadTreeItem(sourceActor.thread);
-    
-    
-    addSortedItem(threadItems, threadItem, sortThreadItems);
+  let threadItem;
+  if (lastThreadItem?.threadActorID == sourceActor.thread) {
+    threadItem = lastThreadItem;
+  } else {
+    threadItem = threadItems.find(item => {
+      return item.threadActorID == sourceActor.thread;
+    });
+    if (!threadItem) {
+      threadItem = createThreadTreeItem(sourceActor.thread);
+      
+      
+      addSortedItem(threadItems, threadItem, sortThreadItems);
+    }
+    lastThreadItem = threadItem;
+    lastGroupItem = null;
+    lastDirectoryItem = null;
   }
 
   
@@ -435,28 +449,38 @@ function addSource(threadItems, source, sourceActor) {
   const { displayURL } = source;
   const { group, origin } = displayURL;
 
-  let groupItem = threadItem.children.find(item => {
-    return item.groupName == group;
-  });
+  let groupItem;
+  if (lastGroupItem?.groupName == group) {
+    groupItem = lastGroupItem;
+  } else {
+    groupItem = threadItem.children.find(item => {
+      return item.groupName == group;
+    });
 
-  if (!groupItem) {
-    groupItem = createGroupTreeItem(group, origin, threadItem, source);
-    
-    
-    threadItem.children = [...threadItem.children];
+    if (!groupItem) {
+      groupItem = createGroupTreeItem(group, origin, threadItem, source);
+      
+      
+      threadItem.children = [...threadItem.children];
 
-    addSortedItem(threadItem.children, groupItem, sortItems);
+      addSortedItem(threadItem.children, groupItem, sortItems);
+    }
+    lastGroupItem = groupItem;
+    lastDirectoryItem = null;
   }
 
   
   const { path } = displayURL;
   const parentPath = path.substring(0, path.lastIndexOf("/"));
-  const parentUrl = source.url.substring(0, source.url.lastIndexOf("/"));
-  const directoryItem = addOrGetParentDirectory(
-    groupItem,
-    parentPath,
-    parentUrl
-  );
+  let directoryItem;
+  if (lastDirectoryItem?.path == parentPath) {
+    directoryItem = lastDirectoryItem;
+  } else {
+    const { url } = displayURL;
+    const parentUrl = url.substring(0, url.lastIndexOf("/"));
+    directoryItem = addOrGetParentDirectory(groupItem, parentPath, parentUrl);
+    lastDirectoryItem = directoryItem;
+  }
 
   
   
@@ -502,9 +526,7 @@ function findSourceInThreadItem(source, threadItem) {
     });
   }
 
-  const directoryItem = groupItem._allGroupDirectoryItems.find(item => {
-    return item.type == "directory" && item.path == parentPath;
-  });
+  const directoryItem = groupItem._allGroupDirectoryItems.get(parentPath);
   if (!directoryItem) {
     return null;
   }
@@ -611,9 +633,7 @@ function addOrGetParentDirectory(groupItem, path, url) {
     return groupItem;
   }
   
-  const existing = groupItem._allGroupDirectoryItems.find(item => {
-    return item.type == "directory" && item.path == path;
-  });
+  const existing = groupItem._allGroupDirectoryItems.get(path);
   if (existing) {
     return existing;
   }
@@ -637,7 +657,7 @@ function addOrGetParentDirectory(groupItem, path, url) {
 
   
   
-  groupItem._allGroupDirectoryItems.push(directory);
+  groupItem._allGroupDirectoryItems.set(directory.path, directory);
 
   return directory;
 }
@@ -693,6 +713,8 @@ function createGroupTreeItem(groupName, origin, parent, source) {
     }),
 
     groupName,
+
+    
     url: origin,
 
     
@@ -703,7 +725,7 @@ function createGroupTreeItem(groupName, origin, parent, source) {
     
     
     
-    _allGroupDirectoryItems: [],
+    _allGroupDirectoryItems: new Map(),
   };
 }
 function createDirectoryTreeItem(path, url, parent) {
@@ -733,6 +755,8 @@ function createDirectoryTreeItem(path, url, parent) {
     
     
     path,
+
+    
     url,
   };
 }
