@@ -11,11 +11,14 @@
 #ifndef RTC_BASE_STRINGS_JSON_H_
 #define RTC_BASE_STRINGS_JSON_H_
 
+#include <cstddef>
 #include <string>
 #include <vector>
 
 #include "absl/strings/string_view.h"
-#include "json/json.h"  
+#include "json/json.h"    
+#include "json/reader.h"  
+#include "json/value.h"   
 
 namespace webrtc {
 
