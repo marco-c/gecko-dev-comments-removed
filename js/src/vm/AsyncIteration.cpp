@@ -341,6 +341,34 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 
 
 
+[[nodiscard]] static bool AsyncGeneratorUnwrapYieldResumption(
+    JSContext* cx, Handle<AsyncGeneratorObject*> generator,
+    CompletionKind completionKind, JS::Handle<JS::Value> value) {
+  
+  
+  if (completionKind != CompletionKind::Return) {
+    return AsyncGeneratorResume(cx, generator, completionKind, value);
+  }
+
+  
+  
+  
+  
+  
+  generator->setAwaitingYieldReturn();
+
+  return InternalAsyncGeneratorAwait(
+      cx, generator, value,
+      PromiseHandler::AsyncGeneratorYieldReturnAwaitedFulfilled,
+      PromiseHandler::AsyncGeneratorYieldReturnAwaitedRejected);
+}
+
+
+
+
+
+
+
 [[nodiscard]] static bool AsyncGeneratorYield(
     JSContext* cx, Handle<AsyncGeneratorObject*> generator, HandleValue value) {
   
@@ -394,24 +422,10 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 
     generator->setSuspendedYield();
 
-    RootedValue argument(cx, next->completionValue());
+    RootedValue completionValue(cx, next->completionValue());
 
-    if (completionKind == CompletionKind::Return) {
-      generator->setAwaitingYieldReturn();
-
-      if (!InternalAsyncGeneratorAwait(
-              cx, generator, argument,
-              PromiseHandler::AsyncGeneratorYieldReturnAwaitedFulfilled,
-              PromiseHandler::AsyncGeneratorYieldReturnAwaitedRejected)) {
-        return false;
-      }
-    } else {
-      if (!AsyncGeneratorResume(cx, generator, completionKind, argument)) {
-        return false;
-      }
-    }
-
-    return true;
+    return AsyncGeneratorUnwrapYieldResumption(cx, generator, completionKind,
+                                               completionValue);
   }
 
   generator->setSuspendedYield();
