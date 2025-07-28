@@ -534,7 +534,6 @@ MsaaAccessible::QueryInterface(REFIID iid, void** ppv) {
   if (!mAcc) {
     
     
-    
     return E_NOINTERFACE;
   }
   AccessibleWrap* localAcc = LocalAcc();
