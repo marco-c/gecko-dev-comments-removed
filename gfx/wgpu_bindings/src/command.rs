@@ -2,8 +2,8 @@
 
 
 
-use crate::{id, server::Global, RawString};
-use std::{borrow::Cow, ffi, slice};
+use crate::{id, server::Global, FfiSlice, RawString};
+use std::{borrow::Cow, ffi};
 use wgc::{
     command::{
         ComputePassDescriptor, PassTimestampWrites, RenderPassColorAttachment,
@@ -223,25 +223,19 @@ pub enum ComputeCommand {
     EndPipelineStatisticsQuery,
 }
 
-
-
-
-
 #[no_mangle]
 pub unsafe extern "C" fn wgpu_recorded_render_pass_set_bind_group(
     pass: &mut RecordedRenderPass,
     index: u32,
     bind_group_id: Option<id::BindGroupId>,
-    offsets: *const DynamicOffset,
-    offset_length: usize,
+    offsets: FfiSlice<'_, DynamicOffset>,
 ) {
-    pass.base
-        .dynamic_offsets
-        .extend_from_slice(unsafe { slice::from_raw_parts(offsets, offset_length) });
+    let offsets = offsets.as_slice();
+    pass.base.dynamic_offsets.extend_from_slice(offsets);
 
     pass.base.commands.push(RenderCommand::SetBindGroup {
         index,
-        num_dynamic_offsets: offset_length,
+        num_dynamic_offsets: offsets.len(),
         bind_group_id,
     });
 }
@@ -568,43 +562,31 @@ pub extern "C" fn wgpu_recorded_render_pass_end_pipeline_statistics_query(
         .push(RenderCommand::EndPipelineStatisticsQuery);
 }
 
-
-
-
-
 #[no_mangle]
 pub unsafe extern "C" fn wgpu_recorded_render_pass_execute_bundles(
     pass: &mut RecordedRenderPass,
-    render_bundle_ids: *const id::RenderBundleId,
-    render_bundle_ids_length: usize,
+    render_bundles: FfiSlice<'_, id::RenderBundleId>,
 ) {
-    for &bundle_id in unsafe { slice::from_raw_parts(render_bundle_ids, render_bundle_ids_length) }
-    {
+    for &bundle_id in render_bundles.as_slice() {
         pass.base
             .commands
             .push(RenderCommand::ExecuteBundle(bundle_id));
     }
 }
 
-
-
-
-
 #[no_mangle]
 pub unsafe extern "C" fn wgpu_recorded_compute_pass_set_bind_group(
     pass: &mut RecordedComputePass,
     index: u32,
     bind_group_id: Option<id::BindGroupId>,
-    offsets: *const DynamicOffset,
-    offset_length: usize,
+    offsets: FfiSlice<'_, DynamicOffset>,
 ) {
-    pass.base
-        .dynamic_offsets
-        .extend_from_slice(unsafe { slice::from_raw_parts(offsets, offset_length) });
+    let offsets = offsets.as_slice();
+    pass.base.dynamic_offsets.extend_from_slice(offsets);
 
     pass.base.commands.push(ComputeCommand::SetBindGroup {
         index,
-        num_dynamic_offsets: offset_length,
+        num_dynamic_offsets: offsets.len(),
         bind_group_id,
     });
 }
