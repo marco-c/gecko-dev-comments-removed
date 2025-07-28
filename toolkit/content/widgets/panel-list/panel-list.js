@@ -216,7 +216,9 @@
 
         requestAnimationFrame(() =>
           setTimeout(() => {
-            let target = this.getTargetForEvent(this.triggeringEvent);
+            let target =
+              this.lastAnchorNode ||
+              this.getTargetForEvent(this.triggeringEvent);
             let anchorElement = target || hostElement;
             
             
