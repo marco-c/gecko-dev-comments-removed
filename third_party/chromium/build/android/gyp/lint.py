@@ -24,6 +24,7 @@ _LINT_MD_URL = 'https://chromium.googlesource.com/chromium/src/+/main/build/andr
 
 _DISABLED_ALWAYS = [
     "AppCompatResource",  
+    "AppLinkUrlError",  
     "Assert",  
     "InflateParams",  
     "InlinedApi",  
@@ -199,6 +200,7 @@ def _RunLint(custom_lint_jar_path,
              android_sdk_root,
              lint_gen_dir,
              baseline,
+             create_cache,
              warnings_as_errors=False):
   logging.info('Lint starting')
   if not cache_dir:
@@ -216,7 +218,7 @@ def _RunLint(custom_lint_jar_path,
     lint_xmx = '4G'
   else:
     creating_baseline = False
-    lint_xmx = '2G'
+    lint_xmx = '3G'
 
   
   
@@ -245,9 +247,16 @@ def _RunLint(custom_lint_jar_path,
       '--offline',
       '--quiet',  
       '--stacktrace',  
-      '--disable',
-      ','.join(_DISABLED_ALWAYS),
   ]
+
+  
+  
+  
+  if not create_cache:
+    cmd += [
+        '--disable',
+        ','.join(_DISABLED_ALWAYS),
+    ]
 
   if not manifest_path:
     manifest_path = os.path.join(build_utils.DIR_SOURCE_ROOT, 'build',
@@ -272,19 +281,20 @@ def _RunLint(custom_lint_jar_path,
   _WriteXmlFile(android_manifest_tree.getroot(), lint_android_manifest_path)
 
   resource_root_dir = os.path.join(lint_gen_dir, _RES_ZIP_DIR)
+  shutil.rmtree(resource_root_dir, True)
   
   logging.info('Extracting resource zips')
   for resource_zip in resource_zips:
     
     
     resource_dir = os.path.join(resource_root_dir, resource_zip)
-    shutil.rmtree(resource_dir, True)
     os.makedirs(resource_dir)
     resource_sources.extend(
         build_utils.ExtractAll(resource_zip, path=resource_dir))
 
   logging.info('Extracting aars')
   aar_root_dir = os.path.join(lint_gen_dir, _AAR_DIR)
+  shutil.rmtree(aar_root_dir, True)
   custom_lint_jars = []
   custom_annotation_zips = []
   if aars:
@@ -292,7 +302,6 @@ def _RunLint(custom_lint_jar_path,
       
       aar_dir = os.path.join(aar_root_dir,
                              os.path.splitext(_SrcRelative(aar))[0])
-      shutil.rmtree(aar_dir, True)
       os.makedirs(aar_dir)
       aar_files = build_utils.ExtractAll(aar, path=aar_dir)
       for f in aar_files:
@@ -303,13 +312,13 @@ def _RunLint(custom_lint_jar_path,
 
   logging.info('Extracting srcjars')
   srcjar_root_dir = os.path.join(lint_gen_dir, _SRCJAR_DIR)
+  shutil.rmtree(srcjar_root_dir, True)
   srcjar_sources = []
   if srcjars:
     for srcjar in srcjars:
       
       
       srcjar_dir = os.path.join(srcjar_root_dir, os.path.splitext(srcjar)[0])
-      shutil.rmtree(srcjar_dir, True)
       os.makedirs(srcjar_dir)
       
       
@@ -326,8 +335,19 @@ def _RunLint(custom_lint_jar_path,
   _WriteXmlFile(project_file_root, project_xml_path)
   cmd += ['--project', project_xml_path]
 
-  
-  stdout_filter = lambda x: build_utils.FilterLines(x, 'No issues found')
+  def stdout_filter(output):
+    filter_patterns = [
+        
+        'No issues found',
+        
+        
+        
+        r'\[UnknownIssueId\]',
+        
+        
+        r'\d+ errors?, \d+ warnings?',
+    ]
+    return build_utils.FilterLines(output, '|'.join(filter_patterns))
 
   def stderr_filter(output):
     output = build_utils.FilterReflectiveAccessJavaWarnings(output)
@@ -368,7 +388,8 @@ def _RunLint(custom_lint_jar_path,
       shutil.rmtree(aar_root_dir, ignore_errors=True)
       shutil.rmtree(resource_root_dir, ignore_errors=True)
       shutil.rmtree(srcjar_root_dir, ignore_errors=True)
-      os.unlink(project_xml_path)
+      if os.path.exists(project_xml_path):
+        os.unlink(project_xml_path)
       shutil.rmtree(partials_dir, ignore_errors=True)
 
     if failed:
@@ -500,7 +521,7 @@ def main():
       and server_utils.MaybeRunCommand(name=args.target_name,
                                        argv=sys.argv,
                                        stamp_file=args.stamp,
-                                       force=args.use_build_server)):
+                                       use_build_server=args.use_build_server)):
     return
 
   _RunLint(args.custom_lint_jar_path,
@@ -521,9 +542,10 @@ def main():
            args.android_sdk_root,
            args.lint_gen_dir,
            args.baseline,
+           args.create_cache,
            warnings_as_errors=args.warnings_as_errors)
   logging.info('Creating stamp file')
-  build_utils.Touch(args.stamp)
+  server_utils.MaybeTouch(args.stamp)
 
 
 if __name__ == '__main__':

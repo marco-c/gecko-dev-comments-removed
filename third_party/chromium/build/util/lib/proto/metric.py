@@ -5,6 +5,8 @@
 
 """ The entry of the metric system."""
 
+from typing import List, Set
+
 from measure import Measure
 from test_script_metrics_pb2 import TestScriptMetrics
 
@@ -12,12 +14,36 @@ from test_script_metrics_pb2 import TestScriptMetrics
 class Metric:
 
   def __init__(self) -> None:
+    
     self._metrics: List[Measure] = []
+    
+    self._tags: Set[str] = set()
 
   def register(self, metric: Measure) -> None:
     self._metrics.append(metric)
 
+  def size(self) -> int:
+    return len(self._metrics)
+
+  def clear(self) -> None:
+    self._metrics.clear()
+    self._tags.clear()
+
+  def tag(self, *args: str) -> None:
+    
+    
+    
+    
+    
+    
+    self._tags.update(list(args))
+
   def dump(self) -> TestScriptMetrics:
     result = TestScriptMetrics()
     result.metrics.extend([m.dump() for m in self._metrics])
+    for tag in sorted(self._tags):
+      for metric in self._metrics:
+        m = metric.dump()
+        m.name = m.name + '@' + tag
+        result.metrics.append(m)
     return result

@@ -26,6 +26,9 @@ class ModificationWaiter(AbstractContextManager):
 
     def __exit__(self, exc_type, exc_value, traceback) -> bool:
         
+        if not self._path:
+            return False
+        
         
         last_mod_time = time.time()
         start_time = last_mod_time

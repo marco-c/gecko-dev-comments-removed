@@ -5,6 +5,7 @@
 
 
 import argparse
+import json
 import logging
 import os
 import pathlib
@@ -59,7 +60,11 @@ _IGNORE_WARNINGS = (
     r'Missing class android.adservices.common.AdServicesOutcomeReceiver',
     
     r'FastServiceLoader\.class:.*Could not inline ServiceLoader\.load',
-
+    
+    r'(?:GeneratedExtensionRegistryLoader|ExtensionRegistryLite)\.class:.*Could not inline ServiceLoader\.load',  
+    
+    
+    r'Missing class org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement',
     
     
     
@@ -68,8 +73,13 @@ _IGNORE_WARNINGS = (
     
     
     r'Warning: InnerClasses attribute has entries missing a corresponding EnclosingMethod attribute',  
-    r'Warning in obj/third_party/androidx/androidx_test_espresso_espresso_core_java',  
-    r'Warning in obj/third_party/androidx/androidx_test_espresso_espresso_web_java',  
+    
+    
+    r'Classes with missing EnclosingMethod',
+    
+    
+    
+    r'Warning in .*:androidx/test/espresso/.*/guava/collect/.*',
 
     
     r'AppSearchDocumentClassMap\.class:.*Could not inline ServiceLoader\.load',
@@ -77,10 +87,8 @@ _IGNORE_WARNINGS = (
 
 _BLOCKLISTED_EXPECTATION_PATHS = [
     
-    'clank/third_party/google3/pg_confs/',
+    'clank/third_party/google3/cipd/pg_confs/',
 ]
-
-_DUMP_DIR_NAME = 'r8inputs_dir'
 
 
 def _ParseOptions():
@@ -92,12 +100,13 @@ def _ParseOptions():
                       help='Path to the R8.jar to use.')
   parser.add_argument('--custom-r8-path',
                       required=True,
-                      help='Path to our custom R8 wrapepr to use.')
+                      help='Path to our custom R8 wrapper to use.')
   parser.add_argument('--input-paths',
                       action='append',
                       required=True,
                       help='GN-list of .jar files to optimize.')
   parser.add_argument('--output-path', help='Path to the generated .jar file.')
+  parser.add_argument('--tracerefs-json-out')
   parser.add_argument(
       '--proguard-configs',
       action='append',
@@ -112,10 +121,14 @@ def _ParseOptions():
   parser.add_argument(
       '--extra-mapping-output-paths',
       help='GN-list of additional paths to copy output mapping file to.')
+  parser.add_argument('--sdk-jars',
+                      action='append',
+                      help='GN-list of .jar files to include as libraries.')
   parser.add_argument(
-      '--classpath',
+      '--sdk-extension-jars',
       action='append',
-      help='GN-list of .jar files to include as libraries.')
+      help='GN-list of .jar files to include as libraries, and that are not a '
+      'part of R8\'s API database.')
   parser.add_argument('--main-dex-rules-path',
                       action='append',
                       help='Path to main dex rules for multidex.')
@@ -129,10 +142,9 @@ def _ParseOptions():
   parser.add_argument('--repackage-classes',
                       default='',
                       help='Value for -repackageclasses.')
-  parser.add_argument(
-    '--disable-checks',
-    action='store_true',
-    help='Disable -checkdiscard directives and missing symbols check')
+  parser.add_argument('--disable-checks',
+                      action='store_true',
+                      help='Disable -checkdiscard directives')
   parser.add_argument('--source-file', help='Value for source file attribute.')
   parser.add_argument('--package-name',
                       help='Goes into a comment in the mapping file.')
@@ -223,7 +235,9 @@ def _ParseOptions():
     parser.error('Cannot use both --force-enable-assertions and '
                  '--assertion-handler')
 
-  options.classpath = action_helpers.parse_gn_list(options.classpath)
+  options.sdk_jars = action_helpers.parse_gn_list(options.sdk_jars)
+  options.sdk_extension_jars = action_helpers.parse_gn_list(
+      options.sdk_extension_jars)
   options.proguard_configs = action_helpers.parse_gn_list(
       options.proguard_configs)
   options.input_paths = action_helpers.parse_gn_list(options.input_paths)
@@ -324,26 +338,7 @@ def _OptimizeWithR8(options, config_paths, libraries, dynamic_config_data):
     base_context = split_contexts_by_name['base']
 
     
-    
-    extension_packages = [
-        'android.car',
-        'android.car.hardware.property',
-        'android.car.input',
-        'android.car.media',
-        'android.car.remoteaccess',
-        'android.car.watchdog',
-        'androidx.window.extensions',
-        'androidx.window.extensions.area',
-        'androidx.window.extensions.core',
-        'androidx.window.extensions.core.util',
-        'androidx.window.extensions.core.util.function',
-        'androidx.window.extensions.layout',
-        'androidx.window.extensions.embedding',
-        'androidx.window.layout.adapter.extensions',
-    ]
-
-    
-    cmd = build_utils.JavaCmd(xmx='2G') + [
+    cmd = build_utils.JavaCmd(xmx='3G') + [
         
         
         '-Dcom.android.tools.r8.experimental.enablewhyareyounotinlining=1',
@@ -351,11 +346,25 @@ def _OptimizeWithR8(options, config_paths, libraries, dynamic_config_data):
         
         '-Dcom.android.tools.r8.enableSameFilePolicy=1',
         
-        '-Dcom.android.tools.r8.androidApiExtensionPackages=' +
-        ','.join(extension_packages),
+        
+        '-Dcom.android.tools.r8.allowServiceLoaderRewritingPinnedTypes=1',
+        
+        
+        '-Dcom.android.tools.r8.allowCodeReplacement=false',
+        
+        '-Dcom.android.tools.r8.allowTestProguardOptions=true',
+        
+        
+        '-Dcom.android.tools.r8.experimentalTraceEnumReflection=1',
     ]
+    if options.sdk_extension_jars:
+      
+      cmd += [
+          '-Dcom.android.tools.r8.androidApiExtensionLibraries=' +
+          ','.join(options.sdk_extension_jars)
+      ]
     if options.dump_inputs:
-      cmd += [f'-Dcom.android.tools.r8.dumpinputtodirectory={_DUMP_DIR_NAME}']
+      cmd += ['-Dcom.android.tools.r8.dumpinputtofile=r8inputs.zip']
     if options.dump_unknown_refs:
       cmd += ['-Dcom.android.tools.r8.reportUnknownApiReferences=1']
     cmd += [
@@ -378,6 +387,9 @@ def _OptimizeWithR8(options, config_paths, libraries, dynamic_config_data):
 
     if options.disable_checks:
       cmd += ['--map-diagnostics:CheckDiscardDiagnostic', 'error', 'none']
+    
+    cmd += [('--map-diagnostics:EmptyMemberRulesToDefaultInitRuleConversion'
+             'Diagnostic'), 'warning', 'none']
     cmd += ['--map-diagnostics', 'info', 'warning']
     
     
@@ -458,10 +470,10 @@ def _OptimizeWithR8(options, config_paths, libraries, dynamic_config_data):
   return split_contexts_by_name
 
 
-def _OutputKeepRules(r8_path, input_paths, classpath, targets_re_string,
+def _OutputKeepRules(r8_path, input_paths, libraries, targets_re_string,
                      keep_rules_output):
 
-  cmd = build_utils.JavaCmd() + [
+  cmd = build_utils.JavaCmd(xmx='2G') + [
       '-cp', r8_path, 'com.android.tools.r8.tracereferences.TraceReferences',
       '--map-diagnostics:MissingDefinitionsDiagnostic', 'error', 'warning',
       '--keep-rules', '--output', keep_rules_output
@@ -472,104 +484,10 @@ def _OutputKeepRules(r8_path, input_paths, classpath, targets_re_string,
       cmd += ['--target', path]
     else:
       cmd += ['--source', path]
-  for path in classpath:
+  for path in libraries:
     cmd += ['--lib', path]
 
   build_utils.CheckOutput(cmd, print_stderr=False, fail_on_output=False)
-
-
-def _CheckForMissingSymbols(options, dex_files, error_title):
-  cmd = build_utils.JavaCmd()
-
-  if options.dump_inputs:
-    cmd += [f'-Dcom.android.tools.r8.dumpinputtodirectory={_DUMP_DIR_NAME}']
-
-  cmd += [
-      '-cp', options.r8_path,
-      'com.android.tools.r8.tracereferences.TraceReferences',
-      '--map-diagnostics:MissingDefinitionsDiagnostic', 'error', 'warning',
-      '--check'
-  ]
-
-  for path in options.classpath:
-    cmd += ['--lib', path]
-  for path in dex_files:
-    cmd += ['--source', path]
-
-  failed_holder = [False]
-
-  def stderr_filter(stderr):
-    ignored_lines = [
-        
-        'Warning: Tracereferences found',
-
-        
-        
-        'dalvik.system',
-        'libcore.io',
-        'sun.misc.Unsafe',
-
-        
-        'android.text.StaticLayout.<init>',
-        
-        
-        ' android.',
-
-        
-        
-        'com.google.common.flogger.backend.google.GooglePlatform',
-        'com.google.common.flogger.backend.system.DefaultPlatform',
-
-        
-        'java.lang.instrument.ClassFileTransformer',
-        'java.lang.instrument.IllegalClassFormatException',
-        'java.lang.instrument.Instrumentation',
-        'java.lang.management.ManagementFactory',
-        'javax.management.MBeanServer',
-        'javax.management.ObjectInstance',
-        'javax.management.ObjectName',
-        'javax.management.StandardMBean',
-
-        
-        
-        'kotlin.KotlinVersion',
-    ]
-
-    had_unfiltered_items = '  ' in stderr
-    stderr = build_utils.FilterLines(
-        stderr, '|'.join(re.escape(x) for x in ignored_lines))
-    if stderr:
-      if 'Missing' in stderr:
-        failed_holder[0] = True
-        stderr = 'TraceReferences failed: ' + error_title + """
-Tip: Build with:
-        is_java_debug=false
-        treat_warnings_as_errors=false
-        enable_proguard_obfuscation=false
-     and then use dexdump to see which class(s) reference them.
-
-     E.g.:
-       third_party/android_sdk/public/build-tools/*/dexdump -d \
-out/Release/apks/YourApk.apk > dex.txt
-""" + stderr
-      elif had_unfiltered_items:
-        
-        stderr = ''
-    return stderr
-
-  try:
-    if options.verbose:
-      stderr_filter = None
-    build_utils.CheckOutput(cmd,
-                            print_stdout=True,
-                            stderr_filter=stderr_filter,
-                            fail_on_output=options.warnings_as_errors)
-  except build_utils.CalledProcessError as e:
-    
-    
-    sys.stderr.write(e.output)
-    sys.exit(1)
-  return failed_holder[0]
 
 
 def _CombineConfigs(configs,
@@ -583,7 +501,9 @@ def _CombineConfigs(configs,
 
   def format_config_contents(path, contents):
     formatted_contents = []
-    if not contents.strip():
+    
+    if all(l.isspace() or l.rstrip().startswith('#')
+           for l in contents.splitlines()):
       return []
 
     
@@ -673,7 +593,7 @@ def _IterParentContexts(context_name, split_contexts_by_name):
     context_name = context.parent_name
 
 
-def _DoTraceReferencesChecks(options, split_contexts_by_name):
+def _WriteTraceReferencesJson(options, split_contexts_by_name):
   
   parent_splits_context_names = {
       c.parent_name
@@ -687,26 +607,25 @@ def _DoTraceReferencesChecks(options, split_contexts_by_name):
   context_sets.sort(key=lambda x: (len(x), x[0].name))
 
   
-  error_title = 'DEX contains references to non-existent symbols after R8.'
   dex_files = sorted(c.final_output_path
                      for c in split_contexts_by_name.values())
-  if _CheckForMissingSymbols(options, dex_files, error_title):
-    
-    return
+  payload = {
+      'r8jar': options.r8_path,
+      'libs': options.sdk_jars + options.sdk_extension_jars,
+      'jobs': [],
+  }
 
+  
+  payload['jobs'].append({'name': '', 'jars': dex_files})
+
+  
+  
   for context_set in context_sets:
-    
-    
-    error_title = (f'DEX within module "{context_set[0].name}" contains '
-                   'reference(s) to symbols within child splits')
     dex_files = [c.final_output_path for c in context_set]
-    
-    
-    
-    
-    if _CheckForMissingSymbols(options, dex_files, error_title):
-      
-      return
+    payload['jobs'].append({'name': context_set[0].name, 'jars': dex_files})
+
+  with action_helpers.atomic_output(options.tracerefs_json_out, 'wt') as f:
+    json.dump(payload, f, indent=2)
 
 
 def _Run(options):
@@ -715,11 +634,10 @@ def _Run(options):
   dynamic_config_data = _CreateDynamicConfig(options)
 
   logging.debug('Looking for embedded configs')
-  
-  libraries = [p for p in options.classpath if p not in options.input_paths]
+  libraries = options.sdk_jars + options.sdk_extension_jars
 
   embedded_configs = {}
-  for jar_path in options.input_paths + libraries:
+  for jar_path in options.input_paths:
     _ExtractEmbeddedConfigs(jar_path, embedded_configs)
 
   
@@ -738,7 +656,7 @@ def _Run(options):
       return
 
   if options.keep_rules_output_path:
-    _OutputKeepRules(options.r8_path, options.input_paths, options.classpath,
+    _OutputKeepRules(options.r8_path, options.input_paths, libraries,
                      options.keep_rules_targets_regex,
                      options.keep_rules_output_path)
     return
@@ -746,9 +664,9 @@ def _Run(options):
   split_contexts_by_name = _OptimizeWithR8(options, options.proguard_configs,
                                            libraries, dynamic_config_data)
 
-  if not options.disable_checks:
-    logging.debug('Running tracereferences')
-    _DoTraceReferencesChecks(options, split_contexts_by_name)
+  if options.tracerefs_json_out:
+    logging.debug('Writing TraceReferences .json')
+    _WriteTraceReferencesJson(options, split_contexts_by_name)
 
   for output in options.extra_mapping_output_paths:
     shutil.copy(options.mapping_output, output)
@@ -766,21 +684,8 @@ def main():
   if options.dump_inputs:
     
     options.warnings_as_errors = False
-    
-    
-    dump_dir_name = _DUMP_DIR_NAME
-    dump_dir_path = pathlib.Path(dump_dir_name)
-    if dump_dir_path.exists():
-      shutil.rmtree(dump_dir_path)
-    
-    dump_dir_path.mkdir()
 
-  
-  try:
-    _Run(options)
-  finally:
-    if options.dump_inputs:
-      zip_helpers.zip_directory('r8inputs.zip', _DUMP_DIR_NAME)
+  _Run(options)
 
 
 if __name__ == '__main__':

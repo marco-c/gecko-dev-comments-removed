@@ -4,12 +4,15 @@
 
 
 
+import collections
 import functools
+import itertools
 import logging
-import multiprocessing
-import optparse
+import argparse
 import os
+import pathlib
 import re
+import shlex
 import shutil
 import sys
 import time
@@ -26,191 +29,6 @@ import zip_helpers
 _JAVAC_EXTRACTOR = os.path.join(build_utils.DIR_SOURCE_ROOT, 'third_party',
                                 'android_prebuilts', 'build_tools', 'common',
                                 'framework', 'javac_extractor.jar')
-
-
-
-ERRORPRONE_CHECKS_TO_APPLY = []
-
-
-ERRORPRONE_WARNINGS_TO_DISABLE = [
-    
-    
-    'InlineMeInliner',
-    
-    
-    'InvalidParam',
-    'InvalidLink',
-    'InvalidInlineTag',
-    'EmptyBlockTag',
-    'PublicConstructorForAbstractClass',
-    'InvalidBlockTag',
-    'StaticAssignmentInConstructor',
-    'MutablePublicArray',
-    'UnescapedEntity',
-    'NonCanonicalType',
-    'AlmostJavadoc',
-    'ReturnValueIgnored',
-    
-    'InlineMeSuggester',
-    'DoNotClaimAnnotations',
-    'JavaUtilDate',
-    'IdentityHashMapUsage',
-    'UnnecessaryMethodReference',
-    'LongFloatConversion',
-    'CharacterGetNumericValue',
-    'ErroneousThreadPoolConstructorChecker',
-    'StaticMockMember',
-    'MissingSuperCall',
-    'ToStringReturnsNull',
-    
-    'MalformedInlineTag',
-    
-    'DoubleBraceInitialization',
-    
-    'CatchAndPrintStackTrace',
-    
-    'SynchronizeOnNonFinalField',
-    
-    'TypeParameterUnusedInFormals',
-    
-    'CatchFail',
-    
-    'JUnitAmbiguousTestClass',
-    
-    
-    'DefaultCharset',
-    
-    'UnrecognisedJavadocTag',
-    
-    'JdkObsolete',
-    
-    'FunctionalInterfaceClash',
-    
-    'FutureReturnValueIgnored',
-    
-    'OperatorPrecedence',
-    
-    'ThreadJoinLoop',
-    
-    
-    
-    'StringSplitter',
-    
-    'ClassNewInstance',
-    
-    'ClassCanBeStatic',
-    
-    'FloatCast',
-    
-    'ThreadLocalUsage',
-    
-    'Finally',
-    
-    'FragmentNotInstantiable',
-    
-    'HidingField',
-    
-    'IntLongMath',
-    
-    'BadComparable',
-    
-    'EqualsHashCode',
-    
-    'TypeParameterShadowing',
-    
-    'ImmutableEnumChecker',
-    
-    'InputStreamSlowMultibyteRead',
-    
-    'BoxedPrimitiveConstructor',
-    
-    'OverrideThrowableToString',
-    
-    'CollectionToArraySafeParameter',
-    
-    
-    'ObjectToString',
-    
-    'UnusedMethod',
-    
-    'UnusedVariable',
-    
-    'UnsafeReflectiveConstructionCast',
-    
-    'MixedMutabilityReturnType',
-    
-    'EqualsGetClass',
-    
-    'UndefinedEquals',
-    
-    'ExtendingJUnitAssert',
-    
-    'SystemExitOutsideMain',
-    
-    'TypeParameterNaming',
-    
-    'UnusedException',
-    
-    'UngroupedOverloads',
-    
-    'FunctionalInterfaceClash',
-    
-    'InconsistentOverloads',
-    
-    'SameNameButDifferent',
-    
-    'UnnecessaryLambda',
-    
-    'UnnecessaryAnonymousClass',
-    
-    'LiteProtoToString',
-    
-    'MissingSummary',
-    
-    'ReturnFromVoid',
-    
-    'EmptyCatch',
-    
-    'BadImport',
-    
-    'UseCorrectAssertInTests',
-    
-    'InlineFormatString',
-    
-    'DefaultPackage',
-    
-    
-    'RefersToDaggerCodegen',
-    
-    
-    'RemoveUnusedImports',
-    
-    'UnnecessaryParentheses',
-    
-    
-    'UnicodeEscape',
-    
-    'AlreadyChecked',
-]
-
-
-
-
-ERRORPRONE_WARNINGS_TO_ENABLE = [
-    'BinderIdentityRestoredDangerously',
-    'EmptyIf',
-    'EqualsBrokenForNull',
-    'InvalidThrows',
-    'LongLiteralLowerCaseSuffix',
-    'MultiVariableDeclaration',
-    'RedundantOverride',
-    'StaticQualifiedUsingExpression',
-    'StringEquality',
-    'TimeUnitMismatch',
-    'UnnecessaryStaticImport',
-    'UseBinds',
-    'WildcardImport',
-]
 
 
 def ProcessJavacOutput(output, target_name):
@@ -248,7 +66,7 @@ def ProcessJavacOutput(output, target_name):
 
 def CreateJarFile(jar_path,
                   classes_dir,
-                  service_provider_configuration_dir=None,
+                  services_map=None,
                   additional_jar_files=None,
                   extra_classes_jar=None):
   """Zips files from compilation into a single jar."""
@@ -256,13 +74,11 @@ def CreateJarFile(jar_path,
   with action_helpers.atomic_output(jar_path) as f:
     with zipfile.ZipFile(f.name, 'w') as z:
       zip_helpers.zip_directory(z, classes_dir)
-      if service_provider_configuration_dir:
-        config_files = build_utils.FindInDirectory(
-            service_provider_configuration_dir)
-        for config_file in config_files:
-          zip_path = os.path.relpath(config_file,
-                                     service_provider_configuration_dir)
-          zip_helpers.add_to_zip_hermetic(z, zip_path, src_path=config_file)
+      if services_map:
+        for service_class, impl_classes in sorted(services_map.items()):
+          zip_path = 'META-INF/services/' + service_class
+          data = ''.join(f'{x}\n' for x in sorted(impl_classes))
+          zip_helpers.add_to_zip_hermetic(z, zip_path, data=data)
 
       if additional_jar_files:
         for src_path, zip_path in additional_jar_files:
@@ -274,41 +90,70 @@ def CreateJarFile(jar_path,
   logging.info('Completed jar file: %s', jar_path)
 
 
-def _ParsePackageAndClassNames(source_file):
+
+_PACKAGE_RE = re.compile(r'^package\s+(.*?)(;|\s*$)', flags=re.MULTILINE)
+
+_SERVICE_IMPL_RE = re.compile(
+    r'^([\t ]*)@ServiceImpl\(\s*(.+?)\.class\)(.*?)\sclass\s+(\w+)',
+    flags=re.MULTILINE | re.DOTALL)
+
+
+_TOP_LEVEL_CLASSES_RE = re.compile(
+    
+    r'^(?:/\*.*\*/\s*)?'
+    
+    r'(?:@\w+(?:\(.*\))\s+)*'
+    r'(?:(?:public|protected|private)\s+)?'
+    r'(?:(?:static|abstract|final|sealed)\s+)*'
+    r'(?:class|@?interface|enum|record)\s+'
+    r'(\w+?)\b[^"]*?$',
+    flags=re.MULTILINE)
+
+
+def ParseJavaSource(data, services_map, path=None):
   """This should support both Java and Kotlin files."""
   package_name = ''
-  class_names = []
-  with open(source_file) as f:
-    for l in f:
+  if m := _PACKAGE_RE.search(data):
+    package_name = m.group(1)
+
+  class_names = _TOP_LEVEL_CLASSES_RE.findall(data)
+
+  
+  if '@ServiceImpl' in data:
+    for indent, service_class, modifiers, impl_class in (
+        _SERVICE_IMPL_RE.findall(data)):
+      if 'public' not in modifiers:
+        raise Exception(f'@ServiceImpl can be used only on public classes '
+                        f'(when parsing {path})')
       
-      
-      
-      l = re.sub(r'^(?://.*|/?\*.*?(?:\*/\s*|$))', '', l)
-      
-      
-      
-      l = re.sub('(?:".*?")', '', l)
+      if indent:
+        impl_class = f'{class_names[0]}${impl_class}'
+      else:
+        assert class_names[0] == impl_class
 
       
-      m = re.match(r'package\s+(.*?)(;|\s*$)', l)
-      if m and not package_name:
-        package_name = m.group(1)
+      dot_idx = service_class.find('.')
+      
+      outer_class = service_class if dot_idx == -1 else service_class[:dot_idx]
+
+      if m := re.search(r'^import\s+([\w\.]*\.' + outer_class + r')[;\s]',
+                        data,
+                        flags=re.MULTILINE):
+        service_class = m.group(1) + service_class[len(outer_class):]
+      else:
+        service_class = f'{package_name}.{service_class}'
 
       
-      
-      m = re.match(r'(?:\S.*?)?(?:class|@?interface|enum)\s+(.+?)\b', l)
-      if m:
-        class_names.append(m.group(1))
+      for m in list(re.finditer(r'\.[A-Z]', service_class))[1:]:
+        idx = m.start()
+        service_class = service_class[:idx] + '$' + service_class[idx + 1:]
+
+      services_map[service_class].append(f'{package_name}.{impl_class}')
+
   return package_name, class_names
 
 
-def _ProcessSourceFileForInfo(source_file):
-  package_name, class_names = _ParsePackageAndClassNames(source_file)
-  return source_file, package_name, class_names
-
-
-class _InfoFileContext:
-  """Manages the creation of the class->source file .info file."""
+class _MetadataParser:
 
   def __init__(self, chromium_code, excluded_globs):
     self._chromium_code = chromium_code
@@ -316,9 +161,7 @@ class _InfoFileContext:
     
     self._srcjar_files = {}
     
-    self._results = []
-    
-    self._pool = None
+    self.services_map = collections.defaultdict(list)
 
   def AddSrcJarSources(self, srcjar_path, extracted_paths, parent_dir):
     for path in extracted_paths:
@@ -326,19 +169,6 @@ class _InfoFileContext:
       
       self._srcjar_files[path] = '{}/{}'.format(
           srcjar_path, os.path.relpath(path, parent_dir))
-
-  def SubmitFiles(self, source_files):
-    if not source_files:
-      return
-    if self._pool is None:
-      
-      
-      self._pool = multiprocessing.Pool(1)
-    logging.info('Submitting %d files for info', len(source_files))
-    self._results.append(
-        self._pool.imap_unordered(_ProcessSourceFileForInfo,
-                                  source_files,
-                                  chunksize=1000))
 
   def _CheckPathMatchesClassName(self, source_file, package_name, class_name):
     if source_file.endswith('.java'):
@@ -358,7 +188,8 @@ class _InfoFileContext:
       if '_aidl.srcjar' in source:
         continue
       assert not self._chromium_code or len(class_names) == 1, (
-          'Chromium java files must only have one class: {}'.format(source))
+          'Chromium java files must only have one class: {} found: {}'.format(
+              source, class_names))
       if self._chromium_code:
         
         self._CheckPathMatchesClassName(java_file, package_name, class_names[0])
@@ -367,36 +198,24 @@ class _InfoFileContext:
     name_as_class_glob = fully_qualified_name.replace('.', '/') + '.class'
     return not build_utils.MatchesGlob(name_as_class_glob, self._excluded_globs)
 
-  def _Collect(self):
-    if self._pool is None:
-      return {}
-    ret = {}
-    for result in self._results:
-      for java_file, package_name, class_names in result:
-        source = self._srcjar_files.get(java_file, java_file)
-        for fully_qualified_name in self._ProcessInfo(java_file, package_name,
-                                                      class_names, source):
-          if self._ShouldIncludeInJarInfo(fully_qualified_name):
-            ret[fully_qualified_name] = java_file
-    return ret
-
-  def Close(self):
-    
-    
-    if self._pool is not None:
-      logging.info('Joining multiprocessing.Pool')
-      self._pool.terminate()
-      self._pool.join()
-      logging.info('Done.')
-
-  def Commit(self, output_path):
+  def ParseAndWriteInfoFile(self, output_path, java_files, kt_files=None):
     """Writes a .jar.info file.
 
     Maps fully qualified names for classes to either the java file that they
     are defined in or the path of the srcjar that they came from.
     """
     logging.info('Collecting info file entries')
-    entries = self._Collect()
+    entries = {}
+    for path in itertools.chain(java_files, kt_files or []):
+      data = pathlib.Path(path).read_text()
+      package_name, class_names = ParseJavaSource(data,
+                                                  self.services_map,
+                                                  path=path)
+      source = self._srcjar_files.get(path, path)
+      for fully_qualified_name in self._ProcessInfo(path, package_name,
+                                                    class_names, source):
+        if self._ShouldIncludeInJarInfo(fully_qualified_name):
+          entries[fully_qualified_name] = path
 
     logging.info('Writing info file: %s', output_path)
     with action_helpers.atomic_output(output_path, mode='wb') as f:
@@ -404,16 +223,14 @@ class _InfoFileContext:
     logging.info('Completed info file: %s', output_path)
 
 
-def _OnStaleMd5(changes, options, javac_cmd, javac_args, java_files, kt_files):
+def _OnStaleMd5(changes,
+                options,
+                javac_cmd,
+                javac_args,
+                java_files,
+                kt_files,
+                use_errorprone=False):
   logging.info('Starting _OnStaleMd5')
-
-  
-  if (options.enable_errorprone and not options.skip_build_server
-      and server_utils.MaybeRunCommand(name=options.target_name,
-                                       argv=sys.argv,
-                                       stamp_file=options.jar_path,
-                                       force=options.use_build_server)):
-    return
 
   if options.enable_kythe_annotations:
     
@@ -450,7 +267,7 @@ def _OnStaleMd5(changes, options, javac_cmd, javac_args, java_files, kt_files):
 
   intermediates_out_dir = None
   jar_info_path = None
-  if not options.enable_errorprone:
+  if not use_errorprone:
     
     
     shutil.rmtree(options.generated_dir, True)
@@ -468,6 +285,7 @@ def _OnStaleMd5(changes, options, javac_cmd, javac_args, java_files, kt_files):
                  javac_cmd + javac_args,
                  java_files,
                  options.jar_path,
+                 use_errorprone=use_errorprone,
                  kt_files=kt_files,
                  jar_info_path=jar_info_path,
                  intermediates_out_dir=intermediates_out_dir,
@@ -487,6 +305,7 @@ def _RunCompiler(changes,
                  javac_cmd,
                  java_files,
                  jar_path,
+                 use_errorprone=False,
                  kt_files=None,
                  jar_info_path=None,
                  intermediates_out_dir=None,
@@ -514,22 +333,21 @@ def _RunCompiler(changes,
 
   java_files = java_files.copy()
   java_srcjars = options.java_srcjars
-  save_info_file = jar_info_path is not None
+  parse_java_files = jar_info_path is not None
 
   
   temp_dir = jar_path + '.staging'
   build_utils.DeleteDirectory(temp_dir)
   os.makedirs(temp_dir)
-  info_file_context = None
+  metadata_parser = _MetadataParser(options.chromium_code,
+                                    options.jar_info_exclude_globs)
   try:
     classes_dir = os.path.join(temp_dir, 'classes')
-    service_provider_configuration = os.path.join(
-        temp_dir, 'service_provider_configuration')
 
     if java_files:
       os.makedirs(classes_dir)
 
-      if enable_partial_javac:
+      if enable_partial_javac and changes:
         all_changed_paths_are_java = all(
             p.endswith(".java") for p in changes.IterChangedPaths())
         if (all_changed_paths_are_java and not changes.HasStringChanges()
@@ -544,16 +362,19 @@ def _RunCompiler(changes,
           
           
           java_files = list(changes.IterChangedPaths())
+
+          
+          
           java_srcjars = None
 
           
-          save_info_file = False
+          
+          
+          
+          parse_java_files = False
 
-          build_utils.ExtractAll(jar_path, classes_dir, pattern='*.class')
-
-    if save_info_file:
-      info_file_context = _InfoFileContext(options.chromium_code,
-                                           options.jar_info_exclude_globs)
+          
+          build_utils.ExtractAll(jar_path, classes_dir)
 
     if intermediates_out_dir is None:
       intermediates_out_dir = temp_dir
@@ -567,24 +388,10 @@ def _RunCompiler(changes,
         extracted_files = build_utils.ExtractAll(
             srcjar, no_clobber=True, path=input_srcjars_dir, pattern='*.java')
         java_files.extend(extracted_files)
-        if save_info_file:
-          info_file_context.AddSrcJarSources(srcjar, extracted_files,
-                                             input_srcjars_dir)
+        if parse_java_files:
+          metadata_parser.AddSrcJarSources(srcjar, extracted_files,
+                                           input_srcjars_dir)
       logging.info('Done extracting srcjars')
-
-    if options.header_jar:
-      logging.info('Extracting service provider configs')
-      
-      
-      build_utils.ExtractAll(options.header_jar,
-                             no_clobber=True,
-                             path=service_provider_configuration,
-                             pattern='META-INF/services/*')
-      logging.info('Done extracting service provider configs')
-
-    if save_info_file and java_files:
-      info_file_context.SubmitFiles(java_files)
-      info_file_context.SubmitFiles(kt_files)
 
     if java_files:
       
@@ -607,16 +414,36 @@ def _RunCompiler(changes,
 
       logging.debug('Build command %s', cmd)
       start = time.time()
+      before_join_callback = None
+      if parse_java_files:
+        before_join_callback = lambda: metadata_parser.ParseAndWriteInfoFile(
+            jar_info_path, java_files, kt_files)
+
+      if options.print_javac_command_line:
+        print(shlex.join(cmd))
+        return
+
       build_utils.CheckOutput(cmd,
                               print_stdout=options.chromium_code,
                               stdout_filter=process_javac_output_partial,
                               stderr_filter=process_javac_output_partial,
-                              fail_on_output=options.warnings_as_errors)
+                              fail_on_output=options.warnings_as_errors,
+                              before_join_callback=before_join_callback)
       end = time.time() - start
       logging.info('Java compilation took %ss', end)
+    elif parse_java_files:
+      if options.print_javac_command_line:
+        raise Exception('need java files for --print-javac-command-line.')
+      metadata_parser.ParseAndWriteInfoFile(jar_info_path, java_files, kt_files)
 
-    CreateJarFile(jar_path, classes_dir, service_provider_configuration,
-                  options.additional_jar_files, options.kotlin_jar_path)
+    if use_errorprone:
+      
+      
+      server_utils.MaybeTouch(jar_path)
+    else:
+      CreateJarFile(jar_path, classes_dir, metadata_parser.services_map,
+                    options.additional_jar_files, options.kotlin_jar_path)
+
 
     
     
@@ -627,94 +454,78 @@ def _RunCompiler(changes,
         if '_jni_java/' in p and not p.endswith('Jni.java'):
           os.unlink(p)
 
-    if save_info_file:
-      info_file_context.Commit(jar_info_path)
-
     logging.info('Completed all steps in _RunCompiler')
   finally:
-    if info_file_context:
-      info_file_context.Close()
-    shutil.rmtree(temp_dir)
+    
+    if not options.print_javac_command_line:
+      shutil.rmtree(temp_dir)
 
 
 def _ParseOptions(argv):
-  parser = optparse.OptionParser()
+  parser = argparse.ArgumentParser()
   action_helpers.add_depfile_arg(parser)
 
-  parser.add_option('--target-name', help='Fully qualified GN target name.')
-  parser.add_option('--skip-build-server',
-                    action='store_true',
-                    help='Avoid using the build server.')
-  parser.add_option('--use-build-server',
-                    action='store_true',
-                    help='Always use the build server.')
-  parser.add_option(
-      '--java-srcjars',
-      action='append',
-      default=[],
-      help='List of srcjars to include in compilation.')
-  parser.add_option(
+  parser.add_argument('--target-name', help='Fully qualified GN target name.')
+  parser.add_argument('--java-srcjars',
+                      action='append',
+                      default=[],
+                      help='List of srcjars to include in compilation.')
+  parser.add_argument(
       '--generated-dir',
       help='Subdirectory within target_gen_dir to place extracted srcjars and '
       'annotation processor output for codesearch to find.')
-  parser.add_option('--classpath', action='append', help='Classpath to use.')
-  parser.add_option(
+  parser.add_argument('--classpath', action='append', help='Classpath to use.')
+  parser.add_argument(
       '--processorpath',
       action='append',
       help='GN list of jars that comprise the classpath used for Annotation '
       'Processors.')
-  parser.add_option(
-      '--processor-arg',
-      dest='processor_args',
-      action='append',
-      help='key=value arguments for the annotation processors.')
-  parser.add_option(
+  parser.add_argument('--processor-arg',
+                      dest='processor_args',
+                      action='append',
+                      help='key=value arguments for the annotation processors.')
+  parser.add_argument(
       '--additional-jar-file',
       dest='additional_jar_files',
       action='append',
       help='Additional files to package into jar. By default, only Java .class '
       'files are packaged into the jar. Files should be specified in '
       'format <filename>:<path to be placed in jar>.')
-  parser.add_option(
+  parser.add_argument(
       '--jar-info-exclude-globs',
       help='GN list of exclude globs to filter from generated .info files.')
-  parser.add_option(
+  parser.add_argument(
       '--chromium-code',
-      type='int',
+      action='store_true',
       help='Whether code being compiled should be built with stricter '
       'warnings for chromium code.')
-  parser.add_option(
-      '--errorprone-path', help='Use the Errorprone compiler at this path.')
-  parser.add_option(
-      '--enable-errorprone',
-      action='store_true',
-      help='Enable errorprone checks')
-  parser.add_option(
-      '--warnings-as-errors',
-      action='store_true',
-      help='Treat all warnings as errors.')
-  parser.add_option('--jar-path', help='Jar output path.')
-  parser.add_option(
-      '--javac-arg',
-      action='append',
-      default=[],
-      help='Additional arguments to pass to javac.')
-  parser.add_option(
+  parser.add_argument('--warnings-as-errors',
+                      action='store_true',
+                      help='Treat all warnings as errors.')
+  parser.add_argument('--jar-path', required=True, help='Jar output path.')
+  parser.add_argument('--javac-arg',
+                      action='append',
+                      default=[],
+                      help='Additional arguments to pass to javac.')
+  parser.add_argument('--print-javac-command-line',
+                      action='store_true',
+                      help='Just show javac command line (for ide_query).')
+  parser.add_argument(
       '--enable-kythe-annotations',
       action='store_true',
       help='Enable generation of Kythe kzip, used for codesearch. Ensure '
       'proper environment variables are set before using this flag.')
-  parser.add_option(
+  parser.add_argument(
       '--header-jar',
       help='This is the header jar for the current target that contains '
       'META-INF/services/* files to be included in the output jar.')
-  parser.add_option(
+  parser.add_argument(
       '--kotlin-jar-path',
       help='Kotlin jar to be merged into the output jar. This contains the '
       ".class files from this target's .kt files.")
+  parser.add_argument('sources', nargs='*')
 
-  options, args = parser.parse_args(argv)
-  build_utils.CheckOptions(options, parser, required=('jar_path', ))
+  options = parser.parse_args(argv)
 
   options.classpath = action_helpers.parse_gn_list(options.classpath)
   options.processorpath = action_helpers.parse_gn_list(options.processorpath)
@@ -729,7 +540,7 @@ def _ParseOptions(argv):
   options.additional_jar_files = additional_jar_files
 
   files = []
-  for arg in args:
+  for arg in options.sources:
     
     if arg.startswith('@'):
       files.extend(build_utils.ReadSourcesList(arg[1:]))
@@ -747,7 +558,10 @@ def _ParseOptions(argv):
   return options, java_files, kt_files
 
 
-def main(argv):
+def main(argv,
+         extra_javac_args=None,
+         use_errorprone=False,
+         write_depfile_only=False):
   build_utils.InitLogging('JAVAC_DEBUG')
   argv = build_utils.ExpandFileArgs(argv)
   options, java_files, kt_files = _ParseOptions(argv)
@@ -756,6 +570,8 @@ def main(argv):
 
   javac_args = [
       '-g',
+      
+      '-parameters',
       
       '--release',
       '17',
@@ -775,56 +591,13 @@ def main(argv):
       '-Xlint:-removal',
       
       '-J-XX:+PerfDisableSharedMem',
+
+      
+      '-proc:none',
   ]
 
-  if options.enable_errorprone:
-    
-    errorprone_flags = ['-Xplugin:ErrorProne']
-    
-    
-    errorprone_flags += ['-XepAllErrorsAsWarnings']
-    
-    errorprone_flags += ['-XepDisableWarningsInGeneratedCode']
-    errorprone_flags.extend('-Xep:{}:OFF'.format(x)
-                            for x in ERRORPRONE_WARNINGS_TO_DISABLE)
-    errorprone_flags.extend('-Xep:{}:WARN'.format(x)
-                            for x in ERRORPRONE_WARNINGS_TO_ENABLE)
-
-    if ERRORPRONE_CHECKS_TO_APPLY:
-      errorprone_flags += [
-          '-XepPatchLocation:IN_PLACE',
-          '-XepPatchChecks:,' + ','.join(ERRORPRONE_CHECKS_TO_APPLY)
-      ]
-
-    
-    
-    javac_args += [
-        '-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED',
-        '-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED',
-        '-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED',
-        '-J--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED',
-        '-J--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED',
-        '-J--add-exports=jdk.compiler/com.sun.tools.javac.processing='
-        'ALL-UNNAMED',
-        '-J--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED',
-        '-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED',
-        '-J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED',
-        '-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED',
-    ]
-
-    javac_args += ['-XDcompilePolicy=simple', ' '.join(errorprone_flags)]
-
-    
-    
-    
-    if not ERRORPRONE_CHECKS_TO_APPLY:
-      javac_args += ['-XDshould-stop.ifNoError=FLOW']
-
-  
-  
-  
-  
-  javac_args.extend(['-proc:none'])
+  if extra_javac_args:
+    javac_args.extend(extra_javac_args)
 
   if options.processorpath:
     javac_args.extend(['-processorpath', ':'.join(options.processorpath)])
@@ -834,33 +607,55 @@ def main(argv):
 
   javac_args.extend(options.javac_arg)
 
-  classpath_inputs = options.classpath + options.processorpath
+  do_it = lambda changes: _OnStaleMd5(changes,
+                                      options,
+                                      javac_cmd,
+                                      javac_args,
+                                      java_files,
+                                      kt_files,
+                                      use_errorprone=use_errorprone)
 
-  depfile_deps = classpath_inputs
-  
-  input_paths = ([build_utils.JAVAC_PATH] + depfile_deps +
-                 options.java_srcjars + java_files + kt_files)
-  if options.header_jar:
-    input_paths.append(options.header_jar)
-  input_paths += [x[0] for x in options.additional_jar_files]
+  if options.print_javac_command_line:
+    if options.java_srcjars:
+      raise Exception(
+          '--print-javac-command-line does not work with --java-srcjars')
+    do_it(None)
+    return 0
+
+  depfile_deps = options.classpath + options.processorpath
 
   output_paths = [options.jar_path]
-  if not options.enable_errorprone:
-    output_paths += [options.jar_path + '.info']
-
-  input_strings = (javac_cmd + javac_args + options.classpath + java_files +
-                   kt_files +
-                   [options.warnings_as_errors, options.jar_info_exclude_globs])
+  if not use_errorprone:
+    jar_info_path = options.jar_path + '.info'
+    output_paths.append(jar_info_path)
 
   
-  md5_check.CallAndWriteDepfileIfStale(lambda changes: _OnStaleMd5(
-      changes, options, javac_cmd, javac_args, java_files, kt_files),
-                                       options,
-                                       depfile_deps=depfile_deps,
-                                       input_paths=input_paths,
-                                       input_strings=input_strings,
-                                       output_paths=output_paths,
-                                       pass_changes=True)
+  if write_depfile_only:
+    action_helpers.write_depfile(options.depfile, output_paths[0], depfile_deps)
+  elif use_errorprone:
+    do_it(None)
+    action_helpers.write_depfile(options.depfile, output_paths[0], depfile_deps)
+  else:
+    
+    input_paths = ([build_utils.JAVAC_PATH] + depfile_deps +
+                   options.java_srcjars + java_files + kt_files)
+    if options.header_jar:
+      input_paths.append(options.header_jar)
+    input_paths += [x[0] for x in options.additional_jar_files]
+
+    input_strings = (
+        javac_cmd + javac_args + options.classpath + java_files + kt_files +
+        [options.warnings_as_errors, options.jar_info_exclude_globs])
+
+    
+    md5_check.CallAndWriteDepfileIfStale(do_it,
+                                         options,
+                                         depfile_deps=depfile_deps,
+                                         input_paths=input_paths,
+                                         input_strings=input_strings,
+                                         output_paths=output_paths,
+                                         pass_changes=True)
+  return 0
 
 
 if __name__ == '__main__':

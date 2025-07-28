@@ -49,8 +49,6 @@
 
 
 
-
-
 #ifndef BUILD_BUILD_CONFIG_H_
 #define BUILD_BUILD_CONFIG_H_
 
@@ -79,11 +77,8 @@
 #if defined(TARGET_OS_MACCATALYST) && TARGET_OS_MACCATALYST
 #define OS_IOS_MACCATALYST
 #endif  
-#if defined(TARGET_OS_VISION) && TARGET_OS_VISION
-#define OS_IOS_VISION 1
-#endif  
 #if defined(TARGET_OS_WATCH) && TARGET_OS_WATCH
-#define OS_IOS_WATCH 1
+#define OS_WATCHOS 1
 #endif  
 #else
 #define OS_MAC 1
@@ -207,18 +202,6 @@
 #define BUILDFLAG_INTERNAL_IS_IOS_MACCATALYST() (0)
 #endif
 
-#if defined(OS_IOS_VISION)
-#define BUILDFLAG_INTERNAL_IS_IOS_VISION() (1)
-#else
-#define BUILDFLAG_INTERNAL_IS_IOS_VISION() (0)
-#endif
-
-#if defined(OS_IOS_WATCH)
-#define BUILDFLAG_INTERNAL_IS_IOS_WATCH() (1)
-#else
-#define BUILDFLAG_INTERNAL_IS_IOS_WATCH() (0)
-#endif
-
 #if defined(OS_LINUX)
 #define BUILDFLAG_INTERNAL_IS_LINUX() (1)
 #else
@@ -265,6 +248,12 @@
 #define BUILDFLAG_INTERNAL_IS_SOLARIS() (1)
 #else
 #define BUILDFLAG_INTERNAL_IS_SOLARIS() (0)
+#endif
+
+#if defined(OS_WATCHOS)
+#define BUILDFLAG_INTERNAL_IS_WATCHOS() (1)
+#else
+#define BUILDFLAG_INTERNAL_IS_WATCHOS() (0)
 #endif
 
 #if defined(OS_WIN)
@@ -414,6 +403,26 @@
 
 
 #define BASE_STRING16_ITERATOR_IS_CHAR16_POINTER
+#endif
+
+
+
+#if !defined(CPU_ARM_NEON)
+#if defined(__arm__)
+#if !defined(__ARMEB__) && !defined(__ARM_EABI__) && !defined(__EABI__) && \
+    !defined(__VFP_FP__) && !defined(_WIN32_WCE) && !defined(ANDROID)
+#error Chromium does not support middle endian architecture
+#endif
+#if defined(__ARM_NEON__)
+#define CPU_ARM_NEON 1
+#endif
+#endif  
+#endif  
+
+#if !defined(HAVE_MIPS_MSA_INTRINSICS)
+#if defined(__mips_msa) && defined(__mips_isa_rev) && (__mips_isa_rev >= 5)
+#define HAVE_MIPS_MSA_INTRINSICS 1
+#endif
 #endif
 
 #endif  

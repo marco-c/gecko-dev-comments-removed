@@ -37,7 +37,8 @@ fn main() {
     let fptr =
         unsafe { std::mem::transmute::<usize, fn()>(nop_sled as usize + NOP_INSTRUCTION_SIZE) };
     
-    indirect_call(fptr);
+    
+    indirect_call(std::hint::black_box(fptr));
     
     eprintln!("failed");
 }

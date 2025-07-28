@@ -110,6 +110,11 @@ _RE_FLAKY = re.compile(r'FLAKY_')
 
 
 
+
+_RE_LAUNCHER_MAIN_START = re.compile(r'>>ScopedMainEntryLogger')
+
+
+
 _RE_ANY_TESTS_FAILED = re.compile(r'\[ +FAILED +\].*listed below')
 
 
@@ -192,6 +197,7 @@ def ParseGTestOutput(output, symbolizer, device_abi):
 
   for l in output:
     matcher = _RE_TEST_STATUS.match(l)
+    launcher_main_start_match = _RE_LAUNCHER_MAIN_START.match(l)
     if matcher:
       if matcher.group(1) == 'RUN':
         handle_possibly_unknown_test()
@@ -221,11 +227,11 @@ def ParseGTestOutput(output, symbolizer, device_abi):
         test_name = currently_running_matcher.group(1)
         result_type = base_test_result.ResultType.CRASH
         duration = None  
-      elif dcheck_matcher:
+      elif dcheck_matcher or launcher_main_start_match:
         result_type = base_test_result.ResultType.CRASH
         duration = None  
 
-    if log is not None:
+    if not launcher_main_start_match:
       if not matcher and _STACK_LINE_RE.match(l):
         stack.append(l)
       else:
@@ -349,6 +355,7 @@ class GtestTestInstance(test_instance.TestInstance):
     self._total_external_shards = args.test_launcher_total_shards
     self._wait_for_java_debugger = args.wait_for_java_debugger
     self._use_existing_test_data = args.use_existing_test_data
+    self._deploy_mock_openxr_runtime = args.deploy_mock_openxr_runtime
 
     
     if args.executable_dist_dir:
@@ -469,6 +476,10 @@ class GtestTestInstance(test_instance.TestInstance):
   @property
   def coverage_dir(self):
     return self._coverage_dir
+
+  @property
+  def deploy_mock_openxr_runtime(self):
+    return self._deploy_mock_openxr_runtime
 
   @property
   def enable_xml_result_parsing(self):

@@ -23,11 +23,6 @@ class BlinkTestRunner(TestRunner):
                  target_id: Optional[str]) -> None:
         super().__init__(out_dir, test_args, ['content_shell'], target_id)
 
-    
-    @staticmethod
-    def is_cfv2() -> bool:
-        return False
-
     def run_test(self):
         test_cmd = [_BLINK_TEST_SCRIPT, '-t', os.path.basename(self._out_dir)]
 

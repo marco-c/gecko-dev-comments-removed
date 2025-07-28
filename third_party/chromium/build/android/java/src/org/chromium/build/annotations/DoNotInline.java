@@ -17,4 +17,5 @@ import java.lang.annotation.Target;
 
 @Target({ElementType.CONSTRUCTOR, ElementType.FIELD, ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.CLASS)
+@UsedReflectively
 public @interface DoNotInline {}

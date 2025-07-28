@@ -48,7 +48,8 @@ def _MergeResInfoFiles(res_info_path, info_paths):
 
 
 def _PakInfoPathsForAssets(assets):
-  return [f.split(':')[0] + '.info' for f in assets if f.endswith('.pak')]
+  
+  return [f.split(':')[0] + '.info' for f in assets if '.pak' in f]
 
 
 def _MergePakInfoFiles(merged_path, pak_infos):

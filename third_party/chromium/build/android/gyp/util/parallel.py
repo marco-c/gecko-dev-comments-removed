@@ -27,6 +27,10 @@ _fork_params = None
 _fork_kwargs = None
 
 
+
+
+multiprocessing.set_start_method('fork')
+
 class _ImmediateResult:
   def __init__(self, value):
     self._value = value

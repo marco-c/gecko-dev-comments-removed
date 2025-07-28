@@ -9,7 +9,7 @@ import json
 import os
 
 from google.protobuf import any_pb2
-from google.protobuf.json_format import MessageToJson
+from google.protobuf.json_format import MessageToDict
 
 from average import Average
 from count import Count
@@ -20,7 +20,11 @@ from time_consumption import TimeConsumption
 
 
 
-TEST_SCRIPT_METRICS_JSONPB_FILENAME = 'test_script_metrics.jsonpb'
+TEST_SCRIPT_METRICS_KEY = 'test_script_metrics'
+
+
+
+TEST_SCRIPT_METRICS_JSONPB_FILENAME = f'{TEST_SCRIPT_METRICS_KEY}.jsonpb'
 
 _metric = Metric()
 
@@ -52,17 +56,43 @@ def time_consumption(*name_pieces: str) -> TimeConsumption:
   return _register(TimeConsumption(_create_name(*name_pieces)))
 
 
+def tag(*args: str) -> None:
+  """Adds a tag to the Metric to tag the final results; see Metric for details.
+  """
+  _metric.tag(*args)
+
+
+def clear() -> None:
+  """Clears all the registered Measures."""
+  _metric.clear()
+
+
+def size() -> int:
+  """Gets the current size of registered Measures."""
+  return _metric.size()
+
+def to_dict() -> dict:
+  """Converts all the registered Measures to a dict.
+
+  The records are wrapped in protobuf Any message before exported as dict
+  so that an additional key "@type" is included.
+  """
+  any_msg = any_pb2.Any()
+  any_msg.Pack(_metric.dump())
+  return MessageToDict(any_msg, preserving_proto_field_name=True)
+
+
+def to_json() -> str:
+  """Converts all the registered Measures to a json str."""
+  return json.dumps(to_dict(), sort_keys=True, indent=2)
+
 
 
 
 def dump(dir_path: str) -> None:
   """Dumps the metric data into test_script_metrics.jsonpb in the |path|."""
   os.makedirs(dir_path, exist_ok=True)
-  any_msg = any_pb2.Any()
-  any_msg.Pack(_metric.dump())
   with open(os.path.join(dir_path, TEST_SCRIPT_METRICS_JSONPB_FILENAME),
             'w',
             encoding='utf-8') as wf:
-    wf.write(
-        MessageToJson(any_msg, preserving_proto_field_name=True,
-                      sort_keys=True))
+    wf.write(to_json())

@@ -177,6 +177,7 @@ def main():
     
     
     rsp_args = [remove_lib_suffix_from_l_args(arg) for arg in rsp_args]
+    rustc_args = [remove_lib_suffix_from_l_args(arg) for arg in rustc_args]
   out_rsp = str(args.rsp) + ".rsp"
   with open(out_rsp, 'w') as rspfile:
     
