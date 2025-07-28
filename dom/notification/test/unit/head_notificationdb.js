@@ -40,20 +40,19 @@ function startNotificationDB() {
 }
 
 
-function addAndSend(msg, reply, callback, payload, runNext = true) {
+async function addAndSend(msg, reply, callback, payload) {
+  const { promise, resolve, reject } = Promise.withResolvers();
   let handler = {
     receiveMessage(message) {
       if (message.name === reply) {
         Services.cpmm.removeMessageListener(reply, handler);
-        callback(message);
-        if (runNext) {
-          run_next_test();
-        }
+        Promise.resolve(callback(message)).then(resolve, reject);
       }
     },
   };
   Services.cpmm.addMessageListener(reply, handler);
   Services.cpmm.sendAsyncMessage(msg, payload);
+  return promise;
 }
 
 
@@ -61,6 +60,6 @@ function compareNotification(notif1, notif2) {
   
   for (let prop in notif1) {
     
-    Assert.equal(notif1[prop], notif2[prop]);
+    Assert.equal(notif1[prop], notif2[prop], `${prop} should be equal`);
   }
 }
