@@ -165,13 +165,16 @@ struct arena_chunk_t {
 #endif
 
   
-  size_t ndirty;
+  
+  size_t ndirty = 0;
 
-  bool mIsPurging;
-  bool mDying;
+  bool mIsPurging = false;
+  bool mDying = false;
 
   
   arena_chunk_map_t map[];  
+
+  explicit arena_chunk_t(arena_t* aArena) : arena(aArena) {}
 
   bool IsEmpty();
 };

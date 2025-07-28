@@ -1561,15 +1561,9 @@ bool arena_t::SplitRun(arena_run_t* aRun, size_t aSize, bool aLarge,
 }
 
 void arena_t::InitChunk(arena_chunk_t* aChunk, size_t aMinCommittedPages) {
+  new (aChunk) arena_chunk_t(this);
+
   mStats.mapped += kChunkSize;
-
-  aChunk->arena = this;
-
-  
-  aChunk->ndirty = 0;
-
-  aChunk->mIsPurging = false;
-  aChunk->mDying = false;
 
   
   
@@ -1629,10 +1623,6 @@ void arena_t::InitChunk(arena_chunk_t* aChunk, size_t aMinCommittedPages) {
   aChunk->map[gChunkHeaderNumPages].bits |= gMaxLargeClass;
   aChunk->map[gChunkNumPages - 2].bits |= gMaxLargeClass;
   mRunsAvail.Insert(&aChunk->map[gChunkHeaderNumPages]);
-
-#ifdef MALLOC_DOUBLE_PURGE
-  new (&aChunk->chunks_madvised_elem) DoublyLinkedListElement<arena_chunk_t>();
-#endif
 }
 
 bool arena_t::RemoveChunk(arena_chunk_t* aChunk) {
