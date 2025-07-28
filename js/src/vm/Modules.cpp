@@ -17,7 +17,7 @@
 #include "jstypes.h"  
 
 #include "builtin/JSON.h"  
-#include "builtin/ModuleObject.h"
+#include "builtin/ModuleObject.h"  
 #include "builtin/Promise.h"  
 #include "ds/Sort.h"
 #include "frontend/BytecodeCompiler.h"  
@@ -50,23 +50,20 @@ static bool ModuleEvaluate(JSContext* cx, Handle<ModuleObject*> module,
                            MutableHandle<Value> rval);
 static bool SyntheticModuleEvaluate(JSContext* cx, Handle<ModuleObject*> module,
                                     MutableHandle<Value> rval);
-static bool ContinueModuleLoading(JSContext* cx,
-                                  Handle<GraphLoadingStateRecordObject*> state,
-                                  Handle<JSObject*> moduleCompletion,
-                                  Handle<Value> error);
 
 
 
-JS_PUBLIC_API JS::ModuleLoadHook JS::GetModuleLoadHook(JSRuntime* rt) {
+JS_PUBLIC_API JS::ModuleResolveHook JS::GetModuleResolveHook(JSRuntime* rt) {
   AssertHeapIsIdle();
 
-  return rt->moduleLoadHook;
+  return rt->moduleResolveHook;
 }
 
-JS_PUBLIC_API void JS::SetModuleLoadHook(JSRuntime* rt, ModuleLoadHook func) {
+JS_PUBLIC_API void JS::SetModuleResolveHook(JSRuntime* rt,
+                                            ModuleResolveHook func) {
   AssertHeapIsIdle();
 
-  rt->moduleLoadHook = func;
+  rt->moduleResolveHook = func;
 }
 
 JS_PUBLIC_API JS::ModuleMetadataHook JS::GetModuleMetadataHook(JSRuntime* rt) {
@@ -82,51 +79,30 @@ JS_PUBLIC_API void JS::SetModuleMetadataHook(JSRuntime* rt,
   rt->moduleMetadataHook = func;
 }
 
-JS_PUBLIC_API bool JS::FinishLoadingImportedModule(
-    JSContext* cx, Handle<JSObject*> referrer, Handle<Value> referencingPrivate,
-    Handle<JSObject*> moduleRequest, Handle<Value> statePrivate,
-    Handle<JSObject*> result) {
+JS_PUBLIC_API JS::ModuleDynamicImportHook JS::GetModuleDynamicImportHook(
+    JSRuntime* rt) {
   AssertHeapIsIdle();
-  CHECK_THREAD(cx);
-  cx->check(referencingPrivate);
 
-  return js::FinishLoadingImportedModule(cx, referrer, referencingPrivate,
-                                         moduleRequest, statePrivate, result);
+  return rt->moduleDynamicImportHook;
 }
 
-JS_PUBLIC_API bool JS::FinishLoadingImportedModule(
-    JSContext* cx, Handle<JSObject*> referrer, Handle<Value> referencingPrivate,
-    Handle<JSObject*> moduleRequest, Handle<JSObject*> promise,
-    Handle<JSObject*> result, bool usePromise) {
+JS_PUBLIC_API void JS::SetModuleDynamicImportHook(
+    JSRuntime* rt, ModuleDynamicImportHook func) {
   AssertHeapIsIdle();
-  CHECK_THREAD(cx);
-  cx->check(referencingPrivate);
 
-  return js::FinishLoadingImportedModule(cx, referrer, referencingPrivate,
-                                         moduleRequest, promise, result,
-                                         usePromise);
+  rt->moduleDynamicImportHook = func;
 }
 
-JS_PUBLIC_API bool JS::FinishLoadingImportedModuleFailed(
-    JSContext* cx, Handle<Value> statePrivate, Handle<JSObject*> promise,
-    Handle<Value> error) {
+JS_PUBLIC_API bool JS::FinishDynamicModuleImport(
+    JSContext* cx, Handle<JSObject*> evaluationPromise,
+    Handle<Value> referencingPrivate, Handle<JSObject*> moduleRequest,
+    Handle<JSObject*> promise) {
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
-  if (!statePrivate.isUndefined()) {
-    cx->check(statePrivate, error);
-    return js::FinishLoadingImportedModuleFailed(cx, statePrivate, error);
-  }
+  cx->check(referencingPrivate, promise);
 
-  cx->check(promise);
-  return js::FinishLoadingImportedModuleFailed(cx, promise, error);
-}
-
-JS_PUBLIC_API bool JS::FinishLoadingImportedModuleFailedWithPendingException(
-    JSContext* cx, Handle<JSObject*> promise) {
-  AssertHeapIsIdle();
-  CHECK_THREAD(cx);
-  cx->check(promise);
-  return js::FinishLoadingImportedModuleFailedWithPendingException(cx, promise);
+  return js::FinishDynamicModuleImport(
+      cx, evaluationPromise, referencingPrivate, moduleRequest, promise);
 }
 
 template <typename Unit>
@@ -251,42 +227,6 @@ JS_PUBLIC_API bool JS::ModuleLink(JSContext* cx, Handle<JSObject*> moduleArg) {
   return ::ModuleLink(cx, moduleArg.as<ModuleObject>());
 }
 
-JS_PUBLIC_API bool JS::LoadRequestedModules(
-    JSContext* cx, Handle<JSObject*> moduleArg, Handle<Value> hostDefined,
-    JS::LoadModuleResolvedCallback&& resolved,
-    JS::LoadModuleRejectedCallback&& rejected) {
-  AssertHeapIsIdle();
-  CHECK_THREAD(cx);
-  cx->releaseCheck(moduleArg);
-
-  return js::LoadRequestedModules(cx, moduleArg.as<ModuleObject>(), hostDefined,
-                                  std::move(resolved), std::move(rejected));
-}
-
-JS_PUBLIC_API bool JS::LoadRequestedModules(
-    JSContext* cx, Handle<JSObject*> moduleArg, Handle<Value> hostDefined,
-    MutableHandle<JSObject*> promiseOut) {
-  AssertHeapIsIdle();
-  CHECK_THREAD(cx);
-  cx->releaseCheck(moduleArg);
-
-  return js::LoadRequestedModules(cx, moduleArg.as<ModuleObject>(), hostDefined,
-                                  promiseOut);
-}
-
-JS_PUBLIC_API void JS::GetLoadingModuleHostDefinedValue(
-    JSContext* cx, Handle<Value> statePrivate,
-    MutableHandleValue hostDefinedOut) {
-  AssertHeapIsIdle();
-  CHECK_THREAD(cx);
-  cx->releaseCheck(statePrivate);
-
-  Rooted<GraphLoadingStateRecordObject*> state(cx);
-  state = static_cast<GraphLoadingStateRecordObject*>(&statePrivate.toObject());
-  MOZ_ASSERT(state);
-  hostDefinedOut.set(state->hostDefined());
-}
-
 JS_PUBLIC_API bool JS::ModuleEvaluate(JSContext* cx,
                                       Handle<JSObject*> moduleRecord,
                                       MutableHandle<JS::Value> rval) {
@@ -348,6 +288,17 @@ JS_PUBLIC_API JSString* JS::GetRequestedModuleSpecifier(
         cx, GetErrorMessage, nullptr,
         JSMSG_IMPORT_ATTRIBUTES_STATIC_IMPORT_UNSUPPORTED_ATTRIBUTE,
         printableKey ? printableKey.get() : "");
+    return nullptr;
+  }
+
+  
+  
+  
+  
+  
+  if (moduleRequest->moduleType() == JS::ModuleType::Unknown) {
+    JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,
+                              JSMSG_BAD_MODULE_TYPE);
     return nullptr;
   }
 
@@ -480,8 +431,7 @@ JS_PUBLIC_API void JS::ClearModuleEnvironment(JSObject* moduleObj) {
 
 JS_PUBLIC_API bool JS::ModuleIsLinked(JSObject* moduleObj) {
   AssertHeapIsIdle();
-  return moduleObj->as<ModuleObject>().status() != ModuleStatus::New &&
-         moduleObj->as<ModuleObject>().status() != ModuleStatus::Unlinked;
+  return moduleObj->as<ModuleObject>().status() != ModuleStatus::Unlinked;
 }
 
 
@@ -509,6 +459,10 @@ using ResolveSet = GCVector<ResolveSetEntry, 0, SystemAllocPolicy>;
 using ModuleSet =
     GCHashSet<ModuleObject*, DefaultHasher<ModuleObject*>, SystemAllocPolicy>;
 
+static ModuleObject* HostResolveImportedModule(
+    JSContext* cx, Handle<ModuleObject*> module,
+    Handle<ModuleRequestObject*> moduleRequest,
+    ModuleStatus expectedMinimumStatus);
 static bool CyclicModuleResolveExport(JSContext* cx,
                                       Handle<ModuleObject*> module,
                                       Handle<JSAtom*> exportName,
@@ -536,8 +490,6 @@ static bool GatherAvailableModuleAncestors(
 
 static const char* ModuleStatusName(ModuleStatus status) {
   switch (status) {
-    case ModuleStatus::New:
-      return "New";
     case ModuleStatus::Unlinked:
       return "Unlinked";
     case ModuleStatus::Linking:
@@ -603,29 +555,6 @@ static bool SyntheticModuleGetExportedNames(
 }
 
 
-static ModuleObject* GetImportedModule(
-    JSContext* cx, Handle<ModuleObject*> referrer,
-    Handle<ModuleRequestObject*> moduleRequest) {
-  MOZ_ASSERT(referrer);
-  MOZ_ASSERT(moduleRequest);
-
-  
-  
-  
-  
-  
-  
-  
-  auto record = referrer->loadedModules().lookup(moduleRequest);
-  MOZ_ASSERT(record);
-
-  
-  
-  
-  return record->value();
-}
-
-
 
 static bool ModuleGetExportedNames(
     JSContext* cx, Handle<ModuleObject*> module,
@@ -680,11 +609,11 @@ static bool ModuleGetExportedNames(
     
     
     moduleRequest = e.moduleRequest();
-    requestedModule = GetImportedModule(cx, module, moduleRequest);
+    requestedModule = HostResolveImportedModule(cx, module, moduleRequest,
+                                                ModuleStatus::Unlinked);
     if (!requestedModule) {
       return false;
     }
-    MOZ_ASSERT(requestedModule->status() >= ModuleStatus::Unlinked);
 
     
     
@@ -719,23 +648,25 @@ static void ThrowUnexpectedModuleStatus(JSContext* cx, ModuleStatus status) {
                            JSMSG_BAD_MODULE_STATUS, ModuleStatusName(status));
 }
 
-
-static bool HostLoadImportedModule(
-    JSContext* cx, Handle<ModuleObject*> referrer,
-    Handle<JSObject*> moduleRequest,
-    Handle<GraphLoadingStateRecordObject*> payload) {
-  JS::ModuleLoadHook moduleLoadHook = cx->runtime()->moduleLoadHook;
-  if (!moduleLoadHook) {
-    JS_ReportErrorASCII(cx, "Module load hook not set");
-    return false;
-  }
-
-  MOZ_ASSERT(referrer);
+static ModuleObject* HostResolveImportedModule(
+    JSContext* cx, Handle<ModuleObject*> module,
+    Handle<ModuleRequestObject*> moduleRequest,
+    ModuleStatus expectedMinimumStatus) {
+  MOZ_ASSERT(module);
   MOZ_ASSERT(moduleRequest);
-  Rooted<Value> referencingPrivate(cx, JS::GetModulePrivate(referrer));
-  RootedValue payloadPrivate(cx, ObjectValue(*payload));
-  return moduleLoadHook(cx, referrer, referencingPrivate, moduleRequest,
-                        payloadPrivate, nullptr);
+
+  Rooted<Value> referencingPrivate(cx, JS::GetModulePrivate(module));
+  Rooted<ModuleObject*> requestedModule(cx);
+  requestedModule =
+      CallModuleResolveHook(cx, referencingPrivate, moduleRequest);
+  if (!requestedModule) {
+    return nullptr;
+  }
+  if (requestedModule->status() < expectedMinimumStatus) {
+    ThrowUnexpectedModuleStatus(cx, requestedModule->status());
+    return nullptr;
+  }
+  return requestedModule;
 }
 
 static bool ModuleResolveExportImpl(JSContext* cx, Handle<ModuleObject*> module,
@@ -773,10 +704,8 @@ static bool ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
                                 MutableHandle<Value> result,
                                 ModuleErrorInfo* errorInfoOut = nullptr) {
   
-  MOZ_ASSERT(module->status() != ModuleStatus::New);
-
-  
   Rooted<ResolveSet> resolveSet(cx);
+
   return ModuleResolveExportImpl(cx, module, exportName, &resolveSet, result,
                                  errorInfoOut);
 }
@@ -844,16 +773,13 @@ static bool CyclicModuleResolveExport(JSContext* cx,
     
     if (exportName == e.exportName()) {
       
-      MOZ_ASSERT(e.moduleRequest());
-
-      
       
       moduleRequest = e.moduleRequest();
-      importedModule = GetImportedModule(cx, module, moduleRequest);
+      importedModule = HostResolveImportedModule(cx, module, moduleRequest,
+                                                 ModuleStatus::Unlinked);
       if (!importedModule) {
         return false;
       }
-      MOZ_ASSERT(importedModule->status() >= ModuleStatus::Unlinked);
 
       
       if (!e.importName()) {
@@ -864,6 +790,7 @@ static bool CyclicModuleResolveExport(JSContext* cx,
         name = cx->names().star_namespace_star_;
         return CreateResolvedBindingObject(cx, importedModule, name, result);
       } else {
+        
         
         
         
@@ -898,16 +825,13 @@ static bool CyclicModuleResolveExport(JSContext* cx,
   Rooted<ResolvedBindingObject*> binding(cx);
   for (const ExportEntry& e : module->starExportEntries()) {
     
-    MOZ_ASSERT(e.moduleRequest());
-
-    
     
     moduleRequest = e.moduleRequest();
-    importedModule = GetImportedModule(cx, module, moduleRequest);
+    importedModule = HostResolveImportedModule(cx, module, moduleRequest,
+                                               ModuleStatus::Unlinked);
     if (!importedModule) {
       return false;
     }
-    MOZ_ASSERT(importedModule->status() >= ModuleStatus::Unlinked);
 
     
     
@@ -932,6 +856,7 @@ static bool CyclicModuleResolveExport(JSContext* cx,
       if (!starResolution) {
         starResolution = binding;
       } else {
+        
         
         
         
@@ -996,8 +921,7 @@ ModuleNamespaceObject* js::GetOrCreateModuleNamespace(
     JSContext* cx, Handle<ModuleObject*> module) {
   
   
-  MOZ_ASSERT(module->status() != ModuleStatus::New ||
-             module->status() != ModuleStatus::Unlinked);
+  MOZ_ASSERT(module->status() != ModuleStatus::Unlinked);
 
   
   Rooted<ModuleNamespaceObject*> ns(cx, module->namespace_());
@@ -1281,11 +1205,11 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
     
     
     moduleRequest = in.moduleRequest();
-    importedModule = GetImportedModule(cx, module, moduleRequest);
+    importedModule = HostResolveImportedModule(cx, module, moduleRequest,
+                                               ModuleStatus::Linking);
     if (!importedModule) {
       return false;
     }
-    MOZ_ASSERT(importedModule->status() >= ModuleStatus::Linking);
 
     localName = in.localName();
     importName = in.importName();
@@ -1385,303 +1309,14 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
 
 
 
-static bool InnerModuleLoading(JSContext* cx,
-                               Handle<GraphLoadingStateRecordObject*> state,
-                               Handle<ModuleObject*> module) {
-  MOZ_ASSERT(state);
-  MOZ_ASSERT(module);
-
-  
-  MOZ_ASSERT(state->isLoading());
-
-  
-  
-  if (module->hasCyclicModuleFields() &&
-      module->status() == ModuleStatus::New && !state->visited().has(module)) {
-    
-    if (!state->visited().putNew(module)) {
-      ReportOutOfMemory(cx);
-      return false;
-    }
-
-    
-    
-    size_t requestedModulesCount = module->requestedModules().Length();
-
-    
-    
-    uint32_t count = state->pendingModulesCount() + requestedModulesCount;
-    state->setPendingModulesCount(count);
-
-    
-    Rooted<ModuleRequestObject*> moduleRequest(cx);
-    Rooted<ModuleObject*> recordModule(cx);
-    Rooted<JSAtom*> invalidKey(cx);
-    for (const RequestedModule& request : module->requestedModules()) {
-      moduleRequest = request.moduleRequest();
-
-      
-      if (moduleRequest->hasFirstUnsupportedAttributeKey()) {
-        UniqueChars printableKey = AtomToPrintableString(
-            cx, moduleRequest->getFirstUnsupportedAttributeKey());
-        JS_ReportErrorNumberASCII(
-            cx, GetErrorMessage, nullptr,
-            JSMSG_IMPORT_ATTRIBUTES_STATIC_IMPORT_UNSUPPORTED_ATTRIBUTE,
-            printableKey ? printableKey.get() : "");
-
-        JS::ExceptionStack exnStack(cx);
-        if (!JS::StealPendingExceptionStack(cx, &exnStack)) {
-          return false;
-        }
-
-        ContinueModuleLoading(cx, state, nullptr, exnStack.exception());
-      } else if (auto record = module->loadedModules().lookup(moduleRequest)) {
-        
-        
-        
-        
-        recordModule = record->value();
-        if (!InnerModuleLoading(cx, state, recordModule)) {
-          return false;
-        }
-      } else {
-        
-        
-        
-        if (!HostLoadImportedModule(cx, module, moduleRequest, state)) {
-          return false;
-        }
-      }
-
-      
-      if (!state->isLoading()) {
-        return true;
-      }
-    }
-  }
-
-  
-  MOZ_ASSERT(state->pendingModulesCount() >= 1);
-
-  
-  
-  uint32_t count = state->pendingModulesCount() - 1;
-  state->setPendingModulesCount(count);
-
-  
-  if (state->pendingModulesCount() == 0) {
-    
-    state->setIsLoading(false);
-
-    
-    for (auto iter = state->visited().iter(); !iter.done(); iter.next()) {
-      auto& loaded = iter.get();
-      
-      
-      if (loaded->status() == ModuleStatus::New) {
-        loaded->setStatus(ModuleStatus::Unlinked);
-      }
-    }
-
-    
-    
-    RootedValue hostDefined(cx, state->hostDefined());
-    if (!state->resolved(cx, hostDefined)) {
-      return false;
-    }
-  }
-
-  
-  return true;
-}
-
-
-
-static bool ContinueModuleLoading(JSContext* cx,
-                                  Handle<GraphLoadingStateRecordObject*> state,
-                                  Handle<JSObject*> moduleCompletion,
-                                  Handle<Value> error) {
-  
-  if (!state->isLoading()) {
-    return true;
-  }
-
-  
-  if (moduleCompletion) {
-    
-    Rooted<ModuleObject*> module(cx, &moduleCompletion->as<ModuleObject>());
-    return InnerModuleLoading(cx, state, module);
-  }
-
-  
-  
-  state->setIsLoading(false);
-
-  
-  
-  RootedValue hostDefined(cx, state->hostDefined());
-  return state->rejected(cx, hostDefined, error);
-}
-
-
-
-bool js::FinishLoadingImportedModule(JSContext* cx, Handle<JSObject*> referrer,
-                                     Handle<Value> referencingPrivate,
-                                     Handle<JSObject*> moduleRequest,
-                                     Handle<Value> statePrivate,
-                                     Handle<JSObject*> result) {
-  
-  MOZ_ASSERT(referrer);
-  Rooted<ModuleObject*> mod(cx, &referrer->as<ModuleObject>());
-  auto& loadedModules = mod->loadedModules();
-
-  
-  
-  
-  if (auto record = loadedModules.lookup(moduleRequest)) {
-    
-    MOZ_ASSERT(record->value() == result);
-  } else {
-    
-    
-    
-    if (!loadedModules.putNew(moduleRequest, &result->as<ModuleObject>())) {
-      ReportOutOfMemory(cx);
-      return false;
-    }
-  }
-
-  return js::ContinueLoadingImportedModule(cx, statePrivate, result,
-                                           UndefinedHandleValue);
-}
-
-
-bool js::FinishLoadingImportedModule(JSContext* cx, Handle<JSObject*> referrer,
-                                     Handle<Value> referencingPrivate,
-                                     Handle<JSObject*> moduleRequest,
-                                     Handle<JSObject*> promise,
-                                     Handle<JSObject*> result,
-                                     bool usePromise) {
-  return js::ContinueDynamicImport(cx, referencingPrivate, moduleRequest,
-                                   promise, result, usePromise);
-}
-
-
-
-bool js::FinishLoadingImportedModuleFailed(JSContext* cx,
-                                           Handle<Value> statePrivate,
-                                           Handle<Value> error) {
-  return js::ContinueLoadingImportedModule(cx, statePrivate, nullptr, error);
-}
-
-bool js::FinishLoadingImportedModuleFailed(JSContext* cx,
-                                           Handle<JSObject*> promise,
-                                           Handle<Value> error) {
-  MOZ_ASSERT(promise);
-  JS_SetPendingException(cx, error);
-  return RejectPromiseWithPendingError(cx, promise.as<PromiseObject>());
-}
-
-bool js::FinishLoadingImportedModuleFailedWithPendingException(
-    JSContext* cx, Handle<JSObject*> promise) {
-  MOZ_ASSERT(JS_IsExceptionPending(cx));
-  MOZ_ASSERT(promise);
-  return RejectPromiseWithPendingError(cx, promise.as<PromiseObject>());
-}
-
-
-
-bool js::ContinueLoadingImportedModule(JSContext* cx,
-                                       Handle<Value> statePrivate,
-                                       Handle<JSObject*> result,
-                                       Handle<Value> error) {
-  
-  
-  MOZ_ASSERT(!statePrivate.isUndefined());
-  Rooted<GraphLoadingStateRecordObject*> state(cx);
-  state = static_cast<GraphLoadingStateRecordObject*>(&statePrivate.toObject());
-  return ContinueModuleLoading(cx, state, result, error);
-}
-
-
-bool js::LoadRequestedModules(JSContext* cx, Handle<ModuleObject*> module,
-                              Handle<Value> hostDefined,
-                              JS::LoadModuleResolvedCallback&& resolved,
-                              JS::LoadModuleRejectedCallback&& rejected) {
-  if (module->hasSyntheticModuleFields()) {
-    
-    return resolved(cx, hostDefined);
-  }
-
-  
-  
-  
-
-  
-  
-  
-  Rooted<GraphLoadingStateRecordObject*> state(
-      cx,
-      GraphLoadingStateRecordObject::create(cx, true, 1, std::move(resolved),
-                                            std::move(rejected), hostDefined));
-  if (!state) {
-    ReportOutOfMemory(cx);
-    return false;
-  }
-
-  
-  return InnerModuleLoading(cx, state, module);
-}
-
-bool js::LoadRequestedModules(JSContext* cx, Handle<ModuleObject*> module,
-                              Handle<Value> hostDefined,
-                              MutableHandle<JSObject*> promiseOut) {
-  
-  
-  Rooted<PromiseObject*> pc(cx, CreatePromiseObjectForAsync(cx));
-  if (!pc) {
-    ReportOutOfMemory(cx);
-    return false;
-  }
-
-  if (module->hasSyntheticModuleFields()) {
-    
-    promiseOut.set(pc);
-    return AsyncFunctionReturned(cx, pc, UndefinedHandleValue);
-  }
-
-  
-  
-  
-  Rooted<GraphLoadingStateRecordObject*> state(
-      cx, GraphLoadingStateRecordObject::create(cx, true, 1, pc, hostDefined));
-  if (!state) {
-    ReportOutOfMemory(cx);
-    return false;
-  }
-
-  
-  if (!InnerModuleLoading(cx, state, module)) {
-    return false;
-  }
-
-  
-  promiseOut.set(pc);
-  return true;
-}
-
-
-
 static bool ModuleLink(JSContext* cx, Handle<ModuleObject*> module) {
   if (!module->hasCyclicModuleFields()) {
     return true;
   }
 
   
-  
   ModuleStatus status = module->status();
-  if (status == ModuleStatus::New || status == ModuleStatus::Linking ||
-      status == ModuleStatus::Evaluating) {
+  if (status == ModuleStatus::Linking || status == ModuleStatus::Evaluating) {
     ThrowUnexpectedModuleStatus(cx, status);
     return false;
   }
@@ -1780,16 +1415,32 @@ static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
 
   
   
-  Rooted<ModuleRequestObject*> required(cx);
+  Rooted<ModuleRequestObject*> moduleRequest(cx);
   Rooted<ModuleObject*> requiredModule(cx);
   for (const RequestedModule& request : module->requestedModules()) {
+    moduleRequest = request.moduleRequest();
+
     
-    required = request.moduleRequest();
-    requiredModule = GetImportedModule(cx, module, required);
+    
+    
+    if (moduleRequest->hasFirstUnsupportedAttributeKey()) {
+      UniqueChars printableKey = AtomToPrintableString(
+          cx, moduleRequest->getFirstUnsupportedAttributeKey());
+      JS_ReportErrorNumberASCII(
+          cx, GetErrorMessage, nullptr,
+          JSMSG_IMPORT_ATTRIBUTES_STATIC_IMPORT_UNSUPPORTED_ATTRIBUTE,
+          printableKey ? printableKey.get() : "");
+
+      return false;
+    }
+
+    
+    
+    requiredModule = HostResolveImportedModule(cx, module, moduleRequest,
+                                               ModuleStatus::Unlinked);
     if (!requiredModule) {
       return false;
     }
-    MOZ_ASSERT(requiredModule->status() >= ModuleStatus::Unlinked);
 
     
     
@@ -2083,17 +1734,18 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
   Rooted<ModuleRequestObject*> required(cx);
   Rooted<ModuleObject*> requiredModule(cx);
   for (const RequestedModule& request : module->requestedModules()) {
-    
-    
-    
-    
-    
     required = request.moduleRequest();
-    requiredModule = GetImportedModule(cx, module, required);
+
+    
+    
+    
+    
+    
+    requiredModule =
+        HostResolveImportedModule(cx, module, required, ModuleStatus::Linked);
     if (!requiredModule) {
       return false;
     }
-    MOZ_ASSERT(requiredModule->status() >= ModuleStatus::Linked);
 
     
     

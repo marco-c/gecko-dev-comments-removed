@@ -1086,11 +1086,15 @@ nsresult mozJSModuleLoader::ImportESModule(
 
   RefPtr<SyncLoadContext> context = new SyncLoadContext();
 
+  RefPtr<VisitedURLSet> visitedSet =
+      ModuleLoadRequest::NewVisitedSetForTopLevelImport(
+          uri, JS::ModuleType::JavaScript);
+
   RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
       uri, JS::ModuleType::JavaScript, dom::ReferrerPolicy::No_referrer,
       options, dom::SRIMetadata(),
        nullptr, context, ModuleLoadRequest::Kind::TopLevel,
-      mModuleLoader, nullptr);
+      mModuleLoader, visitedSet, nullptr);
 
   request->NoCacheEntryFound();
 
@@ -1114,8 +1118,7 @@ nsresult mozJSModuleLoader::ImportESModule(
 
   
 
-  if (!request->mModuleScript->HasErrorToRethrow() &&
-      !request->InstantiateModuleGraph()) {
+  if (!request->InstantiateModuleGraph()) {
     return NS_ERROR_FAILURE;
   }
 

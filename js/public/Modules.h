@@ -71,55 +71,20 @@ enum class ModuleType : uint32_t {
 
 
 
-
-
-using ModuleLoadHook = bool (*)(JSContext* cx, Handle<JSObject*> referrer,
-                                Handle<Value> referencingPrivate,
-                                Handle<JSObject*> moduleRequest,
-                                Handle<Value> statePrivate,
-                                Handle<JSObject*> promise);
+using ModuleResolveHook = JSObject* (*)(JSContext* cx,
+                                        Handle<Value> referencingPrivate,
+                                        Handle<JSObject*> moduleRequest);
 
 
 
 
-extern JS_PUBLIC_API ModuleLoadHook GetModuleLoadHook(JSRuntime* rt);
+extern JS_PUBLIC_API ModuleResolveHook GetModuleResolveHook(JSRuntime* rt);
 
 
 
 
-extern JS_PUBLIC_API void SetModuleLoadHook(JSRuntime* rt, ModuleLoadHook func);
-
-using LoadModuleResolvedCallback =
-    std::function<bool(JSContext* cx, JS::Handle<JS::Value> hostDefined)>;
-using LoadModuleRejectedCallback = std::function<bool(
-    JSContext* cx, JS::Handle<JS::Value> hostDefined, Handle<JS::Value> error)>;
-
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API bool LoadRequestedModules(
-    JSContext* cx, Handle<JSObject*> module, Handle<Value> hostDefined,
-    LoadModuleResolvedCallback&& resolved,
-    LoadModuleRejectedCallback&& rejected);
-
-extern JS_PUBLIC_API bool LoadRequestedModules(
-    JSContext* cx, Handle<JSObject*> module, Handle<Value> hostDefined,
-    MutableHandle<JSObject*> promiseOut);
-
-
-
-
-
-extern JS_PUBLIC_API void GetLoadingModuleHostDefinedValue(
-    JSContext* cx, Handle<Value> statePrivate,
-    MutableHandleValue hostDefinedOut);
+extern JS_PUBLIC_API void SetModuleResolveHook(JSRuntime* rt,
+                                               ModuleResolveHook func);
 
 
 
@@ -153,25 +118,49 @@ extern JS_PUBLIC_API void SetModuleMetadataHook(JSRuntime* rt,
 
 
 
-extern JS_PUBLIC_API bool FinishLoadingImportedModule(
-    JSContext* cx, Handle<JSObject*> referrer, Handle<Value> referencingPrivate,
-    Handle<JSObject*> moduleRequest, Handle<Value> statePrivate,
-    Handle<JSObject*> result);
-
-extern JS_PUBLIC_API bool FinishLoadingImportedModule(
-    JSContext* cx, Handle<JSObject*> referrer, Handle<Value> referencingPrivate,
-    Handle<JSObject*> moduleRequest, Handle<JSObject*> promise,
-    Handle<JSObject*> result, bool usePromise);
 
 
 
 
-extern JS_PUBLIC_API bool FinishLoadingImportedModuleFailed(
-    JSContext* cx, Handle<Value> statePrivate, Handle<JSObject*> promise,
-    Handle<Value> error);
 
-extern JS_PUBLIC_API bool FinishLoadingImportedModuleFailedWithPendingException(
-    JSContext* cx, Handle<JSObject*> promise);
+
+
+
+
+
+
+
+using ModuleDynamicImportHook = bool (*)(JSContext* cx,
+                                         Handle<Value> referencingPrivate,
+                                         Handle<JSObject*> moduleRequest,
+                                         Handle<JSObject*> promise);
+
+
+
+
+extern JS_PUBLIC_API ModuleDynamicImportHook
+GetModuleDynamicImportHook(JSRuntime* rt);
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API void SetModuleDynamicImportHook(
+    JSRuntime* rt, ModuleDynamicImportHook func);
+
+
+
+
+
+
+
+extern JS_PUBLIC_API bool FinishDynamicModuleImport(
+    JSContext* cx, Handle<JSObject*> evaluationPromise,
+    Handle<Value> referencingPrivate, Handle<JSObject*> moduleRequest,
+    Handle<JSObject*> promise);
 
 
 

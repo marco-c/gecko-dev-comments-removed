@@ -307,7 +307,6 @@ class ModuleNamespaceObject : public ProxyObject {
 
 
 enum class ModuleStatus : int8_t {
-  New,
   Unlinked,
   Linking,
   Linked,
@@ -341,22 +340,6 @@ constexpr uint32_t ASYNC_EVALUATING_POST_ORDER_INIT = 1;
 
 
 constexpr uint32_t ASYNC_EVALUATING_POST_ORDER_CLEARED = 0;
-
-
-
-
-
-
-
-
-
-
-
-
-
-using LoadedModuleMap =
-    GCHashMap<HeapPtr<JSObject*>, HeapPtr<ModuleObject*>,
-              StableCellHasher<HeapPtr<JSObject*>>, SystemAllocPolicy>;
 
 
 
@@ -453,8 +436,6 @@ class ModuleObject : public NativeObject {
   ModuleObject* getCycleRoot() const;
   bool hasCyclicModuleFields() const;
   bool hasSyntheticModuleFields() const;
-  LoadedModuleMap& loadedModules();
-  const LoadedModuleMap& loadedModules() const;
 
   static void onTopLevelEvaluationFinished(ModuleObject* module);
 
@@ -498,74 +479,11 @@ class ModuleObject : public NativeObject {
   const SyntheticModuleFields* syntheticModuleFields() const;
 };
 
-using VisitedModuleSet =
-    GCHashSet<HeapPtr<ModuleObject*>, DefaultHasher<HeapPtr<ModuleObject*>>,
-              SystemAllocPolicy>;
-
-
-
-struct GraphLoadingStateRecord {
-  explicit GraphLoadingStateRecord(JSContext* cx);
-  GraphLoadingStateRecord(JSContext* cx,
-                          JS::LoadModuleResolvedCallback&& resolved,
-                          JS::LoadModuleRejectedCallback&& rejected);
-
-  void trace(JSTracer* trc);
-
-  
-  VisitedModuleSet visited;
-
-  JS::LoadModuleResolvedCallback resolved;
-  JS::LoadModuleRejectedCallback rejected;
-};
-
-class GraphLoadingStateRecordObject : public NativeObject {
- public:
-  enum {
-    StateSlot = 0,
-    PromiseSlot,
-    IsLoadingSlot,
-    PendingModulesCountSlot,
-    HostDefinedSlot,
-    SlotCount
-  };
-
-  static const JSClass class_;
-  static const JSClassOps classOps_;
-
-  [[nodiscard]] static GraphLoadingStateRecordObject* create(
-      JSContext* cx, bool isLoading, uint32_t pendingModulesCount,
-      JS::LoadModuleResolvedCallback&& resolved,
-      JS::LoadModuleRejectedCallback&& rejected, Handle<Value> hostDefined);
-
-  [[nodiscard]] static GraphLoadingStateRecordObject* create(
-      JSContext* cx, bool isLoading, uint32_t pendingModulesCount,
-      Handle<PromiseObject*> promise, Handle<Value> hostDefined);
-
-  static void finalize(JS::GCContext* gcx, JSObject* obj);
-  static void trace(JSTracer* trc, JSObject* obj);
-
-  
-  PromiseObject* promise();
-
-  
-  bool isLoading();
-  void setIsLoading(bool isLoading);
-
-  
-  uint32_t pendingModulesCount();
-  void setPendingModulesCount(uint32_t count);
-
-  VisitedModuleSet& visited();
-
-  Value hostDefined();
-
-  bool resolved(JSContext* cx, JS::Handle<JS::Value> hostDefined);
-  bool rejected(JSContext* cx, JS::Handle<JS::Value> hostDefined,
-                Handle<JS::Value> error);
-};
-
 JSObject* GetOrCreateModuleMetaObject(JSContext* cx, HandleObject module);
+
+ModuleObject* CallModuleResolveHook(JSContext* cx,
+                                    HandleValue referencingPrivate,
+                                    HandleObject moduleRequest);
 
 JSObject* StartDynamicModuleImport(JSContext* cx, HandleScript script,
                                    HandleValue specifier, HandleValue options);
@@ -573,46 +491,10 @@ JSObject* StartDynamicModuleImport(JSContext* cx, HandleScript script,
 bool OnModuleEvaluationFailure(JSContext* cx, HandleObject evaluationPromise,
                                JS::ModuleErrorBehaviour errorBehaviour);
 
-bool FinishDynamicModuleImport(JSContext* cx, HandleValue contextValue,
-                               HandleObject evaluationPromise);
-
-bool LoadRequestedModules(JSContext* cx, Handle<ModuleObject*> module,
-                          HandleValue hostDefined,
-                          JS::LoadModuleResolvedCallback&& resolved,
-                          JS::LoadModuleRejectedCallback&& rejected);
-
-bool LoadRequestedModules(JSContext* cx, Handle<ModuleObject*> module,
-                          HandleValue hostDefined,
-                          MutableHandle<JSObject*> promiseOut);
-
-bool ContinueLoadingImportedModule(JSContext* cx, Handle<Value> statePrivate,
-                                   Handle<JSObject*> result,
-                                   Handle<Value> error);
-
-bool FinishLoadingImportedModule(JSContext* cx, Handle<JSObject*> referrer,
-                                 HandleValue referencingPrivate,
-                                 Handle<JSObject*> moduleRequest,
-                                 HandleValue statePrivate,
-                                 Handle<JSObject*> result);
-
-bool FinishLoadingImportedModule(JSContext* cx, Handle<JSObject*> referrer,
-                                 HandleValue referencingPrivate,
-                                 Handle<JSObject*> moduleRequest,
-                                 Handle<JSObject*> promise,
-                                 Handle<JSObject*> result, bool usePromise);
-
-bool FinishLoadingImportedModuleFailed(JSContext* cx, HandleValue statePrivate,
-                                       HandleValue error);
-
-bool FinishLoadingImportedModuleFailed(JSContext* cx, Handle<JSObject*> promise,
-                                       HandleValue error);
-bool FinishLoadingImportedModuleFailedWithPendingException(
-    JSContext* cx, Handle<JSObject*> promise);
-
-bool ContinueDynamicImport(JSContext* cx, Handle<Value> referencingPrivate,
-                           Handle<JSObject*> moduleRequest,
-                           Handle<JSObject*> promise, Handle<JSObject*> result,
-                           bool usePromise);
+bool FinishDynamicModuleImport(JSContext* cx, HandleObject evaluationPromise,
+                               HandleValue referencingPrivate,
+                               HandleObject moduleRequest,
+                               HandleObject promise);
 
 }  
 

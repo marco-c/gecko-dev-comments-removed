@@ -24,14 +24,21 @@ class ModuleLoaderBase;
 
 
 
+class VisitedURLSet : public nsTHashtable<ModuleMapKey> {
+  NS_INLINE_DECL_REFCOUNTING(VisitedURLSet)
+
+ private:
+  ~VisitedURLSet() = default;
+};
+
+
+
 
 
 class ModuleLoadRequest final : public ScriptLoadRequest {
   ~ModuleLoadRequest() {
-    MOZ_ASSERT(!mReferrerObj);
-    MOZ_ASSERT(!mModuleRequestObj);
-    MOZ_ASSERT(mReferencingPrivate.isUndefined());
-    MOZ_ASSERT(mStatePrivate.isUndefined());
+    MOZ_ASSERT(!mWaitingParentRequest);
+    MOZ_ASSERT(mAwaitingImports == 0);
   }
 
   ModuleLoadRequest(const ModuleLoadRequest& aOther) = delete;
@@ -61,7 +68,11 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
                     ScriptFetchOptions* aFetchOptions,
                     const SRIMetadata& aIntegrity, nsIURI* aReferrer,
                     LoadContextBase* aContext, Kind aKind,
-                    ModuleLoaderBase* aLoader, ModuleLoadRequest* aRootModule);
+                    ModuleLoaderBase* aLoader, VisitedURLSet* aVisitedSet,
+                    ModuleLoadRequest* aRootModule);
+
+  static VisitedURLSet* NewVisitedSetForTopLevelImport(
+      nsIURI* aURI, JS::ModuleType aModuleType);
 
   bool IsTopLevel() const override { return mIsTopLevel; }
 
@@ -75,12 +86,13 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
   void Cancel() override;
 
   void SetDynamicImport(LoadedScript* aReferencingScript,
-                        JS::Handle<JSObject*> aModuleRequestObj,
+                        JS::Handle<JSString*> aSpecifier,
                         JS::Handle<JSObject*> aPromise);
   void ClearDynamicImport();
 
   void ModuleLoaded();
   void ModuleErrored();
+  void DependenciesLoaded();
   void LoadFailed();
 
   ModuleLoadRequest* GetRootModule() {
@@ -115,12 +127,19 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
   void StartDynamicImport() { mLoader->StartDynamicImport(this); }
   void ProcessDynamicImport() { mLoader->ProcessDynamicImport(this); }
 
+  void ChildLoadComplete(bool aSuccess);
+
+ private:
   void LoadFinished();
+  void CancelImports();
+  void CheckModuleDependenciesLoaded();
 
-  void UpdateReferrerPolicy(mozilla::dom::ReferrerPolicy aReferrerPolicy) {
-    mReferrerPolicy = aReferrerPolicy;
-  }
+  void ChildModuleUnlinked();
 
+  void AssertAllImportsFinished() const;
+  void AssertAllImportsCancelled() const;
+
+ public:
   
   const bool mIsTopLevel;
 
@@ -143,14 +162,24 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
   RefPtr<ModuleScript> mModuleScript;
 
   
+  nsTArray<RefPtr<ModuleLoadRequest>> mImports;
+
+  
+  
+  RefPtr<ModuleLoadRequest> mWaitingParentRequest;
+
+  
+  
+  size_t mAwaitingImports = 0;
+
+  
+  
+  RefPtr<VisitedURLSet> mVisitedSet;
+
+  
   RefPtr<LoadedScript> mDynamicReferencingScript;
   JS::Heap<JSString*> mDynamicSpecifier;
   JS::Heap<JSObject*> mDynamicPromise;
-
-  JS::Heap<JSObject*> mReferrerObj;
-  JS::Heap<JSObject*> mModuleRequestObj;
-  JS::Heap<Value> mReferencingPrivate;
-  JS::Heap<Value> mStatePrivate;
 };
 
 }  
