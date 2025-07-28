@@ -60,12 +60,9 @@ void Rule::UnlinkDeclarationWrapper(nsWrapperCache& aDecl) {
   
   
   
-  
-  
-  
   bool needDrop = PreservingWrapper() || aDecl.PreservingWrapper();
-  SetPreservingWrapper(false);
-  aDecl.SetPreservingWrapper(false);
+  ReleaseWrapperWithoutDrop();
+  aDecl.ReleaseWrapperWithoutDrop();
   if (needDrop) {
     DropJSObjects(this);
   }

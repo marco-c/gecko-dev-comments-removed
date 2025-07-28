@@ -48,11 +48,24 @@ void nsWrapperCache::SetWrapperJSObject(JSObject* aNewWrapper) {
 }
 
 void nsWrapperCache::ReleaseWrapper(void* aScriptObjectHolder) {
+  MOZ_ASSERT(aScriptObjectHolder);
+  ReleaseWrapperAndMaybeDropHolder(aScriptObjectHolder);
+}
+
+void nsWrapperCache::ReleaseWrapperWithoutDrop() {
   
   
+  
+  ReleaseWrapperAndMaybeDropHolder(nullptr);
+}
+
+void nsWrapperCache::ReleaseWrapperAndMaybeDropHolder(
+    void* aScriptObjectHolderToDrop) {
   if (PreservingWrapper()) {
     SetPreservingWrapper(false);
-    cyclecollector::DropJSObjectsImpl(aScriptObjectHolder);
+    if (aScriptObjectHolderToDrop) {
+      cyclecollector::DropJSObjectsImpl(aScriptObjectHolderToDrop);
+    }
     JS::HeapObjectPostWriteBarrier(&mWrapper, mWrapper, nullptr);
   }
 }
