@@ -2044,7 +2044,7 @@ class ScaleInput extends PrintUIControlMixin(HTMLElement) {
     
     let isValid = this._percentScale.checkValidity();
     if (
-      !this._percentScale.value ||
+      this._percentScale.value != parseInt(scaling * 100, 10) ||
       (this._shrinkToFitChoice.checked && !isValid) ||
       (this.printerName != printerName && !isValid)
     ) {
