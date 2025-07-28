@@ -330,7 +330,10 @@ nsresult TRR::SendHTTPRequest() {
   rv = internalChannel->SetIsTRRServiceChannel(true);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (UseDefaultServer() && StaticPrefs::network_trr_async_connInfo()) {
+  
+  
+  if (UseDefaultServer() && !useOHTTP &&
+      StaticPrefs::network_trr_async_connInfo()) {
     RefPtr<nsHttpConnectionInfo> trrConnInfo =
         TRRService::Get()->TRRConnectionInfo();
     if (trrConnInfo) {
@@ -341,7 +344,10 @@ nsresult TRR::SendHTTPRequest() {
         LOG(("TRR::SendHTTPRequest use conn info:%s\n",
              trrConnInfo->HashKey().get()));
       } else {
-        MOZ_DIAGNOSTIC_CRASH("host not equal to trrConnInfo origin");
+        
+        
+        TRRService::Get()->SetDefaultTRRConnectionInfo(nullptr);
+        TRRService::Get()->InitTRRConnectionInfo(true);
       }
     } else {
       TRRService::Get()->InitTRRConnectionInfo();

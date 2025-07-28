@@ -34,7 +34,8 @@ class TRRServiceBase : public nsIProxyConfigChangedCallback {
   already_AddRefed<nsHttpConnectionInfo> TRRConnectionInfo();
   
   
-  virtual void InitTRRConnectionInfo();
+  
+  virtual void InitTRRConnectionInfo(bool aForceReinit = false);
   bool TRRConnectionInfoInited() const { return mTRRConnectionInfoInited; }
 
  protected:
