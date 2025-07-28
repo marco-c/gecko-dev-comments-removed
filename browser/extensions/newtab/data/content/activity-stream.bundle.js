@@ -12264,6 +12264,7 @@ function Lists({
     }
   }
   return lists ? external_React_default().createElement("article", {
+    id: "widget-lists",
     className: "lists"
   }, external_React_default().createElement("moz-select", {
     value: selected
@@ -12348,6 +12349,7 @@ function FocusTimer() {
     return `${minutes}:${secs}`;
   };
   return external_React_default().createElement("article", {
+    id: "widget-timer",
     className: "focus-timer-wrapper"
   }, external_React_default().createElement("p", null, "Focus timer widget"), external_React_default().createElement("form", {
     onSubmit: setTimerMinutes
