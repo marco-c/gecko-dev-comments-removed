@@ -153,7 +153,7 @@ class AudioReceiveStreamInterface : public MediaReceiveStreamInterface {
     
     std::map<int, SdpAudioFormat> decoder_map;
 
-    rtc::scoped_refptr<AudioDecoderFactory> decoder_factory;
+    scoped_refptr<AudioDecoderFactory> decoder_factory;
 
     std::optional<AudioCodecPairId> codec_pair_id;
 
@@ -166,14 +166,14 @@ class AudioReceiveStreamInterface : public MediaReceiveStreamInterface {
     
     
     
-    rtc::scoped_refptr<webrtc::FrameDecryptorInterface> frame_decryptor;
+    scoped_refptr<webrtc::FrameDecryptorInterface> frame_decryptor;
 
     
     
     
     
     
-    rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer;
+    scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer;
   };
 
   

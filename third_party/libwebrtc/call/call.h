@@ -90,7 +90,7 @@ class Call {
   
   
   
-  virtual void AddAdaptationResource(rtc::scoped_refptr<Resource> resource) = 0;
+  virtual void AddAdaptationResource(scoped_refptr<Resource> resource) = 0;
 
   
   
@@ -141,7 +141,7 @@ class Call {
   virtual void OnUpdateSyncGroup(AudioReceiveStreamInterface& stream,
                                  absl::string_view sync_group) = 0;
 
-  virtual void OnSentPacket(const rtc::SentPacket& sent_packet) = 0;
+  virtual void OnSentPacket(const SentPacketInfo& sent_packet) = 0;
 
   virtual void SetClientBitratePreferences(
       const BitrateSettings& preferences) = 0;

@@ -20,7 +20,7 @@ namespace webrtc {
 class PacketReceiver {
  public:
   
-  virtual void DeliverRtcpPacket(rtc::CopyOnWriteBuffer packet) = 0;
+  virtual void DeliverRtcpPacket(CopyOnWriteBuffer packet) = 0;
 
   
   

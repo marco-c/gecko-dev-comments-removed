@@ -36,39 +36,37 @@ namespace webrtc {
 
 class BroadcastResourceListener : public ResourceListener {
  public:
-  explicit BroadcastResourceListener(
-      rtc::scoped_refptr<Resource> source_resource);
+  explicit BroadcastResourceListener(scoped_refptr<Resource> source_resource);
   ~BroadcastResourceListener() override;
 
-  rtc::scoped_refptr<Resource> SourceResource() const;
+  scoped_refptr<Resource> SourceResource() const;
   void StartListening();
   void StopListening();
 
   
   
-  rtc::scoped_refptr<Resource> CreateAdapterResource();
+  scoped_refptr<Resource> CreateAdapterResource();
 
   
   
   
-  void RemoveAdapterResource(rtc::scoped_refptr<Resource> resource);
-  std::vector<rtc::scoped_refptr<Resource>> GetAdapterResources();
+  void RemoveAdapterResource(scoped_refptr<Resource> resource);
+  std::vector<scoped_refptr<Resource>> GetAdapterResources();
 
   
-  void OnResourceUsageStateMeasured(rtc::scoped_refptr<Resource> resource,
+  void OnResourceUsageStateMeasured(scoped_refptr<Resource> resource,
                                     ResourceUsageState usage_state) override;
 
  private:
   class AdapterResource;
   friend class AdapterResource;
 
-  const rtc::scoped_refptr<Resource> source_resource_;
+  const scoped_refptr<Resource> source_resource_;
   Mutex lock_;
   bool is_listening_ RTC_GUARDED_BY(lock_);
   
   
-  std::vector<rtc::scoped_refptr<AdapterResource>> adapters_
-      RTC_GUARDED_BY(lock_);
+  std::vector<scoped_refptr<AdapterResource>> adapters_ RTC_GUARDED_BY(lock_);
 };
 
 }  

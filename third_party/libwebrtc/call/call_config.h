@@ -53,7 +53,7 @@ struct CallConfig {
   BitrateConstraints bitrate_config;
 
   
-  rtc::scoped_refptr<AudioState> audio_state;
+  scoped_refptr<AudioState> audio_state;
 
   
   AudioProcessing* audio_processing = nullptr;

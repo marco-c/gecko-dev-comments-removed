@@ -155,7 +155,7 @@ class AudioSendStream : public AudioSender {
     };
 
     std::optional<SendCodecSpec> send_codec_spec;
-    rtc::scoped_refptr<AudioEncoderFactory> encoder_factory;
+    scoped_refptr<AudioEncoderFactory> encoder_factory;
     std::optional<AudioCodecPairId> codec_pair_id;
 
     
@@ -167,11 +167,11 @@ class AudioSendStream : public AudioSender {
     
     
     
-    rtc::scoped_refptr<webrtc::FrameEncryptorInterface> frame_encryptor;
+    scoped_refptr<webrtc::FrameEncryptorInterface> frame_encryptor;
 
     
     
-    rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer;
+    scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer;
   };
 
   virtual ~AudioSendStream() = default;

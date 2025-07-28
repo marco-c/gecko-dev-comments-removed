@@ -35,7 +35,7 @@ enum class MediaType;
 
 class NetworkPacket {
  public:
-  NetworkPacket(rtc::CopyOnWriteBuffer packet,
+  NetworkPacket(CopyOnWriteBuffer packet,
                 int64_t send_time,
                 int64_t arrival_time,
                 std::optional<PacketOptions> packet_options,
@@ -59,7 +59,7 @@ class NetworkPacket {
 
   const uint8_t* data() const { return packet_.data(); }
   size_t data_length() const { return packet_.size(); }
-  rtc::CopyOnWriteBuffer* raw_packet() { return &packet_; }
+  CopyOnWriteBuffer* raw_packet() { return &packet_; }
   int64_t send_time() const { return send_time_; }
   int64_t arrival_time() const { return arrival_time_; }
   void IncrementArrivalTime(int64_t extra_delay) {
@@ -80,7 +80,7 @@ class NetworkPacket {
   Transport* transport() const { return transport_; }
 
  private:
-  rtc::CopyOnWriteBuffer packet_;
+  CopyOnWriteBuffer packet_;
   
   int64_t send_time_;
   
@@ -133,10 +133,10 @@ class FakeNetworkPipe : public SimulatedPacketReceiverInterface {
   
   
   
-  bool SendRtp(rtc::ArrayView<const uint8_t> packet,
+  bool SendRtp(ArrayView<const uint8_t> packet,
                const PacketOptions& options,
                Transport* transport);
-  bool SendRtcp(rtc::ArrayView<const uint8_t> packet, Transport* transport);
+  bool SendRtcp(ArrayView<const uint8_t> packet, Transport* transport);
 
   
   
@@ -146,7 +146,7 @@ class FakeNetworkPipe : public SimulatedPacketReceiverInterface {
       MediaType media_type,
       RtpPacketReceived packet,
       OnUndemuxablePacketHandler undemuxable_packet_handler) override;
-  void DeliverRtcpPacket(rtc::CopyOnWriteBuffer packet) override;
+  void DeliverRtcpPacket(CopyOnWriteBuffer packet) override;
 
   
   
@@ -179,7 +179,7 @@ class FakeNetworkPipe : public SimulatedPacketReceiverInterface {
 
   
   
-  bool EnqueuePacket(rtc::CopyOnWriteBuffer packet,
+  bool EnqueuePacket(CopyOnWriteBuffer packet,
                      std::optional<PacketOptions> options,
                      bool is_rtcp,
                      MediaType media_type,
@@ -187,7 +187,7 @@ class FakeNetworkPipe : public SimulatedPacketReceiverInterface {
 
   
   
-  bool EnqueuePacket(rtc::CopyOnWriteBuffer packet,
+  bool EnqueuePacket(CopyOnWriteBuffer packet,
                      std::optional<PacketOptions> options,
                      bool is_rtcp,
                      Transport* transport);

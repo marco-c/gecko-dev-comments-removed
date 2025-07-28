@@ -61,20 +61,20 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
       ResourceLimitationsListener* limitations_listener) override;
   void RemoveResourceLimitationsListener(
       ResourceLimitationsListener* limitations_listener) override;
-  void AddResource(rtc::scoped_refptr<Resource> resource) override;
-  std::vector<rtc::scoped_refptr<Resource>> GetResources() const override;
-  void RemoveResource(rtc::scoped_refptr<Resource> resource) override;
+  void AddResource(scoped_refptr<Resource> resource) override;
+  std::vector<scoped_refptr<Resource>> GetResources() const override;
+  void RemoveResource(scoped_refptr<Resource> resource) override;
 
   
   
-  void OnResourceUsageStateMeasured(rtc::scoped_refptr<Resource> resource,
+  void OnResourceUsageStateMeasured(scoped_refptr<Resource> resource,
                                     ResourceUsageState usage_state) override;
 
   
   void OnVideoSourceRestrictionsUpdated(
       VideoSourceRestrictions restrictions,
       const VideoAdaptationCounters& adaptation_counters,
-      rtc::scoped_refptr<Resource> reason,
+      scoped_refptr<Resource> reason,
       const VideoSourceRestrictions& unfiltered_restrictions) override;
 
  private:
@@ -89,7 +89,7 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
     void OnProcessorDestroyed();
 
     
-    void OnResourceUsageStateMeasured(rtc::scoped_refptr<Resource> resource,
+    void OnResourceUsageStateMeasured(scoped_refptr<Resource> resource,
                                       ResourceUsageState usage_state) override;
 
    private:
@@ -116,11 +116,11 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   
   
   MitigationResultAndLogMessage OnResourceUnderuse(
-      rtc::scoped_refptr<Resource> reason_resource);
+      scoped_refptr<Resource> reason_resource);
   MitigationResultAndLogMessage OnResourceOveruse(
-      rtc::scoped_refptr<Resource> reason_resource);
+      scoped_refptr<Resource> reason_resource);
 
-  void UpdateResourceLimitations(rtc::scoped_refptr<Resource> reason_resource,
+  void UpdateResourceLimitations(scoped_refptr<Resource> reason_resource,
                                  const VideoSourceRestrictions& restrictions,
                                  const VideoAdaptationCounters& counters)
       RTC_RUN_ON(task_queue_);
@@ -130,23 +130,22 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   
   
   
-  std::pair<std::vector<rtc::scoped_refptr<Resource>>,
+  std::pair<std::vector<scoped_refptr<Resource>>,
             VideoStreamAdapter::RestrictionsWithCounters>
   FindMostLimitedResources() const RTC_RUN_ON(task_queue_);
 
-  void RemoveLimitationsImposedByResource(
-      rtc::scoped_refptr<Resource> resource);
+  void RemoveLimitationsImposedByResource(scoped_refptr<Resource> resource);
 
   TaskQueueBase* task_queue_;
-  rtc::scoped_refptr<ResourceListenerDelegate> resource_listener_delegate_;
+  scoped_refptr<ResourceListenerDelegate> resource_listener_delegate_;
   
   mutable Mutex resources_lock_;
-  std::vector<rtc::scoped_refptr<Resource>> resources_
+  std::vector<scoped_refptr<Resource>> resources_
       RTC_GUARDED_BY(resources_lock_);
   std::vector<ResourceLimitationsListener*> resource_limitations_listeners_
       RTC_GUARDED_BY(task_queue_);
   
-  std::map<rtc::scoped_refptr<Resource>,
+  std::map<scoped_refptr<Resource>,
            VideoStreamAdapter::RestrictionsWithCounters>
       adaptation_limits_by_resources_ RTC_GUARDED_BY(task_queue_);
   
