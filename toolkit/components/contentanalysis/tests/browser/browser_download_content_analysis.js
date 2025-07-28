@@ -41,21 +41,24 @@ async function createTargetFileAndDownload() {
 
 
 
-function promiseDownloadFinished(aDownload) {
-  return new Promise(resolve => {
-    
-    let onchange = function () {
-      if (aDownload.succeeded || aDownload.error) {
-        aDownload.onchange = null;
-        resolve();
-      }
-    };
 
-    
-    
-    aDownload.onchange = onchange;
-    onchange();
-  });
+
+function promiseDownloadFinished(aList, aDownload) {
+  let promiseAndResolvers = Promise.withResolvers();
+  let view = {
+    onDownloadChanged() {
+      if (aDownload.succeeded || aDownload.error || aDownload.canceled) {
+        aList.removeView(view);
+        promiseAndResolvers.resolve();
+      }
+    },
+  };
+  aList.addView(view);
+  
+  
+  view.onDownloadChanged(aDownload);
+
+  return promiseAndResolvers.promise;
 }
 
 function assertContentAnalysisDownloadRequest(request, expectedFilePath) {
@@ -97,8 +100,10 @@ add_task(async function test_download_content_analysis_allows() {
   });
 
   const download = await createTargetFileAndDownload();
+  let list = await Downloads.getList(Downloads.PUBLIC);
+  await list.add(download);
   await download.start();
-  await promiseDownloadFinished(download);
+  await promiseDownloadFinished(list, download);
   
   ok(download.succeeded, "Download should succeed");
   is(mockCA.calls.length, 1, "Content analysis should be called once");
@@ -137,12 +142,64 @@ add_task(async function test_download_content_analysis_blocks() {
   await SpecialPowers.popPrefEnv();
 });
 
+add_task(async function test_download_content_analysis_user_cancels() {
+  
+  
+  mockCA.setupForTest(true,  true);
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.contentanalysis.interception_point.download.enabled", true],
+    ],
+  });
+
+  let scanStartedPromise = new Promise(res => {
+    mockCA.eventTarget.addEventListener("inAnalyzeContentRequest", res, {
+      once: true,
+    });
+  });
+  const download = await createTargetFileAndDownload();
+
+  info(`path is ${download.target.path}`);
+  let list = await Downloads.getList(Downloads.PUBLIC);
+  await list.add(download);
+  download.start();
+  
+  await scanStartedPromise;
+  download.cancel();
+  await promiseDownloadFinished(list, download);
+  
+  
+  await TestUtils.waitForCondition(() => {
+    return mockCA.cancelledUserActions.length == 1;
+  }, "Wait for the scan to be cancelled");
+
+  
+  
+  mockCA.eventTarget.dispatchEvent(
+    new CustomEvent("returnContentAnalysisResponse")
+  );
+  
+  ok(download.canceled, "Download should be cancelled");
+  is(mockCA.calls.length, 1, "Content analysis should be called once");
+  is(mockCA.cancelledUserActions.length, 1, "One user action cancelled");
+
+  try {
+    await IOUtils.remove(download.target.path);
+  } catch (ex) {
+    
+    
+  }
+  await SpecialPowers.popPrefEnv();
+});
+
 add_task(async function test_download_content_analysis_pref_defaults_to_off() {
   mockCA.setupForTest(false);
   
   const download = await createTargetFileAndDownload();
+  let list = await Downloads.getList(Downloads.PUBLIC);
+  await list.add(download);
   await download.start();
-  await promiseDownloadFinished(download);
+  await promiseDownloadFinished(list, download);
   
   ok(download.succeeded, "Download should succeed");
   is(mockCA.calls.length, 0, "Content analysis should not be called");
