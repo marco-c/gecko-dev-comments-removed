@@ -186,8 +186,6 @@
 
     async setAlign() {
       const hostElement = this.parentElement || this.getRootNode().host;
-      const containerRect = hostElement.getBoundingClientRect();
-
       if (!hostElement) {
         
         
@@ -299,17 +297,9 @@
         this.setAttribute("align", align);
         this.setAttribute("valign", valign);
         hostElement.style.overflow = "";
-        
-        const offsetParentIsBody = this.offsetParent === document?.body;
-        if (offsetParentIsBody) {
-          
-          this.style.left = `${leftOffset + winScrollX}px`;
-          this.style.top = `${topOffset + winScrollY}px`;
-        } else {
-          
-          this.style.left = `${leftOffset - containerRect.left + winScrollX}px`;
-          this.style.top = `${topOffset - containerRect.top + winScrollY}px`;
-        }
+
+        this.style.left = `${leftOffset + winScrollX}px`;
+        this.style.top = `${topOffset + winScrollY}px`;
       }
 
       this.style.minWidth = this.hasAttribute("min-width-from-anchor")
