@@ -47,6 +47,11 @@ _IGNORE_WARNINGS = (
     
     r'Warning: Cannot emulate interface ',
     
+    
+    
+    
+    r'Warning: Specification conversion: The following prefixes do not match any type:',  
+    
     r'Ignoring -shrinkunusedprotofields since the protobuf-lite runtime is',
 )
 

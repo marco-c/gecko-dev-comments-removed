@@ -74,7 +74,8 @@ def _ProcessManifest(path, arsc_package_name, disable_isolated_processes):
   
   
   
-  manifest_node.set('package', arsc_package_name)
+  if arsc_package_name is not None:
+    manifest_node.set('package', arsc_package_name)
 
   
   
@@ -108,7 +109,6 @@ def main(raw_args):
 
   arsc_package, _ = resource_utils.ExtractArscPackage(options.aapt2_path,
                                                       options.in_apk)
-  assert arsc_package is not None, 'The apk does not have a valid package.'
   
   
   version_code, version_name, manifest_package = (

@@ -401,7 +401,7 @@ def GenerateBundleInfoPlist(bundle, plist_compiler, partial_plist):
 
   
   subprocess.check_call([
-      'python',
+      'python3',
       plist_compiler,
       'merge',
       '-f',

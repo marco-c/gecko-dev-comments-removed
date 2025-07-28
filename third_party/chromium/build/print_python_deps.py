@@ -165,12 +165,6 @@ def main():
 
   current_version = sys.version_info[0]
 
-  
-  
-  
-  
-  
-  
   is_vpython = 'vpython' in sys.executable
   if not is_vpython or target_version != current_version:
     
