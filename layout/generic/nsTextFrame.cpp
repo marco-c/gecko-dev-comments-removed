@@ -4865,17 +4865,11 @@ static bool IsUnderlineRight(const ComputedStyle& aStyle) {
 }
 
 static bool FrameStopsLineDecorationPropagation(nsIFrame* aFrame,
-                                                nsBlockFrame* aFrameAsBlock,
                                                 nsCompatibility aCompatMode) {
-  MOZ_ASSERT_IF(aFrameAsBlock, aFrameAsBlock == aFrame);
   
   
   
   mozilla::StyleDisplay display = aFrame->GetDisplay();
-  
-  if (aFrameAsBlock && aFrameAsBlock->IsButtonLike()) {
-    display = aFrame->StyleDisplay()->mOriginalDisplay;
-  }
   if (!display.IsInlineFlow() &&
       (!display.IsRuby() ||
        display == mozilla::StyleDisplay::RubyTextContainer) &&
@@ -5071,7 +5065,7 @@ void nsTextFrame::GetTextDecorations(
             !ignoreSubproperties));
       }
     }
-    if (FrameStopsLineDecorationPropagation(f, fBlock, compatMode)) {
+    if (FrameStopsLineDecorationPropagation(f, compatMode)) {
       break;
     }
   }
