@@ -306,9 +306,9 @@ for (const type of [
   "WIDGETS_LISTS_UPDATE",
   "WIDGETS_TIMER_END",
   "WIDGETS_TIMER_PAUSE",
+  "WIDGETS_TIMER_PLAY",
   "WIDGETS_TIMER_RESET",
   "WIDGETS_TIMER_SET_DURATION",
-  "WIDGETS_TIMER_START",
 ]) {
   actionTypes[type] = type;
 }
@@ -7854,7 +7854,6 @@ const INITIAL_STATE = {
     
     startTime: null,
     
-    remaining: 0,
     isRunning: false,
   },
 };
@@ -8755,32 +8754,46 @@ function TrendingSearch(prevState = INITIAL_STATE.TrendingSearch, action) {
 function TimerWidget(prevState = INITIAL_STATE.TimerWidget, action) {
   switch (action.type) {
     case actionTypes.WIDGETS_TIMER_SET:
-      return { ...action.data };
-    case actionTypes.WIDGETS_TIMER_SET_DURATION:
       return {
         ...prevState,
-        duration: action.data,
-        remaining: action.data,
+        ...action.data,
       };
-    case actionTypes.WIDGETS_TIMER_START:
-      return { ...prevState, startTime: Date.now(), isRunning: true };
+    case actionTypes.WIDGETS_TIMER_SET_DURATION:
+      return {
+        duration: action.data,
+        startTime: null,
+        isRunning: false,
+      };
+    case actionTypes.WIDGETS_TIMER_PLAY:
+      return {
+        ...prevState,
+        startTime: Math.floor(Date.now() / 1000), 
+        isRunning: true,
+      };
     case actionTypes.WIDGETS_TIMER_PAUSE:
       if (prevState.isRunning) {
-        const elapsed = Date.now() - prevState.startTime;
         return {
           ...prevState,
-          remaining: prevState.duration - elapsed,
-          isRunning: false,
+          duration: action.data.duration,
+          
+          
           startTime: null,
+          isRunning: false,
         };
       }
       break;
     case actionTypes.WIDGETS_TIMER_RESET:
       return {
-        ...prevState,
-        isRunning: false,
+        duration: 0,
         startTime: null,
-        remaining: prevState.duration,
+        isRunning: false,
+      };
+    case actionTypes.WIDGETS_TIMER_END:
+      return {
+        ...prevState,
+        duration: 0,
+        startTime: null,
+        isRunning: false,
       };
     default:
       return prevState;
@@ -12310,55 +12323,91 @@ function Lists({
 
 
 
-function FocusTimer() {
-  const [timer, setTimer] = (0,external_React_namespaceObject.useState)(0);
-  const [isRunning, setIsRunning] = (0,external_React_namespaceObject.useState)(false);
+
+
+function FocusTimer({
+  dispatch
+}) {
   const inputRef = (0,external_React_namespaceObject.useRef)(null);
+  const timerData = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.TimerWidget);
+  const {
+    duration,
+    startTime,
+    isRunning
+  } = timerData;
+  const [timeLeft, setTimeLeft] = (0,external_React_namespaceObject.useState)(0);
+  const calculateTimeRemaining = (dur, start) => {
+    const currentTime = Math.floor(Date.now() / 1000);
+
+    
+    return Math.max(dur - (currentTime - start), 0);
+  };
   (0,external_React_namespaceObject.useEffect)(() => {
     let interval;
-    if (isRunning && timer > 0) {
+    if (isRunning && duration > 0) {
       interval = setInterval(() => {
-        setTimer(previousValue => {
-          if (previousValue <= 1) {
-            clearInterval(interval);
-            setIsRunning(false);
-            return 0;
-          }
-          return previousValue - 1;
-        });
+        const remaining = calculateTimeRemaining(duration, startTime);
+        if (remaining <= 0) {
+          clearInterval(interval);
+          dispatch(actionCreators.AlsoToMain({
+            type: actionTypes.WIDGETS_TIMER_END
+          }));
+        }
+
+        
+        setTimeLeft(remaining);
       }, 1000);
     }
+
+    
+    const newTime = isRunning ? calculateTimeRemaining(duration, startTime) : duration;
+    setTimeLeft(newTime);
     return () => clearInterval(interval);
-  }, [isRunning, timer]);
+  }, [isRunning, startTime, duration, dispatch, timeLeft]);
 
   
   const setTimerMinutes = e => {
     e.preventDefault();
-    const minutes = inputRef.current.value;
-    const minutesInt = parseInt(minutes, 10);
-    if (minutesInt > 0) {
-      setTimer(minutesInt * 60); 
+    const minutes = parseInt(inputRef.current.value, 10);
+    const seconds = minutes * 60;
+    if (minutes > 0) {
+      dispatch(actionCreators.AlsoToMain({
+        type: actionTypes.WIDGETS_TIMER_SET_DURATION,
+        data: seconds
+      }));
     }
   };
 
   
   const toggleTimer = () => {
-    if (timer > 0) {
-      setIsRunning(previousValue => !previousValue); 
+    if (!isRunning && duration > 0) {
+      dispatch(actionCreators.AlsoToMain({
+        type: actionTypes.WIDGETS_TIMER_PLAY
+      }));
+    } else if (isRunning) {
+      
+      const remaining = calculateTimeRemaining(duration, startTime);
+      dispatch(actionCreators.AlsoToMain({
+        type: actionTypes.WIDGETS_TIMER_PAUSE,
+        data: {
+          duration: remaining
+        }
+      }));
     }
   };
 
   
   const resetTimer = () => {
-    setIsRunning(false);
-    setTimer(0);
+    dispatch(actionCreators.AlsoToMain({
+      type: actionTypes.WIDGETS_TIMER_RESET
+    }));
   };
   const formatTime = seconds => {
     const minutes = Math.floor(seconds / 60).toString().padStart(2, "0");
     const secs = (seconds % 60).toString().padStart(2, "0");
     return `${minutes}:${secs}`;
   };
-  return external_React_default().createElement("article", {
+  return timerData ? external_React_default().createElement("article", {
     className: "focus-timer-wrapper"
   }, external_React_default().createElement("p", null, "Focus timer widget"), external_React_default().createElement("form", {
     onSubmit: setTimerMinutes
@@ -12376,7 +12425,7 @@ function FocusTimer() {
     onClick: toggleTimer
   }, isRunning ? "Pause" : "Play"), external_React_default().createElement("button", {
     onClick: resetTimer
-  }, "Reset")), "Time left: ", formatTime(timer));
+  }, "Reset")), "Time left: ", formatTime(timeLeft)) : null;
 }
 
 ;
@@ -12403,7 +12452,9 @@ function Widgets() {
     className: "widgets-container"
   }, listsEnabled && external_React_default().createElement(Lists, {
     dispatch: dispatch
-  }), timerEnabled && external_React_default().createElement(FocusTimer, null));
+  }), timerEnabled && external_React_default().createElement(FocusTimer, {
+    dispatch: dispatch
+  }));
 }
 
 ;
