@@ -176,9 +176,6 @@ let propNameAllowlist = [
   { sourceName: /\/design-system\/tokens-.*\.css$/, isFromDevTools: true },
 
   
-  { propName: "--input-space-block", isFromDevTools: false },
-
-  
   
   { propName: /--color-[a-z]+-\d+/, isFromDevTools: false },
 ];
