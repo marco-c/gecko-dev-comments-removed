@@ -253,6 +253,12 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
     return false;
   }
 
+  MOZ_ASSERT(!generator->isExecuting());
+  MOZ_ASSERT(!generator->isAwaitingYieldReturn());
+  if (generator->isAwaitingReturn()) {
+    return true;
+  }
+
   
   
   return AsyncGeneratorDrainQueue(cx, generator);
@@ -282,6 +288,12 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
   }
   if (!AsyncGeneratorCompleteStepThrow(cx, generator, value)) {
     return false;
+  }
+
+  MOZ_ASSERT(!generator->isExecuting());
+  MOZ_ASSERT(!generator->isAwaitingYieldReturn());
+  if (generator->isAwaitingReturn()) {
+    return true;
   }
 
   
@@ -336,6 +348,13 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
   
   if (!AsyncGeneratorCompleteStepNormal(cx, generator, value, false)) {
     return false;
+  }
+
+  MOZ_ASSERT(!generator->isAwaitingYieldReturn());
+  
+  
+  if (generator->isAwaitingReturn()) {
+    return true;
   }
 
   
@@ -530,6 +549,12 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
     return false;
   }
 
+  MOZ_ASSERT(!generator->isExecuting());
+  MOZ_ASSERT(!generator->isAwaitingYieldReturn());
+  if (generator->isAwaitingReturn()) {
+    return true;
+  }
+
   
   
   return AsyncGeneratorDrainQueue(cx, generator);
@@ -554,6 +579,12 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
   
   if (!AsyncGeneratorCompleteStepThrow(cx, generator, value)) {
     return false;
+  }
+
+  MOZ_ASSERT(!generator->isExecuting());
+  MOZ_ASSERT(!generator->isAwaitingYieldReturn());
+  if (generator->isAwaitingReturn()) {
+    return true;
   }
 
   
@@ -617,11 +648,6 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
     JSContext* cx, Handle<AsyncGeneratorObject*> generator) {
   
   
-  MOZ_ASSERT(!generator->isExecuting());
-  MOZ_ASSERT(!generator->isAwaitingYieldReturn());
-  if (generator->isAwaitingReturn()) {
-    return true;
-  }
 
   
   
@@ -890,7 +916,8 @@ bool js::AsyncGeneratorNext(JSContext* cx, unsigned argc, Value* vp) {
                              completionValue, resultPromise)) {
     return false;
   }
-  if (!generator->isExecuting() && !generator->isAwaitingYieldReturn()) {
+  if (!generator->isExecuting() && !generator->isAwaitingYieldReturn() &&
+      !generator->isAwaitingReturn()) {
     if (!AsyncGeneratorDrainQueue(cx, generator)) {
       return false;
     }
@@ -958,7 +985,8 @@ bool js::AsyncGeneratorReturn(JSContext* cx, unsigned argc, Value* vp) {
   
   
 
-  if (!generator->isExecuting() && !generator->isAwaitingYieldReturn()) {
+  if (!generator->isExecuting() && !generator->isAwaitingYieldReturn() &&
+      !generator->isAwaitingReturn()) {
     if (!AsyncGeneratorDrainQueue(cx, generator)) {
       return false;
     }
@@ -1026,7 +1054,8 @@ bool js::AsyncGeneratorThrow(JSContext* cx, unsigned argc, Value* vp) {
                              completionValue, resultPromise)) {
     return false;
   }
-  if (!generator->isExecuting() && !generator->isAwaitingYieldReturn()) {
+  if (!generator->isExecuting() && !generator->isAwaitingYieldReturn() &&
+      !generator->isAwaitingReturn()) {
     if (!AsyncGeneratorDrainQueue(cx, generator)) {
       return false;
     }
