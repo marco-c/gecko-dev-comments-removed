@@ -34,6 +34,12 @@ this.storage = class extends ExtensionAPI {
           ])
           .then(deserialize);
       },
+      getKeys() {
+        return context.childManager.callParentAsyncFunction(
+          "storage.local.JSONFileBackend.getKeys",
+          []
+        );
+      },
       set(items) {
         return context.childManager.callParentAsyncFunction(
           "storage.local.JSONFileBackend.set",
@@ -85,6 +91,10 @@ this.storage = class extends ExtensionAPI {
             return db.get(keys);
           }
         );
+      },
+      async getKeys() {
+        const db = await getDB();
+        return db.getKeys();
       },
       set(items) {
         function serialize(name, anonymizedName, value) {
@@ -240,7 +250,7 @@ this.storage = class extends ExtensionAPI {
     const local = {
       onChanged: makeOnChangedEventTarget("storage.local.onChanged"),
     };
-    for (let method of ["get", "set", "remove", "clear"]) {
+    for (let method of ["get", "getKeys", "set", "remove", "clear"]) {
       local[method] = async function (...args) {
         try {
           
@@ -258,7 +268,7 @@ this.storage = class extends ExtensionAPI {
             
             
             
-            if (method !== "get") {
+            if (method !== "get" && method !== "getKeys") {
               
               try {
                 const result =
