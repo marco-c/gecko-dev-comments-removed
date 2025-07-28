@@ -34,7 +34,6 @@ class ChannelWin : public Channel, public MessageLoopForIO::IOHandler {
 
   bool Connect(Listener* listener) MOZ_EXCLUDES(SendMutex()) override;
   void Close() MOZ_EXCLUDES(SendMutex()) override;
-  void StartAcceptingHandles(Mode mode) MOZ_EXCLUDES(SendMutex()) override;
   
   bool Send(mozilla::UniquePtr<Message> message)
       MOZ_EXCLUDES(SendMutex()) override;
@@ -59,6 +58,7 @@ class ChannelWin : public Channel, public MessageLoopForIO::IOHandler {
   void OutputQueuePop() MOZ_REQUIRES(SendMutex());
 
   bool EnqueueHelloMessage() MOZ_REQUIRES(SendMutex(), IOThread());
+  void MaybeOpenProcessHandle() MOZ_REQUIRES(SendMutex(), IOThread());
   void CloseLocked() MOZ_REQUIRES(SendMutex(), IOThread());
 
   bool ProcessIncomingMessages(MessageLoopForIO::IOContext* context,
@@ -78,7 +78,7 @@ class ChannelWin : public Channel, public MessageLoopForIO::IOHandler {
                              DWORD bytes_transfered, DWORD error);
 
  private:
-  Mode mode_ MOZ_GUARDED_BY(IOThread());
+  Mode mode_ MOZ_GUARDED_BY(chan_cap_);
 
   struct State {
     explicit State(ChannelWin* channel);
@@ -126,12 +126,6 @@ class ChannelWin : public Channel, public MessageLoopForIO::IOHandler {
   
   base::ProcessId other_pid_ MOZ_GUARDED_BY(chan_cap_) =
       base::kInvalidProcessId;
-
-  
-  
-  
-  bool accept_handles_ MOZ_GUARDED_BY(chan_cap_) = false;
-  bool privileged_ MOZ_GUARDED_BY(chan_cap_) = false;
 
   
   
