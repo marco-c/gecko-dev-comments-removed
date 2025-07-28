@@ -147,11 +147,11 @@ void SignalingInterceptor::FillSimulcastContext(
 
       
       std::vector<cricket::RidDescription> rids;
-      cricket::SimulcastDescription simulcast_description;
+      SimulcastDescription simulcast_description;
       for (std::string& rid : info.rids) {
         rids.emplace_back(rid, cricket::RidDirection::kSend);
         simulcast_description.send_layers().AddLayer(
-            cricket::SimulcastLayer(rid, false));
+            SimulcastLayer(rid, false));
       }
       media_desc->mutable_streams()[0].set_rids(rids);
       media_desc->set_simulcast_description(simulcast_description);
@@ -278,8 +278,7 @@ LocalAndRemoteSdp SignalingInterceptor::PatchVp8Offer(
 
     
     prototype_media_desc->mutable_streams()[0].set_rids({});
-    prototype_media_desc->set_simulcast_description(
-        cricket::SimulcastDescription());
+    prototype_media_desc->set_simulcast_description(SimulcastDescription());
 
     
     for (std::string& rid : info.rids) {
@@ -466,7 +465,7 @@ LocalAndRemoteSdp SignalingInterceptor::PatchVp8Answer(
     
     
     
-    cricket::SimulcastDescription simulcast_description;
+    SimulcastDescription simulcast_description;
     for (const auto& layer : info.simulcast_description.send_layers()) {
       simulcast_description.receive_layers().AddLayerWithAlternatives(layer);
     }

@@ -13,7 +13,7 @@
 #include "test/gtest.h"
 
 TEST(RtcpMuxFilterTest, IsActiveSender) {
-  cricket::RtcpMuxFilter filter;
+  webrtc::RtcpMuxFilter filter;
   
   EXPECT_FALSE(filter.IsActive());
   EXPECT_FALSE(filter.IsProvisionallyActive());
@@ -32,7 +32,7 @@ TEST(RtcpMuxFilterTest, IsActiveSender) {
 
 
 TEST(RtcpMuxFilterTest, ReceivePrAnswer) {
-  cricket::RtcpMuxFilter filter;
+  webrtc::RtcpMuxFilter filter;
   filter.SetOffer(true, cricket::CS_LOCAL);
   
   EXPECT_TRUE(filter.SetProvisionalAnswer(true, cricket::CS_REMOTE));
@@ -54,7 +54,7 @@ TEST(RtcpMuxFilterTest, ReceivePrAnswer) {
 }
 
 TEST(RtcpMuxFilterTest, IsActiveReceiver) {
-  cricket::RtcpMuxFilter filter;
+  webrtc::RtcpMuxFilter filter;
   
   EXPECT_FALSE(filter.IsActive());
   EXPECT_FALSE(filter.IsProvisionallyActive());
@@ -73,7 +73,7 @@ TEST(RtcpMuxFilterTest, IsActiveReceiver) {
 
 
 TEST(RtcpMuxFilterTest, SendPrAnswer) {
-  cricket::RtcpMuxFilter filter;
+  webrtc::RtcpMuxFilter filter;
   filter.SetOffer(true, cricket::CS_REMOTE);
   
   EXPECT_TRUE(filter.SetProvisionalAnswer(true, cricket::CS_LOCAL));
@@ -96,7 +96,7 @@ TEST(RtcpMuxFilterTest, SendPrAnswer) {
 
 
 TEST(RtcpMuxFilterTest, EnableFilterDuringUpdate) {
-  cricket::RtcpMuxFilter filter;
+  webrtc::RtcpMuxFilter filter;
   EXPECT_FALSE(filter.IsActive());
   EXPECT_TRUE(filter.SetOffer(false, cricket::CS_REMOTE));
   EXPECT_TRUE(filter.SetAnswer(false, cricket::CS_LOCAL));
@@ -113,14 +113,14 @@ TEST(RtcpMuxFilterTest, EnableFilterDuringUpdate) {
 
 
 TEST(RtcpMuxFilterTest, SetOfferTwice) {
-  cricket::RtcpMuxFilter filter;
+  webrtc::RtcpMuxFilter filter;
 
   EXPECT_TRUE(filter.SetOffer(true, cricket::CS_REMOTE));
   EXPECT_TRUE(filter.SetOffer(true, cricket::CS_REMOTE));
   EXPECT_TRUE(filter.SetAnswer(true, cricket::CS_LOCAL));
   EXPECT_TRUE(filter.IsActive());
 
-  cricket::RtcpMuxFilter filter2;
+  webrtc::RtcpMuxFilter filter2;
   EXPECT_TRUE(filter2.SetOffer(false, cricket::CS_LOCAL));
   EXPECT_TRUE(filter2.SetOffer(false, cricket::CS_LOCAL));
   EXPECT_TRUE(filter2.SetAnswer(false, cricket::CS_REMOTE));
@@ -129,7 +129,7 @@ TEST(RtcpMuxFilterTest, SetOfferTwice) {
 
 
 TEST(RtcpMuxFilterTest, EnableFilterTwiceDuringUpdate) {
-  cricket::RtcpMuxFilter filter;
+  webrtc::RtcpMuxFilter filter;
 
   EXPECT_TRUE(filter.SetOffer(true, cricket::CS_REMOTE));
   EXPECT_TRUE(filter.SetAnswer(true, cricket::CS_LOCAL));
@@ -142,7 +142,7 @@ TEST(RtcpMuxFilterTest, EnableFilterTwiceDuringUpdate) {
 
 
 TEST(RtcpMuxFilterTest, KeepFilterDisabledDuringUpdate) {
-  cricket::RtcpMuxFilter filter;
+  webrtc::RtcpMuxFilter filter;
 
   EXPECT_TRUE(filter.SetOffer(false, cricket::CS_REMOTE));
   EXPECT_TRUE(filter.SetAnswer(false, cricket::CS_LOCAL));
@@ -155,7 +155,7 @@ TEST(RtcpMuxFilterTest, KeepFilterDisabledDuringUpdate) {
 
 
 TEST(RtcpMuxFilterTest, SetActiveCantDeactivate) {
-  cricket::RtcpMuxFilter filter;
+  webrtc::RtcpMuxFilter filter;
 
   filter.SetActive();
   EXPECT_TRUE(filter.IsActive());

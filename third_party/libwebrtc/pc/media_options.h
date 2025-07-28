@@ -25,7 +25,7 @@
 #include "p2p/base/transport_description_factory.h"
 #include "pc/simulcast_description.h"
 
-namespace cricket {
+namespace webrtc {
 
 
 const char kDefaultRtcpCname[] = "DefaultRtcpCname";
@@ -36,7 +36,7 @@ struct SenderOptions {
   std::string track_id;
   std::vector<std::string> stream_ids;
   
-  std::vector<RidDescription> rids;
+  std::vector<cricket::RidDescription> rids;
   SimulcastLayerList simulcast_layers;
   
   int num_sim_layers;
@@ -44,9 +44,9 @@ struct SenderOptions {
 
 
 struct MediaDescriptionOptions {
-  MediaDescriptionOptions(webrtc::MediaType type,
+  MediaDescriptionOptions(MediaType type,
                           const std::string& mid,
-                          webrtc::RtpTransceiverDirection direction,
+                          RtpTransceiverDirection direction,
                           bool stopped)
       : type(type), mid(mid), direction(direction), stopped(stopped) {}
 
@@ -56,29 +56,29 @@ struct MediaDescriptionOptions {
                       const std::vector<std::string>& stream_ids);
   void AddVideoSender(const std::string& track_id,
                       const std::vector<std::string>& stream_ids,
-                      const std::vector<RidDescription>& rids,
+                      const std::vector<cricket::RidDescription>& rids,
                       const SimulcastLayerList& simulcast_layers,
                       int num_sim_layers);
 
-  webrtc::MediaType type;
+  MediaType type;
   std::string mid;
-  webrtc::RtpTransceiverDirection direction;
+  RtpTransceiverDirection direction;
   bool stopped;
-  webrtc::TransportOptions transport_options;
+  TransportOptions transport_options;
   
   
   std::vector<SenderOptions> sender_options;
-  std::vector<webrtc::RtpCodecCapability> codec_preferences;
-  std::vector<webrtc::RtpHeaderExtensionCapability> header_extensions;
+  std::vector<RtpCodecCapability> codec_preferences;
+  std::vector<RtpHeaderExtensionCapability> header_extensions;
   
   
-  std::vector<Codec> codecs_to_include;
+  std::vector<cricket::Codec> codecs_to_include;
 
  private:
   
   void AddSenderInternal(const std::string& track_id,
                          const std::vector<std::string>& stream_ids,
-                         const std::vector<RidDescription>& rids,
+                         const std::vector<cricket::RidDescription>& rids,
                          const SimulcastLayerList& simulcast_layers,
                          int num_sim_layers);
 };
@@ -90,15 +90,11 @@ struct MediaDescriptionOptions {
 struct MediaSessionOptions {
   MediaSessionOptions() {}
 
-  bool has_audio() const {
-    return HasMediaDescription(webrtc::MediaType::AUDIO);
-  }
-  bool has_video() const {
-    return HasMediaDescription(webrtc::MediaType::VIDEO);
-  }
-  bool has_data() const { return HasMediaDescription(webrtc::MediaType::DATA); }
+  bool has_audio() const { return HasMediaDescription(MediaType::AUDIO); }
+  bool has_video() const { return HasMediaDescription(MediaType::VIDEO); }
+  bool has_data() const { return HasMediaDescription(MediaType::DATA); }
 
-  bool HasMediaDescription(webrtc::MediaType type) const;
+  bool HasMediaDescription(MediaType type) const;
 
   bool vad_enabled = true;  
   bool rtcp_mux_enabled = true;
@@ -106,11 +102,11 @@ struct MediaSessionOptions {
   bool offer_extmap_allow_mixed = false;
   bool raw_packetization_for_video = false;
   std::string rtcp_cname = kDefaultRtcpCname;
-  webrtc::CryptoOptions crypto_options;
+  CryptoOptions crypto_options;
   
   
   std::vector<MediaDescriptionOptions> media_description_options;
-  std::vector<IceParameters> pooled_ice_credentials;
+  std::vector<cricket::IceParameters> pooled_ice_credentials;
 
   
   
@@ -119,6 +115,15 @@ struct MediaSessionOptions {
   bool use_obsolete_sctp_sdp = true;
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::kDefaultRtcpCname;
+using ::webrtc::MediaDescriptionOptions;
+using ::webrtc::MediaSessionOptions;
+using ::webrtc::SenderOptions;
 }  
 
 #endif  

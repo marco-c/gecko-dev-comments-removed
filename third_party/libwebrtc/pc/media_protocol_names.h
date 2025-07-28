@@ -13,7 +13,7 @@
 
 #include "absl/strings/string_view.h"
 
-namespace cricket {
+namespace webrtc {
 
 
 
@@ -42,6 +42,24 @@ bool IsPlainRtp(absl::string_view protocol);
 
 bool IsDtlsRtp(absl::string_view protocol);
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::IsDtlsRtp;
+using ::webrtc::IsDtlsSctp;
+using ::webrtc::IsPlainRtp;
+using ::webrtc::IsPlainSctp;
+using ::webrtc::IsRtpProtocol;
+using ::webrtc::IsSctpProtocol;
+using ::webrtc::kMediaProtocolAvpf;
+using ::webrtc::kMediaProtocolDtlsSavpf;
+using ::webrtc::kMediaProtocolDtlsSctp;
+using ::webrtc::kMediaProtocolSavpf;
+using ::webrtc::kMediaProtocolSctp;
+using ::webrtc::kMediaProtocolTcpDtlsSctp;
+using ::webrtc::kMediaProtocolUdpDtlsSctp;
 }  
 
 #endif  

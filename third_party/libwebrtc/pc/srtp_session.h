@@ -25,7 +25,7 @@
 struct srtp_event_data_t;
 struct srtp_ctx_t_;  
 
-namespace cricket {
+namespace webrtc {
 
 
 
@@ -36,7 +36,7 @@ void ProhibitLibsrtpInitialization();
 class SrtpSession {
  public:
   SrtpSession();
-  explicit SrtpSession(const webrtc::FieldTrialsView& field_trials);
+  explicit SrtpSession(const FieldTrialsView& field_trials);
   ~SrtpSession();
 
   SrtpSession(const SrtpSession&) = delete;
@@ -66,30 +66,30 @@ class SrtpSession {
                                                            int in_len,
                                                            int max_len,
                                                            int* out_len);
-  bool ProtectRtp(rtc::CopyOnWriteBuffer& buffer);
+  bool ProtectRtp(CopyOnWriteBuffer& buffer);
   
   [[deprecated("Pass CopyOnWriteBuffer")]] bool ProtectRtp(void* data,
                                                            int in_len,
                                                            int max_len,
                                                            int* out_len,
                                                            int64_t* index);
-  bool ProtectRtp(rtc::CopyOnWriteBuffer& buffer, int64_t* index);
+  bool ProtectRtp(CopyOnWriteBuffer& buffer, int64_t* index);
 
   [[deprecated("Pass CopyOnWriteBuffer")]] bool ProtectRtcp(void* data,
                                                             int in_len,
                                                             int max_len,
                                                             int* out_len);
-  bool ProtectRtcp(rtc::CopyOnWriteBuffer& buffer);
+  bool ProtectRtcp(CopyOnWriteBuffer& buffer);
   
   
   [[deprecated("Pass CopyOnWriteBuffer")]] bool UnprotectRtp(void* data,
                                                              int in_len,
                                                              int* out_len);
-  bool UnprotectRtp(rtc::CopyOnWriteBuffer& buffer);
+  bool UnprotectRtp(CopyOnWriteBuffer& buffer);
   [[deprecated("Pass CopyOnWriteBuffer")]] bool UnprotectRtcp(void* data,
                                                               int in_len,
                                                               int* out_len);
-  bool UnprotectRtcp(rtc::CopyOnWriteBuffer& buffer);
+  bool UnprotectRtcp(CopyOnWriteBuffer& buffer);
 
   
   bool GetRtpAuthParams(uint8_t** key, int* key_len, int* tag_len);
@@ -131,11 +131,11 @@ class SrtpSession {
                  const rtc::ZeroOnFreeBuffer<uint8_t>& key,
                  const std::vector<int>& extension_ids);
   
-  bool GetSendStreamPacketIndex(rtc::CopyOnWriteBuffer& buffer, int64_t* index);
+  bool GetSendStreamPacketIndex(CopyOnWriteBuffer& buffer, int64_t* index);
 
   
   
-  void DumpPacket(const rtc::CopyOnWriteBuffer& buffer, bool outbound);
+  void DumpPacket(const CopyOnWriteBuffer& buffer, bool outbound);
   [[deprecated("Pass CopyOnWriteBuffer")]] void DumpPacket(const void* buf,
                                                            int len,
                                                            bool outbound);
@@ -143,7 +143,7 @@ class SrtpSession {
   void HandleEvent(const srtp_event_data_t* ev);
   static void HandleEventThunk(srtp_event_data_t* ev);
 
-  webrtc::SequenceChecker thread_checker_;
+  SequenceChecker thread_checker_;
   srtp_ctx_t_* session_ = nullptr;
 
   
@@ -161,6 +161,13 @@ class SrtpSession {
   bool dump_plain_rtp_ = false;
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::ProhibitLibsrtpInitialization;
+using ::webrtc::SrtpSession;
 }  
 
 #endif  

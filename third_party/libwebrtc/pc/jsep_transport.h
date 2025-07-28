@@ -42,10 +42,11 @@
 #include "rtc_base/ssl_stream_adapter.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_annotations.h"
-
 namespace cricket {
-
 class DtlsTransportInternal;
+}  
+
+namespace webrtc {
 
 struct JsepTransportDescription {
  public:
@@ -54,7 +55,7 @@ struct JsepTransportDescription {
       bool rtcp_mux_enabled,
       const std::vector<int>& encrypted_header_extension_ids,
       int rtp_abs_sendtime_extn_id,
-      const TransportDescription& transport_description);
+      const cricket::TransportDescription& transport_description);
   JsepTransportDescription(const JsepTransportDescription& from);
   ~JsepTransportDescription();
 
@@ -65,7 +66,7 @@ struct JsepTransportDescription {
   int rtp_abs_sendtime_extn_id = -1;
   
   
-  TransportDescription transport_desc;
+  cricket::TransportDescription transport_desc;
 };
 
 
@@ -83,17 +84,17 @@ class JsepTransport {
   
   JsepTransport(
       const std::string& mid,
-      const rtc::scoped_refptr<webrtc::RTCCertificate>& local_certificate,
-      rtc::scoped_refptr<webrtc::IceTransportInterface> ice_transport,
-      rtc::scoped_refptr<webrtc::IceTransportInterface> rtcp_ice_transport,
-      std::unique_ptr<webrtc::RtpTransport> unencrypted_rtp_transport,
-      std::unique_ptr<webrtc::SrtpTransport> sdes_transport,
-      std::unique_ptr<webrtc::DtlsSrtpTransport> dtls_srtp_transport,
-      std::unique_ptr<DtlsTransportInternal> rtp_dtls_transport,
-      std::unique_ptr<DtlsTransportInternal> rtcp_dtls_transport,
-      std::unique_ptr<SctpTransportInternal> sctp_transport,
+      const scoped_refptr<RTCCertificate>& local_certificate,
+      scoped_refptr<IceTransportInterface> ice_transport,
+      scoped_refptr<IceTransportInterface> rtcp_ice_transport,
+      std::unique_ptr<RtpTransport> unencrypted_rtp_transport,
+      std::unique_ptr<SrtpTransport> sdes_transport,
+      std::unique_ptr<DtlsSrtpTransport> dtls_srtp_transport,
+      std::unique_ptr<cricket::DtlsTransportInternal> rtp_dtls_transport,
+      std::unique_ptr<cricket::DtlsTransportInternal> rtcp_dtls_transport,
+      std::unique_ptr<cricket::SctpTransportInternal> sctp_transport,
       std::function<void()> rtcp_mux_active_callback,
-      webrtc::PayloadTypePicker& suggester);
+      PayloadTypePicker& suggester);
 
   ~JsepTransport();
 
@@ -106,27 +107,27 @@ class JsepTransport {
   
   
   void SetLocalCertificate(
-      const rtc::scoped_refptr<webrtc::RTCCertificate>& local_certificate) {
+      const scoped_refptr<RTCCertificate>& local_certificate) {
     RTC_DCHECK_RUN_ON(network_thread_);
     local_certificate_ = local_certificate;
   }
 
   
-  rtc::scoped_refptr<webrtc::RTCCertificate> GetLocalCertificate() const {
+  scoped_refptr<RTCCertificate> GetLocalCertificate() const {
     RTC_DCHECK_RUN_ON(network_thread_);
     return local_certificate_;
   }
 
-  webrtc::RTCError SetLocalJsepTransportDescription(
+  RTCError SetLocalJsepTransportDescription(
       const JsepTransportDescription& jsep_description,
-      webrtc::SdpType type);
+      SdpType type);
 
   
   
-  webrtc::RTCError SetRemoteJsepTransportDescription(
+  RTCError SetRemoteJsepTransportDescription(
       const JsepTransportDescription& jsep_description,
-      webrtc::SdpType type);
-  webrtc::RTCError AddRemoteCandidates(const Candidates& candidates);
+      SdpType type);
+  RTCError AddRemoteCandidates(const Candidates& candidates);
 
   
   
@@ -145,7 +146,7 @@ class JsepTransport {
 
   
   
-  std::optional<webrtc::SSLRole> GetDtlsRole() const;
+  std::optional<SSLRole> GetDtlsRole() const;
 
   bool GetStats(TransportStats* stats) const;
 
@@ -160,7 +161,7 @@ class JsepTransport {
   }
 
   
-  webrtc::RtpTransportInternal* rtp_transport() const {
+  RtpTransportInternal* rtp_transport() const {
     if (dtls_srtp_transport_) {
       return dtls_srtp_transport_.get();
     }
@@ -173,21 +174,21 @@ class JsepTransport {
     return nullptr;
   }
 
-  const DtlsTransportInternal* rtp_dtls_transport() const {
+  const cricket::DtlsTransportInternal* rtp_dtls_transport() const {
     if (rtp_dtls_transport_) {
       return rtp_dtls_transport_->internal();
     }
     return nullptr;
   }
 
-  DtlsTransportInternal* rtp_dtls_transport() {
+  cricket::DtlsTransportInternal* rtp_dtls_transport() {
     if (rtp_dtls_transport_) {
       return rtp_dtls_transport_->internal();
     }
     return nullptr;
   }
 
-  const DtlsTransportInternal* rtcp_dtls_transport() const {
+  const cricket::DtlsTransportInternal* rtcp_dtls_transport() const {
     RTC_DCHECK_RUN_ON(network_thread_);
     if (rtcp_dtls_transport_) {
       return rtcp_dtls_transport_->internal();
@@ -195,7 +196,7 @@ class JsepTransport {
     return nullptr;
   }
 
-  DtlsTransportInternal* rtcp_dtls_transport() {
+  cricket::DtlsTransportInternal* rtcp_dtls_transport() {
     RTC_DCHECK_RUN_ON(network_thread_);
     if (rtcp_dtls_transport_) {
       return rtcp_dtls_transport_->internal();
@@ -203,17 +204,15 @@ class JsepTransport {
     return nullptr;
   }
 
-  rtc::scoped_refptr<webrtc::DtlsTransport> RtpDtlsTransport() {
+  scoped_refptr<DtlsTransport> RtpDtlsTransport() {
     return rtp_dtls_transport_;
   }
 
-  rtc::scoped_refptr<webrtc::SctpTransport> SctpTransport() const {
-    return sctp_transport_;
-  }
+  scoped_refptr<SctpTransport> SctpTransport() const { return sctp_transport_; }
 
   
   
-  webrtc::DataChannelTransportInterface* data_channel_transport() const {
+  DataChannelTransportInterface* data_channel_transport() const {
     return sctp_transport_.get();
   }
 
@@ -223,27 +222,25 @@ class JsepTransport {
 
   
   
-  webrtc::RTCError VerifyCertificateFingerprint(
-      const webrtc::RTCCertificate* certificate,
-      const webrtc::SSLFingerprint* fingerprint) const;
+  RTCError VerifyCertificateFingerprint(
+      const RTCCertificate* certificate,
+      const SSLFingerprint* fingerprint) const;
 
   void SetActiveResetSrtpParams(bool active_reset_srtp_params);
 
   
   
-  webrtc::RTCError RecordPayloadTypes(bool local,
-                                      webrtc::SdpType type,
-                                      const webrtc::ContentInfo& content);
+  RTCError RecordPayloadTypes(bool local,
+                              SdpType type,
+                              const ContentInfo& content);
 
-  const webrtc::PayloadTypeRecorder& remote_payload_types() const {
+  const PayloadTypeRecorder& remote_payload_types() const {
     return remote_payload_types_;
   }
-  const webrtc::PayloadTypeRecorder& local_payload_types() const {
+  const PayloadTypeRecorder& local_payload_types() const {
     return local_payload_types_;
   }
-  webrtc::PayloadTypeRecorder& local_payload_types() {
-    return local_payload_types_;
-  }
+  PayloadTypeRecorder& local_payload_types() { return local_payload_types_; }
   void CommitPayloadTypes() {
     RTC_DCHECK_RUN_ON(network_thread_);
     local_payload_types_.Commit();
@@ -251,9 +248,7 @@ class JsepTransport {
   }
 
  private:
-  bool SetRtcpMux(bool enable,
-                  webrtc::SdpType type,
-                  webrtc::ContentSource source);
+  bool SetRtcpMux(bool enable, SdpType type, ContentSource source);
 
   void ActivateRtcpMux() RTC_RUN_ON(network_thread_);
 
@@ -262,38 +257,36 @@ class JsepTransport {
   
   
   
-  webrtc::RTCError NegotiateAndSetDtlsParameters(
-      webrtc::SdpType local_description_type);
+  RTCError NegotiateAndSetDtlsParameters(SdpType local_description_type);
 
   
   
   
-  webrtc::RTCError NegotiateDtlsRole(
-      webrtc::SdpType local_description_type,
-      ConnectionRole local_connection_role,
-      ConnectionRole remote_connection_role,
-      std::optional<webrtc::SSLRole>* negotiated_dtls_role);
+  RTCError NegotiateDtlsRole(SdpType local_description_type,
+                             cricket::ConnectionRole local_connection_role,
+                             cricket::ConnectionRole remote_connection_role,
+                             std::optional<SSLRole>* negotiated_dtls_role);
 
   
-  void SetRemoteIceParameters(const IceParameters& ice_parameters,
-                              webrtc::IceTransportInternal* ice);
+  void SetRemoteIceParameters(const cricket::IceParameters& ice_parameters,
+                              IceTransportInternal* ice);
 
   
-  static webrtc::RTCError SetNegotiatedDtlsParameters(
-      DtlsTransportInternal* dtls_transport,
-      std::optional<webrtc::SSLRole> dtls_role,
-      webrtc::SSLFingerprint* remote_fingerprint);
+  static RTCError SetNegotiatedDtlsParameters(
+      cricket::DtlsTransportInternal* dtls_transport,
+      std::optional<SSLRole> dtls_role,
+      SSLFingerprint* remote_fingerprint);
 
-  bool GetTransportStats(DtlsTransportInternal* dtls_transport,
+  bool GetTransportStats(cricket::DtlsTransportInternal* dtls_transport,
                          int component,
                          TransportStats* stats) const;
 
   
-  const webrtc::Thread* const network_thread_;
+  const Thread* const network_thread_;
   const std::string mid_;
   
   bool needs_ice_restart_ RTC_GUARDED_BY(network_thread_) = false;
-  rtc::scoped_refptr<webrtc::RTCCertificate> local_certificate_
+  scoped_refptr<RTCCertificate> local_certificate_
       RTC_GUARDED_BY(network_thread_);
   std::unique_ptr<JsepTransportDescription> local_description_
       RTC_GUARDED_BY(network_thread_);
@@ -302,22 +295,22 @@ class JsepTransport {
 
   
   
-  const rtc::scoped_refptr<webrtc::IceTransportInterface> ice_transport_;
-  const rtc::scoped_refptr<webrtc::IceTransportInterface> rtcp_ice_transport_;
+  const scoped_refptr<IceTransportInterface> ice_transport_;
+  const scoped_refptr<IceTransportInterface> rtcp_ice_transport_;
 
   
   
-  const std::unique_ptr<webrtc::RtpTransport> unencrypted_rtp_transport_;
-  const std::unique_ptr<webrtc::SrtpTransport> sdes_transport_;
-  const std::unique_ptr<webrtc::DtlsSrtpTransport> dtls_srtp_transport_;
+  const std::unique_ptr<RtpTransport> unencrypted_rtp_transport_;
+  const std::unique_ptr<SrtpTransport> sdes_transport_;
+  const std::unique_ptr<DtlsSrtpTransport> dtls_srtp_transport_;
 
-  const rtc::scoped_refptr<webrtc::DtlsTransport> rtp_dtls_transport_;
+  const scoped_refptr<DtlsTransport> rtp_dtls_transport_;
   
   
-  rtc::scoped_refptr<webrtc::DtlsTransport> rtcp_dtls_transport_
+  scoped_refptr<DtlsTransport> rtcp_dtls_transport_
       RTC_GUARDED_BY(network_thread_);
 
-  const rtc::scoped_refptr<webrtc::SctpTransport> sctp_transport_;
+  const scoped_refptr<::webrtc::SctpTransport> sctp_transport_;
 
   RtcpMuxFilter rtcp_mux_negotiator_ RTC_GUARDED_BY(network_thread_);
 
@@ -333,13 +326,18 @@ class JsepTransport {
   std::function<void()> rtcp_mux_active_callback_;
 
   
-  webrtc::PayloadTypeRecorder remote_payload_types_
-      RTC_GUARDED_BY(network_thread_);
+  PayloadTypeRecorder remote_payload_types_ RTC_GUARDED_BY(network_thread_);
   
-  webrtc::PayloadTypeRecorder local_payload_types_
-      RTC_GUARDED_BY(network_thread_);
+  PayloadTypeRecorder local_payload_types_ RTC_GUARDED_BY(network_thread_);
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::JsepTransport;
+using ::webrtc::JsepTransportDescription;
 }  
 
 #endif  

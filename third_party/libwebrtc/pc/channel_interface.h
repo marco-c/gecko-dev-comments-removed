@@ -12,7 +12,6 @@
 #define PC_CHANNEL_INTERFACE_H_
 
 #include <functional>
-#include <memory>
 #include <string>
 #include <vector>
 
@@ -26,14 +25,14 @@
 namespace webrtc {
 class Call;
 class VideoBitrateAllocatorFactory;
+class VideoChannel;
+class VoiceChannel;
+}  
+namespace cricket {
+struct MediaConfig;
 }  
 
-namespace cricket {
-
-class VoiceChannel;
-class VideoChannel;
-
-struct MediaConfig;
+namespace webrtc {
 
 
 
@@ -49,21 +48,25 @@ struct MediaConfig;
 class ChannelInterface {
  public:
   virtual ~ChannelInterface() = default;
-  virtual webrtc::MediaType media_type() const = 0;
+  virtual MediaType media_type() const = 0;
 
   virtual VideoChannel* AsVideoChannel() = 0;
   virtual VoiceChannel* AsVoiceChannel() = 0;
 
-  virtual MediaSendChannelInterface* media_send_channel() = 0;
+  virtual cricket::MediaSendChannelInterface* media_send_channel() = 0;
   
   
-  virtual VideoMediaSendChannelInterface* video_media_send_channel() = 0;
-  virtual VoiceMediaSendChannelInterface* voice_media_send_channel() = 0;
-  virtual MediaReceiveChannelInterface* media_receive_channel() = 0;
+  virtual cricket::VideoMediaSendChannelInterface*
+  video_media_send_channel() = 0;
+  virtual cricket::VoiceMediaSendChannelInterface*
+  voice_media_send_channel() = 0;
+  virtual cricket::MediaReceiveChannelInterface* media_receive_channel() = 0;
   
   
-  virtual VideoMediaReceiveChannelInterface* video_media_receive_channel() = 0;
-  virtual VoiceMediaReceiveChannelInterface* voice_media_receive_channel() = 0;
+  virtual cricket::VideoMediaReceiveChannelInterface*
+  video_media_receive_channel() = 0;
+  virtual cricket::VoiceMediaReceiveChannelInterface*
+  voice_media_receive_channel() = 0;
 
   
   
@@ -83,26 +86,32 @@ class ChannelInterface {
   virtual void SetFirstPacketSentCallback(std::function<void()> callback) = 0;
 
   
-  virtual bool SetLocalContent(const webrtc::MediaContentDescription* content,
-                               webrtc::SdpType type,
+  virtual bool SetLocalContent(const MediaContentDescription* content,
+                               SdpType type,
                                std::string& error_desc) = 0;
-  virtual bool SetRemoteContent(const webrtc::MediaContentDescription* content,
-                                webrtc::SdpType type,
+  virtual bool SetRemoteContent(const MediaContentDescription* content,
+                                SdpType type,
                                 std::string& error_desc) = 0;
   virtual bool SetPayloadTypeDemuxingEnabled(bool enabled) = 0;
 
   
-  virtual const std::vector<StreamParams>& local_streams() const = 0;
-  virtual const std::vector<StreamParams>& remote_streams() const = 0;
+  virtual const std::vector<cricket::StreamParams>& local_streams() const = 0;
+  virtual const std::vector<cricket::StreamParams>& remote_streams() const = 0;
 
   
   
   
   
   
-  virtual bool SetRtpTransport(webrtc::RtpTransportInternal* rtp_transport) = 0;
+  virtual bool SetRtpTransport(RtpTransportInternal* rtp_transport) = 0;
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::ChannelInterface;
 }  
 
 #endif  

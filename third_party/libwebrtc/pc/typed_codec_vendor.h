@@ -16,7 +16,7 @@
 #include "media/base/codec_list.h"
 #include "media/base/media_engine.h"
 
-namespace cricket {
+namespace webrtc {
 
 
 
@@ -26,21 +26,27 @@ class TypedCodecVendor {
   
   
   TypedCodecVendor() {}
-  TypedCodecVendor(MediaEngineInterface* media_engine,
-                   webrtc::MediaType type,
+  TypedCodecVendor(cricket::MediaEngineInterface* media_engine,
+                   MediaType type,
                    bool is_sender,
                    bool rtx_enabled,
-                   const webrtc::FieldTrialsView& trials);
-  const CodecList& codecs() const { return codecs_; }
-  void set_codecs(const CodecList& codecs) { codecs_ = codecs; }
+                   const FieldTrialsView& trials);
+  const cricket::CodecList& codecs() const { return codecs_; }
+  void set_codecs(const cricket::CodecList& codecs) { codecs_ = codecs; }
   
   TypedCodecVendor(const TypedCodecVendor& from) = default;
   TypedCodecVendor& operator=(const TypedCodecVendor& from) = default;
 
  private:
-  CodecList codecs_;
+  cricket::CodecList codecs_;
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::TypedCodecVendor;
 }  
 
 #endif  

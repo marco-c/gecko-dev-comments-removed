@@ -294,7 +294,7 @@ class PeerConnection : public PeerConnectionInternal,
   std::optional<std::string> sctp_mid() const override;
 
   cricket::CandidateStatsList GetPooledCandidateStats() const override;
-  std::map<std::string, cricket::TransportStats> GetTransportStatsByNames(
+  std::map<std::string, TransportStats> GetTransportStatsByNames(
       const std::set<std::string>& transport_names) override;
   Call::Stats GetCallStats() override;
 
@@ -582,11 +582,11 @@ class PeerConnection : public PeerConnectionInternal,
       RTC_RUN_ON(network_thread());
 
   
-  static void ReportBestConnectionState(const cricket::TransportStats& stats);
+  static void ReportBestConnectionState(const TransportStats& stats);
 
   static void ReportNegotiatedCiphers(
       bool dtls_enabled,
-      const cricket::TransportStats& stats,
+      const TransportStats& stats,
       const std::set<webrtc::MediaType>& media_types);
   void ReportIceCandidateCollected(const Candidate& candidate)
       RTC_RUN_ON(signaling_thread());
@@ -718,7 +718,7 @@ class PeerConnection : public PeerConnectionInternal,
   
   std::unique_ptr<RtpTransmissionManager> rtp_manager_;
 
-  std::unique_ptr<cricket::CodecLookupHelper> codec_lookup_helper_;
+  std::unique_ptr<CodecLookupHelper> codec_lookup_helper_;
 
   
   WeakPtrFactory<PeerConnection> weak_factory_;

@@ -87,35 +87,33 @@ class BundleManager {
 
 class JsepTransportCollection {
  public:
-  JsepTransportCollection(std::function<bool(const std::string& mid,
-                                             cricket::JsepTransport* transport)>
-                              map_change_callback,
-                          std::function<void()> state_change_callback)
+  JsepTransportCollection(
+      std::function<bool(const std::string& mid,
+                         webrtc::JsepTransport* transport)> map_change_callback,
+      std::function<void()> state_change_callback)
       : map_change_callback_(map_change_callback),
         state_change_callback_(state_change_callback) {}
 
   void RegisterTransport(const std::string& mid,
-                         std::unique_ptr<cricket::JsepTransport> transport);
+                         std::unique_ptr<JsepTransport> transport);
   
   
-  std::vector<cricket::JsepTransport*> Transports();
+  std::vector<JsepTransport*> Transports();
   
-  std::vector<cricket::JsepTransport*> ActiveTransports();
+  std::vector<JsepTransport*> ActiveTransports();
   void DestroyAllTransports();
   
-  cricket::JsepTransport* GetTransportByName(const std::string& mid);
-  const cricket::JsepTransport* GetTransportByName(
-      const std::string& mid) const;
+  JsepTransport* GetTransportByName(const std::string& mid);
+  const JsepTransport* GetTransportByName(const std::string& mid) const;
   
-  cricket::JsepTransport* GetTransportForMid(const std::string& mid);
-  const cricket::JsepTransport* GetTransportForMid(
-      const std::string& mid) const;
-  cricket::JsepTransport* GetTransportForMid(absl::string_view mid);
-  const cricket::JsepTransport* GetTransportForMid(absl::string_view mid) const;
+  JsepTransport* GetTransportForMid(const std::string& mid);
+  const JsepTransport* GetTransportForMid(const std::string& mid) const;
+  JsepTransport* GetTransportForMid(absl::string_view mid);
+  const JsepTransport* GetTransportForMid(absl::string_view mid) const;
   
   
   bool SetTransportForMid(const std::string& mid,
-                          cricket::JsepTransport* jsep_transport);
+                          JsepTransport* jsep_transport);
   
   
   void RemoveTransportForMid(const std::string& mid);
@@ -128,15 +126,15 @@ class JsepTransportCollection {
 
  private:
   
-  bool TransportInUse(cricket::JsepTransport* jsep_transport) const;
+  bool TransportInUse(JsepTransport* jsep_transport) const;
 
   
   
-  bool TransportNeededForRollback(cricket::JsepTransport* jsep_transport) const;
+  bool TransportNeededForRollback(JsepTransport* jsep_transport) const;
 
   
   
-  void MaybeDestroyJsepTransport(cricket::JsepTransport* transport);
+  void MaybeDestroyJsepTransport(JsepTransport* transport);
 
   
   void DestroyUnusedTransports();
@@ -146,20 +144,20 @@ class JsepTransportCollection {
   RTC_NO_UNIQUE_ADDRESS SequenceChecker sequence_checker_{
       SequenceChecker::kDetached};
   
-  std::map<std::string, std::unique_ptr<cricket::JsepTransport>>
-      jsep_transports_by_name_ RTC_GUARDED_BY(sequence_checker_);
+  std::map<std::string, std::unique_ptr<JsepTransport>> jsep_transports_by_name_
+      RTC_GUARDED_BY(sequence_checker_);
 
   
   
-  std::map<std::string, cricket::JsepTransport*> mid_to_transport_
+  std::map<std::string, JsepTransport*> mid_to_transport_
       RTC_GUARDED_BY(sequence_checker_);
   
   
-  std::map<std::string, cricket::JsepTransport*> stable_mid_to_transport_
+  std::map<std::string, JsepTransport*> stable_mid_to_transport_
       RTC_GUARDED_BY(sequence_checker_);
   
   const std::function<bool(const std::string& mid,
-                           cricket::JsepTransport* transport)>
+                           webrtc::JsepTransport* transport)>
       map_change_callback_;
   
   const std::function<void()> state_change_callback_;

@@ -9,7 +9,7 @@
 
 #include "pc/transport_stats.h"
 
-namespace cricket {
+namespace webrtc {
 
 TransportChannelStats::TransportChannelStats() = default;
 

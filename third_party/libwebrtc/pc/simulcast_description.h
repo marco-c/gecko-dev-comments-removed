@@ -18,7 +18,7 @@
 
 #include "absl/strings/string_view.h"
 
-namespace cricket {
+namespace webrtc {
 
 
 
@@ -110,6 +110,14 @@ class SimulcastDescription final {
   SimulcastLayerList receive_layers_;
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::SimulcastDescription;
+using ::webrtc::SimulcastLayer;
+using ::webrtc::SimulcastLayerList;
 }  
 
 #endif  

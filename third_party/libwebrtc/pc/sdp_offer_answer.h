@@ -85,7 +85,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
       std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>
           video_bitrate_allocator_factory,
       ConnectionContext* context,
-      cricket::CodecLookupHelper* codec_lookup_helper);
+      CodecLookupHelper* codec_lookup_helper);
 
   void ResetSessionDescFactory() {
     RTC_DCHECK_RUN_ON(signaling_thread());
@@ -218,7 +218,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
       std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>
           video_bitrate_allocator_factory,
       ConnectionContext* context,
-      cricket::CodecLookupHelper* codec_lookup_helper);
+      CodecLookupHelper* codec_lookup_helper);
 
   Thread* signaling_thread() const;
   Thread* network_thread() const;
@@ -389,33 +389,29 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   void GetOptionsForOffer(const PeerConnectionInterface::RTCOfferAnswerOptions&
                               offer_answer_options,
-                          cricket::MediaSessionOptions* session_options);
+                          MediaSessionOptions* session_options);
   void GetOptionsForPlanBOffer(
       const PeerConnectionInterface::RTCOfferAnswerOptions&
           offer_answer_options,
-      cricket::MediaSessionOptions* session_options)
-      RTC_RUN_ON(signaling_thread());
+      MediaSessionOptions* session_options) RTC_RUN_ON(signaling_thread());
   void GetOptionsForUnifiedPlanOffer(
       const PeerConnectionInterface::RTCOfferAnswerOptions&
           offer_answer_options,
-      cricket::MediaSessionOptions* session_options)
-      RTC_RUN_ON(signaling_thread());
+      MediaSessionOptions* session_options) RTC_RUN_ON(signaling_thread());
 
   
   
   void GetOptionsForAnswer(const PeerConnectionInterface::RTCOfferAnswerOptions&
                                offer_answer_options,
-                           cricket::MediaSessionOptions* session_options);
+                           MediaSessionOptions* session_options);
   void GetOptionsForPlanBAnswer(
       const PeerConnectionInterface::RTCOfferAnswerOptions&
           offer_answer_options,
-      cricket::MediaSessionOptions* session_options)
-      RTC_RUN_ON(signaling_thread());
+      MediaSessionOptions* session_options) RTC_RUN_ON(signaling_thread());
   void GetOptionsForUnifiedPlanAnswer(
       const PeerConnectionInterface::RTCOfferAnswerOptions&
           offer_answer_options,
-      cricket::MediaSessionOptions* session_options)
-      RTC_RUN_ON(signaling_thread());
+      MediaSessionOptions* session_options) RTC_RUN_ON(signaling_thread());
 
   const char* SessionErrorToString(SessionError error) const;
   std::string GetSessionErrorMsg();
@@ -537,16 +533,16 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
       std::optional<size_t>* audio_index,
       std::optional<size_t>* video_index,
       std::optional<size_t>* data_index,
-      cricket::MediaSessionOptions* session_options);
+      MediaSessionOptions* session_options);
 
   
   
-  cricket::MediaDescriptionOptions GetMediaDescriptionOptionsForActiveData(
+  MediaDescriptionOptions GetMediaDescriptionOptionsForActiveData(
       const std::string& mid) const;
 
   
   
-  cricket::MediaDescriptionOptions GetMediaDescriptionOptionsForRejectedData(
+  MediaDescriptionOptions GetMediaDescriptionOptionsForRejectedData(
       const std::string& mid) const;
 
   

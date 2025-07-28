@@ -113,8 +113,7 @@ class RTCStatsCollector : public RefCountInterface {
       RTCStatsReport* partial_report);
   virtual void ProducePartialResultsOnNetworkThreadImpl(
       Timestamp timestamp,
-      const std::map<std::string, cricket::TransportStats>&
-          transport_stats_by_name,
+      const std::map<std::string, TransportStats>& transport_stats_by_name,
       const std::map<std::string, CertificateStatsPair>& transport_cert_stats,
       RTCStatsReport* partial_report);
 
@@ -193,8 +192,7 @@ class RTCStatsCollector : public RefCountInterface {
   
   void ProduceIceCandidateAndPairStats_n(
       Timestamp timestamp,
-      const std::map<std::string, cricket::TransportStats>&
-          transport_stats_by_name,
+      const std::map<std::string, TransportStats>& transport_stats_by_name,
       const Call::Stats& call_stats,
       RTCStatsReport* report) const;
   
@@ -225,16 +223,14 @@ class RTCStatsCollector : public RefCountInterface {
   
   void ProduceTransportStats_n(
       Timestamp timestamp,
-      const std::map<std::string, cricket::TransportStats>&
-          transport_stats_by_name,
+      const std::map<std::string, TransportStats>& transport_stats_by_name,
       const std::map<std::string, CertificateStatsPair>& transport_cert_stats,
       RTCStatsReport* report) const;
 
   
   std::map<std::string, CertificateStatsPair>
   PrepareTransportCertificateStats_n(
-      const std::map<std::string, cricket::TransportStats>&
-          transport_stats_by_name);
+      const std::map<std::string, TransportStats>& transport_stats_by_name);
   
   void PrepareTransceiverStatsInfosAndCallStats_s_w_n();
 

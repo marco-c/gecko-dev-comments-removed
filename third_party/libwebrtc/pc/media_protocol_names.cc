@@ -15,7 +15,7 @@
 
 #include <string>
 
-namespace cricket {
+namespace webrtc {
 
 
 
@@ -72,7 +72,7 @@ bool IsRtpProtocol(absl::string_view protocol) {
   if (protocol.empty()) {
     return true;
   }
-  size_t pos = protocol.find(cricket::kMediaProtocolRtpPrefix);
+  size_t pos = protocol.find(kMediaProtocolRtpPrefix);
   if (pos == std::string::npos) {
     return false;
   }

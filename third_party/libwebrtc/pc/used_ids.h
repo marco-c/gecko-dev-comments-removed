@@ -18,7 +18,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 
-namespace cricket {
+namespace webrtc {
 template <typename IdStruct>
 class UsedIds {
  public:
@@ -90,15 +90,15 @@ class UsedIds {
 
 
 
-class UsedPayloadTypes : public UsedIds<Codec> {
+class UsedPayloadTypes : public UsedIds<cricket::Codec> {
  public:
   UsedPayloadTypes()
-      : UsedIds<Codec>(kFirstDynamicPayloadTypeLowerRange,
-                       kLastDynamicPayloadTypeUpperRange) {}
+      : UsedIds<cricket::Codec>(kFirstDynamicPayloadTypeLowerRange,
+                                kLastDynamicPayloadTypeUpperRange) {}
 
   
   
-  static bool IsIdValid(Codec codec, bool rtcp_mux) {
+  static bool IsIdValid(cricket::Codec codec, bool rtcp_mux) {
     if (rtcp_mux && (codec.id > kLastDynamicPayloadTypeLowerRange &&
                      codec.id < kFirstDynamicPayloadTypeUpperRange)) {
       return false;
@@ -112,7 +112,7 @@ class UsedPayloadTypes : public UsedIds<Codec> {
     if (new_id > kLastDynamicPayloadTypeLowerRange &&
         new_id < kFirstDynamicPayloadTypeUpperRange)
       return true;
-    return UsedIds<Codec>::IsIdUsed(new_id);
+    return UsedIds<cricket::Codec>::IsIdUsed(new_id);
   }
 
  private:
@@ -125,7 +125,7 @@ class UsedPayloadTypes : public UsedIds<Codec> {
 
 
 
-class UsedRtpHeaderExtensionIds : public UsedIds<webrtc::RtpExtension> {
+class UsedRtpHeaderExtensionIds : public UsedIds<RtpExtension> {
  public:
   enum class IdDomain {
     
@@ -136,14 +136,12 @@ class UsedRtpHeaderExtensionIds : public UsedIds<webrtc::RtpExtension> {
   };
 
   explicit UsedRtpHeaderExtensionIds(IdDomain id_domain)
-      : UsedIds<webrtc::RtpExtension>(
-            webrtc::RtpExtension::kMinId,
-            id_domain == IdDomain::kTwoByteAllowed
-                ? webrtc::RtpExtension::kMaxId
-                : webrtc::RtpExtension::kOneByteHeaderExtensionMaxId),
+      : UsedIds<RtpExtension>(RtpExtension::kMinId,
+                              id_domain == IdDomain::kTwoByteAllowed
+                                  ? RtpExtension::kMaxId
+                                  : RtpExtension::kOneByteHeaderExtensionMaxId),
         id_domain_(id_domain),
-        next_extension_id_(webrtc::RtpExtension::kOneByteHeaderExtensionMaxId) {
-  }
+        next_extension_id_(RtpExtension::kOneByteHeaderExtensionMaxId) {}
 
  private:
   
@@ -152,8 +150,7 @@ class UsedRtpHeaderExtensionIds : public UsedIds<webrtc::RtpExtension> {
   
   
   int FindUnusedId() override {
-    if (next_extension_id_ <=
-        webrtc::RtpExtension::kOneByteHeaderExtensionMaxId) {
+    if (next_extension_id_ <= RtpExtension::kOneByteHeaderExtensionMaxId) {
       
       
       while (IsIdUsed(next_extension_id_) &&
@@ -167,12 +164,10 @@ class UsedRtpHeaderExtensionIds : public UsedIds<webrtc::RtpExtension> {
         
         
         
-        next_extension_id_ =
-            webrtc::RtpExtension::kOneByteHeaderExtensionMaxId + 2;
+        next_extension_id_ = RtpExtension::kOneByteHeaderExtensionMaxId + 2;
       }
 
-      if (next_extension_id_ >
-          webrtc::RtpExtension::kOneByteHeaderExtensionMaxId) {
+      if (next_extension_id_ > RtpExtension::kOneByteHeaderExtensionMaxId) {
         while (IsIdUsed(next_extension_id_) &&
                next_extension_id_ <= max_allowed_id_) {
           ++next_extension_id_;
@@ -188,6 +183,14 @@ class UsedRtpHeaderExtensionIds : public UsedIds<webrtc::RtpExtension> {
   int next_extension_id_;
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::UsedIds;
+using ::webrtc::UsedPayloadTypes;
+using ::webrtc::UsedRtpHeaderExtensionIds;
 }  
 
 #endif  
