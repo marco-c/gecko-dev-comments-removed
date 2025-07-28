@@ -252,12 +252,12 @@ class PageStyleActor extends Actor {
 
 
 
-
-
-
   getComputed(node, options) {
     const ret = Object.create(null);
 
+    if (options.clearCache) {
+      this.cssLogic.reset();
+    }
     const filterProperties = Array.isArray(options.filterProperties)
       ? options.filterProperties
       : null;
@@ -556,14 +556,24 @@ class PageStyleActor extends Actor {
   
   getSelectorSource(selectorInfo, relativeTo) {
     let result = selectorInfo.selector.text;
-    if (selectorInfo.inlineStyle) {
+    const ruleDeclarationOrigin =
+      selectorInfo.selector.cssRule.domRule.declarationOrigin;
+    if (
+      ruleDeclarationOrigin === "style-attribute" ||
+      ruleDeclarationOrigin === "pres-hints"
+    ) {
       const source = selectorInfo.sourceElement;
       if (source === relativeTo) {
         result = "element";
       } else {
         result = CssLogic.getShortName(source);
       }
+
+      if (ruleDeclarationOrigin === "pres-hints") {
+        result += " attributes style";
+      }
     }
+
     return result;
   }
 

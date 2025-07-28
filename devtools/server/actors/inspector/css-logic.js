@@ -450,7 +450,8 @@ class CssLogic {
       rule.selectors.forEach(function (selector) {
         if (
           selector._matchId !== this._matchId &&
-          (selector.inlineStyle ||
+          (rule.domRule.declarationOrigin === "style-attribute" ||
+            rule.domRule.declarationOrigin === "pres-hints" ||
             this.selectorMatchesElement(rule.domRule, selector.selectorIndex))
         ) {
           selector._matchId = this._matchId;
@@ -600,15 +601,6 @@ class CssLogic {
       }
 
       
-      
-      if (element.style && element.style.length) {
-        const rule = new CssRule(null, { style: element.style }, element);
-        rule._matchId = this._matchId;
-        rule._passId = this._passId;
-        this._matchedRules.push([rule, status, distance]);
-      }
-
-      
       if (domRules !== null) {
         
         
@@ -617,6 +609,25 @@ class CssLogic {
           const domRule = domRules[i];
           if (domRule.declarationOrigin) {
             
+            if (
+              domRule.declarationOrigin !== "style-attribute" &&
+              domRule.declarationOrigin !== "pres-hints"
+            ) {
+              continue;
+            }
+
+            const rule = new CssRule(
+              null,
+              {
+                style: domRule.style,
+                declarationOrigin: domRule.declarationOrigin,
+              },
+              element
+            );
+            rule._matchId = this._matchId;
+            rule._passId = this._passId;
+            this._matchedRules.push([rule, status, distance]);
+
             continue;
           }
           const sheet = this.getSheet(domRule.parentStyleSheet, -1);
@@ -1007,7 +1018,14 @@ class CssRule {
       this.userRule = this._cssSheet.userSheet;
       this.agentRule = this._cssSheet.agentSheet;
     } else if (element) {
-      this._selectors = [new CssSelector(this, "@element.style", 0)];
+      let selector = "";
+      if (domRule.declarationOrigin === "style-attribute") {
+        selector = "@element.style";
+      } else if (domRule.declarationOrigin === "pres-hints") {
+        selector = "@element.attributesStyle";
+      }
+
+      this._selectors = [new CssSelector(this, selector, 0)];
       this.line = -1;
       this.href = "#";
       this.authorRule = true;
@@ -1044,10 +1062,24 @@ class CssRule {
 
 
 
+  getStyle() {
+    
+    
+    
+    return this.domRule.declarationOrigin === "style-attribute"
+      ? this.sourceElement.style
+      : this.domRule.style;
+  }
+
+  
+
+
+
+
 
 
   getPropertyValue(property) {
-    return this.domRule.style.getPropertyValue(property);
+    return this.getStyle().getPropertyValue(property);
   }
 
   
@@ -1058,7 +1090,7 @@ class CssRule {
 
 
   getPropertyPriority(property) {
-    return this.domRule.style.getPropertyPriority(property);
+    return this.getStyle().getPropertyPriority(property);
   }
 
   
@@ -1106,7 +1138,7 @@ class CssSelector {
   constructor(cssRule, selector, index) {
     this.cssRule = cssRule;
     this.text = selector;
-    this.inlineStyle = this.text == "@element.style";
+    this.inlineStyle = cssRule.domRule?.declarationOrigin === "style-attribute";
     this._specificity = null;
     this.selectorIndex = index;
   }
@@ -1217,6 +1249,14 @@ class CssSelector {
       
       
       return 0x40000000;
+    }
+
+    if (this.cssRule.declarationOrigin === "pres-hints") {
+      
+      
+      
+      
+      return 0;
     }
 
     if (typeof this._specificity !== "number") {

@@ -9,7 +9,7 @@ const ToolDefinitions =
   require("resource://devtools/client/definitions.js").Tools;
 const CssLogic = require("resource://devtools/shared/inspector/css-logic.js");
 const {
-  style: { ELEMENT_STYLE },
+  style: { ELEMENT_STYLE, PRES_HINTS },
 } = require("resource://devtools/shared/constants.js");
 const OutputParser = require("resource://devtools/client/shared/output-parser.js");
 const { PrefObserver } = require("resource://devtools/client/shared/prefs.js");
@@ -266,6 +266,9 @@ class CssComputedView {
 
     
     this.viewedElementPageStyle = null;
+    
+    
+    this.elementStyleUpdated = false;
 
     this.createStyleViews();
 
@@ -602,9 +605,12 @@ class CssComputedView {
           filter: this.#sourceFilter,
           onlyMatched: !this.includeBrowserStyles,
           markMatched: true,
+          clearCache: !!this.elementStyleUpdated,
         }),
         this.#createPropertyViews(),
       ]);
+
+      this.elementStyleUpdated = false;
 
       if (viewedElement !== this.#viewedElement) {
         return;
@@ -1427,7 +1433,10 @@ class PropertyView {
         class: "fix-get-selection computed-other-property-selector",
         textContent: selector.sourceText,
       });
-      if (selector.selectorInfo.rule.type === ELEMENT_STYLE) {
+      if (
+        selector.selectorInfo.rule.type === ELEMENT_STYLE ||
+        selector.selectorInfo.rule.type === PRES_HINTS
+      ) {
         selectorEl.classList.add("alternative-selector");
       }
 
@@ -1786,7 +1795,17 @@ class ComputedViewTool {
       this.onPanelSelected,
       opts
     );
-    this.inspector.styleChangeTracker.on("style-changed", this.refresh, opts);
+    this.inspector.styleChangeTracker.on(
+      "style-changed",
+      () => {
+        
+        
+        
+        this.computedView.elementStyleUpdated = true;
+        this.refresh();
+      },
+      opts
+    );
 
     this.computedView.selectElement(null);
 
