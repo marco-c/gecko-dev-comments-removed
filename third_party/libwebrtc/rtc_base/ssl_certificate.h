@@ -77,9 +77,7 @@ class RTC_EXPORT SSLCertificate {
 
   
   virtual bool ComputeDigest(absl::string_view algorithm,
-                             unsigned char* digest,
-                             size_t size,
-                             size_t* length) const = 0;
+                             Buffer& digest) const = 0;
 
   
   
