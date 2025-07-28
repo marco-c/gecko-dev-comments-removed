@@ -1736,7 +1736,8 @@ var gCSSProperties = {
     invalid_values: [],
   },
   "-moz-appearance": {
-    domProp: "MozAppearance",
+    
+    
     inherited: false,
     type: CSS_TYPE_SHORTHAND_AND_LONGHAND,
     alias_for: "appearance",

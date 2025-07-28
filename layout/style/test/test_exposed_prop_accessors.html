@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=375363
+-->
 <head>
   <title>Test for cloning of CSS property values (including 'inherit', 'initial' and 'unset')</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -22,6 +22,13 @@ for (var prop in gCSSProperties) {
   var info = gCSSProperties[prop];
 
   var s = document.createElement("div").style;
+
+  if (!info.domProp) {
+    // Certain properties like -moz-appearance is intentionally hidden from
+    // CSSStyleProperties.
+    is(s[info.domProp], undefined, `${prop} should not exist`);
+    continue;
+  }
 
   is(s[info.domProp], "", prop + " should not be set yet");
   s[info.domProp] = info.initial_values[0];
