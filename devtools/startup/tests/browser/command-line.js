@@ -1,3 +1,6 @@
 "use strict";
 
 console.log("command line script");
+
+
+console.log("Something to select on line 6");
