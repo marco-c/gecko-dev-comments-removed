@@ -59,6 +59,52 @@ impl PartialEq for CssUrlData {
     }
 }
 
+
+
+
+
+#[repr(u8)]
+pub enum LikelyBaseUriDependency {
+    
+    No,
+    
+    
+    
+    Path,
+    
+    
+    Full,
+}
+
+fn likely_base_uri_dependency(specified: &str) -> LikelyBaseUriDependency {
+    if specified.is_empty() {
+        
+        
+        return LikelyBaseUriDependency::No;
+    }
+    if specified.starts_with('#') || specified.starts_with('/') {
+        
+        return LikelyBaseUriDependency::No;
+    }
+    const COMMON_PROTOCOLS: [&str; 3] = [
+        "http:",
+        "https:",
+        "data:",
+    ];
+    for protocol in COMMON_PROTOCOLS {
+        if specified.starts_with(protocol) {
+            
+            return LikelyBaseUriDependency::No;
+        }
+    }
+    if specified.starts_with('?') {
+        
+        return LikelyBaseUriDependency::Full;
+    }
+    
+    LikelyBaseUriDependency::Path
+}
+
 impl CssUrl {
     
     pub fn parse_with_cors_mode<'i, 't>(
@@ -76,6 +122,21 @@ impl CssUrl {
 
     
     pub fn parse_from_string(url: String, context: &ParserContext, cors_mode: CorsMode) -> Self {
+        use crate::use_counters::CustomUseCounter;
+        if let Some(counters) = context.use_counters {
+            if !counters.custom.recorded(CustomUseCounter::MaybeHasFullBaseUriDependency) {
+                match likely_base_uri_dependency(&url) {
+                    LikelyBaseUriDependency::No => {},
+                    LikelyBaseUriDependency::Path => {
+                        counters.custom.record(CustomUseCounter::MaybeHasPathBaseUriDependency);
+                    },
+                    LikelyBaseUriDependency::Full => {
+                        counters.custom.record(CustomUseCounter::MaybeHasPathBaseUriDependency);
+                        counters.custom.record(CustomUseCounter::MaybeHasFullBaseUriDependency);
+                    },
+                }
+            }
+        }
         CssUrl(Arc::new(CssUrlData {
             serialization: url.into(),
             extra_data: context.url_data.clone(),

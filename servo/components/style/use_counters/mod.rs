@@ -31,6 +31,10 @@ pub struct NonCustomPropertyUseCounters {
 #[repr(u32)]
 pub enum CustomUseCounter {
     
+    MaybeHasPathBaseUriDependency = 0,
+    
+    MaybeHasFullBaseUriDependency,
+    
     Last,
 }
 
