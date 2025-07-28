@@ -10,12 +10,4 @@
 
 
 
-
-
-
-
-
-
-
-
-module.exports = require("../../whatwg-url.js").URL;
+module.exports = typeof URL === "function" ? URL : require("url").URL;

@@ -842,8 +842,11 @@ class IndexedSourceMapConsumer extends SourceMapConsumer {
           return cmp;
         }
 
+        
+        
         return (
-          aNeedle.generatedColumn - section.generatedOffset.generatedColumn
+          aNeedle.generatedColumn -
+          (section.generatedOffset.generatedColumn - 1)
         );
       }
     );
