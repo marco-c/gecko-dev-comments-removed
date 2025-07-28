@@ -51,28 +51,30 @@ static bool CanUseWMFHwEncoder(CodecType aCodec) {
   }
 }
 
-EncodeSupportSet CanCreateWMFEncoder(
-    CodecType aCodec, const gfx::IntSize& aFrameSize,
-    const EncoderConfig::CodecSpecific& aCodecSpecific) {
+EncodeSupportSet CanCreateWMFEncoder(const EncoderConfig& aConfig) {
   EncodeSupportSet supports;
   mscom::EnsureMTA([&]() {
     if (!wmf::MediaFoundationInitializer::HasInitialized()) {
       return;
     }
     
-    if (CanUseWMFHwEncoder(aCodec)) {
+    if (CanUseWMFHwEncoder(aConfig.mCodec) &&
+        aConfig.mHardwarePreference == HardwarePreference::RequireSoftware) {
       auto hwEnc =
           MakeRefPtr<MFTEncoder>(MFTEncoder::HWPreference::HardwareOnly);
-      if (SUCCEEDED(hwEnc->Create(CodecToSubtype(aCodec), aFrameSize,
-                                  aCodecSpecific))) {
+      if (SUCCEEDED(hwEnc->Create(CodecToSubtype(aConfig.mCodec), aConfig.mSize,
+                                  aConfig.mCodecSpecific))) {
         supports += EncodeSupport::HardwareEncode;
       }
     }
-    
-    auto swEnc = MakeRefPtr<MFTEncoder>(MFTEncoder::HWPreference::SoftwareOnly);
-    if (SUCCEEDED(swEnc->Create(CodecToSubtype(aCodec), aFrameSize,
-                                aCodecSpecific))) {
-      supports += EncodeSupport::SoftwareEncode;
+    if (aConfig.mHardwarePreference != HardwarePreference::RequireHardware) {
+      
+      auto swEnc =
+          MakeRefPtr<MFTEncoder>(MFTEncoder::HWPreference::SoftwareOnly);
+      if (SUCCEEDED(swEnc->Create(CodecToSubtype(aConfig.mCodec), aConfig.mSize,
+                                  aConfig.mCodecSpecific))) {
+        supports += EncodeSupport::SoftwareEncode;
+      }
     }
   });
   return supports;
