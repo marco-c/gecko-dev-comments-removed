@@ -59,6 +59,14 @@ add_setup(async () => {
   Services.prefs.setBoolPref("network.lna.block_trackers", true);
   Services.obs.addObserver(ChannelCreationObserver, "http-on-opening-request");
   
+  Services.prefs.setBoolPref("network.lna.blocking", true);
+
+  
+  
+  Services.prefs.setBoolPref("network.localhost.prompt.testing", true);
+  Services.prefs.setBoolPref("network.localnetwork.prompt.testing", true);
+
+  
   httpServer = new HttpServer();
   httpServer.registerPathHandler("/test_lna", pathHandler);
   httpServer.start(-1);
@@ -74,6 +82,14 @@ add_setup(async () => {
     try {
       await server.stop();
       await httpServer.stop();
+      Services.prefs.clearUserPref("network.lna.blocking");
+      Services.prefs.clearUserPref("network.lna.blocking.prompt.testing");
+      Services.prefs.clearUserPref("network.localhost.prompt.testing.allow");
+      Services.prefs.clearUserPref("network.localnetwork.prompt.testing.allow");
+
+      Services.prefs.clearUserPref(
+        "network.lna.address_space.private.override"
+      );
     } catch (e) {
       
       info("Error during cleanup:", e);
@@ -89,45 +105,61 @@ add_setup(async () => {
   });
 });
 
-add_task(async function lna_blocking_tests() {
-  
-  
-  const testCases = [
+
+
+
+add_task(async function lna_blocking_tests_localhost_prompt() {
+  const localHostTestCases = [
+    
+    [true, Ci.nsILoadInfo.Public, "/test_lna", Cr.NS_OK, H1_URL],
+    [true, Ci.nsILoadInfo.Private, "/test_lna", Cr.NS_OK, H1_URL],
+    [false, Ci.nsILoadInfo.Local, "/test_lna", Cr.NS_OK, H1_URL],
     [
-      true,
+      false,
       Ci.nsILoadInfo.Public,
       "/test_lna",
       Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
       H1_URL,
     ],
     [
-      true,
+      false,
       Ci.nsILoadInfo.Private,
       "/test_lna",
       Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
       H1_URL,
     ],
-    [true, Ci.nsILoadInfo.Local, "/test_lna", Cr.NS_OK, H1_URL],
-    [false, Ci.nsILoadInfo.Public, "/test_lna", Cr.NS_OK, H1_URL],
-    [false, Ci.nsILoadInfo.Private, "/test_lna", Cr.NS_OK, H1_URL],
-    [false, Ci.nsILoadInfo.Local, "/test_lna", Cr.NS_OK, H1_URL],
+    [true, Ci.nsILoadInfo.Public, "/test_lna", Cr.NS_OK, H2_URL],
+    [true, Ci.nsILoadInfo.Private, "/test_lna", Cr.NS_OK, H2_URL],
+    [true, Ci.nsILoadInfo.Local, "/test_lna", Cr.NS_OK, H2_URL],
     [
-      true,
+      false,
       Ci.nsILoadInfo.Public,
       "/test_lna",
       Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
       H2_URL,
     ],
     [
-      true,
+      false,
       Ci.nsILoadInfo.Private,
       "/test_lna",
       Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
       H2_URL,
     ],
     [true, Ci.nsILoadInfo.Local, "/test_lna", Cr.NS_OK, H2_URL],
-    [false, Ci.nsILoadInfo.Public, "/test_lna", Cr.NS_OK, H2_URL],
-    [false, Ci.nsILoadInfo.Private, "/test_lna", Cr.NS_OK, H2_URL],
+    [
+      false,
+      Ci.nsILoadInfo.Public,
+      "/test_lna",
+      Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
+      H2_URL,
+    ],
+    [
+      false,
+      Ci.nsILoadInfo.Private,
+      "/test_lna",
+      Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
+      H2_URL,
+    ],
     [false, Ci.nsILoadInfo.Local, "/test_lna", Cr.NS_OK, H2_URL],
     
     
@@ -155,7 +187,7 @@ add_task(async function lna_blocking_tests() {
       H2_URL,
     ],
     [
-      false,
+      true,
       Ci.nsILoadInfo.Public,
       "/test_lna_content_tracker",
       Cr.NS_OK,
@@ -179,15 +211,86 @@ add_task(async function lna_blocking_tests() {
       false,
       Ci.nsILoadInfo.Private,
       "/test_lna_content_tracker",
-      Cr.NS_OK,
+      Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
       H2_URL,
     ],
   ];
 
-  for (let [blocking, space, suffix, expectedStatus, url] of testCases) {
+  for (let [allow, space, suffix, expectedStatus, url] of localHostTestCases) {
     info(`do_test ${url}${suffix}, ${space} -> ${expectedStatus}`);
 
-    Services.prefs.setBoolPref("network.lna.blocking", blocking);
+    Services.prefs.setBoolPref("network.localhost.prompt.testing.allow", allow);
+
+    let chan = makeChannel(url + suffix);
+    chan.loadInfo.parentIpAddressSpace = space;
+
+    let expectFailure = expectedStatus !== Cr.NS_OK ? CL_EXPECT_FAILURE : 0;
+
+    await new Promise(resolve => {
+      chan.asyncOpen(new ChannelListener(resolve, null, expectFailure));
+    });
+
+    Assert.equal(chan.status, expectedStatus);
+    if (expectedStatus === Cr.NS_OK) {
+      Assert.equal(chan.protocolVersion, url === H1_URL ? "http/1.1" : "h2");
+    }
+  }
+});
+
+add_task(async function lna_blocking_tests_local_network() {
+  
+  var override_value =
+    "127.0.0.1" +
+    ":" +
+    httpServer.identity.primaryPort +
+    "," +
+    "127.0.0.1" +
+    ":" +
+    server.port();
+
+  Services.prefs.setCharPref(
+    "network.lna.address_space.private.override",
+    override_value
+  );
+
+  const localNetworkTestCases = [
+    
+    [true, Ci.nsILoadInfo.Public, "/test_lna", Cr.NS_OK, H1_URL],
+    [false, Ci.nsILoadInfo.Private, "/test_lna", Cr.NS_OK, H1_URL],
+    [false, Ci.nsILoadInfo.Local, "/test_lna", Cr.NS_OK, H1_URL],
+    [
+      false,
+      Ci.nsILoadInfo.Public,
+      "/test_lna",
+      Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
+      H1_URL,
+    ],
+    [false, Ci.nsILoadInfo.Private, "/test_lna", Cr.NS_OK, H1_URL],
+    [true, Ci.nsILoadInfo.Public, "/test_lna", Cr.NS_OK, H2_URL],
+    [false, Ci.nsILoadInfo.Private, "/test_lna", Cr.NS_OK, H2_URL],
+    [false, Ci.nsILoadInfo.Local, "/test_lna", Cr.NS_OK, H2_URL],
+    [
+      false,
+      Ci.nsILoadInfo.Public,
+      "/test_lna",
+      Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
+      H2_URL,
+    ],
+  ];
+
+  for (let [
+    allow,
+    space,
+    suffix,
+    expectedStatus,
+    url,
+  ] of localNetworkTestCases) {
+    info(`do_test ${url}, ${space} -> ${expectedStatus}`);
+
+    Services.prefs.setBoolPref(
+      "network.localnetwork.prompt.testing.allow",
+      allow
+    );
 
     let chan = makeChannel(url + suffix);
     chan.loadInfo.parentIpAddressSpace = space;

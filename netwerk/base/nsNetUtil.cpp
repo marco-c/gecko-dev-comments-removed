@@ -4178,7 +4178,28 @@ nsresult AddExtraHeaders(nsIHttpChannel* aHttpChannel,
   return NS_OK;
 }
 
-bool IsLocalNetworkAccess(
+bool IsLocalHostAccess(
+    const nsILoadInfo::IPAddressSpace aParentIPAddressSpace,
+    const nsILoadInfo::IPAddressSpace aTargetIPAddressSpace) {
+  
+  
+  
+
+  return ((aTargetIPAddressSpace == nsILoadInfo::IPAddressSpace::Local) &&
+          (aParentIPAddressSpace == nsILoadInfo::IPAddressSpace::Public ||
+           aParentIPAddressSpace == nsILoadInfo::IPAddressSpace::Private));
+}
+
+bool IsPrivateNetworkAccess(
+    const nsILoadInfo::IPAddressSpace aParentIPAddressSpace,
+    const nsILoadInfo::IPAddressSpace aTargetIPAddressSpace) {
+  
+
+  return ((aTargetIPAddressSpace == nsILoadInfo::IPAddressSpace::Private) &&
+          (aParentIPAddressSpace == nsILoadInfo::IPAddressSpace::Public));
+}
+
+bool IsLocalOrPrivateNetworkAccess(
     const nsILoadInfo::IPAddressSpace aParentIPAddressSpace,
     const nsILoadInfo::IPAddressSpace aTargetIPAddressSpace) {
   
@@ -4189,26 +4210,8 @@ bool IsLocalNetworkAccess(
   
   
 
-  if (aTargetIPAddressSpace == nsILoadInfo::IPAddressSpace::Public ||
-      aTargetIPAddressSpace == nsILoadInfo::IPAddressSpace::Unknown) {
-    return false;
-  }
-  
-  
-  if ((aTargetIPAddressSpace == nsILoadInfo::IPAddressSpace::Local) &&
-      (aParentIPAddressSpace == nsILoadInfo::IPAddressSpace::Public ||
-       aParentIPAddressSpace == nsILoadInfo::IPAddressSpace::Private)) {
-    return true;
-  }
-
-  
-  
-  if ((aTargetIPAddressSpace == nsILoadInfo::IPAddressSpace::Private) &&
-      (aParentIPAddressSpace == nsILoadInfo::IPAddressSpace::Public)) {
-    return true;
-  }
-
-  return false;
+  return IsPrivateNetworkAccess(aParentIPAddressSpace, aTargetIPAddressSpace) ||
+         IsLocalHostAccess(aParentIPAddressSpace, aTargetIPAddressSpace);
 }
 }  
 }  

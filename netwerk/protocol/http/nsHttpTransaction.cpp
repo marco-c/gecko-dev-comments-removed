@@ -3702,18 +3702,23 @@ bool nsHttpTransaction::AllowedToConnectToIpAddressSpace(
   
   
 
-  if (mozilla::net::IsLocalNetworkAccess(mParentIPAddressSpace,
-                                         aTargetIpAddressSpace)) {
+  if (mozilla::net::IsLocalOrPrivateNetworkAccess(mParentIPAddressSpace,
+                                                  aTargetIpAddressSpace)) {
     if (aTargetIpAddressSpace == nsILoadInfo::IPAddressSpace::Local &&
         mLnaPermissionStatus.mLocalHostPermission == LNAPermission::Denied) {
       return false;
     }
+
     if (aTargetIpAddressSpace == nsILoadInfo::IPAddressSpace::Private &&
         mLnaPermissionStatus.mLocalNetworkPermission == LNAPermission::Denied) {
       return false;
     }
 
-    if (StaticPrefs::network_lna_blocking()) {
+    if ((StaticPrefs::network_lna_blocking() ||
+         StaticPrefs::network_lna_block_trackers()) &&
+        (mLnaPermissionStatus.mLocalHostPermission == LNAPermission::Pending) &&
+        (mLnaPermissionStatus.mLocalNetworkPermission ==
+         LNAPermission::Pending)) {
       
       
       return false;

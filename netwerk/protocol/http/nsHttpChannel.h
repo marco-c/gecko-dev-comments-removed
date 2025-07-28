@@ -142,7 +142,8 @@ class nsHttpChannel final : public HttpBaseChannel,
   NS_IMETHOD Suspend() override;
   NS_IMETHOD Resume() override;
   
-  NS_IMETHOD GetSecurityInfo(nsITransportSecurityInfo** aSecurityInfo) override;
+  NS_IMETHOD
+  GetSecurityInfo(nsITransportSecurityInfo** aSecurityInfo) override;
   NS_IMETHOD AsyncOpen(nsIStreamListener* aListener) override;
   
   NS_IMETHOD GetEncodedBodySize(uint64_t* aEncodedBodySize) override;
@@ -335,6 +336,10 @@ class nsHttpChannel final : public HttpBaseChannel,
       nsHttpConnectionInfo* aConnInfo);
   [[nodiscard]] nsresult ContinueProcessResponse2(nsresult);
   nsresult HandleOverrideResponse();
+  nsresult OnPermissionPromptResult(bool aGranted, const nsACString& aType);
+  LNAPermission UpdateLocalNetworkAccessPermissions(
+      const nsACString& aPermissionType);
+  nsresult ProcessLNAActions();
 
  public:
   void UpdateCacheDisposition(bool aSuccessfulReval, bool aPartialContentUsed);
@@ -855,6 +860,9 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   Maybe<EssentialDomainCategory> mEssentialDomainCategory;
   static EssentialDomainCategory GetEssentialDomainCategory(nsCString& domain);
+
+  
+  LNAPerms mLNAPermission{};
 
  protected:
   virtual void DoNotifyListenerCleanup() override;

@@ -133,6 +133,7 @@
 #include "mozilla/net/SocketProcessParent.h"
 #include "mozilla/dom/SecFetch.h"
 #include "mozilla/net/TRRService.h"
+#include "LNAPermissionRequest.h"
 #include "nsUnknownDecoder.h"
 #ifdef XP_WIN
 #  include "HttpWinUtils.h"
@@ -1783,6 +1784,65 @@ nsresult nsHttpChannel::SetupChannelForTransaction() {
   return NS_OK;
 }
 
+
+
+LNAPermission nsHttpChannel::UpdateLocalNetworkAccessPermissions(
+    const nsACString& aPermissionType) {
+  
+  
+
+  MOZ_ASSERT(aPermissionType == LOCAL_HOST_PERMISSION_KEY ||
+             aPermissionType == LOCAL_NETWORK_PERMISSION_KEY);
+  LNAPermission userPerms = aPermissionType == LOCAL_HOST_PERMISSION_KEY
+                                ? mLNAPermission.mLocalHostPermission
+                                : mLNAPermission.mLocalNetworkPermission;
+
+  if (NS_WARN_IF(userPerms != LNAPermission::Pending)) {
+    
+    MOZ_ASSERT(false,
+               "UpdateLocalNetworkAccessPermissions called with non-pending "
+               "permission");
+    return userPerms;
+  }
+
+  
+  if (nsContentUtils::IsExactSitePermAllow(mLoadInfo->GetLoadingPrincipal(),
+                                           aPermissionType)) {
+    userPerms = LNAPermission::Granted;
+    return userPerms;
+  }
+
+  if (nsContentUtils::IsExactSitePermDeny(mLoadInfo->GetLoadingPrincipal(),
+                                          aPermissionType)) {
+    userPerms = LNAPermission::Denied;
+    return userPerms;
+  }
+
+  
+  uint32_t flags = 0;
+  using CF = nsIClassifiedChannel::ClassificationFlags;
+  if (StaticPrefs::network_lna_block_trackers() &&
+      NS_SUCCEEDED(
+          mLoadInfo->GetTriggeringThirdPartyClassificationFlags(&flags)) &&
+      (flags & (CF::CLASSIFIED_ANY_BASIC_TRACKING |
+                CF::CLASSIFIED_ANY_SOCIAL_TRACKING)) != 0) {
+    userPerms = LNAPermission::Denied;
+    return userPerms;
+  }
+
+  
+  
+  
+  if (StaticPrefs::network_lna_blocking()) {
+    return userPerms;
+  }
+
+  
+  
+  userPerms = LNAPermission::Granted;
+  return userPerms;
+}
+
 nsresult nsHttpChannel::InitTransaction() {
   nsresult rv;
   
@@ -1850,30 +1910,6 @@ nsresult nsHttpChannel::InitTransaction() {
   }
   mTransaction->SetIsForWebTransport(!!mWebTransportSessionEventListener);
 
-  struct LNAPerms perms{};
-  
-  
-  
-  uint32_t flags = 0;
-  using CF = nsIClassifiedChannel::ClassificationFlags;
-  if (StaticPrefs::network_lna_block_trackers() &&
-      NS_SUCCEEDED(
-          mLoadInfo->GetTriggeringThirdPartyClassificationFlags(&flags)) &&
-      (flags & (CF::CLASSIFIED_ANY_BASIC_TRACKING |
-                CF::CLASSIFIED_ANY_SOCIAL_TRACKING)) != 0) {
-    perms.mLocalHostPermission = LNAPermission::Denied;
-    perms.mLocalNetworkPermission = LNAPermission::Denied;
-
-    if (nsContentUtils::IsExactSitePermAllow(mLoadInfo->GetLoadingPrincipal(),
-                                             "localhost"_ns)) {
-      perms.mLocalHostPermission = LNAPermission::Granted;
-    }
-    if (nsContentUtils::IsExactSitePermAllow(mLoadInfo->GetLoadingPrincipal(),
-                                             "local-network"_ns)) {
-      perms.mLocalNetworkPermission = LNAPermission::Granted;
-    }
-  }
-
   RefPtr<mozilla::dom::BrowsingContext> bc;
   mLoadInfo->GetBrowsingContext(getter_AddRefs(bc));
 
@@ -1890,7 +1926,7 @@ nsresult nsHttpChannel::InitTransaction() {
       LoadUploadStreamHasHeaders(), GetCurrentSerialEventTarget(), callbacks,
       this, mBrowserId, category, mRequestContext, mClassOfService,
       mInitialRwin, LoadResponseTimeoutEnabled(), mChannelId,
-      std::move(observer), parentAddressSpace, perms);
+      std::move(observer), parentAddressSpace, mLNAPermission);
   if (NS_FAILED(rv)) {
     mTransaction = nullptr;
     return rv;
@@ -7974,6 +8010,47 @@ nsHttpChannel::GetEssentialDomainCategory(nsCString& domain) {
   return EssentialDomainCategory::Other;
 }
 
+nsresult nsHttpChannel::ProcessLNAActions() {
+  
+  
+  
+  Suspend();
+  auto permissionKey = mTransaction->GetTargetIPAddressSpace() ==
+                               nsILoadInfo::IPAddressSpace::Local
+                           ? LOCAL_HOST_PERMISSION_KEY
+                           : LOCAL_NETWORK_PERMISSION_KEY;
+  LNAPermission permissionUpdateResult =
+      UpdateLocalNetworkAccessPermissions(permissionKey);
+
+  if (LNAPermission::Granted == permissionUpdateResult) {
+    
+    return OnPermissionPromptResult(true, permissionKey);
+  }
+
+  if (LNAPermission::Denied == permissionUpdateResult) {
+    
+    return OnPermissionPromptResult(false, permissionKey);
+  }
+
+  
+  
+  auto permissionPromptCallback = [self = RefPtr{this}](
+                                      bool aPermissionGranted,
+                                      const nsACString& aType) -> void {
+    self->OnPermissionPromptResult(aPermissionGranted, aType);
+  };
+
+  RefPtr<LNAPermissionRequest> request = new LNAPermissionRequest(
+      std::move(permissionPromptCallback), mLoadInfo, permissionKey);
+
+  
+  
+  
+  
+  
+  return request->RequestPermission();
+}
+
 NS_IMETHODIMP
 nsHttpChannel::OnStartRequest(nsIRequest* request) {
   nsresult rv;
@@ -8002,6 +8079,10 @@ nsHttpChannel::OnStartRequest(nsIRequest* request) {
                                          : "unknown",
                                      mURI->GetSpecOrDefault().get())
                          .get());
+  }
+
+  if (mStatus == NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED) {
+    return ProcessLNAActions();
   }
 
   LOG(("nsHttpChannel::OnStartRequest [this=%p request=%p status=%" PRIx32
@@ -8236,6 +8317,68 @@ nsHttpChannel::OnStartRequest(nsIRequest* request) {
 
   
   return ContinueOnStartRequest1(rv);
+}
+
+nsresult nsHttpChannel::OnPermissionPromptResult(bool aGranted,
+                                                 const nsACString& aType) {
+  if (aGranted) {
+    LOG(
+        ("nsHttpChannel::OnPermissionPromptResult [this=%p] "
+         "LNAPermissionRequest "
+         "granted",
+         this));
+    
+    
+    if (aType == LOCAL_HOST_PERMISSION_KEY) {
+      mLNAPermission.mLocalHostPermission = LNAPermission::Granted;
+    }
+
+    if (aType == LOCAL_NETWORK_PERMISSION_KEY) {
+      mLNAPermission.mLocalNetworkPermission = LNAPermission::Granted;
+    }
+    
+    mTransaction = nullptr;
+
+    
+    
+    RefPtr<nsInputStreamPump> pump = do_QueryObject(mTransactionPump);
+    if (pump) {
+      pump->Reset();
+    }
+    mTransactionPump = nullptr;
+
+    
+    mStatus = nsresult::NS_OK;
+
+    
+    Resume();
+    
+    return CallOrWaitForResume(
+        [](auto* self) -> nsresult { return self->DoConnect(nullptr); });
+  }
+
+  
+  
+  LOG(
+      ("nsHttpChannel::OnPermissionPromptResult [this=%p] "
+       "LNAPermissionRequest "
+       "denied",
+       this));
+
+  Resume();
+
+  if (aType == LOCAL_HOST_PERMISSION_KEY) {
+    mLNAPermission.mLocalHostPermission = LNAPermission::Denied;
+  }
+
+  if (aType == LOCAL_NETWORK_PERMISSION_KEY) {
+    mLNAPermission.mLocalNetworkPermission = LNAPermission::Denied;
+  }
+
+  return CallOrWaitForResume([](auto* self) {
+    return self->ContinueOnStartRequest1(
+        nsresult::NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED);
+  });
 }
 
 nsresult nsHttpChannel::ContinueOnStartRequest1(nsresult result) {
@@ -8645,8 +8788,8 @@ static void RecordLNATelemetry(bool aLoadSuccess, nsIURI* aURI,
     parentAddressSpace = bc->GetCurrentIPAddressSpace();
   }
 
-  if (!mozilla::net::IsLocalNetworkAccess(parentAddressSpace,
-                                          aLoadInfo->GetIpAddressSpace())) {
+  if (!mozilla::net::IsLocalOrPrivateNetworkAccess(
+          parentAddressSpace, aLoadInfo->GetIpAddressSpace())) {
     return;
   }
 
