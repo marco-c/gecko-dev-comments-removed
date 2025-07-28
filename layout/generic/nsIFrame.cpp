@@ -1454,10 +1454,6 @@ void nsIFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
 
 void nsIFrame::HandleLastRememberedSize() {
   MOZ_ASSERT(IsPrimaryFrame());
-  
-  if (!StaticPrefs::layout_css_contain_intrinsic_size_enabled()) {
-    return;
-  }
   auto* element = Element::FromNodeOrNull(mContent);
   if (!element) {
     return;
