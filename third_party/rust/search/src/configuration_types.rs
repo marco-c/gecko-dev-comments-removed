@@ -52,6 +52,10 @@ pub(crate) struct JSONEngineUrl {
     
     
     pub search_term_param_name: Option<String>,
+
+    
+    
+    pub display_name: Option<String>,
 }
 
 
@@ -69,6 +73,9 @@ pub(crate) struct JSONEngineUrls {
 
     
     pub search_form: Option<JSONEngineUrl>,
+
+    
+    pub visual_search: Option<JSONEngineUrl>,
 }
 
 

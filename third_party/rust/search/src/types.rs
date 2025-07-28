@@ -126,6 +126,10 @@ pub struct SearchEngineUrl {
     
     
     pub search_term_param_name: Option<String>,
+
+    
+    
+    pub display_name: Option<String>,
 }
 
 
@@ -142,6 +146,9 @@ pub struct SearchEngineUrls {
 
     
     pub search_form: Option<SearchEngineUrl>,
+
+    
+    pub visual_search: Option<SearchEngineUrl>,
 }
 
 

@@ -12,6 +12,7 @@
 const STATIC_SEARCH_URL_DATA = {
   base: "https://www.example.com/search",
   searchTermParamName: "q",
+  displayName: null,
 };
 
 const CONFIG = [
