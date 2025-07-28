@@ -43,8 +43,7 @@ class AbsoluteCaptureTimeInterpolator {
   explicit AbsoluteCaptureTimeInterpolator(Clock* clock);
 
   
-  static uint32_t GetSource(uint32_t ssrc,
-                            rtc::ArrayView<const uint32_t> csrcs);
+  static uint32_t GetSource(uint32_t ssrc, ArrayView<const uint32_t> csrcs);
 
   
   

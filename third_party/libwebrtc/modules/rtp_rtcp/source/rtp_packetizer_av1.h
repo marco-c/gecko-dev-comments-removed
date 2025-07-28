@@ -24,7 +24,7 @@ namespace webrtc {
 
 class RtpPacketizerAv1 : public RtpPacketizer {
  public:
-  RtpPacketizerAv1(rtc::ArrayView<const uint8_t> payload,
+  RtpPacketizerAv1(ArrayView<const uint8_t> payload,
                    PayloadSizeLimits limits,
                    VideoFrameType frame_type,
                    bool is_last_frame_in_picture);
@@ -37,7 +37,7 @@ class RtpPacketizerAv1 : public RtpPacketizer {
   struct Obu {
     uint8_t header;
     uint8_t extension_header;  
-    rtc::ArrayView<const uint8_t> payload;
+    ArrayView<const uint8_t> payload;
     int size;  
   };
   struct Packet {
@@ -53,14 +53,14 @@ class RtpPacketizerAv1 : public RtpPacketizer {
   };
 
   
-  static std::vector<Obu> ParseObus(rtc::ArrayView<const uint8_t> payload);
+  static std::vector<Obu> ParseObus(ArrayView<const uint8_t> payload);
   
   
   static int AdditionalBytesForPreviousObuElement(const Packet& packet);
-  static std::vector<Packet> PacketizeInternal(rtc::ArrayView<const Obu> obus,
+  static std::vector<Packet> PacketizeInternal(ArrayView<const Obu> obus,
                                                PayloadSizeLimits limits);
   
-  static std::vector<Packet> Packetize(rtc::ArrayView<const Obu> obus,
+  static std::vector<Packet> Packetize(ArrayView<const Obu> obus,
                                        PayloadSizeLimits limits);
 
   uint8_t AggregationHeader() const;

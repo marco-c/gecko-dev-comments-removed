@@ -116,7 +116,7 @@ class RtpPacketHistory {
           encapsulate);
 
   
-  void CullAcknowledgedPackets(rtc::ArrayView<const uint16_t> sequence_numbers);
+  void CullAcknowledgedPackets(ArrayView<const uint16_t> sequence_numbers);
 
   
   

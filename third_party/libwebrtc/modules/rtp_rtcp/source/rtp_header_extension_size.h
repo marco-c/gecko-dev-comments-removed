@@ -24,7 +24,7 @@ struct RtpExtensionSize {
 
 
 
-int RtpHeaderExtensionSize(rtc::ArrayView<const RtpExtensionSize> extensions,
+int RtpHeaderExtensionSize(ArrayView<const RtpExtensionSize> extensions,
                            const RtpHeaderExtensionMap& registered_extensions);
 
 }  

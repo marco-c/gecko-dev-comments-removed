@@ -81,7 +81,7 @@ class RtpStreamRtcpHandler {
   virtual RtpStats SentStats() = 0;
 
   virtual void OnNack(uint32_t ,
-                      rtc::ArrayView<const uint16_t> ) {}
+                      ArrayView<const uint16_t> ) {}
   virtual void OnFir(uint32_t ) {}
   virtual void OnPli(uint32_t ) {}
 
@@ -117,7 +117,7 @@ struct RtcpTransceiverConfig {
   Clock* clock = nullptr;
 
   
-  std::function<void(rtc::ArrayView<const uint8_t>)> rtcp_transport;
+  std::function<void(ArrayView<const uint8_t>)> rtcp_transport;
 
   
   TaskQueueBase* task_queue = nullptr;

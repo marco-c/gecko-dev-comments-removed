@@ -59,7 +59,7 @@ class RtcpTransceiverImpl {
 
   void SetReadyToSend(bool ready);
 
-  void ReceivePacket(rtc::ArrayView<const uint8_t> packet, Timestamp now);
+  void ReceivePacket(ArrayView<const uint8_t> packet, Timestamp now);
 
   void SendCompoundPacket();
 
@@ -71,8 +71,7 @@ class RtcpTransceiverImpl {
   void SendPictureLossIndication(uint32_t ssrc);
   
   
-  void SendFullIntraRequest(rtc::ArrayView<const uint32_t> ssrcs,
-                            bool new_request);
+  void SendFullIntraRequest(ArrayView<const uint32_t> ssrcs, bool new_request);
 
   
   
@@ -102,11 +101,10 @@ class RtcpTransceiverImpl {
   void HandleReceiverReport(const rtcp::CommonHeader& rtcp_packet_header,
                             Timestamp now,
                             std::vector<ReportBlockData>& report_blocks);
-  void HandleReportBlocks(
-      uint32_t sender_ssrc,
-      Timestamp now,
-      rtc::ArrayView<const rtcp::ReportBlock> rtcp_report_blocks,
-      std::vector<ReportBlockData>& report_blocks);
+  void HandleReportBlocks(uint32_t sender_ssrc,
+                          Timestamp now,
+                          ArrayView<const rtcp::ReportBlock> rtcp_report_blocks,
+                          std::vector<ReportBlockData>& report_blocks);
   void HandlePayloadSpecificFeedback(
       const rtcp::CommonHeader& rtcp_packet_header,
       Timestamp now);
@@ -128,7 +126,7 @@ class RtcpTransceiverImpl {
   void HandleTargetBitrate(const rtcp::TargetBitrate& target_bitrate,
                            uint32_t remote_ssrc);
   void ProcessReportBlocks(Timestamp now,
-                           rtc::ArrayView<const ReportBlockData> report_blocks);
+                           ArrayView<const ReportBlockData> report_blocks);
 
   void ReschedulePeriodicCompoundPackets();
   void SchedulePeriodicCompoundPackets(TimeDelta delay);
@@ -158,7 +156,7 @@ class RtcpTransceiverImpl {
                                                     size_t num_max_blocks);
 
   const RtcpTransceiverConfig config_;
-  std::function<void(rtc::ArrayView<const uint8_t>)> rtcp_transport_;
+  std::function<void(ArrayView<const uint8_t>)> rtcp_transport_;
 
   bool ready_to_send_;
   std::optional<rtcp::Remb> remb_;

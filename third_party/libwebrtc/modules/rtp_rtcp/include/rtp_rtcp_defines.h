@@ -175,9 +175,8 @@ class NetworkLinkRtcpObserver {
 
   
   
-  virtual void OnReport(
-      Timestamp ,
-      rtc::ArrayView<const ReportBlockData> ) {}
+  virtual void OnReport(Timestamp ,
+                        ArrayView<const ReportBlockData> ) {}
   virtual void OnRttUpdate(Timestamp , TimeDelta ) {}
 };
 

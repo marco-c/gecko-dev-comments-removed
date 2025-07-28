@@ -21,7 +21,7 @@ namespace webrtc {
 class RtpDependencyDescriptorReader {
  public:
   
-  RtpDependencyDescriptorReader(rtc::ArrayView<const uint8_t> raw_data,
+  RtpDependencyDescriptorReader(ArrayView<const uint8_t> raw_data,
                                 const FrameDependencyStructure* structure,
                                 DependencyDescriptor* descriptor);
   RtpDependencyDescriptorReader(const RtpDependencyDescriptorReader&) = delete;

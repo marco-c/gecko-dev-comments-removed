@@ -36,14 +36,14 @@ class RtpPacketizerGeneric : public RtpPacketizer {
   
   
   
-  RtpPacketizerGeneric(rtc::ArrayView<const uint8_t> payload,
+  RtpPacketizerGeneric(ArrayView<const uint8_t> payload,
                        PayloadSizeLimits limits,
                        const RTPVideoHeader& rtp_video_header);
   
   
   
   
-  RtpPacketizerGeneric(rtc::ArrayView<const uint8_t> payload,
+  RtpPacketizerGeneric(ArrayView<const uint8_t> payload,
                        PayloadSizeLimits limits);
 
   ~RtpPacketizerGeneric() override;
@@ -64,7 +64,7 @@ class RtpPacketizerGeneric : public RtpPacketizer {
 
   uint8_t header_[3];
   size_t header_size_;
-  rtc::ArrayView<const uint8_t> remaining_payload_;
+  ArrayView<const uint8_t> remaining_payload_;
   std::vector<int> payload_sizes_;
   std::vector<int>::const_iterator current_packet_;
 };

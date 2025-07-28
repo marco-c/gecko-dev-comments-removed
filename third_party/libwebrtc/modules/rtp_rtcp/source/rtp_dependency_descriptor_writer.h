@@ -24,7 +24,7 @@ class RtpDependencyDescriptorWriter {
  public:
   
   
-  RtpDependencyDescriptorWriter(rtc::ArrayView<uint8_t> data,
+  RtpDependencyDescriptorWriter(ArrayView<uint8_t> data,
                                 const FrameDependencyStructure& structure,
                                 std::bitset<32> active_chains,
                                 const DependencyDescriptor& descriptor);

@@ -55,7 +55,7 @@ class ForwardErrorCorrection {
     
     virtual int32_t Release();
 
-    rtc::CopyOnWriteBuffer data;  
+    CopyOnWriteBuffer data;  
 
    private:
     int32_t ref_count_;  
@@ -86,7 +86,7 @@ class ForwardErrorCorrection {
                   
     bool is_recovered;
     RtpHeaderExtensionMap extensions;
-    rtc::scoped_refptr<Packet> pkt;  
+    scoped_refptr<Packet> pkt;  
   };
 
   
@@ -102,7 +102,7 @@ class ForwardErrorCorrection {
                          
     bool returned;  
                     
-    rtc::scoped_refptr<Packet> pkt;  
+    scoped_refptr<Packet> pkt;  
   };
 
   
@@ -113,7 +113,7 @@ class ForwardErrorCorrection {
     ProtectedPacket();
     ~ProtectedPacket();
 
-    rtc::scoped_refptr<ForwardErrorCorrection::Packet> pkt;
+    scoped_refptr<ForwardErrorCorrection::Packet> pkt;
   };
 
   using ProtectedPacketList = std::list<std::unique_ptr<ProtectedPacket>>;
@@ -148,7 +148,7 @@ class ForwardErrorCorrection {
         protected_streams;
     size_t protection_length;
     
-    rtc::scoped_refptr<ForwardErrorCorrection::Packet> pkt;
+    scoped_refptr<ForwardErrorCorrection::Packet> pkt;
   };
 
   using PacketList = std::list<std::unique_ptr<Packet>>;
@@ -398,7 +398,7 @@ class FecHeaderWriter {
   struct ProtectedStream {
     uint32_t ssrc = 0;
     uint16_t seq_num_base = 0;
-    rtc::ArrayView<const uint8_t> packet_mask;
+    ArrayView<const uint8_t> packet_mask;
   };
 
   virtual ~FecHeaderWriter();
@@ -424,7 +424,7 @@ class FecHeaderWriter {
 
   
   virtual void FinalizeFecHeader(
-      rtc::ArrayView<const ProtectedStream> protected_streams,
+      ArrayView<const ProtectedStream> protected_streams,
       ForwardErrorCorrection::Packet& fec_packet) const = 0;
 
  protected:

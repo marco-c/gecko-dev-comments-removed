@@ -93,15 +93,14 @@ class RtpSenderEgress {
   
   
   std::vector<RtpSequenceNumberMap::Info> GetSentRtpPacketInfos(
-      rtc::ArrayView<const uint16_t> sequence_numbers) const;
+      ArrayView<const uint16_t> sequence_numbers) const;
 
   void SetFecProtectionParameters(const FecProtectionParams& delta_params,
                                   const FecProtectionParams& key_params);
   std::vector<std::unique_ptr<RtpPacketToSend>> FetchFecPackets();
 
   
-  void OnAbortedRetransmissions(
-      rtc::ArrayView<const uint16_t> sequence_numbers);
+  void OnAbortedRetransmissions(ArrayView<const uint16_t> sequence_numbers);
 
  private:
   struct Packet {

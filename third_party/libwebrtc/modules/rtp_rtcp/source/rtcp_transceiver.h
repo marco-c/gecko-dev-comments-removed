@@ -65,7 +65,7 @@ class RtcpTransceiver : public RtcpFeedbackSenderInterface {
   void SetReadyToSend(bool ready);
 
   
-  void ReceivePacket(rtc::CopyOnWriteBuffer packet);
+  void ReceivePacket(CopyOnWriteBuffer packet);
 
   
   void SendCompoundPacket();

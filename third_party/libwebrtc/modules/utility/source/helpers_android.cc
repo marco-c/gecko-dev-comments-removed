@@ -94,7 +94,7 @@ AttachThreadScoped::AttachThreadScoped(JavaVM* jvm)
     
     
     
-    ALOGD("Attaching thread to JVM[tid=%d]", rtc::CurrentThreadId());
+    ALOGD("Attaching thread to JVM[tid=%d]", CurrentThreadId());
     jint res = jvm->AttachCurrentThread(&env_, NULL);
     attached_ = (res == JNI_OK);
     RTC_CHECK(attached_) << "AttachCurrentThread failed: " << res;
@@ -103,7 +103,7 @@ AttachThreadScoped::AttachThreadScoped(JavaVM* jvm)
 
 AttachThreadScoped::~AttachThreadScoped() {
   if (attached_) {
-    ALOGD("Detaching thread from JVM[tid=%d]", rtc::CurrentThreadId());
+    ALOGD("Detaching thread from JVM[tid=%d]", CurrentThreadId());
     jint res = jvm_->DetachCurrentThread();
     RTC_CHECK(res == JNI_OK) << "DetachCurrentThread failed: " << res;
     RTC_CHECK(!GetEnv(jvm_));

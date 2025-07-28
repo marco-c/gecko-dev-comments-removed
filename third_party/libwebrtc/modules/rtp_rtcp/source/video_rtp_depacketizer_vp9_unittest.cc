@@ -322,7 +322,7 @@ TEST(VideoRtpDepacketizerVp9Test, ParseResolution) {
 }
 
 TEST(VideoRtpDepacketizerVp9Test, ParseFailsForNoPayloadLength) {
-  rtc::ArrayView<const uint8_t> empty;
+  ArrayView<const uint8_t> empty;
 
   RTPVideoHeader video_header;
   EXPECT_EQ(VideoRtpDepacketizerVp9::ParseRtpPayload(empty, &video_header), 0);
@@ -364,7 +364,7 @@ TEST(VideoRtpDepacketizerVp9Test, ReferencesInputCopyOnWriteBuffer) {
   uint8_t packet[4] = {0};
   packet[0] = 0x0C;  
 
-  rtc::CopyOnWriteBuffer rtp_payload(packet);
+  CopyOnWriteBuffer rtp_payload(packet);
   VideoRtpDepacketizerVp9 depacketizer;
   std::optional<VideoRtpDepacketizer::ParsedRtpPayload> parsed =
       depacketizer.Parse(rtp_payload);

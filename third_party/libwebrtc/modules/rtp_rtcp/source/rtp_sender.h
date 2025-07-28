@@ -114,22 +114,21 @@ class RTPSender {
       RTC_LOCKS_EXCLUDED(send_mutex_);
 
   
-  static rtc::ArrayView<const RtpExtensionSize> FecExtensionSizes()
+  static ArrayView<const RtpExtensionSize> FecExtensionSizes()
       RTC_LOCKS_EXCLUDED(send_mutex_);
 
   
-  static rtc::ArrayView<const RtpExtensionSize> VideoExtensionSizes()
+  static ArrayView<const RtpExtensionSize> VideoExtensionSizes()
       RTC_LOCKS_EXCLUDED(send_mutex_);
 
   
-  static rtc::ArrayView<const RtpExtensionSize> AudioExtensionSizes()
+  static ArrayView<const RtpExtensionSize> AudioExtensionSizes()
       RTC_LOCKS_EXCLUDED(send_mutex_);
 
   
   
   std::unique_ptr<RtpPacketToSend> AllocatePacket(
-      rtc::ArrayView<const uint32_t> csrcs = {})
-      RTC_LOCKS_EXCLUDED(send_mutex_);
+      ArrayView<const uint32_t> csrcs = {}) RTC_LOCKS_EXCLUDED(send_mutex_);
 
   
   size_t FecOrPaddingPacketMaxRtpHeaderLength() const

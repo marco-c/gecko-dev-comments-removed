@@ -30,11 +30,10 @@ class VideoRtpDepacketizerVp8 : public VideoRtpDepacketizer {
 
   
   
-  static int ParseRtpPayload(rtc::ArrayView<const uint8_t> rtp_payload,
+  static int ParseRtpPayload(ArrayView<const uint8_t> rtp_payload,
                              RTPVideoHeader* video_header);
 
-  std::optional<ParsedRtpPayload> Parse(
-      rtc::CopyOnWriteBuffer rtp_payload) override;
+  std::optional<ParsedRtpPayload> Parse(CopyOnWriteBuffer rtp_payload) override;
 };
 
 }  

@@ -127,7 +127,7 @@ class MockModuleRtpRtcp : public RTCPReceiver::ModuleRtpRtcp {
   MOCK_METHOD(void, OnReceivedNack, (const std::vector<uint16_t>&), (override));
   MOCK_METHOD(void,
               OnReceivedRtcpReportBlocks,
-              (rtc::ArrayView<const ReportBlockData>),
+              (ArrayView<const ReportBlockData>),
               (override));
 };
 
@@ -896,7 +896,7 @@ TEST(RtcpReceiverTest, InjectExtendedReportsPacketWithUnknownReportBlock) {
   xr.SetRrtr(rrtr);
   xr.AddDlrrItem(ReceiveTimeInfo(kReceiverMainSsrc, 0x12345, 0x67890));
 
-  rtc::Buffer packet = xr.Build();
+  Buffer packet = xr.Build();
   
   ASSERT_EQ(5, packet.data()[20]);
   packet.data()[20] = 6;
@@ -1852,7 +1852,7 @@ TEST(RtcpReceiverTest, HandlesInvalidCongestionControlFeedback) {
                                          }},
                                          324);
   packet.SetSenderSsrc(kSenderSsrc);
-  rtc::Buffer built_packet = packet.Build();
+  Buffer built_packet = packet.Build();
   
   const size_t kNumReportsOffset = 14;
   ByteWriter<uint16_t>::WriteBigEndian(&built_packet.data()[kNumReportsOffset],
@@ -1929,7 +1929,7 @@ TEST(RtcpReceiverTest, HandlesInvalidTransportFeedback) {
   rtcp::CompoundPacket compound;
   compound.Append(std::move(packet));
   compound.Append(std::move(remb));
-  rtc::Buffer built_packet = compound.Build();
+  Buffer built_packet = compound.Build();
 
   
   const size_t kStatusCountOffset = 14;

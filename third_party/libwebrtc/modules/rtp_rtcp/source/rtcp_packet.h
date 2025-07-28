@@ -54,7 +54,7 @@ class RtcpPacket {
   
   
   using PacketReadyCallback =
-      FunctionView<void(rtc::ArrayView<const uint8_t> packet)>;
+      FunctionView<void(ArrayView<const uint8_t> packet)>;
 
   virtual ~RtcpPacket() = default;
 
@@ -63,7 +63,7 @@ class RtcpPacket {
 
   
   
-  rtc::Buffer Build() const;
+  Buffer Build() const;
 
   
   bool Build(size_t max_length, PacketReadyCallback callback) const;

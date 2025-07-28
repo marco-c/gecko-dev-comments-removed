@@ -50,8 +50,8 @@ class RtpPacketReceived : public RtpPacket {
 
   
   
-  rtc::EcnMarking ecn() const { return ecn_; }
-  void set_ecn(rtc::EcnMarking ecn) { ecn_ = ecn; }
+  EcnMarking ecn() const { return ecn_; }
+  void set_ecn(EcnMarking ecn) { ecn_ = ecn; }
 
   
   bool recovered() const { return recovered_; }
@@ -64,19 +64,19 @@ class RtpPacketReceived : public RtpPacket {
 
   
   
-  rtc::scoped_refptr<rtc::RefCountedBase> additional_data() const {
+  scoped_refptr<RefCountedBase> additional_data() const {
     return additional_data_;
   }
-  void set_additional_data(rtc::scoped_refptr<rtc::RefCountedBase> data) {
+  void set_additional_data(scoped_refptr<RefCountedBase> data) {
     additional_data_ = std::move(data);
   }
 
  private:
   webrtc::Timestamp arrival_time_ = Timestamp::MinusInfinity();
-  rtc::EcnMarking ecn_ = rtc::EcnMarking::kNotEct;
+  EcnMarking ecn_ = EcnMarking::kNotEct;
   int payload_type_frequency_ = 0;
   bool recovered_ = false;
-  rtc::scoped_refptr<rtc::RefCountedBase> additional_data_;
+  scoped_refptr<RefCountedBase> additional_data_;
 };
 
 }  
