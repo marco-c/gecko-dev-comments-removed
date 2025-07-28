@@ -425,17 +425,18 @@ void WebGPUChild::ClearActorState() {
   
 
   
-  {
-    while (!mPendingRequestAdapterPromises.empty()) {
+  
+  
+  while (true) {
+    
+    if (!mPendingRequestAdapterPromises.empty()) {
       auto pending_promise = std::move(mPendingRequestAdapterPromises.front());
       mPendingRequestAdapterPromises.pop_front();
 
       pending_promise.promise->MaybeResolve(JS::NullHandleValue);
     }
-  }
-  
-  {
-    while (!mPendingRequestDevicePromises.empty()) {
+    
+    else if (!mPendingRequestDevicePromises.empty()) {
       auto pending_promise = std::move(mPendingRequestDevicePromises.front());
       mPendingRequestDevicePromises.pop_front();
 
@@ -449,11 +450,9 @@ void WebGPUChild::ClearActorState() {
                           u"WebGPUChild destroyed"_ns);
       pending_promise.promise->MaybeResolve(device);
     }
-  }
-  
-  
-  {
-    while (!mPendingDeviceLostPromises.empty()) {
+    
+    
+    else if (!mPendingDeviceLostPromises.empty()) {
       auto pending_promise_entry = mPendingDeviceLostPromises.begin();
       auto pending_promise = std::move(pending_promise_entry->second);
       mPendingDeviceLostPromises.erase(pending_promise_entry->first);
@@ -463,10 +462,8 @@ void WebGPUChild::ClearActorState() {
           dom::GPUDeviceLostReason::Destroyed, u"Device destroyed"_ns);
       pending_promise->MaybeResolve(info);
     }
-  }
-  
-  {
-    while (!mDeviceMap.empty()) {
+    
+    else if (!mDeviceMap.empty()) {
       auto device_map_entry = mDeviceMap.begin();
       auto device = std::move(device_map_entry->second);
       mDeviceMap.erase(device_map_entry->first);
@@ -474,19 +471,15 @@ void WebGPUChild::ClearActorState() {
       device->ResolveLost(dom::GPUDeviceLostReason::Unknown,
                           u"WebGPUChild destroyed"_ns);
     }
-  }
-  
-  {
-    while (!mPendingPopErrorScopePromises.empty()) {
+    
+    else if (!mPendingPopErrorScopePromises.empty()) {
       auto pending_promise = std::move(mPendingPopErrorScopePromises.front());
       mPendingPopErrorScopePromises.pop_front();
 
       pending_promise.promise->MaybeResolve(JS::NullHandleValue);
     }
-  }
-  
-  {
-    while (!mPendingCreatePipelinePromises.empty()) {
+    
+    else if (!mPendingCreatePipelinePromises.empty()) {
       auto pending_promise = std::move(mPendingCreatePipelinePromises.front());
       mPendingCreatePipelinePromises.pop_front();
 
@@ -506,10 +499,8 @@ void WebGPUChild::ClearActorState() {
         pending_promise.promise->MaybeResolve(object);
       }
     }
-  }
-  
-  {
-    while (!mPendingCreateShaderModulePromises.empty()) {
+    
+    else if (!mPendingCreateShaderModulePromises.empty()) {
       auto pending_promise =
           std::move(mPendingCreateShaderModulePromises.front());
       mPendingCreateShaderModulePromises.pop_front();
@@ -520,10 +511,8 @@ void WebGPUChild::ClearActorState() {
       infoObject->SetMessages(messages);
       pending_promise.promise->MaybeResolve(infoObject);
     }
-  }
-  
-  {
-    while (!mPendingBufferMapPromises.empty()) {
+    
+    else if (!mPendingBufferMapPromises.empty()) {
       auto pending_promises = mPendingBufferMapPromises.begin();
       auto pending_promise = std::move(pending_promises->second.front());
       pending_promises->second.pop_front();
@@ -539,15 +528,15 @@ void WebGPUChild::ClearActorState() {
       pending_promise.buffer->RejectMapRequestWithAbortError(
           pending_promise.promise);
     }
-  }
-  
-  {
-    while (!mPendingOnSubmittedWorkDonePromises.empty()) {
+    
+    else if (!mPendingOnSubmittedWorkDonePromises.empty()) {
       auto pending_promise =
           std::move(mPendingOnSubmittedWorkDonePromises.front());
       mPendingOnSubmittedWorkDonePromises.pop_front();
 
       pending_promise->MaybeResolveWithUndefined();
+    } else {
+      break;
     }
   }
 }
