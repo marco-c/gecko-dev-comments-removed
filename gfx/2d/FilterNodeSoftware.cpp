@@ -89,7 +89,7 @@ class PowCache {
 
   static const int sInputIntPrecisionBits = 15;
   static const int sOutputIntPrecisionBits = 15;
-  static const int sCacheIndexPrecisionBits = 7;
+  static const int sCacheIndexPrecisionBits = 8;
 
   inline bool HasPowerTable() const { return mNumPowTablePreSquares >= 0; }
 
