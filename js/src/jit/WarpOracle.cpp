@@ -789,8 +789,83 @@ static void MaybeSetInliningStateFromJitHints(JSContext* cx,
   }
 }
 
+template <auto FuseMember, CompilationDependency::Type DepType>
+struct RealmFuseDependency final : public CompilationDependency {
+  RealmFuseDependency() : CompilationDependency(DepType) {}
+
+  virtual bool registerDependency(JSContext* cx,
+                                  const IonScriptKey& ionScript) override {
+    MOZ_ASSERT(checkDependency(cx));
+
+    return (cx->realm()->realmFuses.*FuseMember)
+        .addFuseDependency(cx, ionScript);
+  }
+
+  virtual UniquePtr<CompilationDependency> clone() const override {
+    return MakeUnique<RealmFuseDependency<FuseMember, DepType>>();
+  }
+
+  virtual bool checkDependency(JSContext* cx) const override {
+    return (cx->realm()->realmFuses.*FuseMember).intact();
+  }
+
+  virtual bool operator==(const CompilationDependency& dep) const override {
+    return dep.type == type;
+  }
+};
+
+bool WarpOracle::addFuseDependency(RealmFuses::FuseIndex fuseIndex,
+                                   bool* stillValid) {
+  auto addIfStillValid = [&](const auto& dep) {
+    if (!dep.checkDependency(cx_)) {
+      *stillValid = false;
+      return true;
+    }
+    *stillValid = true;
+    return mirGen().tracker.addDependency(dep);
+  };
+
+  
+  
+  switch (fuseIndex) {
+    case RealmFuses::FuseIndex::OptimizeGetIteratorFuse: {
+      using Dependency =
+          RealmFuseDependency<&RealmFuses::optimizeGetIteratorFuse,
+                              CompilationDependency::Type::GetIterator>;
+      return addIfStillValid(Dependency());
+    }
+    case RealmFuses::FuseIndex::OptimizeArraySpeciesFuse: {
+      using Dependency =
+          RealmFuseDependency<&RealmFuses::optimizeArraySpeciesFuse,
+                              CompilationDependency::Type::ArraySpecies>;
+      return addIfStillValid(Dependency());
+    }
+    case RealmFuses::FuseIndex::OptimizeRegExpPrototypeFuse: {
+      using Dependency =
+          RealmFuseDependency<&RealmFuses::optimizeRegExpPrototypeFuse,
+                              CompilationDependency::Type::RegExpPrototype>;
+      return addIfStillValid(Dependency());
+    }
+    case RealmFuses::FuseIndex::OptimizeStringPrototypeSymbolsFuse: {
+      using Dependency = RealmFuseDependency<
+          &RealmFuses::optimizeStringPrototypeSymbolsFuse,
+          CompilationDependency::Type::StringPrototypeSymbols>;
+      return addIfStillValid(Dependency());
+    }
+    default:
+      MOZ_ASSERT(!RealmFuses::isInvalidatingFuse(fuseIndex));
+      *stillValid = true;
+      return true;
+  }
+}
+
 AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
                                                   BytecodeLocation loc) {
+  
+  
+  
+  
+  
   
   
   
@@ -908,10 +983,10 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
 
   
   CacheIRReader reader(stubInfo);
+  bool hasInvalidFuseGuard = false;
   while (reader.more()) {
     CacheOp op = reader.readOp();
     CacheIROpInfo opInfo = CacheIROpInfos[size_t(op)];
-    reader.skip(opInfo.argLength);
 
     if (!opInfo.transpile) {
       [[maybe_unused]] unsigned line;
@@ -934,33 +1009,59 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
     
     switch (op) {
       case CacheOp::CallRegExpMatcherResult:
+        reader.argsForCallRegExpMatcherResult();  
         if (!oracle_->snapshotJitZoneStub(JitZone::StubKind::RegExpMatcher)) {
           return abort(AbortReason::Error);
         }
         break;
       case CacheOp::CallRegExpSearcherResult:
+        reader.argsForCallRegExpSearcherResult();  
         if (!oracle_->snapshotJitZoneStub(JitZone::StubKind::RegExpSearcher)) {
           return abort(AbortReason::Error);
         }
         break;
       case CacheOp::RegExpBuiltinExecMatchResult:
+        reader.argsForRegExpBuiltinExecMatchResult();  
         if (!oracle_->snapshotJitZoneStub(JitZone::StubKind::RegExpExecMatch)) {
           return abort(AbortReason::Error);
         }
         break;
       case CacheOp::RegExpBuiltinExecTestResult:
+        reader.argsForRegExpBuiltinExecTestResult();  
         if (!oracle_->snapshotJitZoneStub(JitZone::StubKind::RegExpExecTest)) {
           return abort(AbortReason::Error);
         }
         break;
       case CacheOp::ConcatStringsResult:
+        reader.argsForConcatStringsResult();  
         if (!oracle_->snapshotJitZoneStub(JitZone::StubKind::StringConcat)) {
           return abort(AbortReason::Error);
         }
         break;
+      case CacheOp::GuardFuse: {
+        auto [fuseIndex] = reader.argsForGuardFuse();
+        bool stillValid;
+        if (!oracle_->addFuseDependency(fuseIndex, &stillValid)) {
+          return abort(AbortReason::Alloc);
+        }
+        if (!stillValid) {
+          hasInvalidFuseGuard = true;
+        }
+        break;
+      }
       default:
+        reader.skip(opInfo.argLength);
         break;
     }
+  }
+
+  
+  
+  if (hasInvalidFuseGuard) {
+    if (!AddOpSnapshot<WarpBailout>(alloc_, snapshots, offset)) {
+      return abort(AbortReason::Alloc);
+    }
+    return Ok();
   }
 
   

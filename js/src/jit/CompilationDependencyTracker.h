@@ -37,7 +37,7 @@ struct CompilationDependency {
 
   
   
-  virtual bool checkDependency(JSContext* cx) = 0;
+  virtual bool checkDependency(JSContext* cx) const = 0;
   [[nodiscard]] virtual bool registerDependency(
       JSContext* cx, const IonScriptKey& ionScript) = 0;
 
