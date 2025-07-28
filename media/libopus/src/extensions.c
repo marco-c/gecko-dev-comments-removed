@@ -154,6 +154,74 @@ void opus_extension_iterator_set_frame_max(OpusExtensionIterator *iter,
 
 
 
+static int opus_extension_iterator_next_repeat(OpusExtensionIterator *iter,
+ opus_extension_data *ext) {
+   opus_int32 header_size;
+   celt_assert(iter->repeat_frame > 0);
+   for (;iter->repeat_frame < iter->nb_frames; iter->repeat_frame++) {
+      while (iter->src_len > 0) {
+         const unsigned char *curr_data0;
+         int repeat_id_byte;
+         repeat_id_byte = *iter->src_data;
+         iter->src_len = skip_extension(&iter->src_data, iter->src_len,
+          &header_size);
+         
+         celt_assert(iter->src_len >= 0);
+         
+         if (repeat_id_byte <= 3) continue;
+         
+
+
+         if (iter->repeat_l == 0
+          && iter->repeat_frame + 1 >= iter->nb_frames
+          && iter->src_data == iter->last_long) {
+            repeat_id_byte &= ~1;
+         }
+         curr_data0 = iter->curr_data;
+         iter->curr_len = skip_extension_payload(&iter->curr_data,
+          iter->curr_len, &header_size, repeat_id_byte,
+          iter->trailing_short_len);
+         if (iter->curr_len < 0) {
+            return OPUS_INVALID_PACKET;
+         }
+         celt_assert(iter->curr_data - iter->data
+          == iter->len - iter->curr_len);
+         
+
+         if (iter->repeat_frame >= iter->frame_max) {
+            continue;
+         }
+         if (ext != NULL) {
+            ext->id = repeat_id_byte >> 1;
+            ext->frame = iter->repeat_frame;
+            ext->data = curr_data0 + header_size;
+            ext->len = iter->curr_data - curr_data0 - header_size;
+         }
+         return 1;
+      }
+      
+      iter->src_data = iter->repeat_data;
+      iter->src_len = iter->repeat_len;
+   }
+   
+   iter->repeat_data = iter->curr_data;
+   iter->last_long = NULL;
+   
+
+   if (iter->repeat_l == 0) {
+      iter->curr_frame++;
+      
+      if (iter->curr_frame >= iter->nb_frames) {
+         iter->curr_len = 0;
+      }
+   }
+   iter->repeat_frame = 0;
+   return 0;
+}
+
+
+
+
 
 int opus_extension_iterator_next(OpusExtensionIterator *iter,
  opus_extension_data *ext) {
@@ -162,65 +230,10 @@ int opus_extension_iterator_next(OpusExtensionIterator *iter,
       return OPUS_INVALID_PACKET;
    }
    if (iter->repeat_frame > 0) {
+      int ret;
       
-      for (;iter->repeat_frame < iter->nb_frames; iter->repeat_frame++) {
-         while (iter->src_len > 0) {
-            const unsigned char *curr_data0;
-            int repeat_id_byte;
-            repeat_id_byte = *iter->src_data;
-            iter->src_len = skip_extension(&iter->src_data, iter->src_len,
-             &header_size);
-            
-            celt_assert(iter->src_len >= 0);
-            
-            if (repeat_id_byte <= 3) continue;
-            
-
-
-            if (iter->repeat_l == 0
-             && iter->repeat_frame + 1 >= iter->nb_frames
-             && iter->src_data == iter->last_long) {
-               repeat_id_byte &= ~1;
-            }
-            curr_data0 = iter->curr_data;
-            iter->curr_len = skip_extension_payload(&iter->curr_data,
-             iter->curr_len, &header_size, repeat_id_byte,
-             iter->trailing_short_len);
-            if (iter->curr_len < 0) {
-               return OPUS_INVALID_PACKET;
-            }
-            celt_assert(iter->curr_data - iter->data
-             == iter->len - iter->curr_len);
-            
-
-            if (iter->repeat_frame >= iter->frame_max) {
-               continue;
-            }
-            if (ext != NULL) {
-               ext->id = repeat_id_byte >> 1;
-               ext->frame = iter->repeat_frame;
-               ext->data = curr_data0 + header_size;
-               ext->len = iter->curr_data - curr_data0 - header_size;
-            }
-            return 1;
-         }
-         
-         iter->src_data = iter->repeat_data;
-         iter->src_len = iter->repeat_len;
-      }
-      
-      iter->repeat_data = iter->curr_data;
-      iter->last_long = NULL;
-      
-
-      if (iter->repeat_l == 0) {
-         iter->curr_frame++;
-         
-         if (iter->curr_frame >= iter->nb_frames) {
-            iter->curr_len = 0;
-         }
-      }
-      iter->repeat_frame = 0;
+      ret = opus_extension_iterator_next_repeat(iter, ext);
+      if (ret) return ret;
    }
    
 
@@ -263,12 +276,14 @@ int opus_extension_iterator_next(OpusExtensionIterator *iter,
          iter->trailing_short_len = 0;
       }
       else if (id == 2) {
+         int ret;
          iter->repeat_l = L;
          iter->repeat_frame = iter->curr_frame + 1;
          iter->repeat_len = curr_data0 - iter->repeat_data;
          iter->src_data = iter->repeat_data;
          iter->src_len = iter->repeat_len;
-         return opus_extension_iterator_next(iter, ext);
+         ret = opus_extension_iterator_next_repeat(iter, ext);
+         if (ret) return ret;
       }
       else if (id > 2) {
          
