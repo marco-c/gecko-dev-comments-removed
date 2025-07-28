@@ -5,11 +5,14 @@
 
 #include "vm/RealmFuses.h"
 
+#include <array>
+
 #include "builtin/MapObject.h"
 #include "builtin/Promise.h"
 #include "builtin/RegExp.h"
 #include "builtin/WeakMapObject.h"
 #include "builtin/WeakSetObject.h"
+#include "js/experimental/TypedData.h"
 #include "vm/GlobalObject.h"
 #include "vm/NativeObject.h"
 #include "vm/ObjectOperations.h"
@@ -373,6 +376,52 @@ bool js::OptimizeSharedArrayBufferSpeciesFuse::checkInvariant(JSContext* cx) {
   return SpeciesFuseCheckInvariant(
       cx, JSProto_SharedArrayBuffer,
       cx->names().dollar_SharedArrayBufferSpecies_);
+}
+
+bool js::OptimizeTypedArraySpeciesFuse::checkInvariant(JSContext* cx) {
+  
+  if (!SpeciesFuseCheckInvariant(cx, JSProto_TypedArray,
+                                 cx->names().dollar_TypedArraySpecies_)) {
+    return false;
+  }
+
+  auto typedArrayProtoKeys = std::array{
+#define PROTO_KEY(_, T, N) JSProto_##N##Array,
+      JS_FOR_EACH_TYPED_ARRAY(PROTO_KEY)
+#undef PROTO_KEY
+  };
+
+  auto* typedArrayproto =
+      cx->global()->maybeGetPrototype<NativeObject>(JSProto_TypedArray);
+
+  
+  for (auto protoKey : typedArrayProtoKeys) {
+    
+    auto* proto = cx->global()->maybeGetPrototype<NativeObject>(protoKey);
+    if (!proto) {
+      
+      continue;
+    }
+    MOZ_ASSERT(typedArrayproto,
+               "%TypedArray%.prototype must be initialized when TypedArray "
+               "subclass is initialized");
+
+    
+    if (proto->staticPrototype() != typedArrayproto) {
+      return false;
+    }
+
+    auto* ctor = cx->global()->maybeGetConstructor<NativeObject>(protoKey);
+    MOZ_ASSERT(ctor);
+
+    
+    if (!ObjectHasDataPropertyValue(proto, NameToId(cx->names().constructor),
+                                    ObjectValue(*ctor))) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 void js::OptimizePromiseLookupFuse::popFuse(JSContext* cx,
