@@ -288,7 +288,7 @@ pub const TILE_SIZE_SCROLLBAR_VERTICAL: DeviceIntSize = DeviceIntSize {
 
 
 
-pub const MAX_SURFACE_SIZE: usize = 4096;
+pub const MAX_SURFACE_SIZE: usize = 8192;
 
 const MAX_COMPOSITOR_SURFACES_SIZE: f32 = 8192.0;
 
