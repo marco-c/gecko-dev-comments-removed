@@ -387,6 +387,14 @@ interface nsIIOService : nsISupports
 
 
     void clearEssentialDomainMapping();
+
+    
+
+
+
+
+    [implicit_jscontext]
+    jsval parseCacheControlHeader(in ACString aCacheControlHeader);
 };
 
 %{C++
