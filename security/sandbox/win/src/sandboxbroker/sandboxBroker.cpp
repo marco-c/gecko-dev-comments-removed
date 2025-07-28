@@ -1813,8 +1813,12 @@ bool SandboxBroker::SetSecurityLevelForGMPlugin(
   
   
   
+  
+  
+  
   if (StaticPrefs::security_sandbox_gmp_win32k_disable() &&
-      aGMPSandboxKind != Widevine && aGMPSandboxKind != Clearkey) {
+      aGMPSandboxKind != Widevine && aGMPSandboxKind != Clearkey &&
+      aGMPSandboxKind != Fake) {
     result = AddWin32kLockdownConfig(config);
     SANDBOX_ENSURE_SUCCESS(result, "Failed to add the win32k lockdown policy");
   }
