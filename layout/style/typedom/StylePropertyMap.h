@@ -53,6 +53,8 @@ class StylePropertyMap final : public StylePropertyMapReadOnly {
 
   
 
+  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
+
  private:
   virtual ~StylePropertyMap() = default;
 };

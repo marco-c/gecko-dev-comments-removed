@@ -48,4 +48,9 @@ void StylePropertyMap::Clear() {}
 
 
 
+size_t StylePropertyMap::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
+  return StylePropertyMapReadOnly::SizeOfExcludingThis(aMallocSizeOf) +
+         aMallocSizeOf(this);
+}
+
 }  

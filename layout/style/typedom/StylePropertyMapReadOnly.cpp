@@ -70,9 +70,14 @@ nsTArray<RefPtr<CSSStyleValue>> StylePropertyMapReadOnly::GetValueAtIndex(
 
 
 
+size_t StylePropertyMapReadOnly::SizeOfExcludingThis(
+    MallocSizeOf aMallocSizeOf) const {
+  return 0;
+}
+
 size_t StylePropertyMapReadOnly::SizeOfIncludingThis(
     MallocSizeOf aMallocSizeOf) const {
-  return aMallocSizeOf(this);
+  return SizeOfExcludingThis(aMallocSizeOf) + aMallocSizeOf(this);
 }
 
 }  

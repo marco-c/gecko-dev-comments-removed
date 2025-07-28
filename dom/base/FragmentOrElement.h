@@ -44,6 +44,7 @@ namespace dom {
 struct CustomElementData;
 class Element;
 class PopoverData;
+class StylePropertyMap;
 class StylePropertyMapReadOnly;
 }  
 }  
@@ -322,6 +323,11 @@ class FragmentOrElement : public nsIContent {
 
 
     RefPtr<StylePropertyMapReadOnly> mComputedStyleMap;
+
+    
+
+
+    RefPtr<StylePropertyMap> mAttributeStyleMap;
   };
 
   
