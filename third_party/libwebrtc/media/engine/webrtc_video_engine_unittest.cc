@@ -6519,7 +6519,6 @@ TEST(WebRtcVideoChannelHelperTest, MergeInfoAboutOutboundRtpSubstreams) {
   const uint32_t kFirstMediaStreamSsrc = 10;
   const uint32_t kSecondMediaStreamSsrc = 20;
   const uint32_t kRtxSsrc = 30;
-  const uint32_t kFlexfecSsrc = 40;
   std::map<uint32_t, VideoSendStream::StreamStats> substreams;
   
   substreams[kFirstMediaStreamSsrc].type =
@@ -7330,8 +7329,6 @@ TEST_F(WebRtcVideoChannelTest,
 }
 
 TEST_F(WebRtcVideoChannelTest, MultiplePendingDemuxerCriteriaUpdates) {
-  const uint32_t kSsrc = 1;
-
   
   EXPECT_TRUE(
       receive_channel_->AddRecvStream(StreamParams::CreateLegacy(kSsrc)));
@@ -8048,7 +8045,6 @@ TEST_F(WebRtcVideoChannelTest, SetRtpSendParametersPriorityOneStream) {
 
 TEST_F(WebRtcVideoChannelTest, SetRtpSendParametersPrioritySimulcastStreams) {
   
-  const size_t kNumSimulcastStreams = 3;
   std::vector<uint32_t> ssrcs = MAKE_VECTOR(kSsrcs3);
   StreamParams stream_params = webrtc::CreateSimStreamParams("cname", ssrcs);
   AddSendStream(stream_params);
@@ -9283,7 +9279,6 @@ TEST_F(WebRtcVideoChannelTest, DefaultMinAndMaxBitratePropagatedToEncoder) {
 TEST_F(WebRtcVideoChannelTest,
        SetRtpSendParametersSetsMinBitrateForFirstActiveStream) {
   
-  const size_t kNumSimulcastStreams = 3;
   std::vector<uint32_t> ssrcs = MAKE_VECTOR(kSsrcs3);
   StreamParams stream_params = webrtc::CreateSimStreamParams("cname", ssrcs);
   FakeVideoSendStream* fake_video_send_stream = AddSendStream(stream_params);

@@ -148,7 +148,7 @@ struct RTC_EXPORT Codec {
 
   
   
-  bool RemoveParam(const std::string& name);
+  bool RemoveParam(const std::string& key);
 
   bool HasFeedbackParam(const FeedbackParam& param) const;
   void AddFeedbackParam(const FeedbackParam& param);
