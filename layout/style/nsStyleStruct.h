@@ -393,12 +393,13 @@ struct AnchorPosResolutionData {
 
 
 class AnchorPosReferencedAnchors {
-public:
+ public:
   AnchorPosReferencedAnchors() = default;
   AnchorPosReferencedAnchors(const AnchorPosReferencedAnchors&) = delete;
   AnchorPosReferencedAnchors(AnchorPosReferencedAnchors&&) = default;
 
-  AnchorPosReferencedAnchors& operator=(const AnchorPosReferencedAnchors&) = delete;
+  AnchorPosReferencedAnchors& operator=(const AnchorPosReferencedAnchors&) =
+      delete;
   AnchorPosReferencedAnchors& operator=(AnchorPosReferencedAnchors&&) = default;
 
   struct Result {
@@ -408,8 +409,9 @@ public:
 
   Result Lookup(const nsAtom* aAnchorName, bool aNeedOffset);
 
-private:
-  nsTHashMap<RefPtr<const nsAtom>, mozilla::Maybe<AnchorPosResolutionData>> mMap;
+ private:
+  nsTHashMap<RefPtr<const nsAtom>, mozilla::Maybe<AnchorPosResolutionData>>
+      mMap;
 };
 
 
