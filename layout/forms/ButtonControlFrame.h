@@ -39,6 +39,9 @@ class ButtonControlFrame : public nsBlockFrame,
                        mozilla::WidgetGUIEvent* aEvent,
                        nsEventStatus* aEventStatus) override;
 
+  void Reflow(nsPresContext*, ReflowOutput&, const ReflowInput&,
+              nsReflowStatus&) override;
+
   
   
   

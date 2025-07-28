@@ -238,9 +238,6 @@ void nsComboboxControlFrame::Reflow(nsPresContext* aPresContext,
   }
 
   ButtonControlFrame::Reflow(aPresContext, aDesiredSize, aReflowInput, aStatus);
-  
-  
-  aStatus.Reset();
 }
 
 void nsComboboxControlFrame::Init(nsIContent* aContent,

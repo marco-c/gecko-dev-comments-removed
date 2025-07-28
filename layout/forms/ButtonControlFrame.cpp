@@ -43,4 +43,13 @@ nsresult ButtonControlFrame::HandleEvent(nsPresContext* aPresContext,
   return NS_OK;
 }
 
+void ButtonControlFrame::Reflow(nsPresContext* aPc, ReflowOutput& aDesiredSize,
+                                const ReflowInput& aReflowInput,
+                                nsReflowStatus& aStatus) {
+  nsBlockFrame::Reflow(aPc, aDesiredSize, aReflowInput, aStatus);
+  
+  
+  aStatus.Reset();
+}
+
 }  
