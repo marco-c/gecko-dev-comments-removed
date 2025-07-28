@@ -82,7 +82,7 @@ int MBS_ReadHeader(FILE* file, MBSPatchHeader* header);
 
 
 int MBS_ApplyPatch(const MBSPatchHeader* header, FILE* patchFile,
-                   unsigned char* fbuffer, FILE* file);
+                   const unsigned char* fbuffer, FILE* file);
 
 typedef struct MBSPatchTriple_ {
   uint32_t x; 
