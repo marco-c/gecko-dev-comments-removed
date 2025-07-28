@@ -32,6 +32,9 @@ class FrontendContext;
 
 struct DelazifyStrategy {
   using ScriptIndex = frontend::ScriptIndex;
+  using InitialStencilAndDelazifications =
+      frontend::InitialStencilAndDelazifications;
+
   virtual ~DelazifyStrategy() = default;
 
   
@@ -61,6 +64,7 @@ struct DelazifyStrategy {
   
   
   [[nodiscard]] bool add(FrontendContext* fc,
+                         const InitialStencilAndDelazifications& stencils,
                          const frontend::CompilationStencil& stencil,
                          ScriptIndex index);
 };

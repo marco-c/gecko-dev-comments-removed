@@ -71,6 +71,7 @@ class ModuleObject;
 
 namespace frontend {
 
+struct InitialStencilAndDelazifications;
 struct CompilationInput;
 struct CompilationStencil;
 struct CompilationGCOutput;
@@ -87,6 +88,7 @@ struct FakeStencilGlobalScope {};
 
 
 struct ScopeStencilRef {
+  const InitialStencilAndDelazifications& stencils_;
   const CompilationStencil& context_;
   const ScopeIndex scopeIndex_;
 
@@ -114,8 +116,8 @@ class InputScope {
 
   
   
-  InputScope(const CompilationStencil& context, ScopeIndex scopeIndex)
-      : scope_(ScopeStencilRef{context, scopeIndex}) {}
+  InputScope(const InitialStencilAndDelazifications& stencils, const CompilationStencil& context, ScopeIndex scopeIndex)
+      : scope_(ScopeStencilRef{stencils, context, scopeIndex}) {}
 
   
   
@@ -186,7 +188,8 @@ class InputScope {
                             if (!scope.hasEnclosing()) {
                               break;
                             }
-                            new (&it) ScopeStencilRef{ref.context_,
+                            new (&it) ScopeStencilRef{ref.stencils_,
+                                                      ref.context_,
                                                       scope.enclosing()};
                           }
                           return false;
@@ -218,7 +221,8 @@ class InputScope {
             if (!scope.hasEnclosing()) {
               break;
             }
-            new (&it) ScopeStencilRef{ref.context_, scope.enclosing()};
+            new (&it) ScopeStencilRef{ref.stencils_, ref.context_,
+                                      scope.enclosing()};
           }
           return length;
         },
@@ -255,6 +259,7 @@ class InputScope {
 
 
 struct ScriptStencilRef {
+  const InitialStencilAndDelazifications& stencils_;
   const CompilationStencil& context_;
   const ScriptIndex scriptIndex_;
 
@@ -274,8 +279,9 @@ class InputScript {
 
   
   
-  InputScript(const CompilationStencil& context, ScriptIndex scriptIndex)
-      : script_(ScriptStencilRef{context, scriptIndex}) {}
+  InputScript(const InitialStencilAndDelazifications& stencils,
+              const CompilationStencil& context, ScriptIndex scriptIndex)
+      : script_(ScriptStencilRef{stencils, context, scriptIndex}) {}
 
   const InputScriptStorage& raw() const { return script_; }
   InputScriptStorage& raw() { return script_; }
@@ -321,7 +327,7 @@ class InputScript {
           MOZ_RELEASE_ASSERT(!ref.scriptData().hasSharedData());
           MOZ_ASSERT(ref.scriptData().hasLazyFunctionEnclosingScopeIndex());
           auto scopeIndex = ref.scriptData().lazyFunctionEnclosingScopeIndex();
-          return InputScope(ref.context_, scopeIndex);
+          return InputScope(ref.stencils_, ref.context_, scopeIndex);
         });
   }
   MemberInitializers getMemberInitializers() const {
@@ -765,10 +771,12 @@ struct CompilationInput {
     enclosingScope = lazy_.enclosingScope();
   }
 
-  void initFromStencil(CompilationStencil& context, ScriptIndex scriptIndex,
+  void initFromStencil(const InitialStencilAndDelazifications& stencils,
+                       const CompilationStencil& context,
+                       ScriptIndex scriptIndex,
                        ScriptSource* ss) {
     target = CompilationTarget::Delazification;
-    lazy_ = InputScript(context, scriptIndex);
+    lazy_ = InputScript(stencils, context, scriptIndex);
     source = ss;
     enclosingScope = lazy_.enclosingScope();
   }
@@ -2169,7 +2177,7 @@ InputScope InputScope::enclosing() const {
       },
       [](const ScopeStencilRef& ref) {
         if (ref.scope().hasEnclosing()) {
-          return InputScope(ref.context_, ref.scope().enclosing());
+          return InputScope(ref.stencils_, ref.context_, ref.scope().enclosing());
         }
         
         
