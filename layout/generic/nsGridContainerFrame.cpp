@@ -664,6 +664,18 @@ class nsGridContainerFrame::ItemPlan {
     return mTrackSizes[aIndex];
   }
 
+  using FitContentClamper =
+      std::function<bool(uint32_t aTrack, nscoord aMinSize, nscoord* aSize)>;
+
+  
+
+
+
+
+  nscoord GrowTracksToLimit(nscoord aAvailableSpace,
+                            const nsTArray<uint32_t>& aGrowableTracks,
+                            const FitContentClamper& aFitContentClamper);
+
  private:
   nsTArray<nsGridContainerFrame::TrackSize> mTrackSizes;
 };
@@ -2800,55 +2812,6 @@ struct nsGridContainerFrame::Tracks {
 
 
 
-  nscoord GrowTracksToLimit(nscoord aAvailableSpace, ItemPlan& aItemPlan,
-                            const nsTArray<uint32_t>& aGrowableTracks,
-                            const FitContentClamper& aFitContentClamper) const {
-    MOZ_ASSERT(aAvailableSpace > 0 && aGrowableTracks.Length() > 0);
-    nscoord space = aAvailableSpace;
-    uint32_t numGrowable = aGrowableTracks.Length();
-    while (true) {
-      nscoord spacePerTrack = std::max<nscoord>(space / numGrowable, 1);
-      for (uint32_t track : aGrowableTracks) {
-        TrackSize& sz = aItemPlan[track];
-        if (sz.IsFrozen()) {
-          continue;
-        }
-        nscoord newBase = sz.mBase + spacePerTrack;
-        nscoord limit = sz.mLimit;
-        if (MOZ_UNLIKELY((sz.mState & TrackSize::eApplyFitContentClamping) &&
-                         aFitContentClamper)) {
-          
-          aFitContentClamper(track, sz.mBase, &limit);
-        }
-        if (newBase > limit) {
-          nscoord consumed = limit - sz.mBase;
-          if (consumed > 0) {
-            space -= consumed;
-            sz.mBase = limit;
-          }
-          sz.mState |= TrackSize::eFrozen;
-          if (--numGrowable == 0) {
-            return space;
-          }
-        } else {
-          sz.mBase = newBase;
-          space -= spacePerTrack;
-        }
-        MOZ_ASSERT(space >= 0);
-        if (space == 0) {
-          return 0;
-        }
-      }
-    }
-    MOZ_ASSERT_UNREACHABLE("we don't exit the loop above except by return");
-    return 0;
-  }
-
-  
-
-
-
-
 
 
 
@@ -2979,8 +2942,8 @@ struct nsGridContainerFrame::Tracks {
       space = aTrackPlan.DistributeToFlexTrackSizes(space, aGrowableTracks,
                                                     aFunctions, *this);
     } else {
-      space = GrowTracksToLimit(space, aItemPlan, aGrowableTracks,
-                                aFitContentClamper);
+      space = aItemPlan.GrowTracksToLimit(space, aGrowableTracks,
+                                          aFitContentClamper);
     }
 
     if (space > 0) {
@@ -10974,4 +10937,48 @@ nscoord nsGridContainerFrame::TrackPlan::DistributeToFlexTrackSizes(
     sz.mBase = std::max(sz.mBase, size);
   }
   return space;
+}
+
+nscoord nsGridContainerFrame::ItemPlan::GrowTracksToLimit(
+    nscoord aAvailableSpace, const nsTArray<uint32_t>& aGrowableTracks,
+    const FitContentClamper& aFitContentClamper) {
+  MOZ_ASSERT(aAvailableSpace > 0 && aGrowableTracks.Length() > 0);
+  nscoord space = aAvailableSpace;
+  uint32_t numGrowable = aGrowableTracks.Length();
+  while (true) {
+    nscoord spacePerTrack = std::max<nscoord>(space / numGrowable, 1);
+    for (uint32_t track : aGrowableTracks) {
+      TrackSize& sz = mTrackSizes[track];
+      if (sz.IsFrozen()) {
+        continue;
+      }
+      nscoord newBase = sz.mBase + spacePerTrack;
+      nscoord limit = sz.mLimit;
+      if (MOZ_UNLIKELY((sz.mState & TrackSize::eApplyFitContentClamping) &&
+                       aFitContentClamper)) {
+        
+        aFitContentClamper(track, sz.mBase, &limit);
+      }
+      if (newBase > limit) {
+        nscoord consumed = limit - sz.mBase;
+        if (consumed > 0) {
+          space -= consumed;
+          sz.mBase = limit;
+        }
+        sz.mState |= TrackSize::eFrozen;
+        if (--numGrowable == 0) {
+          return space;
+        }
+      } else {
+        sz.mBase = newBase;
+        space -= spacePerTrack;
+      }
+      MOZ_ASSERT(space >= 0);
+      if (space == 0) {
+        return 0;
+      }
+    }
+  }
+  MOZ_ASSERT_UNREACHABLE("we don't exit the loop above except by return");
+  return 0;
 }
