@@ -37,7 +37,7 @@ class VideoCaptureFactory : webrtc::VideoCaptureOptions::Callback {
       int32_t aId, mozilla::camera::CaptureDeviceType aType);
 
   struct CreateVideoCaptureResult {
-    rtc::scoped_refptr<webrtc::VideoCaptureModule> mCapturer;
+    webrtc::scoped_refptr<webrtc::VideoCaptureModule> mCapturer;
     
     
     webrtc::DesktopCaptureImpl* mDesktopImpl = nullptr;

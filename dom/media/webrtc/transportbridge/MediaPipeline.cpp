@@ -568,7 +568,7 @@ void MediaPipeline::RtpPacketReceived(std::string& aTransportId,
   
   
   
-  rtc::CopyOnWriteBuffer packet_buffer(packet.data(), packet.len());
+  webrtc::CopyOnWriteBuffer packet_buffer(packet.data(), packet.len());
   webrtc::RtpPacketReceived parsedPacket(mRtpHeaderExtensionMap.get());
   if (!parsedPacket.Parse(packet_buffer)) {
     return;
@@ -657,7 +657,8 @@ void MediaPipeline::RtcpPacketReceived(std::string& aTransportId,
 
   
   
-  mRtcpReceiveEvent.Notify(rtc::CopyOnWriteBuffer(packet.data(), packet.len()));
+  mRtcpReceiveEvent.Notify(
+      webrtc::CopyOnWriteBuffer(packet.data(), packet.len()));
 }
 
 void MediaPipeline::AlpnNegotiated(const std::string& aAlpn,
@@ -1513,7 +1514,7 @@ class MediaPipelineReceiveVideo::PipelineListener
       image = imageBuffer->GetNativeImage();
     } else {
       MOZ_ASSERT(buffer.type() == webrtc::VideoFrameBuffer::Type::kI420);
-      rtc::scoped_refptr<const webrtc::I420BufferInterface> i420(
+      webrtc::scoped_refptr<const webrtc::I420BufferInterface> i420(
           buffer.GetI420());
 
       MOZ_ASSERT(i420->DataY());

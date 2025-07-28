@@ -12,7 +12,7 @@
 
 #  include "platform_uithread.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 static const UINT_PTR kTimerId = 1;

@@ -41,13 +41,14 @@ class FrameTransformer : public webrtc::FrameTransformerInterface {
   
   
   void RegisterTransformedFrameCallback(
-      rtc::scoped_refptr<webrtc::TransformedFrameCallback> aCallback) override;
+      webrtc::scoped_refptr<webrtc::TransformedFrameCallback> aCallback)
+      override;
   void UnregisterTransformedFrameCallback() override;
 
   
   
   void RegisterTransformedFrameSinkCallback(
-      rtc::scoped_refptr<webrtc::TransformedFrameCallback> aCallback,
+      webrtc::scoped_refptr<webrtc::TransformedFrameCallback> aCallback,
       uint32_t aSsrc) override;
   void UnregisterTransformedFrameSinkCallback(uint32_t aSsrc) override;
 
@@ -57,9 +58,9 @@ class FrameTransformer : public webrtc::FrameTransformerInterface {
   const bool mVideo;
   Mutex mCallbacksMutex;
   
-  rtc::scoped_refptr<webrtc::TransformedFrameCallback> mCallback
+  webrtc::scoped_refptr<webrtc::TransformedFrameCallback> mCallback
       MOZ_GUARDED_BY(mCallbacksMutex);
-  std::map<uint32_t, rtc::scoped_refptr<webrtc::TransformedFrameCallback>>
+  std::map<uint32_t, webrtc::scoped_refptr<webrtc::TransformedFrameCallback>>
       mCallbacksBySsrc MOZ_GUARDED_BY(mCallbacksMutex);
 
   Mutex mProxyMutex;
