@@ -46,6 +46,7 @@ enum ArgResult {
   ARG_NONE = 0,
   ARG_FOUND = 1,
   ARG_BAD = 2  
+               
 };
 
 template <typename CharT>
@@ -92,15 +93,20 @@ static inline constexpr char toNarrow(CharT c) {
 
 
 
+
 template <typename CharT>
-static inline bool strimatch(const char* lowerstr, const CharT* mixedstr) {
+static inline bool ArgStartsWith(const CharT* mixedstr, const char* lowerstr) {
   while (*lowerstr) {
-    if (!*mixedstr) return false;  
+    if (!*mixedstr) {
+      return false;  
+    }
 
     
     
     
-    if (!isValidOptionCharacter(*lowerstr)) return false;
+    if (!isValidOptionCharacter(*lowerstr)) {
+      return false;
+    }
 
     if (toLowercase(toNarrow(*mixedstr)) != *lowerstr) {
       return false;  
@@ -110,9 +116,18 @@ static inline bool strimatch(const char* lowerstr, const CharT* mixedstr) {
     ++mixedstr;
   }
 
-  if (*mixedstr) return false;  
-
   return true;
+}
+
+
+
+template <typename CharT>
+static inline bool strimatch(const char* lowerstr, const CharT* mixedstr) {
+  if (ArgStartsWith(mixedstr, lowerstr)) {
+    return *(mixedstr + strlen(lowerstr)) == '\0';
+  }
+
+  return false;
 }
 
 
@@ -139,6 +154,7 @@ mozilla::Maybe<const CharT*> ReadAsOption(const CharT* str) {
 
 }  
 
+using internal::ArgStartsWith;
 using internal::strimatch;
 
 const wchar_t kCommandLineDelimiter[] = L" \t";
@@ -150,6 +166,7 @@ enum class CheckArgFlag : uint32_t {
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(CheckArgFlag)
+
 
 
 
@@ -175,34 +192,61 @@ inline ArgResult CheckArg(int& aArgc, CharT** aArgv, const char* aArg,
 
   while (*curarg) {
     if (const auto arg = ReadAsOption(*curarg)) {
-      if (strimatch(aArg, arg.value())) {
-        if (aFlags & CheckArgFlag::RemoveArg) {
-          RemoveArg(aArgc, curarg);
-        } else {
-          ++curarg;
-        }
-
-        if (!aParam) {
-          ar = ARG_FOUND;
-          break;
-        }
-
-        if (*curarg) {
-          if (ReadAsOption(*curarg)) {
-            return ARG_BAD;
-          }
-
-          *aParam = *curarg;
-
+      if (ArgStartsWith(arg.value(), aArg)) {
+        const auto nextChar = arg.value() + strlen(aArg);
+        if (*nextChar == 0) {
+          
+          
           if (aFlags & CheckArgFlag::RemoveArg) {
             RemoveArg(aArgc, curarg);
+          } else {
+            ++curarg;
           }
 
-          ar = ARG_FOUND;
-          break;
+          if (!aParam) {
+            ar = ARG_FOUND;
+            break;
+          }
+
+          if (*curarg) {
+            if (ReadAsOption(*curarg)) {
+              return ARG_BAD;
+            }
+
+            *aParam = *curarg;
+
+            
+            
+            if (aFlags & CheckArgFlag::RemoveArg) {
+              RemoveArg(aArgc, curarg);
+            }
+
+            ar = ARG_FOUND;
+            break;
+          }
+
+          return ARG_BAD;
         }
 
-        return ARG_BAD;
+        if (*nextChar == '=') {
+          if (aParam) {
+            
+            
+            
+            
+            *aParam = nextChar + 1;  
+
+            if (aFlags & CheckArgFlag::RemoveArg) {
+              RemoveArg(aArgc, curarg);
+            }
+
+            ar = ARG_FOUND;
+          } else {
+            ar = ARG_BAD;
+          }
+
+          break;
+        }
       }
     }
 
