@@ -35,16 +35,6 @@ class AccessibleWrap : public LocalAccessible {
   
   virtual void Shutdown() override;
 
-  
-  
-
-
-
-
-
-
-  static void UpdateSystemCaretFor(Accessible* aAccessible);
-
  public:
   
 
