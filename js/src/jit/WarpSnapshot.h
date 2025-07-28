@@ -264,6 +264,10 @@ class WarpCacheIR : public WarpOpSnapshot {
 
 
 
+
+
+
+
 class WarpObjectField {
   
   static constexpr uintptr_t NurseryIndexTag = 0x1;
@@ -558,6 +562,11 @@ class WarpSnapshot : public TempObject {
   using NurseryObjectVector = Vector<JSObject*, 0, JitAllocPolicy>;
   NurseryObjectVector nurseryObjects_;
 
+  
+  
+  using NurseryValueVector = mozilla::Vector<Value, 0, JitAllocPolicy>;
+  NurseryValueVector nurseryValues_;
+
 #ifdef JS_CACHEIR_SPEW
   bool needsFinalWarmUpCount_ = false;
 #endif
@@ -594,6 +603,9 @@ class WarpSnapshot : public TempObject {
 
   NurseryObjectVector& nurseryObjects() { return nurseryObjects_; }
   const NurseryObjectVector& nurseryObjects() const { return nurseryObjects_; }
+
+  NurseryValueVector& nurseryValues() { return nurseryValues_; }
+  const NurseryValueVector& nurseryValues() const { return nurseryValues_; }
 
 #ifdef DEBUG
   mozilla::HashNumber icHash() const { return icHash_; }

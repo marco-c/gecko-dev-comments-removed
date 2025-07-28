@@ -34,7 +34,8 @@ WarpSnapshot::WarpSnapshot(JSContext* cx, TempAllocator& alloc,
       globalLexicalEnv_(&cx->global()->lexicalEnvironment()),
       globalLexicalEnvThis_(globalLexicalEnv_->thisObject()),
       bailoutInfo_(bailoutInfo),
-      nurseryObjects_(alloc) {
+      nurseryObjects_(alloc),
+      nurseryValues_(alloc) {
 #ifdef JS_CACHEIR_SPEW
   needsFinalWarmUpCount_ = needsFinalWarmUpCount;
 #endif
@@ -72,9 +73,15 @@ void WarpSnapshot::dump(GenericPrinter& out) const {
   }
   out.printf("\n");
 
-  out.printf("Nursery objects (%u):\n", unsigned(nurseryObjects_.length()));
+  out.printf("Nursery objects (%zu):\n", nurseryObjects_.length());
   for (size_t i = 0; i < nurseryObjects_.length(); i++) {
-    out.printf("  %u: 0x%p\n", unsigned(i), nurseryObjects_[i]);
+    out.printf("  %zu: 0x%p\n", i, nurseryObjects_[i]);
+  }
+  out.printf("\n");
+
+  out.printf("Nursery values (%zu):\n", nurseryValues_.length());
+  for (size_t i = 0; i < nurseryValues_.length(); i++) {
+    out.printf("  %zu: (gc::Cell*)0x%p\n", i, nurseryValues_[i].toGCThing());
   }
   out.printf("\n");
 
@@ -216,6 +223,10 @@ void WarpSnapshot::trace(JSTracer* trc) {
   
   for (size_t i = 0; i < nurseryObjects_.length(); i++) {
     TraceManuallyBarrieredEdge(trc, &nurseryObjects_[i], "warp-nursery-object");
+  }
+  for (size_t i = 0; i < nurseryValues_.length(); i++) {
+    MOZ_ASSERT(nurseryValues_[i].isGCThing());
+    TraceManuallyBarrieredEdge(trc, &nurseryValues_[i], "warp-nursery-value");
   }
 
   
