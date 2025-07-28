@@ -399,7 +399,7 @@ for k, v in variant.get("env", {}).items():
     env[k] = v.format(**REPLACEMENTS)
 
 
-extra_args = {"jit-test": [], "jstests": []}
+extra_args = {"jit-test": [], "jstests": [], "gdb": []}
 extra_args.update(variant.get("extra-args", {}))
 for v in extra_args.values():
     v[:] = [arg.format(**REPLACEMENTS) for arg in v]
@@ -568,12 +568,12 @@ if use_minidump:
     
     
     
-    for extra in extra_args.values():
-        extra.append(f"--args=--dll {injector_lib}")
+    for suite in ("jstests", "jit-test"):
+        extra_args[suite].append(f"--args=--dll {injector_lib}")
 
 
-for extra in extra_args.values():
-    extra.append("--show-slow")
+for suite in ("jstests", "jit-test"):
+    extra_args[suite].append("--show-slow")
 
 
 
@@ -616,11 +616,12 @@ if "jstests" in test_suites:
 if "gdb" in test_suites:
     test_script = os.path.join(DIR.js_src, "gdb", "run-tests.py")
     auto_args = ["-s", "-o", "--no-progress"] if AUTOMATION else []
-    extra_args = env.get("GDBTEST_EXTRA_ARGS", "").split(" ")
     results.append(
         (
             "gdb",
-            run_test_command([PYTHON, test_script, *auto_args, *extra_args, OBJDIR]),
+            run_test_command(
+                [PYTHON, test_script, *auto_args, *extra_args["gdb"], OBJDIR]
+            ),
         )
     )
 
