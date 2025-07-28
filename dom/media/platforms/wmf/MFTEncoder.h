@@ -15,6 +15,7 @@
 #include "EncoderConfig.h"
 #include "WMF.h"
 #include "mozilla/DefineEnum.h"
+#include "mozilla/EnumSet.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ResultVariant.h"
@@ -91,65 +92,32 @@ class MFTEncoder final {
   };
 
  private:
-  
-  
-  
-  
-  
-  
-  using Event = Result<MediaEventType, HRESULT>;
-  using EventQueue = std::queue<MediaEventType>;
-  class EventSource final {
-   public:
-    EventSource() : mImpl(Nothing{}) {}
-
-    void SetAsyncEventGenerator(
-        already_AddRefed<IMFMediaEventGenerator>&& aAsyncEventGenerator) {
-      MOZ_ASSERT(mImpl.is<Nothing>());
-      mImpl.emplace<RefPtr<IMFMediaEventGenerator>>(aAsyncEventGenerator);
-    }
-
-    void InitSyncMFTEventQueue() {
-      MOZ_ASSERT(mImpl.is<Nothing>());
-      mImpl.emplace<UniquePtr<EventQueue>>(MakeUnique<EventQueue>());
-    }
-
-    bool IsSync() const { return mImpl.is<UniquePtr<EventQueue>>(); }
-
-    Event GetEvent();
-    
-    HRESULT QueueSyncMFTEvent(MediaEventType aEventType);
-
-   private:
-    
-    Event GetSyncMFTEvent();
-
-    Variant<
-        
-        Nothing,
-        
-        
-        RefPtr<IMFMediaEventGenerator>,
-        
-        
-        UniquePtr<EventQueue>>
-        mImpl;
-#ifdef DEBUG
-    bool IsOnCurrentThread();
-    nsCOMPtr<nsISerialEventTarget> mThread;
-#endif
-  };
-
   ~MFTEncoder() { Destroy(); };
 
   static nsTArray<Info>& Infos();
   static nsTArray<Info> Enumerate();
   static Maybe<Info> GetInfo(const GUID& aSubtype);
 
+  
   Result<EncodedData, MediaResult> EncodeSync(InputSample&& aInput);
   Result<EncodedData, MediaResult> DrainSync();
   Result<EncodedData, HRESULT> PullOutputs();
 
+  
+  Result<EncodedData, MediaResult> EncodeAsync(InputSample&& aInput);
+  Result<EncodedData, MediaResult> DrainAsync();
+
+  MOZ_DEFINE_ENUM_CLASS_WITH_TOSTRING_AT_CLASS_SCOPE(
+      ProcessedResult, (AllAvailableInputsProcessed, InputProcessed,
+                        OutputYielded, DrainComplete));
+  using ProcessedResults = EnumSet<ProcessedResult>;
+  Result<ProcessedResults, HRESULT> ProcessPendingEvents();
+  Result<ProcessedResult, HRESULT> ProcessEvent(MediaEventType aType);
+  Result<ProcessedResult, HRESULT> ProcessInput();
+  Result<ProcessedResult, HRESULT> ProcessOutput();
+  Result<MediaEventType, HRESULT> GetPendingEvent();
+
+  
   class OutputResult {
    public:
     explicit OutputResult(already_AddRefed<IMFSample> aSample)
@@ -177,6 +145,9 @@ class MFTEncoder final {
   HRESULT UpdateOutputType();
   HRESULT ProcessOutput(RefPtr<IMFSample>& aSample, DWORD& aOutputStatus,
                         DWORD& aBufferStatus);
+  HRESULT ProcessInput(InputSample&& aInput);
+
+  bool IsAsync() const { return mAsyncEventGenerator; }
 
   
   
@@ -185,20 +156,6 @@ class MFTEncoder final {
   HRESULT GetStreamIDs();
   GUID MatchInputSubtype(IMFMediaType* aInputType);
   HRESULT SendMFTMessage(MFT_MESSAGE_TYPE aMsg, ULONG_PTR aData);
-
-  HRESULT PushInput(InputSample&& aInput);
-  nsTArray<OutputSample> TakeOutput();
-  HRESULT Drain(nsTArray<OutputSample>& aOutput);
-
-  HRESULT ProcessEvents();
-  HRESULT ProcessEventsInternal();
-  HRESULT ProcessInput();
-  HRESULT ProcessOutput();
-
-  MOZ_DEFINE_ENUM_CLASS_WITH_TOSTRING_AT_CLASS_SCOPE(DrainState,
-                                                     (DRAINED, DRAINABLE,
-                                                      DRAINING));
-  void SetDrainState(DrainState aState);
 
   const HWPreference mHWPreference;
   RefPtr<IMFTransform> mEncoder;
@@ -215,16 +172,16 @@ class MFTEncoder final {
   MFT_OUTPUT_STREAM_INFO mOutputStreamInfo;
   bool mOutputStreamProvidesSample;
 
+  
   size_t mNumNeedInput;
-  DrainState mDrainState = DrainState::DRAINABLE;
-
   std::deque<InputSample> mPendingInputs;
+
   nsTArray<OutputSample> mOutputs;
   
   
   MPEGHeader mOutputHeader;
 
-  EventSource mEventSource;
+  RefPtr<IMFMediaEventGenerator> mAsyncEventGenerator;
 };
 
 }  
