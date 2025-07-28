@@ -27,33 +27,21 @@
 
 namespace IPC {
 
-class Channel::ChannelImpl : public MessageLoopForIO::IOHandler {
+class ChannelWin : public Channel, public MessageLoopForIO::IOHandler {
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DELETE_ON_EVENT_TARGET(
-      ChannelImpl, IOThread().GetEventTarget());
+  ChannelWin(ChannelHandle pipe, Mode mode, base::ProcessId other_pid);
 
-  using ChannelHandle = Channel::ChannelHandle;
+  bool Connect(Listener* listener) MOZ_EXCLUDES(SendMutex()) override;
+  void Close() MOZ_EXCLUDES(SendMutex()) override;
+  void StartAcceptingHandles(Mode mode) MOZ_EXCLUDES(SendMutex()) override;
+  
+  bool Send(mozilla::UniquePtr<Message> message)
+      MOZ_EXCLUDES(SendMutex()) override;
 
-  
-  ChannelImpl(ChannelHandle pipe, Mode mode, base::ProcessId other_pid);
-  bool Connect(Listener* listener) MOZ_EXCLUDES(SendMutex());
-  void Close() MOZ_EXCLUDES(SendMutex());
-  void StartAcceptingHandles(Mode mode) MOZ_EXCLUDES(SendMutex());
-  
-  bool Send(mozilla::UniquePtr<Message> message) MOZ_EXCLUDES(SendMutex());
-
-  void SetOtherPid(base::ProcessId other_pid);
-
-  
-  
-  bool IsClosed() MOZ_EXCLUDES(SendMutex()) {
-    mozilla::MutexAutoLock lock(SendMutex());
-    chan_cap_.NoteLockHeld();
-    return pipe_ == INVALID_HANDLE_VALUE;
-  }
+  void SetOtherPid(base::ProcessId other_pid) override;
 
  private:
-  ~ChannelImpl() {
+  ~ChannelWin() {
     IOThread().AssertOnCurrentThread();
     if (pipe_ != INVALID_HANDLE_VALUE ||
         other_process_ != INVALID_HANDLE_VALUE) {
@@ -86,20 +74,7 @@ class Channel::ChannelImpl : public MessageLoopForIO::IOHandler {
   virtual void OnIOCompleted(MessageLoopForIO::IOContext* context,
                              DWORD bytes_transfered, DWORD error);
 
-  const mozilla::EventTargetCapability<nsISerialEventTarget>& IOThread() const
-      MOZ_RETURN_CAPABILITY(chan_cap_.Target()) {
-    return chan_cap_.Target();
-  }
-
-  mozilla::Mutex& SendMutex() MOZ_RETURN_CAPABILITY(chan_cap_.Lock()) {
-    return chan_cap_.Lock();
-  }
-
  private:
-  
-  mozilla::EventTargetAndLockCapability<nsISerialEventTarget, mozilla::Mutex>
-      chan_cap_;
-
   Mode mode_ MOZ_GUARDED_BY(IOThread());
 
   struct State {
@@ -158,8 +133,6 @@ class Channel::ChannelImpl : public MessageLoopForIO::IOHandler {
   
   
   HANDLE other_process_ MOZ_GUARDED_BY(chan_cap_) = INVALID_HANDLE_VALUE;
-
-  DISALLOW_COPY_AND_ASSIGN(ChannelImpl);
 };
 
 }  

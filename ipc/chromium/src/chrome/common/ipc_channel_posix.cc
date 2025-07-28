@@ -103,18 +103,16 @@ static inline ssize_t corrected_sendmsg(int socket,
 }  
 
 
-Channel::ChannelImpl::ChannelImpl(ChannelHandle pipe, Mode mode,
-                                  base::ProcessId other_pid)
-    : chan_cap_("ChannelImpl::SendMutex",
-                MessageLoopForIO::current()->SerialEventTarget()),
-      other_pid_(other_pid) {
+ChannelPosix::ChannelPosix(ChannelHandle pipe, Mode mode,
+                           base::ProcessId other_pid)
+    : other_pid_(other_pid) {
   Init(mode);
   SetPipe(pipe.release());
 
   EnqueueHelloMessage();
 }
 
-void Channel::ChannelImpl::SetPipe(int fd) {
+void ChannelPosix::SetPipe(int fd) {
   chan_cap_.NoteExclusiveAccess();
 
   pipe_ = fd;
@@ -133,14 +131,14 @@ void Channel::ChannelImpl::SetPipe(int fd) {
   }
 }
 
-bool Channel::ChannelImpl::PipeBufHasSpaceAfter(size_t already_written) {
+bool ChannelPosix::PipeBufHasSpaceAfter(size_t already_written) {
   
   
   return pipe_buf_len_ == 0 ||
          static_cast<size_t>(pipe_buf_len_) > already_written;
 }
 
-void Channel::ChannelImpl::Init(Mode mode) {
+void ChannelPosix::Init(Mode mode) {
   
   static_assert(sizeof(*this) <= 512, "Exceeded expected size class");
 
@@ -164,7 +162,7 @@ void Channel::ChannelImpl::Init(Mode mode) {
 #endif
 }
 
-bool Channel::ChannelImpl::EnqueueHelloMessage() {
+bool ChannelPosix::EnqueueHelloMessage() {
   mozilla::UniquePtr<Message> msg(
       new Message(MSG_ROUTING_NONE, HELLO_MESSAGE_TYPE));
   if (!msg->WriteInt(base::GetCurrentProcId())) {
@@ -176,7 +174,7 @@ bool Channel::ChannelImpl::EnqueueHelloMessage() {
   return true;
 }
 
-bool Channel::ChannelImpl::Connect(Listener* listener) {
+bool ChannelPosix::Connect(Listener* listener) {
   IOThread().AssertOnCurrentThread();
   mozilla::MutexAutoLock lock(SendMutex());
   chan_cap_.NoteExclusiveAccess();
@@ -190,7 +188,7 @@ bool Channel::ChannelImpl::Connect(Listener* listener) {
   return ContinueConnect();
 }
 
-bool Channel::ChannelImpl::ContinueConnect() {
+bool ChannelPosix::ContinueConnect() {
   chan_cap_.NoteExclusiveAccess();
   MOZ_ASSERT(pipe_ != -1);
 
@@ -210,7 +208,7 @@ bool Channel::ChannelImpl::ContinueConnect() {
   return ProcessOutgoingMessages();
 }
 
-void Channel::ChannelImpl::SetOtherPid(base::ProcessId other_pid) {
+void ChannelPosix::SetOtherPid(base::ProcessId other_pid) {
   IOThread().AssertOnCurrentThread();
   mozilla::MutexAutoLock lock(SendMutex());
   chan_cap_.NoteExclusiveAccess();
@@ -220,7 +218,7 @@ void Channel::ChannelImpl::SetOtherPid(base::ProcessId other_pid) {
   other_pid_ = other_pid;
 }
 
-bool Channel::ChannelImpl::ProcessIncomingMessages() {
+bool ChannelPosix::ProcessIncomingMessages() {
   chan_cap_.NoteOnTarget();
 
   struct msghdr msg = {0};
@@ -508,7 +506,7 @@ bool Channel::ChannelImpl::ProcessIncomingMessages() {
   }
 }
 
-bool Channel::ChannelImpl::ProcessOutgoingMessages() {
+bool ChannelPosix::ProcessOutgoingMessages() {
   
   chan_cap_.NoteLockHeld();
 
@@ -694,8 +692,8 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages() {
         
         
         IOThread().Dispatch(mozilla::NewRunnableMethod<int>(
-            "ChannelImpl::ContinueProcessOutgoing", this,
-            &ChannelImpl::OnFileCanWriteWithoutBlocking, -1));
+            "ChannelPosix::ContinueProcessOutgoing", this,
+            &ChannelPosix::OnFileCanWriteWithoutBlocking, -1));
       }
       return true;
     } else {
@@ -731,7 +729,7 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages() {
   return true;
 }
 
-bool Channel::ChannelImpl::Send(mozilla::UniquePtr<Message> message) {
+bool ChannelPosix::Send(mozilla::UniquePtr<Message> message) {
   
   mozilla::MutexAutoLock lock(SendMutex());
   chan_cap_.NoteLockHeld();
@@ -766,7 +764,7 @@ bool Channel::ChannelImpl::Send(mozilla::UniquePtr<Message> message) {
 }
 
 
-void Channel::ChannelImpl::OnFileCanReadWithoutBlocking(int fd) {
+void ChannelPosix::OnFileCanReadWithoutBlocking(int fd) {
   IOThread().AssertOnCurrentThread();
   chan_cap_.NoteOnTarget();
 
@@ -781,7 +779,7 @@ void Channel::ChannelImpl::OnFileCanReadWithoutBlocking(int fd) {
 }
 
 #if defined(XP_DARWIN)
-void Channel::ChannelImpl::CloseDescriptors(uint32_t pending_fd_id) {
+void ChannelPosix::CloseDescriptors(uint32_t pending_fd_id) {
   mozilla::MutexAutoLock lock(SendMutex());
   chan_cap_.NoteExclusiveAccess();
 
@@ -797,7 +795,7 @@ void Channel::ChannelImpl::CloseDescriptors(uint32_t pending_fd_id) {
 }
 #endif
 
-void Channel::ChannelImpl::OutputQueuePush(mozilla::UniquePtr<Message> msg) {
+void ChannelPosix::OutputQueuePush(mozilla::UniquePtr<Message> msg) {
   chan_cap_.NoteLockHeld();
 
   mozilla::LogIPCMessage::LogDispatchWithPid(msg.get(), other_pid_);
@@ -807,7 +805,7 @@ void Channel::ChannelImpl::OutputQueuePush(mozilla::UniquePtr<Message> msg) {
   output_queue_.Push(std::move(msg));
 }
 
-void Channel::ChannelImpl::OutputQueuePop() {
+void ChannelPosix::OutputQueuePop() {
   
   partial_write_.reset();
 
@@ -815,8 +813,8 @@ void Channel::ChannelImpl::OutputQueuePop() {
 }
 
 
-void Channel::ChannelImpl::OnFileCanWriteWithoutBlocking(int fd) {
-  RefPtr<ChannelImpl> grip(this);
+void ChannelPosix::OnFileCanWriteWithoutBlocking(int fd) {
+  RefPtr<ChannelPosix> grip(this);
   IOThread().AssertOnCurrentThread();
   mozilla::ReleasableMutexAutoLock lock(SendMutex());
   chan_cap_.NoteExclusiveAccess();
@@ -827,13 +825,13 @@ void Channel::ChannelImpl::OnFileCanWriteWithoutBlocking(int fd) {
   }
 }
 
-void Channel::ChannelImpl::Close() {
+void ChannelPosix::Close() {
   IOThread().AssertOnCurrentThread();
   mozilla::MutexAutoLock lock(SendMutex());
   CloseLocked();
 }
 
-void Channel::ChannelImpl::CloseLocked() {
+void ChannelPosix::CloseLocked() {
   chan_cap_.NoteExclusiveAccess();
 
   
@@ -866,7 +864,7 @@ void Channel::ChannelImpl::CloseLocked() {
 }
 
 #if defined(XP_DARWIN)
-void Channel::ChannelImpl::SetOtherMachTask(task_t task) {
+void ChannelPosix::SetOtherMachTask(task_t task) {
   IOThread().AssertOnCurrentThread();
   mozilla::MutexAutoLock lock(SendMutex());
   chan_cap_.NoteExclusiveAccess();
@@ -881,7 +879,7 @@ void Channel::ChannelImpl::SetOtherMachTask(task_t task) {
   ContinueConnect();
 }
 
-void Channel::ChannelImpl::StartAcceptingMachPorts(Mode mode) {
+void ChannelPosix::StartAcceptingMachPorts(Mode mode) {
   IOThread().AssertOnCurrentThread();
   mozilla::MutexAutoLock lock(SendMutex());
   chan_cap_.NoteExclusiveAccess();
@@ -1033,7 +1031,7 @@ static mozilla::Maybe<mach_port_name_t> BrokerTransferSendRight(
 
 
 
-bool Channel::ChannelImpl::AcceptMachPorts(Message& msg) {
+bool ChannelPosix::AcceptMachPorts(Message& msg) {
   chan_cap_.NoteOnTarget();
 
   uint32_t num_send_rights = msg.header()->num_send_rights;
@@ -1091,7 +1089,7 @@ bool Channel::ChannelImpl::AcceptMachPorts(Message& msg) {
 
 
 
-bool Channel::ChannelImpl::TransferMachPorts(Message& msg) {
+bool ChannelPosix::TransferMachPorts(Message& msg) {
   uint32_t num_send_rights = msg.num_send_rights();
   if (num_send_rights == 0) {
     return true;
@@ -1137,42 +1135,7 @@ bool Channel::ChannelImpl::TransferMachPorts(Message& msg) {
 #endif
 
 
-
-Channel::Channel(ChannelHandle pipe, Mode mode, base::ProcessId other_pid)
-    : channel_impl_(new ChannelImpl(std::move(pipe), mode, other_pid)) {
-  MOZ_COUNT_CTOR(IPC::Channel);
-}
-
-Channel::~Channel() { MOZ_COUNT_DTOR(IPC::Channel); }
-
-bool Channel::Connect(Listener* listener) {
-  return channel_impl_->Connect(listener);
-}
-
-void Channel::Close() { channel_impl_->Close(); }
-
-bool Channel::Send(mozilla::UniquePtr<Message> message) {
-  return channel_impl_->Send(std::move(message));
-}
-
-void Channel::SetOtherPid(base::ProcessId other_pid) {
-  channel_impl_->SetOtherPid(other_pid);
-}
-
-bool Channel::IsClosed() const { return channel_impl_->IsClosed(); }
-
-#if defined(XP_DARWIN)
-void Channel::SetOtherMachTask(task_t task) {
-  channel_impl_->SetOtherMachTask(task);
-}
-
-void Channel::StartAcceptingMachPorts(Mode mode) {
-  channel_impl_->StartAcceptingMachPorts(mode);
-}
-#endif
-
-
-bool Channel::CreateRawPipe(ChannelHandle* server, ChannelHandle* client) {
+bool ChannelPosix::CreateRawPipe(ChannelHandle* server, ChannelHandle* client) {
   int fds[2];
   if (socketpair(AF_UNIX, SOCK_STREAM, 0, fds) < 0) {
     mozilla::ipc::AnnotateCrashReportWithErrno(
