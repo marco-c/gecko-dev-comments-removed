@@ -94,10 +94,16 @@ add_task(async () => {
   );
 
   info("Check passing a selector for an element in a cross origin iframe");
-  nodeFront = await commands.inspectorCommand.findNodeFrontFromSelectors([
-    "#iframe-com",
-    "h3",
-  ]);
+  nodeFront = await commands.inspectorCommand.findNodeFrontFromSelectors(
+    ["#iframe-com", "h3"],
+    
+    
+    
+    
+    
+    
+    Services.appinfo.OS === "Darwin" ? 20000 : undefined
+  );
   is(
     nodeFront.displayName,
     "h3",
