@@ -177,7 +177,7 @@ def http2_compatible() -> bool:
     if not ssl.OPENSSL_VERSION.startswith("OpenSSL"):
         logger = get_logger()
         logger.warning(
-            'Skipping HTTP/2.0 compatibility check as system is not using '
+            'Skipping HTTP/2 compatibility check as system is not using '
             'OpenSSL (found: %s)' % ssl.OPENSSL_VERSION)
         return True
 
