@@ -1112,7 +1112,8 @@ static bool AvailableSpaceShrunk(WritingMode aWM,
 }
 
 static LogicalSize CalculateContainingBlockSizeForAbsolutes(
-    WritingMode aWM, const ReflowInput& aReflowInput, LogicalSize aFrameSize) {
+    WritingMode aWM, const ReflowInput& aReflowInput,
+    const LogicalSize& aFrameSize) {
   
   
   
