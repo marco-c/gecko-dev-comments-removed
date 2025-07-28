@@ -241,8 +241,7 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 [[nodiscard]] static bool AsyncGeneratorReturned(
     JSContext* cx, Handle<AsyncGeneratorObject*> generator, HandleValue value) {
   
-  
-  generator->setCompleted();
+  generator->setDrainingQueue();
 
   
   
@@ -254,8 +253,8 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
   }
 
   MOZ_ASSERT(!generator->isExecuting());
-  MOZ_ASSERT(!generator->isAwaitingYieldReturn());
-  if (generator->isAwaitingReturn()) {
+  MOZ_ASSERT(!generator->isExecuting_AwaitingYieldReturn());
+  if (generator->isDrainingQueue_AwaitingReturn()) {
     return true;
   }
 
@@ -273,8 +272,7 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 [[nodiscard]] static bool AsyncGeneratorThrown(
     JSContext* cx, Handle<AsyncGeneratorObject*> generator) {
   
-  
-  generator->setCompleted();
+  generator->setDrainingQueue();
 
   
   if (!cx->isExceptionPending()) {
@@ -291,8 +289,8 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
   }
 
   MOZ_ASSERT(!generator->isExecuting());
-  MOZ_ASSERT(!generator->isAwaitingYieldReturn());
-  if (generator->isAwaitingReturn()) {
+  MOZ_ASSERT(!generator->isExecuting_AwaitingYieldReturn());
+  if (generator->isDrainingQueue_AwaitingReturn()) {
     return true;
   }
 
@@ -309,7 +307,7 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 
 [[nodiscard]] static bool AsyncGeneratorYieldReturnAwaitedFulfilled(
     JSContext* cx, Handle<AsyncGeneratorObject*> generator, HandleValue value) {
-  MOZ_ASSERT(generator->isAwaitingYieldReturn(),
+  MOZ_ASSERT(generator->isExecuting_AwaitingYieldReturn(),
              "YieldReturn-Await fulfilled when not in "
              "'AwaitingYieldReturn' state");
 
@@ -328,7 +326,7 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
     JSContext* cx, Handle<AsyncGeneratorObject*> generator,
     HandleValue reason) {
   MOZ_ASSERT(
-      generator->isAwaitingYieldReturn(),
+      generator->isExecuting_AwaitingYieldReturn(),
       "YieldReturn-Await rejected when not in 'AwaitingYieldReturn' state");
 
   
@@ -355,7 +353,7 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
   
   
   
-  generator->setAwaitingYieldReturn();
+  generator->setExecuting_AwaitingYieldReturn();
 
   return InternalAsyncGeneratorAwait(
       cx, generator, value,
@@ -378,10 +376,10 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
     return false;
   }
 
-  MOZ_ASSERT(!generator->isAwaitingYieldReturn());
+  MOZ_ASSERT(!generator->isExecuting_AwaitingYieldReturn());
   
   
-  if (generator->isAwaitingReturn()) {
+  if (generator->isDrainingQueue_AwaitingReturn()) {
     return true;
   }
 
@@ -579,10 +577,11 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
     JSContext* cx, Handle<AsyncGeneratorObject*> generator, HandleValue value) {
   
   
-  MOZ_ASSERT(generator->isAwaitingReturn());
-
   
-  generator->setCompleted();
+  
+  
+  MOZ_ASSERT(generator->isDrainingQueue_AwaitingReturn());
+  generator->setDrainingQueue();
 
   
   
@@ -591,8 +590,8 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
   }
 
   MOZ_ASSERT(!generator->isExecuting());
-  MOZ_ASSERT(!generator->isAwaitingYieldReturn());
-  if (generator->isAwaitingReturn()) {
+  MOZ_ASSERT(!generator->isExecuting_AwaitingYieldReturn());
+  if (generator->isDrainingQueue_AwaitingReturn()) {
     return true;
   }
 
@@ -611,10 +610,9 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
     JSContext* cx, Handle<AsyncGeneratorObject*> generator, HandleValue value) {
   
   
-  MOZ_ASSERT(generator->isAwaitingReturn());
-
   
-  generator->setCompleted();
+  MOZ_ASSERT(generator->isDrainingQueue_AwaitingReturn());
+  generator->setDrainingQueue();
 
   
   
@@ -623,8 +621,8 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
   }
 
   MOZ_ASSERT(!generator->isExecuting());
-  MOZ_ASSERT(!generator->isAwaitingYieldReturn());
-  if (generator->isAwaitingReturn()) {
+  MOZ_ASSERT(!generator->isExecuting_AwaitingYieldReturn());
+  if (generator->isDrainingQueue_AwaitingReturn()) {
     return true;
   }
 
@@ -640,7 +638,8 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 [[nodiscard]] static bool AsyncGeneratorAwaitReturn(
     JSContext* cx, Handle<AsyncGeneratorObject*> generator, HandleValue next) {
   
-  
+  MOZ_ASSERT(generator->isDrainingQueue());
+  generator->setDrainingQueue_AwaitingReturn();
 
   
   
@@ -655,12 +654,6 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 
   
   
-  
-  
-  
-  
-  
-  
 
   
   
@@ -676,9 +669,20 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
   
   
   
-  return InternalAsyncGeneratorAwait(
-      cx, generator, next, PromiseHandler::AsyncGeneratorAwaitReturnFulfilled,
-      PromiseHandler::AsyncGeneratorAwaitReturnRejected);
+  if (!InternalAsyncGeneratorAwait(
+          cx, generator, next,
+          PromiseHandler::AsyncGeneratorAwaitReturnFulfilled,
+          PromiseHandler::AsyncGeneratorAwaitReturnRejected)) {
+    
+    
+    
+    
+    
+    
+    return false;
+  }
+
+  return true;
 }
 
 
@@ -689,8 +693,8 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
     JSContext* cx, Handle<AsyncGeneratorObject*> generator) {
   
   
-
-  MOZ_ASSERT(!generator->isSuspendedStart() && !generator->isSuspendedYield());
+  
+  MOZ_ASSERT(generator->isDrainingQueue());
 
   
   
@@ -708,9 +712,6 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
     
     if (completionKind == CompletionKind::Return) {
       RootedValue value(cx, next->completionValue());
-
-      
-      generator->setAwaitingReturn();
 
       
       
@@ -738,15 +739,15 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
     }
 
     MOZ_ASSERT(!generator->isExecuting());
-    MOZ_ASSERT(!generator->isAwaitingYieldReturn());
-    if (generator->isAwaitingReturn()) {
-      
+    MOZ_ASSERT(!generator->isExecuting_AwaitingYieldReturn());
+    if (generator->isDrainingQueue_AwaitingReturn()) {
       return true;
     }
   }
 
   
-  
+  generator->setCompleted();
+
   
   return true;
 }
@@ -908,7 +909,7 @@ bool js::AsyncGeneratorNext(JSContext* cx, unsigned argc, Value* vp) {
 
   
   
-  if (generator->isCompleted() && generator->isQueueEmpty()) {
+  if (generator->isCompleted()) {
     MOZ_ASSERT(generator->isQueueEmpty());
 
     
@@ -947,8 +948,9 @@ bool js::AsyncGeneratorNext(JSContext* cx, unsigned argc, Value* vp) {
       
       
       MOZ_ASSERT(generator->isExecuting() ||
-                 generator->isAwaitingYieldReturn() ||
-                 generator->isAwaitingReturn() || generator->isCompleted());
+                 generator->isExecuting_AwaitingYieldReturn() ||
+                 generator->isDrainingQueue() ||
+                 generator->isDrainingQueue_AwaitingReturn());
     }
   }
 
@@ -996,8 +998,6 @@ bool js::AsyncGeneratorReturn(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  bool wasQueueEmpty = generator->isQueueEmpty();
-
   
   
   
@@ -1008,12 +1008,11 @@ bool js::AsyncGeneratorReturn(JSContext* cx, unsigned argc, Value* vp) {
 
   
   
-  if (generator->isSuspendedStart() ||
-      (generator->isCompleted() && wasQueueEmpty)) {
+  if (generator->isSuspendedStart() || generator->isCompleted()) {
     MOZ_ASSERT(generator->isQueueLengthOne());
 
     
-    generator->setAwaitingReturn();
+    generator->setDrainingQueue();
 
     
     if (!AsyncGeneratorAwaitReturn(cx, generator, completionValue)) {
@@ -1042,9 +1041,10 @@ bool js::AsyncGeneratorReturn(JSContext* cx, unsigned argc, Value* vp) {
   } else {
     
     
-    MOZ_ASSERT(generator->isExecuting() || generator->isAwaitingYieldReturn() ||
-               generator->isAwaitingReturn() ||
-               (generator->isCompleted() && !wasQueueEmpty));
+    MOZ_ASSERT(generator->isExecuting() ||
+               generator->isExecuting_AwaitingYieldReturn() ||
+               generator->isDrainingQueue() ||
+               generator->isDrainingQueue_AwaitingReturn());
   }
 
   
@@ -1098,7 +1098,7 @@ bool js::AsyncGeneratorThrow(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  if (generator->isCompleted() && generator->isQueueEmpty()) {
+  if (generator->isCompleted()) {
     MOZ_ASSERT(generator->isQueueEmpty());
 
     
@@ -1128,8 +1128,9 @@ bool js::AsyncGeneratorThrow(JSContext* cx, unsigned argc, Value* vp) {
       
       
       MOZ_ASSERT(generator->isExecuting() ||
-                 generator->isAwaitingYieldReturn() ||
-                 generator->isAwaitingReturn() || generator->isCompleted());
+                 generator->isExecuting_AwaitingYieldReturn() ||
+                 generator->isDrainingQueue() ||
+                 generator->isDrainingQueue_AwaitingReturn());
     }
   }
 
