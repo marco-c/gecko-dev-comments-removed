@@ -66,7 +66,9 @@ const INDENT_STR = " ".repeat(INDENT_SIZE);
 
 
 
-function RuleEditor(ruleView, rule) {
+
+
+function RuleEditor(ruleView, rule, options = {}) {
   EventEmitter.decorate(this);
 
   this.ruleView = ruleView;
@@ -74,6 +76,7 @@ function RuleEditor(ruleView, rule) {
   this.toolbox = this.ruleView.inspector.toolbox;
   this.telemetry = this.toolbox.telemetry;
   this.rule = rule;
+  this.options = options;
 
   this.isEditable = !rule.isSystem;
   
@@ -648,7 +651,9 @@ RuleEditor.prototype = {
 
     for (const prop of this.rule.textProps) {
       if (!prop.editor && !prop.invisible) {
-        const editor = new TextPropertyEditor(this, prop);
+        const editor = new TextPropertyEditor(this, prop, {
+          elementsWithPendingClicks: this.options.elementsWithPendingClicks,
+        });
         this.propertyList.appendChild(editor.element);
       } else if (prop.editor) {
         
@@ -779,7 +784,9 @@ RuleEditor.prototype = {
       siblingProp
     );
     const index = this.rule.textProps.indexOf(prop);
-    const editor = new TextPropertyEditor(this, prop);
+    const editor = new TextPropertyEditor(this, prop, {
+      elementsWithPendingClicks: this.options.elementsWithPendingClicks,
+    });
 
     
     

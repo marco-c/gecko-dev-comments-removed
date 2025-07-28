@@ -25,12 +25,6 @@ const {
 
 loader.lazyRequireGetter(
   this,
-  "openContentLink",
-  "resource://devtools/client/shared/link.js",
-  true
-);
-loader.lazyRequireGetter(
-  this,
   ["parseDeclarations", "parseSingleValue"],
   "resource://devtools/shared/css/parsing-utils.js",
   true
@@ -103,8 +97,10 @@ const IS_DRAGGING_CLASSNAME = "ruleview-propertyvalue-dragging";
 
 
 
+
+
 class TextPropertyEditor {
-  constructor(ruleEditor, property) {
+  constructor(ruleEditor, property, options) {
     this.ruleEditor = ruleEditor;
     this.ruleView = this.ruleEditor.ruleView;
     this.cssProperties = this.ruleView.cssProperties;
@@ -113,6 +109,7 @@ class TextPropertyEditor {
     this.prop = property;
     this.prop.editor = this;
     this.browserWindow = this.doc.defaultView.top;
+    this.#elementsWithPendingClicks = options.elementsWithPendingClicks;
 
     this.toolbox = this.ruleView.inspector.toolbox;
     this.telemetry = this.toolbox.telemetry;
@@ -127,6 +124,7 @@ class TextPropertyEditor {
   #hasPendingClick = false;
   #clickedElementOptions = null;
   #populatedShorthandOverridden;
+  #elementsWithPendingClicks;
 
   #colorSwatchSpans;
   #bezierSwatchSpans;
@@ -383,6 +381,7 @@ class TextPropertyEditor {
             return;
           }
           this.#hasPendingClick = true;
+          this.#elementsWithPendingClicks.add(this.valueSpan);
 
           const matchedSelector = ACTIONABLE_ELEMENTS_SELECTORS.find(selector =>
             clickedEl.matches(selector)
@@ -409,44 +408,9 @@ class TextPropertyEditor {
           }
           this.#clickedElementOptions = null;
           this.#hasPendingClick = false;
+          this.#elementsWithPendingClicks.delete(this.valueSpan);
         },
         { signal: this.abortController.signal }
-      );
-
-      
-      
-      win.addEventListener(
-        "click",
-        event => {
-          
-          if (!this.valueSpan.contains(event.target)) {
-            return;
-          }
-
-          if (this.#hasPendingClick) {
-            
-            
-            
-            
-            event.stopImmediatePropagation();
-            return;
-          }
-
-          const target = event.target;
-          if (target.nodeName === "a") {
-            event.stopPropagation();
-            event.preventDefault();
-            openContentLink(target.href, {
-              relatedToCurrent: true,
-              inBackground:
-                event.button === 1 ||
-                (lazy.AppConstants.platform === "macosx"
-                  ? event.metaKey
-                  : event.ctrlKey),
-            });
-          }
-        },
-        { signal: this.abortController.signal, capture: true }
       );
 
       this.ruleView.on(
@@ -870,6 +834,7 @@ class TextPropertyEditor {
     
     if (this.#hasPendingClick && !this.#isDragging) {
       this.#hasPendingClick = false;
+      this.#elementsWithPendingClicks.delete(this.valueSpan);
       let elToClick;
 
       if (this.#clickedElementOptions !== null) {
@@ -1294,6 +1259,7 @@ class TextPropertyEditor {
     this.ruleEditor.rule.editClosestTextProperty(this.prop, direction);
     this.nameSpan.textProperty = null;
     this.valueSpan.textProperty = null;
+    this.#elementsWithPendingClicks.delete(this.valueSpan);
     this.prop.remove();
   }
 
