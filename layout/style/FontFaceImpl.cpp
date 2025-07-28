@@ -489,8 +489,7 @@ bool FontFaceImpl::SetDescriptors(const nsACString& aFamily,
         !setDesc(eCSSFontDesc_DescentOverride, aDescriptors.mDescentOverride) ||
         !setDesc(eCSSFontDesc_LineGapOverride,
                  aDescriptors.mLineGapOverride))) ||
-      (StaticPrefs::layout_css_size_adjust_enabled() &&
-       !setDesc(eCSSFontDesc_SizeAdjust, aDescriptors.mSizeAdjust))) {
+      !setDesc(eCSSFontDesc_SizeAdjust, aDescriptors.mSizeAdjust)) {
     
 
     
