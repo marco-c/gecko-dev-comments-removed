@@ -5,10 +5,7 @@
 
 
 
-
-
-
-const Mochia = (function () {
+(() => {
   
 
 
@@ -246,14 +243,12 @@ const Mochia = (function () {
     },
   });
 
-  return function (scope) {
-    _testScope = scope;
+  _testScope = this;
 
-    Object.assign(_testScope, {
-      describe: MochiaImpl.describe,
-      beforeEach: MochiaImpl.beforeEach,
-      afterEach: MochiaImpl.afterEach,
-      it: MochiaImpl.it,
-    });
-  };
+  Object.assign(_testScope, {
+    describe: MochiaImpl.describe,
+    beforeEach: MochiaImpl.beforeEach,
+    afterEach: MochiaImpl.afterEach,
+    it: MochiaImpl.it,
+  });
 })();

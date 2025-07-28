@@ -1377,6 +1377,12 @@ Tester.prototype = {
     this.ContentTask.setTestScope(currentScope);
 
     
+    Services.scriptloader.loadSubScript(
+      "resource://testing-common/Mochia.js",
+      scope
+    );
+
+    
     scope.export_assertions = function () {
       for (let func in this.Assert) {
         this[func] = this.Assert[func].bind(this.Assert);
@@ -2011,11 +2017,3 @@ testScope.prototype = {
     return this.__signal;
   },
 };
-
-
-Services.scriptloader.loadSubScript(
-  "resource://testing-common/Mochia.js",
-  this
-);
-
-Mochia(testScope);

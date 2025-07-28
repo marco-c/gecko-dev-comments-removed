@@ -2251,6 +2251,12 @@ function add_setup(generatorFunction) {
 }
 
 
+SpecialPowers.Services.scriptloader.loadSubScript(
+  "resource://testing-common/Mochia.js",
+  this
+);
+
+
 
 if (usesFailurePatterns()) {
   SimpleTest.requestCompleteLog();
@@ -2262,11 +2268,3 @@ addEventListener("message", async event => {
     SimpleTest.finish();
   }
 });
-
-
-SpecialPowers.Services.scriptloader.loadSubScript(
-  "resource://testing-common/Mochia.js",
-  this
-);
-
-Mochia(this);
