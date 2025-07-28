@@ -2152,7 +2152,9 @@ pref("sidebar.animation.expand-on-hover.duration-ms", 400);
 
 
 
+
 pref("sidebar.main.tools", "");
+pref("sidebar.installed.extensions", "");
 pref("sidebar.verticalTabs", false);
 pref("sidebar.visibility", "always-show");
 
