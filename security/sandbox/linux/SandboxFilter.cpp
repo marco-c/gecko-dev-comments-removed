@@ -2164,7 +2164,11 @@ class SocketProcessSandboxPolicy final : public SandboxPolicyCommon {
     
     
     
-    return BoolConst(true);
+    
+    
+    
+    
+    return (aFlags & MSG_OOB) == 0;
   }
 
   Maybe<ResultExpr> EvaluateSocketCall(int aCall,
