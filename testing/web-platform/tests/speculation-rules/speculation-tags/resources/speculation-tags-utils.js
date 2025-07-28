@@ -26,6 +26,22 @@
     return type;
   }
 
+  function assertHeaders(headers, expectedTag, preloadingType) {
+    if (expectedTag === undefined) {
+      
+      
+      
+      assert_false(headers.has("sec-purpose"));
+      assert_false(headers.has("sec-speculation-tags"));
+    } else {
+      
+      assert_equals(
+        headers.get("sec-purpose"),
+        preloadingType === "prefetch" ? "prefetch" : "prefetch;prerender");
+      assert_equals(headers.get("sec-speculation-tags"), expectedTag);
+    }
+  }
+
   function testRulesetTag(tag, expectedTag, description) {
     promise_test(async t => {
         const rcHelper = new RemoteContextHelper();
@@ -35,7 +51,7 @@
         const preloadingType = getPreloadingType();
         const preloadedRC = await referrerRC.helper.createContext({
             executorCreator(url) {
-              return referrerRC.executeScript((preloadingType, tag, url) => {
+              return referrerRC.executeScript((preloadingType, tag, url, expectedTag) => {
                   const script = document.createElement("script");
                   script.type = "speculationrules";
                   script.textContent = JSON.stringify({
@@ -47,8 +63,16 @@
                         }
                       ]
                   });
+
+                  if (expectedTag === undefined) {
+                    return new Promise(resolve => {
+                      script.addEventListener('error', resolve, { once: true });
+                      document.head.append(script);
+                    });
+                  }
+
                   document.head.append(script);
-              }, [preloadingType, tag, url]);
+              }, [preloadingType, tag, url, expectedTag]);
             }, extraConfig
         });
 
@@ -56,11 +80,7 @@
         referrerRC.navigateTo(preloadedRC.url);
 
         const headers = await preloadedRC.getRequestHeaders();
-        
-        assert_equals(
-          headers.get("sec-purpose"),
-          preloadingType === "prefetch" ? "prefetch" : "prefetch;prerender");
-        assert_equals(headers.get("sec-speculation-tags"), expectedTag);
+        assertHeaders(headers, expectedTag, preloadingType);
     }, "Sec-Speculation-Tags [ruleset-based]: " + description);
   }
 
@@ -94,21 +114,7 @@
         referrerRC.navigateTo(preloadedRC.url);
 
         const headers = await preloadedRC.getRequestHeaders();
-
-        if (expectedTag === undefined) {
-          
-          
-          
-          assert_false(headers.has("sec-purpose"));
-          assert_false(headers.has("sec-speculation-tags"));
-        } else {
-          
-          assert_equals(
-            headers.get("sec-purpose"),
-            preloadingType === "prefetch" ? "prefetch" : "prefetch;prerender");
-          assert_equals(headers.get("sec-speculation-tags"), expectedTag);
-        }
-
+        assertHeaders(headers, expectedTag, preloadingType);
     }, "Sec-Speculation-Tags [rule-based]: " + description);
   }
 
@@ -124,7 +130,7 @@
   
   globalThis.testInvalidTag = (tag, description) => {
     if (getTagLevel() === 'ruleset') {
-      testRulesetTag(tag, 'null', description);
+      testRulesetTag(tag, undefined, description);
     } else {
       
       testRuleTag(tag, undefined, description);
