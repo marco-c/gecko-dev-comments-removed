@@ -40,6 +40,12 @@ class MappedFileReader {
 
 
 
+#if defined(MOZ_ZUCCHINI)
+
+
+
+
+#endif  
 class MappedFileWriter {
  public:
   
@@ -47,7 +53,12 @@ class MappedFileWriter {
   
   MappedFileWriter(const base::FilePath& file_path,
                    base::File file,
+#if defined(MOZ_ZUCCHINI)
+                   size_t length,
+                   bool keep = false);
+#else
                    size_t length);
+#endif
   MappedFileWriter(const MappedFileWriter&) = delete;
   const MappedFileWriter& operator=(const MappedFileWriter&) = delete;
   ~MappedFileWriter();
