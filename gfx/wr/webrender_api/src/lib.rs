@@ -36,7 +36,6 @@ extern crate malloc_size_of_derive;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-extern crate time;
 
 extern crate malloc_size_of;
 extern crate peek_poke;
@@ -840,4 +839,23 @@ impl<'a> Drop for CrashAnnotatorGuard<'a> {
             annotator.clear(self.annotation);
         }
     }
+}
+
+
+
+
+
+
+
+
+
+fn precise_time_ns() -> u64 {
+    use std::convert::TryInto;
+    use std::time::SystemTime;
+
+    (SystemTime::now().duration_since(SystemTime::UNIX_EPOCH))
+        .expect("System clock was before 1970.")
+        .as_nanos()
+        .try_into()
+        .expect("This function will be removed long before this is an issue.")
 }
