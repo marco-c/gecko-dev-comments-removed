@@ -18,7 +18,7 @@ namespace webrtc {
 class VideoFrame;
 
 namespace test {
-class VideoRenderer : public rtc::VideoSinkInterface<VideoFrame> {
+class VideoRenderer : public VideoSinkInterface<VideoFrame> {
  public:
   
   

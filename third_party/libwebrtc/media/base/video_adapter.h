@@ -100,7 +100,7 @@ class RTC_EXPORT VideoAdapter {
   
   
   
-  void OnSinkWants(const rtc::VideoSinkWants& sink_wants)
+  void OnSinkWants(const webrtc::VideoSinkWants& sink_wants)
       RTC_LOCKS_EXCLUDED(mutex_);
 
   

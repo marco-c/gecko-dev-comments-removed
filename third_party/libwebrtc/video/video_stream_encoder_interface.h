@@ -79,7 +79,7 @@ class VideoStreamEncoderInterface {
   
   
   virtual void SetSource(
-      rtc::VideoSourceInterface<VideoFrame>* source,
+      VideoSourceInterface<VideoFrame>* source,
       const DegradationPreference& degradation_preference) = 0;
 
   

@@ -29,7 +29,7 @@ namespace webrtc {
 
 
 TEST(MultiStreamEndToEndTest, SendsAndReceivesMultipleStreams) {
-  class VideoOutputObserver : public rtc::VideoSinkInterface<VideoFrame> {
+  class VideoOutputObserver : public VideoSinkInterface<VideoFrame> {
    public:
     VideoOutputObserver(const MultiStreamTester::CodecSettings& settings,
                         uint32_t ssrc,

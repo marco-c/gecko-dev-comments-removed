@@ -245,7 +245,7 @@ class VideoSendStream {
   GetAdaptationResources() = 0;
 
   virtual void SetSource(
-      rtc::VideoSourceInterface<webrtc::VideoFrame>* source,
+      VideoSourceInterface<webrtc::VideoFrame>* source,
       const DegradationPreference& degradation_preference) = 0;
 
   

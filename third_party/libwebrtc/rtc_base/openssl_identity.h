@@ -22,7 +22,7 @@
 #include "rtc_base/ssl_certificate.h"
 #include "rtc_base/ssl_identity.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -70,6 +70,12 @@ class OpenSSLIdentity final : public SSLIdentity {
   std::unique_ptr<SSLCertChain> cert_chain_;
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::OpenSSLIdentity;
 }  
 
 #endif  

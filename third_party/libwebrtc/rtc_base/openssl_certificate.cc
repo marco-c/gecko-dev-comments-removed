@@ -30,7 +30,7 @@
 #include "rtc_base/openssl_identity.h"
 #include "rtc_base/openssl_utility.h"
 
-namespace rtc {
+namespace webrtc {
 namespace {
 
 

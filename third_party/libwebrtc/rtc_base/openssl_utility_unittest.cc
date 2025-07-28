@@ -40,7 +40,7 @@
 #include "rtc_base/ssl_roots.h"
 #include "test/gmock.h"
 
-namespace rtc {
+namespace webrtc {
 namespace {
 
 const unsigned char kFakeSSLPrivateKey[] = {

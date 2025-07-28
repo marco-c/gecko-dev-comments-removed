@@ -73,7 +73,7 @@ TrackWithPeriodicSource CreateTrackWithPeriodicSource(
 
 
 
-rtc::VideoSinkWants TriggerOveruseAndGetSinkWants(
+VideoSinkWants TriggerOveruseAndGetSinkWants(
     rtc::scoped_refptr<FakeResource> fake_resource,
     const FakePeriodicVideoSource& source) {
   fake_resource->SetUsageState(ResourceUsageState::kOveruse);

@@ -18,7 +18,7 @@
 #include "api/video/video_sink_interface.h"
 #include "rtc_base/system/rtc_export.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -132,5 +132,12 @@ class VideoSourceInterface {
   virtual void RequestRefreshFrame() {}
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::VideoSinkWants;
+using ::webrtc::VideoSourceInterface;
 }  
 #endif  

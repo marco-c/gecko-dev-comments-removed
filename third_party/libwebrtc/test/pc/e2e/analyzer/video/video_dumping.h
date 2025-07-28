@@ -25,7 +25,7 @@ namespace webrtc_pc_e2e {
 
 
 
-class VideoWriter final : public rtc::VideoSinkInterface<VideoFrame> {
+class VideoWriter final : public VideoSinkInterface<VideoFrame> {
  public:
   
   

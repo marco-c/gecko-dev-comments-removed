@@ -13,7 +13,7 @@
 
 #include "api/video_track_source_constraints.h"
 
-namespace rtc {
+namespace webrtc {
 
 template <typename VideoFrameT>
 class VideoSinkInterface {
@@ -29,9 +29,15 @@ class VideoSinkInterface {
   
   
   virtual void OnConstraintsChanged(
-      const webrtc::VideoTrackSourceConstraints& ) {}
+      const VideoTrackSourceConstraints& ) {}
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::VideoSinkInterface;
 }  
 
 #endif  

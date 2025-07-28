@@ -101,9 +101,9 @@ void SetRemoteFingerprintFromCert(
 class DtlsTestClient : public sigslot::has_slots<> {
  public:
   explicit DtlsTestClient(absl::string_view name) : name_(name) {}
-  void CreateCertificate(rtc::KeyType key_type) {
+  void CreateCertificate(webrtc::KeyType key_type) {
     certificate_ = webrtc::RTCCertificate::Create(
-        rtc::SSLIdentity::Create(name_, key_type));
+        webrtc::SSLIdentity::Create(name_, key_type));
   }
   const rtc::scoped_refptr<webrtc::RTCCertificate>& certificate() {
     return certificate_;
@@ -219,7 +219,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
     if (dtls_transport_->IsDtlsActive()) {
       ASSERT_TRUE(rv);
       EXPECT_TRUE(webrtc::SSLStreamAdapter::IsAcceptableCipher(
-          cipher, rtc::KT_DEFAULT));
+          cipher, webrtc::KT_DEFAULT));
     } else {
       ASSERT_FALSE(rv);
     }
@@ -304,7 +304,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
   void set_writable_callback(absl::AnyInvocable<void()> func) {
     writable_func_ = std::move(func);
   }
-  void OnTransportWritableState(rtc::PacketTransportInternal* transport) {
+  void OnTransportWritableState(webrtc::PacketTransportInternal* transport) {
     RTC_LOG(LS_INFO) << name_ << ": Transport '" << transport->transport_name()
                      << "' is writable";
     if (writable_func_) {
@@ -312,7 +312,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
     }
   }
 
-  void OnTransportReadPacket(rtc::PacketTransportInternal* ,
+  void OnTransportReadPacket(webrtc::PacketTransportInternal* ,
                              const rtc::ReceivedPacket& packet) {
     uint32_t packet_num = 0;
     ASSERT_TRUE(VerifyPacket(packet.payload(), &packet_num));
@@ -330,7 +330,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
     }
   }
 
-  void OnTransportSentPacket(rtc::PacketTransportInternal* ,
+  void OnTransportSentPacket(webrtc::PacketTransportInternal* ,
                              const rtc::SentPacket& sent_packet) {
     sent_packet_ = sent_packet;
   }
@@ -339,7 +339,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
 
   
   void OnFakeIceTransportReadPacket(
-      rtc::PacketTransportInternal* ,
+      webrtc::PacketTransportInternal* ,
       const rtc::ReceivedPacket& packet) {
     
     ASSERT_EQ(packet.decryption_info(), rtc::ReceivedPacket::kNotDecrypted);
@@ -398,7 +398,7 @@ class DtlsTransportTestBase {
     client2_.SetupMaxProtocolVersion(c2);
   }
   
-  void PrepareDtls(rtc::KeyType key_type) {
+  void PrepareDtls(webrtc::KeyType key_type) {
     client1_.CreateCertificate(key_type);
     client2_.CreateCertificate(key_type);
     use_dtls_ = true;
@@ -579,7 +579,7 @@ TEST_F(DtlsTransportTest, TestTransferSrtp) {
 
 
 TEST_F(DtlsTransportTest, TestTransferDtls) {
-  PrepareDtls(rtc::KT_DEFAULT);
+  PrepareDtls(webrtc::KT_DEFAULT);
   ASSERT_TRUE(Connect());
   TestTransfer(1000, 100, false);
 }
@@ -589,7 +589,7 @@ TEST_F(DtlsTransportTest, TestTransferDtls) {
 
 
 TEST_F(DtlsTransportTest, TestTransferDtlsCombineRecords) {
-  PrepareDtls(rtc::KT_DEFAULT);
+  PrepareDtls(webrtc::KT_DEFAULT);
   ASSERT_TRUE(Connect());
   
   
@@ -601,7 +601,7 @@ TEST_F(DtlsTransportTest, TestTransferDtlsCombineRecords) {
 }
 
 TEST_F(DtlsTransportTest, KeyingMaterialExporter) {
-  PrepareDtls(rtc::KT_DEFAULT);
+  PrepareDtls(webrtc::KT_DEFAULT);
   ASSERT_TRUE(Connect());
 
   int crypto_suite;
@@ -705,7 +705,7 @@ class DtlsTransportVersionTest
           std::tuple<EndpointConfig, EndpointConfig>> {
  public:
   void Prepare(bool rtt_estimate = true) {
-    PrepareDtls(rtc::KT_DEFAULT);
+    PrepareDtls(webrtc::KT_DEFAULT);
     const auto& config1 = std::get<0>(GetParam());
     const auto& config2 = std::get<1>(GetParam());
     SetMaxProtocolVersions(config1.max_protocol_version,
@@ -989,7 +989,7 @@ TEST_P(DtlsTransportVersionTest, HandshakeLoseSecondClientPacket) {
 
 
 TEST_F(DtlsTransportTest, TestTransferDtlsSrtp) {
-  PrepareDtls(rtc::KT_DEFAULT);
+  PrepareDtls(webrtc::KT_DEFAULT);
   ASSERT_TRUE(Connect());
   TestTransfer(1000, 100, true);
 }
@@ -997,7 +997,7 @@ TEST_F(DtlsTransportTest, TestTransferDtlsSrtp) {
 
 
 TEST_F(DtlsTransportTest, TestTransferDtlsInvalidSrtpPacket) {
-  PrepareDtls(rtc::KT_DEFAULT);
+  PrepareDtls(webrtc::KT_DEFAULT);
   ASSERT_TRUE(Connect());
   EXPECT_EQ(-1, client1_.SendInvalidSrtpPacket(100));
 }
@@ -1005,7 +1005,7 @@ TEST_F(DtlsTransportTest, TestTransferDtlsInvalidSrtpPacket) {
 
 
 TEST_F(DtlsTransportTest, TestTransferDtlsSrtpDemux) {
-  PrepareDtls(rtc::KT_DEFAULT);
+  PrepareDtls(webrtc::KT_DEFAULT);
   ASSERT_TRUE(Connect());
   TestTransfer(1000, 100, false);
   TestTransfer(1000, 100, true);
@@ -1013,7 +1013,7 @@ TEST_F(DtlsTransportTest, TestTransferDtlsSrtpDemux) {
 
 
 TEST_F(DtlsTransportTest, TestTransferDtlsSrtpAnswererIsPassive) {
-  PrepareDtls(rtc::KT_DEFAULT);
+  PrepareDtls(webrtc::KT_DEFAULT);
   ASSERT_TRUE(Connect(false));
   TestTransfer(1000, 100, true);
 }
@@ -1021,7 +1021,7 @@ TEST_F(DtlsTransportTest, TestTransferDtlsSrtpAnswererIsPassive) {
 
 
 TEST_F(DtlsTransportTest, TestRenegotiateBeforeConnect) {
-  PrepareDtls(rtc::KT_DEFAULT);
+  PrepareDtls(webrtc::KT_DEFAULT);
   
   
   Negotiate();
@@ -1036,7 +1036,7 @@ TEST_F(DtlsTransportTest, TestRenegotiateBeforeConnect) {
 
 
 TEST_F(DtlsTransportTest, TestCertificatesBeforeConnect) {
-  PrepareDtls(rtc::KT_DEFAULT);
+  PrepareDtls(webrtc::KT_DEFAULT);
   Negotiate();
 
   
@@ -1051,7 +1051,7 @@ TEST_F(DtlsTransportTest, TestCertificatesBeforeConnect) {
 
 
 TEST_F(DtlsTransportTest, TestCertificatesAfterConnect) {
-  PrepareDtls(rtc::KT_DEFAULT);
+  PrepareDtls(webrtc::KT_DEFAULT);
   ASSERT_TRUE(Connect());
 
   
@@ -1084,7 +1084,7 @@ TEST_F(DtlsTransportTest, TestRetransmissionSchedule) {
   
   MAYBE_SKIP_TEST(IsBoringSsl);
 
-  PrepareDtls(rtc::KT_DEFAULT);
+  PrepareDtls(webrtc::KT_DEFAULT);
 
   
   
@@ -1158,7 +1158,7 @@ class DtlsEventOrderingTest
     
     
     
-    PrepareDtls(rtc::KT_DEFAULT);
+    PrepareDtls(webrtc::KT_DEFAULT);
     client1_.SetupTransports(ICEROLE_CONTROLLING);
     client2_.SetupTransports(ICEROLE_CONTROLLED);
     

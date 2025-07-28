@@ -111,7 +111,7 @@ class RTC_EXPORT MediaStreamTrackInterface : public webrtc::RefCountInterface,
 
 
 class VideoTrackSourceInterface : public MediaSourceInterface,
-                                  public rtc::VideoSourceInterface<VideoFrame> {
+                                  public VideoSourceInterface<VideoFrame> {
  public:
   struct Stats {
     
@@ -150,11 +150,11 @@ class VideoTrackSourceInterface : public MediaSourceInterface,
   
   
   virtual void AddEncodedSink(
-      rtc::VideoSinkInterface<RecordableEncodedFrame>* sink) = 0;
+      VideoSinkInterface<RecordableEncodedFrame>* sink) = 0;
 
   
   virtual void RemoveEncodedSink(
-      rtc::VideoSinkInterface<RecordableEncodedFrame>* sink) = 0;
+      VideoSinkInterface<RecordableEncodedFrame>* sink) = 0;
 
   
   
@@ -173,9 +173,8 @@ class VideoTrackSourceInterface : public MediaSourceInterface,
 
 
 
-class RTC_EXPORT VideoTrackInterface
-    : public MediaStreamTrackInterface,
-      public rtc::VideoSourceInterface<VideoFrame> {
+class RTC_EXPORT VideoTrackInterface : public MediaStreamTrackInterface,
+                                       public VideoSourceInterface<VideoFrame> {
  public:
   
   
@@ -184,9 +183,9 @@ class RTC_EXPORT VideoTrackInterface
 
   
   
-  void AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* ,
-                       const rtc::VideoSinkWants& ) override {}
-  void RemoveSink(rtc::VideoSinkInterface<VideoFrame>* ) override {}
+  void AddOrUpdateSink(VideoSinkInterface<VideoFrame>* ,
+                       const VideoSinkWants& ) override {}
+  void RemoveSink(VideoSinkInterface<VideoFrame>* ) override {}
 
   virtual VideoTrackSourceInterface* GetSource() const = 0;
 

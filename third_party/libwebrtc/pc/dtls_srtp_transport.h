@@ -76,7 +76,7 @@ class DtlsSrtpTransport : public SrtpTransport {
                    DtlsTransportState state);
 
   
-  void OnWritableState(rtc::PacketTransportInternal* packet_transport) override;
+  void OnWritableState(PacketTransportInternal* packet_transport) override;
 
   
   cricket::DtlsTransportInternal* rtp_dtls_transport_ = nullptr;

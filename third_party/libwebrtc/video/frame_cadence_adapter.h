@@ -30,8 +30,7 @@ namespace webrtc {
 
 
 
-class FrameCadenceAdapterInterface
-    : public rtc::VideoSinkInterface<VideoFrame> {
+class FrameCadenceAdapterInterface : public VideoSinkInterface<VideoFrame> {
  public:
   
   

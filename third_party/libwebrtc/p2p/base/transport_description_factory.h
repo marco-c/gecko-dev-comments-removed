@@ -19,12 +19,9 @@
 #include "p2p/base/ice_credentials_iterator.h"
 #include "p2p/base/transport_description.h"
 #include "rtc_base/rtc_certificate.h"
+#include "rtc_base/ssl_identity.h"
 
-namespace rtc {
-class SSLIdentity;
-}
-
-namespace cricket {
+namespace webrtc {
 
 struct TransportOptions {
   bool ice_restart = false;
@@ -40,25 +37,24 @@ struct TransportOptions {
 class TransportDescriptionFactory {
  public:
   
-  explicit TransportDescriptionFactory(
-      const webrtc::FieldTrialsView& field_trials);
+  explicit TransportDescriptionFactory(const FieldTrialsView& field_trials);
   ~TransportDescriptionFactory();
 
   
-  const rtc::scoped_refptr<webrtc::RTCCertificate>& certificate() const {
+  const scoped_refptr<RTCCertificate>& certificate() const {
     return certificate_;
   }
 
   
-  void set_certificate(rtc::scoped_refptr<webrtc::RTCCertificate> certificate) {
+  void set_certificate(scoped_refptr<RTCCertificate> certificate) {
     certificate_ = std::move(certificate);
   }
 
   
-  std::unique_ptr<TransportDescription> CreateOffer(
+  std::unique_ptr<cricket::TransportDescription> CreateOffer(
       const TransportOptions& options,
-      const TransportDescription* current_description,
-      IceCredentialsIterator* ice_credentials) const;
+      const cricket::TransportDescription* current_description,
+      cricket::IceCredentialsIterator* ice_credentials) const;
   
   
   
@@ -66,14 +62,14 @@ class TransportDescriptionFactory {
   
   
   
-  std::unique_ptr<TransportDescription> CreateAnswer(
-      const TransportDescription* offer,
+  std::unique_ptr<cricket::TransportDescription> CreateAnswer(
+      const cricket::TransportDescription* offer,
       const TransportOptions& options,
       bool require_transport_attributes,
-      const TransportDescription* current_description,
-      IceCredentialsIterator* ice_credentials) const;
+      const cricket::TransportDescription* current_description,
+      cricket::IceCredentialsIterator* ice_credentials) const;
 
-  const webrtc::FieldTrialsView& trials() const { return field_trials_; }
+  const FieldTrialsView& trials() const { return field_trials_; }
   
   
   
@@ -83,13 +79,20 @@ class TransportDescriptionFactory {
   void SetInsecureForTesting() { insecure_ = true; }
 
  private:
-  bool SetSecurityInfo(TransportDescription* description,
-                       ConnectionRole role) const;
+  bool SetSecurityInfo(cricket::TransportDescription* description,
+                       cricket::ConnectionRole role) const;
   bool insecure_ = false;
-  rtc::scoped_refptr<webrtc::RTCCertificate> certificate_;
-  const webrtc::FieldTrialsView& field_trials_;
+  scoped_refptr<RTCCertificate> certificate_;
+  const FieldTrialsView& field_trials_;
 };
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::TransportDescriptionFactory;
+using ::webrtc::TransportOptions;
 }  
 
 #endif  

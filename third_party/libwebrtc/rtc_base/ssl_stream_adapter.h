@@ -134,8 +134,8 @@ class SSLStreamAdapter : public StreamInterface {
   
   
   
-  virtual void SetIdentity(std::unique_ptr<rtc::SSLIdentity> identity) = 0;
-  virtual rtc::SSLIdentity* GetIdentityForTesting() const = 0;
+  virtual void SetIdentity(std::unique_ptr<SSLIdentity> identity) = 0;
+  virtual SSLIdentity* GetIdentityForTesting() const = 0;
 
   
   
@@ -238,9 +238,8 @@ class SSLStreamAdapter : public StreamInterface {
 
   
   
-  static bool IsAcceptableCipher(int cipher, rtc::KeyType key_type);
-  static bool IsAcceptableCipher(absl::string_view cipher,
-                                 rtc::KeyType key_type);
+  static bool IsAcceptableCipher(int cipher, KeyType key_type);
+  static bool IsAcceptableCipher(absl::string_view cipher, KeyType key_type);
 
   
   

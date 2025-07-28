@@ -285,7 +285,7 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
     Transport* rtcp_send_transport = nullptr;
 
     
-    rtc::VideoSinkInterface<VideoFrame>* renderer = nullptr;
+    VideoSinkInterface<VideoFrame>* renderer = nullptr;
 
     
     

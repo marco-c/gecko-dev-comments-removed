@@ -22,7 +22,7 @@
 #include "rtc_base/ssl_certificate.h"
 #include "rtc_base/ssl_identity.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -74,5 +74,13 @@ class OpenSSLCertificate final : public SSLCertificate {
 };
 
 }  
+
+
+
+namespace rtc {
+
+using ::webrtc::OpenSSLCertificate;
+
+}
 
 #endif  

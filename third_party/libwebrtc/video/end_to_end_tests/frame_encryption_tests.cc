@@ -27,7 +27,7 @@ enum : int {
 };
 
 class DecryptedFrameObserver : public test::EndToEndTest,
-                               public rtc::VideoSinkInterface<VideoFrame> {
+                               public VideoSinkInterface<VideoFrame> {
  public:
   DecryptedFrameObserver()
       : EndToEndTest(test::VideoTestConstants::kDefaultTimeout),

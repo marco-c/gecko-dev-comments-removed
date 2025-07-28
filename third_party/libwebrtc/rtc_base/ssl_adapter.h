@@ -46,7 +46,7 @@ class SSLAdapterFactory {
 
   
   
-  virtual void SetIdentity(std::unique_ptr<rtc::SSLIdentity> identity) = 0;
+  virtual void SetIdentity(std::unique_ptr<SSLIdentity> identity) = 0;
 
   
   virtual void SetRole(SSLRole role) = 0;
@@ -86,7 +86,7 @@ class SSLAdapter : public AsyncSocketAdapter {
 
   
   
-  virtual void SetIdentity(std::unique_ptr<rtc::SSLIdentity> identity) = 0;
+  virtual void SetIdentity(std::unique_ptr<SSLIdentity> identity) = 0;
 
   
   virtual void SetRole(SSLRole role) = 0;

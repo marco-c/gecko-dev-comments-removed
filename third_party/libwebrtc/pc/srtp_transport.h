@@ -120,7 +120,7 @@ class SrtpTransport : public RtpTransport {
       std::optional<NetworkRoute> network_route) override;
 
   
-  void OnWritableState(rtc::PacketTransportInternal* packet_transport) override;
+  void OnWritableState(PacketTransportInternal* packet_transport) override;
 
   bool ProtectRtp(rtc::CopyOnWriteBuffer& buffer);
   

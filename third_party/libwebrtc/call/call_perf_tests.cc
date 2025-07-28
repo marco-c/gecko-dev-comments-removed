@@ -135,7 +135,7 @@ class CallPerfTest : public test::CallTest {
 };
 
 class VideoRtcpAndSyncObserver : public test::RtpRtcpObserver,
-                                 public rtc::VideoSinkInterface<VideoFrame> {
+                                 public VideoSinkInterface<VideoFrame> {
   static const int kInSyncThresholdMs = 50;
   static const int kStartupTimeMs = 2000;
   static const int kMinRunTimeMs = 30000;
@@ -452,8 +452,8 @@ TEST_F(CallPerfTest, ReceivesCpuOveruseAndUnderuse) {
     
     
     
-    void OnSinkWantsChanged(rtc::VideoSinkInterface<VideoFrame>* ,
-                            const rtc::VideoSinkWants& wants) override {
+    void OnSinkWantsChanged(VideoSinkInterface<VideoFrame>* ,
+                            const VideoSinkWants& wants) override {
       RTC_LOG(LS_INFO) << "OnSinkWantsChanged fps:" << wants.max_framerate_fps
                        << " max_pixel_count " << wants.max_pixel_count
                        << " target_pixel_count"
@@ -534,7 +534,7 @@ TEST_F(CallPerfTest, ReceivesCpuOveruseAndUnderuse) {
     } test_phase_;
 
    private:
-    rtc::VideoSinkWants last_wants_;
+    VideoSinkWants last_wants_;
   } test;
 
   RunBaseTest(&test);
@@ -960,8 +960,8 @@ void CallPerfTest::TestEncodeFramerate(VideoEncoderFactory* encoder_factory,
       frame_generator_capturer->ChangeResolution(640, 360);
     }
 
-    void OnSinkWantsChanged(rtc::VideoSinkInterface<VideoFrame>* ,
-                            const rtc::VideoSinkWants& ) override {}
+    void OnSinkWantsChanged(VideoSinkInterface<VideoFrame>* ,
+                            const VideoSinkWants& ) override {}
 
     void ModifySenderBitrateConfig(
         BitrateConstraints* bitrate_config) override {

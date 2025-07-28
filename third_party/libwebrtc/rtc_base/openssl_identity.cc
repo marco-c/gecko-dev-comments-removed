@@ -31,7 +31,7 @@
 #include "rtc_base/openssl.h"
 #include "rtc_base/openssl_utility.h"
 
-namespace rtc {
+namespace webrtc {
 
 OpenSSLIdentity::OpenSSLIdentity(
     std::unique_ptr<OpenSSLKeyPair> key_pair,

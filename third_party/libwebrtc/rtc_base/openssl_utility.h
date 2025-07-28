@@ -17,7 +17,7 @@
 
 #include "absl/strings/string_view.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -52,6 +52,26 @@ bool LoadBuiltinSSLRootCertificates(SSL_CTX* ssl_ctx);
 
 #ifdef OPENSSL_IS_BORINGSSL
 CRYPTO_BUFFER_POOL* GetBufferPool();
+#endif
+
+}  
+}  
+
+
+
+namespace rtc {
+namespace openssl {
+
+#ifndef WEBRTC_EXCLUDE_BUILT_IN_SSL_ROOT_CERTS
+using ::webrtc::openssl::LoadBuiltinSSLRootCertificates;
+#endif
+
+using ::webrtc::openssl::LogSSLErrors;
+using ::webrtc::openssl::VerifyPeerCertMatchesHost;
+
+#ifdef OPENSSL_IS_BORINGSSL
+using ::webrtc::openssl::GetBufferPool;
+using ::webrtc::openssl::ParseCertificate;
 #endif
 
 }  

@@ -23,7 +23,7 @@
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_annotations.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -31,7 +31,7 @@ namespace rtc {
 
 
 class VideoBroadcaster : public VideoSourceBase,
-                         public VideoSinkInterface<webrtc::VideoFrame> {
+                         public VideoSinkInterface<VideoFrame> {
  public:
   VideoBroadcaster();
   ~VideoBroadcaster() override;
@@ -40,9 +40,9 @@ class VideoBroadcaster : public VideoSourceBase,
   
   
   
-  void AddOrUpdateSink(VideoSinkInterface<webrtc::VideoFrame>* sink,
+  void AddOrUpdateSink(VideoSinkInterface<VideoFrame>* sink,
                        const VideoSinkWants& wants) override;
-  void RemoveSink(VideoSinkInterface<webrtc::VideoFrame>* sink) override;
+  void RemoveSink(VideoSinkInterface<VideoFrame>* sink) override;
 
   
   bool frame_wanted() const;
@@ -55,31 +55,36 @@ class VideoBroadcaster : public VideoSourceBase,
   
   
   
-  void OnFrame(const webrtc::VideoFrame& frame) override;
+  void OnFrame(const VideoFrame& frame) override;
 
   void OnDiscardedFrame() override;
 
   
   
-  void ProcessConstraints(
-      const webrtc::VideoTrackSourceConstraints& constraints);
+  void ProcessConstraints(const VideoTrackSourceConstraints& constraints);
 
  protected:
   void UpdateWants() RTC_EXCLUSIVE_LOCKS_REQUIRED(sinks_and_wants_lock_);
-  const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& GetBlackFrameBuffer(
-      int width,
-      int height) RTC_EXCLUSIVE_LOCKS_REQUIRED(sinks_and_wants_lock_);
+  const scoped_refptr<VideoFrameBuffer>& GetBlackFrameBuffer(int width,
+                                                             int height)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(sinks_and_wants_lock_);
 
-  mutable webrtc::Mutex sinks_and_wants_lock_;
+  mutable Mutex sinks_and_wants_lock_;
 
   VideoSinkWants current_wants_ RTC_GUARDED_BY(sinks_and_wants_lock_);
-  rtc::scoped_refptr<webrtc::VideoFrameBuffer> black_frame_buffer_;
+  scoped_refptr<VideoFrameBuffer> black_frame_buffer_;
   bool previous_frame_sent_to_all_sinks_ RTC_GUARDED_BY(sinks_and_wants_lock_) =
       true;
-  std::optional<webrtc::VideoTrackSourceConstraints> last_constraints_
+  std::optional<VideoTrackSourceConstraints> last_constraints_
       RTC_GUARDED_BY(sinks_and_wants_lock_);
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::VideoBroadcaster;
 }  
 
 #endif  

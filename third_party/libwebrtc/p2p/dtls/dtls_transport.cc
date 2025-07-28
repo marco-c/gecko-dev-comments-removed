@@ -645,7 +645,8 @@ void DtlsTransport::ConnectToIceTransport() {
 
 
 
-void DtlsTransport::OnWritableState(rtc::PacketTransportInternal* transport) {
+void DtlsTransport::OnWritableState(
+    webrtc::PacketTransportInternal* transport) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   RTC_DCHECK(transport == ice_transport_);
   RTC_LOG(LS_INFO) << ToString() << ": ice_transport writable state changed to "
@@ -708,7 +709,8 @@ void DtlsTransport::OnWritableState(rtc::PacketTransportInternal* transport) {
   }
 }
 
-void DtlsTransport::OnReceivingState(rtc::PacketTransportInternal* transport) {
+void DtlsTransport::OnReceivingState(
+    webrtc::PacketTransportInternal* transport) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   RTC_DCHECK(transport == ice_transport_);
   RTC_LOG(LS_VERBOSE) << ToString()
@@ -721,7 +723,7 @@ void DtlsTransport::OnReceivingState(rtc::PacketTransportInternal* transport) {
   }
 }
 
-void DtlsTransport::OnReadPacket(rtc::PacketTransportInternal* transport,
+void DtlsTransport::OnReadPacket(webrtc::PacketTransportInternal* transport,
                                  const rtc::ReceivedPacket& packet,
                                  bool piggybacked) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
@@ -804,14 +806,15 @@ void DtlsTransport::OnReadPacket(rtc::PacketTransportInternal* transport,
   }
 }
 
-void DtlsTransport::OnSentPacket(rtc::PacketTransportInternal* ,
-                                 const rtc::SentPacket& sent_packet) {
+void DtlsTransport::OnSentPacket(
+    webrtc::PacketTransportInternal* ,
+    const rtc::SentPacket& sent_packet) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   SignalSentPacket(this, sent_packet);
 }
 
 void DtlsTransport::OnReadyToSend(
-    rtc::PacketTransportInternal* ) {
+    webrtc::PacketTransportInternal* ) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   if (writable()) {
     SignalReadyToSend(this);
@@ -1027,7 +1030,7 @@ void DtlsTransport::ConfigureHandshakeTimeout() {
 }
 
 void DtlsTransport::SetPiggybackDtlsDataCallback(
-    absl::AnyInvocable<void(rtc::PacketTransportInternal* transport,
+    absl::AnyInvocable<void(webrtc::PacketTransportInternal* transport,
                             const rtc::ReceivedPacket& packet)> callback) {
   RTC_DCHECK(callback == nullptr || !piggybacked_dtls_callback_);
   piggybacked_dtls_callback_ = std::move(callback);

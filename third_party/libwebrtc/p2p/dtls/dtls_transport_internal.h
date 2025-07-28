@@ -45,7 +45,7 @@ enum PacketFlags {
 
 
 
-class DtlsTransportInternal : public rtc::PacketTransportInternal {
+class DtlsTransportInternal : public webrtc::PacketTransportInternal {
  public:
   ~DtlsTransportInternal() override;
 

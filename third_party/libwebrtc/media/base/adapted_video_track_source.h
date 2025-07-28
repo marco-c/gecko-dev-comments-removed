@@ -28,14 +28,14 @@
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/thread_annotations.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
 
 
 class RTC_EXPORT AdaptedVideoTrackSource
-    : public webrtc::Notifier<webrtc::VideoTrackSourceInterface> {
+    : public Notifier<VideoTrackSourceInterface> {
  public:
   AdaptedVideoTrackSource();
   ~AdaptedVideoTrackSource() override;
@@ -47,7 +47,7 @@ class RTC_EXPORT AdaptedVideoTrackSource
   
   
   
-  void OnFrame(const webrtc::VideoFrame& frame);
+  void OnFrame(const VideoFrame& frame);
   
   void OnFrameDropped();
 
@@ -75,35 +75,39 @@ class RTC_EXPORT AdaptedVideoTrackSource
 
  private:
   
-  void AddOrUpdateSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
-                       const rtc::VideoSinkWants& wants) override;
-  void RemoveSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) override;
+  void AddOrUpdateSink(VideoSinkInterface<VideoFrame>* sink,
+                       const VideoSinkWants& wants) override;
+  void RemoveSink(VideoSinkInterface<VideoFrame>* sink) override;
 
   
   bool GetStats(Stats* stats) override;
 
-  void OnSinkWantsChanged(const rtc::VideoSinkWants& wants);
+  void OnSinkWantsChanged(const VideoSinkWants& wants);
 
   
   bool SupportsEncodedOutput() const override { return false; }
   void GenerateKeyFrame() override {}
   void AddEncodedSink(
-      rtc::VideoSinkInterface<webrtc::RecordableEncodedFrame>* )
-      override {}
+      VideoSinkInterface<RecordableEncodedFrame>* ) override {}
   void RemoveEncodedSink(
-      rtc::VideoSinkInterface<webrtc::RecordableEncodedFrame>* )
-      override {}
+      VideoSinkInterface<RecordableEncodedFrame>* ) override {}
   void ProcessConstraints(
-      const webrtc::VideoTrackSourceConstraints& constraints) override;
+      const VideoTrackSourceConstraints& constraints) override;
 
   cricket::VideoAdapter video_adapter_;
 
-  webrtc::Mutex stats_mutex_;
+  Mutex stats_mutex_;
   std::optional<Stats> stats_ RTC_GUARDED_BY(stats_mutex_);
 
   VideoBroadcaster broadcaster_;
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::AdaptedVideoTrackSource;
 }  
 
 #endif  

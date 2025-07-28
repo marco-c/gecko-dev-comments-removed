@@ -32,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 
 @property(nonatomic, readonly)
-    rtc::VideoSinkInterface<webrtc::VideoFrame> *nativeVideoRenderer;
+    webrtc::VideoSinkInterface<webrtc::VideoFrame> *nativeVideoRenderer;
 
 
 - (instancetype)initWithNativeRenderer:

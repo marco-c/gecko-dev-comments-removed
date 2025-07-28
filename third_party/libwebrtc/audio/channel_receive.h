@@ -44,10 +44,6 @@
 
 
 
-namespace rtc {
-class TimestampWrapAroundHandler;
-}
-
 namespace webrtc {
 
 class AudioDeviceModule;

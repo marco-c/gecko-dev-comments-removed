@@ -58,8 +58,8 @@ class VideoRtpTrackSource : public VideoTrackSource {
       const RecordableEncodedFrame& frame) const;
 
   
-  rtc::VideoSourceInterface<VideoFrame>* source() override;
-  rtc::VideoSinkInterface<VideoFrame>* sink();
+  VideoSourceInterface<VideoFrame>* source() override;
+  VideoSinkInterface<VideoFrame>* sink();
 
   
   bool SupportsEncodedOutput() const override;
@@ -69,11 +69,11 @@ class VideoRtpTrackSource : public VideoTrackSource {
 
   
   void AddEncodedSink(
-      rtc::VideoSinkInterface<RecordableEncodedFrame>* sink) override;
+      VideoSinkInterface<RecordableEncodedFrame>* sink) override;
 
   
   void RemoveEncodedSink(
-      rtc::VideoSinkInterface<RecordableEncodedFrame>* sink) override;
+      VideoSinkInterface<RecordableEncodedFrame>* sink) override;
 
  private:
   RTC_NO_UNIQUE_ADDRESS SequenceChecker worker_sequence_checker_{
@@ -81,9 +81,9 @@ class VideoRtpTrackSource : public VideoTrackSource {
   
   
   
-  rtc::VideoBroadcaster broadcaster_;
+  VideoBroadcaster broadcaster_;
   mutable Mutex mu_;
-  std::vector<rtc::VideoSinkInterface<RecordableEncodedFrame>*> encoded_sinks_
+  std::vector<VideoSinkInterface<RecordableEncodedFrame>*> encoded_sinks_
       RTC_GUARDED_BY(mu_);
   Callback* callback_ RTC_GUARDED_BY(worker_sequence_checker_);
 };

@@ -875,7 +875,7 @@ VideoStreamEncoder::GetAdaptationResources() {
 }
 
 void VideoStreamEncoder::SetSource(
-    rtc::VideoSourceInterface<VideoFrame>* source,
+    VideoSourceInterface<VideoFrame>* source,
     const DegradationPreference& degradation_preference) {
   RTC_DCHECK_RUN_ON(worker_queue_);
   video_source_sink_controller_.SetSource(source);
@@ -935,7 +935,7 @@ void VideoStreamEncoder::ConfigureEncoder(VideoEncoderConfig config,
   
   bool active = false;
   
-  std::optional<rtc::VideoSinkWants::FrameSize> scale_resolution_down_to;
+  std::optional<VideoSinkWants::FrameSize> scale_resolution_down_to;
   for (const auto& stream : config.simulcast_layers) {
     active |= stream.active;
     if (stream.active) {
@@ -1289,7 +1289,7 @@ void VideoStreamEncoder::ReconfigureEncoder() {
   max_framerate_ = codec.maxFramerate;
 
   
-  std::vector<rtc::VideoSinkWants::FrameSize> encoder_resolutions;
+  std::vector<VideoSinkWants::FrameSize> encoder_resolutions;
   
   
   for (const auto& simulcastStream : codec.simulcastStream) {

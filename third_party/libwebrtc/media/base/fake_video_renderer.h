@@ -21,7 +21,7 @@
 namespace webrtc {
 
 
-class FakeVideoRenderer : public rtc::VideoSinkInterface<VideoFrame> {
+class FakeVideoRenderer : public VideoSinkInterface<VideoFrame> {
  public:
   FakeVideoRenderer();
 

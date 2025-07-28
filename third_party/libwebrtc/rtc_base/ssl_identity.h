@@ -23,7 +23,7 @@
 #include "rtc_base/ssl_certificate.h"
 #include "rtc_base/system/rtc_export.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -53,14 +53,14 @@ enum ECCurve { EC_NIST_P256,  EC_LAST };
 class RTC_EXPORT KeyParams {
  public:
   
-  explicit KeyParams(KeyType key_type = rtc::KT_DEFAULT);
+  explicit KeyParams(KeyType key_type = KT_DEFAULT);
 
   
-  static KeyParams RSA(int mod_size = rtc::kRsaDefaultModSize,
-                       int pub_exp = rtc::kRsaDefaultExponent);
+  static KeyParams RSA(int mod_size = kRsaDefaultModSize,
+                       int pub_exp = kRsaDefaultExponent);
 
   
-  static KeyParams ECDSA(ECCurve curve = rtc::EC_NIST_P256);
+  static KeyParams ECDSA(ECCurve curve = EC_NIST_P256);
 
   
   
@@ -163,6 +163,33 @@ extern const char kPemTypeCertificate[];
 extern const char kPemTypeRsaPrivateKey[];
 extern const char kPemTypeEcPrivateKey[];
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::ASN1TimeToSec;
+using ::webrtc::EC_LAST;
+using ::webrtc::EC_NIST_P256;
+using ::webrtc::ECCurve;
+using ::webrtc::kCertificateWindowInSeconds;
+using ::webrtc::kDefaultCertificateLifetimeInSeconds;
+using ::webrtc::KeyParams;
+using ::webrtc::KeyType;
+using ::webrtc::kPemTypeCertificate;
+using ::webrtc::kPemTypeEcPrivateKey;
+using ::webrtc::kPemTypeRsaPrivateKey;
+using ::webrtc::kRsaDefaultExponent;
+using ::webrtc::kRsaDefaultModSize;
+using ::webrtc::kRsaMaxModSize;
+using ::webrtc::kRsaMinModSize;
+using ::webrtc::KT_DEFAULT;
+using ::webrtc::KT_ECDSA;
+using ::webrtc::KT_LAST;
+using ::webrtc::KT_RSA;
+using ::webrtc::RSAParams;
+using ::webrtc::SSLIdentity;
+using ::webrtc::SSLIdentityParams;
 }  
 
 #endif  

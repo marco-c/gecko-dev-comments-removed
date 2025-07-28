@@ -257,7 +257,7 @@ struct RTC_EXPORT IceConfig {
 
 
 
-class RTC_EXPORT IceTransportInternal : public rtc::PacketTransportInternal {
+class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
  public:
   IceTransportInternal();
   ~IceTransportInternal() override;

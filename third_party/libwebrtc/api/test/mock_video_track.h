@@ -50,14 +50,14 @@ class MockVideoTrack
   
   MOCK_METHOD(void,
               AddOrUpdateSink,
-              (rtc::VideoSinkInterface<VideoFrame> * sink,
-               const rtc::VideoSinkWants& wants),
+              (webrtc::VideoSinkInterface<VideoFrame> * sink,
+               const webrtc::VideoSinkWants& wants),
               (override));
   
   
   MOCK_METHOD(void,
               RemoveSink,
-              (rtc::VideoSinkInterface<VideoFrame> * sink),
+              (webrtc::VideoSinkInterface<VideoFrame> * sink),
               (override));
 
   

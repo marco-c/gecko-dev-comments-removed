@@ -41,7 +41,7 @@ class RTCCertificateGeneratorInterface {
   
   
   virtual void GenerateCertificateAsync(
-      const rtc::KeyParams& key_params,
+      const KeyParams& key_params,
       const std::optional<uint64_t>& expires_ms,
       Callback callback) = 0;
 };
@@ -59,7 +59,7 @@ class RTC_EXPORT RTCCertificateGenerator
   
   
   static scoped_refptr<RTCCertificate> GenerateCertificate(
-      const rtc::KeyParams& key_params,
+      const KeyParams& key_params,
       const std::optional<uint64_t>& expires_ms);
 
   RTCCertificateGenerator(Thread* signaling_thread, Thread* worker_thread);
@@ -70,7 +70,7 @@ class RTC_EXPORT RTCCertificateGenerator
   
   
   
-  void GenerateCertificateAsync(const rtc::KeyParams& key_params,
+  void GenerateCertificateAsync(const KeyParams& key_params,
                                 const std::optional<uint64_t>& expires_ms,
                                 Callback callback) override;
 

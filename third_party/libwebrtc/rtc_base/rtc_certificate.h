@@ -53,7 +53,7 @@ class RTC_EXPORT RTCCertificate final
  public:
   
   static scoped_refptr<RTCCertificate> Create(
-      std::unique_ptr<rtc::SSLIdentity> identity);
+      std::unique_ptr<SSLIdentity> identity);
 
   
   uint64_t Expires() const;
@@ -68,7 +68,7 @@ class RTC_EXPORT RTCCertificate final
   
   
   
-  rtc::SSLIdentity* identity() const { return identity_.get(); }
+  SSLIdentity* identity() const { return identity_.get(); }
 
   
   RTCCertificatePEM ToPEM() const;
@@ -78,7 +78,7 @@ class RTC_EXPORT RTCCertificate final
   bool operator!=(const RTCCertificate& certificate) const;
 
  protected:
-  explicit RTCCertificate(rtc::SSLIdentity* identity);
+  explicit RTCCertificate(SSLIdentity* identity);
 
   friend class RefCountedNonVirtual<RTCCertificate>;
   ~RTCCertificate();
@@ -86,7 +86,7 @@ class RTC_EXPORT RTCCertificate final
  private:
   
   
-  const std::unique_ptr<rtc::SSLIdentity> identity_;
+  const std::unique_ptr<SSLIdentity> identity_;
 };
 
 }  

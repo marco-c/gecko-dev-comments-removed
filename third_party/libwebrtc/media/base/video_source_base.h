@@ -20,28 +20,28 @@
 #include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/thread_annotations.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
 
 
-class VideoSourceBase : public VideoSourceInterface<webrtc::VideoFrame> {
+class VideoSourceBase : public VideoSourceInterface<VideoFrame> {
  public:
   VideoSourceBase();
   ~VideoSourceBase() override;
-  void AddOrUpdateSink(VideoSinkInterface<webrtc::VideoFrame>* sink,
+  void AddOrUpdateSink(VideoSinkInterface<VideoFrame>* sink,
                        const VideoSinkWants& wants) override;
-  void RemoveSink(VideoSinkInterface<webrtc::VideoFrame>* sink) override;
+  void RemoveSink(VideoSinkInterface<VideoFrame>* sink) override;
 
  protected:
   struct SinkPair {
-    SinkPair(VideoSinkInterface<webrtc::VideoFrame>* sink, VideoSinkWants wants)
+    SinkPair(VideoSinkInterface<VideoFrame>* sink, VideoSinkWants wants)
         : sink(sink), wants(wants) {}
-    VideoSinkInterface<webrtc::VideoFrame>* sink;
+    VideoSinkInterface<VideoFrame>* sink;
     VideoSinkWants wants;
   };
-  SinkPair* FindSinkPair(const VideoSinkInterface<webrtc::VideoFrame>* sink);
+  SinkPair* FindSinkPair(const VideoSinkInterface<VideoFrame>* sink);
 
   const std::vector<SinkPair>& sink_pairs() const { return sinks_; }
 
@@ -51,34 +51,41 @@ class VideoSourceBase : public VideoSourceInterface<webrtc::VideoFrame> {
 
 
 
-class VideoSourceBaseGuarded : public VideoSourceInterface<webrtc::VideoFrame> {
+class VideoSourceBaseGuarded : public VideoSourceInterface<VideoFrame> {
  public:
   VideoSourceBaseGuarded();
   ~VideoSourceBaseGuarded() override;
 
-  void AddOrUpdateSink(VideoSinkInterface<webrtc::VideoFrame>* sink,
+  void AddOrUpdateSink(VideoSinkInterface<VideoFrame>* sink,
                        const VideoSinkWants& wants) override;
-  void RemoveSink(VideoSinkInterface<webrtc::VideoFrame>* sink) override;
+  void RemoveSink(VideoSinkInterface<VideoFrame>* sink) override;
 
  protected:
   struct SinkPair {
-    SinkPair(VideoSinkInterface<webrtc::VideoFrame>* sink, VideoSinkWants wants)
+    SinkPair(VideoSinkInterface<VideoFrame>* sink, VideoSinkWants wants)
         : sink(sink), wants(wants) {}
-    VideoSinkInterface<webrtc::VideoFrame>* sink;
+    VideoSinkInterface<VideoFrame>* sink;
     VideoSinkWants wants;
   };
 
-  SinkPair* FindSinkPair(const VideoSinkInterface<webrtc::VideoFrame>* sink);
+  SinkPair* FindSinkPair(const VideoSinkInterface<VideoFrame>* sink);
   const std::vector<SinkPair>& sink_pairs() const;
 
   
   
-  RTC_NO_UNIQUE_ADDRESS webrtc::SequenceChecker source_sequence_;
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker source_sequence_;
 
  private:
   std::vector<SinkPair> sinks_ RTC_GUARDED_BY(&source_sequence_);
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::VideoSourceBase;
+using ::webrtc::VideoSourceBaseGuarded;
 }  
 
 #endif  

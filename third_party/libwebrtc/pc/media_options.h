@@ -64,7 +64,7 @@ struct MediaDescriptionOptions {
   std::string mid;
   webrtc::RtpTransceiverDirection direction;
   bool stopped;
-  TransportOptions transport_options;
+  webrtc::TransportOptions transport_options;
   
   
   std::vector<SenderOptions> sender_options;

@@ -10,7 +10,7 @@
 
 #include "api/video/video_source_interface.h"
 
-namespace rtc {
+namespace webrtc {
 
 VideoSinkWants::VideoSinkWants() = default;
 VideoSinkWants::VideoSinkWants(const VideoSinkWants&) = default;

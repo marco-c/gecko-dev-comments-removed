@@ -33,7 +33,7 @@ namespace webrtc {
 namespace webrtc_pc_e2e {
 
 
-class AnalyzingVideoSink : public rtc::VideoSinkInterface<VideoFrame> {
+class AnalyzingVideoSink : public VideoSinkInterface<VideoFrame> {
  public:
   struct Stats {
     
@@ -76,7 +76,7 @@ class AnalyzingVideoSink : public rtc::VideoSinkInterface<VideoFrame> {
 
     
     test::VideoFrameWriter* video_frame_writer = nullptr;
-    std::vector<std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>> sinks;
+    std::vector<std::unique_ptr<VideoSinkInterface<VideoFrame>>> sinks;
   };
 
   
