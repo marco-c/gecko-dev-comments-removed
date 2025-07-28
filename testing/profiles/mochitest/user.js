@@ -41,6 +41,3 @@ user_pref("places.history.floodingPrevention.enabled", false);
 
 
 user_pref("geo.prompt.open_system_prefs", false);
-
-
-user_pref("messaging-system.log", "all");
