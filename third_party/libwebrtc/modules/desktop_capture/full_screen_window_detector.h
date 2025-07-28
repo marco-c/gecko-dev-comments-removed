@@ -59,6 +59,15 @@ class FullScreenWindowDetector
 
   static scoped_refptr<FullScreenWindowDetector>
   CreateFullScreenWindowDetector();
+  void SetUseHeuristicFullscreenPowerPointWindows(
+      bool use_heuristic_fullscreen_powerpoint_windows) {
+    use_heuristic_fullscreen_powerpoint_windows_ =
+        use_heuristic_fullscreen_powerpoint_windows;
+    if (app_handler_) {
+      app_handler_->SetUseHeuristicFullscreenPowerPointWindows(
+          use_heuristic_fullscreen_powerpoint_windows);
+    }
+  }
 
  protected:
   std::unique_ptr<FullScreenApplicationHandler> app_handler_;
@@ -67,6 +76,12 @@ class FullScreenWindowDetector
   void CreateApplicationHandlerIfNeeded(DesktopCapturer::SourceId source_id);
 
   ApplicationHandlerFactory application_handler_factory_;
+  
+  
+  
+  
+  
+  bool use_heuristic_fullscreen_powerpoint_windows_ = true;
 
   int64_t last_update_time_ms_;
   DesktopCapturer::SourceId previous_source_id_;
