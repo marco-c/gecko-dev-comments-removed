@@ -165,10 +165,15 @@ function expandComputedViewPropertyByIndex(view, index) {
 
 
 function getComputedViewLinkByIndex(view, index) {
-  const links = view.styleDocument.querySelectorAll(
-    ".rule-link .computed-link"
+  const matchedSelectors = view.styleDocument.querySelectorAll(
+    ".matchedselectors > p"
   );
-  return links[index];
+  const matchedSelector = matchedSelectors[index];
+  if (!matchedSelector) {
+    return null;
+  }
+
+  return matchedSelector.querySelector(`.rule-link .computed-link`);
 }
 
 
