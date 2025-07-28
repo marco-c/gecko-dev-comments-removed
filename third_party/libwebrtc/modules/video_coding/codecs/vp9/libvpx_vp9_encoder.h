@@ -102,6 +102,10 @@ class LibvpxVp9Encoder : public VideoEncoder {
 
   
   
+  void AdjustScalingFactorsForTopActiveLayer();
+
+  
+  
   void EnableSpatialLayer(int sid);
   void DisableSpatialLayer(int sid);
   void SetActiveSpatialLayers();
@@ -126,7 +130,9 @@ class LibvpxVp9Encoder : public VideoEncoder {
 
   size_t SteadyStateSize(int sid, int tid);
 
-  void MaybeRewrapRawWithFormat(vpx_img_fmt fmt);
+  void MaybeRewrapRawWithFormat(const vpx_img_fmt fmt,
+                                unsigned int width,
+                                unsigned int height);
   
   
   
@@ -192,6 +198,10 @@ class LibvpxVp9Encoder : public VideoEncoder {
   std::vector<ScalableVideoController::LayerFrameConfig> layer_frames_;
 
   FramerateControllerDeprecated variable_framerate_controller_;
+
+  
+  
+  std::vector<int> scaling_factors_num_, scaling_factors_den_;
 
   const struct QualityScalerExperiment {
     int low_qp;
