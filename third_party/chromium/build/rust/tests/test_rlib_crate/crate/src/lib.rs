@@ -19,7 +19,11 @@ pub fn say_hello_from_crate() {
     #[cfg(not(has_feature_a))]
     panic!("Wasn't passed feature a");
     #[cfg(not(has_feature_b))]
+    #[cfg(test_a_and_b)]
     panic!("Wasn't passed feature b");
+    #[cfg(has_feature_b)]
+    #[cfg(not(test_a_and_b))]
+    panic!("Was passed feature b");
 }
 
 #[cfg(test)]
@@ -27,11 +31,22 @@ mod tests {
     
     
     #[test]
-    fn test_features_passed() {
+    #[cfg(test_a_and_b)]
+    fn test_features_passed_target1() {
         #[cfg(not(has_feature_a))]
         panic!("Wasn't passed feature a");
         #[cfg(not(has_feature_b))]
         panic!("Wasn't passed feature b");
+    }
+
+    
+    #[test]
+    #[cfg(not(test_a_and_b))]
+    fn test_features_passed_target2() {
+        #[cfg(not(has_feature_a))]
+        panic!("Wasn't passed feature a");
+        #[cfg(has_feature_b)]
+        panic!("Was passed feature b");
     }
 
     #[test]

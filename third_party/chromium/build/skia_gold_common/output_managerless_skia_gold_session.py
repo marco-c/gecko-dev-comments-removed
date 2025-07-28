@@ -28,6 +28,7 @@ class OutputManagerlessSkiaGoldSession(skia_gold_session.SkiaGoldSession):
     
     
     
+    
     return super(OutputManagerlessSkiaGoldSession, self).RunComparison(
         name=name,
         png_file=png_file,
@@ -36,6 +37,7 @@ class OutputManagerlessSkiaGoldSession(skia_gold_session.SkiaGoldSession):
         use_luci=use_luci,
         optional_keys=optional_keys,
         force_dryrun=force_dryrun)
+    
 
   def _CreateDiffOutputDir(self, name):
     

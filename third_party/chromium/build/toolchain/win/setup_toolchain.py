@@ -58,6 +58,15 @@ def _ExtractImportantEnvironment(output_of_set):
           
           
           setting = os.path.dirname(sys.executable) + os.pathsep + setting
+        if envvar in ['include', 'lib']:
+          
+          
+          
+          for part in setting.split(';'):
+            if not os.path.exists(part) and len(part) != 0:
+              raise Exception(
+                  'Path "%s" from environment variable "%s" does not exist. '
+                  'Make sure the necessary SDK is installed.' % (part, envvar))
         env[var.upper()] = setting
         break
   if sys.platform in ('win32', 'cygwin'):
@@ -175,7 +184,7 @@ def _LoadToolchainEnv(cpu, toolchain_root, sdk_dir, target_store):
     
     
     
-    args.append('10.0.19041.0')
+    args.append('10.0.20348.0')
     variables = _LoadEnvFromBat(args)
   return _ExtractImportantEnvironment(variables)
 
@@ -243,9 +252,6 @@ def main():
   cpus = ('x86', 'x64', 'arm', 'arm64')
   assert target_cpu in cpus
   vc_bin_dir = 'fake_path/cl.exe'
-  vc_lib_path = 'fake_path/lib'
-  vc_lib_atlmfc_path = 'fake_path/atlmfc'
-  vc_lib_um_path = 'fake_path/lib_um'
   include = ''
   lib = ''
 
@@ -287,10 +293,6 @@ def main():
 
 
 
-
-
-
-
   env = {}
   env['PATH'] = ''
   include_I = include
@@ -303,14 +305,13 @@ def main():
           gn_helpers.ToGNString(q('/winsysroot' + relflag(toolchain_root))))
   else:
     print('include_flags_imsvc = ' + gn_helpers.ToGNString(include_imsvc))
-  print('vc_lib_path = ' + gn_helpers.ToGNString(vc_lib_path))
-  
-  
-  if (vc_lib_atlmfc_path != ''):
-    print('vc_lib_atlmfc_path = ' + gn_helpers.ToGNString(vc_lib_atlmfc_path))
-  print('vc_lib_um_path = ' + gn_helpers.ToGNString(vc_lib_um_path))
   print('paths = ' + gn_helpers.ToGNString(env['PATH']))
   print('libpath_flags = ' + gn_helpers.ToGNString(libpath_flags))
+  if bool(int(os.environ.get('DEPOT_TOOLS_WIN_TOOLCHAIN', 1))) and win_sdk_path:
+    print('libpath_lldlink_flags = ' +
+          gn_helpers.ToGNString(q('/winsysroot:' + relflag(toolchain_root))))
+  else:
+    print('libpath_lldlink_flags = ' + gn_helpers.ToGNString(libpath_flags))
 
 
 if __name__ == '__main__':

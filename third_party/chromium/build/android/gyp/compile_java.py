@@ -187,6 +187,8 @@ ERRORPRONE_WARNINGS_TO_DISABLE = [
     
     
     'UnicodeEscape',
+    
+    'AlreadyChecked',
 ]
 
 
@@ -763,7 +765,12 @@ def main(argv):
   javac_args.extend(['-proc:none'])
 
   if options.bootclasspath:
-    javac_args.extend(['-bootclasspath', ':'.join(options.bootclasspath)])
+    
+    
+    if options.java_version != '1.8':
+      options.classpath = options.bootclasspath + options.classpath
+    else:
+      javac_args.extend(['-bootclasspath', ':'.join(options.bootclasspath)])
 
   if options.processorpath:
     javac_args.extend(['-processorpath', ':'.join(options.processorpath)])

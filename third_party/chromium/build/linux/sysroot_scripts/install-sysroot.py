@@ -54,7 +54,8 @@ ARCH_TRANSLATIONS = {
     'mips64': 'mips64el',
 }
 
-DEFAULT_TARGET_PLATFORM = 'sid'
+DEFAULT_TARGET_PLATFORM = 'bullseye'
+
 
 class Error(Exception):
   pass

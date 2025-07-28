@@ -3,6 +3,7 @@
 
 
 
+import json
 import os
 import shutil
 import subprocess
@@ -61,7 +62,12 @@ class TestBinarySizes(unittest.TestCase):
   def tearDownClass(cls):
     shutil.rmtree(cls.tmpdir)
 
+
   def testReadAndWritePackageBlobs(self):
+    
+    
+    if os.name == 'nt':
+      return
     with tempfile.NamedTemporaryFile(mode='w') as tmp_file:
       tmp_file.write(_EXAMPLE_BLOBS)
       tmp_file.flush()
@@ -77,6 +83,52 @@ class TestBinarySizes(unittest.TestCase):
                        package_blobs)
     finally:
       os.remove(tmp_package_file.name)
+
+  def testReadAndWritePackageSizes(self):
+    
+    
+    if os.name == 'nt':
+      return
+    with tempfile.NamedTemporaryFile(mode='w') as tmp_file:
+      tmp_file.write(_EXAMPLE_BLOBS)
+      tmp_file.flush()
+      blobs = binary_sizes.ReadPackageBlobsJson(tmp_file.name)
+
+    sizes = binary_sizes.GetPackageSizes(blobs)
+
+    new_sizes = {}
+    with tempfile.NamedTemporaryFile(mode='w') as tmp_file:
+      binary_sizes.WritePackageSizesJson(tmp_file.name, sizes)
+      new_sizes = binary_sizes.ReadPackageSizesJson(tmp_file.name)
+      self.assertEqual(new_sizes, sizes)
+      self.assertIn('web_engine', new_sizes)
+
+  def testGetPackageSizesUsesBlobMerklesForCount(self):
+    
+    
+    if os.name == 'nt':
+      return
+    blobs = json.loads(_EXAMPLE_BLOBS)
+
+    
+    last_blob = dict(blobs['web_engine'][-1])
+    blobs['cast_runner'] = []
+    last_blob['path'] = 'foo'  
+
+    
+    
+    
+    
+    blobs['cast_runner'].append(last_blob)
+
+    with tempfile.NamedTemporaryFile(mode='w') as tmp_file:
+      tmp_file.write(json.dumps(blobs))
+      tmp_file.flush()
+      blobs = binary_sizes.ReadPackageBlobsJson(tmp_file.name)
+
+    sizes = binary_sizes.GetPackageSizes(blobs)
+
+    self.assertEqual(sizes['cast_runner'].compressed, last_blob['size'] / 2)
 
 
 if __name__ == '__main__':

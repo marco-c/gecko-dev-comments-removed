@@ -16,24 +16,11 @@ import zipfile
 
 import dex
 import dex_jdk_libs
-from pylib.dex import dex_parser
 from util import build_utils
 from util import diff_utils
 
-_API_LEVEL_VERSION_CODE = [
-    (21, 'L'),
-    (22, 'LollipopMR1'),
-    (23, 'M'),
-    (24, 'N'),
-    (25, 'NMR1'),
-    (26, 'O'),
-    (27, 'OMR1'),
-    (28, 'P'),
-    (29, 'Q'),
-    (30, 'R'),
-    (31, 'S'),
-]
-
+sys.path.insert(1, os.path.dirname(os.path.dirname(__file__)))
+from pylib.dex import dex_parser
 
 def _ParseOptions():
   args = build_utils.ExpandFileArgs(sys.argv[1:])
@@ -83,10 +70,6 @@ def _ParseOptions():
       '--verbose', '-v', action='store_true', help='Print all ProGuard output')
   parser.add_argument(
       '--repackage-classes', help='Package all optimized classes are put in.')
-  parser.add_argument(
-      '--disable-outlining',
-      action='store_true',
-      help='Disable the outlining optimization provided by R8.')
   parser.add_argument(
     '--disable-checks',
     action='store_true',
@@ -305,11 +288,10 @@ def _OptimizeWithR8(options,
 
     
     cmd = build_utils.JavaCmd(options.warnings_as_errors, xmx='2G') + [
+        
         '-Dcom.android.tools.r8.allowTestProguardOptions=1',
         '-Dcom.android.tools.r8.disableHorizontalClassMerging=1',
     ]
-    if options.disable_outlining:
-      cmd += ['-Dcom.android.tools.r8.disableOutlining=1']
     if options.dump_inputs:
       cmd += ['-Dcom.android.tools.r8.dumpinputtofile=r8inputs.zip']
     cmd += [
@@ -326,6 +308,8 @@ def _OptimizeWithR8(options,
     if options.disable_checks:
       
       cmd += ['--map-diagnostics:CheckDiscardDiagnostic', 'error', 'info']
+    elif not options.warnings_as_errors:
+      cmd += ['--map-diagnostics:CheckDiscardDiagnostic', 'error', 'warning']
 
     if options.desugar_jdk_libs_json:
       cmd += [
@@ -424,7 +408,7 @@ def _OptimizeWithR8(options,
       
       
       out_file.writelines(l for l in in_file if not l.startswith('#'))
-  return base_context
+  return split_contexts_by_name
 
 
 def _OutputKeepRules(r8_path, input_paths, classpath, targets_re_string,
@@ -459,6 +443,8 @@ def _CheckForMissingSymbols(r8_path, dex_files, classpath, warnings_as_errors,
   for path in dex_files:
     cmd += ['--source', path]
 
+  failed_holder = [False]
+
   def stderr_filter(stderr):
     ignored_lines = [
         
@@ -479,10 +465,6 @@ def _CheckForMissingSymbols(r8_path, dex_files, classpath, warnings_as_errors,
         'com.google.common.flogger.backend.system.DefaultPlatform',
 
         
-        
-        'org.chromium.build.NativeLibraries',
-
-        
         'java.lang.instrument.ClassFileTransformer',
         'java.lang.instrument.IllegalClassFormatException',
         'java.lang.instrument.Instrumentation',
@@ -501,8 +483,9 @@ def _CheckForMissingSymbols(r8_path, dex_files, classpath, warnings_as_errors,
     stderr = build_utils.FilterLines(
         stderr, '|'.join(re.escape(x) for x in ignored_lines))
     if stderr:
-      if '  ' in stderr:
-        stderr = error_title + """
+      if 'Missing' in stderr:
+        failed_holder[0] = True
+        stderr = 'TraceReferences failed: ' + error_title + """
 Tip: Build with:
         is_java_debug=false
         treat_warnings_as_errors=false
@@ -525,11 +508,11 @@ https://chromium.googlesource.com/chromium/src.git/+/main/docs/ui/android/byteco
         stderr = ''
     return stderr
 
-  logging.debug('cmd: %s', ' '.join(cmd))
   build_utils.CheckOutput(cmd,
                           print_stdout=True,
                           stderr_filter=stderr_filter,
                           fail_on_output=warnings_as_errors)
+  return failed_holder[0]
 
 
 def _CombineConfigs(configs,
@@ -566,7 +549,7 @@ def _CombineConfigs(configs,
 
     ret.extend(format_config_contents(config, contents))
 
-  for path, contents in sorted(embedded_configs.items(), key=lambda x: x[0]):
+  for path, contents in sorted(embedded_configs.items()):
     ret.extend(format_config_contents(path, contents))
 
 
@@ -598,17 +581,27 @@ def _CreateDynamicConfig(options):
   return '\n'.join(ret)
 
 
-def _ExtractEmbeddedConfigs(jar_paths):
-  embedded_configs = {}
-  for jar_path in jar_paths:
-    with zipfile.ZipFile(jar_path) as z:
-      for info in z.infolist():
-        if info.is_dir():
-          continue
-        if info.filename.startswith('META-INF/proguard/'):
-          config_path = '{}:{}'.format(jar_path, info.filename)
-          embedded_configs[config_path] = z.read(info).decode('utf-8').rstrip()
-  return embedded_configs
+def _ExtractEmbeddedConfigs(jar_path, embedded_configs):
+  with zipfile.ZipFile(jar_path) as z:
+    proguard_names = []
+    r8_names = []
+    for info in z.infolist():
+      if info.is_dir():
+        continue
+      if info.filename.startswith('META-INF/proguard/'):
+        proguard_names.append(info.filename)
+      elif info.filename.startswith('META-INF/com.android.tools/r8/'):
+        r8_names.append(info.filename)
+      elif info.filename.startswith('META-INF/com.android.tools/r8-from'):
+        
+        if '-upto-' not in info.filename:
+          r8_names.append(info.filename)
+
+    
+    active = r8_names or proguard_names
+    for filename in active:
+      config_path = '{}:{}'.format(jar_path, filename)
+      embedded_configs[config_path] = z.read(filename).decode('utf-8').rstrip()
 
 
 def _ContainsDebuggingConfig(config_str):
@@ -625,18 +618,57 @@ def _MaybeWriteStampAndDepFile(options, inputs):
     build_utils.WriteDepfile(options.depfile, output, inputs=inputs)
 
 
+def _IterParentContexts(context_name, split_contexts_by_name):
+  while context_name:
+    context = split_contexts_by_name[context_name]
+    yield context
+    context_name = context.parent_name
+
+
+def _DoTraceReferencesChecks(options, split_contexts_by_name):
+  
+  parent_splits_context_names = {
+      c.parent_name
+      for c in split_contexts_by_name.values() if c.parent_name
+  }
+  context_sets = [
+      list(_IterParentContexts(n, split_contexts_by_name))
+      for n in parent_splits_context_names
+  ]
+  
+  context_sets.sort(key=lambda x: (len(x), x[0].name))
+
+  
+  error_title = 'DEX contains references to non-existent symbols after R8.'
+  dex_files = sorted(c.final_output_path
+                     for c in split_contexts_by_name.values())
+  if _CheckForMissingSymbols(options.r8_path, dex_files, options.classpath,
+                             options.warnings_as_errors, error_title):
+    
+    return
+
+  for context_set in context_sets:
+    
+    
+    error_title = (f'DEX within module "{context_set[0].name}" contains '
+                   'reference(s) to symbols within child splits')
+    dex_files = [c.final_output_path for c in context_set]
+    
+    
+    
+    
+    if _CheckForMissingSymbols(options.r8_path, dex_files, options.classpath,
+                               options.warnings_as_errors, error_title):
+      
+      return
+
+
 def main():
   build_utils.InitLogging('PROGUARD_DEBUG')
   options = _ParseOptions()
 
+  
   logging.debug('Preparing configs')
-  
-  proguard_configs = [
-      cfg for cfg in options.proguard_configs if not cfg.endswith(
-          'java_com_google_privacy_one_psl_annotation_proguard.pgcfg')
-  ]
-
-  
   dynamic_config_data = _CreateDynamicConfig(options)
 
   logging.debug('Looking for embedded configs')
@@ -649,10 +681,13 @@ def main():
     
     if p not in libraries and p not in options.input_paths:
       libraries.append(p)
-  embedded_configs = _ExtractEmbeddedConfigs(options.input_paths + libraries)
+
+  embedded_configs = {}
+  for jar_path in options.input_paths + libraries:
+    _ExtractEmbeddedConfigs(jar_path, embedded_configs)
 
   
-  merged_configs = _CombineConfigs(proguard_configs,
+  merged_configs = _CombineConfigs(options.proguard_configs,
                                    dynamic_config_data,
                                    embedded_configs,
                                    exclude_generated=True)
@@ -673,27 +708,22 @@ def main():
                      options.keep_rules_output_path)
     return
 
-  base_context = _OptimizeWithR8(options, proguard_configs, libraries,
-                                 dynamic_config_data, print_stdout)
+  
+  
+  
+  tools_configs = {
+      k: v
+      for k, v in embedded_configs.items() if 'com.android.tools' in k
+  }
+  dynamic_config_data += '\n' + _CombineConfigs([], None, tools_configs)
+
+  split_contexts_by_name = _OptimizeWithR8(options, options.proguard_configs,
+                                           libraries, dynamic_config_data,
+                                           print_stdout)
 
   if not options.disable_checks:
     logging.debug('Running tracereferences')
-    all_dex_files = []
-    if options.output_path:
-      all_dex_files.append(options.output_path)
-    if options.dex_dests:
-      all_dex_files.extend(options.dex_dests)
-    error_title = 'DEX contains references to non-existent symbols after R8.'
-    _CheckForMissingSymbols(options.r8_path, all_dex_files, options.classpath,
-                            options.warnings_as_errors, error_title)
-    
-    
-    
-    
-    error_title = 'Base module DEX contains references symbols within DFMs.'
-    _CheckForMissingSymbols(options.r8_path, [base_context.final_output_path],
-                            options.classpath, options.warnings_as_errors,
-                            error_title)
+    _DoTraceReferencesChecks(options, split_contexts_by_name)
 
   for output in options.extra_mapping_output_paths:
     shutil.copy(options.mapping_output, output)

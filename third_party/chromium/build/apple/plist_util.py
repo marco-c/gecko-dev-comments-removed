@@ -12,11 +12,6 @@ import sys
 import tempfile
 import shlex
 
-if sys.version_info.major < 3:
-  basestring_compat = basestring
-else:
-  basestring_compat = str
-
 
 
 
@@ -89,24 +84,15 @@ def Interpolate(value, substitutions):
     return {k: Interpolate(v, substitutions) for k, v in value.items()}
   if isinstance(value, list):
     return [Interpolate(v, substitutions) for v in value]
-  if isinstance(value, basestring_compat):
+  if isinstance(value, str):
     return InterpolateString(value, substitutions)
   return value
 
 
 def LoadPList(path):
   """Loads Plist at |path| and returns it as a dictionary."""
-  if sys.version_info.major == 2:
-    fd, name = tempfile.mkstemp()
-    try:
-      subprocess.check_call(['plutil', '-convert', 'xml1', '-o', name, path])
-      with os.fdopen(fd, 'rb') as f:
-        return plistlib.readPlist(f)
-    finally:
-      os.unlink(name)
-  else:
-    with open(path, 'rb') as f:
-      return plistlib.load(f)
+  with open(path, 'rb') as f:
+    return plistlib.load(f)
 
 
 def SavePList(path, format, data):
@@ -115,20 +101,13 @@ def SavePList(path, format, data):
   
   
   
-  if os.path.exists(path):
+  try:
     os.unlink(path)
-  if sys.version_info.major == 2:
-    fd, name = tempfile.mkstemp()
-    try:
-      with os.fdopen(fd, 'wb') as f:
-        plistlib.writePlist(data, f)
-      subprocess.check_call(['plutil', '-convert', format, '-o', path, name])
-    finally:
-      os.unlink(name)
-  else:
-    with open(path, 'wb') as f:
-      plist_format = {'binary1': plistlib.FMT_BINARY, 'xml1': plistlib.FMT_XML}
-      plistlib.dump(data, f, fmt=plist_format[format])
+  except FileNotFoundError:
+    pass
+  with open(path, 'wb') as f:
+    plist_format = {'binary1': plistlib.FMT_BINARY, 'xml1': plistlib.FMT_XML}
+    plistlib.dump(data, f, fmt=plist_format[format])
 
 
 def MergePList(plist1, plist2):
@@ -243,10 +222,6 @@ class SubstituteAction(Action):
 
 
 def Main():
-  
-  
-  codecs.lookup('utf-8')
-
   parser = argparse.ArgumentParser(description='manipulate plist files')
   subparsers = parser.add_subparsers()
 
@@ -258,8 +233,4 @@ def Main():
 
 
 if __name__ == '__main__':
-  
-  
-  if sys.version_info[0] < 3:
-    os.execvp('python3', ['python3'] + sys.argv)
   sys.exit(Main())

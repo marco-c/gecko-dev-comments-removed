@@ -7,6 +7,9 @@ USE_PYTHON3 = True
 
 
 def _CommonChecks(input_api, output_api):
+  
+  if input_api.is_windows:
+    return []
   tests = input_api.canned_checks.GetUnitTestsInDirectory(
       input_api,
       output_api,

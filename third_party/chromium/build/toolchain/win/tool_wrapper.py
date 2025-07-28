@@ -155,7 +155,8 @@ class WinTool(object):
       
       args = list(args) 
       args[0] = args[0].replace('/', '\\')
-    popen = subprocess.Popen(args, shell=True, env=env,
+    
+    popen = subprocess.Popen(args, shell=sys.platform == 'win32', env=env,
                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     out, _ = popen.communicate()
     for line in out.decode('utf8').splitlines():

@@ -18,8 +18,6 @@ The toolchain version can be overridden by setting MAC_TOOLCHAIN_REVISION with
 the full revision, e.g. 9A235.
 """
 
-from __future__ import print_function
-
 import argparse
 import os
 import pkg_resources
@@ -32,8 +30,6 @@ import sys
 
 def LoadPList(path):
   """Loads Plist at |path| and returns it as a dictionary."""
-  if sys.version_info.major == 2:
-    return plistlib.readPlist(path)
   with open(path, 'rb') as f:
     return plistlib.load(f)
 
@@ -42,7 +38,8 @@ def LoadPList(path):
 
 
 MAC_BINARIES_LABEL = 'infra_internal/ios/xcode/xcode_binaries/mac-amd64'
-MAC_BINARIES_TAG = 'fE3bk9-nINNxwK4pUcZYcJlGZ-9KSirXzoQuzuvoHV8C'
+MAC_BINARIES_TAG = 'OzUNvLYw4Z-9XcbsXRKaDWo3rbJtcD1B7BbGPqEQ8a0C'
+
 
 
 
@@ -163,11 +160,10 @@ def InstallXcodeBinaries():
     return 0
 
   
-  license_accept_script = '/usr/local/bin/xcode_accept_license.py'
+  license_accept_script = '/usr/local/bin/xcode_accept_license.sh'
   if os.path.exists(license_accept_script):
     args = [
-        'sudo', license_accept_script, '--xcode-version', cipd_xcode_version,
-        '--license-version', cipd_license_version
+        'sudo', license_accept_script, cipd_xcode_version, cipd_license_version
     ]
     subprocess.check_call(args)
     return 0

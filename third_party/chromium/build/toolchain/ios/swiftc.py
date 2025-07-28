@@ -113,7 +113,14 @@ def compile_module(module, sources, settings, extras, tmpdir):
         '-enable-cxx-interop',
     ])
 
+  
+  
+  
+  
   process = subprocess.Popen([
+      'xcrun',
+      '--toolchain',
+      'swift',
       'swiftc',
       '-parse-as-library',
       '-module-name',

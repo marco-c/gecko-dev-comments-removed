@@ -6,9 +6,12 @@ import json
 import logging
 import multiprocessing
 import os
+import queue
+import re
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import zipfile
 
@@ -44,6 +47,9 @@ _MIN_CLASSES_PER_SHARD = 8
 
 
 _SHARD_TIMEOUT = 30 * 60
+
+
+_LOGCAT_RE = re.compile(r'[A-Z]/[\w\d_-]+:')
 
 
 class LocalMachineJunitTestRun(test_run.TestRun):
@@ -82,9 +88,8 @@ class LocalMachineJunitTestRun(test_run.TestRun):
         self._test_instance.robolectric_runtime_deps_dir,
         '-Ddir.source.root=%s' % constants.DIR_SOURCE_ROOT,
         '-Drobolectric.resourcesMode=binary',
+        '-Drobolectric.logging=stdout',
     ]
-    if logging.getLogger().isEnabledFor(logging.INFO):
-      jvm_args += ['-Drobolectric.logging=stdout']
     if self._test_instance.debug_socket:
       jvm_args += [
           '-agentlib:jdwp=transport=dt_socket'
@@ -116,7 +121,7 @@ class LocalMachineJunitTestRun(test_run.TestRun):
     return jvm_args
 
   
-  def RunTests(self, results):
+  def RunTests(self, results, raw_logs_fh=None):
     wrapper_path = os.path.join(constants.GetOutDirectory(), 'bin', 'helper',
                                 self._test_instance.suite)
 
@@ -152,29 +157,21 @@ class LocalMachineJunitTestRun(test_run.TestRun):
 
       AddPropertiesJar(cmd_list, temp_dir, self._test_instance.resource_apk)
 
-      procs = []
-      temp_files = []
-      for index, cmd in enumerate(cmd_list):
-        
-        if index == 0:
-          sys.stdout.write('\nShard 0 output:\n')
-          procs.append(
-              cmd_helper.Popen(
-                  cmd,
-                  stdout=sys.stdout,
-                  stderr=subprocess.STDOUT,
-              ))
+      show_logcat = logging.getLogger().isEnabledFor(logging.INFO)
+      num_omitted_lines = 0
+      for line in _RunCommandsAndSerializeOutput(cmd_list):
+        if raw_logs_fh:
+          raw_logs_fh.write(line)
+        if show_logcat or not _LOGCAT_RE.match(line):
+          sys.stdout.write(line)
         else:
-          temp_file = tempfile.TemporaryFile()
-          temp_files.append(temp_file)
-          procs.append(
-              cmd_helper.Popen(
-                  cmd,
-                  stdout=temp_file,
-                  stderr=temp_file,
-              ))
+          num_omitted_lines += 1
 
-      PrintProcessesStdout(procs, temp_files)
+      if num_omitted_lines > 0:
+        logging.critical('%d log lines omitted.', num_omitted_lines)
+      sys.stdout.flush()
+      if raw_logs_fh:
+        raw_logs_fh.flush()
 
       results_list = []
       try:
@@ -255,51 +252,100 @@ def GroupTestsForShard(num_of_shards, test_classes):
   return test_dict
 
 
-def PrintProcessesStdout(procs, temp_files):
-  """Prints the files that the processes wrote stdout to.
-
-  Waits for processes to finish, then writes the files to stdout.
+def _RunCommandsAndSerializeOutput(cmd_list):
+  """Runs multiple commands in parallel and yields serialized output lines.
 
   Args:
-    procs: A list of subprocesses.
-    temp_files: A list of temporaryFile objects.
+    cmd_list: List of commands.
 
   Returns: N/A
 
   Raises:
     TimeoutError: If timeout is exceeded.
   """
-  
+  num_shards = len(cmd_list)
+  assert num_shards > 0
+  procs = []
+  temp_files = []
+  for i, cmd in enumerate(cmd_list):
+    
+    if i == 0:
+      temp_files.append(None)  
+      procs.append(
+          cmd_helper.Popen(
+              cmd,
+              stdout=subprocess.PIPE,
+              stderr=subprocess.STDOUT,
+          ))
+    else:
+      temp_file = tempfile.TemporaryFile(mode='w+t', encoding='utf-8')
+      temp_files.append(temp_file)
+      procs.append(cmd_helper.Popen(
+          cmd,
+          stdout=temp_file,
+          stderr=temp_file,
+      ))
+
   timeout_time = time.time() + _SHARD_TIMEOUT
   timed_out = False
-  processes_running = True
+
+  yield '\n'
+  yield 'Shard 0 output:\n'
 
   
-  while processes_running:
-    if all(p.poll() is not None for p in procs):
-      processes_running = False
-    else:
-      time.sleep(.25)
+  
+  def pump_stream_to_queue(f, q):
+    try:
+      for line in iter(f.readline, ''):
+        q.put(line)
+    except ValueError:  
+      pass
 
+  shard_0_q = queue.Queue()
+  shard_0_pump = threading.Thread(target=pump_stream_to_queue,
+                                  args=(procs[0].stdout, shard_0_q))
+  shard_0_pump.start()
+
+  
+  shard_to_check = 0
+  while shard_to_check < num_shards:
+    if shard_0_pump.is_alive():
+      while not shard_0_q.empty():
+        yield shard_0_q.get_nowait()
+    if procs[shard_to_check].poll() is not None:
+      shard_to_check += 1
+    else:
+      time.sleep(.1)
     if time.time() > timeout_time:
       timed_out = True
       break
 
   
-  for i, f in enumerate(temp_files):
+  if shard_0_pump.is_alive():
+    procs[0].stdout.close()
+  shard_0_pump.join()
+
+  
+  while not shard_0_q.empty():
+    yield shard_0_q.get_nowait()
+  for i in range(1, num_shards):
+    f = temp_files[i]
+    yield '\n'
+    yield 'Shard %d output:\n' % i
     f.seek(0)
-    
-    sys.stdout.write('\nShard %d output:\n' % (i + 1))
-    sys.stdout.write(f.read().decode('utf-8'))
+    for line in f.readlines():
+      yield line
     f.close()
 
+  
   if timed_out:
     for i, p in enumerate(procs):
       if p.poll() is None:
         p.kill()
-        sys.stdout.write('Index of timed out shard: %d\n' % i)
+        yield 'Index of timed out shard: %d\n' % i
 
-    sys.stdout.write('Output in shards may be cutoff due to timeout.\n\n')
+    yield 'Output in shards may be cutoff due to timeout.\n'
+    yield '\n'
     raise cmd_helper.TimeoutError('Junit shards timed out.')
 
 

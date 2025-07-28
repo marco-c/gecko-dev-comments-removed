@@ -24,8 +24,10 @@ def Main():
   args = parser.parse_args()
 
   
-  if os.path.exists(args.output):
+  try:
     os.unlink(args.output)
+  except FileNotFoundError:
+    pass
 
   plist = plist_util.LoadPList(args.plist)
   package_type = plist['CFBundlePackageType']
@@ -47,8 +49,4 @@ def Main():
 
 
 if __name__ == '__main__':
-  
-  
-  if sys.version_info[0] < 3:
-    os.execvp('python3', ['python3'] + sys.argv)
   sys.exit(Main())

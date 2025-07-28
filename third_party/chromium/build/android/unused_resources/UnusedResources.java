@@ -382,7 +382,10 @@ public class UnusedResources {
         ReferenceChecker callback = new ReferenceChecker() {
             @Override
             public boolean shouldProcess(String internalName) {
-                return !isResourceClass(internalName + DOT_CLASS);
+                
+                
+                
+                return true;
             }
 
             @Override
@@ -400,6 +403,12 @@ public class UnusedResources {
                 Resource resource = getResourceFromCode(internalName, fieldName);
                 if (resource != null) {
                     ResourceUsageModel.markReachable(resource);
+                    if (mDebugPrinter != null) {
+                        mDebugPrinter.println("Marking " + resource
+                                + " reachable: referenced from dex"
+                                + " in " + file + ":" + name + " (static field access "
+                                + internalName + "." + fieldName + ")");
+                    }
                 }
             }
 

@@ -264,8 +264,6 @@ def run_midl(args, env_dict):
                              stdout=subprocess.PIPE,
                              stderr=subprocess.STDOUT)
     out, _ = popen.communicate()
-    if popen.returncode != 0:
-      return popen.returncode, midl_output_dir
 
     
     
@@ -278,6 +276,9 @@ def run_midl(args, env_dict):
     for line in lines:
       if not line.startswith(prefixes) and line not in processing:
         print(line)
+
+    if popen.returncode != 0:
+      return popen.returncode, midl_output_dir
 
     for f in os.listdir(midl_output_dir):
       ZapTimestamp(os.path.join(midl_output_dir, f))

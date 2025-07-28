@@ -12,6 +12,12 @@ USE_PYTHON3 = True
 
 
 def CommonChecks(input_api, output_api):
+  
+  
+  
+  if input_api.sys.platform == 'win32':
+    return []
+
   build_android_dir = input_api.PresubmitLocalPath()
 
   def J(*dirs):
@@ -31,12 +37,7 @@ def CommonChecks(input_api, output_api):
           output_api,
           pylintrc='pylintrc',
           files_to_skip=[
-              r'.*_pb2\.py',
-              
-              r'.*fast_local_dev_server\.py',
-              r'.*incremental_javac_test_android_library.py',
-              r'.*list_class_verification_failures.py',
-              r'.*list_java_targets\.py',
+              r'.*_pb2\.py'
           ] + build_pys,
           extra_paths_list=[
               J(),
@@ -93,7 +94,6 @@ def CommonChecks(input_api, output_api):
           input_api,
           output_api,
           unit_tests=[
-              J('.', 'convert_dex_profile_tests.py'),
               J('.', 'emma_coverage_stats_test.py'),
               J('.', 'list_class_verification_failures_test.py'),
               J('pylib', 'constants', 'host_paths_unittest.py'),

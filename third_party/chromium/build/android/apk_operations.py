@@ -597,6 +597,7 @@ class _LogcatProcessor:
       'ActivityManager',  
       'ActivityTaskManager',  
       'AndroidRuntime',  
+      'AppZygoteInit',  
       'DEBUG',  
   }
 
@@ -855,9 +856,11 @@ def _RunLogcat(device,
 
 
 def _GetPackageProcesses(device, package_name):
+  my_names = (package_name, package_name + '_zygote')
   return [
       p for p in device.ListProcesses(package_name)
-      if p.name == package_name or p.name.startswith(package_name + ':')]
+      if p.name in my_names or p.name.startswith(package_name + ':')
+  ]
 
 
 def _RunPs(devices, package_name):
@@ -1647,16 +1650,52 @@ class _PrintCertsCommand(_Command):
           full_output = subprocess.check_output(
               cmd + ['-rfc'], stderr=subprocess.STDOUT)
     else:
-      cmd = [
-          build_tools.GetPath('apksigner'), 'verify', '--print-certs',
-          '--verbose', self.apk_helper.path
+
+      def run_apksigner(min_sdk_version):
+        cmd = [
+            build_tools.GetPath('apksigner'), 'verify', '--min-sdk-version',
+            str(min_sdk_version), '--print-certs', '--verbose',
+            self.apk_helper.path
+        ]
+        logging.warning('Running: %s', ' '.join(cmd))
+        env = os.environ.copy()
+        env['PATH'] = os.path.pathsep.join(
+            [os.path.join(_JAVA_HOME, 'bin'),
+             env.get('PATH')])
+        
+        return subprocess.check_output(cmd,
+                                       env=env,
+                                       universal_newlines=True,
+                                       stderr=subprocess.STDOUT)
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      versions = [
+          version_codes.MARSHMALLOW,  
+          version_codes.OREO_MR1,  
+          version_codes.Q,  
+          version_codes.R,
       ]
-      logging.warning('Running: %s', ' '.join(cmd))
-      env = os.environ.copy()
-      env['PATH'] = os.path.pathsep.join(
-          [os.path.join(_JAVA_HOME, 'bin'),
-           env.get('PATH')])
-      stdout = subprocess.check_output(cmd, env=env, universal_newlines=True)
+      stdout = None
+      for min_sdk_version in versions:
+        try:
+          stdout = run_apksigner(min_sdk_version)
+          break
+        except subprocess.CalledProcessError:
+          
+          
+          continue
+      if not stdout:
+        raise RuntimeError('apksigner was not able to verify APK')
+
       print(stdout)
       if self.args.full_cert:
         if 'v1 scheme (JAR signing): true' not in stdout:

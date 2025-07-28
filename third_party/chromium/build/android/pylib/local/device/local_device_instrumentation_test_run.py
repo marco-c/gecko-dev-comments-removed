@@ -135,6 +135,22 @@ def _LogTestEndpoints(device, test_name):
         check_return=True)
 
 
+@contextlib.contextmanager
+def _VoiceInteractionService(device, use_voice_interaction_service):
+  def set_voice_interaction_service(service):
+    device.RunShellCommand('settings put secure voice_interaction_service %s' %
+                           service)
+
+  try:
+    default_voice_interaction_service = device.RunShellCommand(
+        'settings get secure voice_interaction_service', single_line=True)
+
+    set_voice_interaction_service(use_voice_interaction_service)
+    yield
+  finally:
+    set_voice_interaction_service(default_voice_interaction_service)
+
+
 def DismissCrashDialogs(device):
   
   
@@ -198,8 +214,7 @@ class LocalDeviceInstrumentationTestRun(
           
           
           system_app_context = system_app.ReplaceSystemApp(
-              dev, self._test_instance.replace_system_package.package,
-              self._test_instance.replace_system_package.replacement_apk)
+              dev, replacement_apk=self._test_instance.replace_system_package)
           
           
           
@@ -224,9 +239,71 @@ class LocalDeviceInstrumentationTestRun(
         
         steps.insert(0, remove_packages)
 
+      def install_helper(apk,
+                         modules=None,
+                         fake_modules=None,
+                         permissions=None,
+                         additional_locales=None,
+                         instant_app=False):
+
+        @instrumentation_tracing.no_tracing
+        @trace_event.traced
+        def install_helper_internal(d, apk_path=None):
+          
+          d.Install(
+              apk,
+              modules=modules,
+              fake_modules=fake_modules,
+              permissions=permissions,
+              additional_locales=additional_locales,
+              instant_app=instant_app,
+              force_queryable=self._test_instance.IsApkForceQueryable(apk))
+
+        return install_helper_internal
+
+      def incremental_install_helper(apk, json_path, permissions):
+
+        @trace_event.traced
+        def incremental_install_helper_internal(d, apk_path=None):
+          
+          installer.Install(d, json_path, apk=apk, permissions=permissions)
+
+        return incremental_install_helper_internal
+
+      permissions = self._test_instance.test_apk.GetPermissions()
+      if self._test_instance.test_apk_incremental_install_json:
+        if self._test_instance.test_apk_as_instant:
+          raise Exception('Test APK cannot be installed as an instant '
+                          'app if it is incremental')
+
+        steps.append(
+            incremental_install_helper(
+                self._test_instance.test_apk,
+                self._test_instance.test_apk_incremental_install_json,
+                permissions))
+      else:
+        steps.append(
+            install_helper(self._test_instance.test_apk,
+                           permissions=permissions,
+                           instant_app=self._test_instance.test_apk_as_instant))
+
+      steps.extend(
+          install_helper(apk, instant_app=self._test_instance.IsApkInstant(apk))
+          for apk in self._test_instance.additional_apks)
+
+      
+      
+      for apk in (self._test_instance.additional_apks +
+                  [self._test_instance.test_apk]):
+        self._installed_packages.append(apk_helper.GetPackageName(apk))
+
       if self._test_instance.use_webview_provider:
+
         @trace_event.traced
         def use_webview_provider(dev):
+          
+          
+          
           
           
           
@@ -246,52 +323,21 @@ class LocalDeviceInstrumentationTestRun(
 
         steps.append(use_webview_provider)
 
-      def install_helper(apk,
-                         modules=None,
-                         fake_modules=None,
-                         permissions=None,
-                         additional_locales=None):
-
-        @instrumentation_tracing.no_tracing
-        @trace_event.traced
-        def install_helper_internal(d, apk_path=None):
-          
-          d.Install(apk,
-                    modules=modules,
-                    fake_modules=fake_modules,
-                    permissions=permissions,
-                    additional_locales=additional_locales)
-
-        return install_helper_internal
-
-      def incremental_install_helper(apk, json_path, permissions):
+      if self._test_instance.use_voice_interaction_service:
 
         @trace_event.traced
-        def incremental_install_helper_internal(d, apk_path=None):
+        def use_voice_interaction_service(device):
+          voice_interaction_service_context = _VoiceInteractionService(
+              device, self._test_instance.use_voice_interaction_service)
           
-          installer.Install(d, json_path, apk=apk, permissions=permissions)
-        return incremental_install_helper_internal
+          
+          
+          voice_interaction_service_context.__enter__()
+          
+          self._context_managers[str(device)].append(
+              voice_interaction_service_context)
 
-      permissions = self._test_instance.test_apk.GetPermissions()
-      if self._test_instance.test_apk_incremental_install_json:
-        steps.append(incremental_install_helper(
-                         self._test_instance.test_apk,
-                         self._test_instance.
-                             test_apk_incremental_install_json,
-                         permissions))
-      else:
-        steps.append(
-            install_helper(
-                self._test_instance.test_apk, permissions=permissions))
-
-      steps.extend(
-          install_helper(apk) for apk in self._test_instance.additional_apks)
-
-      
-      
-      for apk in (self._test_instance.additional_apks +
-                  [self._test_instance.test_apk]):
-        self._installed_packages.append(apk_helper.GetPackageName(apk))
+        steps.append(use_voice_interaction_service)
 
       
       
@@ -547,8 +593,7 @@ class LocalDeviceInstrumentationTestRun(
     all_tests = []
     for _, btests in list(batched_tests.items()):
       
-      if len(btests) > _TEST_BATCH_MAX_GROUP_SIZE:
-        btests.sort(key=dict2list)
+      btests.sort(key=dict2list)
       all_tests.extend([
           btests[i:i + _TEST_BATCH_MAX_GROUP_SIZE]
           for i in range(0, len(btests), _TEST_BATCH_MAX_GROUP_SIZE)
@@ -740,9 +785,14 @@ class LocalDeviceInstrumentationTestRun(
           try:
             if not os.path.exists(self._test_instance.coverage_directory):
               os.makedirs(self._test_instance.coverage_directory)
-            device.PullFile(coverage_device_file,
-                            self._test_instance.coverage_directory)
-            device.RemovePath(coverage_device_file, True)
+            
+            if device.PathExists(coverage_device_file, retries=0):
+              device.PullFile(coverage_device_file,
+                              self._test_instance.coverage_directory)
+              device.RemovePath(coverage_device_file, True)
+            else:
+              logging.warning('Coverage file does not exist: %s',
+                              coverage_device_file)
           except (OSError, base_error.BaseError) as e:
             logging.warning('Failed to handle coverage data after tests: %s', e)
 
@@ -1056,7 +1106,7 @@ class LocalDeviceInstrumentationTestRun(
       if logmon:
         logmon.Close()
       if logcat_file and logcat_file.Link():
-        logging.info('Logcat saved to %s', logcat_file.Link())
+        logging.critical('Logcat saved to %s', logcat_file.Link())
 
   def _SaveTraceData(self, trace_device_file, device, test_class):
     trace_host_file = self._env.trace_output
@@ -1159,6 +1209,21 @@ class LocalDeviceInstrumentationTestRun(
     has_batch_limit = self._test_instance.test_launcher_batch_limit is not None
     return is_tryjob and has_filter and has_batch_limit
 
+  def _IsFlakeEndorserRun(self):
+    """Checks whether this test run is part of the flake endorser.
+
+    Returns:
+      True iff this is being run on a trybot and the current step is part of the
+      flake endorser.
+    """
+    is_tryjob = self._test_instance.skia_gold_properties.IsTryjobRun()
+    
+    
+    
+    has_filter = bool(self._test_instance.test_filter)
+    has_batch_limit = self._test_instance.test_launcher_batch_limit is not None
+    return is_tryjob and has_filter and not has_batch_limit
+
   def _ProcessSkiaGoldRenderTestResults(self, device, results):
     gold_dir = posixpath.join(self._render_tests_device_output_dir,
                               _DEVICE_GOLD_DIR)
@@ -1201,8 +1266,12 @@ class LocalDeviceInstrumentationTestRun(
           
           
           json_dict = json.load(infile)
-          fail_on_unsupported = json_dict.get('fail_on_unsupported_configs',
-                                              'false')
+          optional_dict = json_dict.get('optional_keys', {})
+          if 'optional_keys' in json_dict:
+            should_rewrite = True
+            del json_dict['optional_keys']
+          fail_on_unsupported = optional_dict.get('fail_on_unsupported_configs',
+                                                  'false')
           fail_on_unsupported = fail_on_unsupported.lower() == 'true'
           
           
@@ -1222,7 +1291,8 @@ class LocalDeviceInstrumentationTestRun(
         
         should_hide_failure = running_on_unsupported
         if should_ignore_in_gold:
-          should_rewrite = True
+          
+          
           json_dict['ignore'] = '1'
         if should_rewrite:
           with open(json_path, 'w') as outfile:
@@ -1231,17 +1301,40 @@ class LocalDeviceInstrumentationTestRun(
         gold_session = self._skia_gold_session_manager.GetSkiaGoldSession(
             keys_input=json_path)
 
+        
+        
+        
+        
+        
+        
+        should_force_dryrun = (self._IsRetryWithoutPatch()
+                               or self._IsFlakeEndorserRun())
+        should_redo_on_failed_dryrun = self._IsFlakeEndorserRun()
+
         try:
           status, error = gold_session.RunComparison(
               name=render_name,
               png_file=image_path,
               output_manager=self._env.output_manager,
               use_luci=use_luci,
-              force_dryrun=self._IsRetryWithoutPatch())
+              optional_keys=optional_dict,
+              force_dryrun=should_force_dryrun)
         except Exception as e:  
+          error = e
+          if should_redo_on_failed_dryrun:
+            try:
+              status, error = gold_session.RunComparison(
+                  name=render_name,
+                  png_file=image_path,
+                  output_manager=self._env.output_manager,
+                  use_luci=use_luci,
+                  optional_keys=optional_dict,
+                  force_dryrun=False)
+            except Exception as inner_e:  
+              error = inner_e
           _FailTestIfNecessary(results, full_test_name)
           _AppendToLog(results, full_test_name,
-                       'Skia Gold comparison raised exception: %s' % e)
+                       'Skia Gold comparison raised exception: %s' % error)
           continue
 
         if not status:

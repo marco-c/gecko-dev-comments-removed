@@ -5,6 +5,7 @@
 
 import contextlib
 import collections
+import fnmatch
 import itertools
 import logging
 import math
@@ -762,7 +763,7 @@ class LocalDeviceGtestRun(local_device_test_run.LocalDeviceTestRun):
       if logmon:
         logmon.Close()
       if logcat_file and logcat_file.Link():
-        logging.info('Logcat saved to %s', logcat_file.Link())
+        logging.critical('Logcat saved to %s', logcat_file.Link())
 
   
   def _RunTest(self, device, test):
@@ -911,6 +912,19 @@ class LocalDeviceGtestRun(local_device_test_run.LocalDeviceTestRun):
           gtest_test_instance.TestNameWithoutDisabledPrefix(t))
     not_run_tests = tests_stripped_disabled_prefix.difference(
         set(r.GetName() for r in results))
+
+    if self._test_instance.extract_test_list_from_filter:
+      
+      
+      
+      
+      
+      not_run_tests = {
+          t
+          for t in not_run_tests
+          if not any(fnmatch.fnmatch(r.GetName(), t) for r in results)
+      }
+
     return results, list(not_run_tests) if results else None
 
   

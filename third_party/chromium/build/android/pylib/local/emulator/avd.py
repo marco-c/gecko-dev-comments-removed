@@ -17,6 +17,7 @@ import threading
 from google.protobuf import text_format  
 
 from devil.android import device_utils
+from devil.android import settings
 from devil.android.sdk import adb_wrapper
 from devil.android.tools import system_app
 from devil.utils import cmd_helper
@@ -47,6 +48,7 @@ _DEFAULT_GPU_MODE = 'swiftshader_indirect'
 
 
 _DEFAULT_SNAPSHOT_NAME = 'default_boot'
+
 
 
 _LONG_PRESS_TIMEOUT = '1000'
@@ -304,6 +306,10 @@ class AvdConfig:
         features_ini_contents.update(self.avd_settings.advanced_features)
 
       with ini.update_ini_file(self._config_ini_path) as config_ini_contents:
+        
+        
+        config_ini_contents.update(self.avd_settings.avd_properties)
+
         height = self.avd_settings.screen.height or _DEFAULT_SCREEN_HEIGHT
         width = self.avd_settings.screen.width or _DEFAULT_SCREEN_WIDTH
         density = self.avd_settings.screen.density or _DEFAULT_SCREEN_DENSITY
@@ -365,18 +371,14 @@ class AvdConfig:
 
       
       
-      if instance.device.build_version_sdk > 23:
-        
-        
-        
-        
-        logging.info('Disabling the network in emulator.')
-        instance.device.RunShellCommand(['svc', 'wifi', 'disable'],
-                                        check_return=True)
-        instance.device.RunShellCommand(['svc', 'data', 'disable'],
-                                        check_return=True)
+      
+      logging.info('Disabling the network.')
+      settings.ConfigureContentSettings(instance.device,
+                                        settings.NETWORK_DISABLED_SETTINGS)
 
       if snapshot:
+        
+        instance.device.Reboot()
         instance.SaveSnapshot()
 
       instance.Stop()
@@ -642,7 +644,11 @@ class _AvdInstance:
             gpu_mode=_DEFAULT_GPU_MODE,
             wipe_data=False,
             debug_tags=None):
-    """Starts the emulator running an instance of the given AVD."""
+    """Starts the emulator running an instance of the given AVD.
+
+    Note when ensure_system_settings is True, the program will wait until the
+    emulator is fully booted, and then update system settings.
+    """
     is_slow_start = False
     
     if self.HasSystemSnapshot():
@@ -740,13 +746,12 @@ class _AvdInstance:
         
         raise AvdException('Emulator failed to start: %s' % str(e))
 
-    assert self.device is not None, '`instance.device` not initialized.'
-    self.device.WaitUntilFullyBooted(timeout=120 if is_slow_start else 30)
-
     
     
     
     if ensure_system_settings:
+      assert self.device is not None, '`instance.device` not initialized.'
+      self.device.WaitUntilFullyBooted(timeout=120 if is_slow_start else 30)
       _EnsureSystemSettings(self.device)
 
   def Stop(self):

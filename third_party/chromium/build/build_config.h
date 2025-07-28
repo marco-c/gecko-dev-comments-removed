@@ -64,6 +64,11 @@
 #include <TargetConditionals.h>
 #if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
 #define OS_IOS 1
+
+
+#if defined(TARGET_OS_MACCATALYST) && TARGET_OS_MACCATALYST
+#define OS_IOS_MACCATALYST
+#endif  
 #else
 #define OS_MAC 1
 #endif  
@@ -178,6 +183,12 @@
 #define BUILDFLAG_INTERNAL_IS_IOS() (1)
 #else
 #define BUILDFLAG_INTERNAL_IS_IOS() (0)
+#endif
+
+#if defined(OS_IOS_MACCATALYST)
+#define BUILDFLAG_INTERNAL_IS_IOS_MACCATALYST() (1)
+#else
+#define BUILDFLAG_INTERNAL_IS_IOS_MACCATALYST() (0)
 #endif
 
 #if defined(OS_LINUX)

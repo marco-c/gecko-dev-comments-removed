@@ -108,17 +108,17 @@ def LogFull(results, test_type, test_package, annotation=None,
     logging.critical('*' * 80)
     logging.critical('Summary')
     logging.critical('*' * 80)
-    for line in results.GetGtestForm().splitlines():
-      color = black_on_white
-      if 'FAILED' in line:
-        
-        color = (logging_utils.BACK.WHITE, logging_utils.FORE.RED,
-                 logging_utils.STYLE.DIM)
-      elif 'PASSED' in line:
-        
-        color = (logging_utils.BACK.WHITE, logging_utils.FORE.GREEN,
-                 logging_utils.STYLE.DIM)
-      with logging_utils.OverrideColor(logging.CRITICAL, color):
+    
+    if any('FAILED' in line for line in results.GetGtestForm().splitlines()):
+      
+      color = (logging_utils.BACK.WHITE, logging_utils.FORE.RED,
+               logging_utils.STYLE.DIM)
+    else:
+      
+      color = (logging_utils.BACK.WHITE, logging_utils.FORE.GREEN,
+               logging_utils.STYLE.DIM)
+    with logging_utils.OverrideColor(logging.CRITICAL, color):
+      for line in results.GetGtestForm().splitlines():
         logging.critical(line)
     logging.critical('*' * 80)
 

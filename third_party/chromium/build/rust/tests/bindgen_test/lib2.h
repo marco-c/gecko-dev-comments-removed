@@ -1,0 +1,10 @@
+
+
+
+
+#ifndef BUILD_RUST_TESTS_BINDGEN_TEST_LIB2_H_
+#define BUILD_RUST_TESTS_BINDGEN_TEST_LIB2_H_
+
+
+
+#endif  

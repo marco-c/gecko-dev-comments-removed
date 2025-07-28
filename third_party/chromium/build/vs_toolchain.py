@@ -32,7 +32,7 @@ from gn_helpers import ToGNString
 
 
 
-TOOLCHAIN_HASH = '3bda71a11e'
+TOOLCHAIN_HASH = '1023ce2e82'
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 json_data_file = os.path.join(script_dir, 'win_toolchain.json')
@@ -441,8 +441,8 @@ def _CopyDebugger(target_dir, target_cpu):
       if is_optional:
         continue
       else:
-        raise Exception('%s not found in "%s"\r\nYou must install'
-                        'Windows 10 SDK version 10.0.19041.0 including the '
+        raise Exception('%s not found in "%s"\r\nYou must install '
+                        'Windows 10 SDK version 10.0.20348.0 including the '
                         '"Debugging Tools for Windows" feature.' %
                         (debug_file, full_path))
     target_path = os.path.join(target_dir, debug_file)

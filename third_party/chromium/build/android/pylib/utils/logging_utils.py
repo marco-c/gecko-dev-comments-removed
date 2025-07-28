@@ -24,6 +24,7 @@ class _ColorFormatter(logging.Formatter):
   
   color_map = {
     logging.DEBUG: (FORE.CYAN),
+    logging.INFO: (),  
     logging.WARNING: (FORE.YELLOW),
     logging.ERROR: (FORE.RED),
     logging.CRITICAL: (BACK.RED),

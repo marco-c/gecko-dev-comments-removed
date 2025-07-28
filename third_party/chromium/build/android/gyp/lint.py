@@ -8,14 +8,11 @@
 from __future__ import print_function
 
 import argparse
-import functools
 import logging
 import os
-import re
 import shutil
 import sys
 import time
-import traceback
 from xml.dom import minidom
 from xml.etree import ElementTree
 
@@ -190,7 +187,7 @@ def _WriteXmlFile(root, path):
 
 
 def _RunLint(create_cache,
-             lint_binary_path,
+             lint_jar_path,
              backported_methods_path,
              config_path,
              manifest_path,
@@ -218,13 +215,29 @@ def _RunLint(create_cache,
     shutil.rmtree(cache_dir, ignore_errors=True)
     os.makedirs(cache_dir)
 
-  cmd = [
-      lint_binary_path,
-      
-      
-      
-      
-      
+  if baseline and not os.path.exists(baseline):
+    
+    
+    lint_xmx = '4G'
+  else:
+    lint_xmx = '2G'
+
+  
+  
+  
+  
+  root_path = os.getcwd()  
+  pathvar_src = os.path.join(
+      root_path, os.path.relpath(build_utils.DIR_SOURCE_ROOT, start=root_path))
+
+  cmd = build_utils.JavaCmd(xmx=lint_xmx) + [
+      '-cp',
+      lint_jar_path,
+      'com.android.tools.lint.Main',
+      '--sdk-home',
+      android_sdk_root,
+      '--path-variables',
+      f'SRC={pathvar_src}',
       
       
       
@@ -317,18 +330,7 @@ def _RunLint(create_cache,
   logging.info('Preparing environment variables')
   env = os.environ.copy()
   
-  
-  env['JAVA_HOME'] = build_utils.JAVA_HOME
-  
   env['LINT_PRINT_STACKTRACE'] = 'true'
-  if baseline and not os.path.exists(baseline):
-    
-    
-    env['LINT_OPTS'] = '-Xmx4g'
-  else:
-    
-    env['LINT_OPTS'] = '-Xmx2g'
-
   
   stderr_filter = build_utils.FilterReflectiveAccessJavaWarnings
   stdout_filter = lambda x: build_utils.FilterLines(x, 'No issues found')
@@ -377,9 +379,9 @@ def _ParseArgs(argv):
   parser.add_argument('--use-build-server',
                       action='store_true',
                       help='Always use the build server.')
-  parser.add_argument('--lint-binary-path',
+  parser.add_argument('--lint-jar-path',
                       required=True,
-                      help='Path to lint executable.')
+                      help='Path to the lint jar.')
   parser.add_argument('--backported-methods',
                       help='Path to backported methods file created by R8.')
   parser.add_argument('--cache-dir',
@@ -478,7 +480,7 @@ def main():
   depfile_deps = [p for p in possible_depfile_deps if p]
 
   _RunLint(args.create_cache,
-           args.lint_binary_path,
+           args.lint_jar_path,
            args.backported_methods,
            args.config_path,
            args.manifest_path,

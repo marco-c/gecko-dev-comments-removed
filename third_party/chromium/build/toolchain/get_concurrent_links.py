@@ -94,6 +94,12 @@ def _GetDefaultConcurrentLinks(per_link_gb, reserve_gb, thin_lto_type,
   else:
     reason = 'RAM'
 
+  
+  
+  if num_links > 30:
+    num_links = 30
+    reason = 'nofile'
+
   explanation.append('concurrent_links={}  (reason: {})'.format(
       num_links, reason))
 

@@ -15,8 +15,8 @@
 
 import optparse
 import os
+import re
 import shlex
-import sys
 
 
 class Options:
@@ -40,9 +40,11 @@ def GetOptions():
   cmdline_options, cmdline_flags = parser.parse_args()
 
   
+  
   header_guard = cmdline_options.output.upper()
-  header_guard = \
-      header_guard.replace('/', '_').replace('\\', '_').replace('.', '_')
+  if header_guard[0].isdigit():
+    header_guard = '_' + header_guard
+  header_guard = re.sub('[^\w]', '_', header_guard)
   header_guard += '_'
 
   
