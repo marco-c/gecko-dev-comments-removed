@@ -22,7 +22,6 @@ import java.util.Collection;
 
 
 public class TraceEventAdder extends ByteCodeRewriter {
-    private final ClassLoader mClassPathJarsClassLoader;
     private ArrayList<MethodDescription> mMethodsToTrace;
 
     
@@ -86,8 +85,8 @@ public class TraceEventAdder extends ByteCodeRewriter {
         }
     }
 
-    public TraceEventAdder(ClassLoader classPathJarsClassLoader) {
-        mClassPathJarsClassLoader = classPathJarsClassLoader;
+    TraceEventAdder(ClassLoader classLoader) {
+        super(classLoader);
     }
 
     @Override
@@ -131,7 +130,7 @@ public class TraceEventAdder extends ByteCodeRewriter {
         
         
         MethodCheckerClassAdapter methodChecker =
-                new MethodCheckerClassAdapter(mMethodsToTrace, mClassPathJarsClassLoader);
+                new MethodCheckerClassAdapter(mMethodsToTrace, getClassLoader());
 
         classReader.accept(methodChecker, ClassReader.EXPAND_FRAMES);
 

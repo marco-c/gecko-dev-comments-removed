@@ -32,6 +32,9 @@ ERRORPRONE_WARNINGS_TO_DISABLE = [
     'AlreadyChecked',
     'DirectInvocationOnMock',
     'MockNotUsedInProduction',
+    'PatternMatchingInstanceof',
+    'AssignmentExpression',
+    'RuleNotRun',
     
     'JdkObsolete',
     'ReturnValueIgnored',
@@ -109,9 +112,13 @@ ERRORPRONE_WARNINGS_TO_DISABLE = [
     
     'StringCharset',
     
+    'StringConcatToTextBlock',
+    
     'StringCaseLocaleUsage',
     
     'RedundantControlFlow',
+    
+    'StatementSwitchToExpressionSwitch',
 ]
 
 

@@ -63,6 +63,9 @@ _IGNORE_WARNINGS = (
     r'Missing class org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement',
     
     
+    r'Missing class .* androidx.appsearch.platformstorage.converter.*\$ApiHelperForB',
+    
+    
     
     r'Warning: Invalid parameter counts in MethodParameter attributes',
     
@@ -354,7 +357,7 @@ def _OptimizeWithR8(options, config_paths, libraries, dynamic_config_data):
         '-Dcom.android.tools.r8.allowTestProguardOptions=true',
         
         
-        '-Dcom.android.tools.r8.experimentalTraceEnumReflection=1',
+        '-Dcom.android.tools.r8.experimentalTraceAndroidEnumSerialization=1',
     ]
     if options.sdk_extension_jars:
       

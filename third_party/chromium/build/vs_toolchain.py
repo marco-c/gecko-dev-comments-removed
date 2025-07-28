@@ -59,8 +59,8 @@ from gn_helpers import ToGNString
 
 
 
-TOOLCHAIN_HASH = '7393122652'
-SDK_VERSION = '10.0.22621.0'
+TOOLCHAIN_HASH = '076960eda6'
+SDK_VERSION = '10.0.26100.0'
 
 
 

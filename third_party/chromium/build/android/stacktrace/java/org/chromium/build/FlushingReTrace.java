@@ -10,6 +10,9 @@ import com.android.tools.r8.retrace.Retrace;
 import com.android.tools.r8.retrace.RetraceCommand;
 import com.android.tools.r8.retrace.StackTraceSupplier;
 
+import org.chromium.build.annotations.NullMarked;
+import org.chromium.build.annotations.Nullable;
+
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -22,6 +25,7 @@ import java.util.List;
 
 
 
+@NullMarked
 public class FlushingReTrace {
     
     
@@ -132,7 +136,7 @@ public class FlushingReTrace {
                                                         new InputStreamReader(System.in, "UTF-8"));
 
                                         @Override
-                                        public List<String> get() {
+                                        public @Nullable List<String> get() {
                                             try {
                                                 String line = mReader.readLine();
                                                 if (line == null) {
