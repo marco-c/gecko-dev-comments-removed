@@ -213,11 +213,6 @@ XPCOMUtils.defineLazyScriptGetter(
 );
 XPCOMUtils.defineLazyScriptGetter(
   this,
-  "gTrustPanelHandler",
-  "chrome://browser/content/browser-trustPanel.js"
-);
-XPCOMUtils.defineLazyScriptGetter(
-  this,
   ["gGestureSupport", "gHistorySwipeAnimation"],
   "chrome://browser/content/browser-gestureSupport.js"
 );
@@ -2491,13 +2486,6 @@ var XULBrowserWindow = {
       this._event 
     );
 
-    gTrustPanelHandler.onContentBlockingEvent(
-      aEvent,
-      aWebProgress,
-      aIsSimulated,
-      this._event 
-    );
-
     
     
     this._event = aEvent;
@@ -2526,7 +2514,6 @@ var XULBrowserWindow = {
       uri = Services.io.createExposableURI(uri);
     } catch (e) {}
     gIdentityHandler.updateIdentity(aState, uri);
-    gTrustPanelHandler.updateIdentity(aState, uri);
   },
 
   
