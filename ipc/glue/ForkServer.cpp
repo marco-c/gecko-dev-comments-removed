@@ -230,6 +230,12 @@ bool ForkServer::HandleForkNewSubprocess(UniquePtr<IPC::Message> aMessage) {
 #if defined(MOZ_MEMORY) && defined(DEBUG)
   jemalloc_stats_t stats;
   jemalloc_stats(&stats);
+  
+  
+  
+  
+  
+  
   MOZ_ASSERT(stats.narenas == 1,
              "ForkServer before fork()/clone() should have a single arena.");
 #endif
