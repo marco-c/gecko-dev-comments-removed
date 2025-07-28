@@ -465,6 +465,10 @@ class EditorUtils final {
 
 
 
+
+
+
+
   static bool IsNewLinePreformatted(const nsIContent& aContent);
 
   

@@ -1306,8 +1306,8 @@ uint32_t HTMLEditUtils::GetInvisibleWhiteSpaceCount(
     
     
     if (aOffset &&
-        textFragment.CharAt(aOffset - 1u) == HTMLEditUtils::kNewLine) {
-      MOZ_ASSERT(EditorUtils::IsNewLinePreformatted(aText));
+        textFragment.CharAt(aOffset - 1u) == HTMLEditUtils::kNewLine &&
+        EditorUtils::IsNewLinePreformatted(aText)) {
       for (const uint32_t offset : IntegerRange(aOffset, endOffset)) {
         if (textFragment.CharAt(offset) == HTMLEditUtils::kNBSP) {
           return offset;
@@ -1327,8 +1327,8 @@ uint32_t HTMLEditUtils::GetInvisibleWhiteSpaceCount(
     
     
     if (endOffset < textFragment.GetLength() &&
-        textFragment.CharAt(endOffset) == HTMLEditUtils::kNewLine) {
-      MOZ_ASSERT(EditorUtils::IsNewLinePreformatted(aText));
+        textFragment.CharAt(endOffset) == HTMLEditUtils::kNewLine &&
+        EditorUtils::IsNewLinePreformatted(aText)) {
       for (const uint32_t offset : Reversed(IntegerRange(aOffset, endOffset))) {
         if (textFragment.CharAt(offset) == HTMLEditUtils::kNBSP) {
           return offset + 1u;
