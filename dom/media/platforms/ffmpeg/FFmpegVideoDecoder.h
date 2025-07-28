@@ -27,10 +27,6 @@
 #  define AVPixelFormat PixelFormat
 #endif
 
-#if LIBAVCODEC_VERSION_MAJOR < 58
-#  define MOZ_FFMPEG_USE_INPUT_INFO_MAP
-#endif
-
 struct _VADRMPRIMESurfaceDescriptor;
 typedef struct _VADRMPRIMESurfaceDescriptor VADRMPRIMESurfaceDescriptor;
 
@@ -60,6 +56,7 @@ class FFmpegVideoDecoder<LIBAV_VER>
   typedef mozilla::layers::Image Image;
   typedef mozilla::layers::ImageContainer ImageContainer;
   typedef mozilla::layers::KnowsCompositor KnowsCompositor;
+  typedef SimpleMap<int64_t, int64_t, ThreadSafePolicy> DurationMap;
 
  public:
   FFmpegVideoDecoder(FFmpegLibWrapper* aLib, const VideoInfo& aConfig,
@@ -244,10 +241,6 @@ class FFmpegVideoDecoder<LIBAV_VER>
   DecodeStats mDecodeStats;
 #endif
 
-#if LIBAVCODEC_VERSION_MAJOR >= 58
-  bool mHasSentDrainPacket = false;
-#endif
-
 #if LIBAVCODEC_VERSION_MAJOR < 58
   class PtsCorrectionContext {
    public:
@@ -264,56 +257,13 @@ class FFmpegVideoDecoder<LIBAV_VER>
   };
 
   PtsCorrectionContext mPtsContext;
-#endif
-
-#ifdef MOZ_FFMPEG_USE_INPUT_INFO_MAP
-  struct InputInfo {
-    explicit InputInfo(const MediaRawData* aSample)
-        : mDuration(aSample->mDuration.ToMicroseconds()) {}
-
-    int64_t mDuration;
-  };
-
-  SimpleMap<int64_t, InputInfo, ThreadSafePolicy> mInputInfo;
-
-  static int64_t GetSampleInputKey(const MediaRawData* aSample) {
-    return aSample->mTimecode.ToMicroseconds();
-  }
-
-  static int64_t GetFrameInputKey(const AVFrame* aFrame) {
-    return aFrame->pkt_dts;
-  }
-
-  void InsertInputInfo(const MediaRawData* aSample) {
-    
-    
-    
-    
-    
-    
-    mInputInfo.Insert(GetSampleInputKey(aSample), InputInfo(aSample));
-  }
-
-  void TakeInputInfo(const AVFrame* aFrame, InputInfo& aEntry) {
-    
-    
-    
-    if (!mInputInfo.Find(GetFrameInputKey(aFrame), aEntry)) {
-      NS_WARNING("Unable to retrieve input info from map");
-      
-      
-      
-      mInputInfo.Clear();
-    }
-  }
+  DurationMap mDurationMap;
 #endif
 
   const bool mLowLatency;
   const Maybe<TrackingId> mTrackingId;
-
-  void RecordFrame(const MediaRawData* aSample, const MediaData* aData);
-
   PerformanceRecorderMulti<DecodeStage> mPerformanceRecorder;
+  PerformanceRecorderMulti<DecodeStage> mPerformanceRecorder2;
 
   
   Maybe<Atomic<bool>> mIsUsingShmemBufferForDecode;
