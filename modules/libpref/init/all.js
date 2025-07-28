@@ -4034,8 +4034,6 @@ pref("extensions.formautofill.creditCards.heuristics.fathom.types", "cc-number,c
 
 pref("extensions.formautofill.creditCards.heuristics.fathom.confidenceThreshold", "0.5");
 
-pref("extensions.formautofill.creditCards.heuristics.fathom.highConfidenceThreshold", "0.95");
-
 pref("extensions.formautofill.creditCards.heuristics.fathom.testConfidence", "0");
 
 pref("extensions.formautofill.loglevel", "Warn");
