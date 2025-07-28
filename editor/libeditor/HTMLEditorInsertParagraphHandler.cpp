@@ -415,40 +415,47 @@ HTMLEditor::AutoInsertParagraphHandler::Run() {
       (mDefaultParagraphSeparator != ParagraphSeparator::br &&
        editableBlockElement->IsAnyOfHTMLElements(nsGkAtoms::p,
                                                  nsGkAtoms::div))) {
-    
-    Result<SplitNodeResult, nsresult> splitNodeResult = HandleInParagraph(
-        *editableBlockElement, insertedPaddingBRElement
-                                   ? EditorDOMPoint(insertedPaddingBRElement)
-                                   : pointToInsert);
-    if (MOZ_UNLIKELY(splitNodeResult.isErr())) {
-      NS_WARNING("HTMLEditor::HandleInsertParagraphInParagraph() failed");
-      return splitNodeResult.propagateErr();
-    }
-    if (splitNodeResult.inspect().Handled()) {
-      SplitNodeResult unwrappedSplitNodeResult = splitNodeResult.unwrap();
-      const RefPtr<Element> rightParagraphElement =
-          unwrappedSplitNodeResult.DidSplit()
-              ? unwrappedSplitNodeResult.GetNextContentAs<Element>()
-              : blockElementToPutCaret.get();
-      const EditorDOMPoint pointToPutCaret =
-          unwrappedSplitNodeResult.UnwrapCaretPoint();
-      nsresult rv = CollapseSelectionToPointOrIntoBlockWhichShouldHaveCaret(
-          pointToPutCaret, rightParagraphElement,
-          {SuggestCaret::AndIgnoreTrivialError});
-      if (NS_FAILED(rv)) {
-        NS_WARNING(
-            "AutoInsertParagraphHandler::"
-            "CollapseSelectionToPointOrIntoBlockWhichShouldHaveCaret() failed");
-        return Err(rv);
+    const EditorDOMPoint pointToSplit =
+        GetBetterSplitPointToAvoidToContinueLink(
+            insertedPaddingBRElement ? EditorDOMPoint(insertedPaddingBRElement)
+                                     : pointToInsert,
+            *editableBlockElement);
+    if (ShouldCreateNewParagraph(*editableBlockElement, pointToSplit)) {
+      MOZ_ASSERT(pointToSplit.IsInContentNodeAndValidInComposedDoc());
+      
+      Result<SplitNodeResult, nsresult> splitNodeResult =
+          HandleInParagraph(*editableBlockElement, pointToSplit);
+      if (MOZ_UNLIKELY(splitNodeResult.isErr())) {
+        NS_WARNING("HTMLEditor::HandleInsertParagraphInParagraph() failed");
+        return splitNodeResult.propagateErr();
       }
-      NS_WARNING_ASSERTION(
-          rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
-          "AutoInsertParagraphHandler::"
-          "CollapseSelectionToPointOrIntoBlockWhichShouldHaveCaret() "
-          "failed, but ignored");
-      return EditActionResult::HandledResult();
+      if (splitNodeResult.inspect().Handled()) {
+        SplitNodeResult unwrappedSplitNodeResult = splitNodeResult.unwrap();
+        const RefPtr<Element> rightParagraphElement =
+            unwrappedSplitNodeResult.DidSplit()
+                ? unwrappedSplitNodeResult.GetNextContentAs<Element>()
+                : blockElementToPutCaret.get();
+        const EditorDOMPoint pointToPutCaret =
+            unwrappedSplitNodeResult.UnwrapCaretPoint();
+        nsresult rv = CollapseSelectionToPointOrIntoBlockWhichShouldHaveCaret(
+            pointToPutCaret, rightParagraphElement,
+            {SuggestCaret::AndIgnoreTrivialError});
+        if (NS_FAILED(rv)) {
+          NS_WARNING(
+              "AutoInsertParagraphHandler::"
+              "CollapseSelectionToPointOrIntoBlockWhichShouldHaveCaret() "
+              "failed");
+          return Err(rv);
+        }
+        NS_WARNING_ASSERTION(
+            rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
+            "AutoInsertParagraphHandler::"
+            "CollapseSelectionToPointOrIntoBlockWhichShouldHaveCaret() "
+            "failed, but ignored");
+        return EditActionResult::HandledResult();
+      }
+      MOZ_ASSERT(!splitNodeResult.inspect().HasCaretPointSuggestion());
     }
-    MOZ_ASSERT(!splitNodeResult.inspect().HasCaretPointSuggestion());
 
     
     MOZ_ASSERT(pointToInsert.IsSetAndValid(),
@@ -1267,25 +1274,94 @@ HTMLEditor::AutoInsertParagraphHandler::HandleInHeadingElement(
       std::move(pointToPutCaret));
 }
 
+
+bool HTMLEditor::AutoInsertParagraphHandler::
+    IsNullOrInvisibleBRElementOrPaddingOneForEmptyLastLine(
+        const dom::HTMLBRElement* aBRElement) {
+  return !aBRElement || HTMLEditUtils::IsInvisibleBRElement(*aBRElement) ||
+         EditorUtils::IsPaddingBRElementForEmptyLastLine(*aBRElement);
+}
+
+bool HTMLEditor::AutoInsertParagraphHandler::ShouldCreateNewParagraph(
+    Element& aParentDivOrP, const EditorDOMPoint& aPointToSplit) const {
+  MOZ_ASSERT(aPointToSplit.IsInContentNodeAndValidInComposedDoc());
+
+  if (MOZ_LIKELY(mHTMLEditor.GetReturnInParagraphCreatesNewParagraph())) {
+    
+    return true;
+  }
+  if (aPointToSplit.GetContainer() == &aParentDivOrP) {
+    
+    return true;
+  }
+  if (aPointToSplit.IsInTextNode()) {
+    if (aPointToSplit.IsStartOfContainer()) {
+      
+      
+      
+      
+      const auto* const precedingBRElement =
+          HTMLBRElement::FromNodeOrNull(HTMLEditUtils::GetPreviousSibling(
+              *aPointToSplit.ContainerAs<Text>(),
+              {WalkTreeOption::IgnoreNonEditableNode}));
+      return !IsNullOrInvisibleBRElementOrPaddingOneForEmptyLastLine(
+          precedingBRElement);
+    }
+    if (aPointToSplit.IsEndOfContainer()) {
+      
+      
+      
+      
+      const auto* const followingBRElement =
+          HTMLBRElement::FromNodeOrNull(HTMLEditUtils::GetNextSibling(
+              *aPointToSplit.ContainerAs<Text>(),
+              {WalkTreeOption::IgnoreNonEditableNode}));
+      return !IsNullOrInvisibleBRElementOrPaddingOneForEmptyLastLine(
+          followingBRElement);
+    }
+    
+    
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  const auto* const precedingBRElement =
+      HTMLBRElement::FromNodeOrNull(HTMLEditUtils::GetPreviousContent(
+          aPointToSplit, {WalkTreeOption::IgnoreNonEditableNode},
+          BlockInlineCheck::Unused, &mEditingHost));
+  if (!IsNullOrInvisibleBRElementOrPaddingOneForEmptyLastLine(
+          precedingBRElement)) {
+    return true;
+  }
+  
+  
+  
+  const auto* followingBRElement =
+      HTMLBRElement::FromNodeOrNull(HTMLEditUtils::GetNextContent(
+          aPointToSplit, {WalkTreeOption::IgnoreNonEditableNode},
+          BlockInlineCheck::Unused, &mEditingHost));
+  return !IsNullOrInvisibleBRElementOrPaddingOneForEmptyLastLine(
+      followingBRElement);
+}
+
 Result<SplitNodeResult, nsresult>
 HTMLEditor::AutoInsertParagraphHandler::HandleInParagraph(
-    Element& aParentDivOrP, const EditorDOMPoint& aCandidatePointToSplit) {
-  MOZ_ASSERT(aCandidatePointToSplit.IsSetAndValid());
+    Element& aParentDivOrP, const EditorDOMPoint& aPointToSplit) {
+  MOZ_ASSERT(aPointToSplit.IsInContentNodeAndValidInComposedDoc());
 
-  
-  
-  EditorDOMPoint pointToSplit = GetBetterSplitPointToAvoidToContinueLink(
-      aCandidatePointToSplit, aParentDivOrP);
-  MOZ_ASSERT(pointToSplit.IsSetAndValid());
-
-  const bool createNewParagraph =
-      mHTMLEditor.GetReturnInParagraphCreatesNewParagraph();
+  EditorDOMPoint pointToSplit(aPointToSplit);
   RefPtr<HTMLBRElement> brElement;
-  if (createNewParagraph && pointToSplit.GetContainer() == &aParentDivOrP) {
+  if (pointToSplit.GetContainer() == &aParentDivOrP) {
     
     
     
-    brElement = nullptr;
   } else if (pointToSplit.IsInTextNode()) {
     if (pointToSplit.IsStartOfContainer()) {
       
@@ -1300,13 +1376,7 @@ HTMLEditor::AutoInsertParagraphHandler::HandleInParagraph(
           HTMLBRElement::FromNodeOrNull(HTMLEditUtils::GetPreviousSibling(
               *pointToSplit.ContainerAs<Text>(),
               {WalkTreeOption::IgnoreNonEditableNode}));
-      if (!brElement || HTMLEditUtils::IsInvisibleBRElement(*brElement) ||
-          EditorUtils::IsPaddingBRElementForEmptyLastLine(*brElement)) {
-        
-        
-        if (!createNewParagraph) {
-          return SplitNodeResult::NotHandled(pointToSplit);
-        }
+      if (IsNullOrInvisibleBRElementOrPaddingOneForEmptyLastLine(brElement)) {
         const EditorDOMPoint pointToInsertBR = pointToSplit.ParentPoint();
         MOZ_ASSERT(pointToInsertBR.IsSet());
         if (pointToInsertBR.IsInContentNode() &&
@@ -1341,13 +1411,7 @@ HTMLEditor::AutoInsertParagraphHandler::HandleInParagraph(
       brElement = HTMLBRElement::FromNodeOrNull(HTMLEditUtils::GetNextSibling(
           *pointToSplit.ContainerAs<Text>(),
           {WalkTreeOption::IgnoreNonEditableNode}));
-      if (!brElement || HTMLEditUtils::IsInvisibleBRElement(*brElement) ||
-          EditorUtils::IsPaddingBRElementForEmptyLastLine(*brElement)) {
-        
-        
-        if (!createNewParagraph) {
-          return SplitNodeResult::NotHandled(pointToSplit);
-        }
+      if (IsNullOrInvisibleBRElementOrPaddingOneForEmptyLastLine(brElement)) {
         const auto pointToInsertBR =
             EditorDOMPoint::After(*pointToSplit.ContainerAs<Text>());
         MOZ_ASSERT(pointToInsertBR.IsSet());
@@ -1373,12 +1437,6 @@ HTMLEditor::AutoInsertParagraphHandler::HandleInParagraph(
         }
       }
     } else {
-      
-      
-      if (!createNewParagraph) {
-        return SplitNodeResult::NotHandled(pointToSplit);
-      }
-
       
       
       
@@ -1473,19 +1531,12 @@ HTMLEditor::AutoInsertParagraphHandler::HandleInParagraph(
     brElement = HTMLBRElement::FromNodeOrNull(HTMLEditUtils::GetPreviousContent(
         pointToSplit, {WalkTreeOption::IgnoreNonEditableNode},
         BlockInlineCheck::Unused, &mEditingHost));
-    if (!brElement || HTMLEditUtils::IsInvisibleBRElement(*brElement) ||
-        EditorUtils::IsPaddingBRElementForEmptyLastLine(*brElement)) {
+    if (IsNullOrInvisibleBRElementOrPaddingOneForEmptyLastLine(brElement)) {
       
       brElement = HTMLBRElement::FromNodeOrNull(HTMLEditUtils::GetNextContent(
           pointToSplit, {WalkTreeOption::IgnoreNonEditableNode},
           BlockInlineCheck::Unused, &mEditingHost));
-      if (!brElement || HTMLEditUtils::IsInvisibleBRElement(*brElement) ||
-          EditorUtils::IsPaddingBRElementForEmptyLastLine(*brElement)) {
-        
-        
-        if (!createNewParagraph) {
-          return SplitNodeResult::NotHandled(pointToSplit);
-        }
+      if (IsNullOrInvisibleBRElementOrPaddingOneForEmptyLastLine(brElement)) {
         if (pointToSplit.IsInContentNode() &&
             HTMLEditUtils::CanNodeContain(
                 *pointToSplit.ContainerAs<nsIContent>(), *nsGkAtoms::br)) {

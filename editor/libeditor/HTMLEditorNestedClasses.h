@@ -21,6 +21,9 @@
 namespace mozilla {
 
 struct LimitersAndCaretData;  
+namespace dom {
+class HTMLBRElement;
+};
 
 
 
@@ -600,14 +603,25 @@ class MOZ_STACK_CLASS HTMLEditor::AutoInsertParagraphHandler final {
 
 
 
-
-
-
-
-
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<SplitNodeResult, nsresult>
   HandleInParagraph(Element& aParentDivOrP,
-                    const EditorDOMPoint& aCandidatePointToSplit);
+                    const EditorDOMPoint& aPointToSplit);
+
+  
+
+
+
+
+  [[nodiscard]] bool ShouldCreateNewParagraph(
+      Element& aParentDivOrP, const EditorDOMPoint& aPointToSplit) const;
+
+  
+
+
+
+  [[nodiscard]] static bool
+  IsNullOrInvisibleBRElementOrPaddingOneForEmptyLastLine(
+      const dom::HTMLBRElement* aBRElement);
 
   
 
