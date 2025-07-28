@@ -289,6 +289,8 @@ class EncoderTemplate : public DOMEventTargetHelper {
   
   RefPtr<ThreadSafeWorkerRef> mWorkerRef;
   uint64_t mPacketsOutput = 0;
+
+  AsyncDurationTracker mAsyncDurationTracker;
 };
 
 }  
