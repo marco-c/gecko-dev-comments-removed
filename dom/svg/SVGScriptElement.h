@@ -80,9 +80,7 @@ class SVGScriptElement final : public SVGScriptElementBase,
 
   StringAttributesInfo GetStringInfo() override;
 
-  
-  
-  bool GetAsyncState() override { return false; }
+  bool GetAsyncState() override { return Async(); }
 
   nsIContent* GetAsContent() override { return this; }
 
