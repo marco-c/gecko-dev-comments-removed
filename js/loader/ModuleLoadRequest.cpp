@@ -6,6 +6,7 @@
 
 #include "ModuleLoadRequest.h"
 
+#include "mozilla/DebugOnly.h"
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/dom/ScriptLoadContext.h"
 
@@ -168,7 +169,12 @@ void ModuleLoadRequest::ModuleErrored() {
   MOZ_ASSERT(!IsFinished());
 
   CheckModuleDependenciesLoaded();
-  MOZ_ASSERT(IsErrored());
+  mozilla::DebugOnly<bool> hasRethrow =
+      mModuleScript && mModuleScript->HasErrorToRethrow();
+
+  
+  
+  MOZ_ASSERT(IsErrored() || hasRethrow);
 
   CancelImports();
   if (IsFinished()) {

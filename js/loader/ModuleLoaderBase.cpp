@@ -720,6 +720,8 @@ void ModuleLoaderBase::ResumeWaitingRequest(ModuleLoadRequest* aRequest,
 
   if (!aRequest->IsErrored()) {
     OnFetchSucceeded(aRequest);
+  } else {
+    OnFetchFailed(aRequest);
   }
 }
 
@@ -789,6 +791,8 @@ nsresult ModuleLoaderBase::OnFetchComplete(ModuleLoadRequest* aRequest,
 
   if (!aRequest->IsErrored()) {
     OnFetchSucceeded(aRequest);
+  } else {
+    OnFetchFailed(aRequest);
   }
 
   if (!waitingRequests) {
@@ -813,6 +817,71 @@ void ModuleLoaderBase::OnFetchSucceeded(ModuleLoadRequest* aRequest) {
 
     aRequest->SetReady();
     aRequest->LoadFinished();
+  }
+}
+
+void ModuleLoaderBase::OnFetchFailed(ModuleLoadRequest* aRequest) {
+  MOZ_ASSERT(aRequest->IsErrored());
+  
+  if (aRequest->IsDynamicImport()) {
+    return;
+  }
+
+  if (aRequest->IsTopLevel()) {
+    
+    
+    
+    
+    if (aRequest->mModuleScript && !aRequest->mModuleScript->ModuleRecord()) {
+      MOZ_ASSERT(aRequest->mModuleScript->HasParseError());
+      JS::Value parseError = aRequest->mModuleScript->ParseError();
+      LOG(("ScriptLoadRequest (%p): found parse error", aRequest));
+      aRequest->mModuleScript->SetErrorToRethrow(parseError);
+    }
+  } else {
+    
+    AutoJSAPI jsapi;
+    if (!jsapi.Init(mGlobalObject)) {
+      return;
+    }
+    JSContext* cx = jsapi.cx();
+
+    MOZ_ASSERT(!aRequest->mStatePrivate.isUndefined());
+    JS::Rooted<JS::Value> statePrivate(cx, aRequest->mStatePrivate);
+    JS::Rooted<JS::Value> error(cx);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!aRequest->mModuleScript) {
+      error = UndefinedValue();
+    } else {
+      
+      
+      
+      
+      
+      
+      MOZ_ASSERT(aRequest->mModuleScript->HasParseError());
+      error = aRequest->mModuleScript->ParseError();
+    }
+
+    LOG(("ScriptLoadRequest (%p): FinishLoadingImportedModuleFailed",
+         aRequest));
+    
+    
+    JS::FinishLoadingImportedModuleFailed(cx, statePrivate, nullptr, error);
+
+    aRequest->mReferrerObj = nullptr;
+    aRequest->mReferencingPrivate.setUndefined();
+    aRequest->mModuleRequestObj = nullptr;
+    aRequest->mStatePrivate.setUndefined();
   }
 }
 
@@ -1081,6 +1150,22 @@ static bool OnLoadRequestedModulesResolvedImpl(ModuleLoadRequest* aRequest) {
 static bool OnLoadRequestedModulesRejectedImpl(ModuleLoadRequest* aRequest,
                                                Handle<JS::Value> error) {
   LOG(("ScriptLoadRequest (%p): LoadRequestedModules rejected", aRequest));
+  ModuleScript* moduleScript = aRequest->mModuleScript;
+  
+  
+  
+  
+  
+  
+  if (moduleScript && !error.isUndefined()) {
+    moduleScript->SetErrorToRethrow(error);
+  } else {
+    
+    aRequest->mModuleScript = nullptr;
+  }
+
+  aRequest->ModuleErrored();
+
   
   aRequest->Release();
   return true;
@@ -1276,6 +1361,7 @@ void ModuleLoaderBase::StartFetchingModuleAndDependencies(
     MOZ_ASSERT(!childRequest->mModuleScript);
     mLoader->ReportErrorToConsole(childRequest, rv);
     childRequest->LoadFailed();
+    OnFetchFailed(childRequest);
   }
 }
 
@@ -1440,6 +1526,7 @@ bool ModuleLoaderBase::HasFetchingModules() const {
 bool ModuleLoaderBase::HasPendingDynamicImports() const {
   return !mDynamicImportRequests.isEmpty();
 }
+
 
 void ModuleLoaderBase::CancelDynamicImport(ModuleLoadRequest* aRequest,
                                            nsresult aResult) {
