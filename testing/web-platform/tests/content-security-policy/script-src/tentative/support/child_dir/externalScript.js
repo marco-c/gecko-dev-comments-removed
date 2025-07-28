@@ -1,0 +1,2 @@
+
+top.postMessage('SCRIPT_RAN', '*');
