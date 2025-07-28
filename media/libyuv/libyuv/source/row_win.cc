@@ -184,7 +184,7 @@ void I444AlphaToARGBRow_SSSE3(const uint8_t* y_buf,
 
 #else  
 
-#ifdef HAS_ARGBTOUVROW_SSSE3
+
 
 
 static const ulvec8 kBiasUV128 = {
@@ -221,7 +221,7 @@ static const lvec8 kShuffleUYVYUV = {0,  2,  0,  2,  4,  6,  4,  6,  8,  10, 8,
 
 static const vec8 kARGBToYJ = {15, 75, 38, 0, 15, 75, 38, 0,
                                15, 75, 38, 0, 15, 75, 38, 0};
-#endif
+
 
 
 static const lvec32 kPermdARGBToY_AVX = {0, 4, 1, 5, 2, 6, 3, 7};
@@ -1208,6 +1208,8 @@ __declspec(naked) void ARGBToYRow_SSSE3(const uint8_t* src_argb,
   }
 }
 
+#ifdef HAS_ARGBTOUVROW_SSSE3
+
 
 
 __declspec(naked) void ARGBToYJRow_SSSE3(const uint8_t* src_argb,
@@ -1244,6 +1246,7 @@ __declspec(naked) void ARGBToYJRow_SSSE3(const uint8_t* src_argb,
     ret
   }
 }
+#endif
 
 #ifdef HAS_ARGBTOYROW_AVX2
 
@@ -1430,6 +1433,8 @@ __declspec(naked) void RGBAToYRow_SSSE3(const uint8_t* src_argb,
   }
 }
 
+#ifdef HAS_ARGBTOUVROW_SSSE3
+
 __declspec(naked) void ARGBToUVRow_SSSE3(const uint8_t* src_argb,
                                          int src_stride_argb,
                                          uint8_t* dst_u,
@@ -1578,6 +1583,7 @@ __declspec(naked) void ARGBToUVJRow_SSSE3(const uint8_t* src_argb,
     ret
   }
 }
+#endif
 
 #ifdef HAS_ARGBTOUVROW_AVX2
 __declspec(naked) void ARGBToUVRow_AVX2(const uint8_t* src_argb,

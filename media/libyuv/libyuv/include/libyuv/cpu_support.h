@@ -28,13 +28,21 @@ extern "C" {
 
 
 #if defined(__has_feature)
-#if __has_feature(memory_sanitizer) && !defined(LIBYUV_DISABLE_NEON)
+#if __has_feature(memory_sanitizer)
+#if !defined(LIBYUV_DISABLE_NEON)
 #define LIBYUV_DISABLE_NEON
 #endif
-#if __has_feature(memory_sanitizer) && !defined(LIBYUV_DISABLE_X86)
+#if !defined(LIBYUV_DISABLE_SME)
+#define LIBYUV_DISABLE_SME
+#endif
+#if !defined(LIBYUV_DISABLE_SVE)
+#define LIBYUV_DISABLE_SVE
+#endif
+#if !defined(LIBYUV_DISABLE_X86)
 #define LIBYUV_DISABLE_X86
 #endif
-#endif
+#endif  
+#endif  
 
 
 #if defined(__clang__) && defined(__aarch64__) && !defined(LIBYUV_DISABLE_NEON)

@@ -95,6 +95,7 @@ void ScaleAddRow_RVV(const uint8_t* src_ptr, uint16_t* dst_ptr, int src_width) {
 #endif
 
 #ifdef HAS_SCALEARGBROWDOWN2_RVV
+
 void ScaleARGBRowDown2_RVV(const uint8_t* src_argb,
                            ptrdiff_t src_stride,
                            uint8_t* dst_argb,
