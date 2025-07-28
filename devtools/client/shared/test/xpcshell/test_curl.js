@@ -341,19 +341,27 @@ function isWin() {
   return Services.appinfo.OS === "WINNT";
 }
 
-const QUOTE = isWin() ? '"' : "'";
+const QUOTE = isWin() ? '^"' : "'";
 
 
 function quote(str) {
-  const replaceStr = isWin() ? `${QUOTE}${QUOTE}` : `\\${QUOTE}`;
-  const escaped = str.replace(new RegExp(QUOTE, "g"), replaceStr);
+  let escaped;
+  if (isWin()) {
+    escaped = str
+      .replace(new RegExp(QUOTE, "g"), `${QUOTE}${QUOTE}`)
+      .replace(/"/g, '\\"');
+  } else {
+    escaped = str.replace(new RegExp(QUOTE, "g"), `\\${QUOTE}`);
+  }
   return QUOTE + escaped + QUOTE;
 }
 
 function escapeNewline(txt) {
   if (isWin()) {
     
-    return txt.replace(/[\r\n]{1,2}/g, '"^$&$&"');
+    
+    
+    return txt.replace(/\r?\n/g, "^\n\n");
   }
   return txt.replace(/\r/g, "\\r").replace(/\n/g, "\\n");
 }
@@ -389,7 +397,6 @@ function parseCurl(curlCmd) {
   
   
   
-  
-  const matchRe = /[-\.A-Za-z1-9]+(?: ([\^\"']+)(?:\\\1|.)*?\1)?/g;
+  const matchRe = /[-A-Za-z1-9]+(?: ([\^\\"']+)(?:\\\1|.)*?\1)?/g;
   return curlCmd.match(matchRe);
 }

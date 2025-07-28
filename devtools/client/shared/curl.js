@@ -167,8 +167,9 @@ const Curl = {
     
     
     const joinStr = currentPlatform === "WINNT" ? " ^\n  " : " \\\n  ";
-    const CMD = currentPlatform == "WINNT" ? "curl.exe " : "curl ";
-    return CMD + commandParts.join(commandParts.length >= 3 ? joinStr : " ");
+    return (
+      "curl " + commandParts.join(commandParts.length >= 3 ? joinStr : " ")
+    );
   },
 };
 
@@ -451,19 +452,23 @@ const CurlUtils = {
 
 
 
-
-
-
     const encapsChars = '^"';
     return (
       encapsChars +
       str
         
+        
+        .replace(/\\/g, "\\\\")
+
+        
         .replace(/"/g, '\\"')
 
         
+        .replace(/[`$]/g, "\\$&")
+
         
-        .replace(/[^a-zA-Z0-9\s_\-:=+~\/.',?;()*`]/g, "^$&")
+        
+        .replace(/[^a-zA-Z0-9\s_\-:=+~\/.',?;()*\$&\\{}\"`]/g, "^$&")
 
         
         
@@ -476,13 +481,8 @@ const CurlUtils = {
 
         
         
-        .replace(/\r\n?/g, "\n")
-
         
-        
-        
-        
-        .replace(/\n/g, '"^\r\n\r\n"') +
+        .replace(/\r?\n|\r/g, "^\n\n") +
       encapsChars
     );
   },
