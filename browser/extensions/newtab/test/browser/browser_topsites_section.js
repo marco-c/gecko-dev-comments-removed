@@ -177,6 +177,8 @@ test_newtab({
         ),
       "Topsite not removed"
     );
+    
+    SpecialPowers.clearUserPref("browser.newtabpage.blocked");
   },
 });
 

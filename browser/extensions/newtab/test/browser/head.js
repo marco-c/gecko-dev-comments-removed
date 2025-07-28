@@ -96,6 +96,13 @@ function refreshHighlightsFeed() {
   );
 }
 
+function clearHighlightsBookmarks() {
+  Services.prefs.setBoolPref(
+    "browser.newtabpage.activity-stream.feeds.section.highlights",
+    false
+  );
+}
+
 
 
 

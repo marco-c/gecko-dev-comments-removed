@@ -12,31 +12,9 @@ const { sinon } = ChromeUtils.importESModule(
 const { DiscoveryStreamFeed } = ChromeUtils.importESModule(
   "resource://newtab/lib/DiscoveryStreamFeed.sys.mjs"
 );
-
-
-
-
-
-
-{
-  const { PREFS_CONFIG } = ChromeUtils.importESModule(
-    "resource://newtab/lib/ActivityStream.sys.mjs"
-  );
-
-  let defaultDSConfig = JSON.parse(
-    PREFS_CONFIG.get("discoverystream.config").getValue({
-      geo: "US",
-      locale: "en-US",
-    })
-  );
-
-  
-  
-  Services.prefs.setCharPref(
-    "browser.newtabpage.activity-stream.discoverystream.config",
-    JSON.stringify(defaultDSConfig)
-  );
-}
+const { PREFS_CONFIG } = ChromeUtils.importESModule(
+  "resource://newtab/lib/ActivityStream.sys.mjs"
+);
 
 
 
@@ -50,6 +28,17 @@ const { DiscoveryStreamFeed } = ChromeUtils.importESModule(
 
 
 async function withFullyLoadedAboutHome(taskFn) {
+  
+  
+  
+  
+  let defaultDSConfig = JSON.parse(
+    PREFS_CONFIG.get("discoverystream.config").getValue({
+      geo: "US",
+      locale: "en-US",
+    })
+  );
+
   const sandbox = sinon.createSandbox();
   sandbox
     .stub(DiscoveryStreamFeed.prototype, "generateFeedUrl")
@@ -60,7 +49,15 @@ async function withFullyLoadedAboutHome(taskFn) {
   
   
   await SpecialPowers.pushPrefEnv({
-    set: [["ui.prefersReducedMotion", 1]],
+    set: [
+      ["ui.prefersReducedMotion", 1],
+      
+      
+      [
+        "browser.newtabpage.activity-stream.discoverystream.config",
+        JSON.stringify(defaultDSConfig),
+      ],
+    ],
   });
 
   return BrowserTestUtils.withNewTab("about:home", async browser => {
