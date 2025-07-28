@@ -387,6 +387,12 @@ static void CollectScriptTelemetry(ScriptLoadRequest* aRequest) {
 
 
 
+
+
+
+
+
+
 static bool IsScriptEventHandler(ScriptKind kind, nsIContent* aScriptElement) {
   if (kind != ScriptKind::eClassic) {
     return false;
@@ -402,27 +408,35 @@ static bool IsScriptEventHandler(ScriptKind kind, nsIContent* aScriptElement) {
     return false;
   }
 
-  return ScriptLoader::IsScriptEventHandler(forAttr, eventAttr);
-}
-
-
-bool ScriptLoader::IsScriptEventHandler(const nsAutoString& aForAttr,
-                                        const nsAutoString& aEventAttr) {
-  const nsAString& forString =
-      nsContentUtils::TrimWhitespace<nsCRT::IsAsciiSpace>(aForAttr);
-  if (!forString.LowerCaseEqualsLiteral("window")) {
-    return true;
-  }
-
-  const nsAString& eventString =
-      nsContentUtils::TrimWhitespace<nsCRT::IsAsciiSpace>(aEventAttr);
-  if (!eventString.LowerCaseEqualsLiteral("onload") &&
-      !eventString.LowerCaseEqualsLiteral("onload()")) {
+  const nsAString& for_str =
+      nsContentUtils::TrimWhitespace<nsCRT::IsAsciiSpace>(forAttr);
+  if (!for_str.LowerCaseEqualsLiteral("window")) {
     return true;
   }
 
   
-  
+  const nsAString& event_str =
+      nsContentUtils::TrimWhitespace<nsCRT::IsAsciiSpace>(eventAttr, false);
+  if (!StringBeginsWith(event_str, u"onload"_ns,
+                        nsCaseInsensitiveStringComparator)) {
+    
+
+    return true;
+  }
+
+  nsAutoString::const_iterator start, end;
+  event_str.BeginReading(start);
+  event_str.EndReading(end);
+
+  start.advance(6);  
+
+  if (start != end && *start != '(' && *start != ' ') {
+    
+    
+
+    return true;
+  }
+
   return false;
 }
 
@@ -1222,7 +1236,7 @@ bool ScriptLoader::ProcessScriptElement(nsIScriptElement* aElement) {
   }
 
   
-  if (::IsScriptEventHandler(scriptKind, scriptContent)) {
+  if (IsScriptEventHandler(scriptKind, scriptContent)) {
     return false;
   }
 
