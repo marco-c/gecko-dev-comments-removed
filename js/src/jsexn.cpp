@@ -485,6 +485,60 @@ JS::ErrorReportBuilder::ErrorReportBuilder(JSContext* cx)
 
 JS::ErrorReportBuilder::~ErrorReportBuilder() = default;
 
+
+
+
+
+
+JSString* JS::ErrorReportBuilder::maybeCreateReportFromDOMException(
+    JS::HandleObject obj, JSContext* cx) {
+  if (!obj->getClass()->isDOMClass()) {
+    return nullptr;
+  }
+
+  bool isException;
+  Rooted<JSString*> fileNameStr(cx), messageStr(cx);
+  uint32_t lineno, column;
+  if (!cx->runtime()->DOMcallbacks->extractExceptionInfo(
+          cx, obj, &isException, &fileNameStr, &lineno, &column, &messageStr)) {
+    cx->clearPendingException();
+    return nullptr;
+  }
+
+  if (!isException) {
+    return nullptr;
+  }
+
+  filename = JS_EncodeStringToUTF8(cx, fileNameStr);
+  if (!filename) {
+    cx->clearPendingException();
+    return nullptr;
+  }
+
+  JS::UniqueChars messageUtf8 = JS_EncodeStringToUTF8(cx, messageStr);
+  if (!messageUtf8) {
+    cx->clearPendingException();
+    return nullptr;
+  }
+
+  reportp = &ownedReport;
+  new (reportp) JSErrorReport();
+  ownedReport.filename = JS::ConstUTF8CharsZ(filename.get());
+  ownedReport.lineno = lineno;
+  ownedReport.exnType = JSEXN_INTERNALERR;
+  ownedReport.column = JS::ColumnNumberOneOrigin(column);
+  
+  
+  
+  
+  
+  
+  
+  ownedReport.initOwnedMessage(messageUtf8.release());
+
+  return messageStr;
+}
+
 bool JS::ErrorReportBuilder::init(JSContext* cx,
                                   const JS::ExceptionStack& exnStack,
                                   SniffingBehavior sniffingBehavior) {
@@ -508,6 +562,9 @@ bool JS::ErrorReportBuilder::init(JSContext* cx,
   RootedString str(cx);
   if (reportp) {
     str = ErrorReportToString(cx, exnObject, reportp, sniffingBehavior);
+  } else if (exnObject &&
+             (str = maybeCreateReportFromDOMException(exnObject, cx))) {
+    MOZ_ASSERT(reportp, "Should have initialized report");
   } else if (exnStack.exception().isSymbol()) {
     RootedValue strVal(cx);
     if (js::SymbolDescriptiveString(cx, exnStack.exception().toSymbol(),

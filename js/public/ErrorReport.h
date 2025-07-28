@@ -410,6 +410,11 @@ struct MOZ_STACK_CLASS JS_PUBLIC_API ErrorReportBuilder {
   void ReportAddonExceptionToTelemetry(JSContext* cx);
 
   
+  
+  JSString* maybeCreateReportFromDOMException(JS::HandleObject obj,
+                                              JSContext* cx);
+
+  
   JSErrorReport* reportp;
 
   

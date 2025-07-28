@@ -11748,21 +11748,21 @@ bool nsContentUtils::IsOverridingWindowName(const nsAString& aName) {
 
 
 
-#define EXTRACT_EXN_VALUES(T, ...)                                \
-  ExtractExceptionValues<mozilla::dom::prototypes::id::T,         \
-                         T##_Binding::NativeType, T>(__VA_ARGS__) \
+#define EXTRACT_EXN_VALUES(T, ...)                                    \
+  ExtractExceptionValuesImpl<mozilla::dom::prototypes::id::T,         \
+                             T##_Binding::NativeType, T>(__VA_ARGS__) \
       .isOk()
 
 template <prototypes::ID PrototypeID, class NativeType, typename T>
-static Result<Ok, nsresult> ExtractExceptionValues(
-    JSContext* aCx, JS::Handle<JSObject*> aObj, nsACString& aSourceSpecOut,
+static Result<Ok, nsresult> ExtractExceptionValuesImpl(
+    JSContext* aCx, JS::Handle<JSObject*> aObj, nsACString& aFilename,
     uint32_t* aLineOut, uint32_t* aColumnOut, nsString& aMessageOut) {
   AssertStaticUnwrapOK<PrototypeID>();
   RefPtr<T> exn;
   MOZ_TRY((UnwrapObject<PrototypeID, NativeType>(aObj, exn, nullptr)));
 
-  exn->GetFilename(aCx, aSourceSpecOut);
-  if (!aSourceSpecOut.IsEmpty()) {
+  exn->GetFilename(aCx, aFilename);
+  if (!aFilename.IsEmpty()) {
     *aLineOut = exn->LineNumber(aCx);
     *aColumnOut = exn->ColumnNumber();
   }
@@ -11774,6 +11774,16 @@ static Result<Ok, nsresult> ExtractExceptionValues(
   exn->GetMessageMoz(message);
   aMessageOut.Append(message);
   return Ok();
+}
+
+
+bool nsContentUtils::ExtractExceptionValues(
+    JSContext* aCx, JS::Handle<JSObject*> aObj, nsACString& aFilename,
+    uint32_t* aLineOut, uint32_t* aColumnOut, nsString& aMessageOut) {
+  return EXTRACT_EXN_VALUES(DOMException, aCx, aObj, aFilename, aLineOut,
+                            aColumnOut, aMessageOut) ||
+         EXTRACT_EXN_VALUES(Exception, aCx, aObj, aFilename, aLineOut,
+                            aColumnOut, aMessageOut);
 }
 
 
@@ -11789,8 +11799,7 @@ void nsContentUtils::ExtractErrorValues(
     
     
     
-    JSErrorReport* err = obj ? JS_ErrorFromException(aCx, obj) : nullptr;
-    if (err) {
+    if (JSErrorReport* err = JS_ErrorFromException(aCx, obj)) {
       
       
       RefPtr<xpc::ErrorReport> report = new xpc::ErrorReport();
@@ -11808,14 +11817,8 @@ void nsContentUtils::ExtractErrorValues(
     }
 
     
-    else if (EXTRACT_EXN_VALUES(DOMException, aCx, obj, aSourceSpecOut,
-                                aLineOut, aColumnOut, aMessageOut)) {
-      return;
-    }
-
-    
-    else if (EXTRACT_EXN_VALUES(Exception, aCx, obj, aSourceSpecOut, aLineOut,
-                                aColumnOut, aMessageOut)) {
+    else if (ExtractExceptionValues(aCx, obj, aSourceSpecOut, aLineOut,
+                                    aColumnOut, aMessageOut)) {
       return;
     }
   }
