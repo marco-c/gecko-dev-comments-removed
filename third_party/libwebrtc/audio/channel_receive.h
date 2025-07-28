@@ -40,10 +40,6 @@
 #include "modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
-
-
-
-
 namespace webrtc {
 
 class AudioDeviceModule;
