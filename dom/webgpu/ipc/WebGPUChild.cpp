@@ -499,7 +499,6 @@ void WebGPUChild::ClearAllPendingPromises() {
     }
   }
   
-  
   {
     while (!mPendingCreateShaderModulePromises.empty()) {
       auto pending_promise =
@@ -532,7 +531,6 @@ void WebGPUChild::ClearAllPendingPromises() {
           pending_promise.promise);
     }
   }
-  
   
   {
     while (!mPendingOnSubmittedWorkDonePromises.empty()) {
