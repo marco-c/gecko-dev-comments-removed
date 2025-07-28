@@ -101,12 +101,8 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
   
   Element* GetViewTransitionTreeRoot() const;
 
-  Maybe<nsSize> GetOldInkOverflowBoxSize(nsAtom* aName) const;
-  Maybe<nsSize> GetNewInkOverflowBoxSize(nsAtom* aName) const;
-  Maybe<nsSize> GetOldBorderBoxSize(nsAtom* aName) const;
-  Maybe<nsSize> GetNewBorderBoxSize(nsAtom* aName) const;
-  Maybe<nsPoint> GetOldInkOverflowOffset(nsAtom* aName) const;
-  Maybe<nsPoint> GetNewInkOverflowOffset(nsAtom* aName) const;
+  Maybe<nsSize> GetOldSize(nsAtom* aName) const;
+  Maybe<nsSize> GetNewSize(nsAtom* aName) const;
   
   
   
