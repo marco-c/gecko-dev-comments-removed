@@ -57,6 +57,12 @@ function TestCase(scenarios, sanityChecker) {
           
           
           timeout = 10;
+        } else if (scenario.subresource.startsWith('worker-') &&
+                   navigator.userAgent.includes("Servo/")) {
+          
+          
+          
+          timeout = 1;
         }
         await new Promise(resolve => setTimeout(resolve, timeout));
 
