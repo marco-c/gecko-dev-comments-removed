@@ -1,0 +1,28 @@
+
+
+
+
+#ifndef BASE_BASE_PATHS_POSIX_H_
+#define BASE_BASE_PATHS_POSIX_H_
+
+
+
+
+
+namespace base {
+
+enum {
+  PATH_POSIX_START = 400,
+
+  DIR_CACHE,  
+              
+              
+              
+              
+
+  PATH_POSIX_END
+};
+
+}  
+
+#endif  
