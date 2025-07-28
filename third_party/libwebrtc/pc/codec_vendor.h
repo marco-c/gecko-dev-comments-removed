@@ -11,7 +11,7 @@
 #ifndef PC_CODEC_VENDOR_H_
 #define PC_CODEC_VENDOR_H_
 
-#include <string>
+#include <utility>
 #include <vector>
 
 #include "api/field_trials_view.h"
@@ -62,6 +62,12 @@ class CodecVendor {
       std::vector<Codec> codecs_from_offer,
       PayloadTypeSuggester& pt_suggester);
 
+  
+  
+  
+  
+  
+  void ModifyVideoCodecs(std::vector<std::pair<Codec, Codec>> changes);
   
   void set_audio_codecs(const CodecList& send_codecs,
                         const CodecList& recv_codecs);
@@ -114,7 +120,10 @@ class CodecLookupHelper {
  public:
   virtual ~CodecLookupHelper() = default;
   virtual PayloadTypeSuggester* PayloadTypeSuggester() = 0;
-  virtual CodecVendor* CodecVendor(const std::string& mid) = 0;
+  
+  
+  
+  virtual CodecVendor* GetCodecVendor() = 0;
 };
 
 }  
