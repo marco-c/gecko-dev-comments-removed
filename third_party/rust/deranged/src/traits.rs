@@ -1,10 +1,7 @@
-
-
 use crate::{
     RangedI128, RangedI16, RangedI32, RangedI64, RangedI8, RangedIsize, RangedU128, RangedU16,
     RangedU32, RangedU64, RangedU8, RangedUsize,
 };
-
 
 macro_rules! declare_traits {
     ($($trait_name:ident),* $(,)?) => {$(
@@ -13,7 +10,6 @@ macro_rules! declare_traits {
         }
     )*};
 }
-
 
 macro_rules! impl_traits_for_all {
     ($($ranged_ty:ident $inner_ty:ident),* $(,)?) => {$(
@@ -58,7 +54,6 @@ macro_rules! impl_traits_for_all {
     )*};
 }
 
-
 macro_rules! impl_traits_for_signed {
     ($($ranged_ty:ident $inner_ty:ident),* $(,)?) => {$(
         impl<const MIN: $inner_ty, const MAX: $inner_ty> AbsIsSafe for $ranged_ty<MIN, MAX> {
@@ -79,7 +74,6 @@ macro_rules! impl_traits_for_signed {
         impl_traits_for_all!($ranged_ty $inner_ty);
     )*};
 }
-
 
 macro_rules! impl_traits_for_unsigned {
     ($($ranged_ty:ident $inner_ty:ident),* $(,)?) => {$(

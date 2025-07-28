@@ -37,9 +37,8 @@ impl TimeZone {
 
     
     fn from_posix_tz(tz_string: &str) -> Result<Self, Error> {
-        
         if tz_string.is_empty() {
-            return Ok(Self::utc());
+            return Err(Error::InvalidTzString("empty TZ string"));
         }
 
         if tz_string == "localtime" {
@@ -926,7 +925,7 @@ mod tests {
         }
 
         assert!(TimeZone::from_posix_tz("EST5EDT,0/0,J365/25").is_err());
-        assert_eq!(TimeZone::from_posix_tz("").unwrap().find_local_time_type(0)?.offset(), 0);
+        assert!(TimeZone::from_posix_tz("").is_err());
 
         Ok(())
     }

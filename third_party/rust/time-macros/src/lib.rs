@@ -29,16 +29,13 @@ mod offset;
 mod serde_format_description;
 mod time;
 mod to_tokens;
-mod utc_datetime;
 
 #[cfg(any(feature = "formatting", feature = "parsing"))]
 use std::iter::Peekable;
 
-#[cfg(all(feature = "serde", any(feature = "formatting", feature = "parsing")))]
-use proc_macro::Delimiter;
 use proc_macro::TokenStream;
 #[cfg(any(feature = "formatting", feature = "parsing"))]
-use proc_macro::TokenTree;
+use proc_macro::{Ident, TokenTree};
 
 use self::error::Error;
 
@@ -60,10 +57,7 @@ macro_rules! impl_macros {
     )*};
 }
 
-impl_macros![date datetime utc_datetime offset time];
-
-#[cfg(any(feature = "formatting", feature = "parsing"))]
-type PeekableTokenStreamIter = Peekable<proc_macro::token_stream::IntoIter>;
+impl_macros![date datetime offset time];
 
 #[cfg(any(feature = "formatting", feature = "parsing"))]
 enum FormatDescriptionVersion {
@@ -72,38 +66,27 @@ enum FormatDescriptionVersion {
 }
 
 #[cfg(any(feature = "formatting", feature = "parsing"))]
+enum VersionOrModuleName {
+    Version(FormatDescriptionVersion),
+    #[cfg_attr(not(feature = "serde"), allow(dead_code))]
+    ModuleName(Ident),
+}
+
+#[cfg(any(feature = "formatting", feature = "parsing"))]
 fn parse_format_description_version<const NO_EQUALS_IS_MOD_NAME: bool>(
-    iter: &mut PeekableTokenStreamIter,
-) -> Result<Option<FormatDescriptionVersion>, Error> {
-    let end_of_input_err = || {
-        if NO_EQUALS_IS_MOD_NAME {
-            Error::UnexpectedEndOfInput
-        } else {
-            Error::ExpectedString {
-                span_start: None,
-                span_end: None,
-            }
-        }
-    };
-    let version_ident = match iter.peek().ok_or_else(end_of_input_err)? {
-        version @ TokenTree::Ident(ident) if ident.to_string() == "version" => {
-            let version_ident = version.clone();
-            iter.next(); 
-            version_ident
-        }
+    iter: &mut Peekable<proc_macro::token_stream::IntoIter>,
+) -> Result<Option<VersionOrModuleName>, Error> {
+    let version_ident = match iter.peek() {
+        Some(TokenTree::Ident(ident)) if ident.to_string() == "version" => match iter.next() {
+            Some(TokenTree::Ident(ident)) => ident,
+            _ => unreachable!(),
+        },
         _ => return Ok(None),
     };
-
     match iter.peek() {
         Some(TokenTree::Punct(punct)) if punct.as_char() == '=' => iter.next(),
         _ if NO_EQUALS_IS_MOD_NAME => {
-            
-            *iter = std::iter::once(version_ident)
-                .chain(iter.clone())
-                .collect::<TokenStream>()
-                .into_iter()
-                .peekable();
-            return Ok(None);
+            return Ok(Some(VersionOrModuleName::ModuleName(version_ident)));
         }
         Some(token) => {
             return Err(Error::Custom {
@@ -150,29 +133,7 @@ fn parse_format_description_version<const NO_EQUALS_IS_MOD_NAME: bool>(
     };
     helpers::consume_punct(',', iter)?;
 
-    Ok(Some(version))
-}
-
-#[cfg(all(feature = "serde", any(feature = "formatting", feature = "parsing")))]
-fn parse_visibility(iter: &mut PeekableTokenStreamIter) -> Result<TokenStream, Error> {
-    let mut visibility = match iter.peek().ok_or(Error::UnexpectedEndOfInput)? {
-        pub_ident @ TokenTree::Ident(ident) if ident.to_string() == "pub" => {
-            let visibility = quote! { #(pub_ident.clone()) };
-            iter.next(); 
-            visibility
-        }
-        _ => return Ok(quote! {}),
-    };
-
-    match iter.peek().ok_or(Error::UnexpectedEndOfInput)? {
-        group @ TokenTree::Group(path) if path.delimiter() == Delimiter::Parenthesis => {
-            visibility.extend(std::iter::once(group.clone()));
-            iter.next(); 
-        }
-        _ => {}
-    }
-
-    Ok(visibility)
+    Ok(Some(VersionOrModuleName::Version(version)))
 }
 
 #[cfg(any(feature = "formatting", feature = "parsing"))]
@@ -180,7 +141,12 @@ fn parse_visibility(iter: &mut PeekableTokenStreamIter) -> Result<TokenStream, E
 pub fn format_description(input: TokenStream) -> TokenStream {
     (|| {
         let mut input = input.into_iter().peekable();
-        let version = parse_format_description_version::<false>(&mut input)?;
+        let version = match parse_format_description_version::<false>(&mut input)? {
+            Some(VersionOrModuleName::Version(version)) => Some(version),
+            None => None,
+            
+            Some(VersionOrModuleName::ModuleName(_)) => bug!("branch should never occur"),
+        };
         let (span, string) = helpers::get_string_literal(input)?;
         let items = format_description::parse_with_version(version, &string, span)?;
 
@@ -205,16 +171,22 @@ pub fn serde_format_description(input: TokenStream) -> TokenStream {
 
         
         let version = parse_format_description_version::<true>(&mut tokens)?;
+        let (version, mod_name) = match version {
+            Some(VersionOrModuleName::ModuleName(module_name)) => (None, Some(module_name)),
+            Some(VersionOrModuleName::Version(version)) => (Some(version), None),
+            None => (None, None),
+        };
 
         
-        let visibility = parse_visibility(&mut tokens)?;
-
         
-        let mod_name = match tokens.next() {
-            Some(TokenTree::Ident(ident)) => Ok(ident),
-            Some(tree) => Err(Error::UnexpectedToken { tree }),
-            None => Err(Error::UnexpectedEndOfInput),
-        }?;
+        let mod_name = match mod_name {
+            Some(mod_name) => mod_name,
+            None => match tokens.next() {
+                Some(TokenTree::Ident(ident)) => Ok(ident),
+                Some(tree) => Err(Error::UnexpectedToken { tree }),
+                None => Err(Error::UnexpectedEndOfInput),
+            }?,
+        };
 
         
         helpers::consume_punct(',', &mut tokens)?;
@@ -251,13 +223,27 @@ pub fn serde_format_description(input: TokenStream) -> TokenStream {
             Some(_) => {
                 let tokens = tokens.collect::<TokenStream>();
                 let tokens_string = tokens.to_string();
-                (tokens, tokens_string)
+                (
+                    quote! {{
+                        // We can't just do `super::path` because the path could be an absolute
+                        // path. In that case, we'd be generating `super::::path`, which is invalid.
+                        // Even if we took that into account, it's not possible to know if it's an
+                        // external crate, which would just require emitting `path` directly. By
+                        // taking this approach, we can leave it to the compiler to do the actual
+                        // resolution.
+                        mod __path_hack {
+                            pub(super) use super::super::*;
+                            pub(super) use #S(tokens) as FORMAT;
+                        }
+                        __path_hack::FORMAT
+                    }},
+                    tokens_string,
+                )
             }
             None => return Err(Error::UnexpectedEndOfInput),
         };
 
         Ok(serde_format_description::build(
-            visibility,
             mod_name,
             formattable,
             format,

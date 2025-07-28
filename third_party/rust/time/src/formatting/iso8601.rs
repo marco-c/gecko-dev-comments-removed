@@ -14,7 +14,7 @@ use crate::{error, Date, Time, UtcOffset};
 
 
 pub(super) fn format_date<const CONFIG: EncodedConfig>(
-    output: &mut (impl io::Write + ?Sized),
+    output: &mut impl io::Write,
     date: Date,
 ) -> Result<usize, error::Format> {
     let mut bytes = 0;
@@ -70,7 +70,7 @@ pub(super) fn format_date<const CONFIG: EncodedConfig>(
 
 
 pub(super) fn format_time<const CONFIG: EncodedConfig>(
-    output: &mut (impl io::Write + ?Sized),
+    output: &mut impl io::Write,
     time: Time,
 ) -> Result<usize, error::Format> {
     let mut bytes = 0;
@@ -115,7 +115,7 @@ pub(super) fn format_time<const CONFIG: EncodedConfig>(
 
 
 pub(super) fn format_offset<const CONFIG: EncodedConfig>(
-    output: &mut (impl io::Write + ?Sized),
+    output: &mut impl io::Write,
     offset: UtcOffset,
 ) -> Result<usize, error::Format> {
     if Iso8601::<CONFIG>::FORMAT_TIME && offset.is_utc() {

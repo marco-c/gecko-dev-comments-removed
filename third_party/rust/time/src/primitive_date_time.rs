@@ -16,9 +16,7 @@ use crate::formatting::Formattable;
 use crate::internal_macros::{const_try, const_try_opt};
 #[cfg(feature = "parsing")]
 use crate::parsing::Parsable;
-use crate::{
-    error, util, Date, Duration, Month, OffsetDateTime, Time, UtcDateTime, UtcOffset, Weekday,
-};
+use crate::{error, util, Date, Duration, Month, OffsetDateTime, Time, UtcOffset, Weekday};
 
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -112,6 +110,7 @@ impl PrimitiveDateTime {
     
     
     
+    
     pub const fn date(self) -> Date {
         self.date
     }
@@ -125,7 +124,9 @@ impl PrimitiveDateTime {
     pub const fn time(self) -> Time {
         self.time
     }
+    
 
+    
     
     
     
@@ -313,7 +314,9 @@ impl PrimitiveDateTime {
     pub const fn to_julian_day(self) -> i32 {
         self.date().to_julian_day()
     }
+    
 
+    
     
     
     
@@ -450,7 +453,9 @@ impl PrimitiveDateTime {
     pub const fn nanosecond(self) -> u32 {
         self.time().nanosecond()
     }
+    
 
+    
     
     
     
@@ -483,27 +488,12 @@ impl PrimitiveDateTime {
     
     
     
-    
-    
-    
     pub const fn assume_utc(self) -> OffsetDateTime {
         self.assume_offset(UtcOffset::UTC)
     }
+    
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub const fn as_utc(self) -> UtcDateTime {
-        UtcDateTime::from_primitive(self)
-    }
-
     
     
     
@@ -563,7 +553,9 @@ impl PrimitiveDateTime {
             time,
         })
     }
+    
 
+    
     
     
     
@@ -623,7 +615,9 @@ impl PrimitiveDateTime {
             Self::MIN
         }
     }
+    
 }
+
 
 
 impl PrimitiveDateTime {
@@ -849,13 +843,15 @@ impl PrimitiveDateTime {
     }
 }
 
+
+
 #[cfg(feature = "formatting")]
 impl PrimitiveDateTime {
     
     
     pub fn format_into(
         self,
-        output: &mut (impl io::Write + ?Sized),
+        output: &mut impl io::Write,
         format: &(impl Formattable + ?Sized),
     ) -> Result<usize, error::Format> {
         format.format_into(output, Some(self.date), Some(self.time), None)
@@ -933,6 +929,8 @@ impl fmt::Debug for PrimitiveDateTime {
         fmt::Display::fmt(self, f)
     }
 }
+
+
 
 impl Add<Duration> for PrimitiveDateTime {
     type Output = Self;
@@ -1048,3 +1046,4 @@ impl Sub for PrimitiveDateTime {
         (self.date - rhs.date) + (self.time - rhs.time)
     }
 }
+

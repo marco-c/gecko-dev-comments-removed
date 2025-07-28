@@ -58,15 +58,22 @@ fn ctext(input: &[u8]) -> Option<ParsedItem<'_, ()>> {
 
 fn quoted_pair(mut input: &[u8]) -> Option<ParsedItem<'_, ()>> {
     input = ascii_char::<b'\\'>(input)?.into_inner();
+
+    let old_input_len = input.len();
+
     input = text(input).into_inner();
 
     
     
     
-    
-    
-
-    Some(ParsedItem(input, ()))
+    if input.len() == old_input_len {
+        match input {
+            [0..=127, rest @ ..] => Some(ParsedItem(rest, ())),
+            _ => Some(ParsedItem(input, ())),
+        }
+    } else {
+        Some(ParsedItem(input, ()))
+    }
 }
 
 

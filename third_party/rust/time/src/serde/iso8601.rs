@@ -51,6 +51,7 @@ pub fn deserialize<'a, D: Deserializer<'a>>(deserializer: D) -> Result<OffsetDat
 
 
 pub mod option {
+    #[allow(clippy::wildcard_imports)]
     use super::*;
 
     

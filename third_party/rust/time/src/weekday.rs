@@ -139,7 +139,7 @@ impl Weekday {
     
     
     pub const fn number_days_from_monday(self) -> u8 {
-        self as u8
+        self as _
     }
 
     

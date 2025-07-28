@@ -49,10 +49,44 @@ pub fn get_iso_time_string(datetime: DateTime<FixedOffset>, truncate_to: TimeUni
 
 
 pub(crate) fn local_now_with_offset() -> DateTime<FixedOffset> {
-    
-    
-    
-    
+    #[cfg(target_os = "windows")]
+    {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        use chrono::Utc;
+
+        
+        let tm = time::now();
+        
+        
+        let offset = tm.tm_utcoff;
+        if let None = FixedOffset::east_opt(offset) {
+            log::warn!(
+                "Detected invalid timezone offset: {}. Using UTC fallback.",
+                offset
+            );
+            let now: DateTime<Utc> = Utc::now();
+            let utc_offset = FixedOffset::east(0);
+            return now.with_timezone(&utc_offset);
+        }
+    }
+
     let now: DateTime<Local> = Local::now();
     now.with_timezone(now.offset())
 }
@@ -187,7 +221,7 @@ pub mod floating_point_context {
 #[cfg(test)]
 mod test {
     use super::*;
-    use chrono::{offset::TimeZone, Timelike};
+    use chrono::offset::TimeZone;
 
     #[test]
     fn test_sanitize_application_id() {
@@ -212,12 +246,9 @@ mod test {
     #[test]
     fn test_get_iso_time_string() {
         
-        let dt = FixedOffset::east_opt(3600)
-            .unwrap()
-            .with_ymd_and_hms(1985, 7, 3, 12, 9, 14)
-            .unwrap()
-            .with_nanosecond(1_560_274)
-            .unwrap();
+        let dt = FixedOffset::east(3600)
+            .ymd(1985, 7, 3)
+            .and_hms_nano(12, 9, 14, 1_560_274);
         assert_eq!(
             "1985-07-03T12:09:14.001560274+01:00",
             get_iso_time_string(dt, TimeUnit::Nanosecond)

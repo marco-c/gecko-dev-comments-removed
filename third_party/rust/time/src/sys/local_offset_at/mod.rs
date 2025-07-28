@@ -19,5 +19,10 @@ use crate::{OffsetDateTime, UtcOffset};
 
 
 pub(crate) fn local_offset_at(datetime: OffsetDateTime) -> Option<UtcOffset> {
-    imp::local_offset_at(datetime)
+    
+    if cfg!(miri) {
+        None
+    } else {
+        imp::local_offset_at(datetime)
+    }
 }

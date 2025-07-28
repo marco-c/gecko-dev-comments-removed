@@ -89,7 +89,12 @@ PACKAGES_WE_ALWAYS_WANT_AN_OVERRIDE_OF = [
 
 
 
-TOLERATED_DUPES = {}
+TOLERATED_DUPES = {
+    
+    
+    
+    "time": 2,
+}
 
 
 class VendorRust(MozbuildObject):

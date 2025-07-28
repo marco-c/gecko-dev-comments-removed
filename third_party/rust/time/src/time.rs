@@ -54,26 +54,36 @@ pub struct Time {
 
     
     #[cfg(target_endian = "little")]
+    #[allow(clippy::missing_docs_in_private_items)]
     nanosecond: Nanoseconds,
     #[cfg(target_endian = "little")]
+    #[allow(clippy::missing_docs_in_private_items)]
     second: Seconds,
     #[cfg(target_endian = "little")]
+    #[allow(clippy::missing_docs_in_private_items)]
     minute: Minutes,
     #[cfg(target_endian = "little")]
+    #[allow(clippy::missing_docs_in_private_items)]
     hour: Hours,
     #[cfg(target_endian = "little")]
+    #[allow(clippy::missing_docs_in_private_items)]
     padding: Padding,
 
     
     #[cfg(target_endian = "big")]
+    #[allow(clippy::missing_docs_in_private_items)]
     padding: Padding,
     #[cfg(target_endian = "big")]
+    #[allow(clippy::missing_docs_in_private_items)]
     hour: Hours,
     #[cfg(target_endian = "big")]
+    #[allow(clippy::missing_docs_in_private_items)]
     minute: Minutes,
     #[cfg(target_endian = "big")]
+    #[allow(clippy::missing_docs_in_private_items)]
     second: Seconds,
     #[cfg(target_endian = "big")]
+    #[allow(clippy::missing_docs_in_private_items)]
     nanosecond: Nanoseconds,
 }
 
@@ -140,21 +150,21 @@ impl Time {
     
     
     
-    #[doc(alias = "MIN")]
-    pub const MIDNIGHT: Self =
+    pub const MIDNIGHT: Self = Self::MIN;
+
+    
+    
+    
+    pub(crate) const MIN: Self =
         Self::from_hms_nanos_ranged(Hours::MIN, Minutes::MIN, Seconds::MIN, Nanoseconds::MIN);
 
     
     
     
-    
-    
-    
-    
-    
-    pub const MAX: Self =
+    pub(crate) const MAX: Self =
         Self::from_hms_nanos_ranged(Hours::MAX, Minutes::MAX, Seconds::MAX, Nanoseconds::MAX);
 
+    
     
     
     
@@ -302,7 +312,9 @@ impl Time {
             ensure_ranged!(Nanoseconds: nanosecond),
         ))
     }
+    
 
+    
     
     
     
@@ -423,7 +435,7 @@ impl Time {
     
     
     pub const fn millisecond(self) -> u16 {
-        (self.nanosecond.get() / Nanosecond::per(Millisecond)) as u16
+        (self.nanosecond.get() / Nanosecond::per(Millisecond)) as _
     }
 
     
@@ -451,7 +463,9 @@ impl Time {
     pub const fn nanosecond(self) -> u32 {
         self.nanosecond.get()
     }
+    
 
+    
     
     
     pub(crate) const fn adjusting_add(self, duration: Duration) -> (DateAdjustment, Self) {
@@ -464,10 +478,10 @@ impl Time {
             self.hour.get() as i8 + (duration.whole_hours() % Hour::per(Day) as i64) as i8;
         let mut date_adjustment = DateAdjustment::None;
 
-        cascade!(nanoseconds in 0..Nanosecond::per(Second) as i32 => seconds);
-        cascade!(seconds in 0..Second::per(Minute) as i8 => minutes);
-        cascade!(minutes in 0..Minute::per(Hour) as i8 => hours);
-        if hours >= Hour::per(Day) as i8 {
+        cascade!(nanoseconds in 0..Nanosecond::per(Second) as _ => seconds);
+        cascade!(seconds in 0..Second::per(Minute) as _ => minutes);
+        cascade!(minutes in 0..Minute::per(Hour) as _ => hours);
+        if hours >= Hour::per(Day) as _ {
             hours -= Hour::per(Day) as i8;
             date_adjustment = DateAdjustment::Next;
         } else if hours < 0 {
@@ -480,10 +494,10 @@ impl Time {
             
             unsafe {
                 Self::__from_hms_nanos_unchecked(
-                    hours as u8,
-                    minutes as u8,
-                    seconds as u8,
-                    nanoseconds as u32,
+                    hours as _,
+                    minutes as _,
+                    seconds as _,
+                    nanoseconds as _,
                 )
             },
         )
@@ -501,10 +515,10 @@ impl Time {
             self.hour.get() as i8 - (duration.whole_hours() % Hour::per(Day) as i64) as i8;
         let mut date_adjustment = DateAdjustment::None;
 
-        cascade!(nanoseconds in 0..Nanosecond::per(Second) as i32 => seconds);
-        cascade!(seconds in 0..Second::per(Minute) as i8 => minutes);
-        cascade!(minutes in 0..Minute::per(Hour) as i8 => hours);
-        if hours >= Hour::per(Day) as i8 {
+        cascade!(nanoseconds in 0..Nanosecond::per(Second) as _ => seconds);
+        cascade!(seconds in 0..Second::per(Minute) as _ => minutes);
+        cascade!(minutes in 0..Minute::per(Hour) as _ => hours);
+        if hours >= Hour::per(Day) as _ {
             hours -= Hour::per(Day) as i8;
             date_adjustment = DateAdjustment::Next;
         } else if hours < 0 {
@@ -517,10 +531,10 @@ impl Time {
             
             unsafe {
                 Self::__from_hms_nanos_unchecked(
-                    hours as u8,
-                    minutes as u8,
-                    seconds as u8,
-                    nanoseconds as u32,
+                    hours as _,
+                    minutes as _,
+                    seconds as _,
+                    nanoseconds as _,
                 )
             },
         )
@@ -565,9 +579,9 @@ impl Time {
             - ((duration.as_secs() / Second::per(Hour) as u64) % Hour::per(Day) as u64) as i8;
         let mut is_previous_day = false;
 
-        cascade!(nanosecond in 0..Nanosecond::per(Second) as i32 => second);
-        cascade!(second in 0..Second::per(Minute) as i8 => minute);
-        cascade!(minute in 0..Minute::per(Hour) as i8 => hour);
+        cascade!(nanosecond in 0..Nanosecond::per(Second) as _ => second);
+        cascade!(second in 0..Second::per(Minute) as _ => minute);
+        cascade!(minute in 0..Minute::per(Hour) as _ => hour);
         if hour < 0 {
             hour += Hour::per(Day) as i8;
             is_previous_day = true;
@@ -578,15 +592,17 @@ impl Time {
             
             unsafe {
                 Self::__from_hms_nanos_unchecked(
-                    hour as u8,
-                    minute as u8,
-                    second as u8,
-                    nanosecond as u32,
+                    hour as _,
+                    minute as _,
+                    second as _,
+                    nanosecond as _,
                 )
             },
         )
     }
+    
 
+    
     
     
     
@@ -645,8 +661,6 @@ impl Time {
     
     
     
-    
-    
     #[must_use = "This method does not mutate the original `Time`."]
     pub const fn replace_millisecond(
         mut self,
@@ -657,8 +671,6 @@ impl Time {
         Ok(self)
     }
 
-    
-    
     
     
     
@@ -689,8 +701,6 @@ impl Time {
     
     
     
-    
-    
     #[must_use = "This method does not mutate the original `Time`."]
     pub const fn replace_nanosecond(
         mut self,
@@ -699,14 +709,16 @@ impl Time {
         self.nanosecond = ensure_ranged!(Nanoseconds: nanosecond);
         Ok(self)
     }
+    
 }
+
 
 #[cfg(feature = "formatting")]
 impl Time {
     
     pub fn format_into(
         self,
-        output: &mut (impl io::Write + ?Sized),
+        output: &mut impl io::Write,
         format: &(impl Formattable + ?Sized),
     ) -> Result<usize, error::Format> {
         format.format_into(output, None, Some(self), None)
@@ -824,6 +836,8 @@ impl fmt::Debug for Time {
     }
 }
 
+
+
 impl Add<Duration> for Time {
     type Output = Self;
 
@@ -935,3 +949,4 @@ impl Sub for Time {
         unsafe { Duration::new_unchecked(seconds, nanoseconds) }
     }
 }
+
