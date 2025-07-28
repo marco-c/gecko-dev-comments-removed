@@ -149,10 +149,10 @@ struct arena_chunk_map_t {
 
 struct arena_chunk_t {
   
-  arena_t* arena;
+  arena_t* mArena;
 
   
-  RedBlackTreeNode<arena_chunk_t> link_dirty;
+  RedBlackTreeNode<arena_chunk_t> mLinkDirty;
 
 #ifdef MALLOC_DOUBLE_PURGE
   
@@ -161,20 +161,20 @@ struct arena_chunk_t {
   
   
   
-  mozilla::DoublyLinkedListElement<arena_chunk_t> chunks_madvised_elem;
+  mozilla::DoublyLinkedListElement<arena_chunk_t> mChunksMavisedElim;
 #endif
 
   
   
-  size_t ndirty = 0;
+  size_t mNumDirty = 0;
 
   bool mIsPurging = false;
   bool mDying = false;
 
   
-  arena_chunk_map_t map[];  
+  arena_chunk_map_t mPageMap[];  
 
-  explicit arena_chunk_t(arena_t* aArena) : arena(aArena) {}
+  explicit arena_chunk_t(arena_t* aArena) : mArena(aArena) {}
 
   bool IsEmpty();
 };
