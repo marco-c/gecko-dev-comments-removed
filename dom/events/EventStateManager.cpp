@@ -6724,8 +6724,22 @@ void EventStateManager::NativeAnonymousContentRemoved(nsIContent* aContent) {
   }
 }
 
+void EventStateManager::ContentInserted(nsIContent* aChild,
+                                        const ContentInsertInfo& aInfo) {
+  if (nsFocusManager* fm = nsFocusManager::GetFocusManager()) {
+    fm->ContentInserted(aChild, aInfo);
+  }
+}
+void EventStateManager::ContentAppended(nsIContent* aFirstNewContent,
+                                        const ContentAppendInfo& aInfo) {
+  if (nsFocusManager* fm = nsFocusManager::GetFocusManager()) {
+    fm->ContentAppended(aFirstNewContent, aInfo);
+  }
+}
+
 void EventStateManager::ContentRemoved(Document* aDocument,
-                                       nsIContent* aContent) {
+                                       nsIContent* aContent,
+                                       const ContentRemoveInfo& aInfo) {
   
 
 
@@ -6749,7 +6763,7 @@ void EventStateManager::ContentRemoved(Document* aDocument,
   
   
   if (RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager()) {
-    fm->ContentRemoved(aDocument, aContent);
+    fm->ContentRemoved(aDocument, aContent, aInfo);
   }
 
   RemoveNodeFromChainIfNeeded(ElementState::HOVER, aContent, true);
@@ -6762,7 +6776,9 @@ void EventStateManager::ContentRemoved(Document* aDocument,
     sDragOverContent = nullptr;
   }
 
-  PointerEventHandler::ReleaseIfCaptureByDescendant(aContent);
+  if (!aInfo.mNewParent) {
+    PointerEventHandler::ReleaseIfCaptureByDescendant(aContent);
+  }
 
   if (mMouseEnterLeaveHelper) {
     const bool hadMouseOutTarget =

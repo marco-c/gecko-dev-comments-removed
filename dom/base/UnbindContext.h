@@ -25,9 +25,16 @@ struct MOZ_STACK_CLASS UnbindContext final {
   explicit UnbindContext(nsINode& aRoot)
       : mRoot(aRoot), mOriginalParent(aRoot.GetParentNode()) {}
 
+  void SetIsMove(bool aIsMove) { mIsMove = aIsMove; }
+
+  bool IsMove() const { return mIsMove; }
+
  private:
   nsINode& mRoot;
   nsINode* const mOriginalParent;
+
+  
+  bool mIsMove = false;
 };
 
 }  

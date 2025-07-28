@@ -1003,8 +1003,11 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
+
+
   virtual void InsertChildBefore(nsIContent* aKid, nsIContent* aBeforeThis,
-                                 bool aNotify, mozilla::ErrorResult& aRv);
+                                 bool aNotify, mozilla::ErrorResult& aRv,
+                                 nsINode* aOldParent = nullptr);
 
   
 
@@ -1051,8 +1054,11 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
+
+
   virtual void RemoveChildNode(nsIContent* aKid, bool aNotify,
-                               const BatchRemovalState* = nullptr);
+                               const BatchRemovalState* = nullptr,
+                               nsINode* aNewParent = nullptr);
 
   
 
@@ -2412,6 +2418,9 @@ class nsINode : public mozilla::dom::EventTarget {
   MOZ_CAN_RUN_SCRIPT void ReplaceChildren(
       const Sequence<OwningNodeOrString>& aNodes, ErrorResult& aRv);
   MOZ_CAN_RUN_SCRIPT void ReplaceChildren(nsINode* aNode, ErrorResult& aRv);
+
+  MOZ_CAN_RUN_SCRIPT void MoveBefore(nsINode& aNode, nsINode* aChild,
+                                     ErrorResult& aRv);
 
   void GetBoxQuads(const BoxQuadOptions& aOptions,
                    nsTArray<RefPtr<DOMQuad>>& aResult, CallerType aCallerType,

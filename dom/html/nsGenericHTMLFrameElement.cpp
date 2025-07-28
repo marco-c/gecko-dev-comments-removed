@@ -8,6 +8,7 @@
 
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLIFrameElement.h"
+#include "mozilla/dom/UnbindContext.h"
 #include "mozilla/dom/XULFrameElement.h"
 #include "mozilla/dom/BrowserBridgeChild.h"
 #include "mozilla/dom/WindowProxyHolder.h"
@@ -182,7 +183,7 @@ nsresult nsGenericHTMLFrameElement::BindToTree(BindContext& aContext,
   nsresult rv = nsGenericHTMLElement::BindToTree(aContext, aParent);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (IsInComposedDoc()) {
+  if (IsInComposedDoc() && !mFrameLoader) {
     NS_ASSERTION(!nsContentUtils::IsSafeToRunScript(),
                  "Missing a script blocker!");
 
@@ -199,7 +200,7 @@ nsresult nsGenericHTMLFrameElement::BindToTree(BindContext& aContext,
 }
 
 void nsGenericHTMLFrameElement::UnbindFromTree(UnbindContext& aContext) {
-  if (mFrameLoader) {
+  if (mFrameLoader && !aContext.IsMove()) {
     
     
     
