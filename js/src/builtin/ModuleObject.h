@@ -346,6 +346,22 @@ constexpr uint32_t ASYNC_EVALUATING_POST_ORDER_CLEARED = 0;
 
 
 
+
+
+
+
+
+
+
+
+using LoadedModuleMap =
+    GCHashMap<HeapPtr<JSObject*>, HeapPtr<ModuleObject*>,
+              StableCellHasher<HeapPtr<JSObject*>>, SystemAllocPolicy>;
+
+
+
+
+
 class ModuleObject : public NativeObject {
  public:
   
@@ -437,6 +453,8 @@ class ModuleObject : public NativeObject {
   ModuleObject* getCycleRoot() const;
   bool hasCyclicModuleFields() const;
   bool hasSyntheticModuleFields() const;
+  LoadedModuleMap& loadedModules();
+  const LoadedModuleMap& loadedModules() const;
 
   static void onTopLevelEvaluationFinished(ModuleObject* module);
 
