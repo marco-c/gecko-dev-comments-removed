@@ -12,7 +12,6 @@ import androidx.annotation.VisibleForTesting
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.Navigation
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.findNavController
 import kotlinx.coroutines.CoroutineDispatcher
@@ -222,15 +221,6 @@ class InstalledAddonDetailsFragment : Fragment() {
                                 it.incognito != Addon.Incognito.NOT_ALLOWED && it.isAllowedInPrivateBrowsing()
                             binding.settings.isVisible = shouldSettingsBeVisible()
                             enableButtons()
-                            context?.let {
-                                showSnackBar(
-                                    binding.root,
-                                    getString(
-                                        R.string.mozac_feature_addons_successfully_enabled,
-                                        addon.translateName(it),
-                                    ),
-                                )
-                            }
                         }
                     },
                     onError = {
@@ -260,15 +250,6 @@ class InstalledAddonDetailsFragment : Fragment() {
                             switch.isClickable = true
                             privateBrowsingSwitch.isVisible = it.isEnabled()
                             enableButtons()
-                            context?.let {
-                                showSnackBar(
-                                    binding.root,
-                                    getString(
-                                        R.string.mozac_feature_addons_successfully_disabled,
-                                        addon.translateName(it),
-                                    ),
-                                )
-                            }
                         }
                     },
                     onError = {
@@ -364,7 +345,7 @@ class InstalledAddonDetailsFragment : Fragment() {
             )
 
             // Send user to the newly open tab.
-            Navigation.findNavController(it).navigate(
+            it.findNavController().navigate(
                 InstalledAddonDetailsFragmentDirections.actionGlobalBrowser(null),
             )
         }
@@ -392,7 +373,7 @@ class InstalledAddonDetailsFragment : Fragment() {
                     InstalledAddonDetailsFragmentDirections
                         .actionInstalledAddonFragmentToAddonInternalSettingsFragment(addon)
                 }
-                Navigation.findNavController(this).navigate(directions)
+                this.findNavController().navigate(directions)
             }
         }
     }
@@ -403,7 +384,7 @@ class InstalledAddonDetailsFragment : Fragment() {
                 InstalledAddonDetailsFragmentDirections.actionInstalledAddonFragmentToAddonDetailsFragment(
                     addon,
                 )
-            Navigation.findNavController(binding.root).navigate(directions)
+            binding.root.findNavController().navigate(directions)
         }
     }
 
@@ -413,7 +394,7 @@ class InstalledAddonDetailsFragment : Fragment() {
                 InstalledAddonDetailsFragmentDirections.actionInstalledAddonFragmentToAddonPermissionsDetailsFragment(
                     addon,
                 )
-            Navigation.findNavController(binding.root).navigate(directions)
+            binding.root.findNavController().navigate(directions)
         }
     }
 
@@ -425,15 +406,6 @@ class InstalledAddonDetailsFragment : Fragment() {
                 onSuccess = {
                     runIfFragmentIsAttached {
                         setAllInteractiveViewsClickable(binding, true)
-                        context?.let {
-                            showSnackBar(
-                                binding.root,
-                                getString(
-                                    R.string.mozac_feature_addons_successfully_uninstalled,
-                                    addon.translateName(it),
-                                ),
-                            )
-                        }
                         binding.root.findNavController().popBackStack()
                     }
                 },
