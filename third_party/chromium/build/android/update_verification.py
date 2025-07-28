@@ -28,8 +28,6 @@ import argparse
 import logging
 import sys
 
-
-from six.moves import input  
 import devil_chromium
 
 from devil.android import apk_helper

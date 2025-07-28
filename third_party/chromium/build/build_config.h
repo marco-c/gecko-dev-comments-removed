@@ -49,10 +49,17 @@
 
 
 
+
+
 #ifndef BUILD_BUILD_CONFIG_H_
 #define BUILD_BUILD_CONFIG_H_
 
 #include "build/buildflag.h"  
+
+
+
+
+
 
 
 #if defined(__native_client__)
@@ -71,6 +78,12 @@
 
 #if defined(TARGET_OS_MACCATALYST) && TARGET_OS_MACCATALYST
 #define OS_IOS_MACCATALYST
+#endif  
+#if defined(TARGET_OS_VISION) && TARGET_OS_VISION
+#define OS_IOS_VISION 1
+#endif  
+#if defined(TARGET_OS_WATCH) && TARGET_OS_WATCH
+#define OS_IOS_WATCH 1
 #endif  
 #else
 #define OS_MAC 1
@@ -192,6 +205,18 @@
 #define BUILDFLAG_INTERNAL_IS_IOS_MACCATALYST() (1)
 #else
 #define BUILDFLAG_INTERNAL_IS_IOS_MACCATALYST() (0)
+#endif
+
+#if defined(OS_IOS_VISION)
+#define BUILDFLAG_INTERNAL_IS_IOS_VISION() (1)
+#else
+#define BUILDFLAG_INTERNAL_IS_IOS_VISION() (0)
+#endif
+
+#if defined(OS_IOS_WATCH)
+#define BUILDFLAG_INTERNAL_IS_IOS_WATCH() (1)
+#else
+#define BUILDFLAG_INTERNAL_IS_IOS_WATCH() (0)
 #endif
 
 #if defined(OS_LINUX)
@@ -335,16 +360,16 @@
 #define ARCH_CPU_32_BITS 1
 #define ARCH_CPU_BIG_ENDIAN 1
 #endif
-#elif defined(__loongarch32)
-#define ARCH_CPU_LOONG_FAMILY 1
-#define ARCH_CPU_LOONG32 1
-#define ARCH_CPU_32_BITS 1
+#elif defined(__loongarch__)
+#define ARCH_CPU_LOONGARCH_FAMILY 1
 #define ARCH_CPU_LITTLE_ENDIAN 1
-#elif defined(__loongarch64)
-#define ARCH_CPU_LOONG_FAMILY 1
-#define ARCH_CPU_LOONG64 1
+#if __loongarch_grlen == 64
+#define ARCH_CPU_LOONGARCH64 1
 #define ARCH_CPU_64_BITS 1
-#define ARCH_CPU_LITTLE_ENDIAN 1
+#else
+#define ARCH_CPU_LOONGARCH32 1
+#define ARCH_CPU_32_BITS 1
+#endif
 #elif defined(__riscv) && (__riscv_xlen == 64)
 #define ARCH_CPU_RISCV_FAMILY 1
 #define ARCH_CPU_RISCV64 1
@@ -365,19 +390,19 @@
 
 
 #if defined(OS_WIN)
-#define WCHAR_T_IS_UTF16
+#define WCHAR_T_IS_16_BIT
 #elif defined(OS_FUCHSIA)
-#define WCHAR_T_IS_UTF32
+#define WCHAR_T_IS_32_BIT
 #elif defined(OS_POSIX) && defined(COMPILER_GCC) && defined(__WCHAR_MAX__) && \
     (__WCHAR_MAX__ == 0x7fffffff || __WCHAR_MAX__ == 0xffffffff)
-#define WCHAR_T_IS_UTF32
+#define WCHAR_T_IS_32_BIT
 #elif defined(OS_POSIX) && defined(COMPILER_GCC) && defined(__WCHAR_MAX__) && \
     (__WCHAR_MAX__ == 0x7fff || __WCHAR_MAX__ == 0xffff)
 
 
 
 
-#define WCHAR_T_IS_UTF16
+#define WCHAR_T_IS_16_BIT
 #else
 #error Please add support for your compiler in build/build_config.h
 #endif

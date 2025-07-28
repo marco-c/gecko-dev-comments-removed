@@ -2,6 +2,10 @@
 
 
 
+chromium::import! {
+    "//chromium/build/rust/tests/test_aliased_deps";
+}
+
 fn main() {
     test_aliased_deps::other_name::hello_world();
 }

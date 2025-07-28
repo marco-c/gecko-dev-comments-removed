@@ -1,0 +1,9 @@
+
+
+
+
+extern "C" void print_foo_bar();
+
+int main() {
+  print_foo_bar();
+}

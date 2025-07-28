@@ -7,9 +7,7 @@ package test;
 import android.app.Application;
 
 
-
-
-public class NewApiTest extends Application {
+public class NewApiLintTest extends Application {
     public String testTriggerNewApiCheck() {
         
         return getApplicationContext().getAttributionTag();

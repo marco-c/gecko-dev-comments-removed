@@ -114,7 +114,7 @@ def main():
   extra_gn_args = [
       'treat_warnings_as_errors = true',
       
-      'use_goma = false',
+      'use_remoteexec = false',
   ]
   _copy_and_append_gn_args(
       options.gn_args_path, out_gn_args_path,

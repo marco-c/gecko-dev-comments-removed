@@ -5,8 +5,6 @@
 package org.chromium.build.gtest_apk;
 
 
-
-
 public class TestStatusIntent {
     public static final String ACTION_TEST_RUN_STARTED =
             "org.chromium.test.reporter.TestStatusReporter.TEST_RUN_STARTED";

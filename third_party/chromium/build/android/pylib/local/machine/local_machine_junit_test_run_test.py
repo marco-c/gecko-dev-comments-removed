@@ -6,83 +6,44 @@
 
 
 
-import os
 import unittest
 
 from pylib.local.machine import local_machine_junit_test_run
-from py_utils import tempfile_ext
-from mock import patch  
 
 
 class LocalMachineJunitTestRunTests(unittest.TestCase):
-  def testAddPropertiesJar(self):
-    with tempfile_ext.NamedTemporaryDirectory() as temp_dir:
-      apk = 'resource_apk'
-      cmd_list = []
-      local_machine_junit_test_run.AddPropertiesJar(cmd_list, temp_dir, apk)
-      self.assertEqual(cmd_list, [])
-      cmd_list = [['test1']]
-      local_machine_junit_test_run.AddPropertiesJar(cmd_list, temp_dir, apk)
-      self.assertEqual(
-          cmd_list[0],
-          ['test1', '--classpath',
-           os.path.join(temp_dir, 'properties.jar')])
-      cmd_list = [['test1'], ['test2']]
-      local_machine_junit_test_run.AddPropertiesJar(cmd_list, temp_dir, apk)
-      self.assertEqual(len(cmd_list[0]), 3)
-      self.assertEqual(
-          cmd_list[1],
-          ['test2', '--classpath',
-           os.path.join(temp_dir, 'properties.jar')])
-
-  @patch('multiprocessing.cpu_count')
-  def testChooseNumOfShards(self, mock_cpu_count):
-    mock_cpu_count.return_value = 36
+  def testGroupTests(self):
     
-    test_shards = 1
-    test_classes = [1] * 50
-    shards = local_machine_junit_test_run.ChooseNumOfShards(
-        test_classes, test_shards)
-    self.assertEqual(1, shards)
-
     
-    test_shards = 4
-    shards = local_machine_junit_test_run.ChooseNumOfShards(
-        test_classes, test_shards)
-    self.assertEqual(4, shards)
-
-    
-    test_classes = [1] * 20
-    test_shards = 8
-    shards = local_machine_junit_test_run.ChooseNumOfShards(
-        test_classes, test_shards)
-    self.assertEqual(2, shards)
-
-  def testGroupTestsForShard(self):
-    test_classes = []
-    results = local_machine_junit_test_run.GroupTestsForShard(1, test_classes)
-    self.assertDictEqual(results, {0: []})
-
-    test_classes = ['dir/test.class'] * 5
-    results = local_machine_junit_test_run.GroupTestsForShard(1, test_classes)
-    self.assertDictEqual(results, {0: ['dir.test*'] * 5})
-
-    test_classes = ['dir/test.class'] * 5
-    results = local_machine_junit_test_run.GroupTestsForShard(2, test_classes)
-    ans_dict = {
-        0: ['dir.test*'] * 3,
-        1: ['dir.test*'] * 2,
+    MAX_TESTS_PER_JOB = 3
+    json_config = {
+        'configs': {
+            'config1': {
+                'class1': ['m1', 'm2'],
+                'class2': ['m1', 'm2'],
+                'class3': ['m1', 'm2'],
+            },
+            'config2': {
+                'class1': ['m3', 'm4', 'm5'],
+            },
+        }
     }
-    self.assertDictEqual(results, ans_dict)
+    actual = local_machine_junit_test_run.GroupTests(json_config,
+                                                     MAX_TESTS_PER_JOB)
 
-    test_classes = ['a10 warthog', 'b17', 'SR71']
-    results = local_machine_junit_test_run.GroupTestsForShard(3, test_classes)
-    ans_dict = {
-        0: ['a10 warthog'],
-        1: ['b17'],
-        2: ['SR71'],
-    }
-    self.assertDictEqual(results, ans_dict)
+    expected = [
+        local_machine_junit_test_run._TestGroup(config='config1',
+                                                methods_by_class={
+                                                    'class1': ['m1', 'm2'],
+                                                    'class2': ['m1', 'm2']
+                                                }),
+        local_machine_junit_test_run._TestGroup(
+            config='config1', methods_by_class={'class3': ['m1', 'm2']}),
+        local_machine_junit_test_run._TestGroup(
+            config='config2', methods_by_class={'class1': ['m3', 'm4', 'm5']}),
+    ]
+    self.assertEqual(expected, actual)
+
 
 
 if __name__ == '__main__':

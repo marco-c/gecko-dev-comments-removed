@@ -15,7 +15,6 @@ import signal
 import socket
 import sys
 import tempfile
-import six
 
 
 
@@ -35,8 +34,6 @@ from pylib.results import json_results
 sys.path.insert(0, os.path.join(CHROMIUM_SRC_PATH, 'build', 'util'))
 
 from lib.results import result_sink  
-
-assert not six.PY2, 'Py2 not supported for this file.'
 
 import subprocess  
 
@@ -60,6 +57,7 @@ SYSTEM_LOG_LOCATIONS = [
     '/var/log/chrome/',
     '/var/log/messages',
     '/var/log/ui/',
+    '/var/log/lacros/',
 ]
 
 TAST_DEBUG_DOC = 'https://bit.ly/2LgvIXz'
@@ -117,9 +115,13 @@ class RemoteTest:
           '--copy-on-write',
       ]
     else:
-      self._test_cmd += [
-          '--device', args.device if args.device else LAB_DUT_HOSTNAME
-      ]
+      if args.fetch_cros_hostname:
+        self._test_cmd += ['--device', get_cros_hostname()]
+      else:
+        self._test_cmd += [
+            '--device', args.device if args.device else LAB_DUT_HOSTNAME
+        ]
+
     if args.logs_dir:
       for log in SYSTEM_LOG_LOCATIONS:
         self._test_cmd += ['--results-src', log]
@@ -156,6 +158,14 @@ class RemoteTest:
     os.fchmod(fd, 0o755)
     with os.fdopen(fd, 'w') as f:
       f.write('\n'.join(script_contents) + '\n')
+    return tmp_path
+
+  def write_runtime_files_to_disk(self, runtime_files):
+    logging.info('Writing runtime files to disk.')
+    fd, tmp_path = tempfile.mkstemp(suffix='.txt', dir=self._path_to_outdir)
+    os.fchmod(fd, 0o755)
+    with os.fdopen(fd, 'w') as f:
+      f.write('\n'.join(runtime_files) + '\n')
     return tmp_path
 
   def run_test(self):
@@ -399,6 +409,9 @@ class TastTest(RemoteTest):
         
         
         artifacts = self.get_artifacts(test['outDir'])
+        html_artifact = debug_link
+        if result == base_test_result.ResultType.SKIP:
+          html_artifact = 'Test was skipped because: ' + test['skipReason']
         self._rdb_client.Post(
             test['name'],
             result,
@@ -407,7 +420,7 @@ class TastTest(RemoteTest):
             None,
             artifacts=artifacts,
             failure_reason=primary_error_message,
-            html_artifact=debug_link)
+            html_artifact=html_artifact)
 
     if self._rdb_client and self._logs_dir:
       
@@ -481,6 +494,10 @@ class GTestTest(RemoteTest):
   def __init__(self, args, unknown_args):
     super().__init__(args, unknown_args)
 
+    self._test_cmd = ['vpython3'] + self._test_cmd
+    if not args.clean:
+      self._test_cmd += ['--no-clean']
+
     self._test_exe = args.test_exe
     self._runtime_deps_path = args.runtime_deps_path
     self._vpython_dir = args.vpython_dir
@@ -489,6 +506,9 @@ class GTestTest(RemoteTest):
     self._env_vars = args.env_var
     self._stop_ui = args.stop_ui
     self._trace_dir = args.trace_dir
+    self._run_test_sudo_helper = args.run_test_sudo_helper
+    self._set_selinux_label = args.set_selinux_label
+    self._use_deployed_dbus_configs = args.use_deployed_dbus_configs
 
   @property
   def suite_name(self):
@@ -550,7 +570,8 @@ class GTestTest(RemoteTest):
       if not os.path.exists(vpython_path) or not os.path.exists(cpython_path):
         raise TestFormatError(
             '--vpython-dir must point to a dir with both '
-            'infra/3pp/tools/cpython3 and infra/tools/luci/vpython installed.')
+            'infra/3pp/tools/cpython3 and infra/tools/luci/vpython3 '
+            'installed.')
       vpython_spec_path = os.path.relpath(
           os.path.join(CHROMIUM_SRC_PATH, '.vpython3'), self._path_to_outdir)
       
@@ -577,12 +598,47 @@ class GTestTest(RemoteTest):
       ])
       test_invocation += ' --trace-dir=%s' % device_trace_dir
 
+    if self._run_test_sudo_helper:
+      device_test_script_contents.extend([
+          'TEST_SUDO_HELPER_PATH=$(mktemp)',
+          './test_sudo_helper.py --socket-path=${TEST_SUDO_HELPER_PATH} &',
+          'TEST_SUDO_HELPER_PID=$!'
+      ])
+      test_invocation += (
+          ' --test-sudo-helper-socket-path=${TEST_SUDO_HELPER_PATH}')
+
+    
+    
+    
+    if self._set_selinux_label:
+      for label_pair in self._set_selinux_label:
+        filename, label = label_pair.split('=', 1)
+        specfile = filename + '.specfile'
+        device_test_script_contents.extend([
+            'echo %s -- %s > %s' % (filename, label, specfile),
+            'setfiles -F %s %s' % (specfile, filename),
+        ])
+
+    
+    
+    if self._use_deployed_dbus_configs:
+      device_test_script_contents.extend([
+          'mount --bind ./dbus /opt/google/chrome/dbus',
+          'kill -s HUP $(pgrep dbus)',
+      ])
+
     if self._additional_args:
       test_invocation += ' %s' % ' '.join(self._additional_args)
 
     if self._stop_ui:
       device_test_script_contents += [
           'stop ui',
+      ]
+      
+      device_test_script_contents += [
+          'dbus-send --system --type=method_call'
+          ' --dest=org.chromium.PowerManager /org/chromium/PowerManager'
+          ' org.chromium.PowerManager.HandleUserActivity int32:0'
       ]
       
       
@@ -600,6 +656,34 @@ class GTestTest(RemoteTest):
       ]
 
     device_test_script_contents.append(test_invocation)
+    device_test_script_contents.append('TEST_RETURN_CODE=$?')
+
+    
+    
+    
+    if self._stop_ui:
+      device_test_script_contents += [
+          'start ui',
+      ]
+
+    
+    if self._run_test_sudo_helper:
+      device_test_script_contents.extend([
+          'pkill -P $TEST_SUDO_HELPER_PID',
+          'kill $TEST_SUDO_HELPER_PID',
+          'unlink ${TEST_SUDO_HELPER_PATH}',
+      ])
+
+    
+    if self._use_deployed_dbus_configs:
+      device_test_script_contents.extend([
+          'umount /opt/google/chrome/dbus',
+          'kill -s HUP $(pgrep dbus)',
+      ])
+
+    
+    
+    device_test_script_contents.append('exit $TEST_RETURN_CODE')
 
     self._on_device_script = self.write_test_script_to_disk(
         device_test_script_contents)
@@ -615,8 +699,9 @@ class GTestTest(RemoteTest):
                   os.path.join(self._path_to_outdir, self._vpython_dir)),
               CHROMIUM_SRC_PATH))
 
-    for f in runtime_files:
-      self._test_cmd.extend(['--files', f])
+    self._test_cmd.extend(
+        ['--files-from',
+         self.write_runtime_files_to_disk(runtime_files)])
 
     self._test_cmd += [
         '--',
@@ -689,9 +774,12 @@ def host_cmd(args, cmd_args):
         '--copy-on-write',
     ]
   else:
-    cros_run_test_cmd += [
-        '--device', args.device if args.device else LAB_DUT_HOSTNAME
-    ]
+    if args.fetch_cros_hostname:
+      cros_run_test_cmd += ['--device', get_cros_hostname()]
+    else:
+      cros_run_test_cmd += [
+          '--device', args.device if args.device else LAB_DUT_HOSTNAME
+      ]
   if args.verbose:
     cros_run_test_cmd.append('--debug')
   if args.flash:
@@ -741,6 +829,29 @@ def host_cmd(args, cmd_args):
 
   return subprocess.call(
       cros_run_test_cmd, stdout=sys.stdout, stderr=sys.stderr, env=test_env)
+
+
+def get_cros_hostname_from_bot_id(bot_id):
+  """Parse hostname from a chromeos-swarming bot id."""
+  for prefix in ['cros-', 'crossk-']:
+    if bot_id.startswith(prefix):
+      return bot_id[len(prefix):]
+  return bot_id
+
+
+def get_cros_hostname():
+  """Fetch bot_id from env var and parse hostname."""
+
+  
+  
+  bot_id = os.environ.get('SWARMING_BOT_ID')
+  if bot_id:
+    return get_cros_hostname_from_bot_id(bot_id)
+
+  logging.warning(
+      'Attempted to read from SWARMING_BOT_ID env var and it was'
+      ' not defined. Will set %s as device instead.', LAB_DUT_HOSTNAME)
+  return LAB_DUT_HOSTNAME
 
 
 def setup_env():
@@ -819,6 +930,11 @@ def add_common_args(*parsers):
         help='Will flash the device to the current SDK version before running '
         'the test.')
     parser.add_argument(
+        '--no-flash',
+        action='store_false',
+        dest='flash',
+        help='Will not flash the device before running the test.')
+    parser.add_argument(
         '--public-image',
         action='store_true',
         help='Will flash a public "full" image to the device.')
@@ -837,7 +953,11 @@ def add_common_args(*parsers):
         type=str,
         help='Hostname (or IP) of device to run the test on. This arg is not '
         'required if --use-vm is set.')
-
+    vm_or_device_group.add_argument(
+        '--fetch-cros-hostname',
+        action='store_true',
+        help='Will extract device hostname from the SWARMING_BOT_ID env var if '
+        'running on ChromeOS Swarming.')
 
 def main():
   parser = argparse.ArgumentParser()
@@ -874,7 +994,8 @@ def main():
   gtest_parser.add_argument(
       '--stop-ui',
       action='store_true',
-      help='Will stop the UI service in the device before running the test.')
+      help='Will stop the UI service in the device before running the test. '
+      'Also start the UI service after all tests are done.')
   gtest_parser.add_argument(
       '--trace-dir',
       type=str,
@@ -888,6 +1009,32 @@ def main():
       help='Env var to set on the device for the duration of the test. '
       'Expected format is "--env-var SOME_VAR_NAME some_var_value". Specify '
       'multiple times for more than one var.')
+  gtest_parser.add_argument(
+      '--run-test-sudo-helper',
+      action='store_true',
+      help='When set, will run test_sudo_helper before the test and stop it '
+      'after test finishes.')
+  gtest_parser.add_argument(
+      "--no-clean",
+      action="store_false",
+      dest="clean",
+      default=True,
+      help="Do not clean up the deployed files after running the test. "
+      "Only supported for --remote-cmd tests")
+  gtest_parser.add_argument(
+      '--set-selinux-label',
+      action='append',
+      default=[],
+      help='Set the selinux label for a file before running. The format is:\n'
+      '  --set-selinux-label=<filename>=<label>\n'
+      'So:\n'
+      '  --set-selinux-label=my_test=u:r:cros_foo_label:s0\n'
+      'You can specify it more than one time to set multiple files tags.')
+  gtest_parser.add_argument(
+      '--use-deployed-dbus-configs',
+      action='store_true',
+      help='When set, will bind mount deployed dbus config to chrome dbus dir '
+      'and ask dbus daemon to reload config before running tests.')
 
   
   
@@ -943,10 +1090,17 @@ def main():
 
   add_common_args(gtest_parser, tast_test_parser, host_cmd_parser)
   args, unknown_args = parser.parse_known_args()
+  
+  
+  
+  
+  verbose_flags = [a for a in sys.argv if a in ('-v', '--verbose')]
+  if verbose_flags:
+    unknown_args += verbose_flags[1:]
 
   logging.basicConfig(level=logging.DEBUG if args.verbose else logging.WARN)
 
-  if not args.use_vm and not args.device:
+  if not args.use_vm and not args.device and not args.fetch_cros_hostname:
     logging.warning(
         'The test runner is now assuming running in the lab environment, if '
         'this is unintentional, please re-invoke the test runner with the '

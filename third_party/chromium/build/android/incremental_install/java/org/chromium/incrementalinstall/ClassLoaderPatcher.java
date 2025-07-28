@@ -43,11 +43,9 @@ final class ClassLoaderPatcher {
     }
 
     
-
-
     @SuppressLint({
-            "SetWorldReadable",
-            "SetWorldWritable",
+        "SetWorldReadable",
+        "SetWorldWritable",
     })
     DexFile[] loadDexFiles(File dexDir, String packageName)
             throws ReflectiveOperationException, IOException {
@@ -134,8 +132,6 @@ final class ClassLoaderPatcher {
     }
 
     
-
-
     @SuppressLint("SetWorldReadable")
     void importNativeLibs(File libDir) throws ReflectiveOperationException, IOException {
         Log.i(TAG, "Importing native libraries from: " + libDir);
@@ -155,9 +151,10 @@ final class ClassLoaderPatcher {
     private void safeCopyAllFiles(File srcDir, File dstDir) throws IOException {
         if (!mIsPrimaryProcess) {
             
-            throw new RuntimeException("Incremental install does not work on Android M+ "
-                    + "with isolated processes. Build system should have removed this. "
-                    + "Please file a bug.");
+            throw new RuntimeException(
+                    "Incremental install does not work on Android M+ "
+                            + "with isolated processes. Build system should have removed this. "
+                            + "Please file a bug.");
         }
 
         
@@ -184,14 +181,16 @@ final class ClassLoaderPatcher {
     private void addNativeLibrarySearchPath(File nativeLibDir) throws ReflectiveOperationException {
         Object dexPathList = Reflect.getField(mClassLoader, "pathList");
         Object currentDirs = Reflect.getField(dexPathList, "nativeLibraryDirectories");
-        File[] newDirs = new File[] { nativeLibDir };
+        File[] newDirs = new File[] {nativeLibDir};
         
         if (currentDirs instanceof List) {
             List<File> dirsAsList = (List<File>) currentDirs;
             dirsAsList.add(0, nativeLibDir);
         } else {
             File[] dirsAsArray = (File[]) currentDirs;
-            Reflect.setField(dexPathList, "nativeLibraryDirectories",
+            Reflect.setField(
+                    dexPathList,
+                    "nativeLibraryDirectories",
                     Reflect.concatArrays(newDirs, newDirs, dirsAsArray));
         }
 
@@ -204,9 +203,11 @@ final class ClassLoaderPatcher {
             return;
         }
         Object[] additionalElements = makeNativePathElements(newDirs);
-        Reflect.setField(dexPathList, "nativeLibraryPathElements",
-                Reflect.concatArrays(nativeLibraryPathElements, additionalElements,
-                        nativeLibraryPathElements));
+        Reflect.setField(
+                dexPathList,
+                "nativeLibraryPathElements",
+                Reflect.concatArrays(
+                        nativeLibraryPathElements, additionalElements, nativeLibraryPathElements));
     }
 
     private static void copyChangedFiles(File srcDir, File dstDir) throws IOException {
@@ -228,17 +229,25 @@ final class ClassLoaderPatcher {
                 f.delete();
             }
         }
-        String msg = String.format(Locale.US,
-                "copyChangedFiles: %d of %d updated. %d stale files removed.", numUpdated,
-                srcFiles.length, numDeleted);
+        String msg =
+                String.format(
+                        Locale.US,
+                        "copyChangedFiles: %d of %d updated. %d stale files removed.",
+                        numUpdated,
+                        srcFiles.length,
+                        numDeleted);
         Log.i(TAG, msg);
     }
 
     @SuppressLint("SetWorldReadable")
     private static boolean copyIfModified(File src, File dest) throws IOException {
         long lastModified = src.lastModified();
-        if (dest.exists() && dest.lastModified() == lastModified) {
-            return false;
+        if (dest.exists()) {
+            if (dest.lastModified() == lastModified) {
+                return false;
+            }
+            
+            dest.delete();
         }
         Log.i(TAG, "Copying " + src + " -> " + dest);
         FileInputStream istream = new FileInputStream(src);
@@ -247,7 +256,8 @@ final class ClassLoaderPatcher {
         istream.close();
         ostream.close();
         dest.setReadable(true, false);
-        dest.setExecutable(true,  false);
+        dest.setWritable(false, false); 
+        dest.setExecutable(true, false);
         dest.setLastModified(lastModified);
         return true;
     }
@@ -288,8 +298,9 @@ final class ClassLoaderPatcher {
         for (int i = 0; i < files.length; ++i) {
             File file = files[i];
             
-            Object dexFile = Reflect.invokeMethod(
-                    clazz, "loadDexFile", file, optimizedDirectory, mClassLoader, ret);
+            Object dexFile =
+                    Reflect.invokeMethod(
+                            clazz, "loadDexFile", file, optimizedDirectory, mClassLoader, ret);
             Object dexElement;
             if (Build.VERSION.SDK_INT >= 26) {
                 dexElement = Reflect.newInstance(entryClazz, dexFile, file);

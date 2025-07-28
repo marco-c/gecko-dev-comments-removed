@@ -6,22 +6,23 @@
 
 import os
 import os.path
+import re
 import shutil
 import subprocess
 import sys
 import tempfile
 
 
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+
+import whole_archive
+
+
 LINKER_DRIVER_ARG_PREFIX = '-Wcrl,'
+LINKER_DRIVER_COMPILER_ARG_PREFIX = '-Wcrl,driver,'
 
 
 OBJECT_PATH_LTO = 'object_path_lto'
-
-
-
-
-
-
 
 
 
@@ -85,8 +86,6 @@ class LinkerDriver(object):
         Args:
             args: list of string, Arguments to the script.
         """
-        if len(args) < 2:
-            raise RuntimeError("Usage: linker_driver.py [linker-invocation]")
         self._args = args
 
         
@@ -101,20 +100,16 @@ class LinkerDriver(object):
             ('unstripped,', self.run_save_unstripped),
             ('strippath,', self.set_strip_path),
             ('strip,', self.run_strip),
-            ('clean_objects', self.run_clean_objects),
         ]
 
         
+        self._driver_path = None  
         self._install_name_tool_cmd = ['xcrun', 'install_name_tool']
         self._dsymutil_cmd = ['xcrun', 'dsymutil']
         self._strip_cmd = ['xcrun', 'strip']
 
         
         self._linker_output = None
-        
-        
-        self._object_path_lto_temp = None
-        
         
         
         self._object_path_lto = None
@@ -130,20 +125,41 @@ class LinkerDriver(object):
         linker_driver_actions = {}
         compiler_driver_args = []
         for index, arg in enumerate(self._args[1:]):
-            if arg.startswith(LINKER_DRIVER_ARG_PREFIX):
+            if arg.startswith(LINKER_DRIVER_COMPILER_ARG_PREFIX):
+                assert not self._driver_path
+                self._driver_path = arg[len(LINKER_DRIVER_COMPILER_ARG_PREFIX
+                                            ):]
+            elif arg.startswith(LINKER_DRIVER_ARG_PREFIX):
                 
                 driver_action = self._process_driver_arg(arg)
                 assert driver_action[0] not in linker_driver_actions
                 linker_driver_actions[driver_action[0]] = driver_action[1]
             else:
-                compiler_driver_args.append(arg)
+                
+                
+                
+                
+                BAD_RUSTC_ARGS = '-Wl,-plugin-opt=O[0-9],-plugin-opt=mcpu=.*'
+                if not re.match(BAD_RUSTC_ARGS, arg):
+                    compiler_driver_args.append(arg)
+
+        if not self._driver_path:
+            raise RuntimeError(
+                "Usage: linker_driver.py -Wcrl,driver,<compiler-driver> "
+                "[linker-args]...")
 
         if self._object_path_lto is not None:
             compiler_driver_args.append('-Wl,-object_path_lto,{}'.format(
-                self._object_path_lto))
+                os.path.relpath(self._object_path_lto.name)))
         if self._get_linker_output() is None:
             raise ValueError(
                 'Could not find path to linker output (-o or --output)')
+
+        
+        
+        
+        compiler_driver_args = whole_archive.wrap_with_whole_archive(
+            compiler_driver_args, is_apple=True)
 
         linker_driver_outputs = [self._get_linker_output()]
 
@@ -153,7 +169,8 @@ class LinkerDriver(object):
             env = os.environ.copy()
             env['ZERO_AR_DATE'] = '1'
             
-            subprocess.check_call(compiler_driver_args, env=env)
+            subprocess.check_call([self._driver_path] + compiler_driver_args,
+                                  env=env)
 
             
             
@@ -199,17 +216,8 @@ class LinkerDriver(object):
         
         
         if sub_arg == OBJECT_PATH_LTO:
-            self._object_path_lto_temp = tempfile.TemporaryDirectory(
+            self._object_path_lto = tempfile.TemporaryDirectory(
                 dir=os.getcwd())
-            self._object_path_lto = self._object_path_lto_temp.name
-            return (OBJECT_PATH_LTO, lambda: [])
-        elif sub_arg.startswith(OBJECT_PATH_LTO):
-            assert sub_arg[len(OBJECT_PATH_LTO):] == ',persist'
-            output = self._get_linker_output()
-            assert output
-            self._object_path_lto = output + '.lto_objects'
-            _remove_path(self._object_path_lto)
-            os.mkdir(self._object_path_lto)
             return (OBJECT_PATH_LTO, lambda: [])
 
         for driver_action in self._actions:
@@ -352,25 +360,6 @@ class LinkerDriver(object):
             No output - this step is run purely for its side-effect.
         """
         self._strip_cmd = [strip_path]
-        return []
-
-    def run_clean_objects(self, args_string):
-        """Linker driver action for -Wcrl,clean_objects,<arguments>.
-
-        For each argument, looks for a directory called "${argument}.lto_objects
-        and deletes it.
-
-        Args:
-            arguments: string, Comma-separated prefixes of LTO object
-            directories to clean up
-
-        Returns:
-            No output
-        """
-        for output in args_string.lstrip(',').split(','):
-            name = output + '.lto_objects'
-            assert os.path.isdir(name)
-            shutil.rmtree(name)
         return []
 
 

@@ -1,0 +1,9 @@
+
+
+
+package org.lsposed.hiddenapibypass.library;
+
+
+public class BuildConfig {
+    public static final boolean DEBUG = false;
+}

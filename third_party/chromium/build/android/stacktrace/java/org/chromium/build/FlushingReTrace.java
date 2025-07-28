@@ -36,61 +36,70 @@ public class FlushingReTrace {
     private static final String LINE_PARSE_REGEX =
             
             LOGCAT_PREFIX
-            + "(?:"
-            
-            
-            
-            
-            
-            + "(?:.*?(?::|\\bat)\\s+%c\\.%m\\s*\\(\\s*%s(?:\\s*:\\s*%l\\s*)?\\))|"
-            
-            
-            + "(?:.*?\\(\\s*%s(?:\\s*:\\s*%l\\s*)?\\)\\s*%c\\.%m)|"
-            
-            
-            + "(?:.*java\\.lang\\.NullPointerException.*[\"']%t\\s*%c\\.(?:%f|%m\\(%a\\))[\"'].*)|"
-            
-            + "(?:java\\.lang\\.VerifyError: %c)|"
-            
-            + "(?:java\\.lang\\.NoSuchFieldError: No instance field %f of type .*? in class L%C;)|"
-            
-            + "(?:.*?Object of type %c .*)|"
-            
-            + "(?:.*L%C;.*)|"
-            
-            + "(?:.*?%c#%m.*?)|"
-            
-            
-            + "(?:.* isTestClass for %c)|"
-            
-            + "(?:Caused by: %c:.*)|"
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            + "(?:.*?%c\\.%m)|"
-            + "(?:.*?\"%c\\.%m\".*)|"
-            + "(?:.*\\b(?:[Cc]lass|[Tt]ype)\\b.*?\"%c\".*)|"
-            + "(?:.*\\b(?:[Cc]lass|[Tt]ype)\\b.*?%c)|"
-            
-            + "(?:%c:.*)|"
-            
-            + "(?:%c)"
-            + ")";
+                    + "(?:"
+                    
+                    
+                    
+                    
+                    
+                    + "(?:.*?(?::|\\bat)\\s+%c\\.%m\\s*\\(\\s*%s(?:\\s*:\\s*%l\\s*)?\\))|"
+                    
+                    
+                    + "(?:.*?\\(\\s*%s(?:\\s*:\\s*%l\\s*)?\\)\\s*%c\\.%m)|"
+                    
+                    
+                    + "(?:.*java\\.lang\\.NullPointerException.*[\"']%t\\s*%c\\.(?:%f|%m\\(%a\\))[\"'].*)|"
+                    
+                    + "(?:java\\.lang\\.VerifyError: %c)|"
+                    
+                    
+                    + "(?:java\\.lang\\.NoSuchFieldError: No instance field %f of type .*? in class"
+                    + " L%C;)|"
+                    
+                    + "(?:.*?Object of type %c .*)|"
+                    
+                    
+                    + "(?:.*L%C;.*)|"
+                    
+                    + "(?:.*?%c#%m.*?)|"
+                    
+                    
+                    
+                    + "(?:.* isTestClass for %c)|"
+                    
+                    + "(?:Caused by: %c:.*)|"
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    + "(?:.*?%c\\.%m)|"
+                    + "(?:.*?\"%c\\.%m\".*)|"
+                    + "(?:.*\\b(?:[Cc]lass|[Tt]ype)\\b.*?\"%c\".*)|"
+                    + "(?:.*\\b(?:[Cc]lass|[Tt]ype)\\b.*?%c)|"
+                    
+                    + "(?:%c:.*)|"
+                    
+                    + "(?:%c)"
+                    + ")";
 
     private static void usage() {
         System.err.println("Usage: echo $OBFUSCATED_CLASS | java_deobfuscate Foo.apk.mapping");
         System.err.println("Usage: java_deobfuscate Foo.apk.mapping < foo.log");
-        System.err.println("Note: Deobfuscation of symbols outside the context of stack "
-                + "traces will work only when lines match the regular expression defined "
-                + "in FlushingReTrace.java.");
-        System.err.println("Also: Deobfuscation of method names without associated line "
-                + "numbers does not seem to work.");
+        System.err.println(
+                "Note: Deobfuscation of symbols outside the context of stack "
+                        + "traces will work only when lines match the regular expression defined "
+                        + "in FlushingReTrace.java.");
+        System.err.println(
+                "Also: Deobfuscation of method names without associated line "
+                        + "numbers does not seem to work.");
         System.exit(1);
     }
 
@@ -116,24 +125,26 @@ public class FlushingReTrace {
                             .setRetracedStackTraceConsumer(
                                     retraced -> retraced.forEach(System.out::println))
                             .setRegularExpression(LINE_PARSE_REGEX)
-                            .setStackTrace(new StackTraceSupplier() {
-                                final BufferedReader mReader = new BufferedReader(
-                                        new InputStreamReader(System.in, "UTF-8"));
+                            .setStackTrace(
+                                    new StackTraceSupplier() {
+                                        final BufferedReader mReader =
+                                                new BufferedReader(
+                                                        new InputStreamReader(System.in, "UTF-8"));
 
-                                @Override
-                                public List<String> get() {
-                                    try {
-                                        String line = mReader.readLine();
-                                        if (line == null) {
-                                            return null;
+                                        @Override
+                                        public List<String> get() {
+                                            try {
+                                                String line = mReader.readLine();
+                                                if (line == null) {
+                                                    return null;
+                                                }
+                                                return Collections.singletonList(line);
+                                            } catch (IOException e) {
+                                                e.printStackTrace();
+                                                return null;
+                                            }
                                         }
-                                        return Collections.singletonList(line);
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                        return null;
-                                    }
-                                }
-                            })
+                                    })
                             .build();
             Retrace.run(retraceCommand);
         } catch (IOException ex) {

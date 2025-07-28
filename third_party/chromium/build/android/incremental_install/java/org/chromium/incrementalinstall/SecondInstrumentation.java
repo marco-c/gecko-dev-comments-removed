@@ -7,6 +7,4 @@ package org.chromium.incrementalinstall;
 import android.app.Instrumentation;
 
 
-
-
 public final class SecondInstrumentation extends Instrumentation {}

@@ -2,10 +2,20 @@
 
 
 
-#include <stddef.h>
-#include <stdlib.h>
+#include <cstddef>
 
+#include "build/build_config.h"
+#include "build/rust/std/alias.h"
 #include "build/rust/std/immediate_crash.h"
+#include "partition_alloc/buildflags.h"
+
+#if PA_BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC)
+#include "partition_alloc/partition_alloc_constants.h"  
+#include "partition_alloc/shim/allocator_shim.h"        
+#endif
+
+
+
 
 
 
@@ -55,33 +65,98 @@
 
 extern "C" {
 
-void* __rdl_alloc(size_t, size_t);
-void __rdl_dealloc(void*);
-void* __rdl_realloc(void*, size_t, size_t, size_t);
-void* __rdl_alloc_zeroed(size_t, size_t);
+#ifdef COMPONENT_BUILD
+#if BUILDFLAG(IS_WIN)
+#define REMAP_ALLOC_ATTRIBUTES __declspec(dllexport) __attribute__((weak))
+#else
+#define REMAP_ALLOC_ATTRIBUTES \
+  __attribute__((visibility("default"))) __attribute__((weak))
+#endif
+#else
+#define REMAP_ALLOC_ATTRIBUTES __attribute__((weak))
+#endif  
 
-void* __attribute__((weak)) __rust_alloc(size_t a, size_t b) {
-  return __rdl_alloc(a, b);
+
+
+
+
+
+
+
+[[maybe_unused]]
+__attribute__((weak)) unsigned char __rust_no_alloc_shim_is_unstable;
+
+REMAP_ALLOC_ATTRIBUTES void* __rust_alloc(size_t size, size_t align) {
+#if !PA_BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC)
+  extern void* __rdl_alloc(size_t size, size_t align);
+  return __rdl_alloc(size, align);
+#else
+  
+  if (align > partition_alloc::internal::kMaxSupportedAlignment) {
+    return nullptr;
+  }
+
+  if (align <= alignof(std::max_align_t)) {
+    return allocator_shim::UncheckedAlloc(size);
+  } else {
+    return allocator_shim::UncheckedAlignedAlloc(size, align);
+  }
+#endif
 }
 
-void __attribute__((weak)) __rust_dealloc(void* a) {
-  __rdl_dealloc(a);
+REMAP_ALLOC_ATTRIBUTES void __rust_dealloc(void* p, size_t size, size_t align) {
+#if !PA_BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC)
+  extern void __rdl_dealloc(void* p, size_t size, size_t align);
+  __rdl_dealloc(p, size, align);
+#else
+  if (align <= alignof(std::max_align_t)) {
+    allocator_shim::UncheckedFree(p);
+  } else {
+    allocator_shim::UncheckedAlignedFree(p);
+  }
+#endif
 }
 
-void* __attribute__((weak))
-__rust_realloc(void* a, size_t b, size_t c, size_t d) {
-  return __rdl_realloc(a, b, c, d);
+REMAP_ALLOC_ATTRIBUTES void* __rust_realloc(void* p,
+                                            size_t old_size,
+                                            size_t align,
+                                            size_t new_size) {
+#if !PA_BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC)
+  extern void* __rdl_realloc(void* p, size_t old_size, size_t align,
+                             size_t new_size);
+  return __rdl_realloc(p, old_size, align, new_size);
+#else
+  if (align <= alignof(std::max_align_t)) {
+    return allocator_shim::UncheckedRealloc(p, new_size);
+  } else {
+    return allocator_shim::UncheckedAlignedRealloc(p, new_size, align);
+  }
+#endif
 }
 
-void* __attribute__((weak)) __rust_alloc_zeroed(size_t a, size_t b) {
-  return __rdl_alloc_zeroed(a, b);
+REMAP_ALLOC_ATTRIBUTES void* __rust_alloc_zeroed(size_t size, size_t align) {
+#if !PA_BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC)
+  extern void* __rdl_alloc_zeroed(size_t size, size_t align);
+  return __rdl_alloc_zeroed(size, align);
+#else
+  
+  
+  
+  void* p = __rust_alloc(size, align);
+  if (p) {
+    memset(p, 0, size);
+  }
+  return p;
+#endif
 }
 
-void __attribute__((weak)) __rust_alloc_error_handler(size_t a, size_t b) {
+REMAP_ALLOC_ATTRIBUTES void __rust_alloc_error_handler(size_t size,
+                                                       size_t align) {
+  NO_CODE_FOLDING();
   IMMEDIATE_CRASH();
 }
 
-extern const unsigned char __attribute__((weak))
-__rust_alloc_error_handler_should_panic = 0;
+REMAP_ALLOC_ATTRIBUTES extern const unsigned char
+    __rust_alloc_error_handler_should_panic = 0;
 
 }  

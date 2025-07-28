@@ -7,16 +7,20 @@ import re
 
 from pylib import constants
 
-
 _EXCLUSIONS = [
-    re.compile(r'.*OWNERS'),  
+    
+    re.compile(r'.*METADATA'),
+    re.compile(r'.*OWNERS'),
+    re.compile(r'.*\.md'),
     re.compile(r'.*\.crx'),  
-    re.compile(os.path.join('.*',
-                            r'\.git.*')),  
+    re.compile(r'.*/\.git.*'),  
     re.compile(r'.*\.so'),  
     re.compile(r'.*Mojo.*manifest\.json'),  
     re.compile(r'.*\.py'),  
     re.compile(r'.*\.apk'),  
+    re.compile(r'.*\.jar'),  
+    re.compile(r'.*\.crx'),  
+    re.compile(r'.*\.wpr'),  
     re.compile(r'.*lib.java/.*'),  
 
     
@@ -26,16 +30,15 @@ _EXCLUSIONS = [
     re.compile(r'.*external_extensions\.json'),
 
     
-    re.compile(r'.*jni_generator_tests'),
-
-    
     re.compile(r'.*snapshot_blob.*\.bin'),
-    re.compile(r'.*icudtl.bin'),
+    re.compile(r'.*icudtl\.bin'),
 
     
     re.compile(r'.*llvm-symbolizer'),
-    re.compile(r'.*md5sum_bin'),
-    re.compile(os.path.join('.*', 'development', 'scripts', 'stack')),
+    re.compile(r'.*md5sum_(?:bin|dist)'),
+    re.compile(r'.*/development/scripts/stack'),
+    re.compile(r'.*/build/android/pylib/symbols'),
+    re.compile(r'.*/build/android/stacktrace'),
 
     
     re.compile(r'.*build/android/stacktrace/.*'),
@@ -43,8 +46,12 @@ _EXCLUSIONS = [
     re.compile(r'.*third_party/proguard/.*'),
 
     
+    re.compile(r'.*/devtools-frontend/.*front_end/.*'),
+
+    
     re.compile(r'.*\.stamp'),
-    re.compile(r'.*.pak\.info'),
+    re.compile(r'.*\.pak\.info'),
+    re.compile(r'.*\.build_config.json'),
     re.compile(r'.*\.incremental\.json'),
 ]
 
@@ -56,7 +63,7 @@ def _FilterDataDeps(abs_host_files):
   return [p for p in abs_host_files if not any(r.match(p) for r in exclusions)]
 
 
-def DevicePathComponentsFor(host_path, output_directory):
+def DevicePathComponentsFor(host_path, output_directory=None):
   """Returns the device path components for a given host path.
 
   This returns the device path as a list of joinable path components,
@@ -93,6 +100,7 @@ def DevicePathComponentsFor(host_path, output_directory):
   Returns:
     A list of device path components.
   """
+  output_directory = output_directory or constants.GetOutDirectory()
   if (host_path.startswith(output_directory) and
       os.path.splitext(host_path)[1] == '.pak'):
     return [None, 'paks', os.path.basename(host_path)]
@@ -123,7 +131,8 @@ def GetDataDependencies(runtime_deps_path):
     return []
 
   with open(runtime_deps_path, 'r') as runtime_deps_file:
-    rel_host_files = [l.strip() for l in runtime_deps_file if l]
+    
+    rel_host_files = sorted({l.strip() for l in runtime_deps_file if l})
 
   output_directory = constants.GetOutDirectory()
   abs_host_files = [

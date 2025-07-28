@@ -7,6 +7,7 @@
 import argparse
 import pathlib
 import subprocess
+import shlex
 import os
 import sys
 import re
@@ -14,8 +15,8 @@ import re
 
 sys.path.append(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir,
-                 os.pardir, 'build', 'android', 'gyp'))
-from util import build_utils
+                 os.pardir, 'build'))
+import action_helpers
 
 
 
@@ -80,6 +81,8 @@ from util import build_utils
 
 
 
+
+FILE_RE = re.compile("[^:]+: (.+)")
 
 
 
@@ -89,11 +92,57 @@ def remove_lib_suffix_from_l_args(text):
   return text
 
 
+def verify_inputs(depline, sources, abs_build_root):
+  """Verify everything used by rustc (found in `depline`) was specified in the
+  GN build rule (found in `sources` or `inputs`).
+
+  TODO(danakj): This allows things in `sources` that were not actually used by
+  rustc since third-party packages sources need to be a union of all build
+  configs/platforms for simplicity in generating build rules. For first-party
+  code we could be more strict and reject things in `sources` that were not
+  consumed.
+  """
+
+  
+  def remove_prefix(text, prefix):
+    if text.startswith(prefix):
+      return text[len(prefix):]
+    return text
+
+  def normalize_path(p):
+    return os.path.relpath(os.path.normpath(remove_prefix(
+        p, abs_build_root))).replace('\\', '/')
+
+  
+  found_files = {}
+  m = FILE_RE.match(depline)
+  if m:
+    files = m.group(1)
+    found_files = {normalize_path(f): f for f in files.split()}
+  
+  missing_files = found_files.keys() - sources
+
+  if not missing_files:
+    return True
+
+  
+  
+  
+  
+  for file_files_key in missing_files:
+    gn_type = "sources" if file_files_key.endswith(".rs") else "inputs"
+    print(f'ERROR: file not in GN {gn_type}: {found_files[file_files_key]}',
+          file=sys.stderr)
+  return False
+
+
 def main():
   parser = argparse.ArgumentParser()
   parser.add_argument('--rustc', required=True, type=pathlib.Path)
-  parser.add_argument('--depfile', type=pathlib.Path)
-  parser.add_argument('--rsp', type=pathlib.Path)
+  parser.add_argument('--depfile', required=True, type=pathlib.Path)
+  parser.add_argument('--rsp', type=pathlib.Path, required=True)
+  parser.add_argument('--target-windows', action='store_true')
+  parser.add_argument('-v', action='store_true')
   parser.add_argument('args', metavar='ARG', nargs='+')
 
   args = parser.parse_args()
@@ -102,28 +151,39 @@ def main():
 
   ldflags_separator = remaining_args.index("LDFLAGS")
   rustenv_separator = remaining_args.index("RUSTENV", ldflags_separator)
+  
+  
+  try:
+    sources_separator = remaining_args.index("SOURCES", rustenv_separator)
+  except:
+    sources_separator = None
   rustc_args = remaining_args[:ldflags_separator]
   ldflags = remaining_args[ldflags_separator + 1:rustenv_separator]
-  rustenv = remaining_args[rustenv_separator + 1:]
+  rustenv = remaining_args[rustenv_separator + 1:sources_separator]
 
-  is_windows = os.name == 'nt'
+  abs_build_root = os.getcwd().replace('\\', '/') + '/'
+  is_windows = sys.platform == 'win32' or args.target_windows
 
   rustc_args.extend(["-Clink-arg=%s" % arg for arg in ldflags])
 
-  
-  if args.rsp:
-    with open(args.rsp) as rspfile:
-      rsp_args = [l.rstrip() for l in rspfile.read().split(' ') if l.rstrip()]
-    if is_windows:
-      
-      
-      rsp_args = [arg for arg in rsp_args if not arg.endswith("-Bdynamic")]
-      
-      
-      rsp_args = [remove_lib_suffix_from_l_args(arg) for arg in rsp_args]
-    with open(args.rsp, 'w') as rspfile:
-      rspfile.write("\n".join(rsp_args))
-    rustc_args.append(f'@{args.rsp}')
+  with open(args.rsp) as rspfile:
+    rsp_args = [l.rstrip() for l in rspfile.read().split(' ') if l.rstrip()]
+
+  sources_separator = rsp_args.index("SOURCES")
+  sources = set(rsp_args[sources_separator + 1:])
+  rsp_args = rsp_args[:sources_separator]
+
+  if is_windows:
+    
+    
+    rsp_args = [remove_lib_suffix_from_l_args(arg) for arg in rsp_args]
+  out_rsp = str(args.rsp) + ".rsp"
+  with open(out_rsp, 'w') as rspfile:
+    
+    
+    
+    rspfile.write("\n".join(rsp_args))
+  rustc_args.append(f'@{out_rsp}')
 
   env = os.environ.copy()
   fixed_env_vars = []
@@ -132,25 +192,38 @@ def main():
     env[k] = v
     fixed_env_vars.append(k)
 
-  r = subprocess.run([args.rustc, *rustc_args], env=env, check=False)
+  try:
+    if args.v:
+      print(' '.join(f'{k}={shlex.quote(v)}' for k, v in env.items()),
+            args.rustc, shlex.join(rustc_args))
+    r = subprocess.run([args.rustc, *rustc_args], env=env, check=False)
+  finally:
+    if not args.v:
+      os.remove(out_rsp)
   if r.returncode != 0:
     sys.exit(r.returncode)
 
-  
-  if args.depfile is not None:
+  final_depfile_lines = []
+  dirty = False
+  with open(args.depfile, encoding="utf-8") as d:
+    
+    
     env_dep_re = re.compile("# env-dep:(.*)=.*")
-    replacement_lines = []
-    dirty = False
-    with open(args.depfile, encoding="utf-8") as d:
-      for line in d:
-        m = env_dep_re.match(line)
-        if m and m.group(1) in fixed_env_vars:
-          dirty = True  
-        else:
-          replacement_lines.append(line)
-    if dirty:  
-      with build_utils.AtomicOutput(args.depfile) as output:
-        output.write("\n".join(replacement_lines).encode("utf-8"))
+    for line in d:
+      m = env_dep_re.match(line)
+      if m and m.group(1) in fixed_env_vars:
+        dirty = True  
+      else:
+        final_depfile_lines.append(line)
+
+  
+  for line in final_depfile_lines:
+    if not verify_inputs(line, sources, abs_build_root):
+      return 1
+
+  if dirty:  
+    with action_helpers.atomic_output(args.depfile) as output:
+      output.write("\n".join(final_depfile_lines).encode("utf-8"))
 
 
 if __name__ == '__main__':

@@ -5,6 +5,7 @@
 import contextlib
 import json
 import os
+import pathlib
 import socket
 
 
@@ -44,4 +45,9 @@ def MaybeRunCommand(name, argv, stamp_file, force):
               '$ build/android/fast_local_dev_server.py\n\n') from None
         return False
       raise e
+
+  
+  
+  
+  pathlib.Path(stamp_file).touch()
   return True

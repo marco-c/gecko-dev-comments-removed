@@ -2,10 +2,8 @@
 
 
 
+use std::alloc::{alloc, dealloc, Layout};
 
-
-
-#[allow(unsafe_op_in_unsafe_fn)]
 #[cxx::bridge]
 mod ffi {
     pub struct SomeStruct {
@@ -13,8 +11,12 @@ mod ffi {
     }
     extern "Rust" {
         fn say_hello();
-        fn allocate_via_rust() -> Box<SomeStruct>;
+        fn alloc_aligned();
         fn add_two_ints_via_rust(x: i32, y: i32) -> i32;
+        fn allocate_via_rust() -> Box<SomeStruct>;
+        fn allocate_huge_via_rust(size: usize, align: usize) -> bool;
+        fn allocate_zeroed_huge_via_rust(size: usize, align: usize) -> bool;
+        fn reallocate_huge_via_rust(size: usize, align: usize) -> bool;
     }
 }
 
@@ -23,6 +25,13 @@ pub fn say_hello() {
         "Hello, world - from a Rust library. Calculations suggest that 3+4={}",
         add_two_ints_via_rust(3, 4)
     );
+}
+
+pub fn alloc_aligned() {
+    let layout = unsafe { Layout::from_size_align_unchecked(1024, 512) };
+    let ptr = unsafe { alloc(layout) };
+    println!("Alloc aligned ptr: {:p}", ptr);
+    unsafe { dealloc(ptr, layout) };
 }
 
 #[test]
@@ -45,4 +54,46 @@ mod tests {
     fn test_in_mod() {
         
     }
+}
+
+
+pub fn allocate_huge_via_rust(size: usize, align: usize) -> bool {
+    let layout = std::alloc::Layout::from_size_align(size, align).unwrap();
+    let p = unsafe { std::alloc::alloc(layout) };
+    
+    
+    dbg!(p);
+    if !p.is_null() {
+        unsafe { std::alloc::dealloc(p, layout) };
+    }
+    !p.is_null()
+}
+
+
+pub fn allocate_zeroed_huge_via_rust(size: usize, align: usize) -> bool {
+    let layout = std::alloc::Layout::from_size_align(size, align).unwrap();
+    let p = unsafe { std::alloc::alloc_zeroed(layout) };
+    
+    
+    dbg!(p);
+    if !p.is_null() {
+        unsafe { std::alloc::dealloc(p, layout) };
+    }
+    !p.is_null()
+}
+
+
+pub fn reallocate_huge_via_rust(size: usize, align: usize) -> bool {
+    let layout = std::alloc::Layout::from_size_align(align, align).unwrap();
+    let p = unsafe { std::alloc::alloc(layout) };
+    assert!(!p.is_null());
+    let p = unsafe { std::alloc::realloc(p, layout, size) };
+    let layout = std::alloc::Layout::from_size_align(size, align).unwrap();
+    
+    
+    dbg!(p);
+    if !p.is_null() {
+        unsafe { std::alloc::dealloc(p, layout) };
+    }
+    !p.is_null()
 }

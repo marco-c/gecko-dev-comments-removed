@@ -8,8 +8,6 @@ import android.app.Instrumentation;
 import android.os.Bundle;
 
 
-
-
 public final class BootstrapInstrumentation extends Instrumentation {
     private final BootstrapApplication mApp;
 

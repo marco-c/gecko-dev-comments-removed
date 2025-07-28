@@ -2,6 +2,14 @@
 
 
 
+chromium::import! {
+    "//chromium/build/rust/tests/test_rust_static_library";
+    "//chromium/build/rust/tests/test_rust_static_library_non_standard_arrangement:lib" as
+        test_rust_static_library_non_standard_arrangement;
+}
+
+
+
 use test_rlib_crate::say_hello_from_crate;
 
 fn main() {

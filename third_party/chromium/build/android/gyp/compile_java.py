@@ -20,6 +20,8 @@ from util import build_utils
 from util import md5_check
 from util import jar_info_utils
 from util import server_utils
+import action_helpers  
+import zip_helpers
 
 _JAVAC_EXTRACTOR = os.path.join(build_utils.DIR_SOURCE_ROOT, 'third_party',
                                 'android_prebuilts', 'build_tools', 'common',
@@ -214,29 +216,29 @@ ERRORPRONE_WARNINGS_TO_ENABLE = [
 def ProcessJavacOutput(output, target_name):
   
   
-  deprecated_re = re.compile(
-      r'(Note: .* uses? or overrides? a deprecated API.)$')
+  deprecated_re = re.compile(r'Note: .* uses? or overrides? a deprecated API')
   unchecked_re = re.compile(
       r'(Note: .* uses? unchecked or unsafe operations.)$')
   recompile_re = re.compile(r'(Note: Recompile with -Xlint:.* for details.)$')
-
-  activity_re = re.compile(r'^(?P<prefix>\s*location: )class Activity$')
 
   def ApplyFilters(line):
     return not (deprecated_re.match(line) or unchecked_re.match(line)
                 or recompile_re.match(line))
 
-  def Elaborate(line):
-    if activity_re.match(line):
-      prefix = ' ' * activity_re.match(line).end('prefix')
-      return '{}\n{}Expecting a FragmentActivity? See {}'.format(
-          line, prefix, 'docs/ui/android/bytecode_rewriting.md')
-    return line
-
   output = build_utils.FilterReflectiveAccessJavaWarnings(output)
 
+  
+  if 'Unsafe is internal proprietary API' in output:
+    
+    
+    
+    
+    
+    output = re.sub(r'.*?Unsafe is internal proprietary API[\s\S]*?\^\n', '',
+                    output)
+    output = re.sub(r'\d+ warnings\n', '', output)
+
   lines = (l for l in output.split('\n') if ApplyFilters(l))
-  lines = (Elaborate(l) for l in lines)
 
   output_processor = javac_output_processor.JavacOutputProcessor(target_name)
   lines = output_processor.Process(lines)
@@ -251,24 +253,24 @@ def CreateJarFile(jar_path,
                   extra_classes_jar=None):
   """Zips files from compilation into a single jar."""
   logging.info('Start creating jar file: %s', jar_path)
-  with build_utils.AtomicOutput(jar_path) as f:
+  with action_helpers.atomic_output(jar_path) as f:
     with zipfile.ZipFile(f.name, 'w') as z:
-      build_utils.ZipDir(z, classes_dir)
+      zip_helpers.zip_directory(z, classes_dir)
       if service_provider_configuration_dir:
         config_files = build_utils.FindInDirectory(
             service_provider_configuration_dir)
         for config_file in config_files:
           zip_path = os.path.relpath(config_file,
                                      service_provider_configuration_dir)
-          build_utils.AddToZipHermetic(z, zip_path, src_path=config_file)
+          zip_helpers.add_to_zip_hermetic(z, zip_path, src_path=config_file)
 
       if additional_jar_files:
         for src_path, zip_path in additional_jar_files:
-          build_utils.AddToZipHermetic(z, zip_path, src_path=src_path)
+          zip_helpers.add_to_zip_hermetic(z, zip_path, src_path=src_path)
       if extra_classes_jar:
-        build_utils.MergeZips(
-            z, [extra_classes_jar],
-            path_transform=lambda p: p if p.endswith('.class') else None)
+        path_transform = lambda p: p if p.endswith('.class') else None
+        zip_helpers.merge_zips(z, [extra_classes_jar],
+                               path_transform=path_transform)
   logging.info('Completed jar file: %s', jar_path)
 
 
@@ -397,13 +399,22 @@ class _InfoFileContext:
     entries = self._Collect()
 
     logging.info('Writing info file: %s', output_path)
-    with build_utils.AtomicOutput(output_path, mode='wb') as f:
+    with action_helpers.atomic_output(output_path, mode='wb') as f:
       jar_info_utils.WriteJarInfoFile(f, entries, self._srcjar_files)
     logging.info('Completed info file: %s', output_path)
 
 
 def _OnStaleMd5(changes, options, javac_cmd, javac_args, java_files, kt_files):
   logging.info('Starting _OnStaleMd5')
+
+  
+  if (options.enable_errorprone and not options.skip_build_server
+      and server_utils.MaybeRunCommand(name=options.target_name,
+                                       argv=sys.argv,
+                                       stamp_file=options.jar_path,
+                                       force=options.use_build_server)):
+    return
+
   if options.enable_kythe_annotations:
     
     
@@ -418,6 +429,8 @@ def _OnStaleMd5(changes, options, javac_cmd, javac_args, java_files, kt_files):
         '--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED',
         '--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED',
         '--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED',
+        '--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED',
+        '--add-exports=jdk.internal.opt/jdk.internal.opt=ALL-UNNAMED',
         '-jar',
         _JAVAC_EXTRACTOR,
     ]
@@ -443,19 +456,29 @@ def _OnStaleMd5(changes, options, javac_cmd, javac_args, java_files, kt_files):
     shutil.rmtree(options.generated_dir, True)
     intermediates_out_dir = options.generated_dir
 
+    
+    
     jar_info_path = options.jar_path + '.info'
 
   
   
-  _RunCompiler(changes,
-               options,
-               javac_cmd + javac_args,
-               java_files,
-               options.jar_path,
-               kt_files=kt_files,
-               jar_info_path=jar_info_path,
-               intermediates_out_dir=intermediates_out_dir,
-               enable_partial_javac=True)
+  try:
+    _RunCompiler(changes,
+                 options,
+                 javac_cmd + javac_args,
+                 java_files,
+                 options.jar_path,
+                 kt_files=kt_files,
+                 jar_info_path=jar_info_path,
+                 intermediates_out_dir=intermediates_out_dir,
+                 enable_partial_javac=True)
+  except build_utils.CalledProcessError as e:
+    
+    
+    
+    sys.stderr.write(e.output)
+    sys.exit(1)
+
   logging.info('Completed all steps in _OnStaleMd5')
 
 
@@ -533,9 +556,9 @@ def _RunCompiler(changes,
                                            options.jar_info_exclude_globs)
 
     if intermediates_out_dir is None:
-      input_srcjars_dir = os.path.join(temp_dir, 'input_srcjars')
-    else:
-      input_srcjars_dir = os.path.join(intermediates_out_dir, 'input_srcjars')
+      intermediates_out_dir = temp_dir
+
+    input_srcjars_dir = os.path.join(intermediates_out_dir, 'input_srcjars')
 
     if java_srcjars:
       logging.info('Extracting srcjars to %s', input_srcjars_dir)
@@ -595,6 +618,15 @@ def _RunCompiler(changes,
     CreateJarFile(jar_path, classes_dir, service_provider_configuration,
                   options.additional_jar_files, options.kotlin_jar_path)
 
+    
+    
+    for root, _, files in os.walk(intermediates_out_dir):
+      for subpath in files:
+        p = os.path.join(root, subpath)
+        
+        if '_jni_java/' in p and not p.endswith('Jni.java'):
+          os.unlink(p)
+
     if save_info_file:
       info_file_context.Commit(jar_info_path)
 
@@ -607,7 +639,7 @@ def _RunCompiler(changes,
 
 def _ParseOptions(argv):
   parser = optparse.OptionParser()
-  build_utils.AddDepfileOption(parser)
+  action_helpers.add_depfile_arg(parser)
 
   parser.add_option('--target-name', help='Fully qualified GN target name.')
   parser.add_option('--skip-build-server',
@@ -652,8 +684,6 @@ def _ParseOptions(argv):
       help='Whether code being compiled should be built with stricter '
       'warnings for chromium code.')
   parser.add_option(
-      '--gomacc-path', help='When set, prefix javac command with gomacc')
-  parser.add_option(
       '--errorprone-path', help='Use the Errorprone compiler at this path.')
   parser.add_option(
       '--enable-errorprone',
@@ -686,10 +716,10 @@ def _ParseOptions(argv):
   options, args = parser.parse_args(argv)
   build_utils.CheckOptions(options, parser, required=('jar_path', ))
 
-  options.classpath = build_utils.ParseGnList(options.classpath)
-  options.processorpath = build_utils.ParseGnList(options.processorpath)
-  options.java_srcjars = build_utils.ParseGnList(options.java_srcjars)
-  options.jar_info_exclude_globs = build_utils.ParseGnList(
+  options.classpath = action_helpers.parse_gn_list(options.classpath)
+  options.processorpath = action_helpers.parse_gn_list(options.processorpath)
+  options.java_srcjars = action_helpers.parse_gn_list(options.java_srcjars)
+  options.jar_info_exclude_globs = action_helpers.parse_gn_list(
       options.jar_info_exclude_globs)
 
   additional_jar_files = []
@@ -722,25 +752,13 @@ def main(argv):
   argv = build_utils.ExpandFileArgs(argv)
   options, java_files, kt_files = _ParseOptions(argv)
 
-  
-  if (options.enable_errorprone and not options.skip_build_server
-      and server_utils.MaybeRunCommand(name=options.target_name,
-                                       argv=sys.argv,
-                                       stamp_file=options.jar_path,
-                                       force=options.use_build_server)):
-    return
-
-  javac_cmd = []
-  if options.gomacc_path:
-    javac_cmd.append(options.gomacc_path)
-  javac_cmd.append(build_utils.JAVAC_PATH)
+  javac_cmd = [build_utils.JAVAC_PATH]
 
   javac_args = [
       '-g',
       
-      
       '--release',
-      '11',
+      '17',
       
       
       '-encoding',
@@ -752,6 +770,11 @@ def main(argv):
       
       
       '-Xlint:-dep-ann',
+      
+      
+      '-Xlint:-removal',
+      
+      '-J-XX:+PerfDisableSharedMem',
   ]
 
   if options.enable_errorprone:
@@ -815,7 +838,8 @@ def main(argv):
 
   depfile_deps = classpath_inputs
   
-  input_paths = depfile_deps + options.java_srcjars + java_files + kt_files
+  input_paths = ([build_utils.JAVAC_PATH] + depfile_deps +
+                 options.java_srcjars + java_files + kt_files)
   if options.header_jar:
     input_paths.append(options.header_jar)
   input_paths += [x[0] for x in options.additional_jar_files]

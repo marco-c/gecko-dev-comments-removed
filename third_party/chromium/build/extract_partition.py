@@ -6,7 +6,6 @@
 
 import argparse
 import hashlib
-import math
 import os
 import struct
 import subprocess
@@ -74,15 +73,10 @@ def _ExtractPartition(objcopy, input_elf, output_elf, partition):
     new_build_id_file = os.path.join(tempdir, 'new_build_id')
 
     
-    
     subprocess.check_call([
         objcopy,
         '--extract-partition',
         partition,
-        
-        
-        '--remove-section',
-        build_id_section,
         '--dump-section',
         '{}={}'.format(build_id_section, old_build_id_file),
         input_elf,
@@ -115,12 +109,8 @@ def _ExtractPartition(objcopy, input_elf, output_elf, partition):
     
     subprocess.check_call([
         objcopy,
-        '--add-section',
+        '--update-section',
         '{}={}'.format(build_id_section, new_build_id_file),
-        
-        
-        '--set-section-flags',
-        '{}={}'.format(build_id_section, 'alloc'),
         temp_elf,
         output_elf,
     ])

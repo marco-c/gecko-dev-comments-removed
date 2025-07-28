@@ -2,6 +2,13 @@
 
 
 
+chromium::import! {
+    "//chromium/build/rust/tests/test_rust_multiple_dep_versions_exe:transitive_v2";
+}
+
+
+
+
 fn main() {
     test_lib::say_hello_from_v1();
     transitive_v2::transitively_say_hello();

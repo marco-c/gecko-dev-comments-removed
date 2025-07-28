@@ -17,6 +17,7 @@ from xml.etree import ElementTree
 from util import build_utils
 from util import manifest_utils
 from util import server_utils
+import action_helpers  
 
 _LINT_MD_URL = 'https://chromium.googlesource.com/chromium/src/+/main/build/android/docs/lint.md'  
 
@@ -27,35 +28,19 @@ _DISABLED_ALWAYS = [
     "InflateParams",  
     "InlinedApi",  
     "LintBaseline",  
+    "LintBaselineFixed",  
     "MissingInflatedId",  
     "MissingApplicationIcon",  
+    "MissingVersion",  
+    "NetworkSecurityConfig",  
     "ObsoleteLintCustomCheck",  
+    "OldTargetApi",  
+    "StringFormatCount",  
     "SwitchIntDef",  
     "Typos",  
+    "VisibleForTests",  
     "UniqueConstants",  
     "UnusedAttribute",  
-]
-
-
-
-_DISABLED_FOR_TESTS = [
-    
-    
-    
-    "MissingTranslation",
-    
-    
-    "Untranslatable",
-    
-    
-    "UnusedResources",
-    
-    
-    
-    
-    "NewApi",
-    
-    "VisibleForTests",
 ]
 
 _RES_ZIP_DIR = 'RESZIPS'
@@ -71,6 +56,7 @@ def _SrcRelative(path):
 def _GenerateProjectFile(android_manifest,
                          android_sdk_root,
                          cache_dir,
+                         partials_dir,
                          sources=None,
                          classpath=None,
                          srcjar_sources=None,
@@ -95,6 +81,9 @@ def _GenerateProjectFile(android_manifest,
   main_module.set('name', 'main')
   main_module.set('android', 'true')
   main_module.set('library', 'false')
+  
+  
+  main_module.set('partial-results-dir', partials_dir)
   if android_sdk_version:
     main_module.set('compile_sdk_version', android_sdk_version)
   manifest = ElementTree.SubElement(main_module, 'manifest')
@@ -103,10 +92,16 @@ def _GenerateProjectFile(android_manifest,
     for srcjar_file in srcjar_sources:
       src = ElementTree.SubElement(main_module, 'src')
       src.set('file', srcjar_file)
+      
+      
+      
   if sources:
     for source in sources:
       src = ElementTree.SubElement(main_module, 'src')
       src.set('file', source)
+      
+      
+      
   if classpath:
     for file_path in classpath:
       classpath_element = ElementTree.SubElement(main_module, 'classpath')
@@ -178,7 +173,7 @@ def _GenerateAndroidManifest(original_manifest_path, extra_manifest_paths,
 def _WriteXmlFile(root, path):
   logging.info('Writing xml file %s', path)
   build_utils.MakeDirectory(os.path.dirname(path))
-  with build_utils.AtomicOutput(path) as f:
+  with action_helpers.atomic_output(path) as f:
     
     
     f.write(
@@ -186,8 +181,7 @@ def _WriteXmlFile(root, path):
             root, encoding='utf-8')).toprettyxml(indent='  ').encode('utf-8'))
 
 
-def _RunLint(create_cache,
-             custom_lint_jar_path,
+def _RunLint(custom_lint_jar_path,
              lint_jar_path,
              backported_methods_path,
              config_path,
@@ -205,16 +199,15 @@ def _RunLint(create_cache,
              android_sdk_root,
              lint_gen_dir,
              baseline,
-             testonly_target=False,
              warnings_as_errors=False):
   logging.info('Lint starting')
-
-  if create_cache:
+  if not cache_dir:
+    
+    cache_dir = os.path.join(lint_gen_dir, 'cache')
     
     
-    logging.info('Clearing cache dir %s before creating cache.', cache_dir)
-    shutil.rmtree(cache_dir, ignore_errors=True)
-    os.makedirs(cache_dir)
+    
+    os.makedirs(cache_dir, exist_ok=True)
 
   if baseline and not os.path.exists(baseline):
     
@@ -224,6 +217,12 @@ def _RunLint(create_cache,
   else:
     creating_baseline = False
     lint_xmx = '2G'
+
+  
+  
+  partials_dir = os.path.join(lint_gen_dir, 'partials')
+  shutil.rmtree(partials_dir, ignore_errors=True)
+  os.makedirs(partials_dir)
 
   
   
@@ -243,14 +242,12 @@ def _RunLint(create_cache,
       build_utils.JAVA_HOME,
       '--path-variables',
       f'SRC={pathvar_src}',
+      '--offline',
       '--quiet',  
       '--stacktrace',  
       '--disable',
       ','.join(_DISABLED_ALWAYS),
   ]
-
-  if testonly_target:
-    cmd.extend(['--disable', ','.join(_DISABLED_FOR_TESTS)])
 
   if not manifest_path:
     manifest_path = os.path.join(build_utils.DIR_SOURCE_ROOT, 'build',
@@ -270,7 +267,8 @@ def _RunLint(create_cache,
                                                    android_sdk_version)
   
   
-  lint_android_manifest_path = os.path.join(lint_gen_dir, manifest_path)
+  
+  lint_android_manifest_path = os.path.join(lint_gen_dir, 'AndroidManifest.xml')
   _WriteXmlFile(android_manifest_tree.getroot(), lint_android_manifest_path)
 
   resource_root_dir = os.path.join(lint_gen_dir, _RES_ZIP_DIR)
@@ -319,24 +317,28 @@ def _RunLint(create_cache,
       srcjar_sources.extend(build_utils.ExtractAll(srcjar, path=srcjar_dir))
 
   logging.info('Generating project file')
-  project_file_root = _GenerateProjectFile(lint_android_manifest_path,
-                                           android_sdk_root, cache_dir, sources,
-                                           classpath, srcjar_sources,
-                                           resource_sources, custom_lint_jars,
-                                           custom_annotation_zips,
-                                           android_sdk_version, baseline)
+  project_file_root = _GenerateProjectFile(
+      lint_android_manifest_path, android_sdk_root, cache_dir, partials_dir,
+      sources, classpath, srcjar_sources, resource_sources, custom_lint_jars,
+      custom_annotation_zips, android_sdk_version, baseline)
 
   project_xml_path = os.path.join(lint_gen_dir, 'project.xml')
   _WriteXmlFile(project_file_root, project_xml_path)
   cmd += ['--project', project_xml_path]
 
   
-  stderr_filter = build_utils.FilterReflectiveAccessJavaWarnings
   stdout_filter = lambda x: build_utils.FilterLines(x, 'No issues found')
+
+  def stderr_filter(output):
+    output = build_utils.FilterReflectiveAccessJavaWarnings(output)
+    
+    
+    
+    return build_utils.FilterLines(output, 'Manifest merger failed')
 
   start = time.time()
   logging.debug('Lint command %s', ' '.join(cmd))
-  failed = True
+  failed = False
 
   if creating_baseline and not warnings_as_errors:
     
@@ -345,24 +347,20 @@ def _RunLint(create_cache,
     fail_func = lambda returncode, _: returncode != 0
 
   try:
-    failed = bool(
-        build_utils.CheckOutput(cmd,
-                                print_stdout=True,
-                                stdout_filter=stdout_filter,
-                                stderr_filter=stderr_filter,
-                                fail_on_output=warnings_as_errors,
-                                fail_func=fail_func))
+    build_utils.CheckOutput(cmd,
+                            print_stdout=True,
+                            stdout_filter=stdout_filter,
+                            stderr_filter=stderr_filter,
+                            fail_on_output=warnings_as_errors,
+                            fail_func=fail_func)
+  except build_utils.CalledProcessError as e:
+    failed = True
+    
+    
+    sys.stderr.write(e.output)
   finally:
     
     is_debug = os.environ.get('LINT_DEBUG', '0') != '0'
-
-    if failed:
-      print('- For more help with lint in Chrome:', _LINT_MD_URL)
-      if is_debug:
-        print('- DEBUG MODE: Here is the project.xml: {}'.format(
-            _SrcRelative(project_xml_path)))
-      else:
-        print('- Run with LINT_DEBUG=1 to enable lint configuration debugging')
 
     end = time.time() - start
     logging.info('Lint command took %ss', end)
@@ -371,13 +369,23 @@ def _RunLint(create_cache,
       shutil.rmtree(resource_root_dir, ignore_errors=True)
       shutil.rmtree(srcjar_root_dir, ignore_errors=True)
       os.unlink(project_xml_path)
+      shutil.rmtree(partials_dir, ignore_errors=True)
+
+    if failed:
+      print('- For more help with lint in Chrome:', _LINT_MD_URL)
+      if is_debug:
+        print('- DEBUG MODE: Here is the project.xml: {}'.format(
+            _SrcRelative(project_xml_path)))
+      else:
+        print('- Run with LINT_DEBUG=1 to enable lint configuration debugging')
+      sys.exit(1)
 
   logging.info('Lint completed')
 
 
 def _ParseArgs(argv):
   parser = argparse.ArgumentParser()
-  build_utils.AddDepfileOption(parser)
+  action_helpers.add_depfile_arg(parser)
   parser.add_argument('--target-name', help='Fully qualified GN target name.')
   parser.add_argument('--skip-build-server',
                       action='store_true',
@@ -394,7 +402,6 @@ def _ParseArgs(argv):
   parser.add_argument('--backported-methods',
                       help='Path to backported methods file created by R8.')
   parser.add_argument('--cache-dir',
-                      required=True,
                       help='Path to the directory in which the android cache '
                       'directory tree should be stored.')
   parser.add_argument('--config-path', help='Path to lint suppressions file.')
@@ -411,11 +418,6 @@ def _ParseArgs(argv):
   parser.add_argument('--android-sdk-root',
                       required=True,
                       help='Lint needs an explicit path to the android sdk.')
-  parser.add_argument('--testonly',
-                      action='store_true',
-                      help='If set, some checks like UnusedResources will be '
-                      'disabled since they are not helpful for test '
-                      'targets.')
   parser.add_argument('--create-cache',
                       action='store_true',
                       help='Whether this invocation is just warming the cache.')
@@ -450,13 +452,14 @@ def _ParseArgs(argv):
                       'on new errors.')
 
   args = parser.parse_args(build_utils.ExpandFileArgs(argv))
-  args.sources = build_utils.ParseGnList(args.sources)
-  args.aars = build_utils.ParseGnList(args.aars)
-  args.srcjars = build_utils.ParseGnList(args.srcjars)
-  args.resource_sources = build_utils.ParseGnList(args.resource_sources)
-  args.extra_manifest_paths = build_utils.ParseGnList(args.extra_manifest_paths)
-  args.resource_zips = build_utils.ParseGnList(args.resource_zips)
-  args.classpath = build_utils.ParseGnList(args.classpath)
+  args.sources = action_helpers.parse_gn_list(args.sources)
+  args.aars = action_helpers.parse_gn_list(args.aars)
+  args.srcjars = action_helpers.parse_gn_list(args.srcjars)
+  args.resource_sources = action_helpers.parse_gn_list(args.resource_sources)
+  args.extra_manifest_paths = action_helpers.parse_gn_list(
+      args.extra_manifest_paths)
+  args.resource_zips = action_helpers.parse_gn_list(args.resource_zips)
+  args.classpath = action_helpers.parse_gn_list(args.classpath)
 
   if args.baseline:
     assert os.path.basename(args.baseline) == 'lint-baseline.xml', (
@@ -470,17 +473,6 @@ def _ParseArgs(argv):
 def main():
   build_utils.InitLogging('LINT_DEBUG')
   args = _ParseArgs(sys.argv[1:])
-
-  
-  
-  
-  
-  if (not args.create_cache and not args.skip_build_server
-      and server_utils.MaybeRunCommand(name=args.target_name,
-                                       argv=sys.argv,
-                                       stamp_file=args.stamp,
-                                       force=args.use_build_server)):
-    return
 
   sources = []
   for sources_file in args.sources:
@@ -496,8 +488,22 @@ def main():
                            ])
   depfile_deps = [p for p in possible_depfile_deps if p]
 
-  _RunLint(args.create_cache,
-           args.custom_lint_jar_path,
+  if args.depfile:
+    action_helpers.write_depfile(args.depfile, args.stamp, depfile_deps)
+
+  
+  
+  
+  
+  
+  if (not args.create_cache and not args.skip_build_server
+      and server_utils.MaybeRunCommand(name=args.target_name,
+                                       argv=sys.argv,
+                                       stamp_file=args.stamp,
+                                       force=args.use_build_server)):
+    return
+
+  _RunLint(args.custom_lint_jar_path,
            args.lint_jar_path,
            args.backported_methods,
            args.config_path,
@@ -515,13 +521,9 @@ def main():
            args.android_sdk_root,
            args.lint_gen_dir,
            args.baseline,
-           testonly_target=args.testonly,
            warnings_as_errors=args.warnings_as_errors)
   logging.info('Creating stamp file')
   build_utils.Touch(args.stamp)
-
-  if args.depfile:
-    build_utils.WriteDepfile(args.depfile, args.stamp, depfile_deps)
 
 
 if __name__ == '__main__':

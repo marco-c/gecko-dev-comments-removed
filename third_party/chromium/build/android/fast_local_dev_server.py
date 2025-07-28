@@ -147,6 +147,7 @@ class Task:
     self.cmd = cmd
     self.stamp_file = stamp_file
     self._terminated = False
+    self._replaced = False
     self._lock = threading.Lock()
     self._proc: Optional[subprocess.Popen] = None
     self._thread: Optional[threading.Thread] = None
@@ -192,13 +193,14 @@ class Task:
       self._thread.start()
       return 1
 
-  def terminate(self):
+  def terminate(self, replaced=False):
     """Can be called multiple times to cancel and ignore the task's output."""
 
     with self._lock:
       if self._terminated:
         return
       self._terminated = True
+      self._replaced = replaced
     
     
     
@@ -230,15 +232,17 @@ class Task:
     that this method does not need locking."""
 
     TaskStats.complete_task()
-    failed = False
+    delete_stamp = False
     if self._terminated:
       log(f'TERMINATED {self.name}')
       
-      failed = True
+      
+      if not self._replaced:
+        delete_stamp = True
     else:
       log(f'FINISHED {self.name}')
       if stdout or self._return_code != 0:
-        failed = True
+        delete_stamp = True
         
         
         
@@ -251,7 +255,7 @@ class Task:
             stdout,
         ]))
 
-    if failed:
+    if delete_stamp:
       
       try:
         os.unlink(os.path.join(self.cwd, self.stamp_file))
@@ -293,7 +297,7 @@ def _process_requests(sock: socket.socket):
                   stamp_file=data['stamp_file'])
       existing_task = tasks.get(task.key)
       if existing_task:
-        existing_task.terminate()
+        existing_task.terminate(replaced=True)
       tasks[task.key] = task
       task_manager.add_task(task)
   except KeyboardInterrupt:

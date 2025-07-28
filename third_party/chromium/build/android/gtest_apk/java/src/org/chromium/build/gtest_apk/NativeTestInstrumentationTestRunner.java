@@ -29,8 +29,6 @@ import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
-
-
 public class NativeTestInstrumentationTestRunner extends Instrumentation {
     private static final String EXTRA_NATIVE_TEST_ACTIVITY =
             "org.chromium.native_test.NativeTestInstrumentationTestRunner.NativeTestActivity";
@@ -64,12 +62,12 @@ public class NativeTestInstrumentationTestRunner extends Instrumentation {
 
     @Override
     public void onCreate(Bundle arguments) {
-        Context context = getContext();
         mTransparentArguments = new Bundle(arguments);
 
         mNativeTestActivity = arguments.getString(EXTRA_NATIVE_TEST_ACTIVITY);
         if (mNativeTestActivity == null) {
-            Log.e(TAG,
+            Log.e(
+                    TAG,
                     "Unable to find org.chromium.native_test.NativeUnitTestActivity extra on "
                             + "NativeTestInstrumentationTestRunner launch intent.");
             finish(Activity.RESULT_CANCELED, new Bundle());
@@ -90,8 +88,9 @@ public class NativeTestInstrumentationTestRunner extends Instrumentation {
             mStdoutFile = new File(stdoutFile);
         } else {
             try {
-                mStdoutFile = File.createTempFile(
-                        ".temp_stdout_", ".txt", Environment.getExternalStorageDirectory());
+                mStdoutFile =
+                        File.createTempFile(
+                                ".temp_stdout_", ".txt", Environment.getExternalStorageDirectory());
                 Log.i(TAG, "stdout file created: " + mStdoutFile.getAbsolutePath());
             } catch (IOException e) {
                 Log.e(TAG, "Unable to create temporary stdout file.", e);
@@ -145,34 +144,38 @@ public class NativeTestInstrumentationTestRunner extends Instrumentation {
 
         mReceiver = new TestStatusReceiver();
         mReceiver.register(getContext());
-        mReceiver.registerCallback(new TestStatusReceiver.TestRunCallback() {
-            @Override
-            public void testRunStarted(int pid) {
-                if (pid != Process.myPid()) {
-                    ShardMonitor m = new ShardMonitor(pid, System.nanoTime() + mShardNanoTimeout);
-                    mMonitors.put(pid, m);
-                    mHandler.post(m);
-                }
-            }
+        mReceiver.registerCallback(
+                new TestStatusReceiver.TestRunCallback() {
+                    @Override
+                    public void testRunStarted(int pid) {
+                        if (pid != Process.myPid()) {
+                            ShardMonitor m =
+                                    new ShardMonitor(pid, System.nanoTime() + mShardNanoTimeout);
+                            mMonitors.put(pid, m);
+                            mHandler.post(m);
+                        }
+                    }
 
-            @Override
-            public void testRunFinished(int pid) {
-                ShardMonitor m = mMonitors.get(pid);
-                if (m != null) {
-                    m.stopped();
-                    mMonitors.remove(pid);
-                }
-                mHandler.post(new ShardEnder(pid));
-            }
+                    @Override
+                    public void testRunFinished(int pid) {
+                        ShardMonitor m = mMonitors.get(pid);
+                        if (m != null) {
+                            m.stopped();
+                            mMonitors.remove(pid);
+                        }
+                        mHandler.post(new ShardEnder(pid));
+                    }
 
-            @Override
-            public void uncaughtException(int pid, String stackTrace) {
-                mLogBundle.putString(Instrumentation.REPORT_KEY_STREAMRESULT,
-                        String.format("Uncaught exception in test process (pid: %d)%n%s%n", pid,
-                                stackTrace));
-                sendStatus(0, mLogBundle);
-            }
-        });
+                    @Override
+                    public void uncaughtException(int pid, String stackTrace) {
+                        mLogBundle.putString(
+                                Instrumentation.REPORT_KEY_STREAMRESULT,
+                                String.format(
+                                        "Uncaught exception in test process (pid: %d)%n%s%n",
+                                        pid, stackTrace));
+                        sendStatus(0, mLogBundle);
+                    }
+                });
 
         mHandler.post(new ShardStarter());
     }
@@ -241,8 +244,6 @@ public class NativeTestInstrumentationTestRunner extends Instrumentation {
     }
 
     
-
-
     private class ShardStarter implements Runnable {
         @Override
         public void run() {

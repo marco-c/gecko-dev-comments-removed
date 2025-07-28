@@ -44,7 +44,7 @@ def GetOptions():
   header_guard = cmdline_options.output.upper()
   if header_guard[0].isdigit():
     header_guard = '_' + header_guard
-  header_guard = re.sub('[^\w]', '_', header_guard)
+  header_guard = re.sub(r'[^\w]', '_', header_guard)
   header_guard += '_'
 
   
@@ -86,6 +86,9 @@ def WriteHeader(options):
     output_file.write('\n#ifndef %s\n' % options.header_guard)
     output_file.write('#define %s\n\n' % options.header_guard)
     output_file.write('#include "build/buildflag.h" // IWYU pragma: export\n\n')
+    
+    
+    output_file.write('// IWYU pragma: always_keep\n\n')
 
     for pair in options.flags:
       output_file.write('#define BUILDFLAG_INTERNAL_%s() (%s)\n' % pair)

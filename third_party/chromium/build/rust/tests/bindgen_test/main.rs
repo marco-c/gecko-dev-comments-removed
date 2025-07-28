@@ -2,6 +2,10 @@
 
 
 
+chromium::import! {
+    "//chromium/build/rust/tests/bindgen_test:bindgen_test_lib";
+}
+
 use bindgen_test_lib::add_two_numbers_in_c;
 
 fn main() {

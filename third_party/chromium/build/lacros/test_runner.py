@@ -9,12 +9,12 @@
   to setup build directory with the lacros-chrome-on-linux build configuration,
   and corresponding test targets are built successfully.
 
-  * Example usages:
+Example usages
 
   ./build/lacros/test_runner.py test out/lacros/url_unittests
   ./build/lacros/test_runner.py test out/lacros/browser_tests
 
-  The commands above run url_unittests and browser_tests respecitively, and more
+  The commands above run url_unittests and browser_tests respectively, and more
   specifically, url_unitests is executed directly while browser_tests is
   executed with the latest version of prebuilt ash-chrome, and the behavior is
   controlled by |_TARGETS_REQUIRE_ASH_CHROME|, and it's worth noting that the
@@ -28,12 +28,17 @@
   the underlying test binary can be specified in the command.
 
   ./build/lacros/test_runner.py test out/lacros/browser_tests \\
-    --ash-chrome-version=793554
+    --ash-chrome-version=120.0.6099.0
 
   The above command runs tests with a given version of ash-chrome, which is
-  useful to reproduce test failures, the version corresponds to the commit
-  position of commits on the master branch, and a list of prebuilt versions can
-  be found at: gs://ash-chromium-on-linux-prebuilts/x86_64.
+  useful to reproduce test failures. A list of prebuilt versions can
+  be found at:
+  https://chrome-infra-packages.appspot.com/p/chromium/testing/linux-ash-chromium/x86_64/ash.zip
+  Click on any instance, you should see the version number for that instance.
+  Also, there are refs, which points to the instance for that channel. It should
+  be close the prod version but no guarantee.
+  For legacy refs, like legacy119, it point to the latest version for that
+  milestone.
 
   ./testing/xvfb.py ./build/lacros/test_runner.py test out/lacros/browser_tests
 
@@ -44,6 +49,13 @@
   will try to find the ash major version and Lacros major version. If ash is
   newer(major version larger), the runner will not run any tests and just
   returns success.
+
+Interactively debugging tests
+
+  Any of the previous examples accept the switches
+    --gdb
+    --lldb
+  to run the tests in the corresponding debugger.
 """
 
 import argparse
@@ -78,7 +90,7 @@ _ASAN_SYMBOLIZER_PATH = os.path.join(_SRC_ROOT, 'tools', 'valgrind', 'asan',
 
 
 ASH_CHROME_TIMEOUT_SECONDS = (
-    300 if os.environ.get('ASH_WRAPPER', None) else 10)
+    300 if os.environ.get('ASH_WRAPPER', None) else 25)
 
 
 _TARGETS_REQUIRE_ASH_CHROME = [
@@ -110,7 +122,6 @@ _TARGETS_REQUIRE_MOJO_CROSAPI = [
     
     'interactive_ui_tests',
     'lacros_chrome_browsertests',
-    'lacros_chrome_browsertests_run_in_series'
 ]
 
 
@@ -270,7 +281,7 @@ def _WaitForAshChromeToStart(tmp_xdg_dir, lacros_mojo_socket_file,
   Determine whether ash-chrome is up and running by checking whether two files
   (lock file + socket) have been created in the |XDG_RUNTIME_DIR| and the lacros
   mojo socket file has been created if enabling the mojo "crosapi" interface.
-  TODO(crbug.com/1107966): Figure out a more reliable hook to determine the
+  TODO(crbug.com/40707216): Figure out a more reliable hook to determine the
   status of ash-chrome, likely through mojo connection.
 
   Args:
@@ -426,9 +437,69 @@ def _ClearDir(dirpath):
   """
   for e in os.scandir(dirpath):
     if e.is_dir():
-      shutil.rmtree(e.path)
+      shutil.rmtree(e.path, ignore_errors=True)
     elif e.is_file():
       os.remove(e.path)
+
+
+def _LaunchDebugger(args, forward_args, test_env):
+  """Launches the requested debugger.
+
+  This is used to wrap the test invocation in a debugger. It returns the
+  created Popen class of the debugger process.
+
+  Args:
+      args (dict): Args for this script.
+      forward_args (list): Args to be forwarded to the test command.
+      test_env (dict): Computed environment variables for the test.
+  """
+  logging.info('Starting debugger.')
+
+  
+  
+  
+  
+  for sig in (signal.SIGTERM, signal.SIGINT):
+    signal.signal(sig, signal.SIG_IGN)
+
+  
+  
+  
+  if not ("--single-process" in forward_args
+          or "--single-process-tests" in forward_args):
+    forward_args += ["--single-process-tests"]
+
+    
+    
+    
+    if not [i for i in forward_args if i.startswith("--gtest_filter")]:
+      logging.error("""Interactive debugging requested without --gtest_filter
+
+This script adds --single-process-tests to support interactive debugging but
+some tests will fail in this mode unless run independently. To debug a test
+specify a --gtest_filter=Foo.Bar to name the test you want to debug.
+""")
+      sys.exit(1)
+
+  
+  
+  
+  if args.gdb:
+    gdbinit_file = os.path.normpath(
+        os.path.join(os.path.realpath(__file__), "../../../tools/gdb/gdbinit"))
+    debugger_command = [
+        'gdb', '--init-eval-command', 'source ' + gdbinit_file, '--args'
+    ]
+  else:
+    lldbinit_dir = os.path.normpath(
+        os.path.join(os.path.realpath(__file__), "../../../tools/lldb"))
+    debugger_command = [
+        'lldb', '-O',
+        "script sys.path[:0] = ['%s']" % lldbinit_dir, '-O',
+        'script import lldbinit', '--'
+    ]
+  debugger_command += [args.command] + forward_args
+  return subprocess.Popen(debugger_command, env=test_env)
 
 
 def _RunTestWithAshChrome(args, forward_args):
@@ -483,6 +554,7 @@ lacros_version_skew_tests_v92.0.4515.130/test_ash_chrome
     
     tmp_xdg_dir_name = tempfile.mkdtemp()
     tmp_ash_data_dir_name = tempfile.mkdtemp()
+    tmp_unique_ash_dir_name = tempfile.mkdtemp()
 
     
     
@@ -502,9 +574,11 @@ lacros_version_skew_tests_v92.0.4515.130/test_ash_chrome
         '--user-data-dir=%s' % tmp_ash_data_dir_name,
         '--enable-wayland-server',
         '--no-startup-window',
+        '--disable-input-event-activation-protection',
         '--disable-lacros-keep-alive',
         '--disable-login-lacros-opening',
         '--enable-field-trial-config',
+        '--enable-logging=stderr',
         '--enable-features=LacrosSupport,LacrosPrimary,LacrosOnly',
         '--ash-ready-file-path=%s' % ash_ready_file,
         '--wayland-server-socket=%s' % ash_wayland_socket_name,
@@ -524,6 +598,7 @@ lacros_version_skew_tests_v92.0.4515.130/test_ash_chrome
       logging.info('Running ash with "ASH_WRAPPER": %s', ash_wrapper)
       ash_cmd = list(ash_wrapper.split()) + ash_cmd
 
+    ash_process = None
     ash_process_has_started = False
     total_tries = 3
     num_tries = 0
@@ -532,6 +607,8 @@ lacros_version_skew_tests_v92.0.4515.130/test_ash_chrome
     
     ash_log = None
     ash_log_path = None
+
+    run_tests_in_debugger = args.gdb or args.lldb
 
     if args.ash_logging_path:
       ash_log_path = args.ash_logging_path
@@ -543,6 +620,12 @@ lacros_version_skew_tests_v92.0.4515.130/test_ash_chrome
       if summary_file:
         ash_log_path = os.path.join(os.path.dirname(summary_file),
                                     'ash_chrome.log')
+    elif run_tests_in_debugger:
+      
+      
+      logging.info("Running in the debugger and --ash-logging-path is not " +
+                   "specified, defaulting to the current directory.")
+      ash_log_path = 'ash_chrome.log'
 
     if ash_log_path:
       ash_log = open(ash_log_path, 'a')
@@ -564,9 +647,16 @@ lacros_version_skew_tests_v92.0.4515.130/test_ash_chrome
     while not ash_process_has_started and num_tries < total_tries:
       num_tries += 1
       ash_start_time = time.monotonic()
-      logging.info('Starting ash-chrome.')
+      logging.info('Starting ash-chrome: ' + ' '.join(ash_cmd))
+
+      
+      
+      
+      
+      
       ash_process = subprocess.Popen(ash_cmd,
                                      env=ash_env,
+                                     preexec_fn=os.setpgrp,
                                      stdout=ash_stdout,
                                      stderr=subprocess.STDOUT)
 
@@ -574,6 +664,7 @@ lacros_version_skew_tests_v92.0.4515.130/test_ash_chrome
         logging.info('Symbolizing ash logs with asan symbolizer.')
         ash_symbolize_process = subprocess.Popen([_ASAN_SYMBOLIZER_PATH],
                                                  stdin=ash_process.stdout,
+                                                 preexec_fn=os.setpgrp,
                                                  stdout=ash_symbolize_stdout,
                                                  stderr=subprocess.STDOUT)
         
@@ -609,21 +700,27 @@ lacros_version_skew_tests_v92.0.4515.130/test_ash_chrome
       forward_args.append(lacros_mojo_socket_arg)
 
     forward_args.append('--ash-chrome-path=' + ash_chrome_file)
+    forward_args.append('--unique-ash-dir=' + tmp_unique_ash_dir_name)
+
     test_env = os.environ.copy()
     test_env['WAYLAND_DISPLAY'] = ash_wayland_socket_name
     test_env['EGL_PLATFORM'] = 'surfaceless'
     test_env['XDG_RUNTIME_DIR'] = tmp_xdg_dir_name
-    logging.info('Starting test process.')
-    test_process = subprocess.Popen([args.command] + forward_args,
-                                    env=test_env,
-                                    stdout=test_stdout,
-                                    stderr=subprocess.STDOUT)
-    if should_symbolize:
-      logging.info('Symbolizing test logs with asan symbolizer.')
-      test_symbolize_process = subprocess.Popen([_ASAN_SYMBOLIZER_PATH],
-                                                stdin=test_process.stdout)
-      
-      test_process.stdout.close()
+
+    if run_tests_in_debugger:
+      test_process = _LaunchDebugger(args, forward_args, test_env)
+    else:
+      logging.info('Starting test process.')
+      test_process = subprocess.Popen([args.command] + forward_args,
+                                      env=test_env,
+                                      stdout=test_stdout,
+                                      stderr=subprocess.STDOUT)
+      if should_symbolize:
+        logging.info('Symbolizing test logs with asan symbolizer.')
+        test_symbolize_process = subprocess.Popen([_ASAN_SYMBOLIZER_PATH],
+                                                  stdin=test_process.stdout)
+        
+        test_process.stdout.close()
     return test_process.wait()
 
   finally:
@@ -634,6 +731,7 @@ lacros_version_skew_tests_v92.0.4515.130/test_ash_chrome
 
     shutil.rmtree(tmp_xdg_dir_name, ignore_errors=True)
     shutil.rmtree(tmp_ash_data_dir_name, ignore_errors=True)
+    shutil.rmtree(tmp_unique_ash_dir_name, ignore_errors=True)
 
 
 def _RunTestDirectly(args, forward_args):
@@ -730,14 +828,22 @@ def Main():
       '--ash-chrome-version',
       type=str,
       help='Version of an prebuilt ash-chrome to use for testing, for example: '
-      '"793554", and the version corresponds to the commit position of commits '
-      'on the main branch. If not specified, will use the latest version '
-      'available')
+      '"120.0.6099.0", and the version corresponds to the commit position of '
+      'commits on the main branch. If not specified, will use the latest '
+      'version available')
   version_group.add_argument(
       '--ash-chrome-path',
       type=str,
       help='Path to an locally built ash-chrome to use for testing. '
       'In general you should build //chrome/test:test_ash_chrome.')
+
+  debugger_group = test_parser.add_mutually_exclusive_group()
+  debugger_group.add_argument('--gdb',
+                              action='store_true',
+                              help='Run the test in GDB.')
+  debugger_group.add_argument('--lldb',
+                              action='store_true',
+                              help='Run the test in LLDB.')
 
   
   
@@ -763,6 +869,11 @@ def Main():
       help='Whether to run subprocess log outputs through the asan symbolizer.')
 
   args = arg_parser.parse_known_args()
+  if not hasattr(args[0], "func"):
+    
+    print(__doc__)
+    sys.exit(1)
+
   return args[0].func(args[0], args[1])
 
 

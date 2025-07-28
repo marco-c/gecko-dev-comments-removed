@@ -16,6 +16,64 @@ import zipfile
 import dex
 from util import build_utils
 from util import diff_utils
+import action_helpers  
+import zip_helpers
+
+_IGNORE_WARNINGS = (
+    
+    
+    
+    r'Missing class org.chromium.build.NativeLibraries',
+    
+    
+    
+    
+    
+    
+    r'GeneratedExtensionRegistryLite\.CONTAINING_TYPE_',
+    
+    r'Ignoring -shrinkunusedprotofields since the protobuf-lite runtime is',
+    
+    r'/third_party/.*Proguard configuration rule does not match anything',
+    
+    r'cronet/android/test/proguard.cfg.*Proguard configuration rule does not',
+    r'Proguard configuration rule does not match anything:.*(?:' + '|'.join([
+        
+        r'class android\.',
+        
+        r'com.no.real.class.needed.receiver',
+        
+        r'@',
+        
+        r'class \*+ implements',
+        
+        r'!cr_allowunused',
+        
+        r'EditorDialogToolbar',
+        
+        r'PaymentRequest[BH]',
+    ]) + ')',
+    
+    r'OnBackAnimationCallback',
+    
+    r'Missing class android.adservices.common.AdServicesOutcomeReceiver',
+    
+    r'FastServiceLoader\.class:.*Could not inline ServiceLoader\.load',
+
+    
+    
+    
+    r'Warning: Invalid parameter counts in MethodParameter attributes',
+    
+    
+    
+    r'Warning: InnerClasses attribute has entries missing a corresponding EnclosingMethod attribute',  
+    r'Warning in obj/third_party/androidx/androidx_test_espresso_espresso_core_java',  
+    r'Warning in obj/third_party/androidx/androidx_test_espresso_espresso_web_java',  
+
+    
+    r'AppSearchDocumentClassMap\.class:.*Could not inline ServiceLoader\.load',
+)
 
 _BLOCKLISTED_EXPECTATION_PATHS = [
     
@@ -28,10 +86,13 @@ _DUMP_DIR_NAME = 'r8inputs_dir'
 def _ParseOptions():
   args = build_utils.ExpandFileArgs(sys.argv[1:])
   parser = argparse.ArgumentParser()
-  build_utils.AddDepfileOption(parser)
+  action_helpers.add_depfile_arg(parser)
   parser.add_argument('--r8-path',
                       required=True,
                       help='Path to the R8.jar to use.')
+  parser.add_argument('--custom-r8-path',
+                      required=True,
+                      help='Path to our custom R8 wrapepr to use.')
   parser.add_argument('--input-paths',
                       action='append',
                       required=True,
@@ -65,8 +126,9 @@ def _ParseOptions():
                       help='Minify symbol names')
   parser.add_argument(
       '--verbose', '-v', action='store_true', help='Print all ProGuard output')
-  parser.add_argument(
-      '--repackage-classes', help='Package all optimized classes are put in.')
+  parser.add_argument('--repackage-classes',
+                      default='',
+                      help='Value for -repackageclasses.')
   parser.add_argument(
     '--disable-checks',
     action='store_true',
@@ -99,6 +161,14 @@ def _ParseOptions():
       action='append',
       help='List of name pairs separated by : mapping a feature module to a '
       'dependent feature module.')
+  parser.add_argument('--input-art-profile',
+                      help='Path to the input unobfuscated ART profile.')
+  parser.add_argument('--output-art-profile',
+                      help='Path to the output obfuscated ART profile.')
+  parser.add_argument(
+      '--apply-startup-profile',
+      action='store_true',
+      help='Whether to pass --input-art-profile as a startup profile to R8.')
   parser.add_argument(
       '--keep-rules-targets-regex',
       metavar='KEEP_RULES_REGEX',
@@ -144,15 +214,23 @@ def _ParseOptions():
     parser.error('You must path both --keep-rules-targets-regex and '
                  '--keep-rules-output-path')
 
+  if options.output_art_profile and not options.input_art_profile:
+    parser.error('--output-art-profile requires --input-art-profile')
+  if options.apply_startup_profile and not options.input_art_profile:
+    parser.error('--apply-startup-profile requires --input-art-profile')
+
   if options.force_enable_assertions and options.assertion_handler:
     parser.error('Cannot use both --force-enable-assertions and '
                  '--assertion-handler')
 
-  options.classpath = build_utils.ParseGnList(options.classpath)
-  options.proguard_configs = build_utils.ParseGnList(options.proguard_configs)
-  options.input_paths = build_utils.ParseGnList(options.input_paths)
-  options.extra_mapping_output_paths = build_utils.ParseGnList(
+  options.classpath = action_helpers.parse_gn_list(options.classpath)
+  options.proguard_configs = action_helpers.parse_gn_list(
+      options.proguard_configs)
+  options.input_paths = action_helpers.parse_gn_list(options.input_paths)
+  options.extra_mapping_output_paths = action_helpers.parse_gn_list(
       options.extra_mapping_output_paths)
+  if os.environ.get('R8_VERBOSE') == '1':
+    options.verbose = True
 
   if options.feature_names:
     if 'base' not in options.feature_names:
@@ -162,7 +240,7 @@ def _ParseOptions():
       parser.error('Invalid feature argument lengths.')
 
     options.feature_jars = [
-        build_utils.ParseGnList(x) for x in options.feature_jars
+        action_helpers.parse_gn_list(x) for x in options.feature_jars
     ]
 
   split_map = {}
@@ -202,15 +280,13 @@ class _SplitContext:
     
     
     tmp_jar_output = self.staging_dir + '.jar'
-    build_utils.DoZip(found_files, tmp_jar_output, base_dir=self.staging_dir)
+    zip_helpers.add_files_to_zip(found_files,
+                                 tmp_jar_output,
+                                 base_dir=self.staging_dir)
     shutil.move(tmp_jar_output, self.final_output_path)
 
 
-def _OptimizeWithR8(options,
-                    config_paths,
-                    libraries,
-                    dynamic_config_data,
-                    print_stdout=False):
+def _OptimizeWithR8(options, config_paths, libraries, dynamic_config_data):
   with build_utils.TempDir() as tmp_dir:
     if dynamic_config_data:
       dynamic_config_path = os.path.join(tmp_dir, 'dynamic_config.flags')
@@ -248,6 +324,25 @@ def _OptimizeWithR8(options,
     base_context = split_contexts_by_name['base']
 
     
+    
+    extension_packages = [
+        'android.car',
+        'android.car.hardware.property',
+        'android.car.input',
+        'android.car.media',
+        'android.car.remoteaccess',
+        'android.car.watchdog',
+        'androidx.window.extensions',
+        'androidx.window.extensions.area',
+        'androidx.window.extensions.core',
+        'androidx.window.extensions.core.util',
+        'androidx.window.extensions.core.util.function',
+        'androidx.window.extensions.layout',
+        'androidx.window.extensions.embedding',
+        'androidx.window.layout.adapter.extensions',
+    ]
+
+    
     cmd = build_utils.JavaCmd(xmx='2G') + [
         
         
@@ -255,6 +350,9 @@ def _OptimizeWithR8(options,
         
         
         '-Dcom.android.tools.r8.enableSameFilePolicy=1',
+        
+        '-Dcom.android.tools.r8.androidApiExtensionPackages=' +
+        ','.join(extension_packages),
     ]
     if options.dump_inputs:
       cmd += [f'-Dcom.android.tools.r8.dumpinputtodirectory={_DUMP_DIR_NAME}']
@@ -262,8 +360,8 @@ def _OptimizeWithR8(options,
       cmd += ['-Dcom.android.tools.r8.reportUnknownApiReferences=1']
     cmd += [
         '-cp',
-        options.r8_path,
-        'com.android.tools.r8.R8',
+        '{}:{}'.format(options.r8_path, options.custom_r8_path),
+        'org.chromium.build.CustomR8',
         '--no-data-resources',
         '--map-id-template',
         f'{options.source_file} ({options.package_name})',
@@ -274,6 +372,9 @@ def _OptimizeWithR8(options,
         '--pg-map-output',
         tmp_mapping_path,
     ]
+
+    if options.uses_split:
+      cmd += ['--isolated-splits']
 
     if options.disable_checks:
       cmd += ['--map-diagnostics:CheckDiscardDiagnostic', 'error', 'none']
@@ -300,6 +401,18 @@ def _OptimizeWithR8(options,
       for main_dex_rule in options.main_dex_rules_path:
         cmd += ['--main-dex-rules', main_dex_rule]
 
+    if options.output_art_profile:
+      cmd += [
+          '--art-profile',
+          options.input_art_profile,
+          options.output_art_profile,
+      ]
+    if options.apply_startup_profile:
+      cmd += [
+          '--startup-profile',
+          options.input_art_profile,
+      ]
+
     
     extra_jars = set(options.input_paths)
     for split_context in split_contexts_by_name.values():
@@ -314,20 +427,26 @@ def _OptimizeWithR8(options,
 
     cmd += sorted(base_context.input_jars)
 
+    if options.verbose:
+      stderr_filter = None
+    else:
+      filters = list(dex.DEFAULT_IGNORE_WARNINGS)
+      filters += _IGNORE_WARNINGS
+      if options.show_desugar_default_interface_warnings:
+        filters += dex.INTERFACE_DESUGARING_WARNINGS
+      stderr_filter = dex.CreateStderrFilter(filters)
+
     try:
-      stderr_filter = dex.CreateStderrFilter(
-          options.show_desugar_default_interface_warnings)
       logging.debug('Running R8')
       build_utils.CheckOutput(cmd,
-                              print_stdout=print_stdout,
+                              print_stdout=True,
                               stderr_filter=stderr_filter,
                               fail_on_output=options.warnings_as_errors)
     except build_utils.CalledProcessError as e:
       
-      raise Exception(
-          'R8 failed. Please see '
-          'https://chromium.googlesource.com/chromium/src/+/HEAD/build/'
-          'android/docs/java_optimization.md#Debugging-common-failures') from e
+      
+      sys.stderr.write(e.output)
+      sys.exit(1)
 
     logging.debug('Collecting ouputs')
     base_context.CreateOutput()
@@ -359,20 +478,20 @@ def _OutputKeepRules(r8_path, input_paths, classpath, targets_re_string,
   build_utils.CheckOutput(cmd, print_stderr=False, fail_on_output=False)
 
 
-def _CheckForMissingSymbols(r8_path, dex_files, classpath, warnings_as_errors,
-                            dump_inputs, error_title):
+def _CheckForMissingSymbols(options, dex_files, error_title):
   cmd = build_utils.JavaCmd()
 
-  if dump_inputs:
+  if options.dump_inputs:
     cmd += [f'-Dcom.android.tools.r8.dumpinputtodirectory={_DUMP_DIR_NAME}']
 
   cmd += [
-      '-cp', r8_path, 'com.android.tools.r8.tracereferences.TraceReferences',
+      '-cp', options.r8_path,
+      'com.android.tools.r8.tracereferences.TraceReferences',
       '--map-diagnostics:MissingDefinitionsDiagnostic', 'error', 'warning',
       '--check'
   ]
 
-  for path in classpath:
+  for path in options.classpath:
     cmd += ['--lib', path]
   for path in dex_files:
     cmd += ['--source', path]
@@ -392,6 +511,9 @@ def _CheckForMissingSymbols(r8_path, dex_files, classpath, warnings_as_errors,
 
         
         'android.text.StaticLayout.<init>',
+        
+        
+        ' android.',
 
         
         
@@ -430,22 +552,23 @@ Tip: Build with:
        third_party/android_sdk/public/build-tools/*/dexdump -d \
 out/Release/apks/YourApk.apk > dex.txt
 """ + stderr
-
-        if 'FragmentActivity' in stderr:
-          stderr += """
-You may need to update build configs to run FragmentActivityReplacer for
-additional targets. See
-https://chromium.googlesource.com/chromium/src.git/+/main/docs/ui/android/bytecode_rewriting.md.
-"""
       elif had_unfiltered_items:
         
         stderr = ''
     return stderr
 
-  build_utils.CheckOutput(cmd,
-                          print_stdout=True,
-                          stderr_filter=stderr_filter,
-                          fail_on_output=warnings_as_errors)
+  try:
+    if options.verbose:
+      stderr_filter = None
+    build_utils.CheckOutput(cmd,
+                            print_stdout=True,
+                            stderr_filter=stderr_filter,
+                            fail_on_output=options.warnings_as_errors)
+  except build_utils.CalledProcessError as e:
+    
+    
+    sys.stderr.write(e.output)
+    sys.exit(1)
   return failed_holder[0]
 
 
@@ -501,7 +624,7 @@ def _CombineConfigs(configs,
 def _CreateDynamicConfig(options):
   ret = []
   if options.enable_obfuscation:
-    ret.append("-repackageclasses ''")
+    ret.append(f"-repackageclasses '{options.repackage_classes}'")
   else:
     ret.append("-dontobfuscate")
 
@@ -534,18 +657,13 @@ def _ExtractEmbeddedConfigs(jar_path, embedded_configs):
       embedded_configs[config_path] = z.read(filename).decode('utf-8').rstrip()
 
 
-def _ContainsDebuggingConfig(config_str):
-  debugging_configs = ('-whyareyoukeeping', '-whyareyounotinlining')
-  return any(config in config_str for config in debugging_configs)
-
-
 def _MaybeWriteStampAndDepFile(options, inputs):
   output = options.output_path
   if options.stamp:
     build_utils.Touch(options.stamp)
     output = options.stamp
   if options.depfile:
-    build_utils.WriteDepfile(options.depfile, output, inputs=inputs)
+    action_helpers.write_depfile(options.depfile, output, inputs=inputs)
 
 
 def _IterParentContexts(context_name, split_contexts_by_name):
@@ -572,9 +690,7 @@ def _DoTraceReferencesChecks(options, split_contexts_by_name):
   error_title = 'DEX contains references to non-existent symbols after R8.'
   dex_files = sorted(c.final_output_path
                      for c in split_contexts_by_name.values())
-  if _CheckForMissingSymbols(options.r8_path, dex_files, options.classpath,
-                             options.warnings_as_errors, options.dump_inputs,
-                             error_title):
+  if _CheckForMissingSymbols(options, dex_files, error_title):
     
     return
 
@@ -588,9 +704,7 @@ def _DoTraceReferencesChecks(options, split_contexts_by_name):
     
     
     
-    if _CheckForMissingSymbols(options.r8_path, dex_files, options.classpath,
-                               options.warnings_as_errors, options.dump_inputs,
-                               error_title):
+    if _CheckForMissingSymbols(options, dex_files, error_title):
       
       return
 
@@ -601,15 +715,8 @@ def _Run(options):
   dynamic_config_data = _CreateDynamicConfig(options)
 
   logging.debug('Looking for embedded configs')
-  libraries = []
-  for p in options.classpath:
-    
-    
-    if 'com_android_support' in p or 'android_support_test' in p:
-      continue
-    
-    if p not in libraries and p not in options.input_paths:
-      libraries.append(p)
+  
+  libraries = [p for p in options.classpath if p not in options.input_paths]
 
   embedded_configs = {}
   for jar_path in options.input_paths + libraries:
@@ -620,15 +727,14 @@ def _Run(options):
                                    dynamic_config_data,
                                    embedded_configs,
                                    exclude_generated=True)
-  print_stdout = _ContainsDebuggingConfig(merged_configs) or options.verbose
 
   depfile_inputs = options.proguard_configs + options.input_paths + libraries
   if options.expected_file:
     diff_utils.CheckExpectations(merged_configs, options)
     if options.only_verify_expectations:
-      build_utils.WriteDepfile(options.depfile,
-                               options.actual_file,
-                               inputs=depfile_inputs)
+      action_helpers.write_depfile(options.depfile,
+                                   options.actual_file,
+                                   inputs=depfile_inputs)
       return
 
   if options.keep_rules_output_path:
@@ -637,18 +743,8 @@ def _Run(options):
                      options.keep_rules_output_path)
     return
 
-  
-  
-  
-  tools_configs = {
-      k: v
-      for k, v in embedded_configs.items() if 'com.android.tools' in k
-  }
-  dynamic_config_data += '\n' + _CombineConfigs([], None, tools_configs)
-
   split_contexts_by_name = _OptimizeWithR8(options, options.proguard_configs,
-                                           libraries, dynamic_config_data,
-                                           print_stdout)
+                                           libraries, dynamic_config_data)
 
   if not options.disable_checks:
     logging.debug('Running tracereferences')
@@ -684,7 +780,7 @@ def main():
     _Run(options)
   finally:
     if options.dump_inputs:
-      build_utils.ZipDir('r8inputs.zip', _DUMP_DIR_NAME)
+      zip_helpers.zip_directory('r8inputs.zip', _DUMP_DIR_NAME)
 
 
 if __name__ == '__main__':

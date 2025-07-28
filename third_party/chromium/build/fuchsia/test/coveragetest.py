@@ -12,9 +12,16 @@ import unittest
 
 import coverage  
 
+
 COVERED_FILES = [
     'compatible_utils.py', 'deploy_to_fuchsia.py', 'flash_device.py',
     'log_manager.py', 'publish_package.py', 'serve_repo.py', 'test_server.py'
+]
+
+
+TESTED_FILES = [
+    'common.py', 'ffx_emulator.py', 'modification_waiter.py', 'monitors.py',
+    'serial_boot_device.py'
 ]
 
 
@@ -30,7 +37,8 @@ def main():
                             config_file=True)
     cov.start()
 
-    for file in COVERED_FILES:
+    for file in COVERED_FILES + TESTED_FILES:
+        print('Testing ' + file + ' ...')
         
         
         module = importlib.import_module(file.replace('.py', '_unittests'))

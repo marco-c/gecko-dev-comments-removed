@@ -13,8 +13,6 @@ import java.nio.channels.FileLock;
 import java.util.concurrent.Callable;
 
 
-
-
 final class LockFile {
     private static final String TAG = "incrementalinstall";
 
@@ -29,8 +27,6 @@ final class LockFile {
     }
 
     
-
-
     static void clearInstallerLock(File lockFile) throws IOException {
         Log.i(TAG, "Clearing " + lockFile);
         
@@ -40,19 +36,19 @@ final class LockFile {
     }
 
     
-
-
     static void waitForInstallerLock(final File file, long timeoutMs) {
-        pollingWait(new Callable<Boolean>() {
-            @Override public Boolean call() {
-                return !installerLockExists(file);
-            }
-        }, file, timeoutMs);
+        pollingWait(
+                new Callable<Boolean>() {
+                    @Override
+                    public Boolean call() {
+                        return !installerLockExists(file);
+                    }
+                },
+                file,
+                timeoutMs);
     }
 
     
-
-
     private static void pollingWait(Callable<Boolean> func, File file, long timeoutMs) {
         long pollIntervalMs = 200;
         for (int i = 0; i < timeoutMs / pollIntervalMs; i++) {
@@ -78,8 +74,6 @@ final class LockFile {
     }
 
     
-
-
     static boolean installerLockExists(File file) {
         return !file.exists() || file.length() == 0;
     }
@@ -105,19 +99,19 @@ final class LockFile {
     }
 
     
-
-
     static void waitForRuntimeLock(final File file, long timeoutMs) {
-        pollingWait(new Callable<Boolean>() {
-            @Override public Boolean call() {
-                return !file.exists();
-            }
-        }, file, timeoutMs);
+        pollingWait(
+                new Callable<Boolean>() {
+                    @Override
+                    public Boolean call() {
+                        return !file.exists();
+                    }
+                },
+                file,
+                timeoutMs);
     }
 
     
-
-
     void release() throws IOException {
         Log.i(TAG, "Deleting lock file: " + mFile);
         mFileLock.release();

@@ -2,6 +2,8 @@
 
 
 
+mod more;
+
 fn main() {
     println!("Hello, world!");
     #[cfg(is_new_rustc)]
@@ -12,4 +14,6 @@ fn main() {
     println!("Is android!");
     #[cfg(is_mac)]
     println!("Is darwin!");
+
+    more::hello();
 }

@@ -86,26 +86,6 @@ def handle_shard_failures_with(on_failure):
   return decorator
 
 
-def place_nomedia_on_device(dev, device_root, run_as=None, as_root=False):
-  """Places .nomedia file in test data root.
-
-  This helps to prevent system from scanning media files inside test data.
-
-  Args:
-    dev: Device to place .nomedia file.
-    device_root: Base path on device to place .nomedia file.
-  """
-
-  dev.RunShellCommand(['mkdir', '-p', device_root],
-                      run_as=run_as,
-                      as_root=as_root,
-                      check_return=True)
-  dev.WriteFile('%s/.nomedia' % device_root,
-                'https://crbug.com/796640',
-                run_as=run_as,
-                as_root=as_root)
-
-
 
 
 
@@ -128,19 +108,27 @@ class LocalDeviceEnvironment(environment.Environment):
     self._preferred_abis = None
     self._recover_devices = args.recover_devices
     self._skip_clear_data = args.skip_clear_data
-    self._tool_name = args.tool
     self._trace_output = None
+    
+    
     if hasattr(args, 'trace_output'):
       self._trace_output = args.trace_output
     self._trace_all = None
     if hasattr(args, 'trace_all'):
       self._trace_all = args.trace_all
+    self._force_main_user = False
+    if hasattr(args, 'force_main_user'):
+      self._force_main_user = args.force_main_user
     self._use_persistent_shell = args.use_persistent_shell
     self._disable_test_server = args.disable_test_server
 
-    devil_chromium.Initialize(
-        output_directory=constants.GetOutDirectory(),
-        adb_path=args.adb_path)
+    use_local_devil_tools = False
+    if hasattr(args, 'use_local_devil_tools'):
+      use_local_devil_tools = args.use_local_devil_tools
+
+    devil_chromium.Initialize(output_directory=constants.GetOutDirectory(),
+                              adb_path=args.adb_path,
+                              use_local_devil_tools=use_local_devil_tools)
 
     
     
@@ -185,7 +173,16 @@ class LocalDeviceEnvironment(environment.Environment):
     @handle_shard_failures_with(on_failure=self.DenylistDevice)
     def prepare_device(d):
       d.WaitUntilFullyBooted()
-      if d.GetCurrentUser() != SYSTEM_USER_ID:
+
+      if self._force_main_user:
+        
+        main_user = d.GetMainUser()
+        if d.GetCurrentUser() != main_user:
+          logging.info('Switching to the main user with id %s', main_user)
+          d.SwitchUser(main_user)
+        d.target_user = main_user
+      elif d.GetCurrentUser() != SYSTEM_USER_ID:
+        
         
         
         
@@ -258,16 +255,16 @@ class LocalDeviceEnvironment(environment.Environment):
     return self._skip_clear_data
 
   @property
-  def tool(self):
-    return self._tool_name
-
-  @property
   def trace_output(self):
     return self._trace_output
 
   @property
   def disable_test_server(self):
     return self._disable_test_server
+
+  @property
+  def force_main_user(self):
+    return self._force_main_user
 
   
   def TearDown(self):

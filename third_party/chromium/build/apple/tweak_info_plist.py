@@ -31,12 +31,30 @@ import tempfile
 
 TOP = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
+assert sys.version_info.major >= 3, "Requires python 3.0 or higher."
 
-def _ConvertPlist(source_plist, output_plist, fmt):
-  """Convert |source_plist| to |fmt| and save as |output_plist|."""
-  assert sys.version_info.major == 2, "Use plistlib directly in Python 3"
-  return subprocess.call(
-      ['plutil', '-convert', fmt, '-o', output_plist, source_plist])
+
+def _WritePlistIfChanged(plist, output_path, fmt):
+  """Write a plist file.
+
+  Write `plist` to `output_path` in `fmt`. If `output_path` already exist,
+  the file is only overwritten if its content would be different. This allows
+  ninja to consider all dependent step to be considered as unnecessary (see
+  "restat" in ninja documentation).
+  """
+  if os.path.isfile(output_path):
+    with open(output_path, 'rb') as f:
+      try:
+        exising_plist = plistlib.load(f)
+        if exising_plist == plist:
+          return
+      except plistlib.InvalidFileException:
+        
+        pass
+
+  with open(output_path, 'wb') as f:
+    plist_format = {'binary1': plistlib.FMT_BINARY, 'xml1': plistlib.FMT_XML}
+    plistlib.dump(plist, f, fmt=plist_format[fmt])
 
 
 def _GetOutput(args):
@@ -332,16 +350,8 @@ def Main(argv):
     return 1
 
   
-  
-  with tempfile.NamedTemporaryFile() as temp_info_plist:
-    if sys.version_info.major == 2:
-      retcode = _ConvertPlist(options.plist_path, temp_info_plist.name, 'xml1')
-      if retcode != 0:
-        return retcode
-      plist = plistlib.readPlist(temp_info_plist.name)
-    else:
-      with open(options.plist_path, 'rb') as f:
-        plist = plistlib.load(f)
+  with open(options.plist_path, 'rb') as f:
+    plist = plistlib.load(f)
 
   
   overrides = {}
@@ -433,13 +443,7 @@ def Main(argv):
   
   
   
-  if sys.version_info.major == 2:
-    with tempfile.NamedTemporaryFile() as temp_info_plist:
-      plistlib.writePlist(plist, temp_info_plist.name)
-      return _ConvertPlist(temp_info_plist.name, output_path, options.format)
-  with open(output_path, 'wb') as f:
-    plist_format = {'binary1': plistlib.FMT_BINARY, 'xml1': plistlib.FMT_XML}
-    plistlib.dump(plist, f, fmt=plist_format[options.format])
+  _WritePlistIfChanged(plist, output_path, options.format)
 
 
 if __name__ == '__main__':

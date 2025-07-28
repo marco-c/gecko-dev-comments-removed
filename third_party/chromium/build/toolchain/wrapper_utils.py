@@ -13,6 +13,8 @@ import shutil
 import sys
 import threading
 
+import whole_archive
+
 _BAT_PREFIX = 'cmd /c call '
 
 
@@ -72,43 +74,7 @@ def RunLinkWithOptionalMapFile(command, env=None, map_file=None):
 
   
   
-  
-  
-  
-  
-  def extract_libname(s):
-    m = re.match(r'-LinkWrapper,add-whole-archive=(.+)', s)
-    return m.group(1) + ".rlib"
-
-  
-  whole_archive_libs = [
-      extract_libname(x) for x in command
-      if x.startswith("-LinkWrapper,add-whole-archive=")
-  ]
-
-  
-  command = [x for x in command if not x.startswith("-LinkWrapper,")]
-
-  def has_any_suffix(string, suffixes):
-    for suffix in suffixes:
-      if string.endswith(suffix):
-        return True
-    return False
-
-  def wrap_libs_with(command, libnames, before, after):
-    out = []
-    for arg in command:
-      
-      
-      if has_any_suffix(arg, libnames):
-        out.extend([before, arg, after])
-      else:
-        out.append(arg)
-    return out
-
-  
-  command = wrap_libs_with(command, whole_archive_libs, "-Wl,--whole-archive",
-                           "-Wl,--no-whole-archive")
+  command = whole_archive.wrap_with_whole_archive(command)
 
   result = subprocess.call(command, env=env)
 

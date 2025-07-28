@@ -16,7 +16,6 @@ import java.util.List;
 
 
 
-
 public class TestStatusReceiver extends BroadcastReceiver {
     private static final String TAG = "test_reporter";
 
@@ -24,6 +23,7 @@ public class TestStatusReceiver extends BroadcastReceiver {
 
     
     private static final IntentFilter INTENT_FILTER;
+
     static {
         IntentFilter filter = new IntentFilter();
         filter.addAction(TestStatusIntent.ACTION_TEST_RUN_STARTED);
@@ -40,7 +40,9 @@ public class TestStatusReceiver extends BroadcastReceiver {
     
     public interface TestRunCallback {
         void testRunStarted(int pid);
+
         void testRunFinished(int pid);
+
         void uncaughtException(int pid, String stackTrace);
     }
 
@@ -51,7 +53,11 @@ public class TestStatusReceiver extends BroadcastReceiver {
 
     
     public void register(Context c) {
-        c.registerReceiver(this, INTENT_FILTER);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            c.registerReceiver(this, INTENT_FILTER, Context.RECEIVER_EXPORTED);
+        } else {
+            c.registerReceiver(this, INTENT_FILTER);
+        }
     }
 
     

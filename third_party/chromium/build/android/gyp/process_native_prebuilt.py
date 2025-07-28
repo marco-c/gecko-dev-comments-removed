@@ -10,6 +10,7 @@ import shutil
 import sys
 
 from util import build_utils
+import action_helpers  
 
 
 def main(args):
@@ -23,7 +24,7 @@ def main(args):
   
   
   
-  with build_utils.AtomicOutput(options.stripped_output_path) as out:
+  with action_helpers.atomic_output(options.stripped_output_path) as out:
     cmd = [
         options.strip_path,
         options.input_path,

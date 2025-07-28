@@ -47,15 +47,13 @@ def main():
       return
 
     
+    if args.output.endswith('.apk'):
+      with zipfile.ZipFile(tmp_file.name) as z:
+        pathlib.Path(args.output).write_bytes(z.read('splits/base-master.apk'))
+      return
+
     
-    with zipfile.ZipFile(tmp_file.name) as z_input, \
-        zipfile.ZipFile(args.output, 'w') as z_output:
-      for info in z_input.infolist():
-        if info.filename.endswith('.apk'):
-          data = z_input.read(info)
-          info.filename = (info.filename.replace('splits/',
-                                                 '').replace('-master', ''))
-          z_output.writestr(info, data)
+    shutil.copyfile(tmp_file.name, args.output)
 
 
 if __name__ == '__main__':
