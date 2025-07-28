@@ -47,7 +47,6 @@
 #include "p2p/base/connection.h"
 #include "p2p/base/ice_agent_interface.h"
 #include "p2p/base/ice_controller_factory_interface.h"
-#include "p2p/base/ice_controller_interface.h"
 #include "p2p/base/ice_switch_reason.h"
 #include "p2p/base/ice_transport_internal.h"
 #include "p2p/base/p2p_constants.h"
@@ -254,6 +253,19 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
   void SetDtlsStunPiggybackCallbacks(
       DtlsStunPiggybackCallbacks&& callbacks) override;
 
+  
+  const IceParameters* local_ice_parameters() const override {
+    RTC_DCHECK_RUN_ON(network_thread_);
+    return &ice_parameters_;
+  }
+  
+  
+  const IceParameters* remote_ice_parameters() const override {
+    RTC_DCHECK_RUN_ON(network_thread_);
+    return remote_ice_parameters_.empty() ? nullptr
+                                          : &remote_ice_parameters_.back();
+  }
+
  private:
   P2PTransportChannel(
       absl::string_view transport_name,
@@ -352,13 +364,6 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
 
   bool AllowedToPruneConnections() const;
 
-  
-  
-  const IceParameters* remote_ice() const {
-    RTC_DCHECK_RUN_ON(network_thread_);
-    return remote_ice_parameters_.empty() ? nullptr
-                                          : &remote_ice_parameters_.back();
-  }
   
   
   const IceParameters* FindRemoteIceFromUfrag(absl::string_view ufrag,
