@@ -351,23 +351,9 @@ async function getNodeCompatibilityInfo(node, elementStyle) {
   return issue;
 }
 
-
-
-
-
-
-
-
-
-
-function hasCSSVariable(propertyValue, variableName) {
-  return getCSSVariables(propertyValue).includes(variableName);
-}
-
 module.exports = {
   getCSSVariables,
   getNodeInfo,
   getRuleFromNode,
-  hasCSSVariable,
   getNodeCompatibilityInfo,
 };
