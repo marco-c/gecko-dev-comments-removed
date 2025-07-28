@@ -65,11 +65,9 @@ async function testCrossProcessTabNavigation(browser, resourceCommand) {
     messageText: "top-level document log",
   });
   assertConsoleMessage(resourceCommand, iframeMessage, {
-    targetFront: isEveryFrameTargetEnabled
-      ? resourceCommand.targetCommand
-          .getAllTargets([resourceCommand.targetCommand.TYPES.FRAME])
-          .find(t => t.url.startsWith("data:"))
-      : resourceCommand.targetCommand.targetFront,
+    targetFront: resourceCommand.targetCommand
+      .getAllTargets([resourceCommand.targetCommand.TYPES.FRAME])
+      .find(t => t.url.startsWith("data:")),
     messageText: "data url data log",
   });
 
@@ -165,11 +163,6 @@ function assertConsoleMessage(resourceCommand, messageResource, expected) {
 }
 
 async function getIframeTargetFront(targetCommand) {
-  
-  
-  if (!isFissionEnabled() && !isEveryFrameTargetEnabled()) {
-    return targetCommand.targetFront;
-  }
   const frameTargets = targetCommand.getAllTargets([targetCommand.TYPES.FRAME]);
   const browsingContextID = await SpecialPowers.spawn(
     gBrowser.selectedBrowser,

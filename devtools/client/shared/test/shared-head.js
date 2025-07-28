@@ -1015,13 +1015,6 @@ function isFissionEnabled() {
   return SpecialPowers.useRemoteSubframes;
 }
 
-function isEveryFrameTargetEnabled() {
-  return Services.prefs.getBoolPref(
-    "devtools.every-frame-target.enabled",
-    false
-  );
-}
-
 
 
 

@@ -12,9 +12,6 @@ const POPUP_SECOND_URL =
 
 add_task(async function () {
   await pushPref("devtools.popups.debug", true);
-  
-  
-  await pushPref("devtools.every-frame-target.enabled", true);
 
   
   const tab = await addTab(TEST_URL);

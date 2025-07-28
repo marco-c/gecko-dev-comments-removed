@@ -92,6 +92,7 @@ try {
       };
       const actor = new WindowGlobalTargetActor(conn, {
         docShell,
+        ignoreSubFrames: false,
         isTopLevelTarget: true,
         
         

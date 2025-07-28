@@ -67,18 +67,16 @@ add_task(async function () {
   let iframeHighlighterTestFront = highlighterTestFront;
   let bodySelectorWithinHighlighterEnv = iframeBodySelector;
 
-  if (isFissionEnabled() || isEveryFrameTargetEnabled()) {
-    const target = toolbox.commands.targetCommand
-      .getAllTargets([toolbox.commands.targetCommand.TYPES.FRAME])
-      .find(t => t.url.startsWith("https://example.com"));
+  const target = toolbox.commands.targetCommand
+    .getAllTargets([toolbox.commands.targetCommand.TYPES.FRAME])
+    .find(t => t.url.startsWith("https://example.com"));
 
-    
-    iframeHighlighterTestFront = await getHighlighterTestFront(toolbox, {
-      target,
-    });
+  
+  iframeHighlighterTestFront = await getHighlighterTestFront(toolbox, {
+    target,
+  });
 
-    bodySelectorWithinHighlighterEnv = ["body"];
-  }
+  bodySelectorWithinHighlighterEnv = ["body"];
 
   info("Check that hovering the iframe <body> highlights the expected element");
   await hoverElement(inspector, iframeBodySelector, 40, 40);

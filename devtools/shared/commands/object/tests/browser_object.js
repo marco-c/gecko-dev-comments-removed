@@ -57,11 +57,6 @@ add_task(async function testObjectRelease() {
 });
 
 add_task(async function testMultiTargetObjectRelease() {
-   
-  if (!isEveryFrameTargetEnabled()) {
-    return;
-  }
-
   const tab = await addTab(`data:text/html;charset=utf-8,Test page<iframe src="data:text/html,bar">/iframe>`);
 
   const commands = await CommandsFactory.forTab(tab);

@@ -35,19 +35,11 @@ add_task(async function () {
   await waitForPaused(dbg);
   ok(true, "debugger is paused");
 
-  let highlighterTestFront;
-  if (isFissionEnabled() || isEveryFrameTargetEnabled()) {
-    
-    const iframeTarget = commands.targetCommand
-      .getAllTargets([commands.targetCommand.TYPES.FRAME])
-      .find(target => target.url.includes("example.org"));
-    highlighterTestFront = await iframeTarget.getFront("highlighterTest");
-  } else {
-    
-    
-    
-    highlighterTestFront = await getHighlighterTestFront(dbg.toolbox);
-  }
+  
+  const iframeTarget = commands.targetCommand
+    .getAllTargets([commands.targetCommand.TYPES.FRAME])
+    .find(target => target.url.includes("example.org"));
+  const highlighterTestFront = await iframeTarget.getFront("highlighterTest");
 
   info("Check that the paused overlay is displayed");
   await waitFor(() => highlighterTestFront.isPausedDebuggerOverlayVisible());

@@ -2906,10 +2906,6 @@ pref("devtools.target-switching.server.enabled", true);
 
 
 
-pref("devtools.every-frame-target.enabled", true);
-
-
-
 pref("devtools.popups.debug", false);
 
 

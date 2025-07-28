@@ -12,13 +12,6 @@ const TEST_URL =
 add_task(async function () {
   
   
-  if (!isFissionEnabled() && !isEveryFrameTargetEnabled()) {
-    ok(true, "Don't go further is both Fission and EFT are disabled");
-    return;
-  }
-
-  
-  
   await pushPref("dom.ipc.processPrelaunch.enabled", false);
   
   await pushPref("dom.ipc.keepProcessesAlive.web", 1);

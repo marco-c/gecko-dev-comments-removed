@@ -60,16 +60,11 @@ add_task(async function testBfCacheNavigationAfterClosingDevTools() {
   
   
   
-  let onIframeProcessed;
-
-  
-  const isNoEFTNoFis = !isFissionEnabled() && !isEveryFrameTargetEnabled();
-  if (!isNoEFTNoFis) {
-    const iframeURL = "https://example.org/document-builder.sjs";
-    onIframeProcessed = waitForTargetProcessed(toolbox.commands, targetFront =>
-      targetFront.url.startsWith(iframeURL)
-    );
-  }
+  const iframeURL = "https://example.org/document-builder.sjs";
+  const onIframeProcessed = waitForTargetProcessed(
+    toolbox.commands,
+    targetFront => targetFront.url.startsWith(iframeURL)
+  );
 
   info("Navigate to a different URL");
   await navigateTo(TEST_URI + "?someparameter");

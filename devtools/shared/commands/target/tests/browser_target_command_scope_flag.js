@@ -11,12 +11,6 @@ const TEST_URL =
 add_task(async function () {
   
   
-  if (!isFissionEnabled() && !isEveryFrameTargetEnabled()) {
-    return;
-  }
-
-  
-  
   await pushPref("dom.ipc.processPrelaunch.enabled", false);
   
   await pushPref("dom.ipc.keepProcessesAlive.web", 1);

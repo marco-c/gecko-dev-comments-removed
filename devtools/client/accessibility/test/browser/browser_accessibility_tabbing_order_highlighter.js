@@ -32,7 +32,6 @@ add_task(async () => {
     t.url.startsWith("https://example.net")
   );
 
-  
   const orgIframeHighlighterTestFront = orgIframeTarget
     ? await orgIframeTarget.getFront("highlighterTest")
     : null;

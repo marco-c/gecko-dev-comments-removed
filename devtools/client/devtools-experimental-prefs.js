@@ -19,11 +19,6 @@ const PREFERENCES = [
       "hosted from another domain, it will run in another process",
   ],
   [
-    "devtools.every-frame-target.enabled",
-    "When enabled, targets will be created for all iframes, no matter if " +
-      "they are remote or not, independently of Fission being enabled or not",
-  ],
-  [
     "fission.bfcacheInParent",
     "Enable bfcache navigation in parent process (requires Fission and involve " +
       "more top level target switching",
@@ -33,8 +28,6 @@ const PREFERENCES = [
     "Enable the JavaScript tracer. (You need to restart Firefox / the Browser Toolbox to apply this setting)",
   ],
 ];
-
-
 
 
 

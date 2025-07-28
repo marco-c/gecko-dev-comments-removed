@@ -4,10 +4,6 @@
 
 "use strict";
 
-const isEveryFrameTargetEnabled = Services.prefs.getBoolPref(
-  "devtools.every-frame-target.enabled",
-  false
-);
 const {
   WILL_NAVIGATE_TIME_SHIFT,
 } = require("resource://devtools/server/actors/webconsole/listeners/document-events.js");
@@ -100,13 +96,6 @@ class ParentProcessDocumentEventWatcher {
     const isDocument = flag & Ci.nsIWebProgressListener.STATE_IS_DOCUMENT;
     if (isDocument && isStart) {
       const { browsingContext } = progress;
-      
-      if (
-        !browsingContext.currentWindowGlobal.isProcessRoot &&
-        !isEveryFrameTargetEnabled
-      ) {
-        return;
-      }
       
       
       

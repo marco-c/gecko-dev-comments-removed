@@ -77,13 +77,10 @@ add_task(async function testBreakableLinesOverReloads() {
   ]);
 
   await selectSource(dbg, "iframe.html");
-  
-  if (isEveryFrameTargetEnabled()) {
-    is(
-      getEditorContent(dbg),
-      `Error: Incorrect contents fetched, please reload.`
-    );
-  }
+  is(
+    getEditorContent(dbg),
+    `Error: Incorrect contents fetched, please reload.`
+  );
   
 
 

@@ -94,28 +94,11 @@ add_task(async function () {
   ok(iframeBtn, "Got iframe document in the list");
 
   
-  const { resourceCommand } = toolbox.commands;
-  const { onResource: willNavigate } =
-    await resourceCommand.waitForNextResource(
-      resourceCommand.TYPES.DOCUMENT_EVENT,
-      {
-        ignoreExistingResources: true,
-        predicate(resource) {
-          return resource.name == "will-navigate";
-        },
-      }
-    );
-
-  
   
   const onInspectorReloaded = toolbox.getPanel("inspector").once("reloaded");
   info("Select the iframe");
   iframeBtn.click();
 
-  
-  if (!isEveryFrameTargetEnabled()) {
-    await willNavigate;
-  }
   await onInspectorReloaded;
   
   await wait(1000);

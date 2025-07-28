@@ -201,11 +201,7 @@ async function getElementNodeRectWithinTarget(selectors) {
   
   
   
-  
-  const relativeBrowsingContext =
-    isFissionEnabled() || isEveryFrameTargetEnabled()
-      ? bc
-      : gBrowser.selectedBrowser.browsingContext;
+  const relativeBrowsingContext = bc;
   const relativeDocumentBounds = await SpecialPowers.spawn(
     relativeBrowsingContext,
     [],

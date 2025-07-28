@@ -53,12 +53,6 @@ add_task(async function () {
   framesButton = doc.getElementById("command-button-frames");
   ok(framesButton, "Frames button is rendered again.");
 
-  
-  
-  if (!isFissionEnabled() || !isEveryFrameTargetEnabled()) {
-    return;
-  }
-
   info("Navigate to a page with frames, the frames button should be enabled.");
   await navigateTo(TEST_URL_FRAMES);
 
