@@ -1588,79 +1588,103 @@ EditorDOMPoint HTMLEditor::AutoInsertParagraphHandler::
     GetBetterSplitPointToAvoidToContinueLink(
         const EditorDOMPoint& aCandidatePointToSplit,
         const Element& aElementToSplit) {
-  
-  
-  
-  
-  
-  
-  
-  if (aCandidatePointToSplit.IsStartOfContainer()) {
-    EditorDOMPoint candidatePoint(aCandidatePointToSplit);
-    for (nsIContent* container =
-             aCandidatePointToSplit.GetContainerAs<nsIContent>();
-         container && container != &aElementToSplit;
-         container = container->GetParent()) {
-      if (HTMLEditUtils::IsLink(container)) {
-        
-        
-        candidatePoint.Set(container);
-        
-        
-      }
-      
-      if (container->GetPreviousSibling()) {
-        
-        
-        break;
-      }
-    }
-    return candidatePoint;
-  }
-
-  
-  
-  
-  
-  
-  
-  if (!aCandidatePointToSplit.IsEndOfContainer() &&
-      !aCandidatePointToSplit.IsBRElementAtEndOfContainer()) {
-    return aCandidatePointToSplit;
-  }
-  
-  
-  
-  
-  bool foundBRElement = aCandidatePointToSplit.IsBRElementAtEndOfContainer();
-  EditorDOMPoint candidatePoint(aCandidatePointToSplit);
-  for (nsIContent* container =
-           aCandidatePointToSplit.GetContainerAs<nsIContent>();
-       container && container != &aElementToSplit;
-       container = container->GetParent()) {
-    if (HTMLEditUtils::IsLink(container)) {
-      
-      candidatePoint.SetAfter(container);
-      
-      
-    }
+  EditorDOMPoint pointToSplit = [&]() MOZ_NEVER_INLINE_DEBUG {
     
-    if (nsIContent* nextSibling = container->GetNextSibling()) {
-      if (foundBRElement) {
-        
-        
-        
-        break;
+    
+    
+    
+    {
+      const WSScanResult prevVisibleThing =
+          WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
+              WSRunScanner::Scan::All, aCandidatePointToSplit,
+              BlockInlineCheck::UseComputedDisplayOutsideStyle,
+              &aElementToSplit);
+      if (prevVisibleThing.GetContent() &&
+          
+          prevVisibleThing.GetContent() !=
+              aCandidatePointToSplit.GetContainer() &&
+          
+          
+          !prevVisibleThing.GetContent()->IsInclusiveDescendantOf(
+              aCandidatePointToSplit.GetContainerOrContainerParentElement())) {
+        EditorRawDOMPoint candidatePointToSplit =
+            aCandidatePointToSplit.To<EditorRawDOMPoint>();
+        const Element* const commonAncestor =
+            Element::FromNode(nsContentUtils::GetClosestCommonInclusiveAncestor(
+                candidatePointToSplit.GetContainerOrContainerParentElement(),
+                prevVisibleThing.GetContent()));
+        MOZ_ASSERT(commonAncestor);
+        for (const Element* container =
+                 candidatePointToSplit.GetContainerOrContainerParentElement();
+             container && container != commonAncestor;
+             container = container->GetParentElement()) {
+          if (!HTMLEditUtils::IsLink(container)) {
+            continue;
+          }
+          
+          
+          candidatePointToSplit.Set(container);
+          
+          
+        }
+        return candidatePointToSplit.To<EditorDOMPoint>();
       }
-
-      
-      if (!nextSibling->IsHTMLElement(nsGkAtoms::br)) {
-        break;
-      }
-      foundBRElement = true;
     }
+    WSScanResult nextVisibleThing =
+        WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
+            WSRunScanner::Scan::All, aCandidatePointToSplit,
+            BlockInlineCheck::UseComputedDisplayOutsideStyle, &aElementToSplit);
+    if (nextVisibleThing.ReachedInvisibleBRElement()) {
+      nextVisibleThing =
+          WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
+              WSRunScanner::Scan::All,
+              nextVisibleThing.PointAfterReachedContent<EditorRawDOMPoint>(),
+              BlockInlineCheck::UseComputedDisplayOutsideStyle,
+              &aElementToSplit);
+    }
+    if (nextVisibleThing.GetContent() &&
+        
+        nextVisibleThing.GetContent() !=
+            aCandidatePointToSplit.GetContainer() &&
+        
+        
+        !nextVisibleThing.GetContent()->IsInclusiveDescendantOf(
+            aCandidatePointToSplit.GetContainerOrContainerParentElement())) {
+      EditorRawDOMPoint candidatePointToSplit =
+          aCandidatePointToSplit.To<EditorRawDOMPoint>();
+      const Element* const commonAncestor =
+          Element::FromNode(nsContentUtils::GetClosestCommonInclusiveAncestor(
+              candidatePointToSplit.GetContainerOrContainerParentElement(),
+              nextVisibleThing.GetContent()));
+      MOZ_ASSERT(commonAncestor);
+      for (const Element* container =
+               candidatePointToSplit.GetContainerOrContainerParentElement();
+           container && container != commonAncestor;
+           container = container->GetParentElement()) {
+        if (!HTMLEditUtils::IsLink(container)) {
+          continue;
+        }
+        
+        candidatePointToSplit.SetAfter(container);
+        
+        
+      }
+      return candidatePointToSplit.To<EditorDOMPoint>();
+    }
+
+    
+    return aCandidatePointToSplit;
+  }();
+
+  
+  
+  for (const nsIContent* container = pointToSplit.ContainerAs<nsIContent>();
+       container && container != &aElementToSplit &&
+       !HTMLEditUtils::IsSplittableNode(*container);
+       container = container->GetParent()) {
+    pointToSplit = pointToSplit.ParentPoint();
   }
-  return candidatePoint;
+  return pointToSplit;
 }
 
 Result<SplitNodeResult, nsresult>
