@@ -9,7 +9,6 @@
 
 #include "mozilla/Assertions.h"         
 #include "mozilla/BaseProfilerUtils.h"  
-#include "mozilla/EndianUtils.h"        
 #include "mozilla/MathAlgorithms.h"     
 #include "mozilla/Maybe.h"  
 #include "mozilla/Span.h"
@@ -29,25 +28,10 @@
 
 namespace js {
 
-enum class OutOfLineEntryType : uint8_t {
-  ScriptURL,
-  Atom,
-  Shape,
-};
-
-enum class InlineEntryType : uint8_t {
-  StackFunctionEnter,
-  StackFunctionLeave,
-  LabelEnter,
-  LabelLeave,
-  Error,
-};
-
-enum class PropertyKeyKind : uint8_t {
-  Undefined,
-  String,
-  Int,
-  Symbol,
+enum class TracerStringEncoding {
+  Latin1,
+  TwoByte,
+  UTF8,
 };
 
 using TracingScratchBuffer = mozilla::Vector<char, 512>;
@@ -103,8 +87,6 @@ class TracingBuffer {
   }
 
  public:
-  static const size_t SIZE = BUFFER_SIZE;
-
   ~TracingBuffer() {
     if (buffer_) {
       js_free(buffer_);
@@ -118,10 +100,6 @@ class TracingBuffer {
 
   bool readable() { return writeHead_ > readHead_; }
 
-  uint64_t uncommittedWriteHead() { return uncommittedWriteHead_; }
-
-  uint64_t readHead() { return readHead_; }
-
   void beginWritingEntry() {
     
     
@@ -132,8 +110,8 @@ class TracingBuffer {
   }
 
   void finishWritingEntry() {
-    MOZ_RELEASE_ASSERT(uncommittedWriteHead_ - writeHead_ <=
-                       std::numeric_limits<uint16_t>::max());
+    MOZ_ASSERT(uncommittedWriteHead_ - writeHead_ <=
+               std::numeric_limits<uint16_t>::max());
     uint16_t entryHeader = uint16_t(uncommittedWriteHead_ - writeHead_);
     writeBytesAtOffset(reinterpret_cast<const uint8_t*>(&entryHeader),
                        sizeof(entryHeader), writeHead_);
@@ -196,66 +174,20 @@ class TracingBuffer {
     
     
     static_assert(std::is_arithmetic_v<T>);
-    if constexpr (sizeof(T) > 1) {
-      val = mozilla::NativeEndian::swapToLittleEndian(val);
-    }
-
     writeBytes(reinterpret_cast<const uint8_t*>(&val), sizeof(T));
   }
 
-  template <typename T>
-  void writeAtOffset(T val, uint64_t offset) {
-    static_assert(std::is_arithmetic_v<T>);
-    if constexpr (sizeof(T) > 1) {
-      val = mozilla::NativeEndian::swapToLittleEndian(val);
-    }
-
-    writeBytesAtOffset(reinterpret_cast<const uint8_t*>(&val), sizeof(T),
-                       offset);
-  }
-
   void writeEmptyString() {
-    write(uint8_t(JS::TracerStringEncoding::Latin1));
+    write(uint8_t(TracerStringEncoding::Latin1));
     write(uint32_t(0));  
   }
 
-  void writeEmptySmallString() { write(uint16_t(0)); }
-
-  enum class InlineStringEncoding { No, Yes };
-
-  
-  
-  template <typename LengthType = uint32_t,
-            InlineStringEncoding InlineEncoding = InlineStringEncoding::No>
-  void writeAdjustedLengthAndEncoding(
-      size_t* length, JS::TracerStringEncoding encoding,
-      size_t lengthLimit = std::numeric_limits<LengthType>::max()) {
-    if (*length > lengthLimit) {
-      *length = lengthLimit;
-    }
-
-    if constexpr (InlineEncoding == InlineStringEncoding::No) {
-      write(uint8_t(encoding));
-      write(LengthType(*length));
-    } else {
-      constexpr LengthType encodingBits = 2;
-      LengthType typedLength =
-          LengthType(*length) |
-          (uint16_t(encoding) << (sizeof(LengthType) * 8 - encodingBits));
-      write(typedLength);
-    }
-  }
-
-  template <typename LengthType = uint32_t,
-            InlineStringEncoding InlineEncoding = InlineStringEncoding::No>
-  bool writeString(
-      JSContext* cx, JS::Handle<JSString*> str,
-      size_t lengthLimit = std::numeric_limits<LengthType>::max()) {
-    JS::TracerStringEncoding encoding;
+  bool writeString(JSContext* cx, JS::Handle<JSString*> str) {
+    TracerStringEncoding encoding;
     if (str->hasLatin1Chars()) {
-      encoding = JS::TracerStringEncoding::Latin1;
+      encoding = TracerStringEncoding::Latin1;
     } else {
-      encoding = JS::TracerStringEncoding::TwoByte;
+      encoding = TracerStringEncoding::TwoByte;
     }
 
     
@@ -264,15 +196,14 @@ class TracingBuffer {
     if (!linear) {
       return false;
     }
-
+    write(uint8_t(encoding));
     size_t length = linear->length();
-    writeAdjustedLengthAndEncoding<LengthType, InlineEncoding>(
-        &length, encoding, lengthLimit);
-
+    MOZ_ASSERT(length <= std::numeric_limits<uint32_t>::max());
+    write(uint32_t(length));
     size_t size = length;
     JS::AutoAssertNoGC nogc;
     const uint8_t* charBuffer = nullptr;
-    if (encoding == JS::TracerStringEncoding::TwoByte) {
+    if (encoding == TracerStringEncoding::TwoByte) {
       size *= sizeof(char16_t);
       charBuffer = reinterpret_cast<const uint8_t*>(linear->twoByteChars(nogc));
     } else {
@@ -282,33 +213,17 @@ class TracingBuffer {
     return true;
   }
 
-  template <typename CharType, JS::TracerStringEncoding Encoding,
-            typename LengthType = uint32_t,
-            InlineStringEncoding InlineEncoding = InlineStringEncoding::No>
-  void writeCString(
-      const CharType* chars,
-      size_t lengthLimit = std::numeric_limits<LengthType>::max()) {
+  template <typename CharType, TracerStringEncoding Encoding>
+  void writeCString(const CharType* chars) {
     size_t length = std::char_traits<CharType>::length(chars);
     static_assert(sizeof(CharType) == 1 ||
-                  Encoding == JS::TracerStringEncoding::TwoByte);
+                  Encoding == TracerStringEncoding::TwoByte);
     static_assert(sizeof(CharType) <= 2);
-
-    writeAdjustedLengthAndEncoding<LengthType, InlineEncoding>(
-        &length, Encoding, lengthLimit);
-
+    write(uint8_t(Encoding));
+    MOZ_ASSERT(length <= std::numeric_limits<uint32_t>::max());
+    write(uint32_t(length));
     const size_t size = length * sizeof(CharType);
     writeBytes(reinterpret_cast<const uint8_t*>(chars), size);
-  }
-
-  bool writeSmallString(JSContext* cx, JS::Handle<JSString*> str) {
-    return writeString<uint16_t, InlineStringEncoding::Yes>(
-        cx, str, JS::ValueSummary::SMALL_STRING_LENGTH_LIMIT);
-  }
-
-  template <typename CharType, JS::TracerStringEncoding Encoding>
-  void writeSmallCString(const CharType* chars) {
-    writeCString<CharType, Encoding, char16_t, InlineStringEncoding::Yes>(
-        chars, JS::ValueSummary::SMALL_STRING_LENGTH_LIMIT);
   }
 
   void readBytesAtOffset(uint8_t* bytes, size_t length, uint64_t offset) {
@@ -330,36 +245,19 @@ class TracingBuffer {
   template <typename T>
   void read(T* val) {
     static_assert(std::is_arithmetic_v<T>);
-
     readBytes(reinterpret_cast<uint8_t*>(val), sizeof(T));
-    if constexpr (sizeof(T) > 1) {
-      *val = mozilla::NativeEndian::swapFromLittleEndian(*val);
-    }
   }
 
   
   
-  template <typename LengthType = uint32_t,
-            InlineStringEncoding InlineEncoding = InlineStringEncoding::No>
   bool readString(TracingScratchBuffer& scratchBuffer,
                   mozilla::Vector<char>& stringBuffer, size_t* index) {
     uint8_t encodingByte;
-    LengthType length;
-    if constexpr (InlineEncoding == InlineStringEncoding::Yes) {
-      LengthType lengthAndEncoding;
-      read(&lengthAndEncoding);
-      constexpr LengthType encodingBits = 2;
-      constexpr LengthType encodingShift =
-          sizeof(LengthType) * 8 - encodingBits;
-      constexpr LengthType encodingMask = 0b11 << encodingShift;
-      length = lengthAndEncoding & ~encodingMask;
-      encodingByte = (lengthAndEncoding & encodingMask) >> encodingShift;
-    } else {
-      read(&encodingByte);
-      read(&length);
-    }
+    read(&encodingByte);
+    TracerStringEncoding encoding = TracerStringEncoding(encodingByte);
 
-    JS::TracerStringEncoding encoding = JS::TracerStringEncoding(encodingByte);
+    uint32_t length;
+    read(&length);
 
     *index = stringBuffer.length();
 
@@ -370,7 +268,7 @@ class TracingBuffer {
       return true;
     }
 
-    if (encoding == JS::TracerStringEncoding::UTF8) {
+    if (encoding == TracerStringEncoding::UTF8) {
       size_t reserveLength = length + 1;
       if (!stringBuffer.growByUninitialized(reserveLength)) {
         return false;
@@ -378,7 +276,7 @@ class TracingBuffer {
       char* writePtr = stringBuffer.end() - reserveLength;
       readBytes(reinterpret_cast<uint8_t*>(writePtr), length);
       writePtr[length] = '\0';
-    } else if (encoding == JS::TracerStringEncoding::Latin1) {
+    } else if (encoding == TracerStringEncoding::Latin1) {
       if (!ensureScratchBufferSize(scratchBuffer, length)) {
         return false;
       }
@@ -403,7 +301,7 @@ class TracingBuffer {
         return false;
       }
     } else {
-      MOZ_ASSERT(encoding == JS::TracerStringEncoding::TwoByte);
+      MOZ_ASSERT(encoding == TracerStringEncoding::TwoByte);
       if (!ensureScratchBufferSize(scratchBuffer, length * sizeof(char16_t))) {
         return false;
       }
@@ -434,12 +332,6 @@ class TracingBuffer {
 
     return true;
   }
-
-  bool readSmallString(TracingScratchBuffer& scratchBuffer,
-                       mozilla::Vector<char>& stringBuffer, size_t* index) {
-    return readString<uint16_t, InlineStringEncoding::Yes>(scratchBuffer,
-                                                           stringBuffer, index);
-  }
 };
 
 
@@ -451,74 +343,8 @@ using InlineDataBuffer = TracingBuffer<1 << 28>;
 
 
 
-using ValueDataBuffer = InlineDataBuffer;
-
-
-
-
 
 using OutOfLineDataBuffer = TracingBuffer<1 << 22>;
-
-class ValueSummaries {
-  ValueDataBuffer* valueData_ = nullptr;
-  OutOfLineDataBuffer* outOfLineData_ = nullptr;
-
-  friend struct ::JS_TracerSummaryWriter;
-
- public:
-  
-  
-  
-  
-  enum class IsNested { No, Yes };
-
-  void init(ValueDataBuffer* valueData, OutOfLineDataBuffer* outOfLineData) {
-    valueData_ = valueData;
-    outOfLineData_ = outOfLineData;
-  }
-
-  bool writeValue(JSContext* cx, JS::Handle<JS::Value> val, IsNested nested);
-
-  
-  
-  bool writeArguments(JSContext* cx, AbstractFramePtr frame,
-                      uint64_t* valueBufferIndex);
-
-  
-  
-  bool populateOutputBuffer(JS::ExecutionTrace::TracedJSContext& context);
-
-  
-  
-  
-  int32_t getOutputBufferIndex(uint64_t ringBufferIndex);
-
-  void writeHeader(JS::ValueType type, uint8_t flags);
-  bool writeShapeSummary(JSContext* cx, JS::Handle<NativeShape*> shape);
-
-  
-  bool writeMinimalShapeSummary(JSContext* cx, JS::Handle<Shape*> shape);
-
-  void writeObjectHeader(JS::ObjectSummary::Kind kind, uint8_t flags);
-
-  bool writeObject(JSContext* cx, JS::Handle<JSObject*> obj, IsNested nested);
-
-  bool writeFunctionSummary(JSContext* cx, JS::Handle<JSFunction*> fn,
-                            IsNested nested);
-  bool writeArrayObjectSummary(JSContext* cx, JS::Handle<ArrayObject*> array,
-                               IsNested nested);
-  bool writeSetObjectSummary(JSContext* cx, JS::Handle<SetObject*> set,
-                             IsNested nested);
-  bool writeMapObjectSummary(JSContext* cx, JS::Handle<MapObject*> set,
-                             IsNested nested);
-  bool writeGenericOrWrappedPrimitiveObjectSummary(
-      JSContext* cx, JS::Handle<NativeObject*> nobj, IsNested nested);
-  bool writeExternalObjectSummary(JSContext* cx, JS::Handle<NativeObject*> nobj,
-                                  IsNested nested);
-
-  bool writeStringLikeValue(JSContext* cx, JS::ValueType valueType,
-                            JS::Handle<JSString*> str);
-};
 
 
 
@@ -546,19 +372,9 @@ class ExecutionTracer {
   
   
   
-  ValueDataBuffer valueData_;
-
-  
-  
-  
   
   
   mozilla::baseprofiler::BaseProfilerThreadId threadId_;
-
-  
-  
-  
-  ValueSummaries valueSummaries_;
 
   
   
@@ -591,19 +407,17 @@ class ExecutionTracer {
   bool readInlineEntry(mozilla::Vector<JS::ExecutionTrace::TracedEvent>& events,
                        TracingScratchBuffer& scratchBuffer,
                        mozilla::Vector<char>& stringBuffer);
-  bool readOutOfLineEntry(
-      mozilla::HashMap<uint32_t, size_t>& scriptUrls,
-      mozilla::HashMap<uint32_t, size_t>& atoms,
-      mozilla::Vector<JS::ExecutionTrace::ShapeSummary>& shapes,
-      TracingScratchBuffer& scratchBuffer, mozilla::Vector<char>& stringBuffer);
+  bool readOutOfLineEntry(mozilla::HashMap<uint32_t, size_t>& scriptUrls,
+                          mozilla::HashMap<uint32_t, size_t>& atoms,
+                          TracingScratchBuffer& scratchBuffer,
+                          mozilla::Vector<char>& stringBuffer);
   bool readInlineEntries(
       mozilla::Vector<JS::ExecutionTrace::TracedEvent>& events,
       TracingScratchBuffer& scratchBuffer, mozilla::Vector<char>& stringBuffer);
-  bool readOutOfLineEntries(
-      mozilla::HashMap<uint32_t, size_t>& scriptUrls,
-      mozilla::HashMap<uint32_t, size_t>& atoms,
-      mozilla::Vector<JS::ExecutionTrace::ShapeSummary>& shapes,
-      TracingScratchBuffer& scratchBuffer, mozilla::Vector<char>& stringBuffer);
+  bool readOutOfLineEntries(mozilla::HashMap<uint32_t, size_t>& scriptUrls,
+                            mozilla::HashMap<uint32_t, size_t>& atoms,
+                            TracingScratchBuffer& scratchBuffer,
+                            mozilla::Vector<char>& stringBuffer);
 
  public:
   ExecutionTracer() : bufferLock_(mutexid::ExecutionTracerInstanceLock) {}
@@ -630,15 +444,10 @@ class ExecutionTracer {
     if (!outOfLineData_.init()) {
       return false;
     }
-    if (!valueData_.init()) {
-      return false;
-    }
 
     if (!globalInstances.append(this)) {
       return false;
     }
-
-    valueSummaries_.init(&valueData_, &outOfLineData_);
 
     return true;
   }
@@ -646,9 +455,9 @@ class ExecutionTracer {
   void onEnterFrame(JSContext* cx, AbstractFramePtr frame);
   void onLeaveFrame(JSContext* cx, AbstractFramePtr frame);
 
-  template <typename CharType, JS::TracerStringEncoding Encoding>
+  template <typename CharType, TracerStringEncoding Encoding>
   void onEnterLabel(const CharType* eventType);
-  template <typename CharType, JS::TracerStringEncoding Encoding>
+  template <typename CharType, TracerStringEncoding Encoding>
   void onLeaveLabel(const CharType* eventType);
 
   
