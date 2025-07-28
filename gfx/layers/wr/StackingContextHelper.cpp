@@ -24,9 +24,7 @@ StackingContextHelper::StackingContextHelper()
       mScale(1.0f, 1.0f),
       mAffectsClipPositioning(false),
       mDeferredTransformItem(nullptr),
-      mRasterizeLocally(false) {
-  
-}
+      mRasterizeLocally(false) {}
 
 static nsSize ComputeDesiredDisplaySizeForAnimation(nsIFrame* aContainerFrame) {
   
@@ -137,7 +135,6 @@ StackingContextHelper::StackingContextHelper(
                         aParentSC.mRasterizeLocally) {
   MOZ_ASSERT(!aContainerItem || aContainerItem->CreatesStackingContextHelper());
 
-  mOrigin = aParentSC.mOrigin + aBounds.TopLeft();
   
   
 

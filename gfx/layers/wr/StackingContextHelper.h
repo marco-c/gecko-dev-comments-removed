@@ -66,13 +66,10 @@ class MOZ_RAII StackingContextHelper {
   bool AffectsClipPositioning() const { return mAffectsClipPositioning; }
   Maybe<wr::WrSpatialId> ReferenceFrameId() const { return mReferenceFrameId; }
 
-  const LayoutDevicePoint& GetOrigin() const { return mOrigin; }
-
  private:
   wr::DisplayListBuilder* mBuilder;
   gfx::MatrixScales mScale;
   gfx::Matrix mInheritedTransform;
-  LayoutDevicePoint mOrigin;
 
   
   
