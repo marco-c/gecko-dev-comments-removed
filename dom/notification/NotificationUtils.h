@@ -14,6 +14,7 @@
 #include "nsStringFwd.h"
 
 enum class nsresult : uint32_t;
+class nsIAlertNotification;
 class nsIPrincipal;
 class nsINotificationStorage;
 namespace mozilla::dom {
@@ -68,6 +69,12 @@ NotificationPermission GetNotificationPermission(
 
 nsCOMPtr<nsINotificationStorage> GetNotificationStorage(bool isPrivate);
 
+using NotificationsPromise =
+    MozPromise<CopyableTArray<IPCNotification>, nsresult, false>;
+
+already_AddRefed<NotificationsPromise> GetStoredNotificationsForScope(
+    nsIPrincipal* aPrincipal, const nsACString& aScope, const nsAString& aTag);
+
 nsresult GetOrigin(nsIPrincipal* aPrincipal, nsString& aOrigin);
 
 nsresult PersistNotification(nsIPrincipal* aPrincipal,
@@ -81,6 +88,14 @@ enum class CloseMode {
   InactiveGlobal,
 };
 void UnregisterNotification(nsIPrincipal* aPrincipal, const nsString& aId);
+
+
+
+
+
+
+nsresult ShowAlertWithCleanup(nsIAlertNotification* aAlert,
+                              nsIObserver* aAlertListener);
 
 nsresult RemovePermission(nsIPrincipal* aPrincipal);
 nsresult OpenSettings(nsIPrincipal* aPrincipal);
