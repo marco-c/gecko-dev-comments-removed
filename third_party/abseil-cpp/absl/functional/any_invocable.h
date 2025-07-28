@@ -157,7 +157,6 @@ ABSL_NAMESPACE_BEGIN
 
 
 
-
 template <class Sig>
 class AnyInvocable : private internal_any_invocable::Impl<Sig> {
  private:

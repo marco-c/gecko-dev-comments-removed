@@ -64,64 +64,13 @@
 
 
 
+
+
 #ifndef ABSL_BASE_OPTIONS_H_
 #define ABSL_BASE_OPTIONS_H_
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define ABSL_OPTION_USE_STD_ANY 2
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define ABSL_OPTION_USE_STD_OPTIONAL 2
 
 
 

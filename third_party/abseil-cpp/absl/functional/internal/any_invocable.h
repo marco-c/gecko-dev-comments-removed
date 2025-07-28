@@ -65,7 +65,6 @@
 
 #include "absl/base/attributes.h"
 #include "absl/base/config.h"
-#include "absl/base/internal/invoke.h"
 #include "absl/base/macros.h"
 #include "absl/base/optimization.h"
 #include "absl/meta/type_traits.h"
@@ -115,30 +114,13 @@ using RemoveCVRef =
     typename std::remove_cv<typename std::remove_reference<T>::type>::type;
 
 
-
-
-
-
-
-template <class ReturnType, class F, class... P,
-          typename = absl::enable_if_t<std::is_void<ReturnType>::value>>
-void InvokeR(F&& f, P&&... args) {
-  absl::base_internal::invoke(std::forward<F>(f), std::forward<P>(args)...);
-}
-
-template <class ReturnType, class F, class... P,
-          absl::enable_if_t<!std::is_void<ReturnType>::value, int> = 0>
+template <class ReturnType, class F, class... P>
 ReturnType InvokeR(F&& f, P&&... args) {
-  
-#if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(12, 0)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#endif
-  return absl::base_internal::invoke(std::forward<F>(f),
-                                     std::forward<P>(args)...);
-#if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(12, 0)
-#pragma GCC diagnostic pop
-#endif
+  if constexpr (std::is_void_v<ReturnType>) {
+    std::invoke(std::forward<F>(f), std::forward<P>(args)...);
+  } else {
+    return std::invoke(std::forward<F>(f), std::forward<P>(args)...);
+  }
 }
 
 
@@ -199,25 +181,7 @@ union TypeErasedState {
 template <class T>
 T& ObjectInLocalStorage(TypeErasedState* const state) {
   
-#if ABSL_INTERNAL_CPLUSPLUS_LANG >= 201703L && __cpp_lib_launder >= 201606L
   return *std::launder(reinterpret_cast<T*>(&state->storage));
-#elif ABSL_HAVE_BUILTIN(__builtin_launder)
-  return *__builtin_launder(reinterpret_cast<T*>(&state->storage));
-#else
-
-  
-  
-  
-#if !defined(__clang__) && defined(__GNUC__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wstrict-aliasing"
-#endif
-  return *reinterpret_cast<T*>(&state->storage);
-#if !defined(__clang__) && defined(__GNUC__)
-#pragma GCC diagnostic pop
-#endif
-
-#endif
 }
 
 
@@ -449,7 +413,6 @@ class CoreImpl {
       
       
       
-      
 #if !defined(__clang__) && defined(__GNUC__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpragmas"
@@ -536,58 +499,40 @@ class CoreImpl {
   
   template <class QualTRef, class... Args>
   void InitializeStorage(Args&&... args) {
-    if constexpr (IsStoredLocally<RemoveCVRef<QualTRef>>()) {
-      using RawT = RemoveCVRef<QualTRef>;
+    using RawT = RemoveCVRef<QualTRef>;
+    if constexpr (IsStoredLocally<RawT>()) {
       ::new (static_cast<void*>(&state_.storage))
           RawT(std::forward<Args>(args)...);
-
       invoker_ = LocalInvoker<SigIsNoexcept, ReturnType, QualTRef, P...>;
       
-      InitializeLocalManager<RawT>();
+      if constexpr (std::is_trivially_copyable_v<RawT>) {
+        manager_ = LocalManagerTrivial;
+      } else {
+        manager_ = LocalManagerNontrivial<RawT>;
+      }
     } else {
-      InitializeRemoteManager<RemoveCVRef<QualTRef>>(
-          std::forward<Args>(args)...);
+      InitializeRemoteManager<RawT>(std::forward<Args>(args)...);
       
       
       invoker_ = RemoteInvoker<SigIsNoexcept, ReturnType, QualTRef, P...>;
     }
   }
 
-  template <class T,
-            typename = absl::enable_if_t<std::is_trivially_copyable<T>::value>>
-  void InitializeLocalManager() {
-    manager_ = LocalManagerTrivial;
-  }
-
-  template <class T,
-            absl::enable_if_t<!std::is_trivially_copyable<T>::value, int> = 0>
-  void InitializeLocalManager() {
-    manager_ = LocalManagerNontrivial<T>;
-  }
-
-  template <class T>
-  using HasTrivialRemoteStorage =
-      std::integral_constant<bool, std::is_trivially_destructible<T>::value &&
-                                       alignof(T) <=
-                                           ABSL_INTERNAL_DEFAULT_NEW_ALIGNMENT>;
-
-  template <class T, class... Args,
-            typename = absl::enable_if_t<HasTrivialRemoteStorage<T>::value>>
+  template <class T, class... Args>
   void InitializeRemoteManager(Args&&... args) {
-    
-    std::unique_ptr<void, TrivialDeleter> uninitialized_target(
-        ::operator new(sizeof(T)), TrivialDeleter(sizeof(T)));
-    ::new (uninitialized_target.get()) T(std::forward<Args>(args)...);
-    state_.remote.target = uninitialized_target.release();
-    state_.remote.size = sizeof(T);
-    manager_ = RemoteManagerTrivial;
-  }
-
-  template <class T, class... Args,
-            absl::enable_if_t<!HasTrivialRemoteStorage<T>::value, int> = 0>
-  void InitializeRemoteManager(Args&&... args) {
-    state_.remote.target = ::new T(std::forward<Args>(args)...);
-    manager_ = RemoteManagerNontrivial<T>;
+    if constexpr (std::is_trivially_destructible_v<T> &&
+                  alignof(T) <= ABSL_INTERNAL_DEFAULT_NEW_ALIGNMENT) {
+      
+      std::unique_ptr<void, TrivialDeleter> uninitialized_target(
+          ::operator new(sizeof(T)), TrivialDeleter(sizeof(T)));
+      ::new (uninitialized_target.get()) T(std::forward<Args>(args)...);
+      state_.remote.target = uninitialized_target.release();
+      state_.remote.size = sizeof(T);
+      manager_ = RemoteManagerTrivial;
+    } else {
+      state_.remote.target = ::new T(std::forward<Args>(args)...);
+      manager_ = RemoteManagerNontrivial<T>;
+    }
   }
 
   
@@ -714,7 +659,7 @@ using CanAssignReferenceWrapper = TrueAlias<
               UnwrapStdReferenceWrapper<absl::decay_t<F>> inv_quals, P...>,  \
           std::is_same<                                                      \
               ReturnType,                                                    \
-              absl::base_internal::invoke_result_t<                          \
+              std::invoke_result_t<                                          \
                   UnwrapStdReferenceWrapper<absl::decay_t<F>> inv_quals,     \
                   P...>>>>::value>
 
@@ -745,11 +690,10 @@ using CanAssignReferenceWrapper = TrueAlias<
     /*SFINAE constraint to check if F is invocable with the proper signature*/ \
     template <class F>                                                         \
     using CallIsValid = TrueAlias<absl::enable_if_t<absl::disjunction<         \
-        absl::base_internal::is_invocable_r<ReturnType,                        \
-                                            absl::decay_t<F> inv_quals, P...>, \
-        std::is_same<ReturnType,                                               \
-                     absl::base_internal::invoke_result_t<                     \
-                         absl::decay_t<F> inv_quals, P...>>>::value>>;         \
+        std::is_invocable_r<ReturnType, absl::decay_t<F> inv_quals, P...>,     \
+        std::is_same<                                                          \
+            ReturnType,                                                        \
+            std::invoke_result_t<absl::decay_t<F> inv_quals, P...>>>::value>>; \
                                                                                \
     /*SFINAE constraint to check if F is nothrow-invocable when necessary*/    \
     template <class F>                                                         \

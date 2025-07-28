@@ -199,12 +199,10 @@ class NoDestructor {
       impl_;
 };
 
-#ifdef ABSL_HAVE_CLASS_TEMPLATE_ARGUMENT_DEDUCTION
 
 
 template <typename T>
 NoDestructor(T) -> NoDestructor<T>;
-#endif  
 
 ABSL_NAMESPACE_END
 }  

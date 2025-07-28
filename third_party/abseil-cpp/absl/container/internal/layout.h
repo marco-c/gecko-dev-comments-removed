@@ -316,9 +316,6 @@ std::string TypeName() {
 
 }  
 
-template <bool C>
-using EnableIf = typename std::enable_if<C, int>::type;
-
 
 template <class T>
 using IsLegalElementType = std::integral_constant<
@@ -418,17 +415,16 @@ class LayoutImpl<
   
   
   
-  template <size_t N, EnableIf<N == 0> = 0>
+  template <size_t N>
   constexpr size_t Offset() const {
-    return 0;
-  }
-
-  template <size_t N, EnableIf<N != 0> = 0>
-  constexpr size_t Offset() const {
-    static_assert(N < NumOffsets, "Index out of bounds");
-    return adl_barrier::Align(
-        Offset<N - 1>() + SizeOf<ElementType<N - 1>>::value * Size<N - 1>(),
-        ElementAlignment<N>::value);
+    if constexpr (N == 0) {
+      return 0;
+    } else {
+      static_assert(N < NumOffsets, "Index out of bounds");
+      return adl_barrier::Align(
+          Offset<N - 1>() + SizeOf<ElementType<N - 1>>::value * Size<N - 1>(),
+          ElementAlignment<N>::value);
+    }
   }
 
   
@@ -457,15 +453,14 @@ class LayoutImpl<
   
   
   
-  template <size_t N, EnableIf<(N < NumStaticSizes)> = 0>
+  template <size_t N>
   constexpr size_t Size() const {
-    return kStaticSizes[N];
-  }
-
-  template <size_t N, EnableIf<(N >= NumStaticSizes)> = 0>
-  constexpr size_t Size() const {
-    static_assert(N < NumSizes, "Index out of bounds");
-    return size_[N - NumStaticSizes];
+    if constexpr (N < NumStaticSizes) {
+      return kStaticSizes[N];
+    } else {
+      static_assert(N < NumSizes, "Index out of bounds");
+      return size_[N - NumStaticSizes];
+    }
   }
 
   
@@ -624,15 +619,13 @@ class LayoutImpl<
   
   
   
-  template <class Char, size_t N = NumOffsets - 1, EnableIf<N == 0> = 0>
+  template <class Char, size_t N = NumOffsets - 1>
   void PoisonPadding(const Char* p) const {
-    Pointer<0>(p);  
-  }
-
-  template <class Char, size_t N = NumOffsets - 1, EnableIf<N != 0> = 0>
-  void PoisonPadding(const Char* p) const {
-    static_assert(N < NumOffsets, "Index out of bounds");
-    (void)p;
+    if constexpr (N == 0) {
+      Pointer<0>(p);  
+    } else {
+      static_assert(N < NumOffsets, "Index out of bounds");
+      (void)p;
 #ifdef ABSL_HAVE_ADDRESS_SANITIZER
     PoisonPadding<Char, N - 1>(p);
     
@@ -642,6 +635,7 @@ class LayoutImpl<
       ASAN_POISON_MEMORY_REGION(p + start, Offset<N>() - start);
     }
 #endif
+    }
   }
 
   
@@ -691,15 +685,6 @@ class LayoutImpl<
   
   size_t size_[NumRuntimeSizes > 0 ? NumRuntimeSizes : 1];
 };
-
-
-
-template <class... Elements, size_t... StaticSizeSeq, size_t... RuntimeSizeSeq,
-          size_t... SizeSeq, size_t... OffsetSeq>
-constexpr std::array<size_t, sizeof...(StaticSizeSeq)> LayoutImpl<
-    std::tuple<Elements...>, absl::index_sequence<StaticSizeSeq...>,
-    absl::index_sequence<RuntimeSizeSeq...>, absl::index_sequence<SizeSeq...>,
-    absl::index_sequence<OffsetSeq...>>::kStaticSizes;
 
 template <class StaticSizeSeq, size_t NumRuntimeSizes, class... Ts>
 using LayoutType = LayoutImpl<

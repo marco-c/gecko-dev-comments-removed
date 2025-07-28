@@ -35,8 +35,6 @@
 
 
 
-
-
 #ifndef ABSL_FUNCTIONAL_OVERLOAD_H_
 #define ABSL_FUNCTIONAL_OVERLOAD_H_
 
@@ -45,9 +43,6 @@
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
-
-#if defined(ABSL_INTERNAL_CPLUSPLUS_LANG) && \
-    ABSL_INTERNAL_CPLUSPLUS_LANG >= 201703L
 
 template <typename... T>
 struct Overload final : T... {
@@ -70,21 +65,6 @@ struct Overload final : T... {
 
 template <typename... T>
 Overload(T...) -> Overload<T...>;
-
-#else
-
-namespace functional_internal {
-template <typename T>
-constexpr bool kDependentFalse = false;
-}
-
-template <typename Dependent = int, typename... T>
-auto Overload(T&&...) {
-  static_assert(functional_internal::kDependentFalse<Dependent>,
-                "Overload is only usable with C++17 or above.");
-}
-
-#endif
 
 ABSL_NAMESPACE_END
 }  

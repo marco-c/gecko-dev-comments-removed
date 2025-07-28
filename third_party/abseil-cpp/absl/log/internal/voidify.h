@@ -20,9 +20,11 @@
 
 
 
+
 #ifndef ABSL_LOG_INTERNAL_VOIDIFY_H_
 #define ABSL_LOG_INTERNAL_VOIDIFY_H_
 
+#include "absl/base/attributes.h"
 #include "absl/base/config.h"
 
 namespace absl {
@@ -34,7 +36,11 @@ class Voidify final {
   
   
   template <typename T>
-  void operator&&(const T&) const&& {}
+  ABSL_ATTRIBUTE_COLD void operator&&(T&& message) const&& {
+    
+    
+    message.Flush();
+  }
 };
 
 }  

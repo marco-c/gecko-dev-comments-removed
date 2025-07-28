@@ -40,8 +40,6 @@
 #include <utility>
 
 #include "absl/base/config.h"
-#include "absl/base/internal/inline_variable.h"
-#include "absl/base/internal/invoke.h"
 #include "absl/meta/type_traits.h"
 
 namespace absl {
@@ -55,6 +53,10 @@ using std::exchange;
 using std::forward;
 using std::index_sequence;
 using std::index_sequence_for;
+using std::in_place;
+using std::in_place_t;
+using std::in_place_type;
+using std::in_place_type_t;
 using std::integer_sequence;
 using std::make_index_sequence;
 using std::make_integer_sequence;
@@ -80,41 +82,6 @@ struct InPlaceIndexTag {
 
 
 
-#ifdef ABSL_USES_STD_OPTIONAL
-
-using std::in_place_t;
-using std::in_place;
-
-#else  
-
-
-
-
-
-
-struct in_place_t {};
-
-ABSL_INTERNAL_INLINE_CONSTEXPR(in_place_t, in_place, {});
-
-#endif  
-
-#if defined(ABSL_USES_STD_ANY) || defined(ABSL_USES_STD_VARIANT)
-using std::in_place_type;
-using std::in_place_type_t;
-#else
-
-
-
-
-
-
-template <typename T>
-using in_place_type_t = void (*)(utility_internal::InPlaceTypeTag<T>);
-
-template <typename T>
-void in_place_type(utility_internal::InPlaceTypeTag<T>) {}
-#endif  
-
 #ifdef ABSL_USES_STD_VARIANT
 using std::in_place_index;
 using std::in_place_index_t;
@@ -136,12 +103,10 @@ namespace utility_internal {
 
 template <typename Functor, typename Tuple, std::size_t... Indexes>
 auto apply_helper(Functor&& functor, Tuple&& t, index_sequence<Indexes...>)
-    -> decltype(absl::base_internal::invoke(
-        absl::forward<Functor>(functor),
-        std::get<Indexes>(absl::forward<Tuple>(t))...)) {
-  return absl::base_internal::invoke(
-      absl::forward<Functor>(functor),
-      std::get<Indexes>(absl::forward<Tuple>(t))...);
+    -> decltype(std::invoke(absl::forward<Functor>(functor),
+                            std::get<Indexes>(absl::forward<Tuple>(t))...)) {
+  return std::invoke(absl::forward<Functor>(functor),
+                     std::get<Indexes>(absl::forward<Tuple>(t))...);
 }
 
 }  

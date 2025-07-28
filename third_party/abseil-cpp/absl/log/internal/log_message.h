@@ -183,17 +183,13 @@ class LogMessage {
   LogMessage& operator<<(char (&buf)[SIZE]) ABSL_ATTRIBUTE_NOINLINE;
 
   
-  template <typename T,
-            typename std::enable_if<absl::HasAbslStringify<T>::value,
-                                    int>::type = 0>
+  
+  
+  template <typename T>
   LogMessage& operator<<(const T& v) ABSL_ATTRIBUTE_NOINLINE;
 
   
-  
-  template <typename T,
-            typename std::enable_if<!absl::HasAbslStringify<T>::value,
-                                    int>::type = 0>
-  LogMessage& operator<<(const T& v) ABSL_ATTRIBUTE_NOINLINE;
+  void Flush();
 
   
   
@@ -206,11 +202,6 @@ class LogMessage {
   
   
   [[noreturn]] static void FailQuietly();
-
-  
-  
-  
-  void Flush();
 
   
   
@@ -308,21 +299,16 @@ class StringifySink final {
 };
 
 
-template <typename T,
-          typename std::enable_if<absl::HasAbslStringify<T>::value, int>::type>
+template <typename T>
 LogMessage& LogMessage::operator<<(const T& v) {
-  StringifySink sink(*this);
-  
-  AbslStringify(sink, v);
-  return *this;
-}
-
-
-template <typename T,
-          typename std::enable_if<!absl::HasAbslStringify<T>::value, int>::type>
-LogMessage& LogMessage::operator<<(const T& v) {
-  OstreamView view(*data_);
-  view.stream() << log_internal::NullGuard<T>().Guard(v);
+  if constexpr (absl::HasAbslStringify<T>::value) {
+    StringifySink sink(*this);
+    
+    AbslStringify(sink, v);
+  } else {
+    OstreamView view(*data_);
+    view.stream() << log_internal::NullGuard<T>().Guard(v);
+  }
   return *this;
 }
 

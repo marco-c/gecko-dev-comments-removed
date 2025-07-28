@@ -86,11 +86,6 @@ crc32c_t ExtendCrc32cInternal(crc32c_t initial_crc,
 
 
 
-crc32c_t ComputeCrc32c(absl::string_view buf);
-
-
-
-
 
 
 
@@ -110,6 +105,13 @@ inline crc32c_t ExtendCrc32c(crc32c_t initial_crc,
     }
   }
   return crc_internal::ExtendCrc32cInternal(initial_crc, buf_to_add);
+}
+
+
+
+
+inline crc32c_t ComputeCrc32c(absl::string_view buf) {
+  return ExtendCrc32c(crc32c_t{0}, buf);
 }
 
 

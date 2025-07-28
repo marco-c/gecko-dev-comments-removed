@@ -18,7 +18,6 @@
 #include <cstdint>
 
 #include "absl/base/config.h"
-#include "absl/base/internal/inline_variable.h"
 #include "absl/base/internal/unscaledcycleclock_config.h"
 
 namespace absl {
@@ -31,21 +30,22 @@ namespace base_internal {
 
 
 
-ABSL_INTERNAL_INLINE_CONSTEXPR(int32_t, kCycleClockShift, 1);
+inline constexpr int32_t kCycleClockShift = 1;
 #else
 
 
 
-ABSL_INTERNAL_INLINE_CONSTEXPR(int32_t, kCycleClockShift, 0);
+inline constexpr int32_t kCycleClockShift = 0;
 #endif
 #else   
 
 
-ABSL_INTERNAL_INLINE_CONSTEXPR(int32_t, kCycleClockShift, 2);
+inline constexpr int32_t kCycleClockShift = 2;
 #endif  
 
-ABSL_INTERNAL_INLINE_CONSTEXPR(double, kCycleClockFrequencyScale,
-                               1.0 / (1 << kCycleClockShift));
+inline constexpr double kCycleClockFrequencyScale =
+    1.0 / (1 << kCycleClockShift);
+
 #endif  
 
 }  

@@ -115,10 +115,8 @@ class ABSL_MUST_USE_RESULT Cleanup final {
 
 
 
-#if defined(ABSL_HAVE_CLASS_TEMPLATE_ARGUMENT_DEDUCTION)
 template <typename Callback>
 Cleanup(Callback callback) -> Cleanup<cleanup_internal::Tag, Callback>;
-#endif  
 
 
 
