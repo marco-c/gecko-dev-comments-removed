@@ -117,10 +117,6 @@ EncodeSupportSet FFmpegEncoderModule<V>::Supports(
       return EncodeSupportSet{};
     }
   }
-  
-  if (aConfig.mHardwarePreference == HardwarePreference::RequireHardware) {
-    return false;
-  }
   return SupportsCodec(aConfig.mCodec);
 }
 
