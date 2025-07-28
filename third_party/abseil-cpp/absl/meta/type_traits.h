@@ -97,26 +97,7 @@ struct is_detected_impl<typename VoidTImpl<Op<Args...>>::type, Op, Args...> {
 template <template <class...> class Op, class... Args>
 struct is_detected : is_detected_impl<void, Op, Args...>::type {};
 
-template <class Enabler, class To, template <class...> class Op, class... Args>
-struct is_detected_convertible_impl {
-  using type = std::false_type;
-};
-
-template <class To, template <class...> class Op, class... Args>
-struct is_detected_convertible_impl<
-    typename std::enable_if<std::is_convertible<Op<Args...>, To>::value>::type,
-    To, Op, Args...> {
-  using type = std::true_type;
-};
-
-template <class To, template <class...> class Op, class... Args>
-struct is_detected_convertible
-    : is_detected_convertible_impl<void, To, Op, Args...>::type {};
-
 }  
-
-
-
 
 
 
@@ -136,81 +117,20 @@ using void_t = typename type_traits_internal::VoidTImpl<Ts...>::type;
 
 
 
-
-
-
-template <typename... Ts>
-struct conjunction : std::true_type {};
-
-template <typename T, typename... Ts>
-struct conjunction<T, Ts...>
-    : std::conditional<T::value, conjunction<Ts...>, T>::type {};
-
-template <typename T>
-struct conjunction<T> : T {};
-
-
-
-
-
-
-
-
-
-
-template <typename... Ts>
-struct disjunction : std::false_type {};
-
-template <typename T, typename... Ts>
-struct disjunction<T, Ts...>
-    : std::conditional<T::value, T, disjunction<Ts...>>::type {};
-
-template <typename T>
-struct disjunction<T> : T {};
-
-
-
-
-
-
-
-
-template <typename T>
-struct negation : std::integral_constant<bool, !T::value> {};
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename T>
-struct is_function
-    : std::integral_constant<
-          bool, !(std::is_reference<T>::value ||
-                  std::is_const<typename std::add_const<T>::type>::value)> {};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+using std::add_const_t;
+using std::add_cv_t;
+using std::add_lvalue_reference_t;
+using std::add_pointer_t;
+using std::add_rvalue_reference_t;
+using std::add_volatile_t;
+using std::common_type_t;
+using std::conditional_t;
+using std::conjunction;
+using std::decay_t;
+using std::enable_if_t;
+using std::disjunction;
 using std::is_copy_assignable;
+using std::is_function;
 using std::is_move_assignable;
 using std::is_trivially_copy_assignable;
 using std::is_trivially_copy_constructible;
@@ -218,6 +138,17 @@ using std::is_trivially_default_constructible;
 using std::is_trivially_destructible;
 using std::is_trivially_move_assignable;
 using std::is_trivially_move_constructible;
+using std::make_signed_t;
+using std::make_unsigned_t;
+using std::negation;
+using std::remove_all_extents_t;
+using std::remove_const_t;
+using std::remove_cv_t;
+using std::remove_extent_t;
+using std::remove_pointer_t;
+using std::remove_reference_t;
+using std::remove_volatile_t;
+using std::underlying_type_t;
 
 #if defined(__cpp_lib_remove_cvref) && __cpp_lib_remove_cvref >= 201711L
 template <typename T>
@@ -239,70 +170,6 @@ struct remove_cvref {
 template <typename T>
 using remove_cvref_t = typename remove_cvref<T>::type;
 #endif
-
-
-
-
-
-template <typename T>
-using remove_cv_t = typename std::remove_cv<T>::type;
-
-template <typename T>
-using remove_const_t = typename std::remove_const<T>::type;
-
-template <typename T>
-using remove_volatile_t = typename std::remove_volatile<T>::type;
-
-template <typename T>
-using add_cv_t = typename std::add_cv<T>::type;
-
-template <typename T>
-using add_const_t = typename std::add_const<T>::type;
-
-template <typename T>
-using add_volatile_t = typename std::add_volatile<T>::type;
-
-template <typename T>
-using remove_reference_t = typename std::remove_reference<T>::type;
-
-template <typename T>
-using add_lvalue_reference_t = typename std::add_lvalue_reference<T>::type;
-
-template <typename T>
-using add_rvalue_reference_t = typename std::add_rvalue_reference<T>::type;
-
-template <typename T>
-using remove_pointer_t = typename std::remove_pointer<T>::type;
-
-template <typename T>
-using add_pointer_t = typename std::add_pointer<T>::type;
-
-template <typename T>
-using make_signed_t = typename std::make_signed<T>::type;
-
-template <typename T>
-using make_unsigned_t = typename std::make_unsigned<T>::type;
-
-template <typename T>
-using remove_extent_t = typename std::remove_extent<T>::type;
-
-template <typename T>
-using remove_all_extents_t = typename std::remove_all_extents<T>::type;
-
-template <typename T>
-using decay_t = typename std::decay<T>::type;
-
-template <bool B, typename T = void>
-using enable_if_t = typename std::enable_if<B, T>::type;
-
-template <bool B, typename T, typename F>
-using conditional_t = typename std::conditional<B, T, F>::type;
-
-template <typename... T>
-using common_type_t = typename std::common_type<T...>::type;
-
-template <typename T>
-using underlying_type_t = typename std::underlying_type<T>::type;
 
 namespace type_traits_internal {
 

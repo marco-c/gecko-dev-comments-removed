@@ -115,23 +115,29 @@ TEST(FlatHashMap, StandardLayout) {
 }
 
 TEST(FlatHashMap, Relocatability) {
-  static_assert(absl::is_trivially_relocatable<int>::value, "");
+  static_assert(absl::is_trivially_relocatable<int>::value);
+#if ABSL_INTERNAL_CPLUSPLUS_LANG <= 202002L
+  
+  
+  
+  
+  
   static_assert(
-      absl::is_trivially_relocatable<std::pair<const int, int>>::value, "");
+      absl::is_trivially_relocatable<std::pair<const int, int>>::value);
+#endif
   static_assert(
       std::is_same<decltype(absl::container_internal::FlatHashMapPolicy<
                             int, int>::transfer<std::allocator<char>>(nullptr,
                                                                       nullptr,
                                                                       nullptr)),
-                   std::true_type>::value,
-      "");
+                   std::true_type>::value);
 
-    struct NonRelocatable {
-      NonRelocatable() = default;
-      NonRelocatable(NonRelocatable&&) {}
-      NonRelocatable& operator=(NonRelocatable&&) { return *this; }
-      void* self = nullptr;
-    };
+  struct NonRelocatable {
+    NonRelocatable() = default;
+    NonRelocatable(NonRelocatable&&) {}
+    NonRelocatable& operator=(NonRelocatable&&) { return *this; }
+    void* self = nullptr;
+  };
 
   EXPECT_FALSE(absl::is_trivially_relocatable<NonRelocatable>::value);
   EXPECT_TRUE(
@@ -360,8 +366,6 @@ TEST(FlatHashMap, CForEachMutate) {
   }
 }
 
-
-#if defined(__cpp_lib_launder) && __cpp_lib_launder >= 201606
 TEST(FlatHashMap, NodeHandleMutableKeyAccess) {
   flat_hash_map<std::string, std::string> map;
 
@@ -373,7 +377,6 @@ TEST(FlatHashMap, NodeHandleMutableKeyAccess) {
 
   EXPECT_THAT(map, testing::ElementsAre(Pair("key", "mapped")));
 }
-#endif
 
 TEST(FlatHashMap, Reserve) {
   

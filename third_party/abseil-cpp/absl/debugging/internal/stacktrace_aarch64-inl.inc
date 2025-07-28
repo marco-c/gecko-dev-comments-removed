@@ -18,6 +18,7 @@
 
 #include "absl/base/attributes.h"
 #include "absl/debugging/internal/address_is_readable.h"
+#include "absl/debugging/internal/addresses.h"
 #include "absl/debugging/internal/vdso_support.h"  
 #include "absl/debugging/stacktrace.h"
 
@@ -178,30 +179,15 @@ static void **NextStackFrame(void **old_frame_pointer, const void *uc,
   return new_frame_pointer;
 }
 
-
-
-
-
-inline void* ClearPacBits(void* ptr) {
-  register void* x30 __asm__("x30") = ptr;
-  
-  
-  
-  
-#define ABSL_XPACLRI_HINT "hint #0x7;"
-  asm(ABSL_XPACLRI_HINT : "+r"(x30));  
-#undef ABSL_XPACLRI_HINT
-  return x30;
-}
-
 template <bool IS_STACK_FRAMES, bool IS_WITH_CONTEXT>
 
 
 ABSL_ATTRIBUTE_NOINLINE
 ABSL_ATTRIBUTE_NO_SANITIZE_ADDRESS  
 ABSL_ATTRIBUTE_NO_SANITIZE_MEMORY   
-static int UnwindImpl(void** result, int* sizes, int max_depth, int skip_count,
-                      const void *ucp, int *min_dropped_frames) {
+static int UnwindImpl(void **result, uintptr_t *frames, int *sizes,
+                      int max_depth, int skip_count, const void *ucp,
+                      int *min_dropped_frames) {
 #ifdef __GNUC__
   void **frame_pointer = reinterpret_cast<void**>(__builtin_frame_address(0));
 #else
@@ -235,10 +221,18 @@ static int UnwindImpl(void** result, int* sizes, int max_depth, int skip_count,
     if (skip_count > 0) {
       skip_count--;
     } else {
-      result[n] = ClearPacBits(prev_return_address);
+      result[n] = reinterpret_cast<void *>(
+          absl::debugging_internal::StripPointerMetadata(prev_return_address));
       if (IS_STACK_FRAMES) {
-        sizes[n] = static_cast<int>(
-            ComputeStackFrameSize(prev_frame_pointer, frame_pointer));
+        if (frames != nullptr) {
+          frames[n] = absl::debugging_internal::StripPointerMetadata(
+                          prev_frame_pointer) +
+                      2 * sizeof(void *) ;
+        }
+        if (sizes != nullptr) {
+          sizes[n] = static_cast<int>(
+              ComputeStackFrameSize(prev_frame_pointer, frame_pointer));
+        }
       }
       n++;
     }

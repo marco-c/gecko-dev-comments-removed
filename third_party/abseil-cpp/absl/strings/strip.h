@@ -74,7 +74,7 @@ inline constexpr bool ConsumeSuffix(absl::Nonnull<absl::string_view*> str,
 
 
 
-ABSL_MUST_USE_RESULT inline constexpr absl::string_view StripPrefix(
+[[nodiscard]] inline constexpr absl::string_view StripPrefix(
     absl::string_view str ABSL_ATTRIBUTE_LIFETIME_BOUND,
     absl::string_view prefix) {
   if (absl::StartsWith(str, prefix)) str.remove_prefix(prefix.size());
@@ -86,7 +86,7 @@ ABSL_MUST_USE_RESULT inline constexpr absl::string_view StripPrefix(
 
 
 
-ABSL_MUST_USE_RESULT inline constexpr absl::string_view StripSuffix(
+[[nodiscard]] inline constexpr absl::string_view StripSuffix(
     absl::string_view str ABSL_ATTRIBUTE_LIFETIME_BOUND,
     absl::string_view suffix) {
   if (absl::EndsWith(str, suffix)) str.remove_suffix(suffix.size());

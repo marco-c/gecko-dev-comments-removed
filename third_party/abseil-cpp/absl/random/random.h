@@ -34,10 +34,10 @@
 #include <cstdint>
 #include <random>
 
+#include "absl/base/config.h"
 #include "absl/random/distributions.h"  
-#include "absl/random/internal/nonsecure_base.h"  
-#include "absl/random/internal/pcg_engine.h"  
-#include "absl/random/internal/pool_urbg.h"
+#include "absl/random/internal/nonsecure_base.h"
+#include "absl/random/internal/pcg_engine.h"
 #include "absl/random/internal/randen_engine.h"
 #include "absl/random/seed_sequences.h"  
 
@@ -95,13 +95,46 @@ ABSL_NAMESPACE_BEGIN
 
 
 
+class BitGen : private random_internal::NonsecureURBGBase<
+                   random_internal::randen_engine<uint64_t>> {
+  using Base = random_internal::NonsecureURBGBase<
+      random_internal::randen_engine<uint64_t>>;
 
+ public:
+  using result_type = typename Base::result_type;
 
+  
+  
+  
+  
+  
+  using Base::Base;
+  using Base::operator=;
 
+  
+  
+  
+  using Base::min;
 
+  
+  
+  
+  using Base::max;
 
+  
+  
+  
+  
+  using Base::discard;
 
+  
+  
+  
+  using Base::operator();
 
+  using Base::operator==;
+  using Base::operator!=;
+};
 
 
 
@@ -118,8 +151,6 @@ ABSL_NAMESPACE_BEGIN
 
 
 
-using BitGen = random_internal::NonsecureURBGBase<
-    random_internal::randen_engine<uint64_t>>;
 
 
 
@@ -146,43 +177,46 @@ using BitGen = random_internal::NonsecureURBGBase<
 
 
 
+class InsecureBitGen : private random_internal::NonsecureURBGBase<
+                           random_internal::pcg64_2018_engine> {
+  using Base =
+      random_internal::NonsecureURBGBase<random_internal::pcg64_2018_engine>;
 
+ public:
+  using result_type = typename Base::result_type;
 
+  
+  
+  
+  
+  
+  using Base::Base;
+  using Base::operator=;
 
-
-
-
-
-
-
-
-
-
-
-using InsecureBitGen =
-    random_internal::NonsecureURBGBase<random_internal::pcg64_2018_engine>;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  
+  
+  
+  using Base::min;
+
+  
+  
+  
+  using Base::max;
+
+  
+  
+  
+  
+  using Base::discard;
+
+  
+  
+  
+  using Base::operator();
+
+  using Base::operator==;
+  using Base::operator!=;
+};
 
 ABSL_NAMESPACE_END
 }  

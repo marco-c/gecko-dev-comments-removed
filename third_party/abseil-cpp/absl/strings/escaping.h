@@ -163,8 +163,8 @@ bool WebSafeBase64Unescape(absl::string_view src,
 
 
 
-ABSL_MUST_USE_RESULT bool HexStringToBytes(absl::string_view hex,
-                                           absl::Nonnull<std::string*> bytes);
+[[nodiscard]] bool HexStringToBytes(absl::string_view hex,
+                                    absl::Nonnull<std::string*> bytes);
 
 
 

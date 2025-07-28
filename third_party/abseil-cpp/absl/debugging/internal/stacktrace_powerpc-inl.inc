@@ -21,6 +21,7 @@
 #ifndef ABSL_DEBUGGING_INTERNAL_STACKTRACE_POWERPC_INL_H_
 #define ABSL_DEBUGGING_INTERNAL_STACKTRACE_POWERPC_INL_H_
 
+#include "absl/debugging/internal/addresses.h"
 #if defined(__linux__)
 #include <asm/ptrace.h>   
 #include <ucontext.h>     
@@ -40,22 +41,22 @@
 
 
 
-static inline void *StacktracePowerPCGetLR(void **sp) {
+static inline void **StacktracePowerPCGetLRPtr(void **sp) {
   
   
   
   
 #if defined(_CALL_AIX) || defined(_CALL_DARWIN)
-  return *(sp+2);
+  return (sp + 2);
 #elif defined(_CALL_SYSV)
-  return *(sp+1);
+  return (sp + 1);
 #elif defined(__APPLE__) || defined(__FreeBSD__) || \
     (defined(__linux__) && defined(__PPC64__))
   
-  return *(sp+2);
+  return (sp + 2);
 #elif defined(__linux)
   
-  return *(sp+1);
+  return (sp + 1);
 #else
 #error Need to specify the PPC ABI for your architecture.
 #endif
@@ -125,9 +126,8 @@ static void **NextStackFrame(void **old_sp, const void *uc) {
       }
     }
 
-    if (new_sp != nullptr &&
-        kernel_symbol_status == kAddressValid &&
-        StacktracePowerPCGetLR(new_sp) == kernel_sigtramp_rt64_address) {
+    if (new_sp != nullptr && kernel_symbol_status == kAddressValid &&
+        *StacktracePowerPCGetLRPtr(new_sp) == kernel_sigtramp_rt64_address) {
       const ucontext_t* signal_context =
           reinterpret_cast<const ucontext_t*>(uc);
       void **const sp_before_signal =
@@ -164,8 +164,9 @@ ABSL_ATTRIBUTE_NOINLINE static void AbslStacktracePowerPCDummyFunction() {
 template <bool IS_STACK_FRAMES, bool IS_WITH_CONTEXT>
 ABSL_ATTRIBUTE_NO_SANITIZE_ADDRESS  
 ABSL_ATTRIBUTE_NO_SANITIZE_MEMORY   
-static int UnwindImpl(void** result, int* sizes, int max_depth, int skip_count,
-                      const void *ucp, int *min_dropped_frames) {
+static int UnwindImpl(void **result, uintptr_t *frames, int *sizes,
+                      int max_depth, int skip_count, const void *ucp,
+                      int *min_dropped_frames) {
   void **sp;
   
   
@@ -211,13 +212,21 @@ static int UnwindImpl(void** result, int* sizes, int max_depth, int skip_count,
     if (skip_count > 0) {
       skip_count--;
     } else {
-      result[n] = StacktracePowerPCGetLR(sp);
+      void **lr = StacktracePowerPCGetLRPtr(sp);
+      result[n] = *lr;
       if (IS_STACK_FRAMES) {
-        if (next_sp > sp) {
-          sizes[n] = (uintptr_t)next_sp - (uintptr_t)sp;
-        } else {
-          
-          sizes[n] = 0;
+        if (frames != nullptr) {
+          frames[n] = absl::debugging_internal::StripPointerMetadata(lr) +
+                      1 * sizeof(void *) ;
+        }
+        if (sizes != nullptr) {
+          if (next_sp > sp) {
+            sizes[n] = absl::debugging_internal::StripPointerMetadata(next_sp) -
+                       absl::debugging_internal::StripPointerMetadata(sp);
+          } else {
+            
+            sizes[n] = 0;
+          }
         }
       }
       n++;

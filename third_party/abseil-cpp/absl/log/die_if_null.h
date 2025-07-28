@@ -60,8 +60,8 @@ namespace log_internal {
 
 
 template <typename T>
-ABSL_MUST_USE_RESULT T DieIfNull(const char* file, int line,
-                                 const char* exprtext, T&& t) {
+[[nodiscard]] T DieIfNull(const char* file, int line, const char* exprtext,
+                          T&& t) {
   if (ABSL_PREDICT_FALSE(t == nullptr)) {
     
     DieBecauseNull(file, line, exprtext);

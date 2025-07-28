@@ -174,7 +174,7 @@ union TypeErasedState {
   } remote;
 
   
-  alignas(kAlignment) char storage[kStorageSize];
+  alignas(kAlignment) unsigned char storage[kStorageSize];
 };
 
 
@@ -642,11 +642,6 @@ using CanAssignReferenceWrapper = TrueAlias<
 
 
 
-#define ABSL_INTERNAL_ANY_INVOCABLE_NOEXCEPT_CONSTRAINT(inv_quals, noex) \
-  ABSL_INTERNAL_ANY_INVOCABLE_NOEXCEPT_CONSTRAINT_##noex(inv_quals)
-
-
-
 
 
 #define ABSL_INTERNAL_ANY_INVOCABLE_NOEXCEPT_CONSTRAINT_true(inv_quals)      \
@@ -698,8 +693,8 @@ using CanAssignReferenceWrapper = TrueAlias<
     /*SFINAE constraint to check if F is nothrow-invocable when necessary*/    \
     template <class F>                                                         \
     using CallIsNoexceptIfSigIsNoexcept =                                      \
-        TrueAlias<ABSL_INTERNAL_ANY_INVOCABLE_NOEXCEPT_CONSTRAINT(inv_quals,   \
-                                                                  noex)>;      \
+        TrueAlias<ABSL_INTERNAL_ANY_INVOCABLE_NOEXCEPT_CONSTRAINT_##noex(      \
+            inv_quals)>;                                                       \
                                                                                \
     /*Put the AnyInvocable into an empty state.*/                              \
     Impl() = default;                                                          \
@@ -772,7 +767,6 @@ ABSL_INTERNAL_ANY_INVOCABLE_IMPL(const, &&, const&&);
 #undef ABSL_INTERNAL_ANY_INVOCABLE_IMPL_
 #undef ABSL_INTERNAL_ANY_INVOCABLE_NOEXCEPT_CONSTRAINT_false
 #undef ABSL_INTERNAL_ANY_INVOCABLE_NOEXCEPT_CONSTRAINT_true
-#undef ABSL_INTERNAL_ANY_INVOCABLE_NOEXCEPT_CONSTRAINT
 
 }  
 ABSL_NAMESPACE_END

@@ -359,8 +359,8 @@ using ParsedFormat = str_format_internal::ExtendedParsedFormat<
 
 
 template <typename... Args>
-ABSL_MUST_USE_RESULT std::string StrFormat(const FormatSpec<Args...>& format,
-                                           const Args&... args) {
+[[nodiscard]] std::string StrFormat(const FormatSpec<Args...>& format,
+                                    const Args&... args) {
   return str_format_internal::FormatPack(
       str_format_internal::UntypedFormatSpecImpl::Extract(format),
       {str_format_internal::FormatArgImpl(args)...});
@@ -396,7 +396,7 @@ std::string& StrAppendFormat(absl::Nonnull<std::string*> dst,
 
 
 template <typename... Args>
-ABSL_MUST_USE_RESULT str_format_internal::Streamable StreamFormat(
+[[nodiscard]] str_format_internal::Streamable StreamFormat(
     const FormatSpec<Args...>& format, const Args&... args) {
   return str_format_internal::Streamable(
       str_format_internal::UntypedFormatSpecImpl::Extract(format),
@@ -582,9 +582,9 @@ using FormatArg = str_format_internal::FormatArgImpl;
 
 
 
-ABSL_MUST_USE_RESULT inline bool FormatUntyped(
-    FormatRawSink raw_sink, const UntypedFormatSpec& format,
-    absl::Span<const FormatArg> args) {
+[[nodiscard]] inline bool FormatUntyped(FormatRawSink raw_sink,
+                                        const UntypedFormatSpec& format,
+                                        absl::Span<const FormatArg> args) {
   return str_format_internal::FormatUntyped(
       str_format_internal::FormatRawSinkImpl::Extract(raw_sink),
       str_format_internal::UntypedFormatSpecImpl::Extract(format), args);

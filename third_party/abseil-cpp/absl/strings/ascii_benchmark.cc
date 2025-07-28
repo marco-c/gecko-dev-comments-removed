@@ -12,15 +12,14 @@
 
 
 
-#include "absl/strings/ascii.h"
-
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <cstddef>
-#include <string>
-#include <array>
 #include <random>
+#include <string>
 
+#include "absl/strings/ascii.h"
 #include "benchmark/benchmark.h"
 
 namespace {

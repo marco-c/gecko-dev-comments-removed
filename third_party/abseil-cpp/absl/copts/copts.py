@@ -57,6 +57,7 @@ ABSL_LLVM_FLAGS = [
     "-Winvalid-constexpr",
     "-Wliteral-conversion",
     "-Wmissing-declarations",
+    "-Wnullability-completeness",
     "-Woverlength-strings",
     "-Wpointer-arith",
     "-Wself-assign",
@@ -66,6 +67,7 @@ ABSL_LLVM_FLAGS = [
     "-Wstring-conversion",
     "-Wtautological-overlap-compare",
     "-Wtautological-unsigned-zero-compare",
+    "-Wthread-safety",
     "-Wundef",
     "-Wuninitialized",
     "-Wunreachable-code",
@@ -119,10 +121,6 @@ MSVC_WARNING_FLAGS = [
     
     "/wd4180",
     
-    "/wd4244",
-    
-    "/wd4267",
-    
     "/wd4503",
     
     "/wd4800",
@@ -158,24 +156,33 @@ def GccStyleFilterAndCombine(default_flags, test_flags):
 COPT_VARS = {
     "ABSL_GCC_FLAGS": ABSL_GCC_FLAGS,
     "ABSL_GCC_TEST_FLAGS": GccStyleFilterAndCombine(
-        ABSL_GCC_FLAGS, ABSL_GCC_TEST_ADDITIONAL_FLAGS),
+        ABSL_GCC_FLAGS, ABSL_GCC_TEST_ADDITIONAL_FLAGS
+    ),
     "ABSL_LLVM_FLAGS": ABSL_LLVM_FLAGS,
     "ABSL_LLVM_TEST_FLAGS": GccStyleFilterAndCombine(
-        ABSL_LLVM_FLAGS, ABSL_LLVM_TEST_ADDITIONAL_FLAGS),
-    "ABSL_CLANG_CL_FLAGS":
-        MSVC_BIG_WARNING_FLAGS + MSVC_DEFINES,
-    "ABSL_CLANG_CL_TEST_FLAGS":
-        MSVC_BIG_WARNING_FLAGS + MSVC_DEFINES + ABSL_LLVM_TEST_ADDITIONAL_FLAGS,
-    "ABSL_MSVC_FLAGS":
-        MSVC_BIG_WARNING_FLAGS + MSVC_WARNING_FLAGS + MSVC_DEFINES,
-    "ABSL_MSVC_TEST_FLAGS":
-        MSVC_BIG_WARNING_FLAGS + MSVC_WARNING_FLAGS + MSVC_DEFINES + [
+        ABSL_LLVM_FLAGS, ABSL_LLVM_TEST_ADDITIONAL_FLAGS
+    ),
+    "ABSL_CLANG_CL_FLAGS": MSVC_BIG_WARNING_FLAGS + MSVC_DEFINES,
+    "ABSL_CLANG_CL_TEST_FLAGS": (
+        MSVC_BIG_WARNING_FLAGS + MSVC_DEFINES + ABSL_LLVM_TEST_ADDITIONAL_FLAGS
+    ),
+    "ABSL_MSVC_FLAGS": (
+        MSVC_BIG_WARNING_FLAGS + MSVC_WARNING_FLAGS + MSVC_DEFINES
+    ),
+    "ABSL_MSVC_TEST_FLAGS": (
+        MSVC_BIG_WARNING_FLAGS
+        + MSVC_WARNING_FLAGS
+        + MSVC_DEFINES
+        + [
             "/wd4018",  
             "/wd4101",  
+            "/wd4244",  
+            "/wd4267",  
             "/wd4503",  
             "/wd4996",  
             "/DNOMINMAX",  
-        ],
+        ]
+    ),
     "ABSL_MSVC_LINKOPTS": [
         
         "-ignore:4221",

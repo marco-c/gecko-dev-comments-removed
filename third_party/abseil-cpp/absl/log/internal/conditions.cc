@@ -63,8 +63,9 @@ bool LogEveryNSecState::ShouldLog(double seconds) {
   
   
   if (now_cycles > next_cycles) {
-    next_log_time_cycles_.store(now_cycles + seconds * CycleClock::Frequency(),
-                                std::memory_order_relaxed);
+    next_log_time_cycles_.store(
+        static_cast<int64_t>(now_cycles + seconds * CycleClock::Frequency()),
+        std::memory_order_relaxed);
     return true;
   }
   return false;
@@ -72,7 +73,8 @@ bool LogEveryNSecState::ShouldLog(double seconds) {
   do {
     if (now_cycles <= next_cycles) return false;
   } while (!next_log_time_cycles_.compare_exchange_weak(
-      next_cycles, now_cycles + seconds * CycleClock::Frequency(),
+      next_cycles,
+      static_cast<int64_t>(now_cycles + seconds * CycleClock::Frequency()),
       std::memory_order_relaxed, std::memory_order_relaxed));
   return true;
 #endif

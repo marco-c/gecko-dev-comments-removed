@@ -169,9 +169,9 @@ inline bool EncodeStringTruncate(uint64_t tag, absl::string_view value,
 
 
 
-ABSL_MUST_USE_RESULT absl::Span<char> EncodeMessageStart(uint64_t tag,
-                                                         uint64_t max_size,
-                                                         absl::Span<char> *buf);
+[[nodiscard]] absl::Span<char> EncodeMessageStart(uint64_t tag,
+                                                  uint64_t max_size,
+                                                  absl::Span<char> *buf);
 
 
 

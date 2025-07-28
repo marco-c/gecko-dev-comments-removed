@@ -61,8 +61,9 @@ static RtlCaptureStackBackTrace_Function* const RtlCaptureStackBackTrace_fn =
 #endif  
 
 template <bool IS_STACK_FRAMES, bool IS_WITH_CONTEXT>
-static int UnwindImpl(void** result, int* sizes, int max_depth, int skip_count,
-                      const void*, int* min_dropped_frames) {
+static int UnwindImpl(void** result, uintptr_t* frames, int* sizes,
+                      int max_depth, int skip_count, const void*,
+                      int* min_dropped_frames) {
   USHORT n = 0;
   if (!RtlCaptureStackBackTrace_fn || skip_count < 0 || max_depth < 0) {
     
@@ -72,7 +73,12 @@ static int UnwindImpl(void** result, int* sizes, int max_depth, int skip_count,
   }
   if (IS_STACK_FRAMES) {
     
-    memset(sizes, 0, sizeof(*sizes) * n);
+    if (frames != nullptr) {
+      memset(frames, 0, sizeof(*frames) * n);
+    }
+    if (sizes != nullptr) {
+      memset(sizes, 0, sizeof(*sizes) * n);
+    }
   }
   if (min_dropped_frames != nullptr) {
     

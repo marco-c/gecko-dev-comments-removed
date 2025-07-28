@@ -123,32 +123,6 @@
 
 
 
-#define ABSL_OPTION_USE_STD_VARIANT 0
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 #define ABSL_OPTION_USE_STD_ORDERING 2
 

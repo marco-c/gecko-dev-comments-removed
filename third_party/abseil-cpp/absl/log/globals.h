@@ -43,7 +43,7 @@ ABSL_NAMESPACE_BEGIN
 
 
 
-ABSL_MUST_USE_RESULT absl::LogSeverityAtLeast MinLogLevel();
+[[nodiscard]] absl::LogSeverityAtLeast MinLogLevel();
 
 
 
@@ -82,7 +82,7 @@ class ScopedMinLogLevel final {
 
 
 
-ABSL_MUST_USE_RESULT absl::LogSeverityAtLeast StderrThreshold();
+[[nodiscard]] absl::LogSeverityAtLeast StderrThreshold();
 
 
 
@@ -118,8 +118,7 @@ class ScopedStderrThreshold final {
 
 
 namespace log_internal {
-ABSL_MUST_USE_RESULT bool ShouldLogBacktraceAt(absl::string_view file,
-                                               int line);
+[[nodiscard]] bool ShouldLogBacktraceAt(absl::string_view file, int line);
 }  
 
 
@@ -145,7 +144,7 @@ void ClearLogBacktraceLocation();
 
 
 
-ABSL_MUST_USE_RESULT bool ShouldPrependLogPrefix();
+[[nodiscard]] bool ShouldPrependLogPrefix();
 
 
 

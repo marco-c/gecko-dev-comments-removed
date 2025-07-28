@@ -192,7 +192,6 @@
 #include <typeinfo>
 #include <utility>
 
-#include "absl/base/attributes.h"
 #include "absl/base/config.h"
 #include "absl/debugging/internal/demangle.h"
 #include "absl/meta/type_traits.h"
@@ -594,7 +593,7 @@ class LayoutImpl<
   
   
   template <class Char>
-  auto Slices(ABSL_ATTRIBUTE_UNUSED Char* p) const {
+  auto Slices([[maybe_unused]] Char* p) const {
     return std::tuple<SliceType<CopyConst<Char, ElementType<SizeSeq>>>...>(
         Slice<SizeSeq>(p)...);
   }

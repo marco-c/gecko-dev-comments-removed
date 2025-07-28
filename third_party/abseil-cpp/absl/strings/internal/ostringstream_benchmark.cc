@@ -12,11 +12,10 @@
 
 
 
-#include "absl/strings/internal/ostringstream.h"
-
 #include <sstream>
 #include <string>
 
+#include "absl/strings/internal/ostringstream.h"
 #include "benchmark/benchmark.h"
 
 namespace {

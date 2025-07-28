@@ -21,7 +21,7 @@
 #include <string>
 #include <vector>
 
-#include "absl/base/attributes.h"
+#include "absl/base/config.h"
 #include "absl/random/internal/fast_uniform_bits.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
@@ -54,7 +54,7 @@ static_assert(kEntropyBlocksNeeded > 0,
 
 
 
-ABSL_MUST_USE_RESULT
+[[nodiscard]]
 bool ReadSeedMaterialFromOSEntropy(absl::Span<uint32_t> values);
 
 
@@ -65,8 +65,8 @@ bool ReadSeedMaterialFromOSEntropy(absl::Span<uint32_t> values);
 
 
 template <typename URBG>
-ABSL_MUST_USE_RESULT bool ReadSeedMaterialFromURBG(
-    URBG* urbg, absl::Span<uint32_t> values) {
+[[nodiscard]] bool ReadSeedMaterialFromURBG(URBG* urbg,
+                                            absl::Span<uint32_t> values) {
   random_internal::FastUniformBits<uint32_t> distr;
 
   assert(urbg != nullptr && values.data() != nullptr);

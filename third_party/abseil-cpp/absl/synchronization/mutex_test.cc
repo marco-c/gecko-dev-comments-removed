@@ -1357,7 +1357,7 @@ static absl::Duration TimeoutTestAllowedSchedulingDelay() {
 
 
 
-ABSL_MUST_USE_RESULT
+[[nodiscard]]
 static bool DelayIsWithinBounds(absl::Duration expected_delay,
                                 absl::Duration actual_delay) {
   bool pass = true;
@@ -1725,7 +1725,7 @@ TEST(Mutex, Logging) {
 TEST(Mutex, LoggingAddressReuse) {
   
   ScopedInvariantDebugging scoped_debugging;
-  alignas(absl::Mutex) char storage[sizeof(absl::Mutex)];
+  alignas(absl::Mutex) unsigned char storage[sizeof(absl::Mutex)];
   auto invariant =
       +[](void *alive) { EXPECT_TRUE(*static_cast<bool *>(alive)); };
   constexpr size_t kIters = 10;

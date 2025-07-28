@@ -73,7 +73,7 @@ void FinalizeRegistry();
 
 
 
-void Retire(const char* name, FlagFastTypeId type_id, char* buf);
+void Retire(const char* name, FlagFastTypeId type_id, unsigned char* buf);
 
 constexpr size_t kRetiredFlagObjSize = 3 * sizeof(void*);
 constexpr size_t kRetiredFlagObjAlignment = alignof(void*);
@@ -87,7 +87,7 @@ class RetiredFlag {
   }
 
  private:
-  alignas(kRetiredFlagObjAlignment) char buf_[kRetiredFlagObjSize];
+  alignas(kRetiredFlagObjAlignment) unsigned char buf_[kRetiredFlagObjSize];
 };
 
 }  

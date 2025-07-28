@@ -464,7 +464,7 @@ class StatusOr : private internal_statusor::StatusOrData<T>,
   
   
   
-  const Status& status() const&;
+  ABSL_MUST_USE_RESULT const Status& status() const&;
   Status status() &&;
 
   

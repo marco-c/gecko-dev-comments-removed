@@ -177,7 +177,7 @@ class MockingBitGen {
             typename ValidatorT>
   auto RegisterMock(SelfT&, base_internal::FastTypeIdType type, ValidatorT)
       -> decltype(GetMockFnType(std::declval<ResultT>(),
-                                std::declval<ArgTupleT>())) & {
+                                std::declval<ArgTupleT>()))& {
     using MockFnType = decltype(GetMockFnType(std::declval<ResultT>(),
                                               std::declval<ArgTupleT>()));
 
@@ -212,10 +212,10 @@ class MockingBitGen {
   
   
   
-  inline bool InvokeMock(base_internal::FastTypeIdType type, void* args_tuple,
+  inline bool InvokeMock(base_internal::FastTypeIdType key_id, void* args_tuple,
                          void* result) {
     
-    auto it = mocks_.find(type);
+    auto it = mocks_.find(key_id);
     if (it == mocks_.end()) return false;
     it->second->Apply(args_tuple, result);
     return true;

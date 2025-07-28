@@ -26,7 +26,6 @@
 #include <vector>
 
 #include "absl/base/macros.h"
-#include "absl/meta/type_traits.h"
 #include "absl/random/bernoulli_distribution.h"
 #include "absl/random/beta_distribution.h"
 #include "absl/random/exponential_distribution.h"
@@ -65,10 +64,10 @@ class PrecompiledSeedSeq {
   PrecompiledSeedSeq() = default;
 
   template <typename Iterator>
-  PrecompiledSeedSeq(Iterator begin, Iterator end) {}
+  PrecompiledSeedSeq(Iterator, Iterator) {}
 
   template <typename T>
-  PrecompiledSeedSeq(std::initializer_list<T> il) {}
+  PrecompiledSeedSeq(std::initializer_list<T>) {}
 
   template <typename OutIterator>
   void generate(OutIterator begin, OutIterator end) {
@@ -90,29 +89,22 @@ class PrecompiledSeedSeq {
 };
 
 
-
-
-
-template <typename E>
-using use_default_initialization = std::false_type;
+class DefaultConstructorSeedSeq {};
 
 
 
 
-template <typename Engine, typename SSeq = PrecompiledSeedSeq>
-typename absl::enable_if_t<!use_default_initialization<Engine>::value, Engine>
-make_engine() {
-  
-  
-  SSeq seq(std::begin(kSeedData), std::end(kSeedData));
-  return Engine(seq);
-}
-
-template <typename Engine, typename SSeq = PrecompiledSeedSeq>
-typename absl::enable_if_t<use_default_initialization<Engine>::value, Engine>
-make_engine() {
-  
-  return Engine();
+template <typename Engine, typename SSeq = DefaultConstructorSeedSeq>
+Engine make_engine() {
+  constexpr bool use_default_initialization =
+    std::is_same_v<SSeq, DefaultConstructorSeedSeq>;
+  if constexpr (use_default_initialization) {
+    return Engine();
+  } else {
+    
+    SSeq seq(std::begin(kSeedData), std::end(kSeedData));
+    return Engine(seq);
+  }
 }
 
 template <typename Engine, typename SSeq>
@@ -248,6 +240,7 @@ void BM_Thread(benchmark::State& state) {
 
 
 #define BM_BASIC(Engine)                                                       \
+  BENCHMARK_TEMPLATE(BM_Construct, Engine, DefaultConstructorSeedSeq);         \
   BENCHMARK_TEMPLATE(BM_Construct, Engine, PrecompiledSeedSeq);                \
   BENCHMARK_TEMPLATE(BM_Construct, Engine, std::seed_seq);                     \
   BENCHMARK_TEMPLATE(BM_Direct, Engine);                                       \

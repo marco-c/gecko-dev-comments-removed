@@ -31,15 +31,21 @@
 #ifndef ABSL_DEBUGGING_STACKTRACE_H_
 #define ABSL_DEBUGGING_STACKTRACE_H_
 
+#include <stdint.h>
+
+#include "absl/base/attributes.h"
 #include "absl/base/config.h"
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
 
+namespace internal_stacktrace {
 
 
 
 
+extern int GetStackFrames(void** result, uintptr_t* frames, int* sizes,
+                          int max_depth, int skip_count);
 
 
 
@@ -58,11 +64,18 @@ ABSL_NAMESPACE_BEGIN
 
 
 
+extern int GetStackFramesWithContext(void** result, uintptr_t* frames,
+                                     int* sizes, int max_depth, int skip_count,
+                                     const void* uc, int* min_dropped_frames);
 
 
 
 
+extern int DefaultStackUnwinder(void** pcs, uintptr_t* frames, int* sizes,
+                                int max_depth, int skip_count, const void* uc,
+                                int* min_dropped_frames);
 
+}  
 
 
 
@@ -78,8 +91,6 @@ ABSL_NAMESPACE_BEGIN
 
 
 
-extern int GetStackFrames(void** result, int* sizes, int max_depth,
-                          int skip_count);
 
 
 
@@ -102,9 +113,47 @@ extern int GetStackFrames(void** result, int* sizes, int max_depth,
 
 
 
-extern int GetStackFramesWithContext(void** result, int* sizes, int max_depth,
-                                     int skip_count, const void* uc,
-                                     int* min_dropped_frames);
+
+
+
+
+
+
+ABSL_ATTRIBUTE_ALWAYS_INLINE inline int GetStackFrames(void** result,
+                                                       int* sizes,
+                                                       int max_depth,
+                                                       int skip_count) {
+  return internal_stacktrace::GetStackFrames(result, nullptr, sizes, max_depth,
+                                             skip_count);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ABSL_ATTRIBUTE_ALWAYS_INLINE inline int GetStackFramesWithContext(
+    void** result, int* sizes, int max_depth, int skip_count, const void* uc,
+    int* min_dropped_frames) {
+  return internal_stacktrace::GetStackFramesWithContext(
+      result, nullptr, sizes, max_depth, skip_count, uc, min_dropped_frames);
+}
 
 
 

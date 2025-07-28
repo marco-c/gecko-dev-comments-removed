@@ -374,9 +374,6 @@ struct map_slot_policy {
     return slot->value;
   }
 
-  
-  
-#if defined(__cpp_lib_launder) && __cpp_lib_launder >= 201606
   static K& mutable_key(slot_type* slot) {
     
     
@@ -384,9 +381,6 @@ struct map_slot_policy {
                                : *std::launder(const_cast<K*>(
                                      std::addressof(slot->value.first)));
   }
-#else  
-  static const K& mutable_key(slot_type* slot) { return key(slot); }
-#endif
 
   static const K& key(const slot_type* slot) {
     return kMutableKeys::value ? slot->key : slot->value.first;
@@ -439,11 +433,17 @@ struct map_slot_policy {
   template <class Allocator>
   static auto transfer(Allocator* alloc, slot_type* new_slot,
                        slot_type* old_slot) {
-    auto is_relocatable =
-        typename absl::is_trivially_relocatable<value_type>::type();
+    
+    
+    
+    
+    
+    auto is_relocatable = typename std::conjunction<
+        absl::is_trivially_relocatable<typename value_type::first_type>,
+        absl::is_trivially_relocatable<typename value_type::second_type>>::
+        type();
 
     emplace(new_slot);
-#if defined(__cpp_lib_launder) && __cpp_lib_launder >= 201606
     if (is_relocatable) {
       
       std::memcpy(static_cast<void*>(std::launder(&new_slot->value)),
@@ -451,7 +451,6 @@ struct map_slot_policy {
                   sizeof(value_type));
       return is_relocatable;
     }
-#endif
 
     if (kMutableKeys::value) {
       absl::allocator_traits<Allocator>::construct(

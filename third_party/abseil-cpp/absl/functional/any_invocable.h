@@ -285,7 +285,6 @@ class AnyInvocable : private internal_any_invocable::Impl<Sig> {
   
   
   
-  
   explicit operator bool() const noexcept { return this->HasValue(); }
 
   

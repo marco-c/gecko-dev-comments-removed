@@ -82,7 +82,7 @@ class MockHelpers {
                                                 Args&&... args) {
     ArgTupleT arg_tuple(std::forward<Args>(args)...);
     ReturnT result;
-    if (urbg->InvokeMock(::absl::base_internal::FastTypeId<KeyT>(), &arg_tuple,
+    if (urbg->InvokeMock(base_internal::FastTypeId<KeyT>(), &arg_tuple,
                          &result)) {
       return result;
     }
@@ -92,9 +92,9 @@ class MockHelpers {
  public:
   
   template <typename URBG>
-  static inline bool PrivateInvokeMock(URBG* urbg, IdType type,
+  static inline bool PrivateInvokeMock(URBG* urbg, IdType key_id,
                                        void* args_tuple, void* result) {
-    return urbg->InvokeMock(type, args_tuple, result);
+    return urbg->InvokeMock(key_id, args_tuple, result);
   }
 
   

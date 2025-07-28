@@ -20,6 +20,7 @@
 #include <sys/ucontext.h>
 
 #include "absl/base/config.h"
+#include "absl/debugging/internal/addresses.h"
 #if defined(__linux__)
 #include <sys/mman.h>
 #include <ucontext.h>
@@ -117,8 +118,9 @@ static void ** NextStackFrame(void **old_frame_pointer, const void *uc,
 template <bool IS_STACK_FRAMES, bool IS_WITH_CONTEXT>
 ABSL_ATTRIBUTE_NO_SANITIZE_ADDRESS  
 ABSL_ATTRIBUTE_NO_SANITIZE_MEMORY   
-static int UnwindImpl(void **result, int *sizes, int max_depth, int skip_count,
-                      const void *ucp, int *min_dropped_frames) {
+static int UnwindImpl(void **result, uintptr_t *frames, int *sizes,
+                      int max_depth, int skip_count, const void *ucp,
+                      int *min_dropped_frames) {
   
   
   
@@ -153,8 +155,13 @@ static int UnwindImpl(void **result, int *sizes, int max_depth, int skip_count,
       result[n] = return_address;
       if (IS_STACK_FRAMES) {
         
-        sizes[n] = static_cast<int>(ComputeStackFrameSize(frame_pointer,
-                                                          next_frame_pointer));
+        if (frames != nullptr) {
+          frames[n] =
+              absl::debugging_internal::StripPointerMetadata(frame_pointer);
+        }
+        if (sizes != nullptr) {
+          sizes[n] = ComputeStackFrameSize(frame_pointer, next_frame_pointer);
+        }
       }
       n++;
     }

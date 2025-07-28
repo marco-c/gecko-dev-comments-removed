@@ -117,6 +117,11 @@ class NodeHashMapPolicy;
 
 
 
+
+
+
+
+
 template <class Key, class Value, class Hash = DefaultHashContainerHash<Key>,
           class Eq = DefaultHashContainerEq<Key>,
           class Alloc = std::allocator<std::pair<const Key, Value>>>

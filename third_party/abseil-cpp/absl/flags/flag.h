@@ -35,6 +35,7 @@
 
 #include "absl/base/attributes.h"
 #include "absl/base/config.h"
+#include "absl/base/nullability.h"
 #include "absl/base/optimization.h"
 #include "absl/flags/commandlineflag.h"
 #include "absl/flags/config.h"
@@ -94,7 +95,7 @@ using Flag = flags_internal::Flag<T>;
 
 
 template <typename T>
-ABSL_MUST_USE_RESULT T GetFlag(const absl::Flag<T>& flag) {
+[[nodiscard]] T GetFlag(const absl::Flag<T>& flag) {
   return flags_internal::FlagImplPeer::InvokeGet<T>(flag);
 }
 
@@ -106,7 +107,7 @@ ABSL_MUST_USE_RESULT T GetFlag(const absl::Flag<T>& flag) {
 
 
 template <typename T>
-void SetFlag(absl::Flag<T>* flag, const T& v) {
+void SetFlag(absl::Flag<T>* absl_nonnull flag, const T& v) {
   flags_internal::FlagImplPeer::InvokeSet(*flag, v);
 }
 
@@ -114,7 +115,7 @@ void SetFlag(absl::Flag<T>* flag, const T& v) {
 
 
 template <typename T, typename V>
-void SetFlag(absl::Flag<T>* flag, const V& v) {
+void SetFlag(absl::Flag<T>* absl_nonnull flag, const V& v) {
   T value(v);
   flags_internal::FlagImplPeer::InvokeSet(*flag, value);
 }

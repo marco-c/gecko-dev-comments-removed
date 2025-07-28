@@ -31,6 +31,10 @@
 
 
 
+
+
+
+
 #ifndef ABSL_NUMERIC_BITS_H_
 #define ABSL_NUMERIC_BITS_H_
 
@@ -45,6 +49,7 @@
 #endif
 
 #include "absl/base/attributes.h"
+#include "absl/base/internal/endian.h"
 #include "absl/numeric/internal/bits.h"
 
 namespace absl {
@@ -63,14 +68,14 @@ using std::rotr;
 
 
 template <class T>
-ABSL_MUST_USE_RESULT constexpr
+[[nodiscard]] constexpr
     typename std::enable_if<std::is_unsigned<T>::value, T>::type
     rotl(T x, int s) noexcept {
   return numeric_internal::RotateLeft(x, s);
 }
 
 template <class T>
-ABSL_MUST_USE_RESULT constexpr
+[[nodiscard]] constexpr
     typename std::enable_if<std::is_unsigned<T>::value, T>::type
     rotr(T x, int s) noexcept {
   return numeric_internal::RotateRight(x, s);
@@ -189,6 +194,67 @@ ABSL_INTERNAL_CONSTEXPR_CLZ inline
 }
 
 #endif
+
+#if defined(__cpp_lib_endian) && __cpp_lib_endian >= 201907L
+
+
+
+
+
+
+
+
+
+using std::endian;
+
+#else
+
+enum class endian {
+  little,
+  big,
+#if defined(ABSL_IS_LITTLE_ENDIAN)
+  native = little
+#elif defined(ABSL_IS_BIG_ENDIAN)
+  native = big
+#else
+#error "Endian detection needs to be set up for this platform"
+#endif
+};
+
+#endif  
+
+#if defined(__cpp_lib_byteswap) && __cpp_lib_byteswap >= 202110L
+
+
+
+
+
+
+
+
+using std::byteswap;
+
+#else
+
+template <class T>
+[[nodiscard]] constexpr T byteswap(T x) noexcept {
+  static_assert(std::is_integral_v<T>,
+                "byteswap requires an integral argument");
+  static_assert(
+      sizeof(T) == 1 || sizeof(T) == 2 || sizeof(T) == 4 || sizeof(T) == 8,
+      "byteswap works only with 8, 16, 32, or 64-bit integers");
+  if constexpr (sizeof(T) == 1) {
+    return x;
+  } else if constexpr (sizeof(T) == 2) {
+    return static_cast<T>(gbswap_16(static_cast<uint16_t>(x)));
+  } else if constexpr (sizeof(T) == 4) {
+    return static_cast<T>(gbswap_32(static_cast<uint32_t>(x)));
+  } else if constexpr (sizeof(T) == 8) {
+    return static_cast<T>(gbswap_64(static_cast<uint64_t>(x)));
+  }
+}
+
+#endif  
 
 ABSL_NAMESPACE_END
 }  

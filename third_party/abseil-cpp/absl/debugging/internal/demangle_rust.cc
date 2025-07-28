@@ -84,7 +84,7 @@ class RustSymbolParser {
   
   
   
-  ABSL_MUST_USE_RESULT bool Parse() && {
+  [[nodiscard]] bool Parse() && {
     
     
     
@@ -111,10 +111,10 @@ class RustSymbolParser {
 #define ABSL_DEMANGLER_RECURSE(callee, caller) \
     do { \
       if (recursion_depth_ == kStackSize) return false; \
-       \
+      /* The next continue will switch on this saved value ... */ \
       recursion_stack_[recursion_depth_++] = caller; \
       goto callee; \
-       \
+      /* ... and will land here, resuming the suspended code. */ \
       case caller: {} \
     } while (0)
 
@@ -564,7 +564,7 @@ class RustSymbolParser {
 
   
   
-  ABSL_MUST_USE_RESULT bool Eat(char want) {
+  [[nodiscard]] bool Eat(char want) {
     if (encoding_[pos_] != want) return false;
     ++pos_;
     return true;
@@ -573,7 +573,7 @@ class RustSymbolParser {
   
   
   
-  ABSL_MUST_USE_RESULT bool EmitChar(char c) {
+  [[nodiscard]] bool EmitChar(char c) {
     if (silence_depth_ > 0) return true;
     if (out_end_ - out_ < 2) return false;
     *out_++ = c;
@@ -584,7 +584,7 @@ class RustSymbolParser {
   
   
   
-  ABSL_MUST_USE_RESULT bool Emit(const char* token) {
+  [[nodiscard]] bool Emit(const char* token) {
     if (silence_depth_ > 0) return true;
     const size_t token_length = std::strlen(token);
     const size_t bytes_to_copy = token_length + 1;  
@@ -598,7 +598,7 @@ class RustSymbolParser {
   
   
   
-  ABSL_MUST_USE_RESULT bool EmitDisambiguator(int disambiguator) {
+  [[nodiscard]] bool EmitDisambiguator(int disambiguator) {
     if (disambiguator < 0) return EmitChar('?');  
     if (disambiguator == 0) return EmitChar('0');
     
@@ -618,7 +618,7 @@ class RustSymbolParser {
   
   
   
-  ABSL_MUST_USE_RESULT bool ParseDisambiguator(int& value) {
+  [[nodiscard]] bool ParseDisambiguator(int& value) {
     value = -1;
 
     
@@ -639,7 +639,7 @@ class RustSymbolParser {
   
   
   
-  ABSL_MUST_USE_RESULT bool ParseBase62Number(int& value) {
+  [[nodiscard]] bool ParseBase62Number(int& value) {
     value = -1;
 
     
@@ -686,7 +686,7 @@ class RustSymbolParser {
   
   
   
-  ABSL_MUST_USE_RESULT bool ParseIdentifier(char uppercase_namespace = '\0') {
+  [[nodiscard]] bool ParseIdentifier(char uppercase_namespace = '\0') {
     
     int disambiguator = 0;
     if (!ParseDisambiguator(disambiguator)) return false;
@@ -703,7 +703,7 @@ class RustSymbolParser {
   
   
   
-  ABSL_MUST_USE_RESULT bool ParseUndisambiguatedIdentifier(
+  [[nodiscard]] bool ParseUndisambiguatedIdentifier(
       char uppercase_namespace = '\0', int disambiguator = 0) {
     
     const bool is_punycoded = Eat('u');
@@ -766,7 +766,7 @@ class RustSymbolParser {
   
   
   
-  ABSL_MUST_USE_RESULT bool ParseDecimalNumber(int& value) {
+  [[nodiscard]] bool ParseDecimalNumber(int& value) {
     value = -1;
     if (!IsDigit(Peek())) return false;
     int encoded_number = Take() - '0';
@@ -788,7 +788,7 @@ class RustSymbolParser {
   
   
   
-  ABSL_MUST_USE_RESULT bool ParseOptionalBinder() {
+  [[nodiscard]] bool ParseOptionalBinder() {
     
     if (!Eat('G')) return true;
     int ignored_binding_count;
@@ -802,7 +802,7 @@ class RustSymbolParser {
   
   
   
-  ABSL_MUST_USE_RESULT bool ParseOptionalLifetime() {
+  [[nodiscard]] bool ParseOptionalLifetime() {
     
     if (!Eat('L')) return true;
     int ignored_de_bruijn_index;
@@ -811,14 +811,14 @@ class RustSymbolParser {
 
   
   
-  ABSL_MUST_USE_RESULT bool ParseRequiredLifetime() {
+  [[nodiscard]] bool ParseRequiredLifetime() {
     if (Peek() != 'L') return false;
     return ParseOptionalLifetime();
   }
 
   
   
-  ABSL_MUST_USE_RESULT bool PushNamespace(char ns) {
+  [[nodiscard]] bool PushNamespace(char ns) {
     if (namespace_depth_ == kNamespaceStackSize) return false;
     namespace_stack_[namespace_depth_++] = ns;
     return true;
@@ -830,7 +830,7 @@ class RustSymbolParser {
 
   
   
-  ABSL_MUST_USE_RESULT bool PushPosition(int position) {
+  [[nodiscard]] bool PushPosition(int position) {
     if (position_depth_ == kPositionStackSize) return false;
     position_stack_[position_depth_++] = position;
     return true;
@@ -845,7 +845,7 @@ class RustSymbolParser {
   
   
   
-  ABSL_MUST_USE_RESULT bool BeginBackref() {
+  [[nodiscard]] bool BeginBackref() {
     
     
     
