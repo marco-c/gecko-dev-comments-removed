@@ -425,7 +425,7 @@ void TurnPort::PrepareAddress() {
     server_address_.address.SetPort(TURN_DEFAULT_PORT);
   }
 
-  if (!AllowedTurnPort(server_address_.address.port(), &field_trials())) {
+  if (!AllowedTurnPort(server_address_.address.port())) {
     
     
     RTC_LOG(LS_ERROR) << ToString()
@@ -1042,8 +1042,7 @@ webrtc::DiffServCodePoint TurnPort::StunDscpValue() const {
 }
 
 
-bool TurnPort::AllowedTurnPort(int port,
-                               const webrtc::FieldTrialsView* field_trials) {
+bool TurnPort::AllowedTurnPort(int port) {
   
   
   if (port == 53 || port == 80 || port == 443 || port >= 1024) {

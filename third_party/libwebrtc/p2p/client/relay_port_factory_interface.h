@@ -12,8 +12,10 @@
 #define P2P_CLIENT_RELAY_PORT_FACTORY_INTERFACE_H_
 
 #include <memory>
+#include <optional>
 #include <string>
 
+#include "api/environment/environment.h"
 #include "api/packet_socket_factory.h"
 #include "p2p/base/port_allocator.h"
 #include "rtc_base/async_packet_socket.h"
@@ -31,6 +33,9 @@ struct ProtocolAddress;
 
 
 struct CreateRelayPortArgs {
+  
+  
+  std::optional<webrtc::Environment> env;
   webrtc::Thread* network_thread;
   webrtc::PacketSocketFactory* socket_factory;
   const webrtc::Network* network;
@@ -39,7 +44,8 @@ struct CreateRelayPortArgs {
   std::string username;
   std::string password;
   webrtc::TurnCustomizer* turn_customizer = nullptr;
-  const webrtc::FieldTrialsView* field_trials = nullptr;
+  [[deprecated("bugs.webrtc.org/405883462")]] const webrtc::FieldTrialsView*
+      field_trials = nullptr;
   
   
   
