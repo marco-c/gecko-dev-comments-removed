@@ -24,7 +24,7 @@ namespace {
 
 void FindFirstOfTwoLargestPeaks(
     float bin_size,
-    rtc::ArrayView<const int, kHistogramSize> spectral_flatness,
+    ArrayView<const int, kHistogramSize> spectral_flatness,
     float* peak_position,
     int* peak_weight) {
   RTC_DCHECK(peak_position);
@@ -65,7 +65,7 @@ void FindFirstOfTwoLargestPeaks(
   }
 }
 
-void UpdateLrt(rtc::ArrayView<const int, kHistogramSize> lrt_histogram,
+void UpdateLrt(ArrayView<const int, kHistogramSize> lrt_histogram,
                float* prior_model_lrt,
                bool* low_lrt_fluctuations) {
   RTC_DCHECK(prior_model_lrt);

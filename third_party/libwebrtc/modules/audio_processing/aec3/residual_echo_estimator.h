@@ -39,11 +39,11 @@ class ResidualEchoEstimator {
   void Estimate(
       const AecState& aec_state,
       const RenderBuffer& render_buffer,
-      rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> S2_linear,
-      rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> Y2,
+      ArrayView<const std::array<float, kFftLengthBy2Plus1>> S2_linear,
+      ArrayView<const std::array<float, kFftLengthBy2Plus1>> Y2,
       bool dominant_nearend,
-      rtc::ArrayView<std::array<float, kFftLengthBy2Plus1>> R2,
-      rtc::ArrayView<std::array<float, kFftLengthBy2Plus1>> R2_unbounded);
+      ArrayView<std::array<float, kFftLengthBy2Plus1>> R2,
+      ArrayView<std::array<float, kFftLengthBy2Plus1>> R2_unbounded);
 
  private:
   enum class ReverbType { kLinear, kNonLinear };
@@ -63,8 +63,7 @@ class ResidualEchoEstimator {
 
   
   
-  void AddReverb(
-      rtc::ArrayView<std::array<float, kFftLengthBy2Plus1>> R2) const;
+  void AddReverb(ArrayView<std::array<float, kFftLengthBy2Plus1>> R2) const;
 
   
   float GetEchoPathGain(const AecState& aec_state,

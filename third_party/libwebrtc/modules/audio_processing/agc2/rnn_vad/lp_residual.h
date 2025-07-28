@@ -24,16 +24,15 @@ constexpr int kNumLpcCoefficients = 5;
 
 
 void ComputeAndPostProcessLpcCoefficients(
-    rtc::ArrayView<const float> x,
-    rtc::ArrayView<float, kNumLpcCoefficients> lpc_coeffs);
+    ArrayView<const float> x,
+    ArrayView<float, kNumLpcCoefficients> lpc_coeffs);
 
 
 
 
-void ComputeLpResidual(
-    rtc::ArrayView<const float, kNumLpcCoefficients> lpc_coeffs,
-    rtc::ArrayView<const float> x,
-    rtc::ArrayView<float> y);
+void ComputeLpResidual(ArrayView<const float, kNumLpcCoefficients> lpc_coeffs,
+                       ArrayView<const float> x,
+                       ArrayView<float> y);
 
 }  
 }  

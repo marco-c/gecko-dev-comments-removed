@@ -26,14 +26,14 @@ class NrFft {
   NrFft& operator=(const NrFft&) = delete;
 
   
-  void Fft(rtc::ArrayView<float, kFftSize> time_data,
-           rtc::ArrayView<float, kFftSize> real,
-           rtc::ArrayView<float, kFftSize> imag);
+  void Fft(ArrayView<float, kFftSize> time_data,
+           ArrayView<float, kFftSize> real,
+           ArrayView<float, kFftSize> imag);
 
   
-  void Ifft(rtc::ArrayView<const float> real,
-            rtc::ArrayView<const float> imag,
-            rtc::ArrayView<float> time_data);
+  void Ifft(ArrayView<const float> real,
+            ArrayView<const float> imag,
+            ArrayView<float> time_data);
 
  private:
   std::vector<size_t> bit_reversal_state_;

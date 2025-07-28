@@ -33,7 +33,7 @@ class FrameBlocker {
   
   
   void InsertSubFrameAndExtractBlock(
-      const std::vector<std::vector<rtc::ArrayView<float>>>& sub_frame,
+      const std::vector<std::vector<ArrayView<float>>>& sub_frame,
       Block* block);
   
   

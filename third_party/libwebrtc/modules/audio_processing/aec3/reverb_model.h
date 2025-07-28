@@ -29,9 +29,7 @@ class ReverbModel {
   void Reset();
 
   
-  rtc::ArrayView<const float, kFftLengthBy2Plus1> reverb() const {
-    return reverb_;
-  }
+  ArrayView<const float, kFftLengthBy2Plus1> reverb() const { return reverb_; }
 
   
   
@@ -39,13 +37,13 @@ class ReverbModel {
   
   
   
-  void UpdateReverbNoFreqShaping(rtc::ArrayView<const float> power_spectrum,
+  void UpdateReverbNoFreqShaping(ArrayView<const float> power_spectrum,
                                  float power_spectrum_scaling,
                                  float reverb_decay);
 
   
-  void UpdateReverb(rtc::ArrayView<const float> power_spectrum,
-                    rtc::ArrayView<const float> power_spectrum_scaling,
+  void UpdateReverb(ArrayView<const float> power_spectrum,
+                    ArrayView<const float> power_spectrum_scaling,
                     float reverb_decay);
 
  private:

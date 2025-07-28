@@ -32,10 +32,10 @@ class ResidualEchoDetector : public EchoDetector {
   ~ResidualEchoDetector() override;
 
   
-  void AnalyzeRenderAudio(rtc::ArrayView<const float> render_audio) override;
+  void AnalyzeRenderAudio(ArrayView<const float> render_audio) override;
 
   
-  void AnalyzeCaptureAudio(rtc::ArrayView<const float> capture_audio) override;
+  void AnalyzeCaptureAudio(ArrayView<const float> capture_audio) override;
 
   
   void Initialize(int capture_sample_rate_hz,

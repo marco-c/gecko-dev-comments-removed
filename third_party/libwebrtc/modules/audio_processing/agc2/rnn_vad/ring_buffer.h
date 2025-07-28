@@ -36,7 +36,7 @@ class RingBuffer {
   
   void Reset() { buffer_.fill(0); }
   
-  void Push(rtc::ArrayView<const T, S> new_values) {
+  void Push(ArrayView<const T, S> new_values) {
     std::memcpy(buffer_.data() + S * tail_, new_values.data(), S * sizeof(T));
     tail_ += 1;
     if (tail_ == N)
@@ -45,7 +45,7 @@ class RingBuffer {
   
   
   
-  rtc::ArrayView<const T, S> GetArrayView(int delay) const {
+  ArrayView<const T, S> GetArrayView(int delay) const {
     RTC_DCHECK_LE(0, delay);
     RTC_DCHECK_LT(delay, N);
     int offset = tail_ - 1 - delay;

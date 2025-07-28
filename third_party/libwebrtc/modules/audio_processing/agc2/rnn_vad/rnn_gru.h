@@ -32,9 +32,9 @@ class GatedRecurrentLayer {
   
   GatedRecurrentLayer(int input_size,
                       int output_size,
-                      rtc::ArrayView<const int8_t> bias,
-                      rtc::ArrayView<const int8_t> weights,
-                      rtc::ArrayView<const int8_t> recurrent_weights,
+                      ArrayView<const int8_t> bias,
+                      ArrayView<const int8_t> weights,
+                      ArrayView<const int8_t> recurrent_weights,
                       const AvailableCpuFeatures& cpu_features,
                       absl::string_view layer_name);
   GatedRecurrentLayer(const GatedRecurrentLayer&) = delete;
@@ -51,7 +51,7 @@ class GatedRecurrentLayer {
   
   void Reset();
   
-  void ComputeOutput(rtc::ArrayView<const float> input);
+  void ComputeOutput(ArrayView<const float> input);
 
  private:
   const int input_size_;

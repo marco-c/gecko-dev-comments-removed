@@ -33,9 +33,9 @@ class FullBandErleEstimator {
   void Reset();
 
   
-  void Update(rtc::ArrayView<const float> X2,
-              rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> Y2,
-              rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> E2,
+  void Update(ArrayView<const float> X2,
+              ArrayView<const std::array<float, kFftLengthBy2Plus1>> Y2,
+              ArrayView<const std::array<float, kFftLengthBy2Plus1>> E2,
               const std::vector<bool>& converged_filters);
 
   
@@ -49,8 +49,7 @@ class FullBandErleEstimator {
 
   
   
-  rtc::ArrayView<const std::optional<float>> GetInstLinearQualityEstimates()
-      const {
+  ArrayView<const std::optional<float>> GetInstLinearQualityEstimates() const {
     return linear_filters_qualities_;
   }
 

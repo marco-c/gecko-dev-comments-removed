@@ -38,7 +38,7 @@ class RnnVad {
   
   
   float ComputeVadProbability(
-      rtc::ArrayView<const float, kFeatureVectorSize> feature_vector,
+      ArrayView<const float, kFeatureVectorSize> feature_vector,
       bool is_silence);
 
  private:

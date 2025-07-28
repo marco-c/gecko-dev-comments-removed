@@ -44,7 +44,7 @@ struct SubtractorOutput {
   void Reset();
 
   
-  void ComputeMetrics(rtc::ArrayView<const float> y);
+  void ComputeMetrics(ArrayView<const float> y);
 };
 
 }  

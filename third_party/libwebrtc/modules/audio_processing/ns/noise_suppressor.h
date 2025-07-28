@@ -83,8 +83,7 @@ class NoiseSuppressor {
   std::vector<std::unique_ptr<ChannelState>> channels_;
 
   
-  void AggregateWienerFilters(
-      rtc::ArrayView<float, kFftSizeBy2Plus1> filter) const;
+  void AggregateWienerFilters(ArrayView<float, kFftSizeBy2Plus1> filter) const;
 };
 
 }  

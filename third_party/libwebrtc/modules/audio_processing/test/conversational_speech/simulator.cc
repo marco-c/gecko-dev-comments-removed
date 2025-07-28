@@ -129,7 +129,7 @@ std::unique_ptr<std::map<std::string, std::vector<int16_t>>> PreloadAudioTracks(
 
 
 
-void PadLeftWriteChunk(rtc::ArrayView<const int16_t> source_samples,
+void PadLeftWriteChunk(ArrayView<const int16_t> source_samples,
                        size_t interval_begin,
                        WavWriter* wav_writer) {
   
@@ -158,9 +158,9 @@ void PadRightWrite(WavWriter* wav_writer, size_t pad_samples) {
   }
 }
 
-void ScaleSignal(rtc::ArrayView<const int16_t> source_samples,
+void ScaleSignal(ArrayView<const int16_t> source_samples,
                  int gain,
-                 rtc::ArrayView<int16_t> output_samples) {
+                 ArrayView<int16_t> output_samples) {
   const float gain_linear = DbToRatio(gain);
   RTC_DCHECK_EQ(source_samples.size(), output_samples.size());
   std::transform(source_samples.begin(), source_samples.end(),

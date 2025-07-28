@@ -51,12 +51,12 @@ class SymmetricMatrixBuffer {
   
   
   
-  void Push(rtc::ArrayView<T, S - 1> values) {
+  void Push(ArrayView<T, S - 1> values) {
     
     
     std::memmove(buf_.data(), buf_.data() + S, (buf_.size() - S) * sizeof(T));
     
-    for (int i = 0; rtc::SafeLt(i, values.size()); ++i) {
+    for (int i = 0; SafeLt(i, values.size()); ++i) {
       const int index = (S - 1 - i) * (S - 1) - 1;
       RTC_DCHECK_GE(index, 0);
       RTC_DCHECK_LT(index, buf_.size());

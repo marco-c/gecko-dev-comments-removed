@@ -215,7 +215,7 @@ class MonoAgc {
   
   
   
-  void Process(rtc::ArrayView<const int16_t> audio,
+  void Process(ArrayView<const int16_t> audio,
                std::optional<int> rms_error_override);
 
   

@@ -48,21 +48,19 @@ class Aec3Fft {
 
   
   
-  void ZeroPaddedFft(rtc::ArrayView<const float> x,
-                     Window window,
-                     FftData* X) const;
+  void ZeroPaddedFft(ArrayView<const float> x, Window window, FftData* X) const;
 
   
   
-  void PaddedFft(rtc::ArrayView<const float> x,
-                 rtc::ArrayView<const float> x_old,
+  void PaddedFft(ArrayView<const float> x,
+                 ArrayView<const float> x_old,
                  FftData* X) const {
     PaddedFft(x, x_old, Window::kRectangular, X);
   }
 
   
-  void PaddedFft(rtc::ArrayView<const float> x,
-                 rtc::ArrayView<const float> x_old,
+  void PaddedFft(ArrayView<const float> x,
+                 ArrayView<const float> x_old,
                  Window window,
                  FftData* X) const;
 

@@ -42,7 +42,7 @@ std::vector<Turn> LoadTiming(absl::string_view timing_filepath);
 
 
 void SaveTiming(absl::string_view timing_filepath,
-                rtc::ArrayView<const Turn> timing);
+                ArrayView<const Turn> timing);
 
 }  
 }  

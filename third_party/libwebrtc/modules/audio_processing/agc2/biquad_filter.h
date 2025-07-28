@@ -41,7 +41,7 @@ class BiQuadFilter {
 
   
   
-  void Process(rtc::ArrayView<const float> x, rtc::ArrayView<float> y);
+  void Process(ArrayView<const float> x, ArrayView<float> y);
 
  private:
   Config config_;

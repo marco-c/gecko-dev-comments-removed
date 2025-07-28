@@ -32,9 +32,8 @@ class AutoCorrelationCalculator {
 
   
   
-  void ComputeOnPitchBuffer(
-      rtc::ArrayView<const float, kBufSize12kHz> pitch_buf,
-      rtc::ArrayView<float, kNumLags12kHz> auto_corr);
+  void ComputeOnPitchBuffer(ArrayView<const float, kBufSize12kHz> pitch_buf,
+                            ArrayView<float, kNumLags12kHz> auto_corr);
 
  private:
   Pffft fft_;

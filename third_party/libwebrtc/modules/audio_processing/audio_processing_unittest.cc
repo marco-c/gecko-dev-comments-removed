@@ -334,8 +334,8 @@ void ExpectEventFieldsEq(const audioproc::Event& actual,
 
 
 
-bool ExpectMessageEq(rtc::ArrayView<const uint8_t> actual,
-                     rtc::ArrayView<const uint8_t> expected) {
+bool ExpectMessageEq(ArrayView<const uint8_t> actual,
+                     ArrayView<const uint8_t> expected) {
   EXPECT_EQ(actual.size(), expected.size());
   if (actual.size() != expected.size()) {
     return false;
@@ -408,7 +408,7 @@ class ApmTest : public ::testing::Test {
 
   const std::string output_path_;
   const std::string ref_filename_;
-  rtc::scoped_refptr<AudioProcessing> apm_;
+  scoped_refptr<AudioProcessing> apm_;
   Int16FrameData frame_;
   Int16FrameData revframe_;
   std::unique_ptr<ChannelBuffer<float>> float_cb_;
@@ -855,7 +855,7 @@ TEST_F(ApmTest, PreAmplifier) {
   tmp_frame.CopyFrom(frame_);
 
   auto compute_power = [](const Int16FrameData& frame) {
-    rtc::ArrayView<const int16_t> data = frame.view().data();
+    ArrayView<const int16_t> data = frame.view().data();
     return std::accumulate(data.begin(), data.end(), 0.0f,
                            [](float a, float b) { return a + b * b; }) /
            data.size() / 32768 / 32768;
@@ -958,7 +958,7 @@ TEST_F(ApmTest, CaptureLevelAdjustment) {
   tmp_frame.CopyFrom(frame_);
 
   auto compute_power = [](const Int16FrameData& frame) {
-    rtc::ArrayView<const int16_t> data = frame.view().data();
+    ArrayView<const int16_t> data = frame.view().data();
     return std::accumulate(data.begin(), data.end(), 0.0f,
                            [](float a, float b) { return a + b * b; }) /
            data.size() / 32768 / 32768;
@@ -2366,10 +2366,9 @@ std::string ProduceDebugText(int render_input_sample_rate_hz,
 
 
 
-void RunApmRateAndChannelTest(
-    rtc::ArrayView<const int> sample_rates_hz,
-    rtc::ArrayView<const int> render_channel_counts,
-    rtc::ArrayView<const int> capture_channel_counts) {
+void RunApmRateAndChannelTest(ArrayView<const int> sample_rates_hz,
+                              ArrayView<const int> render_channel_counts,
+                              ArrayView<const int> capture_channel_counts) {
   webrtc::AudioProcessing::Config apm_config;
   apm_config.pipeline.multi_channel_render = true;
   apm_config.pipeline.multi_channel_capture = true;
@@ -2620,8 +2619,8 @@ TEST(ApmConfiguration, EchoControlInjection) {
 
 TEST(ApmConfiguration, EchoDetectorInjection) {
   using ::testing::_;
-  rtc::scoped_refptr<test::MockEchoDetector> mock_echo_detector =
-      rtc::make_ref_counted<::testing::StrictMock<test::MockEchoDetector>>();
+  scoped_refptr<test::MockEchoDetector> mock_echo_detector =
+      make_ref_counted<::testing::StrictMock<test::MockEchoDetector>>();
   EXPECT_CALL(*mock_echo_detector,
               Initialize(16000, _,
                          16000, _))
@@ -2632,11 +2631,11 @@ TEST(ApmConfiguration, EchoDetectorInjection) {
 
   
   EXPECT_CALL(*mock_echo_detector, AnalyzeRenderAudio(_))
-      .WillOnce([](rtc::ArrayView<const float> render_audio) {
+      .WillOnce([](ArrayView<const float> render_audio) {
         EXPECT_EQ(render_audio.size(), 160u);
       });
   EXPECT_CALL(*mock_echo_detector, AnalyzeCaptureAudio(_))
-      .WillOnce([](rtc::ArrayView<const float> capture_audio) {
+      .WillOnce([](ArrayView<const float> capture_audio) {
         EXPECT_EQ(capture_audio.size(), 160u);
       });
   EXPECT_CALL(*mock_echo_detector, GetMetrics()).Times(1);
@@ -2662,12 +2661,12 @@ TEST(ApmConfiguration, EchoDetectorInjection) {
                          48000, _))
       .Times(1);
   EXPECT_CALL(*mock_echo_detector, AnalyzeRenderAudio(_))
-      .WillOnce([](rtc::ArrayView<const float> render_audio) {
+      .WillOnce([](ArrayView<const float> render_audio) {
         EXPECT_EQ(render_audio.size(), 480u);
       });
   EXPECT_CALL(*mock_echo_detector, AnalyzeCaptureAudio(_))
       .Times(2)
-      .WillRepeatedly([](rtc::ArrayView<const float> capture_audio) {
+      .WillRepeatedly([](ArrayView<const float> capture_audio) {
         EXPECT_EQ(capture_audio.size(), 480u);
       });
   EXPECT_CALL(*mock_echo_detector, GetMetrics()).Times(2);
@@ -2683,7 +2682,7 @@ TEST(ApmConfiguration, EchoDetectorInjection) {
                      StreamConfig(48000, 1), frame.data.data());
 }
 
-rtc::scoped_refptr<AudioProcessing> CreateApm(bool mobile_aec) {
+scoped_refptr<AudioProcessing> CreateApm(bool mobile_aec) {
   
   scoped_refptr<AudioProcessing> apm =
       BuiltinAudioProcessingBuilder()
@@ -2720,7 +2719,7 @@ rtc::scoped_refptr<AudioProcessing> CreateApm(bool mobile_aec) {
 
 TEST(MAYBE_ApmStatistics, AECEnabledTest) {
   
-  rtc::scoped_refptr<AudioProcessing> apm = CreateApm(false);
+  scoped_refptr<AudioProcessing> apm = CreateApm(false);
   ASSERT_TRUE(apm);
   AudioProcessing::Config apm_config;
   apm_config.echo_canceller.enabled = true;
@@ -2772,7 +2771,7 @@ TEST(MAYBE_ApmStatistics, AECEnabledTest) {
 
 TEST(MAYBE_ApmStatistics, AECMEnabledTest) {
   
-  rtc::scoped_refptr<AudioProcessing> apm = CreateApm(true);
+  scoped_refptr<AudioProcessing> apm = CreateApm(true);
   ASSERT_TRUE(apm);
 
   

@@ -37,7 +37,7 @@ class BlockFramer {
   
   void InsertBlockAndExtractSubFrame(
       const Block& block,
-      std::vector<std::vector<rtc::ArrayView<float>>>* sub_frame);
+      std::vector<std::vector<ArrayView<float>>>* sub_frame);
 
  private:
   const size_t num_bands_;

@@ -27,7 +27,7 @@ class Agc {
 
   
   
-  virtual void Process(rtc::ArrayView<const int16_t> audio);
+  virtual void Process(ArrayView<const int16_t> audio);
 
   
   

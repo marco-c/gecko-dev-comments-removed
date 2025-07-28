@@ -20,7 +20,7 @@ float SqrtFastApproximation(float f);
 
 
 float LogApproximation(float x);
-void LogApproximation(rtc::ArrayView<const float> x, rtc::ArrayView<float> y);
+void LogApproximation(ArrayView<const float> x, ArrayView<float> y);
 
 
 float Pow2Approximation(float p);
@@ -30,9 +30,8 @@ float PowApproximation(float x, float p);
 
 
 float ExpApproximation(float x);
-void ExpApproximation(rtc::ArrayView<const float> x, rtc::ArrayView<float> y);
-void ExpApproximationSignFlip(rtc::ArrayView<const float> x,
-                              rtc::ArrayView<float> y);
+void ExpApproximation(ArrayView<const float> x, ArrayView<float> y);
+void ExpApproximationSignFlip(ArrayView<const float> x, ArrayView<float> y);
 }  
 
 #endif  

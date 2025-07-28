@@ -24,8 +24,8 @@ namespace webrtc {
 namespace rnn_vad {
 
 
-void Decimate2x(rtc::ArrayView<const float, kBufSize24kHz> src,
-                rtc::ArrayView<float, kBufSize12kHz> dst);
+void Decimate2x(ArrayView<const float, kBufSize24kHz> src,
+                ArrayView<float, kBufSize12kHz> dst);
 
 
 
@@ -65,8 +65,8 @@ void Decimate2x(rtc::ArrayView<const float, kBufSize24kHz> src,
 
 
 void ComputeSlidingFrameSquareEnergies24kHz(
-    rtc::ArrayView<const float, kBufSize24kHz> pitch_buffer,
-    rtc::ArrayView<float, kRefineNumLags24kHz> y_energy,
+    ArrayView<const float, kBufSize24kHz> pitch_buffer,
+    ArrayView<float, kRefineNumLags24kHz> y_energy,
     AvailableCpuFeatures cpu_features);
 
 
@@ -79,16 +79,16 @@ struct CandidatePitchPeriods {
 
 
 CandidatePitchPeriods ComputePitchPeriod12kHz(
-    rtc::ArrayView<const float, kBufSize12kHz> pitch_buffer,
-    rtc::ArrayView<const float, kNumLags12kHz> auto_correlation,
+    ArrayView<const float, kBufSize12kHz> pitch_buffer,
+    ArrayView<const float, kNumLags12kHz> auto_correlation,
     AvailableCpuFeatures cpu_features);
 
 
 
 
 int ComputePitchPeriod48kHz(
-    rtc::ArrayView<const float, kBufSize24kHz> pitch_buffer,
-    rtc::ArrayView<const float, kRefineNumLags24kHz> y_energy,
+    ArrayView<const float, kBufSize24kHz> pitch_buffer,
+    ArrayView<const float, kRefineNumLags24kHz> y_energy,
     CandidatePitchPeriods pitch_candidates_24kHz,
     AvailableCpuFeatures cpu_features);
 
@@ -102,8 +102,8 @@ struct PitchInfo {
 
 
 PitchInfo ComputeExtendedPitchPeriod48kHz(
-    rtc::ArrayView<const float, kBufSize24kHz> pitch_buffer,
-    rtc::ArrayView<const float, kRefineNumLags24kHz> y_energy,
+    ArrayView<const float, kBufSize24kHz> pitch_buffer,
+    ArrayView<const float, kRefineNumLags24kHz> y_energy,
     int initial_pitch_period_48kHz,
     PitchInfo last_pitch_48kHz,
     AvailableCpuFeatures cpu_features);

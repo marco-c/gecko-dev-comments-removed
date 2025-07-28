@@ -59,8 +59,8 @@ constexpr FloatArraySequence kBiQuadOutputSeq = {
 
 
 
-void ExpectNearRelative(rtc::ArrayView<const float> expected,
-                        rtc::ArrayView<const float> computed,
+void ExpectNearRelative(ArrayView<const float> expected,
+                        ArrayView<const float> computed,
                         const float tolerance) {
   
   

@@ -29,13 +29,13 @@ constexpr float kFloatMin = std::numeric_limits<float>::min();
 
 
 
-void ExpectEqualFloatArray(rtc::ArrayView<const float> expected,
-                           rtc::ArrayView<const float> computed);
+void ExpectEqualFloatArray(ArrayView<const float> expected,
+                           ArrayView<const float> computed);
 
 
 
-void ExpectNearAbsolute(rtc::ArrayView<const float> expected,
-                        rtc::ArrayView<const float> computed,
+void ExpectNearAbsolute(ArrayView<const float> expected,
+                        ArrayView<const float> computed,
                         float tolerance);
 
 
@@ -49,7 +49,7 @@ class FileReader {
   
   
   
-  virtual bool ReadChunk(rtc::ArrayView<float> dst) = 0;
+  virtual bool ReadChunk(ArrayView<float> dst) = 0;
   
   
   
@@ -90,14 +90,13 @@ class PitchTestData {
  public:
   PitchTestData();
   ~PitchTestData();
-  rtc::ArrayView<const float, kBufSize24kHz> PitchBuffer24kHzView() const {
+  ArrayView<const float, kBufSize24kHz> PitchBuffer24kHzView() const {
     return pitch_buffer_24k_;
   }
-  rtc::ArrayView<const float, kRefineNumLags24kHz> SquareEnergies24kHzView()
-      const {
+  ArrayView<const float, kRefineNumLags24kHz> SquareEnergies24kHzView() const {
     return square_energies_24k_;
   }
-  rtc::ArrayView<const float, kNumLags12kHz> AutoCorrelation12kHzView() const {
+  ArrayView<const float, kNumLags12kHz> AutoCorrelation12kHzView() const {
     return auto_correlation_12k_;
   }
 
@@ -115,7 +114,7 @@ class FileWriter {
   FileWriter(const FileWriter&) = delete;
   FileWriter& operator=(const FileWriter&) = delete;
   ~FileWriter() = default;
-  void WriteChunk(rtc::ArrayView<const float> value) {
+  void WriteChunk(ArrayView<const float> value) {
     const std::streamsize bytes_to_write = value.size() * sizeof(float);
     os_.write(reinterpret_cast<const char*>(value.data()), bytes_to_write);
   }

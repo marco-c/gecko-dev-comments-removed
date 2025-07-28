@@ -37,13 +37,13 @@ class StationarityEstimator {
 
   
   void UpdateNoiseEstimator(
-      rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> spectrum);
+      ArrayView<const std::array<float, kFftLengthBy2Plus1>> spectrum);
 
   
   
   void UpdateStationarityFlags(
       const SpectrumBuffer& spectrum_buffer,
-      rtc::ArrayView<const float> render_reverb_contribution_spectrum,
+      ArrayView<const float> render_reverb_contribution_spectrum,
       int idx_current,
       int num_lookahead);
 
@@ -63,7 +63,7 @@ class StationarityEstimator {
   
   
   bool EstimateBandStationarity(const SpectrumBuffer& spectrum_buffer,
-                                rtc::ArrayView<const float> average_reverb,
+                                ArrayView<const float> average_reverb,
                                 const std::array<int, kWindowLength>& indexes,
                                 size_t band) const;
 
@@ -88,10 +88,10 @@ class StationarityEstimator {
 
     
     void Update(
-        rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> spectrum);
+        ArrayView<const std::array<float, kFftLengthBy2Plus1>> spectrum);
 
     
-    rtc::ArrayView<const float> Spectrum() const { return noise_spectrum_; }
+    ArrayView<const float> Spectrum() const { return noise_spectrum_; }
 
     
     float Power(size_t band) const {

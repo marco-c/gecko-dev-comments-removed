@@ -45,18 +45,16 @@ class ErleEstimator {
   
   void Update(
       const RenderBuffer& render_buffer,
-      rtc::ArrayView<const std::vector<std::array<float, kFftLengthBy2Plus1>>>
+      ArrayView<const std::vector<std::array<float, kFftLengthBy2Plus1>>>
           filter_frequency_responses,
-      rtc::ArrayView<const float, kFftLengthBy2Plus1>
+      ArrayView<const float, kFftLengthBy2Plus1>
           avg_render_spectrum_with_reverb,
-      rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>>
-          capture_spectra,
-      rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>>
-          subtractor_spectra,
+      ArrayView<const std::array<float, kFftLengthBy2Plus1>> capture_spectra,
+      ArrayView<const std::array<float, kFftLengthBy2Plus1>> subtractor_spectra,
       const std::vector<bool>& converged_filters);
 
   
-  rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> Erle(
+  ArrayView<const std::array<float, kFftLengthBy2Plus1>> Erle(
       bool onset_compensated) const {
     return signal_dependent_erle_estimator_
                ? signal_dependent_erle_estimator_->Erle(onset_compensated)
@@ -64,8 +62,7 @@ class ErleEstimator {
   }
 
   
-  rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> ErleUnbounded()
-      const {
+  ArrayView<const std::array<float, kFftLengthBy2Plus1>> ErleUnbounded() const {
     
     
     
@@ -77,7 +74,7 @@ class ErleEstimator {
 
   
   
-  rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> ErleDuringOnsets()
+  ArrayView<const std::array<float, kFftLengthBy2Plus1>> ErleDuringOnsets()
       const {
     return subband_erle_estimator_.ErleDuringOnsets();
   }
@@ -92,8 +89,7 @@ class ErleEstimator {
   
   
   
-  rtc::ArrayView<const std::optional<float>> GetInstLinearQualityEstimates()
-      const {
+  ArrayView<const std::optional<float>> GetInstLinearQualityEstimates() const {
     return fullband_erle_estimator_.GetInstLinearQualityEstimates();
   }
 

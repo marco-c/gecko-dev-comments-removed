@@ -45,8 +45,8 @@ class RmsLevel {
   void Reset();
 
   
-  void Analyze(rtc::ArrayView<const int16_t> data);
-  void Analyze(rtc::ArrayView<const float> data);
+  void Analyze(ArrayView<const int16_t> data);
+  void Analyze(ArrayView<const float> data);
 
   
   

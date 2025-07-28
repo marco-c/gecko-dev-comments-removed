@@ -86,12 +86,12 @@ class TestEchoDetector : public EchoDetector {
       : analyze_render_audio_called_(false),
         last_render_audio_first_sample_(0.f) {}
   ~TestEchoDetector() override = default;
-  void AnalyzeRenderAudio(rtc::ArrayView<const float> render_audio) override {
+  void AnalyzeRenderAudio(ArrayView<const float> render_audio) override {
     last_render_audio_first_sample_ = render_audio[0];
     analyze_render_audio_called_ = true;
   }
   void AnalyzeCaptureAudio(
-      rtc::ArrayView<const float> ) override {}
+      ArrayView<const float> ) override {}
   void Initialize(int ,
                   int ,
                   int ,
@@ -121,8 +121,7 @@ class TestRenderPreProcessor : public CustomProcessing {
   void Initialize(int , int ) override {}
   void Process(AudioBuffer* audio) override {
     for (size_t k = 0; k < audio->num_channels(); ++k) {
-      rtc::ArrayView<float> channel_view(audio->channels()[k],
-                                         audio->num_frames());
+      ArrayView<float> channel_view(audio->channels()[k], audio->num_frames());
       std::transform(channel_view.begin(), channel_view.end(),
                      channel_view.begin(), ProcessSample);
     }
@@ -583,7 +582,7 @@ TEST(AudioProcessingImplTest, EchoControllerObservesPlayoutVolumeChange) {
 TEST(AudioProcessingImplTest, RenderPreProcessorBeforeEchoDetector) {
   
   
-  auto test_echo_detector = rtc::make_ref_counted<TestEchoDetector>();
+  auto test_echo_detector = make_ref_counted<TestEchoDetector>();
   std::unique_ptr<CustomProcessing> test_render_pre_processor(
       new TestRenderPreProcessor());
   

@@ -57,13 +57,13 @@ class ThreeBandFilterBank final {
 
   
   
-  void Analysis(rtc::ArrayView<const float, kFullBandSize> in,
-                rtc::ArrayView<const rtc::ArrayView<float>, kNumBands> out);
+  void Analysis(ArrayView<const float, kFullBandSize> in,
+                ArrayView<const ArrayView<float>, kNumBands> out);
 
   
   
-  void Synthesis(rtc::ArrayView<const rtc::ArrayView<float>, kNumBands> in,
-                 rtc::ArrayView<float, kFullBandSize> out);
+  void Synthesis(ArrayView<const ArrayView<float>, kNumBands> in,
+                 ArrayView<float, kFullBandSize> out);
 
  private:
   std::array<std::array<float, kMemorySize>, kNumNonZeroFilters>

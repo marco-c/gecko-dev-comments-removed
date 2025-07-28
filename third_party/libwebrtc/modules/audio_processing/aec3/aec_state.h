@@ -65,7 +65,7 @@ class AecState {
 
   
   
-  void GetResidualEchoScaling(rtc::ArrayView<float> residual_scaling) const;
+  void GetResidualEchoScaling(ArrayView<float> residual_scaling) const;
 
   
   
@@ -74,14 +74,13 @@ class AecState {
   }
 
   
-  rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> Erle(
+  ArrayView<const std::array<float, kFftLengthBy2Plus1>> Erle(
       bool onset_compensated) const {
     return erle_estimator_.Erle(onset_compensated);
   }
 
   
-  rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> ErleUnbounded()
-      const {
+  ArrayView<const std::array<float, kFftLengthBy2Plus1>> ErleUnbounded() const {
     return erle_estimator_.ErleUnbounded();
   }
 
@@ -128,7 +127,7 @@ class AecState {
   }
 
   
-  rtc::ArrayView<const float> GetReverbFrequencyResponse() const {
+  ArrayView<const float> GetReverbFrequencyResponse() const {
     return reverb_model_estimator_.GetReverbFrequencyResponse();
   }
 
@@ -142,14 +141,13 @@ class AecState {
   
   void Update(
       const std::optional<DelayEstimate>& external_delay,
-      rtc::ArrayView<const std::vector<std::array<float, kFftLengthBy2Plus1>>>
+      ArrayView<const std::vector<std::array<float, kFftLengthBy2Plus1>>>
           adaptive_filter_frequency_responses,
-      rtc::ArrayView<const std::vector<float>>
-          adaptive_filter_impulse_responses,
+      ArrayView<const std::vector<float>> adaptive_filter_impulse_responses,
       const RenderBuffer& render_buffer,
-      rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> E2_refined,
-      rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> Y2,
-      rtc::ArrayView<const SubtractorOutput> subtractor_output);
+      ArrayView<const std::array<float, kFftLengthBy2Plus1>> E2_refined,
+      ArrayView<const std::array<float, kFftLengthBy2Plus1>> Y2,
+      ArrayView<const SubtractorOutput> subtractor_output);
 
   
   int FilterLengthBlocks() const {
@@ -205,7 +203,7 @@ class AecState {
 
     
     
-    rtc::ArrayView<const int> DirectPathFilterDelays() const {
+    ArrayView<const int> DirectPathFilterDelays() const {
       return filter_delays_blocks_;
     }
 
@@ -214,10 +212,9 @@ class AecState {
     int MinDirectPathFilterDelay() const { return min_filter_delay_; }
 
     
-    void Update(
-        rtc::ArrayView<const int> analyzer_filter_delay_estimates_blocks,
-        const std::optional<DelayEstimate>& external_delay,
-        size_t blocks_with_proper_filter_adaptation);
+    void Update(ArrayView<const int> analyzer_filter_delay_estimates_blocks,
+                const std::optional<DelayEstimate>& external_delay,
+                size_t blocks_with_proper_filter_adaptation);
 
    private:
     const int delay_headroom_blocks_;
@@ -279,7 +276,7 @@ class AecState {
     void Update(const Block& x,
                 bool saturated_capture,
                 bool usable_linear_estimate,
-                rtc::ArrayView<const SubtractorOutput> subtractor_output,
+                ArrayView<const SubtractorOutput> subtractor_output,
                 float echo_path_gain);
 
    private:

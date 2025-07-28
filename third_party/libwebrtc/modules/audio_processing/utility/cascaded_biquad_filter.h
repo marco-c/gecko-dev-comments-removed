@@ -61,15 +61,15 @@ class CascadedBiQuadFilter {
   CascadedBiQuadFilter& operator=(const CascadedBiQuadFilter&) = delete;
 
   
-  void Process(rtc::ArrayView<const float> x, rtc::ArrayView<float> y);
+  void Process(ArrayView<const float> x, ArrayView<float> y);
   
-  void Process(rtc::ArrayView<float> y);
+  void Process(ArrayView<float> y);
   
   void Reset();
 
  private:
-  void ApplyBiQuad(rtc::ArrayView<const float> x,
-                   rtc::ArrayView<float> y,
+  void ApplyBiQuad(ArrayView<const float> x,
+                   ArrayView<float> y,
                    CascadedBiQuadFilter::BiQuad* biquad);
 
   std::vector<BiQuad> biquads_;

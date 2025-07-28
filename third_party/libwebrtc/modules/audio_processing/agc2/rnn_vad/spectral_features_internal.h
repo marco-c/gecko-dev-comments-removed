@@ -55,8 +55,8 @@ class SpectralCorrelator {
   
   
   void ComputeAutoCorrelation(
-      rtc::ArrayView<const float> x,
-      rtc::ArrayView<float, kOpusBands24kHz> auto_corr) const;
+      ArrayView<const float> x,
+      ArrayView<float, kOpusBands24kHz> auto_corr) const;
 
   
   
@@ -64,9 +64,9 @@ class SpectralCorrelator {
   
   
   void ComputeCrossCorrelation(
-      rtc::ArrayView<const float> x,
-      rtc::ArrayView<const float> y,
-      rtc::ArrayView<float, kOpusBands24kHz> cross_corr) const;
+      ArrayView<const float> x,
+      ArrayView<const float> y,
+      ArrayView<float, kOpusBands24kHz> cross_corr) const;
 
  private:
   const std::vector<float> weights_;  
@@ -77,8 +77,8 @@ class SpectralCorrelator {
 
 
 void ComputeSmoothedLogMagnitudeSpectrum(
-    rtc::ArrayView<const float> bands_energy,
-    rtc::ArrayView<float, kNumBands> log_bands_energy);
+    ArrayView<const float> bands_energy,
+    ArrayView<float, kNumBands> log_bands_energy);
 
 
 
@@ -90,9 +90,9 @@ std::array<float, kNumBands * kNumBands> ComputeDctTable();
 
 
 
-void ComputeDct(rtc::ArrayView<const float> in,
-                rtc::ArrayView<const float, kNumBands * kNumBands> dct_table,
-                rtc::ArrayView<float> out);
+void ComputeDct(ArrayView<const float> in,
+                ArrayView<const float, kNumBands * kNumBands> dct_table,
+                ArrayView<float> out);
 
 }  
 }  

@@ -24,8 +24,8 @@ class WavReaderInterface {
   virtual ~WavReaderInterface() = default;
 
   
-  virtual size_t ReadFloatSamples(rtc::ArrayView<float> samples) = 0;
-  virtual size_t ReadInt16Samples(rtc::ArrayView<int16_t> samples) = 0;
+  virtual size_t ReadFloatSamples(ArrayView<float> samples) = 0;
+  virtual size_t ReadInt16Samples(ArrayView<int16_t> samples) = 0;
 
   
   virtual int SampleRate() const = 0;

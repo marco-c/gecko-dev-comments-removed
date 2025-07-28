@@ -33,12 +33,12 @@ class EchoAudibility {
 
   
   void Update(const RenderBuffer& render_buffer,
-              rtc::ArrayView<const float> average_reverb,
+              ArrayView<const float> average_reverb,
               int min_channel_delay_blocks,
               bool external_delay_seen);
   
   void GetResidualEchoScaling(bool filter_has_had_time_to_converge,
-                              rtc::ArrayView<float> residual_scaling) const {
+                              ArrayView<float> residual_scaling) const {
     for (size_t band = 0; band < residual_scaling.size(); ++band) {
       if (render_stationarity_.IsBandStationary(band) &&
           (filter_has_had_time_to_converge ||
@@ -61,7 +61,7 @@ class EchoAudibility {
 
   
   void UpdateRenderStationarityFlags(const RenderBuffer& render_buffer,
-                                     rtc::ArrayView<const float> average_reverb,
+                                     ArrayView<const float> average_reverb,
                                      int delay_blocks);
 
   

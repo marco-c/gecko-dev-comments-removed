@@ -29,7 +29,7 @@ class MovingAverage {
 
   
   
-  void Average(rtc::ArrayView<const float> input, rtc::ArrayView<float> output);
+  void Average(ArrayView<const float> input, ArrayView<float> output);
 
  private:
   const size_t num_elem_;

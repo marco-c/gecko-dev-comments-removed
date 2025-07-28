@@ -55,7 +55,7 @@ class FakeRecordingDevice final {
   
   
   
-  void SimulateAnalogGain(rtc::ArrayView<int16_t> buffer);
+  void SimulateAnalogGain(ArrayView<int16_t> buffer);
 
   
   

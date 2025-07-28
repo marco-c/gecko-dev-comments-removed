@@ -28,10 +28,9 @@ namespace webrtc {
 namespace rnn_vad {
 namespace {
 
-float ComputeAutoCorrelation(
-    int inverted_lag,
-    rtc::ArrayView<const float, kBufSize24kHz> pitch_buffer,
-    const VectorMath& vector_math) {
+float ComputeAutoCorrelation(int inverted_lag,
+                             ArrayView<const float, kBufSize24kHz> pitch_buffer,
+                             const VectorMath& vector_math) {
   RTC_DCHECK_LT(inverted_lag, kBufSize24kHz);
   RTC_DCHECK_LT(inverted_lag, kRefineNumLags24kHz);
   static_assert(kMaxPitch24kHz < kBufSize24kHz, "");
@@ -68,7 +67,7 @@ int GetPitchPseudoInterpolationOffset(float prev_auto_correlation,
 
 int PitchPseudoInterpolationLagPitchBuf(
     int lag,
-    rtc::ArrayView<const float, kBufSize24kHz> pitch_buffer,
+    ArrayView<const float, kBufSize24kHz> pitch_buffer,
     const VectorMath& vector_math) {
   int offset = 0;
   
@@ -154,8 +153,8 @@ class InvertedLagsIndex {
 
 void ComputeAutoCorrelation(
     Range inverted_lags,
-    rtc::ArrayView<const float, kBufSize24kHz> pitch_buffer,
-    rtc::ArrayView<float, kInitialNumLags24kHz> auto_correlation,
+    ArrayView<const float, kBufSize24kHz> pitch_buffer,
+    ArrayView<float, kInitialNumLags24kHz> auto_correlation,
     InvertedLagsIndex& inverted_lags_index,
     const VectorMath& vector_math) {
   
@@ -182,10 +181,10 @@ void ComputeAutoCorrelation(
 
 
 int ComputePitchPeriod48kHz(
-    rtc::ArrayView<const float, kBufSize24kHz> ,
-    rtc::ArrayView<const int> inverted_lags,
-    rtc::ArrayView<const float, kInitialNumLags24kHz> auto_correlation,
-    rtc::ArrayView<const float, kRefineNumLags24kHz> y_energy,
+    ArrayView<const float, kBufSize24kHz> ,
+    ArrayView<const int> inverted_lags,
+    ArrayView<const float, kInitialNumLags24kHz> auto_correlation,
+    ArrayView<const float, kRefineNumLags24kHz> y_energy,
     const VectorMath& ) {
   static_assert(kMaxPitch24kHz > kInitialNumLags24kHz, "");
   static_assert(kMaxPitch24kHz < kBufSize24kHz, "");
@@ -283,8 +282,8 @@ bool IsAlternativePitchStrongerThanInitial(PitchInfo last,
 
 }  
 
-void Decimate2x(rtc::ArrayView<const float, kBufSize24kHz> src,
-                rtc::ArrayView<float, kBufSize12kHz> dst) {
+void Decimate2x(ArrayView<const float, kBufSize24kHz> src,
+                ArrayView<float, kBufSize12kHz> dst) {
   
   static_assert(2 * kBufSize12kHz == kBufSize24kHz, "");
   for (int i = 0; i < kBufSize12kHz; ++i) {
@@ -293,8 +292,8 @@ void Decimate2x(rtc::ArrayView<const float, kBufSize24kHz> src,
 }
 
 void ComputeSlidingFrameSquareEnergies24kHz(
-    rtc::ArrayView<const float, kBufSize24kHz> pitch_buffer,
-    rtc::ArrayView<float, kRefineNumLags24kHz> y_energy,
+    ArrayView<const float, kBufSize24kHz> pitch_buffer,
+    ArrayView<float, kRefineNumLags24kHz> y_energy,
     AvailableCpuFeatures cpu_features) {
   VectorMath vector_math(cpu_features);
   static_assert(kFrameSize20ms24kHz < kBufSize24kHz, "");
@@ -313,8 +312,8 @@ void ComputeSlidingFrameSquareEnergies24kHz(
 }
 
 CandidatePitchPeriods ComputePitchPeriod12kHz(
-    rtc::ArrayView<const float, kBufSize12kHz> pitch_buffer,
-    rtc::ArrayView<const float, kNumLags12kHz> auto_correlation,
+    ArrayView<const float, kBufSize12kHz> pitch_buffer,
+    ArrayView<const float, kNumLags12kHz> auto_correlation,
     AvailableCpuFeatures cpu_features) {
   static_assert(kMaxPitch12kHz > kNumLags12kHz, "");
   static_assert(kMaxPitch12kHz < kBufSize12kHz, "");
@@ -370,8 +369,8 @@ CandidatePitchPeriods ComputePitchPeriod12kHz(
 }
 
 int ComputePitchPeriod48kHz(
-    rtc::ArrayView<const float, kBufSize24kHz> pitch_buffer,
-    rtc::ArrayView<const float, kRefineNumLags24kHz> y_energy,
+    ArrayView<const float, kBufSize24kHz> pitch_buffer,
+    ArrayView<const float, kRefineNumLags24kHz> y_energy,
     CandidatePitchPeriods pitch_candidates,
     AvailableCpuFeatures cpu_features) {
   
@@ -408,8 +407,8 @@ int ComputePitchPeriod48kHz(
 }
 
 PitchInfo ComputeExtendedPitchPeriod48kHz(
-    rtc::ArrayView<const float, kBufSize24kHz> pitch_buffer,
-    rtc::ArrayView<const float, kRefineNumLags24kHz> y_energy,
+    ArrayView<const float, kBufSize24kHz> pitch_buffer,
+    ArrayView<const float, kRefineNumLags24kHz> y_energy,
     int initial_pitch_period_48kHz,
     PitchInfo last_pitch_48kHz,
     AvailableCpuFeatures cpu_features) {

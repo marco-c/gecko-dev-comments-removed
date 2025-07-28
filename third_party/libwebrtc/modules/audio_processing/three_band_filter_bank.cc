@@ -102,12 +102,11 @@ const float kDctModulation[ThreeBandFilterBank::kNumNonZeroFilters][kDctSize] =
 
 
 
-void FilterCore(
-    rtc::ArrayView<const float, kFilterSize> filter,
-    rtc::ArrayView<const float, ThreeBandFilterBank::kSplitBandSize> in,
-    const int in_shift,
-    rtc::ArrayView<float, ThreeBandFilterBank::kSplitBandSize> out,
-    rtc::ArrayView<float, kMemorySize> state) {
+void FilterCore(ArrayView<const float, kFilterSize> filter,
+                ArrayView<const float, ThreeBandFilterBank::kSplitBandSize> in,
+                const int in_shift,
+                ArrayView<float, ThreeBandFilterBank::kSplitBandSize> out,
+                ArrayView<float, kMemorySize> state) {
   constexpr int kMaxInShift = (kStride - 1);
   RTC_DCHECK_GE(in_shift, 0);
   RTC_DCHECK_LE(in_shift, kMaxInShift);
@@ -170,9 +169,8 @@ ThreeBandFilterBank::~ThreeBandFilterBank() = default;
 
 
 void ThreeBandFilterBank::Analysis(
-    rtc::ArrayView<const float, kFullBandSize> in,
-    rtc::ArrayView<const rtc::ArrayView<float>, ThreeBandFilterBank::kNumBands>
-        out) {
+    ArrayView<const float, kFullBandSize> in,
+    ArrayView<const ArrayView<float>, ThreeBandFilterBank::kNumBands> out) {
   
   for (int band = 0; band < ThreeBandFilterBank::kNumBands; ++band) {
     RTC_DCHECK_EQ(out[band].size(), kSplitBandSize);
@@ -199,11 +197,10 @@ void ThreeBandFilterBank::Analysis(
               ? index
               : (index < kZeroFilterIndex2 ? index - 1 : index - 2);
 
-      rtc::ArrayView<const float, kFilterSize> filter(
-          kFilterCoeffs[filter_index]);
-      rtc::ArrayView<const float, kDctSize> dct_modulation(
+      ArrayView<const float, kFilterSize> filter(kFilterCoeffs[filter_index]);
+      ArrayView<const float, kDctSize> dct_modulation(
           kDctModulation[filter_index]);
-      rtc::ArrayView<float, kMemorySize> state(state_analysis_[filter_index]);
+      ArrayView<float, kMemorySize> state(state_analysis_[filter_index]);
 
       
       std::array<float, kSplitBandSize> out_subsampled;
@@ -227,9 +224,8 @@ void ThreeBandFilterBank::Analysis(
 
 
 void ThreeBandFilterBank::Synthesis(
-    rtc::ArrayView<const rtc::ArrayView<float>, ThreeBandFilterBank::kNumBands>
-        in,
-    rtc::ArrayView<float, kFullBandSize> out) {
+    ArrayView<const ArrayView<float>, ThreeBandFilterBank::kNumBands> in,
+    ArrayView<float, kFullBandSize> out) {
   std::fill(out.begin(), out.end(), 0);
   for (int upsampling_index = 0; upsampling_index < kSubSampling;
        ++upsampling_index) {
@@ -244,11 +240,10 @@ void ThreeBandFilterBank::Synthesis(
               ? index
               : (index < kZeroFilterIndex2 ? index - 1 : index - 2);
 
-      rtc::ArrayView<const float, kFilterSize> filter(
-          kFilterCoeffs[filter_index]);
-      rtc::ArrayView<const float, kDctSize> dct_modulation(
+      ArrayView<const float, kFilterSize> filter(kFilterCoeffs[filter_index]);
+      ArrayView<const float, kDctSize> dct_modulation(
           kDctModulation[filter_index]);
-      rtc::ArrayView<float, kMemorySize> state(state_synthesis_[filter_index]);
+      ArrayView<float, kMemorySize> state(state_synthesis_[filter_index]);
 
       
       std::array<float, kSplitBandSize> in_subsampled;

@@ -50,18 +50,16 @@ class SequenceBuffer {
   
   void Reset() { std::fill(buffer_.begin(), buffer_.end(), 0); }
   
-  rtc::ArrayView<const T, S> GetBufferView() const {
-    return {buffer_.data(), S};
-  }
+  ArrayView<const T, S> GetBufferView() const { return {buffer_.data(), S}; }
   
-  rtc::ArrayView<const T, M> GetMostRecentValuesView() const {
+  ArrayView<const T, M> GetMostRecentValuesView() const {
     static_assert(M <= S,
                   "The number of most recent values cannot be larger than the "
                   "sequence buffer size.");
     return {buffer_.data() + S - M, M};
   }
   
-  void Push(rtc::ArrayView<const T, N> new_values) {
+  void Push(ArrayView<const T, N> new_values) {
     
     if (S > N)
       std::memmove(buffer_.data(), buffer_.data() + N, (S - N) * sizeof(T));

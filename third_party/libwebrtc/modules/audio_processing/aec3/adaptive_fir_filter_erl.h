@@ -26,20 +26,20 @@ namespace aec3 {
 
 
 void ErlComputer(const std::vector<std::array<float, kFftLengthBy2Plus1>>& H2,
-                 rtc::ArrayView<float> erl);
+                 ArrayView<float> erl);
 #if defined(WEBRTC_HAS_NEON)
 void ErlComputer_NEON(
     const std::vector<std::array<float, kFftLengthBy2Plus1>>& H2,
-    rtc::ArrayView<float> erl);
+    webrtc::ArrayView<float> erl);
 #endif
 #if defined(WEBRTC_ARCH_X86_FAMILY)
 void ErlComputer_SSE2(
     const std::vector<std::array<float, kFftLengthBy2Plus1>>& H2,
-    rtc::ArrayView<float> erl);
+    ArrayView<float> erl);
 
 void ErlComputer_AVX2(
     const std::vector<std::array<float, kFftLengthBy2Plus1>>& H2,
-    rtc::ArrayView<float> erl);
+    ArrayView<float> erl);
 #endif
 
 }  
@@ -47,7 +47,7 @@ void ErlComputer_AVX2(
 
 void ComputeErl(const Aec3Optimization& optimization,
                 const std::vector<std::array<float, kFftLengthBy2Plus1>>& H2,
-                rtc::ArrayView<float> erl);
+                ArrayView<float> erl);
 
 }  
 

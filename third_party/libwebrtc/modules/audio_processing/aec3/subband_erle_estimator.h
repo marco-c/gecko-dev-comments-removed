@@ -37,26 +37,25 @@ class SubbandErleEstimator {
   void Reset();
 
   
-  void Update(rtc::ArrayView<const float, kFftLengthBy2Plus1> X2,
-              rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> Y2,
-              rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> E2,
+  void Update(ArrayView<const float, kFftLengthBy2Plus1> X2,
+              ArrayView<const std::array<float, kFftLengthBy2Plus1>> Y2,
+              ArrayView<const std::array<float, kFftLengthBy2Plus1>> E2,
               const std::vector<bool>& converged_filters);
 
   
-  rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> Erle(
+  ArrayView<const std::array<float, kFftLengthBy2Plus1>> Erle(
       bool onset_compensated) const {
     return onset_compensated && use_onset_detection_ ? erle_onset_compensated_
                                                      : erle_;
   }
 
   
-  rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> ErleUnbounded()
-      const {
+  ArrayView<const std::array<float, kFftLengthBy2Plus1>> ErleUnbounded() const {
     return erle_unbounded_;
   }
 
   
-  rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> ErleDuringOnsets()
+  ArrayView<const std::array<float, kFftLengthBy2Plus1>> ErleDuringOnsets()
       const {
     return erle_during_onsets_;
   }
@@ -77,9 +76,9 @@ class SubbandErleEstimator {
   };
 
   void UpdateAccumulatedSpectra(
-      rtc::ArrayView<const float, kFftLengthBy2Plus1> X2,
-      rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> Y2,
-      rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> E2,
+      ArrayView<const float, kFftLengthBy2Plus1> X2,
+      ArrayView<const std::array<float, kFftLengthBy2Plus1>> Y2,
+      ArrayView<const std::array<float, kFftLengthBy2Plus1>> E2,
       const std::vector<bool>& converged_filters);
 
   void ResetAccumulatedSpectra();

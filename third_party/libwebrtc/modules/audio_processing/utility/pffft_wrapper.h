@@ -34,8 +34,8 @@ class Pffft {
     FloatBuffer& operator=(const FloatBuffer&) = delete;
     ~FloatBuffer();
 
-    rtc::ArrayView<const float> GetConstView() const;
-    rtc::ArrayView<float> GetView();
+    ArrayView<const float> GetConstView() const;
+    ArrayView<float> GetView();
 
    private:
     friend class Pffft;
