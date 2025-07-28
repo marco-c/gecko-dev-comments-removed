@@ -68,15 +68,29 @@ UrlClassifierExceptionListEntry::Matches(nsIURI* aURI, nsIURI* aTopLevelURI,
 
   
   
-  if ((mCategory ==
-           nsIUrlClassifierExceptionListEntry::Category::CATEGORY_BASELINE &&
-       !StaticPrefs::
-           privacy_trackingprotection_allow_list_baseline_enabled()) ||
-      (mCategory ==
-           nsIUrlClassifierExceptionListEntry::Category::CATEGORY_CONVENIENCE &&
-       !StaticPrefs::
-           privacy_trackingprotection_allow_list_convenience_enabled())) {
-    return NS_OK;
+  if (mCategory !=
+      nsIUrlClassifierExceptionListEntry::Category::CATEGORY_INTERNAL_PREF) {
+    bool baselineEnabled =
+        StaticPrefs::privacy_trackingprotection_allow_list_baseline_enabled();
+    bool convenienceEnabled = StaticPrefs::
+        privacy_trackingprotection_allow_list_convenience_enabled();
+
+    
+    
+    if (!baselineEnabled) {
+      convenienceEnabled = false;
+    }
+
+    
+    
+    if ((mCategory ==
+             nsIUrlClassifierExceptionListEntry::Category::CATEGORY_BASELINE &&
+         !baselineEnabled) ||
+        (mCategory == nsIUrlClassifierExceptionListEntry::Category::
+                          CATEGORY_CONVENIENCE &&
+         !convenienceEnabled)) {
+      return NS_OK;
+    }
   }
 
   
