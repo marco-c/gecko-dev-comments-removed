@@ -1364,6 +1364,7 @@ nsresult ModuleLoaderBase::EvaluateModuleInContext(
                 mGlobalObject->GetModuleLoader(aCx) == this);
   MOZ_ASSERT_IF(mGlobalObject->GetModuleLoader(aCx)->IsOverridden(),
                 mGlobalObject->GetModuleLoader(aCx)->IsOverriddenBy(this));
+  MOZ_ASSERT(!aRequest->IsDynamicImport());
 
   AUTO_PROFILER_LABEL("ModuleLoaderBase::EvaluateModule", JS);
 
@@ -1408,6 +1409,7 @@ nsresult ModuleLoaderBase::EvaluateModuleInContext(
 
   JS::Rooted<JS::Value> rval(aCx);
 
+  
   mLoader->MaybePrepareModuleForBytecodeEncodingBeforeExecute(aCx, aRequest);
 
   bool ok = JS::ModuleEvaluate(aCx, module, &rval);
@@ -1432,21 +1434,10 @@ nsresult ModuleLoaderBase::EvaluateModuleInContext(
     evaluationPromise.set(&rval.toObject());
   }
 
-  if (aRequest->IsDynamicImport()) {
-    if (NS_FAILED(rv)) {
-      FinishDynamicImportAndReject(aRequest, rv);
-    } else {
-      FinishDynamicImport(aCx, aRequest, NS_OK, evaluationPromise);
-    }
-  } else {
-    
-    
-    if (!JS::ThrowOnModuleEvaluationFailure(aCx, evaluationPromise,
-                                            errorBehaviour)) {
-      LOG(("ScriptLoadRequest (%p):   evaluation failed on throw", aRequest));
-      
-      
-    }
+  
+  if (!JS::ThrowOnModuleEvaluationFailure(aCx, evaluationPromise,
+                                          errorBehaviour)) {
+    LOG(("ScriptLoadRequest (%p):   evaluation failed on throw", aRequest));
   }
 
   rv = mLoader->MaybePrepareModuleForBytecodeEncodingAfterExecute(aRequest,
