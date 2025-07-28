@@ -14,6 +14,7 @@
 
 #include "EncoderConfig.h"
 #include "WMF.h"
+#include "mozilla/DataMutex.h"
 #include "mozilla/DefineEnum.h"
 #include "mozilla/EnumSet.h"
 #include "mozilla/MozPromise.h"
@@ -24,6 +25,8 @@
 #include "nsTArray.h"
 
 namespace mozilla {
+
+class MFTEventSource;
 
 class MFTEncoder final {
  public:
@@ -92,6 +95,8 @@ class MFTEncoder final {
   };
 
  private:
+  friend class MFTEventSource;
+
   ~MFTEncoder() { Destroy(); };
 
   static nsTArray<Info>& Infos();
@@ -112,11 +117,23 @@ class MFTEncoder final {
                         OutputYielded, DrainComplete));
   using ProcessedResults = EnumSet<ProcessedResult>;
   Result<ProcessedResults, HRESULT> ProcessPendingEvents();
+  Result<MediaEventType, HRESULT> GetPendingEvent();
+
+  
+  RefPtr<EncodePromise> EncodeWithAsyncCallback(InputSample&& aInput);
+  RefPtr<EncodePromise> DrainWithAsyncCallback();
+  RefPtr<EncodePromise> PrepareForDrain();
+  RefPtr<EncodePromise> StartDraining();
+  void EventHandler(MediaEventType aEventType, HRESULT aStatus);
+  void MaybeResolveOrRejectEncodePromise();
+  void ResolveOrRejectDrainPromise();
+  void ResolveOrRejectPreDrainPromise();
+
+  
   Result<ProcessedResult, HRESULT> ProcessEvent(MediaEventType aType);
   Result<ProcessedResult, HRESULT> ProcessInput();
   Result<ProcessedResult, HRESULT> ProcessOutput();
   Result<ProcessedResult, HRESULT> ProcessDrainComplete();
-  Result<MediaEventType, HRESULT> GetPendingEvent();
 
   
   class OutputResult {
@@ -148,7 +165,7 @@ class MFTEncoder final {
                         DWORD& aBufferStatus);
   HRESULT ProcessInput(InputSample&& aInput);
 
-  bool IsAsync() const { return mAsyncEventGenerator; }
+  bool IsAsync() const { return mAsyncEventSource; }
 
   
   
@@ -157,6 +174,11 @@ class MFTEncoder final {
   HRESULT GetStreamIDs();
   GUID MatchInputSubtype(IMFMediaType* aInputType);
   HRESULT SendMFTMessage(MFT_MESSAGE_TYPE aMsg, ULONG_PTR aData);
+
+  MOZ_DEFINE_ENUM_CLASS_WITH_TOSTRING_AT_CLASS_SCOPE(
+      State,
+      (Uninited, Initializing, Inited, Encoding, PreDraining, Draining, Error));
+  void SetState(State aState);
 
   const HWPreference mHWPreference;
   RefPtr<IMFTransform> mEncoder;
@@ -173,6 +195,9 @@ class MFTEncoder final {
   MFT_OUTPUT_STREAM_INFO mOutputStreamInfo;
   bool mOutputStreamProvidesSample;
 
+  State mState = State::Uninited;
+  bool mIsRealtime = false;
+
   
   size_t mNumNeedInput;
   std::deque<InputSample> mPendingInputs;
@@ -182,7 +207,86 @@ class MFTEncoder final {
   
   MPEGHeader mOutputHeader;
 
-  RefPtr<IMFMediaEventGenerator> mAsyncEventGenerator;
+  RefPtr<MFTEventSource> mAsyncEventSource;
+
+  
+  
+  MediaResult mPendingError;
+  MozPromiseHolder<EncodePromise> mEncodePromise;
+  MozPromiseHolder<EncodePromise> mDrainPromise;
+  MozPromiseHolder<EncodePromise> mPreDrainPromise;
+  
+  
+  nsCOMPtr<nsITimer> mTimer;
+};
+
+class MFTEventSource final : public IMFAsyncCallback {
+ public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MFTEventSource)
+
+  
+  
+  
+  explicit MFTEventSource(
+      already_AddRefed<IMFMediaEventGenerator> aEventGenerator)
+      : MFTEventSource(GetCurrentSerialEventTarget(), nullptr,
+                       std::move(aEventGenerator)) {}
+  
+  
+  
+  
+  MFTEventSource(MFTEncoder* aEncoder,
+                 already_AddRefed<IMFMediaEventGenerator> aEventGenerator)
+      : MFTEventSource(GetCurrentSerialEventTarget(), aEncoder,
+                       std::move(aEventGenerator)) {}
+
+  bool CanForwardEvents() const { return mEncoder; }
+  Result<MediaEventType, HRESULT> GetEvent(DWORD aFlags);
+
+  HRESULT BeginEventListening();
+
+  
+  STDMETHODIMP GetParameters(DWORD* aFlags, DWORD* aQueue) override;
+  
+  
+  STDMETHODIMP Invoke(IMFAsyncResult* aAsyncResult) override;
+  STDMETHODIMP QueryInterface(REFIID aIID, void** aPPV) override;
+  
+  
+
+  using Id = size_t;
+  const Id mId;
+
+ private:
+  MFTEventSource(nsISerialEventTarget* aEncoderThread, MFTEncoder* aEncoder,
+                 already_AddRefed<IMFMediaEventGenerator> aEventGenerator);
+  ~MFTEventSource();
+
+  static Id GenerateId() {
+    static Id sNextId = 0;
+    return sNextId++;
+  }
+
+  
+  
+  const nsCOMPtr<nsISerialEventTarget> mEncoderThread;
+  const RefPtr<MFTEncoder> mEncoder;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  DataMutex<RefPtr<IMFMediaEventGenerator>> mEventGenerator;
 };
 
 }  
