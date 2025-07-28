@@ -131,7 +131,8 @@ class InputScope {
 
   
   
-  InputScope(const InitialStencilAndDelazifications& stencils, ScriptIndex scriptIndex, ScopeIndex scopeIndex)
+  InputScope(const InitialStencilAndDelazifications& stencils,
+             ScriptIndex scriptIndex, ScopeIndex scopeIndex)
       : scope_(ScopeStencilRef{stencils, scriptIndex, scopeIndex}) {}
 
   
@@ -203,9 +204,9 @@ class InputScope {
                             if (!scope.hasEnclosing()) {
                               break;
                             }
-                            new (&it) ScopeStencilRef{ref.stencils_,
-                                                      ref.scriptIndex_,
-                                                      scope.enclosing()};
+                            new (&it)
+                                ScopeStencilRef{ref.stencils_, ref.scriptIndex_,
+                                                scope.enclosing()};
                           }
                           return false;
                         },
@@ -825,8 +826,7 @@ struct CompilationInput {
   }
 
   void initFromStencil(const InitialStencilAndDelazifications& stencils,
-                       ScriptIndex scriptIndex,
-                       ScriptSource* ss) {
+                       ScriptIndex scriptIndex, ScriptSource* ss) {
     target = CompilationTarget::Delazification;
     lazy_ = InputScript(stencils, scriptIndex);
     source = ss;
@@ -1461,6 +1461,7 @@ class FunctionKeyToScriptIndexMap {
 
 
 
+
 struct ScriptIndexes {
   
   
@@ -1562,15 +1563,13 @@ struct InitialStencilAndDelazifications {
     RefPtr<InitialStencilAndDelazifications> stencils_;
 
     explicit RelativeIndexesGuard(InitialStencilAndDelazifications* stencils)
-        : stencils_(stencils)
-    {}
+        : stencils_(stencils) {}
+
    public:
     RelativeIndexesGuard() : stencils_(nullptr) {}
 
     RelativeIndexesGuard(RelativeIndexesGuard&& src)
-      : stencils_(std::move(src.stencils_))
-    {
-    }
+        : stencils_(std::move(src.stencils_)) {}
 
     ~RelativeIndexesGuard() {
       if (stencils_) {
@@ -2391,7 +2390,7 @@ const ScriptStencilExtra& ScopeStencilRef::functionScriptExtra() const {
   ScriptIndex functionIndexInContext = scope().functionIndex();
   
   ScriptIndex functionIndexInInitial =
-    stencils_.getInitialIndexFor(scriptIndex_, functionIndexInContext);
+      stencils_.getInitialIndexFor(scriptIndex_, functionIndexInContext);
   
   ScriptStencilRef function{stencils_, functionIndexInInitial};
   return function.scriptExtra();
@@ -2478,8 +2477,7 @@ FunctionFlags InputScope::functionFlags() const {
         
         
         
-        ScriptStencil& data =
-            ref.context()->scriptData[functionIndexInContext];
+        ScriptStencil& data = ref.context()->scriptData[functionIndexInContext];
         return data.functionFlags;
       },
       [](const FakeStencilGlobalScope&) -> FunctionFlags {
@@ -2545,8 +2543,8 @@ const ScriptStencil& ScriptStencilRef::scriptDataFromEnclosing() const {
   return enclosing.context()->scriptData[indexes.indexInEnclosing];
 }
 
-mozilla::Span<TaggedScriptThingIndex>
-ScriptStencilRef::gcThingsFromInitial() const {
+mozilla::Span<TaggedScriptThingIndex> ScriptStencilRef::gcThingsFromInitial()
+    const {
   return scriptDataFromInitial().gcthings(*stencils_.getInitial());
 }
 
