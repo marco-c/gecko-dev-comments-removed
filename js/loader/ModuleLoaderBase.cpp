@@ -846,7 +846,13 @@ void ModuleLoaderBase::StartFetchingModuleDependencies(
   bool result = false;
 
   
-  if (aRequest->HasScriptLoadContext()) {
+  
+  
+  
+  bool isChrome = aRequest->mURI->SchemeIs("chrome");
+
+  
+  if (aRequest->HasScriptLoadContext() && !isChrome) {
     Rooted<JSFunction*> onResolved(
         cx, js::NewFunctionWithReserved(cx, OnLoadRequestedModulesResolved,
                                         OnLoadRequestedModulesResolvedNumArgs,
