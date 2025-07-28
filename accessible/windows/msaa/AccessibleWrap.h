@@ -36,11 +36,6 @@ class AccessibleWrap : public LocalAccessible {
   virtual void Shutdown() override;
 
  public:
-  
-
-
-  bool IsRootForHWND();
-
   MsaaAccessible* GetMsaa();
   virtual void GetNativeInterface(void** aOutAccessible) override;
 
