@@ -27,7 +27,6 @@
 #include "api/packet_socket_factory.h"
 #include "api/task_queue/pending_task_safety_flag.h"
 #include "api/transport/enums.h"
-#include "api/transport/field_trial_based_config.h"
 #include "api/turn_customizer.h"
 #include "p2p/base/port.h"
 #include "p2p/base/port_allocator.h"
@@ -52,21 +51,9 @@ class RTC_EXPORT BasicPortAllocator : public webrtc::PortAllocator {
   BasicPortAllocator(
       const webrtc::Environment& env,
       absl::Nonnull<webrtc::NetworkManager*> network_manager,
-      absl::Nonnull<rtc::PacketSocketFactory*> socket_factory,
+      absl::Nonnull<webrtc::PacketSocketFactory*> socket_factory,
       absl::Nullable<webrtc::TurnCustomizer*> turn_customizer = nullptr,
       absl::Nullable<RelayPortFactoryInterface*> relay_port_factory = nullptr);
-
-  
-  
-  
-  
-  
-  
-  BasicPortAllocator(webrtc::NetworkManager* network_manager,
-                     webrtc::PacketSocketFactory* socket_factory,
-                     webrtc::TurnCustomizer* customizer = nullptr,
-                     RelayPortFactoryInterface* relay_port_factory = nullptr,
-                     const webrtc::FieldTrialsView* field_trials = nullptr);
 
   BasicPortAllocator(const BasicPortAllocator&) = delete;
   BasicPortAllocator& operator=(const BasicPortAllocator&) = delete;
@@ -106,19 +93,13 @@ class RTC_EXPORT BasicPortAllocator : public webrtc::PortAllocator {
   void SetVpnList(const std::vector<webrtc::NetworkMask>& vpn_list) override;
 
   const webrtc::FieldTrialsView* field_trials() const {
-    return field_trials_.get();
+    return &env_.field_trials();
   }
 
  private:
   bool MdnsObfuscationEnabled() const override;
 
-  
-  
-  
-  std::optional<webrtc::Environment> env_;
-  webrtc::AlwaysValidPointer<const webrtc::FieldTrialsView,
-                             webrtc::FieldTrialBasedConfig>
-      field_trials_;
+  const webrtc::Environment env_;
   webrtc::NetworkManager* network_manager_;
   
   webrtc::PacketSocketFactory* const socket_factory_;
