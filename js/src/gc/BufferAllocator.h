@@ -189,8 +189,6 @@ struct SmallBufferRegion;
 
 
 
-
-
 class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
  public:
   static constexpr size_t MinSmallAllocShift = 4;    
@@ -280,27 +278,27 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
 
   
   
-  MainThreadData<BufferChunkList> mediumMixedChunks;
+  MainThreadData<BufferChunkList> mixedChunks;
 
   
-  MainThreadData<BufferChunkList> mediumTenuredChunks;
+  MainThreadData<BufferChunkList> tenuredChunks;
 
   
-  MainThreadData<FreeLists> mediumFreeLists;
-
-  
-  
-  MainThreadOrGCTaskData<BufferChunkList> mediumMixedChunksToSweep;
+  MainThreadData<FreeLists> freeLists;
 
   
   
-  MainThreadOrGCTaskData<BufferChunkList> mediumTenuredChunksToSweep;
+  MainThreadOrGCTaskData<BufferChunkList> mixedChunksToSweep;
 
   
-  MutexData<BufferChunkList> sweptMediumMixedChunks;
-  MutexData<BufferChunkList> sweptMediumTenuredChunks;
-  MutexData<FreeLists> sweptMediumNurseryFreeLists;
-  MutexData<FreeLists> sweptMediumTenuredFreeLists;
+  
+  MainThreadOrGCTaskData<BufferChunkList> tenuredChunksToSweep;
+
+  
+  MutexData<BufferChunkList> sweptMixedChunks;
+  MutexData<BufferChunkList> sweptTenuredChunks;
+  MutexData<FreeLists> sweptNurseryFreeLists;
+  MutexData<FreeLists> sweptTenuredFreeLists;
 
   
   MainThreadData<LargeAllocList> largeNurseryAllocs;
@@ -392,9 +390,9 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   static void printStats(GCRuntime* gc, mozilla::TimeStamp creationTime,
                          bool isMajorGC, FILE* file);
   void getStats(size_t& usedBytes, size_t& freeBytes, size_t& adminBytes,
-                size_t& mediumNurseryChunkCount,
-                size_t& mediumTenuredChunkCount, size_t& freeRegions,
-                size_t& largeNurseryAllocCount, size_t& largeTenuredAllocCount);
+                size_t& nurseryChunkCount, size_t& tenuredChunkCount,
+                size_t& freeRegions, size_t& largeNurseryAllocCount,
+                size_t& largeTenuredAllocCount);
 
 #ifdef DEBUG
   void checkGCStateNotInUse();
