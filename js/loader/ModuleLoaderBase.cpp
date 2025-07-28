@@ -1449,6 +1449,33 @@ ModuleLoaderBase::~ModuleLoaderBase() {
   LOG(("ModuleLoaderBase::~ModuleLoaderBase %p", this));
 }
 
+void ModuleLoaderBase::CancelFetchingModules() {
+  for (const auto& entry : mFetchingModules) {
+    RefPtr<LoadingRequest> loadingRequest = entry.GetData();
+
+    
+    
+    
+    
+    bool isCompiling = loadingRequest->mRequest->IsCompiling();
+    if (isCompiling) {
+      OnFetchFailed(loadingRequest->mRequest);
+    }
+
+    loadingRequest->mRequest->Cancel();
+
+    for (const auto& request : loadingRequest->mWaiting) {
+      request->Cancel();
+      if (isCompiling) {
+        OnFetchFailed(request);
+      }
+    }
+  }
+
+  
+  
+}
+
 void ModuleLoaderBase::Shutdown() {
   CancelAndClearDynamicImports();
 
