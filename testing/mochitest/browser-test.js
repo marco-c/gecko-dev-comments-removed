@@ -5,7 +5,9 @@
 
 
 
-var gTimeoutSeconds = 45;
+var gTimeoutSeconds = Services.prefs.getIntPref(
+  "testing.browserTestHarness.timeout"
+);
 var gConfig;
 
 var { AppConstants } = ChromeUtils.importESModule(
@@ -95,16 +97,10 @@ function testInit() {
 
   if (gConfig.testRoot == "browser") {
     
-    var prefs = Services.prefs;
-    if (prefs.prefHasUserValue("testing.browserTestHarness.running")) {
+    if (Services.prefs.prefHasUserValue("testing.browserTestHarness.running")) {
       return;
     }
-
-    prefs.setBoolPref("testing.browserTestHarness.running", true);
-
-    if (prefs.prefHasUserValue("testing.browserTestHarness.timeout")) {
-      gTimeoutSeconds = prefs.getIntPref("testing.browserTestHarness.timeout");
-    }
+    Services.prefs.setBoolPref("testing.browserTestHarness.running", true);
 
     var sstring = Cc["@mozilla.org/supports-string;1"].createInstance(
       Ci.nsISupportsString
@@ -146,11 +142,11 @@ function testInit() {
   if (gConfig.e10s) {
     e10s_init();
 
-    let processCount = prefs.getIntPref("dom.ipc.processCount", 1);
+    let processCount = Services.prefs.getIntPref("dom.ipc.processCount", 1);
     if (processCount > 1) {
       
       
-      prefs.setIntPref("dom.ipc.keepProcessesAlive.web", processCount);
+      Services.prefs.setIntPref("dom.ipc.keepProcessesAlive.web", processCount);
     }
 
     Services.mm.loadFrameScript(
