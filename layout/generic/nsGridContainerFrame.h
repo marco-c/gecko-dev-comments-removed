@@ -324,6 +324,8 @@ class nsGridContainerFrame final : public nsContainerFrame,
     
     bool mIsInEdgeTrack;
   };
+  class TrackPlan;
+  class ItemPlan;
 
   
   nsGridContainerFrame* ParentGridContainerForSubgrid() const;
@@ -563,8 +565,7 @@ class nsGridContainerFrame final : public nsContainerFrame,
   UsedTrackSizes* GetUsedTrackSizes() const;
 
   
-  void StoreUsedTrackSizes(LogicalAxis aAxis,
-                           const nsTArray<TrackSize>& aSizes);
+  void StoreUsedTrackSizes(LogicalAxis aAxis, const nsTArray<TrackSize>& aSizes);
 
   
   void AddImplicitNamedAreasInternal(LineNameList& aNameList,
