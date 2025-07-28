@@ -25,7 +25,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 
-XPCOMUtils.defineLazyGlobalGetters(this, ["ChannelWrapper"]);
+XPCOMUtils.defineLazyGlobalGetters(this, ["ChannelWrapper", "URLSearchParams"]);
 
 const SEARCH_TOPIC_ENGINE_MODIFIED = "browser-search-engine-modified";
 
@@ -47,8 +47,8 @@ this.addonsSearchDetection = class extends ExtensionAPI {
         
         
         
-        async getMatchPatterns() {
-          const patterns = {};
+        async getEngines() {
+          const results = [];
 
           try {
             
@@ -63,7 +63,7 @@ this.addonsSearchDetection = class extends ExtensionAPI {
             }
             
             if (extension.hasShutdown || Services.startup.shuttingDown) {
-              return patterns;
+              return results;
             }
             await Services.search.promiseInitialized;
             const engines = await Services.search.getEngines();
@@ -80,34 +80,30 @@ this.addonsSearchDetection = class extends ExtensionAPI {
               
               let submission = engine.getSubmission("searchTerm");
               if (submission) {
-                
-                
-                
-                const pattern =
-                  submission.uri.prePath + submission.uri.filePath + "*";
-
-                
-                
-                
-                if (!patterns[pattern]) {
-                  patterns[pattern] = [];
-                }
+                const uri = submission.uri;
+                const baseUrl = uri.prePath + uri.filePath;
 
                 
                 
                 
                 
-                const _extensionID = engine.wrappedJSObject._extensionID;
-                if (_extensionID && !patterns[pattern].includes(_extensionID)) {
-                  patterns[pattern].push(_extensionID);
+                const addonId = engine.wrappedJSObject._extensionID;
+
+                let paramName;
+                for (let [key, value] of new URLSearchParams(uri.query)) {
+                  if (value && value === engine.partnerCode) {
+                    paramName = key;
+                  }
                 }
+
+                results.push({ baseUrl, addonId, paramName });
               }
             }
           } catch (err) {
             console.error(err);
           }
 
-          return patterns;
+          return results;
         },
 
         
@@ -128,13 +124,16 @@ this.addonsSearchDetection = class extends ExtensionAPI {
           }
         },
 
-        
-        report(maybeServerSideRedirect, extra) {
-          if (maybeServerSideRedirect) {
-            Glean.addonsSearchDetection.etldChangeOther.record(extra);
-          } else {
-            Glean.addonsSearchDetection.etldChangeWebrequest.record(extra);
-          }
+        reportSameSiteRedirect(extra) {
+          Glean.addonsSearchDetection.sameSiteRedirect.record(extra);
+        },
+
+        reportETLDChangeOther(extra) {
+          Glean.addonsSearchDetection.etldChangeOther.record(extra);
+        },
+
+        reportETLDChangeWebrequest(extra) {
+          Glean.addonsSearchDetection.etldChangeWebrequest.record(extra);
         },
 
         

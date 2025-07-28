@@ -13,22 +13,20 @@ const TELEMETRY_VALUE_SERVER = "server";
 class AddonsSearchDetection {
   constructor() {
     
-    
-    this.matchPatterns = {};
+    this.engines = [];
 
     this.onRedirectedListener = this.onRedirectedListener.bind(this);
   }
 
-  async getMatchPatterns() {
+  async getEngines() {
     try {
-      this.matchPatterns =
-        await browser.addonsSearchDetection.getMatchPatterns();
+      this.engines = await browser.addonsSearchDetection.getEngines();
     } catch (err) {
       console.error(`failed to retrieve the list of URL patterns: ${err}`);
-      this.matchPatterns = {};
+      this.engines = [];
     }
 
-    return this.matchPatterns;
+    return this.engines;
   }
 
   
@@ -52,16 +50,16 @@ class AddonsSearchDetection {
     
     
     
-    const matchPatterns = await this.getMatchPatterns();
-    const patterns = Object.keys(matchPatterns);
+    const engines = await this.getEngines();
+    const patterns = new Set(engines.map(e => e.baseUrl + "*"));
 
-    if (patterns.length === 0) {
+    if (patterns.size === 0) {
       return;
     }
 
     browser.addonsSearchDetection.onRedirected.addListener(
       this.onRedirectedListener,
-      { urls: patterns }
+      { urls: [...patterns] }
     );
   }
 
@@ -70,12 +68,15 @@ class AddonsSearchDetection {
     
     const maybeServerSideRedirect = !addonId;
 
+    
+    let engines = this.getEnginesForUrl(firstUrl);
+
     let addonIds = [];
     
     
     
     if (maybeServerSideRedirect) {
-      addonIds = this.getAddonIdsForUrl(firstUrl);
+      addonIds = engines.filter(e => e.addonId).map(e => e.addonId);
     } else if (addonId) {
       addonIds = [addonId];
     }
@@ -90,15 +91,24 @@ class AddonsSearchDetection {
     
     const to = await browser.addonsSearchDetection.getPublicSuffix(lastUrl);
 
-    if (from === to) {
+    let sameSite = from === to;
+    let paramChanged = false;
+    if (sameSite) {
+      
+
       
       
       
+
       
-      
-      
-      
-      return;
+      let firstParams = new URLSearchParams(new URL(firstUrl).search);
+      let lastParams = new URLSearchParams(new URL(lastUrl).search);
+      for (let { paramName } of engines.filter(e => e.paramName)) {
+        if (firstParams.get(paramName) !== lastParams.get(paramName)) {
+          paramChanged = true;
+          break;
+        }
+      }
     }
 
     for (const id of addonIds) {
@@ -113,21 +123,19 @@ class AddonsSearchDetection {
           ? TELEMETRY_VALUE_SERVER
           : TELEMETRY_VALUE_EXTENSION,
       };
-      browser.addonsSearchDetection.report(maybeServerSideRedirect, extra);
+      if (sameSite) {
+        let ssr = { addonId: id, addonVersion, paramChanged };
+        browser.addonsSearchDetection.reportSameSiteRedirect(ssr);
+      } else if (maybeServerSideRedirect) {
+        browser.addonsSearchDetection.reportETLDChangeOther(extra);
+      } else {
+        browser.addonsSearchDetection.reportETLDChangeWebrequest(extra);
+      }
     }
   }
 
-  getAddonIdsForUrl(url) {
-    for (const pattern of Object.keys(this.matchPatterns)) {
-      
-      const urlPrefix = pattern.slice(0, -1);
-
-      if (url.startsWith(urlPrefix)) {
-        return this.matchPatterns[pattern];
-      }
-    }
-
-    return [];
+  getEnginesForUrl(url) {
+    return this.engines.filter(e => url.startsWith(e.baseUrl));
   }
 }
 
