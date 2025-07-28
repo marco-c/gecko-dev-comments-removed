@@ -945,8 +945,12 @@ impl NaiveDateTime {
     pub const MAX: Self = Self { date: NaiveDate::MAX, time: NaiveTime::MAX };
 
     
-    pub const UNIX_EPOCH: Self =
-        expect(NaiveDate::from_ymd_opt(1970, 1, 1), "").and_time(NaiveTime::MIN);
+    
+    
+    
+    
+    #[deprecated(since = "0.4.41", note = "use `DateTime::UNIX_EPOCH` instead")]
+    pub const UNIX_EPOCH: Self = DateTime::UNIX_EPOCH.naive_utc();
 }
 
 impl From<NaiveDate> for NaiveDateTime {
@@ -2139,13 +2143,8 @@ impl str::FromStr for NaiveDateTime {
 
 
 
-
-
-
-
-
 impl Default for NaiveDateTime {
     fn default() -> Self {
-        Self::UNIX_EPOCH
+        DateTime::UNIX_EPOCH.naive_local()
     }
 }

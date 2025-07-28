@@ -619,7 +619,7 @@ fn uploader_shutdown() {
     
     let result = rx.recv_timeout(Duration::from_secs(30));
 
-    let stop_time = time::precise_time_ns();
+    let stop_time = zeitstempel::now();
     core::with_glean(|glean| {
         glean
             .additional_metrics
@@ -695,7 +695,7 @@ pub fn shutdown() {
     let blocked = dispatcher::block_on_queue_timeout(Duration::from_secs(10));
 
     
-    let stop_time = time::precise_time_ns();
+    let stop_time = zeitstempel::now();
     core::with_glean(|glean| {
         glean
             .additional_metrics

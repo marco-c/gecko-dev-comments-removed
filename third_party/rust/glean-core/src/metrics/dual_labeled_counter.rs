@@ -63,6 +63,12 @@ impl ::malloc_size_of::MallocSizeOf for DualLabeledCounterMetric {
     }
 }
 
+impl MetricType for DualLabeledCounterMetric {
+    fn meta(&self) -> &CommonMetricDataInternal {
+        self.counter.meta()
+    }
+}
+
 impl DualLabeledCounterMetric {
     
     pub fn new(
