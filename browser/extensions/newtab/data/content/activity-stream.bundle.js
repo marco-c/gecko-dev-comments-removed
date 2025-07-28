@@ -11677,10 +11677,10 @@ function getLayoutData(responsiveLayouts, index, refinedCardsLayout, sectionKey)
         
         
         if (sectionKey === "top_stories_section" && tileIndex === 0) {
-          
           layoutData.classNames.push(`col-${layout.columnCount}-medium`);
           layoutData.classNames.push(`col-${layout.columnCount}-position-${tileIndex}`);
           layoutData.imageSizes[layout.columnCount] = "medium";
+          layoutData.classNames.push(`col-${layout.columnCount}-hide-excerpt`);
         } else {
           layoutData.classNames.push(`col-${layout.columnCount}-${tile.size}`);
           layoutData.classNames.push(`col-${layout.columnCount}-position-${tileIndex}`);
