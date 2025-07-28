@@ -9,6 +9,7 @@
 
 #include <cstdint>
 #include <queue>
+#include <variant>
 #include "base/basictypes.h"
 #include "base/process.h"
 #include "mozilla/EventTargetAndLockCapability.h"
@@ -36,7 +37,13 @@ class Channel {
 
   
   
-  using ChannelHandle = mozilla::UniqueFileHandle;
+  using ChannelHandle =
+      std::variant<std::monostate, mozilla::UniqueFileHandle
+#if defined(XP_DARWIN)
+                   ,
+                   mozilla::UniqueMachSendRight, mozilla::UniqueMachReceiveRight
+#endif
+                   >;
 
   
   
