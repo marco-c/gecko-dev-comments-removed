@@ -1064,9 +1064,41 @@ bool js::AsyncGeneratorReturn(JSContext* cx, unsigned argc, Value* vp) {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     if (!AsyncGeneratorUnwrapYieldResumption(
             cx, generator, CompletionKind::Return, completionValue)) {
-      return false;
+      
+      
+      
+      
+      
+      
+      
+      
+
+      
+      if (!cx->isExceptionPending()) {
+        return false;
+      }
+
+      
+      
+      RootedValue exception(cx);
+      if (!GetAndClearException(cx, &exception)) {
+        return false;
+      }
+      if (!AsyncGeneratorResume(cx, generator, CompletionKind::Throw,
+                                exception)) {
+        return false;
+      }
     }
   } else {
     
