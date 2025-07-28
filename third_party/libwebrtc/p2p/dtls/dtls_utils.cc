@@ -17,6 +17,7 @@
 #include "api/array_view.h"
 #include "rtc_base/byte_buffer.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/crc32.h"
 
 namespace {
 
@@ -133,11 +134,16 @@ std::optional<std::vector<uint16_t>> GetDtlsHandshakeAcks(
     }
     RTC_DCHECK(handshake_buf.Length() == 0);
   }
+
   
   if (record_buf.Length() != 0) {
     return std::nullopt;
   }
   return acks;
+}
+
+uint32_t ComputeDtlsPacketHash(rtc::ArrayView<const uint8_t> dtls_packet) {
+  return webrtc::ComputeCrc32(dtls_packet.data(), dtls_packet.size());
 }
 
 }  

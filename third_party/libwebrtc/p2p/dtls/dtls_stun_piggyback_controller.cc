@@ -10,20 +10,25 @@
 
 #include "p2p/dtls/dtls_stun_piggyback_controller.h"
 
+#include <algorithm>
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <utility>
 #include <vector>
 
+#include "absl/container/flat_hash_set.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "api/array_view.h"
 #include "api/sequence_checker.h"
 #include "api/transport/stun.h"
 #include "p2p/dtls/dtls_utils.h"
+#include "rtc_base/buffer.h"
+#include "rtc_base/byte_buffer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/string_encode.h"
+#include "rtc_base/strings/str_join.h"
 
 namespace webrtc {
 
@@ -44,7 +49,7 @@ void DtlsStunPiggybackController::SetDtlsHandshakeComplete(bool is_dtls_client,
   
   
   if ((is_dtls_client && !is_dtls13) || (!is_dtls_client && is_dtls13)) {
-    pending_packet_.Clear();
+    pending_packets_.clear();
   }
 
   
@@ -66,18 +71,26 @@ void DtlsStunPiggybackController::CapturePacket(
   
   
   if (!writing_packets_) {
-    pending_packet_.Clear();
+    pending_packets_.clear();
     writing_packets_ = true;
   }
 
   
   
-  pending_packet_.SetData(data);
+  
+  
+  if (!writing_packets_) {
+    pending_packets_.clear();
+    writing_packets_ = true;
+  }
+  pending_packets_.push_back(std::make_pair(
+      ComputeDtlsPacketHash(data),
+      std::make_unique<webrtc::Buffer>(data.data(), data.size())));
 }
 
 void DtlsStunPiggybackController::ClearCachedPacketForTesting() {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
-  pending_packet_.Clear();
+  pending_packets_.clear();
 }
 
 void DtlsStunPiggybackController::Flush() {
@@ -108,15 +121,17 @@ DtlsStunPiggybackController::GetDataToPiggyback(
     return std::nullopt;
   }
 
-  if (pending_packet_.size() == 0) {
+  if (pending_packets_.size() == 0) {
     return std::nullopt;
   }
-  return absl::string_view(pending_packet_);
+
+  return absl::string_view(*pending_packets_.back().second.get());
 }
 
 std::optional<absl::string_view> DtlsStunPiggybackController::GetAckToPiggyback(
     StunMessageType stun_message_type) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
+
   if (state_ == State::OFF || state_ == State::COMPLETE) {
     return std::nullopt;
   }
@@ -150,7 +165,7 @@ void DtlsStunPiggybackController::ReportDataPiggybacked(
   if (state_ == State::PENDING && data == nullptr && ack == nullptr) {
     RTC_LOG(LS_INFO) << "DTLS-STUN piggybacking complete.";
     state_ = State::COMPLETE;
-    pending_packet_.Clear();
+    pending_packets_.clear();
     handshake_ack_writer_.Clear();
     handshake_messages_received_.clear();
     return;
@@ -161,10 +176,32 @@ void DtlsStunPiggybackController::ReportDataPiggybacked(
     state_ = State::CONFIRMED;
   }
 
-  if (ack != nullptr && !ack->string_view().empty()) {
-    RTC_LOG(LS_VERBOSE) << "DTLS-STUN piggybacking ACK: "
-                        << webrtc::hex_encode(ack->string_view());
+  if (ack != nullptr) {
+    if (!pending_packets_.empty()) {
+      
+      absl::flat_hash_set<uint32_t> acked_packets;
+      {
+        webrtc::ByteBufferReader ack_reader(ack->array_view());
+        uint32_t packet_hash;
+        while (ack_reader.ReadUInt32(&packet_hash)) {
+          acked_packets.insert(packet_hash);
+        }
+      }
+      RTC_LOG(LS_VERBOSE) << "DTLS-STUN piggybacking ACK: "
+                          << webrtc::StrJoin(acked_packets, ",");
+
+      
+      if (!acked_packets.empty()) {
+        pending_packets_.erase(
+            std::remove_if(pending_packets_.begin(), pending_packets_.end(),
+                           [&](const auto& val) {
+                             return acked_packets.contains(val.first);
+                           }),
+            pending_packets_.end());
+      }
+    }
   }
+
   
   
   
@@ -172,31 +209,37 @@ void DtlsStunPiggybackController::ReportDataPiggybacked(
   if (data == nullptr && ack != nullptr && state_ == State::PENDING) {
     RTC_LOG(LS_INFO) << "DTLS-STUN piggybacking complete.";
     state_ = State::COMPLETE;
-    pending_packet_.Clear();
+    pending_packets_.clear();
     handshake_ack_writer_.Clear();
     handshake_messages_received_.clear();
     return;
   }
+
   if (!data || data->length() == 0) {
     return;
   }
 
   
   
-  std::optional<std::vector<uint16_t>> new_message_sequences =
-      webrtc::GetDtlsHandshakeAcks(data->array_view());
-  if (!new_message_sequences) {
-    RTC_LOG(LS_ERROR) << "DTLS-STUN piggybacking failed to parse DTLS packet.";
-    return;
-  }
-  if (!new_message_sequences->empty()) {
-    for (const auto& message_seq : *new_message_sequences) {
-      handshake_messages_received_.insert(message_seq);
+  uint32_t hash = ComputeDtlsPacketHash(data->array_view());
+
+  
+  if (std::find(handshake_messages_received_.begin(),
+                handshake_messages_received_.end(),
+                hash) == handshake_messages_received_.end()) {
+    handshake_messages_received_.push_back(hash);
+    handshake_ack_writer_.WriteUInt32(hash);
+
+    if (handshake_ack_writer_.Length() > kMaxAckSize) {
+      
+      handshake_messages_received_.erase(handshake_messages_received_.begin());
+      handshake_ack_writer_.Clear();
+      for (const auto& val : handshake_messages_received_) {
+        handshake_ack_writer_.WriteUInt32(val);
+      }
     }
-    handshake_ack_writer_.Clear();
-    for (const auto& message_seq : handshake_messages_received_) {
-      handshake_ack_writer_.WriteUInt16(message_seq);
-    }
+
+    RTC_DCHECK(handshake_ack_writer_.Length() <= kMaxAckSize);
   }
 
   dtls_data_callback_(data->array_view());
