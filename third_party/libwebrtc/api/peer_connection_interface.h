@@ -89,6 +89,7 @@
 #include "api/audio_options.h"
 #include "api/candidate.h"
 #include "api/crypto/crypto_options.h"
+#include "api/data_channel_event_observer_interface.h"
 #include "api/data_channel_interface.h"
 #include "api/dtls_transport_interface.h"
 #include "api/fec_controller.h"
@@ -1219,6 +1220,9 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
 
   
   virtual void StopRtcEventLog() = 0;
+
+  virtual void SetDataChannelEventObserver(
+      std::unique_ptr<DataChannelEventObserverInterface> observer) = 0;
 
   
   
