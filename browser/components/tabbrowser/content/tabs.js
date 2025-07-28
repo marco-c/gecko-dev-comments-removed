@@ -1794,7 +1794,7 @@
     #isContainerVerticalPinnedGrid(tab) {
       return (
         this.verticalMode &&
-        tab.hasAttribute("pinned") &&
+        tab.pinned &&
         this.hasAttribute("expanded") &&
         !this.expandOnHover
       );
@@ -2332,7 +2332,7 @@
       
       
       for (let t of allTabs) {
-        let tabIsPinned = t.hasAttribute("pinned");
+        let tabIsPinned = t.pinned;
         if (isTabGroupLabel(t)) {
           t = t.parentElement;
         }
