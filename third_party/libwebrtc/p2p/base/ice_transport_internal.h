@@ -286,12 +286,12 @@ class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
   
   
   
-  virtual const cricket::IceParameters* local_ice_parameters() const {
+  virtual const IceParameters* local_ice_parameters() const {
     RTC_CHECK_NOTREACHED();
   }
   
   
-  virtual const cricket::IceParameters* remote_ice_parameters() const {
+  virtual const IceParameters* remote_ice_parameters() const {
     RTC_CHECK_NOTREACHED();
   }
 

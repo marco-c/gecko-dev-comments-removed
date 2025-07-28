@@ -1432,7 +1432,7 @@ class DtlsEventOrderingTest
       return client2_.dtls_transport()->dtls_state() == expected_final_state ||
              
              
-             (!rtc::SSLStreamAdapter::IsBoringSsl() &&
+             (!SSLStreamAdapter::IsBoringSsl() &&
               expected_final_state == DtlsTransportState::kFailed &&
               client2_.dtls_transport()->dtls_state() ==
                   DtlsTransportState::kConnecting);
