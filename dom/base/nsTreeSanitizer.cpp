@@ -1125,8 +1125,7 @@ static void SanitizeStyleSheet(const nsAString& aOriginal,
            nullptr, &style,
           css::SheetParsingMode::eAuthorSheetFeatures, extraData.get(),
           aDocument->GetCompatibilityMode(),
-           nullptr,
-          StyleAllowImportRules::Yes,
+           nullptr, StyleAllowImportRules::Yes,
           aSanitizationKind, &aSanitized)
           .Consume();
 }
