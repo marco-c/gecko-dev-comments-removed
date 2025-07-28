@@ -1472,6 +1472,17 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
       if (aIsSubtreeHidden) {
         *aIsSubtreeHidden = true;
       }
+    } else if (auto cssAlt = CssAltContent(content)) {
+      
+      
+      
+      
+      
+      
+      newAcc = new TextLeafAccessible(content, document);
+      nsAutoString text;
+      cssAlt.AppendToString(text);
+      newAcc->AsTextLeaf()->SetText(text);
     }
   }
 

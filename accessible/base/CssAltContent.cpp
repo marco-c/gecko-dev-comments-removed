@@ -8,6 +8,7 @@
 #include "mozilla/a11y/DocManager.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
+#include "nsCoreUtils.h"
 #include "nsIContent.h"
 #include "nsIFrame.h"
 #include "nsLayoutUtils.h"
@@ -20,30 +21,47 @@ CssAltContent::CssAltContent(nsIContent* aContent) {
   if (!frame) {
     return;
   }
-  if (!frame->IsReplaced()) {
-    return;
-  }
   
-  if (aContent->IsInNativeAnonymousSubtree()) {
-    nsIContent* parent = aContent->GetParent();
-    if (parent && (parent->IsGeneratedContentContainerForBefore() ||
-                   parent->IsGeneratedContentContainerForAfter() ||
-                   parent->IsGeneratedContentContainerForMarker())) {
-      mPseudoElement = parent->AsElement();
+  if (nsCoreUtils::IsPseudoElement(aContent)) {
+    
+    
+    if (aContent->HasChildren()) {
+      return;
+    }
+    
+    
+    
+    
+    mPseudoElement = aContent->AsElement();
+  } else if (aContent->IsInNativeAnonymousSubtree()) {
+    if (!frame->IsReplaced()) {
+      return;
+    }
+    dom::Element* parent = aContent->GetParentElement();
+    if (parent && nsCoreUtils::IsPseudoElement(parent)) {
+      
+      mPseudoElement = parent;
       
       frame = parent->GetPrimaryFrame();
       if (!frame) {
         return;
       }
-      
-      mRealElement = parent->GetParentElement();
-      if (!mRealElement) {
-        return;
-      }
+    }
+  }
+  if (mPseudoElement) {
+    
+    mRealElement = mPseudoElement->GetParentElement();
+    if (!mRealElement) {
+      return;
     }
   }
   if (!mRealElement) {
+    
+    
     if (aContent->IsElement()) {
+      if (!frame->IsReplaced()) {
+        return;
+      }
       mRealElement = aContent->AsElement();
     } else {
       return;
@@ -100,9 +118,12 @@ bool CssAltContent::HandleAttributeChange(nsIContent* aContent,
                                nsLayoutUtils::GetAfterPseudo(aContent),
                                nsLayoutUtils::GetMarkerPseudo(aContent)}) {
     
-    nsIContent* child = pseudo ? pseudo->GetFirstChild() : nullptr;
-    if (child &&
-        CssAltContent(child).HandleAttributeChange(aNameSpaceID, aAttribute)) {
+    nsIContent* content = pseudo ? pseudo->GetFirstChild() : nullptr;
+    if (!content) {
+      content = pseudo;
+    }
+    if (content && CssAltContent(content).HandleAttributeChange(aNameSpaceID,
+                                                                aAttribute)) {
       return true;
     }
   }
