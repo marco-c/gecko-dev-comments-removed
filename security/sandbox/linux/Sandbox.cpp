@@ -815,7 +815,7 @@ void SetSocketProcessSandbox(SocketProcessSandboxParams&& aParams) {
 
   
   static SandboxBrokerClient* sBroker;
-  MOZ_ASSERT(!sBroker); 
+  MOZ_ASSERT(!sBroker);  
   if (aParams.mBroker) {
     sBroker = new SandboxBrokerClient(aParams.mBroker.release());
   }
