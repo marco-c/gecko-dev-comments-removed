@@ -444,18 +444,6 @@ class TextProperty {
 
     return declaration.syntax;
   }
-
-  
-
-
-
-
-
-
-
-  hasCSSVariable(name) {
-    return this.usedVariables.has(name);
-  }
 }
 
 module.exports = TextProperty;

@@ -567,13 +567,11 @@ class ElementStyle {
 
 
   _hasUpdatedCSSVariable(declaration, variableNamesSet) {
-    for (const variableName of variableNamesSet) {
-      if (declaration.hasCSSVariable(variableName)) {
-        return true;
-      }
+    if (variableNamesSet.size === 0) {
+      return false;
     }
 
-    return false;
+    return !variableNamesSet.isDisjointFrom(declaration.usedVariables);
   }
 
   
