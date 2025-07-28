@@ -124,6 +124,7 @@ export const prefs = new PrefsHelper("devtools", {
     "Bool",
     "debugger.source-map-ignore-list-enabled",
   ],
+  pausedOverlayEnabled: ["Bool", "debugger.features.overlay"],
 });
 
 
