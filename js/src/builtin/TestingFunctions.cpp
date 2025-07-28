@@ -7570,6 +7570,7 @@ static bool ByteSize(JSContext* cx, unsigned argc, Value* vp) {
   {
     
     
+    cx->runtime()->gc.nursery().joinSweepTask();
     JS::AutoCheckCannotGC autoCannotGC;
 
     JS::ubi::Node node = args.get(0);

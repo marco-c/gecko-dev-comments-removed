@@ -1013,6 +1013,12 @@ bool BufferAllocator::IsBufferAlloc(void* alloc) {
 }
 
 size_t BufferAllocator::getAllocSize(void* alloc) {
+  
+  
+  maybeMergeSweptData();
+  MOZ_ASSERT(minorState != State::Sweeping);
+  MOZ_ASSERT(majorState != State::Sweeping);
+
   if (IsLargeAlloc(alloc)) {
     LargeBuffer* buffer = lookupLargeBuffer(alloc);
     return buffer->allocBytes();
