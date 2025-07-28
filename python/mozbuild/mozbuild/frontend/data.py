@@ -1352,8 +1352,12 @@ class GeneratedFile(ContextDerived):
 
         if self.config.substs.get("MOZ_WIDGET_TOOLKIT") == "android":
             
+            
+            
             self.required_before_export = [
-                f for f in self.inputs if f.endswith(".jinja")
+                f
+                for f in self.outputs
+                if f.endswith(".java") or mozpath.match(f, "**/AndroidManifest*.xml")
             ]
         else:
             self.required_before_export = False
