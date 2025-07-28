@@ -398,10 +398,9 @@ class ElementSpecific {
 
 
 
-  static bool setFromTypedArray(Handle<TypedArrayObject*> target,
-                                size_t targetLength,
-                                Handle<TypedArrayObject*> source,
-                                size_t sourceLength, size_t offset) {
+  static bool setFromTypedArray(TypedArrayObject* target, size_t targetLength,
+                                TypedArrayObject* source, size_t sourceLength,
+                                size_t offset) {
     
     
 
@@ -588,9 +587,9 @@ class ElementSpecific {
   }
 
  private:
-  static bool setFromOverlappingTypedArray(Handle<TypedArrayObject*> target,
+  static bool setFromOverlappingTypedArray(TypedArrayObject* target,
                                            size_t targetLength,
-                                           Handle<TypedArrayObject*> source,
+                                           TypedArrayObject* source,
                                            size_t sourceLength, size_t offset) {
     
     
