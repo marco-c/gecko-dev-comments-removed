@@ -2620,21 +2620,69 @@ class HTMLEditUtils final {
       const Element& aElement, const nsAtom& aAttribute1,
       const nsAtom& aAttribute2, const nsAtom& aAttribute3);
 
+  enum class EditablePointOption {
+    
+    
+    RecognizeInvisibleWhiteSpaces,
+    
+    StopAtComment,
+  };
+  using EditablePointOptions = EnumSet<EditablePointOption>;
+
+  friend std::ostream& operator<<(std::ostream& aStream,
+                                  const EditablePointOption& aOption);
+  friend std::ostream& operator<<(std::ostream& aStream,
+                                  const EditablePointOptions& aOptions);
+
+ private:
+  class MOZ_STACK_CLASS AutoEditablePointChecker final {
+   public:
+    explicit AutoEditablePointChecker(const EditablePointOptions& aOptions)
+        : mIgnoreInvisibleText(!aOptions.contains(
+              EditablePointOption::RecognizeInvisibleWhiteSpaces)),
+          mIgnoreComment(
+              !aOptions.contains(EditablePointOption::StopAtComment)) {}
+
+    [[nodiscard]] bool IgnoreInvisibleWhiteSpaces() const {
+      return mIgnoreInvisibleText;
+    }
+
+    [[nodiscard]] bool NodeShouldBeIgnored(const nsIContent& aContent) const {
+      if (mIgnoreInvisibleText && aContent.IsText() &&
+          HTMLEditUtils::IsSimplyEditableNode(aContent) &&
+          !HTMLEditUtils::IsVisibleTextNode(*aContent.AsText())) {
+        return true;
+      }
+      if (mIgnoreComment && aContent.IsComment()) {
+        return true;
+      }
+      return false;
+    }
+
+   private:
+    const bool mIgnoreInvisibleText;
+    const bool mIgnoreComment;
+  };
+
+ public:
   
 
 
 
 
-  enum class InvisibleText { Recognize, Skip };
+
+
+
+
   template <typename EditorDOMPointType>
   [[nodiscard]] static EditorDOMPointType GetDeepestEditableStartPointOf(
-      const nsIContent& aContent,
-      InvisibleText aInvisibleText = InvisibleText::Recognize) {
+      const nsIContent& aContent, const EditablePointOptions& aOptions) {
     if (NS_WARN_IF(!EditorUtils::IsEditableContent(
             aContent, EditorBase::EditorType::HTML))) {
       return EditorDOMPointType();
     }
-    EditorDOMPointType result(&aContent, 0u);
+    const AutoEditablePointChecker checker(aOptions);
+    EditorRawDOMPoint result(&aContent, 0u);
     while (true) {
       nsIContent* firstChild = result.GetContainer()->GetFirstChild();
       if (!firstChild) {
@@ -2642,49 +2690,65 @@ class HTMLEditUtils final {
       }
       
       
-      if (aInvisibleText == InvisibleText::Skip && firstChild->IsText() &&
-          EditorUtils::IsEditableContent(*firstChild,
-                                         EditorBase::EditorType::HTML) &&
-          !HTMLEditUtils::IsVisibleTextNode(*firstChild->AsText())) {
+      nsIContent* meaningfulFirstChild = nullptr;
+      if (checker.NodeShouldBeIgnored(*firstChild)) {
+        
+        
         for (nsIContent* nextSibling = firstChild->GetNextSibling();
              nextSibling; nextSibling = nextSibling->GetNextSibling()) {
-          if (!nextSibling->IsText() ||
-              
-              
-              HTMLEditUtils::GetInclusiveNextNonCollapsibleCharOffset(
-                  *firstChild->AsText(), 0u)
-                  .isSome()) {
-            firstChild = nextSibling;
+          if (!checker.NodeShouldBeIgnored(*nextSibling)) {
+            meaningfulFirstChild = nextSibling;
             break;
           }
         }
+        if (!meaningfulFirstChild) {
+          break;
+        }
+      } else {
+        meaningfulFirstChild = firstChild;
       }
-      if ((!firstChild->IsText() &&
-           !HTMLEditUtils::IsContainerNode(*firstChild)) ||
-          !EditorUtils::IsEditableContent(*firstChild,
+      if (meaningfulFirstChild->IsText()) {
+        if (checker.IgnoreInvisibleWhiteSpaces()) {
+          result.Set(meaningfulFirstChild,
+                     HTMLEditUtils::GetInclusiveNextNonCollapsibleCharOffset(
+                         *meaningfulFirstChild->AsText(), 0u)
+                         .valueOr(0u));
+        } else {
+          result.Set(meaningfulFirstChild, 0u);
+        }
+        break;
+      }
+      if (!HTMLEditUtils::IsContainerNode(*meaningfulFirstChild) ||
+          !EditorUtils::IsEditableContent(*meaningfulFirstChild,
                                           EditorBase::EditorType::HTML)) {
+        
+        
+        result.Set(meaningfulFirstChild);
         break;
       }
-      if (aInvisibleText == InvisibleText::Skip && firstChild->IsText()) {
-        result.Set(firstChild,
-                   HTMLEditUtils::GetInclusiveNextNonCollapsibleCharOffset(
-                       *firstChild->AsText(), 0u)
-                       .valueOr(0u));
-        break;
-      }
-      result.Set(firstChild, 0u);
+      result.Set(meaningfulFirstChild, 0u);
     }
-    return result;
+    return result.To<EditorDOMPointType>();
   }
+
+  
+
+
+
+
+
+
+
+
   template <typename EditorDOMPointType>
   [[nodiscard]] static EditorDOMPointType GetDeepestEditableEndPointOf(
-      const nsIContent& aContent,
-      InvisibleText aInvisibleText = InvisibleText::Recognize) {
+      const nsIContent& aContent, const EditablePointOptions& aOptions) {
     if (NS_WARN_IF(!EditorUtils::IsEditableContent(
             aContent, EditorBase::EditorType::HTML))) {
       return EditorDOMPointType();
     }
-    auto result = EditorDOMPointType::AtEndOf(aContent);
+    const AutoEditablePointChecker checker(aOptions);
+    auto result = EditorRawDOMPoint::AtEndOf(aContent);
     while (true) {
       nsIContent* lastChild = result.GetContainer()->GetLastChild();
       if (!lastChild) {
@@ -2692,43 +2756,49 @@ class HTMLEditUtils final {
       }
       
       
-      if (aInvisibleText == InvisibleText::Skip && lastChild->IsText() &&
-          EditorUtils::IsEditableContent(*lastChild,
-                                         EditorBase::EditorType::HTML) &&
-          !HTMLEditUtils::IsVisibleTextNode(*lastChild->AsText())) {
+      nsIContent* meaningfulLastChild = nullptr;
+      
+      if (checker.NodeShouldBeIgnored(*lastChild)) {
         for (nsIContent* nextSibling = lastChild->GetPreviousSibling();
              nextSibling; nextSibling = nextSibling->GetPreviousSibling()) {
-          if (!nextSibling->IsText() ||
-              
-              
-              HTMLEditUtils::GetPreviousNonCollapsibleCharOffset(
-                  *lastChild->AsText(), lastChild->AsText()->TextDataLength())
-                  .isSome()) {
-            lastChild = nextSibling;
+          if (!checker.NodeShouldBeIgnored(*nextSibling)) {
+            meaningfulLastChild = nextSibling;
             break;
           }
         }
-      }
-      if ((!lastChild->IsText() &&
-           !HTMLEditUtils::IsContainerNode(*lastChild)) ||
-          !EditorUtils::IsEditableContent(*lastChild,
-                                          EditorBase::EditorType::HTML)) {
-        break;
-      }
-      if (aInvisibleText == InvisibleText::Skip && lastChild->IsText()) {
-        Maybe<uint32_t> visibleCharOffset =
-            HTMLEditUtils::GetPreviousNonCollapsibleCharOffset(
-                *lastChild->AsText(), lastChild->AsText()->TextDataLength());
-        if (visibleCharOffset.isNothing()) {
-          result = EditorDOMPointType::AtEndOf(*lastChild);
+        if (!meaningfulLastChild) {
           break;
         }
-        result.Set(lastChild, visibleCharOffset.value() + 1u);
+      } else {
+        meaningfulLastChild = lastChild;
+      }
+      if (meaningfulLastChild->IsText()) {
+        if (checker.IgnoreInvisibleWhiteSpaces()) {
+          const Maybe<uint32_t> visibleCharOffset =
+              HTMLEditUtils::GetPreviousNonCollapsibleCharOffset(
+                  *meaningfulLastChild->AsText(),
+                  meaningfulLastChild->AsText()->TextDataLength());
+          if (visibleCharOffset.isNothing()) {
+            result = EditorRawDOMPoint::AtEndOf(*meaningfulLastChild);
+          } else {
+            result.Set(meaningfulLastChild, visibleCharOffset.value() + 1u);
+          }
+        } else {
+          result = EditorRawDOMPoint::AtEndOf(*meaningfulLastChild);
+        }
         break;
       }
-      result = EditorDOMPointType::AtEndOf(*lastChild);
+      if (!HTMLEditUtils::IsContainerNode(*meaningfulLastChild) ||
+          !EditorUtils::IsEditableContent(*meaningfulLastChild,
+                                          EditorBase::EditorType::HTML)) {
+        
+        
+        result.SetAfter(meaningfulLastChild);
+        break;
+      }
+      result = EditorRawDOMPoint::AtEndOf(*lastChild);
     }
-    return result;
+    return result.To<EditorDOMPointType>();
   }
 
   
