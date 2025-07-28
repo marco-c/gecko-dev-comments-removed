@@ -28,8 +28,6 @@ class ModuleLoaderBase;
 
 class ModuleLoadRequest final : public ScriptLoadRequest {
   ~ModuleLoadRequest() {
-    MOZ_ASSERT(!mWaitingParentRequest);
-    MOZ_ASSERT(mAwaitingImports == 0);
     MOZ_ASSERT(!mReferrerObj);
     MOZ_ASSERT(!mModuleRequestObj);
     MOZ_ASSERT(mReferencingPrivate.isUndefined());
@@ -83,7 +81,6 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
 
   void ModuleLoaded();
   void ModuleErrored();
-  void DependenciesLoaded();
   void LoadFailed();
 
   ModuleLoadRequest* GetRootModule() {
@@ -118,19 +115,8 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
   void StartDynamicImport() { mLoader->StartDynamicImport(this); }
   void ProcessDynamicImport() { mLoader->ProcessDynamicImport(this); }
 
-  void ChildLoadComplete(bool aSuccess);
   void LoadFinished();
 
- private:
-  void CancelImports();
-  void CheckModuleDependenciesLoaded();
-
-  void ChildModuleUnlinked();
-
-  void AssertAllImportsFinished() const;
-  void AssertAllImportsCancelled() const;
-
- public:
   void UpdateReferrerPolicy(mozilla::dom::ReferrerPolicy aReferrerPolicy) {
     mReferrerPolicy = aReferrerPolicy;
   }
@@ -155,17 +141,6 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
   
   
   RefPtr<ModuleScript> mModuleScript;
-
-  
-  nsTArray<RefPtr<ModuleLoadRequest>> mImports;
-
-  
-  
-  RefPtr<ModuleLoadRequest> mWaitingParentRequest;
-
-  
-  
-  size_t mAwaitingImports = 0;
 
   
   RefPtr<LoadedScript> mDynamicReferencingScript;
