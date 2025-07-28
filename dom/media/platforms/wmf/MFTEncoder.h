@@ -144,6 +144,8 @@ class MFTEncoder final {
   
   
   HRESULT UpdateOutputType();
+  HRESULT ProcessOutput(RefPtr<IMFSample>& aSample, DWORD& aOutputStatus,
+                        DWORD& aBufferStatus);
 
   
   
