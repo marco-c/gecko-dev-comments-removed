@@ -1900,6 +1900,13 @@ already_AddRefed<AccAttributes> TextLeafPoint::GetTextAttributesLocalAcc(
   MOZ_ASSERT(acc->IsText());
   
   LocalAccessible* parent = acc->LocalParent();
+  if (!parent) {
+    
+    
+    
+    MOZ_ASSERT(!acc->IsInDocument());
+    return nullptr;
+  }
   HyperTextAccessible* hyperAcc = parent->AsHyperText();
   MOZ_ASSERT(hyperAcc);
   RefPtr<AccAttributes> attributes = new AccAttributes();
