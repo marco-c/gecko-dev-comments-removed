@@ -197,6 +197,12 @@ struct SmallBufferRegion;
 
 
 
+
+
+
+
+
+
 class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
  public:
   static constexpr size_t MinSmallAllocShift = 4;    
@@ -208,8 +214,12 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   static constexpr size_t MinSizeClassShift = 5;  
   static_assert(MinSizeClassShift >= MinSmallAllocShift);
 
+  static constexpr size_t SmallSizeClasses =
+      MinMediumAllocShift - MinSizeClassShift + 1;
+  static constexpr size_t MediumSizeClasses =
+      MinLargeAllocShift - MinMediumAllocShift + 1;
   static constexpr size_t AllocSizeClasses =
-      MinLargeAllocShift - MinSizeClassShift;
+      SmallSizeClasses + MediumSizeClasses;
 
   
   class AutoLock : public LockGuard<Mutex> {
@@ -274,6 +284,8 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
       mozilla::HashMap<void*, LargeBuffer*, PointerHasher<void*>>;
 
   enum class State : uint8_t { NotCollecting, Marking, Sweeping };
+
+  enum class SizeKind : uint8_t { Small, Medium };
 
   enum class SweepKind : uint8_t {
     SweepTenured = 0,
@@ -476,11 +488,11 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   bool shrinkMedium(void* alloc, size_t newBytes);
   enum class ListPosition { Front, Back };
   FreeRegion* addFreeRegion(FreeLists* freeLists, uintptr_t start,
-                            uintptr_t bytes, size_t maxSizeClass,
-                            bool anyDecommitted, ListPosition position,
+                            uintptr_t bytes, SizeKind kind, bool anyDecommitted,
+                            ListPosition position,
                             bool expectUnchanged = false);
   void updateFreeRegionStart(FreeLists* freeLists, FreeRegion* region,
-                             uintptr_t newStart);
+                             uintptr_t newStart, SizeKind kind);
   FreeLists* getChunkFreeLists(BufferChunk* chunk);
   bool isSweepingChunk(BufferChunk* chunk);
   void traceMediumAlloc(JSTracer* trc, Cell* owner, void** allocp,
@@ -489,15 +501,17 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   void markMediumNurseryOwnedBuffer(void* alloc, bool ownerWasTenured);
   bool markMediumTenuredAlloc(void* alloc);
 
-  friend void* TestAllocAligned(JS::Zone* zone, size_t bytes);
+  
+  static SizeKind SizeClassKind(size_t sizeClass);
 
   
   
-  static size_t SizeClassForAlloc(size_t bytes);
+  static size_t SizeClassForSmallAlloc(size_t bytes);
+  static size_t SizeClassForMediumAlloc(size_t bytes);
 
   
   
-  static size_t SizeClassForFreeRegion(size_t bytes);
+  static size_t SizeClassForFreeRegion(size_t bytes, SizeKind kind);
 
   static size_t SizeClassBytes(size_t sizeClass);
   friend struct BufferChunk;
@@ -525,6 +539,10 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
 
   void updateHeapSize(size_t bytes, bool checkThresholds,
                       bool updateRetainedSize);
+
+  
+  friend void* TestAllocAligned(JS::Zone* zone, size_t bytes);
+  friend size_t TestGetAllocSizeKind(void* alloc);
 
 #ifdef DEBUG
   void checkChunkListGCStateNotInUse(BufferChunkList& chunks,
