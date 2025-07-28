@@ -43,7 +43,7 @@ class AudioLoop {
 
   
   
-  rtc::ArrayView<const int16_t> GetNextBlock();
+  ArrayView<const int16_t> GetNextBlock();
 
  private:
   size_t next_index_;

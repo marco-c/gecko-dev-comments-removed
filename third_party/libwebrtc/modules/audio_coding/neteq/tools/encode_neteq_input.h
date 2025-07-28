@@ -28,7 +28,7 @@ class EncodeNetEqInput : public NetEqInput {
    public:
     virtual ~Generator() = default;
     
-    virtual rtc::ArrayView<const int16_t> Generate(size_t num_samples) = 0;
+    virtual ArrayView<const int16_t> Generate(size_t num_samples) = 0;
   };
 
   

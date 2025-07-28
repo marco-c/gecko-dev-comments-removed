@@ -62,7 +62,7 @@
 
 namespace webrtc {
 
-rtc::scoped_refptr<AudioDeviceModule> AudioDeviceModule::Create(
+scoped_refptr<AudioDeviceModule> AudioDeviceModule::Create(
     AudioLayer audio_layer,
     TaskQueueFactory* task_queue_factory) {
   RTC_DLOG(LS_INFO) << __FUNCTION__;
@@ -70,7 +70,7 @@ rtc::scoped_refptr<AudioDeviceModule> AudioDeviceModule::Create(
 }
 
 
-rtc::scoped_refptr<AudioDeviceModuleForTest> AudioDeviceModule::CreateForTest(
+scoped_refptr<AudioDeviceModuleForTest> AudioDeviceModule::CreateForTest(
     AudioLayer audio_layer,
     TaskQueueFactory* task_queue_factory) {
   RTC_DLOG(LS_INFO) << __FUNCTION__;
@@ -93,8 +93,8 @@ rtc::scoped_refptr<AudioDeviceModuleForTest> AudioDeviceModule::CreateForTest(
   }
 
   
-  auto audio_device = rtc::make_ref_counted<AudioDeviceModuleImpl>(
-      audio_layer, task_queue_factory);
+  auto audio_device =
+      make_ref_counted<AudioDeviceModuleImpl>(audio_layer, task_queue_factory);
 
   
   if (audio_device->CheckPlatform() == -1) {

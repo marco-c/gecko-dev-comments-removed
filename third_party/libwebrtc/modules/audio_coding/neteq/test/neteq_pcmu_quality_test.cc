@@ -52,7 +52,7 @@ class NetEqPcmuQualityTest : public NetEqQualityTest {
 
   int EncodeBlock(int16_t* in_data,
                   size_t ,
-                  rtc::Buffer* payload,
+                  Buffer* payload,
                   size_t ) override {
     const size_t kFrameSizeSamples = 80;  
     size_t encoded_samples = 0;
@@ -60,7 +60,7 @@ class NetEqPcmuQualityTest : public NetEqQualityTest {
     AudioEncoder::EncodedInfo info;
     do {
       info = encoder_->Encode(dummy_timestamp,
-                              rtc::ArrayView<const int16_t>(
+                              ArrayView<const int16_t>(
                                   in_data + encoded_samples, kFrameSizeSamples),
                               payload);
       encoded_samples += kFrameSizeSamples;

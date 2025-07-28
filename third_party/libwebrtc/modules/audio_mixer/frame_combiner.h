@@ -32,7 +32,7 @@ class FrameCombiner {
   
   
   
-  void Combine(rtc::ArrayView<AudioFrame* const> mix_list,
+  void Combine(ArrayView<AudioFrame* const> mix_list,
                size_t number_of_channels,
                int sample_rate,
                size_t number_of_streams,

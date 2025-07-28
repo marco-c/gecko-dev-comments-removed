@@ -49,7 +49,7 @@ class TestAudioDeviceModule {
     
     
     
-    virtual bool Capture(rtc::BufferT<int16_t>* buffer) = 0;
+    virtual bool Capture(BufferT<int16_t>* buffer) = 0;
   };
 
   class Renderer {
@@ -62,7 +62,7 @@ class TestAudioDeviceModule {
     virtual int NumChannels() const = 0;
     
     
-    virtual bool Render(rtc::ArrayView<const int16_t> data) = 0;
+    virtual bool Render(ArrayView<const int16_t> data) = 0;
   };
 
   
@@ -81,7 +81,7 @@ class TestAudioDeviceModule {
   
   
   
-  static rtc::scoped_refptr<AudioDeviceModule> Create(
+  static scoped_refptr<AudioDeviceModule> Create(
       TaskQueueFactory* task_queue_factory,
       std::unique_ptr<Capturer> capturer,
       std::unique_ptr<Renderer> renderer,

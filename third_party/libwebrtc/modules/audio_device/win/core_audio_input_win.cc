@@ -143,7 +143,7 @@ int CoreAudioInput::InitRecording() {
   qpc_to_100ns_.reset();
   if (::QueryPerformanceFrequency(&ticks_per_sec)) {
     double qpc_ticks_per_second =
-        rtc::dchecked_cast<double>(ticks_per_sec.QuadPart);
+        webrtc::dchecked_cast<double>(ticks_per_sec.QuadPart);
     qpc_to_100ns_ = 10000000.0 / qpc_ticks_per_second;
   }
 
@@ -349,15 +349,15 @@ bool CoreAudioInput::OnDataCallback(uint64_t device_frequency) {
     
     
     if (flags & AUDCLNT_BUFFERFLAGS_SILENT) {
-      rtc::ExplicitZeroMemory(audio_data,
-                              format_.Format.nBlockAlign * num_frames_to_read);
+      webrtc::ExplicitZeroMemory(
+          audio_data, format_.Format.nBlockAlign * num_frames_to_read);
       RTC_DLOG(LS_WARNING) << "Captured audio is replaced by silence";
     } else {
       
       
       fine_audio_buffer_->DeliverRecordedData(
-          rtc::MakeArrayView(reinterpret_cast<const int16_t*>(audio_data),
-                             format_.Format.nChannels * num_frames_to_read),
+          webrtc::MakeArrayView(reinterpret_cast<const int16_t*>(audio_data),
+                                format_.Format.nChannels * num_frames_to_read),
 
           latency_ms_);
     }

@@ -55,17 +55,17 @@ void CngTest::SetUp() {
 }
 
 void CngTest::TestCngEncode(int sample_rate_hz, int quality) {
-  const size_t num_samples_10ms = rtc::CheckedDivExact(sample_rate_hz, 100);
-  rtc::Buffer sid_data;
+  const size_t num_samples_10ms = CheckedDivExact(sample_rate_hz, 100);
+  Buffer sid_data;
 
   ComfortNoiseEncoder cng_encoder(sample_rate_hz, kSidNormalIntervalUpdate,
                                   quality);
-  EXPECT_EQ(0U, cng_encoder.Encode(rtc::ArrayView<const int16_t>(
-                                       speech_data_, num_samples_10ms),
-                                   kNoSid, &sid_data));
+  EXPECT_EQ(0U, cng_encoder.Encode(
+                    ArrayView<const int16_t>(speech_data_, num_samples_10ms),
+                    kNoSid, &sid_data));
   EXPECT_EQ(static_cast<size_t>(quality + 1),
             cng_encoder.Encode(
-                rtc::ArrayView<const int16_t>(speech_data_, num_samples_10ms),
+                ArrayView<const int16_t>(speech_data_, num_samples_10ms),
                 kForceSid, &sid_data));
 }
 
@@ -89,16 +89,15 @@ TEST_F(CngDeathTest, CngInitFail) {
 
 
 TEST_F(CngDeathTest, CngEncodeTooLong) {
-  rtc::Buffer sid_data;
+  Buffer sid_data;
 
   
   ComfortNoiseEncoder cng_encoder(8000, kSidNormalIntervalUpdate,
                                   kCNGNumParamsNormal);
   
-  EXPECT_DEATH(
-      cng_encoder.Encode(rtc::ArrayView<const int16_t>(speech_data_, 641),
-                         kNoSid, &sid_data),
-      "");
+  EXPECT_DEATH(cng_encoder.Encode(ArrayView<const int16_t>(speech_data_, 641),
+                                  kNoSid, &sid_data),
+               "");
 }
 #endif  
 
@@ -124,7 +123,7 @@ TEST_F(CngTest, CngEncode64000) {
 
 
 TEST_F(CngTest, CngUpdateSid) {
-  rtc::Buffer sid_data;
+  Buffer sid_data;
 
   
   ComfortNoiseEncoder cng_encoder(16000, kSidNormalIntervalUpdate,
@@ -133,7 +132,7 @@ TEST_F(CngTest, CngUpdateSid) {
 
   
   EXPECT_EQ(kCNGNumParamsNormal + 1,
-            cng_encoder.Encode(rtc::ArrayView<const int16_t>(speech_data_, 160),
+            cng_encoder.Encode(ArrayView<const int16_t>(speech_data_, 160),
                                kForceSid, &sid_data));
   cng_decoder.UpdateSid(sid_data);
 
@@ -142,27 +141,26 @@ TEST_F(CngTest, CngUpdateSid) {
   cng_decoder.Reset();
 
   
-  EXPECT_EQ(0U,
-            cng_encoder.Encode(rtc::ArrayView<const int16_t>(speech_data_, 160),
-                               kForceSid, &sid_data));
+  EXPECT_EQ(0U, cng_encoder.Encode(ArrayView<const int16_t>(speech_data_, 160),
+                                   kForceSid, &sid_data));
   EXPECT_EQ(
       kCNGNumParamsHigh + 1,
-      cng_encoder.Encode(rtc::ArrayView<const int16_t>(speech_data_ + 160, 160),
+      cng_encoder.Encode(ArrayView<const int16_t>(speech_data_ + 160, 160),
                          kForceSid, &sid_data));
   cng_decoder.UpdateSid(
-      rtc::ArrayView<const uint8_t>(sid_data.data(), kCNGNumParamsNormal + 1));
+      ArrayView<const uint8_t>(sid_data.data(), kCNGNumParamsNormal + 1));
 }
 
 
 TEST_F(CngTest, CngUpdateSidErroneous) {
-  rtc::Buffer sid_data;
+  Buffer sid_data;
 
   
   ComfortNoiseEncoder cng_encoder(16000, kSidNormalIntervalUpdate,
                                   kCNGNumParamsNormal);
   ComfortNoiseDecoder cng_decoder;
   EXPECT_EQ(kCNGNumParamsNormal + 1,
-            cng_encoder.Encode(rtc::ArrayView<const int16_t>(speech_data_, 160),
+            cng_encoder.Encode(ArrayView<const int16_t>(speech_data_, 160),
                                kForceSid, &sid_data));
 
   
@@ -180,7 +178,7 @@ TEST_F(CngTest, CngUpdateSidErroneous) {
 
 
 TEST_F(CngTest, CngGenerate) {
-  rtc::Buffer sid_data;
+  Buffer sid_data;
   int16_t out_data[640];
 
   
@@ -190,23 +188,23 @@ TEST_F(CngTest, CngGenerate) {
 
   
   EXPECT_EQ(kCNGNumParamsNormal + 1,
-            cng_encoder.Encode(rtc::ArrayView<const int16_t>(speech_data_, 160),
+            cng_encoder.Encode(ArrayView<const int16_t>(speech_data_, 160),
                                kForceSid, &sid_data));
 
   
   cng_decoder.UpdateSid(sid_data);
 
   
-  EXPECT_TRUE(cng_decoder.Generate(rtc::ArrayView<int16_t>(out_data, 640), 1));
-  EXPECT_TRUE(cng_decoder.Generate(rtc::ArrayView<int16_t>(out_data, 640), 0));
+  EXPECT_TRUE(cng_decoder.Generate(ArrayView<int16_t>(out_data, 640), 1));
+  EXPECT_TRUE(cng_decoder.Generate(ArrayView<int16_t>(out_data, 640), 0));
 
   
-  EXPECT_FALSE(cng_decoder.Generate(rtc::ArrayView<int16_t>(out_data, 641), 0));
+  EXPECT_FALSE(cng_decoder.Generate(ArrayView<int16_t>(out_data, 641), 0));
 }
 
 
 TEST_F(CngTest, CngAutoSid) {
-  rtc::Buffer sid_data;
+  Buffer sid_data;
 
   
   ComfortNoiseEncoder cng_encoder(16000, kSidNormalIntervalUpdate,
@@ -215,20 +213,20 @@ TEST_F(CngTest, CngAutoSid) {
 
   
   for (int i = 0; i < 10; i++) {
-    EXPECT_EQ(
-        0U, cng_encoder.Encode(rtc::ArrayView<const int16_t>(speech_data_, 160),
-                               kNoSid, &sid_data));
+    EXPECT_EQ(0U,
+              cng_encoder.Encode(ArrayView<const int16_t>(speech_data_, 160),
+                                 kNoSid, &sid_data));
   }
 
   
   EXPECT_EQ(kCNGNumParamsNormal + 1,
-            cng_encoder.Encode(rtc::ArrayView<const int16_t>(speech_data_, 160),
+            cng_encoder.Encode(ArrayView<const int16_t>(speech_data_, 160),
                                kNoSid, &sid_data));
 }
 
 
 TEST_F(CngTest, CngAutoSidShort) {
-  rtc::Buffer sid_data;
+  Buffer sid_data;
 
   
   ComfortNoiseEncoder cng_encoder(16000, kSidShortIntervalUpdate,
@@ -236,16 +234,14 @@ TEST_F(CngTest, CngAutoSidShort) {
   ComfortNoiseDecoder cng_decoder;
 
   
-  EXPECT_EQ(0U,
-            cng_encoder.Encode(rtc::ArrayView<const int16_t>(speech_data_, 160),
-                               kNoSid, &sid_data));
+  EXPECT_EQ(0U, cng_encoder.Encode(ArrayView<const int16_t>(speech_data_, 160),
+                                   kNoSid, &sid_data));
 
   
   for (int i = 0; i < 10; i++) {
-    EXPECT_EQ(
-        kCNGNumParamsNormal + 1,
-        cng_encoder.Encode(rtc::ArrayView<const int16_t>(speech_data_, 160),
-                           kNoSid, &sid_data));
+    EXPECT_EQ(kCNGNumParamsNormal + 1,
+              cng_encoder.Encode(ArrayView<const int16_t>(speech_data_, 160),
+                                 kNoSid, &sid_data));
   }
 }
 

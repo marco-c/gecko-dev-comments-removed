@@ -336,8 +336,8 @@ bool CoreAudioOutput::OnDataCallback(uint64_t device_frequency) {
   
   
   fine_audio_buffer_->GetPlayoutData(
-      rtc::MakeArrayView(reinterpret_cast<int16_t*>(audio_data),
-                         num_requested_frames * format_.Format.nChannels),
+      webrtc::MakeArrayView(reinterpret_cast<int16_t*>(audio_data),
+                            num_requested_frames * format_.Format.nChannels),
       latency_ms_);
 
   
@@ -376,7 +376,7 @@ int CoreAudioOutput::EstimateOutputLatencyMillis(uint64_t device_frequency) {
 
     
     webrtc::TimeDelta delay =
-        webrtc::TimeDelta::Micros(delay_frames * rtc::kNumMicrosecsPerSec /
+        webrtc::TimeDelta::Micros(delay_frames * webrtc::kNumMicrosecsPerSec /
                                   format_.Format.nSamplesPerSec);
     delay_ms = delay.ms();
   }

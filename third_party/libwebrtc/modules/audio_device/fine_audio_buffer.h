@@ -52,8 +52,7 @@ class FineAudioBuffer {
   
   
   
-  void GetPlayoutData(rtc::ArrayView<int16_t> audio_buffer,
-                      int playout_delay_ms);
+  void GetPlayoutData(ArrayView<int16_t> audio_buffer, int playout_delay_ms);
 
   
   
@@ -64,11 +63,11 @@ class FineAudioBuffer {
   
   
   
-  void DeliverRecordedData(rtc::ArrayView<const int16_t> audio_buffer,
+  void DeliverRecordedData(ArrayView<const int16_t> audio_buffer,
                            int record_delay_ms) {
     DeliverRecordedData(audio_buffer, record_delay_ms, std::nullopt);
   }
-  void DeliverRecordedData(rtc::ArrayView<const int16_t> audio_buffer,
+  void DeliverRecordedData(ArrayView<const int16_t> audio_buffer,
                            int record_delay_ms,
                            std::optional<int64_t> capture_time_ns);
 
@@ -90,10 +89,10 @@ class FineAudioBuffer {
   const size_t record_channels_;
   
   
-  rtc::BufferT<int16_t> playout_buffer_;
+  BufferT<int16_t> playout_buffer_;
   
   
-  rtc::BufferT<int16_t> record_buffer_;
+  BufferT<int16_t> record_buffer_;
   
   int playout_delay_ms_ = 0;
 };

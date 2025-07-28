@@ -272,7 +272,7 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
 
   NetEqTest::DecoderMap codecs = NetEqTest::StandardDecoderMap();
 
-  rtc::scoped_refptr<AudioDecoderFactory> decoder_factory =
+  scoped_refptr<AudioDecoderFactory> decoder_factory =
       CreateBuiltinAudioDecoderFactory();
 
   
@@ -306,7 +306,7 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
 
     
     
-    decoder_factory = rtc::make_ref_counted<FunctionAudioDecoderFactory>(
+    decoder_factory = make_ref_counted<FunctionAudioDecoderFactory>(
         [decoder_factory, config](
             const Environment& env, const SdpAudioFormat& format,
             std::optional<AudioCodecPairId> codec_pair_id) {

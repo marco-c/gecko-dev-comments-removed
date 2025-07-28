@@ -83,7 +83,7 @@ class NetEqTest : public NetEqSimulator {
   
   
   NetEqTest(const NetEq::Config& config,
-            rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
+            scoped_refptr<AudioDecoderFactory> decoder_factory,
             const DecoderMap& codecs,
             std::unique_ptr<std::ofstream> text_log,
             NetEqFactory* neteq_factory,

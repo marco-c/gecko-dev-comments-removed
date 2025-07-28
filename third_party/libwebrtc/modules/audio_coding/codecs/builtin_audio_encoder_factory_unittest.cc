@@ -23,8 +23,7 @@
 namespace webrtc {
 
 class AudioEncoderFactoryTest
-    : public ::testing::TestWithParam<rtc::scoped_refptr<AudioEncoderFactory>> {
-};
+    : public ::testing::TestWithParam<scoped_refptr<AudioEncoderFactory>> {};
 
 TEST_P(AudioEncoderFactoryTest, SupportsAtLeastOneFormat) {
   auto factory = GetParam();
@@ -73,9 +72,9 @@ TEST_P(AudioEncoderFactoryTest, CanRunAllSupportedEncoders) {
     encoder->Reset();
     const int num_samples = checked_cast<int>(encoder->SampleRateHz() *
                                               encoder->NumChannels() / 100);
-    rtc::Buffer out;
-    rtc::BufferT<int16_t> audio;
-    audio.SetData(num_samples, [](rtc::ArrayView<int16_t> audio) {
+    Buffer out;
+    BufferT<int16_t> audio;
+    audio.SetData(num_samples, [](ArrayView<int16_t> audio) {
       for (size_t i = 0; i != audio.size(); ++i) {
         
         audio[i] =
@@ -154,8 +153,7 @@ TEST(BuiltinAudioEncoderFactoryTest, SupportsTheExpectedFormats) {
 
 TEST(BuiltinAudioEncoderFactoryTest, MaxNrOfChannels) {
   const Environment env = CreateEnvironment();
-  rtc::scoped_refptr<AudioEncoderFactory> aef =
-      CreateBuiltinAudioEncoderFactory();
+  scoped_refptr<AudioEncoderFactory> aef = CreateBuiltinAudioEncoderFactory();
   std::vector<std::string> codecs = {
 #ifdef WEBRTC_CODEC_OPUS
       "opus",

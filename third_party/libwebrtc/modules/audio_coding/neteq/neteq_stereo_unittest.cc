@@ -168,16 +168,16 @@ class NetEqStereoTest : public ::testing::TestWithParam<TestParameters> {
       while (time_now_ms >= next_arrival_time_ms) {
         
         ASSERT_EQ(NetEq::kOK,
-                  neteq_mono_->InsertPacket(rtp_header_mono_,
-                                            rtc::ArrayView<const uint8_t>(
-                                                encoded_, payload_size_bytes_),
-                                            Timestamp::Millis(time_now_ms)));
+                  neteq_mono_->InsertPacket(
+                      rtp_header_mono_,
+                      ArrayView<const uint8_t>(encoded_, payload_size_bytes_),
+                      Timestamp::Millis(time_now_ms)));
         
         ASSERT_EQ(NetEq::kOK,
                   neteq_->InsertPacket(
                       rtp_header_,
-                      rtc::ArrayView<const uint8_t>(encoded_multi_channel_,
-                                                    multi_payload_size_bytes_),
+                      ArrayView<const uint8_t>(encoded_multi_channel_,
+                                               multi_payload_size_bytes_),
                       Timestamp::Millis(time_now_ms)));
         
         do {

@@ -20,7 +20,7 @@ namespace webrtc {
 
 
 
-void DownMixFrame(const AudioFrame& input, rtc::ArrayView<int16_t> output);
+void DownMixFrame(const AudioFrame& input, ArrayView<int16_t> output);
 
 
 

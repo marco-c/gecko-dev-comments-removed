@@ -52,7 +52,7 @@ class AudioMultiVector {
   
   
   
-  void PushBackInterleaved(rtc::ArrayView<const int16_t> append_this);
+  void PushBackInterleaved(ArrayView<const int16_t> append_this);
 
   
   

@@ -34,7 +34,7 @@ class ComfortNoiseDecoder {
 
   
   
-  void UpdateSid(rtc::ArrayView<const uint8_t> sid);
+  void UpdateSid(ArrayView<const uint8_t> sid);
 
   
   
@@ -43,7 +43,7 @@ class ComfortNoiseDecoder {
   
   
   
-  bool Generate(rtc::ArrayView<int16_t> out_data, bool new_period);
+  bool Generate(ArrayView<int16_t> out_data, bool new_period);
 
  private:
   uint32_t dec_seed_;
@@ -79,9 +79,9 @@ class ComfortNoiseEncoder {
   
   
   
-  size_t Encode(rtc::ArrayView<const int16_t> speech,
+  size_t Encode(ArrayView<const int16_t> speech,
                 bool force_sid,
-                rtc::Buffer* output);
+                Buffer* output);
 
  private:
   size_t enc_nrOfCoefs_;

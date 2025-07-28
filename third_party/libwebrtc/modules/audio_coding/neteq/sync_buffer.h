@@ -44,7 +44,7 @@ class SyncBuffer : public AudioMultiVector {
   void PushBack(const AudioMultiVector& append_this) override;
 
   
-  void PushBackInterleaved(const rtc::BufferT<int16_t>& append_this);
+  void PushBackInterleaved(const BufferT<int16_t>& append_this);
 
   
   

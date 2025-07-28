@@ -27,7 +27,7 @@ class DefaultOutputRateCalculator : public OutputRateCalculator {
   
   
   int CalculateOutputRateFromRange(
-      rtc::ArrayView<const int> preferred_sample_rates) override;
+      ArrayView<const int> preferred_sample_rates) override;
   ~DefaultOutputRateCalculator() override {}
 };
 

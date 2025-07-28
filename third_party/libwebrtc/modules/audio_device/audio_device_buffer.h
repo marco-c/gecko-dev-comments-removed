@@ -186,11 +186,11 @@ class AudioDeviceBuffer {
   
   
   
-  rtc::BufferT<int16_t> play_buffer_;
+  BufferT<int16_t> play_buffer_;
 
   
   
-  rtc::BufferT<int16_t> rec_buffer_;
+  BufferT<int16_t> rec_buffer_;
 
   
   bool typing_status_;

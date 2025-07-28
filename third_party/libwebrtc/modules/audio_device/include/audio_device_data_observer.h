@@ -43,26 +43,26 @@ class AudioDeviceDataObserver {
 
 
 
-rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceWithDataObserver(
-    rtc::scoped_refptr<AudioDeviceModule> impl,
+scoped_refptr<AudioDeviceModule> CreateAudioDeviceWithDataObserver(
+    scoped_refptr<AudioDeviceModule> impl,
     std::unique_ptr<AudioDeviceDataObserver> observer);
 
 
 
 ABSL_DEPRECATED("")
-rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceWithDataObserver(
-    rtc::scoped_refptr<AudioDeviceModule> impl,
+scoped_refptr<AudioDeviceModule> CreateAudioDeviceWithDataObserver(
+    scoped_refptr<AudioDeviceModule> impl,
     AudioDeviceDataObserver* observer);
 
 
-rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceWithDataObserver(
+scoped_refptr<AudioDeviceModule> CreateAudioDeviceWithDataObserver(
     AudioDeviceModule::AudioLayer audio_layer,
     TaskQueueFactory* task_queue_factory,
     std::unique_ptr<AudioDeviceDataObserver> observer);
 
 
 ABSL_DEPRECATED("")
-rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceWithDataObserver(
+scoped_refptr<AudioDeviceModule> CreateAudioDeviceWithDataObserver(
     AudioDeviceModule::AudioLayer audio_layer,
     TaskQueueFactory* task_queue_factory,
     AudioDeviceDataObserver* observer);
