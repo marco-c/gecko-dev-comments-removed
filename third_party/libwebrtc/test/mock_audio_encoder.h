@@ -66,8 +66,8 @@ class MockAudioEncoder : public AudioEncoder {
   MOCK_METHOD(EncodedInfo,
               EncodeImpl,
               (uint32_t timestamp,
-               rtc::ArrayView<const int16_t> audio,
-               rtc::Buffer*),
+               webrtc::ArrayView<const int16_t> audio,
+               webrtc::Buffer*),
               (override));
 
   class FakeEncoding {
@@ -81,8 +81,8 @@ class MockAudioEncoder : public AudioEncoder {
     explicit FakeEncoding(size_t encoded_bytes);
 
     AudioEncoder::EncodedInfo operator()(uint32_t timestamp,
-                                         rtc::ArrayView<const int16_t> audio,
-                                         rtc::Buffer* encoded);
+                                         ArrayView<const int16_t> audio,
+                                         Buffer* encoded);
 
    private:
     AudioEncoder::EncodedInfo info_;
@@ -98,20 +98,20 @@ class MockAudioEncoder : public AudioEncoder {
     
     
     CopyEncoding(AudioEncoder::EncodedInfo info,
-                 rtc::ArrayView<const uint8_t> payload);
+                 ArrayView<const uint8_t> payload);
 
     
     
     
-    explicit CopyEncoding(rtc::ArrayView<const uint8_t> payload);
+    explicit CopyEncoding(ArrayView<const uint8_t> payload);
 
     AudioEncoder::EncodedInfo operator()(uint32_t timestamp,
-                                         rtc::ArrayView<const int16_t> audio,
-                                         rtc::Buffer* encoded);
+                                         ArrayView<const int16_t> audio,
+                                         Buffer* encoded);
 
    private:
     AudioEncoder::EncodedInfo info_;
-    rtc::ArrayView<const uint8_t> payload_;
+    ArrayView<const uint8_t> payload_;
   };
 };
 

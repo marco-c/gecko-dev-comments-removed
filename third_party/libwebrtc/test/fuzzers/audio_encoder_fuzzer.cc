@@ -25,7 +25,7 @@ namespace webrtc {
 
 
 
-void FuzzAudioEncoder(rtc::ArrayView<const uint8_t> data_view,
+void FuzzAudioEncoder(ArrayView<const uint8_t> data_view,
                       std::unique_ptr<AudioEncoder> encoder) {
   test::FuzzDataHelper data(data_view);
   const size_t block_size_samples =
@@ -37,8 +37,8 @@ void FuzzAudioEncoder(rtc::ArrayView<const uint8_t> data_view,
     return;
   }
 
-  rtc::BufferT<int16_t> input_aligned(block_size_samples);
-  rtc::Buffer encoded;
+  BufferT<int16_t> input_aligned(block_size_samples);
+  Buffer encoded;
 
   
   

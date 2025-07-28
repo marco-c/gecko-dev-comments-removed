@@ -123,7 +123,7 @@ void EmulatedNetworkManager::NetworkManagerImpl::UpdateNetworksOnce() {
   RTC_DCHECK_RUN_ON(network_thread_);
 
   std::vector<std::unique_ptr<Network>> networks;
-  for (std::unique_ptr<rtc::Network>& net :
+  for (std::unique_ptr<Network>& net :
        endpoints_container_->GetEnabledNetworks()) {
     net->set_default_local_address_provider(this);
     networks.push_back(std::move(net));

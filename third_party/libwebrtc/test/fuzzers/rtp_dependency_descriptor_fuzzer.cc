@@ -28,7 +28,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
   const FrameDependencyStructure* structure1_ptr = nullptr;
   std::unique_ptr<const FrameDependencyStructure> structure2;
 
-  test::FuzzDataHelper fuzz_data(rtc::MakeArrayView(data, size));
+  test::FuzzDataHelper fuzz_data(webrtc::MakeArrayView(data, size));
   while (fuzz_data.CanReadBytes(1)) {
     
     
@@ -58,7 +58,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
     uint8_t some_memory[256];
     
     RTC_CHECK_LT(value_size, 256);
-    rtc::ArrayView<uint8_t> write_buffer(some_memory, value_size);
+    webrtc::ArrayView<uint8_t> write_buffer(some_memory, value_size);
     RTC_CHECK(RtpDependencyDescriptorExtension::Write(write_buffer, structure1,
                                                       descriptor1));
 

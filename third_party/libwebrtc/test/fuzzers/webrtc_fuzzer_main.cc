@@ -26,7 +26,7 @@ void InitializeWebRtcFuzzDefaults() {
 
 
 #if !defined(WEBRTC_CHROMIUM_BUILD)
-  rtc::LogMessage::LogToDebug(rtc::LS_NONE);
+  webrtc::LogMessage::LogToDebug(webrtc::LS_NONE);
 #endif  
 
   g_initialized = true;

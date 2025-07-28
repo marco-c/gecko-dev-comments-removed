@@ -47,10 +47,10 @@ const Environment& GetEnvironment() {
   return *env;
 }
 
-rtc::scoped_refptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
-                                              std::string* field_trial_string,
-                                              TaskQueueBase* absl_nonnull
-                                                  worker_queue) {
+webrtc::scoped_refptr<AudioProcessing> CreateApm(
+    test::FuzzDataHelper* fuzz_data,
+    std::string* field_trial_string,
+    TaskQueueBase* absl_nonnull worker_queue) {
   
   
   bool use_ts = fuzz_data->ReadOrDefaultValue(true);
@@ -138,7 +138,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
   if (size > 400000) {
     return;
   }
-  test::FuzzDataHelper fuzz_data(rtc::ArrayView<const uint8_t>(data, size));
+  test::FuzzDataHelper fuzz_data(webrtc::ArrayView<const uint8_t>(data, size));
   
   
   std::string field_trial_string = "";

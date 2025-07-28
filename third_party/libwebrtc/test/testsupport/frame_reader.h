@@ -38,30 +38,30 @@ class FrameReader {
 
   
   
-  virtual rtc::scoped_refptr<I420Buffer> PullFrame() = 0;
+  virtual scoped_refptr<I420Buffer> PullFrame() = 0;
 
   
   
   
-  virtual rtc::scoped_refptr<I420Buffer> PullFrame(int* frame_num) = 0;
+  virtual scoped_refptr<I420Buffer> PullFrame(int* frame_num) = 0;
 
   
   
-  virtual rtc::scoped_refptr<I420Buffer> ReadFrame(int frame_num) = 0;
+  virtual scoped_refptr<I420Buffer> ReadFrame(int frame_num) = 0;
 
   
   
   
   
   
-  virtual rtc::scoped_refptr<I420Buffer> PullFrame(int* frame_num,
-                                                   Resolution resolution,
-                                                   Ratio framerate_scale) = 0;
+  virtual scoped_refptr<I420Buffer> PullFrame(int* frame_num,
+                                              Resolution resolution,
+                                              Ratio framerate_scale) = 0;
 
   
   
-  virtual rtc::scoped_refptr<I420Buffer> ReadFrame(int frame_num,
-                                                   Resolution resolution) = 0;
+  virtual scoped_refptr<I420Buffer> ReadFrame(int frame_num,
+                                              Resolution resolution) = 0;
 
   
   virtual int num_frames() const = 0;
@@ -84,18 +84,18 @@ class YuvFrameReaderImpl : public FrameReader {
 
   virtual void Init();
 
-  rtc::scoped_refptr<I420Buffer> PullFrame() override;
+  scoped_refptr<I420Buffer> PullFrame() override;
 
-  rtc::scoped_refptr<I420Buffer> PullFrame(int* frame_num) override;
+  scoped_refptr<I420Buffer> PullFrame(int* frame_num) override;
 
-  rtc::scoped_refptr<I420Buffer> PullFrame(int* frame_num,
-                                           Resolution resolution,
-                                           Ratio framerate_scale) override;
+  scoped_refptr<I420Buffer> PullFrame(int* frame_num,
+                                      Resolution resolution,
+                                      Ratio framerate_scale) override;
 
-  rtc::scoped_refptr<I420Buffer> ReadFrame(int frame_num) override;
+  scoped_refptr<I420Buffer> ReadFrame(int frame_num) override;
 
-  rtc::scoped_refptr<I420Buffer> ReadFrame(int frame_num,
-                                           Resolution resolution) override;
+  scoped_refptr<I420Buffer> ReadFrame(int frame_num,
+                                      Resolution resolution) override;
 
   int num_frames() const override { return num_frames_; }
 

@@ -99,21 +99,21 @@ class EmulatedTURNServer::AsyncPacketSocketWrapper : public AsyncPacketSocket {
   SocketAddress GetRemoteAddress() const override { return SocketAddress(); }
   int Send(const void* pv,
            size_t cb,
-           const rtc::PacketOptions& options) override {
+           const AsyncSocketPacketOptions& options) override {
     RTC_CHECK(false) << "TCP not implemented";
     return -1;
   }
   int SendTo(const void* pv,
              size_t cb,
              const SocketAddress& addr,
-             const rtc::PacketOptions& options) override {
+             const AsyncSocketPacketOptions& options) override {
     
-    rtc::CopyOnWriteBuffer buf(reinterpret_cast<const char*>(pv), cb);
+    CopyOnWriteBuffer buf(reinterpret_cast<const char*>(pv), cb);
     endpoint_->SendPacket(local_address_, addr, buf);
     return cb;
   }
   int Close() override { return 0; }
-  void NotifyPacketReceived(const rtc::ReceivedPacket& packet) {
+  void NotifyPacketReceived(const ReceivedIpPacket& packet) {
     AsyncPacketSocket::NotifyPacketReceived(packet);
   }
 
@@ -148,12 +148,12 @@ EmulatedTURNServer::EmulatedTURNServer(const EmulatedTURNServerConfig& config,
     turn_server_->set_enable_permission_checks(enable_permission_checks);
 
     auto client_socket = Wrap(client_);
-    turn_server_->AddInternalSocket(client_socket, cricket::PROTO_UDP);
+    turn_server_->AddInternalSocket(client_socket, PROTO_UDP);
     turn_server_->SetExternalSocketFactory(new PacketSocketFactoryWrapper(this),
                                            SocketAddress());
     client_address_ = client_socket->GetLocalAddress();
     char buf[256];
-    rtc::SimpleStringBuilder str(buf);
+    SimpleStringBuilder str(buf);
     str.AppendFormat("turn:%s?transport=udp",
                      client_address_.ToString().c_str());
     ice_config_.url = str.str();
@@ -189,7 +189,7 @@ void EmulatedTURNServer::OnPacketReceived(webrtc::EmulatedIpPacket packet) {
     auto it = sockets_.find(packet.to);
     if (it != sockets_.end()) {
       it->second->NotifyPacketReceived(
-          rtc::ReceivedPacket(packet.data, packet.from, packet.arrival_time));
+          ReceivedIpPacket(packet.data, packet.from, packet.arrival_time));
     }
   });
 }

@@ -39,7 +39,7 @@ class NamesCollection {
  public:
   NamesCollection() = default;
 
-  explicit NamesCollection(rtc::ArrayView<const std::string> names);
+  explicit NamesCollection(ArrayView<const std::string> names);
 
   
   size_t size() const { return size_; }

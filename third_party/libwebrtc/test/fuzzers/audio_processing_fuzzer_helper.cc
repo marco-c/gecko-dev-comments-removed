@@ -42,7 +42,7 @@ void GenerateFloatFrame(test::FuzzDataHelper* fuzz_data,
     std::fill(float_frames[i], float_frames[i] + samples_per_input_channel, 0);
     const size_t read_bytes = sizeof(float) * samples_per_input_channel;
     if (fuzz_data->CanReadBytes(read_bytes)) {
-      rtc::ArrayView<const uint8_t> byte_array =
+      ArrayView<const uint8_t> byte_array =
           fuzz_data->ReadByteArray(read_bytes);
       memmove(float_frames[i], byte_array.begin(), read_bytes);
     }
@@ -76,7 +76,7 @@ void GenerateFixedFrame(test::FuzzDataHelper* fuzz_data,
 }  
 
 void FuzzAudioProcessing(test::FuzzDataHelper* fuzz_data,
-                         rtc::scoped_refptr<AudioProcessing> apm) {
+                         scoped_refptr<AudioProcessing> apm) {
   AudioFrame fixed_frame;
   
   

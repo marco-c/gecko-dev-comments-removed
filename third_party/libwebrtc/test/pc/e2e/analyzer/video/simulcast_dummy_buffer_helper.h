@@ -22,7 +22,7 @@ namespace webrtc_pc_e2e {
 
 
 
-rtc::scoped_refptr<webrtc::VideoFrameBuffer> CreateDummyFrameBuffer();
+scoped_refptr<webrtc::VideoFrameBuffer> CreateDummyFrameBuffer();
 
 
 

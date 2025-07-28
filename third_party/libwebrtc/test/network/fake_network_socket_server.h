@@ -27,7 +27,7 @@ namespace test {
 class FakeNetworkSocket;
 
 
-class FakeNetworkSocketServer : public rtc::SocketServer {
+class FakeNetworkSocketServer : public SocketServer {
  public:
   explicit FakeNetworkSocketServer(EndpointsContainer* endpoints_controller);
   ~FakeNetworkSocketServer() override;

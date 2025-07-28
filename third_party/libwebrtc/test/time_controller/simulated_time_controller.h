@@ -83,7 +83,7 @@ class SimulatedTimeControllerImpl : public TaskQueueFactory,
   void StopYield(TaskQueueBase* yielding_from);
 
  private:
-  const rtc::PlatformThreadId thread_id_;
+  const PlatformThreadId thread_id_;
   const std::unique_ptr<Thread> dummy_thread_ = Thread::Create();
   mutable Mutex time_lock_;
   Timestamp current_time_ RTC_GUARDED_BY(time_lock_);
