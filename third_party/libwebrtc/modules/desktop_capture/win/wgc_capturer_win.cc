@@ -110,7 +110,7 @@ bool IsWgcSupported(CaptureType capture_type) {
     
     
     
-    if (rtc::rtc_win::GetVersion() < rtc::rtc_win::Version::VERSION_WIN11)
+    if (webrtc::rtc_win::GetVersion() < webrtc::rtc_win::Version::VERSION_WIN11)
       return false;
   }
 
@@ -119,7 +119,8 @@ bool IsWgcSupported(CaptureType capture_type) {
   
   
   if (capture_type == CaptureType::kScreen &&
-      rtc::rtc_win::GetVersion() < rtc::rtc_win::Version::VERSION_WIN10_20H1) {
+      webrtc::rtc_win::GetVersion() <
+          webrtc::rtc_win::Version::VERSION_WIN10_20H1) {
     return false;
   }
 

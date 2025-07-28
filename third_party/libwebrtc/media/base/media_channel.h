@@ -208,7 +208,7 @@ class MediaSendChannelInterface {
   
   virtual void OnNetworkRouteChanged(
       absl::string_view transport_name,
-      const rtc::NetworkRoute& network_route) = 0;
+      const webrtc::NetworkRoute& network_route) = 0;
   
   virtual void SetInterface(MediaChannelNetworkInterface* iface) = 0;
 

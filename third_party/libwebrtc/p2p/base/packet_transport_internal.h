@@ -67,7 +67,7 @@ class RTC_EXPORT PacketTransportInternal : public sigslot::has_slots<> {
 
   
   
-  virtual std::optional<NetworkRoute> network_route() const;
+  virtual std::optional<webrtc::NetworkRoute> network_route() const;
 
   
   sigslot::signal1<PacketTransportInternal*> SignalWritableState;
@@ -95,7 +95,8 @@ class RTC_EXPORT PacketTransportInternal : public sigslot::has_slots<> {
       SignalSentPacket;
 
   
-  sigslot::signal1<std::optional<rtc::NetworkRoute>> SignalNetworkRouteChanged;
+  sigslot::signal1<std::optional<webrtc::NetworkRoute>>
+      SignalNetworkRouteChanged;
 
   
   void SetOnCloseCallback(absl::AnyInvocable<void() &&> callback);

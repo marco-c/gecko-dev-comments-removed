@@ -10,14 +10,13 @@
 #ifndef RTC_BASE_NET_HELPER_H_
 #define RTC_BASE_NET_HELPER_H_
 
-#include <string>
 
 #include "absl/strings/string_view.h"
 #include "rtc_base/system/rtc_export.h"
 
 
 
-namespace cricket {
+namespace webrtc {
 
 RTC_EXPORT extern const char UDP_PROTOCOL_NAME[];
 RTC_EXPORT extern const char TCP_PROTOCOL_NAME[];
@@ -30,6 +29,18 @@ constexpr int kUdpHeaderSize = 8;
 
 int GetProtocolOverhead(absl::string_view protocol);
 
+}  
+
+
+
+namespace cricket {
+using ::webrtc::GetProtocolOverhead;
+using ::webrtc::kTcpHeaderSize;
+using ::webrtc::kUdpHeaderSize;
+using ::webrtc::SSLTCP_PROTOCOL_NAME;
+using ::webrtc::TCP_PROTOCOL_NAME;
+using ::webrtc::TLS_PROTOCOL_NAME;
+using ::webrtc::UDP_PROTOCOL_NAME;
 }  
 
 #endif  

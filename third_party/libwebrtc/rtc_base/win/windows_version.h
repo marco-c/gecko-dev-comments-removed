@@ -17,7 +17,7 @@
 
 typedef void* HANDLE;
 
-namespace rtc {
+namespace webrtc {
 namespace rtc_win {
 
 

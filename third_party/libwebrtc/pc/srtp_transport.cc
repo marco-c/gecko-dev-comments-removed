@@ -162,7 +162,7 @@ void SrtpTransport::OnRtcpPacketReceived(const rtc::ReceivedPacket& packet) {
 }
 
 void SrtpTransport::OnNetworkRouteChanged(
-    std::optional<rtc::NetworkRoute> network_route) {
+    std::optional<NetworkRoute> network_route) {
   
   if (network_route) {
     int srtp_overhead = 0;

@@ -20,7 +20,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/ssl_identity.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -31,7 +31,8 @@ class OpenSSLKeyPair final {
     RTC_DCHECK(pkey_ != nullptr);
   }
 
-  static std::unique_ptr<OpenSSLKeyPair> Generate(const KeyParams& key_params);
+  static std::unique_ptr<OpenSSLKeyPair> Generate(
+      const rtc::KeyParams& key_params);
   
   
   static std::unique_ptr<OpenSSLKeyPair> FromPrivateKeyPEMString(
@@ -56,6 +57,12 @@ class OpenSSLKeyPair final {
   EVP_PKEY* pkey_;
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::OpenSSLKeyPair;
 }  
 
 #endif  

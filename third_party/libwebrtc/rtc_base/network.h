@@ -43,15 +43,15 @@
 #include "rtc_base/thread_annotations.h"
 
 #if defined(WEBRTC_POSIX)
+#include "rtc_base/ifaddrs_converter.h"
 struct ifaddrs;
 #endif  
 
-namespace rtc {
+namespace webrtc {
 
 extern const char kPublicIPv4Host[];
 extern const char kPublicIPv6Host[];
 
-class IfAddrsConverter;
 class Network;
 
 
@@ -66,14 +66,14 @@ bool CompareNetworks(const std::unique_ptr<Network>& a,
 
 
 std::string MakeNetworkKey(absl::string_view name,
-                           const webrtc::IPAddress& prefix,
+                           const IPAddress& prefix,
                            int prefix_length);
 
 
 
 
-RTC_EXPORT webrtc::AdapterType GetAdapterTypeFromName(
-    absl::string_view network_name);
+RTC_EXPORT AdapterType GetAdapterTypeFromName(absl::string_view network_name);
+RTC_EXPORT AdapterType GetAdapterTypeFromName(absl::string_view network_name);
 
 class DefaultLocalAddressProvider {
  public:
@@ -82,8 +82,7 @@ class DefaultLocalAddressProvider {
   
   
   
-  virtual bool GetDefaultLocalAddress(int family,
-                                      webrtc::IPAddress* ipaddr) const = 0;
+  virtual bool GetDefaultLocalAddress(int family, IPAddress* ipaddr) const = 0;
 };
 
 class MdnsResponderProvider {
@@ -94,16 +93,16 @@ class MdnsResponderProvider {
   
   
   
-  virtual webrtc::MdnsResponderInterface* GetMdnsResponder() const = 0;
+  virtual MdnsResponderInterface* GetMdnsResponder() const = 0;
 };
 
 
 class NetworkMask {
  public:
-  NetworkMask(const webrtc::IPAddress& addr, int prefix_length)
+  NetworkMask(const IPAddress& addr, int prefix_length)
       : address_(addr), prefix_length_(prefix_length) {}
 
-  const webrtc::IPAddress& address() const { return address_; }
+  const IPAddress& address() const { return address_; }
   int prefix_length() const { return prefix_length_; }
 
   bool operator==(const NetworkMask& o) const {
@@ -111,7 +110,7 @@ class NetworkMask {
   }
 
  private:
-  webrtc::IPAddress address_;
+  IPAddress address_;
   
   int prefix_length_;
 };
@@ -177,8 +176,7 @@ class RTC_EXPORT NetworkManager : public DefaultLocalAddressProvider,
 
   
   virtual void DumpNetworks() {}
-  bool GetDefaultLocalAddress(int family,
-                              webrtc::IPAddress* ipaddr) const override;
+  bool GetDefaultLocalAddress(int family, IPAddress* ipaddr) const override;
 
   struct Stats {
     int ipv4_network_count;
@@ -190,7 +188,7 @@ class RTC_EXPORT NetworkManager : public DefaultLocalAddressProvider,
   };
 
   
-  webrtc::MdnsResponderInterface* GetMdnsResponder() const override;
+  MdnsResponderInterface* GetMdnsResponder() const override;
 
   virtual void set_vpn_list(const std::vector<NetworkMask>& ) {}
 };
@@ -200,7 +198,7 @@ class RTC_EXPORT Network {
  public:
   Network(absl::string_view name,
           absl::string_view description,
-          const webrtc::IPAddress& prefix,
+          const IPAddress& prefix,
           int prefix_length)
       : Network(name,
                 description,
@@ -210,9 +208,9 @@ class RTC_EXPORT Network {
 
   Network(absl::string_view name,
           absl::string_view description,
-          const webrtc::IPAddress& prefix,
+          const IPAddress& prefix,
           int prefix_length,
-          webrtc::AdapterType type);
+          AdapterType type);
 
   Network(const Network&);
   ~Network();
@@ -245,7 +243,7 @@ class RTC_EXPORT Network {
   const std::string& description() const { return description_; }
 
   
-  const webrtc::IPAddress& prefix() const { return prefix_; }
+  const IPAddress& prefix() const { return prefix_; }
   
   int prefix_length() const { return prefix_length_; }
 
@@ -275,27 +273,24 @@ class RTC_EXPORT Network {
 
   
   
-  webrtc::IPAddress GetBestIP() const;
+  IPAddress GetBestIP() const;
 
   
-  void AddIP(const webrtc::InterfaceAddress& ip) { ips_.push_back(ip); }
-  void AddIP(const webrtc::IPAddress& ip) {
-    ips_.push_back(webrtc::InterfaceAddress(ip));
-  }
+  void AddIP(const InterfaceAddress& ip) { ips_.push_back(ip); }
+  void AddIP(const IPAddress& ip) { ips_.push_back(InterfaceAddress(ip)); }
 
   
   
-  bool SetIPs(const std::vector<webrtc::InterfaceAddress>& ips,
-              bool already_changed);
+  bool SetIPs(const std::vector<InterfaceAddress>& ips, bool already_changed);
   
-  const std::vector<webrtc::InterfaceAddress>& GetIPs() const { return ips_; }
+  const std::vector<InterfaceAddress>& GetIPs() const { return ips_; }
   
   void ClearIPs() { ips_.clear(); }
   
   
   
   
-  webrtc::MdnsResponderInterface* GetMdnsResponder() const;
+  MdnsResponderInterface* GetMdnsResponder() const;
 
   
   
@@ -307,17 +302,17 @@ class RTC_EXPORT Network {
   bool ignored() const { return ignored_; }
   void set_ignored(bool ignored) { ignored_ = ignored; }
 
-  webrtc::AdapterType type() const { return type_; }
+  AdapterType type() const { return type_; }
   
   
   
   
   
   
-  webrtc::AdapterType underlying_type_for_vpn() const {
+  AdapterType underlying_type_for_vpn() const {
     return underlying_type_for_vpn_;
   }
-  void set_type(webrtc::AdapterType type) {
+  void set_type(AdapterType type) {
     if (type_ == type) {
       return;
     }
@@ -328,7 +323,7 @@ class RTC_EXPORT Network {
     SignalTypeChanged(this);
   }
 
-  void set_underlying_type_for_vpn(webrtc::AdapterType type) {
+  void set_underlying_type_for_vpn(AdapterType type) {
     if (underlying_type_for_vpn_ == type) {
       return;
     }
@@ -340,7 +335,7 @@ class RTC_EXPORT Network {
 
   bool IsCellular() const { return IsCellular(type_); }
 
-  static bool IsCellular(webrtc::AdapterType type) {
+  static bool IsCellular(AdapterType type) {
     switch (type) {
       case webrtc::ADAPTER_TYPE_CELLULAR:
       case webrtc::ADAPTER_TYPE_CELLULAR_2G:
@@ -357,7 +352,7 @@ class RTC_EXPORT Network {
   
   
   
-  uint16_t GetCost(const webrtc::FieldTrialsView& field_trials) const;
+  uint16_t GetCost(const FieldTrialsView& field_trials) const;
 
   
   
@@ -379,10 +374,8 @@ class RTC_EXPORT Network {
 
   
   
-  webrtc::NetworkPreference network_preference() const {
-    return network_preference_;
-  }
-  void set_network_preference(webrtc::NetworkPreference val) {
+  NetworkPreference network_preference() const { return network_preference_; }
+  void set_network_preference(NetworkPreference val) {
     if (network_preference_ == val) {
       return;
     }
@@ -390,8 +383,8 @@ class RTC_EXPORT Network {
     SignalNetworkPreferenceChanged(this);
   }
 
-  static std::pair<webrtc::AdapterType, bool >
-  GuessAdapterFromNetworkCost(int network_cost);
+  static std::pair<AdapterType, bool > GuessAdapterFromNetworkCost(
+      int network_cost);
 
   
   std::string ToString() const;
@@ -401,19 +394,18 @@ class RTC_EXPORT Network {
   const MdnsResponderProvider* mdns_responder_provider_ = nullptr;
   std::string name_;
   std::string description_;
-  webrtc::IPAddress prefix_;
+  IPAddress prefix_;
   int prefix_length_;
   std::string key_;
-  std::vector<webrtc::InterfaceAddress> ips_;
+  std::vector<InterfaceAddress> ips_;
   int scope_id_;
   bool ignored_;
-  webrtc::AdapterType type_;
-  webrtc::AdapterType underlying_type_for_vpn_ = webrtc::ADAPTER_TYPE_UNKNOWN;
+  AdapterType type_;
+  AdapterType underlying_type_for_vpn_ = webrtc::ADAPTER_TYPE_UNKNOWN;
   int preference_;
   bool active_ = true;
   uint16_t id_ = 0;
-  webrtc::NetworkPreference network_preference_ =
-      webrtc::NetworkPreference::NEUTRAL;
+  NetworkPreference network_preference_ = NetworkPreference::NEUTRAL;
 
   friend class NetworkManager;
 };
@@ -428,8 +420,7 @@ class RTC_EXPORT NetworkManagerBase : public NetworkManager {
 
   EnumerationPermission enumeration_permission() const override;
 
-  bool GetDefaultLocalAddress(int family,
-                              webrtc::IPAddress* ipaddr) const override;
+  bool GetDefaultLocalAddress(int family, IPAddress* ipaddr) const override;
 
   
   
@@ -453,10 +444,10 @@ class RTC_EXPORT NetworkManagerBase : public NetworkManager {
     enumeration_permission_ = state;
   }
 
-  void set_default_local_addresses(const webrtc::IPAddress& ipv4,
-                                   const webrtc::IPAddress& ipv6);
+  void set_default_local_addresses(const IPAddress& ipv4,
+                                   const IPAddress& ipv6);
 
-  Network* GetNetworkFromAddress(const webrtc::IPAddress& ip) const;
+  Network* GetNetworkFromAddress(const IPAddress& ip) const;
 
   
   
@@ -464,9 +455,9 @@ class RTC_EXPORT NetworkManagerBase : public NetworkManager {
 
   std::unique_ptr<Network> CreateNetwork(absl::string_view name,
                                          absl::string_view description,
-                                         const webrtc::IPAddress& prefix,
+                                         const IPAddress& prefix,
                                          int prefix_length,
-                                         webrtc::AdapterType type) const;
+                                         AdapterType type) const;
 
  private:
   friend class NetworkTest;
@@ -476,11 +467,11 @@ class RTC_EXPORT NetworkManagerBase : public NetworkManager {
 
   std::map<std::string, std::unique_ptr<Network>> networks_map_;
 
-  std::unique_ptr<rtc::Network> ipv4_any_address_network_;
-  std::unique_ptr<rtc::Network> ipv6_any_address_network_;
+  std::unique_ptr<Network> ipv4_any_address_network_;
+  std::unique_ptr<Network> ipv6_any_address_network_;
 
-  webrtc::IPAddress default_local_ipv4_address_;
-  webrtc::IPAddress default_local_ipv6_address_;
+  IPAddress default_local_ipv4_address_;
+  IPAddress default_local_ipv6_address_;
   
   
   
@@ -491,25 +482,25 @@ class RTC_EXPORT NetworkManagerBase : public NetworkManager {
 
 
 class RTC_EXPORT BasicNetworkManager : public NetworkManagerBase,
-                                       public webrtc::NetworkBinderInterface,
+                                       public NetworkBinderInterface,
                                        public sigslot::has_slots<> {
  public:
   BasicNetworkManager(
-      const webrtc::Environment& env,
-      absl::Nonnull<webrtc::SocketFactory*> socket_factory,
+      const Environment& env,
+      absl::Nonnull<SocketFactory*> socket_factory,
       absl::Nullable<NetworkMonitorFactory*> network_monitor_factory = nullptr);
 
   
   
-  BasicNetworkManager(webrtc::SocketFactory* socket_factory,
-                      const webrtc::FieldTrialsView* field_trials = nullptr)
+  BasicNetworkManager(SocketFactory* socket_factory,
+                      const FieldTrialsView* field_trials = nullptr)
       : BasicNetworkManager( nullptr,
                             socket_factory,
                             field_trials) {}
 
   BasicNetworkManager(NetworkMonitorFactory* network_monitor_factory,
-                      webrtc::SocketFactory* socket_factory,
-                      const webrtc::FieldTrialsView* field_trials = nullptr);
+                      SocketFactory* socket_factory,
+                      const FieldTrialsView* field_trials = nullptr);
   ~BasicNetworkManager() override;
 
   void StartUpdating() override;
@@ -531,7 +522,7 @@ class RTC_EXPORT BasicNetworkManager : public NetworkManagerBase,
   void set_vpn_list(const std::vector<NetworkMask>& vpn) override;
 
   
-  bool IsConfiguredVpn(webrtc::IPAddress prefix, int prefix_length) const;
+  bool IsConfiguredVpn(IPAddress prefix, int prefix_length) const;
 
   
   
@@ -539,9 +530,8 @@ class RTC_EXPORT BasicNetworkManager : public NetworkManagerBase,
   
   
   
-  webrtc::NetworkBindingResult BindSocketToNetwork(
-      int socket_fd,
-      const webrtc::IPAddress& address) override;
+  NetworkBindingResult BindSocketToNetwork(int socket_fd,
+                                           const IPAddress& address) override;
 
  protected:
 #if defined(WEBRTC_POSIX)
@@ -551,7 +541,7 @@ class RTC_EXPORT BasicNetworkManager : public NetworkManagerBase,
                       bool include_ignored,
                       std::vector<std::unique_ptr<Network>>* networks) const
       RTC_RUN_ON(thread_);
-  webrtc::NetworkMonitorInterface::InterfaceInfo GetInterfaceInfo(
+  NetworkMonitorInterface::InterfaceInfo GetInterfaceInfo(
       struct ifaddrs* cursor) const RTC_RUN_ON(thread_);
 #endif  
 
@@ -567,8 +557,7 @@ class RTC_EXPORT BasicNetworkManager : public NetworkManagerBase,
   
   
   
-  webrtc::IPAddress QueryDefaultLocalAddress(int family) const
-      RTC_RUN_ON(thread_);
+  IPAddress QueryDefaultLocalAddress(int family) const RTC_RUN_ON(thread_);
 
  private:
   friend class NetworkTest;
@@ -589,25 +578,41 @@ class RTC_EXPORT BasicNetworkManager : public NetworkManagerBase,
   
   
   std::optional<webrtc::Environment> env_;
-  webrtc::Thread* thread_ = nullptr;
+  Thread* thread_ = nullptr;
   bool sent_first_update_ = true;
   int start_count_ = 0;
 
-  webrtc::AlwaysValidPointer<const webrtc::FieldTrialsView,
-                             webrtc::FieldTrialBasedConfig>
+  AlwaysValidPointer<const FieldTrialsView, FieldTrialBasedConfig>
       field_trials_;
   std::vector<std::string> network_ignore_list_;
   absl::Nullable<NetworkMonitorFactory*> const network_monitor_factory_;
-  absl::Nonnull<webrtc::SocketFactory*> const socket_factory_;
-  std::unique_ptr<webrtc::NetworkMonitorInterface> network_monitor_
+  absl::Nonnull<SocketFactory*> const socket_factory_;
+  std::unique_ptr<NetworkMonitorInterface> network_monitor_
       RTC_GUARDED_BY(thread_);
   bool allow_mac_based_ipv6_ RTC_GUARDED_BY(thread_) = false;
   bool bind_using_ifname_ RTC_GUARDED_BY(thread_) = false;
 
   std::vector<NetworkMask> vpn_;
-  rtc::scoped_refptr<webrtc::PendingTaskSafetyFlag> task_safety_flag_;
+  scoped_refptr<PendingTaskSafetyFlag> task_safety_flag_;
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::BasicNetworkManager;
+using ::webrtc::DefaultLocalAddressProvider;
+using ::webrtc::GetAdapterTypeFromName;
+using ::webrtc::kDefaultNetworkIgnoreMask;
+using ::webrtc::kPublicIPv4Host;
+using ::webrtc::kPublicIPv6Host;
+using ::webrtc::MakeNetworkKey;
+using ::webrtc::MdnsResponderProvider;
+using ::webrtc::Network;
+using ::webrtc::NetworkManager;
+using ::webrtc::NetworkManagerBase;
+using ::webrtc::NetworkMask;
 }  
 
 #endif  

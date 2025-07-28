@@ -10,6 +10,8 @@
 
 #include "rtc_base/race_checker.h"
 
+#include "rtc_base/platform_thread_types.h"
+
 namespace webrtc {
 
 RaceChecker::RaceChecker() {}
@@ -23,7 +25,7 @@ RaceChecker::RaceChecker() {}
 
 
 bool RaceChecker::Acquire() const {
-  const rtc::PlatformThreadRef current_thread = rtc::CurrentThreadRef();
+  const rtc::PlatformThreadRef current_thread = CurrentThreadRef();
   
   const int current_access_count = access_count_;
   access_count_ = access_count_ + 1;
@@ -33,7 +35,7 @@ bool RaceChecker::Acquire() const {
   
   
   const rtc::PlatformThreadRef accessing_thread = accessing_thread_;
-  return rtc::IsThreadRefEqual(accessing_thread, current_thread);
+  return IsThreadRefEqual(accessing_thread, current_thread);
 }
 
 void RaceChecker::Release() const {

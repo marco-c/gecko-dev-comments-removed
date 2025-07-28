@@ -11,7 +11,6 @@
 #ifndef RTC_BASE_BORINGSSL_CERTIFICATE_H_
 #define RTC_BASE_BORINGSSL_CERTIFICATE_H_
 
-#include <openssl/base.h>
 #include <openssl/ossl_typ.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -21,12 +20,12 @@
 
 #include "absl/strings/string_view.h"
 #include "rtc_base/buffer.h"
+#include "rtc_base/openssl.h"
+#include "rtc_base/openssl_key_pair.h"
 #include "rtc_base/ssl_certificate.h"
 #include "rtc_base/ssl_identity.h"
 
-namespace rtc {
-
-class OpenSSLKeyPair;
+namespace webrtc {
 
 
 
@@ -38,7 +37,7 @@ class BoringSSLCertificate final : public SSLCertificate {
 
   static std::unique_ptr<BoringSSLCertificate> Generate(
       OpenSSLKeyPair* key_pair,
-      const SSLIdentityParams& params);
+      const rtc::SSLIdentityParams& params);
   static std::unique_ptr<BoringSSLCertificate> FromPEMString(
       absl::string_view pem_string);
 
@@ -78,6 +77,12 @@ class BoringSSLCertificate final : public SSLCertificate {
   bssl::UniquePtr<CRYPTO_BUFFER> cert_buffer_;
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::BoringSSLCertificate;
 }  
 
 #endif  

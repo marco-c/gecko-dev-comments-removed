@@ -22,6 +22,7 @@
 #include "absl/strings/string_view.h"
 #include "api/task_queue/pending_task_safety_flag.h"
 #include "rtc_base/buffer.h"
+#include "rtc_base/openssl_stream_adapter.h"
 #ifdef OPENSSL_IS_BORINGSSL
 #include "rtc_base/boringssl_identity.h"
 #else
@@ -35,7 +36,7 @@
 #include "rtc_base/ssl_identity.h"
 #include "rtc_base/ssl_stream_adapter.h"
 
-namespace rtc {
+namespace webrtc {
 
 class OpenSSLAdapter final : public SSLAdapter {
  public:
@@ -48,7 +49,7 @@ class OpenSSLAdapter final : public SSLAdapter {
   
   
   
-  explicit OpenSSLAdapter(webrtc::Socket* socket,
+  explicit OpenSSLAdapter(Socket* socket,
                           OpenSSLSessionCache* ssl_session_cache = nullptr,
                           SSLCertificateVerifier* ssl_cert_verifier = nullptr);
   ~OpenSSLAdapter() override;
@@ -56,19 +57,17 @@ class OpenSSLAdapter final : public SSLAdapter {
   void SetIgnoreBadCert(bool ignore) override;
   void SetAlpnProtocols(const std::vector<std::string>& protos) override;
   void SetEllipticCurves(const std::vector<std::string>& curves) override;
-  [[deprecated]] void SetMode(webrtc::SSLMode mode) override;
+  [[deprecated]] void SetMode(SSLMode mode) override;
   void SetCertVerifier(SSLCertificateVerifier* ssl_cert_verifier) override;
-  void SetIdentity(std::unique_ptr<SSLIdentity> identity) override;
-  void SetRole(webrtc::SSLRole role) override;
+  void SetIdentity(std::unique_ptr<rtc::SSLIdentity> identity) override;
+  void SetRole(SSLRole role) override;
   int StartSSL(absl::string_view hostname) override;
   int Send(const void* pv, size_t cb) override;
-  int SendTo(const void* pv,
-             size_t cb,
-             const webrtc::SocketAddress& addr) override;
+  int SendTo(const void* pv, size_t cb, const SocketAddress& addr) override;
   int Recv(void* pv, size_t cb, int64_t* timestamp) override;
   int RecvFrom(void* pv,
                size_t cb,
-               webrtc::SocketAddress* paddr,
+               SocketAddress* paddr,
                int64_t* timestamp) override;
   int Close() override;
   
@@ -80,13 +79,13 @@ class OpenSSLAdapter final : public SSLAdapter {
   
   
   
-  static SSL_CTX* CreateContext(webrtc::SSLMode mode, bool enable_cache);
+  static SSL_CTX* CreateContext(SSLMode mode, bool enable_cache);
 
  protected:
-  void OnConnectEvent(webrtc::Socket* socket) override;
-  void OnReadEvent(webrtc::Socket* socket) override;
-  void OnWriteEvent(webrtc::Socket* socket) override;
-  void OnCloseEvent(webrtc::Socket* socket, int err) override;
+  void OnConnectEvent(Socket* socket) override;
+  void OnReadEvent(Socket* socket) override;
+  void OnWriteEvent(Socket* socket) override;
+  void OnCloseEvent(Socket* socket, int err) override;
 
  private:
   class EarlyExitCatcher {
@@ -149,10 +148,10 @@ class OpenSSLAdapter final : public SSLAdapter {
 #ifdef OPENSSL_IS_BORINGSSL
   std::unique_ptr<BoringSSLIdentity> identity_;
 #else
-  std::unique_ptr<OpenSSLIdentity> identity_;
+  std::unique_ptr<rtc::OpenSSLIdentity> identity_;
 #endif
   
-  webrtc::SSLRole role_;
+  SSLRole role_;
   bool ssl_read_needs_write_;
   bool ssl_write_needs_read_;
   
@@ -165,7 +164,7 @@ class OpenSSLAdapter final : public SSLAdapter {
   
   std::string ssl_host_name_;
   
-  webrtc::SSLMode ssl_mode_;
+  SSLMode ssl_mode_;
   
   bool ignore_bad_cert_;
   
@@ -175,7 +174,7 @@ class OpenSSLAdapter final : public SSLAdapter {
   
   bool custom_cert_verifier_status_;
   
-  webrtc::ScopedTaskSafety timer_;
+  ScopedTaskSafety timer_;
 };
 
 
@@ -189,17 +188,17 @@ class OpenSSLAdapterFactory : public SSLAdapterFactory {
   
   
   
-  void SetMode(webrtc::SSLMode mode) override;
+  void SetMode(SSLMode mode) override;
 
   
   
   
   void SetCertVerifier(SSLCertificateVerifier* ssl_cert_verifier) override;
 
-  void SetIdentity(std::unique_ptr<SSLIdentity> identity) override;
+  void SetIdentity(std::unique_ptr<rtc::SSLIdentity> identity) override;
 
   
-  void SetRole(webrtc::SSLRole role) override;
+  void SetRole(SSLRole role) override;
 
   
   
@@ -208,15 +207,15 @@ class OpenSSLAdapterFactory : public SSLAdapterFactory {
   
   
   
-  OpenSSLAdapter* CreateAdapter(webrtc::Socket* socket) override;
+  OpenSSLAdapter* CreateAdapter(Socket* socket) override;
 
  private:
   
-  webrtc::SSLMode ssl_mode_ = webrtc::SSL_MODE_TLS;
-  webrtc::SSLRole ssl_role_ = webrtc::SSL_CLIENT;
+  SSLMode ssl_mode_ = webrtc::SSL_MODE_TLS;
+  SSLRole ssl_role_ = webrtc::SSL_CLIENT;
   bool ignore_bad_cert_ = false;
 
-  std::unique_ptr<SSLIdentity> identity_;
+  std::unique_ptr<rtc::SSLIdentity> identity_;
 
   
   std::unique_ptr<OpenSSLSessionCache> ssl_session_cache_;
@@ -234,6 +233,14 @@ class OpenSSLAdapterFactory : public SSLAdapterFactory {
 
 std::string TransformAlpnProtocols(const std::vector<std::string>& protos);
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::OpenSSLAdapter;
+using ::webrtc::OpenSSLAdapterFactory;
+using ::webrtc::TransformAlpnProtocols;
 }  
 
 #endif  

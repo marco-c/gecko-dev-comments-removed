@@ -66,7 +66,7 @@ RTCError VerifyCandidate(const Candidate& cand) {
 
   
   int port = cand.address().port();
-  if (cand.protocol() == cricket::TCP_PROTOCOL_NAME &&
+  if (cand.protocol() == TCP_PROTOCOL_NAME &&
       (cand.tcptype() == cricket::TCPTYPE_ACTIVE_STR || port == 0)) {
     
     

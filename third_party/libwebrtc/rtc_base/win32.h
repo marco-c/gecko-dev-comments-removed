@@ -38,11 +38,18 @@ typedef struct _TOKEN_MANDATORY_LABEL {
 
 #undef SetPort
 
-namespace rtc {
+namespace webrtc {
 
 const char* win32_inet_ntop(int af, const void* src, char* dst, socklen_t size);
 int win32_inet_pton(int af, const char* src, void* dst);
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::win32_inet_ntop;
+using ::webrtc::win32_inet_pton;
 }  
 
 #endif  

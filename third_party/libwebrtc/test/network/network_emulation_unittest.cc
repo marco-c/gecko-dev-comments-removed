@@ -789,7 +789,7 @@ TEST(NetworkEmulationManagerTURNTest, ClientTraffic) {
 
   
   cricket::StunMessage ping(cricket::STUN_BINDING_REQUEST);
-  rtc::ByteBufferWriter buf;
+  ByteBufferWriter buf;
   ping.Write(&buf);
   rtc::CopyOnWriteBuffer packet(buf.Data(), buf.Length());
 

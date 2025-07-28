@@ -24,7 +24,7 @@
 typedef struct ssl_session_st SSL_SESSION;
 #endif
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -34,7 +34,7 @@ class OpenSSLSessionCache final {
   
   
   
-  OpenSSLSessionCache(webrtc::SSLMode ssl_mode, SSL_CTX* ssl_ctx);
+  OpenSSLSessionCache(SSLMode ssl_mode, SSL_CTX* ssl_ctx);
   
   ~OpenSSLSessionCache();
 
@@ -50,12 +50,12 @@ class OpenSSLSessionCache final {
   SSL_CTX* GetSSLContext() const;
   
   
-  webrtc::SSLMode GetSSLMode() const;
+  SSLMode GetSSLMode() const;
 
  private:
   
   
-  const webrtc::SSLMode ssl_mode_;
+  const SSLMode ssl_mode_;
   
   
   
@@ -63,10 +63,16 @@ class OpenSSLSessionCache final {
   
   
   
-  std::map<std::string, SSL_SESSION*, rtc::AbslStringViewCmp> sessions_;
+  std::map<std::string, SSL_SESSION*, AbslStringViewCmp> sessions_;
   
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::OpenSSLSessionCache;
 }  
 
 #endif  

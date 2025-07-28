@@ -212,8 +212,9 @@ class WebRtcVideoSendChannel : public MediaChannelUtil,
 
   void OnPacketSent(const rtc::SentPacket& sent_packet) override;
   void OnReadyToSend(bool ready) override;
-  void OnNetworkRouteChanged(absl::string_view transport_name,
-                             const rtc::NetworkRoute& network_route) override;
+  void OnNetworkRouteChanged(
+      absl::string_view transport_name,
+      const webrtc::NetworkRoute& network_route) override;
 
   
   

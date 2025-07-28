@@ -87,7 +87,8 @@ class DtlsTransportInternal : public rtc::PacketTransportInternal {
       const rtc::scoped_refptr<webrtc::RTCCertificate>& certificate) = 0;
 
   
-  virtual std::unique_ptr<rtc::SSLCertChain> GetRemoteSSLCertChain() const = 0;
+  virtual std::unique_ptr<webrtc::SSLCertChain> GetRemoteSSLCertChain()
+      const = 0;
 
   
   virtual bool ExportSrtpKeyingMaterial(

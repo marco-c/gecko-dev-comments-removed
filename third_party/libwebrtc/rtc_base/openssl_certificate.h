@@ -18,12 +18,11 @@
 #include <string>
 
 #include "rtc_base/buffer.h"
+#include "rtc_base/openssl_key_pair.h"
 #include "rtc_base/ssl_certificate.h"
 #include "rtc_base/ssl_identity.h"
 
 namespace rtc {
-
-class OpenSSLKeyPair;
 
 
 

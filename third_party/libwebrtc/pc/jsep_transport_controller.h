@@ -229,7 +229,7 @@ class JsepTransportController : public PayloadTypeSuggester,
       const std::string& mid) const;
   
   
-  std::unique_ptr<rtc::SSLCertChain> GetRemoteSSLCertChain(
+  std::unique_ptr<SSLCertChain> GetRemoteSSLCertChain(
       const std::string& mid) const;
   
   std::optional<SSLRole> GetDtlsRole(const std::string& mid) const;

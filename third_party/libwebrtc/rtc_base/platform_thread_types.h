@@ -13,6 +13,7 @@
 
 
 
+
 #if defined(WEBRTC_WIN)
 
 
@@ -31,7 +32,8 @@
 #endif
 
 
-namespace rtc {
+
+namespace webrtc {
 #if defined(WEBRTC_WIN)
 typedef DWORD PlatformThreadId;
 typedef DWORD PlatformThreadRef;
@@ -57,6 +59,17 @@ bool IsThreadRefEqual(const PlatformThreadRef& a, const PlatformThreadRef& b);
 
 void SetCurrentThreadName(const char* name);
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::CurrentThreadId;
+using ::webrtc::CurrentThreadRef;
+using ::webrtc::IsThreadRefEqual;
+using ::webrtc::PlatformThreadId;
+using ::webrtc::PlatformThreadRef;
+using ::webrtc::SetCurrentThreadName;
 }  
 
 #endif  

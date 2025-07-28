@@ -20,7 +20,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/string_utils.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 static const char* inet_ntop_v4(const void* src, char* dst, socklen_t size);

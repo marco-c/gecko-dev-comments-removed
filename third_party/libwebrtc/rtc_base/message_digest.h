@@ -17,7 +17,7 @@
 
 #include "absl/strings/string_view.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 extern const char DIGEST_MD5[];
@@ -128,6 +128,23 @@ bool ComputeHmac(absl::string_view alg,
                  absl::string_view input,
                  std::string* output);
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::ComputeDigest;
+using ::webrtc::ComputeHmac;
+using ::webrtc::DIGEST_MD5;
+using ::webrtc::DIGEST_SHA_1;
+using ::webrtc::DIGEST_SHA_224;
+using ::webrtc::DIGEST_SHA_256;
+using ::webrtc::DIGEST_SHA_384;
+using ::webrtc::DIGEST_SHA_512;
+using ::webrtc::IsFips180DigestAlgorithm;
+using ::webrtc::MD5;
+using ::webrtc::MessageDigest;
+using ::webrtc::MessageDigestFactory;
 }  
 
 #endif  

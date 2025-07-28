@@ -15,7 +15,7 @@
 
 #include "rtc_base/system/rtc_export.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -53,6 +53,12 @@ class RTC_EXPORT DataRateLimiter {
   double period_start_;
   double period_end_;
 };
+}  
+
+
+
+namespace rtc {
+using ::webrtc::DataRateLimiter;
 }  
 
 #endif  

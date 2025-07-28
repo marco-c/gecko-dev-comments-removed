@@ -11,17 +11,21 @@
 #ifndef RTC_BASE_SSL_ADAPTER_H_
 #define RTC_BASE_SSL_ADAPTER_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "absl/strings/string_view.h"
 #include "rtc_base/async_socket.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/socket.h"
+#include "rtc_base/socket_address.h"
 #include "rtc_base/ssl_certificate.h"
 #include "rtc_base/ssl_identity.h"
 #include "rtc_base/ssl_stream_adapter.h"
 #include "rtc_base/system/rtc_export.h"
 
-namespace rtc {
+namespace webrtc {
 
 class SSLAdapter;
 
@@ -35,24 +39,24 @@ class SSLAdapterFactory {
   virtual ~SSLAdapterFactory() {}
 
   
-  virtual void SetMode(webrtc::SSLMode mode) = 0;
+  virtual void SetMode(SSLMode mode) = 0;
 
   
   virtual void SetCertVerifier(SSLCertificateVerifier* ssl_cert_verifier) = 0;
 
   
   
-  virtual void SetIdentity(std::unique_ptr<SSLIdentity> identity) = 0;
+  virtual void SetIdentity(std::unique_ptr<rtc::SSLIdentity> identity) = 0;
 
   
-  virtual void SetRole(webrtc::SSLRole role) = 0;
+  virtual void SetRole(SSLRole role) = 0;
 
   
   
   virtual void SetIgnoreBadCert(bool ignore) = 0;
 
   
-  virtual SSLAdapter* CreateAdapter(webrtc::Socket* socket) = 0;
+  virtual SSLAdapter* CreateAdapter(Socket* socket) = 0;
 
   static std::unique_ptr<SSLAdapterFactory> Create();
 };
@@ -62,10 +66,9 @@ class SSLAdapterFactory {
 
 
 
-class SSLAdapter : public webrtc::AsyncSocketAdapter {
+class SSLAdapter : public AsyncSocketAdapter {
  public:
-  explicit SSLAdapter(webrtc::Socket* socket)
-      : webrtc::AsyncSocketAdapter(socket) {}
+  explicit SSLAdapter(Socket* socket) : AsyncSocketAdapter(socket) {}
 
   
   
@@ -77,16 +80,16 @@ class SSLAdapter : public webrtc::AsyncSocketAdapter {
   virtual void SetEllipticCurves(const std::vector<std::string>& curves) = 0;
 
   [[deprecated("Only TLS is supported by the adapter")]] virtual void SetMode(
-      webrtc::SSLMode mode) = 0;
+      SSLMode mode) = 0;
   
   virtual void SetCertVerifier(SSLCertificateVerifier* ssl_cert_verifier) = 0;
 
   
   
-  virtual void SetIdentity(std::unique_ptr<SSLIdentity> identity) = 0;
+  virtual void SetIdentity(std::unique_ptr<rtc::SSLIdentity> identity) = 0;
 
   
-  virtual void SetRole(webrtc::SSLRole role) = 0;
+  virtual void SetRole(SSLRole role) = 0;
 
   
   
@@ -103,14 +106,12 @@ class SSLAdapter : public webrtc::AsyncSocketAdapter {
   
   
   
-  static SSLAdapter* Create(webrtc::Socket* socket);
+  static SSLAdapter* Create(Socket* socket);
 
  private:
   
   int Listen(int backlog) override { RTC_CHECK(false); }
-  webrtc::Socket* Accept(webrtc::SocketAddress* paddr) override {
-    RTC_CHECK(false);
-  }
+  Socket* Accept(SocketAddress* paddr) override { RTC_CHECK(false); }
 };
 
 
@@ -122,6 +123,15 @@ RTC_EXPORT bool InitializeSSL();
 
 RTC_EXPORT bool CleanupSSL();
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::CleanupSSL;
+using ::webrtc::InitializeSSL;
+using ::webrtc::SSLAdapter;
+using ::webrtc::SSLAdapterFactory;
 }  
 
 #endif  

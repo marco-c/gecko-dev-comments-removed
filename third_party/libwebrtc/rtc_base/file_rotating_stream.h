@@ -13,14 +13,13 @@
 
 #include <stddef.h>
 
-#include <memory>
 #include <string>
 #include <vector>
 
 #include "absl/strings/string_view.h"
 #include "rtc_base/system/file_wrapper.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -91,7 +90,7 @@ class FileRotatingStream {
   const std::string file_prefix_;
 
   
-  webrtc::FileWrapper file_;
+  FileWrapper file_;
   
   std::vector<std::string> file_names_;
   size_t max_file_size_;
@@ -168,6 +167,15 @@ class CallSessionFileRotatingStreamReader : public FileRotatingStreamReader {
   CallSessionFileRotatingStreamReader(absl::string_view dir_path);
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::CallSessionFileRotatingStream;
+using ::webrtc::CallSessionFileRotatingStreamReader;
+using ::webrtc::FileRotatingStream;
+using ::webrtc::FileRotatingStreamReader;
 }  
 
 #endif  

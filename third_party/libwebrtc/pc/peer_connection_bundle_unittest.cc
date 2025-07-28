@@ -88,7 +88,7 @@ using ::testing::Values;
 
 class FakeNetworkManagerWithNoAnyNetwork : public FakeNetworkManager {
  public:
-  std::vector<const rtc::Network*> GetAnyAddressNetworks() override {
+  std::vector<const Network*> GetAnyAddressNetworks() override {
     
     
     
@@ -264,7 +264,7 @@ class PeerConnectionBundleBaseTest : public ::testing::Test {
   Candidate CreateLocalUdpCandidate(const SocketAddress& address) {
     Candidate candidate;
     candidate.set_component(cricket::ICE_CANDIDATE_COMPONENT_DEFAULT);
-    candidate.set_protocol(cricket::UDP_PROTOCOL_NAME);
+    candidate.set_protocol(UDP_PROTOCOL_NAME);
     candidate.set_address(address);
     return candidate;
   }

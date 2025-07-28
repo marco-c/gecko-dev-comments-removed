@@ -170,7 +170,7 @@ struct in6_ifreq {
 
 #endif  
 
-namespace rtc {
+namespace webrtc {
 
 namespace {
 

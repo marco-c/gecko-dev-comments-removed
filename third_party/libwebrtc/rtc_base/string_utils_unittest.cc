@@ -10,9 +10,11 @@
 
 #include "rtc_base/string_utils.h"
 
+#include <string>
+
 #include "test/gtest.h"
 
-namespace rtc {
+namespace webrtc {
 
 TEST(string_toHexTest, ToHex) {
   EXPECT_EQ(ToHex(0), "0");

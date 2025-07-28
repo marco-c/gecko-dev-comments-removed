@@ -16,7 +16,7 @@ namespace webrtc {
 class FieldTrialsView;
 }  
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -28,8 +28,8 @@ namespace rtc {
 
 class NetworkMonitorFactory {
  public:
-  virtual webrtc::NetworkMonitorInterface* CreateNetworkMonitor(
-      const webrtc::FieldTrialsView& field_trials) = 0;
+  virtual NetworkMonitorInterface* CreateNetworkMonitor(
+      const FieldTrialsView& field_trials) = 0;
 
   virtual ~NetworkMonitorFactory();
 
@@ -37,6 +37,12 @@ class NetworkMonitorFactory {
   NetworkMonitorFactory();
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::NetworkMonitorFactory;
 }  
 
 #endif  

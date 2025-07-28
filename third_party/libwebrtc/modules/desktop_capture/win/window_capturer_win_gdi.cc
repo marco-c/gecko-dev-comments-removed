@@ -298,7 +298,7 @@ WindowCapturerWinGdi::CaptureResults WindowCapturerWinGdi::CaptureFrame(
   
   
   
-  if (rtc::rtc_win::GetVersion() >= rtc::rtc_win::Version::VERSION_WIN8) {
+  if (webrtc::rtc_win::GetVersion() >= webrtc::rtc_win::Version::VERSION_WIN8) {
     
     
     

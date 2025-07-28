@@ -10,9 +10,11 @@
 
 #include "rtc_base/rate_tracker.h"
 
+#include <cstdint>
+
 #include "test/gtest.h"
 
-namespace rtc {
+namespace webrtc {
 namespace {
 const uint32_t kBucketIntervalMs = 100;
 }  

@@ -15,10 +15,16 @@
 
 #include "rtc_base/socket_server.h"
 
+namespace webrtc {
+
+std::unique_ptr<SocketServer> CreateDefaultSocketServer();
+
+}  
+
+
+
 namespace rtc {
-
-std::unique_ptr<webrtc::SocketServer> CreateDefaultSocketServer();
-
+using ::webrtc::CreateDefaultSocketServer;
 }  
 
 #endif  

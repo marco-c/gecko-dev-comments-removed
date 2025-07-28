@@ -79,7 +79,7 @@ class BasicRegatheringController : public sigslot::has_slots<> {
   void OnIceTransportStateChanged(IceTransportInternal*) {}
   void OnIceTransportWritableState(rtc::PacketTransportInternal*) {}
   void OnIceTransportReceivingState(rtc::PacketTransportInternal*) {}
-  void OnIceTransportNetworkRouteChanged(std::optional<rtc::NetworkRoute>) {}
+  void OnIceTransportNetworkRouteChanged(std::optional<NetworkRoute>) {}
   
   
   

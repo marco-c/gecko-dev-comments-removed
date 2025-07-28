@@ -12,13 +12,19 @@
 
 #include <stdint.h>
 
-namespace rtc {
+namespace webrtc {
 
 
 
 
 int64_t GetProcessResidentSizeBytes();
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::GetProcessResidentSizeBytes;
 }  
 
 #endif  

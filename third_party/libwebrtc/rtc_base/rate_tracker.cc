@@ -11,11 +11,13 @@
 #include "rtc_base/rate_tracker.h"
 
 #include <algorithm>
+#include <cstddef>
+#include <cstdint>
 
 #include "rtc_base/checks.h"
 #include "rtc_base/time_utils.h"
 
-namespace rtc {
+namespace webrtc {
 
 static const int64_t kTimeUnset = -1;
 

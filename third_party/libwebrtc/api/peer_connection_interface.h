@@ -683,7 +683,7 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
 
     
     
-    std::vector<rtc::NetworkMask> vpn_list;
+    std::vector<NetworkMask> vpn_list;
 
     PortAllocatorConfig port_allocator_config;
 
@@ -1398,7 +1398,7 @@ struct RTC_EXPORT PeerConnectionDependencies final {
       async_dns_resolver_factory;
   std::unique_ptr<webrtc::IceTransportFactory> ice_transport_factory;
   std::unique_ptr<RTCCertificateGeneratorInterface> cert_generator;
-  std::unique_ptr<rtc::SSLCertificateVerifier> tls_cert_verifier;
+  std::unique_ptr<SSLCertificateVerifier> tls_cert_verifier;
   std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>
       video_bitrate_allocator_factory;
   
@@ -1446,10 +1446,10 @@ struct RTC_EXPORT PeerConnectionFactoryDependencies final {
   
   
   
-  std::unique_ptr<rtc::NetworkManager> network_manager;
+  std::unique_ptr<NetworkManager> network_manager;
   
   
-  std::unique_ptr<rtc::NetworkMonitorFactory> network_monitor_factory;
+  std::unique_ptr<NetworkMonitorFactory> network_monitor_factory;
   std::unique_ptr<NetEqFactory> neteq_factory;
   std::unique_ptr<SctpTransportFactoryInterface> sctp_factory;
   std::unique_ptr<FieldTrialsView> trials;
@@ -1518,7 +1518,7 @@ class RTC_EXPORT PeerConnectionFactoryInterface
     
     
     
-    int network_ignore_mask = rtc::kDefaultNetworkIgnoreMask;
+    int network_ignore_mask = kDefaultNetworkIgnoreMask;
 
     
     

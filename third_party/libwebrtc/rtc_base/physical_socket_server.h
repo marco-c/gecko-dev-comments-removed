@@ -11,7 +11,10 @@
 #ifndef RTC_BASE_PHYSICAL_SOCKET_SERVER_H_
 #define RTC_BASE_PHYSICAL_SOCKET_SERVER_H_
 
+#include <cstddef>
+
 #include "api/async_dns_resolver.h"
+#include "api/transport/ecn_marking.h"
 #include "api/units/time_delta.h"
 #include "rtc_base/socket.h"
 #include "rtc_base/socket_address.h"
@@ -147,7 +150,7 @@ class RTC_EXPORT PhysicalSocketServer : public SocketServer {
   
   std::vector<uint64_t> current_dispatcher_keys_;
   Signaler* signal_wakeup_;  
-  rtc::RecursiveCriticalSection crit_;
+  RecursiveCriticalSection crit_;
 #if defined(WEBRTC_WIN)
   const WSAEVENT socket_ev_;
 #endif

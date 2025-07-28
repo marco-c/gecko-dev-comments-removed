@@ -196,7 +196,7 @@ class SSLStreamAdapter : public StreamInterface {
 
   
   
-  virtual std::unique_ptr<rtc::SSLCertChain> GetPeerSSLCertChain() const = 0;
+  virtual std::unique_ptr<SSLCertChain> GetPeerSSLCertChain() const = 0;
 
   
   

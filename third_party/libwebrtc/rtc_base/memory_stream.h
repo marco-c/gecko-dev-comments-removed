@@ -13,24 +13,27 @@
 
 #include <stddef.h>
 
+#include <cstdint>
+
+#include "api/array_view.h"
 #include "rtc_base/stream.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
-class MemoryStream final : public webrtc::StreamInterface {
+class MemoryStream final : public StreamInterface {
  public:
   MemoryStream();
   ~MemoryStream() override;
 
-  webrtc::StreamState GetState() const override;
-  webrtc::StreamResult Read(rtc::ArrayView<uint8_t> buffer,
-                            size_t& bytes_read,
-                            int& error) override;
-  webrtc::StreamResult Write(rtc::ArrayView<const uint8_t> buffer,
-                             size_t& bytes_written,
-                             int& error) override;
+  StreamState GetState() const override;
+  StreamResult Read(rtc::ArrayView<uint8_t> buffer,
+                    size_t& bytes_read,
+                    int& error) override;
+  StreamResult Write(rtc::ArrayView<const uint8_t> buffer,
+                     size_t& bytes_written,
+                     int& error) override;
   void Close() override;
   bool GetSize(size_t* size) const;
   bool ReserveSize(size_t size);
@@ -45,7 +48,7 @@ class MemoryStream final : public webrtc::StreamInterface {
   void SetData(const void* data, size_t length);
 
  private:
-  webrtc::StreamResult DoReserve(size_t size, int* error);
+  StreamResult DoReserve(size_t size, int* error);
 
   
   char* buffer_ = nullptr;
@@ -54,6 +57,12 @@ class MemoryStream final : public webrtc::StreamInterface {
   size_t seek_position_ = 0;
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::MemoryStream;
 }  
 
 #endif  

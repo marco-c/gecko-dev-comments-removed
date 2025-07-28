@@ -12,7 +12,7 @@
 
 #include "test/gtest.h"
 
-namespace rtc {
+namespace webrtc {
 
 TEST(RateLimiterTest, TestCanUse) {
   

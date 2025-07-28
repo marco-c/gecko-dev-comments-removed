@@ -13,11 +13,8 @@
 #include <openssl/ssl.h>
 #include <stdlib.h>
 
-#include <map>
-#include <memory>
-
-#include "rtc_base/gunit.h"
-#include "rtc_base/openssl.h"
+#include "rtc_base/ssl_stream_adapter.h"
+#include "test/gtest.h"
 
 namespace {
 
@@ -46,7 +43,7 @@ SSL_SESSION* NewSslSession(SSL_CTX* ssl_ctx) {
 
 }  
 
-namespace rtc {
+namespace webrtc {
 
 TEST(OpenSSLSessionCache, DTLSModeSetCorrectly) {
   SSL_CTX* ssl_ctx = NewDtlsContext();

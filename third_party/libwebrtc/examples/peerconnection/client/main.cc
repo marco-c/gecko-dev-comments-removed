@@ -61,7 +61,7 @@ WindowsCommandLineArguments::WindowsCommandLineArguments() {
 
   
   for (int i = 0; i < argc; ++i) {
-    args_.push_back(rtc::ToUtf8(wide_argv[i], wcslen(wide_argv[i])));
+    args_.push_back(webrtc::ToUtf8(wide_argv[i], wcslen(wide_argv[i])));
     
     argv_.push_back(const_cast<char*>(args_.back().c_str()));
   }

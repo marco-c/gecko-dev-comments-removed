@@ -15,7 +15,10 @@
 
 #include <algorithm>
 
-namespace rtc {
+#include "api/sequence_checker.h"
+#include "rtc_base/buffer.h"
+
+namespace webrtc {
 
 BufferQueue::BufferQueue(size_t capacity, size_t default_size)
     : capacity_(capacity), default_size_(default_size) {}

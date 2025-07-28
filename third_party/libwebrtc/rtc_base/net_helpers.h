@@ -20,15 +20,21 @@
 #endif
 
 #include "absl/strings/string_view.h"
-#include "rtc_base/system/rtc_export.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
 const char* inet_ntop(int af, const void* src, char* dst, socklen_t size);
 int inet_pton(int af, absl::string_view src, void* dst);
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::inet_ntop;
+using ::webrtc::inet_pton;
 }  
 
 #endif  

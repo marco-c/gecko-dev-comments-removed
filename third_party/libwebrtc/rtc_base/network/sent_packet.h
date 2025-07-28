@@ -18,7 +18,7 @@
 
 #include "rtc_base/system/rtc_export.h"
 
-namespace rtc {
+namespace webrtc {
 
 enum class PacketType {
   kUnknown,
@@ -56,6 +56,17 @@ struct RTC_EXPORT PacketInfo {
   size_t ip_overhead_bytes = 0;
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::PacketInfo;
+using ::webrtc::PacketInfoProtocolType;
+using ::webrtc::PacketType;
+}  
+
+namespace rtc {
 struct RTC_EXPORT SentPacket {
   SentPacket();
   SentPacket(int64_t packet_id, int64_t send_time_ms);
@@ -67,7 +78,6 @@ struct RTC_EXPORT SentPacket {
   int64_t send_time_ms = -1;
   rtc::PacketInfo info;
 };
-
 }  
 
 #endif  

@@ -10,7 +10,6 @@
 
 #include "rtc_base/net_helpers.h"
 
-#include <memory>
 #include <string>
 
 #include "absl/strings/string_view.h"
@@ -24,7 +23,7 @@
 #include <arpa/inet.h>
 #endif  
 
-namespace rtc {
+namespace webrtc {
 
 const char* inet_ntop(int af, const void* src, char* dst, socklen_t size) {
 #if defined(WEBRTC_WIN)

@@ -10,6 +10,7 @@
 
 #include "rtc_base/platform_thread_types.h"
 
+
 #if defined(WEBRTC_LINUX)
 #include <sys/prctl.h>
 #include <sys/syscall.h>
@@ -32,7 +33,8 @@ typedef HRESULT(WINAPI* RTC_SetThreadDescription)(HANDLE hThread,
 #include "rtc_base/checks.h"
 #endif
 
-namespace rtc {
+
+namespace webrtc {
 
 PlatformThreadId CurrentThreadId() {
 #if defined(WEBRTC_WIN)

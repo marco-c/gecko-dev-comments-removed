@@ -20,7 +20,7 @@
 #include "rtc_base/file_rotating_stream.h"
 #include "rtc_base/logging.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -75,6 +75,13 @@ class CallSessionFileRotatingLogSink : public FileRotatingLogSink {
       const CallSessionFileRotatingLogSink&) = delete;
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::CallSessionFileRotatingLogSink;
+using ::webrtc::FileRotatingLogSink;
 }  
 
 #endif  

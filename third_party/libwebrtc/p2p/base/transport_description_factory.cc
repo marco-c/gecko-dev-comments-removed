@@ -149,7 +149,7 @@ bool TransportDescriptionFactory::SetSecurityInfo(TransportDescription* desc,
   
   
   desc->identity_fingerprint =
-      rtc::SSLFingerprint::CreateFromCertificate(*certificate_);
+      webrtc::SSLFingerprint::CreateFromCertificate(*certificate_);
   if (!desc->identity_fingerprint) {
     return false;
   }

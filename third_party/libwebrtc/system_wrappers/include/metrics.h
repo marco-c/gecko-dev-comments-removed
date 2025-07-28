@@ -13,7 +13,7 @@
 
 #include <stddef.h>
 
-#include <atomic>
+#include <atomic>  
 #include <map>
 #include <memory>
 #include <string>
@@ -441,7 +441,7 @@ void Enable();
 
 
 void GetAndReset(
-    std::map<std::string, std::unique_ptr<SampleInfo>, rtc::AbslStringViewCmp>*
+    std::map<std::string, std::unique_ptr<SampleInfo>, AbslStringViewCmp>*
         histograms);
 
 

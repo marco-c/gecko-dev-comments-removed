@@ -23,8 +23,8 @@ namespace {
 
 
 bool IsValidTestDependencyFactoryThread() {
-  const rtc::PlatformThreadRef main_thread = rtc::CurrentThreadRef();
-  return rtc::IsThreadRefEqual(main_thread, rtc::CurrentThreadRef());
+  const rtc::PlatformThreadRef main_thread = CurrentThreadRef();
+  return IsThreadRefEqual(main_thread, CurrentThreadRef());
 }
 }  
 

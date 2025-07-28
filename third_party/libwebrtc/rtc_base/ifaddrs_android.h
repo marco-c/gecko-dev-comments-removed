@@ -28,7 +28,7 @@ struct ifaddrs {
   
 };
 
-namespace rtc {
+namespace webrtc {
 
 int getifaddrs(struct ifaddrs** result);
 void freeifaddrs(struct ifaddrs* addrs);

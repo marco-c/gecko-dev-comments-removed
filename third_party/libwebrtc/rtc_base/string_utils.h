@@ -25,14 +25,13 @@
 
 #if defined(WEBRTC_POSIX)
 #include <stdlib.h>
-#include <strings.h>
 #endif  
 
 #include <string>
 
 #include "absl/strings/string_view.h"
 
-namespace rtc {
+namespace webrtc {
 
 const size_t SIZE_UNKNOWN = static_cast<size_t>(-1);
 
@@ -133,6 +132,16 @@ constexpr auto MakeCompileTimeString(const char (&a)[N]) {
   return rtc_base_string_utils_internal::CompileTimeString<N>(a);
 }
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::AbslStringViewCmp;
+using ::webrtc::MakeCompileTimeString;
+using ::webrtc::SIZE_UNKNOWN;
+using ::webrtc::strcpyn;
+using ::webrtc::ToHex;
 }  
 
 #endif  

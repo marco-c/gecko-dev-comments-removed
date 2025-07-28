@@ -13,7 +13,7 @@
 
 #include <stdint.h>
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -23,6 +23,13 @@ int64_t GetProcessCpuTimeNanos();
 
 int64_t GetThreadCpuTimeNanos();
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::GetProcessCpuTimeNanos;
+using ::webrtc::GetThreadCpuTimeNanos;
 }  
 
 #endif  

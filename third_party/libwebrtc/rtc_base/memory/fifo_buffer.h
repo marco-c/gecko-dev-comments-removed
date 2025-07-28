@@ -22,16 +22,16 @@
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_annotations.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
-class FifoBuffer final : public webrtc::StreamInterface {
+class FifoBuffer final : public StreamInterface {
  public:
   
   explicit FifoBuffer(size_t length);
   
-  FifoBuffer(size_t length, webrtc::Thread* owner);
+  FifoBuffer(size_t length, Thread* owner);
   ~FifoBuffer() override;
 
   FifoBuffer(const FifoBuffer&) = delete;
@@ -41,13 +41,13 @@ class FifoBuffer final : public webrtc::StreamInterface {
   bool GetBuffered(size_t* data_len) const;
 
   
-  webrtc::StreamState GetState() const override;
-  webrtc::StreamResult Read(rtc::ArrayView<uint8_t> buffer,
-                            size_t& bytes_read,
-                            int& error) override;
-  webrtc::StreamResult Write(rtc::ArrayView<const uint8_t> buffer,
-                             size_t& bytes_written,
-                             int& error) override;
+  StreamState GetState() const override;
+  StreamResult Read(rtc::ArrayView<uint8_t> buffer,
+                    size_t& bytes_read,
+                    int& error) override;
+  StreamResult Write(rtc::ArrayView<const uint8_t> buffer,
+                     size_t& bytes_written,
+                     int& error) override;
   void Close() override;
 
   
@@ -93,22 +93,20 @@ class FifoBuffer final : public webrtc::StreamInterface {
 
   
   
-  webrtc::StreamResult ReadLocked(void* buffer,
-                                  size_t bytes,
-                                  size_t* bytes_read)
+  StreamResult ReadLocked(void* buffer, size_t bytes, size_t* bytes_read)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(callback_sequence_);
 
   
   
-  webrtc::StreamResult WriteLocked(const void* buffer,
-                                   size_t bytes,
-                                   size_t* bytes_written)
+  StreamResult WriteLocked(const void* buffer,
+                           size_t bytes,
+                           size_t* bytes_written)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(callback_sequence_);
 
-  webrtc::ScopedTaskSafety task_safety_;
+  ScopedTaskSafety task_safety_;
 
   
-  webrtc::StreamState state_ RTC_GUARDED_BY(callback_sequence_);
+  StreamState state_ RTC_GUARDED_BY(callback_sequence_);
   
   std::unique_ptr<char[]> buffer_ RTC_GUARDED_BY(callback_sequence_);
   
@@ -118,9 +116,15 @@ class FifoBuffer final : public webrtc::StreamInterface {
   
   size_t read_position_ RTC_GUARDED_BY(callback_sequence_);
   
-  webrtc::Thread* const owner_;
+  Thread* const owner_;
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::FifoBuffer;
 }  
 
 #endif  

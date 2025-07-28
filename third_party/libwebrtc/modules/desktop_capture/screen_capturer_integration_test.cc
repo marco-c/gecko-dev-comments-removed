@@ -11,15 +11,19 @@
 #include <string.h>
 
 #include <algorithm>
+#include <cstdint>
 #include <initializer_list>
 #include <iostream>  
 #include <memory>
+#include <string>
 #include <utility>
+#include <vector>
 
 
 #include "modules/desktop_capture/desktop_capture_options.h"
 #include "modules/desktop_capture/desktop_capturer.h"
 #include "modules/desktop_capture/desktop_frame.h"
+#include "modules/desktop_capture/desktop_geometry.h"
 #include "modules/desktop_capture/desktop_region.h"
 #include "modules/desktop_capture/mock_desktop_capturer_callback.h"
 #include "modules/desktop_capture/rgba_color.h"
@@ -326,7 +330,7 @@ TEST_F(ScreenCapturerIntegrationTest, DISABLED_TwoDirectxCapturers) {
 
 TEST_F(ScreenCapturerIntegrationTest,
        DISABLED_MaybeCaptureUpdatedRegionWithDirectxCapturer) {
-  if (rtc::rtc_win::GetVersion() < rtc::rtc_win::Version::VERSION_WIN8) {
+  if (rtc_win::GetVersion() < rtc_win::Version::VERSION_WIN8) {
     
     
     

@@ -14,7 +14,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -67,6 +67,12 @@ class RateTracker {
   int64_t initialization_time_milliseconds_;
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::RateTracker;
 }  
 
 #endif  

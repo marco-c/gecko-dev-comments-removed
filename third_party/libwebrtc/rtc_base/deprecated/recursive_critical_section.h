@@ -11,10 +11,9 @@
 #ifndef RTC_BASE_DEPRECATED_RECURSIVE_CRITICAL_SECTION_H_
 #define RTC_BASE_DEPRECATED_RECURSIVE_CRITICAL_SECTION_H_
 
-#include <atomic>
-
 #include "rtc_base/platform_thread_types.h"
 #include "rtc_base/thread_annotations.h"
+
 
 #if defined(WEBRTC_WIN)
 
@@ -40,7 +39,8 @@
 #include <dispatch/dispatch.h>
 #endif
 
-namespace rtc {
+
+namespace webrtc {
 
 
 
@@ -81,7 +81,7 @@ class RTC_LOCKABLE RecursiveCriticalSection {
 #else
   mutable pthread_mutex_t mutex_;
 #endif
-  mutable PlatformThreadRef thread_;  
+  mutable rtc::PlatformThreadRef thread_;  
   mutable int recursion_count_;       
 #else  
 #error Unsupported platform.
@@ -102,6 +102,13 @@ class RTC_SCOPED_LOCKABLE CritScope {
   const RecursiveCriticalSection* const cs_;
 };
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::CritScope;
+using ::webrtc::RecursiveCriticalSection;
 }  
 
 #endif  

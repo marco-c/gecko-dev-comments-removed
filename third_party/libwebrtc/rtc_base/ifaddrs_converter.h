@@ -11,15 +11,17 @@
 #ifndef RTC_BASE_IFADDRS_CONVERTER_H_
 #define RTC_BASE_IFADDRS_CONVERTER_H_
 
+
 #if defined(WEBRTC_ANDROID)
 #include "rtc_base/ifaddrs_android.h"
-#else
+#elif defined(WEBRTC_POSIX)
 #include <ifaddrs.h>
 #endif  
 
+
 #include "rtc_base/ip_address.h"
 
-namespace rtc {
+namespace webrtc {
 
 
 
@@ -29,8 +31,8 @@ class IfAddrsConverter {
   IfAddrsConverter();
   virtual ~IfAddrsConverter();
   virtual bool ConvertIfAddrsToIPAddress(const struct ifaddrs* interface,
-                                         webrtc::InterfaceAddress* ipaddress,
-                                         webrtc::IPAddress* mask);
+                                         InterfaceAddress* ipaddress,
+                                         IPAddress* mask);
 
  protected:
   virtual bool ConvertNativeAttributesToIPAttributes(
@@ -40,6 +42,13 @@ class IfAddrsConverter {
 
 IfAddrsConverter* CreateIfAddrsConverter();
 
+}  
+
+
+
+namespace rtc {
+using ::webrtc::CreateIfAddrsConverter;
+using ::webrtc::IfAddrsConverter;
 }  
 
 #endif  

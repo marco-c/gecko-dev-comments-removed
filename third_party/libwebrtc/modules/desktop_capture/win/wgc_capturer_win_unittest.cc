@@ -366,7 +366,7 @@ TEST(WgcCapturerNoMonitorTest, NoMonitors) {
 
   
   
-  if (rtc::rtc_win::GetVersion() < rtc::rtc_win::Version::VERSION_WIN11)
+  if (webrtc::rtc_win::GetVersion() < webrtc::rtc_win::Version::VERSION_WIN11)
     EXPECT_FALSE(IsWgcSupported(CaptureType::kWindow));
   else
     EXPECT_TRUE(IsWgcSupported(CaptureType::kWindow));
