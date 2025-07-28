@@ -18,4 +18,14 @@ function run_test() {
   Assert.equal(typeof libs[0].start, "number");
   Assert.equal(typeof libs[0].end, "number");
   Assert.lessOrEqual(libs[0].start, libs[0].end);
+
+  
+  
+  
+  
+  
+  const libxul = libs.find(lib => lib.name.toLowerCase().includes("xul"));
+  Assert.equal(typeof libxul, "object");
+  Assert.ok(typeof libxul.breakpadId === "string" && libxul.breakpadId !== "");
+  Assert.ok(typeof libxul.codeId === "string" && libxul.codeId !== "");
 }
