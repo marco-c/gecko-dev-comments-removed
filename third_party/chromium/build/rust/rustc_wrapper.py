@@ -76,6 +76,19 @@ from util import build_utils
 
 
 
+
+
+
+
+
+
+
+def remove_lib_suffix_from_l_args(text):
+  if text.startswith("-l") and text.endswith(".lib"):
+    return text[:-len(".lib")]
+  return text
+
+
 def main():
   parser = argparse.ArgumentParser()
   parser.add_argument('--rustc', required=True, type=pathlib.Path)
@@ -93,12 +106,21 @@ def main():
   ldflags = remaining_args[ldflags_separator + 1:rustenv_separator]
   rustenv = remaining_args[rustenv_separator + 1:]
 
+  is_windows = os.name == 'nt'
+
   rustc_args.extend(["-Clink-arg=%s" % arg for arg in ldflags])
 
   
   if args.rsp:
     with open(args.rsp) as rspfile:
       rsp_args = [l.rstrip() for l in rspfile.read().split(' ') if l.rstrip()]
+    if is_windows:
+      
+      
+      rsp_args = [arg for arg in rsp_args if not arg.endswith("-Bdynamic")]
+      
+      
+      rsp_args = [remove_lib_suffix_from_l_args(arg) for arg in rsp_args]
     with open(args.rsp, 'w') as rspfile:
       rspfile.write("\n".join(rsp_args))
     rustc_args.append(f'@{args.rsp}')

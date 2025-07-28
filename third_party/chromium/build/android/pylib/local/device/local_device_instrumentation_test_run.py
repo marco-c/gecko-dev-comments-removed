@@ -123,7 +123,8 @@ RENDER_TEST_MODEL_SDK_CONFIGS = {
 }
 
 _BATCH_SUFFIX = '_batch'
-_TEST_BATCH_MAX_GROUP_SIZE = 200
+
+_LOCAL_TEST_BATCH_MAX_GROUP_SIZE = 200
 
 
 @contextlib.contextmanager
@@ -228,7 +229,7 @@ class LocalDeviceInstrumentationTestRun(
           
           
           system_app_context = system_app.ReplaceSystemApp(
-              dev, replacement_apk=self._test_instance.replace_system_package)
+              dev, self._test_instance.replace_system_package)
           
           
           
@@ -264,14 +265,15 @@ class LocalDeviceInstrumentationTestRun(
         @trace_event.traced
         def install_helper_internal(d, apk_path=None):
           
-          d.Install(
-              apk,
-              modules=modules,
-              fake_modules=fake_modules,
-              permissions=permissions,
-              additional_locales=additional_locales,
-              instant_app=instant_app,
-              force_queryable=self._test_instance.IsApkForceQueryable(apk))
+          with self._ArchiveLogcat(d, 'install_apk'):
+            d.Install(
+                apk,
+                modules=modules,
+                fake_modules=fake_modules,
+                permissions=permissions,
+                additional_locales=additional_locales,
+                instant_app=instant_app,
+                force_queryable=self._test_instance.IsApkForceQueryable(apk))
 
         return install_helper_internal
 
@@ -685,13 +687,26 @@ class LocalDeviceInstrumentationTestRun(
         return tuple(dict2list(v) for v in d)
       return d
 
+    test_count = sum(
+        [len(test) - 1 for test in tests if self._CountTestsIndividually(test)])
+    test_count += len(tests)
+    if self._test_instance.total_external_shards > 1:
+      
+      
+      
+      
+      test_batch_max_group_size = \
+        max(1, test_count // self._test_instance.total_external_shards // 3)
+    else:
+      test_batch_max_group_size = _LOCAL_TEST_BATCH_MAX_GROUP_SIZE
+
     all_tests = []
     for _, btests in list(batched_tests.items()):
       
       btests.sort(key=dict2list)
       all_tests.extend([
-          btests[i:i + _TEST_BATCH_MAX_GROUP_SIZE]
-          for i in range(0, len(btests), _TEST_BATCH_MAX_GROUP_SIZE)
+          btests[i:i + test_batch_max_group_size]
+          for i in range(0, len(btests), test_batch_max_group_size)
       ])
     all_tests.extend(other_tests)
     

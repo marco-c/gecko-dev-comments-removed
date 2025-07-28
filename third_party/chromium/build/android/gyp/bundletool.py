@@ -24,12 +24,10 @@ BUNDLETOOL_DIR = os.path.abspath(os.path.join(
 BUNDLETOOL_JAR_PATH = os.path.join(BUNDLETOOL_DIR, 'bundletool.jar')
 
 
-def RunBundleTool(args, warnings_as_errors=(), print_stdout=False):
-  
-  verify = warnings_as_errors == () or warnings_as_errors
+def RunBundleTool(args, print_stdout=False):
   
   
-  cmd = build_utils.JavaCmd(verify, xmx='4G')
+  cmd = build_utils.JavaCmd(xmx='4G')
   cmd += ['-jar', BUNDLETOOL_JAR_PATH]
   cmd += args
   logging.debug(' '.join(cmd))

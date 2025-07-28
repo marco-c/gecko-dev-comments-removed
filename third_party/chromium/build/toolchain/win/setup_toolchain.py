@@ -10,7 +10,6 @@
 
 
 
-from __future__ import print_function
 
 import errno
 import json
@@ -23,6 +22,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
 import gn_helpers
 
 SCRIPT_DIR = os.path.dirname(__file__)
+SDK_VERSION = '10.0.22621.0'
+
 
 def _ExtractImportantEnvironment(output_of_set):
   """Extracts environment variables required for the toolchain to run from
@@ -184,7 +185,7 @@ def _LoadToolchainEnv(cpu, toolchain_root, sdk_dir, target_store):
     
     
     
-    args.append('10.0.20348.0')
+    args.append(SDK_VERSION)
     variables = _LoadEnvFromBat(args)
   return _ExtractImportantEnvironment(variables)
 

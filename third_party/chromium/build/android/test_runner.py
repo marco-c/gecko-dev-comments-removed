@@ -238,6 +238,12 @@ def AddCommonOptions(parser):
 
   
   parser.add_argument(
+      '--use-persistent-shell',
+      action='store_true',
+      help='Uses a persistent shell connection for the adb connection.')
+
+  
+  parser.add_argument(
       '--gtest_also_run_disabled_tests', '--gtest-also-run-disabled-tests',
       '--isolated-script-test-also-run-disabled-tests',
       dest='run_disabled', action='store_true',
@@ -315,10 +321,6 @@ def AddDeviceOptions(parser):
       action='store_true',
       dest='upload_logcats_file',
       help='Whether to upload logcat file to logdog.')
-  parser.add_argument(
-      '--use-persistent-shell',
-      action='store_true',
-      help='Uses a persistent shell connection for the adb connection.')
 
   logcat_output_group = parser.add_mutually_exclusive_group()
   logcat_output_group.add_argument(
@@ -351,6 +353,12 @@ def AddEmulatorOptions(parser):
       action='store_true',
       default=False,
       help='Enable graphical window display on the emulator.')
+  parser.add_argument(
+      '--emulator-debug-tags',
+      help='Comma-separated list of debug tags. This can be used to enable or '
+      'disable debug messages from specific parts of the emulator, e.g. '
+      'init,snapshot. See "emulator -help-debug-tags" '
+      'for a full list of tags.')
 
 
 def AddGTestOptions(parser):

@@ -37,6 +37,12 @@ DIR_SOURCE_ROOT = os.path.relpath(
 JAVA_HOME = os.path.join(DIR_SOURCE_ROOT, 'third_party', 'jdk', 'current')
 JAVAC_PATH = os.path.join(JAVA_HOME, 'bin', 'javac')
 JAVAP_PATH = os.path.join(JAVA_HOME, 'bin', 'javap')
+KOTLIN_HOME = os.path.join(DIR_SOURCE_ROOT, 'third_party', 'kotlinc', 'current')
+KOTLINC_PATH = os.path.join(KOTLIN_HOME, 'bin', 'kotlinc')
+
+
+JAVA_11_HOME_DEPRECATED = os.path.join(DIR_SOURCE_ROOT, 'third_party', 'jdk11',
+                                       'current')
 
 try:
   string_types = basestring
@@ -44,17 +50,12 @@ except NameError:
   string_types = (str, bytes)
 
 
-def JavaCmd(verify=True, xmx='1G'):
+def JavaCmd(xmx='1G'):
   ret = [os.path.join(JAVA_HOME, 'bin', 'java')]
   
   
   
   ret += ['-Xmx' + xmx]
-
-  
-  if not verify:
-    ret += ['-noverify']
-
   return ret
 
 
@@ -571,11 +572,13 @@ def MergeZips(output, input_zips, path_transform=None, compress=None):
     compress: Overrides compression setting from origin zip entries.
   """
   path_transform = path_transform or (lambda p: p)
-  added_names = set()
 
   out_zip = output
   if not isinstance(output, zipfile.ZipFile):
     out_zip = zipfile.ZipFile(output, 'w')
+
+  
+  added_names = set(out_zip.namelist())
 
   try:
     for in_file in input_zips:

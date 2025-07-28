@@ -3,7 +3,6 @@
 
 
 
-from __future__ import print_function
 
 import collections
 import glob
@@ -32,7 +31,14 @@ from gn_helpers import ToGNString
 
 
 
-TOOLCHAIN_HASH = '1023ce2e82'
+
+
+
+
+
+
+TOOLCHAIN_HASH = '27370823e7'
+SDK_VERSION = '10.0.22621.0'
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 json_data_file = os.path.join(script_dir, 'win_toolchain.json')
@@ -41,8 +47,8 @@ json_data_file = os.path.join(script_dir, 'win_toolchain.json')
 
 
 MSVS_VERSIONS = collections.OrderedDict([
-    ('2019', '16.0'),  
-    ('2022', '17.0'),
+    ('2022', '17.0'),  
+    ('2019', '16.0'),
     ('2017', '15.0'),
 ])
 
@@ -302,45 +308,26 @@ def _CopyUCRTRuntime(target_dir, source_dir, target_cpu, suffix):
     _CopyRuntimeImpl(target, source)
   
   
-  
-  
-  
-  win_sdk_dir = os.path.normpath(
-      os.environ.get('WINDOWSSDKDIR',
-                     os.path.expandvars('%ProgramFiles(x86)%'
-                                        '\\Windows Kits\\10')))
-  
-  
-  if target_cpu != 'arm64':
+  if not suffix.startswith('.'):
+    win_sdk_dir = os.path.normpath(
+        os.environ.get(
+            'WINDOWSSDKDIR',
+            os.path.expandvars('%ProgramFiles(x86)%'
+                               '\\Windows Kits\\10')))
     
     
-    redist_dir = os.path.join(win_sdk_dir, 'Redist')
-    version_dirs = glob.glob(os.path.join(redist_dir, '10.*'))
-    if len(version_dirs) > 0:
-      _SortByHighestVersionNumberFirst(version_dirs)
-      redist_dir = version_dirs[0]
-    ucrt_dll_dirs = os.path.join(redist_dir, 'ucrt', 'DLLs', target_cpu)
-    ucrt_files = glob.glob(os.path.join(ucrt_dll_dirs, 'api-ms-win-*.dll'))
-    assert len(ucrt_files) > 0
-    for ucrt_src_file in ucrt_files:
-      file_part = os.path.basename(ucrt_src_file)
-      ucrt_dst_file = os.path.join(target_dir, file_part)
-      _CopyRuntimeImpl(ucrt_dst_file, ucrt_src_file, False)
-  
-  if target_cpu != 'arm64' or not suffix.startswith('.'):
-    if not suffix.startswith('.'):
-      
-      
-      sdk_bin_root = os.path.join(win_sdk_dir, 'bin')
-      sdk_bin_sub_dirs = glob.glob(os.path.join(sdk_bin_root, '10.*'))
-      
-      _SortByHighestVersionNumberFirst(sdk_bin_sub_dirs)
-      for directory in sdk_bin_sub_dirs:
-        sdk_redist_root_version = os.path.join(sdk_bin_root, directory)
-        if not os.path.isdir(sdk_redist_root_version):
-          continue
-        source_dir = os.path.join(sdk_redist_root_version, target_cpu, 'ucrt')
-        break
+    sdk_bin_root = os.path.join(win_sdk_dir, 'bin')
+    sdk_bin_sub_dirs = glob.glob(os.path.join(sdk_bin_root, '10.*'))
+    
+    _SortByHighestVersionNumberFirst(sdk_bin_sub_dirs)
+    for directory in sdk_bin_sub_dirs:
+      sdk_redist_root_version = os.path.join(sdk_bin_root, directory)
+      if not os.path.isdir(sdk_redist_root_version):
+        continue
+      source_dir = os.path.join(sdk_redist_root_version, target_cpu, 'ucrt')
+      if not os.path.isdir(source_dir):
+        continue
+      break
     _CopyRuntimeImpl(os.path.join(target_dir, 'ucrtbase' + suffix),
                      os.path.join(source_dir, 'ucrtbase' + suffix))
 
@@ -412,17 +399,21 @@ def CopyDlls(target_dir, configuration, target_cpu):
 
 
 def _CopyDebugger(target_dir, target_cpu):
-  """Copy dbghelp.dll and dbgcore.dll into the requested directory as needed.
+  """Copy dbghelp.dll, dbgcore.dll, and msdia140.dll into the requested
+  directory.
 
   target_cpu is one of 'x86', 'x64' or 'arm64'.
 
   dbghelp.dll is used when Chrome needs to symbolize stacks. Copying this file
   from the SDK directory avoids using the system copy of dbghelp.dll which then
-  ensures compatibility with recent debug information formats, such as VS
-  2017 /debug:fastlink PDBs.
+  ensures compatibility with recent debug information formats, such as
+  large-page PDBs. Note that for these DLLs to be deployed to swarming bots they
+  also need to be listed in group("runtime_libs").
 
   dbgcore.dll is needed when using some functions from dbghelp.dll (like
   MinidumpWriteDump).
+
+  msdia140.dll is needed for tools like symupload.exe and dump_syms.exe.
   """
   win_sdk_dir = SetEnvironmentAndGetSDKDir()
   if not win_sdk_dir:
@@ -431,10 +422,6 @@ def _CopyDebugger(target_dir, target_cpu):
   
   
   debug_files = [('dbghelp.dll', False), ('dbgcore.dll', True)]
-  
-  if target_cpu != 'arm64':
-    debug_files.extend([('api-ms-win-downlevel-kernel32-l2-1-0.dll', False),
-                        ('api-ms-win-eventing-provider-l1-1-0.dll', False)])
   for debug_file, is_optional in debug_files:
     full_path = os.path.join(win_sdk_dir, 'Debuggers', target_cpu, debug_file)
     if not os.path.exists(full_path):
@@ -442,11 +429,17 @@ def _CopyDebugger(target_dir, target_cpu):
         continue
       else:
         raise Exception('%s not found in "%s"\r\nYou must install '
-                        'Windows 10 SDK version 10.0.20348.0 including the '
+                        'Windows 10 SDK version %s including the '
                         '"Debugging Tools for Windows" feature.' %
-                        (debug_file, full_path))
+                        (debug_file, full_path, SDK_VERSION))
     target_path = os.path.join(target_dir, debug_file)
     _CopyRuntimeImpl(target_path, full_path)
+
+  
+  
+  dia_path = os.path.join(NormalizePath(os.environ['GYP_MSVS_OVERRIDE_PATH']),
+                          'DIA SDK', 'bin', 'amd64', 'msdia140.dll')
+  _CopyRuntimeImpl(os.path.join(target_dir, 'msdia140.dll'), dia_path)
 
 
 def _GetDesiredVsToolchainHashes():
@@ -557,11 +550,13 @@ def GetToolchainDir():
   win_sdk_dir = SetEnvironmentAndGetSDKDir()
 
   print('''vs_path = %s
+sdk_version = %s
 sdk_path = %s
 vs_version = %s
 wdk_dir = %s
 runtime_dirs = %s
-''' % (ToGNString(NormalizePath(os.environ['GYP_MSVS_OVERRIDE_PATH'])),
+''' % (ToGNString(NormalizePath(
+      os.environ['GYP_MSVS_OVERRIDE_PATH'])), ToGNString(SDK_VERSION),
        ToGNString(win_sdk_dir), ToGNString(GetVisualStudioVersion()),
        ToGNString(NormalizePath(os.environ.get('WDK_DIR', ''))),
        ToGNString(os.path.pathsep.join(runtime_dll_dirs or ['None']))))

@@ -25,33 +25,40 @@ def extract_gn_build_commands(build_ninja_file):
     
     
     
-    num_blank_lines = 0
-    while num_blank_lines < 3:
-      line = f.readline()
-      if len(line) == 0:
-        return ''  
+    found_build_dot_ninja_target = False
+    for line in f.readlines():
       result += line
-      if line[0] == '\n':
-        num_blank_lines = num_blank_lines + 1
-  return result
+      if line.startswith('build build.ninja:'):
+        found_build_dot_ninja_target = True
+      if found_build_dot_ninja_target and line[0] == '\n':
+        return result
+  return ''  
 
 
-def delete_dir(build_dir):
-  if os.path.islink(build_dir):
-    return
+def _rmtree(d):
   
   
   if sys.platform.startswith('win'):
-    subprocess.check_call(['rmdir', '/s', '/q', build_dir], shell=True)
+    subprocess.check_call(['rmdir', '/s', '/q', d], shell=True)
   else:
-    shutil.rmtree(build_dir)
+    shutil.rmtree(d)
+
+
+def _clean_dir(build_dir):
+  
+  
+  for e in os.scandir(build_dir):
+    if e.is_dir():
+      _rmtree(e.path)
+    else:
+      os.remove(e.path)
 
 
 def delete_build_dir(build_dir):
   
   build_ninja_d_file = os.path.join(build_dir, 'build.ninja.d')
   if not os.path.exists(build_ninja_d_file):
-    delete_dir(build_dir)
+    _clean_dir(build_dir)
     return
 
   
@@ -68,15 +75,16 @@ def delete_build_dir(build_dir):
   except IOError:
     args_contents = ''
 
-  e = None
+  exception_during_rm = None
   try:
     
     
     
-    delete_dir(build_dir)
-    os.mkdir(build_dir)
+    
+    
+    _clean_dir(build_dir)
   except Exception as e:
-    pass
+    exception_during_rm = e
 
   
   if args_contents != '':
@@ -105,9 +113,10 @@ build build.ninja: gn
   with open(build_ninja_d_file, 'w') as f:
     f.write('build.ninja: nonexistant_file.gn\n')
 
-  if e:
+  if exception_during_rm:
     
-    raise e
+    raise exception_during_rm
+
 
 def clobber(out_dir):
   """Clobber contents of build directory.

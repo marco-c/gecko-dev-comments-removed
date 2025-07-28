@@ -6,7 +6,6 @@
 
 
 
-from __future__ import print_function
 
 import argparse
 import collections
@@ -128,12 +127,12 @@ def _GenerateBundleApks(info,
 def _InstallBundle(devices, apk_helper_instance, modules, fake_modules):
 
   def Install(device):
-    device.Install(
-        apk_helper_instance,
-        permissions=[],
-        modules=modules,
-        fake_modules=fake_modules,
-        allow_downgrade=True)
+    device.Install(apk_helper_instance,
+                   permissions=[],
+                   modules=modules,
+                   fake_modules=fake_modules,
+                   allow_downgrade=True,
+                   reinstall=True)
 
   
   
@@ -188,24 +187,95 @@ def _NormalizeProcessName(debug_process_name, package_name):
   return debug_process_name
 
 
-def _LaunchUrl(devices, package_name, argv=None, command_line_flags_file=None,
-               url=None, apk=None, wait_for_java_debugger=False,
-               debug_process_name=None, nokill=None):
+def _ResolveActivity(device, package_name, category, action):
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  lines = device.RunShellCommand(['dumpsys', 'package', package_name],
+                                 check_return=True)
+
+  
+  start_idx = next((i for i, l in enumerate(lines)
+                    if l.startswith('Activity Resolver Table:')), None)
+  if start_idx is None:
+    if not device.IsApplicationInstalled(package_name):
+      raise Exception('Package not installed: ' + package_name)
+    raise Exception('No Activity Resolver Table in:\n' + '\n'.join(lines))
+  line_count = next(i for i, l in enumerate(lines[start_idx + 1:])
+                    if l and not l[0].isspace())
+  data = '\n'.join(lines[start_idx:start_idx + line_count])
+
+  
+  entries = re.split(r'^        [0-9a-f]+ ', data, flags=re.MULTILINE)
+
+  def activity_name_from_entry(entry):
+    assert entry.startswith(package_name), 'Got: ' + entry
+    activity_name = entry[len(package_name) + 1:].split(' ', 1)[0]
+    if activity_name[0] == '.':
+      activity_name = package_name + activity_name
+    return activity_name
+
+  
+  category_text = f'Category: "{category}"'
+  action_text = f'Action: "{action}"'
+  matched_entries = [
+      e for e in entries[1:] if category_text in e and action_text in e
+  ]
+
+  if not matched_entries:
+    raise Exception(f'Did not find {category_text}, {action_text} in\n{data}')
+  if len(matched_entries) > 1:
+    
+    
+    default_entries = [
+        e for e in matched_entries if 'android.intent.category.DEFAULT' in e
+    ]
+    matched_entries = default_entries or matched_entries
+
+  
+  activity_names = {activity_name_from_entry(e) for e in matched_entries}
+
+  if len(activity_names) > 1:
+    raise Exception('Found multiple launcher activities:\n * ' +
+                    '\n * '.join(sorted(activity_names)))
+  return next(iter(activity_names))
+
+
+def _LaunchUrl(devices,
+               package_name,
+               argv=None,
+               command_line_flags_file=None,
+               url=None,
+               wait_for_java_debugger=False,
+               debug_process_name=None,
+               nokill=None):
   if argv and command_line_flags_file is None:
     raise Exception('This apk does not support any flags.')
-  if url:
-    
-    
-    if not apk:
-      raise Exception('Launching with URL is not supported when using '
-                      '--package-name. Use --apk-path instead.')
-    view_activity = apk.GetViewActivityName()
-    if not view_activity:
-      raise Exception('APK does not support launching with URLs.')
 
   debug_process_name = _NormalizeProcessName(debug_process_name, package_name)
 
+  if url is None:
+    category = 'android.intent.category.LAUNCHER'
+    action = 'android.intent.action.MAIN'
+  else:
+    category = 'android.intent.category.BROWSABLE'
+    action = 'android.intent.action.VIEW'
+
   def launch(device):
+    activity = _ResolveActivity(device, package_name, category, action)
     
     
     if not nokill:
@@ -228,18 +298,13 @@ def _LaunchUrl(devices, package_name, argv=None, command_line_flags_file=None,
         except device_errors.AdbShellCommandFailedError:
           logging.exception('Failed to set flags')
 
-    if url is None:
-      
-      cmd = [
-          'am', 'start', '-p', package_name, '-c',
-          'android.intent.category.LAUNCHER', '-a', 'android.intent.action.MAIN'
-      ]
-      device.RunShellCommand(cmd, check_return=True)
-    else:
-      launch_intent = intent.Intent(action='android.intent.action.VIEW',
-                                    activity=view_activity, data=url,
-                                    package=package_name)
-      device.StartActivity(launch_intent)
+    launch_intent = intent.Intent(action=action,
+                                  activity=activity,
+                                  data=url,
+                                  package=package_name)
+    logging.info('Sending launch intent for %s', activity)
+    device.StartActivity(launch_intent)
+
   device_utils.DeviceUtils.parallel(devices).pMap(launch)
   if wait_for_java_debugger:
     print('Waiting for debugger to attach to process: ' +
@@ -649,7 +714,7 @@ class _LogcatProcessor:
     
     
     
-    self._start_pattern = re.compile(r'START .*pkg=' + package_name)
+    self._start_pattern = re.compile(r'START .*(?:cmp|pkg)=' + package_name)
 
     self.nonce = 'Chromium apk_operations.py nonce={}'.format(random.random())
     
@@ -1399,13 +1464,11 @@ class _LaunchCommand(_Command):
   def Run(self):
     if self.is_test_apk:
       raise Exception('Use the bin/run_* scripts to run test apks.')
-    if self.args.url and self.is_bundle:
-      
-      
-      raise Exception('Launching with URL not supported for bundles yet!')
-    _LaunchUrl(self.devices, self.args.package_name, argv=self.args.args,
+    _LaunchUrl(self.devices,
+               self.args.package_name,
+               argv=self.args.args,
                command_line_flags_file=self.args.command_line_flags_file,
-               url=self.args.url, apk=self.apk_helper,
+               url=self.args.url,
                wait_for_java_debugger=self.args.wait_for_java_debugger,
                debug_process_name=self.args.debug_process_name,
                nokill=self.args.nokill)

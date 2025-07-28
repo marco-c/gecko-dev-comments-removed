@@ -11,6 +11,7 @@ import concurrent.futures
 import json
 import logging
 import os
+import posixpath
 import shutil
 import sys
 import zipfile
@@ -131,15 +132,13 @@ def _ParseArgs(args):
 
   
   uncompressed_list = []
-  if options.uncompressed_assets:
-    for l in options.uncompressed_assets:
-      for entry in build_utils.ParseGnList(l):
-        
-        pos = entry.find(':')
-        if pos >= 0:
-          uncompressed_list.append(entry[pos + 1:])
-        else:
-          uncompressed_list.append(entry)
+  for entry in build_utils.ParseGnList(options.uncompressed_assets):
+    
+    pos = entry.find(':')
+    if pos >= 0:
+      uncompressed_list.append(entry[pos + 1:])
+    else:
+      uncompressed_list.append(entry)
 
   options.uncompressed_assets = set(uncompressed_list)
 
@@ -200,13 +199,12 @@ def _GenerateBundleConfigJson(uncompressed_assets, compress_dex,
                        for dim in _ALL_SPLIT_DIMENSIONS ]
 
   
-  
-  
-  uncompressed_globs = ['lib/*/crazy.*']
+  uncompressed_globs = [
+      'assets/locales#lang_*/*.pak', 'assets/fallback-locales/*.pak'
+  ]
   
   uncompressed_globs.extend(
-      ['assets/locales#lang_*/*.pak', 'assets/fallback-locales/*.pak'])
-  uncompressed_globs.extend('assets/' + x for x in uncompressed_assets)
+      posixpath.normpath('assets/' + x) for x in uncompressed_assets)
   
   uncompressed_globs.extend('**.' + ext for ext in _UNCOMPRESSED_FILE_EXTS)
   if not compress_dex:
@@ -534,7 +532,7 @@ def main(args):
       f.write(bundle_config)
 
     logging.info('Running bundletool')
-    cmd_args = build_utils.JavaCmd(options.warnings_as_errors) + [
+    cmd_args = build_utils.JavaCmd() + [
         '-jar',
         bundletool.BUNDLETOOL_JAR_PATH,
         'build-bundle',

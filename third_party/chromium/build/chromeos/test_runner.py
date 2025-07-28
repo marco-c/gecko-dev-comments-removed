@@ -246,6 +246,7 @@ class TastTest(RemoteTest):
 
     self._suite_name = args.suite_name
     self._tast_vars = args.tast_vars
+    self._tast_retries = args.tast_retries
     self._tests = args.tests
     
     
@@ -337,6 +338,9 @@ class TastTest(RemoteTest):
 
     for v in self._tast_vars or []:
       self._test_cmd.extend(['--tast-var', v])
+
+    if self._tast_retries:
+      self._test_cmd.append('--tast-retries=%d' % self._tast_retries)
 
     
     
@@ -917,6 +921,11 @@ def main():
       dest='tast_vars',
       help='Runtime variables for Tast tests, and the format are expected to '
       'be "key=value" pairs.')
+  tast_test_parser.add_argument(
+      '--tast-retries',
+      type=int,
+      dest='tast_retries',
+      help='Number of retries for failed Tast tests on the same DUT.')
   tast_test_parser.add_argument(
       '--test',
       '-t',
