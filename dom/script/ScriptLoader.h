@@ -460,6 +460,12 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   static JS::loader::LoadedScript* GetActiveScript(JSContext* aCx);
 
+  
+
+
+
+  static bool IsScriptEventHandler(const nsAutoString&, const nsAutoString&);
+
   Document* GetDocument() const { return mDocument; }
 
   nsIURI* GetBaseURI() const override;
