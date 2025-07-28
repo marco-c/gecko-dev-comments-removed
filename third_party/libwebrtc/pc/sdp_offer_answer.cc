@@ -28,6 +28,7 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "api/array_view.h"
 #include "api/candidate.h"
@@ -901,6 +902,21 @@ bool ContentHasHeaderExtension(const ContentInfo& content_info,
     }
   }
   return false;
+}
+
+
+
+
+
+bool WildcardHostPrefixMatch(absl::string_view host,
+                             absl::string_view wildcard_host) {
+  for (size_t i = 0; i < std::min(host.size(), wildcard_host.size()); ++i) {
+    if (host[i] == wildcard_host[i]) {
+      continue;
+    }
+    return wildcard_host[i] == '*';
+  }
+  return host.size() == wildcard_host.size();
 }
 
 }  
@@ -2448,19 +2464,22 @@ void SdpOfferAnswerHandler::DoSetLocalDescription(
     return;
   }
 
+  SessionDescriptionInterface* last_created_desc =
+      desc->GetType() == SdpType::kOffer ? last_created_offer_.get()
+                                         : last_created_answer_.get();
+
   
   bool had_local_description = !!local_description();
   SdpMungingType sdp_munging_type =
-      DetermineSdpMungingType(desc.get(), desc->GetType() == SdpType::kOffer
-                                              ? last_created_offer_.get()
-                                              : last_created_answer_.get());
+      DetermineSdpMungingType(desc.get(), last_created_desc);
 
   if (!disable_sdp_munging_checks_ &&
-      pc_->trials().IsEnabled("WebRTC-NoSdpMangleUfrag")) {
-    if (sdp_munging_type == kIceUfrag || sdp_munging_type == kIcePwd) {
+      HasUfragSdpMunging(desc.get(), last_created_desc)) {
+    has_sdp_munged_ufrag_ = true;
+    if (pc_->trials().IsEnabled("WebRTC-NoSdpMangleUfrag")) {
       RTC_LOG(LS_ERROR) << "Rejecting SDP because of ufrag modification";
       observer->OnSetLocalDescriptionComplete(
-          RTCError(RTCErrorType::INVALID_PARAMETER,
+          RTCError(RTCErrorType::INVALID_MODIFICATION,
                    "SDP is modified in a non-acceptable way"));
       last_sdp_munging_type_ = sdp_munging_type;
       ReportInitialSdpMunging(had_local_description, desc->GetType());
@@ -2471,9 +2490,6 @@ void SdpOfferAnswerHandler::DoSetLocalDescription(
   
   
   std::vector<std::pair<Codec, Codec>> codecs_mangled_to_raw;
-  auto last_created_desc = desc->GetType() == SdpType::kOffer
-                               ? last_created_offer_.get()
-                               : last_created_answer_.get();
   
   if (last_created_desc &&
       last_created_desc->description()->contents().size() ==
@@ -5298,6 +5314,30 @@ bool SdpOfferAnswerHandler::ReadyToUseRemoteCandidate(
 
     *valid = false;
     return false;
+  }
+
+  if (has_sdp_munged_ufrag_) {
+    
+    
+    
+    
+    const std::string restricted_addresses =
+        pc_->trials().Lookup("WebRTC-NoSdpMangleUfragRestrictedAddresses");
+    const std::string port = candidate->candidate().address().PortAsString();
+    const std::string host = candidate->candidate().address().HostAsURIString();
+    const std::vector<absl::string_view> restricted_address_list =
+        absl::StrSplit(restricted_addresses, '|');
+    for (const absl::string_view restricted_address : restricted_address_list) {
+      const std::pair<absl::string_view, absl::string_view> address =
+          absl::StrSplit(restricted_address, ':');
+      if ((address.second == port || address.second == "*") &&
+          WildcardHostPrefixMatch(host, address.first)) {
+        RTC_LOG(LS_ERROR) << "ReadyToUseRemoteCandidate: Candidate not valid "
+                             "because of SDP munging.";
+        *valid = false;
+        return false;
+      }
+    }
   }
 
   return true;

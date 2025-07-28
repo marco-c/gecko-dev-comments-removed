@@ -20,6 +20,10 @@ SdpMungingType DetermineSdpMungingType(
     const SessionDescriptionInterface* sdesc,
     const SessionDescriptionInterface* last_created_desc);
 
+
+bool HasUfragSdpMunging(const SessionDescriptionInterface* sdesc,
+                        const SessionDescriptionInterface* last_created_desc);
+
 }  
 
 #endif  
