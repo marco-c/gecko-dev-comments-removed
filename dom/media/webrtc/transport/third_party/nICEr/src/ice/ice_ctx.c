@@ -50,6 +50,7 @@
 #include "nr_crypto.h"
 #include "async_timer.h"
 #include "util.h"
+#include "addrs.h"
 #include "nr_socket_local.h"
 
 #define ICE_UFRAG_LEN 8
@@ -746,7 +747,9 @@ int nr_ice_set_local_addresses(nr_ice_ctx *ctx,
     }
 
     
-    if (r=nr_stun_filter_local_addresses(local_addrs, &addr_ct)) {
+    if (r = nr_stun_filter_addrs(
+            local_addrs, !(ctx->flags & NR_ICE_CTX_FLAGS_ALLOW_LOOPBACK),
+            !(ctx->flags & NR_ICE_CTX_FLAGS_ALLOW_LINK_LOCAL), &addr_ct)) {
       ABORT(r);
     }
 

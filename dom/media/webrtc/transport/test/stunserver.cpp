@@ -1,88 +1,88 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+// Original author: ekr@rtfm.com
+
+/*
+Original code from nICEr and nrappkit.
+
+nICEr copyright:
+
+Copyright (c) 2007, Adobe Systems, Incorporated
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+* Redistributions of source code must retain the above copyright
+  notice, this list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright
+  notice, this list of conditions and the following disclaimer in the
+  documentation and/or other materials provided with the distribution.
+
+* Neither the name of Adobe Systems, Network Resonance nor the names of its
+  contributors may be used to endorse or promote products derived from
+  this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+nrappkit copyright:
+
+   Copyright (C) 2001-2003, Network Resonance, Inc.
+   Copyright (C) 2006, Network Resonance, Inc.
+   All Rights Reserved
+
+   Redistribution and use in source and binary forms, with or without
+   modification, are permitted provided that the following conditions
+   are met:
+
+   1. Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+   2. Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+   3. Neither the name of Network Resonance, Inc. nor the name of any
+      contributors to this software may be used to endorse or promote
+      products derived from this software without specific prior written
+      permission.
+
+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ``AS IS''
+   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+   ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+   POSSIBILITY OF SUCH DAMAGE.
+
+
+   ekr@rtfm.com  Thu Dec 20 20:14:49 2001
+*/
 #include "logging.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
 #include "mediapacket.h"
 
-
+// mozilla/utils.h defines this as well
 #ifdef UNIMPLEMENTED
 #  undef UNIMPLEMENTED
 #endif
@@ -97,6 +97,7 @@ extern "C" {
 #include "stun_util.h"
 #include "registry.h"
 #include "nr_socket_buffered_stun.h"
+#include "addrs.h"
 }
 
 #include "stunserver.h"
@@ -107,8 +108,8 @@ MOZ_MTLOG_MODULE("stunserver");
 
 namespace mozilla {
 
-
-
+// Wrapper nr_socket which allows us to lie to the stun server about the
+// IP address.
 struct nr_socket_wrapped {
   nr_socket* sock_;
   nr_transport_addr addr_;
@@ -186,9 +187,9 @@ int nr_socket_wrapped_create(nr_socket* inner, nr_socket** outp) {
   return 0;
 }
 
-
-
-
+// Instance static.
+// Note: Calling Create() at static init time is not going to be safe, since
+// we have no reason to expect this will be initted to a nullptr yet.
 TestStunServer* TestStunServer::instance;
 TestStunTcpServer* TestStunTcpServer::instance;
 TestStunServer* TestStunServer::instance6;
@@ -197,9 +198,9 @@ uint16_t TestStunServer::instance_port = 3478;
 uint16_t TestStunTcpServer::instance_port = 3478;
 
 TestStunServer::~TestStunServer() {
-  
+  // TODO(ekr@rtfm.com): Put this on the right thread.
 
-  
+  // Unhook callback from our listen socket.
   if (listen_sock_) {
     NR_SOCKET fd;
     if (!nr_socket_getfd(listen_sock_, &fd)) {
@@ -207,12 +208,12 @@ TestStunServer::~TestStunServer() {
     }
   }
 
-  
+  // Free up stun context and network resources
   nr_stun_server_ctx_destroy(&stun_server_);
   nr_socket_destroy(&listen_sock_);
   nr_socket_destroy(&send_sock_);
 
-  
+  // Make sure we aren't still waiting on a deferred response timer to pop
   if (timer_handle_) NR_async_timer_cancel(timer_handle_);
 
   delete response_addr_;
@@ -270,8 +271,8 @@ int TestStunServer::Initialize(int address_family) {
     return R_INTERNAL;
   }
 
-  
-  r = nr_stun_filter_local_addresses(addrs, &addr_ct);
+  // removes duplicate, loopback, and link_local addrs
+  r = nr_stun_filter_addrs(addrs, true, true, &addr_ct);
   if (r) {
     MOZ_MTLOG(ML_ERROR, "Couldn't filter addresses");
     return R_INTERNAL;
@@ -295,10 +296,10 @@ int TestStunServer::Initialize(int address_family) {
 
   int tries = 100;
   while (tries--) {
-    
+    // Bind on configured port (default 3478)
     r = TryOpenListenSocket(&addrs[i], instance_port);
-    
-    
+    // We interpret R_ALREADY to mean the addr is probably in use. Try another.
+    // Otherwise, it either worked or it didn't, and we check below.
     if (r != R_ALREADY) {
       break;
     }
@@ -322,7 +323,7 @@ int TestStunServer::Initialize(int address_family) {
     return R_INTERNAL;
   }
 
-  
+  // Cache the address and port.
   char addr_string[INET6_ADDRSTRLEN];
   r = nr_transport_addr_get_addrstring(&addrs[i].addr, addr_string,
                                        sizeof(addr_string));
@@ -403,7 +404,7 @@ void TestStunServer::Process(const uint8_t* msg, size_t len,
     sock = send_sock_;
   }
 
-  
+  // Set the wrapped address so that the response goes to the right place.
   nr_socket_wrapped_set_send_addr(sock, addr);
 
   nr_stun_server_process_request(
@@ -441,7 +442,7 @@ void TestStunServer::readable_cb(NR_SOCKET s, int how, void* cb_arg) {
   }
   nr_socket* send_sock = server->GetSendingSocket(recv_sock);
 
-  
+  /* Re-arm. */
   NR_ASYNC_WAIT(s, NR_ASYNC_WAIT_READ, &TestStunServer::readable_cb, server);
 
   if (nr_socket_recvfrom(recv_sock, message, sizeof(message), &message_len, 0,
@@ -452,7 +453,7 @@ void TestStunServer::readable_cb(NR_SOCKET s, int how, void* cb_arg) {
 
   MOZ_MTLOG(ML_DEBUG, "Received data of length " << message_len);
 
-  
+  // If we have initial dropping set, check at this point.
   std::string key(addr.as_string);
 
   if (server->received_ct_.count(key) == 0) {
@@ -519,7 +520,7 @@ void TestStunServer::Reset() {
   received_ct_.clear();
 }
 
-
+// TestStunTcpServer
 
 void TestStunTcpServer::ConfigurePort(uint16_t port) { instance_port = port; }
 
@@ -585,10 +586,10 @@ void TestStunTcpServer::accept_cb(NR_SOCKET s, int how, void* cb_arg) {
   nr_transport_addr remote_addr;
   NR_SOCKET fd;
 
-  
+  /* rearm */
   NR_ASYNC_WAIT(s, NR_ASYNC_WAIT_READ, &TestStunTcpServer::accept_cb, cb_arg);
 
-  
+  /* accept */
   if (nr_socket_accept(server->listen_sock_, &remote_addr, &newsock)) {
     MOZ_MTLOG(ML_ERROR, "Couldn't accept incoming tcp connection");
     return;
@@ -649,4 +650,4 @@ TestStunTcpServer::~TestStunTcpServer() {
   }
 }
 
-}  
+}  // namespace mozilla
