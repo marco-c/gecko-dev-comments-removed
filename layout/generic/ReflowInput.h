@@ -69,6 +69,9 @@ struct SizeComputationInput {
   
   gfxContext* mRenderingContext;
 
+  
+  AnchorPosReferencedAnchors* mReferencedAnchors = nullptr;
+
   nsMargin ComputedPhysicalMargin() const {
     return mComputedMargin.GetPhysicalMargin(mWritingMode);
   }
@@ -128,7 +131,9 @@ struct SizeComputationInput {
 
  public:
   
-  SizeComputationInput(nsIFrame* aFrame, gfxContext* aRenderingContext);
+  SizeComputationInput(
+      nsIFrame* aFrame, gfxContext* aRenderingContext,
+      AnchorPosReferencedAnchors* aReferencedAnchors = nullptr);
 
   SizeComputationInput(nsIFrame* aFrame, gfxContext* aRenderingContext,
                        WritingMode aContainingBlockWritingMode,
@@ -615,13 +620,17 @@ struct ReflowInput : public SizeComputationInput {
 
 
 
+
+
+
   ReflowInput(nsPresContext* aPresContext,
               const ReflowInput& aParentReflowInput, nsIFrame* aFrame,
               const LogicalSize& aAvailableSpace,
               const Maybe<LogicalSize>& aContainingBlockSize = Nothing(),
               InitFlags aFlags = {},
               const StyleSizeOverrides& aSizeOverrides = {},
-              ComputeSizeFlags aComputeSizeFlags = {});
+              ComputeSizeFlags aComputeSizeFlags = {},
+              AnchorPosReferencedAnchors* aReferencedAnchors = nullptr);
 
   
 
@@ -953,7 +962,7 @@ struct ReflowInput : public SizeComputationInput {
 
 inline AnchorPosResolutionParams AnchorPosResolutionParams::From(
     const mozilla::ReflowInput* aRI) {
-  return {aRI->mFrame, aRI->mStyleDisplay->mPosition};
+  return {aRI->mFrame, aRI->mStyleDisplay->mPosition, aRI->mReferencedAnchors};
 }
 
 #endif  

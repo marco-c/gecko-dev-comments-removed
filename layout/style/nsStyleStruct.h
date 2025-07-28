@@ -380,16 +380,37 @@ using AnchorResolvedMargin =
     mozilla::UniqueOrNonOwningPtr<const mozilla::StyleMargin>;
 
 
+struct AnchorPosResolutionData {
+  
+  nsSize mSize;
+  
+  
+  
+  
+  mozilla::Maybe<nsPoint> mOrigin;
+};
+
+
+
+using AnchorPosReferencedAnchors =
+    nsTHashMap<RefPtr<const nsAtom>, mozilla::Maybe<AnchorPosResolutionData>>;
+
+
 struct AnchorPosResolutionParams {
   
   
   const nsIFrame* mFrame;
   
   mozilla::StylePositionProperty mPosition;
+  
+  
+  AnchorPosReferencedAnchors* const mReferencedAnchors = nullptr;
 
   
   
-  static inline AnchorPosResolutionParams From(const nsIFrame* aFrame);
+  static inline AnchorPosResolutionParams From(
+      const nsIFrame* aFrame,
+      AnchorPosReferencedAnchors* aReferencedAnchors = nullptr);
   static inline AnchorPosResolutionParams From(const mozilla::ReflowInput* aRI);
   static inline AnchorPosResolutionParams From(
       const nsComputedDOMStyle* aComputedDOMStyle);
