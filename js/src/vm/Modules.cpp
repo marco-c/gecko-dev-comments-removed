@@ -251,6 +251,29 @@ JS_PUBLIC_API bool JS::ModuleLink(JSContext* cx, Handle<JSObject*> moduleArg) {
   return ::ModuleLink(cx, moduleArg.as<ModuleObject>());
 }
 
+JS_PUBLIC_API bool JS::LoadRequestedModules(
+    JSContext* cx, Handle<JSObject*> moduleArg, Handle<Value> hostDefined,
+    JS::LoadModuleResolvedCallback&& resolved,
+    JS::LoadModuleRejectedCallback&& rejected) {
+  AssertHeapIsIdle();
+  CHECK_THREAD(cx);
+  cx->releaseCheck(moduleArg);
+
+  return js::LoadRequestedModules(cx, moduleArg.as<ModuleObject>(), hostDefined,
+                                  std::move(resolved), std::move(rejected));
+}
+
+JS_PUBLIC_API bool JS::LoadRequestedModules(
+    JSContext* cx, Handle<JSObject*> moduleArg, Handle<Value> hostDefined,
+    MutableHandle<JSObject*> promiseOut) {
+  AssertHeapIsIdle();
+  CHECK_THREAD(cx);
+  cx->releaseCheck(moduleArg);
+
+  return js::LoadRequestedModules(cx, moduleArg.as<ModuleObject>(), hostDefined,
+                                  promiseOut);
+}
+
 JS_PUBLIC_API bool JS::ModuleEvaluate(JSContext* cx,
                                       Handle<JSObject*> moduleRecord,
                                       MutableHandle<JS::Value> rval) {
@@ -1576,6 +1599,73 @@ bool js::ContinueLoadingImportedModule(JSContext* cx,
   Rooted<GraphLoadingStateRecordObject*> state(cx);
   state = static_cast<GraphLoadingStateRecordObject*>(&statePrivate.toObject());
   return ContinueModuleLoading(cx, state, result, error);
+}
+
+
+bool js::LoadRequestedModules(JSContext* cx, Handle<ModuleObject*> module,
+                              Handle<Value> hostDefined,
+                              JS::LoadModuleResolvedCallback&& resolved,
+                              JS::LoadModuleRejectedCallback&& rejected) {
+  if (module->hasSyntheticModuleFields()) {
+    
+    return resolved(cx, hostDefined);
+  }
+
+  
+  
+  
+
+  
+  
+  
+  Rooted<GraphLoadingStateRecordObject*> state(
+      cx,
+      GraphLoadingStateRecordObject::create(cx, true, 1, std::move(resolved),
+                                            std::move(rejected), hostDefined));
+  if (!state) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  
+  return InnerModuleLoading(cx, state, module);
+}
+
+bool js::LoadRequestedModules(JSContext* cx, Handle<ModuleObject*> module,
+                              Handle<Value> hostDefined,
+                              MutableHandle<JSObject*> promiseOut) {
+  
+  
+  Rooted<PromiseObject*> pc(cx, CreatePromiseObjectForAsync(cx));
+  if (!pc) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  if (module->hasSyntheticModuleFields()) {
+    
+    promiseOut.set(pc);
+    return AsyncFunctionReturned(cx, pc, UndefinedHandleValue);
+  }
+
+  
+  
+  
+  Rooted<GraphLoadingStateRecordObject*> state(
+      cx, GraphLoadingStateRecordObject::create(cx, true, 1, pc, hostDefined));
+  if (!state) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  
+  if (!InnerModuleLoading(cx, state, module)) {
+    return false;
+  }
+
+  
+  promiseOut.set(pc);
+  return true;
 }
 
 

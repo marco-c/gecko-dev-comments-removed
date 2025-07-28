@@ -104,6 +104,25 @@ using LoadModuleRejectedCallback = std::function<bool(
 
 
 
+extern JS_PUBLIC_API bool LoadRequestedModules(
+    JSContext* cx, Handle<JSObject*> module, Handle<Value> hostDefined,
+    LoadModuleResolvedCallback&& resolved,
+    LoadModuleRejectedCallback&& rejected);
+
+extern JS_PUBLIC_API bool LoadRequestedModules(
+    JSContext* cx, Handle<JSObject*> module, Handle<Value> hostDefined,
+    MutableHandle<JSObject*> promiseOut);
+
+
+
+
+
+
+
+
+
+
+
 
 using ModuleMetadataHook = bool (*)(JSContext* cx, Handle<Value> privateValue,
                                     Handle<JSObject*> metaObject);
