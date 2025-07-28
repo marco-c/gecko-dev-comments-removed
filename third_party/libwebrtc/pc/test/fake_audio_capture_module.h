@@ -44,7 +44,7 @@ class FakeAudioCaptureModule : public webrtc::AudioDeviceModule {
   static const size_t kNumberBytesPerSample = sizeof(Sample);
 
   
-  static rtc::scoped_refptr<FakeAudioCaptureModule> Create();
+  static webrtc::scoped_refptr<FakeAudioCaptureModule> Create();
 
   
   

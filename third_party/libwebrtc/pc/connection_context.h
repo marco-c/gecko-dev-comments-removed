@@ -42,7 +42,7 @@ class ConnectionContext final : public RefCountedNonVirtual<ConnectionContext> {
   
   
   
-  static rtc::scoped_refptr<ConnectionContext> Create(
+  static scoped_refptr<ConnectionContext> Create(
       const Environment& env,
       PeerConnectionFactoryDependencies* dependencies);
 

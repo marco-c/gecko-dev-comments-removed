@@ -55,7 +55,7 @@ class RtpReceiverInternal : public RtpReceiverInterface {
   virtual void SetupUnsignaledMediaChannel() = 0;
 
   virtual void set_transport(
-      rtc::scoped_refptr<DtlsTransportInterface> dtls_transport) = 0;
+      scoped_refptr<DtlsTransportInterface> dtls_transport) = 0;
   
   
   virtual std::optional<uint32_t> ssrc() const = 0;
@@ -72,7 +72,7 @@ class RtpReceiverInternal : public RtpReceiverInterface {
   
   
   virtual void SetStreams(
-      const std::vector<rtc::scoped_refptr<MediaStreamInterface>>& streams) = 0;
+      const std::vector<scoped_refptr<MediaStreamInterface>>& streams) = 0;
 
   
   
@@ -82,8 +82,8 @@ class RtpReceiverInternal : public RtpReceiverInterface {
  protected:
   static int GenerateUniqueId();
 
-  static std::vector<rtc::scoped_refptr<MediaStreamInterface>>
-  CreateStreamsFromIds(std::vector<std::string> stream_ids);
+  static std::vector<scoped_refptr<MediaStreamInterface>> CreateStreamsFromIds(
+      std::vector<std::string> stream_ids);
 };
 
 }  

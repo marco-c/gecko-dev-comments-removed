@@ -41,7 +41,7 @@ RtpCodecCapability ToRtpCodecCapability(const Codec& cricket_codec);
 
 RtpCapabilities ToRtpCapabilities(
     const std::vector<Codec>& cricket_codecs,
-    const cricket::RtpHeaderExtensions& cricket_extensions);
+    const RtpHeaderExtensions& cricket_extensions);
 
 }  
 

@@ -32,7 +32,7 @@
 
 namespace webrtc {
 
-typedef rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
+typedef scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
     RtpTransceiverProxyRefPtr;
 
 
@@ -122,7 +122,7 @@ class TransceiverList {
         transceivers_.end());
   }
   RtpTransceiverProxyRefPtr FindBySender(
-      rtc::scoped_refptr<RtpSenderInterface> sender) const;
+      scoped_refptr<RtpSenderInterface> sender) const;
   RtpTransceiverProxyRefPtr FindByMid(const std::string& mid) const;
   RtpTransceiverProxyRefPtr FindByMLineIndex(size_t mline_index) const;
 

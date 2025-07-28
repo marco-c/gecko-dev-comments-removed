@@ -68,7 +68,7 @@ class RtpSenderInternal : public RtpSenderInterface {
   virtual void set_init_send_encodings(
       const std::vector<RtpEncodingParameters>& init_send_encodings) = 0;
   virtual void set_transport(
-      rtc::scoped_refptr<DtlsTransportInterface> dtls_transport) = 0;
+      scoped_refptr<DtlsTransportInterface> dtls_transport) = 0;
 
   virtual void Stop() = 0;
 
@@ -125,7 +125,7 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   void SetMediaChannel(MediaSendChannelInterface* media_channel) override;
 
   bool SetTrack(MediaStreamTrackInterface* track) override;
-  rtc::scoped_refptr<MediaStreamTrackInterface> track() const override {
+  scoped_refptr<MediaStreamTrackInterface> track() const override {
     
     
     
@@ -182,19 +182,18 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   }
 
   void set_transport(
-      rtc::scoped_refptr<DtlsTransportInterface> dtls_transport) override {
+      scoped_refptr<DtlsTransportInterface> dtls_transport) override {
     dtls_transport_ = dtls_transport;
   }
-  rtc::scoped_refptr<DtlsTransportInterface> dtls_transport() const override {
+  scoped_refptr<DtlsTransportInterface> dtls_transport() const override {
     RTC_DCHECK_RUN_ON(signaling_thread_);
     return dtls_transport_;
   }
 
   void SetFrameEncryptor(
-      rtc::scoped_refptr<FrameEncryptorInterface> frame_encryptor) override;
+      scoped_refptr<FrameEncryptorInterface> frame_encryptor) override;
 
-  rtc::scoped_refptr<FrameEncryptorInterface> GetFrameEncryptor()
-      const override {
+  scoped_refptr<FrameEncryptorInterface> GetFrameEncryptor() const override {
     return frame_encryptor_;
   }
 
@@ -210,7 +209,7 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   RTCError DisableEncodingLayers(const std::vector<std::string>& rid) override;
 
   void SetFrameTransformer(
-      rtc::scoped_refptr<FrameTransformerInterface> frame_transformer) override;
+      scoped_refptr<FrameTransformerInterface> frame_transformer) override;
 
   void SetEncoderSelector(
       std::unique_ptr<VideoEncoderFactory::EncoderSelectorInterface>
@@ -276,10 +275,10 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   
   
   MediaSendChannelInterface* media_channel_ = nullptr;
-  rtc::scoped_refptr<MediaStreamTrackInterface> track_;
+  scoped_refptr<MediaStreamTrackInterface> track_;
 
-  rtc::scoped_refptr<DtlsTransportInterface> dtls_transport_;
-  rtc::scoped_refptr<FrameEncryptorInterface> frame_encryptor_;
+  scoped_refptr<DtlsTransportInterface> dtls_transport_;
+  scoped_refptr<FrameEncryptorInterface> frame_encryptor_;
   
   
   
@@ -292,7 +291,7 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   RtpSenderObserverInterface* observer_ = nullptr;
   bool sent_first_packet_ = false;
 
-  rtc::scoped_refptr<FrameTransformerInterface> frame_transformer_;
+  scoped_refptr<FrameTransformerInterface> frame_transformer_;
   std::unique_ptr<VideoEncoderFactory::EncoderSelectorInterface>
       encoder_selector_;
 
@@ -348,7 +347,7 @@ class AudioRtpSender : public DtmfProviderInterface, public RtpSenderBase {
   
   
   
-  static rtc::scoped_refptr<AudioRtpSender> Create(
+  static scoped_refptr<AudioRtpSender> Create(
       const Environment& env,
       Thread* worker_thread,
       const std::string& id,
@@ -370,7 +369,7 @@ class AudioRtpSender : public DtmfProviderInterface, public RtpSenderBase {
     return MediaStreamTrackInterface::kAudioKind;
   }
 
-  rtc::scoped_refptr<DtmfSenderInterface> GetDtmfSender() const override;
+  scoped_refptr<DtmfSenderInterface> GetDtmfSender() const override;
   RTCError GenerateKeyFrame(const std::vector<std::string>& rids) override;
 
  protected:
@@ -393,14 +392,14 @@ class AudioRtpSender : public DtmfProviderInterface, public RtpSenderBase {
   VoiceMediaSendChannelInterface* voice_media_channel() {
     return media_channel_->AsVoiceSendChannel();
   }
-  rtc::scoped_refptr<AudioTrackInterface> audio_track() const {
-    return rtc::scoped_refptr<AudioTrackInterface>(
+  scoped_refptr<AudioTrackInterface> audio_track() const {
+    return scoped_refptr<AudioTrackInterface>(
         static_cast<AudioTrackInterface*>(track_.get()));
   }
 
   LegacyStatsCollectorInterface* legacy_stats_ = nullptr;
-  rtc::scoped_refptr<DtmfSender> dtmf_sender_;
-  rtc::scoped_refptr<DtmfSenderInterface> dtmf_sender_proxy_;
+  scoped_refptr<DtmfSender> dtmf_sender_;
+  scoped_refptr<DtmfSenderInterface> dtmf_sender_proxy_;
   bool cached_track_enabled_ = false;
 
   
@@ -415,7 +414,7 @@ class VideoRtpSender : public RtpSenderBase {
   
   
   
-  static rtc::scoped_refptr<VideoRtpSender> Create(
+  static scoped_refptr<VideoRtpSender> Create(
       const Environment& env,
       Thread* worker_thread,
       const std::string& id,
@@ -432,7 +431,7 @@ class VideoRtpSender : public RtpSenderBase {
     return MediaStreamTrackInterface::kVideoKind;
   }
 
-  rtc::scoped_refptr<DtmfSenderInterface> GetDtmfSender() const override;
+  scoped_refptr<DtmfSenderInterface> GetDtmfSender() const override;
   RTCError GenerateKeyFrame(const std::vector<std::string>& rids) override;
 
  protected:
@@ -451,8 +450,8 @@ class VideoRtpSender : public RtpSenderBase {
   VideoMediaSendChannelInterface* video_media_channel() {
     return media_channel_->AsVideoSendChannel();
   }
-  rtc::scoped_refptr<VideoTrackInterface> video_track() const {
-    return rtc::scoped_refptr<VideoTrackInterface>(
+  scoped_refptr<VideoTrackInterface> video_track() const {
+    return scoped_refptr<VideoTrackInterface>(
         static_cast<VideoTrackInterface*>(track_.get()));
   }
 

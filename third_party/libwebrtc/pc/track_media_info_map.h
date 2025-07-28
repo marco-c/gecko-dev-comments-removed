@@ -40,11 +40,10 @@ class TrackMediaInfoMap {
   
   
   
-  void Initialize(
-      std::optional<VoiceMediaInfo> voice_media_info,
-      std::optional<VideoMediaInfo> video_media_info,
-      rtc::ArrayView<rtc::scoped_refptr<RtpSenderInternal>> rtp_senders,
-      rtc::ArrayView<rtc::scoped_refptr<RtpReceiverInternal>> rtp_receivers);
+  void Initialize(std::optional<VoiceMediaInfo> voice_media_info,
+                  std::optional<VideoMediaInfo> video_media_info,
+                  ArrayView<scoped_refptr<RtpSenderInternal>> rtp_senders,
+                  ArrayView<scoped_refptr<RtpReceiverInternal>> rtp_receivers);
 
   const std::optional<VoiceMediaInfo>& voice_media_info() const {
     RTC_DCHECK(is_initialized_);
@@ -60,13 +59,13 @@ class TrackMediaInfoMap {
   const VideoSenderInfo* GetVideoSenderInfoBySsrc(uint32_t ssrc) const;
   const VideoReceiverInfo* GetVideoReceiverInfoBySsrc(uint32_t ssrc) const;
 
-  rtc::scoped_refptr<AudioTrackInterface> GetAudioTrack(
+  scoped_refptr<AudioTrackInterface> GetAudioTrack(
       const VoiceSenderInfo& voice_sender_info) const;
-  rtc::scoped_refptr<AudioTrackInterface> GetAudioTrack(
+  scoped_refptr<AudioTrackInterface> GetAudioTrack(
       const VoiceReceiverInfo& voice_receiver_info) const;
-  rtc::scoped_refptr<VideoTrackInterface> GetVideoTrack(
+  scoped_refptr<VideoTrackInterface> GetVideoTrack(
       const VideoSenderInfo& video_sender_info) const;
-  rtc::scoped_refptr<VideoTrackInterface> GetVideoTrack(
+  scoped_refptr<VideoTrackInterface> GetVideoTrack(
       const VideoReceiverInfo& video_receiver_info) const;
 
   
@@ -84,13 +83,13 @@ class TrackMediaInfoMap {
   
   
   
-  std::map<const VoiceSenderInfo*, rtc::scoped_refptr<AudioTrackInterface>>
+  std::map<const VoiceSenderInfo*, scoped_refptr<AudioTrackInterface>>
       audio_track_by_sender_info_;
-  std::map<const VoiceReceiverInfo*, rtc::scoped_refptr<AudioTrackInterface>>
+  std::map<const VoiceReceiverInfo*, scoped_refptr<AudioTrackInterface>>
       audio_track_by_receiver_info_;
-  std::map<const VideoSenderInfo*, rtc::scoped_refptr<VideoTrackInterface>>
+  std::map<const VideoSenderInfo*, scoped_refptr<VideoTrackInterface>>
       video_track_by_sender_info_;
-  std::map<const VideoReceiverInfo*, rtc::scoped_refptr<VideoTrackInterface>>
+  std::map<const VideoReceiverInfo*, scoped_refptr<VideoTrackInterface>>
       video_track_by_receiver_info_;
   
   

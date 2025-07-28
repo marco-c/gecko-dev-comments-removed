@@ -29,14 +29,14 @@ namespace webrtc {
 
 RTC_EXPORT RTCError
 ParseIceServersOrError(const PeerConnectionInterface::IceServers& servers,
-                       cricket::ServerAddresses* stun_servers,
+                       ServerAddresses* stun_servers,
                        std::vector<RelayServerConfig>* turn_servers);
 
 
 
 RTC_EXPORT RTCError ParseAndValidateIceServersFromConfiguration(
     const PeerConnectionInterface::RTCConfiguration& configuration,
-    cricket::ServerAddresses& stun_servers,
+    ServerAddresses& stun_servers,
     std::vector<RelayServerConfig>& turn_servers);
 
 }  

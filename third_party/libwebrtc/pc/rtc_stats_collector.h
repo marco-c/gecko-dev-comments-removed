@@ -57,7 +57,7 @@ class RtpReceiverInternal;
 
 class RTCStatsCollector : public RefCountInterface {
  public:
-  static rtc::scoped_refptr<RTCStatsCollector> Create(
+  static scoped_refptr<RTCStatsCollector> Create(
       PeerConnectionInternal* pc,
       const Environment& env,
       int64_t cache_lifetime_us = 50 * kNumMicrosecsPerMillisec);
@@ -69,15 +69,15 @@ class RTCStatsCollector : public RefCountInterface {
   
   
   
-  void GetStatsReport(rtc::scoped_refptr<RTCStatsCollectorCallback> callback);
+  void GetStatsReport(scoped_refptr<RTCStatsCollectorCallback> callback);
   
   
-  void GetStatsReport(rtc::scoped_refptr<RtpSenderInternal> selector,
-                      rtc::scoped_refptr<RTCStatsCollectorCallback> callback);
+  void GetStatsReport(scoped_refptr<RtpSenderInternal> selector,
+                      scoped_refptr<RTCStatsCollectorCallback> callback);
   
   
-  void GetStatsReport(rtc::scoped_refptr<RtpReceiverInternal> selector,
-                      rtc::scoped_refptr<RTCStatsCollectorCallback> callback);
+  void GetStatsReport(scoped_refptr<RtpReceiverInternal> selector,
+                      scoped_refptr<RTCStatsCollectorCallback> callback);
   
   
   
@@ -123,40 +123,39 @@ class RTCStatsCollector : public RefCountInterface {
     enum class FilterMode { kAll, kSenderSelector, kReceiverSelector };
 
     
-    explicit RequestInfo(
-        rtc::scoped_refptr<RTCStatsCollectorCallback> callback);
+    explicit RequestInfo(scoped_refptr<RTCStatsCollectorCallback> callback);
     
     
-    RequestInfo(rtc::scoped_refptr<RtpSenderInternal> selector,
-                rtc::scoped_refptr<RTCStatsCollectorCallback> callback);
+    RequestInfo(scoped_refptr<RtpSenderInternal> selector,
+                scoped_refptr<RTCStatsCollectorCallback> callback);
     
     
-    RequestInfo(rtc::scoped_refptr<RtpReceiverInternal> selector,
-                rtc::scoped_refptr<RTCStatsCollectorCallback> callback);
+    RequestInfo(scoped_refptr<RtpReceiverInternal> selector,
+                scoped_refptr<RTCStatsCollectorCallback> callback);
 
     FilterMode filter_mode() const { return filter_mode_; }
-    rtc::scoped_refptr<RTCStatsCollectorCallback> callback() const {
+    scoped_refptr<RTCStatsCollectorCallback> callback() const {
       return callback_;
     }
-    rtc::scoped_refptr<RtpSenderInternal> sender_selector() const {
+    scoped_refptr<RtpSenderInternal> sender_selector() const {
       RTC_DCHECK(filter_mode_ == FilterMode::kSenderSelector);
       return sender_selector_;
     }
-    rtc::scoped_refptr<RtpReceiverInternal> receiver_selector() const {
+    scoped_refptr<RtpReceiverInternal> receiver_selector() const {
       RTC_DCHECK(filter_mode_ == FilterMode::kReceiverSelector);
       return receiver_selector_;
     }
 
    private:
     RequestInfo(FilterMode filter_mode,
-                rtc::scoped_refptr<RTCStatsCollectorCallback> callback,
-                rtc::scoped_refptr<RtpSenderInternal> sender_selector,
-                rtc::scoped_refptr<RtpReceiverInternal> receiver_selector);
+                scoped_refptr<RTCStatsCollectorCallback> callback,
+                scoped_refptr<RtpSenderInternal> sender_selector,
+                scoped_refptr<RtpReceiverInternal> receiver_selector);
 
     FilterMode filter_mode_;
-    rtc::scoped_refptr<RTCStatsCollectorCallback> callback_;
-    rtc::scoped_refptr<RtpSenderInternal> sender_selector_;
-    rtc::scoped_refptr<RtpReceiverInternal> receiver_selector_;
+    scoped_refptr<RTCStatsCollectorCallback> callback_;
+    scoped_refptr<RtpSenderInternal> sender_selector_;
+    scoped_refptr<RtpReceiverInternal> receiver_selector_;
   };
 
   void GetStatsReportInternal(RequestInfo request);
@@ -169,7 +168,7 @@ class RTCStatsCollector : public RefCountInterface {
   
   
   struct RtpTransceiverStatsInfo {
-    rtc::scoped_refptr<RtpTransceiver> transceiver;
+    scoped_refptr<RtpTransceiver> transceiver;
     webrtc::MediaType media_type;
     std::optional<std::string> mid;
     std::optional<std::string> transport_name;
@@ -177,9 +176,8 @@ class RTCStatsCollector : public RefCountInterface {
     std::optional<RtpTransceiverDirection> current_direction;
   };
 
-  void DeliverCachedReport(
-      rtc::scoped_refptr<const RTCStatsReport> cached_report,
-      std::vector<RequestInfo> requests);
+  void DeliverCachedReport(scoped_refptr<const RTCStatsReport> cached_report,
+                           std::vector<RequestInfo> requests);
 
   
   void ProduceCertificateStats_n(
@@ -243,11 +241,11 @@ class RTCStatsCollector : public RefCountInterface {
   
   void MergeNetworkReport_s();
 
-  rtc::scoped_refptr<RTCStatsReport> CreateReportFilteredBySelector(
+  scoped_refptr<RTCStatsReport> CreateReportFilteredBySelector(
       bool filter_by_sender_selector,
-      rtc::scoped_refptr<const RTCStatsReport> report,
-      rtc::scoped_refptr<RtpSenderInternal> sender_selector,
-      rtc::scoped_refptr<RtpReceiverInternal> receiver_selector);
+      scoped_refptr<const RTCStatsReport> report,
+      scoped_refptr<RtpSenderInternal> sender_selector,
+      scoped_refptr<RtpReceiverInternal> receiver_selector);
 
   PeerConnectionInternal* const pc_;
   const Environment env_;
@@ -261,13 +259,13 @@ class RTCStatsCollector : public RefCountInterface {
   
   
   
-  rtc::scoped_refptr<RTCStatsReport> partial_report_;
+  scoped_refptr<RTCStatsReport> partial_report_;
   std::vector<RequestInfo> requests_;
   
   
   
   
-  rtc::scoped_refptr<RTCStatsReport> network_report_;
+  scoped_refptr<RTCStatsReport> network_report_;
   
   
   
@@ -301,7 +299,7 @@ class RTCStatsCollector : public RefCountInterface {
   
   int64_t cache_timestamp_us_;
   int64_t cache_lifetime_us_;
-  rtc::scoped_refptr<const RTCStatsReport> cached_report_;
+  scoped_refptr<const RTCStatsReport> cached_report_;
 
   
   

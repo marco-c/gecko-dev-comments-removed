@@ -54,8 +54,8 @@ class PeerConnectionWrapper {
   
   
   PeerConnectionWrapper(
-      rtc::scoped_refptr<PeerConnectionFactoryInterface> pc_factory,
-      rtc::scoped_refptr<PeerConnectionInterface> pc,
+      scoped_refptr<PeerConnectionFactoryInterface> pc_factory,
+      scoped_refptr<PeerConnectionInterface> pc,
       std::unique_ptr<MockPeerConnectionObserver> observer);
   virtual ~PeerConnectionWrapper();
 
@@ -131,51 +131,49 @@ class PeerConnectionWrapper {
   
   
   
-  rtc::scoped_refptr<RtpTransceiverInterface> AddTransceiver(
+  scoped_refptr<RtpTransceiverInterface> AddTransceiver(
       webrtc::MediaType media_type);
-  rtc::scoped_refptr<RtpTransceiverInterface> AddTransceiver(
+  scoped_refptr<RtpTransceiverInterface> AddTransceiver(
       webrtc::MediaType media_type,
       const RtpTransceiverInit& init);
-  rtc::scoped_refptr<RtpTransceiverInterface> AddTransceiver(
-      rtc::scoped_refptr<MediaStreamTrackInterface> track);
-  rtc::scoped_refptr<RtpTransceiverInterface> AddTransceiver(
-      rtc::scoped_refptr<MediaStreamTrackInterface> track,
+  scoped_refptr<RtpTransceiverInterface> AddTransceiver(
+      scoped_refptr<MediaStreamTrackInterface> track);
+  scoped_refptr<RtpTransceiverInterface> AddTransceiver(
+      scoped_refptr<MediaStreamTrackInterface> track,
       const RtpTransceiverInit& init);
 
   
-  rtc::scoped_refptr<AudioTrackInterface> CreateAudioTrack(
-      const std::string& label);
+  scoped_refptr<AudioTrackInterface> CreateAudioTrack(const std::string& label);
 
   
-  rtc::scoped_refptr<VideoTrackInterface> CreateVideoTrack(
-      const std::string& label);
+  scoped_refptr<VideoTrackInterface> CreateVideoTrack(const std::string& label);
 
   
   
-  rtc::scoped_refptr<RtpSenderInterface> AddTrack(
-      rtc::scoped_refptr<MediaStreamTrackInterface> track,
+  scoped_refptr<RtpSenderInterface> AddTrack(
+      scoped_refptr<MediaStreamTrackInterface> track,
       const std::vector<std::string>& stream_ids = {});
 
-  rtc::scoped_refptr<RtpSenderInterface> AddTrack(
-      rtc::scoped_refptr<MediaStreamTrackInterface> track,
+  scoped_refptr<RtpSenderInterface> AddTrack(
+      scoped_refptr<MediaStreamTrackInterface> track,
       const std::vector<std::string>& stream_ids,
       const std::vector<RtpEncodingParameters>& init_send_encodings);
 
   
   
-  rtc::scoped_refptr<RtpSenderInterface> AddAudioTrack(
+  scoped_refptr<RtpSenderInterface> AddAudioTrack(
       const std::string& track_label,
       const std::vector<std::string>& stream_ids = {});
 
   
   
-  rtc::scoped_refptr<RtpSenderInterface> AddVideoTrack(
+  scoped_refptr<RtpSenderInterface> AddVideoTrack(
       const std::string& track_label,
       const std::vector<std::string>& stream_ids = {});
 
   
   
-  rtc::scoped_refptr<DataChannelInterface> CreateDataChannel(
+  scoped_refptr<DataChannelInterface> CreateDataChannel(
       const std::string& label,
       const std::optional<DataChannelInit>& config = std::nullopt);
 
@@ -190,7 +188,7 @@ class PeerConnectionWrapper {
 
   
   
-  rtc::scoped_refptr<const RTCStatsReport> GetStats();
+  scoped_refptr<const RTCStatsReport> GetStats();
 
  private:
   std::unique_ptr<SessionDescriptionInterface> CreateSdp(
@@ -199,9 +197,9 @@ class PeerConnectionWrapper {
   bool SetSdp(FunctionView<void(SetSessionDescriptionObserver*)> fn,
               std::string* error_out);
 
-  rtc::scoped_refptr<PeerConnectionFactoryInterface> pc_factory_;
+  scoped_refptr<PeerConnectionFactoryInterface> pc_factory_;
   std::unique_ptr<MockPeerConnectionObserver> observer_;
-  rtc::scoped_refptr<PeerConnectionInterface> pc_;
+  scoped_refptr<PeerConnectionInterface> pc_;
 };
 
 }  

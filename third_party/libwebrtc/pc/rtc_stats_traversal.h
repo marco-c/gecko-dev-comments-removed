@@ -25,8 +25,8 @@ namespace webrtc {
 
 
 
-rtc::scoped_refptr<RTCStatsReport> TakeReferencedStats(
-    rtc::scoped_refptr<RTCStatsReport> report,
+scoped_refptr<RTCStatsReport> TakeReferencedStats(
+    scoped_refptr<RTCStatsReport> report,
     const std::vector<std::string>& ids);
 
 

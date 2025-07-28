@@ -46,7 +46,7 @@ class SctpDataChannelControllerInterface {
   
   virtual RTCError SendData(StreamId sid,
                             const SendDataParams& params,
-                            const rtc::CopyOnWriteBuffer& payload) = 0;
+                            const CopyOnWriteBuffer& payload) = 0;
   
   virtual void AddSctpDataStream(StreamId sid, PriorityValue priority) = 0;
   
@@ -129,7 +129,7 @@ class SctpSidAllocator {
 
 class SctpDataChannel : public DataChannelInterface {
  public:
-  static rtc::scoped_refptr<SctpDataChannel> Create(
+  static scoped_refptr<SctpDataChannel> Create(
       WeakPtr<SctpDataChannelControllerInterface> controller,
       const std::string& label,
       bool connected_to_transport,
@@ -144,9 +144,9 @@ class SctpDataChannel : public DataChannelInterface {
   
   
   
-  static rtc::scoped_refptr<DataChannelInterface> CreateProxy(
-      rtc::scoped_refptr<SctpDataChannel> channel,
-      rtc::scoped_refptr<PendingTaskSafetyFlag> signaling_safety);
+  static scoped_refptr<DataChannelInterface> CreateProxy(
+      scoped_refptr<SctpDataChannel> channel,
+      scoped_refptr<PendingTaskSafetyFlag> signaling_safety);
 
   void RegisterObserver(DataChannelObserver* observer) override;
   void UnregisterObserver() override;
@@ -186,8 +186,7 @@ class SctpDataChannel : public DataChannelInterface {
   
   void OnTransportReady();
 
-  void OnDataReceived(DataMessageType type,
-                      const rtc::CopyOnWriteBuffer& payload);
+  void OnDataReceived(DataMessageType type, const CopyOnWriteBuffer& payload);
 
   
   
@@ -256,7 +255,7 @@ class SctpDataChannel : public DataChannelInterface {
   RTCError SendDataMessage(const DataBuffer& buffer, bool queue_if_blocked)
       RTC_RUN_ON(network_thread_);
 
-  bool SendControlMessage(const rtc::CopyOnWriteBuffer& buffer)
+  bool SendControlMessage(const CopyOnWriteBuffer& buffer)
       RTC_RUN_ON(network_thread_);
 
   bool connected_to_transport() const RTC_RUN_ON(network_thread_) {
@@ -293,7 +292,7 @@ class SctpDataChannel : public DataChannelInterface {
   
   bool started_closing_procedure_ RTC_GUARDED_BY(network_thread_) = false;
   PacketQueue queued_received_data_ RTC_GUARDED_BY(network_thread_);
-  rtc::scoped_refptr<PendingTaskSafetyFlag> network_safety_ =
+  scoped_refptr<PendingTaskSafetyFlag> network_safety_ =
       PendingTaskSafetyFlag::CreateDetachedInactive();
 };
 

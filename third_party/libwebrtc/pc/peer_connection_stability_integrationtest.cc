@@ -72,10 +72,10 @@ class FactorySignature {
  private:
   
   void ExtractSignatureStrings() {
-    rtc::scoped_refptr<AudioDecoderFactory> audio_decoders =
+    scoped_refptr<AudioDecoderFactory> audio_decoders =
         CreateBuiltinAudioDecoderFactory();
     for (const auto& codec : audio_decoders->GetSupportedDecoders()) {
-      rtc::StringBuilder sb;
+      StringBuilder sb;
       sb << "Decode audio/";
       sb << codec.format.name << "/" << codec.format.clockrate_hz << "/"
          << codec.format.num_channels;
@@ -84,10 +84,10 @@ class FactorySignature {
       }
       signature_.push_back(sb.Release());
     }
-    rtc::scoped_refptr<AudioEncoderFactory> audio_encoders =
+    scoped_refptr<AudioEncoderFactory> audio_encoders =
         CreateBuiltinAudioEncoderFactory();
     for (const auto& codec : audio_encoders->GetSupportedEncoders()) {
-      rtc::StringBuilder sb;
+      StringBuilder sb;
       sb << "Encode audio/";
       sb << codec.format.name << "/" << codec.format.clockrate_hz << "/"
          << codec.format.num_channels;
@@ -99,7 +99,7 @@ class FactorySignature {
     std::unique_ptr<VideoDecoderFactory> video_decoders =
         CreateBuiltinVideoDecoderFactory();
     for (const SdpVideoFormat& format : video_decoders->GetSupportedFormats()) {
-      rtc::StringBuilder sb;
+      StringBuilder sb;
       sb << "Decode video/";
       sb << format.name;
       for (const auto& kv : format.parameters) {
@@ -110,7 +110,7 @@ class FactorySignature {
     std::unique_ptr<VideoEncoderFactory> video_encoders =
         CreateBuiltinVideoEncoderFactory();
     for (const auto& format : video_encoders->GetSupportedFormats()) {
-      rtc::StringBuilder sb;
+      StringBuilder sb;
       sb << "Encode video/";
       
       
@@ -324,7 +324,7 @@ class FactorySignature {
       return Id::kGoogleInternal;
     }
     
-    rtc::StringBuilder sb;
+    StringBuilder sb;
     sb << "{\n";
     for (std::string str : signature_) {
       sb << "\"" << str << "\",\n";
@@ -362,7 +362,7 @@ class PeerConnectionIntegrationTest : public PeerConnectionIntegrationBaseTest {
       const auto* media_description = content.media_description();
       const auto& codecs = media_description->codecs();
       for (const auto& codec : codecs) {
-        rtc::StringBuilder str;
+        StringBuilder str;
         str << media_section_counter << " " << absl::StrCat(codec);
         results.push_back(str.Release());
       }
@@ -378,7 +378,7 @@ class PeerConnectionIntegrationTest : public PeerConnectionIntegrationBaseTest {
                                        std::vector<std::string> caller_remote,
                                        std::vector<std::string> callee_local,
                                        std::vector<std::string> callee_remote) {
-    rtc::StringBuilder sb;
+    StringBuilder sb;
     
     
     sb << "\n{" << ".factory_id = FactorySignature::Id::kChangeThis"

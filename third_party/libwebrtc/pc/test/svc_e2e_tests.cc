@@ -213,7 +213,7 @@ class SvcVideoQualityAnalyzer : public DefaultVideoQualityAnalyzer {
 
   void OnStatsReports(
       absl::string_view pc_label,
-      const rtc::scoped_refptr<const RTCStatsReport>& report) override {
+      const scoped_refptr<const RTCStatsReport>& report) override {
     
     auto outbound_stats = report->GetStatsOfType<RTCOutboundRtpStreamStats>();
     for (const auto& stat : outbound_stats) {

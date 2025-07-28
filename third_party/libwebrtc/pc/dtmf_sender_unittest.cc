@@ -217,7 +217,7 @@ class DtmfSenderTest : public ::testing::Test {
   webrtc::AutoThread main_thread_;
   std::unique_ptr<FakeDtmfObserver> observer_;
   std::unique_ptr<FakeDtmfProvider> provider_;
-  rtc::scoped_refptr<DtmfSender> dtmf_;
+  webrtc::scoped_refptr<DtmfSender> dtmf_;
   webrtc::ScopedFakeClock fake_clock_;
 };
 

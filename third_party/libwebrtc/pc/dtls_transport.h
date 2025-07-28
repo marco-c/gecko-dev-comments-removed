@@ -39,7 +39,7 @@ class DtlsTransport : public DtlsTransportInterface {
   
   explicit DtlsTransport(std::unique_ptr<DtlsTransportInternal> internal);
 
-  rtc::scoped_refptr<IceTransportInterface> ice_transport() override;
+  scoped_refptr<IceTransportInterface> ice_transport() override;
 
   
   
@@ -80,7 +80,7 @@ class DtlsTransport : public DtlsTransportInterface {
   DtlsTransportInformation info_ RTC_GUARDED_BY(lock_);
   std::unique_ptr<DtlsTransportInternal> internal_dtls_transport_
       RTC_GUARDED_BY(owner_thread_);
-  const rtc::scoped_refptr<IceTransportWithPointer> ice_transport_;
+  const scoped_refptr<IceTransportWithPointer> ice_transport_;
 };
 
 }  

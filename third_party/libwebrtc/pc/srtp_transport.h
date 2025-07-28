@@ -41,12 +41,12 @@ class SrtpTransport : public RtpTransport {
 
   virtual ~SrtpTransport() = default;
 
-  bool SendRtpPacket(rtc::CopyOnWriteBuffer* packet,
-                     const rtc::PacketOptions& options,
+  bool SendRtpPacket(CopyOnWriteBuffer* packet,
+                     const AsyncSocketPacketOptions& options,
                      int flags) override;
 
-  bool SendRtcpPacket(rtc::CopyOnWriteBuffer* packet,
-                      const rtc::PacketOptions& options,
+  bool SendRtcpPacket(CopyOnWriteBuffer* packet,
+                      const AsyncSocketPacketOptions& options,
                       int flags) override;
 
   
@@ -59,20 +59,20 @@ class SrtpTransport : public RtpTransport {
   
   
   bool SetRtpParams(int send_crypto_suite,
-                    const rtc::ZeroOnFreeBuffer<uint8_t>& send_key,
+                    const ZeroOnFreeBuffer<uint8_t>& send_key,
                     const std::vector<int>& send_extension_ids,
                     int recv_crypto_suite,
-                    const rtc::ZeroOnFreeBuffer<uint8_t>& recv_key,
+                    const ZeroOnFreeBuffer<uint8_t>& recv_key,
                     const std::vector<int>& recv_extension_ids);
 
   
   
   
   bool SetRtcpParams(int send_crypto_suite,
-                     const rtc::ZeroOnFreeBuffer<uint8_t>& send_key,
+                     const ZeroOnFreeBuffer<uint8_t>& send_key,
                      const std::vector<int>& send_extension_ids,
                      int recv_crypto_suite,
-                     const rtc::ZeroOnFreeBuffer<uint8_t>& recv_key,
+                     const ZeroOnFreeBuffer<uint8_t>& recv_key,
                      const std::vector<int>& recv_extension_ids);
 
   void ResetParams();
@@ -114,23 +114,23 @@ class SrtpTransport : public RtpTransport {
   void ConnectToRtpTransport();
   void CreateSrtpSessions();
 
-  void OnRtpPacketReceived(const rtc::ReceivedPacket& packet) override;
-  void OnRtcpPacketReceived(const rtc::ReceivedPacket& packet) override;
+  void OnRtpPacketReceived(const ReceivedIpPacket& packet) override;
+  void OnRtcpPacketReceived(const ReceivedIpPacket& packet) override;
   void OnNetworkRouteChanged(
       std::optional<NetworkRoute> network_route) override;
 
   
   void OnWritableState(PacketTransportInternal* packet_transport) override;
 
-  bool ProtectRtp(rtc::CopyOnWriteBuffer& buffer);
+  bool ProtectRtp(CopyOnWriteBuffer& buffer);
   
-  bool ProtectRtp(rtc::CopyOnWriteBuffer& buffer, int64_t* index);
-  bool ProtectRtcp(rtc::CopyOnWriteBuffer& buffer);
+  bool ProtectRtp(CopyOnWriteBuffer& buffer, int64_t* index);
+  bool ProtectRtcp(CopyOnWriteBuffer& buffer);
 
   
   
-  bool UnprotectRtp(rtc::CopyOnWriteBuffer& buffer);
-  bool UnprotectRtcp(rtc::CopyOnWriteBuffer& buffer);
+  bool UnprotectRtp(CopyOnWriteBuffer& buffer);
+  bool UnprotectRtcp(CopyOnWriteBuffer& buffer);
 
   const std::string content_name_;
 
@@ -141,8 +141,8 @@ class SrtpTransport : public RtpTransport {
 
   std::optional<int> send_crypto_suite_;
   std::optional<int> recv_crypto_suite_;
-  rtc::ZeroOnFreeBuffer<uint8_t> send_key_;
-  rtc::ZeroOnFreeBuffer<uint8_t> recv_key_;
+  ZeroOnFreeBuffer<uint8_t> send_key_;
+  ZeroOnFreeBuffer<uint8_t> recv_key_;
 
   bool writable_ = false;
 

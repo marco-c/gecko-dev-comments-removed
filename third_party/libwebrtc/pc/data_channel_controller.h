@@ -56,7 +56,7 @@ class DataChannelController : public SctpDataChannelControllerInterface,
   
   RTCError SendData(StreamId sid,
                     const SendDataParams& params,
-                    const rtc::CopyOnWriteBuffer& payload) override;
+                    const CopyOnWriteBuffer& payload) override;
   void AddSctpDataStream(StreamId sid, PriorityValue priority) override;
   void RemoveSctpDataStream(StreamId sid) override;
   void OnChannelStateChanged(SctpDataChannel* channel,
@@ -68,7 +68,7 @@ class DataChannelController : public SctpDataChannelControllerInterface,
   
   void OnDataReceived(int channel_id,
                       DataMessageType type,
-                      const rtc::CopyOnWriteBuffer& buffer) override;
+                      const CopyOnWriteBuffer& buffer) override;
   void OnChannelClosing(int channel_id) override;
   void OnChannelClosed(int channel_id) override;
   void OnReadyToSend() override;
@@ -93,7 +93,7 @@ class DataChannelController : public SctpDataChannelControllerInterface,
 
   
   
-  RTCErrorOr<rtc::scoped_refptr<DataChannelInterface>>
+  RTCErrorOr<scoped_refptr<DataChannelInterface>>
   InternalCreateDataChannelWithProxy(const std::string& label,
                                      const InternalDataChannelInit& config);
   void AllocateSctpSids(SSLRole role);
@@ -116,7 +116,7 @@ class DataChannelController : public SctpDataChannelControllerInterface,
   void OnSctpDataChannelClosed(SctpDataChannel* channel);
 
   
-  RTCErrorOr<rtc::scoped_refptr<SctpDataChannel>> CreateDataChannel(
+  RTCErrorOr<scoped_refptr<SctpDataChannel>> CreateDataChannel(
       const std::string& label,
       InternalDataChannelInit& config) RTC_RUN_ON(network_thread());
 
@@ -124,10 +124,10 @@ class DataChannelController : public SctpDataChannelControllerInterface,
   
   bool HandleOpenMessage_n(int channel_id,
                            DataMessageType type,
-                           const rtc::CopyOnWriteBuffer& buffer)
+                           const CopyOnWriteBuffer& buffer)
       RTC_RUN_ON(network_thread());
   
-  void OnDataChannelOpenMessage(rtc::scoped_refptr<SctpDataChannel> channel,
+  void OnDataChannelOpenMessage(scoped_refptr<SctpDataChannel> channel,
                                 bool ready_to_send)
       RTC_RUN_ON(signaling_thread());
 
@@ -163,7 +163,7 @@ class DataChannelController : public SctpDataChannelControllerInterface,
   DataChannelTransportInterface* data_channel_transport_
       RTC_GUARDED_BY(network_thread()) = nullptr;
   SctpSidAllocator sid_allocator_ RTC_GUARDED_BY(network_thread());
-  std::vector<rtc::scoped_refptr<SctpDataChannel>> sctp_data_channels_n_
+  std::vector<scoped_refptr<SctpDataChannel>> sctp_data_channels_n_
       RTC_GUARDED_BY(network_thread());
   enum class DataChannelUsage : uint8_t {
     kNeverUsed = 0,

@@ -131,16 +131,16 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
 
   void SetLocalDescription(
       std::unique_ptr<SessionDescriptionInterface> desc,
-      rtc::scoped_refptr<SetLocalDescriptionObserverInterface> observer);
+      scoped_refptr<SetLocalDescriptionObserverInterface> observer);
   void SetLocalDescription(
-      rtc::scoped_refptr<SetLocalDescriptionObserverInterface> observer);
+      scoped_refptr<SetLocalDescriptionObserverInterface> observer);
   void SetLocalDescription(SetSessionDescriptionObserver* observer,
                            SessionDescriptionInterface* desc);
   void SetLocalDescription(SetSessionDescriptionObserver* observer);
 
   void SetRemoteDescription(
       std::unique_ptr<SessionDescriptionInterface> desc,
-      rtc::scoped_refptr<SetRemoteDescriptionObserverInterface> observer);
+      scoped_refptr<SetRemoteDescriptionObserverInterface> observer);
   void SetRemoteDescription(SetSessionDescriptionObserver* observer,
                             SessionDescriptionInterface* desc);
 
@@ -172,8 +172,8 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   void DestroyMediaChannels();
 
-  rtc::scoped_refptr<StreamCollectionInterface> local_streams();
-  rtc::scoped_refptr<StreamCollectionInterface> remote_streams();
+  scoped_refptr<StreamCollectionInterface> local_streams();
+  scoped_refptr<StreamCollectionInterface> remote_streams();
 
   bool initial_offerer() {
     RTC_DCHECK_RUN_ON(signaling_thread());
@@ -268,13 +268,13 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   void DoCreateOffer(
       const PeerConnectionInterface::RTCOfferAnswerOptions& options,
-      rtc::scoped_refptr<CreateSessionDescriptionObserver> observer);
+      scoped_refptr<CreateSessionDescriptionObserver> observer);
   void DoCreateAnswer(
       const PeerConnectionInterface::RTCOfferAnswerOptions& options,
-      rtc::scoped_refptr<CreateSessionDescriptionObserver> observer);
+      scoped_refptr<CreateSessionDescriptionObserver> observer);
   void DoSetLocalDescription(
       std::unique_ptr<SessionDescriptionInterface> desc,
-      rtc::scoped_refptr<SetLocalDescriptionObserverInterface> observer);
+      scoped_refptr<SetLocalDescriptionObserverInterface> observer);
   void DoSetRemoteDescription(
       std::unique_ptr<RemoteDescriptionOperation> operation);
 
@@ -315,10 +315,10 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   
   void SetAssociatedRemoteStreams(
-      rtc::scoped_refptr<RtpReceiverInternal> receiver,
+      scoped_refptr<RtpReceiverInternal> receiver,
       const std::vector<std::string>& stream_ids,
-      std::vector<rtc::scoped_refptr<MediaStreamInterface>>* added_streams,
-      std::vector<rtc::scoped_refptr<MediaStreamInterface>>* removed_streams);
+      std::vector<scoped_refptr<MediaStreamInterface>>* added_streams,
+      std::vector<scoped_refptr<MediaStreamInterface>>* removed_streams);
 
   bool CheckIfNegotiationIsNeeded();
   void GenerateNegotiationNeededEvent();
@@ -339,8 +339,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
       const std::map<std::string, const ContentGroup*>& bundle_groups_by_mid);
 
   
-  RTCErrorOr<
-      rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
+  RTCErrorOr<scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
   AssociateTransceiver(ContentSource source,
                        SdpType type,
                        size_t mline_index,
@@ -360,7 +359,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   
   RTCError UpdateTransceiverChannel(
-      rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
+      scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
           transceiver,
       const ContentInfo& content,
       const ContentGroup* bundle_group) RTC_RUN_ON(signaling_thread());
@@ -386,7 +385,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
 
   
   
-  rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
+  scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
   FindAvailableTransceiverToReceive(webrtc::MediaType media_type) const;
 
   
@@ -432,8 +431,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
       webrtc::MediaType media_type) RTC_RUN_ON(signaling_thread());
   void AddUpToOneReceivingTransceiverOfType(webrtc::MediaType media_type);
 
-  std::vector<
-      rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
+  std::vector<scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
   GetReceivingTransceiversOfType(webrtc::MediaType media_type)
       RTC_RUN_ON(signaling_thread());
 
@@ -445,15 +443,14 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   
   void ProcessRemovalOfRemoteTrack(
-      const rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
+      const scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
           transceiver,
-      std::vector<rtc::scoped_refptr<RtpTransceiverInterface>>* remove_list,
-      std::vector<rtc::scoped_refptr<MediaStreamInterface>>* removed_streams);
+      std::vector<scoped_refptr<RtpTransceiverInterface>>* remove_list,
+      std::vector<scoped_refptr<MediaStreamInterface>>* removed_streams);
 
   void RemoveRemoteStreamsIfEmpty(
-      const std::vector<rtc::scoped_refptr<MediaStreamInterface>>&
-          remote_streams,
-      std::vector<rtc::scoped_refptr<MediaStreamInterface>>* removed_streams);
+      const std::vector<scoped_refptr<MediaStreamInterface>>& remote_streams,
+      std::vector<scoped_refptr<MediaStreamInterface>>* removed_streams);
 
   
   
@@ -616,10 +613,10 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   std::optional<bool> is_caller_ RTC_GUARDED_BY(signaling_thread());
 
   
-  const rtc::scoped_refptr<StreamCollection> local_streams_
+  const scoped_refptr<StreamCollection> local_streams_
       RTC_GUARDED_BY(signaling_thread());
   
-  const rtc::scoped_refptr<StreamCollection> remote_streams_
+  const scoped_refptr<StreamCollection> remote_streams_
       RTC_GUARDED_BY(signaling_thread());
 
   std::vector<std::unique_ptr<MediaStreamObserver>> stream_observers_
@@ -630,7 +627,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   
   
-  rtc::scoped_refptr<OperationsChain> operations_chain_
+  scoped_refptr<OperationsChain> operations_chain_
       RTC_GUARDED_BY(signaling_thread());
 
   
@@ -665,7 +662,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   
   
-  rtc::scoped_refptr<MediaStreamInterface> missing_msid_default_stream_
+  scoped_refptr<MediaStreamInterface> missing_msid_default_stream_
       RTC_GUARDED_BY(signaling_thread());
 
   SessionError session_error_ RTC_GUARDED_BY(signaling_thread()) =

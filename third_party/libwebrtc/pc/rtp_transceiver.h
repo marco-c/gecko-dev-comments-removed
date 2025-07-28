@@ -97,9 +97,8 @@ class RtpTransceiver : public RtpTransceiverInterface {
   
   
   RtpTransceiver(
-      rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> sender,
-      rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
-          receiver,
+      scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> sender,
+      scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>> receiver,
       ConnectionContext* context,
       CodecLookupHelper* codec_lookup_helper,
       std::vector<RtpHeaderExtensionCapability> HeaderExtensionsToNegotiate,
@@ -163,14 +162,14 @@ class RtpTransceiver : public RtpTransceiverInterface {
   
   
   void AddSender(
-      rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> sender);
+      scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> sender);
 
   
   
   bool RemoveSender(RtpSenderInterface* sender);
 
   
-  std::vector<rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>>>
+  std::vector<scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>>>
   senders() const {
     return senders_;
   }
@@ -178,7 +177,7 @@ class RtpTransceiver : public RtpTransceiverInterface {
   
   
   void AddReceiver(
-      rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
+      scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
           receiver);
 
   
@@ -186,17 +185,16 @@ class RtpTransceiver : public RtpTransceiverInterface {
   bool RemoveReceiver(RtpReceiverInterface* receiver);
 
   
-  std::vector<
-      rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>>
+  std::vector<scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>>
   receivers() const {
     return receivers_;
   }
 
   
-  rtc::scoped_refptr<RtpSenderInternal> sender_internal() const;
+  scoped_refptr<RtpSenderInternal> sender_internal() const;
 
   
-  rtc::scoped_refptr<RtpReceiverInternal> receiver_internal() const;
+  scoped_refptr<RtpReceiverInternal> receiver_internal() const;
 
   
   
@@ -262,8 +260,8 @@ class RtpTransceiver : public RtpTransceiverInterface {
   
   webrtc::MediaType media_type() const override;
   std::optional<std::string> mid() const override;
-  rtc::scoped_refptr<RtpSenderInterface> sender() const override;
-  rtc::scoped_refptr<RtpReceiverInterface> receiver() const override;
+  scoped_refptr<RtpSenderInterface> sender() const override;
+  scoped_refptr<RtpReceiverInterface> receiver() const override;
   bool stopped() const override;
   bool stopping() const override;
   RtpTransceiverDirection direction() const override;
@@ -273,8 +271,7 @@ class RtpTransceiver : public RtpTransceiverInterface {
   std::optional<RtpTransceiverDirection> fired_direction() const override;
   RTCError StopStandard() override;
   void StopInternal() override;
-  RTCError SetCodecPreferences(
-      rtc::ArrayView<RtpCodecCapability> codecs) override;
+  RTCError SetCodecPreferences(ArrayView<RtpCodecCapability> codecs) override;
   
   
   std::vector<RtpCodecCapability> codec_preferences() const override;
@@ -287,8 +284,7 @@ class RtpTransceiver : public RtpTransceiverInterface {
   std::vector<RtpHeaderExtensionCapability> GetNegotiatedHeaderExtensions()
       const override;
   RTCError SetHeaderExtensionsToNegotiate(
-      rtc::ArrayView<const RtpHeaderExtensionCapability> header_extensions)
-      override;
+      ArrayView<const RtpHeaderExtensionCapability> header_extensions) override;
 
   
   
@@ -329,11 +325,10 @@ class RtpTransceiver : public RtpTransceiverInterface {
   TaskQueueBase* const thread_;
   const bool unified_plan_;
   const webrtc::MediaType media_type_;
-  rtc::scoped_refptr<PendingTaskSafetyFlag> signaling_thread_safety_;
-  std::vector<rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>>>
+  scoped_refptr<PendingTaskSafetyFlag> signaling_thread_safety_;
+  std::vector<scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>>>
       senders_;
-  std::vector<
-      rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>>
+  std::vector<scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>>
       receivers_;
 
   bool stopped_ RTC_GUARDED_BY(thread_) = false;
@@ -363,8 +358,7 @@ class RtpTransceiver : public RtpTransceiverInterface {
   
   
   
-  cricket::RtpHeaderExtensions negotiated_header_extensions_
-      RTC_GUARDED_BY(thread_);
+  RtpHeaderExtensions negotiated_header_extensions_ RTC_GUARDED_BY(thread_);
 
   const std::function<void()> on_negotiation_needed_;
 };
@@ -374,8 +368,8 @@ BEGIN_PRIMARY_PROXY_MAP(RtpTransceiver)
 PROXY_PRIMARY_THREAD_DESTRUCTOR()
 BYPASS_PROXY_CONSTMETHOD0(webrtc::MediaType, media_type)
 PROXY_CONSTMETHOD0(std::optional<std::string>, mid)
-PROXY_CONSTMETHOD0(rtc::scoped_refptr<RtpSenderInterface>, sender)
-PROXY_CONSTMETHOD0(rtc::scoped_refptr<RtpReceiverInterface>, receiver)
+PROXY_CONSTMETHOD0(scoped_refptr<RtpSenderInterface>, sender)
+PROXY_CONSTMETHOD0(scoped_refptr<RtpReceiverInterface>, receiver)
 PROXY_CONSTMETHOD0(bool, stopped)
 PROXY_CONSTMETHOD0(bool, stopping)
 PROXY_CONSTMETHOD0(RtpTransceiverDirection, direction)
@@ -384,7 +378,7 @@ PROXY_CONSTMETHOD0(std::optional<RtpTransceiverDirection>, current_direction)
 PROXY_CONSTMETHOD0(std::optional<RtpTransceiverDirection>, fired_direction)
 PROXY_METHOD0(RTCError, StopStandard)
 PROXY_METHOD0(void, StopInternal)
-PROXY_METHOD1(RTCError, SetCodecPreferences, rtc::ArrayView<RtpCodecCapability>)
+PROXY_METHOD1(RTCError, SetCodecPreferences, ArrayView<RtpCodecCapability>)
 PROXY_CONSTMETHOD0(std::vector<RtpCodecCapability>, codec_preferences)
 PROXY_CONSTMETHOD0(std::vector<RtpHeaderExtensionCapability>,
                    GetHeaderExtensionsToNegotiate)
@@ -392,7 +386,7 @@ PROXY_CONSTMETHOD0(std::vector<RtpHeaderExtensionCapability>,
                    GetNegotiatedHeaderExtensions)
 PROXY_METHOD1(RTCError,
               SetHeaderExtensionsToNegotiate,
-              rtc::ArrayView<const RtpHeaderExtensionCapability>)
+              ArrayView<const RtpHeaderExtensionCapability>)
 END_PROXY_MAP(RtpTransceiver)
 
 }  
