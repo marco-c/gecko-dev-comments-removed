@@ -12,6 +12,7 @@
 #define API_AUDIO_ECHO_CANCELLER3_FACTORY_H_
 
 #include <memory>
+#include <optional>
 
 #include "absl/base/nullability.h"
 #include "api/audio/echo_canceller3_config.h"
@@ -28,7 +29,13 @@ class RTC_EXPORT EchoCanceller3Factory : public EchoControlFactory {
 
   
   
-  explicit EchoCanceller3Factory(const EchoCanceller3Config& config);
+  explicit EchoCanceller3Factory(const EchoCanceller3Config config);
+
+  
+  
+  EchoCanceller3Factory(
+      const EchoCanceller3Config config,
+      std::optional<EchoCanceller3Config> multichannel_config);
 
   
   absl_nonnull std::unique_ptr<EchoControl> Create(
@@ -39,6 +46,7 @@ class RTC_EXPORT EchoCanceller3Factory : public EchoControlFactory {
 
  private:
   const EchoCanceller3Config config_;
+  const std::optional<EchoCanceller3Config> multichannel_config_;
 };
 }  
 

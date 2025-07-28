@@ -23,6 +23,9 @@ struct RTC_EXPORT EchoCanceller3Config {
   
   static bool Validate(EchoCanceller3Config* config);
 
+  
+  static EchoCanceller3Config CreateDefaultMultichannelConfig();
+
   EchoCanceller3Config();
   EchoCanceller3Config(const EchoCanceller3Config& e);
   EchoCanceller3Config& operator=(const EchoCanceller3Config& other);
