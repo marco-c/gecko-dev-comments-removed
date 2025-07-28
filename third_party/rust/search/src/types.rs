@@ -108,7 +108,7 @@ pub struct SearchUrlParam {
 }
 
 
-#[derive(Debug, uniffi::Record, PartialEq, Deserialize, Clone, Default)]
+#[derive(Debug, uniffi::Record, PartialEq, Deserialize, Clone)]
 pub struct SearchEngineUrl {
     
     
@@ -129,6 +129,7 @@ pub struct SearchEngineUrl {
 
     
     
+    #[uniffi(default = None)]
     pub display_name: Option<String>,
 }
 

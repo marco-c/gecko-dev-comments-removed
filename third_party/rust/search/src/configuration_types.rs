@@ -10,6 +10,7 @@ use crate::{
     SearchUrlParam,
 };
 use serde::Deserialize;
+use std::collections::HashMap;
 
 
 #[derive(Debug, uniffi::Enum, PartialEq, Deserialize, Clone, Default)]
@@ -55,7 +56,10 @@ pub(crate) struct JSONEngineUrl {
 
     
     
-    pub display_name: Option<String>,
+    
+    
+    
+    pub display_name_map: Option<HashMap<String, String>>,
 }
 
 
