@@ -11444,63 +11444,29 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayConstructor() {
   return AttachDecision::Attach;
 }
 
-AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayConstructor() {
+AttachDecision
+InlinableNativeIRGenerator::tryAttachTypedArrayConstructorFromLength() {
   MOZ_ASSERT(flags_.isConstructing());
-
-  if (args_.length() == 0 || args_.length() > 3) {
-    return AttachDecision::NoAction;
-  }
-
-  if (!isFirstStub()) {
-    
-    return AttachDecision::NoAction;
-  }
+  MOZ_ASSERT(args_.length() == 0 || args_[0].isInt32());
 
   
-  if (!args_[0].isInt32() && !args_[0].isObject()) {
-    return AttachDecision::NoAction;
-  }
-  if (args_[0].isObject() && args_[0].toObject().is<ProxyObject>()) {
+  if (args_.length() != 1) {
     return AttachDecision::NoAction;
   }
 
-#ifdef JS_CODEGEN_X86
-  
-  
-  if (args_[0].isObject() &&
-      args_[0].toObject().is<ArrayBufferObjectMaybeShared>()) {
-    return AttachDecision::NoAction;
-  }
-#endif
+  int32_t length = args_[0].toInt32();
 
   Scalar::Type type = TypedArrayConstructorType(target_);
-
   Rooted<TypedArrayObject*> templateObj(cx_);
-  if (args_[0].isInt32()) {
-    if (!TypedArrayObject::GetTemplateObjectForLength(
-            cx_, type, args_[0].toInt32(), &templateObj)) {
-      cx_->recoverFromOutOfMemory();
-      return AttachDecision::NoAction;
-    }
+  if (!TypedArrayObject::GetTemplateObjectForLength(cx_, type, length,
+                                                    &templateObj)) {
+    cx_->recoverFromOutOfMemory();
+    return AttachDecision::NoAction;
+  }
 
-    
-    if (!templateObj) {
-      return AttachDecision::NoAction;
-    }
-  } else {
-    Rooted<JSObject*> obj(cx_, &args_[0].toObject());
-    if (obj->is<ArrayBufferObjectMaybeShared>()) {
-      auto buffer = obj.as<ArrayBufferObjectMaybeShared>();
-      templateObj =
-          TypedArrayObject::GetTemplateObjectForBuffer(cx_, type, buffer);
-    } else {
-      templateObj =
-          TypedArrayObject::GetTemplateObjectForArrayLike(cx_, type, obj);
-    }
-    if (!templateObj) {
-      cx_->recoverFromOutOfMemory();
-      return AttachDecision::NoAction;
-    }
+  
+  if (!templateObj) {
+    return AttachDecision::NoAction;
   }
 
   
@@ -11510,55 +11476,159 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayConstructor() {
   ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   ValOperandId arg0Id = loadArgument(calleeId, ArgumentKind::Arg0);
-
-  if (args_[0].isInt32()) {
-    
-    Int32OperandId lengthId = writer.guardToInt32(arg0Id);
-    writer.newTypedArrayFromLengthResult(templateObj, lengthId);
-  } else {
-    JSObject* obj = &args_[0].toObject();
-    ObjOperandId objId = writer.guardToObject(arg0Id);
-
-    if (obj->is<ArrayBufferObjectMaybeShared>()) {
-      
-      if (obj->is<FixedLengthArrayBufferObject>()) {
-        writer.guardClass(objId, GuardClassKind::FixedLengthArrayBuffer);
-      } else if (obj->is<FixedLengthSharedArrayBufferObject>()) {
-        writer.guardClass(objId, GuardClassKind::FixedLengthSharedArrayBuffer);
-      } else if (obj->is<ResizableArrayBufferObject>()) {
-        writer.guardClass(objId, GuardClassKind::ResizableArrayBuffer);
-      } else if (obj->is<GrowableSharedArrayBufferObject>()) {
-        writer.guardClass(objId, GuardClassKind::GrowableSharedArrayBuffer);
-      } else {
-        MOZ_ASSERT(obj->is<ImmutableArrayBufferObject>());
-        writer.guardClass(objId, GuardClassKind::ImmutableArrayBuffer);
-      }
-      ValOperandId byteOffsetId;
-      if (args_.length() > 1) {
-        byteOffsetId = loadArgument(calleeId, ArgumentKind::Arg1);
-      } else {
-        byteOffsetId = writer.loadUndefined();
-      }
-      ValOperandId lengthId;
-      if (args_.length() > 2) {
-        lengthId = loadArgument(calleeId, ArgumentKind::Arg2);
-      } else {
-        lengthId = writer.loadUndefined();
-      }
-      writer.newTypedArrayFromArrayBufferResult(templateObj, objId,
-                                                byteOffsetId, lengthId);
-    } else {
-      
-      writer.guardIsNotArrayBufferMaybeShared(objId);
-      writer.guardIsNotProxy(objId);
-      writer.newTypedArrayFromArrayResult(templateObj, objId);
-    }
-  }
-
+  Int32OperandId lengthId = writer.guardToInt32(arg0Id);
+  writer.newTypedArrayFromLengthResult(templateObj, lengthId);
   writer.returnFromIC();
 
-  trackAttached("TypedArrayConstructor");
+  trackAttached("TypedArrayConstructorFromLength");
   return AttachDecision::Attach;
+}
+
+AttachDecision
+InlinableNativeIRGenerator::tryAttachTypedArrayConstructorFromArrayBuffer() {
+  MOZ_ASSERT(flags_.isConstructing());
+  MOZ_ASSERT(args_.length() > 0);
+  MOZ_ASSERT(args_[0].isObject());
+
+  
+  if (args_.length() > 3) {
+    return AttachDecision::NoAction;
+  }
+
+#ifdef JS_CODEGEN_X86
+  
+  
+  return AttachDecision::NoAction;
+#else
+  Scalar::Type type = TypedArrayConstructorType(target_);
+
+  Rooted<ArrayBufferObjectMaybeShared*> obj(
+      cx_, &args_[0].toObject().as<ArrayBufferObjectMaybeShared>());
+
+  Rooted<TypedArrayObject*> templateObj(
+      cx_, TypedArrayObject::GetTemplateObjectForBuffer(cx_, type, obj));
+  if (!templateObj) {
+    cx_->recoverFromOutOfMemory();
+    return AttachDecision::NoAction;
+  }
+
+  
+  Int32OperandId argcId = initializeInputOperand();
+
+  
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
+
+  ValOperandId arg0Id = loadArgument(calleeId, ArgumentKind::Arg0);
+  ObjOperandId objId = writer.guardToObject(arg0Id);
+
+  if (obj->is<FixedLengthArrayBufferObject>()) {
+    writer.guardClass(objId, GuardClassKind::FixedLengthArrayBuffer);
+  } else if (obj->is<FixedLengthSharedArrayBufferObject>()) {
+    writer.guardClass(objId, GuardClassKind::FixedLengthSharedArrayBuffer);
+  } else if (obj->is<ResizableArrayBufferObject>()) {
+    writer.guardClass(objId, GuardClassKind::ResizableArrayBuffer);
+  } else if (obj->is<GrowableSharedArrayBufferObject>()) {
+    writer.guardClass(objId, GuardClassKind::GrowableSharedArrayBuffer);
+  } else {
+    MOZ_ASSERT(obj->is<ImmutableArrayBufferObject>());
+    writer.guardClass(objId, GuardClassKind::ImmutableArrayBuffer);
+  }
+
+  ValOperandId byteOffsetId;
+  if (args_.length() > 1) {
+    byteOffsetId = loadArgument(calleeId, ArgumentKind::Arg1);
+  } else {
+    byteOffsetId = writer.loadUndefined();
+  }
+
+  ValOperandId lengthId;
+  if (args_.length() > 2) {
+    lengthId = loadArgument(calleeId, ArgumentKind::Arg2);
+  } else {
+    lengthId = writer.loadUndefined();
+  }
+
+  writer.newTypedArrayFromArrayBufferResult(templateObj, objId, byteOffsetId,
+                                            lengthId);
+  writer.returnFromIC();
+
+  trackAttached("TypedArrayConstructorFromArrayBuffer");
+  return AttachDecision::Attach;
+#endif
+}
+
+AttachDecision
+InlinableNativeIRGenerator::tryAttachTypedArrayConstructorFromArray() {
+  MOZ_ASSERT(flags_.isConstructing());
+  MOZ_ASSERT(args_.length() > 0);
+  MOZ_ASSERT(args_[0].isObject());
+
+  
+  if (args_.length() != 1) {
+    return AttachDecision::NoAction;
+  }
+
+  Rooted<JSObject*> obj(cx_, &args_[0].toObject());
+  MOZ_ASSERT(!obj->is<ProxyObject>());
+  MOZ_ASSERT(!obj->is<ArrayBufferObjectMaybeShared>());
+
+  Scalar::Type type = TypedArrayConstructorType(target_);
+
+  Rooted<TypedArrayObject*> templateObj(
+      cx_, TypedArrayObject::GetTemplateObjectForArrayLike(cx_, type, obj));
+  if (!templateObj) {
+    cx_->recoverFromOutOfMemory();
+    return AttachDecision::NoAction;
+  }
+
+  
+  Int32OperandId argcId = initializeInputOperand();
+
+  
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
+
+  ValOperandId arg0Id = loadArgument(calleeId, ArgumentKind::Arg0);
+  ObjOperandId objId = writer.guardToObject(arg0Id);
+
+  writer.guardIsNotArrayBufferMaybeShared(objId);
+  writer.guardIsNotProxy(objId);
+  writer.newTypedArrayFromArrayResult(templateObj, objId);
+  writer.returnFromIC();
+
+  trackAttached("TypedArrayConstructorFromArray");
+  return AttachDecision::Attach;
+}
+
+AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayConstructor() {
+  MOZ_ASSERT(flags_.isConstructing());
+
+  if (!isFirstStub()) {
+    
+    return AttachDecision::NoAction;
+  }
+
+  
+
+  if (args_.length() == 0 || args_[0].isInt32()) {
+    return tryAttachTypedArrayConstructorFromLength();
+  }
+
+  if (args_[0].isObject()) {
+    auto* obj = &args_[0].toObject();
+
+    
+    if (obj->is<ProxyObject>()) {
+      return AttachDecision::NoAction;
+    }
+
+    if (obj->is<ArrayBufferObjectMaybeShared>()) {
+      return tryAttachTypedArrayConstructorFromArrayBuffer();
+    }
+    return tryAttachTypedArrayConstructorFromArray();
+  }
+
+  
+  return AttachDecision::NoAction;
 }
 
 AttachDecision InlinableNativeIRGenerator::tryAttachMapSetConstructor(
