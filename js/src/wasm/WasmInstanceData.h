@@ -137,6 +137,10 @@ struct FuncImportInstanceData {
   
   GCPtr<JSObject*> callable;
   static_assert(sizeof(GCPtr<JSObject*>) == sizeof(void*), "for JIT access");
+
+  
+  
+  bool isFunctionCallBind;
 };
 
 struct MemoryInstanceData {
