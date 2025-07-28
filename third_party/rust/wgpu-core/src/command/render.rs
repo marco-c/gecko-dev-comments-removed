@@ -15,7 +15,6 @@ use crate::command::{
     TimestampWritesError,
 };
 use crate::pipeline::{RenderPipeline, VertexStep};
-use crate::resource::RawResourceAccess;
 use crate::resource::{InvalidResourceError, ResourceErrorIdent};
 use crate::snatch::SnatchGuard;
 use crate::{
@@ -1804,7 +1803,7 @@ impl Global {
         let pass_scope = PassErrorScope::Pass;
         profiling::scope!(
             "CommandEncoder::run_render_pass {}",
-            pass.base.label.as_deref().unwrap_or("")
+            base.label.as_deref().unwrap_or("")
         );
 
         let cmd_buf = pass.parent.take().ok_or(EncoderStateError::Ended)?;
@@ -2323,7 +2322,6 @@ fn set_pipeline(
     Ok(())
 }
 
-
 fn set_index_buffer(
     state: &mut State,
     cmd_buf: &Arc<CommandBuffer>,
@@ -2343,11 +2341,12 @@ fn set_index_buffer(
     buffer.same_device_as(cmd_buf.as_ref())?;
 
     buffer.check_usage(BufferUsages::INDEX)?;
+    let buf_raw = buffer.try_raw(state.general.snatch_guard)?;
 
-    let (binding, resolved_size) = buffer
-        .binding(offset, size, state.general.snatch_guard)
-        .map_err(RenderCommandError::from)?;
-    let end = offset + resolved_size;
+    let end = match size {
+        Some(s) => offset + s.get(),
+        None => buffer.size,
+    };
     state.index.update_buffer(offset..end, index_format);
 
     state.general.buffer_memory_init_actions.extend(
@@ -2358,12 +2357,16 @@ fn set_index_buffer(
         ),
     );
 
+    let bb = hal::BufferBinding {
+        buffer: buf_raw,
+        offset,
+        size,
+    };
     unsafe {
-        hal::DynCommandEncoder::set_index_buffer(state.general.raw_encoder, binding, index_format);
+        hal::DynCommandEncoder::set_index_buffer(state.general.raw_encoder, bb, index_format);
     }
     Ok(())
 }
-
 
 fn set_vertex_buffer(
     state: &mut State,
@@ -2396,10 +2399,13 @@ fn set_vertex_buffer(
     }
 
     buffer.check_usage(BufferUsages::VERTEX)?;
+    let buf_raw = buffer.try_raw(state.general.snatch_guard)?;
 
-    let (binding, buffer_size) = buffer
-        .binding(offset, size, state.general.snatch_guard)
-        .map_err(RenderCommandError::from)?;
+    
+    let buffer_size = match size {
+        Some(s) => s.get(),
+        None => buffer.size - offset,
+    };
     state.vertex.buffer_sizes[slot as usize] = Some(buffer_size);
 
     state.general.buffer_memory_init_actions.extend(
@@ -2410,8 +2416,13 @@ fn set_vertex_buffer(
         ),
     );
 
+    let bb = hal::BufferBinding {
+        buffer: buf_raw,
+        offset,
+        size,
+    };
     unsafe {
-        hal::DynCommandEncoder::set_vertex_buffer(state.general.raw_encoder, slot, binding);
+        hal::DynCommandEncoder::set_vertex_buffer(state.general.raw_encoder, slot, bb);
     }
     if let Some(pipeline) = state.pipeline.as_ref() {
         state.vertex.update_limits(&pipeline.vertex_steps);

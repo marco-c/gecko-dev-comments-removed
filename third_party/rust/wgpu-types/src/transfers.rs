@@ -2,81 +2,46 @@ use crate::{BufferAddress, Extent3d, TexelCopyBufferLayout, TextureAspect, Textu
 
 impl TexelCopyBufferLayout {
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[doc(hidden)]
     #[inline(always)]
     pub fn get_buffer_texture_copy_info(
         &self,
         format: TextureFormat,
         aspect: TextureAspect,
         copy_size: &Extent3d,
-    ) -> Result<BufferTextureCopyInfo, Error> {
-        let copy_width = BufferAddress::from(copy_size.width);
-        let copy_height = BufferAddress::from(copy_size.height);
-        let depth_or_array_layers = BufferAddress::from(copy_size.depth_or_array_layers);
+    ) -> BufferTextureCopyInfo {
+        
+        
+        
+        
+        let copy_width = copy_size.width as BufferAddress;
+        let copy_height = copy_size.height as BufferAddress;
+        let depth_or_array_layers = copy_size.depth_or_array_layers as BufferAddress;
 
-        let block_size_bytes = BufferAddress::from(format.block_copy_size(Some(aspect)).unwrap());
+        let block_size_bytes = format.block_copy_size(Some(aspect)).unwrap() as BufferAddress;
         let (block_width, block_height) = format.block_dimensions();
-        let block_width_texels = BufferAddress::from(block_width);
-        let block_height_texels = BufferAddress::from(block_height);
+        let block_width_texels = block_width as BufferAddress;
+        let block_height_texels = block_height as BufferAddress;
 
         let width_blocks = copy_width.div_ceil(block_width_texels);
         let height_blocks = copy_height.div_ceil(block_height_texels);
 
-        
         let row_bytes_dense = width_blocks * block_size_bytes;
-        let row_stride_bytes = match self.bytes_per_row.map(BufferAddress::from) {
-            Some(bytes_per_row) if bytes_per_row >= row_bytes_dense => bytes_per_row,
-            Some(_) => return Err(Error::InvalidBytesPerRow),
-            None => row_bytes_dense,
-        };
+
+        let row_stride_bytes = self.bytes_per_row.map_or(row_bytes_dense, u64::from);
+        let image_stride_rows = self.rows_per_image.map_or(height_blocks, u64::from);
+
+        let image_stride_bytes = row_stride_bytes * image_stride_rows;
 
         let image_rows_dense = height_blocks;
-        let image_stride_rows = match self.rows_per_image.map(BufferAddress::from) {
-            Some(rows_per_image) if rows_per_image >= image_rows_dense => rows_per_image,
-            Some(_) => return Err(Error::InvalidRowsPerImage),
-            None => image_rows_dense,
-        };
+        let image_bytes_dense =
+            image_rows_dense.saturating_sub(1) * row_stride_bytes + row_bytes_dense;
 
-        let image_bytes_dense = match image_rows_dense.checked_sub(1) {
-            Some(rows_minus_one) => rows_minus_one
-                .checked_mul(row_stride_bytes)
-                .ok_or(Error::ImageBytesOverflow(false))?
-                .checked_add(row_bytes_dense)
-                .ok_or(Error::ImageBytesOverflow(true))?,
-            None => 0,
-        };
+        let mut bytes_in_copy = image_stride_bytes * depth_or_array_layers.saturating_sub(1);
+        if height_blocks > 0 {
+            bytes_in_copy += row_stride_bytes * (height_blocks - 1) + row_bytes_dense;
+        }
 
-        
-        
-        
-        
-        
-        let image_stride_bytes = row_stride_bytes
-            .checked_mul(image_stride_rows)
-            .ok_or(Error::ImageStrideOverflow)?;
-
-        let bytes_in_copy = if depth_or_array_layers <= 1 {
-            depth_or_array_layers * image_bytes_dense
-        } else {
-            (depth_or_array_layers - 1)
-                .checked_mul(image_stride_bytes)
-                .ok_or(Error::ArraySizeOverflow(false))?
-                .checked_add(image_bytes_dense)
-                .ok_or(Error::ArraySizeOverflow(true))?
-        };
-
-        Ok(BufferTextureCopyInfo {
+        BufferTextureCopyInfo {
             copy_width,
             copy_height,
             depth_or_array_layers,
@@ -100,7 +65,7 @@ impl TexelCopyBufferLayout {
             image_bytes_dense,
 
             bytes_in_copy,
-        })
+        }
     }
 }
 
@@ -162,55 +127,16 @@ pub struct BufferTextureCopyInfo {
     pub bytes_in_copy: u64,
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum BufferTextureCopyInfoError {
-    
-    InvalidBytesPerRow,
-    
-    InvalidRowsPerImage,
-    
-    ImageStrideOverflow,
-    
-    
-    
-    
-    ImageBytesOverflow(bool),
-    
-    
-    
-    
-    ArraySizeOverflow(bool),
-}
-type Error = BufferTextureCopyInfoError;
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    #[derive(Clone)]
     struct LTDTest {
         layout: TexelCopyBufferLayout,
         format: TextureFormat,
         aspect: TextureAspect,
         copy_size: Extent3d,
         expected_result: BufferTextureCopyInfo,
-        
-        
-        
-        
-        expected_error: Option<Error>,
     }
 
     impl LTDTest {
@@ -219,11 +145,7 @@ mod tests {
             let linear_texture_data =
                 self.layout
                     .get_buffer_texture_copy_info(self.format, self.aspect, &self.copy_size);
-            let expected = match self.expected_error {
-                Some(err) => Err(err),
-                None => Ok(self.expected_result),
-            };
-            assert_eq!(linear_texture_data, expected);
+            assert_eq!(linear_texture_data, self.expected_result);
         }
     }
 
@@ -260,7 +182,6 @@ mod tests {
                 image_bytes_dense: 16,
                 bytes_in_copy: 16,
             },
-            expected_error: None,
         };
 
         test.run();
@@ -290,7 +211,7 @@ mod tests {
 
     #[test]
     fn linear_texture_data_2d_3d_copy() {
-        let template = LTDTest {
+        let mut test = LTDTest {
             layout: TexelCopyBufferLayout {
                 offset: 0,
                 bytes_per_row: None,
@@ -321,10 +242,8 @@ mod tests {
                 image_bytes_dense: 4 * 7 * 12,
                 bytes_in_copy: 4 * 7 * 12,
             },
-            expected_error: None,
         };
 
-        let mut test = template.clone();
         test.run();
 
         
@@ -333,71 +252,12 @@ mod tests {
         test.expected_result.image_stride_bytes = 48 * 12;
         test.expected_result.image_bytes_dense = 48 * 11 + (4 * 7);
         test.expected_result.bytes_in_copy = 48 * 11 + (4 * 7);
-        test.run();
 
         
         test.copy_size.depth_or_array_layers = 4;
         test.expected_result.depth_or_array_layers = 4;
         test.expected_result.bytes_in_copy = 48 * 12 * 3 + 48 * 11 + (4 * 7); 
-        test.run();
 
-        
-        test.layout.rows_per_image = Some(20);
-        test.expected_result.image_stride_rows = 20;
-        test.expected_result.image_stride_bytes = 20 * test.expected_result.row_stride_bytes;
-        test.expected_result.bytes_in_copy = 48 * 20 * 3 + 48 * 11 + (4 * 7); 
-        test.run();
-
-        
-        let mut test = template.clone();
-        test.layout.bytes_per_row = Some(20);
-        test.expected_error = Some(Error::InvalidBytesPerRow);
-        test.run();
-
-        
-        let mut test = template.clone();
-        test.layout.rows_per_image = Some(8);
-        test.expected_error = Some(Error::InvalidRowsPerImage);
-        test.run();
-
-        
-        let mut test = template.clone();
-        test.copy_size.width = u32::MAX;
-        test.copy_size.height = u32::MAX;
-        test.expected_error = Some(Error::ImageBytesOverflow(false));
-        test.run();
-
-        
-        
-        let mut test = template.clone();
-        test.copy_size.width = 0x8000_0000;
-        test.copy_size.height = 0x8000_0000;
-        test.expected_error = Some(Error::ImageBytesOverflow(true));
-        test.run();
-
-        
-        let mut test = template.clone();
-        test.copy_size.width = 0x8000_0000;
-        test.layout.rows_per_image = Some(0x8000_0000);
-        test.expected_result.image_stride_rows = 0x8000_0000;
-        test.expected_error = Some(Error::ImageStrideOverflow);
-        test.run();
-
-        
-        let mut test = template.clone();
-        test.copy_size.depth_or_array_layers = 0x8000_0000;
-        test.copy_size.width = 0x1_0000;
-        test.copy_size.height = 0x1_0000;
-        test.expected_error = Some(Error::ArraySizeOverflow(false));
-        test.run();
-
-        
-        
-        let mut test = template.clone();
-        test.copy_size.depth_or_array_layers = 0x3fff_8001;
-        test.copy_size.width = 0x1_0001;
-        test.copy_size.height = 0x1_0001;
-        test.expected_error = Some(Error::ArraySizeOverflow(true));
         test.run();
     }
 
@@ -434,7 +294,6 @@ mod tests {
                 image_bytes_dense: 8 * 2 * 4,
                 bytes_in_copy: 8 * 2 * 4,
             },
-            expected_error: None,
         };
 
         test.run();

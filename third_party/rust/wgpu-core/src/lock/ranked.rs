@@ -59,8 +59,6 @@ use core::{cell::Cell, fmt, ops, panic::Location};
 
 use super::rank::LockRank;
 
-pub use LockState as RankData;
-
 
 
 
@@ -89,7 +87,7 @@ std::thread_local! {
 
 
 #[derive(Debug, Copy, Clone)]
-pub struct LockState {
+struct LockState {
     
     last_acquired: Option<(LockRank, &'static Location<'static>)>,
 
@@ -271,27 +269,6 @@ impl<T> RwLock<T> {
             inner: self.inner.write(),
             saved: LockStateGuard(saved),
         }
-    }
-
-    
-    
-    
-    
-    pub unsafe fn force_unlock_read(&self, data: RankData) {
-        release(data);
-        unsafe { self.inner.force_unlock_read() };
-    }
-}
-
-impl<'a, T> RwLockReadGuard<'a, T> {
-    
-    
-    
-    
-    pub fn forget(this: Self) -> RankData {
-        core::mem::forget(this.inner);
-
-        this.saved.0
     }
 }
 
