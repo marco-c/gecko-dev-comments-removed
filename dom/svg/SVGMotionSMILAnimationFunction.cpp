@@ -346,6 +346,7 @@ void SVGMotionSMILAnimationFunction::CheckKeyPoints() {
   
   if (GetCalcMode() == CALC_PACED) {
     SetKeyPointsErrorFlag(false);
+    return;
   }
 
   if (mKeyPoints.Length() != mKeyTimes.Length()) {
@@ -358,6 +359,7 @@ void SVGMotionSMILAnimationFunction::CheckKeyPoints() {
   
   
   
+  SetKeyPointsErrorFlag(false);
 }
 
 nsresult SVGMotionSMILAnimationFunction::SetKeyPoints(
