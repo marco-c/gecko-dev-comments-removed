@@ -627,11 +627,19 @@ impl Drop for ThreadSpecificHandles {
         let cert = self.cert.take();
         let key = self.key.take();
         let thread = self.thread.clone();
-        let task = moz_task::spawn_onto("drop", &thread, async move {
+        
+        
+        
+        if moz_task::is_on_current_thread(&thread) {
             drop(cert);
             drop(key);
-        });
-        futures_executor::block_on(task)
+        } else {
+            let task = moz_task::spawn_onto("drop", &thread, async move {
+                drop(cert);
+                drop(key);
+            });
+            futures_executor::block_on(task)
+        }
     }
 }
 
