@@ -10,6 +10,8 @@
 
 #include "modules/rtp_rtcp/source/fec_private_tables_random.h"
 
+#include <cstdint>
+
 namespace {
 
 #define kMaskRandom1_1 \
