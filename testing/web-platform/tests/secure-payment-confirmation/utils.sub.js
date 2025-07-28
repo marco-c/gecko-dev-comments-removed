@@ -19,7 +19,15 @@ const INVALID_ICON_DATA_URL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACA
 
 
 
-async function createCredential(set_payment_extension=true) {
+
+
+
+
+
+
+
+async function createCredential(set_payment_extension = true, options = {}) {
+  options = Object.assign({browserBoundPubKeyCredParams: []}, options);
   const challengeBytes = new Uint8Array(16);
   window.crypto.getRandomValues(challengeBytes);
 
@@ -47,7 +55,10 @@ async function createCredential(set_payment_extension=true) {
 
   if (set_payment_extension) {
     publicKey.extensions = {
-      payment: { isPayment: true },
+      payment: {
+        isPayment: true,
+        browserBoundPubKeyCredParams: options.browserBoundPubKeyCredParams
+      },
     };
   }
 
@@ -100,4 +111,3 @@ function base64UrlEncode(data) {
   let result = btoa(data);
   return result.replace(/=+$/g, '').replace(/\+/g, "-").replace(/\//g, "_");
 }
-
