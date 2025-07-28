@@ -77,12 +77,6 @@ class TypeUtils {
   inline void AssertOwningThread() const {}
 #endif
 
-  
-  
-  
-  
-  virtual mozilla::ipc::PBackgroundChild* GetIPCManager() = 0;
-
   SafeRefPtr<InternalRequest> ToInternalRequest(JSContext* aCx,
                                                 const RequestOrUTF8String& aIn,
                                                 BodyAction aBodyAction,

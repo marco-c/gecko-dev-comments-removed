@@ -527,13 +527,6 @@ void CacheStorage::AssertOwningThread() const {
 }
 #endif
 
-PBackgroundChild* CacheStorage::GetIPCManager() {
-  
-  
-  
-  MOZ_CRASH("CacheStorage does not implement TypeUtils::GetIPCManager()");
-}
-
 CacheStorage::~CacheStorage() {
   NS_ASSERT_OWNINGTHREAD(CacheStorage);
   if (mActor) {
