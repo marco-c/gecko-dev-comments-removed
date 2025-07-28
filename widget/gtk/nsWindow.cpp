@@ -4013,8 +4013,7 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
   
   
   
-  region.And(region,
-             LayoutDeviceIntRect(LayoutDeviceIntPoint(), GetClientSize()));
+  region.AndWith(LayoutDeviceIntRect(LayoutDeviceIntPoint(), GetClientSize()));
   if (region.IsEmpty()) {
     LOG("quit, region.IsEmpty()");
     return TRUE;
