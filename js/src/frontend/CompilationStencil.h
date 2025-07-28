@@ -1389,6 +1389,52 @@ class FunctionKeyToScriptIndexMap {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct ScriptIndexes {
+  
+  
+  
+  ScriptIndex enclosingIndexInInitial;
+
+  
+  
+  
+  
+  ScriptIndex indexInEnclosing;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 struct InitialStencilAndDelazifications {
  private:
   using FunctionKey = SourceExtent::FunctionKey;
@@ -1411,7 +1457,39 @@ struct InitialStencilAndDelazifications {
   
   FunctionKeyToScriptIndexMap functionKeyToInitialScriptIndex_;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Vector<ScriptIndexes, 0, js::SystemAllocPolicy> relativeIndexes_;
+
   mutable mozilla::Atomic<uintptr_t> refCount_{0};
+
+  
+  void initRelativeIndexes();
 
  public:
   InitialStencilAndDelazifications() = default;
@@ -1450,6 +1528,38 @@ struct InitialStencilAndDelazifications {
   const CompilationStencil* getDelazificationAt(size_t functionIndex) const;
   const CompilationStencil* getDelazificationFor(
       const SourceExtent& extent) const;
+
+  
+  
+  ScriptIndex getScriptIndexFor(const CompilationStencil* delazification) const;
+
+  
+  
+  
+  const ScriptIndexes& getRelativeIndexesAt(ScriptIndex initialIndex) const;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  ScriptIndex getInitialIndexFor(ScriptIndex enclosingInInitial,
+                                 ScriptIndex enclosedInEnclosing) const;
 
   
   
