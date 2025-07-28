@@ -218,7 +218,7 @@ function defaultProfilePreferences(
     
     
     'browser.contentblocking.features.standard':
-      '-tp,tpPrivate,cookieBehavior0,-cm,-fp',
+      '-tp,tpPrivate,cookieBehavior0,-cryptoTP,-fp',
 
     
     
