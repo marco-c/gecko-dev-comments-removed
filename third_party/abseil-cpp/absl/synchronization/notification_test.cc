@@ -84,7 +84,11 @@ static void BasicTests(bool notify_before_waiting, Notification* notification) {
 
   
   
-  const absl::Duration slop = absl::Milliseconds(5);
+  absl::Duration slop = absl::Milliseconds(5);
+#ifdef _MSC_VER
+  
+  slop = absl::Milliseconds(15);
+#endif
   EXPECT_LE(delay - slop, elapsed)
       << "WaitForNotificationWithTimeout returned " << delay - elapsed
       << " early (with " << slop << " slop), start time was " << start;

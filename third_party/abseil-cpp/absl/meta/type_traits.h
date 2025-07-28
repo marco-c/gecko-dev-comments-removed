@@ -510,12 +510,22 @@ using swap_internal::Swap;
 
 
 
+
 #if ABSL_HAVE_BUILTIN(__is_trivially_relocatable) && \
     (defined(__cpp_impl_trivially_relocatable) ||    \
      (!defined(__clang__) && !defined(__APPLE__) && !defined(__NVCC__)))
 template <class T>
 struct is_trivially_relocatable
     : std::integral_constant<bool, __is_trivially_relocatable(T)> {};
+#elif ABSL_HAVE_BUILTIN(__is_trivially_relocatable) && defined(__clang__) && \
+    !(defined(_WIN32) || defined(_WIN64)) && !defined(__APPLE__) &&          \
+    !defined(__NVCC__)
+template <class T>
+struct is_trivially_relocatable
+    : std::integral_constant<
+          bool, std::is_trivially_copyable<T>::value ||
+                    (__is_trivially_relocatable(T) &&
+                     std::is_trivially_move_assignable<T>::value)> {};
 #else
 
 
@@ -648,9 +658,9 @@ struct IsView<std::span<T>> : std::true_type {};
 
 
 template <typename T, typename U>
-using IsLifetimeBoundAssignment =
-    std::integral_constant<bool, IsView<absl::remove_cvref_t<T>>::value &&
-                                     IsOwner<absl::remove_cvref_t<U>>::value>;
+using IsLifetimeBoundAssignment = absl::conjunction<
+    std::integral_constant<bool, !std::is_lvalue_reference<U>::value>,
+    IsOwner<absl::remove_cvref_t<U>>, IsView<absl::remove_cvref_t<T>>>;
 
 }  
 

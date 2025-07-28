@@ -18,6 +18,7 @@
 #include "absl/strings/numbers.h"
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <cfloat>  
 #include <cmath>   
@@ -674,7 +675,7 @@ namespace {
 
 
 
-static const int8_t kAsciiToInt[256] = {
+static constexpr std::array<int8_t, 256> kAsciiToInt = {
     36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36,  
     36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36,
     36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 0,  1,  2,  3,  4,  5,

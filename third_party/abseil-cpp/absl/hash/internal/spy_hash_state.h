@@ -16,6 +16,7 @@
 #define ABSL_HASH_INTERNAL_SPY_HASH_STATE_H_
 
 #include <algorithm>
+#include <cstdint>
 #include <ostream>
 #include <string>
 #include <vector>
@@ -196,6 +197,7 @@ class SpyHashStateImpl : public HashStateBase<SpyHashStateImpl<T>> {
  private:
   template <typename U>
   friend class SpyHashStateImpl;
+  friend struct CombineRaw;
 
   struct UnorderedCombinerCallback {
     std::vector<std::string> element_hash_representations;
@@ -212,6 +214,12 @@ class SpyHashStateImpl : public HashStateBase<SpyHashStateImpl<T>> {
       inner = SpyHashStateImpl<void>{};
     }
   };
+
+  
+  static SpyHashStateImpl combine_raw(SpyHashStateImpl state, uint64_t value) {
+    const unsigned char* data = reinterpret_cast<const unsigned char*>(&value);
+    return SpyHashStateImpl::combine_contiguous(std::move(state), data, 8);
+  }
 
   
   

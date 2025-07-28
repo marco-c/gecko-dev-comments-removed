@@ -85,6 +85,18 @@ inline int64_t UnscaledCycleClock::Now() {
   return static_cast<int64_t>((high << 32) | low);
 }
 
+#elif defined(__aarch64__)
+
+
+
+
+
+inline int64_t UnscaledCycleClock::Now() {
+  int64_t virtual_timer_value;
+  asm volatile("mrs %0, cntvct_el0" : "=r"(virtual_timer_value));
+  return virtual_timer_value;
+}
+
 #endif
 
 }  

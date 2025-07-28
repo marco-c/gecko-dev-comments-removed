@@ -105,16 +105,6 @@ double UnscaledCycleClock::Frequency() {
 
 #elif defined(__aarch64__)
 
-
-
-
-
-int64_t UnscaledCycleClock::Now() {
-  int64_t virtual_timer_value;
-  asm volatile("mrs %0, cntvct_el0" : "=r"(virtual_timer_value));
-  return virtual_timer_value;
-}
-
 double UnscaledCycleClock::Frequency() {
   uint64_t aarch64_timer_frequency;
   asm volatile("mrs %0, cntfrq_el0" : "=r"(aarch64_timer_frequency));

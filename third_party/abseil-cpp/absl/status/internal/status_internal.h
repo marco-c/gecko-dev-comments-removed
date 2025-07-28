@@ -120,7 +120,7 @@ absl::StatusCode MapToLocalCode(int value);
 
 
 ABSL_ATTRIBUTE_PURE_FUNCTION
-absl::Nonnull<std::string*> MakeCheckFailString(
+absl::Nonnull<const char*> MakeCheckFailString(
     absl::Nonnull<const absl::Status*> status,
     absl::Nonnull<const char*> prefix);
 

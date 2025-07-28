@@ -61,6 +61,7 @@
 #define ABSL_STRINGS_CORD_H_
 
 #include <algorithm>
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -68,16 +69,14 @@
 #include <iterator>
 #include <string>
 #include <type_traits>
+#include <utility>
 
 #include "absl/base/attributes.h"
 #include "absl/base/config.h"
 #include "absl/base/internal/endian.h"
-#include "absl/base/internal/per_thread_tls.h"
 #include "absl/base/macros.h"
 #include "absl/base/nullability.h"
 #include "absl/base/optimization.h"
-#include "absl/base/port.h"
-#include "absl/container/inlined_vector.h"
 #include "absl/crc/internal/crc_cord_state.h"
 #include "absl/functional/function_ref.h"
 #include "absl/meta/type_traits.h"
@@ -88,12 +87,10 @@
 #include "absl/strings/internal/cord_rep_btree.h"
 #include "absl/strings/internal/cord_rep_btree_reader.h"
 #include "absl/strings/internal/cord_rep_crc.h"
-#include "absl/strings/internal/cordz_functions.h"
+#include "absl/strings/internal/cord_rep_flat.h"
 #include "absl/strings/internal/cordz_info.h"
-#include "absl/strings/internal/cordz_statistics.h"
 #include "absl/strings/internal/cordz_update_scope.h"
 #include "absl/strings/internal/cordz_update_tracker.h"
-#include "absl/strings/internal/resize_uninitialized.h"
 #include "absl/strings/internal/string_constant.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/compare.h"
@@ -978,15 +975,9 @@ class Cord {
 
     bool IsSame(const InlineRep& other) const { return data_ == other.data_; }
 
+    
     void CopyTo(absl::Nonnull<std::string*> dst) const {
-      
-      
-      
-      absl::strings_internal::STLStringResizeUninitialized(dst, kMaxInline);
-      data_.copy_max_inline_to(&(*dst)[0]);
-      
-      
-      dst->erase(inline_size());
+      data_.CopyInlineToString(dst);
     }
 
     

@@ -19,16 +19,18 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
-#include <type_traits>
+#include <cstring>
+#include <string>
 
 #include "absl/base/attributes.h"
 #include "absl/base/config.h"
 #include "absl/base/internal/endian.h"
 #include "absl/base/internal/invoke.h"
+#include "absl/base/macros.h"
+#include "absl/base/nullability.h"
 #include "absl/base/optimization.h"
 #include "absl/container/internal/compressed_tuple.h"
 #include "absl/container/internal/container_memory.h"
-#include "absl/meta/type_traits.h"
 #include "absl/strings/string_view.h"
 
 
@@ -633,6 +635,19 @@ class InlineData {
     rep_.set_tag(static_cast<int8_t>(n << 1));
     SmallMemmove<true>(rep_.as_chars(), data, n);
     poison();
+  }
+
+  void CopyInlineToString(absl::Nonnull<std::string*> dst) const {
+    assert(!is_tree());
+    
+    
+    
+    
+    
+    
+    dst->assign(rep_.SanitizerSafeCopy().as_chars(), kMaxInline);
+    
+    dst->erase(inline_size());
   }
 
   void copy_max_inline_to(char* dst) const {

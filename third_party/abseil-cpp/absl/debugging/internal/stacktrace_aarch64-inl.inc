@@ -178,6 +178,20 @@ static void **NextStackFrame(void **old_frame_pointer, const void *uc,
   return new_frame_pointer;
 }
 
+
+
+
+
+inline void* ClearPacBits(void* ptr) {
+  register void* x30 __asm__("x30") = ptr;
+  
+  
+  
+  
+  asm("xpaclri" : "+r"(x30));
+  return x30;
+}
+
 template <bool IS_STACK_FRAMES, bool IS_WITH_CONTEXT>
 
 
@@ -219,7 +233,7 @@ static int UnwindImpl(void** result, int* sizes, int max_depth, int skip_count,
     if (skip_count > 0) {
       skip_count--;
     } else {
-      result[n] = prev_return_address;
+      result[n] = ClearPacBits(prev_return_address);
       if (IS_STACK_FRAMES) {
         sizes[n] = static_cast<int>(
             ComputeStackFrameSize(prev_frame_pointer, frame_pointer));

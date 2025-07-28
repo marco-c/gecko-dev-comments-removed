@@ -835,6 +835,17 @@
 
 
 
+#if ABSL_HAVE_CPP_ATTRIBUTE(clang::lifetime_capture_by)
+#define ABSL_INTERNAL_ATTRIBUTE_CAPTURED_BY(Owner) \
+  [[clang::lifetime_capture_by(Owner)]]
+#else
+#define ABSL_INTERNAL_ATTRIBUTE_CAPTURED_BY(Owner)
+#endif
+
+
+
+
+
 
 
 

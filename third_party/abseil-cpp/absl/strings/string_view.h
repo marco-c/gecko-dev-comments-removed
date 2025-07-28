@@ -213,9 +213,8 @@ class ABSL_ATTRIBUTE_VIEW string_view {
   constexpr string_view(absl::Nullable<const char*> data, size_type len)
       : ptr_(data), length_(CheckLengthInternal(len)) {}
 
-  
-  
-  
+  constexpr string_view(const string_view&) noexcept = default;
+  string_view& operator=(const string_view&) noexcept = default;
 
   
 
@@ -302,7 +301,8 @@ class ABSL_ATTRIBUTE_VIEW string_view {
   
   
   constexpr const_reference operator[](size_type i) const {
-    return ABSL_HARDENING_ASSERT(i < size()), ptr_[i];
+    ABSL_HARDENING_ASSERT(i < size());
+    return ptr_[i];
   }
 
   
@@ -321,14 +321,16 @@ class ABSL_ATTRIBUTE_VIEW string_view {
   
   
   constexpr const_reference front() const {
-    return ABSL_HARDENING_ASSERT(!empty()), ptr_[0];
+    ABSL_HARDENING_ASSERT(!empty());
+    return ptr_[0];
   }
 
   
   
   
   constexpr const_reference back() const {
-    return ABSL_HARDENING_ASSERT(!empty()), ptr_[size() - 1];
+    ABSL_HARDENING_ASSERT(!empty());
+    return ptr_[size() - 1];
   }
 
   
@@ -674,7 +676,8 @@ class ABSL_ATTRIBUTE_VIEW string_view {
       (std::numeric_limits<difference_type>::max)();
 
   static constexpr size_type CheckLengthInternal(size_type len) {
-    return ABSL_HARDENING_ASSERT(len <= kMaxSize), len;
+    ABSL_HARDENING_ASSERT(len <= kMaxSize);
+    return len;
   }
 
   static constexpr size_type StrlenInternal(absl::Nonnull<const char*> str) {

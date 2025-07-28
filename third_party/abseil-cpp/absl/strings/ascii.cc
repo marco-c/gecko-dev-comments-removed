@@ -19,10 +19,8 @@
 #include <cstring>
 #include <string>
 
-#include "absl/base/attributes.h"
 #include "absl/base/config.h"
 #include "absl/base/nullability.h"
-#include "absl/base/optimization.h"
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
@@ -177,11 +175,17 @@ constexpr bool AsciiInAZRange(unsigned char c) {
   return static_cast<signed char>(u) < threshold;
 }
 
-
-
 template <bool ToUpper>
-ABSL_ATTRIBUTE_ALWAYS_INLINE inline constexpr void AsciiStrCaseFoldImpl(
-    absl::Nonnull<char*> dst, absl::Nullable<const char*> src, size_t size) {
+constexpr bool AsciiInAZRangeNaive(unsigned char c) {
+  constexpr unsigned char a = (ToUpper ? 'a' : 'A');
+  constexpr unsigned char z = (ToUpper ? 'z' : 'Z');
+  return a <= c && c <= z;
+}
+
+template <bool ToUpper, bool Naive>
+constexpr void AsciiStrCaseFoldImpl(absl::Nonnull<char*> dst,
+                                    absl::Nullable<const char*> src,
+                                    size_t size) {
   
   
   
@@ -191,22 +195,17 @@ ABSL_ATTRIBUTE_ALWAYS_INLINE inline constexpr void AsciiStrCaseFoldImpl(
 
   for (size_t i = 0; i < size; ++i) {
     unsigned char v = static_cast<unsigned char>(src[i]);
-    v ^= AsciiInAZRange<ToUpper>(v) ? kAsciiCaseBitFlip : 0;
+    if ABSL_INTERNAL_CONSTEXPR_SINCE_CXX17 (Naive) {
+      v ^= AsciiInAZRangeNaive<ToUpper>(v) ? kAsciiCaseBitFlip : 0;
+    } else {
+      v ^= AsciiInAZRange<ToUpper>(v) ? kAsciiCaseBitFlip : 0;
+    }
     dst[i] = static_cast<char>(v);
   }
 }
 
 
-constexpr size_t kCaseFoldThreshold = 16;
 
-
-
-template <bool ToUpper>
-ABSL_ATTRIBUTE_NOINLINE constexpr void AsciiStrCaseFoldLong(
-    absl::Nonnull<char*> dst, absl::Nullable<const char*> src, size_t size) {
-  ABSL_ASSUME(size >= kCaseFoldThreshold);
-  AsciiStrCaseFoldImpl<ToUpper>(dst, src, size);
-}
 
 
 
@@ -214,8 +213,8 @@ ABSL_ATTRIBUTE_NOINLINE constexpr void AsciiStrCaseFoldLong(
 template <bool ToUpper>
 constexpr void AsciiStrCaseFold(absl::Nonnull<char*> dst,
                                 absl::Nullable<const char*> src, size_t size) {
-  size < kCaseFoldThreshold ? AsciiStrCaseFoldImpl<ToUpper>(dst, src, size)
-                            : AsciiStrCaseFoldLong<ToUpper>(dst, src, size);
+  size < 16 ? AsciiStrCaseFoldImpl<ToUpper, true>(dst, src, size)
+            : AsciiStrCaseFoldImpl<ToUpper, false>(dst, src, size);
 }
 
 void AsciiStrToLower(absl::Nonnull<char*> dst, absl::Nullable<const char*> src,

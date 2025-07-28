@@ -24,8 +24,13 @@
 #include <vector>
 
 #include "gtest/gtest.h"
+#include "absl/base/config.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
+
+#if defined(ABSL_HAVE_STD_STRING_VIEW)
+#include <string_view>
+#endif
 
 #ifdef __ANDROID__
 
@@ -213,6 +218,14 @@ TEST(StrCat, CornerCases) {
   result = absl::StrCat("", "", "", "", "");
   EXPECT_EQ(result, "");
 }
+
+#if defined(ABSL_HAVE_STD_STRING_VIEW)
+TEST(StrCat, StdStringView) {
+  std::string_view pieces[] = {"Hello", ", ", "World", "!"};
+  EXPECT_EQ(absl::StrCat(pieces[0], pieces[1], pieces[2], pieces[3]),
+                         "Hello, World!");
+}
+#endif  
 
 TEST(StrCat, NullConstCharPtr) {
   const char* null = nullptr;

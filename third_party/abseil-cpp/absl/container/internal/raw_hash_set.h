@@ -175,12 +175,6 @@
 
 
 
-
-
-
-
-
-
 #ifndef ABSL_CONTAINER_INTERNAL_RAW_HASH_SET_H_
 #define ABSL_CONTAINER_INTERNAL_RAW_HASH_SET_H_
 
@@ -209,6 +203,7 @@
 #include "absl/base/port.h"
 #include "absl/base/prefetch.h"
 #include "absl/container/internal/common.h"  
+#include "absl/container/internal/common_policy_traits.h"
 #include "absl/container/internal/compressed_tuple.h"
 #include "absl/container/internal/container_memory.h"
 #include "absl/container/internal/hash_function_defaults.h"
@@ -2007,25 +2002,7 @@ class HashSetResizeHelper {
   
   
   static FindInfo FindFirstNonFullAfterResize(const CommonFields& c,
-                                              size_t old_capacity,
-                                              size_t hash) {
-    if (!IsGrowingIntoSingleGroupApplicable(old_capacity, c.capacity())) {
-      return find_first_non_full(c, hash);
-    }
-    
-    
-    
-    
-    size_t offset = probe(c, hash).offset();
-
-    
-    if (offset - (old_capacity + 1) >= old_capacity) {
-      
-      offset = old_capacity / 2;
-    }
-    ABSL_SWISSTABLE_ASSERT(IsEmpty(c.control()[offset]));
-    return FindInfo{offset, 0};
-  }
+                                              size_t old_capacity, size_t hash);
 
   HeapOrSoo& old_heap_or_soo() { return old_heap_or_soo_; }
   void* old_soo_data() { return old_heap_or_soo_.get_soo_data(); }
@@ -2148,16 +2125,14 @@ class HashSetResizeHelper {
     using slot_type = typename PolicyTraits::slot_type;
     ABSL_SWISSTABLE_ASSERT(is_single_group(c.capacity()));
 
-    auto* new_slots = static_cast<slot_type*>(c.slot_array());
+    auto* new_slots = static_cast<slot_type*>(c.slot_array()) + 1;
     auto* old_slots_ptr = static_cast<slot_type*>(old_slots());
+    auto* old_ctrl_ptr = old_ctrl();
 
-    size_t shuffle_bit = old_capacity_ / 2 + 1;
-    for (size_t i = 0; i < old_capacity_; ++i) {
-      if (IsFull(old_ctrl()[i])) {
-        size_t new_i = i ^ shuffle_bit;
-        SanitizerUnpoisonMemoryRegion(new_slots + new_i, sizeof(slot_type));
-        PolicyTraits::transfer(&alloc_ref, new_slots + new_i,
-                               old_slots_ptr + i);
+    for (size_t i = 0; i < old_capacity_; ++i, ++new_slots) {
+      if (IsFull(old_ctrl_ptr[i])) {
+        SanitizerUnpoisonMemoryRegion(new_slots, sizeof(slot_type));
+        PolicyTraits::transfer(&alloc_ref, new_slots, old_slots_ptr + i);
       }
     }
     PoisonSingleGroupEmptySlots(c, sizeof(slot_type));
@@ -2192,8 +2167,6 @@ class HashSetResizeHelper {
   
   void TransferSlotAfterSoo(CommonFields& c, size_t slot_size);
 
-  
-  
   
   
   
@@ -2458,23 +2431,14 @@ class raw_hash_set {
   static_assert(std::is_lvalue_reference<reference>::value,
                 "Policy::element() must return a reference");
 
-  template <typename T>
-  struct SameAsElementReference
-      : std::is_same<typename std::remove_cv<
-                         typename std::remove_reference<reference>::type>::type,
-                     typename std::remove_cv<
-                         typename std::remove_reference<T>::type>::type> {};
-
-  
-  
-  
   
   
   template <class T>
-  using RequiresInsertable = typename std::enable_if<
-      absl::disjunction<std::is_convertible<T, init_type>,
-                        SameAsElementReference<T>>::value,
-      int>::type;
+  using Insertable = absl::disjunction<
+      std::is_same<absl::remove_cvref_t<reference>, absl::remove_cvref_t<T>>,
+      std::is_convertible<T, init_type>>;
+  template <class T>
+  using IsNotBitField = std::is_pointer<T*>;
 
   
   
@@ -2484,6 +2448,17 @@ class raw_hash_set {
 
   template <class... Ts>
   using IsDecomposable = IsDecomposable<void, PolicyTraits, Hash, Eq, Ts...>;
+
+  template <class T>
+  using IsDecomposableAndInsertable =
+      IsDecomposable<std::enable_if_t<Insertable<T>::value, T>>;
+
+  
+  
+  template <class U>
+  using IsLifetimeBoundAssignmentFrom = std::conditional_t<
+      policy_trait_element_is_owner<Policy>::value, std::false_type,
+      type_traits_internal::IsLifetimeBoundAssignment<init_type, U>>;
 
  public:
   static_assert(std::is_same<pointer, value_type*>::value,
@@ -2728,7 +2703,8 @@ class raw_hash_set {
   
   
   
-  template <class T, RequiresNotInit<T> = 0, RequiresInsertable<T> = 0>
+  template <class T, RequiresNotInit<T> = 0,
+            std::enable_if_t<Insertable<T>::value, int> = 0>
   raw_hash_set(std::initializer_list<T> init, size_t bucket_count = 0,
                const hasher& hash = hasher(), const key_equal& eq = key_equal(),
                const allocator_type& alloc = allocator_type())
@@ -2739,7 +2715,8 @@ class raw_hash_set {
                const allocator_type& alloc = allocator_type())
       : raw_hash_set(init.begin(), init.end(), bucket_count, hash, eq, alloc) {}
 
-  template <class T, RequiresNotInit<T> = 0, RequiresInsertable<T> = 0>
+  template <class T, RequiresNotInit<T> = 0,
+            std::enable_if_t<Insertable<T>::value, int> = 0>
   raw_hash_set(std::initializer_list<T> init, size_t bucket_count,
                const hasher& hash, const allocator_type& alloc)
       : raw_hash_set(init, bucket_count, hash, key_equal(), alloc) {}
@@ -2748,7 +2725,8 @@ class raw_hash_set {
                const hasher& hash, const allocator_type& alloc)
       : raw_hash_set(init, bucket_count, hash, key_equal(), alloc) {}
 
-  template <class T, RequiresNotInit<T> = 0, RequiresInsertable<T> = 0>
+  template <class T, RequiresNotInit<T> = 0,
+            std::enable_if_t<Insertable<T>::value, int> = 0>
   raw_hash_set(std::initializer_list<T> init, size_t bucket_count,
                const allocator_type& alloc)
       : raw_hash_set(init, bucket_count, hasher(), key_equal(), alloc) {}
@@ -2757,7 +2735,8 @@ class raw_hash_set {
                const allocator_type& alloc)
       : raw_hash_set(init, bucket_count, hasher(), key_equal(), alloc) {}
 
-  template <class T, RequiresNotInit<T> = 0, RequiresInsertable<T> = 0>
+  template <class T, RequiresNotInit<T> = 0,
+            std::enable_if_t<Insertable<T>::value, int> = 0>
   raw_hash_set(std::initializer_list<T> init, const allocator_type& alloc)
       : raw_hash_set(init, 0, hasher(), key_equal(), alloc) {}
 
@@ -2973,12 +2952,23 @@ class raw_hash_set {
   
   
   
-  
-  
-  template <class T, RequiresInsertable<T> = 0, class T2 = T,
-            typename std::enable_if<IsDecomposable<T2>::value, int>::type = 0,
-            T* = nullptr>
+  template <class T,
+            std::enable_if_t<IsDecomposableAndInsertable<T>::value &&
+                                 IsNotBitField<T>::value &&
+                                 !IsLifetimeBoundAssignmentFrom<T>::value,
+                             int> = 0>
   std::pair<iterator, bool> insert(T&& value) ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return emplace(std::forward<T>(value));
+  }
+
+  template <class T,
+            std::enable_if_t<IsDecomposableAndInsertable<T>::value &&
+                                 IsNotBitField<T>::value &&
+                                 IsLifetimeBoundAssignmentFrom<T>::value,
+                             int> = 0>
+  std::pair<iterator, bool> insert(
+      T&& value ABSL_INTERNAL_ATTRIBUTE_CAPTURED_BY(this))
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
     return emplace(std::forward<T>(value));
   }
 
@@ -2993,10 +2983,20 @@ class raw_hash_set {
   
   
   
-  template <
-      class T, RequiresInsertable<const T&> = 0,
-      typename std::enable_if<IsDecomposable<const T&>::value, int>::type = 0>
+  template <class T, std::enable_if_t<
+                         IsDecomposableAndInsertable<const T&>::value &&
+                             !IsLifetimeBoundAssignmentFrom<const T&>::value,
+                         int> = 0>
   std::pair<iterator, bool> insert(const T& value)
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return emplace(value);
+  }
+  template <class T,
+            std::enable_if_t<IsDecomposableAndInsertable<const T&>::value &&
+                                 IsLifetimeBoundAssignmentFrom<const T&>::value,
+                             int> = 0>
+  std::pair<iterator, bool> insert(
+      const T& value ABSL_INTERNAL_ATTRIBUTE_CAPTURED_BY(this))
       ABSL_ATTRIBUTE_LIFETIME_BOUND {
     return emplace(value);
   }
@@ -3007,22 +3007,43 @@ class raw_hash_set {
   
   
   std::pair<iterator, bool> insert(init_type&& value)
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+      ABSL_ATTRIBUTE_LIFETIME_BOUND
+#if __cplusplus >= 202002L
+    requires(!IsLifetimeBoundAssignmentFrom<init_type>::value)
+#endif
+  {
     return emplace(std::move(value));
   }
+#if __cplusplus >= 202002L
+  std::pair<iterator, bool> insert(
+      init_type&& value ABSL_INTERNAL_ATTRIBUTE_CAPTURED_BY(this))
+      ABSL_ATTRIBUTE_LIFETIME_BOUND
+    requires(IsLifetimeBoundAssignmentFrom<init_type>::value)
+  {
+    return emplace(std::move(value));
+  }
+#endif
 
-  
-  
-  template <class T, RequiresInsertable<T> = 0, class T2 = T,
-            typename std::enable_if<IsDecomposable<T2>::value, int>::type = 0,
-            T* = nullptr>
+  template <class T,
+            std::enable_if_t<IsDecomposableAndInsertable<T>::value &&
+                                 IsNotBitField<T>::value &&
+                                 !IsLifetimeBoundAssignmentFrom<T>::value,
+                             int> = 0>
   iterator insert(const_iterator, T&& value) ABSL_ATTRIBUTE_LIFETIME_BOUND {
     return insert(std::forward<T>(value)).first;
   }
+  template <class T,
+            std::enable_if_t<IsDecomposableAndInsertable<T>::value &&
+                                 IsNotBitField<T>::value &&
+                                 IsLifetimeBoundAssignmentFrom<T>::value,
+                             int> = 0>
+  iterator insert(const_iterator, T&& value ABSL_INTERNAL_ATTRIBUTE_CAPTURED_BY(
+                                      this)) ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return insert(std::forward<T>(value)).first;
+  }
 
-  template <
-      class T, RequiresInsertable<const T&> = 0,
-      typename std::enable_if<IsDecomposable<const T&>::value, int>::type = 0>
+  template <class T, std::enable_if_t<
+                         IsDecomposableAndInsertable<const T&>::value, int> = 0>
   iterator insert(const_iterator,
                   const T& value) ABSL_ATTRIBUTE_LIFETIME_BOUND {
     return insert(value).first;
@@ -3038,7 +3059,8 @@ class raw_hash_set {
     for (; first != last; ++first) emplace(*first);
   }
 
-  template <class T, RequiresNotInit<T> = 0, RequiresInsertable<const T&> = 0>
+  template <class T, RequiresNotInit<T> = 0,
+            std::enable_if_t<Insertable<const T&>::value, int> = 0>
   void insert(std::initializer_list<T> ilist) {
     insert(ilist.begin(), ilist.end());
   }
@@ -3077,8 +3099,8 @@ class raw_hash_set {
   
   
   
-  template <class... Args, typename std::enable_if<
-                               IsDecomposable<Args...>::value, int>::type = 0>
+  template <class... Args,
+            std::enable_if_t<IsDecomposable<Args...>::value, int> = 0>
   std::pair<iterator, bool> emplace(Args&&... args)
       ABSL_ATTRIBUTE_LIFETIME_BOUND {
     return PolicyTraits::apply(EmplaceDecomposable{*this},
@@ -3088,8 +3110,8 @@ class raw_hash_set {
   
   
   
-  template <class... Args, typename std::enable_if<
-                               !IsDecomposable<Args...>::value, int>::type = 0>
+  template <class... Args,
+            std::enable_if_t<!IsDecomposable<Args...>::value, int> = 0>
   std::pair<iterator, bool> emplace(Args&&... args)
       ABSL_ATTRIBUTE_LIFETIME_BOUND {
     alignas(slot_type) unsigned char raw[sizeof(slot_type)];
@@ -3194,6 +3216,22 @@ class raw_hash_set {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   void erase(const_iterator cit) { erase(cit.inner_); }
 
   
@@ -3281,9 +3319,8 @@ class raw_hash_set {
     return node;
   }
 
-  template <
-      class K = key_type,
-      typename std::enable_if<!std::is_same<K, iterator>::value, int>::type = 0>
+  template <class K = key_type,
+            std::enable_if_t<!std::is_same<K, iterator>::value, int> = 0>
   node_type extract(const key_arg<K>& key) {
     auto it = find(key);
     return it == end() ? node_type() : extract(const_iterator{it});
@@ -3394,20 +3431,14 @@ class raw_hash_set {
 #endif  
   }
 
-  
-  
-  
-  
-  
-  
-  
   template <class K = key_type>
+  ABSL_DEPRECATE_AND_INLINE()
   iterator find(const key_arg<K>& key,
-                size_t hash) ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    AssertOnFind(key);
-    if (is_soo()) return find_soo(key);
-    return find_non_soo(key, hash);
+                size_t) ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return find(key);
   }
+  
+  
   template <class K = key_type>
   iterator find(const key_arg<K>& key) ABSL_ATTRIBUTE_LIFETIME_BOUND {
     AssertOnFind(key);
@@ -3417,9 +3448,10 @@ class raw_hash_set {
   }
 
   template <class K = key_type>
+  ABSL_DEPRECATE_AND_INLINE()
   const_iterator find(const key_arg<K>& key,
-                      size_t hash) const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return const_cast<raw_hash_set*>(this)->find(key, hash);
+                      size_t) const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return find(key);
   }
   template <class K = key_type>
   const_iterator find(const key_arg<K>& key) const
@@ -4155,7 +4187,7 @@ class raw_hash_set {
         (std::is_same<SlotAlloc, std::allocator<slot_type>>::value
              ? &DeallocateStandard<alignof(slot_type)>
              : &raw_hash_set::dealloc_fn),
-        &raw_hash_set::resize_impl,
+        &raw_hash_set::resize_impl
     };
     return value;
   }

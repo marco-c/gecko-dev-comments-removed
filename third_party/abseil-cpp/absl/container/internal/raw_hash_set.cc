@@ -28,6 +28,7 @@
 #include "absl/container/internal/container_memory.h"
 #include "absl/container/internal/hashtablez_sampler.h"
 #include "absl/hash/hash.h"
+#include "absl/numeric/bits.h"
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
@@ -96,6 +97,16 @@ bool ShouldRehashForBugDetection(const ctrl_t* ctrl, size_t capacity) {
          RehashProbabilityConstant();
 }
 
+
+
+
+
+
+size_t SingleGroupTableH1(size_t hash, ctrl_t* control) {
+  return static_cast<size_t>(absl::popcount(
+      hash ^ static_cast<size_t>(reinterpret_cast<uintptr_t>(control))));
+}
+
 }  
 
 GenerationType* EmptyGeneration() {
@@ -135,7 +146,7 @@ size_t PrepareInsertAfterSoo(size_t hash, size_t slot_size,
   
   assert(HashSetResizeHelper::SooSlotIndex() == 1);
   PrepareInsertCommon(common);
-  const size_t offset = H1(hash, common.control()) & 2;
+  const size_t offset = SingleGroupTableH1(hash, common.control()) & 2;
   common.growth_info().OverwriteEmptyAsFull();
   SetCtrlInSingleGroupTable(common, offset, H2(hash), slot_size);
   common.infoz().RecordInsert(hash, 0);
@@ -346,16 +357,10 @@ void HashSetResizeHelper::GrowIntoSingleGroupShuffleControlBytes(
     ctrl_t* __restrict new_ctrl, size_t new_capacity) const {
   assert(is_single_group(new_capacity));
   constexpr size_t kHalfWidth = Group::kWidth / 2;
-  constexpr size_t kQuarterWidth = Group::kWidth / 4;
-  assert(old_capacity_ < kHalfWidth);
-  static_assert(sizeof(uint64_t) >= kHalfWidth,
-                "Group size is too large. The ctrl bytes for half a group must "
-                "fit into a uint64_t for this implementation.");
-  static_assert(sizeof(uint64_t) <= Group::kWidth,
-                "Group size is too small. The ctrl bytes for a group must "
-                "cover a uint64_t for this implementation.");
-
-  const size_t half_old_capacity = old_capacity_ / 2;
+  ABSL_ASSUME(old_capacity_ < kHalfWidth);
+  ABSL_ASSUME(old_capacity_ > 0);
+  static_assert(Group::kWidth == 8 || Group::kWidth == 16,
+                "Group size is not supported.");
 
   
   
@@ -363,21 +368,21 @@ void HashSetResizeHelper::GrowIntoSingleGroupShuffleControlBytes(
   
   
   
-  uint64_t copied_bytes = 0;
-  copied_bytes =
-      absl::little_endian::Load64(old_ctrl() + half_old_capacity + 1);
+  
+  
+  
+  
+  uint64_t copied_bytes =
+      absl::little_endian::Load64(old_ctrl() + old_capacity_);
 
   
   
   
   
   
-  constexpr uint64_t kEmptyXorSentinel =
+  static constexpr uint64_t kEmptyXorSentinel =
       static_cast<uint8_t>(ctrl_t::kEmpty) ^
       static_cast<uint8_t>(ctrl_t::kSentinel);
-  const uint64_t mask_convert_old_sentinel_to_empty =
-      kEmptyXorSentinel << (half_old_capacity * 8);
-  copied_bytes ^= mask_convert_old_sentinel_to_empty;
 
   
   
@@ -385,62 +390,49 @@ void HashSetResizeHelper::GrowIntoSingleGroupShuffleControlBytes(
   
   
   
+  copied_bytes ^= kEmptyXorSentinel;
+
+  if (Group::kWidth == 8) {
+    
+    assert(old_capacity_ < 8 && "old_capacity_ is too large for group size 8");
+    absl::little_endian::Store64(new_ctrl, copied_bytes);
+
+    static constexpr uint64_t kSentinal64 =
+        static_cast<uint8_t>(ctrl_t::kSentinel);
+
+    
+    
+    
+    
+    
+    
+    
+    copied_bytes = (copied_bytes << 8) ^ kSentinal64;
+    absl::little_endian::Store64(new_ctrl + new_capacity, copied_bytes);
+    
+    
+    
+    
+    
+    
+    
+    
+    return;
+  }
+
+  assert(Group::kWidth == 16);
+
   
   
   
+  std::memset(new_ctrl + kHalfWidth, static_cast<int8_t>(ctrl_t::kEmpty),
+              kHalfWidth);
   
-  
-  
-  
-  
-  
+  std::memset(new_ctrl + new_capacity + kHalfWidth,
+              static_cast<int8_t>(ctrl_t::kEmpty), kHalfWidth);
   
   absl::little_endian::Store64(new_ctrl, copied_bytes);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  std::memset(new_ctrl + old_capacity_ + 1, static_cast<int8_t>(ctrl_t::kEmpty),
-              Group::kWidth);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  std::memset(new_ctrl + NumControlBytes(new_capacity) - kHalfWidth,
-              static_cast<int8_t>(ctrl_t::kEmpty), kHalfWidth);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  new_ctrl[new_capacity] = ctrl_t::kSentinel;
   
   absl::little_endian::Store64(new_ctrl + new_capacity + 1, copied_bytes);
 
@@ -456,14 +448,33 @@ void HashSetResizeHelper::GrowIntoSingleGroupShuffleControlBytes(
   
   
   
-  
-  
-  
-  std::memset(new_ctrl + new_capacity + old_capacity_ + 2,
-              static_cast<int8_t>(ctrl_t::kEmpty), kQuarterWidth);
 
   
-  new_ctrl[new_capacity] = ctrl_t::kSentinel;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 }
 
 void HashSetResizeHelper::InitControlBytesAfterSoo(ctrl_t* new_ctrl, ctrl_t h2,
@@ -480,15 +491,10 @@ void HashSetResizeHelper::InitControlBytesAfterSoo(ctrl_t* new_ctrl, ctrl_t h2,
 
 void HashSetResizeHelper::GrowIntoSingleGroupShuffleTransferableSlots(
     void* new_slots, size_t slot_size) const {
-  assert(old_capacity_ > 0);
-  const size_t half_old_capacity = old_capacity_ / 2;
-
+  ABSL_ASSUME(old_capacity_ > 0);
   SanitizerUnpoisonMemoryRegion(old_slots(), slot_size * old_capacity_);
-  std::memcpy(new_slots,
-              SlotAddress(old_slots(), half_old_capacity + 1, slot_size),
-              slot_size * half_old_capacity);
-  std::memcpy(SlotAddress(new_slots, half_old_capacity + 1, slot_size),
-              old_slots(), slot_size * (half_old_capacity + 1));
+  std::memcpy(SlotAddress(new_slots, 1, slot_size), old_slots(),
+              slot_size * old_capacity_);
 }
 
 void HashSetResizeHelper::GrowSizeIntoSingleGroupTransferable(
@@ -586,6 +592,23 @@ const void* GetHashRefForEmptyHasher(const CommonFields& common) {
   
   
   return &common;
+}
+
+FindInfo HashSetResizeHelper::FindFirstNonFullAfterResize(const CommonFields& c,
+                                                          size_t old_capacity,
+                                                          size_t hash) {
+  size_t new_capacity = c.capacity();
+  if (!IsGrowingIntoSingleGroupApplicable(old_capacity, new_capacity)) {
+    return find_first_non_full(c, hash);
+  }
+
+  
+  
+  size_t offset =
+      SingleGroupTableH1(hash, c.control()) & 1 ? 0 : new_capacity - 1;
+
+  assert(IsEmpty(c.control()[offset]));
+  return FindInfo{offset, 0};
 }
 
 size_t PrepareInsertNonSoo(CommonFields& common, size_t hash, FindInfo target,

@@ -281,4 +281,26 @@ ABSL_NAMESPACE_END
 #define ABSL_NULLABILITY_COMPATIBLE
 #endif
 
+
+
+
+
+
+
+
+
+
+
+
+#if defined(__clang__) && !defined(__OBJC__) && \
+    ABSL_HAVE_FEATURE(nullability_on_classes)
+#define ABSL_NONNULL _Nonnull
+#define ABSL_NULLABLE _Nullable
+#define ABSL_NULLABILITY_UNKNOWN _Null_unspecified
+#else
+#define ABSL_NONNULL
+#define ABSL_NULLABLE
+#define ABSL_NULLABILITY_UNKNOWN
+#endif
+
 #endif  

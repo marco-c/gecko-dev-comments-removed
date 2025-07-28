@@ -19,10 +19,21 @@
 
 #include "absl/random/internal/randen_detect.h"
 
+#if defined(__APPLE__) && defined(__aarch64__)
+#if defined(__has_include)
+#if __has_include(<arm/cpu_capabilities_public.h>)
+#include <arm/cpu_capabilities_public.h>
+#endif
+#endif
+#include <sys/sysctl.h>
+#include <sys/types.h>
+#endif
+
 #include <cstdint>
 #include <cstring>
 
 #include "absl/random/internal/platform.h"
+#include "absl/types/optional.h"  
 
 #if !defined(__UCLIBC__) && defined(__GLIBC__) && \
     (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 16))
@@ -102,6 +113,19 @@ static uint32_t GetAuxval(uint32_t hwcap_type) {
 
 #endif
 
+#if defined(__APPLE__) && defined(ABSL_ARCH_AARCH64)
+template <typename T>
+static absl::optional<T> ReadSysctlByName(const char* name) {
+  T val;
+  size_t val_size = sizeof(T);
+  int ret = sysctlbyname(name, &val, &val_size, nullptr, 0);
+  if (ret == -1) {
+    return std::nullopt;
+  }
+  return val;
+}
+#endif
+
 namespace absl {
 ABSL_NAMESPACE_BEGIN
 namespace random_internal {
@@ -112,6 +136,8 @@ namespace random_internal {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunreachable-code-return"
 #endif
+
+
 
 
 
@@ -178,14 +204,39 @@ bool CPUSupportsRandenHwAes() {
   return ((hwcap & kNEON) != 0) && ((hwcap & kAES) != 0);
 #endif
 
+#elif defined(__APPLE__) && defined(ABSL_ARCH_AARCH64)
+  
+
+  
+  
+#if defined(CAP_BIT_AdvSIMD) && defined(CAP_BIT_FEAT_AES)
+  static const absl::optional<uint64_t> caps =
+      ReadSysctlByName<uint64_t>("hw.optional.arm.caps");
+  if (caps.has_value()) {
+    constexpr uint64_t kNeonAndAesCaps =
+        (uint64_t{1} << CAP_BIT_AdvSIMD) | (uint64_t{1} << CAP_BIT_FEAT_AES);
+    return (*caps & kNeonAndAesCaps) == kNeonAndAesCaps;
+  }
+#endif
+
+  
+  static const absl::optional<int> adv_simd =
+      ReadSysctlByName<int>("hw.optional.AdvSIMD");
+  if (adv_simd.value_or(0) == 0) {
+    return false;
+  }
+  
+  static const absl::optional<int> feat_aes =
+      ReadSysctlByName<int>("hw.optional.arm.FEAT_AES");
+  if (feat_aes.value_or(0) == 0) {
+    return false;
+  }
+  return true;
 #else  
   
   return ABSL_HAVE_ACCELERATED_AES ? true : false;
 
 #endif
-  
-  
-  
   
   
   

@@ -769,6 +769,8 @@ TEST(TriviallyRelocatable, UserProvidedDestructor) {
 
 
 
+
+
 #if defined(ABSL_HAVE_ATTRIBUTE_TRIVIAL_ABI) &&      \
     ABSL_HAVE_BUILTIN(__is_trivially_relocatable) && \
     (defined(__cpp_impl_trivially_relocatable) ||    \
@@ -779,8 +781,28 @@ TEST(TriviallyRelocatable, TrivialAbi) {
   struct ABSL_ATTRIBUTE_TRIVIAL_ABI S {
     S(S&&) {}       
     S(const S&) {}  
-    void operator=(S&&) {}
-    void operator=(const S&) {}
+    S& operator=(S&&) { return *this; }
+    S& operator=(const S&) { return *this; }
+    ~S() {}  
+  };
+
+  static_assert(absl::is_trivially_relocatable<S>::value, "");
+}
+#endif
+
+
+
+
+
+#if defined(ABSL_HAVE_ATTRIBUTE_TRIVIAL_ABI) &&                            \
+    ABSL_HAVE_BUILTIN(__is_trivially_relocatable) && defined(__clang__) && \
+    !(defined(_WIN32) || defined(_WIN64)) && !defined(__APPLE__) &&        \
+    !defined(__NVCC__)
+
+
+TEST(TriviallyRelocatable, TrivialAbi_NoUserProvidedMove) {
+  struct ABSL_ATTRIBUTE_TRIVIAL_ABI S {
+    S(const S&) {}  
     ~S() {}  
   };
 

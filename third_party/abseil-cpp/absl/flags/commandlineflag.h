@@ -200,6 +200,13 @@ class CommandLineFlag {
   
   
   virtual void CheckDefaultValueParsingRoundtrip() const = 0;
+
+  
+  
+  
+  
+  
+  virtual absl::string_view TypeName() const;
 };
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic pop

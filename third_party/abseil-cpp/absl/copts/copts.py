@@ -180,15 +180,4 @@ COPT_VARS = {
         
         "-ignore:4221",
     ],
-    
-    
-    
-    
-    "ABSL_RANDOM_HWAES_ARM64_FLAGS": ["-march=armv8-a+crypto"],
-    "ABSL_RANDOM_HWAES_ARM32_FLAGS": ["-mfpu=neon"],
-    "ABSL_RANDOM_HWAES_X64_FLAGS": [
-        "-maes",
-        "-msse4.1",
-    ],
-    "ABSL_RANDOM_HWAES_MSVC_X64_FLAGS": [],
 }

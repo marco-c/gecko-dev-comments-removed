@@ -44,8 +44,8 @@ ABSL_NAMESPACE_BEGIN
 
 
 
-inline bool ConsumePrefix(absl::Nonnull<absl::string_view*> str,
-                          absl::string_view expected) {
+inline constexpr bool ConsumePrefix(absl::Nonnull<absl::string_view*> str,
+                                    absl::string_view expected) {
   if (!absl::StartsWith(*str, expected)) return false;
   str->remove_prefix(expected.size());
   return true;
@@ -61,8 +61,8 @@ inline bool ConsumePrefix(absl::Nonnull<absl::string_view*> str,
 
 
 
-inline bool ConsumeSuffix(absl::Nonnull<absl::string_view*> str,
-                          absl::string_view expected) {
+inline constexpr bool ConsumeSuffix(absl::Nonnull<absl::string_view*> str,
+                                    absl::string_view expected) {
   if (!absl::EndsWith(*str, expected)) return false;
   str->remove_suffix(expected.size());
   return true;
@@ -73,7 +73,7 @@ inline bool ConsumeSuffix(absl::Nonnull<absl::string_view*> str,
 
 
 
-ABSL_MUST_USE_RESULT inline absl::string_view StripPrefix(
+ABSL_MUST_USE_RESULT inline constexpr absl::string_view StripPrefix(
     absl::string_view str, absl::string_view prefix) {
   if (absl::StartsWith(str, prefix)) str.remove_prefix(prefix.size());
   return str;
@@ -84,7 +84,7 @@ ABSL_MUST_USE_RESULT inline absl::string_view StripPrefix(
 
 
 
-ABSL_MUST_USE_RESULT inline absl::string_view StripSuffix(
+ABSL_MUST_USE_RESULT inline constexpr absl::string_view StripSuffix(
     absl::string_view str, absl::string_view suffix) {
   if (absl::EndsWith(str, suffix)) str.remove_suffix(suffix.size());
   return str;

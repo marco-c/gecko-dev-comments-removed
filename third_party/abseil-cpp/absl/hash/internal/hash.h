@@ -36,8 +36,10 @@
 #include <algorithm>
 #include <array>
 #include <bitset>
+#include <cassert>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <cstring>
 #include <deque>
 #include <forward_list>
@@ -56,7 +58,10 @@
 #include <utility>
 #include <vector>
 
+#include "absl/base/attributes.h"
+#include "absl/base/internal/endian.h"
 #include "absl/base/internal/unaligned_access.h"
+#include "absl/base/optimization.h"
 #include "absl/base/port.h"
 #include "absl/container/fixed_array.h"
 #include "absl/hash/internal/city.h"
@@ -75,6 +80,10 @@
 
 #ifdef ABSL_HAVE_STD_STRING_VIEW
 #include <string_view>
+#endif
+
+#ifdef __ARM_ACLE
+#include <arm_acle.h>
 #endif
 
 namespace absl {
@@ -339,7 +348,7 @@ struct is_uniquely_represented<
 template <>
 struct is_uniquely_represented<bool> : std::false_type {};
 
-#if ABSL_HAVE_INTRINSIC_INT128
+#ifdef ABSL_HAVE_INTRINSIC_INT128
 
 template <>
 struct is_uniquely_represented<__int128> : std::true_type {};
@@ -347,11 +356,39 @@ template <>
 struct is_uniquely_represented<unsigned __int128> : std::true_type {};
 #endif  
 
+template <typename T>
+struct FitsIn64Bits : std::integral_constant<bool, sizeof(T) <= 8> {};
+
+struct CombineRaw {
+  template <typename H>
+  H operator()(H state, uint64_t value) const {
+    return H::combine_raw(std::move(state), value);
+  }
+};
 
 
 
 
-template <typename H, typename T>
+
+template <typename H, typename T,
+          absl::enable_if_t<FitsIn64Bits<T>::value, int> = 0>
+H hash_bytes(H hash_state, const T& value) {
+  const unsigned char* start = reinterpret_cast<const unsigned char*>(&value);
+  uint64_t v;
+  if (sizeof(T) == 1) {
+    v = *start;
+  } else if (sizeof(T) == 2) {
+    v = absl::base_internal::UnalignedLoad16(start);
+  } else if (sizeof(T) == 4) {
+    v = absl::base_internal::UnalignedLoad32(start);
+  } else {
+    assert(sizeof(T) == 8);
+    v = absl::base_internal::UnalignedLoad64(start);
+  }
+  return CombineRaw()(std::move(hash_state), v);
+}
+template <typename H, typename T,
+          absl::enable_if_t<!FitsIn64Bits<T>::value, int> = 0>
 H hash_bytes(H hash_state, const T& value) {
   const unsigned char* start = reinterpret_cast<const unsigned char*>(&value);
   return H::combine_contiguous(std::move(hash_state), start, sizeof(value));
@@ -935,6 +972,7 @@ struct HashSelect {
     static State combine_contiguous(State hash_state, const unsigned char*,
                                     size_t);
     using State::HashStateBase::combine_contiguous;
+    static State combine_raw(State state, uint64_t value);
   };
 
   struct UniquelyRepresentedProbe {
@@ -1017,12 +1055,16 @@ class ABSL_DLL MixingHashState : public HashStateBase<MixingHashState> {
   using uint128 = absl::uint128;
 #endif  
 
+  
+  
+  ABSL_CACHELINE_ALIGNED static constexpr uint64_t kStaticRandomData[] = {
+      0x243f'6a88'85a3'08d3, 0x1319'8a2e'0370'7344, 0xa409'3822'299f'31d0,
+      0x082e'fa98'ec4e'6c89, 0x4528'21e6'38d0'1377,
+  };
+
   static constexpr uint64_t kMul =
   sizeof(size_t) == 4 ? uint64_t{0xcc9e2d51}
-                      : uint64_t{0x9ddfea08eb382d69};
-
-  template <typename T>
-  struct FitsIn64Bits : std::integral_constant<bool, sizeof(T) <= 8> {};
+                      : uint64_t{0xdcb22ca68cb134ed};
 
   template <typename T>
   using IntegralFastPath =
@@ -1057,7 +1099,7 @@ class ABSL_DLL MixingHashState : public HashStateBase<MixingHashState> {
   template <typename T, absl::enable_if_t<IntegralFastPath<T>::value, int> = 0>
   static size_t hash(T value) {
     return static_cast<size_t>(
-        Mix(Seed(), static_cast<std::make_unsigned_t<T>>(value)));
+        WeakMix(Seed() ^ static_cast<std::make_unsigned_t<T>>(value)));
   }
 
   
@@ -1095,6 +1137,7 @@ class ABSL_DLL MixingHashState : public HashStateBase<MixingHashState> {
   
   
   friend class absl::HashState;
+  friend struct CombineRaw;
 
   
   
@@ -1103,6 +1146,14 @@ class ABSL_DLL MixingHashState : public HashStateBase<MixingHashState> {
   MixingHashState(const MixingHashState&) = default;
 
   explicit MixingHashState(uint64_t state) : state_(state) {}
+
+  
+  
+  
+  static MixingHashState combine_raw(MixingHashState hash_state,
+                                     uint64_t value) {
+    return MixingHashState(WeakMix(hash_state.state_ ^ value));
+  }
 
   
   
@@ -1116,6 +1167,49 @@ class ABSL_DLL MixingHashState : public HashStateBase<MixingHashState> {
                                         const unsigned char* first, size_t len,
                                         std::integral_constant<int, 8>
                                         );
+
+  ABSL_ATTRIBUTE_ALWAYS_INLINE static uint64_t CombineSmallContiguousImpl(
+      uint64_t state, const unsigned char* first, size_t len) {
+    ABSL_ASSUME(len <= 8);
+    uint64_t v;
+    if (len >= 4) {
+      v = Read4To8(first, len);
+    } else if (len > 0) {
+      v = Read1To3(first, len);
+    } else {
+      
+      return state;
+    }
+    return WeakMix(state ^ v);
+  }
+
+  ABSL_ATTRIBUTE_ALWAYS_INLINE static uint64_t CombineContiguousImpl9to16(
+      uint64_t state, const unsigned char* first, size_t len) {
+    ABSL_ASSUME(len >= 9);
+    ABSL_ASSUME(len <= 16);
+    
+    
+    
+    
+    
+    auto p = Read9To16(first, len);
+    return Mix(state ^ p.first, kMul ^ p.second);
+  }
+
+  ABSL_ATTRIBUTE_ALWAYS_INLINE static uint64_t CombineContiguousImpl17to32(
+      uint64_t state, const unsigned char* first, size_t len) {
+    ABSL_ASSUME(len >= 17);
+    ABSL_ASSUME(len <= 32);
+    
+    
+    const uint64_t m0 =
+        Mix(Read8(first) ^ kStaticRandomData[1], Read8(first + 8) ^ state);
+
+    const unsigned char* tail_16b_ptr = first + (len - 16);
+    const uint64_t m1 = Mix(Read8(tail_16b_ptr) ^ kStaticRandomData[3],
+                            Read8(tail_16b_ptr + 8) ^ state);
+    return m0 ^ m1;
+  }
 
   
   
@@ -1132,8 +1226,8 @@ class ABSL_DLL MixingHashState : public HashStateBase<MixingHashState> {
   
   static std::pair<uint64_t, uint64_t> Read9To16(const unsigned char* p,
                                                  size_t len) {
-    uint64_t low_mem = absl::base_internal::UnalignedLoad64(p);
-    uint64_t high_mem = absl::base_internal::UnalignedLoad64(p + len - 8);
+    uint64_t low_mem = Read8(p);
+    uint64_t high_mem = Read8(p + len - 8);
 #ifdef ABSL_IS_LITTLE_ENDIAN
     uint64_t most_significant = high_mem;
     uint64_t least_significant = low_mem;
@@ -1145,52 +1239,78 @@ class ABSL_DLL MixingHashState : public HashStateBase<MixingHashState> {
   }
 
   
-  static uint64_t Read4To8(const unsigned char* p, size_t len) {
-    uint32_t low_mem = absl::base_internal::UnalignedLoad32(p);
-    uint32_t high_mem = absl::base_internal::UnalignedLoad32(p + len - 4);
-#ifdef ABSL_IS_LITTLE_ENDIAN
-    uint32_t most_significant = high_mem;
-    uint32_t least_significant = low_mem;
-#else
-    uint32_t most_significant = low_mem;
-    uint32_t least_significant = high_mem;
+  static uint64_t Read8(const unsigned char* p) {
+    
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
 #endif
-    return (static_cast<uint64_t>(most_significant) << (len - 4) * 8) |
-           least_significant;
+    return absl::base_internal::UnalignedLoad64(p);
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+  }
+
+  
+  
+  
+  
+  
+  static uint64_t Read4To8(const unsigned char* p, size_t len) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    uint64_t most_significant =
+        static_cast<uint64_t>(absl::base_internal::UnalignedLoad32(p)) << 32;
+    uint64_t least_significant =
+        absl::base_internal::UnalignedLoad32(p + len - 4);
+    return most_significant | least_significant;
   }
 
   
   static uint32_t Read1To3(const unsigned char* p, size_t len) {
     
-    unsigned char mem0 = p[0];
-    unsigned char mem1 = p[len / 2];
-    unsigned char mem2 = p[len - 1];
-#ifdef ABSL_IS_LITTLE_ENDIAN
-    unsigned char significant2 = mem2;
-    unsigned char significant1 = mem1;
-    unsigned char significant0 = mem0;
-#else
-    unsigned char significant2 = mem0;
-    unsigned char significant1 = len == 2 ? mem0 : mem1;
-    unsigned char significant0 = mem2;
-#endif
-    return static_cast<uint32_t>(significant0 |                     
-                                 (significant1 << (len / 2 * 8)) |  
-                                 (significant2 << ((len - 1) * 8)));
+    
+    
+    
+    
+    
+    
+    
+    uint32_t mem0 = (static_cast<uint32_t>(p[0]) << 16) | p[len - 1];
+    uint32_t mem1 = static_cast<uint32_t>(p[len / 2]) << 8;
+    return mem0 | mem1;
   }
 
-  ABSL_ATTRIBUTE_ALWAYS_INLINE static uint64_t Mix(uint64_t state, uint64_t v) {
+  ABSL_ATTRIBUTE_ALWAYS_INLINE static uint64_t Mix(uint64_t lhs, uint64_t rhs) {
     
     
     using MultType =
         absl::conditional_t<sizeof(size_t) == 4, uint64_t, uint128>;
-    
-    
-    
-    
-    MultType m = state + v;
-    m *= kMul;
+    MultType m = lhs;
+    m *= rhs;
     return static_cast<uint64_t>(m ^ (m >> (sizeof(m) * 8 / 2)));
+  }
+
+  
+  
+  ABSL_ATTRIBUTE_ALWAYS_INLINE static uint64_t WeakMix(uint64_t n) {
+    
+    if (sizeof(size_t) < 8) return Mix(n, kMul);
+#ifdef __ARM_ACLE
+    
+    
+    return __rbitll(n * kMul);
+#else
+    return absl::gbswap_64(n * kMul);
+#endif
   }
 
   
@@ -1244,21 +1364,15 @@ inline uint64_t MixingHashState::CombineContiguousImpl(
     std::integral_constant<int, 4> ) {
   
   
-  uint64_t v;
-  if (len > 8) {
-    if (ABSL_PREDICT_FALSE(len > PiecewiseChunkSize())) {
-      return CombineLargeContiguousImpl32(state, first, len);
-    }
-    v = hash_internal::CityHash32(reinterpret_cast<const char*>(first), len);
-  } else if (len >= 4) {
-    v = Read4To8(first, len);
-  } else if (len > 0) {
-    v = Read1To3(first, len);
-  } else {
-    
-    return state;
+  if (len <= 8) {
+    return CombineSmallContiguousImpl(state, first, len);
   }
-  return Mix(state, v);
+  if (ABSL_PREDICT_TRUE(len <= PiecewiseChunkSize())) {
+    return Mix(state ^ hash_internal::CityHash32(
+                           reinterpret_cast<const char*>(first), len),
+               kMul);
+  }
+  return CombineLargeContiguousImpl32(state, first, len);
 }
 
 
@@ -1267,38 +1381,19 @@ inline uint64_t MixingHashState::CombineContiguousImpl(
     std::integral_constant<int, 8> ) {
   
   
-  uint64_t v;
-  if (len > 16) {
-    if (ABSL_PREDICT_FALSE(len > PiecewiseChunkSize())) {
-      return CombineLargeContiguousImpl64(state, first, len);
-    }
-    v = Hash64(first, len);
-  } else if (len > 8) {
-    
-    
-    
-    
-    auto p = Read9To16(first, len);
-    uint64_t lo = p.first;
-    uint64_t hi = p.second;
-    
-    
-    lo = absl::rotr(lo, 53);
-    state += kMul;
-    lo += state;
-    state ^= hi;
-    uint128 m = state;
-    m *= lo;
-    return static_cast<uint64_t>(m ^ (m >> 64));
-  } else if (len >= 4) {
-    v = Read4To8(first, len);
-  } else if (len > 0) {
-    v = Read1To3(first, len);
-  } else {
-    
-    return state;
+  if (len <= 8) {
+    return CombineSmallContiguousImpl(state, first, len);
   }
-  return Mix(state, v);
+  if (len <= 16) {
+    return CombineContiguousImpl9to16(state, first, len);
+  }
+  if (len <= 32) {
+    return CombineContiguousImpl17to32(state, first, len);
+  }
+  if (ABSL_PREDICT_TRUE(len <= PiecewiseChunkSize())) {
+    return Mix(state ^ Hash64(first, len), kMul);
+  }
+  return CombineLargeContiguousImpl64(state, first, len);
 }
 
 struct AggregateBarrier {};

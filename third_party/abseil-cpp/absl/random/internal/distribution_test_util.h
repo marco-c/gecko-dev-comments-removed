@@ -16,9 +16,9 @@
 #define ABSL_RANDOM_INTERNAL_DISTRIBUTION_TEST_UTIL_H_
 
 #include <cstddef>
-#include <iostream>
-#include <vector>
+#include <ostream>
 
+#include "absl/base/config.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 
