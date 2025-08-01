@@ -1313,18 +1313,21 @@ nsChangeHint nsStylePosition::CalcDifference(
     }
   }
 
-  if (mPositionAnchor != aNewData.mPositionAnchor) {
+  
+  
+  
+  if (mPositionVisibility != aNewData.mPositionVisibility) {
     
-    
-    
-    hint |= nsChangeHint_NeutralChange;
+    hint |= nsChangeHint_RepaintFrame;
   }
 
-  if (mPositionVisibility != aNewData.mPositionVisibility ||
+  if (mPositionAnchor != aNewData.mPositionAnchor ||
       mPositionTryFallbacks != aNewData.mPositionTryFallbacks ||
       mPositionTryOrder != aNewData.mPositionTryOrder ||
       mPositionArea != aNewData.mPositionArea) {
-    hint |= nsChangeHint_NeutralChange;
+    
+    
+    hint |= nsChangeHint_NeedReflow;
   }
 
   if (mAspectRatio != aNewData.mAspectRatio) {
@@ -1717,7 +1720,8 @@ void StyleImage::ResolveImage(Document& aDoc, const StyleImage* aOld) {
 }
 
 template <>
-ImageResolution StyleImage::GetResolution(const ComputedStyle& aStyle) const {
+ImageResolution StyleImage::GetResolution(
+    const ComputedStyle* aStyleForZoom) const {
   ImageResolution resolution;
   if (imgRequestProxy* request = GetImageRequest()) {
     RefPtr<imgIContainer> image;
@@ -1734,8 +1738,8 @@ ImageResolution StyleImage::GetResolution(const ComputedStyle& aStyle) const {
       resolution.ScaleBy(r);
     }
   }
-  if (aStyle.EffectiveZoom() != StyleZoom::ONE) {
-    resolution.ScaleBy(1.0f / aStyle.EffectiveZoom().ToFloat());
+  if (aStyleForZoom && aStyleForZoom->EffectiveZoom() != StyleZoom::ONE) {
+    resolution.ScaleBy(1.0f / aStyleForZoom->EffectiveZoom().ToFloat());
   }
   return resolution;
 }
