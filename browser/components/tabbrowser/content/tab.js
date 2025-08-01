@@ -447,11 +447,6 @@
         this.style.MozUserFocus = "";
       } else if (
         this.mOverCloseButton ||
-        
-        
-        
-        
-        event.composedTarget?.classList.contains("tab-close-button") ||
         gSharedTabWarning.willShowSharedTabWarning(this)
       ) {
         event.stopPropagation();
