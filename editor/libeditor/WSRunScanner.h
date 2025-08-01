@@ -234,6 +234,16 @@ class MOZ_STACK_CLASS WSScanResult final {
 
 
 
+  template <typename EditorDOMPointType>
+  EditorDOMPointType PointAfterReachedContentNode() const {
+    MOZ_ASSERT(mContent);
+    return EditorDOMPointType::After(*mContent);
+  }
+
+  
+
+
+
   bool ReachedSpecialContent() const {
     return mReason == WSType::SpecialContent;
   }

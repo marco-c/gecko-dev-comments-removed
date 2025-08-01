@@ -547,33 +547,24 @@ HTMLEditor::HTMLWithContextInserter::GetNewCaretPointAfterInsertingHTML(
 
   
   
-  const WSRunScanner wsRunScannerAtCaret(
-      WSRunScanner::Scan::EditableNodes, pointToPutCaret,
-      BlockInlineCheck::UseComputedDisplayStyle);
-  if (wsRunScannerAtCaret
-          .ScanPreviousVisibleNodeOrBlockBoundaryFrom(pointToPutCaret)
-          .ReachedInvisibleBRElement()) {
-    const WSRunScanner wsRunScannerAtStartReason(
-        WSRunScanner::Scan::EditableNodes,
-        EditorDOMPoint(wsRunScannerAtCaret.GetStartReasonContent()),
-        BlockInlineCheck::UseComputedDisplayStyle);
-    const WSScanResult backwardScanFromPointToCaretResult =
-        wsRunScannerAtStartReason.ScanPreviousVisibleNodeOrBlockBoundaryFrom(
-            pointToPutCaret);
-    if (backwardScanFromPointToCaretResult.InVisibleOrCollapsibleCharacters()) {
-      pointToPutCaret = backwardScanFromPointToCaretResult
+  const WSScanResult prevVisibleThing =
+      WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
+          
+          
+          WSRunScanner::Scan::EditableNodes, pointToPutCaret,
+          BlockInlineCheck::UseComputedDisplayStyle);
+  if (prevVisibleThing.ReachedInvisibleBRElement()) {
+    const WSScanResult prevVisibleThingOfBRElement =
+        WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
+            WSRunScanner::Scan::EditableNodes,
+            EditorRawDOMPoint(prevVisibleThing.BRElementPtr()),
+            BlockInlineCheck::UseComputedDisplayStyle);
+    if (prevVisibleThingOfBRElement.InVisibleOrCollapsibleCharacters()) {
+      pointToPutCaret = prevVisibleThingOfBRElement
                             .PointAfterReachedContent<EditorDOMPoint>();
-    } else if (backwardScanFromPointToCaretResult.ReachedSpecialContent()) {
-      
-      
-      
-      
-      
-      NS_ASSERTION(wsRunScannerAtStartReason.GetStartReasonContent() ==
-                       backwardScanFromPointToCaretResult.GetContent(),
-                   "Start reason is not the reached special content");
-      pointToPutCaret.SetAfter(
-          wsRunScannerAtStartReason.GetStartReasonContent());
+    } else if (prevVisibleThingOfBRElement.ReachedSpecialContent()) {
+      pointToPutCaret = prevVisibleThingOfBRElement
+                            .PointAfterReachedContentNode<EditorDOMPoint>();
     }
   }
 
