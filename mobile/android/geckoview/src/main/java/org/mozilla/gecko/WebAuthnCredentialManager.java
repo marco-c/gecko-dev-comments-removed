@@ -136,18 +136,11 @@ public class WebAuthnCredentialManager {
       final WebAuthnUtils.WebAuthnPublicCredential[] excludeList,
       final GeckoBundle authenticatorSelection,
       final byte[] clientDataHash) {
-    final Boolean requireResidentKey =
-        authenticatorSelection.getBoolean("requireResidentKey", false);
-
-    final Boolean residentKeyDiscouraged =
-        authenticatorSelection
-            .getString("residentKey", requireResidentKey ? "required" : "discouraged")
-            .equals("discouraged");
 
     
-    if (residentKeyDiscouraged) {
-      return GeckoResult.fromException(new WebAuthnUtils.Exception("NOT_SUPPORTED_ERR"));
-    }
+    
+    
+    
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
       return GeckoResult.fromException(new WebAuthnUtils.Exception("NOT_SUPPORTED_ERR"));
     }

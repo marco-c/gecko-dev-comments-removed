@@ -362,7 +362,17 @@ public class WebAuthnUtils {
     json.put("excludeCredentials", excludeCredentials);
 
     final JSONObject authenticatorSelectionJSON = authenticatorSelection.toJSONObject();
-    authenticatorSelectionJSON.put("requireResidentKey", true);
+    
+
+
+
+
+
+
+
+    authenticatorSelectionJSON.put(
+        "requireResidentKey",
+        authenticatorSelection.getString("residentKey", "").equals("required"));
     json.put("authenticatorSelection", authenticatorSelectionJSON);
 
     final JSONObject extensions = new JSONObject();
