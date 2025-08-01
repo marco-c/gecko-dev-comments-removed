@@ -4398,15 +4398,23 @@ bool GCRuntime::maybeIncreaseSliceBudgetForUrgentCollections(
 }
 
 static void ScheduleZones(GCRuntime* gc, JS::GCReason reason) {
+  bool inHighFrequencyMode = gc->schedulingState.inHighFrequencyGCMode();
+
   for (ZonesIter zone(gc, WithAtoms); !zone.done(); zone.next()) {
     
     
     
-    if (gc->tunables.balancedHeapLimitsEnabled() && zone->isGCScheduled() &&
-        zone->smoothedCollectionRate.ref().isNothing() &&
-        reason == JS::GCReason::ALLOC_TRIGGER &&
-        zone->gcHeapSize.bytes() < zone->gcHeapThreshold.startBytes()) {
-      zone->unscheduleGC();  
+    
+    if (zone->isGCScheduled()) {
+      if (reason == JS::GCReason::ALLOC_TRIGGER &&
+          zone->gcHeapSize.bytes() < zone->gcHeapThreshold.startBytes()) {
+        zone->unscheduleGC();
+      }
+      if (reason == JS::GCReason::TOO_MUCH_MALLOC &&
+          zone->mallocHeapSize.bytes() <
+              zone->mallocHeapThreshold.startBytes()) {
+        zone->unscheduleGC();
+      }
     }
 
     if (gc->isShutdownGC()) {
@@ -4424,7 +4432,6 @@ static void ScheduleZones(GCRuntime* gc, JS::GCReason reason) {
     }
 
     
-    bool inHighFrequencyMode = gc->schedulingState.inHighFrequencyGCMode();
     if (zone->gcHeapSize.bytes() >=
             zone->gcHeapThreshold.eagerAllocTrigger(inHighFrequencyMode) ||
         zone->mallocHeapSize.bytes() >=
