@@ -773,6 +773,53 @@ Tester.prototype = {
     }
   },
 
+  async notifyProfilerOfTestEnd() {
+    
+    let name = this.currentTest.path;
+    name = name.slice(name.lastIndexOf("/") + 1);
+    ChromeUtils.addProfilerMarker(
+      "browser-test",
+      { category: "Test", startTime: this.lastStartTimestamp },
+      name
+    );
+
+    
+    if (this.currentTest.failCount) {
+      
+      
+      if (
+        Services.env.exists("MOZ_UPLOAD_DIR") &&
+        !Services.env.exists("MOZ_PROFILER_SHUTDOWN") &&
+        Services.profiler.IsActive()
+      ) {
+        let filename = `profile_${name}.json`;
+        let path = Services.env.get("MOZ_UPLOAD_DIR");
+        let profilePath = PathUtils.join(path, filename);
+        try {
+          const { profile } =
+            await Services.profiler.getProfileDataAsGzippedArrayBuffer();
+          await IOUtils.write(profilePath, new Uint8Array(profile));
+          this.currentTest.addResult(
+            new testResult({
+              name:
+                "Found unexpected failures during the test; profile uploaded in " +
+                filename,
+            })
+          );
+        } catch (e) {
+          
+          this.currentTest.addResult(
+            new testResult({
+              name:
+                "Found unexpected failures during the test; failed to upload profile: " +
+                e,
+            })
+          );
+        }
+      }
+    }
+  },
+
   async nextTest() {
     if (this.currentTest) {
       if (this._coverageCollector) {
@@ -1029,51 +1076,7 @@ Tester.prototype = {
 
       this.PromiseTestUtils.assertNoUncaughtRejections();
 
-      
-      let name = this.currentTest.path;
-      name = name.slice(name.lastIndexOf("/") + 1);
-      ChromeUtils.addProfilerMarker(
-        "browser-test",
-        { category: "Test", startTime: this.lastStartTimestamp },
-        name
-      );
-
-      
-      if (this.currentTest.failCount) {
-        
-        
-        if (
-          Services.env.exists("MOZ_UPLOAD_DIR") &&
-          !Services.env.exists("MOZ_PROFILER_SHUTDOWN") &&
-          Services.profiler.IsActive()
-        ) {
-          let filename = `profile_${name}.json`;
-          let path = Services.env.get("MOZ_UPLOAD_DIR");
-          let profilePath = PathUtils.join(path, filename);
-          try {
-            const { profile } =
-              await Services.profiler.getProfileDataAsGzippedArrayBuffer();
-            await IOUtils.write(profilePath, new Uint8Array(profile));
-            this.currentTest.addResult(
-              new testResult({
-                name:
-                  "Found unexpected failures during the test; profile uploaded in " +
-                  filename,
-              })
-            );
-          } catch (e) {
-            
-            this.currentTest.addResult(
-              new testResult({
-                name:
-                  "Found unexpected failures during the test; failed to upload profile: " +
-                  e,
-              })
-            );
-          }
-        }
-      }
-
+      await this.notifyProfilerOfTestEnd();
       let time = Date.now() - this.lastStartTime;
 
       this.structuredLogger.testEnd(
@@ -1490,7 +1493,7 @@ Tester.prototype = {
       var waitUntilAtLeast = timeoutExpires - 1000;
       this.currentTest.scope.__waitTimer =
         this.SimpleTest._originalSetTimeout.apply(window, [
-          function timeoutFn() {
+          async function timeoutFn() {
             
             
             
@@ -1550,6 +1553,7 @@ Tester.prototype = {
             if (gConfig.timeoutAsPass) {
               self.nextTest();
             } else {
+              await self.notifyProfilerOfTestEnd();
               self.finish();
             }
           },
