@@ -19,6 +19,8 @@
 #include "builtin/MapObject.h"
 #include "builtin/ModuleObject.h"
 #include "builtin/Object.h"
+#include "builtin/WeakMapObject.h"
+#include "builtin/WeakSetObject.h"
 #include "jit/BaselineIC.h"
 #include "jit/CacheIRCloner.h"
 #include "jit/CacheIRCompiler.h"
@@ -2136,6 +2138,10 @@ const JSClass* js::jit::ClassFor(GuardClassKind kind) {
       return &MapObject::class_;
     case GuardClassKind::Date:
       return &DateObject::class_;
+    case GuardClassKind::WeakMap:
+      return &WeakMapObject::class_;
+    case GuardClassKind::WeakSet:
+      return &WeakSetObject::class_;
   }
   MOZ_CRASH("unexpected kind");
 }
@@ -2160,6 +2166,8 @@ void IRGenerator::emitOptimisticClassGuard(ObjOperandId objId, JSObject* obj,
     case GuardClassKind::Set:
     case GuardClassKind::Map:
     case GuardClassKind::Date:
+    case GuardClassKind::WeakMap:
+    case GuardClassKind::WeakSet:
       MOZ_ASSERT(obj->hasClass(ClassFor(kind)));
       break;
 
@@ -11051,6 +11059,227 @@ AttachDecision CallIRGenerator::tryAttachFunCall(HandleFunction callee) {
   return AttachDecision::Attach;
 }
 
+AttachDecision InlinableNativeIRGenerator::tryAttachTypedArraySet() {
+  
+  if (args_.length() < 1 || args_.length() > 2) {
+    return AttachDecision::NoAction;
+  }
+
+  if (!isFirstStub()) {
+    
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (!thisval_.isObject() || !thisval_.toObject().is<TypedArrayObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (!args_[0].isObject() || !args_[0].toObject().is<TypedArrayObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  uint64_t targetOffset = 0;
+  if (args_.length() > 1) {
+    int64_t offsetIndex;
+    if (!ValueIsInt64Index(args_[1], &offsetIndex) || offsetIndex < 0) {
+      return AttachDecision::NoAction;
+    }
+    targetOffset = uint64_t(offsetIndex);
+  }
+
+  auto* tarr = &thisval_.toObject().as<TypedArrayObject>();
+  auto* source = &args_[0].toObject().as<TypedArrayObject>();
+
+  
+  if (tarr->hasDetachedBuffer() || source->hasDetachedBuffer()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (tarr->is<ImmutableTypedArrayObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (Scalar::isBigIntType(tarr->type()) !=
+      Scalar::isBigIntType(source->type())) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  size_t targetLength = tarr->length().valueOr(0);
+  size_t sourceLength = source->length().valueOr(0);
+  if (targetOffset > targetLength ||
+      sourceLength > targetLength - targetOffset) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (tarr->is<ResizableTypedArrayObject>() ||
+      source->is<ResizableTypedArrayObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  bool canUseBitwiseCopy = CanUseBitwiseCopy(tarr->type(), source->type());
+
+  
+  Int32OperandId argcId = initializeInputOperand();
+
+  
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
+
+  
+  ValOperandId thisValId = loadThis(calleeId);
+  ObjOperandId objId = writer.guardToObject(thisValId);
+
+  
+  writer.guardShapeForClass(objId, tarr->shape());
+
+  
+  writer.guardHasAttachedArrayBuffer(objId);
+
+  
+  ValOperandId sourceId = loadArgument(calleeId, ArgumentKind::Arg0);
+  ObjOperandId sourceObjId = writer.guardToObject(sourceId);
+
+  
+  writer.guardShapeForClass(sourceObjId, source->shape());
+
+  
+  
+  if (!source->is<ImmutableTypedArrayObject>()) {
+    writer.guardHasAttachedArrayBuffer(sourceObjId);
+  }
+
+  
+  IntPtrOperandId intPtrOffsetId;
+  if (args_.length() > 1) {
+    ValOperandId offsetId = loadArgument(calleeId, ArgumentKind::Arg1);
+    intPtrOffsetId =
+        guardToIntPtrIndex(args_[1], offsetId,  false);
+    writer.guardIntPtrIsNonNegative(intPtrOffsetId);
+  } else {
+    
+    intPtrOffsetId = writer.loadInt32AsIntPtrConstant(0);
+  }
+
+  writer.typedArraySetResult(objId, sourceObjId, intPtrOffsetId,
+                             canUseBitwiseCopy);
+  writer.returnFromIC();
+
+  trackAttached("TypedArraySet");
+  return AttachDecision::Attach;
+}
+
+AttachDecision InlinableNativeIRGenerator::tryAttachTypedArraySubarray() {
+  
+  if (args_.length() > 2) {
+    return AttachDecision::NoAction;
+  }
+
+  if (!isFirstStub()) {
+    
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (!thisval_.isObject() || !thisval_.toObject().is<TypedArrayObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  int64_t unusedIndex;
+  if (args_.length() > 0 && !ValueIsInt64Index(args_[0], &unusedIndex)) {
+    return AttachDecision::NoAction;
+  }
+  if (args_.length() > 1 && !ValueIsInt64Index(args_[1], &unusedIndex)) {
+    return AttachDecision::NoAction;
+  }
+
+  auto* tarr = &thisval_.toObject().as<TypedArrayObject>();
+
+  
+  if (tarr->hasDetachedBuffer()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (tarr->is<ResizableTypedArrayObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (!cx_->realm()->realmFuses.optimizeTypedArraySpeciesFuse.intact()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  auto protoKey = StandardProtoKeyOrNull(tarr);
+  auto* proto = cx_->global()->maybeGetPrototype(protoKey);
+  if (!proto || tarr->staticPrototype() != proto) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (tarr->containsPure(cx_->names().constructor)) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  Int32OperandId argcId = initializeInputOperand();
+
+  
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
+
+  
+  ValOperandId thisValId = loadThis(calleeId);
+  ObjOperandId objId = writer.guardToObject(thisValId);
+
+  
+  
+  writer.guardShape(objId, tarr->shape());
+
+  
+  
+  if (!tarr->is<ImmutableTypedArrayObject>()) {
+    writer.guardHasAttachedArrayBuffer(objId);
+  }
+
+  
+  writer.guardFuse(RealmFuses::FuseIndex::OptimizeTypedArraySpeciesFuse);
+
+  
+  IntPtrOperandId intPtrStartId;
+  if (args_.length() > 0) {
+    ValOperandId startId = loadArgument(calleeId, ArgumentKind::Arg0);
+    intPtrStartId =
+        guardToIntPtrIndex(args_[0], startId,  false);
+  } else {
+    
+    intPtrStartId = writer.loadInt32AsIntPtrConstant(0);
+  }
+
+  
+  IntPtrOperandId intPtrEndId;
+  if (args_.length() > 1) {
+    ValOperandId endId = loadArgument(calleeId, ArgumentKind::Arg1);
+    intPtrEndId = guardToIntPtrIndex(args_[1], endId,  false);
+  } else {
+    
+    intPtrEndId = writer.loadArrayBufferViewLength(objId);
+  }
+
+  writer.typedArraySubarrayResult(objId, intPtrStartId, intPtrEndId);
+  writer.returnFromIC();
+
+  trackAttached("TypedArraySubarray");
+  return AttachDecision::Attach;
+}
+
 AttachDecision InlinableNativeIRGenerator::tryAttachIsTypedArray(
     bool isPossiblyWrapped) {
   
@@ -12593,6 +12822,12 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
     
     case InlinableNative::TypedArrayConstructor:
       return AttachDecision::NoAction;  
+    case InlinableNative::TypedArraySet:
+      return tryAttachTypedArraySet();
+    case InlinableNative::TypedArraySubarray:
+      return tryAttachTypedArraySubarray();
+
+    
     case InlinableNative::IntrinsicIsTypedArray:
       return tryAttachIsTypedArray( false);
     case InlinableNative::IntrinsicIsPossiblyWrappedTypedArray:
