@@ -39,6 +39,15 @@ declare namespace MockedExports {
     "resource://gre/modules/PlacesUtils.sys.mjs": typeof import("resource://gre/modules/PlacesUtils.sys.mjs");
   }
 
+  type ImportESModuleTargetGlobal =
+    | "contextual"
+    | "current"
+    | "devtools"
+    | "shared";
+  interface ImportESModuleOptionsDictionary {
+    global?: ImportESModuleTargetGlobal;
+  }
+
   interface ChromeUtils {
     
 
@@ -50,9 +59,14 @@ declare namespace MockedExports {
 
 
     importESModule: <S extends keyof KnownModules>(
-      module: S
+      module: S,
+      options?: ImportESModuleOptionsDictionary
     ) => KnownModules[S];
-    defineESModuleGetters: (target: any, mappings: any) => void;
+    defineESModuleGetters: (
+      target: any,
+      mappings: any,
+      options?: ImportESModuleOptionsDictionary
+    ) => void;
   }
 
   interface MessageManager {
