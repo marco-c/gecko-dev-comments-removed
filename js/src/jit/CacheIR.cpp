@@ -10854,6 +10854,108 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMapSet() {
   return AttachDecision::Attach;
 }
 
+AttachDecision InlinableNativeIRGenerator::tryAttachWeakMapGet() {
+  
+  if (!thisval_.isObject() || !thisval_.toObject().is<WeakMapObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (args_.length() != 1 || !args_[0].isObject()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  Int32OperandId argcId = initializeInputOperand();
+
+  
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
+
+  
+  ValOperandId thisValId = loadThis(calleeId);
+  ObjOperandId objId = writer.guardToObject(thisValId);
+  emitOptimisticClassGuard(objId, &thisval_.toObject(),
+                           GuardClassKind::WeakMap);
+
+  
+  ValOperandId argId = loadArgument(calleeId, ArgumentKind::Arg0);
+  ObjOperandId objArgId = writer.guardToObject(argId);
+
+  writer.weakMapGetObjectResult(objId, objArgId);
+  writer.returnFromIC();
+
+  trackAttached("WeakMapGet");
+  return AttachDecision::Attach;
+}
+
+AttachDecision InlinableNativeIRGenerator::tryAttachWeakMapHas() {
+  
+  if (!thisval_.isObject() || !thisval_.toObject().is<WeakMapObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (args_.length() != 1 || !args_[0].isObject()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  Int32OperandId argcId = initializeInputOperand();
+
+  
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
+
+  
+  ValOperandId thisValId = loadThis(calleeId);
+  ObjOperandId objId = writer.guardToObject(thisValId);
+  emitOptimisticClassGuard(objId, &thisval_.toObject(),
+                           GuardClassKind::WeakMap);
+
+  
+  ValOperandId argId = loadArgument(calleeId, ArgumentKind::Arg0);
+  ObjOperandId objArgId = writer.guardToObject(argId);
+
+  writer.weakMapHasObjectResult(objId, objArgId);
+  writer.returnFromIC();
+
+  trackAttached("WeakMapHas");
+  return AttachDecision::Attach;
+}
+
+AttachDecision InlinableNativeIRGenerator::tryAttachWeakSetHas() {
+  
+  if (!thisval_.isObject() || !thisval_.toObject().is<WeakSetObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (args_.length() != 1 || !args_[0].isObject()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  Int32OperandId argcId = initializeInputOperand();
+
+  
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
+
+  
+  ValOperandId thisValId = loadThis(calleeId);
+  ObjOperandId objId = writer.guardToObject(thisValId);
+  emitOptimisticClassGuard(objId, &thisval_.toObject(),
+                           GuardClassKind::WeakSet);
+
+  
+  ValOperandId argId = loadArgument(calleeId, ArgumentKind::Arg0);
+  ObjOperandId objArgId = writer.guardToObject(argId);
+
+  writer.weakSetHasObjectResult(objId, objArgId);
+  writer.returnFromIC();
+
+  trackAttached("WeakSetHas");
+  return AttachDecision::Attach;
+}
+
 AttachDecision InlinableNativeIRGenerator::tryAttachDateGetTime() {
   
   if (!thisval_.isObject() || !thisval_.toObject().is<DateObject>()) {
@@ -12920,6 +13022,14 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachDateGet(DateComponent::Minutes);
     case InlinableNative::DateGetSeconds:
       return tryAttachDateGet(DateComponent::Seconds);
+
+    
+    case InlinableNative::WeakMapGet:
+      return tryAttachWeakMapGet();
+    case InlinableNative::WeakMapHas:
+      return tryAttachWeakMapHas();
+    case InlinableNative::WeakSetHas:
+      return tryAttachWeakSetHas();
 
     
     case InlinableNative::TestBailout:

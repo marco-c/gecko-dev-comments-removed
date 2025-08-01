@@ -352,6 +352,11 @@ bool js::jit::CanInlineNativeCrossRealm(InlinableNative native) {
     case InlinableNative::ObjectKeys:
     case InlinableNative::ObjectToString:
     case InlinableNative::TypedArrayConstructor:
+    case InlinableNative::TypedArraySet:
+    case InlinableNative::TypedArraySubarray:
+    case InlinableNative::WeakMapGet:
+    case InlinableNative::WeakMapHas:
+    case InlinableNative::WeakSetHas:
 #ifdef FUZZING_JS_FUZZILLI
     case InlinableNative::FuzzilliHash:
 #endif

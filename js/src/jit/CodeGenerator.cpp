@@ -11080,6 +11080,61 @@ void CodeGenerator::visitGuardHasAttachedArrayBuffer(
   bailoutFrom(&bail, lir->snapshot());
 }
 
+void CodeGenerator::visitGuardTypedArraySetOffset(
+    LGuardTypedArraySetOffset* lir) {
+  Register offset = ToRegister(lir->offset());
+  Register targetLength = ToRegister(lir->targetLength());
+  Register sourceLength = ToRegister(lir->sourceLength());
+  Register temp = ToRegister(lir->temp0());
+
+  Label bail;
+
+  
+  masm.movePtr(targetLength, temp);
+  masm.branchSubPtr(Assembler::Signed, offset, temp, &bail);
+
+  
+  masm.branchPtr(Assembler::GreaterThan, sourceLength, temp, &bail);
+
+  bailoutFrom(&bail, lir->snapshot());
+}
+
+void CodeGenerator::visitTypedArraySet(LTypedArraySet* lir) {
+  Register target = ToRegister(lir->target());
+  Register source = ToRegister(lir->source());
+  Register offset = ToRegister(lir->offset());
+
+  
+  
+  if (lir->mir()->canUseBitwiseCopy()) {
+    masm.setupAlignedABICall();
+    masm.passABIArg(target);
+    masm.passABIArg(source);
+    masm.passABIArg(offset);
+
+    using Fn = void (*)(TypedArrayObject*, TypedArrayObject*, intptr_t);
+    masm.callWithABI<Fn, js::TypedArraySetInfallible>();
+  } else {
+    pushArg(offset);
+    pushArg(source);
+    pushArg(target);
+
+    using Fn =
+        bool (*)(JSContext*, TypedArrayObject*, TypedArrayObject*, intptr_t);
+    callVM<Fn, js::TypedArraySet>(lir);
+  }
+}
+
+void CodeGenerator::visitTypedArraySubarray(LTypedArraySubarray* lir) {
+  pushArg(ToRegister(lir->end()));
+  pushArg(ToRegister(lir->start()));
+  pushArg(ToRegister(lir->object()));
+
+  using Fn = TypedArrayObject* (*)(JSContext*, Handle<TypedArrayObject*>,
+                                   intptr_t, intptr_t);
+  callVM<Fn, js::TypedArraySubarray>(lir);
+}
+
 void CodeGenerator::visitGuardNumberToIntPtrIndex(
     LGuardNumberToIntPtrIndex* lir) {
   FloatRegister input = ToFloatRegister(lir->input());
@@ -18344,13 +18399,12 @@ void CodeGenerator::visitLoadUnboxedScalar(LLoadUnboxedScalar* lir) {
 
   Label fail;
   if (lir->index()->isConstant()) {
-    Address source =
-        ToAddress(elements, lir->index(), storageType, mir->offsetAdjustment());
+    Address source = ToAddress(elements, lir->index(), storageType);
     masm.loadFromTypedArray(storageType, source, out, temp0, temp1, &fail,
                             volatileRegs);
   } else {
     BaseIndex source(elements, ToRegister(lir->index()),
-                     ScaleFromScalarType(storageType), mir->offsetAdjustment());
+                     ScaleFromScalarType(storageType));
     masm.loadFromTypedArray(storageType, source, out, temp0, temp1, &fail,
                             volatileRegs);
   }
@@ -18369,12 +18423,11 @@ void CodeGenerator::visitLoadUnboxedInt64(LLoadUnboxedInt64* lir) {
   Scalar::Type storageType = mir->storageType();
 
   if (lir->index()->isConstant()) {
-    Address source =
-        ToAddress(elements, lir->index(), storageType, mir->offsetAdjustment());
+    Address source = ToAddress(elements, lir->index(), storageType);
     masm.load64(source, out);
   } else {
     BaseIndex source(elements, ToRegister(lir->index()),
-                     ScaleFromScalarType(storageType), mir->offsetAdjustment());
+                     ScaleFromScalarType(storageType));
     masm.load64(source, out);
   }
 }
@@ -21257,6 +21310,13 @@ void CodeGenerator::visitGuardInt32IsNonNegative(
   bailoutCmp32(Assembler::LessThan, index, Imm32(0), lir->snapshot());
 }
 
+void CodeGenerator::visitGuardIntPtrIsNonNegative(
+    LGuardIntPtrIsNonNegative* lir) {
+  Register index = ToRegister(lir->index());
+
+  bailoutCmpPtr(Assembler::LessThan, index, ImmWord(0), lir->snapshot());
+}
+
 void CodeGenerator::visitGuardInt32Range(LGuardInt32Range* lir) {
   Register input = ToRegister(lir->input());
 
@@ -21723,6 +21783,52 @@ void CodeGenerator::visitMapObjectSize(LMapObjectSize* ins) {
   Register output = ToRegister(ins->output());
 
   masm.loadMapObjectSize(mapObj, output);
+}
+
+void CodeGenerator::visitWeakMapGetObject(LWeakMapGetObject* ins) {
+  Register weakMap = ToRegister(ins->weakMap());
+  Register obj = ToRegister(ins->object());
+  Register temp = ToRegister(ins->temp0());
+  ValueOperand output = ToOutValue(ins);
+
+  
+  masm.reserveStack(sizeof(Value));
+  masm.moveStackPtrTo(temp);
+
+  using Fn = void (*)(WeakMapObject*, JSObject*, Value*);
+  masm.setupAlignedABICall();
+  masm.passABIArg(weakMap);
+  masm.passABIArg(obj);
+  masm.passABIArg(temp);
+  masm.callWithABI<Fn, js::WeakMapObject::getObject>();
+
+  masm.Pop(output);
+}
+
+void CodeGenerator::visitWeakMapHasObject(LWeakMapHasObject* ins) {
+  Register weakMap = ToRegister(ins->weakMap());
+  Register obj = ToRegister(ins->object());
+  Register output = ToRegister(ins->output());
+
+  using Fn = bool (*)(WeakMapObject*, JSObject*);
+  masm.setupAlignedABICall();
+  masm.passABIArg(weakMap);
+  masm.passABIArg(obj);
+  masm.callWithABI<Fn, js::WeakMapObject::hasObject>();
+  masm.storeCallBoolResult(output);
+}
+
+void CodeGenerator::visitWeakSetHasObject(LWeakSetHasObject* ins) {
+  Register weakSet = ToRegister(ins->weakSet());
+  Register obj = ToRegister(ins->object());
+  Register output = ToRegister(ins->output());
+
+  using Fn = bool (*)(WeakSetObject*, JSObject*);
+  masm.setupAlignedABICall();
+  masm.passABIArg(weakSet);
+  masm.passABIArg(obj);
+  masm.callWithABI<Fn, js::WeakSetObject::hasObject>();
+  masm.storeCallBoolResult(output);
 }
 
 void CodeGenerator::visitDateFillLocalTimeSlots(LDateFillLocalTimeSlots* ins) {

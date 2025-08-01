@@ -24,7 +24,8 @@
                                        
 #include "builtin/Sorting.h"           
 #include "builtin/TestingFunctions.h"  
-
+#include "builtin/WeakMapObject.h"     
+#include "builtin/WeakSetObject.h"     
 #include "irregexp/RegExpAPI.h"
 
 
@@ -194,8 +195,12 @@ namespace jit {
   _(js::RoundFloat16)                                                          \
   _(js::SetIteratorObject::next)                                               \
   _(js::StringToNumberPure)                                                    \
+  _(js::TypedArraySetInfallible)                                               \
   _(js::TypedArraySortFromJit)                                                 \
   _(js::TypeOfObject)                                                          \
+  _(js::WeakMapObject::getObject)                                              \
+  _(js::WeakMapObject::hasObject)                                              \
+  _(js::WeakSetObject::hasObject)                                              \
   _(mozilla::SIMD::memchr16)                                                   \
   _(mozilla::SIMD::memchr2x16)                                                 \
   _(mozilla::SIMD::memchr2x8)                                                  \
