@@ -426,10 +426,32 @@ mod processor {
                 thread.context(&self.system_info, self.misc_info.as_ref())
             }
             .map(|c| c.into_owned());
-            let stack_memory = thread.stack_memory(&self.memory_list);
+
+            let mut stack_memory = thread.stack_memory(&self.memory_list);
+
             let Some(mut call_stack) = context.map(CallStack::with_context) else {
                 return CallStack::with_info(thread.raw.thread_id, CallStackInfo::MissingContext);
             };
+
+            
+            
+            
+            if let Some(stack_ptr) = call_stack
+                .frames
+                .first()
+                .map(|frame| frame.context.get_stack_pointer())
+            {
+                let contains_stack_ptr = stack_memory
+                    .as_ref()
+                    .and_then(|memory| memory.get_memory_at_address::<u64>(stack_ptr))
+                    .is_some();
+                if !contains_stack_ptr {
+                    stack_memory = self
+                        .memory_list
+                        .memory_at_address(stack_ptr)
+                        .or(stack_memory);
+                }
+            }
 
             walk_stack(
                 0,
@@ -456,6 +478,16 @@ impl SymbolProvider for BoxedSymbolProvider {
         module: &(dyn Module + Sync),
         frame: &mut (dyn minidump_unwind::FrameSymbolizer + Send),
     ) -> Result<(), minidump_unwind::FillSymbolError> {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        frame.set_function("<unknown>", 0, 0);
         self.0.fill_symbol(module, frame).await
     }
 
