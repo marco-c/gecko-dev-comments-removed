@@ -17,29 +17,21 @@ use crate::values::computed;
 
 
 
-
 impl ToResolvedValue for computed::Content {
     type ResolvedValue = Self;
 
     #[inline]
     fn to_resolved_value(self, context: &Context) -> Self {
-        let (is_pseudo, is_before_or_after, is_marker) = match context.style.pseudo() {
-            Some(ref pseudo) => (true, pseudo.is_before_or_after(), pseudo.is_marker()),
-            None => (false, false, false),
+        let (is_before_or_after, is_marker) = match context.style.pseudo() {
+            Some(ref pseudo) => (pseudo.is_before_or_after(), pseudo.is_marker()),
+            None => (false, false),
         };
         match self {
             Self::Normal if is_before_or_after => Self::None,
             
             
             
-            
-            Self::None
-                if (is_pseudo && !is_before_or_after && !is_marker) ||
-                    (!is_pseudo &&
-                        !static_prefs::pref!("layout.css.element-content-none.enabled")) =>
-            {
-                Self::Normal
-            },
+            Self::None if !is_before_or_after && !is_marker => Self::Normal,
             other => other,
         }
     }
