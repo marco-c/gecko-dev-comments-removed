@@ -31,10 +31,11 @@ namespace layers {
 class GpuFence;
 class NativeLayer;
 class NativeLayerCA;
-class NativeLayerWayland;
+class NativeLayerRemoteMac;
 class NativeLayerRootCA;
 class NativeLayerRootWayland;
 class NativeLayerRootSnapshotter;
+class NativeLayerWayland;
 class SurfacePoolHandle;
 
 
@@ -59,6 +60,8 @@ class NativeLayerRoot {
       gfx::DeviceColor aColor) {
     return nullptr;
   }
+
+  virtual void LayerDestroyed(NativeLayer* aLayer) {}
 
   virtual void AppendLayer(NativeLayer* aLayer) = 0;
   virtual void RemoveLayer(NativeLayer* aLayer) = 0;
@@ -131,6 +134,7 @@ class NativeLayer {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(NativeLayer)
 
   virtual NativeLayerCA* AsNativeLayerCA() { return nullptr; }
+  virtual NativeLayerRemoteMac* AsNativeLayerRemoteMac() { return nullptr; }
   virtual NativeLayerWayland* AsNativeLayerWayland() { return nullptr; }
 
   
@@ -175,6 +179,9 @@ class NativeLayer {
   virtual bool SurfaceIsFlipped() = 0;
 
   virtual void SetSamplingFilter(gfx::SamplingFilter aSamplingFilter) = 0;
+  virtual gfx::SamplingFilter SamplingFilter() {
+    return gfx::SamplingFilter::POINT;
+  };
 
   
   
