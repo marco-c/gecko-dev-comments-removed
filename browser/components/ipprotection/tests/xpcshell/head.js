@@ -1,0 +1,19 @@
+
+
+
+
+"use strict";
+
+const { sinon } = ChromeUtils.importESModule(
+  "resource://testing-common/Sinon.sys.mjs"
+);
+
+function waitForEvent(target, eventName) {
+  return new Promise(resolve => {
+    let listener = event => {
+      target.removeEventListener(eventName, listener);
+      resolve(event);
+    };
+    target.addEventListener(eventName, listener);
+  });
+}
