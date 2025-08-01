@@ -122,9 +122,13 @@ bool CookieServiceParent::ContentProcessHasCookie(
 
 bool CookieServiceParent::InsecureCookieOrSecureOrigin(const Cookie& cookie) {
   nsCString baseDomain;
-  
-  MOZ_ALWAYS_SUCCEEDS(CookieCommons::GetBaseDomainFromHost(
-      mTLDService, cookie.Host(), baseDomain));
+  if (NS_FAILED(CookieCommons::GetBaseDomainFromHost(mTLDService, cookie.Host(),
+                                                     baseDomain))) {
+    MOZ_ASSERT(false,
+               "CookieServiceParent::InsecureCookieOrSecureOrigin - "
+               "GetBaseDomainFromHost shouldn't fail");
+    return false;
+  }
 
   
   CookieKey cookieKey(baseDomain, cookie.OriginAttributesRef());
