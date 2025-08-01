@@ -37,6 +37,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
@@ -52,6 +53,7 @@ import mozilla.components.compose.base.modifier.thenConditional
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.SwipeToDismissState2
 import org.mozilla.fenix.compose.tabstray.TabGridItem
+import org.mozilla.fenix.ext.pixelSizeFor
 import org.mozilla.fenix.tabstray.TabsTrayState
 import org.mozilla.fenix.tabstray.browser.compose.DragItemContainer
 import org.mozilla.fenix.tabstray.browser.compose.createGridReorderState
@@ -165,8 +167,8 @@ private fun TabGrid(
     val state = rememberLazyGridState(initialFirstVisibleItemIndex = selectedTabIndex)
     val tabListBottomPadding = dimensionResource(id = R.dimen.tab_tray_list_bottom_padding)
     val tabThumbnailSize = max(
-        LocalContext.current.resources.getDimensionPixelSize(R.dimen.tab_tray_grid_item_thumbnail_height),
-        LocalContext.current.resources.getDimensionPixelSize(R.dimen.tab_tray_grid_item_thumbnail_width),
+        LocalContext.current.pixelSizeFor(R.dimen.tab_tray_grid_item_thumbnail_height),
+        LocalContext.current.pixelSizeFor(R.dimen.tab_tray_grid_item_thumbnail_width),
     )
     val isInMultiSelectMode = selectionMode is TabsTrayState.Mode.Select
 
@@ -276,8 +278,8 @@ private fun TabList(
     val state = rememberLazyListState(initialFirstVisibleItemIndex = selectedTabIndex)
     val tabListBottomPadding = dimensionResource(id = R.dimen.tab_tray_list_bottom_padding)
     val tabThumbnailSize = max(
-        LocalContext.current.resources.getDimensionPixelSize(R.dimen.tab_tray_list_item_thumbnail_height),
-        LocalContext.current.resources.getDimensionPixelSize(R.dimen.tab_tray_list_item_thumbnail_width),
+        LocalContext.current.pixelSizeFor(R.dimen.tab_tray_list_item_thumbnail_height),
+        LocalContext.current.pixelSizeFor(R.dimen.tab_tray_list_item_thumbnail_width),
     )
     val isInMultiSelectMode = selectionMode is TabsTrayState.Mode.Select
     val reorderState = createListReorderState(
@@ -304,60 +306,75 @@ private fun TabList(
         }
     }
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .detectListPressAndDrag(
-                listState = state,
-                reorderState = reorderState,
-                shouldLongPressToDrag = shouldLongPress,
-            )
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.TopCenter,
+    ) {
+        LazyColumn(
+            modifier = modifier
+                .width(FirefoxTheme.layout.size.containerMaxWidth)
+                .detectListPressAndDrag(
+                    listState = state,
+                    reorderState = reorderState,
+                    shouldLongPressToDrag = shouldLongPress,
+                )
             .padding(all = 16.dp)
             .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 24.dp),
         state = state,
         contentPadding = PaddingValues(bottom = tabListBottomPadding),
-    ) {
-        header?.let {
-            item(key = HEADER_ITEM_KEY) {
-                header()
-            }
-        }
-
-        itemsIndexed(
-            items = tabs,
-            key = { _, tab -> tab.id },
-        ) { index, tab ->
-            DragItemContainer(
-                state = reorderState,
-                position = index + if (header != null) 1 else 0,
-                key = tab.id,
-            ) {
-                TabListItem(
-                    tab = tab,
-                    thumbnailSize = tabThumbnailSize,
-                    modifier = Modifier
-                        .thenConditional(
-                            // Add top rounded corners to the first item
-                            modifier = Modifier.clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)),
-                            predicate = { index == 0 },
-                        )
-                        .thenConditional(
-                            // Add bottom rounded corners to the final item
-                            modifier = Modifier.clip(RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp)),
-                            predicate = { index == tabs.size - 1 },
-                        ),
-                    isSelected = tab.id == selectedTabId,
-                    multiSelectionEnabled = isInMultiSelectMode,
-                    multiSelectionSelected = selectionMode.selectedTabs.any { it.id == tab.id },
-                    shouldClickListen = reorderState.draggingItemKey != tab.id,
-                    swipingEnabled = !state.isScrollInProgress,
-                    onCloseClick = onTabClose,
-                    onClick = onTabClick,
-                )
+        ) {
+            header?.let {
+                item(key = HEADER_ITEM_KEY) {
+                    header()
+                }
             }
 
-            if (index != tabs.size - 1) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            itemsIndexed(
+                items = tabs,
+                key = { _, tab -> tab.id },
+            ) { index, tab ->
+                DragItemContainer(
+                    state = reorderState,
+                    position = index + if (header != null) 1 else 0,
+                    key = tab.id,
+                ) {
+                    TabListItem(
+                        tab = tab,
+                        thumbnailSize = tabThumbnailSize,
+                        modifier = Modifier
+                            .thenConditional(
+                                // Add top rounded corners to the first item
+                                modifier = Modifier.clip(
+                                    RoundedCornerShape(
+                                        topStart = 12.dp,
+                                        topEnd = 12.dp,
+                                    ),
+                                ),
+                                predicate = { index == 0 },
+                            )
+                            .thenConditional(
+                                // Add bottom rounded corners to the final item
+                                modifier = Modifier.clip(
+                                    RoundedCornerShape(
+                                        bottomStart = 12.dp,
+                                        bottomEnd = 12.dp,
+                                    ),
+                                ),
+                                predicate = { index == tabs.size - 1 },
+                            ),
+                        isSelected = tab.id == selectedTabId,
+                        multiSelectionEnabled = isInMultiSelectMode,
+                        multiSelectionSelected = selectionMode.selectedTabs.any { it.id == tab.id },
+                        shouldClickListen = reorderState.draggingItemKey != tab.id,
+                        swipingEnabled = !state.isScrollInProgress,
+                        onCloseClick = onTabClose,
+                        onClick = onTabClick,
+                    )
+                }
+
+                if (index != tabs.size - 1) {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                }
             }
         }
     }
