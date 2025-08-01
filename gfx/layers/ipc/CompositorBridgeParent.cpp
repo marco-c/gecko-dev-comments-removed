@@ -1438,21 +1438,6 @@ CompositorBridgeParent::AllocPCompositorWidgetParent(
 #endif
 }
 
-#ifdef XP_MACOSX
-mozilla::ipc::IPCResult
-CompositorBridgeParent::RecvPCompositorWidgetConstructor(
-    PCompositorWidgetParent* actor, CompositorWidgetInitData&& aInitData) {
-  
-  
-  
-  
-  
-  auto* widget = static_cast<widget::CompositorWidgetParent*>(actor);
-  widget->Init(std::move(aInitData));
-  return IPC_OK();
-}
-#endif
-
 bool CompositorBridgeParent::DeallocPCompositorWidgetParent(
     PCompositorWidgetParent* aActor) {
 #if defined(MOZ_WIDGET_SUPPORTS_OOP_COMPOSITING)

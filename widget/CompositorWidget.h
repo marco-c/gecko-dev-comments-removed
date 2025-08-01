@@ -38,7 +38,6 @@ namespace widget {
 class WinCompositorWidget;
 class GtkCompositorWidget;
 class AndroidCompositorWidget;
-class CocoaCompositorWidget;
 class CompositorWidgetInitData;
 
 
@@ -64,7 +63,7 @@ class CompositorWidgetDelegate {
 
 
 #if defined(XP_WIN) || defined(MOZ_X11) || defined(MOZ_WIDGET_ANDROID) || \
-    defined(MOZ_WAYLAND) || defined(XP_MACOSX)
+    defined(MOZ_WAYLAND)
 
 
 class CompositorWidgetParent;
@@ -268,7 +267,6 @@ class CompositorWidget {
   virtual WinCompositorWidget* AsWindows() { return nullptr; }
   virtual GtkCompositorWidget* AsGTK() { return nullptr; }
   virtual AndroidCompositorWidget* AsAndroid() { return nullptr; }
-  virtual CocoaCompositorWidget* AsCocoa() { return nullptr; }
 
   
 

@@ -252,14 +252,6 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
   void InitSameProcess(widget::CompositorWidget* aWidget,
                        const LayersId& aLayerTreeId);
 
-#ifdef XP_MACOSX
-  
-  
-  
-  mozilla::ipc::IPCResult RecvPCompositorWidgetConstructor(
-      PCompositorWidgetParent* actor,
-      CompositorWidgetInitData&& aInitData) override;
-#endif
   mozilla::ipc::IPCResult RecvInitialize(
       const LayersId& aRootLayerTreeId) override;
   mozilla::ipc::IPCResult RecvWillClose() override;
