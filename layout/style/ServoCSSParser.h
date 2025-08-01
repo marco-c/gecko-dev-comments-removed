@@ -25,16 +25,13 @@ namespace mozilla {
 struct AnimatedPropertyID;
 class ServoStyleSet;
 struct URLExtraData;
-struct StyleAbsoluteColor;
 struct StyleFontFamilyList;
 struct StyleFontStretch;
 struct StyleFontWeight;
 struct StyleFontStyle;
 struct StyleLockedDeclarationBlock;
 struct StyleParsingMode;
-struct StylePerDocumentStyleData;
 union StyleComputedFontStyleDescriptor;
-enum class StyleColorSpace : uint8_t;
 
 template <typename Integer, typename Number, typename LinearStops>
 struct StyleTimingFunction;
@@ -77,27 +74,10 @@ class ServoCSSParser {
 
 
 
-  static bool ComputeColor(const StylePerDocumentStyleData* aStyleData,
-                           nscolor aCurrentColor, const nsACString& aValue,
-                           nscolor* aResultColor,
+  static bool ComputeColor(ServoStyleSet* aStyleSet, nscolor aCurrentColor,
+                           const nsACString& aValue, nscolor* aResultColor,
                            bool* aWasCurrentColor = nullptr,
                            css::Loader* aLoader = nullptr);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  static StyleAbsoluteColor ComputeColorWellControlColor(
-      const StylePerDocumentStyleData* aStyleData, const nsACString& aValue,
-      StyleColorSpace aToColorSpace);
 
   
 

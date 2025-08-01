@@ -1133,6 +1133,14 @@ class HTMLInputElement final : public TextControlElement,
 
 
 
+  bool IsValidSimpleColor(const nsAString& aValue) const;
+
+  
+
+
+
+
+
   bool IsValidWeek(const nsAString& aValue) const;
 
   
