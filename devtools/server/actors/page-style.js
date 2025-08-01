@@ -929,9 +929,16 @@ class PageStyleActor extends Actor {
       if (inherited) {
         
         
-        const hasInherited = [...domRule.style].some(prop =>
-          InspectorUtils.isInheritedProperty(doc, prop)
-        );
+        let hasInherited = false;
+        
+        
+        for (let j = 0, len = domRule.style.length; j < len; j++) {
+          if (InspectorUtils.isInheritedProperty(doc, domRule.style[j])) {
+            hasInherited = true;
+            break;
+          }
+        }
+
         if (!hasInherited) {
           continue;
         }
