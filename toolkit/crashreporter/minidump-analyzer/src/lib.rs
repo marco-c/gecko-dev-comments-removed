@@ -56,33 +56,19 @@ impl<'a> MinidumpAnalyzer<'a> {
     }
 
     
-    pub fn get_extras_file(&self) -> Cow<'a, Path> {
-        self.extras
-            .map(Cow::Borrowed)
-            .unwrap_or_else(|| Cow::Owned(extra_path_from_minidump(&self.minidump)))
-    }
-
-    
     pub fn analyze(self) -> anyhow::Result<()> {
-        let extra_file = self.get_extras_file();
+        let extra_file = self
+            .extras
+            .map(Cow::Borrowed)
+            .unwrap_or_else(|| Cow::Owned(extra_path_from_minidump(&self.minidump)));
         let extra_file = extra_file.as_ref();
 
         log::info!("minidump file path: {}", self.minidump.display());
         log::info!("extra file path: {}", extra_file.display());
 
-        let mut extra_json = parse_extra_file(extra_file)?;
-
-        self.analyze_json(&mut extra_json)?;
-
-        std::fs::write(extra_file, extra_json.to_string())
-            .context("while writing modified extra file")?;
-
-        Ok(())
-    }
-
-    
-    pub fn analyze_json(self, extra_json: &mut JsonValue) -> anyhow::Result<()> {
         let minidump = Minidump::read_path(&self.minidump).context("while reading minidump")?;
+
+        let mut extra_json = parse_extra_file(extra_file)?;
 
         let proc = processor::Processor::new(&minidump)?;
 
@@ -147,6 +133,9 @@ impl<'a> MinidumpAnalyzer<'a> {
                 .unwrap()
                 .into();
         }
+
+        std::fs::write(extra_file, extra_json.to_string())
+            .context("while writing modified extra file")?;
 
         Ok(())
     }
@@ -426,32 +415,10 @@ mod processor {
                 thread.context(&self.system_info, self.misc_info.as_ref())
             }
             .map(|c| c.into_owned());
-
-            let mut stack_memory = thread.stack_memory(&self.memory_list);
-
+            let stack_memory = thread.stack_memory(&self.memory_list);
             let Some(mut call_stack) = context.map(CallStack::with_context) else {
                 return CallStack::with_info(thread.raw.thread_id, CallStackInfo::MissingContext);
             };
-
-            
-            
-            
-            if let Some(stack_ptr) = call_stack
-                .frames
-                .first()
-                .map(|frame| frame.context.get_stack_pointer())
-            {
-                let contains_stack_ptr = stack_memory
-                    .as_ref()
-                    .and_then(|memory| memory.get_memory_at_address::<u64>(stack_ptr))
-                    .is_some();
-                if !contains_stack_ptr {
-                    stack_memory = self
-                        .memory_list
-                        .memory_at_address(stack_ptr)
-                        .or(stack_memory);
-                }
-            }
 
             walk_stack(
                 0,
@@ -478,16 +445,6 @@ impl SymbolProvider for BoxedSymbolProvider {
         module: &(dyn Module + Sync),
         frame: &mut (dyn minidump_unwind::FrameSymbolizer + Send),
     ) -> Result<(), minidump_unwind::FillSymbolError> {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        frame.set_function("<unknown>", 0, 0);
         self.0.fill_symbol(module, frame).await
     }
 
