@@ -1,4 +1,4 @@
-function run_test() {
+add_task(function test() {
   Assert.ok(!Services.profiler.IsActive());
 
   
@@ -11,4 +11,4 @@ function run_test() {
     
   })();
   Services.profiler.StopProfiler();
-}
+});

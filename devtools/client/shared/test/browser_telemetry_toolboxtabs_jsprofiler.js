@@ -3,6 +3,10 @@
 
 "use strict";
 
+const { ProfilerTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/ProfilerTestUtils.sys.mjs"
+);
+
 const TEST_URI =
   "data:text/html;charset=utf-8," +
   "<p>browser_telemetry_toolboxtabs_jsprofiler.js</p>";
@@ -10,6 +14,8 @@ const TEST_URI =
 
 
 const TOOL_DELAY = 200;
+
+add_setup(ProfilerTestUtils.assertProfilerInactive);
 
 add_task(async function () {
   await addTab(TEST_URI);

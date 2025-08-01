@@ -1,14 +1,14 @@
 
 
 
-function run_test() {
+add_task(async function test() {
   
   
   
   Assert.ok(!Services.profiler.IsActive());
 
   const ms = 5;
-  Services.profiler.StartProfiler(10000, ms, ["js"]);
+  await Services.profiler.StartProfiler(10000, ms, ["js"]);
 
   function has_arbitrary_name_in_stack() {
     
@@ -48,5 +48,5 @@ function run_test() {
     has_arbitrary_name_in_stack(),
     "A JS frame was found before the test timeout."
   );
-  Services.profiler.StopProfiler();
-}
+  await Services.profiler.StopProfiler();
+});

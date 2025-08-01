@@ -3,6 +3,12 @@
 
 "use strict";
 
+const { ProfilerTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/ProfilerTestUtils.sys.mjs"
+);
+
+add_setup(ProfilerTestUtils.assertProfilerInactive);
+
 
 
 

@@ -21,6 +21,8 @@ Services.scriptloader.loadSubScript(
   this
 );
 
+add_setup(ProfilerTestUtils.assertProfilerInactive);
+
 
 
 

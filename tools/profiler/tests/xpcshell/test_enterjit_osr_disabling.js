@@ -1,7 +1,7 @@
-function run_test() {
+add_task(async function test() {
   Assert.ok(!Services.profiler.IsActive());
 
-  Services.profiler.StartProfiler(100, 10, ["js"]);
+  await Services.profiler.StartProfiler(100, 10, ["js"]);
   
   (function () {
     Services.profiler.StopProfiler();
@@ -11,4 +11,4 @@ function run_test() {
     
     
   })();
-}
+});
