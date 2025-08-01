@@ -1079,6 +1079,14 @@ void nsFrameConstructorState::ConstructBackdropFrameFor(nsIContent* aContent,
   }
 
   ComputedStyle* parentStyle = nsLayoutUtils::GetStyleFrame(aFrame)->Style();
+  if (parentStyle->GetPseudoType() != PseudoStyleType::NotPseudo) {
+    
+    
+    
+    
+    return;
+  }
+
   RefPtr<ComputedStyle> style =
       mPresShell->StyleSet()->ResolvePseudoElementStyle(
           *aContent->AsElement(), PseudoStyleType::backdrop, nullptr,
