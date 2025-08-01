@@ -514,13 +514,13 @@ class StyleRuleActor extends Actor {
         
         decl.isUsed = isPropertyUsed(el, style, this.rawRule, decl.name);
         
-        decl.isNameValid = InspectorUtils.supports(
-          `${decl.name}:initial`,
-          supportsOptions
-        );
+        decl.isNameValid =
+          
+          
+          decl.isCustomProperty ||
+          InspectorUtils.supports(`${decl.name}:initial`, supportsOptions);
 
-        if (SharedCssLogic.isCssVariable(decl.name)) {
-          decl.isCustomProperty = true;
+        if (decl.isCustomProperty) {
           decl.computedValue = style.getPropertyValue(decl.name);
 
           

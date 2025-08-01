@@ -362,6 +362,17 @@ function parseDeclarationsInternal(
     }
 
     if (
+      token.tokenType === "Ident" &&
+      token.text[0] == "-" &&
+      token.text[1] == "-" &&
+      token.text.length > 2
+    ) {
+      if (!lastProp.name) {
+        lastProp.isCustomProperty = true;
+      }
+    }
+
+    if (
       
       !isInNested &&
       
