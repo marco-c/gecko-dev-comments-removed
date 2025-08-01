@@ -12,6 +12,7 @@
 #include "nsIDOMWindowUtils.h"
 #include "nsILocalFileMac.h"
 #include "CocoaCompositorWidget.h"
+#include "CompositorWidgetChild.h"
 #include "GLContextCGL.h"
 #include "MacThemeGeometryType.h"
 #include "NativeMenuSupport.h"
@@ -19,6 +20,7 @@
 #include "mozilla/Components.h"
 #include "mozilla/MiscEvents.h"
 #include "mozilla/SwipeTracker.h"
+#include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/layers/APZInputBridge.h"
 #include "mozilla/layers/APZThreadUtils.h"
 #include "mozilla/layers/NativeLayerCA.h"
@@ -873,6 +875,73 @@ void nsCocoaWindow::HandleMainThreadCATransaction() {
   MaybeScheduleUnsuspendAsyncCATransactions();
 }
 
+void nsCocoaWindow::CreateCompositor(int aWidth, int aHeight) {
+  
+  
+  
+  
+
+  
+  
+  
+  auto finishCompositorCreation =
+      MakeScopeExit([&] { nsBaseWidget::CreateCompositor(aWidth, aHeight); });
+
+  
+
+  
+  auto* pm = mozilla::gfx::GPUProcessManager::Get();
+  mozilla::ipc::EndpointProcInfo gpuProcessInfo =
+      (pm ? pm->GPUEndpointProcInfo()
+          : mozilla::ipc::EndpointProcInfo::Invalid());
+
+  mozilla::ipc::EndpointProcInfo childProcessInfo =
+      gpuProcessInfo != mozilla::ipc::EndpointProcInfo::Invalid()
+          ? gpuProcessInfo
+          : mozilla::ipc::EndpointProcInfo::Current();
+
+  mozilla::ipc::Endpoint<PNativeLayerRemoteParent> parentEndpoint;
+  auto rv = PNativeLayerRemote::CreateEndpoints(
+      mozilla::ipc::EndpointProcInfo::Current(), childProcessInfo,
+      &parentEndpoint, &mChildEndpoint);
+  if (NS_FAILED(rv)) {
+    return;
+  }
+
+  
+  
+  mNativeLayerRootRemoteMacParent =
+      new NativeLayerRootRemoteMacParent(mNativeLayerRoot);
+  MOZ_ALWAYS_TRUE(parentEndpoint.Bind(mNativeLayerRootRemoteMacParent));
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+  
+}
+
+void nsCocoaWindow::DestroyCompositor() {
+  if (mNativeLayerRootRemoteMacParent) {
+    mNativeLayerRootRemoteMacParent->Close();
+  }
+
+  if (mCompositorWidgetDelegate) {
+    auto* compositorWidgetChild =
+        static_cast<CompositorWidgetChild*>(mCompositorWidgetDelegate);
+    compositorWidgetChild->Shutdown();
+    mCompositorWidgetDelegate = nullptr;
+  }
+
+  nsBaseWidget::DestroyCompositor();
+}
+
 void nsCocoaWindow::SetCompositorWidgetDelegate(
     mozilla::widget::CompositorWidgetDelegate* aDelegate) {
   if (aDelegate) {
@@ -888,8 +957,8 @@ void nsCocoaWindow::SetCompositorWidgetDelegate(
 void nsCocoaWindow::GetCompositorWidgetInitData(
     mozilla::widget::CompositorWidgetInitData* aInitData) {
   auto deviceIntRect = GetBounds();
-  *aInitData =
-      mozilla::widget::CocoaCompositorWidgetInitData(deviceIntRect.Size());
+  *aInitData = mozilla::widget::CocoaCompositorWidgetInitData(
+      deviceIntRect.Size(), std::move(mChildEndpoint));
 }
 
 mozilla::layers::CompositorBridgeChild*
