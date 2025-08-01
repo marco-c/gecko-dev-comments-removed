@@ -11785,11 +11785,11 @@ InlinableNativeIRGenerator::tryAttachTypedArrayConstructorFromLength() {
   MOZ_ASSERT(args_.length() == 0 || args_[0].isInt32());
 
   
-  if (args_.length() != 1) {
+  if (args_.length() > 1) {
     return AttachDecision::NoAction;
   }
 
-  int32_t length = args_[0].toInt32();
+  int32_t length = args_.length() > 0 ? args_[0].toInt32() : 0;
 
   Scalar::Type type = TypedArrayConstructorType(target_);
   Rooted<TypedArrayObject*> templateObj(cx_);
@@ -11810,8 +11810,13 @@ InlinableNativeIRGenerator::tryAttachTypedArrayConstructorFromLength() {
   
   ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
-  ValOperandId arg0Id = loadArgument(calleeId, ArgumentKind::Arg0);
-  Int32OperandId lengthId = writer.guardToInt32(arg0Id);
+  Int32OperandId lengthId;
+  if (args_.length() > 0) {
+    ValOperandId arg0Id = loadArgument(calleeId, ArgumentKind::Arg0);
+    lengthId = writer.guardToInt32(arg0Id);
+  } else {
+    lengthId = writer.loadInt32Constant(0);
+  }
   writer.newTypedArrayFromLengthResult(templateObj, lengthId);
   writer.returnFromIC();
 
