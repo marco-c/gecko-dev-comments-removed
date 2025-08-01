@@ -43,6 +43,11 @@ class JjVersionError(Exception):
 class JujutsuRepository(Repository):
     """An implementation of `Repository` for JJ repositories using the git backend."""
 
+    
+    
+    
+    HEAD_REVSET = "latest((@ ~ (empty() & description(exact:'')) ~ bookmarks()) | @-)"
+
     def __init__(self, path: Path, jj="jj", git="git"):
         super(JujutsuRepository, self).__init__(path, tool=jj)
         self._git = GitRepository(path, git=git)
@@ -107,7 +112,10 @@ class JujutsuRepository(Repository):
         
         
         
-        return self._resolve_to_change("@")
+        
+        
+        
+        return self._resolve_to_change(self.HEAD_REVSET)
 
     def is_cinnabar_repo(self) -> bool:
         return self._git.is_cinnabar_repo()
@@ -193,7 +201,7 @@ class JujutsuRepository(Repository):
 
     def diff_stream(self, rev=None, extensions=(), exclude_file=None, context=8):
         if rev is None:
-            rev = "latest((@ ~ empty()) | @-)"
+            rev = self.HEAD_REVSET
         rev = self._resolve_to_commit(rev)
         return self._git.diff_stream(
             rev=rev, extensions=extensions, exclude_file=exclude_file, context=context
@@ -383,7 +391,7 @@ class JujutsuRepository(Repository):
             "operation", "log", "-n1", "--no-graph", "-T", "id.short(16)"
         ).rstrip()
         try:
-            self._run("new", "-m", commit_message, "latest((@ ~ empty()) | @-)")
+            self._run("new", "-m", commit_message, self.HEAD_REVSET)
             for path, content in (changed_files or {}).items():
                 p = self.path / Path(path)
                 p.parent.mkdir(parents=True, exist_ok=True)
