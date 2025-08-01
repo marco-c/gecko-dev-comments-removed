@@ -11,6 +11,7 @@
 #include "nsIAppStartup.h"
 #include "nsIDOMWindowUtils.h"
 #include "nsILocalFileMac.h"
+#include "CocoaCompositorWidget.h"
 #include "GLContextCGL.h"
 #include "MacThemeGeometryType.h"
 #include "NativeMenuSupport.h"
@@ -870,6 +871,18 @@ void nsCocoaWindow::HandleMainThreadCATransaction() {
   }
 
   MaybeScheduleUnsuspendAsyncCATransactions();
+}
+
+void nsCocoaWindow::SetCompositorWidgetDelegate(
+    mozilla::widget::CompositorWidgetDelegate* aDelegate) {
+  if (aDelegate) {
+    mCompositorWidgetDelegate = aDelegate->AsPlatformSpecificDelegate();
+    MOZ_ASSERT(mCompositorWidgetDelegate,
+               "nsCocoaWindow::SetCompositorWidgetDelegate called with a "
+               "non-PlatformCompositorWidgetDelegate");
+  } else {
+    mCompositorWidgetDelegate = nullptr;
+  }
 }
 
 void nsCocoaWindow::GetCompositorWidgetInitData(
@@ -4521,8 +4534,9 @@ nsCocoaWindow::~nsCocoaWindow() {
 
   [mClosedRetainedWindow release];
 
-  if (mContentLayer) {
-    mNativeLayerRoot->RemoveLayer(mContentLayer);  
+  
+  if (mNativeLayerRoot) {
+    mNativeLayerRoot->SetLayers({});
   }
 
   DestroyCompositor();
@@ -4852,6 +4866,13 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect,
 }
 
 void nsCocoaWindow::Destroy() {
+  
+  
+  
+  
+  
+  MutexAutoLock lock(mCompositingLock);
+
   if (mOnDestroyCalled) {
     return;
   }
@@ -4868,12 +4889,7 @@ void nsCocoaWindow::Destroy() {
   
   Show(false);
 
-  {
-    
-    
-    MutexAutoLock lock(mCompositingLock);
-    [mChildView widgetDestroyed];
-  }
+  [mChildView widgetDestroyed];
 
   TearDownView();  
   if (mFullscreenTransitionAnimation) {
@@ -6958,6 +6974,11 @@ void nsCocoaWindow::CocoaWindowDidResize() {
   
   
   UpdateBounds();
+
+  if (mCompositorWidgetDelegate) {
+    auto deviceIntRect = GetBounds();
+    mCompositorWidgetDelegate->NotifyClientSizeChanged(deviceIntRect.Size());
+  }
 
   if (HandleUpdateFullscreenOnResize()) {
     ReportSizeEvent();
