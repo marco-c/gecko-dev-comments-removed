@@ -1465,6 +1465,7 @@ class MConstant : public MNullaryInstruction {
   static MConstant* NewIntPtr(TempAllocator& alloc, intptr_t i);
   static MConstant* NewObject(TempAllocator& alloc, JSObject* v);
   static MConstant* NewShape(TempAllocator& alloc, Shape* s);
+  static MConstant* NewUndefined(TempAllocator& alloc);
 
   
   
