@@ -100,6 +100,10 @@ add_setup(async () => {
     prefs: [
       ["suggest.quicksuggest.nonsponsored", true],
       ["suggest.quicksuggest.sponsored", true],
+
+      
+      
+      ["quicksuggest.ampTopPickCharThreshold", 0],
     ],
   });
   gSandbox = sinon.createSandbox();
@@ -289,8 +293,109 @@ add_task(async function test_telemetry_interest_mode_with_failures() {
   Services.prefs.clearUserPref(PREF_RANKING_MODE);
 });
 
+add_task(async function offline_interest_mode_end2end() {
+  
+  
+  await doOfflineTest({
+    mode: "interest",
+    expectedResultArgs: {
+      url: "https://example.com/6-education",
+      title: "Suggestion with category 6 (Education)",
+    },
+  });
+});
+
+add_task(async function offline_default_mode_end2end() {
+  
+  
+  
+  await doOfflineTest({
+    mode: "default",
+    expectedResultArgs: {
+      url: "https://example.com/no-categories",
+      title: "Suggestion with no categories",
+    },
+  });
+});
+
+async function doOfflineTest({ mode, expectedResultArgs }) {
+  
+  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", false);
+
+  Services.prefs.setStringPref(PREF_RANKING_MODE, mode);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  let sandbox = sinon.createSandbox();
+  let queryStub = sandbox.stub(QuickSuggest.rustBackend, "query");
+  queryStub.returns([
+    mockRustAmpSuggestion({
+      keyword: "offline",
+      title: "Suggestion with no categories",
+      url: "https://example.com/no-categories",
+      categories: [],
+    }),
+    mockRustAmpSuggestion({
+      keyword: "offline",
+      url: "https://example.com/6-education",
+      title: "Suggestion with category 6 (Education)",
+      categories: [6],
+    }),
+    mockRustAmpSuggestion({
+      keyword: "offline",
+      title: "Suggestion with category 1 (Animals)",
+      url: "https://example.com/1-animals",
+      categories: [1],
+    }),
+  ]);
+
+  await check_results({
+    context: createContext("offline", {
+      providers: [UrlbarProviderQuickSuggest.name],
+      isPrivate: false,
+    }),
+    matches: [
+      QuickSuggestTestUtils.ampResult({
+        ...expectedResultArgs,
+        keyword: "offline",
+      }),
+    ],
+  });
+
+  Services.prefs.clearUserPref(PREF_RANKING_MODE);
+  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", true);
+  sandbox.restore();
+}
+
 async function applyRanking(suggestions) {
   for (let s of suggestions) {
     await UrlbarProviderQuickSuggest._test_applyRanking(s);
   }
+}
+
+function mockRustAmpSuggestion({ keyword, url, title, categories }) {
+  let suggestion = QuickSuggestTestUtils.ampRemoteSettings({
+    url,
+    title,
+    keywords: [keyword],
+  });
+  return {
+    ...suggestion,
+    rawUrl: suggestion.url,
+    impressionUrl: suggestion.impression_url,
+    clickUrl: suggestion.click_url,
+    blockId: suggestion.id,
+    iabCategory: suggestion.iab_category,
+    icon: null,
+    fullKeyword: keyword,
+    source: "rust",
+    provider: "Amp",
+    categories,
+  };
 }
