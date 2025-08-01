@@ -13,7 +13,7 @@ use crate::storage::INTERNAL_STORAGE;
 use crate::util::local_now_with_offset;
 use crate::{CommonMetricData, Glean, Lifetime};
 use chrono::prelude::*;
-use chrono::Duration;
+use chrono::Days;
 use once_cell::sync::Lazy;
 use std::sync::{Arc, Condvar, Mutex};
 use std::thread::JoinHandle;
@@ -135,13 +135,20 @@ fn schedule_internal(
     
 
     let already_sent_today = last_sent_time.is_some_and(|d| d.date_naive() == now.date_naive());
+    
+    let cutoff_time = now
+        .naive_local()
+        .date()
+        .and_hms_opt(SCHEDULED_HOUR, 0, 0)
+        .unwrap()
+        .and_local_timezone(now.timezone())
+        .unwrap();
+
     if already_sent_today {
         
         log::info!("The 'metrics' ping was already sent today, {}", now);
         scheduler.start_scheduler(submitter, now, When::Tomorrow);
-    } else if now
-        > Utc.from_utc_datetime(&now.date_naive().and_hms_opt(SCHEDULED_HOUR, 0, 0).unwrap())
-    {
+    } else if now > cutoff_time {
         
         log::info!("Sending the 'metrics' ping immediately, {}", now);
         submitter.submit_metrics_ping(glean, Some("overdue"), now);
@@ -166,18 +173,24 @@ impl When {
     
     
     fn until(&self, now: DateTime<FixedOffset>) -> std::time::Duration {
+        let now_local = now.naive_local();
+
         let fire_date = match self {
-            Self::Today => now.date_naive().and_hms_opt(SCHEDULED_HOUR, 0, 0).unwrap(),
+            Self::Today => now_local.date().and_hms_opt(SCHEDULED_HOUR, 0, 0).unwrap(),
             
             
-            Self::Tomorrow | Self::Reschedule => (now.date_naive() + Duration::days(1))
-                .and_hms_opt(SCHEDULED_HOUR, 0, 0)
-                .unwrap(),
+            Self::Tomorrow | Self::Reschedule => {
+                let next_day = now_local.checked_add_days(Days::new(1)).unwrap();
+                let next_day_date = next_day.date();
+                next_day_date.and_hms_opt(SCHEDULED_HOUR, 0, 0).unwrap()
+            }
         };
-        
-        (fire_date - now.naive_utc())
-            .to_std()
-            .unwrap_or_else(|_| std::time::Duration::from_millis(0))
+
+        (fire_date - now_local).to_std().unwrap_or_else(|_| {
+            
+            
+            std::time::Duration::from_secs(24 * 60 * 60)
+        })
     }
 
     
@@ -273,6 +286,8 @@ mod test {
     use super::*;
     use crate::tests::new_glean;
     use std::sync::atomic::{AtomicU32, Ordering};
+
+    use chrono::Duration;
 
     struct ValidatingSubmitter<F: Fn(DateTime<FixedOffset>, Option<&str>)> {
         submit_validator: F,
@@ -454,7 +469,7 @@ mod test {
             .with_ymd_and_hms(2021, 4, 30, 15, 2, 10)
             .unwrap();
         
-        assert_eq!(std::time::Duration::from_secs(0), When::Today.until(now));
+        assert_ne!(std::time::Duration::from_secs(0), When::Today.until(now));
         
         let earlier = now
             .date_naive()
@@ -478,6 +493,34 @@ mod test {
         );
         assert_eq!(When::Tomorrow.until(now), When::Reschedule.until(now));
         assert_ne!(When::Tomorrow.reason(), When::Reschedule.reason());
+    }
+
+    #[test]
+    fn datetime_offset_doesnt_cause_rapid_rescheduling() {
+        let now = FixedOffset::west_opt(3600 * 7)
+            .unwrap()
+            .with_ymd_and_hms(2025, 7, 27, 22, 27, 59)
+            .unwrap();
+
+        let next_schedule = When::Reschedule.until(now);
+
+        
+        let expected_duration = std::time::Duration::from_secs(19921);
+        assert_eq!(expected_duration, next_schedule);
+    }
+
+    #[test]
+    fn todays_scheduling_is_in_localtime() {
+        let now = FixedOffset::west_opt(3600 * 7)
+            .unwrap()
+            .with_ymd_and_hms(2025, 7, 27, 3, 30, 0)
+            .unwrap();
+
+        let next_schedule = When::Today.until(now);
+
+        
+        let expected_duration = std::time::Duration::from_secs(30 * 60);
+        assert_eq!(expected_duration, next_schedule);
     }
 
     
@@ -540,6 +583,7 @@ mod test {
     
     #[test]
     fn immediate_task_runs_immediately() {
+        let _ = env_logger::builder().try_init();
         
         
         let _test_lock = SCHEDULER_TEST_MUTEX.lock().unwrap();
@@ -557,7 +601,7 @@ mod test {
         
         let now = FixedOffset::east_opt(0)
             .unwrap()
-            .with_ymd_and_hms(2021, 4, 20, 15, 42, 0)
+            .with_ymd_and_hms(2021, 4, 21, 4, 0, 0)
             .unwrap();
 
         let (submitter, submitter_count, _, _) = new_proxies(
