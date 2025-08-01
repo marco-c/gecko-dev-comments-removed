@@ -1457,6 +1457,12 @@ HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner final {
       const HTMLEditor& aHTMLEditor, nsRange& aRangeToDelete,
       const Element& aEditingHost, ComputeRangeFor aComputeRangeFor) const;
 
+  
+
+
+  [[nodiscard]] nsIContent* ComputeLeafContentInOtherBlockElement(
+      nsIEditor::EDirection aDirectionAndAmount) const;
+
   class MOZ_STACK_CLASS AutoInclusiveAncestorBlockElementsJoiner;
 
   enum class Mode {
@@ -1482,6 +1488,7 @@ HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner final {
   nsCOMPtr<nsIContent> mLeftContent;
   nsCOMPtr<nsIContent> mRightContent;
   nsCOMPtr<nsIContent> mLeafContentInOtherBlock;
+  RefPtr<Element> mOtherBlockElement;
   
   
   

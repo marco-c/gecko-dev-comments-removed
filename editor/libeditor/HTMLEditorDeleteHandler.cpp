@@ -1887,17 +1887,14 @@ bool HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
     return false;
   }
 
+  mOtherBlockElement = &aOtherBlockElement;
   
+  mLeafContentInOtherBlock =
+      ComputeLeafContentInOtherBlockElement(aDirectionAndAmount);
   if (aDirectionAndAmount == nsIEditor::ePrevious) {
-    mLeafContentInOtherBlock = HTMLEditUtils::GetLastLeafContent(
-        aOtherBlockElement, {LeafNodeType::OnlyEditableLeafNode},
-        BlockInlineCheck::Unused, &aOtherBlockElement);
     mLeftContent = mLeafContentInOtherBlock;
     mRightContent = aCaretPoint.GetContainerAs<nsIContent>();
   } else {
-    mLeafContentInOtherBlock = HTMLEditUtils::GetFirstLeafContent(
-        aOtherBlockElement, {LeafNodeType::OnlyEditableLeafNode},
-        BlockInlineCheck::Unused, &aOtherBlockElement);
     mLeftContent = aCaretPoint.GetContainerAs<nsIContent>();
     mRightContent = mLeafContentInOtherBlock;
   }
@@ -1920,6 +1917,18 @@ bool HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
   }
 
   return mLeftContent && mRightContent;
+}
+nsIContent* HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
+    ComputeLeafContentInOtherBlockElement(
+        nsIEditor::EDirection aDirectionAndAmount) const {
+  MOZ_ASSERT(mOtherBlockElement);
+  return aDirectionAndAmount == nsIEditor::ePrevious
+             ? HTMLEditUtils::GetLastLeafContent(
+                   *mOtherBlockElement, {LeafNodeType::OnlyEditableLeafNode},
+                   BlockInlineCheck::Unused, mOtherBlockElement)
+             : HTMLEditUtils::GetFirstLeafContent(
+                   *mOtherBlockElement, {LeafNodeType::OnlyEditableLeafNode},
+                   BlockInlineCheck::Unused, mOtherBlockElement);
 }
 
 nsresult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
@@ -2396,6 +2405,15 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
   
   
   
+  
+  if (mLeafContentInOtherBlock &&
+      !mLeafContentInOtherBlock->IsInComposedDoc()) {
+    mLeafContentInOtherBlock =
+        ComputeLeafContentInOtherBlockElement(aDirectionAndAmount);
+  }
+  
+  
+  
   if (unwrappedMoveFirstLineResult.Handled() &&
       unwrappedMoveFirstLineResult.HasCaretPointSuggestion() &&
       MayEditActionDeleteAroundCollapsedSelection(
@@ -2430,7 +2448,7 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
   
   
   
-  if (unwrappedMoveFirstLineResult.Ignored() &&
+  if (unwrappedMoveFirstLineResult.Ignored() && mLeafContentInOtherBlock &&
       mLeafContentInOtherBlock != aCaretPoint.GetContainer()) {
     
     
