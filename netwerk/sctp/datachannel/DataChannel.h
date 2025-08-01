@@ -23,7 +23,6 @@
 #include "mozilla/dom/Blob.h"
 #include "mozilla/Mutex.h"
 #include "DataChannelProtocol.h"
-#include "DataChannelListener.h"
 #include "mozilla/net/NeckoTargetHolder.h"
 #include "MediaEventSource.h"
 
@@ -33,14 +32,13 @@ namespace mozilla {
 
 class DataChannelConnection;
 class DataChannel;
-class DataChannelOnMessageAvailable;
 class MediaPacket;
 class MediaTransportHandler;
 namespace dom {
+class RTCDataChannel;
 struct RTCStatsCollection;
-};
+};  
 
-enum class DataChannelState { Connecting, Open, Closing, Closed };
 enum class DataChannelConnectionState { Connecting, Open, Closed };
 enum class DataChannelReliabilityPolicy {
   Reliable,
@@ -126,7 +124,6 @@ class IncomingMsg {
 
 class DataChannelConnection : public net::NeckoTargetHolder {
   friend class DataChannel;
-  friend class DataChannelOnMessageAvailable;
   friend class DataChannelConnectRunnable;
   friend class DataChannelConnectionUsrsctp;
 
@@ -201,7 +198,7 @@ class DataChannelConnection : public net::NeckoTargetHolder {
   virtual void Destroy();
 
   void SetMaxMessageSize(bool aMaxMessageSizeSet, uint64_t aMaxMessageSize);
-  uint64_t GetMaxMessageSize();
+  double GetMaxMessageSize();
   void HandleDataMessage(IncomingMsg&& aMsg);
   void HandleDCEPMessage(IncomingMsg&& aMsg);
   void ProcessQueuedOpens();
@@ -222,12 +219,10 @@ class DataChannelConnection : public net::NeckoTargetHolder {
       DataChannelReliabilityPolicy prPolicy, bool inOrder, uint32_t prValue,
       bool aExternalNegotiated, uint16_t aStream);
 
-  void Stop();
-  void Close(DataChannel* aChannel);
-  void GracefulClose(DataChannel* aChannel);
   void FinishClose(DataChannel* aChannel);
   void FinishClose_s(DataChannel* aChannel);
   void CloseAll();
+  void CloseAll_s();
 
   
   int SendMessage(uint16_t stream, nsACString&& aMsg) {
@@ -376,22 +371,14 @@ class DataChannelConnection : public net::NeckoTargetHolder {
 };
 
 class DataChannel {
-  friend class DataChannelOnMessageAvailable;
   friend class DataChannelConnection;
   friend class DataChannelConnectionUsrsctp;
 
  public:
-  struct TrafficCounters {
-    uint32_t mMessagesSent = 0;
-    uint64_t mBytesSent = 0;
-    uint32_t mMessagesReceived = 0;
-    uint64_t mBytesReceived = 0;
-  };
-
   DataChannel(DataChannelConnection* connection, uint16_t stream,
-              DataChannelState state, const nsACString& label,
-              const nsACString& protocol, DataChannelReliabilityPolicy policy,
-              uint32_t value, bool ordered, bool negotiated);
+              const nsACString& label, const nsACString& protocol,
+              DataChannelReliabilityPolicy policy, uint32_t value, bool ordered,
+              bool negotiated);
   DataChannel(const DataChannel&) = delete;
   DataChannel(DataChannel&&) = delete;
   DataChannel& operator=(const DataChannel&) = delete;
@@ -408,82 +395,61 @@ class DataChannel {
   
   void ReleaseConnection();
 
-  
-  
-  void Close();
-
-  
-  void SetListener(DataChannelListener* aListener);
+  void SetDomDataChannel(dom::RTCDataChannel* aChannel);
 
   
   static void SendErrnoToErrorResult(int error, size_t aMessageSize,
                                      ErrorResult& aRv);
 
   
-  void SendMsg(nsACString&& aMsg, ErrorResult& aRv);
+  int SendMsg(nsACString&& aMsg);
 
   
-  void SendBinaryMsg(nsACString&& aMsg, ErrorResult& aRv);
+  int SendBinaryMsg(nsACString&& aMsg);
 
   
-  void SendBinaryBlob(dom::Blob& aBlob, ErrorResult& aRv);
+  int SendBinaryBlob(nsIInputStream* aBlob);
 
-  void IncrementBufferedAmount(uint32_t aSize, ErrorResult& aRv);
-  void DecrementBufferedAmount(uint32_t aSize);
-
-  
-  uint32_t GetBufferedAmount() const {
-    MOZ_ASSERT(NS_IsMainThread());
-    return mBufferedAmount;
-  }
-
-  
-  uint32_t GetBufferedAmountLowThreshold() const;
-  void SetBufferedAmountLowThreshold(uint32_t aThreshold);
-
+  void DecrementBufferedAmount(size_t aSize);
   void AnnounceOpen();
   void AnnounceClosed();
 
-  
-  DataChannelState GetReadyState() const {
+  Maybe<uint16_t> GetStream() const {
     MOZ_ASSERT(NS_IsMainThread());
-    return mReadyState;
+    if (mStream == INVALID_STREAM) {
+      return Nothing();
+    }
+    return Some(mStream);
   }
 
-  
-  void SetReadyState(DataChannelState aState);
+  void SetStream(uint16_t aId);
 
-  void GetLabel(nsAString& aLabel) { CopyUTF8toUTF16(mLabel, aLabel); }
-  void GetProtocol(nsAString& aProtocol) {
-    CopyUTF8toUTF16(mProtocol, aProtocol);
-  }
-  uint16_t GetStream() const {
-    MOZ_ASSERT(NS_IsMainThread());
-    return mStream;
-  }
+  void OnMessageReceived(nsCString&& aMsg, bool aIsBinary);
 
-  void SendOrQueue(DataChannelOnMessageAvailable* aMessage);
+  void AppendStatsToReport(const UniquePtr<dom::RTCStatsCollection>& aReport,
+                           const DOMHighResTimeStamp aTimestamp) const;
 
-  TrafficCounters GetTrafficCounters() const;
+  void FinishClose();
 
  private:
   nsresult AddDataToBinaryMsg(const char* data, uint32_t size);
-  bool EnsureValidStream(ErrorResult& aRv);
-  void WithTrafficCounters(const std::function<void(TrafficCounters&)>&);
 
-  
-  DataChannelListener* mListener = nullptr;
-  bool mEverOpened = false;
   const nsCString mLabel;
   const nsCString mProtocol;
-  DataChannelState mReadyState;
-  uint16_t mStream;
   const DataChannelReliabilityPolicy mPrPolicy;
   const uint32_t mPrValue;
-  size_t mBufferedThreshold;
-  size_t mBufferedAmount;
+  const bool mNegotiated;
+  const bool mOrdered;
+
+  
+  
+  
+  
+  
+  dom::RTCDataChannel* mDomDataChannel = nullptr;
+  bool mEverOpened = false;
+  uint16_t mStream;
   RefPtr<DataChannelConnection> mConnection;
-  TrafficCounters mTrafficCounters;
 
   
   
@@ -493,72 +459,7 @@ class DataChannel {
   std::map<uint16_t, IncomingMsg> mRecvBuffers;
 
   
-  const bool mNegotiated;
-  const bool mOrdered;
-
-  nsCOMPtr<nsISerialEventTarget> mMainThreadEventTarget;
-};
-
-
-
-
-class DataChannelOnMessageAvailable : public Runnable {
- public:
-  enum class EventType {
-    OnConnection,
-    OnDisconnected,
-    OnDataString,
-    OnDataBinary,
-  };
-
-  DataChannelOnMessageAvailable(EventType aType,
-                                DataChannelConnection* aConnection,
-                                DataChannel* aChannel, nsCString&& aData)
-      : Runnable("DataChannelOnMessageAvailable"),
-        mType(aType),
-        mChannel(aChannel),
-        mConnection(aConnection),
-        mData(std::move(aData)) {}
-
-  DataChannelOnMessageAvailable(EventType aType, DataChannel* aChannel)
-      : Runnable("DataChannelOnMessageAvailable"),
-        mType(aType),
-        mChannel(aChannel) {}
-  
-  
-  
-
-  DataChannelOnMessageAvailable(EventType aType,
-                                DataChannelConnection* aConnection,
-                                DataChannel* aChannel)
-      : Runnable("DataChannelOnMessageAvailable"),
-        mType(aType),
-        mChannel(aChannel),
-        mConnection(aConnection) {}
-
-  
-  DataChannelOnMessageAvailable(EventType aType,
-                                DataChannelConnection* aConnection)
-      : Runnable("DataChannelOnMessageAvailable"),
-        mType(aType),
-        mConnection(aConnection) {}
-  DataChannelOnMessageAvailable(const DataChannelOnMessageAvailable&) = delete;
-  DataChannelOnMessageAvailable(DataChannelOnMessageAvailable&&) = delete;
-  DataChannelOnMessageAvailable& operator=(
-      const DataChannelOnMessageAvailable&) = delete;
-  DataChannelOnMessageAvailable& operator=(DataChannelOnMessageAvailable&&) =
-      delete;
-
-  NS_IMETHOD Run() override;
-
- private:
-  ~DataChannelOnMessageAvailable() = default;
-
-  EventType mType;
-  
-  RefPtr<DataChannel> mChannel;
-  RefPtr<DataChannelConnection> mConnection;
-  nsCString mData;
+  nsCOMPtr<nsISerialEventTarget> mDomEventTarget;
 };
 
 static constexpr const char* ToString(DataChannelConnectionState state) {

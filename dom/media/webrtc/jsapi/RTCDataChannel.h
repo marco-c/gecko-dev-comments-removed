@@ -12,16 +12,16 @@
 #include "mozilla/dom/Nullable.h"
 #include "mozilla/dom/RTCDataChannelBinding.h"
 #include "mozilla/dom/TypedArray.h"
-#include "mozilla/net/DataChannelListener.h"
+#include "nsID.h"
 
 namespace mozilla {
 class DataChannel;
 
 namespace dom {
 class Blob;
+struct RTCStatsCollection;
 
-class RTCDataChannel final : public DOMEventTargetHelper,
-                             public DataChannelListener {
+class RTCDataChannel final : public DOMEventTargetHelper {
  public:
   RTCDataChannel(const nsACString& aLabel, bool aOrdered,
                  Nullable<uint16_t> aMaxLifeTime,
@@ -52,9 +52,9 @@ class RTCDataChannel final : public DOMEventTargetHelper,
   Nullable<uint16_t> GetMaxPacketLifeTime() const;
   Nullable<uint16_t> GetMaxRetransmits() const;
   RTCDataChannelState ReadyState() const;
-  uint32_t BufferedAmount() const;
-  uint32_t BufferedAmountLowThreshold() const;
-  void SetBufferedAmountLowThreshold(uint32_t aThreshold);
+  size_t BufferedAmount() const;
+  size_t BufferedAmountLowThreshold() const;
+  void SetBufferedAmountLowThreshold(size_t aThreshold);
   IMPL_EVENT_HANDLER(open)
   IMPL_EVENT_HANDLER(error)
   IMPL_EVENT_HANDLER(close)
@@ -78,20 +78,23 @@ class RTCDataChannel final : public DOMEventTargetHelper,
 
   nsresult DoOnMessageAvailable(const nsACString& aMessage, bool aBinary);
 
-  virtual nsresult OnMessageAvailable(const nsACString& aMessage) override;
+  void SetId(uint16_t aId);
+  void SetMaxMessageSize(double aMaxMessageSize);
+  void SetReadyState(const RTCDataChannelState aState);
 
-  virtual nsresult OnBinaryMessageAvailable(
-      const nsACString& aMessage) override;
+  void AnnounceOpen();
+  void AnnounceClosed();
 
-  virtual nsresult OnSimpleEvent(const nsAString& aName);
+  void DecrementBufferedAmount(size_t aSize);
 
-  virtual nsresult OnChannelConnected() override;
+  void AppendStatsToReport(const UniquePtr<RTCStatsCollection>& aReport,
+                           const DOMHighResTimeStamp aTimestamp) const;
 
-  virtual nsresult OnChannelClosed() override;
+ protected:
+  ~RTCDataChannel();
 
-  virtual nsresult OnBufferLow() override;
-
-  virtual nsresult NotBuffered() override;
+ private:
+  nsresult OnSimpleEvent(const nsAString& aName);
 
   
   
@@ -101,13 +104,20 @@ class RTCDataChannel final : public DOMEventTargetHelper,
   
   void DontKeepAliveAnyMore();
 
- protected:
-  ~RTCDataChannel();
-
- private:
+  void GracefulClose();
+  void IncrementBufferedAmount(size_t aSize);
   bool CheckReadyState(ErrorResult& aRv);
+  bool CheckSendSize(uint64_t aSize, ErrorResult& aRv) const;
 
   void ReleaseSelf();
+
+  const nsID mUuid;  
+  const nsCString mLabel;
+  const bool mOrdered;
+  const Nullable<uint16_t> mMaxPacketLifeTime;
+  const Nullable<uint16_t> mMaxRetransmits;
+  const nsCString mProtocol;
+  const bool mNegotiated;
 
   
   RefPtr<RTCDataChannel> mSelfRef;
@@ -118,16 +128,18 @@ class RTCDataChannel final : public DOMEventTargetHelper,
     DC_BINARY_TYPE_ARRAYBUFFER,
     DC_BINARY_TYPE_BLOB,
   };
-  DataChannelBinaryType mBinaryType;
-  bool mCheckMustKeepAlive;
-  bool mSentClose;
+  DataChannelBinaryType mBinaryType = DC_BINARY_TYPE_BLOB;
+  bool mCheckMustKeepAlive = true;
 
-  const nsCString mLabel;
-  const bool mOrdered;
-  const Nullable<uint16_t> mMaxPacketLifeTime;
-  const Nullable<uint16_t> mMaxRetransmits;
-  const nsCString mProtocol;
-  const bool mNegotiated;
+  Nullable<uint16_t> mId;
+  double mMaxMessageSize = 0;
+  RTCDataChannelState mReadyState = RTCDataChannelState::Connecting;
+  size_t mBufferedAmount = 0;
+  size_t mBufferedThreshold = 0;
+  size_t mMessagesSent = 0;
+  size_t mBytesSent = 0;
+  size_t mMessagesReceived = 0;
+  size_t mBytesReceived = 0;
 };
 
 }  

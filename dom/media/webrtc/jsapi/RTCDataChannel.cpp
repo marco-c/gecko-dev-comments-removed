@@ -15,6 +15,7 @@
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/MessageEvent.h"
 #include "mozilla/dom/MessageEventBinding.h"
+#include "mozilla/dom/RTCStatsReportBinding.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/dom/TypedArray.h"
@@ -26,6 +27,7 @@
 #include "nsIScriptContext.h"
 #include "nsIScriptObjectPrincipal.h"
 #include "nsProxyRelease.h"
+#include "nsThreadManager.h"
 
 #include "DataChannel.h"
 #include "DataChannelLog.h"
@@ -39,13 +41,27 @@
 namespace mozilla {
 namespace dom {
 
+static constexpr const char* ToString(RTCDataChannelState state) {
+  switch (state) {
+    case RTCDataChannelState::Connecting:
+      return "connecting";
+    case RTCDataChannelState::Open:
+      return "open";
+    case RTCDataChannelState::Closing:
+      return "closing";
+    case RTCDataChannelState::Closed:
+      return "closed";
+  }
+  return "";
+};
+
 RTCDataChannel::~RTCDataChannel() {
   
   
   
   DC_DEBUG(("%p: Close()ing %p", this, mDataChannel.get()));
-  mDataChannel->SetListener(nullptr);
-  mDataChannel->Close();
+  mDataChannel->SetDomDataChannel(nullptr);
+  mDataChannel->FinishClose();
 }
 
 
@@ -77,23 +93,21 @@ RTCDataChannel::RTCDataChannel(const nsACString& aLabel, bool aOrdered,
                                already_AddRefed<DataChannel>& aDataChannel,
                                nsPIDOMWindowInner* aWindow)
     : DOMEventTargetHelper(aWindow),
-      mDataChannel(aDataChannel),
-      mBinaryType(DC_BINARY_TYPE_BLOB),
-      mCheckMustKeepAlive(true),
-      mSentClose(false),
+      mUuid(nsID::GenerateUUID()),
       mLabel(aLabel),
       mOrdered(aOrdered),
       mMaxPacketLifeTime(aMaxLifeTime),
       mMaxRetransmits(aMaxRetransmits),
       mProtocol(aProtocol),
-      mNegotiated(aNegotiated) {}
+      mNegotiated(aNegotiated),
+      mDataChannel(aDataChannel) {}
 
 nsresult RTCDataChannel::Init(nsPIDOMWindowInner* aDOMWindow) {
   nsresult rv;
   nsAutoString urlParam;
 
   MOZ_ASSERT(mDataChannel);
-  mDataChannel->SetListener(this);
+  mDataChannel->SetDomDataChannel(this);
 
   
   nsCOMPtr<nsIScriptGlobalObject> sgo = do_QueryInterface(aDOMWindow);
@@ -126,12 +140,12 @@ void RTCDataChannel::GetProtocol(nsACString& aProtocol) const {
   aProtocol = mProtocol;
 }
 
-Nullable<uint16_t> RTCDataChannel::GetId() const {
-  Nullable<uint16_t> result = mDataChannel->GetStream();
-  if (result.Value() == 65535) {
-    result.SetNull();
-  }
-  return result;
+Nullable<uint16_t> RTCDataChannel::GetId() const { return mId; }
+
+void RTCDataChannel::SetId(uint16_t aId) { mId.SetValue(aId); }
+
+void RTCDataChannel::SetMaxMessageSize(double aMaxMessageSize) {
+  mMaxMessageSize = aMaxMessageSize;
 }
 
 Nullable<uint16_t> RTCDataChannel::GetMaxPacketLifeTime() const {
@@ -146,43 +160,81 @@ bool RTCDataChannel::Negotiated() const { return mNegotiated; }
 
 bool RTCDataChannel::Ordered() const { return mOrdered; }
 
-RTCDataChannelState RTCDataChannel::ReadyState() const {
-  return static_cast<RTCDataChannelState>(mDataChannel->GetReadyState());
+RTCDataChannelState RTCDataChannel::ReadyState() const { return mReadyState; }
+
+void RTCDataChannel::SetReadyState(const RTCDataChannelState aState) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  DC_DEBUG(
+      ("RTCDataChannel labeled %s(%p) (stream %d) changing ready "
+       "state "
+       "%s -> %s",
+       mLabel.get(), this, mId.IsNull() ? INVALID_STREAM : mId.Value(),
+       ToString(mReadyState), ToString(aState)));
+
+  mReadyState = aState;
 }
 
-uint32_t RTCDataChannel::BufferedAmount() const {
-  if (!mSentClose) {
-    return mDataChannel->GetBufferedAmount();
-  }
-  return 0;
+size_t RTCDataChannel::BufferedAmount() const { return mBufferedAmount; }
+
+size_t RTCDataChannel::BufferedAmountLowThreshold() const {
+  return mBufferedThreshold;
 }
 
-uint32_t RTCDataChannel::BufferedAmountLowThreshold() const {
-  return mDataChannel->GetBufferedAmountLowThreshold();
-}
-
-void RTCDataChannel::SetBufferedAmountLowThreshold(uint32_t aThreshold) {
-  mDataChannel->SetBufferedAmountLowThreshold(aThreshold);
+void RTCDataChannel::SetBufferedAmountLowThreshold(size_t aThreshold) {
+  mBufferedThreshold = aThreshold;
 }
 
 void RTCDataChannel::Close() {
-  mDataChannel->Close();
+  
+
+  
+  
+
+  
+  
+
+  
+
+  
+  
+  if (mReadyState == RTCDataChannelState::Closed ||
+      mReadyState == RTCDataChannelState::Closing) {
+    DC_DEBUG(("Channel already closing/closed (%s)", ToString(mReadyState)));
+    return;
+  }
+
+  
+  SetReadyState(RTCDataChannelState::Closing);
+
+  
+  GracefulClose();
+
   UpdateMustKeepAlive();
 }
-
 
 void RTCDataChannel::Send(const nsAString& aData, ErrorResult& aRv) {
   if (!CheckReadyState(aRv)) {
     return;
   }
 
+  if (!CheckSendSize(aData.Length(), aRv)) {
+    return;
+  }
+
   nsCString msgString;
   if (!AppendUTF16toUTF8(aData, msgString, fallible_t())) {
+    
     aRv.Throw(NS_ERROR_FILE_TOO_BIG);
     return;
   }
 
-  mDataChannel->SendMsg(std::move(msgString), aRv);
+  size_t length = msgString.Length();
+  if (!mDataChannel->SendMsg(std::move(msgString))) {
+    IncrementBufferedAmount(length);
+  } else {
+    aRv.ThrowOperationError("Failed to queue message");
+  }
 }
 
 void RTCDataChannel::Send(Blob& aData, ErrorResult& aRv) {
@@ -192,23 +244,32 @@ void RTCDataChannel::Send(Blob& aData, ErrorResult& aRv) {
     return;
   }
 
+  uint64_t msgLength = aData.GetSize(aRv);
+  if (NS_WARN_IF(aRv.Failed())) {
+    return;
+  }
+
+  if (!CheckSendSize(msgLength, aRv)) {
+    return;
+  }
+
   nsCOMPtr<nsIInputStream> msgStream;
   aData.CreateInputStream(getter_AddRefs(msgStream), aRv);
   if (NS_WARN_IF(aRv.Failed())) {
     return;
   }
 
-  uint64_t msgLength = aData.GetSize(aRv);
-  if (NS_WARN_IF(aRv.Failed())) {
-    return;
-  }
-
+  
   if (msgLength > UINT32_MAX) {
     aRv.Throw(NS_ERROR_FILE_TOO_BIG);
     return;
   }
 
-  mDataChannel->SendBinaryBlob(aData, aRv);
+  if (!mDataChannel->SendBinaryBlob(msgStream)) {
+    IncrementBufferedAmount(msgLength);
+  } else {
+    aRv.ThrowOperationError("Failed to queue message");
+  }
 }
 
 void RTCDataChannel::Send(const ArrayBuffer& aData, ErrorResult& aRv) {
@@ -224,7 +285,16 @@ void RTCDataChannel::Send(const ArrayBuffer& aData, ErrorResult& aRv) {
     return;
   }
 
-  mDataChannel->SendBinaryMsg(std::move(msgString), aRv);
+  if (!CheckSendSize(msgString.Length(), aRv)) {
+    return;
+  }
+
+  size_t length = msgString.Length();
+  if (!mDataChannel->SendBinaryMsg(std::move(msgString))) {
+    IncrementBufferedAmount(length);
+  } else {
+    aRv.ThrowOperationError("Failed to queue message");
+  }
 }
 
 void RTCDataChannel::Send(const ArrayBufferView& aData, ErrorResult& aRv) {
@@ -240,28 +310,198 @@ void RTCDataChannel::Send(const ArrayBufferView& aData, ErrorResult& aRv) {
     return;
   }
 
-  mDataChannel->SendBinaryMsg(std::move(msgString), aRv);
+  if (!CheckSendSize(msgString.Length(), aRv)) {
+    return;
+  }
+
+  size_t length = msgString.Length();
+  if (!mDataChannel->SendBinaryMsg(std::move(msgString))) {
+    ++mMessagesSent;
+    mBytesSent += length;
+    IncrementBufferedAmount(length);
+  } else {
+    aRv.ThrowOperationError("Failed to queue message");
+  }
+}
+
+void RTCDataChannel::GracefulClose() {
+  
+  
+  
+
+  GetCurrentSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
+      __func__, [this, self = RefPtr<RTCDataChannel>(this)]() {
+        
+        
+
+        
+        
+
+        
+        
+        
+        
+
+        
+        
+        
+        
+        if (mReadyState != RTCDataChannelState::Closing &&
+            mReadyState != RTCDataChannelState::Closed) {
+          SetReadyState(RTCDataChannelState::Closing);
+          
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (!mBufferedAmount && mReadyState != RTCDataChannelState::Closed &&
+            mDataChannel) {
+          mDataChannel->FinishClose();
+        }
+      }));
+}
+
+void RTCDataChannel::AnnounceOpen() {
+  
+  
+  
+
+  
+
+  
+  if (mReadyState != RTCDataChannelState::Closing &&
+      mReadyState != RTCDataChannelState::Closed) {
+    
+    SetReadyState(RTCDataChannelState::Open);
+    
+    DC_DEBUG(("%s: sending open for %s/%s: %u", __FUNCTION__, mLabel.get(),
+              mProtocol.get(), mId.Value()));
+    OnSimpleEvent(u"open"_ns);
+  }
+}
+
+void RTCDataChannel::AnnounceClosed() {
+  
+  
+  
+  
+  if (mReadyState == RTCDataChannelState::Closed) {
+    return;
+  }
+
+  
+  SetReadyState(RTCDataChannelState::Closed);
+
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  
+
+  
+  OnSimpleEvent(u"close"_ns);
+  DontKeepAliveAnyMore();
+}
+
+
+
+void RTCDataChannel::AppendStatsToReport(
+    const UniquePtr<dom::RTCStatsCollection>& aReport,
+    const DOMHighResTimeStamp aTimestamp) const {
+  mozilla::dom::RTCDataChannelStats stats;
+  nsString id = u"dc"_ns;
+  id.Append(NS_ConvertASCIItoUTF16(mUuid.ToString().get()));
+  stats.mId.Construct(id);
+  stats.mTimestamp.Construct(aTimestamp);
+  stats.mType.Construct(mozilla::dom::RTCStatsType::Data_channel);
+  
+  
+  stats.mLabel.Construct(NS_ConvertUTF8toUTF16(mLabel));
+  stats.mProtocol.Construct(NS_ConvertUTF8toUTF16(mProtocol));
+  if (!mId.IsNull()) {
+    stats.mDataChannelIdentifier.Construct(mId.Value());
+  }
+  stats.mState.Construct(mReadyState);
+
+  stats.mMessagesSent.Construct(mMessagesSent);
+  stats.mBytesSent.Construct(mBytesSent);
+  stats.mMessagesReceived.Construct(mMessagesReceived);
+  stats.mBytesReceived.Construct(mBytesReceived);
+  if (!aReport->mDataChannelStats.AppendElement(stats, fallible)) {
+    mozalloc_handle_oom(0);
+  }
+}
+
+void RTCDataChannel::IncrementBufferedAmount(size_t aSize) {
+  MOZ_ASSERT(NS_IsMainThread());
+  mBufferedAmount += aSize;
+}
+
+void RTCDataChannel::DecrementBufferedAmount(size_t aSize) {
+  MOZ_ASSERT(aSize <= mBufferedAmount);
+  aSize = std::min(aSize, mBufferedAmount);
+  bool wasLow = mBufferedAmount <= mBufferedThreshold;
+  mBufferedAmount -= aSize;
+  if (!wasLow && mBufferedAmount <= mBufferedThreshold) {
+    DC_DEBUG(("%s: sending bufferedamountlow for %s/%s: %u", __FUNCTION__,
+              mLabel.get(), mProtocol.get(), mId.Value()));
+    OnSimpleEvent(u"bufferedamountlow"_ns);
+  }
+  if (mBufferedAmount == 0) {
+    DC_DEBUG(("%s: no queued sends for %s/%s: %u", __FUNCTION__, mLabel.get(),
+              mProtocol.get(), mId.Value()));
+    
+    UpdateMustKeepAlive();
+    if (mReadyState == RTCDataChannelState::Closing) {
+      if (mDataChannel) {
+        
+        mDataChannel->FinishClose();
+      }
+    }
+  }
+}
+
+bool RTCDataChannel::CheckSendSize(uint64_t aSize, ErrorResult& aRv) const {
+  if (aSize > mMaxMessageSize) {
+    nsPrintfCString err("Message size (%" PRIu64 ") exceeds maxMessageSize",
+                        aSize);
+    aRv.ThrowTypeError(err);
+    return false;
+  }
+  return true;
 }
 
 bool RTCDataChannel::CheckReadyState(ErrorResult& aRv) {
   MOZ_ASSERT(NS_IsMainThread());
-  DataChannelState state = DataChannelState::Closed;
-  if (!mSentClose) {
-    state = mDataChannel->GetReadyState();
-  }
-
   
   
-  if (state == DataChannelState::Connecting) {
+  if (mReadyState == RTCDataChannelState::Connecting) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return false;
   }
 
-  if (state == DataChannelState::Closing || state == DataChannelState::Closed) {
+  if (mReadyState == RTCDataChannelState::Closing ||
+      mReadyState == RTCDataChannelState::Closed) {
     return false;
   }
 
-  MOZ_ASSERT(state == DataChannelState::Open,
+  MOZ_ASSERT(mReadyState == RTCDataChannelState::Open,
              "Unknown state in RTCDataChannel::Send");
 
   return true;
@@ -270,6 +510,12 @@ bool RTCDataChannel::CheckReadyState(ErrorResult& aRv) {
 nsresult RTCDataChannel::DoOnMessageAvailable(const nsACString& aData,
                                               bool aBinary) {
   MOZ_ASSERT(NS_IsMainThread());
+
+  if (mReadyState == RTCDataChannelState::Closed ||
+      mReadyState == RTCDataChannelState::Closing) {
+    
+    return NS_OK;
+  }
 
   DC_VERBOSE((
       "DoOnMessageAvailable%s\n",
@@ -325,6 +571,9 @@ nsresult RTCDataChannel::DoOnMessageAvailable(const nsACString& aData,
                           Sequence<OwningNonNull<MessagePort>>());
   event->SetTrusted(true);
 
+  ++mMessagesReceived;
+  mBytesReceived += aData.Length();
+
   DC_DEBUG(
       ("%p(%p): %s - Dispatching\n", this, (void*)mDataChannel, __FUNCTION__));
   ErrorResult err;
@@ -335,16 +584,6 @@ nsresult RTCDataChannel::DoOnMessageAvailable(const nsACString& aData,
     NS_WARNING("Failed to dispatch the message event!!!");
   }
   return err.StealNSResult();
-}
-
-nsresult RTCDataChannel::OnMessageAvailable(const nsACString& aMessage) {
-  MOZ_ASSERT(NS_IsMainThread());
-  return DoOnMessageAvailable(aMessage, false);
-}
-
-nsresult RTCDataChannel::OnBinaryMessageAvailable(const nsACString& aMessage) {
-  MOZ_ASSERT(NS_IsMainThread());
-  return DoOnMessageAvailable(aMessage, true);
 }
 
 nsresult RTCDataChannel::OnSimpleEvent(const nsAString& aName) {
@@ -365,46 +604,6 @@ nsresult RTCDataChannel::OnSimpleEvent(const nsAString& aName) {
   return err.StealNSResult();
 }
 
-nsresult RTCDataChannel::OnChannelConnected() {
-  DC_DEBUG(
-      ("%p(%p): %s - Dispatching\n", this, (void*)mDataChannel, __FUNCTION__));
-
-  return OnSimpleEvent(u"open"_ns);
-}
-
-nsresult RTCDataChannel::OnChannelClosed() {
-  nsresult rv;
-  
-  
-  if (!mSentClose) {
-    
-    mDataChannel->ReleaseConnection();
-    DC_DEBUG(("%p(%p): %s - Dispatching\n", this, (void*)mDataChannel,
-              __FUNCTION__));
-
-    rv = OnSimpleEvent(u"close"_ns);
-    
-    mSentClose = true;
-  } else {
-    rv = NS_OK;
-  }
-  DontKeepAliveAnyMore();
-  return rv;
-}
-
-nsresult RTCDataChannel::OnBufferLow() {
-  DC_DEBUG(
-      ("%p(%p): %s - Dispatching\n", this, (void*)mDataChannel, __FUNCTION__));
-
-  return OnSimpleEvent(u"bufferedamountlow"_ns);
-}
-
-nsresult RTCDataChannel::NotBuffered() {
-  
-  UpdateMustKeepAlive();
-  return NS_OK;
-}
-
 
 
 
@@ -420,10 +619,9 @@ void RTCDataChannel::UpdateMustKeepAlive() {
   }
 
   bool shouldKeepAlive = false;
-  DataChannelState readyState = mDataChannel->GetReadyState();
 
-  switch (readyState) {
-    case DataChannelState::Connecting: {
+  switch (mReadyState) {
+    case RTCDataChannelState::Connecting: {
       if (mListenerManager &&
           (mListenerManager->HasListenersFor(nsGkAtoms::onopen) ||
            mListenerManager->HasListenersFor(nsGkAtoms::onmessage) ||
@@ -434,9 +632,9 @@ void RTCDataChannel::UpdateMustKeepAlive() {
       }
     } break;
 
-    case DataChannelState::Open:
-    case DataChannelState::Closing: {
-      if (mDataChannel->GetBufferedAmount() != 0 ||
+    case RTCDataChannelState::Open:
+    case RTCDataChannelState::Closing: {
+      if (mBufferedAmount != 0 ||
           (mListenerManager &&
            (mListenerManager->HasListenersFor(nsGkAtoms::onmessage) ||
             mListenerManager->HasListenersFor(nsGkAtoms::onerror) ||
@@ -446,7 +644,7 @@ void RTCDataChannel::UpdateMustKeepAlive() {
       }
     } break;
 
-    case DataChannelState::Closed: {
+    case RTCDataChannelState::Closed: {
       shouldKeepAlive = false;
     }
   }
