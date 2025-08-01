@@ -46,8 +46,8 @@ AVD_HOME_PATH = Path(
 )
 
 JAVA_VERSION_MAJOR = "17"
-JAVA_VERSION_MINOR = "0.15"
-JAVA_VERSION_PATCH = "6"
+JAVA_VERSION_MINOR = "0.16"
+JAVA_VERSION_PATCH = "8"
 
 ANDROID_NDK_EXISTS = """
 Looks like you have the correct version of the Android NDK installed at:
