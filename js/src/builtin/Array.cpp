@@ -1315,6 +1315,33 @@ static bool ArrayJoinDenseKernel(JSContext* cx, SeparatorOp sepOp,
     }
   }
 
+  
+  
+  
+  
+  if (*numProcessed == initLength && initLength < length &&
+      length < UINT32_MAX) {
+    
+    MOZ_ASSERT(!ObjectMayHaveExtraIndexedProperties(obj));
+    while (*numProcessed < length) {
+      if (!CheckForInterrupt(cx)) {
+        return false;
+      }
+
+#ifdef DEBUG
+      RootedValue v(cx);
+      if (!GetArrayElement(cx, obj, *numProcessed, &v)) {
+        return false;
+      }
+      MOZ_ASSERT(v.isUndefined());
+#endif
+
+      if (++(*numProcessed) != length && !sepOp(sb)) {
+        return false;
+      }
+    }
+  }
+
   return true;
 }
 
