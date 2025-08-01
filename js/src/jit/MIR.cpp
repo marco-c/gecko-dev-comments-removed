@@ -1045,6 +1045,10 @@ MConstant* MConstant::New(TempAllocator::Fallible alloc, const Value& v) {
   return new (alloc) MConstant(alloc.alloc, v);
 }
 
+MConstant* MConstant::NewBoolean(TempAllocator& alloc, bool b) {
+  return new (alloc) MConstant(alloc, BooleanValue(b));
+}
+
 MConstant* MConstant::NewDouble(TempAllocator& alloc, double d) {
   return new (alloc) MConstant(alloc, DoubleValue(d));
 }
@@ -1583,7 +1587,7 @@ MDefinition* MAtomicIsLockFree::foldsTo(TempAllocator& alloc) {
   }
 
   int32_t i = input->toConstant()->toInt32();
-  return MConstant::New(alloc, BooleanValue(AtomicOperations::isLockfreeJS(i)));
+  return MConstant::NewBoolean(alloc, AtomicOperations::isLockfreeJS(i));
 }
 
 
@@ -5538,7 +5542,7 @@ MDefinition* MCompare::tryFoldBigInt64(TempAllocator& alloc) {
       } else {
         result = FoldComparison(jsop_, repr, 0);
       }
-      return MConstant::New(alloc, BooleanValue(result));
+      return MConstant::NewBoolean(alloc, result);
     }
 
     auto* cst = MConstant::NewInt64(alloc, *value);
@@ -5574,7 +5578,7 @@ MDefinition* MCompare::tryFoldBigInt64(TempAllocator& alloc) {
     
     if (!isSigned && constInt32 < 0) {
       bool result = FoldComparison(jsop_, 0, constInt32);
-      return MConstant::New(alloc, BooleanValue(result));
+      return MConstant::NewBoolean(alloc, result);
     }
 
     auto* cst = MConstant::NewInt64(alloc, int64_t(constInt32));
@@ -5635,7 +5639,7 @@ MDefinition* MCompare::tryFoldBigIntPtr(TempAllocator& alloc) {
       } else {
         result = FoldComparison(jsop_, repr, 0);
       }
-      return MConstant::New(alloc, BooleanValue(result));
+      return MConstant::NewBoolean(alloc, result);
     }
 
     auto* cst = MConstant::NewIntPtr(alloc, value);
@@ -5725,7 +5729,7 @@ MDefinition* MCompare::foldsTo(TempAllocator& alloc) {
     }
 
     MOZ_ASSERT(type() == MIRType::Boolean);
-    return MConstant::New(alloc, BooleanValue(result));
+    return MConstant::NewBoolean(alloc, result);
   }
 
   if (MDefinition* folded = tryFoldTypeOf(alloc); folded != this) {
@@ -5784,7 +5788,7 @@ MDefinition* MSameValue::foldsTo(TempAllocator& alloc) {
 
   
   if (lhs == rhs) {
-    return MConstant::New(alloc, BooleanValue(true));
+    return MConstant::NewBoolean(alloc, true);
   }
 
   
@@ -5816,7 +5820,7 @@ MDefinition* MSameValue::foldsTo(TempAllocator& alloc) {
 MDefinition* MSameValueDouble::foldsTo(TempAllocator& alloc) {
   
   if (left() == right()) {
-    return MConstant::New(alloc, BooleanValue(true));
+    return MConstant::NewBoolean(alloc, true);
   }
 
   
@@ -5866,7 +5870,7 @@ MDefinition* MNot::foldsTo(TempAllocator& alloc) {
       return MConstant::NewInt32(alloc, !b);
     }
     MOZ_ASSERT(type == MIRType::Boolean);
-    return MConstant::New(alloc, BooleanValue(!b));
+    return MConstant::NewBoolean(alloc, !b);
   };
 
   
@@ -5888,12 +5892,12 @@ MDefinition* MNot::foldsTo(TempAllocator& alloc) {
   
   if (input()->type() == MIRType::Undefined ||
       input()->type() == MIRType::Null) {
-    return MConstant::New(alloc, BooleanValue(true));
+    return MConstant::NewBoolean(alloc, true);
   }
 
   
   if (input()->type() == MIRType::Symbol) {
-    return MConstant::New(alloc, BooleanValue(false));
+    return MConstant::NewBoolean(alloc, false);
   }
 
   
@@ -6698,8 +6702,7 @@ MDefinition* MIsObject::foldsTo(TempAllocator& alloc) {
   }
 
   MDefinition* unboxed = input->toBox()->input();
-  return MConstant::New(alloc,
-                        BooleanValue(unboxed->type() == MIRType::Object));
+  return MConstant::NewBoolean(alloc, unboxed->type() == MIRType::Object);
 }
 
 MDefinition* MIsNullOrUndefined::foldsTo(TempAllocator& alloc) {
@@ -6713,8 +6716,7 @@ MDefinition* MIsNullOrUndefined::foldsTo(TempAllocator& alloc) {
     unboxed = unboxed->toBox()->input();
   }
 
-  return MConstant::New(alloc,
-                        BooleanValue(IsNullOrUndefined(unboxed->type())));
+  return MConstant::NewBoolean(alloc, IsNullOrUndefined(unboxed->type()));
 }
 
 AliasSet MHomeObjectSuperBase::getAliasSet() const {
@@ -7208,7 +7210,7 @@ MDefinition* MHasClass::foldsTo(TempAllocator& alloc) {
   }
 
   AssertKnownClass(alloc, this, object());
-  return MConstant::New(alloc, BooleanValue(getClass() == clasp));
+  return MConstant::NewBoolean(alloc, getClass() == clasp);
 }
 
 MDefinition* MIsCallable::foldsTo(TempAllocator& alloc) {
@@ -7222,7 +7224,7 @@ MDefinition* MIsCallable::foldsTo(TempAllocator& alloc) {
   }
 
   AssertKnownClass(alloc, this, input());
-  return MConstant::New(alloc, BooleanValue(known == KnownClass::Function));
+  return MConstant::NewBoolean(alloc, known == KnownClass::Function);
 }
 
 MDefinition* MIsArray::foldsTo(TempAllocator& alloc) {
@@ -7236,7 +7238,7 @@ MDefinition* MIsArray::foldsTo(TempAllocator& alloc) {
   }
 
   AssertKnownClass(alloc, this, input());
-  return MConstant::New(alloc, BooleanValue(known == KnownClass::Array));
+  return MConstant::NewBoolean(alloc, known == KnownClass::Array);
 }
 
 AliasSet MObjectClassToString::getAliasSet() const {
