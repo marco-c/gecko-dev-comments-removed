@@ -55,6 +55,20 @@ pref("app.update.background.automaticRestartEnabled", true);
 pref("app.update.background.automaticRestartEnabled", false);
 #endif
 
+
+
+
+#ifdef MOZ_ESR
+pref("app.update.background.checkPolicy.throttleEnabled", false);
+#else
+pref("app.update.background.checkPolicy.throttleEnabled", true);
+#endif
+pref("app.update.background.checkPolicy.throttleAfterDays", 14);
+
+
+
+pref("app.update.background.checkPolicy.throttleDebouncePeriodInHours", 24);
+
 #if defined(ENABLE_TESTS)
   
   pref("toolkit.backgroundtasks.tests.geckoPrefsOverriden", 28);
