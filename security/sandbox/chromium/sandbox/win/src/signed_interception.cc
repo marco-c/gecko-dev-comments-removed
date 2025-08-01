@@ -72,7 +72,7 @@ TargetNtCreateSection(NtCreateSectionFunction orig_CreateSection,
     }
 
     CountedParameterSet<NameBased> params;
-    params[NameBased::NAME] = ParamPickerMake(path->ObjectName.Buffer);
+    params[NameBased::NAME] = ParamPickerMake(path->Name.Buffer);
 
     
     if (!QueryBroker(IpcTag::NTCREATESECTION, params.GetBase()))
