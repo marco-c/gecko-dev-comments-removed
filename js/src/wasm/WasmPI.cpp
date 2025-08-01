@@ -193,9 +193,13 @@ static JitActivation* FindSuspendableStackActivation(
   while (activation) {
     
     
-    WasmFrameIter iter(activation);
-    if (!iter.done() && data.hasFramePointer(iter.frame())) {
-      return activation;
+    if (activation->hasWasmExitFP()) {
+      
+      
+      WasmFrameIter iter(activation);
+      if (!iter.done() && data.hasFramePointer(iter.frame())) {
+        return activation;
+      }
     }
     activation = activation->prevJitActivation();
   }
