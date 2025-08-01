@@ -1161,6 +1161,10 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
                             FOLDERID_System, u"\\*"_ns);
 
     
+    
+    config->SetForceKnownDllLoadingFallback();
+
+    
     result = config->AllowRegistryRead(
         L"HKEY_LOCAL_MACHINE\\Software\\Classes\\CLSID"
         L"\\{e79167d7-1b85-4d78-b603-798e0e1a4c67}*");

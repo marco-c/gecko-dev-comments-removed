@@ -17,6 +17,8 @@
 #include "sandbox/win/src/sharedmem_ipc_client.h"
 #include "sandbox/win/src/target_services.h"
 
+using namespace std::literals;
+
 namespace sandbox {
 
 
@@ -83,6 +85,48 @@ NTSTATUS WINAPI TargetNtImpersonateAnonymousToken(
   }
 
   return orig_ImpersonateAnonymousToken(thread);
+}
+
+
+
+
+
+
+SANDBOX_INTERCEPT NTSTATUS __stdcall TargetNtOpenSection(
+    NtOpenSectionFunction orig_NtOpenSection, PHANDLE section_handle,
+    ACCESS_MASK desired_access, POBJECT_ATTRIBUTES object_attributes) {
+
+  NTSTATUS open_status =
+      orig_NtOpenSection(section_handle, desired_access, object_attributes);
+  
+  if (open_status != STATUS_ACCESS_DENIED) {
+    return open_status;
+  }
+
+  
+  if (!object_attributes->RootDirectory) {
+    return open_status;
+  }
+
+  auto root_path = GetPathFromHandle(object_attributes->RootDirectory);
+  if (!root_path) {
+    return open_status;
+  }
+
+  
+#if defined(_WIN64)
+  constexpr auto kKnownDllsDir = LR"(\KnownDlls)"sv;
+#else
+  constexpr auto kKnownDllsDir = LR"(\KnownDlls32)"sv;
+#endif
+  if (root_path->length() != kKnownDllsDir.length() ||
+      _wcsnicmp(root_path->data(), kKnownDllsDir.data(),
+                kKnownDllsDir.length()) != 0) {
+    return open_status;
+  }
+
+  
+  return STATUS_OBJECT_NAME_NOT_FOUND;
 }
 
 
