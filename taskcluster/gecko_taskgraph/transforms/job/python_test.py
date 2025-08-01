@@ -22,6 +22,9 @@ python_test_schema = Schema(
         Optional("workdir"): str,
         
         Optional("use-caches"): Any(bool, [str]),
+        
+        
+        Optional("prepend-env"): {str: str},
     }
 )
 
