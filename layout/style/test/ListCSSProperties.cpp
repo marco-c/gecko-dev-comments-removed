@@ -106,6 +106,7 @@ const char* gInaccessibleProperties[] = {
     "-moz-subtree-hidden-only-visually",  
     "-moz-user-focus",                    
     "-moz-window-input-region-margin",    
+    "-moz-window-dragging",               
     "-moz-window-opacity",                
     "-moz-window-transform",              
     "-moz-window-shadow",                 
