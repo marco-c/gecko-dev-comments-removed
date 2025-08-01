@@ -737,12 +737,12 @@ nsresult nsSliderFrame::HandleEvent(nsPresContext* aPresContext,
           *aEventStatus = nsEventStatus_eConsumeNoDefault;
         }
         if (isMouseOutsideThumb) {
-          SetCurrentThumbPosition(scrollbar, mThumbStart, false, false);
+          SetCurrentThumbPosition(scrollbar, mThumbStart, false);
           return NS_OK;
         }
 
         
-        SetCurrentThumbPosition(scrollbar, pos, false, true);  
+        SetCurrentThumbPosition(scrollbar, pos, false);
       } break;
 
       case eTouchEnd:
@@ -780,8 +780,7 @@ nsresult nsSliderFrame::HandleEvent(nsPresContext* aPresContext,
 
     
     AutoWeakFrame weakFrame(this);
-    
-    SetCurrentThumbPosition(scrollbar, pos - thumbLength / 2, false, false);
+    SetCurrentThumbPosition(scrollbar, pos - thumbLength / 2, false);
     NS_ENSURE_TRUE(weakFrame.IsAlive(), NS_OK);
 
     DragThumb(true);
@@ -952,17 +951,8 @@ static void UpdateAttribute(dom::Element* aScrollbar, nscoord aNewPos,
 
 void nsSliderFrame::SetCurrentThumbPosition(nsIContent* aScrollbar,
                                             nscoord aNewThumbPos,
-                                            bool aIsSmooth, bool aMaySnap) {
+                                            bool aIsSmooth) {
   int32_t newPos = NSToIntRound(aNewThumbPos / mRatio);
-  if (aMaySnap &&
-      mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::snap,
-                                         nsGkAtoms::_true, eCaseMatters)) {
-    
-    
-    int32_t increment = GetIncrement(aScrollbar);
-    newPos = NSToIntRound(newPos / float(increment)) * increment;
-  }
-
   SetCurrentPosition(aScrollbar, newPos, aIsSmooth);
 }
 
@@ -1202,7 +1192,7 @@ nsresult nsSliderFrame::StartDrag(Event* aEvent) {
 
   if (scrollToClick) {
     
-    SetCurrentThumbPosition(scrollbar, newpos, false, false);
+    SetCurrentThumbPosition(scrollbar, newpos, false);
   }
 
   nsIFrame* thumbFrame = mFrames.FirstChild();
