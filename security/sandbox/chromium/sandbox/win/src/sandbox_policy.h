@@ -93,12 +93,6 @@ class [[clang::lto_visibility_public]] TargetConfig {
   virtual bool GetUseRestrictingSIDs() = 0;
 
   
-  virtual void SetAllowEveryoneForUserRestricted() = 0;
-
-  
-  virtual bool GetAllowEveryoneForUserRestricted() = 0;
-
-  
   
   virtual void SetForceKnownDllLoadingFallback() = 0;
 
