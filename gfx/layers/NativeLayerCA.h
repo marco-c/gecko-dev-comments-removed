@@ -278,7 +278,8 @@ class NativeLayerCA : public NativeLayer {
   bool SurfaceIsFlipped() override;
 
   
-  void SetSurfaceToPresent(CFTypeRefPtr<IOSurfaceRef> aSurfaceRef);
+  void SetSurfaceToPresent(CFTypeRefPtr<IOSurfaceRef> aSurfaceRef,
+                           gfx::IntSize& aSize, bool aIsDRM, bool aIsHDR);
 
   void DumpLayer(std::ostream& aOutputStream);
 
@@ -439,6 +440,7 @@ class NativeLayerCA : public NativeLayer {
   bool mSpecializeVideo = false;
   bool mHasExtent = false;
   bool mIsDRM = false;
+  bool mIsHDR = false;
 
 #ifdef NIGHTLY_BUILD
   
