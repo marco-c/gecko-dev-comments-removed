@@ -12,8 +12,8 @@ add_setup(async function init() {
 
 add_task(async function telemetryType() {
   Assert.equal(
-    QuickSuggest.getFeature("StocksSuggestions").getSuggestionTelemetryType({}),
-    "stocks",
-    "Telemetry type should be 'stocks'"
+    QuickSuggest.getFeature("MarketSuggestions").getSuggestionTelemetryType({}),
+    "market",
+    "Telemetry type should be 'market'"
   );
 });
