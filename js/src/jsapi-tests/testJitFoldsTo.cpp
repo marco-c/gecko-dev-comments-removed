@@ -216,9 +216,9 @@ BEGIN_TEST(testJitFoldsTo_UnsignedDiv) {
   MBasicBlock* block = func.createEntryBlock();
 
   
-  MConstant* c0 = MConstant::New(func.alloc, Int32Value(1));
+  MConstant* c0 = MConstant::NewInt32(func.alloc, 1);
   block->add(c0);
-  MConstant* c1 = MConstant::New(func.alloc, Int32Value(0xffffffff));
+  MConstant* c1 = MConstant::NewInt32(func.alloc, 0xffffffff);
   block->add(c1);
   MDiv* div = MDiv::New(func.alloc, c0, c1, MIRType::Int32, true);
   block->add(div);
@@ -241,9 +241,9 @@ BEGIN_TEST(testJitFoldsTo_UnsignedMod) {
   MBasicBlock* block = func.createEntryBlock();
 
   
-  MConstant* c0 = MConstant::New(func.alloc, Int32Value(1));
+  MConstant* c0 = MConstant::NewInt32(func.alloc, 1);
   block->add(c0);
-  MConstant* c1 = MConstant::New(func.alloc, Int32Value(0xffffffff));
+  MConstant* c1 = MConstant::NewInt32(func.alloc, 0xffffffff);
   block->add(c1);
   MMod* mod = MMod::New(func.alloc, c0, c1, MIRType::Int32, true);
   block->add(mod);

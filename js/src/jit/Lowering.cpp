@@ -4473,6 +4473,34 @@ void LIRGenerator::visitGuardHasAttachedArrayBuffer(
   redefine(ins, ins->object());
 }
 
+void LIRGenerator::visitGuardTypedArraySetOffset(
+    MGuardTypedArraySetOffset* ins) {
+  auto* lir = new (alloc()) LGuardTypedArraySetOffset(
+      useRegister(ins->offset()), useRegister(ins->targetLength()),
+      useRegister(ins->sourceLength()), temp());
+  assignSnapshot(lir, ins->bailoutKind());
+  add(lir, ins);
+  redefine(ins, ins->offset());
+}
+
+void LIRGenerator::visitTypedArraySet(MTypedArraySet* ins) {
+  auto* lir = new (alloc()) LTypedArraySet(useRegisterAtStart(ins->target()),
+                                           useRegisterAtStart(ins->source()),
+                                           useRegisterAtStart(ins->offset()));
+  add(lir, ins);
+  if (!ins->canUseBitwiseCopy()) {
+    assignSafepoint(lir, ins);
+  }
+}
+
+void LIRGenerator::visitTypedArraySubarray(MTypedArraySubarray* ins) {
+  auto* lir = new (alloc()) LTypedArraySubarray(
+      useRegisterAtStart(ins->object()), useRegisterAtStart(ins->start()),
+      useRegisterAtStart(ins->end()));
+  defineReturn(lir, ins);
+  assignSafepoint(lir, ins);
+}
+
 void LIRGenerator::visitGuardNumberToIntPtrIndex(
     MGuardNumberToIntPtrIndex* ins) {
   MDefinition* input = ins->input();
@@ -4517,7 +4545,7 @@ void LIRGenerator::visitNot(MNot* ins) {
   
   switch (op->type()) {
     case MIRType::Boolean: {
-      MConstant* cons = MConstant::New(alloc(), Int32Value(1));
+      MConstant* cons = MConstant::NewInt32(alloc(), 1);
       ins->block()->insertBefore(ins, cons);
       lowerForALU(new (alloc()) LBitOpI(JSOp::BitXor), ins, op, cons);
       break;
@@ -4907,8 +4935,8 @@ void LIRGenerator::visitLoadUnboxedScalar(MLoadUnboxedScalar* ins) {
   }
 
   const LUse elements = useRegister(ins->elements());
-  const LAllocation index = useRegisterOrIndexConstant(
-      ins->index(), ins->storageType(), ins->offsetAdjustment());
+  const LAllocation index =
+      useRegisterOrIndexConstant(ins->index(), ins->storageType());
 
   if (Scalar::isBigIntType(ins->storageType())) {
     MOZ_ASSERT(ins->type() == MIRType::Int64);
@@ -7552,6 +7580,17 @@ void LIRGenerator::visitGuardInt32IsNonNegative(MGuardInt32IsNonNegative* ins) {
   MOZ_ASSERT(index->type() == MIRType::Int32);
 
   auto* guard = new (alloc()) LGuardInt32IsNonNegative(useRegister(index));
+  assignSnapshot(guard, ins->bailoutKind());
+  add(guard, ins);
+  redefine(ins, index);
+}
+
+void LIRGenerator::visitGuardIntPtrIsNonNegative(
+    MGuardIntPtrIsNonNegative* ins) {
+  MDefinition* index = ins->index();
+  MOZ_ASSERT(index->type() == MIRType::IntPtr);
+
+  auto* guard = new (alloc()) LGuardIntPtrIsNonNegative(useRegister(index));
   assignSnapshot(guard, ins->bailoutKind());
   add(guard, ins);
   redefine(ins, index);
