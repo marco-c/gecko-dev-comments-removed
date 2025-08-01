@@ -13,20 +13,33 @@ namespace layers {
 already_AddRefed<NativeLayer> NativeLayerRootRemoteMacChild::CreateLayer(
     const gfx::IntSize& aSize, bool aIsOpaque,
     SurfacePoolHandle* aSurfacePoolHandle) {
-  RefPtr<NativeLayer> layer = new NativeLayerRemoteMac(
+  RefPtr<NativeLayerRemoteMac> layer = new NativeLayerRemoteMac(
       aSize, aIsOpaque, aSurfacePoolHandle->AsSurfacePoolHandleCA());
+  mCommandQueue->AppendCommand(mozilla::layers::CommandCreateLayer(
+      reinterpret_cast<uint64_t>(layer.get()), aSize, aIsOpaque));
+  
+  layer->mCommandQueue = mCommandQueue;
   return layer.forget();
 }
 
 already_AddRefed<NativeLayer>
 NativeLayerRootRemoteMacChild::CreateLayerForExternalTexture(bool aIsOpaque) {
-  RefPtr<NativeLayer> layer = new NativeLayerRemoteMac(aIsOpaque);
+  RefPtr<NativeLayerRemoteMac> layer = new NativeLayerRemoteMac(aIsOpaque);
+  mCommandQueue->AppendCommand(
+      mozilla::layers::CommandCreateLayerForExternalTexture(
+          reinterpret_cast<uint64_t>(layer.get()), aIsOpaque));
+  
+  layer->mCommandQueue = mCommandQueue;
   return layer.forget();
 }
 
 already_AddRefed<NativeLayer>
 NativeLayerRootRemoteMacChild::CreateLayerForColor(gfx::DeviceColor aColor) {
-  RefPtr<NativeLayer> layer = new NativeLayerRemoteMac(aColor);
+  RefPtr<NativeLayerRemoteMac> layer = new NativeLayerRemoteMac(aColor);
+  mCommandQueue->AppendCommand(mozilla::layers::CommandCreateLayerForColor(
+      reinterpret_cast<uint64_t>(layer.get()), aColor));
+  
+  layer->mCommandQueue = mCommandQueue;
   return layer.forget();
 }
 
@@ -35,14 +48,73 @@ void NativeLayerRootRemoteMacChild::AppendLayer(NativeLayer* aLayer) {}
 void NativeLayerRootRemoteMacChild::RemoveLayer(NativeLayer* aLayer) {}
 
 void NativeLayerRootRemoteMacChild::SetLayers(
-    const nsTArray<RefPtr<NativeLayer>>& aLayers) {}
+    const nsTArray<RefPtr<NativeLayer>>& aLayers) {
+  
+  
+  nsTArray<RefPtr<NativeLayer>> layers(aLayers.Length());
+  for (auto& layer : aLayers) {
+    RefPtr<NativeLayerRemoteMac> layerRemoteMac =
+        layer->AsNativeLayerRemoteMac();
+    MOZ_ASSERT(layerRemoteMac);
+    layers.AppendElement(std::move(layerRemoteMac));
+  }
 
-void NativeLayerRootRemoteMacChild::PrepareForCommit() {}
+  if (mNativeLayers == layers) {
+    
+    return;
+  }
 
-bool NativeLayerRootRemoteMacChild::CommitToScreen() { return false; }
+  mNativeLayersChanged = true;
+  mNativeLayers.Clear();
+  mNativeLayers.AppendElements(layers);
+}
+
+void NativeLayerRootRemoteMacChild::PrepareForCommit() {
+  
+}
+
+bool NativeLayerRootRemoteMacChild::CommitToScreen() {
+  
+
+  
+  
+  for (auto layer : mNativeLayers) {
+    RefPtr<NativeLayerRemoteMac> layerRemoteMac(
+        layer->AsNativeLayerRemoteMac());
+    MOZ_ASSERT(layerRemoteMac);
+    layerRemoteMac->FlushDirtyLayerInfoToCommandQueue();
+  }
+
+  
+  
+  
+  nsTArray<NativeLayerCommand> commands;
+  mCommandQueue->FlushToArray(commands);
+
+  if (mNativeLayersChanged) {
+    
+    
+    
+    nsTArray<uint64_t> setLayerIDs;
+    for (auto layer : mNativeLayers) {
+      auto ID = reinterpret_cast<uint64_t>(layer.get());
+      setLayerIDs.AppendElement(ID);
+    }
+    commands.AppendElement(mozilla::layers::CommandSetLayers(setLayerIDs));
+    mNativeLayersChanged = false;
+  }
+
+  if (!commands.IsEmpty()) {
+    
+    MOZ_ASSERT(mRemoteChild);
+    mRemoteChild->SendCommitNativeLayerCommands(commands);
+  }
+  return true;
+}
 
 NativeLayerRootRemoteMacChild::NativeLayerRootRemoteMacChild()
-    : mRemoteChild(MakeRefPtr<NativeLayerRemoteChild>()) {}
+    : mRemoteChild(MakeRefPtr<NativeLayerRemoteChild>()),
+      mCommandQueue(MakeRefPtr<NativeLayerCommandQueue>()) {}
 
 NativeLayerRootRemoteMacChild::~NativeLayerRootRemoteMacChild() {}
 
