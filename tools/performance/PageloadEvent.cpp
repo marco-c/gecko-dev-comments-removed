@@ -13,17 +13,34 @@ namespace mozilla::performance::pageload_event {
 
 
 
+
+
+
+
+
+
 #ifdef NIGHTLY_BUILD
-static constexpr uint64_t kNormalSamplingInterval = 1;  
+static constexpr uint64_t kNormalSamplingInterval = 1;   
+static constexpr uint64_t kDomainSamplingInterval = 10;  
 #else
 static constexpr uint64_t kNormalSamplingInterval = 10;  
+static constexpr uint64_t kDomainSamplingInterval =
+    1000;  
 #endif
 
 PageloadEventType GetPageloadEventType() {
+  static_assert(kDomainSamplingInterval >= kNormalSamplingInterval,
+                "kDomainSamplingInterval should always be higher than "
+                "kNormalSamplingInterval");
+
   Maybe<uint64_t> rand = mozilla::RandomUint64();
   if (rand.isSome()) {
     uint64_t result =
-        static_cast<uint64_t>(rand.value() % kNormalSamplingInterval);
+        static_cast<uint64_t>(rand.value() % kDomainSamplingInterval);
+    if (result == 0) {
+      return PageloadEventType::kDomain;
+    }
+    result = static_cast<uint64_t>(rand.value() % kNormalSamplingInterval);
     if (result == 0) {
       return PageloadEventType::kNormal;
     }
@@ -49,12 +66,33 @@ void PageloadEventData::SetUserFeature(UserFeature aFeature) {
   userFeatures = mozilla::Some(value);
 }
 
+bool PageloadEventData::MaybeSetDomain(nsCString& aDomain) {
+  if (aDomain.IsEmpty()) {
+    return false;
+  }
+
+  mDomain = mozilla::Some(aDomain);
+  return true;
+}
+
 mozilla::glean::perf::PageLoadExtra PageloadEventData::ToPageLoadExtra() const {
   mozilla::glean::perf::PageLoadExtra out;
 
 #define COPY_METRIC(name, type) out.name = this->name;
   FOR_EACH_PAGELOAD_METRIC(COPY_METRIC)
 #undef COPY_METRIC
+  return out;
+}
+
+mozilla::glean::perf::PageLoadDomainExtra
+PageloadEventData::ToPageLoadDomainExtra() const {
+  mozilla::glean::perf::PageLoadDomainExtra out;
+  out.domain = this->mDomain;
+  out.httpVer = this->httpVer;
+  out.sameOriginNav = this->sameOriginNav;
+  out.documentFeatures = this->documentFeatures;
+  out.loadType = this->loadType;
+  out.lcpTime = this->lcpTime;
   return out;
 }
 
