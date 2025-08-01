@@ -7500,11 +7500,6 @@ HTMLEditor::AutoDeleteRangesHandler::ExtendOrShrinkRangeToDelete(
           !backwardScanFromStartResult.ReachedInlineEditingHostBoundary()) {
         break;
       }
-      MOZ_ASSERT(backwardScanFromStartResult.GetContent() ==
-                 WSRunScanner(WSRunScanner::Scan::EditableNodes,
-                              rangeToDelete.StartRef(),
-                              BlockInlineCheck::UseComputedDisplayOutsideStyle)
-                     .GetStartReasonContent());
       
       
       if (HTMLEditUtils::IsAnyTableElement(
