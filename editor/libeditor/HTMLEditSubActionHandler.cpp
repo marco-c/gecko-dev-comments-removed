@@ -7145,88 +7145,93 @@ HTMLEditor::GetRangeExtendedToHardLineEdgesForBlockEditAction(
   
   EditorRawDOMRange newRange(startPoint, endPoint);
 
-  
-  
-  const WSRunScanner wsScannerAtEnd(
-      WSRunScanner::Scan::EditableNodes, endPoint,
-      
-      
-      
-      
-      
-      BlockInlineCheck::UseHTMLDefaultStyle);
-  const WSScanResult scanResultAtEnd =
-      wsScannerAtEnd.ScanPreviousVisibleNodeOrBlockBoundaryFrom(endPoint);
-  if (scanResultAtEnd.Failed()) {
-    NS_WARNING(
-        "WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom() failed");
-    return Err(NS_ERROR_FAILURE);
-  }
-  if (scanResultAtEnd.ReachedSomethingNonTextContent()) {
+  {
     
     
-    if (wsScannerAtEnd.StartsFromOtherBlockElement()) {
+    const WSScanResult prevVisibleThingOfEndPoint =
+        WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
+            WSRunScanner::Scan::All, endPoint,
+            
+            
+            
+            
+            
+            BlockInlineCheck::UseHTMLDefaultStyle, &aEditingHost);
+    if (MOZ_UNLIKELY(prevVisibleThingOfEndPoint.Failed())) {
+      NS_WARNING(
+          "WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary() failed");
+      return Err(NS_ERROR_FAILURE);
+    }
+    if (prevVisibleThingOfEndPoint.ReachedSomethingNonTextContent()) {
       
-      if (nsIContent* child = HTMLEditUtils::GetLastLeafContent(
-              *wsScannerAtEnd.StartReasonOtherBlockElementPtr(),
-              {LeafNodeType::LeafNodeOrChildBlock},
-              BlockInlineCheck::UseHTMLDefaultStyle)) {
-        newRange.SetEnd(EditorRawDOMPoint::After(*child));
+      
+      if (prevVisibleThingOfEndPoint.ReachedOtherBlockElement()) {
+        
+        if (nsIContent* child = HTMLEditUtils::GetLastLeafContent(
+                *prevVisibleThingOfEndPoint.ElementPtr(),
+                {LeafNodeType::LeafNodeOrChildBlock},
+                BlockInlineCheck::UseHTMLDefaultStyle)) {
+          newRange.SetEnd(EditorRawDOMPoint::After(*child));
+        }
+        
+      } else if (prevVisibleThingOfEndPoint.ReachedCurrentBlockBoundary() ||
+                 prevVisibleThingOfEndPoint
+                     .ReachedInlineEditingHostBoundary()) {
+        
+        if (nsIContent* child = HTMLEditUtils::GetPreviousContent(
+                endPoint, {WalkTreeOption::IgnoreNonEditableNode},
+                BlockInlineCheck::UseHTMLDefaultStyle, &aEditingHost)) {
+          newRange.SetEnd(EditorRawDOMPoint::After(*child));
+        }
+        
+      } else if (prevVisibleThingOfEndPoint.ReachedBRElement()) {
+        
+        newRange.SetEnd(prevVisibleThingOfEndPoint
+                            .PointAtReachedContent<EditorRawDOMPoint>());
       }
-      
-    } else if (wsScannerAtEnd.StartsFromCurrentBlockBoundary() ||
-               wsScannerAtEnd.StartsFromInlineEditingHostBoundary()) {
-      
-      if (nsIContent* child = HTMLEditUtils::GetPreviousContent(
-              endPoint, {WalkTreeOption::IgnoreNonEditableNode},
-              BlockInlineCheck::UseHTMLDefaultStyle, &aEditingHost)) {
-        newRange.SetEnd(EditorRawDOMPoint::After(*child));
-      }
-      
-    } else if (wsScannerAtEnd.StartsFromBRElement()) {
-      
-      newRange.SetEnd(
-          EditorRawDOMPoint(wsScannerAtEnd.StartReasonBRElementPtr()));
     }
   }
-
-  
-  
-  const WSRunScanner wsScannerAtStart(WSRunScanner::Scan::EditableNodes,
-                                      startPoint,
-                                      BlockInlineCheck::UseHTMLDefaultStyle);
-  const WSScanResult scanResultAtStart =
-      wsScannerAtStart.ScanInclusiveNextVisibleNodeOrBlockBoundaryFrom(
-          startPoint);
-  if (scanResultAtStart.Failed()) {
-    NS_WARNING("WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom() failed");
-    return Err(NS_ERROR_FAILURE);
-  }
-  if (scanResultAtStart.ReachedSomethingNonTextContent()) {
+  {
     
     
-    if (wsScannerAtStart.EndsByOtherBlockElement()) {
+    const WSScanResult nextVisibleThingOfStartPoint =
+        WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
+            WSRunScanner::Scan::All, startPoint,
+            BlockInlineCheck::UseHTMLDefaultStyle, &aEditingHost);
+    if (MOZ_UNLIKELY(nextVisibleThingOfStartPoint.Failed())) {
+      NS_WARNING(
+          "WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary() failed");
+      return Err(NS_ERROR_FAILURE);
+    }
+    if (nextVisibleThingOfStartPoint.ReachedSomethingNonTextContent()) {
       
-      if (nsIContent* child = HTMLEditUtils::GetFirstLeafContent(
-              *wsScannerAtStart.EndReasonOtherBlockElementPtr(),
-              {LeafNodeType::LeafNodeOrChildBlock},
-              BlockInlineCheck::UseHTMLDefaultStyle)) {
-        newRange.SetStart(EditorRawDOMPoint(child));
+      
+      if (nextVisibleThingOfStartPoint.ReachedOtherBlockElement()) {
+        
+        if (nsIContent* child = HTMLEditUtils::GetFirstLeafContent(
+                *nextVisibleThingOfStartPoint.ElementPtr(),
+                {LeafNodeType::LeafNodeOrChildBlock},
+                BlockInlineCheck::UseHTMLDefaultStyle)) {
+          newRange.SetStart(EditorRawDOMPoint(child));
+        }
+        
+      } else if (nextVisibleThingOfStartPoint.ReachedCurrentBlockBoundary() ||
+                 nextVisibleThingOfStartPoint
+                     .ReachedInlineEditingHostBoundary()) {
+        
+        if (nsIContent* child = HTMLEditUtils::GetNextContent(
+                startPoint, {WalkTreeOption::IgnoreNonEditableNode},
+                BlockInlineCheck::UseHTMLDefaultStyle, &aEditingHost)) {
+          newRange.SetStart(EditorRawDOMPoint(child));
+        }
+        
+      } else if (nextVisibleThingOfStartPoint.ReachedBRElement()) {
+        
+        
+        
+        newRange.SetStart(nextVisibleThingOfStartPoint
+                              .PointAfterReachedContent<EditorRawDOMPoint>());
       }
-      
-    } else if (wsScannerAtStart.EndsByCurrentBlockBoundary() ||
-               wsScannerAtStart.EndsByInlineEditingHostBoundary()) {
-      
-      if (nsIContent* child = HTMLEditUtils::GetNextContent(
-              startPoint, {WalkTreeOption::IgnoreNonEditableNode},
-              BlockInlineCheck::UseHTMLDefaultStyle, &aEditingHost)) {
-        newRange.SetStart(EditorRawDOMPoint(child));
-      }
-      
-    } else if (wsScannerAtStart.EndsByBRElement()) {
-      
-      newRange.SetStart(
-          EditorRawDOMPoint::After(*wsScannerAtStart.EndReasonBRElementPtr()));
     }
   }
 
