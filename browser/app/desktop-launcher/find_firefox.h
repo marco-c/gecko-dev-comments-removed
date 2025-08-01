@@ -1,0 +1,13 @@
+
+
+
+
+#ifndef FIND_FIREFOX_H
+#define FIND_FIREFOX_H
+
+#include <optional>
+#include <string>
+
+std::optional<std::wstring> lookupFirefoxPath();
+
+#endif
