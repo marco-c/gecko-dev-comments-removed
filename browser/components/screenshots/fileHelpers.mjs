@@ -5,6 +5,9 @@
 const { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
 
 const lazy = {};
 // Windows has a total path length of 259 characters so we have to calculate
@@ -24,6 +27,13 @@ ChromeUtils.defineESModuleGetters(lazy, {
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
   ScreenshotsUtils: "resource:///modules/ScreenshotsUtils.sys.mjs",
 });
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "useDownloadDir",
+  "browser.download.useDownloadDir",
+  true
+);
 
 /**
  * macOS and Linux have a max filename of 255.
@@ -138,15 +148,13 @@ export async function getFilename(filenameTitle, browser) {
 }
 
 /**
- * Gets the path to the download directory if "browser.download.useDownloadDir" is true
- * @returns Path to download directory or null if not available
+ * Gets the path to the preferred screenshots directory if "browser.download.useDownloadDir" is true
+ * @returns Path to preferred screenshots directory or null if not available
  */
 export async function getDownloadDirectory() {
-  let useDownloadDir = Services.prefs.getBoolPref(
-    "browser.download.useDownloadDir"
-  );
-  if (useDownloadDir) {
-    const downloadsDir = await lazy.Downloads.getPreferredDownloadsDirectory();
+  if (lazy.useDownloadDir) {
+    const downloadsDir =
+      await lazy.Downloads.getPreferredScreenshotsDirectory();
     if (await IOUtils.exists(downloadsDir)) {
       return downloadsDir;
     }
