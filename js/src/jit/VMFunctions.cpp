@@ -2551,10 +2551,9 @@ void AllocateAndInitTypedArrayBuffer(JSContext* cx,
 
   
   
-  
   constexpr size_t byteLengthLimit = TypedArrayObject::ByteLengthLimit;
   size_t bytesPerElement = obj->bytesPerElement();
-  if (count <= 0 || size_t(count) > byteLengthLimit / bytesPerElement) {
+  if (count < 0 || size_t(count) > byteLengthLimit / bytesPerElement) {
     obj->setFixedSlot(TypedArrayObject::LENGTH_SLOT, PrivateValue(size_t(0)));
     return;
   }
@@ -2572,7 +2571,21 @@ void AllocateAndInitTypedArrayBuffer(JSContext* cx,
         obj->fixedData(FixedLengthTypedArrayObject::FIXED_DATA_START);
     std::memset(data, 0, nbytes);
 
+#ifdef DEBUG
+    if (count == 0) {
+      data[0] = TypedArrayObject::ZeroLengthArrayData;
+    }
+#endif
+
     obj->initFixedSlot(TypedArrayObject::DATA_SLOT, PrivateValue(data));
+    return;
+  }
+
+  
+  
+  
+  if (count == 0) {
+    MOZ_ASSERT(inlineCapacity == 0);
     return;
   }
 
