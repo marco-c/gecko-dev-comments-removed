@@ -3296,9 +3296,6 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::GridReflowInput {
 
 
 
-
-
-
   LogicalSize PercentageBasisFor(LogicalAxis aAxis,
                                  const GridItemInfo& aGridItem) const;
 
@@ -5901,7 +5898,7 @@ static nscoord ContentContribution(const GridItemInfo& aGridItem,
       
       nscoord iMinSizeClamp = NS_MAXSIZE;
       nscoord bMinSizeClamp = NS_MAXSIZE;
-      LogicalSize cbSize(childWM, 0, NS_UNCONSTRAINEDSIZE);
+      LogicalSize cbSize = aPercentageBasis;
       
       
       if (child->GetParent() != aGridRI.mFrame) {
@@ -6579,8 +6576,6 @@ void nsGridContainerFrame::Tracks::InitializeItemBaselines(
       
       
 
-      
-      LogicalSize avail(childWM, INFINITE_ISIZE_COORD, NS_UNCONSTRAINEDSIZE);
       auto* rc = &aGridRI.mRenderingContext;
       
       
@@ -6590,8 +6585,14 @@ void nsGridContainerFrame::Tracks::InitializeItemBaselines(
       
       
       
-      
-      LogicalSize cbSize(childWM, 0, NS_UNCONSTRAINEDSIZE);
+      const LogicalSize cbSize = aGridRI.PercentageBasisFor(mAxis, gridItem);
+      LogicalSize avail(childWM, INFINITE_ISIZE_COORD, NS_UNCONSTRAINEDSIZE);
+      const LogicalAxis inlineAxisInChildWM =
+          isOrthogonal ? LogicalAxis::Block : LogicalAxis::Inline;
+      const nscoord colSize = cbSize.Size(inlineAxisInChildWM, childWM);
+      if (colSize != NS_UNCONSTRAINEDSIZE) {
+        avail.Size(inlineAxisInChildWM, childWM) = colSize;
+      }
       ::MeasuringReflow(child, aGridRI.mReflowInput, rc, avail, cbSize);
 
       nsGridContainerFrame* grid = do_QueryFrame(child);
