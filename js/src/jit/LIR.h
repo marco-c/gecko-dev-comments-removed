@@ -1176,6 +1176,11 @@ class LBlock {
   
   bool isTrivial() { return begin()->isGoto() && !mir()->isLoopHeader(); }
 
+  
+  
+  
+  LBlock* isMoveGroupsThenGoto();
+
 #ifdef JS_JITSPEW
   void dump(GenericPrinter& out);
   void dump();
