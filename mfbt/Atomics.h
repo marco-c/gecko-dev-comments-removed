@@ -65,7 +65,7 @@ namespace mozilla {
 
 
 
-enum MemoryOrdering {
+enum MemoryOrdering : uint8_t {
   
 
 
