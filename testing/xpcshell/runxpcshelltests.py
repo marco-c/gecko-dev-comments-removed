@@ -846,6 +846,9 @@ class XPCShellTestThread(Thread):
         
         self.command.extend(self.buildCmdTestFile(path))
         self.command.extend(["-e", 'const _TEST_NAME = "%s";' % name])
+        self.command.extend(
+            ["-e", 'const _EXPECTED = "%s";' % self.test_object["expected"]]
+        )
 
         
         if self.jscovdir:

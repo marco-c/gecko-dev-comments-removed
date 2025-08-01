@@ -778,7 +778,13 @@ function _execute_test() {
     !Services.env.exists("MOZ_PROFILER_SHUTDOWN") &&
     Services.profiler.IsActive()
   ) {
-    _do_upload_profile();
+    if (_EXPECTED != "pass") {
+      _testLogger.error(
+        "Not uploading the profile as the test is expected to fail."
+      );
+    } else {
+      _do_upload_profile();
+    }
   }
 
   
