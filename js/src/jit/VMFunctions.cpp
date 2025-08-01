@@ -2521,27 +2521,61 @@ void* AllocateBigIntNoGC(JSContext* cx, bool requestMinorGC) {
   return cx->newCell<JS::BigInt, NoGC>(js::gc::Heap::Tenured);
 }
 
-void AllocateAndInitTypedArrayBuffer(JSContext* cx, TypedArrayObject* obj,
-                                     int32_t count) {
+void AllocateAndInitTypedArrayBuffer(JSContext* cx,
+                                     FixedLengthTypedArrayObject* obj,
+                                     int32_t count, size_t inlineCapacity) {
   AutoUnsafeCallWithABI unsafe;
 
   
   
-  obj->initFixedSlot(TypedArrayObject::DATA_SLOT, UndefinedValue());
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  MOZ_RELEASE_ASSERT(
+      obj->getFixedSlot(TypedArrayObject::DATA_SLOT).isUndefined(),
+      "DATA_SLOT initialized to UndefinedValue in JIT code");
+
+  
+  MOZ_ASSERT(obj->getFixedSlot(TypedArrayObject::BUFFER_SLOT).isFalse(),
+             "BUFFER_SLOT initialized to FalseValue in JIT code");
+  MOZ_ASSERT(obj->getFixedSlot(TypedArrayObject::BYTEOFFSET_SLOT) ==
+                 PrivateValue(size_t(0)),
+             "BUFFER_SLOT initialized to PrivateValue(0) in JIT code");
 
   
   
   
   constexpr size_t byteLengthLimit = TypedArrayObject::ByteLengthLimit;
-  if (count <= 0 || size_t(count) > byteLengthLimit / obj->bytesPerElement()) {
+  size_t bytesPerElement = obj->bytesPerElement();
+  if (count <= 0 || size_t(count) > byteLengthLimit / bytesPerElement) {
     obj->setFixedSlot(TypedArrayObject::LENGTH_SLOT, PrivateValue(size_t(0)));
     return;
   }
 
+  size_t nbytes = size_t(count) * bytesPerElement;
+  MOZ_ASSERT(nbytes <= byteLengthLimit);
+
+  
   obj->setFixedSlot(TypedArrayObject::LENGTH_SLOT, PrivateValue(count));
 
-  size_t nbytes = size_t(count) * obj->bytesPerElement();
-  MOZ_ASSERT(nbytes <= byteLengthLimit);
+  
+  
+  if (inlineCapacity > 0 && nbytes <= inlineCapacity) {
+    uint8_t* data =
+        obj->fixedData(FixedLengthTypedArrayObject::FIXED_DATA_START);
+    std::memset(data, 0, nbytes);
+
+    obj->initFixedSlot(TypedArrayObject::DATA_SLOT, PrivateValue(data));
+    return;
+  }
+
   nbytes = RoundUp(nbytes, sizeof(Value));
 
   MOZ_ASSERT(!obj->isTenured());
