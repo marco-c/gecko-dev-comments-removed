@@ -2282,7 +2282,7 @@ void nsLookAndFeel::PerThemeData::Init() {
   style = GtkWidgets::GetStyle(GtkWidgets::Type::HeaderBar);
   {
     const bool headerBarHasBackground = HasBackground(style);
-    if (!headerBarHasBackground && !GetBorderRadius(style)) {
+    if (!headerBarHasBackground || !GetBorderRadius(style)) {
       
       
       GtkStyleContext* fixedStyle =
