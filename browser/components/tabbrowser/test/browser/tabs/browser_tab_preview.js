@@ -42,6 +42,37 @@ async function closePreviews(win = window) {
   return previewHidden;
 }
 
+function getOpenPanels() {
+  return document.querySelectorAll(
+    "panel[panelopen=true],panel[animating=true],menupopup[open=true]"
+  );
+}
+
+async function resetState() {
+  for (let panel of getOpenPanels()) {
+    let hiddenEvent = BrowserTestUtils.waitForPopupEvent(panel, "hidden");
+    panel.hidePopup();
+    await hiddenEvent;
+  }
+
+  let openPanels = getOpenPanels();
+  Assert.ok(!openPanels.length, `sanity check: no panels open`);
+
+  
+  EventUtils.synthesizeMouseAtCenter(document.documentElement, {
+    type: "mouseover",
+  });
+}
+
+function createFakePanel(win = window) {
+  let panel = win.document.createXULElement("panel");
+  
+  panel.setAttribute("type", "arrow");
+  win.document.documentElement.appendChild(panel);
+
+  return panel;
+}
+
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -49,8 +80,15 @@ add_setup(async function () {
       ["browser.tabs.hoverPreview.enabled", true],
       ["browser.tabs.hoverPreview.showThumbnails", false],
       ["browser.tabs.tooltipsShowPidAndActiveness", false],
+      ["sidebar.revamp", false],
+      ["sidebar.verticalTabs", false],
       ["ui.tooltip.delay_ms", 0],
     ],
+  });
+
+  await resetState();
+  registerCleanupFunction(async function () {
+    await resetState();
   });
 });
 
@@ -89,10 +127,7 @@ add_task(async function hoverTests() {
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab2);
 
-  
-  EventUtils.synthesizeMouseAtCenter(document.documentElement, {
-    type: "mouseover",
-  });
+  await resetState();
 });
 
 
@@ -141,11 +176,8 @@ add_task(async function noTabPreviewInBackgroundWindowTests() {
 
   BrowserTestUtils.removeTab(bgTab);
 
-  
-  EventUtils.synthesizeMouseAtCenter(document.documentElement, {
-    type: "mouseover",
-  });
   sinon.restore();
+  await resetState();
 });
 
 
@@ -180,10 +212,7 @@ add_task(async function focusTests() {
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab2);
 
-  
-  EventUtils.synthesizeMouseAtCenter(document.documentElement, {
-    type: "mouseover",
-  });
+  await resetState();
 });
 
 
@@ -209,13 +238,8 @@ add_task(async function pidAndActivenessHiddenByDefaultTests() {
   );
 
   await closePreviews();
-
   BrowserTestUtils.removeTab(tab1);
-
-  
-  EventUtils.synthesizeMouseAtCenter(document.documentElement, {
-    type: "mouseover",
-  });
+  await resetState();
 });
 
 add_task(async function pidAndActivenessTests() {
@@ -272,11 +296,7 @@ add_task(async function pidAndActivenessTests() {
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab2);
   await SpecialPowers.popPrefEnv();
-
-  
-  EventUtils.synthesizeMouseAtCenter(document.documentElement, {
-    type: "mouseover",
-  });
+  await resetState();
 });
 
 
@@ -335,11 +355,7 @@ add_task(async function thumbnailTests() {
 
   
   await previewHidden;
-
-  
-  EventUtils.synthesizeMouseAtCenter(document.documentElement, {
-    type: "mouseover",
-  });
+  await resetState();
 });
 
 
@@ -397,11 +413,7 @@ add_task(async function wireframeTests() {
 
   
   await previewHidden;
-
-  
-  EventUtils.synthesizeMouseAtCenter(document.documentElement, {
-    type: "mouseover",
-  });
+  await resetState();
 });
 
 
@@ -448,6 +460,7 @@ add_task(async function delayTests() {
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab2);
   sinon.restore();
+  await resetState();
 });
 
 
@@ -475,7 +488,7 @@ add_task(async function dragTests() {
   EventUtils.synthesizePlainDragAndDrop({
     srcElement: tab1,
     destElement: null,
-    stepX: 100,
+    stepX: 5,
     stepY: 0,
   });
 
@@ -490,12 +503,8 @@ add_task(async function dragTests() {
   BrowserTestUtils.removeTab(tab1);
   sinon.restore();
 
-  
-  EventUtils.synthesizeMouseAtCenter(document.documentElement, {
-    type: "mouseover",
-  });
-
   await SpecialPowers.popPrefEnv();
+  await resetState();
 });
 
 
@@ -538,11 +547,7 @@ add_task(async function panelSuppressionOnContextMenuTests() {
   contentAreaContextMenu.hidePopup();
   BrowserTestUtils.removeTab(tab);
   sinon.restore();
-
-  
-  EventUtils.synthesizeMouseAtCenter(document.documentElement, {
-    type: "mouseover",
-  });
+  await resetState();
 });
 
 
@@ -560,11 +565,13 @@ add_task(async function panelSuppressionOnPanelTests() {
   const previewComponent = gBrowser.tabContainer.previewPanel;
   sinon.spy(previewComponent, "activate");
 
-  
-  
-  const appMenuButton = document.getElementById("PanelUI-menu-button");
-  const appMenuPopup = document.getElementById("appMenu-popup");
-  appMenuButton.click();
+  let fakePanel = createFakePanel();
+  const popupShownEvent = BrowserTestUtils.waitForPopupEvent(
+    fakePanel,
+    "shown"
+  );
+  fakePanel.openPopup();
+  await popupShownEvent;
 
   EventUtils.synthesizeMouseAtCenter(tab, { type: "mouseover" }, window);
 
@@ -585,12 +592,12 @@ add_task(async function panelSuppressionOnPanelTests() {
     window
   );
 
-  const popupHidingEvent = BrowserTestUtils.waitForEvent(
-    appMenuPopup,
-    "popuphiding"
+  const popupHiddenEvent = BrowserTestUtils.waitForPopupEvent(
+    fakePanel,
+    "hidden"
   );
-  appMenuPopup.hidePopup();
-  await popupHidingEvent;
+  fakePanel.hidePopup();
+  await popupHiddenEvent;
 
   
   await openPreview(tab);
@@ -598,11 +605,8 @@ add_task(async function panelSuppressionOnPanelTests() {
 
   BrowserTestUtils.removeTab(tab);
   sinon.restore();
-
-  
-  EventUtils.synthesizeMouseAtCenter(document.documentElement, {
-    type: "mouseover",
-  });
+  fakePanel.remove();
+  await resetState();
 });
 
 
@@ -615,11 +619,13 @@ add_task(async function panelSuppressionOnPanelLazyLoadTests() {
   let fgWindow = await BrowserTestUtils.openNewBrowserWindow();
   let fgTab = fgWindow.gBrowser.tabs[0];
 
-  
-  
-  const appMenuButton = fgWindow.document.getElementById("PanelUI-menu-button");
-  const appMenuPopup = fgWindow.document.getElementById("appMenu-popup");
-  appMenuButton.click();
+  let fakePanel = createFakePanel(fgWindow);
+  const popupShownEvent = BrowserTestUtils.waitForPopupEvent(
+    fakePanel,
+    "shown"
+  );
+  fakePanel.openPopup();
+  await popupShownEvent;
 
   EventUtils.synthesizeMouseAtCenter(fgTab, { type: "mouseover" }, fgWindow);
 
@@ -627,8 +633,8 @@ add_task(async function panelSuppressionOnPanelLazyLoadTests() {
     
     
     return (
-      (appMenuPopup.getAttribute("animating") === "true" ||
-        appMenuPopup.getAttribute("panelopen") === "true") &&
+      (fakePanel.getAttribute("animating") === "true" ||
+        fakePanel.getAttribute("panelopen") === "true") &&
       fgWindow.gBrowser.tabContainer.previewPanel !== null
     );
   });
@@ -652,20 +658,17 @@ add_task(async function panelSuppressionOnPanelLazyLoadTests() {
     fgWindow
   );
 
-  const popupHidingEvent = BrowserTestUtils.waitForEvent(
-    appMenuPopup,
-    "popuphiding"
+  const popupHiddenEvent = BrowserTestUtils.waitForPopupEvent(
+    fakePanel,
+    "hidden"
   );
-  appMenuPopup.hidePopup();
-  await popupHidingEvent;
+  fakePanel.hidePopup();
+  await popupHiddenEvent;
 
   BrowserTestUtils.removeTab(fgTab);
-
-  
+  fakePanel.remove();
   await BrowserTestUtils.closeWindow(fgWindow);
-  EventUtils.synthesizeMouseAtCenter(document.documentElement, {
-    type: "mouseover",
-  });
+  await resetState();
 });
 
 
@@ -713,12 +716,13 @@ add_task(async function otherPanelOpenTests() {
 
   Assert.ok(previewComponent._panelOpener._timer, "Timer is set");
 
-  
-  const appMenuButton = document.getElementById("PanelUI-menu-button");
-  const appMenuPopup = document.getElementById("appMenu-popup");
-  appMenuButton.click();
-
-  await BrowserTestUtils.waitForEvent(appMenuPopup, "popupshown");
+  let fakePanel = createFakePanel();
+  const popupShownEvent = BrowserTestUtils.waitForPopupEvent(
+    fakePanel,
+    "shown"
+  );
+  fakePanel.openPopup();
+  await popupShownEvent;
 
   
   await BrowserTestUtils.waitForCondition(
@@ -743,16 +747,17 @@ add_task(async function otherPanelOpenTests() {
     type: "mouseout",
   });
 
-  const popupHidingEvent = BrowserTestUtils.waitForEvent(
-    appMenuPopup,
-    "popuphiding"
+  const popupHiddenEvent = BrowserTestUtils.waitForPopupEvent(
+    fakePanel,
+    "hidden"
   );
-  appMenuPopup.hidePopup();
-  await popupHidingEvent;
+  fakePanel.hidePopup();
+  await popupHiddenEvent;
 
+  fakePanel.remove();
   sinon.restore();
-
   await SpecialPowers.popPrefEnv();
+  await resetState();
 });
 
 
@@ -787,6 +792,7 @@ add_task(async function urlBarInputTests() {
   Assert.equal(previewElement.state, "closed", "Preview is closed");
 
   BrowserTestUtils.removeTab(tab1);
+  await resetState();
 });
 
 
@@ -817,8 +823,8 @@ add_task(async function zeroDelayTests() {
 
   await closePreviews();
   BrowserTestUtils.removeTab(tab);
-
   await SpecialPowers.popPrefEnv();
+  await resetState();
 });
 
 
@@ -857,11 +863,7 @@ add_task(async function wheelTests() {
   while (gBrowser.tabs.length > 1) {
     BrowserTestUtils.removeTab(gBrowser.tabs[0]);
   }
-
-  
-  EventUtils.synthesizeMouseAtCenter(document.documentElement, {
-    type: "mouseover",
-  });
+  await resetState();
 });
 
 add_task(async function appearsAsTooltipToAccessibilityToolsTests() {
@@ -908,6 +910,7 @@ add_task(async function tabContentChangeTests() {
 
   await closePreviews();
   BrowserTestUtils.removeTab(tab);
+  await resetState();
 });
 
 
@@ -940,4 +943,5 @@ add_task(async function tabPreview_verticalTabsPositioning() {
 
   await closePreviews();
   BrowserTestUtils.removeTab(tab);
+  await resetState();
 });
