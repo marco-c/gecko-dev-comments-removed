@@ -9,23 +9,34 @@
 #include "nsISupportsImpl.h"
 #include "Units.h"
 
+class nsIURI;
 class nsIFrame;
 class nsPresContext;
 
 namespace mozilla {
 using Modifiers = uint16_t;
 class ErrorResult;
-}  
+class ComputedStyle;
 
-namespace mozilla::dom {
+namespace dom {
 class Element;
 }
 
-namespace mozilla::widget {
+namespace widget {
+
+struct NativeMenuIcon {
+  RefPtr<nsIURI> mURI;
+  RefPtr<const ComputedStyle> mStyle;
+
+  explicit operator bool() const { return !!mURI; }
+};
 
 class NativeMenu {
  public:
   NS_INLINE_DECL_REFCOUNTING(NativeMenu)
+
+  
+  static NativeMenuIcon GetIcon(dom::Element&);
 
   
   
@@ -96,6 +107,7 @@ class NativeMenu {
   virtual ~NativeMenu() = default;
 };
 
+}  
 }  
 
 #endif  

@@ -1801,11 +1801,7 @@ var BookmarkingUI = {
         
         continue;
       }
-      if (starred) {
-        element.setAttribute("starred", "true");
-      } else {
-        element.removeAttribute("starred");
-      }
+      element.toggleAttribute("starred", starred);
     }
 
     if (!this.starBox) {
