@@ -3495,6 +3495,8 @@ void MacroAssembler::Pop(Register reg) {
 
 void MacroAssembler::Pop(FloatRegister f) {
   pop(f);
+  
+  
   adjustFrame(-int32_t(sizeof(double)));
 }
 
@@ -3585,6 +3587,8 @@ void MacroAssembler::Push(const ImmGCPtr ptr) {
 
 void MacroAssembler::Push(FloatRegister f) {
   push(f);
+  
+  
   adjustFrame(int32_t(sizeof(double)));
 }
 
@@ -5714,13 +5718,26 @@ FaultingCodeOffset MacroAssemblerRiscv64::ma_load(
   return asMasm().ma_load(dest, Address(scratch2, src.offset), size, extension);
 }
 void MacroAssemblerRiscv64::ma_pop(FloatRegister f) {
-  fld(f, StackPointer, 0);
+  if (f.isDouble()) {
+    fld(f, StackPointer, 0);
+  } else {
+    MOZ_ASSERT(f.isSingle(), "simd128 is not supported");
+    flw(f, StackPointer, 0);
+  }
+  
+  
   addi(StackPointer, StackPointer, sizeof(double));
 }
 
 void MacroAssemblerRiscv64::ma_push(FloatRegister f) {
+  
   addi(StackPointer, StackPointer, (int32_t)-sizeof(double));
-  fsd(f, StackPointer, 0);
+  if (f.isDouble()) {
+    fsd(f, StackPointer, 0);
+  } else {
+    MOZ_ASSERT(f.isSingle(), "simd128 is not supported");
+    fsw(f, StackPointer, 0);
+  }
 }
 
 FaultingCodeOffset MacroAssemblerRiscv64::ma_fld_s(FloatRegister ft,

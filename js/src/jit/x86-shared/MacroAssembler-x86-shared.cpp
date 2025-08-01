@@ -645,6 +645,7 @@ void MacroAssembler::Push(const ImmGCPtr ptr) {
 
 void MacroAssembler::Push(FloatRegister t) {
   push(t);
+  
   adjustFrame(sizeof(double));
 }
 
@@ -665,6 +666,7 @@ void MacroAssembler::Pop(Register reg) {
 
 void MacroAssembler::Pop(FloatRegister reg) {
   pop(reg);
+  
   implicitPop(sizeof(double));
 }
 
