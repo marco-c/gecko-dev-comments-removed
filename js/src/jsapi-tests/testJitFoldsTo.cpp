@@ -23,7 +23,7 @@ BEGIN_TEST(testJitFoldsTo_DivReciprocal) {
   
   MParameter* p = func.createParameter();
   block->add(p);
-  MConstant* c = MConstant::New(func.alloc, DoubleValue(4.0));
+  MConstant* c = MConstant::NewDouble(func.alloc, 4.0);
   block->add(c);
   MDiv* div = MDiv::New(func.alloc, p, c, MIRType::Double);
   block->add(div);
@@ -55,7 +55,7 @@ BEGIN_TEST(testJitFoldsTo_NoDivReciprocal) {
   
   MParameter* p = func.createParameter();
   block->add(p);
-  MConstant* c = MConstant::New(func.alloc, DoubleValue(5.0));
+  MConstant* c = MConstant::NewDouble(func.alloc, 5.0);
   block->add(c);
   MDiv* div = MDiv::New(func.alloc, p, c, MIRType::Double);
   block->add(div);
