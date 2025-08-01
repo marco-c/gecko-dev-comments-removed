@@ -725,10 +725,5 @@ RemoteAccessible* RootAccessible::GetPrimaryRemoteTopLevelContentDoc() const {
   }
 
   auto tab = static_cast<dom::BrowserHost*>(remoteTab.get());
-  DocAccessibleParent* doc = tab->GetTopLevelDocAccessible();
-  
-  
-  
-  
-  return doc && doc->Parent() ? doc : nullptr;
+  return tab->GetTopLevelDocAccessible();
 }
