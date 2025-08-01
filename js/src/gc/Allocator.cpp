@@ -495,7 +495,7 @@ Arena* GCRuntime::allocateArena(ArenaChunk* chunk, Zone* zone,
 
   
   if (checkThresholds != ShouldCheckThresholds::DontCheckThresholds) {
-    maybeTriggerGCAfterAlloc(zone);
+    maybeTriggerGCAfterCellAlloc(zone);
   }
 
   return arena;
