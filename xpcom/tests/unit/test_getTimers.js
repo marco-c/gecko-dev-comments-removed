@@ -23,27 +23,31 @@ function newTimer(name, delay, type) {
   return timer;
 }
 
+const ignoredTimers = [
+  "BackgroundHangThread_timer", 
+  "CCGCScheduler::EnsureGCRunner", 
+];
+if (AppConstants.platform == "win") {
+  
+  
+  
+  ignoredTimers.push("nsAnonTempFileRemover");
+}
+if (
+  Services.profiler.IsActive() &&
+  !Services.env.exists("MOZ_PROFILER_SHUTDOWN") &&
+  Services.env.exists("MOZ_UPLOAD_DIR") &&
+  Services.env.exists("MOZ_TEST_TIMEOUT_INTERVAL")
+) {
+  
+  
+  ignoredTimers.push("upload_test_timeout_profile");
+}
+
 function getTimers() {
-  return timerManager.getTimers().filter(t => {
-    if (t.name == "BackgroundHangThread_timer") {
-      
-      return false;
-    }
-
-    if (t.name == "CCGCScheduler::EnsureGCRunner") {
-      
-      return false;
-    }
-
-    if (AppConstants.platform == "win" && t.name == "nsAnonTempFileRemover") {
-      
-      
-      
-      return false;
-    }
-
-    return true;
-  });
+  return timerManager
+    .getTimers()
+    .filter(t => !ignoredTimers.includes(t.name.replace(/\[.*/, "")));
 }
 
 function run_test() {
