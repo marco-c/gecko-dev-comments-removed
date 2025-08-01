@@ -7379,8 +7379,7 @@ float nsGridContainerFrame::Tracks::FindFrUnitSize(
 
     
     hypotheticalFrSize = leftOverSpace / std::max(flexFactorSum, 1.0f);
-    for (uint32_t i = 0, len = flexTracks.Length(); i < len; ++i) {
-      uint32_t track = flexTracks[i];
+    for (uint32_t& track : flexTracks) {
       if (track == kAutoLine) {
         continue;  
       }
@@ -7388,7 +7387,7 @@ float nsGridContainerFrame::Tracks::FindFrUnitSize(
       const nscoord base = mSizes[track].mBase;
       if (flexFactor * hypotheticalFrSize < base) {
         
-        flexTracks[i] = kAutoLine;
+        track = kAutoLine;
         flexFactorSum -= flexFactor;
         leftOverSpace -= base;
         --numFlexTracks;
