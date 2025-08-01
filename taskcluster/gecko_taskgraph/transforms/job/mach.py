@@ -26,7 +26,8 @@ mach_schema = Schema(
         
         Required("comm-checkout"): bool,
         
-        Optional("prefix-env"): {str: str},
+        
+        Optional("prepend-env"): {str: str},
         
         Optional("workdir"): str,
         
@@ -50,9 +51,9 @@ def configure_mach(config, job, taskdesc):
     if worker["os"] == "macosx":
         additional_prefix = ["LC_ALL=en_US.UTF-8", "LANG=en_US.UTF-8"]
 
-    if prefix_env := run.pop("prefix-env", None):
-        for name, prefix in prefix_env.items():
-            additional_prefix.append(f"{name}={prefix}${name}")
+    if prepend_env := run.pop("prepend-env", None):
+        for name, value in prepend_env.items():
+            additional_prefix.append(f"{name}={value}")
 
     if python := run.pop("python-version", None):
         if taskdesc.get("use-python", "system") == "system":
