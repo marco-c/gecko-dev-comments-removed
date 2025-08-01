@@ -322,7 +322,24 @@ var Harness = {
   handleEvent(event) {
     if (event.type === "popupshown") {
       if (event.target == event.view.PanelUI.notificationPanel) {
-        event.view.PanelUI.notificationPanel.hidePopup();
+        
+        
+        
+        const { AppMenuNotifications } = ChromeUtils.importESModule(
+          "resource://gre/modules/AppMenuNotifications.sys.mjs"
+        );
+        let notification = AppMenuNotifications.activeNotification;
+        if (notification?.id === "addon-installed") {
+          let popupnotificationID =
+            event.view.PanelUI._getPopupId(notification);
+          let popupnotification =
+            event.target.ownerGlobal.document.getElementById(
+              popupnotificationID
+            );
+          popupnotification?.button.click();
+        } else {
+          event.view.PanelUI.notificationPanel.hidePopup();
+        }
       } else if (event.target.firstElementChild) {
         let popupId = event.target.firstElementChild.getAttribute("popupid");
         if (popupId === "addon-webext-permissions") {
