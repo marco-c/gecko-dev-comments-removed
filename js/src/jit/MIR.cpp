@@ -353,18 +353,17 @@ static MMul* EvaluateExactReciprocal(TempAllocator& alloc, MDiv* ins) {
   }
 
   
-  if (mozilla::Abs(num) & (mozilla::Abs(num) - 1)) {
+  if (num != 0 && !mozilla::IsPowerOfTwo(mozilla::Abs(num))) {
     return nullptr;
   }
 
-  Value ret;
-  ret.setDouble(1.0 / double(num));
+  double ret = 1.0 / double(num);
 
   MConstant* foldedRhs;
   if (ins->type() == MIRType::Float32) {
-    foldedRhs = MConstant::NewFloat32(alloc, ret.toDouble());
+    foldedRhs = MConstant::NewFloat32(alloc, ret);
   } else {
-    foldedRhs = MConstant::New(alloc, ret);
+    foldedRhs = MConstant::NewDouble(alloc, ret);
   }
 
   MOZ_ASSERT(foldedRhs->type() == ins->type());
