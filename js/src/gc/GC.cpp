@@ -1909,7 +1909,7 @@ void GCRuntime::requestMajorGC(JS::GCReason reason) {
   rt->mainContextFromAnyThread()->requestInterrupt(InterruptReason::MajorGC);
 }
 
-bool GCRuntime::triggerFullGC(JS::GCReason reason) {
+bool GCRuntime::triggerGC(JS::GCReason reason) {
   
 
 
@@ -1928,66 +1928,61 @@ bool GCRuntime::triggerFullGC(JS::GCReason reason) {
   return true;
 }
 
-void js::gc::MaybeTriggerGCAfterMalloc(ZoneAllocator* zoneAlloc) {
-  Zone* zone = Zone::from(zoneAlloc);
-  JSRuntime* rt = zone->runtimeFromAnyThread();
-  rt->gc.maybeTriggerGCAfterMalloc(zone);
-}
-
-void js::gc::MaybeTriggerGCAfterJitCodeAlloc(ZoneAllocator* zoneAlloc) {
-  Zone* zone = Zone::from(zoneAlloc);
-  JSRuntime* rt = zone->runtimeFromAnyThread();
-  rt->gc.maybeTriggerGCAfterJitCodeAlloc(zone);
-}
-
-void GCRuntime::maybeTriggerGCAfterCellAlloc(Zone* zone) {
+void GCRuntime::maybeTriggerGCAfterAlloc(Zone* zone) {
+  MOZ_ASSERT(CurrentThreadCanAccessRuntime(rt));
   MOZ_ASSERT(!JS::RuntimeHeapIsCollecting());
-  maybeTriggerZoneGC(zone, zone->gcHeapSize, zone->gcHeapThreshold,
-                     JS::GCReason::ALLOC_TRIGGER);
+
+  TriggerResult trigger =
+      checkHeapThreshold(zone, zone->gcHeapSize, zone->gcHeapThreshold);
+
+  if (trigger.shouldTrigger) {
+    
+    
+    
+    
+    triggerZoneGC(zone, JS::GCReason::ALLOC_TRIGGER, trigger.usedBytes,
+                  trigger.thresholdBytes);
+  }
+}
+
+void js::gc::MaybeMallocTriggerZoneGC(JSRuntime* rt, ZoneAllocator* zoneAlloc,
+                                      const HeapSize& heap,
+                                      const HeapThreshold& threshold,
+                                      JS::GCReason reason) {
+  rt->gc.maybeTriggerGCAfterMalloc(Zone::from(zoneAlloc), heap, threshold,
+                                   reason);
 }
 
 void GCRuntime::maybeTriggerGCAfterMalloc(Zone* zone) {
-  maybeTriggerZoneGC(zone, zone->mallocHeapSize, zone->mallocHeapThreshold,
-                     JS::GCReason::TOO_MUCH_MALLOC);
+  if (maybeTriggerGCAfterMalloc(zone, zone->mallocHeapSize,
+                                zone->mallocHeapThreshold,
+                                JS::GCReason::TOO_MUCH_MALLOC)) {
+    return;
+  }
+
+  maybeTriggerGCAfterMalloc(zone, zone->jitHeapSize, zone->jitHeapThreshold,
+                            JS::GCReason::TOO_MUCH_JIT_CODE);
 }
 
-void GCRuntime::maybeTriggerGCAfterJitCodeAlloc(Zone* zone) {
-  maybeTriggerZoneGC(zone, zone->jitHeapSize, zone->jitHeapThreshold,
-                     JS::GCReason::TOO_MUCH_JIT_CODE);
-}
-
-void GCRuntime::maybeTriggerZoneGC(Zone* zone, const HeapSize& heap,
-                                   const HeapThreshold& threshold,
-                                   JS::GCReason reason) {
+bool GCRuntime::maybeTriggerGCAfterMalloc(Zone* zone, const HeapSize& heap,
+                                          const HeapThreshold& threshold,
+                                          JS::GCReason reason) {
   
   if (heapState() != JS::HeapState::Idle) {
-    return;
+    return false;
   }
 
   MOZ_ASSERT(CurrentThreadCanAccessRuntime(rt));
 
   TriggerResult trigger = checkHeapThreshold(zone, heap, threshold);
   if (!trigger.shouldTrigger) {
-    return;
+    return false;
   }
 
   
   
-
-  zone->scheduleGC();
-  stats().recordTrigger(trigger.usedBytes, trigger.thresholdBytes);
-
-#ifdef JS_GC_ZEAL
-  if (hasZealMode(ZealMode::Alloc)) {
-    JS::PrepareForFullGC(rt->mainContextFromOwnThread());
-  }
-#endif
-
-  if (zone->isAtomsZone()) {
-    JS::PrepareForFullGC(rt->mainContextFromOwnThread());
-  }
-
-  requestMajorGC(reason);
+  triggerZoneGC(zone, reason, trigger.usedBytes, trigger.thresholdBytes);
+  return true;
 }
 
 TriggerResult GCRuntime::checkHeapThreshold(
@@ -2003,6 +1998,34 @@ TriggerResult GCRuntime::checkHeapThreshold(
   MOZ_ASSERT(thresholdBytes <= heapThreshold.incrementalLimitBytes());
 
   return TriggerResult{usedBytes >= thresholdBytes, usedBytes, thresholdBytes};
+}
+
+bool GCRuntime::triggerZoneGC(Zone* zone, JS::GCReason reason, size_t used,
+                              size_t threshold) {
+  MOZ_ASSERT(CurrentThreadCanAccessRuntime(rt));
+
+  
+  if (JS::RuntimeHeapIsBusy()) {
+    return false;
+  }
+
+#ifdef JS_GC_ZEAL
+  if (hasZealMode(ZealMode::Alloc)) {
+    MOZ_RELEASE_ASSERT(triggerGC(reason));
+    return true;
+  }
+#endif
+
+  if (zone->isAtomsZone()) {
+    stats().recordTrigger(used, threshold);
+    MOZ_RELEASE_ASSERT(triggerGC(reason));
+    return true;
+  }
+
+  stats().recordTrigger(used, threshold);
+  zone->scheduleGC();
+  requestMajorGC(reason);
+  return true;
 }
 
 void GCRuntime::maybeGC() {
@@ -4398,23 +4421,15 @@ bool GCRuntime::maybeIncreaseSliceBudgetForUrgentCollections(
 }
 
 static void ScheduleZones(GCRuntime* gc, JS::GCReason reason) {
-  bool inHighFrequencyMode = gc->schedulingState.inHighFrequencyGCMode();
-
   for (ZonesIter zone(gc, WithAtoms); !zone.done(); zone.next()) {
     
     
     
-    
-    if (zone->isGCScheduled()) {
-      if (reason == JS::GCReason::ALLOC_TRIGGER &&
-          zone->gcHeapSize.bytes() < zone->gcHeapThreshold.startBytes()) {
-        zone->unscheduleGC();
-      }
-      if (reason == JS::GCReason::TOO_MUCH_MALLOC &&
-          zone->mallocHeapSize.bytes() <
-              zone->mallocHeapThreshold.startBytes()) {
-        zone->unscheduleGC();
-      }
+    if (gc->tunables.balancedHeapLimitsEnabled() && zone->isGCScheduled() &&
+        zone->smoothedCollectionRate.ref().isNothing() &&
+        reason == JS::GCReason::ALLOC_TRIGGER &&
+        zone->gcHeapSize.bytes() < zone->gcHeapThreshold.startBytes()) {
+      zone->unscheduleGC();  
     }
 
     if (gc->isShutdownGC()) {
@@ -4432,6 +4447,7 @@ static void ScheduleZones(GCRuntime* gc, JS::GCReason reason) {
     }
 
     
+    bool inHighFrequencyMode = gc->schedulingState.inHighFrequencyGCMode();
     if (zone->gcHeapSize.bytes() >=
             zone->gcHeapThreshold.eagerAllocTrigger(inHighFrequencyMode) ||
         zone->mallocHeapSize.bytes() >=
@@ -5006,9 +5022,8 @@ void GCRuntime::minorGC(JS::GCReason reason, gcstats::PhaseKind phase) {
 #endif
 
   for (ZonesIter zone(this, WithAtoms); !zone.done(); zone.next()) {
-    maybeTriggerGCAfterCellAlloc(zone);
+    maybeTriggerGCAfterAlloc(zone);
     maybeTriggerGCAfterMalloc(zone);
-    
   }
 }
 
