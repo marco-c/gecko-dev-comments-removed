@@ -477,6 +477,23 @@ class MozPromise : public MozPromiseBase {
         MOZ_DIAGNOSTIC_ASSERT(!mPromise->IsPending());
       }
 
+#ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
+      
+      NS_IMETHOD GetName(nsACString& aName) override {
+        nsresult rv = PrioritizableCancelableRunnable::GetName(aName);
+        if (NS_FAILED(rv)) {
+          return rv;
+        }
+
+        if (mPromise) {
+          aName.Append(" ");
+          aName.Append(mPromise->mCreationSite);
+        };
+
+        return NS_OK;
+      }
+#endif
+
       ~ResolveOrRejectRunnable() {
         if (mThenValue) {
           mThenValue->AssertIsDead();
