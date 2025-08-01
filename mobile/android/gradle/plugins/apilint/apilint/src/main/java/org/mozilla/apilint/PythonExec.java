@@ -17,7 +17,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.List;
 
 
-public class PythonExec extends Exec {
+abstract public class PythonExec extends Exec {
     
     String mScriptPath;
 
