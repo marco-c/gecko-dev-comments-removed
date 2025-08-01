@@ -754,6 +754,11 @@ pref("browser.urlbar.suggest.wikipedia", true);
 
 pref("browser.urlbar.update2.engineAliasRefresh", true);
 
+
+
+
+pref("browser.urlbar.market.minKeywordLength", 0);
+
 pref("browser.altClickSave", false);
 
 
