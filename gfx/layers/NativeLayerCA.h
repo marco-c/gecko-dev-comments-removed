@@ -143,6 +143,11 @@ class NativeLayerRootCA : public NativeLayerRoot {
   already_AddRefed<NativeLayer> CreateLayerForColor(
       gfx::DeviceColor aColor) override;
 
+  
+  
+  already_AddRefed<NativeLayerCA> CreateLayerForSurfacePresentation(
+      const gfx::IntSize& aSize, bool aIsOpaque);
+
   void SetWindowIsFullscreen(bool aFullscreen);
 
   VideoLowPowerType CheckVideoLowPower(const MutexAutoLock& aProofOfLock);
@@ -266,8 +271,12 @@ class NativeLayerCA : public NativeLayer {
   void SetRoundedClipRect(const Maybe<gfx::RoundedRect>& aClip) override;
   Maybe<gfx::RoundedRect> RoundedClipRect() override;
   gfx::IntRect CurrentSurfaceDisplayRect() override;
+  void SetDisplayRect(const gfx::IntRect& aDisplayRect);
   void SetSurfaceIsFlipped(bool aIsFlipped) override;
   bool SurfaceIsFlipped() override;
+
+  
+  void SetSurfaceToPresent(CFTypeRefPtr<IOSurfaceRef> aSurfaceRef);
 
   void DumpLayer(std::ostream& aOutputStream);
 
@@ -283,17 +292,11 @@ class NativeLayerCA : public NativeLayer {
                 SurfacePoolHandleCA* aSurfacePoolHandle);
   explicit NativeLayerCA(bool aIsOpaque);
   explicit NativeLayerCA(gfx::DeviceColor aColor);
-  ~NativeLayerCA() override;
+  
+  
+  explicit NativeLayerCA(const gfx::IntSize& aSize, bool aIsOpaque);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  bool NextSurface(const MutexAutoLock& aProofOfLock);
+  ~NativeLayerCA() override;
 
   
   typedef NativeLayerRootCA::WhichRepresentation WhichRepresentation;
@@ -408,6 +411,8 @@ class NativeLayerCA : public NativeLayer {
 
   
   Mutex mMutex MOZ_UNANNOTATED;
+
+  CFTypeRefPtr<IOSurfaceRef> mSurfaceToPresent;
 
   Maybe<NativeLayerMacSurfaceHandler> mSurfaceHandler;
 
