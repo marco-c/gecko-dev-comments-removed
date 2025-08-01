@@ -44,6 +44,35 @@ using namespace jit;
 
 
 
+
+
+
+
+
+
+
+
+static bool OffsetIsSmallEnough(int32_t imm) {
+#if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
+  
+  
+  return true;
+#elif defined(JS_CODEGEN_ARM64) || defined(JS_CODEGEN_ARM)
+  
+  
+  return imm >= -0xFFFF && imm <= 0xFFFF;
+#elif defined(JS_CODEGEN_RISCV64) || defined(JS_CODEGEN_LOONG64) || \
+    defined(JS_CODEGEN_MIPS64)
+  return imm >= -0xFFF && imm <= 0xFFF;
+#elif defined(JS_CODEGEN_WASM32) || defined(JS_CODEGEN_NONE)
+  return true;
+#else
+#  error "This needs to be filled in for your platform"
+#endif
+}
+
+
+
 static std::pair<MDefinition*, int32_t> IsShiftBy123(MDefinition* def) {
   MOZ_ASSERT(def->type() == MIRType::Int32);
   if (!def->isLsh()) {
@@ -116,6 +145,11 @@ static void TryMatchShiftAdd(TempAllocator& alloc, MAdd* root) {
   if (base->maybeConstantValue()) {
     int32_t baseValue = base->maybeConstantValue()->toInt32();
     if (baseValue == 0) {
+      
+      
+      return;
+    }
+    if (!OffsetIsSmallEnough(baseValue)) {
       
       
       return;
