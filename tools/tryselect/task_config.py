@@ -212,15 +212,25 @@ class Path(TryConfig):
         if not paths:
             return
 
-        for p in paths:
+        for i, p in enumerate(paths):
             if not os.path.exists(p):
                 print(f"error: '{p}' is not a valid path.", file=sys.stderr)
                 sys.exit(1)
 
-        paths = [
-            mozpath.relpath(mozpath.join(os.getcwd(), p), build.topsrcdir)
-            for p in paths
-        ]
+            
+            
+            
+            if os.path.isfile(p):
+                parent = os.path.dirname(p)
+                print(
+                    f"warning: paths to individual tests don't work, re-writing to {parent}"
+                )
+                paths[i] = parent
+
+            paths[i] = mozpath.relpath(
+                mozpath.join(os.getcwd(), paths[i]), build.topsrcdir
+            )
+
         return {
             "env": {
                 "MOZHARNESS_TEST_PATHS": json.dumps(resolve_tests_by_suite(paths)),
@@ -262,9 +272,20 @@ class Environment(TryConfig):
                 "Can be passed in multiple times.",
             },
         ],
+        [
+            ["--record"],
+            {
+                "action": "store_true",
+                "help": "Get a screen recording of the tests where possible.",
+            },
+        ],
     ]
 
-    def try_config(self, env, **kwargs):
+    def try_config(self, env, record, **kwargs):
+        if env is None:
+            env = []
+        if record:
+            env.append("MOZ_RECORD_TEST=1")
         if not env:
             return
         return {
