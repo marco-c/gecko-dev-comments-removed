@@ -3341,6 +3341,9 @@ void RestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags) {
       IncrementRestyleGeneration();
     }
 
+    
+    presContext->PresShell()->MergeAnchorPosAnchorChanges();
+
     mInStyleRefresh = false;
     presContext->UpdateContainerQueryStyles();
     mInStyleRefresh = true;
