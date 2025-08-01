@@ -1082,6 +1082,9 @@ def gtest(
 
     gtest_env["MOZ_RUN_GTEST"] = "True"
 
+    
+    gtest_env["PYTHON"] = sys.executable
+
     if shuffle:
         gtest_env["GTEST_SHUFFLE"] = "True"
 
