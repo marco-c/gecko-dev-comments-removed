@@ -386,14 +386,8 @@ static void CollectScriptTelemetry(ScriptLoadRequest* aRequest) {
 }
 
 
-
-
-
-
-
-
-
-static bool IsScriptEventHandler(ScriptKind kind, nsIContent* aScriptElement) {
+bool ScriptLoader::IsScriptEventHandler(ScriptKind kind,
+                                        nsIContent* aScriptElement) {
   if (kind != ScriptKind::eClassic) {
     return false;
   }
@@ -408,6 +402,12 @@ static bool IsScriptEventHandler(ScriptKind kind, nsIContent* aScriptElement) {
     return false;
   }
 
+  return ScriptLoader::IsScriptEventHandler(forAttr, eventAttr);
+}
+
+
+bool ScriptLoader::IsScriptEventHandler(const nsAString& forAttr,
+                                        const nsAString& eventAttr) {
   const nsAString& for_str =
       nsContentUtils::TrimWhitespace<nsCRT::IsAsciiSpace>(forAttr);
   if (!for_str.LowerCaseEqualsLiteral("window")) {
@@ -1236,7 +1236,7 @@ bool ScriptLoader::ProcessScriptElement(nsIScriptElement* aElement) {
   }
 
   
-  if (IsScriptEventHandler(scriptKind, scriptContent)) {
+  if (ScriptLoader::IsScriptEventHandler(scriptKind, scriptContent)) {
     return false;
   }
 
