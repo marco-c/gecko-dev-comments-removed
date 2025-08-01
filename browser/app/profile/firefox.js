@@ -2071,6 +2071,9 @@ pref("browser.aboutwelcome.enabled", true);
 pref("browser.aboutwelcome.screens", "");
 
 
+pref("messaging-system.profile.singleProfileMessaging.disable", true);
+
+
 
 pref("messaging-system.log", "warn");
 pref("messaging-system.rsexperimentloader.collection_id", "nimbus-desktop-experiments");
