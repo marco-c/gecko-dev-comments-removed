@@ -844,6 +844,9 @@ pref("browser.search.widget.removeAfterDaysUnused", 120);
 pref("browser.search.totalSearches", 0);
 
 
+pref("browser.search.visualSearch.featureGate", false);
+
+
 pref("browser.spin_cursor_while_busy", false);
 
 
