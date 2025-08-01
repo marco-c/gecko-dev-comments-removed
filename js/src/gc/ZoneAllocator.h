@@ -36,7 +36,7 @@ bool CurrentThreadIsGCFinalizing();
 namespace gc {
 void MaybeTriggerGCAfterMalloc(ZoneAllocator* zoneAlloc);
 void MaybeTriggerGCAfterJitCodeAlloc(ZoneAllocator* zoneAlloc);
-}
+}  
 
 
 class ZoneAllocator : public JS::shadow::Zone,
