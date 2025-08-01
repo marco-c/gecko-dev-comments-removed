@@ -208,6 +208,10 @@ class Editor extends EventEmitter {
   #scrollSnapshots = new Map();
   #updateListener = null;
 
+  
+  
+  #languageModes = new Map();
+
   #sources = new Map();
 
   constructor(config) {
@@ -660,6 +664,17 @@ class Editor extends EventEmitter {
     win.dispatchEvent(editorReadyEvent);
   }
 
+  #setupLanguageModes() {
+    if (!this.config.cm6) {
+      return;
+    }
+    const { codemirrorLangJavascript } = this.#CodeMirror6;
+    this.#languageModes.set(
+      Editor.modes.js.name,
+      codemirrorLangJavascript.javascript()
+    );
+  }
+
   
 
 
@@ -697,7 +712,6 @@ class Editor extends EventEmitter {
         syntaxHighlighting,
         bracketMatching,
       },
-      codemirrorLangJavascript,
       lezerHighlight,
     } = this.#CodeMirror6;
 
@@ -709,6 +723,7 @@ class Editor extends EventEmitter {
     const searchHighlightCompartment = new Compartment();
     const domEventHandlersCompartment = new Compartment();
     const foldGutterCompartment = new Compartment();
+    const languageCompartment = new Compartment();
 
     this.#compartments = {
       tabSizeCompartment,
@@ -719,6 +734,7 @@ class Editor extends EventEmitter {
       searchHighlightCompartment,
       domEventHandlersCompartment,
       foldGutterCompartment,
+      languageCompartment,
     };
 
     const { lineContentMarkerEffect, lineContentMarkerExtension } =
@@ -737,6 +753,13 @@ class Editor extends EventEmitter {
     this.#editorDOMEventHandlers.scroll = [
       debounce(this.#cacheScrollSnapshot, 250),
     ];
+
+    this.#setupLanguageModes();
+
+    const languageMode = [];
+    if (this.config.mode && this.#languageModes.has(this.config.mode.name)) {
+      languageMode.push(this.#languageModes.get(this.config.mode.name));
+    }
 
     const extensions = [
       bracketMatching(),
@@ -781,14 +804,11 @@ class Editor extends EventEmitter {
       lineContentMarkerExtension,
       positionContentMarkerExtension,
       searchHighlightCompartment.of(this.#searchHighlighterExtension([])),
+      languageCompartment.of(languageMode),
       highlightSelectionMatches(),
       
       codemirror.minimalSetup,
     ];
-
-    if (this.config.mode === Editor.modes.js) {
-      extensions.push(codemirrorLangJavascript.javascript());
-    }
 
     if (this.config.placeholder) {
       extensions.push(placeholder(this.config.placeholder));
@@ -1968,24 +1988,33 @@ class Editor extends EventEmitter {
 
 
   setMode(value) {
+    if (this.config.cm6) {
+      const cm = editors.get(this);
+      return cm.dispatch({
+        effects: this.#compartments.languageCompartment.reconfigure([
+          this.#languageModes.get(value),
+        ]),
+      });
+    }
     this.setOption("mode", value);
 
-    
-    
+    // If autocomplete was set up and the mode is changing, then
+    // turn it off and back on again so the proper mode can be used.
     if (this.config.autocomplete) {
       this.setOption("autocomplete", false);
       this.setOption("autocomplete", true);
     }
+    return null;
   }
 
-  
-
-
-
+  /**
+   * The source editor can expose several commands linked from system and context menus.
+   * Kept for backward compatibility with styleeditor.
+   */
   insertCommandsController() {
     const {
       insertCommandsController,
-    } = require("resource://devtools/client/shared/sourceeditor/editor-commands-controller.js");
+    } = require("resource:
     insertCommandsController(this);
   }
 
@@ -2011,7 +2040,7 @@ class Editor extends EventEmitter {
     const cm = editors.get(this);
     if (this.config.cm6) {
       if (!this.#currentDocument) {
-        // A key for caching the WASM content in the WeakMap
+        
         this.#currentDocument = { id: this.#currentDocumentId };
       }
       return this.#currentDocument;
@@ -2046,19 +2075,19 @@ class Editor extends EventEmitter {
     return wasm.renderWasmText(this.getDoc(), content);
   }
 
-  /**
-   * Gets details about the line
-   *
-   * @param {Number} line
-   * @returns {Object} line info object
-   */
+  
+
+
+
+
+
   lineInfo(line) {
     const cm = editors.get(this);
     if (this.config.cm6) {
       const el = this.getElementAtLine(line);
       return {
         text: el.innerText,
-        // TODO: Expose those, or see usage for those and do things differently
+        
         line: null,
         gutterMarkers: null,
         textClass: null,
@@ -2071,12 +2100,12 @@ class Editor extends EventEmitter {
     return cm.lineInfo(line);
   }
 
-  /**
-   * Get the functions symbols for the current source loaded in the
-   * the editor.
-   *
-   * @param {Number} maxResults - The maximum no of results to display
-   */
+  
+
+
+
+
+
   async getFunctionSymbols(maxResults) {
     const cm = editors.get(this);
     const { codemirrorLanguage } = this.#CodeMirror6;
@@ -2091,7 +2120,7 @@ class Editor extends EventEmitter {
         }
         const syntaxNode = node.node;
         const name = lezerUtils.getFunctionName(cm.state.doc, syntaxNode);
-        // Ignore anonymous functions
+        
         if (name == null) {
           return;
         }
@@ -2118,11 +2147,11 @@ class Editor extends EventEmitter {
     return functionSymbols;
   }
 
-  /**
-   * Get the class symbols for the current source loaded in the the editor.
-   *
-   * @returns
-   */
+  
+
+
+
+
   async getClassSymbols() {
     const cm = editors.get(this);
     const { codemirrorLanguage } = this.#CodeMirror6;
@@ -2149,14 +2178,14 @@ class Editor extends EventEmitter {
     return classSymbols;
   }
 
-  /**
-   * Finds the best function name for the location specified.
-   * This is used to map original function names to their corresponding
-   * generated functions.
-   *
-   * @param {Object} location
-   * @returns
-   */
+  
+
+
+
+
+
+
+
   async getClosestFunctionName(location) {
     const cm = editors.get(this);
     const {
@@ -2165,21 +2194,21 @@ class Editor extends EventEmitter {
     } = this.#CodeMirror6;
 
     let doc, tree;
-    // If the specified source is already loaded in the editor,
-    // codemirror has likely parsed most or all the source needed,
-    // just leverage that
+    
+    
+    
     const sourceId = location.source.id;
     if (this.#currentDocumentId === sourceId) {
       doc = cm.state.doc;
-      // Parse the rest of the if needed.
+      
       await forceParsing(cm, doc.length, 10000);
 
       tree = syntaxTree(cm.state);
     } else {
-      // If the source is not currently loaded in the editor we will need
-      // to explicitly parse its source text.
-      // Note: The `loadSourceText` actions is called before this util `getClosestFunctionName`
-      // to make sure source content is available to use.
+      
+      
+      
+      
       const sourceContent = this.#sources.get(location.source.id);
       if (!sourceContent) {
         console.error(
@@ -2188,7 +2217,7 @@ class Editor extends EventEmitter {
         return "";
       }
 
-      // Create a codemirror document for the current source text.
+      
       doc = cm.state.toText(sourceContent);
       tree = lezerUtils.getTree(javascriptLanguage, sourceId, sourceContent);
     }
@@ -2202,14 +2231,14 @@ class Editor extends EventEmitter {
     return enclosingScope ? enclosingScope.funcName : "";
   }
 
-  /**
-   * Traverse the syntaxTree and return expressions
-   * which best match the specified token location is on our
-   * list of accepted symbol types.
-   *
-   * @param {Object} tokenLocation
-   * @returns {Array} Member expression matches
-   */
+  
+
+
+
+
+
+
+
   async findBestMatchExpressions(tokenLocation) {
     const cm = editors.get(this);
     const { codemirrorLanguage } = this.#CodeMirror6;
@@ -2225,7 +2254,7 @@ class Editor extends EventEmitter {
         if (node.from <= tokPos && node.to >= tokPos) {
           expressions.push({
             type: node.name,
-            // Computed member expressions not currently supported
+            
             computed: false,
             expression: cm.state.doc.sliceString(node.from, node.to),
             location: {
@@ -2241,25 +2270,25 @@ class Editor extends EventEmitter {
       walkTo: line.to,
     });
 
-    // There might be multiple expressions which are within the locations.
-    // We want to match expressions based on dots before the desired token.
-    //
-    // ========================== EXAMPLE 1 ================================
-    // Full Expression: `this.myProperty.x`
-    // Hovered Token: `myProperty`
-    // Found Expressions:
-    // { name: "MemberExpression", expression: "this.myProperty.x", from: 1715, to: 1732 }
-    // { name: "MemberExpression", expression: "this.myProperty" from: 1715, to: 1730 } *
-    // { name: "PropertyName", expression: "myProperty" from: 1720, to: 1730 }
-    //
-    // ========================== EXAMPLE 2 ==================================
-    // Full Expression: `a(b).catch`
-    // Hovered Token: `b`
-    // Found Expressions:
-    // { name: "MemberExpression", expression: "a(b).catch", from: 1921  to: 1931 }
-    // { name: "VariableName", expression: "b", from: 1923  to: 1924 } *
-    //
-    // We sort based on the `to` make sure we return the correct property
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     return expressions.sort((a, b) => {
       if (a.to < b.to) {
         return -1;
@@ -2270,12 +2299,12 @@ class Editor extends EventEmitter {
     });
   }
 
-  /**
-   * Get all the lines which are inscope when paused a the specified location.
-   *
-   * @param {Object} location
-   * @param {Array} in scope lines
-   */
+  
+
+
+
+
+
   async getInScopeLines(location) {
     const cm = editors.get(this);
     const { codemirrorLanguage } = this.#CodeMirror6;
@@ -2294,19 +2323,19 @@ class Editor extends EventEmitter {
       forceParseTo: cm.viewport.to,
     });
 
-    // Sort based on the start locations so the scopes
-    // are in the same order as in the source.
+    
+    
     const sortedLocations = scopeUtils.sortByStart(functionLocations);
 
-    // Any function locations which are within the immediate function scope
-    // of the paused location.
+    
+    
     const innerLocations = scopeUtils.getInnerLocations(
       sortedLocations,
       location
     );
 
-    // Any outer locations which do not contain the immediate function
-    // of the paused location
+    
+    
     const outerLocations = sortedLocations.filter(loc => {
       if (innerLocations.includes(loc)) {
         return false;
@@ -2318,11 +2347,11 @@ class Editor extends EventEmitter {
       scopeUtils.removeOverlapLocations(outerLocations)
     );
 
-    // This operation can be very costly for large files so we sacrifice a bit of readability
-    // for performance sake.
-    // We initialize an array with a fixed size and we'll directly assign value for lines
-    // that are not out of scope. This is much faster than having an empty array and pushing
-    // into it.
+    
+    
+    
+    
+    
     const sourceNumLines = cm.state.doc.lines;
     const sourceLines = new Array(sourceNumLines);
     for (let i = 0; i < sourceNumLines; i++) {
@@ -2332,36 +2361,36 @@ class Editor extends EventEmitter {
       }
     }
 
-    // Finally we need to remove any undefined values, i.e. the ones that were matching
-    // out of scope lines.
+    
+    
     return sourceLines.filter(i => i != undefined);
   }
 
-  /**
-   * Gets all the bindings and generates the related references for
-   * the specified platform scope and its ancestry
-   *
-   * @param {Object} location - The currently paused location
-   * @param {Object} scope - The innermost scope node for the tree. This is provided by the
-   *                         platform.
-   * @returns {Object} Binding references
-   *                  Structure
-   *                  ==========
-   *                  {
-   *                    0: { // Levels
-   *                      a: { // Binding
-   *                        enumerable: true,
-   *                        configurable: false
-   *                        value: "foo"
-   *                        refs: [{ // References
-   *                          start: { line: 1, column: 4 }
-   *                          end: { line: 3, column: 5 }
-   *                          meta: {...} // For details see https://searchfox.org/mozilla-central/rev/ba7293cb2710f015fcd34f2b9919d00e27a9c2f6/devtools/client/shared/sourceeditor/lezer-utils.js#414-420
-   *                        }]
-   *                      },
-   *                      ...
-   *                    }
-   **/
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   async getBindingReferences(location, scope) {
     const cm = editors.get(this);
     const {
@@ -2382,7 +2411,7 @@ class Editor extends EventEmitter {
     let level = 0;
     const bindingReferences = {};
 
-    // Walk up the scope tree and generate the bindings and references
+    
     while (scope && scope.bindings) {
       const bindings = lezerUtils.getScopeBindings(scope.bindings);
       const seen = new Set();
@@ -2406,15 +2435,15 @@ class Editor extends EventEmitter {
             end: lezerUtils.positionToLocation(cm.state.doc, node.to),
           };
           const syntaxNode = node.node;
-          // Previews for member expressions are built of the meta property which is
-          // reference of the child property and so on. e.g a.b.c
+          
+          
           if (syntaxNode.parent.name == lezerUtils.nodeTypes.MemberExpression) {
             ref.meta = lezerUtils.getMetaBindings(
               cm.state.doc,
               syntaxNode.parent
             );
-            // For member expressions use the name of the parent object as the binding name
-            // i.e for `obj.a.b` the binding name should be `obj`
+            
+            
             bindingName = cm.state.doc.sliceString(
               syntaxNode.parent.from,
               syntaxNode.parent.to
@@ -2429,8 +2458,8 @@ class Editor extends EventEmitter {
             bindingReferences[level] = {};
           }
           if (!bindingReferences[level][bindingName]) {
-            // Put the binding info and related references together for
-            // easy and efficient access.
+            
+            
             bindingReferences[level][bindingName] = {
               ...bindingData,
               refs: [],
@@ -2449,14 +2478,14 @@ class Editor extends EventEmitter {
     return bindingReferences;
   }
 
-  /**
-   * Replaces whatever is in the text area with the contents of
-   * the 'value' argument.
-   *
-   * @param {String} value: The text to replace the editor content
-   * @param {String} documentId: Optional unique id represeting the specific document which is source of the text.
-   *                 Will be null for loading and error messages.
-   */
+  
+
+
+
+
+
+
+
   async setText(value, documentId) {
     const cm = editors.get(this);
     const isWasm = typeof value !== "string" && "binary" in value;
@@ -3727,6 +3756,7 @@ class Editor extends EventEmitter {
     this.#lineGutterMarkers.clear();
     this.#lineContentMarkers.clear();
     this.#scrollSnapshots.clear();
+    this.#languageModes.clear();
     this.clearSources();
 
     if (this.#prefObserver) {
