@@ -953,8 +953,12 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
     if (Accessible* announcement = mGeckoAccessible->FirstChild()) {
       announcement->Name(name);
     } else {
-      MOZ_ASSERT_UNREACHABLE(
-          "A11yUtil event received, but no announcement found?");
+      
+      
+      
+      
+      
+      NS_WARNING("A11yUtil event received, but no announcement found");
     }
 
     NSDictionary* info = @{
