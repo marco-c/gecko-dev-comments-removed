@@ -84,28 +84,14 @@ class nsScrollbarFrame final : public nsContainerFrame,
   void SetScrollbarMediatorContent(nsIContent* aMediator);
   nsIScrollbarMediator* GetScrollbarMediator();
   void WillBecomeActive();
-  
 
-
-
-  void SetIncrementToLine(int32_t aDirection);
-  void SetIncrementToPage(int32_t aDirection);
-  void SetIncrementToWhole(int32_t aDirection);
-
-  
-
-
-
-
-
-
-
-
-
-
-  enum class ImplementsScrollByUnit { Yes, No };
-  int32_t MoveToNewPosition(ImplementsScrollByUnit aImplementsScrollByUnit);
-  int32_t GetIncrement() const { return mIncrement; }
+  void MoveToNewPosition();
+  int32_t GetButtonScrollDirection() const { return mButtonScrollDirection; }
+  void SetButtonScrollDirectionAndUnit(int32_t aDirection,
+                                       mozilla::ScrollUnit aUnit) {
+    mButtonScrollDirection = aDirection;
+    mButtonScrollUnit = aUnit;
+  }
 
   
   nsresult CreateAnonymousContent(nsTArray<ContentInfo>& aElements) override;
@@ -124,13 +110,9 @@ class nsScrollbarFrame final : public nsContainerFrame,
   void InvalidateForHoverChange(bool aIsNowHovered);
 
   
-  int32_t mDirection = 0;
   
-  
-  
-  int32_t mIncrement = 0;
-  mozilla::ScrollUnit mScrollUnit = mozilla::ScrollUnit::DEVICE_PIXELS;
-  bool mSmoothScroll = false;
+  int32_t mButtonScrollDirection = 0;
+  mozilla::ScrollUnit mButtonScrollUnit = mozilla::ScrollUnit::DEVICE_PIXELS;
   
   
   bool mHasBeenHovered = false;
