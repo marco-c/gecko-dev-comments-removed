@@ -27,12 +27,6 @@ SANDBOX_INTERCEPT NTSTATUS WINAPI TargetNtImpersonateAnonymousToken(
 
 
 
-SANDBOX_INTERCEPT NTSTATUS WINAPI TargetNtOpenSection(
-    NtOpenSectionFunction orig_NtOpenSection, PHANDLE section_handle,
-    ACCESS_MASK desired_access, POBJECT_ATTRIBUTES object_attributes);
-
-
-
 SANDBOX_INTERCEPT NTSTATUS WINAPI TargetNtSetInformationThread(
     NtSetInformationThreadFunction orig_SetInformationThread,
     HANDLE thread,

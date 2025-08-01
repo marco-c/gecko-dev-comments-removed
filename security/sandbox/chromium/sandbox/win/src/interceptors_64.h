@@ -42,11 +42,6 @@ TargetNtImpersonateAnonymousToken64(HANDLE thread);
 
 
 SANDBOX_INTERCEPT NTSTATUS WINAPI
-TargetNtOpenSection64(PHANDLE section_handle, ACCESS_MASK desired_access,
-                      POBJECT_ATTRIBUTES object_attributes);
-
-
-SANDBOX_INTERCEPT NTSTATUS WINAPI
 TargetNtSetInformationThread64(HANDLE thread,
                                THREADINFOCLASS thread_info_class,
                                PVOID thread_information,
