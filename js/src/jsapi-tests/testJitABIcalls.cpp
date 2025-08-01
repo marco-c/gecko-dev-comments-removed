@@ -9,6 +9,7 @@
 #include "mozilla/IntegerTypeTraits.h"
 
 #include <iterator>
+#include <type_traits>
 
 #include "jit/ABIFunctions.h"
 #include "jit/IonAnalysis.h"
@@ -290,11 +291,54 @@ using ArgsFillBits_t = std::integer_sequence<uint64_t, FillBits<Args>()...>;
 
 template <typename Type>
 constexpr ABIType TypeToABIType() {
-  if constexpr (std::is_same_v<Type, float>) {
-    return ABIType::Float32;
-  } else if constexpr (std::is_same_v<Type, double>) {
-    return ABIType::Float64;
-  } else {
+  
+  
+  
+  
+  
+  
+  
+
+  if constexpr (std::is_integral_v<Type>) {
+    
+    if constexpr (sizeof(Type) <= sizeof(intptr_t)) {
+      
+      
+      return ABIType::General;
+    } else if constexpr (sizeof(Type) == sizeof(int64_t)) {
+      return ABIType::Int64;
+    }
+  } else if constexpr (std::is_floating_point_v<Type>) {
+    
+    if constexpr (std::is_same_v<Type, float>) {
+      return ABIType::Float32;
+    } else if constexpr (std::is_same_v<Type, double>) {
+      return ABIType::Float64;
+    }
+  } else if constexpr (std::is_pointer_v<Type> || std::is_reference_v<Type>) {
+    
+    return ABIType::General;
+  } else if constexpr (std::is_enum_v<Type>) {
+    
+    return TypeToABIType<std::underlying_type_t<Type>>();
+  } else if constexpr (std::is_class_v<Type> || std::is_union_v<Type>) {
+    
+    
+    
+    
+    if constexpr (std::is_trivially_copyable_v<Type>) {
+      if constexpr (sizeof(Type) <= sizeof(intptr_t)) {
+        
+        
+        
+        return ABIType::General;
+      }
+    }
+  } else if constexpr (std::is_void_v<Type>) {
+    
+    
+    
+    
     return ABIType::General;
   }
 }
@@ -461,7 +505,20 @@ template <uint64_t... Off, ABIType... Type>
 static void passABIArgs(MacroAssembler& masm, Register base,
                         std::integer_sequence<uint64_t, Off...>,
                         ABITypeSequence<Type...>) {
-  (masm.passABIArg(MoveOperand(base, size_t(Off)), Type), ...);
+  [[maybe_unused]] auto passABIArg = [&](uint64_t off, ABIType type) {
+    if (type == ABIType::Int64) {
+#ifdef JS_64BIT
+      masm.passABIArg(MoveOperand(base, size_t(off)), ABIType::General);
+#else
+      masm.passABIArg(MoveOperand(base, size_t(off)), ABIType::General);
+      masm.passABIArg(MoveOperand(base, size_t(off) + sizeof(intptr_t)),
+                      ABIType::General);
+#endif
+    } else {
+      masm.passABIArg(MoveOperand(base, size_t(off)), type);
+    }
+  };
+  (passABIArg(Off, Type), ...);
 }
 
 
