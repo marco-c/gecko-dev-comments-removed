@@ -31,6 +31,13 @@ static_assert(false);
 
 
 
+
+
+const wchar_t* getFirefoxRegistryBranding() { return firefox_node; }
+
+
+
+
 static std::optional<std::wstring> lookupFirefoxPathInHKEY(HKEY hkey) {
   std::wstring current_version = L"CurrentVersion";
   wchar_t buffer[MAX_PATH];
@@ -39,18 +46,21 @@ static std::optional<std::wstring> lookupFirefoxPathInHKEY(HKEY hkey) {
   DWORD value_size = sizeof(buffer);
 
   
-  LSTATUS status = RegGetValueW(hkey, firefox_node, current_version.c_str(),
-                                RRF_RT_REG_SZ, nullptr, buffer, &value_size);
+  LSTATUS status =
+      RegGetValueW(hkey, getFirefoxRegistryBranding(), current_version.c_str(),
+                   RRF_RT_REG_SZ, nullptr, buffer, &value_size);
   if (status != ERROR_SUCCESS || value_size < 2) {
     std::wcout << L"Failed to get firefox current version at node "
-               << firefox_node << L"status: " << status << std::endl;
+               << getFirefoxRegistryBranding() << L"status: " << status
+               << std::endl;
     return std::nullopt;
   }
   DWORD value_len = value_size / sizeof(wchar_t) - 1;
   
   std::wstring current_version_string = std::wstring(buffer, value_len);
   std::wstring current_version_node =
-      std::wstring(firefox_node) + L"\\" + current_version_string + L"\\Main";
+      std::wstring(getFirefoxRegistryBranding()) + L"\\" +
+      current_version_string + L"\\Main";
   std::wstring path_to_exe = L"PathToExe";
   value_size = sizeof(buffer);
   status = RegGetValueW(hkey, current_version_node.c_str(), path_to_exe.c_str(),
