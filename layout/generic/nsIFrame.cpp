@@ -2357,23 +2357,26 @@ static nsIFrame* GetActiveSelectionFrame(nsPresContext* aPresContext,
   return aFrame;
 }
 
-int16_t nsIFrame::DetermineDisplaySelection() {
-  int16_t selType = nsISelectionController::SELECTION_OFF;
-
+bool nsIFrame::ShouldHandleSelectionMovementEvents() {
   nsCOMPtr<nsISelectionController> selCon;
-  nsresult result =
-      GetSelectionController(PresContext(), getter_AddRefs(selCon));
-  if (NS_SUCCEEDED(result) && selCon) {
-    result = selCon->GetDisplaySelection(&selType);
-    if (NS_SUCCEEDED(result) &&
-        (selType != nsISelectionController::SELECTION_OFF)) {
-      
-      if (!IsSelectable(nullptr)) {
-        selType = nsISelectionController::SELECTION_OFF;
-      }
-    }
+  GetSelectionController(PresContext(), getter_AddRefs(selCon));
+  if (!selCon) {
+    return false;
   }
-  return selType;
+  int16_t selType = nsISelectionController::SELECTION_OFF;
+  selCon->GetDisplaySelection(&selType);
+  if (selType == nsISelectionController::SELECTION_OFF) {
+    return false;
+  }
+  if (!IsSelectable(nullptr)) {
+    
+    return false;
+  }
+  if (IsScrollbarFrame() || IsHTMLCanvasFrame()) {
+    
+    return false;
+  }
+  return true;
 }
 
 static Element* FindElementAncestorForMozSelection(nsIContent* aContent) {
@@ -4859,9 +4862,7 @@ nsresult nsIFrame::MoveCaretToEventPoint(nsPresContext* aPresContext,
 
   
   
-  StyleUserSelect selectStyle;
-  
-  if (!IsSelectable(&selectStyle)) {
+  if (!ShouldHandleSelectionMovementEvents()) {
     return NS_OK;
   }
 
@@ -4886,10 +4887,7 @@ nsresult nsIFrame::MoveCaretToEventPoint(nsPresContext* aPresContext,
 
   
   
-  const nsFrameSelection* frameselection =
-      selectStyle == StyleUserSelect::Text ? GetConstFrameSelection()
-                                           : presShell->ConstFrameSelection();
-
+  const nsFrameSelection* frameselection = GetConstFrameSelection();
   if (!frameselection || frameselection->GetDisplaySelection() ==
                              nsISelectionController::SELECTION_OFF) {
     return NS_OK;  
@@ -5148,15 +5146,12 @@ bool nsIFrame::MovingCaretToEventPointAllowedIfSecondaryButtonEvent(
          contentAsTextControl;
 }
 
-nsresult nsIFrame::SelectByTypeAtPoint(nsPresContext* aPresContext,
-                                       const nsPoint& aPoint,
+nsresult nsIFrame::SelectByTypeAtPoint(const nsPoint& aPoint,
                                        nsSelectionAmount aBeginAmountType,
                                        nsSelectionAmount aEndAmountType,
                                        uint32_t aSelectFlags) {
-  NS_ENSURE_ARG_POINTER(aPresContext);
-
   
-  if (DetermineDisplaySelection() == nsISelectionController::SELECTION_OFF) {
+  if (!ShouldHandleSelectionMovementEvents()) {
     return NS_OK;
   }
 
@@ -5189,7 +5184,7 @@ nsIFrame::HandleMultiplePress(nsPresContext* aPresContext,
   NS_ENSURE_ARG_POINTER(aEventStatus);
 
   if (nsEventStatus_eConsumeNoDefault == *aEventStatus ||
-      DetermineDisplaySelection() == nsISelectionController::SELECTION_OFF) {
+      !ShouldHandleSelectionMovementEvents()) {
     return NS_OK;
   }
 
@@ -5221,7 +5216,7 @@ nsIFrame::HandleMultiplePress(nsPresContext* aPresContext,
 
   nsPoint relPoint = nsLayoutUtils::GetEventCoordinatesRelativeTo(
       mouseEvent, RelativeTo{this});
-  return SelectByTypeAtPoint(aPresContext, relPoint, beginAmount, endAmount,
+  return SelectByTypeAtPoint(relPoint, beginAmount, endAmount,
                              (aControlHeld ? SELECT_ACCUMULATE : 0));
 }
 
@@ -5336,15 +5331,11 @@ NS_IMETHODIMP nsIFrame::HandleDrag(nsPresContext* aPresContext,
 
   nsIFrame* scrollbar =
       nsLayoutUtils::GetClosestFrameOfType(this, LayoutFrameType::Scrollbar);
-  if (!scrollbar) {
+  if (!scrollbar && !ShouldHandleSelectionMovementEvents()) {
     
     
     
-    
-    
-    if (DetermineDisplaySelection() == nsISelectionController::SELECTION_OFF) {
-      return NS_OK;
-    }
+    return NS_OK;
   }
 
   frameselection->StopAutoScrollTimer();
@@ -5470,8 +5461,7 @@ NS_IMETHODIMP nsIFrame::HandleRelease(nsPresContext* aPresContext,
 
   nsCOMPtr<nsIContent> captureContent = PresShell::GetCapturingContent();
 
-  bool selectionOff =
-      (DetermineDisplaySelection() == nsISelectionController::SELECTION_OFF);
+  const bool selectionOff = !ShouldHandleSelectionMovementEvents();
 
   RefPtr<nsFrameSelection> frameselection;
   ContentOffsets offsets;
@@ -5505,8 +5495,8 @@ NS_IMETHODIMP nsIFrame::HandleRelease(nsPresContext* aPresContext,
   
   
   RefPtr<nsFrameSelection> frameSelection;
-  if (activeFrame != this && activeFrame->DetermineDisplaySelection() !=
-                                 nsISelectionController::SELECTION_OFF) {
+  if (activeFrame != this &&
+      activeFrame->ShouldHandleSelectionMovementEvents()) {
     frameSelection = activeFrame->GetFrameSelection();
   }
 

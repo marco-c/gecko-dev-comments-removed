@@ -2278,10 +2278,8 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-
   MOZ_CAN_RUN_SCRIPT nsresult
-  SelectByTypeAtPoint(nsPresContext* aPresContext, const nsPoint& aPoint,
-                      nsSelectionAmount aBeginAmountType,
+  SelectByTypeAtPoint(const nsPoint& aPoint, nsSelectionAmount aBeginAmountType,
                       nsSelectionAmount aEndAmountType, uint32_t aSelectFlags);
 
   MOZ_CAN_RUN_SCRIPT nsresult PeekBackwardAndForwardForSelection(
@@ -2368,9 +2366,8 @@ class nsIFrame : public nsQueryFrame {
                                     mozilla::TableSelectionMode* aTarget);
 
   
-
-
-  int16_t DetermineDisplaySelection();
+  
+  bool ShouldHandleSelectionMovementEvents();
 
  public:
   virtual nsIContent* GetContentForEvent(const mozilla::WidgetEvent*) const;
