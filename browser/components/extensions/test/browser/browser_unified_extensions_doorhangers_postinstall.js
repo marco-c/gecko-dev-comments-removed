@@ -51,6 +51,7 @@ async function testAddonPostInstall({
       win
     );
     const postInstallPanelPromise = promisePostInstallNotificationShown(win);
+    const readyPromise = AddonTestUtils.promiseWebExtensionStartup(addonId);
     win.gURLBar.value = xpi.path;
     win.gURLBar.focus();
     EventUtils.synthesizeKey("KEY_Enter", {}, win);
@@ -71,6 +72,16 @@ async function testAddonPostInstall({
       "#addon-pin-toolbarbutton-checkbox"
     );
     ok(checkbox, "Found 'Pin extension to toolbar' checkbox");
+
+    
+    
+    
+    
+    
+    
+    
+    
+    await readyPromise;
     await verifyPostInstallCheckbox(checkbox);
 
     info(`Dismissing postinstall notification`);
