@@ -34,13 +34,14 @@ class TestUsageReporting(FOGTestCase):
 
     def test_deletion_request(self):
         """
-        Test the "usage-reporting" ping behaviour and usage-id cycling when disabling telemetry in general.
+        Test that the "usage-reporting" ping behaviour is independent from general telemetry.
 
         We do not expect a "usage-deletion-request" ping.  The "deletion-request" ping should not include the usage-id.
+        The `usage.profile_id` stays the same across telemetry toggling.
         """
 
         ping1 = self.wait_for_ping(
-            self.restart_browser,
+            lambda: self.marionette.restart(in_app=True),
             FOG_USAGE_REPORTING,
             ping_server=self.fog_ping_server,
         )
@@ -72,7 +73,7 @@ class TestUsageReporting(FOGTestCase):
 
         self.enable_telemetry()
         ping3 = self.wait_for_ping(
-            self.restart_browser,
+            lambda: self.marionette.restart(in_app=True),
             FOG_USAGE_REPORTING,
             ping_server=self.fog_ping_server,
         )
@@ -81,7 +82,7 @@ class TestUsageReporting(FOGTestCase):
         usage_id2 = ping3["payload"]["metrics"]["uuid"]["usage.profile_id"]
         self.assertIsValidUUID(usage_id2)
 
-        self.assertNotEqual(usage_id1, usage_id2)
+        self.assertEqual(usage_id1, usage_id2)
         self.assertNotEqual(CANARY_USAGE_PROFILE_ID, usage_id2)
 
         self.assertIn("usage.profile_group_id", ping3["payload"]["metrics"]["uuid"])
@@ -99,7 +100,7 @@ class TestUsageReporting(FOGTestCase):
         """
 
         ping1 = self.wait_for_ping(
-            self.restart_browser,
+            lambda: self.marionette.restart(in_app=True),
             FOG_USAGE_REPORTING,
             ping_server=self.fog_ping_server,
         )
@@ -142,7 +143,7 @@ class TestUsageReporting(FOGTestCase):
 
         self.enable_usage_reporting()
         ping3 = self.wait_for_ping(
-            self.restart_browser,
+            lambda: self.marionette.restart(in_app=True),
             FOG_USAGE_REPORTING,
             ping_server=self.fog_ping_server,
         )
@@ -172,7 +173,7 @@ class TestUsageReporting(FOGTestCase):
 
         
         ping1 = self.wait_for_ping(
-            self.restart_browser,
+            lambda: self.marionette.restart(in_app=True),
             FOG_USAGE_REPORTING,
             ping_server=self.fog_ping_server,
         )
@@ -190,7 +191,7 @@ class TestUsageReporting(FOGTestCase):
 
         
         ping2 = self.wait_for_ping(
-            self.restart_browser,
+            lambda: self.marionette.restart(in_app=True),
             FOG_USAGE_REPORTING,
             ping_server=self.fog_ping_server,
         )
@@ -236,7 +237,7 @@ class TestUsageReporting(FOGTestCase):
         
         
         _ping2 = self.wait_for_ping(
-            self.restart_browser,
+            lambda: self.marionette.restart(in_app=True),
             BASELINE,
             ping_server=self.fog_ping_server,
         )
