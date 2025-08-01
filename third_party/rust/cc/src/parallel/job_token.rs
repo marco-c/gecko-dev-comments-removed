@@ -164,7 +164,7 @@ mod inherited_jobserver {
         helper_thread: Option<HelperThread>,
     }
 
-    impl<'a> ActiveJobServer<'a> {
+    impl ActiveJobServer<'_> {
         pub(super) async fn acquire(&mut self) -> Result<JobToken, Error> {
             let mut has_requested_token = false;
 
@@ -235,17 +235,12 @@ mod inprocess_jobserver {
             
             
             
-            
-            
-            
-            let mut parallelism = 4;
-            
-            
-            if let Ok(amt) = var("NUM_JOBS") {
-                if let Ok(amt) = amt.parse() {
-                    parallelism = amt;
-                }
-            }
+
+            let parallelism = var("NUM_JOBS")
+                .ok()
+                .and_then(|j| j.parse::<u32>().ok())
+                .or_else(|| Some(std::thread::available_parallelism().ok()?.get() as u32))
+                .unwrap_or(4);
 
             Self(AtomicU32::new(parallelism))
         }
