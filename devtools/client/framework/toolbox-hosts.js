@@ -410,7 +410,11 @@ PageHost.prototype = {
   },
 
   
-  raise() {},
+  raise() {
+    
+    
+    focusTab(this.frame.ownerGlobal.gBrowser.getTabForBrowser(this.frame));
+  },
 
   
   setTitle() {},
