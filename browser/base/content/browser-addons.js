@@ -2000,8 +2000,7 @@ var gUnifiedExtensions = {
     this._buttonAttrObs = new MutationObserver(() => this.onButtonOpenChange());
     this._buttonAttrObs.observe(this._button, { attributeFilter: ["open"] });
     this._button.addEventListener("PopupNotificationsBeforeAnchor", this);
-    this._navbar.addEventListener("mouseenter", this);
-    this._navbar.addEventListener("mouseleave", this);
+    this._updateButtonBarListeners();
 
     gBrowser.addTabsProgressListener(this);
     window.addEventListener("TabSelect", () => this.updateAttention());
@@ -2040,6 +2039,28 @@ var gUnifiedExtensions = {
     gNavToolbox.removeEventListener("aftercustomization", this);
     CustomizableUI.removeListener(this);
     AddonManager.removeManagerListener(this);
+  },
+
+  _updateButtonBarListeners() {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    this._buttonBarHasMouse = false;
+    
+    
+    if (this.buttonAlwaysVisible) {
+      this._navbar.removeEventListener("mouseover", this);
+      this._navbar.removeEventListener("mouseout", this);
+    } else {
+      this._navbar.addEventListener("mouseover", this);
+      this._navbar.addEventListener("mouseout", this);
+    }
   },
 
   onBlocklistAttentionUpdated() {
@@ -2275,13 +2296,18 @@ var gUnifiedExtensions = {
         }
         break;
 
-      case "mouseenter":
+      case "mouseover":
         this._buttonBarHasMouse = true;
         break;
 
-      case "mouseleave":
-        this._buttonBarHasMouse = false;
-        this.updateButtonVisibility();
+      case "mouseout":
+        if (
+          this._buttonBarHasMouse &&
+          !this._navbar.contains(event.relatedTarget)
+        ) {
+          this._buttonBarHasMouse = false;
+          this.updateButtonVisibility();
+        }
         break;
 
       case "customizationstarting":
@@ -3086,6 +3112,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
   true,
   (prefName, oldValue, newValue) => {
     if (gUnifiedExtensions._initialized) {
+      gUnifiedExtensions._updateButtonBarListeners();
       gUnifiedExtensions.updateButtonVisibility();
       Glean.extensionsButton.prefersHiddenButton.set(!newValue);
     }
