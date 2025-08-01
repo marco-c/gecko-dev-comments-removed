@@ -310,6 +310,7 @@ for (const type of [
   "WIDGETS_TIMER_RESET",
   "WIDGETS_TIMER_SET",
   "WIDGETS_TIMER_SET_DURATION",
+  "WIDGETS_TIMER_SET_TYPE",
 ]) {
   actionTypes[type] = type;
 }
@@ -7851,13 +7852,24 @@ const INITIAL_STATE = {
   },
   TimerWidget: {
     
-    duration: 0,
     
-    initialDuration: 0,
-    
-    startTime: null,
-    
-    isRunning: false,
+    timerType: "focus",
+    focus: {
+      
+      duration: 0,
+      
+      initialDuration: 0,
+      
+      startTime: null,
+      
+      isRunning: false,
+    },
+    break: {
+      duration: 0,
+      initialDuration: 0,
+      startTime: null,
+      isRunning: false,
+    },
   },
 };
 
@@ -8755,51 +8767,74 @@ function TrendingSearch(prevState = INITIAL_STATE.TrendingSearch, action) {
 }
 
 function TimerWidget(prevState = INITIAL_STATE.TimerWidget, action) {
+  
+  const timerType = action.data?.timerType || prevState.timerType;
   switch (action.type) {
     case actionTypes.WIDGETS_TIMER_SET:
       return {
         ...prevState,
         ...action.data,
       };
+    case actionTypes.WIDGETS_TIMER_SET_TYPE:
+      return {
+        ...prevState,
+        timerType: action.data.timerType,
+      };
     case actionTypes.WIDGETS_TIMER_SET_DURATION:
       return {
-        duration: action.data,
-        initialDuration: action.data,
-        startTime: null,
-        isRunning: false,
+        ...prevState,
+        [timerType]: {
+          
+          duration: action.data.duration,
+          initialDuration: action.data.duration,
+          startTime: null,
+          isRunning: false,
+        },
       };
     case actionTypes.WIDGETS_TIMER_PLAY:
       return {
         ...prevState,
-        startTime: Math.floor(Date.now() / 1000), 
-        isRunning: true,
+        [timerType]: {
+          ...prevState[timerType],
+          startTime: Math.floor(Date.now() / 1000), 
+          isRunning: true,
+        },
       };
     case actionTypes.WIDGETS_TIMER_PAUSE:
-      if (prevState.isRunning) {
+      if (prevState[timerType]?.isRunning) {
         return {
           ...prevState,
-          duration: action.data.duration,
-          
-          
-          startTime: null,
-          isRunning: false,
+          [timerType]: {
+            ...prevState[timerType],
+            duration: action.data.duration,
+            
+            
+            startTime: null,
+            isRunning: false,
+          },
         };
       }
-      break;
+      return prevState;
     case actionTypes.WIDGETS_TIMER_RESET:
       return {
-        duration: 0,
-        initialDuration: 0,
-        startTime: null,
-        isRunning: false,
+        ...prevState,
+        [timerType]: {
+          duration: 0,
+          initialDuration: 0,
+          startTime: null,
+          isRunning: false,
+        },
       };
     case actionTypes.WIDGETS_TIMER_END:
       return {
         ...prevState,
-        duration: 0,
-        initialDuration: 0,
-        startTime: null,
-        isRunning: false,
+        [timerType]: {
+          ...prevState[timerType],
+          duration: 0,
+          initialDuration: 0,
+          startTime: null,
+          isRunning: false,
+        },
       };
     default:
       return prevState;
@@ -12478,6 +12513,10 @@ const getClipPath = progress => {
 function FocusTimer({
   dispatch
 }) {
+  const [timeLeft, setTimeLeft] = (0,external_React_namespaceObject.useState)(0);
+  
+  const [progress, setProgress] = (0,external_React_namespaceObject.useState)(0);
+  const timerType = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.TimerWidget.timerType);
   const inputRef = (0,external_React_namespaceObject.useRef)(null);
   const arcRef = (0,external_React_namespaceObject.useRef)(null);
   const timerData = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.TimerWidget);
@@ -12486,10 +12525,7 @@ function FocusTimer({
     initialDuration,
     startTime,
     isRunning
-  } = timerData;
-  const [timeLeft, setTimeLeft] = (0,external_React_namespaceObject.useState)(0);
-  
-  const [progress, setProgress] = (0,external_React_namespaceObject.useState)(0);
+  } = timerData[timerType];
   const resetProgressCircle = (0,external_React_namespaceObject.useCallback)(() => {
     if (arcRef?.current) {
       arcRef.current.style.clipPath = "polygon(50% 50%)";
@@ -12513,7 +12549,10 @@ function FocusTimer({
             resetProgressCircle();
           }, 1500);
           dispatch(actionCreators.AlsoToMain({
-            type: actionTypes.WIDGETS_TIMER_END
+            type: actionTypes.WIDGETS_TIMER_END,
+            data: {
+              timerType
+            }
           }));
         }
 
@@ -12527,7 +12566,7 @@ function FocusTimer({
     const newTime = isRunning ? calculateTimeRemaining(duration, startTime) : duration;
     setTimeLeft(newTime);
     return () => clearInterval(interval);
-  }, [isRunning, startTime, duration, initialDuration, dispatch, timeLeft, resetProgressCircle]);
+  }, [isRunning, startTime, duration, initialDuration, dispatch, resetProgressCircle, timerType]);
 
   
   (0,external_React_namespaceObject.useEffect)(() => {
@@ -12544,7 +12583,10 @@ function FocusTimer({
     if (minutes > 0) {
       dispatch(actionCreators.AlsoToMain({
         type: actionTypes.WIDGETS_TIMER_SET_DURATION,
-        data: seconds
+        data: {
+          timerType,
+          duration: seconds
+        }
       }));
     }
   };
@@ -12553,7 +12595,10 @@ function FocusTimer({
   const toggleTimer = () => {
     if (!isRunning && duration > 0) {
       dispatch(actionCreators.AlsoToMain({
-        type: actionTypes.WIDGETS_TIMER_PLAY
+        type: actionTypes.WIDGETS_TIMER_PLAY,
+        data: {
+          timerType
+        }
       }));
     } else if (isRunning) {
       
@@ -12561,6 +12606,7 @@ function FocusTimer({
       dispatch(actionCreators.AlsoToMain({
         type: actionTypes.WIDGETS_TIMER_PAUSE,
         data: {
+          timerType,
           duration: remaining
         }
       }));
@@ -12570,15 +12616,49 @@ function FocusTimer({
   
   const resetTimer = () => {
     dispatch(actionCreators.AlsoToMain({
-      type: actionTypes.WIDGETS_TIMER_RESET
+      type: actionTypes.WIDGETS_TIMER_RESET,
+      data: {
+        timerType
+      }
     }));
 
     
     resetProgressCircle();
   };
+
+  
+  const toggleType = type => {
+    const oldTypeRemaining = calculateTimeRemaining(duration, startTime);
+    (0,external_ReactRedux_namespaceObject.batch)(() => {
+      
+      dispatch(actionCreators.AlsoToMain({
+        type: actionTypes.WIDGETS_TIMER_PAUSE,
+        data: {
+          timerType,
+          duration: oldTypeRemaining
+        }
+      }));
+
+      
+      dispatch(actionCreators.AlsoToMain({
+        type: actionTypes.WIDGETS_TIMER_SET_TYPE,
+        data: {
+          timerType: type
+        }
+      }));
+    });
+  };
   return timerData ? external_React_default().createElement("article", {
     className: "focus-timer-wrapper"
-  }, external_React_default().createElement("p", null, "Focus timer widget"), external_React_default().createElement("form", {
+  }, external_React_default().createElement("p", null, "Focus timer widget"), external_React_default().createElement("div", {
+    className: "focus-timer-types-wrapper"
+  }, external_React_default().createElement("button", {
+    className: `timer-type-focus ${timerType === "focus" ? "active" : " "}`,
+    onClick: () => toggleType("focus")
+  }, "Focus"), external_React_default().createElement("button", {
+    className: `timer-type-break ${timerType === "break" ? "active" : " "}`,
+    onClick: () => toggleType("break")
+  }, "Break")), external_React_default().createElement("form", {
     onSubmit: setTimerMinutes
   }, external_React_default().createElement("label", {
     htmlFor: "countdown"
@@ -12600,8 +12680,11 @@ function FocusTimer({
   }, external_React_default().createElement("div", {
     className: "progress-circle-background"
   }), external_React_default().createElement("div", {
-    className: "progress-circle",
-    ref: arcRef
+    className: `progress-circle ${timerType === "focus" ? "focus-visible" : "focus-hidden"}`,
+    ref: timerType === "focus" ? arcRef : null
+  }), external_React_default().createElement("div", {
+    className: `progress-circle ${timerType === "break" ? "progress-circle-break break-visible" : "break-hidden"}`,
+    ref: timerType === "break" ? arcRef : null
   }), external_React_default().createElement("div", {
     className: `progress-circle-complete ${progress === 1 ? "visible" : ""}`
   }), external_React_default().createElement("div", {
