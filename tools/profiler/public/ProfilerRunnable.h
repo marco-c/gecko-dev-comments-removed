@@ -89,11 +89,6 @@ class MOZ_RAII AutoProfileRunnable {
       mName = "Unnamed runnable";
     }
   }
-  
-  explicit AutoProfileRunnable(nsACString& aName)
-      : mStartTime(TimeStamp::Now()),
-        mName(aName),
-        mRunnable(Flow::FromPointer(&aName)) {}
 
   ~AutoProfileRunnable() {
     if (mName.IsEmpty()) {
