@@ -87,7 +87,7 @@ const perfMetadata = {
   },
 };
 
-requestLongerTimeout(120);
+requestLongerTimeout(45);
 
 
 

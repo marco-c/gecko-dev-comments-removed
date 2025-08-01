@@ -29,7 +29,7 @@ const perfMetadata = {
   },
 };
 
-requestLongerTimeout(250);
+requestLongerTimeout(10);
 
 
 add_task(async function test_ml_tts() {
