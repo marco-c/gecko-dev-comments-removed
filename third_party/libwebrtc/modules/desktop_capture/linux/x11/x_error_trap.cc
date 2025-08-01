@@ -4,6 +4,10 @@
 
 
 
+
+
+
+
 #include "modules/desktop_capture/linux/x11/x_error_trap.h"
 
 #include <stddef.h>
@@ -11,6 +15,7 @@
 #include <limits>
 
 #include "rtc_base/checks.h"
+
 
 namespace webrtc {
 
@@ -22,14 +27,16 @@ Bool XErrorTrap::XServerErrorHandler(Display* display, xReply* rep,
       
       
       self->last_ignored_request_ - display->last_request_read <
-          std::numeric_limits<unsigned long>::max() >> 1)
+      std::numeric_limits<unsigned long>::max() >> 1)
     return False;
   self->last_xserver_error_code_ = rep->error.errorCode;
   return True;
 }
 
 XErrorTrap::XErrorTrap(Display* display)
-    : display_(display), last_xserver_error_code_(0), enabled_(true) {
+    : display_(display),
+      last_xserver_error_code_(0),
+      enabled_(true) {
   
   
   
@@ -56,7 +63,8 @@ int XErrorTrap::GetLastErrorAndDisable() {
 }
 
 XErrorTrap::~XErrorTrap() {
-  if (enabled_) GetLastErrorAndDisable();
+  if (enabled_)
+    GetLastErrorAndDisable();
 }
 
 }  

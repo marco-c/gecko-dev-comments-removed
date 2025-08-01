@@ -1,9 +1,3 @@
 
 
-
-
-
-
-
-
 #include "GeckoTraceEvent.h"

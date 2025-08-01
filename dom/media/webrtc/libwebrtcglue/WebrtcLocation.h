@@ -4,8 +4,8 @@
 
 
 
-#ifndef DOM_MEDIA_WEBRTC_LIBWEBRTCOVERRIDES_API_WEBRTCLOCATION_H_
-#define DOM_MEDIA_WEBRTC_LIBWEBRTCOVERRIDES_API_WEBRTCLOCATION_H_
+#ifndef DOM_MEDIA_WEBRTC_LIBWEBRTCGLUE_WEBRTCLOCATION_H_
+#define DOM_MEDIA_WEBRTC_LIBWEBRTCGLUE_WEBRTCLOCATION_H_
 
 
 
@@ -55,13 +55,9 @@ class WebrtcLocation {
 
 }  
 
-namespace webrtc {
-using Location = mozilla::WebrtcLocation;
-}  
-
 #undef MOZ_BUILTIN_FUNCTION
 #undef MOZ_BUILTIN_FILE
 #undef MOZ_BUILTIN_LINE
 #undef MOZ_HAS_BUILTIN
 
-#endif  
+#endif
