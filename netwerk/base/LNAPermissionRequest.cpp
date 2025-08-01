@@ -36,6 +36,11 @@ LNAPermissionRequest::LNAPermissionRequest(PermissionPromptCallback&& aCallback,
 
   aLoadInfo->GetTriggeringPrincipal(getter_AddRefs(mPrincipal));
   mTopLevelPrincipal = aLoadInfo->GetTopLevelPrincipal();
+  if (!mTopLevelPrincipal) {
+    
+    
+    mTopLevelPrincipal = mPrincipal;
+  }
 
   mLoadInfo = aLoadInfo;
 
