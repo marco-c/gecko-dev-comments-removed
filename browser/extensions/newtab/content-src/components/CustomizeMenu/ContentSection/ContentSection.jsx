@@ -92,10 +92,15 @@ export class ContentSection extends React.PureComponent {
   render() {
     const {
       enabledSections,
+      enabledWidgets,
       pocketRegion,
       mayHaveInferredPersonalization,
       mayHaveRecentSaves,
       mayHaveWeather,
+      mayHaveTrendingSearch,
+      mayHaveWidgets,
+      mayHaveTimerWidget,
+      mayHaveListsWidget,
       openPreferences,
       wallpapersEnabled,
       activeWallpaper,
@@ -107,10 +112,12 @@ export class ContentSection extends React.PureComponent {
       topSitesEnabled,
       pocketEnabled,
       weatherEnabled,
+      trendingSearchEnabled,
       showInferredPersonalizationEnabled,
       showRecentSavesEnabled,
       topSitesRowsCount,
     } = enabledSections;
+    const { timerEnabled, listsEnabled } = enabledWidgets;
 
     return (
       <div className="home-section">
@@ -123,11 +130,80 @@ export class ContentSection extends React.PureComponent {
                 exitEventFired={exitEventFired}
               />
             </div>
-            <span className="divider" role="separator"></span>
+            {/* If widgets section is visible, hide this divider */}
+            {!mayHaveWidgets && (
+              <span className="divider" role="separator"></span>
+            )}
           </>
         )}
+        {mayHaveWidgets && (
+          <div className="widgets-section">
+            <div className="category-header">
+              <h2>Widgets</h2>
+            </div>
+            <div className="settings-widgets">
+              {/* Weather */}
+              {mayHaveWeather && (
+                <div id="weather-section" className="section">
+                  <moz-toggle
+                    id="weather-toggle"
+                    pressed={weatherEnabled || null}
+                    onToggle={this.onPreferenceSelect}
+                    data-preference="showWeather"
+                    data-eventSource="WEATHER"
+                    label="Weather"
+                  />
+                </div>
+              )}
+
+              {/* Lists */}
+              {mayHaveListsWidget && (
+                <div id="lists-widget-section" className="section">
+                  <moz-toggle
+                    id="lists-toggle"
+                    pressed={listsEnabled || null}
+                    onToggle={this.onPreferenceSelect}
+                    data-preference="widgets.lists.enabled"
+                    data-eventSource="WIDGET_LISTS"
+                    label="Lists"
+                  />
+                </div>
+              )}
+
+              {/* Timer */}
+              {mayHaveTimerWidget && (
+                <div id="timer-widget-section" className="section">
+                  <moz-toggle
+                    id="timer-toggle"
+                    pressed={timerEnabled || null}
+                    onToggle={this.onPreferenceSelect}
+                    data-preference="widgets.focusTimer.enabled"
+                    data-eventSource="WIDGET_TIMER"
+                    label="Timer"
+                  />
+                </div>
+              )}
+
+              {/* Trending Search */}
+              {mayHaveTrendingSearch && (
+                <div id="trending-search-section" className="section">
+                  <moz-toggle
+                    id="trending-search-toggle"
+                    pressed={trendingSearchEnabled || null}
+                    onToggle={this.onPreferenceSelect}
+                    data-preference="trendingSearch.enabled"
+                    data-eventSource="TRENDING_SEARCH"
+                    label="Trending Searches"
+                  />
+                </div>
+              )}
+              <span className="divider" role="separator"></span>
+            </div>
+          </div>
+        )}
         <div className="settings-toggles">
-          {mayHaveWeather && (
+          {/* Note: If widgets are enabled, the weather toggle will be moved under Widgets subsection */}
+          {!mayHaveWidgets && mayHaveWeather && (
             <div id="weather-section" className="section">
               <moz-toggle
                 id="weather-toggle"
@@ -136,6 +212,20 @@ export class ContentSection extends React.PureComponent {
                 data-preference="showWeather"
                 data-eventSource="WEATHER"
                 data-l10n-id="newtab-custom-weather-toggle"
+              />
+            </div>
+          )}
+
+          {/* Note: If widgets are enabled, the trending search toggle will be moved under Widgets subsection */}
+          {!mayHaveWidgets && mayHaveTrendingSearch && (
+            <div id="trending-search-section" className="section">
+              <moz-toggle
+                id="trending-search-toggle"
+                pressed={trendingSearchEnabled || null}
+                onToggle={this.onPreferenceSelect}
+                data-preference="trendingSearch.enabled"
+                data-eventSource="TRENDING_SEARCH"
+                data-l10n-id="newtab-custom-trending-search-toggle"
               />
             </div>
           )}
