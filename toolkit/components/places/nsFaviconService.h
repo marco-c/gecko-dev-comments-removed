@@ -75,6 +75,16 @@ class nsFaviconService final : public nsIFaviconService {
 
 
 
+  nsresult GetFaviconDataAsync(const nsCString& aFaviconSpec,
+                               mozIStorageStatementCallback* aCallback);
+
+  
+
+
+
+
+
+
 
 
 
@@ -82,8 +92,7 @@ class nsFaviconService final : public nsIFaviconService {
 
 
   RefPtr<mozilla::places::FaviconPromise> AsyncGetFaviconForPage(
-      nsIURI* aPageURI, uint16_t aPreferredWidth = 0,
-      bool aOnConcurrentConn = false);
+      nsIURI* aPageURI, uint16_t aPreferredWidth = 0);
 
   
 
