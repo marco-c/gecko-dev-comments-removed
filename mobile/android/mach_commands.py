@@ -8,8 +8,8 @@ import os
 import platform
 import shutil
 import sys
-import tarfile
 import time
+import zipfile
 
 import mozpack.path as mozpath
 from mach.decorators import Command, CommandArgument, SubCommand
@@ -163,11 +163,11 @@ def create_maven_archive(topobjdir):
     
     
     
-    
-    
-    with tarfile.open(os.path.join(gradle_folder, "target.maven.tar.xz"), "w") as tar:
+    with zipfile.ZipFile(
+        os.path.join(gradle_folder, "target.maven.zip"), "w"
+    ) as target_zip:
         for abs_path in get_maven_archive_paths(maven_folder):
-            tar.add(
+            target_zip.write(
                 abs_path,
                 arcname=os.path.join(
                     "geckoview", os.path.relpath(abs_path, maven_folder)
