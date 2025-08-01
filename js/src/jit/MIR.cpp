@@ -1553,12 +1553,11 @@ MDefinition* MSign::foldsTo(TempAllocator& alloc) {
   if (type() == MIRType::Int32) {
     
     
-    Value outValue = NumberValue(out);
-    if (!outValue.isInt32()) {
+    int32_t i;
+    if (!mozilla::NumberIsInt32(out, &i)) {
       return this;
     }
-
-    return MConstant::New(alloc, outValue);
+    return MConstant::NewInt32(alloc, i);
   }
 
   return MConstant::NewDouble(alloc, out);
