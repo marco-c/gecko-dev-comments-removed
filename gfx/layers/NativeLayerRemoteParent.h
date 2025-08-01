@@ -1,0 +1,22 @@
+
+
+
+
+#ifndef mozilla_layers_NativeLayerRemoteParent_h
+#define mozilla_layers_NativeLayerRemoteParent_h
+
+#include "mozilla/layers/PNativeLayerRemoteParent.h"
+
+namespace mozilla {
+namespace layers {
+
+class NativeLayerRemoteParent : public PNativeLayerRemoteParent {
+ public:
+  virtual mozilla::ipc::IPCResult RecvCommitNativeLayerCommands(
+      nsTArray<mozilla::layers::NativeLayerCommand>&& aCommands) = 0;
+};
+
+}  
+}  
+
+#endif  
