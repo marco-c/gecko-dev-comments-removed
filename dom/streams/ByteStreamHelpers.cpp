@@ -16,22 +16,34 @@ namespace mozilla::dom {
 
 
 
+
+
+
 JSObject* TransferArrayBuffer(JSContext* aCx, JS::Handle<JSObject*> aObject) {
-  MOZ_ASSERT(JS::IsArrayBufferObject(aObject));
-
-  
-  MOZ_ASSERT(!JS::IsDetachedArrayBufferObject(aObject));
-
-  
-  size_t bufferLength = JS::GetArrayBufferByteLength(aObject);
-
-  
-  UniquePtr<void, JS::FreePolicy> bufferData{
-      JS::StealArrayBufferContents(aCx, aObject)};
-
-  
-  if (!JS::DetachArrayBuffer(aCx, aObject)) {
+  JS::Rooted<JSObject*> unwrappedObj(aCx, JS::UnwrapArrayBuffer(aObject));
+  if (!unwrappedObj) {
+    js::ReportAccessDenied(aCx);
     return nullptr;
+  }
+
+  size_t bufferLength = 0;
+  UniquePtr<void, JS::FreePolicy> bufferData;
+  {
+    JSAutoRealm ar(aCx, unwrappedObj);
+
+    
+    MOZ_ASSERT(!JS::IsDetachedArrayBufferObject(unwrappedObj));
+
+    
+    bufferLength = JS::GetArrayBufferByteLength(unwrappedObj);
+
+    
+    bufferData.reset(JS::StealArrayBufferContents(aCx, unwrappedObj));
+
+    
+    if (!JS::DetachArrayBuffer(aCx, unwrappedObj)) {
+      return nullptr;
+    }
   }
 
   
