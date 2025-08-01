@@ -214,7 +214,10 @@ var Harness = {
     is(this.runningInstalls.length, 0, "Should be no running installs left");
     this.runningInstalls.forEach(function (aInstall) {
       info(
-        "Install for " + aInstall.sourceURI + " is in state " + aInstall.state
+        "Install for " +
+          aInstall.sourceURI?.spec +
+          " is in state " +
+          aInstall.state
       );
     });
 
@@ -471,6 +474,22 @@ var Harness = {
   },
 
   onDownloadFailed(install) {
+    if (install.installTelemetryInfo?.method === "amWebAPI") {
+      
+      
+      
+      
+      
+      
+      
+      isnot(
+        this.runningInstalls.indexOf(install),
+        -1,
+        "Should only see download failures for started installs"
+      );
+      this.runningInstalls.splice(this.runningInstalls.indexOf(install), 1);
+    }
+
     if (this.downloadFailedCallback) {
       this.downloadFailedCallback(install);
     }
