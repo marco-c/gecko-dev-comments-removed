@@ -96,11 +96,18 @@ add_setup(async function () {
   registerCleanupFunction(() => BrowserTestUtils.removeTab(tab));
 });
 
-add_task(async function test() {
+add_task(async function nonPrivateWindow() {
   Services.fog.testResetFOG();
   TelemetryTestUtils.getAndClearKeyedHistogram("SEARCH_COUNTS");
 
   await openMenuAndClickItem();
+
+  
+  Assert.equal(
+    Glean.sapImpressionCounts.contextmenuVisual[ENGINE_ID].testGetValue(),
+    1,
+    "contextmenuVisual should be recorded once for metric impressionCounts"
+  );
 
   
   await SearchUITestUtils.assertSAPTelemetry({
@@ -123,6 +130,72 @@ add_task(async function test() {
     "contextmenuVisual should be recorded once for metric browserEngagementNavigation"
   );
 });
+
+add_task(async function privateWindow_countsEnabled() {
+  await doPrivateWindowTest(true);
+});
+
+add_task(async function privateWindow_countsDisabled() {
+  await doPrivateWindowTest(false);
+});
+
+async function doPrivateWindowTest(shouldRecordCounts) {
+  Services.fog.testResetFOG();
+  TelemetryTestUtils.getAndClearKeyedHistogram("SEARCH_COUNTS");
+
+  await SpecialPowers.pushPrefEnv({
+    
+    set: [["browser.engagement.search_counts.pbm", !shouldRecordCounts]],
+  });
+
+  let win = await BrowserTestUtils.openNewBrowserWindow({
+    private: true,
+  });
+  await BrowserTestUtils.openNewForegroundTab(win.gBrowser, TEST_PAGE_URL);
+
+  await openMenuAndClickItem({ win });
+
+  let expectedCount = shouldRecordCounts ? 1 : null;
+
+  
+  Assert.equal(
+    Glean.sapImpressionCounts.contextmenuVisual[ENGINE_ID].testGetValue(),
+    expectedCount,
+    "contextmenuVisual should be recorded as expected for metric impressionCounts"
+  );
+
+  
+  if (expectedCount) {
+    await SearchUITestUtils.assertSAPTelemetry({
+      
+      partnerCode: null,
+      
+      expectLegacyTelemetry: false,
+      engineId: ENGINE_ID,
+      engineName: ENGINE_NAME,
+      source: EXPECTED_TELEMETRY_SOURCE,
+      count: expectedCount,
+    });
+  } else {
+    Assert.equal(
+      Glean.sap.counts.testGetValue(),
+      null,
+      "No sap.counts events should be recorded"
+    );
+  }
+
+  
+  Assert.equal(
+    Glean.browserEngagementNavigation.contextmenuVisual[
+      EXPECTED_TELEMETRY_ACTION
+    ].testGetValue(),
+    expectedCount,
+    "contextmenuVisual should be recorded as expected for metric browserEngagementNavigation"
+  );
+
+  await BrowserTestUtils.closeWindow(win);
+  await SpecialPowers.popPrefEnv();
+}
 
 async function openMenuAndClickItem({
   expectedEngineNameInLabel = ENGINE_NAME,
