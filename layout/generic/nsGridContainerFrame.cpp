@@ -6651,7 +6651,11 @@ void nsGridContainerFrame::Tracks::InitializeItemBaselines(
               
               
               
-              baseline.emplace(frameSize / 2);
+              const bool isFirstBaselineSharingGroup =
+                  baselineSharingGroup == BaselineSharingGroup::First;
+              baseline.emplace(frameSize / 2 + (isFirstBaselineSharingGroup
+                                                    ? 0
+                                                    : frameSize % 2));
             } else {
               
               
