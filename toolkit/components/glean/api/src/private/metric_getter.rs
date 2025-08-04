@@ -180,7 +180,6 @@ pub trait MetricNamer {
 
 
 
-#[macro_export]
 macro_rules! define_metric_namer {
     
     
@@ -312,7 +311,6 @@ pub trait BaseMetric {
 
 
 
-#[macro_export]
 macro_rules! metadata_from_static_map {
     ($metric_type:ident, $metric_map:ident, $metric_id:ident) => {{
         let static_map =
@@ -330,7 +328,6 @@ macro_rules! metadata_from_static_map {
 
 
 
-#[macro_export]
 macro_rules! metadata_from_dynamic_map {
     ($metric_map:ident, $metric_id:ident) => {{
         // Find the dynamic map (given as part of the macro), and try to read
@@ -369,7 +366,6 @@ macro_rules! metadata_from_dynamic_map {
 
 
 
-#[macro_export]
 macro_rules! define_metric_metadata_getter {
     
     ($metric_type:ident, $metric_map:ident) => {
@@ -380,9 +376,9 @@ macro_rules! define_metric_metadata_getter {
             {
                 use crate::private::metric_getter::MetricNamer;
                 if id.is_dynamic() {
-                    crate::metadata_from_dynamic_map!($metric_map, id)
+                    metadata_from_dynamic_map!($metric_map, id)
                 } else {
-                    crate::metadata_from_static_map!($metric_type, $metric_map, id)
+                    metadata_from_static_map!($metric_type, $metric_map, id)
                 }
             }
 
@@ -406,9 +402,9 @@ macro_rules! define_metric_metadata_getter {
             {
                 use crate::private::metric_getter::MetricNamer;
                 if id.is_dynamic() {
-                    crate::metadata_from_dynamic_map!($metric_map, id)
+                    metadata_from_dynamic_map!($metric_map, id)
                 } else {
-                    crate::metadata_from_static_map!($metric_type, $metric_map, id)
+                    metadata_from_static_map!($metric_type, $metric_map, id)
                 }
             }
 
@@ -454,9 +450,9 @@ macro_rules! define_metric_metadata_getter {
             {
                 use crate::private::metric_getter::MetricNamer;
                 if id.is_dynamic() {
-                    crate::metadata_from_dynamic_map!($metric_map, id)
+                    metadata_from_dynamic_map!($metric_map, id)
                 } else {
-                    crate::metadata_from_static_map!($metric_type, $metric_map, id)
+                    metadata_from_static_map!($metric_type, $metric_map, id)
                 }
             }
 
