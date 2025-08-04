@@ -239,7 +239,7 @@ bool AppleDecoderModule::IsVideoSupported(
 
 bool AppleDecoderModule::CanCreateHWDecoder(const MediaCodec& aCodec) {
   
-  if (!gfx::gfxVars::CanUseHardwareVideoDecoding()) {
+  if (!gfx::gfxVars::CanUseHardwareVideoDecoding() || XRE_IsUtilityProcess()) {
     return false;
   }
 
