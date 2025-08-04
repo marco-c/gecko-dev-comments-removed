@@ -131,6 +131,16 @@ pub struct SearchEngineUrl {
     
     #[uniffi(default = None)]
     pub display_name: Option<String>,
+
+    
+    
+    #[uniffi(default = None)]
+    pub is_new_until: Option<String>,
+
+    
+    
+    #[uniffi(default = false)]
+    pub exclude_partner_code_from_telemetry: bool,
 }
 
 

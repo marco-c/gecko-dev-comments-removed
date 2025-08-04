@@ -60,6 +60,15 @@ pub(crate) struct JSONEngineUrl {
     
     
     pub display_name_map: Option<HashMap<String, String>>,
+
+    
+    
+    pub is_new_until: Option<String>,
+
+    
+    
+    #[serde(default)]
+    pub exclude_partner_code_from_telemetry: bool,
 }
 
 
