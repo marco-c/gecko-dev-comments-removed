@@ -3,15 +3,10 @@
 
 "use strict";
 
-function whenNewWindowLoaded(aOptions, aCallback) {
-  let win = OpenBrowserWindow(aOptions);
-  win.addEventListener(
-    "load",
-    function () {
-      aCallback(win);
-    },
-    { once: true }
-  );
+function whenNewWindowLoaded(aPrivate, aCallback) {
+  BrowserTestUtils.openNewBrowserWindow({
+    private: aPrivate,
+  }).then(aCallback);
 }
 
 
@@ -31,22 +26,22 @@ function test() {
   }
 
   function doTest(aIsPrivateMode, aWindow, aCallback) {
-    BrowserTestUtils.browserLoaded(aWindow.gBrowser.selectedBrowser).then(
-      () => {
-        uri = aWindow.Services.io.newURI("https://localhost/img.png");
-        gSSService.processHeader(
-          uri,
-          "max-age=1000",
-          originAttributes(aIsPrivateMode)
-        );
-        ok(
-          gSSService.isSecureURI(uri, originAttributes(aIsPrivateMode)),
-          "checking sts host"
-        );
+    BrowserTestUtils.browserLoaded(aWindow.gBrowser.selectedBrowser, {
+      wantLoad: testURI,
+    }).then(() => {
+      uri = aWindow.Services.io.newURI("https://localhost/img.png");
+      gSSService.processHeader(
+        uri,
+        "max-age=1000",
+        originAttributes(aIsPrivateMode)
+      );
+      ok(
+        gSSService.isSecureURI(uri, originAttributes(aIsPrivateMode)),
+        "checking sts host"
+      );
 
-        aCallback();
-      }
-    );
+      aCallback();
+    });
 
     BrowserTestUtils.startLoadingURIString(
       aWindow.gBrowser.selectedBrowser,
@@ -54,8 +49,8 @@ function test() {
     );
   }
 
-  function testOnWindow(aOptions, aCallback) {
-    whenNewWindowLoaded(aOptions, function (aWin) {
+  function testOnWindow(aPrivate, aCallback) {
+    whenNewWindowLoaded(aPrivate, function (aWin) {
       windowsToClose.push(aWin);
       
       
@@ -76,13 +71,13 @@ function test() {
   });
 
   
-  testOnWindow({ private: true }, function (aWin) {
+  testOnWindow(true, function (aWin) {
     doTest(true, aWin, function () {
       
-      testOnWindow({}, function (aWin) {
+      testOnWindow(false, function (aWin) {
         doTest(false, aWin, function () {
           
-          testOnWindow({ private: true }, function (aWin) {
+          testOnWindow(true, function (aWin) {
             doTest(true, aWin, function () {
               finish();
             });

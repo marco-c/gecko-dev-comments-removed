@@ -31,13 +31,13 @@ add_task(async function () {
   
   let tab = BrowserTestUtils.addTab(gBrowser, "about:blank");
   let browser = tab.linkedBrowser;
-  await promiseBrowserLoaded(browser);
+  await BrowserTestUtils.browserLoaded(browser, { wantLoad: "about:blank" });
   await promiseTabState(tab, TAB_STATE);
 
   
   let tab2 = BrowserTestUtils.addTab(gBrowser, "about:blank");
   let browser2 = tab2.linkedBrowser;
-  await promiseBrowserLoaded(browser2);
+  await BrowserTestUtils.browserLoaded(browser2, { wantLoad: "about:blank" });
 
   
   Services.prefs.setBoolPref("browser.sessionstore.restore_on_demand", true);
