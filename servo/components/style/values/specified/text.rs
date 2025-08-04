@@ -968,6 +968,11 @@ impl Parse for TextIndent {
             }
 
             
+            if cfg!(feature = "servo") {
+                break;
+            }
+
+            
             try_match_ident_ignore_ascii_case! { input,
                 "hanging" if !hanging => hanging = true,
                 "each-line" if !each_line => each_line = true,
