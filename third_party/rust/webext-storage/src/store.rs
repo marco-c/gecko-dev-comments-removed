@@ -98,6 +98,13 @@ impl WebExtStorageStore {
     }
 
     
+    pub fn get_keys(&self, ext_id: &str) -> Result<JsonValue> {
+        let db = &self.db.lock();
+        let conn = db.get_connection()?;
+        api::get_keys(conn, ext_id)
+    }
+
+    
     
     
     
