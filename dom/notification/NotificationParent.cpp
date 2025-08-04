@@ -37,7 +37,7 @@ class NotificationObserver final : public nsIObserver {
 
   NS_IMETHODIMP Observe(nsISupports* aSubject, const char* aTopic,
                         const char16_t* aData) override {
-    AlertTopic topic = ToAlertTopic(aTopic, aData);
+    AlertTopic topic = ToAlertTopic(aTopic);
 
     
     if (topic == AlertTopic::Disable) {
@@ -78,8 +78,7 @@ class NotificationObserver final : public nsIObserver {
       return NS_OK;
     }
 
-    MOZ_ASSERT(topic == AlertTopic::Click || topic == AlertTopic::Finished ||
-               topic == AlertTopic::Closed);
+    MOZ_ASSERT(topic == AlertTopic::Click || topic == AlertTopic::Finished);
 
     if (topic == AlertTopic::Click) {
       nsCOMPtr<nsIAlertAction> action = do_QueryInterface(aSubject);
@@ -98,7 +97,7 @@ class NotificationObserver final : public nsIObserver {
     nsAutoCString originSuffix;
     MOZ_TRY(mPrincipal->GetOriginSuffix(originSuffix));
 
-    MOZ_ASSERT(topic == AlertTopic::Finished || topic == AlertTopic::Closed);
+    MOZ_ASSERT(topic == AlertTopic::Finished);
     (void)NS_WARN_IF(NS_FAILED(
         AdjustPushQuota(mPrincipal, NotificationStatusChange::Closed)));
     (void)NS_WARN_IF(
@@ -111,7 +110,7 @@ class NotificationObserver final : public nsIObserver {
  private:
   virtual ~NotificationObserver() = default;
 
-  static AlertTopic ToAlertTopic(const char* aTopic, const char16_t* aData) {
+  static AlertTopic ToAlertTopic(const char* aTopic) {
     if (!strcmp("alertdisablecallback", aTopic)) {
       return AlertTopic::Disable;
     }
@@ -125,14 +124,6 @@ class NotificationObserver final : public nsIObserver {
       return AlertTopic::Show;
     }
     if (!strcmp("alertfinished", aTopic)) {
-      if (aData && nsDependentString(aData) == u"close"_ns) {
-        
-        
-        
-        
-        
-        return AlertTopic::Closed;
-      }
       return AlertTopic::Finished;
     }
     MOZ_ASSERT_UNREACHABLE("Unknown alert topic");
@@ -154,17 +145,20 @@ nsresult NotificationParent::HandleAlertTopic(AlertTopic aTopic) {
   }
   if (aTopic == AlertTopic::Show) {
     if (!mResolver) {
+#ifdef ANDROID
+      
+      
+      return NS_OK;
+#else
       MOZ_ASSERT_UNREACHABLE("Are we getting double show events?");
       return NS_ERROR_FAILURE;
+#endif
     }
     mResolver.take().value()(CopyableErrorResult());
     return NS_OK;
   }
-  if (mResolver) {
-    if (aTopic == AlertTopic::Closed) {
-      
-      mResolver.take().value()(CopyableErrorResult());
-    } else if (aTopic == AlertTopic::Finished) {
+  if (aTopic == AlertTopic::Finished) {
+    if (mResolver) {
       
       
       
@@ -177,9 +171,7 @@ nsresult NotificationParent::HandleAlertTopic(AlertTopic aTopic) {
           "not have the corresponding OS-level permission."_ns);
       mResolver.take().value()(rv);
     }
-  }
 
-  if (aTopic == AlertTopic::Finished || aTopic == AlertTopic::Closed) {
     
     mDangling = true;
     Close();
@@ -285,6 +277,14 @@ nsresult NotificationParent::Show() {
   RefPtr<NotificationObserver> observer = new NotificationObserver(
       mArgs.mScope, principal, IPCNotification(mId, options), *this);
   MOZ_TRY(ShowAlertWithCleanup(alert, observer));
+
+#ifdef ANDROID
+  
+  
+  
+  
+  observer->Observe(nullptr, "alertshow", nullptr);
+#endif
 
   return NS_OK;
 }
