@@ -1055,6 +1055,14 @@ const nsTArray<RefPtr<GfxDriverInfo>>& GfxInfo::GetGfxDriverInfo() {
     
     APPEND_TO_DRIVER_BLOCKLIST_EXT(
         OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
+        WindowProtocol::All, DriverVendor::NonMesaAll, DeviceFamily::NvidiaAll,
+        nsIGfxInfo::FEATURE_DMABUF, nsIGfxInfo::FEATURE_BLOCKED_DEVICE,
+        DRIVER_LESS_THAN, V(575, 64, 5, 0), "FEATURE_FAILURE_BUG_1978911", "");
+
+    
+    
+    APPEND_TO_DRIVER_BLOCKLIST_EXT(
+        OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
         WindowProtocol::All, DriverVendor::MesaRadeonsi, DeviceFamily::AtiAll,
         nsIGfxInfo::FEATURE_DMABUF, nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION,
         DRIVER_EQUAL, V(24, 1, 3, 0), "FEATURE_FAILURE_BUG_1913778", "");
