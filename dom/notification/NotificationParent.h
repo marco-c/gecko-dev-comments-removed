@@ -20,7 +20,10 @@ enum class AlertTopic : uint8_t {
   Settings,
   Click,
   Show,
+  
+  
   Finished,
+  Closed,
 };
 
 struct NotificationParentArgs {
