@@ -1236,18 +1236,6 @@ var gKeywordURIFixup = {
   },
 };
 
-
-
-function _createNullPrincipalFromTabUserContextId(tab = gBrowser.selectedTab) {
-  let userContextId;
-  if (tab.hasAttribute("usercontextid")) {
-    userContextId = tab.getAttribute("usercontextid");
-  }
-  return Services.scriptSecurityManager.createNullPrincipal({
-    userContextId,
-  });
-}
-
 function HandleAppCommandEvent(evt) {
   switch (evt.command) {
     case "Back":
@@ -4577,154 +4565,13 @@ function switchToTabHavingURI(
   aOpenParams = {},
   aUserContextId = null
 ) {
-  
-  
-  const kPrivateBrowsingWhitelist = new Set(["about:addons"]);
-
-  let ignoreFragment = aOpenParams.ignoreFragment;
-  let ignoreQueryString = aOpenParams.ignoreQueryString;
-  let replaceQueryString = aOpenParams.replaceQueryString;
-  let adoptIntoActiveWindow = aOpenParams.adoptIntoActiveWindow;
-
-  
-  
-  delete aOpenParams.ignoreFragment;
-  delete aOpenParams.ignoreQueryString;
-  delete aOpenParams.replaceQueryString;
-  delete aOpenParams.adoptIntoActiveWindow;
-
-  let isBrowserWindow = !!window.gBrowser;
-
-  
-  function switchIfURIInWindow(aWindow) {
-    
-    
-    if (
-      !kPrivateBrowsingWhitelist.has(aURI.spec) &&
-      PrivateBrowsingUtils.isWindowPrivate(window) !==
-        PrivateBrowsingUtils.isWindowPrivate(aWindow)
-    ) {
-      return false;
-    }
-
-    
-    function cleanURL(url, removeQuery, removeFragment) {
-      let ret = url;
-      if (removeFragment) {
-        ret = ret.split("#")[0];
-        if (removeQuery) {
-          
-          ret = ret.split("?")[0];
-        }
-      } else if (removeQuery) {
-        
-        let fragment = ret.split("#")[1];
-        ret = ret
-          .split("?")[0]
-          .concat(fragment != undefined ? "#".concat(fragment) : "");
-      }
-      return ret;
-    }
-
-    
-    
-    let ignoreFragmentWhenComparing =
-      typeof ignoreFragment == "string" &&
-      ignoreFragment.startsWith("whenComparing");
-    let requestedCompare = cleanURL(
-      aURI.displaySpec,
-      ignoreQueryString || replaceQueryString,
-      ignoreFragmentWhenComparing
-    );
-    let browsers = aWindow.gBrowser.browsers;
-    for (let i = 0; i < browsers.length; i++) {
-      let browser = browsers[i];
-      let browserCompare = cleanURL(
-        browser.currentURI.displaySpec,
-        ignoreQueryString || replaceQueryString,
-        ignoreFragmentWhenComparing
-      );
-      let browserUserContextId = browser.getAttribute("usercontextid") || "";
-      if (aUserContextId != null && aUserContextId != browserUserContextId) {
-        continue;
-      }
-      if (requestedCompare == browserCompare) {
-        
-        
-        let doAdopt =
-          adoptIntoActiveWindow && isBrowserWindow && aWindow != window;
-
-        if (doAdopt) {
-          const newTab = window.gBrowser.adoptTab(
-            aWindow.gBrowser.getTabForBrowser(browser),
-            {
-              tabIndex: window.gBrowser.tabContainer.selectedIndex + 1,
-              selectTab: true,
-            }
-          );
-          if (!newTab) {
-            doAdopt = false;
-          }
-        }
-        if (!doAdopt) {
-          aWindow.focus();
-        }
-
-        if (ignoreFragment == "whenComparingAndReplace" || replaceQueryString) {
-          browser.loadURI(aURI, {
-            triggeringPrincipal:
-              aOpenParams.triggeringPrincipal ||
-              _createNullPrincipalFromTabUserContextId(),
-          });
-        }
-
-        if (!doAdopt) {
-          aWindow.gBrowser.tabContainer.selectedIndex = i;
-        }
-
-        return true;
-      }
-    }
-    return false;
-  }
-
-  
-  if (!(aURI instanceof Ci.nsIURI)) {
-    aURI = Services.io.newURI(aURI);
-  }
-
-  
-  if (isBrowserWindow && switchIfURIInWindow(window)) {
-    return true;
-  }
-
-  for (let browserWin of browserWindows()) {
-    
-    
-    if (browserWin.closed || browserWin == window) {
-      continue;
-    }
-    if (switchIfURIInWindow(browserWin)) {
-      return true;
-    }
-  }
-
-  
-  if (aOpenNew) {
-    if (
-      UrlbarPrefs.get("switchTabs.searchAllContainers") &&
-      aUserContextId != null
-    ) {
-      aOpenParams.userContextId = aUserContextId;
-    }
-    if (isBrowserWindow && gBrowser.selectedTab.isEmpty) {
-      openTrustedLinkIn(aURI.spec, "current", aOpenParams);
-    } else {
-      openTrustedLinkIn(aURI.spec, "tab", aOpenParams);
-    }
-  }
-
-  return false;
+  return URILoadingHelper.switchToTabHavingURI(
+    window,
+    aURI,
+    aOpenNew,
+    aOpenParams,
+    aUserContextId
+  );
 }
 
 
