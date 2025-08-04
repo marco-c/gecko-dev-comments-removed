@@ -130,19 +130,26 @@ export function fedcm_test(test_func, test_name) {
   promise_test(async t => {
     assert_implements(window.IdentityCredential, "FedCM is not supported");
 
-    try {
-      await navigator.credentials.preventSilentAccess();
-    } catch (ex) {
-      
-      
-    }
-
     
     try {
       await test_driver.set_fedcm_delay_enabled(false);
     } catch (e) {
       
     }
+
+    t.add_cleanup(async () => {
+      try {
+        await IdentityCredential.disconnect(alt_disconnect_options(""));
+      } catch (ex){
+        
+      }
+
+      try {
+        await IdentityCredential.disconnect(disconnect_options(""));
+      } catch (ex){
+        
+      }
+    });
 
     await set_fedcm_cookie();
     await set_alt_fedcm_cookie();
