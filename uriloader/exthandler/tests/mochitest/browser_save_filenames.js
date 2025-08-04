@@ -260,12 +260,6 @@ add_task(async function save_document() {
 
   for (let idx = 0; idx < expectedItems.length; idx++) {
     let filename = expectedItems[idx].filename;
-    if (idx == 66 && AppConstants.platform == "win") {
-      
-      
-      
-      filename = "Untitled_002";
-    }
 
     let file = tmpDir.clone();
     file.append(filename);
