@@ -3047,6 +3047,20 @@ public class WebExtension {
 
 
 
+    @Deprecated
+    @DeprecationSchedule(id = "web-extension-permission-prompt-response", version = 143)
+    public PermissionPromptResponse(
+        final @Nullable Boolean isPermissionsGranted,
+        final @Nullable Boolean isPrivateModeGranted) {
+      this(isPermissionsGranted, isPrivateModeGranted, false);
+    }
+
+    
+
+
+
+
+
 
 
     public PermissionPromptResponse(
