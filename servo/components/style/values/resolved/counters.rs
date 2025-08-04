@@ -5,6 +5,7 @@
 
 
 use super::{Context, ToResolvedValue};
+use selectors::parser::PseudoElement;
 use crate::values::computed;
 
 
