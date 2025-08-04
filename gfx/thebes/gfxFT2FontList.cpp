@@ -414,6 +414,17 @@ nsresult FT2FontEntry::ReadCMAP(FontInfoData* aFontInfoData) {
         charmap->ClearRange(sr->rangeStart, sr->rangeEnd);
       }
     }
+
+    
+    
+    
+    if (FamilyName().EqualsLiteral("Cutive Mono")) {
+      charmap->ClearRange(0x0080, 0x009f);  
+                                            
+      charmap->clear(0x2074);               
+      charmap->clear(0xfb00);               
+      charmap->ClearRange(0xfb03, 0xfb04);  
+    }
   }
 
 #if defined(MOZ_WIDGET_ANDROID) && !defined(NIGHTLY_BUILD)
