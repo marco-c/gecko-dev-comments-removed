@@ -42,7 +42,7 @@ add_task(async function test_nested_about_sessionrestore() {
   
   let tab = BrowserTestUtils.addTab(gBrowser, "about:blank");
   let browser = tab.linkedBrowser;
-  await BrowserTestUtils.browserLoaded(browser, { wantLoad: "about:blank" });
+  await promiseBrowserLoaded(browser);
 
   
   await promiseTabState(tab, STATE);

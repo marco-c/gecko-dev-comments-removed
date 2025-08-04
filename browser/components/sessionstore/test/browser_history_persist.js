@@ -11,7 +11,7 @@ add_task(async function check_history_not_persisted() {
   
   let tab = BrowserTestUtils.addTab(gBrowser, "about:blank");
   let browser = tab.linkedBrowser;
-  await BrowserTestUtils.browserLoaded(browser, { wantLoad: "about:blank" });
+  await promiseBrowserLoaded(browser);
 
   
   await TabStateFlusher.flush(browser);
@@ -63,7 +63,7 @@ add_task(async function check_history_default_persisted() {
   
   let tab = BrowserTestUtils.addTab(gBrowser, "about:blank");
   let browser = tab.linkedBrowser;
-  await BrowserTestUtils.browserLoaded(browser, { wantLoad: "about:blank" });
+  await promiseBrowserLoaded(browser);
 
   
   await TabStateFlusher.flush(browser);

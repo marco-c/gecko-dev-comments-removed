@@ -41,7 +41,7 @@ add_task(async function () {
     "about:blank"
   ));
   let browser = tab.linkedBrowser;
-  await BrowserTestUtils.browserLoaded(browser, { wantLoad: "about:blank" });
+  await promiseBrowserLoaded(browser);
 
   
   let referrerInfo1 = new ReferrerInfo(

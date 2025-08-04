@@ -12,7 +12,7 @@ add_task(async function test_load_start() {
   
   let tab = BrowserTestUtils.addTab(gBrowser, "about:blank");
   let browser = tab.linkedBrowser;
-  await BrowserTestUtils.browserLoaded(browser, { wantLoad: "about:blank" });
+  await promiseBrowserLoaded(browser);
 
   const PAGE = "http://example.com/";
 
@@ -190,7 +190,7 @@ add_task(async function test_about_page_navigate() {
   
   let tab = BrowserTestUtils.addTab(gBrowser, "about:blank");
   let browser = tab.linkedBrowser;
-  await BrowserTestUtils.browserLoaded(browser, { wantLoad: "about:blank" });
+  await promiseBrowserLoaded(browser);
 
   
   await TabStateFlusher.flush(browser);

@@ -74,9 +74,7 @@ add_task(async function test_numberOfSiteOriginsMultipleNavigations() {
 
   
   BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, "about:blank");
-  await BrowserTestUtils.browserLoaded(tab.linkedBrowser, {
-    wantLoad: "about:blank",
-  });
+  await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
 
   
   BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, testPage);

@@ -19,10 +19,15 @@ function test() {
     return aWindow.windowGlobalChild.innerWindowId;
   }
 
-  function whenNewWindowLoaded(aPrivate, aCallback) {
-    BrowserTestUtils.openNewBrowserWindow({
-      private: aPrivate,
-    }).then(aCallback);
+  function whenNewWindowLoaded(aOptions, aCallback) {
+    let win = OpenBrowserWindow(aOptions);
+    win.addEventListener(
+      "load",
+      function () {
+        aCallback(win);
+      },
+      { once: true }
+    );
   }
 
   function doTest(aIsPrivateMode, aWindow, aCallback) {
@@ -62,8 +67,8 @@ function test() {
     );
   }
 
-  function testOnWindow(aPrivate, aCallback) {
-    whenNewWindowLoaded(aPrivate, function (aWin) {
+  function testOnWindow(aOptions, aCallback) {
+    whenNewWindowLoaded(aOptions, function (aWin) {
       windowsToClose.push(aWin);
       
       
@@ -80,10 +85,10 @@ function test() {
   });
 
   
-  testOnWindow(false, function (aWin) {
+  testOnWindow({}, function (aWin) {
     doTest(false, aWin, function () {
       
-      testOnWindow(true, function (aWin) {
+      testOnWindow({ private: true }, function (aWin) {
         doTest(true, aWin, finish);
       });
     });

@@ -138,9 +138,9 @@ add_task(async function () {
 
         
         BrowserTestUtils.startLoadingURIString(bg, "about:blank");
-        await BrowserTestUtils.browserLoaded(bg, { wantLoad: "about:blank" });
+        await BrowserTestUtils.browserLoaded(bg);
         BrowserTestUtils.startLoadingURIString(fg, "about:blank");
-        await BrowserTestUtils.browserLoaded(fg, { wantLoad: "about:blank" });
+        await BrowserTestUtils.browserLoaded(fg);
 
         
         BrowserTestUtils.startLoadingURIString(bg, test.uri);

@@ -18,7 +18,7 @@ add_task(async function () {
   
   let tab = BrowserTestUtils.addTab(gBrowser, "about:blank");
   let browser = tab.linkedBrowser;
-  await BrowserTestUtils.browserLoaded(browser, { wantLoad: "about:blank" });
+  await promiseBrowserLoaded(browser);
 
   
   ss.setTabState(tab, JSON.stringify(TAB_STATE));
