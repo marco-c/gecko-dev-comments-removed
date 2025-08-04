@@ -2288,7 +2288,7 @@ public class GeckoSessionTestRule implements TestRule {
 
     public void stopPostingLocation() {
       if (executor != null) {
-        executor.shutdown();
+        executor.shutdownNow();
         executor = null;
       }
     }
@@ -2344,7 +2344,7 @@ public class GeckoSessionTestRule implements TestRule {
               }
             },
             0,
-            3,
+            2,
             TimeUnit.SECONDS);
       }
     }
@@ -2538,6 +2538,10 @@ public class GeckoSessionTestRule implements TestRule {
         args -> {
           args.put("languageState", languageState);
         });
+  }
+
+  public void teardownAlertsService(final @NonNull GeckoSession session) {
+    webExtensionApiCall(session, "TeardownAlertsService", null);
   }
 
   private Object waitForMessage(final WebExtension.Port port, final String id) {
