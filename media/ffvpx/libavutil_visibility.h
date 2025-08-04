@@ -13,6 +13,7 @@
 
 
 #include "libavutil/log.h"
+#include "libavutil/internal.h"
 #include "libavcodec/packet.h"
 
 #pragma GCC visibility pop
