@@ -72,12 +72,56 @@ static const char kFacebookBackupFingerprint[] =
   "q4PO2G2cbkZhZ82+JgmRUyGMoAeozA+BSXVXQWB8XWQ=";
 
 
+static const char kGOOGLE_PIN_AE1_GoogleTrustServicesFingerprint[] =
+  "IGnQeIPjbxiR+JteR7AkUXl7pV+19BT4x3o15saZBNE=";
+
+
 static const char kGOOGLE_PIN_DigiCertECCSecureServerCAFingerprint[] =
   "PZXN3lRAy+8tBKk2Ox6F7jIlnzr2Yzmwqc3JnyfXoCw=";
 
 
 static const char kGOOGLE_PIN_SymantecClass3EVG3Fingerprint[] =
   "gMxWOrX4PMQesK9qFNbYBxjBfjUvlkn/vN1n+L9lE5E=";
+
+
+static const char kGOOGLE_PIN_WE1_GoogleTrustServicesFingerprint[] =
+  "kIdp6NNEd8wsugYyyIYFsi1ylMCED3hZbSR8ZFsa/A4=";
+
+
+static const char kGOOGLE_PIN_WE2_GoogleTrustServicesFingerprint[] =
+  "vh78KSg1Ry4NaqGDV10w/cTb9VH3BQUZoCWNa93W/EY=";
+
+
+static const char kGOOGLE_PIN_WE3_GoogleTrustServicesFingerprint[] =
+  "daBIAnKdRIX3bqM85I6We7wBUh0DPycNFBMvYkXGX2Q=";
+
+
+static const char kGOOGLE_PIN_WE4_GoogleTrustServicesFingerprint[] =
+  "O5TQDB/wa4SkRjBrQL2Aq9CG317H9MDDgpTVcrpJDa4=";
+
+
+static const char kGOOGLE_PIN_WE5_GoogleTrustServicesFingerprint[] =
+  "8yZxLgpR8EbO8ANRrWKAzIzz9XdlSUgtYPkXKYUlGSY=";
+
+
+static const char kGOOGLE_PIN_WR1_GoogleTrustServicesFingerprint[] =
+  "yDu9og255NN5GEf+Bwa9rTrqFQ0EydZ0r1FCh9TdAW4=";
+
+
+static const char kGOOGLE_PIN_WR2_GoogleTrustServicesFingerprint[] =
+  "YPtHaftLw6/0vnc2BnNKGF54xiCA28WFcccjkA4ypCM=";
+
+
+static const char kGOOGLE_PIN_WR3_GoogleTrustServicesFingerprint[] =
+  "OdSlmQD9NWJh4EbcOHBxkhygPwNSwA9Q91eounfbcoE=";
+
+
+static const char kGOOGLE_PIN_WR4_GoogleTrustServicesFingerprint[] =
+  "hZe1OerqJ1Pnq6F4N0gVjjpHqm037Ndf4aLLVpZZdAE=";
+
+
+static const char kGOOGLE_PIN_WR5_GoogleTrustServicesFingerprint[] =
+  "/RoweMyX8j8/fAaaeAIwzhWXigZDrh/J2BBJaHrjX90=";
 
 
 static const char kGTS_Root_R1Fingerprint[] =
@@ -232,12 +276,23 @@ static const StaticFingerprints kPinset_test = {
 };
 
 static const char* const kPinset_google_Data[] = {
+  kGOOGLE_PIN_WR5_GoogleTrustServicesFingerprint,
+  kGOOGLE_PIN_WE5_GoogleTrustServicesFingerprint,
   kGlobalSign_ECC_Root_CA___R4Fingerprint,
+  kGOOGLE_PIN_AE1_GoogleTrustServicesFingerprint,
   kGoogleBackup2048Fingerprint,
+  kGOOGLE_PIN_WE4_GoogleTrustServicesFingerprint,
+  kGOOGLE_PIN_WR3_GoogleTrustServicesFingerprint,
   kGTS_Root_R3Fingerprint,
   kGTS_Root_R2Fingerprint,
+  kGOOGLE_PIN_WR2_GoogleTrustServicesFingerprint,
+  kGOOGLE_PIN_WE3_GoogleTrustServicesFingerprint,
+  kGOOGLE_PIN_WR4_GoogleTrustServicesFingerprint,
   kGTS_Root_R1Fingerprint,
+  kGOOGLE_PIN_WE1_GoogleTrustServicesFingerprint,
   kGTS_Root_R4Fingerprint,
+  kGOOGLE_PIN_WE2_GoogleTrustServicesFingerprint,
+  kGOOGLE_PIN_WR1_GoogleTrustServicesFingerprint,
 };
 static const StaticFingerprints kPinset_google = {
   sizeof(kPinset_google_Data) / sizeof(const char*),
@@ -691,4 +746,4 @@ static const TransportSecurityPreload kPublicKeyPinningPreloadList[] = {
 
 static const int32_t kUnknownId = -1;
 
-static const PRTime kPreloadPKPinsExpirationTime = INT64_C(1761823746570000);
+static const PRTime kPreloadPKPinsExpirationTime = INT64_C(1762428166225000);
