@@ -126,8 +126,10 @@ class MFTEncoder final {
   RefPtr<EncodePromise> StartDraining();
   void EventHandler(MediaEventType aEventType, HRESULT aStatus);
   void MaybeResolveOrRejectEncodePromise();
-  void ResolveOrRejectDrainPromise();
-  void ResolveOrRejectPreDrainPromise();
+  void MaybeResolveOrRejectDrainPromise();
+  void MaybeResolveOrRejectPreDrainPromise();
+  void MaybeResolveOrRejectAnyPendingPromise(
+      const MediaResult& aResult = NS_OK);
 
   
   Result<ProcessedResult, HRESULT> ProcessEvent(MediaEventType aType);
