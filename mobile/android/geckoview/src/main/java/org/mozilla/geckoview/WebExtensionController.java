@@ -263,30 +263,6 @@ public class WebExtensionController {
 
 
     @Nullable
-    @Deprecated
-    @DeprecationSchedule(id = "web-extension-on-install-prompt-request", version = 143)
-    default GeckoResult<WebExtension.PermissionPromptResponse> onInstallPromptRequest(
-        @NonNull final WebExtension extension,
-        @NonNull final String[] permissions,
-        @NonNull final String[] origins) {
-      return null;
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    @Nullable
     default GeckoResult<WebExtension.PermissionPromptResponse> onInstallPromptRequest(
         @NonNull final WebExtension extension,
         @NonNull final String[] permissions,
@@ -821,27 +797,6 @@ public class WebExtensionController {
 
   @NonNull
   @AnyThread
-  @Deprecated
-  @DeprecationSchedule(id = "web-extension-add-optional-permissions", version = 143)
-  public GeckoResult<WebExtension> addOptionalPermissions(
-      final @NonNull String extensionId,
-      @NonNull final String[] permissions,
-      @NonNull final String[] origins) {
-    return addOptionalPermissions(extensionId, permissions, origins, new String[0]);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  @NonNull
-  @AnyThread
   public GeckoResult<WebExtension> addOptionalPermissions(
       final @NonNull String extensionId,
       @NonNull final String[] permissions,
@@ -857,27 +812,6 @@ public class WebExtensionController {
         .queryBundle("GeckoView:WebExtension:AddOptionalPermissions", bundle)
         .map(ext -> WebExtension.fromBundle(mDelegateControllerProvider, ext))
         .map(this::registerWebExtension);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  @NonNull
-  @AnyThread
-  @Deprecated
-  @DeprecationSchedule(id = "web-extension-remove-optional-permissions", version = 143)
-  public GeckoResult<WebExtension> removeOptionalPermissions(
-      final @NonNull String extensionId,
-      @NonNull final String[] permissions,
-      @NonNull final String[] origins) {
-    return removeOptionalPermissions(extensionId, permissions, origins, new String[0]);
   }
 
   
@@ -1305,21 +1239,12 @@ public class WebExtensionController {
       return;
     }
 
-    
-    
-    
-    GeckoResult<WebExtension.PermissionPromptResponse> promptResponse =
+    final GeckoResult<WebExtension.PermissionPromptResponse> promptResponse =
         mPromptDelegate.onInstallPromptRequest(
-            extension, message.getStringArray("permissions"), message.getStringArray("origins"));
-
-    if (promptResponse == null) {
-      promptResponse =
-          mPromptDelegate.onInstallPromptRequest(
-              extension,
-              message.getStringArray("permissions"),
-              message.getStringArray("origins"),
-              message.getStringArray("dataCollectionPermissions"));
-    }
+            extension,
+            message.getStringArray("permissions"),
+            message.getStringArray("origins"),
+            message.getStringArray("dataCollectionPermissions"));
 
     if (promptResponse == null) {
       return;
