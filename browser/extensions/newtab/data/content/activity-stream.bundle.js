@@ -11210,14 +11210,27 @@ const selectLayoutRender = ({ state = {}, prefs = {} }) => {
 
   const filterArray = [];
 
+  
   if (!prefs["feeds.topsites"]) {
     filterArray.push("TopSites");
   }
 
+  
+  
+  const nimbusWidgetsEnabled = prefs.widgetsConfig?.enabled;
+  const widgetsEnabled = prefs["widgets.system.enabled"];
+  if (!nimbusWidgetsEnabled && !widgetsEnabled) {
+    filterArray.push("Widgets");
+  }
+
+  
   const pocketEnabled =
     prefs["feeds.section.topstories"] && prefs["feeds.system.topstories"];
   if (!pocketEnabled) {
-    filterArray.push(...DS_COMPONENTS);
+    filterArray.push(
+      
+      ...DS_COMPONENTS.filter(component => component !== "Widgets")
+    );
   }
 
   
@@ -13181,6 +13194,11 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
       locale,
       mayHaveSponsoredStories
     } = this.props;
+    
+    
+    
+    
+
     
     const {
       layoutRender
