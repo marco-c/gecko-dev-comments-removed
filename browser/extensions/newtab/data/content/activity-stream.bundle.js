@@ -303,8 +303,10 @@ for (const type of [
   "WEBEXT_DISMISS",
   "WIDGETS_LISTS_CHANGE_SELECTED",
   "WIDGETS_LISTS_SET",
+  "WIDGETS_LISTS_SET_LOCAL",
   "WIDGETS_LISTS_SET_SELECTED",
   "WIDGETS_LISTS_UPDATE",
+  "WIDGETS_LISTS_UPDATE_LOCAL",
   "WIDGETS_TIMER_END",
   "WIDGETS_TIMER_PAUSE",
   "WIDGETS_TIMER_PLAY",
@@ -7871,13 +7873,8 @@ const INITIAL_STATE = {
       taskList: {
         label: "Task List",
         tasks: [],
+        completed: [],
       },
-    },
-    
-    
-    completed: {
-      label: "Completed",
-      tasks: [],
     },
   },
   TimerWidget: {
@@ -12306,6 +12303,10 @@ function CardSections({
 
 
 
+const taskType = {
+  IN_PROGRESS: "tasks",
+  COMPLETED: "completed"
+};
 function Lists({
   dispatch
 }) {
@@ -12316,8 +12317,6 @@ function Lists({
   } = listsData;
   const [newTask, setNewTask] = (0,external_React_namespaceObject.useState)("");
   const [isEditing, setIsEditing] = (0,external_React_namespaceObject.useState)(false);
-  
-  
   const [pendingNewList, setPendingNewList] = (0,external_React_namespaceObject.useState)(null);
   const inputRef = (0,external_React_namespaceObject.useRef)(null);
   const selectRef = (0,external_React_namespaceObject.useRef)(null);
@@ -12366,29 +12365,79 @@ function Lists({
       };
       dispatch(actionCreators.AlsoToMain({
         type: actionTypes.WIDGETS_LISTS_UPDATE,
-        data: updatedLists
+        data: {
+          lists: updatedLists
+        }
       }));
       setNewTask("");
     }
   }
-  function updateTask(updatedTask) {
-    const selectedTasks = lists[selected].tasks;
+  function updateTask(updatedTask, type) {
+    let localUpdatedTasks;
+    const selectedList = lists[selected];
+    const isCompletedType = type === taskType.COMPLETED;
+    const isNowCompleted = updatedTask.completed;
+
     
-    const updatedTasks = selectedTasks.map(task => task.id === updatedTask.id ? updatedTask : task);
+    const shouldMoveToTasks = isCompletedType && !updatedTask.completed;
+
+    
+    const shouldMoveToCompleted = !isCompletedType && isNowCompleted;
+    let newTasks = selectedList.tasks;
+    let newCompleted = selectedList.completed;
+
+    
+    if (shouldMoveToTasks) {
+      newCompleted = selectedList.completed.filter(task => task.id !== updatedTask.id);
+      newTasks = [...selectedList.tasks, updatedTask];
+      
+    } else if (shouldMoveToCompleted) {
+      newTasks = selectedList.tasks.filter(task => task.id !== updatedTask.id);
+      newCompleted = [...selectedList.completed, updatedTask];
+
+      
+      localUpdatedTasks = selectedList.tasks.map(existingTask => existingTask.id === updatedTask.id ? updatedTask : existingTask);
+    } else {
+      const targetKey = isCompletedType ? "completed" : "tasks";
+      const updatedArray = selectedList[targetKey].map(task => task.id === updatedTask.id ? updatedTask : task);
+      
+      if (targetKey === "tasks") {
+        newTasks = updatedArray;
+      } else {
+        newCompleted = updatedArray;
+      }
+    }
     const updatedLists = {
       ...lists,
       [selected]: {
-        ...lists[selected],
-        tasks: updatedTasks
+        ...selectedList,
+        tasks: newTasks,
+        completed: newCompleted
       }
     };
+
+    
+    const localLists = {
+      ...lists,
+      [selected]: {
+        ...selectedList,
+        tasks: localUpdatedTasks || newTasks,
+        completed: newCompleted.filter(task => task.id !== updatedTask.id)
+      }
+    };
+
+    
+    
     dispatch(actionCreators.AlsoToMain({
       type: actionTypes.WIDGETS_LISTS_UPDATE,
-      data: updatedLists
+      data: {
+        lists: updatedLists,
+        localLists
+      }
     }));
   }
-  function deleteTask(task) {
-    const selectedTasks = lists[selected].tasks;
+  function deleteTask(task, type) {
+    const selectedTasks = lists[selected][type];
     const updatedTasks = selectedTasks.filter(({
       id
     }) => id !== task.id);
@@ -12396,12 +12445,14 @@ function Lists({
       ...lists,
       [selected]: {
         ...lists[selected],
-        tasks: updatedTasks
+        [type]: updatedTasks
       }
     };
     dispatch(actionCreators.AlsoToMain({
       type: actionTypes.WIDGETS_LISTS_UPDATE,
-      data: updatedLists
+      data: {
+        lists: updatedLists
+      }
     }));
   }
   function handleKeyDown(e) {
@@ -12425,24 +12476,29 @@ function Lists({
       };
       dispatch(actionCreators.AlsoToMain({
         type: actionTypes.WIDGETS_LISTS_UPDATE,
-        data: updatedLists
+        data: {
+          lists: updatedLists
+        }
       }));
       setIsEditing(false);
     }
   }
-  async function handleCreateNewList() {
+  function handleCreateNewList() {
     const listUuid = crypto.randomUUID();
     const newLists = {
       ...lists,
       [listUuid]: {
         label: "New list",
-        tasks: []
+        tasks: [],
+        completed: []
       }
     };
-    await (0,external_ReactRedux_namespaceObject.batch)(() => {
+    (0,external_ReactRedux_namespaceObject.batch)(() => {
       dispatch(actionCreators.AlsoToMain({
         type: actionTypes.WIDGETS_LISTS_UPDATE,
-        data: newLists
+        data: {
+          lists: newLists
+        }
       }));
       dispatch(actionCreators.AlsoToMain({
         type: actionTypes.WIDGETS_LISTS_CHANGE_SELECTED,
@@ -12463,7 +12519,8 @@ function Lists({
         updatedLists = {
           [crypto.randomUUID()]: {
             label: "New list",
-            tasks: []
+            tasks: [],
+            completed: []
           }
         };
       }
@@ -12472,7 +12529,9 @@ function Lists({
       (0,external_ReactRedux_namespaceObject.batch)(() => {
         dispatch(actionCreators.AlsoToMain({
           type: actionTypes.WIDGETS_LISTS_UPDATE,
-          data: updatedLists
+          data: {
+            lists: updatedLists
+          }
         }));
         dispatch(actionCreators.AlsoToMain({
           type: actionTypes.WIDGETS_LISTS_CHANGE_SELECTED,
@@ -12528,36 +12587,44 @@ function Lists({
     maxLength: 100
   })), external_React_default().createElement("div", {
     className: "task-list-wrapper"
-  }, lists[selected]?.tasks.length >= 1 ? external_React_default().createElement("moz-reorderable-list", {
+  }, external_React_default().createElement("moz-reorderable-list", {
     itemSelector: "fieldset .task-item"
-  }, external_React_default().createElement("fieldset", null, lists[selected].tasks.map(task => external_React_default().createElement(ListItem, {
+  }, external_React_default().createElement("fieldset", null, lists[selected]?.tasks.length >= 1 ? lists[selected].tasks.map(task => external_React_default().createElement(ListItem, {
+    type: taskType.IN_PROGRESS,
     task: task,
     key: task.id,
     updateTask: updateTask,
     deleteTask: deleteTask,
     isValidUrl: isValidUrl
-  })))) : external_React_default().createElement("p", {
+  })) : external_React_default().createElement("p", {
     className: "empty-list-text"
-  }, "The list is empty. For now \uD83E\uDD8A"))) : null;
+  }, "The list is empty. For now \uD83E\uDD8A"), lists[selected]?.completed.length >= 1 && external_React_default().createElement("details", {
+    className: "completed-task-wrapper"
+  }, external_React_default().createElement("summary", null, external_React_default().createElement("span", {
+    className: "completed-title"
+  }, `Completed (${lists[selected]?.completed.length})`)), lists[selected]?.completed.map(completedTask => external_React_default().createElement(ListItem, {
+    key: completedTask.id,
+    type: taskType.COMPLETED,
+    task: completedTask,
+    deleteTask: deleteTask,
+    updateTask: updateTask
+  }))))))) : null;
 }
 function ListItem({
   task,
   updateTask,
   deleteTask,
-  isValidUrl
+  isValidUrl,
+  type
 }) {
-  const [shouldAnimate, setShouldAnimate] = (0,external_React_namespaceObject.useState)(false);
   const [isEditing, setIsEditing] = (0,external_React_namespaceObject.useState)(false);
+  const isCompleted = type === taskType.COMPLETED;
   function handleCheckboxChange(e) {
-    const {
-      checked
-    } = e.target;
     const updatedTask = {
       ...task,
       completed: e.target.checked
     };
-    updateTask(updatedTask);
-    setShouldAnimate(checked);
+    updateTask(updatedTask, type);
   }
   function handleSave(newValue) {
     const trimmedTask = newValue.trimEnd();
@@ -12566,10 +12633,24 @@ function ListItem({
         ...task,
         value: newValue,
         isUrl: isValidUrl(trimmedTask)
-      });
+      }, type);
       setIsEditing(false);
     }
   }
+  function handleDelete() {
+    deleteTask(task, type);
+  }
+  const taskLabel = task.isUrl ? external_React_default().createElement("a", {
+    href: task.value,
+    rel: "noopener noreferrer",
+    target: "_blank",
+    className: "task-label",
+    title: task.value
+  }, task.value) : external_React_default().createElement("span", {
+    className: "task-label",
+    title: task.value,
+    onClick: () => setIsEditing(true)
+  }, task.value);
   return external_React_default().createElement("div", {
     className: "task-item"
   }, external_React_default().createElement("div", {
@@ -12578,36 +12659,26 @@ function ListItem({
     type: "checkbox",
     onChange: handleCheckboxChange,
     checked: task.completed
-  }), external_React_default().createElement(EditableText, {
+  }), isCompleted ? taskLabel : external_React_default().createElement(EditableText, {
     isEditing: isEditing,
     setIsEditing: setIsEditing,
     value: task.value,
     onSave: handleSave,
     type: "task"
-  }, task.isUrl ? external_React_default().createElement("a", {
-    href: task.value,
-    rel: "noopener noreferrer",
-    target: "_blank",
-    className: `task-label ${task.completed && shouldAnimate ? "animate-strike" : ""}`,
-    title: task.value
-  }, task.value) : external_React_default().createElement("span", {
-    className: `task-label ${task.completed && shouldAnimate ? "animate-strike" : ""}`,
-    title: task.value,
-    onClick: () => setIsEditing(true)
-  }, task.value))), external_React_default().createElement("moz-button", {
+  }, taskLabel)), external_React_default().createElement("moz-button", {
     iconSrc: "chrome://global/skin/icons/more.svg",
     menuId: `panel-task-${task.id}`,
     type: "ghost"
   }), external_React_default().createElement("panel-list", {
     id: `panel-task-${task.id}`
-  }, task.isUrl && external_React_default().createElement("panel-item", {
+  }, !isCompleted && external_React_default().createElement((external_React_default()).Fragment, null, task.isUrl && external_React_default().createElement("panel-item", {
     onClick: () => window.open(task.value, "_blank", "noopener")
   }, "Open link"), external_React_default().createElement("panel-item", null, "Move up"), external_React_default().createElement("panel-item", null, "Move down"), external_React_default().createElement("panel-item", {
     className: "edit-item",
     onClick: () => setIsEditing(true)
-  }, "Edit"), external_React_default().createElement("panel-item", {
+  }, "Edit")), external_React_default().createElement("panel-item", {
     className: "delete-item",
-    onClick: () => deleteTask(task)
+    onClick: handleDelete
   }, "Delete item")));
 }
 function EditableText({
