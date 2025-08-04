@@ -36,7 +36,8 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
 #endif
   }
   static void Init(FFmpegLibWrapper* aLib) {
-#if (defined(XP_WIN) || defined(MOZ_WIDGET_GTK)) && \
+#if (defined(XP_WIN) || defined(MOZ_WIDGET_GTK) || \
+     defined(MOZ_WIDGET_ANDROID)) &&               \
     defined(MOZ_USE_HWDECODE) && !defined(MOZ_FFVPX_AUDIOONLY)
 #  ifdef XP_WIN
     if (!XRE_IsGPUProcess()) {
@@ -61,6 +62,9 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
         AV_HWDEVICE_TYPE_VAAPI,
         AV_HWDEVICE_TYPE_NONE,  
 #  endif
+#  ifdef MOZ_WIDGET_ANDROID
+        AV_HWDEVICE_TYPE_MEDIACODEC,
+#  endif
     };
 
     struct CodecEntry {
@@ -77,13 +81,15 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
 #  if LIBAVCODEC_VERSION_MAJOR >= 55
         {AV_CODEC_ID_VP9, gfx::gfxVars::UseVP9HwDecode()},
 #  endif
-#  if defined(MOZ_WIDGET_GTK) && LIBAVCODEC_VERSION_MAJOR >= 54
+#  if (defined(MOZ_WIDGET_GTK) || defined(MOZ_WIDGET_ANDROID)) && \
+      LIBAVCODEC_VERSION_MAJOR >= 54
         {AV_CODEC_ID_VP8, gfx::gfxVars::UseVP8HwDecode()},
 #  endif
 
     
     
-#  if defined(MOZ_WIDGET_GTK) && !defined(FFVPX_VERSION)
+#  if (defined(MOZ_WIDGET_GTK) && !defined(FFVPX_VERSION)) || \
+      defined(MOZ_WIDGET_ANDROID)
 #    if LIBAVCODEC_VERSION_MAJOR >= 55
         {AV_CODEC_ID_HEVC, gfx::gfxVars::UseHEVCHwDecode()},
 #    endif
@@ -286,15 +292,13 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
   }
 
   bool IsHWDecodingSupported(AVCodecID aCodec) const {
-    if (!gfx::gfxVars::IsInitialized() ||
-        !gfx::gfxVars::CanUseHardwareVideoDecoding()) {
-      return false;
-    }
 #ifdef FFVPX_VERSION
     if (!StaticPrefs::media_ffvpx_hw_enabled()) {
       return false;
     }
 #endif
+    
+    
     auto hwCodecs = sSupportedHWCodecs.Lock();
     return hwCodecs->Contains(aCodec);
   }
