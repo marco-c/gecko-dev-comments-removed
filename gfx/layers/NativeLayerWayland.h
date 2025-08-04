@@ -83,7 +83,9 @@ class NativeLayerRootWayland final : public NativeLayerRoot {
   
   GdkWindow* GetGdkWindow() const;
 
-  RefPtr<widget::WaylandSurface> GetWaylandSurface() { return mSurface; }
+  RefPtr<widget::WaylandSurface> GetRootWaylandSurface() {
+    return mRootSurface;
+  }
 
   RefPtr<widget::DRMFormat> GetDRMFormat() { return mDRMFormat; }
 
@@ -133,7 +135,7 @@ class NativeLayerRootWayland final : public NativeLayerRoot {
   
   
   
-  RefPtr<widget::WaylandSurface> mSurface;
+  RefPtr<widget::WaylandSurface> mRootSurface;
 
   
   RefPtr<widget::DRMFormat> mDRMFormat;
