@@ -34,6 +34,14 @@ streamListener.prototype = {
   },
 };
 
+add_setup(async function () {
+  
+  
+  
+  
+  await PlacesUtils.history.clear();
+});
+
 add_task(async function () {
   info("Test that the default icon has the right content type.");
   let channel = NetUtil.newChannel({

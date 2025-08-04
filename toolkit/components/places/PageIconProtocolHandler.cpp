@@ -284,7 +284,7 @@ RefPtr<FaviconPromise> PageIconProtocolHandler::GetFaviconData(
     return FaviconPromise::CreateAndReject(rv, __func__);
   }
 
-  return faviconService->AsyncGetFaviconForPage(pageURI, preferredSize);
+  return faviconService->AsyncGetFaviconForPage(pageURI, preferredSize, true);
 }
 
 RefPtr<RemoteStreamPromise> PageIconProtocolHandler::NewStream(
