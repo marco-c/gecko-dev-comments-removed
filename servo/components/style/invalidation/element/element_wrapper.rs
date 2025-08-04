@@ -225,6 +225,7 @@ where
             },
 
             
+            #[cfg(feature = "gecko")]
             NonTSPseudoClass::Heading(ref levels) => {
                 return levels.matches_state(
                     self.snapshot()
