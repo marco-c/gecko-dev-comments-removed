@@ -267,8 +267,7 @@ export interface LangTags {
   docLangTag: string | null;
   userLangTag: string | null;
   htmlLangAttribute: string | null;
-  identifiedLangTag: string | null;
-  identifiedLangConfident?: boolean;
+  identified: null | DetectionResult;
 }
 
 
@@ -535,3 +534,30 @@ export interface TranslationRequest {
 
 
 export type TranslationFunction = (message: string) => Promise<string>;
+
+
+
+
+
+
+
+
+
+
+
+interface MultilingualSection {
+  
+  language: string;
+  
+  percent: number;
+}
+
+interface DetectionResult {
+  
+  language: string;
+  
+  confident: boolean;
+  
+  
+  languages: MultilingualSection[];
+}
