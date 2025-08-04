@@ -14,7 +14,5 @@
 
 
 
-(
-  window.CSSStyleProperties ?? window.CSS2Properties
-).prototype.wrappedJSObject.msTouchAction =
+CSS2Properties.prototype.wrappedJSObject.msTouchAction =
   window.wrappedJSObject.String("none");
