@@ -9,4 +9,13 @@ def main(request, response):
     if test_id is None:
         test_id = session_manager.initialize_test()
 
-    return (200, [("Set-Cookie", f"test_id={test_id}")], "")
+    headers = [("Set-Cookie", f"test_id={test_id}")]
+    
+    
+    
+    
+    cross_site = request_body.get("crossSite")
+    if cross_site is not None and cross_site:
+        headers = [("Set-Cookie", f"test_id={test_id};SameSite=None;Secure")]
+
+    return (200, headers, "")
