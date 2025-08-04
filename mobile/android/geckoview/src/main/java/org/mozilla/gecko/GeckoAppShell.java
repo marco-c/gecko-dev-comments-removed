@@ -797,6 +797,14 @@ public class GeckoAppShell {
       String name, String topic, String action, String origin);
 
   
+  public static void onNotificationShow(
+      final String name, final String cookie, @NotNull final String origin) {
+    if (GeckoThread.isRunning()) {
+      notifyAlertListener(name, "alertshow", cookie, origin);
+    }
+  }
+
+  
 
 
 

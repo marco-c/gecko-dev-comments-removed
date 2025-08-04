@@ -145,14 +145,8 @@ nsresult NotificationParent::HandleAlertTopic(AlertTopic aTopic) {
   }
   if (aTopic == AlertTopic::Show) {
     if (!mResolver) {
-#ifdef ANDROID
-      
-      
-      return NS_OK;
-#else
       MOZ_ASSERT_UNREACHABLE("Are we getting double show events?");
       return NS_ERROR_FAILURE;
-#endif
     }
     mResolver.take().value()(CopyableErrorResult());
     return NS_OK;
@@ -277,14 +271,6 @@ nsresult NotificationParent::Show() {
   RefPtr<NotificationObserver> observer = new NotificationObserver(
       mArgs.mScope, principal, IPCNotification(mId, options), *this);
   MOZ_TRY(ShowAlertWithCleanup(alert, observer));
-
-#ifdef ANDROID
-  
-  
-  
-  
-  observer->Observe(nullptr, "alertshow", nullptr);
-#endif
 
   return NS_OK;
 }
