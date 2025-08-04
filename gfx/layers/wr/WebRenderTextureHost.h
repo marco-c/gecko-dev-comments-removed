@@ -21,7 +21,7 @@ class SurfaceDescriptor;
 
 
 
-class WebRenderTextureHost : public TextureHost {
+class WebRenderTextureHost final : public TextureHost {
  public:
   WebRenderTextureHost(TextureFlags aFlags, TextureHost* aTexture,
                        const wr::ExternalImageId& aExternalImageId);
@@ -49,6 +49,8 @@ class WebRenderTextureHost : public TextureHost {
   gfx::ColorDepth GetColorDepth() const override;
   gfx::YUVColorSpace GetYUVColorSpace() const override;
   gfx::ColorRange GetColorRange() const override;
+
+  bool NeedsYFlip() const override;
 
   gfx::IntSize GetSize() const override;
 

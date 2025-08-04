@@ -104,6 +104,10 @@ gfx::SurfaceFormat WebRenderTextureHost::GetFormat() const {
   return mWrappedTextureHost->GetFormat();
 }
 
+bool WebRenderTextureHost::NeedsYFlip() const {
+  return mWrappedTextureHost->NeedsYFlip();
+}
+
 void WebRenderTextureHost::MaybeDestroyRenderTexture() {
   
   
