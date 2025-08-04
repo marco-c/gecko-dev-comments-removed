@@ -217,6 +217,11 @@ pub(crate) mod profiler_utils {
                     
                     
                     Some(label) => {
+                        
+                        
+                        
+                        let label = label.strip_prefix('\x1E').unwrap_or(&label);
+                        let label = label.replace('\x1E', ", ");
                         json_writer.unique_string_property("id", &metadata.name);
                         json_writer.unique_string_property("label", &label);
                     }
