@@ -8,7 +8,7 @@
 
 
 idl_test(
-  ['cookie-store'],
+  ['cookiestore'],
   ['service-workers', 'html', 'dom'],
   async (idl_array, t) => {
     const isServiceWorker = 'ServiceWorkerGlobalScope' in self

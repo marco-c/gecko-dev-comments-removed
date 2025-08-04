@@ -3,7 +3,7 @@
 
 'use strict';
 
-const kScope = '/cookie-store/does/not/exist';
+const kScope = '/cookiestore/does/not/exist';
 
 
 const kServiceWorkerActivatedPromise = new Promise((resolve) => {
