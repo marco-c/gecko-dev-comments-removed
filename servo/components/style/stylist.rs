@@ -1266,7 +1266,6 @@ impl Stylist {
             },
         };
 
-        let mut implemented_pseudo = None;
         
         
         
@@ -1275,10 +1274,7 @@ impl Stylist {
         
         properties::cascade::<E>(
             &self,
-            pseudo.or_else(|| {
-                implemented_pseudo = element.unwrap().implemented_pseudo_element();
-                implemented_pseudo.as_ref()
-            }),
+            pseudo,
             inputs.rules.as_ref().unwrap_or(self.rule_tree.root()),
             guards,
             parent_style,
@@ -1475,20 +1471,10 @@ impl Stylist {
     ) where
         E: TElement,
     {
-        let mut cur = element;
-        let mut pseudos = SmallVec::new();
-        if let Some(pseudo) = pseudo_element {
-            pseudos.push(pseudo.clone());
-        }
-        while let Some(p) = cur.implemented_pseudo_element() {
-            pseudos.push(p);
-            let Some(parent_pseudo) = cur.pseudo_element_originating_element() else { break };
-            cur = parent_pseudo;
-        }
         RuleCollector::new(
             self,
             element,
-            pseudos,
+            pseudo_element,
             style_attribute,
             smil_override,
             animation_declarations,
@@ -2356,33 +2342,34 @@ struct GenericElementAndPseudoRules<Map> {
     
     
     
-    pseudos_map: PerPseudoElementMap<Box<Self>>,
+    pseudos_map: PerPseudoElementMap<Box<Map>>,
 }
 
 impl<Map: Default + MallocSizeOf> GenericElementAndPseudoRules<Map> {
     #[inline(always)]
-    fn for_insertion<'a>(&mut self, pseudo_elements: &[&'a PseudoElement]) -> &mut Map {
-        let mut current = self;
-        for &pseudo_element in pseudo_elements {
-            debug_assert!(
-                !pseudo_element.is_precomputed() && !pseudo_element.is_unknown_webkit_pseudo_element(),
-                "Precomputed pseudos should end up in precomputed_pseudo_element_decls, \
-                 and unknown webkit pseudos should be discarded before getting here"
-            );
+    fn for_insertion(&mut self, pseudo_element: Option<&PseudoElement>) -> &mut Map {
+        debug_assert!(
+            pseudo_element.map_or(true, |pseudo| {
+                !pseudo.is_precomputed() && !pseudo.is_unknown_webkit_pseudo_element()
+            }),
+            "Precomputed pseudos should end up in precomputed_pseudo_element_decls, \
+             and unknown webkit pseudos should be discarded before getting here"
+        );
 
-            current = current.pseudos_map.get_or_insert_with(pseudo_element, Default::default);
+        match pseudo_element {
+            None => &mut self.element_map,
+            Some(pseudo) => self
+                .pseudos_map
+                .get_or_insert_with(pseudo, || Box::new(Default::default())),
         }
-
-        &mut current.element_map
     }
 
     #[inline]
-    fn rules(&self, pseudo_elements: &[PseudoElement]) -> Option<&Map> {
-        let mut current = self;
-        for pseudo in pseudo_elements {
-            current = current.pseudos_map.get(&pseudo)?.as_ref();
+    fn rules(&self, pseudo: Option<&PseudoElement>) -> Option<&Map> {
+        match pseudo {
+            Some(pseudo) => self.pseudos_map.get(pseudo).map(|p| &**p),
+            None => Some(&self.element_map),
         }
-        Some(&current.element_map)
     }
 
     
@@ -2924,19 +2911,19 @@ impl CascadeData {
 
     
     #[inline]
-    pub fn normal_rules(&self, pseudo_elements: &[PseudoElement]) -> Option<&SelectorMap<Rule>> {
-        self.normal_rules.rules(pseudo_elements)
+    pub fn normal_rules(&self, pseudo: Option<&PseudoElement>) -> Option<&SelectorMap<Rule>> {
+        self.normal_rules.rules(pseudo)
     }
 
     
     #[inline]
     pub fn featureless_host_rules(
         &self,
-        pseudo_elements: &[PseudoElement],
+        pseudo: Option<&PseudoElement>,
     ) -> Option<&SelectorMap<Rule>> {
         self.featureless_host_rules
             .as_ref()
-            .and_then(|d| d.rules(pseudo_elements))
+            .and_then(|d| d.rules(pseudo))
     }
 
     
@@ -2946,8 +2933,8 @@ impl CascadeData {
 
     
     #[inline]
-    pub fn slotted_rules(&self, pseudo_elements: &[PseudoElement]) -> Option<&SelectorMap<Rule>> {
-        self.slotted_rules.as_ref().and_then(|d| d.rules(pseudo_elements))
+    pub fn slotted_rules(&self, pseudo: Option<&PseudoElement>) -> Option<&SelectorMap<Rule>> {
+        self.slotted_rules.as_ref().and_then(|d| d.rules(pseudo))
     }
 
     
@@ -2957,8 +2944,8 @@ impl CascadeData {
 
     
     #[inline]
-    pub fn part_rules(&self, pseudo_elements: &[PseudoElement]) -> Option<&PartMap> {
-        self.part_rules.as_ref().and_then(|d| d.rules(pseudo_elements))
+    pub fn part_rules(&self, pseudo: Option<&PseudoElement>) -> Option<&PartMap> {
+        self.part_rules.as_ref().and_then(|d| d.rules(pseudo))
     }
 
     
@@ -3295,9 +3282,8 @@ impl CascadeData {
         for selector in selectors.slice() {
             self.num_selectors += 1;
 
-            let pseudo_elements = selector.pseudo_elements();
-            let inner_pseudo_element = pseudo_elements.get(0);
-            if let Some(pseudo) = inner_pseudo_element {
+            let pseudo_element = selector.pseudo_element();
+            if let Some(pseudo) = pseudo_element {
                 if pseudo.is_precomputed() {
                     debug_assert!(selector.is_universal());
                     debug_assert!(ancestor_selectors.is_none());
@@ -3321,12 +3307,10 @@ impl CascadeData {
                         ));
                     continue;
                 }
-                if pseudo_elements.iter().any(|p| p.is_unknown_webkit_pseudo_element()) {
+                if pseudo.is_unknown_webkit_pseudo_element() {
                     continue;
                 }
             }
-
-            debug_assert!(!pseudo_elements.iter().any(|p| p.is_precomputed() || p.is_unknown_webkit_pseudo_element()));
 
             let selector = match ancestor_selectors {
                 Some(ref s) => selector.replace_parent_selector(&s),
@@ -3432,7 +3416,7 @@ impl CascadeData {
                 let map = self
                     .part_rules
                     .get_or_insert_with(|| Box::new(Default::default()))
-                    .for_insertion(&pseudo_elements);
+                    .for_insertion(pseudo_element);
                 map.try_reserve(1)?;
                 let vec = map.entry(parts.last().unwrap().clone().0).or_default();
                 vec.try_reserve(1)?;
@@ -3445,7 +3429,7 @@ impl CascadeData {
                         
                         self.featureless_host_rules
                             .get_or_insert_with(|| Box::new(Default::default()))
-                            .for_insertion(&pseudo_elements)
+                            .for_insertion(pseudo_element)
                             .insert(rule.clone(), quirks_mode)?;
                         false
                     },
@@ -3467,7 +3451,7 @@ impl CascadeData {
                 } else {
                     &mut self.normal_rules
                 }
-                .for_insertion(&pseudo_elements);
+                .for_insertion(pseudo_element);
                 rules.insert(rule, quirks_mode)?;
             }
         }
