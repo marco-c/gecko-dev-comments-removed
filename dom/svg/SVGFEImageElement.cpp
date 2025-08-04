@@ -37,17 +37,32 @@ SVGElement::StringInfo SVGFEImageElement::sStringInfo[3] = {
     {nsGkAtoms::href, kNameSpaceID_XLink, true}};
 
 
+NS_IMPL_CYCLE_COLLECTION_CLASS(SVGFEImageElement)
+
+NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(SVGFEImageElement,
+                                                SVGFEImageElementBase)
+  tmp->mImageContentObserver = nullptr;
+NS_IMPL_CYCLE_COLLECTION_UNLINK_END
+
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(SVGFEImageElement,
+                                                  SVGFEImageElementBase)
+  SVGObserverUtils::TraverseFEImageObserver(tmp, &cb);
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 
-NS_IMPL_ISUPPORTS_INHERITED(SVGFEImageElement, SVGFEImageElementBase,
-                            imgINotificationObserver, nsIImageLoadingContent)
+
+
+NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(SVGFEImageElement,
+                                             SVGFEImageElementBase,
+                                             imgINotificationObserver,
+                                             nsIImageLoadingContent)
 
 
 
 
 SVGFEImageElement::SVGFEImageElement(
     already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
-    : SVGFEImageElementBase(std::move(aNodeInfo)), mImageAnimationMode(0) {
+    : SVGFEImageElementBase(std::move(aNodeInfo)) {
   
   AddStatesSilently(ElementState::BROKEN);
 }
@@ -58,12 +73,9 @@ SVGFEImageElement::~SVGFEImageElement() { nsImageLoadingContent::Destroy(); }
 
 void SVGFEImageElement::UpdateSrcURI() {
   nsAutoString href;
-  if (mStringAttributes[HREF].IsExplicitlySet()) {
-    mStringAttributes[HREF].GetAnimValue(href, this);
-  } else {
-    mStringAttributes[XLINK_HREF].GetAnimValue(href, this);
-  }
+  HrefAsString(href);
 
+  mImageContentObserver = nullptr;
   mSrcURI = nullptr;
   if (!href.IsEmpty()) {
     StringToURI(href, OwnerDoc(), getter_AddRefs(mSrcURI));
@@ -80,9 +92,15 @@ void SVGFEImageElement::LoadSelectedImage(bool aAlwaysLoad,
     return;
   }
 
-  nsresult rv = NS_ERROR_FAILURE;
-
   const bool kNotify = true;
+
+  if (SVGObserverUtils::GetAndObserveFEImageContent(this)) {
+    
+    CancelImageRequests(kNotify);
+    return;
+  }
+
+  nsresult rv = NS_ERROR_FAILURE;
   if (mSrcURI || (mStringAttributes[HREF].IsExplicitlySet() ||
                   mStringAttributes[XLINK_HREF].IsExplicitlySet())) {
     rv = LoadImage(mSrcURI,  true, kNotify, eImageLoadType_Normal,
@@ -165,6 +183,7 @@ nsresult SVGFEImageElement::BindToTree(BindContext& aContext,
 }
 
 void SVGFEImageElement::UnbindFromTree(UnbindContext& aContext) {
+  mImageContentObserver = nullptr;
   nsImageLoadingContent::UnbindFromTree();
   SVGFEImageElementBase::UnbindFromTree(aContext);
 }
@@ -334,7 +353,7 @@ NS_IMETHODIMP_(void)
 SVGFEImageElement::FrameCreated(nsIFrame* aFrame) {
   nsImageLoadingContent::FrameCreated(aFrame);
 
-  uint64_t mode = aFrame->PresContext()->ImageAnimationMode();
+  auto mode = aFrame->PresContext()->ImageAnimationMode();
   if (mode == mImageAnimationMode) {
     return;
   }
@@ -392,6 +411,21 @@ void SVGFEImageElement::DidAnimateAttribute(int32_t aNameSpaceID,
     QueueImageTask(mSrcURI,  true,  true);
   }
   SVGFEImageElementBase::DidAnimateAttribute(aNameSpaceID, aAttribute);
+}
+
+
+
+
+void SVGFEImageElement::HrefAsString(nsAString& aHref) {
+  if (mStringAttributes[HREF].IsExplicitlySet()) {
+    mStringAttributes[HREF].GetBaseValue(aHref, this);
+  } else {
+    mStringAttributes[XLINK_HREF].GetBaseValue(aHref, this);
+  }
+}
+
+void SVGFEImageElement::NotifyImageContentChanged() {
+  
 }
 
 }  

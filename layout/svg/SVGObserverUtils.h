@@ -37,7 +37,9 @@ class SVGPaintServerFrame;
 namespace dom {
 class CanvasRenderingContext2D;
 class Element;
+class SVGFEImageElement;
 class SVGGeometryElement;
+class SVGGraphicsElement;
 class SVGMPathElement;
 }  
 }  
@@ -160,6 +162,7 @@ class SVGObserverUtils {
   using CanvasRenderingContext2D = dom::CanvasRenderingContext2D;
   using Element = dom::Element;
   using SVGGeometryElement = dom::SVGGeometryElement;
+  using SVGGraphicsElement = dom::SVGGraphicsElement;
   using HrefToTemplateCallback = const std::function<void(nsAString&)>&;
 
   
@@ -367,6 +370,17 @@ class SVGObserverUtils {
 
 
   static void RemoveTextPathObserver(nsIFrame* aTextPathFrame);
+
+  
+
+
+
+  static SVGGraphicsElement* GetAndObserveFEImageContent(
+      dom::SVGFEImageElement* aSVGFEImagrElement);
+
+  static void TraverseFEImageObserver(
+      dom::SVGFEImageElement* aSVGFEImageElement,
+      nsCycleCollectionTraversalCallback* aCB);
 
   
 
