@@ -18,6 +18,10 @@ const { TestUtils } = ChromeUtils.importESModule(
 
 let gHttpServer;
 
+const TEST_CONTENT_TYPE = "image/jpeg";
+const TEST_CONTENT_CHARSET = "UTF-8";
+const TEST_CONTENT_TYPE_HEADER = `${TEST_CONTENT_TYPE};charset=${TEST_CONTENT_CHARSET}`;
+
 
 
 
@@ -64,15 +68,6 @@ async function waitForCacheEntry(urlString) {
 add_setup(async function () {
   
   gHttpServer = new HttpServer();
-  gHttpServer.registerPathHandler(
-    "/cached-image.jpg",
-    function (request, response) {
-      response.setStatusLine(request.httpVersion, 200, "OK");
-      response.setHeader("Content-Type", "image/jpeg");
-      response.setHeader("Cache-Control", "max-age=3600");
-      response.write("fake-image-data");
-    }
-  );
   gHttpServer.start(-1);
 
   
@@ -114,6 +109,7 @@ add_task(async function test_ohttp_populates_cache_and_cache_hit() {
     const testURI = createTestOHTTPResourceURI(imageURL);
 
     
+    MockOHTTPService.shouldUseContentTypeHeader = TEST_CONTENT_TYPE_HEADER;
     const firstChannel = createTestChannel(testURI);
 
     let firstRequestData = "";
@@ -167,6 +163,16 @@ add_task(async function test_ohttp_populates_cache_and_cache_hit() {
 
     
     Assert.ok(cacheHit, "Second request should succeed from cache");
+    Assert.equal(
+      secondChannel.contentType,
+      TEST_CONTENT_TYPE,
+      "Got the right content type from the cache"
+    );
+    Assert.equal(
+      secondChannel.contentCharset,
+      TEST_CONTENT_CHARSET,
+      "Got the right content charset from the cache"
+    );
     Assert.ok(
       !MockOHTTPService.channelCreated,
       "Should not call OHTTP service for cache hit"
