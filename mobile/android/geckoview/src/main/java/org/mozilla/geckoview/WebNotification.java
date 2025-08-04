@@ -159,16 +159,6 @@ public class WebNotification implements Parcelable {
 
 
 
-  @UiThread
-  public void show() {
-    ThreadUtils.assertOnUiThread();
-    GeckoAppShell.onNotificationShow(tag, mCookie, origin);
-  }
-
-  
-
-
-
 
   @UiThread
   public void click() {
