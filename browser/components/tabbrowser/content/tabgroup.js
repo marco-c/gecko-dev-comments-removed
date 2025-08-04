@@ -160,10 +160,9 @@
           } else {
             let tabs = this.tabs;
             let tabCount = tabs.length;
-            let hasActiveTab = false;
             tabs.forEach((tab, index) => {
               if (tab.selected) {
-                hasActiveTab = true;
+                this.hasActiveTab = true;
               }
 
               
@@ -171,7 +170,6 @@
               tab.setAttribute("aria-posinset", index + 1);
               tab.setAttribute("aria-setsize", tabCount);
             });
-            this.hasActiveTab = hasActiveTab;
 
             
             
@@ -259,15 +257,9 @@
       this.setAttribute("id", val);
     }
 
-    
-
-
     get hasActiveTab() {
       return this.hasAttribute("hasactivetab");
     }
-
-    
-
 
     set hasActiveTab(val) {
       this.toggleAttribute("hasactivetab", val);
@@ -378,25 +370,8 @@
       }
     }
 
-    
-
-
     get tabs() {
       return Array.from(this.children).filter(node => node.matches("tab"));
-    }
-
-    
-
-
-
-    isTabVisibleInGroup(tab) {
-      if (this.isBeingDragged) {
-        return false;
-      }
-      if (this.collapsed && !tab.selected) {
-        return false;
-      }
-      return true;
     }
 
     
@@ -415,20 +390,6 @@
 
     set wasCreatedByAdoption(value) {
       this.#wasCreatedByAdoption = value;
-    }
-
-    
-
-
-    get isBeingDragged() {
-      return this.hasAttribute("movingtabgroup");
-    }
-
-    
-
-
-    set isBeingDragged(val) {
-      this.toggleAttribute("movingtabgroup", val);
     }
 
     
@@ -540,9 +501,6 @@
         );
       }
     }
-
-    
-
 
     on_TabSelect(event) {
       const { previousTab } = event.detail;
