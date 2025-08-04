@@ -17,6 +17,7 @@ use crate::string_cache::Atom;
 use crate::values::serialize_atom_identifier;
 use crate::values::AtomIdent;
 use cssparser::{ToCss, Parser};
+use selectors::parser::PseudoElement as PseudoElementTrait;
 use static_prefs::pref;
 use std::fmt;
 use style_traits::ParseError;
@@ -170,7 +171,7 @@ impl ToCss for PtNameAndClassSelector {
     }
 }
 
-impl ::selectors::parser::PseudoElement for PseudoElement {
+impl PseudoElementTrait for PseudoElement {
     type Impl = SelectorImpl;
 
     
@@ -187,6 +188,13 @@ impl ::selectors::parser::PseudoElement for PseudoElement {
                 Self::FileSelectorButton |
                 Self::DetailsContent
         )
+    }
+
+    
+    
+    #[inline]
+    fn valid_after_before_or_after(&self) -> bool {
+        matches!(*self, Self::Marker)
     }
 
     #[inline]
@@ -215,6 +223,12 @@ impl ::selectors::parser::PseudoElement for PseudoElement {
         
         
         self.is_named_view_transition() || *self == PseudoElement::DetailsContent
+    }
+
+    
+    #[inline]
+    fn is_before_or_after(&self) -> bool {
+        matches!(*self, PseudoElement::Before | PseudoElement::After)
     }
 }
 
@@ -259,12 +273,6 @@ impl PseudoElement {
     #[inline]
     pub fn animations_stored_in_parent(&self) -> bool {
         matches!(*self, Self::Before | Self::After | Self::Marker)
-    }
-
-    
-    #[inline]
-    pub fn is_before_or_after(&self) -> bool {
-        matches!(*self, Self::Before | Self::After)
     }
 
     
