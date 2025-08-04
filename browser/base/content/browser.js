@@ -1599,7 +1599,7 @@ function FillHistoryMenu(event) {
       if (j != index) {
         
         
-        item.style.listStyleImage = `url(page-icon:${uri})`;
+        item.style.setProperty("--menuitem-icon", `url(page-icon:${uri})`);
       }
 
       if (j < index) {
