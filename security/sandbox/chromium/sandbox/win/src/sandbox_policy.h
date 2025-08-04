@@ -100,6 +100,10 @@ class [[clang::lto_visibility_public]] TargetConfig {
 
   
   
+  virtual void SetForceKnownDllLoadingFallback() = 0;
+
+  
+  
   
   
   
