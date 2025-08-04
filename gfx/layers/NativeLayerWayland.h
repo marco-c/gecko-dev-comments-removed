@@ -75,7 +75,6 @@ class NativeLayerRootWayland final : public NativeLayerRoot {
   void AppendLayer(NativeLayer* aLayer) override;
   void RemoveLayer(NativeLayer* aLayer) override;
   void SetLayers(const nsTArray<RefPtr<NativeLayer>>& aLayers) override;
-  void ClearLayers();
 
   void PrepareForCommit() override { mFrameInProcess = true; };
   bool CommitToScreen() override;
@@ -119,8 +118,8 @@ class NativeLayerRootWayland final : public NativeLayerRoot {
   
   
   bool MapLocked(const widget::WaylandSurfaceLock& aProofOfLock);
-
   bool IsEmptyLocked(const widget::WaylandSurfaceLock& aProofOfLock);
+  void ClearLayersLocked(const widget::WaylandSurfaceLock& aProofOfLock);
 
 #ifdef MOZ_LOGGING
   void LogStatsLocked(const widget::WaylandSurfaceLock& aProofOfLock);
@@ -152,6 +151,12 @@ class NativeLayerRootWayland final : public NativeLayerRoot {
   
   
   nsTArray<RefPtr<NativeLayerWayland>> mMainThreadUpdateSublayers;
+
+  
+  
+  
+  
+  nsTArray<RefPtr<NativeLayerWayland>> mRemovedSublayers;
 
   
   
