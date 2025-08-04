@@ -139,11 +139,9 @@ add_task(async function test_TabChanges() {
     );
     const navigateUrl = "https://example.org/";
     BrowserTestUtils.startLoadingURIString(newTab.linkedBrowser, navigateUrl);
-    await BrowserTestUtils.browserLoaded(
-      newTab.linkedBrowser,
-      null,
-      navigateUrl
-    );
+    await BrowserTestUtils.browserLoaded(newTab.linkedBrowser, {
+      wantLoad: navigateUrl,
+    });
     
     changeEvent = await tabChangeRaised;
     Assert.deepEqual(

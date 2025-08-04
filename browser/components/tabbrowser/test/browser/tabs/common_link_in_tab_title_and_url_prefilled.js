@@ -65,7 +65,12 @@ async function doTestInSameWindow({
     Assert.equal(target.textLabel.textContent, loadingState.tab);
 
     await actionWhileLoading(
-      BrowserTestUtils.browserLoaded(target.linkedBrowser, false, href)
+      
+      BrowserTestUtils.browserLoaded(
+        target.linkedBrowser,
+        false,
+        href || (() => true)
+      )
     );
 
     info("Check the final result");
@@ -119,7 +124,7 @@ async function doTestWithNewWindow({ link, expectedSetURICalled }) {
     await BrowserTestUtils.browserLoaded(
       win.gBrowser.selectedBrowser,
       false,
-      href
+      href || (() => true)
     );
     sandbox.restore();
 

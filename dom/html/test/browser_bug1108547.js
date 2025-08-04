@@ -76,7 +76,8 @@ function runPass(getterFile, finishedCallback) {
     );
     BrowserTestUtils.browserLoaded(
       privateWin.gBrowser.tabs[privateWin.gBrowser.tabs.length - 1]
-        .linkedBrowser
+        .linkedBrowser,
+      { wantLoad: "about:blank" } 
     )
       .then(fetchResult)
       .then(onNewTabLoaded);
@@ -127,7 +128,8 @@ function runPass(getterFile, finishedCallback) {
     
     gBrowser.tabContainer.removeEventListener("TabOpen", onNewTabOpened2, true);
     BrowserTestUtils.browserLoaded(
-      gBrowser.tabs[gBrowser.tabs.length - 1].linkedBrowser
+      gBrowser.tabs[gBrowser.tabs.length - 1].linkedBrowser,
+      { wantLoad: "about:blank" } 
     )
       .then(fetchResult)
       .then(onNewTabLoaded2);

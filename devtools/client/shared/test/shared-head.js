@@ -564,7 +564,10 @@ async function addTab(url, options = {}) {
   }
 
   if (waitForLoad) {
-    await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+    
+    await BrowserTestUtils.browserLoaded(tab.linkedBrowser, {
+      wantLoad: () => true,
+    });
     
     await waitForPresShell(tab.linkedBrowser);
     info("Tab added and finished loading");
@@ -1009,10 +1012,6 @@ async function createAndAttachTargetForTab(tab) {
 
   const target = commands.targetCommand.targetFront;
   return target;
-}
-
-function isFissionEnabled() {
-  return SpecialPowers.useRemoteSubframes;
 }
 
 

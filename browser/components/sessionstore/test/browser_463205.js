@@ -14,7 +14,7 @@ add_task(async function test_check_urls_before_restoring() {
   
   let tab = BrowserTestUtils.addTab(gBrowser, "about:blank");
   let browser = tab.linkedBrowser;
-  await promiseBrowserLoaded(browser);
+  await BrowserTestUtils.browserLoaded(browser, { wantLoad: "about:blank" });
 
   
   await promiseTabState(tab, getState(URL));
