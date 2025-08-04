@@ -4752,11 +4752,27 @@ nsresult nsTextFrame::CharacterDataChanged(
   return NS_OK;
 }
 
-NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(TextCombineScaleFactorProperty, float)
+struct TextCombineData {
+  
+  nscoord mNaturalWidth = 0;
+  
+  
+  nscoord mOffset = 0;
+  
+  
+  float mScale = 1.0f;
+};
 
-float nsTextFrame::GetTextCombineScaleFactor(nsTextFrame* aFrame) {
-  float factor = aFrame->GetProperty(TextCombineScaleFactorProperty());
-  return factor ? factor : 1.0f;
+NS_DECLARE_FRAME_PROPERTY_DELETABLE(TextCombineDataProperty, TextCombineData)
+
+float nsTextFrame::GetTextCombineScale() const {
+  const auto* data = GetProperty(TextCombineDataProperty());
+  return data ? data->mScale : 1.0f;
+}
+
+std::pair<nscoord, float> nsTextFrame::GetTextCombineOffsetAndScale() const {
+  const auto* data = GetProperty(TextCombineDataProperty());
+  return data ? std::pair(data->mOffset, data->mScale) : std::pair(0, 1.0f);
 }
 
 void nsTextFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
@@ -6352,9 +6368,13 @@ bool nsTextFrame::PaintTextWithSelectionColors(
                         nscoord(aParams.framePt.y + offs), GetSize().width,
                         nscoord(advance));
       } else {
+        
+        
+        nscoord height = Style()->IsTextCombined()
+                             ? aParams.provider->GetFontMetrics()->EmHeight()
+                             : GetSize().height;
         bgRect = nsRect(nscoord(aParams.framePt.x + offs),
-                        nscoord(aParams.framePt.y), nscoord(advance),
-                        GetSize().height);
+                        nscoord(aParams.framePt.y), nscoord(advance), height);
       }
 
       LayoutDeviceRect selectionRect =
@@ -7158,7 +7178,7 @@ void nsTextFrame::DrawTextRunAndDecorations(
   
   gfxContextMatrixAutoSaveRestore scaledRestorer;
   if (Style()->IsTextCombined()) {
-    float scaleFactor = GetTextCombineScaleFactor(this);
+    float scaleFactor = GetTextCombineScale();
     if (scaleFactor != 1.0f) {
       scaledRestorer.SetContext(aParams.context);
       gfxMatrix unscaled = aParams.context->CurrentMatrixDouble();
@@ -7414,7 +7434,7 @@ nsIFrame::ContentOffsets nsTextFrame::GetCharacterOffsetAtFramePointInternal(
           ? (mTextRun->IsInlineReversed() ? mRect.height - aPoint.y : aPoint.y)
           : (mTextRun->IsInlineReversed() ? mRect.width - aPoint.x : aPoint.x);
   if (Style()->IsTextCombined()) {
-    width /= GetTextCombineScaleFactor(this);
+    width /= GetTextCombineScale();
   }
   gfxFloat fitWidth;
   Range skippedRange = ComputeTransformedRange(provider);
@@ -7722,7 +7742,7 @@ nsPoint nsTextFrame::GetPointFromIterator(const gfxSkipCharsIterator& aIter,
   } else {
     point.y = 0;
     if (Style()->IsTextCombined()) {
-      iSize *= GetTextCombineScaleFactor(this);
+      iSize *= GetTextCombineScale();
     }
     if (mTextRun->IsInlineReversed()) {
       point.x = mRect.width - iSize;
@@ -7851,7 +7871,7 @@ nsresult nsTextFrame::GetCharacterRectsInRange(int32_t aInOffset,
       if (Style()->IsTextCombined()) {
         
         
-        iSize *= GetTextCombineScaleFactor(this);
+        iSize *= GetTextCombineScale();
       }
       rect.width = iSize;
       rect.height = mRect.height;
@@ -8884,11 +8904,14 @@ void nsTextFrame::AddInlineMinISizeForFlow(gfxContext* aRenderingContext,
                                                     &iter, flowEndInTextRun);
 
   
+  
   if (Style()->IsTextCombined()) {
     if (start < flowEndInTextRun && textRun->CanBreakLineBefore(start)) {
       aData->OptionallyBreak();
     }
-    aData->mCurrentLine += provider.GetFontMetrics()->EmHeight();
+    if (!GetNextSibling() || GetNextSibling()->Style() != Style()) {
+      aData->mCurrentLine += provider.GetFontMetrics()->EmHeight();
+    }
     aData->mTrailingWhitespace = 0;
     return;
   }
@@ -9155,8 +9178,11 @@ void nsTextFrame::AddInlinePrefISizeForFlow(gfxContext* aRenderingContext,
                             nullptr, 0, aTextRunType, aData->mLineIsEmpty);
 
   
+  
   if (Style()->IsTextCombined()) {
-    aData->mCurrentLine += provider.GetFontMetrics()->EmHeight();
+    if (!GetNextSibling() || GetNextSibling()->Style() != Style()) {
+      aData->mCurrentLine += provider.GetFontMetrics()->EmHeight();
+    }
     aData->mTrailingWhitespace = 0;
     aData->mLineIsEmpty = false;
     return;
@@ -10159,30 +10185,88 @@ void nsTextFrame::ReflowText(nsLineLayout& aLineLayout, nscoord aAvailableWidth,
     nscoord width = finalSize.ISize(wm);
     nscoord em = fm->EmHeight();
     
-    if (width <= em) {
-      RemoveProperty(TextCombineScaleFactorProperty());
-    } else {
-      SetProperty(TextCombineScaleFactorProperty(),
-                  static_cast<float>(em) / static_cast<float>(width));
-      finalSize.ISize(wm) = em;
+    auto* data = GetProperty(TextCombineDataProperty());
+    if (!data) {
+      data = new TextCombineData;
+      SetProperty(TextCombineDataProperty(), data);
     }
+    data->mNaturalWidth = width;
+    finalSize.ISize(wm) = em;
+    
+    
     
     if (finalSize.BSize(wm) != em) {
       fontBaseline =
           aMetrics.BlockStartAscent() + (em - finalSize.BSize(wm)) / 2;
       aMetrics.SetBlockStartAscent(fontBaseline);
+    }
+    
+    
+    
+    if (GetNextSibling() && GetNextSibling()->Style() == Style()) {
+      finalSize.BSize(wm) = 0;
+    } else {
+      
       finalSize.BSize(wm) = em;
+    }
+    
+    
+    
+    
+    nsIFrame* f = GetPrevSibling();
+    if (f && f->Style() == Style() &&
+        (!GetNextSibling() || GetNextSibling()->Style() != Style())) {
+      
+      while (f->Style() == Style()) {
+        if (auto* fData = f->GetProperty(TextCombineDataProperty())) {
+          width += fData->mNaturalWidth;
+        }
+        if (!f->GetPrevSibling()) {
+          break;
+        }
+        f = f->GetPrevSibling();
+      }
+    } else {
+      
+      f = this;
+    }
+    
+    
+    float scale;
+    nscoord offset;
+    if (width > em) {
+      scale = static_cast<float>(em) / width;
+      offset = 0;
+    } else {
+      scale = 1.0f;
+      offset = (em - width) / 2;
+    }
+    while (true) {
+      if (auto* fData = f->GetProperty(TextCombineDataProperty())) {
+        fData->mScale = scale;
+        fData->mOffset = offset;
+        offset += fData->mNaturalWidth * scale;
+      }
+      if (f == this) {
+        break;
+      }
+      f = f->GetNextSibling();
     }
   }
   aMetrics.SetSize(wm, finalSize);
 
   NS_ASSERTION(aMetrics.BlockStartAscent() >= 0, "Negative ascent???");
-  NS_ASSERTION(
+  
+  
+  
+  
+  DebugOnly<nscoord> descent =
       (Style()->IsTextCombined() ? aMetrics.ISize(aMetrics.GetWritingMode())
                                  : aMetrics.BSize(aMetrics.GetWritingMode())) -
-              aMetrics.BlockStartAscent() >=
-          0,
-      "Negative descent???");
+      aMetrics.BlockStartAscent();
+  NS_ASSERTION(descent >= 0 || (Style()->IsTextCombined() && GetNextSibling() &&
+                                GetNextSibling()->Style() == Style()),
+               "Unexpected negative descent???");
 
   mAscent = fontBaseline;
 
