@@ -287,9 +287,6 @@ RefPtr<ShutdownPromise> EncoderAgent::Shutdown() {
 
   
   mDrainRequest.DisconnectIfExists();
-  mEncodeRequest.DisconnectIfExists();
-
-  mDrainRequest.DisconnectIfExists();
   mDrainPromise.RejectIfExists(r, __func__);
 
   SetState(State::Unconfigured);
