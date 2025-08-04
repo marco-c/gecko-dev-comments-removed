@@ -135,7 +135,7 @@ AndroidAlerts::ShowAlert(nsIAlertNotification* aAlert,
   } else if (Maybe<AndroidNotificationTuple> tuple =
                  sNotificationMap->Extract(name)) {
     if (tuple->mObserver) {
-      tuple->mObserver->Observe(nullptr, "alertfinished", nullptr);
+      tuple->mObserver->Observe(nullptr, "alertfinished", u"close");
     }
   }
 
@@ -173,7 +173,7 @@ AndroidAlerts::CloseAlert(const nsAString& aAlertName, bool aContextClosed) {
     
     
     
-    tuple->mObserver->Observe(nullptr, "alertfinished", nullptr);
+    tuple->mObserver->Observe(nullptr, "alertfinished", u"close");
   }
 
   java::GeckoRuntime::LocalRef runtime = java::GeckoRuntime::GetInstance();
