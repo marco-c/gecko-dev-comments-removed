@@ -80,7 +80,7 @@ parent:
   
   async InitVR(Endpoint<PVRGPUChild> endpoint);
   
-  async UpdateVar(GfxVarUpdate var);
+  async UpdateVar(GfxVarUpdate[] var);
 
   async PreferenceUpdate(Pref pref);
   async ScreenInformationChanged();

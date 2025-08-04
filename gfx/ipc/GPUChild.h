@@ -54,7 +54,7 @@ class GPUChild final : public ipc::CrashReporterHelper<GPUChild>,
   void DeletePairedMinidump();
 
   
-  void OnVarChanged(const GfxVarUpdate& aVar) override;
+  void OnVarChanged(const nsTArray<GfxVarUpdate>& aVar) override;
 
   
   mozilla::ipc::IPCResult RecvInitComplete(const GPUDeviceData& aData);
