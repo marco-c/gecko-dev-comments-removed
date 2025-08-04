@@ -75,9 +75,11 @@ class FFmpegDataDecoder<LIBAV_VER>
                               
   const RefPtr<TaskQueue> mTaskQueue;  
 
+  RefPtr<DecodePromise> ProcessDrain();
+  MozPromiseHolder<DecodePromise> mDrainPromise;
+
  private:
   RefPtr<DecodePromise> ProcessDecode(MediaRawData* aSample);
-  RefPtr<DecodePromise> ProcessDrain();
   virtual MediaResult DoDecode(MediaRawData* aSample, uint8_t* aData, int aSize,
                                bool* aGotFrame,
                                MediaDataDecoder::DecodedData& aOutResults) = 0;

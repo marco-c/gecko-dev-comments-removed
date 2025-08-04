@@ -356,6 +356,14 @@ class FFmpegVideoDecoder<LIBAV_VER>
 
   PerformanceRecorderMulti<DecodeStage> mPerformanceRecorder;
 
+  bool MaybeQueueDrain(const MediaDataDecoder::DecodedData& aData);
+#ifdef MOZ_WIDGET_ANDROID
+  void QueueResumeDrain();
+  void ResumeDrain();
+
+  Atomic<bool> mShouldResumeDrain{false};
+#endif
+
   
   Maybe<Atomic<bool>> mIsUsingShmemBufferForDecode;
 
