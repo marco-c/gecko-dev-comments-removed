@@ -222,8 +222,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "CSS", insecureContext: true },
   
-  { name: "CSS2Properties", insecureContext: true },
-  
   { name: "CSSAnimation", insecureContext: true },
   
   { name: "CSSConditionRule", insecureContext: true },
@@ -275,6 +273,8 @@ let interfaceNamesInGlobalScope = [
   { name: "CSSStartingStyleRule", insecureContext: true },
   
   { name: "CSSStyleDeclaration", insecureContext: true },
+  
+  { name: "CSSStyleProperties", insecureContext: true },
   
   { name: "CSSStyleRule", insecureContext: true },
   
