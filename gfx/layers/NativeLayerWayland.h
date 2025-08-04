@@ -165,6 +165,8 @@ class NativeLayerRootWayland final : public NativeLayerRoot {
   
   
   bool mRootMutatedStackingOrder = false;
+  
+  bool mRootAllLayersRendered = false;
   bool mMainThreadUpdateQueued = false;
   bool mIsFullscreen = false;
 };
