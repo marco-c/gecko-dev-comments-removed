@@ -37,7 +37,7 @@ test(
 
       
       
-      assert_throws_dom('QuotaExceededError', () => {
+      assert_throws_quotaexceedederror(() => {
         fetchLater(requestUrl, {
           method: 'POST',
           signal: controller.signal,
@@ -45,7 +45,7 @@ test(
           
           referrer: '',
         });
-      });
+      }, null, null);
 
       
       
