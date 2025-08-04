@@ -254,10 +254,6 @@ class nsBaseClipboard : public nsIClipboard {
 
   
   
-  static nsresult SanitizeForClipboard(nsITransferable* aTransferable);
-
-  
-  
   
   mozilla::Array<RefPtr<AsyncSetClipboardData>,
                  nsIClipboard::kClipboardTypeCount>
