@@ -412,7 +412,7 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
     
     
     
-    if (result.canChangeToAppProvided) {
+    if (result.canChangeToConfigEngine) {
       await this.setDefault(engineName, true);
     }
     if (!result.canInstallEngine) {

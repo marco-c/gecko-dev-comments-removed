@@ -20,8 +20,8 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AddonSearchEngine:
     "moz-src:///toolkit/components/search/AddonSearchEngine.sys.mjs",
-  AppProvidedSearchEngine:
-    "moz-src:///toolkit/components/search/AppProvidedSearchEngine.sys.mjs",
+  ConfigSearchEngine:
+    "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
 });
 
 
@@ -71,7 +71,7 @@ this.addonsSearchDetection = class extends ExtensionAPI {
             for (let engine of engines) {
               if (
                 !(engine instanceof lazy.AddonSearchEngine) &&
-                !(engine instanceof lazy.AppProvidedSearchEngine)
+                !(engine instanceof lazy.ConfigSearchEngine)
               ) {
                 continue;
               }

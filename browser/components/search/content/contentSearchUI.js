@@ -89,7 +89,7 @@ this.ContentSearchUIController = (function () {
       this._defaultEngine = {
         name: engine.name,
         icon,
-        isAppProvided: engine.isAppProvided,
+        isConfigEngine: engine.isConfigEngine,
       };
       this._updateDefaultEngineHeader();
       this._updateDefaultEngineIcon();
@@ -676,7 +676,7 @@ this.ContentSearchUIController = (function () {
     _updateDefaultEngineIcon() {
       
       
-      let icon = this.defaultEngine.isAppProvided
+      let icon = this.defaultEngine.isConfigEngine
         ? this.defaultEngine.icon
         : "chrome://global/skin/icons/search-glass.svg";
 

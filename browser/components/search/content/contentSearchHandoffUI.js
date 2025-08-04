@@ -67,7 +67,7 @@ class ContentSearchHandoffUIController {
 
     
     
-    if (!engine.isAppProvided) {
+    if (!engine.isConfigEngine) {
       this._engineIcon = "chrome://global/skin/icons/search-glass.svg";
     } else if (engine.iconData) {
       this._engineIcon = this._getFaviconURIFromIconData(engine.iconData);
@@ -102,7 +102,7 @@ class ContentSearchHandoffUIController {
           ? "about-private-browsing-search-placeholder"
           : "newtab-search-box-text"
       );
-    } else if (!engine.isAppProvided) {
+    } else if (!engine.isConfigEngine) {
       document.l10n.setAttributes(
         fakeButton,
         this._isAboutPrivateBrowsing

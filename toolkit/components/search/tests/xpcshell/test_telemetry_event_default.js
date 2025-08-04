@@ -10,8 +10,8 @@
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
-  AppProvidedSearchEngine:
-    "moz-src:///toolkit/components/search/AppProvidedSearchEngine.sys.mjs",
+  AppProvidedConfigEngine:
+    "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
 });
 
 const BASE_CONFIG = [
@@ -496,7 +496,7 @@ add_task(async function test_only_notify_on_relevant_engine_property_change() {
   
   
   let notificationSpy = sinon.spy(
-    AppProvidedSearchEngine.prototype,
+    AppProvidedConfigEngine.prototype,
     "_resetPrevEngineInfo"
   );
 
@@ -527,7 +527,7 @@ add_task(
     
     
     let notificationSpy = sinon.spy(
-      AppProvidedSearchEngine.prototype,
+      AppProvidedConfigEngine.prototype,
       "_resetPrevEngineInfo"
     );
 

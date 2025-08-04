@@ -115,7 +115,7 @@ add_task(async function test_error() {
   );
 });
 
-add_task(async function test_nonAppProvided() {
+add_task(async function test_nonConfig() {
   let controller = new SearchSuggestionController();
   let result = await controller.fetch("mo", false, openSearchEngine);
   Assert.equal(result.remote.length, 3);
@@ -123,6 +123,6 @@ add_task(async function test_nonAppProvided() {
   Assert.equal(
     Glean.searchSuggestions.successfulRequests.openSearchEngine.testGetValue(),
     null,
-    "No telemetry is recorded for non-app-provided-engine"
+    "No telemetry is recorded for non-config-engine"
   );
 });
