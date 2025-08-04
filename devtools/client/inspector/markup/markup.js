@@ -309,6 +309,7 @@ function MarkupView(inspector, frame, controllerWindow) {
   this._onDomMutation = this._onDomMutation.bind(this);
   this._updateSearchResultsHighlightingInSelectedNode =
     this._updateSearchResultsHighlightingInSelectedNode.bind(this);
+  this._onToolboxSelect = this._onToolboxSelect.bind(this);
 
   
   this._elt.addEventListener("blur", this._onBlur, true);
@@ -352,6 +353,7 @@ function MarkupView(inspector, frame, controllerWindow) {
     "highlighter-hidden",
     this.onHighlighterHidden
   );
+  this.inspector.toolbox.once("select", this._onToolboxSelect);
 
   this._onNewSelection(this.inspector.selection.nodeFront);
   if (this.inspector.selection.nodeFront) {
@@ -531,6 +533,20 @@ MarkupView.prototype = {
   _onToolboxPickerCanceled() {
     if (this._selectedContainer) {
       scrollIntoViewIfNeeded(this._selectedContainer.editor.elt);
+    }
+  },
+
+  _onToolboxSelect(id) {
+    if (id !== "inspector") {
+      return;
+    }
+
+    
+    
+    
+    
+    if (this.inspector.selection?.reason === "browser-context-menu") {
+      this.maybeNavigateToNewSelection();
     }
   },
 
@@ -2697,6 +2713,7 @@ MarkupView.prototype = {
       "highlighter-hidden",
       this.onHighlighterHidden
     );
+    this.inspector.toolbox.off("select", this._onToolboxSelect);
     this.win.removeEventListener("copy", this._onCopy);
     this.win.removeEventListener("mouseup", this._onMouseUp);
 
