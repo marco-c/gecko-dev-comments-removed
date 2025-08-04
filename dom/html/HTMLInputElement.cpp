@@ -15,6 +15,7 @@
 #include "mozilla/dom/BlobImpl.h"
 #include "mozilla/dom/CustomEvent.h"
 #include "mozilla/dom/Directory.h"
+#include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/DocumentOrShadowRoot.h"
 #include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/FileSystemUtils.h"
@@ -33,6 +34,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/ServoCSSParser.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_signon.h"
 #include "mozilla/TextUtils.h"
@@ -724,6 +726,41 @@ static bool IsPickerBlocked(Document* aDoc) {
   return true;
 }
 
+
+
+
+
+
+
+
+
+static Maybe<StyleAbsoluteColor> MaybeComputeColor(Document* aDocument,
+                                                   const nsAString& aValue) {
+  
+  
+  return ServoCSSParser::ComputeColorWellControlColor(
+      aDocument->EnsureStyleSet().RawData(), NS_ConvertUTF16toUTF8(aValue),
+      StyleColorSpace::Srgb);
+}
+
+
+
+
+
+
+
+
+static void SerializeColorForHTMLCompatibility(const StyleAbsoluteColor& aColor,
+                                               nsAString& aResult) {
+  
+  
+  
+  nscolor color = aColor.ToColor();
+  aResult.Truncate();
+  aResult.AppendPrintf("#%02x%02x%02x", NS_GET_R(color), NS_GET_G(color),
+                       NS_GET_B(color));
+}
+
 nsTArray<nsString> HTMLInputElement::GetColorsFromList() {
   RefPtr<HTMLDataListElement> dataList = GetList();
   if (!dataList) {
@@ -740,10 +777,15 @@ nsTArray<nsString> HTMLInputElement::GetColorsFromList() {
       continue;
     }
 
-    nsString value;
+    nsAutoString value;
     option->GetValue(value);
-    if (IsValidSimpleColor(value)) {
-      ToLowerCase(value);
+    
+    
+    if (Maybe<StyleAbsoluteColor> result =
+            MaybeComputeColor(OwnerDoc(), value)) {
+      
+      
+      SerializeColorForHTMLCompatibility(*result, value);
       colors.AppendElement(value);
     }
   }
@@ -4981,13 +5023,15 @@ void HTMLInputElement::SanitizeValue(nsAString& aValue,
       }
     } break;
     case FormControlType::InputColor: {
-      if (IsValidSimpleColor(aValue)) {
-        ToLowerCase(aValue);
-      } else {
-        
-        aValue.AssignLiteral("#000000");
-      }
-    } break;
+      
+      
+      StyleAbsoluteColor color = MaybeComputeColor(OwnerDoc(), aValue)
+                                     .valueOr(StyleAbsoluteColor::BLACK);
+      
+      
+      SerializeColorForHTMLCompatibility(color, aValue);
+      break;
+    }
     default:
       break;
   }
@@ -5007,20 +5051,6 @@ Maybe<nscolor> HTMLInputElement::ParseSimpleColor(const nsAString& aColor) {
   }
 
   return Some(color);
-}
-
-bool HTMLInputElement::IsValidSimpleColor(const nsAString& aValue) const {
-  if (aValue.Length() != 7 || aValue.First() != '#') {
-    return false;
-  }
-
-  for (int i = 1; i < 7; ++i) {
-    if (!IsAsciiDigit(aValue[i]) && !(aValue[i] >= 'a' && aValue[i] <= 'f') &&
-        !(aValue[i] >= 'A' && aValue[i] <= 'F')) {
-      return false;
-    }
-  }
-  return true;
 }
 
 bool HTMLInputElement::IsLeapYear(uint32_t aYear) const {
