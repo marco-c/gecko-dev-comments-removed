@@ -41,6 +41,11 @@ ChromeUtils.defineLazyGetter(lazy, "l10n", function () {
 
 
 
+
+
+
+
+
 const ERROR_L10N_IDS = new Map([
   [
     -1,
@@ -68,6 +73,8 @@ const ERROR_L10N_IDS = new Map([
     [
       "addon-install-error-file-access",
       "addon-local-install-error-file-access",
+      "addon-install-error-no-addon-name-file-access",
+      "addon-local-install-error-no-addon-name-file-access",
     ],
   ],
   [
@@ -1591,7 +1598,11 @@ var gXPInstallObserver = {
           } else {
             
             const isLocal = !host;
-            let errorId = ERROR_L10N_IDS.get(install.error)?.[isLocal ? 1 : 0];
+            const fluentIds = ERROR_L10N_IDS.get(install.error);
+            
+            
+            const offset = fluentIds?.length === 4 && !install.name ? 2 : 0;
+            let errorId = fluentIds?.[offset + isLocal ? 1 : 0];
             const args = {
               addonName: install.name,
               appVersion: Services.appinfo.version,
