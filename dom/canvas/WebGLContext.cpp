@@ -514,6 +514,7 @@ void WebGLContext::Resize(uvec2 requestedSize) {
   
   mRequestedSize = requestedSize;
   mDefaultFB = nullptr;
+  mResolvedDefaultFB = nullptr;
   mResetLayer = true;  
 }
 
