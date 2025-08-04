@@ -7,7 +7,9 @@
 
 #include "cairo-win32.h"
 #include "mozilla/gfx/HelpersCairo.h"
+#include "mozilla/StaticPrefs_browser.h"
 #include "nsCoord.h"
+#include "nsIContentAnalysis.h"
 #include "nsString.h"
 
 namespace mozilla {
@@ -81,8 +83,26 @@ nsresult PrintTargetWindows::BeginPrinting(const nsAString& aTitle,
   
   
   
+  bool lockSfw =
+      StaticPrefs::
+          browser_contentanalysis_windows_lock_foreground_window_on_print() &&
+      nsIContentAnalysis::MightBeActive();
+  if (lockSfw) {
+    ::LockSetForegroundWindow(LSFW_LOCK);
+  }
+  
+  
+  
+  
+  
+  
+  
   
   int result = ::StartDocW(mDC, &docinfo);
+  if (lockSfw) {
+    ::LockSetForegroundWindow(LSFW_UNLOCK);
+  }
+
   if (result <= 0) {
     if (::GetLastError() == ERROR_CANCELLED) {
       return NS_ERROR_ABORT;
