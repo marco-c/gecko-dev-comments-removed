@@ -49,6 +49,10 @@ import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.WithDisplay
 const val DISPLAY_WIDTH = 480
 const val DISPLAY_HEIGHT = 640
 
+
+const val VIRTUAL_DESCENDANT_ID_MASK = -0x100000000L
+const val VIRTUAL_DESCENDANT_ID_SHIFT = 32
+
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 @WithDisplay(width = DISPLAY_WIDTH, height = DISPLAY_HEIGHT)
@@ -63,11 +67,20 @@ class AccessibilityTest : BaseSessionTest() {
     override val rules: RuleChain = RuleChain.outerRule(activityRule).around(sessionRule)
 
     
-    private fun getVirtualDescendantId(childId: Long): Int {
+
+
+
+
+    private fun getVirtualDescendantId(accessibilityNodeId: Long): Int {
         try {
-            val getVirtualDescendantIdMethod =
-                AccessibilityNodeInfo::class.java.getMethod("getVirtualDescendantId", Long::class.java)
-            val virtualDescendantId = getVirtualDescendantIdMethod.invoke(null, childId) as Int
+            
+            
+            val virtualDescendantId =
+                (
+                    (accessibilityNodeId and VIRTUAL_DESCENDANT_ID_MASK)
+                        shr VIRTUAL_DESCENDANT_ID_SHIFT
+                    ).toInt()
+
             return if (virtualDescendantId == Int.MAX_VALUE) -1 else virtualDescendantId
         } catch (ex: Exception) {
             return 0
