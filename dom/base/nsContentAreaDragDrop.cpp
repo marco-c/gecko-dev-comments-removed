@@ -640,6 +640,8 @@ nsresult DragDataProducer::Produce(DataTransfer* aDataTransfer, bool* aCanDrag,
     data = do_QueryInterface(supports);
     if (NS_SUCCEEDED(rv)) {
       data->GetData(mHtmlString);
+      
+      mHtmlString.StripChar(L'\0');
     }
     rv = transferable->GetTransferData(kHTMLContext, getter_AddRefs(supports));
     data = do_QueryInterface(supports);
@@ -655,6 +657,8 @@ nsresult DragDataProducer::Produce(DataTransfer* aDataTransfer, bool* aCanDrag,
     data = do_QueryInterface(supports);
     NS_ENSURE_SUCCESS(rv, rv);  
     data->GetData(mTitleString);
+    
+    mTitleString.StripChar(L'\0');
   }
 
   
