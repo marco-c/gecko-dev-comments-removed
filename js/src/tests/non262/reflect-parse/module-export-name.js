@@ -104,13 +104,11 @@ assertModule(`
 `, [
   exportDecl(null, [exportNamespaceSpec(literal("x"))], moduleRequest(literal("module"), []), false),
 ]);
-if (getRealmConfiguration("importAttributes")) {
-  assertModule(`
-    import {"x" as y} from "module" with {type: "json"};
-  `, [
-    importDecl([importSpec(literal("x"), ident("y"))], moduleRequest(literal("module"), [importAttribute(ident("type"), literal("json"))])),
-  ]);
-}
+assertModule(`
+  import {"x" as y} from "module" with {type: "json"};
+`, [
+  importDecl([importSpec(literal("x"), ident("y"))], moduleRequest(literal("module"), [importAttribute(ident("type"), literal("json"))])),
+]);
 
 if (typeof reportCompare === "function")
   reportCompare(true, true);

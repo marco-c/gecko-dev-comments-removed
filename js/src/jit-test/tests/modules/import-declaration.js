@@ -326,114 +326,112 @@ program([
     )
 ]).assert(parseAsModule("import 'a'"));
 
-if (getRealmConfiguration("importAttributes")) {
-    program([
-        importDeclaration(
-            [
-                importSpecifier(
-                    ident("default"),
-                    ident("a")
-                )
-            ],
-            moduleRequest(
-                lit("b"),
-                []
+program([
+    importDeclaration(
+        [
+            importSpecifier(
+                ident("default"),
+                ident("a")
             )
+        ],
+        moduleRequest(
+            lit("b"),
+            []
         )
-    ]).assert(parseAsModule("import a from 'b' with {}"));
+    )
+]).assert(parseAsModule("import a from 'b' with {}"));
 
-    program([
-        importDeclaration(
-            [
-                importSpecifier(
-                    ident("default"),
-                    ident("a")
-                )
-            ],
-            moduleRequest(
-                lit("b"),
-                [
-                    importAttribute(ident('type'), lit('js')),
-                ]
+program([
+    importDeclaration(
+        [
+            importSpecifier(
+                ident("default"),
+                ident("a")
             )
-        )
-    ]).assert(parseAsModule("import a from 'b' with { type: 'js' }"));
-
-    program([
-        importDeclaration(
+        ],
+        moduleRequest(
+            lit("b"),
             [
-                importSpecifier(
-                    ident("default"),
-                    ident("a")
-                )
-            ],
-            moduleRequest(
-                lit("b"),
-                [
-                    importAttribute(ident('foo'), lit('bar')),
-                ]
-            )
+                importAttribute(ident('type'), lit('js')),
+            ]
         )
-    ]).assert(parseAsModule("import a from 'b' with { foo: 'bar' }"));
+    )
+]).assert(parseAsModule("import a from 'b' with { type: 'js' }"));
 
-    program([
-        importDeclaration(
+program([
+    importDeclaration(
+        [
+            importSpecifier(
+                ident("default"),
+                ident("a")
+            )
+        ],
+        moduleRequest(
+            lit("b"),
             [
-                importSpecifier(
-                    ident("default"),
-                    ident("a")
-                )
-            ],
-            moduleRequest(
-                lit("b"),
-                [
-                    importAttribute(ident('foo'), lit('bar')),
-                ]
-            )
+                importAttribute(ident('foo'), lit('bar')),
+            ]
         )
-    ]).assert(parseAsModule(`import a from 'b' with { foo: 'bar' }`));
+    )
+]).assert(parseAsModule("import a from 'b' with { foo: 'bar' }"));
 
-    
-    program([
-        importDeclaration(
+program([
+    importDeclaration(
+        [
+            importSpecifier(
+                ident("default"),
+                ident("a")
+            )
+        ],
+        moduleRequest(
+            lit("b"),
             [
-                importSpecifier(
-                    ident("default"),
-                    ident("a")
-                )
-            ],
-            moduleRequest(
-                lit("b"),
-                [
-                    importAttribute(ident('foo'), lit('bar')),
-                ]
-            )
+                importAttribute(ident('foo'), lit('bar')),
+            ]
         )
-    ]).assert(parseAsModule(`import a from 'b'
-                             with { foo: 'bar' }`));
+    )
+]).assert(parseAsModule(`import a from 'b' with { foo: 'bar' }`));
 
-    program([
-        importDeclaration(
+
+program([
+    importDeclaration(
+        [
+            importSpecifier(
+                ident("default"),
+                ident("a")
+            )
+        ],
+        moduleRequest(
+            lit("b"),
             [
-                importSpecifier(
-                    ident("default"),
-                    ident("a")
-                )
-            ],
-            moduleRequest(
-                lit("b"),
-                [
-                    importAttribute(ident('type'), lit('js')),
-                    importAttribute(ident('foo'), lit('bar')),
-                ]
-            )
+                importAttribute(ident('foo'), lit('bar')),
+            ]
         )
-    ]).assert(parseAsModule("import a from 'b' with { type: 'js', foo: 'bar' }"));
+    )
+]).assert(parseAsModule(`import a from 'b'
+                         with { foo: 'bar' }`));
 
-    assertThrowsInstanceOf(function () {
-        parseAsModule("import a from 'b' with { type: type }");
-    }, SyntaxError);
-}
+program([
+    importDeclaration(
+        [
+            importSpecifier(
+                ident("default"),
+                ident("a")
+            )
+        ],
+        moduleRequest(
+            lit("b"),
+            [
+                importAttribute(ident('type'), lit('js')),
+                importAttribute(ident('foo'), lit('bar')),
+            ]
+        )
+    )
+]).assert(parseAsModule("import a from 'b' with { type: 'js', foo: 'bar' }"));
+
+assertThrowsInstanceOf(function () {
+    parseAsModule("import a from 'b' with { type: type }");
+}, SyntaxError);
 
 var loc = parseAsModule("import { a as b } from 'c'", {
     loc: true
