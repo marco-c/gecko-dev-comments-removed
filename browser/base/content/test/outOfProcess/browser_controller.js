@@ -48,19 +48,9 @@ add_task(async function test_controllers_subframes() {
 
   gURLBar.focus();
 
-  let canTabMoveFocusToRootElement = !SpecialPowers.getBoolPref(
-    "dom.disable_tab_focus_to_root_element"
-  );
   for (let stepNum = 0; stepNum < browsingContexts.length; stepNum++) {
     let useTab = stepNum > 0;
-    
-    
-    
-    await keyAndUpdate(
-      useTab ? "VK_TAB" : "VK_F6",
-      {},
-      canTabMoveFocusToRootElement ? 6 : 4
-    );
+    await keyAndUpdate(useTab ? "VK_TAB" : "VK_F6", {}, 4);
 
     
     
@@ -74,23 +64,18 @@ add_task(async function test_controllers_subframes() {
     
     goUpdateGlobalEditMenuItems(true);
 
-    await SpecialPowers.spawn(
-      browsingContexts[stepNum],
-      [{ canTabMoveFocusToRootElement, useTab }],
-      args => {
-        
-        
-        
-        let document = content.document;
-        let expectedElement =
-          args.canTabMoveFocusToRootElement || !args.useTab
-            ? document.documentElement
-            : document.getElementById("input");
-        Assert.equal(document.activeElement, expectedElement, "root focused");
-      }
-    );
+    await SpecialPowers.spawn(browsingContexts[stepNum], [{ useTab }], args => {
+      
+      
+      
+      let document = content.document;
+      let expectedElement = !args.useTab
+        ? document.documentElement
+        : document.getElementById("input");
+      Assert.equal(document.activeElement, expectedElement, "root focused");
+    });
 
-    if (canTabMoveFocusToRootElement || !useTab) {
+    if (!useTab) {
       
       
       checkCommandState(

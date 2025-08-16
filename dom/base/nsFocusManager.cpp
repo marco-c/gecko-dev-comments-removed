@@ -4089,7 +4089,6 @@ nsIContent* nsFocusManager::GetNextTabbableContentInScope(
         }
         if (!checkSubDocument) {
           if (aReachedToEndForDocumentNavigation &&
-              StaticPrefs::dom_disable_tab_focus_to_root_element() &&
               nsContentUtils::IsChromeDoc(iterContent->GetComposedDoc())) {
             
             
@@ -4641,7 +4640,6 @@ nsresult nsFocusManager::GetNextTabbableContent(
               return NS_OK;
             }
           } else if (currentContent && aReachedToEndForDocumentNavigation &&
-                     StaticPrefs::dom_disable_tab_focus_to_root_element() &&
                      nsContentUtils::IsChromeDoc(
                          currentContent->GetComposedDoc())) {
             
@@ -4693,17 +4691,6 @@ nsresult nsFocusManager::GetNextTabbableContent(
     
     
     if (aCurrentTabIndex == (aForward ? 0 : 1)) {
-      
-      
-      if (!aForward && !StaticPrefs::dom_disable_tab_focus_to_root_element()) {
-        nsCOMPtr<nsPIDOMWindowOuter> window = GetCurrentWindow(aRootContent);
-        NS_ENSURE_TRUE(window, NS_ERROR_FAILURE);
-
-        RefPtr<Element> docRoot = GetRootForFocus(
-            window, aRootContent->GetComposedDoc(), false, true);
-        FocusFirst(docRoot, aResultContent,
-                   false );
-      }
       break;
     }
 
@@ -4751,17 +4738,6 @@ bool nsFocusManager::TryToMoveFocusToSubDocument(
   NS_ASSERTION(doc, "content not in document");
   Document* subdoc = doc->GetSubDocumentFor(aCurrentContent);
   if (subdoc && !subdoc->EventHandlingSuppressed()) {
-    if (aForward && !StaticPrefs::dom_disable_tab_focus_to_root_element()) {
-      
-      
-      if (nsCOMPtr<nsPIDOMWindowOuter> subframe = subdoc->GetWindow()) {
-        *aResultContent = GetRootForFocus(subframe, subdoc, false, true);
-        if (*aResultContent) {
-          NS_ADDREF(*aResultContent);
-          return true;
-        }
-      }
-    }
     if (RefPtr<Element> rootElement = subdoc->GetRootElement()) {
       if (RefPtr<PresShell> subPresShell = subdoc->GetPresShell()) {
         nsresult rv = GetNextTabbableContent(
@@ -4773,8 +4749,7 @@ bool nsFocusManager::TryToMoveFocusToSubDocument(
         if (*aResultContent) {
           return true;
         }
-        if (rootElement->IsEditable() &&
-            StaticPrefs::dom_disable_tab_focus_to_root_element()) {
+        if (rootElement->IsEditable()) {
           
           *aResultContent = rootElement;
           NS_ADDREF(*aResultContent);
@@ -4927,10 +4902,8 @@ nsresult nsFocusManager::FocusFirst(Element* aRootElement,
       if (RefPtr<PresShell> presShell = doc->GetPresShell()) {
         return GetNextTabbableContent(
             presShell, aRootElement, nullptr, aRootElement, true, 1, false,
-            StaticPrefs::dom_disable_tab_focus_to_root_element()
-                ? aReachedToEndForDocumentNavigation
-                : false,
-            true, false, aReachedToEndForDocumentNavigation, aNextContent);
+            aReachedToEndForDocumentNavigation, true, false,
+            aReachedToEndForDocumentNavigation, aNextContent);
       }
     }
   }
