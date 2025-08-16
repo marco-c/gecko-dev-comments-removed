@@ -227,7 +227,7 @@ struct AllocSpace {
 
   
   
-  MainThreadOrGCTaskData<PerAllocBitmap> nurseryOwnedBitmap;
+  MainThreadOrGCTaskData<AtomicPerAllocBitmap> nurseryOwnedBitmap;
 
   static constexpr uintptr_t firstAllocOffset() {
     return RoundUp(sizeof(Derived), GranularityBytes);
