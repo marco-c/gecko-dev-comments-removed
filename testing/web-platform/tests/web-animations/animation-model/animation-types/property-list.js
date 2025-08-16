@@ -866,7 +866,7 @@ const gCSSProperties2 = {
   },
   'letter-spacing': {
     
-    types: [ 'length' ]
+    types: [ 'lengthPercentageOrCalc' ]
   },
   'lighting-color': {
     
