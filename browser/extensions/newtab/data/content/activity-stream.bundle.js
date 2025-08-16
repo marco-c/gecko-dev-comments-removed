@@ -12566,12 +12566,21 @@ function Lists({
   }), external_React_default().createElement("panel-list", {
     id: "lists-panel"
   }, external_React_default().createElement("panel-item", {
+    "data-l10n-id": "newtab-widget-lists-menu-edit",
     onClick: () => setIsEditing(true)
-  }, "Edit name"), external_React_default().createElement("panel-item", {
+  }), external_React_default().createElement("panel-item", {
+    "data-l10n-id": "newtab-widget-lists-menu-create",
     onClick: () => handleCreateNewList()
-  }, "Create a new list"), external_React_default().createElement("panel-item", {
+  }), external_React_default().createElement("panel-item", {
+    "data-l10n-id": "newtab-widget-lists-menu-delete",
     onClick: () => handleDeleteList()
-  }, "Delete this list"), external_React_default().createElement("panel-item", null, "Hide To Do list"), external_React_default().createElement("panel-item", null, "Learn more"), external_React_default().createElement("panel-item", null, "Copy to clipboard"))), external_React_default().createElement("div", {
+  }), external_React_default().createElement("hr", null), external_React_default().createElement("panel-item", {
+    "data-l10n-id": "newtab-widget-lists-menu-copy"
+  }), external_React_default().createElement("panel-item", {
+    "data-l10n-id": "newtab-widget-lists-menu-hide"
+  }), external_React_default().createElement("panel-item", {
+    "data-l10n-id": "newtab-widget-lists-menu-learn-more"
+  }))), external_React_default().createElement("div", {
     className: "add-task-container"
   }, external_React_default().createElement("span", {
     className: "icon icon-add"
@@ -12597,12 +12606,17 @@ function Lists({
     deleteTask: deleteTask,
     isValidUrl: isValidUrl
   })) : external_React_default().createElement("p", {
-    className: "empty-list-text"
-  }, "The list is empty. For now \uD83E\uDD8A"), lists[selected]?.completed.length >= 1 && external_React_default().createElement("details", {
+    className: "empty-list-text",
+    "data-l10n-id": "newtab-widget-lists-empty-cta"
+  }), lists[selected]?.completed.length >= 1 && external_React_default().createElement("details", {
     className: "completed-task-wrapper"
   }, external_React_default().createElement("summary", null, external_React_default().createElement("span", {
+    "data-l10n-id": "newtab-widget-lists-completed-list",
+    "data-l10n-args": JSON.stringify({
+      number: lists[selected]?.completed.length
+    }),
     className: "completed-title"
-  }, `Completed (${lists[selected]?.completed.length})`)), lists[selected]?.completed.map(completedTask => external_React_default().createElement(ListItem, {
+  })), lists[selected]?.completed.map(completedTask => external_React_default().createElement(ListItem, {
     key: completedTask.id,
     type: taskType.COMPLETED,
     task: completedTask,
@@ -12672,14 +12686,21 @@ function ListItem({
   }), external_React_default().createElement("panel-list", {
     id: `panel-task-${task.id}`
   }, !isCompleted && external_React_default().createElement((external_React_default()).Fragment, null, task.isUrl && external_React_default().createElement("panel-item", {
+    "data-l10n-id": "newtab-widget-lists-input-menu-open-link",
     onClick: () => window.open(task.value, "_blank", "noopener")
-  }, "Open link"), external_React_default().createElement("panel-item", null, "Move up"), external_React_default().createElement("panel-item", null, "Move down"), external_React_default().createElement("panel-item", {
+  }), external_React_default().createElement("panel-item", {
+    "data-l10n-id": "newtab-widget-lists-input-menu-move-up"
+  }), external_React_default().createElement("panel-item", {
+    "data-l10n-id": "newtab-widget-lists-input-menu-move-down"
+  }), external_React_default().createElement("panel-item", {
+    "data-l10n-id": "newtab-widget-lists-input-menu-edit",
     className: "edit-item",
     onClick: () => setIsEditing(true)
-  }, "Edit")), external_React_default().createElement("panel-item", {
+  })), external_React_default().createElement("panel-item", {
+    "data-l10n-id": "newtab-widget-lists-input-menu-delete",
     className: "delete-item",
     onClick: handleDelete
-  }, "Delete item")));
+  })));
 }
 function EditableText({
   value,
