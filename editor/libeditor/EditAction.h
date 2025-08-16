@@ -352,9 +352,6 @@ enum class EditAction {
   eSetText,
 
   
-  eSetHTML,
-
-  
   eInsertHTML,
 
   
@@ -485,10 +482,6 @@ enum class EditSubAction : int32_t {
   
   
   eInsertHTMLSource,
-
-  
-  
-  eReplaceHeadWithHTMLSource,
 
   
   
@@ -828,7 +821,6 @@ inline bool MayEditActionDeleteSelection(const EditAction aEditAction) {
 
     case EditAction::eRewrap:
     case EditAction::eSetText:
-    case EditAction::eSetHTML:
     case EditAction::eInsertHTML:
       return true;
 

@@ -3445,16 +3445,6 @@ class HTMLEditor final : public EditorBase,
       const EditorInlineStyle& aStyleToRemove,
       nsTArray<EditorInlineStyle>& aStylesToRemove) const;
 
-  
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT nsresult ReplaceHeadContentsWithSourceWithTransaction(
-      const nsAString& aSourceToInsert);
-
   enum class RetrievingBackgroundColorOption {
     
     

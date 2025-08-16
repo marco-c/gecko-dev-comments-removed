@@ -115,15 +115,6 @@ interface nsIHTMLEditor : nsISupports
 
 
 
-  [can_run_script]
-  void rebuildDocumentFromSource(in AString aSourceString);
-
-  
-
-
-
-
-
 
 
 
