@@ -772,7 +772,7 @@ static void ThrowUnexpectedModuleStatus(JSContext* cx, ModuleStatus status) {
 static bool HostLoadImportedModule(
     JSContext* cx, Handle<ModuleObject*> referrer,
     Handle<JSObject*> moduleRequest,
-    Handle<GraphLoadingStateRecordObject*> payload) {
+    Handle<GraphLoadingStateRecordObject*> state) {
   JS::ModuleLoadHook moduleLoadHook = cx->runtime()->moduleLoadHook;
   if (!moduleLoadHook) {
     JS_ReportErrorASCII(cx, "Module load hook not set");
@@ -782,9 +782,9 @@ static bool HostLoadImportedModule(
   MOZ_ASSERT(referrer);
   MOZ_ASSERT(moduleRequest);
   Rooted<Value> referencingPrivate(cx, JS::GetModulePrivate(referrer));
-  RootedValue payloadPrivate(cx, ObjectValue(*payload));
+  RootedValue payload(cx, ObjectValue(*state));
   return moduleLoadHook(cx, referrer, referencingPrivate, moduleRequest,
-                        payloadPrivate, nullptr);
+                        payload);
 }
 
 static bool ModuleResolveExportImpl(JSContext* cx, Handle<ModuleObject*> module,
@@ -2683,13 +2683,15 @@ JSObject* js::StartDynamicModuleImport(JSContext* cx, HandleScript script,
   }
 
   RootedValue referencingPrivate(cx, script->sourceObject()->getPrivate());
+  RootedValue payload(cx, ObjectValue(*promise));
+
   
   
   
   
   
   std::ignore = moduleLoadHook(cx,  nullptr, referencingPrivate,
-                               moduleRequest, UndefinedHandleValue, promise);
+                               moduleRequest, payload);
   return promise;
 }
 
