@@ -5,8 +5,8 @@
 
 #include "RemoteDecoderParent.h"
 
-#include "RemoteMediaManagerParent.h"
 #include "RemoteCDMParent.h"
+#include "RemoteMediaManagerParent.h"
 #include "mozilla/Unused.h"
 
 namespace mozilla {
