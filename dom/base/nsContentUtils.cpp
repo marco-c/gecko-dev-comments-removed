@@ -212,7 +212,6 @@
 #include "mozilla/dom/TrustedTypesConstants.h"
 #include "mozilla/dom/UserActivation.h"
 #include "mozilla/dom/ViewTransition.h"
-#include "mozilla/dom/WindowBinding.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/dom/WorkerPrivate.h"
@@ -9565,15 +9564,14 @@ nsView* nsContentUtils::GetViewToDispatchEvent(nsPresContext* aPresContext,
   return viewManager->GetRootView();
 }
 
-Result<bool, nsresult> nsContentUtils::SynthesizeMouseEvent(
+nsresult nsContentUtils::SendMouseEvent(
     mozilla::PresShell* aPresShell, nsIWidget* aWidget, const nsAString& aType,
-    LayoutDeviceIntPoint& aRefPoint,
-    const SynthesizeMouseEventData& aMouseEventData,
-    const SynthesizeMouseEventOptions& aOptions) {
-  MOZ_ASSERT(aPresShell);
+    LayoutDeviceIntPoint& aRefPoint, int32_t aButton, int32_t aButtons,
+    int32_t aClickCount, int32_t aModifiers, bool aIgnoreRootScrollFrame,
+    float aPressure, unsigned short aInputSourceArg, uint32_t aIdentifier,
+    bool aToWindow, bool* aPreventDefault, bool aIsDOMEventSynthesized,
+    bool aIsWidgetEventSynthesized) {
   MOZ_ASSERT(aWidget);
-  AUTO_PROFILER_LABEL("nsContentUtils::SynthesizeMouseEvent", OTHER);
-
   EventMessage msg;
   Maybe<WidgetMouseEvent::ExitFrom> exitFrom;
   bool contextMenuKey = false;
@@ -9596,33 +9594,36 @@ Result<bool, nsresult> nsContentUtils::SynthesizeMouseEvent(
     msg = eMouseLongTap;
   } else if (aType.EqualsLiteral("contextmenu")) {
     msg = eContextMenu;
-    contextMenuKey =
-        !aMouseEventData.mButton &&
-        aMouseEventData.mInputSource != MouseEvent_Binding::MOZ_SOURCE_TOUCH;
+    contextMenuKey = !aButton && aInputSourceArg !=
+                                     dom::MouseEvent_Binding::MOZ_SOURCE_TOUCH;
   } else if (aType.EqualsLiteral("MozMouseHittest")) {
     msg = eMouseHitTest;
   } else if (aType.EqualsLiteral("MozMouseExploreByTouch")) {
     msg = eMouseExploreByTouch;
   } else {
-    return Err(NS_ERROR_FAILURE);
+    return NS_ERROR_FAILURE;
+  }
+
+  if (aInputSourceArg == MouseEvent_Binding::MOZ_SOURCE_UNKNOWN) {
+    aInputSourceArg = MouseEvent_Binding::MOZ_SOURCE_MOUSE;
   }
 
   Maybe<WidgetPointerEvent> pointerEvent;
   Maybe<WidgetMouseEvent> mouseEvent;
   if (IsPointerEventMessage(msg)) {
-    if (MOZ_UNLIKELY(aOptions.mIsWidgetEventSynthesized)) {
-      MOZ_ASSERT_UNREACHABLE(
-          "The event shouldn't be dispatched as a synthesized event");
+    MOZ_ASSERT(!aIsWidgetEventSynthesized,
+               "The event shouldn't be dispatched as a synthesized event");
+    if (MOZ_UNLIKELY(aIsWidgetEventSynthesized)) {
       
       
-      return Err(NS_ERROR_INVALID_ARG);
+      return NS_ERROR_INVALID_ARG;
     }
     pointerEvent.emplace(true, msg, aWidget,
                          contextMenuKey ? WidgetMouseEvent::eContextMenuKey
                                         : WidgetMouseEvent::eNormal);
   } else {
     mouseEvent.emplace(true, msg, aWidget,
-                       aOptions.mIsWidgetEventSynthesized
+                       aIsWidgetEventSynthesized
                            ? WidgetMouseEvent::eSynthesized
                            : WidgetMouseEvent::eReal,
                        contextMenuKey ? WidgetMouseEvent::eContextMenuKey
@@ -9630,56 +9631,47 @@ Result<bool, nsresult> nsContentUtils::SynthesizeMouseEvent(
   }
   WidgetMouseEvent& mouseOrPointerEvent =
       pointerEvent.isSome() ? pointerEvent.ref() : mouseEvent.ref();
-  mouseOrPointerEvent.pointerId = aMouseEventData.mIdentifier;
-  mouseOrPointerEvent.mModifiers =
-      GetWidgetModifiers(aMouseEventData.mModifiers);
-  mouseOrPointerEvent.mButton = aMouseEventData.mButton;
+  mouseOrPointerEvent.pointerId = aIdentifier;
+  mouseOrPointerEvent.mModifiers = GetWidgetModifiers(aModifiers);
+  mouseOrPointerEvent.mButton = aButton;
   mouseOrPointerEvent.mButtons =
-      aMouseEventData.mButtons.WasPassed()
-          ? aMouseEventData.mButtons.Value()
-          : (msg != eMouseDown
-                 ? 0
-                 : GetButtonsFlagForButton(aMouseEventData.mButton));
-  mouseOrPointerEvent.mPressure = aMouseEventData.mPressure;
-  mouseOrPointerEvent.mInputSource = aMouseEventData.mInputSource;
-  mouseOrPointerEvent.mClickCount =
-      aMouseEventData.mClickCount.WasPassed()
-          ? aMouseEventData.mClickCount.Value()
-          : ((msg == eMouseDown || msg == eMouseUp) ? 1 : 0);
-  mouseOrPointerEvent.mFlags.mIsSynthesizedForTests =
-      aOptions.mIsDOMEventSynthesized;
+      aButtons != nsIDOMWindowUtils::MOUSE_BUTTONS_NOT_SPECIFIED ? aButtons
+      : msg == eMouseUp                                          ? 0
+                        : GetButtonsFlagForButton(aButton);
+  mouseOrPointerEvent.mPressure = aPressure;
+  mouseOrPointerEvent.mInputSource = aInputSourceArg;
+  mouseOrPointerEvent.mClickCount = aClickCount;
+  mouseOrPointerEvent.mFlags.mIsSynthesizedForTests = aIsDOMEventSynthesized;
   mouseOrPointerEvent.mExitFrom = exitFrom;
 
   nsPresContext* presContext = aPresShell->GetPresContext();
-  if (!presContext) {
-    return Err(NS_ERROR_FAILURE);
-  }
+  if (!presContext) return NS_ERROR_FAILURE;
 
   mouseOrPointerEvent.mRefPoint = aRefPoint;
-  mouseOrPointerEvent.mIgnoreRootScrollFrame = aOptions.mIgnoreRootScrollFrame;
+  mouseOrPointerEvent.mIgnoreRootScrollFrame = aIgnoreRootScrollFrame;
 
   nsEventStatus status = nsEventStatus_eIgnore;
-  if (aOptions.mToWindow) {
+  if (aToWindow) {
     RefPtr<PresShell> presShell;
     nsView* view =
         GetViewToDispatchEvent(presContext, getter_AddRefs(presShell));
     if (!presShell || !view) {
-      return Err(NS_ERROR_FAILURE);
+      return NS_ERROR_FAILURE;
     }
-    nsresult rv = presShell->HandleEvent(view->GetFrame(), &mouseOrPointerEvent,
-                                         false, &status);
-    if (NS_FAILED(rv)) {
-      return Err(rv);
-    }
-  } else if (StaticPrefs::test_events_async_enabled()) {
+    return presShell->HandleEvent(view->GetFrame(), &mouseOrPointerEvent, false,
+                                  &status);
+  }
+  if (StaticPrefs::test_events_async_enabled()) {
     status = aWidget->DispatchInputEvent(&mouseOrPointerEvent).mContentStatus;
   } else {
     nsresult rv = aWidget->DispatchEvent(&mouseOrPointerEvent, status);
-    if (NS_FAILED(rv)) {
-      return Err(rv);
-    }
+    NS_ENSURE_SUCCESS(rv, rv);
   }
-  return status == nsEventStatus_eConsumeNoDefault;
+  if (aPreventDefault) {
+    *aPreventDefault = (status == nsEventStatus_eConsumeNoDefault);
+  }
+
+  return NS_OK;
 }
 
 
@@ -10191,7 +10183,6 @@ class StringBuilder {
   AutoTArray<Unit, STRING_BUFFER_UNITS> mUnits;
   UniquePtr<StringBuilder> mNext;
   StringBuilder* mLast;
-  
   
   CheckedInt<uint32_t> mLength;
 };
@@ -11053,7 +11044,6 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
   }
 
   if (nodeInfo->NamespaceEquals(kNameSpaceID_XHTML)) {
-    
     
     
     if (isCustomElementName) {

@@ -219,6 +219,22 @@ function computeButton(aEvent) {
   return aEvent.type == "contextmenu" ? 2 : 0;
 }
 
+function computeButtons(aEvent, utils) {
+  if (typeof aEvent.buttons != "undefined") {
+    return aEvent.buttons;
+  }
+
+  if (typeof aEvent.button != "undefined") {
+    return utils.MOUSE_BUTTONS_NOT_SPECIFIED;
+  }
+
+  if (typeof aEvent.type != "undefined" && aEvent.type != "mousedown") {
+    return utils.MOUSE_BUTTONS_NO_BUTTON;
+  }
+
+  return utils.MOUSE_BUTTONS_NOT_SPECIFIED;
+}
+
 
 
 
@@ -759,60 +775,51 @@ function synthesizeMouseAtPoint(left, top, aEvent, aWindow = window) {
         ? aEvent.isWidgetEventSynthesized
         : false;
     if ("type" in aEvent && aEvent.type) {
-      defaultPrevented = _EU_maybeWrap(aWindow).synthesizeMouseEvent(
+      defaultPrevented = utils.sendMouseEvent(
         aEvent.type,
         left,
         top,
-        {
-          identifier: id,
-          button,
-          buttons: aEvent.buttons,
-          clickCount,
-          modifiers,
-          pressure,
-          inputSource,
-        },
-        {
-          isDOMEventSynthesized,
-          isWidgetEventSynthesized,
-        }
+        button,
+        clickCount,
+        modifiers,
+        false,
+        pressure,
+        inputSource,
+        isDOMEventSynthesized,
+        isWidgetEventSynthesized,
+        computeButtons(aEvent, utils),
+        id
       );
     } else {
-      _EU_maybeWrap(aWindow).synthesizeMouseEvent(
+      utils.sendMouseEvent(
         "mousedown",
         left,
         top,
-        {
-          identifier: id,
-          button,
-          buttons: aEvent.buttons,
-          clickCount,
-          modifiers,
-          pressure,
-          inputSource,
-        },
-        {
-          isDOMEventSynthesized,
-          isWidgetEventSynthesized,
-        }
+        button,
+        clickCount,
+        modifiers,
+        false,
+        pressure,
+        inputSource,
+        isDOMEventSynthesized,
+        isWidgetEventSynthesized,
+        computeButtons(Object.assign({ type: "mousedown" }, aEvent), utils),
+        id
       );
-      _EU_maybeWrap(aWindow).synthesizeMouseEvent(
+      utils.sendMouseEvent(
         "mouseup",
         left,
         top,
-        {
-          identifier: id,
-          button,
-          buttons: aEvent.buttons,
-          clickCount,
-          modifiers,
-          pressure,
-          inputSource,
-        },
-        {
-          isDOMEventSynthesized,
-          isWidgetEventSynthesized,
-        }
+        button,
+        clickCount,
+        modifiers,
+        false,
+        pressure,
+        inputSource,
+        isDOMEventSynthesized,
+        isWidgetEventSynthesized,
+        computeButtons(Object.assign({ type: "mouseup" }, aEvent), utils),
+        id
       );
     }
   }
