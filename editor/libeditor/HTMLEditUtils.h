@@ -1808,8 +1808,7 @@ class HTMLEditUtils final {
 
 
 
-
-  static Element* GetClosestAncestorListItemElement(
+  static Element* GetClosestInclusiveAncestorListItemElement(
       const nsIContent& aContent, const Element* aAncestorLimit = nullptr) {
     MOZ_ASSERT_IF(aAncestorLimit,
                   aContent.IsInclusiveDescendantOf(aAncestorLimit));

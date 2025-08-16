@@ -5129,22 +5129,34 @@ nsresult HTMLEditor::HandleHTMLIndentAroundRanges(
   
   
   RefPtr<Element> subListElement, blockquoteElement, indentedListItemElement;
-  for (OwningNonNull<nsIContent>& content : arrayOfContents) {
+  for (size_t i = 0; i < arrayOfContents.Length(); i++) {
+    const OwningNonNull<nsIContent>& content = arrayOfContents[i];
+
     
     EditorDOMPoint atContent(content);
     if (NS_WARN_IF(!atContent.IsSet())) {
       continue;
     }
 
-    
-    
-    if (!EditorUtils::IsEditableContent(content, EditorType::HTML) ||
-        !HTMLEditUtils::IsRemovableNode(content)) {
+    const auto IsNotHandlableContent = [](const nsIContent& aContent) {
+      
+      
+      
+      return !EditorUtils::IsEditableContent(aContent, EditorType::HTML) ||
+             !HTMLEditUtils::IsRemovableNode(aContent);
+    };
+
+    const auto IsMovableContentSibling = [&](const nsIContent& aContent) {
+      return !IsNotHandlableContent(aContent) &&
+             !HTMLEditUtils::IsListItem(&aContent);
+    };
+
+    if (IsNotHandlableContent(content)) {
       continue;
     }
 
     
-    if (MOZ_UNLIKELY(!content->IsInclusiveDescendantOf(&aEditingHost))) {
+    if (!content->IsInclusiveDescendantOf(&aEditingHost)) {
       continue;
     }
 
@@ -5180,8 +5192,8 @@ nsresult HTMLEditor::HandleHTMLIndentAroundRanges(
     
     
     if (RefPtr<Element> listItem =
-            HTMLEditUtils::GetClosestAncestorListItemElement(content,
-                                                             &aEditingHost)) {
+            HTMLEditUtils::GetClosestInclusiveAncestorListItemElement(
+                content, &aEditingHost)) {
       if (indentedListItemElement == listItem) {
         
         continue;
@@ -5291,14 +5303,27 @@ nsresult HTMLEditor::HandleHTMLIndentAroundRanges(
       latestNewBlockElement = blockquoteElement;
     }
 
+    MOZ_ASSERT(IsMovableContentSibling(content));
+    const OwningNonNull<nsIContent> lastContent = [&]() {
+      nsIContent* lastContent = content;
+      for (; i + 1 < arrayOfContents.Length(); i++) {
+        const OwningNonNull<nsIContent>& nextContent = arrayOfContents[i + 1];
+        if (lastContent->GetNextSibling() != nextContent ||
+            !IsMovableContentSibling(nextContent)) {
+          break;
+        }
+        lastContent = nextContent;
+      }
+      return OwningNonNull<nsIContent>(*lastContent);
+    }();
     
     
     
     Result<MoveNodeResult, nsresult> moveNodeResult =
-        MoveNodeToEndWithTransaction(MOZ_KnownLive(content),
-                                     *blockquoteElement);
+        MoveSiblingsToEndWithTransaction(MOZ_KnownLive(content), lastContent,
+                                         *blockquoteElement);
     if (MOZ_UNLIKELY(moveNodeResult.isErr())) {
-      NS_WARNING("HTMLEditor::MoveNodeToEndWithTransaction() failed");
+      NS_WARNING("HTMLEditor::MoveSiblingsToEndWithTransaction() failed");
       return moveNodeResult.unwrapErr();
     }
     MoveNodeResult unwrappedMoveNodeResult = moveNodeResult.unwrap();
@@ -10512,8 +10537,8 @@ nsresult HTMLEditor::MoveSelectedContentsToDivElementToMakeItAbsolutePosition(
     
     
     if (RefPtr<Element> listItemElement =
-            HTMLEditUtils::GetClosestAncestorListItemElement(content,
-                                                             &aEditingHost)) {
+            HTMLEditUtils::GetClosestInclusiveAncestorListItemElement(
+                content, &aEditingHost)) {
       if (handledListItemElement == listItemElement) {
         
         continue;
