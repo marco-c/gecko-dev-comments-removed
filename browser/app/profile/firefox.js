@@ -1828,6 +1828,9 @@ pref("browser.newtabpage.activity-stream.discoverystream.region-weather-config",
 pref("browser.newtabpage.activity-stream.discoverystream.locale-weather-config", "en-US,en-GB,en-CA");
 
 
+pref("browser.newtabpage.activity-stream.discoverystream.promoCard.visible", true);
+
+
 pref("browser.newtabpage.activity-stream.newtabWallpapers.enabled", true);
 pref("browser.newtabpage.activity-stream.newtabWallpapers.customColor.enabled", true);
 pref("browser.newtabpage.activity-stream.newtabWallpapers.customWallpaper.enabled", true);
