@@ -88,7 +88,6 @@
 #include "nsIFrameInlines.h"
 #include "nsILayoutHistoryState.h"
 #include "nsINode.h"
-#include "nsIScrollPositionListener.h"
 #include "nsIScrollbarMediator.h"
 #include "nsIXULRuntime.h"
 #include "nsLayoutUtils.h"
@@ -3073,11 +3072,6 @@ void ScrollContainerFrame::ScrollToImpl(
     needFrameVisibilityUpdate = true;
   }
 
-  
-  for (uint32_t i = 0; i < mListeners.Length(); i++) {
-    mListeners[i]->ScrollPositionWillChange(pt.x, pt.y);
-  }
-
   nsRect oldDisplayPort;
   nsIContent* content = GetContent();
   DisplayPortUtils::GetDisplayPort(content, &oldDisplayPort);
@@ -3287,9 +3281,8 @@ void ScrollContainerFrame::ScrollToImpl(
   
   ScheduleScrollAnimations();
 
-  
-  for (uint32_t i = 0; i < mListeners.Length(); i++) {
-    mListeners[i]->ScrollPositionDidChange(pt.x, pt.y);
+  if (mStickyContainer) {
+    mStickyContainer->UpdatePositions(pt,  nullptr);
   }
 
   if (nsCOMPtr<nsIDocShell> docShell = presContext->GetDocShell()) {
@@ -5174,8 +5167,15 @@ static void AddToListIfHeaderFooter(nsIFrame* aFrame,
   }
 }
 
+StickyScrollContainer& ScrollContainerFrame::EnsureStickyContainer() {
+  if (!mStickyContainer) {
+    mStickyContainer = MakeUnique<StickyScrollContainer>(this);
+  }
+  return *mStickyContainer;
+}
+
 static nsSize GetScrollPortSizeExcludingHeadersAndFooters(
-    nsIFrame* aScrollFrame, nsIFrame* aViewportFrame,
+    ScrollContainerFrame* aScrollFrame, nsIFrame* aViewportFrame,
     const nsRect& aScrollPort) {
   AutoTArray<TopAndBottom, 10> list;
   if (aViewportFrame) {
@@ -5185,10 +5185,7 @@ static nsSize GetScrollPortSizeExcludingHeadersAndFooters(
   }
 
   
-  StickyScrollContainer* ssc =
-      StickyScrollContainer::GetStickyScrollContainerForScrollFrame(
-          aScrollFrame);
-  if (ssc) {
+  if (auto* ssc = aScrollFrame->GetStickyContainer()) {
     for (nsIFrame* f : ssc->GetFrames().IterFromShallowest()) {
       
       if (ssc->IsStuckInYDirection(f)) {
@@ -6419,10 +6416,8 @@ bool ScrollContainerFrame::ComputeCustomOverflow(
 }
 
 void ScrollContainerFrame::UpdateSticky() {
-  StickyScrollContainer* ssc =
-      StickyScrollContainer::GetStickyScrollContainerForScrollFrame(this);
-  if (ssc) {
-    ssc->UpdatePositions(GetScrollPosition(), this);
+  if (mStickyContainer) {
+    mStickyContainer->UpdatePositions(GetScrollPosition(), this);
   }
 }
 

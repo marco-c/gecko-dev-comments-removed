@@ -29,7 +29,6 @@
 class nsPresContext;
 class nsIContent;
 class nsAtom;
-class nsIScrollPositionListener;
 class AutoContainsBlendModeCapturer;
 
 namespace mozilla {
@@ -40,6 +39,7 @@ enum class PhysicalAxis : uint8_t;
 enum class StyleScrollbarWidth : uint8_t;
 class ScrollContainerFrame;
 class ScrollPositionUpdate;
+class StickyScrollContainer;
 struct ScrollReflowInput;
 struct ScrollStyles;
 struct StyleScrollSnapAlign;
@@ -131,6 +131,11 @@ class ScrollContainerFrame : public nsContainerFrame,
   Maybe<nscoord> GetNaturalBaselineBOffset(
       WritingMode aWM, BaselineSharingGroup aBaselineGroup,
       BaselineExportContext aExportContext) const override;
+
+  StickyScrollContainer* GetStickyContainer() const {
+    return mStickyContainer.get();
+  }
+  StickyScrollContainer& EnsureStickyContainer();
 
   
   
@@ -513,21 +518,6 @@ class ScrollContainerFrame : public nsContainerFrame,
 
   bool NeedRestorePosition() const {
     return mRestorePos.y != -1 && mLastPos.x != -1 && mLastPos.y != -1;
-  }
-
-  
-
-
-
-  void AddScrollPositionListener(nsIScrollPositionListener* aListener) {
-    mListeners.AppendElement(aListener);
-  }
-
-  
-
-
-  void RemoveScrollPositionListener(nsIScrollPositionListener* aListener) {
-    mListeners.RemoveElement(aListener);
   }
 
   
@@ -1326,7 +1316,6 @@ class ScrollContainerFrame : public nsContainerFrame,
   RefPtr<AsyncScroll> mAsyncScroll;
   RefPtr<AsyncSmoothMSDScroll> mAsyncSmoothMSDScroll;
   RefPtr<layout::ScrollbarActivity> mScrollbarActivity;
-  nsTArray<nsIScrollPositionListener*> mListeners;
   ScrollOrigin mLastScrollOrigin;
   Maybe<nsPoint> mApzSmoothScrollDestination;
   MainThreadScrollGeneration mScrollGeneration;
@@ -1529,6 +1518,8 @@ class ScrollContainerFrame : public nsContainerFrame,
   
   nsRect mScrollPort;
   UniquePtr<ScrollSnapTargetIds> mLastSnapTargetIds;
+  
+  UniquePtr<StickyScrollContainer> mStickyContainer;
 };
 
 }  

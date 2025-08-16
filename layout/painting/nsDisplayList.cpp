@@ -1584,10 +1584,8 @@ static bool IsStickyFrameActive(nsDisplayListBuilder* aBuilder,
   MOZ_ASSERT(aFrame->StyleDisplay()->mPosition ==
              StylePositionProperty::Sticky);
 
-  StickyScrollContainer* stickyScrollContainer =
-      StickyScrollContainer::GetStickyScrollContainerForFrame(aFrame);
-  return stickyScrollContainer && stickyScrollContainer->ScrollContainer()
-                                      ->IsMaybeAsynchronouslyScrolled();
+  auto* ssc = StickyScrollContainer::GetOrCreateForFrame(aFrame);
+  return ssc && ssc->ScrollContainer()->IsMaybeAsynchronouslyScrolled();
 }
 
 bool nsDisplayListBuilder::IsAnimatedGeometryRoot(nsIFrame* aFrame,
@@ -5673,28 +5671,26 @@ static nscoord NegativePart(nscoord min, nscoord max) {
 }
 
 StickyScrollContainer* nsDisplayStickyPosition::GetStickyScrollContainer() {
-  StickyScrollContainer* stickyScrollContainer =
-      StickyScrollContainer::GetStickyScrollContainerForFrame(mFrame);
-  if (stickyScrollContainer) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    MOZ_ASSERT(stickyScrollContainer->ScrollContainer()
-                   ->IsMaybeAsynchronouslyScrolled());
-    if (!stickyScrollContainer->ScrollContainer()
-             ->IsMaybeAsynchronouslyScrolled()) {
-      stickyScrollContainer = nullptr;
-    }
+  auto* ssc = StickyScrollContainer::GetOrCreateForFrame(mFrame);
+  if (!ssc) {
+    return nullptr;
   }
-  return stickyScrollContainer;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(ssc->ScrollContainer()->IsMaybeAsynchronouslyScrolled());
+  if (!ssc->ScrollContainer()->IsMaybeAsynchronouslyScrolled()) {
+    return nullptr;
+  }
+  return ssc;
 }
 
 bool nsDisplayStickyPosition::CreateWebRenderCommands(
