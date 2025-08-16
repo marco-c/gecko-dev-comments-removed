@@ -6214,12 +6214,14 @@ void PresShell::ProcessSynthMouseOrPointerMoveEvent(
   if (aMoveMessage == eMouseMove) {
     mouseMoveEvent.emplace(true, eMouseMove, view->GetWidget(),
                            WidgetMouseEvent::eSynthesized);
+    mouseMoveEvent->mButton = MouseButton::ePrimary;
     
     
     
     mouseMoveEvent->convertToPointer = false;
   } else {
     pointerMoveEvent.emplace(true, ePointerMove, view->GetWidget());
+    pointerMoveEvent->mButton = MouseButton::eNotPressed;
     pointerMoveEvent->mReason = WidgetMouseEvent::eSynthesized;
   }
   WidgetMouseEvent& event =
