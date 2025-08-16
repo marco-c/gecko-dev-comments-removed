@@ -12,7 +12,6 @@
 #include "base/timer.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/ipc/SharedMemoryHandle.h"
-#include "mozilla/webgpu/ExternalTexture.h"
 #include "mozilla/webgpu/PWebGPUParent.h"
 #include "mozilla/webgpu/ffi/wgpu.h"
 #include "mozilla/webrender/WebRenderAPI.h"
@@ -25,58 +24,9 @@ class RemoteTextureOwnerClient;
 
 namespace webgpu {
 
+class ErrorBuffer;
 class SharedTexture;
 class PresentationData;
-
-
-
-
-
-
-
-
-
-
-
-
-
-class ErrorBuffer {
-  
-  static constexpr unsigned BUFFER_SIZE = 512;
-  ffi::WGPUErrorBufferType mType = ffi::WGPUErrorBufferType_None;
-  char mMessageUtf8[BUFFER_SIZE] = {};
-  bool mAwaitingGetError = false;
-  RawId mDeviceId = 0;
-
- public:
-  ErrorBuffer();
-  ErrorBuffer(const ErrorBuffer&) = delete;
-  ~ErrorBuffer();
-
-  ffi::WGPUErrorBuffer ToFFI();
-
-  ffi::WGPUErrorBufferType GetType();
-
-  static Maybe<dom::GPUErrorFilter> ErrorTypeToFilterType(
-      ffi::WGPUErrorBufferType aType);
-
-  struct Error {
-    dom::GPUErrorFilter type;
-    bool isDeviceLost;
-    nsCString message;
-    RawId deviceId;
-  };
-
-  
-  
-  
-  
-  
-  
-  Maybe<Error> GetError();
-
-  void CoerceValidationToInternal();
-};
 
 
 
@@ -103,9 +53,6 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
                               ipc::ByteBuf&& aSerializedMessages,
                               nsTArray<ipc::ByteBuf>&& aDataBuffers,
                               nsTArray<MutableSharedMemoryHandle>&& aShmems);
-  ipc::IPCResult RecvCreateExternalTextureSource(
-      RawId aDeviceId, RawId aQueueId, RawId aExternalTextureSourceId,
-      const ExternalTextureSourceDescriptor& aDesc);
   void QueueSubmit(RawId aQueueId, RawId aDeviceId,
                    Span<const RawId> aCommandBuffers,
                    Span<const RawId> aTextureIds);
@@ -183,10 +130,6 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
   RefPtr<gfx::FileHandleWrapper> GetDeviceFenceHandle(const RawId aDeviceId);
 
   void RemoveSharedTexture(RawId aTextureId);
-
-  void DestroyExternalTextureSource(RawId aId);
-  void DropExternalTextureSource(RawId aId);
-
   void DeallocBufferShmem(RawId aBufferId);
   void PreDeviceDrop(RawId aDeviceId);
 
@@ -248,8 +191,6 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
 
   std::unordered_map<ffi::WGPUTextureId, std::shared_ptr<SharedTexture>>
       mSharedTextures;
-
-  std::unordered_map<RawId, ExternalTextureSourceHost> mExternalTextureSources;
 
   
   
