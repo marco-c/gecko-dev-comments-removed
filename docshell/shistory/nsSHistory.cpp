@@ -1509,9 +1509,7 @@ static bool MaybeCheckUnloadingIsCanceled(
   }
 
   
-  if (needsBeforeUnload) {
-    aLoadResults.RemoveElementAt(found);
-  }
+  
 
   
   
