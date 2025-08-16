@@ -6,12 +6,10 @@ use api::BorderRadius;
 use api::units::*;
 use euclid::{Point2D, Rect, Box2D, Size2D, Vector2D, point2, point3};
 use euclid::{default, Transform2D, Transform3D, Scale, approxeq::ApproxEq};
-use malloc_size_of::{MallocShallowSizeOf, MallocSizeOf, MallocSizeOfOps};
 use plane_split::{Clipper, Polygon};
 use std::{i32, f32, fmt, ptr};
 use std::borrow::Cow;
 use std::num::NonZeroUsize;
-use std::os::raw::c_void;
 use std::sync::Arc;
 use std::mem::replace;
 
@@ -1428,51 +1426,6 @@ impl Preallocator {
 impl Default for Preallocator {
     fn default() -> Self {
         Self::new(0)
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub struct PrimaryArc<T>(pub Arc<T>);
-
-impl<T> ::std::ops::Deref for PrimaryArc<T> {
-    type Target = Arc<T>;
-
-    #[inline]
-    fn deref(&self) -> &Arc<T> {
-        &self.0
-    }
-}
-
-impl<T> MallocShallowSizeOf for PrimaryArc<T> {
-    fn shallow_size_of(&self, ops: &mut MallocSizeOfOps) -> usize {
-        unsafe {
-            
-            
-            let raw_arc_ptr: *const Arc<T> = &self.0;
-            let raw_ptr_ptr: *const *const c_void = raw_arc_ptr as _;
-            let raw_ptr = *raw_ptr_ptr;
-            (ops.size_of_op)(raw_ptr)
-        }
-    }
-}
-
-impl<T: MallocSizeOf> MallocSizeOf for PrimaryArc<T> {
-    fn size_of(&self, ops: &mut MallocSizeOfOps) -> usize {
-        self.shallow_size_of(ops) + (**self).size_of(ops)
     }
 }
 
