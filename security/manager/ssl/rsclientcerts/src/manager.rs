@@ -5,6 +5,8 @@
 
 use pkcs11_bindings::*;
 use std::collections::{BTreeMap, BTreeSet};
+use std::convert::TryInto;
+use std::iter::FromIterator;
 
 use crate::error::{Error, ErrorType};
 use crate::error_here;
@@ -37,6 +39,9 @@ pub trait ClientCertsBackend {
 
     #[allow(clippy::type_complexity)]
     fn find_objects(&mut self) -> Result<(Vec<CryptokiCert>, Vec<Self::Key>), Error>;
+    fn get_slot_info(&self) -> CK_SLOT_INFO;
+    fn get_token_info(&self) -> CK_TOKEN_INFO;
+    fn get_mechanism_list(&self) -> Vec<CK_MECHANISM_TYPE>;
 }
 
 const SUPPORTED_ATTRIBUTES: &[CK_ATTRIBUTE_TYPE] = &[
@@ -103,16 +108,7 @@ impl<B: ClientCertsBackend> Object<B> {
 }
 
 
-
-
-pub struct Manager<B: ClientCertsBackend> {
-    
-    sessions: BTreeSet<CK_SESSION_HANDLE>,
-    
-    searches: BTreeMap<CK_SESSION_HANDLE, Vec<CK_OBJECT_HANDLE>>,
-    
-    
-    signs: BTreeMap<CK_SESSION_HANDLE, (CK_OBJECT_HANDLE, Option<CK_RSA_PKCS_PSS_PARAMS>)>,
+struct Slot<B: ClientCertsBackend> {
     
     objects: BTreeMap<CK_OBJECT_HANDLE, Object<B>>,
     
@@ -121,25 +117,26 @@ pub struct Manager<B: ClientCertsBackend> {
     
     key_ids: BTreeSet<Vec<u8>>,
     
-    next_session: CK_SESSION_HANDLE,
-    
     next_handle: CK_OBJECT_HANDLE,
+    
     backend: B,
 }
 
-impl<B: ClientCertsBackend> Manager<B> {
-    pub fn new(backend: B) -> Manager<B> {
-        Manager {
-            sessions: BTreeSet::new(),
-            searches: BTreeMap::new(),
-            signs: BTreeMap::new(),
+impl<B: ClientCertsBackend> Slot<B> {
+    fn new(backend: B) -> Slot<B> {
+        Slot {
             objects: BTreeMap::new(),
             cert_ids: BTreeSet::new(),
             key_ids: BTreeSet::new(),
-            next_session: 1,
             next_handle: 1,
             backend,
         }
+    }
+
+    fn get_next_handle(&mut self) -> CK_OBJECT_HANDLE {
+        let next_handle = self.next_handle;
+        self.next_handle += 1;
+        next_handle
     }
 
     
@@ -166,30 +163,98 @@ impl<B: ClientCertsBackend> Manager<B> {
         }
         Ok(())
     }
+}
 
-    pub fn open_session(&mut self) -> Result<CK_SESSION_HANDLE, Error> {
+
+
+
+pub struct Manager<B: ClientCertsBackend> {
+    
+    
+    sessions: BTreeMap<CK_SESSION_HANDLE, CK_SLOT_ID>,
+    
+    searches: BTreeMap<CK_SESSION_HANDLE, Vec<CK_OBJECT_HANDLE>>,
+    
+    
+    signs: BTreeMap<CK_SESSION_HANDLE, (CK_OBJECT_HANDLE, Option<CK_RSA_PKCS_PSS_PARAMS>)>,
+    
+    next_session: CK_SESSION_HANDLE,
+    
+    slots: Vec<Slot<B>>,
+}
+
+impl<B: ClientCertsBackend> Manager<B> {
+    pub fn new(slots: Vec<B>) -> Manager<B> {
+        Manager {
+            sessions: BTreeMap::new(),
+            searches: BTreeMap::new(),
+            signs: BTreeMap::new(),
+            next_session: 1,
+            slots: slots.into_iter().map(Slot::new).collect(),
+        }
+    }
+
+    pub fn get_slot_ids(&self) -> Vec<CK_SLOT_ID> {
+        Vec::from_iter(1..=self.slots.len().try_into().unwrap())
+    }
+
+    pub fn get_slot_info(&self, slot_id: CK_SLOT_ID) -> Result<CK_SLOT_INFO, Error> {
+        let slot = self.slot_id_to_slot(slot_id)?;
+        Ok(slot.backend.get_slot_info())
+    }
+
+    pub fn get_token_info(&self, slot_id: CK_SLOT_ID) -> Result<CK_TOKEN_INFO, Error> {
+        let slot = self.slot_id_to_slot(slot_id)?;
+        Ok(slot.backend.get_token_info())
+    }
+
+    pub fn get_mechanism_list(&self, slot_id: CK_SLOT_ID) -> Result<Vec<CK_MECHANISM_TYPE>, Error> {
+        let slot = self.slot_id_to_slot(slot_id)?;
+        Ok(slot.backend.get_mechanism_list())
+    }
+
+    pub fn open_session(&mut self, slot_id: CK_SLOT_ID) -> Result<CK_SESSION_HANDLE, Error> {
         let next_session = self.next_session;
         self.next_session += 1;
-        self.sessions.insert(next_session);
+        self.sessions.insert(next_session, slot_id);
         Ok(next_session)
     }
 
     pub fn close_session(&mut self, session: CK_SESSION_HANDLE) -> Result<(), Error> {
-        if !self.sessions.remove(&session) {
+        self.sessions
+            .remove(&session)
+            .map(|_| ())
+            .ok_or(error_here!(ErrorType::InvalidInput))
+    }
+
+    pub fn close_all_sessions(&mut self, slot_id: CK_SLOT_ID) -> Result<(), Error> {
+        self.sessions
+            .retain(|_, existing_slot_id| *existing_slot_id != slot_id);
+        Ok(())
+    }
+
+    fn slot_id_to_slot(&self, slot_id: CK_SLOT_ID) -> Result<&Slot<B>, Error> {
+        let slot_id: usize = slot_id
+            .try_into()
+            .map_err(|_| error_here!(ErrorType::InvalidInput))?;
+        if slot_id < 1 {
             return Err(error_here!(ErrorType::InvalidInput));
         }
-        Ok(())
+        self.slots
+            .get(slot_id - 1)
+            .ok_or(error_here!(ErrorType::InvalidInput))
     }
 
-    pub fn close_all_sessions(&mut self) -> Result<(), Error> {
-        self.sessions.clear();
-        Ok(())
-    }
-
-    fn get_next_handle(&mut self) -> CK_OBJECT_HANDLE {
-        let next_handle = self.next_handle;
-        self.next_handle += 1;
-        next_handle
+    fn slot_id_to_slot_mut(&mut self, slot_id: CK_SLOT_ID) -> Result<&mut Slot<B>, Error> {
+        let slot_id: usize = slot_id
+            .try_into()
+            .map_err(|_| error_here!(ErrorType::InvalidInput))?;
+        if slot_id < 1 {
+            return Err(error_here!(ErrorType::InvalidInput));
+        }
+        self.slots
+            .get_mut(slot_id - 1)
+            .ok_or(error_here!(ErrorType::InvalidInput))
     }
 
     
@@ -201,9 +266,10 @@ impl<B: ClientCertsBackend> Manager<B> {
         session: CK_SESSION_HANDLE,
         attrs: Vec<(CK_ATTRIBUTE_TYPE, Vec<u8>)>,
     ) -> Result<(), Error> {
-        if !self.sessions.contains(&session) {
+        let Some(slot_id) = self.sessions.get(&session) else {
             return Err(error_here!(ErrorType::InvalidArgument));
-        }
+        };
+        let slot = self.slot_id_to_slot_mut(*slot_id)?;
         
         
         for (attr, _) in &attrs {
@@ -217,10 +283,10 @@ impl<B: ClientCertsBackend> Manager<B> {
         
         
         if unsafe { IsGeckoSearchingForClientAuthCertificates() } {
-            self.maybe_find_new_objects()?;
+            slot.maybe_find_new_objects()?;
         }
         let mut handles = Vec::new();
-        for (handle, object) in &self.objects {
+        for (handle, object) in &slot.objects {
             if object.matches(&attrs) {
                 handles.push(*handle);
             }
@@ -264,10 +330,15 @@ impl<B: ClientCertsBackend> Manager<B> {
 
     pub fn get_attributes(
         &self,
+        session: CK_SESSION_HANDLE,
         object_handle: CK_OBJECT_HANDLE,
         attr_types: Vec<CK_ATTRIBUTE_TYPE>,
     ) -> Result<Vec<Option<Vec<u8>>>, Error> {
-        let object = match self.objects.get(&object_handle) {
+        let Some(slot_id) = self.sessions.get(&session) else {
+            return Err(error_here!(ErrorType::InvalidArgument));
+        };
+        let slot = self.slot_id_to_slot(*slot_id)?;
+        let object = match slot.objects.get(&object_handle) {
             Some(object) => object,
             None => return Err(error_here!(ErrorType::InvalidArgument)),
         };
@@ -303,15 +374,24 @@ impl<B: ClientCertsBackend> Manager<B> {
         session: CK_SESSION_HANDLE,
         data: Vec<u8>,
     ) -> Result<usize, Error> {
-        let (key_handle, params) = match self.signs.get(&session) {
+        
+        
+        let (key_handle, params) = match self.signs.remove(&session) {
             Some((key_handle, params)) => (key_handle, params),
             None => return Err(error_here!(ErrorType::InvalidArgument)),
         };
-        let key = match self.objects.get_mut(key_handle) {
+        let Some(slot_id) = self.sessions.get(&session) else {
+            return Err(error_here!(ErrorType::InvalidArgument));
+        };
+        let slot = self.slot_id_to_slot_mut(*slot_id)?;
+        let key = match slot.objects.get_mut(&key_handle) {
             Some(key) => key,
             None => return Err(error_here!(ErrorType::InvalidArgument)),
         };
-        key.get_signature_length(data, params)
+        let signature_length = key.get_signature_length(data, &params)?;
+        
+        self.signs.insert(session, (key_handle, params));
+        Ok(signature_length)
     }
 
     pub fn sign(&mut self, session: CK_SESSION_HANDLE, data: Vec<u8>) -> Result<Vec<u8>, Error> {
@@ -321,7 +401,11 @@ impl<B: ClientCertsBackend> Manager<B> {
             Some((key_handle, params)) => (key_handle, params),
             None => return Err(error_here!(ErrorType::InvalidArgument)),
         };
-        let key = match self.objects.get_mut(&key_handle) {
+        let Some(slot_id) = self.sessions.get(&session) else {
+            return Err(error_here!(ErrorType::InvalidArgument));
+        };
+        let slot = self.slot_id_to_slot_mut(*slot_id)?;
+        let key = match slot.objects.get_mut(&key_handle) {
             Some(key) => key,
             None => return Err(error_here!(ErrorType::InvalidArgument)),
         };
