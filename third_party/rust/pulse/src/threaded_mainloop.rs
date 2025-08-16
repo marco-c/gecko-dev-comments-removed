@@ -3,16 +3,17 @@
 
 
 
-use ffi;
-use mainloop_api;
+use crate::mainloop_api;
+use crate::ErrorCode;
+use crate::Result;
 use mainloop_api::MainloopApi;
-use ErrorCode;
-use Result;
 
 #[derive(Debug)]
 pub struct ThreadedMainloop(*mut ffi::pa_threaded_mainloop);
 
 impl ThreadedMainloop {
+    
+    #[allow(clippy::missing_safety_doc)]
     pub unsafe fn from_raw_ptr(raw: *mut ffi::pa_threaded_mainloop) -> Self {
         ThreadedMainloop(raw)
     }
@@ -21,6 +22,8 @@ impl ThreadedMainloop {
         unsafe { ThreadedMainloop::from_raw_ptr(ffi::pa_threaded_mainloop_new()) }
     }
 
+    
+    #[allow(clippy::mut_from_ref)]
     pub fn raw_mut(&self) -> &mut ffi::pa_threaded_mainloop {
         unsafe { &mut *self.0 }
     }

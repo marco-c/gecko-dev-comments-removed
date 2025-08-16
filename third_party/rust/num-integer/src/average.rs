@@ -1,5 +1,5 @@
+use crate::Integer;
 use core::ops::{BitAnd, BitOr, BitXor, Shr};
-use Integer;
 
 
 pub trait Average: Integer {

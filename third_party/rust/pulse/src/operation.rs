@@ -3,12 +3,12 @@
 
 
 
-use ffi;
-
 #[derive(Debug)]
 pub struct Operation(*mut ffi::pa_operation);
 
 impl Operation {
+    
+    #[allow(clippy::missing_safety_doc)]
     pub unsafe fn from_raw_ptr(raw: *mut ffi::pa_operation) -> Operation {
         Operation(raw)
     }

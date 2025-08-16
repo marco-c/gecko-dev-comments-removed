@@ -3,7 +3,9 @@
 
 
 
-use ffi;
+use std::ffi::{c_char, CStr};
+use std::sync::RwLock;
+use {ffi, Error, Result};
 
 
 #[derive(PartialEq, Eq, Clone, Debug, Copy, PartialOrd, Ord)]
@@ -27,8 +29,58 @@ impl From<ffi::cubeb_log_level> for LogLevel {
     }
 }
 
+impl From<LogLevel> for ffi::cubeb_log_level {
+    fn from(x: LogLevel) -> Self {
+        use LogLevel::*;
+        match x {
+            Normal => ffi::CUBEB_LOG_NORMAL,
+            Verbose => ffi::CUBEB_LOG_VERBOSE,
+            Disabled => ffi::CUBEB_LOG_DISABLED,
+        }
+    }
+}
+
 pub fn log_enabled() -> bool {
     unsafe { ffi::cubeb_log_get_level() != LogLevel::Disabled as _ }
+}
+
+static LOG_CALLBACK: RwLock<Option<fn(s: &CStr)>> = RwLock::new(None);
+
+extern "C" {
+    fn cubeb_write_log(fmt: *const c_char, ...);
+}
+
+
+
+
+#[no_mangle]
+pub unsafe extern "C" fn rust_write_formatted_msg(s: *const c_char) {
+    if s.is_null() {
+        
+        return;
+    }
+    if let Ok(guard) = LOG_CALLBACK.read() {
+        if let Some(f) = *guard {
+            f(CStr::from_ptr(s));
+        }
+        
+    }
+    
+}
+
+pub fn set_logging(level: LogLevel, f: Option<fn(s: &CStr)>) -> Result<()> {
+    match LOG_CALLBACK.write() {
+        Ok(mut guard) => {
+            *guard = f;
+        }
+        Err(_) => return Err(Error::Error),
+    }
+    unsafe {
+        call!(ffi::cubeb_set_log_callback(
+            level.into(),
+            Some(cubeb_write_log)
+        ))
+    }
 }
 
 #[cfg(test)]
