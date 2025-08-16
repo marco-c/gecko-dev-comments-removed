@@ -270,6 +270,28 @@ void FunctionBox::setEnclosingScopeForInnerLazyFunction(ScopeIndex scopeIndex) {
   }
 }
 
+bool FunctionBox::setUseAsm() {
+  MOZ_ASSERT(!useAsm);
+
+  
+  useAsm = true;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (compilationState_.asmJS) {
+    return true;
+  }
+  compilationState_.asmJS = fc_->getAllocator()->new_<StencilAsmJSContainer>();
+  return !!compilationState_.asmJS;
+}
+
 bool FunctionBox::setAsmJSModule(const JS::WasmModule* module) {
   MOZ_ASSERT(!isFunctionFieldCopiedToStencil);
 
@@ -280,14 +302,8 @@ bool FunctionBox::setAsmJSModule(const JS::WasmModule* module) {
   flags_.setIsExtended();
   flags_.setKind(FunctionFlags::AsmJS);
 
-  if (!compilationState_.asmJS) {
-    compilationState_.asmJS =
-        fc_->getAllocator()->new_<StencilAsmJSContainer>();
-    if (!compilationState_.asmJS) {
-      return false;
-    }
-  }
-
+  
+  
   if (!compilationState_.asmJS->moduleMap.putNew(index(), module)) {
     js::ReportOutOfMemory(fc_);
     return false;

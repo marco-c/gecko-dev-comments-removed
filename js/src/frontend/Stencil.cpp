@@ -2755,6 +2755,13 @@ bool CompilationStencil::instantiateStencilAfterPreparation(
     }
   }
 
+  
+  
+  
+  if (stencil.hasAsmJS()) {
+    cx->runtime()->setUseCounter(cx->global(), JSUseCounter::USE_ASM);
+  }
+
   return true;
 }
 

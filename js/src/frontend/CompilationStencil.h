@@ -1286,6 +1286,10 @@ struct CompilationStencil {
 
   
   
+  
+  
+  
+  
   RefPtr<StencilAsmJSContainer> asmJS;
 
   
@@ -1374,6 +1378,9 @@ struct CompilationStencil {
 
   bool isModule() const;
 
+  
+  
+  
   bool hasAsmJS() const;
 
   bool hasMultipleReference() const { return refCount_ > 1; }
@@ -1680,6 +1687,9 @@ struct InitialStencilAndDelazifications {
   
   CompilationStencil* getMerged(FrontendContext* fc) const;
 
+  
+  
+  
   bool hasAsmJS() const;
 
   
@@ -1745,6 +1755,12 @@ struct ExtensibleCompilationStencil {
 
   RefPtr<StencilModuleMetadata> moduleMetadata;
 
+  
+  
+  
+  
+  
+  
   RefPtr<StencilAsmJSContainer> asmJS;
 
   explicit ExtensibleCompilationStencil(ScriptSource* source);
@@ -1830,6 +1846,9 @@ struct ExtensibleCompilationStencil {
 
   bool isModule() const;
 
+  
+  
+  
   bool hasAsmJS() const;
 
   inline size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;

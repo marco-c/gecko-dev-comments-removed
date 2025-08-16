@@ -3878,7 +3878,10 @@ bool Parser<FullParseHandler, Unit>::asmJS(ListNodeType list) {
     return true;
   }
 
-  pc_->functionBox()->useAsm = true;
+  
+  if (!pc_->functionBox()->setUseAsm()) {
+    return false;
+  }
 
   
   
