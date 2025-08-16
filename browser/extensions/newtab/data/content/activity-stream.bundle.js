@@ -13537,7 +13537,7 @@ const FocusTimer = ({
     iconsrc: "chrome://newtab/content/data/content/assets/arrow-clockwise-16.svg",
     "data-l10n-id": "newtab-widget-timer-reset",
     onClick: resetTimer
-  }))), !showSystemNotifications && external_React_default().createElement("p", {
+  }))), !showSystemNotifications && !timerData[timerType].isRunning && external_React_default().createElement("p", {
     className: "timer-notification-status",
     "data-l10n-id": "newtab-widget-timer-notification-warning"
   })) : null;
@@ -13583,18 +13583,32 @@ const PREF_WIDGETS_TIMER_ENABLED = "widgets.focusTimer.enabled";
 const PREF_WIDGETS_SYSTEM_TIMER_ENABLED = "widgets.system.focusTimer.enabled";
 function Widgets() {
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
+  const listsState = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.ListsWidget);
+  const timerState = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.TimerWidget);
+  const timerType = timerState?.timerType;
   const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
   const nimbusListsEnabled = prefs.widgetsConfig?.listsEnabled;
   const nimbusTimerEnabled = prefs.widgetsConfig?.timerEnabled;
   const listsEnabled = (nimbusListsEnabled || prefs[PREF_WIDGETS_SYSTEM_LISTS_ENABLED]) && prefs[PREF_WIDGETS_LISTS_ENABLED];
   const timerEnabled = (nimbusTimerEnabled || prefs[PREF_WIDGETS_SYSTEM_TIMER_ENABLED]) && prefs[PREF_WIDGETS_TIMER_ENABLED];
+  const tasksCount = listsEnabled && listsState?.lists && listsState?.selected ? listsState.lists[listsState.selected]?.tasks?.length ?? 0 : 0;
+  const manyTasks = tasksCount >= 4;
+  const isTimerRunning = timerState?.[timerType].isRunning;
+  const showScrollMessage = manyTasks || isTimerRunning;
   return external_React_default().createElement("div", {
+    className: "widgets-wrapper"
+  }, external_React_default().createElement("div", {
     className: "widgets-container"
   }, listsEnabled && external_React_default().createElement(Lists, {
     dispatch: dispatch
   }), timerEnabled && external_React_default().createElement(FocusTimer, {
     dispatch: dispatch
-  }));
+  })), showScrollMessage && external_React_default().createElement("div", {
+    className: "widgets-scroll-message fade-in",
+    "aria-live": "polite"
+  }, external_React_default().createElement("p", {
+    "data-l10n-id": "newtab-widget-keep-scrolling"
+  })));
 }
 
 ;
