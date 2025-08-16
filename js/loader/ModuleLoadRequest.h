@@ -142,9 +142,6 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
   
   RefPtr<ModuleScript> mModuleScript;
 
-  
-  Heap<JSObject*> mDynamicPromise;
-
   Heap<JSObject*> mReferrerObj;
   Heap<JSObject*> mModuleRequestObj;
   Heap<Value> mReferencingPrivate;

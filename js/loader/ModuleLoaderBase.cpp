@@ -280,7 +280,7 @@ bool ModuleLoaderBase::HostLoadImportedModule(JSContext* aCx,
 bool ModuleLoaderBase::FinishLoadingImportedModule(
     JSContext* aCx, ModuleLoadRequest* aRequest) {
   
-  MOZ_ASSERT_IF(aRequest->mDynamicPromise,
+  MOZ_ASSERT_IF(aRequest->IsDynamicImport(),
                 !aRequest->mLoader->HasDynamicImport(aRequest));
 
   Rooted<JSObject*> module(aCx);
@@ -296,12 +296,7 @@ bool ModuleLoaderBase::FinishLoadingImportedModule(
   Rooted<Value> referencingPrivate(aCx, aRequest->mReferencingPrivate);
   Rooted<JSObject*> moduleReqObj(aCx, aRequest->mModuleRequestObj);
   Rooted<Value> statePrivate(aCx, aRequest->mPayload);
-
   Rooted<Value> payload(aCx, aRequest->mPayload);
-  if (payload.isUndefined()) {
-    MOZ_ASSERT(aRequest->mDynamicPromise);
-    payload = ObjectValue(*aRequest->mDynamicPromise);
-  }
 
   LOG(("ScriptLoadRequest (%p): FinishLoadingImportedModule module (%p)",
        aRequest, module.get()));
@@ -1380,13 +1375,13 @@ void ModuleLoaderBase::FinishDynamicImportAndReject(ModuleLoadRequest* aRequest,
     return;
   }
 
-  if (!aRequest->mDynamicPromise) {
+  if (aRequest->mPayload.isUndefined()) {
     
     return;
   }
 
   JSContext* cx = jsapi.cx();
-  Rooted<Value> payload(cx, ObjectValue(*aRequest->mDynamicPromise));
+  Rooted<Value> payload(cx, aRequest->mPayload);
 
   if (NS_FAILED(aResult) &&
       aResult != NS_SUCCESS_DOM_SCRIPT_EVALUATION_THREW_UNCATCHABLE) {
@@ -1485,7 +1480,7 @@ void ModuleLoaderBase::CancelDynamicImport(ModuleLoadRequest* aRequest,
   if (!aRequest->IsCanceled()) {
     
     
-    MOZ_ASSERT(aRequest->mDynamicPromise);
+    MOZ_ASSERT(!aRequest->mPayload.isUndefined());
 
     aRequest->Cancel();
     
@@ -1564,7 +1559,7 @@ void ModuleLoaderBase::ProcessDynamicImport(ModuleLoadRequest* aRequest) {
   }
 
   if (aRequest->mModuleScript->HasParseError()) {
-    Rooted<Value> payload(cx, ObjectValue(*aRequest->mDynamicPromise));
+    Rooted<Value> payload(cx, aRequest->mPayload);
     Rooted<Value> error(cx, aRequest->mModuleScript->ParseError());
     FinishLoadingImportedModuleFailed(cx, payload, error);
     return;
