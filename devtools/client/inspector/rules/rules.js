@@ -2065,24 +2065,27 @@ CssRuleView.prototype = {
 
 
 
+
   _flashElement(element) {
     flashElementOn(element, {
       backgroundClass: "theme-bg-contrast",
     });
 
-    if (this._flashMutationTimer) {
-      clearTimeout(this._removeFlashOutTimer);
-      this._flashMutationTimer = null;
+    if (this._flashMutationCallback) {
+      this._flashMutationCallback();
     }
 
-    this._flashMutationTimer = setTimeout(() => {
-      flashElementOff(element, {
-        backgroundClass: "theme-bg-contrast",
-      });
+    return new Promise(resolve => {
+      this._flashMutationCallback = () => {
+        flashElementOff(element, {
+          backgroundClass: "theme-bg-contrast",
+        });
+        this._flashMutationCallback = null;
+        resolve();
+      };
 
-      
-      this.emit("scrolled-to-element");
-    }, PROPERTY_FLASHING_DURATION);
+      setTimeout(this._flashMutationCallback, PROPERTY_FLASHING_DURATION);
+    });
   },
 
   
@@ -2147,9 +2150,6 @@ CssRuleView.prototype = {
           continue;
         }
 
-        const {
-          editor: { selectorText },
-        } = rule;
         let scrollBehavior = "smooth";
 
         
@@ -2168,15 +2168,11 @@ CssRuleView.prototype = {
             this._togglePseudoElementRuleContainer();
           }
 
-          
-          
-          this._scrollToElement(
-            selectorText,
+          this._highlightElementInRule(
+            rule,
             textProp.editor.element,
             scrollBehavior
           );
-          this._flashElement(textProp.editor.element);
-
           return true;
         }
 
@@ -2202,12 +2198,11 @@ CssRuleView.prototype = {
             
             textProp.editor.expandForFilter();
 
-            this._scrollToElement(
-              selectorText,
+            this._highlightElementInRule(
+              rule,
               computed.element,
               scrollBehavior
             );
-            this._flashElement(computed.element);
 
             return true;
           }
@@ -2216,6 +2211,20 @@ CssRuleView.prototype = {
     }
 
     return false;
+  },
+
+  
+
+
+
+
+
+
+  _highlightElementInRule(rule, element, scrollBehavior) {
+    this._scrollToElement(rule.editor.selectorText, element, scrollBehavior);
+    this._flashElement(element).then(() =>
+      this.emitForTests("element-highlighted")
+    );
   },
 
   
