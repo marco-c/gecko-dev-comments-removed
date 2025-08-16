@@ -415,30 +415,6 @@ function assert_large_array_equals(actual, expected, description) {
 }
 
 
-function assert_record_equals(actual_record, expected_record) {
-  assert_class_string(
-      actual_record, 'IDBRecord', 'The record must be an IDBRecord');
-  assert_idl_attribute(
-      actual_record, 'key', 'The record must have a key attribute');
-  assert_idl_attribute(
-      actual_record, 'primaryKey',
-      'The record must have a primaryKey attribute');
-  assert_idl_attribute(
-      actual_record, 'value', 'The record must have a value attribute');
-
-  
-  assert_equals(
-      actual_record.primaryKey, expected_record.primaryKey,
-      'The record must have the expected primaryKey');
-  assert_equals(
-      actual_record.key, expected_record.key,
-      'The record must have the expected key');
-
-  
-  assert_idb_value_equals(actual_record.value, expected_record.value);
-}
-
-
 
 function assert_idb_value_equals(actual_value, expected_value) {
   if (isArrayOrArrayBufferView(expected_value)) {
