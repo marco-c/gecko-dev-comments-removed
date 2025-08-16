@@ -8,22 +8,15 @@
 #define mozilla_glean_Glean_h
 
 #include "js/TypeDecls.h"
+
+
+#include "mozilla/glean/bindings/GleanWebIDL.h"
 #include "nsCOMPtr.h"
 #include "nsISupports.h"
 #include "nsTArrayForwardDeclare.h"
 #include "nsWrapperCache.h"
 
 class nsIGlobalObject;
-
-namespace mozilla::dom {
-
-
-
-
-
-
-bool GleanWebidlEnabled(JSContext* aCx, JSObject* aObj);
-}  
 
 namespace mozilla::glean {
 

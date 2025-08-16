@@ -1,0 +1,24 @@
+
+
+
+
+
+
+#ifndef mozilla_glean_GleanWebIDL_h
+#define mozilla_glean_GleanWebIDL_h
+
+#include "js/TypeDecls.h"
+
+namespace mozilla::dom {
+
+
+
+
+
+
+
+bool GleanWebidlEnabled(JSContext* aCx, JSObject* aObj);
+
+}  
+
+#endif 
