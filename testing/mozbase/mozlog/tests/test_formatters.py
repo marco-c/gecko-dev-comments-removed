@@ -99,8 +99,8 @@ FORMATS = {
               test: 2 (1 fail, 1 pass)
               subtest: 2 (1 fail, 1 timeout)
 
-            Unexpected Results
-            ------------------
+            Error Summary
+            -------------
             test_foo
               FAIL test_foo - expected 0 got 1
             test_bar
@@ -139,8 +139,8 @@ FORMATS = {
               test: 2 (1 fail, 1 pass)
               subtest: 2 (1 fail, 1 timeout)
 
-            Unexpected Results
-            ------------------
+            Error Summary
+            -------------
             test_foo
               FAIL test_foo - expected 0 got 1
             test_bar
@@ -176,8 +176,8 @@ FORMATS = {
               test: 1 (1 precondition_failed)
               subtest: 1 (1 precondition_failed)
 
-            Unexpected Results
-            ------------------
+            Error Summary
+            -------------
             test_foo
               PRECONDITION_FAILED test_foo
             test_bar
@@ -207,8 +207,8 @@ FORMATS = {
               test: 1 (1 precondition_failed)
               subtest: 1 (1 precondition_failed)
 
-            Unexpected Results
-            ------------------
+            Error Summary
+            -------------
             test_foo
               PRECONDITION_FAILED test_foo
             test_bar
@@ -667,6 +667,33 @@ Unexpected results: 3
         
         self.logger.process_exit(1234, -signal.SIGTERM)
         self.assertIn("1234: killed by SIGTERM", self.loglines[0])
+
+    def test_expected_fail_log_conversion(self):
+        """Test that ERROR TEST-EXPECTED-FAIL messages are converted to TODO"""
+        self.set_position()
+
+        
+        self.logger.error("TEST-EXPECTED-FAIL | some test failed")
+
+        
+        self.logger.error("Regular error message")
+
+        
+        self.logger.error("Some prefix TEST-EXPECTED-FAIL suffix")
+
+        
+        
+        output = "\n".join(self.loglines)
+        self.assertIn("TODO | some test failed", output)
+
+        
+        self.assertIn("ERROR Regular error message", output)
+
+        
+        self.assertIn("ERROR Some prefix TEST-EXPECTED-FAIL suffix", output)
+
+        
+        self.assertNotIn("ERROR TEST-EXPECTED-FAIL", output)
 
 
 class TestGroupingFormatter(FormatterTest):
