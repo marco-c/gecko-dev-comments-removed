@@ -12059,7 +12059,6 @@ nsIFrame* PresShell::GetAbsoluteContainingBlock(nsIFrame* aFrame) {
 nsIFrame* PresShell::GetAnchorPosAnchor(
     const nsAtom* aName, const nsIFrame* aPositionedFrame) const {
   MOZ_ASSERT(aName);
-  MOZ_ASSERT(mLazyAnchorPosAnchorChanges.IsEmpty());
   if (const auto& entry = mAnchorPosAnchors.Lookup(aName)) {
     return AnchorPositioningUtils::FindFirstAcceptableAnchor(aPositionedFrame,
                                                              entry.Data());
@@ -12068,8 +12067,7 @@ nsIFrame* PresShell::GetAnchorPosAnchor(
   return nullptr;
 }
 
-template <bool AreWeMerging>
-void PresShell::AddAnchorPosAnchorImpl(const nsAtom* aName, nsIFrame* aFrame) {
+void PresShell::AddAnchorPosAnchor(const nsAtom* aName, nsIFrame* aFrame) {
   MOZ_ASSERT(aName);
 
   auto& entry = mAnchorPosAnchors.LookupOrInsertWith(
@@ -12084,7 +12082,7 @@ void PresShell::AddAnchorPosAnchorImpl(const nsAtom* aName, nsIFrame* aFrame) {
     nsIFrame* mFrame;
 
     int32_t operator()(nsIFrame* aOther) const {
-      return nsLayoutUtils::CompareTreePosition(mFrame, aOther, nullptr);
+      return nsLayoutUtils::CompareTreePosition(aOther, mFrame, nullptr);
     }
   };
 
@@ -12094,49 +12092,15 @@ void PresShell::AddAnchorPosAnchorImpl(const nsAtom* aName, nsIFrame* aFrame) {
   
   
   if (BinarySearchIf(entry, 0, entry.Length(), cmp, &matchOrInsertionIdx)) {
-    if (entry.ElementAt(matchOrInsertionIdx) == aFrame) {
-      
-      
-      
-      
-      MOZ_ASSERT_UNREACHABLE("Attempt to insert a frame twice was made");
-      return;
-    }
-    MOZ_ASSERT(!entry.Contains(aFrame));
-
-    if constexpr (AreWeMerging) {
-      MOZ_ASSERT_UNREACHABLE(
-          "A frame may not be in a different child list at merge time");
-    } else {
-      
-      
-      
-      
-      mLazyAnchorPosAnchorChanges.AppendElement(
-          AnchorPosAnchorChange{RefPtr<const nsAtom>(aName), aFrame});
-    }
-
+    MOZ_ASSERT_UNREACHABLE("Anchor added already");
     return;
   }
 
-  MOZ_ASSERT(!entry.Contains(aFrame));
   *entry.InsertElementAt(matchOrInsertionIdx) = aFrame;
-}
-
-void PresShell::AddAnchorPosAnchor(const nsAtom* aName, nsIFrame* aFrame) {
-  AddAnchorPosAnchorImpl< false>(aName, aFrame);
 }
 
 void PresShell::RemoveAnchorPosAnchor(const nsAtom* aName, nsIFrame* aFrame) {
   MOZ_ASSERT(aName);
-
-  if (!mLazyAnchorPosAnchorChanges.IsEmpty()) {
-    mLazyAnchorPosAnchorChanges.RemoveElementsBy(
-        [&](const AnchorPosAnchorChange& change) {
-          return change.mFrame == aFrame;
-        });
-  }
-
   auto entry = mAnchorPosAnchors.Lookup(aName);
   if (!entry) {
     return;  
@@ -12152,14 +12116,6 @@ void PresShell::RemoveAnchorPosAnchor(const nsAtom* aName, nsIFrame* aFrame) {
   if (anchorArray.IsEmpty()) {
     entry.Remove();
   }
-}
-
-void PresShell::MergeAnchorPosAnchorChanges() {
-  for (const auto& [name, frame] : mLazyAnchorPosAnchorChanges) {
-    AddAnchorPosAnchorImpl< true>(name, frame);
-  }
-
-  mLazyAnchorPosAnchorChanges.Clear();
 }
 
 void PresShell::ActivenessMaybeChanged() {
