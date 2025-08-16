@@ -12092,7 +12092,18 @@ void PresShell::AddAnchorPosAnchor(const nsAtom* aName, nsIFrame* aFrame) {
   
   
   if (BinarySearchIf(entry, 0, entry.Length(), cmp, &matchOrInsertionIdx)) {
-    MOZ_ASSERT_UNREACHABLE("Anchor added already");
+    if (entry.ElementAt(matchOrInsertionIdx) == aFrame) {
+      
+      
+      
+      
+      MOZ_ASSERT_UNREACHABLE("Attempt to insert a frame twice was made");
+      return;
+    }
+    MOZ_ASSERT(!entry.Contains(aFrame));
+
+    MOZ_ASSERT_UNREACHABLE("Frames were in different documents or child lists");
+
     return;
   }
 
