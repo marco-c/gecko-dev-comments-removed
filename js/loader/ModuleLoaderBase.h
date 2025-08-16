@@ -463,7 +463,8 @@ class ModuleLoaderBase : public nsISupports {
                                      Handle<JSObject*> aReferrer,
                                      JS::Handle<JS::Value> aReferencingPrivate,
                                      JS::Handle<JSObject*> aModuleRequest,
-                                     JS::Handle<JS::Value> aPayload);
+                                     JS::Handle<JS::Value> aStatePrivate,
+                                     JS::Handle<JSObject*> aPromise);
   static bool FinishLoadingImportedModule(JSContext* aCx,
                                           ModuleLoadRequest* aRequest);
 
@@ -513,22 +514,15 @@ class ModuleLoaderBase : public nsISupports {
       JSContext* aCx, const ModuleMapKey& aRequestedModule,
       JS::Handle<JSObject*> aReferrer,
       JS::Handle<JS::Value> aReferencingPrivate,
-      JS::Handle<JSObject*> aModuleRequest, JS::Handle<JS::Value> aPayload);
+      JS::Handle<JSObject*> aModuleRequest,
+      JS::Handle<JS::Value> aStatePrivate);
 
   void InstantiateAndEvaluateDynamicImport(ModuleLoadRequest* aRequest);
 
-  static bool OnLoadRequestedModulesResolved(JSContext* aCx, unsigned aArgc,
-                                             Value* aVp);
-  static bool OnLoadRequestedModulesRejected(JSContext* aCx, unsigned aArgc,
-                                             Value* aVp);
-  static bool OnLoadRequestedModulesResolved(
-      JSContext* aCx, JS::Handle<JS::Value> aHostDefined);
-  static bool OnLoadRequestedModulesRejected(JSContext* aCx,
-                                             JS::Handle<JS::Value> aHostDefined,
-                                             JS::Handle<JS::Value> aError);
-  static bool OnLoadRequestedModulesResolved(ModuleLoadRequest* aRequest);
-  static bool OnLoadRequestedModulesRejected(ModuleLoadRequest* aRequest,
-                                             JS::Handle<JS::Value> aError);
+  static bool OnLoadRequestedModulesResolved(JSContext* cx, unsigned argc,
+                                             Value* vp);
+  static bool OnLoadRequestedModulesRejected(JSContext* cx, unsigned argc,
+                                             Value* vp);
 
   
 
@@ -561,8 +555,10 @@ class ModuleLoaderBase : public nsISupports {
   static const uint32_t ImportMetaResolveSpecifierArg = 0;
 
   
-  
-  static const uint32_t LoadReactionHostDefinedSlot = 0;
+  enum class OnLoadRequestedModulesSlot : uint8_t {
+    HostDefinedSlot = 0,
+    SlotCount
+  };
 
   
   static const uint32_t OnLoadRequestedModulesResolvedNumArgs = 0;

@@ -473,9 +473,8 @@ static JSObject* ShadowRealmImportValue(JSContext* cx,
     
     
     Rooted<Value> referencingPrivate(cx, script->sourceObject()->getPrivate());
-    Rooted<Value> payload(cx, ObjectValue(*promise));
     if (!moduleLoadHook(cx, nullptr, referencingPrivate, moduleRequest,
-                        payload)) {
+                        UndefinedHandleValue, promise)) {
       return promise;
     }
 
