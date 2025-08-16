@@ -146,6 +146,18 @@ export class Tracer extends Component {
     if (!this.tooltip) {
       this.instantiateTooltip();
     }
+
+    
+    
+    if (!this.state.renderedTraceCount) {
+      this.updateIndexes(
+        {
+          startIndex: this.state.startIndex,
+          endIndex: this.state.endIndex,
+        },
+        this.props
+      );
+    }
   }
 
   instantiateTooltip() {
@@ -599,6 +611,11 @@ export class Tracer extends Component {
   }
 
   renderEventsInSlider() {
+    
+    
+    if (!this.refs.timeline) {
+      return null;
+    }
     const { topTraces, allTraces, traceChildren } = this.props;
     const { startIndex, endIndex } = this.state;
 
