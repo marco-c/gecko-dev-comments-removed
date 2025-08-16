@@ -5710,15 +5710,6 @@ nsresult ScrollContainerFrame::CreateAnonymousContent(
     }
     aElements.AppendElement(ContentInfo(mScrollCornerContent, key));
   }
-
-  
-  
-  if (GetContent()->IsHTMLElement(nsGkAtoms::select)) {
-    for (auto& info : aElements) {
-      info.mKey = AnonymousContentKey::None;
-    }
-  }
-
   return NS_OK;
 }
 

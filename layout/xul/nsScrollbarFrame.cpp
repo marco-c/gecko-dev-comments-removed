@@ -460,14 +460,6 @@ nsresult nsScrollbarFrame::CreateAnonymousContent(
     aElements.AppendElement(ContentInfo(mDownBottomButton, key));
   }
 
-  
-  
-  if (el->GetParent() && el->GetParent()->IsHTMLElement(nsGkAtoms::select)) {
-    for (auto& info : aElements) {
-      info.mKey = AnonymousContentKey::None;
-    }
-  }
-
   return NS_OK;
 }
 
