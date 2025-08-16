@@ -83,10 +83,24 @@ static nsPresContext* EnsureSafeToHandOutRules(Element& aElement) {
 }
 
 static already_AddRefed<const ComputedStyle> GetStartingStyle(
-    Element& aElement) {
+    Element& aElement, const PseudoStyleRequest& aPseudo) {
+  Element* elementOrPseudoElement = aElement.GetPseudoElement(aPseudo);
+  if (!elementOrPseudoElement) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return nullptr;
+  }
   
   
-  if (!Servo_Element_MayHaveStartingStyle(&aElement)) {
+  if (!Servo_Element_MayHaveStartingStyle(elementOrPseudoElement)) {
     return nullptr;
   }
   if (!EnsureSafeToHandOutRules(aElement)) {
@@ -101,7 +115,7 @@ static already_AddRefed<const ComputedStyle> GetStartingStyle(
   if (!ps) {
     return nullptr;
   }
-  return ps->StyleSet()->ResolveStartingStyle(aElement);
+  return ps->StyleSet()->ResolveStartingStyle(*elementOrPseudoElement);
 }
 
 static already_AddRefed<const ComputedStyle> GetCleanComputedStyleForElement(
@@ -435,9 +449,10 @@ void InspectorUtils::GetMatchingCSSRules(
 
   RefPtr<const ComputedStyle> computedStyle;
   if (aWithStartingStyle) {
-    computedStyle = GetStartingStyle(aElement);
+    computedStyle = GetStartingStyle(aElement, *pseudo);
   }
 
+  
   
   
   
