@@ -336,6 +336,9 @@ class LookAndFeel {
     NativeMenubar,
 
     
+    HourCycle,
+
+    
 
 
     End,
