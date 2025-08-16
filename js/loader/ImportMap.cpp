@@ -107,19 +107,19 @@ static void NormalizeSpecifierKey(const nsAString& aSpecifierKey,
 
 
 static UniquePtr<SpecifierMap> SortAndNormalizeSpecifierMap(
-    JSContext* aCx, JS::HandleObject aOriginalMap, nsIURI* aBaseURL,
+    JSContext* aCx, HandleObject aOriginalMap, nsIURI* aBaseURL,
     const ReportWarningHelper& aWarning) {
   
   UniquePtr<SpecifierMap> normalized = MakeUnique<SpecifierMap>();
 
-  JS::Rooted<JS::IdVector> specifierKeys(aCx, JS::IdVector(aCx));
+  Rooted<IdVector> specifierKeys(aCx, IdVector(aCx));
   if (!JS_Enumerate(aCx, aOriginalMap, &specifierKeys)) {
     return nullptr;
   }
 
   
   for (size_t i = 0; i < specifierKeys.length(); i++) {
-    const JS::RootedId specifierId(aCx, specifierKeys[i]);
+    const RootedId specifierId(aCx, specifierKeys[i]);
     nsAutoJSString specifierKey;
     NS_ENSURE_TRUE(specifierKey.init(aCx, specifierId), nullptr);
 
@@ -134,7 +134,7 @@ static UniquePtr<SpecifierMap> SortAndNormalizeSpecifierMap(
       continue;
     }
 
-    JS::RootedValue idVal(aCx);
+    RootedValue idVal(aCx);
     NS_ENSURE_TRUE(JS_GetPropertyById(aCx, aOriginalMap, specifierId, &idVal),
                    nullptr);
     
@@ -213,7 +213,7 @@ static UniquePtr<SpecifierMap> SortAndNormalizeSpecifierMap(
 
 
 
-static bool IsMapObject(JSContext* aCx, JS::HandleValue aMapVal, bool* aIsMap) {
+static bool IsMapObject(JSContext* aCx, HandleValue aMapVal, bool* aIsMap) {
   MOZ_ASSERT(aIsMap);
 
   *aIsMap = false;
@@ -232,9 +232,9 @@ static bool IsMapObject(JSContext* aCx, JS::HandleValue aMapVal, bool* aIsMap) {
 
 
 static UniquePtr<ScopeMap> SortAndNormalizeScopes(
-    JSContext* aCx, JS::HandleObject aOriginalMap, nsIURI* aBaseURL,
+    JSContext* aCx, HandleObject aOriginalMap, nsIURI* aBaseURL,
     const ReportWarningHelper& aWarning) {
-  JS::Rooted<JS::IdVector> scopeKeys(aCx, JS::IdVector(aCx));
+  Rooted<IdVector> scopeKeys(aCx, IdVector(aCx));
   if (!JS_Enumerate(aCx, aOriginalMap, &scopeKeys)) {
     return nullptr;
   }
@@ -244,14 +244,14 @@ static UniquePtr<ScopeMap> SortAndNormalizeScopes(
 
   
   for (size_t i = 0; i < scopeKeys.length(); i++) {
-    const JS::RootedId scopeKey(aCx, scopeKeys[i]);
+    const RootedId scopeKey(aCx, scopeKeys[i]);
     nsAutoJSString scopePrefix;
     NS_ENSURE_TRUE(scopePrefix.init(aCx, scopeKey), nullptr);
 
     
     
     
-    JS::RootedValue mapVal(aCx);
+    RootedValue mapVal(aCx);
     NS_ENSURE_TRUE(JS_GetPropertyById(aCx, aOriginalMap, scopeKey, &mapVal),
                    nullptr);
 
@@ -290,7 +290,7 @@ static UniquePtr<ScopeMap> SortAndNormalizeScopes(
 
     
     
-    JS::RootedObject potentialSpecifierMap(aCx, &mapVal.toObject());
+    RootedObject potentialSpecifierMap(aCx, &mapVal.toObject());
     UniquePtr<SpecifierMap> specifierMap = SortAndNormalizeSpecifierMap(
         aCx, potentialSpecifierMap, aBaseURL, aWarning);
     if (!specifierMap) {
@@ -311,19 +311,19 @@ static UniquePtr<ScopeMap> SortAndNormalizeScopes(
 
 
 static UniquePtr<IntegrityMap> NormalizeIntegrity(
-    JSContext* aCx, JS::HandleObject aOriginalMap, nsIURI* aBaseURL,
+    JSContext* aCx, HandleObject aOriginalMap, nsIURI* aBaseURL,
     const ReportWarningHelper& aWarning) {
   
   UniquePtr<IntegrityMap> normalized = MakeUnique<IntegrityMap>();
 
-  JS::Rooted<JS::IdVector> keys(aCx, JS::IdVector(aCx));
+  Rooted<IdVector> keys(aCx, IdVector(aCx));
   if (!JS_Enumerate(aCx, aOriginalMap, &keys)) {
     return nullptr;
   }
 
   
   for (size_t i = 0; i < keys.length(); i++) {
-    const JS::RootedId keyId(aCx, keys[i]);
+    const RootedId keyId(aCx, keys[i]);
     nsAutoJSString key;
     NS_ENSURE_TRUE(key.init(aCx, keyId), nullptr);
 
@@ -345,7 +345,7 @@ static UniquePtr<IntegrityMap> NormalizeIntegrity(
 
     nsCOMPtr<nsIURI> resolvedURL = parseResult.unwrap();
 
-    JS::RootedValue idVal(aCx);
+    RootedValue idVal(aCx);
     NS_ENSURE_TRUE(JS_GetPropertyById(aCx, aOriginalMap, keyId, &idVal),
                    nullptr);
 
@@ -378,7 +378,7 @@ UniquePtr<ImportMap> ImportMap::ParseString(
     const ReportWarningHelper& aWarning) {
   
   
-  JS::Rooted<JS::Value> parsedVal(aCx);
+  Rooted<Value> parsedVal(aCx);
   if (!JS_ParseJSON(aCx, aInput.get(), aInput.length(), &parsedVal)) {
     NS_WARNING("Parsing Import map string failed");
 
@@ -386,12 +386,12 @@ UniquePtr<ImportMap> ImportMap::ParseString(
     
     
     MOZ_ASSERT(JS_IsExceptionPending(aCx));
-    JS::Rooted<JS::Value> exn(aCx);
+    Rooted<Value> exn(aCx);
     if (!JS_GetPendingException(aCx, &exn)) {
       return nullptr;
     }
     MOZ_ASSERT(exn.isObject());
-    JS::Rooted<JSObject*> obj(aCx, &exn.toObject());
+    Rooted<JSObject*> obj(aCx, &exn.toObject());
     JSErrorReport* err = JS_ErrorFromException(aCx, obj);
     if (err->exnType == JSEXN_SYNTAXERR) {
       JS_ClearPendingException(aCx);
@@ -415,8 +415,8 @@ UniquePtr<ImportMap> ImportMap::ParseString(
     return nullptr;
   }
 
-  JS::RootedObject parsedObj(aCx, &parsedVal.toObject());
-  JS::RootedValue importsVal(aCx);
+  RootedObject parsedObj(aCx, &parsedVal.toObject());
+  RootedValue importsVal(aCx);
   if (!JS_GetProperty(aCx, parsedObj, "imports", &importsVal)) {
     return nullptr;
   }
@@ -444,7 +444,7 @@ UniquePtr<ImportMap> ImportMap::ParseString(
 
     
     
-    JS::RootedObject importsObj(aCx, &importsVal.toObject());
+    RootedObject importsObj(aCx, &importsVal.toObject());
     sortedAndNormalizedImports =
         SortAndNormalizeSpecifierMap(aCx, importsObj, aBaseURL, aWarning);
     if (!sortedAndNormalizedImports) {
@@ -452,7 +452,7 @@ UniquePtr<ImportMap> ImportMap::ParseString(
     }
   }
 
-  JS::RootedValue scopesVal(aCx);
+  RootedValue scopesVal(aCx);
   if (!JS_GetProperty(aCx, parsedObj, "scopes", &scopesVal)) {
     return nullptr;
   }
@@ -480,7 +480,7 @@ UniquePtr<ImportMap> ImportMap::ParseString(
 
     
     
-    JS::RootedObject scopesObj(aCx, &scopesVal.toObject());
+    RootedObject scopesObj(aCx, &scopesVal.toObject());
     sortedAndNormalizedScopes =
         SortAndNormalizeScopes(aCx, scopesObj, aBaseURL, aWarning);
     if (!sortedAndNormalizedScopes) {
@@ -488,7 +488,7 @@ UniquePtr<ImportMap> ImportMap::ParseString(
     }
   }
 
-  JS::RootedValue integrityVal(aCx);
+  RootedValue integrityVal(aCx);
   if (!JS_GetProperty(aCx, parsedObj, "integrity", &integrityVal)) {
     return nullptr;
   }
@@ -516,7 +516,7 @@ UniquePtr<ImportMap> ImportMap::ParseString(
 
     
     
-    JS::RootedObject integrityObj(aCx, &integrityVal.toObject());
+    RootedObject integrityObj(aCx, &integrityVal.toObject());
     normalizedIntegrity =
         NormalizeIntegrity(aCx, integrityObj, aBaseURL, aWarning);
     if (!normalizedIntegrity) {
@@ -527,13 +527,13 @@ UniquePtr<ImportMap> ImportMap::ParseString(
   
   
   
-  JS::Rooted<JS::IdVector> keys(aCx, JS::IdVector(aCx));
+  Rooted<IdVector> keys(aCx, IdVector(aCx));
   if (!JS_Enumerate(aCx, parsedObj, &keys)) {
     return nullptr;
   }
 
   for (size_t i = 0; i < keys.length(); i++) {
-    const JS::RootedId key(aCx, keys[i]);
+    const RootedId key(aCx, keys[i]);
     nsAutoJSString val;
     NS_ENSURE_TRUE(val.init(aCx, key), nullptr);
     if (val.EqualsLiteral("imports") || val.EqualsLiteral("scopes") ||

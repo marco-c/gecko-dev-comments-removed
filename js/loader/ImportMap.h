@@ -80,7 +80,7 @@ class ImportMap {
 
 
   static mozilla::UniquePtr<ImportMap> ParseString(
-      JSContext* aCx, JS::SourceText<char16_t>& aInput, nsIURI* aBaseURL,
+      JSContext* aCx, SourceText<char16_t>& aInput, nsIURI* aBaseURL,
       const ReportWarningHelper& aWarning);
 
   

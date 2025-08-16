@@ -44,8 +44,7 @@ namespace mozilla::loader {
 class SyncLoadContext;
 }  
 
-namespace JS {
-namespace loader {
+namespace JS::loader {
 
 class LoadContextBase;
 class ModuleLoadRequest;
@@ -106,7 +105,7 @@ class ScriptLoadRequest : public nsISupports,
   using super::getNext;
   using super::isInList;
 
-  template <typename T, typename D = JS::DeletePolicy<T>>
+  template <typename T, typename D = DeletePolicy<T>>
   using UniquePtr = mozilla::UniquePtr<T, D>;
 
   bool IsModuleRequest() const { return mKind == ScriptKind::eModule; }
@@ -304,7 +303,7 @@ class ScriptLoadRequest : public nsISupports,
   
   
   
-  JS::Heap<JSScript*> mScriptForBytecodeEncoding;
+  Heap<JSScript*> mScriptForBytecodeEncoding;
 
   
   
@@ -372,7 +371,6 @@ inline void ImplCycleCollectionTraverse(
   }
 }
 
-}  
 }  
 
 #endif  

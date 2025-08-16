@@ -50,6 +50,7 @@ struct ResolveErrorInfo {
 
 using ResolveResult =
     mozilla::Result<mozilla::NotNull<nsCOMPtr<nsIURI>>, ResolveError>;
+
 }  
 
 #endif  
