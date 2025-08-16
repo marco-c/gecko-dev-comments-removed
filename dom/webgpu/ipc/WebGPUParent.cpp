@@ -358,95 +358,60 @@ extern void wgpu_parent_send_server_message(WGPUWebGPUParentPtr aParent,
 
 }  
 
+ErrorBuffer::ErrorBuffer() { mMessageUtf8[0] = 0; }
 
+ErrorBuffer::~ErrorBuffer() { MOZ_ASSERT(!mAwaitingGetError); }
 
+ffi::WGPUErrorBuffer ErrorBuffer::ToFFI() {
+  mAwaitingGetError = true;
+  ffi::WGPUErrorBuffer errorBuf = {&mType, mMessageUtf8, BUFFER_SIZE,
+                                   &mDeviceId};
+  return errorBuf;
+}
 
+ffi::WGPUErrorBufferType ErrorBuffer::GetType() { return mType; }
 
-
-
-
-
-
-
-
-
-class ErrorBuffer {
-  
-  static constexpr unsigned BUFFER_SIZE = 512;
-  ffi::WGPUErrorBufferType mType = ffi::WGPUErrorBufferType_None;
-  char mMessageUtf8[BUFFER_SIZE] = {};
-  bool mAwaitingGetError = false;
-  RawId mDeviceId = 0;
-
- public:
-  ErrorBuffer() { mMessageUtf8[0] = 0; }
-  ErrorBuffer(const ErrorBuffer&) = delete;
-  ~ErrorBuffer() { MOZ_ASSERT(!mAwaitingGetError); }
-
-  ffi::WGPUErrorBuffer ToFFI() {
-    mAwaitingGetError = true;
-    ffi::WGPUErrorBuffer errorBuf = {&mType, mMessageUtf8, BUFFER_SIZE,
-                                     &mDeviceId};
-    return errorBuf;
-  }
-
-  ffi::WGPUErrorBufferType GetType() { return mType; }
-
-  static Maybe<dom::GPUErrorFilter> ErrorTypeToFilterType(
-      ffi::WGPUErrorBufferType aType) {
-    switch (aType) {
-      case ffi::WGPUErrorBufferType_None:
-      case ffi::WGPUErrorBufferType_DeviceLost:
-        return {};
-      case ffi::WGPUErrorBufferType_Internal:
-        return Some(dom::GPUErrorFilter::Internal);
-      case ffi::WGPUErrorBufferType_Validation:
-        return Some(dom::GPUErrorFilter::Validation);
-      case ffi::WGPUErrorBufferType_OutOfMemory:
-        return Some(dom::GPUErrorFilter::Out_of_memory);
-      case ffi::WGPUErrorBufferType_Sentinel:
-        break;
-    }
-
-    MOZ_CRASH("invalid `ErrorBufferType`");
-  }
-
-  struct Error {
-    dom::GPUErrorFilter type;
-    bool isDeviceLost;
-    nsCString message;
-    RawId deviceId;
-  };
-
-  
-  
-  
-  
-  
-  
-  Maybe<Error> GetError() {
-    mAwaitingGetError = false;
-    if (mType == ffi::WGPUErrorBufferType_DeviceLost) {
-      
-      
-      
-      
-      return Some(Error{dom::GPUErrorFilter::Validation, true,
-                        nsCString{mMessageUtf8}, mDeviceId});
-    }
-    auto filterType = ErrorTypeToFilterType(mType);
-    if (!filterType) {
+Maybe<dom::GPUErrorFilter> ErrorBuffer::ErrorTypeToFilterType(
+    ffi::WGPUErrorBufferType aType) {
+  switch (aType) {
+    case ffi::WGPUErrorBufferType_None:
+    case ffi::WGPUErrorBufferType_DeviceLost:
       return {};
-    }
-    return Some(Error{*filterType, false, nsCString{mMessageUtf8}, mDeviceId});
+    case ffi::WGPUErrorBufferType_Internal:
+      return Some(dom::GPUErrorFilter::Internal);
+    case ffi::WGPUErrorBufferType_Validation:
+      return Some(dom::GPUErrorFilter::Validation);
+    case ffi::WGPUErrorBufferType_OutOfMemory:
+      return Some(dom::GPUErrorFilter::Out_of_memory);
+    case ffi::WGPUErrorBufferType_Sentinel:
+      break;
   }
 
-  void CoerceValidationToInternal() {
-    if (mType == ffi::WGPUErrorBufferType_Validation) {
-      mType = ffi::WGPUErrorBufferType_Internal;
-    }
+  MOZ_CRASH("invalid `ErrorBufferType`");
+}
+
+Maybe<ErrorBuffer::Error> ErrorBuffer::GetError() {
+  mAwaitingGetError = false;
+  if (mType == ffi::WGPUErrorBufferType_DeviceLost) {
+    
+    
+    
+    
+    return Some(Error{dom::GPUErrorFilter::Validation, true,
+                      nsCString{mMessageUtf8}, mDeviceId});
   }
-};
+  auto filterType = ErrorTypeToFilterType(mType);
+  if (!filterType) {
+    return {};
+  }
+  return Some(Error{*filterType, false, nsCString{mMessageUtf8}, mDeviceId});
+}
+
+void ErrorBuffer::CoerceValidationToInternal() {
+  if (mType == ffi::WGPUErrorBufferType_Validation) {
+    mType = ffi::WGPUErrorBufferType_Internal;
+  }
+}
 
 struct PendingSwapChainDrop {
   layers::RemoteTextureTxnType mTxnType;
