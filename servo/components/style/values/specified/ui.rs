@@ -338,30 +338,6 @@ pub enum Inert {
     ToShmem,
 )]
 #[repr(u8)]
-pub enum UserInput {
-    Auto,
-    None,
-}
-
-
-
-#[allow(missing_docs)]
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    FromPrimitive,
-    MallocSizeOf,
-    Parse,
-    PartialEq,
-    SpecifiedValueInfo,
-    ToComputedValue,
-    ToCss,
-    ToResolvedValue,
-    ToShmem,
-)]
-#[repr(u8)]
 pub enum UserFocus {
     Normal,
     None,

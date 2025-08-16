@@ -34,15 +34,6 @@ NS_IMPL_ELEMENT_CLONE(HTMLOptGroupElement)
 
 void HTMLOptGroupElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
   aVisitor.mCanHandle = false;
-
-  if (nsIFrame* frame = GetPrimaryFrame()) {
-    
-    
-    if (frame->StyleUI()->UserInput() == StyleUserInput::None) {
-      return;
-    }
-  }
-
   nsGenericHTMLElement::GetEventTargetParent(aVisitor);
 }
 
