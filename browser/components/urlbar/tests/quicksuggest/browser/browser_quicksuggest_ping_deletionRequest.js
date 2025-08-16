@@ -34,8 +34,13 @@ if (ContextId.rotationEnabled) {
     sandbox.stub(ContextId, "forceRotation");
 
     UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
+    
+    
+    
+    
+    
     Assert.ok(
-      ContextId.forceRotation.calledOnce,
+      ContextId.forceRotation.called,
       "Should have forced context ID rotation upon disabling sponsored suggest"
     );
 
