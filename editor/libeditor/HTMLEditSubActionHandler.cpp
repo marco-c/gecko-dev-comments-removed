@@ -4799,7 +4799,9 @@ nsresult HTMLEditor::HandleCSSIndentAroundRanges(
   
   
   RefPtr<Element> subListElement, divElement;
-  for (OwningNonNull<nsIContent>& content : arrayOfContents) {
+  for (size_t i = 0; i < arrayOfContents.Length(); i++) {
+    const OwningNonNull<nsIContent>& content = arrayOfContents[i];
+
     
     EditorDOMPoint atContent(content);
     if (NS_WARN_IF(!atContent.IsSet())) {
@@ -4908,13 +4910,32 @@ nsresult HTMLEditor::HandleCSSIndentAroundRanges(
       latestNewBlockElement = divElement;
     }
 
+    const auto IsMovableContentSibling = [&](const nsIContent& aContent) {
+      return HTMLEditUtils::IsSimplyEditableNode(aContent) &&
+             !HTMLEditUtils::IsBlockElement(
+                 aContent, BlockInlineCheck::UseHTMLDefaultStyle);
+    };
+    MOZ_ASSERT(IsMovableContentSibling(content));
+    const OwningNonNull<nsIContent> lastContent = [&]() {
+      nsIContent* lastContent = content;
+      for (; i + 1 < arrayOfContents.Length(); i++) {
+        nsIContent* const nextContent = arrayOfContents[i + 1];
+        if (lastContent->GetNextSibling() != nextContent ||
+            !IsMovableContentSibling(*nextContent)) {
+          break;
+        }
+        lastContent = nextContent;
+      }
+      return OwningNonNull<nsIContent>(*lastContent);
+    }();
     
     
     
     Result<MoveNodeResult, nsresult> moveNodeResult =
-        MoveNodeToEndWithTransaction(MOZ_KnownLive(content), *divElement);
+        MoveSiblingsToEndWithTransaction(MOZ_KnownLive(content), lastContent,
+                                         *divElement);
     if (MOZ_UNLIKELY(moveNodeResult.isErr())) {
-      NS_WARNING("HTMLEditor::MoveNodeToEndWithTransaction() failed");
+      NS_WARNING("HTMLEditor::MoveSiblingsToEndWithTransaction() failed");
       return moveNodeResult.unwrapErr();
     }
     MoveNodeResult unwrappedMoveNodeResult = moveNodeResult.unwrap();
