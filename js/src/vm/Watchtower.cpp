@@ -607,8 +607,8 @@ static void MaybePopFuses(JSContext* cx, NativeObject* obj, jsid id) {
 
 
 bool Watchtower::watchPropertyRemoveSlow(JSContext* cx,
-                                         Handle<NativeObject*> obj,
-                                         HandleId id) {
+                                         Handle<NativeObject*> obj, HandleId id,
+                                         PropertyInfo propInfo) {
   MOZ_ASSERT(watchesPropertyRemove(obj));
 
   if (obj->isUsedAsPrototype() && !id.isInt()) {
