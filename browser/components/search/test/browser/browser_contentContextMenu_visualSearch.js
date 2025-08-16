@@ -19,7 +19,7 @@ const TEST_PAGE_URL =
 
 
 const IMAGE_URL =
-  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAATklEQVRYhe3SIQ4AIBADwf7/04elBAtrVlSduGnSTDJ7cuT1PQJwwO+Hl7sAGAA07gjAAfgIBeAAoHFHAA7ARygABwCNOwJwAD5CATRgAYXh+kypw86nAAAAAElFTkSuQmCC";
+  "http://mochi.test:8888/browser/browser/components/search/test/browser/ctxmenu-image.png";
 
 const SEARCH_CONFIG = [
   
@@ -200,6 +200,16 @@ add_task(async function contextClick_unsupportedImage() {
     
     
     selector: "#image-svg",
+    defaultEngineId: "visual-search-1",
+    shouldBeShown: false,
+  });
+});
+
+
+
+add_task(async function contextClick_dataURI() {
+  await setDefaultEngineAndCheckMenu({
+    selector: "#image-data-uri",
     defaultEngineId: "visual-search-1",
     shouldBeShown: false,
   });
@@ -409,6 +419,18 @@ async function openAndCheckMenu({
   selector,
   shouldHaveNewBadge = false,
 }) {
+  let selectorMatches = await SpecialPowers.spawn(
+    win.gBrowser.selectedBrowser,
+    [selector],
+    async function (sel) {
+      return !!content.document.querySelector(sel);
+    }
+  );
+  Assert.ok(
+    selectorMatches,
+    "Sanity check: selector should match an element in the page: " + selector
+  );
+
   let menu = win.document.getElementById(CONTEXT_MENU_ID);
   let popupPromise = BrowserTestUtils.waitForEvent(menu, "popupshown");
 
