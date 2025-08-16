@@ -163,7 +163,7 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
             CreateDecoderParams::Option::HardwareDecoderNotAllowed),
         aParams.mOptions.contains(
             CreateDecoderParams::Option::Output8BitPerChannel),
-        aParams.mTrackingId);
+        aParams.mTrackingId, aParams.mCDM);
 
     
     
