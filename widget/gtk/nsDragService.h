@@ -131,6 +131,8 @@ class nsDragSession : public nsBaseDragSession, public nsIObserver {
 
   static int GetLoopDepth() { return sEventLoopDepth; };
 
+  static bool IsTextFlavor(GdkAtom aFlavor);
+
  protected:
   
   
