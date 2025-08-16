@@ -1,30 +1,36 @@
+
+
+
+
+"use strict";
+
 var proxyPrefValue;
 
 
 
-function test() {
-  
-  setInstallTriggerPrefs();
+async function test() {
+  waitForExplicitFinish(); 
+
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["extensions.webapi.testing", true],
+      [PREF_INSTALL_REQUIREBUILTINCERTS, false],
+    ],
+  });
 
   Harness.downloadProgressCallback = download_progress;
   Harness.installsCompletedCallback = finish_test;
   Harness.setup();
 
-  PermissionTestUtils.add(
-    "http://example.com/",
-    "install",
-    Services.perms.ALLOW_ACTION
-  );
-
   var triggers = encodeURIComponent(
     JSON.stringify({
-      "Unsigned XPI": TESTROOT + "amosigned.xpi",
+      url: SECURE_TESTROOT + "amosigned.xpi",
     })
   );
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
   BrowserTestUtils.startLoadingURIString(
     gBrowser,
-    TESTROOT + "installtrigger.html?" + triggers
+    SECURE_TESTROOT + "mozaddonmanager.html?" + triggers
   );
 }
 
@@ -66,7 +72,7 @@ function finish_test(count) {
     });
     BrowserTestUtils.startLoadingURIString(
       tab.linkedBrowser,
-      "http://example.com/"
+      "https://example.com/"
     );
   }
 
@@ -75,8 +81,6 @@ function finish_test(count) {
     Services.prefs.setIntPref("network.proxy.type", proxyPrefValue);
     Services.io.offline = false;
   } catch (ex) {}
-
-  PermissionTestUtils.remove("http://example.com", "install");
 
   wait_for_online();
 }
