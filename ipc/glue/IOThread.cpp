@@ -30,6 +30,22 @@ IOThread::~IOThread() {
   sSingleton = nullptr;
 }
 
+void IOThread::Startup() {
+  if (XRE_IsParentProcess()) {
+    
+    auto* thread = new IOThreadParent();
+    MOZ_RELEASE_ASSERT(thread == sSingleton);
+  }
+  MOZ_ASSERT(sSingleton);
+}
+
+void IOThread::Shutdown() {
+  if (XRE_IsParentProcess()) {
+    delete static_cast<IOThreadParent*>(sSingleton);
+    MOZ_ASSERT(!sSingleton);
+  }
+}
+
 void IOThread::StartThread() {
   
   
