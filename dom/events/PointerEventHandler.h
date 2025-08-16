@@ -9,6 +9,7 @@
 
 #include "LayoutConstants.h"
 #include "mozilla/EventForwards.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TouchEvents.h"
@@ -371,6 +372,20 @@ class PointerEventHandler final {
       const PresShell* aRootPresShell = nullptr);
 
   
+
+
+
+  [[nodiscard]] static Maybe<uint32_t> GetLastPointerId() {
+    return sLastPointerId;
+  }
+  
+
+
+  [[nodiscard]] static bool IsLastPointerId(uint32_t aPointerId) {
+    return sLastPointerId && *sLastPointerId == aPointerId;
+  }
+
+  
   
   MOZ_CAN_RUN_SCRIPT
   static void MaybeProcessPointerCapture(WidgetGUIEvent* aEvent);
@@ -613,11 +628,41 @@ class PointerEventHandler final {
       nsWeakPtr&& aPointerCapturingElement);
 
   
+
+
+  static const UniquePtr<PointerInfo>& InsertOrUpdateActivePointer(
+      uint32_t aPointerId, UniquePtr<PointerInfo>&& aNewPointerInfo,
+      EventMessage aEventMessage, const char* aCallerName);
+
+  
+
+
+  static void RemoveActivePointer(uint32_t aPointerId,
+                                  EventMessage aEventMessage,
+                                  const char* aCallerName);
+
+  
+
+
+  static void UpdateLastPointerId(uint32_t aPointerId,
+                                  EventMessage aEventMessage);
+
+  
+
+
+  static void MaybeForgetLastPointerId(uint32_t aPointerId,
+                                       EventMessage aEventMessage);
+
+  
   
   static StaticAutoPtr<PointerInfo> sLastMouseInfo;
 
   
   static StaticRefPtr<nsIWeakReference> sLastMousePresShell;
+
+  
+  
+  static Maybe<uint32_t> sLastPointerId;
 };
 
 }  

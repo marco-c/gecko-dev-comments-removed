@@ -307,6 +307,12 @@ class PresShell final : public nsStubDocumentObserver,
 
   nsPresContext* GetPresContext() const { return mPresContext; }
 
+  
+
+
+
+  PresShell* GetRootPresShell() const;
+
   nsViewManager* GetViewManager() const { return mViewManager; }
 
   nsRefreshDriver* GetRefreshDriver() const;
@@ -3123,8 +3129,6 @@ class PresShell final : public nsStubDocumentObserver,
     static TimeStamp sLastInputProcessed;
     static StaticRefPtr<dom::Element> sLastKeyDownEventTargetElement;
   };
-
-  PresShell* GetRootPresShell() const;
 
   bool IsTransparentContainerElement() const;
   ColorScheme DefaultBackgroundColorScheme() const;
