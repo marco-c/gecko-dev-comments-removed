@@ -236,7 +236,7 @@ var FullZoom = {
     
     this._ignorePendingZoomAccesses(browser);
 
-    if (!aURI || (aIsTabSwitch && !this._isSiteSpecific(browser))) {
+    if (!aURI || (aIsTabSwitch && !this.siteSpecific)) {
       this._notifyOnLocationChange(browser);
       return;
     }
@@ -530,13 +530,13 @@ var FullZoom = {
     if (
       !aBrowser.mInitialized ||
       aBrowser.isSyntheticDocument ||
-      (!this._isSiteSpecific(aBrowser) && aBrowser.tabHasCustomZoom)
+      (!this.siteSpecific && aBrowser.tabHasCustomZoom)
     ) {
       this._executeSoon(aCallback);
       return;
     }
 
-    if (aValue !== undefined && this._isSiteSpecific(aBrowser)) {
+    if (aValue !== undefined && this.siteSpecific) {
       ZoomManager.setZoomForBrowser(aBrowser, this._ensureValid(aValue));
       this._ignorePendingZoomAccesses(aBrowser);
       this._executeSoon(aCallback);
@@ -563,11 +563,11 @@ var FullZoom = {
 
 
   _applyZoomToPref: function FullZoom__applyZoomToPref(browser) {
-    if (!this._isSiteSpecific(browser) || browser.isSyntheticDocument) {
+    if (!this.siteSpecific || browser.isSyntheticDocument) {
       
       
       
-      browser.tabHasCustomZoom = !this._isSiteSpecific(browser);
+      browser.tabHasCustomZoom = !this.siteSpecific;
       return null;
     }
 
@@ -695,23 +695,6 @@ var FullZoom = {
     }
 
     return aValue;
-  },
-
-  
-  
-  
-  _isSiteSpecific(aBrowser) {
-    if (!this.siteSpecific) {
-      return false;
-    }
-    return (
-      !aBrowser?.browsingContext?.topWindowContext.shouldResistFingerprinting ||
-      !ChromeUtils.shouldResistFingerprinting(
-        "SiteSpecificZoom",
-        aBrowser?.browsingContext?.topWindowContext
-          .overriddenFingerprintingSettings
-      )
-    );
   },
 
   
