@@ -965,8 +965,9 @@ JSObject* js::gc::TenuringTracer::promoteObjectSlow(JSObject* src) {
   
   
   
-  
-  if (src->is<FixedLengthTypedArrayObject>()) {
+  if (src->is<ArrayObject>()) {
+    srcSize = sizeof(NativeObject);
+  } else if (src->is<FixedLengthTypedArrayObject>()) {
     auto* tarray = &src->as<FixedLengthTypedArrayObject>();
     
     
@@ -982,8 +983,6 @@ JSObject* js::gc::TenuringTracer::promoteObjectSlow(JSObject* src) {
       size_t headerSize = Arena::thingSize(srcKind);
       srcSize = headerSize + tarray->byteLength();
     }
-  } else if (src->canHaveFixedElements()) {
-    srcSize = sizeof(NativeObject);
   }
 
   promotedSize += srcSize;
@@ -1090,7 +1089,7 @@ size_t js::gc::TenuringTracer::moveElements(NativeObject* dst,
   void* unshiftedHeader = src->getUnshiftedElementsHeader();
 
   
-  if (src->canHaveFixedElements() && nslots <= GetGCKindSlots(dstKind)) {
+  if (src->is<ArrayObject>() && nslots <= GetGCKindSlots(dstKind)) {
     dst->as<NativeObject>().setFixedElements();
     js_memcpy(dst->getElementsHeader(), unshiftedHeader, allocSize);
     dst->elements_ += numShifted;
