@@ -569,6 +569,9 @@ nsDragSession::nsDragSession() {
 
   
   mTempFileTimerID = 0;
+#ifdef MOZ_X11
+  mActive = widget::GdkIsX11Display();
+#endif
 
   static std::once_flag onceFlag;
   std::call_once(onceFlag, [] {
