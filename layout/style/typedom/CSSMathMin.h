@@ -38,8 +38,8 @@ class CSSMathMin final : public CSSMathValue {
   
 
   static already_AddRefed<CSSMathMin> Constructor(
-      const GlobalObject& aGlobal,
-      const Sequence<OwningDoubleOrCSSNumericValue>& aArgs, ErrorResult& aRv);
+      const GlobalObject& aGlobal, const Sequence<OwningCSSNumberish>& aArgs,
+      ErrorResult& aRv);
 
   CSSNumericArray* GetValues(ErrorResult& aRv) const;
 
