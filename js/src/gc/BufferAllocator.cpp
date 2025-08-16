@@ -1121,30 +1121,28 @@ static inline void VirtualCopyPages(void* dst, const void* src, size_t bytes) {
 }
 #endif
 
-void* BufferAllocator::realloc(void* alloc, size_t oldBytes, size_t newBytes,
-                               bool nurseryOwned) {
+void* BufferAllocator::realloc(void* alloc, size_t bytes, bool nurseryOwned) {
   
   
   
 
   if (!alloc) {
-    MOZ_ASSERT(oldBytes == 0);
-    return this->alloc(newBytes, nurseryOwned);
+    return this->alloc(bytes, nurseryOwned);
   }
 
   MOZ_ASSERT(isNurseryOwned(alloc) == nurseryOwned);
   MOZ_ASSERT_IF(zone->isGCMarkingOrSweeping(), majorState == State::Marking);
 
-  oldBytes = GetGoodAllocSize(oldBytes);
-  newBytes = GetGoodAllocSize(newBytes);
+  bytes = GetGoodAllocSize(bytes);
 
+  size_t currentBytes;
   if (IsLargeAlloc(alloc)) {
     LargeBuffer* buffer = lookupLargeBuffer(alloc);
-    MOZ_ASSERT(oldBytes == buffer->allocBytes());
+    currentBytes = buffer->allocBytes();
 
     
-    if (newBytes < buffer->allocBytes() && IsLargeAllocSize(newBytes)) {
-      if (shrinkLarge(buffer, newBytes)) {
+    if (bytes < buffer->allocBytes() && IsLargeAllocSize(bytes)) {
+      if (shrinkLarge(buffer, bytes)) {
         return alloc;
       }
     }
@@ -1152,40 +1150,38 @@ void* BufferAllocator::realloc(void* alloc, size_t oldBytes, size_t newBytes,
     BufferChunk* chunk = BufferChunk::from(alloc);
     MOZ_ASSERT(!chunk->isSmallBufferRegion(alloc));
 
+    currentBytes = chunk->allocBytes(alloc);
+
     
-    if (!isSweepingChunkAfterMerge(chunk)) {
-      MOZ_ASSERT(oldBytes == chunk->allocBytes(alloc));
-
-      
-      if (newBytes < oldBytes && !IsSmallAllocSize(newBytes)) {
-        if (shrinkMedium(alloc, oldBytes, newBytes)) {
-          return alloc;
-        }
+    if (bytes < currentBytes && !IsSmallAllocSize(bytes)) {
+      if (shrinkMedium(alloc, bytes)) {
+        return alloc;
       }
+    }
 
-      if (newBytes > oldBytes && !IsLargeAllocSize(newBytes)) {
-        if (growMedium(alloc, oldBytes, newBytes)) {
-          return alloc;
-        }
+    if (bytes > currentBytes && !IsLargeAllocSize(bytes)) {
+      if (growMedium(alloc, bytes)) {
+        return alloc;
       }
     }
   } else {
     
-    MOZ_ASSERT(oldBytes == SmallBufferRegion::from(alloc)->allocBytes(alloc));
+    auto* region = SmallBufferRegion::from(alloc);
+    currentBytes = region->allocBytes(alloc);
   }
 
-  if (newBytes == oldBytes) {
+  if (bytes == currentBytes) {
     return alloc;
   }
 
-  void* newAlloc = this->alloc(newBytes, nurseryOwned);
+  void* newAlloc = this->alloc(bytes, nurseryOwned);
   if (!newAlloc) {
     return nullptr;
   }
 
   auto freeGuard = mozilla::MakeScopeExit([&]() { free(alloc); });
 
-  size_t bytesToCopy = std::min(newBytes, oldBytes);
+  size_t bytesToCopy = std::min(bytes, currentBytes);
 
 #ifdef XP_DARWIN
   if (bytesToCopy >= ChunkSize) {
@@ -3181,13 +3177,13 @@ void BufferAllocator::freeMedium(void* alloc) {
   BufferChunk* chunk = BufferChunk::from(alloc);
   MOZ_ASSERT(chunk->zone == zone);
 
-  if (isSweepingChunkAfterMerge(chunk)) {
-    return;  
-  }
-
   size_t bytes = chunk->allocBytes(alloc);
   PoisonAlloc(alloc, JS_FREED_BUFFER_PATTERN, bytes,
               MemCheckKind::MakeUndefined);
+
+  if (isSweepingChunk(chunk)) {
+    return;  
+  }
 
   
   if (!chunk->isNurseryOwned(alloc)) {
@@ -3270,19 +3266,41 @@ void BufferAllocator::maybeUpdateAvailableLists(ChunkLists* availableChunks,
   }
 }
 
-bool BufferAllocator::isSweepingChunkAfterMerge(BufferChunk* chunk) {
-  if (chunk->hasNurseryOwnedAllocs && hasMinorSweepDataToMerge) {
+bool BufferAllocator::isSweepingChunk(BufferChunk* chunk) {
+  if (minorState == State::Sweeping && chunk->hasNurseryOwnedAllocs) {
+    
+
+    
+    
+
+    if (!hasMinorSweepDataToMerge) {
+#ifdef DEBUG
+      {
+        AutoLock lock(this);
+        MOZ_ASSERT_IF(!hasMinorSweepDataToMerge, !minorSweepingFinished);
+      }
+#endif
+
+      
+      return true;
+    }
+
+    
+    
     
     
     mergeSweptData();
+    if (minorState == State::Sweeping && chunk->hasNurseryOwnedAllocs) {
+      return true;
+    }
   }
 
-  return isSweepingChunk(chunk);
-}
+  if (majorState == State::Sweeping && !chunk->allocatedDuringCollection) {
+    
+    return true;
+  }
 
-bool BufferAllocator::isSweepingChunk(BufferChunk* chunk) const {
-  return (minorState == State::Sweeping && chunk->hasNurseryOwnedAllocs) ||
-         (majorState == State::Sweeping && !chunk->allocatedDuringCollection);
+  return false;
 }
 
 BufferAllocator::FreeRegion* BufferAllocator::addFreeRegion(
@@ -3353,20 +3371,23 @@ void BufferAllocator::updateFreeRegionStart(FreeLists* freeLists,
   }
 }
 
-bool BufferAllocator::growMedium(void* alloc, size_t oldBytes,
-                                 size_t newBytes) {
+bool BufferAllocator::growMedium(void* alloc, size_t newBytes) {
   MOZ_ASSERT(!IsSmallAllocSize(newBytes));
   MOZ_ASSERT(!IsLargeAllocSize(newBytes));
   newBytes = std::max(newBytes, MinMediumAllocSize);
   MOZ_ASSERT(newBytes == GetGoodAllocSize(newBytes));
-  MOZ_ASSERT(newBytes > oldBytes);
 
   BufferChunk* chunk = BufferChunk::from(alloc);
   MOZ_ASSERT(chunk->zone == zone);
-  MOZ_ASSERT(!isSweepingChunk(chunk));
-  MOZ_ASSERT(oldBytes == chunk->allocBytes(alloc));
 
-  uintptr_t endOffset = (uintptr_t(alloc) & ChunkMask) + oldBytes;
+  if (isSweepingChunk(chunk)) {
+    return false;  
+  }
+
+  size_t currentBytes = chunk->allocBytes(alloc);
+  MOZ_ASSERT(newBytes > currentBytes);
+
+  uintptr_t endOffset = (uintptr_t(alloc) & ChunkMask) + currentBytes;
   MOZ_ASSERT(endOffset <= ChunkSize);
   if (endOffset == ChunkSize) {
     return false;  
@@ -3380,7 +3401,7 @@ bool BufferAllocator::growMedium(void* alloc, size_t oldBytes,
   FreeRegion* region = chunk->findFollowingFreeRegion(endAddr);
   MOZ_ASSERT(region->startAddr == endAddr);
 
-  size_t extraBytes = newBytes - oldBytes;
+  size_t extraBytes = newBytes - currentBytes;
   if (region->size() < extraBytes) {
     return false;  
   }
@@ -3404,7 +3425,7 @@ bool BufferAllocator::growMedium(void* alloc, size_t oldBytes,
     maybeUpdateAvailableLists(availableChunks, chunk, oldChunkSizeClass);
   }
 
-  chunk->updateEndOffset(alloc, oldBytes, newBytes);
+  chunk->updateEndOffset(alloc, currentBytes, newBytes);
   MOZ_ASSERT(chunk->allocBytes(alloc) == newBytes);
 
   if (!chunk->isNurseryOwned(alloc)) {
@@ -3416,8 +3437,7 @@ bool BufferAllocator::growMedium(void* alloc, size_t oldBytes,
   return true;
 }
 
-bool BufferAllocator::shrinkMedium(void* alloc, size_t oldBytes,
-                                   size_t newBytes) {
+bool BufferAllocator::shrinkMedium(void* alloc, size_t newBytes) {
   MOZ_ASSERT(!IsSmallAllocSize(newBytes));
   MOZ_ASSERT(!IsLargeAllocSize(newBytes));
   newBytes = std::max(newBytes, MinMediumAllocSize);
@@ -3425,19 +3445,22 @@ bool BufferAllocator::shrinkMedium(void* alloc, size_t oldBytes,
 
   BufferChunk* chunk = BufferChunk::from(alloc);
   MOZ_ASSERT(chunk->zone == zone);
-  MOZ_ASSERT(!isSweepingChunk(chunk));
-  MOZ_ASSERT(oldBytes == chunk->allocBytes(alloc));
 
-  if (newBytes == oldBytes) {
+  if (isSweepingChunk(chunk)) {
+    return false;  
+  }
+
+  size_t currentBytes = chunk->allocBytes(alloc);
+  if (newBytes == currentBytes) {
     
     return false;
   }
 
-  MOZ_ASSERT(newBytes < oldBytes);
-  size_t sizeChange = oldBytes - newBytes;
+  MOZ_ASSERT(newBytes < currentBytes);
+  size_t sizeChange = currentBytes - newBytes;
 
   
-  chunk->updateEndOffset(alloc, oldBytes, newBytes);
+  chunk->updateEndOffset(alloc, currentBytes, newBytes);
   MOZ_ASSERT(chunk->allocBytes(alloc) == newBytes);
   if (!chunk->isNurseryOwned(alloc)) {
     bool updateRetained =
@@ -3446,7 +3469,7 @@ bool BufferAllocator::shrinkMedium(void* alloc, size_t oldBytes,
   }
 
   uintptr_t startOffset = uintptr_t(alloc) & ChunkMask;
-  uintptr_t oldEndOffset = startOffset + oldBytes;
+  uintptr_t oldEndOffset = startOffset + currentBytes;
   uintptr_t newEndOffset = startOffset + newBytes;
   MOZ_ASSERT(oldEndOffset <= ChunkSize);
 
