@@ -88,9 +88,6 @@
 #define BYTES_PER_KIBIBYTE 1024
 
 
-#define DATABASE_BUSY_TIMEOUT_MS 100
-
-
 #define LAST_USED_ANNO "bookmarkPropertiesDialog/folderLastUsed"_ns
 
 #define LAST_USED_FOLDERS_META_KEY "places/bookmarks/edit/lastusedfolder"_ns

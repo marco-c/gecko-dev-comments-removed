@@ -225,9 +225,17 @@ ConcurrentConnection::Complete(nsresult aRv, nsISupports* aData) {
 
   
   
-  nsCOMPtr<mozIStoragePendingStatement> ps;
+  nsAutoCString busyTimeoutPragma("PRAGMA busy_timeout = ");
+  busyTimeoutPragma.AppendInt(DATABASE_BUSY_TIMEOUT_MS);
+  nsCOMPtr<mozIStoragePendingStatement> busyPs;
+  (void)mConn->ExecuteSimpleSQLAsync(busyTimeoutPragma, nullptr,
+                                     getter_AddRefs(busyPs));
+
+  
+  
+  nsCOMPtr<mozIStoragePendingStatement> schemaPs;
   nsresult rv = mConn->ExecuteSimpleSQLAsync("PRAGMA user_version"_ns, this,
-                                             getter_AddRefs(ps));
+                                             getter_AddRefs(schemaPs));
   if (NS_FAILED(rv)) {
     CloseConnection();
     Shutdown();

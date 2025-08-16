@@ -23,6 +23,9 @@
 #define DATABASE_FAVICONS_SCHEMANAME "favicons"_ns
 
 
+#define DATABASE_BUSY_TIMEOUT_MS 100
+
+
 #define TOPIC_PLACES_INIT_COMPLETE "places-init-complete"
 
 
