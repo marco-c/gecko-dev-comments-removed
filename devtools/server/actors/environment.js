@@ -101,6 +101,11 @@ class EnvironmentActor extends Actor {
       parameterNames = [];
     }
     for (const name of parameterNames) {
+      
+      
+      if (name == undefined) {
+        continue;
+      }
       const arg = Object.create(null);
       const value = this.obj.getVariable(name);
 
