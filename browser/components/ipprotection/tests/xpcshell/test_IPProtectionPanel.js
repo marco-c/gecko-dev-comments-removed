@@ -34,14 +34,6 @@ class FakeIPProtectionPanelElement {
   }
 }
 
-add_setup(() => {
-  IPProtectionService.init();
-
-  registerCleanupFunction(() => {
-    IPProtectionService.uninit();
-  });
-});
-
 
 
 
