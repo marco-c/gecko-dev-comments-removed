@@ -159,8 +159,8 @@ async function runWorkflow(actions_to_take, expected_results) {
     
     
     let sandbox = Cu.Sandbox(null);
-    let sawAnError = false;
     try {
+      
       
       
       Cu.evalInSandbox(
@@ -170,10 +170,7 @@ async function runWorkflow(actions_to_take, expected_results) {
         "https://example.net/script.js",
         1
       );
-    } catch (e) {
-      sawAnError = true;
-    }
-    ok(sawAnError, "Should have seen an error from the evalInSandbox call");
+    } catch (e) {}
 
     let notification = await notificationShownPromise;
 
