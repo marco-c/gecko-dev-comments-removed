@@ -746,6 +746,14 @@ var gMainPane = {
     );
 
     document
+      .getElementById("browserLayoutShowSidebar")
+      .addEventListener(
+        "command",
+        gMainPane.onShowSidebarCommand.bind(gMainPane),
+        { capture: true }
+      );
+
+    document
       .getElementById("migrationWizardDialog")
       .addEventListener("MigrationWizard:Close", function (e) {
         e.currentTarget.close();
@@ -1084,6 +1092,21 @@ var gMainPane = {
     }
 
     return false;
+  },
+
+  
+
+
+
+  onShowSidebarCommand(event) {
+    
+    
+    const willEnable = event.target.checked;
+    if (willEnable) {
+      window.browsingContext.topChromeWindow.SidebarController?.enabledViaSettings(
+        true
+      );
+    }
   },
 
   
