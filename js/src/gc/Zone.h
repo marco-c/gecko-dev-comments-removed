@@ -36,6 +36,7 @@
 #include "vm/InvalidatingFuse.h"
 #include "vm/JSObject.h"
 #include "vm/JSScript.h"
+#include "vm/ObjectFuse.h"
 #include "vm/ShapeZone.h"
 
 namespace js {
@@ -903,6 +904,9 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
 
   
   js::DependentIonScriptGroup fuseDependencies;
+
+  
+  js::ObjectFuseMap objectFuses;
 
  private:
   js::jit::JitZone* createJitZone(JSContext* cx);

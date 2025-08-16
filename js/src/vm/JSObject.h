@@ -217,6 +217,8 @@ class JSObject
     return setFlag(cx, obj, js::ObjectFlag::HasNonFunctionAccessor);
   }
 
+  bool hasObjectFuse() const { return hasFlag(js::ObjectFlag::HasObjectFuse); }
+
   
   
   

@@ -89,11 +89,17 @@ enum class ObjectFlag : uint32_t {
 
   
   
-  HasPreservedWrapperDummy = 1 << 15,
+  
+  
+  HasObjectFuse = 1 << 15,
 
   
   
-  HasNonFunctionAccessor = 1 << 16,
+  HasPreservedWrapperDummy = 1 << 16,
+
+  
+  
+  HasNonFunctionAccessor = 1 << 17,
 };
 
 using ObjectFlags = EnumFlags<ObjectFlag>;

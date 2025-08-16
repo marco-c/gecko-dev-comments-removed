@@ -3771,7 +3771,16 @@ static void ReportRuntimeRedeclaration(JSContext* cx,
   if (shadowedExistingProp && varObj->is<GlobalObject>()) {
     
     
-    varObj->as<GlobalObject>().bumpGenerationCount();
+    auto* global = &varObj->as<GlobalObject>();
+    global->bumpGenerationCount();
+
+    
+    
+    if (global->hasObjectFuse()) {
+      if (auto* objFuse = cx->zone()->objectFuses.get(global)) {
+        objFuse->handleShadowedGlobalProperty(cx, *shadowedExistingProp);
+      }
+    }
   }
 
   return true;

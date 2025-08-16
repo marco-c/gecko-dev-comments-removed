@@ -2172,7 +2172,14 @@ JS_PUBLIC_API void JS_SetAllNonReservedSlotsToUndefined(JS::HandleObject obj) {
   }
 
   NativeObject& nobj = obj->as<NativeObject>();
-  MOZ_RELEASE_ASSERT(!Watchtower::watchesPropertyValueChange(&nobj));
+
+  
+  
+  
+  
+  MOZ_RELEASE_ASSERT(nobj.is<GlobalObject>() ||
+                     !Watchtower::watchesPropertyValueChange(&nobj));
+
   const JSClass* clasp = obj->getClass();
   unsigned numReserved = JSCLASS_RESERVED_SLOTS(clasp);
   unsigned numSlots = nobj.slotSpan();
