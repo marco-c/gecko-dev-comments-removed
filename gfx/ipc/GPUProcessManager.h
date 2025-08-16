@@ -189,6 +189,10 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   void KillProcess(bool aGenerateMinidump = false);
 
   
+  
+  void StopObserving();
+
+  
   void CrashProcess();
 
   
