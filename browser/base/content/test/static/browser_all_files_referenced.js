@@ -122,6 +122,10 @@ var gExceptionPaths = [
 
   
   "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/tests/generated/",
+
+  
+  
+  "chrome://browser/skin/illustrations/market-opt-in.svg",
 ];
 
 
