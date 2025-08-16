@@ -8172,6 +8172,12 @@ nsHttpChannel::GetEssentialDomainCategory(nsCString& domain) {
 }
 
 nsresult nsHttpChannel::ProcessLNAActions() {
+  if (!mTransaction) {
+    
+    
+    
+    return NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED;
+  }
   
   
   
