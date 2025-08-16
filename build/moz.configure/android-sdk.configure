@@ -127,20 +127,11 @@ def android_sdk_root(value, android_os_info, want_bootstrap):
 
 @dependable
 def android_sdk_version():
-    
-    
-    
-    
-    
-    
-    
-    
-    
     return namespace(
         build_tools_version="36.0.0",
         compile_sdk_version="36",
         target_sdk_version="36",
-        min_sdk_version="21",
+        min_sdk_version="26",
     )
 
 
