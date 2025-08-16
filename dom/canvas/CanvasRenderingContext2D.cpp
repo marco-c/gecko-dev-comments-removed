@@ -5937,6 +5937,13 @@ void CanvasRenderingContext2D::DrawImage(const CanvasImageSource& aImage,
     return;
   }
 
+  if (static_cast<float>(aSw) <= 0.0 || static_cast<float>(aSh) <= 0.0 ||
+      static_cast<float>(aDw) <= 0.0 || static_cast<float>(aDh) <= 0.0) {
+    
+    
+    return;
+  }
+
   
   
   
