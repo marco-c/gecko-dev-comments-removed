@@ -371,13 +371,13 @@ class HTMLCanvasElement final : public nsGenericHTMLElement,
   RefPtr<layers::ImageContainer> mImageContainer;
   RefPtr<HTMLCanvasElementObserver> mContextObserver;
 
+ public:
   
   
   
   
   bool mWriteOnly;
 
- public:
   
   
   RefPtr<nsIPrincipal> mExpandedReader;
