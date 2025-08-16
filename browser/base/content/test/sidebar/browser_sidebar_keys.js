@@ -28,7 +28,7 @@ add_task(async function test_sidebar_in_customize_mode() {
   
   
   let { CustomizableUI } = ChromeUtils.importESModule(
-    "resource:///modules/CustomizableUI.sys.mjs"
+    "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs"
   );
   registerCleanupFunction(() => SidebarController.hide());
 

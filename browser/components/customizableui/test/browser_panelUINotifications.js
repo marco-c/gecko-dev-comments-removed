@@ -229,7 +229,7 @@ add_task(async function testInteractionWithBadges() {
     
     
     let { CustomizableUI } = ChromeUtils.importESModule(
-      "resource:///modules/CustomizableUI.sys.mjs"
+      "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs"
     );
     CustomizableUI.removeWidgetFromArea("fxa-toolbar-menu-button");
 
