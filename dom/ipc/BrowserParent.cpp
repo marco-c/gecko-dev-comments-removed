@@ -1756,7 +1756,16 @@ mozilla::ipc::IPCResult BrowserParent::RecvDispatchKeyboardEvent(
 
 mozilla::ipc::IPCResult BrowserParent::RecvDispatchTouchEvent(
     const mozilla::WidgetTouchEvent& aEvent) {
-  NS_ENSURE_TRUE(xpc::IsInAutomation(), IPC_FAIL(this, "Unexpected event"));
+  
+  
+  
+  
+  
+  
+  if (!xpc::IsInAutomation()) {
+    NS_ENSURE_TRUE(mBrowsingContext, IPC_OK());
+    NS_ENSURE_TRUE(mBrowsingContext->Top()->GetInRDMPane(), IPC_OK());
+  }
 
   nsCOMPtr<nsIWidget> widget = GetWidget();
   if (!widget) {
@@ -1949,16 +1958,7 @@ mozilla::ipc::IPCResult BrowserParent::RecvSynthesizeNativeTouchPoint(
     const uint32_t& aPointerId, const TouchPointerState& aPointerState,
     const LayoutDeviceIntPoint& aPoint, const double& aPointerPressure,
     const uint32_t& aPointerOrientation, const Maybe<uint64_t>& aCallbackId) {
-  
-  
-  
-  
-  
-  
-  if (!xpc::IsInAutomation()) {
-    NS_ENSURE_TRUE(mBrowsingContext, IPC_OK());
-    NS_ENSURE_TRUE(mBrowsingContext->Top()->GetInRDMPane(), IPC_OK());
-  }
+  NS_ENSURE_TRUE(xpc::IsInAutomation(), IPC_FAIL(this, "Unexpected event"));
 
   nsCOMPtr<nsISynthesizedEventCallback> callback =
       SynthesizedEventCallback::MaybeCreate(this, aCallbackId);

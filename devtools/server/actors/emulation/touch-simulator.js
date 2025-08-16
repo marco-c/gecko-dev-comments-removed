@@ -18,16 +18,6 @@ var clickHoldDelay = Services.prefs.getIntPref(
   500
 );
 
-
-const TOUCH_CONTACT = 0x02;
-const TOUCH_REMOVE = 0x04;
-
-const TOUCH_STATES = {
-  touchstart: TOUCH_CONTACT,
-  touchmove: TOUCH_CONTACT,
-  touchend: TOUCH_REMOVE,
-};
-
 const EVENTS_TO_HANDLE = [
   "mousedown",
   "mousemove",
@@ -203,7 +193,7 @@ class TouchSimulator {
 
     const target = eventTarget || this.target;
     if (target && type) {
-      this.synthesizeNativeTouch(content, evt.screenX, evt.screenY, type);
+      this.sendTouchEvent(content, evt.clientX, evt.clientY, type);
     }
 
     evt.preventDefault();
@@ -241,13 +231,23 @@ class TouchSimulator {
 
 
 
-  synthesizeNativeTouch(win, screenX, screenY, type) {
-    
+  sendTouchEvent(win, clientX, clientY, type) {
     const utils = win.windowUtils;
-    const deviceScale = win.devicePixelRatio;
-    const pt = { x: screenX * deviceScale, y: screenY * deviceScale };
-
-    utils.sendNativeTouchPoint(0, TOUCH_STATES[type], pt.x, pt.y, 1, 90, null);
+    utils.sendTouchEvent(
+      type,
+      [0],
+      [clientX],
+      [clientY],
+      [0],
+      [0],
+      [0],
+      [0],
+      [0],
+      [0],
+      [0],
+      0,
+      utils.ASYNC_ENABLED
+    );
     return true;
   }
 
