@@ -696,9 +696,11 @@ void HTMLVideoElement::ResetState() {
   mLastPresentedFrameID = layers::kContainerFrameID_Invalid;
 }
 
-bool HTMLVideoElement::WillFireVideoFrameCallbacks(
+void HTMLVideoElement::TakeVideoFrameRequestCallbacks(
     const TimeStamp& aNowTime, const Maybe<TimeStamp>& aNextTickTime,
-    VideoFrameCallbackMetadata& aMd) {
+    VideoFrameCallbackMetadata& aMd, nsTArray<VideoFrameRequest>& aCallbacks) {
+  MOZ_ASSERT(aCallbacks.IsEmpty());
+
   
   
   AutoTArray<ImageContainer::OwningImage, 4> images;
@@ -709,7 +711,7 @@ bool HTMLVideoElement::WillFireVideoFrameCallbacks(
   
   
   if (images.IsEmpty()) {
-    return false;
+    return;
   }
 
   
@@ -742,7 +744,7 @@ bool HTMLVideoElement::WillFireVideoFrameCallbacks(
   
   if (!selected || selected->mFrameID == layers::kContainerFrameID_Invalid ||
       selected->mFrameID == mLastPresentedFrameID) {
-    return false;
+    return;
   }
 
   
@@ -750,7 +752,7 @@ bool HTMLVideoElement::WillFireVideoFrameCallbacks(
   
   gfx::IntSize frameSize = selected->mImage->GetSize();
   if (NS_WARN_IF(frameSize.IsEmpty())) {
-    return false;
+    return;
   }
 
   
@@ -850,11 +852,11 @@ bool HTMLVideoElement::WillFireVideoFrameCallbacks(
   
   aMd.mPresentedFrames = mPresentedFrames;
 
+  mVideoFrameRequestManager.Take(aCallbacks);
+
   NS_DispatchToMainThread(NewRunnableMethod(
       "HTMLVideoElement::FinishedVideoFrameRequestCallbacks", this,
       &HTMLVideoElement::FinishedVideoFrameRequestCallbacks));
-
-  return true;
 }
 
 void HTMLVideoElement::FinishedVideoFrameRequestCallbacks() {
@@ -875,6 +877,10 @@ uint32_t HTMLVideoElement::RequestVideoFrameCallback(
     NotifyDecoderActivityChanges();
   }
   return handle;
+}
+
+bool HTMLVideoElement::IsVideoFrameCallbackCancelled(uint32_t aHandle) {
+  return mVideoFrameRequestManager.IsCanceled(aHandle);
 }
 
 void HTMLVideoElement::CancelVideoFrameCallback(uint32_t aHandle) {

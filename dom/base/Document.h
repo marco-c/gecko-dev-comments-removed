@@ -3140,16 +3140,25 @@ class Document : public nsINode,
 
 
 
+
+  bool IsCanceledFrameRequestCallback(uint32_t aHandle) const;
+
+  
+
+
+
   void TakeVideoFrameRequestCallbacks(
       nsTArray<RefPtr<HTMLVideoElement>>& aVideoCallbacks);
 
   
+
+
+
+  void TakeFrameRequestCallbacks(nsTArray<FrameRequest>& aCallbacks);
+
+  
   bool HasFrameRequestCallbacks() const {
     return !mFrameRequestManager.IsEmpty();
-  }
-
-  dom::FrameRequestManager& FrameRequestManager() {
-    return mFrameRequestManager;
   }
 
   
@@ -5279,7 +5288,7 @@ class Document : public nsINode,
 
   nsCOMPtr<nsIDocumentEncoder> mCachedEncoder;
 
-  dom::FrameRequestManager mFrameRequestManager;
+  FrameRequestManager mFrameRequestManager;
 
   
   

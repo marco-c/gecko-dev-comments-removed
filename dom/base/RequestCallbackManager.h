@@ -31,8 +31,7 @@ struct RequestCallbackEntry {
   bool operator<(uint32_t aHandle) const { return mHandle < aHandle; }
 
   RefPtr<RequestCallback> mCallback;
-  const uint32_t mHandle;
-  bool mCancelled = false;
+  uint32_t mHandle;
 };
 
 template <typename RequestCallback>
@@ -40,8 +39,6 @@ class RequestCallbackManager {
  public:
   RequestCallbackManager() = default;
   ~RequestCallbackManager() = default;
-
-  using CallbackList = nsTArray<RequestCallbackEntry<RequestCallback>>;
 
   nsresult Schedule(RequestCallback& aCallback, uint32_t* aHandle) {
     if (mCallbackCounter == std::numeric_limits<uint32_t>::max()) {
@@ -61,40 +58,21 @@ class RequestCallbackManager {
     if (mCallbacks.RemoveElementSorted(aHandle)) {
       return true;
     }
-    for (auto* callbacks : mFiringCallbacksOnStack) {
-      auto index = callbacks->mList.BinaryIndexOf(aHandle);
-      if (index != CallbackList::NoIndex) {
-        callbacks->mList.ElementAt(index).mCancelled = true;
-      }
-    }
+
+    Unused << mCanceledCallbacks.put(aHandle);
     return false;
   }
 
   bool IsEmpty() const { return mCallbacks.IsEmpty(); }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  struct MOZ_NON_MEMMOVABLE MOZ_STACK_CLASS FiringCallbacks {
-    explicit FiringCallbacks(RequestCallbackManager& aManager)
-        : mManager(aManager) {
-      mList = std::move(aManager.mCallbacks);
-      aManager.mFiringCallbacksOnStack.AppendElement(this);
-    }
+  bool IsCanceled(uint32_t aHandle) const {
+    return !mCanceledCallbacks.empty() && mCanceledCallbacks.has(aHandle);
+  }
 
-    ~FiringCallbacks() {
-      MOZ_ASSERT(mManager.mFiringCallbacksOnStack.LastElement() == this);
-      mManager.mFiringCallbacksOnStack.RemoveLastElement();
-    }
-
-    RequestCallbackManager& mManager;
-    CallbackList mList;
-  };
+  void Take(nsTArray<RequestCallbackEntry<RequestCallback>>& aCallbacks) {
+    aCallbacks = std::move(mCallbacks);
+    mCanceledCallbacks.clear();
+  }
 
   void Unlink() { mCallbacks.Clear(); }
 
@@ -107,14 +85,15 @@ class RequestCallbackManager {
   }
 
  private:
-  CallbackList mCallbacks;
+  nsTArray<RequestCallbackEntry<RequestCallback>> mCallbacks;
 
   
   
-  
-  AutoTArray<FiringCallbacks*, 1> mFiringCallbacksOnStack;
+  HashSet<uint32_t> mCanceledCallbacks;
 
   
+
+
   uint32_t mCallbackCounter = 0;
 };
 

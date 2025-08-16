@@ -20,7 +20,6 @@
 #include "nsRefreshDriver.h"
 
 #include "mozilla/DataMutex.h"
-#include "mozilla/dom/VideoFrameProvider.h"
 #include "nsThreadUtils.h"
 
 #ifdef XP_WIN
@@ -2090,6 +2089,7 @@ void nsRefreshDriver::RunVideoFrameCallbacks(
     AUTO_PROFILER_TRACING_MARKER_INNERWINDOWID(
         "Paint", "requestVideoFrame callbacks", GRAPHICS, doc->InnerWindowID());
     for (const auto& videoElm : videoElms) {
+      nsTArray<VideoFrameRequest> callbacks;
       VideoFrameCallbackMetadata metadata;
 
       
@@ -2108,16 +2108,11 @@ void nsRefreshDriver::RunVideoFrameCallbacks(
       
       
       
-      if (!videoElm->WillFireVideoFrameCallbacks(aNowTime, nextTickHint,
-                                                 metadata)) {
-        continue;
-      }
+      videoElm->TakeVideoFrameRequestCallbacks(aNowTime, nextTickHint, metadata,
+                                               callbacks);
 
-      VideoFrameRequestManager::FiringCallbacks callbacks(
-          videoElm->FrameRequestManager());
-
-      for (auto& callback : callbacks.mList) {
-        if (callback.mCancelled) {
+      for (auto& callback : callbacks) {
+        if (videoElm->IsVideoFrameCallbackCancelled(callback.mHandle)) {
           continue;
         }
 
@@ -2134,8 +2129,9 @@ void nsRefreshDriver::RunVideoFrameCallbacks(
 void nsRefreshDriver::RunFrameRequestCallbacks(
     const nsTArray<RefPtr<Document>>& aDocs, TimeStamp aNowTime) {
   for (Document* doc : aDocs) {
-    FrameRequestManager::FiringCallbacks callbacks(doc->FrameRequestManager());
-    if (callbacks.mList.IsEmpty()) {
+    nsTArray<FrameRequest> callbacks;
+    doc->TakeFrameRequestCallbacks(callbacks);
+    if (callbacks.IsEmpty()) {
       continue;
     }
 
@@ -2151,8 +2147,8 @@ void nsRefreshDriver::RunFrameRequestCallbacks(
     AUTO_PROFILER_TRACING_MARKER_INNERWINDOWID(
         "Paint", "requestAnimationFrame callbacks", GRAPHICS,
         doc->InnerWindowID());
-    for (auto& callback : callbacks.mList) {
-      if (callback.mCancelled) {
+    for (const auto& callback : callbacks) {
+      if (doc->IsCanceledFrameRequestCallback(callback.mHandle)) {
         continue;
       }
 
