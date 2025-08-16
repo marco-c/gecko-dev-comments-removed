@@ -8166,6 +8166,42 @@ MDefinition* MNormalizeSliceTerm::foldsTo(TempAllocator& alloc) {
   return this;
 }
 
+MDefinition* MToIntegerIndex::foldsTo(TempAllocator& alloc) {
+  
+
+  auto* index = this->index();
+  auto* length = this->length();
+
+  if (index == length) {
+    return index;
+  }
+
+  if (index->isConstant()) {
+    intptr_t indexConst = index->toConstant()->toIntPtr();
+
+    
+    if (indexConst > 0) {
+      return MMinMax::NewMin(alloc, index, length, MIRType::IntPtr);
+    }
+
+    
+    if (indexConst < 0) {
+      auto* add = MAdd::New(alloc, index, length, MIRType::IntPtr);
+      block()->insertBefore(this, add);
+
+      auto* zero = MConstant::NewIntPtr(alloc, 0);
+      block()->insertBefore(this, zero);
+
+      return MMinMax::NewMax(alloc, add, zero, MIRType::IntPtr);
+    }
+
+    
+    return index;
+  }
+
+  return this;
+}
+
 bool MInt32ToStringWithBase::congruentTo(const MDefinition* ins) const {
   if (!ins->isInt32ToStringWithBase()) {
     return false;
