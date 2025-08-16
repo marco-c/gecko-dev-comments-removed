@@ -18,6 +18,7 @@
 #include <algorithm>
 
 #include "nsWindow.h"
+#include "ScreenHelperUIKit.h"
 #include "nsAppShell.h"
 #include "nsIAppWindow.h"
 #include "nsIWindowWatcher.h"
@@ -49,6 +50,7 @@
 #include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/widget/GeckoViewSupport.h"
+#include "mozilla/layers/NativeLayerCA.h"
 #ifdef ACCESSIBILITY
 #  include "mozilla/a11y/MUIRootAccessibleProtocol.h"
 #endif
@@ -98,6 +100,13 @@ class nsAutoRetainUIKitObject {
   BOOL mWaitingForPaint;
   NSMapTable<UITouch*, NSNumber*>* mTouches;
   int mNextTouchID;
+
+  
+  
+  CALayer* mRootCALayer;  
+
+  
+  BOOL mIsUpdatingLayer;
 }
 
 - (id)initWithFrame:(CGRect)inFrame geckoChild:(nsWindow*)inChild;
@@ -120,6 +129,12 @@ class nsAutoRetainUIKitObject {
 - (void)touchesCancelled:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event;
 - (void)touchesEnded:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event;
 - (void)touchesMoved:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event;
+
+- (void)layoutSubviews;
+
+- (void)markLayerForDisplay;
+- (CALayer*)rootCALayer;
+- (void)updateRootCALayer;
 
 - (void)activateWindow:(NSNotification*)notification;
 - (void)deactivateWindow:(NSNotification*)notification;
@@ -145,14 +160,17 @@ class nsAutoRetainUIKitObject {
 @end
 
 @implementation ChildView
-+ (Class)layerClass {
-  return [CAEAGLLayer class];
-}
-
 - (id)initWithFrame:(CGRect)inFrame geckoChild:(nsWindow*)inChild {
   self.multipleTouchEnabled = YES;
   if ((self = [super initWithFrame:inFrame])) {
     mGeckoChild = inChild;
+
+    mRootCALayer = [[CALayer layer] retain];
+    mRootCALayer.position = CGPointZero;
+    mRootCALayer.bounds = CGRectZero;
+    mRootCALayer.anchorPoint = CGPointZero;
+    mRootCALayer.contentsGravity = kCAGravityTopLeft;
+    [[self layer] addSublayer:mRootCALayer];
   }
   ALOG("[ChildView[%p] initWithFrame:] (mGeckoChild = %p)", (void*)self,
        (void*)mGeckoChild);
@@ -320,6 +338,20 @@ class nsAutoRetainUIKitObject {
                 widget:mGeckoChild];
 }
 
+- (void)layoutSubviews {
+  ALOG("[ChildView[%p] layoutSubviews", self);
+  if (!mGeckoChild ||
+      mGeckoChild->GetWindowType() != nsIWidget::WindowType::TopLevel) {
+    return;
+  }
+
+  CGFloat scaleFactor = [self contentScaleFactor];
+  mGeckoChild->Resize(self.frame.origin.x * scaleFactor,
+                      self.frame.origin.y * scaleFactor,
+                      self.frame.size.width * scaleFactor,
+                      self.frame.size.height * scaleFactor, false);
+}
+
 - (BOOL)canBecomeFirstResponder {
   if (!mGeckoChild) {
     return NO;
@@ -346,6 +378,29 @@ class nsAutoRetainUIKitObject {
                     inModes:[NSArray arrayWithObject:NSRunLoopCommonModes]];
     }
   }
+}
+
+- (void)markLayerForDisplay {
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  if (!mIsUpdatingLayer) {
+    
+    
+    
+    [[self layer] setNeedsDisplay];
+  }
+}
+
+- (void)updateRootCALayer {
+  if (NS_IsMainThread() && mGeckoChild) {
+    MOZ_RELEASE_ASSERT(!mIsUpdatingLayer, "Re-entrant layer display?");
+    mIsUpdatingLayer = YES;
+    mGeckoChild->HandleMainThreadCATransaction();
+    mIsUpdatingLayer = NO;
+  }
+}
+
+- (CALayer*)rootCALayer {
+  return mRootCALayer;
 }
 
 - (BOOL)isUsingMainThreadOpenGL {
@@ -493,6 +548,14 @@ class nsAutoRetainUIKitObject {
   CGContextSetLineWidth(aContext, 4.0);
   CGContextStrokeRect(aContext, aRect);
 #endif
+}
+
+- (BOOL)wantsUpdateLayer {
+  return YES;
+}
+
+- (void)updateLayer {
+  [(ChildView*)[self superview] updateRootCALayer];
 }
 
 
@@ -747,6 +810,12 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
   if (parent && parent->mNativeView) {
     [parent->mNativeView addSubview:mNativeView];
   }
+
+  CGFloat scaleFactor = [UIScreen mainScreen].scale;
+
+  mNativeLayerRoot =
+      NativeLayerRootCA::CreateForCALayer([mNativeView rootCALayer]);
+  mNativeLayerRoot->SetBackingScale(scaleFactor);
 
   mTextInputHandler = new widget::TextInputHandler(this);
 
@@ -1072,6 +1141,89 @@ int32_t nsWindow::RoundsWidgetCoordinatesTo() {
     return 2;
   }
   return 1;
+}
+
+RefPtr<layers::NativeLayerRoot> nsWindow::GetNativeLayerRoot() {
+  return mNativeLayerRoot;
+}
+
+void nsWindow::HandleMainThreadCATransaction() {
+  WillPaintWindow();
+
+  
+  
+  
+  
+  PaintWindow(LayoutDeviceIntRegion(GetBounds()));
+
+  {
+    
+    
+    
+    
+    
+    
+    
+    mNativeLayerRoot->CommitToScreen();
+  }
+
+  MaybeScheduleUnsuspendAsyncCATransactions();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void nsWindow::SuspendAsyncCATransactions() {
+  if (mUnsuspendAsyncCATransactionsRunnable) {
+    mUnsuspendAsyncCATransactionsRunnable->Cancel();
+    mUnsuspendAsyncCATransactionsRunnable = nullptr;
+  }
+
+  
+  
+  
+  [mNativeView markLayerForDisplay];
+
+  mNativeLayerRoot->SuspendOffMainThreadCommits();
+}
+
+void nsWindow::MaybeScheduleUnsuspendAsyncCATransactions() {
+  if (mNativeLayerRoot->AreOffMainThreadCommitsSuspended() &&
+      !mUnsuspendAsyncCATransactionsRunnable) {
+    mUnsuspendAsyncCATransactionsRunnable = NewCancelableRunnableMethod(
+        "nsWindow::MaybeScheduleUnsuspendAsyncCATransactions", this,
+        &nsWindow::UnsuspendAsyncCATransactions);
+    NS_DispatchToMainThread(mUnsuspendAsyncCATransactionsRunnable);
+  }
+}
+
+void nsWindow::UnsuspendAsyncCATransactions() {
+  mUnsuspendAsyncCATransactionsRunnable = nullptr;
+
+  if (mNativeLayerRoot->UnsuspendOffMainThreadCommits()) {
+    
+    
+    
+    
+    
+    [mNativeView markLayerForDisplay];
+  }
 }
 
 EventDispatcher* nsWindow::GetEventDispatcher() const {
