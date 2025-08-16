@@ -16,6 +16,7 @@
 #include "mozilla/Logging.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs_content.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/dom/BrowserChild.h"
@@ -357,10 +358,17 @@ static nsresult DoCORSChecks(nsIChannel* aChannel, nsILoadInfo* aLoadInfo,
     return NS_OK;
   }
 
-  
-  
-  
-  nsIPrincipal* principal = aLoadInfo->TriggeringPrincipal();
+  nsIPrincipal* principal = aLoadInfo->GetLoadingPrincipal();
+  if (StaticPrefs::content_cors_use_triggering_principal()) {
+    
+    
+    
+    
+    
+    
+    
+    principal = aLoadInfo->TriggeringPrincipal();
+  }
   RefPtr<nsCORSListenerProxy> corsListener = new nsCORSListenerProxy(
       aInAndOutListener, principal,
       aLoadInfo->GetCookiePolicy() == nsILoadInfo::SEC_COOKIES_INCLUDE);
