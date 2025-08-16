@@ -4527,6 +4527,12 @@ nsresult nsHttpChannel::OpenCacheEntryInternal(bool isHttps) {
   mCacheQueueSizeWhenOpen =
       CacheStorageService::CacheQueueSize(mCacheOpenWithPriority);
 
+  
+  
+  if (NS_IsOffline()) {
+    maybeRCWN = false;
+  }
+
   if ((mNetworkTriggerDelay || StaticPrefs::network_http_rcwn_enabled()) &&
       maybeRCWN && mAllowRCWN) {
     bool hasAltData = false;
