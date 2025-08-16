@@ -288,8 +288,6 @@ class TestTelemetryMirrors(unittest.TestCase):
                 ), f"No mirror metric found for event probe {event.identifier}."
 
         for hgram in hgrams:
-            if hgram.keyed() and hgram.kind() in ("categorical", "boolean"):
-                continue  
             if hgram.name().startswith("TELEMETRY_TEST_"):
                 continue
             assert any(
@@ -299,8 +297,6 @@ class TestTelemetryMirrors(unittest.TestCase):
             ), f"No mirror metric found for histogram probe {hgram.name()}."
 
         for scalar in scalars:
-            if scalar.label == "mathml.doc_count":
-                continue  
             if scalar.category in ("telemetry", "telemetry.discarded"):
                 
                 continue
