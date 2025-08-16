@@ -16,6 +16,15 @@
 
 int wmain() {
   
+  
+  if (!SetEnvironmentVariableW(L"FIREFOX_LAUNCHED_BY_DESKTOP_LAUNCHER",
+                               L"TRUE")) {
+    std::wcout
+        << L"Could not set env variable FIREFOX_LAUNCHED_BY_DESKTOP_LAUNCHER"
+        << std::endl;
+  }
+
+  
   std::optional<std::wstring> firefox_path = lookupFirefoxPath();
   if (firefox_path.has_value()) {
     std::wcout << L"Found Firefox at path " << firefox_path.value()
