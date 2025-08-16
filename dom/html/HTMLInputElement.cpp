@@ -4220,7 +4220,9 @@ void HTMLInputElement::ActivationBehavior(EventChainPostVisitor& aVisitor) {
       break;
   }  
   if (IsButtonControl()) {
-    HandlePopoverTargetAction();
+    nsCOMPtr<Element> eventTarget =
+        do_QueryInterface(aVisitor.mEvent->mOriginalTarget);
+    HandlePopoverTargetAction(eventTarget);
   }
 
   EndSubmitClick(aVisitor);

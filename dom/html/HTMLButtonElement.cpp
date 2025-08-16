@@ -404,9 +404,11 @@ void HTMLButtonElement::ActivationBehavior(EventChainPostVisitor& aVisitor) {
     target->HandleCommandInternal(this, command, IgnoreErrors());
 
   } else {
+    nsCOMPtr<Element> eventTarget =
+        do_QueryInterface(aVisitor.mEvent->mOriginalTarget);
     
     
-    HandlePopoverTargetAction();
+    HandlePopoverTargetAction(eventTarget);
   }
 }
 

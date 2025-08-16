@@ -1270,7 +1270,7 @@ class nsGenericHTMLFormControlElementWithState
   
 
 
-  MOZ_CAN_RUN_SCRIPT void HandlePopoverTargetAction();
+  MOZ_CAN_RUN_SCRIPT void HandlePopoverTargetAction(mozilla::dom::Element*);
 
   
 

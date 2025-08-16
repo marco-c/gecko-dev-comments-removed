@@ -2823,12 +2823,34 @@ void nsGenericHTMLFormControlElementWithState::SetPopoverTargetElement(
   ExplicitlySetAttrElement(nsGkAtoms::popovertarget, aElement);
 }
 
-void nsGenericHTMLFormControlElementWithState::HandlePopoverTargetAction() {
-  RefPtr<nsGenericHTMLElement> target = GetEffectivePopoverTargetElement();
-  if (!target) {
+
+void nsGenericHTMLFormControlElementWithState::HandlePopoverTargetAction(
+    mozilla::dom::Element* aEventTarget) {
+  
+  RefPtr<nsGenericHTMLElement> popover = GetEffectivePopoverTargetElement();
+
+  
+  if (!popover) {
     return;
   }
 
+  
+  
+  if (aEventTarget &&
+      aEventTarget->IsShadowIncludingInclusiveDescendantOf(popover) &&
+      popover->IsShadowIncludingDescendantOf(this)) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
   auto action = PopoverTargetAction::Toggle;
   if (const nsAttrValue* value =
           GetParsedAttr(nsGkAtoms::popovertargetaction)) {
@@ -2838,15 +2860,15 @@ void nsGenericHTMLFormControlElementWithState::HandlePopoverTargetAction() {
 
   bool canHide = action == PopoverTargetAction::Hide ||
                  action == PopoverTargetAction::Toggle;
-  bool shouldHide = canHide && target->IsPopoverOpen();
+  bool shouldHide = canHide && popover->IsPopoverOpen();
   bool canShow = action == PopoverTargetAction::Show ||
                  action == PopoverTargetAction::Toggle;
-  bool shouldShow = canShow && !target->IsPopoverOpen();
+  bool shouldShow = canShow && !popover->IsPopoverOpen();
 
   if (shouldHide) {
-    target->HidePopover(IgnoreErrors());
+    popover->HidePopover(IgnoreErrors());
   } else if (shouldShow) {
-    target->ShowPopoverInternal(this, IgnoreErrors());
+    popover->ShowPopoverInternal(this, IgnoreErrors());
   }
 }
 
