@@ -98,6 +98,8 @@ exports.isNodeValid = isNodeValid;
 
 
 
+class CanvasFrameAnonymousContentHelper {
+  
 
 
 
@@ -108,27 +110,22 @@ exports.isNodeValid = isNodeValid;
 
 
 
+  constructor(
+    highlighterEnv,
+    nodeBuilder,
+    { waitForDocumentToLoad = true } = {}
+  ) {
+    this.highlighterEnv = highlighterEnv;
+    this.nodeBuilder = nodeBuilder;
+    this.waitForDocumentToLoad = !!waitForDocumentToLoad;
 
+    this._onWindowReady = this._onWindowReady.bind(this);
+    this.highlighterEnv.on("window-ready", this._onWindowReady);
 
+    this.listeners = new Map();
+    this.elements = new Map();
+  }
 
-
-function CanvasFrameAnonymousContentHelper(
-  highlighterEnv,
-  nodeBuilder,
-  { waitForDocumentToLoad = true } = {}
-) {
-  this.highlighterEnv = highlighterEnv;
-  this.nodeBuilder = nodeBuilder;
-  this.waitForDocumentToLoad = !!waitForDocumentToLoad;
-
-  this._onWindowReady = this._onWindowReady.bind(this);
-  this.highlighterEnv.on("window-ready", this._onWindowReady);
-
-  this.listeners = new Map();
-  this.elements = new Map();
-}
-
-CanvasFrameAnonymousContentHelper.prototype = {
   initialize() {
     
     const onInitialized = new Promise(resolve => {
@@ -146,7 +143,7 @@ CanvasFrameAnonymousContentHelper.prototype = {
     }
 
     return onInitialized;
-  },
+  }
 
   destroy() {
     this._remove();
@@ -159,7 +156,7 @@ CanvasFrameAnonymousContentHelper.prototype = {
 
     this._removeAllListeners();
     this.elements.clear();
-  },
+  }
 
   async _insert() {
     if (this.waitForDocumentToLoad) {
@@ -220,7 +217,7 @@ CanvasFrameAnonymousContentHelper.prototype = {
     this._content.root.appendChild(this.nodeBuilder());
 
     this._initialized();
-  },
+  }
 
   _remove() {
     try {
@@ -229,7 +226,7 @@ CanvasFrameAnonymousContentHelper.prototype = {
       
       
     }
-  },
+  }
 
   
 
@@ -244,11 +241,11 @@ CanvasFrameAnonymousContentHelper.prototype = {
       this.elements.clear();
       this._insert();
     }
-  },
+  }
 
   _getNodeById(id) {
     return this.content?.root.getElementById(id);
-  },
+  }
 
   getBoundingClientRect(id) {
     const node = this._getNodeById(id);
@@ -256,7 +253,7 @@ CanvasFrameAnonymousContentHelper.prototype = {
       return null;
     }
     return node.getBoundingClientRect();
-  },
+  }
 
   getComputedStylePropertyValue(id, property) {
     const node = this._getNodeById(id);
@@ -266,11 +263,11 @@ CanvasFrameAnonymousContentHelper.prototype = {
     return this.anonymousContentWindow
       .getComputedStyle(node)
       .getPropertyValue(property);
-  },
+  }
 
   getTextContentForElement(id) {
     return this._getNodeById(id)?.textContent;
-  },
+  }
 
   setTextContentForElement(id, text) {
     const node = this._getNodeById(id);
@@ -278,27 +275,27 @@ CanvasFrameAnonymousContentHelper.prototype = {
       return;
     }
     node.textContent = text;
-  },
+  }
 
   setAttributeForElement(id, name, value) {
     this._getNodeById(id)?.setAttribute(name, value);
-  },
+  }
 
   getAttributeForElement(id, name) {
     return this._getNodeById(id)?.getAttribute(name);
-  },
+  }
 
   removeAttributeForElement(id, name) {
     this._getNodeById(id)?.removeAttribute(name);
-  },
+  }
 
   hasAttributeForElement(id, name) {
     return typeof this.getAttributeForElement(id, name) === "string";
-  },
+  }
 
   getCanvasContext(id, type = "2d") {
     return this._getNodeById(id)?.getContext(type);
-  },
+  }
 
   
 
@@ -353,7 +350,7 @@ CanvasFrameAnonymousContentHelper.prototype = {
 
     const listeners = this.listeners.get(type);
     listeners.set(id, handler);
-  },
+  }
 
   
 
@@ -373,7 +370,7 @@ CanvasFrameAnonymousContentHelper.prototype = {
       const target = this.pageListenerTarget;
       target.removeEventListener(type, this, true);
     }
-  },
+  }
 
   handleEvent(event) {
     const listeners = this.listeners.get(event.type);
@@ -410,7 +407,7 @@ CanvasFrameAnonymousContentHelper.prototype = {
       }
       node = node.parentNode;
     }
-  },
+  }
 
   _removeAllListeners() {
     if (this.pageListenerTarget) {
@@ -420,7 +417,7 @@ CanvasFrameAnonymousContentHelper.prototype = {
       }
     }
     this.listeners.clear();
-  },
+  }
 
   getElement(id) {
     if (this.elements.has(id)) {
@@ -451,14 +448,14 @@ CanvasFrameAnonymousContentHelper.prototype = {
     this.elements.set(id, element);
 
     return element;
-  },
+  }
 
   get content() {
     if (!this._content || Cu.isDeadWrapper(this._content)) {
       return null;
     }
     return this._content;
-  },
+  }
 
   
 
@@ -501,7 +498,7 @@ CanvasFrameAnonymousContentHelper.prototype = {
 
     value += `position:absolute; width:${width}px;height:${height}px; overflow:hidden;`;
     root.style = value;
-  },
+  }
 
   
 
@@ -519,7 +516,7 @@ CanvasFrameAnonymousContentHelper.prototype = {
     options.namespace = SVG_NS;
 
     return this.createNode(options);
-  },
+  }
 
   
 
@@ -551,8 +548,9 @@ CanvasFrameAnonymousContentHelper.prototype = {
     }
 
     return node;
-  },
-};
+  }
+}
+
 exports.CanvasFrameAnonymousContentHelper = CanvasFrameAnonymousContentHelper;
 
 
