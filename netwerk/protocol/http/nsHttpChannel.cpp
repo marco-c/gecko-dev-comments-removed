@@ -582,7 +582,14 @@ nsresult nsHttpChannel::PrepareToConnect() {
   
   gHttpHandler->OnModifyRequestBeforeCookies(this);
 
-  AddCookiesToRequest();
+  if (mStaleRevalidation) {
+    
+    
+    
+    
+  } else {
+    AddCookiesToRequest();
+  }
 
 #if defined(XP_WIN) || defined(XP_MACOSX)
 
@@ -6980,6 +6987,8 @@ nsHttpChannel::AsyncOpen(nsIStreamListener* aListener) {
   
   nsAutoCString cookieHeader;
   if (NS_SUCCEEDED(mRequestHead.GetHeader(nsHttp::Cookie, cookieHeader))) {
+    
+    
     mUserSetCookieHeader = cookieHeader;
   }
 
