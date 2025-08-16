@@ -1,19 +1,19 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * shlibsign creates the checksum (.chk) files for the NSS libraries,
+ * libsoftokn3/softokn3 and libfreebl/freebl (platforms can have
+ * multiple freebl variants), that contain the NSS cryptograhic boundary.
+ *
+ * The generated .chk files must be put in the same directory as
+ * the NSS libraries they were generated for.
+ *
+ * When in FIPS 140 mode, the NSS Internal FIPS PKCS #11 Module will
+ * compute the checksum for the NSS cryptographic boundary libraries
+ * and compare the checksum with the value in .chk file.
+ */
 
 #ifdef XP_UNIX
 #define USES_LINKS 1
@@ -35,7 +35,7 @@
 #include <sys/stat.h>
 #endif
 
-
+/* nspr headers */
 #include "prlink.h"
 #include "prprf.h"
 #include "prenv.h"
@@ -45,17 +45,17 @@
 #include "plstr.h"
 #include "prerror.h"
 
-
+/* softoken headers */
 #include "pkcs11.h"
 #include "pkcs11t.h"
 
-
+/* freebl headers */
 #include "shsign.h"
 
-
+/* nss headers for definition of HASH_HashType */
 #include "hasht.h"
 
-
+/* other basic nss header */
 #include "secport.h"
 #include "basicutil.h"
 #include "secitem.h"
@@ -208,16 +208,16 @@ mkoutput(const char *input)
     return output;
 }
 
-
-
-
-
-
-
-
-
-
-
+/*
+ * There are 3 error functions in this code:
+ *  print_error: just prints the string to stderr. Used in cases where
+ *               the error is discovered in this code rather than returned
+ *               from a library.
+ *  lperror: prints the error from NSPR or NSS code (including SECUTIL code).
+ *           it works like perror for NSPR and NSS.
+ *  pk11error: prints the error based on the pkcs #11 return code. it also
+ *             looks up the NSPR/NSS error code and prints it if it exists.
+ */
 static void
 print_error(const char *string)
 {
@@ -308,48 +308,48 @@ static const unsigned char base[] = {
     0x1d, 0x7e, 0x5e, 0x7d, 0xfa, 0x5b, 0x77, 0x1f
 };
 
+/*
+ * The constants h, seed, & counter aren't used in the code; they're provided
+ * here (commented-out) so that human readers can verify that our our PQG
+ * parameters were generated properly.
+static const unsigned char h[] = {
+    0x41, 0x87, 0x47, 0x79, 0xd8, 0xba, 0x4e, 0xac,
+    0x44, 0x4f, 0x6b, 0xd2, 0x16, 0x5e, 0x04, 0xc6,
+    0xc2, 0x29, 0x93, 0x5e, 0xbd, 0xc7, 0xa9, 0x8f,
+    0x23, 0xa1, 0xc8, 0xee, 0x80, 0x64, 0xd5, 0x67,
+    0x3c, 0xba, 0x59, 0x9a, 0x06, 0x0c, 0xcc, 0x29,
+    0x56, 0xc0, 0xb2, 0x21, 0xe0, 0x5b, 0x52, 0xcd,
+    0x84, 0x73, 0x57, 0xfd, 0xd8, 0xc3, 0x5b, 0x13,
+    0x54, 0xd7, 0x4a, 0x06, 0x86, 0x63, 0x09, 0xa5,
+    0xb0, 0x59, 0xe2, 0x32, 0x9e, 0x09, 0xa3, 0x9f,
+    0x49, 0x62, 0xcc, 0xa6, 0xf9, 0x54, 0xd5, 0xb2,
+    0xc3, 0x08, 0x71, 0x7e, 0xe3, 0x37, 0x50, 0xd6,
+    0x7b, 0xa7, 0xc2, 0x60, 0xc1, 0xeb, 0x51, 0x32,
+    0xfa, 0xad, 0x35, 0x25, 0x17, 0xf0, 0x7f, 0x23,
+    0xe5, 0xa8, 0x01, 0x52, 0xcf, 0x2f, 0xd9, 0xa9,
+    0xf6, 0x00, 0x21, 0x15, 0xf1, 0xf7, 0x70, 0xb7,
+    0x57, 0x8a, 0xd0, 0x59, 0x6a, 0x82, 0xdc, 0x9c };
 
+static const unsigned char seed[] = { 0x00,
+    0xcc, 0x4c, 0x69, 0x74, 0xf6, 0x72, 0x24, 0x68,
+    0x24, 0x4f, 0xd7, 0x50, 0x11, 0x40, 0x81, 0xed,
+    0x19, 0x3c, 0x8a, 0x25, 0xbc, 0x78, 0x0a, 0x85,
+    0x82, 0x53, 0x70, 0x20, 0xf6, 0x54, 0xa5, 0x1b,
+    0xf4, 0x15, 0xcd, 0xff, 0xc4, 0x88, 0xa7, 0x9d,
+    0xf3, 0x47, 0x1c, 0x0a, 0xbe, 0x10, 0x29, 0x83,
+    0xb9, 0x0f, 0x4c, 0xdf, 0x90, 0x16, 0x83, 0xa2,
+    0xb3, 0xe3, 0x2e, 0xc1, 0xc2, 0x24, 0x6a, 0xc4,
+    0x9d, 0x57, 0xba, 0xcb, 0x0f, 0x18, 0x75, 0x00,
+    0x33, 0x46, 0x82, 0xec, 0xd6, 0x94, 0x77, 0xc3,
+    0x4f, 0x4c, 0x58, 0x1c, 0x7f, 0x61, 0x3c, 0x36,
+    0xd5, 0x2f, 0xa5, 0x66, 0xd8, 0x2f, 0xce, 0x6e,
+    0x8e, 0x20, 0x48, 0x4a, 0xbb, 0xe3, 0xe0, 0xb2,
+    0x50, 0x33, 0x63, 0x8a, 0x5b, 0x2d, 0x6a, 0xbe,
+    0x4c, 0x28, 0x81, 0x53, 0x5b, 0xe4, 0xf6, 0xfc,
+    0x64, 0x06, 0x13, 0x51, 0xeb, 0x4a, 0x91, 0x9c };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+static const unsigned int counter=1496;
+ */
 
 static const unsigned char prime2[] = { 0x00,
                                         0xa4, 0xc2, 0x83, 0x4f, 0x36, 0xd3, 0x4f, 0xae,
@@ -425,80 +425,80 @@ static const unsigned char base2[] = { 0x00,
                                        0x1c, 0xd3, 0xff, 0x4e, 0x2c, 0x38, 0x1c, 0xaa,
                                        0x2e, 0x66, 0xbe, 0x32, 0x3e, 0x3c, 0x06, 0x5f };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * The constants h2, seed2, & counter2 aren't used in the code; they're provided
+ * here (commented-out) so that human readers can verify that our our PQG
+ * parameters were generated properly.
+static const unsigned char h2[] = {
+    0x30, 0x91, 0xa1, 0x2e, 0x40, 0xa5, 0x7d, 0xf7,
+    0xdc, 0xed, 0xee, 0x05, 0xc2, 0x31, 0x91, 0x37,
+    0xda, 0xc5, 0xe3, 0x47, 0xb5, 0x35, 0x4b, 0xfd,
+    0x18, 0xb2, 0x7e, 0x67, 0x1e, 0x92, 0x22, 0xe7,
+    0xf5, 0x00, 0x71, 0xc0, 0x86, 0x8d, 0x90, 0x31,
+    0x36, 0x3e, 0xd0, 0x94, 0x5d, 0x2f, 0x9a, 0x68,
+    0xd2, 0xf8, 0x3d, 0x5e, 0x84, 0x42, 0x35, 0xda,
+    0x75, 0xdd, 0x05, 0xf0, 0x03, 0x31, 0x39, 0xe5,
+    0xfd, 0x2f, 0x5a, 0x7d, 0x56, 0xd8, 0x26, 0xa0,
+    0x51, 0x5e, 0x32, 0xb4, 0xad, 0xee, 0xd4, 0x89,
+    0xae, 0x01, 0x7f, 0xac, 0x86, 0x98, 0x77, 0x26,
+    0x5c, 0x31, 0xd2, 0x5e, 0xbb, 0x7f, 0xf5, 0x4c,
+    0x9b, 0xf0, 0xa6, 0x37, 0x34, 0x08, 0x86, 0x6b,
+    0xce, 0xeb, 0x85, 0x66, 0x0a, 0x26, 0x8a, 0x14,
+    0x92, 0x12, 0x74, 0xf4, 0xf0, 0xcb, 0xb5, 0xfc,
+    0x38, 0xd5, 0x1e, 0xa1, 0x2f, 0x4a, 0x1a, 0xca,
+    0x66, 0xde, 0x6e, 0xe6, 0x6e, 0x1c, 0xef, 0x50,
+    0x41, 0x31, 0x09, 0xe7, 0x4a, 0xb8, 0xa3, 0xaa,
+    0x5a, 0x22, 0xbd, 0x63, 0x0f, 0xe9, 0x0e, 0xdb,
+    0xb3, 0xca, 0x7e, 0x8d, 0x40, 0xb3, 0x3e, 0x0b,
+    0x12, 0x8b, 0xb0, 0x80, 0x4d, 0x6d, 0xb0, 0x54,
+    0xbb, 0x4c, 0x1d, 0x6c, 0xa0, 0x5c, 0x9d, 0x91,
+    0xb3, 0xbb, 0xd9, 0xfc, 0x60, 0xec, 0xc1, 0xbc,
+    0xae, 0x72, 0x3f, 0xa5, 0x4f, 0x36, 0x2d, 0x2c,
+    0x81, 0x03, 0x86, 0xa2, 0x03, 0x38, 0x36, 0x8e,
+    0xad, 0x1d, 0x53, 0xc6, 0xc5, 0x9e, 0xda, 0x08,
+    0x35, 0x4f, 0xb2, 0x78, 0xba, 0xd1, 0x22, 0xde,
+    0xc4, 0x6b, 0xbe, 0x83, 0x71, 0x0f, 0xee, 0x38,
+    0x4a, 0x9f, 0xda, 0x90, 0x93, 0x6b, 0x9a, 0xf2,
+    0xeb, 0x23, 0xfe, 0x41, 0x3f, 0xf1, 0xfc, 0xee,
+    0x7f, 0x67, 0xa7, 0xb8, 0xab, 0x29, 0xf4, 0x75,
+    0x1c, 0xe9, 0xd1, 0x47, 0x7d, 0x86, 0x44, 0xe2 };
+
+static const unsigned char seed2[] = { 0x00,
+    0xbc, 0xae, 0xc4, 0xea, 0x4e, 0xd2, 0xed, 0x1c,
+    0x8d, 0x48, 0xed, 0xf2, 0xa5, 0xb4, 0x18, 0xba,
+    0x00, 0xcb, 0x9c, 0x75, 0x8a, 0x39, 0x94, 0x3b,
+    0xd0, 0xd6, 0x01, 0xf7, 0xc1, 0xf5, 0x9d, 0xe5,
+    0xe3, 0xb4, 0x1d, 0xf5, 0x30, 0xfe, 0x99, 0xe4,
+    0x01, 0xab, 0xc0, 0x88, 0x4e, 0x67, 0x8f, 0xc6,
+    0x72, 0x39, 0x2e, 0xac, 0x51, 0xec, 0x91, 0x41,
+    0x47, 0x71, 0x14, 0x8a, 0x1d, 0xca, 0x88, 0x15,
+    0xea, 0xc9, 0x48, 0x9a, 0x71, 0x50, 0x19, 0x38,
+    0xdb, 0x4e, 0x65, 0xd5, 0x13, 0xd8, 0x2a, 0xc4,
+    0xcd, 0xfd, 0x0c, 0xe3, 0xc3, 0x60, 0xae, 0x6d,
+    0x88, 0xf2, 0x3a, 0xd0, 0x64, 0x73, 0x32, 0x89,
+    0xcd, 0x0b, 0xb8, 0xc7, 0xa5, 0x27, 0x84, 0xd5,
+    0x83, 0x3f, 0x0e, 0x10, 0x63, 0x10, 0x78, 0xac,
+    0x6b, 0x56, 0xb2, 0x62, 0x3a, 0x44, 0x56, 0xc0,
+    0xe4, 0x33, 0xd7, 0x63, 0x4c, 0xc9, 0x6b, 0xae,
+    0xfb, 0xe2, 0x9b, 0xf4, 0x96, 0xc7, 0xf0, 0x2a,
+    0x50, 0xde, 0x86, 0x69, 0x4f, 0x42, 0x4b, 0x1c,
+    0x7c, 0xa8, 0x6a, 0xfb, 0x54, 0x47, 0x1b, 0x41,
+    0x31, 0x9e, 0x0a, 0xc6, 0xc0, 0xbc, 0x88, 0x7f,
+    0x5a, 0x42, 0xa9, 0x82, 0x58, 0x32, 0xb3, 0xeb,
+    0x54, 0x83, 0x84, 0x26, 0x92, 0xa6, 0xc0, 0x6e,
+    0x2b, 0xa6, 0x82, 0x82, 0x43, 0x58, 0x84, 0x53,
+    0x31, 0xcf, 0xd0, 0x0a, 0x11, 0x09, 0x44, 0xc8,
+    0x11, 0x36, 0xe0, 0x04, 0x85, 0x2e, 0xd1, 0x29,
+    0x6b, 0x7b, 0x00, 0x71, 0x5f, 0xef, 0x7b, 0x7a,
+    0x2d, 0x91, 0xf9, 0x84, 0x45, 0x4d, 0xc7, 0xe1,
+    0xee, 0xd4, 0xb8, 0x61, 0x3b, 0x13, 0xb7, 0xba,
+    0x95, 0x39, 0xf6, 0x3d, 0x89, 0xbd, 0xa5, 0x80,
+    0x93, 0xf7, 0xe5, 0x17, 0x05, 0xc5, 0x65, 0xb7,
+    0xde, 0xc9, 0x9f, 0x04, 0x87, 0xcf, 0x4f, 0x86,
+    0xc3, 0x29, 0x7d, 0xb7, 0x89, 0xbf, 0xe3, 0xde };
+
+static const unsigned int counter2=210;
+ */
 
 struct tuple_str {
     CK_RV errNum;
@@ -601,9 +601,9 @@ static const tuple_str errStrings[] = {
 
 static const CK_ULONG numStrings = sizeof(errStrings) / sizeof(tuple_str);
 
-
-
-
+/* Returns constant error string for "CRV".
+ * Returns "unknown error" if errNum is unknown.
+ */
 static const char *
 CK_RVtoStr(CK_RV errNum)
 {
@@ -613,9 +613,9 @@ CK_RVtoStr(CK_RV errNum)
     CK_RV num;
     static int initDone;
 
-    
-
-
+    /* make sure table is in  ascending order.
+     * binary search depends on it.
+     */
     if (!initDone) {
         CK_RV lastNum = CKR_OK;
         for (i = low; i <= high; ++i) {
@@ -634,7 +634,7 @@ CK_RVtoStr(CK_RV errNum)
         initDone = 1;
     }
 
-    
+    /* Do binary search of table. */
     while (low + 1 < high) {
         i = low + (high - low) / 2;
         num = errStrings[i].errNum;
@@ -688,11 +688,11 @@ softokn_Init(CK_FUNCTION_LIST_PTR pFunctionList, const char *configDir,
     char *moduleSpec = NULL;
 
     if (NSS_InitializePRErrorTable() != SECSuccess) {
-        
-
+        /* this will output the NSPR eror number, and maybe the NSPR
+         * error string */
         lperror("Couldn't initialize error table.");
         print_error("Can not translate error codes to strings.");
-        
+        /* failure to initialize this table isn't fatal */
     }
 
     initArgs.CreateMutex = NULL;
@@ -750,7 +750,7 @@ filePasswd(char *pwFile)
     nb = PR_Read(fd, phrase, sizeof(phrase));
 
     PR_Close(fd);
-    
+    /* handle the Windows EOL case */
     i = 0;
     while (phrase[i] != '\r' && phrase[i] != '\n' && i < nb)
         i++;
@@ -768,17 +768,17 @@ checkPath(char *string)
     char *src;
     char *dest;
 
-    
-
-
-
+    /*
+     * windows support convert any back slashes to
+     * forward slashes.
+     */
     for (src = string, dest = string; *src; src++, dest++) {
         if (*src == '\\') {
             *dest = '/';
         }
     }
     dest--;
-    
+    /* if the last char is a / set it to 0 */
     if (*dest == '/')
         *dest = 0;
 }
@@ -791,8 +791,8 @@ getSlotList(CK_FUNCTION_LIST_PTR pFunctionList,
     CK_SLOT_ID *pSlotList = NULL;
     CK_ULONG slotCount;
 
-    
-    crv = pFunctionList->C_GetSlotList(CK_FALSE ,
+    /* Get slot list */
+    crv = pFunctionList->C_GetSlotList(CK_FALSE /* all slots */,
                                        NULL, &slotCount);
     if (crv != CKR_OK) {
         pk11error("C_GetSlotList failed", crv);
@@ -809,7 +809,7 @@ getSlotList(CK_FUNCTION_LIST_PTR pFunctionList,
         lperror("failed to allocate slot list");
         return NULL;
     }
-    crv = pFunctionList->C_GetSlotList(CK_FALSE ,
+    crv = pFunctionList->C_GetSlotList(CK_FALSE /* all slots */,
                                        pSlotList, &slotCount);
     if (crv != CKR_OK) {
         pk11error("C_GetSlotList failed", crv);
@@ -828,7 +828,7 @@ shlibSignDSA(CK_FUNCTION_LIST_PTR pFunctionList, CK_SLOT_ID slot,
     CK_MECHANISM digestmech;
     CK_ULONG digestLen = 0;
     CK_BYTE digest[HASH_LENGTH_MAX];
-    CK_BYTE sign[64]; 
+    CK_BYTE sign[64]; /* DSA2 SIGNATURE LENGTH */
     CK_ULONG signLen = 0;
     CK_ULONG expectedSigLen = sizeof(sign);
     CK_MECHANISM signMech = {
@@ -841,10 +841,10 @@ shlibSignDSA(CK_FUNCTION_LIST_PTR pFunctionList, CK_SLOT_ID slot,
     int count = 0;
     CK_RV crv = CKR_GENERAL_ERROR;
     PRStatus rv = PR_SUCCESS;
-    const char *hashName = "sha256"; 
+    const char *hashName = "sha256"; /* default hash value */
     int i;
 
-    
+    /*** DSA Key ***/
     CK_MECHANISM dsaKeyPairGenMech;
     CK_ATTRIBUTE dsaPubKeyTemplate[5];
     CK_ATTRIBUTE dsaPrivKeyTemplate[5];
@@ -876,7 +876,7 @@ shlibSignDSA(CK_FUNCTION_LIST_PTR pFunctionList, CK_SLOT_ID slot,
         }
     }
 
-    
+    /* DSA key init */
     if (keySize == 1024) {
         dsaPubKeyTemplate[0].type = CKA_PRIME;
         dsaPubKeyTemplate[0].pValue = (CK_VOID_PTR)&prime;
@@ -887,7 +887,7 @@ shlibSignDSA(CK_FUNCTION_LIST_PTR pFunctionList, CK_SLOT_ID slot,
         dsaPubKeyTemplate[2].type = CKA_BASE;
         dsaPubKeyTemplate[2].pValue = (CK_VOID_PTR)&base;
         dsaPubKeyTemplate[2].ulValueLen = sizeof(base);
-        hashName = "sha-1"; 
+        hashName = "sha-1"; /* use sha-1 for old dsa keys */
         expectedSigLen = 32;
     } else if (keySize == 2048) {
         dsaPubKeyTemplate[0].type = CKA_PRIME;
@@ -919,7 +919,7 @@ shlibSignDSA(CK_FUNCTION_LIST_PTR pFunctionList, CK_SLOT_ID slot,
     digestmech.pParameter = NULL;
     digestmech.ulParameterLen = 0;
     dsaPubKeyTemplate[3].type = CKA_TOKEN;
-    dsaPubKeyTemplate[3].pValue = &ckfalse; 
+    dsaPubKeyTemplate[3].pValue = &ckfalse; /* session object */
     dsaPubKeyTemplate[3].ulValueLen = sizeof(ckfalse);
     dsaPubKeyTemplate[4].type = CKA_VERIFY;
     dsaPubKeyTemplate[4].pValue = &cktrue;
@@ -928,7 +928,7 @@ shlibSignDSA(CK_FUNCTION_LIST_PTR pFunctionList, CK_SLOT_ID slot,
     dsaKeyPairGenMech.pParameter = NULL;
     dsaKeyPairGenMech.ulParameterLen = 0;
     dsaPrivKeyTemplate[0].type = CKA_TOKEN;
-    dsaPrivKeyTemplate[0].pValue = &ckfalse; 
+    dsaPrivKeyTemplate[0].pValue = &ckfalse; /* session object */
     dsaPrivKeyTemplate[0].ulValueLen = sizeof(ckfalse);
     dsaPrivKeyTemplate[1].type = CKA_PRIVATE;
     dsaPrivKeyTemplate[1].pValue = &cktrue;
@@ -943,7 +943,7 @@ shlibSignDSA(CK_FUNCTION_LIST_PTR pFunctionList, CK_SLOT_ID slot,
     dsaPrivKeyTemplate[4].pValue = &ckfalse;
     dsaPrivKeyTemplate[4].ulValueLen = sizeof(ckfalse);
 
-    
+    /* Generate a DSA key pair */
     logIt("Generate a DSA key pair ... \n");
     crv = pFunctionList->C_GenerateKeyPair(hRwSession, &dsaKeyPairGenMech,
                                            dsaPubKeyTemplate,
@@ -956,7 +956,7 @@ shlibSignDSA(CK_FUNCTION_LIST_PTR pFunctionList, CK_SLOT_ID slot,
         return crv;
     }
 
-    
+    /* compute the digest */
     memset(digest, 0, sizeof(digest));
     crv = pFunctionList->C_DigestInit(hRwSession, &digestmech);
     if (crv != CKR_OK) {
@@ -964,7 +964,7 @@ shlibSignDSA(CK_FUNCTION_LIST_PTR pFunctionList, CK_SLOT_ID slot,
         return crv;
     }
 
-    
+    /* Digest the file */
     while ((bytesRead = PR_Read(ifd, file_buf, sizeof(file_buf))) > 0) {
         crv = pFunctionList->C_DigestUpdate(hRwSession, (CK_BYTE_PTR)file_buf,
                                             bytesRead);
@@ -995,9 +995,9 @@ shlibSignDSA(CK_FUNCTION_LIST_PTR pFunctionList, CK_SLOT_ID slot,
         return crv;
     }
 
-    
+    /* sign the hash */
     memset(sign, 0, sizeof(sign));
-    
+    /* SignUpdate  */
     crv = pFunctionList->C_SignInit(hRwSession, &signMech, hDSAprivKey);
     if (crv != CKR_OK) {
         pk11error("C_SignInit failed", crv);
@@ -1055,26 +1055,26 @@ shlibSignDSA(CK_FUNCTION_LIST_PTR pFunctionList, CK_SLOT_ID slot,
         }
     }
 
-    
-
-
-
-
-
-
+    /*
+     * we write the key out in a straight binary format because very
+     * low level libraries need to read an parse this file. Ideally we should
+     * just derEncode the public key (which would be pretty simple, and be
+     * more general), but then we'd need to link the ASN.1 decoder with the
+     * freebl libraries.
+     */
 
     header.magic1 = NSS_SIGN_CHK_MAGIC1;
     header.magic2 = NSS_SIGN_CHK_MAGIC2;
     header.majorVersion = compat ? COMPAT_MAJOR : NSS_SIGN_CHK_MAJOR_VERSION;
     header.minorVersion = compat ? COMPAT_MINOR : NSS_SIGN_CHK_MINOR_VERSION;
-    encodeInt(header.offset, sizeof(header)); 
+    encodeInt(header.offset, sizeof(header)); /* offset to data start */
     encodeInt(header.type, CKK_DSA);
     bytesWritten = PR_Write(ofd, &header, sizeof(header));
     if (bytesWritten != sizeof(header)) {
         return CKR_INTERNAL_OUT_FAILURE;
     }
 
-    
+    /* get DSA Public KeyValue */
     memset(dsaPubKey, 0, sizeof(dsaPubKey));
     dsaPubKeyValue.type = CKA_VALUE;
     dsaPubKeyValue.pValue = (CK_VOID_PTR)&dsaPubKey;
@@ -1087,31 +1087,31 @@ shlibSignDSA(CK_FUNCTION_LIST_PTR pFunctionList, CK_SLOT_ID slot,
         return crv;
     }
 
-    
+    /* CKA_PRIME */
     rv = writeItem(ofd, dsaPubKeyTemplate[0].pValue,
                    dsaPubKeyTemplate[0].ulValueLen);
     if (rv != PR_SUCCESS) {
         return CKR_INTERNAL_OUT_FAILURE;
     }
-    
+    /* CKA_SUBPRIME */
     rv = writeItem(ofd, dsaPubKeyTemplate[1].pValue,
                    dsaPubKeyTemplate[1].ulValueLen);
     if (rv != PR_SUCCESS) {
         return CKR_INTERNAL_OUT_FAILURE;
     }
-    
+    /* CKA_BASE */
     rv = writeItem(ofd, dsaPubKeyTemplate[2].pValue,
                    dsaPubKeyTemplate[2].ulValueLen);
     if (rv != PR_SUCCESS) {
         return CKR_INTERNAL_OUT_FAILURE;
     }
-    
+    /* DSA Public Key value */
     rv = writeItem(ofd, dsaPubKeyValue.pValue,
                    dsaPubKeyValue.ulValueLen);
     if (rv != PR_SUCCESS) {
         return CKR_INTERNAL_OUT_FAILURE;
     }
-    
+    /* DSA SIGNATURE */
     rv = writeItem(ofd, &sign, signLen);
     if (rv != PR_SUCCESS) {
         return CKR_INTERNAL_OUT_FAILURE;
@@ -1120,7 +1120,7 @@ shlibSignDSA(CK_FUNCTION_LIST_PTR pFunctionList, CK_SLOT_ID slot,
     return CKR_OK;
 }
 
-
+/* side effect, attrCount is incremented, returns zero on failure */
 #define SET_ATTR(attrCount, template, templateLen, _type, _value, _len) \
     if (attrCount >= templateLen) {                                     \
         return 0;                                                       \
@@ -1129,7 +1129,7 @@ shlibSignDSA(CK_FUNCTION_LIST_PTR pFunctionList, CK_SLOT_ID slot,
     template[attrCount].pValue = _value;                                \
     template[attrCount++].ulValueLen = _len;
 
-
+/* build a template. keyLengthptr and key are both optional */
 size_t
 buildHMACKeyTemplate(CK_ATTRIBUTE *template,
                      size_t templateLength,
@@ -1164,7 +1164,7 @@ buildHMACKeyTemplate(CK_ATTRIBUTE *template,
     return attrCount;
 }
 
-
+/* helper functions to generate HMAC keys */
 CK_RV
 generateHMACKey(CK_FUNCTION_LIST_PTR pFunctionList,
                 CK_SESSION_HANDLE hRwSession, CK_MECHANISM_PTR keyGenMech,
@@ -1178,10 +1178,10 @@ generateHMACKey(CK_FUNCTION_LIST_PTR pFunctionList,
                                        PR_ARRAY_SIZE(hmacKeyTemplate),
                                        &sensitive, &keyType, &keyLength, NULL);
     if (templateLen == 0) {
-        
-
-
-
+        /* this can only happen if we didn't declear hmacKeyTemplate
+         * to be big enough... on debug builds crash with a useful
+         * Assert. otherwise just fail (won't work until the program
+         * is fixed). */
         PORT_Assert(templateLen < PR_ARRAY_SIZE(hmacKeyTemplate));
         return CKR_GENERAL_ERROR;
     }
@@ -1190,7 +1190,7 @@ generateHMACKey(CK_FUNCTION_LIST_PTR pFunctionList,
                                         phHMACKey);
 }
 
-
+/* generate an hmac and and try to extract it */
 CK_RV
 generateAndExtractHMACKeyRaw(CK_FUNCTION_LIST_PTR pFunctionList,
                              CK_SESSION_HANDLE hRwSession, CK_MECHANISM_PTR keyGenMech,
@@ -1213,12 +1213,12 @@ generateAndExtractHMACKeyRaw(CK_FUNCTION_LIST_PTR pFunctionList,
     return crv;
 }
 
-
-
-
-
-
-
+/* trick to import a key in FIPS mode.
+ * There are limitted times when this is legitimate,
+ * if you think you need this contact the crypto team
+ * before using it. Usually if you need this its because
+ * you are improperly handling FIPS CPS material which is
+ * not allowed */
 CK_RV
 fipsImportKey(CK_FUNCTION_LIST_PTR pFunctionList,
               CK_SESSION_HANDLE hRwSession, const SECItem *pKeyItem,
@@ -1230,7 +1230,7 @@ fipsImportKey(CK_FUNCTION_LIST_PTR pFunctionList,
     CK_KEY_DERIVATION_STRING_DATA deriveParams = { 0 };
     CK_ATTRIBUTE hmacKeyTemplate[7];
     size_t templateLen;
-    
+    /* put length in an appropriate size variable */
     CK_ULONG keyLength = pKeyItem->len;
     CK_RV crv;
 
@@ -1238,10 +1238,10 @@ fipsImportKey(CK_FUNCTION_LIST_PTR pFunctionList,
                                        PR_ARRAY_SIZE(hmacKeyTemplate),
                                        &cktrue, &keyType, &keyLength, NULL);
     if (templateLen == 0) {
-        
-
-
-
+        /* this can only happen if we didn't declear hmacKeyTemplate
+         * to be big enough... on debug builds crash with a useful
+         * Assert. otherwise just fail (won't work until the program
+         * is fixed). */
         PORT_Assert(templateLen < PR_ARRAY_SIZE(hmacKeyTemplate));
         return CKR_GENERAL_ERROR;
     }
@@ -1253,26 +1253,26 @@ fipsImportKey(CK_FUNCTION_LIST_PTR pFunctionList,
     deriveMech.ulParameterLen = sizeof(deriveParams);
     hmacKeyGenMech.mechanism = CKM_GENERIC_SECRET_KEY_GEN;
 
-    
+    /* generate a dummy key */
     crv = generateHMACKey(pFunctionList, hRwSession, &hmacKeyGenMech,
                           pKeyItem->len, keyType, cktrue, &hTmpKey);
     if (crv != CKR_OK) {
         return crv;
     }
-    
-
+    /* append the desired key to the front of the dummy key, and
+     * then truncate the dummy key */
     crv = pFunctionList->C_DeriveKey(hRwSession, &deriveMech, hTmpKey,
                                      hmacKeyTemplate,
                                      templateLen,
                                      phHMACKey);
-    
+    /* done with the dummy key, delete it */
     pFunctionList->C_DestroyObject(hRwSession, hTmpKey);
     return crv;
 }
 
-
-
-
+/* generate an hmac key and extract it. If it fails, assume we are in
+ * FIPS mode and use generate random to generate a key and use fipsImport
+ * to import it */
 CK_RV
 generateAndExtractHMACKey(CK_FUNCTION_LIST_PTR pFunctionList,
                           CK_SESSION_HANDLE hRwSession, CK_MECHANISM_PTR keyGenMech,
@@ -1301,10 +1301,10 @@ generateAndExtractHMACKey(CK_FUNCTION_LIST_PTR pFunctionList,
                          phHMACKey);
 }
 
-
-
-
-
+/*
+ * import a user supplied key. If we fail, we are probably in FIPS mode,
+ * use fipsImport to import the key
+ */
 CK_RV
 importHMACKey(CK_FUNCTION_LIST_PTR pFunctionList,
               CK_SESSION_HANDLE hRwSession, CK_OBJECT_HANDLE_PTR phHMACKey,
@@ -1318,10 +1318,10 @@ importHMACKey(CK_FUNCTION_LIST_PTR pFunctionList,
                                        PR_ARRAY_SIZE(hmacKeyTemplate),
                                        &ckfalse, &keyType, NULL, keyItem);
     if (templateLen == 0) {
-        
-
-
-
+        /* this can only happen if we didn't declear hmacKeyTemplate
+         * to be big enough... on debug builds crash with a useful
+         * Assert. otherwise just fail (won't work until the program
+         * is fixed). */
         PORT_Assert(templateLen < PR_ARRAY_SIZE(hmacKeyTemplate));
         return CKR_GENERAL_ERROR;
     }
@@ -1344,7 +1344,7 @@ shlibSignHMAC(CK_FUNCTION_LIST_PTR pFunctionList, CK_SLOT_ID slot,
               PRFileDesc *ifd, PRFileDesc *ofd, const HashTable *hash)
 {
     CK_MECHANISM hmacMech = { 0, NULL, 0 };
-    
+    /* init the HMAC KeyValue */
     CK_BYTE keyBuf[HASH_LENGTH_MAX] = { 0 };
     CK_ULONG keyLen = 0;
     CK_BYTE sign[HASH_LENGTH_MAX];
@@ -1358,7 +1358,7 @@ shlibSignHMAC(CK_FUNCTION_LIST_PTR pFunctionList, CK_SLOT_ID slot,
     PRStatus rv = PR_SUCCESS;
     int i;
 
-    
+    /*** HMAC Key ***/
     CK_OBJECT_HANDLE hHMACKey = CK_INVALID_HANDLE;
 
     if (hash == NULL) {
@@ -1377,7 +1377,7 @@ shlibSignHMAC(CK_FUNCTION_LIST_PTR pFunctionList, CK_SLOT_ID slot,
         hmacKeyValue.pValue = (CK_VOID_PTR)&keyBuf;
         hmacKeyValue.ulValueLen = sizeof(keyBuf);
 
-        
+        /* Generate a HMAC key */
         logIt("Generate an HMAC key ... \n");
         crv = generateAndExtractHMACKey(pFunctionList, hRwSession,
                                         &hmacKeyGenMech,
@@ -1398,6 +1398,7 @@ shlibSignHMAC(CK_FUNCTION_LIST_PTR pFunctionList, CK_SLOT_ID slot,
 
         if (keyItem.len != hash->hashLength) {
             print_error("Supplied HMAC key does not match the HMAC hash length.");
+            SECITEM_FreeItem(&keyItem, PR_FALSE);
             return CKR_ATTRIBUTE_VALUE_INVALID;
         }
 
@@ -1406,18 +1407,21 @@ shlibSignHMAC(CK_FUNCTION_LIST_PTR pFunctionList, CK_SLOT_ID slot,
                             hash->keyType, &keyItem);
         if (crv != CKR_OK) {
             pk11error("HMAC key import failed", crv);
+            SECITEM_FreeItem(&keyItem, PR_FALSE);
             return crv;
         }
         if (sizeof(keyBuf) < keyItem.len) {
-            
-
-
+            /* this is a paranoia check. It really shouldn't happen because
+             * we already check for keyItem.len != hash->hashLength above,
+             * and keyBuf should be big enough for the largest hash length */
             print_error("Input key is too large");
+            SECITEM_FreeItem(&keyItem, PR_FALSE);
             return CKR_HOST_MEMORY;
         }
-        
+        /* save the HMAC KeyValue */
         PORT_Memcpy(keyBuf, keyItem.data, keyItem.len);
         keyLen = keyItem.len;
+        SECITEM_FreeItem(&keyItem, PR_FALSE);
     }
 
     if (crv != CKR_OK) {
@@ -1426,7 +1430,7 @@ shlibSignHMAC(CK_FUNCTION_LIST_PTR pFunctionList, CK_SLOT_ID slot,
     }
     hmacMech.mechanism = hash->hmac;
 
-    
+    /* compute the digest */
     memset(sign, 0, sizeof(sign));
     crv = pFunctionList->C_SignInit(hRwSession, &hmacMech, hHMACKey);
     if (crv != CKR_OK) {
@@ -1434,7 +1438,7 @@ shlibSignHMAC(CK_FUNCTION_LIST_PTR pFunctionList, CK_SLOT_ID slot,
         return crv;
     }
 
-    
+    /* Digest the file */
     while ((bytesRead = PR_Read(ifd, file_buf, sizeof(file_buf))) > 0) {
         crv = pFunctionList->C_SignUpdate(hRwSession, (CK_BYTE_PTR)file_buf,
                                           bytesRead);
@@ -1487,31 +1491,31 @@ shlibSignHMAC(CK_FUNCTION_LIST_PTR pFunctionList, CK_SLOT_ID slot,
         }
     }
 
-    
-
-
-
-
-
-
+    /*
+     * we write the key out in a straight binary format because very
+     * low level libraries need to read an parse this file. Ideally we should
+     * just derEncode the public key (which would be pretty simple, and be
+     * more general), but then we'd need to link the ASN.1 decoder with the
+     * freebl libraries.
+     */
 
     header.magic1 = NSS_SIGN_CHK_MAGIC1;
     header.magic2 = NSS_SIGN_CHK_MAGIC2;
     header.majorVersion = NSS_SIGN_CHK_MAJOR_VERSION;
     header.minorVersion = NSS_SIGN_CHK_MINOR_VERSION;
-    encodeInt(header.offset, sizeof(header)); 
+    encodeInt(header.offset, sizeof(header)); /* offset to data start */
     encodeInt(header.type, NSS_SIGN_CHK_FLAG_HMAC | hash->hashType);
     bytesWritten = PR_Write(ofd, &header, sizeof(header));
     if (bytesWritten != sizeof(header)) {
         return CKR_INTERNAL_OUT_FAILURE;
     }
 
-    
+    /* HMACKey */
     rv = writeItem(ofd, keyBuf, keyLen);
     if (rv != PR_SUCCESS) {
         return CKR_INTERNAL_OUT_FAILURE;
     }
-    
+    /* HMAC SIGNATURE */
     rv = writeItem(ofd, &sign, signLen);
     if (rv != PR_SUCCESS) {
         return CKR_INTERNAL_OUT_FAILURE;
@@ -1529,8 +1533,8 @@ main(int argc, char **argv)
     PRLibrary *lib = NULL;
     PRFileDesc *ifd = NULL;
     PRFileDesc *ofd = NULL;
-    const char *input_file = NULL; 
-    char *output_file = NULL;      
+    const char *input_file = NULL; /* read/create encrypted data from here */
+    char *output_file = NULL;      /* write new encrypted data here */
     unsigned int keySize = 0;
     ModeTypes mode = mode_default;
     PRBool useDSA = PR_FALSE;
@@ -1630,7 +1634,7 @@ main(int argc, char **argv)
 
             case 'F':
                 if (mode == mode_fips) {
-                    break; 
+                    break; /* mode is already set to fips */
                 }
                 if (mode != mode_default) {
                     PR_fprintf(PR_STDERR, "-C and -F are mutually exclusive\n");
@@ -1641,7 +1645,7 @@ main(int argc, char **argv)
 
             case 'C':
                 if (mode == mode_nonfips) {
-                    break; 
+                    break; /* mode is already set to nonfips */
                 }
                 if (mode != mode_default) {
                     PR_fprintf(PR_STDERR, "-F and -C are mutually exclusive\n");
@@ -1708,9 +1712,9 @@ main(int argc, char **argv)
         return 1;
     }
 
-    
-
-
+    /* Get the platform-dependent library name of the
+     * NSS cryptographic module.
+     */
     libname = PR_GetLibraryName(NULL, "softokn3");
     assert(libname != NULL);
     if (!libname) {
@@ -1749,10 +1753,10 @@ main(int argc, char **argv)
         if (crv != CKR_OK) {
             logIt("Failed to use provided database directory "
                   "will just initialize the volatile certdb.\n");
-            crv = softokn_Init(pFunctionList, NULL, NULL); 
+            crv = softokn_Init(pFunctionList, NULL, NULL); /* NoDB Init */
         }
     } else {
-        crv = softokn_Init(pFunctionList, NULL, NULL); 
+        crv = softokn_Init(pFunctionList, NULL, NULL); /* NoDB Init */
     }
 
     if (crv != CKR_OK) {
@@ -1774,7 +1778,7 @@ main(int argc, char **argv)
         goto cleanup;
     }
 
-    
+    /* check if a password is needed */
     crv = pFunctionList->C_GetTokenInfo(pSlotList[slotIndex], &tokenInfo);
     if (crv != CKR_OK) {
         pk11error("C_GetTokenInfo failed", crv);
@@ -1797,7 +1801,7 @@ main(int argc, char **argv)
         logIt("A password was provided but the password was not used.\n");
     }
 
-    
+    /* open the shared library */
     ifd = PR_OpenFile(input_file, PR_RDONLY, 0);
     if (ifd == NULL) {
         lperror(input_file);
@@ -1818,7 +1822,7 @@ main(int argc, char **argv)
         }
         link_buf[ret] = 0;
         link_file = mkoutput(input_file);
-        
+        /* get the dirname of input_file */
         dirpath = PL_strdup(input_file);
         dirend = strrchr(dirpath, '/');
         if (dirend) {
@@ -1831,7 +1835,7 @@ main(int argc, char **argv)
         }
         PL_strfree(dirpath);
         input_file = link_buf;
-        
+        /* get the basename of link_file */
         dirend = strrchr(link_file, '/');
         if (dirend) {
             char *tmp_file = NULL;
@@ -1855,7 +1859,7 @@ main(int argc, char **argv)
 #endif
     }
 
-    
+    /* open the target signature file */
     ofd = PR_Open(output_file, PR_WRONLY | PR_CREATE_FILE | PR_TRUNCATE, 0666);
     if (ofd == NULL) {
         lperror(output_file);
@@ -1878,7 +1882,7 @@ main(int argc, char **argv)
 
     PR_Close(ofd);
     ofd = NULL;
-    
+    /* close the input_File */
     PR_Close(ifd);
     ifd = NULL;
 
@@ -1896,8 +1900,8 @@ main(int argc, char **argv)
 
 cleanup:
     if (pFunctionList) {
-        
-        
+        /* C_Finalize will automatically logout, close session, */
+        /* and delete the temp objects on the token */
         crv = pFunctionList->C_Finalize(NULL);
         if (crv != CKR_OK) {
             pk11error("C_Finalize failed", crv);
@@ -1915,11 +1919,11 @@ cleanup:
     if (dbPrefix) {
         PL_strfree(dbPrefix);
     }
-    if (output_file) { 
+    if (output_file) { /* allocated by mkoutput function */
         PL_strfree(output_file);
     }
 #ifdef USES_LINKS
-    if (link_file) { 
+    if (link_file) { /* allocated by mkoutput function */
         PL_strfree(link_file);
     }
 #endif
