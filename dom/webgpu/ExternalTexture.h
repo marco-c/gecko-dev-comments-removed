@@ -9,6 +9,7 @@
 #include <array>
 
 #include "ObjectModel.h"
+#include "mozilla/HashTable.h"
 #include "mozilla/Span.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/gfx/Types.h"
@@ -19,8 +20,11 @@
 
 namespace mozilla {
 namespace dom {
+struct GPUExternalTextureDescriptor;
+class HTMLVideoElement;
 class OwningHTMLVideoElementOrVideoFrame;
 enum class PredefinedColorSpace : uint8_t;
+class VideoFrame;
 }  
 namespace layers {
 class BufferDescriptor;
@@ -73,6 +77,8 @@ class ExternalTexture : public ObjectBase,
   
   void Expire();
   bool IsExpired() const { return mIsExpired; }
+  void Unexpire();
+  bool IsDestroyed() const { return mIsDestroyed; }
 
   void OnSubmit(uint64_t aSubmissionIndex);
   void OnSubmittedWorkDone(uint64_t aSubmissionIndex);
@@ -104,6 +110,41 @@ class ExternalTexture : public ObjectBase,
 
 
 
+class ExternalTextureCache : public SupportsWeakPtr {
+ public:
+  
+  
+  
+  RefPtr<ExternalTexture> GetOrCreate(
+      Device* aDevice, const dom::GPUExternalTextureDescriptor& aDesc,
+      ErrorResult& aRv);
+
+  
+  
+  void RemoveSource(const ExternalTextureSourceClient* aSource);
+
+ private:
+  
+  
+  
+  
+  RefPtr<ExternalTextureSourceClient> GetOrCreateSource(
+      Device* aDevice, const dom::OwningHTMLVideoElementOrVideoFrame& aSource,
+      ErrorResult& aRv);
+
+  
+  
+  
+  
+  
+  HashMap<uint32_t, ExternalTextureSourceClient*> mSources;
+};
+
+
+
+
+
+
 
 
 
@@ -118,8 +159,8 @@ class ExternalTextureSourceClient {
   
   
   static already_AddRefed<ExternalTextureSourceClient> Create(
-      Device* aDevice, const dom::OwningHTMLVideoElementOrVideoFrame& aSource,
-      ErrorResult& aRv);
+      Device* aDevice, ExternalTextureCache* aCache,
+      const dom::OwningHTMLVideoElementOrVideoFrame& aSource, ErrorResult& aRv);
 
   const RawId mId;
 
@@ -141,8 +182,15 @@ class ExternalTextureSourceClient {
   const std::array<RawId, 3> mTextureIds;
   const std::array<RawId, 3> mViewIds;
 
+  
+  
+  RefPtr<ExternalTexture> GetOrCreateExternalTexture(
+      Device* aDevice, const dom::GPUExternalTextureDescriptor& aDesc);
+
  private:
   ExternalTextureSourceClient(WebGPUChild* aBridge, RawId aId,
+                              ExternalTextureCache* aCache,
+                              const RefPtr<layers::Image>& aImage,
                               const std::array<RawId, 3>& aTextureIds,
                               const std::array<RawId, 3>& aViewIds);
   ~ExternalTextureSourceClient();
@@ -150,6 +198,18 @@ class ExternalTextureSourceClient {
   
   
   const WeakPtr<WebGPUChild> mBridge;
+
+  
+  
+  
+  const WeakPtr<ExternalTextureCache> mCache;
+
+  
+  
+  
+  
+  HashMap<dom::PredefinedColorSpace, WeakPtr<ExternalTexture>>
+      mExternalTextures;
 };
 
 

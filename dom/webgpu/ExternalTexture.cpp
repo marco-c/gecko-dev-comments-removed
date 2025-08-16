@@ -60,6 +60,12 @@ void ExternalTexture::Expire() {
   MaybeDestroy();
 }
 
+void ExternalTexture::Unexpire() {
+  MOZ_ASSERT(!mIsDestroyed);
+  MOZ_ASSERT(mSource);
+  mIsExpired = false;
+}
+
 void ExternalTexture::OnSubmit(uint64_t aSubmissionIndex) {
   mLastSubmittedIndex = aSubmissionIndex;
 }
@@ -104,17 +110,82 @@ void ExternalTexture::Cleanup() {
 
 ExternalTexture::~ExternalTexture() { Cleanup(); }
 
+RefPtr<ExternalTexture> ExternalTextureCache::GetOrCreate(
+    Device* aDevice, const dom::GPUExternalTextureDescriptor& aDesc,
+    ErrorResult& aRv) {
+  const RefPtr<ExternalTextureSourceClient> source =
+      GetOrCreateSource(aDevice, aDesc.mSource, aRv);
+
+  if (source) {
+    return source->GetOrCreateExternalTexture(aDevice, aDesc);
+  }
+
+  
+  return ExternalTexture::Create(aDevice, aDesc.mLabel, nullptr,
+                                 aDesc.mColorSpace);
+}
+
+RefPtr<ExternalTextureSourceClient> ExternalTextureCache::GetOrCreateSource(
+    Device* aDevice, const dom::OwningHTMLVideoElementOrVideoFrame& aSource,
+    ErrorResult& aRv) {
+  RefPtr<layers::Image> image;
+  switch (aSource.GetType()) {
+    case dom::OwningHTMLVideoElementOrVideoFrame::Type::eHTMLVideoElement:
+      image = aSource.GetAsHTMLVideoElement()->GetCurrentImage();
+      break;
+    case dom::OwningHTMLVideoElementOrVideoFrame::Type::eVideoFrame:
+      image = aSource.GetAsVideoFrame()->GetImage();
+      break;
+  }
+
+  typename decltype(mSources)::AddPtr p;
+  if (image) {
+    p = mSources.lookupForAdd(image->GetSerial());
+    if (p) {
+      const RefPtr<ExternalTextureSourceClient> source = p->value();
+      MOZ_ASSERT(source->mImage == image);
+      return source;
+    }
+  }
+
+  
+  
+  const RefPtr<ExternalTextureSourceClient> source =
+      ExternalTextureSourceClient::Create(aDevice, this, aSource, aRv);
+  if (source) {
+    
+    
+    
+    
+    Unused << mSources.add(p, source->mImage->GetSerial(), source);
+  }
+  return source;
+}
+
+void ExternalTextureCache::RemoveSource(
+    const ExternalTextureSourceClient* aSource) {
+  mSources.remove(aSource->mImage->GetSerial());
+}
+
 ExternalTextureSourceClient::ExternalTextureSourceClient(
-    WebGPUChild* aBridge, RawId aId, const std::array<RawId, 3>& aTextureIds,
+    WebGPUChild* aBridge, RawId aId, ExternalTextureCache* aCache,
+    const RefPtr<layers::Image>& aImage,
+    const std::array<RawId, 3>& aTextureIds,
     const std::array<RawId, 3>& aViewIds)
     : mId(aId),
+      mImage(aImage),
       mTextureIds(std::move(aTextureIds)),
       mViewIds(std::move(aViewIds)),
-      mBridge(aBridge) {
+      mBridge(aBridge),
+      mCache(aCache) {
   MOZ_RELEASE_ASSERT(aId);
 }
 
 ExternalTextureSourceClient::~ExternalTextureSourceClient() {
+  if (mCache) {
+    mCache->RemoveSource(this);
+  }
+
   if (!mBridge) {
     return;
   }
@@ -139,8 +210,8 @@ ExternalTextureSourceClient::~ExternalTextureSourceClient() {
 
  already_AddRefed<ExternalTextureSourceClient>
 ExternalTextureSourceClient::Create(
-    Device* aDevice, const dom::OwningHTMLVideoElementOrVideoFrame& aSource,
-    ErrorResult& aRv) {
+    Device* aDevice, ExternalTextureCache* aCache,
+    const dom::OwningHTMLVideoElementOrVideoFrame& aSource, ErrorResult& aRv) {
   
   
   
@@ -312,8 +383,37 @@ ExternalTextureSourceClient::Create(
       aDevice->mId, aDevice->GetQueue()->mId, sourceId, sourceDesc);
 
   RefPtr<ExternalTextureSourceClient> source = new ExternalTextureSourceClient(
-      aDevice->GetBridge().get(), sourceId, textureIds, viewIds);
+      aDevice->GetBridge().get(), sourceId, aCache, image, textureIds, viewIds);
+
   return source.forget();
+}
+
+RefPtr<ExternalTexture> ExternalTextureSourceClient::GetOrCreateExternalTexture(
+    Device* aDevice, const dom::GPUExternalTextureDescriptor& aDesc) {
+  auto p = mExternalTextures.lookupForAdd(aDesc.mColorSpace);
+  if (p) {
+    if (auto* const externalTexture = p->value().get()) {
+      if (!externalTexture->IsDestroyed()) {
+        externalTexture->Unexpire();
+        return externalTexture;
+      }
+    }
+  }
+
+  const RefPtr<ExternalTexture> externalTexture =
+      ExternalTexture::Create(aDevice, aDesc.mLabel, this, aDesc.mColorSpace);
+
+  if (externalTexture) {
+    if (p) {
+      p->value() = externalTexture;
+    } else {
+      
+      
+      Unused << mExternalTextures.add(p, aDesc.mColorSpace, externalTexture);
+    }
+  }
+
+  return externalTexture;
 }
 
 ExternalTextureSourceHost::ExternalTextureSourceHost(
