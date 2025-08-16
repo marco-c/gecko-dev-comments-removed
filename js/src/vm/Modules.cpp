@@ -794,20 +794,7 @@ bool js::HostLoadImportedModule(JSContext* cx, Handle<JSScript*> referrer,
     return false;
   }
 
-  
-  
-  
-  Rooted<Value> referencingPrivate(cx);
-  if (referrer) {
-    if (referrer->isModule()) {
-      referencingPrivate = JS::GetModulePrivate(referrer->module());
-    } else {
-      referencingPrivate = referrer->sourceObject()->getPrivate();
-    }
-  }
-
-  bool ok = moduleLoadHook(cx, referrer, referencingPrivate, moduleRequest,
-                           hostDefined, payload);
+  bool ok = moduleLoadHook(cx, referrer, moduleRequest, hostDefined, payload);
 
   if (!ok) {
     MOZ_ASSERT(JS_IsExceptionPending(cx));
