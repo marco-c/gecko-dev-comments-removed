@@ -328,13 +328,6 @@ pkix::Result AppTrustDomain::CheckValidityIsAcceptable(
   return Success;
 }
 
-pkix::Result AppTrustDomain::NetscapeStepUpMatchesServerAuth(
-    Time ,
-     bool& matches) {
-  matches = false;
-  return Success;
-}
-
 void AppTrustDomain::NoteAuxiliaryExtension(AuxiliaryExtension ,
                                             Input ) {}
 

@@ -80,8 +80,6 @@ enum class VerifyUsage {
   EmailCA = 7,
 };
 
-enum class NetscapeStepUpPolicy : uint32_t;
-
 
 enum class IssuerSource {
   TLSHandshake,            
@@ -263,7 +261,6 @@ class CertVerifier {
                mozilla::TimeDuration ocspTimeoutSoft,
                mozilla::TimeDuration ocspTimeoutHard,
                uint32_t certShortLifetimeInDays,
-               NetscapeStepUpPolicy netscapeStepUpPolicy,
                CertificateTransparencyConfig&& ctConfig, CRLiteMode crliteMode,
                const nsTArray<EnterpriseCert>& thirdPartyCerts);
   ~CertVerifier();
@@ -276,7 +273,6 @@ class CertVerifier {
   const mozilla::TimeDuration mOCSPTimeoutSoft;
   const mozilla::TimeDuration mOCSPTimeoutHard;
   const uint32_t mCertShortLifetimeInDays;
-  const NetscapeStepUpPolicy mNetscapeStepUpPolicy;
   const CertificateTransparencyConfig mCTConfig;
   const CRLiteMode mCRLiteMode;
 
