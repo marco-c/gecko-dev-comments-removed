@@ -535,36 +535,113 @@ void RangeUpdater::DidRemoveContainer(const Element& aRemovedElement,
   }
 }
 
-void RangeUpdater::DidMoveNode(const nsINode& aOldParent, uint32_t aOldOffset,
-                               const nsINode& aNewParent, uint32_t aNewOffset) {
+void RangeUpdater::DidMoveNodes(
+    const nsTArray<SimpleEditorDOMPoint>& aOldPoints,
+    const SimpleEditorDOMPoint& aExpectedDestination,
+    const nsTArray<SimpleEditorDOMPoint>& aNewPoints) {
   if (mLocked) {
     
     return;
   }
-  auto AdjustDOMPoint = [&](nsCOMPtr<nsINode>& aNode, uint32_t& aOffset) {
-    if (aNode == &aOldParent) {
-      
-      if (aOffset == aOldOffset) {
-        aNode = const_cast<nsINode*>(&aNewParent);
-        aOffset = aNewOffset;
-      } else if (aOffset > aOldOffset) {
-        aOffset--;
-      }
-      return;
-    }
-    if (aNode == &aNewParent) {
-      if (aOffset > aNewOffset) {
-        aOffset++;
-      }
-    }
-  };
-  for (RefPtr<RangeItem>& rangeItem : mArray) {
-    if (NS_WARN_IF(!rangeItem)) {
-      return;
-    }
 
-    AdjustDOMPoint(rangeItem->mStartContainer, rangeItem->mStartOffset);
-    AdjustDOMPoint(rangeItem->mEndContainer, rangeItem->mEndOffset);
+  AutoTArray<SimpleEditorRawDOMPoint, 12> oldPoints;
+  oldPoints.SetCapacity(aOldPoints.Length());
+  for (const size_t i : IntegerRange(aOldPoints.Length())) {
+    const SimpleEditorDOMPoint& oldPoint = aOldPoints[i];
+    if (MOZ_UNLIKELY(oldPoints.IsEmpty())) {
+      oldPoints.AppendElement(SimpleEditorRawDOMPoint(
+          oldPoint.mContainer, oldPoint.mChild, oldPoint.Offset()));
+      continue;
+    }
+    
+    
+    
+    
+    
+    
+    if (MOZ_UNLIKELY(aExpectedDestination.mContainer == oldPoint.mContainer) &&
+        aExpectedDestination.Offset() < oldPoint.Offset()) {
+      oldPoints.AppendElement(SimpleEditorRawDOMPoint(
+          oldPoint.mContainer, oldPoint.mChild, oldPoint.Offset()));
+      continue;
+    }
+    
+    
+    if (oldPoints.LastElement().mChild->GetNextSibling() == oldPoint.mChild) {
+      oldPoints.AppendElement(
+          SimpleEditorRawDOMPoint(oldPoint.mContainer, oldPoint.mChild,
+                                  oldPoints.LastElement().Offset()));
+      continue;
+    }
+    
+    
+    
+    
+    uint32_t offset = oldPoint.Offset();
+    for (const SimpleEditorRawDOMPoint& precedingPoint : oldPoints) {
+      if (precedingPoint.mContainer == oldPoint.mContainer &&
+          precedingPoint.Offset() < oldPoint.Offset()) {
+        offset--;
+      }
+    }
+    oldPoints.AppendElement(
+        SimpleEditorRawDOMPoint{oldPoint.mContainer, oldPoint.mChild, offset});
+  }
+
+  size_t newPointIndex = 0;
+  for (const SimpleEditorRawDOMPoint& oldPoint : oldPoints) {
+    const SimpleEditorDOMPoint* newPoint =
+        newPointIndex < aNewPoints.Length() &&
+                oldPoint.mChild == aNewPoints[newPointIndex].mChild
+            ? &aNewPoints[newPointIndex++]
+            : nullptr;
+    auto AdjustDOMPoint = [&](nsCOMPtr<nsINode>& aNode, uint32_t& aOffset) {
+      
+      if (!newPoint || !newPoint->mContainer) {
+        
+        
+        if (aNode->IsInclusiveDescendantOf(oldPoint.mChild)) {
+          aNode = oldPoint.mContainer;
+          aOffset = std::min(oldPoint.Offset(), aNode->Length());
+          return;
+        }
+        
+        if (aNode == oldPoint.mContainer) {
+          if (aOffset > oldPoint.Offset()) {
+            aOffset--;
+          }
+          if (aOffset > aNode->Length()) {
+            aOffset = aNode->Length();
+          }
+          return;
+        }
+        return;
+      }
+      
+      if (aNode == oldPoint.mContainer) {
+        
+        if (aOffset == oldPoint.Offset()) {
+          aNode = newPoint->mContainer;
+          aOffset = newPoint->Offset();
+        } else if (aOffset > oldPoint.Offset()) {
+          aOffset--;
+        }
+        return;
+      }
+      if (aNode == newPoint->mContainer) {
+        if (aOffset > newPoint->Offset()) {
+          aOffset++;
+        }
+      }
+    };
+    for (RefPtr<RangeItem>& rangeItem : mArray) {
+      if (NS_WARN_IF(!rangeItem)) {
+        return;
+      }
+
+      AdjustDOMPoint(rangeItem->mStartContainer, rangeItem->mStartOffset);
+      AdjustDOMPoint(rangeItem->mEndContainer, rangeItem->mEndOffset);
+    }
   }
 }
 

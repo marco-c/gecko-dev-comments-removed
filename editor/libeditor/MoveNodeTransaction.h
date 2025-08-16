@@ -10,6 +10,7 @@
 
 #include "EditorDOMPoint.h"
 #include "EditorForwards.h"
+#include "SelectionState.h"
 
 #include "nsCOMPtr.h"  
 #include "nsCycleCollectionParticipant.h"
@@ -224,6 +225,26 @@ class MoveSiblingsTransaction final : public MoveNodeTransactionBase {
     }
     return true;
   }
+
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT void RemoveAllSiblingsToMove(
+      HTMLEditor& aHTMLEditor,
+      const nsTArray<OwningNonNull<nsIContent>>& aClonedSiblingsToMove,
+      AutoMoveNodeSelNotify& aNotifier) const;
+
+  
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult InsertAllSiblingsToMove(
+      HTMLEditor& aHTMLEditor,
+      const nsTArray<OwningNonNull<nsIContent>>& aClonedSiblingsToMove,
+      nsINode& aParentNode, nsIContent* aReferenceNode,
+      AutoMoveNodeSelNotify& aNotifier) const;
 
   
   AutoTArray<OwningNonNull<nsIContent>, 2> mSiblingsToMove;
