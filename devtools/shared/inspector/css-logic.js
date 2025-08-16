@@ -586,7 +586,7 @@ exports.getMatchingCSSRules = getMatchingCSSRules;
 
 
 function hasVisitedState(node) {
-  if (!node) {
+  if (!Element.isInstance(node)) {
     return false;
   }
 

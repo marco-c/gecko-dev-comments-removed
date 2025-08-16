@@ -669,34 +669,36 @@ class PageStyleActor extends Actor {
     );
     const rules = [];
 
-    if (!bindingElement || !bindingElement.style) {
+    if (!bindingElement) {
       return rules;
     }
 
-    const elementStyle = this._styleRef(
-      bindingElement,
+    if (bindingElement.style) {
+      const elementStyle = this._styleRef(
+        bindingElement,
+        
+        null
+      );
+      const showElementStyles = !inherited && !pseudo;
+      const showInheritedStyles =
+        inherited && this._hasInheritedProps(bindingElement.style);
+
+      const rule = this._getRuleItem(elementStyle, node.rawNode, {
+        pseudoElement: null,
+        isSystem: false,
+        inherited: false,
+      });
+
       
-      null
-    );
-    const showElementStyles = !inherited && !pseudo;
-    const showInheritedStyles =
-      inherited && this._hasInheritedProps(bindingElement.style);
+      if (showElementStyles) {
+        rules.push(rule);
+      }
 
-    const rule = this._getRuleItem(elementStyle, node.rawNode, {
-      pseudoElement: null,
-      isSystem: false,
-      inherited: false,
-    });
-
-    
-    if (showElementStyles) {
-      rules.push(rule);
-    }
-
-    
-    if (showInheritedStyles) {
-      rule.inherited = inherited;
-      rules.push(rule);
+      
+      if (showInheritedStyles) {
+        rule.inherited = inherited;
+        rules.push(rule);
+      }
     }
 
     
@@ -714,45 +716,54 @@ class PageStyleActor extends Actor {
     );
 
     
-    if (!pseudo && !options.skipPseudo) {
-      const relevantPseudoElements = [];
-      for (const readPseudo of PSEUDO_ELEMENTS) {
-        if (!this._pseudoIsRelevant(bindingElement, readPseudo, inherited)) {
-          continue;
-        }
+    if (options.skipPseudo) {
+      return rules;
+    }
 
-        
-        if (readPseudo === "::highlight") {
-          InspectorUtils.getRegisteredCssHighlights(
-            this.inspector.targetActor.window.document,
-            
-            true
-          ).forEach(name => {
-            relevantPseudoElements.push(`::highlight(${name})`);
-          });
-        } else {
-          relevantPseudoElements.push(readPseudo);
-        }
+    
+    
+    
+    
+    
+    const elementForPseudo = pseudo ? node.rawNode : bindingElement;
+
+    const relevantPseudoElements = [];
+    for (const readPseudo of PSEUDO_ELEMENTS) {
+      if (!this._pseudoIsRelevant(elementForPseudo, readPseudo, inherited)) {
+        continue;
       }
 
-      for (const readPseudo of relevantPseudoElements) {
-        const pseudoRules = this._getElementRules(
-          bindingElement,
-          readPseudo,
-          inherited,
-          options
-        );
-        
-        
-        
-        if (
-          SharedCssLogic.ELEMENT_BACKED_PSEUDO_ELEMENTS.has(readPseudo) &&
-          inherited
-        ) {
-          rules.unshift(...pseudoRules);
-        } else {
-          rules.push(...pseudoRules);
-        }
+      
+      if (readPseudo === "::highlight") {
+        InspectorUtils.getRegisteredCssHighlights(
+          this.inspector.targetActor.window.document,
+          
+          true
+        ).forEach(name => {
+          relevantPseudoElements.push(`::highlight(${name})`);
+        });
+      } else {
+        relevantPseudoElements.push(readPseudo);
+      }
+    }
+
+    for (const readPseudo of relevantPseudoElements) {
+      const pseudoRules = this._getElementRules(
+        elementForPseudo,
+        readPseudo,
+        inherited,
+        options
+      );
+      
+      
+      
+      if (
+        SharedCssLogic.ELEMENT_BACKED_PSEUDO_ELEMENTS.has(readPseudo) &&
+        inherited
+      ) {
+        rules.unshift(...pseudoRules);
+      } else {
+        rules.push(...pseudoRules);
       }
     }
 
@@ -888,6 +899,10 @@ class PageStyleActor extends Actor {
 
 
   _getElementRules(node, pseudo, inherited, options) {
+    if (!Element.isInstance(node)) {
+      return [];
+    }
+
     
     const includeStartingStyleRules = !inherited;
     const domRules = InspectorUtils.getMatchingCSSRules(
