@@ -25,6 +25,7 @@
 #include "mozilla/layers/NativeLayerCA.h"
 #include "mozilla/widget/CompositorWidget.h"
 #include "mozilla/TextEventDispatcher.h"
+#include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/SurfacePool.h"
 #include "mozilla/layers/IAPZCTreeManager.h"
 #include "mozilla/dom/SimpleGestureEventBinding.h"
@@ -875,19 +876,9 @@ void nsCocoaWindow::HandleMainThreadCATransaction() {
 }
 
 void nsCocoaWindow::CreateCompositor(int aWidth, int aHeight) {
-  
-  
-  
-  
+  MOZ_ASSERT(!mNativeLayerRootRemoteMacParent);
 
   
-  
-  
-  auto finishCompositorCreation =
-      MakeScopeExit([&] { nsBaseWidget::CreateCompositor(aWidth, aHeight); });
-
-  
-
   
   auto* pm = mozilla::gfx::GPUProcessManager::Get();
   mozilla::ipc::EndpointProcInfo gpuProcessInfo =
@@ -902,16 +893,26 @@ void nsCocoaWindow::CreateCompositor(int aWidth, int aHeight) {
   mozilla::ipc::Endpoint<PNativeLayerRemoteParent> parentEndpoint;
   auto rv = PNativeLayerRemote::CreateEndpoints(
       mozilla::ipc::EndpointProcInfo::Current(), childProcessInfo,
-      &parentEndpoint, &mChildEndpoint);
-  if (NS_FAILED(rv)) {
-    return;
+      &mParentEndpoint, &mChildEndpoint);
+
+  if (NS_SUCCEEDED(rv)) {
+    
+    mNativeLayerRootRemoteMacParent =
+        new NativeLayerRootRemoteMacParent(mNativeLayerRoot);
+
+    
+    MOZ_ASSERT(CompositorThread());
+    CompositorThread()->Dispatch(NewRunnableMethod<int, int>(
+        "nsCocoaWindow::FinishCreateCompositor", this,
+        &nsCocoaWindow::FinishCreateCompositor, aWidth, aHeight));
   }
 
-  
-  
-  mNativeLayerRootRemoteMacParent =
-      new NativeLayerRootRemoteMacParent(mNativeLayerRoot);
-  MOZ_ALWAYS_TRUE(parentEndpoint.Bind(mNativeLayerRootRemoteMacParent));
+  nsBaseWidget::CreateCompositor(aWidth, aHeight);
+}
+
+void nsCocoaWindow::FinishCreateCompositor(int aWidth, int aHeight) {
+  MOZ_ASSERT(mNativeLayerRootRemoteMacParent);
+  MOZ_ALWAYS_TRUE(mParentEndpoint.Bind(mNativeLayerRootRemoteMacParent));
   
   
 
@@ -919,16 +920,21 @@ void nsCocoaWindow::CreateCompositor(int aWidth, int aHeight) {
   
   
   
-  
-  
-
   
   
 }
 
 void nsCocoaWindow::DestroyCompositor() {
-  if (mNativeLayerRootRemoteMacParent) {
-    mNativeLayerRootRemoteMacParent->Close();
+  
+  
+  
+  
+  if (RefPtr<NativeLayerRootRemoteMacParent> actor =
+          std::move(mNativeLayerRootRemoteMacParent)) {
+    MOZ_ASSERT(CompositorThread());
+    CompositorThread()->Dispatch(
+        NewRunnableMethod("NativeLayerRootRemoteMacParent::Close", actor,
+                          &NativeLayerRootRemoteMacParent::Close));
   }
 
   nsBaseWidget::DestroyCompositor();
@@ -948,6 +954,7 @@ void nsCocoaWindow::SetCompositorWidgetDelegate(
 
 void nsCocoaWindow::GetCompositorWidgetInitData(
     mozilla::widget::CompositorWidgetInitData* aInitData) {
+  MOZ_ASSERT(mChildEndpoint.IsValid());
   auto deviceIntRect = GetBounds();
   *aInitData = mozilla::widget::CocoaCompositorWidgetInitData(
       deviceIntRect.Size(), std::move(mChildEndpoint));
@@ -4599,8 +4606,6 @@ nsCocoaWindow::~nsCocoaWindow() {
   if (mNativeLayerRoot) {
     mNativeLayerRoot->SetLayers({});
   }
-
-  DestroyCompositor();
 
   
   
