@@ -49,7 +49,6 @@ pub enum PseudoElement {
     
     
     
-
     Backdrop,
 
     
@@ -219,7 +218,9 @@ impl PseudoElement {
             PseudoElement::After | PseudoElement::Before | PseudoElement::Selection => {
                 PseudoElementCascadeType::Eager
             },
-            PseudoElement::Backdrop | PseudoElement::DetailsSummary => PseudoElementCascadeType::Lazy,
+            PseudoElement::Backdrop | PseudoElement::DetailsSummary => {
+                PseudoElementCascadeType::Lazy
+            },
             PseudoElement::DetailsContent |
             PseudoElement::ServoAnonymousBox |
             PseudoElement::ServoAnonymousTable |
@@ -427,7 +428,9 @@ impl NonTSPseudoClass {
             Self::UserValid => ElementState::USER_VALID,
             Self::Valid => ElementState::VALID,
             Self::Visited => ElementState::VISITED,
-            Self::CustomState(_) | Self::Lang(_) | Self::ServoNonZeroBorder => ElementState::empty(),
+            Self::CustomState(_) | Self::Lang(_) | Self::ServoNonZeroBorder => {
+                ElementState::empty()
+            },
         }
     }
 

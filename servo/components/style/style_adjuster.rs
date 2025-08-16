@@ -7,16 +7,15 @@
 
 use crate::computed_value_flags::ComputedValueFlags;
 use crate::dom::TElement;
-#[cfg(feature = "gecko")]
-use crate::properties::longhands::{
-    contain::computed_value::T as Contain,
-    container_type::computed_value::T as ContainerType,
-    content_visibility::computed_value::T as ContentVisibility,
-    overflow_x::computed_value::T as Overflow
-};
 use crate::properties::longhands::display::computed_value::T as Display;
 use crate::properties::longhands::float::computed_value::T as Float;
 use crate::properties::longhands::position::computed_value::T as Position;
+#[cfg(feature = "gecko")]
+use crate::properties::longhands::{
+    contain::computed_value::T as Contain, container_type::computed_value::T as ContainerType,
+    content_visibility::computed_value::T as ContentVisibility,
+    overflow_x::computed_value::T as Overflow,
+};
 use crate::properties::{self, ComputedValues, StyleBuilder};
 
 #[cfg(feature = "gecko")]
@@ -924,7 +923,10 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
                     
                     
                     
-                    debug_assert!(self.style.pseudo.is_some(), "Someone really messed up (no pseudo style for {e:?}, {p:?})");
+                    debug_assert!(
+                        self.style.pseudo.is_some(),
+                        "Someone really messed up (no pseudo style for {e:?}, {p:?})"
+                    );
                 }
             }
         }

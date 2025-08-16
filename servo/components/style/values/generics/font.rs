@@ -101,7 +101,16 @@ impl<T> TaggedFontValue for VariationValue<T> {
 
 
 #[derive(
-    Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToAnimatedValue, ToCss, ToResolvedValue, ToShmem,
+    Clone,
+    Debug,
+    Eq,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
 )]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[css(comma)]
@@ -222,7 +231,9 @@ pub enum FontStyle<Angle> {
 
 impl<Angle: Zero> FontStyle<Angle> {
     
-    pub fn normal() -> Self { Self::Oblique(Angle::zero()) }
+    pub fn normal() -> Self {
+        Self::Oblique(Angle::zero())
+    }
 }
 
 

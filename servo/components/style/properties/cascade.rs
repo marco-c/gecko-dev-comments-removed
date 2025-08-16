@@ -938,7 +938,10 @@ impl<'b> Cascade<'b> {
         }
         let can_skip_apply = match declaration.get_css_wide_keyword() {
             Some(keyword) => {
-                if matches!(keyword, CSSWideKeyword::RevertLayer | CSSWideKeyword::Revert) {
+                if matches!(
+                    keyword,
+                    CSSWideKeyword::RevertLayer | CSSWideKeyword::Revert
+                ) {
                     let origin_revert = keyword == CSSWideKeyword::Revert;
                     
                     

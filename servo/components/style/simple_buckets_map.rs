@@ -2,8 +2,8 @@
 
 
 
-use crate::{Atom, LocalName, ShrinkIfNeeded};
 use crate::selector_map::{MaybeCaseInsensitiveHashMap, PrecomputedHashMap};
+use crate::{Atom, LocalName, ShrinkIfNeeded};
 
 
 #[derive(Clone, Debug, MallocSizeOf)]
@@ -46,8 +46,6 @@ impl<T> SimpleBucketsMap<T> {
     
     #[inline(always)]
     pub fn is_empty(&self) -> bool {
-        self.classes.is_empty() &&
-            self.ids.is_empty() &&
-            self.local_names.is_empty()
+        self.classes.is_empty() && self.ids.is_empty() && self.local_names.is_empty()
     }
 }

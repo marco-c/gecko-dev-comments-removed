@@ -533,19 +533,17 @@ pub type MaxSize = GenericMaxSize<NonNegativeLengthPercentage>;
 
 pub type AnchorSizeFunction = GenericAnchorSizeFunction<LengthPercentage>;
 
-#[cfg(feature="gecko")]
+#[cfg(feature = "gecko")]
 use crate::{
-    gecko_bindings::structs::AnchorPosResolutionParams,
-    logical_geometry::PhysicalAxis,
-    values::DashedIdent,
-    values::generics::length::AnchorSizeKeyword,
+    gecko_bindings::structs::AnchorPosResolutionParams, logical_geometry::PhysicalAxis,
+    values::generics::length::AnchorSizeKeyword, values::DashedIdent,
 };
 
 impl AnchorSizeFunction {
     
     
     
-    #[cfg(feature="gecko")]
+    #[cfg(feature = "gecko")]
     pub fn resolve(
         anchor_name: &DashedIdent,
         prop_axis: PhysicalAxis,

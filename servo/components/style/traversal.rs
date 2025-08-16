@@ -233,7 +233,7 @@ pub trait DomTraversal<E: TElement>: Sync {
             
             
             return el.has_animation_only_dirty_descendants() ||
-                   data.hint.has_animation_hint_or_recascade();
+                data.hint.has_animation_hint_or_recascade();
         }
 
         

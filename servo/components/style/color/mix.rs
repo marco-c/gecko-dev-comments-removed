@@ -550,7 +550,9 @@ fn interpolate_premultiplied(
                 } else {
                     right[i]
                 };
-                result[i] = if hue_interpolation == HueInterpolationMethod::Longer && hue_index == Some(i) {
+                result[i] = if hue_interpolation == HueInterpolationMethod::Longer &&
+                    hue_index == Some(i)
+                {
                     
                     
                     

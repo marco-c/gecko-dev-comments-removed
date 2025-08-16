@@ -134,7 +134,10 @@ impl<'a> ParserContext<'a> {
     
     #[inline]
     pub fn allows_important_declarations(&self) -> bool {
-        !self.nesting_context.rule_types.intersects(CssRuleTypes::IMPORTANT_FORBIDDEN)
+        !self
+            .nesting_context
+            .rule_types
+            .intersects(CssRuleTypes::IMPORTANT_FORBIDDEN)
     }
 
     
