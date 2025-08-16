@@ -288,15 +288,6 @@ utf8_to_wstr(char const * str);
 class wasapi_collection_notification_client;
 class monitor_device_notifications;
 
-typedef enum {
-  
-  CUBEB_AUDIO_CLIENT2_NONE,
-  
-  CUBEB_AUDIO_CLIENT2_RAW,
-  
-  CUBEB_AUDIO_CLIENT2_VOICE
-} AudioClient2Option;
-
 struct cubeb {
   cubeb_ops const * ops = &wasapi_ops;
   owned_critical_section lock;
@@ -1941,19 +1932,6 @@ wasapi_get_preferred_sample_rate(cubeb * ctx, uint32_t * rate)
   return CUBEB_OK;
 }
 
-int
-wasapi_get_supported_input_processing_params(
-    cubeb * ctx, cubeb_input_processing_params * params)
-{
-  
-  
-  
-  return CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION |
-         CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION |
-         CUBEB_INPUT_PROCESSING_PARAM_AUTOMATIC_GAIN_CONTROL |
-         CUBEB_INPUT_PROCESSING_PARAM_VOICE_ISOLATION;
-}
-
 static void
 waveformatex_update_derived_properties(WAVEFORMATEX * format)
 {
@@ -2029,8 +2007,7 @@ handle_channel_layout(cubeb_stream * stm, EDataFlow direction,
 }
 
 static int
-initialize_iaudioclient2(com_ptr<IAudioClient> & audio_client,
-                         AudioClient2Option option)
+initialize_iaudioclient2(com_ptr<IAudioClient> & audio_client)
 {
   com_ptr<IAudioClient2> audio_client2;
   audio_client->QueryInterface<IAudioClient2>(audio_client2.receive());
@@ -2042,11 +2019,7 @@ initialize_iaudioclient2(com_ptr<IAudioClient> & audio_client,
   AudioClientProperties properties = {0};
   properties.cbSize = sizeof(AudioClientProperties);
 #ifndef __MINGW32__
-  if (option == CUBEB_AUDIO_CLIENT2_RAW) {
-    properties.Options |= AUDCLNT_STREAMOPTIONS_RAW;
-  } else if (option == CUBEB_AUDIO_CLIENT2_VOICE) {
-    properties.eCategory = AudioCategory_Communications;
-  }
+  properties.Options |= AUDCLNT_STREAMOPTIONS_RAW;
 #endif
   HRESULT hr = audio_client2->SetClientProperties(&properties);
   if (FAILED(hr)) {
@@ -2360,28 +2333,9 @@ setup_wasapi_stream_one_side(cubeb_stream * stm,
   }
 
   if (stream_params->prefs & CUBEB_STREAM_PREF_RAW) {
-    if (initialize_iaudioclient2(audio_client, CUBEB_AUDIO_CLIENT2_RAW) !=
-        CUBEB_OK) {
+    if (initialize_iaudioclient2(audio_client) != CUBEB_OK) {
       LOG("Can't initialize an IAudioClient2, error: %lx", GetLastError());
       
-    }
-  } else if (direction == eCapture &&
-             (stream_params->prefs & CUBEB_STREAM_PREF_VOICE) &&
-             stream_params->input_params != CUBEB_INPUT_PROCESSING_PARAM_NONE) {
-    if (stream_params->input_params ==
-            CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION |
-        CUBEB_INPUT_PROCESSING_PARAM_NOISE_SUPPRESSION |
-        CUBEB_INPUT_PROCESSING_PARAM_AUTOMATIC_GAIN_CONTROL |
-        CUBEB_INPUT_PROCESSING_PARAM_VOICE_ISOLATION) {
-      if (initialize_iaudioclient2(audio_client, CUBEB_AUDIO_CLIENT2_VOICE) !=
-          CUBEB_OK) {
-        LOG("Can't initialize an IAudioClient2, error: %lx", GetLastError());
-        
-      }
-    } else {
-      LOG("Invalid combination of input processing params %#x",
-          stream_params->input_params);
-      return CUBEB_ERROR;
     }
   }
 
@@ -3523,14 +3477,6 @@ wasapi_device_collection_destroy(cubeb * ,
   return CUBEB_OK;
 }
 
-int
-wasapi_set_input_processing_params(cubeb_stream * stream,
-                                   cubeb_input_processing_params params)
-{
-  LOG("Cannot set voice processing params after init. Use cubeb_stream_init.");
-  return CUBEB_ERROR_NOT_SUPPORTED;
-}
-
 static int
 wasapi_register_device_collection_changed(
     cubeb * context, cubeb_device_type devtype,
@@ -3611,8 +3557,7 @@ cubeb_ops const wasapi_ops = {
     wasapi_get_max_channel_count,
     wasapi_get_min_latency,
     wasapi_get_preferred_sample_rate,
-    
-    wasapi_get_supported_input_processing_params,
+    NULL,
     wasapi_enumerate_devices,
     wasapi_device_collection_destroy,
     wasapi_destroy,
@@ -3627,7 +3572,7 @@ cubeb_ops const wasapi_ops = {
     NULL,
     NULL,
     NULL,
-    wasapi_set_input_processing_params,
+    NULL,
     NULL,
     NULL,
     
