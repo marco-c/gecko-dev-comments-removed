@@ -3728,8 +3728,7 @@ static void ReportRuntimeRedeclaration(JSContext* cx,
     HandleObject varObj, Handle<PropertyName*> name) {
   const char* redeclKind = nullptr;
   RootedId id(cx, NameToId(name));
-  mozilla::Maybe<PropertyInfo> prop;
-  bool shadowsExistingProperty = false;
+  mozilla::Maybe<PropertyInfo> prop, shadowedExistingProp;
 
   if ((prop = lexicalEnv->lookup(cx, name))) {
     
@@ -3741,7 +3740,7 @@ static void ReportRuntimeRedeclaration(JSContext* cx,
     if (!prop->configurable()) {
       redeclKind = "non-configurable global property";
     } else {
-      shadowsExistingProperty = true;
+      shadowedExistingProp = prop;
     }
   } else {
     
@@ -3753,7 +3752,14 @@ static void ReportRuntimeRedeclaration(JSContext* cx,
       if (!desc->configurable()) {
         redeclKind = "non-configurable global property";
       } else {
-        shadowsExistingProperty = true;
+        
+        
+        
+        
+        MOZ_ASSERT_IF(varObj->is<GlobalObject>(),
+                      varObj->getClass()->getResolve());
+        MOZ_ASSERT_IF(varObj->is<GlobalObject>(),
+                      varObj->as<GlobalObject>().containsPure(name));
       }
     }
   }
@@ -3762,7 +3768,7 @@ static void ReportRuntimeRedeclaration(JSContext* cx,
     ReportRuntimeRedeclaration(cx, name, redeclKind);
     return false;
   }
-  if (shadowsExistingProperty && varObj->is<GlobalObject>()) {
+  if (shadowedExistingProp && varObj->is<GlobalObject>()) {
     
     
     varObj->as<GlobalObject>().bumpGenerationCount();
