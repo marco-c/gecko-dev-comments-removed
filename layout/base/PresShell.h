@@ -1818,25 +1818,8 @@ class PresShell final : public nsStubDocumentObserver,
 
   static Modifiers GetCurrentModifiers() { return sCurrentModifiers; }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-  void MergeAnchorPosAnchorChanges();
-
  private:
   ~PresShell();
-
-  template <bool AreWeMerging>
-  void AddAnchorPosAnchorImpl(const nsAtom* aName, nsIFrame* aFrame);
 
   void SetIsActive(bool aIsActive);
   bool ComputeActiveness() const;
@@ -3221,15 +3204,6 @@ class PresShell final : public nsStubDocumentObserver,
 
   
   nsTHashSet<WeakFrame*> mWeakFrames;
-
-  struct AnchorPosAnchorChange {
-    RefPtr<const nsAtom> mName;
-    nsIFrame* mFrame;
-  };
-  
-  
-  
-  nsTArray<AnchorPosAnchorChange> mLazyAnchorPosAnchorChanges;
 
   nsTHashMap<RefPtr<const nsAtom>, nsTArray<nsIFrame*>> mAnchorPosAnchors;
   nsTArray<nsIFrame*> mAnchorPosPositioned;
