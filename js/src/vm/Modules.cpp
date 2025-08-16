@@ -37,8 +37,8 @@
 #include "vm/Runtime.h"                 
 
 #include "builtin/HandlerFunction-inl.h"  
-#include "vm/JSAtomUtils-inl.h"  
-#include "vm/JSContext-inl.h"    
+#include "vm/JSAtomUtils-inl.h"           
+#include "vm/JSContext-inl.h"             
 #include "vm/JSObject-inl.h"
 #include "vm/NativeObject-inl.h"
 
