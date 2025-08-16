@@ -119,7 +119,6 @@ for (const type of [
   "DIALOG_CLOSE",
   "DIALOG_OPEN",
   "DISABLE_SEARCH",
-  "DISCOVERY_STREAM_COLLECTION_DISMISSIBLE_TOGGLE",
   "DISCOVERY_STREAM_CONFIG_CHANGE",
   "DISCOVERY_STREAM_CONFIG_RESET",
   "DISCOVERY_STREAM_CONFIG_RESET_DEFAULTS",
@@ -6046,145 +6045,6 @@ const CardGrid = (0,external_ReactRedux_namespaceObject.connect)(state => ({
   DiscoveryStream: state.DiscoveryStream
 }))(_CardGrid);
 ;
-
-
-
-
-
-
-
-
-
-class CollectionCardGrid extends (external_React_default()).PureComponent {
-  constructor(props) {
-    super(props);
-    this.onDismissClick = this.onDismissClick.bind(this);
-    this.state = {
-      dismissed: false
-    };
-  }
-  onDismissClick() {
-    const {
-      data
-    } = this.props;
-    if (this.props.dispatch && data && data.spocs && data.spocs.length) {
-      this.setState({
-        dismissed: true
-      });
-      const pos = 0;
-      const source = this.props.type.toUpperCase();
-      
-      
-      const spocsData = data.spocs.map(item => ({
-        url: item.url,
-        guid: item.id,
-        shim: item.shim,
-        flight_id: item.flightId
-      }));
-      const blockUrlOption = LinkMenuOptions.BlockUrls(spocsData, pos, source);
-      const {
-        action,
-        impression,
-        userEvent
-      } = blockUrlOption;
-      this.props.dispatch(action);
-      this.props.dispatch(actionCreators.DiscoveryStreamUserEvent({
-        event: userEvent,
-        source,
-        action_position: pos
-      }));
-      if (impression) {
-        this.props.dispatch(impression);
-      }
-    }
-  }
-  render() {
-    const {
-      data,
-      dismissible,
-      pocket_button_enabled
-    } = this.props;
-    if (this.state.dismissed || !data || !data.spocs || !data.spocs[0] ||
-    
-    data.spocs.length < 3) {
-      return null;
-    }
-    const {
-      spocs,
-      placement,
-      feed
-    } = this.props;
-    
-    const {
-      title,
-      context,
-      sponsored_by_override,
-      sponsor
-    } = spocs.data[placement.name] || {};
-    
-    if (!title) {
-      return null;
-    }
-    let sponsoredByMessage = "";
-
-    
-    if (sponsored_by_override || sponsored_by_override === "") {
-      
-      
-      
-      sponsoredByMessage = sponsored_by_override;
-    } else if (sponsor) {
-      sponsoredByMessage = {
-        id: `newtab-label-sponsored-by`,
-        values: {
-          sponsor
-        }
-      };
-    } else if (context) {
-      sponsoredByMessage = context;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    const recsData = {
-      recommendations: data.spocs
-    };
-
-    
-    
-    
-    
-    
-    const type = `${this.props.type}_card`;
-    const collectionGrid = external_React_default().createElement("div", {
-      className: "ds-collection-card-grid"
-    }, external_React_default().createElement(CardGrid, {
-      pocket_button_enabled: pocket_button_enabled,
-      title: title,
-      context: sponsoredByMessage,
-      data: recsData,
-      feed: feed,
-      type: type,
-      is_collection: true,
-      dispatch: this.props.dispatch,
-      items: this.props.items
-    }));
-    if (dismissible) {
-      return external_React_default().createElement(DSDismiss, {
-        onDismissClick: this.onDismissClick,
-        extraClasses: `ds-dismiss-ds-collection`
-      }, collectionGrid);
-    }
-    return collectionGrid;
-  }
-}
-;
 function A11yLinkButton_extends() { return A11yLinkButton_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, A11yLinkButton_extends.apply(null, arguments); }
 
 
@@ -7929,8 +7789,6 @@ const TOP_SITES_MAX_SITES_PER_ROW = 8;
 
 
 
-const PREF_COLLECTION_DISMISSIBLE = "discoverystream.isCollectionDismissible";
-
 const dedupe = new Dedupe(site => site && site.url);
 
 const INITIAL_STATE = {
@@ -7994,7 +7852,6 @@ const INITIAL_STATE = {
     config: { enabled: false },
     layout: [],
     isPrivacyInfoModalVisible: false,
-    isCollectionDismissible: false,
     topicsLoading: false,
     feeds: {
       data: {
@@ -8663,11 +8520,6 @@ function DiscoveryStream(prevState = INITIAL_STATE.DiscoveryStream, action) {
         ...prevState,
         layout: action.data.layout || [],
       };
-    case actionTypes.DISCOVERY_STREAM_COLLECTION_DISMISSIBLE_TOGGLE:
-      return {
-        ...prevState,
-        isCollectionDismissible: action.data.value,
-      };
     case actionTypes.DISCOVERY_STREAM_TOPICS_LOADING:
       return {
         ...prevState,
@@ -8834,14 +8686,6 @@ function DiscoveryStream(prevState = INITIAL_STATE.DiscoveryStream, action) {
         ? prevState
         : nextState(items => items.map(removeBookmarkInfo));
     }
-    case actionTypes.PREF_CHANGED:
-      if (action.data.name === PREF_COLLECTION_DISMISSIBLE) {
-        return {
-          ...prevState,
-          isCollectionDismissible: action.data.value,
-        };
-      }
-      return prevState;
     case actionTypes.TOPIC_SELECTION_SPOTLIGHT_OPEN:
       return {
         ...prevState,
@@ -11421,7 +11265,6 @@ const selectLayoutRender = ({ state = {}, prefs = {} }) => {
     "Navigation",
     "Widgets",
     "CardGrid",
-    "CollectionCardGrid",
     "HorizontalRule",
     "PrivacyLink",
   ];
@@ -13767,7 +13610,6 @@ function Widgets() {
 
 
 
-
 const ALLOWED_CSS_URL_PREFIXES = ["chrome://", "resource://", "https://img-getpocket.cdn.mozilla.net/"];
 const DUMMY_CSS_SELECTOR = "DUMMY#CSS.SELECTOR";
 
@@ -13885,22 +13727,6 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
           newFooterSection: component.newFooterSection,
           privacyNoticeURL: component.properties.privacyNoticeURL
         });
-      case "CollectionCardGrid":
-        {
-          const {
-            DiscoveryStream
-          } = this.props;
-          return external_React_default().createElement(CollectionCardGrid, {
-            data: component.data,
-            feed: component.feed,
-            spocs: DiscoveryStream.spocs,
-            placement: component.placement,
-            type: component.type,
-            items: component.properties.items,
-            dismissible: this.props.DiscoveryStream.isCollectionDismissible,
-            dispatch: this.props.dispatch
-          });
-        }
       case "CardGrid":
         {
           const sectionsEnabled = this.props.Prefs.values["discoverystream.sections.enabled"];
@@ -14027,7 +13853,6 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
     
     const topSites = extractComponent("TopSites");
     const widgets = extractComponent("Widgets");
-    const sponsoredCollection = extractComponent("CollectionCardGrid");
     const message = extractComponent("Message") || {
       header: {
         link_text: topStories.learnMore.link.message,
@@ -14059,9 +13884,6 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
       width: 12,
       components: [widgets],
       sectionType: "widgets"
-    }]), sponsoredCollection && this.renderLayout([{
-      width: 12,
-      components: [sponsoredCollection]
     }]), !!layoutRender.length && external_React_default().createElement(CollapsibleSection, {
       className: "ds-layout",
       collapsed: topStories.pref.collapsed,

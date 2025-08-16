@@ -1920,7 +1920,6 @@ pref("browser.newtabpage.activity-stream.discoverystream.contile-topsites-positi
 pref("browser.newtabpage.activity-stream.discoverystream.widget-positions", "");
 pref("browser.newtabpage.activity-stream.discoverystream.spocs-endpoint", "");
 pref("browser.newtabpage.activity-stream.discoverystream.spocs-endpoint-query", "");
-pref("browser.newtabpage.activity-stream.discoverystream.sponsored-collections.enabled", false);
 
 
 pref("browser.newtabpage.activity-stream.discoverystream.spocAdTypes", "");
@@ -2009,8 +2008,6 @@ pref("browser.newtabpage.activity-stream.discoverystream.region-basic-config", "
 pref("browser.newtabpage.activity-stream.discoverystream.pocket-feed-parameters", "");
 pref("browser.newtabpage.activity-stream.discoverystream.merino-feed-experiment", false);
 
-
-pref("browser.newtabpage.activity-stream.discoverystream.isCollectionDismissible", true);
 pref("browser.newtabpage.activity-stream.discoverystream.personalization.enabled", true);
 pref("browser.newtabpage.activity-stream.discoverystream.personalization.override", false);
 
