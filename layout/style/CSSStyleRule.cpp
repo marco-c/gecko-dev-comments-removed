@@ -10,6 +10,7 @@
 #include "mozilla/DeclarationBlock.h"
 #include "mozilla/PseudoStyleType.h"
 #include "mozilla/ServoBindings.h"
+#include "mozilla/dom/CSSScopeRule.h"
 #include "mozilla/dom/CSSStyleRuleBinding.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "mozilla/dom/StylePropertyMap.h"
@@ -234,13 +235,21 @@ uint32_t CSSStyleRule::SelectorCount() const {
 }
 
 static void CollectStyleRules(CSSStyleRule& aDeepestRule, bool aDesugared,
-                              nsTArray<const StyleLockedStyleRule*>& aResult) {
+                              nsTArray<const StyleLockedStyleRule*>& aResult,
+                              nsTArray<StyleScopeRuleData>* aScopes = nullptr) {
   aResult.AppendElement(aDeepestRule.Raw());
   if (aDesugared) {
     for (auto* rule = aDeepestRule.GetParentRule(); rule;
          rule = rule->GetParentRule()) {
       if (rule->Type() == StyleCssRuleType::Style) {
         aResult.AppendElement(static_cast<CSSStyleRule*>(rule)->Raw());
+      } else if (aScopes && rule->Type() == StyleCssRuleType::Scope) {
+        MOZ_ASSERT(aResult.Length() > 0, "Innermost rule wasn't a style rule?");
+        aScopes->AppendElement(StyleScopeRuleData{
+            static_cast<CSSScopeRule*>(rule)->Raw(),
+            rule->GetStyleSheet(),
+            aResult.Length() - 1,
+        });
       }
     }
   }
@@ -303,12 +312,13 @@ bool CSSStyleRule::SelectorMatchesElement(uint32_t aSelectorIndex,
   }();
 
   AutoTArray<const StyleLockedStyleRule*, 8> rules;
-  CollectStyleRules(*this,  true, rules);
+  AutoTArray<StyleScopeRuleData, 1> scopes;
+  CollectStyleRules(*this,  true, rules, &scopes);
 
   
   
   return Servo_StyleRule_SelectorMatchesElement(
-      &rules, &aElement, aSelectorIndex, host, pseudo->mType,
+      &rules, &scopes, &aElement, aSelectorIndex, host, pseudo->mType,
       aRelevantLinkVisited);
 }
 
@@ -336,6 +346,9 @@ void CSSStyleRule::GetSelectorWarnings(
 
 already_AddRefed<nsINodeList> CSSStyleRule::QuerySelectorAll(nsINode& aRoot) {
   AutoTArray<const StyleLockedStyleRule*, 8> rules;
+  
+  
+  
   CollectStyleRules(*this,  true, rules);
   StyleSelectorList* list = Servo_StyleRule_GetSelectorList(&rules);
 

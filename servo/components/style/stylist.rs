@@ -2480,22 +2480,49 @@ pub struct ScopeConditionId(u16);
 
 impl ScopeConditionId {
     
+    pub fn new(id: u16) -> Self {
+        Self(id)
+    }
+
+    
     pub const fn none() -> Self {
         Self(0)
     }
 }
 
+
 #[derive(Clone, Debug, MallocSizeOf)]
-struct ScopeConditionReference {
+pub struct ScopeConditionReference {
+    
     parent: ScopeConditionId,
+    
     condition: Option<ScopeBoundsWithHashes>,
+    
+    
     #[ignore_malloc_size_of = "Raw ptr behind the scenes"]
     implicit_scope_root: StylistImplicitScopeRoot,
+    
     is_trivial: bool,
 }
 
 impl ScopeConditionReference {
-    const fn none() -> Self {
+    
+    pub fn new(
+        parent: ScopeConditionId,
+        condition: Option<ScopeBoundsWithHashes>,
+        implicit_scope_root: ImplicitScopeRoot,
+        is_trivial: bool,
+    ) -> Self {
+        Self {
+            parent,
+            condition,
+            implicit_scope_root: StylistImplicitScopeRoot::Normal(implicit_scope_root),
+            is_trivial,
+        }
+    }
+
+    
+    pub const fn none() -> Self {
         Self {
             parent: ScopeConditionId::none(),
             condition: None,
@@ -2505,20 +2532,12 @@ impl ScopeConditionReference {
     }
 }
 
-fn scope_bounds_is_trivial(bounds: &ScopeBoundsWithHashes) -> bool {
-    fn scope_bound_is_trivial(bound: &Option<ScopeBoundWithHashes>, default: bool) -> bool {
-        bound.as_ref().map_or(default, |bound| {
-            scope_selector_list_is_trivial(&bound.selectors)
-        })
-    }
 
+pub struct ScopeRootCandidates {
     
-    scope_bound_is_trivial(&bounds.start, false) && scope_bound_is_trivial(&bounds.end, true)
-}
-
-struct ScopeRootCandidates {
-    candidates: Vec<ScopeRootCandidate>,
-    is_trivial: bool,
+    pub candidates: Vec<ScopeRootCandidate>,
+    
+    pub is_trivial: bool,
 }
 
 impl Default for ScopeRootCandidates {
@@ -2539,8 +2558,9 @@ impl ScopeRootCandidates {
     }
 }
 
+
 #[derive(Clone, Debug, MallocSizeOf)]
-struct ScopeBoundWithHashes {
+pub struct ScopeBoundWithHashes {
     
     #[ignore_malloc_size_of = "Arc"]
     selectors: SelectorList<SelectorImpl>,
@@ -2555,15 +2575,26 @@ impl ScopeBoundWithHashes {
         }
         Self { selectors, hashes }
     }
+
+    fn new_no_hash(selectors: SelectorList<SelectorImpl>) -> Self {
+        let hashes = selectors.slice().iter().map(|_| {
+            AncestorHashes{ packed_hashes: [0, 0, 0] }
+        }).collect();
+        Self { selectors, hashes }
+    }
 }
 
+
 #[derive(Clone, Debug, MallocSizeOf)]
-struct ScopeBoundsWithHashes {
+pub struct ScopeBoundsWithHashes {
+    
     start: Option<ScopeBoundWithHashes>,
+    
     end: Option<ScopeBoundWithHashes>,
 }
 
 impl ScopeBoundsWithHashes {
+    
     fn new(
         quirks_mode: QuirksMode,
         start: Option<SelectorList<SelectorImpl>>,
@@ -2572,6 +2603,17 @@ impl ScopeBoundsWithHashes {
         Self {
             start: start.map(|selectors| ScopeBoundWithHashes::new(quirks_mode, selectors)),
             end: end.map(|selectors| ScopeBoundWithHashes::new(quirks_mode, selectors)),
+        }
+    }
+
+    
+    pub fn new_no_hash(
+        start: Option<SelectorList<SelectorImpl>>,
+        end: Option<SelectorList<SelectorImpl>>,
+    ) -> Self {
+        Self {
+            start: start.map(|selectors| ScopeBoundWithHashes::new_no_hash(selectors)),
+            end: end.map(|selectors| ScopeBoundWithHashes::new_no_hash(selectors)),
         }
     }
 
@@ -2588,6 +2630,165 @@ impl ScopeBoundsWithHashes {
         let start_selectors = Self::selectors_for(self.start.as_ref());
         let end_selectors = Self::selectors_for(self.end.as_ref());
         start_selectors.chain(end_selectors)
+    }
+
+    fn is_trivial(&self) -> bool {
+        fn scope_bound_is_trivial(bound: &Option<ScopeBoundWithHashes>, default: bool) -> bool {
+            bound.as_ref().map_or(default, |bound| {
+                scope_selector_list_is_trivial(&bound.selectors)
+            })
+        }
+
+        
+        scope_bound_is_trivial(&self.start, false) && scope_bound_is_trivial(&self.end, true)
+    }
+}
+
+
+pub fn scope_root_candidates<E>(
+    scope_conditions: &[ScopeConditionReference],
+    id: ScopeConditionId,
+    element: &E,
+    override_matches_shadow_host_for_part: bool,
+    scope_subject_map: &ScopeSubjectMap,
+    context: &mut MatchingContext<SelectorImpl>,
+) -> ScopeRootCandidates
+where
+    E: TElement,
+{
+    let condition_ref = &scope_conditions[id.0 as usize];
+    let bounds = match condition_ref.condition {
+        None => return ScopeRootCandidates::default(),
+        Some(ref c) => c,
+    };
+    
+    
+    
+    let outer_result = scope_root_candidates(
+        scope_conditions,
+        condition_ref.parent,
+        element,
+        override_matches_shadow_host_for_part,
+        scope_subject_map,
+        context,
+    );
+
+    let is_trivial = condition_ref.is_trivial && outer_result.is_trivial;
+    let is_outermost_scope = condition_ref.parent == ScopeConditionId::none();
+    if !is_outermost_scope && outer_result.candidates.is_empty() {
+        return ScopeRootCandidates::empty(is_trivial);
+    }
+
+    let (root_target, matches_shadow_host) = if let Some(start) = bounds.start.as_ref() {
+        if let Some(filter) = context.bloom_filter {
+            
+            
+            
+            
+            if !start
+                .hashes
+                .iter()
+                .any(|entry| selector_may_match(entry, filter))
+            {
+                return ScopeRootCandidates::empty(is_trivial);
+            }
+        }
+        (
+            ScopeTarget::Selector(&start.selectors),
+            scope_start_matches_shadow_host(&start.selectors),
+        )
+    } else {
+        let implicit_root = condition_ref.implicit_scope_root;
+        match implicit_root {
+            StylistImplicitScopeRoot::Normal(r) => (
+                ScopeTarget::Implicit(r.element(context.current_host.clone())),
+                r.matches_shadow_host(),
+            ),
+            StylistImplicitScopeRoot::Cached(index) => {
+                let host = context
+                    .current_host
+                    .expect("Cached implicit scope for light DOM implicit scope");
+                match E::implicit_scope_for_sheet_in_shadow_root(host, index) {
+                    None => return ScopeRootCandidates::empty(is_trivial),
+                    Some(root) => (
+                        ScopeTarget::Implicit(root.element(context.current_host.clone())),
+                        root.matches_shadow_host(),
+                    ),
+                }
+            },
+        }
+    };
+    
+    
+    let matches_shadow_host = override_matches_shadow_host_for_part || matches_shadow_host;
+
+    let potential_scope_roots = if is_outermost_scope {
+        collect_scope_roots(
+            *element,
+            None,
+            context,
+            &root_target,
+            matches_shadow_host,
+            scope_subject_map,
+        )
+    } else {
+        let mut result = vec![];
+        for activation in outer_result.candidates {
+            let mut this_result = collect_scope_roots(
+                *element,
+                Some(activation.root),
+                context,
+                &root_target,
+                matches_shadow_host,
+                scope_subject_map,
+            );
+            result.append(&mut this_result);
+        }
+        result
+    };
+
+    if potential_scope_roots.is_empty() {
+        return ScopeRootCandidates::empty(is_trivial);
+    }
+
+    let candidates = if let Some(end) = bounds.end.as_ref() {
+        let mut result = vec![];
+        
+        for scope_root in potential_scope_roots {
+            if end
+                .selectors
+                .slice()
+                .iter()
+                .zip(end.hashes.iter())
+                .all(|(selector, hashes)| {
+                    
+                    if let Some(filter) = context.bloom_filter {
+                        if !selector_may_match(hashes, filter) {
+                            
+                            return true;
+                        }
+                    }
+
+                    !element_is_outside_of_scope(
+                        selector,
+                        *element,
+                        scope_root.root,
+                        context,
+                        matches_shadow_host,
+                    )
+                })
+            {
+                result.push(scope_root);
+            }
+        }
+        result
+    } else {
+        potential_scope_roots
+    };
+
+    ScopeRootCandidates {
+        candidates,
+        is_trivial,
     }
 }
 
@@ -2764,6 +2965,13 @@ fn scope_start_matches_shadow_host(start: &SelectorList<SelectorImpl>) -> bool {
         .slice()
         .iter()
         .any(|s| s.matches_featureless_host(true).may_match())
+}
+
+
+pub fn replace_parent_selector_with_implicit_scope(
+    selectors: &SelectorList<SelectorImpl>,
+) -> SelectorList<SelectorImpl> {
+    selectors.replace_parent_selector(&IMPLICIT_SCOPE)
 }
 
 impl CascadeData {
@@ -3011,10 +3219,12 @@ impl CascadeData {
         
         
         
-        let result = self.scope_condition_matches(
+        let result = scope_root_candidates(
+            &self.scope_conditions,
             rule.scope_condition_id,
-            element,
+            &element,
             rule.selector.is_part(),
+            &self.scope_subject_map,
             context,
         );
         for candidate in result.candidates {
@@ -3025,147 +3235,6 @@ impl CascadeData {
             }
         }
         ScopeProximity::infinity()
-    }
-
-    fn scope_condition_matches<E>(
-        &self,
-        id: ScopeConditionId,
-        element: E,
-        override_matches_shadow_host_for_part: bool,
-        context: &mut MatchingContext<E::Impl>,
-    ) -> ScopeRootCandidates
-    where
-        E: TElement,
-    {
-        let condition_ref = &self.scope_conditions[id.0 as usize];
-        let bounds = match condition_ref.condition {
-            None => return ScopeRootCandidates::default(),
-            Some(ref c) => c,
-        };
-        
-        
-        
-        let outer_result = self.scope_condition_matches(
-            condition_ref.parent,
-            element,
-            override_matches_shadow_host_for_part,
-            context,
-        );
-
-        let is_trivial = condition_ref.is_trivial && outer_result.is_trivial;
-        let is_outermost_scope = condition_ref.parent == ScopeConditionId::none();
-        if !is_outermost_scope && outer_result.candidates.is_empty() {
-            return ScopeRootCandidates::empty(is_trivial);
-        }
-
-        let (root_target, matches_shadow_host) = if let Some(start) = bounds.start.as_ref() {
-            if let Some(filter) = context.bloom_filter {
-                
-                
-                
-                
-                if !start
-                    .hashes
-                    .iter()
-                    .any(|entry| selector_may_match(entry, filter))
-                {
-                    return ScopeRootCandidates::empty(is_trivial);
-                }
-            }
-            (
-                ScopeTarget::Selector(&start.selectors),
-                scope_start_matches_shadow_host(&start.selectors),
-            )
-        } else {
-            let implicit_root = condition_ref.implicit_scope_root;
-            match implicit_root {
-                StylistImplicitScopeRoot::Normal(r) => (
-                    ScopeTarget::Implicit(r.element(context.current_host.clone())),
-                    r.matches_shadow_host(),
-                ),
-                StylistImplicitScopeRoot::Cached(index) => {
-                    let host = context
-                        .current_host
-                        .expect("Cached implicit scope for light DOM implicit scope");
-                    match E::implicit_scope_for_sheet_in_shadow_root(host, index) {
-                        None => return ScopeRootCandidates::empty(is_trivial),
-                        Some(root) => (
-                            ScopeTarget::Implicit(root.element(context.current_host.clone())),
-                            root.matches_shadow_host(),
-                        ),
-                    }
-                },
-            }
-        };
-        
-        
-        let matches_shadow_host = override_matches_shadow_host_for_part || matches_shadow_host;
-
-        let potential_scope_roots = if is_outermost_scope {
-            collect_scope_roots(
-                element,
-                None,
-                context,
-                &root_target,
-                matches_shadow_host,
-                &self.scope_subject_map,
-            )
-        } else {
-            let mut result = vec![];
-            for activation in outer_result.candidates {
-                let mut this_result = collect_scope_roots(
-                    element,
-                    Some(activation.root),
-                    context,
-                    &root_target,
-                    matches_shadow_host,
-                    &self.scope_subject_map,
-                );
-                result.append(&mut this_result);
-            }
-            result
-        };
-
-        if potential_scope_roots.is_empty() {
-            return ScopeRootCandidates::empty(is_trivial);
-        }
-
-        let candidates =
-            if let Some(end) = bounds.end.as_ref() {
-                let mut result = vec![];
-                
-                for scope_root in potential_scope_roots {
-                    if end.selectors.slice().iter().zip(end.hashes.iter()).all(
-                        |(selector, hashes)| {
-                            
-                            if let Some(filter) = context.bloom_filter {
-                                if !selector_may_match(hashes, filter) {
-                                    
-                                    return true;
-                                }
-                            }
-
-                            !element_is_outside_of_scope(
-                                selector,
-                                element,
-                                scope_root.root,
-                                context,
-                                matches_shadow_host,
-                            )
-                        },
-                    ) {
-                        result.push(scope_root);
-                    }
-                }
-                result
-            } else {
-                potential_scope_roots
-            };
-
-        ScopeRootCandidates {
-            candidates,
-            is_trivial,
-        }
     }
 
     fn did_finish_rebuild(&mut self) {
@@ -3828,7 +3897,7 @@ impl CascadeData {
                             .add_bound_start(&selectors.selectors, quirks_mode);
                     }
 
-                    let is_trivial = scope_bounds_is_trivial(&replaced);
+                    let is_trivial = replaced.is_trivial();
                     self.scope_conditions.push(ScopeConditionReference {
                         parent: containing_rule_state.scope_condition_id,
                         condition: Some(replaced),
@@ -4036,11 +4105,13 @@ impl CascadeData {
                 
                 continue;
             } else {
-                let result = self.scope_condition_matches(
+                let result = scope_root_candidates(
+                    &self.scope_conditions,
                     ScopeConditionId(condition_id as u16),
-                    *element,
+                    element,
                     
                     false,
+                    &self.scope_subject_map,
                     matching_context,
                 );
                 !result.candidates.is_empty()
