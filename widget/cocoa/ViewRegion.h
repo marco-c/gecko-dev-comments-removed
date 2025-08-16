@@ -49,6 +49,10 @@ class ViewRegion {
 
  private:
   mozilla::LayoutDeviceIntRegion mRegion;
+  
+  
+  
+  
   nsTArray<NSView*> mViews;
 };
 

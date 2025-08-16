@@ -14,6 +14,7 @@ using namespace mozilla;
 ViewRegion::~ViewRegion() {
   for (NSView* view : mViews) {
     [view removeFromSuperview];
+    [view release];
   }
 }
 
@@ -42,10 +43,6 @@ bool ViewRegion::UpdateRegion(const LayoutDeviceIntRegion& aRegion,
     } else {
       view = aViewCreationCallback();
       [aContainerView addSubview:view];
-
-      
-      
-      [view release];
     }
     if (!NSEqualRects(rect, view.frame)) {
       view.frame = rect;
@@ -58,6 +55,7 @@ bool ViewRegion::UpdateRegion(const LayoutDeviceIntRegion& aRegion,
     
     
     [view removeFromSuperview];
+    [view release];
   }
 
   mRegion = aRegion;
