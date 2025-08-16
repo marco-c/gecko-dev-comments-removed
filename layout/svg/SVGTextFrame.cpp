@@ -955,7 +955,7 @@ void TextRenderedRun::GetClipEdges(nscoord& aVisIStartEdge,
   
   
   nsTextFrame::TrimmedOffsets trimmedOffsets =
-      mFrame->GetTrimmedOffsets(mFrame->TextFragment());
+      mFrame->GetTrimmedOffsets(mFrame->CharacterDataBuffer());
   TrimOffsets(frameOffset, frameLength, trimmedOffsets);
 
   
@@ -1855,7 +1855,7 @@ TextRenderedRun TextRenderedRunIterator::Next() {
     uint32_t untrimmedOffset = offset;
     uint32_t untrimmedLength = length;
     nsTextFrame::TrimmedOffsets trimmedOffsets =
-        frame->GetTrimmedOffsets(frame->TextFragment());
+        frame->GetTrimmedOffsets(frame->CharacterDataBuffer());
     TrimOffsets(offset, length, trimmedOffsets);
     charIndex += offset - untrimmedOffset;
 
@@ -2298,7 +2298,7 @@ bool CharIterator::IsOriginalCharTrimmed() const {
     uint32_t offset = mFrameForTrimCheck->GetContentOffset();
     uint32_t length = mFrameForTrimCheck->GetContentLength();
     nsTextFrame::TrimmedOffsets trim = mFrameForTrimCheck->GetTrimmedOffsets(
-        mFrameForTrimCheck->TextFragment(),
+        mFrameForTrimCheck->CharacterDataBuffer(),
         (mPostReflow ? nsTextFrame::TrimmedOffsetFlags::Default
                      : nsTextFrame::TrimmedOffsetFlags::NotPostReflow));
     TrimOffsets(offset, length, trim);
@@ -2314,7 +2314,7 @@ bool CharIterator::IsOriginalCharTrimmed() const {
       (index >= mTrimmedOffset + mTrimmedLength &&
        mFrameForTrimCheck->StyleText()->NewlineIsSignificant(
            mFrameForTrimCheck) &&
-       mFrameForTrimCheck->TextFragment()->CharAt(index) == '\n'));
+       mFrameForTrimCheck->CharacterDataBuffer()->CharAt(index) == '\n'));
 }
 
 gfxFloat CharIterator::GetAdvance(nsPresContext* aContext) const {
@@ -3658,7 +3658,8 @@ float SVGTextFrame::GetSubStringLengthFastPath(nsIContent* aContent,
     uint32_t trimmedOffset = untrimmedOffset;
     uint32_t trimmedLength = untrimmedLength;
     nsTextFrame::TrimmedOffsets trimmedOffsets = frame->GetTrimmedOffsets(
-        frame->TextFragment(), nsTextFrame::TrimmedOffsetFlags::NotPostReflow);
+        frame->CharacterDataBuffer(),
+        nsTextFrame::TrimmedOffsetFlags::NotPostReflow);
     TrimOffsets(trimmedOffset, trimmedLength, trimmedOffsets);
 
     textElementCharIndex += trimmedOffset - untrimmedOffset;
@@ -4327,7 +4328,7 @@ void SVGTextFrame::DetermineCharPositions(nsTArray<nsPoint>& aPositions) {
 
     
     nsTextFrame::TrimmedOffsets trimmedOffsets =
-        frame->GetTrimmedOffsets(frame->TextFragment());
+        frame->GetTrimmedOffsets(frame->CharacterDataBuffer());
     while (it.GetOriginalOffset() < trimmedOffsets.mStart) {
       aPositions.AppendElement(position);
       it.AdvanceOriginal(1);
