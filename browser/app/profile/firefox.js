@@ -718,19 +718,9 @@ pref("browser.urlbar.yelp.serviceResultDistinction", false);
 pref("browser.urlbar.suggest.yelp", true);
 
 
+
+
 pref("browser.urlbar.fakespot.featureGate", false);
-
-
-
-pref("browser.urlbar.fakespot.minKeywordLength", 4);
-
-
-
-pref("browser.urlbar.fakespot.suggestedIndex", -1);
-
-
-
-pref("browser.urlbar.suggest.fakespot", true);
 
 
 
