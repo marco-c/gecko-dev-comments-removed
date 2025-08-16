@@ -1482,12 +1482,27 @@ class DSImage extends (external_React_default()).PureComponent {
       });
     }
   }
+
+  
   reformatImageURL(url, width, height) {
     const smart = this.props.smartCrop ? "smart/" : "";
     
     
     
-    return `https://img-getpocket.cdn.mozilla.net/${width}x${height}/${smart}filters:format(jpeg):quality(60):no_upscale():strip_exif()/${encodeURIComponent(url)}`;
+    const formattedUrl = `https://img-getpocket.cdn.mozilla.net/${width}x${height}/${smart}filters:format(jpeg):quality(60):no_upscale():strip_exif()/${encodeURIComponent(url)}`;
+    return this.secureImageURL(formattedUrl);
+  }
+
+  
+  
+  
+  
+  
+  secureImageURL(url) {
+    if (!this.props.secureImage) {
+      return url;
+    }
+    return `moz-cached-ohttp://newtab-image/?url=${encodeURIComponent(url)}`;
   }
   componentDidMount() {
     this.idleCallbackId = this.props.windowObj.requestIdleCallback(this.onIdleCallback.bind(this));
@@ -1506,7 +1521,12 @@ class DSImage extends (external_React_default()).PureComponent {
     let img;
     if (this.state) {
       if (this.props.optimize && this.props.rawSource && !this.state.optimizedImageFailed) {
-        let baseSource = this.props.rawSource;
+        const baseSource = this.props.rawSource;
+
+        
+        
+        
+        const securedSource = this.secureImageURL(baseSource);
         let sizeRules = [];
         let srcSetRules = [];
         for (let rule of this.props.sizes) {
@@ -1534,7 +1554,7 @@ class DSImage extends (external_React_default()).PureComponent {
           onLoad: this.onLoad,
           onError: this.onOptimizedImageError,
           sizes: sizeRules.join(","),
-          src: baseSource,
+          src: securedSource,
           srcSet: srcSetRules.join(",")
         });
       } else if (this.props.source && !this.state.nonOptimizedImageFailed) {
@@ -3507,6 +3527,13 @@ function DSThumbsUpDownButtons({
 
 
 const READING_WPM = 220;
+const PREF_OHTTP_MERINO = "discoverystream.merino-provider.ohttp.enabled";
+const PREF_OHTTP_UNIFIED_ADS = "unifiedAds.ohttp.enabled";
+const PREF_CONTEXTUAL_ADS = "discoverystream.sections.contextualAds.enabled";
+const PREF_INFERRED_PERSONALIZATION_SYSTEM = "discoverystream.sections.personalization.inferred.enabled";
+const PREF_INFERRED_PERSONALIZATION_USER = "discoverystream.sections.personalization.inferred.user.enabled";
+const DSCard_PREF_SECTIONS_ENABLED = "discoverystream.sections.enabled";
+const PREF_FAVICONS_ENABLED = "discoverystream.publisherFavicon.enabled";
 
 
 
@@ -4009,12 +4036,18 @@ class _DSCard extends (external_React_default()).PureComponent {
   }
   onIdleCallback() {
     if (!this.state.isSeen) {
-      if (this.observer && this.placeholderElement) {
-        this.observer.unobserve(this.placeholderElement);
+      
+      
+      
+      
+      if (!this.secureImage) {
+        if (this.observer && this.placeholderElement) {
+          this.observer.unobserve(this.placeholderElement);
+        }
+        this.setState({
+          isSeen: true
+        });
       }
-      this.setState({
-        isSeen: true
-      });
     }
   }
   componentDidMount() {
@@ -4032,6 +4065,57 @@ class _DSCard extends (external_React_default()).PureComponent {
     if (this.idleCallbackId) {
       this.props.windowObj.cancelIdleCallback(this.idleCallbackId);
     }
+  }
+
+  
+  
+  
+  
+  
+  secureImageURL(url) {
+    return `moz-cached-ohttp://newtab-image/?url=${encodeURIComponent(url)}`;
+  }
+  getRawImageSrc() {
+    let rawImageSrc = "";
+    
+    if (!this.props.App.isForStartupCache.App) {
+      rawImageSrc = this.props.raw_image_src;
+    }
+    return rawImageSrc;
+  }
+  getFaviconSrc() {
+    let faviconSrc = "";
+    const faviconEnabled = this.props.Prefs.values[PREF_FAVICONS_ENABLED];
+    
+    if (!this.props.App.isForStartupCache.App && faviconEnabled && this.props.icon_src) {
+      faviconSrc = this.props.icon_src;
+      if (this.secureImage) {
+        faviconSrc = this.secureImageURL(this.props.icon_src);
+      }
+    }
+    return faviconSrc;
+  }
+  get secureImage() {
+    const {
+      Prefs,
+      flightId
+    } = this.props;
+    let ohttpEnabled = false;
+    if (flightId) {
+      ohttpEnabled = Prefs.values[PREF_CONTEXTUAL_ADS] && Prefs.values[PREF_OHTTP_UNIFIED_ADS];
+    } else {
+      ohttpEnabled = Prefs.values[PREF_OHTTP_MERINO];
+    }
+    const inferredPersonalizationUser = Prefs.values[PREF_INFERRED_PERSONALIZATION_USER];
+    const inferredPersonalizationSystem = Prefs.values[PREF_INFERRED_PERSONALIZATION_SYSTEM];
+    const inferredPersonalization = inferredPersonalizationSystem && inferredPersonalizationUser;
+    const ohttpImagesEnabled = Prefs.values.ohttpImagesConfig?.enabled;
+    const includeTopStoriesSection = Prefs.values.ohttpImagesConfig?.includeTopStoriesSection;
+    const sectionsEnabled = Prefs.values[DSCard_PREF_SECTIONS_ENABLED];
+    const nonPersonalizedSections = ["top_stories_section"];
+    const sectionPersonalized = !nonPersonalizedSections.includes(this.props.section) || includeTopStoriesSection;
+    const secureImage = sectionsEnabled && ohttpImagesEnabled && ohttpEnabled && sectionPersonalized && inferredPersonalization;
+    return secureImage;
   }
   render() {
     const {
@@ -4088,9 +4172,8 @@ class _DSCard extends (external_React_default()).PureComponent {
       descLines = 3,
       readTime: displayReadTime
     } = DiscoveryStream;
-    const sectionsEnabled = Prefs.values["discoverystream.sections.enabled"];
+    const sectionsEnabled = Prefs.values[DSCard_PREF_SECTIONS_ENABLED];
     const smartCrop = Prefs.values["images.smart"];
-    const faviconEnabled = Prefs.values["discoverystream.publisherFavicon.enabled"];
     
     
     const excerpt = !hideDescriptions || sectionsEnabled && refinedCardsLayout ? this.props.excerpt : "";
@@ -4115,6 +4198,8 @@ class _DSCard extends (external_React_default()).PureComponent {
     const descLinesClassName = `ds-card-desc-lines-${descLines}`;
     const isMediumRectangle = format === "rectangle";
     const spocFormatClassName = isMediumRectangle ? `ds-spoc-rectangle` : ``;
+    const rawImageSrc = this.getRawImageSrc();
+    const faviconSrc = this.getFaviconSrc();
     let sizes = [];
     if (!isMediumRectangle) {
       sizes = this.dsImageSizes;
@@ -4148,13 +4233,14 @@ class _DSCard extends (external_React_default()).PureComponent {
     }, external_React_default().createElement(DSImage, {
       extraClassNames: "img",
       source: this.props.image_src,
-      rawSource: this.props.raw_image_src,
+      rawSource: rawImageSrc,
       sizes: sizes,
       url: this.props.url,
       title: this.props.title,
       isRecentSave: isRecentSave,
       alt_text: alt_text,
-      smartCrop: smartCrop
+      smartCrop: smartCrop,
+      secureImage: this.secureImage
     })), external_React_default().createElement(ImpressionStats_ImpressionStats, {
       flightId: this.props.flightId,
       rows: [{
@@ -4224,7 +4310,7 @@ class _DSCard extends (external_React_default()).PureComponent {
       isSectionsCard: this.props.mayHaveSectionsCards && this.props.topic && !isListCard,
       format: format,
       topic: this.props.topic,
-      icon_src: faviconEnabled && this.props.icon_src,
+      icon_src: faviconSrc,
       refinedCardsLayout: refinedCardsLayout
     })), external_React_default().createElement("div", {
       className: "card-stp-button-hover-background"
@@ -4817,6 +4903,12 @@ function AdBannerContextMenu({
 
 
 
+const AdBanner_PREF_SECTIONS_ENABLED = "discoverystream.sections.enabled";
+const AdBanner_PREF_OHTTP_UNIFIED_ADS = "unifiedAds.ohttp.enabled";
+const AdBanner_PREF_CONTEXTUAL_ADS = "discoverystream.sections.contextualAds.enabled";
+const PREF_USER_INFERRED_PERSONALIZATION = "discoverystream.sections.personalization.inferred.user.enabled";
+const PREF_SYSTEM_INFERRED_PERSONALIZATION = "discoverystream.sections.personalization.inferred.enabled";
+const PREF_REPORT_ADS_ENABLED = "discoverystream.reportAds.enabled";
 
 
 
@@ -4857,8 +4949,12 @@ const AdBanner = ({
       height: undefined
     };
   };
-  const sectionsEnabled = prefs["discoverystream.sections.enabled"];
-  const showAdReporting = prefs["discoverystream.reportAds.enabled"];
+  const sectionsEnabled = prefs[AdBanner_PREF_SECTIONS_ENABLED];
+  const ohttpEnabled = prefs[AdBanner_PREF_OHTTP_UNIFIED_ADS];
+  const contextualAds = prefs[AdBanner_PREF_CONTEXTUAL_ADS];
+  const inferredPersonalization = prefs[PREF_USER_INFERRED_PERSONALIZATION] && prefs[PREF_SYSTEM_INFERRED_PERSONALIZATION];
+  const showAdReporting = prefs[PREF_REPORT_ADS_ENABLED];
+  const ohttpImagesEnabled = prefs.ohttpImagesConfig?.enabled;
   const [menuActive, setMenuActive] = (0,external_React_namespaceObject.useState)(false);
   const adBannerWrapperClassName = `ad-banner-wrapper ${menuActive ? "active" : ""}`;
   const {
@@ -4894,6 +4990,17 @@ const AdBanner = ({
   
   
   const clampedRow = Math.max(1, Math.min(9, row));
+  const secureImage = ohttpImagesEnabled && ohttpEnabled && contextualAds && inferredPersonalization && sectionsEnabled;
+  let rawImageSrc = spoc.raw_image_src;
+
+  
+  
+  
+  
+  
+  if (secureImage) {
+    rawImageSrc = `moz-cached-ohttp://newtab-image/?url=${encodeURIComponent(spoc.raw_image_src)}`;
+  }
   return external_React_default().createElement("aside", {
     className: adBannerWrapperClassName,
     style: {
@@ -4925,7 +5032,7 @@ const AdBanner = ({
   }), external_React_default().createElement("div", {
     className: "ad-banner-content"
   }, external_React_default().createElement("img", {
-    src: spoc.raw_image_src,
+    src: rawImageSrc,
     alt: spoc.alt_text,
     loading: "eager",
     width: imgWidth,
@@ -11860,7 +11967,7 @@ const CardSections_PREF_PROMOCARD_ENABLED = "discoverystream.promoCard.enabled";
 const CardSections_PREF_LEADERBOARD_ENABLED = "newtabAdSize.leaderboard";
 const CardSections_PREF_LEADERBOARD_POSITION = "newtabAdSize.leaderboard.position";
 const PREF_REFINED_CARDS_ENABLED = "discoverystream.refinedCardsLayout.enabled";
-const PREF_INFERRED_PERSONALIZATION_USER = "discoverystream.sections.personalization.inferred.user.enabled";
+const CardSections_PREF_INFERRED_PERSONALIZATION_USER = "discoverystream.sections.personalization.inferred.user.enabled";
 const CardSections_PREF_TRENDING_SEARCH = "trendingSearch.enabled";
 const CardSections_PREF_TRENDING_SEARCH_SYSTEM = "system.trendingSearch.enabled";
 const CardSections_PREF_SEARCH_ENGINE = "trendingSearch.defaultSearchEngine";
@@ -12271,7 +12378,7 @@ function CardSections({
   }
   function displayP13nCard() {
     if (messageData && Object.keys(messageData).length >= 1) {
-      if (shouldShowOMCHighlight(messageData, "PersonalizedCard") && prefs[PREF_INFERRED_PERSONALIZATION_USER]) {
+      if (shouldShowOMCHighlight(messageData, "PersonalizedCard") && prefs[CardSections_PREF_INFERRED_PERSONALIZATION_USER]) {
         const row = messageData.content.position;
         sectionsToRender.splice(row, 0, external_React_default().createElement(MessageWrapper, {
           dispatch: dispatch,
@@ -16129,7 +16236,7 @@ function Base_extends() { return Base_extends = Object.assign ? Object.assign.bi
 
 const Base_VISIBLE = "visible";
 const Base_VISIBILITY_CHANGE_EVENT = "visibilitychange";
-const PREF_INFERRED_PERSONALIZATION_SYSTEM = "discoverystream.sections.personalization.inferred.enabled";
+const Base_PREF_INFERRED_PERSONALIZATION_SYSTEM = "discoverystream.sections.personalization.inferred.enabled";
 const Base_PREF_INFERRED_PERSONALIZATION_USER = "discoverystream.sections.personalization.inferred.user.enabled";
 
 
@@ -16608,7 +16715,7 @@ class BaseContent extends (external_React_default()).PureComponent {
     };
     const pocketRegion = prefs["feeds.system.topstories"];
     const mayHaveSponsoredStories = prefs["system.showSponsored"];
-    const mayHaveInferredPersonalization = prefs[PREF_INFERRED_PERSONALIZATION_SYSTEM];
+    const mayHaveInferredPersonalization = prefs[Base_PREF_INFERRED_PERSONALIZATION_SYSTEM];
     const mayHaveWeather = prefs["system.showWeather"];
     const {
       mayHaveSponsoredTopSites
