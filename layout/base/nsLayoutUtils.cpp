@@ -1161,11 +1161,16 @@ int32_t nsLayoutUtils::DoCompareTreePosition(
   }
 
   AutoTArray<const nsIFrame*, 20> frame1Ancestors;
-  if (aCommonAncestor &&
-      !FillAncestors(aFrame1, aCommonAncestor, &frame1Ancestors)) {
+  const nsIFrame* frame1CommonAncestor =
+      FillAncestors(aFrame1, aCommonAncestor, &frame1Ancestors);
+  if (aCommonAncestor && !frame1CommonAncestor) {
     
     
-    return DoCompareTreePosition(aFrame1, aFrame2, nullptr);
+    
+    
+    const int32_t oppositeResult =
+        DoCompareTreePosition(aFrame2, aFrame1, frame1Ancestors, nullptr);
+    return -oppositeResult;
   }
 
   int32_t last1 = int32_t(frame1Ancestors.Length()) - 1;
