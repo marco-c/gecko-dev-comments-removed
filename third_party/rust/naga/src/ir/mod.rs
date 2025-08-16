@@ -347,6 +347,20 @@ pub enum AddressSpace {
     Storage { access: StorageAccess },
     
     Handle,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     PushConstant,
 }
@@ -2345,6 +2359,51 @@ pub struct SpecialTypes {
     
     
     pub ray_vertex_return: Option<Handle<Type>>,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub external_texture_params: Option<Handle<Type>>,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub external_texture_transfer_function: Option<Handle<Type>>,
 
     
     

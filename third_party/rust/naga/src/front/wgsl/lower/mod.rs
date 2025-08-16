@@ -3983,11 +3983,30 @@ impl<'source, 'temp> Lowerer<'source, 'temp> {
                 dim,
                 arrayed,
                 class,
-            } => ir::TypeInner::Image {
-                dim,
-                arrayed,
-                class,
-            },
+            } => {
+                if class == crate::ImageClass::External {
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    ctx.module.generate_external_texture_types();
+                }
+                ir::TypeInner::Image {
+                    dim,
+                    arrayed,
+                    class,
+                }
+            }
             ast::Type::Sampler { comparison } => ir::TypeInner::Sampler { comparison },
             ast::Type::AccelerationStructure { vertex_return } => {
                 ir::TypeInner::AccelerationStructure { vertex_return }

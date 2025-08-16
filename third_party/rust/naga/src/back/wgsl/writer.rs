@@ -109,12 +109,29 @@ impl<W: Write> Writer<W> {
         self.required_polyfills.clear();
     }
 
-    fn is_builtin_wgsl_struct(&self, module: &Module, handle: Handle<crate::Type>) -> bool {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn is_builtin_wgsl_struct(&self, module: &Module, ty: Handle<crate::Type>) -> bool {
         module
             .special_types
             .predeclared_types
             .values()
-            .any(|t| *t == handle)
+            .any(|t| *t == ty)
+            || Some(ty) == module.special_types.external_texture_params
+            || Some(ty) == module.special_types.external_texture_transfer_function
     }
 
     pub fn write(&mut self, module: &Module, info: &valid::ModuleInfo) -> BackendResult {

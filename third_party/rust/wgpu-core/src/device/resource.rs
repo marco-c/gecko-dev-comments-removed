@@ -78,22 +78,87 @@ pub(crate) struct CommandIndices {
 
 
 
+
+
+
+
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Zeroable, bytemuck::Pod)]
 pub struct ExternalTextureParams {
     
     
     
+    
     pub yuv_conversion_matrix: [f32; 16],
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub gamut_conversion_matrix: [f32; 12],
+
+    
+    
+    
+    pub src_transfer_function: wgt::ExternalTextureTransferFunction,
+
+    
+    
+    pub dst_transfer_function: wgt::ExternalTextureTransferFunction,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     pub sample_transform: [f32; 6],
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub load_transform: [f32; 6],
+
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
     
     pub size: [u32; 2],
+
     
     
     
@@ -102,8 +167,26 @@ pub struct ExternalTextureParams {
 
 impl ExternalTextureParams {
     pub fn from_desc<L>(desc: &wgt::ExternalTextureDescriptor<L>) -> Self {
+        let gamut_conversion_matrix = [
+            desc.gamut_conversion_matrix[0],
+            desc.gamut_conversion_matrix[1],
+            desc.gamut_conversion_matrix[2],
+            0.0, 
+            desc.gamut_conversion_matrix[3],
+            desc.gamut_conversion_matrix[4],
+            desc.gamut_conversion_matrix[5],
+            0.0, 
+            desc.gamut_conversion_matrix[6],
+            desc.gamut_conversion_matrix[7],
+            desc.gamut_conversion_matrix[8],
+            0.0, 
+        ];
+
         Self {
             yuv_conversion_matrix: desc.yuv_conversion_matrix,
+            gamut_conversion_matrix,
+            src_transfer_function: desc.src_transfer_function,
+            dst_transfer_function: desc.dst_transfer_function,
             size: [desc.width, desc.height],
             sample_transform: desc.sample_transform,
             load_transform: desc.load_transform,
@@ -407,6 +490,14 @@ impl Device {
                 0.0, 0.0, 1.0, 0.0,
                 0.0, 0.0, 0.0, 1.0,
             ],
+            #[rustfmt::skip]
+            gamut_conversion_matrix: [
+                1.0, 0.0, 0.0,  0.0,
+                0.0, 1.0, 0.0,  0.0,
+                0.0, 0.0, 1.0,  0.0,
+            ],
+            src_transfer_function: Default::default(),
+            dst_transfer_function: Default::default(),
             size: [0, 0],
             #[rustfmt::skip]
             sample_transform: [
@@ -755,6 +846,13 @@ impl Device {
                 requested: desc.size,
                 maximum: self.limits.max_buffer_size,
             });
+        }
+
+        if desc
+            .usage
+            .intersects(wgt::BufferUsages::BLAS_INPUT | wgt::BufferUsages::TLAS_INPUT)
+        {
+            self.require_features(wgt::Features::EXPERIMENTAL_RAY_QUERY)?;
         }
 
         if desc.usage.contains(wgt::BufferUsages::INDEX)
@@ -2265,7 +2363,22 @@ impl Device {
                         },
                     )
                 }
-                Bt::AccelerationStructure { .. } => (None, WritableStorage::No),
+                Bt::AccelerationStructure { vertex_return } => {
+                    self.require_features(wgt::Features::EXPERIMENTAL_RAY_QUERY)
+                        .map_err(|e| binding_model::CreateBindGroupLayoutError::Entry {
+                            binding: entry.binding,
+                            error: e.into(),
+                        })?;
+                    if vertex_return {
+                        self.require_features(wgt::Features::EXPERIMENTAL_RAY_HIT_VERTEX_RETURN)
+                            .map_err(|e| binding_model::CreateBindGroupLayoutError::Entry {
+                                binding: entry.binding,
+                                error: e.into(),
+                            })?;
+                    }
+
+                    (None, WritableStorage::No)
+                }
                 Bt::ExternalTexture => {
                     self.require_features(wgt::Features::EXTERNAL_TEXTURE)
                         .map_err(|e| binding_model::CreateBindGroupLayoutError::Entry {
@@ -2429,6 +2542,19 @@ impl Device {
         buffer.check_usage(pub_usage)?;
 
         let (bb, bind_size) = buffer.binding(bb.offset, bb.size, snatch_guard)?;
+
+        if matches!(binding_ty, wgt::BufferBindingType::Storage { .. }) {
+            let storage_buf_size_alignment = 4;
+
+            let aligned = bind_size % u64::from(storage_buf_size_alignment) == 0;
+            if !aligned {
+                return Err(Error::UnalignedEffectiveBufferBindingSizeForStorage {
+                    alignment: storage_buf_size_alignment,
+                    size: bind_size,
+                });
+            }
+        }
+
         let bind_end = bb.offset + bind_size;
 
         if bind_size > range_limit as u64 {

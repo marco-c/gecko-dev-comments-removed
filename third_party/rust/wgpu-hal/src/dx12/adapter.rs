@@ -361,7 +361,8 @@ impl super::Adapter {
             | wgt::Features::DUAL_SOURCE_BLENDING
             | wgt::Features::TEXTURE_FORMAT_NV12
             | wgt::Features::FLOAT32_FILTERABLE
-            | wgt::Features::TEXTURE_ATOMIC;
+            | wgt::Features::TEXTURE_ATOMIC
+            | wgt::Features::EXTERNAL_TEXTURE;
 
         
         

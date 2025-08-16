@@ -120,22 +120,34 @@ impl crate::Instance for Context {
     ) -> Vec<crate::ExposedAdapter<Api>> {
         vec![crate::ExposedAdapter {
             adapter: Context,
-            info: wgt::AdapterInfo {
-                name: String::from("noop wgpu backend"),
-                vendor: 0,
-                device: 0,
-                device_type: wgt::DeviceType::Cpu,
-                driver: String::from("wgpu"),
-                driver_info: String::new(),
-                backend: wgt::Backend::Noop,
-            },
+            info: adapter_info(),
             features: wgt::Features::all(),
             capabilities: CAPABILITIES,
         }]
     }
 }
 
-const CAPABILITIES: crate::Capabilities = {
+
+
+
+
+pub fn adapter_info() -> wgt::AdapterInfo {
+    wgt::AdapterInfo {
+        name: String::from("noop wgpu backend"),
+        vendor: 0,
+        device: 0,
+        device_type: wgt::DeviceType::Cpu,
+        driver: String::from("wgpu"),
+        driver_info: String::new(),
+        backend: wgt::Backend::Noop,
+    }
+}
+
+
+
+
+
+pub const CAPABILITIES: crate::Capabilities = {
     
     
     const ALLOC_MAX_U32: u32 = i32::MAX as u32;

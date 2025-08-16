@@ -112,6 +112,37 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 mod conv;
 mod help;
 mod keywords;
@@ -125,6 +156,35 @@ use core::fmt::Error as FmtError;
 use thiserror::Error;
 
 use crate::{back, ir, proc};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
@@ -336,6 +396,62 @@ where
 pub type DynamicStorageBufferOffsetsTargets = alloc::collections::BTreeMap<u32, OffsetsBindTarget>;
 
 
+
+
+
+
+
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+pub struct ExternalTextureBindTarget {
+    
+    
+    
+    
+    
+    
+    pub planes: [BindTarget; 3],
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub params: BindTarget,
+}
+
+#[cfg(any(feature = "serialize", feature = "deserialize"))]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+struct ExternalTextureBindingMapSerialization {
+    resource_binding: crate::ResourceBinding,
+    bind_target: ExternalTextureBindTarget,
+}
+
+#[cfg(feature = "deserialize")]
+fn deserialize_external_texture_binding_map<'de, D>(
+    deserializer: D,
+) -> Result<ExternalTextureBindingMap, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::Deserialize;
+
+    let vec = Vec::<ExternalTextureBindingMapSerialization>::deserialize(deserializer)?;
+    let mut map = ExternalTextureBindingMap::default();
+    for item in vec {
+        map.insert(item.resource_binding, item.bind_target);
+    }
+    Ok(map)
+}
+pub type ExternalTextureBindingMap =
+    alloc::collections::BTreeMap<crate::ResourceBinding, ExternalTextureBindTarget>;
+
+
 type BackendResult = Result<(), Error>;
 
 #[derive(Clone, Debug, PartialEq, thiserror::Error)]
@@ -354,21 +470,47 @@ pub enum EntryPointError {
 pub struct Options {
     
     pub shader_model: ShaderModel,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     #[cfg_attr(
         feature = "deserialize",
         serde(deserialize_with = "deserialize_binding_map")
     )]
     pub binding_map: BindingMap,
+
     
     pub fake_missing_bindings: bool,
     
     
     pub special_constants_binding: Option<BindTarget>,
+
+    
+    
+    
+    
+    
+    
+    
+    
     
     pub push_constants_target: Option<BindTarget>,
+
     
     pub sampler_heap_target: SamplerHeapBindTargets,
+
     
     #[cfg_attr(
         feature = "deserialize",
@@ -381,6 +523,18 @@ pub struct Options {
         serde(deserialize_with = "deserialize_storage_buffer_offsets")
     )]
     pub dynamic_storage_buffer_offsets_targets: DynamicStorageBufferOffsetsTargets,
+    #[cfg_attr(
+        feature = "deserialize",
+        serde(deserialize_with = "deserialize_external_texture_binding_map")
+    )]
+
+    
+    
+    
+    
+    
+    pub external_texture_binding_map: ExternalTextureBindingMap,
+
     
     pub zero_initialize_workgroup_memory: bool,
     
@@ -401,6 +555,7 @@ impl Default for Options {
             sampler_buffer_binding_map: alloc::collections::BTreeMap::default(),
             push_constants_target: None,
             dynamic_storage_buffer_offsets_targets: alloc::collections::BTreeMap::new(),
+            external_texture_binding_map: ExternalTextureBindingMap::default(),
             zero_initialize_workgroup_memory: true,
             restrict_indexing: true,
             force_loop_bounding: true,
@@ -422,6 +577,29 @@ impl Options {
                 dynamic_storage_buffer_offsets_index: None,
                 restrict_indexing: false,
             }),
+            None => Err(EntryPointError::MissingBinding(*res_binding)),
+        }
+    }
+
+    fn resolve_external_texture_resource_binding(
+        &self,
+        res_binding: &crate::ResourceBinding,
+    ) -> Result<ExternalTextureBindTarget, EntryPointError> {
+        match self.external_texture_binding_map.get(res_binding) {
+            Some(target) => Ok(*target),
+            None if self.fake_missing_bindings => {
+                let fake = BindTarget {
+                    space: res_binding.group as u8,
+                    register: res_binding.binding,
+                    binding_array_size: None,
+                    dynamic_storage_buffer_offsets_index: None,
+                    restrict_indexing: false,
+                };
+                Ok(ExternalTextureBindTarget {
+                    planes: [fake, fake, fake],
+                    params: fake,
+                })
+            }
             None => Err(EntryPointError::MissingBinding(*res_binding)),
         }
     }
@@ -479,6 +657,7 @@ enum WrappedType {
     ArrayLength(help::WrappedArrayLength),
     ImageSample(help::WrappedImageSample),
     ImageQuery(help::WrappedImageQuery),
+    ImageLoad(help::WrappedImageLoad),
     ImageLoadScalar(crate::Scalar),
     Constructor(help::WrappedConstructor),
     StructMatrixAccess(help::WrappedStructMatrixAccess),

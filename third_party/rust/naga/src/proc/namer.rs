@@ -15,6 +15,40 @@ use crate::{arena::Handle, FastHashMap, FastHashSet};
 pub type EntryPointIndex = u16;
 const SEPARATOR: char = '_';
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ExternalTextureNameKey {
+    Plane(usize),
+    Params,
+}
+
+impl ExternalTextureNameKey {
+    const ALL: &[(&str, ExternalTextureNameKey)] = &[
+        ("_plane0", ExternalTextureNameKey::Plane(0)),
+        ("_plane1", ExternalTextureNameKey::Plane(1)),
+        ("_plane2", ExternalTextureNameKey::Plane(2)),
+        ("_params", ExternalTextureNameKey::Params),
+    ];
+}
+
 #[derive(Debug, Eq, Hash, PartialEq)]
 pub enum NameKey {
     Constant(Handle<crate::Constant>),
@@ -37,6 +71,17 @@ pub enum NameKey {
 
     
     EntryPointOobLocal(EntryPointIndex, Handle<crate::Type>),
+
+    
+    
+    
+    ExternalTextureGlobalVariable(Handle<crate::GlobalVariable>, ExternalTextureNameKey),
+
+    
+    
+    
+    
+    ExternalTextureFunctionArgument(Handle<crate::Function>, u32, ExternalTextureNameKey),
 }
 
 
@@ -272,6 +317,27 @@ impl Namer {
             for (index, arg) in fun.arguments.iter().enumerate() {
                 let name = self.call_or(&arg.name, "param");
                 output.insert(NameKey::FunctionArgument(fun_handle, index as u32), name);
+
+                if matches!(
+                    module.types[arg.ty].inner,
+                    crate::TypeInner::Image {
+                        class: crate::ImageClass::External,
+                        ..
+                    }
+                ) {
+                    let base = arg.name.as_deref().unwrap_or("param");
+                    for &(suffix, ext_key) in ExternalTextureNameKey::ALL {
+                        let name = self.call(&format!("{base}_{suffix}"));
+                        output.insert(
+                            NameKey::ExternalTextureFunctionArgument(
+                                fun_handle,
+                                index as u32,
+                                ext_key,
+                            ),
+                            name,
+                        );
+                    }
+                }
             }
             for (handle, var) in fun.local_variables.iter() {
                 let name = self.call_or(&var.name, "local");
@@ -282,6 +348,23 @@ impl Namer {
         for (handle, var) in module.global_variables.iter() {
             let name = self.call_or(&var.name, "global");
             output.insert(NameKey::GlobalVariable(handle), name);
+
+            if matches!(
+                module.types[var.ty].inner,
+                crate::TypeInner::Image {
+                    class: crate::ImageClass::External,
+                    ..
+                }
+            ) {
+                let base = var.name.as_deref().unwrap_or("global");
+                for &(suffix, ext_key) in ExternalTextureNameKey::ALL {
+                    let name = self.call(&format!("{base}_{suffix}"));
+                    output.insert(
+                        NameKey::ExternalTextureGlobalVariable(handle, ext_key),
+                        name,
+                    );
+                }
+            }
         }
 
         for (handle, constant) in module.constants.iter() {
