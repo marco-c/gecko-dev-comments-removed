@@ -9,6 +9,7 @@
 
 #include "imgIEncoder.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/CanvasUtils.h"
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/HTMLCanvasElementBinding.h"
 #include "nsError.h"
@@ -37,7 +38,8 @@ class ImageEncoder {
   
   
   static nsresult ExtractData(nsAString& aType, const nsAString& aOptions,
-                              const CSSIntSize aSize, bool aUsePlaceholder,
+                              const CSSIntSize aSize,
+                              CanvasUtils::ImageExtraction aExtractionBehavior,
                               nsICanvasRenderingContextInternal* aContext,
                               OffscreenCanvasDisplayHelper* aOffscreenDisplay,
                               nsIInputStream** aStream);
@@ -53,12 +55,11 @@ class ImageEncoder {
   
   
   
-  static nsresult ExtractDataAsync(nsAString& aType, const nsAString& aOptions,
-                                   bool aUsingCustomOptions,
-                                   UniquePtr<uint8_t[]> aImageBuffer,
-                                   int32_t aFormat, const CSSIntSize aSize,
-                                   bool aUsePlaceholder,
-                                   EncodeCompleteCallback* aEncodeCallback);
+  static nsresult ExtractDataAsync(
+      nsAString& aType, const nsAString& aOptions, bool aUsingCustomOptions,
+      UniquePtr<uint8_t[]> aImageBuffer, int32_t aFormat,
+      const CSSIntSize aSize, CanvasUtils::ImageExtraction aExtractionBehavior,
+      EncodeCompleteCallback* aEncodeCallback);
 
   
   
@@ -67,7 +68,7 @@ class ImageEncoder {
   
   static nsresult ExtractDataFromLayersImageAsync(
       nsAString& aType, const nsAString& aOptions, bool aUsingCustomOptions,
-      layers::Image* aImage, bool aUsePlaceholder,
+      layers::Image* aImage, CanvasUtils::ImageExtraction aExtractionBehavior,
       EncodeCompleteCallback* aEncodeCallback);
 
   
@@ -83,8 +84,9 @@ class ImageEncoder {
   
   static nsresult ExtractDataInternal(
       const nsAString& aType, const nsAString& aOptions, uint8_t* aImageBuffer,
-      int32_t aFormat, const CSSIntSize aSize, bool aUsePlaceholder,
-      layers::Image* aImage, nsICanvasRenderingContextInternal* aContext,
+      int32_t aFormat, const CSSIntSize aSize,
+      CanvasUtils::ImageExtraction aExtractionBehavior, layers::Image* aImage,
+      nsICanvasRenderingContextInternal* aContext,
       OffscreenCanvasDisplayHelper* aOffscreenDisplay, nsIInputStream** aStream,
       imgIEncoder* aEncoder);
 

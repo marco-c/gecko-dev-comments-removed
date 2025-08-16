@@ -113,6 +113,7 @@ class nsICanvasRenderingContextInternal : public nsISupports,
 
   
   virtual mozilla::UniquePtr<uint8_t[]> GetImageBuffer(
+      mozilla::CanvasUtils::ImageExtraction aExtractionBehavior,
       int32_t* out_format, mozilla::gfx::IntSize* out_imageSize) = 0;
 
   
@@ -123,6 +124,7 @@ class nsICanvasRenderingContextInternal : public nsISupports,
   
   NS_IMETHOD GetInputStream(const char* mimeType,
                             const nsAString& encoderOptions,
+                            mozilla::CanvasUtils::ImageExtraction spoofing,
                             nsIInputStream** stream) = 0;
 
   

@@ -60,16 +60,16 @@ bool HasDrawWindowPrivilege(JSContext* aCx, JSObject* aObj);
 bool IsOffscreenCanvasEnabled(JSContext* aCx, JSObject* aObj);
 
 
-uint32_t GetCanvasExtractDataPermission(nsIPrincipal& aPrincipal);
+uint32_t GetCanvasExtractDataPermission(nsIPrincipal* aPrincipal);
 
 
 bool IsImageExtractionAllowed(dom::Document* aDocument, JSContext* aCx,
-                              nsIPrincipal& aPrincipal);
+                              nsIPrincipal* aPrincipal);
 
 bool IsImageExtractionAllowed(dom::OffscreenCanvas* aOffscreenCanvas,
-                              JSContext* aCx, nsIPrincipal& aPrincipal);
+                              JSContext* aCx, nsIPrincipal* aPrincipal);
 
-uint32_t GetCanvasExtractDataPermission(nsIPrincipal& aPrincipal);
+uint32_t GetCanvasExtractDataPermission(nsIPrincipal* aPrincipal);
 
 enum class ImageExtraction {
   Unrestricted,
@@ -80,9 +80,9 @@ enum class ImageExtraction {
 
 
 ImageExtraction ImageExtractionResult(dom::HTMLCanvasElement* aCanvasElement,
-                                      JSContext* aCx, nsIPrincipal& aPrincipal);
+                                      JSContext* aCx, nsIPrincipal* aPrincipal);
 ImageExtraction ImageExtractionResult(dom::OffscreenCanvas* aOffscreenCanvas,
-                                      JSContext* aCx, nsIPrincipal& aPrincipal);
+                                      JSContext* aCx, nsIPrincipal* aPrincipal);
 
 
 
