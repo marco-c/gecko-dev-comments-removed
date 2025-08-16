@@ -2322,6 +2322,7 @@
       let unpinnedRect = window.windowUtils.getBoundsWithoutFlushing(
         this.arrowScrollbox.scrollbox
       );
+      let tabContainerRect = window.windowUtils.getBoundsWithoutFlushing(this);
 
       if (this.pinnedTabsContainer.firstChild) {
         this.pinnedTabsContainer.scrollbox.style.height =
@@ -2366,14 +2367,7 @@
       
       
       
-      const startingPosition = this.dragToPinPromoCard.shouldRender
-        ? window.windowUtils.getBoundsWithoutFlushing(this.dragToPinPromoCard)
-            .height
-        : 0;
-      
-      
-      
-      let position = startingPosition;
+      let position = 0;
       
       for (let movingTab of movingTabs.slice(movingTabsIndex)) {
         movingTab = elementToMove(movingTab);
@@ -2395,10 +2389,7 @@
           position += rect.width;
         } else if (this.verticalMode) {
           movingTab.style.top =
-            rect.top -
-            (gBrowser.pinnedTabCount > 0 ? pinnedRect.top : unpinnedRect.top) +
-            position +
-            "px";
+            rect.top - tabContainerRect.top + position + "px";
           position += rect.height;
         } else if (this.#rtlMode) {
           movingTab.style.left =
@@ -2412,11 +2403,11 @@
       }
       
       if (this.verticalMode) {
-        position = startingPosition - rect.height;
+        position = -rect.height;
       } else if (this.#rtlMode) {
-        position = 0 + rect.width;
+        position = rect.width;
       } else {
-        position = 0 - rect.width;
+        position = -rect.width;
       }
       
       for (let movingTab of movingTabs.slice(0, movingTabsIndex).reverse()) {
@@ -2424,10 +2415,7 @@
         movingTab.setAttribute("dragtarget", "");
         if (this.verticalMode) {
           movingTab.style.top =
-            rect.top -
-            (gBrowser.pinnedTabCount > 0 ? pinnedRect.top : unpinnedRect.top) +
-            position +
-            "px";
+            rect.top - tabContainerRect.top + position + "px";
           position -= rect.height;
         } else if (this.#rtlMode) {
           movingTab.style.left =
@@ -3176,7 +3164,7 @@
           delete dragData.shouldCreateGroupOnDrop;
           delete dragData.shouldDropIntoCollapsedTabGroup;
 
-          
+          // Default to dropping into `dropElement`'s tab group, if it exists.
           let dropElementGroup = dropElement?.group;
           let colorCode = dropElementGroup?.color;
 
@@ -3190,21 +3178,21 @@
             !dropBefore &&
             overlapPercent < dragOverGroupingThreshold
           ) {
-            
-            
+            // Dragging tab over the last tab of a tab group, but not enough
+            // for it to drop into the tab group. Drop it after the tab group instead.
             dropElement = dropElementGroup;
             colorCode = undefined;
           } else if (isTabGroupLabel(dropElement)) {
             if (dropBefore) {
-              
+              // Dropping right before the tab group.
               dropElement = dropElementGroup;
               colorCode = undefined;
             } else if (dropElementGroup.collapsed) {
-              
+              // Dropping right after the collapsed tab group.
               dropElement = dropElementGroup;
               colorCode = undefined;
             } else {
-              
+              // Dropping right before the first tab in the tab group.
               dropElement = dropElementGroup.tabs[0];
               dropBefore = true;
             }
@@ -3227,8 +3215,8 @@
       dragData.dropBefore = dropBefore;
       dragData.animDropElementIndex = newDropElementIndex;
 
-      
-      
+      // Shift background tabs to leave a gap where the dragged tab
+      // would currently be dropped.
       for (let item of tabs) {
         if (item == draggedTab) {
           continue;
@@ -3249,14 +3237,14 @@
       translate,
       draggedTab,
     }) {
-      
-      
-      
+      // Display the pinned drop indicator based on the position of the moving tabs.
+      // If the indicator is not yet shown, display once we are within a pinned tab width/height
+      // distance.
       let firstMovingTabPosition = firstMovingTabScreen + translate;
       let lastMovingTabPosition = lastMovingTabScreen + translate;
-      
-      
-      
+      // Approximation of pinned tabs width and height in horizontal or grid mode (40) is a sufficient
+      // buffer to display the pinned drop indicator slightly before dragging over it. Exact value is
+      // not necessary.
       let buffer = 40;
       let inPinnedRange = this.#rtlMode
         ? lastMovingTabPosition >= pinnedTabsStartEdge
