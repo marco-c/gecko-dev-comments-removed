@@ -95,7 +95,7 @@ enum class ObjectFlag : uint32_t {
 
   
   
-  HasPreservedWrapperDummy = 1 << 16,
+  HasPreservedWrapper = 1 << 16,
 
   
   
