@@ -17,6 +17,10 @@
 #include "nsCompatibility.h"
 #include "nsICSSDeclaration.h"
 
+
+
+#include "nsCSSProps.h"
+
 class nsIPrincipal;
 struct JSContext;
 class JSObject;

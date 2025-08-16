@@ -11,6 +11,10 @@
 #include "nsDOMCSSDeclaration.h"
 #include "nsICSSDeclaration.h"
 
+
+
+#include "nsCSSProps.h"
+
 namespace mozilla {
 class DeclarationBlock;
 
