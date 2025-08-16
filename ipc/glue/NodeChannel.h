@@ -72,7 +72,7 @@ class NodeChannel final : public IPC::Channel::Listener {
     virtual void OnChannelError(const NodeName& aFromNode) = 0;
   };
 
-  NodeChannel(const NodeName& aName, UniquePtr<IPC::Channel> aChannel,
+  NodeChannel(const NodeName& aName, IPC::Channel* aChannel,
               Listener* aListener,
               base::ProcessId aPid = base::kInvalidProcessId,
               GeckoChildProcessHost* aChildProcessHost = nullptr);
@@ -156,7 +156,7 @@ class NodeChannel final : public IPC::Channel::Listener {
   
   
   
-  const mozilla::UniquePtr<IPC::Channel> mChannel;
+  const RefPtr<IPC::Channel> mChannel;
 
   
   

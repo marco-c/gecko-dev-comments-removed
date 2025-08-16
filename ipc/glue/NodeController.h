@@ -92,14 +92,13 @@ class NodeController final : public mojo::core::ports::NodeDelegate,
   
   
   std::tuple<ScopedPort, RefPtr<NodeChannel>> InviteChildProcess(
-      UniquePtr<IPC::Channel> aChannel,
-      GeckoChildProcessHost* aChildProcessHost);
+      IPC::Channel* aChannel, GeckoChildProcessHost* aChildProcessHost);
 
   
   static void InitBrokerProcess();
 
   
-  static ScopedPort InitChildProcess(UniquePtr<IPC::Channel> aChannel,
+  static ScopedPort InitChildProcess(IPC::Channel* aChannel,
                                      base::ProcessId aParentPid);
 
   
