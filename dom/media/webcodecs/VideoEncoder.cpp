@@ -280,12 +280,11 @@ EncoderConfig VideoEncoderConfigInternal::ToEncoderConfig() const {
   
   
   
-  EncoderConfig::SampleFormat format;
+  EncoderConfig::SampleFormat format(usage == Usage::Realtime
+                                         ? dom::ImageBitmapFormat::YUV420P
+                                         : dom::ImageBitmapFormat::BGRA32);
   if (usage == Usage::Realtime) {
-    format.mPixelFormat = ImageBitmapFormat::YUV420P;
     format.mColorSpace.mRange.emplace(gfx::ColorRange::LIMITED);
-  } else {
-    format.mPixelFormat = ImageBitmapFormat::BGRA32;
   }
   return EncoderConfig(codecType, {mWidth, mHeight}, usage, format,
                        SaturatingCast<uint32_t>(mFramerate.refOr(0.f)), 0,
