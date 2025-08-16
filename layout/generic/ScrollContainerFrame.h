@@ -535,8 +535,8 @@ class ScrollContainerFrame : public nsContainerFrame,
 
 
 
-  void CurPosAttributeChanged(nsIContent* aChild) {
-    return CurPosAttributeChangedInternal(aChild);
+  void ScrollbarCurPosChanged(nsIContent* aChild) {
+    return ScrollbarCurPosChangedInternal(aChild);
   }
 
   
@@ -1120,31 +1120,17 @@ class ScrollContainerFrame : public nsContainerFrame,
 
 
 
-  void CurPosAttributeChangedInternal(nsIContent*, bool aDoScroll = true);
+  void ScrollbarCurPosChangedInternal(nsIContent*, bool aDoScroll = true);
 
   void PostScrollEvent();
   MOZ_CAN_RUN_SCRIPT void FireScrollEvent();
   void PostScrolledAreaEvent();
   MOZ_CAN_RUN_SCRIPT void FireScrolledAreaEvent();
 
-  
-
-
-  void FinishReflowForScrollbar(Element* aElement, nscoord aMinXY,
+  void FinishReflowForScrollbar(nsScrollbarFrame*, nscoord aMinXY,
                                 nscoord aMaxXY, nscoord aCurPosXY,
-                                nscoord aPageIncrement, nscoord aIncrement);
-  
-
-
-  void SetScrollbarEnabled(Element* aElement, nscoord aMaxPos);
-  
-
-
-  void SetCoordAttribute(Element* aElement, nsAtom* aAtom, nscoord aSize);
-
-  nscoord GetCoordAttribute(nsIFrame* aFrame, nsAtom* aAtom,
-                            nscoord aDefaultValue, nscoord* aRangeStart,
-                            nscoord* aRangeLength);
+                                nscoord aPageIncrement);
+  void ActivityOccurred();
 
   nsRect GetLayoutScrollRange() const;
   
