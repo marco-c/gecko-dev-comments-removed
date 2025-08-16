@@ -243,7 +243,7 @@ nsresult nsFileChannel::Init() {
   NS_ENSURE_STATE(mLoadInfo);
 
   RefPtr<nsHttpHandler> handler = nsHttpHandler::GetInstance();
-  MOZ_ALWAYS_SUCCEEDS(handler->NewChannelId(mChannelId));
+  mChannelId = handler->NewChannelId();
 
   
   

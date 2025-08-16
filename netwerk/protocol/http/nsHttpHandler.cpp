@@ -2076,13 +2076,10 @@ nsresult nsHttpHandler::SetupChannelInternal(
 
   uint32_t caps = mCapabilities;
 
-  uint64_t channelId;
-  nsresult rv = NewChannelId(channelId);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = httpChannel->Init(uri, caps, proxyInfo, proxyResolveFlags, proxyURI,
-                         channelId, aLoadInfo->GetExternalContentPolicyType(),
-                         aLoadInfo);
+  uint64_t channelId = NewChannelId();
+  nsresult rv = httpChannel->Init(
+      uri, caps, proxyInfo, proxyResolveFlags, proxyURI, channelId,
+      aLoadInfo->GetExternalContentPolicyType(), aLoadInfo);
   if (NS_FAILED(rv)) return rv;
 
   httpChannel.forget(result);
@@ -2637,14 +2634,12 @@ void nsHttpHandler::ShutdownConnectionManager() {
   }
 }
 
-nsresult nsHttpHandler::NewChannelId(uint64_t& channelId) {
-  channelId =
-      
-      
-      
-      
-      ((mUniqueProcessId << 31) & 0xFFFFFFFF80000000LL) | mNextChannelId++;
-  return NS_OK;
+uint64_t nsHttpHandler::NewChannelId() {
+  
+  
+  
+  
+  return ((mUniqueProcessId << 31) & 0xFFFFFFFF80000000LL) | mNextChannelId++;
 }
 
 void nsHttpHandler::NotifyActiveTabLoadOptimization() {
