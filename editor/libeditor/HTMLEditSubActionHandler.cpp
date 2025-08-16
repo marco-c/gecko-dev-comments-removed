@@ -7034,8 +7034,14 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::AlignBlockContentsWithDivElement(
 
   
   
-  nsCOMPtr<nsIContent> firstEditableContent = HTMLEditUtils::GetFirstChild(
-      aBlockElement, {WalkTreeOption::IgnoreNonEditableNode});
+  
+  
+
+  
+  
+  const nsCOMPtr<nsIContent> firstEditableContent =
+      HTMLEditUtils::GetFirstChild(aBlockElement,
+                                   {WalkTreeOption::IgnoreNonEditableNode});
   if (!firstEditableContent) {
     
     return EditorDOMPoint();
@@ -7043,10 +7049,14 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::AlignBlockContentsWithDivElement(
 
   
   
-  nsCOMPtr<nsIContent> lastEditableContent = HTMLEditUtils::GetLastChild(
+  const nsCOMPtr<nsIContent> lastEditableContent = HTMLEditUtils::GetLastChild(
       aBlockElement, {WalkTreeOption::IgnoreNonEditableNode});
   if (firstEditableContent == lastEditableContent &&
       firstEditableContent->IsHTMLElement(nsGkAtoms::div)) {
+    
+    
+    
+    
     nsresult rv = SetAttributeOrEquivalent(
         MOZ_KnownLive(firstEditableContent->AsElement()), nsGkAtoms::align,
         aAlignType, false);
@@ -7065,57 +7075,50 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::AlignBlockContentsWithDivElement(
   }
 
   
-  
-  
-  Result<CreateElementResult, nsresult> createNewDivElementResult =
+  Result<CreateElementResult, nsresult> createNewDivElementResultOrError =
       CreateAndInsertElement(
           WithTransaction::Yes, *nsGkAtoms::div,
           EditorDOMPoint(&aBlockElement, 0u),
           
-          [&aAlignType](HTMLEditor& aHTMLEditor, Element& aDivElement,
-                        const EditorDOMPoint&) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
+          [&](HTMLEditor& aHTMLEditor, Element& aDivElement,
+              const EditorDOMPoint&) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
             MOZ_ASSERT(!aDivElement.IsInComposedDoc());
             
             
             nsresult rv = aHTMLEditor.SetAttributeOrEquivalent(
                 &aDivElement, nsGkAtoms::align, aAlignType, false);
-            NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                                 "EditorBase::SetAttributeOrEquivalent("
-                                 "nsGkAtoms::align, \"...\", false) failed");
-            return rv;
+            if (NS_FAILED(rv)) {
+              NS_WARNING(
+                  "EditorBase::SetAttributeOrEquivalent(nsGkAtoms::align, "
+                  "\"...\", false) failed");
+              return rv;
+            }
+            if (!aBlockElement.HasChildren()) {
+              return NS_OK;
+            }
+            
+            
+            
+            Result<MoveNodeResult, nsresult> moveChildrenResultOrError =
+                aHTMLEditor.MoveSiblingsWithTransaction(
+                    *firstEditableContent, *lastEditableContent,
+                    EditorDOMPoint(&aDivElement, 0));
+            if (MOZ_UNLIKELY(moveChildrenResultOrError.isErr())) {
+              NS_WARNING_ASSERTION(
+                  moveChildrenResultOrError.isOk(),
+                  "HTMLEditor::MoveSiblingsWithTransaction() failed");
+              return moveChildrenResultOrError.unwrapErr();
+            }
+            moveChildrenResultOrError.unwrap().IgnoreCaretPointSuggestion();
+            return NS_OK;
           });
-  if (MOZ_UNLIKELY(createNewDivElementResult.isErr())) {
+  if (MOZ_UNLIKELY(createNewDivElementResultOrError.isErr())) {
     NS_WARNING(
         "HTMLEditor::CreateAndInsertElement(WithTransaction::Yes, "
         "nsGkAtoms::div) failed");
-    return createNewDivElementResult.propagateErr();
+    return createNewDivElementResultOrError.propagateErr();
   }
-  CreateElementResult unwrappedCreateNewDivElementResult =
-      createNewDivElementResult.unwrap();
-  EditorDOMPoint pointToPutCaret =
-      unwrappedCreateNewDivElementResult.UnwrapCaretPoint();
-  RefPtr<Element> newDivElement =
-      unwrappedCreateNewDivElementResult.UnwrapNewNode();
-  MOZ_ASSERT(newDivElement);
-  
-  
-  
-  
-  while (lastEditableContent && (lastEditableContent != newDivElement)) {
-    Result<MoveNodeResult, nsresult> moveNodeResult = MoveNodeWithTransaction(
-        *lastEditableContent, EditorDOMPoint(newDivElement, 0u));
-    if (MOZ_UNLIKELY(moveNodeResult.isErr())) {
-      NS_WARNING("HTMLEditor::MoveNodeWithTransaction() failed");
-      return moveNodeResult.propagateErr();
-    }
-    MoveNodeResult unwrappedMoveNodeResult = moveNodeResult.unwrap();
-    if (unwrappedMoveNodeResult.HasCaretPointSuggestion()) {
-      pointToPutCaret = unwrappedMoveNodeResult.UnwrapCaretPoint();
-    }
-    lastEditableContent = HTMLEditUtils::GetLastChild(
-        aBlockElement, {WalkTreeOption::IgnoreNonEditableNode});
-  }
-  return pointToPutCaret;
+  return createNewDivElementResultOrError.unwrap().UnwrapCaretPoint();
 }
 
 Result<EditorRawDOMRange, nsresult>
