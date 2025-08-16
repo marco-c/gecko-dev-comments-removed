@@ -70,18 +70,18 @@ std::optional<std::wstring> get_object_name() {
   std::wstring product = L"firefox-stub";
 #elif defined(MOZ_BRANDING_IS_NIGHTLY)
   
-  std::wstring product = L"firefox-nightly-latest-ssl";
+  std::wstring product = L"firefox-nightly-stub";
 #elif defined(MOZ_BRANDING_IS_BETA)
   
-  std::wstring product = L"firefox-beta-latest-ssl";
+  std::wstring product = L"firefox-beta-stub";
 #elif defined(MOZ_BRANDING_IS_DEVEDITION)
   
-  std::wstring product = L"firefox-devedition-latest-ssl";
+  std::wstring product = L"firefox-devedition-stub";
 #elif defined(MOZ_BRANDING_IS_UNOFFICIAL)
   
   
   
-  std::wstring product = L"firefox-nightly-latest-ssl";
+  std::wstring product = L"firefox-nightly-stub";
 #else
   
   static_assert(false);
