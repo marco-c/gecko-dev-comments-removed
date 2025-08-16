@@ -7479,6 +7479,9 @@ already_AddRefed<PresShell> Document::CreatePresShell(
     presShell->SetAuthorStyleDisabled(bc->Top()->AuthorStyleDisabledDefault());
   }
 
+  
+  
+  MaybeEditingStateChanged();
   return presShell.forget();
 }
 
