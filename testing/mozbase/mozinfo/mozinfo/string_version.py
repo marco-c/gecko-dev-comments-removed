@@ -52,7 +52,7 @@ class StringVersion(str):
 
     def __hash__(self):
         
-        return hash("".join(self.version))
+        return hash(self.version)
 
     
     def __eq__(self, other):

@@ -2,7 +2,6 @@
 
 
 
-import functools
 import re
 import sys
 import traceback
@@ -182,36 +181,6 @@ class ParseError(Exception):
     """error parsing conditional expression"""
 
 
-
-
-@functools.lru_cache(maxsize=None)  
-def scan(text):
-    if not ExpressionParser.scanner:
-        ExpressionParser.scanner = re.Scanner(
-            [
-                
-                (r"true|false", bool_token),
-                (r"[a-zA-Z_]\w*", ident_token),
-                (r"[0-9]+", int_token),
-                (r'("[^"]*")|(\'[^\']*\')', string_token),
-                (r"==", eq_op_token()),
-                (r"!=", neq_op_token()),
-                (r"<=", le_op_token()),
-                (r">=", ge_op_token()),
-                (r"<", lt_op_token()),
-                (r">", gt_op_token()),
-                (r"\|\|", or_op_token()),
-                (r"!", not_op_token()),
-                (r"&&", and_op_token()),
-                (r"\(", lparen_token()),
-                (r"\)", rparen_token()),
-                (r"\s+", None),  
-            ]
-        )
-    tokens, _ = ExpressionParser.scanner.scan(text)
-    return tokens
-
-
 class ExpressionParser:
     r"""
     A parser for a simple expression language.
@@ -261,7 +230,30 @@ class ExpressionParser:
         """
         Lex the input text into tokens and yield them in sequence.
         """
-        for t in scan(self.text):
+        if not ExpressionParser.scanner:
+            ExpressionParser.scanner = re.Scanner(
+                [
+                    
+                    (r"true|false", bool_token),
+                    (r"[a-zA-Z_]\w*", ident_token),
+                    (r"[0-9]+", int_token),
+                    (r'("[^"]*")|(\'[^\']*\')', string_token),
+                    (r"==", eq_op_token()),
+                    (r"!=", neq_op_token()),
+                    (r"<=", le_op_token()),
+                    (r">=", ge_op_token()),
+                    (r"<", lt_op_token()),
+                    (r">", gt_op_token()),
+                    (r"\|\|", or_op_token()),
+                    (r"!", not_op_token()),
+                    (r"&&", and_op_token()),
+                    (r"\(", lparen_token()),
+                    (r"\)", rparen_token()),
+                    (r"\s+", None),  
+                ]
+            )
+        tokens, remainder = ExpressionParser.scanner.scan(self.text)
+        for t in tokens:
             yield t
         yield end_token()
 
@@ -320,9 +312,6 @@ class ExpressionParser:
     __call__ = parse
 
 
-
-
-@functools.lru_cache(maxsize=None)  
 def parse(text, strict=False, **values):
     """
     Parse and evaluate a boolean expression.
