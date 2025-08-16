@@ -206,6 +206,21 @@ extern "C" {
   __PASTE(CK_,name) name;
 
 
+struct CK_FUNCTION_LIST_3_2 {
+
+  CK_VERSION    version;  
+
+
+
+
+
+#include "pkcs11f.h"
+
+};
+
+#define CK_PKCS11_3_0_ONLY 1   /* don't include the 3.2 and later functions */
+
+
 struct CK_FUNCTION_LIST_3_0 {
 
   CK_VERSION    version;  
@@ -218,7 +233,9 @@ struct CK_FUNCTION_LIST_3_0 {
 
 };
 
-#define CK_PKCS11_2_0_ONLY 1
+#undef CK_PKCS11_3_0_ONLY
+
+#define CK_PKCS11_2_0_ONLY 1   /* don't include the 3.0 and later functions */
 
 
 struct CK_FUNCTION_LIST {
