@@ -1301,18 +1301,23 @@ class nsDisplayListBuilder {
 
   class MOZ_RAII AutoPageNumberSetter {
    public:
-    AutoPageNumberSetter(nsDisplayListBuilder* aBuilder, const uint8_t aPageNum)
+    AutoPageNumberSetter(nsDisplayListBuilder* aBuilder, int32_t aPageNum,
+                         bool aAvoidBuildingDuplicateOofs = false)
         : mBuilder(aBuilder),
-          mOldPageNum(aBuilder->GetBuildingExtraPagesForPageNum()) {
-      mBuilder->SetBuildingExtraPagesForPageNum(aPageNum);
+          mOldPageNum(aBuilder->GetBuildingPageNum()),
+          mOldAvoid(aBuilder->AvoidBuildingDuplicateOofs()) {
+      mBuilder->SetBuildingPageNum(
+          uint8_t(std::min(aPageNum, 255)),
+          aAvoidBuildingDuplicateOofs || aPageNum > 255);
     }
     ~AutoPageNumberSetter() {
-      mBuilder->SetBuildingExtraPagesForPageNum(mOldPageNum);
+      mBuilder->SetBuildingPageNum(mOldPageNum, mOldAvoid);
     }
 
    private:
     nsDisplayListBuilder* mBuilder;
     uint8_t mOldPageNum;
+    bool mOldAvoid;
   };
 
   
@@ -1622,12 +1627,16 @@ class nsDisplayListBuilder {
     mBuildingInvisibleItems = aBuildingInvisibleItems;
   }
 
-  void SetBuildingExtraPagesForPageNum(uint8_t aPageNum) {
-    mBuildingExtraPagesForPageNum = aPageNum;
+  void SetBuildingPageNum(uint8_t aPageNum, bool aAvoidBuildingDuplicateOofs) {
+    mBuildingPageNum = aPageNum;
+    mAvoidBuildingDuplicateOofs = aAvoidBuildingDuplicateOofs;
   }
-  uint8_t GetBuildingExtraPagesForPageNum() const {
-    return mBuildingExtraPagesForPageNum;
+
+  bool AvoidBuildingDuplicateOofs() const {
+    return mAvoidBuildingDuplicateOofs;
   }
+
+  uint8_t GetBuildingPageNum() const { return mBuildingPageNum; }
 
   bool HitTestIsForVisibility() const { return mVisibleThreshold.isSome(); }
 
@@ -1915,7 +1924,7 @@ class nsDisplayListBuilder {
 
   Preserves3DContext mPreserves3DCtx;
 
-  uint8_t mBuildingExtraPagesForPageNum;
+  uint8_t mBuildingPageNum = 0;
 
   nsDisplayListBuilderMode mMode;
   static uint32_t sPaintSequenceNumber;
@@ -1967,6 +1976,15 @@ class nsDisplayListBuilder {
 
   bool mIsReusingStackingContextItems;
   bool mIsDestroying;
+  
+  
+  
+  
+  
+  
+  
+  
+  bool mAvoidBuildingDuplicateOofs = false;
 
   Maybe<layers::ScrollDirection> mCurrentScrollbarDirection;
 };
@@ -2045,7 +2063,7 @@ MOZ_ALWAYS_INLINE T* MakeDisplayItemWithIndex(nsDisplayListBuilder* aBuilder,
   }
 
   item->SetPerFrameIndex(aIndex);
-  item->SetExtraPageForPageNum(aBuilder->GetBuildingExtraPagesForPageNum());
+  item->SetPageNum(aBuilder->GetBuildingPageNum());
 
   nsPaintedDisplayItem* paintedItem = item->AsPaintedDisplayItem();
   if (paintedItem) {
@@ -2225,7 +2243,7 @@ class nsDisplayItem {
     
     
     
-    return (static_cast<uint32_t>(mExtraPageForPageNum)
+    return (static_cast<uint32_t>(mPageNum)
             << (TYPE_BITS + (sizeof(mPerFrameIndex) * 8))) |
            (static_cast<uint32_t>(mPerFrameIndex) << TYPE_BITS) |
            static_cast<uint32_t>(mType);
@@ -2337,7 +2355,7 @@ class nsDisplayItem {
       : mFrame(aOther.mFrame),
         mItemFlags(aOther.mItemFlags),
         mType(aOther.mType),
-        mExtraPageForPageNum(aOther.mExtraPageForPageNum),
+        mPageNum(aOther.mPageNum),
         mPerFrameIndex(aOther.mPerFrameIndex),
         mBuildingRect(aOther.mBuildingRect),
         mToReferenceFrame(aOther.mToReferenceFrame),
@@ -2367,9 +2385,7 @@ class nsDisplayItem {
   
   
   
-  void SetExtraPageForPageNum(const uint8_t aPageNum) {
-    mExtraPageForPageNum = aPageNum;
-  }
+  void SetPageNum(uint8_t aPageNum) { mPageNum = aPageNum; }
 
   void SetDeletedFrame();
 
@@ -2899,7 +2915,7 @@ class nsDisplayItem {
 
   EnumSet<ItemFlag, uint16_t> mItemFlags;              
   DisplayItemType mType = DisplayItemType::TYPE_ZERO;  
-  uint8_t mExtraPageForPageNum = 0;                    
+  uint8_t mPageNum = 0;                                
   uint16_t mPerFrameIndex = 0;                         
   ReuseState mReuseState = ReuseState::None;
   OldListIndex mOldListIndex;  
