@@ -120,6 +120,8 @@ END_TEST(testWeakCacheMapToNonGCThing)
 
 BEGIN_TEST(testWeakCacheMapToObject) {
   AutoLeaveZeal leaveZeal(cx);
+  AutoGCParameter enableIncremental(cx, JSGC_INCREMENTAL_GC_ENABLED, true);
+
   CHECK((test<HeapPtr<JSObject*>, HeapPtr<JSObject*>>(cx)));
   CHECK((test<JS::Heap<JSObject*>, JS::Heap<JSObject*>>(cx)));
   return true;
@@ -157,6 +159,24 @@ bool test(JSContext* cx) {
   
   CHECK(cache.has(nullptr));
   CHECK_EQUAL(cache.count(), size_t(2));
+
+#ifdef JS_GC_ZEAL
+  
+  
+  JS::SetGCZeal(cx, 10, 100);
+  for (size_t i = 0; i < 1000; i++) {
+    Rooted<JSObject*> key(cx);
+    Rooted<JSObject*> value(cx);
+    key = JS_NewPlainObject(cx);
+    CHECK(key);
+    value = JS_NewPlainObject(cx);
+    CHECK(value);
+    CHECK(cache.put(key, value));
+  }
+  JS::SetGCZeal(cx, 0, 0);
+  JS_GC(cx);
+  CHECK_EQUAL(cache.count(), size_t(2));
+#endif 
 
   return true;
 }
