@@ -36,6 +36,12 @@ class CocoaCompositorWidget : public CompositorWidget {
   
   RefPtr<layers::NativeLayerRoot> GetNativeLayerRoot() override;
 
+  already_AddRefed<gfx::DrawTarget> StartRemoteDrawingInRegion(
+      const LayoutDeviceIntRegion& aInvalidRegion) override;
+  void EndRemoteDrawingInRegion(
+      gfx::DrawTarget* aDrawTarget,
+      const LayoutDeviceIntRegion& aInvalidRegion) override;
+
   LayoutDeviceIntSize GetClientSize() override;
 
   void NotifyClientSizeChanged(const LayoutDeviceIntSize& aClientSize);
