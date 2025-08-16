@@ -336,12 +336,11 @@ IPCResult CookieServiceParent::SetCookies(
 
   
   
-  mProcessingCookie = true;
+  CookieProcessingGuard guard(this);
 
   bool ok = mCookieService->SetCookiesFromIPC(aBaseDomain, aOriginAttributes,
                                               aHost, aFromHttp, aIsThirdParty,
                                               aCookies, aBrowsingContext);
-  mProcessingCookie = false;
   return ok ? IPC_OK() : IPC_FAIL(this, "Invalid cookie received.");
 }
 

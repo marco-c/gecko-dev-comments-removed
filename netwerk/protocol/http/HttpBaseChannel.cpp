@@ -3593,7 +3593,14 @@ NS_IMETHODIMP
 HttpBaseChannel::SetCookieHeaders(const nsTArray<nsCString>& aCookieHeaders) {
   if (mLoadFlags & LOAD_ANONYMOUS) return NS_OK;
 
-  if (IsBrowsingContextDiscarded()) {
+  
+  
+  
+  
+  
+  if (!StaticPrefs::
+          network_cookie_skip_browsing_context_check_in_parent_for_testing() &&
+      IsBrowsingContextDiscarded()) {
     return NS_OK;
   }
 

@@ -112,9 +112,7 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   
   
   
-  
-  
-  void SetCookieHeaders(const nsTArray<nsCString>& aCookieHeaders);
+  void SetCookieChanges(nsTArray<CookieChange>&& aCookieChanges);
 
   using ChildEndpointPromise =
       MozPromise<ipc::Endpoint<extensions::PStreamFilterChild>, bool, true>;
@@ -291,7 +289,7 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
 
   
   
-  nsTArray<nsCString> mCookieHeaders;
+  nsTArray<CookieChange> mCookieChanges;
 
   
   

@@ -79,6 +79,17 @@ struct CookieJarSettingsArgs
 
 
 
+struct CookieChange
+{
+  bool added;
+  CookieStruct cookie;
+  OriginAttributes originAttributes;
+};
+
+
+
+
+
 struct PreferredAlternativeDataTypeParams
 {
   nsCString type;

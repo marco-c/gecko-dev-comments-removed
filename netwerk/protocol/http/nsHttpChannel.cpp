@@ -16,6 +16,7 @@
 #include "mozilla/glean/AntitrackingMetrics.h"
 #include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
+#include "mozilla/net/CookieServiceParent.h"
 #include "mozilla/StoragePrincipalHelper.h"
 
 #include "nsCOMPtr.h"
@@ -29,6 +30,7 @@
 #include "nsICacheStorageService.h"
 #include "nsICacheStorage.h"
 #include "nsICacheEntry.h"
+#include "nsICookieNotification.h"
 #include "nsICryptoHash.h"
 #include "nsIEffectiveTLDService.h"
 #include "nsIHttpHeaderVisitor.h"
@@ -280,6 +282,122 @@ class CookieVisitor final {
  private:
   nsTArray<nsCString> mCookieHeaders;
 };
+
+class CookieObserver final : public nsIObserver,
+                             public nsSupportsWeakReference {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIOBSERVER
+
+  static already_AddRefed<CookieObserver> Create(bool aPrivateBrowsing);
+
+  void StealChanges(nsTArray<CookieChange>& aChanges) {
+    aChanges.SwapElements(mChanges);
+  }
+
+ private:
+  CookieObserver() = default;
+  ~CookieObserver() = default;
+
+  nsTArray<CookieChange> mChanges;
+};
+
+NS_IMPL_ISUPPORTS(CookieObserver, nsIObserver, nsISupportsWeakReference)
+
+
+already_AddRefed<CookieObserver> CookieObserver::Create(bool aPrivateBrowsing) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  RefPtr<CookieObserver> observer = new CookieObserver();
+
+  nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
+  if (NS_WARN_IF(!os)) {
+    return nullptr;
+  }
+
+  nsresult rv = os->AddObserver(
+      observer, aPrivateBrowsing ? "private-cookie-changed" : "cookie-changed",
+      true);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return nullptr;
+  }
+
+  return observer.forget();
+}
+
+NS_IMETHODIMP
+CookieObserver::Observe(nsISupports* aSubject, const char* aTopic,
+                        const char16_t* aData) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  nsCOMPtr<nsICookieNotification> notification = do_QueryInterface(aSubject);
+  NS_ENSURE_TRUE(notification, NS_ERROR_FAILURE);
+
+  nsCOMPtr<nsICookie> xpcCookie;
+  nsresult rv = notification->GetCookie(getter_AddRefs(xpcCookie));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  if (!xpcCookie) {
+    return NS_OK;
+  }
+
+  const Cookie& cookie = xpcCookie->AsCookie();
+
+  nsICookieNotification::Action action = notification->GetAction();
+
+  switch (action) {
+    case nsICookieNotification::COOKIE_DELETED:
+      mChanges.AppendElement(CookieChange{ false, cookie.ToIPC(),
+                                          cookie.OriginAttributesRef()});
+      break;
+
+    case nsICookieNotification::COOKIE_ADDED:
+      [[fallthrough]];
+    case nsICookieNotification::COOKIE_CHANGED:
+      mChanges.AppendElement(CookieChange{ true, cookie.ToIPC(),
+                                          cookie.OriginAttributesRef()});
+      break;
+
+    default:
+      
+      
+      break;
+  }
+
+  return NS_OK;
+}
+
+void MaybeInitializeCookieProcessingGuard(
+    nsHttpChannel* aChannel, CookieServiceParent::CookieProcessingGuard& aGuard,
+    RefPtr<CookieObserver>& aCookieObserver,
+    RefPtr<HttpChannelParent>& aHttpChannelParent) {
+  nsCOMPtr<nsIParentChannel> parentChannel;
+  NS_QueryNotificationCallbacks(aChannel, parentChannel);
+  aHttpChannelParent = do_QueryObject(parentChannel);
+  if (!aHttpChannelParent) {
+    return;
+  }
+
+  aCookieObserver = CookieObserver::Create(NS_UsePrivateBrowsing(aChannel));
+
+  PNeckoParent* neckoParent = aHttpChannelParent->Manager();
+  if (!neckoParent) {
+    return;
+  }
+
+  PCookieServiceParent* csParent =
+      LoneManagedOrNullAsserts(neckoParent->ManagedPCookieServiceParent());
+  CookieServiceParent* cookieServiceParent =
+      static_cast<CookieServiceParent*>(csParent);
+  if (!cookieServiceParent) {
+    return;
+  }
+
+  aGuard.Initialize(cookieServiceParent);
+}
+
 }  
 
 
@@ -1068,12 +1186,28 @@ nsresult nsHttpChannel::HandleOverrideResponse() {
   }
 
   
-  CookieVisitor cookieVisitor(mResponseHead.get());
-  SetCookieHeaders(cookieVisitor.CookieHeaders());
-  nsCOMPtr<nsIParentChannel> parentChannel;
-  NS_QueryNotificationCallbacks(this, parentChannel);
-  if (RefPtr<HttpChannelParent> httpParent = do_QueryObject(parentChannel)) {
-    httpParent->SetCookieHeaders(cookieVisitor.CookieHeaders());
+  
+  {
+    RefPtr<HttpChannelParent> httpParent;
+    RefPtr<CookieObserver> cookieObserver;
+
+    CookieServiceParent::CookieProcessingGuard cookieProcessingGuard;
+    MaybeInitializeCookieProcessingGuard(this, cookieProcessingGuard,
+                                         cookieObserver, httpParent);
+
+    
+    CookieVisitor cookieVisitor(mResponseHead.get());
+    SetCookieHeaders(cookieVisitor.CookieHeaders());
+
+    if (cookieObserver) {
+      nsTArray<CookieChange> cookieChanges;
+      cookieObserver->StealChanges(cookieChanges);
+
+      if (!cookieChanges.IsEmpty()) {
+        MOZ_ASSERT(httpParent);
+        httpParent->SetCookieChanges(std::move(cookieChanges));
+      }
+    }
   }
 
   rv = ProcessSecurityHeaders();
@@ -2783,17 +2917,33 @@ nsresult nsHttpChannel::ContinueProcessResponse1(
   
   if (!(mTransaction && mTransaction->ProxyConnectFailed()) &&
       (httpStatus != 407)) {
-    CookieVisitor cookieVisitor(mResponseHead.get());
-    SetCookieHeaders(cookieVisitor.CookieHeaders());
-    if (!LoadOnStartRequestCalled()) {
-      
-      
-      
-      nsCOMPtr<nsIParentChannel> parentChannel;
-      NS_QueryNotificationCallbacks(this, parentChannel);
-      if (RefPtr<HttpChannelParent> httpParent =
-              do_QueryObject(parentChannel)) {
-        httpParent->SetCookieHeaders(cookieVisitor.CookieHeaders());
+    
+    
+    {
+      RefPtr<CookieObserver> cookieObserver;
+      RefPtr<HttpChannelParent> httpParent;
+      CookieServiceParent::CookieProcessingGuard cookieProcessingGuard;
+
+      if (!LoadOnStartRequestCalled()) {
+        
+        
+        
+
+        MaybeInitializeCookieProcessingGuard(this, cookieProcessingGuard,
+                                             cookieObserver, httpParent);
+      }
+
+      CookieVisitor cookieVisitor(mResponseHead.get());
+      SetCookieHeaders(cookieVisitor.CookieHeaders());
+
+      if (cookieObserver) {
+        nsTArray<CookieChange> cookieChanges;
+        cookieObserver->StealChanges(cookieChanges);
+
+        if (!cookieChanges.IsEmpty()) {
+          MOZ_ASSERT(httpParent);
+          httpParent->SetCookieChanges(std::move(cookieChanges));
+        }
       }
     }
 
