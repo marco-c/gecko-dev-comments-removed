@@ -3073,6 +3073,7 @@ class SubarrayReplacer : public MDefinitionVisitorDefaultNoop {
   void visitTypedArrayElementSize(MTypedArrayElementSize* ins);
   void visitTypedArrayFill(MTypedArrayFill* ins);
   void visitTypedArraySet(MTypedArraySet* ins);
+  void visitTypedArraySubarray(MTypedArraySubarray* ins);
   void visitUnbox(MUnbox* ins);
 
   
@@ -3387,6 +3388,29 @@ void SubarrayReplacer::visitTypedArraySet(MTypedArraySet* ins) {
   ins->block()->discard(ins);
 }
 
+void SubarrayReplacer::visitTypedArraySubarray(MTypedArraySubarray* ins) {
+  
+  if (!isSubarrayOrGuard(ins->object())) {
+    return;
+  }
+
+  
+  auto* newStart =
+      MAdd::New(alloc(), subarray()->start(), ins->start(), MIRType::IntPtr);
+  ins->block()->insertBefore(ins, newStart);
+
+  auto* replacement = MTypedArraySubarray::New(
+      alloc(), subarray()->object(), newStart, ins->length(),
+      ins->templateObject(), ins->initialHeap());
+  ins->block()->insertBefore(ins, replacement);
+
+  
+  ins->replaceAllUsesWith(replacement);
+
+  
+  ins->block()->discard(ins);
+}
+
 
 bool SubarrayReplacer::escapes(MInstruction* ins) const {
   MOZ_ASSERT(ins->type() == MIRType::Object);
@@ -3452,6 +3476,7 @@ bool SubarrayReplacer::escapes(MInstruction* ins) const {
       case MDefinition::Opcode::TypedArrayElementSize:
       case MDefinition::Opcode::TypedArrayFill:
       case MDefinition::Opcode::TypedArraySet:
+      case MDefinition::Opcode::TypedArraySubarray:
         break;
 
       
