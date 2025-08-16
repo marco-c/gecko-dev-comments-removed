@@ -490,7 +490,7 @@ class ElementStyle {
 
       
       if (textProp.editor && this.unusedCssEnabled) {
-        textProp.editor.updatePropertyState();
+        textProp.editor.updateUI();
       }
     }
   }
