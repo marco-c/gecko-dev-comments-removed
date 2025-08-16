@@ -23,52 +23,9 @@ const TERMINATE_EXIT_CODE = 0x7f;
 
 let io;
 
-
-
-
-
-
-
-
-
-
-
-
-class IOCPKeyGen {
-  
-  static IOCP_KEY_IS_PIPE = 1 << 31;
-  static IOCP_KEY_IS_PROC = 1 << 30;
-
-  static keyForPipe(pipe) {
-    
-    return (IOCPKeyGen.IOCP_KEY_IS_PIPE | pipe.id) >>> 0;
-  }
-  static keyForProcess(process) {
-    
-    return (IOCPKeyGen.IOCP_KEY_IS_PROC | process.id) >>> 0;
-  }
-
-  static isPipeKey(completionKey) {
-    return !!(IOCPKeyGen.IOCP_KEY_IS_PIPE & completionKey);
-  }
-  static isProcessKey(completionKey) {
-    return !!(IOCPKeyGen.IOCP_KEY_IS_PROC & completionKey);
-  }
-
-  
-  static pipeIdFromKey(completionKey) {
-    return (~IOCPKeyGen.IOCP_KEY_IS_PIPE & completionKey) >>> 0;
-  }
-  
-  static processIdFromKey(completionKey) {
-    return (~IOCPKeyGen.IOCP_KEY_IS_PROC & completionKey) >>> 0;
-  }
-}
-
 let nextPipeId = 0;
 
 class Pipe extends BasePipe {
-  
   constructor(process, origHandle) {
     super();
 
@@ -92,24 +49,21 @@ class Pipe extends BasePipe {
 
     this.handle = win32.Handle(handle);
 
-    this.overlapped = win32.OVERLAPPED();
+    let event = libc.CreateEventW(null, false, false, null);
 
-    let ok = libc.CreateIoCompletionPort(
-      handle,
-      io.iocpCompletionPort,
-      IOCPKeyGen.keyForPipe(this),
-      0 
-    );
-    if (!ok) {
-      
-      debug(`Failed to associate IOCP: ${ctypes.winLastError}`);
-    }
+    this.overlapped = win32.OVERLAPPED();
+    this.overlapped.hEvent = event;
+
+    this._event = win32.Handle(event);
 
     this.buffer = null;
   }
 
-  hasPendingIO() {
-    return !!this.pending.length;
+  get event() {
+    if (this.pending.length) {
+      return this._event;
+    }
+    return null;
   }
 
   maybeClose() {}
@@ -142,6 +96,7 @@ class Pipe extends BasePipe {
 
     if (!this.closed) {
       this.handle.dispose();
+      this._event.dispose();
 
       io.pipes.delete(this.id);
 
@@ -372,11 +327,38 @@ class OutputPipe extends Pipe {
   }
 }
 
+class Signal {
+  constructor(event) {
+    this.event = event;
+  }
+
+  cleanup() {
+    libc.CloseHandle(this.event);
+    this.event = null;
+  }
+
+  onError() {
+    io.shutdown();
+  }
+
+  onReady() {
+    io.messageCount += 1;
+  }
+}
+
 class Process extends BaseProcess {
   constructor(...args) {
     super(...args);
 
     this.killed = false;
+  }
+
+  
+
+
+
+  get event() {
+    return this.handle;
   }
 
   
@@ -590,29 +572,9 @@ class Process extends BaseProcess {
         ctypes.cast(info.address(), ctypes.voidptr_t),
         info.constructor.size
       );
-      if (!ok) {
-        errorMessage = `Failed to set job limits: 0x${(
-          ctypes.winLastError || 0
-        ).toString(16)}`;
-      }
-    }
-
-    if (ok) {
-      let acp = win32.JOBOBJECT_ASSOCIATE_COMPLETION_PORT();
-      acp.CompletionKey = win32.PVOID(IOCPKeyGen.keyForProcess(this));
-      acp.CompletionPort = io.iocpCompletionPort;
-
-      ok = libc.SetInformationJobObject(
-        this.jobHandle,
-        win32.JobObjectAssociateCompletionPortInformation,
-        ctypes.cast(acp.address(), ctypes.voidptr_t),
-        acp.constructor.size
-      );
-      if (!ok) {
-        errorMessage = `Failed to set IOCP: 0x${(
-          ctypes.winLastError || 0
-        ).toString(16)}`;
-      }
+      errorMessage = `Failed to set job limits: 0x${(
+        ctypes.winLastError || 0
+      ).toString(16)}`;
     }
 
     if (ok) {
@@ -682,9 +644,6 @@ class Process extends BaseProcess {
       this.handle.dispose();
       this.handle = null;
 
-      
-      
-      
       libc.TerminateJobObject(this.jobHandle, TERMINATE_EXIT_CODE);
       this.jobHandle.dispose();
       this.jobHandle = null;
@@ -701,7 +660,8 @@ class Process extends BaseProcess {
 }
 
 io = {
-  iocpCompletionPort: null,
+  events: null,
+  eventHandlers: null,
 
   pipes: new Map(),
 
@@ -716,12 +676,11 @@ io = {
   init(details) {
     this.comspec = details.comspec;
 
-    
-    
-    this.iocpCompletionPort = ctypes.cast(
-      ctypes.uintptr_t(details.iocpCompletionPort),
+    let signalEvent = ctypes.cast(
+      ctypes.uintptr_t(details.signalEvent),
       win32.HANDLE
     );
+    this.signal = new Signal(signalEvent);
     this.updatePollEvents();
 
     setTimeout(this.loop.bind(this), 0);
@@ -730,6 +689,9 @@ io = {
   shutdown() {
     if (this.running) {
       this.running = false;
+
+      this.signal.cleanup();
+      this.signal = null;
 
       self.postMessage({ msg: "close" });
       self.close();
@@ -757,29 +719,28 @@ io = {
   },
 
   updatePollEvents() {
-    let shouldPoll = false;
-    if (this.processes.size) {
-      
-      
-      shouldPoll = true;
-    } else {
-      for (let pipe of this.pipes.values()) {
-        if (pipe.hasPendingIO()) {
-          shouldPoll = true;
-          break;
-        }
-      }
-    }
+    let handlers = [
+      this.signal,
+      ...this.pipes.values(),
+      ...this.processes.values(),
+    ];
+
+    handlers = handlers.filter(handler => handler.event);
 
     
     
-    if (!shouldPoll) {
+    if (handlers.length == 1) {
       this.polling = false;
     } else if (!this.polling && this.running) {
       
       setTimeout(this.loop.bind(this), 0);
       this.polling = true;
     }
+
+    this.eventHandlers = handlers;
+
+    let handles = handlers.map(handler => handler.event);
+    this.events = win32.HANDLE.array()(handles);
   },
 
   loop() {
@@ -790,107 +751,28 @@ io = {
   },
 
   poll() {
-    
-    
     let timeout = this.messageCount > 0 ? 0 : POLL_TIMEOUT;
     for (; ; timeout = 0) {
-      let numberOfBytesTransferred = win32.DWORD();
-      let completionKeyOut = win32.ULONG_PTR();
-      let lpOverlapped = win32.OVERLAPPED.ptr(0);
-      let ok = libc.GetQueuedCompletionStatus(
-        io.iocpCompletionPort,
-        numberOfBytesTransferred.address(),
-        completionKeyOut.address(),
-        lpOverlapped.address(),
+      let events = this.events;
+      let handlers = this.eventHandlers;
+
+      let result = libc.WaitForMultipleObjects(
+        events.length,
+        events,
+        false,
         timeout
       );
 
-      const deqWinErr = ok ? 0 : ctypes.winLastError;
-      if (!ok) {
-        if (deqWinErr === win32.WAIT_TIMEOUT) {
-          
-          break;
-        }
-        if (deqWinErr === win32.ERROR_ABANDONED_WAIT_0) {
-          
-          io.shutdown();
-          break;
-        }
-        if (lpOverlapped.isNull()) {
-          
-          
-          continue;
-        }
-        
-      }
-      let completionKey = parseInt(completionKeyOut.value, 10);
-      if (completionKey === win32.IOCP_COMPLETION_KEY_WAKE_WORKER) {
-        
-        io.messageCount += 1;
-        
-        
-        continue;
-      }
-      if (IOCPKeyGen.isPipeKey(completionKey)) {
-        const pipeId = IOCPKeyGen.pipeIdFromKey(completionKey);
-        const pipe = io.pipes.get(pipeId);
-        if (!pipe) {
-          debug(`IOCP notification for unknown pipe: ${pipeId}`);
-          continue;
-        }
-        if (deqWinErr === win32.ERROR_BROKEN_PIPE) {
-          pipe.onError();
-          continue;
-        }
+      if (result < handlers.length) {
         try {
-          pipe.onReady();
+          handlers[result].onReady();
         } catch (e) {
           console.error(e);
           debug(`Worker error: ${e} :: ${e.stack}`);
-          pipe.onError();
-        }
-      } else if (IOCPKeyGen.isProcessKey(completionKey)) {
-        
-        
-        
-        const jobMsgId = numberOfBytesTransferred.value;
-        const processId = IOCPKeyGen.processIdFromKey(completionKey);
-
-        
-        
-        
-        
-        
-        const isExit =
-          jobMsgId === win32.JOB_OBJECT_MSG_ABNORMAL_EXIT_PROCESS ||
-          jobMsgId === win32.JOB_OBJECT_MSG_EXIT_PROCESS;
-        const isJobZero = jobMsgId === win32.JOB_OBJECT_MSG_ACTIVE_PROCESS_ZERO;
-        if (!isExit && !isJobZero) {
-          
-          continue;
-        }
-        const process = io.processes.get(processId);
-        if (!process) {
-          
-          
-          continue;
-        }
-        if (isExit) {
-          let realPid = ctypes.cast(lpOverlapped, win32.DWORD).value;
-          if (process.pid !== realPid) {
-            
-            continue;
-          }
-        }
-        try {
-          process.onReady();
-        } catch (e) {
-          
-          console.error(e);
-          debug(`Worker error: ${e} :: ${e.stack}`);
+          handlers[result].onError();
         }
       } else {
-        debug(`Unexpected IOCP CompletionKey: ${completionKey}`);
+        break;
       }
     }
   },

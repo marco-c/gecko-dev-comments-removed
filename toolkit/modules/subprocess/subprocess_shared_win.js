@@ -87,7 +87,6 @@ Object.assign(win32, {
   ERROR_HANDLE_EOF: 38,
   ERROR_BROKEN_PIPE: 109,
   ERROR_INSUFFICIENT_BUFFER: 122,
-  ERROR_ABANDONED_WAIT_0: 735,
 
   FILE_ATTRIBUTE_NORMAL: 0x00000080,
   FILE_FLAG_OVERLAPPED: 0x40000000,
@@ -109,14 +108,10 @@ Object.assign(win32, {
 
   PROC_THREAD_ATTRIBUTE_HANDLE_LIST: 0x00020002,
 
-  JobObjectAssociateCompletionPortInformation: 7,
   JobObjectBasicLimitInformation: 2,
   JobObjectExtendedLimitInformation: 9,
 
   JOB_OBJECT_LIMIT_BREAKAWAY_OK: 0x00000800,
-  JOB_OBJECT_MSG_ABNORMAL_EXIT_PROCESS: 8,
-  JOB_OBJECT_MSG_ACTIVE_PROCESS_ZERO: 4,
-  JOB_OBJECT_MSG_EXIT_PROCESS: 7,
 
   
   
@@ -125,6 +120,7 @@ Object.assign(win32, {
   STD_ERROR_HANDLE: -12 + 0x100000000,
 
   WAIT_TIMEOUT: 0x00000102,
+  WAIT_FAILED: 0xffffffff,
 });
 
 Object.assign(win32, {
@@ -154,10 +150,6 @@ Object.assign(win32, {
 });
 
 Object.assign(win32, {
-  JOBOBJECT_ASSOCIATE_COMPLETION_PORT: new ctypes.StructType(
-    "JOBOBJECT_ASSOCIATE_COMPLETION_PORT",
-    [{ CompletionKey: win32.PVOID }, { CompletionPort: win32.HANDLE }]
-  ),
   JOBOBJECT_EXTENDED_LIMIT_INFORMATION: new ctypes.StructType(
     "JOBOBJECT_EXTENDED_LIMIT_INFORMATION",
     [
@@ -230,6 +222,15 @@ var libc = new Library("libc", LIBC_CHOICES, {
 
   CloseHandle: [win32.WINAPI, win32.BOOL, win32.HANDLE ],
 
+  CreateEventW: [
+    win32.WINAPI,
+    win32.HANDLE,
+    win32.SECURITY_ATTRIBUTES.ptr ,
+    win32.BOOL ,
+    win32.BOOL ,
+    win32.LPWSTR ,
+  ],
+
   CreateFileW: [
     win32.WINAPI,
     win32.HANDLE,
@@ -240,15 +241,6 @@ var libc = new Library("libc", LIBC_CHOICES, {
     win32.DWORD ,
     win32.DWORD ,
     win32.HANDLE ,
-  ],
-
-  CreateIoCompletionPort: [
-    win32.WINAPI,
-    win32.HANDLE,
-    win32.HANDLE ,
-    win32.HANDLE ,
-    win32.ULONG_PTR ,
-    win32.DWORD ,
   ],
 
   CreateJobObjectW: [
@@ -293,6 +285,15 @@ var libc = new Library("libc", LIBC_CHOICES, {
     win32.LPCWSTR ,
     win32.STARTUPINFOW.ptr ,
     win32.PROCESS_INFORMATION.ptr ,
+  ],
+
+  CreateSemaphoreW: [
+    win32.WINAPI,
+    win32.HANDLE,
+    win32.SECURITY_ATTRIBUTES.ptr ,
+    win32.LONG ,
+    win32.LONG ,
+    win32.LPCWSTR ,
   ],
 
   DeleteProcThreadAttributeList: [
@@ -341,16 +342,6 @@ var libc = new Library("libc", LIBC_CHOICES, {
     win32.BOOL ,
   ],
 
-  GetQueuedCompletionStatus: [
-    win32.WINAPI,
-    win32.BOOL,
-    win32.HANDLE ,
-    win32.LPDWORD ,
-    win32.ULONG_PTR.ptr ,
-    win32.OVERLAPPED.ptr.ptr ,
-    win32.DWORD ,
-  ],
-
   GetStdHandle: [win32.WINAPI, win32.HANDLE, win32.DWORD ],
 
   InitializeProcThreadAttributeList: [
@@ -362,15 +353,6 @@ var libc = new Library("libc", LIBC_CHOICES, {
     win32.PSIZE_T ,
   ],
 
-  PostQueuedCompletionStatus: [
-    win32.WINAPI,
-    win32.BOOL,
-    win32.HANDLE ,
-    win32.DWORD ,
-    win32.ULONG_PTR ,
-    win32.OVERLAPPED.ptr ,
-  ],
-
   ReadFile: [
     win32.WINAPI,
     win32.BOOL,
@@ -379,6 +361,14 @@ var libc = new Library("libc", LIBC_CHOICES, {
     win32.DWORD ,
     win32.LPDWORD ,
     win32.OVERLAPPED.ptr ,
+  ],
+
+  ReleaseSemaphore: [
+    win32.WINAPI,
+    win32.BOOL,
+    win32.HANDLE ,
+    win32.LONG ,
+    win32.LONG.ptr ,
   ],
 
   ResumeThread: [win32.WINAPI, win32.DWORD, win32.HANDLE ],
@@ -418,6 +408,23 @@ var libc = new Library("libc", LIBC_CHOICES, {
     win32.PSIZE_T ,
   ],
 
+  WaitForMultipleObjects: [
+    win32.WINAPI,
+    win32.DWORD,
+    win32.DWORD ,
+    win32.HANDLE.ptr ,
+    win32.BOOL ,
+    win32.DWORD ,
+  ],
+
+  WaitForSingleObject: [
+    win32.WINAPI,
+    win32.DWORD,
+    win32.HANDLE ,
+    win32.BOOL ,
+    win32.DWORD ,
+  ],
+
   WriteFile: [
     win32.WINAPI,
     win32.BOOL,
@@ -428,10 +435,6 @@ var libc = new Library("libc", LIBC_CHOICES, {
     win32.OVERLAPPED.ptr ,
   ],
 });
-
-
-
-win32.IOCP_COMPLETION_KEY_WAKE_WORKER = 1;
 
 let nextNamedPipeId = 0;
 
