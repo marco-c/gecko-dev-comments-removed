@@ -250,7 +250,7 @@ function updateCertStatus() {
     document.getElementById("viewCertButton").disabled = false;
 
     
-    Services.obs.notifyObservers(null, "cert-exception-ui-ready");
+    Services.obs.notifyObservers(window, "cert-exception-ui-ready");
   } else if (gChecking) {
     shortDesc = "add-exception-checking-short";
     longDesc = "add-exception-checking-long";
@@ -325,7 +325,9 @@ function addException() {
 
 
 function inPrivateBrowsingMode() {
-  return PrivateBrowsingUtils.isWindowPrivate(window);
+  return window.isChromeWindow
+    ? PrivateBrowsingUtils.isWindowPrivate(window)
+    : PrivateBrowsingUtils.isContentWindowPrivate(window);
 }
 
 window.addEventListener("load", () => initExceptionDialog());
