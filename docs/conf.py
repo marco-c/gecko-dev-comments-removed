@@ -91,7 +91,11 @@ js_source_path = [
     "../toolkit/components/prompts/src",
     "../toolkit/components/pictureinpicture",
     "../toolkit/components/pictureinpicture/content",
-    "../toolkit/components/search",
+    
+    
+    
+    
+    "../toolkit/components/search/SearchService.sys.mjs",
     "../toolkit/components/uniffi-bindgen-gecko-js/components/generated",
 ]
 root_for_relative_js_paths = ".."
