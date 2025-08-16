@@ -227,7 +227,7 @@ class nsIContent : public nsINode {
 
 
 
-  virtual const mozilla::dom::CharacterDataBuffer* GetText() = 0;
+  virtual const mozilla::dom::CharacterDataBuffer* GetCharacterDataBuffer() = 0;
 
   
 

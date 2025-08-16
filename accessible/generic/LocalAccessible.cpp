@@ -3870,8 +3870,9 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
                 
                 
                 
-                const char16_t contentChar = mContent->GetText()->CharAt(
-                    charData.Length() / kNumbersInRect);
+                const char16_t contentChar =
+                    mContent->GetCharacterDataBuffer()->CharAt(
+                        charData.Length() / kNumbersInRect);
                 if (contentChar == u' ' || contentChar == u'\t' ||
                     contentChar == u'\n') {
                   continue;

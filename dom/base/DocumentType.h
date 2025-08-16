@@ -41,7 +41,7 @@ class DocumentType final : public CharacterData {
                             mozilla::ErrorResult& aError) override {}
 
   
-  virtual const CharacterDataBuffer* GetText() override;
+  virtual const CharacterDataBuffer* GetCharacterDataBuffer() override;
 
   virtual already_AddRefed<CharacterData> CloneDataNode(
       mozilla::dom::NodeInfo* aNodeInfo, bool aCloneText) const override;
