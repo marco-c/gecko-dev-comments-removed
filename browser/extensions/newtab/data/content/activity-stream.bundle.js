@@ -13120,6 +13120,8 @@ const FocusTimer = ({
     }
     setProgress(0);
   }, [arcRef]);
+  const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
+  const showSystemNotifications = prefs["widgets.focusTimer.showSystemNotifications"];
 
   
   
@@ -13340,10 +13342,29 @@ const FocusTimer = ({
       sel.addRange(range);
     }
   };
+  function handleLearnMore() {
+    dispatch(actionCreators.OnlyToMain({
+      type: actionTypes.OPEN_LINK,
+      data: {
+        url: "https://support.mozilla.org/kb/firefox-new-tab-widgets"
+      }
+    }));
+  }
+  function handlePrefUpdate(prefName, prefValue) {
+    dispatch(actionCreators.OnlyToMain({
+      type: actionTypes.SET_PREF,
+      data: {
+        name: prefName,
+        value: prefValue
+      }
+    }));
+  }
   return timerData ? external_React_default().createElement("article", {
     className: "focus-timer"
   }, external_React_default().createElement("div", {
     className: "focus-timer-tabs"
+  }, external_React_default().createElement("div", {
+    className: "focus-timer-tabs-buttons"
   }, external_React_default().createElement("moz-button", {
     type: timerType === "focus" ? "primary" : "ghost",
     "data-l10n-id": "newtab-widget-timer-mode-focus",
@@ -13353,6 +13374,28 @@ const FocusTimer = ({
     "data-l10n-id": "newtab-widget-timer-mode-break",
     onClick: () => toggleType("break")
   })), external_React_default().createElement("div", {
+    className: "focus-timer-context-menu-wrapper"
+  }, external_React_default().createElement("moz-button", {
+    className: "focus-timer-context-menu-button",
+    iconSrc: "chrome://global/skin/icons/more.svg",
+    menuId: "focus-timer-context-menu",
+    type: "ghost"
+  }), external_React_default().createElement("panel-list", {
+    id: "focus-timer-context-menu"
+  }, external_React_default().createElement("panel-item", {
+    "data-l10n-id": showSystemNotifications ? "newtab-widget-timer-menu-notifications" : "newtab-widget-timer-menu-notifications-on",
+    onClick: () => {
+      handlePrefUpdate("widgets.focusTimer.showSystemNotifications", !showSystemNotifications);
+    }
+  }), external_React_default().createElement("panel-item", {
+    "data-l10n-id": "newtab-widget-timer-menu-hide",
+    onClick: () => {
+      handlePrefUpdate("widgets.focusTimer.enabled", false);
+    }
+  }), external_React_default().createElement("panel-item", {
+    "data-l10n-id": "newtab-widget-timer-menu-learn-more",
+    onClick: handleLearnMore
+  })))), external_React_default().createElement("div", {
     role: "progress",
     className: `progress-circle-wrapper${progressVisible ? " visible" : ""}`
   }, external_React_default().createElement("div", {
