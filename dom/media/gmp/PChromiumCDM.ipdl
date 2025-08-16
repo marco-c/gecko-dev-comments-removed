@@ -106,7 +106,8 @@ parent:
   async ResolveLoadSessionPromise(uint32_t aPromiseId, bool aSuccessful);
 
   
-  async Decrypted(uint32_t aId, uint32_t aStatus, Shmem aDecryptedData);
+  async DecryptedShmem(uint32_t aId, uint32_t aStatus, Shmem aData);
+  async DecryptedData(uint32_t aId, uint32_t aStatus, uint8_t[] aData);
   async DecryptFailed(uint32_t aId, uint32_t aStatus);
 
   async OnDecoderInitDone(uint32_t aStatus);
