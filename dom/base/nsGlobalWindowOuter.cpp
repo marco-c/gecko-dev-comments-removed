@@ -6275,7 +6275,8 @@ void nsGlobalWindowOuter::UpdateCommands(const nsAString& anAction) {
   
   if (nsIDocShell* docShell = GetDocShell()) {
     if (nsCOMPtr<nsIBrowserChild> child = docShell->GetBrowserChild()) {
-      if (nsCOMPtr<nsPIWindowRoot> root = GetTopWindowRoot()) {
+      nsCOMPtr<nsPIWindowRoot> root = GetTopWindowRoot();
+      if (root) {
         nsContentUtils::AddScriptRunner(
             new ChildCommandDispatcher(root, child, this, anAction));
       }
@@ -6443,12 +6444,6 @@ Location* nsGlobalWindowOuter::GetLocation() {
 void nsGlobalWindowOuter::SetIsBackground(bool aIsBackground) {
   const bool changed = aIsBackground != IsBackground();
   SetIsBackgroundInternal(aIsBackground);
-
-  if (changed) {
-    
-    
-    UpdateCommands(u"focus"_ns);
-  }
 
   nsGlobalWindowInner* inner = GetCurrentInnerWindowInternal(this);
   if (!inner) {
