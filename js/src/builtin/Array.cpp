@@ -5423,7 +5423,7 @@ static JSObject* CreateArrayConstructor(JSContext* cx, JSProtoKey key) {
   if (!ctor) {
     return nullptr;
   }
-  if (!JSObject::setHasFuseProperty(cx, ctor)) {
+  if (!JSObject::setHasRealmFuseProperty(cx, ctor)) {
     return nullptr;
   }
   return ctor;
@@ -5471,7 +5471,8 @@ static bool array_proto_finish(JSContext* cx, JS::HandleObject ctor,
   }
 
   
-  return JSObject::setHasFuseProperty(cx, proto);
+  
+  return JSObject::setHasRealmFuseProperty(cx, proto);
 }
 
 static const JSClassOps ArrayObjectClassOps = {

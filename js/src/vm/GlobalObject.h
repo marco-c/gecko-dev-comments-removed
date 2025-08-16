@@ -1209,20 +1209,20 @@ JSObject* GenericCreatePrototype(JSContext* cx, JSProtoKey key) {
 
 
 
-enum class WhichHasFuseProperty {
+enum class WhichHasRealmFuseProperty {
   Proto,
   ProtoAndCtor,
 };
 
-template <WhichHasFuseProperty FuseProperty>
+template <WhichHasRealmFuseProperty FuseProperty>
 inline bool GenericFinishInit(JSContext* cx, HandleObject ctor,
                               HandleObject proto) {
-  if constexpr (FuseProperty == WhichHasFuseProperty::ProtoAndCtor) {
-    if (!JSObject::setHasFuseProperty(cx, ctor)) {
+  if constexpr (FuseProperty == WhichHasRealmFuseProperty::ProtoAndCtor) {
+    if (!JSObject::setHasRealmFuseProperty(cx, ctor)) {
       return false;
     }
   }
-  return JSObject::setHasFuseProperty(cx, proto);
+  return JSObject::setHasRealmFuseProperty(cx, proto);
 }
 
 inline JSProtoKey StandardProtoKeyOrNull(const JSObject* obj) {

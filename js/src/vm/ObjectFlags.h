@@ -84,7 +84,8 @@ enum class ObjectFlag : uint32_t {
 
   
   
-  HasFuseProperty = 1 << 14,
+  
+  HasRealmFuseProperty = 1 << 14,
 
   
   

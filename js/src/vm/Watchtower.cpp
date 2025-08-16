@@ -548,7 +548,7 @@ static void MaybePopTypedArrayPrototypeFuses(JSContext* cx, NativeObject* obj,
   }
 }
 
-static void MaybePopFuses(JSContext* cx, NativeObject* obj, jsid id) {
+static void MaybePopRealmFuses(JSContext* cx, NativeObject* obj, jsid id) {
   
   MaybePopArrayConstructorFuses(cx, obj, id);
 
@@ -619,8 +619,8 @@ bool Watchtower::watchPropertyRemoveSlow(JSContext* cx,
     obj->as<GlobalObject>().bumpGenerationCount();
   }
 
-  if (MOZ_UNLIKELY(obj->hasFuseProperty())) {
-    MaybePopFuses(cx, obj, id);
+  if (MOZ_UNLIKELY(obj->hasRealmFuseProperty())) {
+    MaybePopRealmFuses(cx, obj, id);
   }
 
   if (MOZ_UNLIKELY(obj->useWatchtowerTestingLog())) {
@@ -686,8 +686,8 @@ void Watchtower::watchPropertyValueChangeSlow(
     return;
   }
 
-  if (MOZ_UNLIKELY(obj->hasFuseProperty())) {
-    MaybePopFuses(cx, obj, id);
+  if (MOZ_UNLIKELY(obj->hasRealmFuseProperty())) {
+    MaybePopRealmFuses(cx, obj, id);
   }
 
   
