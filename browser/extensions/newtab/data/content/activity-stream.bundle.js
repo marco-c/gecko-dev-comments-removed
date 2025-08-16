@@ -12747,6 +12747,13 @@ function Lists({
       }
     }));
   }
+
+  
+  (0,external_React_namespaceObject.useEffect)(() => {
+    prevCompletedCount.current = selectedList?.completed?.length || 0;
+    
+    
+  }, [selected]);
   (0,external_React_namespaceObject.useEffect)(() => {
     if (selectedList) {
       const doneCount = selectedList.completed?.length || 0;
@@ -12757,7 +12764,7 @@ function Lists({
       }
       prevCompletedCount.current = doneCount;
     }
-  }, [selectedList, fireConfetti]);
+  }, [selectedList, fireConfetti, selected]);
   if (!lists) {
     return null;
   }
