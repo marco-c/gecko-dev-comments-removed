@@ -7849,7 +7849,9 @@ HTMLEditor::CreateOrChangeFormatContainerElement(
   
   RefPtr<Element> pendingBRElementToMoveCurBlock;
   EditorDOMPoint pointToPutCaret;
-  for (auto& content : aArrayOfContents) {
+  for (size_t i = 0; i < aArrayOfContents.Length(); i++) {
+    const OwningNonNull<nsIContent>& content = aArrayOfContents[i];
+
     EditorDOMPoint atContent(content);
     if (NS_WARN_IF(!atContent.IsInContentNode())) {
       
@@ -7861,11 +7863,47 @@ HTMLEditor::CreateOrChangeFormatContainerElement(
       continue;
     }
 
+    const auto IsSameFormatBlockOrNonEditableBlock =
+        [&aNewFormatTagName](const nsIContent& aContent) {
+          return aContent.IsHTMLElement(&aNewFormatTagName) ||
+                 (!EditorUtils::IsEditableContent(aContent, EditorType::HTML) &&
+                  HTMLEditUtils::IsBlockElement(
+                      aContent, BlockInlineCheck::UseHTMLDefaultStyle));
+        };
+
+    const auto IsMozDivOrFormatBlock =
+        [&aFormatBlockMode](const nsIContent& aContent) {
+          return HTMLEditUtils::IsMozDiv(&aContent) ||
+                 HTMLEditor::IsFormatElement(aFormatBlockMode, aContent);
+        };
+
+    const auto IsNewFormatBlockRequired = [](const nsIContent& aContent) {
+      return HTMLEditUtils::IsTable(&aContent) ||
+             HTMLEditUtils::IsAnyListElement(&aContent) ||
+             aContent.IsAnyOfHTMLElements(
+                 nsGkAtoms::tbody, nsGkAtoms::tr, nsGkAtoms::td, nsGkAtoms::li,
+                 nsGkAtoms::blockquote, nsGkAtoms::div);
+    };
+
+    const auto IsMovableInlineContent = [&aNewFormatTagName](
+                                            const nsIContent& aContent) {
+      return HTMLEditUtils::IsInlineContent(
+                 aContent, BlockInlineCheck::UseHTMLDefaultStyle) &&
+             
+             !(&aNewFormatTagName == nsGkAtoms::pre &&
+               !EditorUtils::IsEditableContent(aContent, EditorType::HTML));
+    };
+
+    const auto IsMovableInlineContentSibling = [&](const nsIContent& aContent) {
+      return !IsSameFormatBlockOrNonEditableBlock(aContent) &&
+             !IsMozDivOrFormatBlock(aContent) &&
+             !IsNewFormatBlockRequired(aContent) &&
+             !aContent.IsHTMLElement(nsGkAtoms::br) &&
+             IsMovableInlineContent(aContent);
+    };
+
     
-    if (content->IsHTMLElement(&aNewFormatTagName) ||
-        (!EditorUtils::IsEditableContent(content, EditorType::HTML) &&
-         HTMLEditUtils::IsBlockElement(
-             content, BlockInlineCheck::UseHTMLDefaultStyle))) {
+    if (IsSameFormatBlockOrNonEditableBlock(content)) {
       
       curBlock = nullptr;
       pendingBRElementToMoveCurBlock = nullptr;
@@ -7876,8 +7914,7 @@ HTMLEditor::CreateOrChangeFormatContainerElement(
     
     
     
-    if (HTMLEditUtils::IsMozDiv(content) ||
-        HTMLEditor::IsFormatElement(aFormatBlockMode, content)) {
+    if (IsMozDivOrFormatBlock(content)) {
       
       curBlock = nullptr;
       pendingBRElementToMoveCurBlock = nullptr;
@@ -7912,11 +7949,7 @@ HTMLEditor::CreateOrChangeFormatContainerElement(
       continue;
     }
 
-    if (HTMLEditUtils::IsTable(content) ||
-        HTMLEditUtils::IsAnyListElement(content) ||
-        content->IsAnyOfHTMLElements(nsGkAtoms::tbody, nsGkAtoms::tr,
-                                     nsGkAtoms::td, nsGkAtoms::li,
-                                     nsGkAtoms::blockquote, nsGkAtoms::div)) {
+    if (IsNewFormatBlockRequired(content)) {
       
       curBlock = nullptr;
       pendingBRElementToMoveCurBlock = nullptr;
@@ -8030,82 +8063,82 @@ HTMLEditor::CreateOrChangeFormatContainerElement(
       continue;
     }
 
-    if (HTMLEditUtils::IsInlineContent(content,
-                                       BlockInlineCheck::UseHTMLDefaultStyle)) {
+    if (!IsMovableInlineContent(content)) {
       
-      
-      
-      
-      
-      
-      
-      if (&aNewFormatTagName == nsGkAtoms::pre &&
-          !EditorUtils::IsEditableContent(content, EditorType::HTML)) {
-        
-        continue;
-      }
-
-      
-      if (!curBlock) {
-        Result<CreateElementResult, nsresult> createNewBlockElementResult =
-            InsertElementWithSplittingAncestorsWithTransaction(
-                aNewFormatTagName, atContent, BRElementNextToSplitPoint::Keep,
-                aEditingHost);
-        if (MOZ_UNLIKELY(createNewBlockElementResult.isErr())) {
-          NS_WARNING(nsPrintfCString("HTMLEditor::"
-                                     "InsertElementWithSplittingAncestorsWith"
-                                     "Transaction(%s) failed",
-                                     nsAtomCString(&aNewFormatTagName).get())
-                         .get());
-          return createNewBlockElementResult;
-        }
-        CreateElementResult unwrappedCreateNewBlockElementResult =
-            createNewBlockElementResult.unwrap();
-        unwrappedCreateNewBlockElementResult.MoveCaretPointTo(
-            pointToPutCaret, {SuggestCaret::OnlyIfHasSuggestion});
-        MOZ_ASSERT(unwrappedCreateNewBlockElementResult.GetNewNode());
-        blockElementToPutCaret =
-            unwrappedCreateNewBlockElementResult.GetNewNode();
-        curBlock = unwrappedCreateNewBlockElementResult.UnwrapNewNode();
-
-        
-        atContent.Set(content);
-        if (NS_WARN_IF(!atContent.IsSet())) {
-          
-          return Err(NS_ERROR_UNEXPECTED);
-        }
-      } else if (pendingBRElementToMoveCurBlock) {
-        Result<CreateElementResult, nsresult> insertBRElementResult =
-            InsertNodeWithTransaction<Element>(
-                *pendingBRElementToMoveCurBlock,
-                EditorDOMPoint::AtEndOf(*curBlock));
-        if (MOZ_UNLIKELY(insertBRElementResult.isErr())) {
-          NS_WARNING("EditorBase::InsertNodeWithTransaction<Element>() failed");
-          return insertBRElementResult.propagateErr();
-        }
-        insertBRElementResult.inspect().IgnoreCaretPointSuggestion();
-        pendingBRElementToMoveCurBlock = nullptr;
-      }
-
-      
-
-      
-      
-      
-      
-      
-      
-      
-      Result<MoveNodeResult, nsresult> moveNodeResult =
-          MoveNodeToEndWithTransaction(MOZ_KnownLive(content), *curBlock);
-      if (MOZ_UNLIKELY(moveNodeResult.isErr())) {
-        NS_WARNING("HTMLEditor::MoveNodeToEndWithTransaction() failed");
-        return moveNodeResult.propagateErr();
-      }
-      MoveNodeResult unwrappedMoveNodeResult = moveNodeResult.unwrap();
-      unwrappedMoveNodeResult.MoveCaretPointTo(
-          pointToPutCaret, {SuggestCaret::OnlyIfHasSuggestion});
+      continue;
     }
+    MOZ_ASSERT(IsMovableInlineContentSibling(content));
+
+    
+    if (!curBlock) {
+      Result<CreateElementResult, nsresult> createNewBlockElementResult =
+          InsertElementWithSplittingAncestorsWithTransaction(
+              aNewFormatTagName, atContent, BRElementNextToSplitPoint::Keep,
+              aEditingHost);
+      if (MOZ_UNLIKELY(createNewBlockElementResult.isErr())) {
+        NS_WARNING(nsPrintfCString("HTMLEditor::"
+                                   "InsertElementWithSplittingAncestorsWith"
+                                   "Transaction(%s) failed",
+                                   nsAtomCString(&aNewFormatTagName).get())
+                       .get());
+        return createNewBlockElementResult;
+      }
+      CreateElementResult unwrappedCreateNewBlockElementResult =
+          createNewBlockElementResult.unwrap();
+      unwrappedCreateNewBlockElementResult.MoveCaretPointTo(
+          pointToPutCaret, {SuggestCaret::OnlyIfHasSuggestion});
+      MOZ_ASSERT(unwrappedCreateNewBlockElementResult.GetNewNode());
+      blockElementToPutCaret =
+          unwrappedCreateNewBlockElementResult.GetNewNode();
+      curBlock = unwrappedCreateNewBlockElementResult.UnwrapNewNode();
+
+      
+      atContent.Set(content);
+      if (NS_WARN_IF(!atContent.IsSet())) {
+        
+        return Err(NS_ERROR_UNEXPECTED);
+      }
+    } else if (pendingBRElementToMoveCurBlock) {
+      Result<CreateElementResult, nsresult> insertBRElementResult =
+          InsertNodeWithTransaction<Element>(
+              *pendingBRElementToMoveCurBlock,
+              EditorDOMPoint::AtEndOf(*curBlock));
+      if (MOZ_UNLIKELY(insertBRElementResult.isErr())) {
+        NS_WARNING("EditorBase::InsertNodeWithTransaction<Element>() failed");
+        return insertBRElementResult.propagateErr();
+      }
+      insertBRElementResult.inspect().IgnoreCaretPointSuggestion();
+      pendingBRElementToMoveCurBlock = nullptr;
+    }
+
+    
+    
+    const OwningNonNull<nsIContent> lastContent = [&]() {
+      nsIContent* lastContent = content;
+      for (; i + 1 < aArrayOfContents.Length(); i++) {
+        const OwningNonNull<nsIContent>& nextContent = aArrayOfContents[i + 1];
+        if (lastContent->GetNextSibling() != nextContent ||
+            !IsMovableInlineContentSibling(nextContent)) {
+          break;
+        }
+        lastContent = nextContent;
+      }
+      return OwningNonNull<nsIContent>(*lastContent);
+    }();
+    
+    
+    
+    
+    Result<MoveNodeResult, nsresult> moveNodeResult =
+        MoveSiblingsToEndWithTransaction(MOZ_KnownLive(content), lastContent,
+                                         *curBlock);
+    if (MOZ_UNLIKELY(moveNodeResult.isErr())) {
+      NS_WARNING("HTMLEditor::MoveSiblingsToEndWithTransaction() failed");
+      return moveNodeResult.propagateErr();
+    }
+    MoveNodeResult unwrappedMoveNodeResult = moveNodeResult.unwrap();
+    unwrappedMoveNodeResult.MoveCaretPointTo(
+        pointToPutCaret, {SuggestCaret::OnlyIfHasSuggestion});
   }
   return blockElementToPutCaret
              ? CreateElementResult(std::move(blockElementToPutCaret),

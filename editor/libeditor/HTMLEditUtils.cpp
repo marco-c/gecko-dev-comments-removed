@@ -626,7 +626,7 @@ bool HTMLEditUtils::IsNamedAnchor(const nsINode* aNode) {
 
 
 
-bool HTMLEditUtils::IsMozDiv(nsINode* aNode) {
+bool HTMLEditUtils::IsMozDiv(const nsINode* aNode) {
   MOZ_ASSERT(aNode);
   return aNode->IsHTMLElement(nsGkAtoms::div) &&
          aNode->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,

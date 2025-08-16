@@ -1928,6 +1928,15 @@ class HTMLEditor final : public EditorBase,
 
 
 
+  [[nodiscard]] inline MOZ_CAN_RUN_SCRIPT Result<MoveNodeResult, nsresult>
+  MoveSiblingsToEndWithTransaction(nsIContent& aFirstContentToMove,
+                                   nsIContent& aLastContentToMove,
+                                   nsINode& aNewContainer);
+
+  
+
+
+
 
 
 
