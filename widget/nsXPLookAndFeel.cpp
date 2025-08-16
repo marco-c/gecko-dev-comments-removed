@@ -766,7 +766,6 @@ Maybe<nscolor> nsXPLookAndFeel::GenericDarkColor(ColorID aID) {
     case ColorID::Fieldtext:
     case ColorID::Infotext:
     case ColorID::Buttontext:  
-                               
     case ColorID::MozComboboxtext:
     case ColorID::MozButtonhovertext:
     case ColorID::MozButtonactivetext:
