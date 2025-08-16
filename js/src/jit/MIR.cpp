@@ -3161,7 +3161,7 @@ void MBinaryArithInstruction::trySpecializeFloat32(TempAllocator& alloc) {
   MOZ_ASSERT(IsNumberType(type()));
 
   
-  if (type() == MIRType::Int32) {
+  if (!IsFloatingPointType(type())) {
     return;
   }
 
