@@ -8,6 +8,10 @@
 
 
 
+ChromeUtils.defineESModuleGetters(this, {
+  EngineURL: "moz-src:///toolkit/components/search/SearchEngine.sys.mjs",
+});
+
 
 const EXPECTED_TELEMETRY_SOURCE = "contextmenu_visual";
 const EXPECTED_TELEMETRY_ACTION = "search";
@@ -29,6 +33,8 @@ const ENGINE_URL =
     "chrome://mochitests/content",
     "https://example.org"
   ) + "searchTelemetry.html";
+
+const NONCONFIG_ENGINE_NAME = "Nonconfig Visual Search Engine";
 
 const SEARCH_CONFIG = [
   {
@@ -107,6 +113,7 @@ add_setup(async function () {
     ],
   });
 
+  
   SearchSERPTelemetry.overrideSearchTelemetryForTests(TEST_PROVIDER_INFO);
   await SearchTestUtils.updateRemoteSettingsConfig(SEARCH_CONFIG);
   await waitForIdle();
@@ -121,6 +128,27 @@ add_setup(async function () {
     engine.partnerCode,
     "test-partner-code",
     "Sanity check: The visual search engine should have a partner code"
+  );
+
+  
+  
+  
+  
+  await SearchTestUtils.installSearchExtension({
+    name: NONCONFIG_ENGINE_NAME,
+    search_url: "https://example.com/nonconfig-engine",
+    search_url_get_params: "q={searchTerms}",
+  });
+  let nonconfigEngine = Services.search.getEngineByName(NONCONFIG_ENGINE_NAME);
+  nonconfigEngine.wrappedJSObject._urls.push(
+    new EngineURL(
+      SearchUtils.URL_TYPE.VISUAL_SEARCH,
+      "GET",
+      "https://example.com/nonconfig-engine-visual",
+      "", 
+      "", 
+      false 
+    )
   );
 
   
@@ -301,6 +329,47 @@ async function doPrivateWindowTest(shouldRecordCounts) {
   await SpecialPowers.popPrefEnv();
 }
 
+
+
+add_task(async function nonconfigEngine() {
+  Services.fog.testResetFOG();
+
+  let engine = Services.search.getEngineByName(NONCONFIG_ENGINE_NAME);
+  Assert.ok(
+    engine.wrappedJSObject.getURLOfType(SearchUtils.URL_TYPE.VISUAL_SEARCH),
+    "Sanity check: Nonconfig engine has a visual search URL"
+  );
+
+  
+  let previousEngine = await Services.search.getDefault();
+  await Services.search.setDefault(
+    engine,
+    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+  );
+
+  await openAndCheckMenu({
+    shouldBeShown: true,
+    expectedEngineNameInLabel: NONCONFIG_ENGINE_NAME,
+  });
+  await closeMenu();
+
+  Assert.equal(
+    Glean.sapImpressionCounts.contextmenuVisual.none.testGetValue(),
+    1,
+    "impressionCounts.contextmenuVisual should be recorded once with name 'none'"
+  );
+  Assert.equal(
+    Glean.sapImpressionCounts.contextmenuVisual[engine.id].testGetValue(),
+    null,
+    "impressionCounts.contextmenuVisual should not be recorded with the engine ID"
+  );
+
+  await Services.search.setDefault(
+    previousEngine,
+    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+  );
+});
+
 async function openMenuAndClickItem({
   expectedEngineNameInLabel = ENGINE_NAME,
   expectedBaseUrl = ENGINE_URL,
@@ -340,9 +409,9 @@ async function openMenuAndClickItem({
 }
 
 async function openAndCheckMenu({
-  win,
   shouldBeShown,
   expectedEngineNameInLabel,
+  win = window,
   selector = "#image",
 }) {
   let menu = win.document.getElementById(CONTEXT_MENU_ID);
@@ -367,12 +436,29 @@ async function openAndCheckMenu({
     "The visual search menuitem should be shown as expected"
   );
   if (shouldBeShown) {
+    let expectedLabel = `Search Image with ${expectedEngineNameInLabel}`;
+    await TestUtils.waitForCondition(
+      () => item.label == expectedLabel,
+      "Waiting for expected label to be set on item: " + expectedLabel
+    );
     Assert.equal(
       item.label,
-      `Search Image with ${expectedEngineNameInLabel}`,
+      expectedLabel,
       "The visual search menuitem should have the expected label"
     );
   }
 
   return { menu, item };
+}
+
+async function closeMenu({ win = window } = {}) {
+  let menu = win.document.getElementById(CONTEXT_MENU_ID);
+  let popupPromise = BrowserTestUtils.waitForEvent(menu, "popuphidden");
+
+  info("Closing context menu");
+  menu.hidePopup();
+
+  info("Waiting for context menu to close");
+  await popupPromise;
+  info("Context menu closed");
 }
