@@ -53,6 +53,11 @@ static inline nsDependentCString ToCString(const std::string_view s) {
   return true;
 }
 
+ bool Instance::ExternalTextureEnabled(JSContext* aCx,
+                                                   JSObject* aObj) {
+  return gfx::gfxVars::AllowWebGPUExternalTexture();
+}
+
 
 already_AddRefed<Instance> Instance::Create(nsIGlobalObject* aOwner) {
   RefPtr<Instance> result = new Instance(aOwner);
