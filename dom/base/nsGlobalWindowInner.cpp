@@ -916,7 +916,6 @@ nsGlobalWindowInner::nsGlobalWindowInner(nsGlobalWindowOuter* aOuterWindow,
       mIsChrome(false),
       mCleanMessageManager(false),
       mNeedsFocus(true),
-      mHasFocus(false),
       mFocusByKeyOccurred(false),
       mDidFireDocElemInserted(false),
       mHasGamepad(false),
@@ -4355,7 +4354,6 @@ void nsGlobalWindowInner::SetFocusedElement(Element* aElement,
     aNeedsFocus = false;
   }
   if (mFocusedElement != aElement) {
-    UpdateCanvasFocus(false, aElement);
     mFocusedElement = aElement;
     
     mFocusMethod = aFocusMethod & nsIFocusManager::METHOD_MASK;
@@ -4402,17 +4400,12 @@ bool nsGlobalWindowInner::TakeFocus(bool aFocus, uint32_t aFocusMethod) {
     mFocusMethod = aFocusMethod & nsIFocusManager::METHOD_MASK;
   }
 
-  if (mHasFocus != aFocus) {
-    mHasFocus = aFocus;
-    UpdateCanvasFocus(true, mFocusedElement);
-  }
-
   
   
   
   
   
-  if (aFocus && mNeedsFocus && mDoc && mDoc->GetRootElement() != nullptr) {
+  if (aFocus && mNeedsFocus && mDoc && mDoc->GetRootElement()) {
     mNeedsFocus = false;
     return true;
   }
@@ -4556,41 +4549,6 @@ nsresult nsGlobalWindowInner::DispatchSyncPopState() {
   ErrorResult err;
   DispatchEvent(*event, err);
   return err.StealNSResult();
-}
-
-
-
-void nsGlobalWindowInner::UpdateCanvasFocus(bool aFocusChanged,
-                                            nsIContent* aNewContent) {
-  
-  nsIDocShell* docShell = GetDocShell();
-  if (!docShell) return;
-
-  bool editable;
-  docShell->GetEditable(&editable);
-  if (editable) return;
-
-  PresShell* presShell = docShell->GetPresShell();
-  if (!presShell || !mDoc) {
-    return;
-  }
-
-  Element* rootElement = mDoc->GetRootElement();
-  if (rootElement) {
-    if ((mHasFocus || aFocusChanged) &&
-        (mFocusedElement == rootElement || aNewContent == rootElement)) {
-      nsCanvasFrame* canvasFrame = presShell->GetCanvasFrame();
-      if (canvasFrame) {
-        canvasFrame->SetHasFocus(mHasFocus && rootElement == aNewContent);
-      }
-    }
-  } else {
-    
-    nsCanvasFrame* canvasFrame = presShell->GetCanvasFrame();
-    if (canvasFrame) {
-      canvasFrame->SetHasFocus(false);
-    }
-  }
 }
 
 already_AddRefed<nsICSSDeclaration> nsGlobalWindowInner::GetComputedStyle(

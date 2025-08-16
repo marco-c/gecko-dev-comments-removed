@@ -1314,7 +1314,6 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   
   
   bool mNeedsFocus : 1;
-  bool mHasFocus : 1;
 
   
   
