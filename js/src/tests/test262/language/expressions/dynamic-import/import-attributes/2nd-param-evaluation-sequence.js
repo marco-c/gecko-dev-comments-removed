@@ -15,7 +15,6 @@
 
 
 
-
 var log = [];
 
 import(log.push('first'), (log.push('second'), undefined))
