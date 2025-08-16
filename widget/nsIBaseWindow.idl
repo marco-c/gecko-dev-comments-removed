@@ -229,6 +229,13 @@ interface nsIBaseWindow : nsISupports
 
 
   [noscript] readonly attribute nsIWidget mainWidget;
+%{C++
+  already_AddRefed<nsIWidget> GetMainWidget() {
+    nsCOMPtr<nsIWidget> widget;
+    GetMainWidget(getter_AddRefs(widget));
+    return widget.forget();
+  }
+%}
 
   
 
