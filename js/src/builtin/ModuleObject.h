@@ -505,9 +505,8 @@ using VisitedModuleSet =
 
 
 struct GraphLoadingStateRecord {
-  explicit GraphLoadingStateRecord(JSContext* cx);
-  GraphLoadingStateRecord(JSContext* cx,
-                          JS::LoadModuleResolvedCallback resolved,
+  GraphLoadingStateRecord() = default;
+  GraphLoadingStateRecord(JS::LoadModuleResolvedCallback resolved,
                           JS::LoadModuleRejectedCallback rejected);
 
   void trace(JSTracer* trc);
