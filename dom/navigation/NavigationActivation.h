@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_NavigationActivation_h___
 #define mozilla_dom_NavigationActivation_h___
 
-#include "nsCOMPtr.h"
 #include "nsISupports.h"
 #include "nsWrapperCache.h"
 
@@ -23,29 +22,16 @@ class NavigationActivation final : public nsISupports, public nsWrapperCache {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(NavigationActivation)
 
-  NavigationActivation(nsIGlobalObject* aGlobal,
-                       NavigationHistoryEntry* aNewEntry,
-                       NavigationHistoryEntry* aOldEntry, NavigationType aType);
-
-  already_AddRefed<NavigationHistoryEntry> GetFrom() const;
-  already_AddRefed<NavigationHistoryEntry> Entry() const;
-  
-  enum NavigationType NavigationType() const { return mType; }
+  already_AddRefed<NavigationHistoryEntry> GetFrom() const { return {}; }
+  already_AddRefed<NavigationHistoryEntry> Entry() const { return {}; }
+  enum NavigationType NavigationType() const { return {}; }
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
-  nsIGlobalObject* GetParentObject() const { return mGlobal; }
+  nsIGlobalObject* GetParentObject() const { return {}; }
 
  private:
   ~NavigationActivation() = default;
-
-  nsCOMPtr<nsIGlobalObject> mGlobal;
-  
-  RefPtr<NavigationHistoryEntry> mNewEntry;
-  
-  RefPtr<NavigationHistoryEntry> mOldEntry;
-  
-  enum NavigationType mType;
 };
 
 }  
