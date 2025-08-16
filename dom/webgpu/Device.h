@@ -123,6 +123,10 @@ class Device final : public DOMEventTargetHelper {
  private:
   ~Device();
   void Cleanup();
+  
+  
+  
+  void ExpireExternalTextures();
 
   RefPtr<WebGPUChild> mBridge;
   bool mValid = true;
@@ -131,6 +135,9 @@ class Device final : public DOMEventTargetHelper {
   RefPtr<Queue> mQueue;
   nsTHashSet<nsCString> mKnownWarnings;
   nsTHashSet<Buffer*> mTrackedBuffers;
+  
+  
+  nsTArray<WeakPtr<ExternalTexture>> mExternalTexturesToExpire;
 
  public:
   void GetLabel(nsAString& aValue) const;

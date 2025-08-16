@@ -12,6 +12,7 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/Span.h"
+#include "mozilla/WeakPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/BufferSourceBindingFwd.h"
 #include "mozilla/dom/TypedArray.h"
@@ -21,6 +22,7 @@
 #include "mozilla/gfx/Rect.h"
 #include "mozilla/media/MediaUtils.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsTArrayForwardDeclare.h"
 #include "nsWrapperCache.h"
 
 class nsIGlobalObject;
@@ -52,6 +54,11 @@ struct VideoFrameCopyToOptions;
 struct VideoFrameInit;
 
 }  
+
+namespace webgpu {
+class ExternalTexture;
+}  
+
 }  
 
 namespace mozilla::dom {
@@ -191,6 +198,11 @@ class VideoFrame final : public nsISupports,
   const gfx::IntRect& NativeVisibleRect() const { return mVisibleRect; }
   already_AddRefed<layers::Image> GetImage() const;
 
+  
+  
+  void TrackWebGPUExternalTexture(
+      WeakPtr<webgpu::ExternalTexture> aExternalTexture);
+
   nsCString ToString() const;
 
  public:
@@ -266,6 +278,10 @@ class VideoFrame final : public nsISupports,
 
   
   RefPtr<media::ShutdownWatcher> mShutdownWatcher = nullptr;
+
+  
+  
+  nsTArray<WeakPtr<webgpu::ExternalTexture>> mWebGPUExternalTextures;
 };
 
 }  

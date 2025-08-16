@@ -9,6 +9,7 @@
 
 #include "CommandBuffer.h"
 #include "CommandEncoder.h"
+#include "ExternalTexture.h"
 #include "Utility.h"
 #include "ipc/WebGPUChild.h"
 #include "mozilla/Casting.h"
@@ -58,6 +59,24 @@ void Queue::Submit(
   nsTArray<RawId> list(aCommandBuffers.Length());
   for (uint32_t i = 0; i < aCommandBuffers.Length(); ++i) {
     auto idMaybe = aCommandBuffers[i]->Commit();
+
+    
+    
+    
+    
+    
+    
+    
+    
+    for (const auto& externalTexture :
+         aCommandBuffers[i]->GetExternalTextures()) {
+      if (externalTexture->IsExpired()) {
+        ffi::wgpu_report_validation_error(mBridge->GetClient(), mParent->mId,
+                                          "External texture is expired");
+        return;
+      }
+    }
+
     if (idMaybe) {
       list.AppendElement(*idMaybe);
     }
