@@ -114,27 +114,26 @@ var gProfiles = {
 
   async onPopupShowing() {
     let menuPopup = document.getElementById("menu_ProfilesPopup");
-    
-    
-    while (menuPopup.hasChildNodes()) {
-      menuPopup.firstChild.remove();
-    }
-
     let profiles = await SelectableProfileService.getAllProfiles();
     let currentProfile = SelectableProfileService.currentProfile;
-
+    let insertionPoint = document.getElementById("menu_newProfile");
+    let existingItems = [...menuPopup.querySelectorAll(":scope > menuitem[profileid]")];
     for (let profile of profiles) {
-      let menuitem = document.createXULElement("menuitem");
+      let menuitem = existingItems.shift();
+      let isNewItem = !menuitem;
+      if (isNewItem) {
+        menuitem = document.createXULElement("menuitem");
+        menuitem.classList.add("menuitem-iconic", "menuitem-iconic-profile");
+        menuitem.setAttribute("command", "Profiles:LaunchProfile");
+      }
       let { themeBg, themeFg } = profile.theme;
       menuitem.setAttribute("profileid", profile.id);
-      menuitem.setAttribute("command", "Profiles:LaunchProfile");
       menuitem.style.setProperty("--menu-profiles-theme-bg", themeBg);
       menuitem.style.setProperty("--menu-profiles-theme-fg", themeFg);
       menuitem.style.setProperty(
         "--menuitem-icon",
         `url(${await profile.getAvatarURL(48)})`
       );
-      menuitem.classList.add("menuitem-iconic", "menuitem-iconic-profile");
 
       if (profile.id === currentProfile.id) {
         menuitem.classList.add("current");
@@ -144,31 +143,20 @@ var gProfiles = {
           JSON.stringify({ profileName: profile.name })
         );
       } else {
+        menuitem.classList.remove("current");
+        menuitem.removeAttribute("data-l10n-id");
+        menuitem.removeAttribute("data-l10n-args");
         menuitem.setAttribute("label", profile.name);
       }
 
-      menuPopup.appendChild(menuitem);
+      if (isNewItem) {
+        menuPopup.insertBefore(menuitem, insertionPoint);
+      }
     }
-
-    let newProfile = document.createXULElement("menuitem");
-    newProfile.id = "menu_newProfile";
-    newProfile.className = "menuitem-iconic";
-    newProfile.setAttribute("command", "Profiles:CreateProfile");
-    newProfile.setAttribute("data-l10n-id", "menu-profiles-new-profile");
-    menuPopup.appendChild(newProfile);
-
-    let separator = document.createXULElement("menuseparator");
-    separator.id = "profilesSeparator";
-    menuPopup.appendChild(separator);
-
-    let manageProfiles = document.createXULElement("menuitem");
-    manageProfiles.id = "menu_manageProfiles";
-    manageProfiles.setAttribute("command", "Profiles:ManageProfiles");
-    manageProfiles.setAttribute(
-      "data-l10n-id",
-      "menu-profiles-manage-profiles"
-    );
-    menuPopup.appendChild(manageProfiles);
+    
+    for (let remaining of existingItems) {
+      remaining.remove();
+    }
   },
 
   manageProfiles() {
