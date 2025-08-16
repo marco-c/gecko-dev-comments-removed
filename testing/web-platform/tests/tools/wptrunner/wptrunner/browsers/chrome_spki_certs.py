@@ -2,7 +2,7 @@
 
 
 
-WPT_FINGERPRINT = '0BFjPjhH1jzif+9C8nnl+d94xL0i/PK6o1CJnqnHKps='
+WPT_FINGERPRINT = 'Npn6zU/1yv4wCd+wwl7Ch89WtS7fwqZzrgm89NOfKww='
 
 
 SXG_WPT_FINGERPRINT = '0Rt4mT6SJXojEMHTnKnlJ/hBKMBcI4kteBlhR1eTTdk='
