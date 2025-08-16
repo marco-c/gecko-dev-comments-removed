@@ -110,14 +110,17 @@ class CanvasFrameAnonymousContentHelper {
 
 
 
+
+
   constructor(
     highlighterEnv,
     nodeBuilder,
-    { waitForDocumentToLoad = true } = {}
+    { contentRootHostClassName, waitForDocumentToLoad = true } = {}
   ) {
     this.#highlighterEnv = highlighterEnv;
     this.#nodeBuilder = nodeBuilder;
     this.#waitForDocumentToLoad = !!waitForDocumentToLoad;
+    this.#contentRootHostClassName = contentRootHostClassName;
 
     this.#highlighterEnv.on("window-ready", this.#onWindowReady);
   }
@@ -127,6 +130,7 @@ class CanvasFrameAnonymousContentHelper {
   #highlighterEnv;
   #nodeBuilder;
   #waitForDocumentToLoad;
+  #contentRootHostClassName;
   #listeners = new Map();
   #elements = new Map();
 
@@ -219,6 +223,10 @@ class CanvasFrameAnonymousContentHelper {
     link.rel = "stylesheet";
     this.#content.root.appendChild(link);
     this.#content.root.appendChild(this.#nodeBuilder());
+
+    if (this.#contentRootHostClassName) {
+      this.#content.root.host.classList.add(this.#contentRootHostClassName);
+    }
 
     this.#initialized();
   }
