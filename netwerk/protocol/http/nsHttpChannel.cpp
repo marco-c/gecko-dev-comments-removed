@@ -6300,7 +6300,11 @@ nsresult nsHttpChannel::ContinueProcessRedirectionAfterFallback(nsresult rv) {
                              nullptr,  
                              nullptr,  
                              nsIRequest::LOAD_NORMAL, ioService);
-  NS_ENSURE_SUCCESS(rv, rv);
+  
+  
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return NS_ERROR_CORRUPTED_CONTENT;
+  }
 
   rv = SetupReplacementChannel(mRedirectURI, newChannel, !rewriteToGET,
                                redirectFlags);
