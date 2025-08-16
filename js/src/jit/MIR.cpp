@@ -2729,6 +2729,22 @@ static inline bool IsConstant(MDefinition* def, double v) {
   return NumbersAreIdentical(def->toConstant()->numberToDouble(), v);
 }
 
+static inline bool IsConstantInt64(MDefinition* def, int64_t v) {
+  if (!def->isConstant()) {
+    return false;
+  }
+
+  return def->toConstant()->toInt64() == v;
+}
+
+static inline bool IsConstantIntPtr(MDefinition* def, intptr_t v) {
+  if (!def->isConstant()) {
+    return false;
+  }
+
+  return def->toConstant()->toIntPtr() == v;
+}
+
 MDefinition* MBinaryBitwiseInstruction::foldsTo(TempAllocator& alloc) {
   
 
@@ -3036,6 +3052,7 @@ MDefinition* MRsh::foldsTo(TempAllocator& alloc) {
 
 MDefinition* MBinaryArithInstruction::foldsTo(TempAllocator& alloc) {
   MOZ_ASSERT(IsNumberType(type()));
+  MOZ_ASSERT(!isDiv() && !isMod(), "Div and Mod don't call this method");
 
   MDefinition* lhs = getOperand(0);
   MDefinition* rhs = getOperand(1);
@@ -3046,19 +3063,32 @@ MDefinition* MBinaryArithInstruction::foldsTo(TempAllocator& alloc) {
     if (MConstant* folded = EvaluateInt64ConstantOperands(alloc, this)) {
       return folded;
     }
-    if (isSub() || isDiv() || isMod()) {
-      return this;
+    if (IsConstantInt64(rhs, int64_t(getIdentity()))) {
+      return lhs;  
     }
-    if (rhs->isConstant() &&
-        rhs->toConstant()->toInt64() == int64_t(getIdentity())) {
-      return lhs;
-    }
-    if (lhs->isConstant() &&
-        lhs->toConstant()->toInt64() == int64_t(getIdentity())) {
-      return rhs;
+    if (isCommutative() && IsConstantInt64(lhs, int64_t(getIdentity()))) {
+      return rhs;  
     }
     return this;
   }
+
+  if (type() == MIRType::IntPtr) {
+    MOZ_ASSERT(!isTruncated());
+
+    if (MConstant* folded = EvaluateIntPtrConstantOperands(alloc, this)) {
+      return folded;
+    }
+    if (IsConstantIntPtr(rhs, intptr_t(getIdentity()))) {
+      return lhs;  
+    }
+    if (isCommutative() && IsConstantIntPtr(lhs, intptr_t(getIdentity()))) {
+      return rhs;  
+    }
+    return this;
+  }
+
+  
+  MOZ_ASSERT(IsTypeRepresentableAsDouble(type()));
 
   if (MConstant* folded = EvaluateConstantOperands(alloc, this)) {
     if (isTruncated()) {
@@ -3824,6 +3854,7 @@ void MAbs::trySpecializeFloat32(TempAllocator& alloc) {
 
 MDefinition* MDiv::foldsTo(TempAllocator& alloc) {
   MOZ_ASSERT(IsNumberType(type()));
+  MOZ_ASSERT(type() != MIRType::IntPtr, "not yet implemented");
 
   if (type() == MIRType::Int64) {
     if (MDefinition* folded = EvaluateInt64ConstantOperands(alloc, this)) {
@@ -3895,6 +3926,7 @@ bool MDiv::fallible() const { return !isTruncated(); }
 
 MDefinition* MMod::foldsTo(TempAllocator& alloc) {
   MOZ_ASSERT(IsNumberType(type()));
+  MOZ_ASSERT(type() != MIRType::IntPtr, "not yet implemented");
 
   if (type() == MIRType::Int64) {
     if (MDefinition* folded = EvaluateInt64ConstantOperands(alloc, this)) {
@@ -3992,18 +4024,23 @@ MDefinition* MSub::foldsTo(TempAllocator& alloc) {
     return out;
   }
 
-  if (type() != MIRType::Int32) {
-    return this;
-  }
-
   
   
   
   if (lhs() == rhs()) {
-    
-    
-    lhs()->setGuardRangeBailoutsUnchecked();
-    return MConstant::NewInt32(alloc, 0);
+    switch (type()) {
+      case MIRType::Int32:
+        
+        
+        lhs()->setGuardRangeBailoutsUnchecked();
+        return MConstant::NewInt32(alloc, 0);
+      case MIRType::Int64:
+        return MConstant::NewInt64(alloc, 0);
+      case MIRType::IntPtr:
+        return MConstant::NewIntPtr(alloc, 0);
+      default:
+        MOZ_ASSERT(IsFloatingPointType(type()));
+    }
   }
 
   return this;
