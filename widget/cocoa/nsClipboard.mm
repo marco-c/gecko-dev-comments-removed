@@ -748,6 +748,17 @@ NSDictionary* nsClipboard::PasteboardDictFromTransferable(
                                forKey:urlPromise];
       [pasteboardOutputDict setObject:[NSArray arrayWithObject:@""]
                                forKey:urlPromiseContent];
+      NSString* fileUTType =
+          [UTIHelper stringFromPboardType:(NSString*)kUTTypeFileURL];
+      
+      
+      
+      
+      
+      
+      
+      
+      [pasteboardOutputDict setObject:@"" forKey:fileUTType];
     } else if (flavorStr.EqualsLiteral(kURLMime)) {
       nsCOMPtr<nsISupports> genericURL;
       rv = aTransferable->GetTransferData(flavorStr.get(),
