@@ -32,7 +32,7 @@ loader.lazyGetter(this, "RELOAD_PAGE_INFO", function () {
 
 
 const bugLink =
-  "https://bugzilla.mozilla.org/enter_bug.cgi?format=__default__&product=DevTools&component=";
+  "https://bugzilla.mozilla.org/enter_bug.cgi?format=__default__&blocked=devtools-toolbox-crash&product=DevTools&component=";
 
 
 
@@ -170,7 +170,12 @@ class AppErrorBoundary extends Component {
   getBugLink() {
     const { componentStack, clientPacket, serverPacket } = this.state.errorInfo;
 
-    let msg = `## Error in ${this.props.panel}: \n${this.state.errorMsg}\n\n`;
+    let msg =
+      "## Steps to reproduce:\n\n" +
+      "If possible, please share specific steps to reproduce the error.\n" +
+      "Otherwise add any additional information useful to investigate the issue.\n\n";
+
+    msg += `## Error in ${this.props.panel}: \n${this.state.errorMsg}\n\n`;
 
     if (componentStack) {
       msg += `## React Component Stack:${componentStack}\n\n`;
