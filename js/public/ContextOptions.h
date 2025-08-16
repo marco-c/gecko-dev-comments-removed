@@ -105,12 +105,6 @@ class JS_PUBLIC_API ContextOptions {
     return *this;
   }
 
-  bool importAttributes() const { return compileOptions_.importAttributes(); }
-  ContextOptions& setImportAttributes(bool enabled) {
-    compileOptions_.setImportAttributes(enabled);
-    return *this;
-  }
-
   
   
   bool disableEvalSecurityChecks() const { return disableEvalSecurityChecks_; }
