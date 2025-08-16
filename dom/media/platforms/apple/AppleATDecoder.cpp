@@ -12,11 +12,17 @@
 
 #include "ADTSDemuxer.h"
 #include "Adts.h"
+#include "ErrorList.h"
 #include "MP4Decoder.h"
 #include "MediaInfo.h"
+#include "MediaResult.h"
 #include "mozilla/Logging.h"
+#include "mozilla/Result.h"
 #include "mozilla/UniquePtr.h"
+#include "nsDebug.h"
 #include "nsTArray.h"
+#include "ByteWriter.h"
+#include <mozilla/Result.h>
 
 #define LOG(...) \
    MOZ_LOG(mozilla::sPDMLog, mozilla::LogLevel::Debug, (__VA_ARGS__))
@@ -24,7 +30,105 @@
   ((char[5]){(char)(n >> 24), (char)(n >> 16), (char)(n >> 8), (char)(n), 0})
 
 const int AUDIO_OBJECT_TYPE_USAC = 42;
-const UInt32 kDynamicRangeControlProperty = 0x64726370;  
+const UInt32 kDynamicRangeControlProperty =
+    0x64726370;  
+
+
+
+template <typename T>
+static bool WriteDescriptor(mozilla::ByteWriter<T>& writer, uint8_t tag,
+                            uint32_t size) {
+#define TRY(x)    \
+  if (!(x)) {     \
+    return false; \
+  }
+  TRY(writer.WriteU8(tag));
+  
+  
+  
+  
+  
+  if (size < 0x80) {
+    TRY(writer.WriteU8(size));
+  } else if (size < 0x4000) {
+    TRY(writer.WriteU8(0x80 | (size >> 7)));
+    TRY(writer.WriteU8(size & 0x7F));
+  } else if (size < 0x200000) {
+    TRY(writer.WriteU8(0x80 | (size >> 14)));
+    TRY(writer.WriteU8(0x80 | (size >> 7)));
+    TRY(writer.WriteU8(size & 0x7F));
+  } else {
+    TRY(writer.WriteU8(0x80 | (size >> 21)));
+    TRY(writer.WriteU8(0x80 | (size >> 14)));
+    TRY(writer.WriteU8(0x80 | (size >> 7)));
+    TRY(writer.WriteU8(size & 0x7F));
+  }
+
+  return true;
+}
+
+#undef TRY
+
+
+static mozilla::Result<nsTArray<uint8_t>, nsresult> CreateEsds(
+    const nsTArray<uint8_t>& extradata) {
+  nsTArray<uint8_t> esds;
+  mozilla::ByteWriter<mozilla::BigEndian> writer(esds);
+#define TRY(x)                                                              \
+  if (!(x)) {                                                               \
+    LOG("CreateEsds failed at line %d: %s", __LINE__, #x);                 \
+    return mozilla::Err(nsresult::NS_ERROR_FAILURE);                       \
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  const uint32_t kESDescriptorHeaderSize = 3;  
+  const uint32_t kDecoderConfigDescrTagSize = 5;  
+  const uint32_t kDecoderConfigDescrFixedSize = 13;  
+  const uint32_t kDecoderSpecificInfoTagSize = 5;  
+  const uint32_t esDescriptorSize = kESDescriptorHeaderSize +
+                                     kDecoderConfigDescrTagSize +
+                                     kDecoderConfigDescrFixedSize +
+                                     kDecoderSpecificInfoTagSize +
+                                     extradata.Length();
+  WriteDescriptor(writer, 0x03, esDescriptorSize);
+  TRY(writer.WriteU16(0x0000));  
+  TRY(writer.WriteU8(0x00));  
+                              
+
+  
+  
+  const uint32_t decoderConfigDescrSize = kDecoderConfigDescrFixedSize +
+                                           kDecoderSpecificInfoTagSize +
+                                           extradata.Length();
+  TRY(WriteDescriptor(writer, 0x04, decoderConfigDescrSize));
+  TRY(writer.WriteU8(0x40));  
+  TRY(writer.WriteU8(
+      0x15));  
+
+  
+  TRY(writer.WriteU8(0x00));
+  TRY(writer.WriteU16(0x0000));
+
+  TRY(writer.WriteU32(0x00000000));  
+  TRY(writer.WriteU32(0x00000000));  
+
+  
+  
+  
+  
+  TRY(WriteDescriptor(writer, 0x05, extradata.Length()));
+  TRY(writer.Write(extradata.Elements(), extradata.Length()));
+
+  return esds;
+}
+
+#undef TRY
 
 namespace mozilla {
 
@@ -51,9 +155,12 @@ AppleATDecoder::AppleATDecoder(const AudioInfo& aConfig)
           aConfig.mCodecSpecificConfig.as<AacCodecSpecificData>();
 
       
-      if (mConfig.mProfile == 42) {
+      if (mConfig.mProfile == AUDIO_OBJECT_TYPE_USAC ||
+          mConfig.mExtendedProfile == AUDIO_OBJECT_TYPE_USAC) {
         mFormatID = kAudioFormatMPEGD_USAC;
-        LOG("AppleATDecoder detected xHE-AAC/USAC format");
+        LOG("AppleATDecoder detected xHE-AAC/USAC format (profile=%d, "
+            "extended_profile=%d)",
+            mConfig.mProfile, mConfig.mExtendedProfile);
       } else {
         mFormatID = kAudioFormatMPEG4AAC;
       }
@@ -379,6 +486,10 @@ MediaResult AppleATDecoder::GetInputAudioDescription(
 
   if (mFormatID == kAudioFormatMPEGD_USAC && aExtraData.Length() > 0) {
     
+    aDesc.mFormatID = mFormatID;
+    aDesc.mChannelsPerFrame = mConfig.mChannels;
+    aDesc.mSampleRate = mConfig.mRate;
+
     rv = AudioFormatGetProperty(kAudioFormatProperty_FormatInfo,
                                 aExtraData.Length(), aExtraData.Elements(),
                                 &inputFormatSize, &aDesc);
@@ -568,7 +679,8 @@ MediaResult AppleATDecoder::SetupDecoder(MediaRawData* aSample) {
 
     if (mFormatID == kAudioFormatMPEG4AAC &&
         mConfig.mExtendedProfile == AUDIO_OBJECT_TYPE_USAC) {
-      LOG("Detected xHE-AAC profile 42, switching to kAudioFormatMPEGD_USAC");
+      LOG("Detected xHE-AAC profile 42 (USAC), switching to "
+          "kAudioFormatMPEGD_USAC");
       mFormatID = kAudioFormatMPEGD_USAC;
     }
   }
@@ -635,8 +747,7 @@ MediaResult AppleATDecoder::SetupDecoder(MediaRawData* aSample) {
         RESULT_DETAIL("Error constructing AudioConverter:%d", int32_t(status)));
   }
 
-  if (magicCookie.Length() && (mFormatID == kAudioFormatMPEG4AAC ||
-                               mFormatID == kAudioFormatMPEGD_USAC)) {
+  if (magicCookie.Length() && mFormatID == kAudioFormatMPEG4AAC) {
     status = AudioConverterSetProperty(
         mConverter, kAudioConverterDecompressionMagicCookie,
         magicCookie.Length(), magicCookie.Elements());
@@ -647,6 +758,22 @@ MediaResult AppleATDecoder::SetupDecoder(MediaRawData* aSample) {
           NS_ERROR_FAILURE,
           RESULT_DETAIL("Error setting AudioConverter AAC cookie:%d",
                         int32_t(status)));
+    }
+  } else if (magicCookie.Length() && mFormatID == kAudioFormatMPEGD_USAC) {
+    auto maybeEsdsData = CreateEsds(magicCookie);
+    if (maybeEsdsData.isErr()) {
+      return MediaResult(NS_ERROR_FAILURE,
+                         RESULT_DETAIL("Couldn't create ESDS data"));
+    }
+    nsTArray<uint8_t> esdsData = maybeEsdsData.unwrap();
+    status = AudioConverterSetProperty(
+        mConverter, kAudioConverterDecompressionMagicCookie,
+        magicCookie.Length(), magicCookie.Elements());
+    if (status) {
+      LOG("AudioConvertSetProperty failed: %d", int32_t(status));
+      return MediaResult(NS_ERROR_FAILURE,
+                         RESULT_DETAIL("AudioConverterSetProperty failed: %d",
+                                       int32_t(status)));
     }
   }
 
@@ -666,6 +793,7 @@ MediaResult AppleATDecoder::SetupDecoder(MediaRawData* aSample) {
       
     }
 
+    
     
     
     const UInt32 kDefaultEffectType = 3;

@@ -505,6 +505,7 @@ gPlayTests.push(
 
 if (
   AppConstants.isPlatformAndVersionAtLeast("win", "11") ||
+  AppConstants.isPlatformAndVersionAtLeast("macosx", "10.15") ||
   
   AppConstants.isPlatformAndVersionAtLeast("android", "28")
 ) {
