@@ -33,6 +33,14 @@ namespace mozilla {
 
 LazyLogModule gLogMouseLocation("MouseLocation");
 
+
+
+
+
+
+
+LazyLogModule gLogPointerLocation("PointerLocation");
+
 using namespace dom;
 
 Maybe<int32_t> PointerEventHandler::sSpoofedPointerId;
@@ -155,12 +163,44 @@ void PointerEventHandler::RecordPointerState(
   if (aMouseEvent.InputSourceSupportsHover() &&
       aRefPoint != nsPoint(NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE)) {
     pointerInfo->RecordLastState(aRefPoint, aMouseEvent);
+#ifdef DEBUG
+    if (MOZ_LOG_TEST(gLogPointerLocation, LogLevel::Info)) {
+      static uint32_t sFrequentMessageCount = 0;
+      const bool isFrequentMessage = aMouseEvent.mMessage == ePointerMove;
+      if (!isFrequentMessage ||
+          MOZ_LOG_TEST(gLogPointerLocation, LogLevel::Verbose) ||
+          !(sFrequentMessageCount % 50)) {
+        MOZ_LOG(
+            gLogPointerLocation,
+            isFrequentMessage ? LogLevel::Debug : LogLevel::Info,
+            ("got %s on widget:%p at {%d, %d} (pointerId=%u, source=%s)\n",
+             ToChar(aMouseEvent.mMessage), aMouseEvent.mWidget.get(),
+             sLastMouseInfo->mLastRefPointInRootDoc.x,
+             sLastMouseInfo->mLastRefPointInRootDoc.y, aMouseEvent.pointerId,
+             InputSourceToString(aMouseEvent.mInputSource).get()));
+      }
+      if (isFrequentMessage) {
+        sFrequentMessageCount++;
+      } else {
+        
+        sFrequentMessageCount = 0;
+      }
+    }
+#endif  
   }
   
   
   
   else {
     pointerInfo->ClearLastState();
+#ifdef DEBUG
+    MOZ_LOG(gLogPointerLocation, LogLevel::Info,
+            ("got %s on widget:%p, pointer location is cleared (pointerId=%u, "
+             "source=%s)\n",
+             ToChar(aMouseEvent.mMessage), aMouseEvent.mWidget.get(),
+             aMouseEvent.pointerId,
+             InputSourceToString(aMouseEvent.mInputSource).get()));
+#endif  
   }
 }
 
@@ -190,12 +230,14 @@ void PointerEventHandler::RecordMouseState(
     if (!isFrequentMessage ||
         MOZ_LOG_TEST(gLogMouseLocation, LogLevel::Verbose) ||
         !(sFrequentMessageCount % 50)) {
-      MOZ_LOG(gLogMouseLocation,
-              isFrequentMessage ? LogLevel::Debug : LogLevel::Info,
-              ("[ps=%p]got %s for %p at {%d, %d}\n", &aRootPresShell,
-               ToChar(aMouseEvent.mMessage), aMouseEvent.mWidget.get(),
-               sLastMouseInfo->mLastRefPointInRootDoc.x,
-               sLastMouseInfo->mLastRefPointInRootDoc.y));
+      MOZ_LOG(
+          gLogMouseLocation,
+          isFrequentMessage ? LogLevel::Debug : LogLevel::Info,
+          ("[ps=%p]got %s on widget:%p at {%d, %d} (pointerId=%u, source=%s)\n",
+           &aRootPresShell, ToChar(aMouseEvent.mMessage),
+           aMouseEvent.mWidget.get(), sLastMouseInfo->mLastRefPointInRootDoc.x,
+           sLastMouseInfo->mLastRefPointInRootDoc.y, aMouseEvent.pointerId,
+           InputSourceToString(aMouseEvent.mInputSource).get()));
     }
     if (isFrequentMessage) {
       sFrequentMessageCount++;
@@ -205,7 +247,7 @@ void PointerEventHandler::RecordMouseState(
       sFrequentMessageCount = 0;
     }
   }
-#endif
+#endif  
 }
 
 
@@ -225,14 +267,22 @@ void PointerEventHandler::ClearMouseState(PresShell& aRootPresShell,
       aMouseEvent.mFlags.mIsSynthesizedForTests;
 #ifdef DEBUG
   MOZ_LOG(gLogMouseLocation, LogLevel::Info,
-          ("[ps=%p]got %s for %p, mouse location is cleared\n", &aRootPresShell,
-           ToChar(aMouseEvent.mMessage), aMouseEvent.mWidget.get()));
-#endif
+          ("[ps=%p]got %s on widget:%p, mouse location is cleared "
+           "(pointerId=%u, source=%s)\n",
+           &aRootPresShell, ToChar(aMouseEvent.mMessage),
+           aMouseEvent.mWidget.get(), aMouseEvent.pointerId,
+           InputSourceToString(aMouseEvent.mInputSource).get()));
+#endif  
 }
 
 
 LazyLogModule& PointerEventHandler::MouseLocationLogRef() {
   return gLogMouseLocation;
+}
+
+
+LazyLogModule& PointerEventHandler::PointerLocationLogRef() {
+  return gLogPointerLocation;
 }
 
 

@@ -556,6 +556,11 @@ class PointerEventHandler final {
 
   [[nodiscard]] static LazyLogModule& MouseLocationLogRef();
 
+  
+
+
+  [[nodiscard]] static LazyLogModule& PointerLocationLogRef();
+
  private:
   
   static void SetPointerCaptureById(uint32_t aPointerId,
