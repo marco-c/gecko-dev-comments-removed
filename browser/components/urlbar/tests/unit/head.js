@@ -957,6 +957,55 @@ function makeCalculatorResult(queryContext, { value }) {
 
 
 
+
+function makeGlobalActionsResult({
+  actionsResults,
+  query,
+  inputLength,
+  showOnboardingLabel = false,
+  providesSearchMode = false,
+  engine,
+}) {
+  const payload = {
+    actionsResults,
+    dynamicType: "actions",
+    query,
+    input: query,
+    inputLength,
+    showOnboardingLabel,
+    providesSearchMode,
+    engine,
+  };
+
+  const result = new UrlbarResult(
+    UrlbarUtils.RESULT_TYPE.DYNAMIC,
+    UrlbarUtils.RESULT_SOURCE.ACTIONS,
+    payload
+  );
+
+  result.providerName = "UrlbarProviderGlobalActions";
+
+  return result;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 async function check_results({
   context,
   incompleteSearch,
