@@ -2727,8 +2727,10 @@ bool nsRFPService::IsWebCodecsRFPTargetEnabled(JSContext* aCx) {
   
   
 
-  
-  if (!aCx) {
+  if (NS_WARN_IF(!aCx)) {
+    MOZ_LOG(gResistFingerprintingLog, LogLevel::Warning,
+            ("nsRFPService::IsWebCodecsRFPTargetEnabled called with null "
+             "JSContext"));
     return true;
   }
 
@@ -2741,4 +2743,14 @@ bool nsRFPService::IsWebCodecsRFPTargetEnabled(JSContext* aCx) {
 
   return nsContentUtils::ShouldResistFingerprinting_dangerous(
       principal, "Principal is the best context we have", RFPTarget::WebCodecs);
+}
+
+uint32_t nsRFPService::CollapseMaxTouchPoints(uint32_t aMaxTouchPoints) {
+  if (aMaxTouchPoints <= 1) {
+    return aMaxTouchPoints;
+  }
+  
+  
+  
+  return 5;
 }
