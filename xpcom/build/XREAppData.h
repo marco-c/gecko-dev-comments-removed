@@ -187,6 +187,8 @@ class XREAppData {
 #endif
 
   
+  
+  
   static void SanitizeNameForDBus(nsACString&);
   void GetDBusAppName(nsACString&) const;
 };

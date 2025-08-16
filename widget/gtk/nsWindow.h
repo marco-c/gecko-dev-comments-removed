@@ -302,6 +302,12 @@ class nsWindow final : public nsBaseWidget {
   }
   LayoutDeviceIntRegion GetOpaqueRegion() const;
 
+  
+  using ExportHandlePromise =
+      mozilla::MozPromise<nsCString, bool,  true>;
+  RefPtr<ExportHandlePromise> ExportHandle();
+  void UnexportHandle();
+
   already_AddRefed<mozilla::gfx::DrawTarget> StartRemoteDrawingInRegion(
       const LayoutDeviceIntRegion& aInvalidRegion) override;
   void EndRemoteDrawingInRegion(

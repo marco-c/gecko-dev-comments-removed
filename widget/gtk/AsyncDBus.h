@@ -33,6 +33,14 @@ RefPtr<DBusCallPromise> DBusProxyCallWithUnixFDList(
     GDBusProxy*, const char* aMethod, GVariant* aArgs, GDBusCallFlags,
     gint aTimeout = -1, GUnixFDList* = nullptr, GCancellable* = nullptr);
 
+
+void MakePortalRequestToken(const nsCString& aType, nsACString& aOutToken);
+void GetPortalRequestPath(GDBusProxy*, const nsCString& aRequestToken,
+                          nsACString& aOutPath);
+using PortalResponseListener = std::function<void(GVariant*)>;
+guint OnDBusPortalResponse(GDBusProxy* aProxy, const nsCString& aRequestToken,
+                           PortalResponseListener);
+
 }  
 
 #endif
