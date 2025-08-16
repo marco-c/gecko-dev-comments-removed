@@ -12,13 +12,15 @@
 #include "mozilla/Span.h"
 #include "mozilla/gfx/Types.h"
 #include "mozilla/webgpu/WebGPUTypes.h"
+#include "mozilla/webgpu/ffi/wgpu.h"
 #include "nsIGlobalObject.h"
 #include "nsTArrayForwardDeclare.h"
 
 namespace mozilla {
 namespace dom {
 class OwningHTMLVideoElementOrVideoFrame;
-}
+enum class PredefinedColorSpace : uint8_t;
+}  
 namespace layers {
 class BufferDescriptor;
 class Image;
@@ -27,24 +29,51 @@ class Image;
 namespace webgpu {
 
 class Device;
+class ExternalTextureSourceClient;
 class WebGPUParent;
 
 
 
-class ExternalTexture : public ObjectBase {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ExternalTexture : public ObjectBase, public ChildOf<Device> {
  public:
   GPU_DECL_CYCLE_COLLECTION(ExternalTexture)
   GPU_DECL_JS_WRAP(ExternalTexture)
 
-  explicit ExternalTexture(nsIGlobalObject* const aGlobal) : mGlobal(aGlobal) {}
+  static already_AddRefed<ExternalTexture> Create(
+      Device* const aParent, const nsString& aLabel,
+      const RefPtr<ExternalTextureSourceClient>& aSource,
+      dom::PredefinedColorSpace aColorSpace);
 
-  nsIGlobalObject* GetParentObject() const { return mGlobal; }
+  const RawId mId;
 
  private:
-  nsCOMPtr<nsIGlobalObject> mGlobal;
+  explicit ExternalTexture(Device* const aParent, RawId aId,
+                           RefPtr<ExternalTextureSourceClient> aSource);
+  virtual ~ExternalTexture();
+  void Cleanup();
 
-  ~ExternalTexture() = default;
-  void Cleanup() {}
+  
+  
+  RefPtr<ExternalTextureSourceClient> mSource;
 };
 
 
@@ -104,6 +133,11 @@ class ExternalTextureSourceHost {
   Span<const RawId> TextureIds() const { return mTextureIds; }
   Span<const RawId> ViewIds() const { return mViewIds; }
 
+  
+  
+  ffi::WGPUExternalTextureDescriptorFromSource GetExternalTextureDescriptor(
+      ffi::WGPUPredefinedColorSpace aDestColorSpace) const;
+
  private:
   ExternalTextureSourceHost(Span<const RawId> aTextureIds,
                             Span<const RawId> aViewIds, gfx::IntSize aSize,
@@ -130,10 +164,10 @@ class ExternalTextureSourceHost {
   AutoTArray<RawId, 3> mTextureIds;
   AutoTArray<RawId, 3> mViewIds;
   const gfx::IntSize mSize;
-  MOZ_MAYBE_UNUSED const gfx::SurfaceFormat mFormat;
-  MOZ_MAYBE_UNUSED const gfx::YUVRangedColorSpace mColorSpace;
-  MOZ_MAYBE_UNUSED const std::array<float, 6> mSampleTransform;
-  MOZ_MAYBE_UNUSED const std::array<float, 6> mLoadTransform;
+  const gfx::SurfaceFormat mFormat;
+  const gfx::YUVRangedColorSpace mColorSpace;
+  const std::array<float, 6> mSampleTransform;
+  const std::array<float, 6> mLoadTransform;
 };
 
 }  
