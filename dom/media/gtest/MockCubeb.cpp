@@ -543,7 +543,7 @@ MockCubeb::MockCubeb() : MockCubeb(MockCubeb::RunningMode::Automatic) {}
 MockCubeb::MockCubeb(RunningMode aRunningMode)
     : ops(&mock_ops), mRunningMode(aRunningMode) {}
 
-MockCubeb::~MockCubeb() { MOZ_RELEASE_ASSERT(!mFakeAudioThreadRunning); }
+MockCubeb::~MockCubeb() { MOZ_RELEASE_ASSERT(!mFakeAudioThread); };
 
 void MockCubeb::Destroy() {
   MOZ_RELEASE_ASSERT(mHasCubebContext);
@@ -811,10 +811,9 @@ void MockCubeb::StartStream(MockCubebStream* aStream) {
     
     MOZ_RELEASE_ASSERT(streams->IsEmpty());
   }
-  if (!mFakeAudioThreadRunning && mRunningMode == RunningMode::Automatic) {
+  if (!mFakeAudioThread && mRunningMode == RunningMode::Automatic) {
     AddRef();  
-    std::thread(ThreadFunction_s, this).detach();
-    mFakeAudioThreadRunning = true;
+    mFakeAudioThread = WrapUnique(new std::thread(ThreadFunction_s, this));
   }
 }
 
@@ -845,9 +844,14 @@ void MockCubeb::ThreadFunction() {
         }
       }
       streams->RemoveElementsBy([](const auto& stream) { return !stream; });
-      MOZ_RELEASE_ASSERT(mFakeAudioThreadRunning);
+      MOZ_RELEASE_ASSERT(mFakeAudioThread);
       if (streams->IsEmpty() && !mForcedAudioThread) {
-        mFakeAudioThreadRunning = false;
+        
+        
+        NS_DispatchToMainThread(NS_NewRunnableFunction(
+            __func__, [audioThread = std::move(mFakeAudioThread)] {
+              audioThread->join();
+            }));
         break;
       }
     }

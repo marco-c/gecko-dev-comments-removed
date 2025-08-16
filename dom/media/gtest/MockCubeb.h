@@ -532,8 +532,7 @@ class MockCubeb {
   
   
   
-  
-  bool mFakeAudioThreadRunning = false;
+  UniquePtr<std::thread> mFakeAudioThread;
   
   
   
