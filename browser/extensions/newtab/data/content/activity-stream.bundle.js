@@ -12677,6 +12677,14 @@ function Lists({
       }
     }));
   }
+  function handleLearnMore() {
+    dispatch(actionCreators.OnlyToMain({
+      type: actionTypes.OPEN_LINK,
+      data: {
+        url: "https://support.mozilla.org/kb/firefox-new-tab-widgets"
+      }
+    }));
+  }
   if (!lists) {
     return null;
   }
@@ -12723,7 +12731,9 @@ function Lists({
     "data-l10n-id": "newtab-widget-lists-menu-hide",
     onClick: () => handleHideLists()
   }), external_React_default().createElement("panel-item", {
-    "data-l10n-id": "newtab-widget-lists-menu-learn-more"
+    className: "learn-more",
+    "data-l10n-id": "newtab-widget-lists-menu-learn-more",
+    onClick: handleLearnMore
   }))), external_React_default().createElement("div", {
     className: "add-task-container"
   }, external_React_default().createElement("span", {
