@@ -6835,9 +6835,8 @@ Result<CreateElementResult, nsresult> HTMLEditor::AlignNodesAndDescendants(
 
   RefPtr<Element> createdDivElement;
   const bool useCSS = IsCSSEnabled();
-  int32_t indexOfTransitionList = -1;
-  for (OwningNonNull<nsIContent>& content : aArrayOfContents) {
-    ++indexOfTransitionList;
+  for (size_t i = 0; i < aArrayOfContents.Length(); i++) {
+    const OwningNonNull<nsIContent>& content = aArrayOfContents[i];
 
     
     if (!EditorUtils::IsEditableContent(content, EditorType::HTML)) {
@@ -6967,7 +6966,7 @@ Result<CreateElementResult, nsresult> HTMLEditor::AlignNodesAndDescendants(
 
     
     
-    if (!createdDivElement || transitionList[indexOfTransitionList]) {
+    if (!createdDivElement || transitionList[i]) {
       
       if (!HTMLEditUtils::CanNodeContain(*atContent.GetContainer(),
                                          *nsGkAtoms::div)) {
@@ -7016,14 +7015,43 @@ Result<CreateElementResult, nsresult> HTMLEditor::AlignNodesAndDescendants(
       latestCreatedDivElement = createdDivElement;
     }
 
+    const OwningNonNull<nsIContent> lastContent = [&]() {
+      nsIContent* lastContent = content;
+      for (; i + 1 < aArrayOfContents.Length(); i++) {
+        const OwningNonNull<nsIContent>& nextContent = aArrayOfContents[i + 1];
+        if (lastContent->GetNextSibling() != nextContent ||
+            !EditorUtils::IsEditableContent(content, EditorType::HTML) ||
+            !HTMLEditUtils::SupportsAlignAttr(nextContent) ||
+            
+            
+            
+            
+            
+
+            
+            
+            
+            
+            HTMLEditUtils::IsListItem(nextContent) ||
+            HTMLEditUtils::IsAnyListElement(nextContent) ||
+            
+            
+            transitionList[i + 1]) {
+          break;
+        }
+        lastContent = nextContent;
+      }
+      return OwningNonNull<nsIContent>(*lastContent);
+    }();
+
     
     
     
     Result<MoveNodeResult, nsresult> moveNodeResult =
-        MoveNodeToEndWithTransaction(MOZ_KnownLive(content),
-                                     *createdDivElement);
+        MoveSiblingsToEndWithTransaction(MOZ_KnownLive(content), lastContent,
+                                         *createdDivElement);
     if (MOZ_UNLIKELY(moveNodeResult.isErr())) {
-      NS_WARNING("HTMLEditor::MoveNodeToEndWithTransaction() failed");
+      NS_WARNING("HTMLEditor::MoveSiblingsToEndWithTransaction() failed");
       return moveNodeResult.propagateErr();
     }
     MoveNodeResult unwrappedMoveNodeResult = moveNodeResult.unwrap();
