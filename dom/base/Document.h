@@ -3763,6 +3763,11 @@ class Document : public nsINode,
 
   
   
+  
+  
+  
+  
+  
   void SetUserHasInteracted();
   bool UserHasInteracted() { return mUserHasInteracted; }
   void ResetUserInteractionTimer();
