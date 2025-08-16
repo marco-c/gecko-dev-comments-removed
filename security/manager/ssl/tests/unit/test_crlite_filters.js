@@ -8,6 +8,68 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 "use strict";
 do_get_profile(); 
 
@@ -23,19 +85,15 @@ const { CRLiteFiltersClient } = RemoteSecuritySettings.init();
 const CRLITE_FILTERS_ENABLED_PREF =
   "security.remote_settings.crlite_filters.enabled";
 const CRLITE_FILTER_CHANNEL_PREF = "security.pki.crlite_channel";
-const CRLITE_MODE_PREF = "security.pki.crlite_mode";
-const CRLITE_TIMESTAMPS_FOR_COVERAGE_PREF =
-  "security.pki.crlite_timestamps_for_coverage";
 const INTERMEDIATES_ENABLED_PREF =
   "security.remote_settings.intermediates.enabled";
 const INTERMEDIATES_DL_PER_POLL_PREF =
   "security.remote_settings.intermediates.downloads_per_poll";
-const OCSP_ENABLED_PREF = "security.OCSP.enabled";
-const OCSP_REQUIRED_PREF = "security.OCSP.require";
-const BUILTIN_ROOT_HASH_PREF = "security.test.built_in_root_hash";
-const CHECK_AT_TIME = new Date("2020-01-01T00:00:00Z").getTime() / 1000;
 
-var gOCSPRequestCount = 0;
+
+const ISSUER_PEM_UID = "UbH9/ZAnjuqf79Xhah1mFOWo6ZvgQCgsdheWfjvVUM8=";
+
+const NO_SCT_ISSUER_PEM_UID = "Myn7EasO1QikOtNmo/UZdh6snCAw0BOY6wgU8OsUeeY=";
 
 function getHashCommon(aStr, useBase64) {
   let hasher = Cc["@mozilla.org/security/hash;1"].createInstance(
@@ -60,9 +118,12 @@ function getHash(aStr) {
 
 function getFilenameForFilter(filter) {
   if (filter.type == "filter") {
-    return "20200101-0-filter";
+    return "20201017-0-filter";
   }
-  return "20200101-1-filter.delta";
+  if (filter.id == "0001") {
+    return "20201017-1-filter.delta";
+  }
+  return "20201201-3-filter.delta";
 }
 
 
@@ -106,6 +167,8 @@ async function syncAndDownload(filters, clear = true, channel = undefined) {
       effectiveTimestamp: new Date(filter.timestamp).getTime(),
       parent: incremental ? filter.parent : undefined,
       id: filter.id,
+      coverage: !incremental ? filter.coverage : undefined,
+      enrolledIssuers: !incremental ? filter.enrolledIssuers : undefined,
       channel: `${channel}`,
       filter_expression: `'${channel}' == '${CRLITE_FILTER_CHANNEL_PREF}'|preferenceValue('none')`,
     };
@@ -133,58 +196,30 @@ function expectDownloads(result, expected) {
   );
 }
 
-function setup_certdb() {
-  let certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
-    Ci.nsIX509CertDB
-  );
-
-  let ca = addCertFromFile(certdb, "test_crlite_filters/ca.pem", "C,C,");
-  Services.prefs.setCharPref(BUILTIN_ROOT_HASH_PREF, ca.sha256Fingerprint);
-
-  addCertFromFile(certdb, "test_crlite_filters/int.pem", ",,");
-  return certdb;
-}
-
-function set_crlite_mode(mode) {
-  Services.prefs.setBoolPref(
-    CRLITE_FILTERS_ENABLED_PREF,
-    mode != CRLiteModeDisabledPrefValue
-  );
-  Services.prefs.setIntPref(CRLITE_MODE_PREF, mode);
-}
-
-function set_crlite_channel(channel) {
-  Services.prefs.setStringPref(CRLITE_FILTER_CHANNEL_PREF, channel);
-}
-
-async function cleanup() {
-  Services.prefs.clearUserPref(BUILTIN_ROOT_HASH_PREF);
-  Services.prefs.clearUserPref(CRLITE_FILTERS_ENABLED_PREF);
-  Services.prefs.clearUserPref(CRLITE_FILTER_CHANNEL_PREF);
-  Services.prefs.clearUserPref(CRLITE_MODE_PREF);
-  Services.prefs.clearUserPref(CRLITE_TIMESTAMPS_FOR_COVERAGE_PREF);
-  Services.prefs.clearUserPref(OCSP_ENABLED_PREF);
-  Services.prefs.clearUserPref(OCSP_REQUIRED_PREF);
-  await syncAndDownload([], true);
-}
-
 add_task(async function test_crlite_filters_disabled() {
-  set_crlite_mode(CRLiteModeDisabledPrefValue);
+  Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, false);
 
   let result = await syncAndDownload([
     {
       timestamp: "2019-01-01T00:00:00Z",
       type: "filter",
       id: "0000",
+      coverage: [
+        {
+          logID: "9lyUL9F3MCIUVBgIMJRWjuNNExkzv98MLyALzE7xZOM=",
+          minTimestamp: 0,
+          maxTimestamp: 9999999999999,
+        },
+      ],
     },
   ]);
   equal(result, "disabled", "CRLite filter download should not have run");
 
-  await cleanup();
+  await syncAndDownload([], true);
 });
 
 add_task(async function test_crlite_no_filters() {
-  set_crlite_mode(CRLiteModeEnforcePrefValue);
+  Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, true);
 
   let result = await syncAndDownload([]);
   equal(
@@ -193,11 +228,11 @@ add_task(async function test_crlite_no_filters() {
     "CRLite filter download should have run, but nothing was available"
   );
 
-  await cleanup();
+  await syncAndDownload([], true);
 });
 
 add_task(async function test_crlite_no_filters_in_channel() {
-  set_crlite_mode(CRLiteModeEnforcePrefValue);
+  Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, true);
 
   let result = await syncAndDownload(
     [{ timestamp: "2019-01-01T00:00:00Z", type: "filter", id: "0000" }],
@@ -210,11 +245,11 @@ add_task(async function test_crlite_no_filters_in_channel() {
     "CRLite filter download should have run, but nothing was available"
   );
 
-  await cleanup();
+  await syncAndDownload([], true);
 });
 
 add_task(async function test_crlite_only_incremental_filters() {
-  set_crlite_mode(CRLiteModeEnforcePrefValue);
+  Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, true);
 
   let result = await syncAndDownload([
     {
@@ -242,11 +277,11 @@ add_task(async function test_crlite_only_incremental_filters() {
     "CRLite filter download should have run, but no full filters were available"
   );
 
-  await cleanup();
+  await syncAndDownload([], true);
 });
 
 add_task(async function test_crlite_incremental_filters_with_wrong_parent() {
-  set_crlite_mode(CRLiteModeEnforcePrefValue);
+  Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, true);
 
   let result = await syncAndDownload([
     { timestamp: "2019-01-01T00:00:00Z", type: "filter", id: "0000" },
@@ -274,11 +309,11 @@ add_task(async function test_crlite_incremental_filters_with_wrong_parent() {
     "2019-01-01T06:00:00Z-diff",
   ]);
 
-  await cleanup();
+  await syncAndDownload([], true);
 });
 
 add_task(async function test_crlite_incremental_filter_too_early() {
-  set_crlite_mode(CRLiteModeEnforcePrefValue);
+  Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, true);
 
   let result = await syncAndDownload([
     { timestamp: "2019-01-02T00:00:00Z", type: "filter", id: "0000" },
@@ -295,11 +330,11 @@ add_task(async function test_crlite_incremental_filter_too_early() {
     "CRLite filter download should have run"
   );
 
-  await cleanup();
+  await syncAndDownload([], true);
 });
 
 add_task(async function test_crlite_filters_basic() {
-  set_crlite_mode(CRLiteModeEnforcePrefValue);
+  Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, true);
 
   let result = await syncAndDownload([
     { timestamp: "2019-01-01T00:00:00Z", type: "filter", id: "0000" },
@@ -310,11 +345,11 @@ add_task(async function test_crlite_filters_basic() {
     "CRLite filter download should have run"
   );
 
-  await cleanup();
+  await syncAndDownload([], true);
 });
 
 add_task(async function test_crlite_filters_not_cached() {
-  set_crlite_mode(CRLiteModeEnforcePrefValue);
+  Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, true);
   let filters = [
     { timestamp: "2019-01-01T00:00:00Z", type: "filter", id: "0000" },
   ];
@@ -335,11 +370,11 @@ add_task(async function test_crlite_filters_not_cached() {
   equal(attachment._source, "remote_match");
   await CRLiteFiltersClient.client.attachments.deleteDownloaded(records[0]);
 
-  await cleanup();
+  await syncAndDownload([], true);
 });
 
 add_task(async function test_crlite_filters_full_and_incremental() {
-  set_crlite_mode(CRLiteModeEnforcePrefValue);
+  Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, true);
 
   let result = await syncAndDownload([
     
@@ -370,11 +405,11 @@ add_task(async function test_crlite_filters_full_and_incremental() {
     "2019-01-01T18:00:00Z-diff",
   ]);
 
-  await cleanup();
+  await syncAndDownload([], true);
 });
 
 add_task(async function test_crlite_filters_multiple_days() {
-  set_crlite_mode(CRLiteModeEnforcePrefValue);
+  Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, true);
 
   let result = await syncAndDownload([
     
@@ -443,283 +478,156 @@ add_task(async function test_crlite_filters_multiple_days() {
     "2019-01-03T18:00:00Z-diff",
   ]);
 
-  await cleanup();
+  await syncAndDownload([], true);
 });
 
 add_task(async function test_crlite_confirm_revocations_mode() {
-  set_crlite_mode(CRLiteModeConfirmRevocationsValue);
+  Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, true);
+  Services.prefs.setIntPref(
+    "security.pki.crlite_mode",
+    CRLiteModeConfirmRevocationsValue
+  );
+  Services.prefs.setBoolPref(INTERMEDIATES_ENABLED_PREF, true);
 
-  let certdb = setup_certdb();
+  let certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
+    Ci.nsIX509CertDB
+  );
+  addCertFromFile(certdb, "test_crlite_filters/issuer.pem", ",,");
+  addCertFromFile(certdb, "test_crlite_filters/no-sct-issuer.pem", ",,");
 
   let result = await syncAndDownload([
     {
-      timestamp: "2020-01-01T00:00:00Z",
+      timestamp: "2020-10-17T00:00:00Z",
       type: "filter",
       id: "0000",
+      coverage: [
+        {
+          logID: "9lyUL9F3MCIUVBgIMJRWjuNNExkzv98MLyALzE7xZOM=",
+          minTimestamp: 0,
+          maxTimestamp: 9999999999999,
+        },
+        {
+          logID: "pLkJkLQYWBSHuxOizGdwCjw1mAT5G9+443fNDsgN3BA=",
+          minTimestamp: 0,
+          maxTimestamp: 9999999999999,
+        },
+      ],
+      enrolledIssuers: [ISSUER_PEM_UID, NO_SCT_ISSUER_PEM_UID],
     },
   ]);
   equal(
     result,
-    "finished;2020-01-01T00:00:00Z-filter",
+    "finished;2020-10-17T00:00:00Z-filter",
     "CRLite filter download should have run"
   );
 
-  let validCert = constructCertFromFile(
-    "test_crlite_filters/valid.example.com.pem"
-  );
-  let notCoveredCert = constructCertFromFile(
-    "test_crlite_filters/not-covered.example.com.pem"
-  );
-  let revokedCert = constructCertFromFile(
-    "test_crlite_filters/revoked.example.com.pem"
-  );
-
-  Services.prefs.setIntPref(OCSP_ENABLED_PREF, 1);
-  Services.prefs.setBoolPref(OCSP_REQUIRED_PREF, false);
   
   
-  
-  
-  gOCSPRequestCount = 0;
+  let validCert = constructCertFromFile("test_crlite_filters/valid.pem");
   await checkCertErrorGenericAtTime(
     certdb,
     validCert,
     PRErrorCodeSuccess,
     Ci.nsIX509CertDB.verifyUsageTLSServer,
-    CHECK_AT_TIME,
+    new Date("2020-10-20T00:00:00Z").getTime() / 1000,
     undefined,
-    "valid.example.com"
-  );
-
-  await checkCertErrorGenericAtTime(
-    certdb,
-    notCoveredCert,
-    PRErrorCodeSuccess,
-    Ci.nsIX509CertDB.verifyUsageTLSServer,
-    CHECK_AT_TIME,
-    false,
-    "not-covered.example.com",
+    "vpn.worldofspeed.org",
     0
   );
 
+  
+  
+  
+  let revokedCert = constructCertFromFile("test_crlite_filters/revoked.pem");
   await checkCertErrorGenericAtTime(
     certdb,
     revokedCert,
     SEC_ERROR_REVOKED_CERTIFICATE,
     Ci.nsIX509CertDB.verifyUsageTLSServer,
-    CHECK_AT_TIME,
+    new Date("2020-10-20T00:00:00Z").getTime() / 1000,
     undefined,
-    "revoked.example.com",
-    0
-  );
-  Assert.equal(
-    gOCSPRequestCount,
-    2,
-    "exactly two OCSP requests should have been made"
+    "us-datarecovery.com",
+    Ci.nsIX509CertDB.FLAG_LOCAL_ONLY
   );
 
-  Services.prefs.setBoolPref(OCSP_REQUIRED_PREF, true);
-  Services.prefs.setIntPref(OCSP_ENABLED_PREF, 1);
-  
-  
-  
-  
-  gOCSPRequestCount = 0;
-  await checkCertErrorGenericAtTime(
-    certdb,
-    validCert,
-    PRErrorCodeSuccess,
-    Ci.nsIX509CertDB.verifyUsageTLSServer,
-    CHECK_AT_TIME,
-    undefined,
-    "valid.example.com"
-  );
-  await checkCertErrorGenericAtTime(
-    certdb,
-    notCoveredCert,
-    SEC_ERROR_OCSP_MALFORMED_RESPONSE,
-    Ci.nsIX509CertDB.verifyUsageTLSServer,
-    CHECK_AT_TIME,
-    false,
-    "not-covered.example.com",
-    0
-  );
-
-  await checkCertErrorGenericAtTime(
-    certdb,
-    revokedCert,
-    SEC_ERROR_REVOKED_CERTIFICATE,
-    Ci.nsIX509CertDB.verifyUsageTLSServer,
-    CHECK_AT_TIME,
-    undefined,
-    "revoked.example.com",
-    0
-  );
-  Assert.equal(
-    gOCSPRequestCount,
-    2,
-    "exactly two OCSP requests should have been made"
-  );
-
-  await cleanup();
+  await syncAndDownload([], true);
 });
 
 add_task(async function test_crlite_filters_and_check_revocation() {
-  set_crlite_mode(CRLiteModeEnforcePrefValue);
+  Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, true);
+  Services.prefs.setIntPref(
+    "security.pki.crlite_mode",
+    CRLiteModeEnforcePrefValue
+  );
+  Services.prefs.setBoolPref(INTERMEDIATES_ENABLED_PREF, true);
 
-  let certdb = setup_certdb();
+  let certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
+    Ci.nsIX509CertDB
+  );
+  addCertFromFile(certdb, "test_crlite_filters/issuer.pem", ",,");
+  addCertFromFile(certdb, "test_crlite_filters/no-sct-issuer.pem", ",,");
 
   let result = await syncAndDownload([
     {
-      timestamp: "2020-01-01T00:00:00Z",
+      timestamp: "2020-10-17T00:00:00Z",
       type: "filter",
       id: "0000",
     },
   ]);
   equal(
     result,
-    `finished;2020-01-01T00:00:00Z-filter`,
+    `finished;2020-10-17T00:00:00Z-filter`,
     "CRLite filter download should have run"
   );
 
-  let validCert = constructCertFromFile(
-    "test_crlite_filters/valid.example.com.pem"
-  );
-  let notCoveredCert = constructCertFromFile(
-    "test_crlite_filters/not-covered.example.com.pem"
-  );
-  let revokedCert = constructCertFromFile(
-    "test_crlite_filters/revoked.example.com.pem"
-  );
-
-  Services.prefs.setIntPref(OCSP_ENABLED_PREF, 1);
-  Services.prefs.setBoolPref(OCSP_REQUIRED_PREF, false);
+  let validCert = constructCertFromFile("test_crlite_filters/valid.pem");
   
   
   
   
-  gOCSPRequestCount = 0;
+  
   await checkCertErrorGenericAtTime(
     certdb,
     validCert,
     PRErrorCodeSuccess,
     Ci.nsIX509CertDB.verifyUsageTLSServer,
-    CHECK_AT_TIME,
+    new Date("2020-10-20T00:00:00Z").getTime() / 1000,
     false,
-    "valid.example.com",
+    "vpn.worldofspeed.org",
     0
   );
 
-  await checkCertErrorGenericAtTime(
-    certdb,
-    notCoveredCert,
-    PRErrorCodeSuccess,
-    Ci.nsIX509CertDB.verifyUsageTLSServer,
-    CHECK_AT_TIME,
-    false,
-    "not-covered.example.com",
-    0
-  );
-
+  let revokedCert = constructCertFromFile("test_crlite_filters/revoked.pem");
   await checkCertErrorGenericAtTime(
     certdb,
     revokedCert,
     SEC_ERROR_REVOKED_CERTIFICATE,
     Ci.nsIX509CertDB.verifyUsageTLSServer,
-    CHECK_AT_TIME,
+    new Date("2020-10-20T00:00:00Z").getTime() / 1000,
     false,
-    "revoked.example.com",
+    "us-datarecovery.com",
     0
   );
-  Assert.equal(gOCSPRequestCount, 0, "no OCSP requests should have been made");
 
-  Services.prefs.setIntPref(OCSP_ENABLED_PREF, 1);
-  Services.prefs.setBoolPref(OCSP_REQUIRED_PREF, true);
   
-  
-  
-  
-  gOCSPRequestCount = 0;
+  let revokedInStashCert = constructCertFromFile(
+    "test_crlite_filters/revoked-in-stash.pem"
+  );
   await checkCertErrorGenericAtTime(
     certdb,
-    validCert,
+    revokedInStashCert,
     PRErrorCodeSuccess,
     Ci.nsIX509CertDB.verifyUsageTLSServer,
-    CHECK_AT_TIME,
+    new Date("2020-10-20T00:00:00Z").getTime() / 1000,
     false,
-    "valid.example.com",
-    0
-  );
-
-  await checkCertErrorGenericAtTime(
-    certdb,
-    notCoveredCert,
-    SEC_ERROR_OCSP_MALFORMED_RESPONSE,
-    Ci.nsIX509CertDB.verifyUsageTLSServer,
-    CHECK_AT_TIME,
-    false,
-    "not-covered.example.com",
-    0
-  );
-
-  await checkCertErrorGenericAtTime(
-    certdb,
-    revokedCert,
-    SEC_ERROR_REVOKED_CERTIFICATE,
-    Ci.nsIX509CertDB.verifyUsageTLSServer,
-    CHECK_AT_TIME,
-    false,
-    "revoked.example.com",
-    0
-  );
-  Assert.equal(
-    gOCSPRequestCount,
-    1,
-    "exactly one OCSP request should have been made"
-  );
-
-  await cleanup();
-});
-
-add_task(async function test_crlite_filters_with_delta() {
-  set_crlite_mode(CRLiteModeEnforcePrefValue);
-
-  let certdb = setup_certdb();
-
-  let result = await syncAndDownload([
-    {
-      timestamp: "2020-01-01T00:00:00Z",
-      type: "filter",
-      id: "0000",
-    },
-  ]);
-  equal(
-    result,
-    `finished;2020-01-01T00:00:00Z-filter`,
-    "CRLite filter download should have run"
-  );
-
-  let revokedInDeltaCert = constructCertFromFile(
-    "test_crlite_filters/revoked-in-delta.example.com.pem"
-  );
-
-  Services.prefs.setIntPref(OCSP_ENABLED_PREF, 1);
-  Services.prefs.setBoolPref(OCSP_REQUIRED_PREF, false);
-  await checkCertErrorGenericAtTime(
-    certdb,
-    revokedInDeltaCert,
-    PRErrorCodeSuccess, 
-    Ci.nsIX509CertDB.verifyUsageTLSServer,
-    CHECK_AT_TIME,
-    false,
-    "revoked-in-delta.example.com",
+    "stokedmoto.com",
     0
   );
 
   result = await syncAndDownload(
     [
       {
-        timestamp: "2020-01-01T12:00:00Z",
+        timestamp: "2020-10-17T03:00:00Z",
         type: "diff",
         id: "0001",
         parent: "0000",
@@ -729,85 +637,165 @@ add_task(async function test_crlite_filters_with_delta() {
   );
   equal(
     result,
-    "finished;2020-01-01T12:00:00Z-diff",
+    "finished;2020-10-17T03:00:00Z-diff",
     "Should have downloaded the expected CRLite filters"
   );
 
+  
   await checkCertErrorGenericAtTime(
     certdb,
-    revokedInDeltaCert,
+    revokedInStashCert,
     SEC_ERROR_REVOKED_CERTIFICATE,
     Ci.nsIX509CertDB.verifyUsageTLSServer,
-    CHECK_AT_TIME,
+    new Date("2020-10-20T00:00:00Z").getTime() / 1000,
     false,
-    "revoked-in-delta.example.com",
+    "stokedmoto.com",
     0
   );
 
-  await cleanup();
-});
+  
+  let revokedInStash2Cert = constructCertFromFile(
+    "test_crlite_filters/revoked-in-stash-2.pem"
+  );
+  await checkCertErrorGenericAtTime(
+    certdb,
+    revokedInStash2Cert,
+    PRErrorCodeSuccess,
+    Ci.nsIX509CertDB.verifyUsageTLSServer,
+    new Date("2020-10-20T00:00:00Z").getTime() / 1000,
+    false,
+    "icsreps.com",
+    0
+  );
 
-add_task(async function test_crlite_timestamps_for_coverage() {
-  set_crlite_mode(CRLiteModeEnforcePrefValue);
-
-  let certdb = setup_certdb();
-
-  let result = await syncAndDownload([
-    {
-      timestamp: "2020-01-01T00:00:00Z",
-      type: "filter",
-      id: "0000",
-    },
-  ]);
+  result = await syncAndDownload(
+    [
+      {
+        timestamp: "2020-10-17T06:00:00Z",
+        type: "diff",
+        id: "0002",
+        parent: "0001",
+      },
+    ],
+    false
+  );
   equal(
     result,
-    `finished;2020-01-01T00:00:00Z-filter`,
-    "CRLite filter download should have run"
+    "finished;2020-10-17T06:00:00Z-diff",
+    "Should have downloaded the expected CRLite filters"
   );
 
-  let validCert = constructCertFromFile(
-    "test_crlite_filters/valid.example.com.pem"
+  
+  await checkCertErrorGenericAtTime(
+    certdb,
+    revokedInStash2Cert,
+    SEC_ERROR_REVOKED_CERTIFICATE,
+    Ci.nsIX509CertDB.verifyUsageTLSServer,
+    new Date("2020-10-20T00:00:00Z").getTime() / 1000,
+    false,
+    "icsreps.com",
+    0
   );
 
-  Services.prefs.setIntPref(OCSP_ENABLED_PREF, 1);
-  Services.prefs.setBoolPref(OCSP_REQUIRED_PREF, true);
+  
   await checkCertErrorGenericAtTime(
     certdb,
     validCert,
     PRErrorCodeSuccess,
     Ci.nsIX509CertDB.verifyUsageTLSServer,
-    CHECK_AT_TIME,
+    new Date("2020-10-20T00:00:00Z").getTime() / 1000,
     false,
-    "valid.example.com",
+    "vpn.worldofspeed.org",
+    0
+  );
+
+  await checkCertErrorGenericAtTime(
+    certdb,
+    revokedCert,
+    SEC_ERROR_REVOKED_CERTIFICATE,
+    Ci.nsIX509CertDB.verifyUsageTLSServer,
+    new Date("2020-10-20T00:00:00Z").getTime() / 1000,
+    false,
+    "us-datarecovery.com",
+    0
+  );
+
+  await checkCertErrorGenericAtTime(
+    certdb,
+    revokedInStashCert,
+    SEC_ERROR_REVOKED_CERTIFICATE,
+    Ci.nsIX509CertDB.verifyUsageTLSServer,
+    new Date("2020-10-20T00:00:00Z").getTime() / 1000,
+    false,
+    "stokedmoto.com",
     0
   );
 
   
   
   
-  Services.prefs.setIntPref(CRLITE_TIMESTAMPS_FOR_COVERAGE_PREF, 100);
+  Services.prefs.setCharPref("network.dns.localDomains", [
+    "ocsp.digicert.com",
+    "ocsp.godaddy.com",
+  ]);
+  Services.prefs.setBoolPref("security.OCSP.require", true);
+  Services.prefs.setIntPref("security.OCSP.enabled", 1);
+
+  
+  
+  
+  
+  
+  let noSCTCert = constructCertFromFile("test_crlite_filters/no-sct.pem");
+  await checkCertErrorGenericAtTime(
+    certdb,
+    noSCTCert,
+    SEC_ERROR_OCSP_SERVER_ERROR,
+    Ci.nsIX509CertDB.verifyUsageTLSServer,
+    new Date("2020-10-20T00:00:00Z").getTime() / 1000,
+    false,
+    "mail233.messagelabs.com",
+    0
+  );
+
+  
+  
+  Services.prefs.setIntPref("security.pki.crlite_timestamps_for_coverage", 100);
   await checkCertErrorGenericAtTime(
     certdb,
     validCert,
-    SEC_ERROR_OCSP_MALFORMED_RESPONSE,
+    SEC_ERROR_OCSP_SERVER_ERROR,
     Ci.nsIX509CertDB.verifyUsageTLSServer,
-    CHECK_AT_TIME,
+    new Date("2020-10-20T00:00:00Z").getTime() / 1000,
     false,
-    "valid.example.com",
+    "vpn.worldofspeed.org",
     0
   );
+  Services.prefs.clearUserPref("security.pki.crlite_timestamps_for_coverage");
 
-  await cleanup();
+  Services.prefs.clearUserPref("network.dns.localDomains");
+  Services.prefs.clearUserPref("security.OCSP.require");
+  Services.prefs.clearUserPref("security.OCSP.enabled");
+
+  await syncAndDownload([], true);
 });
 
 add_task(async function test_crlite_filters_avoid_reprocessing_filters() {
-  set_crlite_mode(CRLiteModeEnforcePrefValue);
+  Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, true);
 
   let result = await syncAndDownload([
     {
       timestamp: "2019-01-01T00:00:00Z",
       type: "filter",
       id: "0000",
+      coverage: [
+        {
+          logID: "9lyUL9F3MCIUVBgIMJRWjuNNExkzv98MLyALzE7xZOM=",
+          minTimestamp: 0,
+          maxTimestamp: 9999999999999,
+        },
+      ],
+      enrolledIssuers: [ISSUER_PEM_UID, NO_SCT_ISSUER_PEM_UID],
     },
     {
       timestamp: "2019-01-01T06:00:00Z",
@@ -853,13 +841,19 @@ add_task(async function test_crlite_filters_avoid_reprocessing_filters() {
   );
   equal(result, "finished;2019-01-02T00:00:00Z-diff");
 
-  await cleanup();
+  await syncAndDownload([], true);
 });
 
 add_task(
   async function test_crlite_filters_reprocess_filters_on_channel_change() {
-    set_crlite_mode(CRLiteModeEnforcePrefValue);
-    set_crlite_channel("specified");
+    Services.prefs.setBoolPref(CRLITE_FILTERS_ENABLED_PREF, true);
+    Services.prefs.setStringPref(CRLITE_FILTER_CHANNEL_PREF, "specified");
+    registerCleanupFunction(async () => {
+      
+      await CRLiteFiltersClient.client.db.clear();
+      Services.prefs.clearUserPref(CRLITE_FILTERS_ENABLED_PREF);
+      Services.prefs.clearUserPref(CRLITE_FILTER_CHANNEL_PREF);
+    });
 
     
     let result = await syncAndDownload(
@@ -868,6 +862,14 @@ add_task(
           timestamp: "2019-01-01T00:00:00Z",
           type: "filter",
           id: "0000",
+          coverage: [
+            {
+              logID: "9lyUL9F3MCIUVBgIMJRWjuNNExkzv98MLyALzE7xZOM=",
+              minTimestamp: 0,
+              maxTimestamp: 9999999999999,
+            },
+          ],
+          enrolledIssuers: [ISSUER_PEM_UID, NO_SCT_ISSUER_PEM_UID],
         },
         {
           timestamp: "2019-01-01T06:00:00Z",
@@ -892,6 +894,14 @@ add_task(
           timestamp: "2020-01-01T00:00:00Z",
           type: "filter",
           id: "0002",
+          coverage: [
+            {
+              logID: "9lyUL9F3MCIUVBgIMJRWjuNNExkzv98MLyALzE7xZOM=",
+              minTimestamp: 0,
+              maxTimestamp: 9999999999999,
+            },
+          ],
+          enrolledIssuers: [ISSUER_PEM_UID, NO_SCT_ISSUER_PEM_UID],
         },
         {
           timestamp: "2020-01-01T06:00:00Z",
@@ -908,7 +918,7 @@ add_task(
     
     
     
-    set_crlite_channel("priority");
+    Services.prefs.setStringPref(CRLITE_FILTER_CHANNEL_PREF, "priority");
     result = await syncAndDownload([], false);
     expectDownloads(result, [
       "2020-01-01T00:00:00Z-filter",
@@ -917,14 +927,14 @@ add_task(
 
     
     
-    set_crlite_channel("specified");
+    Services.prefs.setStringPref(CRLITE_FILTER_CHANNEL_PREF, "specified");
     result = await syncAndDownload([], false);
     expectDownloads(result, [
       "2019-01-01T00:00:00Z-filter",
       "2019-01-01T06:00:00Z-diff",
     ]);
 
-    await cleanup();
+    await syncAndDownload([], true);
   }
 );
 
@@ -954,20 +964,12 @@ function run_test() {
     response.setStatusLine(null, 200, "OK");
   });
 
-  let ocspResponder = new HttpServer();
-  ocspResponder.registerPrefixHandler("/", function (_request, _response) {
-    gOCSPRequestCount++;
-  });
-  ocspResponder.start(8888);
-  registerCleanupFunction(() => ocspResponder.stop(() => {}));
-
   Services.prefs.setCharPref(
     "services.settings.server",
     `http://localhost:${server.identity.primaryPort}/v1`
   );
 
   
-  Services.prefs.setBoolPref(INTERMEDIATES_ENABLED_PREF, true);
   Services.prefs.setIntPref(INTERMEDIATES_DL_PER_POLL_PREF, 0);
 
   Services.prefs.setCharPref("browser.policies.loglevel", "debug");
