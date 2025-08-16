@@ -206,7 +206,6 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
 
   
   
-  
   const RefPtr<media::Refcountable<AtomicBool>> mSettingsUpdatedByFrame;
 
   
@@ -224,6 +223,10 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
   
   webrtc::CaptureCapability mCapability;
   DistanceCalculation mCalculation;
+
+  
+  
+  Maybe<NormalizedConstraints> mConstraints MOZ_GUARDED_BY(mMutex);
 
   
   UniquePtr<MediaEnginePrefs> mPrefs;

@@ -194,6 +194,7 @@ nsresult MediaEngineRemoteVideoSource::Allocate(
     mState = kAllocated;
     mCapability = newCapability;
     mCalculation = distanceMode;
+    mConstraints = Some(c);
     *mPrefs = aPrefs;
     mTrackingId =
         TrackingId(CaptureEngineToTrackingSourceStr(mCapEngine), mCaptureId);
@@ -314,23 +315,8 @@ nsresult MediaEngineRemoteVideoSource::Start() {
   NS_DispatchToMainThread(NS_NewRunnableFunction(
       "MediaEngineRemoteVideoSource::SetLastCapability",
       [settings = mSettings, updated = mSettingsUpdatedByFrame,
-       capEngine = mCapEngine, cap = mCapability, calc = mCalculation,
+       cap = mCapability, calc = mCalculation,
        resizeModeEnabled = mPrefs->mResizeModeEnabled]() mutable {
-        switch (capEngine) {
-          case camera::ScreenEngine:
-          case camera::WinEngine:
-            
-            
-            
-            
-            
-            cap.width = std::min(cap.width >> 16, cap.width & 0xffff);
-            cap.height = std::min(cap.height >> 16, cap.height & 0xffff);
-            break;
-          default:
-            break;
-        }
-
         if (!updated->mValue) {
           settings->mWidth.Value() = cap.width;
           settings->mHeight.Value() = cap.height;
@@ -411,6 +397,7 @@ nsresult MediaEngineRemoteVideoSource::Reconfigure(
     
     mCapability = newCapability;
     mCalculation = distanceMode;
+    mConstraints = Some(c);
     *mPrefs = aPrefs;
   }
 
@@ -486,22 +473,17 @@ int MediaEngineRemoteVideoSource::DeliverFrame(
   {
     MutexAutoLock lock(mMutex);
     MOZ_ASSERT(mState == kStarted);
-    
-    const int32_t max_width = mCapability.width & 0xffff;
-    const int32_t max_height = mCapability.height & 0xffff;
-    const int32_t ideal_width = (mCapability.width >> 16) & 0xffff;
-    const int32_t ideal_height = (mCapability.height >> 16) & 0xffff;
+    const int32_t& max_width = mConstraints->mWidth.mMax;
+    const int32_t& max_height = mConstraints->mHeight.mMax;
 
     req_max_width = max_width ? Some(max_width) : Nothing();
     req_max_height = max_height ? Some(max_height) : Nothing();
-    req_ideal_width = ideal_width ? Some(ideal_width) : Nothing();
-    req_ideal_height = ideal_height ? Some(ideal_height) : Nothing();
+    req_ideal_width = mConstraints->mWidth.mIdeal;
+    req_ideal_height = mConstraints->mHeight.mIdeal;
     if (!mFrameDeliveringTrackingId) {
       mFrameDeliveringTrackingId = Some(mTrackingId);
     }
   }
-
-  
 
   if (aProps.rotation() == 90 || aProps.rotation() == 270) {
     
@@ -836,25 +818,12 @@ bool MediaEngineRemoteVideoSource::ChooseCapability(
 
   switch (mCapEngine) {
     case camera::ScreenEngine:
-    case camera::WinEngine: {
-      FlattenedConstraints c(aConstraints);
-      
-      
-      
-      
-      
-      aCapability.width =
-          (std::min(0xffff, c.mWidth.mIdeal.valueOr(0)) & 0xffff) << 16 |
-          (std::min(0xffff, c.mWidth.mMax) & 0xffff);
-      aCapability.height =
-          (std::min(0xffff, c.mHeight.mIdeal.valueOr(0)) & 0xffff) << 16 |
-          (std::min(0xffff, c.mHeight.mMax) & 0xffff);
-      aCapability.maxFPS =
-          c.mFrameRate.Clamp(c.mFrameRate.mIdeal.valueOr(aPrefs.mFPS));
-      return true;
-    }
+    case camera::WinEngine:
     case camera::BrowserEngine: {
       FlattenedConstraints c(aConstraints);
+      
+      
+      
       aCapability.maxFPS =
           c.mFrameRate.Clamp(c.mFrameRate.mIdeal.valueOr(aPrefs.mFPS));
       return true;
