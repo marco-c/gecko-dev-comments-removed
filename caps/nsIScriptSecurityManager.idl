@@ -332,6 +332,14 @@ interface nsIScriptSecurityManager : nsISupports
 
 
     boolean policyAllowsScript(in nsIURI aDomain);
+
+    
+
+
+
+
+     readonly attribute ACString firstUnexpectedJavaScriptLoad;
+
 };
 
 %{C++

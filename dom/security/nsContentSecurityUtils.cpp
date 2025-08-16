@@ -2006,6 +2006,21 @@ void nsContentSecurityUtils::AssertChromePageHasCSP(Document* aDocument) {
 #endif
 
 
+static StaticMutex gVeryFirstUnexpectedJavascriptLoadFilenameMutex;
+static StaticAutoPtr<nsCString> gVeryFirstUnexpectedJavascriptLoadFilename
+    MOZ_GUARDED_BY(gVeryFirstUnexpectedJavascriptLoadFilenameMutex);
+
+
+nsresult nsContentSecurityUtils::GetVeryFirstUnexpectedScriptFilename(
+    nsACString& aFilename) {
+  StaticMutexAutoLock lock(gVeryFirstUnexpectedJavascriptLoadFilenameMutex);
+  if (gVeryFirstUnexpectedJavascriptLoadFilename) {
+    aFilename = *gVeryFirstUnexpectedJavascriptLoadFilename;
+  }
+  return NS_OK;
+}
+
+
 bool nsContentSecurityUtils::ValidateScriptFilename(JSContext* cx,
                                                     const char* aFilename) {
   
@@ -2159,6 +2174,33 @@ bool nsContentSecurityUtils::ValidateScriptFilename(JSContext* cx,
     PossiblyCrash("js_load_1", aFilename, "(None)"_ns);
   }
 #endif
+
+  {
+    StaticMutexAutoLock lock(gVeryFirstUnexpectedJavascriptLoadFilenameMutex);
+    if (gVeryFirstUnexpectedJavascriptLoadFilename == nullptr) {
+      gVeryFirstUnexpectedJavascriptLoadFilename = new nsCString(aFilename);
+    }
+  }
+
+  if (NS_IsMainThread()) {
+    nsCOMPtr<nsIObserverService> observerService =
+        mozilla::services::GetObserverService();
+    if (observerService) {
+      observerService->NotifyObservers(nullptr, "UnexpectedJavaScriptLoad-Live",
+                                       NS_ConvertUTF8toUTF16(filename).get());
+    }
+  } else {
+    NS_DispatchToMainThread(
+        NS_NewRunnableFunction("NotifyObserversRunnable", [filename]() {
+          nsCOMPtr<nsIObserverService> observerService =
+              mozilla::services::GetObserverService();
+          if (observerService) {
+            observerService->NotifyObservers(
+                nullptr, "UnexpectedJavaScriptLoad-Live",
+                NS_ConvertUTF8toUTF16(filename).get());
+          }
+        }));
+  }
 
   
   
