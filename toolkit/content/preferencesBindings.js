@@ -6,6 +6,14 @@
 
 
 
+
+
+
+
+
+
+
+
 const Preferences = (window.Preferences = (function () {
   const { EventEmitter } = ChromeUtils.importESModule(
     "resource://gre/modules/EventEmitter.sys.mjs"
@@ -689,11 +697,29 @@ const Preferences = (window.Preferences = (function () {
   }
 
   class Setting extends EventEmitter {
+    
+
+
+    pref;
+
+    
+
+
+
+
+
+    _deps;
+
     constructor(id, config) {
       super();
       this.id = id;
       this.config = config;
       this.pref = config.pref && Preferences.get(config.pref);
+
+      for (const setting of Object.values(this.deps)) {
+        setting.on("change", this.onChange);
+      }
+
       if (this.pref) {
         this.pref.on("change", this.onChange);
       }
@@ -705,6 +731,32 @@ const Preferences = (window.Preferences = (function () {
     onChange = () => {
       this.emit("change");
     };
+
+    
+
+
+
+
+    get deps() {
+      if (this._deps) {
+        return this._deps;
+      }
+      
+
+
+      const deps = {};
+
+      if (this.config.deps) {
+        for (let id of this.config.deps) {
+          const setting = Preferences.getSetting(id);
+          if (setting) {
+            deps[id] = setting;
+          }
+        }
+      }
+      this._deps = deps;
+      return this._deps;
+    }
 
     get value() {
       let prefVal = this.pref?.value;
@@ -726,7 +778,7 @@ const Preferences = (window.Preferences = (function () {
     }
 
     get visible() {
-      return this.config.visible ? this.config.visible() : true;
+      return this.config.visible ? this.config.visible(this.deps) : true;
     }
 
     getControlConfig(config) {
