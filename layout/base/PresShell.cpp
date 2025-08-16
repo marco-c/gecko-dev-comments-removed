@@ -3231,11 +3231,8 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName,
 
   if (target) {
     
-    target->RevealAncestorClosedDetails();
-    
-    
     ErrorResult rv;
-    target->RevealAncestorHiddenUntilFoundAndFireBeforematchEvent(rv);
+    target->AncestorRevealingAlgorithm(rv);
     if (MOZ_UNLIKELY(rv.Failed())) {
       return rv.StealNSResult();
     }

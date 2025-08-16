@@ -4129,62 +4129,89 @@ ShadowRoot* nsINode::GetShadowRootForSelection() const {
   return shadowRoot;
 }
 
+enum class RevealType : uint8_t {
+  UntilFound,
+  Details,
+};
 
-void nsINode::RevealAncestorHiddenUntilFoundAndFireBeforematchEvent(
-    ErrorResult& aRv) {
-  if (!StaticPrefs::dom_hidden_until_found_enabled()) {
-    return;
-  }
+void nsINode::AncestorRevealingAlgorithm(ErrorResult& aRv) {
   
-  auto* currentNode = this;
-  while (RefPtr parentNode = currentNode->GetFlattenedTreeParentNode()) {
+  AutoTArray<std::pair<RefPtr<nsINode>, RevealType>, 16> ancestorsToReveal;
+  
+  
+  for (nsINode* ancestor : InclusiveFlatTreeAncestors(*this)) {
     
     
-    if (RefPtr currentAsElement = Element::FromNode(currentNode);
+    if (Element* currentAsElement = Element::FromNode(ancestor);
         currentAsElement &&
         currentAsElement->AttrValueIs(kNameSpaceID_None, nsGkAtoms::hidden,
                                       nsGkAtoms::untilFound, eIgnoreCase)) {
+      ancestorsToReveal.AppendElement(
+          std::make_pair(ancestor, RevealType::UntilFound));
+    }
+
+    
+    
+    
+    if (HTMLSlotElement* slot = HTMLSlotElement::FromNode(ancestor)) {
       
-      currentAsElement->FireBeforematchEvent(aRv);
+      
+      if (HTMLDetailsElement* details = HTMLDetailsElement::FromNodeOrNull(
+              slot->GetContainingShadowHost());
+          details && !details->Open() && !slot->HasName()) {
+        ancestorsToReveal.AppendElement(
+            std::make_pair(details, RevealType::Details));
+      }
+    }
+
+    
+  }
+
+  
+  for (const auto& [ancestor, revealType] : ancestorsToReveal) {
+    
+    if (!ancestor->IsInComposedDoc()) {
+      return;
+    }
+
+    
+    if (revealType == RevealType::UntilFound) {
+      
+      
+      RefPtr ancestorAsElement = Element::FromNode(ancestor);
+      if (!ancestorAsElement ||
+          !ancestorAsElement->AttrValueIs(kNameSpaceID_None, nsGkAtoms::hidden,
+                                          nsGkAtoms::untilFound, eIgnoreCase)) {
+        return;
+      }
+      
+      
+      ancestorAsElement->FireBeforematchEvent(aRv);
       if (MOZ_UNLIKELY(aRv.Failed())) {
         return;
       }
-
       
-      currentAsElement->UnsetAttr(kNameSpaceID_None, nsGkAtoms::hidden,
-                                  true);
+      if (!ancestor->IsInComposedDoc()) {
+        return;
+      }
+      
+      ancestorAsElement->UnsetAttr(kNameSpaceID_None, nsGkAtoms::hidden,
+                                   true);
+    } else {  
+      
+      MOZ_ASSERT(revealType == RevealType::Details);
+      
+      RefPtr details = HTMLDetailsElement::FromNode(ancestor);
+      MOZ_ASSERT(details);
+      if (details->Open()) {
+        return;
+      }
+      
+      details->SetOpen(true, aRv);
+      if (MOZ_UNLIKELY(aRv.Failed())) {
+        return;
+      }
     }
-    
-    
-    currentNode = parentNode;
-  }
-}
-
-
-void nsINode::RevealAncestorClosedDetails() {
-  AutoTArray<RefPtr<HTMLDetailsElement>, 16> detailsElements;
-  
-  for (auto* currentNode : InclusiveFlatTreeAncestors(*this)) {
-    
-    auto* slot = HTMLSlotElement::FromNode(currentNode);
-    if (!slot) {
-      continue;
-    }
-    
-    
-    if (auto* details =
-            HTMLDetailsElement::FromNodeOrNull(slot->GetContainingShadowHost());
-        details && !details->Open() && !slot->HasName()) {
-      detailsElements.AppendElement(details);
-      
-      
-      
-    }
-  }
-  
-  
-  for (auto& details : detailsElements) {
-    details->SetOpen(true, IgnoreErrors());
   }
 }
 
