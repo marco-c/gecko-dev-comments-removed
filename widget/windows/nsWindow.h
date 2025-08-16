@@ -729,7 +729,7 @@ class nsWindow final : public nsBaseWidget {
 
   
   
-  static POINT sLastMouseMovePoint;
+  class LastMouseMoveData;
 
   nsClassHashtable<nsUint32HashKey, PointerInfo> mActivePointers;
 

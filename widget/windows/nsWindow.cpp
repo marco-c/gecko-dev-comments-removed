@@ -331,10 +331,6 @@ UINT nsWindow::sRollupMsgId = 0;
 HWND nsWindow::sRollupMsgWnd = nullptr;
 UINT nsWindow::sHookTimerId = 0;
 
-
-
-POINT nsWindow::sLastMouseMovePoint = {0};
-
 bool nsWindow::sIsRestoringSession = false;
 
 bool nsWindow::sTouchInjectInitialized = false;
@@ -442,6 +438,161 @@ static bool gInitializedVirtualDesktopManager = false;
 
 
 #define HITTEST_CACHE_LIFETIME_MS 50
+
+
+
+
+
+class nsWindow::LastMouseMoveData {
+ public:
+  
+
+
+
+
+
+
+
+
+
+
+
+  template <typename POINTOrLayoutDeviceIntPoint>
+  [[nodiscard]] static bool ShouldIgnoreMouseMoveOf(
+      const POINTOrLayoutDeviceIntPoint& aPoint, uint16_t aInputSource,
+      uint32_t aPointerId) {
+    return sInstance.ShouldIgnoreMouseMoveOfImpl(aPoint, aInputSource,
+                                                 aPointerId);
+  }
+
+  
+
+
+  static void Clear() { sInstance.ClearImpl(); }
+
+  
+
+
+
+
+
+
+
+
+  static void WillDispatchMouseMoveOf(const LayoutDeviceIntPoint& aPoint,
+                                      uint16_t aInputSource,
+                                      uint32_t aPointerId) {
+    sInstance.WillDispatchMouseMoveOfImpl(aPoint, aInputSource, aPointerId);
+  }
+
+ private:
+  LastMouseMoveData() = default;
+
+  template <typename POINTOrLayoutDeviceIntPoint>
+  [[nodiscard]] bool ShouldIgnoreMouseMoveOfImpl(
+      const POINTOrLayoutDeviceIntPoint& aPoint, uint16_t aInputSource,
+      uint32_t aPointerId) const {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return PointsEqual(LastPoint(aInputSource, aPointerId), aPoint);
+  }
+
+  void ClearImpl() {
+    mLastPointByMouse.reset();
+    mLastPointAndPointerIdByNonMouse.reset();
+  }
+
+  void WillDispatchMouseMoveOfImpl(const LayoutDeviceIntPoint& aPoint,
+                                   uint16_t aInputSource, uint32_t aPointerId) {
+    POINT& lastPoint = [&]() -> POINT& {
+      if (IsMouse(aInputSource)) {
+        if (mLastPointByMouse.isNothing()) {
+          mLastPointByMouse.emplace();
+        }
+        return mLastPointByMouse.ref();
+      }
+      if (mLastPointAndPointerIdByNonMouse.isNothing()) {
+        mLastPointAndPointerIdByNonMouse.emplace();
+      }
+      mLastPointAndPointerIdByNonMouse->mPointerId = aPointerId;
+      return mLastPointAndPointerIdByNonMouse->mPoint;
+    }();
+    lastPoint.x = aPoint.x.value;
+    lastPoint.y = aPoint.y.value;
+  }
+
+  
+
+
+  [[nodiscard]] static bool IsMouse(uint16_t aInputSource) {
+    return aInputSource == MouseEvent_Binding::MOZ_SOURCE_MOUSE;
+  }
+
+  
+
+
+  template <typename PointType>
+  [[nodiscard]] static bool PointsEqual(const Maybe<POINT>& aPoint,
+                                        const PointType& aOtherPoint);
+
+  
+
+
+
+  [[nodiscard]] Maybe<POINT> LastPoint(uint16_t aInputSource,
+                                       uint32_t aPointerId) const {
+    return IsMouse(aInputSource)
+               ? mLastPointByMouse
+               : (IsLastNonMousePointerId(aPointerId)
+                      ? Some(mLastPointAndPointerIdByNonMouse->mPoint)
+                      : Nothing());
+  }
+
+  
+
+
+  [[nodiscard]] bool IsLastNonMousePointerId(uint32_t aPointerId) const {
+    return mLastPointAndPointerIdByNonMouse &&
+           mLastPointAndPointerIdByNonMouse->mPointerId == aPointerId;
+  }
+
+  
+  
+  
+  Maybe<POINT> mLastPointByMouse;
+  
+  
+  struct LastNonMousePointerMoveData {
+    POINT mPoint = {0};
+    uint32_t mPointerId = 0;
+  };
+  Maybe<LastNonMousePointerMoveData> mLastPointAndPointerIdByNonMouse;
+
+  static LastMouseMoveData sInstance;
+};
+
+template <>
+bool nsWindow::LastMouseMoveData::PointsEqual(const Maybe<POINT>& aPoint,
+                                              const POINT& aOtherPoint) {
+  return aPoint.isSome() && aPoint->x == aOtherPoint.x &&
+         aPoint->y == aOtherPoint.y;
+}
+
+template <>
+bool nsWindow::LastMouseMoveData::PointsEqual(
+    const Maybe<POINT>& aPoint, const LayoutDeviceIntPoint& aOtherPoint) {
+  return aPoint.isSome() && aPoint->x == aOtherPoint.x.value &&
+         aPoint->y == aOtherPoint.y.value;
+}
+
+nsWindow::LastMouseMoveData nsWindow::LastMouseMoveData::sInstance;
 
 #if defined(ACCESSIBILITY)
 
@@ -4055,12 +4206,13 @@ bool nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
   
   
   if (aEventMessage == eMouseMove) {
-    if ((sLastMouseMovePoint.x == mpScreen.x.value) &&
-        (sLastMouseMovePoint.y == mpScreen.y.value)) {
+    if (LastMouseMoveData::ShouldIgnoreMouseMoveOf(
+            mpScreen, aInputSource,
+            aPointerInfo ? aPointerInfo->pointerId : 0)) {
       return result;
     }
-    sLastMouseMovePoint.x = mpScreen.x;
-    sLastMouseMovePoint.y = mpScreen.y;
+    LastMouseMoveData::WillDispatchMouseMoveOf(
+        mpScreen, aInputSource, aPointerInfo ? aPointerInfo->pointerId : 0);
   }
 
   if (!bool(aIsNonclient) && WinUtils::GetIsMouseFromTouch(aEventMessage)) {
@@ -5055,16 +5207,14 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
       POINT mp;
       mp.x = GET_X_LPARAM(lParamScreen);
       mp.y = GET_Y_LPARAM(lParamScreen);
-      bool userMovedMouse = false;
-      if ((sLastMouseMovePoint.x != mp.x) || (sLastMouseMovePoint.y != mp.y)) {
-        userMovedMouse = true;
-      }
-
-      if (userMovedMouse) {
-        result = DispatchMouseEvent(
-            eMouseMove, wParam, lParam, false, MouseButton::ePrimary,
-            MOUSE_INPUT_SOURCE(),
-            mPointerEvents.GetCachedPointerInfo(msg, wParam));
+      const uint16_t inputSource = MOUSE_INPUT_SOURCE();
+      WinPointerInfo* const pointerInfo =
+          mPointerEvents.GetCachedPointerInfo(msg, wParam);
+      if (!LastMouseMoveData::ShouldIgnoreMouseMoveOf(
+              mp, inputSource, pointerInfo ? pointerInfo->pointerId : 0)) {
+        result =
+            DispatchMouseEvent(eMouseMove, wParam, lParam, false,
+                               MouseButton::ePrimary, inputSource, pointerInfo);
         DispatchPendingEvents();
       }
     } break;
@@ -5146,7 +5296,7 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
       
       
       if (mTransitionWnd && WindowAtMouse() == mTransitionWnd) {
-        sLastMouseMovePoint = {0};
+        LastMouseMoveData::Clear();
       }
 
       
@@ -6170,7 +6320,7 @@ nsresult nsWindow::SynthesizeNativeMouseEvent(
       
       
       
-      sLastMouseMovePoint = {0};
+      LastMouseMoveData::Clear();
       break;
     case NativeMouseMessage::ButtonDown:
     case NativeMouseMessage::ButtonUp: {
