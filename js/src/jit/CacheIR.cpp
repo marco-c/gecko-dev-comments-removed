@@ -1044,11 +1044,10 @@ void IRGenerator::emitGuardGetterSetterSlot(NativeObject* holder,
   }
 }
 
-void GetPropIRGenerator::emitCallGetterResultGuards(NativeObject* obj,
-                                                    NativeObject* holder,
-                                                    HandleId id,
-                                                    PropertyInfo prop,
-                                                    ObjOperandId objId) {
+void IRGenerator::emitCallAccessorGuards(NativeObject* obj,
+                                         NativeObject* holder, HandleId id,
+                                         PropertyInfo prop, ObjOperandId objId,
+                                         AccessorKind accessorKind) {
   
   
   
@@ -1065,10 +1064,10 @@ void GetPropIRGenerator::emitCallGetterResultGuards(NativeObject* obj,
       ObjOperandId holderId = writer.loadObject(holder);
       TestMatchingHolder(writer, holder, holderId);
 
-      emitGuardGetterSetterSlot(holder, prop, holderId, AccessorKind::Getter,
+      emitGuardGetterSetterSlot(holder, prop, holderId, accessorKind,
                                  true);
     } else {
-      emitGuardGetterSetterSlot(holder, prop, objId, AccessorKind::Getter);
+      emitGuardGetterSetterSlot(holder, prop, objId, accessorKind);
     }
   } else {
     Value val = holder->getSlot(prop.slot());
@@ -1076,6 +1075,14 @@ void GetPropIRGenerator::emitCallGetterResultGuards(NativeObject* obj,
     MOZ_ASSERT(val.toGCThing()->is<GetterSetter>());
     writer.guardHasGetterSetter(objId, id, val);
   }
+}
+
+void GetPropIRGenerator::emitCallGetterResultGuards(NativeObject* obj,
+                                                    NativeObject* holder,
+                                                    HandleId id,
+                                                    PropertyInfo prop,
+                                                    ObjOperandId objId) {
+  emitCallAccessorGuards(obj, holder, id, prop, objId, AccessorKind::Getter);
 }
 
 void GetPropIRGenerator::emitCallGetterResult(NativeGetPropKind kind,
@@ -4986,30 +4993,7 @@ AttachDecision SetPropIRGenerator::tryAttachSetter(HandleObject obj,
 
   maybeEmitIdGuard(id);
 
-  
-  
-  
-  if (mode_ == ICState::Mode::Specialized || IsWindow(nobj)) {
-    TestMatchingNativeReceiver(writer, nobj, objId);
-
-    if (nobj != holder) {
-      GeneratePrototypeGuards(writer, nobj, holder, objId);
-
-      
-      ObjOperandId holderId = writer.loadObject(holder);
-      TestMatchingHolder(writer, holder, holderId);
-
-      emitGuardGetterSetterSlot(holder, *prop, holderId, AccessorKind::Setter,
-                                 true);
-    } else {
-      emitGuardGetterSetterSlot(holder, *prop, objId, AccessorKind::Setter);
-    }
-  } else {
-    Value val = holder->getSlot(prop->slot());
-    MOZ_ASSERT(val.isPrivateGCThing());
-    MOZ_ASSERT(val.toGCThing()->is<GetterSetter>());
-    writer.guardHasGetterSetter(objId, id, val);
-  }
+  emitCallAccessorGuards(nobj, holder, id, *prop, objId, AccessorKind::Setter);
 
   if (CanAttachDOMGetterSetter(cx_, JSJitInfo::Setter, nobj, holder, *prop,
                                mode_)) {
