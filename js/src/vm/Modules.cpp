@@ -37,8 +37,8 @@
 #include "vm/Runtime.h"                 
 
 #include "builtin/HandlerFunction-inl.h"  
-#include "vm/JSAtomUtils-inl.h"  
-#include "vm/JSContext-inl.h"    
+#include "vm/JSAtomUtils-inl.h"           
+#include "vm/JSContext-inl.h"             
 #include "vm/JSObject-inl.h"
 #include "vm/NativeObject-inl.h"
 
@@ -2750,12 +2750,7 @@ bool js::OnModuleEvaluationFailure(JSContext* cx,
 
 class DynamicImportContextObject : public NativeObject {
  public:
-  enum {
-    ReferencingPrivateSlot = 0,
-    PromiseSlot,
-    ModuleSlot,
-    SlotCount
-  };
+  enum { ReferencingPrivateSlot = 0, PromiseSlot, ModuleSlot, SlotCount };
 
   static const JSClass class_;
   static const JSClassOps classOps_;
