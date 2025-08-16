@@ -947,10 +947,6 @@ add_task(async function test_saveAndCloseGroupViaMiddleClick() {
   Assert.ok(SessionStore.getSavedTabGroup(group.id), "Group is in savedGroups");
 
   SessionStore.forgetSavedTabGroup(group.id);
-  
-  EventUtils.synthesizeMouseAtCenter(document.documentElement, {
-    type: "mouseover",
-  });
 });
 
 add_task(async function test_pinningInteractionsWithTabGroups() {
