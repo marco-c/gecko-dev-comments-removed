@@ -770,7 +770,7 @@ nsTreeBodyFrame::ScrollParts nsTreeBodyFrame::GetScrollParts() {
     
     FindScrollParts(treeFrame, &result);
     if (result.mVScrollbar) {
-      result.mVScrollbar->SetScrollbarMediatorContent(GetContent());
+      result.mVScrollbar->SetOverrideScrollbarMediator(this);
       result.mVScrollbarContent = result.mVScrollbar->GetContent()->AsElement();
     }
   }
