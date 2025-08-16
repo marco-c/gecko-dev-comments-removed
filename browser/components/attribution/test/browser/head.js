@@ -4,7 +4,7 @@
 "use strict";
 
 const { AttributionCode } = ChromeUtils.importESModule(
-  "resource:///modules/AttributionCode.sys.mjs"
+  "moz-src:///browser/components/attribution/AttributionCode.sys.mjs"
 );
 
 
