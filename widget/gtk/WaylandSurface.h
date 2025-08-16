@@ -61,6 +61,11 @@ class WaylandSurface final {
       bool aEmulateFrameCallback = false);
 
   
+  
+  
+  void ClearFrameCallbackHandlerLocked(const WaylandSurfaceLock& aProofOfLock);
+
+  
   void SetFrameCallbackStateLocked(const WaylandSurfaceLock& aProofOfLock,
                                    bool aEnabled);
   void SetFrameCallbackStateHandlerLocked(
