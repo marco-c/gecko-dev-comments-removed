@@ -133,63 +133,65 @@ const DEFAULT_COLOR_UNIT_PREF = "devtools.defaultColorUnit";
 
 
 
-function Inspector(toolbox, commands) {
-  EventEmitter.decorate(this);
+class Inspector extends EventEmitter {
+  constructor(toolbox, commands, win) {
+    super();
 
-  this._toolbox = toolbox;
-  this._commands = commands;
-  this.panelDoc = window.document;
-  this.panelWin = window;
-  this.panelWin.inspector = this;
-  this.telemetry = toolbox.telemetry;
-  this.store = createStore(this);
+    this._toolbox = toolbox;
+    this._commands = commands;
+    this.panelDoc = win.document;
+    this.panelWin = win;
+    this.panelWin.inspector = this;
+    this.telemetry = toolbox.telemetry;
+    this.store = createStore(this);
 
-  
-  
-  this._panels = new Map();
+    
+    
+    this._panels = new Map();
 
-  this._clearSearchResultsLabel = this._clearSearchResultsLabel.bind(this);
-  this._handleDefaultColorUnitPrefChange =
-    this._handleDefaultColorUnitPrefChange.bind(this);
-  this._handleRejectionIfNotDestroyed =
-    this._handleRejectionIfNotDestroyed.bind(this);
-  this._onTargetAvailable = this._onTargetAvailable.bind(this);
-  this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
-  this._onTargetSelected = this._onTargetSelected.bind(this);
-  this._onWillNavigate = this._onWillNavigate.bind(this);
-  this._updateSearchResultsLabel = this._updateSearchResultsLabel.bind(this);
-  this._onSearchLabelClick = this._onSearchLabelClick.bind(this);
+    this._clearSearchResultsLabel = this._clearSearchResultsLabel.bind(this);
+    this._handleDefaultColorUnitPrefChange =
+      this._handleDefaultColorUnitPrefChange.bind(this);
+    this._handleRejectionIfNotDestroyed =
+      this._handleRejectionIfNotDestroyed.bind(this);
+    this._onTargetAvailable = this._onTargetAvailable.bind(this);
+    this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
+    this._onTargetSelected = this._onTargetSelected.bind(this);
+    this._onWillNavigate = this._onWillNavigate.bind(this);
+    this._updateSearchResultsLabel = this._updateSearchResultsLabel.bind(this);
+    this._onSearchLabelClick = this._onSearchLabelClick.bind(this);
 
-  this.onDetached = this.onDetached.bind(this);
-  this.onHostChanged = this.onHostChanged.bind(this);
-  this.onNewSelection = this.onNewSelection.bind(this);
-  this.onResourceAvailable = this.onResourceAvailable.bind(this);
-  this.onRootNodeAvailable = this.onRootNodeAvailable.bind(this);
-  this._onLazyPanelResize = this._onLazyPanelResize.bind(this);
-  this.onPanelWindowResize = debounce(
-    this._onLazyPanelResize,
-    LAZY_RESIZE_INTERVAL_MS,
-    this
-  );
-  this.onPickerCanceled = this.onPickerCanceled.bind(this);
-  this.onPickerHovered = this.onPickerHovered.bind(this);
-  this.onPickerPicked = this.onPickerPicked.bind(this);
-  this.onSidebarHidden = this.onSidebarHidden.bind(this);
-  this.onSidebarResized = this.onSidebarResized.bind(this);
-  this.onSidebarSelect = this.onSidebarSelect.bind(this);
-  this.onSidebarShown = this.onSidebarShown.bind(this);
-  this.onSidebarToggle = this.onSidebarToggle.bind(this);
-  this.listenForSearchEvents = this.listenForSearchEvents.bind(this);
+    this.onDetached = this.onDetached.bind(this);
+    this.onHostChanged = this.onHostChanged.bind(this);
+    this.onNewSelection = this.onNewSelection.bind(this);
+    this.onResourceAvailable = this.onResourceAvailable.bind(this);
+    this.onRootNodeAvailable = this.onRootNodeAvailable.bind(this);
+    this._onLazyPanelResize = this._onLazyPanelResize.bind(this);
+    this.onPanelWindowResize = debounce(
+      this._onLazyPanelResize,
+      LAZY_RESIZE_INTERVAL_MS,
+      this
+    );
+    this.onPickerCanceled = this.onPickerCanceled.bind(this);
+    this.onPickerHovered = this.onPickerHovered.bind(this);
+    this.onPickerPicked = this.onPickerPicked.bind(this);
+    this.onSidebarHidden = this.onSidebarHidden.bind(this);
+    this.onSidebarResized = this.onSidebarResized.bind(this);
+    this.onSidebarSelect = this.onSidebarSelect.bind(this);
+    this.onSidebarShown = this.onSidebarShown.bind(this);
+    this.onSidebarToggle = this.onSidebarToggle.bind(this);
+    this.listenForSearchEvents = this.listenForSearchEvents.bind(this);
 
-  this.prefObserver = new PrefObserver("devtools.");
-  this.prefObserver.on(
-    DEFAULT_COLOR_UNIT_PREF,
-    this._handleDefaultColorUnitPrefChange
-  );
-  this.defaultColorUnit = Services.prefs.getStringPref(DEFAULT_COLOR_UNIT_PREF);
-}
+    this.prefObserver = new PrefObserver("devtools.");
+    this.prefObserver.on(
+      DEFAULT_COLOR_UNIT_PREF,
+      this._handleDefaultColorUnitPrefChange
+    );
+    this.defaultColorUnit = Services.prefs.getStringPref(
+      DEFAULT_COLOR_UNIT_PREF
+    );
+  }
 
-Inspector.prototype = {
   
 
 
@@ -296,7 +298,7 @@ Inspector.prototype = {
     Glean.devtoolsInspector.threePaneEnabled[this.is3PaneModeEnabled].add(1);
 
     return this;
-  },
+  }
 
   
   
@@ -312,7 +314,7 @@ Inspector.prototype = {
       this._getCssProperties(targetFront),
       this._getAccessibilityFront(targetFront),
     ]);
-  },
+  }
 
   async _onTargetSelected({ targetFront }) {
     
@@ -337,7 +339,7 @@ Inspector.prototype = {
 
     
     await this.onRootNodeAvailable(rootNodeFront);
-  },
+  }
 
   _onTargetDestroyed({ targetFront }) {
     
@@ -347,7 +349,7 @@ Inspector.prototype = {
 
     this._defaultNode = null;
     this.selection.setNodeFront(null);
-  },
+  }
 
   onResourceAvailable(resources) {
     
@@ -391,7 +393,7 @@ Inspector.prototype = {
     }
 
     return Promise.all(rootNodeAvailablePromises);
-  },
+  }
 
   
 
@@ -423,7 +425,7 @@ Inspector.prototype = {
     } catch (e) {
       this._handleRejectionIfNotDestroyed(e);
     }
-  },
+  }
 
   async _initMarkupView() {
     if (!this._markupFrame) {
@@ -488,20 +490,20 @@ Inspector.prototype = {
       }
       delete this._newRootStart;
     }
-  },
+  }
 
   async initInspectorFront(targetFront) {
     this.inspectorFront = await targetFront.getFront("inspector");
     this.walker = this.inspectorFront.walker;
-  },
+  }
 
   get toolbox() {
     return this._toolbox;
-  },
+  }
 
   get commands() {
     return this._commands;
-  },
+  }
 
   
 
@@ -515,7 +517,7 @@ Inspector.prototype = {
       [this.commands.targetCommand.TYPES.FRAME],
       "inspector"
     );
-  },
+  }
 
   get highlighters() {
     if (!this._highlighters) {
@@ -523,7 +525,7 @@ Inspector.prototype = {
     }
 
     return this._highlighters;
-  },
+  }
 
   get _3PanePrefName() {
     
@@ -531,7 +533,7 @@ Inspector.prototype = {
     return this.commands.descriptorFront.isTabDescriptor
       ? THREE_PANE_ENABLED_PREF
       : THREE_PANE_CHROME_ENABLED_PREF;
-  },
+  }
 
   get is3PaneModeEnabled() {
     if (!this._is3PaneModeEnabled) {
@@ -540,12 +542,12 @@ Inspector.prototype = {
       );
     }
     return this._is3PaneModeEnabled;
-  },
+  }
 
   set is3PaneModeEnabled(value) {
     this._is3PaneModeEnabled = value;
     Services.prefs.setBoolPref(this._3PanePrefName, this._is3PaneModeEnabled);
-  },
+  }
 
   get search() {
     if (!this._search) {
@@ -559,32 +561,32 @@ Inspector.prototype = {
     }
 
     return this._search;
-  },
+  }
 
   get selection() {
     return this.toolbox.selection;
-  },
+  }
 
   get cssProperties() {
     return this._cssProperties.cssProperties;
-  },
+  }
 
   get fluentL10n() {
     return this._fluentL10n;
-  },
+  }
 
   
   
   
   
   
-  HIGHLIGHTER_AUTOHIDE_TIMER: flags.testing ? 0 : 1000,
+  HIGHLIGHTER_AUTOHIDE_TIMER = flags.testing ? 0 : 1000;
 
   _handleDefaultColorUnitPrefChange() {
     this.defaultColorUnit = Services.prefs.getStringPref(
       DEFAULT_COLOR_UNIT_PREF
     );
-  },
+  }
 
   
 
@@ -596,7 +598,7 @@ Inspector.prototype = {
     if (!this._destroyed) {
       console.error(e);
     }
-  },
+  }
 
   _onWillNavigate() {
     this._defaultNode = null;
@@ -606,16 +608,16 @@ Inspector.prototype = {
     }
     this._destroyMarkup();
     this._pendingSelectionUnique = null;
-  },
+  }
 
   async _getCssProperties(targetFront) {
     this._cssProperties = await targetFront.getFront("cssProperties");
-  },
+  }
 
   async _getAccessibilityFront(targetFront) {
     this.accessibilityFront = await targetFront.getFront("accessibility");
     return this.accessibilityFront;
-  },
+  }
 
   
 
@@ -698,14 +700,14 @@ Inspector.prototype = {
     }
 
     return null;
-  },
+  }
 
   
 
 
   get currentTarget() {
     return this.commands.targetCommand.selectedTargetFront;
-  },
+  }
 
   
 
@@ -738,18 +740,18 @@ Inspector.prototype = {
     });
 
     this.createSearchBoxShortcuts();
-  },
+  }
 
   _onSearchLabelClick() {
     
     
     this.searchBox.focus();
-  },
+  }
 
   listenForSearchEvents() {
     this.search.on("search-cleared", this._clearSearchResultsLabel);
     this.search.on("search-result", this._updateSearchResultsLabel);
-  },
+  }
 
   createSearchBoxShortcuts() {
     this.searchboxShortcuts = new KeyShortcuts({
@@ -778,11 +780,11 @@ Inspector.prototype = {
         this.searchBox.focus();
       }
     });
-  },
+  }
 
   get searchSuggestions() {
     return this.search.autocompleter;
-  },
+  }
 
   _clearSearchResultsLabel(result) {
     
@@ -790,7 +792,7 @@ Inspector.prototype = {
     
     this.emit("search-cleared");
     return this._updateSearchResultsLabel(result, true);
-  },
+  }
 
   _updateSearchResultsLabel(result, clear = false) {
     let str = "";
@@ -813,23 +815,23 @@ Inspector.prototype = {
     }
 
     this.searchResultsLabel.textContent = str;
-  },
+  }
 
   get React() {
     return this._toolbox.React;
-  },
+  }
 
   get ReactDOM() {
     return this._toolbox.ReactDOM;
-  },
+  }
 
   get ReactRedux() {
     return this._toolbox.ReactRedux;
-  },
+  }
 
   get browserRequire() {
     return this._toolbox.browserRequire;
-  },
+  }
 
   get InspectorTabPanel() {
     if (!this._InspectorTabPanel) {
@@ -840,7 +842,7 @@ Inspector.prototype = {
       );
     }
     return this._InspectorTabPanel;
-  },
+  }
 
   get InspectorSplitBox() {
     if (!this._InspectorSplitBox) {
@@ -851,7 +853,7 @@ Inspector.prototype = {
       );
     }
     return this._InspectorSplitBox;
-  },
+  }
 
   get TabBar() {
     if (!this._TabBar) {
@@ -860,7 +862,7 @@ Inspector.prototype = {
       );
     }
     return this._TabBar;
-  },
+  }
 
   
 
@@ -880,7 +882,7 @@ Inspector.prototype = {
         this.toolbox.hostType == Toolbox.HostType.RIGHT)
       ? width > SIDE_PORTAIT_MODE_WIDTH_THRESHOLD
       : width > PORTRAIT_MODE_WIDTH_THRESHOLD;
-  },
+  }
 
   
 
@@ -926,12 +928,12 @@ Inspector.prototype = {
     );
 
     this.panelWin.addEventListener("resize", this.onPanelWindowResize, true);
-  },
+  }
 
   async _onLazyPanelResize() {
     
     if (
-      window.closed ||
+      this.panelWin.closed ||
       this._destroyed ||
       this._toolbox.currentToolId !== "inspector"
     ) {
@@ -940,7 +942,7 @@ Inspector.prototype = {
 
     this.splitBox.setState({ vert: this.useLandscapeMode() });
     this.emit("inspector-resize");
-  },
+  }
 
   getSidebarSize() {
     let width;
@@ -969,7 +971,7 @@ Inspector.prototype = {
     }
 
     return { width, height, splitSidebarWidth };
-  },
+  }
 
   onSidebarHidden() {
     
@@ -986,33 +988,33 @@ Inspector.prototype = {
       "devtools.toolsidebar-width.inspector.splitsidebar",
       this.sidebarSplitBoxRef.current.state.width
     );
-  },
+  }
 
   onSidebarResized(width, height) {
     this.toolbox.emit("inspector-sidebar-resized", { width, height });
-  },
+  }
 
   
 
 
   getActiveSidebar() {
     return Services.prefs.getCharPref("devtools.inspector.activeSidebar");
-  },
+  }
 
   setActiveSidebar(toolId) {
     Services.prefs.setCharPref("devtools.inspector.activeSidebar", toolId);
-  },
+  }
 
   
 
 
   getSelectedSidebar() {
     return Services.prefs.getCharPref("devtools.inspector.selectedSidebar");
-  },
+  }
 
   setSelectedSidebar(toolId) {
     Services.prefs.setCharPref("devtools.inspector.selectedSidebar", toolId);
-  },
+  }
 
   onSidebarSelect(toolId) {
     
@@ -1024,19 +1026,19 @@ Inspector.prototype = {
     this.getPanel(toolId);
 
     this.toolbox.emit("inspector-sidebar-select", toolId);
-  },
+  }
 
   onSidebarShown() {
     const { width, height, splitSidebarWidth } = this.getSidebarSize();
     this.splitBox.setState({ width, height });
     this.sidebarSplitBoxRef.current.setState({ width: splitSidebarWidth });
-  },
+  }
 
   async onSidebarToggle() {
     this.is3PaneModeEnabled = !this.is3PaneModeEnabled;
     await this.setupToolbar();
     this.addRuleView({ skipQueue: true });
-  },
+  }
 
   
 
@@ -1094,7 +1096,7 @@ Inspector.prototype = {
       splitterSize: 1,
       width: sidebarSplitboxWidth,
     });
-  },
+  }
 
   
 
@@ -1178,14 +1180,14 @@ Inspector.prototype = {
     this.setSelectedSidebar(selectedSidebar);
 
     this.emit("ruleview-added");
-  },
+  }
 
   
 
 
   hasPanel(id) {
     return this._panels.has(id);
-  },
+  }
 
   
 
@@ -1255,7 +1257,7 @@ Inspector.prototype = {
     }
 
     return panel;
-  },
+  }
 
   
 
@@ -1355,7 +1357,7 @@ Inspector.prototype = {
     this.sidebar.on("destroy", this.onSidebarHidden);
 
     this.sidebar.show();
-  },
+  }
 
   
 
@@ -1366,7 +1368,7 @@ Inspector.prototype = {
       .inspectorExtensionSidebars) {
       this.addExtensionSidebar(sidebarId, { title });
     }
-  },
+  }
 
   
 
@@ -1402,7 +1404,7 @@ Inspector.prototype = {
     
     
     this.toolbox.emit(`extension-sidebar-created-${id}`, extensionSidebar);
-  },
+  }
 
   
 
@@ -1431,7 +1433,7 @@ Inspector.prototype = {
     this._panels.delete(id);
     this.sidebar.removeTab(id);
     panel.destroy();
-  },
+  }
 
   
 
@@ -1445,7 +1447,7 @@ Inspector.prototype = {
 
   addSidebarTab(id, title, panel, selected) {
     this.sidebar.addTab(id, title, panel, selected);
-  },
+  }
 
   
 
@@ -1461,7 +1463,7 @@ Inspector.prototype = {
       console.error(e);
       return false;
     }
-  },
+  }
 
   async setupToolbar() {
     this.teardownToolbar();
@@ -1508,7 +1510,7 @@ Inspector.prototype = {
     }
 
     this.emit("inspector-toolbar-updated");
-  },
+  }
 
   teardownToolbar() {
     if (this.addNodeButton) {
@@ -1523,9 +1525,9 @@ Inspector.prototype = {
       );
       this.eyeDropperButton = null;
     }
-  },
+  }
 
-  _selectionCssSelectors: null,
+  _selectionCssSelectors = null;
 
   
 
@@ -1542,7 +1544,7 @@ Inspector.prototype = {
       selectors: cssSelectors,
       url: this.currentTarget.url,
     };
-  },
+  }
 
   
 
@@ -1556,7 +1558,7 @@ Inspector.prototype = {
       return this._selectionCssSelectors.selectors;
     }
     return [];
-  },
+  }
 
   
 
@@ -1575,7 +1577,7 @@ Inspector.prototype = {
         
         this.emitForTests("selection-css-selectors-updated", selectors);
       }, this._handleRejectionIfNotDestroyed);
-  },
+  }
 
   
 
@@ -1595,7 +1597,7 @@ Inspector.prototype = {
       !selection.isAnonymousNode() &&
       !invalidTagNames.includes(selection.nodeFront.nodeName.toLowerCase())
     );
-  },
+  }
 
   
 
@@ -1607,7 +1609,7 @@ Inspector.prototype = {
     } else {
       btn.setAttribute("disabled", "true");
     }
-  },
+  }
 
   
 
@@ -1631,7 +1633,7 @@ Inspector.prototype = {
     this.createSearchBoxShortcuts();
 
     this.setSidebarSplitBoxState();
-  },
+  }
 
   
 
@@ -1653,7 +1655,7 @@ Inspector.prototype = {
         console.error(ex);
       }
     });
-  },
+  }
 
   
 
@@ -1702,14 +1704,14 @@ Inspector.prototype = {
     };
     progress.outstanding.add(done);
     return done;
-  },
+  }
 
   
 
 
   cancelUpdate() {
     this._updateProgress = null;
-  },
+  }
 
   
 
@@ -1720,7 +1722,7 @@ Inspector.prototype = {
     this.breadcrumbs.cutAfter(this.breadcrumbs.indexOf(parentNode));
     const nodeFront = parentNode ? parentNode : this._defaultNode;
     this.selection.setNodeFront(nodeFront, { reason: "detached" });
-  },
+  }
 
   
 
@@ -1829,7 +1831,7 @@ Inspector.prototype = {
       this._onSearchLabelClick
     );
     this.searchResultsLabel = null;
-  },
+  }
 
   _destroyMarkup() {
     if (this.markup) {
@@ -1840,20 +1842,20 @@ Inspector.prototype = {
     if (this._markupBox) {
       this._markupBox.style.visibility = "hidden";
     }
-  },
+  }
 
   onEyeDropperButtonClicked() {
     this.eyeDropperButton.classList.contains("checked")
       ? this.hideEyeDropper()
       : this.showEyeDropper();
-  },
+  }
 
   startEyeDropperListeners() {
     this.toolbox.tellRDMAboutPickerState(true, PICKER_TYPES.EYEDROPPER);
     this.inspectorFront.once("color-pick-canceled", this.onEyeDropperDone);
     this.inspectorFront.once("color-picked", this.onEyeDropperDone);
     this.once("new-root", this.onEyeDropperDone);
-  },
+  }
 
   stopEyeDropperListeners() {
     this.toolbox
@@ -1862,12 +1864,12 @@ Inspector.prototype = {
     this.inspectorFront.off("color-pick-canceled", this.onEyeDropperDone);
     this.inspectorFront.off("color-picked", this.onEyeDropperDone);
     this.off("new-root", this.onEyeDropperDone);
-  },
+  }
 
   onEyeDropperDone() {
     this.eyeDropperButton.classList.remove("checked");
     this.stopEyeDropperListeners();
-  },
+  }
 
   
 
@@ -1886,7 +1888,7 @@ Inspector.prototype = {
     return this.inspectorFront
       .pickColorFromPage({ copyOnSelect: true })
       .catch(console.error);
-  },
+  }
 
   
 
@@ -1901,7 +1903,7 @@ Inspector.prototype = {
     this.eyeDropperButton.classList.remove("checked");
     this.stopEyeDropperListeners();
     return this.inspectorFront.cancelPickColorFromPage().catch(console.error);
-  },
+  }
 
   
 
@@ -1932,7 +1934,7 @@ Inspector.prototype = {
 
     
     this.markup.expandNode(nodeFront);
-  },
+  }
 
   
 
@@ -1952,7 +1954,7 @@ Inspector.prototype = {
       });
     }
     return Promise.resolve();
-  },
+  }
 
   
 
@@ -1993,7 +1995,7 @@ Inspector.prototype = {
       }
       notificationBox.appendNotification(text, null, null, priorityMap[level]);
     }
-  },
+  }
 
   
 
@@ -2002,18 +2004,18 @@ Inspector.prototype = {
     return {
       setSelectedNode: this.selection.setNodeFront,
     };
-  },
+  }
 
   onPickerCanceled() {
     this.highlighters.hideHighlighterType(this.highlighters.TYPES.BOXMODEL);
-  },
+  }
 
   onPickerHovered(nodeFront) {
     this.highlighters.showHighlighterTypeForNode(
       this.highlighters.TYPES.BOXMODEL,
       nodeFront
     );
-  },
+  }
 
   onPickerPicked(nodeFront) {
     if (this.toolbox.isDebugTargetFenix()) {
@@ -2027,7 +2029,7 @@ Inspector.prototype = {
       return;
     }
     this.highlighters.hideHighlighterType(this.highlighters.TYPES.BOXMODEL);
-  },
+  }
 
   async inspectNodeActor(nodeGrip, reason) {
     const nodeFront =
@@ -2048,7 +2050,7 @@ Inspector.prototype = {
 
     await this.selection.setNodeFront(nodeFront, { reason });
     return true;
-  },
+  }
 
   
 
@@ -2065,7 +2067,7 @@ Inspector.prototype = {
       this.markup.eventDetailsTooltip.hide();
       abortController.abort();
     }
-  },
-};
+  }
+}
 
 exports.Inspector = Inspector;
