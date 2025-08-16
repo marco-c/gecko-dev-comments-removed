@@ -121,7 +121,9 @@ var UnexpectedScriptLoadPanel = new (class {
     
     this.elements.emailInput.addEventListener("change", e => {
       const hasEmail = this.elements.emailInput.value.trim() !== "";
-      if (!hasEmail) return;
+      if (!hasEmail) {
+        return;
+      }
 
       
       
