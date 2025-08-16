@@ -3,7 +3,7 @@
 use crate::errno::Errno;
 use crate::fcntl::{self, OFlag};
 use crate::sys;
-use crate::{Error, NixPath, Result};
+use crate::{NixPath, Result};
 use cfg_if::cfg_if;
 use std::ffi;
 use std::os::unix::io::{AsRawFd, IntoRawFd, RawFd};
@@ -14,6 +14,27 @@ use libc::{dirent64 as dirent, readdir64_r as readdir_r};
 
 #[cfg(not(target_os = "linux"))]
 use libc::{dirent, readdir_r};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -43,8 +64,8 @@ impl Dir {
     }
 
     
-    pub fn openat<P: ?Sized + NixPath>(
-        dirfd: Option<RawFd>,
+    pub fn openat<Fd: std::os::fd::AsFd, P: ?Sized + NixPath>(
+        dirfd: Fd,
         path: &P,
         oflag: OFlag,
         mode: sys::stat::Mode,
@@ -54,21 +75,46 @@ impl Dir {
     }
 
     
+    
+    
+    
+    
     #[inline]
-    pub fn from<F: IntoRawFd>(fd: F) -> Result<Self> {
-        Dir::from_fd(fd.into_raw_fd())
+    #[deprecated(
+        since = "0.30.0",
+        note = "Deprecate this since it is not I/O-safe, use from_fd instead."
+    )]
+    pub unsafe fn from<F: IntoRawFd>(fd: F) -> Result<Self> {
+        use std::os::fd::FromRawFd;
+        use std::os::fd::OwnedFd;
+
+        
+        
+        
+        let owned_fd = unsafe { OwnedFd::from_raw_fd(fd.into_raw_fd()) };
+        Dir::from_fd(owned_fd)
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[doc(alias("fdopendir"))]
-    pub fn from_fd(fd: RawFd) -> Result<Self> {
-        let d = ptr::NonNull::new(unsafe { libc::fdopendir(fd) }).ok_or_else(
-            || {
-                let e = Error::last();
-                unsafe { libc::close(fd) };
-                e
-            },
-        )?;
+    pub fn from_fd(fd: std::os::fd::OwnedFd) -> Result<Self> {
+        
+        let raw_fd = fd.into_raw_fd();
+        let d = ptr::NonNull::new(unsafe { libc::fdopendir(raw_fd) })
+            .ok_or(Errno::last())?;
         Ok(Dir(d))
     }
 
@@ -85,6 +131,18 @@ impl Dir {
 
 
 unsafe impl Send for Dir {}
+
+impl std::os::fd::AsFd for Dir {
+    fn as_fd(&self) -> std::os::fd::BorrowedFd {
+        let raw_fd = self.as_raw_fd();
+
+        
+        
+        
+        
+        unsafe { std::os::fd::BorrowedFd::borrow_raw(raw_fd) }
+    }
+}
 
 impl AsRawFd for Dir {
     fn as_raw_fd(&self) -> RawFd {
@@ -132,7 +190,7 @@ fn next(dir: &mut Dir) -> Option<Result<Entry>> {
 #[derive(Debug, Eq, Hash, PartialEq)]
 pub struct Iter<'d>(&'d mut Dir);
 
-impl<'d> Iterator for Iter<'d> {
+impl Iterator for Iter<'_> {
     type Item = Result<Entry>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -140,7 +198,7 @@ impl<'d> Iterator for Iter<'d> {
     }
 }
 
-impl<'d> Drop for Iter<'d> {
+impl Drop for Iter<'_> {
     fn drop(&mut self) {
         unsafe { libc::rewinddir((self.0).0.as_ptr()) }
     }
@@ -229,6 +287,7 @@ impl Entry {
                          target_os = "fuchsia",
                          target_os = "haiku",
                          target_os = "hurd",
+                         target_os = "cygwin",
                          solarish,
                          linux_android,
                          apple_targets))] {

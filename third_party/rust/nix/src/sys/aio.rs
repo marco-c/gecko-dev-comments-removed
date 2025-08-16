@@ -193,7 +193,7 @@ impl<'a> AioCb<'a> {
     }
 }
 
-impl<'a> Debug for AioCb<'a> {
+impl Debug for AioCb<'_> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.debug_struct("AioCb")
             .field("aiocb", &self.aiocb.0)
@@ -202,7 +202,7 @@ impl<'a> Debug for AioCb<'a> {
     }
 }
 
-impl<'a> Drop for AioCb<'a> {
+impl Drop for AioCb<'_> {
     
     
     fn drop(&mut self) {
@@ -458,7 +458,6 @@ impl<'a> AioFsync<'a> {
     
     
     
-    
     pub fn new(
         fd: BorrowedFd<'a>,
         mode: AioFsyncMode,
@@ -499,7 +498,7 @@ impl<'a> Aio for AioFsync<'a> {
 
 
 
-impl<'a> AsRef<libc::aiocb> for AioFsync<'a> {
+impl AsRef<libc::aiocb> for AioFsync<'_> {
     fn as_ref(&self) -> &libc::aiocb {
         &self.aiocb.aiocb.0
     }
@@ -576,8 +575,6 @@ impl<'a> AioRead<'a> {
     
     
     
-    
-    
     pub fn new(
         fd: BorrowedFd<'a>,
         offs: off_t,
@@ -609,13 +606,13 @@ impl<'a> Aio for AioRead<'a> {
     aio_methods!(aio_read);
 }
 
-impl<'a> AsMut<libc::aiocb> for AioRead<'a> {
+impl AsMut<libc::aiocb> for AioRead<'_> {
     fn as_mut(&mut self) -> &mut libc::aiocb {
         &mut self.aiocb.aiocb.0
     }
 }
 
-impl<'a> AsRef<libc::aiocb> for AioRead<'a> {
+impl AsRef<libc::aiocb> for AioRead<'_> {
     fn as_ref(&self) -> &libc::aiocb {
         &self.aiocb.aiocb.0
     }
@@ -732,14 +729,14 @@ impl<'a> Aio for AioReadv<'a> {
 }
 
 #[cfg(target_os = "freebsd")]
-impl<'a> AsMut<libc::aiocb> for AioReadv<'a> {
+impl AsMut<libc::aiocb> for AioReadv<'_> {
     fn as_mut(&mut self) -> &mut libc::aiocb {
         &mut self.aiocb.aiocb.0
     }
 }
 
 #[cfg(target_os = "freebsd")]
-impl<'a> AsRef<libc::aiocb> for AioReadv<'a> {
+impl AsRef<libc::aiocb> for AioReadv<'_> {
     fn as_ref(&self) -> &libc::aiocb {
         &self.aiocb.aiocb.0
     }
@@ -808,8 +805,6 @@ impl<'a> AioWrite<'a> {
     
     
     
-    
-    
     pub fn new(
         fd: BorrowedFd<'a>,
         offs: off_t,
@@ -845,13 +840,13 @@ impl<'a> Aio for AioWrite<'a> {
     aio_methods!(aio_write);
 }
 
-impl<'a> AsMut<libc::aiocb> for AioWrite<'a> {
+impl AsMut<libc::aiocb> for AioWrite<'_> {
     fn as_mut(&mut self) -> &mut libc::aiocb {
         &mut self.aiocb.aiocb.0
     }
 }
 
-impl<'a> AsRef<libc::aiocb> for AioWrite<'a> {
+impl AsRef<libc::aiocb> for AioWrite<'_> {
     fn as_ref(&self) -> &libc::aiocb {
         &self.aiocb.aiocb.0
     }
@@ -965,14 +960,14 @@ impl<'a> Aio for AioWritev<'a> {
 }
 
 #[cfg(target_os = "freebsd")]
-impl<'a> AsMut<libc::aiocb> for AioWritev<'a> {
+impl AsMut<libc::aiocb> for AioWritev<'_> {
     fn as_mut(&mut self) -> &mut libc::aiocb {
         &mut self.aiocb.aiocb.0
     }
 }
 
 #[cfg(target_os = "freebsd")]
-impl<'a> AsRef<libc::aiocb> for AioWritev<'a> {
+impl AsRef<libc::aiocb> for AioWritev<'_> {
     fn as_ref(&self) -> &libc::aiocb {
         &self.aiocb.aiocb.0
     }

@@ -40,12 +40,16 @@
 
 
 
+
 #![crate_name = "nix"]
 #![cfg(unix)]
 #![allow(non_camel_case_types)]
-#![cfg_attr(test, deny(warnings))]
+
+
+#![allow(clippy::too_long_first_doc_paragraph)]
 #![recursion_limit = "500"]
 #![deny(unused)]
+#![deny(unexpected_cfgs)]
 #![allow(unused_macros)]
 #![cfg_attr(
     not(all(
@@ -76,6 +80,7 @@
         feature = "sched",
         feature = "socket",
         feature = "signal",
+        feature = "syslog",
         feature = "term",
         feature = "time",
         feature = "ucontext",
@@ -92,6 +97,11 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![deny(clippy::cast_ptr_alignment)]
 #![deny(unsafe_op_in_unsafe_fn)]
+
+
+
+
+#![allow(clippy::unwrap_or_default)]
 
 
 pub use libc;
@@ -140,7 +150,11 @@ feature! {
     #![feature = "mount"]
     pub mod mount;
 }
-#[cfg(any(freebsdlike, target_os = "linux", target_os = "netbsd"))]
+#[cfg(any(
+    freebsdlike,
+    all(target_os = "linux", not(target_env = "ohos")),
+    target_os = "netbsd"
+))]
 feature! {
     #![feature = "mqueue"]
     pub mod mqueue;
@@ -184,6 +198,23 @@ pub mod unistd;
 
 #[cfg(any(feature = "poll", feature = "event"))]
 mod poll_timeout;
+
+#[cfg(any(
+    target_os = "freebsd",
+    target_os = "haiku",
+    target_os = "linux",
+    target_os = "netbsd",
+    apple_targets
+))]
+feature! {
+    #![feature = "process"]
+    pub mod spawn;
+}
+
+feature! {
+    #![feature = "syslog"]
+    pub mod syslog;
+}
 
 use std::ffi::{CStr, CString, OsStr};
 use std::mem::MaybeUninit;
