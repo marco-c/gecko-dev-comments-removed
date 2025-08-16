@@ -114,6 +114,8 @@ var gProfiles = {
 
   async onPopupShowing() {
     let menuPopup = document.getElementById("menu_ProfilesPopup");
+    
+    
     while (menuPopup.hasChildNodes()) {
       menuPopup.firstChild.remove();
     }
