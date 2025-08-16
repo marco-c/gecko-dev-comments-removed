@@ -492,10 +492,6 @@ static constexpr const js::ObjectOps* JS_NULL_OBJECT_OPS = nullptr;
 
 
 
-
-static const uint32_t JSCLASS_PRESERVES_WRAPPER = 1 << 0;
-
-
 static const uint32_t JSCLASS_DELAY_METADATA_BUILDER = 1 << 1;
 
 
@@ -596,9 +592,6 @@ static_assert(JSProto_LIMIT <= (JSCLASS_CACHED_PROTO_MASK + 1),
 static constexpr uint32_t JSCLASS_HAS_CACHED_PROTO(JSProtoKey key) {
   return uint32_t(key) << JSCLASS_CACHED_PROTO_SHIFT;
 }
-
-
-static constexpr size_t JS_OBJECT_WRAPPER_SLOT = 0;
 
 struct MOZ_STATIC_CLASS JSClassOps {
   
@@ -712,8 +705,6 @@ struct alignas(js::gc::JSClassAlignBytes) JSClass {
   bool isWrappedNative() const { return flags & JSCLASS_IS_WRAPPED_NATIVE; }
 
   bool slot0IsISupports() const { return flags & JSCLASS_SLOT0_IS_NSISUPPORTS; }
-
-  bool preservesWrapper() const { return flags & JSCLASS_PRESERVES_WRAPPER; }
 
   static size_t offsetOfFlags() { return offsetof(JSClass, flags); }
 

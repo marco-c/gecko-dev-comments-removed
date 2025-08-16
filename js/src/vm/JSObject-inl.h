@@ -547,13 +547,7 @@ inline bool IsConstructor(const Value& v) {
 }
 
 static inline bool MaybePreserveDOMWrapper(JSContext* cx, HandleObject obj) {
-  const JSClass* clasp = obj->getClass();
-  
-  MOZ_ASSERT_IF(clasp->preservesWrapper(), clasp->isDOMClass());
-  if (!clasp->isDOMClass()) {
-    return true;
-  }
-  if (JS::GetReservedSlot(obj, JS_OBJECT_WRAPPER_SLOT).isUndefined()) {
+  if (!obj->getClass()->isDOMClass()) {
     return true;
   }
 

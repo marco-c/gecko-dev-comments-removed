@@ -19,7 +19,7 @@ namespace js {
 
 
 
-enum class ObjectFlag : uint16_t {
+enum class ObjectFlag : uint32_t {
   IsUsedAsPrototype = 1 << 0,
   NotExtensible = 1 << 1,
   Indexed = 1 << 2,
@@ -88,7 +88,11 @@ enum class ObjectFlag : uint16_t {
 
   
   
-  HasPreservedWrapper = 1 << 15,
+  HasPreservedWrapperDummy = 1 << 15,
+
+  
+  
+  HasNonFunctionAccessor = 1 << 16,
 };
 
 using ObjectFlags = EnumFlags<ObjectFlag>;
