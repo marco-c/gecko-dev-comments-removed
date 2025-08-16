@@ -1055,6 +1055,24 @@ void IRGenerator::emitCallAccessorGuards(NativeObject* obj,
   MOZ_ASSERT(holder->containsPure(id, prop));
 
   if (mode_ == ICState::Mode::Specialized || IsWindow(obj)) {
+    
+    ObjectFuse* objFuse = nullptr;
+    if (canOptimizeConstantAccessorProperty(holder, prop, &objFuse)) {
+      ObjOperandId holderId;
+      if (obj == holder) {
+        writer.guardSpecificObject(objId, obj);
+        holderId = objId;
+      } else {
+        
+        
+        
+        TestMatchingNativeReceiver(writer, obj, objId);
+        holderId = writer.loadObject(holder);
+      }
+      emitGuardConstantAccessorProperty(holder, holderId, id, prop, objFuse);
+      return;
+    }
+
     TestMatchingNativeReceiver(writer, obj, objId);
 
     if (obj != holder) {
