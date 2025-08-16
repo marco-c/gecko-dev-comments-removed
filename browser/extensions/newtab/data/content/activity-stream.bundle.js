@@ -5090,7 +5090,10 @@ const PromoCard = () => {
     className: "promo-card-inner"
   }, external_React_default().createElement("div", {
     className: "img-wrapper"
-  }), external_React_default().createElement("span", {
+  }, external_React_default().createElement("img", {
+    src: "chrome://newtab/content/data/content/assets/puzzle-fox.svg",
+    alt: ""
+  })), external_React_default().createElement("span", {
     className: "promo-card-title",
     "data-l10n-id": "newtab-promo-card-title"
   }), external_React_default().createElement("span", {
