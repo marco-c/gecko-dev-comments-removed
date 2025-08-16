@@ -12305,9 +12305,11 @@ const USER_ACTION_TYPES = {
   TASK_DELETE: "task_delete",
   TASK_COMPLETE: "task_complete"
 };
+const PREF_WIDGETS_LISTS_MAX_LISTS = "widgets.lists.maxLists";
 function Lists({
   dispatch
 }) {
+  const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
   const {
     selected,
     lists
@@ -12700,6 +12702,17 @@ function Lists({
   if (!lists) {
     return null;
   }
+
+  
+  const currentListsCount = Object.keys(lists).length;
+  let maxListsCount = prefs[PREF_WIDGETS_LISTS_MAX_LISTS];
+  function isAtMaxListsLimit() {
+    
+    if (maxListsCount < 1) {
+      maxListsCount = 1;
+    }
+    return currentListsCount >= maxListsCount;
+  }
   return external_React_default().createElement("article", {
     className: "lists",
     ref: el => {
@@ -12733,10 +12746,13 @@ function Lists({
   }, external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-widget-lists-menu-edit",
     onClick: () => setIsEditing(true)
-  }), external_React_default().createElement("panel-item", {
+  }), external_React_default().createElement("panel-item", Lists_extends({}, isAtMaxListsLimit ? {
+    disabled: true
+  } : {}, {
     "data-l10n-id": "newtab-widget-lists-menu-create",
-    onClick: () => handleCreateNewList()
-  }), external_React_default().createElement("panel-item", {
+    onClick: () => handleCreateNewList(),
+    className: "create-list"
+  })), external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-widget-lists-menu-delete",
     onClick: () => handleDeleteList()
   }), external_React_default().createElement("hr", null), external_React_default().createElement("panel-item", {
