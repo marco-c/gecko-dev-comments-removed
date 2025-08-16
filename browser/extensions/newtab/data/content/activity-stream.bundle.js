@@ -12939,7 +12939,9 @@ function Lists({
     key: key,
     value: key,
     label: list.label
-  })))), external_React_default().createElement("moz-button", {
+  })))), external_React_default().createElement("moz-badge", {
+    "data-l10n-id": "newtab-widget-lists-label-beta"
+  }), external_React_default().createElement("moz-button", {
     className: "lists-panel-button",
     iconSrc: "chrome://global/skin/icons/more.svg",
     menuId: "lists-panel",
