@@ -7,7 +7,7 @@
 
 #[cfg(feature = "gecko")]
 use crate::media_queries::Device;
-use crate::properties::ComputedValues;
+use crate::properties::{ComputedValues, NonCustomPropertyId};
 use crate::ArcSlice;
 use app_units::Au;
 use servo_arc::Arc;
@@ -37,6 +37,8 @@ pub struct Context<'a> {
     
     #[cfg(feature = "gecko")]
     pub element_info: ResolvedElementInfo<'a>,
+    
+    pub for_property: NonCustomPropertyId,
 }
 
 
