@@ -93,6 +93,12 @@ class AutoWebCodecsMarker {
   bool mEnded = false;
 };
 
+
+
+
+#define AUTO_WEBCODECS_MARKER(type, desc) \
+  AutoWebCodecsMarker PROFILER_RAII(type, desc)
+
 class AsyncDurationTracker {
  public:
   AsyncDurationTracker() : mOwningThread(GetCurrentSerialEventTarget()) {}
