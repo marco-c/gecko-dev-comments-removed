@@ -519,10 +519,18 @@ class ModuleLoaderBase : public nsISupports {
 
   void InstantiateAndEvaluateDynamicImport(ModuleLoadRequest* aRequest);
 
-  static bool OnLoadRequestedModulesResolved(JSContext* cx, unsigned argc,
-                                             Value* vp);
-  static bool OnLoadRequestedModulesRejected(JSContext* cx, unsigned argc,
-                                             Value* vp);
+  static bool OnLoadRequestedModulesResolved(JSContext* aCx, unsigned aArgc,
+                                             Value* aVp);
+  static bool OnLoadRequestedModulesRejected(JSContext* aCx, unsigned aArgc,
+                                             Value* aVp);
+  static bool OnLoadRequestedModulesResolved(
+      JSContext* aCx, JS::Handle<JS::Value> aHostDefined);
+  static bool OnLoadRequestedModulesRejected(JSContext* aCx,
+                                             JS::Handle<JS::Value> aHostDefined,
+                                             JS::Handle<JS::Value> aError);
+  static bool OnLoadRequestedModulesResolved(ModuleLoadRequest* aRequest);
+  static bool OnLoadRequestedModulesRejected(ModuleLoadRequest* aRequest,
+                                             JS::Handle<JS::Value> aError);
 
   
 
@@ -555,10 +563,8 @@ class ModuleLoaderBase : public nsISupports {
   static const uint32_t ImportMetaResolveSpecifierArg = 0;
 
   
-  enum class OnLoadRequestedModulesSlot : uint8_t {
-    HostDefinedSlot = 0,
-    SlotCount
-  };
+  
+  static const uint32_t LoadReactionHostDefinedSlot = 0;
 
   
   static const uint32_t OnLoadRequestedModulesResolvedNumArgs = 0;
