@@ -26,9 +26,9 @@ promise_test(async () => {
     tone: 'neutral',
     format: 'plain-text',
     length: 'medium',
-    expectedInputLanguages: ['es'], 
+    expectedInputLanguages: ['zu'], 
     expectedContextLanguages: ['en'],
-    outputLanguage: 'es', 
+    outputLanguage: 'zu', 
   });
   assert_equals(availability, 'unavailable');
 }, 'Writer.availability() returns unavailable for unsupported languages');
