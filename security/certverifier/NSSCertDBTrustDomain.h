@@ -230,6 +230,9 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
   
   
   void ResetAccumulatedState();
+  
+  
+  void ResetCandidateBuiltChainState();
 
   CertVerifier::OCSPStaplingStatus GetOCSPStaplingStatus() const {
     return mOCSPStaplingStatus;
