@@ -15,6 +15,7 @@ const { PrefObserver } = require("resource://devtools/client/shared/prefs.js");
 
 
 const Promise = require("Promise");
+const osString = Services.appinfo.OS;
 
 loader.lazyRequireGetter(
   this,
@@ -281,6 +282,7 @@ class Inspector extends EventEmitter {
     this.breadcrumbs = new HTMLBreadcrumbs(this);
     this.#setupExtensionSidebars();
     this.#setupSearchBox();
+    this.#createInspectorShortcuts();
 
     this.#onNewSelection();
 
@@ -742,8 +744,6 @@ class Inspector extends EventEmitter {
     this.searchBox.addEventListener("focus", this.#listenForSearchEvents, {
       once: true,
     });
-
-    this.#createSearchBoxShortcuts();
   }
 
   #onSearchLabelClick = () => {
@@ -757,34 +757,42 @@ class Inspector extends EventEmitter {
     this.search.on("search-result", this.#updateSearchResultsLabel);
   };
 
-  #createSearchBoxShortcuts() {
-    this.searchboxShortcuts = new KeyShortcuts({
+  #isFromInspectorWindow = event => {
+    const win = event.originalTarget.ownerGlobal;
+    return win === this.panelWin || win.parent === this.panelWin;
+  };
+
+  #createInspectorShortcuts = () => {
+    this.inspectorShortcuts = new KeyShortcuts({
       window: this.panelDoc.defaultView,
       
       
       
       target: this.toolbox.getChromeEventHandler(),
     });
-    const key = INSPECTOR_L10N.getStr("inspector.searchHTML.key");
-    this.searchboxShortcuts.on(key, event => {
+
+    const searchboxKey = INSPECTOR_L10N.getStr("inspector.searchHTML.key");
+    this.inspectorShortcuts.on(searchboxKey, event => {
       
       if (
         event.originalTarget.closest("#sidebar-panel-ruleview") ||
-        event.originalTarget.closest("#sidebar-panel-computedview")
+        event.originalTarget.closest("#sidebar-panel-computedview") ||
+        !this.#isFromInspectorWindow(event)
       ) {
         return;
       }
-
-      const win = event.originalTarget.ownerGlobal;
-      
-      
-      
-      if (win === this.panelWin || win.parent === this.panelWin) {
-        event.preventDefault();
-        this.searchBox.focus();
-      }
+      event.preventDefault();
+      this.searchBox.focus();
     });
-  }
+    const eyedropperKey = INSPECTOR_L10N.getStr("inspector.eyedropper.key");
+    this.inspectorShortcuts.on(eyedropperKey, event => {
+      if (!this.#isFromInspectorWindow(event)) {
+        return;
+      }
+      event.preventDefault();
+      this.onEyeDropperButtonClicked();
+    });
+  };
 
   get searchSuggestions() {
     return this.search.autocompleter;
@@ -1500,8 +1508,13 @@ class Inspector extends EventEmitter {
         "inspector-eyedropper-toggle"
       );
       this.eyeDropperButton.disabled = false;
-      this.eyeDropperButton.title = INSPECTOR_L10N.getStr(
-        "inspector.eyedropper.label"
+      const shortcutKey = INSPECTOR_L10N.getStr(
+        "inspector.eyedropper.key"
+      ).replace("CmdOrCtrl", osString == "Darwin" ? "Cmd" : "Ctrl");
+
+      this.eyeDropperButton.title = INSPECTOR_L10N.getFormatStr(
+        "inspector.eyedropper.label2",
+        shortcutKey
       );
       this.eyeDropperButton.addEventListener(
         "click",
@@ -1637,9 +1650,8 @@ class Inspector extends EventEmitter {
 
     
     
-    this.searchboxShortcuts.destroy();
-    this.#createSearchBoxShortcuts();
-
+    this.inspectorShortcuts.destroy();
+    this.#createInspectorShortcuts();
     this.#setSidebarSplitBoxState();
   };
 
@@ -1789,8 +1801,8 @@ class Inspector extends EventEmitter {
 
     this.breadcrumbs.destroy();
     this.styleChangeTracker.destroy();
-    this.searchboxShortcuts.destroy();
-    this.searchboxShortcuts = null;
+    this.inspectorShortcuts.destroy();
+    this.inspectorShortcuts = null;
 
     this.commands.targetCommand.unwatchTargets({
       types: [this.commands.targetCommand.TYPES.FRAME],
@@ -1877,6 +1889,7 @@ class Inspector extends EventEmitter {
   onEyeDropperDone() {
     this.eyeDropperButton.classList.remove("checked");
     this.stopEyeDropperListeners();
+    this.panelWin.focus();
   }
 
   
