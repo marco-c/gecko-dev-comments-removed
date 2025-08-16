@@ -11,5 +11,8 @@ DIRS += [
 if CONFIG["MOZ_DEBUG"]:
     DIRS += [ "exporters/ostream" ]
 
+if CONFIG["ENABLE_TESTS"]:
+    DIRS += ["exporters/memory"]
+
 with Files("**"):
     BUG_COMPONENT = ("Toolkit", "Gecko Trace")
