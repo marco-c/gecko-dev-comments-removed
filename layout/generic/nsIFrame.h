@@ -50,6 +50,7 @@
 
 #include <algorithm>
 
+#include "DisplayListClipState.h"
 #include "FrameProperties.h"
 #include "LayoutConstants.h"
 #include "Visibility.h"
@@ -3200,6 +3201,13 @@ class nsIFrame : public nsQueryFrame {
 
   virtual void UnionChildOverflow(mozilla::OverflowAreas& aOverflowAreas,
                                   bool aAsIfScrolled = false);
+  
+
+
+
+  bool ComputeOverflowClipRectRelativeToSelf(
+      const mozilla::PhysicalAxes aClipAxes, nsRect& aOutRect,
+      nscoord aOutRadii[8]) const;
 
   
   nsSize OverflowClipMargin(mozilla::PhysicalAxes aClipAxes) const;

@@ -2790,20 +2790,27 @@ static void ApplyOverflowClipping(
     nsDisplayListBuilder* aBuilder, const nsIFrame* aFrame,
     PhysicalAxes aClipAxes,
     DisplayListClipState::AutoClipMultiple& aClipState) {
-  
-  
-  
-  
-  MOZ_ASSERT(!aClipAxes.isEmpty());
-  MOZ_ASSERT(aFrame->ShouldApplyOverflowClipping(aFrame->StyleDisplay()) ==
-             aClipAxes);
-
   nsRect clipRect;
-  bool haveRadii = false;
   nscoord radii[8];
-  auto* disp = aFrame->StyleDisplay();
+  bool haveRadii =
+      aFrame->ComputeOverflowClipRectRelativeToSelf(aClipAxes, clipRect, radii);
+  aClipState.ClipContainingBlockDescendantsExtra(
+      clipRect + aBuilder->ToReferenceFrame(aFrame),
+      haveRadii ? radii : nullptr);
+}
+
+bool nsIFrame::ComputeOverflowClipRectRelativeToSelf(
+    const PhysicalAxes aClipAxes, nsRect& aOutRect,
+    nscoord aOutRadii[8]) const {
   
-  auto wm = aFrame->GetWritingMode();
+  
+  
+  
+  const auto* disp = StyleDisplay();
+  MOZ_ASSERT(!aClipAxes.isEmpty());
+  MOZ_ASSERT(ShouldApplyOverflowClipping(disp) == aClipAxes);
+  
+  auto wm = GetWritingMode();
   bool cbH = (wm.IsVertical() ? disp->mOverflowClipBoxBlock
                               : disp->mOverflowClipBoxInline) ==
              StyleOverflowClipBox::ContentBox;
@@ -2811,7 +2818,7 @@ static void ApplyOverflowClipping(
                               : disp->mOverflowClipBoxBlock) ==
              StyleOverflowClipBox::ContentBox;
 
-  nsMargin boxMargin = -aFrame->GetUsedPadding();
+  nsMargin boxMargin = -GetUsedPadding();
   if (!cbH) {
     boxMargin.left = boxMargin.right = nscoord(0);
   }
@@ -2819,33 +2826,30 @@ static void ApplyOverflowClipping(
     boxMargin.top = boxMargin.bottom = nscoord(0);
   }
 
-  auto clipMargin = aFrame->OverflowClipMargin(aClipAxes);
+  auto clipMargin = OverflowClipMargin(aClipAxes);
 
-  boxMargin -= aFrame->GetUsedBorder();
+  boxMargin -= GetUsedBorder();
   boxMargin += nsMargin(clipMargin.height, clipMargin.width, clipMargin.height,
                         clipMargin.width);
-  boxMargin.ApplySkipSides(aFrame->GetSkipSides());
+  boxMargin.ApplySkipSides(GetSkipSides());
 
-  nsRect rect(nsPoint(0, 0), aFrame->GetSize());
-  rect.Inflate(boxMargin);
+  aOutRect = nsRect(nsPoint(), GetSize());
+  aOutRect.Inflate(boxMargin);
   if (MOZ_UNLIKELY(!aClipAxes.contains(PhysicalAxis::Horizontal))) {
     
     
     
-    nsRect o = aFrame->InkOverflowRect();
-    rect.x = o.x;
-    rect.width = o.width;
+    nsRect o = InkOverflowRect();
+    aOutRect.x = o.x;
+    aOutRect.width = o.width;
   }
   if (MOZ_UNLIKELY(!aClipAxes.contains(PhysicalAxis::Vertical))) {
     
-    nsRect o = aFrame->InkOverflowRect();
-    rect.y = o.y;
-    rect.height = o.height;
+    nsRect o = InkOverflowRect();
+    aOutRect.y = o.y;
+    aOutRect.height = o.height;
   }
-  clipRect = rect + aBuilder->ToReferenceFrame(aFrame);
-  haveRadii = aFrame->GetBoxBorderRadii(radii, boxMargin);
-  aClipState.ClipContainingBlockDescendantsExtra(clipRect,
-                                                 haveRadii ? radii : nullptr);
+  return GetBoxBorderRadii(aOutRadii, boxMargin);
 }
 
 nsSize nsIFrame::OverflowClipMargin(PhysicalAxes aClipAxes) const {
@@ -12219,6 +12223,7 @@ PhysicalAxes nsIFrame::ShouldApplyOverflowClipping(
       case LayoutFrameType::SVGSymbol:
       case LayoutFrameType::Table:
       case LayoutFrameType::TableCell:
+      case LayoutFrameType::Image:
         return kPhysicalAxesBoth;
       case LayoutFrameType::TextInput:
         
