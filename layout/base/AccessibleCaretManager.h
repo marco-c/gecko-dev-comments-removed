@@ -278,8 +278,8 @@ class AccessibleCaretManager {
   virtual CaretMode GetCaretMode() const;
 
   
-  virtual bool CompareTreePosition(nsIFrame* aStartFrame,
-                                   nsIFrame* aEndFrame) const;
+  virtual bool CompareTreePosition(const nsIContent* aStartContent,
+                                   const nsIContent* aEndContent) const;
 
   
   
