@@ -23,8 +23,7 @@ struct StaticXREAppData;
 
 
 
-Maybe<int> LauncherMain(int& argc, wchar_t* argv[],
-                        const StaticXREAppData& aAppData);
+Maybe<int> LauncherMain(int& argc, wchar_t* argv[]);
 
 enum class LauncherFlags : uint32_t {
   eNone = 0,

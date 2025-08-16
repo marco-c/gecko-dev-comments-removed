@@ -42,13 +42,6 @@ inline void HandleLauncherError(
   HandleLauncherError(r, aProcessType);
 }
 
-
-struct StaticXREAppData;
-
-void SetLauncherErrorAppData(const StaticXREAppData& aAppData);
-
-void SetLauncherErrorForceEventLog();
-
 }  
 
 #endif  
