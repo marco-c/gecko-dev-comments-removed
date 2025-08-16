@@ -75,7 +75,9 @@ function getVisibleMenuItems(aMenu) {
         
         
         item.id != "context-inspect-a11y" &&
-        !item.id.includes("context-media-playbackrate")
+        !item.id.includes("context-media-playbackrate") &&
+        item.id != "context-copy-link-to-highlight" &&
+        item.id != "context-copy-clean-link-to-highlight"
       ) {
         if (item.id != FRAME_OS_PID) {
           ok(key, "menuitem " + item.id + " has an access key");
@@ -397,13 +399,37 @@ async function test_contextmenu(selector, menuItems, options = {}) {
     info("Completed onContextMenuShown");
   }
 
+  if (
+    typeof options.awaitOnMenuBuilt === "object" &&
+    options.awaitOnMenuBuilt.id
+  ) {
+    const elementId = options.awaitOnMenuBuilt.id;
+    const menu = document.getElementById(elementId);
+    await TestUtils.waitForCondition(
+      () => menu && !menu.hidden,
+      `Menu ${elementId} did not appear in time`
+    );
+    info(`Menu "${elementId}" was built and is now visible`);
+  }
+
   if (menuItems) {
     if (Services.prefs.getBoolPref("devtools.inspector.enabled", true)) {
-      const inspectItems =
+      let inspectItems = [];
+      let hasSeparatorAboveAskChat = false;
+      const hasViewSource =
         menuItems.includes("context-viewsource") ||
-        menuItems.includes("context-viewpartialsource-selection")
-          ? []
-          : ["---", null];
+        menuItems.includes("context-viewpartialsource-selection");
+
+      const askChatIndex = menuItems.indexOf("context-ask-chat");
+      const isAskChatLastItem = menuItems.at(-4) === "context-ask-chat";
+      if (askChatIndex >= 2) {
+        hasSeparatorAboveAskChat = menuItems[askChatIndex - 2] === "---";
+      }
+
+      if (!hasViewSource && !(isAskChatLastItem && hasSeparatorAboveAskChat)) {
+        inspectItems.push("---", null);
+      }
+
       if (
         Services.prefs.getBoolPref("devtools.accessibility.enabled", true) &&
         (Services.prefs.getBoolPref("devtools.everOpened", false) ||
