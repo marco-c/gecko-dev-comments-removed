@@ -141,6 +141,15 @@ pub struct SearchEngineUrl {
     
     #[uniffi(default = false)]
     pub exclude_partner_code_from_telemetry: bool,
+
+    
+    
+    
+    
+    
+    
+    #[uniffi(default = None)]
+    pub accepted_content_types: Option<Vec<String>>,
 }
 
 

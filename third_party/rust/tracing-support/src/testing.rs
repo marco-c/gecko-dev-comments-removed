@@ -2,10 +2,15 @@
 
 
 
-use std::sync::Once;
-use tracing_subscriber::{fmt, prelude::*, EnvFilter};
+use std::{env, sync::Once};
+use tracing_subscriber::{
+    filter::{targets::Targets, LevelFilter},
+    fmt,
+    prelude::*,
+};
 
 static TESTING_SUBSCRIBER: Once = Once::new();
+
 
 
 
@@ -16,7 +21,7 @@ pub fn init_for_tests() {
     TESTING_SUBSCRIBER.call_once(|| {
         tracing_subscriber::registry()
             .with(fmt::layer())
-            .with(EnvFilter::from_default_env())
+            .with(build_targets_from_env(LevelFilter::ERROR))
             .init();
     });
 }
@@ -25,15 +30,55 @@ pub fn init_for_tests() {
 pub fn init_for_tests_with_level(level: crate::Level) {
     
     
-    let level: tracing::Level = level.into();
     TESTING_SUBSCRIBER.call_once(|| {
         tracing_subscriber::registry()
             .with(fmt::layer())
-            .with(
-                EnvFilter::builder()
-                    .with_default_directive(level.into())
-                    .from_env_lossy(),
-            )
+            .with(build_targets_from_env(LevelFilter::from_level(
+                level.into(),
+            )))
             .init();
     });
+}
+
+fn build_targets_from_env(default: LevelFilter) -> Targets {
+    let mut targets = Targets::new().with_default(default);
+    let Ok(env) = env::var("RUST_LOG") else {
+        return targets;
+    };
+    for item in env.split(",") {
+        let item = item.trim();
+        match item.split_once("=") {
+            Some((target, level)) => {
+                let level = match try_parse_level(level) {
+                    Some(level) => level,
+                    None => {
+                        println!("Invalid logging level, defaulting to error: {level}");
+                        LevelFilter::ERROR
+                    }
+                };
+                targets = targets.with_target(target, level);
+            }
+            None => match try_parse_level(item) {
+                Some(level) => {
+                    targets = targets.with_default(level);
+                }
+                None => {
+                    targets = targets.with_target(item, LevelFilter::TRACE);
+                }
+            },
+        }
+    }
+    targets
+}
+
+fn try_parse_level(env_part: &str) -> Option<LevelFilter> {
+    match env_part.to_lowercase().as_str() {
+        "error" => Some(LevelFilter::ERROR),
+        "warn" | "warning" => Some(LevelFilter::WARN),
+        "info" => Some(LevelFilter::INFO),
+        "debug" => Some(LevelFilter::DEBUG),
+        "trace" => Some(LevelFilter::TRACE),
+        "off" => Some(LevelFilter::OFF),
+        _ => None,
+    }
 }
