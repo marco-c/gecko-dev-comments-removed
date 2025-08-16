@@ -76,8 +76,7 @@ enum class ModuleType : uint32_t {
 using ModuleLoadHook = bool (*)(JSContext* cx, Handle<JSObject*> referrer,
                                 Handle<Value> referencingPrivate,
                                 Handle<JSObject*> moduleRequest,
-                                Handle<Value> statePrivate,
-                                Handle<JSObject*> promise);
+                                Handle<Value> payload);
 
 
 
