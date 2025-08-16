@@ -56,7 +56,7 @@ def optimize_task_graph(
     assigned taskId, including replacement tasks.
     """
     
-    from taskgraph.optimize.strategies import IndexSearch
+    from taskgraph.optimize.strategies import IndexSearch  
 
     label_to_taskid = {}
     if not existing_tasks:
@@ -294,7 +294,7 @@ def replace_tasks(
     a side-effect.
     """
     
-    from taskgraph.optimize.strategies import IndexSearch
+    from taskgraph.optimize.strategies import IndexSearch  
 
     opt_counts = defaultdict(int)
     replaced = set()
