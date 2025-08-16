@@ -91,16 +91,15 @@ def get_logger():
     
     new_logger = BridgeLogger(new_logger)
 
-    
-    if sys.version_info.major == 3:
-        try:
-            from arsenic import connection
-            from structlog import wrap_logger
+    try:
+        
+        from arsenic import connection
+        from structlog import wrap_logger
 
-            connection.log = wrap_logger(new_logger)
-        except ImportError:
-            
-            pass
+        connection.log = wrap_logger(new_logger)
+    except ImportError:
+        
+        pass
     logger = new_logger
     return logger
 

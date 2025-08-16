@@ -51,7 +51,7 @@ def run_prettier(cmd_args, config, fix):
             
             if not ("Ignored unknown option" in error)
         ]
-        if len(errors):
+        if errors:
             results.append(
                 result.from_config(
                     config,
@@ -69,7 +69,7 @@ def run_prettier(cmd_args, config, fix):
 
     if not output:
         
-        if errors and len(errors):
+        if errors and errors:
             return {"results": results, "fixed": 0}
 
         return {"results": [], "fixed": 0}  
