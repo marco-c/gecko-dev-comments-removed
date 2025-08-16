@@ -18,18 +18,20 @@ NativeMenuIcon NativeMenu::GetIcon(dom::Element& aElement) {
   if (!img) {
     return {};
   }
+  
+  
+  RefPtr<const ComputedStyle> style = nsComputedDOMStyle::GetComputedStyle(img);
   if (RefPtr uri = img->GetCurrentURI()) {
-    return {std::move(uri), nullptr};
+    return {std::move(uri), std::move(style)};
   }
   
   
   if (auto* selector = img->GetResponsiveImageSelector()) {
     if (RefPtr uri = selector->GetSelectedImageURL()) {
-      return {std::move(uri), nullptr};
+      return {std::move(uri), std::move(style)};
     }
   }
   
-  RefPtr<const ComputedStyle> style = nsComputedDOMStyle::GetComputedStyle(img);
   if (!style) {
     return {};
   }
