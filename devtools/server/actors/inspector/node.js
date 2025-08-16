@@ -318,16 +318,6 @@ class NodeActor extends Actor {
   
   
   get numChildren() {
-    
-    
-    if (
-      isMarkerPseudoElement(this.rawNode) ||
-      isBeforePseudoElement(this.rawNode) ||
-      isAfterPseudoElement(this.rawNode)
-    ) {
-      return 0;
-    }
-
     const rawNode = this.rawNode;
     let numChildren = rawNode.childNodes.length;
     const hasContentDocument = rawNode.contentDocument;
@@ -339,13 +329,15 @@ class NodeActor extends Actor {
 
     
     
-    
-    
-    
     if (
       numChildren === 0 ||
       isShadowHost(this.rawNode) ||
-      this.rawNode.containingShadowRoot
+      
+      
+      this.rawNode.containingShadowRoot ||
+      isMarkerPseudoElement(this.rawNode) ||
+      isBeforePseudoElement(this.rawNode) ||
+      isAfterPseudoElement(this.rawNode)
     ) {
       numChildren = this.walker.countChildren(this);
     }
