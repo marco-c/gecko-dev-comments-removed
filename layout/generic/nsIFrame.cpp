@@ -11258,7 +11258,9 @@ static nsIFrame* GetCorrectedParent(const nsIFrame* aFrame) {
 
   
   
-  if (pseudo != PseudoStyleType::NotPseudo) {
+  
+  if (pseudo != PseudoStyleType::NotPseudo &&
+      !PseudoStyle::IsElementBackedPseudo(pseudo)) {
     MOZ_ASSERT(aFrame->GetContent());
     Element* element = Element::FromNode(aFrame->GetContent());
     
