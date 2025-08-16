@@ -7,6 +7,7 @@
 
 #include <algorithm>
 
+#include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/Encoding.h"
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/Try.h"
@@ -262,6 +263,13 @@ nsresult txMozillaXMLOutput::endElement() {
                element->IsHTMLElement(nsGkAtoms::script)) {
       nsCOMPtr<nsIScriptElement> sele = do_QueryInterface(element);
       if (sele) {
+        
+        
+        
+        
+        {
+          nsAutoMicroTask mt;
+        }
         bool block = sele->AttemptToExecute();
         
         

@@ -624,6 +624,13 @@ nsresult nsXMLContentSink::CloseElement(nsIContent* aContent) {
 
     
     
+    
+    {
+      nsAutoMicroTask mt;
+    }
+
+    
+    
     bool block = sele->AttemptToExecute();
     if (mParser) {
       if (block) {

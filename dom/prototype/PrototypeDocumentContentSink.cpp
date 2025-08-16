@@ -444,6 +444,13 @@ void PrototypeDocumentContentSink::CloseElement(Element* aElement,
     nsCOMPtr<nsIScriptElement> sele = do_QueryInterface(aElement);
     MOZ_ASSERT(sele, "Node didn't QI to script.");
     if (sele->GetScriptIsModule()) {
+      
+      
+      
+      
+      {
+        nsAutoMicroTask mt;
+      }
       DebugOnly<bool> block = sele->AttemptToExecute();
       MOZ_ASSERT(!block, "<script type=module> shouldn't block the parser");
     }

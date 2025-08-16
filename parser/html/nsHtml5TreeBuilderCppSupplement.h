@@ -1330,6 +1330,19 @@ void nsHtml5TreeBuilder::elementPopped(int32_t aNamespace, nsAtom* aName,
     if (mBuilder) {
       return;
     }
+
+    
+    
+    
+    
+    nsHtml5TreeOperation* treeOpMicrotask =
+        mOpQueue.AppendElement(mozilla::fallible);
+    if (MOZ_UNLIKELY(!treeOpMicrotask)) {
+      MarkAsBrokenAndRequestSuspensionWithoutBuilder(NS_ERROR_OUT_OF_MEMORY);
+      return;
+    }
+    treeOpMicrotask->Init(mozilla::AsVariant(opMicrotaskCheckpoint()));
+
     if (mCurrentHtmlScriptCannotDocumentWriteOrBlock) {
       NS_ASSERTION(
           aNamespace == kNameSpaceID_XHTML || aNamespace == kNameSpaceID_SVG,

@@ -141,13 +141,6 @@ bool ScriptElement::MaybeProcessScript() {
   NS_ASSERTION(cont->DebugGetSlots()->mMutationObservers.contains(this),
                "You forgot to add self as observer");
 
-  
-  
-  
-  
-  nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
-      "ScriptElement::MaybeProcessScript", []() { nsAutoMicroTask mt; }));
-
   if (mAlreadyStarted || !mDoneAddingChildren || !cont->GetComposedDoc() ||
       mMalformed) {
     return false;
