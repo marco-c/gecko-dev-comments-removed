@@ -205,8 +205,11 @@ struct BufferChunk : public ChunkBase,
   
   
   using PerAllocBitmap = mozilla::BitSet<MaxAllocsPerChunk>;
+  using AtomicPerAllocBitmap =
+      mozilla::BitSet<MaxAllocsPerChunk,
+                      mozilla::Atomic<size_t, mozilla::Relaxed>>;
   MainThreadOrGCTaskData<PerAllocBitmap> allocStartBitmap;
-  MainThreadOrGCTaskData<PerAllocBitmap> allocEndBitmap;
+  MainThreadOrGCTaskData<AtomicPerAllocBitmap> allocEndBitmap;
 
   
   
@@ -337,8 +340,11 @@ struct SmallBufferRegion {
   MainThreadOrGCTaskData<AtomicBitmap<MaxAllocsPerRegion>> markBits;
 
   using PerAllocBitmap = mozilla::BitSet<MaxAllocsPerRegion>;
+  using AtomicPerAllocBitmap =
+      mozilla::BitSet<MaxAllocsPerRegion,
+                      mozilla::Atomic<size_t, mozilla::Relaxed>>;
   MainThreadOrGCTaskData<PerAllocBitmap> allocStartBitmap;
-  MainThreadOrGCTaskData<PerAllocBitmap> allocEndBitmap;
+  MainThreadOrGCTaskData<AtomicPerAllocBitmap> allocEndBitmap;
   MainThreadOrGCTaskData<PerAllocBitmap> nurseryOwnedBitmap;
 
   MainThreadOrGCTaskData<bool> hasNurseryOwnedAllocs_;
