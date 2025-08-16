@@ -5778,9 +5778,6 @@ class _CardGrid extends (external_React_default()).PureComponent {
     const prefs = this.props.Prefs.values;
     const {
       items,
-      fourCardLayout,
-      essentialReadsHeader,
-      editorsPicksHeader,
       onboardingExperience,
       ctaButtonSponsors,
       ctaButtonVariant,
@@ -5811,8 +5808,6 @@ class _CardGrid extends (external_React_default()).PureComponent {
     
     const recs = this.props.data.recommendations.filter(item => !item.feedName).slice(0, items);
     const cards = [];
-    let essentialReadsCards = [];
-    let editorsPicksCards = [];
     for (let index = 0; index < items; index++) {
       const rec = recs[index];
       cards.push(topicsLoading || !rec || rec.placeholder || rec.flight_id && !spocsStartupCacheEnabled && this.props.App.isForStartupCache.DiscoveryStream ? external_React_default().createElement(PlaceholderDSCard, {
@@ -5964,36 +5959,17 @@ class _CardGrid extends (external_React_default()).PureComponent {
     }
     let moreRecsHeader = "";
     
-    if (showRecentSaves || essentialReadsHeader && editorsPicksHeader) {
-      let spliceAt = 6;
-      
-      if (fourCardLayout) {
-        spliceAt = 8;
-      }
+    if (showRecentSaves) {
       
       moreRecsHeader = "More Recommendations";
-      
-      essentialReadsCards = [...cards.splice(0, spliceAt)];
-      
-      if (essentialReadsHeader && editorsPicksHeader) {
-        editorsPicksCards = [...cards.splice(0, cards.length)];
-      }
     }
     const gridClassName = this.renderGridClassName();
     return external_React_default().createElement((external_React_default()).Fragment, null, !isOnboardingExperienceDismissed && onboardingExperience && external_React_default().createElement(OnboardingExperience, {
       dispatch: this.props.dispatch
-    }), essentialReadsCards?.length > 0 && external_React_default().createElement("div", {
-      className: gridClassName
-    }, essentialReadsCards), showRecentSaves && external_React_default().createElement(RecentSavesContainer, {
+    }), showRecentSaves && external_React_default().createElement(RecentSavesContainer, {
       gridClassName: gridClassName,
       dispatch: this.props.dispatch
-    }), editorsPicksCards?.length > 0 && external_React_default().createElement((external_React_default()).Fragment, null, external_React_default().createElement(DSSubHeader, null, external_React_default().createElement("span", {
-      className: "section-title"
-    }, external_React_default().createElement(FluentOrText, {
-      message: "Editor\u2019s Picks"
-    }))), external_React_default().createElement("div", {
-      className: gridClassName
-    }, editorsPicksCards)), cards?.length > 0 && external_React_default().createElement((external_React_default()).Fragment, null, moreRecsHeader && external_React_default().createElement(DSSubHeader, null, external_React_default().createElement("span", {
+    }), cards?.length > 0 && external_React_default().createElement((external_React_default()).Fragment, null, moreRecsHeader && external_React_default().createElement(DSSubHeader, null, external_React_default().createElement("span", {
       className: "section-title"
     }, external_React_default().createElement(FluentOrText, {
       message: moreRecsHeader
@@ -13900,9 +13876,7 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
           subtitle: component.header && component.header.subtitle,
           link_text: component.header && component.header.link_text,
           link_url: component.header && component.header.link_url,
-          icon: component.header && component.header.icon,
-          essentialReadsHeader: component.essentialReadsHeader,
-          editorsPicksHeader: component.editorsPicksHeader
+          icon: component.header && component.header.icon
         });
       case "SectionTitle":
         return external_React_default().createElement(SectionTitle, {
@@ -13964,12 +13938,10 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
             hideCardBackground: component.properties.hideCardBackground,
             fourCardLayout: component.properties.fourCardLayout,
             compactGrid: component.properties.compactGrid,
-            essentialReadsHeader: component.properties.essentialReadsHeader,
             onboardingExperience: component.properties.onboardingExperience,
             ctaButtonSponsors: component.properties.ctaButtonSponsors,
             ctaButtonVariant: component.properties.ctaButtonVariant,
             spocMessageVariant: component.properties.spocMessageVariant,
-            editorsPicksHeader: component.properties.editorsPicksHeader,
             recentSavesEnabled: this.props.DiscoveryStream.recentSavesEnabled,
             hideDescriptions: this.props.DiscoveryStream.hideDescriptions,
             firstVisibleTimestamp: this.props.firstVisibleTimestamp,
@@ -14081,18 +14053,6 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
     };
     let sectionTitle = message.header.title;
     let subTitle = "";
-
-    
-    
-    if (message.essentialReadsHeader || message.editorsPicksHeader) {
-      learnMore = null;
-      subTitle = "Recommended By Pocket";
-      if (message.essentialReadsHeader) {
-        sectionTitle = "Today’s Essential Reads";
-      } else if (message.editorsPicksHeader) {
-        sectionTitle = "Editor’s Picks";
-      }
-    }
     const {
       DiscoveryStream
     } = this.props;
