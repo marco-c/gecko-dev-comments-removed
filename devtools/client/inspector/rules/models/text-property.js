@@ -51,7 +51,15 @@ class TextProperty {
 
 
 
-  constructor(rule, name, value, priority, enabled = true, invisible = false) {
+
+  constructor({
+    rule,
+    name,
+    value,
+    priority,
+    enabled = true,
+    invisible = false,
+  }) {
     this.id = name + "_" + generateUUID().toString();
     this.rule = rule;
     this.name = name;
