@@ -174,7 +174,6 @@ function CssRuleView(inspector, document, store) {
   this._onToggleDarkColorSchemeSimulation =
     this._onToggleDarkColorSchemeSimulation.bind(this);
   this._onTogglePrintSimulation = this._onTogglePrintSimulation.bind(this);
-  this.highlightElementRule = this.highlightElementRule.bind(this);
   this.highlightProperty = this.highlightProperty.bind(this);
   this.refreshPanel = this.refreshPanel.bind(this);
 
@@ -2131,42 +2130,6 @@ CssRuleView.prototype = {
       `[aria-controls="${PSEUDO_ELEMENTS_CONTAINER_ID}"]`
     );
     this._toggleContainerVisibility(toggle, container, true, true);
-  },
-
-  
-
-
-
-
-
-  highlightElementRule(ruleId) {
-    let scrollBehavior = "smooth";
-
-    const rule = this.rules.find(r => r.domRule.actorID === ruleId);
-
-    if (!rule) {
-      return;
-    }
-
-    if (rule.domRule.actorID === ruleId) {
-      
-      if (!this.inspector.isThreePaneModeEnabled) {
-        this.inspector.sidebar.select("ruleview");
-      }
-
-      if (rule.pseudoElement.length && !this.showPseudoElements) {
-        scrollBehavior = "auto";
-        this._togglePseudoElementRuleContainer();
-      }
-
-      const {
-        editor: { element },
-      } = rule;
-
-      
-      this._scrollToElement(element, null, scrollBehavior);
-      this._flashElement(element);
-    }
   },
 
   
