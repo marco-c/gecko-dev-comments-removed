@@ -30,12 +30,11 @@ class ViewportSizeHighlighter {
 
 
 
-
   constructor(highlighterEnv, parent, options = {}) {
     this.env = highlighterEnv;
     this.parent = parent;
 
-    this.ID_CLASS_PREFIX = options?.prefix || "viewport-size-highlighter-";
+    this.extraCls = options?.extraCls;
     this.hideTimeout = options?.hideTimeout;
 
     this.markup = new CanvasFrameAnonymousContentHelper(
@@ -65,8 +64,6 @@ class ViewportSizeHighlighter {
   }
 
   _buildMarkup() {
-    const prefix = this.ID_CLASS_PREFIX;
-
     const container = this.markup.createNode({
       attributes: { class: "highlighter-container" },
     });
@@ -74,12 +71,13 @@ class ViewportSizeHighlighter {
     this.markup.createNode({
       parent: container,
       attributes: {
-        class: "viewport-infobar-container",
-        id: "viewport-infobar-container",
+        id: "viewport-size-highlighter-viewport-infobar-container",
+        class:
+          "viewport-size-highlighter-viewport-infobar-container" +
+          (this.extraCls ? " " + this.extraCls : ""),
         position: "top",
         hidden: "true",
       },
-      prefix,
     });
 
     return container;
@@ -108,7 +106,7 @@ class ViewportSizeHighlighter {
   updateViewportInfobar() {
     const { window } = this.env;
     const { innerHeight, innerWidth } = window;
-    const infobarId = this.ID_CLASS_PREFIX + "viewport-infobar-container";
+    const infobarId = "viewport-size-highlighter-viewport-infobar-container";
     const textContent = innerWidth + "px \u00D7 " + innerHeight + "px";
     this.markup.getElement(infobarId).setTextContent(textContent);
   }
@@ -186,7 +184,7 @@ class ViewportSizeHighlighter {
 
   _showInfobarContainer() {
     this.markup.removeAttributeForElement(
-      this.ID_CLASS_PREFIX + "viewport-infobar-container",
+      "viewport-size-highlighter-viewport-infobar-container",
       "hidden"
     );
   }
@@ -205,7 +203,7 @@ class ViewportSizeHighlighter {
 
   _hideInfobarContainer() {
     this.markup.setAttributeForElement(
-      this.ID_CLASS_PREFIX + "viewport-infobar-container",
+      "viewport-size-highlighter-viewport-infobar-container",
       "hidden",
       "true"
     );

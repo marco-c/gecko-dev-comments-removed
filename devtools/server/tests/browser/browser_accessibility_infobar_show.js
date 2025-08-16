@@ -33,7 +33,7 @@ add_task(async function () {
 
         function isContainerHidden(infobar) {
           return !!infobar
-            .getElement("infobar-container")
+            .getElement("accessible-infobar-container")
             .getAttribute("hidden");
         }
 
@@ -45,7 +45,7 @@ add_task(async function () {
 
 
         function getName(infobar) {
-          return infobar.getTextContent("infobar-name");
+          return infobar.getTextContent("accessible-infobar-name");
         }
 
         
@@ -56,7 +56,7 @@ add_task(async function () {
 
 
         function getRole(infobar) {
-          return infobar.getTextContent("infobar-role");
+          return infobar.getTextContent("accessible-infobar-role");
         }
 
         

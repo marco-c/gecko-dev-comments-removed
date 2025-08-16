@@ -339,16 +339,14 @@ class AutoRefreshHighlighter extends EventEmitter {
       return;
     }
 
-    const root = this.getElement("root");
-    if (!root) {
-      
+    if (!this.rootEl) {
       
       return;
     }
 
     
     
-    root.classList?.toggle(
+    this.rootEl.classList.toggle(
       "use-simple-highlighters",
       this.highlighterEnv.useSimpleHighlightersForReducedMotion
     );

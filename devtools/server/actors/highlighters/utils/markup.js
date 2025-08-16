@@ -511,8 +511,6 @@ CanvasFrameAnonymousContentHelper.prototype = {
 
 
 
-
-
   createSVGNode(options) {
     if (!options.nodeType) {
       options.nodeType = "box";
@@ -533,8 +531,6 @@ CanvasFrameAnonymousContentHelper.prototype = {
 
 
 
-
-
   createNode(options) {
     const type = options.nodeType || "div";
     const namespace = options.namespace || XHTML_NS;
@@ -543,11 +539,7 @@ CanvasFrameAnonymousContentHelper.prototype = {
     const node = doc.createElementNS(namespace, type);
 
     for (const name in options.attributes || {}) {
-      let value = options.attributes[name];
-      if (options.prefix && (name === "class" || name === "id")) {
-        value = options.prefix + value;
-      }
-      node.setAttribute(name, value);
+      node.setAttribute(name, options.attributes[name]);
     }
 
     if (options.parent) {
@@ -555,7 +547,7 @@ CanvasFrameAnonymousContentHelper.prototype = {
     }
 
     if (options.text) {
-      node.appendChild(doc.createTextNode(options.text));
+      node.append(options.text);
     }
 
     return node;
