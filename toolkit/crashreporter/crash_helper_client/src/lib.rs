@@ -64,12 +64,17 @@ impl CrashHelperClient {
             bail!("The crash helper process is not available");
         };
 
-        let Ok(ancillary_data) = server_endpoint.into_ancillary(&self.helper_process) else {
+        
+        
+        
+        let Ok(ancillary_data) = server_endpoint.as_ancillary(&self.helper_process) else {
             bail!("Could not convert the server IPC endpoint");
         };
 
         let message = messages::RegisterChildProcess::new(ancillary_data);
         self.connector.send_message(&message)?;
+        
+        
         let Ok(ancillary_data) = client_endpoint.into_ancillary( &None) else {
             bail!("Could not convert the local IPC endpoint");
         };
