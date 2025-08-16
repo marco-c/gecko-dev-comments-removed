@@ -57,6 +57,16 @@ pub unsafe extern "C" fn chardetng_encoding_detector_free(detector: *mut Encodin
 
 
 
+
+
+
+
+
+
+
+
+
+
 #[no_mangle]
 pub unsafe extern "C" fn chardetng_encoding_detector_tld_may_affect_guess(
     tld: *const u8,

@@ -1039,6 +1039,11 @@ impl SingleByteData {
                 }
             } else {
                 
+                
+                
+                
+
+                
                 if current_usize == 0
                     || current_usize == ASCII_DIGIT
                     || (is_windows_1256 && current_usize == WINDOWS_1256_ZWNJ)
