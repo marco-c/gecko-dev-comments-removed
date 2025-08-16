@@ -386,7 +386,7 @@ class WrappedPtrOperations<wasm::AnyRef, Wrapper> {
 
 
 template <typename F>
-auto MapGCThingTyped(const wasm::AnyRef& val, F&& f) {
+inline auto MapGCThingTyped(const wasm::AnyRef& val, F&& f) {
   switch (val.kind()) {
     case wasm::AnyRefKind::Object:
       return mozilla::Some(f(&val.toJSObject()));
