@@ -7,6 +7,8 @@
 
 
 
+
+
 const EXPECTED_TELEMETRY_SOURCE = "contextmenu_visual";
 const EXPECTED_TELEMETRY_ACTION = "search";
 
@@ -51,6 +53,7 @@ const SEARCH_CONFIG = [
             },
           ],
           searchTermParamName: "url",
+          excludePartnerCodeFromTelemetry: true,
         },
       },
     },
