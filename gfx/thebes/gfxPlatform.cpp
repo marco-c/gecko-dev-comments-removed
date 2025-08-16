@@ -3102,7 +3102,7 @@ void gfxPlatform::InitHardwareVideoConfig() {
   CODEC_HW_FEATURE_SETUP(VP9)
 
   
-#if defined(MOZ_WIDGET_GTK) || defined(MOZ_WIDGET_ANDROID)
+#if defined(MOZ_WIDGET_GTK) || defined(MOZ_WIDGET_ANDROID) || defined(XP_WIN)
   CODEC_HW_FEATURE_SETUP(H264)
   CODEC_HW_FEATURE_SETUP(HEVC)
 #endif
