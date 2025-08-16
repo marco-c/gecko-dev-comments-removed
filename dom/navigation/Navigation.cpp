@@ -892,6 +892,8 @@ bool Navigation::InnerFireNavigateEvent(
     already_AddRefed<FormData> aFormDataEntryList,
     nsIStructuredCloneContainer* aClassicHistoryAPIState,
     const nsAString& aDownloadRequestFilename) {
+  nsCOMPtr<nsIGlobalObject> globalObject = GetOwnerGlobal();
+
   
   if (HasEntriesAndEventsDisabled()) {
     
@@ -972,8 +974,7 @@ bool Navigation::InnerFireNavigateEvent(
   init.mSourceElement = aSourceElement;
 
   
-  RefPtr<AbortController> abortController =
-      new AbortController(GetOwnerGlobal());
+  RefPtr<AbortController> abortController = new AbortController(globalObject);
 
   
   init.mSignal = abortController->Signal();
@@ -1053,9 +1054,9 @@ bool Navigation::InnerFireNavigateEvent(
     MOZ_DIAGNOSTIC_ASSERT(fromNHE);
 
     
-    RefPtr<Promise> promise = Promise::CreateInfallible(GetOwnerGlobal());
+    RefPtr<Promise> promise = Promise::CreateInfallible(globalObject);
     mTransition = MakeAndAddRef<NavigationTransition>(
-        GetOwnerGlobal(), aNavigationType, fromNHE, promise);
+        globalObject, aNavigationType, fromNHE, promise);
 
     
     MOZ_ALWAYS_TRUE(promise->SetAnyPromiseIsHandled());
@@ -1095,17 +1096,22 @@ bool Navigation::InnerFireNavigateEvent(
     
     for (auto& handler : event->NavigationHandlerList().Clone()) {
       
-      promiseList.AppendElement(MOZ_KnownLive(handler)->Call());
+      RefPtr promise = MOZ_KnownLive(handler)->Call();
+      if (promise) {
+        promiseList.AppendElement(promise);
+      }
     }
 
     
     if (promiseList.IsEmpty()) {
-      promiseList.AppendElement(Promise::CreateResolvedWithUndefined(
-          GetOwnerGlobal(), IgnoredErrorResult()));
+      RefPtr promise = Promise::CreateResolvedWithUndefined(
+          globalObject, IgnoredErrorResult());
+      if (promise) {
+        promiseList.AppendElement(promise);
+      }
     }
 
     
-    nsCOMPtr<nsIGlobalObject> globalObject = GetOwnerGlobal();
     
     
     
