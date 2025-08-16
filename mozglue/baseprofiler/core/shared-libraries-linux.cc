@@ -735,6 +735,18 @@ static int dl_iterate_callback(struct dl_phdr_info* dl_info, size_t size,
   if (dl_info->dlpi_phnum <= 0) return 0;
 
   unsigned long baseAddress = dl_info->dlpi_addr;
+
+  
+  
+  
+  
+  
+  
+  
+  if (baseAddress == 0) {
+    return 0;
+  }
+
   unsigned long firstMappingStart = -1;
   unsigned long lastMappingEnd = 0;
   std::vector<uint8_t> elfFileIdentifier;
