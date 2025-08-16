@@ -9665,7 +9665,6 @@ interface nsIX509CertDB extends nsISupports, Enums<typeof nsIX509CertDB_VerifyUs
   getCerts(): nsIX509Cert[];
   asPKCS7Blob(certList: nsIX509Cert[]): string;
   asyncHasThirdPartyRoots(callback: nsIAsyncBoolCallback): void;
-  countTrustObjects(): u32;
   getAndroidCertificateFromAlias(alias: string): nsIX509Cert;
 }
 
@@ -14685,22 +14684,6 @@ interface nsIGIOService extends nsISupports {
 
 
 
-interface nsIGSettingsCollection extends nsISupports {
-  setString(key: string, value: string): void;
-  setBoolean(key: string, value: boolean): void;
-  setInt(key: string, value: i32): void;
-  getString(key: string): string;
-  getBoolean(key: string): boolean;
-  getInt(key: string): i32;
-  getStringList(key: string): nsIArray;
-}
-
-interface nsIGSettingsService extends nsISupports {
-  getCollectionForSchema(schema: string): nsIGSettingsCollection;
-}
-
-
-
 interface nsIGeolocationUpdate extends nsISupports {
   update(position: nsIDOMGeoPosition): void;
   notifyError(error: u16): void;
@@ -16492,8 +16475,6 @@ interface nsIXPCComponents_Interfaces {
   nsIGIOHandlerApp: nsJSIID<nsIGIOHandlerApp>;
   nsIGIOMimeApp: nsJSIID<nsIGIOMimeApp>;
   nsIGIOService: nsJSIID<nsIGIOService>;
-  nsIGSettingsCollection: nsJSIID<nsIGSettingsCollection>;
-  nsIGSettingsService: nsJSIID<nsIGSettingsService>;
   nsIGeolocationUpdate: nsJSIID<nsIGeolocationUpdate>;
   nsIGeolocationProvider: nsJSIID<nsIGeolocationProvider>;
   nsIHapticFeedback: nsJSIID<nsIHapticFeedback>;
