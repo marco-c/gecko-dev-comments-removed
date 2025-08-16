@@ -6442,31 +6442,29 @@ Location* nsGlobalWindowOuter::GetLocation() {
 }
 
 void nsGlobalWindowOuter::SetIsBackground(bool aIsBackground) {
-  bool changed = aIsBackground != IsBackground();
+  const bool changed = aIsBackground != IsBackground();
   SetIsBackgroundInternal(aIsBackground);
 
   nsGlobalWindowInner* inner = GetCurrentInnerWindowInternal(this);
-
-  if (inner && changed) {
-    inner->UpdateBackgroundState();
-  }
-
-  if (aIsBackground) {
-    
-    
-    
-    
-    if (inner && changed) {
-      inner->StopGamepadHaptics();
-      inner->StopVRActivity();
-    }
+  if (!inner) {
     return;
   }
 
-  if (inner) {
-    inner->SyncGamepadState();
-    inner->StartVRActivity();
+  if (changed) {
+    inner->UpdateBackgroundState();
+    if (aIsBackground) {
+      
+      
+      
+      
+      inner->StopGamepadHaptics();
+      inner->StopVRActivity();
+      return;
+    }
   }
+  
+  inner->SyncGamepadState();
+  inner->StartVRActivity();
 }
 
 void nsGlobalWindowOuter::SetIsBackgroundInternal(bool aIsBackground) {
