@@ -20,7 +20,7 @@ loadScripts(
 );
 
 
-const ALL_A11Y_PERFSTATS =
+const ALL_A11Y_PERFSTATS_MASK =
   (1 << 29) |
   (1 << 30) |
   (1 << 31) |
@@ -38,18 +38,29 @@ const ALL_A11Y_PERFSTATS =
   (1 << 43) |
   (1 << 44);
 
+const LOG_PREFIX = "perfMetrics";
+
+function logToPerfMetrics(stat) {
+  info(`${LOG_PREFIX} | ${JSON.stringify(stat)}`);
+}
 
 
 
 
-async function timeThis(name, func) {
-  const logPrefix = `Timing: ${name}`;
-  info(`${logPrefix}: begin`);
+
+
+
+async function timeThis(func) {
   const start = performance.now();
-  ChromeUtils.setPerfStatsCollectionMask(ALL_A11Y_PERFSTATS);
+  ChromeUtils.setPerfStatsCollectionMask(ALL_A11Y_PERFSTATS_MASK);
+  const journal = {};
+
+  
   await func();
-  const delta = performance.now() - start;
-  info(`${logPrefix}: took ${delta} ms`);
+
+  
+  journal.A11Y_TotalTime = performance.now() - start;
+
   const stats = JSON.parse(await ChromeUtils.collectPerfStats());
   ChromeUtils.setPerfStatsCollectionMask(0);
   
@@ -67,5 +78,30 @@ async function timeThis(name, func) {
   stats.processes = stats.processes.filter(
     process => !!process.perfstats.metrics.length
   );
-  info(`${logPrefix}: PerfStats: ${JSON.stringify(stats, null, 2)}`);
+  
+  
+  
+  
+  
+  stats.processes = stats.processes.filter(
+    process =>
+      process.type == "parent" ||
+      !process.urls.length ||
+      !process.urls.includes("about:newtab")
+  );
+
+  
+  
+  
+  
+  for (const process of stats.processes) {
+    for (const stat of process.perfstats.metrics) {
+      journal[stat.metric + "_" + process.type] = stat.time;
+      if (stat.count) {
+        journal[stat.metric + "_Count_" + process.type] = stat.count;
+      }
+    }
+  }
+
+  logToPerfMetrics(journal);
 }
