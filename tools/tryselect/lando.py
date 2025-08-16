@@ -430,7 +430,8 @@ def push_to_lando_try(
         raise ValueError(f"Try push via Lando is not supported for `{vcs.name}`.")
 
     
-    lando_config_section = (
+    
+    lando_config_section = os.getenv("LANDO_TRY_CONFIG") or (
         "lando-prod" if not os.getenv("LANDO_TRY_USE_DEV") else "lando-dev"
     )
 
