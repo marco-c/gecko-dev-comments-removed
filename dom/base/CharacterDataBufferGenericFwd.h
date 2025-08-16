@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsTextFragmentGenericFwd_h__
-#define nsTextFragmentGenericFwd_h__
+#ifndef mozilla_dom_CharacterDataBufferGenericFwd_h
+#define mozilla_dom_CharacterDataBufferGenericFwd_h
 
 #include <cstdint>
 #include <xsimd/xsimd.hpp>

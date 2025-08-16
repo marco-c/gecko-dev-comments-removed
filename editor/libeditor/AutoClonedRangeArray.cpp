@@ -13,14 +13,15 @@
 #include "TextEditor.h"       
 #include "WSRunScanner.h"     
 
-#include "mozilla/CaretAssociationHint.h"  
-#include "mozilla/IntegerRange.h"          
-#include "mozilla/OwningNonNull.h"         
-#include "mozilla/PresShell.h"             
-#include "mozilla/dom/Document.h"          
-#include "mozilla/dom/HTMLBRElement.h"     
-#include "mozilla/dom/Selection.h"         
-#include "mozilla/dom/Text.h"              
+#include "mozilla/CaretAssociationHint.h"     
+#include "mozilla/IntegerRange.h"             
+#include "mozilla/OwningNonNull.h"            
+#include "mozilla/PresShell.h"                
+#include "mozilla/dom/CharacterDataBuffer.h"  
+#include "mozilla/dom/Document.h"             
+#include "mozilla/dom/HTMLBRElement.h"        
+#include "mozilla/dom/Selection.h"            
+#include "mozilla/dom/Text.h"                 
 
 #include "gfxFontUtils.h"      
 #include "nsError.h"           
@@ -28,7 +29,6 @@
 #include "nsIContent.h"        
 #include "nsINode.h"           
 #include "nsRange.h"           
-#include "nsTextFragment.h"    
 
 namespace mozilla {
 
@@ -1447,7 +1447,7 @@ AutoClonedSelectionRangeArray::ExtendAnchorFocusRangeFor(
         return aDirectionAndAmount;
       }
 
-      const nsTextFragment* data =
+      const CharacterDataBuffer* data =
           &insertionPoint.ContainerAs<Text>()->TextFragment();
       uint32_t offset = insertionPoint.Offset();
       if (!(offset > 1 &&

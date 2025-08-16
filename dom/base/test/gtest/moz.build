@@ -5,9 +5,9 @@
 
 
 UNIFIED_SOURCES += [
+    "TestCharacterDataBuffer.cpp",
     "TestContentUtils.cpp",
     "TestMimeType.cpp",
-    "TestNsTextFragment.cpp",
     "TestParser.cpp",
     "TestPlainTextSerializer.cpp",
     "TestScheduler.cpp",

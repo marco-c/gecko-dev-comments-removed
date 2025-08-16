@@ -3,7 +3,7 @@
 
 
 
-#include "nsTextFragmentGeneric.h"
+#include "CharacterDataBufferGeneric.h"
 
 namespace mozilla {
 template int32_t FirstNon8Bit<xsimd::sse2>(const char16_t*, const char16_t*);

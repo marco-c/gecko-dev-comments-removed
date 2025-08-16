@@ -10,8 +10,8 @@
 
 
 
-#ifndef nsTextFragment_h___
-#define nsTextFragment_h___
+#ifndef mozilla_dom_CharacterDataBuffer_h
+#define mozilla_dom_CharacterDataBuffer_h
 
 #include "mozilla/Attributes.h"
 #include "mozilla/EnumSet.h"
@@ -25,6 +25,7 @@
 
 
 
+namespace mozilla::dom {
 
 
 
@@ -34,8 +35,7 @@
 
 
 
-
-class nsTextFragment final {
+class CharacterDataBuffer final {
  private:
   constexpr static unsigned char kFormFeed = '\f';
   constexpr static unsigned char kNewLine = '\n';
@@ -51,18 +51,18 @@ class nsTextFragment final {
   
 
 
-  nsTextFragment() : m1b(nullptr), mAllBits(0) {
-    MOZ_COUNT_CTOR(nsTextFragment);
+  CharacterDataBuffer() : m1b(nullptr), mAllBits(0) {
+    MOZ_COUNT_CTOR(CharacterDataBuffer);
     NS_ASSERTION(sizeof(FragmentBits) == 4, "Bad field packing!");
   }
 
-  ~nsTextFragment();
+  ~CharacterDataBuffer();
 
   
 
 
 
-  nsTextFragment& operator=(const nsTextFragment& aOther);
+  CharacterDataBuffer& operator=(const CharacterDataBuffer& aOther);
 
   
 
@@ -90,6 +90,7 @@ class nsTextFragment final {
 
 
 
+
   const char* Get1b() const {
     NS_ASSERTION(!Is2b(), "not 1b text");
     return (const char*)m1b;
@@ -108,7 +109,7 @@ class nsTextFragment final {
 
   uint32_t GetLength() const { return mState.mLength; }
 
-#define NS_MAX_TEXT_FRAGMENT_LENGTH (static_cast<uint32_t>(0x1FFFFFFF))
+#define NS_MAX_CHARACTER_DATA_BUFFER_LENGTH (static_cast<uint32_t>(0x1FFFFFFF))
 
   bool CanGrowBy(size_t n) const {
     return n < (1 << 29) && mState.mLength + n < (1 << 29);
@@ -126,10 +127,10 @@ class nsTextFragment final {
              bool aForce2b);
 
   bool SetTo(const nsString& aString, bool aUpdateBidi, bool aForce2b) {
-    if (MOZ_UNLIKELY(aString.Length() > NS_MAX_TEXT_FRAGMENT_LENGTH)) {
+    if (MOZ_UNLIKELY(aString.Length() > NS_MAX_CHARACTER_DATA_BUFFER_LENGTH)) {
       return false;
     }
-    ReleaseText();
+    ReleaseBuffer();
     if (aForce2b && !aUpdateBidi) {
       if (mozilla::StringBuffer* buffer = aString.GetStringBuffer()) {
         NS_ADDREF(m2b = buffer);
@@ -329,7 +330,7 @@ class nsTextFragment final {
 
 
 
-  [[nodiscard]] bool TextEquals(const nsTextFragment& aOther) const;
+  [[nodiscard]] bool BufferEquals(const CharacterDataBuffer& aOther) const;
 
   
   
@@ -552,7 +553,7 @@ class nsTextFragment final {
   }
 
  private:
-  void ReleaseText();
+  void ReleaseBuffer();
 
   
 
@@ -664,5 +665,7 @@ class nsTextFragment final {
     return kNotFound;
   }
 };
+
+}  
 
 #endif 

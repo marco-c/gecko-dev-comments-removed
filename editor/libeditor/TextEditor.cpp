@@ -30,6 +30,7 @@
 #include "mozilla/TextEvents.h"
 #include "mozilla/TextServicesDocument.h"
 #include "mozilla/Try.h"
+#include "mozilla/dom/CharacterDataBuffer.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Selection.h"
@@ -60,7 +61,6 @@
 #include "nsServiceManagerUtils.h"
 #include "nsString.h"
 #include "nsStringFwd.h"
-#include "nsTextFragment.h"
 #include "nsTextNode.h"
 #include "nsUnicharUtils.h"
 #include "nsXPCOM.h"
@@ -942,7 +942,7 @@ nsresult TextEditor::SetUnmaskRangeInternal(uint32_t aStart, uint32_t aLength,
     
     
     
-    const nsTextFragment& textFragment = text->TextFragment();
+    const CharacterDataBuffer& textFragment = text->TextFragment();
     if (textFragment.IsLowSurrogateFollowingHighSurrogateAt(aStart)) {
       mPasswordMaskData->mUnmaskedStart = aStart - 1;
       

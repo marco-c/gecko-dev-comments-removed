@@ -44,7 +44,6 @@
 #include "nsPresContext.h"
 #include "nsQueryObject.h"
 #include "nsRange.h"  
-#include "nsTextFragment.h"
 #include "nsTextNode.h"
 
 using namespace mozilla;

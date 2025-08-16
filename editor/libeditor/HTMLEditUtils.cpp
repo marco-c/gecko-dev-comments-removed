@@ -18,10 +18,11 @@
 #include "mozilla/ArrayUtils.h"  
 #include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"
-#include "mozilla/StaticPrefs_editor.h"   
-#include "mozilla/RangeUtils.h"           
-#include "mozilla/dom/DocumentInlines.h"  
-#include "mozilla/dom/Element.h"          
+#include "mozilla/StaticPrefs_editor.h"       
+#include "mozilla/RangeUtils.h"               
+#include "mozilla/dom/CharacterDataBuffer.h"  
+#include "mozilla/dom/DocumentInlines.h"      
+#include "mozilla/dom/Element.h"              
 #include "mozilla/dom/ElementInlines.h"  
 #include "mozilla/dom/HTMLAnchorElement.h"
 #include "mozilla/dom/HTMLBodyElement.h"
@@ -48,10 +49,9 @@
 #include "nsPrintfCString.h"     
 #include "nsString.h"            
 #include "nsStyledElement.h"
-#include "nsStyleStruct.h"   
-#include "nsStyleUtil.h"     
-#include "nsTextFragment.h"  
-#include "nsTextFrame.h"     
+#include "nsStyleStruct.h"  
+#include "nsStyleUtil.h"    
+#include "nsTextFrame.h"    
 
 namespace mozilla {
 
@@ -752,7 +752,7 @@ EditorDOMPoint HTMLEditUtils::LineRequiresPaddingLineBreakToBeVisible(
       
       
       
-      const nsTextFragment& fragment =
+      const CharacterDataBuffer& fragment =
           point.template ContainerAs<Text>()->TextFragment();
       const uint32_t inclusiveNextVisibleCharOffset =
           fragment.FindNonWhitespaceChar(
@@ -761,7 +761,7 @@ EditorDOMPoint HTMLEditUtils::LineRequiresPaddingLineBreakToBeVisible(
                                       WhitespaceOption::NewLineIsSignificant}
                   : WhitespaceOptions{WhitespaceOption::FormFeedIsSignificant},
               point.Offset());
-      if (inclusiveNextVisibleCharOffset != nsTextFragment::kNotFound) {
+      if (inclusiveNextVisibleCharOffset != CharacterDataBuffer::kNotFound) {
         return EditorDOMPoint();  
       }
       
@@ -980,7 +980,7 @@ Element* HTMLEditUtils::GetElementOfImmediateBlockBoundary(
                 ? WhitespaceOptions{WhitespaceOption::FormFeedIsSignificant,
                                     WhitespaceOption::NewLineIsSignificant}
                 : WhitespaceOptions{WhitespaceOption::FormFeedIsSignificant});
-    if (nonWhiteSpaceOffset != nsTextFragment::kNotFound) {
+    if (nonWhiteSpaceOffset != CharacterDataBuffer::kNotFound) {
       return nullptr;  
     }
     
@@ -1070,7 +1070,7 @@ Maybe<EditorLineBreakType> HTMLEditUtils::GetUnnecessaryLineBreak(
         if (!textNode->TextLength()) {
           continue;  
         }
-        const nsTextFragment& textFragment = textNode->TextFragment();
+        const CharacterDataBuffer& textFragment = textNode->TextFragment();
         if (EditorUtils::IsNewLinePreformatted(*textNode) &&
             textFragment.CharAt(textFragment.GetLength() - 1u) ==
                 HTMLEditUtils::kNewLine) {
@@ -1143,7 +1143,7 @@ Maybe<EditorLineBreakType> HTMLEditUtils::GetUnnecessaryLineBreak(
       if (!textNode->TextDataLength()) {
         continue;  
       }
-      const nsTextFragment& textFragment = textNode->TextFragment();
+      const CharacterDataBuffer& textFragment = textNode->TextFragment();
       if (EditorUtils::IsNewLinePreformatted(*textNode) &&
           textFragment.CharAt(textFragment.GetLength() - 1u) ==
               HTMLEditUtils::kNewLine) {
@@ -1242,7 +1242,7 @@ Maybe<EditorLineBreakType> HTMLEditUtils::GetFollowingUnnecessaryLineBreak(
 }
 
 uint32_t HTMLEditUtils::GetFirstVisibleCharOffset(const Text& aText) {
-  const nsTextFragment& textFragment = aText.TextFragment();
+  const CharacterDataBuffer& textFragment = aText.TextFragment();
   if (!textFragment.GetLength() || !EditorRawDOMPointInText(&aText, 0u)
                                         .IsCharCollapsibleASCIISpaceOrNBSP()) {
     return 0u;
@@ -1259,7 +1259,7 @@ uint32_t HTMLEditUtils::GetFirstVisibleCharOffset(const Text& aText) {
 }
 
 uint32_t HTMLEditUtils::GetOffsetAfterLastVisibleChar(const Text& aText) {
-  const nsTextFragment& textFragment = aText.TextFragment();
+  const CharacterDataBuffer& textFragment = aText.TextFragment();
   if (!textFragment.GetLength()) {
     return 0u;
   }
@@ -1297,7 +1297,7 @@ uint32_t HTMLEditUtils::GetOffsetAfterLastVisibleChar(const Text& aText) {
 uint32_t HTMLEditUtils::GetInvisibleWhiteSpaceCount(
     const Text& aText, uint32_t aOffset ,
     uint32_t aLength ) {
-  const nsTextFragment& textFragment = aText.TextFragment();
+  const CharacterDataBuffer& textFragment = aText.TextFragment();
   if (!aLength || textFragment.GetLength() <= aOffset) {
     return 0u;
   }

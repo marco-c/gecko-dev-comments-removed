@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsTextFragmentImpl_h__
-#define nsTextFragmentImpl_h__
+#ifndef mozilla_dom_CharacterDataBufferImpl_h
+#define mozilla_dom_CharacterDataBufferImpl_h
 
 #include <stdint.h>
 
