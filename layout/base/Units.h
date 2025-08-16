@@ -363,18 +363,10 @@ struct CSSPixel {
 
   
 
+  
+  
   static nscoord ToAppUnits(CSSCoord aCoord) {
     return NSFloatPixelsToAppUnits(aCoord, AppUnitsPerCSSPixel());
-  }
-
-  
-  
-  static nscoord ToAppUnits(CSSIntCoord aCoord) {
-    return ToAppUnits(CSSCoord(aCoord));
-  }
-
-  static nscoord ToAppUnits(int32_t aCoord) {
-    return ToAppUnits(CSSIntCoord(aCoord));
   }
 
   static nsPoint ToAppUnits(const CSSPoint& aPoint) {
@@ -410,8 +402,10 @@ struct CSSPixel {
   }
 
   static nsMargin ToAppUnits(const CSSIntMargin& aMargin) {
-    return nsMargin(ToAppUnits(aMargin.top), ToAppUnits(aMargin.right),
-                    ToAppUnits(aMargin.bottom), ToAppUnits(aMargin.left));
+    return nsMargin(ToAppUnits(CSSCoord(aMargin.top)),
+                    ToAppUnits(CSSCoord(aMargin.right)),
+                    ToAppUnits(CSSCoord(aMargin.bottom)),
+                    ToAppUnits(CSSCoord(aMargin.left)));
   }
 
   

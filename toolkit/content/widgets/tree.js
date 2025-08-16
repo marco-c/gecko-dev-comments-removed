@@ -652,23 +652,31 @@
       this.NATURAL_ORDER = 1; 
 
       this.attachShadow({ mode: "open" });
-      this.shadowRoot.appendChild(this.constructor.fragment);
-
+      let handledElements = this.constructor.fragment.querySelectorAll(
+        "scrollbar,scrollcorner"
+      );
       let stopAndPrevent = e => {
         e.stopPropagation();
         e.preventDefault();
       };
       let stopProp = e => e.stopPropagation();
-      this.#verticalScrollbar = this.shadowRoot.querySelector("scrollbar");
-      this.#verticalScrollbar.addEventListener("click", stopAndPrevent);
-      this.#verticalScrollbar.addEventListener("contextmenu", stopAndPrevent);
-      this.#verticalScrollbar.addEventListener("dblclick", stopProp);
-      this.#verticalScrollbar.addEventListener("command", stopProp);
+      for (let el of handledElements) {
+        el.addEventListener("click", stopAndPrevent);
+        el.addEventListener("contextmenu", stopAndPrevent);
+        el.addEventListener("dblclick", stopProp);
+        el.addEventListener("command", stopProp);
+      }
+      this.shadowRoot.appendChild(this.constructor.fragment);
+
+      this.#verticalScrollbar = this.shadowRoot.querySelector(
+        "scrollbar[orient='vertical']"
+      );
     }
 
     static get inheritedAttributes() {
       return {
         ".hidevscroll-scrollbar": "collapsed=hidevscroll",
+        ".hidevscroll-scrollcorner": "collapsed=hidevscroll",
       };
     }
 
@@ -1673,10 +1681,11 @@
         return true;
       }
 
-      const curpos = this.scrollbarPosition;
+      const curpos = Number(this.#verticalScrollbar.getAttribute("curpos"));
       return (
         (event.detail < 0 && 0 < curpos) ||
-        (event.detail > 0 && curpos < this.scrollbarMaxPosition)
+        (event.detail > 0 &&
+          curpos < Number(this.#verticalScrollbar.getAttribute("maxpos")))
       );
     }
   }
