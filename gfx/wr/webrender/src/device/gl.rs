@@ -1814,7 +1814,10 @@ impl Device {
         
         
         
-        let supports_alpha_target_clears = !is_mali_midgard(&renderer_name);
+        
+        
+        let is_adreno_510 = renderer_name.starts_with("Adreno (TM) 510");
+        let supports_alpha_target_clears = !is_mali_midgard(&renderer_name) && !is_adreno_510;
 
         
         
