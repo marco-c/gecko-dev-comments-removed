@@ -19,6 +19,7 @@
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/FeaturePolicy.h"
 #include "mozilla/dom/NavigationActivation.h"
+#include "mozilla/dom/NavigationBinding.h"
 #include "mozilla/dom/NavigationCurrentEntryChangeEvent.h"
 #include "mozilla/dom/NavigationHistoryEntry.h"
 #include "mozilla/dom/NavigationTransition.h"
@@ -27,6 +28,7 @@
 #include "mozilla/dom/SessionHistoryEntry.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/WindowGlobalChild.h"
+#include "mozilla/ipc/IPDLParamTraits.h"
 #include "nsContentUtils.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsDocShell.h"
@@ -1447,4 +1449,58 @@ Navigation::AddUpcomingTraverseAPIMethodTracker(const nsID& aKey,
   return mUpcomingTraverseAPIMethodTrackers.InsertOrUpdate(aKey,
                                                            apiMethodTracker);
 }
+
+
+void Navigation::CreateNavigationActivationFrom(
+    SessionHistoryInfo* aPreviousEntryForActivation,
+    NavigationType aNavigationType) {
+  
+  
+  MOZ_LOG_FMT(gNavigationLog, LogLevel::Debug,
+              "Creating NavigationActivation for from={}, type={}",
+              fmt::ptr(aPreviousEntryForActivation), aNavigationType);
+
+  
+  
+  auto possiblePreviousEntry =
+      std::find_if(mEntries.begin(), mEntries.end(),
+                   [aPreviousEntryForActivation](const auto& entry) {
+                     return entry->IsSameEntry(aPreviousEntryForActivation);
+                   });
+
+  
+  
+  RefPtr<NavigationHistoryEntry> oldEntry;
+  if (possiblePreviousEntry != mEntries.end()) {
+    MOZ_LOG_FMT(gNavigationLog, LogLevel::Debug, "Found previous entry at {}",
+                fmt::ptr(possiblePreviousEntry->get()));
+    oldEntry = *possiblePreviousEntry;
+  } else if (aNavigationType == NavigationType::Replace &&
+             !aPreviousEntryForActivation->IsTransient()) {
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    oldEntry = MakeRefPtr<NavigationHistoryEntry>(
+        GetOwnerGlobal(), aPreviousEntryForActivation, -1);
+    MOZ_LOG_FMT(gNavigationLog, LogLevel::Debug, "Created a new entry at {}",
+                fmt::ptr(oldEntry.get()));
+  }
+
+  
+  
+  
+  
+  
+  mActivation = MakeRefPtr<NavigationActivation>(
+      GetOwnerGlobal(), GetCurrentEntry().take(), oldEntry, aNavigationType);
+}
+
 }  
