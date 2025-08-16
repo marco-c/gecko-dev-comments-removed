@@ -2166,7 +2166,7 @@ void nsLookAndFeel::PerThemeData::Init() {
   mName = GetGtkTheme();
 
   mFamily = [&] {
-    if (StringBeginsWith(mName, "Adw"_ns)) {
+    if (StringBeginsWith(mName, "adw"_ns, nsCaseInsensitiveCStringComparator)) {
       
       return ThemeFamily::Adwaita;
     }
