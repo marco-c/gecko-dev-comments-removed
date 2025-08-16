@@ -305,7 +305,7 @@ class nsTextFrame : public nsIFrame {
   
   
   const mozilla::dom::CharacterDataBuffer* TextFragment() const {
-    return &mContent->AsText()->TextFragment();
+    return &mContent->AsText()->DataBuffer();
   }
 
   

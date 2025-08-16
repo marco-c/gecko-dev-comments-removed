@@ -942,8 +942,8 @@ nsresult TextEditor::SetUnmaskRangeInternal(uint32_t aStart, uint32_t aLength,
     
     
     
-    const CharacterDataBuffer& textFragment = text->TextFragment();
-    if (textFragment.IsLowSurrogateFollowingHighSurrogateAt(aStart)) {
+    const CharacterDataBuffer& characterDataBuffer = text->DataBuffer();
+    if (characterDataBuffer.IsLowSurrogateFollowingHighSurrogateAt(aStart)) {
       mPasswordMaskData->mUnmaskedStart = aStart - 1;
       
       if (aLength > 0) {
@@ -958,7 +958,8 @@ nsresult TextEditor::SetUnmaskRangeInternal(uint32_t aStart, uint32_t aLength,
     
     
     if (UnmaskedEnd() < valueLength &&
-        textFragment.IsLowSurrogateFollowingHighSurrogateAt(UnmaskedEnd())) {
+        characterDataBuffer.IsLowSurrogateFollowingHighSurrogateAt(
+            UnmaskedEnd())) {
       mPasswordMaskData->mUnmaskedLength++;
     }
     
