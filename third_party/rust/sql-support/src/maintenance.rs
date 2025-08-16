@@ -18,7 +18,7 @@ pub fn run_maintenance(conn: &Connection) -> Result<()> {
 
 
 fn vacuum(conn: &Connection) -> Result<()> {
-    let auto_vacuum_setting: u32 = conn.query_one("PRAGMA auto_vacuum")?;
+    let auto_vacuum_setting: u32 = conn.conn_ext_query_one("PRAGMA auto_vacuum")?;
     if auto_vacuum_setting == 2 {
         
         conn.execute_one("PRAGMA incremental_vacuum(2)")?;

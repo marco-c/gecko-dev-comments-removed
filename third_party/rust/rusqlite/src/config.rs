@@ -1,6 +1,6 @@
 
 
-use std::os::raw::c_int;
+use std::ffi::c_int;
 
 use crate::error::check;
 use crate::ffi;
@@ -10,9 +10,8 @@ use crate::{Connection, Result};
 
 #[repr(i32)]
 #[derive(Copy, Clone, Debug)]
-#[allow(non_snake_case, non_camel_case_types)]
+#[expect(non_camel_case_types)]
 #[non_exhaustive]
-#[allow(clippy::upper_case_acronyms)]
 pub enum DbConfig {
     
     
@@ -69,6 +68,16 @@ pub enum DbConfig {
     
     #[cfg(feature = "modern_sqlite")]
     SQLITE_DBCONFIG_REVERSE_SCANORDER = 1019, 
+    
+    
+    #[cfg(feature = "modern_sqlite")]
+    SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE = 1020, 
+    
+    #[cfg(feature = "modern_sqlite")]
+    SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE = 1021, 
+    
+    #[cfg(feature = "modern_sqlite")]
+    SQLITE_DBCONFIG_ENABLE_COMMENTS = 1022, 
 }
 
 impl Connection {

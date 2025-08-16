@@ -9,11 +9,8 @@ fn main() -> Result<()> {
     unsafe {
         db.load_extension_enable()?;
         db.load_extension(
-            format!(
-                "target/debug/examples/{}loadable_extension{}",
-                DLL_PREFIX, DLL_SUFFIX
-            ),
-            None,
+            format!("target/debug/examples/{DLL_PREFIX}loadable_extension{DLL_SUFFIX}"),
+            None::<&str>,
         )?;
         db.load_extension_disable()?;
     }
