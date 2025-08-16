@@ -235,7 +235,7 @@ class InputPipe extends Pipe {
       this.overlapped.address()
     );
 
-    if (!ok && (!this.process.handle || ctypes.winLastError)) {
+    if (!ok && (!this.process.handle || libc.winLastError)) {
       this.onError();
     } else {
       io.updatePollEvents();
@@ -758,18 +758,11 @@ io = {
 
   updatePollEvents() {
     let shouldPoll = false;
-    for (const process of this.processes.values()) {
+    if (this.processes.size) {
       
       
-      
-      
-      
-      if (process.handle) {
-        shouldPoll = true;
-        break;
-      }
-    }
-    if (!shouldPoll) {
+      shouldPoll = true;
+    } else {
       for (let pipe of this.pipes.values()) {
         if (pipe.hasPendingIO()) {
           shouldPoll = true;
