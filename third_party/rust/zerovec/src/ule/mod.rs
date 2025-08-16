@@ -147,7 +147,6 @@ where
     
     
     #[inline]
-    #[allow(clippy::wrong_self_convention)] 
     fn slice_as_bytes(slice: &[Self]) -> &[u8] {
         unsafe {
             slice::from_raw_parts(slice as *const [Self] as *const u8, mem::size_of_val(slice))

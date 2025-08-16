@@ -6,7 +6,7 @@
 
 mod borrowed;
 mod kv;
-#[allow(clippy::module_inception)] 
+#[expect(clippy::module_inception)] 
 pub(crate) mod map;
 mod vecs;
 

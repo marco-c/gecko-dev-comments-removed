@@ -13,6 +13,8 @@ impl<T: AsULE> Bake for ZeroVec<'_, T> {
             quote! { zerovec::ZeroVec::new() }
         } else {
             let bytes = databake::Bake::bake(&self.as_bytes(), env);
+            
+            
             quote! { unsafe { zerovec::ZeroVec::from_bytes_unchecked(#bytes) } }
         }
     }
@@ -31,6 +33,8 @@ impl<T: AsULE> Bake for &ZeroSlice<T> {
             quote! { zerovec::ZeroSlice::new_empty() }
         } else {
             let bytes = databake::Bake::bake(&self.as_bytes(), env);
+            
+            
             quote! { unsafe { zerovec::ZeroSlice::from_bytes_unchecked(#bytes) } }
         }
     }

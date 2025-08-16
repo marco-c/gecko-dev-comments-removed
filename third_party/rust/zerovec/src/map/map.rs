@@ -296,9 +296,9 @@ where
     > {
         (0..self.keys.zvl_len()).map(move |idx| {
             (
-                #[allow(clippy::unwrap_used)] 
+                #[expect(clippy::unwrap_used)] 
                 self.keys.zvl_get(idx).unwrap(),
-                #[allow(clippy::unwrap_used)] 
+                #[expect(clippy::unwrap_used)] 
                 self.values.zvl_get(idx).unwrap(),
             )
         })
@@ -308,7 +308,7 @@ where
     pub fn iter_keys<'b>(
         &'b self,
     ) -> impl ExactSizeIterator<Item = &'b <K as ZeroMapKV<'a>>::GetType> {
-        #[allow(clippy::unwrap_used)] 
+        #[expect(clippy::unwrap_used)] 
         (0..self.keys.zvl_len()).map(move |idx| self.keys.zvl_get(idx).unwrap())
     }
 
@@ -316,7 +316,7 @@ where
     pub fn iter_values<'b>(
         &'b self,
     ) -> impl ExactSizeIterator<Item = &'b <V as ZeroMapKV<'a>>::GetType> {
-        #[allow(clippy::unwrap_used)] 
+        #[expect(clippy::unwrap_used)] 
         (0..self.values.zvl_len()).map(move |idx| self.values.zvl_get(idx).unwrap())
     }
 }
@@ -446,7 +446,7 @@ where
     pub fn insert_var_v<VE: EncodeAsVarULE<V>>(&mut self, key: &K, value: &VE) -> Option<Box<V>> {
         match self.keys.zvl_binary_search(key) {
             Ok(index) => {
-                #[allow(clippy::unwrap_used)] 
+                #[expect(clippy::unwrap_used)] 
                 let ret = self.values.get(index).unwrap().to_boxed();
                 self.values.make_mut().replace(index, value);
                 Some(ret)
@@ -512,7 +512,7 @@ where
         let ule = self.values.zvl_get(index)?;
         let mut result = Option::<V>::None;
         V::Container::zvl_get_as_t(ule, |v| result.replace(*v));
-        #[allow(clippy::unwrap_used)] 
+        #[expect(clippy::unwrap_used)] 
         Some(result.unwrap())
     }
 }
@@ -529,9 +529,9 @@ where
     ) -> impl Iterator<Item = (&'b <K as ZeroMapKV<'a>>::GetType, V)> {
         (0..self.keys.zvl_len()).map(move |idx| {
             (
-                #[allow(clippy::unwrap_used)] 
+                #[expect(clippy::unwrap_used)] 
                 self.keys.zvl_get(idx).unwrap(),
-                #[allow(clippy::unwrap_used)] 
+                #[expect(clippy::unwrap_used)] 
                 ZeroSlice::get(&*self.values, idx).unwrap(),
             )
         })
@@ -545,15 +545,14 @@ where
 {
     
     
-    #[allow(clippy::needless_lifetimes)] 
     pub fn iter_copied<'b>(&'b self) -> impl Iterator<Item = (K, V)> + 'b {
         let keys = &self.keys;
         let values = &self.values;
         (0..keys.len()).map(move |idx| {
             (
-                #[allow(clippy::unwrap_used)] 
+                #[expect(clippy::unwrap_used)] 
                 ZeroSlice::get(&**keys, idx).unwrap(),
-                #[allow(clippy::unwrap_used)] 
+                #[expect(clippy::unwrap_used)] 
                 ZeroSlice::get(&**values, idx).unwrap(),
             )
         })

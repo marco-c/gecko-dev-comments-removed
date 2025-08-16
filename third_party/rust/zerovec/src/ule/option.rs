@@ -79,7 +79,7 @@ unsafe impl<U: ULE> ULE for OptionULE<U> {
             return Err(UleError::length::<Self>(bytes.len()));
         }
         for chunk in bytes.chunks(size) {
-            #[allow(clippy::indexing_slicing)] 
+            #[expect(clippy::indexing_slicing)] 
             match chunk[0] {
                 
                 
@@ -179,7 +179,7 @@ unsafe impl<U: VarULE + ?Sized> VarULE for OptionVarULE<U> {
         if slice.is_empty() {
             return Err(UleError::length::<Self>(slice.len()));
         }
-        #[allow(clippy::indexing_slicing)] 
+        #[expect(clippy::indexing_slicing)] 
         match slice[0] {
             
             
@@ -224,7 +224,7 @@ where
         }
     }
 
-    #[allow(clippy::indexing_slicing)] 
+    #[expect(clippy::indexing_slicing)] 
     fn encode_var_ule_write(&self, dst: &mut [u8]) {
         if let Some(ref inner) = *self {
             debug_assert!(

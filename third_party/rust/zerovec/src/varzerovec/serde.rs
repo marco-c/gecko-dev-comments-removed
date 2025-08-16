@@ -13,7 +13,7 @@ use serde::de::{self, Deserialize, Deserializer, SeqAccess, Visitor};
 use serde::ser::{Serialize, SerializeSeq, Serializer};
 
 struct VarZeroVecVisitor<T: ?Sized, F: VarZeroVecFormat> {
-    #[allow(clippy::type_complexity)] 
+    #[expect(clippy::type_complexity)] 
     marker: PhantomData<(fn() -> Box<T>, F)>,
 }
 

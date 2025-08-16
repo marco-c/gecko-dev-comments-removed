@@ -24,7 +24,7 @@ pub struct MultiFieldsULE<const LEN: usize, Format: VarZeroVecFormat>(
 impl<const LEN: usize, Format: VarZeroVecFormat> MultiFieldsULE<LEN, Format> {
     
     #[inline]
-    #[allow(clippy::expect_used)] 
+    #[expect(clippy::expect_used)] 
     pub fn compute_encoded_len_for(lengths: [usize; LEN]) -> usize {
         let lengths = lengths.map(BlankSliceEncoder);
         crate::varzerovec::components::compute_serializable_len_without_length::<_, _, Format>(

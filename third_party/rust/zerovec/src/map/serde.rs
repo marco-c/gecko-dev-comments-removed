@@ -72,7 +72,7 @@ where
     K: ZeroMapKV<'a> + ?Sized + Ord,
     V: ZeroMapKV<'a> + ?Sized,
 {
-    #[allow(clippy::type_complexity)] 
+    #[expect(clippy::type_complexity)] 
     marker: PhantomData<fn() -> (&'a K::OwnedType, &'a V::OwnedType)>,
 }
 

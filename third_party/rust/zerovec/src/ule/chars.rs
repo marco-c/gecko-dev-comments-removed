@@ -84,7 +84,7 @@ unsafe impl ULE for CharULE {
         
         for chunk in bytes.chunks_exact(3) {
             
-            #[allow(clippy::indexing_slicing)]
+            #[expect(clippy::indexing_slicing)]
             
             let u = u32::from_le_bytes([chunk[0], chunk[1], chunk[2], 0]);
             char::try_from(u).map_err(|_| UleError::parse::<Self>())?;

@@ -14,6 +14,7 @@ impl<T: VarULE + ?Sized> Bake for VarZeroVec<'_, T, Index16> {
         } else {
             let bytes = databake::Bake::bake(&self.as_bytes(), env);
             
+            
             quote! { unsafe { zerovec::vecs::VarZeroVec16::from_bytes_unchecked(#bytes) } }
         }
     }
@@ -26,6 +27,7 @@ impl<T: VarULE + ?Sized> Bake for VarZeroVec<'_, T, Index32> {
             quote! { zerovec::vecs::VarZeroVec32::new() }
         } else {
             let bytes = databake::Bake::bake(&self.as_bytes(), env);
+            
             
             quote! { unsafe { zerovec::vecs::VarZeroVec32::from_bytes_unchecked(#bytes) } }
         }
@@ -52,6 +54,7 @@ impl<T: VarULE + ?Sized> Bake for &VarZeroSlice<T, Index16> {
         } else {
             let bytes = databake::Bake::bake(&self.as_bytes(), env);
             
+            
             quote! { unsafe { zerovec::vecs::VarZeroSlice16::from_bytes_unchecked(#bytes) } }
         }
     }
@@ -64,6 +67,7 @@ impl<T: VarULE + ?Sized> Bake for &VarZeroSlice<T, Index32> {
             quote! { zerovec::vecs::VarZeroSlice32::new_empty() }
         } else {
             let bytes = databake::Bake::bake(&self.as_bytes(), env);
+            
             
             quote! { unsafe { zerovec::vecs::VarZeroSlice32::from_bytes_unchecked(#bytes) } }
         }

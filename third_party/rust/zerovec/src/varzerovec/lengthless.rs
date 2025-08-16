@@ -110,7 +110,7 @@ impl<T: VarULE + ?Sized, F: VarZeroVecFormat> VarZeroLengthlessSlice<T, F> {
 
         
         
-        #[allow(clippy::indexing_slicing)]
+        #[expect(clippy::indexing_slicing)]
         &mut self.entire_slice[offset..][range]
     }
 }

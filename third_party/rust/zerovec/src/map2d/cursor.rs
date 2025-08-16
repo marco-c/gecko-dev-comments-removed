@@ -88,7 +88,7 @@ where
     
     
     pub fn key0(&self) -> &'l K0::GetType {
-        #[allow(clippy::unwrap_used)] 
+        #[expect(clippy::unwrap_used)] 
         self.keys0.zvl_get(self.key0_index).unwrap()
     }
 
@@ -107,7 +107,7 @@ where
     > + ExactSizeIterator
            + '_ {
         let range = self.get_range();
-        #[allow(clippy::unwrap_used)] 
+        #[expect(clippy::unwrap_used)] 
         range.map(move |idx| {
             (
                 self.keys1.zvl_get(idx).unwrap(),
@@ -126,7 +126,7 @@ where
         ),
     > + ExactSizeIterator {
         let range = self.get_range();
-        #[allow(clippy::unwrap_used)] 
+        #[expect(clippy::unwrap_used)] 
         range.map(move |idx| {
             (
                 self.keys1.zvl_get(idx).unwrap(),
@@ -141,10 +141,10 @@ where
         let start = if self.key0_index == 0 {
             0
         } else {
-            #[allow(clippy::unwrap_used)] 
+            #[expect(clippy::unwrap_used)] 
             self.joiner.get(self.key0_index - 1).unwrap()
         };
-        #[allow(clippy::unwrap_used)] 
+        #[expect(clippy::unwrap_used)] 
         let limit = self.joiner.get(self.key0_index).unwrap();
         
         debug_assert!(start < limit);
@@ -191,7 +191,7 @@ where
     ) -> impl DoubleEndedIterator<Item = (&'l <K1 as ZeroMapKV<'a>>::GetType, V)> + ExactSizeIterator + '_
     {
         let range = self.get_range();
-        #[allow(clippy::unwrap_used)] 
+        #[expect(clippy::unwrap_used)] 
         range.map(move |idx| {
             (
                 self.keys1.zvl_get(idx).unwrap(),
@@ -228,7 +228,7 @@ where
     ) -> impl DoubleEndedIterator<Item = (&'l <K1 as ZeroMapKV<'a>>::GetType, V)> + ExactSizeIterator
     {
         let range = self.get_range();
-        #[allow(clippy::unwrap_used)] 
+        #[expect(clippy::unwrap_used)] 
         range.map(move |idx| {
             (
                 self.keys1.zvl_get(idx).unwrap(),
@@ -241,7 +241,7 @@ where
         let ule = self.values.zvl_get(index)?;
         let mut result = Option::<V>::None;
         V::Container::zvl_get_as_t(ule, |v| result.replace(*v));
-        #[allow(clippy::unwrap_used)] 
+        #[expect(clippy::unwrap_used)] 
         Some(result.unwrap())
     }
 }
@@ -267,7 +267,7 @@ where
     
     pub fn get1(&self, key1: &K1) -> Option<&'l V::GetType> {
         let key1_index = self.get_key1_index(key1)?;
-        #[allow(clippy::unwrap_used)] 
+        #[expect(clippy::unwrap_used)] 
         Some(self.values.zvl_get(key1_index).unwrap())
     }
 
@@ -283,7 +283,7 @@ where
     
     pub fn get1_by(&self, predicate: impl FnMut(&K1) -> Ordering) -> Option<&'l V::GetType> {
         let key1_index = self.get_key1_index_by(predicate)?;
-        #[allow(clippy::unwrap_used)] 
+        #[expect(clippy::unwrap_used)] 
         Some(self.values.zvl_get(key1_index).unwrap())
     }
 
@@ -293,7 +293,7 @@ where
         debug_assert!(range.start < range.end); 
         debug_assert!(range.end <= self.keys1.zvl_len());
         let start = range.start;
-        #[allow(clippy::expect_used)] 
+        #[expect(clippy::expect_used)] 
         let binary_search_result = self
             .keys1
             .zvl_binary_search_in_range_by(predicate, range)
@@ -307,7 +307,7 @@ where
         debug_assert!(range.start < range.end); 
         debug_assert!(range.end <= self.keys1.zvl_len());
         let start = range.start;
-        #[allow(clippy::expect_used)] 
+        #[expect(clippy::expect_used)] 
         let binary_search_result = self
             .keys1
             .zvl_binary_search_in_range(key1, range)
