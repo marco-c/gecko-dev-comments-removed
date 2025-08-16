@@ -2891,15 +2891,17 @@ static bool BuilderHasScrolledClip(nsDisplayListBuilder* aBuilder) {
 
 class AutoTrackStackingContextBits {
   nsDisplayListBuilder& mBuilder;
-  StackingContextBits mSavedBits;
+  StackingContextBits mBitsToSet;
 
  public:
   explicit AutoTrackStackingContextBits(nsDisplayListBuilder& aBuilder)
-      : mBuilder(aBuilder), mSavedBits(aBuilder.GetStackingContextBits()) {}
+      : mBuilder(aBuilder), mBitsToSet(aBuilder.GetStackingContextBits()) {}
 
   ~AutoTrackStackingContextBits() {
-    mBuilder.SetStackingContextBits(mSavedBits);
+    mBuilder.SetStackingContextBits(mBitsToSet);
   }
+
+  void AddToParent(StackingContextBits aBits) { mBitsToSet |= aBits; }
 };
 
 static bool IsFrameOrAncestorApzAware(nsIFrame* aFrame) {
@@ -3210,12 +3212,9 @@ void nsIFrame::BuildDisplayListForStackingContext(
   
   
   
-  bool hasViewTransitionName = style.StyleUIReset()->HasViewTransitionName() &&
-                               !style.IsRootElementStyle();
-
-  bool addBackdropRoot =
-      (disp->mWillChange.bits & StyleWillChangeBits::BACKDROP_ROOT) ||
-      hasViewTransitionName;
+  const bool hasViewTransitionName =
+      style.StyleUIReset()->HasViewTransitionName() &&
+      !style.IsRootElementStyle();
 
   if (aBuilder->IsForPainting() && disp->mWillChange.bits) {
     aBuilder->AddToWillChangeBudget(this, GetSize());
@@ -3264,23 +3263,7 @@ void nsIFrame::BuildDisplayListForStackingContext(
     }
   }
 
-  const bool useBlendMode = effects->mMixBlendMode != StyleBlend::Normal;
-  if (useBlendMode) {
-    aBuilder->AddStackingContextBits(StackingContextBits::ContainsMixBlendMode);
-  }
-
-  
-  
-  const bool usingBackdropFilter = effects->HasBackdropFilters() &&
-                                   IsVisibleForPainting() &&
-                                   !style.IsRootElementStyle();
-
-  if (usingBackdropFilter) {
-    aBuilder->AddStackingContextBits(
-        StackingContextBits::ContainsBackdropFilter);
-  }
-
-  AutoTrackStackingContextBits autoRestoreStackingContextBits(*aBuilder);
+  AutoTrackStackingContextBits stackingContextTracker(*aBuilder);
   aBuilder->ClearStackingContextBits();
 
   nsRect visibleRectOutsideTransform = visibleRect;
@@ -3616,6 +3599,37 @@ void nsIFrame::BuildDisplayListForStackingContext(
   const ActiveScrolledRoot* containerItemASR = contASRTracker.GetContainerASR();
 
   bool createdContainer = false;
+  const StackingContextBits localIsolationReasons = [&] {
+    auto reasons = StackingContextBits::None;
+    if (!GetParent()) {
+      
+      return reasons;
+    }
+    if ((disp->mWillChange.bits & StyleWillChangeBits::BACKDROP_ROOT) ||
+        hasViewTransitionName) {
+      reasons |= StackingContextBits::ContainsBackdropFilter;
+    }
+    if (!combines3DTransformWithAncestors) {
+      reasons |= StackingContextBits::MayContainNonIsolated3DTransform;
+    }
+    return reasons;
+  }();
+
+  StackingContextBits currentIsolationReasons =
+      localIsolationReasons & aBuilder->GetStackingContextBits();
+  bool isolated = false;
+  auto MarkAsIsolated = [&] {
+    isolated = true;
+    currentIsolationReasons = StackingContextBits::None;
+  };
+  auto ShouldForceIsolation = [&] {
+    if (localIsolationReasons == StackingContextBits::None) {
+      return false;
+    }
+    bool force = currentIsolationReasons != StackingContextBits::None;
+    MarkAsIsolated();
+    return force;
+  };
 
   
   
@@ -3627,16 +3641,23 @@ void nsIFrame::BuildDisplayListForStackingContext(
     resultList.AppendToTop(nsDisplayBlendContainer::CreateForMixBlendMode(
         aBuilder, this, &resultList, containerItemASR));
     createdContainer = true;
-    addBackdropRoot = false;
+    MarkAsIsolated();
   }
 
+  
+  
+  const bool usingBackdropFilter = effects->HasBackdropFilters() &&
+                                   IsVisibleForPainting() &&
+                                   !style.IsRootElementStyle();
   if (usingBackdropFilter) {
+    stackingContextTracker.AddToParent(
+        StackingContextBits::ContainsBackdropFilter);
     nsRect backdropRect =
         GetRectRelativeToSelf() + aBuilder->ToReferenceFrame(this);
     resultList.AppendNewToTop<nsDisplayBackdropFilters>(
         aBuilder, this, &resultList, backdropRect, this);
     createdContainer = true;
-    addBackdropRoot = false;
+    MarkAsIsolated();
   }
 
   
@@ -3678,7 +3699,7 @@ void nsIFrame::BuildDisplayListForStackingContext(
       resultList.AppendNewToTop<nsDisplayMasksAndClipPaths>(
           aBuilder, this, &resultList, maskASR, usingBackdropFilter);
       createdContainer = true;
-      addBackdropRoot = false;
+      MarkAsIsolated();
     }
 
     
@@ -3698,10 +3719,8 @@ void nsIFrame::BuildDisplayListForStackingContext(
         nsDisplayOpacity::NeedsActiveLayer(aBuilder, this);
     resultList.AppendNewToTop<nsDisplayOpacity>(
         aBuilder, this, &resultList, containerItemASR, opacityItemForEventsOnly,
-        needsActiveOpacityLayer, usingBackdropFilter,
-        addBackdropRoot && aBuilder->ContainsBackdropFilter());
+        needsActiveOpacityLayer, usingBackdropFilter, ShouldForceIsolation());
     createdContainer = true;
-    addBackdropRoot = false;
   }
 
   
@@ -3753,7 +3772,7 @@ void nsIFrame::BuildDisplayListForStackingContext(
 
       if (separator) {
         createdContainer = true;
-        addBackdropRoot = false;
+        MarkAsIsolated();
       }
 
       resultList.AppendToTop(&participants);
@@ -3799,7 +3818,7 @@ void nsIFrame::BuildDisplayListForStackingContext(
 
     nsDisplayTransform* transformItem = MakeDisplayItem<nsDisplayTransform>(
         aBuilder, this, &resultList, visibleRect, prerenderInfo.mDecision,
-        usingBackdropFilter);
+        usingBackdropFilter, ShouldForceIsolation());
     if (transformItem) {
       resultList.AppendToTop(transformItem);
       createdContainer = true;
@@ -3818,6 +3837,16 @@ void nsIFrame::BuildDisplayListForStackingContext(
         resultList.AppendNewToTop<nsDisplayPerspective>(aBuilder, this,
                                                         &resultList);
         createdContainer = true;
+      }
+
+      
+      
+      
+      const bool hasMaybe3dTransform =
+          hasPerspective || !transformItem->GetTransform().Is2D();
+      if (hasMaybe3dTransform) {
+        stackingContextTracker.AddToParent(
+            StackingContextBits::MayContainNonIsolated3DTransform);
       }
     }
     if (clipCapturedBy ==
@@ -3849,7 +3878,8 @@ void nsIFrame::BuildDisplayListForStackingContext(
     const ActiveScrolledRoot* fixedASR = ActiveScrolledRoot::PickAncestor(
         containerItemASR, aBuilder->CurrentActiveScrolledRoot());
     resultList.AppendNewToTop<nsDisplayFixedPosition>(
-        aBuilder, this, &resultList, fixedASR, containerItemASR);
+        aBuilder, this, &resultList, fixedASR, containerItemASR,
+        ShouldForceIsolation());
     createdContainer = true;
   } else if (useStickyPosition && !capturedByViewTransition) {
     
@@ -3893,19 +3923,21 @@ void nsIFrame::BuildDisplayListForStackingContext(
   
   
   
-  if (useBlendMode) {
-    DisplayListClipState::AutoSaveRestore blendModeClipState(aBuilder);
+  if (effects->mMixBlendMode != StyleBlend::Normal) {
+    stackingContextTracker.AddToParent(
+        StackingContextBits::ContainsMixBlendMode);
     resultList.AppendNewToTop<nsDisplayBlendMode>(aBuilder, this, &resultList,
                                                   effects->mMixBlendMode,
                                                   containerItemASR, false);
     createdContainer = true;
+    MarkAsIsolated();
   }
 
   if (capturedByViewTransition) {
     resultList.AppendNewToTop<nsDisplayViewTransitionCapture>(
         aBuilder, this, &resultList, nullptr,  false);
     createdContainer = true;
-    addBackdropRoot = false;
+    MarkAsIsolated();
     
     
     if (clipCapturedBy == ContainerItemType::ViewTransitionCapture) {
@@ -3913,11 +3945,15 @@ void nsIFrame::BuildDisplayListForStackingContext(
     }
   }
 
-  if (addBackdropRoot) {
-    resultList.AppendToTop(nsDisplayBlendContainer::CreateForBackdropRoot(
-        aBuilder, this, &resultList, containerItemASR,
-         aBuilder->ContainsBackdropFilter()));
+  if (!isolated && localIsolationReasons != StackingContextBits::None) {
+    resultList.AppendToTop(nsDisplayBlendContainer::CreateForIsolation(
+        aBuilder, this, &resultList, containerItemASR, ShouldForceIsolation()));
     createdContainer = true;
+  }
+
+  if (!isolated && aBuilder->MayContainNonIsolated3DTransform()) {
+    stackingContextTracker.AddToParent(
+        StackingContextBits::MayContainNonIsolated3DTransform);
   }
 
   if (aBuilder->IsReusingStackingContextItems()) {
