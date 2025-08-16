@@ -114,7 +114,7 @@ pub trait ExternalImageHandler {
     
     
     
-    fn lock(&mut self, key: ExternalImageId, channel_index: u8, is_composited: bool) -> ExternalImage;
+    fn lock(&mut self, key: ExternalImageId, channel_index: u8) -> ExternalImage;
     
     
     fn unlock(&mut self, key: ExternalImageId, channel_index: u8);
