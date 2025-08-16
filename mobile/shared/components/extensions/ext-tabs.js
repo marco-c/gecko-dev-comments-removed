@@ -266,7 +266,7 @@ this.tabs = class extends ExtensionAPIPersistent {
       const isAboutUrl = url.startsWith("about:");
       if (
         isAboutUrl ||
-        (url.startsWith("moz-extension://") &&
+        (ExtensionUtils.isExtensionUrl(url) &&
           !context.checkLoadURL(url, { dontReportErrors: true }))
       ) {
         
@@ -390,7 +390,7 @@ this.tabs = class extends ExtensionAPIPersistent {
             url = context.uri.resolve(url);
 
             if (
-              !url.startsWith("moz-extension://") &&
+              !ExtensionUtils.isExtensionUrl(url) &&
               !context.checkLoadURL(url, { dontReportErrors: true })
             ) {
               return Promise.reject({ message: `Illegal URL: ${url}` });
@@ -468,7 +468,7 @@ this.tabs = class extends ExtensionAPIPersistent {
             url = context.uri.resolve(url);
 
             if (
-              !url.startsWith("moz-extension://") &&
+              !ExtensionUtils.isExtensionUrl(url) &&
               !context.checkLoadURL(url, { dontReportErrors: true })
             ) {
               return Promise.reject({ message: `Illegal URL: ${url}` });
