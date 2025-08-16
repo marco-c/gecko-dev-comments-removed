@@ -2241,6 +2241,78 @@ const ContentTiles = props => {
     }
   }, [tiles]); 
 
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    
+
+
+
+
+
+
+
+
+
+
+
+    const page = document.querySelector("#multi-stage-message-root.onboardingContainer[data-page]")?.dataset.page || document.location.href;
+    if (page !== "spotlight") {
+      return () => {};
+    }
+    const tilesEl = document.getElementById("content-tiles-container");
+    const dialog = tilesEl?.closest('main[role="alertdialog"]') || null;
+    if (!tilesEl || !dialog) {
+      return () => {};
+    }
+
+    
+    
+    
+    
+    const TAB_GRACE_WINDOW_MS = 250;
+    let lastTilesEl = null;
+    let lastTabAt = 0;
+    let restoring = false;
+    function onKeyDown(e) {
+      if (e.key === "Tab") {
+        lastTabAt = performance.now();
+      }
+    }
+    function onFocusIn(event) {
+      const {
+        target
+      } = event;
+
+      
+      if (tilesEl.contains(target)) {
+        lastTilesEl = target;
+        return;
+      }
+
+      
+      const tabRecently = performance.now() - lastTabAt < TAB_GRACE_WINDOW_MS;
+      if (tabRecently || !lastTilesEl || !document.contains(lastTilesEl) || restoring) {
+        return;
+      }
+
+      
+      restoring = true;
+      try {
+        lastTilesEl.focus({
+          preventScroll: true
+        });
+      } finally {
+        restoring = false;
+      }
+    }
+
+    
+    dialog.addEventListener("keydown", onKeyDown, true);
+    dialog.addEventListener("focusin", onFocusIn, true);
+    return () => {
+      dialog.removeEventListener("keydown", onKeyDown, true);
+      dialog.removeEventListener("focusin", onFocusIn, true);
+    };
+  }, []);
   const toggleTile = (index, tile) => {
     const tileId = `${tile.type}${tile.id ? "_" : ""}${tile.id ?? ""}_header`;
     setExpandedTileIndex(prevIndex => prevIndex === index ? null : index);
