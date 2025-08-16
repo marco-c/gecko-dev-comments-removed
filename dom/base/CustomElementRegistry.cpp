@@ -956,7 +956,7 @@ void CustomElementRegistry::Define(
 
 
 
-  nsAutoString localName(aName);
+  RefPtr<nsAtom> localNameAtom = nameAtom;
   if (aOptions.mExtends.WasPassed()) {
     doc->SetUseCounter(eUseCounter_custom_CustomizedBuiltin);
 
@@ -985,7 +985,7 @@ void CustomElementRegistry::Define(
       }
     }
 
-    localName.Assign(aOptions.mExtends.Value());
+    localNameAtom = NS_Atomize(aOptions.mExtends.Value());
   }
 
   
@@ -1134,11 +1134,6 @@ void CustomElementRegistry::Define(
 
 
 
-
-  
-  RefPtr<nsAtom> localNameAtom(NS_Atomize(localName));
-
-  
 
 
   if (!mConstructors.put(constructorUnwrapped, nameAtom)) {
