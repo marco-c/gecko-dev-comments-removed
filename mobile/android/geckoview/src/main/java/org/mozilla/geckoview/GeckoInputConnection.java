@@ -476,6 +476,9 @@ import org.mozilla.gecko.util.ThreadUtils;
 
   @Override 
   public void onDefaultKeyEvent(final KeyEvent event) {
+    if (DEBUG) {
+      Log.d(LOGTAG, "onDefaultKeyEvent: " + event);
+    }
     ThreadUtils.runOnUiThread(
         new Runnable() {
           @Override
@@ -775,8 +778,7 @@ import org.mozilla.gecko.util.ThreadUtils;
     return event;
   }
 
-  
-   void performDefaultKeyAction(final KeyEvent event) {
+   static boolean isMediaKeyEvent(final KeyEvent event) {
     switch (event.getKeyCode()) {
       case KeyEvent.KEYCODE_MUTE:
       case KeyEvent.KEYCODE_HEADSETHOOK:
@@ -791,16 +793,25 @@ import org.mozilla.gecko.util.ThreadUtils;
       case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
       case KeyEvent.KEYCODE_MEDIA_CLOSE:
       case KeyEvent.KEYCODE_MEDIA_EJECT:
-      case KeyEvent.KEYCODE_MEDIA_AUDIO_TRACK:
-        
-        
-        
-        
-        final Context viewContext = getView().getContext();
-        final AudioManager am = (AudioManager) viewContext.getSystemService(Context.AUDIO_SERVICE);
-        am.dispatchMediaKeyEvent(event);
-        break;
+        return true;
+      default:
+        return false;
     }
+  }
+
+  
+   void performDefaultKeyAction(final KeyEvent event) {
+    if (!isMediaKeyEvent(event)) {
+      return;
+    }
+
+    
+    
+    
+    
+    final Context viewContext = getView().getContext();
+    final AudioManager am = (AudioManager) viewContext.getSystemService(Context.AUDIO_SERVICE);
+    am.dispatchMediaKeyEvent(event);
   }
 
   @TargetApi(Build.VERSION_CODES.N_MR1)

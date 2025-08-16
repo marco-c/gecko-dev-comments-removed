@@ -192,6 +192,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
         unicodeChar >= ' '
             ? unicodeChar
             : unmodifiedMetaState != metaState ? unmodifiedUnicodeChar : 0;
+    final boolean waitingReply = GeckoInputConnection.isMediaKeyEvent(event);
 
     
     
@@ -219,6 +220,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
         event.getRepeatCount(),
         event.getFlags(),
         isSynthesizedImeKey,
+        waitingReply,
         event);
   }
 

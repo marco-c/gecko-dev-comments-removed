@@ -428,6 +428,8 @@ static jni::ObjectArray::LocalRef ConvertRectArrayToJavaRectFArray(
 namespace mozilla {
 namespace widget {
 
+uint32_t GeckoEditableSupport::sUniqueKeyEventId = 0;
+
 NS_IMPL_ISUPPORTS(GeckoEditableSupport, TextEventDispatcherListener,
                   nsISupportsWeakReference)
 
@@ -463,13 +465,11 @@ bool GeckoEditableSupport::RemoveComposition(RemoveCompositionFlag aFlag) {
   return true;
 }
 
-void GeckoEditableSupport::OnKeyEvent(int32_t aAction, int32_t aKeyCode,
-                                      int32_t aScanCode, int32_t aMetaState,
-                                      int32_t aKeyPressMetaState, int64_t aTime,
-                                      int32_t aDomPrintableKeyValue,
-                                      int32_t aRepeatCount, int32_t aFlags,
-                                      bool aIsSynthesizedImeKey,
-                                      jni::Object::Param aOriginalEvent) {
+void GeckoEditableSupport::OnKeyEvent(
+    int32_t aAction, int32_t aKeyCode, int32_t aScanCode, int32_t aMetaState,
+    int32_t aKeyPressMetaState, int64_t aTime, int32_t aDomPrintableKeyValue,
+    int32_t aRepeatCount, int32_t aFlags, bool aIsSynthesizedImeKey,
+    bool aWaitingReply, jni::Object::Param aOriginalEvent) {
   AutoGeckoEditableBlocker blocker(this);
 
   nsCOMPtr<nsIWidget> widget = GetWidget();
@@ -518,13 +518,29 @@ void GeckoEditableSupport::OnKeyEvent(int32_t aAction, int32_t aKeyCode,
     
     mIMEKeyEvents.AppendElement(UniquePtr<WidgetEvent>(event.Duplicate()));
   } else {
+    if (aWaitingReply) {
+      event.MarkAsWaitingReplyFromRemoteProcess();
+      event.mUniqueId = ++sUniqueKeyEventId;
+    }
     NS_ENSURE_SUCCESS_VOID(BeginInputTransaction(dispatcher));
     dispatcher->DispatchKeyboardEvent(msg, event, status);
     if (widget->Destroyed() || status == nsEventStatus_eConsumeNoDefault) {
       
       return;
     }
-    mEditable->OnDefaultKeyEvent(aOriginalEvent);
+
+    
+    
+    
+    if (aWaitingReply) {
+      if (nsIWidget::UsePuppetWidgets()) {
+        mEditable->OnDefaultKeyEvent(aOriginalEvent);
+      } else {
+        jni::Object::GlobalRef originalKeyEvent(aOriginalEvent);
+        mWaitingReplyKeyEvents.AppendElement(
+            WaitingReplyKeyEvent{sUniqueKeyEventId, aOriginalEvent});
+      }
+    }
   }
 
   
@@ -1368,6 +1384,8 @@ nsresult GeckoEditableSupport::NotifyIME(
 
       
       mIMEMaskEventsCount++;
+
+      mWaitingReplyKeyEvents.Clear();
       break;
     }
 
@@ -1701,6 +1719,20 @@ void GeckoEditableSupport::OnImeInsertImage(jni::ByteArray::Param aData,
   command.mTransferable = trans.forget();
   nsEventStatus status;
   widget->DispatchEvent(&command, status);
+}
+
+void GeckoEditableSupport::PostHandleKeyEvent(WidgetKeyboardEvent* aEvent) {
+  const auto foundIt =
+      std::find_if(mWaitingReplyKeyEvents.begin(), mWaitingReplyKeyEvents.end(),
+                   [aEvent](const auto& item) {
+                     return item.mUniqueId == aEvent->mUniqueId;
+                   });
+  if (foundIt != mWaitingReplyKeyEvents.end()) {
+    mEditable->OnDefaultKeyEvent(*foundIt->mOriginalEvent);
+    
+    
+    mWaitingReplyKeyEvents.RemoveElementsAt(0, foundIt.GetIndex() + 1);
+  }
 }
 
 }  
