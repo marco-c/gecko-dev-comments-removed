@@ -144,6 +144,8 @@ export function fedcm_test(test_func, test_name) {
       
     }
 
+    await mark_signed_in();
+    await mark_signed_in(alt_manifest_origin);
     await set_fedcm_cookie();
     await set_alt_fedcm_cookie();
     await test_func(t);
