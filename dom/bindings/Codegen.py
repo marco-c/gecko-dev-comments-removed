@@ -58,6 +58,23 @@ INSTANCE_RESERVED_SLOTS = 1
 GLOBAL_NAMES_PHF_SIZE = 256
 
 
+
+JS_OBJECT_PROTOTYPE_PROPERTIES = [
+    "constructor",
+    "toString",
+    "toLocaleString",
+    "valueOf",
+    "hasOwnProperty",
+    "isPrototypeOf",
+    "propertyIsEnumerable",
+    "__defineGetter__",
+    "__defineSetter__",
+    "__lookupGetter__",
+    "__lookupSetter__",
+    "__proto__",
+]
+
+
 def reservedSlot(slotIndex, forXray):
     base = "DOM_EXPANDO_RESERVED_SLOTS" if forXray else "DOM_INSTANCE_RESERVED_SLOTS"
     return "(%s + %d)" % (base, slotIndex)
@@ -15332,7 +15349,7 @@ class CGCountMaybeMissingProperty(CGAbstractPropertySwitchMethod):
         )
 
 
-class CGInterfaceHasNonEventHandlerProperty(CGAbstractPropertySwitchMethod):
+class CGInterfaceHasProperty(CGAbstractPropertySwitchMethod):
     def __init__(self, descriptor):
         """
         Returns whether the given string a property of this or any of its
@@ -15341,7 +15358,7 @@ class CGInterfaceHasNonEventHandlerProperty(CGAbstractPropertySwitchMethod):
         CGAbstractPropertySwitchMethod.__init__(
             self,
             descriptor,
-            "InterfaceHasNonEventHandlerProperty",
+            "InterfaceHasProperty",
             "bool",
             [
                 Argument("const nsAString&", "name"),
@@ -15350,21 +15367,15 @@ class CGInterfaceHasNonEventHandlerProperty(CGAbstractPropertySwitchMethod):
 
     def definition_body(self):
         
-        names = {"constructor", "__proto__"}
+        names = set(JS_OBJECT_PROTOTYPE_PROPERTIES)
 
         iface = self.descriptor.interface
         while iface:
             for m in iface.members:
-                if not m.isAttr() or isChromeOnly(m):
+                if isChromeOnly(m):
                     continue
 
-                name = m.identifier.name
-                
-                
-                if name.startswith("on"):
-                    continue
-
-                names.add(name)
+                names.add(m.identifier.name)
 
             iface = iface.parent
 
@@ -17421,7 +17432,7 @@ class CGDescriptor(CGThing):
             cgThings.append(CGCountMaybeMissingProperty(descriptor))
 
         if descriptor.interface.identifier.name in ("HTMLDocument", "HTMLFormElement"):
-            cgThings.append(CGInterfaceHasNonEventHandlerProperty(descriptor))
+            cgThings.append(CGInterfaceHasProperty(descriptor))
 
         
         
@@ -18514,22 +18525,7 @@ class CGDictionary(CGThing):
             
             memberData = "%s.InternalValue()" % memberLoc
 
-        
-        
-        if member.identifier.name in [
-            "constructor",
-            "toString",
-            "toLocaleString",
-            "valueOf",
-            "hasOwnProperty",
-            "isPrototypeOf",
-            "propertyIsEnumerable",
-            "__defineGetter__",
-            "__defineSetter__",
-            "__lookupGetter__",
-            "__lookupSetter__",
-            "__proto__",
-        ]:
+        if member.identifier.name in JS_OBJECT_PROTOTYPE_PROPERTIES:
             raise TypeError(
                 "'%s' member of %s dictionary shadows "
                 "a property of Object.prototype, and Xrays to "
