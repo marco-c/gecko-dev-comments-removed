@@ -92,21 +92,44 @@ JS_PUBLIC_API bool JS::FinishLoadingImportedModule(
   CHECK_THREAD(cx);
   cx->check(referrer, referencingPrivate, moduleRequest, payload, result);
 
+  if (referrer) {
+    
+    
+
+    
+    
+    
+    LoadedModuleMap& loadedModules =
+        referrer->as<ModuleObject>().loadedModules();
+    if (auto record = loadedModules.lookup(moduleRequest)) {
+      
+      MOZ_ASSERT(record->value() == result);
+    } else {
+      
+      
+      
+      if (!loadedModules.putNew(moduleRequest, &result->as<ModuleObject>())) {
+        ReportOutOfMemory(cx);
+        return FinishLoadingImportedModuleFailedWithPendingException(cx,
+                                                                     payload);
+      }
+    }
+  }
+
   
   
   JSObject* object = &payload.toObject();
   if (object->is<GraphLoadingStateRecordObject>()) {
-    return js::FinishLoadingImportedModule(cx, referrer, referencingPrivate,
-                                           moduleRequest, payload, result);
+    return js::ContinueLoadingImportedModule(cx, payload, result,
+                                             UndefinedHandleValue);
   }
 
   
   
   MOZ_ASSERT(object->is<PromiseObject>());
   Rooted<JSObject*> promise(cx, &object->as<PromiseObject>());
-  return js::FinishLoadingImportedModule(cx, referrer, referencingPrivate,
-                                         moduleRequest, promise, result,
-                                         usePromise);
+  return js::ContinueDynamicImport(cx, referencingPrivate, moduleRequest,
+                                   promise, result, usePromise);
 }
 
 
@@ -1547,49 +1570,6 @@ static bool ContinueModuleLoading(JSContext* cx,
   
   RootedValue hostDefined(cx, state->hostDefined());
   return state->rejected(cx, hostDefined, error);
-}
-
-
-
-bool js::FinishLoadingImportedModule(JSContext* cx, Handle<JSObject*> referrer,
-                                     Handle<Value> referencingPrivate,
-                                     Handle<JSObject*> moduleRequest,
-                                     Handle<Value> statePrivate,
-                                     Handle<JSObject*> result) {
-  
-  MOZ_ASSERT(referrer);
-  Rooted<ModuleObject*> mod(cx, &referrer->as<ModuleObject>());
-  auto& loadedModules = mod->loadedModules();
-
-  
-  
-  
-  if (auto record = loadedModules.lookup(moduleRequest)) {
-    
-    MOZ_ASSERT(record->value() == result);
-  } else {
-    
-    
-    
-    if (!loadedModules.putNew(moduleRequest, &result->as<ModuleObject>())) {
-      ReportOutOfMemory(cx);
-      return false;
-    }
-  }
-
-  return js::ContinueLoadingImportedModule(cx, statePrivate, result,
-                                           UndefinedHandleValue);
-}
-
-
-bool js::FinishLoadingImportedModule(JSContext* cx, Handle<JSObject*> referrer,
-                                     Handle<Value> referencingPrivate,
-                                     Handle<JSObject*> moduleRequest,
-                                     Handle<JSObject*> promise,
-                                     Handle<JSObject*> result,
-                                     bool usePromise) {
-  return js::ContinueDynamicImport(cx, referencingPrivate, moduleRequest,
-                                   promise, result, usePromise);
 }
 
 
