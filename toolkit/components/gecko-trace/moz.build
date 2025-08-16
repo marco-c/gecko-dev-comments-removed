@@ -6,13 +6,18 @@
 
 include("/third_party/opentelemetry-cpp/opentelemetry-config.mozbuild")
 
-DIRS += [
-    "/third_party/opentelemetry-cpp",
-]
-
 EXPORTS.mozilla += ["GeckoTrace.h"]
+EXPORTS.mozilla.gecko_trace += ["SpanEvent.h"]
 
-UNIFIED_SOURCES += ["GeckoTrace.cpp"]
+if CONFIG["GECKO_TRACE_ENABLE"]:
+    DIRS += [
+        "/third_party/opentelemetry-cpp",
+    ]
+
+    UNIFIED_SOURCES += ["GeckoTrace.cpp"]
+
+if CONFIG["ENABLE_TESTS"]:
+    DIRS += ["tests/gtest"]
 
 FINAL_LIBRARY = "xul"
 
