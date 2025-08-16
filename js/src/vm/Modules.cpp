@@ -2743,26 +2743,21 @@ bool js::OnModuleEvaluationFailure(JSContext* cx,
 
 
 
+
+
+
 class DynamicImportContextObject : public NativeObject {
  public:
-  enum {
-    ReferencingPrivateSlot = 0,
-    ModuleRequestSlot,
-    PromiseSlot,
-    ModuleSlot,
-    SlotCount
-  };
+  enum { ReferencingPrivateSlot = 0, PromiseSlot, ModuleSlot, SlotCount };
 
   static const JSClass class_;
   static const JSClassOps classOps_;
 
   [[nodiscard]] static DynamicImportContextObject* create(
       JSContext* cx, Handle<Value> referencingPrivate,
-      Handle<JSObject*> moduleRequest, Handle<JSObject*> promise,
-      Handle<JSObject*> module);
+      Handle<JSObject*> promise, Handle<JSObject*> module);
 
   Value referencingPrivate() const;
-  JSObject* moduleRequest() const;
   JSObject* promise() const;
   JSObject* module() const;
 
@@ -2797,8 +2792,7 @@ const JSClassOps DynamicImportContextObject::classOps_ = {
 
 
 DynamicImportContextObject* DynamicImportContextObject::create(
-    JSContext* cx, Handle<Value> referencingPrivate,
-    Handle<JSObject*> moduleRequest, Handle<JSObject*> promise,
+    JSContext* cx, Handle<Value> referencingPrivate, Handle<JSObject*> promise,
     Handle<JSObject*> module) {
   Rooted<DynamicImportContextObject*> self(
       cx, NewObjectWithGivenProto<DynamicImportContextObject>(cx, nullptr));
@@ -2809,7 +2803,6 @@ DynamicImportContextObject* DynamicImportContextObject::create(
   cx->runtime()->addRefScriptPrivate(referencingPrivate);
 
   self->initReservedSlot(ReferencingPrivateSlot, referencingPrivate);
-  self->initReservedSlot(ModuleRequestSlot, ObjectValue(*moduleRequest));
   self->initReservedSlot(PromiseSlot, ObjectValue(*promise));
   self->initReservedSlot(ModuleSlot, ObjectValue(*module));
   return self;
@@ -2817,15 +2810,6 @@ DynamicImportContextObject* DynamicImportContextObject::create(
 
 Value DynamicImportContextObject::referencingPrivate() const {
   return getReservedSlot(ReferencingPrivateSlot);
-}
-
-JSObject* DynamicImportContextObject::moduleRequest() const {
-  Value value = getReservedSlot(ModuleRequestSlot);
-  if (value.isUndefined()) {
-    return nullptr;
-  }
-
-  return &value.toObject();
 }
 
 JSObject* DynamicImportContextObject::promise() const {
@@ -2864,6 +2848,9 @@ void DynamicImportContextObject::clearReferencingPrivate(
 
 
 
+
+
+
 static bool OnResolvedDynamicModule(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   MOZ_ASSERT(args.get(0).isUndefined());
@@ -2877,10 +2864,6 @@ static bool OnResolvedDynamicModule(JSContext* cx, unsigned argc, Value* vp) {
   RootedValue referencingPrivate(cx, context->referencingPrivate());
 
   Rooted<PromiseObject*> promise(cx, TargetFromHandler<PromiseObject>(args));
-  RootedObject moduleRequest(cx, context->moduleRequest());
-  if (!moduleRequest) {
-    return RejectPromiseWithPendingError(cx, promise);
-  }
 
   Rooted<ModuleObject*> module(cx, &context->module()->as<ModuleObject>());
   if (module->status() != ModuleStatus::EvaluatingAsync &&
@@ -2890,21 +2873,32 @@ static bool OnResolvedDynamicModule(JSContext* cx, unsigned argc, Value* vp) {
     return RejectPromiseWithPendingError(cx, promise);
   }
 
+  
   MOZ_ASSERT_IF(module->hasCyclicModuleFields(),
                 module->getCycleRoot()
                         ->topLevelCapability()
                         ->as<PromiseObject>()
                         .state() == JS::PromiseState::Fulfilled);
 
+  
   RootedObject ns(cx, GetOrCreateModuleNamespace(cx, module));
   if (!ns) {
     return RejectPromiseWithPendingError(cx, promise);
   }
 
-  args.rval().setUndefined();
+  
+  
   RootedValue value(cx, ObjectValue(*ns));
-  return PromiseObject::resolve(cx, promise, value);
+  if (!PromiseObject::resolve(cx, promise, value)) {
+    return false;
+  }
+
+  
+  args.rval().setUndefined();
+  return true;
 };
+
+
 
 static bool OnRejectedDynamicModule(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -3001,8 +2995,8 @@ bool js::ContinueDynamicImport(JSContext* cx, Handle<Value> referencingPrivate,
                                Handle<JSObject*> result, bool usePromise) {
   MOZ_ASSERT(result);
   Rooted<DynamicImportContextObject*> context(
-      cx, DynamicImportContextObject::create(cx, referencingPrivate,
-                                             moduleRequest, promise, result));
+      cx, DynamicImportContextObject::create(cx, referencingPrivate, promise,
+                                             result));
   if (!context) {
     return RejectPromiseWithPendingError(cx, promise.as<PromiseObject>());
   }
