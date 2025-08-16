@@ -328,7 +328,7 @@ void PreallocatedProcessManagerImpl::AllocateNow() {
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [self = RefPtr{this},
-           process = RefPtr{process.get()}](UniqueContentParentKeepAlive) {
+           process = RefPtr{process.get()}](UniqueContentParentKeepAlive&&) {
             if (process->IsDead()) {
               self->Erase(process);
               

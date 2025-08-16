@@ -34,15 +34,15 @@ using UniqueThreadsafeContentParentKeepAlive =
     UniquePtr<ThreadsafeContentParentHandle, ContentParentKeepAliveDeleter>;
 
 UniqueContentParentKeepAlive UniqueContentParentKeepAliveFromThreadsafe(
-    UniqueThreadsafeContentParentKeepAlive aKeepAlive);
+    UniqueThreadsafeContentParentKeepAlive&& aKeepAlive);
 UniqueThreadsafeContentParentKeepAlive UniqueContentParentKeepAliveToThreadsafe(
-    UniqueContentParentKeepAlive aKeepAlive);
+    UniqueContentParentKeepAlive&& aKeepAlive);
 
 
 
 
 already_AddRefed<nsIContentParentKeepAlive> WrapContentParentKeepAliveForJS(
-    UniqueContentParentKeepAlive aKeepAlive);
+    UniqueContentParentKeepAlive&& aKeepAlive);
 
 }  
 
