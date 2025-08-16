@@ -271,12 +271,7 @@ class WalkerSearch {
     
     if (
       
-      query.match(/^[a-z]+$/i) ||
-      
-      InspectorUtils.isCustomElementName(
-        query,
-        this.walker.targetActor.window.document.documentElement.namespaceURI
-      )
+      query.match(/^[a-z]+$/i)
     ) {
       return;
     }
