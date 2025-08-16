@@ -89,13 +89,30 @@ pub struct Config {
     custom_types: IndexMap<String, CustomTypeConfig>,
 }
 
+
 #[derive(Clone, Debug, Deserialize, Serialize, Node, PartialEq, Eq)]
 #[serde(rename_all = "PascalCase")]
 pub enum ConcurrencyMode {
     
     Sync,
     
+    Async,
+    
+    
+    
+    
+    
+    
+    
+    
     AsyncWrapped,
+    
+    
+    
+    
+    
+    
+    FireAndForget,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, Node)]

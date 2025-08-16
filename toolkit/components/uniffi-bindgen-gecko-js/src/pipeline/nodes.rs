@@ -9,7 +9,7 @@ use askama::Template;
 use uniffi_bindgen::backend::filters::to_askama_error;
 use uniffi_pipeline::Node;
 
-use crate::Config;
+use crate::{ConcurrencyMode, Config};
 
 
 #[derive(Debug, Clone, Node)]
@@ -108,7 +108,7 @@ pub struct CppCallbackInterface {
 pub struct CppCallbackInterfaceMethod {
     
     pub fn_name: String,
-    pub async_data: Option<CppCallbackInterfaceMethodAsyncData>,
+    pub kind: CallbackMethodKind,
     pub base_class_name: String,
     
     pub handler_class_name: String,
@@ -116,6 +116,17 @@ pub struct CppCallbackInterfaceMethod {
     pub arguments: Vec<FfiValueArgument>,
     pub return_ty: Option<FfiValueReturnType>,
     pub out_pointer_ty: FfiTypeNode,
+}
+
+
+
+
+
+
+#[derive(Debug, Clone, Node)]
+pub enum CallbackMethodKind {
+    FireAndForget,
+    Async(CppCallbackInterfaceMethodAsyncData),
 }
 
 #[derive(Debug, Clone, Node)]
@@ -218,6 +229,7 @@ pub struct Callable {
     pub name: String,
     pub async_data: Option<AsyncData>,
     pub is_js_async: bool,
+    pub concurrency_mode: ConcurrencyMode,
     
     pub uniffi_scaffolding_method: String,
     pub kind: CallableKind,
@@ -834,12 +846,6 @@ impl FfiFunctionType {
             .map(|a| a.ty.type_name.as_str())
             .chain(self.has_rust_call_status_arg.then_some("RustCallStatus*"))
             .collect()
-    }
-}
-
-impl CppCallbackInterfaceMethod {
-    fn is_async(&self) -> bool {
-        self.async_data.is_some()
     }
 }
 
