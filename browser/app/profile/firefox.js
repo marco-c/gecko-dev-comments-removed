@@ -2145,6 +2145,8 @@ pref("pdfjs.handleOctetStream", true);
 pref("sidebar.position_start", true);
 pref("sidebar.revamp", false);
 
+pref("sidebar.revamp.defaultLauncherVisible", true);
+
 #ifdef NIGHTLY_BUILD
 pref("sidebar.revamp.round-content-area", true);
 #else
