@@ -155,6 +155,13 @@ struct PointerInfo final {
     mLastPressure = 0.0f;
   }
 
+  [[nodiscard]] bool EqualsBasicPointerData(const PointerInfo& aOther) const {
+    return mInputSource == aOther.mInputSource &&
+           mIsActive == aOther.mIsActive && mIsPrimary == aOther.mIsPrimary &&
+           mFromTouchEvent == aOther.mFromTouchEvent &&
+           mIsSynthesizedForTests == aOther.mIsSynthesizedForTests;
+  }
+
   
   
   nsPoint mLastRefPointInRootDoc =
