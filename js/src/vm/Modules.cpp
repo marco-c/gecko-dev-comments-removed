@@ -1961,7 +1961,7 @@ static bool ModuleEvaluate(JSContext* cx, Handle<ModuleObject*> moduleArg,
     
     Rooted<Value> error(cx);
     if (cx->isExceptionPending()) {
-      std::ignore = cx->getPendingException(&error);
+      (void)cx->getPendingException(&error);
       cx->clearPendingException();
     }
 
@@ -2318,7 +2318,7 @@ static void RejectExecutionWithPendingException(JSContext* cx,
   
   RootedValue exception(cx);
   if (cx->isExceptionPending()) {
-    std::ignore = cx->getPendingException(&exception);
+    (void)cx->getPendingException(&exception);
   }
   cx->clearPendingException();
   AsyncModuleExecutionRejected(cx, module, exception);
@@ -2706,8 +2706,8 @@ static bool TryStartDynamicModuleImport(JSContext* cx, HandleScript script,
   
   
   
-  std::ignore = moduleLoadHook(cx,  nullptr, referencingPrivate,
-                               moduleRequest, payload);
+  (void)moduleLoadHook(cx,  nullptr, referencingPrivate,
+                       moduleRequest, payload);
   return true;
 }
 
