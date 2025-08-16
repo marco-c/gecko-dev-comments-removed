@@ -1050,6 +1050,7 @@ class nsWindow final : public nsBaseWidget {
   nsCString mWindowActivationTokenFromEnv;
   mozilla::widget::WindowSurfaceProvider mSurfaceProvider;
   GdkDragContext* mSourceDragContext = nullptr;
+  bool mSourceDragContextActive = false;
   mozilla::Sides mResizableEdges{mozilla::SideBits::eAll};
   
   
