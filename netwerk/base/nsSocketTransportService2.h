@@ -257,13 +257,9 @@ class nsSocketTransportService final : public nsPISocketTransportService,
 
   PRIntervalTime PollTimeout(
       PRIntervalTime now);  
-  nsresult DoPollIteration(TimeDuration* pollDuration);
+  nsresult DoPollIteration();
   
-  int32_t Poll(TimeDuration* pollDuration, PRIntervalTime ts);
-  
-  
-  
-  
+  int32_t Poll(PRIntervalTime ts);
   
 
   
