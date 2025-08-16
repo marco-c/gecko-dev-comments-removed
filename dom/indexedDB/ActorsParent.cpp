@@ -148,6 +148,7 @@
 #include "mozilla/dom/quota/UniversalDirectoryLock.h"
 #include "mozilla/dom/quota/UsageInfo.h"
 #include "mozilla/fallible.h"
+#include "mozilla/glean/DomIndexedDBMetrics.h"
 #include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/InputStreamParams.h"
@@ -13365,6 +13366,11 @@ nsresult Maintenance::DirectoryWork() {
 
     
     
+    MOZ_DIAGNOSTIC_ASSERT(
+        persistent || quotaManager->IsTemporaryStorageInitializedInternal());
+
+    
+    
     const auto persistenceTypeString =
         persistenceType == PERSISTENCE_TYPE_PERSISTENT
             ? "permanent"_ns
@@ -13418,6 +13424,8 @@ nsresult Maintenance::DirectoryWork() {
               if (!persistent &&
                   !quotaManager->IsTemporaryOriginInitializedInternal(
                       metadata)) {
+                glean::idb_maintenance::fallback_fullrestore_metadata.Add();
+
                 
                 
                 
@@ -13430,10 +13438,26 @@ nsresult Maintenance::DirectoryWork() {
                 
                 
                 
-                QM_TRY_UNWRAP(
-                    metadata,
-                    quotaManager->LoadFullOriginMetadataWithRestore(originDir),
+
+                QM_TRY_INSPECT(
+                    const auto& fullmetadataAndStatus,
+                    quotaManager->LoadFullOriginMetadataWithRestoreAndStatus(
+                        originDir),
                     Ok{});
+
+                metadata = fullmetadataAndStatus.first;
+                if (fullmetadataAndStatus.second) {
+                  
+                  glean::idb_maintenance::metadata_restored.Add();
+                }
+
+                QM_TRY(OkIf(quotaManager->IsTemporaryOriginInitializedInternal(
+                           metadata)),
+                        Ok{},
+                       
+                       [](const auto&) {
+                         glean::idb_maintenance::unknown_metadata.Add();
+                       });
               }
 
               
@@ -13508,7 +13532,6 @@ nsresult Maintenance::DirectoryWork() {
                 if (!persistent) {
                   auto maybeOriginStateMetadata =
                       quotaManager->GetOriginStateMetadata(metadata);
-
                   auto originStateMetadata = maybeOriginStateMetadata.extract();
 
                   
