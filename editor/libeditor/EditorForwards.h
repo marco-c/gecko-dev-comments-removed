@@ -123,6 +123,8 @@ class JoinNodesResult;
 class JoinNodesTransaction;               
 class MoveNodeResult;                     
 class MoveNodeTransaction;                
+class MoveNodeTransactionBase;            
+class MoveSiblingsTransaction;            
 class PlaceholderTransaction;             
 class ReplaceTextInTextNodeTransaction;   
 class ReplaceTextTransaction;             

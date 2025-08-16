@@ -8,6 +8,7 @@
 
 #include "EditTransactionBase.h"  
 
+#include "EditorDOMPoint.h"
 #include "EditorForwards.h"
 
 #include "nsCOMPtr.h"  
@@ -17,10 +18,71 @@
 
 namespace mozilla {
 
+class MoveNodeTransactionBase : public EditTransactionBase {
+ public:
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(MoveNodeTransactionBase,
+                                           EditTransactionBase)
+  NS_DECL_EDITTRANSACTIONBASE_GETASMETHODS_OVERRIDE(MoveNodeTransactionBase)
+
+  virtual EditorRawDOMPoint SuggestPointToPutCaret() const = 0;
+  virtual EditorRawDOMPoint SuggestNextInsertionPoint() const = 0;
+
+ protected:
+  MoveNodeTransactionBase(HTMLEditor& aHTMLEditor,
+                          nsIContent& aLastContentToMove,
+                          const EditorRawDOMPoint& aPointToInsert);
+
+  virtual ~MoveNodeTransactionBase() = default;
+
+  [[nodiscard]] EditorRawDOMPoint SuggestPointToPutCaret(
+      nsIContent* aLastMoveContent) const {
+    if (MOZ_UNLIKELY(!mContainer || !aLastMoveContent)) {
+      return EditorRawDOMPoint();
+    }
+    return EditorRawDOMPoint::After(*aLastMoveContent);
+  }
+
+  [[nodiscard]] EditorRawDOMPoint SuggestNextInsertionPoint(
+      nsIContent* aLastMoveContent) const {
+    if (MOZ_UNLIKELY(!mContainer)) {
+      return EditorRawDOMPoint();
+    }
+    if (!mReference) {
+      return EditorRawDOMPoint::AtEndOf(*aLastMoveContent);
+    }
+    if (MOZ_UNLIKELY(mReference->GetParentNode() != mContainer)) {
+      if (MOZ_LIKELY(aLastMoveContent->GetParentNode() == mContainer)) {
+        return EditorRawDOMPoint(aLastMoveContent).NextPoint();
+      }
+      return EditorRawDOMPoint::AtEndOf(mContainer);
+    }
+    return EditorRawDOMPoint(mReference);
+  }
+
+  
+  
+  nsCOMPtr<nsINode> mContainer;
+
+  
+  
+  
+  nsCOMPtr<nsIContent> mReference;
+
+  
+  nsCOMPtr<nsINode> mOldContainer;
+
+  
+  nsCOMPtr<nsIContent> mOldNextSibling;
+
+  
+  RefPtr<HTMLEditor> mHTMLEditor;
+};
 
 
 
-class MoveNodeTransaction final : public EditTransactionBase {
+
+class MoveNodeTransaction final : public MoveNodeTransactionBase {
  protected:
   template <typename PT, typename CT>
   MoveNodeTransaction(HTMLEditor& aHTMLEditor, nsIContent& aContentToMove,
@@ -44,44 +106,27 @@ class MoveNodeTransaction final : public EditTransactionBase {
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(MoveNodeTransaction,
-                                           EditTransactionBase)
+                                           MoveNodeTransactionBase)
 
   NS_DECL_EDITTRANSACTIONBASE
   NS_DECL_EDITTRANSACTIONBASE_GETASMETHODS_OVERRIDE(MoveNodeTransaction)
 
-  MOZ_CAN_RUN_SCRIPT NS_IMETHOD RedoTransaction() override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD RedoTransaction() final;
 
   
 
 
 
-  template <typename EditorDOMPointType>
-  EditorDOMPointType SuggestPointToPutCaret() const {
-    if (MOZ_UNLIKELY(!mContainer || !mContentToMove)) {
-      return EditorDOMPointType();
-    }
-    return EditorDOMPointType::After(mContentToMove);
+  EditorRawDOMPoint SuggestPointToPutCaret() const final {
+    return MoveNodeTransactionBase::SuggestPointToPutCaret(mContentToMove);
   }
 
   
 
 
 
-  template <typename EditorDOMPointType>
-  EditorDOMPointType SuggestNextInsertionPoint() const {
-    if (MOZ_UNLIKELY(!mContainer)) {
-      return EditorDOMPointType();
-    }
-    if (!mReference) {
-      return EditorDOMPointType::AtEndOf(mContainer);
-    }
-    if (MOZ_UNLIKELY(mReference->GetParentNode() != mContainer)) {
-      if (MOZ_LIKELY(mContentToMove->GetParentNode() == mContainer)) {
-        return EditorDOMPointType(mContentToMove).NextPoint();
-      }
-      return EditorDOMPointType::AtEndOf(mContainer);
-    }
-    return EditorDOMPointType(mReference);
+  EditorRawDOMPoint SuggestNextInsertionPoint() const final {
+    return MoveNodeTransactionBase::SuggestNextInsertionPoint(mContentToMove);
   }
 
   friend std::ostream& operator<<(std::ostream& aStream,
@@ -94,24 +139,97 @@ class MoveNodeTransaction final : public EditTransactionBase {
 
   
   nsCOMPtr<nsIContent> mContentToMove;
+};
+
+
+
+
+class MoveSiblingsTransaction final : public MoveNodeTransactionBase {
+ protected:
+  template <typename PT, typename CT>
+  MoveSiblingsTransaction(HTMLEditor& aHTMLEditor,
+                          nsIContent& aFirstContentToMove,
+                          nsIContent& aLastContentToMove,
+                          uint32_t aNumberOfSiblings,
+                          const EditorDOMPointBase<PT, CT>& aPointToInsert);
+
+ public:
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  template <typename PT, typename CT>
+  static already_AddRefed<MoveSiblingsTransaction> MaybeCreate(
+      HTMLEditor& aHTMLEditor, nsIContent& aFirstContentToMove,
+      nsIContent& aLastContentToMove,
+      const EditorDOMPointBase<PT, CT>& aPointToInsert);
+
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(MoveSiblingsTransaction,
+                                           MoveNodeTransactionBase)
+
+  NS_DECL_EDITTRANSACTIONBASE
+  NS_DECL_EDITTRANSACTIONBASE_GETASMETHODS_OVERRIDE(MoveSiblingsTransaction)
+
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD RedoTransaction() override;
 
   
-  
-  nsCOMPtr<nsINode> mContainer;
+
+
+
+  EditorRawDOMPoint SuggestPointToPutCaret() const final {
+    return MoveNodeTransactionBase::SuggestPointToPutCaret(
+        GetLastMovedContent());
+  }
 
   
-  
-  
-  nsCOMPtr<nsIContent> mReference;
+
+
+
+  EditorRawDOMPoint SuggestNextInsertionPoint() const final {
+    return MoveNodeTransactionBase::SuggestNextInsertionPoint(
+        GetLastMovedContent());
+  }
+
+  const nsTArray<OwningNonNull<nsIContent>>& TargetSiblings() const {
+    return mSiblingsToMove;
+  }
+
+  [[nodiscard]] nsIContent* GetFirstMovedContent() const;
+  [[nodiscard]] nsIContent* GetLastMovedContent() const;
+
+  friend std::ostream& operator<<(std::ostream& aStream,
+                                  const MoveSiblingsTransaction& aTransaction);
+
+ protected:
+  virtual ~MoveSiblingsTransaction() = default;
+
+  MOZ_CAN_RUN_SCRIPT nsresult DoTransactionInternal();
+
+  [[nodiscard]] bool IsSiblingsToMoveValid() const {
+    for (const auto& content : mSiblingsToMove) {
+      if (MOZ_UNLIKELY(!content.isInitialized())) {
+        return false;
+      }
+    }
+    return true;
+  }
 
   
-  nsCOMPtr<nsINode> mOldContainer;
+  AutoTArray<OwningNonNull<nsIContent>, 2> mSiblingsToMove;
 
   
-  nsCOMPtr<nsIContent> mOldNextSibling;
-
-  
-  RefPtr<HTMLEditor> mHTMLEditor;
+  bool mDone = false;
 };
 
 }  

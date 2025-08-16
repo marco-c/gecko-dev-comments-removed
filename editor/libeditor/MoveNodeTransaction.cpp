@@ -23,6 +23,38 @@ namespace mozilla {
 
 using namespace dom;
 
+
+
+
+
+MoveNodeTransactionBase::MoveNodeTransactionBase(
+    HTMLEditor& aHTMLEditor, nsIContent& aLastContentToMove,
+    const EditorRawDOMPoint& aPointToInsert)
+    : mContainer(aPointToInsert.GetContainer()),
+      mReference(aPointToInsert.GetChild()),
+      mOldContainer(aLastContentToMove.GetParentNode()),
+      mOldNextSibling(aLastContentToMove.GetNextSibling()),
+      mHTMLEditor(&aHTMLEditor) {
+  MOZ_ASSERT(mContainer);
+  MOZ_ASSERT(mOldContainer);
+  MOZ_ASSERT_IF(mReference, mReference->GetParentNode() == mContainer);
+  MOZ_ASSERT_IF(mOldNextSibling,
+                mOldNextSibling->GetParentNode() == mOldContainer);
+}
+
+NS_IMPL_CYCLE_COLLECTION_INHERITED(MoveNodeTransactionBase, EditTransactionBase,
+                                   mHTMLEditor, mContainer, mReference,
+                                   mOldContainer, mOldNextSibling)
+
+NS_IMPL_ADDREF_INHERITED(MoveNodeTransactionBase, EditTransactionBase)
+NS_IMPL_RELEASE_INHERITED(MoveNodeTransactionBase, EditTransactionBase)
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(MoveNodeTransactionBase)
+NS_INTERFACE_MAP_END_INHERITING(EditTransactionBase)
+
+
+
+
+
 template already_AddRefed<MoveNodeTransaction> MoveNodeTransaction::MaybeCreate(
     HTMLEditor& aHTMLEditor, nsIContent& aContentToMove,
     const EditorDOMPoint& aPointToInsert);
@@ -43,14 +75,15 @@ already_AddRefed<MoveNodeTransaction> MoveNodeTransaction::MaybeCreate(
   
   
   
-  if (NS_WARN_IF(!HTMLEditUtils::IsRemovableNode(aContentToMove)) ||
+  if (NS_WARN_IF(aContentToMove.IsInComposedDoc() &&
+                 !HTMLEditUtils::IsRemovableNode(aContentToMove)) ||
       
       
       
       
-      NS_WARN_IF(!HTMLEditUtils::IsSimplyEditableNode(
-                     *aPointToInsert.GetContainer()) &&
-                 aPointToInsert.GetContainer()->IsInComposedDoc())) {
+      NS_WARN_IF(aPointToInsert.IsInComposedDoc() &&
+                 !HTMLEditUtils::IsSimplyEditableNode(
+                     *aPointToInsert.GetContainer()))) {
     return nullptr;
   }
   RefPtr<MoveNodeTransaction> transaction =
@@ -62,22 +95,9 @@ template <typename PT, typename CT>
 MoveNodeTransaction::MoveNodeTransaction(
     HTMLEditor& aHTMLEditor, nsIContent& aContentToMove,
     const EditorDOMPointBase<PT, CT>& aPointToInsert)
-    : mContentToMove(&aContentToMove),
-      mContainer(aPointToInsert.GetContainer()),
-      mReference(aPointToInsert.GetChild()),
-      mOldContainer(aContentToMove.GetParentNode()),
-      mOldNextSibling(aContentToMove.GetNextSibling()),
-      mHTMLEditor(&aHTMLEditor) {
-  MOZ_ASSERT(mContainer);
-  MOZ_ASSERT(mOldContainer);
-  MOZ_ASSERT_IF(mReference, mReference->GetParentNode() == mContainer);
-  MOZ_ASSERT_IF(mOldNextSibling,
-                mOldNextSibling->GetParentNode() == mOldContainer);
-  
-  static_assert(sizeof(MoveNodeTransaction) <= 72,
-                "Transaction classes may be created a lot and may be alive "
-                "long so that keep the foot print smaller as far as possible");
-}
+    : MoveNodeTransactionBase(aHTMLEditor, aContentToMove,
+                              aPointToInsert.template To<EditorRawDOMPoint>()),
+      mContentToMove(&aContentToMove) {}
 
 std::ostream& operator<<(std::ostream& aStream,
                          const MoveNodeTransaction& aTransaction) {
@@ -106,14 +126,13 @@ std::ostream& operator<<(std::ostream& aStream,
   return aStream;
 }
 
-NS_IMPL_CYCLE_COLLECTION_INHERITED(MoveNodeTransaction, EditTransactionBase,
-                                   mHTMLEditor, mContentToMove, mContainer,
-                                   mReference, mOldContainer, mOldNextSibling)
+NS_IMPL_CYCLE_COLLECTION_INHERITED(MoveNodeTransaction, MoveNodeTransactionBase,
+                                   mContentToMove)
 
-NS_IMPL_ADDREF_INHERITED(MoveNodeTransaction, EditTransactionBase)
-NS_IMPL_RELEASE_INHERITED(MoveNodeTransaction, EditTransactionBase)
+NS_IMPL_ADDREF_INHERITED(MoveNodeTransaction, MoveNodeTransactionBase)
+NS_IMPL_RELEASE_INHERITED(MoveNodeTransaction, MoveNodeTransactionBase)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(MoveNodeTransaction)
-NS_INTERFACE_MAP_END_INHERITING(EditTransactionBase)
+NS_INTERFACE_MAP_END_INHERITING(MoveNodeTransactionBase)
 
 NS_IMETHODIMP MoveNodeTransaction::DoTransaction() {
   MOZ_LOG(GetLogModule(), LogLevel::Info,
@@ -187,17 +206,19 @@ NS_IMETHODIMP MoveNodeTransaction::UndoTransaction() {
     }
   }
 
-  if (MOZ_UNLIKELY(!HTMLEditUtils::IsRemovableNode(*mContentToMove))) {
-    NS_WARNING(
-        "MoveNodeTransaction::UndoTransaction() couldn't move the "
-        "content due to not removable from its current container");
-    return NS_ERROR_FAILURE;
-  }
-  if (MOZ_UNLIKELY(!HTMLEditUtils::IsSimplyEditableNode(*mOldContainer))) {
+  if (MOZ_UNLIKELY(mOldContainer->IsInComposedDoc() &&
+                   !HTMLEditUtils::IsSimplyEditableNode(*mOldContainer))) {
     NS_WARNING(
         "MoveNodeTransaction::UndoTransaction() couldn't move the "
         "content into the old container due to non-editable one");
     return NS_ERROR_FAILURE;
+  }
+  if (MOZ_UNLIKELY(mContentToMove->IsInComposedDoc() &&
+                   !HTMLEditUtils::IsRemovableNode(*mContentToMove))) {
+    
+    
+    
+    return NS_OK;
   }
 
   
@@ -262,17 +283,19 @@ NS_IMETHODIMP MoveNodeTransaction::RedoTransaction() {
     }
   }
 
-  if (MOZ_UNLIKELY(!HTMLEditUtils::IsRemovableNode(*mContentToMove))) {
-    NS_WARNING(
-        "MoveNodeTransaction::RedoTransaction() couldn't move the "
-        "content due to not removable from its current container");
-    return NS_ERROR_FAILURE;
-  }
-  if (MOZ_UNLIKELY(!HTMLEditUtils::IsSimplyEditableNode(*mContainer))) {
+  if (MOZ_UNLIKELY(mContainer->IsInComposedDoc() &&
+                   !HTMLEditUtils::IsSimplyEditableNode(*mContainer))) {
     NS_WARNING(
         "MoveNodeTransaction::RedoTransaction() couldn't move the "
         "content into the new container due to non-editable one");
     return NS_ERROR_FAILURE;
+  }
+  if (NS_WARN_IF(mContentToMove->IsInComposedDoc() &&
+                 !HTMLEditUtils::IsRemovableNode(*mContentToMove))) {
+    
+    
+    
+    return NS_OK;
   }
 
   
@@ -284,16 +307,6 @@ NS_IMETHODIMP MoveNodeTransaction::RedoTransaction() {
     NS_WARNING("MoveNodeTransaction::DoTransactionInternal() failed");
     return rv;
   }
-
-  if (!mHTMLEditor->AllowsTransactionsToChangeSelection()) {
-    return NS_OK;
-  }
-
-  OwningNonNull<HTMLEditor> htmlEditor(*mHTMLEditor);
-  rv = htmlEditor->CollapseSelectionTo(
-      SuggestPointToPutCaret<EditorRawDOMPoint>());
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                       "EditorBase::CollapseSelectionTo() failed, but ignored");
   return NS_OK;
 }
 

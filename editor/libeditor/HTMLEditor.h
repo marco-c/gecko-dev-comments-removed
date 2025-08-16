@@ -1907,6 +1907,15 @@ class HTMLEditor final : public EditorBase,
 
 
 
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<MoveNodeResult, nsresult>
+  MoveSiblingsWithTransaction(nsIContent& aFirstContentToMove,
+                              nsIContent& aLastContentToMove,
+                              const EditorDOMPoint& aPointToInsert);
+
+  
+
+
+
 
 
 
@@ -4639,9 +4648,10 @@ class HTMLEditor final : public EditorBase,
                                                
   friend class ListItemElementSelectionState;  
                                                
-  friend class MoveNodeTransaction;  
-                                     
-                                     
+  friend class MoveNodeTransaction;      
+                                         
+  friend class MoveSiblingsTransaction;  
+                                         
   friend class ParagraphStateAtSelection;  
                                            
                                            

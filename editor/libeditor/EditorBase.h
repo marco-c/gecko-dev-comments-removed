@@ -3073,12 +3073,13 @@ class EditorBase : public nsIEditor,
                                                
   friend class ListItemElementSelectionState;  
                                                
-  friend class MoveNodeTransaction;            
-  friend class ParagraphStateAtSelection;      
-                                               
-  friend class PendingStyles;                  
-                                               
-                                               
+  friend class MoveNodeTransaction;      
+  friend class MoveSiblingsTransaction;  
+  friend class ParagraphStateAtSelection;  
+                                           
+  friend class PendingStyles;              
+                                           
+                                           
   friend class ReplaceTextTransaction;  
                                         
                                         
