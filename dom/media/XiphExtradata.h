@@ -3,10 +3,10 @@
 
 
 
-#if !defined(XiphExtradata_h)
-#  define XiphExtradata_h
+#ifndef XiphExtradata_h
+#define XiphExtradata_h
 
-#  include "MediaData.h"
+#include "MediaData.h"
 
 namespace mozilla {
 

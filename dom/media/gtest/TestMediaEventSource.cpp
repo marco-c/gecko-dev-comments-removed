@@ -3,17 +3,17 @@
 
 
 
+#include <memory>
+#include <type_traits>
+
+#include "MediaEventSource.h"
+#include "VideoUtils.h"
+#include "gmock/gmock-matchers.h"  
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "gmock/gmock-matchers.h"  
-
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/TaskQueue.h"
 #include "mozilla/UniquePtr.h"
-#include "MediaEventSource.h"
-#include "VideoUtils.h"
-#include <memory>
-#include <type_traits>
 
 using namespace mozilla;
 using testing::InSequence;

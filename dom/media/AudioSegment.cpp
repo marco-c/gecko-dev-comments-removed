@@ -4,10 +4,12 @@
 
 
 #include "AudioSegment.h"
-#include "AudioMixer.h"
-#include "AudioChannelFormat.h"
-#include "MediaTrackGraph.h"  
+
 #include <speex/speex_resampler.h>
+
+#include "AudioChannelFormat.h"
+#include "AudioMixer.h"
+#include "MediaTrackGraph.h"  
 
 namespace mozilla {
 

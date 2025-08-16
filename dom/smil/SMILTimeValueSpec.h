@@ -10,8 +10,8 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/SMILTimeValueSpecParams.h"
 #include "mozilla/dom/IDTracker.h"
-#include "nsStringFwd.h"
 #include "nsIDOMEventListener.h"
+#include "nsStringFwd.h"
 
 
 #include "mozilla/dom/Element.h"

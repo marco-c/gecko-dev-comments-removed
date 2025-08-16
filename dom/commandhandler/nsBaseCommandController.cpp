@@ -4,10 +4,11 @@
 
 
 
-#include "nsString.h"
-#include "nsIWeakReferenceUtils.h"
 #include "nsBaseCommandController.h"
+
 #include "nsControllerCommandTable.h"
+#include "nsIWeakReferenceUtils.h"
+#include "nsString.h"
 
 NS_IMPL_ADDREF(nsBaseCommandController)
 NS_IMPL_RELEASE(nsBaseCommandController)

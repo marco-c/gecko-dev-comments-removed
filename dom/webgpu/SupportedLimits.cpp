@@ -4,6 +4,7 @@
 
 
 #include "SupportedLimits.h"
+
 #include "Adapter.h"
 #include "mozilla/dom/WebGPUBinding.h"
 

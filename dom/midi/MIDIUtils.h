@@ -4,8 +4,8 @@
 
 
 
-#include "nsTArray.h"
 #include "mozilla/TimeStamp.h"
+#include "nsTArray.h"
 
 namespace mozilla::dom {
 class MIDIMessage;

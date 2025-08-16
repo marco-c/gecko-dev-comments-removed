@@ -5,6 +5,7 @@
 
 
 #include "XRNativeOriginViewer.h"
+
 #include "VRDisplayClient.h"
 
 namespace mozilla::dom {

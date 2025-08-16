@@ -10,9 +10,9 @@
 
 
 
+#include "mozilla/dom/Nullable.h"
 #include "nsCOMPtr.h"
 #include "nsStringFwd.h"
-#include "mozilla/dom/Nullable.h"
 
 class nsPIDOMWindowInner;
 

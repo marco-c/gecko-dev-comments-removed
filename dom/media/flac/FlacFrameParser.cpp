@@ -5,13 +5,14 @@
 
 
 #include "FlacFrameParser.h"
-#include "nsTArray.h"
+
+#include "BufferReader.h"
 #include "OggCodecState.h"
 #include "OpusParser.h"
 #include "VideoUtils.h"
-#include "BufferReader.h"
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/Try.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 

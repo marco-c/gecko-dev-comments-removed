@@ -4,33 +4,35 @@
 
 
 
+#include "nsContentPermissionHelper.h"
+
 #include <map>
-#include "nsCOMPtr.h"
-#include "nsIPrincipal.h"
+
+#include "js/PropertyAndElement.h"  
+#include "mozilla/Attributes.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/Unused.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentParent.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/PContentPermission.h"
-#include "mozilla/dom/PermissionMessageUtils.h"
 #include "mozilla/dom/PContentPermissionRequestParent.h"
+#include "mozilla/dom/PermissionMessageUtils.h"
 #include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/Attributes.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/Unused.h"
-#include "nsComponentManagerUtils.h"
 #include "nsArrayUtils.h"
-#include "nsIMutableArray.h"
-#include "nsContentPermissionHelper.h"
+#include "nsCOMPtr.h"
+#include "nsComponentManagerUtils.h"
 #include "nsGlobalWindowInner.h"
-#include "nsJSUtils.h"
+#include "nsIMutableArray.h"
+#include "nsIPrincipal.h"
 #include "nsISupportsPrimitives.h"
-#include "nsServiceManagerUtils.h"
-#include "mozilla/dom/Document.h"
 #include "nsIWeakReferenceUtils.h"
-#include "js/PropertyAndElement.h"  
+#include "nsJSUtils.h"
+#include "nsServiceManagerUtils.h"
 
 using mozilla::Unused;  
 using namespace mozilla::dom;

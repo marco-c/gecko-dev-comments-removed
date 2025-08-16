@@ -5,16 +5,17 @@
 
 
 #include "StereoPannerNode.h"
-#include "mozilla/dom/StereoPannerNodeBinding.h"
+
+#include "AlignmentUtils.h"
+#include "AudioDestinationNode.h"
 #include "AudioNodeEngine.h"
 #include "AudioNodeTrack.h"
-#include "AudioDestinationNode.h"
-#include "AlignmentUtils.h"
-#include "WebAudioUtils.h"
-#include "PanningUtils.h"
-#include "AudioParamTimeline.h"
 #include "AudioParam.h"
+#include "AudioParamTimeline.h"
+#include "PanningUtils.h"
 #include "Tracing.h"
+#include "WebAudioUtils.h"
+#include "mozilla/dom/StereoPannerNodeBinding.h"
 
 namespace mozilla::dom {
 

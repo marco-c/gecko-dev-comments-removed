@@ -5,6 +5,7 @@
 
 
 #include "RemoteLazyInputStreamChild.h"
+
 #include "RemoteLazyInputStreamThread.h"
 
 namespace mozilla {

@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/SVGMetadataElement.h"
+
 #include "mozilla/dom/SVGMetadataElementBinding.h"
 
 NS_IMPL_NS_NEW_SVG_ELEMENT(Metadata)

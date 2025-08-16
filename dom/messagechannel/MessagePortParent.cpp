@@ -5,10 +5,11 @@
 
 
 #include "MessagePortParent.h"
+
 #include "MessagePortService.h"
+#include "mozilla/Unused.h"
 #include "mozilla/dom/RefMessageBodyService.h"
 #include "mozilla/dom/SharedMessageBody.h"
-#include "mozilla/Unused.h"
 
 namespace mozilla::dom {
 

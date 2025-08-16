@@ -6,17 +6,17 @@
 
 #include "SharedScriptCache.h"
 
-#include "mozilla/Maybe.h"   
-#include "mozilla/Unused.h"  
-#include "nsIPrefService.h"  
-#include "nsIPrefBranch.h"   
-#include "nsISupportsImpl.h"    
-#include "nsIMemoryReporter.h"  
-#include "mozilla/dom/ContentParent.h"  
-#include "nsIPrincipal.h"               
-#include "nsStringFwd.h"                
-#include "ScriptLoader.h"               
 #include "ScriptLoadHandler.h"          
+#include "ScriptLoader.h"               
+#include "mozilla/Maybe.h"              
+#include "mozilla/Unused.h"             
+#include "mozilla/dom/ContentParent.h"  
+#include "nsIMemoryReporter.h"  
+#include "nsIPrefBranch.h"   
+#include "nsIPrefService.h"  
+#include "nsIPrincipal.h"    
+#include "nsISupportsImpl.h"  
+#include "nsStringFwd.h"      
 
 namespace mozilla::dom {
 

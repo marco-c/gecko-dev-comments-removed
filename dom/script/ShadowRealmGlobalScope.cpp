@@ -4,18 +4,18 @@
 
 
 
+#include "mozilla/dom/ShadowRealmGlobalScope.h"
+
+#include "js/TypeDecls.h"
+#include "js/loader/ModuleLoaderBase.h"
+#include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/ModuleLoader.h"
+#include "mozilla/dom/ScriptLoader.h"
+#include "mozilla/dom/ShadowRealmGlobalScopeBinding.h"
 #include "nsGlobalWindowInner.h"
 #include "nsIGlobalObject.h"
 #include "xpcpublic.h"
-#include "js/TypeDecls.h"
-
-#include "mozilla/dom/Document.h"
-#include "mozilla/dom/BindingDeclarations.h"
-#include "mozilla/dom/ModuleLoader.h"
-#include "mozilla/dom/ShadowRealmGlobalScope.h"
-#include "mozilla/dom/ShadowRealmGlobalScopeBinding.h"
-
-#include "js/loader/ModuleLoaderBase.h"
 
 using namespace JS::loader;
 

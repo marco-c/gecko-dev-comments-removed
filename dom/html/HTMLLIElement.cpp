@@ -5,9 +5,9 @@
 
 
 #include "mozilla/dom/HTMLLIElement.h"
-#include "mozilla/dom/HTMLLIElementBinding.h"
 
 #include "mozilla/MappedDeclarationsBuilder.h"
+#include "mozilla/dom/HTMLLIElementBinding.h"
 #include "nsGkAtoms.h"
 #include "nsStyleConsts.h"
 

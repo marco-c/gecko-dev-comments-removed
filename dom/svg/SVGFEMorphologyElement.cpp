@@ -5,10 +5,11 @@
 
 
 #include "mozilla/dom/SVGFEMorphologyElement.h"
-#include "mozilla/dom/SVGFEMorphologyElementBinding.h"
+
 #include "mozilla/SVGFilterInstance.h"
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/SVGFEMorphologyElementBinding.h"
 
 NS_IMPL_NS_NEW_SVG_ELEMENT(FEMorphology)
 

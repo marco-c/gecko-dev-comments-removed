@@ -5,6 +5,7 @@
 
 
 #include "AudioWorklet.h"
+
 #include "mozilla/dom/MessagePort.h"
 #include "mozilla/dom/WorkletImpl.h"
 

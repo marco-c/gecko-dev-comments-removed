@@ -6,9 +6,9 @@
 
 #include "OmxPlatformLayer.h"
 
-#include "OmxDataDecoder.h"
 #include "OMX_Component.h"
 #include "OMX_VideoExt.h"  
+#include "OmxDataDecoder.h"
 
 #ifdef MOZ_OMX
 #  include "PureOmxPlatformLayer.h"

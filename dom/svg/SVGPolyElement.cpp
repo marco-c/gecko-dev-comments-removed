@@ -5,10 +5,11 @@
 
 
 #include "SVGPolyElement.h"
+
 #include "DOMSVGPointList.h"
+#include "SVGContentUtils.h"
 #include "mozilla/dom/SVGAnimatedLength.h"
 #include "mozilla/gfx/2D.h"
-#include "SVGContentUtils.h"
 
 using namespace mozilla::gfx;
 

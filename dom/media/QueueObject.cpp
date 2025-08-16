@@ -5,6 +5,7 @@
 
 
 #include "QueueObject.h"
+
 #include "mozilla/AbstractThread.h"
 #include "mozilla/TaskQueue.h"
 #include "nsThreadUtils.h"

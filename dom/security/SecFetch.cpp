@@ -5,17 +5,18 @@
 
 
 #include "SecFetch.h"
-#include "nsIHttpChannel.h"
+
+#include "mozIThirdPartyUtil.h"
+#include "mozilla/BasePrincipal.h"
+#include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/dom/RequestBinding.h"
 #include "nsContentSecurityManager.h"
 #include "nsContentUtils.h"
+#include "nsIHttpChannel.h"
 #include "nsIRedirectHistoryEntry.h"
 #include "nsIReferrerInfo.h"
-#include "mozIThirdPartyUtil.h"
 #include "nsMixedContentBlocker.h"
 #include "nsNetUtil.h"
-#include "mozilla/BasePrincipal.h"
-#include "mozilla/dom/RequestBinding.h"
-#include "mozilla/StaticPrefs_dom.h"
 
 
 

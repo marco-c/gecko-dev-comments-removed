@@ -3,16 +3,17 @@
 
 
 
-#include "mozilla/dom/WebGPUBinding.h"
 #include "RenderPassEncoder.h"
+
 #include "BindGroup.h"
 #include "CommandEncoder.h"
 #include "RenderBundle.h"
 #include "RenderPipeline.h"
 #include "TextureView.h"
 #include "Utility.h"
-#include "mozilla/webgpu/ffi/wgpu.h"
 #include "ipc/WebGPUChild.h"
+#include "mozilla/dom/WebGPUBinding.h"
+#include "mozilla/webgpu/ffi/wgpu.h"
 
 namespace mozilla::webgpu {
 

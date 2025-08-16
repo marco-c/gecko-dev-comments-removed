@@ -5,8 +5,9 @@
 
 
 #include "SVGDataParser.h"
-#include "nsContentUtils.h"
+
 #include "SVGContentUtils.h"
+#include "nsContentUtils.h"
 
 namespace mozilla {
 

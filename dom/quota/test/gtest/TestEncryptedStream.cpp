@@ -4,8 +4,6 @@
 
 
 
-#include "gtest/gtest.h"
-
 #include <algorithm>
 #include <cstdint>
 #include <cstdlib>
@@ -16,7 +14,9 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+
 #include "ErrorList.h"
+#include "gtest/gtest.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"

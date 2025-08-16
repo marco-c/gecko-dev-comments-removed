@@ -4,17 +4,17 @@
 
 
 
+#include <windows.security.authorization.appcapabilityaccess.h>
+#include <windows.system.h>
+#include <wrl.h>
+
 #include "GeolocationSystem.h"
 #include "mozilla/Components.h"
-#include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/dom/BrowsingContext.h"
 #include "nsIGeolocationUIUtilsWin.h"
 #include "nsIWifiListener.h"
 #include "nsIWifiMonitor.h"
-
-#include <windows.system.h>
-#include <windows.security.authorization.appcapabilityaccess.h>
-#include <wrl.h>
 
 namespace mozilla::dom::geolocation {
 

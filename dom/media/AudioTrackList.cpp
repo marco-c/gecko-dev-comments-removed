@@ -3,8 +3,9 @@
 
 
 
-#include "mozilla/dom/AudioTrack.h"
 #include "mozilla/dom/AudioTrackList.h"
+
+#include "mozilla/dom/AudioTrack.h"
 #include "mozilla/dom/AudioTrackListBinding.h"
 
 namespace mozilla::dom {

@@ -5,11 +5,12 @@
 
 
 #include "mozilla/dom/HTMLMapElement.h"
+
 #include "mozilla/dom/HTMLMapElementBinding.h"
+#include "nsCOMPtr.h"
+#include "nsContentList.h"
 #include "nsGkAtoms.h"
 #include "nsStyleConsts.h"
-#include "nsContentList.h"
-#include "nsCOMPtr.h"
 
 NS_IMPL_NS_NEW_HTML_ELEMENT(Map)
 

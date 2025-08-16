@@ -5,8 +5,8 @@
 
 
 #include "nsCOMPtr.h"
-#include "nsITimer.h"
 #include "nsINamed.h"
+#include "nsITimer.h"
 
 class nsIGeolocationUpdate;
 class nsIGeolocationProvider;

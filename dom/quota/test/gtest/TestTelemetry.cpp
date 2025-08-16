@@ -4,11 +4,11 @@
 
 
 
+#include "QuotaManagerDependencyFixture.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/SimpleGlobalObject.h"
 #include "mozilla/gtest/MozAssertions.h"
 #include "nsITelemetry.h"
-#include "QuotaManagerDependencyFixture.h"
 
 namespace mozilla::dom::quota::test {
 

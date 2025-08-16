@@ -5,10 +5,10 @@
 
 
 #include "mozilla/dom/TestUtils.h"
-#include "mozilla/dom/TestUtilsBinding.h"
 
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/TestUtilsBinding.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "nsJSEnvironment.h"

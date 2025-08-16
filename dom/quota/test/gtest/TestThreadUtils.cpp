@@ -4,10 +4,10 @@
 
 
 
+#include "QuotaManagerDependencyFixture.h"
 #include "mozilla/dom/quota/QuotaManager.h"
 #include "mozilla/dom/quota/ThreadUtils.h"
 #include "mozilla/gtest/MozAssertions.h"
-#include "QuotaManagerDependencyFixture.h"
 
 namespace mozilla::dom::quota::test {
 

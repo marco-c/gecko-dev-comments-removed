@@ -4,13 +4,14 @@
 
 
 
-#include "nsTArray.h"
+#include "MLSTransactionMessage.h"
+
 #include "ipc/IPCMessageUtils.h"
 #include "ipc/IPCMessageUtilsSpecializations.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/security/mls/mls_gk_ffi_generated.h"
-#include "MLSTransactionMessage.h"
 #include "mozilla/dom/MLSTransactionMessage.h"
+#include "mozilla/security/mls/mls_gk_ffi_generated.h"
+#include "nsTArray.h"
 
 using namespace mozilla::security::mls;
 

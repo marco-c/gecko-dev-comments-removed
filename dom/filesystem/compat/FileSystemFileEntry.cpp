@@ -5,11 +5,12 @@
 
 
 #include "FileSystemFileEntry.h"
+
 #include "CallbackRunnables.h"
 #include "mozilla/dom/File.h"
+#include "mozilla/dom/FileSystemFileEntryBinding.h"
 #include "mozilla/dom/FileSystemUtils.h"
 #include "mozilla/dom/MultipartBlobImpl.h"
-#include "mozilla/dom/FileSystemFileEntryBinding.h"
 
 namespace mozilla::dom {
 

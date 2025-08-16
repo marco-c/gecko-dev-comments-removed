@@ -3,9 +3,8 @@
 
 
 
-#include "gtest/gtest.h"
-
 #include "DriftController.h"
+#include "gtest/gtest.h"
 #include "mozilla/Maybe.h"
 
 using namespace mozilla;

@@ -4,14 +4,12 @@
 
 
 
-#include "mozilla/TaskQueue.h"
-
-#include "MediaSystemResourceManagerChild.h"
-#include "MediaSystemResourceClient.h"
-
-#include "mozilla/layers/ImageBridgeChild.h"
-
 #include "MediaSystemResourceManager.h"
+
+#include "MediaSystemResourceClient.h"
+#include "MediaSystemResourceManagerChild.h"
+#include "mozilla/TaskQueue.h"
+#include "mozilla/layers/ImageBridgeChild.h"
 
 namespace mozilla {
 

@@ -4,16 +4,16 @@
 
 
 #include "txNodeSorter.h"
-#include "txExecutionState.h"
-#include "txXPathResultComparator.h"
-#include "nsGkAtoms.h"
-#include "txNodeSetContext.h"
-#include "txExpr.h"
-#include "txStringUtils.h"
 
 #include "mozilla/CheckedInt.h"
 #include "mozilla/UniquePtrExtensions.h"
+#include "nsGkAtoms.h"
 #include "nsRFPService.h"
+#include "txExecutionState.h"
+#include "txExpr.h"
+#include "txNodeSetContext.h"
+#include "txStringUtils.h"
+#include "txXPathResultComparator.h"
 
 using mozilla::CheckedUint32;
 using mozilla::MakeUnique;

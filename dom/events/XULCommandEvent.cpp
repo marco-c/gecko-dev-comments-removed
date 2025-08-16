@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/XULCommandEvent.h"
+
 #include "prtime.h"
 
 namespace mozilla::dom {

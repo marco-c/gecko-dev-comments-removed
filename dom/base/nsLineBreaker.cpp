@@ -5,18 +5,19 @@
 
 
 #include "nsLineBreaker.h"
-#include "nsContentUtils.h"
+
 #include "gfxTextRun.h"  
-#include "nsHyphenationManager.h"
-#include "nsHyphenator.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/ScopeExit.h"
+#include "mozilla/StaticPrefs_intl.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/intl/LineBreaker.h"  
 #include "mozilla/intl/Locale.h"
 #include "mozilla/intl/UnicodeProperties.h"
-#include "mozilla/ScopeExit.h"
-#include "mozilla/StaticPrefs_intl.h"
+#include "nsContentUtils.h"
+#include "nsHyphenationManager.h"
+#include "nsHyphenator.h"
 
 using mozilla::AutoRestore;
 using mozilla::intl::LineBreaker;

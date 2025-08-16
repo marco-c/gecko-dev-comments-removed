@@ -4,8 +4,9 @@
 
 
 #include "txOutputFormat.h"
-#include "txXMLUtils.h"
+
 #include "txExpandedName.h"
+#include "txXMLUtils.h"
 
 txOutputFormat::txOutputFormat()
     : mMethod(eMethodNotSet),

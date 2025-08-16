@@ -4,10 +4,11 @@
 
 
 
-#include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/RadioGroupContainer.h"
-#include "mozilla/dom/TreeOrderedArrayInlines.h"
+
 #include "mozilla/Assertions.h"
+#include "mozilla/dom/HTMLInputElement.h"
+#include "mozilla/dom/TreeOrderedArrayInlines.h"
 #include "nsIFrame.h"
 
 namespace mozilla::dom {

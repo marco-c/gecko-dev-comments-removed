@@ -3,16 +3,15 @@
 
 
 
-#include "mozilla/FloatingPoint.h"
-
-#include "txXSLTFunctions.h"
-#include "nsGkAtoms.h"
-#include "txIXPathContext.h"
-#include "txStylesheet.h"
 #include <math.h>
-#include "txNamespaceMap.h"
 
+#include "mozilla/FloatingPoint.h"
+#include "nsGkAtoms.h"
 #include "prdtoa.h"
+#include "txIXPathContext.h"
+#include "txNamespaceMap.h"
+#include "txStylesheet.h"
+#include "txXSLTFunctions.h"
 
 #define INVALID_PARAM_VALUE u"invalid parameter value for function"_ns
 

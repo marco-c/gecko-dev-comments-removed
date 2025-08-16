@@ -3,15 +3,11 @@
 
 
 
-#include "WebGLContext.h"
-
 #include "GLContext.h"
 #include "GLScreenBuffer.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/Preferences.h"
 #include "MozFramebuffer.h"
-#include "nsString.h"
 #include "WebGLBuffer.h"
+#include "WebGLContext.h"
 #include "WebGLContextUtils.h"
 #include "WebGLFormats.h"
 #include "WebGLFramebuffer.h"
@@ -20,6 +16,9 @@
 #include "WebGLShader.h"
 #include "WebGLTexture.h"
 #include "WebGLVertexArray.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/Preferences.h"
+#include "nsString.h"
 
 namespace mozilla {
 

@@ -5,6 +5,7 @@
 
 
 #include "MIDIManagerChild.h"
+
 #include "mozilla/dom/MIDIAccessManager.h"
 
 using namespace mozilla::dom;

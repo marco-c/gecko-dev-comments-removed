@@ -5,15 +5,16 @@
 
 
 #include "ChromiumCDMProxy.h"
+
 #include "ChromiumCDMCallbackProxy.h"
+#include "GMPService.h"
+#include "GMPUtils.h"
 #include "MediaResult.h"
+#include "content_decryption_module.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/dom/MediaKeySession.h"
 #include "mozilla/dom/MediaKeysBinding.h"
-#include "GMPUtils.h"
 #include "nsPrintfCString.h"
-#include "GMPService.h"
-#include "content_decryption_module.h"
 
 #define NS_DispatchToMainThread(...) CompileError_UseAbstractMainThreadInstead
 

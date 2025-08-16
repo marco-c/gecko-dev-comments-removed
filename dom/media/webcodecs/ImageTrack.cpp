@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/ImageTrack.h"
+
 #include "ImageContainer.h"
 #include "mozilla/dom/ImageTrackList.h"
 #include "mozilla/dom/WebCodecsUtils.h"

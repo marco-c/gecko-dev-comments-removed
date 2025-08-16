@@ -2,21 +2,23 @@
 
 
 
+#include "MP4Metadata.h"
+
+#include <stdint.h>
+
+#include <limits>
+#include <vector>
+
+#include "ByteStream.h"
+#include "MoofParser.h"
+#include "VideoUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/Logging.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
-#include "VideoUtils.h"
-#include "MoofParser.h"
-#include "MP4Metadata.h"
-#include "ByteStream.h"
 #include "mp4parse.h"
-
-#include <limits>
-#include <stdint.h>
-#include <vector>
 
 using mozilla::media::TimeUnit;
 

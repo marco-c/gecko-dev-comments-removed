@@ -8,9 +8,9 @@
 #define YUVBufferGenerator_h
 
 #include "ImageContainer.h"
+#include "Point.h"  
 #include "mozilla/AlreadyAddRefed.h"
 #include "nsTArray.h"
-#include "Point.h"  
 
 
 class YUVBufferGenerator {

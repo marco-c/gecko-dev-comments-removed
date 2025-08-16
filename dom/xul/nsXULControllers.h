@@ -13,9 +13,9 @@
 #define nsXULControllers_h__
 
 #include "nsCOMPtr.h"
-#include "nsTArray.h"
-#include "nsIControllers.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsIControllers.h"
+#include "nsTArray.h"
 
 
 class nsXULControllerData final {

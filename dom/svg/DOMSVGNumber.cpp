@@ -5,14 +5,15 @@
 
 
 #include "DOMSVGNumber.h"
-#include "DOMSVGNumberList.h"
+
 #include "DOMSVGAnimatedNumberList.h"
+#include "DOMSVGNumberList.h"
 #include "SVGAnimatedNumberList.h"
 #include "SVGElement.h"
-#include "nsError.h"
-#include "nsContentUtils.h"  
 #include "mozilla/dom/SVGNumberBinding.h"
 #include "mozilla/dom/SVGSVGElement.h"
+#include "nsContentUtils.h"  
+#include "nsError.h"
 
 
 

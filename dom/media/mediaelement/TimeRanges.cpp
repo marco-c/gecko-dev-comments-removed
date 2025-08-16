@@ -5,9 +5,10 @@
 
 
 #include "mozilla/dom/TimeRanges.h"
-#include "mozilla/dom/TimeRangesBinding.h"
-#include "mozilla/dom/HTMLMediaElement.h"
+
 #include "TimeUnits.h"
+#include "mozilla/dom/HTMLMediaElement.h"
+#include "mozilla/dom/TimeRangesBinding.h"
 #include "nsError.h"
 
 namespace mozilla::dom {

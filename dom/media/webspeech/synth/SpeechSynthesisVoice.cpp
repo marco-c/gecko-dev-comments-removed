@@ -5,8 +5,8 @@
 
 
 #include "SpeechSynthesis.h"
-#include "nsSynthVoiceRegistry.h"
 #include "mozilla/dom/SpeechSynthesisVoiceBinding.h"
+#include "nsSynthVoiceRegistry.h"
 
 namespace mozilla::dom {
 

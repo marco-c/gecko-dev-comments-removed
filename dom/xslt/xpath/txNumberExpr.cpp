@@ -3,10 +3,10 @@
 
 
 
-#include "mozilla/FloatingPoint.h"
-
-#include "txExpr.h"
 #include <math.h>
+
+#include "mozilla/FloatingPoint.h"
+#include "txExpr.h"
 #include "txIXPathContext.h"
 
 nsresult txNumberExpr::evaluate(txIEvalContext* aContext,

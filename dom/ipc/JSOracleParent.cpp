@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/JSOracleParent.h"
+
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/PJSOracle.h"

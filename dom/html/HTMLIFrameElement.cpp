@@ -4,22 +4,23 @@
 
 
 
-#include "mozilla/dom/DOMIntersectionObserver.h"
 #include "mozilla/dom/HTMLIFrameElement.h"
-#include "mozilla/dom/ContentChild.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/dom/HTMLIFrameElementBinding.h"
-#include "mozilla/dom/FeaturePolicy.h"
-#include "mozilla/dom/TrustedTypeUtils.h"
-#include "mozilla/dom/TrustedTypesConstants.h"
+
 #include "mozilla/MappedDeclarationsBuilder.h"
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/StaticPrefs_dom.h"
-#include "nsSubDocumentFrame.h"
-#include "nsError.h"
+#include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/DOMIntersectionObserver.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/FeaturePolicy.h"
+#include "mozilla/dom/HTMLIFrameElementBinding.h"
+#include "mozilla/dom/TrustedTypeUtils.h"
+#include "mozilla/dom/TrustedTypesConstants.h"
 #include "nsContentUtils.h"
-#include "nsSandboxFlags.h"
+#include "nsError.h"
 #include "nsNetUtil.h"
+#include "nsSandboxFlags.h"
+#include "nsSubDocumentFrame.h"
 
 NS_IMPL_NS_NEW_HTML_ELEMENT_CHECK_PARSER(IFrame)
 

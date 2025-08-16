@@ -5,9 +5,11 @@
 
 
 #include "sdp/SdpAttribute.h"
-#include "sdp/SdpHelper.h"
-#include <iomanip>
+
 #include <bitset>
+#include <iomanip>
+
+#include "sdp/SdpHelper.h"
 
 #ifdef CRLF
 #  undef CRLF

@@ -5,8 +5,9 @@
 
 
 #include "RemoteMediaDataEncoderChild.h"
-#include "RemoteMediaManagerChild.h"
+
 #include "RemoteDecodeUtils.h"
+#include "RemoteMediaManagerChild.h"
 
 namespace mozilla {
 

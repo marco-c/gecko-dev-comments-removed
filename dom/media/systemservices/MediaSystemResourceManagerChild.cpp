@@ -3,9 +3,9 @@
 
 
 
-#include "MediaSystemResourceManager.h"
-
 #include "MediaSystemResourceManagerChild.h"
+
+#include "MediaSystemResourceManager.h"
 
 namespace mozilla::media {
 

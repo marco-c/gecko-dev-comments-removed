@@ -5,9 +5,10 @@
 
 
 #include "MemoryBlobImpl.h"
-#include "mozilla/ipc/InputStreamUtils.h"
+
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/SHA1.h"
+#include "mozilla/ipc/InputStreamUtils.h"
 #include "nsIMemoryReporter.h"
 #include "nsPrintfCString.h"
 #include "nsRFPService.h"

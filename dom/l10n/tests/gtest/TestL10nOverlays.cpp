@@ -4,11 +4,11 @@
 
 
 #include "gtest/gtest.h"
-#include "mozilla/dom/L10nOverlays.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/dom/L10nOverlaysBinding.h"
-#include "mozilla/dom/Element.h"
 #include "mozilla/NullPrincipal.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/dom/L10nOverlays.h"
+#include "mozilla/dom/L10nOverlaysBinding.h"
 #include "nsNetUtil.h"
 
 using mozilla::NullPrincipal;

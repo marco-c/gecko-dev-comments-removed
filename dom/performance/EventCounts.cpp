@@ -4,12 +4,13 @@
 
 
 
-#include "nsIGlobalObject.h"
 #include "EventCounts.h"
+
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/EventCounts.h"
 #include "mozilla/dom/PerformanceEventTimingBinding.h"
+#include "nsIGlobalObject.h"
 
 namespace mozilla::dom {
 

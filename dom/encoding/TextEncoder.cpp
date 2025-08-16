@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/TextEncoder.h"
+
 #include "mozilla/CheckedInt.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/UniquePtrExtensions.h"

@@ -6,11 +6,10 @@
 
 #include "ChromeWorkerScope.h"
 
-#include "jsapi.h"
+#include "js/MemoryFunctions.h"
 #include "js/PropertyAndElement.h"  
 #include "js/experimental/CTypes.h"  
-#include "js/MemoryFunctions.h"
-
+#include "jsapi.h"
 #include "nsNativeCharsetUtils.h"
 #include "nsString.h"
 

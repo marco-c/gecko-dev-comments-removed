@@ -6,35 +6,37 @@
 
 #include "Key.h"
 
+#include <stdint.h>  
+
 #include <algorithm>
 #include <cstdint>
-#include <stdint.h>    
+
+#include "ReportInternalError.h"
 #include "js/Array.h"  
 #include "js/ArrayBuffer.h"  
 #include "js/Date.h"
-#include "js/experimental/TypedData.h"  
 #include "js/MemoryFunctions.h"
 #include "js/Object.h"              
 #include "js/PropertyAndElement.h"  
 #include "js/Value.h"
+#include "js/experimental/TypedData.h"  
 #include "jsfriendapi.h"
+#include "mozIStorageStatement.h"
+#include "mozIStorageValueArray.h"
 #include "mozilla/Casting.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/FloatingPoint.h"
-#include "mozilla/intl/Collator.h"
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/ReverseIterator.h"
+#include "mozilla/dom/TypedArray.h"
 #include "mozilla/dom/indexedDB/IDBResult.h"
 #include "mozilla/dom/indexedDB/Key.h"
 #include "mozilla/dom/quota/QuotaCommon.h"
 #include "mozilla/dom/quota/ResultExtensions.h"
-#include "mozilla/dom/TypedArray.h"
-#include "mozIStorageStatement.h"
-#include "mozIStorageValueArray.h"
+#include "mozilla/intl/Collator.h"
 #include "nsJSUtils.h"
 #include "nsTStringRepr.h"
-#include "ReportInternalError.h"
 #include "xpcpublic.h"
 
 namespace mozilla::dom::indexedDB {

@@ -5,9 +5,10 @@
 
 
 #include "mozilla/dom/TestInterfaceIterableDouble.h"
+
+#include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/TestInterfaceJSMaplikeSetlikeIterableBinding.h"
 #include "nsPIDOMWindow.h"
-#include "mozilla/dom/BindingUtils.h"
 
 namespace mozilla::dom {
 

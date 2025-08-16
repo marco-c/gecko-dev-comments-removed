@@ -5,13 +5,14 @@
 
 
 #include "mozilla/dom/SVGAnimationElement.h"
-#include "mozilla/dom/SVGSVGElement.h"
-#include "mozilla/dom/SVGSwitchElement.h"
-#include "mozilla/dom/BindContext.h"
-#include "mozilla/dom/ElementInlines.h"
+
 #include "mozilla/SMILAnimationController.h"
 #include "mozilla/SMILAnimationFunction.h"
 #include "mozilla/SMILTimeContainer.h"
+#include "mozilla/dom/BindContext.h"
+#include "mozilla/dom/ElementInlines.h"
+#include "mozilla/dom/SVGSVGElement.h"
+#include "mozilla/dom/SVGSwitchElement.h"
 #include "nsContentUtils.h"
 #include "nsIContentInlines.h"
 

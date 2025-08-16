@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/TextTrackManager.h"
+
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/Maybe.h"

@@ -4,17 +4,18 @@
 
 
 
-#include "mozilla/dom/Event.h"
+#include "mozilla/TextInputProcessor.h"
+
 #include "mozilla/EventForwards.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/NativeKeyBindingsType.h"
 #include "mozilla/StaticPrefs_test.h"
 #include "mozilla/TextEventDispatcher.h"
 #include "mozilla/TextEvents.h"
-#include "mozilla/TextInputProcessor.h"
 #include "mozilla/WritingModes.h"
-#include "mozilla/widget/IMEData.h"
+#include "mozilla/dom/Event.h"
 #include "mozilla/dom/KeyboardEvent.h"
+#include "mozilla/widget/IMEData.h"
 #include "nsContentUtils.h"
 #include "nsIDocShell.h"
 #include "nsIWidget.h"

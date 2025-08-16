@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/MIDIPortInterface.h"
+
 #include "mozilla/dom/MIDIPlatformService.h"
 #include "mozilla/dom/MIDITypes.h"
 

@@ -5,6 +5,7 @@
 
 
 #include "MP4Decoder.h"
+
 #include "H264.h"
 #include "VPXDecoder.h"
 #ifdef MOZ_AV1

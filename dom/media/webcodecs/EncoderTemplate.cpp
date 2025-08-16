@@ -5,6 +5,7 @@
 
 
 #include "EncoderTemplate.h"
+
 #include <type_traits>
 
 #include "EncoderTypes.h"

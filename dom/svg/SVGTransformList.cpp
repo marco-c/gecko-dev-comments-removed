@@ -5,9 +5,10 @@
 
 
 #include "SVGTransformList.h"
+
 #include "SVGTransformListParser.h"
-#include "nsString.h"
 #include "nsError.h"
+#include "nsString.h"
 
 namespace mozilla {
 

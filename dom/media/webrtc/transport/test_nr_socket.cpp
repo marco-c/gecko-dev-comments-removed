@@ -81,16 +81,19 @@
 
 
 extern "C" {
+
 #include "stun_msg.h"  
 #include "async_wait.h"
 #include "async_timer.h"
 #include "nr_socket.h"
 #include "stun.h"
 #include "transport_addr.h"
+
 }
 
-#include "mozilla/RefPtr.h"
 #include "test_nr_socket.h"
+
+#include "mozilla/RefPtr.h"
 
 namespace mozilla {
 

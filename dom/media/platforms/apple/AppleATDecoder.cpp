@@ -5,7 +5,12 @@
 
 
 #include "AppleATDecoder.h"
+
 #include <CoreAudioTypes/CoreAudioBaseTypes.h>
+
+#include <array>
+
+#include "ADTSDemuxer.h"
 #include "Adts.h"
 #include "AppleUtils.h"
 #include "MP4Decoder.h"
@@ -15,9 +20,6 @@
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/UniquePtr.h"
 #include "nsTArray.h"
-#include "ADTSDemuxer.h"
-
-#include <array>
 
 #define LOG(...) DDMOZ_LOG(sPDMLog, mozilla::LogLevel::Debug, __VA_ARGS__)
 #define LOGEX(_this, ...) \

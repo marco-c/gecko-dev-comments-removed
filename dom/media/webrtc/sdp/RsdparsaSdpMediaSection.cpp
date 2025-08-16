@@ -4,13 +4,13 @@
 
 
 
-#include "sdp/SdpMediaSection.h"
 #include "sdp/RsdparsaSdpMediaSection.h"
+
+#include <ostream>
 
 #include "sdp/RsdparsaSdpGlue.h"
 #include "sdp/RsdparsaSdpInc.h"
-
-#include <ostream>
+#include "sdp/SdpMediaSection.h"
 
 #ifdef CRLF
 #  undef CRLF

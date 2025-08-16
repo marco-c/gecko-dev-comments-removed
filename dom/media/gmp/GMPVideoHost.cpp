@@ -4,11 +4,12 @@
 
 
 #include "GMPVideoHost.h"
-#include "mozilla/Assertions.h"
+
 #include "GMPSharedMemManager.h"
+#include "GMPVideoEncodedFrameImpl.h"
 #include "GMPVideoPlaneImpl.h"
 #include "GMPVideoi420FrameImpl.h"
-#include "GMPVideoEncodedFrameImpl.h"
+#include "mozilla/Assertions.h"
 
 namespace mozilla::gmp {
 

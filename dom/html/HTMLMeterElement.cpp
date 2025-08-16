@@ -5,6 +5,7 @@
 
 
 #include "HTMLMeterElement.h"
+
 #include "mozilla/dom/HTMLMeterElementBinding.h"
 
 NS_IMPL_NS_NEW_HTML_ELEMENT(Meter)

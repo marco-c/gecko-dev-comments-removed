@@ -5,6 +5,7 @@
 
 
 #include "PerformanceInteractionMetrics.h"
+
 #include "mozilla/EventForwards.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MouseEvents.h"

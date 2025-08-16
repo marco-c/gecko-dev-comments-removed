@@ -4,9 +4,9 @@
 
 
 
-#include "LockManagerChild.h"
 #include "LockRequestChild.h"
 
+#include "LockManagerChild.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WorkerPrivate.h"
 

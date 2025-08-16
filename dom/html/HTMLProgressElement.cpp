@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/HTMLProgressElement.h"
+
 #include "mozilla/dom/HTMLProgressElementBinding.h"
 
 NS_IMPL_NS_NEW_HTML_ELEMENT(Progress)

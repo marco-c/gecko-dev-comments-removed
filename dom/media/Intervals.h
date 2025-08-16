@@ -10,9 +10,9 @@
 #include <algorithm>
 #include <type_traits>
 
-#include "nsTArray.h"
-#include "nsString.h"
 #include "nsPrintfCString.h"
+#include "nsString.h"
+#include "nsTArray.h"
 
 
 namespace mozilla::media {

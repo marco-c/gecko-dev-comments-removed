@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/StyledRange.h"
+
 #include "nsRange.h"
 
 StyledRange::StyledRange(mozilla::dom::AbstractRange* aRange)

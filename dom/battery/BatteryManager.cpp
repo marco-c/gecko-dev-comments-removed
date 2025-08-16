@@ -4,17 +4,19 @@
 
 
 
+#include "BatteryManager.h"
+
 #include <cmath>
 #include <limits>
-#include "BatteryManager.h"
+
 #include "Constants.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/Hal.h"
-#include "mozilla/dom/BatteryManagerBinding.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/dom/BatteryManagerBinding.h"
+#include "mozilla/dom/Document.h"
 #include "nsContentUtils.h"
 #include "nsGlobalWindowInner.h"
-#include "mozilla/dom/Document.h"
 
 
 

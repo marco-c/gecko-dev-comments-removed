@@ -4,16 +4,17 @@
 
 
 
+#include "mozilla/dom/PublicKeyCredential.h"
+
 #include "mozilla/Base64.h"
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/dom/AuthenticatorResponse.h"
-#include "mozilla/dom/CredentialsContainer.h"
 #include "mozilla/dom/ChromeUtils.h"
+#include "mozilla/dom/CredentialsContainer.h"
 #include "mozilla/dom/Navigator.h"
 #include "mozilla/dom/Promise.h"
-#include "mozilla/dom/PublicKeyCredential.h"
 #include "mozilla/dom/WebAuthenticationBinding.h"
 #include "mozilla/dom/WebAuthnHandler.h"
 #include "nsCycleCollectionParticipant.h"

@@ -3,9 +3,9 @@
 
 
 
-#include "base/basictypes.h"
-
 #include "CoalescedWheelData.h"
+
+#include "base/basictypes.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

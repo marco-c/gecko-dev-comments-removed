@@ -4,17 +4,18 @@
 
 
 
-#include "mozilla/ClearOnShutdown.h"
-#include "mozilla/dom/PaymentRequestChild.h"
-#include "mozilla/dom/BrowserChild.h"
-#include "mozilla/Preferences.h"
-#include "nsContentUtils.h"
-#include "nsString.h"
-#include "nsIPrincipal.h"
-#include "nsIPaymentActionResponse.h"
 #include "PaymentRequestManager.h"
+
 #include "PaymentRequestUtils.h"
 #include "PaymentResponse.h"
+#include "mozilla/ClearOnShutdown.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/dom/BrowserChild.h"
+#include "mozilla/dom/PaymentRequestChild.h"
+#include "nsContentUtils.h"
+#include "nsIPaymentActionResponse.h"
+#include "nsIPrincipal.h"
+#include "nsString.h"
 
 namespace mozilla::dom {
 namespace {

@@ -5,6 +5,7 @@
 
 
 #include <type_traits>
+
 #include "mozilla/dom/quota/ForwardDecls.h"
 
 using namespace mozilla;

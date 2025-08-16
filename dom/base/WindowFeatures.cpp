@@ -6,9 +6,9 @@
 
 #include "WindowFeatures.h"
 
-#include "nsINode.h"               
 #include "nsContentUtils.h"        
 #include "nsDependentSubstring.h"  
+#include "nsINode.h"               
 #include "nsReadableUtils.h"       
 
 using mozilla::dom::IsSpaceCharacter;

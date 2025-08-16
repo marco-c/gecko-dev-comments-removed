@@ -5,11 +5,12 @@
 
 
 #include "mozilla/dom/ConsoleInstance.h"
+
 #include "Console.h"
-#include "mozilla/dom/ConsoleBinding.h"
-#include "mozilla/Preferences.h"
 #include "ConsoleCommon.h"
 #include "ConsoleUtils.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/dom/ConsoleBinding.h"
 #include "nsContentUtils.h"
 
 namespace mozilla::dom {

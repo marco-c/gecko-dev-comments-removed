@@ -4,9 +4,10 @@
 
 
 #include "GMPStorageChild.h"
+
 #include "GMPChild.h"
-#include "gmp-storage.h"
 #include "base/task.h"
+#include "gmp-storage.h"
 
 #define ON_GMP_THREAD() (mPlugin->GMPMessageLoop() == MessageLoop::current())
 

@@ -5,9 +5,9 @@
 
 
 #include "PermissionStatusSink.h"
+
 #include "PermissionObserver.h"
 #include "PermissionStatus.h"
-
 #include "mozilla/Permission.h"
 #include "mozilla/PermissionDelegateHandler.h"
 #include "mozilla/PermissionManager.h"

@@ -5,6 +5,7 @@
 
 
 #include "PermissionUtils.h"
+
 #include "mozilla/dom/Document.h"
 #include "nsIPermissionManager.h"
 

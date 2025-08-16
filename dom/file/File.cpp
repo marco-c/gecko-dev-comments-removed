@@ -5,6 +5,7 @@
 
 
 #include "File.h"
+
 #include "FileBlobImpl.h"
 #include "MemoryBlobImpl.h"
 #include "MultipartBlobImpl.h"
@@ -13,8 +14,8 @@
 #include "mozilla/dom/FileCreatorHelper.h"
 #include "mozilla/dom/FileSystemUtils.h"
 #include "mozilla/dom/Promise.h"
-#include "nsIFile.h"
 #include "nsContentUtils.h"
+#include "nsIFile.h"
 #include "nsXULAppAPI.h"
 
 namespace mozilla::dom {

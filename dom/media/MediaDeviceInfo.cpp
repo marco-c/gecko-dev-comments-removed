@@ -3,8 +3,9 @@
 
 
 #include "mozilla/dom/MediaDeviceInfo.h"
-#include "mozilla/dom/MediaStreamBinding.h"
+
 #include "mozilla/MediaManager.h"
+#include "mozilla/dom/MediaStreamBinding.h"
 #include "nsIScriptGlobalObject.h"
 
 namespace mozilla::dom {

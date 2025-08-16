@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/UniqueContentParentKeepAlive.h"
+
 #include "mozilla/dom/ContentParent.h"
 
 namespace mozilla::dom {

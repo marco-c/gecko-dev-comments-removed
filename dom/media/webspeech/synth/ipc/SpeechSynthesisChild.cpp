@@ -3,6 +3,7 @@
 
 
 #include "SpeechSynthesisChild.h"
+
 #include "nsSynthVoiceRegistry.h"
 
 namespace mozilla::dom {

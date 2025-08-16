@@ -4,6 +4,7 @@
 
 
 #include "CompilationMessage.h"
+
 #include "CompilationInfo.h"
 #include "mozilla/dom/WebGPUBinding.h"
 

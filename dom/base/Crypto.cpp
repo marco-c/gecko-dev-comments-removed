@@ -5,14 +5,14 @@
 
 
 #include "Crypto.h"
+
 #include "js/ScalarType.h"
 #include "js/experimental/TypedData.h"  
+#include "mozilla/dom/CryptoBinding.h"
+#include "mozilla/dom/SubtleCrypto.h"
 #include "nsCOMPtr.h"
 #include "nsIRandomGenerator.h"
 #include "nsReadableUtils.h"
-
-#include "mozilla/dom/CryptoBinding.h"
-#include "mozilla/dom/SubtleCrypto.h"
 #include "nsServiceManagerUtils.h"
 
 namespace mozilla::dom {

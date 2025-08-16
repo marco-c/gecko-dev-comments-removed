@@ -4,15 +4,16 @@
 
 
 #include "XULMenuParentElement.h"
+
 #include "XULButtonElement.h"
 #include "XULMenuBarElement.h"
 #include "XULPopupElement.h"
+#include "mozilla/EventDispatcher.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/StaticAnalysisFunctions.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/KeyboardEvent.h"
-#include "mozilla/EventDispatcher.h"
 #include "nsDebug.h"
 #include "nsMenuPopupFrame.h"
 #include "nsString.h"

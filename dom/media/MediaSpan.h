@@ -3,12 +3,12 @@
 
 
 
-#if !defined(MediaSpan_h)
-#  define MediaSpan_h
+#ifndef MediaSpan_h
+#define MediaSpan_h
 
-#  include "MediaData.h"
-#  include "mozilla/RefPtr.h"
-#  include "mozilla/Span.h"
+#include "MediaData.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/Span.h"
 
 namespace mozilla {
 

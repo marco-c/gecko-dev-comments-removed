@@ -4,17 +4,17 @@
 
 
 
+#include "mozilla/dom/WebAuthnTransactionParent.h"
+
+#include "WebAuthnArgs.h"
+#include "WebAuthnUtil.h"
 #include "mozilla/Base64.h"
 #include "mozilla/JSONStringWriteFuncs.h"
 #include "mozilla/JSONWriter.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/dom/PWindowGlobalParent.h"
-#include "mozilla/dom/WebAuthnTransactionParent.h"
 #include "mozilla/dom/WindowGlobalParent.h"
-
 #include "nsThreadUtils.h"
-#include "WebAuthnArgs.h"
-#include "WebAuthnUtil.h"
 
 namespace mozilla::dom {
 

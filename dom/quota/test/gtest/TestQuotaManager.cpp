@@ -4,9 +4,10 @@
 
 
 
+#include "QuotaManagerDependencyFixture.h"
+#include "QuotaManagerTestHelpers.h"
 #include "gtest/gtest.h"
 #include "mozilla/BasePrincipal.h"
-#include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "mozilla/dom/quota/ClientDirectoryLock.h"
 #include "mozilla/dom/quota/ClientDirectoryLockHandle.h"
 #include "mozilla/dom/quota/DirectoryLock.h"
@@ -17,10 +18,9 @@
 #include "mozilla/dom/quota/ResultExtensions.h"
 #include "mozilla/dom/quota/UniversalDirectoryLock.h"
 #include "mozilla/gtest/MozAssertions.h"
+#include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "nsFmtString.h"
 #include "prtime.h"
-#include "QuotaManagerDependencyFixture.h"
-#include "QuotaManagerTestHelpers.h"
 
 namespace mozilla::dom::quota::test {
 

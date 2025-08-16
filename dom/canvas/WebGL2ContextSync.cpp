@@ -3,9 +3,8 @@
 
 
 
-#include "WebGL2Context.h"
-
 #include "GLContext.h"
+#include "WebGL2Context.h"
 #include "WebGLSync.h"
 #include "mozilla/StaticPrefs_webgl.h"
 

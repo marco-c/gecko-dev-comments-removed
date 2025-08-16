@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/TestReflectedHTMLAttribute.h"
+
 #include "mozilla/dom/TestFunctionsBinding.h"
 
 namespace mozilla::dom {

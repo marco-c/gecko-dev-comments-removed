@@ -4,15 +4,16 @@
 
 
 
-#include "mozilla/dom/ContentParent.h"
+#include "PowerManagerService.h"
+
+#include "WakeLock.h"
+#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Hal.h"
 #include "mozilla/HalWakeLock.h"
-#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ModuleUtils.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/dom/ContentParent.h"
 #include "nsIDOMWakeLockListener.h"
-#include "PowerManagerService.h"
-#include "WakeLock.h"
 
 
 #ifdef XP_WIN

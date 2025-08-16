@@ -9,15 +9,16 @@
 #ifndef mozilla_dom_ScriptDecoding_h
 #define mozilla_dom_ScriptDecoding_h
 
+#include <stddef.h>  
+#include <stdint.h>  
+
+#include <type_traits>  
+
 #include "mozilla/Assertions.h"  
 #include "mozilla/CheckedInt.h"  
 #include "mozilla/Encoding.h"    
 #include "mozilla/Span.h"        
 #include "mozilla/UniquePtr.h"   
-
-#include <stddef.h>     
-#include <stdint.h>     
-#include <type_traits>  
 
 namespace mozilla::dom {
 

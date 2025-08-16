@@ -5,6 +5,7 @@
 
 
 #include "PerformanceNavigation.h"
+
 #include "PerformanceTiming.h"
 #include "mozilla/dom/PerformanceNavigationBinding.h"
 

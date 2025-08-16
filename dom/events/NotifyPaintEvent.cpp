@@ -4,12 +4,13 @@
 
 
 
+#include "mozilla/dom/NotifyPaintEvent.h"
+
 #include "base/basictypes.h"
 #include "ipc/IPCMessageUtils.h"
-#include "mozilla/dom/DOMRect.h"
-#include "mozilla/dom/NotifyPaintEvent.h"
-#include "mozilla/dom/PaintRequest.h"
 #include "mozilla/GfxMessageUtils.h"
+#include "mozilla/dom/DOMRect.h"
+#include "mozilla/dom/PaintRequest.h"
 #include "nsContentUtils.h"
 
 namespace mozilla::dom {

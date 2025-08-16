@@ -5,15 +5,17 @@
 
 
 #include "mozilla/dom/SVGRectElement.h"
+
+#include <algorithm>
+
+#include "SVGGeometryProperty.h"
 #include "mozilla/dom/SVGLengthBinding.h"
 #include "mozilla/dom/SVGRectElementBinding.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Matrix.h"
-#include "mozilla/gfx/Rect.h"
 #include "mozilla/gfx/PathHelpers.h"
+#include "mozilla/gfx/Rect.h"
 #include "nsGkAtoms.h"
-#include "SVGGeometryProperty.h"
-#include <algorithm>
 
 NS_IMPL_NS_NEW_SVG_ELEMENT(Rect)
 

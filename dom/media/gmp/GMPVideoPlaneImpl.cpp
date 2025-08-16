@@ -4,10 +4,12 @@
 
 
 #include "GMPVideoPlaneImpl.h"
+
 #include <algorithm>
-#include "mozilla/gmp/GMPTypes.h"
-#include "GMPVideoHost.h"
+
 #include "GMPSharedMemManager.h"
+#include "GMPVideoHost.h"
+#include "mozilla/gmp/GMPTypes.h"
 
 namespace mozilla::gmp {
 

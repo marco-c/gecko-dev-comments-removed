@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/XRRenderState.h"
+
 #include "VRLayerChild.h"
 #include "nsIObserverService.h"
 #include "nsISupportsPrimitives.h"

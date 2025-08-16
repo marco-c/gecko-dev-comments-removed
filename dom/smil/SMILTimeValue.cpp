@@ -5,6 +5,7 @@
 
 
 #include "SMILTimeValue.h"
+
 #include "nsMathUtils.h"
 
 namespace mozilla {

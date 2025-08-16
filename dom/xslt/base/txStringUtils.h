@@ -8,8 +8,8 @@
 
 #include "nsAString.h"
 #include "nsAtom.h"
-#include "nsUnicharUtils.h"
 #include "nsContentUtils.h"  
+#include "nsUnicharUtils.h"
 
 
 

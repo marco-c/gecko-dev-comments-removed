@@ -4,12 +4,12 @@
 
 
 
-#include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/UserActivation.h"
-#include "mozilla/dom/UserActivationBinding.h"
-#include "mozilla/dom/WindowGlobalChild.h"
 
 #include "mozilla/TextEvents.h"
+#include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/UserActivationBinding.h"
+#include "mozilla/dom/WindowGlobalChild.h"
 
 namespace mozilla::dom {
 

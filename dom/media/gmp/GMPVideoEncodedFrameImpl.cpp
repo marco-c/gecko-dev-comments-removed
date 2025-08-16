@@ -4,10 +4,11 @@
 
 
 #include "GMPVideoEncodedFrameImpl.h"
-#include "GMPVideoHost.h"
-#include "mozilla/gmp/GMPTypes.h"
-#include "mozilla/Unused.h"
+
 #include "GMPSharedMemManager.h"
+#include "GMPVideoHost.h"
+#include "mozilla/Unused.h"
+#include "mozilla/gmp/GMPTypes.h"
 
 namespace mozilla::gmp {
 

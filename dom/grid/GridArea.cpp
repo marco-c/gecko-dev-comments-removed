@@ -5,8 +5,9 @@
 
 
 #include "GridArea.h"
-#include "mozilla/dom/GridBinding.h"
+
 #include "Grid.h"
+#include "mozilla/dom/GridBinding.h"
 
 namespace mozilla::dom {
 

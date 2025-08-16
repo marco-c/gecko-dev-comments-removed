@@ -5,10 +5,12 @@
 
 
 #include "Box.h"
+
+#include <algorithm>
+
 #include "ByteStream.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/Unused.h"
-#include <algorithm>
 
 namespace mozilla {
 

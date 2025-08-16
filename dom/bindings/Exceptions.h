@@ -10,9 +10,10 @@
 
 
 #include <stdint.h>
+
+#include "jsapi.h"
 #include "jspubtd.h"
 #include "nsString.h"
-#include "jsapi.h"
 
 class nsIStackFrame;
 class nsPIDOMWindowInner;

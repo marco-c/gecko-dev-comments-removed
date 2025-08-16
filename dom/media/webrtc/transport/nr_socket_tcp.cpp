@@ -41,9 +41,8 @@
 
 #include "nr_socket_tcp.h"
 
-#include "mozilla/ErrorNames.h"
-
 #include "WebrtcTCPSocketWrapper.h"
+#include "mozilla/ErrorNames.h"
 
 namespace mozilla {
 using namespace net;

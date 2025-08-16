@@ -5,9 +5,9 @@
 
 
 #include "PerformanceServerTiming.h"
-#include "nsITimedChannel.h"
 
 #include "mozilla/dom/PerformanceServerTimingBinding.h"
+#include "nsITimedChannel.h"
 
 namespace mozilla::dom {
 

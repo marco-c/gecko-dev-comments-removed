@@ -5,9 +5,9 @@
 
 
 #include "mozilla/dom/NavigationHistoryEntry.h"
-#include "mozilla/dom/NavigationHistoryEntryBinding.h"
 
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/NavigationHistoryEntryBinding.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
 #include "nsDocShell.h"
 #include "nsGlobalWindowInner.h"

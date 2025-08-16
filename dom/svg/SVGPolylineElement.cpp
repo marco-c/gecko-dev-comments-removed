@@ -5,8 +5,9 @@
 
 
 #include "mozilla/dom/SVGPolylineElement.h"
-#include "mozilla/dom/SVGPolylineElementBinding.h"
+
 #include "mozilla/dom/SVGAnimatedLength.h"
+#include "mozilla/dom/SVGPolylineElementBinding.h"
 #include "mozilla/gfx/2D.h"
 
 using namespace mozilla::gfx;

@@ -4,20 +4,19 @@
 
 
 
-#if !defined(MediaDataDemuxer_h)
-#  define MediaDataDemuxer_h
+#ifndef MediaDataDemuxer_h
+#define MediaDataDemuxer_h
 
-#  include "DecoderDoctorLogger.h"
-#  include "mozilla/MozPromise.h"
-#  include "mozilla/UniquePtr.h"
-
-#  include "MediaData.h"
-#  include "MediaInfo.h"
-#  include "MediaResult.h"
-#  include "TimeUnits.h"
-#  include "nsISupportsImpl.h"
-#  include "mozilla/RefPtr.h"
-#  include "nsTArray.h"
+#include "DecoderDoctorLogger.h"
+#include "MediaData.h"
+#include "MediaInfo.h"
+#include "MediaResult.h"
+#include "TimeUnits.h"
+#include "mozilla/MozPromise.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/UniquePtr.h"
+#include "nsISupportsImpl.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 

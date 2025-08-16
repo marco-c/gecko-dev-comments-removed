@@ -5,10 +5,11 @@
 
 
 #include "L10nMutations.h"
-#include "mozilla/dom/DocumentInlines.h"
-#include "nsRefreshDriver.h"
+
 #include "DOMLocalization.h"
+#include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/intl/Localization.h"
+#include "nsRefreshDriver.h"
 #include "nsThreadManager.h"
 
 using namespace mozilla;

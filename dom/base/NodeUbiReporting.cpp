@@ -5,6 +5,7 @@
 
 
 #include "NodeUbiReporting.h"
+
 #include "js/UbiNodeUtils.h"
 #include "nsWindowSizes.h"
 

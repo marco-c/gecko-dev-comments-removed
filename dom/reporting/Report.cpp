@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/Report.h"
+
 #include "mozilla/dom/ReportBody.h"
 #include "mozilla/dom/ReportingBinding.h"
 #include "nsIGlobalObject.h"

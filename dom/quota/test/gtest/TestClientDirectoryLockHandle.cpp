@@ -4,9 +4,9 @@
 
 
 
+#include "QuotaManagerDependencyFixture.h"
 #include "mozilla/dom/quota/ClientDirectoryLockHandle.h"
 #include "mozilla/dom/quota/ConditionalCompilation.h"
-#include "QuotaManagerDependencyFixture.h"
 
 namespace mozilla::dom::quota::test {
 

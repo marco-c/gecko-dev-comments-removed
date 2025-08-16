@@ -5,11 +5,12 @@
 
 
 #include "mozilla/dom/BlobSet.h"
-#include "mozilla/CheckedInt.h"
-#include "mozilla/dom/File.h"
+
 #include "MemoryBlobImpl.h"
 #include "MultipartBlobImpl.h"
 #include "StringBlobImpl.h"
+#include "mozilla/CheckedInt.h"
+#include "mozilla/dom/File.h"
 
 namespace mozilla::dom {
 

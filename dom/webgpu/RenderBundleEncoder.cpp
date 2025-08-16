@@ -3,7 +3,6 @@
 
 
 
-#include "mozilla/dom/WebGPUBinding.h"
 #include "RenderBundleEncoder.h"
 
 #include "BindGroup.h"
@@ -12,6 +11,7 @@
 #include "RenderPipeline.h"
 #include "Utility.h"
 #include "ipc/WebGPUChild.h"
+#include "mozilla/dom/WebGPUBinding.h"
 #include "mozilla/webgpu/ffi/wgpu.h"
 
 namespace mozilla::webgpu {

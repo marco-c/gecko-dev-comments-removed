@@ -3,12 +3,12 @@
 
 
 
-#include "mozilla/gfx/Logging.h"
-#include "mozilla/IntegerRange.h"
-
 #include <functional>
 #include <regex>
 #include <string>
+
+#include "mozilla/IntegerRange.h"
+#include "mozilla/gfx/Logging.h"
 
 namespace mozilla {
 namespace webgl {

@@ -5,15 +5,16 @@
 
 
 #include "RemoteLazyInputStreamParent.h"
+
 #include "RemoteLazyInputStreamStorage.h"
 #include "mozilla/InputStreamLengthHelper.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/IPCStreamUtils.h"
 #include "mozilla/ipc/InputStreamParams.h"
 #include "mozilla/ipc/ProtocolUtils.h"
-#include "nsStreamUtils.h"
-#include "nsServiceManagerUtils.h"
 #include "nsNetCID.h"
+#include "nsServiceManagerUtils.h"
+#include "nsStreamUtils.h"
 
 namespace mozilla {
 

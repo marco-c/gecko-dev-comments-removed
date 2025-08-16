@@ -5,6 +5,7 @@
 
 
 #include "MediaStreamError.h"
+
 #include "mozilla/dom/MediaStreamErrorBinding.h"
 #include "mozilla/dom/Promise.h"
 #include "nsContentUtils.h"

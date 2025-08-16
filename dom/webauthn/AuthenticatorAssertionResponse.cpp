@@ -4,10 +4,11 @@
 
 
 
-#include "mozilla/Base64.h"
-#include "mozilla/dom/WebAuthenticationBinding.h"
 #include "mozilla/dom/AuthenticatorAssertionResponse.h"
+
+#include "mozilla/Base64.h"
 #include "mozilla/HoldDropJSObjects.h"
+#include "mozilla/dom/WebAuthenticationBinding.h"
 
 namespace mozilla::dom {
 

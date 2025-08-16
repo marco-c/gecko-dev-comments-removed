@@ -3,9 +3,10 @@
 
 
 #include "mozilla/dom/MIDIInputMap.h"
+
+#include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/MIDIInputMapBinding.h"
 #include "nsPIDOMWindow.h"
-#include "mozilla/dom/BindingUtils.h"
 
 namespace mozilla::dom {
 

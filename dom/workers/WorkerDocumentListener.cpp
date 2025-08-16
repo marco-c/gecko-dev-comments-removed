@@ -5,6 +5,7 @@
 
 
 #include "WorkerDocumentListener.h"
+
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRef.h"

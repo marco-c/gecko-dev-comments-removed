@@ -5,6 +5,7 @@
 
 
 #include "CookieStoreSubscriptionService.h"
+
 #include "json/json.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/dom/PCookieStore.h"

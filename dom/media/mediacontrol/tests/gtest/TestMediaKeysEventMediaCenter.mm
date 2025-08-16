@@ -3,9 +3,9 @@
 
 #import <MediaPlayer/MediaPlayer.h>
 
-#include "gtest/gtest.h"
 #include "MediaHardwareKeysEventSourceMacMediaCenter.h"
 #include "MediaKeyListenerTest.h"
+#include "gtest/gtest.h"
 #include "mozilla/TimeStamp.h"
 #include "nsCocoaUtils.h"
 #include "prinrval.h"

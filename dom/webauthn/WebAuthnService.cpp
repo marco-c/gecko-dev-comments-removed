@@ -2,14 +2,15 @@
 
 
 
+#include "WebAuthnService.h"
+
+#include "WebAuthnEnumStrings.h"
+#include "WebAuthnTransportIdentifiers.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "nsIObserverService.h"
 #include "nsTextFormatter.h"
 #include "nsThreadUtils.h"
-#include "WebAuthnEnumStrings.h"
-#include "WebAuthnService.h"
-#include "WebAuthnTransportIdentifiers.h"
 
 namespace mozilla::dom {
 

@@ -3,11 +3,12 @@
 
 
 
-#include <string>
+#include "sdp/RsdparsaSdpGlue.h"
+
 #include <cstdint>
+#include <string>
 
 #include "sdp/RsdparsaSdpInc.h"
-#include "sdp/RsdparsaSdpGlue.h"
 namespace mozilla {
 
 std::string convertStringView(StringView str) {

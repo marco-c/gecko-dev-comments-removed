@@ -4,8 +4,8 @@
 
 
 #include "nsError.h"
-#include "txExpr.h"
 #include "nsString.h"
+#include "txExpr.h"
 #include "txIXPathContext.h"
 
 nsresult txErrorExpr::evaluate(txIEvalContext* aContext,

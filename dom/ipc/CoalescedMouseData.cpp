@@ -3,11 +3,10 @@
 
 
 
-#include "base/basictypes.h"
-
 #include "CoalescedMouseData.h"
-#include "BrowserChild.h"
 
+#include "BrowserChild.h"
+#include "base/basictypes.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "nsRefreshDriver.h"

@@ -11,9 +11,10 @@
 
 
 #include <utility>
+
 #include "mozilla/StaticPtr.h"
-#include "nsTHashMap.h"
 #include "nsHashKeys.h"
+#include "nsTHashMap.h"
 
 namespace mozilla::dom {
 

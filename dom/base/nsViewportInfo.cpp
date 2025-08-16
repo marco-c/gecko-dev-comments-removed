@@ -5,8 +5,10 @@
 
 
 #include "nsViewportInfo.h"
-#include "mozilla/Assertions.h"
+
 #include <algorithm>
+
+#include "mozilla/Assertions.h"
 
 using namespace mozilla;
 

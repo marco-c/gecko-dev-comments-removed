@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/PlayPromise.h"
+
 #include "mozilla/Logging.h"
 
 extern mozilla::LazyLogModule gMediaElementLog;

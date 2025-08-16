@@ -7,8 +7,8 @@
 #ifndef mozilla_dom_RemoteType_h
 #define mozilla_dom_RemoteType_h
 
-#include "nsString.h"
 #include "nsReadableUtils.h"
+#include "nsString.h"
 
 
 

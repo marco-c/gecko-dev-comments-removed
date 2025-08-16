@@ -3,6 +3,7 @@
 
 
 #include "RemoteWorkerDebuggerChild.h"
+
 #include "mozilla/dom/MessageEvent.h"
 #include "mozilla/dom/MessageEventBinding.h"
 #include "mozilla/dom/WorkerCommon.h"

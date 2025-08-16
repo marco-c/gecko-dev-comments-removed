@@ -5,11 +5,12 @@
 
 
 #include "mozilla/dom/HTMLTableRowElement.h"
-#include "mozilla/dom/HTMLTableElement.h"
+
 #include "mozilla/MappedDeclarationsBuilder.h"
-#include "nsAttrValueInlines.h"
 #include "mozilla/dom/BindingUtils.h"
+#include "mozilla/dom/HTMLTableElement.h"
 #include "mozilla/dom/HTMLTableRowElementBinding.h"
+#include "nsAttrValueInlines.h"
 #include "nsContentList.h"
 #include "nsContentUtils.h"
 

@@ -17,7 +17,6 @@
 
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
-
 #include "mozilla/layers/InputAPZContext.h"
 
 class AutoWeakFrame;

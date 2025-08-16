@@ -17,8 +17,9 @@
 #ifndef GMP_STORAGE_h_
 #define GMP_STORAGE_h_
 
-#include "gmp-errors.h"
 #include <stdint.h>
+
+#include "gmp-errors.h"
 
 
 #define GMP_MAX_RECORD_SIZE (10 * 1024 * 1024)

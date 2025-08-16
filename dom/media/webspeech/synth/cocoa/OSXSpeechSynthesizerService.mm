@@ -5,20 +5,20 @@
 
 
 
-#include "nsISupports.h"
-#include "nsServiceManagerUtils.h"
-#include "nsObjCExceptions.h"
-#include "nsCocoaUtils.h"
-#include "nsIThread.h"
-#include "nsThreadUtils.h"
-#include "nsXULAppAPI.h"
+#include "OSXSpeechSynthesizerService.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/ClearOnShutdown.h"
-#include "mozilla/dom/nsSynthVoiceRegistry.h"
-#include "mozilla/dom/nsSpeechTask.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_media.h"
-#include "mozilla/Assertions.h"
-#include "OSXSpeechSynthesizerService.h"
+#include "mozilla/dom/nsSpeechTask.h"
+#include "mozilla/dom/nsSynthVoiceRegistry.h"
+#include "nsCocoaUtils.h"
+#include "nsISupports.h"
+#include "nsIThread.h"
+#include "nsObjCExceptions.h"
+#include "nsServiceManagerUtils.h"
+#include "nsThreadUtils.h"
+#include "nsXULAppAPI.h"
 
 #import <Cocoa/Cocoa.h>
 

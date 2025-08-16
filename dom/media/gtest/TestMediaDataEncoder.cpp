@@ -3,21 +3,21 @@
 
 
 
-#include "gtest/gtest.h"
+#include <algorithm>
 
 #include "AnnexB.h"
 #include "BufferReader.h"
 #include "H264.h"
 #include "ImageContainer.h"
+#include "PEMFactory.h"
+#include "TimeUnits.h"
+#include "VPXDecoder.h"
+#include "VideoUtils.h"
+#include "gtest/gtest.h"
 #include "mozilla/AbstractThread.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/media/MediaUtils.h"  
-#include "PEMFactory.h"
-#include "TimeUnits.h"
-#include "VideoUtils.h"
-#include "VPXDecoder.h"
-#include <algorithm>
 
 #ifdef MOZ_WIDGET_ANDROID
 

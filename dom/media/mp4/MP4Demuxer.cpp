@@ -4,11 +4,12 @@
 
 
 
-#include <algorithm>
-#include <limits>
+#include "MP4Demuxer.h"
+
 #include <stdint.h>
 
-#include "MP4Demuxer.h"
+#include <algorithm>
+#include <limits>
 
 #include "AnnexB.h"
 #include "BufferStream.h"
@@ -18,12 +19,12 @@
 #include "MP4Metadata.h"
 #include "MoofParser.h"
 #include "ResourceStream.h"
+#include "SampleIterator.h"
 #include "TimeUnits.h"
 #include "VPXDecoder.h"
 #include "mozilla/Span.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "nsPrintfCString.h"
-#include "SampleIterator.h"
 
 extern mozilla::LazyLogModule gMediaDemuxerLog;
 mozilla::LogModule* GetDemuxerLog() { return gMediaDemuxerLog; }

@@ -4,11 +4,9 @@
 
 
 
-#include "gtest/gtest.h"
-
 #include "KeyEventHandler.h"
 #include "ShortcutKeys.h"
-
+#include "gtest/gtest.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/dom/KeyboardEvent.h"

@@ -3,8 +3,8 @@
 
 
 
-#include "gtest/gtest.h"
 #include "MediaMIMETypes.h"
+#include "gtest/gtest.h"
 #include "mozilla/Unused.h"
 
 using namespace mozilla;

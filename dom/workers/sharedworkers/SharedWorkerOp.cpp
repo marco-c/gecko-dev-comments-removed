@@ -3,6 +3,7 @@
 
 
 #include "SharedWorkerOp.h"
+
 #include "mozilla/dom/MessagePort.h"
 #include "mozilla/dom/RemoteWorkerChild.h"
 #include "mozilla/dom/RemoteWorkerNonLifeCycleOpControllerChild.h"

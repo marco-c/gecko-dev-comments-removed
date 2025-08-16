@@ -4,10 +4,11 @@
 
 
 
-#include "nsRefreshDriver.h"
-#include "BrowserChild.h"
 #include "CoalescedInputData.h"
+
+#include "BrowserChild.h"
 #include "mozilla/PresShell.h"
+#include "nsRefreshDriver.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

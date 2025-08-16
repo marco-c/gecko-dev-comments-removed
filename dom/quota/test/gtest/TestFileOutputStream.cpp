@@ -4,6 +4,7 @@
 
 
 
+#include "QuotaManagerDependencyFixture.h"
 #include "mozilla/dom/quota/Client.h"
 #include "mozilla/dom/quota/ClientDirectoryLock.h"
 #include "mozilla/dom/quota/ClientDirectoryLockHandle.h"
@@ -13,7 +14,6 @@
 #include "mozilla/gtest/MozAssertions.h"
 #include "nsIPrefBranch.h"
 #include "nsIPrefService.h"
-#include "QuotaManagerDependencyFixture.h"
 
 namespace mozilla::dom::quota::test {
 

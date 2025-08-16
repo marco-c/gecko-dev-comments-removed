@@ -4,13 +4,14 @@
 
 
 
-#include "MediaTrack.h"
 #include "MediaTrackList.h"
+
+#include "MediaTrack.h"
 #include "mozilla/AsyncEventDispatcher.h"
-#include "mozilla/dom/HTMLMediaElement.h"
 #include "mozilla/dom/AudioTrack.h"
-#include "mozilla/dom/VideoTrack.h"
+#include "mozilla/dom/HTMLMediaElement.h"
 #include "mozilla/dom/TrackEvent.h"
+#include "mozilla/dom/VideoTrack.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla::dom {

@@ -3,16 +3,16 @@
 
 
 
-#include "gtest/gtest.h"
 #include "MP4Demuxer.h"
-#include "mozilla/MozPromise.h"
 #include "MediaDataDemuxer.h"
-#include "mozilla/SharedThreadPool.h"
-#include "mozilla/TaskQueue.h"
-#include "mozilla/ArrayUtils.h"
-#include "mozilla/Unused.h"
 #include "MockMediaResource.h"
 #include "VideoUtils.h"
+#include "gtest/gtest.h"
+#include "mozilla/ArrayUtils.h"
+#include "mozilla/MozPromise.h"
+#include "mozilla/SharedThreadPool.h"
+#include "mozilla/TaskQueue.h"
+#include "mozilla/Unused.h"
 
 using namespace mozilla;
 using media::TimeUnit;

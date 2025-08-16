@@ -5,6 +5,7 @@
 
 
 #include "CoalescedTouchData.h"
+
 #include "BrowserChild.h"
 #include "mozilla/dom/PointerEventHandler.h"
 

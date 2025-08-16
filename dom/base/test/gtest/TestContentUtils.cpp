@@ -5,14 +5,13 @@
 
 
 #include "gtest/gtest.h"
-
-#include "jsapi.h"
 #include "js/PropertyAndElement.h"  
-#include "nsContentUtils.h"
-#include "nsNetUtil.h"
+#include "jsapi.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/SimpleGlobalObject.h"
+#include "nsContentUtils.h"
+#include "nsNetUtil.h"
 
 using namespace mozilla::dom;
 

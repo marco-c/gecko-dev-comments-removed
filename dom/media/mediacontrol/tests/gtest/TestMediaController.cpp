@@ -2,9 +2,9 @@
 
 
 
-#include "gtest/gtest.h"
 #include "MediaControlService.h"
 #include "MediaController.h"
+#include "gtest/gtest.h"
 #include "mozilla/dom/MediaSessionBinding.h"
 
 using namespace mozilla::dom;

@@ -5,9 +5,10 @@
 
 
 #include "mozilla/dom/HTMLTableColElement.h"
+
+#include "mozilla/MappedDeclarationsBuilder.h"
 #include "mozilla/dom/HTMLTableColElementBinding.h"
 #include "nsAttrValueInlines.h"
-#include "mozilla/MappedDeclarationsBuilder.h"
 
 NS_IMPL_NS_NEW_HTML_ELEMENT(TableCol)
 

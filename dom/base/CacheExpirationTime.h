@@ -7,10 +7,11 @@
 #ifndef mozilla_dom_CacheExpirationTime_h___
 #define mozilla_dom_CacheExpirationTime_h___
 
-#include <stdint.h>              
+#include <stdint.h>  
+
 #include "mozilla/Assertions.h"  
-#include "prtime.h"              
 #include "nsICacheEntry.h"       
+#include "prtime.h"              
 
 
 

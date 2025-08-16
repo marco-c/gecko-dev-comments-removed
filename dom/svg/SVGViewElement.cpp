@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/SVGViewElement.h"
+
 #include "mozilla/dom/SVGViewElementBinding.h"
 
 NS_IMPL_NS_NEW_SVG_ELEMENT(View)

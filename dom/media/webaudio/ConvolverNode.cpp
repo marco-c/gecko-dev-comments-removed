@@ -5,13 +5,14 @@
 
 
 #include "ConvolverNode.h"
-#include "mozilla/dom/ConvolverNodeBinding.h"
+
 #include "AlignmentUtils.h"
 #include "AudioNodeEngine.h"
 #include "AudioNodeTrack.h"
-#include "blink/Reverb.h"
 #include "PlayingRefChangeHandler.h"
 #include "Tracing.h"
+#include "blink/Reverb.h"
+#include "mozilla/dom/ConvolverNodeBinding.h"
 
 namespace mozilla::dom {
 

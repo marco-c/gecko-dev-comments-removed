@@ -4,10 +4,8 @@
 
 
 
-#include "mozilla/dom/quota/PersistenceType.h"
-
 #include "gtest/gtest.h"
-
+#include "mozilla/dom/quota/PersistenceType.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
 #include "nsIFile.h"

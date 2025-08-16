@@ -3,9 +3,10 @@
 
 
 
+#include "sdp/SdpLog.h"
+
 #include <type_traits>
 
-#include "sdp/SdpLog.h"
 #include "common/browser_logging/CSFLog.h"
 
 namespace mozilla {

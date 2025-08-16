@@ -14,13 +14,12 @@
 
 
 
-#include "mozilla/Assertions.h"
-
-#include "jsapi.h"
 #include "js/CompileOptions.h"
 #include "js/Conversions.h"
 #include "js/String.h"  
 #include "js/Utility.h"  
+#include "jsapi.h"
+#include "mozilla/Assertions.h"
 #include "nsString.h"
 #include "xpcpublic.h"
 

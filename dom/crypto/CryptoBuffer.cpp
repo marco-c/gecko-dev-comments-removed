@@ -5,10 +5,11 @@
 
 
 #include "CryptoBuffer.h"
-#include "secitem.h"
+
 #include "mozilla/Base64.h"
 #include "mozilla/dom/BufferSourceBinding.h"
 #include "mozilla/dom/UnionTypes.h"
+#include "secitem.h"
 
 namespace mozilla::dom {
 

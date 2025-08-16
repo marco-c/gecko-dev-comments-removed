@@ -5,6 +5,7 @@
 
 
 #include "XMLHttpRequestUpload.h"
+
 #include "mozilla/dom/XMLHttpRequestUploadBinding.h"
 
 namespace mozilla::dom {

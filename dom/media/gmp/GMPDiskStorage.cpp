@@ -3,18 +3,18 @@
 
 
 
-#include "plhash.h"
-#include "nsDirectoryServiceUtils.h"
-#include "nsDirectoryServiceDefs.h"
-#include "nsAppDirectoryServiceDefs.h"
 #include "GMPLog.h"
 #include "GMPParent.h"
 #include "gmp-storage.h"
-#include "mozilla/Unused.h"
 #include "mozilla/EndianUtils.h"
+#include "mozilla/Unused.h"
+#include "nsAppDirectoryServiceDefs.h"
 #include "nsClassHashtable.h"
-#include "prio.h"
+#include "nsDirectoryServiceDefs.h"
+#include "nsDirectoryServiceUtils.h"
 #include "nsServiceManagerUtils.h"
+#include "plhash.h"
+#include "prio.h"
 
 namespace mozilla::gmp {
 

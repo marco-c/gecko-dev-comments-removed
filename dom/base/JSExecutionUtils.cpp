@@ -13,11 +13,12 @@
 
 #include "mozilla/dom/JSExecutionUtils.h"
 
-#include <utility>      
+#include <utility>  
+
 #include "ErrorList.h"  
 #include "js/CompilationAndEvaluation.h"  
+#include "js/SourceText.h"                
 #include "js/experimental/JSStencil.h"  
-#include "js/SourceText.h"              
 #include "jsapi.h"                      
 #include "nsTPromiseFlatString.h"  
 

@@ -3,14 +3,15 @@
 
 
 
-#if !defined(AudioLayout_h)
-#  define AudioLayout_h
+#ifndef AudioLayout_h
+#define AudioLayout_h
 
-#  include <cstdint>
-#  include <initializer_list>
-#  include "mozilla/MathAlgorithms.h"
-#  include "nsTArray.h"
-#  include "cubeb/cubeb.h"
+#include <cstdint>
+#include <initializer_list>
+
+#include "cubeb/cubeb.h"
+#include "mozilla/MathAlgorithms.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 

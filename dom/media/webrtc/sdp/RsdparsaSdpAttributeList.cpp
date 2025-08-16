@@ -4,17 +4,16 @@
 
 
 
-#include "SdpAttribute.h"
-#include "nsCRT.h"
-
 #include "sdp/RsdparsaSdpAttributeList.h"
-#include "sdp/RsdparsaSdpInc.h"
-#include "sdp/RsdparsaSdpGlue.h"
-
-#include <ostream>
-#include "mozilla/Assertions.h"
 
 #include <limits>
+#include <ostream>
+
+#include "SdpAttribute.h"
+#include "mozilla/Assertions.h"
+#include "nsCRT.h"
+#include "sdp/RsdparsaSdpGlue.h"
+#include "sdp/RsdparsaSdpInc.h"
 
 namespace mozilla {
 

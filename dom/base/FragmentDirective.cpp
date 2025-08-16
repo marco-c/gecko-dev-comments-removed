@@ -5,14 +5,17 @@
 
 
 #include "FragmentDirective.h"
+
 #include <cstdint>
-#include "RangeBoundary.h"
-#include "mozilla/Assertions.h"
+
 #include "BasePrincipal.h"
 #include "Document.h"
+#include "RangeBoundary.h"
 #include "TextDirectiveCreator.h"
 #include "TextDirectiveFinder.h"
 #include "TextDirectiveUtil.h"
+#include "mozilla/Assertions.h"
+#include "mozilla/PresShell.h"
 #include "mozilla/ResultVariant.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/BrowsingContextGroup.h"
@@ -21,7 +24,6 @@
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/glean/DomMetrics.h"
-#include "mozilla/PresShell.h"
 #include "nsContentUtils.h"
 #include "nsDocShell.h"
 #include "nsICSSDeclaration.h"

@@ -5,6 +5,7 @@
 
 
 #include "CloseWatcherManager.h"
+
 #include "CloseWatcher.h"
 
 namespace mozilla::dom {

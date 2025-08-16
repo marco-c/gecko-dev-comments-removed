@@ -9,14 +9,14 @@
 
 #  include <ogg/ogg.h>
 
+#  include <nsClassHashtable.h>
+#  include <nsDeque.h>
+#  include <nsTArray.h>
+#  include <vorbis/codec.h>
+
 #  include "FlacFrameParser.h"
 #  include "OggRLBoxTypes.h"
 #  include "VideoUtils.h"
-#  include <nsDeque.h>
-#  include <nsTArray.h>
-#  include <nsClassHashtable.h>
-
-#  include <vorbis/codec.h>
 
 
 

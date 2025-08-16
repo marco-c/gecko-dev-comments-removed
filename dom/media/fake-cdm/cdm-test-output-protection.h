@@ -7,9 +7,10 @@
 #if defined(XP_WIN)
 #  include <d3d9.h>  
 #  include <stdio.h>
+#  include <windows.h>
+
 #  include <string>
 #  include <vector>
-#  include <windows.h>
 
 #  include "opmapi.h"
 #endif

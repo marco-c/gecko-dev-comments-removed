@@ -1,14 +1,16 @@
 
 
 
+#include "nrinterfaceprioritizer.h"
+
 #include <algorithm>
 #include <map>
 #include <set>
 #include <string>
 #include <vector>
+
 #include "logging.h"
 #include "nr_api.h"
-#include "nrinterfaceprioritizer.h"
 
 MOZ_MTLOG_MODULE("mtransport")
 

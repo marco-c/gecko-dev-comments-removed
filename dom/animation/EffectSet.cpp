@@ -5,14 +5,15 @@
 
 
 #include "EffectSet.h"
-#include "mozilla/dom/Element.h"      
+
+#include "ElementAnimationData.h"
+#include "mozilla/LayerAnimationInfo.h"
 #include "mozilla/PseudoStyleType.h"  
 #include "mozilla/RestyleManager.h"
-#include "mozilla/LayerAnimationInfo.h"
+#include "mozilla/dom/Element.h"         
 #include "nsCycleCollectionNoteChild.h"  
-#include "nsPresContext.h"
 #include "nsLayoutUtils.h"
-#include "ElementAnimationData.h"
+#include "nsPresContext.h"
 
 namespace mozilla {
 

@@ -4,10 +4,10 @@
 
 
 
+#include "MediaSystemResourceClient.h"
+
 #include "mozilla/Monitor.h"
 #include "mozilla/ReentrantMonitor.h"
-
-#include "MediaSystemResourceClient.h"
 
 namespace mozilla {
 

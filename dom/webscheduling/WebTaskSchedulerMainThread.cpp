@@ -5,10 +5,10 @@
 
 
 
-#include "mozilla/dom/TimeoutManager.h"
-
-#include "nsContentUtils.h"
 #include "WebTaskSchedulerMainThread.h"
+
+#include "mozilla/dom/TimeoutManager.h"
+#include "nsContentUtils.h"
 
 namespace mozilla::dom {
 

@@ -5,10 +5,11 @@
 
 
 #include "mozilla/dom/HTMLTableSectionElement.h"
+
 #include "mozilla/MappedDeclarationsBuilder.h"
-#include "nsAttrValueInlines.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/HTMLTableSectionElementBinding.h"
+#include "nsAttrValueInlines.h"
 #include "nsContentUtils.h"
 
 NS_IMPL_NS_NEW_HTML_ELEMENT(TableSection)

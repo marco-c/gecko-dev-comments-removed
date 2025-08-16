@@ -5,6 +5,7 @@
 
 
 #include "FlacDecoder.h"
+
 #include "MediaContainerType.h"
 #include "mozilla/StaticPrefs_media.h"
 

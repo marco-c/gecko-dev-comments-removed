@@ -4,19 +4,20 @@
 
 
 
-#include "mozilla/dom/Navigator.h"
 #include "mozilla/dom/TouchEvent.h"
-#include "mozilla/dom/Touch.h"
-#include "mozilla/dom/TouchListBinding.h"
+
+#include "gfxPlatform.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/TouchEvents.h"
-#include "gfxPlatform.h"
+#include "mozilla/dom/Navigator.h"
+#include "mozilla/dom/Touch.h"
+#include "mozilla/dom/TouchListBinding.h"
 #include "nsContentUtils.h"
-#include "nsIDocShell.h"
 #include "nsExceptionHandler.h"
+#include "nsIDocShell.h"
 
 namespace mozilla::dom {
 

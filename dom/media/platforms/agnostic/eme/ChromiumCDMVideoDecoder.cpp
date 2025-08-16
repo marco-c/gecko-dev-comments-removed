@@ -5,12 +5,13 @@
 
 
 #include "ChromiumCDMVideoDecoder.h"
+
 #include "ChromiumCDMProxy.h"
-#include "content_decryption_module.h"
 #include "GMPService.h"
 #include "GMPVideoDecoder.h"
 #include "MP4Decoder.h"
 #include "VPXDecoder.h"
+#include "content_decryption_module.h"
 #ifdef MOZ_AV1
 #  include "AOMDecoder.h"
 #endif

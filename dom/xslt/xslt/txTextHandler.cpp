@@ -4,6 +4,7 @@
 
 
 #include "txTextHandler.h"
+
 #include "nsAString.h"
 
 txTextHandler::txTextHandler(bool aOnlyText)

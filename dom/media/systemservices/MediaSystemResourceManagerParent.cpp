@@ -3,10 +3,10 @@
 
 
 
+#include "MediaSystemResourceManagerParent.h"
+
 #include "mozilla/Unused.h"
 #include "mozilla/layers/PImageBridgeParent.h"
-
-#include "MediaSystemResourceManagerParent.h"
 
 namespace mozilla::media {
 

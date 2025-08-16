@@ -5,6 +5,7 @@
 
 
 #include "AudioBlock.h"
+
 #include "AlignmentUtils.h"
 
 namespace mozilla {

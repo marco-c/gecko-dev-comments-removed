@@ -3,13 +3,13 @@
 
 
 
-#include "mozilla/dom/WebGPUBinding.h"
-#include "mozilla/dom/Promise.h"
 #include "ShaderModule.h"
-#include "CompilationInfo.h"
-#include "ipc/WebGPUChild.h"
 
+#include "CompilationInfo.h"
 #include "Device.h"
+#include "ipc/WebGPUChild.h"
+#include "mozilla/dom/Promise.h"
+#include "mozilla/dom/WebGPUBinding.h"
 
 namespace mozilla::webgpu {
 

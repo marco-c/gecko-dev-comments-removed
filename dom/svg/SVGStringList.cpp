@@ -5,13 +5,14 @@
 
 
 #include "SVGStringList.h"
-#include "nsError.h"
+
+#include "SVGContentUtils.h"
 #include "nsCharSeparatedTokenizer.h"
 #include "nsContentUtils.h"
+#include "nsError.h"
 #include "nsReadableUtils.h"
 #include "nsString.h"
 #include "nsWhitespaceTokenizer.h"
-#include "SVGContentUtils.h"
 
 namespace mozilla {
 

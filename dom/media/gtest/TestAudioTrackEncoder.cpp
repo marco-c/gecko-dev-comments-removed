@@ -3,11 +3,10 @@
 
 
 
-#include "gtest/gtest.h"
-#include "OpusTrackEncoder.h"
-
 #include "AudioGenerator.h"
 #include "AudioSampleFormat.h"
+#include "OpusTrackEncoder.h"
+#include "gtest/gtest.h"
 
 using namespace mozilla;
 

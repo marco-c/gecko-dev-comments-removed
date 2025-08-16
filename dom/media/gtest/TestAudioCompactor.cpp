@@ -3,8 +3,8 @@
 
 
 
-#include "gtest/gtest.h"
 #include "AudioCompactor.h"
+#include "gtest/gtest.h"
 #include "nsDeque.h"
 #include "nsIMemoryReporter.h"
 

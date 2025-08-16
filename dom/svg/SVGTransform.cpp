@@ -6,8 +6,8 @@
 
 #include "SVGTransform.h"
 
-#include "nsError.h"
 #include "nsContentUtils.h"  
+#include "nsError.h"
 #include "nsTextFormatter.h"
 
 namespace {

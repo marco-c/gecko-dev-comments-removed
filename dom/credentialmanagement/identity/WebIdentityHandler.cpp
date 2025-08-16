@@ -4,8 +4,9 @@
 
 
 
-#include "mozilla/dom/IdentityCredential.h"
 #include "mozilla/dom/WebIdentityHandler.h"
+
+#include "mozilla/dom/IdentityCredential.h"
 #include "mozilla/dom/WindowGlobalChild.h"
 #include "nsCycleCollectionParticipant.h"
 

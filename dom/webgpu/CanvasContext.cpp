@@ -3,14 +3,20 @@
 
 
 
-#include "mozilla/dom/WebGPUBinding.h"
 #include "CanvasContext.h"
-#include "gfxUtils.h"
+
 #include "LayerUserData.h"
-#include "nsDisplayList.h"
+#include "Utility.h"
+#include "gfxUtils.h"
+#include "ipc/WebGPUChild.h"
+#include "mozilla/ProfilerMarkers.h"
+#include "mozilla/SVGObserverUtils.h"
+#include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/dom/HTMLCanvasElement.h"
+#include "mozilla/dom/WebGPUBinding.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/CanvasManagerChild.h"
+#include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/CanvasRenderer.h"
 #include "mozilla/layers/CompositableForwarder.h"
@@ -18,12 +24,7 @@
 #include "mozilla/layers/LayersSurfaces.h"
 #include "mozilla/layers/RenderRootStateManager.h"
 #include "mozilla/layers/WebRenderCanvasRenderer.h"
-#include "mozilla/gfx/Logging.h"
-#include "mozilla/StaticPrefs_privacy.h"
-#include "mozilla/SVGObserverUtils.h"
-#include "mozilla/ProfilerMarkers.h"
-#include "ipc/WebGPUChild.h"
-#include "Utility.h"
+#include "nsDisplayList.h"
 
 namespace mozilla {
 

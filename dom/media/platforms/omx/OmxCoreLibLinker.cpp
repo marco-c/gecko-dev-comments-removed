@@ -5,11 +5,12 @@
 
 
 #include "OmxCoreLibLinker.h"
+
+#include "MainThreadUtils.h"
+#include "PlatformDecoderModule.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Preferences.h"
-#include "MainThreadUtils.h"
 #include "prlink.h"
-#include "PlatformDecoderModule.h"
 
 #ifdef LOG
 #  undef LOG

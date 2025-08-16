@@ -4,13 +4,14 @@
 
 
 #include "GMPContentChild.h"
-#include "GMPChild.h"
-#include "GMPVideoDecoderChild.h"
-#include "GMPVideoEncoderChild.h"
+
 #include "ChromiumCDMChild.h"
 #include "ChromiumCDMCompat.h"
-#include "base/task.h"
+#include "GMPChild.h"
 #include "GMPUtils.h"
+#include "GMPVideoDecoderChild.h"
+#include "GMPVideoEncoderChild.h"
+#include "base/task.h"
 
 namespace mozilla::gmp {
 

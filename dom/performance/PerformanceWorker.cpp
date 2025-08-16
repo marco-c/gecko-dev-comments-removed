@@ -5,8 +5,9 @@
 
 
 #include "PerformanceWorker.h"
-#include "mozilla/dom/WorkerScope.h"
+
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/dom/WorkerScope.h"
 
 namespace mozilla::dom {
 

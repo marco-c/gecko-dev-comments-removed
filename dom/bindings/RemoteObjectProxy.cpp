@@ -5,9 +5,10 @@
 
 
 #include "RemoteObjectProxy.h"
+
 #include "AccessCheck.h"
-#include "jsfriendapi.h"
 #include "js/Object.h"  
+#include "jsfriendapi.h"
 #include "xpcprivate.h"
 
 namespace mozilla::dom {

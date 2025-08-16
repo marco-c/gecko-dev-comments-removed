@@ -4,14 +4,15 @@
 
 
 
+#include "RemoteLazyInputStreamStorage.h"
+
+#include "RemoteLazyInputStreamParent.h"
 #include "mozilla/SlicedInputStream.h"
-#include "mozilla/dom/ContentParent.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/dom/ContentParent.h"
 #include "nsIPropertyBag2.h"
 #include "nsStreamUtils.h"
-#include "RemoteLazyInputStreamParent.h"
-#include "RemoteLazyInputStreamStorage.h"
 
 namespace mozilla {
 

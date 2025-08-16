@@ -5,20 +5,21 @@
 
 
 #include "mozilla/dom/LocationBase.h"
-#include "nsIScriptSecurityManager.h"
-#include "nsIScriptContext.h"
-#include "nsIClassifiedChannel.h"
-#include "nsDocShellLoadState.h"
-#include "nsIWebNavigation.h"
-#include "nsNetUtil.h"
-#include "nsCOMPtr.h"
-#include "nsError.h"
-#include "nsContentUtils.h"
-#include "nsGlobalWindowInner.h"
+
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/dom/Document.h"
-#include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/PolicyContainer.h"
+#include "mozilla/dom/WindowContext.h"
+#include "nsCOMPtr.h"
+#include "nsContentUtils.h"
+#include "nsDocShellLoadState.h"
+#include "nsError.h"
+#include "nsGlobalWindowInner.h"
+#include "nsIClassifiedChannel.h"
+#include "nsIScriptContext.h"
+#include "nsIScriptSecurityManager.h"
+#include "nsIWebNavigation.h"
+#include "nsNetUtil.h"
 
 namespace mozilla::dom {
 

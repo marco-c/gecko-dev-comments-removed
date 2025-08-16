@@ -6,9 +6,9 @@
 #ifndef MOZILLA_AudioDeviceInfo_H
 #define MOZILLA_AudioDeviceInfo_H
 
-#include "nsIAudioDeviceInfo.h"
 #include "CubebUtils.h"
 #include "mozilla/Maybe.h"
+#include "nsIAudioDeviceInfo.h"
 
 
 class AudioDeviceInfo final : public nsIAudioDeviceInfo {

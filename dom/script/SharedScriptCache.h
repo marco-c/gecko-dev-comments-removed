@@ -11,18 +11,18 @@
 #include "js/loader/LoadedScript.h"          
 #include "js/loader/ScriptKind.h"            
 #include "js/loader/ScriptLoadRequest.h"     
-#include "mozilla/RefPtr.h"                  
-#include "mozilla/WeakPtr.h"                 
 #include "mozilla/CORSMode.h"                
 #include "mozilla/MemoryReporting.h"         
+#include "mozilla/RefPtr.h"                  
 #include "mozilla/SharedSubResourceCache.h"  
+#include "mozilla/WeakPtr.h"                 
 #include "mozilla/dom/CacheExpirationTime.h"  
+#include "mozilla/dom/SRIMetadata.h"          
 #include "nsIMemoryReporter.h"  
 #include "nsIObserver.h"        
 #include "nsIPrincipal.h"       
 #include "nsISupports.h"        
 #include "nsStringFwd.h"        
-#include "mozilla/dom/SRIMetadata.h"  
 
 namespace mozilla {
 namespace dom {

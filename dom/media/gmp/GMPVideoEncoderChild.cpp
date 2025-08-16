@@ -4,13 +4,15 @@
 
 
 #include "GMPVideoEncoderChild.h"
-#include "GMPContentChild.h"
+
 #include <stdio.h>
-#include "mozilla/StaticPrefs_media.h"
-#include "mozilla/Unused.h"
+
+#include "GMPContentChild.h"
 #include "GMPPlatform.h"
 #include "GMPVideoEncodedFrameImpl.h"
 #include "GMPVideoi420FrameImpl.h"
+#include "mozilla/StaticPrefs_media.h"
+#include "mozilla/Unused.h"
 #include "runnable_utils.h"
 
 namespace mozilla::gmp {

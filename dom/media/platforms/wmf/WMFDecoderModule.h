@@ -4,13 +4,13 @@
 
 
 
-#if !defined(WMFPlatformDecoderModule_h_)
-#  define WMFPlatformDecoderModule_h_
+#ifndef WMFPlatformDecoderModule_h_
+#define WMFPlatformDecoderModule_h_
 
-#  include "PlatformDecoderModule.h"
-#  include "WMF.h"
-#  include "WMFUtils.h"
-#  include "mozilla/Atomics.h"
+#include "PlatformDecoderModule.h"
+#include "WMF.h"
+#include "WMFUtils.h"
+#include "mozilla/Atomics.h"
 
 namespace mozilla {
 

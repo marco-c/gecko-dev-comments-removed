@@ -4,9 +4,10 @@
 
 
 
+#include "AndroidLocationProvider.h"
+
 #include "Geolocation.h"
 #include "GeolocationPosition.h"
-#include "AndroidLocationProvider.h"
 #include "mozilla/java/GeckoAppShellWrappers.h"
 
 using namespace mozilla;

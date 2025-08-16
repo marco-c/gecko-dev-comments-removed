@@ -5,10 +5,11 @@
 
 
 #include "mozilla/dom/SVGFEDisplacementMapElement.h"
-#include "mozilla/dom/SVGFEDisplacementMapElementBinding.h"
+
 #include "mozilla/SVGFilterInstance.h"
-#include "mozilla/dom/Document.h"
 #include "mozilla/dom/BindContext.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/SVGFEDisplacementMapElementBinding.h"
 
 NS_IMPL_NS_NEW_SVG_ELEMENT(FEDisplacementMap)
 

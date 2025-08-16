@@ -5,9 +5,10 @@
 
 
 #include "mozilla/dom/GeolocationPositionError.h"
-#include "mozilla/dom/GeolocationPositionErrorBinding.h"
-#include "mozilla/CycleCollectedJSContext.h"  
+
 #include "Geolocation.h"
+#include "mozilla/CycleCollectedJSContext.h"  
+#include "mozilla/dom/GeolocationPositionErrorBinding.h"
 
 extern mozilla::LazyLogModule gGeolocationLog;
 

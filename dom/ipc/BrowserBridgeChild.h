@@ -7,8 +7,8 @@
 #ifndef mozilla_dom_BrowserBridgeChild_h
 #define mozilla_dom_BrowserBridgeChild_h
 
-#include "mozilla/dom/PBrowserBridgeChild.h"
 #include "mozilla/dom/BrowserChild.h"
+#include "mozilla/dom/PBrowserBridgeChild.h"
 #include "mozilla/dom/ipc/IdType.h"
 
 namespace mozilla::dom {
@@ -93,6 +93,7 @@ class BrowserBridgeChild : public PBrowserBridgeChild {
       const ScrollAxis& aHorizontal, const ScrollFlags& aScrollFlags,
       const int32_t& aAppUnitsPerDevPixel);
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvSubFrameCrashed();
 
   void ActorDestroy(ActorDestroyReason aWhy) override;

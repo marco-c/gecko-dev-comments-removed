@@ -4,9 +4,8 @@
 
 
 
-#include "mozilla/dom/quota/ScopedLogExtraInfo.h"
-
 #include "gtest/gtest.h"
+#include "mozilla/dom/quota/ScopedLogExtraInfo.h"
 
 using namespace mozilla::dom::quota;
 

@@ -4,9 +4,10 @@
 
 
 
-#include "mozilla/dom/MIDITypes.h"
 #include "mozilla/dom/MIDIUtils.h"
+
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/MIDITypes.h"
 
 
 static const uint8_t kCommandByte = 0x80;

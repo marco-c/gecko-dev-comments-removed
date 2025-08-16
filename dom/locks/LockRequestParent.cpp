@@ -4,9 +4,9 @@
 
 
 
-#include "LockManagerParent.h"
 #include "LockRequestParent.h"
 
+#include "LockManagerParent.h"
 #include "mozilla/dom/Promise.h"
 
 namespace mozilla::dom::locks {

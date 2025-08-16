@@ -5,8 +5,9 @@
 
 
 #include "mozilla/dom/HTMLPictureElement.h"
-#include "mozilla/dom/HTMLPictureElementBinding.h"
+
 #include "mozilla/dom/HTMLImageElement.h"
+#include "mozilla/dom/HTMLPictureElementBinding.h"
 #include "mozilla/dom/HTMLSourceElement.h"
 
 

@@ -5,8 +5,9 @@
 
 
 #include "mozilla/dom/SVGFEDistantLightElement.h"
-#include "mozilla/dom/SVGFEDistantLightElementBinding.h"
+
 #include "mozilla/SVGFilterInstance.h"
+#include "mozilla/dom/SVGFEDistantLightElementBinding.h"
 
 NS_IMPL_NS_NEW_SVG_ELEMENT(FEDistantLight)
 

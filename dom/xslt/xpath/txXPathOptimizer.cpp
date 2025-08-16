@@ -3,14 +3,15 @@
 
 
 
-#include "mozilla/Assertions.h"
 #include "txXPathOptimizer.h"
-#include "txExprResult.h"
+
+#include "mozilla/Assertions.h"
 #include "nsAtom.h"
 #include "nsGkAtoms.h"
-#include "txXPathNode.h"
 #include "txExpr.h"
+#include "txExprResult.h"
 #include "txIXPathContext.h"
+#include "txXPathNode.h"
 
 using mozilla::UniquePtr;
 using mozilla::Unused;

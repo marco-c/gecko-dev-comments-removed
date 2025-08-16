@@ -4,6 +4,7 @@
 
 
 #include "txPatternOptimizer.h"
+
 #include "txXSLTPatterns.h"
 
 void txPatternOptimizer::optimize(txPattern* aInPattern,

@@ -7,11 +7,11 @@
 #ifndef MediaResult_h_
 #define MediaResult_h_
 
-#include "nsString.h"  
 #include "mozilla/ErrorNames.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "nsError.h"
 #include "nsPrintfCString.h"
+#include "nsString.h"  
 
 
 

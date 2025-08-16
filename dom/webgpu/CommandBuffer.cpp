@@ -3,13 +3,13 @@
 
 
 
-#include "mozilla/dom/WebGPUBinding.h"
 #include "CommandBuffer.h"
-#include "CommandEncoder.h"
-#include "ipc/WebGPUChild.h"
 
-#include "mozilla/webgpu/CanvasContext.h"
+#include "CommandEncoder.h"
 #include "Device.h"
+#include "ipc/WebGPUChild.h"
+#include "mozilla/dom/WebGPUBinding.h"
+#include "mozilla/webgpu/CanvasContext.h"
 
 namespace mozilla::webgpu {
 

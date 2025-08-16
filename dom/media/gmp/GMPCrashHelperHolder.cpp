@@ -5,10 +5,11 @@
 
 
 #include "GMPCrashHelperHolder.h"
+
 #include "GMPService.h"
 #include "mozilla/RefPtr.h"
-#include "nsPIDOMWindow.h"
 #include "mozilla/ipc/ProtocolUtils.h"
+#include "nsPIDOMWindow.h"
 
 namespace mozilla {
 

@@ -5,8 +5,9 @@
 
 
 #include "RemoteWorkerServiceChild.h"
-#include "RemoteWorkerController.h"
+
 #include "RemoteWorkerChild.h"
+#include "RemoteWorkerController.h"
 
 namespace mozilla::dom {
 

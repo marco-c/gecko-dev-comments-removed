@@ -4,16 +4,16 @@
 
 
 
+#include "WorkerModuleLoader.h"
+
 #include "js/experimental/JSStencil.h"  
 #include "js/friend/ErrorMessages.h"  
 #include "js/loader/ModuleLoadRequest.h"
 #include "mozilla/dom/RequestBinding.h"
 #include "mozilla/dom/WorkerLoadContext.h"
 #include "mozilla/dom/WorkerPrivate.h"
-#include "mozilla/dom/workerinternals/ScriptLoader.h"
 #include "mozilla/dom/WorkerScope.h"
-#include "WorkerModuleLoader.h"
-
+#include "mozilla/dom/workerinternals/ScriptLoader.h"
 #include "nsISupportsImpl.h"
 
 namespace mozilla::dom::workerinternals::loader {

@@ -4,10 +4,11 @@
 
 
 
-#include "nsMemoryReporterManager.h"
 #include "MemoryReportRequest.h"
+
 #include "mozilla/ipc/FileDescriptor.h"
 #include "mozilla/ipc/FileDescriptorUtils.h"
+#include "nsMemoryReporterManager.h"
 
 using namespace mozilla::ipc;
 

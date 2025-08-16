@@ -3,9 +3,10 @@
 
 
 
-#include "gtest/gtest.h"
-#include "OpusParser.h"
 #include <algorithm>
+
+#include "OpusParser.h"
+#include "gtest/gtest.h"
 
 using namespace mozilla;
 

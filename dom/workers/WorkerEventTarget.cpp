@@ -5,9 +5,9 @@
 
 
 #include "WorkerEventTarget.h"
+
 #include "WorkerPrivate.h"
 #include "WorkerRunnable.h"
-
 #include "mozilla/Logging.h"
 #include "mozilla/dom/ReferrerInfo.h"
 

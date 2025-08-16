@@ -4,16 +4,15 @@
 
 
 
-#include "gtest/gtest.h"
-
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-#include "nsContentSecurityUtils.h"
-#include "nsTString.h"
-#include "nsStringFwd.h"
+#include "gtest/gtest.h"
 #include "mozilla/Sprintf.h"
+#include "nsContentSecurityUtils.h"
+#include "nsStringFwd.h"
+#include "nsTString.h"
 
 #define ASSERT_STRCMP(first, second) ASSERT_TRUE(strcmp(first, second) == 0);
 

@@ -4,12 +4,13 @@
 
 
 
-#include "gtest/gtest.h"
-#include <algorithm>
 #include <stdint.h>
+
+#include <algorithm>
 #include <vector>
 
 #include "../ClearKeyBase64.cpp"
+#include "gtest/gtest.h"
 
 using namespace std;
 

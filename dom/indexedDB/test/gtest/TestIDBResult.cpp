@@ -3,7 +3,6 @@
 
 
 #include "IDBResult.h"
-
 #include "gtest/gtest.h"
 
 using mozilla::ErrorResult;

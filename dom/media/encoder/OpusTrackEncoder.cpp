@@ -3,12 +3,13 @@
 
 
 #include "OpusTrackEncoder.h"
-#include "nsString.h"
-#include "mozilla/CheckedInt.h"
-#include "mozilla/ProfilerLabels.h"
-#include "VideoUtils.h"
 
 #include <opus/opus.h>
+
+#include "VideoUtils.h"
+#include "mozilla/CheckedInt.h"
+#include "mozilla/ProfilerLabels.h"
+#include "nsString.h"
 
 #define LOG(args, ...)
 

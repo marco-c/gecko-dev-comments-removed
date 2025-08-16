@@ -5,10 +5,11 @@
 
 
 #include "XRPermissionRequest.h"
-#include "nsGlobalWindowInner.h"
-#include "mozilla/dom/Document.h"
+
 #include "mozilla/Preferences.h"
+#include "mozilla/dom/Document.h"
 #include "nsContentUtils.h"
+#include "nsGlobalWindowInner.h"
 
 namespace mozilla::dom {
 

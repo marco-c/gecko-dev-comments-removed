@@ -4,15 +4,14 @@
 
 
 
-#include "nsError.h"
+#include "sdp/RsdparsaSdpParser.h"
 
 #include "mozilla/UniquePtr.h"
-
-#include "sdp/Sdp.h"
+#include "nsError.h"
 #include "sdp/RsdparsaSdp.h"
-#include "sdp/RsdparsaSdpParser.h"
-#include "sdp/RsdparsaSdpInc.h"
 #include "sdp/RsdparsaSdpGlue.h"
+#include "sdp/RsdparsaSdpInc.h"
+#include "sdp/Sdp.h"
 
 namespace mozilla {
 

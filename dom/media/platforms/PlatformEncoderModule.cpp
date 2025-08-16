@@ -5,9 +5,10 @@
 
 
 #include "PlatformEncoderModule.h"
+
 #include "H264.h"
-#include "nsPrintfCString.h"
 #include "mozilla/ToString.h"
+#include "nsPrintfCString.h"
 
 namespace mozilla {
 

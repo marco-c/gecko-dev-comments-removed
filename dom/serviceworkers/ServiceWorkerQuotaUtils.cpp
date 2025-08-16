@@ -4,9 +4,9 @@
 
 
 
-#include "MainThreadUtils.h"
 #include "ServiceWorkerQuotaUtils.h"
 
+#include "MainThreadUtils.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_dom.h"

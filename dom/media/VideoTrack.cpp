@@ -4,9 +4,10 @@
 
 
 
+#include "mozilla/dom/VideoTrack.h"
+
 #include "mozilla/dom/HTMLMediaElement.h"
 #include "mozilla/dom/VideoStreamTrack.h"
-#include "mozilla/dom/VideoTrack.h"
 #include "mozilla/dom/VideoTrackBinding.h"
 #include "mozilla/dom/VideoTrackList.h"
 

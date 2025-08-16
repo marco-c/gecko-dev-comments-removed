@@ -5,6 +5,7 @@
 
 
 #include "MediaResult.h"
+
 #include "mozilla/Assertions.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/Promise.h"

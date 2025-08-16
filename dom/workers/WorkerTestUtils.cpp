@@ -4,12 +4,13 @@
 
 
 
+#include "mozilla/dom/WorkerTestUtils.h"
+
 #include "mozilla/ErrorResult.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRef.h"
-#include "mozilla/dom/WorkerTestUtils.h"
 #include "mozilla/dom/WorkerTestUtilsBinding.h"
 #include "nsIObserverService.h"
 #include "nsThreadUtils.h"

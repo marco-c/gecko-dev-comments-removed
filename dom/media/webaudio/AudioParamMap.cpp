@@ -5,6 +5,7 @@
 
 
 #include "AudioParamMap.h"
+
 #include "mozilla/dom/AudioParamMapBinding.h"
 
 namespace mozilla::dom {

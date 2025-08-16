@@ -7,11 +7,12 @@
 #ifndef mozilla_AppleUtils_h
 #define mozilla_AppleUtils_h
 
-#include "mozilla/Assertions.h"
-#include "mozilla/Attributes.h"
 #include <CoreFoundation/CFBase.h>      
 #include <CoreVideo/CVBuffer.h>         
 #include <VideoToolbox/VideoToolbox.h>  
+
+#include "mozilla/Assertions.h"
+#include "mozilla/Attributes.h"
 
 #if TARGET_OS_IPHONE
 inline bool OSSupportsSVC() {

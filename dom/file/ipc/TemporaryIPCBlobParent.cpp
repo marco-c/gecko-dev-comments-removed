@@ -4,12 +4,13 @@
 
 
 
-#include "private/pprio.h"
 #include "TemporaryIPCBlobParent.h"
-#include "mozilla/dom/FileBlobImpl.h"
-#include "nsAnonymousTemporaryFile.h"
+
 #include "TemporaryFileBlobImpl.h"
+#include "mozilla/dom/FileBlobImpl.h"
 #include "mozilla/dom/IPCBlobUtils.h"
+#include "nsAnonymousTemporaryFile.h"
+#include "private/pprio.h"
 
 namespace mozilla::dom {
 

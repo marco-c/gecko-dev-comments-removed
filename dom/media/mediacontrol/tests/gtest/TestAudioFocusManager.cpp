@@ -2,9 +2,9 @@
 
 
 
-#include "gtest/gtest.h"
 #include "AudioFocusManager.h"
 #include "MediaControlService.h"
+#include "gtest/gtest.h"
 #include "mozilla/Preferences.h"
 
 using namespace mozilla::dom;

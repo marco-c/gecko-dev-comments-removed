@@ -3,10 +3,10 @@
 
 
 
+#include "GLContext.h"
 #include "WebGL2Context.h"
 #include "WebGLProgram.h"
 #include "WebGLTransformFeedback.h"
-#include "GLContext.h"
 
 namespace mozilla {
 

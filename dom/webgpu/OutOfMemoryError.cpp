@@ -4,6 +4,7 @@
 
 
 #include "OutOfMemoryError.h"
+
 #include "mozilla/dom/WebGPUBinding.h"
 
 namespace mozilla::webgpu {

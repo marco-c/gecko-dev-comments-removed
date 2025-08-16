@@ -5,12 +5,13 @@
 
 
 #include "mozilla/dom/XRFrame.h"
+
+#include "VRDisplayClient.h"
+#include "mozilla/dom/XRReferenceSpace.h"
 #include "mozilla/dom/XRRenderState.h"
 #include "mozilla/dom/XRRigidTransform.h"
-#include "mozilla/dom/XRViewerPose.h"
 #include "mozilla/dom/XRView.h"
-#include "mozilla/dom/XRReferenceSpace.h"
-#include "VRDisplayClient.h"
+#include "mozilla/dom/XRViewerPose.h"
 
 namespace mozilla::dom {
 

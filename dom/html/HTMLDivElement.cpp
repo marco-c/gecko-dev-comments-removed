@@ -5,9 +5,10 @@
 
 
 #include "HTMLDivElement.h"
+
+#include "mozilla/dom/HTMLDivElementBinding.h"
 #include "nsGenericHTMLElement.h"
 #include "nsStyleConsts.h"
-#include "mozilla/dom/HTMLDivElementBinding.h"
 
 NS_IMPL_NS_NEW_HTML_ELEMENT(Div)
 

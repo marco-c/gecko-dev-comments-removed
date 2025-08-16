@@ -4,10 +4,10 @@
 
 
 
+#include "QuotaManagerTestHelpers.h"
 #include "gtest/gtest.h"
 #include "mozilla/dom/quota/CommonMetadata.h"
 #include "nsString.h"
-#include "QuotaManagerTestHelpers.h"
 
 namespace mozilla::dom::quota::test {
 

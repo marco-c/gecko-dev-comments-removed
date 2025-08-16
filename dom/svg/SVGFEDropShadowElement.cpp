@@ -5,8 +5,9 @@
 
 
 #include "mozilla/dom/SVGFEDropShadowElement.h"
-#include "mozilla/dom/SVGFEDropShadowElementBinding.h"
+
 #include "mozilla/SVGFilterInstance.h"
+#include "mozilla/dom/SVGFEDropShadowElementBinding.h"
 #include "nsIFrame.h"
 
 NS_IMPL_NS_NEW_SVG_ELEMENT(FEDropShadow)

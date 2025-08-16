@@ -5,8 +5,8 @@
 
 
 #include "CookieStoreManager.h"
-#include "CookieStoreChild.h"
 
+#include "CookieStoreChild.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/dom/WorkerPrivate.h"

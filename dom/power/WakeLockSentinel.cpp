@@ -4,17 +4,18 @@
 
 
 
+#include "WakeLockSentinel.h"
+
+#include "WakeLockJS.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/glean/DomPowerMetrics.h"
+#include "mozilla/Hal.h"
 #include "mozilla/TelemetryHistogramEnums.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/EventBinding.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WakeLockSentinelBinding.h"
-#include "mozilla/Hal.h"
-#include "WakeLockJS.h"
-#include "WakeLockSentinel.h"
+#include "mozilla/glean/DomPowerMetrics.h"
 
 namespace mozilla::dom {
 

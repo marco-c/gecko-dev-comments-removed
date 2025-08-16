@@ -5,8 +5,9 @@
 
 
 #include "mozilla/dom/IdentityProvider.h"
-#include "nsIGlobalObject.h"
+
 #include "mozilla/dom/WebIdentityHandler.h"
+#include "nsIGlobalObject.h"
 
 namespace mozilla {
 namespace dom {

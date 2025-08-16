@@ -4,15 +4,16 @@
 
 
 #include "txExecutionState.h"
-#include "txSingleNodeContext.h"
+
 #include "txInstructions.h"
-#include "txStylesheet.h"
-#include "txVariableMap.h"
-#include "txRtfHandler.h"
-#include "txXSLTProcessor.h"
 #include "txLog.h"
+#include "txRtfHandler.h"
+#include "txSingleNodeContext.h"
+#include "txStylesheet.h"
 #include "txURIUtils.h"
+#include "txVariableMap.h"
 #include "txXMLParser.h"
+#include "txXSLTProcessor.h"
 
 using namespace mozilla;
 

@@ -6,8 +6,8 @@
 
 
 #include "WebTaskController.h"
-#include "TaskSignal.h"
 
+#include "TaskSignal.h"
 #include "mozilla/dom/TaskPriorityChangeEvent.h"
 
 namespace mozilla::dom {

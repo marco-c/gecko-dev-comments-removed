@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/JSValidatorUtils.h"
+
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/ipc/Shmem.h"
 #include "nsStringFwd.h"

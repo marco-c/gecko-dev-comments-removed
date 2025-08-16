@@ -5,10 +5,11 @@
 
 
 #include "FileSystemRootDirectoryReader.h"
+
 #include "CallbackRunnables.h"
-#include "nsIGlobalObject.h"
 #include "mozilla/dom/FileSystemDirectoryReaderBinding.h"
 #include "mozilla/dom/FileSystemUtils.h"
+#include "nsIGlobalObject.h"
 
 namespace mozilla::dom {
 

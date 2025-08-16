@@ -5,9 +5,10 @@
 
 
 #include "mozilla/dom/XRBoundedReferenceSpace.h"
-#include "mozilla/dom/XRRigidTransform.h"
-#include "mozilla/dom/DOMPoint.h"
+
 #include "VRDisplayClient.h"
+#include "mozilla/dom/DOMPoint.h"
+#include "mozilla/dom/XRRigidTransform.h"
 
 namespace mozilla::dom {
 

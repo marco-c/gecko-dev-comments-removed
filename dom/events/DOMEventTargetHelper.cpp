@@ -4,16 +4,17 @@
 
 
 
-#include "nsContentUtils.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/Sprintf.h"
-#include "mozilla/dom/Event.h"
 #include "mozilla/DOMEventTargetHelper.h"
+
+#include "MainThreadUtils.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/Likely.h"
+#include "mozilla/Sprintf.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/Event.h"
+#include "nsContentUtils.h"
 #include "nsGlobalWindowInner.h"
-#include "MainThreadUtils.h"
 
 namespace mozilla {
 

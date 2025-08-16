@@ -5,9 +5,10 @@
 
 
 #include "mozilla/dom/TestInterfaceObservableArray.h"
+
+#include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/TestInterfaceObservableArrayBinding.h"
 #include "nsPIDOMWindow.h"
-#include "mozilla/dom/BindingUtils.h"
 
 namespace mozilla::dom {
 

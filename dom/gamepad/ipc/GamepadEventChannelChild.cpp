@@ -4,6 +4,7 @@
 
 
 #include "GamepadEventChannelChild.h"
+
 #include "mozilla/dom/GamepadManager.h"
 #include "mozilla/dom/Promise.h"
 

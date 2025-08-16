@@ -5,8 +5,10 @@
 
 
 #include "AudioConfig.h"
-#include "nsString.h"
+
 #include <array>
+
+#include "nsString.h"
 
 namespace mozilla {
 

@@ -4,19 +4,18 @@
 
 
 
-#include "gtest/gtest.h"
-
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include "nsIContentSecurityPolicy.h"
-#include "nsNetUtil.h"
+#include "gtest/gtest.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/dom/nsCSPContext.h"
 #include "mozilla/gtest/MozAssertions.h"
 #include "nsComponentManagerUtils.h"
+#include "nsIContentSecurityPolicy.h"
 #include "nsIPrefBranch.h"
 #include "nsIPrefService.h"
+#include "nsNetUtil.h"
 #include "nsStringFwd.h"
 
 

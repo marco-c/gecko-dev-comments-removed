@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/ConstructibleEventTarget.h"
+
 #include "mozilla/dom/EventTargetBinding.h"
 
 namespace mozilla::dom {

@@ -5,18 +5,20 @@
 
 
 #include "ScriptProcessorNode.h"
-#include "mozilla/dom/ScriptProcessorNodeBinding.h"
+
+#include <deque>
+
 #include "AudioBuffer.h"
 #include "AudioDestinationNode.h"
 #include "AudioNodeEngine.h"
 #include "AudioNodeTrack.h"
 #include "AudioProcessingEvent.h"
-#include "mozilla/dom/ScriptSettings.h"
+#include "Tracing.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/PodOperations.h"
+#include "mozilla/dom/ScriptProcessorNodeBinding.h"
+#include "mozilla/dom/ScriptSettings.h"
 #include "nsGlobalWindowInner.h"
-#include <deque>
-#include "Tracing.h"
 
 namespace mozilla::dom {
 

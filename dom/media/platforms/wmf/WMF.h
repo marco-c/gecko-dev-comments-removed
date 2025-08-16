@@ -7,6 +7,7 @@
 #ifndef WMF_H_
 #define WMF_H_
 
+
 #include <windows.h>
 #include <mfapi.h>
 #include <mfidl.h>
@@ -22,8 +23,9 @@
 #include <wmcodecdsp.h>
 #include <codecapi.h>
 
-#include "mozilla/Atomics.h"
+
 #include "mozilla/AppShutdown.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/StaticMutex.h"
 #include "nsThreadUtils.h"

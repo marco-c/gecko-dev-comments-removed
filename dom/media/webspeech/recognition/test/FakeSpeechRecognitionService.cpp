@@ -4,17 +4,16 @@
 
 
 
-#include "nsThreadUtils.h"
-
 #include "FakeSpeechRecognitionService.h"
 
 #include "SpeechRecognition.h"
 #include "SpeechRecognitionAlternative.h"
 #include "SpeechRecognitionResult.h"
 #include "SpeechRecognitionResultList.h"
-#include "nsIObserverService.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_media.h"
+#include "nsIObserverService.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla {
 

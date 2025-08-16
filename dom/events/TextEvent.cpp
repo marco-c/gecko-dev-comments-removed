@@ -4,11 +4,12 @@
 
 
 
+#include "mozilla/dom/TextEvent.h"
+
 #include "mozilla/BasePrincipal.h"  
 #include "mozilla/EventForwards.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/dom/DataTransfer.h"
-#include "mozilla/dom/TextEvent.h"
 #include "nsGlobalWindowInner.h"
 #include "nsIPrincipal.h"
 #include "nsPresContext.h"

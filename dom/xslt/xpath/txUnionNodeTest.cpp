@@ -5,7 +5,6 @@
 
 
 #include "mozilla/FloatingPoint.h"
-
 #include "txExpr.h"
 #include "txExprResult.h"
 #include "txSingleNodeContext.h"

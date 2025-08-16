@@ -14,6 +14,7 @@
 
 #include <new>
 #include <utility>
+
 #include "mozilla/Assertions.h"
 #include "mozilla/dom/quota/PQuotaRequest.h"
 #include "nsError.h"

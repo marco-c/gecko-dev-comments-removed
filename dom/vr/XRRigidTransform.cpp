@@ -5,10 +5,11 @@
 
 
 #include "mozilla/dom/XRRigidTransform.h"
-#include "mozilla/dom/DOMPoint.h"
-#include "mozilla/dom/Pose.h"
-#include "mozilla/dom/DOMPointBinding.h"
+
 #include "mozilla/HoldDropJSObjects.h"
+#include "mozilla/dom/DOMPoint.h"
+#include "mozilla/dom/DOMPointBinding.h"
+#include "mozilla/dom/Pose.h"
 #include "nsWrapperCache.h"
 
 namespace mozilla::dom {

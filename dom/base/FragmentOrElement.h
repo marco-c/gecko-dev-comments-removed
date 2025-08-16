@@ -18,9 +18,9 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/RadioGroupContainer.h"
+#include "nsAtomHashKeys.h"
 #include "nsCycleCollectionParticipant.h"  
 #include "nsIContent.h"                    
-#include "nsAtomHashKeys.h"
 #include "nsIHTMLCollection.h"
 #include "nsIWeakReferenceUtils.h"
 

@@ -5,9 +5,10 @@
 
 
 #include "OffscreenCanvasRenderingContext2D.h"
+
 #include "mozilla/CycleCollectedJSRuntime.h"
-#include "mozilla/dom/OffscreenCanvasRenderingContext2DBinding.h"
 #include "mozilla/dom/OffscreenCanvas.h"
+#include "mozilla/dom/OffscreenCanvasRenderingContext2DBinding.h"
 
 using namespace mozilla;
 

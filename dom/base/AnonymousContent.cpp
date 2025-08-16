@@ -5,10 +5,11 @@
 
 
 #include "AnonymousContent.h"
+
+#include "mozilla/dom/AnonymousContentBinding.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ShadowRoot.h"
-#include "mozilla/dom/AnonymousContentBinding.h"
 #include "nsCycleCollectionParticipant.h"
 
 namespace mozilla::dom {

@@ -8,9 +8,9 @@
 #include "MediaDataDecoderProxy.h"
 #include "PDMFactory.h"
 #include "VideoUtils.h"
+#include "mozilla/StaticPrefs_media.h"
 #include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/media/MediaUtils.h"
-#include "mozilla/StaticPrefs_media.h"
 
 #include "modules/video_coding/include/video_error_codes.h"
 

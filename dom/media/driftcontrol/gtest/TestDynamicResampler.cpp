@@ -3,9 +3,8 @@
 
 
 
-#include "gtest/gtest.h"
-
 #include "DynamicResampler.h"
+#include "gtest/gtest.h"
 
 using namespace mozilla;
 

@@ -5,11 +5,10 @@
 
 
 #include "gtest/gtest.h"
-
 #include "js/TypeDecls.h"
 #include "js/Value.h"
-#include "mozilla/dom/Promise.h"
 #include "mozilla/dom/Promise-inl.h"
+#include "mozilla/dom/Promise.h"
 #include "xpcpublic.h"
 
 using namespace mozilla;

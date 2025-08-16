@@ -4,6 +4,7 @@
 
 
 #include "txExpandedNameMap.h"
+
 #include "txCore.h"
 
 class txMapItemComparator {

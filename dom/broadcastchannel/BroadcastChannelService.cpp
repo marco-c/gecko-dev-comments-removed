@@ -5,6 +5,7 @@
 
 
 #include "BroadcastChannelService.h"
+
 #include "BroadcastChannelParent.h"
 #include "mozilla/dom/BlobImpl.h"
 #include "mozilla/dom/File.h"

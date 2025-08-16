@@ -3,10 +3,11 @@
 
 
 #include "jsep/JsepTrack.h"
-#include "jsep/JsepCodecDescription.h"
-#include "jsep/JsepTrackEncoding.h"
 
 #include <algorithm>
+
+#include "jsep/JsepCodecDescription.h"
+#include "jsep/JsepTrackEncoding.h"
 
 namespace mozilla {
 void JsepTrack::GetNegotiatedPayloadTypes(

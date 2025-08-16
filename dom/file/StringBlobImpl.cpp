@@ -5,6 +5,7 @@
 
 
 #include "StringBlobImpl.h"
+
 #include "nsStringStream.h"
 
 namespace mozilla::dom {

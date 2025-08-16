@@ -4,14 +4,15 @@
 
 
 
-#include "ComputedStyle.h"
 #include "mozilla/dom/SVGEllipseElement.h"
+
+#include "ComputedStyle.h"
+#include "SVGGeometryProperty.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/dom/SVGEllipseElementBinding.h"
 #include "mozilla/dom/SVGLengthBinding.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/PathHelpers.h"
-#include "mozilla/RefPtr.h"
-#include "SVGGeometryProperty.h"
 
 NS_IMPL_NS_NEW_SVG_ELEMENT(Ellipse)
 

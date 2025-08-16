@@ -10,22 +10,22 @@
 #ifndef UNICODE
 #  define UNICODE
 #endif
+
 #include <windows.h>
 #include <hidsdi.h>
 #include <stdio.h>
 #include <xinput.h>
 
+
+#include "Gamepad.h"
+#include "mozilla/ArrayUtils.h"
+#include "mozilla/dom/GamepadPlatformService.h"
+#include "mozilla/dom/GamepadRemapping.h"
+#include "mozilla/ipc/BackgroundParent.h"
 #include "nsITimer.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
 #include "nsWindowsHelpers.h"
-
-#include "mozilla/ArrayUtils.h"
-
-#include "mozilla/ipc/BackgroundParent.h"
-#include "mozilla/dom/GamepadPlatformService.h"
-#include "mozilla/dom/GamepadRemapping.h"
-#include "Gamepad.h"
 
 namespace {
 

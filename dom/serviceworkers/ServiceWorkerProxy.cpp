@@ -5,15 +5,15 @@
 
 
 #include "ServiceWorkerProxy.h"
+
 #include "ServiceWorkerCloneData.h"
+#include "ServiceWorkerInfo.h"
 #include "ServiceWorkerManager.h"
 #include "ServiceWorkerParent.h"
-
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/dom/ClientState.h"
 #include "mozilla/ipc/BackgroundParent.h"
-#include "ServiceWorkerInfo.h"
 
 namespace mozilla::dom {
 

@@ -5,6 +5,7 @@
 
 
 #include "CookieStoreNotificationWatcher.h"
+
 #include "mozilla/Services.h"
 #include "mozilla/Unused.h"
 #include "nsICookie.h"

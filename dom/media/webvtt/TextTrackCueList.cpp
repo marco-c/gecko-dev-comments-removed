@@ -4,8 +4,9 @@
 
 
 #include "mozilla/dom/TextTrackCueList.h"
-#include "mozilla/dom/TextTrackCueListBinding.h"
+
 #include "mozilla/dom/TextTrackCue.h"
+#include "mozilla/dom/TextTrackCueListBinding.h"
 
 namespace mozilla::dom {
 

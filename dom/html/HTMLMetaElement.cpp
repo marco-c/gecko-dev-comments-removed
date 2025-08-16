@@ -4,19 +4,20 @@
 
 
 
-#include "mozilla/AsyncEventDispatcher.h"
-#include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/HTMLMetaElement.h"
-#include "mozilla/dom/HTMLMetaElementBinding.h"
-#include "mozilla/dom/nsCSPService.h"
-#include "mozilla/dom/nsCSPUtils.h"
-#include "mozilla/dom/ViewportMetaData.h"
+
+#include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/Logging.h"
 #include "mozilla/StaticPrefs_security.h"
+#include "mozilla/dom/BindContext.h"
+#include "mozilla/dom/HTMLMetaElementBinding.h"
+#include "mozilla/dom/ViewportMetaData.h"
+#include "mozilla/dom/nsCSPService.h"
+#include "mozilla/dom/nsCSPUtils.h"
 #include "nsContentUtils.h"
+#include "nsIXMLContentSink.h"
 #include "nsSandboxFlags.h"
 #include "nsStyleConsts.h"
-#include "nsIXMLContentSink.h"
 
 static mozilla::LazyLogModule gMetaElementLog("nsMetaElement");
 #define LOG(msg) MOZ_LOG(gMetaElementLog, mozilla::LogLevel::Debug, msg)

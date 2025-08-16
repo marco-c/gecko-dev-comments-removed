@@ -5,9 +5,11 @@
 
 
 #include "StorageAccessPermissionRequest.h"
-#include "nsGlobalWindowInner.h"
-#include "mozilla/StaticPrefs_dom.h"
+
 #include <cstdlib>
+
+#include "mozilla/StaticPrefs_dom.h"
+#include "nsGlobalWindowInner.h"
 
 namespace mozilla::dom {
 

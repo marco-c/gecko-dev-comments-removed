@@ -5,8 +5,8 @@
 
 
 #include "LockManagerParent.h"
-#include "LockRequestParent.h"
 
+#include "LockRequestParent.h"
 #include "mozilla/PrincipalHashKey.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPtr.h"

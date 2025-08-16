@@ -3,11 +3,11 @@
 
 
 
-#include "gtest/gtest.h"
 #include <algorithm>
 #include <vector>
 
 #include "TimeUnits.h"
+#include "gtest/gtest.h"
 
 using namespace mozilla;
 using namespace mozilla::media;

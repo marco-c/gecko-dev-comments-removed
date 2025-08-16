@@ -5,9 +5,10 @@
 
 
 #include "mozilla/dom/SVGFEBlendElement.h"
-#include "mozilla/dom/SVGFEBlendElementBinding.h"
-#include "mozilla/dom/Document.h"
+
 #include "mozilla/dom/BindContext.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/SVGFEBlendElementBinding.h"
 
 NS_IMPL_NS_NEW_SVG_ELEMENT(FEBlend)
 

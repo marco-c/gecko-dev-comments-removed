@@ -5,6 +5,7 @@
 
 
 #include "BlobURLChannel.h"
+
 #include "mozilla/dom/BlobImpl.h"
 #include "mozilla/dom/BlobURL.h"
 #include "mozilla/dom/BlobURLInputStream.h"

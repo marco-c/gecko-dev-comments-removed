@@ -4,12 +4,13 @@
 
 
 
+#include "mozilla/dom/ScrollAreaEvent.h"
+
 #include "base/basictypes.h"
 #include "ipc/IPCMessageUtils.h"
 #include "ipc/IPCMessageUtilsSpecializations.h"
-#include "mozilla/dom/DOMRect.h"
-#include "mozilla/dom/ScrollAreaEvent.h"
 #include "mozilla/ContentEvents.h"
+#include "mozilla/dom/DOMRect.h"
 
 namespace mozilla::dom {
 

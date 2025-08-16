@@ -5,15 +5,16 @@
 
 
 #include "mozilla/dom/LockManager.h"
-#include "mozilla/dom/AutoEntryScript.h"
-#include "mozilla/dom/WorkerCommon.h"
-#include "mozilla/dom/locks/LockManagerChild.h"
-#include "mozilla/dom/locks/LockRequestChild.h"
+
 #include "mozilla/Assertions.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/LockManagerBinding.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/WorkerCommon.h"
+#include "mozilla/dom/locks/LockManagerChild.h"
+#include "mozilla/dom/locks/LockRequestChild.h"
 #include "mozilla/dom/locks/PLockManager.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/BackgroundUtils.h"

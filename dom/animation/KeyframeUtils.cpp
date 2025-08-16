@@ -9,9 +9,9 @@
 #include <algorithm>  
 #include <utility>
 
-#include "jsapi.h"             
 #include "js/ForOfIterator.h"  
 #include "js/PropertyAndElement.h"  
+#include "jsapi.h"                  
 #include "mozilla/AnimatedPropertyID.h"
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/ErrorResult.h"

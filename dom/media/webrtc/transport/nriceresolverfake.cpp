@@ -40,19 +40,21 @@
 
 
 
-#include "prio.h"
 #include "mozilla/Assertions.h"
+#include "prio.h"
 
 extern "C" {
+
 #include "async_wait.h"
 #include "async_timer.h"
 #include "nr_resolver.h"
 #include "r_macros.h"
 #include "transport_addr.h"
+
 }
 
-#include "nriceresolverfake.h"
 #include "nr_socket_prsock.h"
+#include "nriceresolverfake.h"
 
 namespace mozilla {
 

@@ -3,9 +3,9 @@
 
 
 
-#include "txXSLTNumber.h"
 #include "nsReadableUtils.h"
 #include "txCore.h"
+#include "txXSLTNumber.h"
 
 class txDecimalCounter : public txFormattedCounter {
  public:

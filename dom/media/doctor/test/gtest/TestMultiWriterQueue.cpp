@@ -4,17 +4,17 @@
 
 
 
-#include "MultiWriterQueue.h"
+#include <gtest/gtest.h>
+
+#include <type_traits>
 
 #include "DDTimeStamp.h"
-#include "mozilla/gtest/MozAssertions.h"
+#include "MultiWriterQueue.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/gtest/MozAssertions.h"
 #include "nsDeque.h"
 #include "nsIThread.h"
 #include "nsThreadUtils.h"
-
-#include <gtest/gtest.h>
-#include <type_traits>
 
 using mozilla::MultiWriterQueue;
 using mozilla::MultiWriterQueueDefaultBufferSize;

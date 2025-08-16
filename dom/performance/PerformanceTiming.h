@@ -7,20 +7,21 @@
 #ifndef mozilla_dom_PerformanceTiming_h
 #define mozilla_dom_PerformanceTiming_h
 
+#include "CacheablePerformanceTimingData.h"
+#include "Performance.h"
+#include "ipc/IPCMessageUtils.h"
+#include "ipc/IPCMessageUtilsSpecializations.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/StaticPrefs_dom.h"
-#include "nsContentUtils.h"
-#include "nsDOMNavigationTiming.h"
-#include "nsRFPService.h"
-#include "nsWrapperCache.h"
-#include "Performance.h"
-#include "nsITimedChannel.h"
 #include "mozilla/dom/PerformanceTimingTypes.h"
 #include "mozilla/ipc/IPDLParamTraits.h"
-#include "ipc/IPCMessageUtils.h"
-#include "ipc/IPCMessageUtilsSpecializations.h"
 #include "mozilla/net/nsServerTiming.h"
+#include "nsContentUtils.h"
+#include "nsDOMNavigationTiming.h"
+#include "nsITimedChannel.h"
+#include "nsRFPService.h"
+#include "nsWrapperCache.h"
 
 class nsIHttpChannel;
 
@@ -29,10 +30,15 @@ namespace mozilla::dom {
 class PerformanceTiming;
 enum class RenderBlockingStatusType : uint8_t;
 
-class PerformanceTimingData final {
+class PerformanceTimingData final : public CacheablePerformanceTimingData {
   friend class PerformanceTiming;
   friend struct mozilla::ipc::IPDLParamTraits<
       mozilla::dom::PerformanceTimingData>;
+
+  
+  
+  
+  static constexpr uint64_t kLocalCacheTransferSize = 0;
 
  public:
   PerformanceTimingData() = default;  
@@ -46,6 +52,18 @@ class PerformanceTimingData final {
   PerformanceTimingData(nsITimedChannel* aChannel, nsIHttpChannel* aHttpChannel,
                         DOMHighResTimeStamp aZeroTime);
 
+  static PerformanceTimingData* Create(
+      const CacheablePerformanceTimingData& aCachedData,
+      DOMHighResTimeStamp aZeroTime, TimeStamp aStartTime, TimeStamp aEndTime,
+      RenderBlockingStatusType aRenderBlockingStatus);
+
+ private:
+  PerformanceTimingData(const CacheablePerformanceTimingData& aCachedData,
+                        DOMHighResTimeStamp aZeroTime, TimeStamp aStartTime,
+                        TimeStamp aEndTime,
+                        RenderBlockingStatusType aRenderBlockingStatus);
+
+ public:
   explicit PerformanceTimingData(const IPCPerformanceTimingData& aIPCData);
 
   IPCPerformanceTimingData ToIPC();
@@ -53,19 +71,11 @@ class PerformanceTimingData final {
   void SetPropertiesFromHttpChannel(nsIHttpChannel* aHttpChannel,
                                     nsITimedChannel* aChannel);
 
-  bool IsInitialized() const { return mInitialized; }
+ private:
+  void SetTransferSizeFromHttpChannel(nsIHttpChannel* aHttpChannel);
 
-  const nsString& NextHopProtocol() const { return mNextHopProtocol; }
-
+ public:
   uint64_t TransferSize() const { return mTransferSize; }
-
-  uint64_t EncodedBodySize() const { return mEncodedBodySize; }
-
-  uint64_t DecodedBodySize() const { return mDecodedBodySize; }
-
-  uint16_t ResponseStatus() const { return mResponseStatus; }
-
-  const nsString& ContentType() const { return mContentType; }
 
   
 
@@ -148,11 +158,6 @@ class PerformanceTimingData final {
 
   DOMHighResTimeStamp ZeroTime() const { return mZeroTime; }
 
-  uint8_t RedirectCountReal() const { return mRedirectCount; }
-  uint8_t GetRedirectCount() const;
-
-  bool AllRedirectsSameOrigin() const { return mAllRedirectsSameOrigin; }
-
   
   
   
@@ -163,36 +168,11 @@ class PerformanceTimingData final {
   bool ShouldReportCrossOriginRedirect(
       bool aEnsureSameOriginAndIgnoreTAO) const;
 
-  
-  nsITimedChannel::BodyInfoAccess BodyInfoAccessAllowed() const {
-    return mBodyInfoAccessAllowed;
-  }
-
-  
-  
-  bool TimingAllowed() const { return mTimingAllowed; }
-
-  nsTArray<nsCOMPtr<nsIServerTiming>> GetServerTiming();
-
   RenderBlockingStatusType RenderBlockingStatus() const {
     return mRenderBlockingStatus;
   }
 
  private:
-  
-  
-  nsITimedChannel::BodyInfoAccess CheckBodyInfoAccessAllowedForOrigin(
-      nsIHttpChannel* aResourceChannel, nsITimedChannel* aChannel);
-
-  
-  
-  
-  bool CheckTimingAllowedForOrigin(nsIHttpChannel* aResourceChannel,
-                                   nsITimedChannel* aChannel);
-
-  nsTArray<nsCOMPtr<nsIServerTiming>> mServerTiming;
-  nsString mNextHopProtocol;
-
   TimeStamp mAsyncOpen;
   TimeStamp mRedirectStart;
   TimeStamp mRedirectEnd;
@@ -220,30 +200,9 @@ class PerformanceTimingData final {
 
   DOMHighResTimeStamp mFetchStart = 0;
 
-  uint64_t mEncodedBodySize = 0;
   uint64_t mTransferSize = 0;
-  uint64_t mDecodedBodySize = 0;
-
-  uint16_t mResponseStatus = 0;
-
-  uint8_t mRedirectCount = 0;
 
   RenderBlockingStatusType mRenderBlockingStatus;
-
-  nsString mContentType;
-
-  bool mAllRedirectsSameOrigin = false;
-
-  bool mAllRedirectsPassTAO = false;
-
-  bool mSecureConnection = false;
-
-  nsITimedChannel::BodyInfoAccess mBodyInfoAccessAllowed =
-      nsITimedChannel::BodyInfoAccess::DISALLOWED;
-
-  bool mTimingAllowed = false;
-
-  bool mInitialized = false;
 };
 
 

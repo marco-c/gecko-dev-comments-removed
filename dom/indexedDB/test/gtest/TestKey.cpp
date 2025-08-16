@@ -5,13 +5,6 @@
 
 
 #include "gtest/gtest.h"
-
-#include "mozilla/dom/SimpleGlobalObject.h"
-#include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/dom/indexedDB/Key.h"
-#include "mozilla/IntegerRange.h"
-#include "mozilla/Unused.h"
-
 #include "js/Array.h"  
 #include "js/ArrayBuffer.h"
 #include "js/PropertyAndElement.h"  
@@ -19,6 +12,11 @@
 #include "js/String.h"
 #include "js/TypeDecls.h"
 #include "js/Value.h"
+#include "mozilla/IntegerRange.h"
+#include "mozilla/Unused.h"
+#include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/dom/SimpleGlobalObject.h"
+#include "mozilla/dom/indexedDB/Key.h"
 
 
 

@@ -3,9 +3,9 @@
 
 
 
+#include "GLContext.h"
 #include "WebGL2Context.h"
 #include "WebGLSampler.h"
-#include "GLContext.h"
 
 namespace mozilla {
 

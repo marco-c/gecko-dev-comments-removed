@@ -5,13 +5,14 @@
 
 
 #include "AbortController.h"
+
 #include "AbortSignal.h"
 #include "js/Value.h"
+#include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/dom/AbortControllerBinding.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/WorkerPrivate.h"
-#include "mozilla/HoldDropJSObjects.h"
 
 namespace mozilla::dom {
 

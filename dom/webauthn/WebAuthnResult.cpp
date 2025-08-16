@@ -2,10 +2,11 @@
 
 
 
-#include "AuthrsBridge_ffi.h"
 #include "WebAuthnResult.h"
-#include "nsIWebAuthnAttObj.h"
+
+#include "AuthrsBridge_ffi.h"
 #include "nsCOMPtr.h"
+#include "nsIWebAuthnAttObj.h"
 #include "nsString.h"
 
 #ifdef MOZ_WIDGET_ANDROID

@@ -5,10 +5,8 @@
 
 
 #include "gtest/gtest.h"
-
-#include "mozilla/dom/IntegrityPolicy.h"
 #include "mozilla/Preferences.h"
-
+#include "mozilla/dom/IntegrityPolicy.h"
 #include "nsCOMPtr.h"
 #include "nsLiteralString.h"
 #include "nsSerializationHelper.h"

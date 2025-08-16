@@ -5,10 +5,11 @@
 
 
 #include "RTCStatsReport.h"
+
+#include "WebrtcGlobal.h"
 #include "libwebrtcglue/SystemTime.h"
 #include "mozilla/dom/Performance.h"
 #include "nsRFPService.h"
-#include "WebrtcGlobal.h"
 
 namespace mozilla::dom {
 

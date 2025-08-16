@@ -3,25 +3,26 @@
 
 
 #include "MediaTransportHandler.h"
+
 #include "MediaTransportHandlerIPC.h"
-#include "transport/sigslot.h"
 #include "transport/nricemediastream.h"
 #include "transport/nriceresolver.h"
+#include "transport/sigslot.h"
 #include "transport/transportflow.h"
-#include "transport/transportlayerice.h"
 #include "transport/transportlayerdtls.h"
+#include "transport/transportlayerice.h"
 #include "transport/transportlayersrtp.h"
 
 
-#include "mozilla/dom/RTCConfigurationBinding.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_network.h"
+#include "mozilla/dom/RTCConfigurationBinding.h"
 
 
 #include "nsIURI.h"
+#include "nsIURLParser.h"
 #include "nsNetUtil.h"
 #include "nsURLHelper.h"
-#include "nsIURLParser.h"
 
 
 #include "common/browser_logging/CSFLog.h"
@@ -30,23 +31,18 @@
 #include "transport/rlogconnector.h"
 
 
-#include "sdp/SdpAttribute.h"
-
-#include "transport/runnable_utils.h"
-
-#include "mozilla/Algorithm.h"
-
-#include "mozilla/dom/RTCStatsReportBinding.h"
-
-#include "nss.h"                
-#include "mozilla/PublicSSL.h"  
-
-#include "nsISocketTransportService.h"
-#include "nsDNSService2.h"
-
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
+
+#include "mozilla/Algorithm.h"
+#include "mozilla/PublicSSL.h"  
+#include "mozilla/dom/RTCStatsReportBinding.h"
+#include "nsDNSService2.h"
+#include "nsISocketTransportService.h"
+#include "nss.h"  
+#include "sdp/SdpAttribute.h"
+#include "transport/runnable_utils.h"
 
 #ifdef MOZ_GECKO_PROFILER
 #  include "mozilla/ProfilerMarkers.h"

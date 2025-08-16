@@ -3,17 +3,16 @@
 
 
 
-#include "WebGL2Context.h"
-
 #include "GLContext.h"
-#include "js/Array.h"  
-#include "mozilla/dom/WebGL2RenderingContextBinding.h"
-#include "mozilla/RefPtr.h"
+#include "WebGL2Context.h"
 #include "WebGLBuffer.h"
 #include "WebGLContext.h"
 #include "WebGLProgram.h"
 #include "WebGLTransformFeedback.h"
 #include "WebGLVertexArray.h"
+#include "js/Array.h"  
+#include "mozilla/RefPtr.h"
+#include "mozilla/dom/WebGL2RenderingContextBinding.h"
 
 namespace mozilla {
 

@@ -4,17 +4,17 @@
 
 
 
-#include "sdp/Sdp.h"
 #include "sdp/ParsingResultComparer.h"
-#include "sdp/SipccSdpParser.h"
-#include "sdp/RsdparsaSdpParser.h"
 
-#include <string>
 #include <ostream>
 #include <regex>
+#include <string>
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Logging.h"
+#include "sdp/RsdparsaSdpParser.h"
+#include "sdp/Sdp.h"
+#include "sdp/SipccSdpParser.h"
 
 using mozilla::LogLevel;
 static mozilla::LazyLogModule sSdpDiffLogger("sdpdiff_logger");

@@ -4,8 +4,9 @@
 
 
 
-#include "mozilla/dom/WebAuthnHandler.h"
 #include "mozilla/dom/WebAuthnTransactionChild.h"
+
+#include "mozilla/dom/WebAuthnHandler.h"
 
 namespace mozilla::dom {
 

@@ -4,14 +4,15 @@
 
 
 
+#include "mozilla/dom/HTMLOptGroupElement.h"
+
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/dom/HTMLOptGroupElement.h"
 #include "mozilla/dom/HTMLOptGroupElementBinding.h"
 #include "mozilla/dom/HTMLSelectElement.h"  
 #include "nsGkAtoms.h"
-#include "nsStyleConsts.h"
 #include "nsIFrame.h"
+#include "nsStyleConsts.h"
 
 NS_IMPL_NS_NEW_HTML_ELEMENT(OptGroup)
 

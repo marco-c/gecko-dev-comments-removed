@@ -2,9 +2,10 @@
 
 
 
-#include "WebGLContext.h"
 #include "WebGLTexelConversions.h"
+
 #include "GLBlitHelper.h"
+#include "WebGLContext.h"
 
 namespace mozilla {
 

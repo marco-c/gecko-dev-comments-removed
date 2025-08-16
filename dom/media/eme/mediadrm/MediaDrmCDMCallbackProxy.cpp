@@ -5,13 +5,14 @@
 
 
 #include "MediaDrmCDMCallbackProxy.h"
-#include "MediaDrmCDMProxy.h"
-#include "nsString.h"
-#include "mozilla/dom/MediaKeys.h"
-#include "mozilla/dom/MediaKeySession.h"
-#include "nsServiceManagerUtils.h"
+
 #include "MainThreadUtils.h"
+#include "MediaDrmCDMProxy.h"
 #include "mozilla/EMEUtils.h"
+#include "mozilla/dom/MediaKeySession.h"
+#include "mozilla/dom/MediaKeys.h"
+#include "nsServiceManagerUtils.h"
+#include "nsString.h"
 
 namespace mozilla {
 

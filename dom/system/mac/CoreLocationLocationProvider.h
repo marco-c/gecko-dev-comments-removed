@@ -4,9 +4,9 @@
 
 
 
+#include "mozilla/Attributes.h"
 #include "nsCOMPtr.h"
 #include "nsIGeolocationProvider.h"
-#include "mozilla/Attributes.h"
 
 
 

@@ -5,8 +5,8 @@
 
 
 #include "mozilla/dom/EncodedVideoChunk.h"
+
 #include <utility>
-#include "mozilla/dom/EncodedVideoChunkBinding.h"
 
 #include "MediaData.h"
 #include "TimeUnits.h"
@@ -14,6 +14,7 @@
 #include "mozilla/Logging.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/dom/BufferSourceBinding.h"
+#include "mozilla/dom/EncodedVideoChunkBinding.h"
 #include "mozilla/dom/StructuredCloneHolder.h"
 #include "mozilla/dom/StructuredCloneTags.h"
 #include "mozilla/dom/WebCodecsUtils.h"

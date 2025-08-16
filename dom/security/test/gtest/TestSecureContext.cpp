@@ -4,17 +4,16 @@
 
 
 
-#include "gtest/gtest.h"
-
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
+#include "gtest/gtest.h"
+#include "mozilla/NullPrincipal.h"
+#include "mozilla/Preferences.h"
 #include "nsContentSecurityManager.h"
 #include "nsContentUtils.h"
 #include "nsIPrincipal.h"
 #include "nsScriptSecurityManager.h"
-#include "mozilla/NullPrincipal.h"
-#include "mozilla/Preferences.h"
 
 using namespace mozilla;
 

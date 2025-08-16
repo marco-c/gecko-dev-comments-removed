@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/GamepadHapticActuator.h"
+
 #include "mozilla/dom/GamepadManager.h"
 #include "mozilla/dom/Promise.h"
 

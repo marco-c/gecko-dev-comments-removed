@@ -5,17 +5,17 @@
 
 
 #include "mozilla/dom/DOMJSProxyHandler.h"
-#include "xpcpublic.h"
-#include "xpcprivate.h"
-#include "XPCWrapper.h"
-#include "WrapperFactory.h"
-#include "nsWrapperCacheInlines.h"
-#include "mozilla/dom/BindingUtils.h"
 
-#include "jsapi.h"
-#include "js/friend/DOMProxy.h"  
-#include "js/PropertyAndElement.h"  
+#include "WrapperFactory.h"
+#include "XPCWrapper.h"
 #include "js/Object.h"              
+#include "js/PropertyAndElement.h"  
+#include "js/friend/DOMProxy.h"  
+#include "jsapi.h"
+#include "mozilla/dom/BindingUtils.h"
+#include "nsWrapperCacheInlines.h"
+#include "xpcprivate.h"
+#include "xpcpublic.h"
 
 using namespace JS;
 

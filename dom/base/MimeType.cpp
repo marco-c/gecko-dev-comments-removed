@@ -5,6 +5,7 @@
 
 
 #include "MimeType.h"
+
 #include "nsNetUtil.h"
 #include "nsUnicharUtils.h"
 

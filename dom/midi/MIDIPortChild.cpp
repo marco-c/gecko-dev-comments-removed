@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/MIDIPortChild.h"
+
 #include "mozilla/dom/MIDIPort.h"
 #include "mozilla/dom/MIDIPortInterface.h"
 #include "nsContentUtils.h"

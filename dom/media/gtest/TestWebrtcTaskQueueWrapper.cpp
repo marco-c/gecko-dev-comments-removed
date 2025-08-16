@@ -5,7 +5,6 @@
 
 
 #include "WebrtcTaskQueueWrapper.h"
-
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "mozilla/TaskQueue.h"

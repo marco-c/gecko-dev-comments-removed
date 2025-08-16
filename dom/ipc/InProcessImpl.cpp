@@ -4,11 +4,11 @@
 
 
 
-#include "mozilla/dom/InProcessParent.h"
+#include "mozilla/Services.h"
 #include "mozilla/dom/InProcessChild.h"
+#include "mozilla/dom/InProcessParent.h"
 #include "mozilla/dom/JSProcessActorBinding.h"
 #include "nsIObserverService.h"
-#include "mozilla/Services.h"
 
 using namespace mozilla::ipc;
 

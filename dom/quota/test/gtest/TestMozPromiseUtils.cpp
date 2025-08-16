@@ -4,8 +4,8 @@
 
 
 
-#include "mozilla/dom/quota/MozPromiseUtils.h"
 #include "QuotaManagerDependencyFixture.h"
+#include "mozilla/dom/quota/MozPromiseUtils.h"
 
 namespace mozilla::dom::quota::test {
 

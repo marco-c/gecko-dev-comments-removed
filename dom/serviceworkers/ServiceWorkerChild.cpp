@@ -5,6 +5,7 @@
 
 
 #include "ServiceWorkerChild.h"
+
 #include "ServiceWorker.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/dom/WorkerRef.h"

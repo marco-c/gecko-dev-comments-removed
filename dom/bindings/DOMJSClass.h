@@ -7,15 +7,14 @@
 #ifndef mozilla_dom_DOMJSClass_h
 #define mozilla_dom_DOMJSClass_h
 
-#include "jsapi.h"
-#include "jsfriendapi.h"
 #include "js/Object.h"  
 #include "js/Wrapper.h"
+#include "jsapi.h"
+#include "jsfriendapi.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/OriginTrials.h"
 #include "mozilla/Likely.h"
-
+#include "mozilla/OriginTrials.h"
 #include "mozilla/dom/PrototypeList.h"  
 #include "mozilla/dom/WebIDLPrefs.h"    
 

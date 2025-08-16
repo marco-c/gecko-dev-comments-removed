@@ -4,6 +4,7 @@
 
 
 #include "GMPSharedMemManager.h"
+
 #include "mozilla/ipc/SharedMemoryMapping.h"
 
 namespace mozilla::gmp {

@@ -9,12 +9,11 @@
 #include "MediaTrackListener.h"
 #include "VP8TrackEncoder.h"
 #include "WebMWriter.h"  
+#include "YUVBufferGenerator.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "mozilla/ArrayUtils.h"
 #include "prtime.h"
-
-#include "YUVBufferGenerator.h"
 
 #define VIDEO_TRACK_RATE 90000
 

@@ -8,7 +8,6 @@
 #define mozilla_dom_Animation_h
 
 #include "X11UndefineNone.h"
-#include "nsCycleCollectionParticipant.h"
 #include "mozilla/AnimatedPropertyIDSet.h"
 #include "mozilla/AnimationPerformanceWarning.h"
 #include "mozilla/Attributes.h"
@@ -22,6 +21,7 @@
 #include "mozilla/TimeStamp.h"             
 #include "mozilla/dom/AnimationBinding.h"  
 #include "mozilla/dom/AnimationTimeline.h"
+#include "nsCycleCollectionParticipant.h"
 
 struct JSContext;
 class nsCSSPropertyIDSet;

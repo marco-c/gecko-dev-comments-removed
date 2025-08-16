@@ -4,15 +4,15 @@
 
 
 
-#include "zlib.h"
 #include "ScriptLoadRequest.h"
 #include "ScriptLoader.h"
 #include "mozilla/PerfStats.h"
-#include "mozilla/ProfilerMarkers.h"
-#include "mozilla/Vector.h"
-#include "mozilla/ScopeExit.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/ProfilerMarkers.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_browser.h"
+#include "mozilla/Vector.h"
+#include "zlib.h"
 
 using namespace mozilla;
 

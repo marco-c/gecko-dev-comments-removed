@@ -5,9 +5,9 @@
 
 
 #include "mozilla/dom/HTMLParagraphElement.h"
-#include "mozilla/dom/HTMLParagraphElementBinding.h"
 
 #include "mozilla/MappedDeclarationsBuilder.h"
+#include "mozilla/dom/HTMLParagraphElementBinding.h"
 #include "nsStyleConsts.h"
 
 NS_IMPL_NS_NEW_HTML_ELEMENT(Paragraph)

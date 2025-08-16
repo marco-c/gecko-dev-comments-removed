@@ -3,8 +3,8 @@
 
 
 
-#include "gtest/gtest.h"
 #include "MediaCodecsSupport.h"
+#include "gtest/gtest.h"
 
 using namespace mozilla;
 using namespace media;

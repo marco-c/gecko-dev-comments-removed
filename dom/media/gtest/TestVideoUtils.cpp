@@ -3,10 +3,10 @@
 
 
 
+#include "VideoUtils.h"
 #include "gtest/gtest.h"
 #include "nsMimeTypes.h"
 #include "nsString.h"
-#include "VideoUtils.h"
 
 using namespace mozilla;
 

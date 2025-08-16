@@ -5,6 +5,7 @@
 
 
 #include "nsHapticFeedback.h"
+
 #include "mozilla/Hal.h"
 
 using namespace mozilla;

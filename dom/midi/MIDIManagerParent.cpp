@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/MIDIManagerParent.h"
+
 #include "mozilla/dom/MIDIPlatformService.h"
 
 namespace mozilla::dom {

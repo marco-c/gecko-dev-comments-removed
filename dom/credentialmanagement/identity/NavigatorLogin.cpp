@@ -4,14 +4,15 @@
 
 
 
+#include "mozilla/dom/NavigatorLogin.h"
+
 #include "mozilla/Components.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/dom/CredentialsContainer.h"
 #include "mozilla/dom/Document.h"
-#include "mozilla/dom/NavigatorLogin.h"
 #include "mozilla/dom/Promise.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/net/SFVService.h"
 #include "mozilla/dom/WebIdentityHandler.h"
+#include "mozilla/net/SFVService.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIGlobalObject.h"
 #include "nsIPermissionManager.h"

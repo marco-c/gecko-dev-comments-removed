@@ -7,8 +7,8 @@
 
 
 
-#include "mozilla/dom/SanitizerTypes.h"
 #include "SanitizerDefaultConfig.h"
+#include "mozilla/dom/SanitizerTypes.h"
 #include "nsGkAtoms.h"
 
 namespace mozilla::dom::sanitizer {

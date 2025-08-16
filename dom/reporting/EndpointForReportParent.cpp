@@ -5,9 +5,10 @@
 
 
 #include "mozilla/dom/EndpointForReportParent.h"
+
+#include "mozilla/Unused.h"
 #include "mozilla/dom/ReportingHeader.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
-#include "mozilla/Unused.h"
 #include "nsIThread.h"
 #include "nsThreadUtils.h"
 

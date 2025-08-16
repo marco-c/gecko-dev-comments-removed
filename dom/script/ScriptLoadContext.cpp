@@ -4,20 +4,18 @@
 
 
 
-#include "GeckoProfiler.h"
+#include "ScriptLoadContext.h"
 
-#include "mozilla/dom/Document.h"
+#include "GeckoProfiler.h"
+#include "ModuleLoadRequest.h"
+#include "js/SourceText.h"
+#include "js/loader/LoadContextBase.h"
+#include "js/loader/ModuleLoadRequest.h"
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/Unused.h"
 #include "mozilla/Utf8.h"  
-
-#include "js/SourceText.h"
-#include "js/loader/LoadContextBase.h"
-#include "js/loader/ModuleLoadRequest.h"
-
-#include "ScriptLoadContext.h"
-#include "ModuleLoadRequest.h"
+#include "mozilla/dom/Document.h"
 #include "nsContentUtils.h"
 #include "nsICacheInfoChannel.h"
 #include "nsIClassOfService.h"

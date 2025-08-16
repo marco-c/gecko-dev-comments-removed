@@ -4,18 +4,16 @@
 
 
 
-#include "gtest/gtest.h"
-
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include "nsContentSecurityUtils.h"
-#include "nsStringFwd.h"
-
+#include "gtest/gtest.h"
 #include "mozilla/ExtensionPolicyService.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/SimpleGlobalObject.h"
 #include "mozilla/extensions/WebExtensionPolicy.h"
+#include "nsContentSecurityUtils.h"
+#include "nsStringFwd.h"
 
 static constexpr auto kChromeURI = "chromeuri"_ns;
 static constexpr auto kResourceURI = "resourceuri"_ns;

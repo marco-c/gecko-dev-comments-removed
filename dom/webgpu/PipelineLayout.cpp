@@ -3,11 +3,11 @@
 
 
 
-#include "mozilla/dom/WebGPUBinding.h"
 #include "PipelineLayout.h"
-#include "ipc/WebGPUChild.h"
 
 #include "Device.h"
+#include "ipc/WebGPUChild.h"
+#include "mozilla/dom/WebGPUBinding.h"
 
 namespace mozilla::webgpu {
 

@@ -5,6 +5,7 @@
 
 
 #include "AnimationFrameProvider.h"
+
 #include "MainThreadUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/dom/HTMLVideoElement.h"

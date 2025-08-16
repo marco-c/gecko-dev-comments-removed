@@ -2,9 +2,9 @@
 
 
 
-#include "gtest/gtest.h"
-#include "MediaController.h"
 #include "MediaControlKeySource.h"
+#include "MediaController.h"
+#include "gtest/gtest.h"
 
 using namespace mozilla::dom;
 

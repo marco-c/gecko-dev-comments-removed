@@ -4,18 +4,19 @@
 
 
 
-#include "js/Realm.h"
-#include "mozilla/dom/EventBinding.h"
 #include "mozilla/dom/MIDIMessageEvent.h"
-#include "mozilla/dom/MIDIMessageEventBinding.h"
+
 #include "js/GCAPI.h"
+#include "js/Realm.h"
 #include "jsfriendapi.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/HoldDropJSObjects.h"
+#include "mozilla/dom/EventBinding.h"
+#include "mozilla/dom/MIDIMessageEventBinding.h"
 #include "mozilla/dom/Nullable.h"
+#include "mozilla/dom/Performance.h"
 #include "mozilla/dom/PrimitiveConversions.h"
 #include "mozilla/dom/TypedArray.h"
-#include "mozilla/dom/Performance.h"
 
 namespace mozilla::dom {
 

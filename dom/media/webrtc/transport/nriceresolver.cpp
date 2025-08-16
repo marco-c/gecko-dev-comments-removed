@@ -41,28 +41,29 @@
 
 
 #include "logging.h"
+#include "mozilla/Assertions.h"
 #include "nspr.h"
 #include "prnetdb.h"
 
-#include "mozilla/Assertions.h"
-
 extern "C" {
+
 #include "nr_api.h"
 #include "async_timer.h"
 #include "nr_resolver.h"
 #include "transport_addr.h"
+
 }
 
 #include "mozilla/net/DNS.h"  
-#include "nsThreadUtils.h"
-#include "nsServiceManagerUtils.h"
-#include "nsIDNSService.h"
+#include "nr_socket_prsock.h"
+#include "nriceresolver.h"
+#include "nsCOMPtr.h"
 #include "nsIDNSListener.h"
 #include "nsIDNSRecord.h"
+#include "nsIDNSService.h"
 #include "nsNetCID.h"
-#include "nsCOMPtr.h"
-#include "nriceresolver.h"
-#include "nr_socket_prsock.h"
+#include "nsServiceManagerUtils.h"
+#include "nsThreadUtils.h"
 #include "transport/runnable_utils.h"
 
 namespace mozilla {

@@ -2,17 +2,16 @@
 
 
 
+#include "CSFLog.h"
+
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdarg.h>
 
-#include "CSFLog.h"
 #include "MainThreadUtils.h"
-
-#include "prthread.h"
-
 #include "mozilla/Logging.h"
 #include "mozilla/Sprintf.h"
+#include "prthread.h"
 
 mozilla::LazyLogModule gSignalingLog("signaling");
 

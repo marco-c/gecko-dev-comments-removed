@@ -4,13 +4,14 @@
 
 
 
-#include <algorithm>
-#include "mozilla/EndianUtils.h"
-
 #include "OpusParser.h"
-#include "VideoUtils.h"
 
 #include <opus/opus.h>
+
+#include <algorithm>
+
+#include "VideoUtils.h"
+#include "mozilla/EndianUtils.h"
 extern "C" {
 #include <opus/opus_multistream.h>
 }

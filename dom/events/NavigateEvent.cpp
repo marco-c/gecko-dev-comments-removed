@@ -4,17 +4,16 @@
 
 
 
-#include "nsGlobalWindowInner.h"
-#include "nsDocShell.h"
+#include "mozilla/dom/NavigateEvent.h"
 
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/PresShell.h"
-
 #include "mozilla/dom/AbortController.h"
-#include "mozilla/dom/NavigateEvent.h"
 #include "mozilla/dom/NavigateEventBinding.h"
 #include "mozilla/dom/Navigation.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
+#include "nsDocShell.h"
+#include "nsGlobalWindowInner.h"
 
 namespace mozilla::dom {
 

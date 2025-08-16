@@ -8,14 +8,14 @@
 #ifndef TestBindingHeader_h
 #define TestBindingHeader_h
 
+#include "js/Object.h"  
+#include "mozilla/ErrorResult.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/Record.h"
 #include "mozilla/dom/TypedArray.h"
-#include "mozilla/ErrorResult.h"
 #include "nsCOMPtr.h"
 #include "nsGenericHTMLElement.h"
 #include "nsWrapperCache.h"
-#include "js/Object.h"  
 
 
 

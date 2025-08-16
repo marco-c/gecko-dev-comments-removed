@@ -5,9 +5,10 @@
 
 
 #include "mozilla/dom/XRInputSourceArray.h"
-#include "mozilla/dom/XRSession.h"
-#include "mozilla/dom/XRInputSourcesChangeEvent.h"
+
 #include "VRDisplayClient.h"
+#include "mozilla/dom/XRInputSourcesChangeEvent.h"
+#include "mozilla/dom/XRSession.h"
 
 namespace mozilla::dom {
 

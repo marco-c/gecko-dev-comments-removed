@@ -5,10 +5,11 @@
 
 
 #include "mozilla/dom/TabContext.h"
-#include "mozilla/dom/PTabContext.h"
-#include "mozilla/dom/BrowserParent.h"
-#include "mozilla/dom/BrowserChild.h"
+
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/dom/BrowserChild.h"
+#include "mozilla/dom/BrowserParent.h"
+#include "mozilla/dom/PTabContext.h"
 #include "nsServiceManagerUtils.h"
 
 using namespace mozilla::dom::ipc;

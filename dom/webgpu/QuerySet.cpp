@@ -3,8 +3,9 @@
 
 
 
-#include "Device.h"
 #include "QuerySet.h"
+
+#include "Device.h"
 #include "ipc/WebGPUChild.h"
 #include "mozilla/dom/WebGPUBinding.h"
 

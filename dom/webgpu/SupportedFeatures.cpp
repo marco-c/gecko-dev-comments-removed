@@ -4,6 +4,7 @@
 
 
 #include "SupportedFeatures.h"
+
 #include "Adapter.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/WebGPUBinding.h"

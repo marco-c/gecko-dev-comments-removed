@@ -4,13 +4,14 @@
 
 
 #include "txXSLTProcessor.h"
-#include "txInstructions.h"
+
 #include "nsGkAtoms.h"
+#include "txExecutionState.h"
+#include "txExprResult.h"
+#include "txInstructions.h"
 #include "txLog.h"
 #include "txStylesheetCompileHandlers.h"
 #include "txStylesheetCompiler.h"
-#include "txExecutionState.h"
-#include "txExprResult.h"
 
 TX_LG_IMPL
 

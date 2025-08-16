@@ -5,9 +5,10 @@
 
 
 #include "mozilla/dom/SVGFECompositeElement.h"
-#include "mozilla/dom/SVGFECompositeElementBinding.h"
-#include "mozilla/dom/Document.h"
+
 #include "mozilla/dom/BindContext.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/SVGFECompositeElementBinding.h"
 
 NS_IMPL_NS_NEW_SVG_ELEMENT(FEComposite)
 

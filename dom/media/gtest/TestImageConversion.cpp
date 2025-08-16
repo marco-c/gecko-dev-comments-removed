@@ -3,13 +3,13 @@
 
 
 
+#include "ImageContainer.h"
+#include "ImageConversion.h"
+#include "SourceSurfaceRawData.h"
 #include "gtest/gtest.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/ImageBitmapBinding.h"
 #include "mozilla/dom/ImageUtils.h"
-#include "ImageConversion.h"
-#include "ImageContainer.h"
-#include "SourceSurfaceRawData.h"
 
 using mozilla::ConvertToI420;
 using mozilla::MakeAndAddRef;

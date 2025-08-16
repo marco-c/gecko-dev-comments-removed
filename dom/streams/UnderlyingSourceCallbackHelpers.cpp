@@ -4,16 +4,17 @@
 
 
 
+#include "mozilla/dom/UnderlyingSourceCallbackHelpers.h"
+
 #include "StreamUtils.h"
+#include "js/experimental/TypedData.h"
+#include "mozilla/dom/ReadableByteStreamController.h"
 #include "mozilla/dom/ReadableStream.h"
 #include "mozilla/dom/ReadableStreamDefaultController.h"
-#include "mozilla/dom/ReadableByteStreamController.h"
-#include "mozilla/dom/UnderlyingSourceCallbackHelpers.h"
 #include "mozilla/dom/UnderlyingSourceBinding.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRunnable.h"
-#include "js/experimental/TypedData.h"
 #include "nsStreamUtils.h"
 
 namespace mozilla::dom {

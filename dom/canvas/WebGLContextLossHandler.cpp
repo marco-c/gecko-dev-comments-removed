@@ -4,8 +4,8 @@
 
 
 #include "WebGLContextLossHandler.h"
-#include "WebGLContext.h"
 
+#include "WebGLContext.h"
 #include "base/message_loop.h"
 
 namespace mozilla {

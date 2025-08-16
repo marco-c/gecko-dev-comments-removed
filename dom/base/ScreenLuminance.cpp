@@ -5,6 +5,7 @@
 
 
 #include "ScreenLuminance.h"
+
 #include "nsScreen.h"
 
 namespace mozilla::dom {

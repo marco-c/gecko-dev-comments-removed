@@ -4,12 +4,13 @@
 
 
 
-#include "nsString.h"
-#include "nsIControllerCommand.h"
 #include "nsControllerCommandTable.h"
-#include "nsGlobalWindowCommands.h"
+
 #include "mozilla/EditorController.h"
 #include "mozilla/HTMLEditorController.h"
+#include "nsGlobalWindowCommands.h"
+#include "nsIControllerCommand.h"
+#include "nsString.h"
 
 
 #define NUM_COMMANDS_LENGTH 32

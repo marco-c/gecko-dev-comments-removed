@@ -47,13 +47,11 @@
 #include <string>
 #include <vector>
 
-#include "sigslot.h"
-
+#include "m_cpp_utils.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "nscore.h"
-
-#include "m_cpp_utils.h"
+#include "sigslot.h"
 
 namespace mozilla {
 

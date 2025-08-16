@@ -2,13 +2,12 @@
 
 
 
-#include "mozilla/dom/quota/CheckedUnsafePtr.h"
-
-#include "gtest/gtest.h"
-
 #include <memory>
 #include <type_traits>
 #include <utility>
+
+#include "gtest/gtest.h"
+#include "mozilla/dom/quota/CheckedUnsafePtr.h"
 #include "mozilla/fallible.h"
 
 using namespace mozilla;

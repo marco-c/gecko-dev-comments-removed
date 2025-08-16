@@ -4,21 +4,23 @@
 
 
 
-#include <algorithm>
 #include "TCPSocketChild.h"
-#include "mozilla/HoldDropJSObjects.h"
-#include "mozilla/Unused.h"
-#include "mozilla/UniquePtr.h"
-#include "mozilla/net/NeckoChild.h"
-#include "mozilla/dom/PBrowserChild.h"
-#include "mozilla/dom/BrowserChild.h"
-#include "nsITCPSocketCallback.h"
+
+#include <algorithm>
+
 #include "TCPSocket.h"
-#include "nsContentUtils.h"
 #include "js/ArrayBuffer.h"  
 #include "js/RootingAPI.h"   
 #include "js/Utility.h"  
 #include "js/Value.h"  
+#include "mozilla/HoldDropJSObjects.h"
+#include "mozilla/UniquePtr.h"
+#include "mozilla/Unused.h"
+#include "mozilla/dom/BrowserChild.h"
+#include "mozilla/dom/PBrowserChild.h"
+#include "mozilla/net/NeckoChild.h"
+#include "nsContentUtils.h"
+#include "nsITCPSocketCallback.h"
 
 using mozilla::net::gNeckoChild;
 

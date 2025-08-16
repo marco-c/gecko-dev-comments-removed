@@ -5,8 +5,9 @@
 
 
 #include "SMILKeySpline.h"
-#include <stdint.h>
+
 #include <math.h>
+#include <stdint.h>
 
 namespace mozilla {
 

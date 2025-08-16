@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/Lock.h"
+
 #include "mozilla/dom/LockBinding.h"
 #include "mozilla/dom/LockManager.h"
 #include "mozilla/dom/Promise.h"

@@ -4,13 +4,13 @@
 
 
 
-#include "gtest/gtest.h"
-#include "GMPUtils.h"
-#include "mozilla/ArrayUtils.h"
-#include "nsString.h"
-
 #include <string>
 #include <vector>
+
+#include "GMPUtils.h"
+#include "gtest/gtest.h"
+#include "mozilla/ArrayUtils.h"
+#include "nsString.h"
 
 using namespace mozilla;
 

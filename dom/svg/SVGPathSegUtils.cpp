@@ -6,10 +6,10 @@
 
 #include "SVGPathSegUtils.h"
 
+#include "SVGArcConverter.h"
+#include "gfx2DGlue.h"
 #include "mozilla/ArrayUtils.h"        
 #include "mozilla/ServoStyleConsts.h"  
-#include "gfx2DGlue.h"
-#include "SVGArcConverter.h"
 #include "nsMathUtils.h"
 #include "nsTextFormatter.h"
 

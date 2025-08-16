@@ -8,18 +8,16 @@
 #define mozilla_TimingParams_h
 
 #include "X11UndefineNone.h"
-#include "nsPrintfCString.h"
-#include "nsStringFwd.h"
-#include "nsPrintfCString.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/ServoStyleConsts.h"
+#include "mozilla/StickyTimeDuration.h"
+#include "mozilla/TimeStamp.h"                   
+#include "mozilla/dom/AnimationEffectBinding.h"  
 #include "mozilla/dom/Nullable.h"
 #include "mozilla/dom/UnionTypes.h"  
-#include "mozilla/Maybe.h"
-#include "mozilla/StickyTimeDuration.h"
-#include "mozilla/TimeStamp.h"  
-#include "mozilla/ServoStyleConsts.h"
+#include "nsPrintfCString.h"
+#include "nsStringFwd.h"
 
-#include "mozilla/dom/AnimationEffectBinding.h"  
-                                                 
 
 namespace mozilla {
 

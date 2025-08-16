@@ -1,22 +1,21 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef mozilla_dom_workers_WorkerLoadInfo_h
 #define mozilla_dom_workers_WorkerLoadInfo_h
 
 #include "mozilla/OriginAttributes.h"
-#include "mozilla/StorageAccess.h"
 #include "mozilla/OriginTrials.h"
+#include "mozilla/StorageAccess.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/ChannelInfo.h"
-#include "mozilla/net/NeckoChannelParams.h"
 #include "mozilla/dom/ServiceWorkerRegistrationDescriptor.h"
-#include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/dom/WorkerCSPContext.h"
-
+#include "mozilla/dom/WorkerCommon.h"
+#include "mozilla/net/NeckoChannelParams.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsILoadContext.h"
 #include "nsIRequest.h"
@@ -41,31 +40,31 @@ namespace mozilla {
 
 namespace ipc {
 class PrincipalInfo;
-}  // namespace ipc
+}  
 
 namespace dom {
 
 class WorkerPrivate;
 
 struct WorkerLoadInfoData {
-  // All of these should be released in
-  // WorkerPrivateParent::ForgetMainThreadObjects.
+  
+  
   nsCOMPtr<nsIURI> mBaseURI;
   nsCOMPtr<nsIURI> mResolvedScriptURI;
 
-  // This is the principal of the global (parent worker or a window) loading
-  // the worker. It can be null if we are executing a ServiceWorker, otherwise,
-  // except for data: URL, it must subsumes the worker principal.
-  // If we load a data: URL, mPrincipal will be a null principal.
+  
+  
+  
+  
   nsCOMPtr<nsIPrincipal> mLoadingPrincipal;
   nsCOMPtr<nsIPrincipal> mPrincipal;
   nsCOMPtr<nsIPrincipal> mPartitionedPrincipal;
 
-  // Taken from the parent context.
+  
   nsCOMPtr<nsICookieJarSettings> mCookieJarSettings;
 
-  // The CookieJarSettingsArgs of mCookieJarSettings.
-  // This is specific for accessing on worker thread.
+  
+  
   net::CookieJarSettingsArgs mCookieJarSettingsArgs;
 
   nsCOMPtr<nsIScriptContext> mScriptContext;
@@ -98,13 +97,13 @@ struct WorkerLoadInfoData {
     nsCOMPtr<nsILoadContext> mLoadContext;
     nsCOMPtr<nsIInterfaceRequestor> mOuterRequestor;
 
-    // Array of weak references to nsIBrowserChild.  We do not want to keep
-    // BrowserChild actors alive for long after their ActorDestroy() methods are
-    // called.
+    
+    
+    
     nsTArray<nsWeakPtr> mBrowserChildList;
   };
 
-  // Only set if we have a custom overriden load group
+  
   RefPtr<InterfaceRequestor> mInterfaceRequestor;
 
   UniquePtr<mozilla::ipc::PrincipalInfo> mPrincipalInfo;
@@ -187,7 +186,7 @@ struct WorkerLoadInfo : WorkerLoadInfoData {
       nsCOMPtr<nsILoadGroup>&& aLoadGroupToCancel);
 };
 
-}  // namespace dom
-}  // namespace mozilla
+}  
+}  
 
-#endif  // mozilla_dom_workers_WorkerLoadInfo_h
+#endif  

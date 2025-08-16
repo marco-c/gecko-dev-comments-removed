@@ -5,6 +5,7 @@
 
 
 #include "VideoFrameContainer.h"
+
 #include "mozilla/Logging.h"
 
 #ifdef MOZ_WIDGET_ANDROID

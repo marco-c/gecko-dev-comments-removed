@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/SVGSymbolElement.h"
+
 #include "mozilla/dom/SVGSymbolElementBinding.h"
 
 NS_IMPL_NS_NEW_SVG_ELEMENT(Symbol)

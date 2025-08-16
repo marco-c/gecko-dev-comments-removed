@@ -4,11 +4,12 @@
 
 
 
-#include "js/JSON.h"
-#include "nsContentUtils.h"
-#include "nsArrayUtils.h"
-#include "nsTString.h"
 #include "PaymentRequestUtils.h"
+
+#include "js/JSON.h"
+#include "nsArrayUtils.h"
+#include "nsContentUtils.h"
+#include "nsTString.h"
 
 namespace mozilla::dom {
 

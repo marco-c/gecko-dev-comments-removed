@@ -7,13 +7,13 @@
 #ifndef DOM_SVG_DOMSVGPOINTLIST_H_
 #define DOM_SVG_DOMSVGPOINTLIST_H_
 
+#include "SVGPointList.h"  
 #include "mozAutoDocUpdate.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/RefPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsDebug.h"
 #include "nsTArray.h"
-#include "SVGPointList.h"  
-#include "mozilla/Attributes.h"
-#include "mozilla/RefPtr.h"
 
 
 #define MOZILLA_DOMSVGPOINTLIST_IID \

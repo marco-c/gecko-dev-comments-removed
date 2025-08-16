@@ -4,13 +4,14 @@
 
 
 
-#include "mozilla/dom/JSWindowActorBinding.h"
 #include "mozilla/dom/JSWindowActorParent.h"
+
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/ContentParent.h"
+#include "mozilla/dom/JSWindowActorBinding.h"
+#include "mozilla/dom/MessageManagerBinding.h"
 #include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/dom/WindowGlobalParent.h"
-#include "mozilla/dom/MessageManagerBinding.h"
 
 namespace mozilla::dom {
 

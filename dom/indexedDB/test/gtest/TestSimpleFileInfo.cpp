@@ -2,17 +2,15 @@
 
 
 
+#include <array>
+
 #include "FileInfo.h"
 #include "FileInfoImpl.h"
 #include "FileInfoManager.h"
-
 #include "gtest/gtest.h"
-
 #include "mozilla/ArrayAlgorithm.h"
 #include "mozilla/StaticMutex.h"
 #include "nsTArray.h"
-
-#include <array>
 
 using namespace mozilla;
 using namespace mozilla::dom::indexedDB;

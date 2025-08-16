@@ -7,17 +7,15 @@
 #ifndef mozilla_dom_ProxyHandlerUtils_h
 #define mozilla_dom_ProxyHandlerUtils_h
 
-#include "mozilla/Likely.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/TextUtils.h"
-
 #include "js/Id.h"
 #include "js/Object.h"  
 #include "js/PropertyDescriptor.h"
 #include "js/String.h"  
 #include "js/TypeDecls.h"
-
 #include "jsfriendapi.h"  
+#include "mozilla/Likely.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/TextUtils.h"
 
 namespace mozilla::dom {
 

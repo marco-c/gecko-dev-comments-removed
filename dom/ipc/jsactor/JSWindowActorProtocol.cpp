@@ -5,19 +5,19 @@
 
 
 
+#include "mozilla/dom/JSWindowActorProtocol.h"
+
+#include "JSActorProtocolUtils.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/JSActorBinding.h"
 #include "mozilla/dom/JSActorService.h"
 #include "mozilla/dom/JSWindowActorBinding.h"
 #include "mozilla/dom/JSWindowActorChild.h"
-#include "mozilla/dom/JSWindowActorProtocol.h"
 #include "mozilla/dom/PContent.h"
 #include "mozilla/dom/WindowGlobalChild.h"
-
 #include "mozilla/extensions/MatchPattern.h"
 #include "nsContentUtils.h"
-#include "JSActorProtocolUtils.h"
 
 namespace mozilla::dom {
 

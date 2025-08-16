@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/PaymentAddress.h"
+
 #include "mozilla/dom/PaymentAddressBinding.h"
 
 namespace mozilla::dom {

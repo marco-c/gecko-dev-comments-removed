@@ -4,9 +4,10 @@
 
 
 #include "WebMWriter.h"
+
 #include "EbmlComposer.h"
-#include "mozilla/ProfilerLabels.h"
 #include "OpusTrackEncoder.h"
+#include "mozilla/ProfilerLabels.h"
 
 namespace mozilla {
 

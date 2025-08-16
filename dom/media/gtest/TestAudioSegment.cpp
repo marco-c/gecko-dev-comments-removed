@@ -3,11 +3,11 @@
 
 
 
-#include "AudioSegment.h"
 #include <iostream>
-#include "gtest/gtest.h"
 
 #include "AudioGenerator.h"
+#include "AudioSegment.h"
+#include "gtest/gtest.h"
 
 using namespace mozilla;
 

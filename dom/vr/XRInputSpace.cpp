@@ -5,6 +5,7 @@
 
 
 #include "XRInputSpace.h"
+
 #include "VRDisplayClient.h"
 #include "mozilla/dom/GamepadPoseState.h"
 

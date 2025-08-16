@@ -3,41 +3,39 @@
 
 
 #include "WebrtcGlobalInformation.h"
-#include "WebrtcGlobalStatsHistory.h"
-#include "libwebrtcglue/VideoConduit.h"
-#include "mozilla/Assertions.h"
-#include "mozilla/StaticPtr.h"
-#include "mozilla/dom/PWebrtcGlobal.h"
-#include "mozilla/dom/PWebrtcGlobalChild.h"
-#include "WebrtcGlobalChild.h"
-#include "WebrtcGlobalParent.h"
 
 #include <algorithm>
 #include <vector>
 
-#include "mozilla/dom/WebrtcGlobalInformationBinding.h"
-#include "mozilla/dom/RTCStatsReportBinding.h"  
-#include "mozilla/dom/ContentChild.h"
-
 #include "ErrorList.h"
+#include "MediaTransportHandler.h"
+#include "PeerConnectionCtx.h"
+#include "PeerConnectionImpl.h"
+#include "WebrtcGlobalChild.h"
+#include "WebrtcGlobalParent.h"
+#include "WebrtcGlobalStatsHistory.h"
+#include "common/browser_logging/WebRtcLog.h"
+#include "libwebrtcglue/VideoConduit.h"
+#include "mozilla/Assertions.h"
+#include "mozilla/ClearOnShutdown.h"
+#include "mozilla/ErrorResult.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/StaticPtr.h"
+#include "mozilla/Unused.h"
+#include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/PWebrtcGlobal.h"
+#include "mozilla/dom/PWebrtcGlobalChild.h"
+#include "mozilla/dom/RTCStatsReportBinding.h"  
+#include "mozilla/dom/WebrtcGlobalInformationBinding.h"
 #include "nsISupports.h"
 #include "nsITimer.h"
 #include "nsLiteralString.h"
 #include "nsNetCID.h"               
+#include "nsProxyRelease.h"         
 #include "nsServiceManagerUtils.h"  
-#include "nsXULAppAPI.h"
-#include "mozilla/ErrorResult.h"
-#include "nsProxyRelease.h"  
-#include "mozilla/Unused.h"
-#include "mozilla/RefPtr.h"
-#include "mozilla/ClearOnShutdown.h"
-
-#include "common/browser_logging/WebRtcLog.h"
 #include "nsString.h"
+#include "nsXULAppAPI.h"
 #include "transport/runnable_utils.h"
-#include "MediaTransportHandler.h"
-#include "PeerConnectionCtx.h"
-#include "PeerConnectionImpl.h"
 
 #ifdef XP_WIN
 #  include <process.h>

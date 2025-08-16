@@ -4,6 +4,7 @@
 
 
 #include "WebVTTListener.h"
+
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLTrackElement.h"

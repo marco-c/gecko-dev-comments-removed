@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/CookieChangeEvent.h"
+
 #include "mozilla/dom/CookieChangeEventBinding.h"
 
 namespace mozilla::dom {

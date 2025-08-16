@@ -5,6 +5,7 @@
 
 
 #include "Feature.h"
+
 #include "mozilla/BasePrincipal.h"
 
 namespace mozilla::dom {

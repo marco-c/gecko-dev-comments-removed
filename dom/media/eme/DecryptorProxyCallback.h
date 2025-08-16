@@ -6,9 +6,9 @@
 #ifndef DecryptorProxyCallback_h_
 #define DecryptorProxyCallback_h_
 
-#include "mozilla/dom/MediaKeyStatusMapBinding.h"     
-#include "mozilla/dom/MediaKeyMessageEventBinding.h"  
 #include "mozilla/CDMProxy.h"
+#include "mozilla/dom/MediaKeyMessageEventBinding.h"  
+#include "mozilla/dom/MediaKeyStatusMapBinding.h"     
 
 namespace mozilla {
 class ErrorResult;

@@ -7,9 +7,9 @@
 #ifndef mozilla_dom_VREventObserver_h
 #define mozilla_dom_VREventObserver_h
 
+#include "VRManagerChild.h"
 #include "mozilla/dom/VRDisplayEventBinding.h"
 #include "nsISupportsImpl.h"  
-#include "VRManagerChild.h"
 
 class nsGlobalWindowInner;
 

@@ -3,14 +3,15 @@
 
 
 
-#include "mozilla/FloatingPoint.h"
+#include <math.h>
+#include <stdlib.h>
 
+#include <algorithm>
+
+#include "mozilla/FloatingPoint.h"
 #include "nsString.h"
 #include "txCore.h"
 #include "txXMLUtils.h"
-#include <math.h>
-#include <stdlib.h>
-#include <algorithm>
 #ifdef WIN32
 #  include <float.h>
 #endif

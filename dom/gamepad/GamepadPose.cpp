@@ -4,11 +4,11 @@
 
 
 
-#include "nsWrapperCache.h"
+#include "mozilla/dom/GamepadPose.h"
 
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/dom/GamepadPoseBinding.h"
-#include "mozilla/dom/GamepadPose.h"
+#include "nsWrapperCache.h"
 
 namespace mozilla::dom {
 

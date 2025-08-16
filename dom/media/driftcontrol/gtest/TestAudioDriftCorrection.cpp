@@ -3,11 +3,10 @@
 
 
 
-#include "gtest/gtest.h"
-
 #include "AudioDriftCorrection.h"
 #include "AudioGenerator.h"
 #include "AudioVerifier.h"
+#include "gtest/gtest.h"
 #include "nsContentUtils.h"
 
 using namespace mozilla;

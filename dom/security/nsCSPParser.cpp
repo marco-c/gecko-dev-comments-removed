@@ -4,25 +4,26 @@
 
 
 
+#include "nsCSPParser.h"
+
+#include <cstdint>
+#include <utility>
+
 #include "mozilla/ArrayUtils.h"
-#include "mozilla/TextUtils.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/dom/TrustedTypesConstants.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_security.h"
+#include "mozilla/TextUtils.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/TrustedTypesConstants.h"
 #include "nsCOMPtr.h"
-#include "nsContentUtils.h"
-#include "nsCSPParser.h"
 #include "nsCSPUtils.h"
+#include "nsContentUtils.h"
 #include "nsIScriptError.h"
 #include "nsNetUtil.h"
 #include "nsReadableUtils.h"
 #include "nsServiceManagerUtils.h"
 #include "nsUnicharUtils.h"
-
-#include <cstdint>
-#include <utility>
 
 using namespace mozilla;
 using namespace mozilla::dom;

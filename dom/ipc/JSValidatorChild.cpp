@@ -5,17 +5,16 @@
 
 
 #include "mozilla/dom/JSValidatorChild.h"
-#include "mozilla/dom/JSOracleChild.h"
-
-#include "mozilla/Encoding.h"
-#include "mozilla/dom/ScriptDecoding.h"
-#include "mozilla/ipc/Endpoint.h"
 
 #include "js/CompileOptions.h"
 #include "js/JSON.h"
 #include "js/SourceText.h"
 #include "js/experimental/CompileScript.h"
 #include "js/experimental/JSStencil.h"
+#include "mozilla/Encoding.h"
+#include "mozilla/dom/JSOracleChild.h"
+#include "mozilla/dom/ScriptDecoding.h"
+#include "mozilla/ipc/Endpoint.h"
 #include "xpcpublic.h"
 
 using namespace mozilla::dom;

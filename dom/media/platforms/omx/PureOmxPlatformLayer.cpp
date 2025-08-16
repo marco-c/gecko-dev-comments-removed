@@ -4,10 +4,11 @@
 
 
 
+#include "PureOmxPlatformLayer.h"
+
+#include "OmxCoreLibLinker.h"
 #include "OmxDataDecoder.h"
 #include "OmxPromiseLayer.h"
-#include "PureOmxPlatformLayer.h"
-#include "OmxCoreLibLinker.h"
 
 #ifdef LOG
 #  undef LOG

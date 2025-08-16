@@ -4,6 +4,7 @@
 
 
 #include "txNodeSetContext.h"
+
 #include "txNodeSet.h"
 
 const txXPathNode& txNodeSetContext::getContextNode() {

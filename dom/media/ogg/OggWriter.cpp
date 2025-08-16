@@ -3,8 +3,9 @@
 
 
 #include "OggWriter.h"
-#include "prtime.h"
+
 #include "mozilla/ProfilerLabels.h"
+#include "prtime.h"
 
 #define LOG(args, ...)
 

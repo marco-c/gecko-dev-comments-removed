@@ -4,11 +4,13 @@
 
 
 
-#include "nscore.h"
-#include "nsTextFragmentImpl.h"
-#include "mozilla/Assertions.h"
-#include <algorithm>
 #include <altivec.h>
+
+#include <algorithm>
+
+#include "mozilla/Assertions.h"
+#include "nsTextFragmentImpl.h"
+#include "nscore.h"
 
 namespace mozilla {
 namespace VMX {

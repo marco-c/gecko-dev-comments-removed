@@ -4,11 +4,12 @@
 
 
 
+#include "mozilla/dom/IdentityCredential.h"
+
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Fetch.h"
-#include "mozilla/dom/IdentityCredential.h"
-#include "mozilla/dom/WebIdentityHandler.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/WebIdentityHandler.h"
 #include "nsIGlobalObject.h"
 #include "nsIIdentityCredentialStorageService.h"
 #include "nsNetUtil.h"

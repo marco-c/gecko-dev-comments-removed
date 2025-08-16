@@ -3,8 +3,9 @@
 
 
 
-#include "mozilla/dom/VideoTrack.h"
 #include "mozilla/dom/VideoTrackList.h"
+
+#include "mozilla/dom/VideoTrack.h"
 #include "mozilla/dom/VideoTrackListBinding.h"
 
 namespace mozilla::dom {

@@ -5,10 +5,12 @@
 
 
 #include "mozilla/dom/SVGMatrix.h"
-#include "nsError.h"
+
 #include <math.h>
-#include "mozilla/dom/SVGMatrixBinding.h"
+
 #include "mozilla/FloatingPoint.h"
+#include "mozilla/dom/SVGMatrixBinding.h"
+#include "nsError.h"
 
 const double radPerDegree = 2.0 * M_PI / 360.0;
 

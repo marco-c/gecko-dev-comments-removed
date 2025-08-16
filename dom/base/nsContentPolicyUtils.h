@@ -15,14 +15,13 @@
 #define __nsContentPolicyUtils_h__
 
 #include "mozilla/BasePrincipal.h"
-
+#include "mozilla/dom/nsCSPService.h"
 #include "nsContentUtils.h"
-#include "nsIContentPolicy.h"
 #include "nsIContent.h"
+#include "nsIContentPolicy.h"
 #include "nsIURI.h"
 #include "nsServiceManagerUtils.h"
 #include "nsStringFwd.h"
-#include "mozilla/dom/nsCSPService.h"
 
 
 #include "mozilla/dom/Document.h"

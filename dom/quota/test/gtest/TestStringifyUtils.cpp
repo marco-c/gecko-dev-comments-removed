@@ -4,9 +4,8 @@
 
 
 
-#include "mozilla/dom/quota/StringifyUtils.h"
-
 #include "gtest/gtest.h"
+#include "mozilla/dom/quota/StringifyUtils.h"
 
 namespace mozilla::dom::quota {
 

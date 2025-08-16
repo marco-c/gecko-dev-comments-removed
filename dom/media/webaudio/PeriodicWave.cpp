@@ -5,6 +5,7 @@
 
 
 #include "PeriodicWave.h"
+
 #include "AudioContext.h"
 #include "mozilla/dom/PeriodicWaveBinding.h"
 

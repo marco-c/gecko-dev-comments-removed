@@ -4,8 +4,9 @@
 
 
 
-#include "mozilla/dom/NavigationBinding.h"
 #include "mozilla/dom/NavigationUtils.h"
+
+#include "mozilla/dom/NavigationBinding.h"
 
 namespace mozilla::dom {
 

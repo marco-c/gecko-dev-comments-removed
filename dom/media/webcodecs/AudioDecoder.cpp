@@ -5,8 +5,6 @@
 
 
 #include "mozilla/dom/AudioDecoder.h"
-#include "mozilla/dom/AudioDecoderBinding.h"
-#include "mozilla/dom/TypedArray.h"
 
 #include "DecoderTraits.h"
 #include "MediaContainerType.h"
@@ -18,10 +16,12 @@
 #include "mozilla/Try.h"
 #include "mozilla/Unused.h"
 #include "mozilla/dom/AudioDataBinding.h"
+#include "mozilla/dom/AudioDecoderBinding.h"
 #include "mozilla/dom/EncodedAudioChunk.h"
 #include "mozilla/dom/EncodedAudioChunkBinding.h"
 #include "mozilla/dom/ImageUtils.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/TypedArray.h"
 #include "mozilla/dom/WebCodecsUtils.h"
 #include "nsPrintfCString.h"
 #include "nsReadableUtils.h"

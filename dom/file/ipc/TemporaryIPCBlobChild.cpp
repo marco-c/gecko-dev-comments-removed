@@ -5,10 +5,12 @@
 
 
 #include "TemporaryIPCBlobChild.h"
-#include "mozilla/dom/BlobImpl.h"
-#include "mozilla/dom/MutableBlobStorage.h"
-#include "mozilla/dom/IPCBlobUtils.h"
+
 #include <private/pprio.h>
+
+#include "mozilla/dom/BlobImpl.h"
+#include "mozilla/dom/IPCBlobUtils.h"
+#include "mozilla/dom/MutableBlobStorage.h"
 
 namespace mozilla::dom {
 

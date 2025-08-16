@@ -4,15 +4,16 @@
 
 
 
+#include "mozilla/dom/HTMLSlotElement.h"
+
+#include "mozilla/AppShutdown.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/Document.h"
-#include "mozilla/dom/HTMLSlotElement.h"
 #include "mozilla/dom/HTMLSlotElementBinding.h"
 #include "mozilla/dom/HTMLUnknownElement.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "mozilla/dom/Text.h"
-#include "mozilla/AppShutdown.h"
 #include "nsContentUtils.h"
 #include "nsGkAtoms.h"
 

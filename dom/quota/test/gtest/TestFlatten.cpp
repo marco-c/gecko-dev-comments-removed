@@ -5,9 +5,7 @@
 
 
 #include "Flatten.h"
-
 #include "gtest/gtest.h"
-
 #include "mozilla/Unused.h"
 #include "nsTArray.h"
 

@@ -3,9 +3,11 @@
 
 
 #include "BufferStream.h"
+
+#include <algorithm>
+
 #include "MediaData.h"
 #include "MediaResource.h"
-#include <algorithm>
 
 namespace mozilla {
 

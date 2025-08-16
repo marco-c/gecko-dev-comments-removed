@@ -5,9 +5,8 @@
 
 
 #include "gtest/gtest.h"
-
-#include "mozilla/dom/Promise.h"
 #include "mozilla/dom/Promise-inl.h"
+#include "mozilla/dom/Promise.h"
 #include "xpcpublic.h"
 
 using namespace mozilla;

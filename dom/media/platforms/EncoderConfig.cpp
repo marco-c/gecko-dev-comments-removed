@@ -5,6 +5,7 @@
 
 
 #include "EncoderConfig.h"
+
 #include "ImageContainer.h"
 #include "MP4Decoder.h"
 #include "VPXDecoder.h"

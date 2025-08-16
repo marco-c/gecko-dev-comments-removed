@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/ReportBody.h"
+
 #include "nsIGlobalObject.h"
 
 namespace mozilla::dom {

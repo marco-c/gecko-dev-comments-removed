@@ -3,11 +3,11 @@
 
 
 
-#include "txExpr.h"
 #include "nsAtom.h"
 #include "nsGkAtoms.h"
-#include "txXPathTreeWalker.h"
+#include "txExpr.h"
 #include "txIXPathContext.h"
+#include "txXPathTreeWalker.h"
 
 txNameTest::txNameTest(nsAtom* aPrefix, nsAtom* aLocalName, int32_t aNSID,
                        uint16_t aNodeType)

@@ -3,14 +3,13 @@
 
 
 
-#include "WebGL2Context.h"
-
 #include "GLContext.h"
 #include "GLScreenBuffer.h"
-#include "mozilla/CheckedInt.h"
+#include "WebGL2Context.h"
 #include "WebGLContextUtils.h"
 #include "WebGLFormats.h"
 #include "WebGLFramebuffer.h"
+#include "mozilla/CheckedInt.h"
 
 namespace mozilla {
 

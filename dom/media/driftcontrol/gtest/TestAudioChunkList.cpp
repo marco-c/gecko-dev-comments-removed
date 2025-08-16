@@ -3,9 +3,8 @@
 
 
 
-#include "gtest/gtest.h"
-
 #include "AudioChunkList.h"
+#include "gtest/gtest.h"
 #include "nsContentUtils.h"
 
 using namespace mozilla;

@@ -3,23 +3,21 @@
 
 
 
-#if !defined(mozilla_dom_HTMLCanvasElement_h)
-#  define mozilla_dom_HTMLCanvasElement_h
+#ifndef mozilla_dom_HTMLCanvasElement_h
+#define mozilla_dom_HTMLCanvasElement_h
 
-#  include "LayoutConstants.h"
-#  include "mozilla/Attributes.h"
-#  include "mozilla/StateWatching.h"
-#  include "mozilla/WeakPtr.h"
-#  include "nsIDOMEventListener.h"
-#  include "nsIObserver.h"
-#  include "nsGenericHTMLElement.h"
-#  include "nsGkAtoms.h"
-#  include "nsSize.h"
-#  include "nsError.h"
-
-#  include "mozilla/dom/CanvasRenderingContextHelper.h"
-#  include "mozilla/gfx/Rect.h"
-#  include "mozilla/layers/LayersTypes.h"
+#include "LayoutConstants.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/StateWatching.h"
+#include "mozilla/WeakPtr.h"
+#include "mozilla/dom/CanvasRenderingContextHelper.h"
+#include "mozilla/gfx/Rect.h"
+#include "mozilla/layers/LayersTypes.h"
+#include "nsError.h"
+#include "nsGenericHTMLElement.h"
+#include "nsGkAtoms.h"
+#include "nsIObserver.h"
+#include "nsSize.h"
 
 class nsICanvasRenderingContextInternal;
 class nsIInputStream;

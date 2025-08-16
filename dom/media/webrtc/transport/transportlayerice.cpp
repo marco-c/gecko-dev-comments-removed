@@ -48,8 +48,8 @@
 
 
 extern "C" {
-#include "nr_api.h"
 #include "ice_util.h"
+#include "nr_api.h"
 #include "transport_addr.h"
 }
 

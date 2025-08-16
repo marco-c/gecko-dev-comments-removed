@@ -4,9 +4,10 @@
 
 
 
-#include "mozilla/dom/ParentProcessMessageManager.h"
 #include "mozilla/dom/ProcessMessageManager.h"
+
 #include "mozilla/dom/MessageManagerBinding.h"
+#include "mozilla/dom/ParentProcessMessageManager.h"
 #include "nsContentUtils.h"
 
 namespace mozilla::dom {

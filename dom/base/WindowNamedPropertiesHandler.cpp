@@ -5,6 +5,7 @@
 
 
 #include "WindowNamedPropertiesHandler.h"
+
 #include "mozilla/dom/EventTargetBinding.h"
 #include "mozilla/dom/ProxyHandlerUtils.h"
 #include "mozilla/dom/WindowBinding.h"

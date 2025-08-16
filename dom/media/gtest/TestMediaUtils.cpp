@@ -3,9 +3,8 @@
 
 
 
-#include "gtest/gtest.h"
-
 #include "MediaUtils.h"
+#include "gtest/gtest.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/gtest/MozHelpers.h"

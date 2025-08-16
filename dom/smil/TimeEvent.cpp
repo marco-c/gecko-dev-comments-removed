@@ -4,12 +4,13 @@
 
 
 
-#include "mozilla/ContentEvents.h"
 #include "mozilla/dom/TimeEvent.h"
+
+#include "mozilla/ContentEvents.h"
+#include "nsGlobalWindowInner.h"
 #include "nsIDocShell.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsPresContext.h"
-#include "nsGlobalWindowInner.h"
 
 namespace mozilla::dom {
 

@@ -4,15 +4,14 @@
 
 
 
-#include "nsWrapperCacheInlines.h"
-
-#include "jsfriendapi.h"
 #include "js/Class.h"
 #include "js/Proxy.h"
+#include "jsfriendapi.h"
 #include "mozilla/CycleCollectedJSRuntime.h"
 #include "mozilla/HoldDropJSObjects.h"
 #include "nsCycleCollectionTraversalCallback.h"
 #include "nsCycleCollector.h"
+#include "nsWrapperCacheInlines.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

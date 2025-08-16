@@ -3,6 +3,7 @@
 
 
 #include "RemoteDecodeUtils.h"
+
 #include "mozilla/ipc/UtilityProcessChild.h"
 
 namespace mozilla {

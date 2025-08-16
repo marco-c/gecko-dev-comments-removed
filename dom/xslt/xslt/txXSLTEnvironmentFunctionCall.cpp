@@ -3,13 +3,13 @@
 
 
 
-#include "txIXPathContext.h"
-#include "nsGkAtoms.h"
 #include "nsError.h"
+#include "nsGkAtoms.h"
+#include "txExpandedName.h"
+#include "txIXPathContext.h"
+#include "txNamespaceMap.h"
 #include "txXMLUtils.h"
 #include "txXSLTFunctions.h"
-#include "txExpandedName.h"
-#include "txNamespaceMap.h"
 
 nsresult txXSLTEnvironmentFunctionCall::evaluate(txIEvalContext* aContext,
                                                  txAExprResult** aResult) {

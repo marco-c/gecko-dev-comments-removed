@@ -4,13 +4,14 @@
 
 
 
+#include "nsHTTPSOnlyStreamListener.h"
+
 #include "NSSErrorsService.h"
-#include "mozilla/glean/DomSecurityMetrics.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/WindowGlobalParent.h"
+#include "mozilla/glean/DomSecurityMetrics.h"
 #include "mozpkix/pkixnss.h"
 #include "nsCOMPtr.h"
-#include "nsHTTPSOnlyStreamListener.h"
 #include "nsHTTPSOnlyUtils.h"
 #include "nsIChannel.h"
 #include "nsIRequest.h"

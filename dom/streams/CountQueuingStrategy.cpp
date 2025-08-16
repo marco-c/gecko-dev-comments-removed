@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/CountQueuingStrategy.h"
+
 #include "mozilla/dom/FunctionBinding.h"
 #include "mozilla/dom/QueuingStrategyBinding.h"
 #include "nsCOMPtr.h"

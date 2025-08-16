@@ -4,14 +4,15 @@
 
 
 
+#include "PaymentRequestData.h"
+
+#include "PaymentRequestUtils.h"
 #include "mozilla/dom/PaymentRequestBinding.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "nsArrayUtils.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIMutableArray.h"
 #include "nsUnicharUtils.h"
-#include "PaymentRequestData.h"
-#include "PaymentRequestUtils.h"
 
 namespace mozilla::dom::payments {
 

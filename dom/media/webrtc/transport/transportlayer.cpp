@@ -5,8 +5,9 @@
 
 
 
-#include "logging.h"
 #include "transportlayer.h"
+
+#include "logging.h"
 
 
 namespace mozilla {

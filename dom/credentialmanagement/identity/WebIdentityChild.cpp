@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/WebIdentityChild.h"
+
 #include "mozilla/dom/WebIdentityHandler.h"
 #include "mozilla/dom/WindowContext.h"
 #include "nsGlobalWindowOuter.h"

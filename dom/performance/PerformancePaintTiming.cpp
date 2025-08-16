@@ -5,8 +5,9 @@
 
 
 #include "PerformancePaintTiming.h"
-#include "Performance.h"
+
 #include "MainThreadUtils.h"
+#include "Performance.h"
 #include "mozilla/dom/PerformanceMeasureBinding.h"
 #include "nsRFPService.h"
 

@@ -5,11 +5,12 @@
 
 
 #include "MediaDrmProxySupport.h"
+
+#include "MediaCodec.h"  
 #include "MediaDrmCDMCallbackProxy.h"
 #include "mozilla/EMEUtils.h"
 #include "mozilla/java/MediaDrmProxyNatives.h"
 #include "mozilla/java/SessionKeyInfoWrappers.h"
-#include "MediaCodec.h"  
 
 namespace mozilla {
 

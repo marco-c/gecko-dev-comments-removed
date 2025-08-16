@@ -8,9 +8,9 @@
 #define DOM_SMIL_SMILTARGETIDENTIFIER_H_
 
 
+#include "mozilla/dom/Element.h"
 #include "nsAtom.h"
 #include "nsIContent.h"
-#include "mozilla/dom/Element.h"
 
 class nsIContent;
 

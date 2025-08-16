@@ -4,8 +4,9 @@
 
 
 
-#include "CookieStore.h"
 #include "CookieStoreChild.h"
+
+#include "CookieStore.h"
 #include "mozilla/ipc/PBackgroundChild.h"
 
 namespace mozilla {

@@ -3,22 +3,22 @@
 
 
 
-#if !defined(MediaInfo_h)
-#  define MediaInfo_h
+#ifndef MediaInfo_h
+#define MediaInfo_h
 
-#  include "mozilla/UniquePtr.h"
-#  include "mozilla/RefPtr.h"
-#  include "mozilla/Variant.h"
-#  include "nsTHashMap.h"
-#  include "nsString.h"
-#  include "nsTArray.h"
-#  include "AudioConfig.h"
-#  include "ImageTypes.h"
-#  include "MediaData.h"
-#  include "TimeUnits.h"
-#  include "mozilla/gfx/Point.h"  
-#  include "mozilla/gfx/Rect.h"   
-#  include "mozilla/gfx/Types.h"  
+#include "AudioConfig.h"
+#include "ImageTypes.h"
+#include "MediaData.h"
+#include "TimeUnits.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/UniquePtr.h"
+#include "mozilla/Variant.h"
+#include "mozilla/gfx/Point.h"  
+#include "mozilla/gfx/Rect.h"   
+#include "mozilla/gfx/Types.h"  
+#include "nsString.h"
+#include "nsTArray.h"
+#include "nsTHashMap.h"
 
 namespace mozilla {
 

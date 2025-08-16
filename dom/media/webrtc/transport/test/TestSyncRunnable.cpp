@@ -3,11 +3,10 @@
 
 
 
+#include "gtest/gtest.h"
+#include "mozilla/SyncRunnable.h"
 #include "nsIThread.h"
 #include "nsThreadUtils.h"
-#include "mozilla/SyncRunnable.h"
-
-#include "gtest/gtest.h"
 
 using namespace mozilla;
 

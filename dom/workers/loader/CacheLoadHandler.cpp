@@ -5,31 +5,27 @@
 
 
 #include "CacheLoadHandler.h"
+
 #include "ScriptResponseHeaderProcessor.h"  
 #include "WorkerLoadContext.h"              
-
-#include "nsIPrincipal.h"
-
-#include "nsIThreadRetargetableRequest.h"
-#include "nsIXPConnect.h"
-
 #include "jsapi.h"
-#include "nsNetUtil.h"
-
 #include "mozilla/Assertions.h"
 #include "mozilla/Encoding.h"
-#include "mozilla/dom/CacheBinding.h"
-#include "mozilla/dom/PolicyContainer.h"
-#include "mozilla/dom/cache/CacheTypes.h"
-#include "mozilla/dom/Response.h"
-#include "mozilla/dom/ServiceWorkerBinding.h"  
 #include "mozilla/Result.h"
 #include "mozilla/TaskQueue.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/CacheBinding.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/PolicyContainer.h"
+#include "mozilla/dom/Response.h"
+#include "mozilla/dom/ServiceWorkerBinding.h"  
 #include "mozilla/dom/WorkerScope.h"
-
+#include "mozilla/dom/cache/CacheTypes.h"
 #include "mozilla/dom/workerinternals/ScriptLoader.h"  
+#include "nsIPrincipal.h"
+#include "nsIThreadRetargetableRequest.h"
+#include "nsIXPConnect.h"
+#include "nsNetUtil.h"
 
 namespace mozilla {
 namespace dom {

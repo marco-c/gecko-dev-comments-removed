@@ -5,10 +5,11 @@
 
 
 #include "mozilla/dom/ChannelSplitterNode.h"
-#include "mozilla/dom/ChannelSplitterNodeBinding.h"
+
 #include "AudioNodeEngine.h"
 #include "AudioNodeTrack.h"
 #include "Tracing.h"
+#include "mozilla/dom/ChannelSplitterNodeBinding.h"
 
 namespace mozilla::dom {
 

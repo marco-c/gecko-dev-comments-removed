@@ -4,11 +4,12 @@
 
 
 
+#include "ReaderProxy.h"
+
+#include "MediaFormatReader.h"
+#include "TimeUnits.h"
 #include "mozilla/CDMProxy.h"
 #include "mozilla/MozPromise.h"
-#include "MediaFormatReader.h"
-#include "ReaderProxy.h"
-#include "TimeUnits.h"
 
 namespace mozilla {
 

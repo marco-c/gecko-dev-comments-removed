@@ -4,9 +4,10 @@
 
 
 #include "CDMStorageIdProvider.h"
+
 #include "GMPLog.h"
-#include "nsCOMPtr.h"
 #include "mozilla/IntegerPrintfMacros.h"
+#include "nsCOMPtr.h"
 #include "nsICryptoHash.h"
 
 #ifdef SUPPORT_STORAGE_ID

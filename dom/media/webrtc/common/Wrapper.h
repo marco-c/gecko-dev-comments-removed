@@ -47,8 +47,9 @@
 
 
 #include <map>
-#include "prlock.h"
+
 #include "mozilla/Assertions.h"
+#include "prlock.h"
 
 
 

@@ -4,10 +4,11 @@
 
 
 
-#include "mozilla/EventListenerManager.h"
 #include "mozilla/dom/EventTarget.h"
-#include "mozilla/dom/EventTargetBinding.h"
+
+#include "mozilla/EventListenerManager.h"
 #include "mozilla/dom/ConstructibleEventTarget.h"
+#include "mozilla/dom/EventTargetBinding.h"
 #include "mozilla/dom/Nullable.h"
 #include "mozilla/dom/WindowProxyHolder.h"
 #include "nsGlobalWindowInner.h"

@@ -5,8 +5,9 @@
 
 
 #include "mozilla/dom/CSPViolationReportBody.h"
-#include "mozilla/dom/ReportingBinding.h"
+
 #include "mozilla/JSONWriter.h"
+#include "mozilla/dom/ReportingBinding.h"
 
 namespace mozilla::dom {
 

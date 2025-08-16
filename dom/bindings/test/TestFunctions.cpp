@@ -4,14 +4,15 @@
 
 
 
+#include "mozilla/dom/TestFunctions.h"
+
+#include "mozITestInterfaceJS.h"
+#include "mozilla/StringBuffer.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/Document.h"
-#include "mozilla/dom/TestFunctions.h"
 #include "mozilla/dom/TestFunctionsBinding.h"
 #include "mozilla/dom/WindowBinding.h"
 #include "mozilla/dom/WrapperCachedNonISupportsTestInterface.h"
-#include "mozilla/StringBuffer.h"
-#include "mozITestInterfaceJS.h"
 #include "nsComponentManagerUtils.h"
 #include "nsGlobalWindowInner.h"
 

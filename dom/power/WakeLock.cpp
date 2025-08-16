@@ -5,14 +5,15 @@
 
 
 #include "WakeLock.h"
-#include "mozilla/dom/ContentParent.h"
-#include "mozilla/dom/Event.h"  
+
 #include "mozilla/Hal.h"
 #include "mozilla/HalWakeLock.h"
-#include "nsError.h"
+#include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/Document.h"
-#include "nsPIDOMWindow.h"
+#include "mozilla/dom/Event.h"  
+#include "nsError.h"
 #include "nsIPropertyBag2.h"
+#include "nsPIDOMWindow.h"
 
 using namespace mozilla::hal;
 

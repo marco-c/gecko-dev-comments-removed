@@ -4,20 +4,22 @@
 
 
 
+#include "mozilla/SMILTimeValueSpec.h"
+
+#include <limits>
+
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/SMILInstanceTime.h"
 #include "mozilla/SMILInterval.h"
 #include "mozilla/SMILParserUtils.h"
 #include "mozilla/SMILTimeContainer.h"
-#include "mozilla/SMILTimedElement.h"
-#include "mozilla/SMILTimeValueSpec.h"
 #include "mozilla/SMILTimeValue.h"
+#include "mozilla/SMILTimedElement.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/SVGAnimationElement.h"
 #include "mozilla/dom/TimeEvent.h"
 #include "nsString.h"
-#include <limits>
 
 using namespace mozilla::dom;
 

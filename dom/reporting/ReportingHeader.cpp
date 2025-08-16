@@ -5,20 +5,21 @@
 
 
 #include "mozilla/dom/ReportingHeader.h"
+
 #include <limits>
 
 #include "js/Array.h"  
 #include "js/JSON.h"
 #include "js/PropertyAndElement.h"  
+#include "mozilla/OriginAttributes.h"
+#include "mozilla/Services.h"
+#include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/dom/ReportingBinding.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/SimpleGlobalObject.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/net/SFVService.h"
-#include "mozilla/OriginAttributes.h"
-#include "mozilla/Services.h"
-#include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/StaticPtr.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
 #include "nsIEffectiveTLDService.h"

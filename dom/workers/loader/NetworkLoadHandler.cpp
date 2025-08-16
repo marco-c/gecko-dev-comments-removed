@@ -5,8 +5,17 @@
 
 
 #include "NetworkLoadHandler.h"
-#include "CacheLoadHandler.h"  
 
+#include "CacheLoadHandler.h"  
+#include "mozilla/Encoding.h"
+#include "mozilla/dom/BlobURLProtocolHandler.h"
+#include "mozilla/dom/InternalResponse.h"
+#include "mozilla/dom/Response.h"
+#include "mozilla/dom/ScriptLoader.h"
+#include "mozilla/dom/ServiceWorkerBinding.h"
+#include "mozilla/dom/ServiceWorkerManager.h"
+#include "mozilla/dom/WorkerScope.h"
+#include "mozilla/dom/workerinternals/ScriptLoader.h"  
 #include "nsContentUtils.h"
 #include "nsIChannel.h"
 #include "nsIHttpChannel.h"
@@ -14,17 +23,6 @@
 #include "nsIPrincipal.h"
 #include "nsIScriptError.h"
 #include "nsNetUtil.h"
-
-#include "mozilla/Encoding.h"
-#include "mozilla/dom/BlobURLProtocolHandler.h"
-#include "mozilla/dom/InternalResponse.h"
-#include "mozilla/dom/ServiceWorkerBinding.h"
-#include "mozilla/dom/ServiceWorkerManager.h"
-#include "mozilla/dom/ScriptLoader.h"
-#include "mozilla/dom/Response.h"
-#include "mozilla/dom/WorkerScope.h"
-
-#include "mozilla/dom/workerinternals/ScriptLoader.h"  
 
 using mozilla::ipc::PrincipalInfo;
 

@@ -5,6 +5,7 @@
 
 
 #include "nsIGlobalObject.h"
+
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/GlobalFreezeObserver.h"
@@ -21,8 +22,8 @@
 #include "mozilla/dom/ServiceWorkerRegistration.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "nsContentUtils.h"
-#include "nsThreadUtils.h"
 #include "nsGlobalWindowInner.h"
+#include "nsThreadUtils.h"
 
 
 constexpr auto MAX_REPORT_RECORDS = 100;

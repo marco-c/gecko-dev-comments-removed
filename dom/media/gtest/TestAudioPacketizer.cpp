@@ -3,9 +3,11 @@
 
 
 
-#include <stdint.h>
 #include <math.h>
+#include <stdint.h>
+
 #include <memory>
+
 #include "../AudioPacketizer.h"
 #include "../TimedPacketizer.h"
 #include "gtest/gtest.h"

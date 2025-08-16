@@ -5,13 +5,14 @@
 
 
 #include "XULMenuBarElement.h"
+
 #include "MenuBarListener.h"
 #include "XULButtonElement.h"
-#include "nsXULPopupManager.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/dom/BindContext.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/Try.h"
+#include "mozilla/dom/BindContext.h"
+#include "nsXULPopupManager.h"
 
 namespace mozilla::dom {
 

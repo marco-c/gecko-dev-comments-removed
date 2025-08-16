@@ -5,8 +5,9 @@
 
 
 #include "mozilla/dom/Text.h"
-#include "nsTextNode.h"
+
 #include "mozAutoDocUpdate.h"
+#include "nsTextNode.h"
 
 namespace mozilla::dom {
 

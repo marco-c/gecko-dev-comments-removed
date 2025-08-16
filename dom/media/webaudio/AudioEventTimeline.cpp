@@ -5,8 +5,8 @@
 
 
 #include "AudioEventTimeline.h"
-#include "AudioNodeTrack.h"
 
+#include "AudioNodeTrack.h"
 #include "mozilla/ErrorResult.h"
 
 using mozilla::Span;

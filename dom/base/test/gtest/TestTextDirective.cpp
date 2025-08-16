@@ -4,8 +4,8 @@
 
 
 
-#include "gtest/gtest.h"
 #include "TextDirectiveUtil.h"
+#include "gtest/gtest.h"
 
 using namespace mozilla::dom;
 

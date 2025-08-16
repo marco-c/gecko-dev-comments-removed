@@ -5,12 +5,13 @@
 
 
 #include "mozilla/dom/MediaKeyStatusMap.h"
-#include "nsPIDOMWindow.h"
-#include "mozilla/dom/BufferSourceBinding.h"
-#include "mozilla/dom/UnionTypes.h"
-#include "mozilla/dom/ToJSValue.h"
-#include "mozilla/EMEUtils.h"
+
 #include "GMPUtils.h"
+#include "mozilla/EMEUtils.h"
+#include "mozilla/dom/BufferSourceBinding.h"
+#include "mozilla/dom/ToJSValue.h"
+#include "mozilla/dom/UnionTypes.h"
+#include "nsPIDOMWindow.h"
 
 namespace mozilla::dom {
 

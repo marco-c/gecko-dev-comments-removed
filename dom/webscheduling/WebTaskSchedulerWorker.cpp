@@ -5,8 +5,9 @@
 
 
 #include "WebTaskSchedulerWorker.h"
-#include "mozilla/dom/WorkerScope.h"
+
 #include "mozilla/dom/TimeoutManager.h"
+#include "mozilla/dom/WorkerScope.h"
 
 namespace mozilla::dom {
 WebTaskWorkerRunnable::WebTaskWorkerRunnable(

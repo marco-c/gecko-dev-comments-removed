@@ -2,12 +2,13 @@
 
 
 
-#include "mozilla/Try.h"
-#include "mozilla/Unused.h"
 #include "SinfParser.h"
+
 #include "AtomType.h"
 #include "Box.h"
 #include "ByteStream.h"
+#include "mozilla/Try.h"
+#include "mozilla/Unused.h"
 
 namespace mozilla {
 

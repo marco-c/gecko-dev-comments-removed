@@ -3,14 +3,15 @@
 
 
 
-#include "gtest/gtest.h"
-#include "mozilla/ErrorResult.h"
-#include "mozilla/dom/TimeRanges.h"
-#include "TimeUnits.h"
-#include "Intervals.h"
 #include <algorithm>
 #include <type_traits>
 #include <vector>
+
+#include "Intervals.h"
+#include "TimeUnits.h"
+#include "gtest/gtest.h"
+#include "mozilla/ErrorResult.h"
+#include "mozilla/dom/TimeRanges.h"
 
 using namespace mozilla;
 

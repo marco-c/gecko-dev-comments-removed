@@ -4,23 +4,23 @@
 
 
 
-#include "mozilla/dom/PWebAuthnTransactionParent.h"
-#include "mozilla/ipc/BackgroundParent.h"
+#include "WinWebAuthnService.h"
+
+#include "WebAuthnAutoFillEntry.h"
+#include "WebAuthnEnumStrings.h"
+#include "WebAuthnResult.h"
+#include "WebAuthnTransportIdentifiers.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/Unused.h"
-
+#include "mozilla/dom/PWebAuthnTransactionParent.h"
+#include "mozilla/ipc/BackgroundParent.h"
 #include "nsTextFormatter.h"
 #include "nsWindowsHelpers.h"
-#include "WebAuthnAutoFillEntry.h"
-#include "WebAuthnEnumStrings.h"
-#include "WebAuthnResult.h"
-#include "WebAuthnTransportIdentifiers.h"
 #include "winwebauthn/webauthn.h"
-#include "WinWebAuthnService.h"
 
 namespace mozilla::dom {
 

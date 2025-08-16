@@ -5,6 +5,7 @@
 
 
 #include "WorkerChannelInfo.h"
+
 #include "mozilla/dom/BrowsingContext.h"
 
 namespace mozilla::dom {

@@ -4,11 +4,12 @@
 
 
 
+#include "mozilla/dom/Pose.h"
+
 #include "js/experimental/TypedData.h"  
 #include "mozilla/ErrorResult.h"
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/dom/TypedArray.h"
-#include "mozilla/dom/Pose.h"
 
 namespace mozilla::dom {
 

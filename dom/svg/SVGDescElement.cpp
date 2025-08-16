@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/SVGDescElement.h"
+
 #include "mozilla/dom/SVGDescElementBinding.h"
 
 NS_IMPL_NS_NEW_SVG_ELEMENT(Desc)

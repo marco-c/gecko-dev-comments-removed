@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/MessageManagerGlobal.h"
+
 #include "mozilla/IntentionalCrash.h"
 #include "mozilla/Logging.h"
 #include "nsContentUtils.h"

@@ -5,10 +5,11 @@
 
 
 #include "mozilla/dom/TestInterfaceMaplikeObject.h"
-#include "mozilla/dom/TestInterfaceMaplike.h"
-#include "mozilla/dom/TestInterfaceJSMaplikeSetlikeIterableBinding.h"
-#include "nsPIDOMWindow.h"
+
 #include "mozilla/dom/BindingUtils.h"
+#include "mozilla/dom/TestInterfaceJSMaplikeSetlikeIterableBinding.h"
+#include "mozilla/dom/TestInterfaceMaplike.h"
+#include "nsPIDOMWindow.h"
 
 namespace mozilla::dom {
 

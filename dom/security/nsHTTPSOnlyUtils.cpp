@@ -4,17 +4,18 @@
 
 
 
-#include "mozilla/Components.h"
+#include "nsHTTPSOnlyUtils.h"
+
 #include "mozilla/ClearOnShutdown.h"
-#include "mozilla/TimeStamp.h"
-#include "mozilla/glean/DomSecurityMetrics.h"
+#include "mozilla/Components.h"
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/OriginAttributes.h"
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/TimeStamp.h"
+#include "mozilla/glean/DomSecurityMetrics.h"
 #include "mozilla/net/DNS.h"
 #include "nsContentUtils.h"
 #include "nsDNSPrefetch.h"
-#include "nsHTTPSOnlyUtils.h"
 #include "nsIEffectiveTLDService.h"
 #include "nsIHttpChannel.h"
 #include "nsIHttpChannelInternal.h"

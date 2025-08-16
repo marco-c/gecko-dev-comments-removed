@@ -2,12 +2,12 @@
 
 
 
+#include <stdio.h>
+
+#include "VPXDecoder.h"
 #include "gtest/gtest.h"
 #include "mozilla/ArrayUtils.h"
 #include "nsTArray.h"
-#include "VPXDecoder.h"
-
-#include <stdio.h>
 
 using namespace mozilla;
 

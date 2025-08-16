@@ -5,6 +5,7 @@
 
 
 #include "BasicCardPayment.h"
+
 #include "PaymentAddress.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ErrorResult.h"

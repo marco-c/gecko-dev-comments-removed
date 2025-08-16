@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/NavigationActivation.h"
+
 #include "mozilla/dom/NavigationActivationBinding.h"
 
 namespace mozilla::dom {

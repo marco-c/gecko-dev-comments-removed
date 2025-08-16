@@ -5,6 +5,7 @@
 
 
 #include "Connection.h"
+
 #include "ConnectionMainThread.h"
 #include "ConnectionWorker.h"
 #include "Constants.h"

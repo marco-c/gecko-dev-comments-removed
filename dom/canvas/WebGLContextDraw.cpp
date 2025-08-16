@@ -3,16 +3,12 @@
 
 
 
-#include "WebGLContext.h"
+#include <algorithm>
 
-#include "MozFramebuffer.h"
 #include "GLContext.h"
-#include "mozilla/CheckedInt.h"
-#include "mozilla/ProfilerLabels.h"
-#include "mozilla/ScopeExit.h"
-#include "mozilla/StaticPrefs_webgl.h"
-#include "nsPrintfCString.h"
+#include "MozFramebuffer.h"
 #include "WebGLBuffer.h"
+#include "WebGLContext.h"
 #include "WebGLContextUtils.h"
 #include "WebGLFormats.h"
 #include "WebGLFramebuffer.h"
@@ -22,8 +18,11 @@
 #include "WebGLTexture.h"
 #include "WebGLTransformFeedback.h"
 #include "WebGLVertexArray.h"
-
-#include <algorithm>
+#include "mozilla/CheckedInt.h"
+#include "mozilla/ProfilerLabels.h"
+#include "mozilla/ScopeExit.h"
+#include "mozilla/StaticPrefs_webgl.h"
+#include "nsPrintfCString.h"
 
 namespace mozilla {
 

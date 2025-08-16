@@ -5,8 +5,9 @@
 
 
 #include "GlobalTeardownObserver.h"
-#include "nsGlobalWindowInner.h"
+
 #include "mozilla/dom/Document.h"
+#include "nsGlobalWindowInner.h"
 
 namespace mozilla {
 

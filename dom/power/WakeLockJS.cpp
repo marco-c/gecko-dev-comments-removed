@@ -4,10 +4,16 @@
 
 
 
+#include "WakeLockJS.h"
+
 #include "ErrorList.h"
+#include "WakeLock.h"
+#include "WakeLockSentinel.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/Hal.h"
 #include "mozilla/Logging.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/EventTarget.h"
@@ -15,20 +21,15 @@
 #include "mozilla/dom/Navigator.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WakeLockBinding.h"
-#include "mozilla/Hal.h"
-#include "mozilla/StaticPrefs_dom.h"
 #include "nsCOMPtr.h"
 #include "nsCRT.h"
+#include "nsContentPermissionHelper.h"
 #include "nsError.h"
 #include "nsIGlobalObject.h"
 #include "nsISupports.h"
 #include "nsPIDOMWindow.h"
-#include "nsContentPermissionHelper.h"
 #include "nsServiceManagerUtils.h"
 #include "nscore.h"
-#include "WakeLock.h"
-#include "WakeLockJS.h"
-#include "WakeLockSentinel.h"
 
 namespace mozilla::dom {
 

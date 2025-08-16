@@ -4,12 +4,12 @@
 
 
 
+#include "ServiceWorkerContainerChild.h"
+
+#include "ServiceWorkerContainer.h"
 #include "mozilla/dom/PServiceWorkerContainerChild.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/dom/WorkerRef.h"
-
-#include "ServiceWorkerContainer.h"
-#include "ServiceWorkerContainerChild.h"
 
 namespace mozilla::dom {
 

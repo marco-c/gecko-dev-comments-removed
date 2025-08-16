@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/VideoColorSpace.h"
+
 #include "mozilla/dom/VideoColorSpaceBinding.h"
 #include "nsIGlobalObject.h"
 

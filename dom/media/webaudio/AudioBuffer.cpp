@@ -5,21 +5,23 @@
 
 
 #include "AudioBuffer.h"
-#include "mozilla/dom/AudioBufferBinding.h"
-#include "jsfriendapi.h"
+
+#include <numeric>
+
+#include "AudioChannelFormat.h"
+#include "AudioNodeEngine.h"
+#include "AudioSegment.h"
 #include "js/ArrayBuffer.h"             
 #include "js/experimental/TypedData.h"  
-#include "mozilla/ErrorResult.h"
-#include "AudioSegment.h"
-#include "AudioChannelFormat.h"
-#include "mozilla/PodOperations.h"
+#include "jsfriendapi.h"
 #include "mozilla/CheckedInt.h"
+#include "mozilla/ErrorResult.h"
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/MemoryReporting.h"
-#include "AudioNodeEngine.h"
+#include "mozilla/PodOperations.h"
+#include "mozilla/dom/AudioBufferBinding.h"
 #include "nsPrintfCString.h"
 #include "nsTHashSet.h"
-#include <numeric>
 
 namespace mozilla::dom {
 

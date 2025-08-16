@@ -5,13 +5,15 @@
 
 
 #include "MFTEncoder.h"
+
+#include <comdef.h>
+
+#include "WMFUtils.h"
 #include "mozilla/Logging.h"
-#include "mozilla/WindowsProcessMitigations.h"
 #include "mozilla/StaticPrefs_media.h"
+#include "mozilla/WindowsProcessMitigations.h"
 #include "mozilla/mscom/COMWrappers.h"
 #include "mozilla/mscom/Utils.h"
-#include "WMFUtils.h"
-#include <comdef.h>
 
 using Microsoft::WRL::ComPtr;
 

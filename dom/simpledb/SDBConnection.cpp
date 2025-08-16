@@ -13,7 +13,9 @@
 
 
 #include <stdint.h>
+
 #include <utility>
+
 #include "MainThreadUtils.h"
 #include "js/ArrayBuffer.h"
 #include "js/RootingAPI.h"

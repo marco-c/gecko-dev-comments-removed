@@ -2,8 +2,9 @@
 
 
 
-#include "WebrtcGmpVideoCodec.h"
 #include "GmpVideoCodec.h"
+
+#include "WebrtcGmpVideoCodec.h"
 
 namespace mozilla {
 

@@ -3,6 +3,9 @@
 
 
 #include "H264.h"
+
+#include <limits>
+
 #include "AnnexB.h"
 #include "BitReader.h"
 #include "BitWriter.h"
@@ -14,7 +17,6 @@
 #include "mozilla/Result.h"
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/Try.h"
-#include <limits>
 
 #define READSE(var, min, max)     \
   {                               \

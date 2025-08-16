@@ -4,16 +4,15 @@
 
 
 
-#include "ChromeUtils.h"
 #include "MozQueryInterface.h"
-#include "xptinfo.h"
 
 #include <string.h>
 
+#include "ChromeUtils.h"
 #include "jsapi.h"
-
 #include "mozilla/ErrorResult.h"
 #include "xpcpublic.h"
+#include "xptinfo.h"
 
 namespace mozilla::dom {
 

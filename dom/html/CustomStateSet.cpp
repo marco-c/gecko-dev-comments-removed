@@ -5,10 +5,11 @@
 
 
 #include "CustomStateSet.h"
+
+#include "mozilla/PresShell.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/ElementInternalsBinding.h"
 #include "mozilla/dom/HTMLElement.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/PresShell.h"
 
 namespace mozilla::dom {
 

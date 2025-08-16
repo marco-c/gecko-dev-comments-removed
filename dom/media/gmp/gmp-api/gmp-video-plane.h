@@ -34,8 +34,9 @@
 #ifndef GMP_VIDEO_PLANE_h_
 #define GMP_VIDEO_PLANE_h_
 
-#include "gmp-errors.h"
 #include <stdint.h>
+
+#include "gmp-errors.h"
 
 
 

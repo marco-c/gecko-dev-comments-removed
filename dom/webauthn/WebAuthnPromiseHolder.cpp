@@ -2,8 +2,9 @@
 
 
 
-#include "mozilla/AppShutdown.h"
 #include "WebAuthnPromiseHolder.h"
+
+#include "mozilla/AppShutdown.h"
 
 namespace mozilla::dom {
 

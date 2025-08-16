@@ -4,11 +4,12 @@
 
 
 
-#include "BasicCardPayment.h"
-#include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/dom/PaymentMethodChangeEvent.h"
-#include "mozilla/dom/PaymentRequestUpdateEvent.h"
+
+#include "BasicCardPayment.h"
 #include "PaymentRequestUtils.h"
+#include "mozilla/HoldDropJSObjects.h"
+#include "mozilla/dom/PaymentRequestUpdateEvent.h"
 
 namespace mozilla::dom {
 

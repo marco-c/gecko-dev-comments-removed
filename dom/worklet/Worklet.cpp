@@ -5,8 +5,8 @@
 
 
 #include "Worklet.h"
-#include "WorkletThread.h"
 
+#include "WorkletThread.h"
 #include "mozilla/dom/WorkletFetchHandler.h"
 #include "mozilla/dom/WorkletImpl.h"
 #include "xpcprivate.h"

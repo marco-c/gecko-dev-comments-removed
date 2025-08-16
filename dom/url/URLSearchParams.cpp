@@ -10,9 +10,11 @@
 #include "mozilla/Encoding.h"
 #include "encoding_rs.h"
 
+
 #include <new>
 #include <type_traits>
 #include <utility>
+
 #include "js/StructuredClone.h"
 #include "mozilla/ArrayIterator.h"
 #include "mozilla/Attributes.h"

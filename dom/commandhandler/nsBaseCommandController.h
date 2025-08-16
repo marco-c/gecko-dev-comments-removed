@@ -7,11 +7,11 @@
 #ifndef nsBaseCommandController_h__
 #define nsBaseCommandController_h__
 
+#include "nsControllerCommandTable.h"
 #include "nsIController.h"
 #include "nsIControllerContext.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsIWeakReferenceUtils.h"
-#include "nsControllerCommandTable.h"
 
 
 

@@ -4,8 +4,10 @@
 
 
 
-#if !defined(MediaSystemResourceTypes_h_)
-#  define MediaSystemResourceTypes_h_
+#ifndef MediaSystemResourceTypes_h_
+#define MediaSystemResourceTypes_h_
+
+#include <cstdint>
 
 namespace mozilla {
 

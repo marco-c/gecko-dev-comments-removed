@@ -5,12 +5,13 @@
 
 
 #include "FFmpegAudioDecoder.h"
-#include "FFmpegUtils.h"
+
 #include "AudioSampleFormat.h"
+#include "BufferReader.h"
 #include "FFmpegLog.h"
+#include "FFmpegUtils.h"
 #include "TimeUnits.h"
 #include "VideoUtils.h"
-#include "BufferReader.h"
 #include "libavutil/dict.h"
 #include "libavutil/samplefmt.h"
 #if defined(FFVPX_VERSION)
@@ -19,8 +20,8 @@
 #include "mozilla/StaticPrefs_media.h"
 
 #ifdef MOZ_WIDGET_ANDROID
-#  include "ffvpx/mediacodec.h"
 #  include "ffvpx/hwcontext_mediacodec.h"
+#  include "ffvpx/mediacodec.h"
 #endif
 
 namespace mozilla {

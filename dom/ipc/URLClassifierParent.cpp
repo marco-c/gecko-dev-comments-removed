@@ -5,11 +5,12 @@
 
 
 #include "URLClassifierParent.h"
+
+#include "mozilla/Unused.h"
+#include "mozilla/net/UrlClassifierFeatureResult.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIUrlClassifierFeature.h"
 #include "nsNetCID.h"
-#include "mozilla/net/UrlClassifierFeatureResult.h"
-#include "mozilla/Unused.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

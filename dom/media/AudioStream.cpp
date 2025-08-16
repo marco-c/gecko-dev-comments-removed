@@ -3,33 +3,35 @@
 
 
 
-#include <stdio.h>
-#include <math.h>
-#include <string.h>
-#include "mozilla/Logging.h"
-#include "prdtoa.h"
 #include "AudioStream.h"
+
+#include <math.h>
+#include <stdio.h>
+#include <string.h>
+
+#include <algorithm>
+
+#include "AudioConverter.h"
+#include "CubebUtils.h"
+#include "UnderrunHandler.h"
 #include "VideoUtils.h"
-#include "mozilla/dom/AudioDeviceInfo.h"
+#include "mozilla/Logging.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/Unused.h"
-#include <algorithm>
-#include "CubebUtils.h"
+#include "mozilla/dom/AudioDeviceInfo.h"
 #include "nsNativeCharsetUtils.h"
 #include "nsPrintfCString.h"
-#include "AudioConverter.h"
-#include "UnderrunHandler.h"
+#include "prdtoa.h"
 #if defined(XP_WIN)
 #  include "nsXULAppAPI.h"
 #endif
-#include "Tracing.h"
-#include "webaudio/blink/DenormalDisabler.h"
 #include "CallbackThreadRegistry.h"
-#include "mozilla/StaticPrefs_media.h"
-
 #include "RLBoxSoundTouch.h"
+#include "Tracing.h"
+#include "mozilla/StaticPrefs_media.h"
+#include "webaudio/blink/DenormalDisabler.h"
 
 namespace mozilla {
 

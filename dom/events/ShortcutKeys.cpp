@@ -5,10 +5,11 @@
 
 
 #include "ShortcutKeys.h"
+
 #include "mozilla/KeyEventHandler.h"
-#include "nsContentUtils.h"
-#include "nsAtom.h"
 #include "mozilla/TextEvents.h"
+#include "nsAtom.h"
+#include "nsContentUtils.h"
 
 namespace mozilla {
 

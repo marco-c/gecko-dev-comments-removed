@@ -3,9 +3,9 @@
 
 
 
-#include "gtest/gtest.h"
 #include "BlankDecoderModule.h"
 #include "ImageContainer.h"
+#include "gtest/gtest.h"
 
 using namespace mozilla;
 

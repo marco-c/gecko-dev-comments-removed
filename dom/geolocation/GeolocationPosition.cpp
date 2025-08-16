@@ -5,9 +5,9 @@
 
 
 #include "mozilla/dom/GeolocationPosition.h"
-#include "mozilla/dom/GeolocationCoordinates.h"
 
 #include "mozilla/FloatingPoint.h"
+#include "mozilla/dom/GeolocationCoordinates.h"
 #include "mozilla/dom/GeolocationPositionBinding.h"
 
 using mozilla::EqualOrBothNaN;

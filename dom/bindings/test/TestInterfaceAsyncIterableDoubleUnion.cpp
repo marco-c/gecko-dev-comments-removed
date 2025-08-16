@@ -5,10 +5,11 @@
 
 
 #include "mozilla/dom/TestInterfaceAsyncIterableDoubleUnion.h"
-#include "mozilla/dom/TestInterfaceJSMaplikeSetlikeIterableBinding.h"
-#include "nsPIDOMWindow.h"
+
 #include "mozilla/dom/BindingUtils.h"
+#include "mozilla/dom/TestInterfaceJSMaplikeSetlikeIterableBinding.h"
 #include "mozilla/dom/UnionTypes.h"
+#include "nsPIDOMWindow.h"
 
 namespace mozilla::dom {
 

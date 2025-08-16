@@ -7,8 +7,8 @@
 #ifndef mozAutoDocUpdate_h_
 #define mozAutoDocUpdate_h_
 
-#include "nsContentUtils.h"  
 #include "mozilla/dom/Document.h"
+#include "nsContentUtils.h"  
 #include "nsIDocumentObserver.h"
 
 

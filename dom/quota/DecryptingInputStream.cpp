@@ -5,8 +5,8 @@
 
 
 #include "DecryptingInputStream.h"
-#include "DecryptingInputStream_impl.h"
 
+#include "DecryptingInputStream_impl.h"
 #include "nsStreamUtils.h"
 
 namespace mozilla::dom::quota {

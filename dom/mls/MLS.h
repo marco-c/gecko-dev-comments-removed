@@ -9,9 +9,9 @@
 
 
 #include "mozilla/DOMEventTargetHelper.h"
-#include "mozilla/dom/Promise.h"
 #include "mozilla/dom/MLSBinding.h"
 #include "mozilla/dom/MLSTransactionChild.h"
+#include "mozilla/dom/Promise.h"
 #include "nsIGlobalObject.h"
 
 class nsIGlobalObject;

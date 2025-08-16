@@ -4,14 +4,14 @@
 
 
 
-#include "nsTHashMap.h"
 #include "WebTaskScheduler.h"
-#include "WebTaskSchedulerWorker.h"
-#include "WebTaskSchedulerMainThread.h"
-#include "nsGlobalWindowInner.h"
 
-#include "mozilla/dom/WorkerPrivate.h"
+#include "WebTaskSchedulerMainThread.h"
+#include "WebTaskSchedulerWorker.h"
 #include "mozilla/dom/TimeoutManager.h"
+#include "mozilla/dom/WorkerPrivate.h"
+#include "nsGlobalWindowInner.h"
+#include "nsTHashMap.h"
 
 namespace mozilla::dom {
 

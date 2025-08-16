@@ -5,18 +5,19 @@
 
 
 #include "PortalLocationProvider.h"
-#include "MLSFallback.h"
-#include "mozilla/FloatingPoint.h"
-#include "mozilla/Logging.h"
-#include "mozilla/dom/GeolocationPositionErrorBinding.h"
-#include "GeolocationPosition.h"
-#include "prtime.h"
-#include "mozilla/GUniquePtr.h"
-#include "mozilla/UniquePtrExtensions.h"
-#include "mozilla/XREAppData.h"
 
 #include <gio/gio.h>
 #include <glib-object.h>
+
+#include "GeolocationPosition.h"
+#include "MLSFallback.h"
+#include "mozilla/FloatingPoint.h"
+#include "mozilla/GUniquePtr.h"
+#include "mozilla/Logging.h"
+#include "mozilla/UniquePtrExtensions.h"
+#include "mozilla/XREAppData.h"
+#include "mozilla/dom/GeolocationPositionErrorBinding.h"
+#include "prtime.h"
 
 extern const mozilla::XREAppData* gAppData;
 

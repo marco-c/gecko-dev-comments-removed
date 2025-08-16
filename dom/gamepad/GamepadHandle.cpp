@@ -5,6 +5,7 @@
 
 
 #include "GamepadHandle.h"
+
 #include "mozilla/Assertions.h"
 #include "mozilla/HashFunctions.h"
 

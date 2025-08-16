@@ -4,14 +4,14 @@
 
 
 
-#include "nsIClassInfoImpl.h"
-#include "nsIObjectInputStream.h"
-#include "nsIObjectOutputStream.h"
-
 #include "mozilla/dom/BlobURL.h"
+
 #include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/URIUtils.h"
+#include "nsIClassInfoImpl.h"
+#include "nsIObjectInputStream.h"
+#include "nsIObjectOutputStream.h"
 
 using namespace mozilla::dom;
 

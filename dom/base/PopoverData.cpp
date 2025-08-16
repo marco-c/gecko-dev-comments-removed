@@ -5,11 +5,11 @@
 
 
 #include "PopoverData.h"
-#include "nsGenericHTMLElement.h"
-#include "mozilla/dom/Document.h"
+
 #include "mozilla/dom/CloseWatcher.h"
 #include "mozilla/dom/CloseWatcherManager.h"
-
+#include "mozilla/dom/Document.h"
+#include "nsGenericHTMLElement.h"
 #include "nsIDOMEventListener.h"
 
 namespace mozilla::dom {

@@ -5,13 +5,14 @@
 
 
 #include "mozilla/dom/AnalyserNode.h"
-#include "mozilla/dom/AnalyserNodeBinding.h"
+
 #include "AudioNodeEngine.h"
 #include "AudioNodeTrack.h"
+#include "Tracing.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/PodOperations.h"
+#include "mozilla/dom/AnalyserNodeBinding.h"
 #include "nsMathUtils.h"
-#include "Tracing.h"
 
 namespace mozilla {
 

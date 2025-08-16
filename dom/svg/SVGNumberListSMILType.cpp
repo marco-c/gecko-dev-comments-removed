@@ -6,11 +6,12 @@
 
 #include "SVGNumberListSMILType.h"
 
+#include <math.h>
+
+#include "SVGNumberList.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/SMILValue.h"
 #include "nsMathUtils.h"
-#include "SVGNumberList.h"
-#include <math.h>
 
 
 

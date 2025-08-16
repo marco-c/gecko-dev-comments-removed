@@ -4,9 +4,10 @@
 
 
 
+#include "mozilla/dom/WebAuthnUtil.h"
+
 #include "hasht.h"
 #include "mozilla/BasePrincipal.h"
-#include "mozilla/dom/WebAuthnUtil.h"
 #include "mozpkix/pkixutil.h"
 #include "nsComponentManagerUtils.h"
 #include "nsHTMLDocument.h"

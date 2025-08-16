@@ -4,32 +4,33 @@
 
 
 
-#include "nsError.h"
 #include "MediaResource.h"
+#include "nsError.h"
 #ifdef MOZ_AV1
 #  include "AOMDecoder.h"
 #endif
-#include "VPXDecoder.h"
-#include "WebMDemuxer.h"
-#include "WebMBufferedParser.h"
-#include "gfx2DGlue.h"
-#include "gfxUtils.h"
-#include "mozilla/EndianUtils.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/SharedThreadPool.h"
-#include "MediaDataDemuxer.h"
-#include "nsAutoRef.h"
-#include "NesteggPacketHolder.h"
-#include "XiphExtradata.h"
-#include "prprf.h"  
-#include "mozilla/IntegerPrintfMacros.h"
-#include "mozilla/Sprintf.h"
-#include "VideoUtils.h"
+#include <opus/opus.h>
+#include <stdint.h>
 
 #include <algorithm>
 #include <numeric>
-#include <stdint.h>
-#include <opus/opus.h>
+
+#include "MediaDataDemuxer.h"
+#include "NesteggPacketHolder.h"
+#include "VPXDecoder.h"
+#include "VideoUtils.h"
+#include "WebMBufferedParser.h"
+#include "WebMDemuxer.h"
+#include "XiphExtradata.h"
+#include "gfx2DGlue.h"
+#include "gfxUtils.h"
+#include "mozilla/EndianUtils.h"
+#include "mozilla/IntegerPrintfMacros.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/SharedThreadPool.h"
+#include "mozilla/Sprintf.h"
+#include "nsAutoRef.h"
+#include "prprf.h"  
 
 #define WEBM_DEBUG(arg, ...)                                          \
   DDMOZ_LOG(gMediaDemuxerLog, mozilla::LogLevel::Debug, "::%s: " arg, \

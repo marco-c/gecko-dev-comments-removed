@@ -5,13 +5,14 @@
 
 
 #include "GainNode.h"
-#include "mozilla/dom/GainNodeBinding.h"
+
 #include "AlignmentUtils.h"
+#include "AudioDestinationNode.h"
 #include "AudioNodeEngine.h"
 #include "AudioNodeTrack.h"
-#include "AudioDestinationNode.h"
-#include "WebAudioUtils.h"
 #include "Tracing.h"
+#include "WebAudioUtils.h"
+#include "mozilla/dom/GainNodeBinding.h"
 
 namespace mozilla::dom {
 

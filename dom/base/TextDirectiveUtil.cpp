@@ -4,6 +4,15 @@
 
 
 #include "TextDirectiveUtil.h"
+
+#include "ContentIterator.h"
+#include "Document.h"
+#include "Text.h"
+#include "fragmentdirectives_ffi_generated.h"
+#include "mozilla/ContentIterator.h"
+#include "mozilla/ResultVariant.h"
+#include "mozilla/SelectionMovementUtils.h"
+#include "mozilla/intl/WordBreaker.h"
 #include "nsComputedDOMStyle.h"
 #include "nsDOMAttributeMap.h"
 #include "nsFind.h"
@@ -16,14 +25,6 @@
 #include "nsString.h"
 #include "nsTArray.h"
 #include "nsUnicharUtils.h"
-#include "ContentIterator.h"
-#include "Document.h"
-#include "fragmentdirectives_ffi_generated.h"
-#include "Text.h"
-#include "mozilla/ContentIterator.h"
-#include "mozilla/ResultVariant.h"
-#include "mozilla/intl/WordBreaker.h"
-#include "mozilla/SelectionMovementUtils.h"
 
 namespace mozilla::dom {
 LazyLogModule gFragmentDirectiveLog("FragmentDirective");

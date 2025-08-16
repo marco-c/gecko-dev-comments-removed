@@ -5,10 +5,11 @@
 
 
 #include "FileSystemSecurity.h"
+
 #include "FileSystemUtils.h"
 #include "mozilla/ClearOnShutdown.h"
-#include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/ipc/BackgroundParent.h"
 
 namespace mozilla::dom {
 

@@ -7,26 +7,27 @@
 #ifndef nsINode_h___
 #define nsINode_h___
 
+#include <iosfwd>
+
+#include "js/TypeDecls.h"  
 #include "mozilla/DoublyLinkedList.h"
-#include "mozilla/Likely.h"
-#include "mozilla/UniquePtr.h"
-#include "nsCOMPtr.h"              
-#include "nsGkAtoms.h"             
-#include "mozilla/dom/NodeInfo.h"  
-#include "nsIWeakReference.h"
-#include "nsIMutationObserver.h"
-#include "nsNodeInfoManager.h"  
-#include "nsPropertyTable.h"    
 #include "mozilla/ErrorResult.h"
+#include "mozilla/Likely.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/MemoryReporting.h"
-#include "mozilla/dom/EventTarget.h"  
-#include "js/TypeDecls.h"             
-#include "mozilla/dom/DOMString.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/DOMString.h"
+#include "mozilla/dom/EventTarget.h"  
 #include "mozilla/dom/NodeBinding.h"
+#include "mozilla/dom/NodeInfo.h"  
+#include "nsCOMPtr.h"              
+#include "nsGkAtoms.h"             
+#include "nsIMutationObserver.h"
+#include "nsIWeakReference.h"
+#include "nsNodeInfoManager.h"  
+#include "nsPropertyTable.h"    
 #include "nsTHashtable.h"
-#include <iosfwd>
 
 
 #ifdef XP_WIN

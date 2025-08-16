@@ -43,24 +43,23 @@
 #include <string>
 #include <vector>
 
-#include "nr_socket_proxy_config.h"
-#include "nsXULAppAPI.h"
-
+#include "ScopedNSSTypes.h"
 #include "logging.h"
-#include "pk11pub.h"
-#include "plbase64.h"
-
+#include "mozilla/Preferences.h"
+#include "nr_socket_proxy_config.h"
 #include "nsCOMPtr.h"
 #include "nsError.h"
+#include "nsIUUIDGenerator.h"
 #include "nsNetCID.h"
 #include "nsServiceManagerUtils.h"
-#include "ScopedNSSTypes.h"
+#include "nsXULAppAPI.h"
+#include "pk11pub.h"
+#include "plbase64.h"
 #include "runnable_utils.h"
-#include "nsIUUIDGenerator.h"
-#include "mozilla/Preferences.h"
 
 
 extern "C" {
+
 #include "nr_api.h"
 #include "registry.h"
 #include "async_timer.h"
@@ -76,12 +75,13 @@ extern "C" {
 #include "ice_codeword.h"
 #include "ice_ctx.h"
 #include "ice_candidate.h"
+
 }
 
 
+#include "nr_socket_prsock.h"
 #include "nricectx.h"
 #include "nricemediastream.h"
-#include "nr_socket_prsock.h"
 #include "nrinterfaceprioritizer.h"
 #include "rlogconnector.h"
 #include "test_nr_socket.h"

@@ -5,6 +5,7 @@
 
 
 #include "VRDisplayEvent.h"
+
 #include "js/RootingAPI.h"
 #include "mozilla/dom/Nullable.h"
 #include "mozilla/dom/PrimitiveConversions.h"

@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/TestInterfaceLength.h"
+
 #include "mozilla/dom/TestFunctionsBinding.h"
 
 namespace mozilla::dom {

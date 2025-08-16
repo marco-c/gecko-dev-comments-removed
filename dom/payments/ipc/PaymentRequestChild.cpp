@@ -5,6 +5,7 @@
 
 
 #include "PaymentRequestChild.h"
+
 #include "mozilla/dom/PaymentRequest.h"
 #include "mozilla/dom/PaymentRequestManager.h"
 

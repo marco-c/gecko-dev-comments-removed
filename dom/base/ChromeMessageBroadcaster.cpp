@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/ChromeMessageBroadcaster.h"
+
 #include "AccessCheck.h"
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/dom/MessageManagerBinding.h"

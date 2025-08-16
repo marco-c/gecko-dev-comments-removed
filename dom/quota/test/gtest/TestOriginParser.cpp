@@ -5,7 +5,6 @@
 
 
 #include "OriginParser.h"
-
 #include "gtest/gtest.h"
 #include "mozilla/OriginAttributes.h"
 #include "nsFmtString.h"

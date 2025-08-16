@@ -5,9 +5,10 @@
 
 
 #include "PerformanceResourceTiming.h"
+
 #include "mozilla/dom/PerformanceResourceTimingBinding.h"
-#include "nsNetUtil.h"
 #include "nsArrayUtils.h"
+#include "nsNetUtil.h"
 
 using namespace mozilla::dom;
 

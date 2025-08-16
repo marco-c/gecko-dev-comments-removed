@@ -4,10 +4,12 @@
 
 
 
-#include "FileUtilsImpl.h"
-
 #include "CacheCipherKeyManager.h"
 #include "DBSchema.h"
+#include "FileUtilsImpl.h"
+#include "mozilla/ScopeExit.h"
+#include "mozilla/SnappyCompressOutputStream.h"
+#include "mozilla/Unused.h"
 #include "mozilla/dom/InternalResponse.h"
 #include "mozilla/dom/quota/DecryptingInputStream.h"
 #include "mozilla/dom/quota/DecryptingInputStream_impl.h"
@@ -18,12 +20,9 @@
 #include "mozilla/dom/quota/QuotaManager.h"
 #include "mozilla/dom/quota/QuotaObject.h"
 #include "mozilla/dom/quota/ResultExtensions.h"
-#include "mozilla/ScopeExit.h"
-#include "mozilla/SnappyCompressOutputStream.h"
-#include "mozilla/Unused.h"
+#include "nsIFile.h"
 #include "nsIObjectInputStream.h"
 #include "nsIObjectOutputStream.h"
-#include "nsIFile.h"
 #include "nsIUUIDGenerator.h"
 #include "nsNetCID.h"
 #include "nsNetUtil.h"

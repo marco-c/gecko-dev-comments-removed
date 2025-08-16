@@ -4,8 +4,9 @@
 
 
 
-#include "mozilla/ThreadLocal.h"
 #include "mozilla/dom/quota/StringifyUtils.h"
+
+#include "mozilla/ThreadLocal.h"
 #include "nsTHashSet.h"
 
 namespace mozilla {

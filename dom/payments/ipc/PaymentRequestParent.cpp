@@ -4,15 +4,16 @@
 
 
 
+#include "PaymentRequestParent.h"
+
+#include "PaymentRequestData.h"
+#include "PaymentRequestService.h"
 #include "mozilla/ipc/InputStreamUtils.h"
 #include "nsArrayUtils.h"
 #include "nsCOMPtr.h"
 #include "nsIPaymentRequestService.h"
 #include "nsISupportsPrimitives.h"
 #include "nsServiceManagerUtils.h"
-#include "PaymentRequestData.h"
-#include "PaymentRequestParent.h"
-#include "PaymentRequestService.h"
 
 namespace mozilla::dom {
 

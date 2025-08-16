@@ -5,10 +5,11 @@
 
 
 #include "mozilla/dom/CSSPseudoElement.h"
+
+#include "mozilla/AnimationComparator.h"
 #include "mozilla/dom/CSSPseudoElementBinding.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/KeyframeEffectBinding.h"
-#include "mozilla/AnimationComparator.h"
 
 namespace mozilla::dom {
 

@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/DeviceMotionEvent.h"
+
 #include "nsContentUtils.h"
 
 namespace mozilla::dom {

@@ -3,29 +3,29 @@
 
 
 
-#include "mozilla/dom/WebGPUBinding.h"
-#include "mozilla/dom/UnionTypes.h"
 #include "Queue.h"
 
 #include <algorithm>
 
 #include "CommandBuffer.h"
 #include "CommandEncoder.h"
+#include "Utility.h"
 #include "ipc/WebGPUChild.h"
 #include "mozilla/Casting.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/BufferSourceBinding.h"
-#include "mozilla/dom/HTMLImageElement.h"
 #include "mozilla/dom/HTMLCanvasElement.h"
+#include "mozilla/dom/HTMLImageElement.h"
 #include "mozilla/dom/ImageBitmap.h"
 #include "mozilla/dom/OffscreenCanvas.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/UnionTypes.h"
 #include "mozilla/dom/WebGLTexelConversions.h"
 #include "mozilla/dom/WebGLTypes.h"
+#include "mozilla/dom/WebGPUBinding.h"
 #include "mozilla/ipc/SharedMemoryHandle.h"
 #include "mozilla/ipc/SharedMemoryMapping.h"
 #include "nsLayoutUtils.h"
-#include "Utility.h"
 
 namespace mozilla::webgpu {
 

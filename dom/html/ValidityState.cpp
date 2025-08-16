@@ -5,8 +5,8 @@
 
 
 #include "mozilla/dom/ValidityState.h"
-#include "mozilla/dom/ValidityStateBinding.h"
 
+#include "mozilla/dom/ValidityStateBinding.h"
 #include "nsCycleCollectionParticipant.h"
 
 namespace mozilla::dom {

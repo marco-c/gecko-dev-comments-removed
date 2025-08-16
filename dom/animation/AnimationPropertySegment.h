@@ -7,8 +7,8 @@
 #ifndef mozilla_dom_AnimationPropertySegment_h
 #define mozilla_dom_AnimationPropertySegment_h
 
-#include "mozilla/ServoStyleConsts.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/ServoStyleConsts.h"
 #include "mozilla/StyleAnimationValue.h"           
 #include "mozilla/dom/BaseKeyframeTypesBinding.h"  
 

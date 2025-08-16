@@ -9,10 +9,10 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/CheckedInt.h"
-#include "mozilla/dom/TypedArray.h"
-#include "mozilla/dom/WebSocketBinding.h"  
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/dom/TypedArray.h"
+#include "mozilla/dom/WebSocketBinding.h"  
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsISupports.h"

@@ -4,16 +4,17 @@
 
 
 
-#include "mozilla/dom/Credential.h"
 #include "mozilla/dom/CredentialsContainer.h"
-#include "mozilla/dom/FeaturePolicyUtils.h"
-#include "mozilla/dom/Promise.h"
+
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_security.h"
-#include "mozilla/dom/WebIdentityHandler.h"
+#include "mozilla/dom/Credential.h"
+#include "mozilla/dom/FeaturePolicyUtils.h"
+#include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WebAuthnHandler.h"
-#include "mozilla/dom/WindowGlobalChild.h"
+#include "mozilla/dom/WebIdentityHandler.h"
 #include "mozilla/dom/WindowContext.h"
+#include "mozilla/dom/WindowGlobalChild.h"
 #include "nsContentUtils.h"
 #include "nsIDocShell.h"
 

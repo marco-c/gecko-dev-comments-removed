@@ -5,11 +5,12 @@
 
 
 #include "mozilla/dom/TestInterfaceAsyncIterableSingle.h"
-#include "mozilla/dom/TestInterfaceJSMaplikeSetlikeIterableBinding.h"
-#include "nsPIDOMWindow.h"
+
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/IterableIterator.h"
 #include "mozilla/dom/Promise-inl.h"
+#include "mozilla/dom/TestInterfaceJSMaplikeSetlikeIterableBinding.h"
+#include "nsPIDOMWindow.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla::dom {

@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/HTMLFrameElement.h"
+
 #include "mozilla/dom/HTMLFrameElementBinding.h"
 
 NS_IMPL_NS_NEW_HTML_ELEMENT_CHECK_PARSER(Frame)

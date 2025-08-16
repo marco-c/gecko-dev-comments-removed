@@ -4,6 +4,7 @@
 
 
 #include "CompilationInfo.h"
+
 #include "CompilationMessage.h"
 #include "ShaderModule.h"
 #include "mozilla/dom/WebGPUBinding.h"

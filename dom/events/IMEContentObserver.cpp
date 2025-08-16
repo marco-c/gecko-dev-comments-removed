@@ -4,8 +4,10 @@
 
 
 
-#include "ContentEventHandler.h"
 #include "IMEContentObserver.h"
+
+#include "ContentEventHandler.h"
+#include "WritingModes.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/AutoRestore.h"
@@ -23,8 +25,8 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Selection.h"
-#include "nsContentUtils.h"
 #include "nsAtom.h"
+#include "nsContentUtils.h"
 #include "nsDocShell.h"
 #include "nsGkAtoms.h"
 #include "nsIContent.h"
@@ -37,7 +39,6 @@
 #include "nsPresContext.h"
 #include "nsRange.h"
 #include "nsRefreshDriver.h"
-#include "WritingModes.h"
 #include "nsString.h"
 
 namespace mozilla {

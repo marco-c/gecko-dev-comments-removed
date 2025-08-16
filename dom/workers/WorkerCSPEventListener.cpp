@@ -5,6 +5,7 @@
 
 
 #include "WorkerCSPEventListener.h"
+
 #include "WorkerRef.h"
 #include "WorkerRunnable.h"
 #include "WorkerScope.h"

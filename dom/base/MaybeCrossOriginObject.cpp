@@ -6,12 +6,8 @@
 
 #include "mozilla/dom/MaybeCrossOriginObject.h"
 
-#include "mozilla/BasePrincipal.h"
-#include "mozilla/dom/BindingUtils.h"
-#include "mozilla/dom/DOMJSProxyHandler.h"
-#include "mozilla/dom/RemoteObjectProxy.h"
+#include "AccessCheck.h"
 #include "js/CallAndConstruct.h"    
-#include "js/friend/WindowProxy.h"  
 #include "js/Object.h"              
 #include "js/PropertyAndElement.h"  
 #include "js/PropertyDescriptor.h"  
@@ -19,8 +15,12 @@
 #include "js/RootingAPI.h"
 #include "js/WeakMap.h"
 #include "js/Wrapper.h"
+#include "js/friend/WindowProxy.h"  
 #include "jsfriendapi.h"
-#include "AccessCheck.h"
+#include "mozilla/BasePrincipal.h"
+#include "mozilla/dom/BindingUtils.h"
+#include "mozilla/dom/DOMJSProxyHandler.h"
+#include "mozilla/dom/RemoteObjectProxy.h"
 #include "nsContentUtils.h"
 
 #ifdef DEBUG

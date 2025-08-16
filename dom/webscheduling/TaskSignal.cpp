@@ -6,6 +6,7 @@
 
 
 #include "TaskSignal.h"
+
 #include "WebTaskScheduler.h"
 
 namespace mozilla::dom {

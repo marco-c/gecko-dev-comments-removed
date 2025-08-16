@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/MIDIPlatformRunnables.h"
+
 #include "mozilla/dom/MIDIPlatformService.h"
 #include "mozilla/dom/MIDIPortParent.h"
 #include "mozilla/ipc/BackgroundParent.h"

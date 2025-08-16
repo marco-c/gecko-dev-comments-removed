@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/SVGAnimateMotionElement.h"
+
 #include "mozilla/dom/SVGAnimateMotionElementBinding.h"
 
 NS_IMPL_NS_NEW_SVG_ELEMENT(AnimateMotion)

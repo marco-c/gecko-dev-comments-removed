@@ -5,10 +5,11 @@
 
 
 #include "PlacesEventCounts.h"
+
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/BindingUtils.h"
-#include "mozilla/dom/PlacesEventCounts.h"
 #include "mozilla/dom/PlacesEventBinding.h"
+#include "mozilla/dom/PlacesEventCounts.h"
 #include "mozilla/dom/PlacesObserversBinding.h"
 
 namespace mozilla::dom {

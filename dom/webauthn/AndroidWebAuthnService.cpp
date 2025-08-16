@@ -4,19 +4,19 @@
 
 
 
-#include "mozilla/StaticPtr.h"
-#include "mozilla/ipc/BackgroundParent.h"
-#include "mozilla/jni/GeckoBundleUtils.h"
-
 #include "AndroidWebAuthnService.h"
+
 #include "JavaBuiltins.h"
 #include "JavaExceptions.h"
-#include "WebAuthnPromiseHolder.h"
 #include "WebAuthnEnumStrings.h"
+#include "WebAuthnPromiseHolder.h"
 #include "WebAuthnResult.h"
 #include "mozilla/StaticPrefs_security.h"
+#include "mozilla/StaticPtr.h"
+#include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/java/WebAuthnTokenManagerWrappers.h"
 #include "mozilla/jni/Conversions.h"
+#include "mozilla/jni/GeckoBundleUtils.h"
 
 namespace mozilla {
 namespace jni {

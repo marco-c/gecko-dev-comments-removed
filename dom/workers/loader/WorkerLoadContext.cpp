@@ -5,8 +5,9 @@
 
 
 #include "WorkerLoadContext.h"
-#include "mozilla/dom/workerinternals/ScriptLoader.h"
+
 #include "CacheLoadHandler.h"  
+#include "mozilla/dom/workerinternals/ScriptLoader.h"
 
 namespace mozilla {
 namespace dom {

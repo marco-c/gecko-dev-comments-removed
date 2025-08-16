@@ -46,45 +46,40 @@
 
 
 #include "HTMLFormSubmissionConstants.h"
+#include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/StaticPrefs_prompts.h"
 #include "mozilla/dom/FormData.h"
 #include "mozilla/dom/FormDataEvent.h"
 #include "mozilla/dom/SubmitEvent.h"
-#include "mozilla/intl/Localization.h"
 #include "mozilla/glean/DomSecurityMetrics.h"
-#include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/StaticPrefs_prompts.h"
+#include "mozilla/intl/Localization.h"
 #include "nsCategoryManagerUtils.h"
 #include "nsIContentInlines.h"
-#include "nsISimpleEnumerator.h"
-#include "nsRange.h"
+#include "nsIDocShell.h"
+#include "nsIInterfaceRequestorUtils.h"
+#include "nsIPromptService.h"
 #include "nsIScriptError.h"
 #include "nsIScriptSecurityManager.h"
-#include "nsNetUtil.h"
-#include "nsIInterfaceRequestorUtils.h"
-#include "nsIDocShell.h"
-#include "nsIPromptService.h"
 #include "nsISecurityUITelemetry.h"
+#include "nsISimpleEnumerator.h"
+#include "nsNetUtil.h"
+#include "nsRange.h"
 
 
-#include "mozilla/dom/HTMLInputElement.h"
-#include "mozilla/dom/HTMLButtonElement.h"
-#include "mozilla/dom/HTMLSelectElement.h"
 #include "RadioNodeList.h"
-
-#include "nsLayoutUtils.h"
-
 #include "mozAutoDocUpdate.h"
-#include "nsIHTMLCollection.h"
-
+#include "mozilla/dom/HTMLAnchorElement.h"
+#include "mozilla/dom/HTMLButtonElement.h"
+#include "mozilla/dom/HTMLInputElement.h"
+#include "mozilla/dom/HTMLSelectElement.h"
 #include "nsIConstraintValidation.h"
-
+#include "nsIHTMLCollection.h"
+#include "nsLayoutUtils.h"
 #include "nsSandboxFlags.h"
 
-#include "mozilla/dom/HTMLAnchorElement.h"
 
-
-#include "mozilla/dom/HTMLImageElement.h"
 #include "mozilla/dom/HTMLButtonElement.h"
+#include "mozilla/dom/HTMLImageElement.h"
 
 
 NS_IMPL_NS_NEW_HTML_ELEMENT(Form)
@@ -1421,11 +1416,9 @@ nsresult HTMLFormElement::RemoveElementFromTable(
   return mControls->RemoveElementFromTable(aElement, aName);
 }
 
-already_AddRefed<nsISupports> HTMLFormElement::NamedGetter(
-    const nsAString& aName, bool& aFound) {
-  aFound = true;
-
-  nsCOMPtr<nsISupports> result = DoResolveName(aName);
+already_AddRefed<nsISupports> HTMLFormElement::ResolveName(
+    const nsAString& aName) {
+  nsCOMPtr<nsISupports> result = mControls->NamedItemInternal(aName);
   if (result) {
     AddToPastNamesMap(aName, result);
     return result.forget();
@@ -1438,7 +1431,18 @@ already_AddRefed<nsISupports> HTMLFormElement::NamedGetter(
   }
 
   result = mPastNameLookupTable.GetWeak(aName);
-  if (result) {
+  return result.forget();
+}
+
+already_AddRefed<nsISupports> HTMLFormElement::NamedGetter(
+    const nsAString& aName, bool& aFound) {
+  if (nsCOMPtr<nsISupports> result = ResolveName(aName)) {
+    aFound = true;
+
+    if (HTMLFormElement_Binding::InterfaceHasNonEventHandlerProperty(aName)) {
+      OwnerDoc()->CollectShadowedHTMLFormElementProperty(aName);
+    }
+
     return result.forget();
   }
 
@@ -1448,26 +1452,6 @@ already_AddRefed<nsISupports> HTMLFormElement::NamedGetter(
 
 void HTMLFormElement::GetSupportedNames(nsTArray<nsString>& aRetval) {
   
-}
-
-already_AddRefed<nsISupports> HTMLFormElement::FindNamedItem(
-    const nsAString& aName, nsWrapperCache** aCache) {
-  
-
-  bool found;
-  nsCOMPtr<nsISupports> result = NamedGetter(aName, found);
-  if (result) {
-    *aCache = nullptr;
-    return result.forget();
-  }
-
-  return nullptr;
-}
-
-already_AddRefed<nsISupports> HTMLFormElement::DoResolveName(
-    const nsAString& aName) {
-  nsCOMPtr<nsISupports> result = mControls->NamedItemInternal(aName);
-  return result.forget();
 }
 
 void HTMLFormElement::OnSubmitClickBegin() { mDeferSubmission = true; }

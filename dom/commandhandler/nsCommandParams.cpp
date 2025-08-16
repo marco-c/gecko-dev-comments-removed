@@ -4,12 +4,13 @@
 
 
 
-#include <new>
-#include "nscore.h"
-#include "nsCRT.h"
-
 #include "nsCommandParams.h"
+
+#include <new>
+
 #include "mozilla/HashFunctions.h"
+#include "nsCRT.h"
+#include "nscore.h"
 
 using namespace mozilla;
 

@@ -5,6 +5,7 @@
 
 
 #include "XMLHttpRequest.h"
+
 #include "XMLHttpRequestMainThread.h"
 #include "XMLHttpRequestWorker.h"
 #include "mozilla/BasePrincipal.h"

@@ -4,14 +4,15 @@
 
 
 
-#include "nsGkAtoms.h"
-#include "nsUnicharUtils.h"
-#include "mozilla/dom/LinkStyle.h"
 #include "mozilla/dom/ProcessingInstruction.h"
+
+#include "mozilla/IntegerPrintfMacros.h"
+#include "mozilla/dom/LinkStyle.h"
 #include "mozilla/dom/ProcessingInstructionBinding.h"
 #include "mozilla/dom/XMLStylesheetProcessingInstruction.h"
-#include "mozilla/IntegerPrintfMacros.h"
 #include "nsContentUtils.h"
+#include "nsGkAtoms.h"
+#include "nsUnicharUtils.h"
 
 already_AddRefed<mozilla::dom::ProcessingInstruction>
 NS_NewXMLProcessingInstruction(nsNodeInfoManager* aNodeInfoManager,

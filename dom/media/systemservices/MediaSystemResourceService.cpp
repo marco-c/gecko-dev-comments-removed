@@ -4,11 +4,11 @@
 
 
 
-#include "MediaSystemResourceManagerParent.h"
-#include "mozilla/layers/CompositorThread.h"
-#include "mozilla/Unused.h"
-
 #include "MediaSystemResourceService.h"
+
+#include "MediaSystemResourceManagerParent.h"
+#include "mozilla/Unused.h"
+#include "mozilla/layers/CompositorThread.h"
 
 using namespace mozilla::layers;
 

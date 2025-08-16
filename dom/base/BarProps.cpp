@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/BarProps.h"
+
 #include "mozilla/dom/BarPropBinding.h"
 #include "nsContentUtils.h"
 #include "nsDocShell.h"

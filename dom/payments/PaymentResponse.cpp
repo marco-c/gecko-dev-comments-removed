@@ -4,17 +4,18 @@
 
 
 
-#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/PaymentResponse.h"
-#include "mozilla/dom/BasicCardPaymentBinding.h"
-#include "mozilla/dom/PaymentRequestUpdateEvent.h"
+
 #include "BasicCardPayment.h"
 #include "PaymentAddress.h"
 #include "PaymentRequest.h"
 #include "PaymentRequestManager.h"
 #include "PaymentRequestUtils.h"
-#include "nsGlobalWindowInner.h"
 #include "mozilla/EventStateManager.h"
+#include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/dom/BasicCardPaymentBinding.h"
+#include "mozilla/dom/PaymentRequestUpdateEvent.h"
+#include "nsGlobalWindowInner.h"
 
 namespace mozilla::dom {
 

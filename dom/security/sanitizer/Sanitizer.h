@@ -12,9 +12,9 @@
 #include "mozilla/dom/SanitizerBinding.h"
 #include "mozilla/dom/SanitizerTypes.h"
 #include "mozilla/dom/StaticAtomSet.h"
-#include "nsString.h"
 #include "nsIGlobalObject.h"
 #include "nsIParserUtils.h"
+#include "nsString.h"
 
 
 

@@ -4,9 +4,8 @@
 
 
 
-#include "gtest/gtest.h"
-
 #include "MimeType.h"
+#include "gtest/gtest.h"
 #include "nsString.h"
 
 TEST(MimeType, EmptyString)

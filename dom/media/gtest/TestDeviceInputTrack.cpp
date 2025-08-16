@@ -4,16 +4,14 @@
 
 
 
-#include "DeviceInputTrack.h"
-
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-
 #include "AudioGenerator.h"
+#include "DeviceInputTrack.h"
 #include "MediaTrackGraphImpl.h"
 #include "MockCubeb.h"
-#include "mozilla/gtest/WaitFor.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "mozilla/StaticPrefs_media.h"
+#include "mozilla/gtest/WaitFor.h"
 #include "nsContentUtils.h"
 
 using namespace mozilla;

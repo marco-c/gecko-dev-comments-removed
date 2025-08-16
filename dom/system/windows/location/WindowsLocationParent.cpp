@@ -4,8 +4,9 @@
 
 
 #include "WindowsLocationParent.h"
-#include "nsIDOMGeoPosition.h"
+
 #include "WindowsLocationProvider.h"
+#include "nsIDOMGeoPosition.h"
 
 namespace mozilla::dom {
 

@@ -2,8 +2,8 @@
 
 
 
-#include "gtest/gtest.h"
 #include "MediaSession.h"
+#include "gtest/gtest.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

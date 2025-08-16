@@ -8,13 +8,14 @@
 #define mozilla_dom_InputType_h__
 
 #include <stdint.h>
+
 #include "mozilla/Decimal.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/TextControlState.h"
 #include "mozilla/UniquePtr.h"
+#include "nsError.h"
 #include "nsIConstraintValidation.h"
 #include "nsString.h"
-#include "nsError.h"
 
 
 

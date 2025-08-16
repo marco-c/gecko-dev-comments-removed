@@ -3,6 +3,7 @@
 
 
 #include "RemoteWorkerDebuggerParent.h"
+
 #include "mozilla/dom/WorkerDebuggerManager.h"
 #include "mozilla/dom/WorkerPrivate.h"
 

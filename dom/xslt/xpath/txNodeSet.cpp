@@ -4,9 +4,11 @@
 
 
 #include "txNodeSet.h"
+
+#include <algorithm>
+
 #include "txLog.h"
 #include "txXPathTreeWalker.h"
-#include <algorithm>
 
 
 

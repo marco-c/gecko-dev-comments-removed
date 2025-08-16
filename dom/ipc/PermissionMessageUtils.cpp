@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/PermissionMessageUtils.h"
+
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "nsCOMPtr.h"

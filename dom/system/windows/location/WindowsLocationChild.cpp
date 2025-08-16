@@ -4,14 +4,15 @@
 
 
 #include "WindowsLocationChild.h"
-#include "nsCOMPtr.h"
+
+#include <locationapi.h>
+
 #include "WindowsLocationProvider.h"
 #include "mozilla/dom/GeolocationPosition.h"
 #include "mozilla/dom/GeolocationPositionErrorBinding.h"
+#include "nsCOMPtr.h"
 #include "nsIGeolocationProvider.h"
 #include "prtime.h"
-
-#include <locationapi.h>
 
 namespace mozilla::dom {
 

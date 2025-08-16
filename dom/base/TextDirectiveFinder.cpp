@@ -4,14 +4,15 @@
 
 
 #include "TextDirectiveFinder.h"
+
 #include "Document.h"
 #include "TextDirectiveUtil.h"
-#include "mozilla/glean/DomMetrics.h"
-#include "nsFind.h"
-#include "nsRange.h"
 #include "fragmentdirectives_ffi_generated.h"
 #include "mozilla/CycleCollectedUniquePtr.h"
 #include "mozilla/ResultVariant.h"
+#include "mozilla/glean/DomMetrics.h"
+#include "nsFind.h"
+#include "nsRange.h"
 
 namespace mozilla::dom {
 

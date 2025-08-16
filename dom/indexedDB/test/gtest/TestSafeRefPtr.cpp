@@ -5,9 +5,8 @@
 
 
 #include "gtest/gtest.h"
-
-#include "mozilla/dom/SafeRefPtr.h"
 #include "mozilla/RefCounted.h"
+#include "mozilla/dom/SafeRefPtr.h"
 
 using namespace mozilla;
 

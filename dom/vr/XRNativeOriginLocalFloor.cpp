@@ -4,9 +4,10 @@
 
 
 
-#include "mozilla/StaticPrefs_dom.h"
 #include "XRNativeOriginLocalFloor.h"
+
 #include "VRDisplayClient.h"
+#include "mozilla/StaticPrefs_dom.h"
 
 namespace mozilla::dom {
 

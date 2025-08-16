@@ -4,10 +4,11 @@
 
 
 
+#include "mozilla/dom/AuthenticatorAttestationResponse.h"
+
 #include "AuthrsBridge_ffi.h"
 #include "mozilla/Base64.h"
 #include "mozilla/HoldDropJSObjects.h"
-#include "mozilla/dom/AuthenticatorAttestationResponse.h"
 #include "mozilla/dom/WebAuthenticationBinding.h"
 
 namespace mozilla::dom {

@@ -45,7 +45,6 @@
 #include <list>
 
 #include "mozilla/net/WebrtcTCPSocketCallback.h"
-
 #include "nsTArray.h"
 
 extern "C" {

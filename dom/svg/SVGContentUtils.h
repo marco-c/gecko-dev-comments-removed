@@ -10,13 +10,13 @@
 
 #include <math.h>
 
+#include "gfx2DGlue.h"
 #include "mozilla/gfx/2D.h"  
 #include "mozilla/gfx/Matrix.h"
+#include "nsDependentSubstring.h"
 #include "nsError.h"
 #include "nsStringFwd.h"
 #include "nsTArray.h"
-#include "gfx2DGlue.h"
-#include "nsDependentSubstring.h"
 
 class nsIContent;
 

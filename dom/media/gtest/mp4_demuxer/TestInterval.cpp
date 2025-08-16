@@ -3,8 +3,8 @@
 
 
 
-#include "gtest/gtest.h"
 #include "MP4Interval.h"
+#include "gtest/gtest.h"
 
 using mozilla::MP4Interval;
 
