@@ -573,6 +573,17 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
+    public @NonNull Builder setLnaBlockingEnabled(@NonNull final Boolean enabled) {
+      getSettings().setLnaBlockingEnabled(enabled);
+      return this;
+    }
+
+    
+
+
+
+
+
 
     public @NonNull Builder trustedRecursiveResolverMode(
         final @TrustedRecursiveResolverMode int mode) {
@@ -704,6 +715,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new Pref<Boolean>("dom.security.https_only_mode", false);
    final Pref<Boolean> mHttpsOnlyPrivateMode =
       new Pref<Boolean>("dom.security.https_only_mode_pbm", false);
+
+   final Pref<Boolean> mLnaBlockingEnabled = new Pref<>("network.lna.blocking", false);
    final PrefWithoutDefault<Integer> mTrustedRecursiveResolverMode =
       new PrefWithoutDefault<>("network.trr.mode");
    final PrefWithoutDefault<String> mTrustedRecursiveResolverUri =
@@ -1953,6 +1966,26 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       return HTTPS_ONLY_PRIVATE;
     }
     return ALLOW_ALL;
+  }
+
+  
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setLnaBlockingEnabled(final boolean enabled) {
+    mLnaBlockingEnabled.commit(enabled);
+    return this;
+  }
+
+  
+
+
+
+
+  public boolean getLnaBlockingEnabled() {
+    return mLnaBlockingEnabled.get();
   }
 
   
