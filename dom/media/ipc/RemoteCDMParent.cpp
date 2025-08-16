@@ -1,0 +1,17 @@
+
+
+
+
+
+
+#include "RemoteCDMParent.h"
+#include "RemoteMediaManagerChild.h"
+
+namespace mozilla {
+
+RemoteMediaIn RemoteCDMParent::GetLocation() const {
+  MOZ_CRASH("Unexpected call!");
+  return RemoteMediaIn::Unspecified;
+}
+
+}  
