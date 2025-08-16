@@ -1,10 +1,10 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* a presentation of a document, part 2 */
+
+
+
+
+
+
 
 #include "PresShell.h"
 
@@ -148,7 +148,7 @@
 #include "nsContentList.h"
 #include "nsDOMNavigationTiming.h"
 #include "nsDisplayList.h"
-#include "nsDocShell.h"  // for reflow observation
+#include "nsDocShell.h"  
 #include "nsError.h"
 #include "nsFlexContainerFrame.h"
 #include "nsFocusManager.h"
@@ -167,7 +167,7 @@
 #include "nsIFrame.h"
 #include "nsIFrameInlines.h"
 #include "nsILayoutHistoryState.h"
-#include "nsILineIterator.h"  // for ScrollContentIntoView
+#include "nsILineIterator.h"  
 #include "nsIObserverService.h"
 #include "nsIReflowCallback.h"
 #include "nsIScreen.h"
@@ -177,7 +177,7 @@
 #include "nsImageFrame.h"
 #include "nsLayoutUtils.h"
 #include "nsMenuPopupFrame.h"
-#include "nsNameSpaceManager.h"  // for Pref-related rule management (bugs 22963,20760,31816)
+#include "nsNameSpaceManager.h"  
 #include "nsNetUtil.h"
 #include "nsPIDOMWindow.h"
 #include "nsPageSequenceFrame.h"
@@ -220,8 +220,8 @@
 #  endif
 #endif
 
-// define the scalfactor of drag and drop images
-// relative to the max screen height/width
+
+
 #define RELATIVE_SCALEFACTOR 0.0925f
 
 using namespace mozilla;
@@ -236,17 +236,17 @@ typedef ScrollableLayerGuid::ViewID ViewID;
 
 MOZ_RUNINIT PresShell::CapturingContentInfo PresShell::sCapturingContentInfo;
 
-// RangePaintInfo is used to paint ranges to offscreen buffers
+
 struct RangePaintInfo {
   nsDisplayListBuilder mBuilder;
   nsDisplayList mList;
 
-  // offset of builder's reference frame to the root frame
+  
   nsPoint mRootOffset;
 
-  // Resolution at which the items are normally painted. So if we're painting
-  // these items in a range separately from the "full display list", we may want
-  // to paint them at this resolution.
+  
+  
+  
   float mResolution = 1.0;
 
   explicit RangePaintInfo(nsIFrame* aFrame)
@@ -265,12 +265,12 @@ struct RangePaintInfo {
 
 #undef NOISY
 
-// ----------------------------------------------------------------------
+
 
 #ifdef DEBUG
-// Set the environment variable GECKO_VERIFY_REFLOW_FLAGS to one or
-// more of the following flags (comma separated) for handy debug
-// output.
+
+
+
 static VerifyReflowFlags gVerifyReflowFlags;
 
 struct VerifyReflowFlagData {
@@ -279,7 +279,7 @@ struct VerifyReflowFlagData {
 };
 
 static const VerifyReflowFlagData gFlags[] = {
-    // clang-format off
+    
   { "verify",                VerifyReflowFlags::On },
   { "reflow",                VerifyReflowFlags::Noisy },
   { "all",                   VerifyReflowFlags::All },
@@ -287,7 +287,7 @@ static const VerifyReflowFlagData gFlags[] = {
   { "noisy-commands",        VerifyReflowFlags::NoisyCommands },
   { "really-noisy-commands", VerifyReflowFlags::ReallyNoisyCommands },
   { "resize",                VerifyReflowFlags::DuringResizeReflow },
-    // clang-format on
+    
 };
 
 #  define NUM_VERIFY_REFLOW_FLAGS (sizeof(gFlags) / sizeof(gFlags[0]))
@@ -305,15 +305,15 @@ static void ShowVerifyReflowFlags() {
 }
 #endif
 
-//========================================================================
-//========================================================================
-//========================================================================
+
+
+
 #ifdef MOZ_REFLOW_PERF
 class ReflowCountMgr;
 
 static const char kGrandTotalsStr[] = "Grand Totals";
 
-// Counting Class
+
 class ReflowCounter {
  public:
   explicit ReflowCounter(ReflowCountMgr* aMgr = nullptr);
@@ -341,10 +341,10 @@ class ReflowCounter {
   uint32_t mTotal;
   uint32_t mCacheTotal;
 
-  ReflowCountMgr* mMgr;  // weak reference (don't delete)
+  ReflowCountMgr* mMgr;  
 };
 
-// Counting Class
+
 class IndiReflowCounter {
  public:
   explicit IndiReflowCounter(ReflowCountMgr* aMgr = nullptr)
@@ -356,18 +356,18 @@ class IndiReflowCounter {
   virtual ~IndiReflowCounter() = default;
 
   nsAutoString mName;
-  nsIFrame* mFrame;  // weak reference (don't delete)
+  nsIFrame* mFrame;  
   int32_t mCount;
 
-  ReflowCountMgr* mMgr;  // weak reference (don't delete)
+  ReflowCountMgr* mMgr;  
 
   ReflowCounter mCounter;
   bool mHasBeenOutput;
 };
 
-//--------------------
-// Manager Class
-//--------------------
+
+
+
 class ReflowCountMgr {
  public:
   ReflowCountMgr();
@@ -389,10 +389,10 @@ class ReflowCountMgr {
   FILE* GetOutFile() { return mFD; }
 
   void SetPresContext(nsPresContext* aPresContext) {
-    mPresContext = aPresContext;  // weak reference
+    mPresContext = aPresContext;  
   }
   void SetPresShell(PresShell* aPresShell) {
-    mPresShell = aPresShell;  // weak reference
+    mPresShell = aPresShell;  
   }
 
   void SetDumpFrameCounts(bool aVal) { mDumpFrameCounts = aVal; }
@@ -408,7 +408,7 @@ class ReflowCountMgr {
   void DoGrandTotals();
   void DoIndiTotalsTree();
 
-  // HTML Output Methods
+  
   void DoGrandHTMLTotals();
 
   nsClassHashtable<nsCharPtrHashKey, ReflowCounter> mCounts;
@@ -421,24 +421,24 @@ class ReflowCountMgr {
 
   bool mCycledOnce;
 
-  // Root Frame for Individual Tracking
+  
   nsPresContext* mPresContext;
   PresShell* mPresShell;
 
-  // ReflowCountMgr gReflowCountMgr;
+  
 };
 #endif
-//========================================================================
 
-// comment out to hide caret
+
+
 #define SHOW_CARET
 
-// The upper bound on the amount of time to spend reflowing, in
-// microseconds.  When this bound is exceeded and reflow commands are
-// still queued up, a reflow event is posted.  The idea is for reflow
-// to not hog the processor beyond the time specifed in
-// gMaxRCProcessingTime.  This data member is initialized from the
-// layout.reflow.timeslice pref.
+
+
+
+
+
+
 #define NS_MAX_REFLOW_TIME 1000000
 static int32_t gMaxRCProcessingTime = -1;
 
@@ -447,7 +447,7 @@ struct nsCallbackEventRequest {
   nsCallbackEventRequest* next;
 };
 
-// ----------------------------------------------------------------------------
+
 
 class nsAutoCauseReflowNotifier {
  public:
@@ -456,8 +456,8 @@ class nsAutoCauseReflowNotifier {
     mPresShell->WillCauseReflow();
   }
   MOZ_CAN_RUN_SCRIPT ~nsAutoCauseReflowNotifier() {
-    // This check should not be needed. Currently the only place that seem
-    // to need it is the code that deals with bug 337586.
+    
+    
     if (!mPresShell->mHaveShutDown) {
       RefPtr<PresShell> presShell(mPresShell);
       presShell->DidCauseReflow();
@@ -478,20 +478,20 @@ class MOZ_STACK_CLASS nsPresShellEventCB : public EventDispatchingCallback {
     if (aVisitor.mPresContext && aVisitor.mEvent->mClass != eBasicEventClass) {
       if (aVisitor.mEvent->mMessage == eMouseDown ||
           aVisitor.mEvent->mMessage == eMouseUp) {
-        // Mouse-up and mouse-down events call nsIFrame::HandlePress/Release
-        // which call GetContentOffsetsFromPoint which requires up-to-date
-        // layout. Bring layout up-to-date now so that GetCurrentEventFrame()
-        // below will return a real frame and we don't have to worry about
-        // destroying it by flushing later.
+        
+        
+        
+        
+        
         MOZ_KnownLive(mPresShell)->FlushPendingNotifications(FlushType::Layout);
       } else if (aVisitor.mEvent->mMessage == eWheel &&
                  aVisitor.mEventStatus != nsEventStatus_eConsumeNoDefault) {
         nsIFrame* frame = mPresShell->GetCurrentEventFrame();
         if (frame) {
-          // chrome (including addons) should be able to know if content
-          // handles both D3E "wheel" event and legacy mouse scroll events.
-          // We should dispatch legacy mouse events before dispatching the
-          // "wheel" event into system group.
+          
+          
+          
+          
           RefPtr<EventStateManager> esm =
               aVisitor.mPresContext->EventStateManager();
           esm->DispatchLegacyMouseScrollEvents(
@@ -501,8 +501,8 @@ class MOZ_STACK_CLASS nsPresShellEventCB : public EventDispatchingCallback {
       nsIFrame* frame = mPresShell->GetCurrentEventFrame();
       if (!frame && (aVisitor.mEvent->mMessage == eMouseUp ||
                      aVisitor.mEvent->mMessage == eTouchEnd)) {
-        // Redirect BUTTON_UP and TOUCH_END events to the root frame to ensure
-        // that capturing is released.
+        
+        
         frame = mPresShell->GetRootFrame();
       }
       if (frame) {
@@ -521,8 +521,8 @@ class nsBeforeFirstPaintDispatcher : public Runnable {
       : mozilla::Runnable("nsBeforeFirstPaintDispatcher"),
         mDocument(aDocument) {}
 
-  // Fires the "before-first-paint" event so that interested parties (right now,
-  // the mobile browser) are aware of it.
+  
+  
   NS_IMETHOD Run() override {
     nsCOMPtr<nsIObserverService> observerService =
         mozilla::services::GetObserverService();
@@ -537,9 +537,9 @@ class nsBeforeFirstPaintDispatcher : public Runnable {
   RefPtr<Document> mDocument;
 };
 
-// This is a helper class to track whether the targeted frame is destroyed after
-// dispatching pointer events. In that case, we need the original targeted
-// content so that we can dispatch the mouse events to it.
+
+
+
 class MOZ_RAII AutoPointerEventTargetUpdater final {
  public:
   AutoPointerEventTargetUpdater(PresShell* aShell, WidgetEvent* aEvent,
@@ -547,7 +547,7 @@ class MOZ_RAII AutoPointerEventTargetUpdater final {
                                 nsIContent** aOutTargetContent) {
     MOZ_ASSERT(aEvent);
     if (!aOutTargetContent || aEvent->mClass != ePointerEventClass) {
-      // Make the destructor happy.
+      
       mOutTargetContent = nullptr;
       return;
     }
@@ -559,11 +559,11 @@ class MOZ_RAII AutoPointerEventTargetUpdater final {
     mWeakFrame = aFrame;
     mOutTargetContent = aOutTargetContent;
     mFromTouch = aEvent->AsPointerEvent()->mFromTouchEvent;
-    // Touch event target may have no frame, e.g., removed from the DOM
+    
     MOZ_ASSERT_IF(!mFromTouch, aFrame);
-    // The frame may be a text frame, but the event target should be an element
-    // node.  Therefore, refer aTargetContent first, then, if we have only a
-    // frame, we should use inclusive ancestor of the content.
+    
+    
+    
     mOriginalPointerEventTarget = [&]() -> nsIContent* {
       nsIContent* const target =
           aTargetContent ? aTargetContent
@@ -588,15 +588,15 @@ class MOZ_RAII AutoPointerEventTargetUpdater final {
       return;
     }
     if (mFromTouch) {
-      // If the source event is a touch event, the touch event target should
-      // always be same target as preceding ePointerDown.  Therefore, we should
-      // always set it back to the original event target.
+      
+      
+      
       mOriginalPointerEventTarget.swap(*mOutTargetContent);
     } else {
-      // If the source event is not a touch event (must be a mouse event in
-      // this case), the event should be fired on the closest inclusive ancestor
-      // of the pointer event target which is still connected.  The mutations
-      // are tracked by PresShell::ContentRemoved.  Therefore, we should set it.
+      
+      
+      
+      
       if (!mPointerEventTargetTracker ||
           !mPointerEventTargetTracker->ContentWasRemoved()) {
         mOriginalPointerEventTarget.swap(*mOutTargetContent);
@@ -758,23 +758,23 @@ already_AddRefed<nsFrameSelection> PresShell::FrameSelection() {
   return ret.forget();
 }
 
-//----------------------------------------------------------------------
+
 
 static uint32_t sNextPresShellId = 0;
 
-/* static */
+
 bool PresShell::AccessibleCaretEnabled(nsIDocShell* aDocShell) {
-  // If the pref forces it on, then enable it.
+  
   if (StaticPrefs::layout_accessiblecaret_enabled()) {
     return true;
   }
-  // If the touch pref is on, and touch events are enabled (this depends
-  // on the specific device running), then enable it.
+  
+  
   if (StaticPrefs::layout_accessiblecaret_enabled_on_touch() &&
       dom::TouchEvent::PrefEnabled(aDocShell)) {
     return true;
   }
-  // Otherwise, disabled.
+  
   return false;
 }
 
@@ -784,7 +784,7 @@ PresShell::PresShell(Document* aDocument)
       mLastSelectionForToString(nullptr),
 #ifdef ACCESSIBILITY
       mDocAccessible(nullptr),
-#endif  // ACCESSIBILITY
+#endif  
       mLastResolutionChangeOrigin(ResolutionChangeOrigin::Apz),
       mPaintCount(0),
       mAPZFocusSequenceNumber(0),
@@ -854,9 +854,9 @@ PresShell::PresShell(Document* aDocument)
 
 NS_INTERFACE_TABLE_HEAD(PresShell)
   NS_INTERFACE_TABLE_BEGIN
-    // In most cases, PresShell should be treated as concrete class, but need to
-    // QI for weak reference.  Therefore, the case needed by do_QueryReferent()
-    // should be tested first.
+    
+    
+    
     NS_INTERFACE_TABLE_ENTRY(PresShell, PresShell)
     NS_INTERFACE_TABLE_ENTRY(PresShell, nsIDocumentObserver)
     NS_INTERFACE_TABLE_ENTRY(PresShell, nsISelectionController)
@@ -895,12 +895,12 @@ PresShell::~PresShell() {
   mFrameConstructor = nullptr;
 }
 
-/**
- * Initialize the presentation shell. Create view manager and style
- * manager.
- * Note this can't be merged into our constructor because caret initialization
- * calls AddRef() on us.
- */
+
+
+
+
+
+
 void PresShell::Init(nsPresContext* aPresContext, nsViewManager* aViewManager) {
   MOZ_ASSERT(mDocument);
   MOZ_ASSERT(aPresContext);
@@ -909,58 +909,58 @@ void PresShell::Init(nsPresContext* aPresContext, nsViewManager* aViewManager) {
 
   mViewManager = aViewManager;
 
-  // mDocument is now set.  It might have a display document whose "need layout/
-  // style" flush flags are not set, but ours will be set.  To keep these
-  // consistent, call the flag setting functions to propagate those flags up
-  // to the display document.
+  
+  
+  
+  
   SetNeedLayoutFlush();
   SetNeedStyleFlush();
 
-  // Create our frame constructor.
+  
   mFrameConstructor = MakeUnique<nsCSSFrameConstructor>(mDocument, this);
 
-  // The document viewer owns both view manager and pres shell.
+  
   mViewManager->SetPresShell(this);
 
-  // Bind the context to the presentation shell.
-  // FYI: We cannot initialize mPresContext in the constructor because we
-  //      cannot call AttachPresShell() in it and once we initialize
-  //      mPresContext, other objects may refer refresh driver or restyle
-  //      manager via mPresContext and that causes hitting MOZ_ASSERT in some
-  //      places.  Therefore, we should initialize mPresContext here with
-  //      const_cast hack since we want to guarantee that mPresContext lives
-  //      as long as the PresShell.
+  
+  
+  
+  
+  
+  
+  
+  
   const_cast<RefPtr<nsPresContext>&>(mPresContext) = aPresContext;
   mPresContext->AttachPresShell(this);
 
   mPresContext->InitFontCache();
 
-  // FIXME(emilio, bug 1544185): Some Android code somehow depends on the shell
-  // being eagerly registered as a style flush observer. This shouldn't be
-  // needed otherwise.
+  
+  
+  
   EnsureStyleFlush();
 
   const bool accessibleCaretEnabled =
       AccessibleCaretEnabled(mDocument->GetDocShell());
   if (accessibleCaretEnabled) {
-    // Need to happen before nsFrameSelection has been set up.
+    
     mAccessibleCaretEventHub = new AccessibleCaretEventHub(this);
     mAccessibleCaretEventHub->Init();
   }
 
   mSelection = new nsFrameSelection(this, accessibleCaretEnabled);
 
-  // Important: this has to happen after the selection has been set up
+  
 #ifdef SHOW_CARET
-  // make the caret
+  
   mCaret = new nsCaret();
   mCaret->Init(this);
   mOriginalCaret = mCaret;
 
-  // SetCaretEnabled(true);       // make it show in browser windows
+  
 #endif
-  // set up selection to be displayed in document
-  // Don't enable selection for print media
+  
+  
   nsPresContext::nsPresContextType type = mPresContext->Type();
   if (type != nsPresContext::eContext_PrintPreview &&
       type != nsPresContext::eContext_Print) {
@@ -1010,10 +1010,10 @@ void PresShell::Init(nsPresContext* aPresContext, nsViewManager* aViewManager) {
     timelines->UpdateLastRefreshDriverTime();
   }
 
-  // Get our activeness from the docShell.
+  
   ActivenessMaybeChanged();
 
-  // Setup our font inflation preferences.
+  
   mFontSizeInflationEmPerLine = StaticPrefs::font_size_inflation_emPerLine();
   mFontSizeInflationMinTwips = StaticPrefs::font_size_inflation_minTwips();
   mFontSizeInflationLineThreshold =
@@ -1022,8 +1022,8 @@ void PresShell::Init(nsPresContext* aPresContext, nsViewManager* aViewManager) {
       StaticPrefs::font_size_inflation_forceEnabled();
   mFontSizeInflationDisabledInMasterProcess =
       StaticPrefs::font_size_inflation_disabledInMasterProcess();
-  // We'll compute the font size inflation state in Initialize(), when we know
-  // the document type.
+  
+  
 
   mTouchManager.Init(this, mDocument);
 
@@ -1031,7 +1031,7 @@ void PresShell::Init(nsPresContext* aPresContext, nsViewManager* aViewManager) {
     mZoomConstraintsClient = new ZoomConstraintsClient();
     mZoomConstraintsClient->Init(this, mDocument);
 
-    // We call this to create mMobileViewportManager, if it is needed.
+    
     MaybeRecreateMobileViewportManager(false);
   }
 
@@ -1051,7 +1051,7 @@ static void LogTextPerfStats(gfxTextPerfMetrics* aTextPerf,
                              const char* aURL) {
   LogModule* tpLog = gfxPlatform::GetLog(eGfxLog_textperf);
 
-  // ignore XUL contexts unless at debug level
+  
   mozilla::LogLevel logLevel = LogLevel::Warning;
   if (aCounts.numContentTextRuns == 0) {
     logLevel = LogLevel::Debug;
@@ -1144,10 +1144,10 @@ void PresShell::MaybeNotifyShowDynamicToolbar() {
     }
   }
 }
-#endif  // defined(MOZ_WIDGET_ANDROID)
+#endif  
 
 void PresShell::Destroy() {
-  // Do not add code before this line please!
+  
   if (mHaveShutDown) {
     return;
   }
@@ -1160,34 +1160,34 @@ void PresShell::Destroy() {
       "Layout tree destruction", LAYOUT_Destroy,
       uri ? uri->GetSpecOrDefault() : "N/A"_ns);
 
-  // Try to determine if the page is the user had a meaningful opportunity to
-  // zoom this page. This is not 100% accurate but should be "good enough" for
-  // telemetry purposes.
+  
+  
+  
   auto isUserZoomablePage = [&]() -> bool {
     if (mIsFirstPaint) {
-      // Page was never painted, so it wasn't zoomable by the user. We get a
-      // handful of these "transient" presShells.
+      
+      
       return false;
     }
     if (!mPresContext->IsRootContentDocumentCrossProcess()) {
-      // Not a root content document, so APZ doesn't support zooming it.
+      
       return false;
     }
     if (InRDMPane()) {
-      // Responsive design mode is a special case that we want to ignore here.
+      
       return false;
     }
     if (mDocument && mDocument->IsInitialDocument()) {
-      // Ignore initial about:blank page loads
+      
       return false;
     }
     if (XRE_IsContentProcess() &&
         IsExtensionRemoteType(ContentChild::GetSingleton()->GetRemoteType())) {
-      // Also omit presShells from the extension process because they sometimes
-      // can't be zoomed by the user.
+      
+      
       return false;
     }
-    // Otherwise assume the page is user-zoomable.
+    
     return true;
   };
   if (isUserZoomablePage()) {
@@ -1197,7 +1197,7 @@ void PresShell::Destroy() {
         .Add();
   }
 
-  // dump out cumulative text perf metrics
+  
   gfxTextPerfMetrics* tp;
   if (mPresContext && (tp = mPresContext->GetTextPerfMetrics())) {
     tp->Accumulate();
@@ -1243,7 +1243,7 @@ void PresShell::Destroy() {
     mDocAccessible->Shutdown();
     mDocAccessible = nullptr;
   }
-#endif  // ACCESSIBILITY
+#endif  
 
   MaybeReleaseCapturingContent();
 
@@ -1255,8 +1255,8 @@ void PresShell::Destroy() {
   }
 
   if (mPresContext) {
-    // We need to notify the destroying the nsPresContext to ESM for
-    // suppressing to use from ESM.
+    
+    
     mPresContext->EventStateManager()->NotifyDestroyPresContext(mPresContext);
   }
 
@@ -1277,7 +1277,7 @@ void PresShell::Destroy() {
     }
   }
 
-  // If our paint suppression timer is still active, kill it.
+  
   CancelPaintSuppressionTimer();
 
   mSynthMouseMoveEvent.Revoke();
@@ -1303,15 +1303,15 @@ void PresShell::Destroy() {
 
   mIsDestroying = true;
 
-  // We can't release all the event content in
-  // mCurrentEventContentStack here since there might be code on the
-  // stack that will release the event content too. Double release
-  // bad!
+  
+  
+  
+  
 
-  // The frames will be torn down, so remove them from the current
-  // event frame stack (since they'd be dangling references if we'd
-  // leave them in) and null out the mCurrentEventFrame pointer as
-  // well.
+  
+  
+  
+  
 
   mCurrentEventTarget.ClearFrame();
 
@@ -1325,15 +1325,15 @@ void PresShell::Destroy() {
   mPendingScrollResnap.Clear();
 
   if (mViewManager) {
-    // Clear the view manager's weak pointer back to |this| in case it
-    // was leaked.
+    
+    
     mViewManager->SetPresShell(nullptr);
     mViewManager = nullptr;
   }
 
-  // This shell must be removed from the document before the frame
-  // hierarchy is torn down to avoid finding deleted frames through
-  // this presshell while the frames are being torn down
+  
+  
+  
   if (mDocument) {
     NS_ASSERTION(mDocument->GetPresShell() == this, "Wrong shell?");
     mDocument->ClearServoRestyleRoot();
@@ -1344,14 +1344,14 @@ void PresShell::Destroy() {
     mPresContext->AnimationEventDispatcher()->ClearEventQueue();
   }
 
-  // Revoke any pending events.  We need to do this and cancel pending reflows
-  // before we destroy the frame constructor, since apparently frame destruction
-  // sometimes spins the event queue when plug-ins are involved(!).
-  // XXXmats is this still needed now that plugins are gone?
+  
+  
+  
+  
   CancelAllPendingReflows();
   CancelPostedReflowCallbacks();
 
-  // Destroy the frame constructor. This will destroy the frame hierarchy
+  
   mFrameConstructor->WillDestroyFrameTree();
 
   NS_WARNING_ASSERTION(!mAutoWeakFrames && mWeakFrames.IsEmpty(),
@@ -1364,18 +1364,18 @@ void PresShell::Destroy() {
     weakFrame->Clear(this);
   }
 
-  // Terminate AccessibleCaretEventHub after tearing down the frame tree so that
-  // we don't need to remove caret element's frame in
-  // AccessibleCaret::RemoveCaretElement().
+  
+  
+  
   if (mAccessibleCaretEventHub) {
     mAccessibleCaretEventHub->Terminate();
     mAccessibleCaretEventHub = nullptr;
   }
 
   if (mPresContext) {
-    // We hold a reference to the pres context, and it holds a weak link back
-    // to us. To avoid the pres context having a dangling reference, set its
-    // pres shell to nullptr
+    
+    
+    
     mPresContext->DetachPresShell();
   }
 
@@ -1417,26 +1417,26 @@ bool PresShell::GetAuthorStyleDisabled() const {
 }
 
 void PresShell::AddUserSheet(StyleSheet* aSheet) {
-  // Make sure this does what nsDocumentViewer::CreateStyleSet does wrt
-  // ordering. We want this new sheet to come after all the existing stylesheet
-  // service sheets (which are at the start), but before other user sheets; see
-  // nsIStyleSheetService.idl for the ordering.
+  
+  
+  
+  
 
   nsStyleSheetService* sheetService = nsStyleSheetService::GetInstance();
   nsTArray<RefPtr<StyleSheet>>& userSheets = *sheetService->UserStyleSheets();
 
-  // Search for the place to insert the new user sheet. Since all of the
-  // stylesheet service provided user sheets should be at the start of the style
-  // set's list, and aSheet should be at the end of userSheets. Given that, we
-  // can find the right place to insert the new sheet based on the length of
-  // userSheets.
+  
+  
+  
+  
+  
   MOZ_ASSERT(aSheet);
   MOZ_ASSERT(userSheets.LastElement() == aSheet);
 
   size_t index = userSheets.Length() - 1;
 
-  // Assert that all of userSheets (except for the last, new element) matches up
-  // with what's in the style set.
+  
+  
   for (size_t i = 0; i < index; ++i) {
     MOZ_ASSERT(StyleSet()->SheetAt(StyleOrigin::User, i) == userSheets[i]);
   }
@@ -1452,15 +1452,15 @@ void PresShell::AddUserSheet(StyleSheet* aSheet) {
 }
 
 void PresShell::AddAgentSheet(StyleSheet* aSheet) {
-  // Make sure this does what nsDocumentViewer::CreateStyleSet does
-  // wrt ordering.
+  
+  
   StyleSet()->AppendStyleSheet(*aSheet);
   mDocument->ApplicableStylesChanged();
 }
 
 void PresShell::AddAuthorSheet(StyleSheet* aSheet) {
-  // Document specific "additional" Author sheets should be stronger than the
-  // ones added with the StyleSheetService.
+  
+  
   StyleSheet* firstAuthorSheet = mDocument->GetFirstAdditionalAuthorSheet();
   if (firstAuthorSheet) {
     StyleSet()->InsertStyleSheetBefore(*aSheet, *firstAuthorSheet);
@@ -1482,8 +1482,8 @@ bool PresShell::NeedsFocusFixUp() const {
     return false;
   }
 
-  // If focus target is an area element with one or more shapes that are
-  // focusable areas.
+  
+  
   if (auto* area = HTMLAreaElement::FromNode(currentFocus)) {
     if (nsFocusManager::IsAreaElementFocusable(*area)) {
       return false;
@@ -1524,20 +1524,20 @@ void PresShell::SelectionWillTakeFocus() {
 }
 
 void PresShell::SelectionWillLoseFocus() {
-  // Do nothing, the main selection is the default focused selection.
+  
 }
 
-// Selection repainting code relies on selection offsets being properly
-// adjusted (see bug 1626291), so we need to wait until the DOM is finished
-// notifying.
+
+
+
 static void RepaintNormalSelectionWhenSafe(nsFrameSelection& aFrameSelection) {
   if (nsContentUtils::IsSafeToRunScript()) {
     aFrameSelection.RepaintSelection(SelectionType::eNormal);
     return;
   }
 
-  // Note that importantly we don't defer changing the DisplaySelection. That'd
-  // be potentially racy with other code that may change it.
+  
+  
   nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
       "RepaintNormalSelectionWhenSafe",
       [sel = RefPtr<nsFrameSelection>(&aFrameSelection)] {
@@ -1550,7 +1550,7 @@ void PresShell::FrameSelectionWillLoseFocus(nsFrameSelection& aFrameSelection) {
     return;
   }
 
-  // Do nothing, the main selection is the default focused selection.
+  
   if (&aFrameSelection == mSelection) {
     return;
   }
@@ -1580,10 +1580,10 @@ void PresShell::FrameSelectionWillTakeFocus(
   }
   if (mFocusedFrameSelection == &aFrameSelection) {
 #ifdef XP_MACOSX
-    // FIXME: Mac needs to update the global selection cache, even if the
-    // document's focused selection doesn't change, and this is currently done
-    // from RepaintSelection. Maybe we should move part of the global selection
-    // handling here, or something of that sort, unclear.
+    
+    
+    
+    
     RepaintNormalSelectionWhenSafe(aFrameSelection);
 #endif
     return;
@@ -1689,7 +1689,7 @@ PresShell::RepaintSelection(RawSelectionType aRawSelectionType) {
   return frameSelection->RepaintSelection(ToSelectionType(aRawSelectionType));
 }
 
-// Make shell be a document observer
+
 void PresShell::BeginObservingDocument() {
   if (mDocument && !mIsDestroying) {
     mIsObservingDocument = true;
@@ -1702,16 +1702,16 @@ void PresShell::BeginObservingDocument() {
   }
 }
 
-// Make shell stop being a document observer
+
 void PresShell::EndObservingDocument() {
-  // XXXbz do we need to tell the frame constructor that the document
-  // is gone, perhaps?  Except for printing it's NOT gone, sometimes.
+  
+  
   mIsDocumentGone = true;
   mIsObservingDocument = false;
 }
 
 void PresShell::InitPaintSuppressionTimer() {
-  // Default to PAINTLOCK_EVENT_DELAY if we can't get the pref value.
+  
   Document* doc = mDocument->GetDisplayDocument()
                       ? mDocument->GetDisplayDocument()
                       : mDocument.get();
@@ -1735,7 +1735,7 @@ nsresult PresShell::Initialize() {
   }
 
   if (!mDocument) {
-    // Nothing to do
+    
     return NS_OK;
   }
 
@@ -1748,11 +1748,11 @@ nsresult PresShell::Initialize() {
   RecomputeFontSizeInflationEnabled();
   MOZ_DIAGNOSTIC_ASSERT(!mIsDestroying);
 
-  // Ensure the pres context doesn't think it has changed, since we haven't even
-  // started layout. This avoids spurious restyles / reflows afterwards.
-  //
-  // Note that this is very intentionally before setting mDidInitialize so it
-  // doesn't notify the document, or run media query change events.
+  
+  
+  
+  
+  
   mPresContext->FlushPendingMediaFeatureValuesChanged();
   MOZ_DIAGNOSTIC_ASSERT(!mIsDestroying);
 
@@ -1770,10 +1770,10 @@ nsresult PresShell::Initialize() {
   }
 #endif
 
-  // Get the root frame from the frame constructor.
-  // XXXbz it would be nice to move this somewhere else... like frame manager
-  // Init(), say.  But we need to make sure our views are all set up by the
-  // time we do this!
+  
+  
+  
+  
   MOZ_ASSERT(!mFrameConstructor->GetRootFrame(),
              "How did that happen, exactly?");
   ViewportFrame* rootFrame;
@@ -1792,15 +1792,15 @@ nsresult PresShell::Initialize() {
   if (Element* root = mDocument->GetRootElement()) {
     {
       nsAutoCauseReflowNotifier reflowNotifier(this);
-      // Have the style sheet processor construct frame for the root
-      // content object down
+      
+      
       mFrameConstructor->ContentInserted(
           root, nsCSSFrameConstructor::InsertionKind::Sync);
     }
-    // Something in mFrameConstructor->ContentInserted may have caused
-    // Destroy() to get called, bug 337586.  Or, nsAutoCauseReflowNotifier
-    // (which sets up a script blocker) going out of scope may have killed us
-    // too
+    
+    
+    
+    
     NS_ENSURE_STATE(!mHaveShutDown);
   }
 
@@ -1808,10 +1808,10 @@ nsresult PresShell::Initialize() {
 
   NS_ASSERTION(rootFrame, "How did that happen?");
 
-  // Note: when the frame was created above it had the NS_FRAME_IS_DIRTY bit
-  // set, but XBL processing could have caused a reflow which clears it.
+  
+  
   if (MOZ_LIKELY(rootFrame->HasAnyStateBits(NS_FRAME_IS_DIRTY))) {
-    // Unset the DIRTY bits so that FrameNeedsReflow() will work right.
+    
     rootFrame->RemoveStateBits(NS_FRAME_IS_DIRTY | NS_FRAME_HAS_DIRTY_CHILDREN);
     NS_ASSERTION(!mDirtyRoots.Contains(rootFrame),
                  "Why is the root in mDirtyRoots already?");
@@ -1822,21 +1822,21 @@ nsresult PresShell::Initialize() {
                  "Why no reflow scheduled?");
   }
 
-  // Restore our root scroll position now if we're getting here after EndLoad
-  // got called, since this is our one chance to do it.  Note that we need not
-  // have reflowed for this to work; when the scrollframe is finally reflowed
-  // it'll pick up the position we store in it here.
+  
+  
+  
+  
   if (!mDocumentLoading) {
     RestoreRootScrollPosition();
   }
 
-  // For printing, we just immediately unsuppress.
+  
   if (!mPresContext->IsPaginated()) {
-    // Kick off a one-shot timer based off our pref value.  When this timer
-    // fires, if painting is still locked down, then we will go ahead and
-    // trigger a full invalidate and allow painting to proceed normally.
+    
+    
+    
     mPaintingSuppressed = true;
-    // Don't suppress painting if the document isn't loading.
+    
     Document::ReadyState readyState = mDocument->GetReadyStateEnum();
     if (readyState != Document::READYSTATE_COMPLETE) {
       mPaintSuppressionTimer = NS_NewTimer();
@@ -1844,12 +1844,12 @@ nsresult PresShell::Initialize() {
     if (!mPaintSuppressionTimer) {
       mPaintingSuppressed = false;
     } else {
-      // Initialize the timer.
+      
       mPaintSuppressionTimer->SetTarget(GetMainThreadSerialEventTarget());
       InitPaintSuppressionTimer();
       if (mHasTriedFastUnsuppress) {
-        // Someone tried to unsuppress painting before Initialize was called so
-        // unsuppress painting rather soon.
+        
+        
         mHasTriedFastUnsuppress = false;
         TryUnsuppressPaintingSoon();
         MOZ_ASSERT(mHasTriedFastUnsuppress);
@@ -1857,13 +1857,13 @@ nsresult PresShell::Initialize() {
     }
   }
 
-  // If we get here and painting is not suppressed, we still want to run the
-  // unsuppression logic, so set mShouldUnsuppressPainting to true.
+  
+  
   if (!mPaintingSuppressed) {
     mShouldUnsuppressPainting = true;
   }
 
-  return NS_OK;  // XXX this needs to be real. MMP
+  return NS_OK;  
 }
 
 void PresShell::TryUnsuppressPaintingSoon() {
@@ -1879,9 +1879,9 @@ void PresShell::TryUnsuppressPaintingSoon() {
   if (!mDocument->IsInitialDocument() &&
       mDocument->DidHitCompleteSheetCache() &&
       mPresContext->IsRootContentDocumentCrossProcess()) {
-    // Try to unsuppress faster on a top level page if it uses stylesheet
-    // cache, since that hints that many resources can be painted sooner than
-    // in a cold page load case.
+    
+    
+    
     NS_DispatchToCurrentThreadQueue(
         NS_NewRunnableFunction("PresShell::TryUnsuppressPaintingSoon",
                                [self = RefPtr{this}]() -> void {
@@ -1911,17 +1911,17 @@ void PresShell::ForceResizeReflowWithCurrentDimensions() {
 void PresShell::ResizeReflow(nscoord aWidth, nscoord aHeight,
                              ResizeReflowOptions aOptions) {
   if (mZoomConstraintsClient) {
-    // If we have a ZoomConstraintsClient and the available screen area
-    // changed, then we might need to disable double-tap-to-zoom, so notify
-    // the ZCC to update itself.
+    
+    
+    
     mZoomConstraintsClient->ScreenSizeChanged();
   }
   if (UsesMobileViewportSizing()) {
-    // If we are using mobile viewport sizing, request a reflow from the MVM.
-    // It can recompute the final CSS viewport and trigger a call to
-    // ResizeReflowIgnoreOverride if it changed. We don't force adjusting
-    // of resolution, because that is only necessary when we are destroying
-    // the MVM.
+    
+    
+    
+    
+    
     MOZ_ASSERT(mMobileViewportManager);
     mMobileViewportManager->RequestReflow(false);
     return;
@@ -1979,13 +1979,13 @@ void PresShell::PostScrollEvent(Runnable* aEvent) {
   MOZ_ASSERT(aEvent);
   mPendingScrollEvents.AppendElement(aEvent);
 
-  // If we (or any descendant docs) have any content visibility: auto elements,
-  // we also need to run its proximity to the viewport on scroll. Same for
-  // intersection observers.
-  //
-  // We don't need to mark ourselves as needing a layout flush. We don't need to
-  // get flushed, we just need the viewport relevancy / content-visibility: auto
-  // viewport proximity phases to run.
+  
+  
+  
+  
+  
+  
+  
   mPresContext->RefreshDriver()->ScheduleRenderingPhases(
       {RenderingPhase::ScrollSteps, RenderingPhase::Layout,
        RenderingPhase::UpdateIntersectionObservations});
@@ -2012,8 +2012,8 @@ bool PresShell::ResizeReflowIgnoreOverride(nscoord aWidth, nscoord aHeight,
                                            ResizeReflowOptions aOptions) {
   MOZ_ASSERT(!mIsReflowing, "Shouldn't be in reflow here!");
 
-  // Historically we never fired resize events if there was no root frame by the
-  // time this function got called.
+  
+  
   const bool initialized = mDidInitialize;
   RefPtr<PresShell> kungFuDeathGrip(this);
 
@@ -2023,8 +2023,8 @@ bool PresShell::ResizeReflowIgnoreOverride(nscoord aWidth, nscoord aHeight,
     }
   };
 
-  // If there are orthogonal flows that were dependent on the ICB size, mark
-  // them as dirty to ensure they will be reflowed.
+  
+  
   for (auto* frame : mOrthogonalFlows) {
     FrameNeedsReflow(frame, IntrinsicDirty::None, NS_FRAME_HAS_DIRTY_CHILDREN);
   }
@@ -2041,28 +2041,28 @@ bool PresShell::ResizeReflowIgnoreOverride(nscoord aWidth, nscoord aHeight,
     return changed;
   }
 
-  // Make sure that style is flushed before setting the pres context
-  // VisibleArea.
-  //
-  // Otherwise we may end up with bogus viewport units resolved against the
-  // unconstrained bsize, or restyling the whole document resolving viewport
-  // units against targetWidth, which may end up doing wasteful work.
+  
+  
+  
+  
+  
+  
   mDocument->FlushPendingNotifications(FlushType::Frames);
 
   nsIFrame* rootFrame = GetRootFrame();
   if (mIsDestroying || !rootFrame) {
-    // If we don't have a root frame yet, that means we haven't had our initial
-    // reflow... If that's the case, and aWidth or aHeight is unconstrained,
-    // ignore them altogether.
+    
+    
+    
     if (aHeight == NS_UNCONSTRAINEDSIZE || aWidth == NS_UNCONSTRAINEDSIZE) {
-      // We can't do the work needed for SizeToContent without a root
-      // frame, and we want to return before setting the visible area.
+      
+      
       return false;
     }
 
     mPresContext->SetVisibleArea(nsRect(0, 0, aWidth, aHeight));
-    // There isn't anything useful we can do if the initial reflow hasn't
-    // happened.
+    
+    
     return true;
   }
 
@@ -2079,12 +2079,12 @@ bool PresShell::ResizeReflowIgnoreOverride(nscoord aWidth, nscoord aHeight,
   }
 
   mPresContext->SetVisibleArea(nsRect(0, 0, targetWidth, targetHeight));
-  // XXX Do a full invalidate at the beginning so that invalidates along
-  // the way don't have region accumulation issues?
+  
+  
 
-  // For height:auto BSizes (i.e. layout-controlled), descendant
-  // intrinsic sizes can't depend on them. So the only other case is
-  // viewport-controlled BSizes which we handle here.
+  
+  
+  
   nsLayoutUtils::MarkIntrinsicISizesDirtyIfDependentOnBSize(rootFrame);
   rootFrame->SetHasBSizeChange(true);
   FrameNeedsReflow(rootFrame, IntrinsicDirty::None,
@@ -2094,7 +2094,7 @@ bool PresShell::ResizeReflowIgnoreOverride(nscoord aWidth, nscoord aHeight,
     nsAutoCauseReflowNotifier crNotifier(this);
     WillDoReflow();
 
-    // Kick off a top-down reflow
+    
     AUTO_LAYOUT_PHASE_ENTRY_POINT(GetPresContext(), Reflow);
     nsViewManager::AutoDisableRefresh refreshBlocker(mViewManager);
 
@@ -2112,14 +2112,14 @@ bool PresShell::ResizeReflowIgnoreOverride(nscoord aWidth, nscoord aHeight,
     }
   }
 
-  // Now, we may have been destroyed by the destructor of
-  // `nsAutoCauseReflowNotifier`.
+  
+  
 
   mPendingDidDoReflow = true;
   DidDoReflow(true);
 
-  // the reflow above should've set our bsize if it was NS_UNCONSTRAINEDSIZE,
-  // and the isize shouldn't be NS_UNCONSTRAINEDSIZE anyway.
+  
+  
   MOZ_DIAGNOSTIC_ASSERT(
       mPresContext->GetVisibleArea().width != NS_UNCONSTRAINEDSIZE,
       "width should not be NS_UNCONSTRAINEDSIZE after reflow");
@@ -2131,7 +2131,7 @@ bool PresShell::ResizeReflowIgnoreOverride(nscoord aWidth, nscoord aHeight,
   return true;
 }
 
-// https://drafts.csswg.org/cssom-view/#document-run-the-resize-steps
+
 void PresShell::RunResizeSteps() {
   if (!mResizeEventPending && !mVisualViewportResizeEventPending) {
     return;
@@ -2146,14 +2146,14 @@ void PresShell::RunResizeSteps() {
   }
 
   if (mResizeEventPending) {
-    // Clear it before firing, just in case the event triggers another resize
-    // event. Such event will fire next tick.
+    
+    
     mResizeEventPending = false;
     WidgetEvent event(true, mozilla::eResize);
     nsEventStatus status = nsEventStatus_eIgnore;
 
     if (RefPtr<nsPIDOMWindowOuter> outer = window->GetOuterWindow()) {
-      // MOZ_KnownLive due to bug 1506441
+      
       EventDispatcher::Dispatch(MOZ_KnownLive(nsGlobalWindowOuter::Cast(outer)),
                                 mPresContext, &event, nullptr, &status);
     }
@@ -2166,13 +2166,13 @@ void PresShell::RunResizeSteps() {
   }
 }
 
-// https://drafts.csswg.org/cssom-view/#document-run-the-scroll-steps
-// But note: https://github.com/w3c/csswg-drafts/issues/11164
+
+
 void PresShell::RunScrollSteps() {
-  // Scroll events are one-shot, so after running them we can drop them.
-  // However, dispatching a scroll event can potentially cause more scroll
-  // events to be posted, so we move the initial set into a temporary array
-  // first. (Newly posted scroll events will be dispatched on the next tick.)
+  
+  
+  
+  
   auto events = std::move(mPendingScrollEvents);
   for (auto& event : events) {
     event->Run();
@@ -2196,7 +2196,7 @@ void PresShell::NativeAnonymousContentWillBeRemoved(nsIContent* aAnonContent) {
   }
 #endif
   if (mDocument->DevToolsAnonymousAndShadowEventsEnabled()) {
-    aAnonContent->QueueDevtoolsAnonymousEvent(/* aIsRemove = */ true);
+    aAnonContent->QueueDevtoolsAnonymousEvent( true);
   }
   if (nsIContent* root =
           GetNativeAnonymousSubtreeRoot(mCurrentEventTarget.mContent)) {
@@ -2217,17 +2217,17 @@ void PresShell::NativeAnonymousContentWillBeRemoved(nsIContent* aAnonContent) {
 
 void PresShell::SetIgnoreFrameDestruction(bool aIgnore) {
   if (mDocument) {
-    // We need to tell the ImageLoader to drop all its references to frames
-    // because they're about to go away and it won't get notifications of that.
+    
+    
     mDocument->StyleImageLoader()->ClearFrames(mPresContext);
   }
   mIgnoreFrameDestruction = aIgnore;
 }
 
 void PresShell::NotifyDestroyingFrame(nsIFrame* aFrame) {
-  // We must remove these from FrameLayerBuilder::DisplayItemData::mFrameList
-  // here, otherwise the DisplayItemData destructor will use the destroyed frame
-  // when it tries to remove it from the (array) value of this property.
+  
+  
+  
   aFrame->RemoveDisplayItemDataForDeletion();
 
   if (!mIgnoreFrameDestruction) {
@@ -2239,7 +2239,7 @@ void PresShell::NotifyDestroyingFrame(nsIFrame* aFrame) {
 
     mDirtyRoots.Remove(aFrame);
 
-    // Remove frame properties
+    
     aFrame->RemoveAllProperties();
 
     const auto ComputeTargetContent =
@@ -2261,8 +2261,8 @@ void PresShell::NotifyDestroyingFrame(nsIFrame* aFrame) {
 
     for (EventTargetInfo& eventTargetInfo : mCurrentEventTargetStack) {
       if (aFrame == eventTargetInfo.mFrame) {
-        // One of our stack frames was deleted.  Get its content so that when we
-        // pop it we can still get its new frame from its content
+        
+        
         eventTargetInfo.UpdateFrameAndContent(
             nullptr, ComputeTargetContent(eventTargetInfo));
       }
@@ -2362,7 +2362,7 @@ NS_IMETHODIMP PresShell::GetSelectionFlags(int16_t* aFlags) {
   return NS_OK;
 }
 
-// implementation of nsISelectionController
+
 
 NS_IMETHODIMP
 PresShell::PhysicalMove(int16_t aDirection, int16_t aAmount, bool aExtend) {
@@ -2380,8 +2380,8 @@ NS_IMETHODIMP
 PresShell::WordMove(bool aForward, bool aExtend) {
   RefPtr<nsFrameSelection> frameSelection = mSelection;
   nsresult result = frameSelection->WordMove(aForward, aExtend);
-  // if we can't go down/up any more we must then move caret completely to
-  // end/beginning respectively.
+  
+  
   if (NS_FAILED(result)) {
     result = CompleteMove(aForward, aExtend);
   }
@@ -2392,8 +2392,8 @@ NS_IMETHODIMP
 PresShell::LineMove(bool aForward, bool aExtend) {
   RefPtr<nsFrameSelection> frameSelection = mSelection;
   nsresult result = frameSelection->LineMove(aForward, aExtend);
-  // if we can't go down/up any more we must then move caret completely to
-  // end/beginning respectively.
+  
+  
   if (NS_FAILED(result)) {
     result = CompleteMove(aForward, aExtend);
   }
@@ -2411,7 +2411,7 @@ PresShell::PageMove(bool aForward, bool aExtend) {
   nsIFrame* frame = nullptr;
   if (!aExtend) {
     frame = GetScrollContainerFrameToScroll(VerticalScrollDirection);
-    // If there is no scrollable frame, get the frame to move caret instead.
+    
   }
   if (!frame || frame->PresContext() != mPresContext) {
     frame = mSelection->GetFrameToPageSelect();
@@ -2419,9 +2419,9 @@ PresShell::PageMove(bool aForward, bool aExtend) {
       return NS_OK;
     }
   }
-  // We may scroll parent scrollable element of current selection limiter.
-  // In such case, we don't want to scroll selection into view unless
-  // selection is changed.
+  
+  
+  
   RefPtr<nsFrameSelection> frameSelection = mSelection;
   return frameSelection->PageMove(
       aForward, aExtend, frame, nsFrameSelection::SelectionIntoView::IfChanged);
@@ -2495,8 +2495,8 @@ PresShell::CompleteScroll(bool aForward) {
 
 NS_IMETHODIMP
 PresShell::CompleteMove(bool aForward, bool aExtend) {
-  // Beware! This may flush notifications via synchronous
-  // ScrollSelectionIntoView.
+  
+  
   RefPtr<nsFrameSelection> frameSelection = mSelection;
   Element* const limiter = frameSelection->GetAncestorLimiter();
   nsIFrame* frame = limiter ? limiter->GetPrimaryFrame()
@@ -2510,22 +2510,22 @@ PresShell::CompleteMove(bool aForward, bool aExtend) {
       aExtend ? nsFrameSelection::FocusMode::kExtendSelection
               : nsFrameSelection::FocusMode::kCollapseToNewPoint;
   frameSelection->HandleClick(
-      MOZ_KnownLive(pos.mResultContent) /* bug 1636889 */, pos.mContentOffset,
+      MOZ_KnownLive(pos.mResultContent) , pos.mContentOffset,
       pos.mContentOffset, focusMode,
       aForward ? CaretAssociationHint::After : CaretAssociationHint::Before);
   if (limiter) {
-    // HandleClick resets ancestorLimiter, so set it again.
+    
     frameSelection->SetAncestorLimiter(limiter);
   }
 
-  // After ScrollSelectionIntoView(), the pending notifications might be
-  // flushed and PresShell/PresContext/Frames may be dead. See bug 418470.
+  
+  
   return ScrollSelectionIntoView(SelectionType::eNormal,
                                  nsISelectionController::SELECTION_FOCUS_REGION,
                                  SelectionScrollMode::SyncFlush);
 }
 
-// end implementations nsISelectionController
+
 
 ScrollContainerFrame* PresShell::GetRootScrollContainerFrame() const {
   if (!mFrameConstructor) {
@@ -2605,7 +2605,7 @@ void PresShell::LoadComplete() {
     tp = mPresContext->GetTextPerfMetrics();
   }
 
-  // log load
+  
   bool shouldLog = MOZ_LOG_TEST(gLog, LogLevel::Debug);
   if (shouldLog || tp) {
     TimeDuration loadTime = TimeStamp::Now() - mLoadBegin;
@@ -2631,18 +2631,18 @@ void PresShell::LoadComplete() {
 
 #ifdef DEBUG
 void PresShell::VerifyHasDirtyRootAncestor(nsIFrame* aFrame) {
-  // XXXbz due to bug 372769, can't actually assert anything here...
-  // XXX Since bug 372769 is now fixed, the assertion is being enabled in bug
-  //     1758104.
+  
+  
+  
 #  if 0
-  // XXXbz shouldn't need this part; remove it once FrameNeedsReflow
-  // handles the root frame correctly.
+  
+  
   if (!aFrame->GetParent()) {
     return;
   }
 
-  // Make sure that there is a reflow root ancestor of |aFrame| that's
-  // in mDirtyRoots already.
+  
+  
   while (aFrame && aFrame->HasAnyStateBits(NS_FRAME_HAS_DIRTY_CHILDREN)) {
     if ((aFrame->HasAnyStateBits(NS_FRAME_REFLOW_ROOT |
                                  NS_FRAME_DYNAMIC_REFLOW_ROOT) ||
@@ -2705,28 +2705,28 @@ void PresShell::FrameNeedsReflow(nsIFrame* aFrame,
                  aBitToAdd == NS_FRAME_HAS_DIRTY_CHILDREN || !aBitToAdd,
              "Unexpected bits being added");
 
-  // FIXME bug 478135
+  
   NS_ASSERTION(
       aIntrinsicDirty != IntrinsicDirty::FrameAncestorsAndDescendants ||
           aBitToAdd != NS_FRAME_HAS_DIRTY_CHILDREN,
       "bits don't correspond to style change reason");
 
-  // FIXME bug 457400
+  
   NS_ASSERTION(!mIsReflowing, "can't mark frame dirty during reflow");
 
-  // If we've not yet done the initial reflow, then don't bother
-  // enqueuing a reflow command yet.
+  
+  
   if (!mDidInitialize) {
     return;
   }
 
-  // If we're already destroying, don't bother with this either.
+  
   if (mIsDestroying) {
     return;
   }
 
 #ifdef DEBUG
-  // printf("gShellCounter: %d\n", gShellCounter++);
+  
   if (mInVerifyReflow) return;
 
   if (VerifyReflowFlags::NoisyCommands & gVerifyReflowFlags) {
@@ -2748,13 +2748,13 @@ void PresShell::FrameNeedsReflow(nsIFrame* aFrame,
   do {
     nsIFrame* subtreeRoot = subtrees.PopLastElement();
 
-    // Grab |wasDirty| now so we can go ahead and update the bits on
-    // subtreeRoot.
+    
+    
     bool wasDirty = subtreeRoot->IsSubtreeDirty();
     subtreeRoot->AddStateBits(aBitToAdd);
 
-    // Determine whether we need to keep looking for the next ancestor
-    // reflow root if subtreeRoot itself is a reflow root.
+    
+    
     bool targetNeedsReflowFromParent;
     switch (aRootHandling) {
       case ReflowRootHandling::PositionOrSizeChange:
@@ -2782,19 +2782,19 @@ void PresShell::FrameNeedsReflow(nsIFrame* aFrame,
              (aFrame != subtreeRoot || !targetNeedsReflowFromParent);
     };
 
-    // Mark the intrinsic widths as dirty on the frame, all of its ancestors,
-    // and all of its descendants, if needed:
+    
+    
 
     if (aIntrinsicDirty != IntrinsicDirty::None) {
-      // Mark argument and all ancestors dirty. (Unless we hit a reflow root
-      // that should contain the reflow.
+      
+      
       for (nsIFrame* a = subtreeRoot;
            a && !CanStopClearingAncestorIntrinsics(a); a = a->GetParent()) {
         a->MarkIntrinsicISizesDirty();
         if (a->IsAbsolutelyPositioned()) {
-          // If we get here, 'a' is abspos, so its subtree's intrinsic sizing
-          // has no effect on its ancestors' intrinsic sizing. So, don't loop
-          // upwards any further.
+          
+          
+          
           break;
         }
       }
@@ -2804,10 +2804,10 @@ void PresShell::FrameNeedsReflow(nsIFrame* aFrame,
         (aIntrinsicDirty == IntrinsicDirty::FrameAncestorsAndDescendants);
     const bool dirty = (aBitToAdd == NS_FRAME_IS_DIRTY);
     if (frameAncestorAndDescendantISizesDirty || dirty) {
-      // Mark all descendants dirty (using an nsTArray stack rather than
-      // recursion).
-      // Note that ReflowInput::InitResizeFlags has some similar
-      // code; see comments there for how and why it differs.
+      
+      
+      
+      
       AutoTArray<nsIFrame*, 32> stack;
       stack.AppendElement(subtreeRoot);
 
@@ -2815,12 +2815,12 @@ void PresShell::FrameNeedsReflow(nsIFrame* aFrame,
         nsIFrame* f = stack.PopLastElement();
 
         if (frameAncestorAndDescendantISizesDirty && f->IsPlaceholderFrame()) {
-          // Call `GetOutOfFlowFrame` directly because we can get here from
-          // frame destruction and the placeholder might be already torn down.
+          
+          
           if (nsIFrame* oof =
                   static_cast<nsPlaceholderFrame*>(f)->GetOutOfFlowFrame()) {
             if (!nsLayoutUtils::IsProperAncestorFrame(subtreeRoot, oof)) {
-              // We have another distinct subtree we need to mark.
+              
               subtrees.AppendElement(oof);
             }
           }
@@ -2840,18 +2840,18 @@ void PresShell::FrameNeedsReflow(nsIFrame* aFrame,
       } while (stack.Length() != 0);
     }
 
-    // Skip setting dirty bits up the tree if we weren't given a bit to add.
+    
     if (!aBitToAdd) {
       continue;
     }
 
-    // Set NS_FRAME_HAS_DIRTY_CHILDREN bits (via nsIFrame::ChildIsDirty)
-    // up the tree until we reach either a frame that's already dirty or
-    // a reflow root.
+    
+    
+    
     nsIFrame* f = subtreeRoot;
     for (;;) {
       if (IsReflowBoundary(f) || !f->GetParent()) {
-        // we've hit a reflow root or the root frame
+        
         if (!wasDirty) {
           mDirtyRoots.Add(f);
           SetNeedLayoutFlush();
@@ -2872,7 +2872,7 @@ void PresShell::FrameNeedsReflow(nsIFrame* aFrame,
       NS_ASSERTION(f->HasAnyStateBits(NS_FRAME_HAS_DIRTY_CHILDREN),
                    "ChildIsDirty didn't do its job");
       if (wasDirty) {
-        // This frame was already marked dirty.
+        
 #ifdef DEBUG
         VerifyHasDirtyRootAncestor(f);
 #endif
@@ -2965,31 +2965,31 @@ void PresShell::SlotAssignmentWillChange(Element& aElement,
     return;
   }
 
-  // If the old slot is about to become empty and show fallback, let layout know
-  // that it needs to do work.
+  
+  
   if (aOldSlot && aOldSlot->AssignedNodes().Length() == 1 &&
       aOldSlot->HasChildren()) {
     DestroyFramesForAndRestyle(aOldSlot);
   }
 
-  // Ensure the new element starts off clean.
+  
   DestroyFramesAndStyleDataFor(&aElement, *mPresContext,
                                RestyleManager::IncludeRoot::Yes);
 
   if (aNewSlot) {
-    // If the new slot will stop showing fallback content, we need to reframe it
-    // altogether.
+    
+    
     if (aNewSlot->AssignedNodes().IsEmpty() && aNewSlot->HasChildren()) {
       DestroyFramesForAndRestyle(aNewSlot);
-      // Otherwise we just care about the element, but we need to ensure that
-      // something takes care of traversing to the relevant slot, if needed.
+      
+      
     } else if (aNewSlot->HasServoData() &&
                !Servo_Element_IsDisplayNone(aNewSlot)) {
-      // Set the reframe bits...
+      
       aNewSlot->NoteDescendantsNeedFramesForServo();
       aElement.SetFlags(NODE_NEEDS_FRAME);
-      // Now the style dirty bits. Note that we can't just do
-      // aElement.NoteDirtyForServo(), because the new slot is not setup yet.
+      
+      
       aNewSlot->SetHasDirtyDescendantsForServo();
       aNewSlot->NoteDirtySubtreeForServo();
     }
@@ -3003,7 +3003,7 @@ static void AssertNoFramesOrStyleDataInDescendants(Element& aElement) {
     if (c == &aElement) {
       continue;
     }
-    // FIXME(emilio): The <area> check is needed because of bug 135040.
+    
     MOZ_ASSERT(!c->GetPrimaryFrame() || c->IsHTMLElement(nsGkAtoms::area));
     MOZ_ASSERT(!c->IsElement() || !c->AsElement()->HasServoData());
   }
@@ -3020,18 +3020,18 @@ void PresShell::DestroyFramesForAndRestyle(Element* aElement) {
 
   MOZ_ASSERT(aElement);
   if (!aElement->HasServoData()) {
-    // Nothing to do here, the element already is out of the flat tree or is not
-    // styled.
+    
+    
     return;
   }
 
-  // Mark ourselves as not safe to flush while we're doing frame destruction.
+  
   nsAutoScriptBlocker scriptBlocker;
   ++mChangeNestCount;
 
   const bool didReconstruct = FrameConstructor()->DestroyFramesFor(aElement);
-  // Clear the style data from all the flattened tree descendants, but _not_
-  // from us, since otherwise we wouldn't see the reframe.
+  
+  
   RestyleManager::ClearServoDataFromSubtree(aElement,
                                             RestyleManager::IncludeRoot::No);
   auto changeHint =
@@ -3049,23 +3049,23 @@ void PresShell::ShadowRootWillBeAttached(Element& aElement) {
 #endif
 
   if (!aElement.HasServoData()) {
-    // Nothing to do here, the element already is out of the flat tree or is not
-    // styled.
+    
+    
     return;
   }
 
   if (!aElement.HasChildren()) {
-    // The element has no children, just avoid the work.
+    
     return;
   }
 
-  // Mark ourselves as not safe to flush while we're doing frame destruction.
+  
   nsAutoScriptBlocker scriptBlocker;
   ++mChangeNestCount;
 
-  // NOTE(emilio): We use FlattenedChildIterator intentionally here (rather than
-  // StyleChildrenIterator), since we don't want to remove ::before / ::after
-  // content.
+  
+  
+  
   FlattenedChildIterator iter(&aElement);
   nsCSSFrameConstructor* fc = FrameConstructor();
   for (nsIContent* c = iter.GetNextChild(); c; c = iter.GetNextChild()) {
@@ -3086,8 +3086,8 @@ void PresShell::ShadowRootWillBeAttached(Element& aElement) {
 
 void PresShell::PostRecreateFramesFor(Element* aElement) {
   if (MOZ_UNLIKELY(!mDidInitialize)) {
-    // Nothing to do here. In fact, if we proceed and aElement is the root, we
-    // will crash.
+    
+    
     return;
   }
 
@@ -3096,10 +3096,10 @@ void PresShell::PostRecreateFramesFor(Element* aElement) {
 }
 
 void PresShell::RestyleForAnimation(Element* aElement, RestyleHint aHint) {
-  // Now that we no longer have separate non-animation and animation
-  // restyles, this method having a distinct identity is less important,
-  // but it still seems useful to offer as a "more public" API and as a
-  // checkpoint for these restyles to go through.
+  
+  
+  
+  
   mPresContext->RestyleManager()->PostRestyleEvent(aElement, aHint,
                                                    nsChangeHint(0));
 }
@@ -3115,7 +3115,7 @@ void PresShell::ClearFrameRefs(nsIFrame* aFrame) {
   while (weakFrame) {
     AutoWeakFrame* prev = weakFrame->GetPreviousWeakFrame();
     if (weakFrame->GetFrame() == aFrame) {
-      // This removes weakFrame from mAutoWeakFrames.
+      
       weakFrame->Clear(this);
     }
     weakFrame = prev;
@@ -3138,14 +3138,14 @@ UniquePtr<gfxContext> PresShell::CreateReferenceRenderingContext() {
         gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget().get());
   }
 
-  // We assume the devCtx has positive width and height for this call.
-  // However, width and height, may be outside of the reasonable range
-  // so rc may still be null.
+  
+  
+  
   nsDeviceContext* devCtx = mPresContext->DeviceContext();
   return devCtx->CreateReferenceRenderingContext();
 }
 
-// https://html.spec.whatwg.org/#scroll-to-the-fragment-identifier
+
 nsresult PresShell::GoToAnchor(const nsAString& aAnchorName,
                                const nsRange* aFirstTextDirective, bool aScroll,
                                ScrollFlags aAdditionalScrollFlags) {
@@ -3155,30 +3155,30 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName,
 
   const Element* root = mDocument->GetRootElement();
   if (root && root->IsSVGElement(nsGkAtoms::svg)) {
-    // We need to execute this even if there is an empty anchor name
-    // so that any existing SVG fragment identifier effect is removed
+    
+    
     if (SVGFragmentIdentifier::ProcessFragmentIdentifier(mDocument,
                                                          aAnchorName)) {
       return NS_OK;
     }
   }
 
-  // Hold a reference to the ESM in case event dispatch tears us down.
+  
   RefPtr<EventStateManager> esm = mPresContext->EventStateManager();
 
-  // https://wicg.github.io/scroll-to-text-fragment/#invoking-text-directives
-  // From "Monkeypatching HTML § 7.4.6.3 Scrolling to a fragment:"
-  // 3.4. If target is a range, then:
-  // 3.4.1 Set target to be the first common ancestor of target's start node and
-  //       end node.
-  // 3.4.2 While target is non-null and is not an element, set target to
-  //       target's parent.
-  // ------
-  // Common closest ancestor is not suitable here, as it can scroll to positions
-  // where no text directive is visible. Instead, scroll to the start container
-  // of the text directive.
-  // see https://bugzil.la/1906895 and
-  // https://github.com/WICG/scroll-to-text-fragment/issues/259
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   Element* textFragmentTargetElement = [&aFirstTextDirective]() -> Element* {
     nsINode* node = aFirstTextDirective
                         ? aFirstTextDirective->GetStartContainer()
@@ -3190,47 +3190,47 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName,
   }();
   const bool thereIsATextFragment = !!textFragmentTargetElement;
 
-  // 1. If there is no indicated part of the document, set the Document's target
-  //    element to null.
-  //
-  // FIXME(emilio): Per spec empty fragment string should take the same
-  // code-path as "top"!
+  
+  
+  
+  
+  
   if (aAnchorName.IsEmpty() && !thereIsATextFragment) {
     NS_ASSERTION(!aScroll, "can't scroll to empty anchor name");
     esm->SetContentState(nullptr, ElementState::URLTARGET);
     return NS_OK;
   }
 
-  // 2. If the indicated part of the document is the top of the document,
-  // then:
-  // (handled below when `target` is null, and anchor is `top`)
+  
+  
+  
 
-  // 3.1. Let target be element that is the indicated part of the document.
-  //
-  // https://html.spec.whatwg.org/#target-element
-  // https://html.spec.whatwg.org/#find-a-potential-indicated-element
+  
+  
+  
+  
   RefPtr<Element> target = textFragmentTargetElement;
   if (!target) {
     target = nsContentUtils::GetTargetElement(mDocument, aAnchorName);
   }
 
-  // 1. If there is no indicated part of the document, set the Document's
-  //    target element to null.
-  // 2.1. Set the Document's target element to null.
-  // 3.2. Set the Document's target element to target.
+  
+  
+  
+  
   esm->SetContentState(target, ElementState::URLTARGET);
 
-  // TODO: Spec probably needs a section to account for this.
+  
   if (ScrollContainerFrame* rootScroll = GetRootScrollContainerFrame()) {
     if (rootScroll->DidHistoryRestore()) {
-      // Scroll position restored from history trumps scrolling to anchor.
+      
       aScroll = false;
       rootScroll->ClearDidHistoryRestore();
     }
   }
 
   if (target) {
-    // 3.4 Run the ancestor revealing algorithm on target.
+    
     ErrorResult rv;
     target->AncestorRevealingAlgorithm(rv);
     if (MOZ_UNLIKELY(rv.Failed())) {
@@ -3238,17 +3238,17 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName,
     }
 
     if (aScroll) {
-      // https://wicg.github.io/scroll-to-text-fragment/#invoking-text-directives
-      // From "Monkeypatching HTML § 7.4.6.3 Scrolling to a fragment:"
-      // 3.9 Let blockPosition be "center" if scrollTarget is a range, "start"
-      //     otherwise.
-      // Implementation note: Use `ScrollSelectionIntoView` for text fragment,
-      // since the text fragment is stored as a `eTargetText` selection.
-      //
-      // 3.4. Scroll target into view, with behavior set to "auto", block set to
-      //      "start", and inline set to "nearest".
-      // FIXME(emilio): Not all callers pass ScrollSmoothAuto (but we use auto
-      // smooth scroll for `top` regardless below, so maybe they should!).
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
       ScrollingInteractionContext scrollToAnchorContext(true);
       if (thereIsATextFragment) {
         MOZ_TRY(ScrollSelectionIntoView(
@@ -3274,15 +3274,15 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName,
     }
 
     {
-      // 3.6. Move the sequential focus navigation starting point to target.
-      //
-      // Move the caret to the anchor. That way tabbing will start from the new
-      // location.
-      //
-      // TODO(emilio): Do we want to do this even if aScroll is false?
-      //
-      // NOTE: Intentionally out of order for now with the focus steps, see
-      // https://github.com/whatwg/html/issues/7759
+      
+      
+      
+      
+      
+      
+      
+      
+      
       RefPtr<nsRange> jumpToRange = nsRange::Create(mDocument);
       nsCOMPtr<nsIContent> nodeToSelect = target.get();
       while (nodeToSelect->GetFirstChild()) {
@@ -3295,24 +3295,24 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName,
       sel->AddRangeAndSelectFramesAndNotifyListeners(*jumpToRange,
                                                      IgnoreErrors());
       if (!StaticPrefs::layout_selectanchor()) {
-        // Use a caret (collapsed selection) at the start of the anchor.
+        
         sel->CollapseToStart(IgnoreErrors());
       }
     }
 
-    // 3.5. Run the focusing steps for target, with the Document's viewport as
-    // the fallback target.
-    //
-    // Note that ScrollContentIntoView flushes, so we don't need to do that
-    // again here. We also don't need to scroll again either.
-    //
-    // We intentionally focus the target only when aScroll is true, we need to
-    // sort out if the spec needs to differentiate these cases. When aScroll is
-    // false we still clear the focus unconditionally, that's legacy behavior,
-    // maybe we shouldn't do it.
-    //
-    // TODO(emilio): Do we really want to clear the focus even if aScroll is
-    // false?
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     const bool shouldFocusTarget = [&] {
       if (!aScroll || thereIsATextFragment) {
         return false;
@@ -3327,7 +3327,7 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName,
       target->Focus(options, CallerType::NonSystem, IgnoreErrors());
     } else if (RefPtr<nsIFocusManager> fm = nsFocusManager::GetFocusManager()) {
       if (nsPIDOMWindowOuter* win = mDocument->GetWindow()) {
-        // Now focus the document itself if focus is on an element within it.
+        
         nsCOMPtr<mozIDOMWindowProxy> focusedWindow;
         fm->GetFocusedWindow(getter_AddRefs(focusedWindow));
         if (SameCOMIdentity(win, focusedWindow)) {
@@ -3336,7 +3336,7 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName,
       }
     }
 
-    // If the target is an animation element, activate the animation
+    
     if (auto* animationElement = SVGAnimationElement::FromNode(target.get())) {
       animationElement->ActivateByHyperlink();
     }
@@ -3345,11 +3345,11 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName,
     if (nsAccessibilityService* accService = GetAccService()) {
       nsIContent* a11yTarget = target;
       if (thereIsATextFragment) {
-        // A text fragment starts in a text leaf node. `target` is the element
-        // parent, but there may be many other children of that element before
-        // the start of the text fragment. Explicitly use the start leaf node
-        // here to get a11y clients as close as possible to the fragment (on
-        // platforms which support this).
+        
+        
+        
+        
+        
         a11yTarget = nsIContent::FromNodeOrNull(
             aFirstTextDirective->GetStartContainer());
         if (!a11yTarget) {
@@ -3360,14 +3360,14 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName,
     }
 #endif
   } else if (nsContentUtils::EqualsIgnoreASCIICase(aAnchorName, u"top"_ns)) {
-    // 2.2. Scroll to the beginning of the document for the Document.
+    
     ScrollContainerFrame* sf = GetRootScrollContainerFrame();
-    // Check |aScroll| after setting |rv| so we set |rv| to the same
-    // thing whether or not |aScroll| is true.
+    
+    
     if (aScroll && sf) {
       ScrollMode scrollMode =
           sf->IsSmoothScroll() ? ScrollMode::SmoothMsd : ScrollMode::Instant;
-      // Scroll to the top of the page
+      
       sf->ScrollTo(nsPoint(0, 0), scrollMode);
     }
   } else {
@@ -3402,19 +3402,19 @@ nsresult PresShell::ScrollToAnchor() {
       ScrollFlags::AnchorScrollFlags, SelectionScrollMode::SyncFlush);
 }
 
-/*
- * Helper (per-continuation) for ScrollContentIntoView.
- *
- * @param aContainerFrame [in] the frame which aRect is relative to
- * @param aFrame [in] Frame whose bounds should be unioned
- * @param aUseWholeLineHeightForInlines [in] if true, then for inline frames
- * we should include the top of the line in the added rectangle
- * @param aRect [inout] rect into which its bounds should be unioned
- * @param aHaveRect [inout] whether aRect contains data yet
- * @param aPrevBlock [inout] the block aLines is a line iterator for
- * @param aLines [inout] the line iterator we're using
- * @param aCurLine [inout] the line to start looking from in this iterator
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
 static void AccumulateFrameBounds(nsIFrame* aContainerFrame, nsIFrame* aFrame,
                                   bool aUseWholeLineHeightForInlines,
                                   nsRect& aRect, bool& aHaveRect,
@@ -3423,9 +3423,9 @@ static void AccumulateFrameBounds(nsIFrame* aContainerFrame, nsIFrame* aFrame,
   nsIFrame* frame = aFrame;
   nsRect frameBounds = nsRect(nsPoint(0, 0), aFrame->GetSize());
 
-  // If this is an inline frame and either the bounds height is 0 (quirks
-  // layout model) or aUseWholeLineHeightForInlines is set, we need to
-  // change the top of the bounds to include the whole line.
+  
+  
+  
   if (frameBounds.height == 0 || aUseWholeLineHeightForInlines) {
     nsIFrame* prevFrame = aFrame;
     nsIFrame* f = aFrame;
@@ -3437,7 +3437,7 @@ static void AccumulateFrameBounds(nsIFrame* aContainerFrame, nsIFrame* aFrame,
     }
 
     if (f != aFrame && f && f->IsBlockFrame()) {
-      // find the line containing aFrame and increase the top of |offset|.
+      
       if (f != aPrevBlock) {
         aLines = f->GetLineIterator();
         aPrevBlock = f;
@@ -3462,9 +3462,9 @@ static void AccumulateFrameBounds(nsIFrame* aContainerFrame, nsIFrame* aFrame,
       frame, frameBounds, aContainerFrame);
 
   if (aHaveRect) {
-    // We can't use nsRect::UnionRect since it drops empty rects on
-    // the floor, and we need to include them.  (Thus we need
-    // aHaveRect to know when to drop the initial value on the floor.)
+    
+    
+    
     aRect = aRect.UnionEdges(transformedBounds);
   } else {
     aHaveRect = true;
@@ -3475,24 +3475,24 @@ static void AccumulateFrameBounds(nsIFrame* aContainerFrame, nsIFrame* aFrame,
 static bool ComputeNeedToScroll(WhenToScroll aWhenToScroll, nscoord aLineSize,
                                 nscoord aRectMin, nscoord aRectMax,
                                 nscoord aViewMin, nscoord aViewMax) {
-  // See how the rect should be positioned in a given axis.
+  
   switch (aWhenToScroll) {
     case WhenToScroll::Always:
-      // The caller wants the frame as visible as possible
+      
       return true;
     case WhenToScroll::IfNotVisible:
       if (aLineSize > (aRectMax - aRectMin)) {
-        // If the line size is greater than the size of the rect
-        // to scroll into view, do not use the line size to determine
-        // if we need to scroll.
+        
+        
+        
         aLineSize = 0;
       }
 
-      // Scroll only if no part of the frame is visible in this view.
+      
       return aRectMax - aLineSize <= aViewMin ||
              aRectMin + aLineSize >= aViewMax;
     case WhenToScroll::IfNotFullyVisible:
-      // Scroll only if part of the frame is hidden and more can fit in view
+      
       return !(aRectMin >= aViewMin && aRectMax <= aViewMax) &&
              std::min(aViewMax, aRectMax) - std::max(aRectMin, aViewMin) <
                  aViewMax - aViewMin;
@@ -3508,9 +3508,9 @@ static nscoord ComputeWhereToScroll(WhereToScroll aWhereToScroll,
   nscoord resultCoord = aOriginalCoord;
   nscoord scrollPortLength = aViewMax - aViewMin;
   if (!aWhereToScroll.mPercentage) {
-    // Scroll the minimum amount necessary to show as much as possible of the
-    // frame. If the frame is too large, don't hide any initially visible part
-    // of it.
+    
+    
+    
     nscoord min = std::min(aRectMin, aRectMax - scrollPortLength);
     nscoord max = std::max(aRectMin, aRectMax - scrollPortLength);
     resultCoord = std::clamp(aOriginalCoord, min, max);
@@ -3520,7 +3520,7 @@ static nscoord ComputeWhereToScroll(WhereToScroll aWhereToScroll,
         NSToCoordRound(aRectMin + (aRectMax - aRectMin) * percent);
     resultCoord = NSToCoordRound(frameAlignCoord - scrollPortLength * percent);
   }
-  // Force the scroll range to extend to include resultCoord.
+  
   *aRangeMin = std::min(resultCoord, aRectMax - scrollPortLength);
   *aRangeMax = std::max(resultCoord, aRectMin);
   return resultCoord;
@@ -3557,10 +3557,10 @@ static ScrollMode GetScrollModeForScrollIntoView(
     const ScrollContainerFrame* aScrollContainerFrame,
     ScrollFlags aScrollFlags) {
   ScrollMode scrollMode = ScrollMode::Instant;
-  // Default to an instant scroll, but if the scroll behavior given is "auto"
-  // or "smooth", use that as the specified behavior. If the user has disabled
-  // smooth scrolls, a given mode of "auto" or "smooth" should not result in
-  // a smooth scroll.
+  
+  
+  
+  
   ScrollBehavior behavior = ScrollBehavior::Instant;
   if (aScrollFlags & ScrollFlags::ScrollSmooth) {
     behavior = ScrollBehavior::Smooth;
@@ -3573,14 +3573,14 @@ static ScrollMode GetScrollModeForScrollIntoView(
   return scrollMode;
 }
 
-/**
- * This function takes a scroll container frame, a rect in the coordinate system
- * of the scrolled frame, and a desired percentage-based scroll
- * position and attempts to scroll the rect to that position in the
- * visual viewport.
- *
- * This needs to work even if aRect has a width or height of zero.
- */
+
+
+
+
+
+
+
+
 static Maybe<nsPoint> ScrollToShowRect(
     ScrollContainerFrame* aScrollContainerFrame,
     const nsIFrame* aScrollableFrame, const nsIFrame* aTarget,
@@ -3605,11 +3605,11 @@ static Maybe<nsPoint> ScrollToShowRect(
   }();
 
   nsSize lineSize;
-  // Don't call GetLineScrollAmount unless we actually need it. Not only
-  // does this save time, but it's not safe to call GetLineScrollAmount
-  // during reflow (because it depends on font size inflation and doesn't
-  // use the in-reflow-safe font-size inflation path). If we did call it,
-  // it would assert and possible give the wrong result.
+  
+  
+  
+  
+  
   if (aVertical.mWhenToScroll == WhenToScroll::IfNotVisible ||
       aHorizontal.mWhenToScroll == WhenToScroll::IfNotVisible) {
     lineSize = aScrollContainerFrame->GetLineScrollAmount();
@@ -3626,7 +3626,7 @@ static Maybe<nsPoint> ScrollToShowRect(
     if (ComputeNeedToScroll(aVertical.mWhenToScroll, lineSize.height, aRect.y,
                             aRect.YMost(), visibleRect.y + padding.top,
                             visibleRect.YMost() - padding.bottom)) {
-      // If the scroll-snap-align on the frame is valid, we need to respect it.
+      
       WhereToScroll whereToScroll = GetApplicableWhereToScroll(
           aScrollContainerFrame, aScrollableFrame, aTarget,
           ScrollDirection::eVertical, aVertical.mWhereToScroll);
@@ -3647,7 +3647,7 @@ static Maybe<nsPoint> ScrollToShowRect(
     if (ComputeNeedToScroll(aHorizontal.mWhenToScroll, lineSize.width, aRect.x,
                             aRect.XMost(), visibleRect.x + padding.left,
                             visibleRect.XMost() - padding.right)) {
-      // If the scroll-snap-align on the frame is valid, we need to respect it.
+      
       WhereToScroll whereToScroll = GetApplicableWhereToScroll(
           aScrollContainerFrame, aScrollableFrame, aTarget,
           ScrollDirection::eHorizontal, aHorizontal.mWhereToScroll);
@@ -3661,8 +3661,8 @@ static Maybe<nsPoint> ScrollToShowRect(
     }
   }
 
-  // If we don't need to scroll, then don't try since it might cancel
-  // a current smooth scroll operation.
+  
+  
   if (scrollPt == originalScrollPt) {
     return Nothing();
   }
@@ -3703,17 +3703,17 @@ nsresult PresShell::ScrollContentIntoView(nsIContent* aContent,
     mContentToScrollTo = nullptr;
   }
 
-  // If the target frame has an ancestor of a `content-visibility: auto`
-  // element ensure that it is laid out, so that the boundary rectangle is
-  // correct.
-  // Additionally, ensure that all ancestor elements with 'content-visibility:
-  // auto' are set to 'visible'. so that they are laid out as visible before
-  // scrolling, improving the accuracy of the scroll position, especially when
-  // the scroll target is within the overflow area. And here invoking
-  // 'SetTemporarilyVisibleForScrolledIntoViewDescendant' would make the
-  // intersection observer knows that it should generate entries for these
-  // c-v:auto ancestors, so that the content relevancy could be checked again
-  // after scrolling. https://drafts.csswg.org/css-contain-2/#cv-notes
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   bool reflowedForHiddenContent = false;
   if (mContentToScrollTo) {
     if (nsIFrame* frame = mContentToScrollTo->GetPrimaryFrame()) {
@@ -3731,8 +3731,8 @@ nsresult PresShell::ScrollContentIntoView(nsIContent* aContent,
       }
       if (hasContentVisibilityAutoAncestor) {
         UpdateHiddenContentInForcedLayout(frame);
-        // TODO: There might be the other already scheduled relevancy updates,
-        // other than caused be scrollIntoView.
+        
+        
         UpdateContentRelevancyImmediately(ContentRelevancyReason::Visible);
         reflowedForHiddenContent = ReflowForHiddenContentIfNeeded();
       }
@@ -3740,21 +3740,21 @@ nsresult PresShell::ScrollContentIntoView(nsIContent* aContent,
   }
 
   if (!reflowedForHiddenContent) {
-    // Flush layout and attempt to scroll in the process.
+    
     if (PresShell* presShell = composedDoc->GetPresShell()) {
       presShell->SetNeedLayoutFlush();
     }
     composedDoc->FlushPendingNotifications(FlushType::InterruptibleLayout);
   }
 
-  // If mContentToScrollTo is non-null, that means we interrupted the reflow
-  // (or suppressed it altogether because we're suppressing interruptible
-  // flushes right now) and won't necessarily get the position correct, but do
-  // a best-effort scroll here.  The other option would be to do this inside
-  // FlushPendingNotifications, but I'm not sure the repeated scrolling that
-  // could trigger if reflows keep getting interrupted would be more desirable
-  // than a single best-effort scroll followed by one final scroll on the first
-  // completed reflow.
+  
+  
+  
+  
+  
+  
+  
+  
   if (mContentToScrollTo) {
     DoScrollContentIntoView();
   }
@@ -3763,14 +3763,14 @@ nsresult PresShell::ScrollContentIntoView(nsIContent* aContent,
 
 static nsMargin GetScrollMargin(const nsIFrame* aFrame) {
   MOZ_ASSERT(aFrame);
-  // If we're focusing something that can't be targeted by content, allow
-  // content to customize the margin.
-  //
-  // TODO: This is also a bit of an issue for delegated focus, see
-  // https://github.com/whatwg/html/issues/7033.
+  
+  
+  
+  
+  
   if (aFrame->GetContent() && aFrame->GetContent()->ChromeOnlyAccess()) {
-    // XXX Should we use nsIContent::FindFirstNonChromeOnlyAccessContent()
-    // instead of nsINode::GetClosestNativeAnonymousSubtreeRootParentOrHost()?
+    
+    
     if (const nsIContent* userContent =
             aFrame->GetContent()
                 ->GetClosestNativeAnonymousSubtreeRootParentOrHost()) {
@@ -3795,9 +3795,9 @@ void PresShell::DoScrollContentIntoView() {
   }
 
   if (frame->HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
-    // The reflow flush before this scroll got interrupted, and this frame's
-    // coords and size are all zero, and it has no content showing anyway.
-    // Don't bother scrolling to it.  We'll try again when we finish up layout.
+    
+    
+    
     return;
   }
 
@@ -3814,15 +3814,15 @@ void PresShell::DoScrollContentIntoView() {
 
 static bool NeedToVisuallyScroll(const nsSize& aLayoutViewportSize,
                                  const nsRect& aPositionFixedRect) {
-  // position:fixed elements are fixed to the layout viewport, thus the
-  // coordinate system is (0, 0) origin.
-  // (and the maximum visible position is the layout viewport size, elements
-  // outside of the size will never be laid out)
+  
+  
+  
+  
   const nsRect layoutViewport = nsRect(nsPoint(), aLayoutViewportSize);
 
-  // `BaseRect::Intersects(const Sub& aRect)` does return false if `aRect` is
-  // empty, but we do want to visually scroll to empty position:fixed elements
-  // if the elements are inside the layout viewport.
+  
+  
+  
   if (aPositionFixedRect.IsEmpty()) {
     if (aPositionFixedRect.x > layoutViewport.XMost() ||
         aPositionFixedRect.XMost() < layoutViewport.x ||
@@ -3858,10 +3858,10 @@ void PresShell::ScrollFrameIntoVisualViewport(Maybe<nsPoint>& aDestination,
   }
 
   if (!aDestination) {
-    // If we have in the top level content document but we didn't reach to
-    // the root scroll container in the frame tree walking up loop in
-    // ScrollFrameIntoView, it means the target element is inside a
-    // position:fixed subtree.
+    
+    
+    
+    
     if (!StaticPrefs::layout_scroll_fixed_content_into_view_visually()) {
       return;
     }
@@ -3871,19 +3871,19 @@ void PresShell::ScrollFrameIntoVisualViewport(Maybe<nsPoint>& aDestination,
 
     const nsSize layoutViewportSize = root->GetLayoutViewportSize();
     const nsRect layoutViewport = nsRect(nsPoint(), layoutViewportSize);
-    // `positon:fixed` element are attached/fixed to the ViewportFrame, which is
-    // the parent of the root scroll container frame, thus what we need here is
-    // the visible area of the position:fixed element inside the root scroll
-    // container frame.
-    // For example, if the top left position of the fixed element is (-100,
-    // -100), it's outside of the scrollable range either in the layout viewport
-    // or the visual viewport. Likewise, if the right bottom position of the
-    // fixed element is (110vw, 110vh), it's also outside of the scrollable
-    // range.
+    
+    
+    
+    
+    
+    
+    
+    
+    
     const nsRect clampedPositionFixedRect =
         aPositionFixedRect.MoveInsideAndClamp(layoutViewport);
-    // If the position:fixed element is already inside the visual viewport, we
-    // don't need to scroll visually.
+    
+    
     if (clampedPositionFixedRect.y >= 0 &&
         clampedPositionFixedRect.YMost() <= visualViewportSize.height &&
         clampedPositionFixedRect.x >= 0 &&
@@ -3891,23 +3891,23 @@ void PresShell::ScrollFrameIntoVisualViewport(Maybe<nsPoint>& aDestination,
       return;
     }
 
-    // If the position:fixed element is totally outside of the the layout
-    // viewport, it will never be in the viewport.
+    
+    
     if (!NeedToVisuallyScroll(layoutViewportSize, aPositionFixedRect)) {
       return;
     }
-    // Offset the position:fixed element position by the layout scroll
-    // position because the position:fixed origin (0, 0) is the layout scroll
-    // position. Otherwise if we've already scrolled, this scrollIntoView
-    // operaiton will jump back to near (0, 0) position.
-    // Bug 1947470: We need to calculate the destination with `WhereToScroll`
-    // options.
+    
+    
+    
+    
+    
+    
     const nsPoint layoutOffset = rootScrollContainer->GetScrollPosition();
     aDestination = Some(aPositionFixedRect.TopLeft() + layoutOffset);
   }
 
-  // NOTE: It seems chrome doesn't respect the root element's
-  // scroll-behavior for visual scrolling.
+  
+  
   ScrollMode scrollMode =
       GetScrollModeForScrollIntoView(rootScrollContainer, aScrollFlags);
   root->ScrollToVisual(*aDestination, FrameMetrics::eMainThread, scrollMode);
@@ -3916,25 +3916,25 @@ void PresShell::ScrollFrameIntoVisualViewport(Maybe<nsPoint>& aDestination,
 bool PresShell::ScrollFrameIntoView(
     nsIFrame* aTargetFrame, const Maybe<nsRect>& aKnownRectRelativeToTarget,
     ScrollAxis aVertical, ScrollAxis aHorizontal, ScrollFlags aScrollFlags) {
-  // If the AxesAreLogical flag is set, the aVertical and aHorizontal params
-  // actually refer to block and inline axes respectively, so we resolve them
-  // to physical axes/directions here.
-  // XXX Maybe we should convert more of the following code to logical axes,
-  // if it's convenient for more callers to work that way?
+  
+  
+  
+  
+  
   if (aScrollFlags & ScrollFlags::AxesAreLogical) {
-    // The aVertical parameter actually refers to the element's block axis,
-    // and aHorizontal to its inline axis. Potentially reverse/swap them,
-    // according to its writing mode and directionality.
+    
+    
+    
     WritingMode wm = aTargetFrame->GetWritingMode();
     if (wm.IsVerticalRL()) {
-      // Reverse the block-axis percentage.
+      
       if (aVertical.mWhereToScroll.mPercentage) {
         aVertical.mWhereToScroll.mPercentage =
             Some(100 - aVertical.mWhereToScroll.mPercentage.value());
       }
     }
     if (wm.IsInlineReversed()) {
-      // Reverse the inline-axis percentage.
+      
       if (aHorizontal.mWhereToScroll.mPercentage) {
         aHorizontal.mWhereToScroll.mPercentage =
             Some(100 - aHorizontal.mWhereToScroll.mPercentage.value());
@@ -3943,13 +3943,13 @@ bool PresShell::ScrollFrameIntoView(
     if (wm.IsVertical()) {
       std::swap(aVertical, aHorizontal);
     }
-    // Remove the AxesAreLogical flag, to make it clear that methods we call
-    // always get physical axes from here on.
+    
+    
     aScrollFlags &= ~ScrollFlags::AxesAreLogical;
   }
 
-  // The scroll margin only applies to the whole bounds of the element, so don't
-  // apply it if we get an arbitrary rect / point to scroll to.
+  
+  
   const nsMargin scrollMargin =
       aKnownRectRelativeToTarget ? nsMargin() : GetScrollMargin(aTargetFrame);
 
@@ -3961,10 +3961,10 @@ bool PresShell::ScrollFrameIntoView(
     const nsPoint pos = aFrame->GetPosition();
     const nsPoint normalPos = aFrame->GetNormalPosition();
     if (pos == normalPos) {
-      return;  // Frame is not stuck.
+      return;  
     }
-    // If we're targetting a sticky element, make sure not to apply
-    // scroll-padding on the direction we're stuck.
+    
+    
     const auto* stylePosition = aFrame->StylePosition();
     const auto anchorResolutionParams =
         AnchorPosOffsetResolutionParams::UseCBFrameSize(
@@ -3974,7 +3974,7 @@ bool PresShell::ScrollFrameIntoView(
               ->IsAuto()) {
         continue;
       }
-      // See if this axis is stuck.
+      
       const bool yAxis = side == eSideTop || side == eSideBottom;
       const bool stuck = yAxis ? pos.y != normalPos.y : pos.x != normalPos.x;
       if (!stuck) {
@@ -3991,7 +3991,7 @@ bool PresShell::ScrollFrameIntoView(
     return aFrame->StyleDisplay()->mPosition == StylePositionProperty::Fixed &&
            nsLayoutUtils::IsReallyFixedPos(aFrame);
   };
-  // This function needs to work even if rect has a width or height of 0.
+  
   nsRect rect = [&] {
     if (aKnownRectRelativeToTarget) {
       return *aKnownRectRelativeToTarget;
@@ -4003,11 +4003,11 @@ bool PresShell::ScrollFrameIntoView(
       }
       container = parent;
       if (container->IsScrollContainerOrSubclass()) {
-        // We really just need a non-fragmented frame so that we can accumulate
-        // the bounds of all our continuations relative to it. We shouldn't jump
-        // out of our nearest scrollable frame, and that's an ok reference
-        // frame, so try to use that, or the root frame if there's nothing to
-        // scroll in this document.
+        
+        
+        
+        
+        
         break;
       }
       MaybeSkipPaddingSides(container);
@@ -4020,13 +4020,13 @@ bool PresShell::ScrollFrameIntoView(
       const bool useWholeLineHeightForInlines =
           aVertical.mWhenToScroll != WhenToScroll::IfNotFullyVisible;
       AutoAssertNoDomMutations
-          guard;  // Ensure use of nsILineIterators is safe.
+          guard;  
       nsIFrame* prevBlock = nullptr;
-      // Reuse the same line iterator across calls to AccumulateFrameBounds.
-      // We set it every time we detect a new block (stored in prevBlock).
+      
+      
       nsILineIterator* lines = nullptr;
-      // The last line we found a continuation on in |lines|.  We assume that
-      // later continuations cannot come on earlier lines.
+      
+      
       int32_t curLine = 0;
       nsIFrame* frame = aTargetFrame;
       do {
@@ -4041,8 +4041,8 @@ bool PresShell::ScrollFrameIntoView(
   bool didScroll = false;
   const nsIFrame* target = aTargetFrame;
   Maybe<nsPoint> rootScrollDestination;
-  // Walk up the frame hierarchy scrolling the rect into view and
-  // keeping rect relative to container
+  
+  
   do {
     if (isPositionFixed(container)) {
       inPositionFixedSubtree = true;
@@ -4051,8 +4051,8 @@ bool PresShell::ScrollFrameIntoView(
     if (ScrollContainerFrame* sf = do_QueryFrame(container)) {
       nsPoint oldPosition = sf->GetScrollPosition();
       nsRect targetRect = rect;
-      // Inflate the scrolled rect by the container's padding in each dimension,
-      // unless we have 'overflow-clip-box-*: content-box' in that dimension.
+      
+      
       auto* disp = container->StyleDisplay();
       if (disp->mOverflowClipBoxBlock == StyleOverflowClipBox::ContentBox ||
           disp->mOverflowClipBoxInline == StyleOverflowClipBox::ContentBox) {
@@ -4091,24 +4091,24 @@ bool PresShell::ScrollFrameIntoView(
       }
 
       nsPoint newPosition = sf->LastScrollDestination();
-      // If the scroll position increased, that means our content moved up,
-      // so our rect's offset should decrease
+      
+      
       rect += oldPosition - newPosition;
 
       if (oldPosition != newPosition) {
         didScroll = true;
       }
 
-      // only scroll one container when this flag is set
+      
       if (aScrollFlags & ScrollFlags::ScrollFirstAncestorOnly) {
         break;
       }
 
-      // This scroll container will be the next target element in the nearest
-      // ancestor scroll container.
+      
+      
       target = container;
-      // We found a sticky scroll container, we shouldn't skip that side
-      // anymore.
+      
+      
       skipPaddingSides = {};
     }
 
@@ -4136,7 +4136,7 @@ bool PresShell::ScrollFrameIntoView(
         nsCOMPtr<nsIDocShell> docShell =
             container->PresContext()->GetDocShell();
         if (BrowserChild* browserChild = BrowserChild::GetFrom(docShell)) {
-          // Defer to the parent document if this is an out-of-process iframe.
+          
           Unused << browserChild->SendScrollRectIntoView(
               rect, aVertical, aHorizontal, aScrollFlags, APD);
         }
@@ -4145,11 +4145,11 @@ bool PresShell::ScrollFrameIntoView(
     container = parent;
   } while (container);
 
-  // If this is inside the top level content document process (and a direct
-  // descendant of it), also call ScrollToVisual() since we want to
-  // scroll the rect into view visually, and that may require scrolling
-  // the visual viewport in scenarios where there is not enough layout
-  // scroll range.
+  
+  
+  
+  
+  
   if (!rootScrollDestination && !inPositionFixedSubtree) {
     return didScroll;
   }
@@ -4185,26 +4185,26 @@ void PresShell::DispatchSynthMouseOrPointerMove(
 void PresShell::ClearMouseCaptureOnView(nsView* aView) {
   if (nsIContent* capturingContent = GetCapturingContent()) {
     if (aView) {
-      // if a view was specified, ensure that the captured content is within
-      // this view.
+      
+      
       nsIFrame* frame = capturingContent->GetPrimaryFrame();
       if (frame) {
         nsView* view = frame->GetClosestView();
-        // if there is no view, capturing won't be handled any more, so
-        // just release the capture.
+        
+        
         if (view) {
           do {
             if (view == aView) {
               ReleaseCapturingContent();
-              // the view containing the captured content likely disappeared so
-              // disable capture for now.
+              
+              
               AllowMouseCapture(false);
               break;
             }
 
             view = view->GetParent();
           } while (view);
-          // return if the view wasn't found
+          
           return;
         }
       }
@@ -4213,9 +4213,9 @@ void PresShell::ClearMouseCaptureOnView(nsView* aView) {
     ReleaseCapturingContent();
   }
 
-  // disable mouse capture until the next mousedown as a dialog has opened
-  // or a drag has started. Otherwise, someone could start capture during
-  // the modal dialog or drag.
+  
+  
+  
   AllowMouseCapture(false);
 }
 
@@ -4244,12 +4244,12 @@ void PresShell::ClearMouseCapture(nsIFrame* aFrame) {
 nsresult PresShell::CaptureHistoryState(nsILayoutHistoryState** aState) {
   MOZ_ASSERT(nullptr != aState, "null state pointer");
 
-  // We actually have to mess with the docshell here, since we want to
-  // store the state back in it.
-  // XXXbz this isn't really right, since this is being called in the
-  // content viewer's Hide() method...  by that point the docshell's
-  // state could be wrong.  We should sort out a better ownership
-  // model for the layout history state.
+  
+  
+  
+  
+  
+  
   nsCOMPtr<nsIDocShell> docShell(mPresContext->GetDocShell());
   if (!docShell) {
     return NS_ERROR_FAILURE;
@@ -4258,7 +4258,7 @@ nsresult PresShell::CaptureHistoryState(nsILayoutHistoryState** aState) {
   nsCOMPtr<nsILayoutHistoryState> historyState;
   docShell->GetLayoutHistoryState(getter_AddRefs(historyState));
   if (!historyState) {
-    // Create the document state object
+    
     historyState = NS_NewLayoutHistoryState();
     docShell->SetLayoutHistoryState(historyState);
   }
@@ -4266,7 +4266,7 @@ nsresult PresShell::CaptureHistoryState(nsILayoutHistoryState** aState) {
   *aState = historyState;
   NS_IF_ADDREF(*aState);
 
-  // Capture frame state for the entire frame hierarchy
+  
   nsIFrame* rootFrame = mFrameConstructor->GetRootFrame();
   if (!rootFrame) {
     return NS_OK;
@@ -4279,9 +4279,9 @@ nsresult PresShell::CaptureHistoryState(nsILayoutHistoryState** aState) {
 
 void PresShell::ScheduleBeforeFirstPaint() {
   if (!mDocument->IsResourceDoc()) {
-    // Notify observers that a new page is about to be drawn. Execute this
-    // as soon as it is safe to run JS, which is guaranteed to be before we
-    // go back to the event loop and actually draw the page.
+    
+    
+    
     MOZ_LOG(gLog, LogLevel::Debug,
             ("PresShell::ScheduleBeforeFirstPaint this=%p", this));
 
@@ -4291,11 +4291,11 @@ void PresShell::ScheduleBeforeFirstPaint() {
 }
 
 void PresShell::UnsuppressAndInvalidate() {
-  // Note: We ignore the EnsureVisible check for resource documents, because
-  // they won't have a docshell, so they'll always fail EnsureVisible.
+  
+  
   if ((!mDocument->IsResourceDoc() && !mPresContext->EnsureVisible()) ||
       mHaveShutDown) {
-    // No point; we're about to be torn down anyway.
+    
     return;
   }
 
@@ -4305,7 +4305,7 @@ void PresShell::UnsuppressAndInvalidate() {
 
   mPaintingSuppressed = false;
   if (nsIFrame* rootFrame = mFrameConstructor->GetRootFrame()) {
-    // let's assume that outline on a root frame is not supported
+    
     rootFrame->InvalidateFrame();
   }
 
@@ -4319,7 +4319,7 @@ void PresShell::UnsuppressAndInvalidate() {
     }
   }
 
-  // now that painting is unsuppressed, focus may be set on the document
+  
   if (nsPIDOMWindowOuter* win = mDocument->GetWindow()) {
     win->SetReadyForFocus();
   }
@@ -4344,10 +4344,10 @@ void PresShell::UnsuppressPainting() {
     return;
   }
 
-  // If we have reflows pending, just wait until we process
-  // the reflows and get all the frames where we want them
-  // before actually unlocking the painting.  Otherwise
-  // go ahead and unlock now.
+  
+  
+  
+  
   if (!mDirtyRoots.IsEmpty()) {
     mShouldUnsuppressPainting = true;
   } else {
@@ -4355,7 +4355,7 @@ void PresShell::UnsuppressPainting() {
   }
 }
 
-// Post a request to handle an arbitrary callback after reflow has finished.
+
 nsresult PresShell::PostReflowCallback(nsIReflowCallback* aCallback) {
   void* result = AllocateByObjectID(eArenaObjectID_nsCallbackEventRequest,
                                     sizeof(nsCallbackEventRequest));
@@ -4420,7 +4420,7 @@ void PresShell::CancelPostedReflowCallbacks() {
 
 void PresShell::HandlePostedReflowCallbacks(bool aInterruptible) {
   while (true) {
-    // Call all our callbacks, tell us if we need to flush again.
+    
     bool shouldFlush = false;
     while (mFirstCallbackEventRequest) {
       nsCallbackEventRequest* node = mFirstCallbackEventRequest;
@@ -4439,7 +4439,7 @@ void PresShell::HandlePostedReflowCallbacks(bool aInterruptible) {
       return;
     }
 
-    // The flush might cause us to have more callbacks.
+    
     const auto flushType =
         aInterruptible ? FlushType::InterruptibleLayout : FlushType::Layout;
     FlushPendingNotifications(flushType);
@@ -4447,13 +4447,13 @@ void PresShell::HandlePostedReflowCallbacks(bool aInterruptible) {
 }
 
 bool PresShell::IsSafeToFlush() const {
-  // Not safe if we are getting torn down, reflowing, or in the middle of frame
-  // construction.
+  
+  
   if (mIsReflowing || mChangeNestCount || mIsDestroying) {
     return false;
   }
 
-  // Not safe if we are painting
+  
   if (nsViewManager* viewManager = GetViewManager()) {
     bool isPainting = false;
     viewManager->IsPainting(isPainting);
@@ -4472,7 +4472,7 @@ void PresShell::NotifyFontFaceSetOnRefresh() {
 }
 
 void PresShell::DoFlushPendingNotifications(FlushType aType) {
-  // by default, flush animations if aType >= FlushType::Style
+  
   mozilla::ChangesToFlush flush(aType, aType >= FlushType::Style,
                                 aType >= FlushType::Layout);
   FlushPendingNotifications(flush);
@@ -4510,24 +4510,24 @@ static void TriggerPendingScrollTimelineAnimations(Document* aDocument) {
 }
 
 void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
-  // FIXME(emilio, bug 1530177): Turn into a release assert when bug 1530188 and
-  // bug 1530190 are fixed.
+  
+  
   MOZ_DIAGNOSTIC_ASSERT(!mForbiddenToFlush, "This is bad!");
 
-  // Per our API contract, hold a strong ref to ourselves until we return.
+  
   RefPtr<PresShell> kungFuDeathGrip = this;
 
-  /**
-   * VERY IMPORTANT: If you add some sort of new flushing to this
-   * method, make sure to add the relevant SetNeedLayoutFlush or
-   * SetNeedStyleFlush calls on the shell.
-   */
+  
+
+
+
+
   FlushType flushType = aFlush.mFlushType;
 
   if (aFlush.mUpdateRelevancy) {
-    // If needed, first update the relevancy of any content of elements with
-    // `content-visibility: auto` so that the values returned from e.g. script
-    // queries are up-to-date.
+    
+    
+    
     UpdateRelevancyOfContentVisibilityAutoFrames();
   }
 
@@ -4555,15 +4555,15 @@ void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
 
   bool isSafeToFlush = IsSafeToFlush();
 
-  // If layout could possibly trigger scripts, then it's only safe to flush if
-  // it's safe to run script.
+  
+  
   bool hasHadScriptObject;
   if (mDocument->GetScriptHandlingObject(hasHadScriptObject) ||
       hasHadScriptObject) {
     isSafeToFlush = isSafeToFlush && nsContentUtils::IsSafeToRunScript();
   }
 
-  // Don't flush if the doc is already in the bfcache.
+  
   if (MOZ_UNLIKELY(mDocument->GetPresShell() != this)) {
     MOZ_DIAGNOSTIC_ASSERT(!mDocument->GetPresShell(),
                           "Where did this shell come from?");
@@ -4578,39 +4578,39 @@ void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
     return;
   }
 
-  // Make sure the view manager stays alive.
+  
   RefPtr<nsViewManager> viewManager = mViewManager;
-  // We need to make sure external resource documents are flushed too (for
-  // example, svg filters that reference a filter in an external document
-  // need the frames in the external document to be constructed for the
-  // filter to work). We only need external resources to be flushed when the
-  // main document is flushing >= FlushType::Frames, so we flush external
-  // resources here instead of Document::FlushPendingNotifications.
+  
+  
+  
+  
+  
+  
   mDocument->FlushExternalResources(flushType);
 
-  // Force flushing of any pending content notifications that might have
-  // queued up while our event was pending.  That will ensure that we don't
-  // construct frames for content right now that's still waiting to be
-  // notified on,
+  
+  
+  
+  
   mDocument->FlushPendingNotifications(FlushType::ContentAndNotify);
 
   mDocument->UpdateSVGUseElementShadowTrees();
 
-  // Process pending restyles, since any flush of the presshell wants
-  // up-to-date style data.
+  
+  
   if (MOZ_LIKELY(!mIsDestroying)) {
     viewManager->FlushDelayedResize();
     mPresContext->FlushPendingMediaFeatureValuesChanged();
   }
 
   if (MOZ_LIKELY(!mIsDestroying)) {
-    // Now that we have flushed media queries, update the rules before looking
-    // up @font-face / @counter-style / @font-feature-values rules.
+    
+    
     StyleSet()->UpdateStylistIfNeeded();
 
-    // Flush any pending update of the user font set, since that could
-    // cause style changes (for updating ex/ch units, and to cause a
-    // reflow).
+    
+    
+    
     mDocument->FlushUserFontSet();
 
     mPresContext->FlushCounterStyles();
@@ -4619,13 +4619,13 @@ void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
 
     mPresContext->FlushFontPaletteValues();
 
-    // Flush any requested SMIL samples.
+    
     if (mDocument->HasAnimationController()) {
       mDocument->GetAnimationController()->FlushResampleRequests();
     }
   }
 
-  // The FlushResampleRequests() above might have flushed style changes.
+  
   if (MOZ_LIKELY(!mIsDestroying)) {
     if (aFlush.mFlushAnimations) {
       mPresContext->EffectCompositor()->PostRestyleForThrottledAnimations();
@@ -4651,7 +4651,7 @@ void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
                         ? FlushType::Layout
                         : FlushType::InterruptibleLayout) &&
       !mIsDestroying) {
-    if (DoFlushLayout(/* aInterruptible = */ flushType < FlushType::Layout)) {
+    if (DoFlushLayout( flushType < FlushType::Layout)) {
       if (mContentToScrollTo) {
         DoScrollContentIntoView();
         if (mContentToScrollTo) {
@@ -4660,8 +4660,8 @@ void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
         }
       }
     }
-    // FIXME(emilio): Maybe we should assert here but it's not 100% sure it'd
-    // hold right now, UnsuppressAndInvalidate and so on can run script...
+    
+    
     if (MOZ_LIKELY(mDirtyRoots.IsEmpty())) {
       mNeedLayoutFlush = false;
     }
@@ -4670,13 +4670,13 @@ void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
   FlushPendingScrollResnap();
 
   if (MOZ_LIKELY(!mIsDestroying)) {
-    // Try to trigger pending scroll-driven animations after we flush
-    // style and layout (if any). If we try to trigger them after flushing
-    // style but the frame tree is not ready, we will check them again after
-    // we flush layout because the requirement to trigger scroll-driven
-    // animations is that the associated scroll containers are ready (i.e. the
-    // scroll-timeline is active), and this depends on the readiness of the
-    // scrollable frame and the primary frame of the scroll container.
+    
+    
+    
+    
+    
+    
+    
     TriggerPendingScrollTimelineAnimations(mDocument);
   }
 
@@ -4754,9 +4754,9 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::AttributeWillChange(
   MOZ_ASSERT(!mIsDocumentGone, "Unexpected AttributeWillChange");
   MOZ_ASSERT(aElement->OwnerDoc() == mDocument, "Unexpected document");
 
-  // XXXwaterson it might be more elegant to wait until after the
-  // initial reflow to begin observing the document. That would
-  // squelch any other inappropriate notifications as well.
+  
+  
+  
   if (mDidInitialize) {
     nsAutoCauseReflowNotifier crNotifier(this);
     mPresContext->RestyleManager()->AttributeWillChange(aElement, aNameSpaceID,
@@ -4771,9 +4771,9 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::AttributeChanged(
   MOZ_ASSERT(!mIsDocumentGone, "Unexpected AttributeChanged");
   MOZ_ASSERT(aElement->OwnerDoc() == mDocument, "Unexpected document");
 
-  // XXXwaterson it might be more elegant to wait until after the
-  // initial reflow to begin observing the document. That would
-  // squelch any other inappropriate notifications as well.
+  
+  
+  
   if (mDidInitialize) {
     nsAutoCauseReflowNotifier crNotifier(this);
     mPresContext->RestyleManager()->AttributeChanged(
@@ -4807,8 +4807,8 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::ContentAppended(
   MOZ_ASSERT(!mIsDocumentGone, "Unexpected ContentAppended");
   MOZ_ASSERT(aFirstNewContent->OwnerDoc() == mDocument, "Unexpected document");
 
-  // We never call ContentAppended with a document as the container, so we can
-  // assert that we have an nsIContent parent.
+  
+  
   MOZ_ASSERT(aFirstNewContent->GetParent());
   MOZ_ASSERT(aFirstNewContent->GetParent()->IsElement() ||
              aFirstNewContent->GetParent()->IsShadowRoot());
@@ -4825,9 +4825,9 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::ContentAppended(
 
   nsAutoCauseReflowNotifier crNotifier(this);
 
-  // Call this here so it only happens for real content mutations and
-  // not cases when the frame constructor calls its own methods to force
-  // frame reconstruction.
+  
+  
+  
   mPresContext->RestyleManager()->ContentAppended(aFirstNewContent);
 
   mFrameConstructor->ContentAppended(
@@ -4852,9 +4852,9 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::ContentInserted(
 
   nsAutoCauseReflowNotifier crNotifier(this);
 
-  // Call this here so it only happens for real content mutations and
-  // not cases when the frame constructor calls its own methods to force
-  // frame reconstruction.
+  
+  
+  
   mPresContext->RestyleManager()->ContentInserted(aChild);
 
   mFrameConstructor->ContentInserted(
@@ -4866,8 +4866,8 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::ContentWillBeRemoved(
   MOZ_ASSERT(!nsContentUtils::IsSafeToRunScript());
   MOZ_ASSERT(!mIsDocumentGone, "Unexpected ContentRemoved");
   MOZ_ASSERT(aChild->OwnerDoc() == mDocument, "Unexpected document");
-  // Notify the ESM that the content has been removed, so that
-  // it can clean up any state related to the content.
+  
+  
 
   mPresContext->EventStateManager()->ContentRemoved(mDocument, aChild, aInfo);
 
@@ -4892,19 +4892,19 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::ContentWillBeRemoved(
   mFrameConstructor->ContentWillBeRemoved(
       aChild, nsCSSFrameConstructor::REMOVE_CONTENT);
 
-  // NOTE(emilio): It's important that this goes after the frame constructor
-  // stuff, otherwise the frame constructor can't see elements which are
-  // display: contents / display: none, because we'd have cleared all the style
-  // data from there.
+  
+  
+  
+  
   mPresContext->RestyleManager()->ContentWillBeRemoved(aChild);
 }
 
 void PresShell::NotifyCounterStylesAreDirty() {
-  // TODO: Looks like that nsFrameConstructor::NotifyCounterStylesAreDirty()
-  //       does not run script.  If so, we don't need to block script with
-  //       nsAutoCauseReflowNotifier here.  Instead, there should be methods
-  //       and stack only class which manages only mChangeNestCount for
-  //       avoiding unnecessary `MOZ_CAN_RUN_SCRIPT` marking.
+  
+  
+  
+  
+  
   nsAutoCauseReflowNotifier reflowNotifier(this);
   mFrameConstructor->NotifyCounterStylesAreDirty();
 }
@@ -4917,7 +4917,7 @@ void PresShell::ReconstructFrames() {
   MOZ_ASSERT(!mFrameConstructor->GetRootFrame() || mDidInitialize,
              "Must not have root frame before initial reflow");
   if (!mDidInitialize || mIsDestroying) {
-    // Nothing to do here
+    
     return;
   }
 
@@ -4945,7 +4945,7 @@ nsresult PresShell::RenderDocument(const nsRect& aRect,
 
   nsAutoScriptBlocker blockScripts;
 
-  // Set up the rectangle as the path in aThebesContext
+  
   gfxRect r(0, 0, nsPresContext::AppUnitsToFloatCSSPixels(aRect.width),
             nsPresContext::AppUnitsToFloatCSSPixels(aRect.height));
   aThebesContext->NewPath();
@@ -4957,7 +4957,7 @@ nsresult PresShell::RenderDocument(const nsRect& aRect,
 
   nsIFrame* rootFrame = mFrameConstructor->GetRootFrame();
   if (!rootFrame) {
-    // Nothing to paint, just fill the rect
+    
     aThebesContext->SetColor(sRGBColor::FromABGR(aBackgroundColor));
     aThebesContext->Fill();
     return NS_OK;
@@ -4976,10 +4976,10 @@ nsresult PresShell::RenderDocument(const nsRect& aRect,
   gfxFloat scale =
       gfxFloat(devCtx->AppUnitsPerDevPixel()) / AppUnitsPerCSSPixel();
 
-  // Since canvas APIs use floats to set up their matrices, we may have some
-  // slight rounding errors here.  We use NudgeToIntegers() here to adjust
-  // matrix components that are integers up to the accuracy of floats to be
-  // those integers.
+  
+  
+  
+  
   gfxMatrix newTM = aThebesContext->CurrentMatrixDouble()
                         .PreTranslate(offset)
                         .PreScale(scale, scale)
@@ -5000,13 +5000,13 @@ nsresult PresShell::RenderDocument(const nsRect& aRect,
     flags |= PaintFrameFlags::UseHighQualityScaling;
   }
   if (aFlags & RenderDocumentFlags::UseWidgetLayers) {
-    // We only support using widget layers on display root's with widgets.
+    
     nsView* view = rootFrame->GetView();
     if (view && view->GetWidget() &&
         nsLayoutUtils::GetDisplayRootFrame(rootFrame) == rootFrame) {
       WindowRenderer* renderer = view->GetWidget()->GetWindowRenderer();
-      // WebRenderLayerManagers in content processes
-      // don't support taking snapshots.
+      
+      
       if (renderer &&
           (!renderer->AsKnowsCompositor() || XRE_IsParentProcess())) {
         flags |= PaintFrameFlags::WidgetLayers;
@@ -5029,15 +5029,15 @@ nsresult PresShell::RenderDocument(const nsRect& aRect,
     mRenderingStateFlags |= RenderingStateFlags::DrawWindowNotFlushing;
   }
   if (aFlags & RenderDocumentFlags::DocumentRelative) {
-    // XXX be smarter about this ... drawWindow might want a rect
-    // that's "pretty close" to what our retained layer tree covers.
-    // In that case, it wouldn't disturb normal rendering too much,
-    // and we should allow it.
+    
+    
+    
+    
     wouldFlushRetainedLayers = true;
     flags |= PaintFrameFlags::DocumentRelative;
   }
 
-  // Don't let drawWindow blow away our retained layer tree
+  
   if ((flags & PaintFrameFlags::WidgetLayers) && wouldFlushRetainedLayers) {
     flags &= ~PaintFrameFlags::WidgetLayers;
   }
@@ -5049,20 +5049,20 @@ nsresult PresShell::RenderDocument(const nsRect& aRect,
   return NS_OK;
 }
 
-/*
- * Clip the display list aList to a range. Returns the clipped
- * rectangle surrounding the range.
- */
+
+
+
+
 nsRect PresShell::ClipListToRange(nsDisplayListBuilder* aBuilder,
                                   nsDisplayList* aList, nsRange* aRange) {
-  // iterate though the display items and add up the bounding boxes of each.
-  // This will allow the total area of the frames within the range to be
-  // determined. To do this, remove an item from the bottom of the list, check
-  // whether it should be part of the range, and if so, append it to the top
-  // of the temporary list tmpList. If the item is a text frame at the end of
-  // the selection range, clip it to the portion of the text frame that is
-  // part of the selection. Then, append the wrapper to the top of the list.
-  // Otherwise, just delete the item and don't append it.
+  
+  
+  
+  
+  
+  
+  
+  
   nsRect surfaceRect;
 
   for (nsDisplayItem* i : aList->TakeItems()) {
@@ -5073,8 +5073,8 @@ nsRect PresShell::ClipListToRange(nsDisplayListBuilder* aBuilder,
       continue;
     }
 
-    // itemToInsert indiciates the item that should be inserted into the
-    // temporary list. If null, no item should be inserted.
+    
+    
     nsDisplayItem* itemToInsert = nullptr;
     nsIFrame* frame = i->Frame();
     nsIContent* content = frame->GetContent();
@@ -5096,16 +5096,16 @@ nsRect PresShell::ClipListToRange(nsDisplayListBuilder* aBuilder,
                              frameEndOffset)
                   : frameEndOffset;
         if (highlightStart < highlightEnd) {
-          // determine the location of the start and end edges of the range.
+          
           nsPoint startPoint, endPoint;
           frame->GetPointFromOffset(highlightStart, &startPoint);
           frame->GetPointFromOffset(highlightEnd, &endPoint);
 
-          // The clip rectangle is determined by taking the the start and
-          // end points of the range, offset from the reference frame.
-          // Because of rtl, the end point may be to the left of (or above,
-          // in vertical mode) the start point, so x (or y) is set to the
-          // lower of the values.
+          
+          
+          
+          
+          
           nsRect textRect(aBuilder->ToReferenceFrame(frame), frame->GetSize());
           if (frame->GetWritingMode().IsVertical()) {
             nscoord y = std::min(startPoint.y, endPoint.y);
@@ -5130,13 +5130,13 @@ nsRect PresShell::ClipListToRange(nsDisplayListBuilder* aBuilder,
           itemToInsert = i;
         }
       }
-      // Don't try to descend into subdocuments.
-      // If this ever changes we'd need to add handling for subdocuments with
-      // different zoom levels.
+      
+      
+      
       else if (content->GetComposedDoc() ==
                aRange->GetMayCrossShadowBoundaryStartContainer()
                    ->GetComposedDoc()) {
-        // if the node is within the range, append it to the temporary list
+        
         bool before, after;
         nsresult rv =
             RangeUtils::CompareNodeToRange<TreeKind::ShadowIncludingDOM>(
@@ -5149,18 +5149,18 @@ nsRect PresShell::ClipListToRange(nsDisplayListBuilder* aBuilder,
       }
     }
 
-    // insert the item into the list if necessary. If the item has a child
-    // list, insert that as well
+    
+    
     nsDisplayList* sublist = i->GetSameCoordinateSystemChildren();
     if (itemToInsert || sublist) {
       aList->AppendToTop(itemToInsert ? itemToInsert : i);
-      // if the item is a list, iterate over it as well
+      
       if (sublist) {
         surfaceRect.UnionRect(surfaceRect,
                               ClipListToRange(aBuilder, sublist, aRange));
       }
     } else {
-      // otherwise, just delete the item and don't readd it to the list
+      
       i->Destroy(aBuilder);
     }
   }
@@ -5179,9 +5179,9 @@ UniquePtr<RangePaintInfo> PresShell::CreateRangePaintInfo(
   nsIFrame* ancestorFrame = nullptr;
   nsIFrame* rootFrame = GetRootFrame();
 
-  // If the start or end of the range is the document, just use the root
-  // frame, otherwise get the common ancestor of the two endpoints of the
-  // range.
+  
+  
+  
   nsINode* startContainer = aRange->GetMayCrossShadowBoundaryStartContainer();
   nsINode* endContainer = aRange->GetMayCrossShadowBoundaryEndContainer();
   Document* doc = startContainer->GetComposedDoc();
@@ -5206,8 +5206,8 @@ UniquePtr<RangePaintInfo> PresShell::CreateRangePaintInfo(
       ancestor = ancestor->GetParentOrShadowHostNode();
     }
 
-    // use the nearest ancestor frame that includes all continuations as the
-    // root for building the display list
+    
+    
     while (ancestorFrame &&
            nsLayoutUtils::GetNextContinuationOrIBSplitSibling(ancestorFrame)) {
       ancestorFrame = ancestorFrame->GetParent();
@@ -5218,7 +5218,7 @@ UniquePtr<RangePaintInfo> PresShell::CreateRangePaintInfo(
     return nullptr;
   }
 
-  // get a display list containing the range
+  
   auto info = MakeUnique<RangePaintInfo>(ancestorFrame);
   info->mBuilder.SetIncludeAllOutOfFlows();
   if (aForPrimarySelection) {
@@ -5239,7 +5239,7 @@ UniquePtr<RangePaintInfo> PresShell::CreateRangePaintInfo(
       return;
     }
     nsIFrame* frame = aNode->AsContent()->GetPrimaryFrame();
-    // XXX deal with frame being null due to display:contents
+    
     for (; frame;
          frame = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(frame)) {
       info->mBuilder.SetVisibleRect(frame->InkOverflowRect());
@@ -5259,25 +5259,25 @@ UniquePtr<RangePaintInfo> PresShell::CreateRangePaintInfo(
     BuildDisplayListForNode(endContainer);
   }
 
-  // If one of the ancestor presShells (including this one) has a resolution
-  // set, we may have some APZ zoom applied. That means we may want to rasterize
-  // the nodes at that zoom level. Populate `info` with the relevant information
-  // so that the caller can decide what to do. Also wrap the display list in
-  // appropriate nsDisplayAsyncZoom display items. This code handles the general
-  // case with nested async zooms (even though that never actually happens),
-  // because it fell out of the implementation for free.
-  //
-  // TODO: Do we need to do the same for ancestor transforms?
+  
+  
+  
+  
+  
+  
+  
+  
+  
   for (nsPresContext* ctx = GetPresContext(); ctx;
        ctx = ctx->GetParentPresContext()) {
     PresShell* shell = ctx->PresShell();
     float resolution = shell->GetResolution();
 
-    // If we are at the root document in the process, try to see if documents
-    // in enclosing processes have a resolution and include that as well.
+    
+    
     if (!ctx->GetParentPresContext()) {
-      // xScale is an arbitrary choice. Outside of edge cases involving CSS
-      // transforms, xScale == yScale so it doesn't matter.
+      
+      
       resolution *= ViewportUtils::TryInferEnclosingResolution(shell).xScale;
     }
 
@@ -5315,9 +5315,9 @@ UniquePtr<RangePaintInfo> PresShell::CreateRangePaintInfo(
   }
 #endif
 
-  // determine the offset of the reference frame for the display list
-  // to the root frame. This will allow the coordinates used when painting
-  // to all be offset from the same point
+  
+  
+  
   info->mRootOffset = ancestorFrame->GetBoundingClientRect().TopLeft();
   rangeRect.MoveBy(info->mRootOffset);
   aSurfaceRect.UnionRect(aSurfaceRect, rangeRect);
@@ -5335,48 +5335,48 @@ already_AddRefed<SourceSurface> PresShell::PaintRangePaintInfo(
     return nullptr;
   }
 
-  // use the rectangle to create the surface
+  
   LayoutDeviceIntRect pixelArea = LayoutDeviceIntRect::FromAppUnitsToOutside(
       aArea, pc->AppUnitsPerDevPixel());
 
-  // if the image should not be resized, scale must be 1
+  
   float scale = 1.0;
 
   const nsRect maxSize = pc->DeviceContext()->GetClientRect();
 
-  // check if the image should be resized
+  
   bool resize = !!(aFlags & RenderImageFlags::AutoScale);
 
   if (resize) {
-    // check if image-resizing-algorithm should be used
+    
     if (aFlags & RenderImageFlags::IsImage) {
-      // get max screensize
+      
       int32_t maxWidth = pc->AppUnitsToDevPixels(maxSize.width);
       int32_t maxHeight = pc->AppUnitsToDevPixels(maxSize.height);
-      // resize image relative to the screensize
-      // get best height/width relative to screensize
+      
+      
       float bestHeight = float(maxHeight) * RELATIVE_SCALEFACTOR;
       float bestWidth = float(maxWidth) * RELATIVE_SCALEFACTOR;
-      // calculate scale for bestWidth
+      
       float adjustedScale = bestWidth / float(pixelArea.width);
-      // get the worst height (height when width is perfect)
+      
       float worstHeight = float(pixelArea.height) * adjustedScale;
-      // get the difference of best and worst height
+      
       float difference = bestHeight - worstHeight;
-      // halve the difference and add it to worstHeight to get
-      // the best compromise between bestHeight and bestWidth,
-      // then calculate the corresponding scale factor
+      
+      
+      
       adjustedScale = (worstHeight + difference / 2) / float(pixelArea.height);
-      // prevent upscaling
+      
       scale = std::min(scale, adjustedScale);
     } else {
-      // get half of max screensize
+      
       int32_t maxWidth = pc->AppUnitsToDevPixels(maxSize.width >> 1);
       int32_t maxHeight = pc->AppUnitsToDevPixels(maxSize.height >> 1);
       if (pixelArea.width > maxWidth || pixelArea.height > maxHeight) {
-        // divide the maximum size by the image size in both directions.
-        // Whichever direction produces the smallest result determines how much
-        // should be scaled.
+        
+        
+        
         if (pixelArea.width > maxWidth) {
           scale = std::min(scale, float(maxWidth) / pixelArea.width);
         }
@@ -5386,49 +5386,49 @@ already_AddRefed<SourceSurface> PresShell::PaintRangePaintInfo(
       }
     }
 
-    // Pick a resolution scale factor that is the highest we need for any of
-    // the items. This means some items may get rendered at a higher-than-needed
-    // resolution but at least nothing will be avoidably blurry.
+    
+    
+    
     float resolutionScale = 1.0;
     for (const UniquePtr<RangePaintInfo>& rangeInfo : aItems) {
       resolutionScale = std::max(resolutionScale, rangeInfo->mResolution);
     }
     float unclampedResolution = resolutionScale;
-    // Clamp the resolution scale so that `pixelArea` when scaled by `scale` and
-    // `resolutionScale` isn't bigger than `maxSize`. This prevents creating
-    // giant/unbounded images.
+    
+    
+    
     resolutionScale =
         std::min(resolutionScale, maxSize.width / (scale * pixelArea.width));
     resolutionScale =
         std::min(resolutionScale, maxSize.height / (scale * pixelArea.height));
-    // The following assert should only get hit if pixelArea scaled by `scale`
-    // alone would already have been bigger than `maxSize`, which should never
-    // be the case. For release builds we handle gracefully by reverting
-    // resolutionScale to 1.0 to avoid unexpected consequences.
+    
+    
+    
+    
     MOZ_ASSERT(resolutionScale >= 1.0);
     resolutionScale = std::max(1.0f, resolutionScale);
 
     scale *= resolutionScale;
 
-    // Now we need adjust the output screen position of the surface based on the
-    // scaling factor and any APZ zoom that may be in effect. The goal is here
-    // to set `aScreenRect`'s top-left corner (in screen-relative LD pixels)
-    // such that the scaling effect on the surface appears anchored  at `aPoint`
-    // ("anchor" here is like "transform-origin"). When this code is e.g. used
-    // to generate a drag image for dragging operations, `aPoint` refers to the
-    // position of the mouse cursor (also in screen-relative LD pixels), and the
-    // user-visible effect of doing this is that the point at which the user
-    // clicked to start the drag remains under the mouse during the drag.
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
-    // In order to do this we first compute the top-left corner of the
-    // pixelArea is screen-relative LD pixels.
+    
+    
     LayoutDevicePoint visualPoint = ViewportUtils::ToScreenRelativeVisual(
         LayoutDevicePoint(pixelArea.TopLeft()), pc);
-    // And then adjust the output screen position based on that, which we can do
-    // since everything here is screen-relative LD pixels. Note that the scale
-    // factor we use here is the effective "transform" scale applied to the
-    // content we're painting, relative to the scale at which it would normally
-    // get painted at as part of page rendering (`unclampedResolution`).
+    
+    
+    
+    
+    
     float scaleRelativeToNormalContent = scale / unclampedResolution;
     aScreenRect->x =
         NSToIntFloor(aPoint.x - float(aPoint.x.value - visualPoint.x.value) *
@@ -5443,7 +5443,7 @@ already_AddRefed<SourceSurface> PresShell::PaintRangePaintInfo(
       return nullptr;
     }
   } else {
-    // move aScreenRect to the position of the surface in screen coordinates
+    
     LayoutDevicePoint visualPoint = ViewportUtils::ToScreenRelativeVisual(
         LayoutDevicePoint(pixelArea.TopLeft()), pc);
     aScreenRect->MoveTo(RoundedToInt(visualPoint));
@@ -5463,7 +5463,7 @@ already_AddRefed<SourceSurface> PresShell::PaintRangePaintInfo(
   if (aRegion) {
     RefPtr<PathBuilder> builder = dt->CreatePathBuilder(FillRule::FILL_WINDING);
 
-    // Convert aRegion from CSS pixels to dev pixels
+    
     nsIntRegion region = aRegion->ToAppUnits(AppUnitsPerCSSPixel())
                              .ToOutsidePixels(pc->AppUnitsPerDevPixel());
     for (auto iter = region.RectIter(); !iter.Done(); iter.Next()) {
@@ -5486,14 +5486,14 @@ already_AddRefed<SourceSurface> PresShell::PaintRangePaintInfo(
     initialTM.PreScale(scale, scale);
   }
 
-  // translate so that points are relative to the surface area
+  
   gfxPoint surfaceOffset = nsLayoutUtils::PointToGfxPoint(
       -aArea.TopLeft(), pc->AppUnitsPerDevPixel());
   initialTM.PreTranslate(surfaceOffset);
 
-  // temporarily hide the selection so that text is drawn normally. If a
-  // selection is being rendered, use that, otherwise use the presshell's
-  // selection.
+  
+  
+  
   RefPtr<nsFrameSelection> frameSelection;
   if (aSelection) {
     frameSelection = aSelection->GetFrameSelection();
@@ -5503,10 +5503,10 @@ already_AddRefed<SourceSurface> PresShell::PaintRangePaintInfo(
   int16_t oldDisplaySelection = frameSelection->GetDisplaySelection();
   frameSelection->SetDisplaySelection(nsISelectionController::SELECTION_HIDDEN);
 
-  // next, paint each range in the selection
+  
   for (const UniquePtr<RangePaintInfo>& rangeInfo : aItems) {
-    // the display lists paint relative to the offset from the reference
-    // frame, so account for that translation too:
+    
+    
     gfxPoint rootOffset = nsLayoutUtils::PointToGfxPoint(
         rangeInfo->mRootOffset, pc->AppUnitsPerDevPixel());
     ctx.SetMatrixDouble(initialTM.PreTranslate(rootOffset));
@@ -5517,7 +5517,7 @@ already_AddRefed<SourceSurface> PresShell::PaintRangePaintInfo(
     aArea.MoveBy(rangeInfo->mRootOffset.x, rangeInfo->mRootOffset.y);
   }
 
-  // restore the old selection display state
+  
   frameSelection->SetDisplaySelection(oldDisplaySelection);
 
   return dt->Snapshot();
@@ -5527,12 +5527,12 @@ already_AddRefed<SourceSurface> PresShell::RenderNode(
     nsINode* aNode, const Maybe<CSSIntRegion>& aRegion,
     const LayoutDeviceIntPoint aPoint, LayoutDeviceIntRect* aScreenRect,
     RenderImageFlags aFlags) {
-  // area will hold the size of the surface needed to draw the node, measured
-  // from the root frame.
+  
+  
   nsRect area;
   nsTArray<UniquePtr<RangePaintInfo>> rangeItems;
 
-  // nothing to draw if the node isn't in a document
+  
   if (!aNode->IsInComposedDoc()) {
     return nullptr;
   }
@@ -5546,14 +5546,14 @@ already_AddRefed<SourceSurface> PresShell::RenderNode(
 
   UniquePtr<RangePaintInfo> info = CreateRangePaintInfo(range, area, false);
   if (info) {
-    // XXX(Bug 1631371) Check if this should use a fallible operation as it
-    // pretended earlier, or change the return type to void.
+    
+    
     rangeItems.AppendElement(std::move(info));
   }
 
   Maybe<CSSIntRegion> region = aRegion;
   if (region) {
-    // combine the area with the supplied region
+    
     CSSIntRect rrectPixels = region->GetBounds();
 
     nsRect rrect = ToAppUnits(rrectPixels, AppUnitsPerCSSPixel());
@@ -5564,8 +5564,8 @@ already_AddRefed<SourceSurface> PresShell::RenderNode(
       return nullptr;
     }
 
-    // move the region so that it is offset from the topleft corner of the
-    // surface
+    
+    
     region->MoveBy(-nsPresContext::AppUnitsToIntCSSPixels(area.x),
                    -nsPresContext::AppUnitsToIntCSSPixels(area.y));
   }
@@ -5577,14 +5577,14 @@ already_AddRefed<SourceSurface> PresShell::RenderNode(
 already_AddRefed<SourceSurface> PresShell::RenderSelection(
     Selection* aSelection, const LayoutDeviceIntPoint aPoint,
     LayoutDeviceIntRect* aScreenRect, RenderImageFlags aFlags) {
-  // area will hold the size of the surface needed to draw the selection,
-  // measured from the root frame.
+  
+  
   nsRect area;
   nsTArray<UniquePtr<RangePaintInfo>> rangeItems;
 
-  // iterate over each range and collect them into the rangeItems array.
-  // This is done so that the size of selection can be determined so as
-  // to allocate a surface area
+  
+  
+  
   const uint32_t rangeCount = aSelection->RangeCount();
   NS_ASSERTION(rangeCount > 0, "RenderSelection called with no selection");
   for (const uint32_t r : IntegerRange(rangeCount)) {
@@ -5593,8 +5593,8 @@ already_AddRefed<SourceSurface> PresShell::RenderSelection(
 
     UniquePtr<RangePaintInfo> info = CreateRangePaintInfo(range, area, true);
     if (info) {
-      // XXX(Bug 1631371) Check if this should use a fallible operation as it
-      // pretended earlier.
+      
+      
       rangeItems.AppendElement(std::move(info));
     }
   }
@@ -5617,8 +5617,8 @@ void PresShell::AddCanvasBackgroundColorItem(nsDisplayListBuilder* aBuilder,
                                              const nsRect& aBounds,
                                              nscolor aBackstopColor) {
   if (aBounds.IsEmpty() || !aFrame->IsViewportFrame()) {
-    // We don't want to add an item for the canvas background color if the frame
-    // (sub)tree we are painting doesn't include any canvas frames.
+    
+    
     return;
   }
 
@@ -5628,15 +5628,15 @@ void PresShell::AddCanvasBackgroundColorItem(nsDisplayListBuilder* aBuilder,
     return;
   }
 
-  // With async scrolling, we'd like to have two instances of the background
-  // color: one that scrolls with the content and one underneath which does not
-  // scroll with the content, but which can be shown during checkerboarding and
-  // overscroll and the dynamic toolbar movement. We can only do that if the
-  // color is opaque.
-  //
-  // We also need to paint the background if CSS hasn't specified it (since
-  // otherwise nsCanvasFrame might not paint it). Note that non-CSS-specified
-  // backgrounds shouldn't ever be semi-transparent.
+  
+  
+  
+  
+  
+  
+  
+  
+  
   const bool forceUnscrolledItem =
       nsLayoutUtils::UsesAsyncScrolling(aFrame) && NS_GET_A(bgcolor) == 255;
   if (canvasBg.mCSSSpecified && !forceUnscrolledItem) {
@@ -5686,10 +5686,10 @@ bool PresShell::IsTransparentContainerElement() const {
     if (mDocument->IsInChromeDocShell()) {
       return true;
     }
-    // Frames are transparent except if their used embedder color-scheme is
-    // mismatched, in which case we use an opaque background to avoid
-    // black-on-black or white-on-white text, see
-    // https://github.com/w3c/csswg-drafts/issues/4772
+    
+    
+    
+    
     if (BrowsingContext* bc = mDocument->GetBrowsingContext()) {
       switch (bc->GetEmbedderColorSchemes().mUsed) {
         case dom::PrefersColorSchemeOverride::Light:
@@ -5715,8 +5715,8 @@ bool PresShell::IsTransparentContainerElement() const {
     return containerElement->HasAttr(nsGkAtoms::transparent);
   }
   if (BrowserChild* tab = BrowserChild::GetFrom(docShell)) {
-    // Check if presShell is the top PresShell. Only the top can influence the
-    // canvas background color.
+    
+    
     return this == tab->GetTopLevelPresShell() && tab->IsTransparent();
   }
   return false;
@@ -5738,7 +5738,7 @@ static SingleCanvasBackground ComputeSingleCanvasBackground(nsIFrame* aCanvas) {
   const nsIFrame* bgFrame = nsCSSRendering::FindBackgroundFrame(aCanvas);
   static constexpr nscolor kTransparent = NS_RGBA(0, 0, 0, 0);
   if (bgFrame->IsThemed()) {
-    // Ignore the CSS background-color if `appearance` is used on the root.
+    
     return {kTransparent, false};
   }
   bool drawBackgroundImage = false;
@@ -5747,23 +5747,23 @@ static SingleCanvasBackground ComputeSingleCanvasBackground(nsIFrame* aCanvas) {
       aCanvas->PresContext(), bgFrame->Style(), aCanvas, drawBackgroundImage,
       drawBackgroundColor);
   if (!drawBackgroundColor) {
-    // No need to draw the CSS-specified background (or no CSS-specified
-    // background at all).
+    
+    
     return {kTransparent, false};
   }
   return {color, true};
 }
 
 PresShell::CanvasBackground PresShell::ComputeCanvasBackground() const {
-  // If we have a frame tree and it has style information that
-  // specifies the background color of the canvas, update our local
-  // cache of that color.
+  
+  
+  
   nsIFrame* canvas = GetCanvasFrame();
   if (!canvas) {
     nscolor color = GetDefaultBackgroundColorToDraw();
-    // If the root element of the document (ie html) has style 'display: none'
-    // then the document's background color does not get drawn; return the color
-    // we actually draw.
+    
+    
+    
     return {{color, false}, {color, false}};
   }
 
@@ -5776,9 +5776,9 @@ PresShell::CanvasBackground PresShell::ComputeCanvasBackground() const {
   nsCanvasFrame* docElementCb =
       mFrameConstructor->GetDocElementContainingBlock();
   if (canvas != docElementCb) {
-    // We're in paged mode / print / print-preview, and just computed the "root"
-    // canvas background. Compute the doc element containing block background
-    // too.
+    
+    
+    
     MOZ_ASSERT(mPresContext->IsRootPaginatedDocument());
     pageBg = ComputeSingleCanvasBackground(docElementCb);
   }
@@ -5790,13 +5790,13 @@ nscolor PresShell::ComputeBackstopColor(nsView* aDisplayRoot) {
   if (widget &&
       (widget->GetTransparencyMode() != widget::TransparencyMode::Opaque ||
        widget->WidgetPaintsBackground())) {
-    // Within a transparent widget, so the backstop color must be
-    // totally transparent.
+    
+    
     return NS_RGBA(0, 0, 0, 0);
   }
-  // Within an opaque widget (or no widget at all), so the backstop
-  // color must be totally opaque. The user's default background
-  // as reported by the prescontext is guaranteed to be opaque.
+  
+  
+  
   return GetDefaultBackgroundColorToDraw();
 }
 
@@ -5837,8 +5837,8 @@ nsresult PresShell::SetResolutionAndScaleTo(float aResolution,
     return NS_OK;
   }
 
-  // GetResolution handles mResolution being nothing by returning 1 so this
-  // is checking that the resolution is actually changing.
+  
+  
   bool resolutionUpdated = aResolution != GetResolution();
 
   mLastResolutionChangeOrigin = aOrigin;
@@ -5849,11 +5849,11 @@ nsresult PresShell::SetResolutionAndScaleTo(float aResolution,
   if (mMobileViewportManager) {
     mMobileViewportManager->ResolutionUpdated(aOrigin);
   }
-  // Changing the resolution changes the visual viewport size which may
-  // make the current visual viewport offset out-of-bounds (if the size
-  // increased). APZ will reconcile this by sending a clamped visual
-  // viewport offset on the next repaint, but to avoid main-thread code
-  // observing an out-of-bounds offset until then, reclamp it here.
+  
+  
+  
+  
+  
   if (IsVisualViewportOffsetSet()) {
     SetVisualViewportOffset(GetVisualViewportOffset(),
                             GetLayoutViewportOffset());
@@ -5941,22 +5941,22 @@ static nsView* FindFloatingViewContaining(nsPresContext* aRootPresContext,
   return popupFrame ? popupFrame->GetView() : nullptr;
 }
 
-/*
- * This finds the first view with a frame that contains the given point in a
- * postorder traversal of the view tree, assuming that the point is not in a
- * floating view.  It assumes that only floating views extend outside the bounds
- * of their parents.
- *
- * This methods should only be called if FindFloatingViewContaining returns
- * null.
- *
- * aPt is relative aRelativeToView with the viewport type
- * aRelativeToViewportType. aRelativeToView will always have a frame. If aView
- * has a frame then aRelativeToView will be aView. (The reason aRelativeToView
- * and aView are separate is because we need to traverse into views without
- * frames (ie the inner view of a subdocument frame) but we can only easily
- * transform between views using TransformPoint which takes frames.)
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static nsView* FindViewContaining(nsView* aRelativeToView,
                                   ViewportType aRelativeToViewportType,
                                   nsView* aView, nsPoint aPt) {
@@ -5974,12 +5974,12 @@ static nsView* FindViewContaining(nsView* aRelativeToView,
       return nullptr;
     }
 
-    // We start out in visual coords and then if we cross the zoom boundary we
-    // become in layout coords. The zoom boundary always occurs in a document
-    // with IsRootContentDocumentCrossProcess. The root view of such a document
-    // is outside the zoom boundary and any child view must be inside the zoom
-    // boundary because we only create views for certain kinds of frames and
-    // none of them can be between the root frame and the zoom boundary.
+    
+    
+    
+    
+    
+    
     bool crossingZoomBoundary = false;
     if (aRelativeToViewportType == ViewportType::Visual) {
       if (!aRelativeToView->GetParent() ||
@@ -6005,19 +6005,19 @@ static nsView* FindViewContaining(nsView* aRelativeToView,
       return nullptr;
     }
 
-    // Even though aPt is in visual coordinates until we cross the zoom boundary
-    // it is valid to compare it to view coords (which are in layout coords)
-    // because visual coords are the same as layout coords for every view
-    // outside of the zoom boundary except for the root view of the root content
-    // document.
-    // For the root view of the root content document, its bounds don't
-    // actually correspond to what is visible when we have a
-    // MobileViewportManager. So we skip the hit test. This is okay because the
-    // point has already been hit test: 1) if we are the root view in the
-    // process then the point comes from a real mouse event so it must have been
-    // over our widget, or 2) if we are the root of a subdocument then
-    // hittesting against the view of the subdocument frame that contains us
-    // already happened and succeeded before getting here.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     if (!crossingZoomBoundary) {
       if (!aView->GetDimensions().Contains(aPt)) {
         return nullptr;
@@ -6045,8 +6045,8 @@ static BrowserBridgeChild* GetChildBrowser(nsView* aView) {
   }
   nsIFrame* frame = aView->GetFrame();
   if (!frame && aView->GetParent()) {
-    // If frame is null then view is an anonymous inner view, and we want
-    // the frame from the corresponding outer view.
+    
+    
     frame = aView->GetParent()->GetFrame();
   }
   if (!frame || !frame->GetContent()) {
@@ -6057,12 +6057,12 @@ static BrowserBridgeChild* GetChildBrowser(nsView* aView) {
 
 void PresShell::ProcessSynthMouseMoveEvent(bool aFromScroll) {
   auto forgetMouseMove = MakeScopeExit([&]() {
-    // Must be safe to refer `this` without grabbing it with a RefPtr since this
-    // method is marked as MOZ_CAN_RUN_SCRIPT, and we don't want to use RefPtr
-    // here because of a hot path
+    
+    
+    
     mSynthMouseMoveEvent.Forget();
   });
-  // If drag session has started, we shouldn't synthesize mousemove event.
+  
   nsView* rootView = mViewManager ? mViewManager->GetRootView() : nullptr;
   if (!rootView || !rootView->HasWidget()) {
     return;
@@ -6070,8 +6070,8 @@ void PresShell::ProcessSynthMouseMoveEvent(bool aFromScroll) {
   nsCOMPtr<nsIDragSession> dragSession =
       nsContentUtils::GetDragSession(rootView->GetWidget());
   if (dragSession) {
-    // Don't forget it.  We need to synthesize a mouse move when the drag
-    // session ends.
+    
+    
     forgetMouseMove.release();
     return;
   }
@@ -6080,8 +6080,8 @@ void PresShell::ProcessSynthMouseMoveEvent(bool aFromScroll) {
     return;
   }
 
-  // allow new event to be posted while handling this one only if the
-  // source of the event is a scroll (to prevent infinite reflow loops)
+  
+  
   if (aFromScroll) {
     mSynthMouseMoveEvent.Forget();
     forgetMouseMove.release();
@@ -6095,14 +6095,14 @@ void PresShell::ProcessSynthMouseMoveEvent(bool aFromScroll) {
       const PointerInfo* const pointerInfo =
           PointerEventHandler::GetPointerInfo(pointerId);
       if (MOZ_UNLIKELY(!pointerInfo) || !pointerInfo->HasLastState() ||
-          // We shouldn't dispatch pointer boundary events when a layout change
-          // if the pointer is not a stationary device.
+          
+          
           !pointerInfo->InputSourceSupportsHover()) {
         continue;
       }
-      // If the pointer is captured, we don't need to dispatch pointer boundary
-      // events since pointer boundary events should be fired before
-      // gotpointercapture.
+      
+      
+      
       PointerCaptureInfo* const captureInfo =
           PointerEventHandler::GetPointerCaptureInfo(pointerId);
       if (captureInfo && captureInfo->mOverrideElement) {
@@ -6145,21 +6145,21 @@ void PresShell::ProcessSynthMouseOrPointerMoveEvent(
 
   int32_t APD = mPresContext->AppUnitsPerDevPixel();
 
-  // We need a widget to put in the event we are going to dispatch so we look
-  // for a view that has a widget and the mouse location is over. We first look
-  // for floating views, if there isn't one we use the root view. |view| holds
-  // that view.
+  
+  
+  
+  
   nsView* view = nullptr;
 
-  // The appunits per devpixel ratio of |view|.
+  
   int32_t viewAPD;
 
-  // mRefPoint will be mMouseLocation relative to the widget of |view|, the
-  // widget we will put in the event we dispatch, in viewAPD appunits
+  
+  
   nsPoint refpoint(0, 0);
 
-  // We always dispatch the event to the pres shell that contains the view that
-  // the mouse is over. pointVM is the VM of that pres shell.
+  
+  
   nsViewManager* pointVM = nullptr;
 
   nsView* const rootView = mViewManager ? mViewManager->GetRootView() : nullptr;
@@ -6190,7 +6190,7 @@ void PresShell::ProcessSynthMouseOrPointerMoveEvent(
     } else {
       pointView = rootView;
     }
-    // pointView can be null in situations related to mouse capture
+    
     pointVM = (pointView ? pointView : view)->GetViewManager();
     refpoint =
         aPointerInfo.mLastRefPointInRootDoc + rootView->ViewToWidgetOffset();
@@ -6214,9 +6214,9 @@ void PresShell::ProcessSynthMouseOrPointerMoveEvent(
   if (aMoveMessage == eMouseMove) {
     mouseMoveEvent.emplace(true, eMouseMove, view->GetWidget(),
                            WidgetMouseEvent::eSynthesized);
-    // We don't want to dispatch preceding pointer event since the caller
-    // should've already been dispatched it.  However, if the target is an OOP
-    // iframe, we'll set this to true again below.
+    
+    
+    
     mouseMoveEvent->convertToPointer = false;
   } else {
     pointerMoveEvent.emplace(true, ePointerMove, view->GetWidget());
@@ -6225,12 +6225,12 @@ void PresShell::ProcessSynthMouseOrPointerMoveEvent(
   WidgetMouseEvent& event =
       mouseMoveEvent ? mouseMoveEvent.ref() : pointerMoveEvent.ref();
 
-  // If the last cursor location was set by a synthesized mouse event for tests,
-  // running test should expect a restyle or a DOM mutation under the cursor may
-  // cause mouse boundary events in a remote process if the cursor is over a
-  // remote content.  Therefore, the events should not be ignored by
-  // PresShell::HandleEvent in the remote process.  So we need to mark the
-  // synthesized eMouseMove as "synthesized for tests".
+  
+  
+  
+  
+  
+  
   event.mFlags.mIsSynthesizedForTests = aPointerInfo.mIsSynthesizedForTests;
 
   event.mRefPoint =
@@ -6241,14 +6241,14 @@ void PresShell::ProcessSynthMouseOrPointerMoveEvent(
   event.mModifiers = PresShell::GetCurrentModifiers();
 
   if (BrowserBridgeChild* bbc = GetChildBrowser(pointView)) {
-    // If we have a BrowserBridgeChild, we're going to be dispatching this
-    // mouse event into an OOP iframe of the current document if and only if
-    // we're synthesizing a mouse move.
-    // FIXME: We may need to dispatch ePointerMove in the OOP iframe too.
-    // However, it may require to change the active pointer state in both this
-    // process and the OOP iframe process too.  Therefore, we will fire
-    // ePointerMove as a preceding pointer event of the synthesized eMouseMove
-    // in PointerEventHandler::DispatchPointerFromMouseOrTouch().
+    
+    
+    
+    
+    
+    
+    
+    
     if (aMoveMessage == eMouseMove) {
       event.mLayersId = bbc->GetLayersId();
       event.convertToPointer = true;
@@ -6258,19 +6258,19 @@ void PresShell::ProcessSynthMouseOrPointerMoveEvent(
   }
 
   if (RefPtr<PresShell> presShell = pointVM->GetPresShell()) {
-    // Since this gets run in a refresh tick there isn't an InputAPZContext on
-    // the stack from the nsBaseWidget. We need to simulate one with at least
-    // the correct target guid, so that the correct callback transform gets
-    // applied if this event goes to a child process. The input block id is set
-    // to 0 because this is a synthetic event which doesn't really belong to any
-    // input block. Same for the APZ response field.
+    
+    
+    
+    
+    
+    
     InputAPZContext apzContext(aPointerInfo.mLastTargetGuid, 0,
                                nsEventStatus_eIgnore);
     presShell->DispatchSynthMouseOrPointerMove(&event);
   }
 }
 
-/* static */
+
 void PresShell::MarkFramesInListApproximatelyVisible(
     const nsDisplayList& aList) {
   for (nsDisplayItem* item : aList) {
@@ -6287,25 +6287,25 @@ void PresShell::MarkFramesInListApproximatelyVisible(
       continue;
     }
 
-    // Use the presshell containing the frame.
+    
     PresShell* presShell = frame->PresShell();
     MOZ_ASSERT(!presShell->AssumeAllFramesVisible());
     if (presShell->mApproximatelyVisibleFrames.EnsureInserted(frame)) {
-      // The frame was added to mApproximatelyVisibleFrames, so increment its
-      // visible count.
+      
+      
       frame->IncApproximateVisibleCount();
     }
   }
 }
 
-/* static */
+
 void PresShell::DecApproximateVisibleCount(
     VisibleFrames& aFrames, const Maybe<OnNonvisible>& aNonvisibleAction
-    /* = Nothing() */) {
+    ) {
   for (nsIFrame* frame : aFrames) {
-    // Decrement the frame's visible count if we're still tracking its
-    // visibility. (We may not be, if the frame disabled visibility tracking
-    // after we added it to the visible frames list.)
+    
+    
+    
     if (frame->TrackingVisibility()) {
       frame->DecApproximateVisibleCount(aNonvisibleAction);
     }
@@ -6317,8 +6317,8 @@ void PresShell::RebuildApproximateFrameVisibilityDisplayList(
   MOZ_ASSERT(!mApproximateFrameVisibilityVisited, "already visited?");
   mApproximateFrameVisibilityVisited = true;
 
-  // Remove the entries of the mApproximatelyVisibleFrames hashtable and put
-  // them in oldApproxVisibleFrames.
+  
+  
   VisibleFrames oldApproximatelyVisibleFrames =
       std::move(mApproximatelyVisibleFrames);
 
@@ -6327,7 +6327,7 @@ void PresShell::RebuildApproximateFrameVisibilityDisplayList(
   DecApproximateVisibleCount(oldApproximatelyVisibleFrames);
 }
 
-/* static */
+
 void PresShell::ClearApproximateFrameVisibilityVisited(nsView* aView,
                                                        bool aClear) {
   nsViewManager* vm = aView->GetViewManager();
@@ -6345,29 +6345,29 @@ void PresShell::ClearApproximateFrameVisibilityVisited(nsView* aView,
 
 void PresShell::ClearApproximatelyVisibleFramesList(
     const Maybe<OnNonvisible>& aNonvisibleAction
-    /* = Nothing() */) {
+    ) {
   DecApproximateVisibleCount(mApproximatelyVisibleFrames, aNonvisibleAction);
   mApproximatelyVisibleFrames.Clear();
 }
 
-// aRect is relative to aFrame
-// aPreserve3DRect is set upon entering a preserve3d context and it doesn't
-// change, it stays relative to the root frame in the preserve3d context. Any
-// frame that is in a preserve3d context ignores aRect but takes aPreserve3DRect
-// and transforms it from the root of the preserve3d context to itself
-// (nsDisplayTransform::UntransformRect does this by default), and passes the
-// result down as aRect (leaving aPreserve3DRect untouched). Additionally, we
-// descend into every frame inside the preserve3d context (we skip the rect
-// intersection test). Any frame that is not in a preserve3d context just uses
-// aRect and doesn't need to know about any of this, even if it's parent frame
-// is in the preserve3d context. Any frame that is extend3d (ie has preserve3d
-// transform style) but not combines3d (ie its either transformed or backface
-// visibility hidden and its parent has preserve3d style) forms the root of a
-// preserve3d context. And any frame that is combines3d is in a preserve3d
-// context.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void PresShell::MarkFramesInSubtreeApproximatelyVisible(
     nsIFrame* aFrame, const nsRect& aRect, const nsRect& aPreserve3DRect,
-    bool aRemoveOnly /* = false */) {
+    bool aRemoveOnly ) {
   MOZ_DIAGNOSTIC_ASSERT(aFrame, "aFrame arg should be a valid frame pointer");
   MOZ_ASSERT(aFrame->PresShell() == this, "wrong presshell");
 
@@ -6376,8 +6376,8 @@ void PresShell::MarkFramesInSubtreeApproximatelyVisible(
        aFrame->GetVisibility() == Visibility::ApproximatelyVisible)) {
     MOZ_ASSERT(!AssumeAllFramesVisible());
     if (mApproximatelyVisibleFrames.EnsureInserted(aFrame)) {
-      // The frame was added to mApproximatelyVisibleFrames, so increment its
-      // visible count.
+      
+      
       aFrame->IncApproximateVisibleCount();
     }
   }
@@ -6408,11 +6408,11 @@ void PresShell::MarkFramesInSubtreeApproximatelyVisible(
   if (ScrollContainerFrame* scrollFrame = do_QueryFrame(aFrame)) {
     bool ignoreDisplayPort = false;
     if (DisplayPortUtils::IsMissingDisplayPortBaseRect(aFrame->GetContent())) {
-      // We can properly set the base rect for root scroll frames on top level
-      // and root content documents. Otherwise the base rect we compute might
-      // be way too big without the limiting that
-      // ScrollContainerFrame::DecideScrollableLayer does, so we just ignore the
-      // displayport in that case.
+      
+      
+      
+      
+      
       nsPresContext* pc = aFrame->PresContext();
       if (scrollFrame->IsRootScrollFrameOfDocument() &&
           (pc->IsRootContentDocumentCrossProcess() ||
@@ -6443,10 +6443,10 @@ void PresShell::MarkFramesInSubtreeApproximatelyVisible(
 
   for (const auto& [list, listID] : aFrame->ChildLists()) {
     for (nsIFrame* child : list) {
-      // Note: This assert should be trivially satisfied, just by virtue of how
-      // nsFrameList and its iterator works (with nullptr being an end-of-list
-      // sentinel which should terminate the loop).  But we do somehow get
-      // crash reports inside this loop that suggest `child` is null...
+      
+      
+      
+      
       MOZ_DIAGNOSTIC_ASSERT(child, "shouldn't have null values in child lists");
 
       const bool extend3DContext = child->Extend3DContext();
@@ -6485,7 +6485,7 @@ void PresShell::MarkFramesInSubtreeApproximatelyVisible(
 }
 
 void PresShell::RebuildApproximateFrameVisibility(
-    nsRect* aRect, bool aRemoveOnly /* = false */) {
+    nsRect* aRect, bool aRemoveOnly ) {
   MOZ_ASSERT(!mApproximateFrameVisibilityVisited, "already visited?");
   mApproximateFrameVisibilityVisited = true;
 
@@ -6494,8 +6494,8 @@ void PresShell::RebuildApproximateFrameVisibility(
     return;
   }
 
-  // Remove the entries of the mApproximatelyVisibleFrames hashtable and put
-  // them in oldApproximatelyVisibleFrames.
+  
+  
   VisibleFrames oldApproximatelyVisibleFrames =
       std::move(mApproximatelyVisibleFrames);
 
@@ -6504,15 +6504,15 @@ void PresShell::RebuildApproximateFrameVisibility(
     vis = *aRect;
   }
 
-  // If we are in-process root but not the top level content, we need to take
-  // the intersection with the iframe visible rect.
+  
+  
   if (mPresContext->IsRootContentDocumentInProcess() &&
       !mPresContext->IsRootContentDocumentCrossProcess()) {
-    // There are two possibilities that we can't get the iframe's visible
-    // rect other than the iframe is out side of ancestors' display ports.
-    // a) the BrowserChild is being torn down
-    // b) the visible rect hasn't been delivered the BrowserChild
-    // In both cases we consider the visible rect is empty.
+    
+    
+    
+    
+    
     Maybe<nsRect> visibleRect;
     if (BrowserChild* browserChild = BrowserChild::GetFrom(this)) {
       visibleRect = browserChild->GetVisibleRect();
@@ -6526,7 +6526,7 @@ void PresShell::RebuildApproximateFrameVisibility(
 }
 
 void PresShell::UpdateApproximateFrameVisibility() {
-  DoUpdateApproximateFrameVisibility(/* aRemoveOnly = */ false);
+  DoUpdateApproximateFrameVisibility( false);
 }
 
 void PresShell::DoUpdateApproximateFrameVisibility(bool aRemoveOnly) {
@@ -6540,22 +6540,22 @@ void PresShell::DoUpdateApproximateFrameVisibility(bool aRemoveOnly) {
     return;
   }
 
-  // call update on that frame
+  
   nsIFrame* rootFrame = GetRootFrame();
   if (!rootFrame) {
     ClearApproximatelyVisibleFramesList(Some(OnNonvisible::DiscardImages));
     return;
   }
 
-  RebuildApproximateFrameVisibility(/* aRect = */ nullptr, aRemoveOnly);
+  RebuildApproximateFrameVisibility( nullptr, aRemoveOnly);
   ClearApproximateFrameVisibilityVisited(rootFrame->GetView(), true);
 
 #ifdef DEBUG_FRAME_VISIBILITY_DISPLAY_LIST
-  // This can be used to debug the frame walker by comparing beforeFrameList
-  // and mApproximatelyVisibleFrames in RebuildFrameVisibilityDisplayList to see
-  // if they produce the same results (mApproximatelyVisibleFrames holds the
-  // frames the display list thinks are visible, beforeFrameList holds the
-  // frames the frame walker thinks are visible).
+  
+  
+  
+  
+  
   nsDisplayListBuilder builder(
       rootFrame, nsDisplayListBuilderMode::FRAME_VISIBILITY, false);
   nsRect updateRect(nsPoint(0, 0), rootFrame->GetSize());
@@ -6591,23 +6591,23 @@ bool PresShell::AssumeAllFramesVisible() {
     return true;
   }
 
-  // We assume all frames are visible in print, print preview, chrome, and
-  // resource docs and don't keep track of them.
+  
+  
   if (mPresContext->Type() == nsPresContext::eContext_PrintPreview ||
       mPresContext->Type() == nsPresContext::eContext_Print ||
       mPresContext->IsChrome() || mDocument->IsResourceDoc()) {
     return true;
   }
 
-  // If we're assuming all frames are visible in the top level content
-  // document, we need to in subdocuments as well. Otherwise we can get in a
-  // situation where things like animations won't work in subdocuments because
-  // their frames appear not to be visible, since we won't schedule an image
-  // visibility update if the top level content document is assuming all
-  // frames are visible.
-  //
-  // Note that it's not safe to call IsRootContentDocumentInProcess() if we're
-  // currently being destroyed, so we have to check that first.
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (!mHaveShutDown && !mIsDestroying &&
       !mPresContext->IsRootContentDocumentInProcess()) {
     nsPresContext* presContext =
@@ -6634,7 +6634,7 @@ void PresShell::ScheduleApproximateFrameVisibilityUpdateSoon() {
     return;
   }
 
-  // Ask the refresh driver to update frame visibility soon.
+  
   refreshDriver->ScheduleFrameVisibilityUpdate();
 }
 
@@ -6685,7 +6685,7 @@ void PresShell::EnsureFrameInApproximatelyVisibleList(nsIFrame* aFrame) {
   }
 
 #ifdef DEBUG
-  // Make sure it's in this pres shell.
+  
   nsCOMPtr<nsIContent> content = aFrame->GetContent();
   if (content) {
     PresShell* presShell = content->OwnerDoc()->GetPresShell();
@@ -6694,14 +6694,14 @@ void PresShell::EnsureFrameInApproximatelyVisibleList(nsIFrame* aFrame) {
 #endif
 
   if (mApproximatelyVisibleFrames.EnsureInserted(aFrame)) {
-    // We inserted a new entry.
+    
     aFrame->IncApproximateVisibleCount();
   }
 }
 
 void PresShell::RemoveFrameFromApproximatelyVisibleList(nsIFrame* aFrame) {
 #ifdef DEBUG
-  // Make sure it's in this pres shell.
+  
   nsCOMPtr<nsIContent> content = aFrame->GetContent();
   if (content) {
     PresShell* presShell = content->OwnerDoc()->GetPresShell();
@@ -6717,8 +6717,8 @@ void PresShell::RemoveFrameFromApproximatelyVisibleList(nsIFrame* aFrame) {
 
   if (mApproximatelyVisibleFrames.EnsureRemoved(aFrame) &&
       aFrame->TrackingVisibility()) {
-    // aFrame was in the hashtable, and we're still tracking its visibility,
-    // so we need to decrement its visible count.
+    
+    
     aFrame->DecApproximateVisibleCount();
   }
 }
@@ -6731,15 +6731,15 @@ void PresShell::PaintAndRequestComposite(nsView* aView, PaintFlags aFlags) {
   WindowRenderer* renderer = aView->GetWidget()->GetWindowRenderer();
   NS_ASSERTION(renderer, "Must be in paint event");
   if (renderer->AsFallback()) {
-    // The fallback renderer doesn't do any retaining, so we
-    // just need to notify the view and widget that we're invalid, and
-    // we'll do a paint+composite from the PaintWindow callback.
+    
+    
+    
     GetViewManager()->InvalidateView(aView);
     return;
   }
 
-  // Otherwise we're a retained WebRenderLayerManager, so we want to call
-  // Paint to update with any changes and push those to WR.
+  
+  
   PaintInternalFlags flags = PaintInternalFlags::None;
   if (aFlags & PaintFlags::PaintSyncDecodeImages) {
     flags |= PaintInternalFlags::PaintSyncDecodeImages;
@@ -6779,13 +6779,13 @@ void PresShell::PaintInternal(nsView* aViewToPaint, PaintInternalFlags aFlags) {
 
   Maybe<js::AutoAssertNoContentJS> nojs;
 
-  // On Android, Flash can call into content JS during painting, so we can't
-  // assert there. However, we don't rely on this assertion on Android because
-  // we don't paint while JS is running.
+  
+  
+  
 #if !defined(MOZ_WIDGET_ANDROID)
   if (!(aFlags & PaintInternalFlags::PaintComposite)) {
-    // We need to allow content JS when the flag is set since we may trigger
-    // MozAfterPaint events in content in those cases.
+    
+    
     nojs.emplace(dom::danger::GetJSContext());
   }
 #endif
@@ -6803,10 +6803,10 @@ void PresShell::PaintInternal(nsView* aViewToPaint, PaintInternalFlags aFlags) {
 
   FocusTarget focusTarget;
   if (StaticPrefs::apz_keyboard_enabled_AtStartup()) {
-    // Update the focus target for async keyboard scrolling. This will be
-    // forwarded to APZ by nsDisplayList::PaintRoot. We need to to do this
-    // before we enter the paint phase because dispatching eVoid events can
-    // cause layout to happen.
+    
+    
+    
+    
     uint64_t focusSequenceNumber;
     if (nsMenuPopupFrame* popup = do_QueryFrame(frame)) {
       focusSequenceNumber = popup->GetAPZFocusSequenceNumber();
@@ -6823,10 +6823,10 @@ void PresShell::PaintInternal(nsView* aViewToPaint, PaintInternalFlags aFlags) {
   NS_ASSERTION(renderer, "Must be in paint event");
   WebRenderLayerManager* layerManager = renderer->AsWebRender();
 
-  // Whether or not we should set first paint when painting is suppressed
-  // is debatable. For now we'll do it because B2G relied on first paint
-  // to configure the viewport and we only want to do that when we have
-  // real content to paint. See Bug 798245
+  
+  
+  
+  
   if (mIsFirstPaint && !mPaintingSuppressed) {
     MOZ_LOG(gLog, LogLevel::Debug,
             ("PresShell::Paint, first paint, this=%p", this));
@@ -6844,8 +6844,8 @@ void PresShell::PaintInternal(nsView* aViewToPaint, PaintInternalFlags aFlags) {
     return;
   }
 
-  // Send an updated focus target with this transaction. Be sure to do this
-  // before we paint in the case this is an empty transaction.
+  
+  
   if (layerManager) {
     layerManager->SetFocusTarget(focusTarget);
   }
@@ -6871,9 +6871,9 @@ void PresShell::PaintInternal(nsView* aViewToPaint, PaintInternalFlags aFlags) {
   PaintFrameFlags flags =
       PaintFrameFlags::WidgetLayers | PaintFrameFlags::ExistingTransaction;
 
-  // We force sync-decode for printing / print-preview (printing already does
-  // this from nsPageSequenceFrame::PrintNextSheet).
-  // We also force sync-decoding via pref for reftests.
+  
+  
+  
   if (aFlags & PaintInternalFlags::PaintSyncDecodeImages ||
       mDocument->IsStaticDocument() ||
       StaticPrefs::image_testing_decode_sync_enabled()) {
@@ -6887,7 +6887,7 @@ void PresShell::PaintInternal(nsView* aViewToPaint, PaintInternalFlags aFlags) {
   }
 
   if (frame) {
-    // We can paint directly into the widget using its layer manager.
+    
     SelectionNodeCache cache(*this);
     nsLayoutUtils::PaintFrame(nullptr, frame, nsRegion(), bgcolor,
                               nsDisplayListBuilderMode::Painting, flags);
@@ -6919,11 +6919,11 @@ void PresShell::PaintInternal(nsView* aViewToPaint, PaintInternalFlags aFlags) {
   }
 }
 
-// static
+
 void PresShell::SetCapturingContent(nsIContent* aContent, CaptureFlags aFlags,
                                     WidgetEvent* aEvent) {
-  // If capture was set for pointer lock, don't unlock unless we are coming
-  // out of pointer lock explicitly.
+  
+  
   if (!aContent && sCapturingContentInfo.mPointerLock &&
       !(aFlags & CaptureFlags::PointerLock)) {
     return;
@@ -6932,8 +6932,8 @@ void PresShell::SetCapturingContent(nsIContent* aContent, CaptureFlags aFlags,
   sCapturingContentInfo.mContent = nullptr;
   sCapturingContentInfo.mRemoteTarget = nullptr;
 
-  // only set capturing content if allowed or the
-  // CaptureFlags::IgnoreAllowedState or CaptureFlags::PointerLock are used.
+  
+  
   if ((aFlags & CaptureFlags::IgnoreAllowedState) ||
       sCapturingContentInfo.mAllowed || (aFlags & CaptureFlags::PointerLock)) {
     if (aContent) {
@@ -6947,8 +6947,8 @@ void PresShell::SetCapturingContent(nsIContent* aContent, CaptureFlags aFlags,
           BrowserParent::GetLastMouseRemoteTarget();
       MOZ_ASSERT(sCapturingContentInfo.mRemoteTarget);
     }
-    // CaptureFlags::PointerLock is the same as
-    // CaptureFlags::RetargetToElement & CaptureFlags::IgnoreAllowedState.
+    
+    
     sCapturingContentInfo.mRetargetToElement =
         !!(aFlags & CaptureFlags::RetargetToElement) ||
         !!(aFlags & CaptureFlags::PointerLock);
@@ -6971,10 +6971,10 @@ nsIFrame* PresShell::GetCurrentEventFrame() {
     return nullptr;
   }
 
-  // GetCurrentEventContent() makes sure the content is still in the
-  // same document that this pres shell belongs to. If not, then the
-  // frame shouldn't get an event, nor should we even assume its safe
-  // to try and find the frame.
+  
+  
+  
+  
   nsIContent* content = GetCurrentEventContent();
   if (!mCurrentEventTarget.mFrame && content) {
     mCurrentEventTarget.mFrame = content->GetPrimaryFrame();
@@ -7000,8 +7000,8 @@ already_AddRefed<nsIContent> PresShell::GetEventTargetContent(
 
 void PresShell::PushCurrentEventInfo(const EventTargetInfo& aInfo) {
   if (mCurrentEventTarget.IsSet()) {
-    // XXX Why do we insert first item instead of append it? This requires to
-    // move the previous items...
+    
+    
     mCurrentEventTargetStack.InsertElementAt(0, std::move(mCurrentEventTarget));
   }
   mCurrentEventTarget = aInfo;
@@ -7021,7 +7021,7 @@ void PresShell::PopCurrentEventInfo() {
     mCurrentEventTarget = std::move(mCurrentEventTargetStack[0]);
     mCurrentEventTargetStack.RemoveElementAt(0);
 
-    // Don't use it if it has moved to a different document.
+    
     if (mCurrentEventTarget.mContent &&
         mCurrentEventTarget.mContent->GetComposedDoc() != mDocument) {
       mCurrentEventTarget.Clear();
@@ -7029,14 +7029,14 @@ void PresShell::PopCurrentEventInfo() {
   }
 }
 
-// static
+
 bool PresShell::EventHandler::InZombieDocument(nsIContent* aContent) {
-  // If a content node points to a null document, or the document is not
-  // attached to a window, then it is possibly in a zombie document,
-  // about to be replaced by a newly loading document.
-  // Such documents cannot handle DOM events.
-  // It might actually be in a node not attached to any document,
-  // in which case there is not parent presshell to retarget it to.
+  
+  
+  
+  
+  
+  
   Document* doc = aContent->GetComposedDoc();
   return !doc || !doc->GetWindow();
 }
@@ -7049,8 +7049,8 @@ already_AddRefed<nsPIDOMWindowOuter> PresShell::GetRootWindow() {
     return rootWindow.forget();
   }
 
-  // If we don't have DOM window, we're zombie, we should find the root window
-  // with our parent shell.
+  
+  
   RefPtr<PresShell> parentPresShell = GetParentPresShellForEventHandling();
   NS_ENSURE_TRUE(parentPresShell, nullptr);
   return parentPresShell->GetRootWindow();
@@ -7083,13 +7083,13 @@ already_AddRefed<PresShell> PresShell::GetParentPresShellForEventHandling() {
     return nullptr;
   }
 
-  // Now, find the parent pres shell and send the event there
+  
   RefPtr<nsDocShell> docShell = mPresContext->GetDocShell();
   if (!docShell) {
     docShell = mForwardingContainer.get();
   }
 
-  // Might have gone away, or never been around to start with
+  
   if (!docShell) {
     return nullptr;
   }
@@ -7118,15 +7118,15 @@ already_AddRefed<PresShell> PresShell::GetParentPresShellForEventHandling() {
 
 nsresult PresShell::EventHandler::RetargetEventToParent(
     WidgetGUIEvent* aGUIEvent, nsEventStatus* aEventStatus) {
-  // Send this events straight up to the parent pres shell.
-  // We do this for keystroke events in zombie documents or if either a frame
-  // or a root content is not present.
-  // That way at least the UI key bindings can work.
+  
+  
+  
+  
 
   RefPtr<PresShell> parentPresShell = GetParentPresShellForEventHandling();
   NS_ENSURE_TRUE(parentPresShell, NS_ERROR_FAILURE);
 
-  // Fake the event as though it's from the parent pres shell's root frame.
+  
   return parentPresShell->HandleEvent(parentPresShell->GetRootFrame(),
                                       aGUIEvent, true, aEventStatus);
 }
@@ -7209,8 +7209,8 @@ void PresShell::RecordPointerLocation(WidgetGUIEvent* aEvent) {
 
   const auto StoreLastPointerEventLocation =
       [&](const WidgetMouseEvent& aMouseOrPointerEvent) {
-        // TODO: instead, encapsulate mMouseLocation and
-        // `mLastOverWindowPointerLocation` in a struct.
+        
+        
         mLastOverWindowPointerLocation = GetEventLocation(aMouseOrPointerEvent);
       };
 
@@ -7229,11 +7229,11 @@ void PresShell::RecordPointerLocation(WidgetGUIEvent* aEvent) {
            aEvent->mClass == eDragEventClass)) {
         SynthesizeMouseMove(false);
       }
-      // In a drag session, we won't dispatch pointer events except
-      // ePointerCancel immediately after eDragStart.  However, once the drag
-      // session ends, we want to synthesize ePointerMove at the dropped point.
-      // Therefore, we should update the last state of the pointer when we start
-      // handling a drag event.
+      
+      
+      
+      
+      
       if (aEvent->mClass == eDragEventClass) {
         StorePointerLocation(mouseEvent);
       }
@@ -7242,7 +7242,7 @@ void PresShell::RecordPointerLocation(WidgetGUIEvent* aEvent) {
     case eDragExit: {
       const WidgetMouseEvent& mouseEvent = *aEvent->AsMouseEvent();
       if (aEvent->mRelatedTarget) {
-        // not exit from the widget
+        
         break;
       }
       ClearMouseLocation(mouseEvent);
@@ -7251,12 +7251,12 @@ void PresShell::RecordPointerLocation(WidgetGUIEvent* aEvent) {
     }
     case eMouseExitFromWidget: {
       const WidgetMouseEvent& mouseEvent = *aEvent->AsMouseEvent();
-      // Although we only care about the mouse moving into an area for which
-      // this pres shell doesn't receive mouse move events, we don't check which
-      // widget the mouse exit was for since this seems to vary by platform.
-      // Hopefully this won't matter at all since we'll get the mouse move or
-      // enter after the mouse exit when the mouse moves from one of our widgets
-      // into another.
+      
+      
+      
+      
+      
+      
       ClearMouseLocation(mouseEvent);
       ClearPointerLocation(mouseEvent);
       break;
@@ -7284,30 +7284,30 @@ void PresShell::RecordPointerLocation(WidgetGUIEvent* aEvent) {
     case ePointerUp: {
       const WidgetPointerEvent& pointerEvent = *aEvent->AsPointerEvent();
       StoreLastPointerEventLocation(pointerEvent);
-      // If the pointer supports hover, we need to keep storing the last
-      // position to synthesize ePointerMove after layout changes.
+      
+      
       if (pointerEvent.InputSourceSupportsHover()) {
         StorePointerLocation(pointerEvent);
       }
-      // If the pointer does not support hover, we won't synthesize ePointerMove
-      // for that.  So, we can clear the pointer location.
+      
+      
       else {
         ClearPointerLocation(pointerEvent);
       }
-      // If the pointer is for a touch, we need to forget the last state of
-      // mMouseLocation if it was set by a touch because the touch is being
-      // removed from the active pointers.
+      
+      
+      
       ClearMouseLocationIfSetByTouch(pointerEvent);
       break;
     }
     case ePointerCancel: {
-      // If a touch is canceled, it means that the touch input is tracked by a
-      // gesture like swipe to scroll, pinch to zoom or DnD.  So, it means that
-      // a normal touch sequence finished.  Then, we shouldn't give `:hover`
-      // state to the element underneath the last touch point anymore.  For
-      // example, it's odd that new element which comes underneath the first
-      // touch position gets `:hover` style even though the scroll is caused
-      // by swipe (i.e., has moved the touch position).
+      
+      
+      
+      
+      
+      
+      
       ClearMouseLocationIfSetByTouch(*aEvent->AsPointerEvent());
       break;
     }
@@ -7316,7 +7316,7 @@ void PresShell::RecordPointerLocation(WidgetGUIEvent* aEvent) {
   }
 }
 
-// static
+
 void PresShell::RecordModifiers(WidgetGUIEvent* aEvent) {
   switch (aEvent->mMessage) {
     case eKeyPress:
@@ -7395,7 +7395,7 @@ bool PresShell::CanDispatchEvent(const WidgetGUIEvent* aEvent) const {
   return rv;
 }
 
-/* static */
+
 PresShell* PresShell::GetShellForEventTarget(nsIFrame* aFrame,
                                              nsIContent* aContent) {
   if (aFrame) {
@@ -7411,14 +7411,14 @@ PresShell* PresShell::GetShellForEventTarget(nsIFrame* aFrame,
   return nullptr;
 }
 
-/* static */
+
 PresShell* PresShell::GetShellForTouchEvent(WidgetGUIEvent* aEvent) {
   switch (aEvent->mMessage) {
     case eTouchMove:
     case eTouchRawUpdate:
     case eTouchCancel:
     case eTouchEnd: {
-      // get the correct shell to dispatch to
+      
       WidgetTouchEvent* touchEvent = aEvent->AsTouchEvent();
       for (dom::Touch* touch : touchEvent->mTouches) {
         if (!touch) {
@@ -7458,30 +7458,30 @@ nsresult PresShell::HandleEvent(nsIFrame* aFrameForPresShell,
 
   AutoWeakFrame weakFrameForPresShell(aFrameForPresShell);
 
-  // Running tests must not expect that some mouse boundary events are fired
-  // when something occurs in the parent process, e.g., when a popup is
-  // opened/closed at the last mouse cursor position in the parent process (the
-  // position may be different from the position which stored in this process).
-  // Therefore, let's ignore synthesized mouse events coming form another
-  // process if and only if they are not caused by the API.
+  
+  
+  
+  
+  
+  
   if (aGUIEvent->CameFromAnotherProcess() && XRE_IsContentProcess() &&
       !aGUIEvent->mFlags.mIsSynthesizedForTests) {
     const PointerInfo* const lastMouseInfo =
         PointerEventHandler::GetLastMouseInfo();
     if (lastMouseInfo && lastMouseInfo->mIsSynthesizedForTests) {
       switch (aGUIEvent->mMessage) {
-        // Synthesized eMouseMove will case mouse boundary events like
-        // mouseover, mouseout, and :hover state is changed at dispatching the
-        // events.
+        
+        
+        
         case eMouseMove:
-        // eMouseExitFromWidget comes from the parent process if the cursor
-        // crosses a puppet widget boundary.  Then, the event will be handled as
-        // a synthesized eMouseMove in this process and may cause unexpected
-        // `mouseout` and `mouseleave`.
+        
+        
+        
+        
         case eMouseExitFromWidget:
-        // eMouseEnterIntoWidget causes updating the hover state under the event
-        // position which may be different from the last cursor position
-        // synthesized in this process.
+        
+        
+        
         case eMouseEnterIntoWidget:
           if (!aGUIEvent->AsMouseEvent()->IsReal()) {
             return NS_OK;
@@ -7493,21 +7493,21 @@ nsresult PresShell::HandleEvent(nsIFrame* aFrameForPresShell,
     }
   }
 
-  // Here we are granting some delays to ensure that user input events are
-  // created while the page content may not be visible to the user are not
-  // processed.
-  // The main purpose of this is to avoid user inputs are handled in the
-  // new document where as the user inputs were originally targeting some
-  // content in the old document.
+  
+  
+  
+  
+  
+  
   if (!CanHandleUserInputEvents(aGUIEvent)) {
     return NS_OK;
   }
 
-  // If there is a composition and we got a pointing device events which may not
-  // impossible to continue the composition, we should notify the editor of the
-  // event before dispatching it.  Then, composition will be commited before
-  // the editor loses focus.  This behavior is compatible with Chrome.
-  // FIXME: Perhaps, we should do same thing before dispatching touch events.
+  
+  
+  
+  
+  
   switch (aGUIEvent->mMessage) {
     case eMouseDown:
     case eMouseUp: {
@@ -7530,28 +7530,28 @@ nsresult PresShell::HandleEvent(nsIFrame* aFrameForPresShell,
       if (!textComposition) {
         break;
       }
-      // If there is a composition and it's managed by an editor, let's notify
-      // the editor of mouse button event.  The editor commits the composition
-      // unless IME consumes the event.
+      
+      
+      
       if (RefPtr<EditorBase> editorBase = textComposition->GetEditorBase()) {
         MOZ_ASSERT(aGUIEvent->AsMouseEvent());
         editorBase->WillHandleMouseButtonEvent(*aGUIEvent->AsMouseEvent());
       }
-      // Otherwise, we should commit the orphan composition instead.
+      
       else if (nsCOMPtr<nsIWidget> widget = textComposition->GetWidget()) {
         textComposition->RequestToCommit(widget, false);
       }
       if (!CanHandleUserInputEvents(aGUIEvent)) {
         return NS_OK;
       }
-      // Before bug 1945988, we dispatched the mouse button event without
-      // committing composition and the editor will commit composition.
-      // However, for compatibility with the other browsers, we started
-      // committing composition before dispatching the mouse event.  To keep
-      // the traditional behavior, we should compute aFrameForPresShell if it's
-      // reframed by dispatching the composition events (and input events)
-      // above.  Otherwise, we stop dispatching the mouse button events newly in
-      // such case.
+      
+      
+      
+      
+      
+      
+      
+      
       if (MOZ_UNLIKELY(!weakFrameForPresShell.IsAlive())) {
         FlushPendingNotifications(FlushType::Layout);
         if (MOZ_UNLIKELY(IsDestroying())) {
@@ -7580,20 +7580,20 @@ nsresult PresShell::HandleEvent(nsIFrame* aFrameForPresShell,
         [[fallthrough]];
       case eMouseDown:
       case eMouseUp: {
-        // We should flush pending mousemove event now because some mouse
-        // boundary events which should've already been dispatched before a user
-        // input may have not been dispatched.  E.g., if a mousedown event
-        // listener removed or appended an element under the cursor and mouseup
-        // event comes immediately after that, mouseover or mouseout may have
-        // not been dispatched on the new element yet.
-        // XXX If eMouseMove is not propery dispatched before eMouseDown and
-        // a `mousedown` event listener removes the event target or its
-        // ancestor, eMouseOver will be dispatched between eMouseDown and
-        // eMouseUp.  That could cause unexpected behavior if a `mouseover`
-        // event listener assumes it's always disptached before `mousedown`.
-        // However, we're not sure whether it could happen with users' input.
-        // FIXME: Perhaps, we need to do this for all events which are directly
-        // caused by user input, e.g., eKeyDown, etc.
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         const RefPtr<PresShell> rootPresShell =
             IsRoot() ? this : GetRootPresShell();
         if (rootPresShell && rootPresShell->mSynthMouseMoveEvent.IsPending()) {
@@ -7603,10 +7603,10 @@ nsresult PresShell::HandleEvent(nsIFrame* aFrameForPresShell,
           if (IsDestroying()) {
             return NS_OK;
           }
-          // XXX If the frame or "this" is reframed, it might be better to
-          // recompute the frame.  However, it could treat the user input on
-          // unexpected element.  Therefore, we should not do that until we'd
-          // get a bug report caused by that.
+          
+          
+          
+          
           if (MOZ_UNLIKELY(!weakFrameForPresShell.IsAlive())) {
             return NS_OK;
           }
@@ -7618,15 +7618,15 @@ nsresult PresShell::HandleEvent(nsIFrame* aFrameForPresShell,
     }
   }
 
-  // If the event may cause ePointerMove, we need to dispatch ePointerRawUpdate
-  // before that if and only if there are some `pointerrawupdate` event
-  // listeners.  Note that if a `pointerrawupdate` event listener destroys its
-  // document/window, we need to dispatch the following pointer event (e.g.,
-  // ePointerMove) in the parent document/window with the parent PresShell.
-  // Therefore, we need to consider the target PresShell for each event
-  // (ePointerRawUpdate and the following pointer event) in
-  // EventHandler::HandleEvent().  Thus, we need to dispatch the internal event
-  // for ePointerRawUpdate before calling EventHandler::HandleEvent() below.
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (!aDontRetargetEvents &&
       StaticPrefs::dom_event_pointer_rawupdate_enabled()) {
     nsresult rv = EnsurePrecedingPointerRawUpdate(
@@ -7653,20 +7653,20 @@ nsresult PresShell::EnsurePrecedingPointerRawUpdate(
     return NS_OK;
   }
 
-  // We should not dispatch ePointerRawUpdate directly because dispatching
-  // it requires some steps which are defined by "fire a pointer event" section
-  // in the spec.  https://w3c.github.io/pointerevents/#dfn-fire-a-pointer-event
-  // We handle the steps when we call DispatchPrecedingPointerEvent().
-  // Therefore, this method dispatches eMouseRawUpdate or eTouchRawUpdate event
-  // if the event should follow a ePointerRawUpdate.  Then,
-  // HandleEventUsingCoordinates() will stop handling the internal events after
-  // calling DispatchPrecedingPointerEvent().
+  
+  
+  
+  
+  
+  
+  
+  
 
   MOZ_ASSERT(aSourceEvent.mMessage != eMouseRawUpdate);
   MOZ_ASSERT(aSourceEvent.mMessage != eTouchRawUpdate);
 
-  // If no window in the browser child has `pointerrawupdate` event listener,
-  // we should do nothing.
+  
+  
   if (auto* const browserChild = BrowserChild::GetFrom(this)) {
     if (!browserChild->HasPointerRawUpdateEventListeners()) {
       return NS_OK;
@@ -7674,12 +7674,12 @@ nsresult PresShell::EnsurePrecedingPointerRawUpdate(
   }
 
   if (const WidgetMouseEvent* const mouseEvent = aSourceEvent.AsMouseEvent()) {
-    // If `convertToPointer` is `false`, it means that we've already handled the
-    // event to dispatch a preceding pointer event.  Therefore, its preceding
-    // event should've already been handled.
-    // If `convertToPointerRawUpdate` is `false`, it means that the event was in
-    // the queue in BrowserChild and BrowserChild has already dispatched
-    // `eMouseRawUpdate`. Therefore, we don't need to dispatch it again here.
+    
+    
+    
+    
+    
+    
     if (mouseEvent->IsSynthesized() || !mouseEvent->convertToPointer ||
         !mouseEvent->convertToPointerRawUpdate) {
       return NS_OK;
@@ -7687,11 +7687,11 @@ nsresult PresShell::EnsurePrecedingPointerRawUpdate(
     WidgetMouseEvent mouseRawUpdateEvent(*mouseEvent);
     mouseRawUpdateEvent.mMessage = eMouseRawUpdate;
     mouseRawUpdateEvent.mCoalescedWidgetEvents = nullptr;
-    // PointerEvent.button of `pointerrawupdate` should always be -1 if the
-    // source event is not eMouseDown nor eMouseUp.  PointerEventHandler cannot
-    // distinguish whether eMouseRawUpdate is caused by eMouseDown/eMouseUp or
-    // not.  Therefore, we need to set the proper value in the latter case here
-    // (In the former case, the copy constructor did it already).
+    
+    
+    
+    
+    
     if (mouseEvent->mMessage != eMouseDown &&
         mouseEvent->mMessage != eMouseUp) {
       mouseRawUpdateEvent.mButton = MouseButton::eNotPressed;
@@ -7708,13 +7708,13 @@ nsresult PresShell::EnsurePrecedingPointerRawUpdate(
     touchRawUpdate.mMessage = eTouchRawUpdate;
     touchRawUpdate.mTouches.Clear();
     for (const RefPtr<Touch>& touch : touchEvent->mTouches) {
-      // If `convertToPointer` is `false`, it means that we've already handled
-      // the event to dispatch a preceding pointer event.  Therefore, its
-      // preceding event should've already been handled.
-      // If ShouldConvertTouchToPointer() returns `false`, the touch is not an
-      // active pointer or the touch hasn't been changed from the previous
-      // state.  Therefore, we don't need to dispatch ePointerRawUpdate for the
-      // touch.
+      
+      
+      
+      
+      
+      
+      
       if (!touch->convertToPointerRawUpdate ||
           !TouchManager::ShouldConvertTouchToPointer(touch, &touchRawUpdate)) {
         continue;
@@ -7767,8 +7767,8 @@ nsresult PresShell::EventHandler::HandleEvent(
   NS_ASSERTION(aWeakFrameForPresShell.IsAlive(),
                "aWeakFrameForPresShell should refer a frame");
 
-  // Update the latest focus sequence number with this new sequence number;
-  // the next transasction that gets sent to the compositor will carry this over
+  
+  
   if (UpdateFocusSequenceNumber(aWeakFrameForPresShell.GetFrame(),
                                 aGUIEvent->mFocusSequenceNumber)) {
     if (aWeakFrameForPresShell.IsAlive() &&
@@ -7789,33 +7789,33 @@ nsresult PresShell::EventHandler::HandleEvent(
   const bool wasFrameForPresShellNull = !aWeakFrameForPresShell.GetFrame();
   if (MaybeHandleEventWithAccessibleCaret(aWeakFrameForPresShell, aGUIEvent,
                                           aEventStatus)) {
-    // Handled by AccessibleCaretEventHub.
+    
     return NS_OK;
   }
 
   if (MaybeDiscardEvent(aGUIEvent)) {
-    // Cannot handle the event for now.
+    
     return NS_OK;
   }
 
   if (!aDontRetargetEvents) {
     const DebugOnly<bool> wasFrameForPresShellAlive =
         aWeakFrameForPresShell.IsAlive();
-    // If aGUIEvent should be handled in another PresShell, we should call its
-    // HandleEvent() and do nothing here.
+    
+    
     nsresult rv = NS_OK;
     if (MaybeHandleEventWithAnotherPresShell(aWeakFrameForPresShell, aGUIEvent,
                                              aEventStatus, &rv)) {
-      // Handled by another PresShell or nobody can handle the event.
+      
       return rv;
     }
-    // If MaybeHandleEventWithAnotherPresShell() returns false, it shouldn't
-    // have run any script.  So, aWeakFrameForPresShell must be alive.
+    
+    
     MOZ_ASSERT_IF(wasFrameForPresShellAlive, aWeakFrameForPresShell.IsAlive());
   }
 
   if (MaybeDiscardOrDelayKeyboardEvent(aGUIEvent)) {
-    // The event is discarded or put into the delayed event queue.
+    
     return NS_OK;
   }
 
@@ -7824,20 +7824,20 @@ nsresult PresShell::EventHandler::HandleEvent(
                                        aEventStatus, aDontRetargetEvents);
   }
 
-  // Activation events need to be dispatched even if no frame was found, since
-  // we don't want the focus to be out of sync.
+  
+  
   if (MOZ_UNLIKELY(wasFrameForPresShellNull)) {
     if (!NS_EVENT_NEEDS_FRAME(aGUIEvent)) {
-      // Push nullptr for both current event target content and frame since
-      // there is no frame but the event does not require a frame.
+      
+      
       AutoCurrentEventInfoSetter eventInfoSetter(*this);
       return HandleEventWithCurrentEventInfo(aGUIEvent, aEventStatus, true,
                                              nullptr);
     }
 
     if (aGUIEvent->HasKeyEventMessage()) {
-      // Keypress events in new blank tabs should not be completely thrown away.
-      // Retarget them -- the parent chrome shell might make use of them.
+      
+      
       return RetargetEventToParent(aGUIEvent, aEventStatus);
     }
 
@@ -7859,18 +7859,18 @@ nsresult PresShell::EventHandler::HandleEventUsingCoordinates(
   MOZ_ASSERT(aGUIEvent->IsUsingCoordinates());
   MOZ_ASSERT(aEventStatus);
 
-  // Flush pending notifications to handle the event with the latest layout.
-  // But if it causes destroying the frame for mPresShell, stop handling the
-  // event. (why?)
+  
+  
+  
   MaybeFlushPendingNotifications(aGUIEvent);
   if (MOZ_UNLIKELY(!aWeakFrameForPresShell.IsAlive())) {
     *aEventStatus = nsEventStatus_eIgnore;
     return NS_OK;
   }
 
-  // If we are trying to dispatch an ePointerRawUpdate but it's not allowed in
-  // the (maybe retargetted) document, we should not flush the capture state
-  // below.
+  
+  
+  
   if (aGUIEvent->mMessage == eMouseRawUpdate ||
       aGUIEvent->mMessage == eTouchRawUpdate) {
     EventTargetDataWithCapture eventTargetData =
@@ -7881,9 +7881,9 @@ nsresult PresShell::EventHandler::HandleEventUsingCoordinates(
             eventTargetData.GetDocument())) {
       return NS_OK;
     }
-    // Then, we need to recompute the target with processing the pending pointer
-    // capture.  Note that the result may be differnet since `gotpointercapture`
-    // event listener does something tricky things.
+    
+    
+    
   }
 
   EventTargetDataWithCapture eventTargetData =
@@ -7892,9 +7892,9 @@ nsresult PresShell::EventHandler::HandleEventUsingCoordinates(
           EventTargetDataWithCapture::Query::LatestState, aGUIEvent,
           aEventStatus);
   if (MOZ_UNLIKELY(!eventTargetData.CanHandleEvent())) {
-    // We cannot handle the event within the PresShell anymore.  Let's stop
-    // handling the event without returning error since it's not illegal
-    // case.
+    
+    
+    
     return NS_OK;
   }
   if (MOZ_UNLIKELY(!eventTargetData.GetFrame())) {
@@ -7908,36 +7908,36 @@ nsresult PresShell::EventHandler::HandleEventUsingCoordinates(
     return NS_OK;
   }
 
-  // Suppress mouse event if it's being targeted at an element inside
-  // a document which needs events suppressed
+  
+  
   if (MaybeDiscardOrDelayMouseEvent(eventTargetData.GetFrame(), aGUIEvent)) {
     return NS_OK;
   }
 
-  // Check if we have an active EventStateManager which isn't the
-  // EventStateManager of the current PresContext.  If that is the case, and
-  // mouse is over some ancestor document, forward event handling to the
-  // active document.  This way content can get mouse events even when mouse
-  // is over the chrome or outside the window.
+  
+  
+  
+  
+  
   if (eventTargetData.MaybeRetargetToActiveDocument(aGUIEvent) &&
       NS_WARN_IF(!eventTargetData.GetFrame())) {
     return NS_OK;
   }
 
-  // Wheel events only apply to elements. If this is a wheel event, attempt to
-  // update the event target from the current wheel transaction before we
-  // compute the element from the target frame.
+  
+  
+  
   eventTargetData.UpdateWheelEventTarget(aGUIEvent);
 
   if (!eventTargetData.ComputeElementFromFrame(aGUIEvent)) {
     return NS_OK;
   }
-  // Note that even if ComputeElementFromFrame() returns true,
-  // eventTargetData.mContent can be nullptr here.
+  
+  
 
-  // Dispatch a pointer event if Pointer Events is enabled.  Note that if
-  // pointer event listeners change the layout, eventTargetData is
-  // automatically updated.
+  
+  
+  
   if (!DispatchPrecedingPointerEvent(
           aWeakFrameForPresShell, aGUIEvent,
           MOZ_KnownLive(eventTargetData.mPointerCapturingElement),
@@ -7945,16 +7945,16 @@ nsresult PresShell::EventHandler::HandleEventUsingCoordinates(
     return NS_OK;
   }
 
-  // Handle the event in the correct shell.
-  // We pass the subshell's root frame as the frame to start from. This is
-  // the only correct alternative; if the event was captured then it
-  // must have been captured by us or some ancestor shell and we
-  // now ask the subshell to dispatch it normally.
+  
+  
+  
+  
+  
   EventHandler eventHandler(*eventTargetData.mPresShell);
   AutoCurrentEventInfoSetter eventInfoSetter(eventHandler, aGUIEvent->mMessage,
                                              eventTargetData);
-  // eventTargetData is on the stack and is guaranteed to keep its
-  // mOverrideClickTarget alive, so we can just use MOZ_KnownLive here.
+  
+  
   nsresult rv = eventHandler.HandleEventWithCurrentEventInfo(
       aGUIEvent, aEventStatus, true,
       MOZ_KnownLive(eventTargetData.mOverrideClickTarget));
@@ -7971,17 +7971,17 @@ nsresult PresShell::EventHandler::HandleEventUsingCoordinates(
   return NS_OK;
 }
 
-// static
+
 PresShell::EventHandler::EventTargetDataWithCapture::EventTargetDataWithCapture(
     EventHandler& aEventHandler, AutoWeakFrame& aWeakFrameForPresShell,
     Query aQueryState, WidgetGUIEvent* aGUIEvent,
-    nsEventStatus* aEventStatus /* = nullptr*/)
+    nsEventStatus* aEventStatus )
     : EventTargetData(aWeakFrameForPresShell.GetFrame()) {
   MOZ_ASSERT(aGUIEvent);
   MOZ_ASSERT(aGUIEvent->IsUsingCoordinates());
-  // EventHandler::GetFrameToHandleNonTouchEvent() may need to flush pending
-  // notifications of the target child document if eMouseDown or eMouseUp.
-  // Currently, this class does not support the case with Query::PendingState.
+  
+  
+  
   MOZ_ASSERT_IF(aQueryState == Query::PendingState,
                 aGUIEvent->mMessage != eMouseDown);
   MOZ_ASSERT_IF(aQueryState == Query::PendingState,
@@ -8000,28 +8000,28 @@ PresShell::EventHandler::EventTargetDataWithCapture::EventTargetDataWithCapture(
   if (!queryLatestState) {
     assertNoGC.emplace();
   }
-#endif  // #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+#endif  
 
-  // XXX Retrieving capturing content here.  However, some of the following
-  //     methods allow to run script.  So, isn't it possible the capturing
-  //     content outdated?
+  
+  
+  
   mCapturingContent = EventHandler::GetCapturingContentFor(aGUIEvent);
   if (queryLatestState) {
     if (GetDocument() && aGUIEvent->mClass == eTouchEventClass) {
       PointerLockManager::Unlock("TouchEvent");
     }
-    // XXX If aGUIEvent is eMouseRawUpdate or eTouchRawUpdate and it's
-    // dispatched by BrowserChild, i.e., the event won't cause ePointerMove
-    // immediately after ePointerRawUpdate, should we skip fluhsing pending
-    // animations here? Doing this could cause different animation result while
-    // the user moves mouse cursor during a long animation whether there is a
-    // `pointerrawupdate` event listener or not.
+    
+    
+    
+    
+    
+    
     aEventHandler.MaybeFlushThrottledStyles(aWeakFrameForPresShell);
-    // Previously, MaybeFlushThrottledStyles() recomputed the closest ancestor
-    // frame for view of mPresShell if it's reframed.  Therefore, we should keep
-    // computing it here.
-    // FIXME: GetFrame() may be target content's frame if aGUIEvent is a touch
-    // event.  So, we need to use different computation for such cases.
+    
+    
+    
+    
+    
     if (MOZ_UNLIKELY(!aWeakFrameForPresShell.IsAlive())) {
       Clear();
       MOZ_ASSERT(!CanHandleEvent());
@@ -8037,20 +8037,20 @@ PresShell::EventHandler::EventTargetDataWithCapture::EventTargetDataWithCapture(
     mCapturingContent = nullptr;
   }
 
-  // The order to generate pointer event is
-  // 1. check pending pointer capture.
-  // 2. check if there is a capturing content.
-  // 3. hit test
-  // 4. dispatch pointer events
-  // 5. check whether the targets of all Touch instances are in the same
-  //    document and suppress invalid instances.
-  // 6. dispatch mouse or touch events.
+  
+  
+  
+  
+  
+  
+  
+  
 
-  // Try to keep frame for following check, because frame can be damaged
-  // during MaybeProcessPointerCapture.
+  
+  
   if (queryLatestState) {
     PointerEventHandler::MaybeProcessPointerCapture(aGUIEvent);
-    // Prevent application crashes, in case damaged frame.
+    
     if (NS_WARN_IF(!weakRootFrameToHandleEvent.IsAlive())) {
       Clear();
       MOZ_ASSERT(!CanHandleEvent());
@@ -8058,14 +8058,14 @@ PresShell::EventHandler::EventTargetDataWithCapture::EventTargetDataWithCapture(
     }
   }
 
-  // We want to query the pointer capture element which **will** capture the
-  // following pointer event.  If we've already processed the pointer capture
-  // above, current override element is it.  Otherwise, we will process the
-  // pending pointer capture before dispatching a pointer event.  Therefore,
-  // the pending pointer capture element will be the next override element
-  // if and only if they are different.  (If they are the same element, the
-  // element will keep capturing the pointer.  So, referring to the pending
-  // element is also fine in the case.)
+  
+  
+  
+  
+  
+  
+  
+  
   mPointerCapturingElement =
       queryLatestState
           ? PointerEventHandler::GetPointerCapturingElement(aGUIEvent)
@@ -8074,11 +8074,11 @@ PresShell::EventHandler::EventTargetDataWithCapture::EventTargetDataWithCapture(
   if (mPointerCapturingElement) {
     weakRootFrameToHandleEvent = mPointerCapturingElement->GetPrimaryFrame();
     if (!weakRootFrameToHandleEvent.IsAlive()) {
-      // The caller should not keep handling the event with the frame stored by
-      // the super class.  Therefore, we need to clear the frame.
+      
+      
       ClearFrameToHandleEvent();
-      // Although the pointer capturing element does not have a frame, the event
-      // should be handled on the element.
+      
+      
       MOZ_ASSERT(CanHandleEvent());
       return;
     }
@@ -8091,11 +8091,11 @@ PresShell::EventHandler::EventTargetDataWithCapture::EventTargetDataWithCapture(
        (mouseEvent->mExitFrom.value() == WidgetMouseEvent::ePlatformTopLevel ||
         mouseEvent->mExitFrom.value() == WidgetMouseEvent::ePuppet));
 
-  // Get the frame at the event point. However, don't do this if we're
-  // capturing and retargeting the event because the captured frame will
-  // be used instead below. Also keep using the root frame if we're dealing
-  // with a window-level mouse exit event since we want to start sending
-  // mouse out events at the root EventStateManager.
+  
+  
+  
+  
+  
   SetFrameAndComputePresShell(weakRootFrameToHandleEvent.GetFrame());
   if (!mCaptureRetargeted && !isWindowLevelMouseExit &&
       !mPointerCapturingElement) {
@@ -8110,10 +8110,10 @@ PresShell::EventHandler::EventTargetDataWithCapture::EventTargetDataWithCapture(
     }
   }
 
-  // if a node is capturing the mouse, check if the event needs to be
-  // retargeted at the capturing content instead. This will be the case when
-  // capture retargeting is being used, no frame was found or the frame's
-  // content is not a descendant of the capturing content.
+  
+  
+  
+  
   if (mCapturingContent && !mPointerCapturingElement &&
       (PresShell::sCapturingContentInfo.mRetargetToElement ||
        !GetFrameContent() ||
@@ -8150,16 +8150,16 @@ bool PresShell::EventHandler::MaybeFlushPendingNotifications(
   }
 }
 
-// The type of coordinates to use for hit-testing input events
-// that are relative to the RCD's viewport frame.
-// On most platforms, use visual coordinates so that scrollbars
-// can be targeted.
-// On mobile, use layout coordinates because hit-testing in
-// visual coordinates clashes with mobile viewport sizing, where
-// the ViewportFrame is sized to the initial containing block
-// (ICB) size, which is in layout coordinates. This is fine
-// because we don't need to be able to target scrollbars on mobile
-// (scrollbar dragging isn't supported).
+
+
+
+
+
+
+
+
+
+
 static ViewportType ViewportTypeForInputEventsRelativeToRoot() {
 #ifdef MOZ_WIDGET_ANDROID
   return ViewportType::Layout;
@@ -8205,28 +8205,28 @@ nsIFrame* PresShell::EventHandler::GetFrameToHandleNonTouchEvent(
   }
 
   if (targetFrame->PresShell() == mPresShell) {
-    // If found target is in mPresShell, we've already found it in the latest
-    // layout so that we can use it.
+    
+    
     return targetFrame;
   }
 
-  // If target is in a child document, we've not flushed its layout yet.
+  
   PresShell* childPresShell = targetFrame->PresShell();
   EventHandler childEventHandler(*childPresShell);
   bool layoutChanged =
       childEventHandler.MaybeFlushPendingNotifications(aGUIEvent);
   if (!aWeakRootFrameToHandleEvent.IsAlive()) {
-    // Stop handling the event if the root frame to handle event is destroyed
-    // by the reflow. (but why?)
+    
+    
     return nullptr;
   }
   if (!layoutChanged) {
-    // If the layout in the child PresShell hasn't been changed, we don't
-    // need to recompute the target.
+    
+    
     return targetFrame;
   }
 
-  // Finally, we need to recompute the target with the latest layout.
+  
   targetFrame =
       FindFrameTargetedByInputEvent(aGUIEvent, relativeTo, eventPoint, flags);
 
@@ -8260,21 +8260,21 @@ bool PresShell::EventHandler::DispatchPrecedingPointerEvent(
   MOZ_ASSERT(aEventTargetData);
   MOZ_ASSERT(aEventStatus);
 
-  // Dispatch pointer events from the mouse or touch events. Regarding
-  // pointer events from mouse, we should dispatch those pointer events to
-  // the same target as the source mouse events. We pass the frame found
-  // in hit test to PointerEventHandler and dispatch pointer events to it.
-  //
-  // Regarding pointer events from touch, the behavior is different. Touch
-  // events are dispatched to the same target as the target of touchstart.
-  // Multiple touch points must be dispatched to the same document. Pointer
-  // events from touch can be dispatched to different documents. We Pass the
-  // original frame to PointerEventHandler, reentry PresShell::HandleEvent,
-  // and do hit test for each point.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   auto targetFrameOrError = [&]() -> Result<nsIFrame*, nsresult> {
     if (aGUIEvent->mClass == eTouchEventClass) {
-      // If aWeakFrameForPresShell has already been reframed before this is
-      // called, we don't need to handle the event.
+      
+      
       if (MOZ_UNLIKELY(!aWeakFrameForPresShell.IsAlive())) {
         return Err(NS_ERROR_FAILURE);
       }
@@ -8299,8 +8299,8 @@ bool PresShell::EventHandler::DispatchPrecedingPointerEvent(
     aEventTargetData->mPresShell =
         PresShell::GetShellForEventTarget(nullptr, aPointerCapturingElement);
     if (!aEventTargetData->mPresShell) {
-      // If we can't process event for the capturing content, release
-      // the capture.
+      
+      
       PointerEventHandler::ReleaseIfCaptureByDescendant(
           aPointerCapturingElement);
       return false;
@@ -8325,8 +8325,8 @@ bool PresShell::EventHandler::DispatchPrecedingPointerEvent(
       aGUIEvent->mMessage != eMouseRawUpdate &&
       aGUIEvent->mMessage != eTouchRawUpdate;
 
-  // If the target frame is alive, the caller should keep handling the event
-  // unless event target frame is destroyed.
+  
+  
   if (weakTargetFrame.IsAlive() && weakFrame.IsAlive()) {
     aEventTargetData->UpdateTouchEventTarget(aGUIEvent);
     return maybeCallerCanHandleEvent;
@@ -8337,16 +8337,16 @@ bool PresShell::EventHandler::DispatchPrecedingPointerEvent(
     return false;
   }
 
-  // The spec defines that mouse events must be dispatched to the same target as
-  // the pointer event.
-  // The Touch Events spec defines that touch events must be dispatched to the
-  // same target as touch start and the other browsers dispatch touch events
-  // even if the touch event target is not connected to the document.
-  // Retargetting the event is handled by AutoPointerEventTargetUpdater and
-  // mouseOrTouchEventTargetContent stores the result.
+  
+  
+  
+  
+  
+  
+  
 
-  // If the target is no longer participating in its ownerDocument's tree,
-  // fire the event at the original target's nearest ancestor node.
+  
+  
   if (!mouseOrTouchEventTargetContent) {
     MOZ_ASSERT(aGUIEvent->IsMouseEventClassOrHasClickRelatedPointerEvent());
     return false;
@@ -8361,7 +8361,7 @@ bool PresShell::EventHandler::DispatchPrecedingPointerEvent(
                                               aEventTargetData->GetContent())
           : mouseOrTouchEventTargetContent->OwnerDoc()->GetPresShell();
 
-  // If new target PresShel is not found, we cannot keep handling the event.
+  
   if (!aEventTargetData->mPresShell) {
     return false;
   }
@@ -8370,11 +8370,11 @@ bool PresShell::EventHandler::DispatchPrecedingPointerEvent(
   return maybeCallerCanHandleEvent;
 }
 
-/**
- * Event retargetting may retarget a mouse event and change the reference point.
- * If event retargetting changes the reference point of a event that accessible
- * caret will not handle, restore the original reference point.
- */
+
+
+
+
+
 class AutoEventTargetPointResetter {
  public:
   explicit AutoEventTargetPointResetter(WidgetGUIEvent* aGUIEvent)
@@ -8402,10 +8402,10 @@ bool PresShell::EventHandler::MaybeHandleEventWithAccessibleCaret(
   MOZ_ASSERT(aGUIEvent);
   MOZ_ASSERT(aEventStatus);
 
-  // Don't dispatch event to AccessibleCaretEventHub when the event status
-  // is nsEventStatus_eConsumeNoDefault. This might be happened when content
-  // preventDefault on the pointer events. In such case, we also call
-  // preventDefault on mouse events to stop default behaviors.
+  
+  
+  
+  
   if (*aEventStatus == nsEventStatus_eConsumeNoDefault) {
     return false;
   }
@@ -8414,7 +8414,7 @@ bool PresShell::EventHandler::MaybeHandleEventWithAccessibleCaret(
     return false;
   }
 
-  // AccessibleCaretEventHub handles only mouse, touch, and keyboard events.
+  
   if (!aGUIEvent->IsMouseEventClassOrHasClickRelatedPointerEvent() &&
       aGUIEvent->mClass != eTouchEventClass &&
       aGUIEvent->mClass != eKeyboardEventClass) {
@@ -8422,8 +8422,8 @@ bool PresShell::EventHandler::MaybeHandleEventWithAccessibleCaret(
   }
 
   AutoEventTargetPointResetter autoEventTargetPointResetter(aGUIEvent);
-  // First, try the event hub at the event point to handle a long press to
-  // select a word in an unfocused window.
+  
+  
   do {
     EventTargetData eventTargetData(nullptr);
     if (!ComputeEventTargetFrameAndPresShellAtEventPoint(
@@ -8446,14 +8446,14 @@ bool PresShell::EventHandler::MaybeHandleEventWithAccessibleCaret(
       break;
     }
 
-    // If the event is consumed, cancel APZC panning by setting
-    // mMultipleActionsPrevented.
+    
+    
     aGUIEvent->mFlags.mMultipleActionsPrevented = true;
     autoEventTargetPointResetter.SetHandledByAccessibleCaret();
     return true;
   } while (false);
 
-  // Then, we target the event to the event hub at the focused window.
+  
   nsCOMPtr<nsPIDOMWindowOuter> window = GetFocusedDOMWindowInOurWindow();
   if (!window) {
     return false;
@@ -8476,8 +8476,8 @@ bool PresShell::EventHandler::MaybeHandleEventWithAccessibleCaret(
   if (*aEventStatus != nsEventStatus_eConsumeNoDefault) {
     return false;
   }
-  // If the event is consumed, cancel APZC panning by setting
-  // mMultipleActionsPrevented.
+  
+  
   aGUIEvent->mFlags.mMultipleActionsPrevented = true;
   autoEventTargetPointResetter.SetHandledByAccessibleCaret();
   return true;
@@ -8488,9 +8488,9 @@ void PresShell::EventHandler::MaybeSynthesizeCompatMouseEventsForTouchEnd(
     const nsEventStatus* aStatus) const {
   MOZ_ASSERT(aTouchEndEvent->mMessage == eTouchEnd);
 
-  // If the eTouchEnd event is dispatched via APZ, APZCCallbackHelper dispatches
-  // a set of mouse events with better handling.  Therefore, we don't need to
-  // handle that here.
+  
+  
+  
   if (!aTouchEndEvent->mFlags.mIsSynthesizedForTests ||
       StaticPrefs::test_events_async_enabled()) {
     return;
@@ -8500,8 +8500,8 @@ void PresShell::EventHandler::MaybeSynthesizeCompatMouseEventsForTouchEnd(
     PointerEventHandler::ReleasePointerCapturingElementAtLastPointerUp();
   });
 
-  // If the tap was consumed or 2 or more touches occurred, we don't need the
-  // compatibility mouse events.
+  
+  
   if (*aStatus == nsEventStatus_eConsumeNoDefault ||
       !TouchManager::IsSingleTapEndToDoDefault(aTouchEndEvent)) {
     return;
@@ -8513,10 +8513,10 @@ void PresShell::EventHandler::MaybeSynthesizeCompatMouseEventsForTouchEnd(
 
   nsCOMPtr<nsIWidget> widget = aTouchEndEvent->mWidget;
 
-  // NOTE: I think that we don't need to implement a double click here becase
-  // WebDriver does not support a way to synthesize a double click and Chrome
-  // does not fire "dblclick" even if doing `pointerDown().pointerUp()` twice.
-  // FIXME: Currently we don't support long tap.
+  
+  
+  
+  
   RefPtr<PresShell> presShell = mPresShell;
   for (const EventMessage message : {eMouseMove, eMouseDown, eMouseUp}) {
     if (MOZ_UNLIKELY(presShell->IsDestroying())) {
@@ -8551,20 +8551,20 @@ void PresShell::EventHandler::MaybeSynthesizeCompatMouseEventsForTouchEnd(
 bool PresShell::EventHandler::MaybeDiscardEvent(WidgetGUIEvent* aGUIEvent) {
   MOZ_ASSERT(aGUIEvent);
 
-  // If it is safe to dispatch events now, don't discard the event.
+  
   if (nsContentUtils::IsSafeToRunScript()) {
     return false;
   }
 
-  // If the event does not cause dispatching DOM event (i.e., internal event),
-  // we can keep handling it even when it's not safe to run script.
+  
+  
   if (!aGUIEvent->IsAllowedToDispatchDOMEvent()) {
     return false;
   }
 
-  // If the event is a composition event, we need to let IMEStateManager know
-  // it's discarded because it needs to listen all composition events to manage
-  // TextComposition instance.
+  
+  
+  
   if (aGUIEvent->mClass == eCompositionEventClass) {
     IMEStateManager::OnCompositionEventDiscarded(
         aGUIEvent->AsCompositionEvent());
@@ -8576,13 +8576,13 @@ bool PresShell::EventHandler::MaybeDiscardEvent(WidgetGUIEvent* aGUIEvent) {
                             ToChar(aGUIEvent->mMessage));
     NS_WARNING(warning.get());
   }
-#endif  // #ifdef DEBUG
+#endif  
 
   nsContentUtils::WarnScriptWasIgnored(GetDocument());
   return true;
 }
 
-// static
+
 nsIContent* PresShell::EventHandler::GetCapturingContentFor(
     WidgetGUIEvent* aGUIEvent) {
   if (aGUIEvent->mClass != ePointerEventClass &&
@@ -8591,12 +8591,12 @@ nsIContent* PresShell::EventHandler::GetCapturingContentFor(
     return nullptr;
   }
 
-  // PointerEventHandler may synthesize ePointerMove event before releasing the
-  // mouse capture (it's done by a default handler of eMouseUp) after handling
-  // ePointerUp.  Then, we need to dispatch pointer boundary events for the
-  // element under the pointer to emulate a pointer move after a pointer
-  // capture.  Therefore, we need to ignore the capturing element if the event
-  // dispatcher requests it.
+  
+  
+  
+  
+  
+  
   if (aGUIEvent->ShouldIgnoreCapturingContent()) {
     return nullptr;
   }
@@ -8611,19 +8611,19 @@ bool PresShell::EventHandler::GetRetargetEventDocument(
 
   *aRetargetEventDocument = nullptr;
 
-  // key and IME related events should not cross top level window boundary.
-  // Basically, such input events should be fired only on focused widget.
-  // However, some IMEs might need to clean up composition after focused
-  // window is deactivated.  And also some tests on MozMill want to test key
-  // handling on deactivated window because MozMill window can be activated
-  // during tests.  So, there is no merit the events should be redirected to
-  // active window.  So, the events should be handled on the last focused
-  // content in the last focused DOM window in same top level window.
-  // Note, if no DOM window has been focused yet, we can discard the events.
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (aGUIEvent->IsTargetedAtFocusedWindow()) {
     nsCOMPtr<nsPIDOMWindowOuter> window = GetFocusedDOMWindowInOurWindow();
-    // No DOM window in same top level window has not been focused yet,
-    // discard the events.
+    
+    
     if (!window) {
       return false;
     }
@@ -8641,8 +8641,8 @@ bool PresShell::EventHandler::GetRetargetEventDocument(
           ? nullptr
           : EventHandler::GetCapturingContentFor(aGUIEvent);
   if (capturingContent) {
-    // if the mouse is being captured then retarget the mouse event at the
-    // document that is being captured.
+    
+    
     RefPtr<Document> retargetEventDoc = capturingContent->GetComposedDoc();
     retargetEventDoc.forget(aRetargetEventDocument);
     return true;
@@ -8656,10 +8656,10 @@ bool PresShell::EventHandler::GetRetargetEventDocument(
     retargetEventDoc.forget(aRetargetEventDocument);
     return true;
   }
-#endif  // #ifdef ANDROID
+#endif  
 
-  // When we don't find another document to handle the event, we need to keep
-  // handling the event by ourselves.
+  
+  
   return true;
 }
 
@@ -8670,9 +8670,9 @@ nsIFrame* PresShell::EventHandler::GetFrameForHandlingEventWith(
   MOZ_ASSERT(aRetargetDocument);
 
   RefPtr<PresShell> retargetPresShell = aRetargetDocument->GetPresShell();
-  // Even if the document doesn't have PresShell, i.e., it's invisible, we
-  // need to dispatch only KeyboardEvent in its nearest visible document
-  // because key focus shouldn't be caught by invisible document.
+  
+  
+  
   if (!retargetPresShell) {
     if (!aGUIEvent->HasKeyEventMessage()) {
       return nullptr;
@@ -8687,27 +8687,27 @@ nsIFrame* PresShell::EventHandler::GetFrameForHandlingEventWith(
     }
   }
 
-  // If the found PresShell is this instance, caller needs to keep handling
-  // aGUIEvent by itself.  Therefore, return the given frame which was set
-  // to aFrame of HandleEvent().
+  
+  
+  
   if (retargetPresShell == mPresShell) {
     return aFrameForPresShell;
   }
 
-  // Use root frame of the new PresShell if there is.
+  
   nsIFrame* rootFrame = retargetPresShell->GetRootFrame();
   if (rootFrame) {
     return rootFrame;
   }
 
-  // Otherwise, and if aGUIEvent requires content of PresShell, caller should
-  // stop handling the event.
+  
+  
   if (aGUIEvent->mMessage == eQueryTextContent ||
       aGUIEvent->IsContentCommandEvent()) {
     return nullptr;
   }
 
-  // Otherwise, use nearest ancestor frame which includes the PresShell.
+  
   return retargetPresShell->GetClosestAncestorFrameForAncestorView();
 }
 
@@ -8722,13 +8722,13 @@ bool PresShell::EventHandler::MaybeHandleEventWithAnotherPresShell(
 
   RefPtr<Document> retargetEventDoc;
   if (!GetRetargetEventDocument(aGUIEvent, getter_AddRefs(retargetEventDoc))) {
-    // Nobody can handle this event.  So, treat as handled by somebody to make
-    // caller do nothing anymore.
+    
+    
     return true;
   }
 
-  // If there is no proper retarget document, the caller should handle the
-  // event by itself.
+  
+  
   if (!retargetEventDoc) {
     return false;
   }
@@ -8736,23 +8736,23 @@ bool PresShell::EventHandler::MaybeHandleEventWithAnotherPresShell(
   nsIFrame* frame = GetFrameForHandlingEventWith(
       aGUIEvent, retargetEventDoc, aWeakFrameForPresShell.GetFrame());
   if (!frame) {
-    // Nobody can handle this event.  So, treat as handled by somebody to make
-    // caller do nothing anymore.
-    // NOTE: If aWeakFrameForPresShell does not refer to a frame (i.e., it's
-    // already been reframed) and aGUIEvent needs to be handled in mPresShell,
-    // we are here because GetFrameForHandlingEventWith() returns
-    // aWeakFrameForPresShell.GetFrame() as-is. In the case, we don't need to
-    // handle aGUIEvent, so, it's fine to return true from this method.
+    
+    
+    
+    
+    
+    
+    
     return true;
   }
 
-  // If we reached same frame as set to HandleEvent(), the caller should handle
-  // the event by itself.
+  
+  
   if (frame == aWeakFrameForPresShell.GetFrame()) {
     return false;
   }
 
-  // We need to handle aGUIEvent with another PresShell.
+  
   RefPtr<PresShell> presShell = frame->PresContext()->PresShell();
   *aRv = presShell->HandleEvent(frame, aGUIEvent, true, aEventStatus);
   return true;
@@ -8790,10 +8790,10 @@ bool PresShell::EventHandler::MaybeDiscardOrDelayMouseEvent(
   MOZ_ASSERT(aFrameToHandleEvent);
   MOZ_ASSERT(aGUIEvent);
 
-  // We must not need to let suspend listeners know ePointerRawUpdate events.
-  // And also the delayed events will be dispatched via widget.  Therefore,
-  // ePointerRawUpdate event will be dispatched by PresShell::HandleEvent()
-  // again.
+  
+  
+  
+  
   if (aGUIEvent->mMessage == eMouseRawUpdate ||
       aGUIEvent->mMessage == eTouchRawUpdate ||
       aGUIEvent->mMessage == ePointerRawUpdate) {
@@ -8819,30 +8819,30 @@ bool PresShell::EventHandler::MaybeDiscardOrDelayMouseEvent(
 
   switch (aGUIEvent->mMessage) {
     case eTouchStart: {
-      // If we receive a single touch start during the suppression, its
-      // compatibility mouse events should not be fired later because the single
-      // tap sequence has not been sent to the web app.
+      
+      
+      
       const WidgetTouchEvent* const touchEvent = aGUIEvent->AsTouchEvent();
       if (touchEvent->mTouches.Length() == 1) {
         ps->mNoDelayedSingleTap = true;
       }
-      // We won't dispatch eTouchStart as a delayed event later so that return
-      // false.
+      
+      
       return false;
     }
     case eMouseDown: {
-      // If we receive a click sequence start during the suppression, we should
-      // not fire `click` event later because its sequence has not been send to
-      // the web app.  Note that if the eMouseDown is caused by a touch, we may
-      // have already sent the touch sequence to the web app.  In such case,
-      // the eMouseDown is NOT start of the click sequence.
+      
+      
+      
+      
+      
       const WidgetMouseEvent* const mouseEvent = aGUIEvent->AsMouseEvent();
       if (ps->mNoDelayedSingleTap ||
           mouseEvent->mInputSource != MouseEvent_Binding::MOZ_SOURCE_TOUCH) {
         ps->mNoDelayedMouseEvents = true;
         break;
       }
-      // Otherwise, put the event into the queue.
+      
       [[fallthrough]];
     }
     case eMouseUp:
@@ -8859,8 +8859,8 @@ bool PresShell::EventHandler::MaybeDiscardOrDelayMouseEvent(
       if (ps->mNoDelayedMouseEvents) {
         break;
       }
-      // contextmenu is triggered after right mouseup on Windows and right
-      // mousedown on other platforms.
+      
+      
       UniquePtr<DelayedPointerEvent> delayedPointerEvent =
           MakeUnique<DelayedPointerEvent>(aGUIEvent->AsPointerEvent());
       ps->mDelayedEvents.AppendElement(std::move(delayedPointerEvent));
@@ -8870,10 +8870,10 @@ bool PresShell::EventHandler::MaybeDiscardOrDelayMouseEvent(
       break;
   }
 
-  // If there is a suppressed event listener associated with the document,
-  // notify it about the suppressed mouse event. This allows devtools
-  // features to continue receiving mouse events even when the devtools
-  // debugger has paused execution in a page.
+  
+  
+  
+  
   RefPtr<EventListener> suppressedListener = aFrameToHandleEvent->PresContext()
                                                  ->Document()
                                                  ->GetSuppressedEventListener();
@@ -8909,16 +8909,16 @@ void PresShell::EventHandler::MaybeFlushThrottledStyles(
     return;
   }
 
-  {  // scope for scriptBlocker.
+  {  
     nsAutoScriptBlocker scriptBlocker;
     FlushThrottledStyles(*rootDocument);
   }
 
   if (MOZ_UNLIKELY(!aWeakFrameForPresShell.IsAlive()) &&
       MOZ_LIKELY(!mPresShell->IsDestroying())) {
-    // FIXME: aWeakFrameForPresShell may be target content's frame if aGUIEvent
-    // of the caller is a touch event.  So, we need to use different computation
-    // for such cases.
+    
+    
+    
     aWeakFrameForPresShell =
         mPresShell->GetClosestAncestorFrameForAncestorView();
   }
@@ -8937,7 +8937,7 @@ nsIFrame* PresShell::EventHandler::ComputeRootFrameToHandleEvent(
       aFrameForPresShell, aGUIEvent, aCapturingContent,
       aIsCapturingContentIgnored);
   if (*aIsCapturingContentIgnored) {
-    // If the capturing content is ignored, we don't need to respect it.
+    
     return rootFrameToHandleEvent;
   }
 
@@ -8945,7 +8945,7 @@ nsIFrame* PresShell::EventHandler::ComputeRootFrameToHandleEvent(
     return rootFrameToHandleEvent;
   }
 
-  // If we have capturing content, let's compute root frame with it again.
+  
   return ComputeRootFrameToHandleEventWithCapturingContent(
       rootFrameToHandleEvent, aCapturingContent, aIsCapturingContentIgnored,
       aIsCaptureRetargeted);
@@ -8971,26 +8971,26 @@ nsIFrame* PresShell::EventHandler::ComputeRootFrameToHandleEventWithPopup(
     return aRootFrameToHandleEvent;
   }
 
-  // If a remote browser is currently capturing input break out if we
-  // detect a chrome generated popup.
-  // XXXedgar, do we need to check fission OOP iframe?
+  
+  
+  
   if (aCapturingContent &&
       EventStateManager::IsTopLevelRemoteTarget(aCapturingContent)) {
     *aIsCapturingContentIgnored = true;
   }
 
-  // If the popupFrame is an ancestor of the 'frame', the frame should
-  // handle the event, otherwise, the popup should handle it.
+  
+  
   if (nsContentUtils::ContentIsCrossDocDescendantOf(
           framePresContext->GetPresShell()->GetDocument(),
           popupFrame->GetContent())) {
     return aRootFrameToHandleEvent;
   }
 
-  // If we aren't starting our event dispatch from the root frame of the
-  // root prescontext, then someone must be capturing the mouse. In that
-  // case we only want to use the popup list if the capture is
-  // inside the popup.
+  
+  
+  
+  
   if (framePresContext == rootPresContext &&
       aRootFrameToHandleEvent == FrameConstructor()->GetRootFrame()) {
     return popupFrame;
@@ -9016,10 +9016,10 @@ PresShell::EventHandler::ComputeRootFrameToHandleEventWithCapturingContent(
   *aIsCapturingContentIgnored = false;
   *aIsCaptureRetargeted = false;
 
-  // If a capture is active, determine if the BrowsingContext is active. If
-  // not, clear the capture and target the mouse event normally instead. This
-  // would occur if the mouse button is held down while a tab change occurs.
-  // If the BrowsingContext is active, look for a scrolling container.
+  
+  
+  
+  
   BrowsingContext* bc = GetPresContext()->Document()->GetBrowsingContext();
   if (!bc || !bc->IsActive()) {
     ClearMouseCapture();
@@ -9037,8 +9037,8 @@ PresShell::EventHandler::ComputeRootFrameToHandleEventWithCapturingContent(
     return aRootFrameToHandleEvent;
   }
 
-  // scrollable frames should use the scrolling container as the root instead
-  // of the document
+  
+  
   ScrollContainerFrame* scrollFrame = do_QueryFrame(captureFrame);
   return scrollFrame ? scrollFrame->GetScrolledFrame()
                      : aRootFrameToHandleEvent;
@@ -9057,12 +9057,12 @@ PresShell::EventHandler::HandleEventWithPointerCapturingContentWithoutItsFrame(
   RefPtr<PresShell> presShellForCapturingContent =
       PresShell::GetShellForEventTarget(nullptr, aPointerCapturingElement);
   if (!presShellForCapturingContent) {
-    // If we can't process event for the capturing content, release
-    // the capture.
+    
+    
     PointerEventHandler::ReleaseIfCaptureByDescendant(aPointerCapturingElement);
-    // Since we don't dispatch ePointeUp nor ePointerCancel in this case,
-    // EventStateManager::PostHandleEvent does not have a chance to dispatch
-    // ePointerLostCapture event.  Therefore, we need to dispatch it here.
+    
+    
+    
     PointerEventHandler::MaybeImplicitlyReleasePointerCapture(aGUIEvent);
     return NS_OK;
   }
@@ -9076,8 +9076,8 @@ PresShell::EventHandler::HandleEventWithPointerCapturingContentWithoutItsFrame(
   nsCOMPtr<nsIContent> overrideClickTarget =
       overrideClickTargetOrError.unwrap();
 
-  // Dispatch events to the capturing content even it's frame is
-  // destroyed.
+  
+  
   PointerEventHandler::DispatchPointerFromMouseOrTouch(
       presShellForCapturingContent, nullptr, aPointerCapturingElement,
       aPointerCapturingElement, aGUIEvent, false, aEventStatus, nullptr);
@@ -9106,8 +9106,8 @@ nsresult PresShell::EventHandler::HandleEventAtFocusedContent(
   RefPtr<Element> eventTargetElement =
       ComputeFocusedEventTargetElement(aGUIEvent);
 
-  // mCurrentEventTarget is cleared by eventInfoSetter and
-  // ComputeFocusedEventTargetElement shouldn't set it again.
+  
+  
   MOZ_ASSERT(!mPresShell->mCurrentEventTarget.IsSet());
 
   if (eventTargetElement) {
@@ -9118,18 +9118,18 @@ nsresult PresShell::EventHandler::HandleEventAtFocusedContent(
     }
   }
 
-  // If we cannot handle the event with mPresShell, let's try to handle it
-  // with parent PresShell.
-  // However, we don't want to handle IME related events with parent document
-  // because it may leak the content of parent document and the IME state was
-  // set for the empty document.  So, dispatching on the parent document may be
-  // handled by nobody. Additionally, IMEContentObserver may send notifications
-  // to PuppetWidget in a content process while document which is in the design
-  // mode but does not have content nodes has focus.  At that time, PuppetWidget
-  // makes ContentCacheInChild collect the latest content data with dispatching
-  // query content events.  Therefore, we want they handle in the empty document
-  // rather than the parent document.  So, we must not retarget in this case
-  // anyway.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   mPresShell->mCurrentEventTarget.SetFrameAndContent(
       aGUIEvent->mMessage, nullptr, eventTargetElement);
   if (aGUIEvent->mClass != eCompositionEventClass &&
@@ -9151,17 +9151,17 @@ Element* PresShell::EventHandler::ComputeFocusedEventTargetElement(
   MOZ_ASSERT(aGUIEvent);
   MOZ_ASSERT(aGUIEvent->IsTargetedAtFocusedContent());
 
-  // key and IME related events go to the focused frame in this DOM window.
+  
   nsPIDOMWindowOuter* window = GetDocument()->GetWindow();
   nsCOMPtr<nsPIDOMWindowOuter> focusedWindow;
   Element* eventTargetElement = nsFocusManager::GetFocusedDescendant(
       window, nsFocusManager::eOnlyCurrentWindow,
       getter_AddRefs(focusedWindow));
 
-  // otherwise, if there is no focused content or the focused content has
-  // no frame, just use the root content. This ensures that key events
-  // still get sent to the window properly if nothing is focused or if a
-  // frame goes away while it is focused.
+  
+  
+  
+  
   if (!eventTargetElement || !eventTargetElement->GetPrimaryFrame()) {
     eventTargetElement = GetDocument()->GetUnfocusedKeyEventTarget();
   }
@@ -9175,12 +9175,12 @@ Element* PresShell::EventHandler::ComputeFocusedEventTargetElement(
       if (!sLastKeyDownEventTargetElement) {
         return eventTargetElement;
       }
-      // If a different element is now focused for the keypress/keyup event
-      // than what was focused during the keydown event, check if the new
-      // focused element is not in a chrome document any more, and if so,
-      // retarget the event back at the keydown target. This prevents a
-      // content area from grabbing the focus from chrome in-between key
-      // events.
+      
+      
+      
+      
+      
+      
       if (eventTargetElement) {
         bool keyDownIsChrome = nsContentUtils::IsChromeDoc(
             sLastKeyDownEventTargetElement->GetComposedDoc());
@@ -9218,7 +9218,7 @@ bool PresShell::EventHandler::MaybeHandleEventWithAnotherPresShell(
   RefPtr<PresShell> eventTargetPresShell = eventTargetDocument->GetPresShell();
   if (!eventTargetPresShell) {
     *aRv = NS_OK;
-    return true;  // No PresShell can handle the event.
+    return true;  
   }
 
   EventHandler eventHandler(std::move(eventTargetPresShell));
@@ -9265,7 +9265,7 @@ Document* PresShell::GetPrimaryContentDocument() {
     return nullptr;
   }
 
-  // now get the primary content shell (active tab)
+  
   nsCOMPtr<nsIDocShellTreeItem> item;
   owner->GetPrimaryContentShell(getter_AddRefs(item));
   nsCOMPtr<nsIDocShell> childDocShell = do_QueryInterface(item);
@@ -9284,8 +9284,8 @@ nsresult PresShell::EventHandler::HandleEventWithTarget(
   MOZ_DIAGNOSTIC_ASSERT(aEvent->IsTrusted());
   MOZ_ASSERT(!aNewEventFrame || aNewEventFrame->PresShell() == mPresShell,
              "wrong shell");
-  // NOTE: We don't require that the document still have a PresShell.
-  // See bug 1375940.
+  
+  
   NS_ASSERTION(!aNewEventContent || aNewEventContent->IsInComposedDoc(),
                "event for content that isn't in a document");
   NS_ENSURE_STATE(!aNewEventContent ||
@@ -9342,7 +9342,7 @@ class MOZ_RAII AutoEventHandler final {
   WidgetEvent* mEvent;
 };
 
-}  // anonymous namespace
+}  
 
 nsresult PresShell::EventHandler::HandleEventWithCurrentEventInfo(
     WidgetEvent* aEvent, nsEventStatus* aEventStatus,
@@ -9352,10 +9352,10 @@ nsresult PresShell::EventHandler::HandleEventWithCurrentEventInfo(
 
   RefPtr<EventStateManager> manager = GetPresContext()->EventStateManager();
 
-  // If we cannot handle the event with mPresShell because of no target,
-  // just record the response time.
-  // XXX Is this intentional?  In such case, the score is really good because
-  //     of nothing to do.  So, it may make average and median better.
+  
+  
+  
+  
   if (NS_EVENT_NEEDS_FRAME(aEvent) && !mPresShell->GetCurrentEventFrame() &&
       !mPresShell->GetCurrentEventContent()) {
     RecordEventHandlingResponsePerformance(aEvent);
@@ -9366,7 +9366,7 @@ nsresult PresShell::EventHandler::HandleEventWithCurrentEventInfo(
       aEvent->IsTargetedAtFocusedWindow() &&
       aEvent->AllowFlushingPendingNotifications()) {
     if (RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager()) {
-      // This may run script now.  So, mPresShell might be destroyed after here.
+      
       nsCOMPtr<nsIContent> currentEventContent =
           mPresShell->mCurrentEventTarget.mContent;
       fm->FlushBeforeEventHandlingIfNeeded(currentEventContent);
@@ -9378,8 +9378,8 @@ nsresult PresShell::EventHandler::HandleEventWithCurrentEventInfo(
     return NS_OK;
   }
 
-  // We finished preparing to dispatch the event.  So, let's record the
-  // performance.
+  
+  
   RecordEventPreparationPerformance(aEvent);
 
   AutoHandlingUserInputStatePusher userInpStatePusher(
@@ -9388,8 +9388,8 @@ nsresult PresShell::EventHandler::HandleEventWithCurrentEventInfo(
   AutoPopupStatePusher popupStatePusher(
       PopupBlocker::GetEventPopupControlState(aEvent));
 
-  // FIXME. If the event was reused, we need to clear the old target,
-  // bug 329430
+  
+  
   aEvent->mTarget = nullptr;
 
   nsresult rv = DispatchEvent(manager, aEvent, touchIsNew, aEventStatus,
@@ -9397,10 +9397,10 @@ nsresult PresShell::EventHandler::HandleEventWithCurrentEventInfo(
 
   if (!mPresShell->IsDestroying() && aIsHandlingNativeEvent &&
       aEvent->mClass != eQueryContentEventClass) {
-    // Ensure that notifications to IME should be sent before getting next
-    // native event from the event queue.
-    // XXX Should we check the event message or event class instead of
-    //     using aIsHandlingNativeEvent?
+    
+    
+    
+    
     manager->TryToFlushPendingNotificationsToIME();
   }
 
@@ -9408,7 +9408,7 @@ nsresult PresShell::EventHandler::HandleEventWithCurrentEventInfo(
 
   RecordEventHandlingResponsePerformance(aEvent);
 
-  return rv;  // Result of DispatchEvent()
+  return rv;  
 }
 
 nsresult PresShell::EventHandler::DispatchEvent(
@@ -9419,9 +9419,9 @@ nsresult PresShell::EventHandler::DispatchEvent(
   MOZ_ASSERT(aEvent);
   MOZ_ASSERT(aEventStatus);
 
-  // 1. Give event to event manager for pre event state changes and
-  //    generation of synthetic events.
-  {  // Scope for presContext
+  
+  
+  {  
     RefPtr<nsPresContext> presContext = GetPresContext();
     nsCOMPtr<nsIContent> eventContent =
         mPresShell->mCurrentEventTarget.mContent;
@@ -9431,13 +9431,13 @@ nsresult PresShell::EventHandler::DispatchEvent(
     if (NS_FAILED(rv)) {
       return rv;
     }
-    // Let's retarget eMouseMove target if the preceding mouse boundary events
-    // caused removing the target from the tree and EventStateManager knows that
-    // the deepest connected mouseenter target which was an ancestor of the
-    // removed target.  This matches with Chrome Canary with enabling the
-    // new mouse/pointer boundary event feature.  However, they stop dispatching
-    // "pointermove" in the same case.  Therefore, for now, we should do this
-    // only for eMouseMove.
+    
+    
+    
+    
+    
+    
+    
     if (eventContent && aEvent->mMessage == eMouseMove &&
         (!eventContent->IsInComposedDoc() ||
          eventContent->OwnerDoc() != mPresShell->GetDocument())) {
@@ -9450,12 +9450,12 @@ nsresult PresShell::EventHandler::DispatchEvent(
           boundaryEventTargets
               ? boundaryEventTargets->GetDeepestLeaveEventTarget()
               : nullptr;
-      // If the last "over" target (next "out" target) is there, it means that
-      // it was temporarily removed.  In such case, EventStateManager treats
-      // it as never disconnected.  Therefore, we need to do nothing here.
-      // Additionally, if there is no last deepest "enter" event target, we
-      // lost the target.  Therefore, we should keep the traditional behavior,
-      // to dispatch it on the Document node.
+      
+      
+      
+      
+      
+      
       if (!outEventTarget && deepestLeaveEventTarget) {
         nsIFrame* const frame =
             deepestLeaveEventTarget->GetPrimaryFrame(FlushType::Layout);
@@ -9470,21 +9470,21 @@ nsresult PresShell::EventHandler::DispatchEvent(
     }
   }
 
-  // 2. Give event to the DOM for third party and JS use.
+  
   bool wasHandlingKeyBoardEvent = nsContentUtils::IsHandlingKeyBoardEvent();
   if (aEvent->mClass == eKeyboardEventClass) {
     nsContentUtils::SetIsHandlingKeyBoardEvent(true);
   }
-  // If EventStateManager or something wants reply from remote process and
-  // needs to win any other event listeners in chrome, the event is both
-  // stopped its propagation and marked as "waiting reply from remote
-  // process".  In this case, PresShell shouldn't dispatch the event into
-  // the DOM tree because they don't have a chance to stop propagation in
-  // the system event group.  On the other hand, if its propagation is not
-  // stopped, that means that the event may be reserved by chrome.  If it's
-  // reserved by chrome, the event shouldn't be sent to any remote
-  // processes.  In this case, PresShell needs to dispatch the event to
-  // the DOM tree for checking if it's reserved.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (aEvent->IsAllowedToDispatchDOMEvent() &&
       !(aEvent->PropagationStopped() &&
         aEvent->IsWaitingReplyFromRemoteProcess())) {
@@ -9509,9 +9509,9 @@ nsresult PresShell::EventHandler::DispatchEvent(
     return NS_OK;
   }
 
-  // 3. Give event to event manager for post event state changes and
-  //    generation of synthetic events.
-  // Refetch the prescontext, in case it changed.
+  
+  
+  
   RefPtr<nsPresContext> presContext = GetPresContext();
   return aEventStateManager->PostHandleEvent(
       presContext, aEvent, mPresShell->GetCurrentEventFrame(), aEventStatus,
@@ -9569,18 +9569,18 @@ bool PresShell::EventHandler::PrepareToDispatchEvent(
       return true;
     }
     case eContextMenu: {
-      // If we cannot open context menu even though eContextMenu is fired, we
-      // should stop dispatching it into the DOM.
+      
+      
       WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent();
       if (mouseEvent->IsContextMenuKeyEvent() &&
           !AdjustContextMenuKeyEvent(mouseEvent)) {
         return false;
       }
 
-      // If "Shift" state is active, context menu should be forcibly opened even
-      // if web apps want to prevent it since we respect our users' intention.
-      // In this case, we don't fire "contextmenu" event on web content because
-      // of not cancelable.
+      
+      
+      
+      
       if (mouseEvent->IsShift() &&
           StaticPrefs::dom_event_contextmenu_shift_suppresses_event()) {
         aEvent->mFlags.mOnlyChromeDispatch = true;
@@ -9613,7 +9613,7 @@ void PresShell::EventHandler::FinalizeHandlingEvent(
     case eKeyUp: {
       if (aEvent->AsKeyboardEvent()->mKeyCode == NS_VK_ESCAPE) {
         if (aEvent->mMessage == eKeyUp) {
-          // Reset this flag after key up is handled.
+          
           mPresShell->mIsLastChromeOnlyEscapeKeyConsumed = false;
         } else {
           if (aEvent->mFlags.mOnlyChromeDispatch &&
@@ -9638,7 +9638,7 @@ void PresShell::EventHandler::FinalizeHandlingEvent(
       break;
     }
     case eMouseUp:
-      // reset the capturing content now that the mouse button is up
+      
       PresShell::ReleaseCapturingContent();
       break;
     case eMouseRawUpdate:
@@ -9655,9 +9655,9 @@ void PresShell::EventHandler::FinalizeHandlingEvent(
     case eDragLeave:
     case eDragOver:
     case eDrop: {
-      // After any drag event other than dragstart (which is handled
-      // separately, as we need to collect the data first), the DataTransfer
-      // needs to be made protected, and then disconnected.
+      
+      
+      
       DataTransfer* dataTransfer = aEvent->AsDragEvent()->mDataTransfer;
       if (dataTransfer) {
         dataTransfer->Disconnect();
@@ -9697,28 +9697,28 @@ void PresShell::EventHandler::MaybeHandleKeyboardEventBeforeDispatch(
     return;
   }
 
-  // If we're in fullscreen mode, exit from it forcibly when Escape key is
-  // pressed.
+  
+  
   Document* doc = mPresShell->GetCurrentEventContent()
                       ? mPresShell->mCurrentEventTarget.mContent->OwnerDoc()
                       : nullptr;
   Document* root = nsContentUtils::GetInProcessSubtreeRootDocument(doc);
   if (root && root->GetFullscreenElement()) {
-    // Prevent default action on ESC key press when exiting
-    // DOM fullscreen mode. This prevents the browser ESC key
-    // handler from stopping all loads in the document, which
-    // would cause <video> loads to stop.
-    // XXX We need to claim the Escape key event which will be
-    //     dispatched only into chrome is already consumed by
-    //     content because we need to prevent its default here
-    //     for some reasons (not sure) but we need to detect
-    //     if a chrome event handler will call PreventDefault()
-    //     again and check it later.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     aKeyboardEvent->PreventDefaultBeforeDispatch(CrossProcessForwarding::eStop);
     aKeyboardEvent->mFlags.mOnlyChromeDispatch = true;
 
-    // The event listeners in chrome can prevent this ESC behavior by
-    // calling prevent default on the preceding keydown/press events.
+    
+    
     if (aKeyboardEvent->mMessage == eKeyUp) {
       bool shouldExitFullscreen =
           !mPresShell->mIsLastChromeOnlyEscapeKeyConsumed;
@@ -9738,9 +9738,9 @@ void PresShell::EventHandler::MaybeHandleKeyboardEventBeforeDispatch(
       }
 
       if (shouldExitFullscreen) {
-        // ESC key released while in DOM fullscreen mode.
-        // Fully exit fullscreen mode for the browser window and documents that
-        // received the event.
+        
+        
+        
         Document::AsyncExitFullscreen(root);
       }
     }
@@ -9750,9 +9750,9 @@ void PresShell::EventHandler::MaybeHandleKeyboardEventBeforeDispatch(
       !mPresShell->mIsLastChromeOnlyEscapeKeyConsumed) {
     if (PointerLockManager::GetLockedRemoteTarget() ||
         PointerLockManager::IsLocked()) {
-      // XXX See above comment to understand the reason why this needs
-      //     to claim that the Escape key event is consumed by content
-      //     even though it will be dispatched only into chrome.
+      
+      
+      
       aKeyboardEvent->PreventDefaultBeforeDispatch(
           CrossProcessForwarding::eStop);
       aKeyboardEvent->mFlags.mOnlyChromeDispatch = true;
@@ -9823,17 +9823,17 @@ void PresShell::EventHandler::RecordEventHandlingResponsePerformance(
 
   if (!sLastInputProcessed || sLastInputProcessed < aEvent->mTimeStamp) {
     if (sLastInputProcessed) {
-      // This input event was created after we handled the last one.
-      // Accumulate the previous events' coalesced duration.
+      
+      
       glean::layout::input_event_response_coalesced.AccumulateRawDuration(
           sLastInputProcessed - sLastInputCreated);
 
       if (MOZ_UNLIKELY(!PresShell::sProcessInteractable)) {
-        // For content process, we use the ready state of
-        // top-level-content-document to know if the process has finished the
-        // start-up.
-        // For parent process, see the topic
-        // 'sessionstore-one-or-no-tab-restored' in PresShell::Observe.
+        
+        
+        
+        
+        
         if (XRE_IsContentProcess() && GetDocument() &&
             GetDocument()->IsTopLevelContentDocument()) {
           switch (GetDocument()->GetReadyStateEnum()) {
@@ -9849,14 +9849,14 @@ void PresShell::EventHandler::RecordEventHandlingResponsePerformance(
     }
     sLastInputCreated = aEvent->mTimeStamp;
   } else if (aEvent->mTimeStamp < sLastInputCreated) {
-    // This event was created before the last input. May be processing out
-    // of order, so coalesce backwards, too.
+    
+    
     sLastInputCreated = aEvent->mTimeStamp;
   }
   sLastInputProcessed = now;
 }
 
-// static
+
 nsIPrincipal*
 PresShell::EventHandler::GetDocumentPrincipalToCompareWithBlacklist(
     PresShell& aPresShell) {
@@ -9888,8 +9888,8 @@ nsresult PresShell::EventHandler::DispatchEventToDOM(
       eventTarget = targetContent;
     } else if (GetDocument()) {
       eventTarget = GetDocument();
-      // If we don't have any content, the callback wouldn't probably
-      // do nothing.
+      
+      
       eventCBPtr = nullptr;
     }
   }
@@ -9899,17 +9899,17 @@ nsresult PresShell::EventHandler::DispatchEventToDOM(
         aEvent->IsBlockedForFingerprintingResistance()) {
       aEvent->mFlags.mOnlySystemGroupDispatchInContent = true;
     } else if (aEvent->mMessage == eKeyPress) {
-      // If eKeyPress event is marked as not dispatched in the default event
-      // group in web content, it's caused by non-printable key or key
-      // combination.  In this case, UI Events declares that browsers
-      // shouldn't dispatch keypress event.  However, some web apps may be
-      // broken with this strict behavior due to historical issue.
-      // Therefore, we need to keep dispatching keypress event for such keys
-      // even with breaking the standard.
-      // Similarly, the other browsers sets non-zero value of keyCode or
-      // charCode of keypress event to the other.  Therefore, we should
-      // behave so, however, some web apps may be broken.  On such web apps,
-      // we should keep using legacy our behavior.
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
       if (!mPresShell->mInitializedWithKeyPressEventDispatchingBlacklist) {
         mPresShell->mInitializedWithKeyPressEventDispatchingBlacklist = true;
         nsCOMPtr<nsIPrincipal> principal =
@@ -9961,7 +9961,7 @@ nsresult PresShell::EventHandler::DispatchEventToDOM(
                          .get());
           MOZ_CRASH("MouseEvent target must be an element");
         }
-#endif  // #ifdef DEBUG
+#endif  
       }
       RefPtr<nsPresContext> presContext = GetPresContext();
       EventDispatcher::Dispatch(eventTarget, presContext, aEvent, nullptr,
@@ -9975,9 +9975,9 @@ void PresShell::EventHandler::DispatchTouchEventToDOM(
     WidgetEvent* aEvent, nsEventStatus* aEventStatus,
     nsPresShellEventCB* aEventCB, bool aTouchIsNew) {
   MOZ_ASSERT(aEvent->mMessage != eTouchRawUpdate);
-  // calling preventDefault on touchstart or the first touchmove for a
-  // point prevents mouse events. calling it on the touchend should
-  // prevent click dispatching.
+  
+  
+  
   bool canPrevent = (aEvent->mMessage == eTouchStart) ||
                     (aEvent->mMessage == eTouchMove && aTouchIsNew) ||
                     (aEvent->mMessage == eTouchEnd);
@@ -9985,10 +9985,10 @@ void PresShell::EventHandler::DispatchTouchEventToDOM(
   nsEventStatus tmpStatus = nsEventStatus_eIgnore;
   WidgetTouchEvent* touchEvent = aEvent->AsTouchEvent();
 
-  // loop over all touches and dispatch events on any that have changed
+  
   for (dom::Touch* touch : touchEvent->mTouches) {
-    // We should remove all suppressed touch instances in
-    // TouchManager::PreHandleEvent.
+    
+    
     MOZ_ASSERT(!touch->mIsTouchEventSuppressed);
 
     if (!touch || !touch->mChanged) {
@@ -10005,12 +10005,12 @@ void PresShell::EventHandler::DispatchTouchEventToDOM(
     nsIContent* capturingContent = PresShell::GetCapturingContent();
     if (capturingContent) {
       if (capturingContent->OwnerDoc() != doc) {
-        // Wrong document, don't dispatch anything.
+        
         continue;
       }
       content = capturingContent;
     }
-    // copy the event
+    
     MOZ_ASSERT(touchEvent->IsTrusted());
     WidgetTouchEvent newEvent(true, touchEvent->mMessage, touchEvent->mWidget);
     newEvent.AssignTouchEventData(*touchEvent, false);
@@ -10021,8 +10021,8 @@ void PresShell::EventHandler::DispatchTouchEventToDOM(
     if (doc == GetDocument()) {
       contentPresShell = doc->GetPresShell();
       if (contentPresShell) {
-        // XXXsmaug huge hack. Pushing possibly capturing content,
-        //         even though event target is something else.
+        
+        
         contentPresShell->PushCurrentEventInfo(EventTargetInfo(
             newEvent.mMessage, content->GetPrimaryFrame(), content));
       }
@@ -10060,8 +10060,8 @@ void PresShell::EventHandler::DispatchTouchEventToDOM(
   }
 }
 
-// Dispatch event to content only (NOT full processing)
-// See also HandleEventWithTarget which does full event processing.
+
+
 nsresult PresShell::HandleDOMEventWithTarget(nsIContent* aTargetContent,
                                              WidgetEvent* aEvent,
                                              nsEventStatus* aStatus) {
@@ -10070,14 +10070,14 @@ nsresult PresShell::HandleDOMEventWithTarget(nsIContent* aTargetContent,
   PushCurrentEventInfo(
       EventTargetInfo(aEvent->mMessage, nullptr, aTargetContent));
 
-  // Bug 41013: Check if the event should be dispatched to content.
-  // It's possible that we are in the middle of destroying the window
-  // and the js context is out of date. This check detects the case
-  // that caused a crash in bug 41013, but there may be a better way
-  // to handle this situation!
+  
+  
+  
+  
+  
   nsCOMPtr<nsISupports> container = mPresContext->GetContainerWeak();
   if (container) {
-    // Dispatch event to content
+    
     rv = EventDispatcher::Dispatch(aTargetContent, mPresContext, aEvent,
                                    nullptr, aStatus);
   }
@@ -10086,7 +10086,7 @@ nsresult PresShell::HandleDOMEventWithTarget(nsIContent* aTargetContent,
   return rv;
 }
 
-// See the method above.
+
 nsresult PresShell::HandleDOMEventWithTarget(nsIContent* aTargetContent,
                                              Event* aEvent,
                                              nsEventStatus* aStatus) {
@@ -10106,8 +10106,8 @@ nsresult PresShell::HandleDOMEventWithTarget(nsIContent* aTargetContent,
 
 bool PresShell::EventHandler::AdjustContextMenuKeyEvent(
     WidgetMouseEvent* aMouseEvent) {
-  // if a menu is open, open the context menu relative to the active item on the
-  // menu.
+  
+  
   if (nsXULPopupManager* pm = nsXULPopupManager::GetInstance()) {
     nsIFrame* popupFrame = pm->GetTopPopup(widget::PopupType::Menu);
     if (popupFrame) {
@@ -10137,21 +10137,21 @@ bool PresShell::EventHandler::AdjustContextMenuKeyEvent(
     }
   }
 
-  // If we're here because of the key-equiv for showing context menus, we
-  // have to twiddle with the NS event to make sure the context menu comes
-  // up in the upper left of the relevant content area before we create
-  // the DOM event. Since we never call InitMouseEvent() on the event,
-  // the client X/Y will be 0,0. We can make use of that if the widget is null.
-  // Use the root view manager's widget since it's most likely to have one,
-  // and the coordinates returned by GetCurrentItemAndPositionForElement
-  // are relative to the widget of the root of the root view manager.
+  
+  
+  
+  
+  
+  
+  
+  
   nsRootPresContext* rootPC = GetPresContext()->GetRootPresContext();
   aMouseEvent->mRefPoint = LayoutDeviceIntPoint(0, 0);
   if (rootPC) {
     aMouseEvent->mWidget =
         rootPC->PresShell()->GetViewManager()->GetRootWidget();
     if (aMouseEvent->mWidget) {
-      // default the refpoint to the topleft of our document
+      
       nsPoint offset(0, 0);
       nsIFrame* rootFrame = FrameConstructor()->GetRootFrame();
       if (rootFrame) {
@@ -10165,13 +10165,13 @@ bool PresShell::EventHandler::AdjustContextMenuKeyEvent(
     aMouseEvent->mWidget = nullptr;
   }
 
-  // see if we should use the caret position for the popup
+  
   LayoutDeviceIntPoint caretPoint;
-  // Beware! This may flush notifications via synchronous
-  // ScrollSelectionIntoView.
+  
+  
   if (PrepareToUseCaretPosition(MOZ_KnownLive(aMouseEvent->mWidget),
                                 caretPoint)) {
-    // caret position is good
+    
     int32_t devPixelRatio = GetPresContext()->AppUnitsPerDevPixel();
     caretPoint = LayoutDeviceIntPoint::FromAppUnitsToNearest(
         ViewportUtils::LayoutToVisual(
@@ -10182,12 +10182,12 @@ bool PresShell::EventHandler::AdjustContextMenuKeyEvent(
     return true;
   }
 
-  // If we're here because of the key-equiv for showing context menus, we
-  // have to reset the event target to the currently focused element. Get it
-  // from the focus controller.
+  
+  
+  
   RefPtr<Element> currentFocus = nsFocusManager::GetFocusedElementStatic();
 
-  // Reset event coordinates relative to focused frame in view
+  
   if (currentFocus) {
     nsCOMPtr<nsIContent> currentPointElement;
     GetCurrentItemAndPositionForElement(
@@ -10203,22 +10203,22 @@ bool PresShell::EventHandler::AdjustContextMenuKeyEvent(
   return true;
 }
 
-// PresShell::EventHandler::PrepareToUseCaretPosition
-//
-//    This checks to see if we should use the caret position for popup context
-//    menus. Returns true if the caret position should be used, and the
-//    coordinates of that position is returned in aTargetPt. This function
-//    will also scroll the window as needed to make the caret visible.
-//
-//    The event widget should be the widget that generated the event, and
-//    whose coordinate system the resulting event's mRefPoint should be
-//    relative to.  The returned point is in device pixels realtive to the
-//    widget passed in.
+
+
+
+
+
+
+
+
+
+
+
 bool PresShell::EventHandler::PrepareToUseCaretPosition(
     nsIWidget* aEventWidget, LayoutDeviceIntPoint& aTargetPt) {
   nsresult rv;
 
-  // check caret visibility
+  
   RefPtr<nsCaret> caret = mPresShell->GetCaret();
   NS_ENSURE_TRUE(caret, false);
 
@@ -10227,15 +10227,15 @@ bool PresShell::EventHandler::PrepareToUseCaretPosition(
     return false;
   }
 
-  // caret selection, this is a temporary weak reference, so no refcounting is
-  // needed
+  
+  
   Selection* domSelection = caret->GetSelection();
   NS_ENSURE_TRUE(domSelection, false);
 
-  // since the match could be an anonymous textnode inside a
-  // <textarea> or text <input>, we need to get the outer frame
-  // note: frames are not refcounted
-  nsIFrame* frame = nullptr;  // may be nullptr
+  
+  
+  
+  nsIFrame* frame = nullptr;  
   nsINode* node = domSelection->GetFocusNode();
   NS_ENSURE_TRUE(node, false);
   nsCOMPtr<nsIContent> content = nsIContent::FromNode(node);
@@ -10245,19 +10245,19 @@ bool PresShell::EventHandler::PrepareToUseCaretPosition(
   }
 
   if (content) {
-    // It seems like ScrollSelectionIntoView should be enough, but it's
-    // not. The problem is that scrolling the selection into view when it is
-    // below the current viewport will align the top line of the frame exactly
-    // with the bottom of the window. This is fine, BUT, the popup event causes
-    // the control to be re-focused which does this exact call to
-    // ScrollContentIntoView, which has a one-pixel disagreement of whether the
-    // frame is actually in view. The result is that the frame is aligned with
-    // the top of the window, but the menu is still at the bottom.
-    //
-    // Doing this call first forces the frame to be in view, eliminating the
-    // problem. The only difference in the result is that if your cursor is in
-    // an edit box below the current view, you'll get the edit box aligned with
-    // the top of the window. This is arguably better behavior anyway.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     rv = MOZ_KnownLive(mPresShell)
              ->ScrollContentIntoView(
                  content,
@@ -10269,13 +10269,13 @@ bool PresShell::EventHandler::PrepareToUseCaretPosition(
     NS_WARNING_ASSERTION(frame, "No frame for focused content?");
   }
 
-  // Actually scroll the selection (ie caret) into view. Note that this must
-  // be synchronous since we will be checking the caret position on the screen.
-  //
-  // Be easy about errors, and just don't scroll in those cases. Better to have
-  // the correct menu at a weird place than the wrong menu.
-  // After ScrollSelectionIntoView(), the pending notifications might be
-  // flushed and PresShell/PresContext/Frames may be dead. See bug 418470.
+  
+  
+  
+  
+  
+  
+  
   nsCOMPtr<nsISelectionController> selCon;
   if (frame) {
     frame->GetSelectionController(GetPresContext(), getter_AddRefs(selCon));
@@ -10291,7 +10291,7 @@ bool PresShell::EventHandler::PrepareToUseCaretPosition(
 
   nsPresContext* presContext = GetPresContext();
 
-  // get caret position relative to the closest view
+  
   nsRect caretCoords;
   nsIFrame* caretFrame = caret->GetGeometry(&caretCoords);
   if (!caretFrame) {
@@ -10302,20 +10302,20 @@ bool PresShell::EventHandler::PrepareToUseCaretPosition(
   if (!view) {
     return false;
   }
-  // and then get the caret coords relative to the event widget
+  
   if (aEventWidget) {
     viewOffset += view->GetOffsetToWidget(aEventWidget);
   }
   caretCoords.MoveBy(viewOffset);
 
-  // caret coordinates are in app units, convert to pixels
+  
   aTargetPt.x =
       presContext->AppUnitsToDevPixels(caretCoords.x + caretCoords.width);
   aTargetPt.y =
       presContext->AppUnitsToDevPixels(caretCoords.y + caretCoords.height);
 
-  // make sure rounding doesn't return a pixel which is outside the caret
-  // (e.g. one line lower)
+  
+  
   aTargetPt.y -= 1;
 
   return true;
@@ -10334,10 +10334,10 @@ void PresShell::EventHandler::GetCurrentItemAndPositionForElement(
   bool istree = false, checkLineHeight = true;
   nscoord extraTreeY = 0;
 
-  // Set the position to just underneath the current item for multi-select
-  // lists or just underneath the selected item for single-select lists. If
-  // the element is not a list, or there is no selection, leave the position
-  // as is.
+  
+  
+  
+  
   nsCOMPtr<Element> item;
   nsCOMPtr<nsIDOMXULMultiSelectControlElement> multiSelect =
       aFocusedElement->AsXULMultiSelectControl();
@@ -10348,12 +10348,12 @@ void PresShell::EventHandler::GetCurrentItemAndPositionForElement(
     multiSelect->GetCurrentIndex(&currentIndex);
     if (currentIndex >= 0) {
       RefPtr<XULTreeElement> tree = XULTreeElement::FromNode(focusedContent);
-      // Tree view special case (tree items have no frames)
-      // Get the focused row and add its coordinates, which are already in
-      // pixels
-      // XXX Boris, should we create a new interface so that this doesn't
-      // need to know about trees? Something like nsINodelessChildCreator
-      // which could provide the current focus coordinates?
+      
+      
+      
+      
+      
+      
       if (tree) {
         tree->EnsureRowIsVisible(currentIndex);
         int32_t firstVisibleRow = tree->GetFirstVisibleRow();
@@ -10379,7 +10379,7 @@ void PresShell::EventHandler::GetCurrentItemAndPositionForElement(
       }
     }
   } else {
-    // don't check menulists as the selected item will be inside a popup.
+    
     nsCOMPtr<nsIDOMXULMenuListElement> menulist =
         aFocusedElement->AsXULMenuList();
     if (!menulist) {
@@ -10404,23 +10404,23 @@ void PresShell::EventHandler::GetCurrentItemAndPositionForElement(
 
     nsPoint frameOrigin(0, 0);
 
-    // Get the frame's origin within its view
+    
     nsView* view = frame->GetClosestView(&frameOrigin);
     NS_ASSERTION(view, "No view for frame");
 
-    // View's origin relative the widget
+    
     if (aRootWidget) {
       frameOrigin += view->GetOffsetToWidget(aRootWidget);
     }
 
-    // Start context menu down and to the right from top left of frame
-    // use the lineheight. This is a good distance to move the context
-    // menu away from the top left corner of the frame. If we always
-    // used the frame height, the context menu could end up far away,
-    // for example when we're focused on linked images.
-    // On the other hand, we want to use the frame height if it's less
-    // than the current line height, so that the context menu appears
-    // associated with the correct frame.
+    
+    
+    
+    
+    
+    
+    
+    
     nscoord extra = 0;
     if (!istree) {
       extra = frame->GetSize().height;
@@ -10455,21 +10455,21 @@ bool PresShell::ShouldIgnoreInvalidation() {
 }
 
 void PresShell::WillPaint() {
-  // Check the simplest things first.  In particular, it's important to
-  // check mIsActive before making any of the more expensive calls such
-  // as GetRootPresContext, for the case of a browser with a large
-  // number of tabs.
-  // Don't bother doing anything if some viewmanager in our tree is painting
-  // while we still have painting suppressed or we are not active.
+  
+  
+  
+  
+  
+  
   if (!mIsActive || mPaintingSuppressed || !IsVisible()) {
     return;
   }
 
   nsRootPresContext* rootPresContext = mPresContext->GetRootPresContext();
   if (!rootPresContext) {
-    // In some edge cases, such as when we don't have a root frame yet,
-    // we can't find the root prescontext. There's nothing to do in that
-    // case.
+    
+    
+    
     return;
   }
 
@@ -10478,20 +10478,20 @@ void PresShell::WillPaint() {
     return;
   }
 
-  // Process reflows, if we have them, to reduce flicker due to invalidates and
-  // reflow being interspersed.  Note that we _do_ allow this to be
-  // interruptible; if we can't do all the reflows it's better to flicker a bit
-  // than to freeze up.
+  
+  
+  
+  
   FlushPendingNotifications(ChangesToFlush(FlushType::InterruptibleLayout,
-                                           /* aFlushAnimations = */ false,
-                                           /* aUpdateRelevancy = */ false));
+                                            false,
+                                            false));
 }
 
 void PresShell::DidPaintWindow() {
   nsRootPresContext* rootPresContext = mPresContext->GetRootPresContext();
   if (rootPresContext != mPresContext) {
-    // This could be a popup's presshell. No point in notifying XPConnect
-    // about compositing of popups.
+    
+    
     return;
   }
 
@@ -10518,13 +10518,13 @@ bool PresShell::IsVisible() const {
     return true;
   }
 
-  // inner view of subdoc frame
+  
   view = view->GetParent();
   if (!view) {
     return true;
   }
 
-  // subdoc view
+  
   view = view->GetParent();
   if (!view) {
     return true;
@@ -10546,7 +10546,7 @@ void PresShell::SuppressDisplayport(bool aEnabled) {
     bool isSuppressed = IsDisplayportSuppressed();
     mActiveSuppressDisplayport--;
     if (isSuppressed && !IsDisplayportSuppressed()) {
-      // We unsuppressed the displayport, trigger a paint
+      
       if (nsIFrame* rootFrame = mFrameConstructor->GetRootFrame()) {
         rootFrame->SchedulePaint();
       }
@@ -10560,7 +10560,7 @@ void PresShell::RespectDisplayportSuppression(bool aEnabled) {
   bool isSuppressed = IsDisplayportSuppressed();
   sDisplayPortSuppressionRespected = aEnabled;
   if (isSuppressed && !IsDisplayportSuppressed()) {
-    // We unsuppressed the displayport, trigger a paint
+    
     if (nsIFrame* rootFrame = mFrameConstructor->GetRootFrame()) {
       rootFrame->SchedulePaint();
     }
@@ -10653,20 +10653,20 @@ void PresShell::Thaw(bool aIncludeSubDocuments) {
     });
   }
 
-  // Get the activeness of our presshell, as this might have changed
-  // while we were in the bfcache
+  
+  
   ActivenessMaybeChanged();
 
-  // We're now unfrozen
+  
   mFrozen = false;
   UpdateImageLockingState();
 
   UnsuppressPainting();
 
-  // In case the above UnsuppressPainting call didn't start the
-  // refresh driver, we manually start the refresh driver to
-  // ensure nsPresContext::MaybeIncreaseMeasuredTicksSinceLoading
-  // can be called for user input events handling.
+  
+  
+  
+  
   if (presContext && presContext->IsRoot()) {
     if (!presContext->RefreshDriver()->HasPendingTick()) {
       presContext->RefreshDriver()->InitializeTimer();
@@ -10674,9 +10674,9 @@ void PresShell::Thaw(bool aIncludeSubDocuments) {
   }
 }
 
-//--------------------------------------------------------
-// Start of protected and private methods on the PresShell
-//--------------------------------------------------------
+
+
+
 
 void PresShell::WillCauseReflow() {
   nsContentUtils::AddScriptBlocker();
@@ -10704,9 +10704,9 @@ void PresShell::WillDoReflow() {
 void PresShell::DidDoReflow(bool aInterruptible) {
   MOZ_ASSERT(mPendingDidDoReflow);
   if (!nsContentUtils::IsSafeToRunScript()) {
-    // If we're reflowing while script-blocked (e.g. from container query
-    // updates), defer our reflow callbacks until the end of our next layout
-    // flush.
+    
+    
+    
     SetNeedLayoutFlush();
     return;
   }
@@ -10742,22 +10742,22 @@ void PresShell::DidDoReflow(bool aInterruptible) {
   }
 
   if (mDirtyRoots.IsEmpty()) {
-    // We only unsuppress painting if we're out of reflows.  It's pointless to
-    // do so if reflows are still pending, since reflows are just going to
-    // thrash the frames around some more.  By waiting we avoid an overeager
-    // "jitter" effect.
+    
+    
+    
+    
     if (mShouldUnsuppressPainting) {
       mShouldUnsuppressPainting = false;
       UnsuppressAndInvalidate();
     }
   } else {
-    // If any new reflow commands were enqueued during the reflow (or we didn't
-    // reflow everything because we were interrupted), schedule another reflow
-    // event to process them.
-    //
-    // Note that we want to do this after DidDoReflow(), since that method can
-    // change whether there are dirty roots around by flushing, and there's no
-    // point in posting a reflow event just to have the flush revoke it.
+    
+    
+    
+    
+    
+    
+    
     EnsureLayoutFlush();
   }
 }
@@ -10792,15 +10792,15 @@ bool PresShell::DoReflow(nsIFrame* target, bool aInterruptible,
     timeStart = TimeStamp::Now();
   }
 
-  // set up a cache that saves all nodes contained in each selection,
-  // allowing a fast lookup in `nsTextFrame::IsFrameSelected()`.
-  // This cache only lives throughout this reflow call.
+  
+  
+  
   SelectionNodeCache cache(*this);
 
-  // Schedule a paint, but don't actually mark this frame as changed for
-  // retained DL building purposes. If any child frames get moved, then
-  // they will schedule paint again. We could probaby skip this, and just
-  // schedule a similar paint when a frame is deleted.
+  
+  
+  
+  
   target->SchedulePaint(nsIFrame::PAINT_DEFAULT, false);
 
   Maybe<uint64_t> innerWindowID;
@@ -10820,16 +10820,16 @@ bool PresShell::DoReflow(nsIFrame* target, bool aInterruptible,
              "caller must provide overflow tracker when reflowing "
              "non-root frames");
 
-  // CreateReferenceRenderingContext can return nullptr
+  
   UniquePtr<gfxContext> rcx(CreateReferenceRenderingContext());
 
 #ifdef DEBUG
   mCurrentReflowRoot = target;
 #endif
 
-  // If the target frame is the root of the frame hierarchy, then
-  // use all the available space. If it's simply a `reflow root',
-  // then use the target frame's size as the available space.
+  
+  
+  
   WritingMode wm = target->GetWritingMode();
   LogicalSize size(wm);
   if (isRoot) {
@@ -10838,7 +10838,7 @@ bool PresShell::DoReflow(nsIFrame* target, bool aInterruptible,
     size = target->GetLogicalSize();
   }
 
-  OverflowAreas oldOverflow;  // initialized and used only when !isRoot
+  OverflowAreas oldOverflow;  
   if (!isRoot) {
     oldOverflow = target->GetOverflowAreas();
   }
@@ -10846,8 +10846,8 @@ bool PresShell::DoReflow(nsIFrame* target, bool aInterruptible,
   NS_ASSERTION(!target->GetNextInFlow() && !target->GetPrevInFlow(),
                "reflow roots should never split");
 
-  // Don't pass size directly to the reflow input, since a
-  // constrained height implies page/column breaking.
+  
+  
   LogicalSize reflowSize(wm, size.ISize(wm), NS_UNCONSTRAINEDSIZE);
   ReflowInput reflowInput(mPresContext, target, rcx.get(), reflowSize,
                           ReflowInput::InitFlag::CallerWillInit);
@@ -10855,15 +10855,15 @@ bool PresShell::DoReflow(nsIFrame* target, bool aInterruptible,
   if (isRoot) {
     reflowInput.Init(mPresContext);
   } else {
-    // Initialize reflow input with current used border and padding,
-    // in case this was set specially by the parent frame when the reflow root
-    // was reflowed by its parent.
+    
+    
+    
     reflowInput.Init(mPresContext, Nothing(),
                      Some(target->GetLogicalUsedBorder(wm)),
                      Some(target->GetLogicalUsedPadding(wm)));
   }
 
-  // fix the computed height
+  
   NS_ASSERTION(reflowInput.ComputedPhysicalMargin() == nsMargin(0, 0, 0, 0),
                "reflow input should not set margin for reflow roots");
   if (size.BSize(wm) != NS_UNCONSTRAINEDSIZE) {
@@ -10886,10 +10886,10 @@ bool PresShell::DoReflow(nsIFrame* target, bool aInterruptible,
   ReflowOutput desiredSize(reflowInput);
   target->Reflow(mPresContext, desiredSize, reflowInput, status);
 
-  // If an incremental reflow is initiated at a frame other than the
-  // root frame, then its desired size had better not change!  If it's
-  // initiated at the root, then the size better not change unless its
-  // height was unconstrained to start with.
+  
+  
+  
+  
   nsRect boundsRelativeToTarget =
       nsRect(0, 0, desiredSize.Width(), desiredSize.Height());
   const bool isBSizeLimitReflow =
@@ -10901,10 +10901,10 @@ bool PresShell::DoReflow(nsIFrame* target, bool aInterruptible,
 
   target->SetSize(boundsRelativeToTarget.Size());
 
-  // Always use boundsRelativeToTarget here, not desiredSize.InkOverflowRect(),
-  // because for root frames (where they could be different, since root frames
-  // are allowed to have overflow) the root view bounds need to match the
-  // viewport bounds; the view manager "window dimensions" code depends on it.
+  
+  
+  
+  
   if (target->HasView()) {
     nsContainerFrame::SyncFrameViewAfterReflow(
         mPresContext, target, target->GetView(), boundsRelativeToTarget);
@@ -10924,7 +10924,7 @@ bool PresShell::DoReflow(nsIFrame* target, bool aInterruptible,
 #endif
 
   if (!isRoot && oldOverflow != target->GetOverflowAreas()) {
-    // The overflow area changed.  Propagate this change to ancestors.
+    
     aOverflowTracker->AddFrame(target->GetParent(),
                                OverflowChangedTracker::CHILDREN_CHANGED);
   }
@@ -10936,9 +10936,9 @@ bool PresShell::DoReflow(nsIFrame* target, bool aInterruptible,
   mIsReflowing = false;
   bool interrupted = mPresContext->HasPendingInterrupt();
   if (interrupted) {
-    // Make sure target gets reflowed again.
+    
     for (const auto& key : mFramesToDirty) {
-      // Mark frames dirty until target frame.
+      
       for (nsIFrame* f = key; f && !f->IsSubtreeDirty(); f = f->GetParent()) {
         f->AddStateBits(NS_FRAME_HAS_DIRTY_CHILDREN);
         if (f->IsFlexItem()) {
@@ -10955,21 +10955,21 @@ bool PresShell::DoReflow(nsIFrame* target, bool aInterruptible,
     mDirtyRoots.Add(target);
     SetNeedLayoutFlush();
 
-    // Clear mFramesToDirty after we've done the target->IsSubtreeDirty()
-    // assertion so that if it fails it's easier to see what's going on.
+    
+    
 #ifdef NOISY_INTERRUPTIBLE_REFLOW
     printf("mFramesToDirty.Count() == %u\n", mFramesToDirty.Count());
-#endif /* NOISY_INTERRUPTIBLE_REFLOW */
+#endif 
     mFramesToDirty.Clear();
 
-    // Any FlushPendingNotifications with interruptible reflows
-    // should be suppressed now. We don't want to do extra reflow work
-    // before our reflow event happens.
+    
+    
+    
     mWasLastReflowInterrupted = true;
     EnsureLayoutFlush();
   }
 
-  // dump text perf metrics for reflows with significant text processing
+  
   if (tp) {
     if (tp->current.numChars > 100) {
       TimeDuration reflowTime = TimeStamp::Now() - timeStart;
@@ -10985,8 +10985,8 @@ bool PresShell::DoReflow(nsIFrame* target, bool aInterruptible,
 #ifdef DEBUG
 void PresShell::DoVerifyReflow() {
   if (GetVerifyReflowEnable()) {
-    // First synchronously render what we have so far so that we can
-    // see it.
+    
+    
     nsView* rootView = mViewManager->GetRootView();
     mViewManager->InvalidateView(rootView);
 
@@ -11005,13 +11005,13 @@ void PresShell::DoVerifyReflow() {
 }
 #endif
 
-// used with Telemetry metrics
+
 #define NS_LONG_REFLOW_TIME_MS 5000
 
 bool PresShell::ProcessReflowCommands(bool aInterruptible) {
   if (mDirtyRoots.IsEmpty() && !mShouldUnsuppressPainting &&
       !mPendingDidDoReflow) {
-    // Nothing to do; bail out
+    
     return true;
   }
 
@@ -11029,13 +11029,13 @@ bool PresShell::ProcessReflowCommands(bool aInterruptible) {
     }
 #endif
 
-    // If reflow is interruptible, then make a note of our deadline.
+    
     const PRIntervalTime deadline =
         aInterruptible
             ? PR_IntervalNow() + PR_MicrosecondsToInterval(gMaxRCProcessingTime)
             : (PRIntervalTime)0;
 
-    // Scope for the reflow entry point
+    
     nsAutoScriptBlocker scriptBlocker;
     WillDoReflow();
     AUTO_LAYOUT_PHASE_ENTRY_POINT(GetPresContext(), Reflow);
@@ -11044,20 +11044,20 @@ bool PresShell::ProcessReflowCommands(bool aInterruptible) {
     OverflowChangedTracker overflowTracker;
 
     do {
-      // Send an incremental reflow notification to the target frame.
+      
       nsIFrame* target = mDirtyRoots.PopShallowestRoot();
 
       if (!target->IsSubtreeDirty()) {
-        // It's not dirty anymore, which probably means the notification
-        // was posted in the middle of a reflow (perhaps with a reflow
-        // root in the middle).  Don't do anything.
+        
+        
+        
         continue;
       }
 
       interrupted = !DoReflow(target, aInterruptible, &overflowTracker);
 
-      // Keep going until we're out of reflow commands, or we've run
-      // past our deadline, or we're interrupted.
+      
+      
     } while (!interrupted && !mDirtyRoots.IsEmpty() &&
              (!aInterruptible || PR_IntervalNow() < deadline));
 
@@ -11066,15 +11066,15 @@ bool PresShell::ProcessReflowCommands(bool aInterruptible) {
     overflowTracker.Flush();
 
     if (!interrupted) {
-      // We didn't get interrupted. Go ahead and perform scroll anchor
-      // adjustments.
+      
+      
       FlushPendingScrollAnchorAdjustments();
     }
     mPendingDidDoReflow = true;
   }
 
-  // Exiting the scriptblocker might have killed us. If we were processing
-  // scroll commands, let the outermost call deal with it.
+  
+  
   if (!mIsDestroying && mPendingDidDoReflow && !wasProcessingReflowCommands) {
     DidDoReflow(aInterruptible);
   }
@@ -11125,7 +11125,7 @@ PresShell::Observe(nsISupports* aSubject, const char* aTopic,
   if (!nsCRT::strcmp(aTopic, "memory-pressure")) {
     if (!AssumeAllFramesVisible() &&
         mPresContext->IsRootContentDocumentInProcess()) {
-      DoUpdateApproximateFrameVisibility(/* aRemoveOnly = */ true);
+      DoUpdateApproximateFrameVisibility( true);
     }
     return NS_OK;
   }
@@ -11135,8 +11135,8 @@ PresShell::Observe(nsISupports* aSubject, const char* aTopic,
     return NS_OK;
   }
 
-  // For parent process, user may expect the UI is interactable after a
-  // tab (previously opened page or home page) has restored.
+  
+  
   if (!nsCRT::strcmp(aTopic, "sessionstore-one-or-no-tab-restored")) {
     MOZ_ASSERT(XRE_IsParentProcess());
     sProcessInteractable = true;
@@ -11149,16 +11149,16 @@ PresShell::Observe(nsISupports* aSubject, const char* aTopic,
   }
 
   if (!nsCRT::strcmp(aTopic, "font-info-updated")) {
-    // See how gfxPlatform::ForceGlobalReflow encodes this.
+    
     bool needsReframe = aData && !!aData[0];
     mPresContext->ForceReflowForFontInfoUpdate(needsReframe);
     return NS_OK;
   }
 
-  // The "look-and-feel-changed" notification for JS observers will be
-  // dispatched HandleGlobalThemeChange once LookAndFeel caches are cleared.
+  
+  
   if (!nsCRT::strcmp(aTopic, "internal-look-and-feel-changed")) {
-    // See how LookAndFeel::NotifyChangedAllWindows encodes this.
+    
     auto kind = widget::ThemeChangeKind(aData[0]);
     mPresContext->ThemeChanged(kind);
     return NS_OK;
@@ -11213,13 +11213,13 @@ void PresShell::ScheduleFlush() {
   mPresContext->RefreshDriver()->ScheduleRenderingPhase(RenderingPhase::Layout);
 }
 
-//------------------------------------------------------
-// End of protected and private methods on the PresShell
-//------------------------------------------------------
 
-//------------------------------------------------------------------
-//-- Delayed event Classes Impls
-//------------------------------------------------------------------
+
+
+
+
+
+
 
 PresShell::DelayedInputEvent::DelayedInputEvent()
     : DelayedEvent(), mEvent(nullptr) {}
@@ -11269,7 +11269,7 @@ bool PresShell::DelayedKeyEvent::IsKeyPressEvent() {
   return mEvent->mMessage == eKeyPress;
 }
 
-// Start of DEBUG only code
+
 
 #ifdef DEBUG
 
@@ -11335,10 +11335,10 @@ static bool CompareTrees(nsPresContext* aFirstPresContext,
   if (!aFirstPresContext || !aFirstFrame || !aSecondPresContext ||
       !aSecondFrame)
     return true;
-  // XXX Evil hack to reduce false positives; I can't seem to figure
-  // out how to flush scrollbar changes correctly
-  // if (aFirstFrame->IsScrollbarFrame())
-  //  return true;
+  
+  
+  
+  
   bool ok = true;
   const auto& childLists1 = aFirstFrame->ChildLists();
   const auto& childLists2 = aSecondFrame->ChildLists();
@@ -11376,17 +11376,17 @@ static bool CompareTrees(nsPresContext* aFirstPresContext,
         LogVerifyMessage(k1, k2, "child lists are different\n");
         break;
       } else if (nullptr != k1) {
-        // Verify that the frames are the same size
+        
         if (!k1->GetRect().IsEqualInterior(k2->GetRect())) {
           ok = false;
           LogVerifyMessage(k1, k2, "(frame rects)", k1->GetRect(),
                            k2->GetRect());
         }
 
-        // Make sure either both have views or neither have views; if they
-        // do have views, make sure the views are the same size. If the
-        // views have widgets, make sure they both do or neither does. If
-        // they do, make sure the widgets are the same size.
+        
+        
+        
+        
         v1 = k1->GetView();
         v2 = k2->GetView();
         if (((nullptr == v1) && (nullptr != v2)) ||
@@ -11418,9 +11418,9 @@ static bool CompareTrees(nsPresContext* aFirstPresContext,
           break;
         }
 
-        // XXX Should perhaps compare their float managers.
+        
 
-        // Compare the sub-trees too
+        
         if (!CompareTrees(aFirstPresContext, k1, aSecondPresContext, k2)) {
           ok = false;
           if (!(VerifyReflowFlags::All & gVerifyReflowFlags)) {
@@ -11472,7 +11472,7 @@ FindTopFrame(nsIFrame* aRoot)
       }
     }
 
-    // Try one of the children
+    
     for (nsIFrame* kid : aRoot->PrincipalChildList()) {
       nsIFrame* result = FindTopFrame(kid);
       if (nullptr != result) {
@@ -11486,14 +11486,14 @@ FindTopFrame(nsIFrame* aRoot)
 
 #ifdef DEBUG
 
-// After an incremental reflow, we verify the correctness by doing a
-// full reflow into a fresh frame tree.
+
+
 bool PresShell::VerifyIncrementalReflow() {
   if (VerifyReflowFlags::Noisy & gVerifyReflowFlags) {
     printf("Building Verification Tree...\n");
   }
 
-  // Create a presentation context to view the new frame tree
+  
   auto cx = MakeRefPtr<nsRootPresContext>(
       mDocument, mPresContext->IsPaginated()
                      ? nsPresContext::eContext_PrintPreview
@@ -11503,40 +11503,40 @@ bool PresShell::VerifyIncrementalReflow() {
   nsresult rv = cx->Init(dc);
   NS_ENSURE_SUCCESS(rv, false);
 
-  // Get our scrolling preference
+  
   nsView* rootView = mViewManager->GetRootView();
   NS_ENSURE_TRUE(rootView->HasWidget(), false);
   nsIWidget* parentWidget = rootView->GetWidget();
 
-  // Create a new view manager.
+  
   auto vm = MakeRefPtr<nsViewManager>();
   rv = vm->Init(dc);
   NS_ENSURE_SUCCESS(rv, false);
 
-  // Create a child window of the parent that is our "root view/window"
-  // Create a view
+  
+  
   nsRect tbounds = mPresContext->GetVisibleArea();
   nsView* view = vm->CreateView(tbounds, nullptr);
   NS_ENSURE_TRUE(view, false);
 
-  // now create the widget for the view
+  
   rv = view->CreateWidget(parentWidget, true);
   NS_ENSURE_SUCCESS(rv, false);
 
-  // Setup hierarchical relationship in view manager
+  
   vm->SetRootView(view);
 
-  // Make the new presentation context the same size as our
-  // presentation context.
+  
+  
   cx->SetVisibleArea(mPresContext->GetVisibleArea());
 
   RefPtr<PresShell> presShell = mDocument->CreatePresShell(cx, vm);
   NS_ENSURE_TRUE(presShell, false);
 
-  // Note that after we create the shell, we must make sure to destroy it
+  
   presShell->SetVerifyReflowEnable(
-      false);  // turn off verify reflow while we're
-               // reflowing the test frame tree
+      false);  
+               
   vm->SetPresShell(presShell);
   {
     nsAutoCauseReflowNotifier crNotifier(this);
@@ -11544,17 +11544,17 @@ bool PresShell::VerifyIncrementalReflow() {
   }
   presShell->FlushPendingNotifications(FlushType::Layout);
   presShell->SetVerifyReflowEnable(
-      true);  // turn on verify reflow again now that
-              // we're done reflowing the test frame tree
-  // Force the non-primary presshell to unsuppress; it doesn't want to normally
-  // because it thinks it's hidden
+      true);  
+              
+  
+  
   presShell->mPaintingSuppressed = false;
   if (VerifyReflowFlags::Noisy & gVerifyReflowFlags) {
     printf("Verification Tree built, comparing...\n");
   }
 
-  // Now that the document has been reflowed, use its frame tree to
-  // compare against our frame tree.
+  
+  
   nsIFrame* root1 = mFrameConstructor->GetRootFrame();
   nsIFrame* root2 = presShell->GetRootFrame();
   bool ok = CompareTrees(mPresContext, root1, cx, root2);
@@ -11566,8 +11566,8 @@ bool PresShell::VerifyIncrementalReflow() {
   }
 
 #  if 0
-  // Sample code for dumping page to png
-  // XXX Needs to be made more flexible
+  
+  
   if (!ok) {
     nsString stra;
     static int num = 0;
@@ -11593,14 +11593,14 @@ bool PresShell::VerifyIncrementalReflow() {
   return ok;
 }
 
-// Layout debugging hooks
+
 void PresShell::ListComputedStyles(FILE* out, int32_t aIndent) {
   nsIFrame* rootFrame = GetRootFrame();
   if (rootFrame) {
     rootFrame->Style()->List(out, aIndent);
   }
 
-  // The root element's frame's ComputedStyle is the root of a separate tree.
+  
   Element* rootElement = mDocument->GetRootElement();
   if (rootElement) {
     nsIFrame* rootElementFrame = rootElement->GetPrimaryFrame();
@@ -11626,13 +11626,13 @@ void PresShell::ListStyleSheets(FILE* out, int32_t aIndent) {
 }
 #endif
 
-//=============================================================
-//=============================================================
-//-- Debug Reflow Counts
-//=============================================================
-//=============================================================
+
+
+
+
+
 #ifdef MOZ_REFLOW_PERF
-//-------------------------------------------------------------
+
 void PresShell::DumpReflows() {
   if (mReflowCountMgr) {
     nsAutoCString uriStr;
@@ -11648,14 +11648,14 @@ void PresShell::DumpReflows() {
   }
 }
 
-//-------------------------------------------------------------
+
 void PresShell::CountReflows(const char* aName, nsIFrame* aFrame) {
   if (mReflowCountMgr) {
     mReflowCountMgr->Add(aName, aFrame);
   }
 }
 
-//-------------------------------------------------------------
+
 void PresShell::PaintCount(const char* aName, gfxContext* aRenderingContext,
                            nsPresContext* aPresContext, nsIFrame* aFrame,
                            const nsPoint& aOffset, uint32_t aColor) {
@@ -11665,7 +11665,7 @@ void PresShell::PaintCount(const char* aName, gfxContext* aRenderingContext,
   }
 }
 
-//-------------------------------------------------------------
+
 void PresShell::SetPaintFrameCount(bool aPaintFrameCounts) {
   if (mReflowCountMgr) {
     mReflowCountMgr->SetPaintFrameCounts(aPaintFrameCounts);
@@ -11677,46 +11677,46 @@ bool PresShell::IsPaintingFrameCounts() {
   return false;
 }
 
-//------------------------------------------------------------------
-//-- Reflow Counter Classes Impls
-//------------------------------------------------------------------
 
-//------------------------------------------------------------------
+
+
+
+
 ReflowCounter::ReflowCounter(ReflowCountMgr* aMgr) : mMgr(aMgr) {
   ClearTotals();
   SetTotalsCache();
 }
 
-//------------------------------------------------------------------
+
 ReflowCounter::~ReflowCounter() = default;
 
-//------------------------------------------------------------------
+
 void ReflowCounter::ClearTotals() { mTotal = 0; }
 
-//------------------------------------------------------------------
+
 void ReflowCounter::SetTotalsCache() { mCacheTotal = mTotal; }
 
-//------------------------------------------------------------------
+
 void ReflowCounter::CalcDiffInTotals() { mCacheTotal = mTotal - mCacheTotal; }
 
-//------------------------------------------------------------------
+
 void ReflowCounter::DisplayTotals(const char* aStr) {
   DisplayTotals(mTotal, aStr ? aStr : "Totals");
 }
 
-//------------------------------------------------------------------
+
 void ReflowCounter::DisplayDiffTotals(const char* aStr) {
   DisplayTotals(mCacheTotal, aStr ? aStr : "Diff Totals");
 }
 
-//------------------------------------------------------------------
+
 void ReflowCounter::DisplayHTMLTotals(const char* aStr) {
   DisplayHTMLTotals(mTotal, aStr ? aStr : "Totals");
 }
 
-//------------------------------------------------------------------
+
 void ReflowCounter::DisplayTotals(uint32_t aTotal, const char* aTitle) {
-  // figure total
+  
   if (aTotal == 0) {
     return;
   }
@@ -11729,7 +11729,7 @@ void ReflowCounter::DisplayTotals(uint32_t aTotal, const char* aTitle) {
   }
 }
 
-//------------------------------------------------------------------
+
 void ReflowCounter::DisplayHTMLTotals(uint32_t aTotal, const char* aTitle) {
   if (aTotal == 0) {
     return;
@@ -11749,9 +11749,9 @@ void ReflowCounter::DisplayHTMLTotals(uint32_t aTotal, const char* aTitle) {
   }
 }
 
-//------------------------------------------------------------------
-//-- ReflowCountMgr
-//------------------------------------------------------------------
+
+
+
 
 #  define KEY_BUF_SIZE_FOR_PTR \
     24  // adequate char[] buffer to sprintf a pointer
@@ -11763,15 +11763,15 @@ ReflowCountMgr::ReflowCountMgr() : mCounts(10), mIndiFrameCounts(10) {
   mPaintFrameByFrameCounts = false;
 }
 
-//------------------------------------------------------------------
+
 ReflowCountMgr::~ReflowCountMgr() = default;
 
-//------------------------------------------------------------------
+
 ReflowCounter* ReflowCountMgr::LookUp(const char* aName) {
   return mCounts.Get(aName);
 }
 
-//------------------------------------------------------------------
+
 void ReflowCountMgr::Add(const char* aName, nsIFrame* aFrame) {
   NS_ASSERTION(aName != nullptr, "Name shouldn't be null!");
 
@@ -11795,7 +11795,7 @@ void ReflowCountMgr::Add(const char* aName, nsIFrame* aFrame) {
                                   return counter;
                                 })
             .get();
-    // this eliminates extra counts from super classes
+    
     if (counter && counter->mName.EqualsASCII(aName)) {
       counter->mCount++;
       counter->mCounter.Add(1);
@@ -11803,7 +11803,7 @@ void ReflowCountMgr::Add(const char* aName, nsIFrame* aFrame) {
   }
 }
 
-//------------------------------------------------------------------
+
 void ReflowCountMgr::PaintCount(const char* aName,
                                 gfxContext* aRenderingContext,
                                 nsPresContext* aPresContext, nsIFrame* aFrame,
@@ -11823,8 +11823,8 @@ void ReflowCountMgr::PaintCount(const char* aName,
           aRenderingContext->CurrentMatrixDouble().PreTranslate(
               devPixelOffset));
 
-      // We don't care about the document language or user fonts here;
-      // just get a default Latin font.
+      
+      
       nsFont font(StyleGenericFontFamily::Serif, Length::FromPixels(11));
       nsFontMetrics::Params params;
       params.language = nsGkAtoms::x_western;
@@ -11874,7 +11874,7 @@ void ReflowCountMgr::PaintCount(const char* aName,
   }
 }
 
-//------------------------------------------------------------------
+
 void ReflowCountMgr::DoGrandTotals() {
   mCounts.WithEntryHandle(kGrandTotalsStr, [this](auto&& entry) {
     if (!entry) {
@@ -11920,7 +11920,7 @@ static void RecurseIndiTotals(
   }
 }
 
-//------------------------------------------------------------------
+
 void ReflowCountMgr::DoIndiTotalsTree() {
   printf("\n------------------------------------------------\n");
   printf("-- Individual Frame Counts\n");
@@ -11945,7 +11945,7 @@ void ReflowCountMgr::DoIndiTotalsTree() {
   }
 }
 
-//------------------------------------------------------------------
+
 void ReflowCountMgr::DoGrandHTMLTotals() {
   mCounts.WithEntryHandle(kGrandTotalsStr, [this](auto&& entry) {
     if (!entry) {
@@ -11967,7 +11967,7 @@ void ReflowCountMgr::DoGrandHTMLTotals() {
   }
 }
 
-//------------------------------------
+
 void ReflowCountMgr::DisplayTotals(const char* aStr) {
   if (mDumpFrameCounts) {
     DoGrandTotals();
@@ -11976,9 +11976,9 @@ void ReflowCountMgr::DisplayTotals(const char* aStr) {
     DoIndiTotalsTree();
   }
 }
-//------------------------------------
+
 void ReflowCountMgr::DisplayHTMLTotals(const char* aStr) {
-#  ifdef WIN32x  // XXX NOT XP!
+#  ifdef WIN32x  
   char name[1024];
 
   char* sptr = strrchr(aStr, '/');
@@ -12005,17 +12005,17 @@ void ReflowCountMgr::DisplayHTMLTotals(const char* aStr) {
     fclose(mFD);
     mFD = nullptr;
   }
-#  endif  // not XP!
+#  endif  
 }
 
-//------------------------------------------------------------------
+
 void ReflowCountMgr::ClearTotals() {
   for (const auto& data : mCounts.Values()) {
     data->ClearTotals();
   }
 }
 
-//------------------------------------------------------------------
+
 void ReflowCountMgr::ClearGrandTotals() {
   mCounts.WithEntryHandle(kGrandTotalsStr, [&](auto&& entry) {
     if (!entry) {
@@ -12027,7 +12027,7 @@ void ReflowCountMgr::ClearGrandTotals() {
   });
 }
 
-//------------------------------------------------------------------
+
 void ReflowCountMgr::DisplayDiffsInTotals() {
   if (mCycledOnce) {
     printf("Differences\n");
@@ -12049,7 +12049,7 @@ void ReflowCountMgr::DisplayDiffsInTotals() {
   mCycledOnce = true;
 }
 
-#endif  // MOZ_REFLOW_PERF
+#endif  
 
 nsIFrame* PresShell::GetAbsoluteContainingBlock(nsIFrame* aFrame) {
   return FrameConstructor()->GetAbsoluteContainingBlock(
@@ -12059,6 +12059,7 @@ nsIFrame* PresShell::GetAbsoluteContainingBlock(nsIFrame* aFrame) {
 nsIFrame* PresShell::GetAnchorPosAnchor(
     const nsAtom* aName, const nsIFrame* aPositionedFrame) const {
   MOZ_ASSERT(aName);
+  MOZ_ASSERT(mLazyAnchorPosAnchorChanges.IsEmpty());
   if (const auto& entry = mAnchorPosAnchors.Lookup(aName)) {
     return AnchorPositioningUtils::FindFirstAcceptableAnchor(aPositionedFrame,
                                                              entry.Data());
@@ -12067,7 +12068,8 @@ nsIFrame* PresShell::GetAnchorPosAnchor(
   return nullptr;
 }
 
-void PresShell::AddAnchorPosAnchor(const nsAtom* aName, nsIFrame* aFrame) {
+template <bool AreWeMerging>
+void PresShell::AddAnchorPosAnchorImpl(const nsAtom* aName, nsIFrame* aFrame) {
   MOZ_ASSERT(aName);
 
   auto& entry = mAnchorPosAnchors.LookupOrInsertWith(
@@ -12082,51 +12084,82 @@ void PresShell::AddAnchorPosAnchor(const nsAtom* aName, nsIFrame* aFrame) {
     nsIFrame* mFrame;
 
     int32_t operator()(nsIFrame* aOther) const {
-      return nsLayoutUtils::CompareTreePosition(aOther, mFrame, nullptr);
+      return nsLayoutUtils::CompareTreePosition(mFrame, aOther, nullptr);
     }
   };
 
   FrameTreeComparator cmp{aFrame};
 
   size_t matchOrInsertionIdx = entry.Length();
-  // If the same element is already in the array,
-  // someone forgot to call RemoveAnchorPosAnchor.
+  
+  
   if (BinarySearchIf(entry, 0, entry.Length(), cmp, &matchOrInsertionIdx)) {
     if (entry.ElementAt(matchOrInsertionIdx) == aFrame) {
-      // nsLayoutUtils::CompareTreePosition() returns 0 when the frames are
-      // in different documents or child lists. This indicates that
-      // the tree is being restructured and we can defer anchor insertion
-      // to a MergeAnchorPosAnchors call after the restructuring is complete.
+      
+      
+      
+      
       MOZ_ASSERT_UNREACHABLE("Attempt to insert a frame twice was made");
       return;
     }
     MOZ_ASSERT(!entry.Contains(aFrame));
 
-    MOZ_ASSERT_UNREACHABLE("Frames were in different documents or child lists");
+    if constexpr (AreWeMerging) {
+      MOZ_ASSERT_UNREACHABLE(
+          "A frame may not be in a different child list at merge time");
+    } else {
+      
+      
+      
+      
+      mLazyAnchorPosAnchorChanges.AppendElement(
+          AnchorPosAnchorChange{RefPtr<const nsAtom>(aName), aFrame});
+    }
 
     return;
   }
 
+  MOZ_ASSERT(!entry.Contains(aFrame));
   *entry.InsertElementAt(matchOrInsertionIdx) = aFrame;
+}
+
+void PresShell::AddAnchorPosAnchor(const nsAtom* aName, nsIFrame* aFrame) {
+  AddAnchorPosAnchorImpl< false>(aName, aFrame);
 }
 
 void PresShell::RemoveAnchorPosAnchor(const nsAtom* aName, nsIFrame* aFrame) {
   MOZ_ASSERT(aName);
+
+  if (!mLazyAnchorPosAnchorChanges.IsEmpty()) {
+    mLazyAnchorPosAnchorChanges.RemoveElementsBy(
+        [&](const AnchorPosAnchorChange& change) {
+          return change.mFrame == aFrame;
+        });
+  }
+
   auto entry = mAnchorPosAnchors.Lookup(aName);
   if (!entry) {
-    return;  // Nothing to remove.
+    return;  
   }
 
   auto& anchorArray = entry.Data();
 
-  // XXX: Once the implementation is more complete,
-  // we should probably assert here that anchorArray
-  // is not empty and aFrame is in it.
+  
+  
+  
 
   anchorArray.RemoveElement(aFrame);
   if (anchorArray.IsEmpty()) {
     entry.Remove();
   }
+}
+
+void PresShell::MergeAnchorPosAnchorChanges() {
+  for (const auto& [name, frame] : mLazyAnchorPosAnchorChanges) {
+    AddAnchorPosAnchorImpl< true>(name, frame);
+  }
+
+  mLazyAnchorPosAnchorChanges.Clear();
 }
 
 void PresShell::ActivenessMaybeChanged() {
@@ -12136,13 +12169,13 @@ void PresShell::ActivenessMaybeChanged() {
   SetIsActive(ComputeActiveness());
 }
 
-// A PresShell being active means that it is visible (or close to be visible, if
-// the front-end is warming it). That means that when it is active we always
-// tick its refresh driver at full speed if needed.
-//
-// Image documents behave specially in the sense that they are always "active"
-// and never "in the active tab". However these documents tick manually so
-// there's not much to worry about there.
+
+
+
+
+
+
+
 bool PresShell::ComputeActiveness() const {
   MOZ_LOG(gLog, LogLevel::Debug,
           ("PresShell::ComputeActiveness(%s, %d)\n",
@@ -12154,19 +12187,19 @@ bool PresShell::ComputeActiveness() const {
   Document* doc = mDocument;
 
   if (doc->IsBeingUsedAsImage()) {
-    // Documents used as an image can remain active. They do not tick their
-    // refresh driver if not painted, and they can't run script or such so they
-    // can't really observe much else.
-    //
-    // Image docs can be displayed in multiple docs at the same time so the "in
-    // active tab" bool doesn't make much sense for them.
+    
+    
+    
+    
+    
+    
     return true;
   }
 
   if (Document* displayDoc = doc->GetDisplayDocument()) {
-    // Ok, we're an external resource document -- we need to use our display
-    // document's docshell to determine "IsActive" status, since we lack
-    // a browsing context of our own.
+    
+    
+    
     MOZ_ASSERT(!doc->GetBrowsingContext(),
                "external resource doc shouldn't have its own BC");
     doc = displayDoc;
@@ -12186,29 +12219,29 @@ bool PresShell::ComputeActiveness() const {
 
   Document* root = nsContentUtils::GetInProcessSubtreeRootDocument(doc);
   if (auto* browserChild = BrowserChild::GetFrom(root->GetDocShell())) {
-    // We might want to activate a tab even though the browsing-context is not
-    // active if the BrowserChild is considered visible. This serves two
-    // purposes:
-    //
-    //  * For top-level tabs, we use this for tab warming. The browsing-context
-    //    might still be inactive, but we want to activate the pres shell and
-    //    the refresh driver.
-    //
-    //  * For oop iframes, we do want to throttle them if they're not visible.
-    //
-    // TODO(emilio): Consider unifying the in-process vs. fission iframe
-    // throttling code (in-process throttling for non-visible iframes lives
-    // right now in Document::ShouldThrottleFrameRequests(), but that only
-    // throttles rAF).
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     if (!browserChild->IsVisible()) {
       MOZ_LOG(gLog, LogLevel::Debug,
               (" > BrowserChild %p is not visible", browserChild));
       return false;
     }
 
-    // If the browser is visible but just due to be preserving layers
-    // artificially, we do want to fall back to the browsing context activeness
-    // instead. Otherwise we do want to be active for the use cases above.
+    
+    
+    
     if (!browserChild->IsPreservingLayers()) {
       MOZ_LOG(gLog, LogLevel::Debug,
               (" > BrowserChild %p is visible and not preserving layers",
@@ -12236,12 +12269,12 @@ void PresShell::SetIsActive(bool aIsActive) {
   }
 
   if (activityChanged) {
-    // Propagate state-change to my resource documents' PresShells and other
-    // subdocuments.
-    //
-    // Note that it is fine to not propagate to fission iframes. Those will
-    // become active / inactive as needed as a result of they getting painted /
-    // not painted eventually.
+    
+    
+    
+    
+    
+    
     auto recurse = [aIsActive](Document& aSubDoc) {
       if (PresShell* presShell = aSubDoc.GetPresShell()) {
         presShell->SetIsActive(aIsActive);
@@ -12258,7 +12291,7 @@ void PresShell::SetIsActive(bool aIsActive) {
 #if defined(MOZ_WIDGET_ANDROID)
     if (!aIsActive && presContext &&
         presContext->IsRootContentDocumentCrossProcess()) {
-      // Reset the dynamic toolbar offset state.
+      
       presContext->UpdateDynamicToolbarOffset(0);
     }
 #endif
@@ -12282,8 +12315,8 @@ MobileViewportManager* PresShell::GetMobileViewportManager() const {
 
 Maybe<MobileViewportManager::ManagerType> UseMobileViewportManager(
     PresShell* aPresShell, Document* aDocument) {
-  // If we're not using APZ, we won't be able to zoom, so there is no
-  // point in having an MVM.
+  
+  
   if (nsPresContext* presContext = aPresShell->GetPresContext()) {
     if (nsIWidget* widget = presContext->GetNearestWidget()) {
       if (!widget->AsyncPanZoomEnabled()) {
@@ -12301,19 +12334,19 @@ Maybe<MobileViewportManager::ManagerType> UseMobileViewportManager(
 }
 
 void PresShell::MaybeRecreateMobileViewportManager(bool aAfterInitialization) {
-  // Determine if we require a MobileViewportManager, and what kind if so. We
-  // need one any time we allow resolution zooming for a document, and any time
-  // we want to obey <meta name="viewport"> tags for it.
+  
+  
+  
   Maybe<MobileViewportManager::ManagerType> mvmType =
       UseMobileViewportManager(this, mDocument);
 
   if (mvmType.isNothing() && !mMobileViewportManager) {
-    // We don't need one and don't have it. So we're done.
+    
     return;
   }
   if (mvmType && mMobileViewportManager &&
       *mvmType == mMobileViewportManager->GetManagerType()) {
-    // We need one and we have one of the correct type, so we're done.
+    
     return;
   }
 
@@ -12323,9 +12356,9 @@ void PresShell::MaybeRecreateMobileViewportManager(bool aAfterInitialization) {
   }
 
   if (mMobileViewportManager) {
-    // We have one, but we need to either destroy it completely to replace it
-    // with another one of the correct type. So either way, let's destroy the
-    // one we have.
+    
+    
+    
     mMobileViewportManager->Destroy();
     mMobileViewportManager = nullptr;
     mMVMContext = nullptr;
@@ -12334,8 +12367,8 @@ void PresShell::MaybeRecreateMobileViewportManager(bool aAfterInitialization) {
   }
 
   if (mvmType) {
-    // Let's create the MVM of the type that we need. At this point we shouldn't
-    // have one.
+    
+    
     MOZ_ASSERT(!mMobileViewportManager);
 
     mMVMContext = new GeckoMVMContext(mDocument, this);
@@ -12355,15 +12388,15 @@ void PresShell::MaybeRecreateMobileViewportManager(bool aAfterInitialization) {
   }
 
   if (aAfterInitialization) {
-    // Setting the initial viewport will trigger a reflow.
+    
     if (mMobileViewportManager) {
       mMobileViewportManager->SetInitialViewport();
     } else {
-      // Force a reflow to our correct view manager size.
+      
       ForceResizeReflowWithCurrentDimensions();
     }
-    // After we clear out the MVM and the MVMContext, also reset the
-    // resolution to 1.
+    
+    
     SetResolutionAndScaleTo(1.0f, ResolutionChangeOrigin::MainThreadRestore);
   }
 }
@@ -12373,20 +12406,20 @@ bool PresShell::UsesMobileViewportSizing() const {
          nsLayoutUtils::ShouldHandleMetaViewport(mDocument);
 }
 
-/*
- * Determines the current image locking state. Called when one of the
- * dependent factors changes.
- */
+
+
+
+
 void PresShell::UpdateImageLockingState() {
-  // We're locked if we're both thawed and active.
+  
   const bool locked = !mFrozen && mIsActive;
   if (locked == mDocument->GetLockingImages()) {
     return;
   }
   mDocument->SetLockingImages(locked);
   if (locked) {
-    // Request decodes for visible image frames; we want to start decoding as
-    // quickly as possible when we get foregrounded to minimize flashing.
+    
+    
     for (const auto& key : mApproximatelyVisibleFrames) {
       if (nsImageFrame* imageFrame = do_QueryFrame(key)) {
         imageFrame->MaybeDecodeForPredictedSize();
@@ -12432,13 +12465,13 @@ size_t PresShell::SizeOfTextRuns(MallocSizeOf aMallocSizeOf) const {
     return 0;
   }
 
-  // clear the TEXT_RUN_MEMORY_ACCOUNTED flags
+  
   nsLayoutUtils::SizeOfTextRunsForFrames(rootFrame, nullptr,
-                                         /* clear = */ true);
+                                          true);
 
-  // collect the total memory in use for textruns
+  
   return nsLayoutUtils::SizeOfTextRunsForFrames(rootFrame, aMallocSizeOf,
-                                                /* clear = */ false);
+                                                 false);
 }
 
 void PresShell::MarkFixedFramesForReflow(IntrinsicDirty aIntrinsicDirty) {
@@ -12515,13 +12548,13 @@ void PresShell::MaybeReflowForInflationScreenSizeChange() {
 }
 
 void PresShell::CompleteChangeToVisualViewportSize() {
-  // This can get called during reflow, if the caller wants to get the latest
-  // visual viewport size after scrollbars have been added/removed. In such a
-  // case, we don't need to mark things as dirty because the things that we
-  // would mark dirty either just got updated (the root scrollframe's
-  // scrollbars), or will be laid out later during this reflow cycle (fixed-pos
-  // items). Callers that update the visual viewport during a reflow are
-  // responsible for maintaining these invariants.
+  
+  
+  
+  
+  
+  
+  
   if (!mIsReflowing) {
     if (ScrollContainerFrame* sf = GetRootScrollContainerFrame()) {
       sf->MarkScrollbarsDirtyForReflow();
@@ -12565,8 +12598,8 @@ bool PresShell::SetVisualViewportOffset(const nsPoint& aScrollOffset,
   ScrollContainerFrame* rootScrollContainerFrame =
       GetRootScrollContainerFrame();
   if (rootScrollContainerFrame) {
-    // See the comment in ScrollContainerFrame::Reflow above the call to
-    // SetVisualViewportOffset for why we need to do this.
+    
+    
     nsRect scrollRange =
         rootScrollContainerFrame->GetScrollRangeForUserInputEvents();
     if (!scrollRange.Contains(newOffset)) {
@@ -12577,10 +12610,10 @@ bool PresShell::SetVisualViewportOffset(const nsPoint& aScrollOffset,
     }
   }
 
-  // Careful here not to call GetVisualViewportOffset to get the previous visual
-  // viewport offset because if mVisualViewportOffset is nothing then we'll get
-  // the layout scroll position directly from the scroll frame and it has likely
-  // already been updated.
+  
+  
+  
+  
   nsPoint prevOffset = aPrevLayoutScrollPos;
   if (mVisualViewportOffset.isSome()) {
     prevOffset = *mVisualViewportOffset;
@@ -12629,8 +12662,8 @@ void PresShell::ScrollToVisual(const nsPoint& aVisualViewportOffset,
     }
   }
 
-  // If the caller asked for instant scroll, or if we failed
-  // to do a smooth scroll, do an instant scroll.
+  
+  
   SetPendingVisualScrollUpdate(aVisualViewportOffset, aUpdateType);
 }
 
@@ -12640,8 +12673,8 @@ void PresShell::SetPendingVisualScrollUpdate(
   mPendingVisualScrollUpdate =
       Some(VisualScrollUpdate{aVisualViewportOffset, aUpdateType});
 
-  // The pending update is picked up during the next paint.
-  // Schedule a paint to make sure one will happen.
+  
+  
   if (nsIFrame* rootFrame = GetRootFrame()) {
     rootFrame->SchedulePaint();
   }
@@ -12708,17 +12741,17 @@ bool PresShell::DetermineFontSizeInflationState() {
     return false;
   }
 
-  // Force-enabling font inflation always trumps the heuristics here.
+  
   if (!FontSizeInflationForceEnabled()) {
     if (BrowserChild* tab = BrowserChild::GetFrom(this)) {
-      // We're in a child process.  Cancel inflation if we're not
-      // async-pan zoomed.
+      
+      
       if (!tab->AsyncPanZoomEnabled()) {
         return false;
       }
     } else if (XRE_IsParentProcess()) {
-      // We're in the master process.  Cancel inflation if it's been
-      // explicitly disabled.
+      
+      
       if (FontSizeInflationDisabledInMasterProcess()) {
         return false;
       }
@@ -12726,40 +12759,40 @@ bool PresShell::DetermineFontSizeInflationState() {
   }
 
   Maybe<LayoutDeviceIntSize> displaySize;
-  // The MVM already caches the top-level content viewer size and is therefore
-  // the fastest way of getting that data.
+  
+  
   if (mPresContext->IsRootContentDocumentCrossProcess()) {
     if (mMobileViewportManager) {
       displaySize = Some(mMobileViewportManager->DisplaySize());
     }
   } else if (PresShell* rootPresShell = GetRootPresShell()) {
-    // With any luck, we can get at the root content document without any cross-
-    // process shenanigans.
+    
+    
     if (auto mvm = rootPresShell->GetMobileViewportManager()) {
       displaySize = Some(mvm->DisplaySize());
     }
   }
 
   if (!displaySize) {
-    // Unfortunately, it looks like the root content document lives in a
-    // different process. For consistency's sake it would be best to always use
-    // the content viewer size of the root content document, but it's not worth
-    // the effort, because this only makes a difference in the case of pages
-    // with an explicitly sized viewport (neither "width=device-width" nor a
-    // completely missing viewport tag) being loaded within a frame, which is
-    // hopefully a relatively exotic case.
-    // More to the point, these viewport size and zoom-based calculations don't
-    // really make sense for frames anyway, so instead of creating a way to
-    // access the content viewer size of the top level document cross-process,
-    // we probably rather want frames to simply inherit the font inflation state
-    // of their top-level parent and should therefore invest any time spent on
-    // getting things to work cross-process into that (bug 1724311).
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
-    // Until we get around to that though, we just use the content viewer size
-    // of however high we can get within the same process.
+    
+    
 
-    // (This also serves as a fallback code path if the MVM isn't available,
-    // e.g. when debugging in non-e10s mode on Desktop.)
+    
+    
     nsPresContext* topContext =
         mPresContext->GetInProcessRootContentDocumentPresContext();
     LayoutDeviceIntSize result;
@@ -12863,7 +12896,7 @@ void PresShell::SyncWindowProperties(bool aSync) {
     return;
   }
 
-  // Apply color scheme to the top level window widget.
+  
   windowWidget->SetColorScheme(
       Some(LookAndFeel::ColorSchemeForFrame(rootFrame)));
 
@@ -12917,26 +12950,26 @@ Result<nsIContent*, nsresult> PresShell::EventHandler::GetOverrideClickTarget(
     return nullptr;
   }
 
-  // If aFrameForPresShell has already been reframed before this is called,
-  // we cannot keep handling aGUIEvent.
+  
+  
   auto overrideClickTargetOrError = [&]() -> Result<nsIContent*, nsresult> {
     if (PointerEventHandler::ShouldDispatchClickEventOnCapturingElement() &&
         aPointerCapturingContent) {
       return aGUIEvent->AsMouseEvent()->mInputSource ==
                      MouseEvent_Binding::MOZ_SOURCE_TOUCH
-                 // If the event is a compatibility mouse event of Touch Events,
-                 // `click` event target should be the element capturing the
-                 // touch (Note that eTouchStart caused implicit pointer capture
-                 // by default when the web app does not use the pointer capture
-                 // API).  However, if the web app released the pointer capture,
-                 // the target should be the closest common ancestor of
-                 // ePointerDown and ePointerUp.  These things will be handled
-                 // by EventStateManager::SetClickCount().  Therefore, we should
-                 // not override the click event target for a single tap here.
+                 
+                 
+                 
+                 
+                 
+                 
+                 
+                 
+                 
                  ? nullptr
-                 // On the other hand, we want to use the pointer capturing
-                 // element as the target of `click` event caused by other input
-                 // devices.
+                 
+                 
+                 
                  : aPointerCapturingContent;
     }
 
@@ -12971,9 +13004,9 @@ Result<nsIContent*, nsresult> PresShell::EventHandler::GetOverrideClickTarget(
              : nullptr;
 }
 
-/******************************************************************************
- * PresShell::EventHandler::EventTargetData
- ******************************************************************************/
+
+
+
 
 void PresShell::EventHandler::EventTargetData::SetFrameAndComputePresShell(
     nsIFrame* aFrameToHandleEvent) {
@@ -13015,20 +13048,20 @@ void PresShell::EventHandler::EventTargetData::
     return;
   }
 
-  // If we know the event, we can compute the target correctly.
+  
   if (aGUIEvent) {
     MOZ_ASSERT(mContent == mFrame->GetContentForEvent(aGUIEvent));
     return;
   }
-  // If clicking an image map, mFrame should be the image frame, but mContent
-  // should be the area element which handles the event at the position.
+  
+  
   if (mContent->IsHTMLElement(nsGkAtoms::area)) {
     MOZ_ASSERT(mContent->GetPrimaryFrame() == mFrame);
     return;
   }
 
-  // Otherwise, we can check only whether mContent is an inclusive ancestor
-  // element or not.
+  
+  
   if (!mContent->IsElement()) {
     MOZ_ASSERT(mContent == mFrame->GetContent());
     return;
@@ -13048,7 +13081,7 @@ void PresShell::EventHandler::EventTargetData::
                              ToString(*mFrame->GetContent()).c_str())
                  .get());
   MOZ_ASSERT(mContent == mFrame->GetContent());
-#endif  // #ifdef DEBUG
+#endif  
 }
 
 bool PresShell::EventHandler::EventTargetData::MaybeRetargetToActiveDocument(
@@ -13087,8 +13120,8 @@ bool PresShell::EventHandler::EventTargetData::MaybeRetargetToActiveDocument(
     return false;
   }
 
-  // Note, currently for backwards compatibility we don't forward mouse events
-  // to the active document when mouse is over some subdocument.
+  
+  
   if (!nsContentUtils::ContentIsCrossDocDescendantOf(
           activePresShell->GetDocument(), GetDocument())) {
     return false;
@@ -13107,24 +13140,24 @@ bool PresShell::EventHandler::EventTargetData::ComputeElementFromFrame(
 
   SetContentForEventFromFrame(aGUIEvent);
 
-  // If there is no content for this frame, target it anyway.  Some frames can
-  // be targeted but do not have content, particularly windows with scrolling
-  // off.
+  
+  
+  
   if (!mContent) {
     return true;
   }
 
-  // Bug 103055, bug 185889: mouse events apply to *elements*, not all nodes.
-  // Thus we get the nearest element parent here.
-  // XXX we leave the frame the same even if we find an element parent, so that
-  // the text frame will receive the event (selection and friends are the ones
-  // who care about that anyway)
-  //
-  // We use weak pointers because during this tight loop, the node
-  // will *not* go away.  And this happens on every mousemove.
+  
+  
+  
+  
+  
+  
+  
+  
   mContent = mContent->GetInclusiveFlattenedTreeAncestorElement();
 
-  // If we found an element, target it.  Otherwise, target *nothing*.
+  
   return !!mContent;
 }
 
@@ -13136,16 +13169,16 @@ void PresShell::EventHandler::EventTargetData::UpdateWheelEventTarget(
     return;
   }
 
-  // If dom.event.wheel-event-groups.enabled is not set or the stored
-  // event target is removed, we will not get a event target frame from the
-  // wheel transaction here.
+  
+  
+  
   nsIFrame* groupFrame = WheelTransaction::GetEventTargetFrame();
   if (!groupFrame) {
     return;
   }
 
-  // If dom.event.wheel-event-groups.enabled is set and whe have a stored
-  // event target from the wheel transaction, override the event target.
+  
+  
   SetFrameAndComputePresShellAndContent(groupFrame, aGUIEvent);
 }
 
@@ -13170,11 +13203,11 @@ void PresShell::EventHandler::EventTargetData::UpdateTouchEventTarget(
 
   PresShell* newPresShell = PresShell::GetShellForTouchEvent(aGUIEvent);
   if (!newPresShell) {
-    return;  // XXX Why don't we stop handling the event in this case?
+    return;  
   }
 
-  // Touch events (except touchstart) are dispatching to the captured
-  // element. Get correct shell from it.
+  
+  
   mPresShell = newPresShell;
 }
 
@@ -13229,7 +13262,7 @@ void PresShell::UpdateHiddenContentInForcedLayout(nsIFrame* aFrame) {
     return;
   }
 
-  // Queue and immediately flush a reflow for this node.
+  
   MOZ_ASSERT(topmostFrameWithContentHidden);
   FrameNeedsReflow(topmostFrameWithContentHidden, IntrinsicDirty::None,
                    NS_FRAME_IS_DIRTY);
@@ -13283,21 +13316,21 @@ PresShell::ProximityToViewportResult PresShell::DetermineProximityToViewport() {
   auto rootMargin = StyleRect<LengthPercentage>::WithAllSides(margin);
 
   auto input = DOMIntersectionObserver::ComputeInput(
-      *mDocument, /* aRoot = */ nullptr, &rootMargin, nullptr);
+      *mDocument,  nullptr, &rootMargin, nullptr);
 
   for (nsIFrame* frame : mContentVisibilityAutoFrames) {
     auto* element = frame->GetContent()->AsElement();
     result.mAnyScrollIntoViewFlag |=
         element->TemporarilyVisibleForScrolledIntoViewDescendant();
 
-    // 14.2.3.1
+    
     Maybe<bool> oldVisibility = element->GetVisibleForContentVisibility();
     bool checkForInitialDetermination =
         oldVisibility.isNothing() &&
         (element->GetContentRelevancy().isNothing() ||
          element->GetContentRelevancy()->isEmpty());
 
-    // 14.2.3.2
+    
     bool intersects =
         DOMIntersectionObserver::Intersect(
             input, *element, DOMIntersectionObserver::BoxToUse::OverflowClip,
@@ -13305,10 +13338,10 @@ PresShell::ProximityToViewportResult PresShell::DetermineProximityToViewport() {
             .Intersects();
     element->SetVisibleForContentVisibility(intersects);
 
-    // 14.2.3.3
+    
     if (checkForInitialDetermination && intersects) {
-      // Initial determination happens sync, otherwise on the next rendering
-      // opportunity.
+      
+      
       frame->UpdateIsRelevantContent(ContentRelevancyReason::Visible);
       result.mHadInitialDetermination = true;
     } else if (oldVisibility.isNothing() || *oldVisibility != intersects) {
