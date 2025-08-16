@@ -78,22 +78,6 @@ extern JS_PUBLIC_API bool JS_IsDeadWrapper(JSObject* obj);
 extern JS_PUBLIC_API JSObject* JS_NewDeadWrapper(
     JSContext* cx, JSObject* origObject = nullptr);
 
-namespace js {
-
-
-
-
-
-
-
-
-
-
-
-JS_PUBLIC_API JS::Value MaybeGetScriptPrivate(JSObject* object);
-
-}  
-
 
 
 
