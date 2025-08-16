@@ -52,6 +52,17 @@ pub enum ForkptyResult {
 #[derive(Debug)]
 pub struct PtyMaster(OwnedFd);
 
+impl PtyMaster {
+    
+    
+    
+    
+    
+    pub unsafe fn from_owned_fd(fd: OwnedFd) -> Self {
+        Self(fd)
+    }
+}
+
 impl AsRawFd for PtyMaster {
     fn as_raw_fd(&self) -> RawFd {
         self.0.as_raw_fd()
@@ -64,6 +75,12 @@ impl AsFd for PtyMaster {
     }
 }
 
+impl From<PtyMaster> for OwnedFd {
+    fn from(value: PtyMaster) -> Self {
+        value.0
+    }
+}
+
 impl IntoRawFd for PtyMaster {
     fn into_raw_fd(self) -> RawFd {
         let fd = self.0;
@@ -73,7 +90,7 @@ impl IntoRawFd for PtyMaster {
 
 impl io::Read for PtyMaster {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        unistd::read(self.0.as_raw_fd(), buf).map_err(io::Error::from)
+        unistd::read(&self.0, buf).map_err(io::Error::from)
     }
 }
 
@@ -88,7 +105,7 @@ impl io::Write for PtyMaster {
 
 impl io::Read for &PtyMaster {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        unistd::read(self.0.as_raw_fd(), buf).map_err(io::Error::from)
+        unistd::read(&self.0, buf).map_err(io::Error::from)
     }
 }
 

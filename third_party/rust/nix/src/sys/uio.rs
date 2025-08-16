@@ -53,7 +53,7 @@ pub fn readv<Fd: AsFd>(fd: Fd, iov: &mut [IoSliceMut<'_>]) -> Result<usize> {
 
 
 
-#[cfg(not(any(target_os = "redox", target_os = "haiku", target_os = "solaris")))]
+#[cfg(not(any(target_os = "redox", target_os = "haiku", target_os = "solaris", target_os = "cygwin")))]
 pub fn pwritev<Fd: AsFd>(
     fd: Fd,
     iov: &[IoSlice<'_>],
@@ -82,7 +82,7 @@ pub fn pwritev<Fd: AsFd>(
 
 
 
-#[cfg(not(any(target_os = "redox", target_os = "haiku", target_os = "solaris")))]
+#[cfg(not(any(target_os = "redox", target_os = "haiku", target_os = "solaris", target_os = "cygwin")))]
 
 
 #[allow(clippy::needless_pass_by_ref_mut)]
