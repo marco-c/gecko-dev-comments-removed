@@ -237,6 +237,9 @@ const checkSetCookiePermissions = (extension, uri, cookie) => {
         
         return false;
       }
+      if (e.result == Cr.NS_ERROR_ILLEGAL_VALUE) {
+        throw new ExtensionError(`Invalid domain url: "${uri.prePath}"`);
+      }
       throw e;
     }
 
@@ -736,20 +739,32 @@ this.cookies = class extends ExtensionAPIPersistent {
           let fn = gCookiesRejectWhenInvalid
             ? Services.cookies.add
             : Services.cookies.addForAddOn;
-          const cv = fn(
-            cookieAttrs.host,
-            path,
-            name,
-            value,
-            secure,
-            httpOnly,
-            isSession,
-            expiry,
-            originAttributes,
-            sameSite,
-            schemeType,
-            isPartitioned
-          );
+
+          let cv;
+          try {
+            cv = fn(
+              cookieAttrs.host,
+              path,
+              name,
+              value,
+              secure,
+              httpOnly,
+              isSession,
+              expiry,
+              originAttributes,
+              sameSite,
+              schemeType,
+              isPartitioned
+            );
+          } catch (e) {
+            if (e.result == Cr.NS_ERROR_ILLEGAL_VALUE) {
+              
+              
+              
+              throw new ExtensionError(`Invalid domain: "${cookieAttrs.host}"`);
+            }
+            throw e;
+          }
 
           if (cv.result !== Ci.nsICookieValidation.eOK) {
             if (gCookiesRejectWhenInvalid) {
