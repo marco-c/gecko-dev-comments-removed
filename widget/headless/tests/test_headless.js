@@ -208,15 +208,14 @@ add_task(async function test_mouse_drag() {
   let left = rect.left;
   let top = rect.top;
 
-  let utils = contentWindow.windowUtils;
-  utils.sendMouseEvent("mousedown", left, top, 0, 1, 0, false, 0, 0);
-  utils.sendMouseEvent("mousemove", left, top, 0, 1, 0, false, 0, 0);
+  contentWindow.synthesizeMouseEvent("mousedown", left, top);
+  contentWindow.synthesizeMouseEvent("mousemove", left, top);
   
   
   await new Promise(r => {
     executeSoon(r);
   });
-  utils.sendMouseEvent("mouseup", left, top, 0, 1, 0, false, 0, 0);
+  contentWindow.synthesizeMouseEvent("mouseup", left, top);
 
   ok(true, "Send mouse event didn't crash");
 
