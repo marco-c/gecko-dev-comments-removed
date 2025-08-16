@@ -6235,24 +6235,16 @@ nsresult Document::TurnEditingOff() {
     return NS_ERROR_FAILURE;
   }
 
-  nsIDocShell* docshell = window->GetDocShell();
-  if (!docshell) {
-    return NS_ERROR_FAILURE;
-  }
-
-  bool isBeingDestroyed = false;
-  docshell->IsBeingDestroyed(&isBeingDestroyed);
-  if (isBeingDestroyed) {
+  nsIDocShell* docshell = GetDocShell();
+  if (!docshell || docshell->IsBeingDestroyed()) {
     return NS_ERROR_FAILURE;
   }
 
   nsCOMPtr<nsIEditingSession> editSession;
-  nsresult rv = docshell->GetEditingSession(getter_AddRefs(editSession));
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(docshell->GetEditingSession(getter_AddRefs(editSession)));
 
   
-  rv = editSession->TearDownEditorOnWindow(window);
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(editSession->TearDownEditorOnWindow(window));
 
   mEditingState = EditingState::eOff;
 
@@ -6267,14 +6259,6 @@ nsresult Document::TurnEditingOff() {
   }
 
   return NS_OK;
-}
-
-static bool HasPresShell(nsPIDOMWindowOuter* aWindow) {
-  nsIDocShell* docShell = aWindow->GetDocShell();
-  if (!docShell) {
-    return false;
-  }
-  return docShell->GetPresShell() != nullptr;
 }
 
 HTMLEditor* Document::GetHTMLEditor() const {
@@ -6360,24 +6344,15 @@ nsresult Document::EditingStateChanged() {
     return NS_ERROR_FAILURE;
   }
 
-  nsIDocShell* docshell = window->GetDocShell();
-  if (!docshell) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  bool isBeingDestroyed = false;
-  docshell->IsBeingDestroyed(&isBeingDestroyed);
-  if (isBeingDestroyed) {
+  nsIDocShell* docshell = GetDocShell();
+  if (!docshell || docshell->IsBeingDestroyed()) {
     return NS_ERROR_FAILURE;
   }
 
   nsCOMPtr<nsIEditingSession> editSession;
-  nsresult rv = docshell->GetEditingSession(getter_AddRefs(editSession));
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(docshell->GetEditingSession(getter_AddRefs(editSession)));
 
-  RefPtr<HTMLEditor> htmlEditor = editSession->GetHTMLEditorForWindow(window);
-  if (htmlEditor) {
+  if (RefPtr<HTMLEditor> htmlEditor = docshell->GetHTMLEditor()) {
     
     
     uint32_t flags = 0;
@@ -6389,7 +6364,8 @@ nsresult Document::EditingStateChanged() {
     }
   }
 
-  if (!HasPresShell(window)) {
+  RefPtr<PresShell> presShell = GetPresShell();
+  if (!presShell) {
     
     
     return NS_OK;
@@ -6398,13 +6374,10 @@ nsresult Document::EditingStateChanged() {
   bool makeWindowEditable = mEditingState == EditingState::eOff;
   bool spellRecheckAll = false;
   bool putOffToRemoveScriptBlockerUntilModifyingEditingState = false;
-  htmlEditor = nullptr;
 
+  RefPtr<HTMLEditor> htmlEditor;
   {
     nsAutoEditingState push(this, EditingState::eSettingUp);
-
-    RefPtr<PresShell> presShell = GetPresShell();
-    NS_ENSURE_TRUE(presShell, NS_ERROR_FAILURE);
 
     
     
@@ -6464,8 +6437,7 @@ nsresult Document::EditingStateChanged() {
       
       
       
-      rv = editSession->MakeWindowEditable(window, "html", false, false, true);
-      NS_ENSURE_SUCCESS(rv, rv);
+      MOZ_TRY(editSession->MakeWindowEditable(window, "html", false, false, true));
     }
 
     
