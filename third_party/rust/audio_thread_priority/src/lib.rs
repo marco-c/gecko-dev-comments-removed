@@ -68,7 +68,7 @@ impl fmt::Display for AudioThreadPriorityError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut rv = write!(f, "AudioThreadPriorityError: {}", &self.message);
         if let Some(inner) = &self.inner {
-            rv = write!(f, " ({inner})");
+            rv = write!(f, " ({})", inner);
         }
         rv
     }
@@ -87,7 +87,9 @@ impl Error for AudioThreadPriorityError {
 cfg_if! {
     if #[cfg(target_os = "macos")] {
         mod rt_mach;
-        extern crate mach2;
+#[allow(unused, non_camel_case_types, non_snake_case, non_upper_case_globals)]
+        mod mach_sys;
+        extern crate mach;
         extern crate libc;
         use rt_mach::promote_current_thread_to_real_time_internal;
         use rt_mach::demote_current_thread_from_real_time_internal;
@@ -112,11 +114,6 @@ cfg_if! {
         #[no_mangle]
         /// Size of a RtPriorityThreadInfo or atp_thread_info struct, for use in FFI.
         pub static ATP_THREAD_INFO_SIZE: usize = std::mem::size_of::<RtPriorityThreadInfo>();
-    } else if #[cfg(target_os = "android")] {
-        mod rt_android;
-        use rt_android::promote_current_thread_to_real_time_internal;
-        use rt_android::demote_current_thread_from_real_time_internal;
-        use rt_android::RtPriorityHandleInternal;
     } else {
         // blanket implementations for Android, Linux Desktop without dbus and others
         pub struct RtPriorityHandleInternal {}
@@ -590,22 +587,24 @@ mod tests {
         {
             match promote_current_thread_to_real_time(0, 44100) {
                 Ok(rt_prio_handle) => {
-                    let rv = demote_current_thread_from_real_time(rt_prio_handle);
-                    assert!(rv.is_ok());
+                    demote_current_thread_from_real_time(rt_prio_handle).unwrap();
+                    assert!(true);
                 }
                 Err(e) => {
-                    panic!("{}", e);
+                    eprintln!("{}", e);
+                    assert!(false);
                 }
             }
         }
         {
             match promote_current_thread_to_real_time(512, 44100) {
                 Ok(rt_prio_handle) => {
-                    let rv = demote_current_thread_from_real_time(rt_prio_handle);
-                    assert!(rv.is_ok());
+                    demote_current_thread_from_real_time(rt_prio_handle).unwrap();
+                    assert!(true);
                 }
                 Err(e) => {
-                    panic!("{}", e);
+                    eprintln!("{}", e);
+                    assert!(false);
                 }
             }
         }
@@ -613,11 +612,12 @@ mod tests {
             
             match promote_current_thread_to_real_time(0, 192000) {
                 Ok(rt_prio_handle) => {
-                    let rv = demote_current_thread_from_real_time(rt_prio_handle);
-                    assert!(rv.is_ok());
+                    demote_current_thread_from_real_time(rt_prio_handle).unwrap();
+                    assert!(true);
                 }
                 Err(e) => {
-                    panic!("{}", e);
+                    eprintln!("{}", e);
+                    assert!(false);
                 }
             }
         }
@@ -625,19 +625,23 @@ mod tests {
             
             match promote_current_thread_to_real_time(8192, 48000) {
                 Ok(rt_prio_handle) => {
-                    let rv = demote_current_thread_from_real_time(rt_prio_handle);
-                    assert!(rv.is_ok());
+                    demote_current_thread_from_real_time(rt_prio_handle).unwrap();
+                    assert!(true);
                 }
                 Err(e) => {
-                    panic!("{}", e);
+                    eprintln!("{}", e);
+                    assert!(false);
                 }
             }
         }
         {
             match promote_current_thread_to_real_time(512, 44100) {
-                Ok(_) => {}
+                Ok(_) => {
+                    assert!(true);
+                }
                 Err(e) => {
-                    panic!("{}", e);
+                    eprintln!("{}", e);
+                    assert!(false);
                 }
             }
             
@@ -662,9 +666,12 @@ mod tests {
                 {
                     let info = get_current_thread_info().unwrap();
                     match promote_thread_to_real_time(info, 512, 44100) {
-                        Ok(_) => { }
+                        Ok(_) => {
+                            assert!(true);
+                        }
                         Err(e) => {
-                          panic!("{}", e);
+                            eprintln!("{}", e);
+                            assert!(false);
                         }
                     }
                 }
@@ -695,10 +702,12 @@ mod tests {
                                 match promote_thread_to_real_time(info, 0, 44100) {
                                     Ok(_) => {
                                         eprintln!("thread promotion in the child from the parent succeeded");
+                                        assert!(true);
                                     }
-                                    Err(e) => {
+                                    Err(_) => {
+                                        eprintln!("promotion Err");
                                         kill(child, SIGKILL).expect("Could not kill the child?");
-                                        panic!("{}", e);
+                                        assert!(false);
                                     }
                                 }
                             }
