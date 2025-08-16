@@ -85,6 +85,21 @@ class Channel {
 
   
   
+  struct ChannelKind {
+    
+    
+    bool (*create_raw_pipe)(ChannelHandle* server, ChannelHandle* client);
+
+    
+    
+    uint32_t (*num_relayed_attachments)(const IPC::Message& message);
+
+    
+    bool (*is_valid_handle)(const ChannelHandle& handle);
+  };
+
+  
+  
   
   
   
@@ -141,8 +156,7 @@ class Channel {
 #endif
 
   
-  
-  static bool CreateRawPipe(ChannelHandle* server, ChannelHandle* client);
+  virtual const ChannelKind* GetKind() const = 0;
 
  protected:
   Channel();
