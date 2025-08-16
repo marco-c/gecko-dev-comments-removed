@@ -4486,7 +4486,8 @@ bool jit::AddKeepAliveInstructions(MIRGraph& graph) {
 
       MOZ_ASSERT(ownerObject->type() == MIRType::Object);
 
-      if (ownerObject->isConstant()) {
+      const MDefinition* unwrapped = ownerObject->skipObjectGuards();
+      if (unwrapped->isConstant() || unwrapped->isNurseryObject()) {
         
         
         continue;
