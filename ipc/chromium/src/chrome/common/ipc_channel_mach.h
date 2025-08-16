@@ -42,7 +42,6 @@ class ChannelMach final : public Channel,
 
   
   void SetOtherMachTask(task_t) override {}
-  void StartAcceptingMachPorts(Mode) override {}
 
   
   

@@ -48,8 +48,6 @@ class ChannelPosix final : public Channel, public MessageLoopForIO::Watcher {
 
 #if defined(XP_DARWIN)
   void SetOtherMachTask(task_t task) MOZ_EXCLUDES(SendMutex()) override;
-
-  void StartAcceptingMachPorts(Mode mode) MOZ_EXCLUDES(SendMutex()) override;
 #endif
 
   static bool CreateRawPipe(ChannelHandle* server, ChannelHandle* client);
@@ -86,7 +84,7 @@ class ChannelPosix final : public Channel, public MessageLoopForIO::Watcher {
       MOZ_REQUIRES(SendMutex());
   void OutputQueuePop() MOZ_REQUIRES(SendMutex());
 
-  Mode mode_ MOZ_GUARDED_BY(IOThread());
+  Mode mode_ MOZ_GUARDED_BY(chan_cap_);
 
   
   
@@ -167,11 +165,6 @@ class ChannelPosix final : public Channel, public MessageLoopForIO::Watcher {
   uint32_t last_pending_fd_id_ MOZ_GUARDED_BY(SendMutex()) = 0;
 
   
-  
-  
-  bool accept_mach_ports_ MOZ_GUARDED_BY(chan_cap_) = false;
-  bool privileged_ MOZ_GUARDED_BY(chan_cap_) = false;
-
   
   mozilla::UniqueMachSendRight other_task_ MOZ_GUARDED_BY(chan_cap_);
 #endif

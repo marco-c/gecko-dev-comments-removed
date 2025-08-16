@@ -75,6 +75,7 @@ ChannelWin::ChannelWin(mozilla::UniqueFileHandle pipe, Mode mode,
                        base::ProcessId other_pid)
     : input_state_(this), output_state_(this), other_pid_(other_pid) {
   Init(mode);
+  MaybeOpenProcessHandle();
 
   if (!pipe) {
     return;
@@ -96,8 +97,6 @@ void ChannelWin::Init(Mode mode) {
   processing_incoming_ = false;
   input_buf_offset_ = 0;
   input_buf_ = mozilla::MakeUnique<char[]>(Channel::kReadBufferSize);
-  accept_handles_ = false;
-  privileged_ = false;
   other_process_ = INVALID_HANDLE_VALUE;
 }
 
@@ -243,9 +242,16 @@ void ChannelWin::SetOtherPid(base::ProcessId other_pid) {
       "Multiple sources of SetOtherPid disagree!");
   other_pid_ = other_pid;
 
+  MaybeOpenProcessHandle();
+}
+
+void ChannelWin::MaybeOpenProcessHandle() {
+  chan_cap_.NoteExclusiveAccess();
+
   
   
-  if (privileged_ && other_process_ == INVALID_HANDLE_VALUE) {
+  if (mode_ == MODE_BROKER_SERVER && other_process_ == INVALID_HANDLE_VALUE &&
+      other_pid_ != base::kInvalidProcessId) {
     other_process_ = OpenProcess(PROCESS_DUP_HANDLE, false, other_pid_);
     if (!other_process_) {
       other_process_ = INVALID_HANDLE_VALUE;
@@ -518,29 +524,6 @@ void ChannelWin::OnIOCompleted(MessageLoopForIO::IOContext* context,
   }
 }
 
-void ChannelWin::StartAcceptingHandles(Mode mode) {
-  IOThread().AssertOnCurrentThread();
-  mozilla::MutexAutoLock lock(SendMutex());
-  chan_cap_.NoteExclusiveAccess();
-
-  if (accept_handles_) {
-    MOZ_ASSERT(privileged_ == (mode == MODE_SERVER));
-    return;
-  }
-  accept_handles_ = true;
-  privileged_ = mode == MODE_SERVER;
-
-  if (privileged_ && other_pid_ != base::kInvalidProcessId &&
-      other_process_ == INVALID_HANDLE_VALUE) {
-    other_process_ = OpenProcess(PROCESS_DUP_HANDLE, false, other_pid_);
-    if (!other_process_) {
-      other_process_ = INVALID_HANDLE_VALUE;
-      CHROMIUM_LOG(ERROR) << "Failed to acquire privileged handle to "
-                          << other_pid_ << ", cannot accept handles";
-    }
-  }
-}
-
 
 
 
@@ -597,12 +580,6 @@ bool ChannelWin::AcceptHandles(Message& msg) {
     return true;
   }
 
-  if (!accept_handles_) {
-    CHROMIUM_LOG(ERROR) << "invalid message: " << msg.name()
-                        << ". channel is not configured to accept handles";
-    return false;
-  }
-
   
   nsTArray<uint32_t> payload;
   payload.AppendElements(num_handles);
@@ -629,29 +606,36 @@ bool ChannelWin::AcceptHandles(Message& msg) {
     
     
     mozilla::UniqueFileHandle local_handle;
-    if (privileged_) {
-      MOZ_ASSERT(other_process_, "other_process_ cannot be null");
-      if (other_process_ == INVALID_HANDLE_VALUE) {
-        CHROMIUM_LOG(ERROR) << "other_process_ is invalid in AcceptHandles";
-        return false;
-      }
-      if (!DuplicateRealHandle(
-              other_process_, ipc_handle, GetCurrentProcess(),
-              mozilla::getter_Transfers(local_handle), 0, FALSE,
-              DUPLICATE_SAME_ACCESS | DUPLICATE_CLOSE_SOURCE)) {
-        DWORD err = GetLastError();
-        
-        
-        if (!WasOtherProcessExitingError(err)) {
-          CHROMIUM_LOG(ERROR)
-              << "DuplicateHandle failed for handle " << ipc_handle
-              << " from process " << other_pid_ << " for message " << msg.name()
-              << " in AcceptHandles with error: " << err;
+    switch (mode_) {
+      case MODE_BROKER_SERVER:
+        MOZ_ASSERT(other_process_, "other_process_ cannot be null");
+        if (other_process_ == INVALID_HANDLE_VALUE) {
+          CHROMIUM_LOG(ERROR) << "other_process_ is invalid in AcceptHandles";
+          return false;
         }
+        if (!DuplicateRealHandle(
+                other_process_, ipc_handle, GetCurrentProcess(),
+                mozilla::getter_Transfers(local_handle), 0, FALSE,
+                DUPLICATE_SAME_ACCESS | DUPLICATE_CLOSE_SOURCE)) {
+          DWORD err = GetLastError();
+          
+          
+          if (!WasOtherProcessExitingError(err)) {
+            CHROMIUM_LOG(ERROR)
+                << "DuplicateHandle failed for handle " << ipc_handle
+                << " from process " << other_pid_ << " for message "
+                << msg.name() << " in AcceptHandles with error: " << err;
+          }
+          return false;
+        }
+        break;
+      case MODE_BROKER_CLIENT:
+        local_handle.reset(ipc_handle);
+        break;
+      default:
+        CHROMIUM_LOG(ERROR) << "invalid message: " << msg.name()
+                            << ". channel is not configured to accept handles";
         return false;
-      }
-    } else {
-      local_handle.reset(ipc_handle);
     }
 
     MOZ_DIAGNOSTIC_ASSERT(
@@ -678,12 +662,6 @@ bool ChannelWin::TransferHandles(Message& msg) {
     return true;
   }
 
-  if (!accept_handles_) {
-    CHROMIUM_LOG(ERROR) << "cannot send message: " << msg.name()
-                        << ". channel is not configured to accept handles";
-    return false;
-  }
-
 #ifdef DEBUG
   uint32_t handles_offset = msg.header()->payload_size;
 #endif
@@ -705,31 +683,38 @@ bool ChannelWin::TransferHandles(Message& msg) {
     
     
     HANDLE ipc_handle = NULL;
-    if (privileged_) {
-      MOZ_ASSERT(other_process_, "other_process_ cannot be null");
-      if (other_process_ == INVALID_HANDLE_VALUE) {
-        CHROMIUM_LOG(ERROR) << "other_process_ is invalid in TransferHandles";
-        return false;
-      }
-      if (!DuplicateRealHandle(GetCurrentProcess(), local_handle.get(),
-                               other_process_, &ipc_handle, 0, FALSE,
-                               DUPLICATE_SAME_ACCESS)) {
-        DWORD err = GetLastError();
-        
-        
-        if (!WasOtherProcessExitingError(err)) {
-          CHROMIUM_LOG(ERROR) << "DuplicateHandle failed for handle "
-                              << (HANDLE)local_handle.get() << " to process "
-                              << other_pid_ << " for message " << msg.name()
-                              << " in TransferHandles with error: " << err;
+    switch (mode_) {
+      case MODE_BROKER_SERVER:
+        MOZ_ASSERT(other_process_, "other_process_ cannot be null");
+        if (other_process_ == INVALID_HANDLE_VALUE) {
+          CHROMIUM_LOG(ERROR) << "other_process_ is invalid in TransferHandles";
+          return false;
         }
+        if (!DuplicateRealHandle(GetCurrentProcess(), local_handle.get(),
+                                 other_process_, &ipc_handle, 0, FALSE,
+                                 DUPLICATE_SAME_ACCESS)) {
+          DWORD err = GetLastError();
+          
+          
+          if (!WasOtherProcessExitingError(err)) {
+            CHROMIUM_LOG(ERROR) << "DuplicateHandle failed for handle "
+                                << (HANDLE)local_handle.get() << " to process "
+                                << other_pid_ << " for message " << msg.name()
+                                << " in TransferHandles with error: " << err;
+          }
+          return false;
+        }
+        break;
+      case MODE_BROKER_CLIENT:
+        
+        
+        
+        ipc_handle = local_handle.release();
+        break;
+      default:
+        CHROMIUM_LOG(ERROR) << "cannot send message: " << msg.name()
+                            << ". channel is not configured to accept handles";
         return false;
-      }
-    } else {
-      
-      
-      
-      ipc_handle = local_handle.release();
     }
 
     MOZ_DIAGNOSTIC_ASSERT(
