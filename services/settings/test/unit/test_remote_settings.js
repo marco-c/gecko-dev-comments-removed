@@ -41,10 +41,6 @@ add_task(() => {
   server.start(-1);
 
   
-  let oldGetChannel = Policy.getChannel;
-  Policy.getChannel = () => "nightly";
-
-  
   Services.prefs.setStringPref(
     "services.settings.server",
     `http://localhost:${server.identity.primaryPort}/v1`
@@ -75,7 +71,6 @@ add_task(() => {
   server.registerPathHandler("/fake-x5u", handleResponse);
 
   registerCleanupFunction(() => {
-    Policy.getChannel = oldGetChannel;
     server.stop(() => {});
   });
 });
