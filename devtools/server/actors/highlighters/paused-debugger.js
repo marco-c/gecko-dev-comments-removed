@@ -245,8 +245,8 @@ class PausedDebuggerOverlay {
     
     this.getElement("root").setAttribute("hidden", "true");
     
-    this.getElement("step-button-wrapper").classList.remove("hover");
-    this.getElement("resume-button-wrapper").classList.remove("hover");
+    this.getElement("step-button-wrapper").classList?.remove("hover");
+    this.getElement("resume-button-wrapper").classList?.remove("hover");
   }
 }
 exports.PausedDebuggerOverlay = PausedDebuggerOverlay;

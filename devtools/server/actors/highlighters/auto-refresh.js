@@ -348,7 +348,7 @@ class AutoRefreshHighlighter extends EventEmitter {
 
     
     
-    root.classList.toggle(
+    root.classList?.toggle(
       "use-simple-highlighters",
       this.highlighterEnv.useSimpleHighlightersForReducedMotion
     );
