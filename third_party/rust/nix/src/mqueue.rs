@@ -265,8 +265,6 @@ pub fn mq_getattr(mqd: &MqdT) -> Result<MqAttr> {
 
 
 
-
-
 pub fn mq_setattr(mqd: &MqdT, newattr: &MqAttr) -> Result<MqAttr> {
     let mut attr = mem::MaybeUninit::<libc::mq_attr>::uninit();
     let res = unsafe {

@@ -1,4 +1,4 @@
-use std::os::unix::io::AsFd;
+use std::os::unix::io::{AsFd, AsRawFd};
 use tempfile::tempfile;
 
 use nix::errno::Errno;
@@ -80,7 +80,6 @@ fn test_output_flags() {
 
 
 #[test]
-#[cfg(not(target_os = "solaris"))]
 fn test_local_flags() {
     
     let _m = crate::PTSNAME_MTX.lock();
@@ -101,10 +100,10 @@ fn test_local_flags() {
     let pty = openpty(None, &termios).unwrap();
 
     
-    let flags = fcntl::fcntl(&pty.master, fcntl::F_GETFL).unwrap();
+    let flags = fcntl::fcntl(pty.master.as_raw_fd(), fcntl::F_GETFL).unwrap();
     let new_flags =
         fcntl::OFlag::from_bits_truncate(flags) | fcntl::OFlag::O_NONBLOCK;
-    fcntl::fcntl(pty.master.as_fd(), fcntl::F_SETFL(new_flags)).unwrap();
+    fcntl::fcntl(pty.master.as_raw_fd(), fcntl::F_SETFL(new_flags)).unwrap();
 
     
     let string = "foofoofoo\r";
@@ -112,6 +111,6 @@ fn test_local_flags() {
 
     
     let mut buf = [0u8; 10];
-    let read = read(&pty.master, &mut buf).unwrap_err();
+    let read = read(pty.master.as_raw_fd(), &mut buf).unwrap_err();
     assert_eq!(read, Errno::EAGAIN);
 }

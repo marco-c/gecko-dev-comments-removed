@@ -1,102 +1,69 @@
 use crate::errno::Errno;
-use crate::{unistd, Result};
-use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, FromRawFd, OwnedFd, RawFd};
+use crate::{Result,unistd};
+use std::os::unix::io::{FromRawFd, OwnedFd, AsRawFd, AsFd, RawFd, BorrowedFd};
 
 libc_bitflags! {
-    /// Eventfd flags.
     pub struct EfdFlags: libc::c_int {
-        /// Set the close-on-exec (`FD_CLOEXEC`) flag on the new event file descriptor.
         EFD_CLOEXEC; // Since Linux 2.6.27/FreeBSD 13.0
-        /// Set the `O_NONBLOCK` file status flag on the new event file description.
         EFD_NONBLOCK; // Since Linux 2.6.27/FreeBSD 13.0
-        /// Provide semaphore-like semantics for reads from the new event file
-        /// descriptor.
         EFD_SEMAPHORE; // Since Linux 2.6.30/FreeBSD 13.0
     }
 }
 
-#[deprecated(
-    since = "0.28.0",
-    note = "Use EventFd::from_value_and_flags() instead"
-)]
-#[allow(missing_docs)]
+#[deprecated(since = "0.28.0", note = "Use EventFd::from_value_and_flags() instead")]
 pub fn eventfd(initval: libc::c_uint, flags: EfdFlags) -> Result<OwnedFd> {
     let res = unsafe { libc::eventfd(initval, flags.bits()) };
 
     Errno::result(res).map(|r| unsafe { OwnedFd::from_raw_fd(r) })
 }
 
-
 #[derive(Debug)]
 #[repr(transparent)]
 pub struct EventFd(OwnedFd);
-
 impl EventFd {
     
     pub fn new() -> Result<Self> {
         Self::from_value_and_flags(0, EfdFlags::empty())
     }
-
     
     
     
-    pub fn from_value_and_flags(
-        init_val: u32,
-        flags: EfdFlags,
-    ) -> Result<Self> {
+    pub fn from_value_and_flags(init_val: u32, flags: EfdFlags) -> Result<Self> {
         let res = unsafe { libc::eventfd(init_val, flags.bits()) };
         Errno::result(res).map(|r| Self(unsafe { OwnedFd::from_raw_fd(r) }))
     }
-
     
     pub fn from_flags(flags: EfdFlags) -> Result<Self> {
         Self::from_value_and_flags(0, flags)
     }
-
     
     pub fn from_value(init_val: u32) -> Result<Self> {
         Self::from_value_and_flags(init_val, EfdFlags::empty())
     }
-
     
     
     
-    
-    
-    pub unsafe fn from_owned_fd(fd: OwnedFd) -> Self {
-        Self(fd)
+    pub fn arm(&self) -> Result<usize> {
+        self.write(1)
     }
-
     
     
     
-    
-    
-    
-    pub fn write(&self, value: u64) -> Result<usize> {
-        unistd::write(&self.0, &value.to_ne_bytes())
+    pub fn defuse(&self) -> Result<usize> {
+        self.write(0)
     }
-
     
     
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    pub fn write(&self, value: u64) -> Result<usize> { 
+        unistd::write(&self.0,&value.to_ne_bytes())
+    }
     
     pub fn read(&self) -> Result<u64> {
         let mut arr = [0; std::mem::size_of::<u64>()];
-        unistd::read(&self.0, &mut arr)?;
+        unistd::read(self.0.as_raw_fd(),&mut arr)?;
         Ok(u64::from_ne_bytes(arr))
     }
 }
@@ -110,9 +77,8 @@ impl AsRawFd for EventFd {
         self.0.as_raw_fd()
     }
 }
-
 impl From<EventFd> for OwnedFd {
-    fn from(value: EventFd) -> Self {
-        value.0
+    fn from(x: EventFd) -> OwnedFd {
+        x.0
     }
 }

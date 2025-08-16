@@ -11,7 +11,7 @@
 
 
 use crate::errno::Errno;
-use crate::fcntl::OFlag;
+use crate::fcntl::{at_rawfd, OFlag};
 use crate::unistd::{close, read, write};
 use crate::{NixPath, Result};
 use std::marker::PhantomData;
@@ -20,8 +20,8 @@ use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, FromRawFd, OwnedFd, RawFd};
 use std::ptr;
 
 libc_bitflags! {
-    /// Mask for defining which events shall be listened with [`Fanotify::mark()`]
-    /// and for querying notifications.
+    /// Mask for defining which events shall be listened with
+    /// [`fanotify_mark`](fn.fanotify_mark.html) and for querying notifications.
     pub struct MaskFlags: u64 {
         /// File was accessed.
         FAN_ACCESS;
@@ -80,7 +80,7 @@ libc_bitflags! {
 }
 
 libc_bitflags! {
-    /// Configuration options for [`Fanotify::init()`].
+    /// Configuration options for [`fanotify_init`](fn.fanotify_init.html).
     pub struct InitFlags: libc::c_uint {
         /// Close-on-exec flag set on the file descriptor.
         FAN_CLOEXEC;
@@ -162,7 +162,7 @@ impl From<EventFFlags> for OFlag {
 }
 
 libc_bitflags! {
-    /// Configuration options for [`Fanotify::mark()`].
+    /// Configuration options for [`fanotify_mark`](fn.fanotify_mark.html).
     pub struct MarkFlags: libc::c_uint {
         /// Add the events to the marks.
         FAN_MARK_ADD;
@@ -281,7 +281,7 @@ impl<'a> FanotifyResponse<'a> {
 }
 
 libc_bitflags! {
-    /// Response to be wrapped in [`FanotifyResponse`] and sent to the [`Fanotify`]
+    /// Response to be wrapped in `FanotifyResponse` and sent to the `Fanotify`
     /// group to allow or deny an event.
     pub struct Response: u32 {
         /// Allow the event.
@@ -321,11 +321,12 @@ impl Fanotify {
     
     
     
-    pub fn mark<Fd: std::os::fd::AsFd, P: ?Sized + NixPath>(
+    
+    pub fn mark<P: ?Sized + NixPath>(
         &self,
         flags: MarkFlags,
         mask: MaskFlags,
-        dirfd: Fd,
+        dirfd: Option<RawFd>,
         path: Option<&P>,
     ) -> Result<()> {
         let res = crate::with_opt_nix_path(path, |p| unsafe {
@@ -333,7 +334,7 @@ impl Fanotify {
                 self.fd.as_raw_fd(),
                 flags.bits(),
                 mask.bits(),
-                dirfd.as_fd().as_raw_fd(),
+                at_rawfd(dirfd),
                 p,
             )
         })?;
@@ -361,7 +362,7 @@ impl Fanotify {
         let mut events = Vec::new();
         let mut offset = 0;
 
-        let nread = read(&self.fd, &mut buffer)?;
+        let nread = read(self.fd.as_raw_fd(), &mut buffer)?;
 
         while (nread - offset) >= metadata_size {
             let metadata = unsafe {
@@ -416,31 +417,5 @@ impl FromRawFd for Fanotify {
 impl AsFd for Fanotify {
     fn as_fd(&'_ self) -> BorrowedFd<'_> {
         self.fd.as_fd()
-    }
-}
-
-impl AsRawFd for Fanotify {
-    fn as_raw_fd(&self) -> RawFd
-    {
-        self.fd.as_raw_fd()
-    }
-}
-
-impl From<Fanotify> for OwnedFd {
-    fn from(value: Fanotify) -> Self {
-        value.fd
-    }
-}
-
-impl Fanotify {
-    
-    
-    
-    
-    
-    pub unsafe fn from_owned_fd(fd: OwnedFd) -> Self {
-        Self {
-            fd
-        }
     }
 }

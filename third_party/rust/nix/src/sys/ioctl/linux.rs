@@ -1,20 +1,10 @@
 use cfg_if::cfg_if;
 
 
-#[cfg(any(
-    target_os = "android",
-    target_os = "fuchsia",
-    target_env = "musl",
-    target_env = "ohos"
-))]
+#[cfg(any(target_os = "android", target_env = "musl"))]
 #[doc(hidden)]
 pub type ioctl_num_type = ::libc::c_int;
-#[cfg(not(any(
-    target_os = "android",
-    target_os = "fuchsia",
-    target_env = "musl",
-    target_env = "ohos"
-)))]
+#[cfg(not(any(target_os = "android", target_env = "musl")))]
 #[doc(hidden)]
 pub type ioctl_num_type = ::libc::c_ulong;
 

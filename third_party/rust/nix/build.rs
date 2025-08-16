@@ -28,8 +28,13 @@ fn main() {
     }
 
     
+    println!("cargo:rustc-check-cfg=cfg(apple_targets)");
+    println!("cargo:rustc-check-cfg=cfg(bsd)");
+    println!("cargo:rustc-check-cfg=cfg(bsd_without_apple)");
+    println!("cargo:rustc-check-cfg=cfg(linux_android)");
+    println!("cargo:rustc-check-cfg=cfg(freebsdlike)");
+    println!("cargo:rustc-check-cfg=cfg(netbsdlike)");
+    println!("cargo:rustc-check-cfg=cfg(solarish)");
     println!("cargo:rustc-check-cfg=cfg(fbsd14)");
     println!("cargo:rustc-check-cfg=cfg(qemu)");
-    
-    println!("cargo:rustc-check-cfg=cfg(target_os, values(\"cygwin\"))");
 }

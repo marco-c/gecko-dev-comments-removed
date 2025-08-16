@@ -1,7 +1,4 @@
-#[cfg_attr(
-    any(target_env = "musl", target_env = "ohos"),
-    allow(deprecated)
-)]
+#[cfg_attr(target_env = "musl", allow(deprecated))]
 
 pub use libc::{suseconds_t, time_t};
 use libc::{timespec, timeval};
@@ -256,10 +253,7 @@ impl PartialOrd for TimeSpec {
 
 impl TimeValLike for TimeSpec {
     #[inline]
-    #[cfg_attr(
-        any(target_env = "musl", target_env = "ohos"),
-        allow(deprecated)
-    )]
+    #[cfg_attr(target_env = "musl", allow(deprecated))]
     
     fn seconds(seconds: i64) -> TimeSpec {
         assert!(
@@ -292,10 +286,7 @@ impl TimeValLike for TimeSpec {
 
     
     #[inline]
-    #[cfg_attr(
-        any(target_env = "musl", target_env = "ohos"),
-        allow(deprecated)
-    )]
+    #[cfg_attr(target_env = "musl", allow(deprecated))]
     
     fn nanoseconds(nanoseconds: i64) -> TimeSpec {
         let (secs, nanos) = div_mod_floor_64(nanoseconds, NANOS_PER_SEC);
@@ -349,10 +340,7 @@ impl TimeSpec {
         TimeSpec::new(0, libc::UTIME_NOW as timespec_tv_nsec_t);
 
     
-    #[cfg_attr(
-        any(target_env = "musl", target_env = "ohos"),
-        allow(deprecated)
-    )] 
+    #[cfg_attr(target_env = "musl", allow(deprecated))] 
     pub const fn new(seconds: time_t, nanoseconds: timespec_tv_nsec_t) -> Self {
         let mut ts = zero_init_timespec();
         ts.tv_sec = seconds;
@@ -368,10 +356,7 @@ impl TimeSpec {
         }
     }
 
-    #[cfg_attr(
-        any(target_env = "musl", target_env = "ohos"),
-        allow(deprecated)
-    )] 
+    #[cfg_attr(target_env = "musl", allow(deprecated))] 
     pub const fn tv_sec(&self) -> time_t {
         self.0.tv_sec
     }
@@ -380,10 +365,7 @@ impl TimeSpec {
         self.0.tv_nsec
     }
 
-    #[cfg_attr(
-        any(target_env = "musl", target_env = "ohos"),
-        allow(deprecated)
-    )]
+    #[cfg_attr(target_env = "musl", allow(deprecated))]
     
     pub const fn from_duration(duration: Duration) -> Self {
         let mut ts = zero_init_timespec();
@@ -524,10 +506,7 @@ impl TimeValLike for TimeVal {
             (TV_MIN_SECONDS..=TV_MAX_SECONDS).contains(&seconds),
             "TimeVal out of bounds; seconds={seconds}"
         );
-        #[cfg_attr(
-            any(target_env = "musl", target_env = "ohos"),
-            allow(deprecated)
-        )]
+        #[cfg_attr(target_env = "musl", allow(deprecated))]
         
         TimeVal(timeval {
             tv_sec: seconds as time_t,
@@ -552,10 +531,7 @@ impl TimeValLike for TimeVal {
             (TV_MIN_SECONDS..=TV_MAX_SECONDS).contains(&secs),
             "TimeVal out of bounds"
         );
-        #[cfg_attr(
-            any(target_env = "musl", target_env = "ohos"),
-            allow(deprecated)
-        )]
+        #[cfg_attr(target_env = "musl", allow(deprecated))]
         
         TimeVal(timeval {
             tv_sec: secs as time_t,
@@ -573,10 +549,7 @@ impl TimeValLike for TimeVal {
             (TV_MIN_SECONDS..=TV_MAX_SECONDS).contains(&secs),
             "TimeVal out of bounds"
         );
-        #[cfg_attr(
-            any(target_env = "musl", target_env = "ohos"),
-            allow(deprecated)
-        )]
+        #[cfg_attr(target_env = "musl", allow(deprecated))]
         
         TimeVal(timeval {
             tv_sec: secs as time_t,
@@ -613,10 +586,7 @@ impl TimeValLike for TimeVal {
 
 impl TimeVal {
     
-    #[cfg_attr(
-        any(target_env = "musl", target_env = "ohos"),
-        allow(deprecated)
-    )] 
+    #[cfg_attr(target_env = "musl", allow(deprecated))] 
     pub const fn new(seconds: time_t, microseconds: suseconds_t) -> Self {
         Self(timeval {
             tv_sec: seconds,
@@ -632,10 +602,7 @@ impl TimeVal {
         }
     }
 
-    #[cfg_attr(
-        any(target_env = "musl", target_env = "ohos"),
-        allow(deprecated)
-    )] 
+    #[cfg_attr(target_env = "musl", allow(deprecated))] 
     pub const fn tv_sec(&self) -> time_t {
         self.0.tv_sec
     }

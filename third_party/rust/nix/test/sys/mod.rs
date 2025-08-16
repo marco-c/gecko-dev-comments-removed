@@ -8,10 +8,7 @@ mod test_signal;
 #[cfg(any(
     target_os = "freebsd",
     apple_targets,
-    all(
-        target_os = "linux",
-        not(any(target_env = "uclibc", target_env = "ohos"))
-    ),
+    all(target_os = "linux", not(target_env = "uclibc")),
     target_os = "netbsd"
 ))]
 mod test_aio;
@@ -19,8 +16,7 @@ mod test_aio;
     target_os = "redox",
     target_os = "fuchsia",
     target_os = "haiku",
-    target_os = "hurd",
-    target_os = "cygwin"
+    target_os = "hurd"
 )))]
 mod test_ioctl;
 #[cfg(not(target_os = "redox"))]
@@ -86,13 +82,3 @@ mod test_statfs;
     target_os = "haiku"
 )))]
 mod test_resource;
-
-
-
-
-
-
-
-
-#[cfg(target_os = "freebsd")]
-mod test_memfd;

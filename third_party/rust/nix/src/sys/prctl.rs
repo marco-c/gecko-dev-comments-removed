@@ -166,7 +166,7 @@ pub fn get_name() -> Result<CString> {
 
 
 
-pub fn set_timerslack(ns: c_ulong) -> Result<()> {
+pub fn set_timerslack(ns: u64) -> Result<()> {
     let res = unsafe { libc::prctl(libc::PR_SET_TIMERSLACK, ns, 0, 0, 0) };
 
     Errno::result(res).map(drop)

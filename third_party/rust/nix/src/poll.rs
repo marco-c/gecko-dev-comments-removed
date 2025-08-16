@@ -2,7 +2,7 @@
 use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd};
 
 use crate::errno::Errno;
-pub use crate::poll_timeout::{PollTimeout, PollTimeoutTryFromError};
+pub use crate::poll_timeout::PollTimeout;
 use crate::Result;
 
 
@@ -14,13 +14,16 @@ use crate::Result;
 
 
 #[repr(transparent)]
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct PollFd<'fd> {
     pollfd: libc::pollfd,
     _fd: std::marker::PhantomData<BorrowedFd<'fd>>,
 }
 
 impl<'fd> PollFd<'fd> {
+    
+    
+    
     
     
     
@@ -58,7 +61,7 @@ impl<'fd> PollFd<'fd> {
 
     
     
-    pub fn revents(&self) -> Option<PollFlags> {
+    pub fn revents(self) -> Option<PollFlags> {
         PollFlags::from_bits(self.pollfd.revents)
     }
 
@@ -68,7 +71,7 @@ impl<'fd> PollFd<'fd> {
     
     
     
-    pub fn any(&self) -> Option<bool> {
+    pub fn any(self) -> Option<bool> {
         Some(self.revents()? != PollFlags::empty())
     }
 
@@ -78,12 +81,12 @@ impl<'fd> PollFd<'fd> {
     
     
     
-    pub fn all(&self) -> Option<bool> {
+    pub fn all(self) -> Option<bool> {
         Some(self.revents()? & self.events() == self.events())
     }
 
     
-    pub fn events(&self) -> PollFlags {
+    pub fn events(self) -> PollFlags {
         PollFlags::from_bits(self.pollfd.events).unwrap()
     }
 
@@ -93,7 +96,7 @@ impl<'fd> PollFd<'fd> {
     }
 }
 
-impl AsFd for PollFd<'_> {
+impl<'fd> AsFd for PollFd<'fd> {
     fn as_fd(&self) -> BorrowedFd<'_> {
         
         
@@ -193,34 +196,6 @@ libc_bitflags! {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 pub fn poll<T: Into<PollTimeout>>(
     fds: &mut [PollFd],
     timeout: T,
@@ -242,7 +217,7 @@ feature! {
 /// descriptor becomes ready or until a signal is caught.
 /// ([`poll(2)`](https://man7.org/linux/man-pages/man2/poll.2.html))
 ///
-/// `ppoll` behaves like [`poll`], but let you specify what signals may interrupt it
+/// `ppoll` behaves like `poll`, but let you specify what signals may interrupt it
 /// with the `sigmask` argument. If you want `ppoll` to block indefinitely,
 /// specify `None` as `timeout` (it is like `timeout = -1` for `poll`).
 /// If `sigmask` is `None`, then no signal mask manipulation is performed,

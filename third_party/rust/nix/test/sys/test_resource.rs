@@ -10,7 +10,6 @@ use nix::sys::resource::{getrusage, UsageWho};
 
 
 #[test]
-#[cfg_attr(target_os = "cygwin", ignore)]
 pub fn test_resource_limits_nofile() {
     let (mut soft_limit, hard_limit) =
         getrlimit(Resource::RLIMIT_NOFILE).unwrap();

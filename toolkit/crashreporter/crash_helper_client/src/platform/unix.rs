@@ -7,14 +7,10 @@ use crash_helper_common::{
     ignore_eintr, BreakpadChar, BreakpadData, IPCChannel, IPCConnector, IPCListener,
 };
 use nix::{
-    spawn::{posix_spawn, PosixSpawnAttr, PosixSpawnFileActions},
     sys::wait::waitpid,
-    unistd::getpid,
+    unistd::{execv, fork, getpid, setsid, ForkResult},
 };
-use std::{
-    env,
-    ffi::{CStr, CString},
-};
+use std::ffi::{CStr, CString};
 
 use crate::CrashHelperClient;
 
@@ -50,41 +46,62 @@ impl CrashHelperClient {
     ) -> Result<()> {
         let parent_pid = getpid().to_string();
         let parent_pid_arg = unsafe { CString::from_vec_unchecked(parent_pid.into_bytes()) };
-        let program = unsafe { CStr::from_ptr(program) };
-        let breakpad_data_arg =
-            unsafe { CString::from_vec_unchecked(breakpad_data.to_string().into_bytes()) };
-        let minidump_path = unsafe { CStr::from_ptr(minidump_path) };
-        let listener_arg = listener.serialize();
-        let endpoint_arg = endpoint.serialize();
+        let pid = unsafe { fork() }?;
 
-        let file_actions = PosixSpawnFileActions::init()?;
-        let attr = PosixSpawnAttr::init()?;
+        match pid {
+            ForkResult::Child => {
+                
+                
+                
+                
+                
+                
+                
+                
+                let _ = setsid();
 
-        let env: Vec<CString> = env::vars()
-            .map(|(key, value)| format!("{key}={value}"))
-            .map(|string| CString::new(string).unwrap())
-            .collect();
+                
+                
+                let pid = unsafe { fork() }.unwrap();
 
-        let pid = posix_spawn(
-            program,
-            &file_actions,
-            &attr,
-            &[
-                program,
-                &parent_pid_arg,
-                &breakpad_data_arg,
-                minidump_path,
-                &listener_arg,
-                &endpoint_arg,
-            ],
-            env.as_slice(),
-        )?;
+                match pid {
+                    ForkResult::Child => {
+                        let program = unsafe { CStr::from_ptr(program) };
+                        let breakpad_data_arg = unsafe {
+                            CString::from_vec_unchecked(breakpad_data.to_string().into_bytes())
+                        };
+                        let minidump_path = unsafe { CStr::from_ptr(minidump_path) };
+                        let listener_arg = listener.serialize();
+                        let endpoint_arg = endpoint.serialize();
 
-        
-        
-        ignore_eintr!(waitpid(pid, None))?;
+                        let _ = execv(
+                            program,
+                            &[
+                                program,
+                                &parent_pid_arg,
+                                &breakpad_data_arg,
+                                minidump_path,
+                                &listener_arg,
+                                &endpoint_arg,
+                            ],
+                        );
 
-        Ok(())
+                        
+                        unsafe { nix::libc::_exit(1) };
+                    }
+                    _ => unsafe {
+                        
+                        nix::libc::_exit(0);
+                    },
+                }
+            }
+            ForkResult::Parent { child } => {
+                
+                
+                ignore_eintr!(waitpid(child, None))?;
+                Ok(())
+            }
+        }
     }
 
     #[cfg(not(target_os = "linux"))]

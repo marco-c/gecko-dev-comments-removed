@@ -58,12 +58,6 @@ impl FromRawFd for TimerFd {
     }
 }
 
-impl From<TimerFd> for OwnedFd {
-    fn from(value: TimerFd) -> Self {
-        value.fd  
-    }
-}
-
 libc_enum! {
     /// The type of the clock used to mark the progress of the timer. For more
     /// details on each kind of clock, please refer to [timerfd_create(2)](https://man7.org/linux/man-pages/man2/timerfd_create.2.html).
@@ -214,7 +208,7 @@ impl TimerFd {
     
     
     pub fn wait(&self) -> Result<()> {
-        while let Err(e) = read(&self.fd, &mut [0u8; 8]) {
+        while let Err(e) = read(self.fd.as_fd().as_raw_fd(), &mut [0u8; 8]) {
             if e == Errno::ECANCELED {
                 break;
             }
@@ -224,17 +218,5 @@ impl TimerFd {
         }
 
         Ok(())
-    }
-
-
-    
-    
-    
-    
-    
-    pub unsafe fn from_owned_fd(fd: OwnedFd) -> Self {
-        Self {
-            fd
-        }
     }
 }

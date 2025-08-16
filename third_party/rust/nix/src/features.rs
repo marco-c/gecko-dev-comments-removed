@@ -1,7 +1,7 @@
 
 pub use self::os::*;
 
-#[cfg(any(linux_android, target_os = "emscripten"))]
+#[cfg(linux_android)]
 mod os {
     use crate::sys::utsname::uname;
     use crate::Result;
@@ -92,7 +92,7 @@ mod os {
     }
 
     #[test]
-    fn test_parsing_kernel_version() {
+    pub fn test_parsing_kernel_version() {
         assert!(kernel_version().unwrap() > 0);
     }
 }
@@ -103,7 +103,6 @@ mod os {
         target_os = "hurd",         
         target_os = "illumos",      
         target_os = "redox",        
-        target_os = "cygwin",
 ))]
 mod os {
     

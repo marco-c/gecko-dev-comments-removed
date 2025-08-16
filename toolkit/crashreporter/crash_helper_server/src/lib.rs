@@ -40,7 +40,6 @@ pub unsafe extern "C" fn crash_generator_logic_desktop(
     listener: *const c_char,
     pipe: *const c_char,
 ) -> i32 {
-    daemonize();
     logging::init();
 
     let breakpad_data = BreakpadData::new(breakpad_data);
@@ -140,46 +139,6 @@ fn main_loop(mut ipc_server: IPCServer, mut crash_generator: CrashGenerator) -> 
                 return -1;
             }
             _ => {} 
-        }
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-fn daemonize() {
-    #[cfg(not(target_os = "windows"))]
-    {
-        use nix::unistd::{fork, setsid, ForkResult};
-
-        
-        
-        
-        
-        
-        
-        
-        
-        let _ = setsid();
-
-        let res = unsafe { fork() };
-        let Ok(res) = res else {
-            return;
-        };
-
-        match res {
-            ForkResult::Child => {}
-            ForkResult::Parent { child: _ } => unsafe {
-                
-                nix::libc::_exit(0);
-            },
         }
     }
 }
