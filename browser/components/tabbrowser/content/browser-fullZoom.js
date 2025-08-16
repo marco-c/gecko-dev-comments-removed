@@ -27,7 +27,7 @@ var FullZoom = {
   
   _initialLocations: new WeakMap(),
 
-  get siteSpecificPref() {
+  get siteSpecific() {
     if (this._siteSpecificPref === undefined) {
       this._siteSpecificPref = Services.prefs.getBoolPref(
         "browser.zoom.siteSpecific"
@@ -236,7 +236,7 @@ var FullZoom = {
     
     this._ignorePendingZoomAccesses(browser);
 
-    if (!aURI || (aIsTabSwitch && !this.siteSpecificPref)) {
+    if (!aURI || (aIsTabSwitch && !this._isSiteSpecific(browser))) {
       this._notifyOnLocationChange(browser);
       return;
     }
@@ -530,13 +530,13 @@ var FullZoom = {
     if (
       !aBrowser.mInitialized ||
       aBrowser.isSyntheticDocument ||
-      (!this.siteSpecificPref && aBrowser.tabHasCustomZoom)
+      (!this._isSiteSpecific(aBrowser) && aBrowser.tabHasCustomZoom)
     ) {
       this._executeSoon(aCallback);
       return;
     }
 
-    if (aValue !== undefined && this.siteSpecificPref) {
+    if (aValue !== undefined && this._isSiteSpecific(aBrowser)) {
       ZoomManager.setZoomForBrowser(aBrowser, this._ensureValid(aValue));
       this._ignorePendingZoomAccesses(aBrowser);
       this._executeSoon(aCallback);
@@ -563,11 +563,11 @@ var FullZoom = {
 
 
   _applyZoomToPref: function FullZoom__applyZoomToPref(browser) {
-    if (!this.siteSpecificPref || browser.isSyntheticDocument) {
+    if (!this._isSiteSpecific(browser) || browser.isSyntheticDocument) {
       
       
       
-      browser.tabHasCustomZoom = !this.siteSpecificPref;
+      browser.tabHasCustomZoom = !this._isSiteSpecific(browser);
       return null;
     }
 
@@ -695,6 +695,23 @@ var FullZoom = {
     }
 
     return aValue;
+  },
+
+  
+  
+  
+  _isSiteSpecific(aBrowser) {
+    if (!this.siteSpecific) {
+      return false;
+    }
+    return (
+      !aBrowser?.browsingContext?.topWindowContext.shouldResistFingerprinting ||
+      !ChromeUtils.shouldResistFingerprinting(
+        "SiteSpecificZoom",
+        aBrowser?.browsingContext?.topWindowContext
+          .overriddenFingerprintingSettings
+      )
+    );
   },
 
   
