@@ -24,6 +24,7 @@
 #include "nsIWeakReferenceUtils.h"
 #include "nsStubMutationObserver.h"
 #include "nsStyleStruct.h"
+#include "nsStyleStructList.h"
 #include "nscore.h"
 
 
@@ -175,12 +176,12 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
       const Element*, const PseudoStyleRequest&, mozilla::PresShell*,
       StyleType);
 
-#define STYLE_STRUCT(name_)                    \
+#define COMPUTED_STYLE_ACCESSOR(name_)         \
   const nsStyle##name_* Style##name_() const { \
     return mComputedStyle->Style##name_();     \
   }
-#include "nsStyleStructList.h"
-#undef STYLE_STRUCT
+  FOR_EACH_STYLE_STRUCT(COMPUTED_STYLE_ACCESSOR, COMPUTED_STYLE_ACCESSOR)
+#undef COMPUTED_STYLE_ACCESSOR
 
   
 

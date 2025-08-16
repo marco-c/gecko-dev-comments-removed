@@ -4,6 +4,8 @@
 
 
 
+#ifndef nsCSSVisitedDependentPropList_h__
+#define nsCSSVisitedDependentPropList_h__
 
 
 
@@ -20,17 +22,22 @@
 
 
 
-STYLE_STRUCT(Background, (mBackgroundColor))
-STYLE_STRUCT(Border, (mBorderTopColor,
-                      mBorderRightColor,
-                      mBorderBottomColor,
-                      mBorderLeftColor))
-STYLE_STRUCT(Outline, (mOutlineColor))
-STYLE_STRUCT(Column, (mColumnRuleColor))
-STYLE_STRUCT(Text, (mColor))
-STYLE_STRUCT(Text, (mTextEmphasisColor,
-                    mWebkitTextFillColor,
-                    mWebkitTextStrokeColor))
-STYLE_STRUCT(TextReset, (mTextDecorationColor))
-STYLE_STRUCT(SVG, (mFill, mStroke))
-STYLE_STRUCT(UI, (mCaretColor))
+
+
+#define FOR_EACH_VISITED_DEPENDENT_STYLE_STRUCT(MACRO) \
+  MACRO(Background, (mBackgroundColor)) \
+  MACRO(Border, (mBorderTopColor, \
+                 mBorderRightColor, \
+                 mBorderBottomColor, \
+                 mBorderLeftColor)) \
+  MACRO(Outline, (mOutlineColor)) \
+  MACRO(Column, (mColumnRuleColor)) \
+  MACRO(Text, (mColor)) \
+  MACRO(Text, (mTextEmphasisColor, \
+               mWebkitTextFillColor, \
+               mWebkitTextStrokeColor)) \
+  MACRO(TextReset, (mTextDecorationColor)) \
+  MACRO(SVG, (mFill, mStroke)) \
+  MACRO(UI, (mCaretColor))
+
+#endif 
