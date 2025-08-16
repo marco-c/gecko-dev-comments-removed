@@ -4,7 +4,7 @@
 
 
 
-use crate::ir;
+use crate::{ir, valid::MAX_TYPE_SIZE};
 
 use super::TypeResolution;
 
@@ -191,17 +191,18 @@ impl crate::TypeInner {
     }
 
     
-    pub fn size(&self, gctx: super::GlobalCtx) -> u32 {
+    
+    pub fn try_size(&self, gctx: super::GlobalCtx) -> Option<u32> {
         match *self {
-            Self::Scalar(scalar) | Self::Atomic(scalar) => scalar.width as u32,
-            Self::Vector { size, scalar } => size as u32 * scalar.width as u32,
+            Self::Scalar(scalar) | Self::Atomic(scalar) => Some(scalar.width as u32),
+            Self::Vector { size, scalar } => Some(size as u32 * scalar.width as u32),
             
             Self::Matrix {
                 columns,
                 rows,
                 scalar,
-            } => super::Alignment::from(rows) * scalar.width as u32 * columns as u32,
-            Self::Pointer { .. } | Self::ValuePointer { .. } => POINTER_SPAN,
+            } => Some(super::Alignment::from(rows) * scalar.width as u32 * columns as u32),
+            Self::Pointer { .. } | Self::ValuePointer { .. } => Some(POINTER_SPAN),
             Self::Array {
                 base: _,
                 size,
@@ -215,15 +216,33 @@ impl crate::TypeInner {
                     
                     Ok(crate::proc::IndexableLength::Dynamic) => 1,
                 };
-                count * stride
+                if count > MAX_TYPE_SIZE {
+                    
+                    
+                    None
+                } else {
+                    count
+                        .checked_mul(stride)
+                        .filter(|size| *size <= MAX_TYPE_SIZE)
+                }
             }
-            Self::Struct { span, .. } => span,
+            Self::Struct { span, .. } => Some(span),
             Self::Image { .. }
             | Self::Sampler { .. }
             | Self::AccelerationStructure { .. }
             | Self::RayQuery { .. }
-            | Self::BindingArray { .. } => 0,
+            | Self::BindingArray { .. } => Some(0),
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn size(&self, gctx: super::GlobalCtx) -> u32 {
+        self.try_size(gctx).expect("type is too large")
     }
 
     

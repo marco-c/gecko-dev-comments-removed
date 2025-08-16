@@ -47,7 +47,7 @@ parent:
   
   
   
-  sync GetSnapshot(uint32_t aManagerId, ActorId aProtocolId, RemoteTextureOwnerId? ownerId, RawId? commandEncoderId) returns (FrontBufferSnapshotIpc ret);
+  sync GetSnapshot(uint32_t aManagerId, ActorId aProtocolId, RemoteTextureOwnerId? ownerId, RawId? commandEncoderId, RawId? commandBufferId) returns (FrontBufferSnapshotIpc ret);
 };
 
 } 

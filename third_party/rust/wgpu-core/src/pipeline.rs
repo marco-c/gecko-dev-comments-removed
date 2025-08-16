@@ -190,10 +190,6 @@ pub type ImplicitBindGroupCount = u8;
 #[derive(Clone, Debug, Error)]
 #[non_exhaustive]
 pub enum ImplicitLayoutError {
-    #[error("The implicit_pipeline_ids arg is required")]
-    MissingImplicitPipelineIds,
-    #[error("Missing IDs for deriving {0} bind groups")]
-    MissingIds(ImplicitBindGroupCount),
     #[error("Unable to reflect the shader {0:?} interface")]
     ReflectionError(wgt::ShaderStages),
     #[error(transparent)]
@@ -205,9 +201,7 @@ pub enum ImplicitLayoutError {
 impl WebGpuError for ImplicitLayoutError {
     fn webgpu_error_type(&self) -> ErrorType {
         let e: &dyn WebGpuError = match self {
-            Self::MissingImplicitPipelineIds | Self::MissingIds(_) | Self::ReflectionError(_) => {
-                return ErrorType::Validation
-            }
+            Self::ReflectionError(_) => return ErrorType::Validation,
             Self::BindGroup(e) => e,
             Self::Pipeline(e) => e,
         };
@@ -411,6 +405,33 @@ pub type ResolvedFragmentState<'a> = FragmentState<'a, Arc<ShaderModule>>;
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct TaskState<'a, SM = ShaderModuleId> {
+    
+    pub stage: ProgrammableStageDescriptor<'a, SM>,
+}
+
+pub type ResolvedTaskState<'a> = TaskState<'a, Arc<ShaderModule>>;
+
+
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct MeshState<'a, SM = ShaderModuleId> {
+    
+    pub stage: ProgrammableStageDescriptor<'a, SM>,
+}
+
+pub type ResolvedMeshState<'a> = MeshState<'a, Arc<ShaderModule>>;
+
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub(crate) enum RenderPipelineVertexProcessor<'a, SM = ShaderModuleId> {
+    Vertex(VertexState<'a, SM>),
+    Mesh(Option<TaskState<'a, SM>>, MeshState<'a, SM>),
+}
+
+
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RenderPipelineDescriptor<
     'a,
     PLL = PipelineLayoutId,
@@ -440,9 +461,108 @@ pub struct RenderPipelineDescriptor<
     pub cache: Option<PLC>,
 }
 
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct MeshPipelineDescriptor<
+    'a,
+    PLL = PipelineLayoutId,
+    SM = ShaderModuleId,
+    PLC = PipelineCacheId,
+> {
+    pub label: Label<'a>,
+    
+    pub layout: Option<PLL>,
+    
+    pub task: Option<TaskState<'a, SM>>,
+    
+    pub mesh: MeshState<'a, SM>,
+    
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub primitive: wgt::PrimitiveState,
+    
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub depth_stencil: Option<wgt::DepthStencilState>,
+    
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub multisample: wgt::MultisampleState,
+    
+    pub fragment: Option<FragmentState<'a, SM>>,
+    
+    
+    pub multiview: Option<NonZeroU32>,
+    
+    pub cache: Option<PLC>,
+}
+
+
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub(crate) struct GeneralRenderPipelineDescriptor<
+    'a,
+    PLL = PipelineLayoutId,
+    SM = ShaderModuleId,
+    PLC = PipelineCacheId,
+> {
+    pub label: Label<'a>,
+    
+    pub layout: Option<PLL>,
+    
+    pub vertex: RenderPipelineVertexProcessor<'a, SM>,
+    
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub primitive: wgt::PrimitiveState,
+    
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub depth_stencil: Option<wgt::DepthStencilState>,
+    
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub multisample: wgt::MultisampleState,
+    
+    pub fragment: Option<FragmentState<'a, SM>>,
+    
+    
+    pub multiview: Option<NonZeroU32>,
+    
+    pub cache: Option<PLC>,
+}
+impl<'a, PLL, SM, PLC> From<RenderPipelineDescriptor<'a, PLL, SM, PLC>>
+    for GeneralRenderPipelineDescriptor<'a, PLL, SM, PLC>
+{
+    fn from(value: RenderPipelineDescriptor<'a, PLL, SM, PLC>) -> Self {
+        Self {
+            label: value.label,
+            layout: value.layout,
+            vertex: RenderPipelineVertexProcessor::Vertex(value.vertex),
+            primitive: value.primitive,
+            depth_stencil: value.depth_stencil,
+            multisample: value.multisample,
+            fragment: value.fragment,
+            multiview: value.multiview,
+            cache: value.cache,
+        }
+    }
+}
+impl<'a, PLL, SM, PLC> From<MeshPipelineDescriptor<'a, PLL, SM, PLC>>
+    for GeneralRenderPipelineDescriptor<'a, PLL, SM, PLC>
+{
+    fn from(value: MeshPipelineDescriptor<'a, PLL, SM, PLC>) -> Self {
+        Self {
+            label: value.label,
+            layout: value.layout,
+            vertex: RenderPipelineVertexProcessor::Mesh(value.task, value.mesh),
+            primitive: value.primitive,
+            depth_stencil: value.depth_stencil,
+            multisample: value.multisample,
+            fragment: value.fragment,
+            multiview: value.multiview,
+            cache: value.cache,
+        }
+    }
+}
+
 /// cbindgen:ignore
-pub type ResolvedRenderPipelineDescriptor<'a> =
-    RenderPipelineDescriptor<'a, Arc<PipelineLayout>, Arc<ShaderModule>, Arc<PipelineCache>>;
+pub(crate) type ResolvedGeneralRenderPipelineDescriptor<'a> =
+    GeneralRenderPipelineDescriptor<'a, Arc<PipelineLayout>, Arc<ShaderModule>, Arc<PipelineCache>>;
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -512,7 +632,7 @@ pub enum CreateRenderPipelineError {
         given: u32,
         limit: u32,
     },
-    #[error("Vertex buffer {index} stride {stride} does not respect `VERTEX_STRIDE_ALIGNMENT`")]
+    #[error("Vertex buffer {index} stride {stride} does not respect `VERTEX_ALIGNMENT`")]
     UnalignedVertexStride {
         index: u32,
         stride: wgt::BufferAddress,
@@ -655,6 +775,8 @@ pub struct RenderPipeline {
     
     pub(crate) label: String,
     pub(crate) tracking_data: TrackingData,
+    
+    pub(crate) is_mesh: bool,
 }
 
 impl Drop for RenderPipeline {

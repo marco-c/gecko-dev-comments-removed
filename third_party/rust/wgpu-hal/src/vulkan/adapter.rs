@@ -799,17 +799,17 @@ impl PhysicalDeviceFeatures {
 
         features.set(F::DEPTH32FLOAT_STENCIL8, texture_d32_s8);
 
-        features.set(
-            F::EXPERIMENTAL_RAY_TRACING_ACCELERATION_STRUCTURE
-                | F::EXTENDED_ACCELERATION_STRUCTURE_VERTEX_FORMATS,
-            caps.supports_extension(khr::deferred_host_operations::NAME)
-                && caps.supports_extension(khr::acceleration_structure::NAME)
-                && caps.supports_extension(khr::buffer_device_address::NAME),
-        );
+        let supports_acceleration_structures = caps
+            .supports_extension(khr::deferred_host_operations::NAME)
+            && caps.supports_extension(khr::acceleration_structure::NAME)
+            && caps.supports_extension(khr::buffer_device_address::NAME);
 
         features.set(
-            F::EXPERIMENTAL_RAY_QUERY,
-            caps.supports_extension(khr::ray_query::NAME),
+            F::EXPERIMENTAL_RAY_QUERY
+            
+            
+                | F::EXTENDED_ACCELERATION_STRUCTURE_VERTEX_FORMATS,
+            supports_acceleration_structures && caps.supports_extension(khr::ray_query::NAME),
         );
 
         let rg11b10ufloat_renderable = supports_format(
@@ -932,7 +932,7 @@ pub struct PhysicalDeviceProperties {
 
     
     
-    _mesh_shader: Option<vk::PhysicalDeviceMeshShaderPropertiesEXT<'static>>,
+    mesh_shader: Option<vk::PhysicalDeviceMeshShaderPropertiesEXT<'static>>,
 
     
     
@@ -1099,16 +1099,10 @@ impl PhysicalDeviceProperties {
         }
 
         
-        if requested_features
-            .contains(wgt::Features::EXPERIMENTAL_RAY_TRACING_ACCELERATION_STRUCTURE)
-        {
+        if requested_features.contains(wgt::Features::EXPERIMENTAL_RAY_QUERY) {
             extensions.push(khr::deferred_host_operations::NAME);
             extensions.push(khr::acceleration_structure::NAME);
             extensions.push(khr::buffer_device_address::NAME);
-        }
-
-        
-        if requested_features.contains(wgt::Features::EXPERIMENTAL_RAY_QUERY) {
             extensions.push(khr::ray_query::NAME);
         }
 
@@ -1166,14 +1160,29 @@ impl PhysicalDeviceProperties {
         let max_compute_workgroups_per_dimension = limits.max_compute_work_group_count[0]
             .min(limits.max_compute_work_group_count[1])
             .min(limits.max_compute_work_group_count[2]);
+        let (
+            max_task_workgroup_total_count,
+            max_task_workgroups_per_dimension,
+            max_mesh_multiview_count,
+            max_mesh_output_layers,
+        ) = match self.mesh_shader {
+            Some(m) => (
+                m.max_task_work_group_total_count,
+                m.max_task_work_group_count.into_iter().min().unwrap(),
+                m.max_mesh_multiview_view_count,
+                m.max_mesh_output_layers,
+            ),
+            None => (0, 0, 0, 0),
+        };
 
+        
         
         let is_nvidia = self.properties.vendor_id == crate::auxil::db::nvidia::VENDOR;
         let max_buffer_size =
             if (cfg!(target_os = "linux") || cfg!(target_os = "android")) && !is_nvidia {
                 i32::MAX as u64
             } else {
-                u64::MAX
+                1u64 << 52
             };
 
         let mut max_binding_array_elements = 0;
@@ -1273,6 +1282,12 @@ impl PhysicalDeviceProperties {
             max_compute_workgroups_per_dimension,
             max_buffer_size,
             max_non_sampler_bindings: u32::MAX,
+
+            max_task_workgroup_total_count,
+            max_task_workgroups_per_dimension,
+            max_mesh_multiview_count,
+            max_mesh_output_layers,
+
             max_blas_primitive_count,
             max_blas_geometry_count,
             max_tlas_instance_count,
@@ -1407,7 +1422,7 @@ impl super::InstanceShared {
 
                 if supports_mesh_shader {
                     let next = capabilities
-                        ._mesh_shader
+                        .mesh_shader
                         .insert(vk::PhysicalDeviceMeshShaderPropertiesEXT::default());
                     properties2 = properties2.push_next(next);
                 }
@@ -1700,7 +1715,7 @@ impl super::Instance {
         };
         let queue_flags = queue_families.first()?.queue_flags;
         if !queue_flags.contains(vk::QueueFlags::GRAPHICS) {
-            log::warn!("The first queue only exposes {:?}", queue_flags);
+            log::warn!("The first queue only exposes {queue_flags:?}");
             return None;
         }
 
@@ -1828,10 +1843,10 @@ impl super::Adapter {
             });
 
         if !unsupported_extensions.is_empty() {
-            log::warn!("Missing extensions: {:?}", unsupported_extensions);
+            log::warn!("Missing extensions: {unsupported_extensions:?}");
         }
 
-        log::debug!("Supported extensions: {:?}", supported_extensions);
+        log::debug!("Supported extensions: {supported_extensions:?}");
         supported_extensions
     }
 
@@ -2168,6 +2183,9 @@ impl super::Adapter {
                 self.private_caps.maximum_samplers,
             )),
             memory_allocations_counter: Default::default(),
+
+            texture_identity_factory: super::ResourceIdentityFactory::new(),
+            texture_view_identity_factory: super::ResourceIdentityFactory::new(),
         });
 
         let relay_semaphores = super::RelaySemaphores::new(&shared)?;
@@ -2516,7 +2534,7 @@ impl crate::Adapter for super::Adapter {
                 Ok(true) => (),
                 Ok(false) => return None,
                 Err(e) => {
-                    log::error!("get_physical_device_surface_support: {}", e);
+                    log::error!("get_physical_device_surface_support: {e}");
                     return None;
                 }
             }
@@ -2531,7 +2549,7 @@ impl crate::Adapter for super::Adapter {
             } {
                 Ok(caps) => caps,
                 Err(e) => {
-                    log::error!("get_physical_device_surface_capabilities: {}", e);
+                    log::error!("get_physical_device_surface_capabilities: {e}");
                     return None;
                 }
             }
@@ -2565,7 +2583,7 @@ impl crate::Adapter for super::Adapter {
             } {
                 Ok(present_modes) => present_modes,
                 Err(e) => {
-                    log::error!("get_physical_device_surface_present_modes: {}", e);
+                    log::error!("get_physical_device_surface_present_modes: {e}");
                     
                     return None;
                 }
@@ -2581,7 +2599,7 @@ impl crate::Adapter for super::Adapter {
             } {
                 Ok(formats) => formats,
                 Err(e) => {
-                    log::error!("get_physical_device_surface_formats: {}", e);
+                    log::error!("get_physical_device_surface_formats: {e}");
                     
                     return None;
                 }

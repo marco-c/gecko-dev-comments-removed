@@ -86,6 +86,8 @@ pub(crate) enum CommandEncoderStatus {
     
     Locked(CommandBufferMutable),
 
+    Consumed,
+
     
     
     
@@ -145,6 +147,7 @@ impl CommandEncoderStatus {
             
             
             Self::Finished(_) => Err(self.invalidate(EncoderStateError::Ended)),
+            Self::Consumed => Err(EncoderStateError::Ended),
             
             
             Self::Error(_) => Ok(()),
@@ -173,6 +176,7 @@ impl CommandEncoderStatus {
                 self.invalidate(EncoderStateError::Ended);
                 f(None)
             }
+            Self::Consumed => f(None),
             Self::Error(_) => f(None),
             Self::Transitioning => unreachable!(),
         }
@@ -186,6 +190,7 @@ impl CommandEncoderStatus {
             
             
             
+            Self::Consumed => unreachable!("command encoder is consumed"),
             Self::Error(_) => unreachable!("passes in a trace do not store errors"),
             Self::Transitioning => unreachable!(),
         }
@@ -210,6 +215,10 @@ impl CommandEncoderStatus {
                 Err(EncoderStateError::Ended)
             }
             Self::Locked(_) => Err(self.invalidate(EncoderStateError::Locked)),
+            st @ Self::Consumed => {
+                *self = st;
+                Err(EncoderStateError::Ended)
+            }
             st @ Self::Error(_) => {
                 *self = st;
                 Err(EncoderStateError::Invalid)
@@ -254,6 +263,10 @@ impl CommandEncoderStatus {
                 *self = Self::Error(EncoderStateError::Unlocked.into());
                 Err(EncoderStateError::Unlocked)
             }
+            st @ Self::Consumed => {
+                *self = st;
+                Err(EncoderStateError::Ended)
+            }
             st @ Self::Error(_) => {
                 
                 
@@ -264,21 +277,22 @@ impl CommandEncoderStatus {
         }
     }
 
-    fn finish(&mut self) -> Result<(), CommandEncoderError> {
-        match mem::replace(self, Self::Transitioning) {
+    fn finish(&mut self) -> Self {
+        
+        
+        match mem::replace(self, Self::Consumed) {
             Self::Recording(mut inner) => {
-                if let Err(e) = inner.encoder.close_if_open() {
-                    Err(self.invalidate(e.into()))
+                if let Err(err) = inner.encoder.close_if_open() {
+                    Self::Error(err.into())
                 } else {
-                    *self = Self::Finished(inner);
                     
                     
-                    Ok(())
+                    Self::Finished(inner)
                 }
             }
-            Self::Finished(_) => Err(self.invalidate(EncoderStateError::Ended.into())),
-            Self::Locked(_) => Err(self.invalidate(EncoderStateError::Locked.into())),
-            Self::Error(err) => Err(self.invalidate(err)),
+            Self::Consumed | Self::Finished(_) => Self::Error(EncoderStateError::Ended.into()),
+            Self::Locked(_) => Self::Error(EncoderStateError::Locked.into()),
+            st @ Self::Error(_) => st,
             Self::Transitioning => unreachable!(),
         }
     }
@@ -289,7 +303,9 @@ impl CommandEncoderStatus {
     
     
     fn invalidate<E: Clone + Into<CommandEncoderError>>(&mut self, err: E) -> E {
-        *self = Self::Error(err.clone().into());
+        let enc_err = err.clone().into();
+        api_log!("Invalidating command encoder: {enc_err:?}");
+        *self = Self::Error(enc_err);
         err
     }
 }
@@ -372,27 +388,42 @@ impl<'a> ops::DerefMut for RecordingGuard<'a> {
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 pub(crate) struct CommandEncoder {
+    pub(crate) device: Arc<Device>,
+
+    pub(crate) label: String,
+
+    
+    pub(crate) data: Mutex<CommandEncoderStatus>,
+}
+
+crate::impl_resource_type!(CommandEncoder);
+crate::impl_labeled!(CommandEncoder);
+crate::impl_parent_device!(CommandEncoder);
+crate::impl_storage_item!(CommandEncoder);
+
+impl Drop for CommandEncoder {
+    fn drop(&mut self) {
+        resource_log!("Drop {}", self.error_ident());
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub(crate) struct InnerCommandEncoder {
     
     
     
@@ -425,10 +456,10 @@ pub(crate) struct CommandEncoder {
     
     pub(crate) is_open: bool,
 
-    pub(crate) hal_label: Option<String>,
+    pub(crate) label: String,
 }
 
-impl CommandEncoder {
+impl InnerCommandEncoder {
     
     
     
@@ -534,7 +565,7 @@ impl CommandEncoder {
     pub(crate) fn open(&mut self) -> Result<&mut dyn hal::DynCommandEncoder, DeviceError> {
         if !self.is_open {
             self.is_open = true;
-            let hal_label = self.hal_label.as_deref();
+            let hal_label = hal_label(Some(self.label.as_str()), self.device.instance_flags);
             unsafe { self.raw.begin_encoding(hal_label) }
                 .map_err(|e| self.device.handle_hal_error(e))?;
         }
@@ -565,7 +596,7 @@ impl CommandEncoder {
     }
 }
 
-impl Drop for CommandEncoder {
+impl Drop for InnerCommandEncoder {
     fn drop(&mut self) {
         if self.is_open {
             unsafe { self.raw.discard_encoding() };
@@ -582,7 +613,7 @@ impl Drop for CommandEncoder {
 
 
 pub(crate) struct BakedCommands {
-    pub(crate) encoder: CommandEncoder,
+    pub(crate) encoder: InnerCommandEncoder,
     pub(crate) trackers: Tracker,
     pub(crate) temp_resources: Vec<TempResource>,
     pub(crate) indirect_draw_validation_resources: crate::indirect_validation::DrawResources,
@@ -596,7 +627,7 @@ pub struct CommandBufferMutable {
     
     
     
-    pub(crate) encoder: CommandEncoder,
+    pub(crate) encoder: InnerCommandEncoder,
 
     
     pub(crate) trackers: Tracker,
@@ -648,22 +679,8 @@ impl CommandBufferMutable {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 pub struct CommandBuffer {
     pub(crate) device: Arc<Device>,
-    support_clear_texture: bool,
     
     label: String,
 
@@ -677,25 +694,24 @@ impl Drop for CommandBuffer {
     }
 }
 
-impl CommandBuffer {
+impl CommandEncoder {
     pub(crate) fn new(
         encoder: Box<dyn hal::DynCommandEncoder>,
         device: &Arc<Device>,
         label: &Label,
     ) -> Self {
-        CommandBuffer {
+        CommandEncoder {
             device: device.clone(),
-            support_clear_texture: device.features.contains(wgt::Features::CLEAR_TEXTURE),
             label: label.to_string(),
             data: Mutex::new(
                 rank::COMMAND_BUFFER_DATA,
                 CommandEncoderStatus::Recording(CommandBufferMutable {
-                    encoder: CommandEncoder {
+                    encoder: InnerCommandEncoder {
                         raw: ManuallyDrop::new(encoder),
                         list: Vec::new(),
                         device: device.clone(),
                         is_open: false,
-                        hal_label: label.to_hal(device.instance_flags).map(str::to_owned),
+                        label: label.to_string(),
                     },
                     trackers: Tracker::new(),
                     buffer_memory_init_actions: Default::default(),
@@ -721,9 +737,8 @@ impl CommandBuffer {
         label: &Label,
         err: CommandEncoderError,
     ) -> Self {
-        CommandBuffer {
+        CommandEncoder {
             device: device.clone(),
-            support_clear_texture: device.features.contains(wgt::Features::CLEAR_TEXTURE),
             label: label.to_string(),
             data: Mutex::new(rank::COMMAND_BUFFER_DATA, CommandEncoderStatus::Error(err)),
         }
@@ -815,10 +830,7 @@ impl CommandBuffer {
         ) {
             St::Finished(command_buffer_mutable) => Ok(command_buffer_mutable),
             St::Error(err) => Err(err),
-            St::Recording(_) | St::Locked(_) => {
-                Err(InvalidResourceError(self.error_ident()).into())
-            }
-            St::Transitioning => unreachable!(),
+            St::Recording(_) | St::Locked(_) | St::Consumed | St::Transitioning => unreachable!(),
         }
     }
 }
@@ -1121,22 +1133,33 @@ impl Global {
     pub fn command_encoder_finish(
         &self,
         encoder_id: id::CommandEncoderId,
-        _desc: &wgt::CommandBufferDescriptor<Label>,
+        desc: &wgt::CommandBufferDescriptor<Label>,
+        id_in: Option<id::CommandBufferId>,
     ) -> (id::CommandBufferId, Option<CommandEncoderError>) {
         profiling::scope!("CommandEncoder::finish");
 
         let hub = &self.hub;
 
-        let cmd_buf = hub.command_buffers.get(encoder_id.into_command_buffer_id());
+        let cmd_enc = hub.command_encoders.get(encoder_id);
+
+        let data = cmd_enc.data.lock().finish();
 
         
         
-        let error = match cmd_buf.data.lock().finish() {
-            Err(e) if !e.is_destroyed_error() => Some(e),
+        let error = match data {
+            CommandEncoderStatus::Error(ref e) if !e.is_destroyed_error() => Some(e.clone()),
             _ => None,
         };
 
-        (encoder_id.into_command_buffer_id(), error)
+        let cmd_buf = CommandBuffer {
+            device: cmd_enc.device.clone(),
+            label: desc.label.to_string(),
+            data: Mutex::new(rank::COMMAND_BUFFER_DATA, data),
+        };
+
+        let cmd_buf_id = hub.command_buffers.prepare(id_in).assign(Arc::new(cmd_buf));
+
+        (cmd_buf_id, error)
     }
 
     pub fn command_encoder_push_debug_group(
@@ -1149,18 +1172,18 @@ impl Global {
 
         let hub = &self.hub;
 
-        let cmd_buf = hub.command_buffers.get(encoder_id.into_command_buffer_id());
-        let mut cmd_buf_data = cmd_buf.data.lock();
+        let cmd_enc = hub.command_encoders.get(encoder_id);
+        let mut cmd_buf_data = cmd_enc.data.lock();
         cmd_buf_data.record_with(|cmd_buf_data| -> Result<(), CommandEncoderError> {
             #[cfg(feature = "trace")]
             if let Some(ref mut list) = cmd_buf_data.commands {
                 list.push(TraceCommand::PushDebugGroup(label.to_owned()));
             }
 
-            cmd_buf.device.check_is_valid()?;
+            cmd_enc.device.check_is_valid()?;
 
             let cmd_buf_raw = cmd_buf_data.encoder.open()?;
-            if !cmd_buf
+            if !cmd_enc
                 .device
                 .instance_flags
                 .contains(wgt::InstanceFlags::DISCARD_HAL_LABELS)
@@ -1184,17 +1207,17 @@ impl Global {
 
         let hub = &self.hub;
 
-        let cmd_buf = hub.command_buffers.get(encoder_id.into_command_buffer_id());
-        let mut cmd_buf_data = cmd_buf.data.lock();
+        let cmd_enc = hub.command_encoders.get(encoder_id);
+        let mut cmd_buf_data = cmd_enc.data.lock();
         cmd_buf_data.record_with(|cmd_buf_data| -> Result<(), CommandEncoderError> {
             #[cfg(feature = "trace")]
             if let Some(ref mut list) = cmd_buf_data.commands {
                 list.push(TraceCommand::InsertDebugMarker(label.to_owned()));
             }
 
-            cmd_buf.device.check_is_valid()?;
+            cmd_enc.device.check_is_valid()?;
 
-            if !cmd_buf
+            if !cmd_enc
                 .device
                 .instance_flags
                 .contains(wgt::InstanceFlags::DISCARD_HAL_LABELS)
@@ -1218,18 +1241,18 @@ impl Global {
 
         let hub = &self.hub;
 
-        let cmd_buf = hub.command_buffers.get(encoder_id.into_command_buffer_id());
-        let mut cmd_buf_data = cmd_buf.data.lock();
+        let cmd_enc = hub.command_encoders.get(encoder_id);
+        let mut cmd_buf_data = cmd_enc.data.lock();
         cmd_buf_data.record_with(|cmd_buf_data| -> Result<(), CommandEncoderError> {
             #[cfg(feature = "trace")]
             if let Some(ref mut list) = cmd_buf_data.commands {
                 list.push(TraceCommand::PopDebugGroup);
             }
 
-            cmd_buf.device.check_is_valid()?;
+            cmd_enc.device.check_is_valid()?;
 
             let cmd_buf_raw = cmd_buf_data.encoder.open()?;
-            if !cmd_buf
+            if !cmd_enc
                 .device
                 .instance_flags
                 .contains(wgt::InstanceFlags::DISCARD_HAL_LABELS)
@@ -1420,6 +1443,15 @@ pub enum DrawKind {
 }
 
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DrawCommandFamily {
+    Draw,
+    DrawIndexed,
+    DrawMeshTasks,
+}
+
+
 
 
 
@@ -1457,7 +1489,10 @@ pub enum PassErrorScope {
     #[error("In a set_scissor_rect command")]
     SetScissorRect,
     #[error("In a draw command, kind: {kind:?}")]
-    Draw { kind: DrawKind, indexed: bool },
+    Draw {
+        kind: DrawKind,
+        family: DrawCommandFamily,
+    },
     #[error("In a write_timestamp command")]
     WriteTimestamp,
     #[error("In a begin_occlusion_query command")]

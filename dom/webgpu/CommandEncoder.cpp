@@ -332,10 +332,6 @@ already_AddRefed<CommandBuffer> CommandEncoder::Finish(
   webgpu::StringHelper label(aDesc.mLabel);
   desc.label = label.Get();
 
-  
-  
-  
-  
   if (mState == CommandEncoderState::Locked) {
     
     
@@ -345,14 +341,13 @@ already_AddRefed<CommandBuffer> CommandEncoder::Finish(
     ffi::wgpu_report_validation_error(mBridge->GetClient(), mParent->mId,
                                       message);
   }
-  ffi::wgpu_command_encoder_finish(mBridge->GetClient(), mParent->mId, mId,
-                                   &desc);
+  RawId command_buffer_id = ffi::wgpu_command_encoder_finish(
+      mBridge->GetClient(), mParent->mId, mId, &desc);
 
   mState = CommandEncoderState::Ended;
 
-  RefPtr<CommandEncoder> me(this);
   RefPtr<CommandBuffer> comb = new CommandBuffer(
-      mParent, mId, std::move(mPresentationContexts), std::move(me));
+      mParent, mBridge, command_buffer_id, std::move(mPresentationContexts));
   comb->SetLabel(aDesc.mLabel);
   return comb.forget();
 }

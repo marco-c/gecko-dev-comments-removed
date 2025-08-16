@@ -114,7 +114,7 @@ impl Typifier {
             for (eh, expr) in expressions.iter().skip(self.resolutions.len()) {
                 
                 let resolution = ctx.resolve(expr, |h| Ok(&self.resolutions[h]))?;
-                log::debug!("Resolving {:?} = {:?} : {:?}", eh, expr, resolution);
+                log::debug!("Resolving {eh:?} = {expr:?} : {resolution:?}");
                 self.resolutions.insert(eh, resolution);
             }
         }

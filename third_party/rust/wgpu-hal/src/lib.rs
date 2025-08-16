@@ -225,6 +225,8 @@
     clippy::missing_safety_doc,
     
     clippy::pattern_type_mismatch,
+    
+    clippy::large_enum_variant
 )]
 #![warn(
     clippy::alloc_instead_of_core,
@@ -472,7 +474,16 @@ impl InstanceError {
     }
 }
 
-pub trait Api: Clone + fmt::Debug + Sized {
+
+
+
+
+
+
+
+pub trait Api: Clone + fmt::Debug + Sized + WasmNotSendSync + 'static {
+    const VARIANT: wgt::Backend;
+
     type Instance: DynInstance + Instance<A = Self>;
     type Surface: DynSurface + Surface<A = Self>;
     type Adapter: DynAdapter + Adapter<A = Self>;
@@ -915,15 +926,6 @@ pub trait Device: WasmNotSendSync {
     unsafe fn create_render_pipeline(
         &self,
         desc: &RenderPipelineDescriptor<
-            <Self::A as Api>::PipelineLayout,
-            <Self::A as Api>::ShaderModule,
-            <Self::A as Api>::PipelineCache,
-        >,
-    ) -> Result<<Self::A as Api>::RenderPipeline, PipelineError>;
-    #[allow(clippy::type_complexity)]
-    unsafe fn create_mesh_pipeline(
-        &self,
-        desc: &MeshPipelineDescriptor<
             <Self::A as Api>::PipelineLayout,
             <Self::A as Api>::ShaderModule,
             <Self::A as Api>::PipelineCache,
@@ -1804,6 +1806,10 @@ pub struct Capabilities {
     pub downlevel: wgt::DownlevelCapabilities,
 }
 
+
+
+
+
 #[derive(Debug)]
 pub struct ExposedAdapter<A: Api> {
     pub adapter: A::Adapter,
@@ -1857,6 +1863,10 @@ pub struct AcquiredSurfaceTexture<A: Api> {
     
     pub suboptimal: bool,
 }
+
+
+
+
 
 #[derive(Debug)]
 pub struct OpenDevice<A: Api> {
@@ -2126,6 +2136,23 @@ impl<'a, T: DynTextureView + ?Sized> Clone for TextureBinding<'a, T> {
     }
 }
 
+#[derive(Debug)]
+pub struct ExternalTextureBinding<'a, B: DynBuffer + ?Sized, T: DynTextureView + ?Sized> {
+    pub planes: [TextureBinding<'a, T>; 3],
+    pub params: BufferBinding<'a, B>,
+}
+
+impl<'a, B: DynBuffer + ?Sized, T: DynTextureView + ?Sized> Clone
+    for ExternalTextureBinding<'a, B, T>
+{
+    fn clone(&self) -> Self {
+        ExternalTextureBinding {
+            planes: self.planes.clone(),
+            params: self.params.clone(),
+        }
+    }
+}
+
 /// cbindgen:ignore
 #[derive(Clone, Debug)]
 pub struct BindGroupEntry {
@@ -2159,6 +2186,7 @@ pub struct BindGroupDescriptor<
     pub textures: &'a [TextureBinding<'a, T>],
     pub entries: &'a [BindGroupEntry],
     pub acceleration_structures: &'a [&'a A],
+    pub external_textures: &'a [ExternalTextureBinding<'a, B, T>],
 }
 
 #[derive(Clone, Debug)]
@@ -2286,6 +2314,20 @@ pub struct VertexBufferLayout<'a> {
     pub attributes: &'a [wgt::VertexAttribute],
 }
 
+#[derive(Clone, Debug)]
+pub enum VertexProcessor<'a, M: DynShaderModule + ?Sized> {
+    Standard {
+        
+        vertex_buffers: &'a [VertexBufferLayout<'a>],
+        
+        vertex_stage: ProgrammableStage<'a, M>,
+    },
+    Mesh {
+        task_stage: Option<ProgrammableStage<'a, M>>,
+        mesh_stage: ProgrammableStage<'a, M>,
+    },
+}
+
 
 #[derive(Clone, Debug)]
 pub struct RenderPipelineDescriptor<
@@ -2298,36 +2340,7 @@ pub struct RenderPipelineDescriptor<
     
     pub layout: &'a Pl,
     
-    pub vertex_buffers: &'a [VertexBufferLayout<'a>],
-    
-    pub vertex_stage: ProgrammableStage<'a, M>,
-    
-    pub primitive: wgt::PrimitiveState,
-    
-    pub depth_stencil: Option<wgt::DepthStencilState>,
-    
-    pub multisample: wgt::MultisampleState,
-    
-    pub fragment_stage: Option<ProgrammableStage<'a, M>>,
-    
-    pub color_targets: &'a [Option<wgt::ColorTargetState>],
-    
-    
-    pub multiview: Option<NonZeroU32>,
-    
-    pub cache: Option<&'a Pc>,
-}
-pub struct MeshPipelineDescriptor<
-    'a,
-    Pl: DynPipelineLayout + ?Sized,
-    M: DynShaderModule + ?Sized,
-    Pc: DynPipelineCache + ?Sized,
-> {
-    pub label: Label<'a>,
-    
-    pub layout: &'a Pl,
-    pub task_stage: Option<ProgrammableStage<'a, M>>,
-    pub mesh_stage: ProgrammableStage<'a, M>,
+    pub vertex_processor: VertexProcessor<'a, M>,
     
     pub primitive: wgt::PrimitiveState,
     

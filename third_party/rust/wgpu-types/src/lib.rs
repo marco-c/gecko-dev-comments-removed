@@ -100,7 +100,15 @@ pub const MAP_ALIGNMENT: BufferAddress = 8;
 
 
 
+
+pub const VERTEX_ALIGNMENT: BufferAddress = 4;
+
+
+
+
+#[deprecated(note = "Use `VERTEX_ALIGNMENT` instead", since = "27.0.0")]
 pub const VERTEX_STRIDE_ALIGNMENT: BufferAddress = 4;
+
 
 
 
@@ -324,7 +332,7 @@ impl Backends {
                 "webgpu" => Self::BROWSER_WEBGPU,
                 "noop" => Self::NOOP,
                 b => {
-                    log::warn!("unknown backend string '{}'", b);
+                    log::warn!("unknown backend string '{b}'");
                     continue;
                 }
             }
@@ -607,6 +615,17 @@ pub struct Limits {
     
     
     pub max_non_sampler_bindings: u32,
+
+    
+    pub max_task_workgroup_total_count: u32,
+    
+    
+    pub max_task_workgroups_per_dimension: u32,
+    
+    pub max_mesh_output_layers: u32,
+    
+    pub max_mesh_multiview_count: u32,
+
     
     
     
@@ -632,6 +651,10 @@ impl Default for Limits {
 }
 
 impl Limits {
+    
+    
+    
+    
     
     
     
@@ -723,6 +746,12 @@ impl Limits {
             max_subgroup_size: 0,
             max_push_constant_size: 0,
             max_non_sampler_bindings: 1_000_000,
+
+            max_task_workgroup_total_count: 0,
+            max_task_workgroups_per_dimension: 0,
+            max_mesh_multiview_count: 0,
+            max_mesh_output_layers: 0,
+
             max_blas_primitive_count: 0,
             max_blas_geometry_count: 0,
             max_tlas_instance_count: 0,
@@ -730,6 +759,12 @@ impl Limits {
         }
     }
 
+    
+    
+    
+    
+    
+    
     
     
     
@@ -789,10 +824,21 @@ impl Limits {
             max_color_attachments: 4,
             
             max_compute_workgroup_storage_size: 16352,
+
+            max_task_workgroups_per_dimension: 0,
+            max_task_workgroup_total_count: 0,
+            max_mesh_multiview_count: 0,
+            max_mesh_output_layers: 0,
             ..Self::defaults()
         }
     }
 
+    
+    
+    
+    
+    
+    
     
     
     
@@ -924,6 +970,26 @@ impl Limits {
     
     
     
+    
+    #[must_use]
+    pub const fn using_recommended_minimum_mesh_shader_values(self) -> Self {
+        Self {
+            
+            
+            
+            max_task_workgroup_total_count: 65536,
+            max_task_workgroups_per_dimension: 256,
+            
+            max_mesh_multiview_count: 0,
+            
+            max_mesh_output_layers: 8,
+            ..self
+        }
+    }
+
+    
+    
+    
     #[must_use]
     pub fn check_limits(&self, allowed: &Self) -> bool {
         let mut within = true;
@@ -1000,6 +1066,12 @@ impl Limits {
         }
         compare!(max_push_constant_size, Less);
         compare!(max_non_sampler_bindings, Less);
+
+        compare!(max_task_workgroup_total_count, Less);
+        compare!(max_task_workgroups_per_dimension, Less);
+        compare!(max_mesh_multiview_count, Less);
+        compare!(max_mesh_output_layers, Less);
+
         compare!(max_blas_primitive_count, Less);
         compare!(max_blas_geometry_count, Less);
         compare!(max_tlas_instance_count, Less);
@@ -1394,9 +1466,9 @@ bitflags::bitflags! {
         const COMPUTE = 1 << 2;
         /// Binding is visible from the vertex and fragment shaders of a render pipeline.
         const VERTEX_FRAGMENT = Self::VERTEX.bits() | Self::FRAGMENT.bits();
-        /// Binding is visible from the task shader of a mesh pipeline
+        /// Binding is visible from the task shader of a mesh pipeline.
         const TASK = 1 << 3;
-        /// Binding is visible from the mesh shader of a mesh pipeline
+        /// Binding is visible from the mesh shader of a mesh pipeline.
         const MESH = 1 << 4;
     }
 }
@@ -2600,6 +2672,8 @@ impl TextureAspect {
     }
 }
 
+
+
 impl TextureFormat {
     
     
@@ -3660,7 +3734,7 @@ impl TextureFormat {
                 
                 Self::NV12 => 3,
                 f => {
-                    log::warn!("Memory footprint for format {:?} is not implemented", f);
+                    log::warn!("Memory footprint for format {f:?} is not implemented");
                     0
                 }
             },
@@ -6190,6 +6264,77 @@ impl<L, V> TextureDescriptor<L, V> {
         match self.dimension {
             TextureDimension::D1 | TextureDimension::D3 => 1,
             TextureDimension::D2 => self.size.depth_or_array_layers,
+        }
+    }
+}
+
+
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub enum ExternalTextureFormat {
+    
+    Rgba,
+    
+    
+    Nv12,
+    
+    Yu12,
+}
+
+
+
+
+
+#[repr(C)]
+#[derive(Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct ExternalTextureDescriptor<L> {
+    
+    
+    pub label: L,
+    
+    
+    
+    pub width: u32,
+    
+    pub height: u32,
+    
+    pub format: ExternalTextureFormat,
+    
+    
+    
+    pub yuv_conversion_matrix: [f32; 16],
+    
+    
+    pub sample_transform: [f32; 6],
+    
+    
+    pub load_transform: [f32; 6],
+}
+
+impl<L> ExternalTextureDescriptor<L> {
+    
+    #[must_use]
+    pub fn map_label<K>(&self, fun: impl FnOnce(&L) -> K) -> ExternalTextureDescriptor<K> {
+        ExternalTextureDescriptor {
+            label: fun(&self.label),
+            width: self.width,
+            height: self.height,
+            format: self.format,
+            yuv_conversion_matrix: self.yuv_conversion_matrix,
+            sample_transform: self.sample_transform,
+            load_transform: self.load_transform,
+        }
+    }
+
+    
+    pub fn num_planes(&self) -> usize {
+        match self.format {
+            ExternalTextureFormat::Rgba => 1,
+            ExternalTextureFormat::Nv12 => 2,
+            ExternalTextureFormat::Yu12 => 3,
         }
     }
 }

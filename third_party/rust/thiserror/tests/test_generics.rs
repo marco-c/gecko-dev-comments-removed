@@ -1,6 +1,7 @@
 #![allow(clippy::needless_late_init, clippy::uninlined_format_args)]
 
 use core::fmt::{self, Debug, Display};
+use core::str::FromStr;
 use thiserror::Error;
 
 pub struct NoFormat;
@@ -159,6 +160,24 @@ pub struct StructFromGeneric<E> {
 #[derive(Error, Debug)]
 #[error(transparent)]
 pub struct StructTransparentGeneric<E>(pub E);
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Error, Debug)]
+pub enum AssociatedTypeError<T: FromStr> {
+    #[error("couldn't parse matrix")]
+    Other,
+    #[error("couldn't parse entry: {0}")]
+    EntryParseError(T::Err),
+}
 
 
 #[test]

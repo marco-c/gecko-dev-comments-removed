@@ -703,7 +703,7 @@ impl<'a> ConstantEvaluator<'a> {
         }
     }
 
-    pub fn to_ctx(&self) -> crate::proc::GlobalCtx {
+    pub fn to_ctx(&self) -> crate::proc::GlobalCtx<'_> {
         crate::proc::GlobalCtx {
             types: self.types,
             constants: self.constants,
@@ -844,7 +844,7 @@ impl<'a> ConstantEvaluator<'a> {
         expr: &Expression,
         span: Span,
     ) -> Result<Handle<Expression>, ConstantEvaluatorError> {
-        log::trace!("try_eval_and_append: {:?}", expr);
+        log::trace!("try_eval_and_append: {expr:?}");
         match *expr {
             Expression::Constant(c) if self.is_global_arena() => {
                 

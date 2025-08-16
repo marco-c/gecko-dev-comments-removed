@@ -35,7 +35,6 @@ enum IdSource {
 
 
 
-
 #[derive(Debug)]
 pub(super) struct IdentityValues {
     free: Vec<(Index, Epoch)>,

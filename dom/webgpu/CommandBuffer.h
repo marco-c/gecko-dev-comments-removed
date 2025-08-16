@@ -22,9 +22,8 @@ class CommandBuffer final : public ObjectBase, public ChildOf<Device> {
   GPU_DECL_CYCLE_COLLECTION(CommandBuffer)
   GPU_DECL_JS_WRAP(CommandBuffer)
 
-  CommandBuffer(Device* const aParent, RawId aId,
-                nsTArray<WeakPtr<CanvasContext>>&& aPresentationContexts,
-                RefPtr<CommandEncoder>&& aEncoder);
+  CommandBuffer(Device* const aParent, WebGPUChild* const aBridge, RawId aId,
+                nsTArray<WeakPtr<CanvasContext>>&& aPresentationContexts);
 
   Maybe<RawId> Commit();
 
@@ -34,12 +33,8 @@ class CommandBuffer final : public ObjectBase, public ChildOf<Device> {
   void Cleanup();
 
   const RawId mId;
+  RefPtr<WebGPUChild> mBridge;
   const nsTArray<WeakPtr<CanvasContext>> mPresentationContexts;
-  
-  
-  
-  
-  RefPtr<CommandEncoder> mEncoder;
 };
 
 }  

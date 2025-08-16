@@ -143,7 +143,7 @@ impl SnatchLock {
 
     
     #[track_caller]
-    pub fn read(&self) -> SnatchGuard {
+    pub fn read(&self) -> SnatchGuard<'_> {
         LockTrace::enter("read");
         SnatchGuard(self.lock.read())
     }
@@ -154,7 +154,7 @@ impl SnatchLock {
     
     
     #[track_caller]
-    pub fn write(&self) -> ExclusiveSnatchGuard {
+    pub fn write(&self) -> ExclusiveSnatchGuard<'_> {
         LockTrace::enter("write");
         ExclusiveSnatchGuard(self.lock.write())
     }

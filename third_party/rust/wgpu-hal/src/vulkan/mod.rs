@@ -56,6 +56,8 @@ const MAX_TOTAL_ATTACHMENTS: usize = crate::MAX_COLOR_ATTACHMENTS * 2 + 1;
 pub struct Api;
 
 impl crate::Api for Api {
+    const VARIANT: wgt::Backend = wgt::Backend::Vulkan;
+
     type Instance = Instance;
     type Surface = Surface;
     type Adapter = Adapter;
@@ -178,7 +180,7 @@ pub struct Instance {
 
 
 #[derive(Debug)]
-struct SwapchainImageSemaphores {
+struct SwapchainAcquireSemaphore {
     
     
     
@@ -209,8 +211,68 @@ struct SwapchainImageSemaphores {
     
     
     
+    
+    
+    
+    
     should_wait_for_acquire: bool,
 
+    
+    
+    
+    
+    
+    
+    
+    previously_used_submission_index: crate::FenceValue,
+}
+
+impl SwapchainAcquireSemaphore {
+    fn new(device: &DeviceShared, index: usize) -> Result<Self, crate::DeviceError> {
+        Ok(Self {
+            acquire: device
+                .new_binary_semaphore(&format!("SwapchainImageSemaphore: Index {index} acquire"))?,
+            should_wait_for_acquire: true,
+            previously_used_submission_index: 0,
+        })
+    }
+
+    
+    
+    fn set_used_fence_value(&mut self, value: crate::FenceValue) {
+        self.previously_used_submission_index = value;
+    }
+
+    
+    
+    
+    
+    fn get_acquire_wait_semaphore(&mut self) -> Option<vk::Semaphore> {
+        if self.should_wait_for_acquire {
+            self.should_wait_for_acquire = false;
+            Some(self.acquire)
+        } else {
+            None
+        }
+    }
+
+    
+    
+    fn end_semaphore_usage(&mut self) {
+        
+        
+        self.should_wait_for_acquire = true;
+    }
+
+    unsafe fn destroy(&self, device: &ash::Device) {
+        unsafe {
+            device.destroy_semaphore(self.acquire, None);
+        }
+    }
+}
+
+#[derive(Debug)]
+struct SwapchainPresentSemaphores {
     
     
     
@@ -253,40 +315,15 @@ struct SwapchainImageSemaphores {
     present_index: usize,
 
     
-    
-    
-    
-    
-    
-    
-    previously_used_submission_index: crate::FenceValue,
+    frame_index: usize,
 }
 
-impl SwapchainImageSemaphores {
-    fn new(device: &DeviceShared) -> Result<Self, crate::DeviceError> {
-        Ok(Self {
-            acquire: device.new_binary_semaphore()?,
-            should_wait_for_acquire: true,
+impl SwapchainPresentSemaphores {
+    pub fn new(frame_index: usize) -> Self {
+        Self {
             present: Vec::new(),
             present_index: 0,
-            previously_used_submission_index: 0,
-        })
-    }
-
-    fn set_used_fence_value(&mut self, value: crate::FenceValue) {
-        self.previously_used_submission_index = value;
-    }
-
-    
-    
-    
-    
-    fn get_acquire_wait_semaphore(&mut self) -> Option<vk::Semaphore> {
-        if self.should_wait_for_acquire {
-            self.should_wait_for_acquire = false;
-            Some(self.acquire)
-        } else {
-            None
+            frame_index,
         }
     }
 
@@ -302,7 +339,10 @@ impl SwapchainImageSemaphores {
         let sem = match self.present.get(self.present_index) {
             Some(sem) => *sem,
             None => {
-                let sem = device.new_binary_semaphore()?;
+                let sem = device.new_binary_semaphore(&format!(
+                    "SwapchainImageSemaphore: Image {} present semaphore {}",
+                    self.frame_index, self.present_index
+                ))?;
                 self.present.push(sem);
                 sem
             }
@@ -315,27 +355,27 @@ impl SwapchainImageSemaphores {
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    fn get_present_wait_semaphores(&mut self) -> &[vk::Semaphore] {
-        let old_index = self.present_index;
-
+    fn end_semaphore_usage(&mut self) {
         
         
         self.present_index = 0;
-        self.should_wait_for_acquire = true;
+    }
 
-        &self.present[0..old_index]
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn get_present_wait_semaphores(&mut self) -> Vec<vk::Semaphore> {
+        self.present[0..self.present_index].to_vec()
     }
 
     unsafe fn destroy(&self, device: &ash::Device) {
         unsafe {
-            device.destroy_semaphore(self.acquire, None);
             for sem in &self.present {
                 device.destroy_semaphore(*sem, None);
             }
@@ -349,16 +389,44 @@ struct Swapchain {
     device: Arc<DeviceShared>,
     images: Vec<vk::Image>,
     config: crate::SurfaceConfiguration,
+
     
     
     
     
     
-    surface_semaphores: Vec<Arc<Mutex<SwapchainImageSemaphores>>>,
     
     
     
-    next_semaphore_index: usize,
+    
+    
+    
+    
+    
+    
+    acquire_semaphores: Vec<Arc<Mutex<SwapchainAcquireSemaphore>>>,
+    
+    
+    
+    
+    
+    
+    next_acquire_index: usize,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    present_semaphores: Vec<Arc<Mutex<SwapchainPresentSemaphores>>>,
+
     
     
     
@@ -369,13 +437,20 @@ struct Swapchain {
 }
 
 impl Swapchain {
-    fn advance_surface_semaphores(&mut self) {
-        let semaphore_count = self.surface_semaphores.len();
-        self.next_semaphore_index = (self.next_semaphore_index + 1) % semaphore_count;
+    
+    fn advance_acquire_semaphore(&mut self) {
+        let semaphore_count = self.acquire_semaphores.len();
+        self.next_acquire_index = (self.next_acquire_index + 1) % semaphore_count;
     }
 
-    fn get_surface_semaphores(&self) -> Arc<Mutex<SwapchainImageSemaphores>> {
-        self.surface_semaphores[self.next_semaphore_index].clone()
+    
+    fn get_acquire_semaphore(&self) -> Arc<Mutex<SwapchainAcquireSemaphore>> {
+        self.acquire_semaphores[self.next_acquire_index].clone()
+    }
+
+    
+    fn get_present_semaphores(&self, index: u32) -> Arc<Mutex<SwapchainPresentSemaphores>> {
+        self.present_semaphores[index as usize].clone()
     }
 }
 
@@ -437,7 +512,8 @@ impl Surface {
 pub struct SurfaceTexture {
     index: u32,
     texture: Texture,
-    surface_semaphores: Arc<Mutex<SwapchainImageSemaphores>>,
+    acquire_semaphores: Arc<Mutex<SwapchainAcquireSemaphore>>,
+    present_semaphores: Arc<Mutex<SwapchainPresentSemaphores>>,
 }
 
 impl crate::DynSurfaceTexture for SurfaceTexture {}
@@ -649,6 +725,14 @@ struct DeviceShared {
     render_passes: Mutex<FastHashMap<RenderPassKey, vk::RenderPass>>,
     sampler_cache: Mutex<sampler::SamplerCache>,
     memory_allocations_counter: InternalCounter,
+
+    
+    
+    
+    
+    texture_identity_factory: ResourceIdentityFactory<vk::Image>,
+    
+    texture_view_identity_factory: ResourceIdentityFactory<vk::ImageView>,
 }
 
 impl Drop for DeviceShared {
@@ -719,7 +803,7 @@ impl RelaySemaphores {
     fn new(device: &DeviceShared) -> Result<Self, crate::DeviceError> {
         Ok(Self {
             wait: None,
-            signal: device.new_binary_semaphore()?,
+            signal: device.new_binary_semaphore("RelaySemaphores: 1")?,
         })
     }
 
@@ -734,7 +818,7 @@ impl RelaySemaphores {
                 
                 
                 self.wait = Some(old.signal);
-                self.signal = device.new_binary_semaphore()?;
+                self.signal = device.new_binary_semaphore("RelaySemaphores: 2")?;
             }
             Some(ref mut wait) => {
                 
@@ -862,6 +946,7 @@ pub struct Texture {
     block: Option<gpu_alloc::MemoryBlock<vk::DeviceMemory>>,
     format: wgt::TextureFormat,
     copy_size: crate::CopyExtent,
+    identity: ResourceIdentity<vk::Image>,
 }
 
 impl crate::DynTexture for Texture {}
@@ -884,6 +969,8 @@ pub struct TextureView {
     raw_format: vk::Format,
     base_mip_level: u32,
     dimension: wgt::TextureViewDimension,
+    texture_identity: ResourceIdentity<vk::Image>,
+    view_identity: ResourceIdentity<vk::ImageView>,
 }
 
 impl crate::DynTextureView for TextureView {}
@@ -894,6 +981,14 @@ impl TextureView {
     
     pub unsafe fn raw_handle(&self) -> vk::ImageView {
         self.raw
+    }
+
+    
+    fn identified_raw_view(&self) -> IdentifiedTextureView {
+        IdentifiedTextureView {
+            raw: self.raw,
+            identity: self.view_identity,
+        }
     }
 }
 
@@ -954,16 +1049,97 @@ impl Temp {
     }
 }
 
+
+
+
+
+struct ResourceIdentityFactory<T> {
+    #[cfg(not(target_has_atomic = "64"))]
+    next_id: Mutex<u64>,
+    #[cfg(target_has_atomic = "64")]
+    next_id: core::sync::atomic::AtomicU64,
+    _phantom: PhantomData<T>,
+}
+
+impl<T> ResourceIdentityFactory<T> {
+    fn new() -> Self {
+        Self {
+            #[cfg(not(target_has_atomic = "64"))]
+            next_id: Mutex::new(0),
+            #[cfg(target_has_atomic = "64")]
+            next_id: core::sync::atomic::AtomicU64::new(0),
+            _phantom: PhantomData,
+        }
+    }
+
+    
+    fn next(&self) -> ResourceIdentity<T> {
+        #[cfg(not(target_has_atomic = "64"))]
+        {
+            let mut next_id = self.next_id.lock();
+            let id = *next_id;
+            *next_id += 1;
+            ResourceIdentity {
+                id,
+                _phantom: PhantomData,
+            }
+        }
+
+        #[cfg(target_has_atomic = "64")]
+        ResourceIdentity {
+            id: self
+                .next_id
+                .fetch_add(1, core::sync::atomic::Ordering::Relaxed),
+            _phantom: PhantomData,
+        }
+    }
+}
+
+
+
+
+
+#[derive(Debug, Copy, Clone, Eq, Hash, PartialEq)]
+struct ResourceIdentity<T> {
+    id: u64,
+    _phantom: PhantomData<T>,
+}
+
 #[derive(Clone, Eq, Hash, PartialEq)]
 struct FramebufferKey {
     raw_pass: vk::RenderPass,
-    attachments: ArrayVec<vk::ImageView, { MAX_TOTAL_ATTACHMENTS }>,
+    
+    
+    
+    attachment_identities: ArrayVec<ResourceIdentity<vk::ImageView>, { MAX_TOTAL_ATTACHMENTS }>,
+    
+    
+    
+    attachment_views: ArrayVec<vk::ImageView, { MAX_TOTAL_ATTACHMENTS }>,
     extent: wgt::Extent3d,
+}
+
+impl FramebufferKey {
+    fn push_view(&mut self, view: IdentifiedTextureView) {
+        self.attachment_identities.push(view.identity);
+        self.attachment_views.push(view.raw);
+    }
+}
+
+
+#[derive(Copy, Clone)]
+struct IdentifiedTextureView {
+    raw: vk::ImageView,
+    identity: ResourceIdentity<vk::ImageView>,
 }
 
 #[derive(Clone, Eq, Hash, PartialEq)]
 struct TempTextureViewKey {
     texture: vk::Image,
+    
+    
+    
+    texture_identity: ResourceIdentity<vk::Image>,
     format: vk::Format,
     mip_level: u32,
     depth_slice: u32,
@@ -1006,7 +1182,7 @@ pub struct CommandEncoder {
     end_of_pass_timer_query: Option<(vk::QueryPool, u32)>,
 
     framebuffers: FastHashMap<FramebufferKey, vk::Framebuffer>,
-    temp_texture_views: FastHashMap<TempTextureViewKey, vk::ImageView>,
+    temp_texture_views: FastHashMap<TempTextureViewKey, IdentifiedTextureView>,
 
     counters: Arc<wgt::HalCounters>,
 }
@@ -1035,7 +1211,7 @@ impl Drop for CommandEncoder {
         }
 
         for (_, view) in self.temp_texture_views.drain() {
-            unsafe { self.device.raw.destroy_image_view(view, None) };
+            unsafe { self.device.raw.destroy_image_view(view.raw, None) };
         }
 
         self.counters.command_encoders.sub(1);
@@ -1273,9 +1449,10 @@ impl crate::Queue for Queue {
                 let mut check = HashSet::with_capacity(surface_textures.len());
                 // We compare the Arcs by pointer, as Eq isn't well defined for SurfaceSemaphores.
                 for st in surface_textures {
-                    check.insert(Arc::as_ptr(&st.surface_semaphores));
+                    check.insert(Arc::as_ptr(&st.acquire_semaphores) as usize);
+                    check.insert(Arc::as_ptr(&st.present_semaphores) as usize);
                 }
-                check.len() == surface_textures.len()
+                check.len() == surface_textures.len() * 2
             },
             "More than one surface texture is being used from the same swapchain. This will cause a deadlock in release."
         );
@@ -1283,26 +1460,33 @@ impl crate::Queue for Queue {
         let locked_swapchain_semaphores = surface_textures
             .iter()
             .map(|st| {
-                st.surface_semaphores
+                let acquire = st
+                    .acquire_semaphores
                     .try_lock()
-                    .expect("Failed to lock surface semaphore.")
+                    .expect("Failed to lock surface acquire semaphore");
+                let present = st
+                    .present_semaphores
+                    .try_lock()
+                    .expect("Failed to lock surface present semaphore");
+
+                (acquire, present)
             })
             .collect::<Vec<_>>();
 
-        for mut swapchain_semaphore in locked_swapchain_semaphores {
-            swapchain_semaphore.set_used_fence_value(signal_value);
+        for (mut acquire_semaphore, mut present_semaphores) in locked_swapchain_semaphores {
+            acquire_semaphore.set_used_fence_value(signal_value);
 
             
             
             
-            if let Some(sem) = swapchain_semaphore.get_acquire_wait_semaphore() {
+            if let Some(sem) = acquire_semaphore.get_acquire_wait_semaphore() {
                 wait_stage_masks.push(vk::PipelineStageFlags::TOP_OF_PIPE);
                 wait_semaphores.push(sem);
             }
 
             
             
-            let signal_semaphore = swapchain_semaphore.get_submit_signal_semaphore(&self.device)?;
+            let signal_semaphore = present_semaphores.get_submit_signal_semaphore(&self.device)?;
             signal_semaphores.push_binary(signal_semaphore);
         }
 
@@ -1377,14 +1561,28 @@ impl crate::Queue for Queue {
     ) -> Result<(), crate::SurfaceError> {
         let mut swapchain = surface.swapchain.write();
         let ssc = swapchain.as_mut().unwrap();
-        let mut swapchain_semaphores = texture.surface_semaphores.lock();
+        let mut acquire_semaphore = texture.acquire_semaphores.lock();
+        let mut present_semaphores = texture.present_semaphores.lock();
+
+        let wait_semaphores = present_semaphores.get_present_wait_semaphores();
+
+        
+        
+        
+        
+        
+        
+        acquire_semaphore.end_semaphore_usage();
+        present_semaphores.end_semaphore_usage();
+
+        drop(acquire_semaphore);
 
         let swapchains = [ssc.raw];
         let image_indices = [texture.index];
         let vk_info = vk::PresentInfoKHR::default()
             .swapchains(&swapchains)
             .image_indices(&image_indices)
-            .wait_semaphores(swapchain_semaphores.get_present_wait_semaphores());
+            .wait_semaphores(&wait_semaphores);
 
         let mut display_timing;
         let present_times;

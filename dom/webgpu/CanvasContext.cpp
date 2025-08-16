@@ -430,12 +430,18 @@ already_AddRefed<gfx::SourceSurface> CanvasContext::GetSurfaceSnapshot(
 
   
   
-  RawId encoderId = ffi::wgpu_client_make_encoder_id(mBridge->GetClient());
-  RefPtr<gfx::DataSourceSurface> snapshot =
-      cm->GetSnapshot(cm->Id(), mBridge->Id(), mRemoteTextureOwnerId,
-                      Some(encoderId), snapshotFormat,  false,
-                       false);
-  ffi::wgpu_client_free_command_encoder_id(mBridge->GetClient(), encoderId);
+  RawId commandEncoderId =
+      ffi::wgpu_client_make_command_encoder_id(mBridge->GetClient());
+  RawId commandBufferId =
+      ffi::wgpu_client_make_command_buffer_id(mBridge->GetClient());
+  RefPtr<gfx::DataSourceSurface> snapshot = cm->GetSnapshot(
+      cm->Id(), mBridge->Id(), mRemoteTextureOwnerId, Some(commandEncoderId),
+      Some(commandBufferId), snapshotFormat,  false,
+       false);
+  ffi::wgpu_client_free_command_encoder_id(mBridge->GetClient(),
+                                           commandEncoderId);
+  ffi::wgpu_client_free_command_buffer_id(mBridge->GetClient(),
+                                          commandBufferId);
   if (!snapshot) {
     return nullptr;
   }
