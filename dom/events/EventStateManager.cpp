@@ -1140,6 +1140,8 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
         GeneratePointerEnterExit(ePointerLeave, mouseEvent);
         GenerateMouseEnterExit(mouseEvent);
         
+        PointerEventHandler::UpdatePointerActiveState(mouseEvent);
+        
         aEvent->mMessage = eVoidEvent;
         break;
       }
@@ -4632,7 +4634,8 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
       break;
 
     case eMouseExitFromWidget:
-      PointerEventHandler::UpdatePointerActiveState(aEvent->AsMouseEvent());
+      MOZ_ASSERT_UNREACHABLE(
+          "Should've already been handled in PreHandleEvent()");
       break;
 
 #ifdef XP_MACOSX
