@@ -2365,8 +2365,8 @@ impl<'a> SceneBuilder<'a> {
 
         
         
-        if flags.contains(StackingContextFlags::IS_BACKDROP_ROOT) {
-            blit_reason = BlitReason::BACKDROP;
+        if flags.contains(StackingContextFlags::FORCED_ISOLATION) {
+            blit_reason = BlitReason::FORCED_ISOLATION;
         }
 
         
@@ -2402,7 +2402,7 @@ impl<'a> SceneBuilder<'a> {
             if !self.sc_stack.is_empty() {
                 
                 
-                blit_reason |= BlitReason::ISOLATE;
+                blit_reason |= BlitReason::BLEND_MODE;
                 is_redundant = false;
             } else {
                 
@@ -2418,7 +2418,7 @@ impl<'a> SceneBuilder<'a> {
                     
                     
                     
-                    blit_reason |= BlitReason::ISOLATE;
+                    blit_reason |= BlitReason::BLEND_MODE;
                     is_redundant = false;
                 }
             }
