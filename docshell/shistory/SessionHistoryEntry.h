@@ -254,6 +254,9 @@ struct LoadingSessionHistoryInfo {
 
   SessionHistoryInfo mInfo;
 
+  
+  CopyableTArray<SessionHistoryInfo> mContiguousEntries;
+
   uint64_t mLoadId = 0;
 
   

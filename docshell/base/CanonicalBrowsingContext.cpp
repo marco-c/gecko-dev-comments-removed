@@ -621,6 +621,36 @@ CanonicalBrowsingContext::CreateLoadingSessionHistoryEntryForLoad(
         LoadingSessionHistoryEntry{loadingInfo->mLoadId, entry});
   }
 
+  
+  
+  
+  if (Navigation::IsAPIEnabled()) {
+    if (mActiveEntry && mActiveEntry->isInList()) {
+      nsCOMPtr<nsIURI> uri = mActiveEntry->GetURI();
+      nsCOMPtr<nsIURI> targetURI = entry->GetURI();
+      if (NS_SUCCEEDED(nsContentUtils::GetSecurityManager()->CheckSameOriginURI(
+              targetURI, uri, false, false))) {
+        nsSHistory::WalkContiguousEntriesInOrder(
+            mActiveEntry,
+            [activeEntry = mActiveEntry,
+             entries = &loadingInfo->mContiguousEntries](auto* aEntry) {
+              if (nsCOMPtr<SessionHistoryEntry> entry =
+                      do_QueryObject(aEntry)) {
+                entries->AppendElement(entry->Info());
+                
+                
+                
+                if (entry == activeEntry) {
+                  return false;
+                }
+              }
+
+              return true;
+            });
+      }
+    }
+  }
+
   MOZ_ASSERT(SessionHistoryEntry::GetByLoadId(loadingInfo->mLoadId)->mEntry ==
              entry);
 
@@ -659,30 +689,6 @@ CanonicalBrowsingContext::ReplaceLoadingSessionHistoryEntryForLoad(
     }
   }
   return nullptr;
-}
-
-mozilla::Span<const SessionHistoryInfo>
-CanonicalBrowsingContext::GetContiguousSessionHistoryInfos() {
-  MOZ_ASSERT(Navigation::IsAPIEnabled());
-
-  mActiveContiguousEntries.ClearAndRetainStorage();
-  MOZ_LOG(gSHLog, LogLevel::Verbose,
-          ("GetContiguousSessionHistoryInfos called with mActiveEntry=%p, "
-           "active entry list does%s contain the active entry.",
-           mActiveEntry.get(),
-           mActiveEntryList.contains(mActiveEntry) ? "" : "n't"));
-  if (mActiveEntry && mActiveEntry->isInList()) {
-    nsSHistory::WalkContiguousEntriesInOrder(mActiveEntry, [&](auto* aEntry) {
-      if (nsCOMPtr<SessionHistoryEntry> entry = do_QueryObject(aEntry)) {
-        mActiveContiguousEntries.AppendElement(entry->Info());
-      }
-    });
-  }
-
-  MOZ_LOG_FMT(gSHLog, LogLevel::Verbose,
-              "mActiveContiguousEntries has {} entries",
-              mActiveContiguousEntries.Length());
-  return mActiveContiguousEntries;
 }
 
 using PrintPromise = CanonicalBrowsingContext::PrintPromise;
