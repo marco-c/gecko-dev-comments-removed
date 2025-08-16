@@ -1203,6 +1203,7 @@ class EditorBase : public nsIEditor,
 
 
     void AppendTargetRange(dom::StaticRange& aTargetRange);
+    void AppendTargetRange(RefPtr<dom::StaticRange>&& aTargetRange);
 
     
 
