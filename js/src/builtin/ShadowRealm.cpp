@@ -30,6 +30,7 @@
 #include "vm/GlobalObject.h"
 #include "vm/Interpreter.h"
 #include "vm/JSObject.h"
+#include "vm/Modules.h"
 #include "vm/ObjectOperations.h"
 
 #include "builtin/HandlerFunction-inl.h"
@@ -412,15 +413,6 @@ static JSObject* ShadowRealmImportValue(JSContext* cx,
 
   Handle<PromiseObject*> promise = promiseObject.as<PromiseObject>();
 
-  JS::ModuleLoadHook moduleLoadHook = cx->runtime()->moduleLoadHook;
-  if (!moduleLoadHook) {
-    JS_ReportErrorASCII(cx, "Module load hook not set");
-    if (!RejectPromiseWithPendingError(cx, promise)) {
-      return nullptr;
-    }
-    return promise;
-  }
-
   {
     
     
@@ -461,21 +453,11 @@ static JSObject* ShadowRealmImportValue(JSContext* cx,
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    Rooted<Value> referencingPrivate(cx, script->sourceObject()->getPrivate());
     Rooted<Value> payload(cx, ObjectValue(*promise));
-    if (!moduleLoadHook(cx, nullptr, referencingPrivate, moduleRequest,
-                        payload)) {
+    if (!js::HostLoadImportedModule(cx, script, moduleRequest, payload)) {
+      if (!RejectPromiseWithPendingError(cx, promise)) {
+        return nullptr;
+      }
       return promise;
     }
 

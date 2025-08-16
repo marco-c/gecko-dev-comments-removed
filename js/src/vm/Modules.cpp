@@ -792,21 +792,37 @@ static void ThrowUnexpectedModuleStatus(JSContext* cx, ModuleStatus status) {
 }
 
 
-static bool HostLoadImportedModule(
-    JSContext* cx, Handle<ModuleObject*> referrer,
-    Handle<JSObject*> moduleRequest,
-    Handle<GraphLoadingStateRecordObject*> state) {
+
+
+
+
+bool js::HostLoadImportedModule(JSContext* cx, Handle<JSScript*> referrer,
+                                Handle<JSObject*> moduleRequest,
+                                Handle<Value> payload) {
+  MOZ_ASSERT(moduleRequest);
+  MOZ_ASSERT(!payload.isUndefined());
+
   JS::ModuleLoadHook moduleLoadHook = cx->runtime()->moduleLoadHook;
   if (!moduleLoadHook) {
     JS_ReportErrorASCII(cx, "Module load hook not set");
     return false;
   }
 
-  MOZ_ASSERT(referrer);
-  MOZ_ASSERT(moduleRequest);
-  Rooted<Value> referencingPrivate(cx, JS::GetModulePrivate(referrer));
-  RootedValue payload(cx, ObjectValue(*state));
-  return moduleLoadHook(cx, referrer, referencingPrivate, moduleRequest,
+  
+  
+  
+  Rooted<ModuleObject*> referrerModule(cx);
+  Rooted<Value> referencingPrivate(cx);
+  if (referrer) {
+    if (referrer->isModule()) {
+      referrerModule = referrer->module();
+      referencingPrivate = JS::GetModulePrivate(referrerModule);
+    } else {
+      referencingPrivate = referrer->sourceObject()->getPrivate();
+    }
+  }
+
+  return moduleLoadHook(cx, referrerModule, referencingPrivate, moduleRequest,
                         payload);
 }
 
@@ -1529,7 +1545,9 @@ static bool InnerModuleLoading(JSContext* cx,
         
         
         
-        if (!HostLoadImportedModule(cx, module, moduleRequest, state)) {
+        Rooted<Value> payload(cx, ObjectValue(*state));
+        Rooted<JSScript*> referrer(cx, module->script());
+        if (!HostLoadImportedModule(cx, referrer, moduleRequest, payload)) {
           return false;
         }
       }
@@ -2649,9 +2667,12 @@ static bool EvaluateDynamicImportOptions(
 
 
 
+
+
 JSObject* js::StartDynamicModuleImport(JSContext* cx, HandleScript script,
                                        HandleValue specifierArg,
                                        HandleValue optionsArg) {
+  
   RootedObject promise(cx, JS::NewPromiseObject(cx, nullptr));
   if (!promise) {
     return nullptr;
@@ -2667,16 +2688,11 @@ JSObject* js::StartDynamicModuleImport(JSContext* cx, HandleScript script,
   return promise;
 }
 
+
 static bool TryStartDynamicModuleImport(JSContext* cx, HandleScript script,
                                         HandleValue specifierArg,
                                         HandleValue optionsArg,
                                         HandleObject promise) {
-  JS::ModuleLoadHook moduleLoadHook = cx->runtime()->moduleLoadHook;
-  if (!moduleLoadHook) {
-    JS_ReportErrorASCII(cx, "Module load hook not set");
-    return false;
-  }
-
   RootedString specifier(cx, ToString(cx, specifierArg));
   if (!specifier) {
     return false;
@@ -2692,22 +2708,19 @@ static bool TryStartDynamicModuleImport(JSContext* cx, HandleScript script,
     return false;
   }
 
+  
+  
   RootedObject moduleRequest(
       cx, ModuleRequestObject::create(cx, specifierAtom, attributes));
   if (!moduleRequest) {
     return false;
   }
 
-  RootedValue referencingPrivate(cx, script->sourceObject()->getPrivate());
+  
+  
   RootedValue payload(cx, ObjectValue(*promise));
+  (void)HostLoadImportedModule(cx, script, moduleRequest, payload);
 
-  
-  
-  
-  
-  
-  (void)moduleLoadHook(cx,  nullptr, referencingPrivate,
-                       moduleRequest, payload);
   return true;
 }
 
