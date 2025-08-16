@@ -6903,6 +6903,18 @@ AliasSet MTypedArraySet::getAliasSet() const {
   return load | store;
 }
 
+AliasSet MTypedArraySetFromSubarray::getAliasSet() const {
+  
+  constexpr auto load =
+      AliasSet::Load(AliasSet::ArrayBufferViewLengthOrOffset |
+                     AliasSet::ObjectFields | AliasSet::UnboxedElement);
+
+  
+  constexpr auto store = AliasSet::Store(AliasSet::UnboxedElement);
+
+  return load | store;
+}
+
 AliasSet MArrayPush::getAliasSet() const {
   return AliasSet::Store(AliasSet::ObjectFields | AliasSet::Element);
 }

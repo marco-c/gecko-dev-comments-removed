@@ -3072,6 +3072,7 @@ class SubarrayReplacer : public MDefinitionVisitorDefaultNoop {
   void visitGuardShape(MGuardShape* ins);
   void visitTypedArrayElementSize(MTypedArrayElementSize* ins);
   void visitTypedArrayFill(MTypedArrayFill* ins);
+  void visitTypedArraySet(MTypedArraySet* ins);
   void visitUnbox(MUnbox* ins);
 
   
@@ -3093,6 +3094,14 @@ class SubarrayReplacer : public MDefinitionVisitorDefaultNoop {
     }
 
     return false;
+  }
+
+  MDefinition* toSubarrayObject(MDefinition* ins) const {
+    MOZ_ASSERT(isSubarrayOrGuard(ins));
+    if (ins == subarray_) {
+      return subarray()->object();
+    }
+    return ins;
   }
 
   auto* templateObject() const {
@@ -3320,6 +3329,64 @@ void SubarrayReplacer::visitTypedArrayFill(MTypedArrayFill* ins) {
   ins->block()->discard(ins);
 }
 
+void SubarrayReplacer::visitTypedArraySet(MTypedArraySet* ins) {
+  
+  if (!isSubarrayOrGuard(ins->target()) && !isSubarrayOrGuard(ins->source())) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  MInstruction* replacement;
+  if (isSubarrayOrGuard(ins->target()) && isSubarrayOrGuard(ins->source())) {
+    
+    
+    replacement = MNop::New(alloc());
+  } else if (isSubarrayOrGuard(ins->target())) {
+    auto* target = toSubarrayObject(ins->target());
+
+    
+    
+    
+    
+    auto* newOffset =
+        MAdd::New(alloc(), ins->offset(), subarray()->start(), MIRType::IntPtr);
+    ins->block()->insertBefore(ins, newOffset);
+
+    replacement = MTypedArraySet::New(alloc(), target, ins->source(), newOffset,
+                                      ins->canUseBitwiseCopy());
+  } else {
+    auto* source = toSubarrayObject(ins->source());
+
+    replacement = MTypedArraySetFromSubarray::New(
+        alloc(), ins->target(), source, ins->offset(), subarray()->start(),
+        subarray()->length(), ins->canUseBitwiseCopy());
+  }
+  replacement->stealResumePoint(ins);
+  ins->block()->insertBefore(ins, replacement);
+
+  
+  ins->replaceAllUsesWith(replacement);
+
+  
+  ins->block()->discard(ins);
+}
+
 
 bool SubarrayReplacer::escapes(MInstruction* ins) const {
   MOZ_ASSERT(ins->type() == MIRType::Object);
@@ -3384,6 +3451,7 @@ bool SubarrayReplacer::escapes(MInstruction* ins) const {
       case MDefinition::Opcode::ArrayBufferViewLength:
       case MDefinition::Opcode::TypedArrayElementSize:
       case MDefinition::Opcode::TypedArrayFill:
+      case MDefinition::Opcode::TypedArraySet:
         break;
 
       
