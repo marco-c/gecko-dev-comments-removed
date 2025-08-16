@@ -17,6 +17,13 @@
 
 
 
+
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.search.widget.new", true]],
+  });
+});
+
 add_task(async function test_all_buttons_have_labels() {
   let win = await BrowserTestUtils.openNewBrowserWindow();
   registerCleanupFunction(async () => {
