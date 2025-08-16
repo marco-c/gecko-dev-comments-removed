@@ -6437,7 +6437,8 @@ nsresult Document::EditingStateChanged() {
       
       
       
-      MOZ_TRY(editSession->MakeWindowEditable(window, "html", false, false, true));
+      MOZ_TRY(
+          editSession->MakeWindowEditable(window, "html", false, false, true));
     }
 
     
