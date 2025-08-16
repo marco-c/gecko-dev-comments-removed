@@ -60,7 +60,7 @@ inline bool DuplicateRealHandle(HANDLE source_process, HANDLE source_handle,
 namespace IPC {
 
 
-ChannelWin::State::State(ChannelImpl* channel) {
+ChannelWin::State::State(ChannelWin* channel) {
   memset(&context.overlapped, 0, sizeof(context.overlapped));
   context.handler = channel;
 }
@@ -71,7 +71,8 @@ ChannelWin::State::~State() {
 
 
 
-ChannelWin::ChannelWin(ChannelHandle pipe, Mode mode, base::ProcessId other_pid)
+ChannelWin::ChannelWin(mozilla::UniqueFileHandle pipe, Mode mode,
+                       base::ProcessId other_pid)
     : input_state_(this), output_state_(this), other_pid_(other_pid) {
   Init(mode);
 
@@ -756,14 +757,14 @@ bool ChannelWin::CreateRawPipe(ChannelHandle* server, ChannelHandle* client) {
   const DWORD kOpenMode =
       PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED | FILE_FLAG_FIRST_PIPE_INSTANCE;
   const DWORD kPipeMode = PIPE_TYPE_BYTE | PIPE_READMODE_BYTE;
-  *server = mozilla::UniqueFileHandle(
+  auto& serverHandle = server->emplace<mozilla::UniqueFileHandle>(
       ::CreateNamedPipeW(pipe_name.c_str(), kOpenMode, kPipeMode,
                          1,                         
                          Channel::kReadBufferSize,  
                          Channel::kReadBufferSize,  
                          5000,                      
                          nullptr));  
-  if (!server) {
+  if (!serverHandle) {
     NS_WARNING(
         nsPrintfCString("CreateNamedPipeW Failed %lu", ::GetLastError()).get());
     return false;
@@ -774,10 +775,10 @@ bool ChannelWin::CreateRawPipe(ChannelHandle* server, ChannelHandle* client) {
   
   const DWORD kFlags =
       SECURITY_SQOS_PRESENT | SECURITY_ANONYMOUS | FILE_FLAG_OVERLAPPED;
-  *client = mozilla::UniqueFileHandle(
+  auto& clientHandle = client->emplace<mozilla::UniqueFileHandle>(
       ::CreateFileW(pipe_name.c_str(), kDesiredAccess, 0, nullptr,
                     OPEN_EXISTING, kFlags, nullptr));
-  if (!client) {
+  if (!clientHandle) {
     NS_WARNING(
         nsPrintfCString("CreateFileW Failed %lu", ::GetLastError()).get());
     return false;
@@ -785,7 +786,7 @@ bool ChannelWin::CreateRawPipe(ChannelHandle* server, ChannelHandle* client) {
 
   
   
-  if (::ConnectNamedPipe(server->get(), nullptr) ||
+  if (::ConnectNamedPipe(serverHandle.get(), nullptr) ||
       ::GetLastError() != ERROR_PIPE_CONNECTED) {
     NS_WARNING(
         nsPrintfCString("ConnectNamedPipe Failed %lu", ::GetLastError()).get());

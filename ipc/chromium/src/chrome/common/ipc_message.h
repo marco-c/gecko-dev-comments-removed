@@ -338,17 +338,18 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
                             mozilla::UniqueMachSendRight* port) const;
 
   uint32_t num_send_rights() const;
+
+  bool WriteMachReceiveRight(mozilla::UniqueMachReceiveRight port);
+
+  
+  
+  bool ConsumeMachReceiveRight(PickleIterator* iter,
+                               mozilla::UniqueMachReceiveRight* port) const;
+
+  uint32_t num_receive_rights() const;
 #endif
 
-  uint32_t num_relayed_attachments() const {
-#if defined(XP_WIN)
-    return num_handles();
-#elif defined(XP_DARWIN)
-    return num_send_rights();
-#else
-    return 0;
-#endif
-  }
+  uint32_t num_relayed_attachments() const;
 
 #ifdef FUZZING_SNAPSHOT
   bool IsFuzzMsg() const { return isFuzzMsg; }
@@ -363,6 +364,7 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
   }
 
   friend class Channel;
+  friend class ChannelMach;
   friend class ChannelPosix;
   friend class ChannelWin;
   friend class MessageReplyDeserializer;
@@ -415,6 +417,17 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
   
   
   mutable nsTArray<mozilla::UniqueMachSendRight> attached_send_rights_;
+
+  
+  
+  
+  
+  mutable nsTArray<mozilla::UniqueMachReceiveRight> attached_receive_rights_;
+
+  
+  
+  
+  mozilla::UniqueMachSendRight mach_voucher_;
 #endif
 
   
