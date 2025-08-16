@@ -37,6 +37,25 @@ if (DebugSymbol.findFunctionsNamed("CERT_AsciiToName").length) {
 
 
 
+if (DebugSymbol.findFunctionsNamed("tls13_DecodeEchConfigs").length) {
+  console.log("Attaching `tls13_DecodeEchConfigs` interceptor...");
+  Interceptor.attach(DebugSymbol.fromName("tls13_DecodeEchConfigs").address, {
+    onEnter: function (args) {
+      const secItem = args[3]; 
+
+      const len = secItem.add(8).add(8).readUInt();
+      const buf = secItem.add(8).readByteArray(len);
+
+      send({
+        func: "tls13_DecodeEchConfigs",
+        data: new Uint8Array(buf),
+      });
+    },
+  });
+}
+
+
+
 if (DebugSymbol.findFunctionsNamed("CERT_DecodeCertPackage").length) {
   console.log("Attaching `CERT_DecodeCertPackage` interceptor...");
   Interceptor.attach(DebugSymbol.fromName("CERT_DecodeCertPackage").address, {

@@ -347,15 +347,6 @@ class TrustDomain {
   
   
   
-  
-  
-  virtual Result NetscapeStepUpMatchesServerAuth(Time notBefore,
-                                                  bool& matches) = 0;
-
-  
-  
-  
-  
   virtual void NoteAuxiliaryExtension(AuxiliaryExtension extension,
                                       Input extensionData) = 0;
 

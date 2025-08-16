@@ -193,7 +193,8 @@ struct SFTKObjectStr {
     SFTKSlot *slot;
     void *objectInfo;
     SFTKFree infoFree;
-    PRBool isFIPS;
+    CK_FLAGS validation_value;
+    SFTKAttribute validation_attribute;
 };
 
 struct SFTKTokenObjectStr {
@@ -292,6 +293,7 @@ struct SFTKSessionContextStr {
     SFTKVerify verify;
     unsigned int maxLen;
     SFTKObject *key;
+    SECItem *signature;
 };
 
 
@@ -504,6 +506,11 @@ struct SFTKItemTemplateStr {
 #define sftk_isToken(id) (((id)&SFTK_TOKEN_MASK) == SFTK_TOKEN_MAGIC)
 #define sftk_isFIPS(id) \
     (((id) == FIPS_SLOT_ID) || ((id) >= SFTK_MIN_FIPS_USER_SLOT_ID))
+
+
+
+
+#define SFTK_VALIDATION_FIPS_FLAG 0x00000001L
 
 
 #define SHMULTIPLIER 1791398085
@@ -969,6 +976,10 @@ CK_FLAGS sftk_AttributeToFlags(CK_ATTRIBUTE_TYPE op);
 
 PRBool sftk_operationIsFIPS(SFTKSlot *slot, CK_MECHANISM *mech,
                             CK_ATTRIBUTE_TYPE op, SFTKObject *source);
+
+void sftk_setFIPS(SFTKObject *obj, PRBool isFIPS);
+PRBool sftk_hasFIPS(SFTKObject *obj);
+
 
 CK_RV sftk_CreateValidationObjects(SFTKSlot *slot);
 

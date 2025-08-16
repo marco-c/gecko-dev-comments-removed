@@ -48,6 +48,16 @@ def on_CERT_AsciiToName(payload):
 
 
 
+def on_tls13_DecodeEchConfigs(payload):
+    if not "data" in payload:
+        return
+
+    store_for_target("ech", bytes(payload["data"].values()))
+
+
+
+
+
 def on_CERT_DecodeCertPackage(payload):
     if not "data" in payload:
         return

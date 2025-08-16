@@ -12251,18 +12251,6 @@ ssl3_RecordKeyLog(sslSocket *ss, const char *label, PK11SymKey *secret)
 #ifdef NSS_ALLOW_SSLKEYLOGFILE
     SECStatus rv;
     SECItem *keyData;
-    
-
-
-
-
-    char buf[200];
-    unsigned int offset, len;
-
-    PORT_Assert(ss->opt.noLocks || ssl_HaveSSL3HandshakeLock(ss));
-
-    if (!ssl_keylog_iob)
-        return;
 
     rv = PK11_ExtractKeyValue(secret);
     if (rv != SECSuccess)
@@ -12270,17 +12258,36 @@ ssl3_RecordKeyLog(sslSocket *ss, const char *label, PK11SymKey *secret)
 
     
     keyData = PK11_GetKeyData(secret);
-    if (!keyData || !keyData->data)
+
+    ssl3_WriteKeyLog(ss, label, keyData);
+#endif
+}
+
+
+
+
+
+void
+ssl3_WriteKeyLog(sslSocket *ss, const char *label, const SECItem *item)
+{
+#ifdef NSS_ALLOW_SSLKEYLOGFILE
+    char *buf;
+    unsigned int offset, len;
+
+    if (item == NULL || item->data == NULL)
+        return;
+
+    PORT_Assert(ss->opt.noLocks || ssl_HaveSSL3HandshakeLock(ss));
+
+    if (!ssl_keylog_iob)
         return;
 
     len = strlen(label) + 1 +          
           SSL3_RANDOM_LENGTH * 2 + 1 + 
-          keyData->len * 2 + 1;        
-    PORT_Assert(len <= sizeof(buf));
-    if (len > sizeof(buf))
+          item->len * 2 + 1;           
+    buf = (char *)PORT_Alloc(len);
+    if (!buf)
         return;
-
-    
 
     
 
@@ -12292,8 +12299,8 @@ ssl3_RecordKeyLog(sslSocket *ss, const char *label, PK11SymKey *secret)
     hexEncode(buf + offset, ss->ssl3.hs.client_random, SSL3_RANDOM_LENGTH);
     offset += SSL3_RANDOM_LENGTH * 2;
     buf[offset++] = ' ';
-    hexEncode(buf + offset, keyData->data, keyData->len);
-    offset += keyData->len * 2;
+    hexEncode(buf + offset, item->data, item->len);
+    offset += item->len * 2;
     buf[offset++] = '\n';
 
     PORT_Assert(offset == len);
@@ -12302,6 +12309,7 @@ ssl3_RecordKeyLog(sslSocket *ss, const char *label, PK11SymKey *secret)
     if (fwrite(buf, len, 1, ssl_keylog_iob) == 1)
         fflush(ssl_keylog_iob);
     PZ_Unlock(ssl_keylog_lock);
+    PORT_Free(buf);
 #endif
 }
 

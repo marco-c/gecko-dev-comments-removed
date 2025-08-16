@@ -539,6 +539,7 @@ sftk_InitGeneric(SFTKSession *session, CK_MECHANISM *pMechanism,
     context->key = key;
     context->blockSize = 0;
     context->maxLen = 0;
+    context->signature = NULL;
     context->isFIPS = sftk_operationIsFIPS(session->slot, pMechanism,
                                            operation, key);
     *contextPtr = context;
@@ -4038,6 +4039,123 @@ NSC_VerifyFinal(CK_SESSION_HANDLE hSession,
 
 
 
+
+
+
+
+CK_RV
+NSC_VerifySignatureInit(CK_SESSION_HANDLE hSession,
+                        CK_MECHANISM_PTR pMechanism, CK_OBJECT_HANDLE hKey,
+                        CK_BYTE_PTR pSignature, CK_ULONG ulSignatureLen)
+{
+    SFTKSession *session;
+    SFTKSessionContext *context;
+    CK_RV crv;
+    SECItem tmpItem;
+
+    crv = NSC_VerifyInit(hSession, pMechanism, hKey);
+    if (crv != CKR_OK) {
+        return crv;
+    }
+
+    CHECK_FORK();
+
+    crv = sftk_GetContext(hSession, &context, SFTK_VERIFY, PR_TRUE, &session);
+    if (crv != CKR_OK)
+        return crv;
+
+    tmpItem.type = siBuffer;
+    tmpItem.data = pSignature;
+    tmpItem.len = ulSignatureLen;
+    context->signature = SECITEM_DupItem(&tmpItem);
+    if (!context->signature) {
+        sftk_TerminateOp(session, SFTK_VERIFY, context);
+        sftk_FreeSession(session);
+        return CKR_HOST_MEMORY;
+    }
+    sftk_FreeSession(session);
+    return CKR_OK;
+}
+
+CK_RV
+NSC_VerifySignature(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pData,
+                    CK_ULONG ulDataLen)
+{
+    SFTKSession *session;
+    SFTKSessionContext *context;
+    CK_RV crv;
+
+    crv = sftk_GetContext(hSession, &context, SFTK_VERIFY, PR_TRUE, &session);
+    if (crv != CKR_OK)
+        return crv;
+
+    
+    if (!context->signature) {
+        sftk_FreeSession(session);
+        return CKR_OPERATION_NOT_INITIALIZED;
+    }
+    crv = NSC_Verify(hSession, pData, ulDataLen,
+                     context->signature->data, context->signature->len);
+    
+
+
+    sftk_FreeSession(session);
+    return crv;
+}
+
+CK_RV
+NSC_VerifySignatureUpdate(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pPart,
+                          CK_ULONG ulPartLen)
+{
+    SFTKSession *session;
+    SFTKSessionContext *context;
+    CK_RV crv;
+
+    
+    crv = sftk_GetContext(hSession, &context, SFTK_VERIFY, PR_TRUE, &session);
+    if (crv != CKR_OK)
+        return crv;
+
+    
+
+
+
+
+
+    if (!context->signature) {
+        sftk_FreeSession(session);
+        return CKR_OPERATION_NOT_INITIALIZED;
+    }
+    sftk_FreeSession(session);
+    return NSC_VerifyUpdate(hSession, pPart, ulPartLen);
+}
+
+CK_RV
+NSC_VerifySignatureFinal(CK_SESSION_HANDLE hSession)
+{
+    SFTKSession *session;
+    SFTKSessionContext *context;
+    CK_RV crv;
+
+    
+    crv = sftk_GetContext(hSession, &context, SFTK_VERIFY, PR_TRUE, &session);
+    if (crv != CKR_OK)
+        return crv;
+
+    if (!context->signature) {
+        sftk_FreeSession(session);
+        return CKR_OPERATION_NOT_INITIALIZED;
+    }
+    crv = NSC_VerifyFinal(hSession, context->signature->data,
+                          context->signature->len);
+    
+    sftk_FreeSession(session);
+    return crv;
+}
+
+
+
+
 static SECStatus
 sftk_RSACheckSignRecover(void *ctx, unsigned char *data,
                          unsigned int *dataLen, unsigned int maxDataLen,
@@ -5541,7 +5659,7 @@ NSC_GenerateKeyPair(CK_SESSION_HANDLE hSession,
     ECParams *ecParams;
 
     
-    CK_NSS_KEM_PARAMETER_SET_TYPE ckKyberParamSet;
+    CK_ULONG genParamSet = 0;
 
     CHECK_FORK();
 
@@ -5565,8 +5683,9 @@ NSC_GenerateKeyPair(CK_SESSION_HANDLE hSession,
             continue;
         }
 
-        if (pPublicKeyTemplate[i].type == CKA_NSS_PARAMETER_SET) {
-            ckKyberParamSet = *(CK_NSS_KEM_PARAMETER_SET_TYPE *)pPublicKeyTemplate[i].pValue;
+        if ((pPublicKeyTemplate[i].type == CKA_PARAMETER_SET) ||
+            (pPublicKeyTemplate[i].type == CKA_NSS_PARAMETER_SET)) {
+            genParamSet = *(CK_ULONG *)pPublicKeyTemplate[i].pValue;
             continue;
         }
 
@@ -5963,14 +6082,21 @@ NSC_GenerateKeyPair(CK_SESSION_HANDLE hSession,
             PORT_FreeArena(ecPriv->ecParams.arena, PR_TRUE);
             break;
 
+#ifndef NSS_NO_KYBER_SUPPORT
         case CKM_NSS_KYBER_KEY_PAIR_GEN:
+#endif
         case CKM_NSS_ML_KEM_KEY_PAIR_GEN:
-            sftk_DeleteAttributeType(privateKey, CKA_NSS_DB);
             key_type = CKK_NSS_KYBER;
+            goto do_ml_kem;
 
+        case CKM_ML_KEM_KEY_PAIR_GEN:
+            key_type = CKK_ML_KEM;
+
+        do_ml_kem:
+            sftk_DeleteAttributeType(privateKey, CKA_NSS_DB);
             SECItem privKey = { siBuffer, NULL, 0 };
             SECItem pubKey = { siBuffer, NULL, 0 };
-            KyberParams kyberParams = sftk_kyber_PK11ParamToInternal(ckKyberParamSet);
+            KyberParams kyberParams = sftk_kyber_PK11ParamToInternal(genParamSet);
             if (!sftk_kyber_AllocPrivKeyItem(kyberParams, &privKey)) {
                 crv = CKR_HOST_MEMORY;
                 goto kyber_done;
@@ -5989,8 +6115,9 @@ NSC_GenerateKeyPair(CK_SESSION_HANDLE hSession,
             if (crv != CKR_OK) {
                 goto kyber_done;
             }
-            crv = sftk_AddAttributeType(publicKey, CKA_NSS_PARAMETER_SET,
-                                        &ckKyberParamSet, sizeof(CK_NSS_KEM_PARAMETER_SET_TYPE));
+            CK_ATTRIBUTE_TYPE param_set = (key_type == CKK_NSS_KYBER) ? CKA_NSS_PARAMETER_SET : CKA_PARAMETER_SET;
+            crv = sftk_AddAttributeType(publicKey, param_set, &genParamSet,
+                                        sizeof(CK_ML_KEM_PARAMETER_SET_TYPE));
             if (crv != CKR_OK) {
                 goto kyber_done;
             }
@@ -5999,8 +6126,8 @@ NSC_GenerateKeyPair(CK_SESSION_HANDLE hSession,
             if (crv != CKR_OK) {
                 goto kyber_done;
             }
-            crv = sftk_AddAttributeType(privateKey, CKA_NSS_PARAMETER_SET,
-                                        &ckKyberParamSet, sizeof(CK_NSS_KEM_PARAMETER_SET_TYPE));
+            crv = sftk_AddAttributeType(privateKey, param_set, &genParamSet,
+                                        sizeof(CK_ML_KEM_PARAMETER_SET_TYPE));
             if (crv != CKR_OK) {
                 goto kyber_done;
             }
@@ -6150,7 +6277,7 @@ NSC_GenerateKeyPair(CK_SESSION_HANDLE hSession,
                                   &cktrue, sizeof(CK_BBOOL));
     }
 
-    if (crv == CKR_OK && pMechanism->mechanism != CKM_NSS_ECDHE_NO_PAIRWISE_CHECK_KEY_PAIR_GEN && key_type != CKK_NSS_KYBER) {
+    if (crv == CKR_OK && pMechanism->mechanism != CKM_NSS_ECDHE_NO_PAIRWISE_CHECK_KEY_PAIR_GEN && key_type != CKK_NSS_KYBER && key_type != CKK_ML_KEM) {
         
         crv = sftk_PairwiseConsistencyCheck(hSession, slot,
                                             publicKey, privateKey, key_type);
@@ -6938,8 +7065,7 @@ NSC_UnwrapKey(CK_SESSION_HANDLE hSession,
     }
 
     
-    key->isFIPS = session->lastOpWasFIPS;
-
+    sftk_setFIPS(key, session->lastOpWasFIPS);
     
 
 
@@ -6949,6 +7075,38 @@ NSC_UnwrapKey(CK_SESSION_HANDLE hSession,
     sftk_FreeObject(key);
 
     return crv;
+}
+
+CK_RV
+NSC_WrapKeyAuthenticated(CK_SESSION_HANDLE hSession,
+                         CK_MECHANISM_PTR pMechanism,
+                         CK_OBJECT_HANDLE hWrappingKey,
+                         CK_OBJECT_HANDLE hKey,
+                         CK_BYTE_PTR pAssociatedData,
+                         CK_ULONG ulAssociatedDataLen,
+                         CK_BYTE_PTR pWrappedKey,
+                         CK_ULONG_PTR pulWrappedKeyLen)
+{
+    CHECK_FORK();
+
+    return CKR_FUNCTION_NOT_SUPPORTED;
+}
+
+CK_RV
+NSC_UnwrapKeyAuthenticated(CK_SESSION_HANDLE hSession,
+                           CK_MECHANISM_PTR pMechanism,
+                           CK_OBJECT_HANDLE hUnwrappingKey,
+                           CK_BYTE_PTR pWrappedKey,
+                           CK_ULONG ulWrappedKeyLen,
+                           CK_ATTRIBUTE_PTR pTemplate,
+                           CK_ULONG ulAttributeCount,
+                           CK_BYTE_PTR pAssociatedData,
+                           CK_ULONG ulAssociatedDataLen,
+                           CK_OBJECT_HANDLE_PTR phKey)
+{
+    CHECK_FORK();
+
+    return CKR_FUNCTION_NOT_SUPPORTED;
 }
 
 
@@ -7412,13 +7570,14 @@ sftk_HKDF(CK_HKDF_PARAMS_PTR params, CK_SESSION_HANDLE hSession,
                 }
                 
 
-                if (isFIPS && (key->isFIPS == 0) && (saltKey->isFIPS == 1)) {
+                if (isFIPS && !sftk_hasFIPS(key) && sftk_hasFIPS(saltKey)) {
                     CK_MECHANISM mech;
                     mech.mechanism = CKM_HKDF_DERIVE;
                     mech.pParameter = params;
                     mech.ulParameterLen = sizeof(*params);
-                    key->isFIPS = sftk_operationIsFIPS(saltKey->slot, &mech,
-                                                       CKA_DERIVE, saltKey);
+                    sftk_setFIPS(key, sftk_operationIsFIPS(saltKey->slot,
+                                                           &mech, CKA_DERIVE,
+                                                           saltKey));
                 }
                 saltKey_att = sftk_FindAttribute(saltKey, CKA_VALUE);
                 if (saltKey_att == NULL) {
@@ -7684,7 +7843,8 @@ NSC_DeriveKey(CK_SESSION_HANDLE hSession,
             return CKR_KEY_HANDLE_INVALID;
         }
     }
-    key->isFIPS = sftk_operationIsFIPS(slot, pMechanism, CKA_DERIVE, sourceKey);
+    sftk_setFIPS(key, sftk_operationIsFIPS(slot, pMechanism,
+                                           CKA_DERIVE, sourceKey));
 
     switch (mechanism) {
         
@@ -9140,7 +9300,7 @@ NSC_DeriveKey(CK_SESSION_HANDLE hSession,
         }
 
         crv = sftk_handleObject(key, session);
-        session->lastOpWasFIPS = key->isFIPS;
+        session->lastOpWasFIPS = sftk_hasFIPS(key);
         sftk_FreeSession(session);
         if (phKey) {
             *phKey = key->handle;

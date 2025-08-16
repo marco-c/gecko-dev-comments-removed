@@ -99,6 +99,15 @@ PK11DisableReasons PK11_GetDisabledReason(PK11SlotInfo *slot);
 
 
 
+
+
+PRInt32 PK11_CheckPKCS11Version(PK11SlotInfo *slot, CK_BYTE major,
+                                CK_BYTE minor, PRBool useFunctionTable);
+
+
+
+
+
 PRBool PK11_UserDisableSlot(PK11SlotInfo *slot);
 
 
@@ -778,6 +787,11 @@ void PK11_HPKE_DestroyContext(HpkeContext *cx, PRBool freeit);
 SECStatus PK11_HPKE_ExportContext(const HpkeContext *cx, PK11SymKey *wrapKey, SECItem **serialized);
 SECStatus PK11_HPKE_ExportSecret(const HpkeContext *cx, const SECItem *info, unsigned int L,
                                  PK11SymKey **outKey);
+
+
+
+
+PK11SymKey *PK11_HPKE_GetSharedSecret(const HpkeContext *cx);
 const SECItem *PK11_HPKE_GetEncapPubKey(const HpkeContext *cx);
 HpkeContext *PK11_HPKE_ImportContext(const SECItem *serialized, PK11SymKey *wrapKey);
 SECStatus PK11_HPKE_Open(HpkeContext *cx, const SECItem *aad, const SECItem *ct, SECItem **outPt);

@@ -149,12 +149,6 @@ class CodeSigningTrustDomain final : public TrustDomain {
     return Success;
   }
 
-  virtual Result NetscapeStepUpMatchesServerAuth(
-      Time notBefore,  bool& matches) override {
-    matches = false;
-    return Success;
-  }
-
   virtual void NoteAuxiliaryExtension(AuxiliaryExtension extension,
                                       Input extensionData) override {}
 

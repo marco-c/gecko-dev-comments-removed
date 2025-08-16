@@ -727,9 +727,7 @@ CheckBasicConstraints(EndEntityOrCA endEntityOrCA,
 
 static Result
 MatchEKU(Reader& value, KeyPurposeId requiredEKU,
-         EndEntityOrCA endEntityOrCA, TrustDomain& trustDomain,
-         Time notBefore,  bool& found,
-          bool& foundOCSPSigning)
+          bool& found,  bool& foundOCSPSigning)
 {
   
   
@@ -749,34 +747,13 @@ MatchEKU(Reader& value, KeyPurposeId requiredEKU,
   static const uint8_t email [] = { (40*1)+3, 6, 1, 5, 5, 7, 3, 4 };
   static const uint8_t ocsp  [] = { (40*1)+3, 6, 1, 5, 5, 7, 3, 9 };
 
-  
-  
-  
-  static const uint8_t serverStepUp[] =
-    { (40*2)+16, 128+6,72, 1, 128+6,128+120,66, 4, 1 };
-
   bool match = false;
 
   if (!found) {
     switch (requiredEKU) {
-      case KeyPurposeId::id_kp_serverAuth: {
-        if (value.MatchRest(server)) {
-          match = true;
-          break;
-        }
-        
-        
-        
-        if (endEntityOrCA == EndEntityOrCA::MustBeCA &&
-            value.MatchRest(serverStepUp)) {
-          Result rv = trustDomain.NetscapeStepUpMatchesServerAuth(notBefore,
-                                                                  match);
-          if (rv != Success) {
-            return rv;
-          }
-        }
+      case KeyPurposeId::id_kp_serverAuth:
+        match = value.MatchRest(server);
         break;
-      }
 
       case KeyPurposeId::id_kp_clientAuth:
         match = value.MatchRest(client);
@@ -817,8 +794,7 @@ MatchEKU(Reader& value, KeyPurposeId requiredEKU,
 Result
 CheckExtendedKeyUsage(EndEntityOrCA endEntityOrCA,
                       const Input* encodedExtendedKeyUsage,
-                      KeyPurposeId requiredEKU, TrustDomain& trustDomain,
-                      Time notBefore)
+                      KeyPurposeId requiredEKU)
 {
   
   
@@ -833,8 +809,7 @@ CheckExtendedKeyUsage(EndEntityOrCA endEntityOrCA,
     Reader input(*encodedExtendedKeyUsage);
     Result rv = der::NestedOf(input, der::SEQUENCE, der::OIDTag,
                               der::EmptyAllowed::No, [&](Reader& r) {
-      return MatchEKU(r, requiredEKU, endEntityOrCA, trustDomain, notBefore,
-                      found, foundOCSPSigning);
+      return MatchEKU(r, requiredEKU, found, foundOCSPSigning);
     });
     if (rv != Success) {
       return Result::ERROR_INADEQUATE_CERT_TYPE;
@@ -1071,7 +1046,7 @@ CheckIssuerIndependentProperties(TrustDomain& trustDomain,
 
   
   rv = CheckExtendedKeyUsage(endEntityOrCA, cert.GetExtKeyUsage(),
-                             requiredEKUIfPresent, trustDomain, notBefore);
+                             requiredEKUIfPresent);
   if (rv != Success) {
     return rv;
   }
