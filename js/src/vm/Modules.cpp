@@ -61,8 +61,7 @@ static bool TryStartDynamicModuleImport(JSContext* cx, HandleScript script,
                                         HandleValue specifierArg,
                                         HandleValue optionsArg,
                                         HandleObject promise);
-static bool ContinueDynamicImport(JSContext* cx,
-                                  Handle<Value> referencingPrivate,
+static bool ContinueDynamicImport(JSContext* cx, Handle<JSScript*> referrer,
                                   Handle<JSObject*> moduleRequest,
                                   Handle<PromiseObject*> promiseCapability,
                                   Handle<ModuleObject*> module,
@@ -104,12 +103,11 @@ JS_PUBLIC_API void JS::SetModuleMetadataHook(JSRuntime* rt,
 
 
 JS_PUBLIC_API bool JS::FinishLoadingImportedModule(
-    JSContext* cx, Handle<JSScript*> referrer, Handle<Value> referencingPrivate,
-    Handle<JSObject*> moduleRequest, Handle<Value> payload,
-    Handle<JSObject*> result, bool usePromise) {
+    JSContext* cx, Handle<JSScript*> referrer, Handle<JSObject*> moduleRequest,
+    Handle<Value> payload, Handle<JSObject*> result, bool usePromise) {
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
-  cx->check(referrer, referencingPrivate, moduleRequest, payload, result);
+  cx->check(referrer, moduleRequest, payload, result);
 
   MOZ_ASSERT(result);
   Rooted<ModuleObject*> module(cx, &result->as<ModuleObject>());
@@ -149,8 +147,8 @@ JS_PUBLIC_API bool JS::FinishLoadingImportedModule(
   
   MOZ_ASSERT(object->is<PromiseObject>());
   Rooted<PromiseObject*> promise(cx, &object->as<PromiseObject>());
-  return ContinueDynamicImport(cx, referencingPrivate, moduleRequest, promise,
-                               module, usePromise);
+  return ContinueDynamicImport(cx, referrer, moduleRequest, promise, module,
+                               usePromise);
 }
 
 
@@ -2777,23 +2775,23 @@ bool js::OnModuleEvaluationFailure(JSContext* cx,
 
 
 
+
+
+
+
 class DynamicImportContextObject : public NativeObject {
  public:
-  enum { ReferencingPrivateSlot = 0, PromiseSlot, ModuleSlot, SlotCount };
+  enum { ReferrerSlot = 0, PromiseSlot, ModuleSlot, SlotCount };
 
   static const JSClass class_;
-  static const JSClassOps classOps_;
 
   [[nodiscard]] static DynamicImportContextObject* create(
-      JSContext* cx, Handle<Value> referencingPrivate,
-      Handle<PromiseObject*> promise, Handle<ModuleObject*> module);
+      JSContext* cx, Handle<JSScript*> referrer, Handle<PromiseObject*> promise,
+      Handle<ModuleObject*> module);
 
-  Value referencingPrivate() const;
+  JSScript* referrer() const;
   PromiseObject* promise() const;
   ModuleObject* module() const;
-
-  static void clearReferencingPrivate(JSRuntime* runtime,
-                                      DynamicImportContextObject* ic);
 
   static void finalize(JS::GCContext* gcx, JSObject* obj);
 };
@@ -2801,46 +2799,33 @@ class DynamicImportContextObject : public NativeObject {
 
 const JSClass DynamicImportContextObject::class_ = {
     "DynamicImportContextObject",
-    JSCLASS_HAS_RESERVED_SLOTS(DynamicImportContextObject::SlotCount) |
-        JSCLASS_SLOT0_IS_NSISUPPORTS | JSCLASS_FOREGROUND_FINALIZE,
-    &DynamicImportContextObject::classOps_,
-};
-static_assert(DynamicImportContextObject::ReferencingPrivateSlot == 0);
-
-
-const JSClassOps DynamicImportContextObject::classOps_ = {
-    nullptr,                               
-    nullptr,                               
-    nullptr,                               
-    nullptr,                               
-    nullptr,                               
-    nullptr,                               
-    DynamicImportContextObject::finalize,  
-    nullptr,                               
-    nullptr,                               
-    nullptr,                               
-};
+    JSCLASS_HAS_RESERVED_SLOTS(DynamicImportContextObject::SlotCount)};
 
 
 DynamicImportContextObject* DynamicImportContextObject::create(
-    JSContext* cx, Handle<Value> referencingPrivate,
-    Handle<PromiseObject*> promise, Handle<ModuleObject*> module) {
+    JSContext* cx, Handle<JSScript*> referrer, Handle<PromiseObject*> promise,
+    Handle<ModuleObject*> module) {
   Rooted<DynamicImportContextObject*> self(
       cx, NewObjectWithGivenProto<DynamicImportContextObject>(cx, nullptr));
   if (!self) {
     return nullptr;
   }
 
-  cx->runtime()->addRefScriptPrivate(referencingPrivate);
-
-  self->initReservedSlot(ReferencingPrivateSlot, referencingPrivate);
+  if (referrer) {
+    self->initReservedSlot(ReferrerSlot, PrivateGCThingValue(referrer));
+  }
   self->initReservedSlot(PromiseSlot, ObjectValue(*promise));
   self->initReservedSlot(ModuleSlot, ObjectValue(*module));
   return self;
 }
 
-Value DynamicImportContextObject::referencingPrivate() const {
-  return getReservedSlot(ReferencingPrivateSlot);
+JSScript* DynamicImportContextObject::referrer() const {
+  Value value = getReservedSlot(ReferrerSlot);
+  if (value.isUndefined()) {
+    return nullptr;
+  }
+
+  return static_cast<JSScript*>(value.toGCThing());
 }
 
 PromiseObject* DynamicImportContextObject::promise() const {
@@ -2862,24 +2847,8 @@ ModuleObject* DynamicImportContextObject::module() const {
 }
 
 
-void DynamicImportContextObject::finalize(JS::GCContext* gcx, JSObject* obj) {
-  auto* context = &obj->as<DynamicImportContextObject>();
-  clearReferencingPrivate(gcx->runtime(), context);
-}
 
-
-void DynamicImportContextObject::clearReferencingPrivate(
-    JSRuntime* runtime, DynamicImportContextObject* context) {
-  Value value = context->referencingPrivate();
-  if (!value.isUndefined()) {
-    context->setReservedSlot(ReferencingPrivateSlot, UndefinedValue());
-    runtime->releaseScriptPrivate(value);
-  }
-}
-
-
-
-bool ContinueDynamicImport(JSContext* cx, Handle<Value> referencingPrivate,
+bool ContinueDynamicImport(JSContext* cx, Handle<JSScript*> referrer,
                            Handle<JSObject*> moduleRequest,
                            Handle<PromiseObject*> promiseCapability,
                            Handle<ModuleObject*> module, bool usePromise) {
@@ -2890,8 +2859,8 @@ bool ContinueDynamicImport(JSContext* cx, Handle<Value> referencingPrivate,
   
   
   Rooted<DynamicImportContextObject*> context(
-      cx, DynamicImportContextObject::create(cx, referencingPrivate,
-                                             promiseCapability, module));
+      cx, DynamicImportContextObject::create(cx, referrer, promiseCapability,
+                                             module));
   if (!context) {
     return RejectPromiseWithPendingError(cx, promiseCapability);
   }
@@ -3003,11 +2972,6 @@ static bool DynamicImportResolved(JSContext* cx, unsigned argc, Value* vp) {
 
   Rooted<DynamicImportContextObject*> context(
       cx, ExtraFromHandler<DynamicImportContextObject>(args));
-  auto clearRef = mozilla::MakeScopeExit([&] {
-    DynamicImportContextObject::clearReferencingPrivate(cx->runtime(), context);
-  });
-
-  RootedValue referencingPrivate(cx, context->referencingPrivate());
 
   Rooted<PromiseObject*> promise(cx, TargetFromHandler<PromiseObject>(args));
 
@@ -3052,11 +3016,7 @@ static bool DynamicImportRejected(JSContext* cx, unsigned argc, Value* vp) {
 
   Rooted<DynamicImportContextObject*> context(
       cx, ExtraFromHandler<DynamicImportContextObject>(args));
-  auto clearRef = mozilla::MakeScopeExit([&] {
-    DynamicImportContextObject::clearReferencingPrivate(cx->runtime(), context);
-  });
 
-  RootedValue referencingPrivate(cx, context->referencingPrivate());
   Rooted<PromiseObject*> promise(cx, TargetFromHandler<PromiseObject>(args));
 
   
