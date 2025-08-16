@@ -125,9 +125,11 @@ bool RemoteMediaManagerParent::OnManagerThread() {
 }
 
 
-void RemoteMediaManagerParent::Dispatch(already_AddRefed<nsIRunnable> aRunnable) {
+void RemoteMediaManagerParent::Dispatch(
+    already_AddRefed<nsIRunnable> aRunnable) {
   if (!sRemoteMediaManagerParentThread) {
-    MOZ_DIAGNOSTIC_CRASH("Dispatching after RemoteMediaManagerParent thread shutdown!");
+    MOZ_DIAGNOSTIC_CRASH(
+        "Dispatching after RemoteMediaManagerParent thread shutdown!");
     return;
   }
 
