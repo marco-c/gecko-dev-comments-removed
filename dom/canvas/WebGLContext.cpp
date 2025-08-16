@@ -8,8 +8,9 @@
 #include <algorithm>
 #include <array>
 #include <bitset>
+#include <cctype>
+#include <iterator>
 #include <queue>
-#include <regex>
 
 #include "AccessCheck.h"
 #include "CompositableHost.h"
@@ -2407,30 +2408,59 @@ Maybe<std::string> WebGLContext::GetString(const GLenum pname) const {
 
 
 Maybe<webgl::IndexedName> webgl::ParseIndexed(const std::string& str) {
-  static const std::regex kRegex("(.*)\\[([0-9]+)\\]");
+  
+  if (str.size() < 2 || str.back() != ']') {
+    return {};
+  }
+  
+  const size_t closeBracket = str.size() - 1;
+  size_t openBracket = closeBracket;
+  for (;;) {
+    char c = str[--openBracket];
+    if (isdigit(c)) {
+      if (openBracket <= 0) {
+        
+        return {};
+      }
+    } else if (c == '[') {
+      
+      break;
+    } else {
+      
+      return {};
+    }
+  }
 
-  std::smatch match;
-  if (!std::regex_match(str, match, kRegex)) return {};
-
-  const auto index = std::stoull(match[2]);
-  return Some(webgl::IndexedName{match[1], index});
+  
+  size_t firstDigit = openBracket + 1;
+  if (firstDigit >= closeBracket) {
+    return {};
+  }
+  const auto index =
+      std::stoull(str.substr(firstDigit, closeBracket - firstDigit));
+  std::string name = str.substr(0, openBracket);
+  return Some(webgl::IndexedName{name, index});
 }
 
 
 static std::vector<std::string> ExplodeName(const std::string& str) {
   std::vector<std::string> ret;
-
-  static const std::regex kSep("[.[\\]]");
-
-  auto itr = std::regex_token_iterator<decltype(str.begin())>(
-      str.begin(), str.end(), kSep, {-1, 0});
-  const auto end = decltype(itr)();
-
-  for (; itr != end; ++itr) {
-    const auto& part = itr->str();
-    if (part.size()) {
-      ret.push_back(part);
+  size_t curPos = 0;
+  while (curPos < str.size()) {
+    
+    size_t nextPos = str.find_first_of(".[]", curPos);
+    if (nextPos == std::string::npos) {
+      
+      ret.push_back(str.substr(curPos));
+      break;
     }
+    
+    if (curPos < nextPos) {
+      ret.push_back(str.substr(curPos, nextPos - curPos));
+    }
+    
+    ret.push_back(str.substr(nextPos, 1));
+    curPos = nextPos + 1;
   }
   return ret;
 }
