@@ -85,7 +85,7 @@ class EnvironmentActor extends Actor {
 
 
   bindings() {
-    const bindings = { arguments: [], variables: {} };
+    const bindings = { arguments: [], variables: Object.create(null) };
 
     
     
@@ -101,7 +101,7 @@ class EnvironmentActor extends Actor {
       parameterNames = [];
     }
     for (const name of parameterNames) {
-      const arg = {};
+      const arg = Object.create(null);
       const value = this.obj.getVariable(name);
 
       
