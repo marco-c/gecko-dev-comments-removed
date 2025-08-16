@@ -364,31 +364,26 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::InitVAAPIDecoder() {
 
   InitHWCodecContext(ContextType::VAAPI);
 
-  auto releaseVAAPIdecoder = MakeScopeExit([&] {
+  
+  
+  auto releaseVAAPIdecoder = MakeScopeExit([&]() MOZ_NO_THREAD_SAFETY_ANALYSIS {
     if (mVAAPIDeviceContext) {
       mLib->av_buffer_unref(&mVAAPIDeviceContext);
     }
-    if (mCodecContext) {
-      mLib->av_freep(&mCodecContext);
-    }
+    ReleaseCodecContext();
   });
 
   if (!CreateVAAPIDeviceContext()) {
-    mLib->av_freep(&mCodecContext);
     FFMPEG_LOG("  Failed to create VA-API device context");
     return NS_ERROR_DOM_MEDIA_FATAL_ERR;
   }
 
   MediaResult ret = AllocateExtraData();
   if (NS_FAILED(ret)) {
-    mLib->av_buffer_unref(&mVAAPIDeviceContext);
-    mLib->av_freep(&mCodecContext);
     return ret;
   }
 
   if (mLib->avcodec_open2(mCodecContext, codec, nullptr) < 0) {
-    mLib->av_buffer_unref(&mVAAPIDeviceContext);
-    mLib->av_freep(&mCodecContext);
     FFMPEG_LOG("  Couldn't initialise VA-API decoder");
     return NS_ERROR_DOM_MEDIA_FATAL_ERR;
   }
@@ -450,20 +445,17 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::InitV4L2Decoder() {
   
   mCodecContext->apply_cropping = 0;
 
-  auto releaseDecoder = MakeScopeExit([&] {
-    if (mCodecContext) {
-      mLib->av_freep(&mCodecContext);
-    }
-  });
+  
+  
+  auto releaseDecoder = MakeScopeExit(
+      [&]() MOZ_NO_THREAD_SAFETY_ANALYSIS { ReleaseCodecContext(); });
 
   MediaResult ret = AllocateExtraData();
   if (NS_FAILED(ret)) {
-    mLib->av_freep(&mCodecContext);
     return ret;
   }
 
   if (mLib->avcodec_open2(mCodecContext, codec, nullptr) < 0) {
-    mLib->av_freep(&mCodecContext);
     FFMPEG_LOG("  Couldn't initialise V4L2 decoder");
     return NS_ERROR_DOM_MEDIA_FATAL_ERR;
   }
@@ -2160,10 +2152,10 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::InitD3D11VADecoder() {
   mCodecContext->opaque = this;
   InitHWCodecContext(ContextType::D3D11VA);
 
-  auto releaseResources = MakeScopeExit([&] {
-    if (mCodecContext) {
-      mLib->av_freep(&mCodecContext);
-    }
+  
+  
+  auto releaseResources = MakeScopeExit([&]() MOZ_NO_THREAD_SAFETY_ANALYSIS {
+    ReleaseCodecContext();
     if (mD3D11VADeviceContext) {
       AVHWDeviceContext* hwctx =
           reinterpret_cast<AVHWDeviceContext*>(mD3D11VADeviceContext->data);
@@ -2343,10 +2335,10 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::InitMediaCodecDecoder() {
   mCodecContext->opaque = this;
   InitHWCodecContext(ContextType::MediaCodec);
 
-  auto releaseResources = MakeScopeExit([&] {
-    if (mCodecContext) {
-      mLib->av_freep(&mCodecContext);
-    }
+  
+  
+  auto releaseResources = MakeScopeExit([&]() MOZ_NO_THREAD_SAFETY_ANALYSIS {
+    ReleaseCodecContext();
     if (mMediaCodecDeviceContext) {
       mLib->av_buffer_unref(&mMediaCodecDeviceContext);
     }
