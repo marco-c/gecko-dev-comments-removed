@@ -59,7 +59,7 @@ EncodeSupportSet CanCreateWMFEncoder(const EncoderConfig& aConfig) {
     }
     
     if (CanUseWMFHwEncoder(aConfig.mCodec) &&
-        aConfig.mHardwarePreference == HardwarePreference::RequireSoftware) {
+        aConfig.mHardwarePreference != HardwarePreference::RequireSoftware) {
       auto hwEnc =
           MakeRefPtr<MFTEncoder>(MFTEncoder::HWPreference::HardwareOnly);
       if (SUCCEEDED(hwEnc->Create(CodecToSubtype(aConfig.mCodec), aConfig.mSize,
