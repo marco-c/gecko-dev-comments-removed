@@ -700,6 +700,10 @@ void Watchtower::watchPropertyValueChangeSlow(
   
   
 
+  
+  
+  
+  
   if (obj->hasObjectFuse()) {
     if (auto* objFuse = cx->zone()->objectFuses.get(obj)) {
       objFuse->handlePropertyValueChange(cx, propInfo);
@@ -741,6 +745,30 @@ template void Watchtower::watchPropertyValueChangeSlow<AllowGC::NoGC>(
     typename MaybeRooted<PropertyKey, AllowGC::NoGC>::HandleType id,
     typename MaybeRooted<Value, AllowGC::NoGC>::HandleType value,
     PropertyInfo propInfo);
+
+
+SetSlotOptimizable Watchtower::canOptimizeSetSlotSlow(JSContext* cx,
+                                                      NativeObject* obj,
+                                                      PropertyInfo prop) {
+  MOZ_ASSERT(obj->hasObjectFuse());
+
+  ObjectFuse* objFuse = cx->zone()->objectFuses.getOrCreate(cx, obj);
+  if (!objFuse) {
+    cx->recoverFromOutOfMemory();
+    return SetSlotOptimizable::No;
+  }
+
+  if (objFuse->canOptimizeSetSlot(prop)) {
+    return SetSlotOptimizable::Yes;
+  }
+
+  
+  
+  
+  
+  
+  return SetSlotOptimizable::NotYet;
+}
 
 
 bool Watchtower::watchFreezeOrSealSlow(JSContext* cx, Handle<NativeObject*> obj,
