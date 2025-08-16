@@ -203,21 +203,13 @@ onmessage = event => {
       self.postMessage(response, result.transfer || []);
     })
     .catch(error => {
-      if (error instanceof Error) {
-        error = {
-          message: error.message,
-          fileName: error.fileName,
-          lineNumber: error.lineNumber,
-          column: error.column,
-          stack: error.stack,
-          errorCode: error.errorCode,
-        };
-      }
-
       self.postMessage({
         msg: "failure",
         msgId,
         error,
+        
+        
+        errorCode: error.errorCode,
       });
     })
     .catch(error => {
