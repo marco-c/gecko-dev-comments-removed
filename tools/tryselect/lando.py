@@ -431,9 +431,7 @@ def push_to_lando_try(
 
     
     
-    lando_config_section = os.getenv("LANDO_TRY_CONFIG") or (
-        "lando-prod" if not os.getenv("LANDO_TRY_USE_DEV") else "lando-dev"
-    )
+    lando_config_section = os.getenv("LANDO_TRY_CONFIG", "lando-prod")
 
     
     lando_ini_path = Path(vcs.path) / ".lando.ini"
