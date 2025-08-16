@@ -13,6 +13,7 @@
 #include "jit/JitOptions.h"
 #include "js/HeapAPI.h"
 #include "js/Utility.h"
+#include "vm/JSContext.h"
 
 #ifdef MOZ_MEMORY
 #  include "mozmemory_stall.h"
@@ -30,6 +31,11 @@
 #  include <algorithm>
 #  include <errno.h>
 #  include <unistd.h>
+
+#  ifdef XP_LINUX
+
+#    include <sys/syscall.h>
+#  endif
 
 #  if !defined(__wasi__)
 #    include <sys/mman.h>
@@ -462,6 +468,62 @@ void InitMemorySubsystem() {
   }
 
   MOZ_ASSERT(gMappedMemorySizeBytes == 0);
+}
+
+void MapStack(size_t stackSize) {
+  
+  
+  
+  MOZ_ASSERT(js::CurrentThreadIsMainThread());
+  MOZ_ASSERT(MaybeGetJSContext()->runtime()->isMainRuntime());
+
+#if defined(FUZZING) && defined(XP_LINUX)
+  
+  if (getpid() != (pid_t)syscall(SYS_gettid)) {
+    return;
+  }
+
+  
+  
+  
+  uintptr_t stackTop = reinterpret_cast<uintptr_t>(__builtin_frame_address(0));
+  uintptr_t stackBase = stackTop - stackSize;
+  size_t pageSize = js::gc::SystemPageSize();
+  MOZ_ASSERT(pageSize > 0);
+
+  
+  
+  
+  stackTop -= pageSize;
+
+  stackBase = RoundDown(stackBase, pageSize);
+  stackTop = RoundDown(stackTop, pageSize);
+
+  
+  
+  
+  
+  
+  uintptr_t guardBase = stackBase - pageSize;
+  if (munmap(reinterpret_cast<void*>(guardBase), pageSize) < 0) {
+    MOZ_CRASH("unable to unmap guard page in unused portion of existing stack");
+  }
+
+  int flags =
+      MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS | MAP_GROWSDOWN | MAP_NORESERVE;
+#  ifdef MAP_STACK
+  flags |= MAP_STACK;
+#  endif
+
+  void* result = mmap(reinterpret_cast<void*>(stackBase), stackTop - stackBase,
+                      PROT_READ | PROT_WRITE, flags, -1, 0);
+  if (result == MAP_FAILED) {
+    MOZ_CRASH("mmap of stack failed");
+  }
+  if (result != reinterpret_cast<void*>(stackBase)) {
+    MOZ_CRASH("(old kernel) interfering mapping exists");
+  }
+#endif
 }
 
 void CheckMemorySubsystemOnShutDown() {
