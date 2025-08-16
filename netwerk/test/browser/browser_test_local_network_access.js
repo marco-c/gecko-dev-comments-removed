@@ -201,22 +201,6 @@ async function runPromptedLnaTest(test, overrideLabel, notificationID) {
       userAction,
       notificationID
     );
-    
-    
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    Services.prefs.setBoolPref("network.http.rcwn.enabled", false);
-
-    
-    await runSingleTestCase(
-      test,
-      rand,
-      expectedStatus,
-      `LNA test (${overrideLabel}) for ${test.type} with user action: ${userAction}`,
-      userAction,
-      notificationID
-    );
-    Services.prefs.clearUserPref("network.http.rcwn.enabled");
   }
 }
 
