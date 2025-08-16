@@ -115,63 +115,67 @@ class CanvasFrameAnonymousContentHelper {
     nodeBuilder,
     { waitForDocumentToLoad = true } = {}
   ) {
-    this.highlighterEnv = highlighterEnv;
-    this.nodeBuilder = nodeBuilder;
-    this.waitForDocumentToLoad = !!waitForDocumentToLoad;
+    this.#highlighterEnv = highlighterEnv;
+    this.#nodeBuilder = nodeBuilder;
+    this.#waitForDocumentToLoad = !!waitForDocumentToLoad;
 
-    this._onWindowReady = this._onWindowReady.bind(this);
-    this.highlighterEnv.on("window-ready", this._onWindowReady);
-
-    this.listeners = new Map();
-    this.elements = new Map();
+    this.#highlighterEnv.on("window-ready", this.#onWindowReady);
   }
+
+  #content;
+  #initialized;
+  #highlighterEnv;
+  #nodeBuilder;
+  #waitForDocumentToLoad;
+  #listeners = new Map();
+  #elements = new Map();
 
   initialize() {
     
-    const onInitialized = new Promise(resolve => {
-      this._initialized = resolve;
-    });
+    const { promise: onInitialized, resolve } = Promise.withResolvers();
+    this.#initialized = resolve;
+
     
     
-    const doc = this.highlighterEnv.document;
+    const doc = this.#highlighterEnv.document;
     if (
-      !this.waitForDocumentToLoad ||
+      !this.#waitForDocumentToLoad ||
       isDocumentReady(doc) ||
       doc.readyState !== "uninitialized"
     ) {
-      this._insert();
+      this.#insert();
     }
 
     return onInitialized;
   }
 
   destroy() {
-    this._remove();
+    this.#remove();
 
-    this.highlighterEnv.off("window-ready", this._onWindowReady);
-    this.highlighterEnv = this.nodeBuilder = this._content = null;
+    this.#highlighterEnv.off("window-ready", this.#onWindowReady);
+    this.#highlighterEnv = this.#nodeBuilder = this.#content = null;
     this.anonymousContentDocument = null;
     this.anonymousContentWindow = null;
     this.pageListenerTarget = null;
 
-    this._removeAllListeners();
-    this.elements.clear();
+    this.#removeAllListeners();
+    this.#elements.clear();
   }
 
-  async _insert() {
-    if (this.waitForDocumentToLoad) {
-      await waitForContentLoaded(this.highlighterEnv.window);
+  async #insert() {
+    if (this.#waitForDocumentToLoad) {
+      await waitForContentLoaded(this.#highlighterEnv.window);
     }
-    if (!this.highlighterEnv) {
+    if (!this.#highlighterEnv) {
       
       return;
     }
 
     
     
-    this.anonymousContentDocument = this.highlighterEnv.document;
-    this.anonymousContentWindow = this.highlighterEnv.window;
-    this.pageListenerTarget = this.highlighterEnv.pageListenerTarget;
+    this.anonymousContentDocument = this.#highlighterEnv.document;
+    this.anonymousContentWindow = this.#highlighterEnv.window;
+    this.pageListenerTarget = this.#highlighterEnv.pageListenerTarget;
 
     
     
@@ -179,7 +183,7 @@ class CanvasFrameAnonymousContentHelper {
     
     
     try {
-      this._content = this.anonymousContentDocument.insertAnonymousContent();
+      this.#content = this.anonymousContentDocument.insertAnonymousContent();
     } catch (e) {
       
       
@@ -198,7 +202,7 @@ class CanvasFrameAnonymousContentHelper {
             { once: true }
           );
         });
-        this._content = this.anonymousContentDocument.insertAnonymousContent();
+        this.#content = this.anonymousContentDocument.insertAnonymousContent();
       } else {
         throw e;
       }
@@ -213,15 +217,15 @@ class CanvasFrameAnonymousContentHelper {
     );
     link.href = STYLESHEET_URI;
     link.rel = "stylesheet";
-    this._content.root.appendChild(link);
-    this._content.root.appendChild(this.nodeBuilder());
+    this.#content.root.appendChild(link);
+    this.#content.root.appendChild(this.#nodeBuilder());
 
-    this._initialized();
+    this.#initialized();
   }
 
-  _remove() {
+  #remove() {
     try {
-      this.anonymousContentDocument.removeAnonymousContent(this._content);
+      this.anonymousContentDocument.removeAnonymousContent(this.#content);
     } catch (e) {
       
       
@@ -235,20 +239,20 @@ class CanvasFrameAnonymousContentHelper {
 
 
 
-  _onWindowReady({ isTopLevel }) {
+  #onWindowReady = ({ isTopLevel }) => {
     if (isTopLevel) {
-      this._removeAllListeners();
-      this.elements.clear();
-      this._insert();
+      this.#removeAllListeners();
+      this.#elements.clear();
+      this.#insert();
     }
-  }
+  };
 
-  _getNodeById(id) {
+  #getNodeById(id) {
     return this.content?.root.getElementById(id);
   }
 
   getBoundingClientRect(id) {
-    const node = this._getNodeById(id);
+    const node = this.#getNodeById(id);
     if (!node) {
       return null;
     }
@@ -256,7 +260,7 @@ class CanvasFrameAnonymousContentHelper {
   }
 
   getComputedStylePropertyValue(id, property) {
-    const node = this._getNodeById(id);
+    const node = this.#getNodeById(id);
     if (!node) {
       return null;
     }
@@ -266,11 +270,11 @@ class CanvasFrameAnonymousContentHelper {
   }
 
   getTextContentForElement(id) {
-    return this._getNodeById(id)?.textContent;
+    return this.#getNodeById(id)?.textContent;
   }
 
   setTextContentForElement(id, text) {
-    const node = this._getNodeById(id);
+    const node = this.#getNodeById(id);
     if (!node) {
       return;
     }
@@ -278,15 +282,15 @@ class CanvasFrameAnonymousContentHelper {
   }
 
   setAttributeForElement(id, name, value) {
-    this._getNodeById(id)?.setAttribute(name, value);
+    this.#getNodeById(id)?.setAttribute(name, value);
   }
 
   getAttributeForElement(id, name) {
-    return this._getNodeById(id)?.getAttribute(name);
+    return this.#getNodeById(id)?.getAttribute(name);
   }
 
   removeAttributeForElement(id, name) {
-    this._getNodeById(id)?.removeAttribute(name);
+    this.#getNodeById(id)?.removeAttribute(name);
   }
 
   hasAttributeForElement(id, name) {
@@ -294,7 +298,7 @@ class CanvasFrameAnonymousContentHelper {
   }
 
   getCanvasContext(id, type = "2d") {
-    return this._getNodeById(id)?.getContext(type);
+    return this.#getNodeById(id)?.getContext(type);
   }
 
   
@@ -341,14 +345,14 @@ class CanvasFrameAnonymousContentHelper {
     }
 
     
-    if (!this.listeners.has(type)) {
+    if (!this.#listeners.has(type)) {
       const target = this.pageListenerTarget;
       target.addEventListener(type, this, true);
       
-      this.listeners.set(type, new Map());
+      this.#listeners.set(type, new Map());
     }
 
-    const listeners = this.listeners.get(type);
+    const listeners = this.#listeners.get(type);
     listeners.set(id, handler);
   }
 
@@ -359,21 +363,21 @@ class CanvasFrameAnonymousContentHelper {
 
 
   removeEventListenerForElement(id, type) {
-    const listeners = this.listeners.get(type);
+    const listeners = this.#listeners.get(type);
     if (!listeners) {
       return;
     }
     listeners.delete(id);
 
     
-    if (!this.listeners.has(type)) {
+    if (!this.#listeners.has(type)) {
       const target = this.pageListenerTarget;
       target.removeEventListener(type, this, true);
     }
   }
 
   handleEvent(event) {
-    const listeners = this.listeners.get(event.type);
+    const listeners = this.#listeners.get(event.type);
     if (!listeners) {
       return;
     }
@@ -409,19 +413,19 @@ class CanvasFrameAnonymousContentHelper {
     }
   }
 
-  _removeAllListeners() {
+  #removeAllListeners() {
     if (this.pageListenerTarget) {
       const target = this.pageListenerTarget;
-      for (const [type] of this.listeners) {
+      for (const [type] of this.#listeners) {
         target.removeEventListener(type, this, true);
       }
     }
-    this.listeners.clear();
+    this.#listeners.clear();
   }
 
   getElement(id) {
-    if (this.elements.has(id)) {
-      return this.elements.get(id);
+    if (this.#elements.has(id)) {
+      return this.#elements.get(id);
     }
 
     const element = {
@@ -442,19 +446,19 @@ class CanvasFrameAnonymousContentHelper {
         getPropertyValue: property =>
           this.getComputedStylePropertyValue(id, property),
       },
-      classList: this._getNodeById(id)?.classList,
+      classList: this.#getNodeById(id)?.classList,
     };
 
-    this.elements.set(id, element);
+    this.#elements.set(id, element);
 
     return element;
   }
 
   get content() {
-    if (!this._content || Cu.isDeadWrapper(this._content)) {
+    if (!this.#content || Cu.isDeadWrapper(this.#content)) {
       return null;
     }
-    return this._content;
+    return this.#content;
   }
 
   
@@ -479,11 +483,11 @@ class CanvasFrameAnonymousContentHelper {
 
 
   scaleRootElement(node, id) {
-    const boundaryWindow = this.highlighterEnv.window;
+    const boundaryWindow = this.#highlighterEnv.window;
     const zoom = getCurrentZoom(node);
     
     
-    const root = this._getNodeById(id);
+    const root = this.#getNodeById(id);
     root.style.display = "none";
     node.offsetWidth;
 
