@@ -2,7 +2,8 @@
 
 
 ChromeUtils.defineESModuleGetters(this, {
-  PageDataService: "resource:///modules/pagedata/PageDataService.sys.mjs",
+  PageDataService:
+    "moz-src:///browser/components/pagedata/PageDataService.sys.mjs",
   TestUtils: "resource://testing-common/TestUtils.sys.mjs",
 });
 
