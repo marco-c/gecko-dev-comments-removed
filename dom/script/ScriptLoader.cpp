@@ -1377,15 +1377,31 @@ bool ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
       ReportErrorToConsole(request, rv);
 
       
-      nsCOMPtr<nsIRunnable> runnable =
-          NewRunnableMethod("nsIScriptElement::FireErrorEvent", aElement,
-                            &nsIScriptElement::FireErrorEvent);
+      
+      bool block = !(request->GetScriptLoadContext()->IsAsyncScript() ||
+                     !aElement->GetParserCreated() ||
+                     request->GetScriptLoadContext()->IsDeferredScript());
+
+      
+      nsCOMPtr<nsIRunnable> runnable;
+      if (block) {
+        mParserBlockingRequest = request;
+        runnable = NewRunnableMethod<RefPtr<ScriptLoadRequest>, nsresult>(
+            "ScriptLoader::HandleLoadErrorAndProcessPendingRequests", this,
+            &ScriptLoader::HandleLoadErrorAndProcessPendingRequests, request,
+            rv);
+      } else {
+        runnable =
+            NewRunnableMethod("nsIScriptElement::FireErrorEvent", aElement,
+                              &nsIScriptElement::FireErrorEvent);
+      }
+
       if (mDocument) {
         mDocument->Dispatch(runnable.forget());
       } else {
         NS_DispatchToCurrentThread(runnable.forget());
       }
-      return false;
+      return block;
     }
 
     if (request->IsStencil()) {
@@ -4197,6 +4213,13 @@ void ScriptLoader::HandleLoadError(ScriptLoadRequest* aRequest,
                aRequest->GetScriptLoadContext()->IsLinkPreloadScript());
     MOZ_ASSERT(!aRequest->isInList());
   }
+}
+
+void ScriptLoader::HandleLoadErrorAndProcessPendingRequests(
+    ScriptLoadRequest* aRequest, nsresult aResult) {
+  HandleLoadError(aRequest, aResult);
+  
+  ProcessPendingRequests();
 }
 
 void ScriptLoader::UnblockParser(ScriptLoadRequest* aParserBlockingRequest) {

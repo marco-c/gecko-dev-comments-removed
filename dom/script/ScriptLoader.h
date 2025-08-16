@@ -611,6 +611,9 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   void HandleLoadError(ScriptLoadRequest* aRequest, nsresult aResult);
 
+  void HandleLoadErrorAndProcessPendingRequests(ScriptLoadRequest* aRequest,
+                                                nsresult aResult);
+
   
 
 
