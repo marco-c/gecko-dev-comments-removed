@@ -32,6 +32,7 @@ const SEARCH_CONFIG = [
         visualSearch: {
           base: "https://example.com/visual-search-1",
           searchTermParamName: "url",
+          acceptedContentTypes: ["image/png"],
         },
       },
     },
@@ -189,6 +190,18 @@ add_task(async function contextClick_selectedText() {
   await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function () {
     let selection = content.getSelection();
     selection.removeAllRanges();
+  });
+});
+
+
+
+add_task(async function contextClick_unsupportedImage() {
+  await setDefaultEngineAndCheckMenu({
+    
+    
+    selector: "#image-svg",
+    defaultEngineId: "visual-search-1",
+    shouldBeShown: false,
   });
 });
 
