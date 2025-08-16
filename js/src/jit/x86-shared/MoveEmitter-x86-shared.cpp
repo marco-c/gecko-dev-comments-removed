@@ -75,6 +75,8 @@ bool MoveEmitterX86::maybeEmitOptimizedCycle(const MoveResolver& moves,
                                              size_t i, bool allGeneralRegs,
                                              bool allFloatRegs,
                                              size_t swapCount) {
+  MOZ_ASSERT(swapCount > 0);
+
   if (allGeneralRegs && swapCount <= 2) {
     
     
@@ -86,14 +88,38 @@ bool MoveEmitterX86::maybeEmitOptimizedCycle(const MoveResolver& moves,
     return true;
   }
 
-  if (allFloatRegs && swapCount == 1) {
+  if (allFloatRegs) {
     
     
-    FloatRegister a = moves.getMove(i).to().floatReg();
-    FloatRegister b = moves.getMove(i + 1).to().floatReg();
-    masm.vxorpd(a, b, b);
-    masm.vxorpd(b, a, a);
-    masm.vxorpd(a, b, b);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    ScratchSimd128Scope scratch(masm);
+    for (size_t k = 0; k <= swapCount; k++) {
+      FloatRegister from = moves.getMove(i + k).from().floatReg();
+      FloatRegister to = moves.getMove(i + k).to().floatReg();
+      MOZ_ASSERT(from != scratch && to != scratch);
+      if (k == 0) {
+        MOZ_ASSERT(from == moves.getMove(i + 1).to().floatReg());
+        masm.vmovapd(to, scratch);
+        masm.vmovapd(from, to);
+      } else if (k == swapCount) {
+        MOZ_ASSERT(from == moves.getMove(i).to().floatReg());
+        masm.vmovapd(scratch, to);
+      } else {
+        MOZ_ASSERT(from == moves.getMove(i + k + 1).to().floatReg());
+        masm.vmovapd(from, to);
+      }
+    }
     return true;
   }
 
