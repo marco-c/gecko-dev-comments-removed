@@ -373,7 +373,9 @@ fn clear_texture_via_buffer_copies(
 ) {
     assert!(!texture_desc.format.is_depth_stencil_format());
 
-    if texture_desc.format == wgt::TextureFormat::NV12 {
+    if texture_desc.format == wgt::TextureFormat::NV12
+        || texture_desc.format == wgt::TextureFormat::P010
+    {
         
         return;
     }

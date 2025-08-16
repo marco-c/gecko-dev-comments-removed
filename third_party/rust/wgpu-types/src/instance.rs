@@ -359,6 +359,8 @@ impl GlBackendOptions {
 pub struct Dx12BackendOptions {
     
     pub shader_compiler: Dx12Compiler,
+    
+    pub latency_waitable_object: Dx12UseFrameLatencyWaitableObject,
 }
 
 impl Dx12BackendOptions {
@@ -368,8 +370,11 @@ impl Dx12BackendOptions {
     #[must_use]
     pub fn from_env_or_default() -> Self {
         let compiler = Dx12Compiler::from_env().unwrap_or_default();
+        let latency_waitable_object =
+            Dx12UseFrameLatencyWaitableObject::from_env().unwrap_or_default();
         Self {
             shader_compiler: compiler,
+            latency_waitable_object,
         }
     }
 
@@ -379,7 +384,12 @@ impl Dx12BackendOptions {
     #[must_use]
     pub fn with_env(self) -> Self {
         let shader_compiler = self.shader_compiler.with_env();
-        Self { shader_compiler }
+        let latency_waitable_object = self.latency_waitable_object.with_env();
+
+        Self {
+            shader_compiler,
+            latency_waitable_object,
+        }
     }
 }
 
@@ -498,6 +508,54 @@ impl Dx12Compiler {
             "dxc" | "dynamicdxc" => Some(Self::default_dynamic_dxc()),
             "staticdxc" => Some(Self::StaticDxc),
             "fxc" => Some(Self::Fxc),
+            _ => None,
+        }
+    }
+
+    
+    
+    
+    #[must_use]
+    pub fn with_env(self) -> Self {
+        if let Some(compiler) = Self::from_env() {
+            compiler
+        } else {
+            self
+        }
+    }
+}
+
+
+#[derive(Clone, Debug, Default)]
+pub enum Dx12UseFrameLatencyWaitableObject {
+    
+    
+    None,
+    
+    #[default]
+    Wait,
+    
+    
+    
+    DontWait,
+}
+
+impl Dx12UseFrameLatencyWaitableObject {
+    
+    
+    
+    
+    
+    
+    #[must_use]
+    pub fn from_env() -> Option<Self> {
+        let value = crate::env::var("WGPU_DX12_USE_FRAME_LATENCY_WAITABLE_OBJECT")
+            .as_deref()?
+            .to_lowercase();
+        match value.as_str() {
+            "none" => Some(Self::None),
+            "wait" => Some(Self::Wait),
+            "dontwait" => Some(Self::DontWait),
             _ => None,
         }
     }

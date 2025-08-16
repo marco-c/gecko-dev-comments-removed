@@ -2979,62 +2979,69 @@ impl BlockContext<'_> {
                     ref accept,
                     ref reject,
                 } => {
-                    let condition_id = self.cached[condition];
+                    
+                    
+                    
+                    
+                    
+                    if !(accept.is_empty() && reject.is_empty()) {
+                        let condition_id = self.cached[condition];
 
-                    let merge_id = self.gen_id();
-                    block.body.push(Instruction::selection_merge(
-                        merge_id,
-                        spirv::SelectionControl::NONE,
-                    ));
+                        let merge_id = self.gen_id();
+                        block.body.push(Instruction::selection_merge(
+                            merge_id,
+                            spirv::SelectionControl::NONE,
+                        ));
 
-                    let accept_id = if accept.is_empty() {
-                        None
-                    } else {
-                        Some(self.gen_id())
-                    };
-                    let reject_id = if reject.is_empty() {
-                        None
-                    } else {
-                        Some(self.gen_id())
-                    };
+                        let accept_id = if accept.is_empty() {
+                            None
+                        } else {
+                            Some(self.gen_id())
+                        };
+                        let reject_id = if reject.is_empty() {
+                            None
+                        } else {
+                            Some(self.gen_id())
+                        };
 
-                    self.function.consume(
-                        block,
-                        Instruction::branch_conditional(
-                            condition_id,
-                            accept_id.unwrap_or(merge_id),
-                            reject_id.unwrap_or(merge_id),
-                        ),
-                    );
+                        self.function.consume(
+                            block,
+                            Instruction::branch_conditional(
+                                condition_id,
+                                accept_id.unwrap_or(merge_id),
+                                reject_id.unwrap_or(merge_id),
+                            ),
+                        );
 
-                    if let Some(block_id) = accept_id {
-                        
-                        
-                        
-                        
-                        let _ = self.write_block(
-                            block_id,
-                            accept,
-                            BlockExit::Branch { target: merge_id },
-                            loop_context,
-                            debug_info,
-                        )?;
+                        if let Some(block_id) = accept_id {
+                            
+                            
+                            
+                            
+                            let _ = self.write_block(
+                                block_id,
+                                accept,
+                                BlockExit::Branch { target: merge_id },
+                                loop_context,
+                                debug_info,
+                            )?;
+                        }
+                        if let Some(block_id) = reject_id {
+                            
+                            
+                            
+                            
+                            let _ = self.write_block(
+                                block_id,
+                                reject,
+                                BlockExit::Branch { target: merge_id },
+                                loop_context,
+                                debug_info,
+                            )?;
+                        }
+
+                        block = Block::new(merge_id);
                     }
-                    if let Some(block_id) = reject_id {
-                        
-                        
-                        
-                        
-                        let _ = self.write_block(
-                            block_id,
-                            reject,
-                            BlockExit::Branch { target: merge_id },
-                            loop_context,
-                            debug_info,
-                        )?;
-                    }
-
-                    block = Block::new(merge_id);
                 }
                 Statement::Switch {
                     selector,
