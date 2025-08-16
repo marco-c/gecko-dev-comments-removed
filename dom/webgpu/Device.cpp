@@ -475,6 +475,8 @@ already_AddRefed<BindGroup> Device::CreateBindGroup(
       setTextureViewBinding(texture_view);
     } else if (entry.mResource.IsGPUSampler()) {
       e.sampler = entry.mResource.GetAsGPUSampler()->mId;
+    } else if (entry.mResource.IsGPUExternalTexture()) {
+      e.external_texture = entry.mResource.GetAsGPUExternalTexture()->mId;
     } else {
       
       
