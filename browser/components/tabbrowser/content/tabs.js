@@ -2760,6 +2760,7 @@
       let size = this.verticalMode ? "height" : "width";
       let translateAxis = this.verticalMode ? "translateY" : "translateX";
       let { width: tabWidth, height: tabHeight } = bounds(draggedTab);
+      let tabSize = this.verticalMode ? tabHeight : tabWidth;
       let translateX = event.screenX - dragData.screenX;
       let translateY = event.screenY - dragData.screenY;
 
@@ -2769,7 +2770,6 @@
       dragData.translateY = translateY;
 
       
-      let lastTab = allTabs.at(-1);
       let periphery = document.getElementById(
         "tabbrowser-arrowscrollbox-periphery"
       );
@@ -2783,17 +2783,18 @@
 
       
       let startBound = this[screenAxis] - firstMovingTabScreen;
+      let endBound =
+        periphery[screenAxis] -
+        lastMovingTabScreen +
+        
+        
+        (this.#rtlMode ? bounds(periphery).width : tabSize);
       
-      let endBound;
-      if (!numPinned && lastTab == draggedTab) {
-        endBound =
-          periphery[screenAxis] -
-          lastMovingTabScreen +
-          
-          
-          (this.#rtlMode ? bounds(periphery).width : bounds(draggedTab)[size]);
-      } else {
-        endBound = endEdge(lastTab) - lastMovingTabScreen;
+      if (
+        this.arrowScrollbox.hasAttribute("overflowing") &&
+        this.verticalMode
+      ) {
+        endBound = endBound - tabHeight;
       }
 
       translate = this.#rtlMode
@@ -2801,12 +2802,18 @@
         : Math.min(Math.max(translate, startBound), endBound);
 
       
+      let draggedTabScreenAxis = draggedTab[screenAxis] + translate;
       if (
-        screen < draggedTab[screenAxis] + translate ||
-        screen > endEdge(draggedTab) + translate
+        (screen < draggedTabScreenAxis ||
+          screen > draggedTabScreenAxis + tabSize) &&
+        draggedTabScreenAxis + tabSize < endBound &&
+        draggedTabScreenAxis > startBound
       ) {
-        translate =
-          screen - draggedTab[screenAxis] - bounds(draggedTab)[size] / 2;
+        translate = screen - draggedTab[screenAxis] - tabSize / 2;
+        
+        translate = this.#rtlMode
+          ? Math.min(Math.max(translate, endBound), startBound)
+          : Math.min(Math.max(translate, startBound), endBound);
       }
 
       if (!gBrowser.pinnedTabCount) {
