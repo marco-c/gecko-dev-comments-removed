@@ -814,6 +814,44 @@ function getRequestHeadersRawText(
   return writeHeaderText(requestHeaders.headers, preHeaderText).trim();
 }
 
+
+
+
+
+
+
+
+
+
+function responseIsFresh({ responseHeaders, status }) {
+  
+  if (status != 304 || !responseHeaders) {
+    return false;
+  }
+
+  const list = responseHeaders.headers;
+  const cacheControl = list.find(e => e.name.toLowerCase() === "cache-control");
+  const expires = list.find(e => e.name.toLowerCase() === "expires");
+
+  
+  if (cacheControl) {
+    const maxAgeMatch =
+      cacheControl.value.match(/s-maxage\s*=\s*(\d+)/) ||
+      cacheControl.value.match(/max-age\s*=\s*(\d+)/);
+
+    if (maxAgeMatch && maxAgeMatch.pop() > 0) {
+      return true;
+    }
+  }
+
+  
+  if (expires && Date.parse(expires.value)) {
+    return true;
+  }
+
+  return false;
+}
+
 module.exports = {
   decodeUnicodeBase64,
   getFormDataSections,
@@ -846,4 +884,5 @@ module.exports = {
   ipToLong,
   parseJSON,
   getRequestHeadersRawText,
+  responseIsFresh,
 };

@@ -12,6 +12,7 @@ const {
 } = require("resource://devtools/client/netmonitor/src/utils/filter-predicates.js");
 const {
   processNetworkUpdates,
+  responseIsFresh,
 } = require("resource://devtools/client/netmonitor/src/utils/request-utils.js");
 const {
   ADD_REQUEST,
@@ -161,44 +162,6 @@ function setData(cacheData, request, dataType, emptyCache) {
   }
   cacheData[dataType].count++;
   return cacheData;
-}
-
-
-
-
-
-
-
-
-
-
-function responseIsFresh({ responseHeaders, status }) {
-  
-  if (status != 304 || !responseHeaders) {
-    return false;
-  }
-
-  const list = responseHeaders.headers;
-  const cacheControl = list.find(e => e.name.toLowerCase() === "cache-control");
-  const expires = list.find(e => e.name.toLowerCase() === "expires");
-
-  
-  if (cacheControl) {
-    const maxAgeMatch =
-      cacheControl.value.match(/s-maxage\s*=\s*(\d+)/) ||
-      cacheControl.value.match(/max-age\s*=\s*(\d+)/);
-
-    if (maxAgeMatch && maxAgeMatch.pop() > 0) {
-      return true;
-    }
-  }
-
-  
-  if (expires && Date.parse(expires.value)) {
-    return true;
-  }
-
-  return false;
 }
 
 module.exports = {
