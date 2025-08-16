@@ -279,7 +279,10 @@ typedef struct {
   cubeb_channel_layout
       layout; 
 
-  cubeb_stream_prefs prefs; 
+  cubeb_stream_prefs prefs;                   
+  cubeb_input_processing_params input_params; 
+
+
 } cubeb_stream_params;
 
 
@@ -415,6 +418,13 @@ typedef struct {
 } cubeb_device_collection;
 
 
+typedef struct {
+  const char * const *
+      names;    
+  size_t count; 
+} cubeb_backend_names;
+
+
 
 
 
@@ -490,6 +500,12 @@ cubeb_init(cubeb ** context, char const * context_name,
 
 CUBEB_EXPORT char const *
 cubeb_get_backend_id(cubeb * context);
+
+
+
+
+CUBEB_EXPORT cubeb_backend_names
+cubeb_get_backend_names();
 
 
 
