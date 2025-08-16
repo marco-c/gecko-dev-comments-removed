@@ -104,7 +104,7 @@ JS_PUBLIC_API void JS::SetModuleMetadataHook(JSRuntime* rt,
 
 
 JS_PUBLIC_API bool JS::FinishLoadingImportedModule(
-    JSContext* cx, Handle<JSObject*> referrer, Handle<Value> referencingPrivate,
+    JSContext* cx, Handle<JSScript*> referrer, Handle<Value> referencingPrivate,
     Handle<JSObject*> moduleRequest, Handle<Value> payload,
     Handle<JSObject*> result, bool usePromise) {
   AssertHeapIsIdle();
@@ -114,15 +114,13 @@ JS_PUBLIC_API bool JS::FinishLoadingImportedModule(
   MOZ_ASSERT(result);
   Rooted<ModuleObject*> module(cx, &result->as<ModuleObject>());
 
-  if (referrer) {
-    
+  if (referrer && referrer->isModule()) {
     
 
     
     
     
-    LoadedModuleMap& loadedModules =
-        referrer->as<ModuleObject>().loadedModules();
+    LoadedModuleMap& loadedModules = referrer->module()->loadedModules();
     if (auto record = loadedModules.lookup(moduleRequest)) {
       
       MOZ_ASSERT(record->value() == module);
@@ -801,19 +799,17 @@ bool js::HostLoadImportedModule(JSContext* cx, Handle<JSScript*> referrer,
   
   
   
-  Rooted<ModuleObject*> referrerModule(cx);
   Rooted<Value> referencingPrivate(cx);
   if (referrer) {
     if (referrer->isModule()) {
-      referrerModule = referrer->module();
-      referencingPrivate = JS::GetModulePrivate(referrerModule);
+      referencingPrivate = JS::GetModulePrivate(referrer->module());
     } else {
       referencingPrivate = referrer->sourceObject()->getPrivate();
     }
   }
 
-  bool ok = moduleLoadHook(cx, referrerModule, referencingPrivate,
-                           moduleRequest, hostDefined, payload);
+  bool ok = moduleLoadHook(cx, referrer, referencingPrivate, moduleRequest,
+                           hostDefined, payload);
 
   if (!ok) {
     MOZ_ASSERT(JS_IsExceptionPending(cx));

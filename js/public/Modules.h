@@ -75,7 +75,7 @@ enum class ModuleType : uint32_t {
 
 
 
-using ModuleLoadHook = bool (*)(JSContext* cx, Handle<JSObject*> referrer,
+using ModuleLoadHook = bool (*)(JSContext* cx, Handle<JSScript*> referrer,
                                 Handle<Value> referencingPrivate,
                                 Handle<JSObject*> moduleRequest,
                                 Handle<Value> hostDefined,
@@ -148,7 +148,7 @@ extern JS_PUBLIC_API void SetModuleMetadataHook(JSRuntime* rt,
 
 
 extern JS_PUBLIC_API bool FinishLoadingImportedModule(
-    JSContext* cx, Handle<JSObject*> referrer, Handle<Value> referencingPrivate,
+    JSContext* cx, Handle<JSScript*> referrer, Handle<Value> referencingPrivate,
     Handle<JSObject*> moduleRequest, Handle<Value> payload,
     Handle<JSObject*> result, bool usePromise);
 
