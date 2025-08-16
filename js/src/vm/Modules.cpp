@@ -125,8 +125,9 @@ JS_PUBLIC_API bool JS::FinishLoadingImportedModule(
   
   JSObject* object = &payload.toObject();
   if (object->is<GraphLoadingStateRecordObject>()) {
-    return js::ContinueLoadingImportedModule(cx, payload, result,
-                                             UndefinedHandleValue);
+    Rooted<GraphLoadingStateRecordObject*> state(cx);
+    state = &object->as<GraphLoadingStateRecordObject>();
+    return ContinueModuleLoading(cx, state, result, UndefinedHandleValue);
   }
 
   
@@ -150,7 +151,9 @@ JS_PUBLIC_API bool JS::FinishLoadingImportedModuleFailed(
   
   JSObject* payload = &payloadArg.toObject();
   if (payload->is<GraphLoadingStateRecordObject>()) {
-    return js::ContinueLoadingImportedModule(cx, payloadArg, nullptr, error);
+    Rooted<GraphLoadingStateRecordObject*> state(cx);
+    state = &payload->as<GraphLoadingStateRecordObject>();
+    return ContinueModuleLoading(cx, state, nullptr, error);
   }
 
   
@@ -1575,20 +1578,6 @@ static bool ContinueModuleLoading(JSContext* cx,
   
   RootedValue hostDefined(cx, state->hostDefined());
   return state->rejected(cx, hostDefined, error);
-}
-
-
-
-bool js::ContinueLoadingImportedModule(JSContext* cx,
-                                       Handle<Value> statePrivate,
-                                       Handle<JSObject*> result,
-                                       Handle<Value> error) {
-  
-  
-  MOZ_ASSERT(!statePrivate.isUndefined());
-  Rooted<GraphLoadingStateRecordObject*> state(cx);
-  state = static_cast<GraphLoadingStateRecordObject*>(&statePrivate.toObject());
-  return ContinueModuleLoading(cx, state, result, error);
 }
 
 
