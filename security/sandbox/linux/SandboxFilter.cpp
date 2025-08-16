@@ -6,6 +6,7 @@
 
 #include "SandboxFilter.h"
 
+#include <asm/termbits.h>  
 #include <errno.h>
 #include <fcntl.h>
 #include <linux/ioctl.h>
@@ -1354,7 +1355,8 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
         
         
         
-        return If(AnyOf(request == TCGETS, request == TIOCGWINSZ),
+        return If(AnyOf(request == TCGETS, request == TIOCGWINSZ,
+                        request == TCGETS2),
                   Error(ENOTTY))
 #ifdef MOZ_ASAN
             
