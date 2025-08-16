@@ -234,7 +234,7 @@ class CssComputedView {
       );
     }
 
-    if (!this.inspector.is3PaneModeEnabled) {
+    if (!this.inspector.isThreePaneModeEnabled) {
       
       
       this.inspector.once(

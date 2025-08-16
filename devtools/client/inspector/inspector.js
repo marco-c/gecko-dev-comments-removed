@@ -137,41 +137,19 @@ class Inspector extends EventEmitter {
   constructor(toolbox, commands, win) {
     super();
 
-    this._toolbox = toolbox;
-    this._commands = commands;
+    this.#toolbox = toolbox;
+    this.#commands = commands;
     this.panelDoc = win.document;
     this.panelWin = win;
     this.panelWin.inspector = this;
     this.telemetry = toolbox.telemetry;
     this.store = createStore(this);
 
-    
-    
-    this._panels = new Map();
-
-    this._clearSearchResultsLabel = this._clearSearchResultsLabel.bind(this);
-    this._handleDefaultColorUnitPrefChange =
-      this._handleDefaultColorUnitPrefChange.bind(this);
-    this._handleRejectionIfNotDestroyed =
-      this._handleRejectionIfNotDestroyed.bind(this);
-    this._onTargetAvailable = this._onTargetAvailable.bind(this);
-    this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
-    this._onTargetSelected = this._onTargetSelected.bind(this);
-    this._onWillNavigate = this._onWillNavigate.bind(this);
-    this._updateSearchResultsLabel = this._updateSearchResultsLabel.bind(this);
-    this._onSearchLabelClick = this._onSearchLabelClick.bind(this);
-
     this.onDetached = this.onDetached.bind(this);
     this.onHostChanged = this.onHostChanged.bind(this);
     this.onNewSelection = this.onNewSelection.bind(this);
     this.onResourceAvailable = this.onResourceAvailable.bind(this);
     this.onRootNodeAvailable = this.onRootNodeAvailable.bind(this);
-    this._onLazyPanelResize = this._onLazyPanelResize.bind(this);
-    this.onPanelWindowResize = debounce(
-      this._onLazyPanelResize,
-      LAZY_RESIZE_INTERVAL_MS,
-      this
-    );
     this.onPickerCanceled = this.onPickerCanceled.bind(this);
     this.onPickerHovered = this.onPickerHovered.bind(this);
     this.onPickerPicked = this.onPickerPicked.bind(this);
@@ -185,12 +163,37 @@ class Inspector extends EventEmitter {
     this.prefObserver = new PrefObserver("devtools.");
     this.prefObserver.on(
       DEFAULT_COLOR_UNIT_PREF,
-      this._handleDefaultColorUnitPrefChange
+      this.#handleDefaultColorUnitPrefChange
     );
     this.defaultColorUnit = Services.prefs.getStringPref(
       DEFAULT_COLOR_UNIT_PREF
     );
   }
+
+  #toolbox;
+  #commands;
+  
+  
+  #panels = new Map();
+  #fluentL10n;
+  #defaultStartupNode;
+  #defaultStartupNodeDomReference;
+  #defaultStartupNodeSelectionReason;
+  #defaultNode;
+  #watchedResources;
+  #highlighters;
+  #newRootStart;
+  #markupFrame;
+  #markupBox;
+  #isThreePaneModeEnabled;
+  #search;
+  #cssProperties;
+  #destroyed;
+  #pendingSelectionUnique;
+  #InspectorTabPanel;
+  #InspectorSplitBox;
+  #TabBar;
+  #updateProgress;
 
   
 
@@ -213,8 +216,8 @@ class Inspector extends EventEmitter {
     
     localizeMarkup(this.panelDoc);
 
-    this._fluentL10n = new FluentL10n();
-    await this._fluentL10n.init(["devtools/client/compatibility.ftl"]);
+    this.#fluentL10n = new FluentL10n();
+    await this.#fluentL10n.init(["devtools/client/compatibility.ftl"]);
 
     
     this.panelDoc.getElementById("inspector-main-content").style.visibility =
@@ -230,26 +233,26 @@ class Inspector extends EventEmitter {
 
     
     
-    this._defaultStartupNode = options.defaultStartupNode;
-    this._defaultStartupNodeDomReference =
+    this.#defaultStartupNode = options.defaultStartupNode;
+    this.#defaultStartupNodeDomReference =
       options.defaultStartupNodeDomReference;
-    this._defaultStartupNodeSelectionReason =
+    this.#defaultStartupNodeSelectionReason =
       options.defaultStartupNodeSelectionReason;
 
     
     
     
-    this._defaultNode = null;
+    this.#defaultNode = null;
 
     await this.commands.targetCommand.watchTargets({
       types: [this.commands.targetCommand.TYPES.FRAME],
-      onAvailable: this._onTargetAvailable,
-      onSelected: this._onTargetSelected,
-      onDestroyed: this._onTargetDestroyed,
+      onAvailable: this.#onTargetAvailable,
+      onSelected: this.#onTargetSelected,
+      onDestroyed: this.#onTargetDestroyed,
     });
 
     const { TYPES } = this.toolbox.resourceCommand;
-    this._watchedResources = [
+    this.#watchedResources = [
       
       TYPES.CSS_CHANGE,
       TYPES.DOCUMENT_EVENT,
@@ -263,10 +266,10 @@ class Inspector extends EventEmitter {
     const isBrowserToolbox =
       this.commands.descriptorFront.isBrowserProcessDescriptor;
     if (isBrowserToolbox) {
-      this._watchedResources.push(TYPES.ROOT_NODE);
+      this.#watchedResources.push(TYPES.ROOT_NODE);
     }
 
-    await this.toolbox.resourceCommand.watchResources(this._watchedResources, {
+    await this.toolbox.resourceCommand.watchResources(this.#watchedResources, {
       onAvailable: this.onResourceAvailable,
     });
 
@@ -295,7 +298,9 @@ class Inspector extends EventEmitter {
     
     
     
-    Glean.devtoolsInspector.threePaneEnabled[this.is3PaneModeEnabled].add(1);
+    Glean.devtoolsInspector.threePaneEnabled[this.isThreePaneModeEnabled].add(
+      1
+    );
 
     return this;
   }
@@ -303,7 +308,7 @@ class Inspector extends EventEmitter {
   
   
   
-  async _onTargetAvailable({ targetFront }) {
+  #onTargetAvailable = async ({ targetFront }) => {
     if (!targetFront.isTopLevel) {
       return;
     }
@@ -311,16 +316,16 @@ class Inspector extends EventEmitter {
     
     
     await Promise.all([
-      this._getCssProperties(targetFront),
-      this._getAccessibilityFront(targetFront),
+      this.#getCssProperties(targetFront),
+      this.#getAccessibilityFront(targetFront),
     ]);
-  }
+  };
 
-  async _onTargetSelected({ targetFront }) {
+  #onTargetSelected = async ({ targetFront }) => {
     
     
-    if (this._highlighters) {
-      this._highlighters.hideAllHighlighters();
+    if (this.#highlighters) {
+      this.#highlighters.hideAllHighlighters();
     }
     if (targetFront.isDestroyed()) {
       return;
@@ -339,17 +344,17 @@ class Inspector extends EventEmitter {
 
     
     await this.onRootNodeAvailable(rootNodeFront);
-  }
+  };
 
-  _onTargetDestroyed({ targetFront }) {
+  #onTargetDestroyed = ({ targetFront }) => {
     
     if (!targetFront.isTopLevel) {
       return;
     }
 
-    this._defaultNode = null;
+    this.#defaultNode = null;
     this.selection.setNodeFront(null);
-  }
+  };
 
   onResourceAvailable(resources) {
     
@@ -378,7 +383,7 @@ class Inspector extends EventEmitter {
         resource.name === "will-navigate" &&
         isTopLevelTarget
       ) {
-        this._onWillNavigate();
+        this.#onWillNavigate();
       }
 
       if (resource.resourceType === this.toolbox.resourceCommand.TYPES.REFLOW) {
@@ -400,70 +405,70 @@ class Inspector extends EventEmitter {
 
   async onRootNodeAvailable(rootNodeFront) {
     
-    this._newRootStart = this.panelWin.performance.now();
+    this.#newRootStart = this.panelWin.performance.now();
 
     this.selection.setNodeFront(null);
-    this._destroyMarkup();
+    this.#destroyMarkup();
 
     try {
-      const defaultNode = await this._getDefaultNodeForSelection(rootNodeFront);
+      const defaultNode = await this.#getDefaultNodeForSelection(rootNodeFront);
       if (!defaultNode) {
         return;
       }
 
       this.selection.setNodeFront(defaultNode, {
         reason:
-          this._defaultStartupNodeSelectionReason ??
+          this.#defaultStartupNodeSelectionReason ??
           "inspector-default-selection",
       });
-      this._defaultStartupNodeSelectionReason = null;
+      this.#defaultStartupNodeSelectionReason = null;
 
-      await this._initMarkupView();
+      await this.#initMarkupView();
 
-      
+      // Setup the toolbar again, since its content may depend on the current document.
       this.setupToolbar();
     } catch (e) {
-      this._handleRejectionIfNotDestroyed(e);
+      this.#handleRejectionIfNotDestroyed(e);
     }
   }
 
-  async _initMarkupView() {
-    if (!this._markupFrame) {
-      this._markupFrame = this.panelDoc.createElement("iframe");
-      this._markupFrame.setAttribute(
+  async #initMarkupView() {
+    if (!this.#markupFrame) {
+      this.#markupFrame = this.panelDoc.createElement("iframe");
+      this.#markupFrame.setAttribute(
         "aria-label",
         INSPECTOR_L10N.getStr("inspector.panelLabel.markupView")
       );
-      this._markupFrame.setAttribute("flex", "1");
+      this.#markupFrame.setAttribute("flex", "1");
       
-      this._markupFrame.setAttribute("tooltip", "aHTMLTooltip");
+      this.#markupFrame.setAttribute("tooltip", "aHTMLTooltip");
 
-      this._markupBox = this.panelDoc.getElementById("markup-box");
-      this._markupBox.style.visibility = "hidden";
-      this._markupBox.appendChild(this._markupFrame);
+      this.#markupBox = this.panelDoc.getElementById("markup-box");
+      this.#markupBox.style.visibility = "hidden";
+      this.#markupBox.appendChild(this.#markupFrame);
 
       const onMarkupFrameLoaded = new Promise(r =>
-        this._markupFrame.addEventListener("load", r, {
+        this.#markupFrame.addEventListener("load", r, {
           capture: true,
           once: true,
         })
       );
 
-      this._markupFrame.setAttribute("src", "markup/markup.xhtml");
+      this.#markupFrame.setAttribute("src", "markup/markup.xhtml");
 
       await onMarkupFrameLoaded;
     }
 
-    this._markupFrame.contentWindow.focus();
-    this._markupBox.style.visibility = "visible";
-    this.markup = new MarkupView(this, this._markupFrame, this._toolbox.win);
+    this.#markupFrame.contentWindow.focus();
+    this.#markupBox.style.visibility = "visible";
+    this.markup = new MarkupView(this, this.#markupFrame, this.#toolbox.win);
     
     this.emitForTests("markuploaded");
 
     const onExpand = this.markup.expandNode(this.selection.nodeFront);
 
     
-    if (this._highlighters) {
+    if (this.#highlighters) {
       await Promise.all([
         this.highlighters.restoreFlexboxState(),
         this.highlighters.restoreGridState(),
@@ -480,15 +485,15 @@ class Inspector extends EventEmitter {
     this.emit("reloaded");
 
     
-    if (this._newRootStart) {
+    if (this.#newRootStart) {
       
       if (this.toolbox && this.toolbox.currentToolId == "inspector") {
-        const delay = this.panelWin.performance.now() - this._newRootStart;
+        const delay = this.panelWin.performance.now() - this.#newRootStart;
         Glean.devtoolsInspector.newRootToReloadDelay.accumulateSingleSample(
           delay
         );
       }
-      delete this._newRootStart;
+      this.#newRootStart = null;
     }
   }
 
@@ -498,11 +503,11 @@ class Inspector extends EventEmitter {
   }
 
   get toolbox() {
-    return this._toolbox;
+    return this.#toolbox;
   }
 
   get commands() {
-    return this._commands;
+    return this.#commands;
   }
 
   
@@ -520,14 +525,14 @@ class Inspector extends EventEmitter {
   }
 
   get highlighters() {
-    if (!this._highlighters) {
-      this._highlighters = new HighlightersOverlay(this);
+    if (!this.#highlighters) {
+      this.#highlighters = new HighlightersOverlay(this);
     }
 
-    return this._highlighters;
+    return this.#highlighters;
   }
 
-  get _3PanePrefName() {
+  get #threePanePrefName() {
     
     
     return this.commands.descriptorFront.isTabDescriptor
@@ -535,23 +540,26 @@ class Inspector extends EventEmitter {
       : THREE_PANE_CHROME_ENABLED_PREF;
   }
 
-  get is3PaneModeEnabled() {
-    if (!this._is3PaneModeEnabled) {
-      this._is3PaneModeEnabled = Services.prefs.getBoolPref(
-        this._3PanePrefName
+  get isThreePaneModeEnabled() {
+    if (!this.#isThreePaneModeEnabled) {
+      this.#isThreePaneModeEnabled = Services.prefs.getBoolPref(
+        this.#threePanePrefName
       );
     }
-    return this._is3PaneModeEnabled;
+    return this.#isThreePaneModeEnabled;
   }
 
-  set is3PaneModeEnabled(value) {
-    this._is3PaneModeEnabled = value;
-    Services.prefs.setBoolPref(this._3PanePrefName, this._is3PaneModeEnabled);
+  set isThreePaneModeEnabled(value) {
+    this.#isThreePaneModeEnabled = value;
+    Services.prefs.setBoolPref(
+      this.#threePanePrefName,
+      this.#isThreePaneModeEnabled
+    );
   }
 
   get search() {
-    if (!this._search) {
-      this._search = new InspectorSearch(
+    if (!this.#search) {
+      this.#search = new InspectorSearch(
         this,
         this.searchBox,
         this.searchClearButton,
@@ -560,7 +568,7 @@ class Inspector extends EventEmitter {
       );
     }
 
-    return this._search;
+    return this.#search;
   }
 
   get selection() {
@@ -568,11 +576,11 @@ class Inspector extends EventEmitter {
   }
 
   get cssProperties() {
-    return this._cssProperties.cssProperties;
+    return this.#cssProperties.cssProperties;
   }
 
   get fluentL10n() {
-    return this._fluentL10n;
+    return this.#fluentL10n;
   }
 
   
@@ -582,11 +590,11 @@ class Inspector extends EventEmitter {
   
   HIGHLIGHTER_AUTOHIDE_TIMER = flags.testing ? 0 : 1000;
 
-  _handleDefaultColorUnitPrefChange() {
+  #handleDefaultColorUnitPrefChange = () => {
     this.defaultColorUnit = Services.prefs.getStringPref(
       DEFAULT_COLOR_UNIT_PREF
     );
-  }
+  };
 
   
 
@@ -594,27 +602,27 @@ class Inspector extends EventEmitter {
 
 
 
-  _handleRejectionIfNotDestroyed(e) {
-    if (!this._destroyed) {
+  #handleRejectionIfNotDestroyed = e => {
+    if (!this.#destroyed) {
       console.error(e);
     }
-  }
+  };
 
-  _onWillNavigate() {
-    this._defaultNode = null;
+  #onWillNavigate = () => {
+    this.#defaultNode = null;
     this.selection.setNodeFront(null);
-    if (this._highlighters) {
-      this._highlighters.hideAllHighlighters();
+    if (this.#highlighters) {
+      this.#highlighters.hideAllHighlighters();
     }
-    this._destroyMarkup();
-    this._pendingSelectionUnique = null;
+    this.#destroyMarkup();
+    this.#pendingSelectionUnique = null;
+  };
+
+  async #getCssProperties(targetFront) {
+    this.#cssProperties = await targetFront.getFront("cssProperties");
   }
 
-  async _getCssProperties(targetFront) {
-    this._cssProperties = await targetFront.getFront("cssProperties");
-  }
-
-  async _getAccessibilityFront(targetFront) {
+  async #getAccessibilityFront(targetFront) {
     this.accessibilityFront = await targetFront.getFront("accessibility");
     return this.accessibilityFront;
   }
@@ -625,26 +633,26 @@ class Inspector extends EventEmitter {
 
 
 
-  async _getDefaultNodeForSelection(rootNodeFront) {
+  async #getDefaultNodeForSelection(rootNodeFront) {
     let node;
-    if (this._defaultStartupNode) {
-      node = this._defaultStartupNode;
-      this._defaultStartupNode = null;
-      this._defaultStartupNodeDomReference = null;
+    if (this.#defaultStartupNode) {
+      node = this.#defaultStartupNode;
+      this.#defaultStartupNode = null;
+      this.#defaultStartupNodeDomReference = null;
       return node;
     }
 
     
     const pendingSelectionUnique = Symbol("pending-selection");
-    this._pendingSelectionUnique = pendingSelectionUnique;
+    this.#pendingSelectionUnique = pendingSelectionUnique;
 
-    if (this._defaultStartupNodeDomReference) {
-      const domReference = this._defaultStartupNodeDomReference;
+    if (this.#defaultStartupNodeDomReference) {
+      const domReference = this.#defaultStartupNodeDomReference;
       
       
       
-      this._defaultStartupNode = null;
-      this._defaultStartupNodeDomReference = null;
+      this.#defaultStartupNode = null;
+      this.#defaultStartupNodeDomReference = null;
 
       try {
         node =
@@ -659,7 +667,7 @@ class Inspector extends EventEmitter {
       }
     }
 
-    if (this._pendingSelectionUnique !== pendingSelectionUnique) {
+    if (this.#pendingSelectionUnique !== pendingSelectionUnique) {
       
       return null;
     }
@@ -688,13 +696,13 @@ class Inspector extends EventEmitter {
     
     for (const selector of defaultNodeSelectors) {
       node = await selector();
-      if (this._pendingSelectionUnique !== pendingSelectionUnique) {
+      if (this.#pendingSelectionUnique !== pendingSelectionUnique) {
         
         return null;
       }
 
       if (node) {
-        this._defaultNode = node;
+        this.#defaultNode = node;
         return node;
       }
     }
@@ -733,7 +741,7 @@ class Inspector extends EventEmitter {
       "inspector-searchlabel"
     );
 
-    this.searchResultsLabel.addEventListener("click", this._onSearchLabelClick);
+    this.searchResultsLabel.addEventListener("click", this.#onSearchLabelClick);
 
     this.searchBox.addEventListener("focus", this.listenForSearchEvents, {
       once: true,
@@ -742,15 +750,15 @@ class Inspector extends EventEmitter {
     this.createSearchBoxShortcuts();
   }
 
-  _onSearchLabelClick() {
+  #onSearchLabelClick = () => {
     
     
     this.searchBox.focus();
-  }
+  };
 
   listenForSearchEvents() {
-    this.search.on("search-cleared", this._clearSearchResultsLabel);
-    this.search.on("search-result", this._updateSearchResultsLabel);
+    this.search.on("search-cleared", this.#clearSearchResultsLabel);
+    this.search.on("search-result", this.#updateSearchResultsLabel);
   }
 
   createSearchBoxShortcuts() {
@@ -786,15 +794,15 @@ class Inspector extends EventEmitter {
     return this.search.autocompleter;
   }
 
-  _clearSearchResultsLabel(result) {
+  #clearSearchResultsLabel = result => {
     
     
     
     this.emit("search-cleared");
-    return this._updateSearchResultsLabel(result, true);
-  }
+    return this.#updateSearchResultsLabel(result, true);
+  };
 
-  _updateSearchResultsLabel(result, clear = false) {
+  #updateSearchResultsLabel = (result, clear = false) => {
     let str = "";
     if (!clear) {
       if (result) {
@@ -815,53 +823,53 @@ class Inspector extends EventEmitter {
     }
 
     this.searchResultsLabel.textContent = str;
-  }
+  };
 
   get React() {
-    return this._toolbox.React;
+    return this.#toolbox.React;
   }
 
   get ReactDOM() {
-    return this._toolbox.ReactDOM;
+    return this.#toolbox.ReactDOM;
   }
 
   get ReactRedux() {
-    return this._toolbox.ReactRedux;
+    return this.#toolbox.ReactRedux;
   }
 
   get browserRequire() {
-    return this._toolbox.browserRequire;
+    return this.#toolbox.browserRequire;
   }
 
   get InspectorTabPanel() {
-    if (!this._InspectorTabPanel) {
-      this._InspectorTabPanel = this.React.createFactory(
+    if (!this.#InspectorTabPanel) {
+      this.#InspectorTabPanel = this.React.createFactory(
         this.browserRequire(
           "devtools/client/inspector/components/InspectorTabPanel"
         )
       );
     }
-    return this._InspectorTabPanel;
+    return this.#InspectorTabPanel;
   }
 
   get InspectorSplitBox() {
-    if (!this._InspectorSplitBox) {
-      this._InspectorSplitBox = this.React.createFactory(
+    if (!this.#InspectorSplitBox) {
+      this.#InspectorSplitBox = this.React.createFactory(
         this.browserRequire(
           "devtools/client/shared/components/splitter/SplitBox"
         )
       );
     }
-    return this._InspectorSplitBox;
+    return this.#InspectorSplitBox;
   }
 
   get TabBar() {
-    if (!this._TabBar) {
-      this._TabBar = this.React.createFactory(
+    if (!this.#TabBar) {
+      this.#TabBar = this.React.createFactory(
         this.browserRequire("devtools/client/shared/components/tabs/TabBar")
       );
     }
-    return this._TabBar;
+    return this.#TabBar;
   }
 
   
@@ -877,7 +885,7 @@ class Inspector extends EventEmitter {
     const splitterBox = this.panelDoc.getElementById("inspector-splitter-box");
     const width = splitterBox.clientWidth;
 
-    return this.is3PaneModeEnabled &&
+    return this.isThreePaneModeEnabled &&
       (this.toolbox.hostType == Toolbox.HostType.LEFT ||
         this.toolbox.hostType == Toolbox.HostType.RIGHT)
       ? width > SIDE_PORTAIT_MODE_WIDTH_THRESHOLD
@@ -908,8 +916,8 @@ class Inspector extends EventEmitter {
         initialWidth: splitSidebarWidth,
         minSize: "225px",
         maxSize: "80%",
-        splitterSize: this.is3PaneModeEnabled ? 1 : 0,
-        endPanelControl: this.is3PaneModeEnabled,
+        splitterSize: this.isThreePaneModeEnabled ? 1 : 0,
+        endPanelControl: this.isThreePaneModeEnabled,
         startPanel: this.InspectorTabPanel({
           id: "inspector-rules-container",
         }),
@@ -927,22 +935,26 @@ class Inspector extends EventEmitter {
       this.panelDoc.getElementById("inspector-splitter-box")
     );
 
-    this.panelWin.addEventListener("resize", this.onPanelWindowResize, true);
+    this.panelWin.addEventListener("resize", this.#onLazyPanelResize, true);
   }
 
-  async _onLazyPanelResize() {
-    
-    if (
-      this.panelWin.closed ||
-      this._destroyed ||
-      this._toolbox.currentToolId !== "inspector"
-    ) {
-      return;
-    }
+  #onLazyPanelResize = debounce(
+    () => {
+      
+      if (
+        this.panelWin?.closed ||
+        this.#destroyed ||
+        this.#toolbox.currentToolId !== "inspector"
+      ) {
+        return;
+      }
 
-    this.splitBox.setState({ vert: this.useLandscapeMode() });
-    this.emit("inspector-resize");
-  }
+      this.splitBox.setState({ vert: this.useLandscapeMode() });
+      this.emit("inspector-resize");
+    },
+    LAZY_RESIZE_INTERVAL_MS,
+    this
+  );
 
   getSidebarSize() {
     let width;
@@ -963,7 +975,7 @@ class Inspector extends EventEmitter {
       
       
       
-      width = this.is3PaneModeEnabled
+      width = this.isThreePaneModeEnabled
         ? INITIAL_SIDEBAR_SIZE * 2
         : INITIAL_SIDEBAR_SIZE;
       height = INITIAL_SIDEBAR_SIZE;
@@ -1035,7 +1047,7 @@ class Inspector extends EventEmitter {
   }
 
   async onSidebarToggle() {
-    this.is3PaneModeEnabled = !this.is3PaneModeEnabled;
+    this.isThreePaneModeEnabled = !this.isThreePaneModeEnabled;
     await this.setupToolbar();
     this.addRuleView({ skipQueue: true });
   }
@@ -1108,7 +1120,7 @@ class Inspector extends EventEmitter {
     const selectedSidebar = this.getSelectedSidebar();
     const ruleViewSidebar = this.sidebarSplitBoxRef.current.startPanelContainer;
 
-    if (this.is3PaneModeEnabled) {
+    if (this.isThreePaneModeEnabled) {
       
       
       
@@ -1186,15 +1198,15 @@ class Inspector extends EventEmitter {
 
 
   hasPanel(id) {
-    return this._panels.has(id);
+    return this.#panels.has(id);
   }
 
   
 
 
   getPanel(id) {
-    if (this._panels.has(id)) {
-      return this._panels.get(id);
+    if (this.#panels.has(id)) {
+      return this.#panels.get(id);
     }
 
     let panel;
@@ -1253,7 +1265,7 @@ class Inspector extends EventEmitter {
     }
 
     if (panel) {
-      this._panels.set(id, panel);
+      this.#panels.set(id, panel);
     }
 
     return panel;
@@ -1270,7 +1282,7 @@ class Inspector extends EventEmitter {
         "allTabsMenuButton.tooltip"
       ),
       sidebarToggleButton: {
-        collapsed: !this.is3PaneModeEnabled,
+        collapsed: !this.isThreePaneModeEnabled,
         collapsePaneTitle: INSPECTOR_L10N.getStr("inspector.hideThreePaneMode"),
         expandPaneTitle: INSPECTOR_L10N.getStr("inspector.showThreePaneMode"),
         onClick: this.onSidebarToggle,
@@ -1381,7 +1393,7 @@ class Inspector extends EventEmitter {
 
 
   addExtensionSidebar(id, { title }) {
-    if (this._panels.has(id)) {
+    if (this.#panels.has(id)) {
       throw new Error(
         `Cannot create an extension sidebar for the existent id: ${id}`
       );
@@ -1399,7 +1411,7 @@ class Inspector extends EventEmitter {
     
     this.addSidebarTab(id, title, extensionSidebar.provider, false);
 
-    this._panels.set(id, extensionSidebar);
+    this.#panels.set(id, extensionSidebar);
 
     
     
@@ -1415,11 +1427,11 @@ class Inspector extends EventEmitter {
 
 
   removeExtensionSidebar(id) {
-    if (!this._panels.has(id)) {
+    if (!this.#panels.has(id)) {
       throw new Error(`Unable to find a sidebar panel with id "${id}"`);
     }
 
-    const panel = this._panels.get(id);
+    const panel = this.#panels.get(id);
 
     const ExtensionSidebar = this.browserRequire(
       "resource://devtools/client/inspector/extensions/extension-sidebar.js"
@@ -1430,7 +1442,7 @@ class Inspector extends EventEmitter {
       );
     }
 
-    this._panels.delete(id);
+    this.#panels.delete(id);
     this.sidebar.removeTab(id);
     panel.destroy();
   }
@@ -1527,7 +1539,7 @@ class Inspector extends EventEmitter {
     }
   }
 
-  _selectionCssSelectors = null;
+  #selectionCssSelectors = null;
 
   
 
@@ -1536,11 +1548,11 @@ class Inspector extends EventEmitter {
 
 
   set selectionCssSelectors(cssSelectors = []) {
-    if (this._destroyed) {
+    if (this.#destroyed) {
       return;
     }
 
-    this._selectionCssSelectors = {
+    this.#selectionCssSelectors = {
       selectors: cssSelectors,
       url: this.currentTarget.url,
     };
@@ -1552,10 +1564,10 @@ class Inspector extends EventEmitter {
 
   get selectionCssSelectors() {
     if (
-      this._selectionCssSelectors &&
-      this._selectionCssSelectors.url === this.currentTarget.url
+      this.#selectionCssSelectors &&
+      this.#selectionCssSelectors.url === this.currentTarget.url
     ) {
-      return this._selectionCssSelectors.selectors;
+      return this.#selectionCssSelectors.selectors;
     }
     return [];
   }
@@ -1576,7 +1588,7 @@ class Inspector extends EventEmitter {
         
         
         this.emitForTests("selection-css-selectors-updated", selectors);
-      }, this._handleRejectionIfNotDestroyed);
+      }, this.#handleRejectionIfNotDestroyed);
   }
 
   
@@ -1620,10 +1632,10 @@ class Inspector extends EventEmitter {
     
     
     
-    await this._onLazyPanelResize();
+    await this.#onLazyPanelResize();
     
     
-    if (!this.currentTarget || !this.is3PaneModeEnabled) {
+    if (!this.currentTarget || !this.isThreePaneModeEnabled) {
       return;
     }
 
@@ -1665,20 +1677,20 @@ class Inspector extends EventEmitter {
 
   updating(name) {
     if (
-      this._updateProgress &&
-      this._updateProgress.node != this.selection.nodeFront
+      this.#updateProgress &&
+      this.#updateProgress.node != this.selection.nodeFront
     ) {
       this.cancelUpdate();
     }
 
-    if (!this._updateProgress) {
+    if (!this.#updateProgress) {
       
       const self = this;
-      this._updateProgress = {
+      this.#updateProgress = {
         node: this.selection.nodeFront,
         outstanding: new Set(),
         checkDone() {
-          if (this !== self._updateProgress) {
+          if (this !== self.#updateProgress) {
             return;
           }
           
@@ -1691,13 +1703,13 @@ class Inspector extends EventEmitter {
             return;
           }
 
-          self._updateProgress = null;
+          self.#updateProgress = null;
           self.emit("inspector-updated", name);
         },
       };
     }
 
-    const progress = this._updateProgress;
+    const progress = this.#updateProgress;
     const done = function () {
       progress.outstanding.delete(done);
       progress.checkDone();
@@ -1710,7 +1722,7 @@ class Inspector extends EventEmitter {
 
 
   cancelUpdate() {
-    this._updateProgress = null;
+    this.#updateProgress = null;
   }
 
   
@@ -1720,7 +1732,7 @@ class Inspector extends EventEmitter {
 
   onDetached(parentNode) {
     this.breadcrumbs.cutAfter(this.breadcrumbs.indexOf(parentNode));
-    const nodeFront = parentNode ? parentNode : this._defaultNode;
+    const nodeFront = parentNode ? parentNode : this.#defaultNode;
     this.selection.setNodeFront(nodeFront, { reason: "detached" });
   }
 
@@ -1728,10 +1740,10 @@ class Inspector extends EventEmitter {
 
 
   destroy() {
-    if (this._destroyed) {
+    if (this.#destroyed) {
       return;
     }
-    this._destroyed = true;
+    this.#destroyed = true;
 
     this.cancelUpdate();
 
@@ -1752,30 +1764,30 @@ class Inspector extends EventEmitter {
     this.sidebar.off("hide", this.onSidebarHidden);
     this.sidebar.off("destroy", this.onSidebarHidden);
 
-    for (const [, panel] of this._panels) {
+    for (const [, panel] of this.#panels) {
       panel.destroy();
     }
-    this._panels.clear();
+    this.#panels.clear();
 
-    if (this._highlighters) {
-      this._highlighters.destroy();
+    if (this.#highlighters) {
+      this.#highlighters.destroy();
     }
 
-    if (this._search) {
-      this._search.destroy();
-      this._search = null;
+    if (this.#search) {
+      this.#search.destroy();
+      this.#search = null;
     }
 
     this.ruleViewSideBar.destroy();
     this.ruleViewSideBar = null;
 
-    this._destroyMarkup();
+    this.#destroyMarkup();
 
     this.teardownToolbar();
 
     this.prefObserver.on(
       DEFAULT_COLOR_UNIT_PREF,
-      this._handleDefaultColorUnitPrefChange
+      this.#handleDefaultColorUnitPrefChange
     );
     this.prefObserver.destroy();
 
@@ -1786,36 +1798,36 @@ class Inspector extends EventEmitter {
 
     this.commands.targetCommand.unwatchTargets({
       types: [this.commands.targetCommand.TYPES.FRAME],
-      onAvailable: this._onTargetAvailable,
-      onSelected: this._onTargetSelected,
-      onDestroyed: this._onTargetDestroyed,
+      onAvailable: this.#onTargetAvailable,
+      onSelected: this.#onTargetSelected,
+      onDestroyed: this.#onTargetDestroyed,
     });
     const { resourceCommand } = this.toolbox;
-    resourceCommand.unwatchResources(this._watchedResources, {
+    resourceCommand.unwatchResources(this.#watchedResources, {
       onAvailable: this.onResourceAvailable,
     });
 
-    this._InspectorTabPanel = null;
-    this._TabBar = null;
-    this._InspectorSplitBox = null;
+    this.#InspectorTabPanel = null;
+    this.#TabBar = null;
+    this.#InspectorSplitBox = null;
     this.sidebarSplitBoxRef = null;
     
     
     
     this.splitBox = null;
 
-    this._is3PaneModeEnabled = null;
-    this._markupBox = null;
-    this._markupFrame = null;
-    this._toolbox = null;
-    this._commands = null;
+    this.#isThreePaneModeEnabled = null;
+    this.#markupBox = null;
+    this.#markupFrame = null;
+    this.#toolbox = null;
+    this.#commands = null;
     this.breadcrumbs = null;
     this.inspectorFront = null;
-    this._cssProperties = null;
+    this.#cssProperties = null;
     this.accessibilityFront = null;
-    this._highlighters = null;
+    this.#highlighters = null;
     this.walker = null;
-    this._defaultNode = null;
+    this.#defaultNode = null;
     this.panelDoc = null;
     this.panelWin.inspector = null;
     this.panelWin = null;
@@ -1828,19 +1840,19 @@ class Inspector extends EventEmitter {
     this.telemetry = null;
     this.searchResultsLabel.removeEventListener(
       "click",
-      this._onSearchLabelClick
+      this.#onSearchLabelClick
     );
     this.searchResultsLabel = null;
   }
 
-  _destroyMarkup() {
+  #destroyMarkup() {
     if (this.markup) {
       this.markup.destroy();
       this.markup = null;
     }
 
-    if (this._markupBox) {
-      this._markupBox.style.visibility = "hidden";
+    if (this.#markupBox) {
+      this.#markupBox.style.visibility = "hidden";
     }
   }
 
@@ -1997,9 +2009,9 @@ class Inspector extends EventEmitter {
     }
   }
 
-  
-
-
+  /**
+   * Returns an object containing the shared handler functions used in React components.
+   */
   getCommonComponentProps() {
     return {
       setSelectedNode: this.selection.setNodeFront,
@@ -2019,8 +2031,8 @@ class Inspector extends EventEmitter {
 
   onPickerPicked(nodeFront) {
     if (this.toolbox.isDebugTargetFenix()) {
-      
-      
+      // When debugging a phone, as we don't have the "hover overlay", we want to provide
+      // feedback to the user so they know where they tapped
       this.highlighters.showHighlighterTypeForNode(
         this.highlighters.TYPES.BOXMODEL,
         nodeFront,
@@ -2052,14 +2064,14 @@ class Inspector extends EventEmitter {
     return true;
   }
 
-  
-
-
-
-
+  /**
+   * Called by toolbox.js on `Esc` keydown.
+   *
+   * @param {AbortController} abortController
+   */
   onToolboxChromeEventHandlerEscapeKeyDown(abortController) {
-    
-    
+    // If the event tooltip is displayed, hide it and prevent the Esc event listener
+    // of the toolbox to occur (e.g. don't toggle split console)
     if (
       this.markup.hasEventDetailsTooltip() &&
       this.markup.eventDetailsTooltip.isVisible()
