@@ -162,11 +162,10 @@ extern JS_PUBLIC_API bool FinishLoadingImportedModule(
 
 
 extern JS_PUBLIC_API bool FinishLoadingImportedModuleFailed(
-    JSContext* cx, Handle<Value> statePrivate, Handle<JSObject*> promise,
-    Handle<Value> error);
+    JSContext* cx, Handle<Value> payload, Handle<Value> error);
 
 extern JS_PUBLIC_API bool FinishLoadingImportedModuleFailedWithPendingException(
-    JSContext* cx, Handle<JSObject*> promise);
+    JSContext* cx, Handle<Value> payload);
 
 
 
