@@ -5133,7 +5133,6 @@ void GCRuntime::waitForBackgroundTasks() {
 
   allocTask.join();
   freeTask.join();
-  nursery().joinSweepTask();
   nursery().joinDecommitTask();
 }
 
@@ -5415,10 +5414,6 @@ AutoEmptyNursery::AutoEmptyNursery(JSContext* cx) {
   cx->runtime()->gc.stats().suspendPhases();
   cx->runtime()->gc.evictNursery(JS::GCReason::EVICT_NURSERY);
   cx->runtime()->gc.stats().resumePhases();
-
-  
-  cx->runtime()->gc.nursery().joinSweepTask();
-
   checkCondition(cx);
 }
 
