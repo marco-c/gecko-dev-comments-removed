@@ -51,11 +51,6 @@ var expected_values = [
 
 
 var suppressed_toggles = [
-  
-  "-moz-scrollbar-end-backward",
-  "-moz-scrollbar-end-forward",
-  "-moz-scrollbar-start-backward",
-  "-moz-scrollbar-start-forward",
   "-moz-gtk-csd-available",
   "-moz-gtk-csd-minimize-button",
   "-moz-gtk-csd-maximize-button",
