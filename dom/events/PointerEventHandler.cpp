@@ -6,7 +6,6 @@
 
 #include "PointerEventHandler.h"
 
-#include "EventStateManager.h"
 #include "PointerEvent.h"
 #include "PointerLockManager.h"
 #include "mozilla/ConnectedAncestorTracker.h"
@@ -44,19 +43,11 @@ LazyLogModule gLogPointerLocation("PointerLocation");
 
 LazyLogModule gLogActivePointers("ActivePointers");
 
-#ifdef DEBUG
-#  define MOZ_LOG_IF_DEBUG(_module, _level, _args) \
-    MOZ_LOG(_module, _level, _args)
-#else
-#  define MOZ_LOG_IF_DEBUG(_module, _level, _args)
-#endif
-
 using namespace dom;
 
 Maybe<int32_t> PointerEventHandler::sSpoofedPointerId;
 StaticAutoPtr<PointerInfo> PointerEventHandler::sLastMouseInfo;
 StaticRefPtr<nsIWeakReference> PointerEventHandler::sLastMousePresShell;
-Maybe<uint32_t> PointerEventHandler::sLastPointerId;
 
 
 
@@ -68,7 +59,7 @@ static nsClassHashtable<nsUint32HashKey, PointerCaptureInfo>*
 
 static nsClassHashtable<nsUint32HashKey, PointerInfo>* sActivePointersIds;
 
-const UniquePtr<PointerInfo>& PointerEventHandler::InsertOrUpdateActivePointer(
+const UniquePtr<PointerInfo>& InsertOrUpdateActivePointer(
     uint32_t aPointerId, UniquePtr<PointerInfo>&& aNewPointerInfo,
     EventMessage aEventMessage, const char* aCallerName) {
   const bool logIt = [&]() {
@@ -99,11 +90,8 @@ const UniquePtr<PointerInfo>& PointerEventHandler::InsertOrUpdateActivePointer(
   return pointerInfo;
 }
 
-void PointerEventHandler::RemoveActivePointer(uint32_t aPointerId,
-                                              EventMessage aEventMessage,
-                                              const char* aCallerName) {
-  MOZ_ASSERT_IF(sLastPointerId, *sLastPointerId != aPointerId);
-
+void RemoveActivePointer(uint32_t aPointerId, EventMessage aEventMessage,
+                         const char* aCallerName) {
   sActivePointersIds->Remove(aPointerId);
   MOZ_LOG(
       gLogActivePointers, LogLevel::Info,
@@ -247,13 +235,14 @@ void PointerEventHandler::RecordPointerState(
   
   else {
     pointerInfo->ClearLastState();
-    MOZ_LOG_IF_DEBUG(
-        gLogPointerLocation, LogLevel::Info,
-        ("got %s on widget:%p, pointer location is cleared (pointerId=%u, "
-         "source=%s)\n",
-         ToChar(aMouseEvent.mMessage), aMouseEvent.mWidget.get(),
-         aMouseEvent.pointerId,
-         InputSourceToString(aMouseEvent.mInputSource).get()));
+#ifdef DEBUG
+    MOZ_LOG(gLogPointerLocation, LogLevel::Info,
+            ("got %s on widget:%p, pointer location is cleared (pointerId=%u, "
+             "source=%s)\n",
+             ToChar(aMouseEvent.mMessage), aMouseEvent.mWidget.get(),
+             aMouseEvent.pointerId,
+             InputSourceToString(aMouseEvent.mInputSource).get()));
+#endif  
   }
 }
 
@@ -318,12 +307,14 @@ void PointerEventHandler::ClearMouseState(PresShell& aRootPresShell,
   sLastMouseInfo->mInputSource = MouseEvent_Binding::MOZ_SOURCE_UNKNOWN;
   sLastMouseInfo->mIsSynthesizedForTests =
       aMouseEvent.mFlags.mIsSynthesizedForTests;
-  MOZ_LOG_IF_DEBUG(gLogMouseLocation, LogLevel::Info,
-                   ("[ps=%p]got %s on widget:%p, mouse location is cleared "
-                    "(pointerId=%u, source=%s)\n",
-                    &aRootPresShell, ToChar(aMouseEvent.mMessage),
-                    aMouseEvent.mWidget.get(), aMouseEvent.pointerId,
-                    InputSourceToString(aMouseEvent.mInputSource).get()));
+#ifdef DEBUG
+  MOZ_LOG(gLogMouseLocation, LogLevel::Info,
+          ("[ps=%p]got %s on widget:%p, mouse location is cleared "
+           "(pointerId=%u, source=%s)\n",
+           &aRootPresShell, ToChar(aMouseEvent.mMessage),
+           aMouseEvent.mWidget.get(), aMouseEvent.pointerId,
+           InputSourceToString(aMouseEvent.mInputSource).get()));
+#endif  
 }
 
 
@@ -352,15 +343,6 @@ void PointerEventHandler::UpdatePointerActiveState(WidgetMouseEvent* aEvent,
           return;
         }
       }
-
-      
-      
-      
-      
-      
-      
-      
-
       
       InsertOrUpdateActivePointer(
           aEvent->pointerId,
@@ -375,9 +357,6 @@ void PointerEventHandler::UpdatePointerActiveState(WidgetMouseEvent* aEvent,
       break;
     }
     case ePointerMove: {
-      if (aEvent->IsReal()) {
-        UpdateLastPointerId(aEvent->pointerId, aEvent->mMessage);
-      }
       
       
       if (!aEvent->mFlags.mIsSynthesizedForTests ||
@@ -398,7 +377,6 @@ void PointerEventHandler::UpdatePointerActiveState(WidgetMouseEvent* aEvent,
       return;
     }
     case ePointerDown:
-      UpdateLastPointerId(aEvent->pointerId, aEvent->mMessage);
       sPointerCapturingElementAtLastPointerUpEvent = nullptr;
       
       if (WidgetPointerEvent* pointerEvent = aEvent->AsPointerEvent()) {
@@ -426,7 +404,6 @@ void PointerEventHandler::UpdatePointerActiveState(WidgetMouseEvent* aEvent,
       if (WidgetPointerEvent* pointerEvent = aEvent->AsPointerEvent()) {
         if (pointerEvent->mInputSource !=
             MouseEvent_Binding::MOZ_SOURCE_TOUCH) {
-          UpdateLastPointerId(aEvent->pointerId, aEvent->mMessage);
           InsertOrUpdateActivePointer(
               pointerEvent->pointerId,
               MakeUnique<PointerInfo>(PointerInfo::Active::No, *pointerEvent,
@@ -434,7 +411,6 @@ void PointerEventHandler::UpdatePointerActiveState(WidgetMouseEvent* aEvent,
                                       GetPointerInfo(aEvent->pointerId)),
               pointerEvent->mMessage, __func__);
         } else {
-          MaybeForgetLastPointerId(aEvent->pointerId, aEvent->mMessage);
           
           
           
@@ -454,7 +430,6 @@ void PointerEventHandler::UpdatePointerActiveState(WidgetMouseEvent* aEvent,
           return;
         }
       }
-      MaybeForgetLastPointerId(aEvent->pointerId, aEvent->mMessage);
       
       
       RemoveActivePointer(aEvent->pointerId, aEvent->mMessage, __func__);
@@ -1584,33 +1559,4 @@ void PointerEventHandler::MaybeCacheSpoofedPointerID(uint16_t aInputSource,
   sSpoofedPointerId.emplace(aPointerId);
 }
 
-void PointerEventHandler::UpdateLastPointerId(uint32_t aPointerId,
-                                              EventMessage aEventMessage) {
-  MOZ_ASSERT(aEventMessage != eMouseEnter);
-
-  if (sLastPointerId && *sLastPointerId == aPointerId) {
-    return;
-  }
-  MOZ_LOG_IF_DEBUG(
-      EventStateManager::MouseCursorUpdateLogRef(), LogLevel::Info,
-      ("PointerEventHandler::UpdateLastPointerId(): "
-       "Last pointerId (%s) is changed to %u when %s",
-       ToString(sLastPointerId).c_str(), aPointerId, ToChar(aEventMessage)));
-  sLastPointerId = Some(aPointerId);
-}
-
-void PointerEventHandler::MaybeForgetLastPointerId(uint32_t aPointerId,
-                                                   EventMessage aEventMessage) {
-  if (!sLastPointerId || *sLastPointerId != aPointerId) {
-    return;
-  }
-  sLastPointerId.reset();
-  MOZ_LOG_IF_DEBUG(EventStateManager::MouseCursorUpdateLogRef(), LogLevel::Info,
-                   ("PointerEventHandler::MaybeForgetLastPointerId(): "
-                    "Last pointerId (%u) is changed to Nothing when %s",
-                    aPointerId, ToChar(aEventMessage)));
-}
-
 }  
-
-#undef MOZ_LOG_IF_DEBUG
