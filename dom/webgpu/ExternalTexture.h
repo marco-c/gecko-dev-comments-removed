@@ -74,6 +74,9 @@ class ExternalTexture : public ObjectBase,
   void Expire();
   bool IsExpired() const { return mIsExpired; }
 
+  void OnSubmit(uint64_t aSubmissionIndex);
+  void OnSubmittedWorkDone(uint64_t aSubmissionIndex);
+
   const RawId mId;
 
  private:
@@ -84,9 +87,19 @@ class ExternalTexture : public ObjectBase,
 
   
   
+  
+  void MaybeDestroy();
+
+  
+  
   RefPtr<ExternalTextureSourceClient> mSource;
   bool mIsExpired = false;
+  bool mIsDestroyed = false;
+  uint64_t mLastSubmittedIndex = 0;
+  uint64_t mLastSubmittedWorkDoneIndex = 0;
 };
+
+
 
 
 
@@ -109,6 +122,17 @@ class ExternalTextureSourceClient {
       ErrorResult& aRv);
 
   const RawId mId;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const RefPtr<layers::Image> mImage;
 
   
   

@@ -69,6 +69,9 @@ class Queue final : public ObjectBase, public ChildOf<Device> {
   void Cleanup();
 
   RefPtr<WebGPUChild> mBridge;
+  
+  
+  uint64_t mNextExternalTextureSubmissionIndex = 1;
 
  public:
 };

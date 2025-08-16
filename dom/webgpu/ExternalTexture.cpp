@@ -55,7 +55,36 @@ ExternalTexture::ExternalTexture(Device* const aParent, RawId aId,
   return externalTexture.forget();
 }
 
-void ExternalTexture::Expire() { mIsExpired = true; }
+void ExternalTexture::Expire() {
+  mIsExpired = true;
+  MaybeDestroy();
+}
+
+void ExternalTexture::OnSubmit(uint64_t aSubmissionIndex) {
+  mLastSubmittedIndex = aSubmissionIndex;
+}
+
+void ExternalTexture::OnSubmittedWorkDone(uint64_t aSubmissionIndex) {
+  mLastSubmittedWorkDoneIndex = aSubmissionIndex;
+  MaybeDestroy();
+}
+
+void ExternalTexture::MaybeDestroy() {
+  if (!mIsDestroyed && mIsExpired &&
+      mLastSubmittedWorkDoneIndex >= mLastSubmittedIndex) {
+    mIsDestroyed = true;
+    mSource = nullptr;
+    
+    
+    
+    
+    
+    
+    if (auto bridge = mParent->GetBridge()) {
+      ffi::wgpu_client_destroy_external_texture(bridge->GetClient(), mId);
+    }
+  }
+}
 
 void ExternalTexture::Cleanup() {
   if (!mValid) {
