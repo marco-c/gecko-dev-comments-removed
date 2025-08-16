@@ -85,8 +85,10 @@ import org.mozilla.fenix.components.menu.store.MenuState
 import org.mozilla.fenix.components.menu.store.MenuStore
 import org.mozilla.fenix.components.menu.store.TranslationInfo
 import org.mozilla.fenix.components.menu.store.WebExtensionMenuItem
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.getWindowInsets
 import org.mozilla.fenix.ext.openSetDefaultBrowserOption
+import org.mozilla.fenix.ext.pixelSizeFor
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.runIfFragmentIsAttached
 import org.mozilla.fenix.ext.settings
@@ -142,12 +144,12 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
         return super.onCreateDialog(savedInstanceState).apply {
             setOnShowListener {
                 val safeActivity = activity ?: return@setOnShowListener
-                val browsingModeManager = (safeActivity as HomeActivity).browsingModeManager
+                val appStore = safeActivity.components.appStore
 
-                isPrivate = browsingModeManager.mode.isPrivate
+                isPrivate = appStore.state.mode.isPrivate
 
                 if (!Config.channel.isNightlyOrDebug) {
-                    val navigationBarColor = if (browsingModeManager.mode.isPrivate) {
+                    val navigationBarColor = if (isPrivate) {
                         ContextCompat.getColor(context, R.color.fx_mobile_private_layer_color_3)
                     } else {
                         ContextCompat.getColor(context, R.color.fx_mobile_layer_color_3)
@@ -156,7 +158,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                     window?.setNavigationBarColorCompat(navigationBarColor)
                 }
 
-                if (browsingModeManager.mode.isPrivate && args.accesspoint == MenuAccessPoint.Home) {
+                if (isPrivate && args.accesspoint == MenuAccessPoint.Home) {
                     window?.setBackgroundDrawable(
                         Color.BLACK.toDrawable().mutate().apply {
                             alpha = PRIVATE_HOME_MENU_BACKGROUND_ALPHA
@@ -879,9 +881,8 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
     private fun calculateMenuSheetWidth(): Int {
         val isLandscape = requireContext().isLandscape()
         val screenWidthPx = requireContext().resources.configuration.screenWidthDp.dpToPx(resources.displayMetrics)
-        val totalHorizontalPadding = 2 * requireContext().resources.getDimensionPixelSize(R.dimen.browser_menu_padding)
-        val minScreenWidth = requireContext().resources.getDimensionPixelSize(R.dimen.browser_menu_max_width) +
-            totalHorizontalPadding
+        val totalHorizontalPadding = 2 * pixelSizeFor(R.dimen.browser_menu_padding)
+        val minScreenWidth = pixelSizeFor(R.dimen.browser_menu_max_width) + totalHorizontalPadding
 
         // We only want to restrict the width of the menu if the device is in landscape mode AND the
         // device's screen width is smaller than the menu's max width and total horizontal padding combined.
@@ -889,7 +890,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
         return if (isLandscape && screenWidthPx < minScreenWidth) {
             screenWidthPx - totalHorizontalPadding
         } else {
-            requireContext().resources.getDimensionPixelSize(R.dimen.browser_menu_max_width)
+            pixelSizeFor(R.dimen.browser_menu_max_width)
         }
     }
 
