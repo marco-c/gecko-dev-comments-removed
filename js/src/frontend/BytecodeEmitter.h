@@ -1010,16 +1010,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   
   
   
-  
-  
-  
-  
-  
-  [[nodiscard]] bool emitSpread(SelfHostedIter selfHostedIter,
-                                int spreadeeStackItems, JSOp storeElementOp);
-  
-  
-  
   [[nodiscard]] bool emitSpread(SelfHostedIter selfHostedIter);
 
   enum class ClassNameKind {

@@ -5671,17 +5671,7 @@ bool BytecodeEmitter::emitAsyncIterator(SelfHostedIter selfHostedIter) {
 }
 
 bool BytecodeEmitter::emitSpread(SelfHostedIter selfHostedIter) {
-  
-  return emitSpread(selfHostedIter, 2, JSOp::InitElemInc);
-  
-}
-
-bool BytecodeEmitter::emitSpread(SelfHostedIter selfHostedIter,
-                                 int spreadeeStackItems, JSOp storeElementOp) {
   LoopControl loopInfo(this, StatementKind::Spread);
-  
-  
-  
 
   if (!loopInfo.emitLoopHead(this, Nothing())) {
     
@@ -5696,7 +5686,7 @@ bool BytecodeEmitter::emitSpread(SelfHostedIter selfHostedIter,
     
     
 
-    if (!emitDupAt(spreadeeStackItems + 1, 2)) {
+    if (!emitDupAt(3, 2)) {
       
       return false;
     }
@@ -5722,7 +5712,7 @@ bool BytecodeEmitter::emitSpread(SelfHostedIter selfHostedIter,
       
       return false;
     }
-    if (!emit1(storeElementOp)) {
+    if (!emit1(JSOp::InitElemInc)) {
       
       return false;
     }
@@ -5743,11 +5733,11 @@ bool BytecodeEmitter::emitSpread(SelfHostedIter selfHostedIter,
   
   MOZ_ASSERT(!loopInfo.continues.offset.valid());
 
-  if (!emit2(JSOp::Pick, spreadeeStackItems + 2)) {
+  if (!emit2(JSOp::Pick, 4)) {
     
     return false;
   }
-  if (!emit2(JSOp::Pick, spreadeeStackItems + 2)) {
+  if (!emit2(JSOp::Pick, 4)) {
     
     return false;
   }
