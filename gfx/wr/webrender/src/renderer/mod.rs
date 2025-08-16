@@ -3851,16 +3851,13 @@ impl Renderer {
         assert_eq!(swapchain_layers.len(), input_layers.len());
 
         if window_is_opaque {
-            match input_layers.first_mut() {
-                Some(_layer) => {
+            match input_layers.last_mut() {
+                Some(layer) => {
                     
                     
-                    
-                    
-                    
-                    
-                    
-                    
+                    if let CompositorSurfaceUsage::Content = layer.usage {
+                        layer.is_opaque = true;
+                    }
                 }
                 None => {
                     
