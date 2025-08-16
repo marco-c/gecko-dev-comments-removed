@@ -9,8 +9,10 @@
 #include "rlogconnector.h"
 
 extern "C" {
-#include "r_log.h"
+
 #include "registry.h"
+#include "r_log.h"
+
 }
 
 #define GTEST_HAS_RTTI 0

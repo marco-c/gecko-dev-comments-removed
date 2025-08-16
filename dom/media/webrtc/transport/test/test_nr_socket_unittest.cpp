@@ -9,8 +9,10 @@
 #include <cstddef>
 
 extern "C" {
-#include "async_wait.h"
+
 #include "r_errors.h"
+#include "async_wait.h"
+
 }
 
 #include <vector>

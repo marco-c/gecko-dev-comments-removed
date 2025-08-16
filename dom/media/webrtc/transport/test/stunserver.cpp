@@ -88,16 +88,18 @@
 #endif
 
 extern "C" {
-#include "addrs.h"
-#include "async_timer.h"
-#include "async_wait.h"
+
 #include "nr_api.h"
+#include "async_wait.h"
+#include "async_timer.h"
 #include "nr_socket.h"
-#include "nr_socket_buffered_stun.h"
 #include "nr_socket_local.h"
-#include "registry.h"
-#include "stun_util.h"
 #include "transport_addr.h"
+#include "stun_util.h"
+#include "registry.h"
+#include "nr_socket_buffered_stun.h"
+#include "addrs.h"
+
 }
 
 #include <string>
