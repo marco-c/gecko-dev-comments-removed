@@ -1738,7 +1738,8 @@ nsresult nsHttpConnection::OnSocketWritable() {
          static_cast<uint32_t>(mSocketOutCondition), again));
 
     
-    if (rv == NS_BASE_STREAM_CLOSED && !mTransaction->IsDone()) {
+    if (rv == NS_BASE_STREAM_CLOSED &&
+        (mTransaction && !mTransaction->IsDone())) {
       rv = NS_OK;
       transactionBytes = 0;
     }
@@ -1781,7 +1782,8 @@ nsresult nsHttpConnection::OnSocketWritable() {
       
       
       if ((mState != HttpConnectionState::SETTING_UP_TUNNEL) && !mSpdySession) {
-        nsHttpTransaction* trans = mTransaction->QueryHttpTransaction();
+        nsHttpTransaction* trans =
+            mTransaction ? mTransaction->QueryHttpTransaction() : nullptr;
         
         if (!trans ||
             (!trans->IsWebsocketUpgrade() && !trans->IsForWebTransport())) {
