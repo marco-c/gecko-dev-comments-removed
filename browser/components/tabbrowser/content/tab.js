@@ -72,10 +72,6 @@
 
       this.muteReason = undefined;
 
-      this.mOverCloseButton = false;
-
-      this.mCorrespondingMenuitem = null;
-
       this.closing = false;
     }
 
@@ -409,15 +405,11 @@
     }
 
     on_mouseover(event) {
-      if (event.target.classList.contains("tab-close-button")) {
-        this.mOverCloseButton = true;
-      }
-
       if (!this.visible) {
         return;
       }
 
-      let tabToWarm = this.mOverCloseButton
+      let tabToWarm = event.target.classList.contains("tab-close-button")
         ? gBrowser._findTabToBlurTo(this)
         : this;
       gBrowser.warmupTab(tabToWarm);
@@ -429,10 +421,6 @@
     }
 
     on_mouseout(event) {
-      if (event.target.classList.contains("tab-close-button")) {
-        this.mOverCloseButton = false;
-      }
-
       
       if (!this.contains(event.relatedTarget)) {
         this._mouseleave();
@@ -448,11 +436,6 @@
       if (event.eventPhase == Event.CAPTURING_PHASE) {
         this.style.MozUserFocus = "";
       } else if (
-        this.mOverCloseButton ||
-        
-        
-        
-        
         event.target.classList?.contains("tab-close-button") ||
         gSharedTabWarning.willShowSharedTabWarning(this)
       ) {
