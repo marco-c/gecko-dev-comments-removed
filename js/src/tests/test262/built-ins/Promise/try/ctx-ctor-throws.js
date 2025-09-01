@@ -7,7 +7,6 @@
 
 
 
-
 var CustomPromise = function () {
   throw new Test262Error();
 };

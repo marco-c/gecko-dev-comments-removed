@@ -6,7 +6,6 @@
 
 
 
-
 var instance = Promise.try(function () {});
 
 assert.sameValue(instance.constructor, Promise);

@@ -8,7 +8,6 @@
 
 
 
-
 assert.sameValue(isConstructor(Promise.try), false, 'isConstructor(Promise.all) must return false');
 
 assert.throws(TypeError, function () {

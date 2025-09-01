@@ -6,7 +6,6 @@
 
 
 
-
 verifyProperty(Promise.try, "length", {
   value: 1,
   writable: false,

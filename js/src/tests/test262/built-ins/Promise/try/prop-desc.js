@@ -8,7 +8,6 @@
 
 
 
-
 verifyProperty(Promise, 'try', {
   value: Promise.try,
   writable: true,
