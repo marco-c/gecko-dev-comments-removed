@@ -14,6 +14,11 @@ ChromeUtils.defineESModuleGetters(this, {
     "resource:///modules/ActionsProviderQuickActions.sys.mjs",
 });
 
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/browser/components/urlbar/tests/browser-tips/head.js",
+  this
+);
+
 const DUMMY_PAGE =
   "https://example.com/browser/browser/base/content/test/general/dummy_page.html";
 
@@ -206,6 +211,20 @@ async function doAlertDialogTest({ input, dialogContentURI }) {
 }
 
 add_task(async function test_refresh() {
+  
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "refresh",
+  });
+  Assert.equal(
+    UrlbarTestUtils.getResultCount(window),
+    1,
+    "We did not match anything"
+  );
+
+  
+  makeProfileResettable();
+
   await doAlertDialogTest({
     input: "refresh",
     dialogContentURI: "chrome://global/content/resetProfile.xhtml",
