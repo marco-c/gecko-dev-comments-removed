@@ -885,7 +885,6 @@ nsresult LoadInfoArgsToLoadInfo(const LoadInfoArgs& loadInfoArgs,
       
       
        false,
-      loadInfoArgs.isInDevToolsContext(), loadInfoArgs.parserCreatedScript(),
       loadInfoArgs.requestMode(), loadInfoArgs.storagePermission(),
       loadInfoArgs.parentIPAddressSpace(), loadInfoArgs.ipAddressSpace(),
       overriddenFingerprintingSettings, loadInfoArgs.isMetaRefresh(),
