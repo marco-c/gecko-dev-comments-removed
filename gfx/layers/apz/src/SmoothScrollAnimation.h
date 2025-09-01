@@ -11,6 +11,7 @@
 #include "InputData.h"
 #include "ScrollPositionUpdate.h"
 #include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/RelativeTo.h"
 #include "mozilla/ScrollOrigin.h"
 #include "mozilla/layers/APZPublicUtils.h"
 #include "mozilla/layers/KeyboardScrollAction.h"
@@ -31,7 +32,7 @@ class SmoothScrollAnimation : public AsyncPanZoomAnimation {
   
   static already_AddRefed<SmoothScrollAnimation> Create(
       AsyncPanZoomController& aApzc, ScrollAnimationKind aKind,
-      ScrollOrigin aOrigin);
+      ViewportType aViewportToScroll, ScrollOrigin aOrigin);
   
   static already_AddRefed<SmoothScrollAnimation> CreateForKeyboard(
       AsyncPanZoomController& aApzc, ScrollOrigin aOrigin);
@@ -75,11 +76,17 @@ class SmoothScrollAnimation : public AsyncPanZoomAnimation {
 
  private:
   SmoothScrollAnimation(ScrollAnimationKind aKind,
-                        AsyncPanZoomController& aApzc, ScrollOrigin aOrigin);
+                        AsyncPanZoomController& aApzc,
+                        ViewportType aViewportToScroll,
+                        ScrollOrigin aOrigin);
 
   void Update(TimeStamp aTime, const nsSize& aCurrentVelocity);
+  CSSPoint GetViewportOffset(const FrameMetrics& aMetrics) const;
 
   ScrollAnimationKind mKind;
+  
+  
+  ViewportType mViewportToScroll;
   AsyncPanZoomController& mApzc;
   UniquePtr<ScrollAnimationPhysics> mAnimationPhysics;
   nsPoint mFinalDestination;
