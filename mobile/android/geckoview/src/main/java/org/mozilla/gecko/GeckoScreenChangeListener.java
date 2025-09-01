@@ -9,10 +9,13 @@ import android.content.Context;
 import android.hardware.display.DisplayManager;
 import android.util.Log;
 import android.view.Display;
+import org.mozilla.gecko.util.ThreadUtils;
 
 public class GeckoScreenChangeListener implements DisplayManager.DisplayListener {
   private static final String LOGTAG = "ScreenChangeListener";
   private static final boolean DEBUG = false;
+
+  private static final int NOTIFY_SCREEN_DELAY_MS = 100;
 
   public GeckoScreenChangeListener() {}
 
@@ -37,17 +40,20 @@ public class GeckoScreenChangeListener implements DisplayManager.DisplayListener
       return;
     }
 
-    final DisplayManager displayManager = getDisplayManager();
-    if (displayManager == null) {
-      return;
-    }
-
-    if (GeckoScreenOrientation.getInstance().update(displayManager.getDisplay(displayId))) {
-      
-      return;
-    }
-
-    ScreenManagerHelper.refreshScreenInfo();
+    
+    
+    ThreadUtils.postToUiThreadDelayed(
+        new Runnable() {
+          @Override
+          public void run() {
+            if (GeckoScreenOrientation.getInstance().update()) {
+              
+              return;
+            }
+            ScreenManagerHelper.refreshScreenInfo();
+          }
+        },
+        NOTIFY_SCREEN_DELAY_MS);
   }
 
   private static DisplayManager getDisplayManager() {

@@ -11,7 +11,6 @@ import static android.content.res.Configuration.ORIENTATION_PORTRAIT;
 import android.content.Context;
 import android.graphics.Rect;
 import android.util.Log;
-import android.view.Display;
 import android.view.Surface;
 import java.util.ArrayList;
 import java.util.List;
@@ -120,16 +119,6 @@ public class GeckoScreenOrientation {
 
 
 
-  public boolean update(final Display aDisplay) {
-    return update(getScreenOrientation(aDisplay));
-  }
-
-  
-
-
-
-
-
 
   public boolean update(final int aAndroidOrientation) {
     return update(getScreenOrientation(aAndroidOrientation, getRotation()));
@@ -218,19 +207,6 @@ public class GeckoScreenOrientation {
       return ScreenOrientation.LANDSCAPE_SECONDARY;
     }
     return ScreenOrientation.NONE;
-  }
-
-  
-
-
-
-
-
-  private ScreenOrientation getScreenOrientation(final Display aDisplay) {
-    final Rect rect = GeckoAppShell.getScreenSizeIgnoreOverride();
-    final int orientation =
-        rect.width() >= rect.height() ? ORIENTATION_LANDSCAPE : ORIENTATION_PORTRAIT;
-    return getScreenOrientation(orientation, aDisplay.getRotation());
   }
 
   
