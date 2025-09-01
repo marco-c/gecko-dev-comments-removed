@@ -456,6 +456,13 @@ function terminalInputChanged(expression, force = false) {
       eager: true,
     });
 
+    
+    
+    
+    if (expression.trim() !== getState().history?.terminalInput) {
+      return null;
+    }
+
     return dispatch({
       type: SET_TERMINAL_EAGER_RESULT,
       result: getEagerEvaluationResult(response),
