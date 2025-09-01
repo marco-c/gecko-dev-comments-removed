@@ -1061,8 +1061,8 @@ class PythonVirtualenv:
         kwargs.setdefault("check", True)
         kwargs.setdefault("stdout", None if show_pip_output() else subprocess.PIPE)
         kwargs.setdefault("stderr", None if show_pip_output() else subprocess.PIPE)
-        kwargs.setdefault("universal_newlines", True)
         kwargs.setdefault("text", True)
+        kwargs.setdefault("encoding", "utf-8")
 
         
         
