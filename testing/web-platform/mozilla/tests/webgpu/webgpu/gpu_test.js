@@ -1212,6 +1212,23 @@ export class GPUTestBase extends Fixture {
   }
 
   
+
+
+
+
+  expectValidationErrorOrException(
+  fn,
+  shouldError = true,
+  shouldThrow = true)
+  {
+    if (shouldThrow) {
+      this.shouldThrow(shouldError, fn);
+    } else {
+      this.expectValidationError(fn, shouldError);
+    }
+  }
+
+  
   createBufferTracked(descriptor) {
     return this.trackForCleanup(this.device.createBuffer(descriptor));
   }

@@ -1212,6 +1212,23 @@ export class GPUTestBase extends Fixture<GPUTestSubcaseBatchState> {
   }
 
   
+
+
+
+
+  expectValidationErrorOrException(
+    fn: () => void,
+    shouldError: boolean = true,
+    shouldThrow: boolean = true
+  ): void {
+    if (shouldThrow) {
+      this.shouldThrow(shouldError, fn);
+    } else {
+      this.expectValidationError(fn, shouldError);
+    }
+  }
+
+  
   createBufferTracked(descriptor: GPUBufferDescriptor): GPUBuffer {
     return this.trackForCleanup(this.device.createBuffer(descriptor));
   }
