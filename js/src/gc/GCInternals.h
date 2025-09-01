@@ -81,23 +81,6 @@ class MOZ_RAII AutoEmptyNursery : public AutoAssertEmptyNursery {
   explicit AutoEmptyNursery(JSContext* cx);
 };
 
-
-class MOZ_RAII AutoHeapSession {
- public:
-  ~AutoHeapSession();
-
- protected:
-  AutoHeapSession(GCRuntime* gc, JS::HeapState state);
-
- private:
-  AutoHeapSession(const AutoHeapSession&) = delete;
-  void operator=(const AutoHeapSession&) = delete;
-
-  GCRuntime* gc;
-  JS::HeapState prevState;
-  mozilla::Maybe<AutoGeckoProfilerEntry> profilingStackFrame;
-};
-
 class MOZ_RAII AutoGCSession : public AutoHeapSession {
  public:
   explicit AutoGCSession(GCRuntime* gc, JS::HeapState state)
@@ -107,28 +90,6 @@ class MOZ_RAII AutoGCSession : public AutoHeapSession {
 class MOZ_RAII AutoMajorGCProfilerEntry : public AutoGeckoProfilerEntry {
  public:
   explicit AutoMajorGCProfilerEntry(GCRuntime* gc);
-};
-
-class MOZ_RAII AutoTraceSession : public AutoHeapSession {
- public:
-  explicit AutoTraceSession(JSRuntime* rt)
-      : AutoHeapSession(&rt->gc, JS::HeapState::Tracing) {}
-};
-
-struct MOZ_RAII AutoFinishGC {
-  explicit AutoFinishGC(JSContext* cx, JS::GCReason reason) {
-    FinishGC(cx, reason);
-  }
-};
-
-
-
-class MOZ_RAII AutoPrepareForTracing : private AutoFinishGC,
-                                       public AutoTraceSession {
- public:
-  explicit AutoPrepareForTracing(JSContext* cx)
-      : AutoFinishGC(cx, JS::GCReason::PREPARE_FOR_TRACING),
-        AutoTraceSession(cx->runtime()) {}
 };
 
 
