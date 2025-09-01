@@ -44,11 +44,7 @@ enum RegisterID : uint8_t {
 
 enum HRegisterID { ah = rsp, ch = rbp, dh = rsi, bh = rdi };
 
-enum XMMRegisterID
-
-#if defined(__clang__) || __GNUC__ > 7
-    : uint8_t
-#endif
+enum XMMRegisterID : uint8_t
 {
   xmm0 = 0,
   xmm1,
@@ -323,4 +319,4 @@ inline int32_t AddressImmediate(const void* address) {
 }  
 }  
 
-#endif
+#endif 
