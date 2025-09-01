@@ -8,7 +8,7 @@
 
 
 addAccessibleTask(
-  `<div role="grouping" id="group"><p>hello</p><p>world</p></div>`,
+  `<div role="group" id="group"><p>hello</p><p>world</p></div>`,
   async (browser, accDoc) => {
     let doc = accDoc.nativeInterface.QueryInterface(
       Ci.nsIAccessibleMacInterface
