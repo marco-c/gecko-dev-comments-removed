@@ -138,7 +138,11 @@ class OpenSSLStreamAdapter final : public SSLStreamAdapter {
 
   
   
-  uint16_t GetSslGroupIdForTesting() const override;
+  bool SetSslGroupIds(const std::vector<uint16_t>& group_ids) override;
+
+  
+  
+  uint16_t GetSslGroupId() const override;
 
  private:
   enum SSLState {
@@ -242,6 +246,9 @@ class OpenSSLStreamAdapter final : public SSLStreamAdapter {
   std::string srtp_ciphers_;
 
   
+  std::vector<uint16_t> ssl_cipher_groups_;
+
+  
   SSLMode ssl_mode_;
 
   
@@ -262,7 +269,8 @@ class OpenSSLStreamAdapter final : public SSLStreamAdapter {
   int retransmission_count_ = 0;
 
   
-  const bool enable_dtls_pqc_ = false;
+  
+  const bool disable_ssl_group_ids_ = false;
 };
 
 

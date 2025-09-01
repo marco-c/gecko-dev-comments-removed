@@ -16,6 +16,7 @@
 
 #include <memory>
 #include <optional>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -244,6 +245,12 @@ class SSLStreamAdapter : public StreamInterface {
   static bool IsAcceptableCipher(int cipher, KeyType key_type);
   static bool IsAcceptableCipher(absl::string_view cipher, KeyType key_type);
 
+  static std::set<uint16_t> GetSupportedEphemeralKeyExchangeCipherGroups();
+  static std::optional<std::string> GetEphemeralKeyExchangeCipherGroupName(
+      uint16_t);
+  static std::vector<uint16_t> GetDefaultEphemeralKeyExchangeCipherGroups(
+      const FieldTrialsView* field_trials);
+
   
   
   
@@ -272,7 +279,11 @@ class SSLStreamAdapter : public StreamInterface {
 
   
   
-  virtual uint16_t GetSslGroupIdForTesting() const = 0;
+  virtual bool SetSslGroupIds(const std::vector<uint16_t>& group_ids) = 0;
+
+  
+  
+  virtual uint16_t GetSslGroupId() const = 0;
 
  private:
   

@@ -11,8 +11,13 @@
 #ifndef API_CRYPTO_CRYPTO_OPTIONS_H_
 #define API_CRYPTO_CRYPTO_OPTIONS_H_
 
+#include <cstdint>
+#include <optional>
+#include <set>
+#include <string>
 #include <vector>
 
+#include "api/field_trials_view.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
@@ -66,6 +71,42 @@ struct RTC_EXPORT CryptoOptions {
     
     bool require_frame_encryption = false;
   } sframe;
+
+  
+  
+  class EphemeralKeyExchangeCipherGroups {
+   public:
+    
+    
+    
+    
+    static constexpr uint16_t kSECP224R1 = 21;
+    static constexpr uint16_t kSECP256R1 = 23;
+    static constexpr uint16_t kSECP384R1 = 24;
+    static constexpr uint16_t kSECP521R1 = 25;
+    static constexpr uint16_t kX25519 = 29;
+    static constexpr uint16_t kX25519_MLKEM768 = 0x11ec;
+
+    static std::set<uint16_t> GetSupported();
+    static std::optional<std::string> GetName(uint16_t);
+
+    EphemeralKeyExchangeCipherGroups();
+
+    
+    std::vector<uint16_t> GetEnabled() const { return enabled_; }
+    void SetEnabled(const std::vector<uint16_t>& groups);
+    void AddFirst(uint16_t group);
+
+    
+    
+    void Update(const FieldTrialsView* field_trials,
+                const std::vector<uint16_t>* disabled_groups = nullptr);
+
+    bool operator==(const EphemeralKeyExchangeCipherGroups& other) const;
+
+   private:
+    std::vector<uint16_t> enabled_;
+  } ephemeral_key_exchange_cipher_groups;
 };
 
 }  

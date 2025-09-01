@@ -280,6 +280,8 @@ class DtlsTransportInternalImpl : public webrtc::DtlsTransportInternal {
   StreamInterfaceChannel*
       downward_;  
   const std::vector<int> srtp_ciphers_;  
+  
+  const std::vector<uint16_t> ephemeral_key_exchange_cipher_groups_;
   bool dtls_active_ = false;
   scoped_refptr<webrtc::RTCCertificate> local_certificate_;
   std::optional<webrtc::SSLRole> dtls_role_;
