@@ -40,6 +40,10 @@ EXCLUDED_PACKAGES = {
     
     
     "ansicon",
+    
+    
+    
+    "jsonschema",
 }
 
 
