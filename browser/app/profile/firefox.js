@@ -861,7 +861,7 @@ pref("browser.search.visualSearch.featureGate", false);
 pref("browser.spin_cursor_while_busy", false);
 
 
-pref("browser.contextual-password-manager.enabled", false);
+pref("browser.contextual-password-manager.enabled", true);
 
 
 pref("browser.privatebrowsing.vpnpromourl", "https://vpn.mozilla.org/?utm_source=firefox-browser&utm_medium=firefox-%CHANNEL%-browser&utm_campaign=private-browsing-vpn-link");
