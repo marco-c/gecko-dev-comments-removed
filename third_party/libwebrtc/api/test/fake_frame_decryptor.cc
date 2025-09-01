@@ -25,7 +25,7 @@ FakeFrameDecryptor::FakeFrameDecryptor(uint8_t fake_key,
     : fake_key_(fake_key), expected_postfix_byte_(expected_postfix_byte) {}
 
 FakeFrameDecryptor::Result FakeFrameDecryptor::Decrypt(
-    webrtc::MediaType ,
+    MediaType ,
     const std::vector<uint32_t>& ,
     ArrayView<const uint8_t> ,
     ArrayView<const uint8_t> encrypted_frame,
@@ -47,7 +47,7 @@ FakeFrameDecryptor::Result FakeFrameDecryptor::Decrypt(
 }
 
 size_t FakeFrameDecryptor::GetMaxPlaintextByteSize(
-    webrtc::MediaType ,
+    MediaType ,
     size_t encrypted_frame_size) {
   return encrypted_frame_size - 1;
 }

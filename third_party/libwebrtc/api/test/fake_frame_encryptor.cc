@@ -22,7 +22,7 @@ FakeFrameEncryptor::FakeFrameEncryptor(uint8_t fake_key, uint8_t postfix_byte)
     : fake_key_(fake_key), postfix_byte_(postfix_byte) {}
 
 
-int FakeFrameEncryptor::Encrypt(webrtc::MediaType ,
+int FakeFrameEncryptor::Encrypt(MediaType ,
                                 uint32_t ,
                                 ArrayView<const uint8_t> ,
                                 ArrayView<const uint8_t> frame,
@@ -42,9 +42,8 @@ int FakeFrameEncryptor::Encrypt(webrtc::MediaType ,
   return static_cast<int>(FakeEncryptionStatus::OK);
 }
 
-size_t FakeFrameEncryptor::GetMaxCiphertextByteSize(
-    webrtc::MediaType ,
-    size_t frame_size) {
+size_t FakeFrameEncryptor::GetMaxCiphertextByteSize(MediaType ,
+                                                    size_t frame_size) {
   return frame_size + 1;
 }
 
