@@ -29,12 +29,12 @@ class RTC_EXPORT EchoCanceller3Factory : public EchoControlFactory {
 
   
   
-  explicit EchoCanceller3Factory(const EchoCanceller3Config config);
+  explicit EchoCanceller3Factory(const EchoCanceller3Config& config);
 
   
   
   EchoCanceller3Factory(
-      const EchoCanceller3Config config,
+      const EchoCanceller3Config& config,
       std::optional<EchoCanceller3Config> multichannel_config);
 
   
