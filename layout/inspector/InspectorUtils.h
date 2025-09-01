@@ -107,6 +107,12 @@ class InspectorUtils {
   static void RgbToColorName(GlobalObject& aGlobal, uint8_t aR, uint8_t aG,
                              uint8_t aB, nsACString& aResult);
 
+  static void RgbToHsv(GlobalObject&, float aR, float aG, float aB,
+                       nsTArray<float>& aResult);
+
+  static void HsvToRgb(GlobalObject&, float aH, float aS, float aV,
+                       nsTArray<float>& aResult);
+
   
   
   
