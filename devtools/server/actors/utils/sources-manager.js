@@ -18,6 +18,16 @@ loader.lazyRequireGetter(
   true
 );
 
+const lazy = {};
+ChromeUtils.defineESModuleGetters(
+  lazy,
+  {
+    HTMLSourcesCache:
+      "resource://devtools/server/actors/utils/HTMLSourcesCache.sys.mjs",
+  },
+  { global: "contextual" }
+);
+
 
 
 
@@ -42,40 +52,20 @@ class SourcesManager extends EventEmitter {
     
     
     
-    this._urlContents = new Map();
-
-    
-    
-    
-    this._urlWaiters = new Map();
-
-    
-    
-    
     
     
     
     
     this._sourcesByInternalSourceId = null;
-
-    if (!isWorker) {
-      Services.obs.addObserver(this, "devtools-html-content");
-    }
   }
 
-  destroy() {
-    if (!isWorker) {
-      Services.obs.removeObserver(this, "devtools-html-content");
-    }
-  }
+  destroy() {}
 
   
 
 
   reset() {
     this._sourceActors = new Map();
-    this._urlContents = new Map();
-    this._urlWaiters = new Map();
     this._sourcesByInternalSourceId = null;
   }
 
@@ -360,78 +350,15 @@ class SourcesManager extends EventEmitter {
   
 
 
-  observe(subject, topic, data) {
-    if (topic == "devtools-html-content") {
-      const { parserID, uri, contents, complete } = JSON.parse(data);
-      if (this._urlContents.has(uri)) {
-        
-        
-        const existing = this._urlContents.get(uri);
-        if (existing.parserID == parserID) {
-          assert(!existing.complete);
-          existing.content = existing.content + contents;
-          existing.complete = complete;
-
-          
-          
-          
-          if (complete) {
-            const waiters = this._urlWaiters.get(uri);
-            if (waiters) {
-              for (const waiter of waiters) {
-                waiter();
-              }
-              this._urlWaiters.delete(uri);
-            }
-          }
-        }
-      } else if (contents) {
-        
-        
-        
-        
-        this._urlContents.set(uri, {
-          content: contents,
-          complete,
-          contentType: "text/html",
-          parserID,
-        });
-      }
-    }
-  }
-
-  
-
-
 
 
   urlContents(url, partial, canUseCache) {
-    if (this._urlContents.has(url)) {
-      const data = this._urlContents.get(url);
-      if (!partial && !data.complete) {
-        return new Promise(resolve => {
-          if (!this._urlWaiters.has(url)) {
-            this._urlWaiters.set(url, []);
-          }
-          this._urlWaiters.get(url).push(resolve);
-        }).then(() => {
-          assert(data.complete);
-          return {
-            content: data.content,
-            contentType: data.contentType,
-          };
-        });
-      }
-      return {
-        content: data.content,
-        contentType: data.contentType,
-      };
-    }
-    if (partial) {
-      return {
-        content: "",
-        contentType: "",
-      };
+    const { browsingContextID } = this._thread.targetActor;
+    const content = !isWorker
+      ? lazy.HTMLSourcesCache.get(browsingContextID, url, partial)
+      : null;
+    if (content) {
+      return content;
     }
     return this._fetchURLContents(url, partial, canUseCache);
   }
@@ -500,8 +427,6 @@ class SourcesManager extends EventEmitter {
         result.content = actors[0].actualText();
       }
     }
-
-    this._urlContents.set(url, { ...result, complete: true });
 
     return result;
   }

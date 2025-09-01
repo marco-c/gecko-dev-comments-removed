@@ -76,18 +76,7 @@ add_task(async function testBreakableLinesOverReloads() {
     13,
   ]);
 
+  info("Assert breakable lines of the second iframe page load");
   await selectSource(dbg, "iframe.html");
-  is(
-    getEditorContent(dbg),
-    `Error: Incorrect contents fetched, please reload.`
-  );
-  
-
-
-
-
-
-
-
-
+  await assertBreakableLines(dbg, "iframe.html", 30, [15, 17, 21, 23]);
 });

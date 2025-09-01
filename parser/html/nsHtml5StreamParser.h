@@ -770,6 +770,18 @@ class nsHtml5StreamParser final : public nsISupports {
 
 
 
+  uint64_t mBrowserIdForDevtools;
+
+  
+
+
+
+  uint64_t mBrowsingContextIDForDevtools;
+
+  
+
+
+
 
   bool mOnStopCalled{false};
 
