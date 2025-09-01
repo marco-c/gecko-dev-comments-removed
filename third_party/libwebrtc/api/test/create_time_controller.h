@@ -23,6 +23,7 @@ std::unique_ptr<TimeController> CreateSimulatedTimeController();
 
 
 
+[[deprecated("Inject Clock through the deps.env instead.")]]
 void EnableMediaWithDefaultsAndTimeController(
     TimeController& time_controller,
     PeerConnectionFactoryDependencies& deps);
