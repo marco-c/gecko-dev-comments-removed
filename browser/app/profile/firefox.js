@@ -1944,9 +1944,6 @@ pref("browser.newtabpage.activity-stream.discoverystream.region-stories-block", 
 
 pref("browser.newtabpage.activity-stream.discoverystream.region-stories-config", "US,DE,CA,GB,IE,CH,AT,BE,IN,FR,IT,ES");
 
-pref("browser.newtabpage.activity-stream.discoverystream.region-bff-config", "US,DE,CA,GB,IE,CH,AT,BE,IN,FR,IT,ES");
-pref("browser.newtabpage.activity-stream.discoverystream.merino-provider.enabled", true);
-
 
 pref("browser.newtabpage.activity-stream.discoverystream.topicSelection.region-topics-config", "");
 pref("browser.newtabpage.activity-stream.discoverystream.topicSelection.onboarding.enabled", false);
