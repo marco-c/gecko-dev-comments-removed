@@ -229,8 +229,8 @@ pref("media.videocontrols.keyboard-tab-to-all-controls", true);
   
   
   
-  pref("media.navigator.video.resize_mode.enabled", false);
-  pref("media.navigator.video.default_resize_mode", 0); 
+  pref("media.navigator.video.resize_mode.enabled", true);
+  pref("media.navigator.video.default_resize_mode", 1); 
   pref("media.navigator.video.use_remb", true);
   pref("media.navigator.video.use_transport_cc", true);
   pref("media.peerconnection.video.use_rtx", true);
