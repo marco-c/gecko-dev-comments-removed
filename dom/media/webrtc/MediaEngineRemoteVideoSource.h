@@ -186,12 +186,14 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
   
   
   
-  gfx::IntSize mImageSize = gfx::IntSize(0, 0);
+  
+  gfx::IntSize mScaledImageSize = gfx::IntSize(0, 0);
 
   struct AtomicBool {
     Atomic<bool> mValue;
   };
 
+  
   
   
   const RefPtr<media::Refcountable<AtomicBool>> mSettingsUpdatedByFrame;
