@@ -2545,6 +2545,8 @@ struct nsGridContainerFrame::Tracks {
         mIsMasonry(false) {
     mBaselineSubtreeAlign[BaselineSharingGroup::First] = StyleAlignFlags::AUTO;
     mBaselineSubtreeAlign[BaselineSharingGroup::Last] = StyleAlignFlags::AUTO;
+    mBaseline[BaselineSharingGroup::First] = NS_INTRINSIC_ISIZE_UNKNOWN;
+    mBaseline[BaselineSharingGroup::Last] = NS_INTRINSIC_ISIZE_UNKNOWN;
   }
 
   void Initialize(const TrackSizingFunctions& aFunctions,
@@ -3044,24 +3046,6 @@ struct nsGridContainerFrame::Tracks {
     return aRange.ToLength(mSizes);
   }
 
-  
-  Maybe<nscoord> GetFirstBaseline(uint32_t aTrack) const {
-    if (aTrack >= mBaselines.Length()) {
-      return {};
-    }
-
-    return mBaselines[aTrack][BaselineSharingGroup::First];
-  }
-
-  
-  Maybe<nscoord> GetLastBaseline(uint32_t aTrack) const {
-    if (aTrack >= mBaselines.Length()) {
-      return {};
-    }
-
-    return mBaselines[aTrack][BaselineSharingGroup::Last];
-  }
-
 #ifdef DEBUG
   void Dump() const;
 #endif
@@ -3069,10 +3053,8 @@ struct nsGridContainerFrame::Tracks {
   TrackPlan mSizes;
   nscoord mContentBoxSize;
   nscoord mGridGap;
-
   
-  CopyableTArray<PerBaseline<Maybe<nscoord>>> mBaselines;
-
+  PerBaseline<nscoord> mBaseline;
   
   TrackSize::StateBits mStateUnion;
   LogicalAxis mAxis;
@@ -3092,14 +3074,10 @@ void nsGridContainerFrame::Tracks::Dump() const {
   const size_t numTracks = mSizes.Length();
   const char* trackName = mAxis == LogicalAxis::Inline ? "column" : "row";
 
-  auto BaselineToStr = [](Maybe<nscoord> aBaseline) {
-    if (!aBaseline) {
-      return std::string("not set");
-    }
-
-    return std::to_string(*aBaseline);
+  auto BaselineToStr = [](nscoord aBaseline) {
+    return aBaseline == NS_INTRINSIC_ISIZE_UNKNOWN ? std::string("unknown")
+                                                   : std::to_string(aBaseline);
   };
-
   auto CoordToStr = [](nscoord aCoord) {
     return aCoord == NS_UNCONSTRAINEDSIZE ? std::string("unconstrained")
                                           : std::to_string(aCoord);
@@ -3118,8 +3096,8 @@ void nsGridContainerFrame::Tracks::Dump() const {
   }
 
   fmt::println(FMT_STRING("  first baseline: {}, last baseline: {}"),
-               BaselineToStr(GetFirstBaseline(0)),
-               BaselineToStr(GetLastBaseline(mBaselines.Length() - 1)));
+               BaselineToStr(mBaseline[BaselineSharingGroup::First]),
+               BaselineToStr(mBaseline[BaselineSharingGroup::Last]));
   fmt::println(FMT_STRING("  {} gap: {}, content-box {}-size: {}"), trackName,
                CoordToStr(mGridGap),
                mAxis == LogicalAxis::Inline ? "inline" : "block",
@@ -6431,12 +6409,7 @@ void nsGridContainerFrame::Tracks::CalculateItemBaselines(
             ItemBaselineData::IsBaselineTrackLessThan);
 
   MOZ_ASSERT(mSizes.Length() > 0, "having an item implies at least one track");
-
-  
-  
-  auto baselineCount = aBaselineItems.LastElement().mBaselineTrack + 1;
-  mBaselines.EnsureLengthAtLeast(baselineCount);
-
+  const uint32_t lastTrack = mSizes.Length() - 1;
   nscoord maxBaseline = 0;
   nscoord maxDescent = 0;
   uint32_t currentTrack = kAutoLine;  
@@ -6462,9 +6435,14 @@ void nsGridContainerFrame::Tracks::CalculateItemBaselines(
       
       mSizes[currentTrack].mBaselineSubtreeSize[aBaselineGroup] =
           maxBaseline + maxDescent;
-
       
-      mBaselines[currentTrack][aBaselineGroup] = Some(maxBaseline);
+      if (currentTrack == 0 && aBaselineGroup == BaselineSharingGroup::First) {
+        mBaseline[aBaselineGroup] = maxBaseline;
+      }
+      if (currentTrack == lastTrack &&
+          aBaselineGroup == BaselineSharingGroup::Last) {
+        mBaseline[aBaselineGroup] = maxBaseline;
+      }
     }
     if (i == len) {
       break;
@@ -10435,13 +10413,12 @@ void nsGridContainerFrame::CalculateBaselines(
     const nsSize& aCBPhysicalSize, nscoord aCBBorderPaddingStart,
     nscoord aCBBorderPaddingEnd, nscoord aCBSize) {
   const auto axis = aTracks.mAxis;
-
-  auto firstBaseline = aTracks.GetFirstBaseline(0);
+  auto firstBaseline = aTracks.mBaseline[BaselineSharingGroup::First];
   if (!(aBaselineSet & BaselineSet::eFirst)) {
     mBaseline[axis][BaselineSharingGroup::First] =
         ::SynthesizeBaselineFromBorderBox(BaselineSharingGroup::First, aWM,
                                           axis, aCBSize);
-  } else if (firstBaseline.isNothing()) {
+  } else if (firstBaseline == NS_INTRINSIC_ISIZE_UNKNOWN) {
     FindItemInGridOrderResult gridOrderFirstItem = FindFirstItemInGridOrder(
         *aIter, *aGridItems,
         axis == LogicalAxis::Block ? &GridArea::mRows : &GridArea::mCols,
@@ -10460,15 +10437,15 @@ void nsGridContainerFrame::CalculateBaselines(
                                    GridLineSide::AfterGridGap)
             : nscoord(0);  
     mBaseline[axis][BaselineSharingGroup::First] =
-        aCBBorderPaddingStart + gapBeforeStartTrack + *firstBaseline;
+        aCBBorderPaddingStart + gapBeforeStartTrack + firstBaseline;
   }
 
-  auto lastBaseline = aTracks.GetLastBaseline(aTracks.mBaselines.Length() - 1);
+  auto lastBaseline = aTracks.mBaseline[BaselineSharingGroup::Last];
   if (!(aBaselineSet & BaselineSet::eLast)) {
     mBaseline[axis][BaselineSharingGroup::Last] =
         ::SynthesizeBaselineFromBorderBox(BaselineSharingGroup::Last, aWM, axis,
                                           aCBSize);
-  } else if (lastBaseline.isNothing()) {
+  } else if (lastBaseline == NS_INTRINSIC_ISIZE_UNKNOWN) {
     
     
     using Iter = ReverseCSSOrderAwareFrameIterator;
@@ -10495,7 +10472,7 @@ void nsGridContainerFrame::CalculateBaselines(
         aTracks.GridLineEdge(aFirstExcludedTrack, GridLineSide::BeforeGridGap) -
         aTracks.GridLineEdge(aFragmentStartTrack, GridLineSide::BeforeGridGap);
     mBaseline[axis][BaselineSharingGroup::Last] =
-        (aCBSize - borderBoxStartToEndOfEndTrack) + *lastBaseline;
+        (aCBSize - borderBoxStartToEndOfEndTrack) + lastBaseline;
   }
 }
 
