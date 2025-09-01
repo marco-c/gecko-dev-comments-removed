@@ -137,19 +137,19 @@ using BootstrapError = Variant<nsresult, DLErrorType>;
 
 using BootstrapResult = ::mozilla::Result<Bootstrap::UniquePtr, BootstrapError>;
 
-
-
-
-
-
-
-
 #ifdef XPCOM_GLUE
 typedef void (*GetBootstrapType)(Bootstrap::UniquePtr&);
 BootstrapResult GetBootstrap(
     const char* aXPCOMFile = nullptr,
     LibLoadingStrategy aLibLoadingStrategy = LibLoadingStrategy::NoReadAhead);
 #else
+
+
+
+
+
+
+
 extern "C" NS_EXPORT void NS_FROZENCALL
 XRE_GetBootstrap(Bootstrap::UniquePtr& b);
 
