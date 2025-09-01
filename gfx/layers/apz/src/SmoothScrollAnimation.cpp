@@ -255,7 +255,7 @@ bool SmoothScrollAnimation::DoSample(FrameMetrics& aFrameMetrics,
       finished = true;
     }
   }
-  if (finished && mKind == ScrollAnimationKind::SmoothMsd) {
+  if (finished) {
     
     
     
