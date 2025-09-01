@@ -5,11 +5,10 @@
 
 #include "MoveNodeTransaction.h"
 
-#include "EditorBase.h"           
-#include "EditorDOMAPIWrapper.h"  
-#include "EditorDOMPoint.h"       
-#include "HTMLEditor.h"           
-#include "HTMLEditUtils.h"        
+#include "EditorBase.h"      
+#include "EditorDOMPoint.h"  
+#include "HTMLEditor.h"      
+#include "HTMLEditUtils.h"   
 
 #include "mozilla/Likely.h"
 #include "mozilla/Logging.h"
@@ -167,14 +166,15 @@ nsresult MoveNodeTransaction::DoTransactionInternal() {
         htmlEditor->RangeUpdaterRef(), contentToMove,
         newNextSibling ? EditorRawDOMPoint(newNextSibling)
                        : EditorRawDOMPoint::AtEndOf(*container));
-    AutoNodeAPIWrapper nodeWrapper(htmlEditor, container);
-    nsresult rv = nodeWrapper.InsertBefore(contentToMove, newNextSibling);
-    if (NS_FAILED(rv)) {
-      NS_WARNING("AutoNodeAPIWrapper::InsertBefore() failed");
-      return rv;
+    IgnoredErrorResult error;
+    container->InsertBefore(contentToMove, newNextSibling, error);
+    
+    
+    error.WouldReportJSException();
+    if (MOZ_UNLIKELY(error.Failed())) {
+      NS_WARNING("nsINode::InsertBefore() failed");
+      return error.StealNSResult();
     }
-    NS_WARNING_ASSERTION(nodeWrapper.IsExpectedResult(),
-                         "Moving node caused other mutations, but ignored");
     if (MOZ_LIKELY(contentToMove->GetParentNode() &&
                    contentToMove->OwnerDoc() == htmlEditor->GetDocument())) {
       notifyStoredRanges.DidMoveContent(contentToMove);
@@ -248,14 +248,15 @@ NS_IMETHODIMP MoveNodeTransaction::UndoTransaction() {
         htmlEditor->RangeUpdaterRef(), contentToMove,
         oldNextSibling ? EditorRawDOMPoint(oldNextSibling)
                        : EditorRawDOMPoint::AtEndOf(*oldContainer));
-    AutoNodeAPIWrapper nodeWrapper(htmlEditor, oldContainer);
-    nsresult rv = nodeWrapper.InsertBefore(contentToMove, oldNextSibling);
-    if (NS_FAILED(rv)) {
-      NS_WARNING("AutoNodeAPIWrapper::InsertBefore() failed");
-      return rv;
+    IgnoredErrorResult error;
+    oldContainer->InsertBefore(contentToMove, oldNextSibling, error);
+    
+    
+    error.WouldReportJSException();
+    if (MOZ_UNLIKELY(error.Failed())) {
+      NS_WARNING("nsINode::InsertBefore() failed");
+      return error.StealNSResult();
     }
-    NS_WARNING_ASSERTION(nodeWrapper.IsExpectedResult(),
-                         "Moving node caused other mutations, but ignored");
     if (MOZ_LIKELY(contentToMove->GetParentNode() &&
                    contentToMove->OwnerDoc() == htmlEditor->GetDocument())) {
       notifyStoredRanges.DidMoveContent(contentToMove);

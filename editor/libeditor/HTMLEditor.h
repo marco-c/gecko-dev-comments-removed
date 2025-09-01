@@ -56,7 +56,6 @@ class ResizerSelectionListener;
 class Runnable;
 template <class T>
 class OwningNonNull;
-enum class LogLevel;
 namespace dom {
 class AbstractRange;
 class Blob;
@@ -103,7 +102,6 @@ class HTMLEditor final : public EditorBase,
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED
   NS_DECL_NSIMUTATIONOBSERVER_CHARACTERDATACHANGED
-  NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTECHANGED
 
   
   NS_DECL_NSIHTMLEDITOR
@@ -1056,23 +1054,26 @@ class HTMLEditor final : public EditorBase,
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   SetPositionToStatic(Element& aElement);
 
-  
+  class DocumentModifiedEvent final : public Runnable {
+   public:
+    explicit DocumentModifiedEvent(HTMLEditor& aHTMLEditor)
+        : Runnable("DocumentModifiedEvent"), mHTMLEditor(aHTMLEditor) {}
 
+    MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD Run() {
+      Unused << MOZ_KnownLive(mHTMLEditor)->OnModifyDocument(*this);
+      return NS_OK;
+    }
 
+    const nsTArray<EditorDOMPointInText>& NewInvisibleWhiteSpacesRef() const {
+      return mNewInvisibleWhiteSpaces;
+    }
 
+   private:
+    ~DocumentModifiedEvent() = default;
 
-  [[nodiscard]] const AutoDOMAPIWrapperBase* OnDOMAPICallStart(
-      const AutoDOMAPIWrapperBase& aRunner);
-
-  
-
-
-
-
-
-  void OnDOMAPICallEnd(const AutoDOMAPIWrapperBase* aPrevRunner);
-
-  class DocumentModifiedEvent;
+    const OwningNonNull<HTMLEditor> mHTMLEditor;
+    nsTArray<EditorDOMPointInText> mNewInvisibleWhiteSpaces;
+  };
 
   
 
@@ -2014,8 +2015,8 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  MoveAllChildren(nsINode& aContainer, const EditorRawDOMPoint& aPointToInsert);
+  [[nodiscard]] nsresult MoveAllChildren(
+      nsINode& aContainer, const EditorRawDOMPoint& aPointToInsert);
 
   
 
@@ -2033,9 +2034,9 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  MoveChildrenBetween(nsIContent& aFirstChild, nsIContent& aLastChild,
-                      const EditorRawDOMPoint& aPointToInsert);
+  [[nodiscard]] nsresult MoveChildrenBetween(
+      nsIContent& aFirstChild, nsIContent& aLastChild,
+      const EditorRawDOMPoint& aPointToInsert);
 
   
 
@@ -2047,7 +2048,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult MovePreviousSiblings(
+  [[nodiscard]] nsresult MovePreviousSiblings(
       nsIContent& aChild, const EditorRawDOMPoint& aPointToInsert);
 
   
@@ -2059,7 +2060,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult MoveInclusiveNextSiblings(
+  [[nodiscard]] nsresult MoveInclusiveNextSiblings(
       nsIContent& aChild, const EditorRawDOMPoint& aPointToInsert);
 
   
@@ -2773,8 +2774,8 @@ class HTMLEditor final : public EditorBase,
   
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult RunOrScheduleOnModifyDocument(
-      const nsIContent* aContentWillBeRemoved = nullptr);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  OnDocumentModified(const nsIContent* aContentWillBeRemoved = nullptr);
 
  protected:  
   MOZ_CAN_RUN_SCRIPT void OnStartToHandleTopLevelEditSubAction(
@@ -2785,28 +2786,6 @@ class HTMLEditor final : public EditorBase,
 
  protected:  
   virtual ~HTMLEditor();
-
-  enum class DOMMutationType {
-    ContentAppended,
-    ContentInserted,
-    ContentWillBeRemoved,
-    CharacterDataChanged,
-  };
-  [[nodiscard]] LogLevel MutationLogLevelOf(
-      nsIContent* aContent,
-      const CharacterDataChangeInfo* aCharacterDataChangeInfo,
-      DOMMutationType aDOMMutationType) const;
-  [[nodiscard]] LogLevel AttrMutationLogLevelOf(
-      Element* aElement, int32_t aNameSpaceID, nsAtom* aAttribute,
-      int32_t aModType, const nsAttrValue* aOldValue) const;
-
-  void MaybeLogContentAppended(nsIContent*) const;
-  void MaybeLogContentInserted(nsIContent*) const;
-  void MaybeLogContentWillBeRemoved(nsIContent*) const;
-  void MaybeLogCharacterDataChanged(nsIContent*,
-                                    const CharacterDataChangeInfo&) const;
-  void MaybeLogAttributeChanged(Element*, int32_t, nsAtom*, int32_t,
-                                const nsAttrValue*) const;
 
   
 
@@ -4317,16 +4296,13 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-
-
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void HideAnonymousEditingUIs();
+  void HideAnonymousEditingUIs();
 
   
 
 
 
-  MOZ_CAN_RUN_SCRIPT void HideAnonymousEditingUIsIfUnnecessary();
+  void HideAnonymousEditingUIsIfUnnecessary();
 
   
 
@@ -4356,7 +4332,7 @@ class HTMLEditor final : public EditorBase,
   
 
 
-  MOZ_CAN_RUN_SCRIPT void HideGrabberInternal();
+  void HideGrabberInternal();
 
   
 
@@ -4557,10 +4533,6 @@ class HTMLEditor final : public EditorBase,
   
   RefPtr<dom::Text> mLastCollapsibleWhiteSpaceAppendedTextNode;
 
-  
-  
-  const AutoDOMAPIWrapperBase* mRunningDOMAPIWrapper = nullptr;
-
   bool mCRInParagraphCreatesParagraph;
 
   
@@ -4665,8 +4637,6 @@ class HTMLEditor final : public EditorBase,
                                        
   friend class AutoClonedRangeArray;   
                                        
-                                       
-  friend class AutoDOMAPIWrapperBase;  
                                        
   friend class AutoClonedSelectionRangeArray;  
   friend class AutoSelectionRestore;

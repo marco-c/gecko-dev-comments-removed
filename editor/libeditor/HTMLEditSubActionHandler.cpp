@@ -10967,4 +10967,16 @@ Result<EditActionResult, nsresult> HTMLEditor::AddZIndexAsSubAction(
   return EditActionResult::HandledResult();
 }
 
+nsresult HTMLEditor::OnDocumentModified(
+    const nsIContent* aContentWillBeRemoved ) {
+  if (mPendingDocumentModifiedRunner) {
+    return NS_OK;  
+  }
+  mPendingDocumentModifiedRunner = new DocumentModifiedEvent(*this);
+  nsContentUtils::AddScriptRunner(do_AddRef(mPendingDocumentModifiedRunner));
+  
+  
+  return NS_WARN_IF(Destroyed()) ? NS_ERROR_EDITOR_DESTROYED : NS_OK;
+}
+
 }  

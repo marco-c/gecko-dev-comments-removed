@@ -93,7 +93,6 @@ class TextEditor;
 
 class AutoClonedRangeArray;               
 class AutoClonedSelectionRangeArray;      
-class AutoDOMAPIWrapperBase;              
 class AutoSelectionRestorer;              
 class AutoSelectionRangeArray;            
 class CaretPoint;                         
