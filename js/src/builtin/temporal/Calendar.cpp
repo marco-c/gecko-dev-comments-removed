@@ -1450,17 +1450,17 @@ class EraName {
 
 
 
-#  ifdef __clang__
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wtautological-value-range-compare"
-#  endif
+#ifdef __clang__
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wtautological-value-range-compare"
+#endif
 
   static_assert(MaxLength >= ICUEraNameMaxLength(),
                 "Storage size is at least as large as the largest known era");
 
-#  ifdef __clang__
-#    pragma clang diagnostic pop
-#  endif
+#ifdef __clang__
+#  pragma clang diagnostic pop
+#endif
 
   
   char buf[MaxLength + 1] = {};
