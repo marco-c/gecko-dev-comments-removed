@@ -86,14 +86,25 @@ async function getContextMenuPanelListForCard(card) {
 }
 
 async function openContextMenuForItem(tabItem, card) {
+  const root = card.shadowRoot;
+  
+  const shownPromise = BrowserTestUtils.waitForEvent(root, "shown", true, e => {
+    const panelList = e
+      .composedPath()
+      .find(node => node?.localName === "panel-list");
+    if (panelList && panelList.isConnected) {
+      e._panelList = panelList;
+      return true;
+    }
+    return false;
+  });
   
   
   tabItem.secondaryButtonEl.click();
   
   
-  let panelList = await getContextMenuPanelListForCard(card);
-  await BrowserTestUtils.waitForEvent(panelList, "shown");
-  return panelList;
+  const event = await shownPromise;
+  return event._panelList || (await getContextMenuPanelListForCard(card));
 }
 
 async function moreMenuSetup() {
