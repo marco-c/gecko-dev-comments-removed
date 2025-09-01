@@ -264,20 +264,14 @@ add_task(async function test_new_profile_theme() {
   
   
   
-  SelectableProfileService.currentProfile.theme = {
-    themeId: "firefox-compact-light@mozilla.org",
-    themeFg: "rgb(21,20,26)",
-    themeBg: "#f9f9fb",
-  };
-  await SelectableProfileService.updateProfile(
-    SelectableProfileService.currentProfile
-  );
   let lightTheme = await lazy.AddonManager.getAddonByID(
     "firefox-compact-light@mozilla.org"
   );
+  let profileUpdated = TestUtils.topicObserved("sps-profiles-updated");
   await lightTheme.enable();
+  await profileUpdated;
 
-  let expectedThemeId = "firefox-compact-dark@mozilla.org";
+  let expectedThemeId = "default-theme@mozilla.org";
 
   is(
     null,
@@ -305,17 +299,19 @@ add_task(async function test_new_profile_theme() {
         
         newProfileCard.nameInput.value = "test";
 
-        let darkThemeCard = newProfileCard.themeCards[5];
+        let defaultThemeCard = newProfileCard.themesPicker.querySelector(
+          "moz-visual-picker-item[value='default-theme@mozilla.org']"
+        );
 
         Assert.ok(
-          !darkThemeCard.checked,
-          "Dark theme chip should not be selected"
+          !defaultThemeCard.checked,
+          "Default theme chip should not be selected"
         );
-        EventUtils.synthesizeMouseAtCenter(darkThemeCard, {}, content);
+        EventUtils.synthesizeMouseAtCenter(defaultThemeCard, {}, content);
 
         await newProfileCard.updateComplete;
         await ContentTaskUtils.waitForCondition(
-          () => darkThemeCard.checked,
+          () => defaultThemeCard.checked,
           "Waiting for the new theme chip to be selected"
         );
 
@@ -342,18 +338,12 @@ add_task(async function test_new_profile_theme() {
   );
 
   
-  SelectableProfileService.currentProfile.theme = {
-    themeId: "firefox-compact-light@mozilla.org",
-    themeFg: "rgb(21,20,26)",
-    themeBg: "#f9f9fb",
-  };
-  await SelectableProfileService.updateProfile(
-    SelectableProfileService.currentProfile
-  );
   lightTheme = await lazy.AddonManager.getAddonByID(
     "firefox-compact-light@mozilla.org"
   );
+  profileUpdated = TestUtils.topicObserved("sps-profiles-updated");
   await lightTheme.enable();
+  await profileUpdated;
 });
 
 add_task(async function test_new_profile_explore_more_themes() {
