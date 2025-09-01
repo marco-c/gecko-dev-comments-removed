@@ -46,7 +46,7 @@ pub enum GenericImage<G, ImageUrl, Color, Percentage, Resolution> {
     
     
     #[cfg(feature = "servo")]
-    PaintWorklet(PaintWorklet),
+    PaintWorklet(Box<PaintWorklet>),
 
     
     
