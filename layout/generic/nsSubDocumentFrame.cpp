@@ -364,6 +364,7 @@ static void WrapBackgroundColorInOwnLayer(nsDisplayListBuilder* aBuilder,
       item = MakeDisplayItemWithIndex<nsDisplayOwnLayer>(
           aBuilder, aFrame,  nsDisplayOwnLayer::OwnLayerForSubdoc,
           &tmpList, aBuilder->CurrentActiveScrolledRoot(),
+          nsDisplayItem::ContainerASRType::Constant,
           nsDisplayOwnLayerFlags::None, ScrollbarData{}, true, false);
     }
     aList->AppendToTop(item);

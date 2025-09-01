@@ -3356,12 +3356,13 @@ static void AppendToTop(nsDisplayListBuilder* aBuilder,
     newItem = MakeDisplayItemWithIndex<nsDisplayOwnLayer>(
         aBuilder, aSourceFrame,
          nsDisplayOwnLayer::OwnLayerForScrollbar, aSource, asr,
-        nsDisplayOwnLayerFlags::None, scrollbarData, true, false);
+        nsDisplayItem::ContainerASRType::Constant, nsDisplayOwnLayerFlags::None,
+        scrollbarData, true, false);
   } else {
     
     
-    newItem = MakeDisplayItemWithIndex<nsDisplayWrapper>(
-        aBuilder, aSourceFrame, 1, aSource, asr, false);
+    newItem = MakeDisplayItemWithIndex<nsDisplayWrapper>(aBuilder, aSourceFrame,
+                                                         1, aSource, false);
   }
   if (!newItem) {
     return;
@@ -3788,7 +3789,8 @@ void ScrollContainerFrame::MaybeCreateTopLayerAndWrapRootItems(
       nsDisplayItem* blendContainer =
           nsDisplayBlendContainer::CreateForMixBlendMode(
               aBuilder, this, &rootResultList,
-              aBuilder->CurrentActiveScrolledRoot());
+              aBuilder->CurrentActiveScrolledRoot(),
+              nsDisplayItem::ContainerASRType::Constant);
       rootResultList.AppendToTop(blendContainer);
 
       
@@ -3813,7 +3815,7 @@ void ScrollContainerFrame::MaybeCreateTopLayerAndWrapRootItems(
 
     rootResultList.AppendNewToTop<nsDisplayAsyncZoom>(
         aBuilder, this, &rootResultList, aBuilder->CurrentActiveScrolledRoot(),
-        viewID);
+        nsDisplayItem::ContainerASRType::Constant, viewID);
   }
 
   if (serializedList) {

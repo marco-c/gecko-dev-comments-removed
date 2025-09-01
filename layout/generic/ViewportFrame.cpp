@@ -199,8 +199,7 @@ nsDisplayWrapList* ViewportFrame::MaybeWrapTopLayerList(
   
   
   nsDisplayWrapList* wrapList = MakeDisplayItemWithIndex<nsDisplayWrapper>(
-      aBuilder, this, aIndex, &aTopLayerList,
-      aBuilder->CurrentActiveScrolledRoot(), false);
+      aBuilder, this, aIndex, &aTopLayerList, false);
   if (!wrapList) {
     return nullptr;
   }
