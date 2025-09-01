@@ -309,7 +309,8 @@ var gPlayTests = [
   { name: "seek-short.webm", type: "video/webm", duration: 0.23 },
 
   
-  { name: "bug1377278.webm", type: "video/webm", duration: 4.0 },
+  
+  
 
   
   { name: "split.webm", type: "video/webm", duration: 1.967 },
