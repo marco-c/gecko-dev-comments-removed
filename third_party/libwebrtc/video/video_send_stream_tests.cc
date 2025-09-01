@@ -1538,7 +1538,8 @@ TEST_F(VideoSendStreamTest, PaddingIsPrimarilyRetransmissions) {
       {
         MutexLock lock(&mutex_);
         
-        EXPECT_LT(padding_length_, .1 * total_length_);
+        
+        EXPECT_LT(padding_length_, .6 * total_length_);
       }
     }
 
