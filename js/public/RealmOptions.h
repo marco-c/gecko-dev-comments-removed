@@ -57,7 +57,15 @@ struct LocaleString : js::RefCounted<LocaleString> {
 
   explicit LocaleString(const char* chars) : chars_(chars) {}
 
-  auto chars() const { return chars_; }
+  auto* chars() const { return chars_; }
+};
+
+struct TimeZoneString : js::RefCounted<TimeZoneString> {
+  const char* chars_;
+
+  explicit TimeZoneString(const char* chars) : chars_(chars) {}
+
+  auto* chars() const { return chars_; }
 };
 
 
@@ -217,6 +225,12 @@ class JS_PUBLIC_API RealmCreationOptions {
   
   
   
+  RefPtr<TimeZoneString> timeZone() const { return timeZone_; }
+  RealmCreationOptions& setTimeZoneCopyZ(const char* timeZone);
+
+  
+  
+  
   bool alwaysUseFdlibm() const { return alwaysUseFdlibm_; }
   RealmCreationOptions& setAlwaysUseFdlibm(bool flag) {
     alwaysUseFdlibm_ = flag;
@@ -238,6 +252,7 @@ class JS_PUBLIC_API RealmCreationOptions {
   };
   uint64_t profilerRealmID_ = 0;
   RefPtr<LocaleString> locale_;
+  RefPtr<TimeZoneString> timeZone_;
   bool invisibleToDebugger_ = false;
   bool preserveJitCode_ = false;
   bool sharedMemoryAndAtomics_ = false;
