@@ -19,7 +19,6 @@
 #include "mozilla/gfx/Logging.h"            
 #include "mozilla/gfx/Matrix.h"             
 #include "mozilla/layers/APZInputBridge.h"  
-#include "mozilla/layers/APZTestData.h"     
 #include "mozilla/layers/APZUtils.h"        
 #include "mozilla/layers/CompositorScrollUpdate.h"  
 #include "mozilla/layers/IAPZCTreeManager.h"        
@@ -36,6 +35,7 @@
 #include "mozilla/UniquePtr.h"       
 #include "nsCOMPtr.h"                
 #include "nsTArray.h"
+#include "VsyncSource.h"
 
 namespace mozilla {
 class MultiTouchInput;
@@ -55,8 +55,10 @@ class Layer;
 class AsyncPanZoomController;
 class APZCTreeManagerParent;
 class APZSampler;
+class APZTestData;
 class APZUpdater;
 class CompositorBridgeParent;
+class MatrixMessage;
 class OverscrollHandoffChain;
 struct OverscrollHandoffState;
 class FocusTarget;

@@ -15,11 +15,9 @@
 #include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"               
 #include "mozilla/RefPtr.h"                   
-#include "mozilla/StaticPrefs_apz.h"          
 #include "mozilla/TimeStamp.h"                
 #include "mozilla/gfx/Point.h"                
 #include "mozilla/gfx/Types.h"                
-#include "mozilla/layers/APZTestData.h"       
 #include "mozilla/layers/CompositorTypes.h"   
 #include "mozilla/layers/DisplayItemCache.h"  
 #include "mozilla/layers/FocusTarget.h"       
@@ -46,6 +44,7 @@ struct ActiveScrolledRoot;
 
 namespace layers {
 
+class APZTestData;
 class CompositorBridgeChild;
 class KnowsCompositor;
 class Layer;
@@ -145,19 +144,12 @@ class WebRenderLayerManager final : public WindowRenderer {
   
   void LogTestDataForCurrentPaint(ScrollableLayerGuid::ViewID aScrollId,
                                   const std::string& aKey,
-                                  const std::string& aValue) {
-    MOZ_ASSERT(StaticPrefs::apz_test_logging_enabled(), "don't call me");
-    mApzTestData.LogTestDataForPaint(mPaintSequenceNumber, aScrollId, aKey,
-                                     aValue);
-  }
+                                  const std::string& aValue);
   void LogAdditionalTestData(const std::string& aKey,
-                             const std::string& aValue) {
-    MOZ_ASSERT(StaticPrefs::apz_test_logging_enabled(), "don't call me");
-    mApzTestData.RecordAdditionalData(aKey, aValue);
-  }
+                             const std::string& aValue);
 
   
-  const APZTestData& GetAPZTestData() const { return mApzTestData; }
+  const APZTestData& GetAPZTestData() const { return *mApzTestData.get(); }
 
   WebRenderCommandBuilder& CommandBuilder() { return mWebRenderCommandBuilder; }
   WebRenderUserDataRefTable* GetWebRenderUserDataTable() {
@@ -267,7 +259,7 @@ class WebRenderLayerManager final : public WindowRenderer {
   
   uint32_t mPaintSequenceNumber;
   
-  APZTestData mApzTestData;
+  const std::unique_ptr<APZTestData> mApzTestData;
 
   TimeStamp mTransactionStart;
   nsCString mURL;

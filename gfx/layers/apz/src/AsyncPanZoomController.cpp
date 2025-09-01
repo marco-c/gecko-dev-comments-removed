@@ -72,6 +72,7 @@
 #include "mozilla/layers/APZUtils.h"        
 #include "mozilla/layers/CompositorController.h"  
 #include "mozilla/layers/DirectionUtils.h"  
+#include "mozilla/layers/DoubleTapToZoom.h"  
 #include "mozilla/layers/APZPublicUtils.h"   
 #include "mozilla/webrender/WebRenderAPI.h"  
 #include "mozilla/mozalloc.h"                
