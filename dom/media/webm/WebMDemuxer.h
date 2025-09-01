@@ -132,8 +132,6 @@ class WebMDemuxer : public MediaDataDemuxer,
   
   bool IsMediaSource() const { return mIsMediaSource; }
 
-  int64_t LastWebMBlockOffset() const { return mLastWebMBlockOffset; }
-
   struct NestEggContext {
     NestEggContext(WebMDemuxer* aParent, MediaResource* aResource)
         : mParent(aParent), mResource(aResource), mContext(nullptr) {}
@@ -146,12 +144,6 @@ class WebMDemuxer : public MediaDataDemuxer,
 
     bool IsMediaSource() const { return mParent->IsMediaSource(); }
     MediaResourceIndex* GetResource() { return &mResource; }
-
-    int64_t GetEndDataOffset() const {
-      return (!mParent->IsMediaSource() || mParent->LastWebMBlockOffset() < 0)
-                 ? mResource.GetLength()
-                 : mParent->LastWebMBlockOffset();
-    }
 
     WebMDemuxer* mParent;
     MediaResourceIndex mResource;
@@ -243,10 +235,6 @@ class WebMDemuxer : public MediaDataDemuxer,
   bool mHasAudio;
   bool mNeedReIndex;
 
-  
-  
-  
-  int64_t mLastWebMBlockOffset;
   const bool mIsMediaSource;
   
   

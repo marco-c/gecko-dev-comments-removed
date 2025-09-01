@@ -59,20 +59,9 @@ static int webmdemux_read(void* aBuffer, size_t aLength, void* aUserData) {
   MOZ_ASSERT(aLength < UINT32_MAX);
   WebMDemuxer::NestEggContext* context =
       reinterpret_cast<WebMDemuxer::NestEggContext*>(aUserData);
-  uint32_t count = aLength;
-  if (context->IsMediaSource()) {
-    int64_t length = context->GetEndDataOffset();
-    int64_t position = context->GetResource()->Tell();
-    MOZ_ASSERT(position <= context->GetResource()->GetLength());
-    MOZ_ASSERT(position <= length);
-    if (length >= 0 && count + position > length) {
-      count = length - position;
-    }
-    MOZ_ASSERT(count <= aLength);
-  }
   uint32_t bytes = 0;
-  nsresult rv =
-      context->GetResource()->Read(static_cast<char*>(aBuffer), count, &bytes);
+  nsresult rv = context->GetResource()->Read(static_cast<char*>(aBuffer),
+                                             aLength, &bytes);
   bool eof = bytes < aLength;
   return NS_FAILED(rv) ? -1 : eof ? 0 : 1;
 }
@@ -170,7 +159,6 @@ WebMDemuxer::WebMDemuxer(
       mHasVideo(false),
       mHasAudio(false),
       mNeedReIndex(true),
-      mLastWebMBlockOffset(-1),
       mIsMediaSource(aIsMediaSource) {
   DDLINKCHILD("resource", aResource);
   
@@ -555,12 +543,6 @@ void WebMDemuxer::EnsureUpToDateIndex() {
   mBufferedState->UpdateIndex(byteRanges, resource);
 
   mNeedReIndex = false;
-
-  if (!mIsMediaSource) {
-    return;
-  }
-  mLastWebMBlockOffset = mBufferedState->GetLastBlockOffset();
-  MOZ_ASSERT(mLastWebMBlockOffset <= resource->GetLength());
 }
 
 void WebMDemuxer::NotifyDataArrived() {
@@ -615,11 +597,6 @@ CryptoTrack WebMDemuxer::GetTrackCrypto(TrackInfo::TrackType aType,
 
 nsresult WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType,
                                     MediaRawDataQueue* aSamples) {
-  if (mIsMediaSource) {
-    
-    EnsureUpToDateIndex();
-  }
-
   RefPtr<NesteggPacketHolder> holder;
   nsresult rv = NextPacket(aType, holder);
 
