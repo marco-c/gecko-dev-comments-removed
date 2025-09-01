@@ -31,22 +31,12 @@ class AutoAddTimeDuration {
   ~AutoAddTimeDuration() { result_ += TimeSince(start_); }
 };
 
-ParallelMarker::ParallelMarker(GCRuntime* gc) : gc(gc) {}
 
-size_t ParallelMarker::workerCount() const { return gc->markers.length(); }
-
-bool ParallelMarker::mark(const SliceBudget& sliceBudget) {
-  MOZ_ASSERT(workerCount() <= gc->getMaxParallelThreads());
-
-  if (markOneColor(MarkColor::Black, sliceBudget) == NotFinished) {
+bool ParallelMarker::mark(GCRuntime* gc, const SliceBudget& sliceBudget) {
+  if (!markOneColor(gc, MarkColor::Black, sliceBudget) ||
+      !markOneColor(gc, MarkColor::Gray, sliceBudget)) {
     return false;
   }
-  MOZ_ASSERT(!hasWork(MarkColor::Black));
-
-  if (markOneColor(MarkColor::Gray, sliceBudget) == NotFinished) {
-    return false;
-  }
-  MOZ_ASSERT(!hasWork(MarkColor::Gray));
 
   
   if (gc->hasDelayedMarking()) {
@@ -56,8 +46,23 @@ bool ParallelMarker::mark(const SliceBudget& sliceBudget) {
   return true;
 }
 
-bool ParallelMarker::markOneColor(MarkColor color,
+
+bool ParallelMarker::markOneColor(GCRuntime* gc, MarkColor color,
                                   const SliceBudget& sliceBudget) {
+  ParallelMarker pm(gc, color);
+  return pm.mark(sliceBudget);
+}
+
+ParallelMarker::ParallelMarker(GCRuntime* gc, MarkColor color)
+    : gc(gc), color(color) {
+  
+  MOZ_ASSERT(workerCount() <= gc->getMaxParallelThreads());
+}
+
+size_t ParallelMarker::workerCount() const { return gc->markers.length(); }
+
+bool ParallelMarker::mark(const SliceBudget& sliceBudget) {
+  
   
 
   if (!hasWork(color)) {
@@ -93,9 +98,6 @@ bool ParallelMarker::markOneColor(MarkColor color,
   }
 
   
-  MOZ_RELEASE_ASSERT(gc->maxParallelThreads >= workerCount());
-
-  
   for (size_t i = 1; i < workerCount(); i++) {
     ParallelMarkTask& task = *tasks[i];
     gc->startTask(task, lock);
@@ -106,11 +108,9 @@ bool ParallelMarker::markOneColor(MarkColor color,
     gc->joinTask(*tasks[i], lock);
   }
 
-#ifdef DEBUG
   MOZ_ASSERT(waitingTasks.ref().isEmpty());
   MOZ_ASSERT(waitingTaskCount == 0);
   MOZ_ASSERT(!hasActiveTasks(lock));
-#endif
 
   return !hasWork(color);
 }
