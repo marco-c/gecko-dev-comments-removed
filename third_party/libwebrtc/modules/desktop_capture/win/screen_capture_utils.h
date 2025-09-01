@@ -62,6 +62,8 @@ DesktopVector GetDpiForMonitor(HMONITOR monitor);
 
 
 
+
+
 bool IsScreenValid(DesktopCapturer::SourceId screen, std::wstring* device_key);
 
 
@@ -71,8 +73,10 @@ DesktopRect GetFullscreenRect();
 
 
 
-RTC_EXPORT DesktopRect GetScreenRect(DesktopCapturer::SourceId screen,
-                                     const std::wstring& device_key);
+
+RTC_EXPORT DesktopRect
+GetScreenRect(DesktopCapturer::SourceId screen,
+              const std::optional<std::wstring>& device_key);
 
 }  
 

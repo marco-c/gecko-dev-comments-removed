@@ -157,6 +157,11 @@ class WgcCaptureSession final {
 
   
   
+  
+  std::optional<HMONITOR> monitor_;
+
+  
+  
   bool is_window_source_;
 
   SequenceChecker sequence_checker_;
