@@ -654,8 +654,6 @@ pub trait TElement:
     
     
     
-    
-    
     fn implemented_pseudo_element(&self) -> Option<PseudoElement> {
         None
     }
