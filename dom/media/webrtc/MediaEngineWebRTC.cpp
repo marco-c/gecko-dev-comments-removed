@@ -151,11 +151,11 @@ void MediaEngineWebRTC::EnumerateVideoDevices(
     
     
 
-    aDevices->EmplaceBack(
-        new MediaDevice(this, aMediaSource, name, uuid, uuid,
-                        MediaDevice::IsScary(scaryKind || scarySource),
-                        canRequestOsLevelPrompt ? MediaDevice::OsPromptable::Yes
-                                                : MediaDevice::OsPromptable::No));
+    aDevices->EmplaceBack(new MediaDevice(
+        this, aMediaSource, name, uuid, uuid,
+        MediaDevice::IsScary(scaryKind || scarySource),
+        canRequestOsLevelPrompt ? MediaDevice::OsPromptable::Yes
+                                : MediaDevice::OsPromptable::No));
   }
 }
 
