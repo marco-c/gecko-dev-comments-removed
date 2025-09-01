@@ -706,7 +706,17 @@ class ResourceCommand {
         let isWillNavigate = false;
         if (resourceType == DOCUMENT_EVENT) {
           isWillNavigate = resource.name === "will-navigate";
-          if (isWillNavigate && resource.targetFront.isTopLevel) {
+          const isBrowserToolbox =
+            this.targetCommand.descriptorFront.isBrowserProcessDescriptor;
+          if (
+            isWillNavigate &&
+            resource.targetFront.isTopLevel &&
+            
+            
+            
+            
+            (!isBrowserToolbox || !resource.isFrameSwitching)
+          ) {
             includesDocumentEventWillNavigate = true;
             this._onWillNavigate(resource.targetFront);
           }
