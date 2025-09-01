@@ -840,26 +840,6 @@
       
       dt.addElement(tab);
 
-      this.#keepTabSizeLocked = true;
-      this._lockTabSizing();
-
-      let expandGroupOnDrop;
-      let dropEffect = this.getDropEffectForTabDrag(event);
-      if (!fromTabList && dropEffect == "move") {
-        this.#setMovingTabMode(true);
-
-        if (tab.multiselected) {
-          this.#moveTogetherSelectedTabs(tab);
-        } else if (isTabGroupLabel(tab)) {
-          this.#setIsDraggingTabGroup(tab.group, true);
-
-          if (!tab.group.collapsed) {
-            tab.group.collapsed = true;
-            expandGroupOnDrop = true;
-          }
-        }
-      }
-
       
       
       
@@ -946,6 +926,11 @@
       let movingTabs = tab.multiselected ? gBrowser.selectedTabs : [tab];
       let movingTabsSet = new Set(movingTabs);
 
+      let dropEffect = this.getDropEffectForTabDrag(event);
+      let isMovingInTabStrip = !fromTabList && dropEffect == "move";
+      let collapseTabGroupDuringDrag =
+        isMovingInTabStrip && isTabGroupLabel(tab) && !tab.group.collapsed;
+
       tab._dragData = {
         offsetX: this.verticalMode
           ? event.screenX - window.screenX
@@ -963,7 +948,7 @@
         movingTabsSet,
         fromTabList,
         tabGroupCreationColor: gBrowser.tabGroupMenu.nextUnusedColor,
-        expandGroupOnDrop,
+        expandGroupOnDrop: collapseTabGroupDuringDrag,
       };
       if (this.#rtlMode) {
         
@@ -972,6 +957,20 @@
       }
 
       this.#updateTabStylesOnDrag(tab, event);
+
+      if (isMovingInTabStrip) {
+        this.#setMovingTabMode(true);
+
+        if (tab.multiselected) {
+          this.#moveTogetherSelectedTabs(tab);
+        } else if (isTabGroupLabel(tab)) {
+          this.#setIsDraggingTabGroup(tab.group, true);
+
+          if (collapseTabGroupDuringDrag) {
+            tab.group.collapsed = true;
+          }
+        }
+      }
 
       event.stopPropagation();
 
@@ -1334,8 +1333,7 @@
           } else if (dropElement && dropBefore != undefined) {
             gBrowser.moveTabsAfter(movingTabs, dropElement, dropMetricsContext);
           }
-          this.#keepTabSizeLocked = false;
-          this._unlockTabSizing();
+
           if (isTabGroupLabel(draggedTab)) {
             this.#setIsDraggingTabGroup(draggedTab.group, false);
             this.#expandGroupOnDrop(draggedTab);
@@ -1536,8 +1534,6 @@
 
       this.finishMoveTogetherSelectedTabs(draggedTab);
       this.finishAnimateTabMove();
-      this.#keepTabSizeLocked = false;
-      this._unlockTabSizing();
       if (isTabGroupLabel(draggedTab)) {
         this.#setIsDraggingTabGroup(draggedTab.group, false);
         this.#expandGroupOnDrop(draggedTab);
@@ -2161,9 +2157,6 @@
     }
 
     
-    #keepTabSizeLocked = false;
-
-    
 
 
     _lockTabSizing(aClosingTab, aTabWidth) {
@@ -2263,10 +2256,6 @@
     }
 
     _unlockTabSizing() {
-      if (this.#keepTabSizeLocked) {
-        return;
-      }
-
       gBrowser.removeEventListener("mousemove", this);
       window.removeEventListener("mouseout", this);
 
@@ -2333,17 +2322,43 @@
       this.arrowScrollbox.scrollbox.style.height = unpinnedRect.height + "px";
       this.arrowScrollbox.scrollbox.style.width = unpinnedRect.width + "px";
 
+      let { movingTabs, movingTabsSet, expandGroupOnDrop } = tab._dragData;
+      
+      let suppressTransitionsFor = [];
+      
       const pinnedTabsOrigBounds = new Map();
 
-      
-      if (isGrid) {
-        for (let t of allTabs.slice(0, numPinned)) {
-          let tabRect = window.windowUtils.getBoundsWithoutFlushing(t);
+      for (let t of allTabs) {
+        t = elementToMove(t);
+        let tabRect = window.windowUtils.getBoundsWithoutFlushing(t);
+
+        
+        if (isGrid && t.pinned) {
           pinnedTabsOrigBounds.set(t, tabRect);
-          
-          
-          t.style.maxWidth = tabRect.width + "px";
         }
+        
+        
+        t.style.maxWidth = tabRect.width + "px";
+        
+        
+        
+        let isTabInCollapsingGroup = expandGroupOnDrop && t.group == tab.group;
+        if (!movingTabsSet.has(t) && !isTabInCollapsingGroup) {
+          t.style.transition = "none";
+          suppressTransitionsFor.push(t);
+        }
+      }
+
+      if (suppressTransitionsFor.length) {
+        window
+          .promiseDocumentFlushed(() => {})
+          .then(() => {
+            window.requestAnimationFrame(() => {
+              for (let t of suppressTransitionsFor) {
+                t.style.transition = "";
+              }
+            });
+          });
       }
 
       
@@ -2351,7 +2366,6 @@
       let tabStripItemElement = elementToMove(tab);
       let rect =
         window.windowUtils.getBoundsWithoutFlushing(tabStripItemElement);
-      let { movingTabs } = tab._dragData;
       
       
       
