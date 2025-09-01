@@ -184,14 +184,10 @@ async function testBackupHelper(isEncrypted) {
   delete sessionStoreStateStaged.session.lastUpdate;
   delete sessionStoreState.session.lastUpdate;
 
-  
-  Assert.equal(
-    sessionStoreStateStaged.cookies.length,
-    0,
-    "expected no cookies in copied session state"
-  );
-  
-  sessionStoreState.cookies = [];
+  if (!isEncrypted) {
+    
+    sessionStoreState.cookies = [];
+  }
 
   Assert.deepEqual(
     sessionStoreStateStaged,
