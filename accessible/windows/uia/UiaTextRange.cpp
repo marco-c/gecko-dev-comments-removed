@@ -485,10 +485,11 @@ UiaTextRange::FindText(__RPC__in BSTR aText, BOOL aBackward, BOOL aIgnoreCase,
   if (!range) {
     return CO_E_OBJNOTCONNECTED;
   }
-  MOZ_ASSERT(range.Start() <= range.End(), "Range must be valid to proceed.");
+  const TextLeafPoint origStart = range.Start();
+  MOZ_ASSERT(origStart <= range.End(), "Range must be valid to proceed.");
 
   
-  if (range.Start() == range.End()) {
+  if (origStart == range.End()) {
     return S_OK;
   }
 
@@ -498,10 +499,12 @@ UiaTextRange::FindText(__RPC__in BSTR aText, BOOL aBackward, BOOL aIgnoreCase,
   nsTArray<std::pair<int32_t, Accessible*>> indexToAcc;
   nsAutoString rangeText;
   for (const TextLeafRange leafSegment : range) {
-    Accessible* startAcc = leafSegment.Start().mAcc;
+    const TextLeafPoint segmentStart = leafSegment.Start();
+    Accessible* startAcc = segmentStart.mAcc;
     MOZ_ASSERT(startAcc, "Start acc of leaf segment was unexpectedly null.");
     indexToAcc.EmplaceBack(rangeText.Length(), startAcc);
-    startAcc->AppendTextTo(rangeText);
+    startAcc->AppendTextTo(rangeText, segmentStart.mOffset,
+                           leafSegment.End().mOffset - segmentStart.mOffset);
   }
 
   
@@ -539,14 +542,27 @@ UiaTextRange::FindText(__RPC__in BSTR aText, BOOL aBackward, BOOL aIgnoreCase,
   };
 
   
+  auto getStartOffsetForAcc = [origStart](Accessible* aAcc) {
+    if (aAcc == origStart.mAcc) {
+      
+      
+      
+      return origStart.mOffset;
+    }
+    return 0;
+  };
+
+  
   auto itr = GetNearestAccLessThanIndex(startIndex);
   Accessible* foundTextStart = itr->second;
-  const int32_t offsetFromStart = startIndex - itr->first;
+  const int32_t offsetFromStart =
+      startIndex - itr->first + getStartOffsetForAcc(foundTextStart);
   const TextLeafPoint rangeStart{foundTextStart, offsetFromStart};
 
   itr = GetNearestAccLessThanIndex(endIndex);
   Accessible* foundTextEnd = itr->second;
-  const int32_t offsetFromEndAccStart = endIndex - itr->first;
+  const int32_t offsetFromEndAccStart =
+      endIndex - itr->first + getStartOffsetForAcc(foundTextEnd);
   const TextLeafPoint rangeEnd{foundTextEnd, offsetFromEndAccStart};
 
   TextLeafRange resultRange{rangeStart, rangeEnd};
