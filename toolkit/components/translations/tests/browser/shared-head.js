@@ -107,6 +107,21 @@ function languageModelNames(languagePairs) {
 
 
 
+async function loadNewPage(browser, url) {
+  BrowserTestUtils.startLoadingURIString(browser, url);
+  await BrowserTestUtils.browserLoaded(
+    browser,
+     false,
+    url
+  );
+}
+
+
+
+
+
+
+
 
 
 
@@ -188,11 +203,7 @@ async function openAboutTranslations({
   });
 
   
-  BrowserTestUtils.startLoadingURIString(
-    tab.linkedBrowser,
-    "about:translations"
-  );
-  await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  await loadNewPage(tab.linkedBrowser, "about:translations");
 
   
 
@@ -1447,8 +1458,7 @@ async function loadTestPage({
     
     
     
-    BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, BLANK_PAGE_URL);
-    await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+    await loadNewPage(tab.linkedBrowser, BLANK_PAGE_URL);
 
     const actor = getTranslationsParent(win);
     await waitForCondition(
@@ -1457,8 +1467,7 @@ async function loadTestPage({
     );
   }
 
-  BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, page);
-  await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  await loadNewPage(tab.linkedBrowser, page);
 
   if (autoOffer && TranslationsParent.shouldAlwaysOfferTranslations()) {
     info("Waiting for the popup to be automatically shown.");
@@ -2226,11 +2235,7 @@ async function setupAboutPreferences(
     languagePairs,
   });
 
-  BrowserTestUtils.startLoadingURIString(
-    tab.linkedBrowser,
-    "about:preferences"
-  );
-  await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  await loadNewPage(tab.linkedBrowser, "about:preferences");
 
   const elements = await selectAboutPreferencesElements();
 
@@ -2726,8 +2731,7 @@ function promiseLoadSubDialog(aURL) {
 
 
 async function loadBlankPage() {
-  BrowserTestUtils.startLoadingURIString(gBrowser.selectedBrowser, BLANK_PAGE);
-  await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+  await loadNewPage(gBrowser.selectedBrowser, BLANK_PAGE);
 }
 
 

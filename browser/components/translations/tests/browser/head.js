@@ -308,12 +308,9 @@ async function navigate(
 
   
   
-  BrowserTestUtils.startLoadingURIString(gBrowser.selectedBrowser, BLANK_PAGE);
-  await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-
+  await loadBlankPage();
   const loadTargetPage = async () => {
-    BrowserTestUtils.startLoadingURIString(gBrowser.selectedBrowser, url);
-    await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+    await loadNewPage(gBrowser.selectedBrowser, url);
 
     if (downloadHandler) {
       await FullPageTranslationsTestUtils.assertTranslationsButton(
