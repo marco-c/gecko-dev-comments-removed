@@ -588,7 +588,10 @@ async function _runNextTest() {
 
     $("current-test-path").innerHTML = url;
 
-    TestRunner._currentTestStartTimestamp = SpecialPowers.ChromeUtils.now();
+    
+    
+    TestRunner._currentTestStartTimestamp =
+      SpecialPowers.ChromeUtils.now?.() || SpecialPowers.Cu.now();
     TestRunner._currentTestStartTime = new Date().valueOf();
     TestRunner._timeoutFactor = 1;
     TestRunner._expectedMinAsserts = 0;
