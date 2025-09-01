@@ -16,7 +16,6 @@ promise_test(async t => {
   const objectStoreName = 'store';
   const dbname = self.location.pathname;
 
-  await indexedDB.deleteDatabase(dbname);
   let usageAfterWrite, usageBeforeWrite;
   
   
@@ -32,6 +31,7 @@ promise_test(async t => {
   
   
   for (let i = 0; i < 10; i++) {
+    indexedDB.deleteDatabase(dbname);
     const db = await createDB(dbname, objectStoreName, t);
     let estimate = await navigator.storage.estimate();
 
