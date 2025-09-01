@@ -602,7 +602,7 @@ class LocalAccessible : public nsISupports, public Accessible {
 
 
 
-  bool IsActiveDescendantId(LocalAccessible** aWidget = nullptr) const;
+  bool IsActiveDescendant(LocalAccessible** aWidget = nullptr) const;
 
   
 
