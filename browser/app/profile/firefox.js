@@ -3457,3 +3457,9 @@ pref("browser.ipProtection.guardian.endpoint", "https://vpn.mozilla.org/");
 
 
 pref("about.glean.redesign.enabled", false);
+
+
+
+
+
+pref("toolkit.rust-components.logging.crates", "");
