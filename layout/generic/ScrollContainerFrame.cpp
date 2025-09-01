@@ -3674,7 +3674,7 @@ void ScrollContainerFrame::MaybeCreateTopLayerAndWrapRootItems(
     nsDisplayListBuilder* aBuilder, nsDisplayListCollection& aSet,
     bool aCreateAsyncZoom, bool aCapturedByViewTransition,
     AutoContainsBlendModeCapturer* aAsyncZoomBlendCapture,
-    const nsRect& aAsyncZoomClipRect, nscoord* aRadii) {
+    const nsRect& aAsyncZoomClipRect, const nsRectCornerRadii* aRadii) {
   if (!mIsRoot) {
     return;
   }
@@ -4033,7 +4033,7 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   nsRect clipRect = scrollPortClip;
   
   
-  nscoord radii[8];
+  nsRectCornerRadii radii;
   const bool haveRadii = GetPaddingBoxBorderRadii(radii);
   if (mIsRoot) {
     clipRect.SizeTo(nsLayoutUtils::CalculateCompositionSizeForFrame(
@@ -4070,10 +4070,10 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
         willBuildAsyncZoomContainer ? scrollPortClip : clipRect;
     if (mIsRoot) {
       clipState.ClipContentDescendants(clipRectForContents,
-                                       haveRadii ? radii : nullptr);
+                                       haveRadii ? &radii : nullptr);
     } else {
       clipState.ClipContainingBlockDescendants(clipRectForContents,
-                                               haveRadii ? radii : nullptr);
+                                               haveRadii ? &radii : nullptr);
     }
 
     Maybe<DisplayListClipState::AutoSaveRestore> contentBoxClipState;
@@ -4264,7 +4264,7 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   MaybeCreateTopLayerAndWrapRootItems(
       aBuilder, set, willBuildAsyncZoomContainer, capturedByViewTransition,
-      &blendCapture, clipRect, haveRadii ? radii : nullptr);
+      &blendCapture, clipRect, haveRadii ? &radii : nullptr);
 
   
   
@@ -6685,19 +6685,18 @@ void ScrollContainerFrame::LayoutScrollbars(ScrollReflowInput& aState,
   }
 }
 
-static void ReduceRadii(nscoord aXBorder, nscoord aYBorder, nscoord& aXRadius,
-                        nscoord& aYRadius) {
+static void ReduceRadii(nscoord aXBorder, nscoord aYBorder, nsSize& aRadius) {
   
   
-  if (aXRadius <= aXBorder || aYRadius <= aYBorder) {
+  if (aRadius.width <= aXBorder || aRadius.height <= aYBorder) {
     return;
   }
 
   
   double ratio =
-      std::max(double(aXBorder) / aXRadius, double(aYBorder) / aYRadius);
-  aXRadius *= ratio;
-  aYRadius *= ratio;
+      std::max(double(aXBorder) / aRadius.width, double(aYBorder) / aRadius.height);
+  aRadius.width *= ratio;
+  aRadius.height *= ratio;
 }
 
 
@@ -6711,7 +6710,7 @@ static void ReduceRadii(nscoord aXBorder, nscoord aYBorder, nscoord& aXRadius,
 bool ScrollContainerFrame::GetBorderRadii(const nsSize& aFrameSize,
                                           const nsSize& aBorderArea,
                                           Sides aSkipSides,
-                                          nscoord aRadii[8]) const {
+                                          nsRectCornerRadii& aRadii) const {
   if (!nsContainerFrame::GetBorderRadii(aFrameSize, aBorderArea, aSkipSides,
                                         aRadii)) {
     return false;
@@ -6724,25 +6723,17 @@ bool ScrollContainerFrame::GetBorderRadii(const nsSize& aFrameSize,
   nsMargin border = GetUsedBorder();
 
   if (sb.left > 0 || sb.top > 0) {
-    ReduceRadii(border.left, border.top, aRadii[eCornerTopLeftX],
-                aRadii[eCornerTopLeftY]);
+    ReduceRadii(border.left, border.top, aRadii.TopLeft());
   }
-
   if (sb.top > 0 || sb.right > 0) {
-    ReduceRadii(border.right, border.top, aRadii[eCornerTopRightX],
-                aRadii[eCornerTopRightY]);
+    ReduceRadii(border.right, border.top, aRadii.TopRight());
   }
-
   if (sb.right > 0 || sb.bottom > 0) {
-    ReduceRadii(border.right, border.bottom, aRadii[eCornerBottomRightX],
-                aRadii[eCornerBottomRightY]);
+    ReduceRadii(border.right, border.bottom, aRadii.BottomRight());
   }
-
   if (sb.bottom > 0 || sb.left > 0) {
-    ReduceRadii(border.left, border.bottom, aRadii[eCornerBottomLeftX],
-                aRadii[eCornerBottomLeftY]);
+    ReduceRadii(border.left, border.bottom, aRadii.BottomLeft());
   }
-
   return true;
 }
 
