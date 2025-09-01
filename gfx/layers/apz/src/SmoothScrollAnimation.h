@@ -51,6 +51,7 @@ class SmoothScrollAnimation : public AsyncPanZoomAnimation {
     return mTriggeredByScript == ScrollTriggeredByScript::Yes;
   }
   ScrollAnimationKind Kind() const { return mKind; }
+  ViewportType ViewportToScroll() const { return mViewportToScroll; }
   ScrollSnapTargetIds TakeSnapTargetIds() { return std::move(mSnapTargetIds); }
   ScrollOrigin GetScrollOrigin() const;
   static ScrollOrigin GetScrollOriginForAction(
@@ -72,7 +73,7 @@ class SmoothScrollAnimation : public AsyncPanZoomAnimation {
 
   
   
-  bool CanExtend(ScrollOrigin aOrigin) const;
+  bool CanExtend(ViewportType aViewportToScroll, ScrollOrigin aOrigin) const;
 
  private:
   SmoothScrollAnimation(ScrollAnimationKind aKind,

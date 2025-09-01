@@ -1677,7 +1677,9 @@ class AsyncPanZoomController {
   
   void SmoothScrollTo(CSSSnapDestination&& aDestination,
                       ScrollTriggeredByScript aTriggeredByScript,
-                      ScrollAnimationKind aAnimationKind, ScrollOrigin aOrigin);
+                      ScrollAnimationKind aAnimationKind,
+                      ViewportType aViewportToScroll,
+                      ScrollOrigin aOrigin);
 
   ParentLayerPoint ConvertDestinationToDelta(CSSPoint& aDestination) const;
 
