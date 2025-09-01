@@ -21,8 +21,7 @@
 namespace mozilla {
 
 template <typename T>
-using DefaultDelete = std::default_delete<T>;
-
+class DefaultDelete;
 template <typename T, class D = DefaultDelete<T>>
 using UniquePtr = std::unique_ptr<T, D>;
 
@@ -60,6 +59,50 @@ struct PointerType {
 };
 
 }  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T>
+class DefaultDelete {
+ public:
+  constexpr DefaultDelete() = default;
+
+  template <typename U>
+  MOZ_IMPLICIT DefaultDelete(
+      const DefaultDelete<U>& aOther,
+      std::enable_if_t<std::is_convertible_v<U*, T*>, int> aDummy = 0) {}
+
+  void operator()(T* aPtr) const {
+    static_assert(sizeof(T) > 0, "T must be complete");
+    delete aPtr;
+  }
+};
+
+
+template <typename T>
+class DefaultDelete<T[]> {
+ public:
+  constexpr DefaultDelete() = default;
+
+  void operator()(T* aPtr) const {
+    static_assert(sizeof(T) > 0, "T must be complete");
+    delete[] aPtr;
+  }
+
+  template <typename U>
+  void operator()(U* aPtr) const = delete;
+};
 
 
 

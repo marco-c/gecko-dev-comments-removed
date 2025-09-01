@@ -20,14 +20,16 @@ class nsIURI;
 struct HyphDic;
 struct CompiledData;
 
-namespace std {
+namespace mozilla {
 template <>
-struct default_delete<const HyphDic> {
+class DefaultDelete<const HyphDic> {
+ public:
   void operator()(const HyphDic* ptr) const;
 };
 
 template <>
-struct default_delete<const CompiledData> {
+class DefaultDelete<const CompiledData> {
+ public:
   void operator()(const CompiledData* ptr) const;
 };
 }  
