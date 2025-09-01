@@ -145,6 +145,22 @@ void AutoStubFrame::leave(MacroAssembler& masm) {
   }
 }
 
+void AutoStubFrame::pushInlinedICScript(MacroAssembler& masm,
+                                        Address icScriptAddr) {
+  
+  
+  MOZ_ASSERT(compiler.localTracingSlots_ == 0);
+  masm.Push(icScriptAddr);
+
+#ifndef JS_64BIT
+  
+  
+  
+  static_assert(sizeof(Value) == 2 * sizeof(uintptr_t));
+  masm.subFromStackPtr(Imm32(sizeof(uintptr_t)));
+#endif
+}
+
 void AutoStubFrame::storeTracedValue(MacroAssembler& masm, ValueOperand value) {
   MOZ_ASSERT(compiler.localTracingSlots_ < 255);
   MOZ_ASSERT(masm.framePushed() - framePushedAtEnterStubFrame_ ==
@@ -574,6 +590,10 @@ bool BaselineCacheIRCompiler::emitCallScriptedGetterShared(
     masm.switchToObjectRealm(callee, scratch);
   }
 
+  if (isInlined) {
+    stubFrame.pushInlinedICScript(masm, stubAddress(*icScriptOffset));
+  }
+
   Label noUnderflow, doneAlignment;
   masm.loadFunctionArgCount(callee, scratch);
   masm.branch32(Assembler::Equal, scratch, Imm32(0), &noUnderflow);
@@ -598,15 +618,9 @@ bool BaselineCacheIRCompiler::emitCallScriptedGetterShared(
   
   masm.Push(receiver);
 
-  if (isInlined) {
-    
-    Address icScriptAddr(stubAddress(*icScriptOffset));
-    masm.loadPtr(icScriptAddr, scratch);
-    masm.storeICScriptInJSContext(scratch);
-  }
-
   masm.Push(callee);
-  masm.Push(FrameDescriptor(FrameType::BaselineStub,  0));
+  masm.Push(
+      FrameDescriptor(FrameType::BaselineStub,  0, isInlined));
 
   masm.callJit(code);
 
@@ -1699,6 +1713,10 @@ bool BaselineCacheIRCompiler::emitCallScriptedSetterShared(
     masm.switchToObjectRealm(callee, scratch);
   }
 
+  if (isInlined) {
+    stubFrame.pushInlinedICScript(masm, stubAddress(*icScriptOffset));
+  }
+
   Label noUnderflow, doneAlignment;
   masm.loadFunctionArgCount(callee, scratch);
   masm.branch32(Assembler::BelowOrEqual, scratch, Imm32(1), &noUnderflow);
@@ -1727,14 +1745,8 @@ bool BaselineCacheIRCompiler::emitCallScriptedSetterShared(
   masm.Push(callee);
 
   
-  masm.Push(FrameDescriptor(FrameType::BaselineStub,  1));
-
-  if (isInlined) {
-    
-    Address icScriptAddr(stubAddress(*icScriptOffset));
-    masm.loadPtr(icScriptAddr, scratch);
-    masm.storeICScriptInJSContext(scratch);
-  }
+  masm.Push(
+      FrameDescriptor(FrameType::BaselineStub,  1, isInlined));
 
   
   if (isInlined) {
@@ -3894,6 +3906,8 @@ bool BaselineCacheIRCompiler::emitCallInlinedFunction(ObjOperandId calleeId,
     masm.switchToObjectRealm(calleeReg, scratch);
   }
 
+  stubFrame.pushInlinedICScript(masm, stubAddress(icScriptOffset));
+
   Label baselineScriptDiscarded;
   if (isConstructing) {
     createThis(argcReg, calleeReg, scratch, flags,
@@ -3905,11 +3919,6 @@ bool BaselineCacheIRCompiler::emitCallInlinedFunction(ObjOperandId calleeId,
     
     masm.loadBaselineJitCodeRaw(calleeReg, codeReg, &baselineScriptDiscarded);
   }
-
-  
-  Address icScriptAddr(stubAddress(icScriptOffset));
-  masm.loadPtr(icScriptAddr, scratch);
-  masm.storeICScriptInJSContext(scratch);
 
   if (isConstructing) {
     Label skip;
@@ -3925,7 +3934,8 @@ bool BaselineCacheIRCompiler::emitCallInlinedFunction(ObjOperandId calleeId,
   
   
   masm.PushCalleeToken(calleeReg, isConstructing);
-  masm.PushFrameDescriptorForJitCall(FrameType::BaselineStub, argcReg, scratch);
+  masm.PushFrameDescriptorForJitCall(FrameType::BaselineStub, argcReg, scratch,
+                                      true);
 
   masm.callJit(codeReg);
 
