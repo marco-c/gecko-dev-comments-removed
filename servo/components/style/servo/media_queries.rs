@@ -257,6 +257,11 @@ impl Device {
     }
 
     
+    pub fn device_pixel_ratio_ignoring_full_zoom(&self) -> Scale<f32, CSSPixel, DevicePixel> {
+        self.device_pixel_ratio
+    }
+
+    
     pub fn device_pixel_ratio(&self) -> Scale<f32, CSSPixel, DevicePixel> {
         self.device_pixel_ratio
     }
