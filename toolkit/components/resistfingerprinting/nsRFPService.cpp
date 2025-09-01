@@ -1063,6 +1063,11 @@ NS_IMETHODIMP nsRFPService::GetSpoofedUserAgentService(bool aDesktopMode,
 nsCString nsRFPService::GetSpoofedJSLocale() { return "en-US"_ns; }
 
 
+nsCString nsRFPService::GetSpoofedJSTimeZone() {
+  return "Atlantic/Reykjavik"_ns;
+}
+
+
 
 
 
