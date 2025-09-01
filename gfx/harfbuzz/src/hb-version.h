@@ -53,14 +53,14 @@ HB_BEGIN_DECLS
 
 
 
-#define HB_VERSION_MICRO 2
+#define HB_VERSION_MICRO 3
 
 
 
 
 
 
-#define HB_VERSION_STRING "11.4.2"
+#define HB_VERSION_STRING "11.4.3"
 
 
 

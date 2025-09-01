@@ -69,6 +69,8 @@ struct MathValueRecord
 
 struct MathConstants
 {
+  friend struct MATH;
+
   MathConstants* copy (hb_serialize_context_t *c) const
   {
     TRACE_SERIALIZE (this);
@@ -1109,8 +1111,8 @@ struct MATH
   {
 #ifndef HB_NO_MATH
     switch HB_CODEPOINT_ENCODE3 (font->face->table.MATH.get_blob ()->length,
-                                 get_constant (HB_OT_MATH_CONSTANT_DISPLAY_OPERATOR_MIN_HEIGHT, font),
-                                 get_constant (HB_OT_MATH_CONSTANT_DELIMITED_SUB_FORMULA_MIN_HEIGHT, font))
+                                 (this+mathConstants).minHeight[1], 
+                                 (this+mathConstants).minHeight[0]) 
     {
       
 
