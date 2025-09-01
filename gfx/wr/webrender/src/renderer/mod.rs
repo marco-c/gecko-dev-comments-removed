@@ -5438,7 +5438,6 @@ impl Renderer {
             self.device.delete_texture(gpu_buffer_texture_i);
         }
 
-        self.force_redraw = false;
         frame.has_been_rendered = true;
     }
 
@@ -5514,10 +5513,12 @@ impl Renderer {
                     );
                 }
             }
+            
+            self.force_redraw = false;
         } else {
             
             
-            self.force_redraw();
+            self.force_redraw = true;
         }
     }
 
