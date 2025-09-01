@@ -143,6 +143,20 @@ export function fedcm_test(test_func, test_name) {
     } catch (e) {
       
     }
+    t.add_cleanup(async () => {
+      
+      
+      try {
+        await IdentityCredential.disconnect(disconnect_options(""));
+      } catch (ex) {
+        
+      }
+      try {
+        await IdentityCredential.disconnect(alt_disconnect_options(""));
+      } catch (ex) {
+        
+      }
+    });
 
     await mark_signed_in();
     await mark_signed_in(alt_manifest_origin);
