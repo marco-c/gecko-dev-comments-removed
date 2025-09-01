@@ -29,10 +29,10 @@ class TestStream : public ByteStream,
  public:
   TestStream(const uint8_t* aBuffer, size_t aSize)
       : mHighestSuccessfulEndOffset(0), mBuffer(aBuffer), mSize(aSize) {}
-  bool ReadAt(int64_t aOffset, void* aData, size_t aLength,
-              size_t* aBytesRead) override {
+  nsresult ReadAt(int64_t aOffset, void* aData, size_t aLength,
+                  size_t* aBytesRead) override {
     if (aOffset < 0 || aOffset > static_cast<int64_t>(mSize)) {
-      return false;
+      return NS_ERROR_DOM_MEDIA_RANGE_ERR;
     }
     
     
@@ -47,10 +47,10 @@ class TestStream : public ByteStream,
     if (mHighestSuccessfulEndOffset < offset + aLength) {
       mHighestSuccessfulEndOffset = offset + aLength;
     }
-    return true;
+    return NS_OK;
   }
-  bool CachedReadAt(int64_t aOffset, void* aData, size_t aLength,
-                    size_t* aBytesRead) override {
+  nsresult CachedReadAt(int64_t aOffset, void* aData, size_t aLength,
+                        size_t* aBytesRead) override {
     return ReadAt(aOffset, aData, aLength, aBytesRead);
   }
   bool Length(int64_t* aLength) override {
