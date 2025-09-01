@@ -57,7 +57,8 @@ class CallbackHelper : public webrtc::VideoSinkInterface<webrtc::VideoFrame> {
 
 class DeliverFrameRunnable;
 
-class CamerasParent final : public PCamerasParent {
+class CamerasParent final : public PCamerasParent,
+                            private webrtc::VideoInputFeedBack {
  public:
   using ShutdownMozPromise = media::ShutdownBlockingTicket::ShutdownMozPromise;
 
@@ -140,7 +141,8 @@ class CamerasParent final : public PCamerasParent {
   void StopCapture(const CaptureEngine& aCapEngine, int aCaptureId);
   int ReleaseCapture(const CaptureEngine& aCapEngine, int aCaptureId);
 
-  void OnDeviceChange();
+  
+  void OnDeviceChange() override;
 
   
   
@@ -183,11 +185,6 @@ class CamerasParent final : public PCamerasParent {
 
   std::map<nsCString, std::map<uint32_t, webrtc::VideoCaptureCapability>>
       mAllCandidateCapabilities;
-
-  
-  
-  MediaEventListener mDeviceChangeEventListener;
-  bool mDeviceChangeEventListenerConnected = false;
 
   
   
