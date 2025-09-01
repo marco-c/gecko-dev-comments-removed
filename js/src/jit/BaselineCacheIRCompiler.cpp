@@ -574,9 +574,24 @@ bool BaselineCacheIRCompiler::emitCallScriptedGetterShared(
     masm.switchToObjectRealm(callee, scratch);
   }
 
+  Label noUnderflow, doneAlignment;
+  masm.loadFunctionArgCount(callee, scratch);
+  masm.branch32(Assembler::Equal, scratch, Imm32(0), &noUnderflow);
+
+  masm.alignJitStackBasedOnNArgs(scratch,  false);
+
+  Label loop;
+  masm.bind(&loop);
+  masm.Push(UndefinedValue());
+  masm.sub32(Imm32(1), scratch);
+  masm.branch32(Assembler::Above, scratch, Imm32(0), &loop);
+  masm.jump(&doneAlignment);
+
   
   
+  masm.bind(&noUnderflow);
   masm.alignJitStackBasedOnNArgs(0,  false);
+  masm.bind(&doneAlignment);
 
   
   
@@ -593,20 +608,6 @@ bool BaselineCacheIRCompiler::emitCallScriptedGetterShared(
   masm.Push(callee);
   masm.PushFrameDescriptorForJitCall(FrameType::BaselineStub,  0);
 
-  
-  Label noUnderflow;
-  masm.loadFunctionArgCount(callee, callee);
-  masm.branch32(Assembler::Equal, callee, Imm32(0), &noUnderflow);
-
-  
-  ArgumentsRectifierKind kind = isInlined
-                                    ? ArgumentsRectifierKind::TrialInlining
-                                    : ArgumentsRectifierKind::Normal;
-  TrampolinePtr argumentsRectifier =
-      cx_->runtime()->jitRuntime()->getArgumentsRectifier(kind);
-  masm.movePtr(argumentsRectifier, code);
-
-  masm.bind(&noUnderflow);
   masm.callJit(code);
 
   stubFrame.leave(masm);
