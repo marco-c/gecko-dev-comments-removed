@@ -457,11 +457,17 @@ class TranslationsBencher {
 
 
 
+  static METRIC_PEAK_PARENT_PROCESS_MEMORY_USAGE =
+    "peak-parent-process-memory-usage";
+
+  
 
 
 
 
-  static METRIC_PEAK_MEMORY_USAGE = "peak-memory-usage";
+
+  static METRIC_STABILIZED_PARENT_PROCESS_MEMORY_USAGE =
+    "stabilized-parent-process-memory-usage";
 
   
 
@@ -470,11 +476,17 @@ class TranslationsBencher {
 
 
 
+  static METRIC_PEAK_INFERENCE_PROCESS_MEMORY_USAGE =
+    "peak-inference-process-memory-usage";
+
+  
 
 
 
 
-  static METRIC_STABILIZED_MEMORY_USAGE = "stabilized-memory-usage";
+
+  static METRIC_STABILIZED_INFERENCE_PROCESS_MEMORY_USAGE =
+    "stabilized-inference-process-memory-usage";
 
   
 
@@ -564,7 +576,14 @@ class TranslationsBencher {
 
 
 
-    #peakMemoryMiB = 0;
+    #peakParentMemoryMiB = 0;
+
+    
+
+
+
+
+    #peakInferenceMemoryMiB = 0;
 
     
 
@@ -595,11 +614,16 @@ class TranslationsBencher {
 
 
 
+
     async #collectMemorySample() {
-      const currentMemoryMiB =
-        await TranslationsBencher.#getInferenceProcessTotalMemoryUsage();
-      if (currentMemoryMiB > this.#peakMemoryMiB) {
-        this.#peakMemoryMiB = currentMemoryMiB;
+      const { parentMemoryMiB, inferenceMemoryMiB } =
+        await TranslationsBencher.#getTotalMemoryUsageByProcess();
+
+      if (parentMemoryMiB > this.#peakParentMemoryMiB) {
+        this.#peakParentMemoryMiB = parentMemoryMiB;
+      }
+      if (inferenceMemoryMiB > this.#peakInferenceMemoryMiB) {
+        this.#peakInferenceMemoryMiB = inferenceMemoryMiB;
       }
     }
 
@@ -613,7 +637,8 @@ class TranslationsBencher {
         );
       }
 
-      this.#peakMemoryMiB = 0;
+      this.#peakParentMemoryMiB = 0;
+      this.#peakInferenceMemoryMiB = 0;
       this.#intervalId = setInterval(() => {
         this.#collectMemorySample().catch(console.error);
       }, this.#interval);
@@ -646,7 +671,10 @@ class TranslationsBencher {
         );
       }
 
-      return this.#peakMemoryMiB;
+      return {
+        peakParentMemoryMiB: this.#peakParentMemoryMiB,
+        peakInferenceMemoryMiB: this.#peakInferenceMemoryMiB,
+      };
     }
   };
 
@@ -805,15 +833,28 @@ class TranslationsBencher {
 
       peakMemorySampler.stop();
 
-      const peakMemoryMiB = peakMemorySampler.getPeakRecordedMemoryUsage();
-      const stabilizedMemoryMiB =
-        await TranslationsBencher.#getInferenceProcessTotalMemoryUsage();
+      const { peakParentMemoryMiB, peakInferenceMemoryMiB } =
+        peakMemorySampler.getPeakRecordedMemoryUsage();
+
+      const { parentMemoryMiB, inferenceMemoryMiB } =
+        await TranslationsBencher.#getTotalMemoryUsageByProcess();
 
       journal.pushMetrics([
-        [TranslationsBencher.METRIC_PEAK_MEMORY_USAGE, peakMemoryMiB],
         [
-          TranslationsBencher.METRIC_STABILIZED_MEMORY_USAGE,
-          stabilizedMemoryMiB,
+          TranslationsBencher.METRIC_PEAK_PARENT_PROCESS_MEMORY_USAGE,
+          peakParentMemoryMiB,
+        ],
+        [
+          TranslationsBencher.METRIC_STABILIZED_PARENT_PROCESS_MEMORY_USAGE,
+          parentMemoryMiB,
+        ],
+        [
+          TranslationsBencher.METRIC_PEAK_INFERENCE_PROCESS_MEMORY_USAGE,
+          peakInferenceMemoryMiB,
+        ],
+        [
+          TranslationsBencher.METRIC_STABILIZED_INFERENCE_PROCESS_MEMORY_USAGE,
+          inferenceMemoryMiB,
         ],
       ]);
 
@@ -1016,9 +1057,53 @@ class TranslationsBencher {
 
 
 
-  static async #getInferenceProcessTotalMemoryUsage() {
-    const inferenceProcessInfo = await fetchInferenceProcessInfo();
-    return bytesToMebibytes(inferenceProcessInfo.memory);
+
+
+  static async #getTotalMemoryUsageByProcess() {
+    const { parentInfo, inferenceInfo } =
+      await TranslationsBencher.#fetchProcessesInfo();
+    return {
+      parentMemoryMiB: bytesToMebibytes(parentInfo.memory),
+      inferenceMemoryMiB: bytesToMebibytes(inferenceInfo.memory),
+    };
+  }
+
+  
+
+
+
+
+
+  static async #fetchProcessesInfo() {
+    let info = await ChromeUtils.requestProcInfo();
+
+    const parentInfo = {
+      pid: info.pid,
+      memory: info.memory,
+      cpuTime: info.cpuTime,
+      cpuCycleCount: info.cpuCycleCount,
+    };
+
+    let inferenceInfo = {};
+    for (const child of info.children) {
+      
+      
+      
+      if (child.type === "inference") {
+        inferenceInfo = {
+          pid: child.pid,
+          memory: child.memory,
+          cpuTime: child.cpuTime,
+          cpuCycleCount: child.cpuCycleCount,
+        };
+        break;
+      }
+    }
+
+    return {
+      parentInfo,
+      inferenceInfo,
+    };
   }
 }
 
