@@ -10,6 +10,7 @@
 
 #include "Units.h"
 #include "mozilla/DefineEnum.h"
+#include "mozilla/RelativeTo.h"
 #include "mozilla/ScrollGeneration.h"
 #include "mozilla/ScrollOrigin.h"
 #include "mozilla/ScrollSnapTargetId.h"
@@ -77,7 +78,8 @@ class ScrollPositionUpdate {
   static ScrollPositionUpdate NewSmoothScroll(
       ScrollMode aMode, ScrollOrigin aOrigin, nsPoint aDestination,
       ScrollTriggeredByScript aTriggeredByScript,
-      UniquePtr<ScrollSnapTargetIds> aSnapTargetIds);
+      UniquePtr<ScrollSnapTargetIds> aSnapTargetIds,
+      ViewportType aViewportToScroll);
   
   
   
@@ -99,6 +101,9 @@ class ScrollPositionUpdate {
   
   CSSPoint GetDelta() const;
 
+  ViewportType GetViewportType() const {
+    return mViewportType;
+  }
   ScrollTriggeredByScript GetScrollTriggeredByScript() const {
     return mTriggeredByScript;
   }
@@ -123,6 +128,11 @@ class ScrollPositionUpdate {
   CSSPoint mSource;
   
   CSSPoint mDelta;
+  
+  
+  
+  
+  ViewportType mViewportType = ViewportType::Layout;
   ScrollTriggeredByScript mTriggeredByScript;
   ScrollSnapTargetIds mSnapTargetIds;
 };
