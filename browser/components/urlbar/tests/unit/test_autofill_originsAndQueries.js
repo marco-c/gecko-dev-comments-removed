@@ -2,8 +2,8 @@
 
 
 
-const HEURISTIC_FALLBACK_PROVIDERNAME = "HeuristicFallback";
-const PLACES_PROVIDERNAME = "Places";
+const HEURISTIC_FALLBACK_PROVIDERNAME = "UrlbarProviderHeuristicFallback";
+const PLACES_PROVIDERNAME = "UrlbarProviderPlaces";
 
 
 

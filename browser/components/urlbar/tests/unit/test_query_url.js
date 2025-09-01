@@ -2,7 +2,7 @@
 
 
 
-const PLACES_PROVIDERNAME = "Places";
+const PLACES_PROVIDERNAME = "UrlbarProviderPlaces";
 
 testEngine_setup();
 

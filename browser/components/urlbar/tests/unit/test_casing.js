@@ -2,8 +2,8 @@
 
 
 
-const AUTOFILL_PROVIDERNAME = "Autofill";
-const PLACES_PROVIDERNAME = "Places";
+const AUTOFILL_PROVIDERNAME = "UrlbarProviderAutofill";
+const PLACES_PROVIDERNAME = "UrlbarProviderPlaces";
 
 testEngine_setup();
 
