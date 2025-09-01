@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <iterator>
 
+#include "jit/arm64/vixl/Cpu-Features-vixl.h"
 #include "jit/arm64/vixl/Instructions-vixl.h"
 #include "jit/shared/Architecture-shared.h"
 
@@ -746,6 +747,43 @@ FloatRegister::LiveAsIndexableSet<RegTypeName::Any>(SetType set) {
   return set;
 }
 
+class ARM64Flags final {
+  
+  static inline vixl::CPUFeatures features{};
+
+  
+  static inline vixl::CPUFeatures disabledFeatures{};
+
+ public:
+  ARM64Flags() = delete;
+
+  
+  
+  static void Init();
+
+  static bool IsInitialized() { return features != vixl::CPUFeatures::None(); }
+
+  static vixl::CPUFeatures GetCPUFeatures() {
+    MOZ_ASSERT(IsInitialized());
+    return features;
+  }
+
+  
+  
+  static void DisableCPUFeatures(vixl::CPUFeatures features) {
+    MOZ_ASSERT(!IsInitialized());
+    disabledFeatures.Combine(features);
+  }
+
+  static uint32_t GetFlags() {
+    MOZ_ASSERT(IsInitialized());
+
+    
+    
+    return 0;
+  }
+};
+
 
 
 inline bool hasUnaliasedDouble() { return false; }
@@ -754,7 +792,8 @@ inline bool hasUnaliasedDouble() { return false; }
 
 inline bool hasMultiAlias() { return false; }
 
-uint32_t GetARM64Flags();
+
+inline uint32_t GetARM64Flags() { return ARM64Flags::GetFlags(); }
 
 bool CanFlushICacheFromBackgroundThreads();
 
