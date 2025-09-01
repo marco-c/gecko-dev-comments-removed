@@ -977,10 +977,8 @@ const equalTests = [
 ];
 
 if (navigator.ml) {
-  equalTests.forEach((test) => {
-    webnn_conformance_test(
-        buildAndExecuteGraph, getZeroULPTolerance, test,
-        true);
+  equalTests.filter(isTargetTest).forEach((test) => {
+    webnn_conformance_test(buildAndExecuteGraph, getZeroULPTolerance, test);
   });
 } else {
   test(() => assert_implements(navigator.ml, 'missing navigator.ml'));

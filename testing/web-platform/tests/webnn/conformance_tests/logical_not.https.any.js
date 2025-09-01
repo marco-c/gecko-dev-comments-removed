@@ -23,7 +23,7 @@ const logicalNotTests = [
       },
       'operators': [{
         'name': 'logicalNot',
-        'arguments': [{'input': 'logicalNotInput'}],
+        'arguments': [{'a': 'logicalNotInput'}],
         'outputs': 'logicalNotOutput'
       }],
       'expectedOutputs': {
@@ -47,7 +47,7 @@ const logicalNotTests = [
       },
       'operators': [{
         'name': 'logicalNot',
-        'arguments': [{'input': 'logicalNotInput'}],
+        'arguments': [{'a': 'logicalNotInput'}],
         'outputs': 'logicalNotOutput'
       }],
       'expectedOutputs': {
@@ -75,7 +75,7 @@ const logicalNotTests = [
       },
       'operators': [{
         'name': 'logicalNot',
-        'arguments': [{'input': 'logicalNotInput'}],
+        'arguments': [{'a': 'logicalNotInput'}],
         'outputs': 'logicalNotOutput'
       }],
       'expectedOutputs': {
@@ -103,7 +103,7 @@ const logicalNotTests = [
       },
       'operators': [{
         'name': 'logicalNot',
-        'arguments': [{'input': 'logicalNotInput'}],
+        'arguments': [{'a': 'logicalNotInput'}],
         'outputs': 'logicalNotOutput'
       }],
       'expectedOutputs': {
@@ -131,7 +131,7 @@ const logicalNotTests = [
       },
       'operators': [{
         'name': 'logicalNot',
-        'arguments': [{'input': 'logicalNotInput'}],
+        'arguments': [{'a': 'logicalNotInput'}],
         'outputs': 'logicalNotOutput'
       }],
       'expectedOutputs': {
@@ -159,7 +159,7 @@ const logicalNotTests = [
       },
       'operators': [{
         'name': 'logicalNot',
-        'arguments': [{'input': 'logicalNotInput'}],
+        'arguments': [{'a': 'logicalNotInput'}],
         'outputs': 'logicalNotOutput'
       }],
       'expectedOutputs': {
@@ -187,7 +187,7 @@ const logicalNotTests = [
       },
       'operators': [{
         'name': 'logicalNot',
-        'arguments': [{'input': 'logicalNotInput'}],
+        'arguments': [{'a': 'logicalNotInput'}],
         'outputs': 'logicalNotOutput'
       }],
       'expectedOutputs': {
@@ -204,10 +204,8 @@ const logicalNotTests = [
 ];
 
 if (navigator.ml) {
-  logicalNotTests.forEach((test) => {
-    webnn_conformance_test(
-        buildAndExecuteGraph, getZeroULPTolerance, test,
-        true);
+  logicalNotTests.filter(isTargetTest).forEach((test) => {
+    webnn_conformance_test(buildAndExecuteGraph, getZeroULPTolerance, test);
   });
 } else {
   test(() => assert_implements(navigator.ml, 'missing navigator.ml'));
