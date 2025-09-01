@@ -60,8 +60,6 @@ struct StyleSheetInfo final {
   
   nsTArray<RefPtr<StyleSheet>> mChildren;
 
-  AutoTArray<StyleSheet*, 8> mSheets;
-
   
   
   
@@ -77,6 +75,13 @@ struct StyleSheetInfo final {
   
   
   RefPtr<URLExtraData> mURLData;
+
+  
+  
+  
+  
+  
+  AutoTArray<StyleSheet*, 8> mSheets;
 
 #ifdef DEBUG
   bool mPrincipalSet = false;
