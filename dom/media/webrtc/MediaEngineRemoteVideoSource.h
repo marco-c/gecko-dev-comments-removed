@@ -187,6 +187,12 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
   
   
   
+  gfx::IntSize mIncomingImageSize = gfx::IntSize(0, 0);
+
+  
+  
+  
+  
   gfx::IntSize mScaledImageSize = gfx::IntSize(0, 0);
 
   struct AtomicBool {
