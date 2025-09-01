@@ -397,7 +397,8 @@ void gfxUserFontEntry::FontLoadComplete() {
   GetUserFontSets(fontSets);
   for (gfxUserFontSet* fontSet : fontSets) {
     fontSet->IncrementGeneration();
-    if (nsPresContext* ctx = dom::FontFaceSetImpl::GetPresContextFor(fontSet)) {
+    if (FontVisibilityProvider* ctx =
+            dom::FontFaceSetImpl::GetFontVisibilityProviderFor(fontSet)) {
       
       
       ctx->UserFontSetUpdated(this);
@@ -459,8 +460,8 @@ void gfxUserFontEntry::DoLoadNextSrc(bool aIsContinue) {
       gfxFontEntry* fe = nullptr;
       if (!pfl->IsFontFamilyWhitelistActive()) {
         fe = gfxPlatform::GetPlatform()->LookupLocalFont(
-            fontSet->GetPresContext(), currSrc.mLocalName, Weight(), Stretch(),
-            SlantStyle());
+            fontSet->GetFontVisibilityProvider(), currSrc.mLocalName, Weight(),
+            Stretch(), SlantStyle());
         
         
         mSeenLocalSource = true;

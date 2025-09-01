@@ -4525,7 +4525,7 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
 
   
   gfxFontGroup* fontGroup =
-      new gfxFontGroup(nullptr,           
+      new gfxFontGroup(mOffscreenCanvas,  
                        list,              
                        &fontStyle,        
                        language,          
@@ -5311,7 +5311,7 @@ gfxFontGroup* CanvasRenderingContext2D::GetCurrentFontStyle() {
   
   RefPtr<gfxFontGroup>& fontGroup = CurrentState().fontGroup;
   if (fontGroup) {
-    if (fontGroup->GetPresContext() != presContext) {
+    if (fontGroup->GetFontVisibilityProvider() != presContext) {
       fontGroup = nullptr;
     }
   }

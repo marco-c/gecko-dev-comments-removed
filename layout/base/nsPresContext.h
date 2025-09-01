@@ -9,6 +9,7 @@
 #ifndef nsPresContext_h___
 #define nsPresContext_h___
 
+#include "FontVisibilityProvider.h"
 #include "Units.h"
 #include "gfxRect.h"
 #include "gfxTypes.h"
@@ -128,7 +129,9 @@ class nsRootPresContext;
 
 
 
-class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
+class nsPresContext : public nsISupports,
+                      public mozilla::SupportsWeakPtr,
+                      public FontVisibilityProvider {
  public:
   using Encoding = mozilla::Encoding;
   template <typename T>
@@ -142,6 +145,8 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS(nsPresContext)
+
+  FONT_VISIBILITY_PROVIDER_IMPL
 
   enum nsPresContextType : uint8_t {
     eContext_Galley,        
@@ -164,21 +169,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   void InitFontCache();
 
   void UpdateFontCacheUserFonts(gfxUserFontSet* aUserFontSet);
-
-  
-
-
-
-
-
-
-  FontVisibility GetFontVisibility() const { return mFontVisibility; }
-
-  
-
-
-  void ReportBlockedFontFamily(const mozilla::fontlist::Family& aFamily);
-  void ReportBlockedFontFamily(const gfxFontFamily& aFamily);
 
   
 
@@ -922,11 +912,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
   gfxUserFontSet* GetUserFontSet();
 
-  
-  
-  
-  void UserFontSetUpdated(gfxUserFontEntry* aUpdatedFont = nullptr);
-
   gfxMissingFontRecorder* MissingFontRecorder() { return mMissingFonts.get(); }
 
   void NotifyMissingFonts();
@@ -1178,8 +1163,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   
   
   bool UpdateFontVisibility();
-  void ReportBlockedFontFamilyName(const nsCString& aFamily,
-                                   FontVisibility aVisibility);
 
   
   
