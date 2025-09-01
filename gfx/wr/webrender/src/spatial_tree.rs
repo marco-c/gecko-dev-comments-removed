@@ -1332,17 +1332,27 @@ impl SpatialTree {
     }
 
     #[allow(dead_code)]
-    pub fn print(&self) {
+    pub fn print_to_string(&self) -> String {
+        let mut result = String::new();
+
         if self.root_reference_frame_index != SpatialNodeIndex::INVALID {
             let mut buf = Vec::<u8>::new();
             {
                 let mut pt = PrintTree::new_with_sink("spatial tree", &mut buf);
                 self.print_with(&mut pt);
             }
-            
-            
-            debug!("{}", std::str::from_utf8(&buf).unwrap_or("(Tree printer emitted non-utf8)"));
+            result = std::str::from_utf8(&buf).unwrap_or("(Tree printer emitted non-utf8)").to_string();
         }
+
+        result
+    }
+
+    #[allow(dead_code)]
+    pub fn print(&self) {
+        let result = self.print_to_string();
+        
+        
+        debug!("{}", result);
     }
 }
 

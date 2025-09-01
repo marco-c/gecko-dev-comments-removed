@@ -28,6 +28,8 @@ use glyph_rasterizer::SharedFontResources;
 use crate::scene_builder_thread::{SceneBuilderRequest, SceneBuilderResult};
 use crate::intern::InterningMemoryReport;
 use crate::profiler::{self, TransactionProfile};
+#[cfg(feature = "debugger")]
+use crate::debugger::{DebugQuery, DebuggerClient};
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
@@ -952,10 +954,11 @@ pub struct CapturedDocument {
 }
 
 
-#[derive(Clone)]
 pub enum DebugCommand {
     
     SetFlags(DebugFlags),
+    
+    GetDebugFlags(Sender<DebugFlags>),
     
     SaveCapture(PathBuf, CaptureBits),
     
@@ -979,6 +982,14 @@ pub enum DebugCommand {
     SetPictureTileSize(Option<DeviceIntSize>),
     
     SetMaximumSurfaceSize(Option<usize>),
+    
+    GenerateFrame,
+    #[cfg(feature = "debugger")]
+    
+    Query(DebugQuery),
+    #[cfg(feature = "debugger")]
+    
+    AddDebugClient(DebuggerClient),
 }
 
 
@@ -1417,6 +1428,14 @@ impl RenderApi {
     pub fn stop_capture_sequence(&self) {
         let msg = ApiMsg::DebugCommand(DebugCommand::StopCaptureSequence);
         self.send_message(msg);
+    }
+
+    
+    pub fn get_debug_flags(&self) -> DebugFlags {
+        let (tx, rx) = unbounded_channel();
+        let msg = ApiMsg::DebugCommand(DebugCommand::GetDebugFlags(tx));
+        self.send_message(msg);
+        rx.recv().unwrap()
     }
 
     
