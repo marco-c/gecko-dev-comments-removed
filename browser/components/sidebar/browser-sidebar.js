@@ -1362,7 +1362,8 @@ var SidebarController = {
         id => toolsNameMap[id] === pref
       );
 
-      if (!commandID) {
+      
+      if (!commandID || this.toolsAndExtensions.get(commandID).hidden) {
         continue;
       }
 
