@@ -861,8 +861,7 @@ struct subr_subsetter_t
 	{
 	  
 	  auto &b = buffArray.arrayZ[last];
-	  b.length = 1;
-	  b.arrayZ = const_cast<unsigned char *>(endchar_str);
+	  b.set_storage (const_cast<unsigned char *>(endchar_str), 1);
 	}
 
       last++; 
@@ -877,8 +876,7 @@ struct subr_subsetter_t
       {
 	
 	auto &b = buffArray.arrayZ[last];
-	b.length = 1;
-	b.arrayZ = const_cast<unsigned char *>(endchar_str);
+	b.set_storage (const_cast<unsigned char *>(endchar_str), 1);
       }
 
     return true;

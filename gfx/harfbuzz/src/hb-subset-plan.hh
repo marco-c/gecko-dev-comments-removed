@@ -303,6 +303,7 @@ struct hb_subset_plan_t
 
 
 
+
 HB_INTERNAL void
 remap_indexes (const hb_set_t *indexes,
                hb_map_t       *mapping );

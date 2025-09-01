@@ -90,7 +90,6 @@ struct hb_buffer_t
   hb_segment_properties_t props; 
 
   bool successful; 
-  bool shaping_failed; 
   bool have_output; 
   bool have_positions; 
 
@@ -346,7 +345,7 @@ struct hb_buffer_t
     {
       if (out_info != info || out_len != idx)
       {
-	if (unlikely (!make_room_for (1, 1))) return false;
+	if (unlikely (!ensure (out_len + 1))) return false;
 	out_info[out_len] = info[idx];
       }
       out_len++;
