@@ -310,9 +310,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   ProxyDNSStrategy GetProxyDNSStrategy();
 
   
-  void AddStorageAccessHeadersToRequest();
-
-  
   
   
   
