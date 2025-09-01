@@ -5750,10 +5750,13 @@ bool nsContentUtils::HasNonEmptyAttr(const nsIContent* aContent,
 }
 
 
-bool nsContentUtils::WantMutationEvents(nsINode* aNode, uint32_t aType,
-                                        nsINode* aTargetForSubtreeModified) {
+bool nsContentUtils::WantMutationEvents(
+    nsINode* aNode, uint32_t aType, nsINode* aTargetForSubtreeModified,
+    IgnoreDevToolsMutationObserver aIgnoreDevToolsMutationObserver ) {
   Document* doc = aNode->OwnerDoc();
-  if (!doc->MutationEventsEnabled()) {
+  if (MOZ_LIKELY(!doc->MutationEventsEnabled() &&
+                 (static_cast<bool>(aIgnoreDevToolsMutationObserver) ||
+                  !doc->DevToolsWatchingDOMMutations()))) {
     return false;
   }
 
@@ -5762,10 +5765,9 @@ bool nsContentUtils::WantMutationEvents(nsINode* aNode, uint32_t aType,
   }
 
   
-  nsPIDOMWindowInner* window = doc->GetInnerWindow();
   
-  
-  if (window && !window->HasMutationListeners(aType)) {
+  if (!nsContentUtils::HasMutationListeners(doc, aType,
+                                            aIgnoreDevToolsMutationObserver)) {
     return false;
   }
 
@@ -5777,8 +5779,9 @@ bool nsContentUtils::WantMutationEvents(nsINode* aNode, uint32_t aType,
 
   
   if (aNode->IsInUncomposedDoc()) {
-    nsCOMPtr<EventTarget> piTarget(do_QueryInterface(window));
-    if (piTarget) {
+    
+    if (const nsCOMPtr<EventTarget> piTarget =
+            do_QueryInterface(doc->GetInnerWindow())) {
       EventListenerManager* manager = piTarget->GetExistingListenerManager();
       if (manager && manager->HasMutationListeners()) {
         return true;
@@ -5802,13 +5805,30 @@ bool nsContentUtils::WantMutationEvents(nsINode* aNode, uint32_t aType,
 }
 
 
-bool nsContentUtils::HasMutationListeners(Document* aDocument, uint32_t aType) {
+bool nsContentUtils::HasMutationListeners(
+    Document* aDocument, uint32_t aType,
+    IgnoreDevToolsMutationObserver aIgnoreDevToolsMutationObserver ) {
   nsPIDOMWindowInner* window =
       aDocument ? aDocument->GetInnerWindow() : nullptr;
 
   
   
-  return !window || window->HasMutationListeners(aType);
+  if (!window || window->HasMutationListeners(aType)) {
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  return !static_cast<bool>(aIgnoreDevToolsMutationObserver) &&
+         aDocument->DevToolsWatchingDOMMutations() &&
+         (aType & NS_EVENT_BITS_MUTATION_NODEREMOVED);
 }
 
 void nsContentUtils::MaybeFireNodeRemoved(nsINode* aChild, nsINode* aParent) {
@@ -5849,7 +5869,8 @@ void nsContentUtils::MaybeFireNodeRemoved(nsINode* aChild, nsINode* aParent) {
     }
   }
 
-  if (WantMutationEvents(aChild, NS_EVENT_BITS_MUTATION_NODEREMOVED, aParent)) {
+  if (WantMutationEvents(aChild, NS_EVENT_BITS_MUTATION_NODEREMOVED, aParent,
+                         IgnoreDevToolsMutationObserver::Yes)) {
     InternalMutationEvent mutation(true, eLegacyNodeRemoved);
     mutation.mRelatedNode = aParent;
 

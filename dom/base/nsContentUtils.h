@@ -1513,22 +1513,7 @@ class nsContentUtils {
 
   static bool IsPreloadType(nsContentPolicyType aType);
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static bool WantMutationEvents(nsINode* aNode, uint32_t aType,
-                                 nsINode* aTargetForSubtreeModified);
+  enum class IgnoreDevToolsMutationObserver : bool { No, Yes };
 
   
 
@@ -1541,7 +1526,29 @@ class nsContentUtils {
 
 
 
-  static bool HasMutationListeners(Document* aDocument, uint32_t aType);
+
+
+
+  static bool WantMutationEvents(
+      nsINode* aNode, uint32_t aType, nsINode* aTargetForSubtreeModified,
+      IgnoreDevToolsMutationObserver aIgnoreDevToolsMutationObserver =
+          IgnoreDevToolsMutationObserver::No);
+
+  
+
+
+
+
+
+
+
+
+
+
+  static bool HasMutationListeners(
+      Document* aDocument, uint32_t aType,
+      IgnoreDevToolsMutationObserver aIgnoreDevToolsMutationObserver =
+          IgnoreDevToolsMutationObserver::No);
   
 
 
