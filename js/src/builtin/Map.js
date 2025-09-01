@@ -227,6 +227,10 @@ function MapGetOrInsertComputed(key, callbackfn) {
 
   
   
+  if (key === 0) {
+    key = 0;
+  }
+  
   
   if (callFunction(std_Map_has, M, key)) {
     return callFunction(std_Map_get, M, key);
