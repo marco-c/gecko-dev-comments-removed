@@ -8,11 +8,10 @@
 
 
 
-#include <stdio.h>
-
 #ifndef TEST_TESTSUPPORT_FILE_UTILS_H_
 #define TEST_TESTSUPPORT_FILE_UTILS_H_
 
+#include <cstdio>
 #include <optional>
 #include <string>
 #include <vector>
@@ -106,6 +105,9 @@ bool DirExists(absl::string_view directory_name);
 
 
 std::string DirName(absl::string_view path);
+
+
+absl::string_view FileName(absl::string_view path);
 
 
 
