@@ -4,7 +4,7 @@
 
 
 
-let baseResourcePath = './resources';let crossOriginHost = '';
+let baseResourcePath = '/_mozilla/webgpu/resources';let crossOriginHost = '';
 
 function getAbsoluteBaseResourcePath(path) {
   
