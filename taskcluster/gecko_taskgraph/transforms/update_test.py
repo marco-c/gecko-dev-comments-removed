@@ -97,8 +97,7 @@ def infix_treeherder_symbol(symbol, infix):
 
 @transforms.add
 def parametrize_by_locale_and_source_version(config, tasks):
-    
-    
+    is_beta = config.params["release_type"] == "beta"
     for task in tasks:
         for locale in TOP_LOCALES:
             this_task = deepcopy(task)
@@ -139,15 +138,14 @@ def parametrize_by_locale_and_source_version(config, tasks):
             yield this_task
 
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        if not is_beta:
+            task["name"] = task["name"] + "-bkg"
+            task["run"]["command"] = task["run"]["command"] + " --test-type Background"
+            task["index"]["job-name"] = task["index"]["job-name"] + "-bkg"
+            task["treeherder"]["symbol"] = infix_treeherder_symbol(
+                task["treeherder"]["symbol"], "bkg"
+            )
+            yield task
 
 
 def get_build_platform(platform):
