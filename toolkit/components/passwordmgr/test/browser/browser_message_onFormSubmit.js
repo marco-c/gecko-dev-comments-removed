@@ -69,7 +69,7 @@ add_task(async function test_login_save_enable() {
       
       
       let p1 = waitForFormSubmissionDetected();
-      let p2 = listenForTestNotification(["FormProcessed", "ShowDoorhanger"]);
+      let p2 = listenForTestNotification("ShowDoorhanger");
       await SpecialPowers.spawn(browser, [], async function () {
         let doc = this.content.document;
         doc.getElementById("form-basic").submit();
