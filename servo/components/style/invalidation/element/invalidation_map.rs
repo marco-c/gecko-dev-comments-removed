@@ -220,6 +220,16 @@ impl Dependency {
     }
 
     
+    
+    #[inline(always)]
+    pub fn relative_invalidation_kind(&self) -> RelativeDependencyInvalidationKind {
+        if let DependencyInvalidationKind::Relative(kind) = self.kind {
+            return kind;
+        }
+        unreachable!("Querying relative invalidation kind on non-relative dependency.");
+    }
+
+    
     pub fn invalidation_kind(&self) -> DependencyInvalidationKind {
         self.kind
     }
