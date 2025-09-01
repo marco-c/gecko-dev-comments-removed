@@ -156,7 +156,7 @@ module.exports = function (config) {
             
 
 
-            "lib/WallpaperFeed.sys.mjs": {
+            "lib/Wallpapers/WallpaperFeed.sys.mjs": {
               statements: 0,
               lines: 0,
               functions: 0,
