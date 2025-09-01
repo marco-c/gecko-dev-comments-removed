@@ -12465,14 +12465,9 @@ function Lists({
 
   
   const currentListsCount = Object.keys(lists).length;
-  let maxListsCount = prefs[PREF_WIDGETS_LISTS_MAX_LISTS];
-  function isAtMaxListsLimit() {
-    
-    if (maxListsCount < 1) {
-      maxListsCount = 1;
-    }
-    return currentListsCount >= maxListsCount;
-  }
+  
+  const maxListsCount = Math.max(1, prefs[PREF_WIDGETS_LISTS_MAX_LISTS]);
+  const isAtMaxListsLimit = currentListsCount >= maxListsCount;
   return external_React_default().createElement("article", {
     className: "lists",
     ref: el => {
