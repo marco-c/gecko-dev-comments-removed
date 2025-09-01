@@ -808,11 +808,10 @@ class InactivePropertyHelper {
 
 
 
-
-  isPropertyUsed(el, elStyle, cssRule, property) {
+  getInactiveCssDataForProperty(el, elStyle, cssRule, property) {
     
     if (!INACTIVE_CSS_ENABLED) {
-      return { used: true };
+      return null;
     }
 
     let fixId = "";
@@ -863,7 +862,7 @@ class InactivePropertyHelper {
     
     if (!isNotAccepted && !this.invalidProperties.has(property)) {
       this.unselect();
-      return { used: true };
+      return null;
     }
 
     
@@ -881,6 +880,10 @@ class InactivePropertyHelper {
       display = elStyle ? elStyle.display : null;
     } catch (e) {}
 
+    if (used) {
+      return null;
+    }
+
     return {
       display,
       fixId,
@@ -888,7 +891,6 @@ class InactivePropertyHelper {
       property,
       learnMoreURL,
       lineCount,
-      used,
     };
   }
 
@@ -1665,6 +1667,7 @@ function computedStyle(node, window = node.ownerGlobal) {
 const inactivePropertyHelper = new InactivePropertyHelper();
 
 
-exports.isPropertyUsed = inactivePropertyHelper.isPropertyUsed.bind(
-  inactivePropertyHelper
-);
+exports.getInactiveCssDataForProperty =
+  inactivePropertyHelper.getInactiveCssDataForProperty.bind(
+    inactivePropertyHelper
+  );

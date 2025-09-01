@@ -41,7 +41,7 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "isPropertyUsed",
+  "getInactiveCssDataForProperty",
   "resource://devtools/server/actors/utils/inactive-property-helper.js",
   true
 );
@@ -511,8 +511,16 @@ class StyleRuleActor extends Actor {
             `${decl.name}:${decl.value}`,
             supportsOptions
           );
-        
-        decl.isUsed = isPropertyUsed(el, style, this.rawRule, decl.name);
+        const inactiveCssData = getInactiveCssDataForProperty(
+          el,
+          style,
+          this.rawRule,
+          decl.name
+        );
+        if (inactiveCssData !== null) {
+          decl.inactiveCssData = inactiveCssData;
+        }
+
         
         decl.isNameValid =
           
@@ -1417,11 +1425,19 @@ class StyleRuleActor extends Actor {
     const style = this.currentlySelectedElementComputedStyle;
 
     for (const decl of this._declarations) {
-      
-      const isUsed = isPropertyUsed(el, style, this.rawRule, decl.name);
+      const inactiveCssData = getInactiveCssDataForProperty(
+        el,
+        style,
+        this.rawRule,
+        decl.name
+      );
 
-      if (decl.isUsed.used !== isUsed.used) {
-        decl.isUsed = isUsed;
+      if (!decl.inactiveCssData !== !inactiveCssData) {
+        if (inactiveCssData) {
+          decl.inactiveCssData = inactiveCssData;
+        } else {
+          delete decl.inactiveCssData;
+        }
         hasChanged = true;
       }
     }

@@ -412,7 +412,7 @@ TooltipsOverlay.prototype = {
 
     if (type === TOOLTIP_INACTIVE_CSS) {
       
-      if (!target.classList.contains("ruleview-unused-warning")) {
+      if (!target.classList.contains("ruleview-inactive-css-warning")) {
         return false;
       }
 

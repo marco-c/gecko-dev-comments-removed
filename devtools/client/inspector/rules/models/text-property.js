@@ -285,16 +285,30 @@ class TextProperty {
     return declaration.isValid;
   }
 
-  isUsed() {
+  
+
+
+
+
+
+  getInactiveCssData() {
     const declaration = this.#getDomRuleDeclaration();
 
-    
-    
-    if (!declaration?.isUsed) {
-      return { used: true };
+    if (!declaration) {
+      return undefined;
     }
 
-    return declaration.isUsed;
+    
+    
+    if (!this.elementStyle.pageStyle.traits.newInactiveCssDataShape) {
+      if (!declaration.isUsed || declaration.isUsed?.used) {
+        return undefined;
+      }
+
+      return declaration.isUsed;
+    }
+
+    return declaration.inactiveCssData;
   }
 
   

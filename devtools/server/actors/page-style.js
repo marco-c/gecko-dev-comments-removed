@@ -153,6 +153,8 @@ class PageStyleActor extends Actor {
         
         fontWeightLevel4:
           CSS.supports("font-weight: 1") && CSS.supports("font-stretch: 100%"),
+        
+        newInactiveCssDataShape: true,
       },
     };
   }
