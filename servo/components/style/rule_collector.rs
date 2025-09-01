@@ -97,12 +97,6 @@ where
         let rule_hash_target = element.rule_hash_target();
         let matches_user_and_content_rules = rule_hash_target.matches_user_and_content_rules();
 
-        
-        
-        debug_assert!(
-            cfg!(feature = "gecko") || style_attribute.is_none() || pseudo_elements.is_empty(),
-            "Style attributes do not apply to pseudo-elements"
-        );
         debug_assert!(pseudo_elements.iter().all(|p| !p.is_precomputed()));
 
         Self {
