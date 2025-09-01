@@ -332,7 +332,7 @@ TEST(TimestampScaler, Failures) {
   uint32_t timestamp = 4711;  
   EXPECT_EQ(timestamp, scaler.ToInternal(timestamp, kRtpPayloadType));
 
-  Packet* packet = NULL;
+  Packet* packet = nullptr;
   scaler.ToInternal(packet);  
 
   EXPECT_CALL(db, Die());  

@@ -176,7 +176,7 @@ TEST(DtmfToneGenerator, TestErrors) {
   EXPECT_TRUE(tone_gen.initialized());
   
   EXPECT_EQ(DtmfToneGenerator::kParameterError,
-            tone_gen.Generate(kNumSamples, NULL));
+            tone_gen.Generate(kNumSamples, nullptr));
 }
 
 }  

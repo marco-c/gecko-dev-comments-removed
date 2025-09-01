@@ -666,7 +666,7 @@ class AcmSenderBitExactnessOldApi : public ::testing::Test,
     audio_source_.reset(new test::InputAudioFile(input_file_name));
     send_test_.reset(new test::AcmSendTestOldApi(audio_source_.get(),
                                                  source_rate, kTestDurationMs));
-    return send_test_.get() != NULL;
+    return send_test_.get() != nullptr;
   }
 
   
@@ -758,7 +758,7 @@ class AcmSenderBitExactnessOldApi : public ::testing::Test,
   std::unique_ptr<test::Packet> NextPacket() override {
     auto packet = send_test_->NextPacket();
     if (!packet)
-      return NULL;
+      return nullptr;
 
     VerifyPacket(packet.get());
     
@@ -1338,7 +1338,7 @@ class AcmSwitchingOutputFrequencyOldApi : public ::testing::Test,
     
     if (num_packets_++ > kTestNumPackets) {
       EXPECT_TRUE(has_toggled_);
-      return NULL;  
+      return nullptr;  
     }
 
     

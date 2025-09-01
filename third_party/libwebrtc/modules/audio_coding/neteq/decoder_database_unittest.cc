@@ -88,12 +88,12 @@ TEST(DecoderDatabase, GetDecoderInfo) {
       db.RegisterPayload(kPayloadType, SdpAudioFormat(kCodecName, 8000, 1)));
   const DecoderDatabase::DecoderInfo* info;
   info = db.GetDecoderInfo(kPayloadType);
-  ASSERT_TRUE(info != NULL);
+  ASSERT_TRUE(info != nullptr);
   EXPECT_TRUE(info->IsType("pcmu"));
   EXPECT_EQ(kCodecName, info->get_name());
   EXPECT_EQ(decoder, db.GetDecoder(kPayloadType));
   info = db.GetDecoderInfo(kPayloadType + 1);  
-  EXPECT_TRUE(info == NULL);                   
+  EXPECT_TRUE(info == nullptr);                
 }
 
 TEST(DecoderDatabase, GetDecoder) {
@@ -103,7 +103,7 @@ TEST(DecoderDatabase, GetDecoder) {
   EXPECT_EQ(DecoderDatabase::kOK,
             db.RegisterPayload(kPayloadType, SdpAudioFormat("l16", 8000, 1)));
   AudioDecoder* dec = db.GetDecoder(kPayloadType);
-  ASSERT_TRUE(dec != NULL);
+  ASSERT_TRUE(dec != nullptr);
 }
 
 TEST(DecoderDatabase, TypeTests) {
@@ -193,40 +193,40 @@ TEST(DecoderDatabase, IF_ISAC(ActiveDecoders)) {
   ASSERT_EQ(DecoderDatabase::kOK,
             db.RegisterPayload(13, SdpAudioFormat("cn", 8000, 1)));
   
-  EXPECT_EQ(NULL, db.GetActiveDecoder());
-  EXPECT_EQ(NULL, db.GetActiveCngDecoder());
+  EXPECT_EQ(nullptr, db.GetActiveDecoder());
+  EXPECT_EQ(nullptr, db.GetActiveCngDecoder());
 
   
   bool changed;  
   EXPECT_EQ(DecoderDatabase::kOK, db.SetActiveDecoder(0, &changed));
   EXPECT_TRUE(changed);
   AudioDecoder* decoder = db.GetActiveDecoder();
-  ASSERT_FALSE(decoder == NULL);  
+  ASSERT_FALSE(decoder == nullptr);  
 
   
   EXPECT_EQ(DecoderDatabase::kOK, db.SetActiveDecoder(0, &changed));
   EXPECT_FALSE(changed);
   decoder = db.GetActiveDecoder();
-  ASSERT_FALSE(decoder == NULL);  
+  ASSERT_FALSE(decoder == nullptr);  
 
   
   EXPECT_EQ(DecoderDatabase::kOK, db.SetActiveDecoder(103, &changed));
   EXPECT_TRUE(changed);
   decoder = db.GetActiveDecoder();
-  ASSERT_FALSE(decoder == NULL);  
+  ASSERT_FALSE(decoder == nullptr);  
 
   
   EXPECT_EQ(DecoderDatabase::kOK, db.Remove(103));
-  EXPECT_EQ(NULL, db.GetActiveDecoder());
+  EXPECT_EQ(nullptr, db.GetActiveDecoder());
 
   
   EXPECT_EQ(DecoderDatabase::kOK, db.SetActiveCngDecoder(13));
   ComfortNoiseDecoder* cng = db.GetActiveCngDecoder();
-  ASSERT_FALSE(cng == NULL);  
+  ASSERT_FALSE(cng == nullptr);  
 
   
   EXPECT_EQ(DecoderDatabase::kOK, db.Remove(13));
-  EXPECT_EQ(NULL, db.GetActiveCngDecoder());
+  EXPECT_EQ(nullptr, db.GetActiveCngDecoder());
 
   
   EXPECT_EQ(DecoderDatabase::kDecoderNotFound,

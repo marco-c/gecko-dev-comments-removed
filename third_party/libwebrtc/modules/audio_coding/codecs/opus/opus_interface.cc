@@ -381,10 +381,10 @@ int16_t WebRtcOpus_DecoderCreate(OpusDecInst** inst,
   int error;
   OpusDecInst* state;
 
-  if (inst != NULL) {
+  if (inst != nullptr) {
     
     state = reinterpret_cast<OpusDecInst*>(calloc(1, sizeof(OpusDecInst)));
-    if (state == NULL) {
+    if (state == nullptr) {
       return -1;
     }
 
@@ -418,10 +418,10 @@ int16_t WebRtcOpus_MultistreamDecoderCreate(
   int error;
   OpusDecInst* state;
 
-  if (inst != NULL) {
+  if (inst != nullptr) {
     
     state = reinterpret_cast<OpusDecInst*>(calloc(1, sizeof(OpusDecInst)));
-    if (state == NULL) {
+    if (state == nullptr) {
       return -1;
     }
 
@@ -532,7 +532,7 @@ static int DecodePlc(OpusDecInst* inst, int16_t* decoded) {
       FrameSizePerChannel(kWebRtcOpusPlcFrameSizeMs, inst->sample_rate_hz);
 
   decoded_samples =
-      DecodeNative(inst, NULL, 0, plc_samples, decoded, &audio_type, 0);
+      DecodeNative(inst, nullptr, 0, plc_samples, decoded, &audio_type, 0);
   if (decoded_samples < 0) {
     return -1;
   }
@@ -678,7 +678,7 @@ int WebRtcOpus_NumSilkFrames(const uint8_t* payload) {
 
 int WebRtcOpus_PacketHasFec(const uint8_t* payload,
                             size_t payload_length_bytes) {
-  if (payload == NULL || payload_length_bytes == 0)
+  if (payload == nullptr || payload_length_bytes == 0)
     return 0;
 
   
@@ -699,7 +699,7 @@ int WebRtcOpus_PacketHasFec(const uint8_t* payload,
   
   
   if (opus_packet_parse(payload, static_cast<opus_int32>(payload_length_bytes),
-                        NULL, frame_data, frame_sizes, NULL) < 0) {
+                        nullptr, frame_data, frame_sizes, nullptr) < 0) {
     return 0;
   }
 
@@ -727,7 +727,7 @@ int WebRtcOpus_PacketHasFec(const uint8_t* payload,
 
 int WebRtcOpus_PacketHasVoiceActivity(const uint8_t* payload,
                                       size_t payload_length_bytes) {
-  if (payload == NULL || payload_length_bytes == 0)
+  if (payload == nullptr || payload_length_bytes == 0)
     return 0;
 
   
@@ -748,7 +748,7 @@ int WebRtcOpus_PacketHasVoiceActivity(const uint8_t* payload,
   
   int frames =
       opus_packet_parse(payload, static_cast<opus_int32>(payload_length_bytes),
-                        NULL, frame_data, frame_sizes, NULL);
+                        nullptr, frame_data, frame_sizes, nullptr);
   if (frames < 0)
     return -1;
 
