@@ -184,12 +184,12 @@ TEST_F(VideoDecoderSoftwareFallbackWrapperTest,
        ForwardsRegisterDecodeCompleteCallback) {
   class FakeDecodedImageCallback : public DecodedImageCallback {
     int32_t Decoded(VideoFrame& ) override { return 0; }
-    int32_t Decoded(webrtc::VideoFrame& ,
+    int32_t Decoded(VideoFrame& ,
                     int64_t ) override {
       RTC_DCHECK_NOTREACHED();
       return -1;
     }
-    void Decoded(webrtc::VideoFrame& ,
+    void Decoded(VideoFrame& ,
                  std::optional<int32_t> ,
                  std::optional<uint8_t> ) override {
       RTC_DCHECK_NOTREACHED();
