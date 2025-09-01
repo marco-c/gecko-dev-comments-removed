@@ -5,10 +5,11 @@
 
 #include "MoveNodeTransaction.h"
 
-#include "EditorBase.h"      
-#include "EditorDOMPoint.h"  
-#include "HTMLEditor.h"      
-#include "HTMLEditUtils.h"   
+#include "EditorBase.h"           
+#include "EditorDOMAPIWrapper.h"  
+#include "EditorDOMPoint.h"       
+#include "HTMLEditor.h"           
+#include "HTMLEditUtils.h"        
 
 #include "mozilla/Likely.h"
 #include "mozilla/Logging.h"
@@ -335,9 +336,17 @@ void MoveSiblingsTransaction::RemoveAllSiblingsToMove(
   for (const size_t i : IntegerRange(aNotifier.MovingContentCount())) {
     nsIContent* const contentToMove = aNotifier.GetContentAt(i);
     MOZ_ASSERT(contentToMove);
-    
-    
-    MOZ_KnownLive(contentToMove)->Remove();
+    AutoNodeAPIWrapper nodeWrapper(aHTMLEditor,
+                                   
+                                   
+                                   MOZ_KnownLive(*contentToMove));
+    if (NS_FAILED(nodeWrapper.Remove())) {
+      NS_WARNING("AutoNodeAPIWrapper::Remove() failed, but ignored");
+    } else {
+      NS_WARNING_ASSERTION(
+          nodeWrapper.IsExpectedResult(),
+          "Temporarily removing node caused other mutations, but ignored");
+    }
   }
 }
 
@@ -362,17 +371,17 @@ nsresult MoveSiblingsTransaction::InsertAllSiblingsToMove(
       }
     }
 
-    IgnoredErrorResult error;
-    aParentNode.InsertBefore(
-        
-        
-        MOZ_KnownLive(*contentToMove), aReferenceNode, error);
+    AutoNodeAPIWrapper nodeWrapper(aHTMLEditor, aParentNode);
     
     
-    error.WouldReportJSException();
-    if (MOZ_UNLIKELY(error.Failed())) {
-      NS_WARNING("nsINode::InsertBefore() failed");
-      rv = error.StealNSResult();
+    nsresult rvInner =
+        nodeWrapper.InsertBefore(MOZ_KnownLive(*contentToMove), aReferenceNode);
+    if (NS_FAILED(rvInner)) {
+      NS_WARNING("AutoNodeAPIWrapper::InsertBefore() failed");
+      rv = rvInner;
+    } else {
+      NS_WARNING_ASSERTION(nodeWrapper.IsExpectedResult(),
+                           "Moving a node caused other mutations, but ignored");
     }
   }
 

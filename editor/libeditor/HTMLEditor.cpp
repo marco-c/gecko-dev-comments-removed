@@ -13,6 +13,7 @@
 #include "CSSEditUtils.h"
 #include "EditAction.h"
 #include "EditorBase.h"
+#include "EditorDOMAPIWrapper.h"
 #include "EditorDOMPoint.h"
 #include "EditorLineBreak.h"
 #include "EditorUtils.h"
@@ -473,9 +474,10 @@ void HTMLEditor::PreDestroy() {
     
     
     RefPtr<HTMLEditor> self = this;
-    nsContentUtils::AddScriptRunner(
-        NS_NewRunnableFunction("HTMLEditor::PreDestroy",
-                               [self]() { self->HideAnonymousEditingUIs(); }));
+    nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
+        "HTMLEditor::PreDestroy", [self]() MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+          self->HideAnonymousEditingUIs();
+        }));
   } else {
     
     HideAnonymousEditingUIs();
@@ -3453,7 +3455,7 @@ nsresult HTMLEditor::CopyAttributes(WithTransaction aWithTransaction,
   }
   struct MOZ_STACK_CLASS AttrCache {
     int32_t mNamespaceID;
-    OwningNonNull<nsAtom> mName;
+    const OwningNonNull<nsAtom> mName;
     nsString mValue;
   };
   AutoTArray<AttrCache, 16> srcAttrs;
@@ -3475,10 +3477,12 @@ nsresult HTMLEditor::CopyAttributes(WithTransaction aWithTransaction,
                        attr.mName, attr.mValue)) {
         continue;
       }
-      DebugOnly<nsresult> rvIgnored = aDestElement.SetAttr(
-          attr.mNamespaceID, attr.mName, attr.mValue, false);
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                           "Element::SetAttr() failed, but ignored");
+      DebugOnly<nsresult> rvIgnored =
+          AutoElementAttrAPIWrapper(*this, aDestElement)
+              .SetAttr(MOZ_KnownLive(attr.mName), attr.mValue, false);
+      NS_WARNING_ASSERTION(
+          NS_SUCCEEDED(rvIgnored) && rvIgnored != NS_ERROR_EDITOR_DESTROYED,
+          "AutoElementAttrAPIWrapper::SetAttr() failed, but ignored");
     }
     if (NS_WARN_IF(Destroyed())) {
       return NS_ERROR_EDITOR_DESTROYED;
@@ -5419,8 +5423,9 @@ Result<SplitNodeResult, nsresult> HTMLEditor::DoSplitNode(
     }
   }
 
-  nsCOMPtr<nsINode> parent = aStartOfRightNode.GetContainerParent();
-  if (NS_WARN_IF(!parent)) {
+  const nsCOMPtr<nsINode> containerParentNode =
+      aStartOfRightNode.GetContainerParent();
+  if (NS_WARN_IF(!containerParentNode)) {
     return Err(NS_ERROR_FAILURE);
   }
 
@@ -5472,8 +5477,10 @@ Result<SplitNodeResult, nsresult> HTMLEditor::DoSplitNode(
     if (!firstChildOfRightNode->GetPreviousSibling()) {
       
       
-      nsresult rv = MoveAllChildren(*aStartOfRightNode.GetContainer(),
-                                    EditorRawDOMPoint(&aNewNode, 0u));
+      nsresult rv = MoveAllChildren(
+          
+          MOZ_KnownLive(*aStartOfRightNode.GetContainer()),
+          EditorRawDOMPoint(&aNewNode, 0u));
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                            "HTMLEditor::MoveAllChildren() failed");
       return rv;
@@ -5499,15 +5506,18 @@ Result<SplitNodeResult, nsresult> HTMLEditor::DoSplitNode(
 
   
   
-  IgnoredErrorResult error;
-  parent->InsertBefore(
-      aNewNode, aStartOfRightNode.GetContainer()->GetNextSibling(), error);
-  if (NS_WARN_IF(Destroyed())) {
-    return Err(NS_ERROR_EDITOR_DESTROYED);
-  }
-  if (MOZ_UNLIKELY(error.Failed())) {
-    NS_WARNING("nsINode::InsertBefore() failed");
-    return Err(error.StealNSResult());
+  {
+    const nsCOMPtr<nsIContent> nextSibling =
+        aStartOfRightNode.GetContainer()->GetNextSibling();
+    AutoNodeAPIWrapper nodeWrapper(*this, *containerParentNode);
+    nsresult rv = nodeWrapper.InsertBefore(aNewNode, nextSibling);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("AutoNodeAPIWrapper::InsertBefore() failed");
+      return Err(rv);
+    }
+    NS_WARNING_ASSERTION(
+        nodeWrapper.IsExpectedResult(),
+        "Inserting new node caused other mutations, but ignored");
   }
   if (NS_FAILED(rv)) {
     NS_WARNING("Moving children from left node to right node failed");
@@ -5525,6 +5535,7 @@ Result<SplitNodeResult, nsresult> HTMLEditor::DoSplitNode(
   const bool allowedTransactionsToChangeSelection =
       AllowsTransactionsToChangeSelection();
 
+  IgnoredErrorResult error;
   RefPtr<Selection> previousSelection;
   for (SavedRange& savedRange : savedRanges) {
     
@@ -5596,8 +5607,9 @@ Result<SplitNodeResult, nsresult> HTMLEditor::DoSplitNode(
   
   
   
-  if (NS_WARN_IF(parent != aStartOfRightNode.GetContainer()->GetParentNode()) ||
-      NS_WARN_IF(parent != aNewNode.GetParentNode()) ||
+  if (NS_WARN_IF(containerParentNode !=
+                 aStartOfRightNode.GetContainer()->GetParentNode()) ||
+      NS_WARN_IF(containerParentNode != aNewNode.GetParentNode()) ||
       NS_WARN_IF(aNewNode.GetPreviousSibling() !=
                  aStartOfRightNode.GetContainer())) {
     return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
@@ -5795,7 +5807,16 @@ nsresult HTMLEditor::DoJoinNodes(nsIContent& aContentToKeep,
       aContentToRemove.AsText()->GetData(rightText);
       
       
-      aContentToRemove.Remove();
+      {
+        AutoNodeAPIWrapper nodeWrapper(*this, aContentToRemove);
+        if (NS_FAILED(nodeWrapper.Remove())) {
+          NS_WARNING("AutoNodeAPIWrapper::Remove() failed, but ignored");
+        } else {
+          NS_WARNING_ASSERTION(
+              nodeWrapper.IsExpectedResult(),
+              "Deleting node caused other mutations, but ignored");
+        }
+      }
       
       
       IgnoredErrorResult ignoredError;
@@ -5814,16 +5835,29 @@ nsresult HTMLEditor::DoJoinNodes(nsIContent& aContentToKeep,
     HTMLEditUtils::CollectAllChildren(aContentToRemove, arrayOfChildContents);
     
     
-    aContentToRemove.Remove();
+    {
+      AutoNodeAPIWrapper nodeWrapper(*this, aContentToRemove);
+      if (NS_FAILED(nodeWrapper.Remove())) {
+        NS_WARNING("AutoNodeAPIWrapper::Remove() failed, but ignored");
+      } else {
+        NS_WARNING_ASSERTION(
+            nodeWrapper.IsExpectedResult(),
+            "Deleting node caused other mutations, but ignored");
+      }
+    }
     
     
     nsresult rv = NS_OK;
     for (const OwningNonNull<nsIContent>& child : arrayOfChildContents) {
-      IgnoredErrorResult error;
-      aContentToKeep.AppendChild(child, error);
-      if (MOZ_UNLIKELY(error.Failed())) {
-        NS_WARNING("nsINode::AppendChild() failed");
-        rv = error.StealNSResult();
+      AutoNodeAPIWrapper nodeWrapper(*this, aContentToKeep);
+      nsresult rvInner = nodeWrapper.AppendChild(MOZ_KnownLive(child));
+      if (NS_FAILED(rvInner)) {
+        NS_WARNING("AutoNodeAPIWrapper::AppendChild() failed");
+        rv = rvInner;
+      } else {
+        NS_WARNING_ASSERTION(
+            nodeWrapper.IsExpectedResult(),
+            "Appending child caused other mutations, but ignored");
       }
     }
     if (NS_WARN_IF(Destroyed())) {
@@ -6291,10 +6325,16 @@ nsresult HTMLEditor::SetAttributeOrEquivalent(Element* aElement,
       }
     }
     if (aSuppressTransaction) {
-      nsresult rv =
-          aElement->SetAttr(kNameSpaceID_None, aAttribute, aValue, true);
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Element::SetAttr() failed");
-      return rv;
+      AutoElementAttrAPIWrapper elementWrapper(*this, *aElement);
+      nsresult rv = elementWrapper.SetAttr(aAttribute, aValue, true);
+      if (NS_FAILED(rv)) {
+        NS_WARNING("AutoElementAttrAPIWrapper::SetAttr() failed");
+        return rv;
+      }
+      NS_WARNING_ASSERTION(
+          elementWrapper.IsExpectedResult(aValue),
+          "Setting attribute caused other mutations, but ignored");
+      return NS_OK;
     }
     nsresult rv = SetAttributeWithTransaction(*aElement, *aAttribute, aValue);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
@@ -6327,10 +6367,16 @@ nsresult HTMLEditor::SetAttributeOrEquivalent(Element* aElement,
         }
 
         if (aSuppressTransaction) {
-          nsresult rv =
-              aElement->UnsetAttr(kNameSpaceID_None, aAttribute, true);
-          NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Element::UnsetAttr() failed");
-          return rv;
+          AutoElementAttrAPIWrapper elementWrapper(*this, *aElement);
+          nsresult rv = elementWrapper.UnsetAttr(aAttribute, true);
+          if (NS_FAILED(rv)) {
+            NS_WARNING("AutoElementAttrAPIWrapper::UnsetAttr() failed");
+            return rv;
+          }
+          NS_WARNING_ASSERTION(
+              elementWrapper.IsExpectedResult(EmptyString()),
+              "Removing attribute caused other mutations, but ignored");
+          return NS_OK;
         }
         nsresult rv = RemoveAttributeWithTransaction(*aElement, *aAttribute);
         NS_WARNING_ASSERTION(
@@ -6355,11 +6401,17 @@ nsresult HTMLEditor::SetAttributeOrEquivalent(Element* aElement,
     }
     existingValue.Append(aValue);
     if (aSuppressTransaction) {
-      nsresult rv = aElement->SetAttr(kNameSpaceID_None, nsGkAtoms::style,
-                                      existingValue, true);
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                           "Element::SetAttr(nsGkAtoms::style) failed");
-      return rv;
+      AutoElementAttrAPIWrapper elementWrapper(*this, *aElement);
+      nsresult rv =
+          elementWrapper.SetAttr(nsGkAtoms::style, existingValue, true);
+      if (NS_FAILED(rv)) {
+        NS_WARNING("AutoElementAttrAPIWrapper::SetAttr() failed");
+        return rv;
+      }
+      NS_WARNING_ASSERTION(
+          elementWrapper.IsExpectedResult(existingValue),
+          "Setting style attribute caused other mutations, but ignored");
+      return NS_OK;
     }
     nsresult rv = SetAttributeWithTransaction(*aElement, *nsGkAtoms::style,
                                               existingValue);
@@ -6372,10 +6424,16 @@ nsresult HTMLEditor::SetAttributeOrEquivalent(Element* aElement,
   
   
   if (aSuppressTransaction) {
-    nsresult rv =
-        aElement->SetAttr(kNameSpaceID_None, aAttribute, aValue, true);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Element::SetAttr() failed");
-    return rv;
+    AutoElementAttrAPIWrapper elementWrapper(*this, *aElement);
+    nsresult rv = elementWrapper.SetAttr(aAttribute, aValue, true);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("AutoElementAttrAPIWrapper::SetAttr() failed");
+      return rv;
+    }
+    NS_WARNING_ASSERTION(
+        elementWrapper.IsExpectedResult(aValue),
+        "Setting attribute caused other mutations, but ignored");
+    return NS_OK;
   }
   nsresult rv = SetAttributeWithTransaction(*aElement, *aAttribute, aValue);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
@@ -6417,10 +6475,16 @@ nsresult HTMLEditor::RemoveAttributeOrEquivalent(Element* aElement,
   }
 
   if (aSuppressTransaction) {
-    nsresult rv = aElement->UnsetAttr(kNameSpaceID_None, aAttribute,
-                                       true);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Element::UnsetAttr() failed");
-    return rv;
+    AutoElementAttrAPIWrapper elementWrapper(*this, *aElement);
+    nsresult rv = elementWrapper.UnsetAttr(aAttribute, true);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("AutoElementAttrAPIWrapper::UnsetAttr() failed");
+      return rv;
+    }
+    NS_WARNING_ASSERTION(
+        elementWrapper.IsExpectedResult(EmptyString()),
+        "Removing attribute caused other mutations, but ignored");
+    return NS_OK;
   }
   nsresult rv = RemoveAttributeWithTransaction(*aElement, *aAttribute);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
@@ -7062,7 +7126,7 @@ NS_IMETHODIMP HTMLEditor::SetWrapWidth(int32_t aWrapColumn) {
   }
 
   
-  RefPtr<Element> rootElement = GetRoot();
+  const RefPtr<Element> rootElement = GetRoot();
   if (NS_WARN_IF(!rootElement)) {
     return NS_ERROR_NOT_INITIALIZED;
   }
@@ -7102,11 +7166,16 @@ NS_IMETHODIMP HTMLEditor::SetWrapWidth(int32_t aWrapColumn) {
     styleValue.AppendLiteral("white-space: pre;");
   }
 
-  nsresult rv = rootElement->SetAttr(kNameSpaceID_None, nsGkAtoms::style,
-                                     styleValue, true);
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                       "Element::SetAttr(nsGkAtoms::style) failed");
-  return rv;
+  AutoElementAttrAPIWrapper elementWrapper(*this, *rootElement);
+  nsresult rv = elementWrapper.SetAttr(nsGkAtoms::style, styleValue, true);
+  if (NS_FAILED(rv)) {
+    NS_WARNING("AutoElementAttrAPIWrapper::SetAttr() failed");
+    return rv;
+  }
+  NS_WARNING_ASSERTION(
+      elementWrapper.IsExpectedResult(styleValue),
+      "Setting style attribute caused other mutations, but ignored");
+  return NS_OK;
 }
 
 Element* HTMLEditor::GetFocusedElement() const {
