@@ -519,16 +519,6 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
 
   MOZ_ASSERT(!gcmarker->isWeakMarking());
 
-#  ifdef DEBUG
-  
-  
-  
-  
-  if (gc->testMarkQueueRemaining() > 0) {
-    return;
-  }
-#  endif
-
   
   MOZ_ASSERT(gc->nursery().isEmpty());
 
@@ -580,14 +570,22 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
       MOZ_ASSERT(r.front().key()->asTenured().zone() == zone);
       if (!savedEphemeronEdges.putNew(r.front().key(),
                                       std::move(r.front().value()))) {
-        
-        
         oomUnsafe.crash("saving weak keys table for validator");
       }
     }
 
     zone->gcEphemeronEdges().clearAndCompact();
   }
+
+#  ifdef DEBUG
+  
+  
+  
+  
+  if (gc->testMarkQueueRemaining() > 0) {
+    return;
+  }
+#  endif
 
   
 
