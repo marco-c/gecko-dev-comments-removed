@@ -1001,7 +1001,6 @@ void vp9_set_speed_features_framesize_independent(VP9_COMP *cpi, int speed) {
   
   
   sf->always_this_block_size = BLOCK_16X16;
-  sf->search_type_check_frequency = 50;
   sf->encode_breakout_thresh = 0;
   
   sf->recode_tolerance_low = 12;

@@ -149,9 +149,6 @@ typedef enum {
   VAR_BASED_PARTITION,
 
   
-  SOURCE_VAR_BASED_PARTITION,
-
-  
   ML_BASED_PARTITION
 } PARTITION_SEARCH_TYPE;
 
@@ -516,10 +513,6 @@ typedef struct SPEED_FEATURES {
   
   
   BLOCK_SIZE max_intra_bsize;
-
-  
-  
-  int search_type_check_frequency;
 
   
   

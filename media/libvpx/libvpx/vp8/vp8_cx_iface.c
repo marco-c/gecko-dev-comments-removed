@@ -58,7 +58,7 @@ static struct vp8_extracfg default_extracfg = {
 #if !(CONFIG_REALTIME_ONLY)
   0, 
 #else
-  4,                      
+  4, 
 #endif
   0, 
   0, 
@@ -961,9 +961,19 @@ static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t *ctx,
     ctx->cpi->common.error.setjmp = 1;
 
     
-    if (ctx->base.init_flags & VPX_CODEC_USE_PSNR) {
-      ((VP8_COMP *)ctx->cpi)->b_calculate_psnr = 1;
+    if ((flags & VPX_EFLAG_CALCULATE_PSNR) && ctx->cfg.g_lag_in_frames != 0) {
+      vpx_internal_error(
+          &ctx->cpi->common.error, VPX_CODEC_INCAPABLE,
+          "Cannot calculate per-frame PSNR when g_lag_in_frames is nonzero");
     }
+    
+#if CONFIG_INTERNAL_STATS
+    assert(((VP8_COMP *)ctx->cpi)->b_calculate_psnr == 1);
+#else
+    ((VP8_COMP *)ctx->cpi)->b_calculate_psnr =
+        (ctx->base.init_flags & VPX_CODEC_USE_PSNR) ||
+        (flags & VPX_EFLAG_CALCULATE_PSNR);
+#endif
 
     if (ctx->base.init_flags & VPX_CODEC_USE_OUTPUT_PARTITION) {
       ((VP8_COMP *)ctx->cpi)->output_partition = 1;
@@ -1012,19 +1022,10 @@ static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t *ctx,
 
       res = image2yuvconfig(img, &sd);
 
-      if (sd.y_width != ctx->cfg.g_w || sd.y_height != ctx->cfg.g_h) {
-        
-
-
-
-        ctx->base.err_detail = "Invalid input frame resolution";
-        res = VPX_CODEC_INVALID_PARAM;
-      } else {
-        if (vp8_receive_raw_frame(ctx->cpi, ctx->next_frame_flag | lib_flags,
-                                  &sd, dst_time_stamp, dst_end_time_stamp)) {
-          VP8_COMP *cpi = (VP8_COMP *)ctx->cpi;
-          res = update_error_state(ctx, &cpi->common.error);
-        }
+      if (vp8_receive_raw_frame(ctx->cpi, ctx->next_frame_flag | lib_flags, &sd,
+                                dst_time_stamp, dst_end_time_stamp)) {
+        VP8_COMP *cpi = (VP8_COMP *)ctx->cpi;
+        res = update_error_state(ctx, &cpi->common.error);
       }
 
       

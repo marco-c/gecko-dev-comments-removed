@@ -188,14 +188,15 @@ void vp8_init3smotion_compensation(MACROBLOCK *x, int stride) {
 
 
 
-#define MVC(r, c)                                                             \
-  (mvcost                                                                     \
-       ? ((mvcost[0][(r)-rr] + mvcost[1][(c)-rc]) * error_per_bit + 128) >> 8 \
-       : 0)
+#define MVC(r, c)                                                          \
+  (mvcost ? ((mvcost[0][(r) - rr] + mvcost[1][(c) - rc]) * error_per_bit + \
+             128) >>                                                       \
+                8                                                          \
+          : 0)
 
 #define PRE(r, c) (y + (((r) >> 2) * y_stride + ((c) >> 2) - (offset)))
 
-#define SP(x) (((x)&3) << 1)
+#define SP(x) (((x) & 3) << 1)
 
 #define DIST(r, c) \
   vfp->svf(PRE(r, c), y_stride, SP(c), SP(r), z, b->src_stride, &sse)
