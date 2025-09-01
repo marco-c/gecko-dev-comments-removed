@@ -166,7 +166,7 @@ class TextLeafPoint final {
 
 
 
-  LayoutDeviceIntRect CharBounds();
+  LayoutDeviceIntRect CharBounds() const;
 
   
 
@@ -252,6 +252,10 @@ class TextLeafPoint final {
 
 
   LayoutDeviceIntRect ComputeBoundsFromFrame() const;
+
+  LayoutDeviceIntRect InsertionPointBounds() const;
+
+  friend class TextLeafRange;
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(TextLeafPoint::BoundaryFlags)
