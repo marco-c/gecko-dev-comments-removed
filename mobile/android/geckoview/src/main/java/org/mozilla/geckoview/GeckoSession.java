@@ -89,6 +89,13 @@ import org.mozilla.geckoview.GeckoSession.PromptDelegate.IdentityCredential.Acco
 import org.mozilla.geckoview.GeckoSession.PromptDelegate.IdentityCredential.PrivacyPolicyPrompt;
 import org.mozilla.geckoview.GeckoSession.PromptDelegate.IdentityCredential.ProviderSelectorPrompt;
 
+
+
+
+
+
+
+
 public class GeckoSession {
   private static final String LOGTAG = "GeckoSession";
   private static final boolean DEBUG = false;
@@ -1663,15 +1670,21 @@ public class GeckoSession {
 
   private final PromptController mPromptController;
 
+  
   protected @Nullable Window mWindow;
+
   private GeckoSessionSettings mSettings;
 
-  @SuppressWarnings("checkstyle:javadocmethod")
+  
   public GeckoSession() {
     this(null);
   }
 
-  @SuppressWarnings("checkstyle:javadocmethod")
+  
+
+
+
+
   public GeckoSession(final @Nullable GeckoSessionSettings settings) {
     mSettings = new GeckoSessionSettings(settings, this);
     mListener.registerListeners();
@@ -1921,6 +1934,7 @@ public class GeckoSession {
   
   public static final int PRIORITY_HIGH = 1;
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef(
       flag = true,
@@ -1993,6 +2007,7 @@ public class GeckoSession {
 
   public static final int HEADER_FILTER_UNRESTRICTED_UNSAFE = 2;
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef(value = {HEADER_FILTER_CORS_SAFELISTED, HEADER_FILTER_UNRESTRICTED_UNSAFE})
   public @interface HeaderFilter {}
@@ -2486,6 +2501,7 @@ public class GeckoSession {
     mEventDispatcher.dispatch("GeckoView:PurgeHistory", null);
   }
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef(
       flag = true,
@@ -2513,6 +2529,7 @@ public class GeckoSession {
   
   public static final int FINDER_FIND_LINKS_ONLY = 1 << 3;
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef(
       flag = true,
@@ -2632,6 +2649,7 @@ public class GeckoSession {
     
     @NonNull public final String filename;
 
+    
     public final boolean isPrivate;
 
      PdfSaveResult(@NonNull final GeckoBundle bundle) {
@@ -2841,7 +2859,11 @@ public class GeckoSession {
       mState = new GeckoBundle(state);
     }
 
-    @SuppressWarnings("checkstyle:javadocmethod")
+    
+
+
+
+
     public SessionState(final @NonNull SessionState state) {
       mState = new GeckoBundle(state.mState);
     }
@@ -2984,7 +3006,10 @@ public class GeckoSession {
     }
 
     
-    @SuppressWarnings("checkstyle:javadocmethod")
+
+
+
+
     public void readFromParcel(final @NonNull Parcel source) {
       if (source.readString() == null) {
         Log.w(LOGTAG, "Can't reproduce session state from Parcel");
@@ -2998,6 +3023,7 @@ public class GeckoSession {
       }
     }
 
+    
     public static final Parcelable.Creator<SessionState> CREATOR =
         new Parcelable.Creator<SessionState>() {
           @Override
@@ -3229,8 +3255,12 @@ public class GeckoSession {
     mDisplay = null;
   }
 
+  
+
+
+
+
   @AnyThread
-  @SuppressWarnings("checkstyle:javadocmethod")
   public @NonNull GeckoSessionSettings getSettings() {
     return mSettings;
   }
@@ -3514,6 +3544,11 @@ public class GeckoSession {
     return mSelectionActionDelegate.getDelegate();
   }
 
+  
+
+
+
+
   @UiThread
   protected void setShouldPinOnScreen(final boolean pinned) {
     if (DEBUG) {
@@ -3534,23 +3569,36 @@ public class GeckoSession {
     return mEventDispatcher;
   }
 
+  
   public interface ProgressDelegate {
     
     class SecurityInformation {
+      
       @Retention(RetentionPolicy.SOURCE)
       @IntDef({SECURITY_MODE_UNKNOWN, SECURITY_MODE_IDENTIFIED, SECURITY_MODE_VERIFIED})
       public @interface SecurityMode {}
 
+      
       public static final int SECURITY_MODE_UNKNOWN = 0;
+
+      
       public static final int SECURITY_MODE_IDENTIFIED = 1;
+
+      
       public static final int SECURITY_MODE_VERIFIED = 2;
 
+      
       @Retention(RetentionPolicy.SOURCE)
       @IntDef({CONTENT_UNKNOWN, CONTENT_BLOCKED, CONTENT_LOADED})
       public @interface ContentType {}
 
+      
       public static final int CONTENT_UNKNOWN = 0;
+
+      
       public static final int CONTENT_BLOCKED = 1;
+
+      
       public static final int CONTENT_LOADED = 2;
 
       
@@ -3714,6 +3762,10 @@ public class GeckoSession {
     }
   }
 
+  
+
+
+
   public interface ContentDelegate {
     
 
@@ -3775,13 +3827,21 @@ public class GeckoSession {
 
     
     class ContextElement {
+      
       @Retention(RetentionPolicy.SOURCE)
       @IntDef({TYPE_NONE, TYPE_IMAGE, TYPE_VIDEO, TYPE_AUDIO})
       public @interface Type {}
 
+      
       public static final int TYPE_NONE = 0;
+
+      
       public static final int TYPE_IMAGE = 1;
+
+      
       public static final int TYPE_VIDEO = 2;
+
+      
       public static final int TYPE_AUDIO = 3;
 
       
@@ -3836,6 +3896,16 @@ public class GeckoSession {
         this.textContent = textContent;
         this.extensionMenus = null;
       }
+
+      
+
+
+
+
+
+
+
+
 
       protected ContextElement(
           final @Nullable String baseUri,
@@ -4031,6 +4101,7 @@ public class GeckoSession {
     default void onCookieBannerHandled(@NonNull final GeckoSession session) {}
   }
 
+  
   public interface SelectionActionDelegate {
     
     int FLAG_IS_COLLAPSED = 1 << 0;
@@ -4378,6 +4449,7 @@ public class GeckoSession {
     default void onDismissClipboardPermissionRequest(@NonNull final GeckoSession session) {}
   }
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @StringDef({
     SelectionActionDelegate.ACTION_HIDE,
@@ -4393,6 +4465,7 @@ public class GeckoSession {
   })
   public @interface SelectionActionDelegateAction {}
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef(
       flag = true,
@@ -4403,6 +4476,7 @@ public class GeckoSession {
       })
   public @interface SelectionActionDelegateFlag {}
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({
     SelectionActionDelegate.HIDE_REASON_NO_SELECTION,
@@ -4412,12 +4486,14 @@ public class GeckoSession {
   })
   public @interface SelectionActionDelegateHideReason {}
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({
     SelectionActionDelegate.PERMISSION_CLIPBOARD_READ,
   })
   public @interface ClipboardPermissionType {}
 
+  
   public interface NavigationDelegate {
     
 
@@ -4453,8 +4529,13 @@ public class GeckoSession {
     @UiThread
     default void onCanGoForward(@NonNull final GeckoSession session, final boolean canGoForward) {}
 
+    
     int TARGET_WINDOW_NONE = 0;
+
+    
     int TARGET_WINDOW_CURRENT = 1;
+
+    
     int TARGET_WINDOW_NEW = 2;
 
     
@@ -4624,6 +4705,7 @@ public class GeckoSession {
     }
   }
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({
     NavigationDelegate.TARGET_WINDOW_NONE,
@@ -4653,6 +4735,7 @@ public class GeckoSession {
       }
     }
 
+    
     interface PromptInstanceDelegate {
       
 
@@ -4689,7 +4772,13 @@ public class GeckoSession {
       private final WeakReference<Observer> mObserver;
       private PromptInstanceDelegate mDelegate;
 
+      
       protected interface Observer {
+        
+
+
+
+
         @AnyThread
         default void onPromptCompleted(@NonNull BasePrompt prompt) {}
       }
@@ -4715,6 +4804,12 @@ public class GeckoSession {
         mIsCompleted = false;
         mObserver = new WeakReference<>(observer);
       }
+
+      
+
+
+
+
 
       @UiThread
       protected @NonNull PromptResponse confirm() {
@@ -4801,6 +4896,12 @@ public class GeckoSession {
 
 
     class BeforeUnloadPrompt extends BasePrompt {
+      
+
+
+
+
+
       protected BeforeUnloadPrompt(@NonNull final String id, @NonNull final Observer observer) {
         super(id, null, observer);
       }
@@ -4860,6 +4961,12 @@ public class GeckoSession {
 
 
     class RepostConfirmPrompt extends BasePrompt {
+      
+
+
+
+
+
       protected RepostConfirmPrompt(@NonNull final String id, @NonNull final Observer observer) {
         super(id, null, observer);
       }
@@ -4885,6 +4992,14 @@ public class GeckoSession {
     class AlertPrompt extends BasePrompt {
       
       public final @Nullable String message;
+
+      
+
+
+
+
+
+
 
       protected AlertPrompt(
           @NonNull final String id,
@@ -5216,10 +5331,12 @@ public class GeckoSession {
 
 
     class ButtonPrompt extends BasePrompt {
+      
       @Retention(RetentionPolicy.SOURCE)
       @IntDef({Type.POSITIVE, Type.NEGATIVE})
       public @interface ButtonType {}
 
+      
       public static class Type {
         
         public static final int POSITIVE = 0;
@@ -5227,11 +5344,20 @@ public class GeckoSession {
         
         public static final int NEGATIVE = 2;
 
+        
         protected Type() {}
       }
 
       
       public final @Nullable String message;
+
+      
+
+
+
+
+
+
 
       protected ButtonPrompt(
           @NonNull final String id,
@@ -5267,6 +5393,15 @@ public class GeckoSession {
       
       public final @Nullable String defaultValue;
 
+      
+
+
+
+
+
+
+
+
       protected TextPrompt(
           @NonNull final String id,
           @Nullable final String title,
@@ -5297,7 +5432,9 @@ public class GeckoSession {
 
 
     class AuthPrompt extends BasePrompt {
+      
       public static class AuthOptions {
+        
         @Retention(RetentionPolicy.SOURCE)
         @IntDef(
             flag = true,
@@ -5327,9 +5464,11 @@ public class GeckoSession {
           
           public static final int CROSS_ORIGIN_SUB_RESOURCE = 1 << 5;
 
+          
           protected Flags() {}
         }
 
+        
         @Retention(RetentionPolicy.SOURCE)
         @IntDef({Level.NONE, Level.PW_ENCRYPTED, Level.SECURE})
         public @interface AuthLevel {}
@@ -5345,6 +5484,7 @@ public class GeckoSession {
           
           public static final int SECURE = 2;
 
+          
           protected Level() {}
         }
 
@@ -5386,6 +5526,15 @@ public class GeckoSession {
 
       
       public final @NonNull AuthOptions authOptions;
+
+      
+
+
+
+
+
+
+
 
       protected AuthPrompt(
           @NonNull final String id,
@@ -5433,6 +5582,7 @@ public class GeckoSession {
 
 
     class ChoicePrompt extends BasePrompt {
+      
       public static class Choice {
         
 
@@ -5491,10 +5641,12 @@ public class GeckoSession {
         }
       }
 
+      
       @Retention(RetentionPolicy.SOURCE)
       @IntDef({Type.MENU, Type.SINGLE, Type.MULTIPLE})
       public @interface ChoiceType {}
 
+      
       public static class Type {
         
         public static final int MENU = 1;
@@ -5505,6 +5657,7 @@ public class GeckoSession {
         
         public static final int MULTIPLE = 3;
 
+        
         protected Type() {}
       }
 
@@ -5516,6 +5669,16 @@ public class GeckoSession {
 
       
       public final @NonNull Choice[] choices;
+
+      
+
+
+
+
+
+
+
+
 
       protected ChoicePrompt(
           @NonNull final String id,
@@ -5609,6 +5772,15 @@ public class GeckoSession {
       
       public final @Nullable String[] predefinedValues;
 
+      
+
+
+
+
+
+
+
+
       protected ColorPrompt(
           @NonNull final String id,
           @Nullable final String title,
@@ -5639,10 +5811,12 @@ public class GeckoSession {
 
 
     class DateTimePrompt extends BasePrompt {
+      
       @Retention(RetentionPolicy.SOURCE)
       @IntDef({Type.DATE, Type.MONTH, Type.WEEK, Type.TIME, Type.DATETIME_LOCAL})
       public @interface DatetimeType {}
 
+      
       public static class Type {
         
         public static final int DATE = 1;
@@ -5659,6 +5833,7 @@ public class GeckoSession {
         
         public static final int DATETIME_LOCAL = 5;
 
+        
         protected Type() {}
       }
 
@@ -5724,6 +5899,7 @@ public class GeckoSession {
 
 
     class FilePrompt extends BasePrompt {
+      
       @Retention(RetentionPolicy.SOURCE)
       @IntDef({Type.SINGLE, Type.MULTIPLE, Type.FOLDER})
       public @interface FileType {}
@@ -5739,9 +5915,11 @@ public class GeckoSession {
         
         public static final int FOLDER = 3;
 
+        
         protected Type() {}
       }
 
+      
       @Retention(RetentionPolicy.SOURCE)
       @IntDef({Capture.NONE, Capture.ANY, Capture.USER, Capture.ENVIRONMENT})
       public @interface CaptureType {}
@@ -5761,6 +5939,7 @@ public class GeckoSession {
         
         public static final int ENVIRONMENT = 3;
 
+        
         protected Capture() {}
       }
 
@@ -5775,6 +5954,16 @@ public class GeckoSession {
 
       
       public final @CaptureType int capture;
+
+      
+
+
+
+
+
+
+
+
 
       protected FilePrompt(
           @NonNull final String id,
@@ -5873,6 +6062,13 @@ public class GeckoSession {
       
       public final @Nullable String targetUri;
 
+      
+
+
+
+
+
+
       protected PopupPrompt(
           @NonNull final String id,
           @Nullable final String targetUri,
@@ -5898,6 +6094,7 @@ public class GeckoSession {
 
     
     class SharePrompt extends BasePrompt {
+      
       @Retention(RetentionPolicy.SOURCE)
       @IntDef({Result.SUCCESS, Result.FAILURE, Result.ABORT})
       public @interface ShareResult {}
@@ -5913,6 +6110,7 @@ public class GeckoSession {
         
         public static final int ABORT = 2;
 
+        
         protected Result() {}
       }
 
@@ -5921,6 +6119,15 @@ public class GeckoSession {
 
       
       public final @Nullable String uri;
+
+      
+
+
+
+
+
+
+
 
       protected SharePrompt(
           @NonNull final String id,
@@ -5967,6 +6174,14 @@ public class GeckoSession {
       
       public final @Nullable Principal[] issuers;
 
+      
+
+
+
+
+
+
+
       protected CertificateRequest(
           final @NonNull String id,
           final Observer observer,
@@ -5998,6 +6213,13 @@ public class GeckoSession {
 
 
       public final @NonNull T[] options;
+
+      
+
+
+
+
+
 
       protected AutocompleteRequest(
           final @NonNull String id, final @NonNull T[] options, final Observer observer) {
@@ -6418,21 +6640,25 @@ public class GeckoSession {
   public class ScrollPositionUpdate {
     
     @WrapForJNI public static final int SOURCE_USER_INTERACTION = 0;
+
     
-    
-    
+
+
+
     @WrapForJNI public static final int SOURCE_OTHER = 1;
 
     
     public float scrollX;
+
     
     public float scrollY;
+
     
-    
-    
-    
+
+
+
     public float zoom;
-    
+
     
     public int source;
   }
@@ -6708,6 +6934,7 @@ public class GeckoSession {
 
 
     class ContentPermission {
+      
       @Retention(RetentionPolicy.SOURCE)
       @IntDef({VALUE_PROMPT, VALUE_DENY, VALUE_ALLOW})
       public @interface Value {}
@@ -6749,6 +6976,9 @@ public class GeckoSession {
       public final @Nullable String contextId;
 
       private final String mPrincipal;
+
+      
+
 
       protected ContentPermission() {
         this.uri = "";
@@ -6963,7 +7193,9 @@ public class GeckoSession {
       return GeckoResult.fromValue(ContentPermission.VALUE_PROMPT);
     }
 
+    
     class MediaSource {
+      
       @Retention(RetentionPolicy.SOURCE)
       @IntDef({
         SOURCE_CAMERA, SOURCE_SCREEN,
@@ -6987,6 +7219,7 @@ public class GeckoSession {
       
       public static final int SOURCE_OTHER = 4;
 
+      
       @Retention(RetentionPolicy.SOURCE)
       @IntDef({TYPE_VIDEO, TYPE_AUDIO})
       public @interface Type {}
@@ -7126,6 +7359,7 @@ public class GeckoSession {
     }
   }
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({
     PermissionDelegate.PERMISSION_GEOLOCATION,
@@ -7242,6 +7476,7 @@ public class GeckoSession {
         @NonNull final GeckoSession session, @NonNull final CursorAnchorInfo info) {}
   }
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({
     TextInputDelegate.RESTART_REASON_FOCUS,
@@ -7608,14 +7843,14 @@ public class GeckoSession {
 
   
   public interface MediaDelegate {
-
+    
     class RecordingDevice {
-
       
-
-
       public static class Status {
+        
         public static final long RECORDING = 0;
+
+        
         public static final long INACTIVE = 1 << 0;
 
         
@@ -7623,22 +7858,25 @@ public class GeckoSession {
       }
 
       
-
-
       public static class Type {
+        
         public static final long CAMERA = 0;
+
+        
         public static final long MICROPHONE = 1 << 0;
 
         
         protected Type() {}
       }
 
+      
       @Retention(RetentionPolicy.SOURCE)
       @LongDef(
           flag = true,
           value = {Status.RECORDING, Status.INACTIVE})
       public @interface RecordingStatus {}
 
+      
       @Retention(RetentionPolicy.SOURCE)
       @LongDef(
           flag = true,
@@ -7802,12 +8040,18 @@ public class GeckoSession {
       return null;
     }
 
+    
+
+
+
+
+
     @UiThread
-    @SuppressWarnings("checkstyle:javadocmethod")
     default void onHistoryStateChange(
         @NonNull final GeckoSession session, @NonNull final HistoryList historyList) {}
   }
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef(
       flag = true,
@@ -8071,6 +8315,7 @@ public class GeckoSession {
     
     public static final int ERROR_NO_PRINT_DELEGATE = -6;
 
+    
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
         value = {
