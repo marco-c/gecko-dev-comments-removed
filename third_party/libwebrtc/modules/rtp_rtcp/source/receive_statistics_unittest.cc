@@ -631,7 +631,7 @@ TEST_P(ReceiveStatisticsTest, SimpleJitterComputation) {
   
   const uint32_t expected_jitter = (kLateArrivalDeltaSamples) / 16;
   EXPECT_EQ(expected_jitter, statistician->GetStats().jitter);
-  EXPECT_EQ(webrtc::TimeDelta::Seconds(expected_jitter) / kCodecSampleRate,
+  EXPECT_EQ(TimeDelta::Seconds(expected_jitter) / kCodecSampleRate,
             statistician->GetStats().interarrival_jitter);
 }
 
