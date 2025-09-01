@@ -7,23 +7,37 @@
 #ifndef MEDIAENGINE_REMOTE_VIDEO_SOURCE_H_
 #define MEDIAENGINE_REMOTE_VIDEO_SOURCE_H_
 
-#include "CamerasChild.h"
 #include "DOMMediaStream.h"
+#include "mozilla/Mutex.h"
+#include "nsCOMPtr.h"
+#include "nsComponentManagerUtils.h"
+#include "nsDirectoryServiceDefs.h"
+#include "nsThreadUtils.h"
+#include "prcvar.h"
+#include "prthread.h"
+
+
+#include "AudioSegment.h"
 #include "MediaEngineSource.h"
 #include "MediaTrackGraph.h"
+#include "VideoSegment.h"
+#include "VideoUtils.h"
+#include "ipc/IPCMessageUtils.h"
+#include "mozilla/dom/MediaStreamTrackBinding.h"
+
+
+#include "CamerasChild.h"
+#include "NullTransport.h"
+
+
 #include "common_video/include/video_frame_buffer_pool.h"
 #include "modules/video_capture/video_capture_defines.h"
-#include "mozilla/Mutex.h"
-#include "mozilla/dom/MediaStreamTrackBinding.h"
 
 namespace webrtc {
 using CaptureCapability = VideoCaptureCapability;
 }
 
 namespace mozilla {
-namespace dom {
-enum class VideoResizeModeEnum : uint8_t;
-}
 
 
 
@@ -109,8 +123,6 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
   nsresult FocusOnSelectedSource() override;
   nsresult Stop() override;
 
-  nsresult StartCapture(const NormalizedConstraints& aConstraints,
-                        const dom::VideoResizeModeEnum& aResizeMode);
   uint32_t GetBestFitnessDistance(
       const nsTArray<const NormalizedConstraintSet*>& aConstraintSets,
       const MediaEnginePrefs& aPrefs) const override;
@@ -186,20 +198,12 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
   
   
   
-  
-  gfx::IntSize mIncomingImageSize = gfx::IntSize(0, 0);
-
-  
-  
-  
-  
-  gfx::IntSize mScaledImageSize = gfx::IntSize(0, 0);
+  gfx::IntSize mImageSize = gfx::IntSize(0, 0);
 
   struct AtomicBool {
     Atomic<bool> mValue;
   };
 
-  
   
   
   const RefPtr<media::Refcountable<AtomicBool>> mSettingsUpdatedByFrame;
