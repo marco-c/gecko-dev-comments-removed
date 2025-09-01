@@ -366,6 +366,21 @@ impl MessageQueue {
 
         self.nr_of_queued_messages = self.nr_of_queued_messages.checked_add(1).unwrap();
         (self.on_message_queued)(child);
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if self.nr_of_queued_messages >= 4 * 1024 {
+            let (nr_of_messages, serialized_messages) = self.flush();
+            let serialized_messages = ByteBuf::from_vec(serialized_messages);
+            unsafe { wgpu_child_send_messages(child, nr_of_messages, serialized_messages) };
+        }
     }
 
     fn flush(&mut self) -> (u32, Vec<u8>) {
@@ -569,6 +584,11 @@ pub struct FfiShaderModuleCompilationMessage {
 }
 
 extern "C" {
+    fn wgpu_child_send_messages(
+        child: WebGPUChildPtr,
+        nr_of_messages: u32,
+        serialized_messages: ByteBuf,
+    );
     fn wgpu_child_resolve_request_adapter_promise(
         child: WebGPUChildPtr,
         adapter_id: id::AdapterId,
