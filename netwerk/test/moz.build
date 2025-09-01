@@ -4,10 +4,7 @@
 
 
 
-TEST_DIRS += ["httpserver"]
-
-if CONFIG["ENABLE_TESTS"]:
-    TEST_DIRS += ["http3server", "gtest"]
+TEST_DIRS += ["httpserver", "http3server", "gtest"]
 
 BROWSER_CHROME_MANIFESTS += [
     "browser/browser.toml",
