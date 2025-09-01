@@ -1263,7 +1263,10 @@ bool Navigation::InnerFireNavigateEvent(
               }
             },
         failureSteps, scope);
-  } else if (apiMethodTracker) {
+  } else if (apiMethodTracker && mOngoingAPIMethodTracker) {
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT(apiMethodTracker == mOngoingAPIMethodTracker);
     
     apiMethodTracker->CleanUp();
   }
