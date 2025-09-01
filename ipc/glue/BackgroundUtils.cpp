@@ -882,8 +882,6 @@ nsresult LoadInfoArgsToLoadInfo(const LoadInfoArgs& loadInfoArgs,
       ancestorBrowsingContextIDs, loadInfoArgs.corsUnsafeHeaders(),
       loadInfoArgs.loadTriggeredFromExternal(), loadInfoArgs.cspNonce(),
       loadInfoArgs.integrityMetadata(),
-      loadInfoArgs.hasValidUserGestureActivation(),
-      loadInfoArgs.textDirectiveUserActivation(),
       
       
        false,
