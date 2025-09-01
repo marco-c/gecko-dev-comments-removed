@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 use std::collections::HashMap;
 
@@ -22,7 +22,7 @@ bitflags! {
 
 pub type ShaderFeatures = HashMap<&'static str, Vec<String>>;
 
-/// Builder for a list of features.
+
 #[derive(Clone)]
 struct FeatureList<'a> {
     list: Vec<&'a str>,
@@ -60,15 +60,15 @@ impl<'a> FeatureList<'a> {
     }
 }
 
-/// Computes available shaders and their features for the given feature flags.
+
 pub fn get_shader_features(flags: ShaderFeatureFlags) -> ShaderFeatures {
     let mut shaders = ShaderFeatures::new();
 
-    // Clip shaders
+    
     shaders.insert("cs_clip_rectangle", vec![String::new(), "FAST_PATH".to_string()]);
     shaders.insert("cs_clip_box_shadow", vec!["TEXTURE_2D".to_string()]);
 
-    // Cache shaders
+    
     shaders.insert("cs_blur", vec!["ALPHA_TARGET".to_string(), "COLOR_TARGET".to_string()]);
 
     shaders.insert("ps_quad_mask", vec![String::new(), "FAST_PATH".to_string()]);
@@ -99,7 +99,7 @@ pub fn get_shader_features(flags: ShaderFeatureFlags) -> ShaderFeatures {
 
     let mut base_prim_features = FeatureList::new();
 
-    // Brush shaders
+    
     let mut brush_alpha_features = base_prim_features.with("ALPHA_PASS");
     for name in &["brush_solid", "brush_blend", "brush_mix_blend"] {
         let features: Vec<String> = vec![
@@ -136,7 +136,7 @@ pub fn get_shader_features(flags: ShaderFeatureFlags) -> ShaderFeatures {
         shaders.insert("brush_opacity", features);
     }
 
-    // Image brush shaders
+    
     let mut texture_types = vec!["TEXTURE_2D"];
     if flags.contains(ShaderFeatureFlags::GL) {
         texture_types.push("TEXTURE_RECT");
@@ -186,7 +186,7 @@ pub fn get_shader_features(flags: ShaderFeatureFlags) -> ShaderFeatures {
     }
     shaders.insert("cs_scale", composite_features.clone());
 
-    // YUV image brush and composite shaders
+    
     let mut yuv_features: Vec<String> = Vec::new();
     for texture_type in &texture_types {
         let mut list = FeatureList::new();
@@ -201,7 +201,7 @@ pub fn get_shader_features(flags: ShaderFeatureFlags) -> ShaderFeatures {
     }
     shaders.insert("brush_yuv_image", yuv_features);
 
-    // Fast path composite shaders
+    
     for texture_type in &composite_texture_types {
         let mut list = FeatureList::new();
         if !texture_type.is_empty() {
@@ -210,7 +210,7 @@ pub fn get_shader_features(flags: ShaderFeatureFlags) -> ShaderFeatures {
         list.add("FAST_PATH");
         composite_features.push(list.finish());
 
-        // YUV shaders are not compatible with ESSL1
+        
         if *texture_type == "TEXTURE_EXTERNAL_ESSL1" {
             continue;
         }
@@ -220,7 +220,7 @@ pub fn get_shader_features(flags: ShaderFeatureFlags) -> ShaderFeatures {
     }
     shaders.insert("composite", composite_features);
 
-    // Prim shaders
+    
     let mut text_types = vec![""];
     if flags.contains(ShaderFeatureFlags::DUAL_SOURCE_BLENDING) {
         text_types.push("DUAL_SOURCE_BLENDING");
@@ -242,6 +242,8 @@ pub fn get_shader_features(flags: ShaderFeatureFlags) -> ShaderFeatures {
 
     shaders.insert("ps_quad_textured", vec![base_prim_features.finish()]);
 
+    shaders.insert("ps_quad_gradient", vec![base_prim_features.finish()]);
+
     shaders.insert("ps_quad_radial_gradient", vec![base_prim_features.finish()]);
 
     shaders.insert("ps_quad_conic_gradient", vec![base_prim_features.finish()]);
@@ -258,4 +260,3 @@ pub fn get_shader_features(flags: ShaderFeatureFlags) -> ShaderFeatures {
 
     shaders
 }
-
