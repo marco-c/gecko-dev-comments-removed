@@ -2909,7 +2909,7 @@ bool BaselineCacheIRCompiler::emitCallStringObjectConcatResult(
 
 
 bool BaselineCacheIRCompiler::updateArgc(CallFlags flags, Register argcReg,
-                                         Register scratch) {
+                                         uint32_t argcFixed, Register scratch) {
   CallFlags::ArgFormat format = flags.getArgFormat();
   switch (format) {
     case CallFlags::Standard:
@@ -2918,6 +2918,15 @@ bool BaselineCacheIRCompiler::updateArgc(CallFlags flags, Register argcReg,
     case CallFlags::FunCall:
       
       
+      if (argcFixed > 0) {
+#ifdef DEBUG
+        Label nonZeroArgs;
+        masm.branchTest32(Assembler::NonZero, argcReg, argcReg, &nonZeroArgs);
+        masm.assumeUnreachable("non-zero argcFixed implies non-zero argc");
+        masm.bind(&nonZeroArgs);
+#endif
+        masm.sub32(Imm32(1), argcReg);
+      }
       return true;
     case CallFlags::FunApplyNullUndefined:
       
@@ -2974,6 +2983,7 @@ static bool NeedsRectifier(CallFlags flags) {
     case CallFlags::FunApplyArray:
     case CallFlags::FunApplyNullUndefined:
     case CallFlags::FunApplyArgsObj:
+    case CallFlags::FunCall:
       return false;
     default:
       return true;
@@ -3065,6 +3075,11 @@ void BaselineCacheIRCompiler::prepareForArguments(
   if (flags.getArgFormat() == CallFlags::Standard &&
       argcFixed < MaxUnrolledArgCopy) {
     masm.alignJitStackBasedOnNArgs(argcFixed, countIncludesThis);
+  } else if (flags.getArgFormat() == CallFlags::FunCall &&
+             argcFixed < MaxUnrolledArgCopy) {
+    
+    uint32_t actualArgc = argcFixed > 0 ? argcFixed - 1 : 0;
+    masm.alignJitStackBasedOnNArgs(actualArgc, countIncludesThis);
   } else {
     masm.alignJitStackBasedOnNArgs(argcReg, countIncludesThis);
   }
@@ -3112,73 +3127,6 @@ static uint32_t ArgsOffsetFromFP(bool isConstructing) {
     offset += sizeof(Value);
   }
   return offset;
-}
-
-
-void BaselineCacheIRCompiler::pushStandardArgumentsForFunCall(
-    Register argcReg, Register scratch, Register scratch2, uint32_t argcFixed,
-    bool isJitCall, bool isConstructing) {
-  MOZ_ASSERT(enteredStubFrame_);
-
-  
-  
-  
-
-  int additionalArgc = 1 + !isJitCall + isConstructing;
-  if (argcFixed < MaxUnrolledArgCopy) {
-#ifdef DEBUG
-    Label ok;
-    masm.branch32(Assembler::Equal, argcReg, Imm32(argcFixed), &ok);
-    masm.assumeUnreachable("Invalid argcFixed value");
-    masm.bind(&ok);
-#endif
-
-    size_t realArgc = argcFixed + additionalArgc;
-
-    if (isJitCall) {
-      masm.alignJitStackBasedOnNArgs(realArgc,  true);
-    }
-
-    for (size_t i = 0; i < realArgc; ++i) {
-      masm.pushValue(Address(
-          FramePointer, BaselineStubFrameLayout::Size() + i * sizeof(Value)));
-    }
-  } else {
-    MOZ_ASSERT(argcFixed == MaxUnrolledArgCopy);
-
-    
-    Register argPtr = scratch2;
-    Address argAddress(FramePointer, BaselineStubFrameLayout::Size());
-    masm.computeEffectiveAddress(argAddress, argPtr);
-
-    
-    
-    
-    
-    
-    
-    
-    Register countReg = scratch;
-    masm.add32(Imm32(additionalArgc), argcReg, countReg);
-
-    
-    
-    if (isJitCall) {
-      masm.alignJitStackBasedOnNArgs(countReg,  true);
-    }
-
-    
-    Label loop, done;
-    masm.branchTest32(Assembler::Zero, countReg, countReg, &done);
-    masm.bind(&loop);
-    {
-      masm.pushValue(Address(argPtr, 0));
-      masm.addPtr(Imm32(sizeof(Value)), argPtr);
-
-      masm.branchSub32(Assembler::NonZero, Imm32(1), countReg, &loop);
-    }
-    masm.bind(&done);
-  }
 }
 
 void BaselineCacheIRCompiler::pushStandardArguments(
@@ -3296,11 +3244,6 @@ void BaselineCacheIRCompiler::pushFunCallArguments(
     Register argcReg, Register calleeReg, Register scratch, Register scratch2,
     uint32_t argcFixed, bool isJitCall) {
   if (argcFixed == 0) {
-    if (isJitCall) {
-      
-      masm.alignJitStackBasedOnNArgs(0,  false);
-    }
-
     
     masm.pushValue(UndefinedValue());
 
@@ -3308,63 +3251,30 @@ void BaselineCacheIRCompiler::pushFunCallArguments(
     if (!isJitCall) {
       masm.Push(TypedOrValueRegister(MIRType::Object, AnyRegister(calleeReg)));
     }
-  } else if (argcFixed < MaxUnrolledArgCopy) {
-    
-    argcFixed -= 1;
-    masm.sub32(Imm32(1), argcReg);
-    pushStandardArgumentsForFunCall(argcReg, scratch, scratch2, argcFixed,
-                                    isJitCall, false);
-  } else {
-    Label zeroArgs, done;
-    masm.branchTest32(Assembler::Zero, argcReg, argcReg, &zeroArgs);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    masm.sub32(Imm32(1), argcReg);
-
-    pushStandardArgumentsForFunCall(argcReg, scratch, scratch2, argcFixed,
-                                    isJitCall, false);
-
-    masm.jump(&done);
-    masm.bind(&zeroArgs);
-
-    
-    
-    
-    
-    
-    
-    
-    
-
-    if (isJitCall) {
-      
-      masm.alignJitStackBasedOnNArgs(0,  false);
-    }
-
-    
-    masm.pushValue(UndefinedValue());
-
-    
-    if (!isJitCall) {
-      masm.Push(TypedOrValueRegister(MIRType::Object, AnyRegister(calleeReg)));
-    }
-
-    masm.bind(&done);
+    return;
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (argcFixed != MaxUnrolledArgCopy) {
+    argcFixed--;
+  }
+  pushStandardArguments(argcReg, scratch, scratch2, argcFixed, isJitCall,
+                        false);
 }
 
 void BaselineCacheIRCompiler::pushFunApplyArgsObj(Register argcReg,
@@ -3512,7 +3422,7 @@ bool BaselineCacheIRCompiler::emitCallNativeShared(
   bool isConstructing = flags.isConstructing();
   bool isSameRealm = flags.isSameRealm();
 
-  if (!updateArgc(flags, argcReg, scratch)) {
+  if (!updateArgc(flags, argcReg, argcFixed, scratch)) {
     return false;
   }
 
@@ -3868,7 +3778,7 @@ bool BaselineCacheIRCompiler::emitCallScriptedFunction(ObjOperandId calleeId,
   bool isConstructing = flags.isConstructing();
   bool isSameRealm = flags.isSameRealm();
 
-  if (!updateArgc(flags, argcReg, scratch)) {
+  if (!updateArgc(flags, argcReg, argcFixed, scratch)) {
     return false;
   }
 
@@ -3960,7 +3870,7 @@ bool BaselineCacheIRCompiler::emitCallInlinedFunction(ObjOperandId calleeId,
 
   masm.loadBaselineJitCodeRaw(calleeReg, codeReg, failure->label());
 
-  if (!updateArgc(flags, argcReg, scratch)) {
+  if (!updateArgc(flags, argcReg, argcFixed, scratch)) {
     return false;
   }
 
