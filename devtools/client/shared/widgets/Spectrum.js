@@ -11,12 +11,6 @@ const {
 
 loader.lazyRequireGetter(
   this,
-  "colorUtils",
-  "resource://devtools/shared/css/color.js",
-  true
-);
-loader.lazyRequireGetter(
-  this,
   ["getTextProperties", "getContrastRatioAgainstBackground"],
   "resource://devtools/shared/accessibility.js",
   true
@@ -405,7 +399,7 @@ class Spectrum {
     
     
     
-    const colorLuminance = colorUtils.calculateLuminance(this.rgb);
+    const colorLuminance = InspectorUtils.relativeLuminance(...this.rgbFloat);
     this.colorPreview.classList.toggle("high-luminance", colorLuminance > 0.85);
 
     

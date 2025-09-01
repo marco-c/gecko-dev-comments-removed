@@ -623,24 +623,6 @@ function hexToRGBA(name, highResolution) {
 
 
 
-function calculateLuminance(rgba) {
-  for (let i = 0; i < 3; i++) {
-    rgba[i] /= 255;
-    rgba[i] =
-      rgba[i] < 0.03928
-        ? rgba[i] / 12.92
-        : Math.pow((rgba[i] + 0.055) / 1.055, 2.4);
-  }
-  return 0.2126 * rgba[0] + 0.7152 * rgba[1] + 0.0722 * rgba[2];
-}
-
-
-
-
-
-
-
-
 
 
 
@@ -669,6 +651,8 @@ function blendColors(foregroundColor, backgroundColor = [255, 255, 255, 1]) {
 
 
 
+
+
 function calculateContrastRatio(backgroundColor, textColor) {
   
   backgroundColor = Array.from(backgroundColor);
@@ -677,8 +661,12 @@ function calculateContrastRatio(backgroundColor, textColor) {
   backgroundColor = blendColors(backgroundColor);
   textColor = blendColors(textColor, backgroundColor);
 
-  const backgroundLuminance = calculateLuminance(backgroundColor);
-  const textLuminance = calculateLuminance(textColor);
+  const backgroundLuminance = InspectorUtils.relativeLuminance(
+    ...backgroundColor.map(c => c / 255)
+  );
+  const textLuminance = InspectorUtils.relativeLuminance(
+    ...textColor.map(c => c / 255)
+  );
   const ratio = (textLuminance + 0.05) / (backgroundLuminance + 0.05);
 
   return ratio > 1.0 ? ratio : 1 / ratio;
@@ -697,7 +685,6 @@ module.exports.colorUtils = {
   rgbToHwb,
   classifyColor,
   calculateContrastRatio,
-  calculateLuminance,
   blendColors,
   colorIsUppercase,
 };
