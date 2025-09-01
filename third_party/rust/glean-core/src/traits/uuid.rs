@@ -2,13 +2,13 @@
 
 
 
-use crate::{ErrorType, TestGetValue};
+use crate::ErrorType;
 
 
 
 
 
-pub trait Uuid: TestGetValue<uuid::Uuid> {
+pub trait Uuid {
     
     
     
@@ -18,6 +18,18 @@ pub trait Uuid: TestGetValue<uuid::Uuid> {
 
     
     fn generate_and_set(&self) -> uuid::Uuid;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<uuid::Uuid>;
 
     
     

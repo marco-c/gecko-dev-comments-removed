@@ -94,6 +94,27 @@ impl Counter for DualLabeledCounterSubMetric {
     
     
     
+    pub fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<i32> {
+        match self {
+            DualLabeledCounterSubMetric::Parent(p) => p.test_get_value(ping_name),
+            DualLabeledCounterSubMetric::Child { id, .. } => {
+                panic!("Cannot get test value for {:?} in non-parent process!", id)
+            }
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     pub fn test_get_num_recorded_errors(&self, error: glean::ErrorType) -> i32 {
         match self {
@@ -102,30 +123,6 @@ impl Counter for DualLabeledCounterSubMetric {
                 "Cannot get the number of recorded errors for {:?} in non-parent process!",
                 id
             ),
-        }
-    }
-}
-
-#[inherent]
-impl glean::TestGetValue<i32> for DualLabeledCounterSubMetric {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<i32> {
-        match self {
-            DualLabeledCounterSubMetric::Parent(p) => p.test_get_value(ping_name),
-            DualLabeledCounterSubMetric::Child { id, .. } => {
-                panic!("Cannot get test value for {:?} in non-parent process!", id)
-            }
         }
     }
 }
@@ -158,7 +155,7 @@ mod test {
             1,
             metric
                 .get("a_key", "a_category")
-                .test_get_value(Some("test-ping".to_string()))
+                .test_get_value("test-ping")
                 .unwrap()
         );
     }
@@ -228,7 +225,7 @@ mod test {
             45,
             parent_metric
                 .get(key, category)
-                .test_get_value(Some("test-ping".to_string()))
+                .test_get_value("test-ping")
                 .unwrap(),
             "Values from the 'processes' should be summed"
         );

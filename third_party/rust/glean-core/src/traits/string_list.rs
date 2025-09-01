@@ -2,13 +2,13 @@
 
 
 
-use crate::{ErrorType, TestGetValue};
+use crate::ErrorType;
 
 
 
 
 
-pub trait StringList: TestGetValue<Vec<String>> {
+pub trait StringList {
     
     
     
@@ -32,6 +32,18 @@ pub trait StringList: TestGetValue<Vec<String>> {
     
     
     fn set(&self, value: Vec<String>);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<Vec<String>>;
 
     
     

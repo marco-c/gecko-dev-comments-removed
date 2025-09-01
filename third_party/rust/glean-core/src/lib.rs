@@ -21,6 +21,7 @@ use std::collections::HashMap;
 use std::fmt;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
+use std::thread;
 use std::time::Duration;
 
 use crossbeam_channel::unbounded;
@@ -50,8 +51,6 @@ pub mod ping;
 mod scheduler;
 pub mod storage;
 mod system;
-#[doc(hidden)]
-pub mod thread;
 pub mod traits;
 pub mod upload;
 mod util;
@@ -76,8 +75,7 @@ pub use crate::metrics::{
     LocalCustomDistribution, LocalMemoryDistribution, LocalTimingDistribution,
     MemoryDistributionMetric, MemoryUnit, NumeratorMetric, ObjectMetric, PingType, QuantityMetric,
     Rate, RateMetric, RecordedEvent, RecordedExperiment, StringListMetric, StringMetric,
-    TestGetValue, TextMetric, TimeUnit, TimerId, TimespanMetric, TimingDistributionMetric,
-    UrlMetric, UuidMetric,
+    TextMetric, TimeUnit, TimerId, TimespanMetric, TimingDistributionMetric, UrlMetric, UuidMetric,
 };
 pub use crate::upload::{PingRequest, PingUploadTask, UploadResult, UploadTaskAction};
 
@@ -385,182 +383,185 @@ fn initialize_inner(
         return;
     }
 
-    let init_handle = thread::spawn("glean.init", move || {
-        let upload_enabled = cfg.upload_enabled;
-        let trim_data_to_registered_pings = cfg.trim_data_to_registered_pings;
+    let init_handle = std::thread::Builder::new()
+        .name("glean.init".into())
+        .spawn(move || {
+            let upload_enabled = cfg.upload_enabled;
+            let trim_data_to_registered_pings = cfg.trim_data_to_registered_pings;
 
-        
-        if let Some(level) = cfg.log_level {
-            log::set_max_level(level)
-        }
+            
+            if let Some(level) = cfg.log_level {
+                log::set_max_level(level)
+            }
 
-        let glean = match Glean::new(cfg) {
-            Ok(glean) => glean,
-            Err(err) => {
-                log::error!("Failed to initialize Glean: {}", err);
+            let glean = match Glean::new(cfg) {
+                Ok(glean) => glean,
+                Err(err) => {
+                    log::error!("Failed to initialize Glean: {}", err);
+                    return;
+                }
+            };
+            if core::setup_glean(glean).is_err() {
                 return;
             }
-        };
-        if core::setup_glean(glean).is_err() {
-            return;
-        }
 
-        log::info!("Glean initialized");
+            log::info!("Glean initialized");
 
-        setup_state(State {
-            client_info,
-            callbacks,
-        });
+            setup_state(State {
+                client_info,
+                callbacks,
+            });
 
-        let mut is_first_run = false;
-        let mut dirty_flag = false;
-        let mut pings_submitted = false;
-        core::with_glean_mut(|glean| {
-            
-            
-            let debug_tag = PRE_INIT_DEBUG_VIEW_TAG.lock().unwrap();
-            if !debug_tag.is_empty() {
-                glean.set_debug_view_tag(&debug_tag);
-            }
+            let mut is_first_run = false;
+            let mut dirty_flag = false;
+            let mut pings_submitted = false;
+            core::with_glean_mut(|glean| {
+                
+                
+                let debug_tag = PRE_INIT_DEBUG_VIEW_TAG.lock().unwrap();
+                if !debug_tag.is_empty() {
+                    glean.set_debug_view_tag(&debug_tag);
+                }
 
-            
-            
-            let log_pigs = PRE_INIT_LOG_PINGS.load(Ordering::SeqCst);
-            if log_pigs {
-                glean.set_log_pings(log_pigs);
-            }
+                
+                
+                let log_pigs = PRE_INIT_LOG_PINGS.load(Ordering::SeqCst);
+                if log_pigs {
+                    glean.set_log_pings(log_pigs);
+                }
 
-            
-            
-            let source_tags = PRE_INIT_SOURCE_TAGS.lock().unwrap();
-            if !source_tags.is_empty() {
-                glean.set_source_tags(source_tags.to_vec());
-            }
+                
+                
+                let source_tags = PRE_INIT_SOURCE_TAGS.lock().unwrap();
+                if !source_tags.is_empty() {
+                    glean.set_source_tags(source_tags.to_vec());
+                }
 
-            
-            
-            
-            
-            dirty_flag = glean.is_dirty_flag_set();
-            glean.set_dirty_flag(false);
+                
+                
+                
+                
+                dirty_flag = glean.is_dirty_flag_set();
+                glean.set_dirty_flag(false);
 
-            
-            
-            let pings = PRE_INIT_PING_REGISTRATION.lock().unwrap();
-            for ping in pings.iter() {
-                glean.register_ping_type(ping);
-            }
-            let pings = PRE_INIT_PING_ENABLED.lock().unwrap();
-            for (ping, enabled) in pings.iter() {
-                glean.set_ping_enabled(ping, *enabled);
-            }
+                
+                
+                let pings = PRE_INIT_PING_REGISTRATION.lock().unwrap();
+                for ping in pings.iter() {
+                    glean.register_ping_type(ping);
+                }
+                let pings = PRE_INIT_PING_ENABLED.lock().unwrap();
+                for (ping, enabled) in pings.iter() {
+                    glean.set_ping_enabled(ping, *enabled);
+                }
 
-            
-            
-            if let Some(attribution) = PRE_INIT_ATTRIBUTION.lock().unwrap().take() {
-                glean.update_attribution(attribution);
-            }
-            if let Some(distribution) = PRE_INIT_DISTRIBUTION.lock().unwrap().take() {
-                glean.update_distribution(distribution);
-            }
+                
+                
+                if let Some(attribution) = PRE_INIT_ATTRIBUTION.lock().unwrap().take() {
+                    glean.update_attribution(attribution);
+                }
+                if let Some(distribution) = PRE_INIT_DISTRIBUTION.lock().unwrap().take() {
+                    glean.update_distribution(distribution);
+                }
 
-            
-            
-            
-            is_first_run = glean.is_first_run();
-            if is_first_run {
+                
+                
+                
+                is_first_run = glean.is_first_run();
+                if is_first_run {
+                    let state = global_state().lock().unwrap();
+                    initialize_core_metrics(glean, &state.client_info);
+                }
+
+                
+                pings_submitted = glean.on_ready_to_submit_pings(trim_data_to_registered_pings);
+            });
+
+            {
                 let state = global_state().lock().unwrap();
-                initialize_core_metrics(glean, &state.client_info);
-            }
-
-            
-            pings_submitted = glean.on_ready_to_submit_pings(trim_data_to_registered_pings);
-        });
-
-        {
-            let state = global_state().lock().unwrap();
-            
-            
-            
-            if pings_submitted || !upload_enabled {
-                if let Err(e) = state.callbacks.trigger_upload() {
-                    log::error!("Triggering upload failed. Error: {}", e);
-                }
-            }
-        }
-
-        core::with_glean(|glean| {
-            
-            glean.start_metrics_ping_scheduler();
-        });
-
-        
-        
-        
-        
-        
-        
-        
-        {
-            let state = global_state().lock().unwrap();
-
-            
-            
-            
-            if state.callbacks.start_metrics_ping_scheduler() {
-                if let Err(e) = state.callbacks.trigger_upload() {
-                    log::error!("Triggering upload failed. Error: {}", e);
-                }
-            }
-        }
-
-        core::with_glean_mut(|glean| {
-            let state = global_state().lock().unwrap();
-
-            
-            
-            
-            if !is_first_run && dirty_flag {
                 
                 
                 
-                
-                
-                if glean.submit_ping_by_name("baseline", Some("dirty_startup")) {
+                if pings_submitted || !upload_enabled {
                     if let Err(e) = state.callbacks.trigger_upload() {
                         log::error!("Triggering upload failed. Error: {}", e);
                     }
                 }
             }
 
-            
-            
-            
-            if !is_first_run {
-                glean.clear_application_lifetime_metrics();
-                initialize_core_metrics(glean, &state.client_info);
-            }
-        });
+            core::with_glean(|glean| {
+                
+                glean.start_metrics_ping_scheduler();
+            });
 
-        
-        
-        
-        
-        
-        match dispatcher::flush_init() {
-            Ok(task_count) if task_count > 0 => {
-                core::with_glean(|glean| {
-                    glean_metrics::error::preinit_tasks_overflow.add_sync(glean, task_count as i32);
-                });
-            }
-            Ok(_) => {}
-            Err(err) => log::error!("Unable to flush the preinit queue: {}", err),
-        }
+            
+            
+            
+            
+            
+            
+            
+            {
+                let state = global_state().lock().unwrap();
 
-        let state = global_state().lock().unwrap();
-        state.callbacks.initialize_finished();
-    })
-    .expect("Failed to spawn Glean's init thread");
+                
+                
+                
+                if state.callbacks.start_metrics_ping_scheduler() {
+                    if let Err(e) = state.callbacks.trigger_upload() {
+                        log::error!("Triggering upload failed. Error: {}", e);
+                    }
+                }
+            }
+
+            core::with_glean_mut(|glean| {
+                let state = global_state().lock().unwrap();
+
+                
+                
+                
+                if !is_first_run && dirty_flag {
+                    
+                    
+                    
+                    
+                    
+                    if glean.submit_ping_by_name("baseline", Some("dirty_startup")) {
+                        if let Err(e) = state.callbacks.trigger_upload() {
+                            log::error!("Triggering upload failed. Error: {}", e);
+                        }
+                    }
+                }
+
+                
+                
+                
+                if !is_first_run {
+                    glean.clear_application_lifetime_metrics();
+                    initialize_core_metrics(glean, &state.client_info);
+                }
+            });
+
+            
+            
+            
+            
+            
+            match dispatcher::flush_init() {
+                Ok(task_count) if task_count > 0 => {
+                    core::with_glean(|glean| {
+                        glean_metrics::error::preinit_tasks_overflow
+                            .add_sync(glean, task_count as i32);
+                    });
+                }
+                Ok(_) => {}
+                Err(err) => log::error!("Unable to flush the preinit queue: {}", err),
+            }
+
+            let state = global_state().lock().unwrap();
+            state.callbacks.initialize_finished();
+        })
+        .expect("Failed to spawn Glean's init thread");
 
     
     INIT_HANDLES.lock().unwrap().push(init_handle);
@@ -574,14 +575,6 @@ fn initialize_inner(
     if dispatcher::global::is_test_mode() {
         join_init();
     }
-}
-
-
-
-
-pub fn alloc_size(ops: &mut malloc_size_of::MallocSizeOfOps) -> usize {
-    use malloc_size_of::MallocSizeOf;
-    core::with_glean(|glean| glean.size_of(ops))
 }
 
 
@@ -604,16 +597,18 @@ fn uploader_shutdown() {
     let timer_id = core::with_glean(|glean| glean.additional_metrics.shutdown_wait.start_sync());
     let (tx, rx) = unbounded();
 
-    let handle = thread::spawn("glean.shutdown", move || {
-        let state = global_state().lock().unwrap();
-        if let Err(e) = state.callbacks.shutdown() {
-            log::error!("Shutdown callback failed: {e:?}");
-        }
+    let handle = thread::Builder::new()
+        .name("glean.shutdown".to_string())
+        .spawn(move || {
+            let state = global_state().lock().unwrap();
+            if let Err(e) = state.callbacks.shutdown() {
+                log::error!("Shutdown callback failed: {e:?}");
+            }
 
-        
-        let _ = tx.send(()).ok();
-    })
-    .expect("Unable to spawn thread to wait on shutdown");
+            
+            let _ = tx.send(()).ok();
+        })
+        .expect("Unable to spawn thread to wait on shutdown");
 
     
     

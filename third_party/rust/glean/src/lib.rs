@@ -36,8 +36,8 @@ pub use configuration::{Builder as ConfigurationBuilder, Configuration};
 pub use core_metrics::ClientInfoMetrics;
 pub use glean_core::{
     metrics::{
-        Datetime, DistributionData, MemoryUnit, MetricIdentifier, Rate, RecordedEvent,
-        TestGetValue, TimeUnit, TimerId,
+        Datetime, DistributionData, MemoryUnit, MetricIdentifier, Rate, RecordedEvent, TimeUnit,
+        TimerId,
     },
     traits, AttributionMetrics, CommonMetricData, DistributionMetrics, Error, ErrorType, Glean,
     HistogramType, LabeledMetricData, Lifetime, PingRateLimit, RecordedExperiment, Result,
@@ -380,13 +380,6 @@ pub fn update_distribution(distribution: DistributionMetrics) {
 
 pub fn test_get_distribution() -> DistributionMetrics {
     glean_core::glean_test_get_distribution()
-}
-
-
-
-
-pub fn alloc_size(ops: &mut malloc_size_of::MallocSizeOfOps) -> usize {
-    glean_core::alloc_size(ops)
 }
 
 #[cfg(test)]

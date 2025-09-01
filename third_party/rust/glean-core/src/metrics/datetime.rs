@@ -12,8 +12,8 @@ use crate::metrics::Metric;
 use crate::metrics::MetricType;
 use crate::storage::StorageManager;
 use crate::util::{get_iso_time_string, local_now_with_offset};
+use crate::CommonMetricData;
 use crate::Glean;
-use crate::{CommonMetricData, TestGetValue};
 
 use chrono::{DateTime, Datelike, FixedOffset, NaiveTime, TimeZone, Timelike};
 use malloc_size_of_derive::MallocSizeOf;
@@ -243,6 +243,28 @@ impl DatetimeMetric {
     
     
     
+    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<Datetime> {
+        crate::block_on_dispatcher();
+        crate::core::with_glean(|glean| {
+            let dt = self.get_value(glean, ping_name.as_deref());
+            dt.map(Datetime::from)
+        })
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn test_get_value_as_string(&self, ping_name: Option<String>) -> Option<String> {
         crate::block_on_dispatcher();
         crate::core::with_glean(|glean| self.get_value_as_string(glean, ping_name))
@@ -273,30 +295,6 @@ impl DatetimeMetric {
 
         crate::core::with_glean(|glean| {
             test_get_num_recorded_errors(glean, self.meta(), error).unwrap_or(0)
-        })
-    }
-}
-
-impl TestGetValue<Datetime> for DatetimeMetric {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn test_get_value(&self, ping_name: Option<String>) -> Option<Datetime> {
-        crate::block_on_dispatcher();
-        crate::core::with_glean(|glean| {
-            let dt = self.get_value(glean, ping_name.as_deref());
-            dt.map(Datetime::from)
         })
     }
 }

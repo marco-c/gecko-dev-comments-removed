@@ -2,13 +2,13 @@
 
 
 
-use crate::{ErrorType, TestGetValue};
+use crate::ErrorType;
 
 
 
 
 
-pub trait Counter: TestGetValue<i32> {
+pub trait Counter {
     
     
     
@@ -19,6 +19,18 @@ pub trait Counter: TestGetValue<i32> {
     
     
     fn add(&self, amount: i32);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<i32>;
 
     
     
