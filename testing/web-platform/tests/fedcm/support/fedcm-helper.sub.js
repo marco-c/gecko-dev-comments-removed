@@ -143,6 +143,14 @@ export function fedcm_test(test_func, test_name) {
     } catch (e) {
       
     }
+
+    
+    try {
+      await test_driver.reset_fedcm_cooldown();
+    } catch (e) {
+      
+    }
+
     t.add_cleanup(async () => {
       
       
