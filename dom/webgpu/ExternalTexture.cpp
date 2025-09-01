@@ -32,17 +32,14 @@
 
 namespace mozilla::webgpu {
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_WEAK_PTR(ExternalTexture, mParent)
+GPU_IMPL_CYCLE_COLLECTION(ExternalTexture, mParent)
 GPU_IMPL_JS_WRAP(ExternalTexture)
 
 ExternalTexture::ExternalTexture(Device* const aParent, RawId aId,
                                  RefPtr<ExternalTextureSourceClient> aSource)
-    : ObjectBase(aParent->GetChild(), aId,
-                 ffi::wgpu_client_drop_external_texture),
-      ChildOf(aParent),
-      mSource(aSource) {}
-
-ExternalTexture::~ExternalTexture() = default;
+    : ChildOf(aParent), mId(aId), mSource(aSource) {
+  MOZ_RELEASE_ASSERT(aId);
+}
 
  already_AddRefed<ExternalTexture> ExternalTexture::Create(
     Device* const aParent, const nsString& aLabel,
@@ -53,12 +50,12 @@ ExternalTexture::~ExternalTexture() = default;
       ConvertPredefinedColorSpace(aColorSpace);
   const ffi::WGPUExternalTextureDescriptor desc = {
       .label = label.Get(),
-      .source = aSource ? aSource->GetId() : 0,
+      .source = aSource ? aSource->mId : 0,
       .color_space = colorSpace,
   };
 
   const RawId id = ffi::wgpu_client_create_external_texture(
-      aParent->GetClient(), aParent->GetId(), &desc);
+      aParent->GetBridge()->GetClient(), aParent->mId, &desc);
 
   RefPtr<ExternalTexture> externalTexture =
       new ExternalTexture(aParent, id, aSource);
@@ -98,9 +95,29 @@ void ExternalTexture::MaybeDestroy() {
     
     
     
-    ffi::wgpu_client_destroy_external_texture(GetClient(), GetId());
+    if (auto bridge = mParent->GetBridge()) {
+      ffi::wgpu_client_destroy_external_texture(bridge->GetClient(), mId);
+    }
   }
 }
+
+void ExternalTexture::Cleanup() {
+  if (!mValid) {
+    return;
+  }
+  mValid = false;
+
+  mSource = nullptr;
+
+  auto bridge = mParent->GetBridge();
+  if (!bridge) {
+    return;
+  }
+
+  ffi::wgpu_client_drop_external_texture(bridge->GetClient(), mId);
+}
+
+ExternalTexture::~ExternalTexture() { Cleanup(); }
 
 RefPtr<ExternalTexture> ExternalTextureCache::GetOrCreate(
     Device* aDevice, const dom::GPUExternalTextureDescriptor& aDesc,
@@ -160,14 +177,15 @@ void ExternalTextureCache::RemoveSource(
 }
 
 ExternalTextureSourceClient::ExternalTextureSourceClient(
-    WebGPUChild* aChild, RawId aId, ExternalTextureCache* aCache,
+    WebGPUChild* aBridge, RawId aId, ExternalTextureCache* aCache,
     const RefPtr<layers::Image>& aImage,
     const std::array<RawId, 3>& aTextureIds,
     const std::array<RawId, 3>& aViewIds)
-    : ObjectBase(aChild, aId, ffi::wgpu_client_drop_external_texture_source),
+    : mId(aId),
       mImage(aImage),
       mTextureIds(std::move(aTextureIds)),
       mViewIds(std::move(aViewIds)),
+      mBridge(aBridge),
       mCache(aCache) {
   MOZ_RELEASE_ASSERT(aId);
 }
@@ -177,21 +195,25 @@ ExternalTextureSourceClient::~ExternalTextureSourceClient() {
     mCache->RemoveSource(this);
   }
 
+  if (!mBridge) {
+    return;
+  }
   
   
   
   
-  ffi::wgpu_client_destroy_external_texture_source(GetClient(), GetId());
+  ffi::wgpu_client_destroy_external_texture_source(mBridge->GetClient(), mId);
+  ffi::wgpu_client_drop_external_texture_source(mBridge->GetClient(), mId);
   
   
   
   
   
   for (const auto id : mViewIds) {
-    wgpu_client_free_texture_view_id(GetClient(), id);
+    wgpu_client_free_texture_view_id(mBridge->GetClient(), id);
   }
   for (const auto id : mTextureIds) {
-    wgpu_client_free_texture_id(GetClient(), id);
+    wgpu_client_free_texture_id(mBridge->GetClient(), id);
   }
 }
 
@@ -238,7 +260,7 @@ ExternalTextureSourceClient::Create(
     return nullptr;
   }
 
-  const auto child = aDevice->GetChild();
+  const auto bridge = aDevice->GetBridge();
 
   
   
@@ -247,7 +269,7 @@ ExternalTextureSourceClient::Create(
   
   const RefPtr<layers::Image> image = sfeResult.mLayersImage;
   if (!image) {
-    ffi::wgpu_report_validation_error(child->GetClient(), aDevice->GetId(),
+    ffi::wgpu_report_validation_error(bridge->GetClient(), aDevice->mId,
                                       "Video source's usability is bad");
     return nullptr;
   }
@@ -257,35 +279,35 @@ ExternalTextureSourceClient::Create(
       sd, layers::Image::BuildSdbFlags::Default, Nothing(),
       [&](uint32_t aBufferSize) {
         ipc::Shmem buffer;
-        if (!child->AllocShmem(aBufferSize, &buffer)) {
+        if (!bridge->AllocShmem(aBufferSize, &buffer)) {
           return layers::MemoryOrShmem();
         }
         return layers::MemoryOrShmem(std::move(buffer));
       },
       [&](layers::MemoryOrShmem&& aBuffer) {
-        child->DeallocShmem(aBuffer.get_Shmem());
+        bridge->DeallocShmem(aBuffer.get_Shmem());
       });
   if (NS_FAILED(rv)) {
     gfxCriticalErrorOnce() << "BuildSurfaceDescriptorGPUVideoOrBuffer failed";
     ffi::wgpu_report_internal_error(
-        child->GetClient(), aDevice->GetId(),
+        bridge->GetClient(), aDevice->mId,
         "BuildSurfaceDescriptorGPUVideoOrBuffer failed");
     return nullptr;
   }
 
   const auto sourceId =
-      ffi::wgpu_client_make_external_texture_source_id(child->GetClient());
+      ffi::wgpu_client_make_external_texture_source_id(bridge->GetClient());
   
   
   const std::array<RawId, 3> textureIds{
-      ffi::wgpu_client_make_texture_id(child->GetClient()),
-      ffi::wgpu_client_make_texture_id(child->GetClient()),
-      ffi::wgpu_client_make_texture_id(child->GetClient()),
+      ffi::wgpu_client_make_texture_id(bridge->GetClient()),
+      ffi::wgpu_client_make_texture_id(bridge->GetClient()),
+      ffi::wgpu_client_make_texture_id(bridge->GetClient()),
   };
   const std::array<RawId, 3> viewIds{
-      ffi::wgpu_client_make_texture_view_id(child->GetClient()),
-      ffi::wgpu_client_make_texture_view_id(child->GetClient()),
-      ffi::wgpu_client_make_texture_view_id(child->GetClient()),
+      ffi::wgpu_client_make_texture_view_id(bridge->GetClient()),
+      ffi::wgpu_client_make_texture_view_id(bridge->GetClient()),
+      ffi::wgpu_client_make_texture_view_id(bridge->GetClient()),
   };
 
   
@@ -367,12 +389,13 @@ ExternalTextureSourceClient::Create(
   
   
   
-  child->FlushQueuedMessages();
-  child->SendCreateExternalTextureSource(
-      aDevice->GetId(), aDevice->GetQueue()->GetId(), sourceId, sourceDesc);
+  bridge->FlushQueuedMessages();
+  bridge->SendCreateExternalTextureSource(
+      aDevice->mId, aDevice->GetQueue()->mId, sourceId, sourceDesc);
 
   RefPtr<ExternalTextureSourceClient> source = new ExternalTextureSourceClient(
-      child, sourceId, aCache, image, textureIds, viewIds);
+      aDevice->GetBridge().get(), sourceId, aCache, image, textureIds, viewIds);
+
   return source.forget();
 }
 

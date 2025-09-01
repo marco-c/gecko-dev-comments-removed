@@ -58,10 +58,9 @@ class WebGPUParent;
 
 
 
-class ExternalTexture final : public nsWrapperCache,
-                              public ObjectBase,
-                              public ChildOf<Device>,
-                              public SupportsWeakPtr {
+class ExternalTexture : public ObjectBase,
+                        public ChildOf<Device>,
+                        public SupportsWeakPtr {
  public:
   GPU_DECL_CYCLE_COLLECTION(ExternalTexture)
   GPU_DECL_JS_WRAP(ExternalTexture)
@@ -86,10 +85,13 @@ class ExternalTexture final : public nsWrapperCache,
 
   RefPtr<ExternalTextureSourceClient> Source() { return mSource; }
 
+  const RawId mId;
+
  private:
   explicit ExternalTexture(Device* const aParent, RawId aId,
                            RefPtr<ExternalTextureSourceClient> aSource);
   virtual ~ExternalTexture();
+  void Cleanup();
 
   
   
@@ -151,7 +153,7 @@ class ExternalTextureCache : public SupportsWeakPtr {
 
 
 
-class ExternalTextureSourceClient final : public ObjectBase {
+class ExternalTextureSourceClient {
   NS_INLINE_DECL_REFCOUNTING(ExternalTextureSourceClient)
 
  public:
@@ -161,6 +163,8 @@ class ExternalTextureSourceClient final : public ObjectBase {
   static already_AddRefed<ExternalTextureSourceClient> Create(
       Device* aDevice, ExternalTextureCache* aCache,
       const dom::OwningHTMLVideoElementOrVideoFrame& aSource, ErrorResult& aRv);
+
+  const RawId mId;
 
   
   
@@ -186,12 +190,16 @@ class ExternalTextureSourceClient final : public ObjectBase {
       Device* aDevice, const dom::GPUExternalTextureDescriptor& aDesc);
 
  private:
-  ExternalTextureSourceClient(WebGPUChild* aChild, RawId aId,
+  ExternalTextureSourceClient(WebGPUChild* aBridge, RawId aId,
                               ExternalTextureCache* aCache,
                               const RefPtr<layers::Image>& aImage,
                               const std::array<RawId, 3>& aTextureIds,
                               const std::array<RawId, 3>& aViewIds);
-  virtual ~ExternalTextureSourceClient();
+  ~ExternalTextureSourceClient();
+
+  
+  
+  const WeakPtr<WebGPUChild> mBridge;
 
   
   
