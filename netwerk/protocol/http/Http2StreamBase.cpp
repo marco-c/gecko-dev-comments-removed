@@ -528,8 +528,6 @@ nsresult Http2StreamBase::GenerateOpen() {
     outputOffset += frameLen;
   }
 
-  glean::spdy::syn_size.Accumulate(compressedData.Length());
-
   mFlatHttpRequestHeaders.Truncate();
 
   return NS_OK;
@@ -835,12 +833,6 @@ nsresult Http2StreamBase::ConvertResponseHeaders(
     
     RefPtr<Http2Session> session = Session();
     session->Received421(ConnectionInfo());
-  }
-
-  if (aHeadersIn.Length() && aHeadersOut.Length()) {
-    glean::spdy::syn_reply_size.Accumulate(aHeadersIn.Length());
-    uint32_t ratio = aHeadersIn.Length() * 100 / aHeadersOut.Length();
-    glean::spdy::syn_reply_ratio.AccumulateSingleSample(ratio);
   }
 
   
