@@ -669,6 +669,14 @@ interface nsILoadInfo : nsISupports
     NoStoragePermission = 0,
     HasStoragePermission = 1,
     StoragePermissionAllowListed = 2,
+    
+    
+    
+    DisabledStoragePermission = 3,
+    
+    
+    
+    InactiveStoragePermission = 4,
   };
 
 
