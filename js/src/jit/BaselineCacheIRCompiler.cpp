@@ -2975,39 +2975,22 @@ bool BaselineCacheIRCompiler::updateArgc(CallFlags flags, Register argcReg,
   return true;
 }
 
-
-static bool NeedsRectifier(CallFlags flags) {
-  switch (flags.getArgFormat()) {
-    case CallFlags::Standard:
-    case CallFlags::Spread:
-    case CallFlags::FunApplyArray:
-    case CallFlags::FunApplyNullUndefined:
-    case CallFlags::FunApplyArgsObj:
-    case CallFlags::FunCall:
-      return false;
-    default:
-      return true;
-  }
-}
-
 void BaselineCacheIRCompiler::pushArguments(Register argcReg,
                                             Register calleeReg,
                                             Register scratch, Register scratch2,
                                             CallFlags flags, uint32_t argcFixed,
                                             bool isJitCall) {
-  if (!NeedsRectifier(flags)) {
-      if (isJitCall) {
-        
-        
-        
-        
-        prepareForArguments(argcReg, calleeReg, scratch, scratch2, flags,
-                            argcFixed);
-      } else if (flags.isConstructing()) {
-        
-        
-        pushNewTarget();
-      }
+  if (isJitCall) {
+    
+    
+    
+    
+    prepareForArguments(argcReg, calleeReg, scratch, scratch2, flags,
+                        argcFixed);
+  } else if (flags.isConstructing()) {
+    
+    
+    pushNewTarget();
   }
 
   switch (flags.getArgFormat()) {
@@ -3809,20 +3792,6 @@ bool BaselineCacheIRCompiler::emitCallScriptedFunction(ObjOperandId calleeId,
   masm.PushCalleeToken(calleeReg, isConstructing);
   masm.PushFrameDescriptorForJitCall(FrameType::BaselineStub, argcReg, scratch);
 
-  if (NeedsRectifier(flags)) {
-    
-    Label noUnderflow;
-    masm.loadFunctionArgCount(calleeReg, calleeReg);
-    masm.branch32(Assembler::AboveOrEqual, argcReg, calleeReg, &noUnderflow);
-    {
-      
-      TrampolinePtr argumentsRectifier =
-          cx_->runtime()->jitRuntime()->getArgumentsRectifier();
-      masm.movePtr(argumentsRectifier, code);
-    }
-
-    masm.bind(&noUnderflow);
-  }
   masm.callJit(code);
 
   
@@ -3916,21 +3885,6 @@ bool BaselineCacheIRCompiler::emitCallInlinedFunction(ObjOperandId calleeId,
   
   masm.PushCalleeToken(calleeReg, isConstructing);
   masm.PushFrameDescriptorForJitCall(FrameType::BaselineStub, argcReg, scratch);
-
-  if (NeedsRectifier(flags)) {
-    
-    Label noUnderflow;
-    masm.loadFunctionArgCount(calleeReg, calleeReg);
-    masm.branch32(Assembler::AboveOrEqual, argcReg, calleeReg, &noUnderflow);
-
-    
-    ArgumentsRectifierKind kind = ArgumentsRectifierKind::TrialInlining;
-    TrampolinePtr argumentsRectifier =
-        cx_->runtime()->jitRuntime()->getArgumentsRectifier(kind);
-    masm.movePtr(argumentsRectifier, codeReg);
-
-    masm.bind(&noUnderflow);
-  }
 
   masm.callJit(codeReg);
 
