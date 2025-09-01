@@ -3231,7 +3231,7 @@ void RestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags) {
     
     
     
-    presContext->UpdateContainerQueryStyles();
+    presContext->UpdateContainerQueryStylesAndAnchorPosLayout();
     presContext->FinishedContainerQueryUpdate();
   }
 
@@ -3342,7 +3342,7 @@ void RestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags) {
     presContext->PresShell()->MergeAnchorPosAnchorChanges();
 
     mInStyleRefresh = false;
-    presContext->UpdateContainerQueryStyles();
+    presContext->UpdateContainerQueryStylesAndAnchorPosLayout();
     mInStyleRefresh = true;
   }
 
