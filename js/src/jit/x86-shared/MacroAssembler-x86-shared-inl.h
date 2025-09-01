@@ -344,38 +344,6 @@ void MacroAssembler::sqrtDouble(FloatRegister src, FloatRegister dest) {
   vsqrtsd(src, dest, dest);
 }
 
-void MacroAssembler::min32(Register lhs, Register rhs, Register dest) {
-  minMax32(lhs, rhs, dest,  false);
-}
-
-void MacroAssembler::min32(Register lhs, Imm32 rhs, Register dest) {
-  minMax32(lhs, rhs, dest,  false);
-}
-
-void MacroAssembler::max32(Register lhs, Register rhs, Register dest) {
-  minMax32(lhs, rhs, dest,  true);
-}
-
-void MacroAssembler::max32(Register lhs, Imm32 rhs, Register dest) {
-  minMax32(lhs, rhs, dest,  true);
-}
-
-void MacroAssembler::minPtr(Register lhs, Register rhs, Register dest) {
-  minMaxPtr(lhs, rhs, dest,  false);
-}
-
-void MacroAssembler::minPtr(Register lhs, ImmWord rhs, Register dest) {
-  minMaxPtr(lhs, rhs, dest,  false);
-}
-
-void MacroAssembler::maxPtr(Register lhs, Register rhs, Register dest) {
-  minMaxPtr(lhs, rhs, dest,  true);
-}
-
-void MacroAssembler::maxPtr(Register lhs, ImmWord rhs, Register dest) {
-  minMaxPtr(lhs, rhs, dest,  true);
-}
-
 void MacroAssembler::minFloat32(FloatRegister other, FloatRegister srcDest,
                                 bool handleNaN) {
   minMaxFloat32(srcDest, other, handleNaN, false);
