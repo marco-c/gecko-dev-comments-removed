@@ -781,9 +781,6 @@ extern JS_PUBLIC_API const gc::SharedMemoryMap& GetSharedMemoryUsageForZone(
 
 
 
-
-
-
 extern JS_PUBLIC_API uint64_t GetGCHeapUsage(JSContext* cx);
 
 class JS_PUBLIC_API CompartmentTransplantCallback {
