@@ -7,6 +7,9 @@ const { NimbusTestUtils } = ChromeUtils.importESModule(
 const { PermissionTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/PermissionTestUtils.sys.mjs"
 );
+const { PromptTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/PromptTestUtils.sys.mjs"
+);
 
 ChromeUtils.defineLazyGetter(this, "QuickSuggestTestUtils", () => {
   const { QuickSuggestTestUtils: module } = ChromeUtils.importESModule(
@@ -568,12 +571,63 @@ async function clickCheckboxAndWaitForPrefChange(
 ) {
   let checkbox = doc.getElementById(checkboxId);
   let prefChange = waitForAndAssertPrefState(prefName, expectedValue);
+
   checkbox.click();
+
   await prefChange;
   is(
     checkbox.checked,
     expectedValue,
     `The checkbox #${checkboxId} should be in the expected state after being clicked.`
   );
+  return checkbox;
+}
+
+
+
+
+
+
+
+
+
+
+async function clickCheckboxWithConfirmDialog(
+  doc,
+  checkboxId,
+  prefName,
+  expectedValue,
+  buttonNumClick
+) {
+  let checkbox = doc.getElementById(checkboxId);
+
+  let promptPromise = PromptTestUtils.handleNextPrompt(
+    gBrowser.selectedBrowser,
+    { modalType: Services.prompt.MODAL_TYPE_CONTENT },
+    { buttonNumClick }
+  );
+
+  let prefChangePromise = null;
+  if (buttonNumClick === 1) {
+    
+    
+    
+    prefChangePromise = waitForAndAssertPrefState(prefName, expectedValue);
+  }
+
+  checkbox.click();
+
+  await promptPromise;
+
+  if (prefChangePromise) {
+    await prefChangePromise;
+  }
+
+  is(
+    checkbox.checked,
+    expectedValue,
+    `The checkbox #${checkboxId} should be in the expected state after dialog interaction.`
+  );
+
   return checkbox;
 }
