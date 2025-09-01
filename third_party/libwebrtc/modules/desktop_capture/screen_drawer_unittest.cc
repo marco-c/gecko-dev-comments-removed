@@ -20,8 +20,8 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/random.h"
+#include "rtc_base/thread.h"
 #include "rtc_base/time_utils.h"
-#include "system_wrappers/include/sleep.h"
 #include "test/gtest.h"
 
 #if defined(WEBRTC_POSIX)
@@ -54,7 +54,7 @@ void TestScreenDrawerLock(
       created_->store(true);
       
       while (!ready_.load()) {
-        SleepMs(1);
+        Thread::SleepMs(1);
       }
       
       
@@ -66,7 +66,7 @@ void TestScreenDrawerLock(
       
       
       while (TimeMillis() - current_ms < kLockDurationMs) {
-        SleepMs(kLockDurationMs - (TimeMillis() - current_ms));
+        Thread::SleepMs(kLockDurationMs - (TimeMillis() - current_ms));
       }
     }
 
@@ -84,7 +84,7 @@ void TestScreenDrawerLock(
   
   
   while (!created.load()) {
-    SleepMs(1);
+    Thread::SleepMs(1);
   }
 
   const int64_t start_ms = TimeMillis();
@@ -130,11 +130,11 @@ TEST(ScreenDrawerTest, DISABLED_DrawRectangles) {
                   random.Rand<uint8_t>(), random.Rand<uint8_t>()));
 
     if (i == 50) {
-      SleepMs(10000);
+      Thread::SleepMs(10000);
     }
   }
 
-  SleepMs(10000);
+  Thread::SleepMs(10000);
 }
 
 #if defined(THREAD_SANITIZER)  

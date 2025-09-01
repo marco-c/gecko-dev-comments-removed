@@ -20,8 +20,8 @@
 #include "modules/desktop_capture/win/screen_capture_utils.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/thread.h"
 #include "rtc_base/time_utils.h"
-#include "system_wrappers/include/sleep.h"
 
 namespace webrtc {
 
@@ -531,7 +531,7 @@ bool DxgiDuplicatorController::EnsureFrameCaptured(Context* context,
 
     
     
-    webrtc::SleepMs(ms_per_frame);
+    Thread::SleepMs(ms_per_frame);
   }
   
   

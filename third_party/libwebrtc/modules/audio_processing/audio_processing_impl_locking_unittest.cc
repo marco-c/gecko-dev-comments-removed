@@ -21,7 +21,7 @@
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/random.h"
 #include "rtc_base/synchronization/mutex.h"
-#include "system_wrappers/include/sleep.h"
+#include "rtc_base/thread.h"
 #include "test/gtest.h"
 
 namespace webrtc {
@@ -441,7 +441,7 @@ class AudioProcessingImplLockTest
 
 void SleepRandomMs(int max_sleep, RandomGenerator* rand_gen) {
   int sleeptime = rand_gen->RandInt(0, max_sleep);
-  SleepMs(sleeptime);
+  Thread::SleepMs(sleeptime);
 }
 
 

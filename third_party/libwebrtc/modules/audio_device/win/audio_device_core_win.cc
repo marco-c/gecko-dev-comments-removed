@@ -45,8 +45,8 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/string_utils.h"
+#include "rtc_base/thread.h"
 #include "rtc_base/thread_annotations.h"
-#include "system_wrappers/include/sleep.h"
 
 
 #define EXIT_ON_ERROR(hres) \
@@ -2878,7 +2878,7 @@ DWORD AudioDeviceWindowsCore::DoRenderThread() {
 
   
 
-  SleepMs(static_cast<DWORD>(endpointBufferSizeMS + 0.5));
+  Thread::SleepMs(static_cast<DWORD>(endpointBufferSizeMS + 0.5));
   hr = _ptrClientOut->Stop();
 
 Exit:
