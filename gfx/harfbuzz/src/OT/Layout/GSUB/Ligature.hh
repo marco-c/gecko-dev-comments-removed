@@ -47,7 +47,13 @@ struct Ligature
   template <typename set_t>
   void collect_second (set_t &s) const
   {
-    s.add (component[1]); 
+    if (unlikely (!component.get_length ()))
+    {
+      
+      s = set_t::full ();
+      return;
+    }
+    s.add (component.arrayZ[0]);
   }
 
   bool would_apply (hb_would_apply_context_t *c) const

@@ -1387,6 +1387,11 @@ struct Lookup
       {
         unsigned new_flag = lookupFlag;
         new_flag &= ~LookupFlag::UseMarkFilteringSet;
+        
+        
+        
+        
+        new_flag |= LookupFlag::IgnoreMarks;
         out->lookupFlag = new_flag;
       }
       else
