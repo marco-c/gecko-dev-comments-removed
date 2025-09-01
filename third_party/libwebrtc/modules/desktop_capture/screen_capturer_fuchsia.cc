@@ -387,7 +387,7 @@ void ScreenCapturerFuchsia::SetupBuffers() {
     const zx::vmo& virt_mem =
         buffer_collection_info_.buffers()[buffer_index].vmo();
     virtual_memory_mapped_addrs_[buffer_index] = nullptr;
-    auto status = zx::vmar::root_self()->map(
+    status = zx::vmar::root_self()->map(
         ZX_VM_PERM_READ,  0, virt_mem,
          0, virt_mem_bytes,
         reinterpret_cast<uintptr_t*>(
