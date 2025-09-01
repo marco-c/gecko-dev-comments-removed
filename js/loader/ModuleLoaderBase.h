@@ -104,15 +104,15 @@ class ScriptLoaderInterface : public nsISupports {
       JSContext* cx, ScriptLoadRequest* aRequest, CompileOptions* aOptions,
       MutableHandle<JSScript*> aIntroductionScript) = 0;
 
-  virtual void MaybePrepareModuleForBytecodeEncodingBeforeExecute(
+  virtual void MaybePrepareModuleForCacheBeforeExecute(
       JSContext* aCx, ModuleLoadRequest* aRequest) {}
 
-  virtual nsresult MaybePrepareModuleForBytecodeEncodingAfterExecute(
+  virtual nsresult MaybePrepareModuleForCacheAfterExecute(
       ModuleLoadRequest* aRequest, nsresult aRv) {
     return NS_OK;
   }
 
-  virtual void MaybeTriggerBytecodeEncoding() {}
+  virtual void MaybeUpdateCache() {}
 };
 
 class ModuleMapKey : public PLDHashEntryHdr {

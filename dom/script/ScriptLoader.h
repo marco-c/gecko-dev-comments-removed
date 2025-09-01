@@ -706,26 +706,25 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
   
   
-  void MaybePrepareForBytecodeEncodingBeforeExecute(
-      ScriptLoadRequest* aRequest, JS::Handle<JSScript*> aScript);
+  void MaybePrepareForCacheBeforeExecute(ScriptLoadRequest* aRequest,
+                                         JS::Handle<JSScript*> aScript);
 
   
   
   
   
-  nsresult MaybePrepareForBytecodeEncodingAfterExecute(
-      ScriptLoadRequest* aRequest, nsresult aRv);
+  nsresult MaybePrepareForCacheAfterExecute(ScriptLoadRequest* aRequest,
+                                            nsresult aRv);
 
   
   
-  bool IsAlreadyHandledForBytecodeEncodingPreparation(
-      ScriptLoadRequest* aRequest);
+  bool IsAlreadyHandledForCachePreparation(ScriptLoadRequest* aRequest);
 
-  void MaybePrepareModuleForBytecodeEncodingBeforeExecute(
+  void MaybePrepareModuleForCacheBeforeExecute(
       JSContext* aCx, ModuleLoadRequest* aRequest) override;
 
-  nsresult MaybePrepareModuleForBytecodeEncodingAfterExecute(
-      ModuleLoadRequest* aRequest, nsresult aRv) override;
+  nsresult MaybePrepareModuleForCacheAfterExecute(ModuleLoadRequest* aRequest,
+                                                  nsresult aRv) override;
 
   
   nsresult EvaluateScript(nsIGlobalObject* aGlobalObject,
@@ -737,26 +736,56 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
 
 
-  void RegisterForBytecodeEncoding(ScriptLoadRequest* aRequest);
+
+
+
+
+
+
+
+
+  void RegisterForCache(ScriptLoadRequest* aRequest);
 
   
 
 
 
 
-  void MaybeTriggerBytecodeEncoding() override;
+
+
+  void MaybeUpdateCache() override;
 
   
 
 
 
-  void EncodeBytecode();
-  void EncodeRequestBytecode(JSContext* aCx, ScriptLoadRequest* aRequest);
+
+
+  void UpdateCache();
+
+  
+
+
+
+  void FinishCollectingDelazificationsAndEncodeBytecode(
+      JSContext* aCx, ScriptLoadRequest* aRequest);
+
+  
+
+
 
   void FinishCollectingDelazifications(JSContext* aCx,
                                        ScriptLoadRequest* aRequest);
 
-  void GiveUpBytecodeEncoding();
+  
+
+
+
+
+
+
+
+  void GiveUpCaching();
 
   already_AddRefed<nsIGlobalObject> GetGlobalForRequest(
       ScriptLoadRequest* aRequest);
@@ -843,11 +872,11 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
   
   
-  ScriptLoadRequestList mBytecodeEncodableDependencyModules;
+  ScriptLoadRequestList mCacheableDependencyModules;
 
   
   
-  ScriptLoadRequestList mBytecodeEncodingQueue;
+  ScriptLoadRequestList mCachingQueue;
 
   
   struct PreloadInfo {
@@ -887,7 +916,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   bool mDeferCheckpointReached;
   bool mBlockingDOMContentLoaded;
   bool mLoadEventFired;
-  bool mGiveUpEncoding;
+  bool mGiveUpCaching;
   bool mContinueParsingDocumentAfterCurrentScript;
 
   TimeDuration mMainThreadParseTime;

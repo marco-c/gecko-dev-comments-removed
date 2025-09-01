@@ -89,7 +89,7 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
     return mRootModule;
   }
 
-  void MarkModuleForBytecodeEncoding() { MarkForBytecodeEncoding(); }
+  void MarkModuleForCache() { MarkForCache(); }
 
   
 

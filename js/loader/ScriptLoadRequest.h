@@ -188,38 +188,38 @@ class ScriptLoadRequest : public nsISupports,
 
   void SetPendingFetchingError();
 
-  bool PassedConditionForBytecodeEncoding() const {
-    return mBytecodeEncodingPlan == BytecodeEncodingPlan::PassedCondition ||
-           mBytecodeEncodingPlan == BytecodeEncodingPlan::MarkedForEncode;
+  bool PassedConditionForCache() const {
+    return mCachingPlan == CachingPlan::PassedCondition ||
+           mCachingPlan == CachingPlan::MarkedForCache;
   }
 
-  void MarkSkippedBytecodeEncoding() {
-    MOZ_ASSERT(mBytecodeEncodingPlan == BytecodeEncodingPlan::Uninitialized ||
-               mBytecodeEncodingPlan == BytecodeEncodingPlan::PassedCondition);
-    mBytecodeEncodingPlan = BytecodeEncodingPlan::Skipped;
+  void MarkSkippedCaching() {
+    MOZ_ASSERT(mCachingPlan == CachingPlan::Uninitialized ||
+               mCachingPlan == CachingPlan::PassedCondition);
+    mCachingPlan = CachingPlan::Skipped;
   }
 
-  void MarkPassedConditionForBytecodeEncoding() {
-    MOZ_ASSERT(mBytecodeEncodingPlan == BytecodeEncodingPlan::Uninitialized);
-    mBytecodeEncodingPlan = BytecodeEncodingPlan::PassedCondition;
+  void MarkPassedConditionForCache() {
+    MOZ_ASSERT(mCachingPlan == CachingPlan::Uninitialized);
+    mCachingPlan = CachingPlan::PassedCondition;
   }
 
-  bool IsMarkedForBytecodeEncoding() const {
-    return mBytecodeEncodingPlan == BytecodeEncodingPlan::MarkedForEncode;
+  bool IsMarkedForCache() const {
+    return mCachingPlan == CachingPlan::MarkedForCache;
   }
 
  protected:
-  void MarkForBytecodeEncoding() {
-    MOZ_ASSERT(mBytecodeEncodingPlan == BytecodeEncodingPlan::PassedCondition);
-    mBytecodeEncodingPlan = BytecodeEncodingPlan::MarkedForEncode;
+  void MarkForCache() {
+    MOZ_ASSERT(mCachingPlan == CachingPlan::PassedCondition);
+    mCachingPlan = CachingPlan::MarkedForCache;
   }
 
  public:
-  void MarkScriptForBytecodeEncoding(JSScript* aScript);
+  void MarkScriptForCache(JSScript* aScript);
 
   mozilla::CORSMode CORSMode() const { return mFetchOptions->mCORSMode; }
 
-  void DropBytecodeCacheReferences();
+  void DropCacheReferences();
 
   bool HasLoadContext() const { return mLoadContext; }
   bool HasScriptLoadContext() const;
@@ -250,7 +250,7 @@ class ScriptLoadRequest : public nsISupports,
   State mState;           
   bool mFetchSourceOnly;  
 
-  enum class BytecodeEncodingPlan : uint8_t {
+  enum class CachingPlan : uint8_t {
     
     Uninitialized,
 
@@ -262,10 +262,9 @@ class ScriptLoadRequest : public nsISupports,
 
     
     
-    MarkedForEncode,
+    MarkedForCache,
   };
-  BytecodeEncodingPlan mBytecodeEncodingPlan =
-      BytecodeEncodingPlan::Uninitialized;
+  CachingPlan mCachingPlan = CachingPlan::Uninitialized;
 
   
   
@@ -303,7 +302,7 @@ class ScriptLoadRequest : public nsISupports,
   
   
   
-  Heap<JSScript*> mScriptForBytecodeEncoding;
+  JS::Heap<JSScript*> mScriptForCache;
 
   
   
