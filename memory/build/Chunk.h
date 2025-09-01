@@ -166,7 +166,11 @@ struct arena_chunk_t {
 
   
   
-  size_t mNumDirty = 0;
+  uint16_t mNumDirty = 0;
+
+  
+  
+  uint16_t mDirtyRunHint;
 
   bool mIsPurging = false;
   bool mDying = false;
@@ -174,7 +178,7 @@ struct arena_chunk_t {
   
   arena_chunk_map_t mPageMap[];  
 
-  explicit arena_chunk_t(arena_t* aArena) : mArena(aArena) {}
+  explicit arena_chunk_t(arena_t* aArena);
 
   bool IsEmpty();
 };

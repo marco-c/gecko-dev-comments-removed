@@ -1513,6 +1513,10 @@ bool arena_t::SplitRun(arena_run_t* aRun, size_t aSize, bool aLarge,
     mRunsAvail.Insert(&chunk->mPageMap[run_ind + need_pages]);
   }
 
+  if (chunk->mDirtyRunHint == run_ind) {
+    chunk->mDirtyRunHint = run_ind + need_pages;
+  }
+
   for (size_t i = 0; i < need_pages; i++) {
     
     if (aZero) {
@@ -2084,7 +2088,7 @@ bool arena_t::PurgeInfo::ScanChunkForDirtyPage() {
   
   
   size_t run_pages;
-  for (size_t run_idx = gChunkHeaderNumPages; run_idx < gChunkNumPages;
+  for (size_t run_idx = mChunk->mDirtyRunHint; run_idx < gChunkNumPages;
        run_idx += run_pages) {
     size_t run_bits = mChunk->mPageMap[run_idx].bits;
     
@@ -2126,6 +2130,7 @@ bool arena_t::PurgeInfo::ScanChunkForDirtyPage() {
       if (page_bits & CHUNK_MAP_DIRTY) {
         MOZ_ASSERT((page_bits & CHUNK_MAP_FRESH_MADVISED_OR_DECOMMITTED) == 0);
         mDirtyInd = page_idx;
+        mChunk->mDirtyRunHint = run_idx;
         return true;
       }
     }
@@ -2164,6 +2169,9 @@ std::pair<bool, arena_chunk_t*> arena_t::PurgeInfo::UpdatePagesAndCounts() {
   mArena.mStats.committed -= mDirtyNPages;
   mPurgeStats.pages += mDirtyNPages;
   mPurgeStats.system_calls++;
+
+  
+  
 
   if (mChunk->mDying) {
     
@@ -2285,6 +2293,14 @@ size_t arena_t::TryCoalesce(arena_chunk_t* aChunk, size_t run_ind,
         size | (aChunk->mPageMap[run_ind + run_pages - 1].bits & gPageSizeMask);
   }
 
+  
+  
+  
+  if ((aChunk->mDirtyRunHint > run_ind) &&
+      (aChunk->mDirtyRunHint < run_ind + run_pages)) {
+    aChunk->mDirtyRunHint = run_ind;
+  }
+
   return run_ind;
 }
 
@@ -2329,6 +2345,11 @@ arena_chunk_t* arena_t::DallocRun(arena_run_t* aRun, bool aDirty) {
       size | (chunk->mPageMap[run_ind + run_pages - 1].bits & gPageSizeMask);
 
   run_ind = TryCoalesce(chunk, run_ind, run_pages, size);
+
+  
+  if (aDirty && run_ind < chunk->mDirtyRunHint) {
+    chunk->mDirtyRunHint = run_ind;
+  }
 
   
   arena_chunk_t* chunk_dealloc = nullptr;
