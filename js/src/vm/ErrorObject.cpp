@@ -1053,24 +1053,12 @@ static bool exn_captureStackTrace(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  
-  
-  cx->runtime()->setUseCounter(cx->global(),
-                               JSUseCounter::ERROR_CAPTURESTACKTRACE);
-
   Rooted<JSObject*> caller(cx, nullptr);
-  if (args.length() > 1) {
-    cx->runtime()->setUseCounter(cx->global(),
-                                 JSUseCounter::ERROR_CAPTURESTACKTRACE_CTOR);
-    if (args[1].isObject() && args[1].toObject().isCallable()) {
-      caller = CheckedUnwrapStatic(&args[1].toObject());
-      if (!caller) {
-        ReportAccessDenied(cx);
-        return false;
-      }
-    } else {
-      cx->runtime()->setUseCounter(
-          cx->global(), JSUseCounter::ERROR_CAPTURESTACKTRACE_UNCALLABLE_CTOR);
+  if (args.length() > 1 && args[1].isObject() && args[1].toObject().isCallable()) {
+    caller = CheckedUnwrapStatic(&args[1].toObject());
+    if (!caller) {
+      ReportAccessDenied(cx);
+      return false;
     }
   }
 
