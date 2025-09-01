@@ -159,10 +159,6 @@ pref("chrome.override_package.passwordmgr", "browser");
 pref("devtools.console.stdout.chrome", true);
 
 
-
-pref("devtools.debugger.unix-domain-socket", "@ANDROID_PACKAGE_NAME@/firefox-debugger-socket");
-
-
 pref("dom.capture.enabled", true);
 
 
