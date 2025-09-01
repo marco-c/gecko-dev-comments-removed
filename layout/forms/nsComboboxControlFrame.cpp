@@ -213,15 +213,6 @@ void nsComboboxControlFrame::Reflow(nsPresContext* aPresContext,
   
   
   
-  
-  
-  mDisplayedIndex = Select().SelectedIndex();
-
-  
-  
-  
-  RedisplayText();
-
   WritingMode wm = aReflowInput.GetWritingMode();
 
   
