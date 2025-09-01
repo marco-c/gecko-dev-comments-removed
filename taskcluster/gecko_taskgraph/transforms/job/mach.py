@@ -17,10 +17,6 @@ mach_schema = Schema(
         Required("mach"): taskref_or_string,
         
         
-        
-        Optional("python-version"): Any(str, int, float),
-        
-        
         Optional("sparse-profile"): Any(str, None),
         
         
@@ -54,20 +50,6 @@ def configure_mach(config, job, taskdesc):
     if prepend_env := run.pop("prepend-env", None):
         for name, value in prepend_env.items():
             additional_prefix.append(f"{name}={value}")
-
-    if python := run.pop("python-version", None):
-        if taskdesc.get("use-python", "system") == "system":
-            if worker["os"] == "macosx" and python == 3:
-                python = "/usr/local/bin/python3"
-
-        python = str(python)
-        try:
-            float(python)
-            python = "python" + python
-        except ValueError:
-            pass
-
-        additional_prefix.append(python)
 
     command_prefix = " ".join(additional_prefix + ["./mach "])
 

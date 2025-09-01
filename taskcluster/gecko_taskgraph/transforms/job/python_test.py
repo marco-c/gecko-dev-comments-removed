@@ -15,8 +15,6 @@ python_test_schema = Schema(
     {
         Required("using"): "python-test",
         
-        Required("python-version"): int,
-        
         Required("subsuite"): str,
         
         Optional("workdir"): str,
@@ -30,7 +28,6 @@ python_test_schema = Schema(
 
 
 defaults = {
-    "python-version": 3,
     "subsuite": "default",
 }
 
