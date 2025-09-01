@@ -401,10 +401,7 @@ Codec CreateAudioCodec(int id,
                        const std::string& name,
                        int clockrate,
                        size_t channels) {
-  return Codec(Codec::Type::kAudio, id, name,
-               
-               
-               clockrate == 0 ? kDefaultAudioClockRateHz : clockrate, channels);
+  return Codec(Codec::Type::kAudio, id, name, clockrate, channels);
 }
 
 Codec CreateAudioCodec(const webrtc::SdpAudioFormat& c) {
