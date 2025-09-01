@@ -75,7 +75,6 @@ class LossBasedBweV2 {
   void UpdateBandwidthEstimate(ArrayView<const PacketResult> packet_results,
                                DataRate delay_based_estimate,
                                bool in_alr);
-  bool PaceAtLossBasedEstimate() const;
 
   
   void SetBandwidthEstimate(DataRate bandwidth_estimate);
