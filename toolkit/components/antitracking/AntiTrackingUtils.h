@@ -73,9 +73,7 @@ class AntiTrackingUtils final {
   
   static bool CheckStoragePermission(nsIPrincipal* aPrincipal,
                                      const nsAutoCString& aType,
-                                     bool aIsInPrivateBrowsing,
-                                     uint32_t* aRejectedReason,
-                                     uint32_t aBlockedReason);
+                                     bool aIsInPrivateBrowsing);
 
   
   
