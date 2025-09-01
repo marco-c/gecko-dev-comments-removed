@@ -17,6 +17,7 @@ namespace webrtc {
 
 class CpuInfo {
  public:
+  
   static uint32_t DetectNumberOfCores();
 
  private:

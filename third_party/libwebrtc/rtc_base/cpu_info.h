@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef RTC_BASE_CPU_INFO_H_
+#define RTC_BASE_CPU_INFO_H_
+
+#include <cstdint>
+
+namespace webrtc {
+
+namespace cpu_info {
+
+
+uint32_t DetectNumberOfCores();
+
+}  
+
+}  
+
+#endif  
