@@ -2970,6 +2970,8 @@ bool BaselineCacheIRCompiler::updateArgc(CallFlags flags, Register argcReg,
 static bool NeedsRectifier(CallFlags flags) {
   switch (flags.getArgFormat()) {
     case CallFlags::Standard:
+    case CallFlags::Spread:
+    case CallFlags::FunApplyArray:
       return false;
     default:
       return true;
@@ -3058,7 +3060,8 @@ void BaselineCacheIRCompiler::prepareForArguments(
 
   masm.bind(&noUnderflow);
 
-  if (argcFixed < MaxUnrolledArgCopy) {
+  if (flags.getArgFormat() == CallFlags::Standard &&
+      argcFixed < MaxUnrolledArgCopy) {
     masm.alignJitStackBasedOnNArgs(argcFixed, countIncludesThis);
   } else {
     masm.alignJitStackBasedOnNArgs(argcReg, countIncludesThis);
@@ -3235,53 +3238,36 @@ void BaselineCacheIRCompiler::pushArrayArguments(Register argcReg,
   MOZ_ASSERT(enteredStubFrame_);
 
   
+  Label emptyArray;
+  masm.branchTest32(Assembler::Zero, argcReg, argcReg, &emptyArray);
+
+  
   Register startReg = scratch;
-  size_t arrayOffset =
-      (isConstructing * sizeof(Value)) + BaselineStubFrameLayout::Size();
+  size_t arrayOffset = ArgsOffsetFromFP(isConstructing);
   masm.unboxObject(Address(FramePointer, arrayOffset), startReg);
   masm.loadPtr(Address(startReg, NativeObject::offsetOfElements()), startReg);
 
   
-  
-  if (isJitCall) {
-    Register alignReg = argcReg;
-    if (isConstructing) {
-      
-      alignReg = scratch2;
-      masm.computeEffectiveAddress(Address(argcReg, 1), alignReg);
-    }
-    masm.alignJitStackBasedOnNArgs(alignReg, false);
-  }
-
-  
-  if (isConstructing) {
-    pushNewTarget();
-  }
-
-  
   Register endReg = scratch2;
-  BaseValueIndex endAddr(startReg, argcReg);
+  BaseValueIndex endAddr(startReg, argcReg, -int32_t(sizeof(Value)));
   masm.computeEffectiveAddress(endAddr, endReg);
 
   
-  Label copyDone;
-  Label copyStart;
-  masm.bind(&copyStart);
-  masm.branchPtr(Assembler::Equal, endReg, startReg, &copyDone);
-  masm.subPtr(Imm32(sizeof(Value)), endReg);
+  Label loop;
+  masm.bind(&loop);
   masm.pushValue(Address(endReg, 0));
-  masm.jump(&copyStart);
-  masm.bind(&copyDone);
+  masm.subPtr(Imm32(sizeof(Value)), endReg);
+  masm.branchPtr(Assembler::AboveOrEqual, endReg, startReg, &loop);
+
+  masm.bind(&emptyArray);
 
   
-  size_t thisvOffset =
-      BaselineStubFrameLayout::Size() + (1 + isConstructing) * sizeof(Value);
+  size_t thisvOffset = arrayOffset + sizeof(Value);
   masm.pushValue(Address(FramePointer, thisvOffset));
 
   
   if (!isJitCall) {
-    size_t calleeOffset =
-        BaselineStubFrameLayout::Size() + (2 + isConstructing) * sizeof(Value);
+    size_t calleeOffset = arrayOffset + 2 * sizeof(Value);
     masm.pushValue(Address(FramePointer, calleeOffset));
   }
 }
