@@ -2973,6 +2973,7 @@ static bool NeedsRectifier(CallFlags flags) {
     case CallFlags::Spread:
     case CallFlags::FunApplyArray:
     case CallFlags::FunApplyNullUndefined:
+    case CallFlags::FunApplyArgsObj:
       return false;
     default:
       return true;
@@ -3372,19 +3373,15 @@ void BaselineCacheIRCompiler::pushFunApplyArgsObj(Register argcReg,
                                                   Register scratch2,
                                                   bool isJitCall) {
   MOZ_ASSERT(enteredStubFrame_);
+  
+  Label emptyArgs;
+  masm.branchTest32(Assembler::Zero, argcReg, argcReg, &emptyArgs);
 
   
   Register argsReg = scratch;
+  uint32_t argsOffset = ArgsOffsetFromFP( false);
   masm.unboxObject(Address(FramePointer, BaselineStubFrameLayout::Size()),
                    argsReg);
-
-  
-  
-  if (isJitCall) {
-    masm.alignJitStackBasedOnNArgs(argcReg, false);
-  }
-
-  
   masm.loadPrivate(Address(argsReg, ArgumentsObject::getDataSlotOffset()),
                    argsReg);
 
@@ -3393,15 +3390,12 @@ void BaselineCacheIRCompiler::pushFunApplyArgsObj(Register argcReg,
   Register currReg = scratch2;
   Address argsStartAddr(argsReg, ArgumentsData::offsetOfArgs());
   masm.computeEffectiveAddress(argsStartAddr, argsReg);
-  BaseValueIndex argsEndAddr(argsReg, argcReg);
+  BaseValueIndex argsEndAddr(argsReg, argcReg, -int32_t(sizeof(Value)));
   masm.computeEffectiveAddress(argsEndAddr, currReg);
 
   
-  Label done, loop;
+  Label loop;
   masm.bind(&loop);
-  masm.branchPtr(Assembler::Equal, currReg, argsReg, &done);
-  masm.subPtr(Imm32(sizeof(Value)), currReg);
-
   Address currArgAddr(currReg, 0);
 #ifdef DEBUG
   
@@ -3412,13 +3406,13 @@ void BaselineCacheIRCompiler::pushFunApplyArgsObj(Register argcReg,
   masm.bind(&notForwarded);
 #endif
   masm.pushValue(currArgAddr);
+  masm.subPtr(Imm32(sizeof(Value)), currReg);
+  masm.branchPtr(Assembler::AboveOrEqual, currReg, argsReg, &loop);
 
-  masm.jump(&loop);
-  masm.bind(&done);
+  masm.bind(&emptyArgs);
 
   
-  masm.pushValue(
-      Address(FramePointer, BaselineStubFrameLayout::Size() + sizeof(Value)));
+  masm.pushValue(Address(FramePointer, argsOffset + sizeof(Value)));
 
   
   if (!isJitCall) {
