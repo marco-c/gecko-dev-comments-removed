@@ -13,6 +13,9 @@ default_cache_path = ".moz-fast-forward/milestone.cache"
 
 
 def fetch_branch_head_dict():
+    
+    
+    
     milestone_url = (
         "https://chromiumdash.appspot.com/fetch_milestones?only_branched=true"
     )
@@ -33,6 +36,44 @@ def fetch_branch_head_dict():
         new_dict[row["milestone"]] = row["webrtc_branch"]
 
     return new_dict
+
+
+def fetch_branch_schedule_dict():
+    
+    
+    
+    milestone_schedule_url = (
+        "https://chromiumdash.appspot.com/fetch_milestone_schedule?offset=-1&n=4"
+    )
+    uf = urllib.request.urlopen(milestone_schedule_url)
+    html = uf.read()
+    schedule_dict = json.loads(html)
+
+    
+    
+    
+    
+    
+    
+    
+    
+    new_dict = {}
+    for row in schedule_dict["mstones"]:
+        new_dict[row["mstone"]] = row["branch_point"]
+
+    return new_dict
+
+
+def get_branch_date(milestone):
+    milestone_dates = {}
+    try:
+        milestone_dates = fetch_branch_schedule_dict()
+    except Exception:
+        pass
+
+    if milestone in milestone_dates:
+        return milestone_dates[milestone]
+    return None
 
 
 def read_dict_from_cache(cache_path):
