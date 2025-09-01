@@ -1153,6 +1153,11 @@ const ProtonScreenActionButtons = props => {
 };
 class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureComponent) {
   componentDidMount() {
+    
+    
+    if (this.props.content?.position === "callout") {
+      return;
+    }
     this.mainContentHeader.focus();
   }
   getScreenClassName(isFirstScreen, isLastScreen, includeNoodles, isVideoOnboarding, isAddonsPicker) {
