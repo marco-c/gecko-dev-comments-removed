@@ -218,6 +218,17 @@ add_task(async function contextClick_dataURI() {
 
 
 
+add_task(async function contextClick_contentDisposition() {
+  await setDefaultEngineAndCheckMenu({
+    selector: "#image-content-disposition",
+    defaultEngineId: "visual-search-1",
+    shouldBeShown: false,
+  });
+});
+
+
+
+
 
 add_task(async function private_noSeparatePrivateEngine() {
   await withPrivateWindow({
