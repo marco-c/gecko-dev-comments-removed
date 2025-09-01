@@ -13,7 +13,9 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 
+#include "absl/base/nullability.h"
 #include "absl/strings/string_view.h"
 #include "api/field_trials_registry.h"
 #include "rtc_base/containers/flat_map.h"
@@ -32,10 +34,41 @@ namespace webrtc {
 
 class FieldTrials : public FieldTrialsRegistry {
  public:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static absl_nullable std::unique_ptr<FieldTrials> Create(absl::string_view s);
+
+  
+  
   explicit FieldTrials(absl::string_view s);
+
+  FieldTrials(const FieldTrials&) = default;
   FieldTrials(FieldTrials&&) = default;
+  FieldTrials& operator=(const FieldTrials&) = default;
   FieldTrials& operator=(FieldTrials&&) = default;
-  ~FieldTrials() = default;
+
+  ~FieldTrials() override = default;
+
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const FieldTrials& self);
+
+  
+  
+  
+  
+  void Merge(const FieldTrials& other);
+
+  
+  
+  
+  void Set(absl::string_view trial, absl::string_view group);
 
   
   
@@ -44,10 +77,26 @@ class FieldTrials : public FieldTrialsRegistry {
   }
 
  private:
+  explicit FieldTrials(flat_map<std::string, std::string> key_value_map)
+      : key_value_map_(std::move(key_value_map)) {}
+
   std::string GetValue(absl::string_view key) const override;
 
   flat_map<std::string, std::string> key_value_map_;
 };
+
+template <typename Sink>
+void AbslStringify(Sink& sink, const FieldTrials& self) {
+  for (const auto& [trial, group] : self.key_value_map_) {
+    sink.Append(trial);
+    sink.Append("/");
+    sink.Append(group);
+    
+    
+    
+    sink.Append("//");
+  }
+}
 
 }  
 
