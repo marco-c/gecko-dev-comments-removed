@@ -540,6 +540,98 @@ function _parseModifiers(aEvent, aWindow = window) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+function synthesizeMouse(aTarget, aOffsetX, aOffsetY, aEvent, aWindow) {
+  var rect = aTarget.getBoundingClientRect();
+  return synthesizeMouseAtPoint(
+    rect.left + aOffsetX,
+    rect.top + aOffsetY,
+    aEvent,
+    aWindow
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function synthesizeTouch(
+  aTarget,
+  aOffsetX,
+  aOffsetY,
+  aEvent = {},
+  aWindow = window
+) {
+  let rectX, rectY;
+  if (Array.isArray(aTarget)) {
+    let lastTarget, lastTargetRect;
+    aTarget.forEach(target => {
+      const rect =
+        target == lastTarget ? lastTargetRect : target.getBoundingClientRect();
+      rectX.push(rect.left);
+      rectY.push(rect.top);
+      lastTarget = target;
+      lastTargetRect = rect;
+    });
+  } else {
+    const rect = aTarget.getBoundingClientRect();
+    rectX = [rect.left];
+    rectY = [rect.top];
+  }
+  const offsetX = (() => {
+    if (Array.isArray(aOffsetX)) {
+      let ret = [];
+      aOffsetX.forEach((value, index) => {
+        ret.push(value + rectX[Math.min(index, rectX.length - 1)]);
+      });
+      return ret;
+    }
+    return aOffsetX + rectX[0];
+  })();
+  const offsetY = (() => {
+    if (Array.isArray(aOffsetY)) {
+      let ret = [];
+      aOffsetY.forEach((value, index) => {
+        ret.push(value + rectY[Math.min(index, rectY.length - 1)]);
+      });
+      return ret;
+    }
+    return aOffsetY + rectY[0];
+  })();
+  return synthesizeTouchAtPoint(offsetX, offsetY, aEvent, aWindow);
+}
+
+
+
+
+
+
 function getDragService() {
   try {
     return _EU_Cc["@mozilla.org/widget/dragservice;1"].getService(
@@ -633,80 +725,14 @@ function _maybeSynthesizeDragOver(left, top, aEvent, aWindow) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function synthesizeMouse(aTarget, aOffsetX, aOffsetY, aEvent, aWindow) {
-  var rect = aTarget.getBoundingClientRect();
-  return synthesizeMouseAtPoint(
-    rect.left + aOffsetX,
-    rect.top + aOffsetY,
-    aEvent,
-    aWindow
-  );
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function synthesizeMouseAtPoint(aLeft, aTop, aEvent, aWindow = window) {
+function synthesizeMouseAtPoint(left, top, aEvent, aWindow = window) {
   if (aEvent.allowToHandleDragDrop) {
     if (aEvent.type == "mouseup" || !aEvent.type) {
-      if (_maybeEndDragSession(aLeft, aTop, aEvent, aWindow)) {
+      if (_maybeEndDragSession(left, top, aEvent, aWindow)) {
         return false;
       }
     } else if (aEvent.type == "mousemove") {
-      if (_maybeSynthesizeDragOver(aLeft, aTop, aEvent, aWindow)) {
+      if (_maybeSynthesizeDragOver(left, top, aEvent, aWindow)) {
         return false;
       }
     }
@@ -742,15 +768,12 @@ function synthesizeMouseAtPoint(aLeft, aTop, aEvent, aWindow = window) {
 
     
     
-    const isDOMEventSynthesized =
+    var isDOMEventSynthesized =
       "isSynthesized" in aEvent ? aEvent.isSynthesized : true;
-    const isWidgetEventSynthesized =
+    var isWidgetEventSynthesized =
       "isWidgetEventSynthesized" in aEvent
         ? aEvent.isWidgetEventSynthesized
         : false;
-    const isAsyncEnabled =
-      "asyncEnabled" in aEvent ? aEvent.asyncEnabled : false;
-
     
     
     
@@ -760,13 +783,12 @@ function synthesizeMouseAtPoint(aLeft, aTop, aEvent, aWindow = window) {
     
     
     
-
     if ("type" in aEvent && aEvent.type) {
       if (_EU_maybeWrap(aWindow).synthesizeMouseEvent) {
         defaultPrevented = _EU_maybeWrap(aWindow).synthesizeMouseEvent(
           aEvent.type,
-          aLeft,
-          aTop,
+          left,
+          top,
           {
             identifier: id,
             button,
@@ -779,14 +801,13 @@ function synthesizeMouseAtPoint(aLeft, aTop, aEvent, aWindow = window) {
           {
             isDOMEventSynthesized,
             isWidgetEventSynthesized,
-            isAsyncEnabled,
           }
         );
       } else {
         defaultPrevented = utils.sendMouseEvent(
           aEvent.type,
-          aLeft,
-          aTop,
+          left,
+          top,
           button,
           clickCount,
           modifiers,
@@ -802,8 +823,8 @@ function synthesizeMouseAtPoint(aLeft, aTop, aEvent, aWindow = window) {
     } else if (_EU_maybeWrap(aWindow).synthesizeMouseEvent) {
       _EU_maybeWrap(aWindow).synthesizeMouseEvent(
         "mousedown",
-        aLeft,
-        aTop,
+        left,
+        top,
         {
           identifier: id,
           button,
@@ -816,13 +837,12 @@ function synthesizeMouseAtPoint(aLeft, aTop, aEvent, aWindow = window) {
         {
           isDOMEventSynthesized,
           isWidgetEventSynthesized,
-          isAsyncEnabled,
         }
       );
       _EU_maybeWrap(aWindow).synthesizeMouseEvent(
         "mouseup",
-        aLeft,
-        aTop,
+        left,
+        top,
         {
           identifier: id,
           button,
@@ -835,14 +855,13 @@ function synthesizeMouseAtPoint(aLeft, aTop, aEvent, aWindow = window) {
         {
           isDOMEventSynthesized,
           isWidgetEventSynthesized,
-          isAsyncEnabled,
         }
       );
     } else {
       utils.sendMouseEvent(
         "mousedown",
-        aLeft,
-        aTop,
+        left,
+        top,
         button,
         clickCount,
         modifiers,
@@ -856,8 +875,8 @@ function synthesizeMouseAtPoint(aLeft, aTop, aEvent, aWindow = window) {
       );
       utils.sendMouseEvent(
         "mouseup",
-        aLeft,
-        aTop,
+        left,
+        top,
         button,
         clickCount,
         modifiers,
@@ -888,101 +907,11 @@ function synthesizeMouseAtPoint(aLeft, aTop, aEvent, aWindow = window) {
 
 
 
-function synthesizeMouseAtCenter(aTarget, aEvent, aWindow) {
-  var rect = aTarget.getBoundingClientRect();
-
-  return synthesizeMouse(
-    aTarget,
-    rect.width / 2,
-    rect.height / 2,
-    aEvent,
-    aWindow
-  );
-}
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function synthesizeTouch(
-  aTarget,
-  aOffsetX,
-  aOffsetY,
-  aEvent = {},
-  aWindow = window
-) {
-  let rectX, rectY;
-  if (Array.isArray(aTarget)) {
-    let lastTarget, lastTargetRect;
-    aTarget.forEach(target => {
-      const rect =
-        target == lastTarget ? lastTargetRect : target.getBoundingClientRect();
-      rectX.push(rect.left);
-      rectY.push(rect.top);
-      lastTarget = target;
-      lastTargetRect = rect;
-    });
-  } else {
-    const rect = aTarget.getBoundingClientRect();
-    rectX = [rect.left];
-    rectY = [rect.top];
-  }
-  const offsetX = (() => {
-    if (Array.isArray(aOffsetX)) {
-      let ret = [];
-      aOffsetX.forEach((value, index) => {
-        ret.push(value + rectX[Math.min(index, rectX.length - 1)]);
-      });
-      return ret;
-    }
-    return aOffsetX + rectX[0];
-  })();
-  const offsetY = (() => {
-    if (Array.isArray(aOffsetY)) {
-      let ret = [];
-      aOffsetY.forEach((value, index) => {
-        ret.push(value + rectY[Math.min(index, rectY.length - 1)]);
-      });
-      return ret;
-    }
-    return aOffsetY + rectY[0];
-  })();
-  return synthesizeTouchAtPoint(offsetX, offsetY, aEvent, aWindow);
-}
 
 
 
@@ -1109,6 +1038,18 @@ function synthesizeTouchAtPoint(aLeft, aTop, aEvent = {}, aWindow = window) {
   utils[sender]("touchstart", ...args);
   utils[sender]("touchend", ...args);
   return false;
+}
+
+
+function synthesizeMouseAtCenter(aTarget, aEvent, aWindow) {
+  var rect = aTarget.getBoundingClientRect();
+  return synthesizeMouse(
+    aTarget,
+    rect.width / 2,
+    rect.height / 2,
+    aEvent,
+    aWindow
+  );
 }
 
 
