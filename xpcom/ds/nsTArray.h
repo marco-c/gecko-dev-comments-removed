@@ -3615,8 +3615,7 @@ void nsTArray_base<Alloc, RelocationStrategy>::MoveInit(
   
   
   
-  if ((!UsesAutoArrayBuffer() || Capacity() < aOther.Length()) &&
-      !aOther.UsesAutoArrayBuffer()) {
+  if (Capacity() < aOther.Length() && !aOther.UsesAutoArrayBuffer()) {
     const bool thisIsAuto = mHdr->mIsAutoArray;
     Header* otherAutoHeader = aOther.GetAutoArrayHeader();
     mHdr = aOther.mHdr;
