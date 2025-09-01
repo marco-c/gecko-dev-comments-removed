@@ -45,7 +45,7 @@ extern bool gUserCancelledDrag;
 mozilla::StaticRefPtr<nsIArray> gDraggedTransferables;
 
 
-bool gCreatedFileForFileURL;
+bool gCreatedPromisedFile;
 
 already_AddRefed<nsIDragSession> nsDragService::CreateDragSession() {
   RefPtr<nsIDragSession> sess = new nsDragSession();
@@ -203,7 +203,7 @@ nsresult nsDragSession::InvokeDragSessionImpl(
 
   
   gDraggedTransferables = aTransferableArray;
-  gCreatedFileForFileURL = false;
+  gCreatedPromisedFile = false;
 
   
   
