@@ -233,7 +233,7 @@ NS_IMETHODIMP_(MozExternalRefCountType) HttpChannelChild::Release() {
 
     
     RefPtr<HttpChannelChild> channel = dont_AddRef(this);
-    NS_DispatchToCurrentThread(NS_NewRunnableFunction(
+    NS_DispatchToMainThread(NS_NewRunnableFunction(
         "~HttpChannelChild>DoNotifyListener",
         [chan = std::move(channel)] { chan->DoNotifyListener(false); }));
     
