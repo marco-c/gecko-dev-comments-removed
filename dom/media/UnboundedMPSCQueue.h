@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_dom_MPSCQueue_h
-#define mozilla_dom_MPSCQueue_h
+#ifndef mozilla_dom_UnboundedMPSCQueue_h
+#define mozilla_dom_UnboundedMPSCQueue_h
 
 namespace mozilla {
 
@@ -20,7 +20,7 @@ namespace mozilla {
 const size_t MPSC_MSG_RESERVED = sizeof(std::atomic<void*>);
 
 template <typename T>
-class MPSCQueue {
+class UnboundedMPSCQueue {
  public:
   struct Message {
     Message() { mNext.store(nullptr, std::memory_order_relaxed); }
@@ -33,13 +33,13 @@ class MPSCQueue {
 
   
   
-  MPSCQueue()
+  UnboundedMPSCQueue()
       
       
       
       : mHead(new Message()), mTail(mHead.load(std::memory_order_relaxed)) {}
 
-  ~MPSCQueue() {
+  ~UnboundedMPSCQueue() {
     Message dummy;
     while (Pop(&dummy.data)) {
     }
@@ -47,7 +47,7 @@ class MPSCQueue {
     delete front;
   }
 
-  void Push(MPSCQueue<T>::Message* aMessage) {
+  void Push(UnboundedMPSCQueue<T>::Message* aMessage) {
     
     
     
@@ -123,8 +123,8 @@ class MPSCQueue {
   
   std::atomic<Message*> mTail;
 
-  MPSCQueue(const MPSCQueue&) = delete;
-  void operator=(const MPSCQueue&) = delete;
+  UnboundedMPSCQueue(const UnboundedMPSCQueue&) = delete;
+  void operator=(const UnboundedMPSCQueue&) = delete;
 };
 
 }  
