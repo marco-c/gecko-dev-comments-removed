@@ -132,9 +132,9 @@ impl RestyleHint {
     
     #[inline]
     pub fn for_animations() -> Self {
-        RestyleHint::RESTYLE_SMIL |
-            RestyleHint::RESTYLE_CSS_ANIMATIONS |
-            RestyleHint::RESTYLE_CSS_TRANSITIONS
+        RestyleHint::RESTYLE_SMIL
+            | RestyleHint::RESTYLE_CSS_ANIMATIONS
+            | RestyleHint::RESTYLE_CSS_TRANSITIONS
     }
 
     
@@ -149,9 +149,9 @@ impl RestyleHint {
     #[inline]
     pub fn has_animation_hint_or_recascade(&self) -> bool {
         self.intersects(
-            Self::for_animations() |
-                Self::RECASCADE_SELF |
-                Self::RECASCADE_SELF_IF_INHERIT_RESET_STYLE,
+            Self::for_animations()
+                | Self::RECASCADE_SELF
+                | Self::RECASCADE_SELF_IF_INHERIT_RESET_STYLE,
         )
     }
 

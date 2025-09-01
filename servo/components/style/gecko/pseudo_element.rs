@@ -94,8 +94,8 @@ impl PtNameAndClassSelector {
         
         let parse_pt_name = |input: &mut Parser<'i, '_>| {
             
-            if matches!(target, Target::Selector) &&
-                input.try_parse(|i| i.expect_delim('*')).is_ok()
+            if matches!(target, Target::Selector)
+                && input.try_parse(|i| i.expect_delim('*')).is_ok()
             {
                 Ok(atom!("*"))
             } else {
@@ -181,12 +181,12 @@ impl PseudoElementTrait for PseudoElement {
     fn valid_after_slotted(&self) -> bool {
         matches!(
             *self,
-            Self::Before |
-                Self::After |
-                Self::Marker |
-                Self::Placeholder |
-                Self::FileSelectorButton |
-                Self::DetailsContent
+            Self::Before
+                | Self::After
+                | Self::Marker
+                | Self::Placeholder
+                | Self::FileSelectorButton
+                | Self::DetailsContent
         )
     }
 
@@ -346,20 +346,20 @@ impl PseudoElement {
     pub fn is_named_view_transition(&self) -> bool {
         matches!(
             *self,
-            Self::ViewTransitionGroup(..) |
-                Self::ViewTransitionImagePair(..) |
-                Self::ViewTransitionOld(..) |
-                Self::ViewTransitionNew(..)
+            Self::ViewTransitionGroup(..)
+                | Self::ViewTransitionImagePair(..)
+                | Self::ViewTransitionOld(..)
+                | Self::ViewTransitionNew(..)
         )
     }
 
     
     pub fn specificity_count(&self) -> u32 {
         match *self {
-            Self::ViewTransitionGroup(ref name_and_class) |
-            Self::ViewTransitionImagePair(ref name_and_class) |
-            Self::ViewTransitionOld(ref name_and_class) |
-            Self::ViewTransitionNew(ref name_and_class) => {
+            Self::ViewTransitionGroup(ref name_and_class)
+            | Self::ViewTransitionImagePair(ref name_and_class)
+            | Self::ViewTransitionOld(ref name_and_class)
+            | Self::ViewTransitionNew(ref name_and_class) => {
                 
                 
                 
@@ -391,11 +391,11 @@ impl PseudoElement {
             Self::DetailsContent => {
                 pref!("layout.css.details-content.enabled")
             },
-            Self::ViewTransition |
-            Self::ViewTransitionGroup(..) |
-            Self::ViewTransitionImagePair(..) |
-            Self::ViewTransitionOld(..) |
-            Self::ViewTransitionNew(..) => pref!("dom.viewTransitions.enabled"),
+            Self::ViewTransition
+            | Self::ViewTransitionGroup(..)
+            | Self::ViewTransitionImagePair(..)
+            | Self::ViewTransitionOld(..)
+            | Self::ViewTransitionNew(..) => pref!("dom.viewTransitions.enabled"),
             
             
             _ => (self.flags() & structs::CSS_PSEUDO_ELEMENT_ENABLED_IN_UA_SHEETS_AND_CHROME) == 0,
@@ -518,13 +518,13 @@ impl PseudoElement {
             (
                 &Self::ViewTransitionGroup(ref name),
                 &Self::ViewTransitionGroup(ref s_name_class),
-            ) |
-            (
+            )
+            | (
                 &Self::ViewTransitionImagePair(ref name),
                 &Self::ViewTransitionImagePair(ref s_name_class),
-            ) |
-            (&Self::ViewTransitionOld(ref name), &Self::ViewTransitionOld(ref s_name_class)) |
-            (&Self::ViewTransitionNew(ref name), &Self::ViewTransitionNew(ref s_name_class)) => {
+            )
+            | (&Self::ViewTransitionOld(ref name), &Self::ViewTransitionOld(ref s_name_class))
+            | (&Self::ViewTransitionNew(ref name), &Self::ViewTransitionNew(ref s_name_class)) => {
                 
                 
                 
@@ -535,8 +535,8 @@ impl PseudoElement {
 
                 
                 
-                s_name_class.classes().is_empty() ||
-                    unsafe {
+                s_name_class.classes().is_empty()
+                    || unsafe {
                         bindings::Gecko_MatchViewTransitionClass(
                             element.0,
                             s_name_class.name_and_classes(),

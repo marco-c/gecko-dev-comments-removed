@@ -126,8 +126,8 @@ trait PrivateMatchMethods: TElement {
         cascade_inputs: &mut ElementCascadeInputs,
     ) -> bool {
         debug_assert!(
-            replacements.intersects(RestyleHint::replacements()) &&
-                (replacements & !RestyleHint::replacements()).is_empty()
+            replacements.intersects(RestyleHint::replacements())
+                && (replacements & !RestyleHint::replacements()).is_empty()
         );
 
         let primary_rules = match cascade_visited {
@@ -320,8 +320,8 @@ trait PrivateMatchMethods: TElement {
             None => return false,
         };
 
-        if !self.has_css_transitions(context.shared, pseudo_element) &&
-            !new_style.get_ui().specifies_transitions()
+        if !self.has_css_transitions(context.shared, pseudo_element)
+            && !new_style.get_ui().specifies_transitions()
         {
             return false;
         }
@@ -344,16 +344,16 @@ trait PrivateMatchMethods: TElement {
         
         
         
-        if !new_styles.may_have_starting_style() ||
-            !new_styles.primary_style().get_ui().specifies_transitions()
+        if !new_styles.may_have_starting_style()
+            || !new_styles.primary_style().get_ui().specifies_transitions()
         {
             return None;
         }
 
         
         
-        if old_values.is_some() &&
-            !new_styles
+        if old_values.is_some()
+            && !new_styles
                 .primary_style()
                 .is_display_property_changed_from_none(old_values.map(|s| &**s))
         {
@@ -1064,9 +1064,9 @@ pub trait MatchMethods: TElement {
             
             
             restyle_requirement = ChildRestyleRequirement::MustMatchDescendants;
-        } else if old_container_type.is_size_container_type() &&
-            !old_primary_style.is_display_contents() &&
-            new_primary_style.is_display_contents()
+        } else if old_container_type.is_size_container_type()
+            && !old_primary_style.is_display_contents()
+            && new_primary_style.is_display_contents()
         {
             
             

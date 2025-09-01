@@ -685,8 +685,8 @@ impl ToComputedValue for TextEmphasisStyle {
                     
                     
                     
-                    if context.style().get_inherited_box().clone_writing_mode() ==
-                        SpecifiedWritingMode::HorizontalTb
+                    if context.style().get_inherited_box().clone_writing_mode()
+                        == SpecifiedWritingMode::HorizontalTb
                     {
                         TextEmphasisShapeKeyword::Circle
                     } else {
@@ -1200,8 +1200,8 @@ impl Parse for RubyPosition {
             "under" => false,
         };
         
-        let alternate = alternate ||
-            input
+        let alternate = alternate
+            || input
                 .try_parse(|i| i.expect_ident_matching("alternate"))
                 .is_ok();
 

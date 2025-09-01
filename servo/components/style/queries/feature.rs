@@ -134,10 +134,10 @@ impl FeatureFlags {
 
     
     pub fn all_container_axes() -> Self {
-        Self::CONTAINER_REQUIRES_INLINE_AXIS |
-            Self::CONTAINER_REQUIRES_BLOCK_AXIS |
-            Self::CONTAINER_REQUIRES_WIDTH_AXIS |
-            Self::CONTAINER_REQUIRES_HEIGHT_AXIS
+        Self::CONTAINER_REQUIRES_INLINE_AXIS
+            | Self::CONTAINER_REQUIRES_BLOCK_AXIS
+            | Self::CONTAINER_REQUIRES_WIDTH_AXIS
+            | Self::CONTAINER_REQUIRES_HEIGHT_AXIS
     }
 
     

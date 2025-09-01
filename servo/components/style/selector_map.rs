@@ -44,15 +44,15 @@ pub type RelevantAttributes = thin_vec::ThinVec<LocalName>;
 
 
 const RARE_PSEUDO_CLASS_STATES: ElementState = ElementState::from_bits_retain(
-    ElementState::FULLSCREEN.bits() |
-        ElementState::VISITED_OR_UNVISITED.bits() |
-        ElementState::URLTARGET.bits() |
-        ElementState::INERT.bits() |
-        ElementState::FOCUS.bits() |
-        ElementState::FOCUSRING.bits() |
-        ElementState::TOPMOST_MODAL.bits() |
-        ElementState::SUPPRESS_FOR_PRINT_SELECTION.bits() |
-        ElementState::HEADING_LEVEL_BITS.bits(),
+    ElementState::FULLSCREEN.bits()
+        | ElementState::VISITED_OR_UNVISITED.bits()
+        | ElementState::URLTARGET.bits()
+        | ElementState::INERT.bits()
+        | ElementState::FOCUS.bits()
+        | ElementState::FOCUSRING.bits()
+        | ElementState::TOPMOST_MODAL.bits()
+        | ElementState::SUPPRESS_FOR_PRINT_SELECTION.bits()
+        | ElementState::HEADING_LEVEL_BITS.bits(),
 );
 
 
@@ -411,8 +411,8 @@ impl<T: SelectorMapEntry> SelectorMap<T> {
                         .class_hash
                         .try_entry(class.clone(), quirks_mode)?
                         .or_default(),
-                    Bucket::Attribute { name, lower_name } |
-                    Bucket::LocalName { name, lower_name } => {
+                    Bucket::Attribute { name, lower_name }
+                    | Bucket::LocalName { name, lower_name } => {
                         // If the local name in the selector isn't lowercase,
                         // insert it into the rule hash twice. This means that,
                         // during lookup, we can always find the rules based on
@@ -472,8 +472,8 @@ impl<T: SelectorMapEntry> SelectorMap<T> {
             
             
             
-            if !disjoint_buckets.is_empty() &&
-                disjoint_buckets
+            if !disjoint_buckets.is_empty()
+                && disjoint_buckets
                     .iter()
                     .all(|b| b.more_specific_than(&bucket))
             {

@@ -611,8 +611,8 @@ impl StylesheetInvalidationSet {
                 
                 return self.invalidate_fully();
             },
-            Document(..) | Import(..) | Media(..) | Supports(..) | Container(..) |
-            LayerBlock(..) | StartingStyle(..) => {
+            Document(..) | Import(..) | Media(..) | Supports(..) | Container(..)
+            | LayerBlock(..) | StartingStyle(..) => {
                 
             },
             FontFace(..) => {

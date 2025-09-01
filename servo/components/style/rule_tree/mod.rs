@@ -112,8 +112,8 @@ impl RuleTree {
         
         
         
-        if !important_author.is_empty() &&
-            important_author.first().unwrap().1 != important_author.last().unwrap().1
+        if !important_author.is_empty()
+            && important_author.first().unwrap().1 != important_author.last().unwrap().1
         {
             
             

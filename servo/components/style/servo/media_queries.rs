@@ -320,12 +320,12 @@ impl Device {
             Ok(m) => {
                 
                 
-                m == mime::IMAGE_BMP ||
-                    m == mime::IMAGE_GIF ||
-                    m == mime::IMAGE_PNG ||
-                    m == mime::IMAGE_JPEG ||
-                    m == "image/x-icon" ||
-                    m == "image/webp"
+                m == mime::IMAGE_BMP
+                    || m == mime::IMAGE_GIF
+                    || m == mime::IMAGE_PNG
+                    || m == mime::IMAGE_JPEG
+                    || m == "image/x-icon"
+                    || m == "image/webp"
             },
             _ => false,
         }

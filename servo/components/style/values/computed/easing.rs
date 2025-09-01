@@ -29,17 +29,17 @@ impl ComputedTimingFunction {
         let mut current_step = (progress * (steps as f64)).floor() as i32;
 
         
-        if pos == StepPosition::Start ||
-            pos == StepPosition::JumpStart ||
-            pos == StepPosition::JumpBoth
+        if pos == StepPosition::Start
+            || pos == StepPosition::JumpStart
+            || pos == StepPosition::JumpBoth
         {
             current_step = current_step.checked_add(1).unwrap_or(current_step);
         }
 
         
         
-        if before_flag == BeforeFlag::Set &&
-            (progress * steps as f64).rem_euclid(1.0).approx_eq(&0.0)
+        if before_flag == BeforeFlag::Set
+            && (progress * steps as f64).rem_euclid(1.0).approx_eq(&0.0)
         {
             current_step = current_step.checked_sub(1).unwrap_or(current_step);
         }

@@ -70,9 +70,9 @@ impl Ord for CascadePriority {
             
             
             
-            if self.cascade_level.is_important() &&
-                !self.layer_order.is_style_attribute_layer() &&
-                !other.layer_order.is_style_attribute_layer()
+            if self.cascade_level.is_important()
+                && !self.layer_order.is_style_attribute_layer()
+                && !other.layer_order.is_style_attribute_layer()
             {
                 ordering.reverse()
             } else {
