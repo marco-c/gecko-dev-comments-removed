@@ -47,7 +47,7 @@ class ProfileBuffer final {
                            const Maybe<ProfilingCategoryPair>& aCategoryPair);
 
   
-  static const size_t kMaxFrameKeyLength = 512;
+  static constexpr size_t kMaxFrameKeyLength = 512;
 
   
   

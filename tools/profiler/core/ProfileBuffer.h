@@ -48,7 +48,7 @@ class ProfileBuffer final {
       const mozilla::Maybe<JS::ProfilingCategoryPair>& aCategoryPair);
 
   
-  static const size_t kMaxFrameKeyLength = 512;
+  static constexpr size_t kMaxFrameKeyLength = 512;
 
   
   

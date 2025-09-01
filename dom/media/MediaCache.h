@@ -195,7 +195,7 @@ class MediaCacheStream : public DecoderDoctorLifeLogger<MediaCacheStream> {
 
  public:
   
-  static const int64_t BLOCK_SIZE = 32768;
+  static constexpr int64_t BLOCK_SIZE = 32768;
 
   enum ReadMode { MODE_METADATA, MODE_PLAYBACK };
 
