@@ -32,13 +32,6 @@ class nsContentDLF final : public nsIDocumentLoaderFactory {
 
   nsresult InitUAStyleSheet();
 
-  typedef already_AddRefed<mozilla::dom::Document> (*DocumentCreator)();
-  nsresult CreateDocument(const char* aCommand, nsIChannel* aChannel,
-                          nsILoadGroup* aLoadGroup, nsIDocShell* aContainer,
-                          DocumentCreator aDocumentCreator,
-                          nsIStreamListener** aDocListener,
-                          nsIDocumentViewer** aDocumentViewer);
-
   
 
 
@@ -50,7 +43,6 @@ class nsContentDLF final : public nsIDocumentLoaderFactory {
 
  private:
   static nsresult EnsureUAStyleSheet();
-  static bool IsImageContentType(const nsACString&);
 };
 
 nsresult NS_NewContentDocumentLoaderFactory(nsIDocumentLoaderFactory** aResult);

@@ -34,7 +34,7 @@ class DecoderTraits {
   
   
   
-  static bool ShouldHandleMediaType(const char* aMIMEType,
+  static bool ShouldHandleMediaType(const nsACString& aMIMEType,
                                     DecoderDoctorDiagnostics* aDiagnostics);
 
   
