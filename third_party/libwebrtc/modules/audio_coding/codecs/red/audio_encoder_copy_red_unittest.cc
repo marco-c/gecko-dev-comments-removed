@@ -207,7 +207,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloadSizes1) {
 
 
 TEST_F(AudioEncoderCopyRedTest, CheckPayloadSizes0) {
-  webrtc::test::ScopedKeyValueConfig field_trials(
+  test::ScopedKeyValueConfig field_trials(
       field_trials_, "WebRTC-Audio-Red-For-Opus/Enabled-0/");
   
   AudioEncoderCopyRed::Config config;
@@ -233,7 +233,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloadSizes0) {
 
 
 TEST_F(AudioEncoderCopyRedTest, CheckPayloadSizes2) {
-  webrtc::test::ScopedKeyValueConfig field_trials(
+  test::ScopedKeyValueConfig field_trials(
       field_trials_, "WebRTC-Audio-Red-For-Opus/Enabled-2/");
   
   AudioEncoderCopyRed::Config config;
@@ -275,7 +275,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloadSizes2) {
 
 
 TEST_F(AudioEncoderCopyRedTest, CheckPayloadSizes3) {
-  webrtc::test::ScopedKeyValueConfig field_trials(
+  test::ScopedKeyValueConfig field_trials(
       field_trials_, "WebRTC-Audio-Red-For-Opus/Enabled-3/");
   
   AudioEncoderCopyRed::Config config;
@@ -489,7 +489,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckRFC2198Header) {
 
 
 TEST_F(AudioEncoderCopyRedTest, CheckRFC2198Header0) {
-  webrtc::test::ScopedKeyValueConfig field_trials(
+  test::ScopedKeyValueConfig field_trials(
       field_trials_, "WebRTC-Audio-Red-For-Opus/Enabled-0/");
   
   AudioEncoderCopyRed::Config config;
@@ -517,7 +517,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckRFC2198Header0) {
 }
 
 TEST_F(AudioEncoderCopyRedTest, CheckRFC2198Header2) {
-  webrtc::test::ScopedKeyValueConfig field_trials(
+  test::ScopedKeyValueConfig field_trials(
       field_trials_, "WebRTC-Audio-Red-For-Opus/Enabled-2/");
   
   AudioEncoderCopyRed::Config config;

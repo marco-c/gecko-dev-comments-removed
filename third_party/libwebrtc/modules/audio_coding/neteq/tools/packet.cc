@@ -95,7 +95,7 @@ void Packet::DeleteRedHeaders(std::list<RTPHeader*>* headers) {
 bool Packet::ParseHeader(const RtpHeaderExtensionMap* extension_map) {
   
   
-  webrtc::RtpPacketReceived rtp_packet(extension_map);
+  RtpPacketReceived rtp_packet(extension_map);
 
   
   
