@@ -26,7 +26,9 @@ import org.mozilla.gecko.util.XPCOMError;
 
 @AnyThread
 public class WebRequestError extends Exception {
+  
   @Retention(RetentionPolicy.SOURCE)
+  
   @IntDef({
     ERROR_CATEGORY_UNKNOWN,
     ERROR_CATEGORY_SECURITY,
@@ -38,6 +40,7 @@ public class WebRequestError extends Exception {
   })
   public @interface ErrorCategory {}
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({
     ERROR_UNKNOWN,
@@ -87,8 +90,13 @@ public class WebRequestError extends Exception {
   
   public static final int ERROR_CATEGORY_CONTENT = 0x4;
 
+  
   public static final int ERROR_CATEGORY_URI = 0x5;
+
+  
   public static final int ERROR_CATEGORY_PROXY = 0x6;
+
+  
   public static final int ERROR_CATEGORY_SAFEBROWSING = 0x7;
 
   

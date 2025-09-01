@@ -49,6 +49,7 @@ public class WebNotificationAction implements Parcelable {
     this(Objects.requireNonNull(in.readString()), Objects.requireNonNull(in.readString()));
   }
 
+  
   public static final Creator<WebNotificationAction> CREATOR =
       new Creator<WebNotificationAction>() {
         @Override

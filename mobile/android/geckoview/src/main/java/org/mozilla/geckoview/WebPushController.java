@@ -17,6 +17,7 @@ import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.ThreadUtils;
 
+
 public class WebPushController {
   private static final String LOGTAG = "WebPushController";
 

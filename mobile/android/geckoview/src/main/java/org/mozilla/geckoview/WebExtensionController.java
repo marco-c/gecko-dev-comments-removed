@@ -30,6 +30,10 @@ import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.geckoview.WebExtension.InstallException;
 
+
+
+
+
 public class WebExtensionController {
   private static final String LOGTAG = "WebExtension";
 
@@ -365,6 +369,10 @@ public class WebExtensionController {
       return null;
     }
   }
+
+  
+
+
 
   public interface DebuggerDelegate {
     
@@ -930,6 +938,7 @@ public class WebExtensionController {
         .accept(result -> unregisterWebExtension(extension));
   }
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({EnableSource.USER, EnableSource.APP})
   public @interface EnableSources {}
@@ -1911,6 +1920,13 @@ public class WebExtensionController {
       final GeckoBundle menuArrayBundle) {
     return null;
   }
+
+  
+
+
+
+
+
 
   @Nullable
   @UiThread

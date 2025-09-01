@@ -80,7 +80,15 @@ public class WebPushSubscription implements Parcelable {
 
   @NonNull public final byte[] authSecret;
 
-  @SuppressWarnings("checkstyle:javadocmethod")
+  
+
+
+
+
+
+
+
+
   public WebPushSubscription(
       final @NonNull String scope,
       final @NonNull String endpoint,
@@ -163,6 +171,7 @@ public class WebPushSubscription implements Parcelable {
     out.writeByteArray(authSecret);
   }
 
+  
   public static final Parcelable.Creator<WebPushSubscription> CREATOR =
       new Parcelable.Creator<WebPushSubscription>() {
         @Override

@@ -7,6 +7,7 @@ package org.mozilla.geckoview;
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
 
+
 public interface WebNotificationDelegate {
   
 

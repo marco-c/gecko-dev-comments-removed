@@ -115,6 +115,7 @@ public class WebNotification implements Parcelable {
 
   public final @NonNull int[] vibrate;
 
+  
   public final @NonNull WebNotificationAction[] actions;
 
   
@@ -264,6 +265,7 @@ public class WebNotification implements Parcelable {
     origin = Objects.requireNonNull(in.readString());
   }
 
+  
   public static final Creator<WebNotification> CREATOR =
       new Creator<>() {
         @Override
