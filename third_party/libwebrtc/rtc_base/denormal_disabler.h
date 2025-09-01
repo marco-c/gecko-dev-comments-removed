@@ -8,10 +8,8 @@
 
 
 
-#ifndef SYSTEM_WRAPPERS_INCLUDE_DENORMAL_DISABLER_H_
-#define SYSTEM_WRAPPERS_INCLUDE_DENORMAL_DISABLER_H_
-
-#include "rtc_base/system/arch.h"
+#ifndef RTC_BASE_DENORMAL_DISABLER_H_
+#define RTC_BASE_DENORMAL_DISABLER_H_
 
 namespace webrtc {
 
