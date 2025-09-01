@@ -644,7 +644,8 @@ static bool CollectRuntimeStatsHelper(JSContext* cx, RuntimeStats* rtStats,
                                       IterateCellCallback statsCellCallback) {
   
   
-  gc::FinishGC(cx);
+  
+  js::gc::AutoPrepareForTracing session(cx);
   JS::AutoAssertNoGC nogc(cx);
 
   
@@ -668,13 +669,13 @@ static bool CollectRuntimeStatsHelper(JSContext* cx, RuntimeStats* rtStats,
 
   if (js::gc::DecommitEnabled()) {
     IterateChunks(cx, &rtStats->gcHeapDecommittedPages,
-                  DecommittedPagesChunkCallback);
+                  DecommittedPagesChunkCallback, session);
   }
 
   
   StatsClosure closure(rtStats, opv, anonymize);
   IterateHeapUnbarriered(cx, &closure, StatsZoneCallback, StatsRealmCallback,
-                         StatsArenaCallback, statsCellCallback);
+                         StatsArenaCallback, statsCellCallback, session);
 
   
   rt->addSizeOfIncludingThis(rtStats->mallocSizeOf_, &rtStats->runtime);
@@ -849,9 +850,10 @@ JS_PUBLIC_API bool AddSizeOfTab(JSContext* cx, HandleObject obj,
   
   
   StatsClosure closure(&rtStats, opv,  false);
+  js::gc::AutoPrepareForTracing session(cx);
   IterateHeapUnbarrieredForZone(cx, zone, &closure, StatsZoneCallback,
                                 StatsRealmCallback, StatsArenaCallback,
-                                StatsCellCallback<CoarseGrained>);
+                                StatsCellCallback<CoarseGrained>, session);
 
   MOZ_ASSERT(rtStats.zoneStatsVector.length() == 1);
   rtStats.zTotals.addSizes(rtStats.zoneStatsVector[0]);

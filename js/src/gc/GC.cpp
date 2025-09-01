@@ -4720,6 +4720,12 @@ bool GCRuntime::checkIfGCAllowedInCurrentState(JS::GCReason reason) {
 
   
   
+  
+  
+  rt->mainContextFromOwnThread()->verifyIsSafeToGC();
+
+  
+  
   if (rt->isBeingDestroyed() && !isShutdownGC()) {
     return false;
   }
