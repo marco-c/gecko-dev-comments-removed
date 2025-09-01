@@ -27,8 +27,6 @@ namespace webrtc {
 
 struct RTC_EXPORT CryptoOptions {
   CryptoOptions();
-  CryptoOptions(const CryptoOptions& other);
-  ~CryptoOptions();
 
   
   
