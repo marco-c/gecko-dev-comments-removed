@@ -1139,8 +1139,9 @@ void ViewTransition::PerformPendingOperations() {
 
 
 nsRect ViewTransition::SnapshotContainingBlockRect(nsPresContext* aPc) {
-  
-  return aPc ? aPc->GetVisibleArea() : nsRect();
+  return aPc ? nsRect(aPc->GetVisibleArea().TopLeft(),
+                      aPc->GetSizeForViewportUnits())
+             : nsRect();
 }
 
 
