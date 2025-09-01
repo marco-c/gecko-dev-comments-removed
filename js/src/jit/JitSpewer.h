@@ -14,7 +14,7 @@
 
 #include <stdarg.h>
 
-#include "jit/JSONSpewer.h"
+#include "jit/GraphSpewer.h"
 #include "js/Printer.h"
 #include "js/TypeDecls.h"
 #include "wasm/WasmTypeDecls.h"
@@ -146,22 +146,22 @@ const char* ValTypeToString(JSValueType type);
 #ifdef JS_JITSPEW
 
 
-class GraphSpewer {
+
+class JitSpewGraphSpewer {
  private:
   MIRGraph* graph_;
   LSprinter jsonPrinter_;
-  JSONSpewer jsonSpewer_;
+  GraphSpewer graphSpewer_;
 
  public:
-  explicit GraphSpewer(TempAllocator* alloc,
-                       const wasm::CodeMetadata* wasmCodeMeta = nullptr);
+  explicit JitSpewGraphSpewer(TempAllocator* alloc,
+                              const wasm::CodeMetadata* wasmCodeMeta = nullptr);
 
   bool isSpewing() const { return graph_; }
   void init(MIRGraph* graph, JSScript* function);
   void beginFunction(JSScript* function);
   void beginWasmFunction(unsigned funcIndex);
-  void spewPass(const char* pass);
-  void spewPass(const char* pass, BacktrackingAllocator* ra);
+  void spewPass(const char* pass, BacktrackingAllocator* ra = nullptr);
   void endFunction();
 
   void dump(Fprinter& json);
@@ -237,16 +237,16 @@ void EnableIonDebugAsyncLogging();
 
 #else
 
-class GraphSpewer {
+class JitSpewGraphSpewer {
  public:
-  explicit GraphSpewer(TempAllocator* alloc,
-                       const wasm::CodeMetadata* wasmCodeMeta = nullptr) {}
+  explicit JitSpewGraphSpewer(
+      TempAllocator* alloc, const wasm::CodeMetadata* wasmCodeMeta = nullptr) {}
 
   bool isSpewing() { return false; }
   void init(MIRGraph* graph, JSScript* function) {}
   void beginFunction(JSScript* function) {}
-  void spewPass(const char* pass) {}
-  void spewPass(const char* pass, BacktrackingAllocator* ra) {}
+  void beginWasmFunction(unsigned funcIndex) {}
+  void spewPass(const char* pass, BacktrackingAllocator* ra = nullptr) {}
   void endFunction() {}
 
   void dump(Fprinter& c1, Fprinter& json) {}

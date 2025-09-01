@@ -4,8 +4,8 @@
 
 
 
-#ifndef jit_JSONSpewer_h
-#define jit_JSONSpewer_h
+#ifndef jit_GraphSpewer_h
+#define jit_GraphSpewer_h
 
 #ifdef JS_JITSPEW
 
@@ -24,18 +24,11 @@ class MIRGraph;
 class MResumePoint;
 class LNode;
 
-class JSONSpewer : JSONPrinter {
+class GraphSpewer : JSONPrinter {
  private:
   
   const wasm::CodeMetadata* wasmCodeMeta_;
 
- public:
-  explicit JSONSpewer(GenericPrinter& out,
-                      const wasm::CodeMetadata* wasmCodeMeta = nullptr)
-      : JSONPrinter(out), wasmCodeMeta_(wasmCodeMeta) {}
-
-  void beginFunction(JSScript* script);
-  void beginWasmFunction(unsigned funcIndex);
   void beginPass(const char* pass);
   void spewMDef(MDefinition* def);
   void spewMResumePoint(MResumePoint* rp);
@@ -44,6 +37,15 @@ class JSONSpewer : JSONPrinter {
   void spewLIR(MIRGraph* mir);
   void spewRanges(BacktrackingAllocator* regalloc);
   void endPass();
+
+ public:
+  explicit GraphSpewer(GenericPrinter& out,
+                      const wasm::CodeMetadata* wasmCodeMeta = nullptr)
+      : JSONPrinter(out), wasmCodeMeta_(wasmCodeMeta) {}
+
+  void beginFunction(JSScript* script);
+  void beginWasmFunction(unsigned funcIndex);
+  void spewPass(const char* pass, MIRGraph* graph, BacktrackingAllocator* ra = nullptr);
   void endFunction();
 };
 
