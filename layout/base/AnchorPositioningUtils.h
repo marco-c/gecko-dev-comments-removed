@@ -7,12 +7,23 @@
 #ifndef AnchorPositioningUtils_h__
 #define AnchorPositioningUtils_h__
 
+#include "mozilla/Maybe.h"
+#include "nsRect.h"
+
+struct AnchorPosResolutionData;
 class nsIFrame;
 
 template <class T>
 class nsTArray;
 
 namespace mozilla {
+
+struct AnchorPosInfo {
+  
+  
+  nsRect mRect;
+  const nsIFrame* mContainingBlock;
+};
 
 
 
@@ -28,6 +39,11 @@ struct AnchorPositioningUtils {
   static nsIFrame* FindFirstAcceptableAnchor(
       const nsIFrame* aPositionedFrame,
       const nsTArray<nsIFrame*>& aPossibleAnchorFrames);
+
+  static Maybe<AnchorPosInfo> GetAnchorPosRect(
+      const nsIFrame* aAbsoluteContainingBlock, const nsIFrame* aAnchor,
+      bool aCBRectIsvalid,
+      Maybe<AnchorPosResolutionData>* aReferencedAnchorsEntry);
 };
 
 }  
