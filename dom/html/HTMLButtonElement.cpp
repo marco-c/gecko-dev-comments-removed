@@ -386,7 +386,6 @@ void HTMLButtonElement::ActivationBehavior(EventChainPostVisitor& aVisitor) {
     GetCommand(init.mCommand);
     init.mSource = this;
     init.mCancelable = true;
-    init.mComposed = true;
     RefPtr<Event> event = CommandEvent::Constructor(this, u"command"_ns, init);
     event->SetTrusted(true);
     event->SetTarget(target);
