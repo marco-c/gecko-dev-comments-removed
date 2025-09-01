@@ -14,7 +14,6 @@
 ChromeUtils.defineESModuleGetters(this, {
   MerinoClient: "resource:///modules/MerinoClient.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
-  UrlbarProviderPlaces: "resource:///modules/UrlbarProviderPlaces.sys.mjs",
 });
 
 const { WEATHER_SUGGESTION } = MerinoTestUtils;
@@ -172,7 +171,7 @@ add_task(async function urlAlreadyInHistory() {
   
   info("Doing first search");
   let context = createContext("weather", {
-    providers: [UrlbarProviderPlaces.name],
+    providers: ["Places"],
     isPrivate: false,
   });
   await check_results({
@@ -186,7 +185,7 @@ add_task(async function urlAlreadyInHistory() {
   
   info("Doing second search");
   context = createContext("weather", {
-    providers: [UrlbarProviderQuickSuggest.name, UrlbarProviderPlaces.name],
+    providers: [UrlbarProviderQuickSuggest.name, "Places"],
     isPrivate: false,
   });
   await check_results({
