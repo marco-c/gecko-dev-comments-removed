@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::hash::Hash;
 
 use crate::event_database::RecordedEvent;
-use crate::ErrorType;
+use crate::{ErrorType, TestGetValue};
 
 
 
@@ -76,7 +76,7 @@ impl TryFrom<&str> for NoExtraKeys {
 
 
 
-pub trait Event {
+pub trait Event: TestGetValue<Vec<RecordedEvent>> {
     
     type Extra: ExtraKeys;
 
@@ -86,21 +86,6 @@ pub trait Event {
     
     
     fn record<M: Into<Option<Self::Extra>>>(&self, extra: M);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn test_get_value<'a, S: Into<Option<&'a str>>>(
-        &self,
-        ping_name: S,
-    ) -> Option<Vec<RecordedEvent>>;
 
     
     

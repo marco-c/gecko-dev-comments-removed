@@ -4,7 +4,7 @@
 
 use crate::metrics::DistributionData;
 use crate::metrics::TimerId;
-use crate::ErrorType;
+use crate::{ErrorType, TestGetValue};
 
 use std::time::Duration;
 
@@ -12,7 +12,7 @@ use std::time::Duration;
 
 
 
-pub trait TimingDistribution {
+pub trait TimingDistribution: TestGetValue<DistributionData> {
     
     
     
@@ -127,21 +127,6 @@ pub trait TimingDistribution {
     
     
     fn accumulate_raw_duration(&self, duration: Duration);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn test_get_value<'a, S: Into<Option<&'a str>>>(
-        &self,
-        ping_name: S,
-    ) -> Option<DistributionData>;
 
     
     

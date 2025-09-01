@@ -7,8 +7,8 @@ use crate::error_recording::{record_error, test_get_num_recorded_errors, ErrorTy
 use crate::metrics::Metric;
 use crate::metrics::MetricType;
 use crate::storage::StorageManager;
-use crate::CommonMetricData;
 use crate::Glean;
+use crate::{CommonMetricData, TestGetValue};
 
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -137,25 +137,6 @@ impl RateMetric {
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<Rate> {
-        crate::block_on_dispatcher();
-        crate::core::with_glean(|glean| self.get_value(glean, ping_name.as_deref()))
-    }
-
-    
     #[doc(hidden)]
     pub fn get_value<'a, S: Into<Option<&'a str>>>(
         &self,
@@ -194,5 +175,26 @@ impl RateMetric {
         crate::core::with_glean(|glean| {
             test_get_num_recorded_errors(glean, self.meta(), error).unwrap_or(0)
         })
+    }
+}
+
+impl TestGetValue<Rate> for RateMetric {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn test_get_value(&self, ping_name: Option<String>) -> Option<Rate> {
+        crate::block_on_dispatcher();
+        crate::core::with_glean(|glean| self.get_value(glean, ping_name.as_deref()))
     }
 }

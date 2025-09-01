@@ -2,12 +2,12 @@
 
 
 
-use crate::ErrorType;
+use crate::{ErrorType, TestGetValue};
 
 
 
 
-pub trait Rate {
+pub trait Rate: TestGetValue<crate::Rate> {
     
     
     
@@ -29,18 +29,6 @@ pub trait Rate {
     
     
     fn add_to_denominator(&self, amount: i32);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<crate::Rate>;
 
     
     

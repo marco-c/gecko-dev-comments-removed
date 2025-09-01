@@ -2,35 +2,30 @@
 
 
 
-
-
-
-
-
-
 mod common;
 
-use glean::{ConfigurationBuilder, TestGetValue};
+use glean::ConfigurationBuilder;
+use glean_core::TestGetValue;
 
 
 mod metrics {
-    use glean::private::*;
-    use glean::{Lifetime, TimeUnit};
-    use glean_core::CommonMetricData;
+    use glean::Lifetime;
+    use glean_core::{CommonMetricData, DualLabeledCounterMetric};
     use once_cell::sync::Lazy;
 
     #[allow(non_upper_case_globals)]
-    pub static initialization: Lazy<TimespanMetric> = Lazy::new(|| {
-        TimespanMetric::new(
+    pub static dual_labeled_counter: Lazy<DualLabeledCounterMetric> = Lazy::new(|| {
+        DualLabeledCounterMetric::new(
             CommonMetricData {
-                name: "initialization".into(),
+                name: "labeled_boolean".into(),
                 category: "sample".into(),
                 send_in_pings: vec!["validation".into()],
                 lifetime: Lifetime::Ping,
                 disabled: false,
                 ..Default::default()
             },
-            TimeUnit::Nanosecond,
+            None,
+            None,
         )
     });
 }
@@ -48,16 +43,13 @@ mod pings {
     });
 }
 
-
-
-
-
-
 #[test]
-fn simple_lifecycle() {
+fn test_dual_labeled_metrics_test_get_value_functions_appropriately() {
     common::enable_test_logging();
 
-    metrics::initialization.start();
+    metrics::dual_labeled_counter
+        .get("label1", "category1")
+        .add(10);
 
     
     let dir = tempfile::tempdir().unwrap();
@@ -69,14 +61,14 @@ fn simple_lifecycle() {
         .build();
     common::initialize(cfg);
 
-    metrics::initialization.stop();
-
-    
-    
-    assert!(metrics::initialization.test_get_value(None).is_some());
+    let map = metrics::dual_labeled_counter.test_get_value(None).unwrap();
+    assert_eq!(map.len(), 1);
+    assert_eq!(map.get("label1").unwrap().get("category1").unwrap(), &10);
 
     pings::validation.submit(None);
-    assert!(metrics::initialization.test_get_value(None).is_none());
+    let map = metrics::dual_labeled_counter.test_get_value(None).unwrap();
+    assert_eq!(map.len(), 0);
+    assert!(!map.contains_key("label1"));
 
     glean::shutdown();
 }

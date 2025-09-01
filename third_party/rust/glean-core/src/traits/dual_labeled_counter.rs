@@ -2,13 +2,14 @@
 
 
 
-use crate::{CounterMetric, ErrorType};
+use crate::{CounterMetric, ErrorType, TestGetValue};
+use std::collections::HashMap;
 
 
 
 
 
-pub trait DualLabeledCounter {
+pub trait DualLabeledCounter: TestGetValue<HashMap<String, HashMap<String, i32>>> {
     
     
     

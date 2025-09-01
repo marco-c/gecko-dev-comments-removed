@@ -11,8 +11,8 @@ use crate::histogram::{Functional, Histogram};
 use crate::metrics::memory_unit::MemoryUnit;
 use crate::metrics::{DistributionData, Metric, MetricType};
 use crate::storage::StorageManager;
-use crate::CommonMetricData;
 use crate::Glean;
+use crate::{CommonMetricData, TestGetValue};
 
 
 const LOG_BASE: f64 = 2.0;
@@ -279,25 +279,6 @@ impl MemoryDistributionMetric {
     
     
     
-    
-    
-    
-    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<DistributionData> {
-        crate::block_on_dispatcher();
-        crate::core::with_glean(|glean| self.get_value(glean, ping_name.as_deref()))
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     pub fn test_get_num_recorded_errors(&self, error: ErrorType) -> i32 {
         crate::block_on_dispatcher();
 
@@ -340,6 +321,27 @@ impl MemoryDistributionMetric {
                     Metric::MemoryDistribution(hist)
                 });
         });
+    }
+}
+
+impl TestGetValue<DistributionData> for MemoryDistributionMetric {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn test_get_value(&self, ping_name: Option<String>) -> Option<DistributionData> {
+        crate::block_on_dispatcher();
+        crate::core::with_glean(|glean| self.get_value(glean, ping_name.as_deref()))
     }
 }
 
