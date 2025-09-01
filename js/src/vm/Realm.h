@@ -44,6 +44,7 @@ class BaselineCompileQueue;
 }  
 
 class AutoRestoreRealmDebugMode;
+class DateTimeInfo;
 class Debugger;
 class GlobalObject;
 class GlobalObjectData;
@@ -338,6 +339,11 @@ class JS::Realm : public JS::shadow::Realm {
 
   const js::AllocationMetadataBuilder* allocationMetadataBuilder_ = nullptr;
   void* realmPrivate_ = nullptr;
+
+#if JS_HAS_INTL_API
+  
+  js::UniquePtr<js::DateTimeInfo> dateTimeInfo_;
+#endif
 
   
   
@@ -802,6 +808,10 @@ class JS::Realm : public JS::shadow::Realm {
 
   
   const char* getLocale() const;
+
+  
+  
+  js::DateTimeInfo* getDateTimeInfo();
 
   
   mozilla::non_crypto::XorShift128PlusRNG& getOrCreateRandomNumberGenerator();
