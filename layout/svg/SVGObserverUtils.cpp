@@ -696,7 +696,7 @@ void SVGMarkerObserver::OnRenderingChange() {
   
   
   
-  if (!frame->HasAnyStateBits(NS_FRAME_IN_REFLOW)) {
+  if (!SVGUtils::OuterSVGIsCallingReflowSVG(frame)) {
     
     
     
