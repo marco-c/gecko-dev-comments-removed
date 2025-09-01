@@ -40,6 +40,12 @@
 #include "vm/MutexIDs.h"
 #include "vm/Realm.h"
 
+
+js::DateTimeInfo::ForceUTC js::DateTimeInfo::forceUTC(JS::Realm* realm) {
+  return realm->creationOptions().forceUTC() ? DateTimeInfo::ForceUTC::Yes
+                                             : DateTimeInfo::ForceUTC::No;
+}
+
 static bool ComputeLocalTime(time_t local, struct tm* ptm) {
   
   
@@ -166,10 +172,6 @@ static int32_t UTCToLocalStandardOffsetSeconds() {
 }
 
 void js::DateTimeInfo::internalResetTimeZone(ResetTimeZoneMode mode) {
-#if JS_HAS_INTL_API
-  MOZ_ASSERT(!timeZoneOverride_, "only valid for default instance");
-#endif
-
   
   if (timeZoneStatus_ == TimeZoneStatus::NeedsUpdate) {
     return;
@@ -186,7 +188,25 @@ void js::DateTimeInfo::internalResetTimeZone(ResetTimeZoneMode mode) {
   }
 }
 
-void js::DateTimeInfo::resetState() {
+void js::DateTimeInfo::updateTimeZone() {
+  MOZ_ASSERT(timeZoneStatus_ != TimeZoneStatus::Valid);
+
+  bool updateIfChanged = timeZoneStatus_ == TimeZoneStatus::UpdateIfChanged;
+
+  timeZoneStatus_ = TimeZoneStatus::Valid;
+
+  
+
+
+
+  int32_t newOffset = UTCToLocalStandardOffsetSeconds();
+
+  if (updateIfChanged && newOffset == utcToLocalStandardOffsetSeconds_) {
+    return;
+  }
+
+  utcToLocalStandardOffsetSeconds_ = newOffset;
+
   dstRange_.reset();
 
 #if JS_HAS_INTL_API
@@ -205,49 +225,6 @@ void js::DateTimeInfo::resetState() {
   standardName_ = nullptr;
   daylightSavingsName_ = nullptr;
 #endif 
-}
-
-#if JS_HAS_INTL_API
-void js::DateTimeInfo::updateTimeZoneOverride(
-    RefPtr<JS::TimeZoneString> timeZone) {
-  MOZ_RELEASE_ASSERT(timeZoneOverride_, "can't change default instance");
-  MOZ_ASSERT(timeZone);
-
-  
-  if (std::strcmp(timeZoneOverride_->chars(), timeZone->chars()) != 0) {
-    timeZoneOverride_ = timeZone;
-
-    
-    utcToLocalStandardOffsetSeconds_++;
-
-    resetState();
-  }
-}
-#endif
-
-void js::DateTimeInfo::updateTimeZone() {
-  MOZ_ASSERT(timeZoneStatus_ != TimeZoneStatus::Valid);
-#if JS_HAS_INTL_API
-  MOZ_ASSERT(!timeZoneOverride_, "only valid for default instance");
-#endif
-
-  bool updateIfChanged = timeZoneStatus_ == TimeZoneStatus::UpdateIfChanged;
-
-  timeZoneStatus_ = TimeZoneStatus::Valid;
-
-  
-
-
-
-  int32_t newOffset = UTCToLocalStandardOffsetSeconds();
-
-  if (updateIfChanged && newOffset == utcToLocalStandardOffsetSeconds_) {
-    return;
-  }
-
-  utcToLocalStandardOffsetSeconds_ = newOffset;
-
-  resetState();
 
   
   {
@@ -258,24 +235,13 @@ void js::DateTimeInfo::updateTimeZone() {
   }
 }
 
-js::DateTimeInfo::DateTimeInfo() {
+js::DateTimeInfo::DateTimeInfo(bool forceUTC) : forceUTC_(forceUTC) {
   
   
   
   
   timeZoneStatus_ = TimeZoneStatus::NeedsUpdate;
 }
-
-#if JS_HAS_INTL_API
-js::DateTimeInfo::DateTimeInfo(RefPtr<JS::TimeZoneString> timeZone)
-    : utcToLocalStandardOffsetSeconds_(0), timeZoneOverride_(timeZone) {
-  MOZ_ASSERT(timeZone);
-
-  
-  
-  resetState();
-}
-#endif
 
 js::DateTimeInfo::~DateTimeInfo() = default;
 
@@ -543,20 +509,15 @@ bool js::DateTimeInfo::internalTimeZoneId(TimeZoneIdentifierVector& result) {
 
 mozilla::intl::TimeZone* js::DateTimeInfo::timeZone() {
   if (!timeZone_) {
-    mozilla::Maybe<mozilla::Span<const char>> timeZoneOverride;
-    if (timeZoneOverride_) {
+    
+    
+    mozilla::Maybe<mozilla::Span<const char16_t>> timeZoneOverride;
+    if (forceUTC_) {
       timeZoneOverride =
-          mozilla::Some(mozilla::MakeStringSpan(timeZoneOverride_->chars()));
+          mozilla::Some(mozilla::MakeStringSpan(u"Atlantic/Reykjavik"));
     }
 
     auto timeZone = mozilla::intl::TimeZone::TryCreate(timeZoneOverride);
-
-    
-    
-    
-    if (timeZone.isErr() && timeZoneOverride_) {
-      timeZone = mozilla::intl::TimeZone::TryCreate();
-    }
 
     
     
@@ -572,19 +533,25 @@ mozilla::intl::TimeZone* js::DateTimeInfo::timeZone() {
 #endif 
 
  js::ExclusiveData<js::DateTimeInfo>* js::DateTimeInfo::instance;
+ js::ExclusiveData<js::DateTimeInfo>* js::DateTimeInfo::instanceUTC;
 
 bool js::InitDateTimeState() {
-  MOZ_ASSERT(!DateTimeInfo::instance, "we should be initializing only once");
+  MOZ_ASSERT(!DateTimeInfo::instance && !DateTimeInfo::instanceUTC,
+             "we should be initializing only once");
 
   DateTimeInfo::instance =
-      js_new<ExclusiveData<DateTimeInfo>>(mutexid::DateTimeInfoMutex);
-  return DateTimeInfo::instance;
+      js_new<ExclusiveData<DateTimeInfo>>(mutexid::DateTimeInfoMutex, false);
+  DateTimeInfo::instanceUTC =
+      js_new<ExclusiveData<DateTimeInfo>>(mutexid::DateTimeInfoMutex, true);
+  return DateTimeInfo::instance && DateTimeInfo::instanceUTC;
 }
 
 
 void js::FinishDateTimeState() {
   js_delete(DateTimeInfo::instance);
   DateTimeInfo::instance = nullptr;
+  js_delete(DateTimeInfo::instanceUTC);
+  DateTimeInfo::instanceUTC = nullptr;
 }
 
 void js::ResetTimeZoneInternal(ResetTimeZoneMode mode) {
@@ -808,6 +775,15 @@ static bool ReadTimeZoneLink(std::string_view tz,
 
 void js::DateTimeInfo::internalResyncICUDefaultTimeZone() {
 #if JS_HAS_INTL_API
+  
+  
+  
+  
+  
+  if (forceUTC_) {
+    return;
+  }
+
   if (const char* tzenv = std::getenv("TZ")) {
     std::string_view tz(tzenv);
 

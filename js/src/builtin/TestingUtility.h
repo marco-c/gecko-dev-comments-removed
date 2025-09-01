@@ -66,14 +66,7 @@ JSObject* CreateScriptPrivate(JSContext* cx,
 
 [[nodiscard]] JS::UniqueChars StringToLocale(JSContext* cx,
                                              JS::Handle<JSObject*> callee,
-                                             JS::Handle<JSString*> str);
-
-enum class AllowTimeZoneLink : bool { No, Yes };
-
-[[nodiscard]] JS::UniqueChars StringToTimeZone(JSContext* cx,
-                                               JS::Handle<JSObject*> callee,
-                                               JS::Handle<JSString*> str,
-                                               AllowTimeZoneLink allowLink);
+                                             JS::Handle<JSString*> str_);
 
 
 

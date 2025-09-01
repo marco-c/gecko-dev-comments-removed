@@ -3522,7 +3522,6 @@ void MacroAssembler::dateFillLocalTimeSlots(
     Register obj, Register scratch, const LiveRegisterSet& volatileRegs) {
   
   
-  
 
   Label callVM, done;
 
@@ -3531,7 +3530,8 @@ void MacroAssembler::dateFillLocalTimeSlots(
                       Address(obj, DateObject::offsetOfLocalTimeSlot()),
                       &callVM);
 
-  unboxInt32(Address(obj, DateObject::offsetOfTimeZoneCacheKeySlot()), scratch);
+  unboxInt32(Address(obj, DateObject::offsetOfUTCTimeZoneOffsetSlot()),
+             scratch);
 
   branch32(Assembler::Equal,
            AbsoluteAddress(DateTimeInfo::addressOfUTCToLocalOffsetSeconds()),

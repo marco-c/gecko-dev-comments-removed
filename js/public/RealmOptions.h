@@ -57,15 +57,7 @@ struct LocaleString : js::RefCounted<LocaleString> {
 
   explicit LocaleString(const char* chars) : chars_(chars) {}
 
-  auto* chars() const { return chars_; }
-};
-
-struct TimeZoneString : js::RefCounted<TimeZoneString> {
-  const char* chars_;
-
-  explicit TimeZoneString(const char* chars) : chars_(chars) {}
-
-  auto* chars() const { return chars_; }
+  auto chars() const { return chars_; }
 };
 
 
@@ -211,6 +203,14 @@ class JS_PUBLIC_API RealmCreationOptions {
     return *this;
   }
 
+  
+  
+  bool forceUTC() const { return forceUTC_; }
+  RealmCreationOptions& setForceUTC(bool flag) {
+    forceUTC_ = flag;
+    return *this;
+  }
+
   RefPtr<LocaleString> locale() const { return locale_; }
   RealmCreationOptions& setLocaleCopyZ(const char* locale);
 
@@ -247,6 +247,7 @@ class JS_PUBLIC_API RealmCreationOptions {
 
   bool secureContext_ = false;
   bool freezeBuiltins_ = false;
+  bool forceUTC_ = false;
   bool alwaysUseFdlibm_ = false;
 };
 
@@ -320,20 +321,12 @@ class JS_PUBLIC_API RealmBehaviors {
     return *this;
   };
 
-  
-  
-  
-  
-  RefPtr<TimeZoneString> timeZone() const { return timeZone_; }
-  RealmBehaviors& setTimeZoneCopyZ(const char* timeZone);
-
  private:
-  RefPtr<LocaleString> localeOverride_;
-  RefPtr<TimeZoneString> timeZone_;
   mozilla::Maybe<RTPCallerTypeToken> rtpCallerType;
   bool discardSource_ = false;
   bool clampAndJitterTime_ = true;
   bool isNonLive_ = false;
+  RefPtr<LocaleString> localeOverride_;
 };
 
 

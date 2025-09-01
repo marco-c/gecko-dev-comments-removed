@@ -9,11 +9,10 @@
 
 #include "js/Date.h"
 #include "js/Value.h"
+#include "vm/DateTime.h"
 #include "vm/NativeObject.h"
 
 namespace js {
-
-class DateTimeInfo;
 
 class DateObject : public NativeObject {
   
@@ -26,7 +25,10 @@ class DateObject : public NativeObject {
   
   
   
-  static const uint32_t TIME_ZONE_CACHE_KEY_SLOT = 1;
+  
+  
+  
+  static const uint32_t UTC_TIME_ZONE_OFFSET_SLOT = 1;
 
   
 
@@ -62,7 +64,7 @@ class DateObject : public NativeObject {
   static const JSClass class_;
   static const JSClass protoClass_;
 
-  js::DateTimeInfo* dateTimeInfo() const;
+  js::DateTimeInfo::ForceUTC forceUTC() const;
 
   JS::ClippedTime clippedTime() const {
     double t = getFixedSlot(UTC_TIME_SLOT).toDouble();
@@ -134,8 +136,8 @@ class DateObject : public NativeObject {
   static constexpr size_t offsetOfUTCTimeSlot() {
     return getFixedSlotOffset(UTC_TIME_SLOT);
   }
-  static constexpr size_t offsetOfTimeZoneCacheKeySlot() {
-    return getFixedSlotOffset(TIME_ZONE_CACHE_KEY_SLOT);
+  static constexpr size_t offsetOfUTCTimeZoneOffsetSlot() {
+    return getFixedSlotOffset(UTC_TIME_ZONE_OFFSET_SLOT);
   }
   static constexpr size_t offsetOfLocalTimeSlot() {
     return getFixedSlotOffset(LOCAL_TIME_SLOT);

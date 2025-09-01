@@ -8,13 +8,11 @@
 #define vm_DateTime_h
 
 #include "mozilla/Atomics.h"
-#include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 
 #include <stdint.h>
 
 #include "js/AllocPolicy.h"
-#include "js/RealmOptions.h"
 #include "js/Utility.h"
 #include "js/Vector.h"
 #include "threading/ExclusiveData.h"
@@ -124,8 +122,14 @@ using TimeZoneIdentifierVector =
 
 
 class DateTimeInfo {
+ public:
   
+  
+  enum class ForceUTC { No, Yes };
+
+ private:
   static ExclusiveData<DateTimeInfo>* instance;
+  static ExclusiveData<DateTimeInfo>* instanceUTC;
 
   static constexpr int32_t InvalidOffset = INT32_MIN;
 
@@ -140,10 +144,12 @@ class DateTimeInfo {
   friend bool InitDateTimeState();
   friend void FinishDateTimeState();
 
-  DateTimeInfo();
+  explicit DateTimeInfo(bool forceUTC);
+  ~DateTimeInfo();
 
-  static auto acquireLockWithValidTimeZone() {
-    auto guard = instance->lock();
+  static auto acquireLockWithValidTimeZone(ForceUTC forceUTC) {
+    auto guard =
+        forceUTC == ForceUTC::Yes ? instanceUTC->lock() : instance->lock();
     if (guard->timeZoneStatus_ != TimeZoneStatus::Valid) {
       guard->updateTimeZone();
     }
@@ -151,10 +157,7 @@ class DateTimeInfo {
   }
 
  public:
-#if JS_HAS_INTL_API
-  explicit DateTimeInfo(RefPtr<JS::TimeZoneString> timeZone);
-#endif
-  ~DateTimeInfo();
+  static ForceUTC forceUTC(JS::Realm* realm);
 
   
   
@@ -166,12 +169,9 @@ class DateTimeInfo {
 
 
 
-  static int32_t getDSTOffsetMilliseconds(DateTimeInfo* dtInfo,
+  static int32_t getDSTOffsetMilliseconds(ForceUTC forceUTC,
                                           int64_t utcMilliseconds) {
-    if (MOZ_UNLIKELY(dtInfo)) {
-      return dtInfo->internalGetDSTOffsetMilliseconds(utcMilliseconds);
-    }
-    auto guard = acquireLockWithValidTimeZone();
+    auto guard = acquireLockWithValidTimeZone(forceUTC);
     return guard->internalGetDSTOffsetMilliseconds(utcMilliseconds);
   }
 
@@ -180,7 +180,12 @@ class DateTimeInfo {
 
 
 
-  static int32_t utcToLocalStandardOffsetSeconds() {
+  static int32_t utcToLocalStandardOffsetSeconds(ForceUTC forceUTC) {
+    
+    if (forceUTC == ForceUTC::Yes) {
+      return 0;
+    }
+
     
     int32_t offset = utcToLocalOffsetSeconds;
     if (offset != InvalidOffset) {
@@ -188,25 +193,10 @@ class DateTimeInfo {
     }
 
     
-    auto guard = acquireLockWithValidTimeZone();
+    auto guard = acquireLockWithValidTimeZone(forceUTC);
     offset = guard->utcToLocalStandardOffsetSeconds_;
     utcToLocalOffsetSeconds = offset;
     return offset;
-  }
-
-  
-
-
-
-  static int32_t timeZoneCacheKey(DateTimeInfo* dtInfo) {
-    if (MOZ_UNLIKELY(dtInfo)) {
-      
-      
-      return dtInfo->utcToLocalStandardOffsetSeconds_;
-    }
-
-    
-    return utcToLocalStandardOffsetSeconds();
   }
 
   enum class TimeZoneOffset { UTC, Local };
@@ -216,13 +206,9 @@ class DateTimeInfo {
 
 
 
-  static int32_t getOffsetMilliseconds(DateTimeInfo* dtInfo,
-                                       int64_t milliseconds,
+  static int32_t getOffsetMilliseconds(ForceUTC forceUTC, int64_t milliseconds,
                                        TimeZoneOffset offset) {
-    if (MOZ_UNLIKELY(dtInfo)) {
-      return dtInfo->internalGetOffsetMilliseconds(milliseconds, offset);
-    }
-    auto guard = acquireLockWithValidTimeZone();
+    auto guard = acquireLockWithValidTimeZone(forceUTC);
     return guard->internalGetOffsetMilliseconds(milliseconds, offset);
   }
 
@@ -230,26 +216,18 @@ class DateTimeInfo {
 
 
 
-  static bool timeZoneDisplayName(DateTimeInfo* dtInfo,
+  static bool timeZoneDisplayName(ForceUTC forceUTC,
                                   TimeZoneDisplayNameVector& result,
                                   int64_t utcMilliseconds, const char* locale) {
-    if (MOZ_UNLIKELY(dtInfo)) {
-      return dtInfo->internalTimeZoneDisplayName(result, utcMilliseconds,
-                                                 locale);
-    }
-    auto guard = acquireLockWithValidTimeZone();
+    auto guard = acquireLockWithValidTimeZone(forceUTC);
     return guard->internalTimeZoneDisplayName(result, utcMilliseconds, locale);
   }
 
   
 
 
-  static bool timeZoneId(DateTimeInfo* dtInfo,
-                         TimeZoneIdentifierVector& result) {
-    if (MOZ_UNLIKELY(dtInfo)) {
-      return dtInfo->internalTimeZoneId(result);
-    }
-    auto guard = acquireLockWithValidTimeZone();
+  static bool timeZoneId(ForceUTC forceUTC, TimeZoneIdentifierVector& result) {
+    auto guard = acquireLockWithValidTimeZone(forceUTC);
     return guard->internalTimeZoneId(result);
   }
 
@@ -257,11 +235,8 @@ class DateTimeInfo {
 
 
   static mozilla::Result<int32_t, mozilla::intl::ICUError> getRawOffsetMs(
-      DateTimeInfo* dtInfo) {
-    if (MOZ_UNLIKELY(dtInfo)) {
-      return dtInfo->timeZone()->GetRawOffsetMs();
-    }
-    auto guard = acquireLockWithValidTimeZone();
+      ForceUTC forceUTC) {
+    auto guard = acquireLockWithValidTimeZone(forceUTC);
     return guard->timeZone()->GetRawOffsetMs();
   }
 #else
@@ -269,8 +244,8 @@ class DateTimeInfo {
 
 
 
-  static int32_t localTZA() {
-    return utcToLocalStandardOffsetSeconds() * msPerSecond;
+  static int32_t localTZA(ForceUTC forceUTC) {
+    return utcToLocalStandardOffsetSeconds(forceUTC) * msPerSecond;
   }
 #endif 
 
@@ -280,20 +255,24 @@ class DateTimeInfo {
     return &DateTimeInfo::utcToLocalOffsetSeconds;
   }
 
-#if JS_HAS_INTL_API
-  void updateTimeZoneOverride(RefPtr<JS::TimeZoneString> timeZone);
-#endif
-
  private:
   
   friend void js::ResetTimeZoneInternal(ResetTimeZoneMode);
 
   static void resetTimeZone(ResetTimeZoneMode mode) {
-    auto guard = instance->lock();
-    guard->internalResetTimeZone(mode);
+    {
+      auto guard = instance->lock();
+      guard->internalResetTimeZone(mode);
 
-    
-    utcToLocalOffsetSeconds = InvalidOffset;
+      
+      utcToLocalOffsetSeconds = InvalidOffset;
+    }
+    {
+      
+      
+      auto guard = instanceUTC->lock();
+      guard->internalResetTimeZone(mode);
+    }
   }
 
   struct RangeCache {
@@ -311,15 +290,13 @@ class DateTimeInfo {
     void sanityCheck();
   };
 
+  bool forceUTC_;
+
   enum class TimeZoneStatus : uint8_t { Valid, NeedsUpdate, UpdateIfChanged };
 
   TimeZoneStatus timeZoneStatus_;
 
   
-
-
-
-
 
 
 
@@ -370,11 +347,6 @@ class DateTimeInfo {
   
 
 
-  RefPtr<JS::TimeZoneString> timeZoneOverride_;
-
-  
-
-
 
   mozilla::UniquePtr<mozilla::intl::TimeZone> timeZone_;
 
@@ -405,13 +377,11 @@ class DateTimeInfo {
 
   void internalResetTimeZone(ResetTimeZoneMode mode);
 
-  void resetState();
-
   void updateTimeZone();
 
   void internalResyncICUDefaultTimeZone();
 
-  static int64_t toClampedSeconds(int64_t milliseconds);
+  int64_t toClampedSeconds(int64_t milliseconds);
 
   using ComputeFn = int32_t (DateTimeInfo::*)(int64_t);
 
