@@ -287,6 +287,12 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
   
 
   
+  
+  static nsCString GetSpoofedJSTimeZone();
+
+  
+
+  
 
 
 
