@@ -476,6 +476,7 @@ void Navigation::Navigate(JSContext* aCx, const nsAString& aUrl,
   if (!document) {
     return;
   }
+
   
   
   RefPtr<nsIURI> urlRecord;
@@ -489,6 +490,16 @@ void Navigation::Navigate(JSContext* aCx, const nsAString& aUrl,
     SetEarlyErrorResult(aCx, aResult, std::move(rv));
     return;
   }
+
+  
+  
+  if (urlRecord->SchemeIs("javascript")) {
+    ErrorResult rv;
+    rv.ThrowNotSupportedError("The javascript: protocol is not supported");
+    SetEarlyErrorResult(aCx, aResult, std::move(rv));
+    return;
+  }
+
   
   
   
@@ -528,6 +539,7 @@ void Navigation::Navigate(JSContext* aCx, const nsAString& aUrl,
   
   
   
+  
   JS::Rooted<JS::Value> info(aCx, aOptions.mInfo);
   RefPtr<NavigationAPIMethodTracker> apiMethodTracker =
       MaybeSetUpcomingNonTraverseAPIMethodTracker(info, serializedState);
@@ -559,6 +571,7 @@ void Navigation::Navigate(JSContext* aCx, const nsAString& aUrl,
     SetEarlyErrorResult(aCx, aResult, std::move(rv));
     return;
   }
+
   
   
   CreateResultFromAPIMethodTracker(apiMethodTracker, aResult);
