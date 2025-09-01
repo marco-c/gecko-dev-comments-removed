@@ -152,11 +152,6 @@ class Navigation final : public DOMEventTargetHelper {
   
   bool HasEntriesAndEventsDisabled() const;
 
-  void ScheduleEventsFromNavigation(
-      NavigationType aType,
-      const RefPtr<NavigationHistoryEntry>& aPreviousEntry,
-      nsTArray<RefPtr<NavigationHistoryEntry>>&& aDisposedEntries);
-
   MOZ_CAN_RUN_SCRIPT
   nsresult FireEvent(const nsAString& aName);
 
