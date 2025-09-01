@@ -77,7 +77,7 @@ BandwidthLimitedCause GetBandwidthLimitedCause(LossBasedState loss_based_state,
     case LossBasedState::kDecreasing:
       
       return BandwidthLimitedCause::kLossLimitedBwe;
-    case webrtc::LossBasedState::kIncreaseUsingPadding:
+    case LossBasedState::kIncreaseUsingPadding:
       
       return BandwidthLimitedCause::kLossLimitedBwe;
     case LossBasedState::kIncreasing:
