@@ -108,16 +108,29 @@ struct NavigationAPIMethodTracker final : public nsISupports {
     CleanUp();
   }
 
+  
+  void CreateResult(NavigationResult& aResult) {
+    
+    
+    
+    
+    aResult.mCommitted.Reset();
+    aResult.mCommitted.Construct(OwningNonNull<Promise>(*mCommittedPromise));
+    aResult.mFinished.Reset();
+    aResult.mFinished.Construct(OwningNonNull<Promise>(*mFinishedPromise));
+  }
+
   RefPtr<Navigation> mNavigationObject;
   Maybe<nsID> mKey;
   JS::Heap<JS::Value> mInfo;
+
+ private:
+  ~NavigationAPIMethodTracker() { mozilla::DropJSObjects(this); };
+
   RefPtr<nsIStructuredCloneContainer> mSerializedState;
   RefPtr<NavigationHistoryEntry> mCommittedToEntry;
   RefPtr<Promise> mCommittedPromise;
   RefPtr<Promise> mFinishedPromise;
-
- private:
-  ~NavigationAPIMethodTracker() { mozilla::DropJSObjects(this); };
 };
 
 NS_IMPL_CYCLE_COLLECTION_WITH_JS_MEMBERS(NavigationAPIMethodTracker,
@@ -385,22 +398,6 @@ void Navigation::SetEarlyErrorResult(JSContext* aCx, NavigationResult& aResult,
   aResult.mFinished.Value()->MaybeReject(rootedExceptionValue);
 }
 
-
-static void CreateResultFromAPIMethodTracker(
-    NavigationAPIMethodTracker* aApiMethodTracker, NavigationResult& aResult) {
-  
-  
-  
-  
-  MOZ_ASSERT(aApiMethodTracker);
-  aResult.mCommitted.Reset();
-  aResult.mCommitted.Construct(
-      OwningNonNull<Promise>(*aApiMethodTracker->mCommittedPromise));
-  aResult.mFinished.Reset();
-  aResult.mFinished.Construct(
-      OwningNonNull<Promise>(*aApiMethodTracker->mFinishedPromise));
-}
-
 bool Navigation::CheckIfDocumentIsFullyActiveAndMaybeSetEarlyErrorResult(
     JSContext* aCx, const Document* aDocument,
     NavigationResult& aResult) const {
@@ -560,7 +557,7 @@ void Navigation::Navigate(JSContext* aCx, const nsAString& aUrl,
 
   
   
-  CreateResultFromAPIMethodTracker(apiMethodTracker, aResult);
+  apiMethodTracker->CreateResult(aResult);
 }
 
 
@@ -623,7 +620,7 @@ void Navigation::Reload(JSContext* aCx, const NavigationReloadOptions& aOptions,
 
   
   
-  CreateResultFromAPIMethodTracker(apiMethodTracker, aResult);
+  apiMethodTracker->CreateResult(aResult);
 }
 
 namespace {
