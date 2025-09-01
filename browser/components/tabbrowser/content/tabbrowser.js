@@ -2527,6 +2527,15 @@
         return false;
       }
 
+      
+      
+      if (
+        !aForceDiscard &&
+        this.getTabDialogBox(browser)._tabDialogManager._dialogs.length
+      ) {
+        return false;
+      }
+
       return true;
     }
 
@@ -2557,6 +2566,10 @@
         this.resetBrowserSharing(browser);
       }
       webrtcUI.forgetStreamsFromBrowserContext(browser.browsingContext);
+
+      
+      let tabDialogBox = this.getTabDialogBox(browser);
+      tabDialogBox.abortAllDialogs();
 
       
       
