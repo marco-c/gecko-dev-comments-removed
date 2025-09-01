@@ -1446,13 +1446,9 @@ class AsyncPanZoomController {
 
     SMOOTH_SCROLL,        
 
-    SMOOTHMSD_SCROLL,     
 
-    WHEEL_SCROLL,    
-    KEYBOARD_SCROLL, 
-
-    AUTOSCROLL,      
-    SCROLLBAR_DRAG   
+    AUTOSCROLL,           
+    SCROLLBAR_DRAG        
   };
   
   
@@ -1477,6 +1473,12 @@ class AsyncPanZoomController {
 
 
   void SetDelayedTransformEnd(bool aDelayedTransformEnd);
+
+  
+
+
+
+  bool InScrollAnimation(ScrollAnimationKind aKind) const;
 
   
 

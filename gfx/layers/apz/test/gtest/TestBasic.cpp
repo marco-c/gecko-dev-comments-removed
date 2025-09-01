@@ -457,7 +457,7 @@ class APZCSmoothScrollTester : public APZCBasicTester {
     apzc->NotifyLayersUpdated(metadata, false, true);
 
     
-    apzc->AssertStateIsSmoothScroll();
+    apzc->AssertInSmoothScroll();
     float y = 0;
     while (y < 500) {
       SampleAnimationOneFrame();
@@ -476,7 +476,7 @@ class APZCSmoothScrollTester : public APZCBasicTester {
     
     float y2 = apzc->GetFrameMetrics().GetVisualScrollOffset().y;
     ASSERT_EQ(y2, y - 400);
-    apzc->AssertStateIsSmoothScroll();
+    apzc->AssertInSmoothScroll();
 
     
     
@@ -515,7 +515,7 @@ class APZCSmoothScrollTester : public APZCBasicTester {
 
     
     SmoothWheel(apzc, ScreenIntPoint(50, 50), ScreenPoint(0, 5), mcc->Time());
-    apzc->AssertStateIsWheelScroll();
+    apzc->AssertInWheelScroll();
 
     
     float y = 0;
@@ -538,7 +538,7 @@ class APZCSmoothScrollTester : public APZCBasicTester {
     
     float y2 = apzc->GetFrameMetrics().GetVisualScrollOffset().y;
     ASSERT_EQ(y2, y + 100);
-    apzc->AssertStateIsWheelScroll();
+    apzc->AssertInWheelScroll();
 
     
     while (y < 400) {
@@ -576,7 +576,7 @@ class APZCSmoothScrollTester : public APZCBasicTester {
 
     
     SmoothWheel(apzc, ScreenIntPoint(50, 50), ScreenPoint(0, 5), mcc->Time());
-    apzc->AssertStateIsWheelScroll();
+    apzc->AssertInWheelScroll();
 
     
     float y = 0;
@@ -596,7 +596,7 @@ class APZCSmoothScrollTester : public APZCBasicTester {
     apzc->NotifyLayersUpdated(metadata, false, true);
     float y2 = apzc->GetFrameMetrics().GetVisualScrollOffset().y;
     ASSERT_EQ(y2, y + 1000);
-    apzc->AssertStateIsWheelScroll();
+    apzc->AssertInWheelScroll();
 
     
     while (y < 1300) {
@@ -648,7 +648,7 @@ class APZCSmoothScrollTester : public APZCBasicTester {
     TimeStamp futureTimeStamp = mcc->Time() + TimeDuration::FromSeconds(60);
     SmoothWheel(apzc, ScreenIntPoint(50, 50), ScreenPoint(0, 5),
                 futureTimeStamp);
-    apzc->AssertStateIsWheelScroll();
+    apzc->AssertInWheelScroll();
 
     
     

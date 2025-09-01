@@ -76,7 +76,7 @@ TEST_F(APZCSnappingOnMomentumTesterMock, Snap_On_Momentum) {
   
   
   EXPECT_EQ(apzc->GetVelocityVector().y, 0);
-  apzc->AssertStateIsSmoothMsdScroll();
+  apzc->AssertInSmoothMsdScroll();
 
   mcc->AdvanceByMillis(5);
 

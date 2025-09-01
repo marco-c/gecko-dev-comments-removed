@@ -138,7 +138,7 @@ TEST_F(APZCSnappingTesterMock, Snap_After_Pinch) {
   PinchWithPinchInput(apzc, ScreenIntPoint(50, 50), ScreenIntPoint(50, 50),
                       1.2f);
 
-  apzc->AssertStateIsSmoothMsdScroll();
+  apzc->AssertInSmoothMsdScroll();
 }
 
 
@@ -208,7 +208,7 @@ TEST_F(APZCSnappingTesterMock, SnapOnPanEndWithZeroVelocity) {
              ScreenPoint(0, 0), mcc->Time());
 
   
-  apzc->AssertStateIsSmoothMsdScroll();
+  apzc->AssertInSmoothMsdScroll();
 
   apzc->AdvanceAnimationsUntilEnd();
   
@@ -291,7 +291,7 @@ TEST_F(APZCSnappingTesterMock, SnapOnPanEndWithPositiveVelocity) {
   mcc->AdvanceByMillis(5);
 
   
-  apzc->AssertStateIsSmoothMsdScroll();
+  apzc->AssertInSmoothMsdScroll();
 
   apzc->AdvanceAnimationsUntilEnd();
   EXPECT_EQ(apzc->GetCurrentAsyncScrollOffset(
