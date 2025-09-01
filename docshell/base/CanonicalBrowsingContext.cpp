@@ -274,6 +274,8 @@ void CanonicalBrowsingContext::ReplacedBy(
 
   
   txn.SetLanguageOverride(GetLanguageOverride());
+  
+  txn.SetTimezoneOverride(GetTimezoneOverride());
 
   
   
