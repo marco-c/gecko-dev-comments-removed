@@ -37,15 +37,13 @@ class SmoothScrollAnimation final : public AsyncPanZoomAnimation {
  public:
   
   static already_AddRefed<SmoothScrollAnimation> Create(
-      AsyncPanZoomController& aApzc, const nsPoint& aInitialPosition,
-      ScrollOrigin aOrigin);
+      AsyncPanZoomController& aApzc, ScrollOrigin aOrigin);
   
   static already_AddRefed<SmoothScrollAnimation> CreateForKeyboard(
-      AsyncPanZoomController& aApzc, const nsPoint& aInitialPosition,
-      ScrollOrigin aOrigin);
+      AsyncPanZoomController& aApzc, ScrollOrigin aOrigin);
   
   static already_AddRefed<SmoothScrollAnimation> CreateForWheel(
-      AsyncPanZoomController& aApzc, const nsPoint& aInitialPosition,
+      AsyncPanZoomController& aApzc,
       ScrollWheelInput::ScrollDeltaType aDeltaType);
 
   void UpdateDestinationAndSnapTargets(
@@ -79,8 +77,7 @@ class SmoothScrollAnimation final : public AsyncPanZoomAnimation {
 
  private:
   SmoothScrollAnimation(ScrollAnimationKind aKind,
-                        AsyncPanZoomController& aApzc,
-                        const nsPoint& aInitialPosition, ScrollOrigin aOrigin);
+                        AsyncPanZoomController& aApzc, ScrollOrigin aOrigin);
 
   void Update(TimeStamp aTime, const nsSize& aCurrentVelocity);
 
