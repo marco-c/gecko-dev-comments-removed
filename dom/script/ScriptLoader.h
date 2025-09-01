@@ -766,16 +766,14 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
 
 
-
-  void FinishCollectingDelazificationsAndEncodeBytecode(
+  already_AddRefed<JS::Stencil> FinishCollectingDelazifications(
       JSContext* aCx, ScriptLoadRequest* aRequest);
 
   
 
 
-
-  void FinishCollectingDelazifications(JSContext* aCx,
-                                       ScriptLoadRequest* aRequest);
+  void EncodeBytecodeAndSave(JSContext* aCx, ScriptLoadRequest* aRequest,
+                             JS::Stencil* aStencil);
 
   
 
