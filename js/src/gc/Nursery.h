@@ -181,9 +181,6 @@ class Nursery {
                          size_t oldBytes, size_t newBytes);
 
   
-  void freeBuffer(void* buffer, size_t nbytes);
-
-  
   static const size_t MaxNurseryBufferSize = 1024;
 
   
