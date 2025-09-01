@@ -10,11 +10,14 @@ add_setup(() => {
   currentReduceMotionOverride = gReduceMotionOverride;
   
   gReduceMotionOverride = true;
+  
+  Services.prefs.setBoolPref("browser.tabs.groups.enabled", false);
 });
 
 registerCleanupFunction(() => {
   gReduceMotionOverride = currentReduceMotionOverride;
   Services.prefs.clearUserPref("sidebar.revamp");
+  Services.prefs.clearUserPref("browser.tabs.groups.enabled");
   
   CustomizableUI.reset();
 });
@@ -42,7 +45,8 @@ async function pinIndicatorDragCond(pinnedDropIndicator) {
     () => {
       return (
         pinnedDropIndicator.hasAttribute("visible") &&
-        pinnedDropIndicator.hasAttribute("interactive")
+        pinnedDropIndicator.hasAttribute("interactive") &&
+        BrowserTestUtils.isVisible(pinnedDropIndicator)
       );
     }
   );
