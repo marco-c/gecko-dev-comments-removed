@@ -6269,16 +6269,14 @@ void CodeGenerator::visitCallGeneric(LCallGeneric* call) {
   }
 
   
-  masm.setFramePushed(frameSize());
-  emitRestoreStackPointerFromFP();
-
-  
   
   if (call->mir()->isConstructing()) {
     Label notPrimitive;
     masm.branchTestPrimitive(Assembler::NotEqual, JSReturnOperand,
                              &notPrimitive);
-    masm.loadValue(Address(masm.getStackPointer(), unusedStack),
+    size_t thisvOffset =
+        JitFrameLayout::offsetOfThis() - JitFrameLayout::bytesPoppedAfterCall();
+    masm.loadValue(Address(masm.getStackPointer(), thisvOffset),
                    JSReturnOperand);
 #ifdef DEBUG
     masm.branchTestPrimitive(Assembler::NotEqual, JSReturnOperand,
@@ -6287,6 +6285,11 @@ void CodeGenerator::visitCallGeneric(LCallGeneric* call) {
 #endif
     masm.bind(&notPrimitive);
   }
+
+  
+  masm.setFramePushed(frameSize());
+  emitRestoreStackPointerFromFP();
+
 }
 
 void JitRuntime::generateIonGenericCallArgumentsShift(
@@ -6392,6 +6395,9 @@ void JitRuntime::generateIonGenericCallStub(MacroAssembler& masm,
   
   
   
+
+  generateIonGenericHandleUnderflow(masm, isConstructing, &vmCall);
+
   masm.loadJitCodeRaw(calleeReg, scratch2);
 
   
@@ -6402,23 +6408,6 @@ void JitRuntime::generateIonGenericCallStub(MacroAssembler& masm,
 #endif
 
   
-  Label noRectifier;
-  masm.loadFunctionArgCount(calleeReg, scratch);
-  masm.branch32(Assembler::BelowOrEqual, scratch, argcReg, &noRectifier);
-  {
-    
-    
-    
-    
-    
-    Label rectifier;
-    bindLabelToOffset(&rectifier, argumentsRectifierOffset_);
-
-    masm.jump(&rectifier);
-  }
-
-  
-  masm.bind(&noRectifier);
   masm.jump(scratch2);
 
   
@@ -6463,6 +6452,139 @@ void JitRuntime::generateIonGenericCallStub(MacroAssembler& masm,
   masm.push(returnAddrReg);
 #endif
   masm.jump(&invokeFunctionVMEntry);
+}
+
+void JitRuntime::generateIonGenericHandleUnderflow(MacroAssembler& masm,
+                                                   bool isConstructing,
+                                                   Label* vmCall) {
+  Register calleeReg = IonGenericCallCalleeReg;
+  Register argcReg = IonGenericCallArgcReg;
+  AllocatableGeneralRegisterSet regs(IonGenericCallScratchRegs());
+  Register numMissing = regs.takeAny();
+  Register src = regs.takeAny();
+  Register dest = regs.takeAny();
+
+  
+  
+  Register srcEnd, scratch;
+  bool mustSpill = false;
+  if (regs.empty()) {
+    srcEnd = numMissing;
+    scratch = calleeReg;
+    mustSpill = true;
+  } else {
+    srcEnd = regs.takeAny();
+    scratch = regs.takeAny();
+  }
+
+  
+  
+  Label noUnderflow;
+  masm.loadFunctionArgCount(calleeReg, numMissing);
+  masm.sub32(argcReg, numMissing);
+  masm.branch32(Assembler::LessThanOrEqual, numMissing, Imm32(0), &noUnderflow);
+
+  
+  masm.branch32(Assembler::Above, numMissing, Imm32(JIT_ARGS_LENGTH_MAX),
+                vmCall);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  masm.moveStackPtrTo(src);
+
+  
+  
+  
+  masm.add32(Imm32(1), numMissing, dest);
+  masm.and32(Imm32(~1), dest);
+  masm.lshift32(Imm32(3), dest);
+  masm.subFromStackPtr(dest);
+  masm.moveStackPtrTo(dest);
+
+  
+  
+  if (mustSpill) {
+    masm.push(calleeReg);
+    masm.push(numMissing);
+  }
+  masm.computeEffectiveAddress(BaseValueIndex(src, argcReg), srcEnd);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  Label argLoop;
+  masm.bind(&argLoop);
+  masm.copy64(Address(src, 0), Address(dest, 0), scratch);
+  masm.addPtr(Imm32(sizeof(Value)), src);
+  masm.addPtr(Imm32(sizeof(Value)), dest);
+  masm.branchPtr(Assembler::BelowOrEqual, src, srcEnd, &argLoop);
+
+  if (mustSpill) {
+    
+    
+    masm.pop(numMissing);
+  }
+
+  if (isConstructing) {
+    
+    Label skip;
+    masm.branchTest32(Assembler::Zero, numMissing, Imm32(1), &skip);
+    Address newTargetSrc(src, 0);
+    Address newTargetDest(src, -int32_t(sizeof(Value)));
+    masm.copy64(newTargetSrc, newTargetDest, scratch);
+    masm.bind(&skip);
+  }
+
+  if (mustSpill) {
+    masm.pop(calleeReg);
+  }
+
+  
+  
+  Label undefLoop;
+  masm.bind(&undefLoop);
+  BaseValueIndex undefSlot(dest, numMissing, -int32_t(sizeof(Value)));
+  masm.storeValue(UndefinedValue(), undefSlot);
+  masm.branchSub32(Assembler::NonZero, Imm32(1), numMissing, &undefLoop);
+
+  masm.bind(&noUnderflow);
 }
 
 void JitRuntime::generateIonGenericCallNativeFunction(MacroAssembler& masm,
