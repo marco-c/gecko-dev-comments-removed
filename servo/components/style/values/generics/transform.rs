@@ -13,6 +13,7 @@ use crate::values::{computed, CSSFloat};
 use crate::{Zero, ZeroNoPercent};
 use euclid::default::{Rect, Transform3D};
 use std::fmt::{self, Write};
+use std::ops::Neg;
 use style_traits::{CssWriter, ToCss};
 
 
@@ -705,8 +706,8 @@ pub trait IsParallelTo {
 
 impl<Number, Angle> ToCss for Rotate<Number, Angle>
 where
-    Number: Copy + ToCss + Zero,
-    Angle: ToCss,
+    Number: Copy + PartialOrd + ToCss + Zero,
+    Angle: Copy + Neg<Output = Angle> + ToCss + Zero,
     (Number, Number, Number): IsParallelTo,
 {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
@@ -717,30 +718,34 @@ where
         match *self {
             Rotate::None => dest.write_str("none"),
             Rotate::Rotate(ref angle) => angle.to_css(dest),
-            Rotate::Rotate3D(x, y, z, ref angle) => {
+            Rotate::Rotate3D(x, y, z, angle) => {
+                
+                
+                
                 
                 
                 
                 
                 
                 let v = (x, y, z);
-                let axis = if x.is_zero() && y.is_zero() && z.is_zero() {
+                let (axis, angle) = if x.is_zero() && y.is_zero() && z.is_zero() {
                     
                     
                     
                     
                     
                     
-                    None
+                    (None, angle)
                 } else if v.is_parallel_to(&DirectionVector::new(1., 0., 0.)) {
-                    Some("x ")
+                    (Some("x "), if v.0 < Number::zero() { -angle } else { angle })
                 } else if v.is_parallel_to(&DirectionVector::new(0., 1., 0.)) {
-                    Some("y ")
+                    (Some("y "), if v.1 < Number::zero() { -angle } else { angle })
                 } else if v.is_parallel_to(&DirectionVector::new(0., 0., 1.)) {
                     
+                    let angle = if v.2 < Number::zero() { -angle } else { angle };
                     return angle.to_css(dest);
                 } else {
-                    None
+                    (None, angle)
                 };
                 match axis {
                     Some(a) => dest.write_str(a)?,
