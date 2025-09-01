@@ -13514,15 +13514,7 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
           properties: component.properties
         });
       case "Widgets":
-        {
-          
-          const nimbusWidgetsEnabled = this.props.Prefs.values.widgetsConfig?.enabled;
-          const widgetsEnabled = this.props.Prefs.values["widgets.system.enabled"];
-          if (widgetsEnabled || nimbusWidgetsEnabled) {
-            return external_React_default().createElement(Widgets, null);
-          }
-          return null;
-        }
+        return external_React_default().createElement(Widgets, null);
       default:
         return external_React_default().createElement("div", null, component.type);
     }
@@ -13593,7 +13585,12 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
 
     
     const topSites = extractComponent("TopSites");
-    const widgets = extractComponent("Widgets");
+
+    
+    
+    const widgetsNimbusEnabled = this.props.Prefs.values.widgetsConfig?.enabled;
+    const widgetsSystemPrefsEnabled = this.props.Prefs.values["widgets.system.enabled"];
+    const widgets = widgetsNimbusEnabled || widgetsSystemPrefsEnabled;
     const message = extractComponent("Message") || {
       header: {
         link_text: topStories.learnMore.link.message,
@@ -13621,7 +13618,9 @@ class _DiscoveryStreamBase extends (external_React_default()).PureComponent {
       sectionType: "topsites"
     }]), widgets && this.renderLayout([{
       width: 12,
-      components: [widgets],
+      components: [{
+        type: "Widgets"
+      }],
       sectionType: "widgets"
     }]), !!layoutRender.length && external_React_default().createElement(CollapsibleSection, {
       className: "ds-layout",
