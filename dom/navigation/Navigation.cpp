@@ -19,7 +19,6 @@
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/FeaturePolicy.h"
 #include "mozilla/dom/NavigationActivation.h"
-#include "mozilla/dom/NavigationBinding.h"
 #include "mozilla/dom/NavigationCurrentEntryChangeEvent.h"
 #include "mozilla/dom/NavigationHistoryEntry.h"
 #include "mozilla/dom/NavigationTransition.h"
@@ -324,10 +323,6 @@ void Navigation::UpdateEntriesForSameDocumentNavigation(
   if (mOngoingAPIMethodTracker) {
     RefPtr<NavigationHistoryEntry> currentEntry = GetCurrentEntry();
     mOngoingAPIMethodTracker->NotifyAboutCommittedToEntry(currentEntry);
-  }
-
-  for (auto& entry : disposedEntries) {
-    entry->ResetIndexForDisposal();
   }
 
   
@@ -1490,65 +1485,4 @@ Navigation::AddUpcomingTraverseAPIMethodTracker(const nsID& aKey,
   
   return methodTracker;
 }
-
-
-void Navigation::CreateNavigationActivationFrom(
-    SessionHistoryInfo* aPreviousEntryForActivation,
-    NavigationType aNavigationType) {
-  
-  
-  MOZ_LOG_FMT(gNavigationLog, LogLevel::Debug,
-              "Creating NavigationActivation for from={}, type={}",
-              fmt::ptr(aPreviousEntryForActivation), aNavigationType);
-  RefPtr currentEntry = GetCurrentEntry();
-  if (!currentEntry) {
-    return;
-  }
-
-  
-  
-  auto possiblePreviousEntry =
-      std::find_if(mEntries.begin(), mEntries.end(),
-                   [aPreviousEntryForActivation](const auto& entry) {
-                     return entry->IsSameEntry(aPreviousEntryForActivation);
-                   });
-
-  
-  
-  RefPtr<NavigationHistoryEntry> oldEntry;
-  if (possiblePreviousEntry != mEntries.end()) {
-    MOZ_LOG_FMT(gNavigationLog, LogLevel::Debug, "Found previous entry at {}",
-                fmt::ptr(possiblePreviousEntry->get()));
-    oldEntry = *possiblePreviousEntry;
-  } else if (aNavigationType == NavigationType::Replace &&
-             !aPreviousEntryForActivation->IsTransient()) {
-    
-    
-    
-    
-    
-    
-    
-    
-
-    nsIURI* previousURI = aPreviousEntryForActivation->GetURI();
-    nsIURI* currentURI = currentEntry->SessionHistoryInfo()->GetURI();
-    if (NS_SUCCEEDED(nsContentUtils::GetSecurityManager()->CheckSameOriginURI(
-            currentURI, previousURI, false, false))) {
-      oldEntry = MakeRefPtr<NavigationHistoryEntry>(
-          GetOwnerGlobal(), aPreviousEntryForActivation, -1);
-      MOZ_LOG_FMT(gNavigationLog, LogLevel::Debug, "Created a new entry at {}",
-                  fmt::ptr(oldEntry.get()));
-    }
-  }
-
-  
-  
-  
-  
-  
-  mActivation = MakeRefPtr<NavigationActivation>(GetOwnerGlobal(), currentEntry,
-                                                 oldEntry, aNavigationType);
-}
-
 }  

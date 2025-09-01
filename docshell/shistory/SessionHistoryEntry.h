@@ -10,7 +10,6 @@
 #include "mozilla/dom/DocumentBinding.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/dom/NavigationBinding.h"
 #include "nsILayoutHistoryState.h"
 #include "nsISHEntry.h"
 #include "nsSHEntryShared.h"
@@ -257,11 +256,6 @@ struct LoadingSessionHistoryInfo {
 
   
   CopyableTArray<SessionHistoryInfo> mContiguousEntries;
-
-  
-  Maybe<SessionHistoryInfo> mTriggeringEntry;
-  
-  Maybe<NavigationType> mTriggeringNavigationType;
 
   uint64_t mLoadId = 0;
 
