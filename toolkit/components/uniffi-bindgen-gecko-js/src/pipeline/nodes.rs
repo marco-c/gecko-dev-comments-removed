@@ -47,6 +47,8 @@ pub struct FfiValueArgument {
     pub name: String,
     
     pub field_name: String,
+    
+    pub var_name: String,
     pub ffi_value_class: String,
     
     pub receiver: bool,
@@ -125,6 +127,7 @@ pub struct CppCallbackInterfaceMethod {
 
 #[derive(Debug, Clone, Node)]
 pub enum CallbackMethodKind {
+    Sync,
     FireAndForget,
     Async(CppCallbackInterfaceMethodAsyncData),
 }
