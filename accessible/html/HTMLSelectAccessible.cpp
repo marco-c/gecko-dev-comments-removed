@@ -319,16 +319,23 @@ uint64_t HTMLComboboxAccessible::NativeState() const {
   return state;
 }
 
-void HTMLComboboxAccessible::Description(nsString& aDescription) const {
+EDescriptionValueFlag HTMLComboboxAccessible::Description(
+    nsString& aDescription) const {
   aDescription.Truncate();
   
   
-  LocalAccessible::Description(aDescription);
-  if (!aDescription.IsEmpty()) return;
+  EDescriptionValueFlag descFlag = LocalAccessible::Description(aDescription);
+  if (!aDescription.IsEmpty()) {
+    return descFlag;
+  }
 
   
   LocalAccessible* option = SelectedOption();
-  if (option) option->Description(aDescription);
+  if (option) {
+    return option->Description(aDescription);
+  }
+
+  return eDescriptionOK;
 }
 
 void HTMLComboboxAccessible::Value(nsString& aValue) const {
