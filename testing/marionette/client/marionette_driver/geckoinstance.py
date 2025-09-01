@@ -47,6 +47,8 @@ class GeckoInstance:
         
         "browser.http.blank_page_with_error_response.enabled": True,
         
+        "browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features": False,
+        
         "browser.newtabpage.activity-stream.discoverystream.region-weather-config": "",
         
         "browser.newtabpage.activity-stream.newtabWallpapers.enabled": False,
