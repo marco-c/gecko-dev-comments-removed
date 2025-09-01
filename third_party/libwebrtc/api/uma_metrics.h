@@ -230,6 +230,16 @@ enum SdpMungingType {
 
 
 
+enum class SdpMungingOutcome {
+  kNoMunge = 0,
+  kAccepted = 1,
+  kRejected = 2,
+  kMaxValue = kRejected,
+};
+
+
+
+
 
 }  
 
