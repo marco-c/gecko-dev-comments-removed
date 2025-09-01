@@ -134,8 +134,16 @@ int WebMDemuxer::NestEggContext::Init() {
   io.tell = webmdemux_tell;
   io.userdata = this;
 
-  return nestegg_init(&mContext, io, &webmdemux_log,
-                      mParent->IsMediaSource() ? mResource.GetLength() : -1);
+  return nestegg_init(
+      &mContext, io, &webmdemux_log,
+      
+      
+      
+      
+      
+      
+      mParent->IsMediaSource() ? mResource.GetResource()->GetCachedDataEnd(0)
+                               : -1);
 }
 
 WebMDemuxer::WebMDemuxer(MediaResource* aResource)
