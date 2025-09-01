@@ -823,10 +823,15 @@ void BufferAllocator::markLargeNurseryOwnedBuffer(LargeBuffer* buffer,
   MOZ_ASSERT(buffer->isNurseryOwned);
 
   
+  
   auto* region = SmallBufferRegion::from(buffer);
-  if (region->isNurseryOwned(buffer)) {
-    markSmallNurseryOwnedBuffer(buffer, ownerWasTenured);
+  MOZ_ASSERT(region->isNurseryOwned(buffer));
+  if (region->isMarked(buffer)) {
+    MOZ_ASSERT(!ownerWasTenured);
+    return;
   }
+
+  markSmallNurseryOwnedBuffer(buffer, ownerWasTenured);
 
   largeNurseryAllocsToSweep.ref().remove(buffer);
 
@@ -935,9 +940,6 @@ void BufferAllocator::traceLargeAlloc(JSTracer* trc, Cell* owner, void** allocp,
                                       const char* name) {
   void* alloc = *allocp;
   LargeBuffer* buffer = lookupLargeBuffer(alloc);
-
-  
-  traceSmallAlloc(trc, owner, reinterpret_cast<void**>(&buffer), "LargeBuffer");
 
   if (trc->isTenuringTracer()) {
     if (isNurseryOwned(alloc)) {
