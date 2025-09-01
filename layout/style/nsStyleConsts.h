@@ -242,6 +242,9 @@ enum class StyleMathVariant : uint8_t {
 
 enum class StyleMathStyle : uint8_t { Compact = 0, Normal = 1 };
 
+
+enum class StyleMathShift : uint8_t { Compact = 0, Normal = 1 };
+
 enum class FrameBorderProperty : uint8_t { Yes, No, One, Zero };
 
 enum class ScrollingAttribute : uint8_t {
