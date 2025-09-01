@@ -195,6 +195,15 @@ namespace JS {
 
 
 
+
+
+
+
+
+
+
+
+
 extern JS_PUBLIC_API TranscodeResult EncodeStencil(JSContext* cx,
                                                    Stencil* stencil,
                                                    TranscodeBuffer& buffer);
@@ -228,25 +237,9 @@ extern JS_PUBLIC_API bool StartCollectingDelazifications(
 
 
 
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API bool FinishCollectingDelazifications(
-    JSContext* cx, Handle<JSScript*> script, TranscodeBuffer& buffer);
-
-
-extern JS_PUBLIC_API bool FinishCollectingDelazifications(
-    JSContext* cx, Handle<JSObject*> module, TranscodeBuffer& buffer);
-
-
-
 extern JS_PUBLIC_API bool FinishCollectingDelazifications(
     JSContext* cx, Handle<JSScript*> script, JS::Stencil** stencilOut);
+
 
 extern JS_PUBLIC_API bool FinishCollectingDelazifications(
     JSContext* cx, Handle<JSObject*> module, JS::Stencil** stencilOut);
