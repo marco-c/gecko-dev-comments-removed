@@ -3149,7 +3149,7 @@ nsINode* nsContentUtils::Retarget(nsINode* aTargetA, nsINode* aTargetB) {
     }
 
     
-    if (aTargetB->IsShadowIncludingInclusiveDescendantOf(root)) {
+    if (aTargetB && aTargetB->IsShadowIncludingInclusiveDescendantOf(root)) {
       
       return aTargetA;
     }
