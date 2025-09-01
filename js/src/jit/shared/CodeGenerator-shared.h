@@ -155,6 +155,7 @@ class CodeGeneratorShared : public LElementVisitor {
  public:
   MIRGenerator& mirGen() const { return *gen; }
   const wasm::CodeMetadata* wasmCodeMeta() const { return wasmCodeMeta_; }
+  IonPerfSpewer& perfSpewer() const { return mirGen().perfSpewer(); }
 
   
   
