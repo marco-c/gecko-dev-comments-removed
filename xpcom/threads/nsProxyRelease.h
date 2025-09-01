@@ -78,9 +78,10 @@ nsresult ProxyRelease(const char* aName, nsIEventTarget* aTarget,
 
   rv = aTarget->Dispatch(ev, NS_DISPATCH_NORMAL);
   if (NS_FAILED(rv)) {
-    NS_WARNING(nsPrintfCString(
-                   "failed to post proxy release event for %s, leaking!", aName)
-                   .get());
+    NS_WARNING(
+        nsPrintfCString("failed to post proxy release event for %s, leaking!",
+                        aName ? aName : "pointer")
+            .get());
     
     
   }
