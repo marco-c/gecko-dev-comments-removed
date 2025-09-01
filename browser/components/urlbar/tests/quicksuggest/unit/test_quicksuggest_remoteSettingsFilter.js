@@ -267,6 +267,12 @@ async function doTests({ locales, homeRegion, tests }) {
                   keyword: query,
                   url: `https://example.com/${query}`,
                   title: `Suggestion: ${query}`,
+                  suggestedIndex:
+                    
+                    
+                    expected == QuickSuggestTestUtils.ampResult
+                      ? -1
+                      : undefined,
                 })
               );
             }

@@ -635,6 +635,9 @@ function makeExpectedAmpResult({
     blockId: suggestion.id,
     advertiser: suggestion.advertiser,
     icon: suggestion.icon,
+    
+    
+    suggestedIndex: -1,
   });
 }
 

@@ -245,12 +245,15 @@ async function doMigrateTest({
 
 
 
+
+
 async function doDismissOneTest({
   feature,
   result,
   command,
   queriesForDismissals,
   queriesForOthers,
+  providers = [UrlbarProviderQuickSuggest.name],
 }) {
   await QuickSuggest.clearDismissedSuggestions();
   await QuickSuggestTestUtils.forceSync();
@@ -288,7 +291,7 @@ async function doDismissOneTest({
     info("Doing search for dismissed suggestions: " + JSON.stringify(query));
     await check_results({
       context: createContext(query, {
-        providers: [UrlbarProviderQuickSuggest.name],
+        providers,
         isPrivate: false,
       }),
       matches: [],
@@ -301,7 +304,7 @@ async function doDismissOneTest({
     );
     await check_results({
       context: createContext(query, {
-        providers: [UrlbarProviderQuickSuggest.name],
+        providers,
         isPrivate: false,
       }),
       matches: expectedResults,
@@ -329,7 +332,7 @@ async function doDismissOneTest({
     info("Doing search after clearing dismissals: " + JSON.stringify(query));
     await check_results({
       context: createContext(query, {
-        providers: [UrlbarProviderQuickSuggest.name],
+        providers,
         isPrivate: false,
       }),
       matches: expectedResults,
@@ -362,7 +365,16 @@ async function doDismissOneTest({
 
 
 
-async function doDismissAllTest({ feature, result, command, pref, queries }) {
+
+
+async function doDismissAllTest({
+  feature,
+  result,
+  command,
+  pref,
+  queries,
+  providers = [UrlbarProviderQuickSuggest.name],
+}) {
   await QuickSuggest.clearDismissedSuggestions();
   await QuickSuggestTestUtils.forceSync();
   Assert.ok(
@@ -399,7 +411,7 @@ async function doDismissAllTest({ feature, result, command, pref, queries }) {
     info("Doing search after triggering command: " + JSON.stringify(query));
     await check_results({
       context: createContext(query, {
-        providers: [UrlbarProviderQuickSuggest.name],
+        providers,
         isPrivate: false,
       }),
       matches: [],
@@ -434,7 +446,7 @@ async function doDismissAllTest({ feature, result, command, pref, queries }) {
     info("Doing search after clearing dismissals: " + JSON.stringify(query));
     await check_results({
       context: createContext(query, {
-        providers: [UrlbarProviderQuickSuggest.name],
+        providers,
         isPrivate: false,
       }),
       matches: expectedResults,

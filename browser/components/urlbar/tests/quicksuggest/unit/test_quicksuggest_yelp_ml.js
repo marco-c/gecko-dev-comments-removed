@@ -560,6 +560,9 @@ function makeExpectedResult({
   provider = "yelp_intent",
   originalUrl = undefined,
   displayUrl = undefined,
+  
+  
+  suggestedIndex = -1,
 }) {
   return QuickSuggestTestUtils.yelpResult({
     url,
@@ -568,5 +571,6 @@ function makeExpectedResult({
     provider,
     originalUrl,
     displayUrl,
+    suggestedIndex,
   });
 }
