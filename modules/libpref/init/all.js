@@ -3341,11 +3341,6 @@ pref("privacy.trackingprotection.emailtracking.webapp.domains", "mail.163.com,ma
 pref("privacy.trackingprotection.allow_list.hasMigratedCategoryPrefs", false);
 
 
-
-
-pref("privacy.trackingprotection.allow_list.hasUserInteractedWithETPSettings", false);
-
-
 pref("urlclassifier.gethashnoise", 4);
 
 
