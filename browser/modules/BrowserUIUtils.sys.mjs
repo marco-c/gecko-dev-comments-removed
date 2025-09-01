@@ -3,7 +3,7 @@
 
 
 
-import { UrlbarPrefs } from "resource:///modules/UrlbarPrefs.sys.mjs";
+import { UrlbarPrefs } from "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 export var BrowserUIUtils = {
