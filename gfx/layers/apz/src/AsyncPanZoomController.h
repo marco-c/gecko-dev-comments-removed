@@ -818,6 +818,21 @@ class AsyncPanZoomController {
 
 
 
+  void ScrollByAndClamp(ViewportType aViewportToScroll,
+                        const CSSPoint& aOffset);
+
+  
+
+
+
+
+  void ScrollToAndClamp(ViewportType aViewportToScroll,
+                        const CSSPoint& aDestination);
+
+  
+
+
+
 
   void ScaleWithFocus(float aScale, const CSSPoint& aFocus);
 

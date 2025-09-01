@@ -151,6 +151,10 @@ bool FrameMetrics::ApplyScrollUpdateFrom(const ScrollPositionUpdate& aUpdate) {
   MOZ_ASSERT(aUpdate.GetType() == ScrollUpdateType::Absolute);
   MOZ_ASSERT(aUpdate.GetMode() != ScrollMode::Smooth &&
              aUpdate.GetMode() != ScrollMode::SmoothMsd);
+  return ScrollLayoutViewportTo(aUpdate.GetDestination());
+}
+
+bool FrameMetrics::ScrollLayoutViewportTo(const CSSPoint& aDestination) {
   
   
   CSSPoint relativeOffset = GetVisualScrollOffset() - GetLayoutScrollOffset();
@@ -158,9 +162,8 @@ bool FrameMetrics::ApplyScrollUpdateFrom(const ScrollPositionUpdate& aUpdate) {
   
   
   
-  bool offsetChanged = SetLayoutScrollOffset(aUpdate.GetDestination());
-  offsetChanged |=
-      ClampAndSetVisualScrollOffset(aUpdate.GetDestination() + relativeOffset);
+  bool offsetChanged = SetLayoutScrollOffset(aDestination);
+  offsetChanged |= ClampAndSetVisualScrollOffset(aDestination + relativeOffset);
   return offsetChanged;
 }
 
