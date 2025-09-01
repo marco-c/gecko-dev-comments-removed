@@ -569,7 +569,7 @@ __arm_locally_streaming void Convert16To8Row_SME(const uint16_t* src_y,
   
   
   
-  int shift = 23 - __builtin_clz((int32_t)scale);
+  const int shift = 23 - __builtin_clz((int32_t)scale);
   int vl;
   asm volatile(
       "cntb     %x[vl]                                  \n"
@@ -917,7 +917,7 @@ __arm_locally_streaming static void HalfRow_16To8_SME(uint8_t* dst_ptr,
   
   
   
-  int shift = 23 - __builtin_clz((int32_t)scale);
+  const int shift = 23 - __builtin_clz((int32_t)scale);
 
   int vl;
   asm volatile(
@@ -977,8 +977,8 @@ __arm_locally_streaming void InterpolateRow_16To8_SME(uint8_t* dst_ptr,
                                                       int scale,
                                                       int width,
                                                       int source_y_fraction) {
-  int y1_fraction = source_y_fraction;
-  int y0_fraction = 256 - y1_fraction;
+  const int y1_fraction = source_y_fraction;
+  const int y0_fraction = 256 - y1_fraction;
   const uint16_t* src_ptr1 = src_ptr + src_stride;
 
   
@@ -994,7 +994,7 @@ __arm_locally_streaming void InterpolateRow_16To8_SME(uint8_t* dst_ptr,
   
   
   
-  int shift = 23 - __builtin_clz((int32_t)scale);
+  const int shift = 23 - __builtin_clz((int32_t)scale);
 
   int vl;
   asm volatile(
@@ -1085,7 +1085,7 @@ __arm_locally_streaming void Convert8To16Row_SME(const uint8_t* src_y,
   
   
   
-  int shift = __builtin_clz(scale) - 15;
+  const int shift = __builtin_clz(scale) - 15;
 
   uint64_t vl;
   asm volatile(

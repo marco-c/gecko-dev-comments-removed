@@ -3983,8 +3983,8 @@ void InterpolateRow_NEON(uint8_t* dst_ptr,
                          ptrdiff_t src_stride,
                          int dst_width,
                          int source_y_fraction) {
-  int y1_fraction = source_y_fraction;
-  int y0_fraction = 256 - y1_fraction;
+  const int y1_fraction = source_y_fraction;
+  const int y0_fraction = 256 - y1_fraction;
   const uint8_t* src_ptr1 = src_ptr + src_stride;
   asm volatile(
       "cmp         %w4, #0                       \n"
@@ -4032,13 +4032,12 @@ void InterpolateRow_NEON(uint8_t* dst_ptr,
       "b.gt        100b                          \n"
 
       "99:         \n"
-      : "+r"(dst_ptr),      // %0
-        "+r"(src_ptr),      // %1
-        "+r"(src_ptr1),     // %2
-        "+r"(dst_width),    // %3
-        "+r"(y1_fraction),  // %4
-        "+r"(y0_fraction)   // %5
-      :
+      : "+r"(dst_ptr),     // %0
+        "+r"(src_ptr),     // %1
+        "+r"(src_ptr1),    // %2
+        "+r"(dst_width)    // %3
+      : "r"(y1_fraction),  // %4
+        "r"(y0_fraction)   // %5
       : "cc", "memory", "v0", "v1", "v3", "v4", "v5");
 }
 
@@ -4119,10 +4118,10 @@ void InterpolateRow_16To8_NEON(uint8_t* dst_ptr,
                                int scale,
                                int dst_width,
                                int source_y_fraction) {
-  int y1_fraction = source_y_fraction;
-  int y0_fraction = 256 - y1_fraction;
+  const int y1_fraction = source_y_fraction;
+  const int y0_fraction = 256 - y1_fraction;
   const uint16_t* src_ptr1 = src_ptr + src_stride;
-  int shift = 15 - __builtin_clz((int32_t)scale);  
+  const int shift = 15 - __builtin_clz((int32_t)scale);  
 
   asm volatile(
       "dup         v6.8h, %w6                    \n"
@@ -5529,7 +5528,7 @@ void Convert16To8Row_NEON(const uint16_t* src_y,
   
   
   
-  int shift = 23 - __builtin_clz((int32_t)scale);
+  const int shift = 23 - __builtin_clz((int32_t)scale);
   asm volatile(
       "dup         v2.8h, %w3                    \n"
       "1:          \n"
@@ -5591,7 +5590,7 @@ void Convert8To16Row_NEON(const uint8_t* src_y,
   
   
   
-  int shift = 15 - __builtin_clz(scale);
+  const int shift = 15 - __builtin_clz(scale);
   asm volatile(
       "dup         v2.8h, %w[shift]                 \n"
       "1:          \n"
