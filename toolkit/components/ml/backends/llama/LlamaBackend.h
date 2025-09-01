@@ -60,7 +60,8 @@ class LlamaBackend {
 
   
   
-  ResultStatus Reinitialize(const LlamaModelOptions& aOptions);
+  ResultStatus Reinitialize(const LlamaModelOptions& aOptions,
+                            const mozilla::Span<const uint8_t> aModelBuffer);
 
   
   
