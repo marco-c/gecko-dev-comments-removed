@@ -612,8 +612,8 @@ class nsFloatManager::ShapeInfo {
 
   
   
-  static UniquePtr<nscoord[]> ConvertToFloatLogical(const nscoord aRadii[8],
-                                                    WritingMode aWM);
+  static nsRectCornerRadii ConvertToFloatLogical(const nsRectCornerRadii&,
+                                                 WritingMode aWM);
 
   
   
@@ -1034,10 +1034,13 @@ nscoord nsFloatManager::EllipseShapeInfo::LineRight(const nscoord aBStart,
 class nsFloatManager::RoundedBoxShapeInfo final
     : public nsFloatManager::ShapeInfo {
  public:
-  RoundedBoxShapeInfo(const nsRect& aRect, UniquePtr<nscoord[]> aRadii)
-      : mRect(aRect), mRadii(std::move(aRadii)), mShapeMargin(0) {}
+  RoundedBoxShapeInfo(const nsRect& aRect, nsRectCornerRadii&& aRadii)
+      : mRect(aRect),
+        mRadii(std::move(aRadii)),
+        mHasRadii(!mRadii.IsEmpty()),
+        mShapeMargin(0) {}
 
-  RoundedBoxShapeInfo(const nsRect& aRect, UniquePtr<nscoord[]> aRadii,
+  RoundedBoxShapeInfo(const nsRect& aRect, nsRectCornerRadii&& aRadii,
                       nscoord aShapeMargin, int32_t aAppUnitsPerDevPixel);
 
   nscoord LineLeft(const nscoord aBStart, const nscoord aBEnd) const override;
@@ -1053,7 +1056,7 @@ class nsFloatManager::RoundedBoxShapeInfo final
   }
   bool MayNarrowInBlockDirection() const override {
     
-    return !!mRadii;
+    return mHasRadii;
   }
 
   void Translate(nscoord aLineLeft, nscoord aBlockStart) override {
@@ -1070,11 +1073,9 @@ class nsFloatManager::RoundedBoxShapeInfo final
     }
   }
 
-  static bool EachCornerHasBalancedRadii(const nscoord* aRadii) {
-    return (aRadii[eCornerTopLeftX] == aRadii[eCornerTopLeftY] &&
-            aRadii[eCornerTopRightX] == aRadii[eCornerTopRightY] &&
-            aRadii[eCornerBottomLeftX] == aRadii[eCornerBottomLeftY] &&
-            aRadii[eCornerBottomRightX] == aRadii[eCornerBottomRightY]);
+  static bool EachCornerHasBalancedRadii(const nsRectCornerRadii& aRadii) {
+    return aRadii.TopLeft().IsSquare() && aRadii.TopRight().IsSquare() &&
+           aRadii.BottomLeft().IsSquare() && aRadii.BottomRight().IsSquare();
   }
 
  private:
@@ -1083,8 +1084,10 @@ class nsFloatManager::RoundedBoxShapeInfo final
   nsRect mRect;
   
   
+  const nsRectCornerRadii mRadii;
+
   
-  const UniquePtr<nscoord[]> mRadii;
+  const bool mHasRadii;
 
   
   
@@ -1104,10 +1107,13 @@ class nsFloatManager::RoundedBoxShapeInfo final
 };
 
 nsFloatManager::RoundedBoxShapeInfo::RoundedBoxShapeInfo(
-    const nsRect& aRect, UniquePtr<nscoord[]> aRadii, nscoord aShapeMargin,
+    const nsRect& aRect, nsRectCornerRadii&& aRadii, nscoord aShapeMargin,
     int32_t aAppUnitsPerDevPixel)
-    : mRect(aRect), mRadii(std::move(aRadii)), mShapeMargin(aShapeMargin) {
-  MOZ_ASSERT(mShapeMargin > 0 && !EachCornerHasBalancedRadii(mRadii.get()),
+    : mRect(aRect),
+      mRadii(std::move(aRadii)),
+      mHasRadii(true),
+      mShapeMargin(aShapeMargin) {
+  MOZ_ASSERT(mShapeMargin > 0 && !EachCornerHasBalancedRadii(mRadii),
              "Slow constructor should only be used for for shape-margin > 0 "
              "and radii with elliptical corners.");
 
@@ -1145,7 +1151,7 @@ nsFloatManager::RoundedBoxShapeInfo::RoundedBoxShapeInfo(
 nscoord nsFloatManager::RoundedBoxShapeInfo::LineLeft(
     const nscoord aBStart, const nscoord aBEnd) const {
   if (mShapeMargin == 0) {
-    if (!mRadii) {
+    if (!mHasRadii) {
       return mRect.x;
     }
 
@@ -1178,7 +1184,7 @@ nscoord nsFloatManager::RoundedBoxShapeInfo::LineLeft(
 nscoord nsFloatManager::RoundedBoxShapeInfo::LineRight(
     const nscoord aBStart, const nscoord aBEnd) const {
   if (mShapeMargin == 0) {
-    if (!mRadii) {
+    if (!mHasRadii) {
       return mRect.XMost();
     }
 
@@ -2482,16 +2488,16 @@ nsFloatManager::ShapeInfo::CreateShapeBox(nsIFrame* const aFrame,
   
   logicalShapeBoxRect.Inflate(aShapeMargin);
 
-  nscoord physicalRadii[8];
+  nsRectCornerRadii physicalRadii;
   bool hasRadii = aFrame->GetShapeBoxBorderRadii(physicalRadii);
   if (!hasRadii) {
     return MakeUnique<RoundedBoxShapeInfo>(logicalShapeBoxRect,
-                                           UniquePtr<nscoord[]>());
+                                           std::move(physicalRadii));
   }
 
   
-  for (nscoord& r : physicalRadii) {
-    r += aShapeMargin;
+  for (auto corner : AllPhysicalCorners()) {
+    physicalRadii[corner] += nsSize(aShapeMargin, aShapeMargin);
   }
 
   return MakeUnique<RoundedBoxShapeInfo>(
@@ -2539,7 +2545,7 @@ nsFloatManager::ShapeInfo::CreateInset(const StyleBasicShape& aBasicShape,
 
   nsRect logicalInsetRect = ConvertToFloatLogical(
       LogicalRect(aWM, insetRect, aContainerSize), aWM, aContainerSize);
-  nscoord physicalRadii[8];
+  nsRectCornerRadii physicalRadii;
   bool hasRadii = ShapeUtils::ComputeRectRadii(aBasicShape.AsRect().round,
                                                physicalShapeBoxRect, insetRect,
                                                physicalRadii);
@@ -2548,7 +2554,7 @@ nsFloatManager::ShapeInfo::CreateInset(const StyleBasicShape& aBasicShape,
   if (aShapeMargin == 0) {
     if (!hasRadii) {
       return MakeUnique<RoundedBoxShapeInfo>(logicalInsetRect,
-                                             UniquePtr<nscoord[]>());
+                                             std::move(physicalRadii));
     }
     return MakeUnique<RoundedBoxShapeInfo>(
         logicalInsetRect, ConvertToFloatLogical(physicalRadii, aWM));
@@ -2560,20 +2566,16 @@ nsFloatManager::ShapeInfo::CreateInset(const StyleBasicShape& aBasicShape,
   
   if (!hasRadii) {
     logicalInsetRect.Inflate(aShapeMargin);
-    auto logicalRadii = MakeUnique<nscoord[]>(8);
-    for (int32_t i = 0; i < 8; ++i) {
-      logicalRadii[i] = aShapeMargin;
-    }
     return MakeUnique<RoundedBoxShapeInfo>(logicalInsetRect,
-                                           std::move(logicalRadii));
+                                           nsRectCornerRadii(aShapeMargin));
   }
 
   
   
   if (RoundedBoxShapeInfo::EachCornerHasBalancedRadii(physicalRadii)) {
     logicalInsetRect.Inflate(aShapeMargin);
-    for (nscoord& r : physicalRadii) {
-      r += aShapeMargin;
+    for (auto corner : AllPhysicalCorners()) {
+      physicalRadii[corner] += nsSize(aShapeMargin, aShapeMargin);
     }
     return MakeUnique<RoundedBoxShapeInfo>(
         logicalInsetRect, ConvertToFloatLogical(physicalRadii, aWM));
@@ -2837,10 +2839,9 @@ nsPoint nsFloatManager::ShapeInfo::ConvertToFloatLogical(
                  logicalPoint.B(aWM));
 }
 
- UniquePtr<nscoord[]>
-nsFloatManager::ShapeInfo::ConvertToFloatLogical(const nscoord aRadii[8],
-                                                 WritingMode aWM) {
-  UniquePtr<nscoord[]> logicalRadii(new nscoord[8]);
+ nsRectCornerRadii nsFloatManager::ShapeInfo::ConvertToFloatLogical(
+    const nsRectCornerRadii& aRadii, WritingMode aWM) {
+  nsRectCornerRadii logicalRadii;
 
   
   
