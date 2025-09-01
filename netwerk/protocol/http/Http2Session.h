@@ -208,8 +208,6 @@ class Http2Session final : public ASpdySession,
   const static uint32_t kQueueTailRoom = 4096;
   const static uint32_t kQueueReserved = 1024;
 
-  const static uint32_t kMaxStreamID = 0x7800000;
-
   
   
   const static uint32_t kDeadStreamID = 0xffffdead;
@@ -440,7 +438,7 @@ class Http2Session final : public ASpdySession,
   
   RefPtr<nsAHttpSegmentReader> mSegmentReader;
   nsAHttpSegmentWriter* mSegmentWriter;
-
+  const uint32_t kMaxStreamID;
   uint32_t mSendingChunkSize;    
   uint32_t mNextStreamID;        
   uint32_t mConcurrentHighWater; 

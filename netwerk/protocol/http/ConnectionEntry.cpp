@@ -265,7 +265,10 @@ bool ConnectionEntry::RestrictConnections() {
   
   
   
-  if (mUsingSpdy && mActiveConns.Length()) {
+  
+  
+  if (mUsingSpdy && mActiveConns.Length() &&
+      !(mConnInfo->UsingHttpsProxy() && mConnInfo->UsingConnect())) {
     bool confirmedRestrict = false;
     for (uint32_t index = 0; index < mActiveConns.Length(); ++index) {
       HttpConnectionBase* conn = mActiveConns[index];
