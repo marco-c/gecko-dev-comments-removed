@@ -99,7 +99,7 @@ class TransformableIncomingAudioFrame
     header_.extension.set_audio_level(
         audio_level_dbov.has_value()
             ? std::make_optional(webrtc::AudioLevel(
-                  false,
+                  true,
                   std::min(*audio_level_dbov, static_cast<uint8_t>(127u))))
             : std::nullopt);
   }
@@ -216,7 +216,7 @@ void ChannelReceiveFrameTransformerDelegate::ReceiveFrame(
       
       
       header.extension.set_audio_level(AudioLevel(
-          false, *transformed_frame->AudioLevel()));
+          true, *transformed_frame->AudioLevel()));
     }
   } else {
     auto* transformed_incoming_frame =
