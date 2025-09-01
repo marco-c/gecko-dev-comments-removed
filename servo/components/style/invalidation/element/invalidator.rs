@@ -127,7 +127,10 @@ where
     
     
     
-    fn check_outer_dependency(&mut self, dependency: &Dependency, element: E) -> bool;
+    
+    
+    
+    fn check_outer_dependency(&mut self, dependency: &Dependency, element: E, scope: Option<OpaqueElement>) -> bool;
 
     
     fn matching_context(&mut self) -> &mut MatchingContext<'b, E::Impl>;
@@ -251,6 +254,8 @@ pub struct Invalidation<'a> {
     
     
     
+    host: Option<OpaqueElement>,
+    
     scope: Option<OpaqueElement>,
     
     
@@ -270,15 +275,16 @@ pub struct Invalidation<'a> {
 
 impl<'a> Invalidation<'a> {
     
-    pub fn new(dependency: &'a Dependency, scope: Option<OpaqueElement>) -> Self {
+    pub fn new(dependency: &'a Dependency, host: Option<OpaqueElement>, scope: Option<OpaqueElement>) -> Self {
         debug_assert!(
-            dependency.selector_offset == dependency.selector.len() + 1
-                || dependency.normal_invalidation_kind()
-                    != NormalDependencyInvalidationKind::Element,
+            dependency.selector_offset == dependency.selector.len() + 1 ||
+                dependency.invalidation_kind() !=
+                    DependencyInvalidationKind::Normal(NormalDependencyInvalidationKind::Element),
             "No point to this, if the dependency matched the element we should just invalidate it"
         );
         Self {
             dependency,
+            host,
             scope,
             
             offset: dependency.selector.len() + 1 - dependency.selector_offset,
@@ -890,14 +896,16 @@ where
 
         let matching_result = {
             let context = self.processor.matching_context();
-            context.current_host = invalidation.scope;
+            context.current_host = invalidation.host;
 
-            matches_compound_selector_from(
-                &invalidation.dependency.selector,
-                invalidation.offset,
-                context,
-                &self.element,
-            )
+            context.nest_for_scope_condition(invalidation.scope,|ctx| {
+                matches_compound_selector_from(
+                    &invalidation.dependency.selector,
+                    invalidation.offset,
+                    ctx,
+                    &self.element,
+                )
+            })
         };
 
         let next_invalidation = match matching_result {
@@ -913,6 +921,7 @@ where
                 
                 let mut cur_dependency = invalidation.dependency;
                 loop {
+                    let mut scope = invalidation.scope;
                     cur_dependency = match cur_dependency.next {
                         None => {
                             return SingleInvalidationResult {
@@ -926,7 +935,11 @@ where
                             match invalidation_kind {
                                 DependencyInvalidationKind::FullSelector => unreachable!(),
                                 DependencyInvalidationKind::Normal(_) => n,
-                                DependencyInvalidationKind::Scope(_) => n,
+                                
+                                DependencyInvalidationKind::Scope(_) => {
+                                    scope = Some(self.element.opaque());
+                                    n
+                                },
                                 DependencyInvalidationKind::Relative(kind) => {
                                     self.processor.found_relative_selector_invalidation(
                                         self.element,
@@ -949,7 +962,7 @@ where
                     
                     if !self
                         .processor
-                        .check_outer_dependency(cur_dependency, self.element)
+                        .check_outer_dependency(cur_dependency, self.element, scope)
                     {
                         return SingleInvalidationResult {
                             invalidated_self: false,
@@ -957,21 +970,28 @@ where
                         };
                     }
 
-                    if cur_dependency.normal_invalidation_kind()
-                        == NormalDependencyInvalidationKind::Element
+                    let invalidation_kind = cur_dependency.invalidation_kind();
+                    if matches!(invalidation_kind,
+                        DependencyInvalidationKind::Normal(NormalDependencyInvalidationKind::Element))
+                        || (
+                            matches!(invalidation_kind,
+                            DependencyInvalidationKind::Scope(_))
+                            && cur_dependency.selector_offset == 0
+                        )
                     {
                         continue;
                     }
 
                     debug!(" > Generating invalidation");
-                    break Invalidation::new(cur_dependency, invalidation.scope);
+                    break Invalidation::new(cur_dependency, invalidation.host, scope);
                 }
             },
             CompoundSelectorMatchingResult::Matched {
                 next_combinator_offset,
             } => Invalidation {
                 dependency: invalidation.dependency,
-                scope: invalidation.scope,
+                host: invalidation.host,
+                scope: Some(self.element.opaque()),
                 offset: next_combinator_offset + 1,
                 matched_by_any_previous: false,
             },
