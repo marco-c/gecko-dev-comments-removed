@@ -69,6 +69,9 @@ import org.mozilla.gecko.InputMethods;
 import org.mozilla.gecko.SurfaceViewWrapper;
 import org.mozilla.gecko.util.ThreadUtils;
 
+
+
+
 @UiThread
 public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfaceProvider {
   private static final String LOGTAG = "GeckoView";
@@ -78,10 +81,14 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
       mWindowInsetsListeners =
           new HashMap<String, androidx.core.view.OnApplyWindowInsetsListener>();
 
+  
   protected final @NonNull Display mDisplay = new Display();
 
   private Integer mLastCoverColor;
+
+  
   protected @Nullable GeckoSession mSession;
+
   WeakReference<Autofill.Session> mAutofillSession = new WeakReference<>(null);
 
   
@@ -255,13 +262,22 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
     }
   }
 
-  @SuppressWarnings("checkstyle:javadocmethod")
+  
+
+
+
+
   public GeckoView(final Context context) {
     super(context);
     init();
   }
 
-  @SuppressWarnings("checkstyle:javadocmethod")
+  
+
+
+
+
+
   public GeckoView(final Context context, final AttributeSet attrs) {
     super(context, attrs);
     init();
@@ -364,6 +380,7 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
 
   public static final int BACKEND_TEXTURE_VIEW = 2;
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({BACKEND_SURFACE_VIEW, BACKEND_TEXTURE_VIEW})
   public @interface ViewBackend {}
@@ -610,8 +627,12 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
     }
   }
 
+  
+
+
+
+
   @AnyThread
-  @SuppressWarnings("checkstyle:javadocmethod")
   public @Nullable GeckoSession getSession() {
     return mSession;
   }
@@ -622,7 +643,11 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
     return mSession.getEventDispatcher();
   }
 
-  @SuppressWarnings("checkstyle:javadocmethod")
+  
+
+
+
+
   public @NonNull PanZoomController getPanZoomController() {
     ThreadUtils.assertOnUiThread();
     return mSession.getPanZoomController();

@@ -53,6 +53,7 @@ public class BasicSelectionActionDelegate
     implements ActionMode.Callback, GeckoSession.SelectionActionDelegate {
   private static final String LOGTAG = "BasicSelectionAction";
 
+  
   protected static final String ACTION_PROCESS_TEXT = Intent.ACTION_PROCESS_TEXT;
 
   private static final String[] FLOATING_TOOLBAR_ACTIONS =
@@ -70,14 +71,24 @@ public class BasicSelectionActionDelegate
   
   private static final int MAX_INTENT_TEXT_LENGTH = 100000;
 
+  
   protected final @NonNull Activity mActivity;
+
+  
   protected final boolean mUseFloatingToolbar;
 
   private boolean mExternalActionsEnabled;
 
+  
   protected @Nullable ActionMode mActionMode;
+
+  
   protected @Nullable GeckoSession mSession;
+
+  
   protected @Nullable Selection mSelection;
+
+  
   protected boolean mRepopulatedMenu;
 
   private @Nullable ActionMode mActionModeForClipboardPermission;
@@ -111,12 +122,21 @@ public class BasicSelectionActionDelegate
     }
   }
 
-  @SuppressWarnings("checkstyle:javadocmethod")
+  
+
+
+
+
   public BasicSelectionActionDelegate(final @NonNull Activity activity) {
     this(activity, Build.VERSION.SDK_INT >= 23);
   }
 
-  @SuppressWarnings("checkstyle:javadocmethod")
+  
+
+
+
+
+
   public BasicSelectionActionDelegate(
       final @NonNull Activity activity, final boolean useFloatingToolbar) {
     mActivity = activity;
@@ -456,7 +476,13 @@ public class BasicSelectionActionDelegate
     mActionMode = null;
   }
 
-  @SuppressWarnings("checkstyle:javadocmethod")
+  
+
+
+
+
+
+
   public void onGetContentRect(
       final @Nullable ActionMode mode, final @Nullable View view, final @NonNull Rect outRect) {
     ThreadUtils.assertOnUiThread();

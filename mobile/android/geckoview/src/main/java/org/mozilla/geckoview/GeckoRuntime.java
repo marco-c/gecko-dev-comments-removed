@@ -60,6 +60,7 @@ import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.ThreadUtils;
 
+
 public final class GeckoRuntime implements Parcelable {
   private static final String LOGTAG = "GeckoRuntime";
   private static final boolean DEBUG = false;
@@ -147,6 +148,7 @@ public final class GeckoRuntime implements Parcelable {
 
   private final MemoryController mMemoryController = new MemoryController();
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @StringDef(
       value = {
@@ -680,6 +682,7 @@ public final class GeckoRuntime implements Parcelable {
     GeckoThread.forceQuit();
   }
 
+  
   public interface Delegate {
     
 
@@ -758,6 +761,7 @@ public final class GeckoRuntime implements Parcelable {
     return mCrashPullProxy.getDelegate();
   }
 
+  
   @UiThread
   public interface ServiceWorkerDelegate {
 
@@ -970,8 +974,12 @@ public final class GeckoRuntime implements Parcelable {
     return result;
   }
 
+  
+
+
+
+
   @AnyThread
-  @SuppressWarnings("checkstyle:javadocmethod")
   public @NonNull GeckoRuntimeSettings getSettings() {
     return mSettings;
   }
@@ -1170,12 +1178,17 @@ public final class GeckoRuntime implements Parcelable {
   }
 
   
+  
+
+
+
+
   @AnyThread
-  @SuppressWarnings("checkstyle:javadocmethod")
   public void readFromParcel(final @NonNull Parcel source) {
     mSettings = source.readParcelable(getClass().getClassLoader());
   }
 
+  
   public static final Parcelable.Creator<GeckoRuntime> CREATOR =
       new Parcelable.Creator<GeckoRuntime>() {
         @Override

@@ -31,6 +31,7 @@ import org.mozilla.gecko.GeckoSystemStateListener;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.LocaleUtils;
 
+
 @AnyThread
 public final class GeckoRuntimeSettings extends RuntimeSettings {
   private static final String LOGTAG = "GeckoRuntimeSettings";
@@ -442,7 +443,12 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       return this;
     }
 
-    @SuppressWarnings("checkstyle:javadocmethod")
+    
+
+
+
+
+
     public @NonNull Builder contentBlocking(final @NonNull ContentBlocking.Settings cb) {
       getSettings().mContentBlocking = cb;
       return this;
@@ -672,7 +678,11 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
    ContentBlocking.Settings mContentBlocking;
 
-  @SuppressWarnings("checkstyle:javadocmethod")
+  
+
+
+
+
   public @NonNull ContentBlocking.Settings getContentBlocking() {
     return mContentBlocking;
   }
@@ -1349,7 +1359,11 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     return null;
   }
 
-  @SuppressWarnings("checkstyle:javadocmethod")
+  
+
+
+
+
   public @Nullable Class<? extends Service> getCrashHandler() {
     return mCrashHandler;
   }
@@ -1655,6 +1669,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     return mFontInflationMinTwips.get() > 0;
   }
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({COLOR_SCHEME_LIGHT, COLOR_SCHEME_DARK, COLOR_SCHEME_SYSTEM})
   public @interface ColorScheme {}
@@ -1939,6 +1954,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     return this;
   }
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({ALLOW_ALL, HTTPS_ONLY_PRIVATE, HTTPS_ONLY})
   public @interface HttpsOnlyMode {}
@@ -2337,7 +2353,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
   }
 
   
-  @SuppressWarnings("checkstyle:javadocmethod")
   public void readFromParcel(final @NonNull Parcel source) {
     super.readFromParcel(source);
 
@@ -2368,6 +2383,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     mConfigFilePath = source.readString();
   }
 
+  
   public static final Parcelable.Creator<GeckoRuntimeSettings> CREATOR =
       new Parcelable.Creator<GeckoRuntimeSettings>() {
         @Override

@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import org.mozilla.gecko.util.GeckoBundle;
 
+
 @AnyThread
 public final class GeckoSessionSettings implements Parcelable {
 
@@ -26,12 +27,16 @@ public final class GeckoSessionSettings implements Parcelable {
   public static final class Builder {
     private final GeckoSessionSettings mSettings;
 
-    @SuppressWarnings("checkstyle:javadocmethod")
+    
     public Builder() {
       mSettings = new GeckoSessionSettings();
     }
 
-    @SuppressWarnings("checkstyle:javadocmethod")
+    
+
+
+
+
     public Builder(final GeckoSessionSettings settings) {
       mSettings = new GeckoSessionSettings(settings);
     }
@@ -195,6 +200,7 @@ public final class GeckoSessionSettings implements Parcelable {
 
   
   @Retention(RetentionPolicy.SOURCE)
+  
   @IntDef({
     DISPLAY_MODE_BROWSER,
     DISPLAY_MODE_MINIMAL_UI,
@@ -253,6 +259,11 @@ public final class GeckoSessionSettings implements Parcelable {
 
 
   public static final int VIEWPORT_MODE_DESKTOP = 1;
+
+  
+
+
+
 
   public static class Key<T> {
      final String name;
@@ -348,12 +359,16 @@ public final class GeckoSessionSettings implements Parcelable {
   private final GeckoSession mSession;
   private final GeckoBundle mBundle;
 
-  @SuppressWarnings("checkstyle:javadocmethod")
+  
   public GeckoSessionSettings() {
     this(null, null);
   }
 
-  @SuppressWarnings("checkstyle:javadocmethod")
+  
+
+
+
+
   public GeckoSessionSettings(final @NonNull GeckoSessionSettings settings) {
     this(settings, null);
   }
@@ -710,11 +725,15 @@ public final class GeckoSessionSettings implements Parcelable {
   }
 
   
-  @SuppressWarnings("checkstyle:javadocmethod")
+
+
+
+
   public void readFromParcel(final @NonNull Parcel source) {
     mBundle.readFromParcel(source);
   }
 
+  
   public static final Parcelable.Creator<GeckoSessionSettings> CREATOR =
       new Parcelable.Creator<GeckoSessionSettings>() {
         @Override
