@@ -35,11 +35,12 @@ add_task(async function test_polling_only_when_process_is_running() {
 
   
   
-  equal(
-    await proc.stdout.readString(),
-    "",
-    "Test program should have closed stdout prematurely without stdout"
-  );
+  
+  
+  
+  
+  
+  
 
   equal(
     await worker.call("getIsPolling", []),
@@ -53,7 +54,6 @@ add_task(async function test_polling_only_when_process_is_running() {
   let { exitCode } = await proc.wait();
   equal(exitCode, 0, "Got expected exit code");
 
-  
   equal(
     await worker.call("getIsPolling", []),
     false,

@@ -33,28 +33,7 @@ let readAll = async function (pipe) {
   return result.join("");
 };
 
-
-
-
-
-
-
-
-
-
-async function getRealPythonExecutable() {
-  let proc = await Subprocess.call({
-    command: PYTHON,
-    arguments: ["-u", TEST_SCRIPT, "print_python_executable_path"],
-  });
-  let { exitCode } = await proc.wait();
-  equal(exitCode, 0, "Successfully got executable path");
-  let realPythonPath = await read(proc.stdout);
-  ok(realPythonPath, `Found path to Python program: ${realPythonPath}`);
-  return realPythonPath;
-}
-
-add_setup(async function setup() {
+add_task(async function setup() {
   PYTHON = await Subprocess.pathSearch(Services.env.get("PYTHON"));
 
   PYTHON_BIN = PathUtils.filename(PYTHON);
@@ -437,50 +416,6 @@ add_task(async function test_subprocess_eof() {
   let { exitCode } = await proc.wait();
 
   equal(exitCode, 0, "Got expected exit code");
-});
-
-
-add_task(async function test_subprocess_stdin_closed_by_program() {
-  
-  
-  
-  
-  
-  
-  let proc = await Subprocess.call({
-    command: await getRealPythonExecutable(),
-    arguments: ["-u", TEST_SCRIPT, "close_stdin_and_wait_forever"],
-  });
-
-  info("Waiting for program to notify us via stdout after closing stdin");
-
-  equal(
-    await read(proc.stdout),
-    "stdin_closed",
-    "Spawned process closed stdin"
-  );
-
-  
-  await Assert.rejects(
-    proc.stdin.write("a"),
-    function (e) {
-      equal(
-        e.errorCode,
-        Subprocess.ERROR_END_OF_FILE,
-        "Got the expected error code"
-      );
-      return /File closed/.test(e.message);
-    },
-    "Promise should be rejected after program closed stdin"
-  );
-
-  let { exitCode } = await proc.kill();
-
-  
-  
-  
-  const expectedExitCode = AppConstants.platform == "win" ? -9 : -15;
-  equal(exitCode, expectedExitCode, "Got expected exit code");
 });
 
 add_task(async function test_subprocess_invalid_json() {

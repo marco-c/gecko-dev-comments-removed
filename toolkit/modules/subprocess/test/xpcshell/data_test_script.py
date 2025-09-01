@@ -43,14 +43,6 @@ elif cmd == "pwd":
 elif cmd == "print_args":
     for arg in sys.argv[2:]:
         output(arg)
-elif cmd == "print_python_executable_path":
-    import psutil  
-
-    
-    
-    
-    
-    output(psutil.Process().exe())
 elif cmd == "ignore_sigterm":
     signal.signal(signal.SIGTERM, signal.SIG_IGN)
 
@@ -62,13 +54,6 @@ elif cmd == "ignore_sigterm":
             import time
 
             time.sleep(3600)
-elif cmd == "close_stdin_and_wait_forever":
-    
-    
-    os.close(sys.stdin.fileno())
-    output("stdin_closed")
-    while True:
-        pass  
 elif cmd == "close_pipes_and_wait_for_stdin":
     os.close(sys.stdout.fileno())
     os.close(sys.stderr.fileno())

@@ -235,10 +235,8 @@ class InputPipe extends Pipe {
       this.overlapped.address()
     );
 
-    if (
-      !ok &&
-      (!this.process.handle || ctypes.winLastError !== win32.ERROR_IO_PENDING)
-    ) {
+    
+    if (!ok && (!this.process.handle || libc.winLastError)) {
       this.onError();
     } else {
       io.updatePollEvents();
@@ -335,7 +333,8 @@ class OutputPipe extends Pipe {
       this.overlapped.address()
     );
 
-    if (!ok && ctypes.winLastError !== win32.ERROR_IO_PENDING) {
+    
+    if (!ok && libc.winLastError) {
       this.onError();
     } else {
       io.updatePollEvents();
