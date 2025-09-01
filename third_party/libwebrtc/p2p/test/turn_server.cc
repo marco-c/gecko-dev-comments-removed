@@ -48,7 +48,6 @@
 
 namespace webrtc {
 namespace {
-using ::webrtc::TimeDelta;
 
 
 
@@ -187,7 +186,7 @@ void TurnServer::OnInternalPacket(AsyncPacketSocket* socket,
   InternalSocketMap::iterator iter = server_sockets_.find(socket);
   RTC_DCHECK(iter != server_sockets_.end());
   TurnServerConnection conn(packet.source_address(), iter->second, socket);
-  uint16_t msg_type = webrtc::GetBE16(packet.payload().data());
+  uint16_t msg_type = GetBE16(packet.payload().data());
   if (!IsTurnChannelData(msg_type)) {
     
     HandleStunMessage(&conn, packet.payload());
@@ -512,7 +511,7 @@ void TurnServer::DestroyAllocation(TurnServerAllocation* allocation) {
   
   
   
-  if (iter != server_sockets_.end() && iter->second != webrtc::PROTO_UDP) {
+  if (iter != server_sockets_.end() && iter->second != PROTO_UDP) {
     DestroyInternalSocket(socket);
   }
 
@@ -703,7 +702,7 @@ void TurnServerAllocation::HandleCreatePermissionRequest(
   }
 
   if (server_->reject_private_addresses_ &&
-      webrtc::IPIsPrivate(peer_attr->GetAddress().ipaddr())) {
+      IPIsPrivate(peer_attr->GetAddress().ipaddr())) {
     SendErrorResponse(msg, STUN_ERROR_FORBIDDEN, STUN_ERROR_REASON_FORBIDDEN);
     return;
   }
@@ -781,7 +780,7 @@ void TurnServerAllocation::HandleChannelBindRequest(const TurnMessage* msg) {
 
 void TurnServerAllocation::HandleChannelData(ArrayView<const uint8_t> payload) {
   
-  uint16_t channel_id = webrtc::GetBE16(payload.data());
+  uint16_t channel_id = GetBE16(payload.data());
   auto channel = FindChannel(channel_id);
   if (channel != channels_.end()) {
     

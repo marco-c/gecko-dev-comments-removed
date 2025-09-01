@@ -326,7 +326,7 @@ class TurnPortTest : public ::testing::Test,
     turn_port_->SetIceTiebreaker(kTiebreakerDefault);
     ConnectSignals();
 
-    if (server_address.proto == webrtc::PROTO_TLS) {
+    if (server_address.proto == PROTO_TLS) {
       
       
       
@@ -339,7 +339,7 @@ class TurnPortTest : public ::testing::Test,
   void CreateSharedTurnPort(absl::string_view username,
                             absl::string_view password,
                             const ProtocolAddress& server_address) {
-    RTC_CHECK(server_address.proto == webrtc::PROTO_UDP);
+    RTC_CHECK(server_address.proto == PROTO_UDP);
 
     if (!socket_) {
       socket_.reset(socket_factory()->CreateUdpSocket(
@@ -403,33 +403,33 @@ class TurnPortTest : public ::testing::Test,
     
     ASSERT_TRUE(turn_port_ != nullptr);
     turn_port_->PrepareAddress();
-    ASSERT_THAT(webrtc::WaitUntil([&] { return turn_ready_; }, IsTrue(),
-                                  {.timeout = TimeDelta::Millis(
-                                       TimeToGetTurnCandidate(protocol_type)),
-                                   .clock = &fake_clock_}),
-                webrtc::IsRtcOk());
+    ASSERT_THAT(WaitUntil([&] { return turn_ready_; }, IsTrue(),
+                          {.timeout = TimeDelta::Millis(
+                               TimeToGetTurnCandidate(protocol_type)),
+                           .clock = &fake_clock_}),
+                IsRtcOk());
 
     CreateUdpPort();
     udp_port_->PrepareAddress();
-    ASSERT_THAT(webrtc::WaitUntil([&] { return udp_ready_; }, IsTrue(),
-                                  {.timeout = TimeDelta::Millis(kSimulatedRtt),
-                                   .clock = &fake_clock_}),
-                webrtc::IsRtcOk());
+    ASSERT_THAT(WaitUntil([&] { return udp_ready_; }, IsTrue(),
+                          {.timeout = TimeDelta::Millis(kSimulatedRtt),
+                           .clock = &fake_clock_}),
+                IsRtcOk());
   }
 
   
   
   int TimeToConnect(ProtocolType protocol_type) {
     switch (protocol_type) {
-      case webrtc::PROTO_TCP:
+      case PROTO_TCP:
         
         
         return kSimulatedRtt / 2;
-      case webrtc::PROTO_TLS:
+      case PROTO_TLS:
         
         
-        return 2 * kSimulatedRtt + TimeToConnect(webrtc::PROTO_TCP);
-      case webrtc::PROTO_UDP:
+        return 2 * kSimulatedRtt + TimeToConnect(PROTO_TCP);
+      case PROTO_UDP:
       default:
         
         return 0;
@@ -478,10 +478,10 @@ class TurnPortTest : public ::testing::Test,
   void TestTurnAllocateSucceeds(unsigned int timeout) {
     ASSERT_TRUE(turn_port_);
     turn_port_->PrepareAddress();
-    EXPECT_THAT(webrtc::WaitUntil([&] { return turn_ready_; }, IsTrue(),
-                                  {.timeout = TimeDelta::Millis(timeout),
-                                   .clock = &fake_clock_}),
-                webrtc::IsRtcOk());
+    EXPECT_THAT(WaitUntil([&] { return turn_ready_; }, IsTrue(),
+                          {.timeout = TimeDelta::Millis(timeout),
+                           .clock = &fake_clock_}),
+                IsRtcOk());
     ASSERT_EQ(1U, turn_port_->Candidates().size());
     EXPECT_EQ(kTurnUdpExtAddr.ipaddr(),
               turn_port_->Candidates()[0].address().ipaddr());
@@ -492,11 +492,11 @@ class TurnPortTest : public ::testing::Test,
                                   absl::string_view expected_url) {
     ASSERT_TRUE(turn_port_);
     turn_port_->PrepareAddress();
-    ASSERT_THAT(webrtc::WaitUntil([&] { return turn_ready_; }, IsTrue(),
-                                  {.timeout = TimeDelta::Millis(
-                                       TimeToGetTurnCandidate(protocol_type)),
-                                   .clock = &fake_clock_}),
-                webrtc::IsRtcOk());
+    ASSERT_THAT(WaitUntil([&] { return turn_ready_; }, IsTrue(),
+                          {.timeout = TimeDelta::Millis(
+                               TimeToGetTurnCandidate(protocol_type)),
+                           .clock = &fake_clock_}),
+                IsRtcOk());
     ASSERT_EQ(1U, turn_port_->Candidates().size());
     EXPECT_EQ(turn_port_->Candidates()[0].url(), expected_url);
   }
@@ -517,12 +517,11 @@ class TurnPortTest : public ::testing::Test,
     const SocketAddress old_addr = turn_port_->server_address().address;
 
     turn_port_->PrepareAddress();
-    EXPECT_THAT(
-        webrtc::WaitUntil([&] { return turn_ready_; }, IsTrue(),
+    EXPECT_THAT(WaitUntil([&] { return turn_ready_; }, IsTrue(),
                           {.timeout = TimeDelta::Millis(
                                TimeToGetAlternateTurnCandidate(protocol_type)),
                            .clock = &fake_clock_}),
-        webrtc::IsRtcOk());
+                IsRtcOk());
     
     
     const SocketAddress new_addr = turn_port_->server_address().address;
@@ -545,12 +544,11 @@ class TurnPortTest : public ::testing::Test,
     turn_port_->PrepareAddress();
     
     
-    EXPECT_THAT(
-        webrtc::WaitUntil([&] { return turn_error_; }, IsTrue(),
+    EXPECT_THAT(WaitUntil([&] { return turn_error_; }, IsTrue(),
                           {.timeout = TimeDelta::Millis(
                                kSimulatedRtt + TimeToConnect(protocol_type)),
                            .clock = &fake_clock_}),
-        webrtc::IsRtcOk());
+                IsRtcOk());
   }
 
   void TestTurnAlternateServerPingPong(ProtocolType protocol_type) {
@@ -567,12 +565,11 @@ class TurnPortTest : public ::testing::Test,
                    ProtocolAddress(kTurnIntAddr, protocol_type));
 
     turn_port_->PrepareAddress();
-    EXPECT_THAT(
-        webrtc::WaitUntil([&] { return turn_error_; }, IsTrue(),
+    EXPECT_THAT(WaitUntil([&] { return turn_error_; }, IsTrue(),
                           {.timeout = TimeDelta::Millis(
                                TimeToGetAlternateTurnCandidate(protocol_type)),
                            .clock = &fake_clock_}),
-        webrtc::IsRtcOk());
+                IsRtcOk());
     ASSERT_EQ(0U, turn_port_->Candidates().size());
     SocketAddress address;
     
@@ -594,12 +591,11 @@ class TurnPortTest : public ::testing::Test,
                    ProtocolAddress(kTurnIntAddr, protocol_type));
 
     turn_port_->PrepareAddress();
-    EXPECT_THAT(
-        webrtc::WaitUntil([&] { return turn_error_; }, IsTrue(),
+    EXPECT_THAT(WaitUntil([&] { return turn_error_; }, IsTrue(),
                           {.timeout = TimeDelta::Millis(
                                TimeToGetAlternateTurnCandidate(protocol_type)),
                            .clock = &fake_clock_}),
-        webrtc::IsRtcOk());
+                IsRtcOk());
     ASSERT_EQ(0U, turn_port_->Candidates().size());
   }
 
@@ -616,17 +612,16 @@ class TurnPortTest : public ::testing::Test,
     
     
     SocketAddress loopback_address(ipv6 ? "::1" : "127.1.2.3",
-                                   webrtc::TURN_SERVER_PORT);
+                                   TURN_SERVER_PORT);
     redirect_addresses.push_back(loopback_address);
 
     
     
     std::unique_ptr<Socket> loopback_socket(ss_->CreateSocket(
-        AF_INET,
-        protocol_type == webrtc::PROTO_UDP ? SOCK_DGRAM : SOCK_STREAM));
+        AF_INET, protocol_type == PROTO_UDP ? SOCK_DGRAM : SOCK_STREAM));
     ASSERT_NE(nullptr, loopback_socket.get());
     ASSERT_EQ(0, loopback_socket->Bind(loopback_address));
-    if (protocol_type == webrtc::PROTO_TCP) {
+    if (protocol_type == PROTO_TCP) {
       ASSERT_EQ(0, loopback_socket->Listen(1));
     }
 
@@ -638,17 +633,17 @@ class TurnPortTest : public ::testing::Test,
                    ProtocolAddress(server_address, protocol_type));
 
     turn_port_->PrepareAddress();
-    EXPECT_THAT(webrtc::WaitUntil([&] { return turn_error_; }, IsTrue(),
-                                  {.timeout = TimeDelta::Millis(
-                                       TimeToGetTurnCandidate(protocol_type)),
-                                   .clock = &fake_clock_}),
-                webrtc::IsRtcOk());
+    EXPECT_THAT(WaitUntil([&] { return turn_error_; }, IsTrue(),
+                          {.timeout = TimeDelta::Millis(
+                               TimeToGetTurnCandidate(protocol_type)),
+                           .clock = &fake_clock_}),
+                IsRtcOk());
 
     
     
     
     SIMULATED_WAIT(false, kSimulatedRtt, fake_clock_);
-    if (protocol_type == webrtc::PROTO_UDP) {
+    if (protocol_type == PROTO_UDP) {
       char buf[1];
       EXPECT_EQ(-1, loopback_socket->Recv(&buf, 1, nullptr));
     } else {
@@ -676,37 +671,35 @@ class TurnPortTest : public ::testing::Test,
     Connection* conn2 = turn_port_->CreateConnection(udp_port_->Candidates()[0],
                                                      Port::ORIGIN_MESSAGE);
     ASSERT_TRUE(conn2 != NULL);
-    ASSERT_THAT(webrtc::WaitUntil(
-                    [&] { return turn_create_permission_success_; }, IsTrue(),
-                    {.timeout = TimeDelta::Millis(kSimulatedRtt),
-                     .clock = &fake_clock_}),
-                webrtc::IsRtcOk());
+    ASSERT_THAT(
+        WaitUntil([&] { return turn_create_permission_success_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kSimulatedRtt),
+                   .clock = &fake_clock_}),
+        IsRtcOk());
     conn2->Ping(0);
 
     
-    EXPECT_THAT(
-        webrtc::WaitUntil([&] { return conn2->write_state(); },
+    EXPECT_THAT(WaitUntil([&] { return conn2->write_state(); },
                           Eq(Connection::STATE_WRITABLE),
                           {.timeout = TimeDelta::Millis(kSimulatedRtt * 2),
                            .clock = &fake_clock_}),
-        webrtc::IsRtcOk());
+                IsRtcOk());
     EXPECT_TRUE(conn1->receiving());
     EXPECT_TRUE(conn2->receiving());
     EXPECT_EQ(Connection::STATE_WRITE_INIT, conn1->write_state());
 
     
     conn1->Ping(0);
-    EXPECT_THAT(
-        webrtc::WaitUntil([&] { return conn1->write_state(); },
+    EXPECT_THAT(WaitUntil([&] { return conn1->write_state(); },
                           Eq(Connection::STATE_WRITABLE),
                           {.timeout = TimeDelta::Millis(kSimulatedRtt * 2),
                            .clock = &fake_clock_}),
-        webrtc::IsRtcOk());
+                IsRtcOk());
     EXPECT_TRUE(conn2->receiving());
   }
 
   void TestDestroyTurnConnection() {
-    PrepareTurnAndUdpPorts(webrtc::PROTO_UDP);
+    PrepareTurnAndUdpPorts(PROTO_UDP);
 
     
     Connection* conn1 = udp_port_->CreateConnection(turn_port_->Candidates()[0],
@@ -719,19 +712,18 @@ class TurnPortTest : public ::testing::Test,
     turn_port_->set_timeout_delay(10 * 60 * 1000);
 
     ASSERT_TRUE(conn2 != NULL);
-    ASSERT_THAT(webrtc::WaitUntil(
-                    [&] { return turn_create_permission_success_; }, IsTrue(),
-                    {.timeout = TimeDelta::Millis(kSimulatedRtt),
-                     .clock = &fake_clock_}),
-                webrtc::IsRtcOk());
+    ASSERT_THAT(
+        WaitUntil([&] { return turn_create_permission_success_; }, IsTrue(),
+                  {.timeout = TimeDelta::Millis(kSimulatedRtt),
+                   .clock = &fake_clock_}),
+        IsRtcOk());
     
     conn1->Ping(0);
-    EXPECT_THAT(
-        webrtc::WaitUntil([&] { return conn1->write_state(); },
+    EXPECT_THAT(WaitUntil([&] { return conn1->write_state(); },
                           Eq(Connection::STATE_WRITABLE),
                           {.timeout = TimeDelta::Millis(kSimulatedRtt * 2),
                            .clock = &fake_clock_}),
-        webrtc::IsRtcOk());
+                IsRtcOk());
     EXPECT_FALSE(turn_unknown_address_);
 
     
@@ -739,11 +731,10 @@ class TurnPortTest : public ::testing::Test,
     turn_port_->DestroyConnection(conn2);
 
     conn1->Ping(0);
-    EXPECT_THAT(
-        webrtc::WaitUntil([&] { return turn_unknown_address_; }, IsTrue(),
+    EXPECT_THAT(WaitUntil([&] { return turn_unknown_address_; }, IsTrue(),
                           {.timeout = TimeDelta::Millis(kSimulatedRtt),
                            .clock = &fake_clock_}),
-        webrtc::IsRtcOk());
+                IsRtcOk());
 
     
     
@@ -775,20 +766,19 @@ class TurnPortTest : public ::testing::Test,
     conn1->set_remote_password_for_test(pwd);
 
     conn1->Ping(0);
-    EXPECT_THAT(
-        webrtc::WaitUntil([&] { return turn_unknown_address_; }, IsTrue(),
+    EXPECT_THAT(WaitUntil([&] { return turn_unknown_address_; }, IsTrue(),
                           {.timeout = TimeDelta::Millis(kSimulatedRtt),
                            .clock = &fake_clock_}),
-        webrtc::IsRtcOk());
+                IsRtcOk());
 
     
     conn2 = turn_port_->CreateConnection(udp_port_->Candidates()[0],
                                          Port::ORIGIN_MESSAGE);
     conn1->Ping(0);
-    EXPECT_THAT(webrtc::WaitUntil([&] { return conn2->receiving(); }, IsTrue(),
-                                  {.timeout = TimeDelta::Millis(kSimulatedRtt),
-                                   .clock = &fake_clock_}),
-                webrtc::IsRtcOk());
+    EXPECT_THAT(WaitUntil([&] { return conn2->receiving(); }, IsTrue(),
+                          {.timeout = TimeDelta::Millis(kSimulatedRtt),
+                           .clock = &fake_clock_}),
+                IsRtcOk());
   }
 
   void TestTurnSendData(ProtocolType protocol_type) {
@@ -816,19 +806,17 @@ class TurnPortTest : public ::testing::Test,
     conn2->SignalDestroyed.connect(this,
                                    &TurnPortTest::OnConnectionSignalDestroyed);
     conn1->Ping(0);
-    EXPECT_THAT(
-        webrtc::WaitUntil([&] { return conn1->write_state(); },
+    EXPECT_THAT(WaitUntil([&] { return conn1->write_state(); },
                           Eq(Connection::STATE_WRITABLE),
                           {.timeout = TimeDelta::Millis(kSimulatedRtt * 2),
                            .clock = &fake_clock_}),
-        webrtc::IsRtcOk());
+                IsRtcOk());
     conn2->Ping(0);
-    EXPECT_THAT(
-        webrtc::WaitUntil([&] { return conn2->write_state(); },
+    EXPECT_THAT(WaitUntil([&] { return conn2->write_state(); },
                           Eq(Connection::STATE_WRITABLE),
                           {.timeout = TimeDelta::Millis(kSimulatedRtt * 2),
                            .clock = &fake_clock_}),
-        webrtc::IsRtcOk());
+                IsRtcOk());
 
     
     size_t num_packets = 256;
@@ -857,11 +845,11 @@ class TurnPortTest : public ::testing::Test,
     PrepareTurnAndUdpPorts(protocol_type);
     turn_port_.reset();
     EXPECT_THAT(
-        webrtc::WaitUntil(
-            [&] { return turn_server_.server()->allocations().size(); }, Eq(0U),
-            {.timeout = TimeDelta::Millis(kSimulatedRtt),
-             .clock = &fake_clock_}),
-        webrtc::IsRtcOk());
+        WaitUntil([&] { return turn_server_.server()->allocations().size(); },
+                  Eq(0U),
+                  {.timeout = TimeDelta::Millis(kSimulatedRtt),
+                   .clock = &fake_clock_}),
+        IsRtcOk());
   }
 
   
@@ -892,19 +880,17 @@ class TurnPortTest : public ::testing::Test,
                                    &TurnPortTest::OnConnectionSignalDestroyed);
 
     conn1->Ping(0);
-    EXPECT_THAT(
-        webrtc::WaitUntil([&] { return conn1->write_state(); },
+    EXPECT_THAT(WaitUntil([&] { return conn1->write_state(); },
                           Eq(Connection::STATE_WRITABLE),
                           {.timeout = TimeDelta::Millis(kSimulatedRtt * 2),
                            .clock = &fake_clock_}),
-        webrtc::IsRtcOk());
+                IsRtcOk());
     conn2->Ping(0);
-    EXPECT_THAT(
-        webrtc::WaitUntil([&] { return conn2->write_state(); },
+    EXPECT_THAT(WaitUntil([&] { return conn2->write_state(); },
                           Eq(Connection::STATE_WRITABLE),
                           {.timeout = TimeDelta::Millis(kSimulatedRtt * 2),
                            .clock = &fake_clock_}),
-        webrtc::IsRtcOk());
+                IsRtcOk());
 
     
     unsigned char buf[256] = {0};
@@ -915,10 +901,10 @@ class TurnPortTest : public ::testing::Test,
     turn_port_->Release();
 
     
-    ASSERT_THAT(webrtc::WaitUntil([&] { return turn_port_closed_; }, IsTrue(),
-                                  {.timeout = TimeDelta::Millis(kSimulatedRtt),
-                                   .clock = &fake_clock_}),
-                webrtc::IsRtcOk());
+    ASSERT_THAT(WaitUntil([&] { return turn_port_closed_; }, IsTrue(),
+                          {.timeout = TimeDelta::Millis(kSimulatedRtt),
+                           .clock = &fake_clock_}),
+                IsRtcOk());
 
     
     ASSERT_EQ(1ul, turn_packets_.size());
@@ -971,32 +957,29 @@ TEST_F(TurnPortTest, TestTurnPortType) {
 
 TEST_F(TurnPortTest, TestReconstructedServerUrlForUdpIPv4) {
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
-  TestReconstructedServerUrl(webrtc::PROTO_UDP,
-                             "turn:99.99.99.3:3478?transport=udp");
+  TestReconstructedServerUrl(PROTO_UDP, "turn:99.99.99.3:3478?transport=udp");
 }
 
 TEST_F(TurnPortTest, TestReconstructedServerUrlForUdpIPv6) {
-  turn_server_.AddInternalSocket(kTurnUdpIPv6IntAddr, webrtc::PROTO_UDP);
+  turn_server_.AddInternalSocket(kTurnUdpIPv6IntAddr, PROTO_UDP);
   CreateTurnPort(kLocalIPv6Addr, kTurnUsername, kTurnPassword,
                  kTurnUdpIPv6ProtoAddr);
   
   TestReconstructedServerUrl(
-      webrtc::PROTO_UDP,
+      PROTO_UDP,
       "turn:[2400:4030:1:2c00:be30:abcd:efab:cdef]:3478?transport=udp");
 }
 
 TEST_F(TurnPortTest, TestReconstructedServerUrlForTcp) {
-  turn_server_.AddInternalSocket(kTurnTcpIntAddr, webrtc::PROTO_TCP);
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
-  TestReconstructedServerUrl(webrtc::PROTO_TCP,
-                             "turn:99.99.99.4:3478?transport=tcp");
+  TestReconstructedServerUrl(PROTO_TCP, "turn:99.99.99.4:3478?transport=tcp");
 }
 
 TEST_F(TurnPortTest, TestReconstructedServerUrlForTls) {
-  turn_server_.AddInternalSocket(kTurnTcpIntAddr, webrtc::PROTO_TLS);
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TLS);
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTlsProtoAddr);
-  TestReconstructedServerUrl(webrtc::PROTO_TLS,
-                             "turns:99.99.99.4:3478?transport=tcp");
+  TestReconstructedServerUrl(PROTO_TLS, "turns:99.99.99.4:3478?transport=tcp");
 }
 
 TEST_F(TurnPortTest, TestReconstructedServerUrlForHostname) {
@@ -1006,10 +989,9 @@ TEST_F(TurnPortTest, TestReconstructedServerUrlForHostname) {
   
   
   turn_port_->PrepareAddress();
-  EXPECT_THAT(
-      webrtc::WaitUntil([&] { return turn_error_; }, IsTrue(),
+  EXPECT_THAT(WaitUntil([&] { return turn_error_; }, IsTrue(),
                         {.timeout = TimeDelta::Millis(kResolverTimeout)}),
-      webrtc::IsRtcOk());
+              IsRtcOk());
   std::string server_url =
       "turn:" + kTurnInvalidAddr.ToString() + "?transport=udp";
   ASSERT_EQ(error_event_.url, server_url);
@@ -1064,18 +1046,16 @@ TEST_F(TurnPortTest, TestTurnAllocateWithoutLoggingId) {
 TEST_F(TurnPortTest, TestTurnBadCredentials) {
   CreateTurnPort(kTurnUsername, "bad", kTurnUdpProtoAddr);
   turn_port_->PrepareAddress();
-  EXPECT_THAT(
-      webrtc::WaitUntil([&] { return turn_error_; }, IsTrue(),
+  EXPECT_THAT(WaitUntil([&] { return turn_error_; }, IsTrue(),
                         {.timeout = TimeDelta::Millis(kSimulatedRtt * 3),
                          .clock = &fake_clock_}),
-      webrtc::IsRtcOk());
+              IsRtcOk());
   ASSERT_EQ(0U, turn_port_->Candidates().size());
-  EXPECT_THAT(
-      webrtc::WaitUntil([&] { return error_event_.error_code; },
+  EXPECT_THAT(WaitUntil([&] { return error_event_.error_code; },
                         Eq(STUN_ERROR_UNAUTHORIZED),
                         {.timeout = TimeDelta::Millis(kSimulatedRtt * 3),
                          .clock = &fake_clock_}),
-      webrtc::IsRtcOk());
+              IsRtcOk());
   EXPECT_EQ(error_event_.error_text, "Unauthorized");
 }
 
@@ -1084,11 +1064,10 @@ TEST_F(TurnPortTest, TestTurnBadCredentials) {
 TEST_F(TurnPortTest, TestServerAddressFamilyMismatch) {
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpIPv6ProtoAddr);
   turn_port_->PrepareAddress();
-  EXPECT_THAT(
-      webrtc::WaitUntil([&] { return turn_error_; }, IsTrue(),
+  EXPECT_THAT(WaitUntil([&] { return turn_error_; }, IsTrue(),
                         {.timeout = TimeDelta::Millis(kSimulatedRtt * 3),
                          .clock = &fake_clock_}),
-      webrtc::IsRtcOk());
+              IsRtcOk());
   ASSERT_EQ(0U, turn_port_->Candidates().size());
   EXPECT_EQ(0, error_event_.error_code);
 }
@@ -1099,18 +1078,17 @@ TEST_F(TurnPortTest, TestServerAddressFamilyMismatch6) {
   CreateTurnPort(kLocalIPv6Addr, kTurnUsername, kTurnPassword,
                  kTurnUdpProtoAddr);
   turn_port_->PrepareAddress();
-  EXPECT_THAT(
-      webrtc::WaitUntil([&] { return turn_error_; }, IsTrue(),
+  EXPECT_THAT(WaitUntil([&] { return turn_error_; }, IsTrue(),
                         {.timeout = TimeDelta::Millis(kSimulatedRtt * 3),
                          .clock = &fake_clock_}),
-      webrtc::IsRtcOk());
+              IsRtcOk());
   ASSERT_EQ(0U, turn_port_->Candidates().size());
   EXPECT_EQ(0, error_event_.error_code);
 }
 
 
 TEST_F(TurnPortTest, TestTurnTcpAllocate) {
-  turn_server_.AddInternalSocket(kTurnTcpIntAddr, webrtc::PROTO_TCP);
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
   EXPECT_EQ(0, turn_port_->SetOption(Socket::OPT_SNDBUF, 10 * 1024));
   TestTurnAllocateSucceeds(kSimulatedRtt * 3);
@@ -1125,7 +1103,7 @@ TEST_F(TurnPortTest, TestTurnTcpAllocationWhenProxyChangesAddressToLocalHost) {
   
   ss_->SetAlternativeLocalAddress(kLocalAddr1.ipaddr(), local_address.ipaddr());
 
-  turn_server_.AddInternalSocket(kTurnTcpIntAddr, webrtc::PROTO_TCP);
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
   CreateTurnPort(kLocalAddr1, kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
   EXPECT_EQ(0, turn_port_->SetOption(Socket::OPT_SNDBUF, 10 * 1024));
   TestTurnAllocateSucceeds(kSimulatedRtt * 3);
@@ -1148,7 +1126,7 @@ TEST_F(TurnPortTest,
   ss_->SetAlternativeLocalAddress(kLocalAddr1.ipaddr(), kLocalAddr2.ipaddr());
 
   
-  turn_server_.AddInternalSocket(kTurnTcpIntAddr, webrtc::PROTO_TCP);
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
 
   
   CreateTurnPort(kLocalAddr1, kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
@@ -1156,15 +1134,15 @@ TEST_F(TurnPortTest,
 
   
   
-  EXPECT_THAT(webrtc::WaitUntil([&] { return turn_error_; }, IsTrue(),
-                                {.timeout = TimeDelta::Millis(kSimulatedRtt),
-                                 .clock = &fake_clock_}),
-              webrtc::IsRtcOk());
-  EXPECT_THAT(webrtc::WaitUntil([&] { return error_event_.error_code; },
-                                Eq(STUN_ERROR_SERVER_NOT_REACHABLE),
-                                {.timeout = TimeDelta::Millis(kSimulatedRtt),
-                                 .clock = &fake_clock_}),
-              webrtc::IsRtcOk());
+  EXPECT_THAT(WaitUntil([&] { return turn_error_; }, IsTrue(),
+                        {.timeout = TimeDelta::Millis(kSimulatedRtt),
+                         .clock = &fake_clock_}),
+              IsRtcOk());
+  EXPECT_THAT(WaitUntil([&] { return error_event_.error_code; },
+                        Eq(STUN_ERROR_SERVER_NOT_REACHABLE),
+                        {.timeout = TimeDelta::Millis(kSimulatedRtt),
+                         .clock = &fake_clock_}),
+              IsRtcOk());
   EXPECT_NE(error_event_.error_text.find('.'), std::string::npos);
   EXPECT_NE(error_event_.address.find(kLocalAddr2.HostAsSensitiveURIString()),
             std::string::npos);
@@ -1187,7 +1165,7 @@ TEST_F(TurnPortTest, TurnTcpAllocationNotDiscardedIfNotBoundToBestIP) {
   ASSERT_EQ(kLocalAddr1.ipaddr(), network->GetBestIP());
 
   
-  turn_server_.AddInternalSocket(kTurnTcpIntAddr, webrtc::PROTO_TCP);
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
 
   
   
@@ -1196,11 +1174,10 @@ TEST_F(TurnPortTest, TurnTcpAllocationNotDiscardedIfNotBoundToBestIP) {
   turn_port_->PrepareAddress();
 
   
-  EXPECT_THAT(
-      webrtc::WaitUntil([&] { return turn_ready_; }, IsTrue(),
+  EXPECT_THAT(WaitUntil([&] { return turn_ready_; }, IsTrue(),
                         {.timeout = TimeDelta::Millis(kSimulatedRtt * 3),
                          .clock = &fake_clock_}),
-      webrtc::IsRtcOk());
+              IsRtcOk());
   ASSERT_EQ(1U, turn_port_->Candidates().size());
 
   
@@ -1213,48 +1190,45 @@ TEST_F(TurnPortTest, TurnTcpAllocationNotDiscardedIfNotBoundToBestIP) {
 
 TEST_F(TurnPortTest, TCPPortNotDiscardedIfBoundToTemporaryIP) {
   networks_.emplace_back("unittest", "unittest", kLocalIPv6Addr.ipaddr(), 32);
-  networks_.back().AddIP(InterfaceAddress(kLocalIPv6Addr.ipaddr(),
-                                          webrtc::IPV6_ADDRESS_FLAG_TEMPORARY));
+  networks_.back().AddIP(
+      InterfaceAddress(kLocalIPv6Addr.ipaddr(), IPV6_ADDRESS_FLAG_TEMPORARY));
 
   
-  turn_server_.AddInternalSocket(kTurnIPv6IntAddr, webrtc::PROTO_TCP);
+  turn_server_.AddInternalSocket(kTurnIPv6IntAddr, PROTO_TCP);
 
   
   
-  CreateTurnPortWithNetwork(
-      &networks_.back(), kTurnUsername, kTurnPassword,
-      ProtocolAddress(kTurnIPv6IntAddr, webrtc::PROTO_TCP));
+  CreateTurnPortWithNetwork(&networks_.back(), kTurnUsername, kTurnPassword,
+                            ProtocolAddress(kTurnIPv6IntAddr, PROTO_TCP));
   turn_port_->PrepareAddress();
 
   
-  EXPECT_THAT(
-      webrtc::WaitUntil([&] { return turn_ready_; }, IsTrue(),
+  EXPECT_THAT(WaitUntil([&] { return turn_ready_; }, IsTrue(),
                         {.timeout = TimeDelta::Millis(kSimulatedRtt * 3),
                          .clock = &fake_clock_}),
-      webrtc::IsRtcOk());
+              IsRtcOk());
   ASSERT_EQ(1U, turn_port_->Candidates().size());
 }
 
 
 
 TEST_F(TurnPortTest, TestTurnTcpOnAddressResolveFailure) {
-  turn_server_.AddInternalSocket(kTurnTcpIntAddr, webrtc::PROTO_TCP);
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
   CreateTurnPort(kTurnUsername, kTurnPassword,
-                 ProtocolAddress(kTurnInvalidAddr, webrtc::PROTO_TCP));
+                 ProtocolAddress(kTurnInvalidAddr, PROTO_TCP));
   turn_port_->PrepareAddress();
-  EXPECT_THAT(
-      webrtc::WaitUntil([&] { return turn_error_; }, IsTrue(),
+  EXPECT_THAT(WaitUntil([&] { return turn_error_; }, IsTrue(),
                         {.timeout = TimeDelta::Millis(kResolverTimeout)}),
-      webrtc::IsRtcOk());
+              IsRtcOk());
   
   
   
   EXPECT_EQ(SOCKET_ERROR, turn_port_->error());
-  EXPECT_THAT(webrtc::WaitUntil([&] { return error_event_.error_code; },
-                                Eq(STUN_ERROR_SERVER_NOT_REACHABLE),
-                                {.timeout = TimeDelta::Millis(kSimulatedRtt),
-                                 .clock = &fake_clock_}),
-              webrtc::IsRtcOk());
+  EXPECT_THAT(WaitUntil([&] { return error_event_.error_code; },
+                        Eq(STUN_ERROR_SERVER_NOT_REACHABLE),
+                        {.timeout = TimeDelta::Millis(kSimulatedRtt),
+                         .clock = &fake_clock_}),
+              IsRtcOk());
   std::string server_url =
       "turn:" + kTurnInvalidAddr.ToString() + "?transport=tcp";
   ASSERT_EQ(error_event_.url, server_url);
@@ -1263,14 +1237,13 @@ TEST_F(TurnPortTest, TestTurnTcpOnAddressResolveFailure) {
 
 
 TEST_F(TurnPortTest, TestTurnTlsOnAddressResolveFailure) {
-  turn_server_.AddInternalSocket(kTurnTcpIntAddr, webrtc::PROTO_TLS);
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TLS);
   CreateTurnPort(kTurnUsername, kTurnPassword,
-                 ProtocolAddress(kTurnInvalidAddr, webrtc::PROTO_TLS));
+                 ProtocolAddress(kTurnInvalidAddr, PROTO_TLS));
   turn_port_->PrepareAddress();
-  EXPECT_THAT(
-      webrtc::WaitUntil([&] { return turn_error_; }, IsTrue(),
+  EXPECT_THAT(WaitUntil([&] { return turn_error_; }, IsTrue(),
                         {.timeout = TimeDelta::Millis(kResolverTimeout)}),
-      webrtc::IsRtcOk());
+              IsRtcOk());
   EXPECT_EQ(SOCKET_ERROR, turn_port_->error());
 }
 
@@ -1278,12 +1251,11 @@ TEST_F(TurnPortTest, TestTurnTlsOnAddressResolveFailure) {
 
 TEST_F(TurnPortTest, TestTurnUdpOnAddressResolveFailure) {
   CreateTurnPort(kTurnUsername, kTurnPassword,
-                 ProtocolAddress(kTurnInvalidAddr, webrtc::PROTO_UDP));
+                 ProtocolAddress(kTurnInvalidAddr, PROTO_UDP));
   turn_port_->PrepareAddress();
-  EXPECT_THAT(
-      webrtc::WaitUntil([&] { return turn_error_; }, IsTrue(),
+  EXPECT_THAT(WaitUntil([&] { return turn_error_; }, IsTrue(),
                         {.timeout = TimeDelta::Millis(kResolverTimeout)}),
-      webrtc::IsRtcOk());
+              IsRtcOk());
   
   EXPECT_NE(SOCKET_ERROR, turn_port_->error());
 }
@@ -1292,11 +1264,10 @@ TEST_F(TurnPortTest, TestTurnUdpOnAddressResolveFailure) {
 TEST_F(TurnPortTest, TestTurnAllocateBadPassword) {
   CreateTurnPort(kTurnUsername, "bad", kTurnUdpProtoAddr);
   turn_port_->PrepareAddress();
-  EXPECT_THAT(
-      webrtc::WaitUntil([&] { return turn_error_; }, IsTrue(),
+  EXPECT_THAT(WaitUntil([&] { return turn_error_; }, IsTrue(),
                         {.timeout = TimeDelta::Millis(kSimulatedRtt * 2),
                          .clock = &fake_clock_}),
-      webrtc::IsRtcOk());
+              IsRtcOk());
   ASSERT_EQ(0U, turn_port_->Candidates().size());
 }
 
@@ -1306,11 +1277,10 @@ TEST_F(TurnPortTest, TestTurnAllocateNonceResetAfterAllocateMismatch) {
   
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
   turn_port_->PrepareAddress();
-  EXPECT_THAT(
-      webrtc::WaitUntil([&] { return turn_ready_; }, IsTrue(),
+  EXPECT_THAT(WaitUntil([&] { return turn_ready_; }, IsTrue(),
                         {.timeout = TimeDelta::Millis(kSimulatedRtt * 2),
                          .clock = &fake_clock_}),
-      webrtc::IsRtcOk());
+              IsRtcOk());
   SocketAddress first_addr(turn_port_->socket()->GetLocalAddress());
   
   
@@ -1328,7 +1298,7 @@ TEST_F(TurnPortTest, TestTurnAllocateNonceResetAfterAllocateMismatch) {
   
   
   
-  int64_t ts_before = webrtc::TimeMillis() - 1;
+  int64_t ts_before = TimeMillis() - 1;
   std::string first_nonce =
       turn_server_.server()->SetTimestampForNextNonce(ts_before);
   turn_port_->PrepareAddress();
@@ -1336,11 +1306,10 @@ TEST_F(TurnPortTest, TestTurnAllocateNonceResetAfterAllocateMismatch) {
   
   
   
-  EXPECT_THAT(
-      webrtc::WaitUntil([&] { return turn_ready_; }, IsTrue(),
+  EXPECT_THAT(WaitUntil([&] { return turn_ready_; }, IsTrue(),
                         {.timeout = TimeDelta::Millis(kSimulatedRtt * 4),
                          .clock = &fake_clock_}),
-      webrtc::IsRtcOk());
+              IsRtcOk());
   EXPECT_NE(first_nonce, turn_port_->nonce());
 }
 
@@ -1350,11 +1319,10 @@ TEST_F(TurnPortTest, TestTurnAllocateMismatch) {
   
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
   turn_port_->PrepareAddress();
-  EXPECT_THAT(
-      webrtc::WaitUntil([&] { return turn_ready_; }, IsTrue(),
+  EXPECT_THAT(WaitUntil([&] { return turn_ready_; }, IsTrue(),
                         {.timeout = TimeDelta::Millis(kSimulatedRtt * 2),
                          .clock = &fake_clock_}),
-      webrtc::IsRtcOk());
+              IsRtcOk());
   SocketAddress first_addr(turn_port_->socket()->GetLocalAddress());
 
   
@@ -1374,11 +1342,10 @@ TEST_F(TurnPortTest, TestTurnAllocateMismatch) {
   
   
   
-  EXPECT_THAT(
-      webrtc::WaitUntil([&] { return turn_ready_; }, IsTrue(),
+  EXPECT_THAT(WaitUntil([&] { return turn_ready_; }, IsTrue(),
                         {.timeout = TimeDelta::Millis(kSimulatedRtt * 4),
                          .clock = &fake_clock_}),
-      webrtc::IsRtcOk());
+              IsRtcOk());
 
   
   EXPECT_NE(first_addr, turn_port_->socket()->GetLocalAddress());
@@ -1386,10 +1353,9 @@ TEST_F(TurnPortTest, TestTurnAllocateMismatch) {
   
   std::string test_packet = "Test packet";
   EXPECT_FALSE(turn_port_->HandleIncomingPacket(
-      socket_.get(),
-      ReceivedIpPacket::CreateFromLegacy(
-          test_packet.data(), test_packet.size(), webrtc::TimeMicros(),
-          SocketAddress(kTurnUdpExtAddr.ipaddr(), 0))));
+      socket_.get(), ReceivedIpPacket::CreateFromLegacy(
+                         test_packet.data(), test_packet.size(), TimeMicros(),
+                         SocketAddress(kTurnUdpExtAddr.ipaddr(), 0))));
 }
 
 
@@ -1398,11 +1364,10 @@ TEST_F(TurnPortTest, TestSharedSocketAllocateMismatch) {
   
   CreateSharedTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
   turn_port_->PrepareAddress();
-  EXPECT_THAT(
-      webrtc::WaitUntil([&] { return turn_ready_; }, IsTrue(),
+  EXPECT_THAT(WaitUntil([&] { return turn_ready_; }, IsTrue(),
                         {.timeout = TimeDelta::Millis(kSimulatedRtt * 2),
                          .clock = &fake_clock_}),
-      webrtc::IsRtcOk());
+              IsRtcOk());
   SocketAddress first_addr(turn_port_->socket()->GetLocalAddress());
 
   
@@ -1418,11 +1383,10 @@ TEST_F(TurnPortTest, TestSharedSocketAllocateMismatch) {
 
   turn_port_->PrepareAddress();
   
-  EXPECT_THAT(
-      webrtc::WaitUntil([&] { return turn_ready_; }, IsTrue(),
+  EXPECT_THAT(WaitUntil([&] { return turn_ready_; }, IsTrue(),
                         {.timeout = TimeDelta::Millis(kSimulatedRtt * 4),
                          .clock = &fake_clock_}),
-      webrtc::IsRtcOk());
+              IsRtcOk());
 
   
   EXPECT_NE(first_addr, turn_port_->socket()->GetLocalAddress());
@@ -1430,16 +1394,15 @@ TEST_F(TurnPortTest, TestSharedSocketAllocateMismatch) {
 }
 
 TEST_F(TurnPortTest, TestTurnTcpAllocateMismatch) {
-  turn_server_.AddInternalSocket(kTurnTcpIntAddr, webrtc::PROTO_TCP);
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
 
   
   turn_port_->PrepareAddress();
-  EXPECT_THAT(
-      webrtc::WaitUntil([&] { return turn_ready_; }, IsTrue(),
+  EXPECT_THAT(WaitUntil([&] { return turn_ready_; }, IsTrue(),
                         {.timeout = TimeDelta::Millis(kSimulatedRtt * 3),
                          .clock = &fake_clock_}),
-      webrtc::IsRtcOk());
+              IsRtcOk());
   SocketAddress first_addr(turn_port_->socket()->GetLocalAddress());
 
   
@@ -1457,11 +1420,10 @@ TEST_F(TurnPortTest, TestTurnTcpAllocateMismatch) {
   EXPECT_EQ(first_addr, turn_port_->socket()->GetLocalAddress());
 
   
-  EXPECT_THAT(
-      webrtc::WaitUntil([&] { return turn_ready_; }, IsTrue(),
+  EXPECT_THAT(WaitUntil([&] { return turn_ready_; }, IsTrue(),
                         {.timeout = TimeDelta::Millis(kSimulatedRtt * 5),
                          .clock = &fake_clock_}),
-      webrtc::IsRtcOk());
+              IsRtcOk());
 
   
   EXPECT_NE(first_addr, turn_port_->socket()->GetLocalAddress());
@@ -1469,7 +1431,7 @@ TEST_F(TurnPortTest, TestTurnTcpAllocateMismatch) {
 
 TEST_F(TurnPortTest, TestRefreshRequestGetsErrorResponse) {
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
-  PrepareTurnAndUdpPorts(webrtc::PROTO_UDP);
+  PrepareTurnAndUdpPorts(PROTO_UDP);
   turn_port_->CreateConnection(udp_port_->Candidates()[0],
                                Port::ORIGIN_MESSAGE);
   
@@ -1480,17 +1442,16 @@ TEST_F(TurnPortTest, TestRefreshRequestGetsErrorResponse) {
   
   
   turn_port_->request_manager().FlushForTest(TURN_REFRESH_REQUEST);
-  EXPECT_THAT(webrtc::WaitUntil([&] { return turn_refresh_success_; }, IsTrue(),
-                                {.timeout = TimeDelta::Millis(kSimulatedRtt),
-                                 .clock = &fake_clock_}),
-              webrtc::IsRtcOk());
+  EXPECT_THAT(WaitUntil([&] { return turn_refresh_success_; }, IsTrue(),
+                        {.timeout = TimeDelta::Millis(kSimulatedRtt),
+                         .clock = &fake_clock_}),
+              IsRtcOk());
   
   turn_port_->request_manager().FlushForTest(TURN_REFRESH_REQUEST);
-  EXPECT_THAT(
-      webrtc::WaitUntil(
-          [&] { return !turn_refresh_success_; }, IsTrue(),
-          {.timeout = TimeDelta::Millis(kSimulatedRtt), .clock = &fake_clock_}),
-      webrtc::IsRtcOk());
+  EXPECT_THAT(WaitUntil([&] { return !turn_refresh_success_; }, IsTrue(),
+                        {.timeout = TimeDelta::Millis(kSimulatedRtt),
+                         .clock = &fake_clock_}),
+              IsRtcOk());
   EXPECT_FALSE(turn_port_->connected());
   EXPECT_TRUE(CheckAllConnectionsFailedAndPruned());
   EXPECT_FALSE(turn_port_->HasRequests());
@@ -1500,7 +1461,7 @@ TEST_F(TurnPortTest, TestRefreshRequestGetsErrorResponse) {
 
 TEST_F(TurnPortTest, TestStopProcessingPacketsAfterClosed) {
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
-  PrepareTurnAndUdpPorts(webrtc::PROTO_UDP);
+  PrepareTurnAndUdpPorts(PROTO_UDP);
   Connection* conn1 = turn_port_->CreateConnection(udp_port_->Candidates()[0],
                                                    Port::ORIGIN_MESSAGE);
   Connection* conn2 = udp_port_->CreateConnection(turn_port_->Candidates()[0],
@@ -1509,12 +1470,11 @@ TEST_F(TurnPortTest, TestStopProcessingPacketsAfterClosed) {
   ASSERT_TRUE(conn2 != NULL);
   
   conn2->Ping(0);
-  EXPECT_THAT(
-      webrtc::WaitUntil([&] { return conn2->write_state(); },
+  EXPECT_THAT(WaitUntil([&] { return conn2->write_state(); },
                         Eq(Connection::STATE_WRITABLE),
                         {.timeout = TimeDelta::Millis(kSimulatedRtt * 2),
                          .clock = &fake_clock_}),
-      webrtc::IsRtcOk());
+              IsRtcOk());
 
   turn_port_->CloseForTest();
   SIMULATED_WAIT(false, kSimulatedRtt, fake_clock_);
@@ -1528,9 +1488,9 @@ TEST_F(TurnPortTest, TestStopProcessingPacketsAfterClosed) {
 
 
 TEST_F(TurnPortTest, TestCreateConnectionWhenSocketClosed) {
-  turn_server_.AddInternalSocket(kTurnTcpIntAddr, webrtc::PROTO_TCP);
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
-  PrepareTurnAndUdpPorts(webrtc::PROTO_TCP);
+  PrepareTurnAndUdpPorts(PROTO_TCP);
   
   Connection* conn1 = turn_port_->CreateConnection(udp_port_->Candidates()[0],
                                                    Port::ORIGIN_MESSAGE);
@@ -1546,97 +1506,97 @@ TEST_F(TurnPortTest, TestCreateConnectionWhenSocketClosed) {
 
 
 TEST_F(TurnPortTest, TestSocketCloseWillDestroyConnection) {
-  turn_server_.AddInternalSocket(kTurnTcpIntAddr, webrtc::PROTO_TCP);
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
-  PrepareTurnAndUdpPorts(webrtc::PROTO_TCP);
+  PrepareTurnAndUdpPorts(PROTO_TCP);
   Connection* conn = turn_port_->CreateConnection(udp_port_->Candidates()[0],
                                                   Port::ORIGIN_MESSAGE);
   EXPECT_NE(nullptr, conn);
   EXPECT_TRUE(!turn_port_->connections().empty());
   turn_port_->socket()->NotifyClosedForTest(1);
-  EXPECT_THAT(webrtc::WaitUntil(
-                  [&] { return turn_port_->connections().empty(); }, IsTrue(),
-                  {.timeout = TimeDelta::Millis(kConnectionDestructionDelay),
-                   .clock = &fake_clock_}),
-              webrtc::IsRtcOk());
+  EXPECT_THAT(
+      WaitUntil([&] { return turn_port_->connections().empty(); }, IsTrue(),
+                {.timeout = TimeDelta::Millis(kConnectionDestructionDelay),
+                 .clock = &fake_clock_}),
+      IsRtcOk());
 }
 
 
 TEST_F(TurnPortTest, TestTurnAlternateServerUDP) {
-  TestTurnAlternateServer(webrtc::PROTO_UDP);
+  TestTurnAlternateServer(PROTO_UDP);
 }
 
 TEST_F(TurnPortTest, TestTurnAlternateServerTCP) {
-  TestTurnAlternateServer(webrtc::PROTO_TCP);
+  TestTurnAlternateServer(PROTO_TCP);
 }
 
 TEST_F(TurnPortTest, TestTurnAlternateServerTLS) {
-  TestTurnAlternateServer(webrtc::PROTO_TLS);
+  TestTurnAlternateServer(PROTO_TLS);
 }
 
 
 
 TEST_F(TurnPortTest, TestTurnAlternateServerV4toV6UDP) {
-  TestTurnAlternateServerV4toV6(webrtc::PROTO_UDP);
+  TestTurnAlternateServerV4toV6(PROTO_UDP);
 }
 
 TEST_F(TurnPortTest, TestTurnAlternateServerV4toV6TCP) {
-  TestTurnAlternateServerV4toV6(webrtc::PROTO_TCP);
+  TestTurnAlternateServerV4toV6(PROTO_TCP);
 }
 
 TEST_F(TurnPortTest, TestTurnAlternateServerV4toV6TLS) {
-  TestTurnAlternateServerV4toV6(webrtc::PROTO_TLS);
+  TestTurnAlternateServerV4toV6(PROTO_TLS);
 }
 
 
 TEST_F(TurnPortTest, TestTurnAlternateServerPingPongUDP) {
-  TestTurnAlternateServerPingPong(webrtc::PROTO_UDP);
+  TestTurnAlternateServerPingPong(PROTO_UDP);
 }
 
 TEST_F(TurnPortTest, TestTurnAlternateServerPingPongTCP) {
-  TestTurnAlternateServerPingPong(webrtc::PROTO_TCP);
+  TestTurnAlternateServerPingPong(PROTO_TCP);
 }
 
 TEST_F(TurnPortTest, TestTurnAlternateServerPingPongTLS) {
-  TestTurnAlternateServerPingPong(webrtc::PROTO_TLS);
+  TestTurnAlternateServerPingPong(PROTO_TLS);
 }
 
 
 TEST_F(TurnPortTest, TestTurnAlternateServerDetectRepetitionUDP) {
-  TestTurnAlternateServerDetectRepetition(webrtc::PROTO_UDP);
+  TestTurnAlternateServerDetectRepetition(PROTO_UDP);
 }
 
 TEST_F(TurnPortTest, TestTurnAlternateServerDetectRepetitionTCP) {
-  TestTurnAlternateServerDetectRepetition(webrtc::PROTO_TCP);
+  TestTurnAlternateServerDetectRepetition(PROTO_TCP);
 }
 
 TEST_F(TurnPortTest, TestTurnAlternateServerDetectRepetitionTLS) {
-  TestTurnAlternateServerDetectRepetition(webrtc::PROTO_TCP);
+  TestTurnAlternateServerDetectRepetition(PROTO_TCP);
 }
 
 
 TEST_F(TurnPortTest, TestTurnAlternateServerLoopbackUdpIpv4) {
-  TestTurnAlternateServerLoopback(webrtc::PROTO_UDP, false);
+  TestTurnAlternateServerLoopback(PROTO_UDP, false);
 }
 
 TEST_F(TurnPortTest, TestTurnAlternateServerLoopbackUdpIpv6) {
-  TestTurnAlternateServerLoopback(webrtc::PROTO_UDP, true);
+  TestTurnAlternateServerLoopback(PROTO_UDP, true);
 }
 
 TEST_F(TurnPortTest, TestTurnAlternateServerLoopbackTcpIpv4) {
-  TestTurnAlternateServerLoopback(webrtc::PROTO_TCP, false);
+  TestTurnAlternateServerLoopback(PROTO_TCP, false);
 }
 
 TEST_F(TurnPortTest, TestTurnAlternateServerLoopbackTcpIpv6) {
-  TestTurnAlternateServerLoopback(webrtc::PROTO_TCP, true);
+  TestTurnAlternateServerLoopback(PROTO_TCP, true);
 }
 
 TEST_F(TurnPortTest, TestTurnAlternateServerLoopbackTlsIpv4) {
-  TestTurnAlternateServerLoopback(webrtc::PROTO_TLS, false);
+  TestTurnAlternateServerLoopback(PROTO_TLS, false);
 }
 
 TEST_F(TurnPortTest, TestTurnAlternateServerLoopbackTlsIpv6) {
-  TestTurnAlternateServerLoopback(webrtc::PROTO_TLS, true);
+  TestTurnAlternateServerLoopback(PROTO_TLS, true);
 }
 
 
@@ -1645,27 +1605,27 @@ TEST_F(TurnPortTest, TestTurnAlternateServerLoopbackTlsIpv6) {
 
 TEST_F(TurnPortTest, TestTurnConnection) {
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
-  TestTurnConnection(webrtc::PROTO_UDP);
+  TestTurnConnection(PROTO_UDP);
 }
 
 
 TEST_F(TurnPortTest, TestTurnConnectionUsingSharedSocket) {
   CreateSharedTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
-  TestTurnConnection(webrtc::PROTO_UDP);
+  TestTurnConnection(PROTO_UDP);
 }
 
 
 TEST_F(TurnPortTest, TestTurnTcpConnection) {
-  turn_server_.AddInternalSocket(kTurnTcpIntAddr, webrtc::PROTO_TCP);
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
-  TestTurnConnection(webrtc::PROTO_TCP);
+  TestTurnConnection(PROTO_TCP);
 }
 
 
 TEST_F(TurnPortTest, TestTurnTlsConnection) {
-  turn_server_.AddInternalSocket(kTurnTcpIntAddr, webrtc::PROTO_TLS);
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TLS);
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTlsProtoAddr);
-  TestTurnConnection(webrtc::PROTO_TLS);
+  TestTurnConnection(PROTO_TLS);
 }
 
 
@@ -1688,7 +1648,7 @@ TEST_F(TurnPortTest, TestDestroyTurnConnectionUsingSharedSocket) {
 TEST_F(TurnPortTest, TestTurnConnectionUsingOTUNonce) {
   turn_server_.set_enable_otu_nonce(true);
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
-  TestTurnConnection(webrtc::PROTO_UDP);
+  TestTurnConnection(PROTO_UDP);
 }
 
 
@@ -1696,16 +1656,16 @@ TEST_F(TurnPortTest, TestTurnConnectionUsingOTUNonce) {
 
 TEST_F(TurnPortTest, TestRefreshCreatePermissionRequest) {
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
-  PrepareTurnAndUdpPorts(webrtc::PROTO_UDP);
+  PrepareTurnAndUdpPorts(PROTO_UDP);
 
   Connection* conn = turn_port_->CreateConnection(udp_port_->Candidates()[0],
                                                   Port::ORIGIN_MESSAGE);
   ASSERT_TRUE(conn != NULL);
   EXPECT_THAT(
-      webrtc::WaitUntil(
+      WaitUntil(
           [&] { return turn_create_permission_success_; }, IsTrue(),
           {.timeout = TimeDelta::Millis(kSimulatedRtt), .clock = &fake_clock_}),
-      webrtc::IsRtcOk());
+      IsRtcOk());
   turn_create_permission_success_ = false;
   
   
@@ -1714,23 +1674,23 @@ TEST_F(TurnPortTest, TestRefreshCreatePermissionRequest) {
   turn_port_->set_credentials(bad_credentials);
   turn_port_->request_manager().FlushForTest(kAllRequestsForTest);
   EXPECT_THAT(
-      webrtc::WaitUntil(
+      WaitUntil(
           [&] { return turn_create_permission_success_; }, IsTrue(),
           {.timeout = TimeDelta::Millis(kSimulatedRtt), .clock = &fake_clock_}),
-      webrtc::IsRtcOk());
+      IsRtcOk());
   
   turn_port_->request_manager().FlushForTest(kAllRequestsForTest);
   EXPECT_THAT(
-      webrtc::WaitUntil(
+      WaitUntil(
           [&] { return !turn_create_permission_success_; }, IsTrue(),
           {.timeout = TimeDelta::Millis(kSimulatedRtt), .clock = &fake_clock_}),
-      webrtc::IsRtcOk());
+      IsRtcOk());
   EXPECT_TRUE(CheckConnectionFailedAndPruned(conn));
 }
 
 TEST_F(TurnPortTest, TestChannelBindGetErrorResponse) {
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
-  PrepareTurnAndUdpPorts(webrtc::PROTO_UDP);
+  PrepareTurnAndUdpPorts(PROTO_UDP);
   Connection* conn1 = turn_port_->CreateConnection(udp_port_->Candidates()[0],
                                                    Port::ORIGIN_MESSAGE);
   ASSERT_TRUE(conn1 != nullptr);
@@ -1739,11 +1699,10 @@ TEST_F(TurnPortTest, TestChannelBindGetErrorResponse) {
 
   ASSERT_TRUE(conn2 != nullptr);
   conn1->Ping(0);
-  EXPECT_THAT(
-      webrtc::WaitUntil([&] { return conn1->writable(); }, IsTrue(),
+  EXPECT_THAT(WaitUntil([&] { return conn1->writable(); }, IsTrue(),
                         {.timeout = TimeDelta::Millis(kSimulatedRtt * 2),
                          .clock = &fake_clock_}),
-      webrtc::IsRtcOk());
+              IsRtcOk());
 
   
   turn_server_.server()->set_reject_bind_requests(true);
@@ -1752,10 +1711,10 @@ TEST_F(TurnPortTest, TestChannelBindGetErrorResponse) {
   conn1->Send(data.data(), data.length(), options);
 
   EXPECT_THAT(
-      webrtc::WaitUntil(
+      WaitUntil(
           [&] { return CheckConnectionFailedAndPruned(conn1); }, IsTrue(),
           {.timeout = TimeDelta::Millis(kSimulatedRtt), .clock = &fake_clock_}),
-      webrtc::IsRtcOk());
+      IsRtcOk());
   
   
 
@@ -1767,10 +1726,10 @@ TEST_F(TurnPortTest, TestChannelBindGetErrorResponse) {
             Buffer(packet.payload().data(), packet.payload().size()));
       });
   conn1->Send(data.data(), data.length(), options);
-  EXPECT_THAT(webrtc::WaitUntil([&] { return !udp_packets_.empty(); }, IsTrue(),
-                                {.timeout = TimeDelta::Millis(kSimulatedRtt),
-                                 .clock = &fake_clock_}),
-              webrtc::IsRtcOk());
+  EXPECT_THAT(WaitUntil([&] { return !udp_packets_.empty(); }, IsTrue(),
+                        {.timeout = TimeDelta::Millis(kSimulatedRtt),
+                         .clock = &fake_clock_}),
+              IsRtcOk());
   conn2->DeregisterReceivedPacketCallback();
 }
 
@@ -1778,41 +1737,38 @@ TEST_F(TurnPortTest, TestChannelBindGetErrorResponse) {
 TEST_F(TurnPortTest, TestTurnSendDataTurnUdpToUdp) {
   
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
-  TestTurnSendData(webrtc::PROTO_UDP);
-  EXPECT_EQ(webrtc::UDP_PROTOCOL_NAME,
-            turn_port_->Candidates()[0].relay_protocol());
+  TestTurnSendData(PROTO_UDP);
+  EXPECT_EQ(UDP_PROTOCOL_NAME, turn_port_->Candidates()[0].relay_protocol());
 }
 
 
 TEST_F(TurnPortTest, TestTurnSendDataTurnTcpToUdp) {
-  turn_server_.AddInternalSocket(kTurnTcpIntAddr, webrtc::PROTO_TCP);
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
   
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
-  TestTurnSendData(webrtc::PROTO_TCP);
-  EXPECT_EQ(webrtc::TCP_PROTOCOL_NAME,
-            turn_port_->Candidates()[0].relay_protocol());
+  TestTurnSendData(PROTO_TCP);
+  EXPECT_EQ(TCP_PROTOCOL_NAME, turn_port_->Candidates()[0].relay_protocol());
 }
 
 
 TEST_F(TurnPortTest, TestTurnSendDataTurnTlsToUdp) {
-  turn_server_.AddInternalSocket(kTurnTcpIntAddr, webrtc::PROTO_TLS);
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TLS);
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTlsProtoAddr);
-  TestTurnSendData(webrtc::PROTO_TLS);
-  EXPECT_EQ(webrtc::TLS_PROTOCOL_NAME,
-            turn_port_->Candidates()[0].relay_protocol());
+  TestTurnSendData(PROTO_TLS);
+  EXPECT_EQ(TLS_PROTOCOL_NAME, turn_port_->Candidates()[0].relay_protocol());
 }
 
 
 
 TEST_F(TurnPortTest, TestTurnLocalIPv6AddressServerIPv4) {
-  turn_server_.AddInternalSocket(kTurnUdpIPv6IntAddr, webrtc::PROTO_UDP);
+  turn_server_.AddInternalSocket(kTurnUdpIPv6IntAddr, PROTO_UDP);
   CreateTurnPort(kLocalIPv6Addr, kTurnUsername, kTurnPassword,
                  kTurnUdpProtoAddr);
   turn_port_->PrepareAddress();
-  ASSERT_THAT(webrtc::WaitUntil([&] { return turn_error_; }, IsTrue(),
-                                {.timeout = TimeDelta::Millis(kSimulatedRtt),
-                                 .clock = &fake_clock_}),
-              webrtc::IsRtcOk());
+  ASSERT_THAT(WaitUntil([&] { return turn_error_; }, IsTrue(),
+                        {.timeout = TimeDelta::Millis(kSimulatedRtt),
+                         .clock = &fake_clock_}),
+              IsRtcOk());
   EXPECT_TRUE(turn_port_->Candidates().empty());
 }
 
@@ -1820,7 +1776,7 @@ TEST_F(TurnPortTest, TestTurnLocalIPv6AddressServerIPv4) {
 
 
 TEST_F(TurnPortTest, TestTurnLocalIPv6AddressServerIPv6ExtenalIPv4) {
-  turn_server_.AddInternalSocket(kTurnUdpIPv6IntAddr, webrtc::PROTO_UDP);
+  turn_server_.AddInternalSocket(kTurnUdpIPv6IntAddr, PROTO_UDP);
   CreateTurnPort(kLocalIPv6Addr, kTurnUsername, kTurnPassword,
                  kTurnUdpIPv6ProtoAddr);
   TestTurnAllocateSucceeds(kSimulatedRtt * 2);
@@ -1831,16 +1787,15 @@ TEST_F(TurnPortTest, TestTurnLocalIPv6AddressServerIPv6ExtenalIPv4) {
 
 
 TEST_F(TurnPortTest, TestCandidateAddressFamilyMatch) {
-  turn_server_.AddInternalSocket(kTurnUdpIPv6IntAddr, webrtc::PROTO_UDP);
+  turn_server_.AddInternalSocket(kTurnUdpIPv6IntAddr, PROTO_UDP);
 
   CreateTurnPort(kLocalIPv6Addr, kTurnUsername, kTurnPassword,
                  kTurnUdpIPv6ProtoAddr);
   turn_port_->PrepareAddress();
-  EXPECT_THAT(
-      webrtc::WaitUntil([&] { return turn_ready_; }, IsTrue(),
+  EXPECT_THAT(WaitUntil([&] { return turn_ready_; }, IsTrue(),
                         {.timeout = TimeDelta::Millis(kSimulatedRtt * 2),
                          .clock = &fake_clock_}),
-      webrtc::IsRtcOk());
+              IsRtcOk());
   ASSERT_EQ(1U, turn_port_->Candidates().size());
 
   
@@ -1862,22 +1817,21 @@ TEST_F(TurnPortTest, TestCandidateAddressFamilyMatch) {
 
 
 TEST_F(TurnPortTest, TestConnectionFailedAndPrunedOnCreatePermissionFailure) {
-  turn_server_.AddInternalSocket(kTurnTcpIntAddr, webrtc::PROTO_TCP);
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
   turn_server_.server()->set_reject_private_addresses(true);
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
   turn_port_->PrepareAddress();
-  EXPECT_THAT(
-      webrtc::WaitUntil([&] { return turn_ready_; }, IsTrue(),
+  EXPECT_THAT(WaitUntil([&] { return turn_ready_; }, IsTrue(),
                         {.timeout = TimeDelta::Millis(kSimulatedRtt * 3),
                          .clock = &fake_clock_}),
-      webrtc::IsRtcOk());
+              IsRtcOk());
 
   CreateUdpPort(SocketAddress("10.0.0.10", 0));
   udp_port_->PrepareAddress();
-  EXPECT_THAT(webrtc::WaitUntil([&] { return udp_ready_; }, IsTrue(),
-                                {.timeout = TimeDelta::Millis(kSimulatedRtt),
-                                 .clock = &fake_clock_}),
-              webrtc::IsRtcOk());
+  EXPECT_THAT(WaitUntil([&] { return udp_ready_; }, IsTrue(),
+                        {.timeout = TimeDelta::Millis(kSimulatedRtt),
+                         .clock = &fake_clock_}),
+              IsRtcOk());
   
   TestConnectionWrapper conn(turn_port_->CreateConnection(
       udp_port_->Candidates()[0], Port::ORIGIN_MESSAGE));
@@ -1886,16 +1840,16 @@ TEST_F(TurnPortTest, TestConnectionFailedAndPrunedOnCreatePermissionFailure) {
   
   
   EXPECT_THAT(
-      webrtc::WaitUntil(
+      WaitUntil(
           [&] { return CheckConnectionFailedAndPruned(conn.connection()); },
           IsTrue(),
           {.timeout = TimeDelta::Millis(kSimulatedRtt), .clock = &fake_clock_}),
-      webrtc::IsRtcOk());
+      IsRtcOk());
   EXPECT_THAT(
-      webrtc::WaitUntil(
+      WaitUntil(
           [&] { return !turn_create_permission_success_; }, IsTrue(),
           {.timeout = TimeDelta::Millis(kSimulatedRtt), .clock = &fake_clock_}),
-      webrtc::IsRtcOk());
+      IsRtcOk());
   
   SIMULATED_WAIT(conn.connection() == nullptr, kConnectionDestructionDelay,
                  fake_clock_);
@@ -1905,38 +1859,38 @@ TEST_F(TurnPortTest, TestConnectionFailedAndPrunedOnCreatePermissionFailure) {
 
 TEST_F(TurnPortTest, TestTurnReleaseAllocation) {
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
-  TestTurnReleaseAllocation(webrtc::PROTO_UDP);
+  TestTurnReleaseAllocation(PROTO_UDP);
 }
 
 
 TEST_F(TurnPortTest, TestTurnTCPReleaseAllocation) {
-  turn_server_.AddInternalSocket(kTurnTcpIntAddr, webrtc::PROTO_TCP);
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
-  TestTurnReleaseAllocation(webrtc::PROTO_TCP);
+  TestTurnReleaseAllocation(PROTO_TCP);
 }
 
 TEST_F(TurnPortTest, TestTurnTLSReleaseAllocation) {
-  turn_server_.AddInternalSocket(kTurnTcpIntAddr, webrtc::PROTO_TLS);
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TLS);
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTlsProtoAddr);
-  TestTurnReleaseAllocation(webrtc::PROTO_TLS);
+  TestTurnReleaseAllocation(PROTO_TLS);
 }
 
 TEST_F(TurnPortTest, TestTurnUDPGracefulReleaseAllocation) {
-  turn_server_.AddInternalSocket(kTurnTcpIntAddr, webrtc::PROTO_UDP);
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_UDP);
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
-  TestTurnGracefulReleaseAllocation(webrtc::PROTO_UDP);
+  TestTurnGracefulReleaseAllocation(PROTO_UDP);
 }
 
 TEST_F(TurnPortTest, TestTurnTCPGracefulReleaseAllocation) {
-  turn_server_.AddInternalSocket(kTurnTcpIntAddr, webrtc::PROTO_TCP);
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
-  TestTurnGracefulReleaseAllocation(webrtc::PROTO_TCP);
+  TestTurnGracefulReleaseAllocation(PROTO_TCP);
 }
 
 TEST_F(TurnPortTest, TestTurnTLSGracefulReleaseAllocation) {
-  turn_server_.AddInternalSocket(kTurnTcpIntAddr, webrtc::PROTO_TLS);
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TLS);
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTlsProtoAddr);
-  TestTurnGracefulReleaseAllocation(webrtc::PROTO_TLS);
+  TestTurnGracefulReleaseAllocation(PROTO_TLS);
 }
 
 
@@ -1944,7 +1898,7 @@ TEST_F(TurnPortTest, TestTurnTLSGracefulReleaseAllocation) {
 
 TEST_F(TurnPortTest, CanCreateTwoConnectionsToSameAddress) {
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
-  PrepareTurnAndUdpPorts(webrtc::PROTO_UDP);
+  PrepareTurnAndUdpPorts(PROTO_UDP);
   Connection* conn1 = turn_port_->CreateConnection(udp_port_->Candidates()[0],
                                                    Port::ORIGIN_MESSAGE);
   Connection* conn2 = turn_port_->CreateConnection(udp_port_->Candidates()[0],
@@ -1957,23 +1911,22 @@ TEST_F(TurnPortTest, CanCreateTwoConnectionsToSameAddress) {
 #if defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID)
 
 TEST_F(TurnPortTest, TestResolverShutdown) {
-  turn_server_.AddInternalSocket(kTurnUdpIPv6IntAddr, webrtc::PROTO_UDP);
+  turn_server_.AddInternalSocket(kTurnUdpIPv6IntAddr, PROTO_UDP);
   int last_fd_count = GetFDCount();
   
   CreateTurnPort(kLocalIPv6Addr, kTurnUsername, kTurnPassword,
-                 ProtocolAddress(kTurnInvalidAddr, webrtc::PROTO_UDP));
+                 ProtocolAddress(kTurnInvalidAddr, PROTO_UDP));
   turn_port_->PrepareAddress();
-  ASSERT_THAT(
-      webrtc::WaitUntil([&] { return turn_error_; }, IsTrue(),
+  ASSERT_THAT(WaitUntil([&] { return turn_error_; }, IsTrue(),
                         {.timeout = TimeDelta::Millis(kResolverTimeout)}),
-      webrtc::IsRtcOk());
+              IsRtcOk());
   EXPECT_TRUE(turn_port_->Candidates().empty());
   turn_port_.reset();
   Thread::Current()->PostTask([this] { test_finish_ = true; });
   
-  ASSERT_THAT(webrtc::WaitUntil([&] { return test_finish_; }, IsTrue(),
-                                {.clock = &fake_clock_}),
-              webrtc::IsRtcOk());
+  ASSERT_THAT(WaitUntil([&] { return test_finish_; }, IsTrue(),
+                        {.clock = &fake_clock_}),
+              IsRtcOk());
   EXPECT_EQ(last_fd_count, GetFDCount());
 }
 #endif
@@ -2029,14 +1982,13 @@ TEST_F(TurnPortTest, TestTurnCustomizerCount) {
       &observer_message_counter, &observer_channel_data_counter,
       &observer_attr_counter));
 
-  turn_server_.AddInternalSocket(kTurnTcpIntAddr, webrtc::PROTO_TLS);
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TLS);
   turn_customizer_.reset(customizer);
   turn_server_.server()->SetStunMessageObserver(std::move(validator));
 
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTlsProtoAddr);
-  TestTurnSendData(webrtc::PROTO_TLS);
-  EXPECT_EQ(webrtc::TLS_PROTOCOL_NAME,
-            turn_port_->Candidates()[0].relay_protocol());
+  TestTurnSendData(PROTO_TLS);
+  EXPECT_EQ(TLS_PROTOCOL_NAME, turn_port_->Candidates()[0].relay_protocol());
 
   
   EXPECT_GE(customizer->modify_cnt_ + customizer->allow_channel_data_cnt_,
@@ -2060,14 +2012,13 @@ TEST_F(TurnPortTest, TestTurnCustomizerDisallowChannelData) {
       &observer_message_counter, &observer_channel_data_counter,
       &observer_attr_counter));
   customizer->allow_channel_data_ = false;
-  turn_server_.AddInternalSocket(kTurnTcpIntAddr, webrtc::PROTO_TLS);
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TLS);
   turn_customizer_.reset(customizer);
   turn_server_.server()->SetStunMessageObserver(std::move(validator));
 
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTlsProtoAddr);
-  TestTurnSendData(webrtc::PROTO_TLS);
-  EXPECT_EQ(webrtc::TLS_PROTOCOL_NAME,
-            turn_port_->Candidates()[0].relay_protocol());
+  TestTurnSendData(PROTO_TLS);
+  EXPECT_EQ(TLS_PROTOCOL_NAME, turn_port_->Candidates()[0].relay_protocol());
 
   
   EXPECT_GE(customizer->modify_cnt_, turn_packets_.size());
@@ -2091,14 +2042,13 @@ TEST_F(TurnPortTest, TestTurnCustomizerAddAttribute) {
       &observer_attr_counter));
   customizer->allow_channel_data_ = false;
   customizer->add_counter_ = true;
-  turn_server_.AddInternalSocket(kTurnTcpIntAddr, webrtc::PROTO_TLS);
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TLS);
   turn_customizer_.reset(customizer);
   turn_server_.server()->SetStunMessageObserver(std::move(validator));
 
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTlsProtoAddr);
-  TestTurnSendData(webrtc::PROTO_TLS);
-  EXPECT_EQ(webrtc::TLS_PROTOCOL_NAME,
-            turn_port_->Candidates()[0].relay_protocol());
+  TestTurnSendData(PROTO_TLS);
+  EXPECT_EQ(TLS_PROTOCOL_NAME, turn_port_->Candidates()[0].relay_protocol());
 
   
   EXPECT_GE(customizer->modify_cnt_, turn_packets_.size());
@@ -2148,7 +2098,7 @@ TEST_F(TurnPortTest, TestTurnDangerousServerPermits443) {
 }
 
 TEST_F(TurnPortTest, TestTurnDangerousAlternateServer) {
-  const ProtocolType protocol_type = webrtc::PROTO_TCP;
+  const ProtocolType protocol_type = PROTO_TCP;
   std::vector<SocketAddress> redirect_addresses;
   redirect_addresses.push_back(kTurnDangerousAddr);
 
@@ -2165,12 +2115,11 @@ TEST_F(TurnPortTest, TestTurnDangerousAlternateServer) {
 
   turn_port_->PrepareAddress();
   
-  EXPECT_THAT(
-      webrtc::WaitUntil([&] { return error_event_.error_code; }, Ne(0),
+  EXPECT_THAT(WaitUntil([&] { return error_event_.error_code; }, Ne(0),
                         {.timeout = TimeDelta::Millis(
                              TimeToGetAlternateTurnCandidate(protocol_type)),
                          .clock = &fake_clock_}),
-      webrtc::IsRtcOk());
+              IsRtcOk());
   
   
   EXPECT_FALSE(turn_ready_);
@@ -2214,7 +2163,7 @@ TEST_F(TurnPortWithMockDnsResolverTest, TestHostnameResolved) {
 
 
 TEST_F(TurnPortWithMockDnsResolverTest, TestHostnameResolvedIPv6Network) {
-  turn_server_.AddInternalSocket(kTurnUdpIPv6IntAddr, webrtc::PROTO_UDP);
+  turn_server_.AddInternalSocket(kTurnUdpIPv6IntAddr, PROTO_UDP);
   CreateTurnPort(kLocalIPv6Addr, kTurnUsername, kTurnPassword,
                  kTurnPortValidHostnameProtoAddr);
   SetDnsResolverExpectations(
