@@ -9,13 +9,19 @@ def main(request, response):
     if test_id is None:
         test_id = session_manager.initialize_test()
 
-    headers = [("Set-Cookie", f"test_id={test_id}")]
+    
+    
+    
+    cookie_attributes = f"Domain={request.url_parts.hostname}"
+
     
     
     
     
     cross_site = request_body.get("crossSite")
     if cross_site is not None and cross_site:
-        headers = [("Set-Cookie", f"test_id={test_id};SameSite=None;Secure")]
+        cookie_attributes += ";SameSite=None;Secure"
+
+    headers = [("Set-Cookie", f"test_id={test_id};{cookie_attributes}")]
 
     return (200, headers, "")
