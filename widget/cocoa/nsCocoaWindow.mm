@@ -4938,13 +4938,6 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect,
 }
 
 void nsCocoaWindow::Destroy() {
-  
-  
-  
-  
-  
-  MutexAutoLock lock(mCompositingLock);
-
   if (mOnDestroyCalled) {
     return;
   }
@@ -4961,7 +4954,12 @@ void nsCocoaWindow::Destroy() {
   
   Show(false);
 
-  [mChildView widgetDestroyed];
+  {
+    
+    
+    MutexAutoLock lock(mCompositingLock);
+    [mChildView widgetDestroyed];
+  }
 
   TearDownView();  
   if (mFullscreenTransitionAnimation) {
