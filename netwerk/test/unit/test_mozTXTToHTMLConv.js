@@ -164,6 +164,11 @@ function run_test() {
       url: "mailto:john@mozilla.org",
       text: "john@mozilla.org",
     },
+    {
+      
+      input: "www\f\f\f\f\f.mozilla.org",
+      url: "http://www.mozilla.org",
+    },
   ];
 
   const scanTXTglyph = [

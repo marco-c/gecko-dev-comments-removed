@@ -511,9 +511,11 @@ bool mozTXTToHTMLConv::FindURL(const char16_t* aInString, int32_t aInLength,
                              resultReplaceAfter);
 
       if (aInString[pos] != ':') {
+        
+        uint32_t urlPos = std::max(txtURL.FindChar(aInString[pos]), 0);
         nsAutoString temp = txtURL;
         txtURL.SetLength(0);
-        CompleteAbbreviatedURL(temp.get(), temp.Length(), pos - start, txtURL);
+        CompleteAbbreviatedURL(temp.get(), temp.Length(), urlPos, txtURL);
       }
 
       if (!txtURL.IsEmpty() &&
