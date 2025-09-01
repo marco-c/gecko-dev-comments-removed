@@ -7,13 +7,12 @@
 #ifndef mozilla_dom_cache_CacheOpChild_h
 #define mozilla_dom_cache_CacheOpChild_h
 
-#include "mozilla/RefPtr.h"
-#include "mozilla/dom/cache/ActorChild.h"
-#include "mozilla/dom/cache/PCacheOpChild.h"
-#include "mozilla/dom/cache/TypeUtils.h"
-#include "mozilla/dom/cache/BoundStorageKey.h"
 #include "mozilla/InitializedOnce.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/dom/cache/ActorChild.h"
+#include "mozilla/dom/cache/BoundStorageKey.h"
+#include "mozilla/dom/cache/PCacheOpChild.h"
+#include "mozilla/dom/cache/TypeUtils.h"
 
 class nsIGlobalObject;
 
@@ -32,7 +31,7 @@ class CacheOpChild final : public PCacheOpChild,
   NS_INLINE_DECL_REFCOUNTING(CacheOpChild, override)
 
  private:
-
+  
   
   
   
@@ -48,6 +47,7 @@ class CacheOpChild final : public PCacheOpChild,
                nsISupports* aParent, RefPtr<Promise>& aPromise,
                ActorChild* aParentActor);
 
+  
   
   CacheOpChild(SafeRefPtr<CacheWorkerRef> aWorkerRef, nsIGlobalObject* aGlobal,
                nsISupports* aParent, RefPtr<CacheStoragePromise>& aPromise,
