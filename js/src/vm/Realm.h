@@ -508,6 +508,10 @@ class JS::Realm : public JS::shadow::Realm {
     behaviors_.setReduceTimerPrecisionCallerType(type);
   }
 
+  void setLocaleOverride(const char* locale) {
+    behaviors_.setLocaleOverride(locale);
+  }
+
   
   bool preserveJitCode() { return creationOptions_.preserveJitCode(); }
 

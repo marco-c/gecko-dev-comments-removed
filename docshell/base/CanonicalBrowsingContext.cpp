@@ -271,6 +271,9 @@ void CanonicalBrowsingContext::ReplacedBy(
   txn.SetIPAddressSpace(GetIPAddressSpace());
 
   
+  txn.SetLanguageOverride(GetLanguageOverride());
+
+  
   
   
   txn.SetAllowJavascript(GetAllowJavascript());
