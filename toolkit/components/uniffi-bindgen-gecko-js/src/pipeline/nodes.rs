@@ -27,8 +27,8 @@ pub struct CppScaffolding {
     pub ffi_definitions: CombinedItems<FfiDefinition>,
     pub scaffolding_calls: CombinedItems<ScaffoldingCall>,
     pub pointer_types: CombinedItems<PointerType>,
-    pub callback_return_handler_classes: CombinedItems<CallbackReturnHandlerClass>,
     pub callback_interfaces: CombinedItems<CppCallbackInterface>,
+    pub async_callback_method_handler_bases: CombinedItems<AsyncCallbackMethodHandlerBase>,
 }
 
 
@@ -47,8 +47,6 @@ pub struct FfiValueArgument {
     pub name: String,
     
     pub field_name: String,
-    
-    pub var_name: String,
     pub ffi_value_class: String,
     
     pub receiver: bool,
@@ -111,9 +109,9 @@ pub struct CppCallbackInterfaceMethod {
     
     pub fn_name: String,
     pub kind: CallbackMethodKind,
-    pub return_handler_class_name: String,
+    pub base_class_name: String,
     
-    pub async_handler_class_name: String,
+    pub handler_class_name: String,
     pub ffi_func: FfiFunctionType,
     pub arguments: Vec<FfiValueArgument>,
     pub return_ty: Option<FfiValueReturnType>,
@@ -127,22 +125,15 @@ pub struct CppCallbackInterfaceMethod {
 
 #[derive(Debug, Clone, Node)]
 pub enum CallbackMethodKind {
-    Sync,
     FireAndForget,
     Async(CppCallbackInterfaceMethodAsyncData),
 }
 
 #[derive(Debug, Clone, Node)]
 pub struct CppCallbackInterfaceMethodAsyncData {
+    pub callback_handler_base_class: String,
     pub complete_callback_type_name: String,
     pub result_type_name: String,
-}
-
-#[derive(Debug, Clone, Node)]
-pub struct CallbackReturnHandlerClass {
-    pub name: String,
-    pub return_ty: Option<FfiValueReturnType>,
-    pub return_type_name: String,
 }
 
 

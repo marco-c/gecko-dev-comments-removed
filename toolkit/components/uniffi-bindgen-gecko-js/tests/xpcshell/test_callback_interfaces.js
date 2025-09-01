@@ -3,7 +3,6 @@
 
 const {
   invokeTestCallbackInterfaceNoop,
-  invokeTestCallbackInterfaceGetValue,
   invokeTestCallbackInterfaceSetValue,
   TestCallbackInterface,
   UniffiSkipJsTypeCheck,
@@ -32,53 +31,76 @@ class Callback extends TestCallbackInterface {
   }
 }
 
-
-const cbi = new Callback(42);
-
-Assert.equal(
-  UnitTestObjs.uniffiCallbackHandlerUniffiBindingsTestsTestCallbackInterface.hasRegisteredCallbacks(),
-  false
-);
-
-
-invokeTestCallbackInterfaceNoop(cbi);
-Assert.equal(invokeTestCallbackInterfaceGetValue(cbi), 42);
-invokeTestCallbackInterfaceSetValue(cbi, 43);
-Assert.equal(invokeTestCallbackInterfaceGetValue(cbi), 43);
-
-
-
-
-
-
-const invalidU32Value = 2 ** 48;
-try {
-  invokeTestCallbackInterfaceSetValue(cbi, invalidU32Value);
-} catch {
+add_task(async () => {
+  const cbi = new Callback(42);
   
-}
+  invokeTestCallbackInterfaceNoop(cbi);
+  do_test_pending();
+  do_timeout(100, do_test_finished);
+});
 
-
-
-
-try {
-  invokeTestCallbackInterfaceSetValue(
-    cbi,
-    new UniffiSkipJsTypeCheck(invalidU32Value)
-  );
-} catch {
+add_task(async () => {
+  const cbi = new Callback(42);
   
-}
+  invokeTestCallbackInterfaceSetValue(cbi, 43);
+  do_test_pending();
+  do_timeout(100, async () => {
+    Assert.equal(await cbi.getValue(), 43);
+    do_test_finished();
+  });
+});
 
 
-delete cbi;
 
 
-do_test_pending();
-do_timeout(100, () => {
+
+
+add_task(async function testCleanupAfterFailedLower() {
+  const cbi = new Callback(42);
   Assert.equal(
     UnitTestObjs.uniffiCallbackHandlerUniffiBindingsTestsTestCallbackInterface.hasRegisteredCallbacks(),
     false
   );
-  do_test_finished();
+  
+  
+  
+  
+  const invalidU32Value = 2 ** 48;
+  invokeTestCallbackInterfaceSetValue(cbi, invalidU32Value)
+    
+    .catch(() => null);
+  Assert.equal(
+    UnitTestObjs.uniffiCallbackHandlerUniffiBindingsTestsTestCallbackInterface.hasRegisteredCallbacks(),
+    false
+  );
+});
+
+
+
+add_task(async function testCleanupAfterFailedCppLower() {
+  const cbi = new Callback(42);
+  Assert.equal(
+    UnitTestObjs.uniffiCallbackHandlerUniffiBindingsTestsTestCallbackInterface.hasRegisteredCallbacks(),
+    false
+  );
+  
+  
+  
+  
+  const invalidU32Value = 2 ** 48;
+  invokeTestCallbackInterfaceSetValue(
+    cbi,
+    new UniffiSkipJsTypeCheck(invalidU32Value)
+  )
+    
+    .catch(() => null);
+  
+  do_test_pending();
+  do_timeout(100, () => {
+    Assert.equal(
+      UnitTestObjs.uniffiCallbackHandlerUniffiBindingsTestsTestCallbackInterface.hasRegisteredCallbacks(),
+      false
+    );
+    do_test_finished();
+  });
 });
