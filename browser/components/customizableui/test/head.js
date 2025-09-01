@@ -23,7 +23,9 @@ registerCleanupFunction(() =>
 
 var { synthesizeDrop, synthesizeMouseAtCenter } = EventUtils;
 
-const kForceOverflowWidthPx = 450;
+
+
+const kForceOverflowWidthPx = 500;
 
 function createDummyXULButton(id, label, win = window) {
   let btn = win.document.createXULElement("toolbarbutton");
@@ -527,4 +529,40 @@ async function hideHistoryPanel(doc = document) {
   let promise = BrowserTestUtils.waitForEvent(historyPanel, "popuphidden");
   historyPanel.hidePopup();
   return promise;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function ensureToolbarOverflow(aWindow, shouldCleanup = true) {
+  const originalWindowWidth = aWindow.outerWidth;
+
+  aWindow.resizeTo(kForceOverflowWidthPx, aWindow.outerHeight);
+  CustomizableUI.addWidgetToArea(
+    "history-panelmenu",
+    CustomizableUI.AREA_NAVBAR
+  );
+
+  if (shouldCleanup) {
+    registerCleanupFunction(async () => {
+      aWindow.resizeTo(originalWindowWidth, aWindow.outerHeight);
+      await CustomizableUI.reset();
+    });
+  }
+
+  return originalWindowWidth;
 }

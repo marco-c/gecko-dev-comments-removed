@@ -10,10 +10,10 @@
 
 loadTestSubscript("head_unified_extensions.js");
 
-requestLongerTimeout(2);
+requestLongerTimeout(3);
 
-const NUM_EXTENSIONS = 5;
-const OVERFLOW_WINDOW_WIDTH_PX = 450;
+const NUM_EXTENSIONS = 7;
+const OVERFLOW_WINDOW_WIDTH_PX = 500;
 const DEFAULT_WIDGET_IDS = [
   "home-button",
   "library-button",
@@ -21,6 +21,13 @@ const DEFAULT_WIDGET_IDS = [
   "search-container",
   "sidebar-button",
 ];
+
+
+
+const NUM_NONOVERFLOWED_DEFAULT_WIDGETS = 2;
+const OVERFLOWED_DEFAULT_WIDGET_IDS = DEFAULT_WIDGET_IDS.slice(
+  NUM_NONOVERFLOWED_DEFAULT_WIDGETS
+);
 const OVERFLOWED_EXTENSIONS_LIST_ID = "overflowed-extensions-list";
 
 add_setup(async function () {
@@ -126,7 +133,9 @@ async function withWindowOverflowed(
   
   
   
-  const signpostWidgetID = "home-button";
+  const signpostWidgetID =
+    DEFAULT_WIDGET_IDS[NUM_NONOVERFLOWED_DEFAULT_WIDGETS];
+
   
   
   CustomizableUI.getWidget(signpostWidgetID).forWindow(win).node.style =
@@ -261,7 +270,7 @@ async function withWindowOverflowed(
 
     let widgetOverflowListener = {
       _remainingOverflowables:
-        browserActionsInNavBar.length + DEFAULT_WIDGET_IDS.length,
+        browserActionsInNavBar.length + OVERFLOWED_DEFAULT_WIDGET_IDS.length,
       _deferred: Promise.withResolvers(),
 
       get promise() {
@@ -273,8 +282,20 @@ async function withWindowOverflowed(
         info(
           `onWidgetOverflow: ${this._remainingOverflowables} remaining after ${widget.id}`
         );
+        if (this._remainingOverflowables < 0) {
+          ok(false, `Unexpected widget overflowed: ${widget.id}`);
+          return;
+        }
         if (!this._remainingOverflowables) {
-          this._deferred.resolve();
+          
+          
+          
+          
+          
+          
+          setTimeout(() => {
+            this._deferred.resolve();
+          }, 500);
         }
       },
     };
@@ -304,6 +325,9 @@ async function withWindowOverflowed(
     try {
       info("Running whenOverflowed task");
       await whenOverflowed(defaultList, unifiedExtensionList, extensionIDs);
+    } catch (err) {
+      console.error(err);
+      ok(false, `whenOverflowed raised an unexpected error: ${err}`);
     } finally {
       info("whenOverflowed finished, maximizing again");
       await ensureMaximizedWindow(win);
@@ -321,6 +345,9 @@ async function withWindowOverflowed(
       try {
         info("Running afterUnderflowed task");
         await afterUnderflowed();
+      } catch (err) {
+        console.error(err);
+        ok(false, `afterUnderflowed raised an unexpected error: ${err}`);
       } finally {
         await Promise.all(extensions.map(extension => extension.unload()));
       }
@@ -443,12 +470,11 @@ add_task(async function test_overflowable_toolbar() {
       
       
       let defaultListIDs = getChildrenIDs(defaultList);
-      for (const widgetID of DEFAULT_WIDGET_IDS) {
-        Assert.ok(
-          defaultListIDs.includes(widgetID),
-          `Default overflow list should have ${widgetID}`
-        );
-      }
+      Assert.deepEqual(
+        defaultListIDs,
+        OVERFLOWED_DEFAULT_WIDGET_IDS,
+        "Got the expected list of default widgets overflowed"
+      );
 
       Assert.ok(
         unifiedExtensionList.children.length,
