@@ -2167,19 +2167,16 @@ void DateObject::fillLocalTimeSlots() {
   
   
   
-  int32_t utcTZOffset = 0;
-  if (MOZ_LIKELY(!dtInfo)) {
-    utcTZOffset = DateTimeInfo::utcToLocalStandardOffsetSeconds();
-  }
+  const int32_t timeZoneCacheKey = DateTimeInfo::timeZoneCacheKey(dtInfo);
 
   
   if (!getReservedSlot(LOCAL_TIME_SLOT).isUndefined() &&
-      getReservedSlot(UTC_TIME_ZONE_OFFSET_SLOT).toInt32() == utcTZOffset) {
+      getReservedSlot(TIME_ZONE_CACHE_KEY_SLOT).toInt32() == timeZoneCacheKey) {
     return;
   }
 
   
-  setReservedSlot(UTC_TIME_ZONE_OFFSET_SLOT, Int32Value(utcTZOffset));
+  setReservedSlot(TIME_ZONE_CACHE_KEY_SLOT, Int32Value(timeZoneCacheKey));
 
   double utcTime = UTCTime().toDouble();
 
