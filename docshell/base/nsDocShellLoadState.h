@@ -149,6 +149,10 @@ class nsDocShellLoadState final {
 
   void SetNotifiedBeforeUnloadListeners(bool aNotifiedBeforeUnloadListeners);
 
+  bool ShouldNotForceReplaceInOnLoad() const;
+
+  void SetShouldNotForceReplaceInOnLoad(bool aShouldNotForceReplaceInOnLoad);
+
   bool ForceAllowDataURI() const;
 
   void SetForceAllowDataURI(bool aForceAllowDataURI);
@@ -529,7 +533,13 @@ class nsDocShellLoadState final {
   
   bool mPrincipalIsExplicit;
 
+  
+  
   bool mNotifiedBeforeUnloadListeners;
+
+  
+  
+  bool mShouldNotForceReplaceInOnLoad;
 
   
   

@@ -2291,7 +2291,8 @@ BrowsingContext::CheckURLAndCreateLoadState(nsIURI* aURI,
 
 void BrowsingContext::Navigate(nsIURI* aURI, nsIPrincipal& aSubjectPrincipal,
                                ErrorResult& aRv,
-                               NavigationHistoryBehavior aHistoryHandling) {
+                               NavigationHistoryBehavior aHistoryHandling,
+                               bool aShouldNotForceReplaceInOnLoad) {
   CallerType callerType = aSubjectPrincipal.IsSystemPrincipal()
                               ? CallerType::System
                               : CallerType::NonSystem;
@@ -2307,6 +2308,8 @@ void BrowsingContext::Navigate(nsIURI* aURI, nsIPrincipal& aSubjectPrincipal,
   if (aRv.Failed()) {
     return;
   }
+
+  loadState->SetShouldNotForceReplaceInOnLoad(aShouldNotForceReplaceInOnLoad);
 
   
   

@@ -544,7 +544,7 @@ void Navigation::Navigate(JSContext* aCx, const nsAString& aUrl,
   MOZ_DIAGNOSTIC_ASSERT(bc);
   bc->Navigate(urlRecord, *document->NodePrincipal(),
                 IgnoreErrors(),
-               aOptions.mHistory);
+               aOptions.mHistory,  true);
 
   
   
