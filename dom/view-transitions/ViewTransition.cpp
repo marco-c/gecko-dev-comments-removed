@@ -1846,140 +1846,144 @@ JSObject* ViewTransition::WrapObject(JSContext* aCx,
   return ViewTransition_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-static void ComputeActiveRect1D(nscoord aViewMin, nscoord aViewSize, nscoord& aCaptureMin, nscoord& aCaptureSize) {
-    nscoord captureMax = aCaptureMin + aCaptureSize;
-    nscoord viewMax = aViewMin + aViewSize;
+static void ComputeActiveRect1D(nscoord aViewMin, nscoord aViewSize,
+                                nscoord& aCaptureMin, nscoord& aCaptureSize) {
+  nscoord captureMax = aCaptureMin + aCaptureSize;
+  nscoord viewMax = aViewMin + aViewSize;
 
-    nscoord min;
-    nscoord max;
+  nscoord min;
+  nscoord max;
 
-    if (aCaptureSize < aViewSize) {
-        
-        min = aCaptureMin;
-        max = min + aCaptureSize;
-    } else if (aViewMin < aCaptureMin) {
-        
-        
-        min = aCaptureMin;
-        max = min + aViewSize;
-    } else if (viewMax > captureMax) {
-        
-        
-        max = captureMax;
-        min = max - aViewSize;
-    } else {
-        
-        
-        min = aViewMin;
-        max = viewMax;
-    }
+  if (aCaptureSize < aViewSize) {
+    
+    min = aCaptureMin;
+    max = min + aCaptureSize;
+  } else if (aViewMin < aCaptureMin) {
+    
+    
+    min = aCaptureMin;
+    max = min + aViewSize;
+  } else if (viewMax > captureMax) {
+    
+    
+    max = captureMax;
+    min = max - aViewSize;
+  } else {
+    
+    
+    min = aViewMin;
+    max = viewMax;
+  }
 
-    aCaptureMin = min;
-    aCaptureSize = max - min;
+  aCaptureMin = min;
+  aCaptureSize = max - min;
 }
 
 void ViewTransition::UpdateActiveRectForCapturedFrame(
-    nsIFrame* aCapturedFrame,
-    const gfx::MatrixScales& aInheritedScale,
-    nsRect& aOutCaptureRect
-) {
-    nsAtom* name = aCapturedFrame->GetProperty(ViewTransitionCaptureName());
-    if (NS_WARN_IF(!name)) {
-      return;
-    }
+    nsIFrame* aCapturedFrame, const gfx::MatrixScales& aInheritedScale,
+    nsRect& aOutCaptureRect) {
+  nsAtom* name = aCapturedFrame->GetProperty(ViewTransitionCaptureName());
+  if (NS_WARN_IF(!name)) {
+    return;
+  }
 
-    auto* el = mNamedElements.Get(name);
-    if (NS_WARN_IF(!el)) {
-      return;
-    }
+  auto* el = mNamedElements.Get(name);
+  if (NS_WARN_IF(!el)) {
+    return;
+  }
 
-    const bool isOld = mPhase < Phase::Animating;
+  const bool isOld = mPhase < Phase::Animating;
 
-    
-    Maybe<nsRect>* activeRect;
-    if (isOld) {
-        activeRect = &el->mOldActiveRect;
-        
-        
-        
-        MOZ_ASSERT(activeRect->isNothing());
-    } else {
-        activeRect = &el->mNewActiveRect;
-    }
-
-    
-    
-    activeRect->reset();
-
-    auto presShell = aCapturedFrame->PresShell();
-    if (!presShell->IsVisualViewportSizeSet()) {
-        return;
-    }
-
-    nsPresContext* pc = aCapturedFrame->PresContext();
-
-    auto rootViewportSize = presShell->GetVisualViewportSize();
-    auto auPerDevPx = pc->AppUnitsPerDevPixel();
-    auto vvpSize = LayoutDeviceSize::FromAppUnits(rootViewportSize, auPerDevPx);
-    auto capSize = LayoutDeviceSize::FromAppUnits(aOutCaptureRect.Size(), auPerDevPx);
-    capSize.width *= aInheritedScale.xScale;
-    capSize.height *= aInheritedScale.yScale;
-
-    
-    
-    if (capSize.width < vvpSize.width && capSize.height < vvpSize.height) {
-        return;
-    }
-
-    
-    
-    auto rootViewportOrigin = nsPoint(0, 0);
-    nsRect viewport = nsRect(rootViewportOrigin, rootViewportSize);
-
+  
+  Maybe<nsRect>* activeRect;
+  if (isOld) {
+    activeRect = &el->mOldActiveRect;
     
     
     
-    
-    float scale = std::max(aInheritedScale.xScale, aInheritedScale.yScale);
-    nscoord margin = NSFloatPixelsToAppUnits(512.0 / scale, auPerDevPx);
-    nscoord maxSize = NSFloatPixelsToAppUnits(4096.0 / scale, auPerDevPx);
-    margin = std::min(margin, std::max(0, maxSize - std::max(viewport.width, viewport.height)) / 2);
+    MOZ_ASSERT(activeRect->isNothing());
+  } else {
+    activeRect = &el->mNewActiveRect;
+  }
 
-    viewport.Inflate(margin);
+  
+  
+  activeRect->reset();
 
-    nsIFrame* rootFrame = pc->GetPresShell()->GetRootFrame();
+  auto presShell = aCapturedFrame->PresShell();
+  if (!presShell->IsVisualViewportSizeSet()) {
+    return;
+  }
 
-    const auto SUCCESS = nsLayoutUtils::TransformResult::TRANSFORM_SUCCEEDED;
-    if (!rootFrame || nsLayoutUtils::TransformRect(rootFrame, aCapturedFrame, viewport) != SUCCESS) {
-        return;
-    }
-    
+  nsPresContext* pc = aCapturedFrame->PresContext();
 
-    ComputeActiveRect1D(viewport.x, viewport.width, aOutCaptureRect.x, aOutCaptureRect.width);
-    ComputeActiveRect1D(viewport.y, viewport.height, aOutCaptureRect.y, aOutCaptureRect.height);
+  auto rootViewportSize = presShell->GetVisualViewportSize();
+  auto auPerDevPx = pc->AppUnitsPerDevPixel();
+  auto vvpSize = LayoutDeviceSize::FromAppUnits(rootViewportSize, auPerDevPx);
+  auto capSize =
+      LayoutDeviceSize::FromAppUnits(aOutCaptureRect.Size(), auPerDevPx);
+  capSize.width *= aInheritedScale.xScale;
+  capSize.height *= aInheritedScale.yScale;
 
-    
-    *activeRect = Some(aOutCaptureRect);
+  
+  
+  if (capSize.width < vvpSize.width && capSize.height < vvpSize.height) {
+    return;
+  }
+
+  
+  
+  auto rootViewportOrigin = nsPoint(0, 0);
+  nsRect viewport = nsRect(rootViewportOrigin, rootViewportSize);
+
+  
+  
+  
+  
+  
+  float scale = std::max(aInheritedScale.xScale, aInheritedScale.yScale);
+  nscoord margin = NSFloatPixelsToAppUnits(512.0 / scale, auPerDevPx);
+  nscoord maxSize = NSFloatPixelsToAppUnits(4096.0 / scale, auPerDevPx);
+  margin = std::min(
+      margin,
+      std::max(0, maxSize - std::max(viewport.width, viewport.height)) / 2);
+
+  viewport.Inflate(margin);
+
+  nsIFrame* rootFrame = pc->GetPresShell()->GetRootFrame();
+
+  const auto SUCCESS = nsLayoutUtils::TransformResult::TRANSFORM_SUCCEEDED;
+  if (!rootFrame || nsLayoutUtils::TransformRect(rootFrame, aCapturedFrame,
+                                                 viewport) != SUCCESS) {
+    return;
+  }
+  
+
+  ComputeActiveRect1D(viewport.x, viewport.width, aOutCaptureRect.x,
+                      aOutCaptureRect.width);
+  ComputeActiveRect1D(viewport.y, viewport.height, aOutCaptureRect.y,
+                      aOutCaptureRect.height);
+
+  
+  *activeRect = Some(aOutCaptureRect);
 }
 
-Maybe<nsRect>
-ViewTransition::GetOldActiveRect(nsAtom* aName) const {
-    auto* el = mNamedElements.Get(aName);
-    if (NS_WARN_IF(!el)) {
-      return Nothing();
-    }
+Maybe<nsRect> ViewTransition::GetOldActiveRect(nsAtom* aName) const {
+  auto* el = mNamedElements.Get(aName);
+  if (NS_WARN_IF(!el)) {
+    return Nothing();
+  }
 
-    return el->mOldActiveRect;
+  return el->mOldActiveRect;
 }
 
-Maybe<nsRect>
-ViewTransition::GetNewActiveRect(nsAtom* aName) const {
-    auto* el = mNamedElements.Get(aName);
-    if (NS_WARN_IF(!el)) {
-      return Nothing();
-    }
+Maybe<nsRect> ViewTransition::GetNewActiveRect(nsAtom* aName) const {
+  auto* el = mNamedElements.Get(aName);
+  if (NS_WARN_IF(!el)) {
+    return Nothing();
+  }
 
-    return el->mNewActiveRect;
+  return el->mNewActiveRect;
 }
 
 };  
