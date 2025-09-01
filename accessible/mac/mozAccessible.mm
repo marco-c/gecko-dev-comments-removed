@@ -5,6 +5,8 @@
 
 
 
+#import <Accessibility/Accessibility.h>
+
 #import "mozAccessible.h"
 #include "MOXAccessibleBase.h"
 
@@ -537,14 +539,36 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
 }
 
 - (NSString*)moxHelp {
+  nsAutoString desc;
+  EDescriptionValueFlag descFlag = mGeckoAccessible->Description(desc);
+
+  if (@available(macOS 11.0, *)) {
+    
+    return descFlag != eDescriptionFromARIA ? nsCocoaUtils::ToNSString(desc)
+                                            : nil;
+  }
+
+  
+  return nsCocoaUtils::ToNSString(desc);
+}
+
+- (NSArray*)moxCustomContent {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
-  
-  
-  nsAutoString helpText;
-  mGeckoAccessible->Description(helpText);
+  if (@available(macOS 11.0, *)) {
+    nsAutoString desc;
+    EDescriptionValueFlag descFlag = mGeckoAccessible->Description(desc);
 
-  return nsCocoaUtils::ToNSString(helpText);
+    if (!desc.IsEmpty() && descFlag == eDescriptionFromARIA) {
+      AXCustomContent* contentItem = [AXCustomContent
+          customContentWithLabel:@"description"
+                           value:nsCocoaUtils::ToNSString(desc)];
+      contentItem.importance = AXCustomContentImportanceHigh;
+      return @[ contentItem ];
+    }
+  }
+
+  return nil;
 
   NS_OBJC_END_TRY_BLOCK_RETURN(nil);
 }

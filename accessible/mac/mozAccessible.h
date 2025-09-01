@@ -185,6 +185,9 @@ enum CheckedState {
 - (NSString*)moxHelp;
 
 
+- (NSArray*)moxCustomContent;
+
+
 - (NSNumber*)moxEnabled;
 
 
