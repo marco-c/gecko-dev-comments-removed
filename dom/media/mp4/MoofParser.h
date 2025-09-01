@@ -298,6 +298,8 @@ class MoofParser : public DecoderDoctorLifeLogger<MoofParser> {
     
     DDLINKCHILD("source", aSource);
   }
+  
+  
   bool RebuildFragmentedIndex(const mozilla::MediaByteRangeSet& aByteRanges);
   
   
@@ -318,6 +320,10 @@ class MoofParser : public DecoderDoctorLifeLogger<MoofParser> {
   void ParseStsd(Box& aBox);
   void ParseEncrypted(Box& aBox);
 
+  
+  
+  
+  
   bool BlockingReadNextMoof();
 
   already_AddRefed<mozilla::MediaByteBuffer> Metadata();
