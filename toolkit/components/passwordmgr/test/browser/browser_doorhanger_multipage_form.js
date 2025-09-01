@@ -101,6 +101,7 @@ async function test_save_change(testData) {
     );
   }
 
+  let formProcessedPromise = listenForTestNotification("FormProcessed");
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
@@ -111,6 +112,9 @@ async function test_save_change(testData) {
     async function (browser) {
       await SimpleTest.promiseFocus(browser.ownerGlobal);
 
+      info("Waiting for form-processed message");
+      await formProcessedPromise;
+
       
       info(`update form with username: ${username}`);
       await changeContentFormValues(browser, {
@@ -120,6 +124,7 @@ async function test_save_change(testData) {
       
       
       info(`submit the username-only form`);
+      formProcessedPromise = listenForTestNotification("FormProcessed");
       await SpecialPowers.spawn(browser, [], async function () {
         let doc = this.content.document;
         doc.getElementById("form-basic-submit").click();
@@ -127,6 +132,7 @@ async function test_save_change(testData) {
           return doc.getElementById("form-basic-password");
         }, "Wait for the username field");
       });
+      await formProcessedPromise;
 
       
       info(`update form with password: ${password}`);
@@ -136,7 +142,10 @@ async function test_save_change(testData) {
 
       
       info(`submit the password-only form`);
-      let formSubmittedPromise = listenForTestNotification("ShowDoorhanger");
+      let formSubmittedPromise = listenForTestNotification([
+        "FormProcessed",
+        "ShowDoorhanger",
+      ]);
       await SpecialPowers.spawn(browser, [], async function () {
         let doc = this.content.document;
         doc.getElementById("form-basic-submit").click();

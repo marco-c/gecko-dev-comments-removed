@@ -5,6 +5,8 @@ const BASIC_FORM_PAGE_PATH = DIRECTORY_PATH + "form_basic.html";
 
 add_task(async function test_doorhanger_dismissal_un() {
   let url = TEST_ORIGIN + BASIC_FORM_PAGE_PATH;
+
+  const formProcessedPromise = listenForTestNotification("FormProcessed");
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
@@ -14,7 +16,7 @@ add_task(async function test_doorhanger_dismissal_un() {
       
       
       
-
+      await formProcessedPromise;
       let passwordFilledPromise = listenForTestNotification(
         "PasswordEditedOrGenerated"
       );
@@ -53,19 +55,22 @@ add_task(async function test_doorhanger_dismissal_un() {
 
 add_task(async function test_doorhanger_dismissal_pw() {
   let url = TEST_ORIGIN + BASIC_FORM_PAGE_PATH;
+
+  const formProcessedPromise = listenForTestNotification("FormProcessed");
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
       url,
     },
     async function test_pw_value_as_ccnumber(browser) {
+      await formProcessedPromise;
       
       
       
-
       let passwordFilledPromise = listenForTestNotification(
         "PasswordEditedOrGenerated"
       );
+
       await changeContentFormValues(browser, {
         "#form-basic-password": "4111111111111111",
         "#form-basic-username": "aaa",
@@ -102,18 +107,22 @@ add_task(async function test_doorhanger_dismissal_pw() {
 
 add_task(async function test_doorhanger_shown_on_un_with_invalid_ccnumber() {
   let url = TEST_ORIGIN + BASIC_FORM_PAGE_PATH;
+
+  const formProcessedPromise = listenForTestNotification("FormProcessed");
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
       url,
     },
     async function test_un_with_invalid_cc_number(browser) {
+      await formProcessedPromise;
       
       
 
       let passwordFilledPromise = listenForTestNotification(
         "PasswordEditedOrGenerated"
       );
+
       await changeContentFormValues(browser, {
         "#form-basic-password": "411",
         "#form-basic-username": "1234123412341234",
@@ -146,12 +155,16 @@ add_task(async function test_doorhanger_shown_on_un_with_invalid_ccnumber() {
 
 add_task(async function test_doorhanger_dismissal_on_change() {
   let url = TEST_ORIGIN + BASIC_FORM_PAGE_PATH;
+
+  const formProcessedPromise = listenForTestNotification("FormProcessed");
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
       url,
     },
     async function test_change_in_pw(browser) {
+      await formProcessedPromise;
+
       let nsLoginInfo = new Components.Constructor(
         "@mozilla.org/login-manager/loginInfo;1",
         Ci.nsILoginInfo,

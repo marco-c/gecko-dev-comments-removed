@@ -93,7 +93,6 @@ add_task(async function test_edit_password() {
     }
 
     let formFilledPromise = listenForTestNotification("FormProcessed");
-
     await BrowserTestUtils.withNewTab(
       {
         gBrowser,
@@ -129,7 +128,10 @@ add_task(async function test_edit_password() {
         
         
         info("Submitting the form");
-        let formSubmittedPromise = listenForTestNotification("ShowDoorhanger");
+        let formSubmittedPromise = listenForTestNotification([
+          "FormProcessed",
+          "ShowDoorhanger",
+        ]);
         let promiseShown = BrowserTestUtils.waitForEvent(
           PopupNotifications.panel,
           "popupshown",
