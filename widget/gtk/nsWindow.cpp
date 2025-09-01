@@ -7378,8 +7378,15 @@ void nsWindow::SetWindowDecoration(BorderStyle aStyle) {
     wasVisible = true;
   }
 
-  gtk_window_set_decorated(GTK_WINDOW(mShell),
-                           !mUndecorated && aStyle != BorderStyle::None);
+  const bool decorated = !mUndecorated && aStyle != BorderStyle::None;
+  gtk_window_set_decorated(GTK_WINDOW(mShell), decorated);
+
+  if (!decorated) {
+    
+    
+    
+    gdk_window_set_shadow_width(GetToplevelGdkWindow(), 0, 0, 0, 0);
+  }
 
   gint wmd = ConvertBorderStyles(aStyle);
   if (wmd != -1) {
