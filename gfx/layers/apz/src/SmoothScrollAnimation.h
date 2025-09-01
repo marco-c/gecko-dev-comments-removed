@@ -28,11 +28,10 @@ class SmoothScrollAnimation : public AsyncPanZoomAnimation {
   using ScrollAnimationKind = apz::ScrollAnimationKind;
 
   
-  static already_AddRefed<SmoothScrollAnimation> Create(
-      AsyncPanZoomController& aApzc, ScrollOrigin aOrigin);
   
-  static already_AddRefed<SmoothScrollAnimation> CreateMsd(
-      AsyncPanZoomController& aApzc);
+  static already_AddRefed<SmoothScrollAnimation> Create(
+      AsyncPanZoomController& aApzc, ScrollAnimationKind aKind,
+      ScrollOrigin aOrigin);
   
   static already_AddRefed<SmoothScrollAnimation> CreateForKeyboard(
       AsyncPanZoomController& aApzc, ScrollOrigin aOrigin);
@@ -69,6 +68,10 @@ class SmoothScrollAnimation : public AsyncPanZoomAnimation {
   CSSPoint GetDestination() const {
     return CSSPoint::FromAppUnits(mFinalDestination);
   }
+
+  
+  
+  bool CanExtend(ScrollOrigin aOrigin) const;
 
  private:
   SmoothScrollAnimation(ScrollAnimationKind aKind,
