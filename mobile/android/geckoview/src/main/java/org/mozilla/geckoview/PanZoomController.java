@@ -30,6 +30,12 @@ import org.mozilla.gecko.mozglue.JNIObject;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.ThreadUtils;
 
+
+
+
+
+
+
 @UiThread
 public class PanZoomController {
   private static final String LOGTAG = "GeckoNPZC";
@@ -44,6 +50,7 @@ public class PanZoomController {
   private float mPointerScrollFactor = 64.0f;
   private long mLastDownTime;
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({SCROLL_BEHAVIOR_SMOOTH, SCROLL_BEHAVIOR_AUTO})
   public @interface ScrollBehaviorType {}
@@ -54,6 +61,7 @@ public class PanZoomController {
   
   public static final int SCROLL_BEHAVIOR_AUTO = 1;
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({
     INPUT_RESULT_UNHANDLED,
@@ -87,6 +95,11 @@ public class PanZoomController {
 
   @WrapForJNI public static final int INPUT_RESULT_IGNORED = 3;
 
+  
+
+
+
+
   @Retention(RetentionPolicy.SOURCE)
   @IntDef(
       flag = true,
@@ -100,21 +113,24 @@ public class PanZoomController {
   public @interface ScrollableDirections {}
 
   
-
-
-
-
-  
   @WrapForJNI public static final int SCROLLABLE_FLAG_NONE = 0;
 
   
   @WrapForJNI public static final int SCROLLABLE_FLAG_TOP = 1 << 0;
+
   
   @WrapForJNI public static final int SCROLLABLE_FLAG_RIGHT = 1 << 1;
+
   
   @WrapForJNI public static final int SCROLLABLE_FLAG_BOTTOM = 1 << 2;
+
   
   @WrapForJNI public static final int SCROLLABLE_FLAG_LEFT = 1 << 3;
+
+  
+
+
+
 
   @Retention(RetentionPolicy.SOURCE)
   @IntDef(
@@ -123,15 +139,11 @@ public class PanZoomController {
   public @interface OverscrollDirections {}
 
   
-
-
-
-
-  
   @WrapForJNI public static final int OVERSCROLL_FLAG_NONE = 0;
 
   
   @WrapForJNI public static final int OVERSCROLL_FLAG_HORIZONTAL = 1 << 0;
+
   
   @WrapForJNI public static final int OVERSCROLL_FLAG_VERTICAL = 1 << 1;
 
@@ -150,6 +162,16 @@ public class PanZoomController {
 
   @WrapForJNI
   public static class InputResultDetail {
+    
+
+
+
+
+
+
+
+
+
     protected InputResultDetail(
         final @InputResult int handledResult,
         final @ScrollableDirections int scrollableDirections,
@@ -461,6 +483,11 @@ public class PanZoomController {
         y,
         event.getButtonState());
   }
+
+  
+
+
+
 
   protected PanZoomController(final GeckoSession session) {
     mSession = session;
