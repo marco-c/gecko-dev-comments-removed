@@ -1885,7 +1885,6 @@ pref("browser.newtabpage.activity-stream.discoverystream.titleLines", 3);
 pref("browser.newtabpage.activity-stream.discoverystream.descLines", 3);
 pref("browser.newtabpage.activity-stream.discoverystream.readTime.enabled", true);
 pref("browser.newtabpage.activity-stream.discoverystream.newSponsoredLabel.enabled", false);
-pref("browser.newtabpage.activity-stream.discoverystream.recentSaves.enabled", false);
 pref("browser.newtabpage.activity-stream.discoverystream.spoc-positions", "2,4,8,13,17,20");
 
 
@@ -2700,8 +2699,6 @@ pref("extensions.pocket.loggedOutVariant", "control");
 
 
 pref("extensions.pocket.refresh.emailButton.enabled", false);
-
-pref("extensions.pocket.refresh.hideRecentSaves.enabled", false);
 
 
 
