@@ -61,14 +61,9 @@ class WorkletThread final : public nsThread, public nsIObserver {
 
   
   
-  NS_IMETHOD
-  Dispatch(already_AddRefed<nsIRunnable> aRunnable, uint32_t aFlags) override;
-
-  NS_IMETHOD
-  DispatchFromScript(nsIRunnable* aRunnable, uint32_t aFlags) override;
-
-  NS_IMETHOD
-  DelayedDispatch(already_AddRefed<nsIRunnable>, uint32_t) override;
+  using nsThread::DelayedDispatch;
+  using nsThread::Dispatch;
+  using nsThread::DispatchFromScript;
 
   const RefPtr<WorkletImpl> mWorkletImpl;
 

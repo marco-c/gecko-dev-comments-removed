@@ -84,12 +84,16 @@ class XPCOMThreadWrapper final : public AbstractThread,
     
     
     
+    
+    
+    
+    
     if (gXPCOMMainThreadEventsAreDoomed) {
       return NS_ERROR_FAILURE;
     }
 
     RefPtr<nsIRunnable> runner = new Runner(this, r.forget());
-    return mThread->Dispatch(runner.forget(), NS_DISPATCH_NORMAL);
+    return mThread->Dispatch(runner.forget(), NS_DISPATCH_FALLIBLE);
   }
 
   
@@ -242,14 +246,15 @@ AbstractThread::IsOnCurrentThread(bool* aResult) {
 }
 
 NS_IMETHODIMP
-AbstractThread::DispatchFromScript(nsIRunnable* aEvent, uint32_t aFlags) {
-  nsCOMPtr<nsIRunnable> event(aEvent);
-  return Dispatch(event.forget(), aFlags);
+AbstractThread::DispatchFromScript(nsIRunnable* aEvent, DispatchFlags aFlags) {
+  return Dispatch(do_AddRef(aEvent), aFlags);
 }
 
 NS_IMETHODIMP
 AbstractThread::Dispatch(already_AddRefed<nsIRunnable> aEvent,
-                         uint32_t aFlags) {
+                         DispatchFlags aFlags) {
+  
+  
   return Dispatch(std::move(aEvent), NormalDispatch);
 }
 
