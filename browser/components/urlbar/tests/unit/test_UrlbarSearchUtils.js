@@ -3,7 +3,7 @@
 
 
 const { UrlbarSearchUtils } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs"
+  "resource:///modules/UrlbarSearchUtils.sys.mjs"
 );
 const { updateAppInfo } = ChromeUtils.importESModule(
   "resource://testing-common/AppInfo.sys.mjs"

@@ -337,7 +337,7 @@ add_setup(async function () {
   
   if (AppConstants.MOZ_APP_VERSION === "140.0") {
     let { UrlbarController } = ChromeUtils.importESModule(
-      "moz-src:///browser/components/urlbar/UrlbarController.sys.mjs"
+      "resource:///modules/UrlbarController.sys.mjs"
     );
 
     UrlbarController.prototype.addListener = function (...args) {
