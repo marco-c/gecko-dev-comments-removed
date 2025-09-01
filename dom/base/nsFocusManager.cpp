@@ -2725,11 +2725,11 @@ void nsFocusManager::Focus(
 
   if (aAdjustWidget && !sTestMode) {
     if (nsViewManager* vm = presShell->GetViewManager()) {
-      nsCOMPtr<nsIWidget> widget = vm->GetRootWidget();
-      if (widget)
+      if (nsCOMPtr<nsIWidget> widget = vm->GetRootWidget()) {
         widget->SetFocus(nsIWidget::Raise::No, aFlags & FLAG_NONSYSTEMCALLER
                                                    ? CallerType::NonSystem
                                                    : CallerType::System);
+      }
     }
   }
 
@@ -2762,17 +2762,22 @@ void nsFocusManager::Focus(
     }
   }
 
-  
-  
-  
-  
-  
-  
-  RefPtr elementToFocus =
-      aElement && aElement->IsInComposedDoc() &&
-              aElement->GetComposedDoc() == aWindow->GetExtantDoc()
-          ? FlushAndCheckIfFocusable(aElement, aFlags)
-          : nullptr;
+  const RefPtr<Element> elementToFocus =
+      [&]() MOZ_CAN_RUN_SCRIPT_FOR_DEFINITION -> Element* {
+    if (!aElement || !aElement->IsInComposedDoc() ||
+        aElement->GetComposedDoc() != aWindow->GetExtantDoc()) {
+      
+      
+      return nullptr;
+    }
+    if (aBlurredElementInfo) {
+      
+      
+      
+      return aElement;
+    }
+    return FlushAndCheckIfFocusable(aElement, aFlags);
+  }();
   if (elementToFocus && !mFocusedElement &&
       GetFocusedBrowsingContext() == aWindow->GetBrowsingContext()) {
     mFocusedElement = elementToFocus;
