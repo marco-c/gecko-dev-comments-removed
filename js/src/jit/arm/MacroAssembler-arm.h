@@ -1351,6 +1351,9 @@ class MacroAssemblerARMCompat : public MacroAssemblerARM {
   void minMax32(Register lhs, Register rhs, Register dest, bool isMax);
   void minMax32(Register lhs, Imm32 rhs, Register dest, bool isMax);
 
+  void minMaxPtr(Register lhs, Register rhs, Register dest, bool isMax);
+  void minMaxPtr(Register lhs, ImmWord rhs, Register dest, bool isMax);
+
   
   
   void minMaxDouble(FloatRegister srcDest, FloatRegister other, bool canBeNaN,
