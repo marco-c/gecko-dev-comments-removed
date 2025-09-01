@@ -11,6 +11,7 @@ run-using handlers in `taskcluster/taskgraph/transforms/run`.
 
 import copy
 import logging
+from textwrap import dedent
 
 from voluptuous import Exclusive, Extra, Optional, Required
 
@@ -39,11 +40,26 @@ fetches_schema = {
 
 run_description_schema = Schema(
     {
-        
-        
-        
-        Optional("name"): str,
-        Optional("label"): str,
+        Optional(
+            "name",
+            description=dedent(
+                """
+                The name of the task. At least one of 'name' or 'label' must be
+                specified. If 'label' is not provided, it will be generated from
+                the 'name' by prepending the kind.
+                """
+            ),
+        ): str,
+        Optional(
+            "label",
+            description=dedent(
+                """
+                The label of the task. At least one of 'name' or 'label' must be
+                specified. If 'label' is not provided, it will be generated from
+                the 'name' by prepending the kind.
+                """
+            ),
+        ): str,
         
         
         
@@ -72,37 +88,80 @@ run_description_schema = Schema(
             "optimization"
         ],
         Optional("needs-sccache"): task_description_schema["needs-sccache"],
-        
-        
-        
-        
-        Exclusive("when", "optimization"): {
-            
-            
-            
-            Optional("files-changed"): [str],
+        Exclusive(
+            "when",
+            "optimization",
+            description=dedent(
+                """
+                The "when" section contains descriptions of the circumstances under
+                which this task should be included in the task graph. This will be
+                converted into an optimization, so it cannot be specified in a run
+                description that also gives 'optimization'.
+                """
+            ),
+        ): {
+            Optional(
+                "files-changed",
+                description=dedent(
+                    """
+                    This task only needs to be run if a file matching one of the given
+                    patterns has changed in the push. The patterns use the mozpack
+                    match function (python/mozbuild/mozpack/path.py).
+                    """
+                ),
+            ): [str],
         },
-        
-        Optional("fetches"): {
+        Optional(
+            "fetches",
+            description=dedent(
+                """
+                A list of artifacts to install from 'fetch' tasks.
+                """
+            ),
+        ): {
             str: [
                 str,
                 fetches_schema,
             ],
         },
-        
-        "run": {
-            
-            "using": str,
-            
-            Optional("workdir"): str,
+        Required(
+            "run",
+            description=dedent(
+                """
+                A description of how to run this task.
+                """
+            ),
+        ): {
+            Required(
+                "using",
+                description=dedent(
+                    """
+                    The key to a run implementation in a peer module to this one.
+                    """
+                ),
+            ): str,
+            Optional(
+                "workdir",
+                description=dedent(
+                    """
+                    Base work directory used to set up the task.
+                    """
+                ),
+            ): str,
             
             
             Extra: object,
         },
         Required("worker-type"): task_description_schema["worker-type"],
-        
-        
-        Optional("worker"): dict,
+        Optional(
+            "worker",
+            description=dedent(
+                """
+                This object will be passed through to the task description, with additions
+                provided by the task's run-using function.
+                """
+            ),
+        ): dict,
     }
 )
 
