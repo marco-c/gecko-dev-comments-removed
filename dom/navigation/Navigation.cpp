@@ -24,6 +24,8 @@
 #include "mozilla/dom/NavigationHistoryEntry.h"
 #include "mozilla/dom/NavigationTransition.h"
 #include "mozilla/dom/NavigationUtils.h"
+#include "mozilla/dom/Promise-inl.h"
+#include "mozilla/dom/Promise.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
 #include "mozilla/dom/WindowContext.h"
@@ -118,6 +120,12 @@ struct NavigationAPIMethodTracker final : public nsISupports {
     aResult.mCommitted.Construct(OwningNonNull<Promise>(*mCommittedPromise));
     aResult.mFinished.Reset();
     aResult.mFinished.Construct(OwningNonNull<Promise>(*mFinishedPromise));
+  }
+
+  Promise* CommittedPromise() { return mCommittedPromise; }
+
+  bool NeedsToWaitForCommittedPromise() const {
+    return mCommittedPromise->State() == Promise::PromiseState::Pending;
   }
 
   RefPtr<Navigation> mNavigationObject;
@@ -1113,8 +1121,7 @@ bool Navigation::InnerFireNavigateEvent(
     
     RefPtr scope =
         MakeRefPtr<NavigationWaitForAllScope>(this, apiMethodTracker, event);
-    Promise::WaitForAll(
-        globalObject, promiseList,
+    auto successSteps =
         [weakScope = WeakPtr(scope)](const Span<JS::Heap<JS::Value>>&)
             MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
               
@@ -1161,7 +1168,8 @@ bool Navigation::InnerFireNavigateEvent(
 
               
               self->mTransition = nullptr;
-            },
+            };
+    auto failureSteps =
         [weakScope = WeakPtr(scope)](JS::Handle<JS::Value> aRejectionReason)
             MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
               
@@ -1216,8 +1224,44 @@ bool Navigation::InnerFireNavigateEvent(
 
               
               self->mTransition = nullptr;
+            };
+    Promise::WaitForAll(
+        globalObject, promiseList,
+        [weakScope = WeakPtr(scope), successSteps,
+         failureSteps](const Span<JS::Heap<JS::Value>>& aValue)
+            MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+              
+              if (!weakScope) {
+                return;
+              }
+
+              
+              
+              
+              
+              
+              RefPtr apiMethodTracker = weakScope->mAPIMethodTracker;
+              if (apiMethodTracker &&
+                  apiMethodTracker->NeedsToWaitForCommittedPromise()) {
+                
+                
+                
+                
+                
+                apiMethodTracker->CommittedPromise()
+                    ->AddCallbacksWithCycleCollectedArgs(
+                        [successSteps](JSContext*, JS::Handle<JS::Value>,
+                                       ErrorResult&) {
+                          successSteps(nsTArray<JS::Heap<JS::Value>>());
+                        },
+                        [](JSContext*, JS::Handle<JS::Value>, ErrorResult&) {});
+              } else {
+                
+                
+                successSteps(aValue);
+              }
             },
-        scope);
+        failureSteps, scope);
   } else if (apiMethodTracker) {
     
     apiMethodTracker->CleanUp();
