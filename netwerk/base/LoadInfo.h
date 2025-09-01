@@ -160,7 +160,19 @@ nsresult LoadInfoArgsToLoadInfo(const mozilla::net::LoadInfoArgs& aLoadInfoArgs,
   SETTER(Maybe<dom::RequestMode>, RequestMode)                                 \
                                                                                \
   GETTER(bool, IsMetaRefresh, isMetaRefresh, false)                            \
-  SETTER(bool, IsMetaRefresh)
+  SETTER(bool, IsMetaRefresh)                                                  \
+                                                                               \
+  GETTER(bool, IsFromProcessingFrameAttributes,                                \
+         isFromProcessingFrameAttributes, false)                               \
+                                                                               \
+  GETTER(bool, IsMediaRequest, isMediaRequest, false)                          \
+  SETTER(bool, IsMediaRequest)                                                 \
+                                                                               \
+  GETTER(bool, IsMediaInitialRequest, isMediaInitialRequest, false)            \
+  SETTER(bool, IsMediaInitialRequest)                                          \
+                                                                               \
+  GETTER(bool, IsFromObjectOrEmbed, isFromObjectOrEmbed, false)                \
+  SETTER(bool, IsFromObjectOrEmbed)
 
 
 
@@ -486,18 +498,6 @@ class LoadInfo final : public nsILoadInfo {
   
   bool mOverriddenFingerprintingSettingsIsSet = false;
 #endif
-
-  
-  
-  
-  bool mIsFromProcessingFrameAttributes = false;
-
-  
-  bool mIsMediaRequest = false;
-  bool mIsMediaInitialRequest = false;
-
-  
-  bool mIsFromObjectOrEmbed = false;
 
   
   
