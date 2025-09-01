@@ -160,6 +160,15 @@
   REAL_IF_INTL(TemporalNow, OCLASP(temporal::TemporalNow))                   \
   REAL_IF_INTL(ZonedDateTime, OCLASP(temporal::ZonedDateTime))
 
+
+
+
+
+
+
+
+
+
 #define JS_FOR_PROTOTYPES(REAL, IMAGINARY)                      \
   JS_FOR_PROTOTYPES_(REAL, IMAGINARY, IF_INTL(REAL, IMAGINARY), \
                      IF_WASM_TYPE(REAL, IMAGINARY),             \
