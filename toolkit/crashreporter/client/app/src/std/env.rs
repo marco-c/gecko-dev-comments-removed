@@ -3,6 +3,7 @@
 
 
 use super::mock::{mock_key, MockKey};
+pub use std::env::consts;
 pub use std::env::VarError;
 use std::ffi::{OsStr, OsString};
 
