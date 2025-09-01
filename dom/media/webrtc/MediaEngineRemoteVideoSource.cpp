@@ -83,7 +83,7 @@ static Maybe<VideoFacingModeEnum> GetFacingMode(const nsString& aDeviceName) {
 
 struct DesiredSizeInput {
   NormalizedConstraints mConstraints;
-  bool mCanCropAndScale;
+  Maybe<bool> mCanCropAndScale;
   Maybe<int32_t> mCapabilityWidth;
   Maybe<int32_t> mCapabilityHeight;
   camera::CaptureEngine mCapEngine;
@@ -93,11 +93,10 @@ struct DesiredSizeInput {
 };
 
 static gfx::IntSize CalculateDesiredSize(DesiredSizeInput aInput) {
-  MOZ_ASSERT(aInput.mInputWidth > 0);
-  MOZ_ASSERT(aInput.mInputHeight > 0);
-
-  if (aInput.mCapabilityWidth && aInput.mCapabilityHeight &&
-      !aInput.mCanCropAndScale) {
+  if (!aInput.mCanCropAndScale.valueOr(aInput.mCapEngine !=
+                                       camera::CameraEngine)) {
+    
+    
     
     aInput.mConstraints.mWidth.mIdeal = Nothing();
     aInput.mConstraints.mHeight.mIdeal = Nothing();
@@ -122,15 +121,9 @@ static gfx::IntSize CalculateDesiredSize(DesiredSizeInput aInput) {
   int32_t dst_width = aInput.mConstraints.mWidth.Get(inputWidth);
   int32_t dst_height = aInput.mConstraints.mHeight.Get(inputHeight);
 
-  if (!aInput.mConstraints.mWidth.mIdeal &&
-      aInput.mConstraints.mHeight.mIdeal) {
-    dst_width = *aInput.mConstraints.mHeight.mIdeal * aInput.mInputWidth /
-                aInput.mInputHeight;
-  } else if (!aInput.mConstraints.mHeight.mIdeal &&
-             aInput.mConstraints.mWidth.mIdeal) {
-    dst_height = *aInput.mConstraints.mWidth.mIdeal * aInput.mInputHeight /
-                 aInput.mInputWidth;
-  }
+  
+  dst_width = std::min(dst_width, inputWidth);
+  dst_height = std::min(dst_height, inputHeight);
 
   if (aInput.mCapEngine != camera::CameraEngine ||
       !aInput.mConstraints.mWidth.mIdeal ||
@@ -139,36 +132,39 @@ static gfx::IntSize CalculateDesiredSize(DesiredSizeInput aInput) {
     
     
     
+
     
-    double scale_width = AssertedCast<double>(dst_width) /
-                         AssertedCast<double>(aInput.mInputWidth);
-    double scale_height = AssertedCast<double>(dst_height) /
-                          AssertedCast<double>(aInput.mInputHeight);
-    double scale = (scale_width + scale_height) / 2;
-    
-    
-    if (!aInput.mConstraints.mWidth.mIdeal) {
-      scale = scale_height;
-    } else if (!aInput.mConstraints.mHeight.mIdeal) {
-      scale = scale_width;
-    }
-    dst_width = int32_t(scale * (double)aInput.mInputWidth);
-    dst_height = int32_t(scale * (double)aInput.mInputHeight);
+    const double scale_width_strict =
+        std::min(1.0, AssertedCast<double>(aInput.mConstraints.mWidth.mMax) /
+                          AssertedCast<double>(aInput.mInputWidth));
+    const double scale_height_strict =
+        std::min(1.0, AssertedCast<double>(aInput.mConstraints.mHeight.mMax) /
+                          AssertedCast<double>(aInput.mInputHeight));
+
+    double scale_width =
+        AssertedCast<double>(dst_width) / AssertedCast<double>(inputWidth);
+    double scale_height =
+        AssertedCast<double>(dst_height) / AssertedCast<double>(inputHeight);
 
     
     
-    if (dst_width > aInput.mConstraints.mWidth.mMax ||
-        dst_height > aInput.mConstraints.mHeight.mMax) {
-      scale_width = AssertedCast<double>(aInput.mConstraints.mWidth.mMax) /
-                    AssertedCast<double>(dst_width);
-      scale_height = AssertedCast<double>(aInput.mConstraints.mHeight.mMax) /
-                     AssertedCast<double>(dst_height);
-      scale = std::min(scale_width, scale_height);
-      dst_width = AssertedCast<int32_t>(
-          std::lround(scale * AssertedCast<double>(dst_width)));
-      dst_height = AssertedCast<int32_t>(
-          std::lround(scale * AssertedCast<double>(dst_height)));
-    }
+    
+    
+    
+    
+    double scale = std::min(
+        {scale_width, scale_height, scale_width_strict, scale_height_strict});
+
+    dst_width = AssertedCast<int32_t>(
+        std::round(scale * AssertedCast<double>(aInput.mInputWidth)));
+    dst_height = AssertedCast<int32_t>(
+        std::round(scale * AssertedCast<double>(aInput.mInputHeight)));
+  }
+
+  if (aInput.mCapEngine == camera::CameraEngine) {
+    
+    dst_width = aInput.mConstraints.mWidth.Clamp(dst_width);
+    dst_height = aInput.mConstraints.mHeight.Clamp(dst_height);
   }
 
   
@@ -278,7 +274,9 @@ nsresult MediaEngineRemoteVideoSource::Allocate(
     const double maxFPS = AssertedCast<double>(mCapability.maxFPS);
     input = {
         .mConstraints = c,
-        .mCanCropAndScale = mCalculation == kFeasibility,
+        .mCanCropAndScale = resizeMode.map([](auto aRM) {
+          return aRM == dom::VideoResizeModeEnum::Crop_and_scale;
+        }),
         .mCapabilityWidth = cw ? Some(cw) : Nothing(),
         .mCapabilityHeight = ch ? Some(ch) : Nothing(),
         .mCapEngine = mCapEngine,
@@ -286,8 +284,9 @@ nsresult MediaEngineRemoteVideoSource::Allocate(
         .mInputHeight = ch,
         .mRotation = 0,
     };
-    framerate =
-        input.mCanCropAndScale ? mConstraints->mFrameRate.Get(maxFPS) : maxFPS;
+    framerate = input.mCanCropAndScale.valueOr(false)
+                    ? mConstraints->mFrameRate.Get(maxFPS)
+                    : maxFPS;
   }
 
   auto dstSize = CalculateDesiredSize(input);
@@ -502,7 +501,9 @@ nsresult MediaEngineRemoteVideoSource::Reconfigure(
     const int32_t& ch = mCapability.height;
     input = {
         .mConstraints = c,
-        .mCanCropAndScale = mCalculation == kFeasibility,
+        .mCanCropAndScale = resizeMode.map([](auto aRM) {
+          return aRM == dom::VideoResizeModeEnum::Crop_and_scale;
+        }),
         .mCapabilityWidth = cw ? Some(cw) : Nothing(),
         .mCapabilityHeight = ch ? Some(ch) : Nothing(),
         .mCapEngine = mCapEngine,
@@ -613,7 +614,9 @@ int MediaEngineRemoteVideoSource::DeliverFrame(
 
     input = {
         .mConstraints = *mConstraints,
-        .mCanCropAndScale = mCalculation == kFeasibility,
+        .mCanCropAndScale = mPrefs->mResizeModeEnabled
+                                ? Some(mCalculation == kFeasibility)
+                                : Nothing(),
         .mCapabilityWidth = cw ? Some(cw) : Nothing(),
         .mCapabilityHeight = ch ? Some(ch) : Nothing(),
         .mCapEngine = mCapEngine,
