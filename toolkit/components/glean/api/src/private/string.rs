@@ -120,29 +120,6 @@ impl glean::traits::String for StringMetric {
     
     
     
-    pub fn test_get_value<'a, S: Into<Option<&'a str>>>(
-        &self,
-        ping_name: S,
-    ) -> Option<std::string::String> {
-        let ping_name = ping_name.into().map(|s| s.to_string());
-        match self {
-            StringMetric::Parent { id: _, inner } => inner.test_get_value(ping_name),
-            StringMetric::Child(_) => {
-                panic!("Cannot get test value for string metric in non-main process!")
-            }
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -152,6 +129,31 @@ impl glean::traits::String for StringMetric {
             StringMetric::Child(_) => panic!(
                 "Cannot get the number of recorded errors for string metric in non-main process!"
             ),
+        }
+    }
+}
+
+#[inherent]
+impl glean::TestGetValue<std::string::String> for StringMetric {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn test_get_value(
+        &self,
+        ping_name: Option<std::string::String>,
+    ) -> Option<std::string::String> {
+        match self {
+            StringMetric::Parent { id: _, inner } => inner.test_get_value(ping_name),
+            StringMetric::Child(_) => {
+                panic!("Cannot get test value for string metric in non-main process!")
+            }
         }
     }
 }
@@ -170,7 +172,7 @@ mod test {
 
         assert_eq!(
             "test_string_value",
-            metric.test_get_value("test-ping").unwrap()
+            metric.test_get_value(Some("test-ping".to_string())).unwrap()
         );
     }
 
@@ -198,7 +200,7 @@ mod test {
         assert!(ipc::replay_from_buf(&ipc::take_buf().unwrap()).is_ok());
 
         assert!(
-            "test_parent_value" == parent_metric.test_get_value("test-ping").unwrap(),
+            "test_parent_value" == parent_metric.test_get_value(Some("test-ping".to_string())).unwrap(),
             "String metrics should only work in the parent process"
         );
     }

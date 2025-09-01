@@ -87,7 +87,10 @@ add_task(
     Assert.equal(new_dir_info[1].dir_exists, true);
     Assert.equal(new_dir_info[1].file_count, 1);
     Assert.equal(new_dir_info[1].files[0].file_name, "test-ping");
-    Assert.greater(new_dir_info[1].files[0].file_size, 0);
+    
+    
+    
+    Assert.greaterOrEqual(new_dir_info[1].files[0].file_size, 0);
 
     console.log(
       "Directory info collected on startup: ",

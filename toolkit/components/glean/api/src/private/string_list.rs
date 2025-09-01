@@ -143,34 +143,6 @@ impl StringList for StringListMetric {
     
     
     
-    pub fn test_get_value<'a, S: Into<Option<&'a str>>>(
-        &self,
-        ping_name: S,
-    ) -> Option<Vec<String>> {
-        let ping_name = ping_name.into().map(|s| s.to_string());
-        match self {
-            StringListMetric::Parent { inner, .. } => inner.test_get_value(ping_name),
-            StringListMetric::Child(meta) => {
-                panic!(
-                    "Cannot get test value for {:?} in non-parent process!",
-                    meta.id
-                )
-            }
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     pub fn test_get_num_recorded_errors(&self, error: glean::ErrorType) -> i32 {
         match self {
@@ -179,6 +151,33 @@ impl StringList for StringListMetric {
                 "Cannot get the number of recorded errors for {:?} in non-parent process!",
                 meta.id
             ),
+        }
+    }
+}
+
+#[inherent]
+impl glean::TestGetValue<Vec<String>> for StringListMetric {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<Vec<String>> {
+        match self {
+            StringListMetric::Parent { inner, .. } => inner.test_get_value(ping_name),
+            StringListMetric::Child(meta) => {
+                panic!(
+                    "Cannot get test value for {:?} in non-parent process!",
+                    meta.id
+                )
+            }
         }
     }
 }
@@ -199,7 +198,7 @@ mod test {
 
         assert_eq!(
             vec!["test_string_value", "another test value"],
-            metric.test_get_value("test-ping").unwrap()
+            metric.test_get_value(Some("test-ping".to_string())).unwrap()
         );
     }
 
@@ -232,7 +231,7 @@ mod test {
         assert!(ipc::replay_from_buf(&ipc::take_buf().unwrap()).is_ok());
         assert_eq!(
             vec!["test_string_value", "another test value"],
-            parent_metric.test_get_value("test-ping").unwrap()
+            parent_metric.test_get_value(Some("test-ping".to_string())).unwrap()
         );
     }
 }

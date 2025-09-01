@@ -104,28 +104,6 @@ impl Quantity for QuantityMetric {
     
     
     
-    pub fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<i64> {
-        let ping_name = ping_name.into().map(|s| s.to_string());
-        match self {
-            QuantityMetric::Parent { inner, .. } => inner.test_get_value(ping_name),
-            QuantityMetric::Child(_) => {
-                panic!("Cannot get test value for quantity metric in non-main process!",)
-            }
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     pub fn test_get_num_recorded_errors(&self, error: glean::ErrorType) -> i32 {
         match self {
@@ -133,6 +111,30 @@ impl Quantity for QuantityMetric {
             QuantityMetric::Child(_) => panic!(
                 "Cannot get the number of recorded errors for quantity metric in non-main process!"
             ),
+        }
+    }
+}
+
+#[inherent]
+impl glean::TestGetValue<i64> for QuantityMetric {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<i64> {
+        match self {
+            QuantityMetric::Parent { inner, .. } => inner.test_get_value(ping_name),
+            QuantityMetric::Child(_) => {
+                panic!("Cannot get test value for quantity metric in non-main process!",)
+            }
         }
     }
 }
@@ -148,7 +150,7 @@ mod test {
         let metric = &metrics::test_only_ipc::a_quantity;
         metric.set(14);
 
-        assert_eq!(14, metric.test_get_value("test-ping").unwrap());
+        assert_eq!(14, metric.test_get_value(Some("test-ping".to_string())).unwrap());
     }
 
     #[test]
