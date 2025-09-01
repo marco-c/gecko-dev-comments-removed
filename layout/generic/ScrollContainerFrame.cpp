@@ -6693,8 +6693,8 @@ static void ReduceRadii(nscoord aXBorder, nscoord aYBorder, nsSize& aRadius) {
   }
 
   
-  double ratio =
-      std::max(double(aXBorder) / aRadius.width, double(aYBorder) / aRadius.height);
+  double ratio = std::max(double(aXBorder) / aRadius.width,
+                          double(aYBorder) / aRadius.height);
   aRadius.width *= ratio;
   aRadius.height *= ratio;
 }
