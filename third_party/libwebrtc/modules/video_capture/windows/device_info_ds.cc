@@ -508,17 +508,18 @@ int32_t DeviceInfoDS::CreateCapabilityMap(const char* deviceUniqueIdUTF8)
         LONGLONG* frameDurationList = NULL;
         LONGLONG maxFPS = 0;
         long listSize = 0;
-        SIZE size;
-        size.cx = capability.width;
-        size.cy = capability.height;
+        SIZE requested_size;
+        requested_size.cx = capability.width;
+        requested_size.cy = capability.height;
 
         
         
         
         
         
-        hrVC = videoControlConfig->GetFrameRateList(
-            outputCapturePin, tmp, size, &listSize, &frameDurationList);
+        hrVC = videoControlConfig->GetFrameRateList(outputCapturePin, tmp,
+                                                    requested_size, &listSize,
+                                                    &frameDurationList);
 
         if (hrVC == S_OK) {
           maxFPS = GetMaxOfFrameArray(frameDurationList, listSize);
