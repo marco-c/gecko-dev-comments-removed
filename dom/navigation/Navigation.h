@@ -201,6 +201,9 @@ class Navigation final : public DOMEventTargetHelper {
 
   Document* GetAssociatedDocument() const;
 
+  
+  void UpdateNeedsTraverse();
+
   void LogHistory() const;
 
   

@@ -154,22 +154,13 @@ JSObject* Navigation::WrapObject(JSContext* aCx,
 }
 
 void Navigation::EventListenerAdded(nsAtom* aType) {
-  if (nsPIDOMWindowInner* window = GetOwnerWindow()) {
-    if (WindowGlobalChild* windowGlobal = window->GetWindowGlobalChild()) {
-      windowGlobal->NavigateAdded();
-    }
-  }
+  UpdateNeedsTraverse();
 
   EventTarget::EventListenerAdded(aType);
 }
 
 void Navigation::EventListenerRemoved(nsAtom* aType) {
-  if (nsPIDOMWindowInner* window = GetOwnerWindow()) {
-    if (WindowGlobalChild* windowGlobal = window->GetWindowGlobalChild()) {
-      windowGlobal->NavigateRemoved();
-    }
-  }
-
+  UpdateNeedsTraverse();
   EventTarget::EventListenerRemoved(aType);
 }
 
@@ -1271,6 +1262,9 @@ void Navigation::PromoteUpcomingAPIMethodTrackerToOngoing(
   RefPtr<Navigation> navigation =
       aNavigationAPIMethodTracker->mNavigationObject;
 
+  auto needsTraverse =
+      MakeScopeExit([navigation]() { navigation->UpdateNeedsTraverse(); });
+
   
   if (navigation->mOngoingAPIMethodTracker == aNavigationAPIMethodTracker) {
     navigation->mOngoingAPIMethodTracker = nullptr;
@@ -1371,6 +1365,43 @@ Document* Navigation::GetAssociatedDocument() const {
   return window ? window->GetDocument() : nullptr;
 }
 
+void Navigation::UpdateNeedsTraverse() {
+  nsGlobalWindowInner* innerWindow = GetOwnerWindow();
+  if (!innerWindow) {
+    return;
+  }
+
+  WindowContext* windowContext = innerWindow->GetWindowContext();
+  if (!windowContext) {
+    return;
+  }
+
+  
+  
+  if (BrowsingContext* browsingContext = innerWindow->GetBrowsingContext();
+      !browsingContext || !browsingContext->IsTop()) {
+    return;
+  }
+
+  
+  bool needsTraverse = mOngoingAPIMethodTracker ||
+                       mUpcomingNonTraverseAPIMethodTracker ||
+                       !mUpcomingTraverseAPIMethodTrackers.IsEmpty();
+
+  
+  if (EventListenerManager* eventListenerManager =
+          GetExistingListenerManager()) {
+    needsTraverse = needsTraverse || eventListenerManager->HasListeners();
+  }
+
+  
+  if (windowContext->GetNeedsTraverse() == needsTraverse) {
+    return;
+  }
+
+  (void)windowContext->SetNeedsTraverse(needsTraverse);
+}
+
 void Navigation::LogHistory() const {
   if (!MOZ_LOG_TEST(gNavigationLog, LogLevel::Debug)) {
     return;
@@ -1416,6 +1447,9 @@ Navigation::MaybeSetUpcomingNonTraverseAPIMethodTracker(
   if (!HasEntriesAndEventsDisabled()) {
     mUpcomingNonTraverseAPIMethodTracker = apiMethodTracker;
   }
+
+  UpdateNeedsTraverse();
+
   
   return apiMethodTracker;
 }
@@ -1443,8 +1477,12 @@ Navigation::AddUpcomingTraverseAPIMethodTracker(const nsID& aKey,
 
   
   
+  RefPtr methodTracker =
+      mUpcomingTraverseAPIMethodTrackers.InsertOrUpdate(aKey, apiMethodTracker);
+
+  UpdateNeedsTraverse();
+
   
-  return mUpcomingTraverseAPIMethodTrackers.InsertOrUpdate(aKey,
-                                                           apiMethodTracker);
+  return methodTracker;
 }
 }  

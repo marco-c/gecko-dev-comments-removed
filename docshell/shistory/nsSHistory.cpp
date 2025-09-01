@@ -1491,7 +1491,8 @@ static bool MaybeCheckUnloadingIsCanceled(
   
   
   
-  if (!windowGlobalParent || !windowGlobalParent->NeedsBeforeUnload()) {
+  if (!windowGlobalParent || (!windowGlobalParent->NeedsBeforeUnload() &&
+                              !windowGlobalParent->GetNeedsTraverse())) {
     return false;
   }
 
