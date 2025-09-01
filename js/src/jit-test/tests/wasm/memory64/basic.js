@@ -2,7 +2,7 @@
 
 
 
-const MaxMemory64PagesValidation = 0x1_0000_0000_0000n; 
+const MaxMemory64PagesValidation = BigInt(Math.pow(2, 37) - 1); 
 const MaxTable64ElemsValidation = 0xFFFF_FFFF_FFFF_FFFFn; 
 const MaxTableElemsRuntime = 10000000; 
 const MaxUint32 = 0xFFFF_FFFF;

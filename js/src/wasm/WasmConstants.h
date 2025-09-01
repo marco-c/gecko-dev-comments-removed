@@ -1163,11 +1163,14 @@ static const unsigned MaxParams = 1000;
 static const unsigned MaxResults = 1000;
 static const unsigned MaxStructFields = 10000;
 static const uint64_t MaxMemory32PagesValidation = uint64_t(1) << 16;
-static const uint64_t MaxMemory64PagesValidation = uint64_t(1) << 48;
+static const uint64_t MaxMemory64PagesValidation = (uint64_t(1) << 37) - 1;
 static const unsigned MaxStringBytes = 100000;
 static const unsigned MaxModuleBytes = 1024 * 1024 * 1024;
 static const unsigned MaxFunctionBytes = 7654321;
 static const unsigned MaxArrayNewFixedElements = 10000;
+
+
+static_assert((PageSize * MaxMemory64PagesValidation) <= (uint64_t(1) << 53) -1);
 
 
 
