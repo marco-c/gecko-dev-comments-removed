@@ -112,12 +112,30 @@ FloatRegisterSet FloatRegister::BroadcastToAllSizes(const FloatRegisterSet& s) {
   return FloatRegisterSet(broadcasted);
 }
 
-uint32_t GetARM64Flags() { return 0; }
+void ARM64Flags::Init() {
+  MOZ_RELEASE_ASSERT(!IsInitialized());
 
+#ifdef JS_SIMULATOR_ARM64
+  
+  vixl::CPUFeatures cpu_features = vixl::CPUFeatures::All();
+#else
+  vixl::CPUFeatures cpu_features = vixl::CPUFeatures::AArch64LegacyBaseline();
 
+  
+  cpu_features.Combine(vixl::CPUFeatures::InferFromOS());
+#endif
 
+  
+  MOZ_ASSERT(!disabledFeatures.Has(vixl::CPUFeatures::kFP),
+             "Disabling FP not allowed");
+  MOZ_ASSERT(!disabledFeatures.Has(vixl::CPUFeatures::kNEON),
+             "Disabling Neon not allowed");
 
-bool CPUFlagsHaveBeenComputed() { return true; }
+  
+  features = cpu_features.Without(disabledFeatures);
+}
+
+bool CPUFlagsHaveBeenComputed() { return ARM64Flags::IsInitialized(); }
 
 void FlushICache(void* code, size_t size) {
   vixl::CPU::EnsureIAndDCacheCoherency(code, size);
