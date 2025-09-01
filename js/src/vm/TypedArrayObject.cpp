@@ -143,30 +143,48 @@ bool TypedArrayObject::ensureHasBuffer(JSContext* cx,
   size_t byteLength = tarray->byteLength();
 
   AutoRealm ar(cx, tarray);
-  ArrayBufferObject* buffer =
-      ArrayBufferObject::createZeroed(cx, tarray->byteLength());
-  if (!buffer) {
-    return false;
+
+  ArrayBufferObject* buffer;
+  if (tarray->hasMallocedElements(cx)) {
+    
+    
+    buffer =
+        ArrayBufferObject::createFromTypedArrayMallocedElements(cx, tarray);
+    if (!buffer) {
+      return false;
+    }
+  } else {
+    buffer = ArrayBufferObject::createZeroed(cx, byteLength);
+    if (!buffer) {
+      return false;
+    }
+
+    
+    memcpy(buffer->dataPointer(), tarray->dataPointerUnshared(), byteLength);
+
+    
+    
+    
+    
+    
+    
+    if (tarray->isTenured() && tarray->hasMallocedElements(cx)) {
+      size_t nbytes = RoundUp(byteLength, sizeof(Value));
+      js_free(tarray->elements());
+      RemoveCellMemory(tarray, nbytes, MemoryUse::TypedArrayElements);
+    }
+
+    tarray->setFixedSlot(TypedArrayObject::DATA_SLOT,
+                         PrivateValue(buffer->dataPointer()));
   }
+
+  MOZ_ASSERT(tarray->elements() == buffer->dataPointer());
 
   buffer->pinLength(tarray->isLengthPinned());
 
   
   MOZ_ALWAYS_TRUE(buffer->addView(cx, tarray));
 
-  
-  memcpy(buffer->dataPointer(), tarray->dataPointerUnshared(), byteLength);
-
-  
-  
-  size_t nbytes = RoundUp(byteLength, sizeof(Value));
-  if (tarray->isTenured() && tarray->hasMallocedElements(cx)) {
-    js_free(tarray->elements());
-    RemoveCellMemory(tarray, nbytes, MemoryUse::TypedArrayElements);
-  }
-
-  tarray->setFixedSlot(TypedArrayObject::DATA_SLOT,
-                       PrivateValue(buffer->dataPointer()));
   tarray->setFixedSlot(TypedArrayObject::BUFFER_SLOT, ObjectValue(*buffer));
 
   return true;
