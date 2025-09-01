@@ -176,13 +176,14 @@ class WebMDemuxer : public MediaDataDemuxer,
   
   
   
-  nsresult NextPacket(TrackInfo::TrackType aType,
-                      RefPtr<NesteggPacketHolder>& aPacket);
+  
+  Result<RefPtr<NesteggPacketHolder>, nsresult> NextPacket(
+      TrackInfo::TrackType aType);
 
   
   
-  nsresult DemuxPacket(TrackInfo::TrackType aType,
-                       RefPtr<NesteggPacketHolder>& aPacket);
+  Result<RefPtr<NesteggPacketHolder>, nsresult> DemuxPacket(
+      TrackInfo::TrackType aType);
 
   
   
