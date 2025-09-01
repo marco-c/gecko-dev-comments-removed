@@ -882,8 +882,7 @@ nsresult LoadInfoArgsToLoadInfo(const LoadInfoArgs& loadInfoArgs,
       loadInfoArgs.integrityMetadata(),
       
       
-       false, loadInfoArgs.storagePermission(),
-      loadInfoArgs.parentIPAddressSpace(), loadInfoArgs.ipAddressSpace(),
+       false,
       overriddenFingerprintingSettings, loadingContext,
       loadInfoArgs.unstrippedURI(), interceptionInfo,
       loadInfoArgs.schemelessInput(), loadInfoArgs.userNavigationInvolvement());
