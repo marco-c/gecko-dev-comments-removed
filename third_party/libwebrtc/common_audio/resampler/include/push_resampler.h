@@ -32,13 +32,10 @@ class PushResampler final {
                 size_t num_channels);
   ~PushResampler();
 
+  void Resample(InterleavedView<const T> src, InterleavedView<T> dst);
   
   
-  int Resample(InterleavedView<const T> src, InterleavedView<T> dst);
-  
-  
-  
-  int Resample(MonoView<const T> src, MonoView<T> dst);
+  void Resample(MonoView<const T> src, MonoView<T> dst);
 
  private:
   

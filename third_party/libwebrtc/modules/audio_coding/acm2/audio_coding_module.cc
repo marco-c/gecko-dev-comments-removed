@@ -155,12 +155,6 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
 
   
   
-  bool ResampleToPreProcessFrame(InterleavedView<const int16_t> source,
-                                 int sample_rate)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(acm_mutex_);
-
-  
-  
   int UpdateUponReceivingCodec(int index);
 
   mutable Mutex acm_mutex_;
@@ -512,10 +506,11 @@ int AudioCodingModuleImpl::PreprocessToAddData(const AudioFrame& in_frame,
   preprocess_frame_.SetSampleRateAndChannelSize(encoder_stack_->SampleRateHz());
 
   if (resample) {
-    if (!ResampleToPreProcessFrame(resample_src_audio,
-                                   in_frame.sample_rate_hz())) {
-      return -1;
-    }
+    resampler_.Resample10Msec(
+        resample_src_audio, in_frame.sample_rate_hz(),
+        preprocess_frame_.mutable_data(preprocess_frame_.samples_per_channel(),
+                                       preprocess_frame_.num_channels()),
+        preprocess_frame_.sample_rate_hz());
   }
 
   expected_codec_ts_ +=
@@ -544,24 +539,6 @@ const AudioFrame* AudioCodingModuleImpl::AddDataNoPreProcess(
   expected_codec_ts_ += static_cast<uint32_t>(in_frame.samples_per_channel_);
 
   return ret;
-}
-
-bool AudioCodingModuleImpl::ResampleToPreProcessFrame(
-    InterleavedView<const int16_t> source,
-    int sample_rate) {
-  int samples_per_channel = resampler_.Resample10Msec(
-      source, sample_rate,
-      preprocess_frame_.mutable_data(preprocess_frame_.samples_per_channel(),
-                                     preprocess_frame_.num_channels()),
-      preprocess_frame_.sample_rate_hz());
-
-  
-  
-  if (samples_per_channel < 0) {
-    RTC_LOG(LS_ERROR) << "Cannot add 10 ms audio, resampling failed";
-  }
-
-  return samples_per_channel >= 0;
 }
 
 
