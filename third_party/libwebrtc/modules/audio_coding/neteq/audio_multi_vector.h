@@ -14,6 +14,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <memory>
 #include <vector>
 
 #include "api/array_view.h"
@@ -37,16 +38,16 @@ class AudioMultiVector {
   AudioMultiVector& operator=(const AudioMultiVector&) = delete;
 
   
-  virtual void Clear();
+  void Clear();
 
   
-  virtual void Zeros(size_t length);
+  void Zeros(size_t length);
 
   
   
   
   
-  virtual void CopyTo(AudioMultiVector* copy_to) const;
+  void CopyTo(AudioMultiVector* copy_to) const;
 
   
   
@@ -61,68 +62,65 @@ class AudioMultiVector {
   
   
   
-  virtual void PushBackFromIndex(const AudioMultiVector& append_this,
-                                 size_t index);
+  void PushBackFromIndex(const AudioMultiVector& append_this, size_t index);
 
   
   
-  virtual void PopFront(size_t length);
+  void PopFront(size_t length);
 
   
   
-  virtual void PopBack(size_t length);
-
-  
-  
-  
-  
-  
-  virtual size_t ReadInterleaved(size_t length, int16_t* destination) const;
-
-  
-  
-  virtual size_t ReadInterleavedFromIndex(size_t start_index,
-                                          size_t length,
-                                          int16_t* destination) const;
-
-  
-  
-  virtual size_t ReadInterleavedFromEnd(size_t length,
-                                        int16_t* destination) const;
+  void PopBack(size_t length);
 
   
   
   
   
   
+  size_t ReadInterleaved(size_t length, int16_t* destination) const;
+
   
   
-  virtual void OverwriteAt(const AudioMultiVector& insert_this,
-                           size_t length,
-                           size_t position);
+  size_t ReadInterleavedFromIndex(size_t start_index,
+                                  size_t length,
+                                  int16_t* destination) const;
+
+  
+  
+  size_t ReadInterleavedFromEnd(size_t length, int16_t* destination) const;
 
   
   
   
-  virtual void CrossFade(const AudioMultiVector& append_this,
-                         size_t fade_length);
-
-  
-  virtual size_t Channels() const;
-
-  
-  virtual size_t Size() const;
-
   
   
-  virtual void AssertSize(size_t required_size);
-
-  virtual bool Empty() const;
+  
+  
+  void OverwriteAt(const AudioMultiVector& insert_this,
+                   size_t length,
+                   size_t position);
 
   
   
   
-  virtual void CopyChannel(size_t from_channel, size_t to_channel);
+  void CrossFade(const AudioMultiVector& append_this, size_t fade_length);
+
+  
+  size_t Channels() const;
+
+  
+  size_t Size() const;
+
+  
+  
+  void AssertSize(size_t required_size);
+
+  bool Empty() const;
+
+  
+  
+  
+  void CopyChannel(size_t from_channel, size_t to_channel);
 
   
   
@@ -130,8 +128,7 @@ class AudioMultiVector {
   AudioVector& operator[](size_t index);
 
  protected:
-  std::vector<AudioVector*> channels_;
-  size_t num_channels_;
+  std::vector<std::unique_ptr<AudioVector>> channels_;
 };
 
 }  

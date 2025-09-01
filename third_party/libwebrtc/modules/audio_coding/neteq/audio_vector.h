@@ -20,7 +20,7 @@
 
 namespace webrtc {
 
-class AudioVector {
+class AudioVector final {
  public:
   
   AudioVector();
@@ -28,91 +28,85 @@ class AudioVector {
   
   explicit AudioVector(size_t initial_size);
 
-  virtual ~AudioVector();
+  ~AudioVector();
 
   AudioVector(const AudioVector&) = delete;
   AudioVector& operator=(const AudioVector&) = delete;
 
   
-  virtual void Clear();
+  void Clear();
 
   
   
   
-  virtual void CopyTo(AudioVector* copy_to) const;
+  void CopyTo(AudioVector* copy_to) const;
 
   
-  virtual void CopyTo(size_t length, size_t position, int16_t* copy_to) const;
-
-  
-  
-  virtual void PushFront(const AudioVector& prepend_this);
+  void CopyTo(size_t length, size_t position, int16_t* copy_to) const;
 
   
   
-  virtual void PushFront(const int16_t* prepend_this, size_t length);
-
-  
-  virtual void PushBack(const AudioVector& append_this);
+  void PushFront(const AudioVector& prepend_this);
 
   
   
-  virtual void PushBack(const AudioVector& append_this,
-                        size_t length,
-                        size_t position);
+  void PushFront(const int16_t* prepend_this, size_t length);
 
   
-  virtual void PushBack(const int16_t* append_this, size_t length);
-
-  
-  virtual void PopFront(size_t length);
-
-  
-  virtual void PopBack(size_t length);
+  void PushBack(const AudioVector& append_this);
 
   
   
-  virtual void Extend(size_t extra_length);
+  void PushBack(const AudioVector& append_this, size_t length, size_t position);
+
+  
+  void PushBack(const int16_t* append_this, size_t length);
+
+  
+  void PopFront(size_t length);
+
+  
+  void PopBack(size_t length);
 
   
   
-  
-  
-  virtual void InsertAt(const int16_t* insert_this,
-                        size_t length,
-                        size_t position);
-
-  
-  virtual void InsertZerosAt(size_t length, size_t position);
+  void Extend(size_t extra_length);
 
   
   
   
   
+  void InsertAt(const int16_t* insert_this, size_t length, size_t position);
+
   
-  virtual void OverwriteAt(const AudioVector& insert_this,
-                           size_t length,
-                           size_t position);
+  void InsertZerosAt(size_t length, size_t position);
 
   
   
   
   
   
-  virtual void OverwriteAt(const int16_t* insert_this,
-                           size_t length,
-                           size_t position);
+  void OverwriteAt(const AudioVector& insert_this,
+                   size_t length,
+                   size_t position);
 
   
   
   
-  virtual void CrossFade(const AudioVector& append_this, size_t fade_length);
+  
+  
+  void OverwriteAt(const int16_t* insert_this, size_t length, size_t position);
 
   
-  virtual size_t Size() const;
+  
+  
+  void CrossFade(const AudioVector& append_this, size_t fade_length);
 
   
-  virtual bool Empty() const;
+  size_t Size() const;
+
+  
+  bool Empty() const;
 
   
   inline const int16_t& operator[](size_t index) const {
