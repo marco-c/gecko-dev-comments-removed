@@ -40,10 +40,10 @@
 
 
 
-typedef struct {
+struct ExternalHmacContext {
   uint8_t key[HMAC_KEY_LENGTH];
   int key_length;
-} ExternalHmacContext;
+};
 
 srtp_err_status_t external_hmac_alloc(srtp_auth_t** a,
                                       int key_len,
