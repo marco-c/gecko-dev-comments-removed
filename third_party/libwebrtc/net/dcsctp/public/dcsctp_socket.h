@@ -363,7 +363,15 @@ class DcSctpSocketCallbacks {
   
   
   
+  
   virtual void OnMessageReceived(DcSctpMessage message) = 0;
+
+  
+  
+  
+  
+  
+  virtual void OnMessageReady() {}
 
   
   
@@ -524,6 +532,20 @@ class DcSctpSocketInterface {
 
   
   virtual void ReceivePacket(webrtc::ArrayView<const uint8_t> data) = 0;
+
+  
+  
+  
+  
+  
+  virtual size_t MessagesReady() const = 0;
+
+  
+  
+  
+  
+  
+  virtual std::optional<DcSctpMessage> GetNextMessage() = 0;
 
   
   

@@ -13,6 +13,7 @@
 #include <stddef.h>
 
 #include <cstdint>
+#include <deque>
 #include <memory>
 #include <set>
 #include <string>
@@ -83,7 +84,12 @@ class ReassemblyQueue {
   bool HasMessages() const { return !reassembled_messages_.empty(); }
 
   
-  std::vector<DcSctpMessage> FlushMessages();
+  
+  size_t MessagesReady() const { return reassembled_messages_.size(); }
+
+  
+  
+  std::optional<DcSctpMessage> GetNextMessage();
 
   
   
@@ -149,7 +155,7 @@ class ReassemblyQueue {
 
   
   
-  std::vector<DcSctpMessage> reassembled_messages_;
+  std::deque<DcSctpMessage> reassembled_messages_;
 
   
   std::optional<DeferredResetStreams> deferred_reset_streams_;

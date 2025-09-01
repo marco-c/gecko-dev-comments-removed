@@ -88,6 +88,12 @@ struct DcSctpOptions {
 
   
   
+  
+  
+  bool enable_receive_pull_mode = false;
+
+  
+  
   size_t max_send_buffer_size = 2'000'000;
 
   
