@@ -1054,26 +1054,7 @@ class HTMLEditor final : public EditorBase,
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   SetPositionToStatic(Element& aElement);
 
-  class DocumentModifiedEvent final : public Runnable {
-   public:
-    explicit DocumentModifiedEvent(HTMLEditor& aHTMLEditor)
-        : Runnable("DocumentModifiedEvent"), mHTMLEditor(aHTMLEditor) {}
-
-    MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD Run() {
-      Unused << MOZ_KnownLive(mHTMLEditor)->OnModifyDocument(*this);
-      return NS_OK;
-    }
-
-    const nsTArray<EditorDOMPointInText>& NewInvisibleWhiteSpacesRef() const {
-      return mNewInvisibleWhiteSpaces;
-    }
-
-   private:
-    ~DocumentModifiedEvent() = default;
-
-    const OwningNonNull<HTMLEditor> mHTMLEditor;
-    nsTArray<EditorDOMPointInText> mNewInvisibleWhiteSpaces;
-  };
+  class DocumentModifiedEvent;
 
   
 
@@ -2774,8 +2755,8 @@ class HTMLEditor final : public EditorBase,
   
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult
-  OnDocumentModified(const nsIContent* aContentWillBeRemoved = nullptr);
+  MOZ_CAN_RUN_SCRIPT nsresult RunOrScheduleOnModifyDocument(
+      const nsIContent* aContentWillBeRemoved = nullptr);
 
  protected:  
   MOZ_CAN_RUN_SCRIPT void OnStartToHandleTopLevelEditSubAction(
