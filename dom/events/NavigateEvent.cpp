@@ -177,7 +177,7 @@ void NavigateEvent::Intercept(const NavigationInterceptOptions& aOptions,
     }
 
     
-    mFocusResetBehavior.emplace(aOptions.mFocusReset.Value());
+    mFocusResetBehavior = Some(aOptions.mFocusReset.Value());
   }
 
   
