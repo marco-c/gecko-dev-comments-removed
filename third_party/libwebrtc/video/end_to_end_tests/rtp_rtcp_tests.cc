@@ -362,7 +362,7 @@ void RtpRtcpEndToEndTest::TestRtpStatePreservation(
         
         rtcp::RapidResyncRequest force_send_sr_back_request;
         Buffer packet = force_send_sr_back_request.Build();
-        static_cast<webrtc::Transport*>(receive_transport_.get())
+        static_cast<Transport*>(receive_transport_.get())
             ->SendRtcp(packet, {});
       }
       CreateFrameGeneratorCapturer(30, 1280, 720);

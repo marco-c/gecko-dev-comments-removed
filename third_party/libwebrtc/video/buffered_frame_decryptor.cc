@@ -73,7 +73,7 @@ BufferedFrameDecryptor::FrameDecision BufferedFrameDecryptor::DecryptFrame(
   }
   
   const size_t max_plaintext_byte_size =
-      frame_decryptor_->GetMaxPlaintextByteSize(webrtc::MediaType::VIDEO,
+      frame_decryptor_->GetMaxPlaintextByteSize(MediaType::VIDEO,
                                                 frame->size());
   RTC_CHECK_LE(max_plaintext_byte_size, frame->size());
   
@@ -88,9 +88,8 @@ BufferedFrameDecryptor::FrameDecision BufferedFrameDecryptor::DecryptFrame(
 
   
   const FrameDecryptorInterface::Result decrypt_result =
-      frame_decryptor_->Decrypt(webrtc::MediaType::VIDEO, {},
-                                additional_data, *frame,
-                                inline_decrypted_bitstream);
+      frame_decryptor_->Decrypt(MediaType::VIDEO, {}, additional_data,
+                                *frame, inline_decrypted_bitstream);
   
   if (decrypt_result.status != last_status_) {
     last_status_ = decrypt_result.status;

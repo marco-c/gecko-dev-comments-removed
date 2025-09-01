@@ -1123,8 +1123,7 @@ ParsedRtcEventLog::LoggedRtpStreamView::LoggedRtpStreamView(
 
 
 
-webrtc::RtpHeaderExtensionMap
-ParsedRtcEventLog::GetDefaultHeaderExtensionMap() {
+RtpHeaderExtensionMap ParsedRtcEventLog::GetDefaultHeaderExtensionMap() {
   
   constexpr int kAudioLevelDefaultId = 1;
   constexpr int kTimestampOffsetDefaultId = 2;
@@ -1136,7 +1135,7 @@ ParsedRtcEventLog::GetDefaultHeaderExtensionMap() {
   constexpr int kVideoTimingDefaultId = 8;
   constexpr int kDependencyDescriptorDefaultId = 9;
 
-  webrtc::RtpHeaderExtensionMap default_map(true);
+  RtpHeaderExtensionMap default_map(true);
   default_map.Register<AudioLevelExtension>(kAudioLevelDefaultId);
   default_map.Register<TransmissionOffset>(kTimestampOffsetDefaultId);
   default_map.Register<AbsoluteSendTime>(kAbsSendTimeDefaultId);
