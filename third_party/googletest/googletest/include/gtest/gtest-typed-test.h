@@ -48,7 +48,7 @@ template <typename T>
 class FooTest : public testing::Test {
  public:
   ...
-  typedef std::list<T> List;
+  using List = ::std::list<T>;
   static T shared_;
   T value_;
 };
@@ -56,7 +56,7 @@ class FooTest : public testing::Test {
 
 
 
-typedef testing::Types<char, int, unsigned int> MyTypes;
+using MyTypes = ::testing::Types<char, int, unsigned int>;
 TYPED_TEST_SUITE(FooTest, MyTypes);
 
 
@@ -157,7 +157,7 @@ REGISTER_TYPED_TEST_SUITE_P(FooTest,
 
 
 
-typedef testing::Types<char, int, unsigned int> MyTypes;
+using MyTypes = ::testing::Types<char, int, unsigned int>;
 INSTANTIATE_TYPED_TEST_SUITE_P(My, FooTest, MyTypes);
 
 

@@ -57,10 +57,19 @@
 #include "gmock/internal/custom/gmock-port.h"
 #include "gtest/internal/gtest-port.h"
 
-#if defined(GTEST_HAS_ABSL) && !defined(GTEST_NO_ABSL_FLAGS)
+#if defined(GTEST_HAS_ABSL)
+#include "absl/base/macros.h"
+
+#define GMOCK_DEPRECATE_AND_INLINE() ABSL_DEPRECATE_AND_INLINE()
+
+#if !defined(GTEST_NO_ABSL_FLAGS)
 #include "absl/flags/declare.h"
 #include "absl/flags/flag.h"
-#endif
+#endif  
+
+#else  
+#define GMOCK_DEPRECATE_AND_INLINE()
+#endif  
 
 
 

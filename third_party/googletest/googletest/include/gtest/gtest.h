@@ -73,8 +73,6 @@
 #include "gtest/internal/gtest-internal.h"
 #include "gtest/internal/gtest-string.h"
 
-#include "mozilla/Attributes.h"
-
 GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251 \
 )
 
@@ -327,7 +325,7 @@ class GTEST_API_ Test {
   
   
   
-  MOZ_CAN_RUN_SCRIPT virtual void TestBody() = 0;
+  virtual void TestBody() = 0;
 
   
   void Run();
@@ -1612,6 +1610,8 @@ GTEST_API_ AssertionResult DoubleNearPredFormat(const char* expr1,
                                                 double val1, double val2,
                                                 double abs_error);
 
+using GoogleTest_NotSupported_OnFunctionReturningNonVoid = void;
+
 
 
 class GTEST_API_ AssertHelper {
@@ -1623,7 +1623,8 @@ class GTEST_API_ AssertHelper {
 
   
   
-  void operator=(const Message& message) const;
+  GoogleTest_NotSupported_OnFunctionReturningNonVoid operator=(
+      const Message& message) const;
 
  private:
   

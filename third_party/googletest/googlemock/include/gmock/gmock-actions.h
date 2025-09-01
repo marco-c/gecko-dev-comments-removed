@@ -1867,6 +1867,13 @@ struct RethrowAction {
 typedef internal::IgnoredValue Unused;
 
 
+template <typename Action>
+GMOCK_DEPRECATE_AND_INLINE()
+typename std::decay<Action>::type DoAll(Action&& action) {
+  return std::forward<Action>(action);
+}
+
+
 
 
 template <typename... Action>
@@ -2035,6 +2042,7 @@ PolymorphicAction<internal::SetErrnoAndReturnAction<T>> SetErrnoAndReturn(
 
 
 template <typename FunctionImpl>
+GMOCK_DEPRECATE_AND_INLINE()
 typename std::decay<FunctionImpl>::type Invoke(FunctionImpl&& function_impl) {
   return std::forward<FunctionImpl>(function_impl);
 }
