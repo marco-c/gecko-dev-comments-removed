@@ -3454,40 +3454,6 @@ function synthesizeDropAfterDragOver(
 
 
 
-function startDragSession(aWindow, aDropEffect) {
-  const ds = _EU_Cc["@mozilla.org/widget/dragservice;1"].getService(
-    _EU_Ci.nsIDragService
-  );
-
-  let dropAction;
-  switch (aDropEffect) {
-    case null:
-    case undefined:
-    case "move":
-      dropAction = _EU_Ci.nsIDragService.DRAGDROP_ACTION_MOVE;
-      break;
-    case "copy":
-      dropAction = _EU_Ci.nsIDragService.DRAGDROP_ACTION_COPY;
-      break;
-    case "link":
-      dropAction = _EU_Ci.nsIDragService.DRAGDROP_ACTION_LINK;
-      break;
-    default:
-      throw new Error(`${aDropEffect} is an invalid drop effect value`);
-  }
-
-  ds.startDragSessionForTests(aWindow, dropAction);
-}
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -3529,7 +3495,28 @@ function synthesizeDrop(
     aDestWindow = aWindow;
   }
 
-  startDragSession(aWindow, aDropEffect);
+  var ds = _EU_Cc["@mozilla.org/widget/dragservice;1"].getService(
+    _EU_Ci.nsIDragService
+  );
+
+  let dropAction;
+  switch (aDropEffect) {
+    case null:
+    case undefined:
+    case "move":
+      dropAction = _EU_Ci.nsIDragService.DRAGDROP_ACTION_MOVE;
+      break;
+    case "copy":
+      dropAction = _EU_Ci.nsIDragService.DRAGDROP_ACTION_COPY;
+      break;
+    case "link":
+      dropAction = _EU_Ci.nsIDragService.DRAGDROP_ACTION_LINK;
+      break;
+    default:
+      throw new Error(`${aDropEffect} is an invalid drop effect value`);
+  }
+
+  ds.startDragSessionForTests(aWindow, dropAction);
 
   try {
     var [result, dataTransfer] = synthesizeDragOver(
