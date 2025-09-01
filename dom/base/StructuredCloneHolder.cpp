@@ -399,13 +399,10 @@ void StructuredCloneHolder::Read(nsIGlobalObject* aGlobal, JSContext* aCx,
 
   
   if (mSupportsTransferring) {
-    mBlobImplArray.Clear();
-    mWasmModuleArray.Clear();
-    mClonedSurfaces.Clear();
-    mInputStreamArray.Clear();
-    mVideoFrames.Clear();
-    mEncodedAudioChunks.Clear();
-    mEncodedVideoChunks.Clear();
+#define STMT(_member) (_member).Clear()
+    CLONED_DATA_MEMBERS
+#undef STMT
+
     Clear();
   }
 }
