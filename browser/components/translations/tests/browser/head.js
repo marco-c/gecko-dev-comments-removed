@@ -466,8 +466,19 @@ class TranslationsBencher {
 
 
 
+
   static METRIC_STABILIZED_PARENT_PROCESS_MEMORY_USAGE =
     "stabilized-parent-process-memory-usage";
+
+  
+
+
+
+
+
+
+  static METRIC_POST_GC_PARENT_PROCESS_MEMORY_USAGE =
+    "post-gc-parent-process-memory-usage";
 
   
 
@@ -485,8 +496,19 @@ class TranslationsBencher {
 
 
 
+
   static METRIC_STABILIZED_INFERENCE_PROCESS_MEMORY_USAGE =
     "stabilized-inference-process-memory-usage";
+
+  
+
+
+
+
+
+
+  static METRIC_POST_GC_INFERENCE_PROCESS_MEMORY_USAGE =
+    "post-gc-inference-process-memory-usage";
 
   
 
@@ -839,6 +861,25 @@ class TranslationsBencher {
       const { parentMemoryMiB, inferenceMemoryMiB } =
         await TranslationsBencher.#getTotalMemoryUsageByProcess();
 
+      
+      Services.obs.notifyObservers(null, "child-cc-request");
+      Services.obs.notifyObservers(null, "child-gc-request");
+      window.windowUtils.cycleCollect();
+      Cu.forceGC();
+
+      const { inferenceMemoryMiB: postGCInferenceMiB } =
+        await TranslationsBencher.#getTotalMemoryUsageByProcess();
+
+      
+      await EngineProcess.destroyTranslationsEngine();
+      Services.obs.notifyObservers(null, "child-cc-request");
+      Services.obs.notifyObservers(null, "child-gc-request");
+      window.windowUtils.cycleCollect();
+      Cu.forceGC();
+
+      const { parentMemoryMiB: postGCParentMiB } =
+        await TranslationsBencher.#getTotalMemoryUsageByProcess();
+
       journal.pushMetrics([
         [
           TranslationsBencher.METRIC_PEAK_PARENT_PROCESS_MEMORY_USAGE,
@@ -849,12 +890,20 @@ class TranslationsBencher {
           parentMemoryMiB,
         ],
         [
+          TranslationsBencher.METRIC_POST_GC_PARENT_PROCESS_MEMORY_USAGE,
+          postGCParentMiB,
+        ],
+        [
           TranslationsBencher.METRIC_PEAK_INFERENCE_PROCESS_MEMORY_USAGE,
           peakInferenceMemoryMiB,
         ],
         [
           TranslationsBencher.METRIC_STABILIZED_INFERENCE_PROCESS_MEMORY_USAGE,
           inferenceMemoryMiB,
+        ],
+        [
+          TranslationsBencher.METRIC_POST_GC_INFERENCE_PROCESS_MEMORY_USAGE,
+          postGCInferenceMiB,
         ],
       ]);
 
