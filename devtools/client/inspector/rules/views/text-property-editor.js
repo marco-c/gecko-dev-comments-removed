@@ -207,10 +207,6 @@ class TextPropertyEditor {
 
     appendText(this.nameContainer, ": ");
 
-    if (this.#shouldShowComputedExpander) {
-      this.#createComputedExpander();
-    }
-
     
     
     
@@ -232,6 +228,11 @@ class TextPropertyEditor {
     this.nameSpan.textProperty = this.prop;
 
     appendText(this.valueContainer, ";");
+
+    
+    if (this.#shouldShowComputedExpander) {
+      this.#createComputedExpander();
+    }
 
     if (this.#shouldShowWarning) {
       this.#createWarningIcon();
@@ -857,12 +858,12 @@ class TextPropertyEditor {
       this.filterProperty.hidden = true;
     }
     if (this.expander) {
-      this.expander.style.display = "none";
+      this.expander.hidden = true;
     }
   };
 
   get #shouldShowComputedExpander() {
-    if (this.prop.name.startsWith("--")) {
+    if (this.prop.name.startsWith("--") || this.editing) {
       return false;
     }
 
@@ -1065,11 +1066,13 @@ class TextPropertyEditor {
       this.filterProperty.hidden = true;
     }
 
-    if (this.#shouldShowComputedExpander && !this.expander) {
-      this.#createComputedExpander();
-    } else if (!this.#shouldShowComputedExpander && this.expander) {
-      this.expander.remove();
-      this.expander = null;
+    if (this.#shouldShowComputedExpander) {
+      if (!this.expander) {
+        this.#createComputedExpander();
+      }
+      this.expander.hidden = false;
+    } else if (this.expander) {
+      this.expander.hidden = true;
     }
 
     if (
@@ -1132,13 +1135,12 @@ class TextPropertyEditor {
       this.computed.replaceChildren();
     }
 
-    if (!this.editing && this.#shouldShowComputedExpander && !this.expander) {
-      this.#createComputedExpander();
-    } else if (
-      this.expander &&
-      !this.editing &&
-      !this.#shouldShowComputedExpander
-    ) {
+    if (this.#shouldShowComputedExpander) {
+      if (!this.expander) {
+        this.#createComputedExpander();
+      }
+      this.expander.hidden = false;
+    } else if (this.expander) {
       this.expander.hidden = true;
     }
 
@@ -1350,6 +1352,7 @@ class TextPropertyEditor {
       if (!this.expander) {
         this.#createComputedExpander();
       }
+      this.expander.hidden = false;
       this.expander.setAttribute("aria-expanded", "true");
 
       if (!this.computed) {
