@@ -197,6 +197,7 @@ Preferences.addAll([
 
   
   { id: "privacy.donottrackheader.enabled", type: "bool" },
+  { id: "privacy.globalprivacycontrol.functionality.enabled", type: "bool" },
 
   
   { id: "privacy.globalprivacycontrol.enabled", type: "bool" },
@@ -307,6 +308,30 @@ if (AppConstants.MOZ_CRASHREPORTER) {
     type: "bool",
   });
 }
+
+Preferences.addSetting({
+  id: "gpcFunctionalityEnabled",
+  pref: "privacy.globalprivacycontrol.functionality.enabled",
+});
+Preferences.addSetting({
+  id: "gpcEnabled",
+  pref: "privacy.globalprivacycontrol.enabled",
+  deps: ["gpcFunctionalityEnabled"],
+  visible: ({ gpcFunctionalityEnabled }) => {
+    return gpcFunctionalityEnabled.value;
+  },
+});
+Preferences.addSetting({
+  id: "dntHeaderEnabled",
+  pref: "privacy.donottrackheader.enabled",
+});
+Preferences.addSetting({
+  id: "dntRemoval",
+  deps: ["dntHeaderEnabled"],
+  visible: ({ dntHeaderEnabled }) => {
+    return dntHeaderEnabled.value;
+  },
+});
 
 function setEventListener(aId, aEventType, aCallback) {
   document
@@ -944,8 +969,47 @@ var gPrivacyPane = {
   
 
 
+  updateNonTechnicalPrivacySectionVisibility() {
+    let allDisabled =
+      !Preferences.get("privacy.globalprivacycontrol.functionality.enabled")
+        .value && !Preferences.get("privacy.donottrackheader.enabled").value;
+    let nonTechnicalPrivacyGroup = document.getElementById(
+      "nonTechnicalPrivacyGroup"
+    );
+    if (allDisabled) {
+      nonTechnicalPrivacyGroup.style.display = "none";
+    } else {
+      nonTechnicalPrivacyGroup.style.display = "";
+    }
+  },
+
+  
+
+
+  initNonTechnicalPrivacySection() {
+    
+    
+    Preferences.get("privacy.globalprivacycontrol.functionality.enabled").on(
+      "change",
+      gPrivacyPane.updateNonTechnicalPrivacySectionVisibility.bind(gPrivacyPane)
+    );
+    Preferences.get("privacy.donottrackheader.enabled").on(
+      "change",
+      gPrivacyPane.updateNonTechnicalPrivacySectionVisibility.bind(gPrivacyPane)
+    );
+    
+    gPrivacyPane.updateNonTechnicalPrivacySectionVisibility();
+  },
+
+  
+
+
 
   init() {
+    initSettingGroup("nonTechnicalPrivacy");
+
+    this.initNonTechnicalPrivacySection();
+
     this._updateSanitizeSettingsButton();
     this.initDeleteOnCloseBox();
     this.syncSanitizationPrefsWithDeleteOnClose();
@@ -1082,7 +1146,6 @@ var gPrivacyPane = {
 
     this._pane = document.getElementById("panePrivacy");
 
-    this._initGlobalPrivacyControlUI();
     this._initPasswordGenerationUI();
     this._initRelayIntegrationUI();
     this._initMasterPasswordUI();
@@ -3020,34 +3083,6 @@ var gPrivacyPane = {
       features: "resizable=no",
       closingCallback: this._initMasterPasswordUI.bind(this),
     });
-  },
-
-  
-
-
-
-
-  _initGlobalPrivacyControlUI() {
-    let gpcEnabledPrefValue = Services.prefs.getBoolPref(
-      "privacy.globalprivacycontrol.functionality.enabled",
-      false
-    );
-    let dntEnabledPrefValue = Services.prefs.getBoolPref(
-      "privacy.donottrackheader.enabled",
-      false
-    );
-    document.getElementById("doNotTrackBox").hidden = !dntEnabledPrefValue;
-    
-    
-    if (gpcEnabledPrefValue) {
-      document
-        .getElementById("nonTechnicalPrivacyGroup")
-        .removeAttribute("style");
-    } else {
-      document
-        .getElementById("nonTechnicalPrivacyGroup")
-        .setAttribute("style", "display: none !important");
-    }
   },
 
   
