@@ -442,9 +442,16 @@ public class GeckoPreferenceController {
 
 
   public static class SetGeckoPreference<T> {
+    
     public final @NonNull String pref;
+
+    
     public final @NonNull T value;
+
+    
     public final @PrefBranch int branch;
+
+    
     public final @PrefType int type;
 
     

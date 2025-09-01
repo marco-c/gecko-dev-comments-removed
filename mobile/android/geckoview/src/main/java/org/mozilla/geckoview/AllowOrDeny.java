@@ -11,6 +11,8 @@ import androidx.annotation.AnyThread;
 
 @AnyThread
 public enum AllowOrDeny {
+  
   ALLOW,
+  
   DENY;
 }

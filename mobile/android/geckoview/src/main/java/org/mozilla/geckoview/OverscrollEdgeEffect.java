@@ -21,6 +21,7 @@ import androidx.annotation.UiThread;
 import java.lang.reflect.Field;
 import org.mozilla.gecko.util.ThreadUtils;
 
+
 @UiThread
 public final class OverscrollEdgeEffect {
   

@@ -15,6 +15,8 @@ import androidx.annotation.AnyThread;
 
 @AnyThread
 public enum SlowScriptResponse {
+  
   STOP,
+  
   CONTINUE;
 }

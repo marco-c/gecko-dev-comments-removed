@@ -11,6 +11,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import org.mozilla.gecko.util.ThreadUtils;
 
+
 public class OrientationController {
   private OrientationDelegate mDelegate;
 

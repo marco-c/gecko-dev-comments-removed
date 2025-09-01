@@ -33,6 +33,11 @@ public class MediaSession {
   private final GeckoSession mSession;
   private boolean mIsActive;
 
+  
+
+
+
+
   protected MediaSession(final GeckoSession session) {
     mSession = session;
   }
@@ -478,6 +483,7 @@ public class MediaSession {
     }
   }
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @LongDef(
       flag = true,
@@ -498,6 +504,7 @@ public class MediaSession {
 
   
   public static class Feature {
+    
     public static final long NONE = 0;
 
     

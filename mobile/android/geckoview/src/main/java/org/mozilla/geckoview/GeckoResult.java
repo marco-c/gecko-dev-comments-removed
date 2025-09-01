@@ -234,8 +234,13 @@ public class GeckoResult<T> {
     private DirectDispatcher() {}
   }
 
+  
   public static final class UncaughtException extends RuntimeException {
-    @SuppressWarnings("checkstyle:javadocmethod")
+    
+
+
+
+
     public UncaughtException(final Throwable cause) {
       super(cause);
     }
