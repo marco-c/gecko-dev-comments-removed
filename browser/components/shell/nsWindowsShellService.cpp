@@ -486,8 +486,15 @@ nsWindowsShellService::CreateWindowsIcon(nsIFile* aIcoFile,
   MOZ_LOG(sLog, LogLevel::Debug,
           ("%s:%d - Reading input image...\n", __FILE__, __LINE__));
 
-  RefPtr<gfx::SourceSurface> surface = aImage->GetFrame(
-      imgIContainer::FRAME_FIRST, imgIContainer::FLAG_SYNC_DECODE);
+  
+  
+  
+  
+  
+  RefPtr<gfx::SourceSurface> surface =
+      aImage->GetFrameAtSize(nsIntSize(256, 256), imgIContainer::FRAME_FIRST,
+                             imgIContainer::FLAG_SYNC_DECODE |
+                                 imgIContainer::FLAG_HIGH_QUALITY_SCALING);
   NS_ENSURE_TRUE(surface, NS_ERROR_FAILURE);
 
   
