@@ -14,6 +14,7 @@ import org.mozilla.gecko.annotationProcessors.classloader.AnnotatableEntity;
 import org.mozilla.gecko.annotationProcessors.classloader.ClassWithOptions;
 import org.mozilla.gecko.annotationProcessors.utils.Utils;
 
+
 public class CodeGenerator {
   private static final Class<?>[] EMPTY_CLASS_ARRAY = new Class<?>[0];
 
@@ -30,6 +31,11 @@ public class CodeGenerator {
   private int numNativesInits;
 
   private final HashSet<String> takenMethodNames = new HashSet<String>();
+
+  
+
+
+
 
   public CodeGenerator(ClassWithOptions annotatedClass) {
     this.cls = annotatedClass.wrappedClass;
@@ -590,6 +596,11 @@ public class CodeGenerator {
     return String.valueOf(val);
   }
 
+  
+
+
+
+
   public void generateField(AnnotatableEntity annotatedField) {
     final Field field = annotatedField.getField();
     final AnnotationInfo info = annotatedField.mAnnotationInfo;
@@ -712,6 +723,11 @@ public class CodeGenerator {
             + "\n");
   }
 
+  
+
+
+
+
   public void generateConstructor(AnnotatableEntity annotatedConstructor) {
     
     final Constructor<?> method = annotatedConstructor.getConstructor();
@@ -759,6 +775,11 @@ public class CodeGenerator {
             + "\n"
             + "\n");
   }
+
+  
+
+
+
 
   public void generateClasses(final ClassWithOptions[] classes) {
     if (classes.length == 0) {

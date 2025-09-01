@@ -16,17 +16,31 @@ import org.mozilla.gecko.annotationProcessors.AnnotationInfo;
 
 
 public class AnnotatableEntity {
+  
   public enum ENTITY_TYPE {
+    
     METHOD,
+    
     NATIVE,
+    
     FIELD,
+    
     CONSTRUCTOR
   }
 
   private final Member mMember;
+
+  
   public final ENTITY_TYPE mEntityType;
 
+  
   public final AnnotationInfo mAnnotationInfo;
+
+  
+
+
+
+
 
   public AnnotatableEntity(Member aObject, AnnotationInfo aAnnotationInfo) {
     mMember = aObject;
@@ -45,6 +59,12 @@ public class AnnotatableEntity {
     }
   }
 
+  
+
+
+
+
+
   public Method getMethod() {
     if (mEntityType != ENTITY_TYPE.METHOD && mEntityType != ENTITY_TYPE.NATIVE) {
       throw new UnsupportedOperationException("Attempt to cast to unsupported member type.");
@@ -52,12 +72,24 @@ public class AnnotatableEntity {
     return (Method) mMember;
   }
 
+  
+
+
+
+
+
   public Field getField() {
     if (mEntityType != ENTITY_TYPE.FIELD) {
       throw new UnsupportedOperationException("Attempt to cast to unsupported member type.");
     }
     return (Field) mMember;
   }
+
+  
+
+
+
+
 
   public Constructor<?> getConstructor() {
     if (mEntityType != ENTITY_TYPE.CONSTRUCTOR) {

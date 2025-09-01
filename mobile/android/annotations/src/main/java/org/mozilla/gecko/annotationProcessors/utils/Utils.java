@@ -120,6 +120,11 @@ public class Utils {
   }
 
   
+
+
+
+
+
   public static String getWrappedNativeClassName(final Class<?> type) {
     return "mozilla::java::" + getSimplifiedClassName(null, type, "::");
   }
@@ -130,11 +135,13 @@ public class Utils {
 
 
 
+
   public static String getNativeParameterType(Class<?> type, AnnotationInfo info) {
     return getNativeParameterType(type, info, false);
   }
 
   
+
 
 
 
@@ -195,11 +202,13 @@ public class Utils {
 
 
 
+
   public static String getNativeReturnType(Class<?> type, AnnotationInfo info) {
     return getNativeReturnType(type, info, false);
   }
 
   
+
 
 
 
@@ -379,6 +388,12 @@ public class Utils {
     return member.getName();
   }
 
+  
+
+
+
+
+
   public static String getUnqualifiedName(String name) {
     return name.substring(name.lastIndexOf(':') + 1);
   }
@@ -420,6 +435,7 @@ public class Utils {
 
 
 
+
   public static <T extends Enum<T>> T getEnumValue(Class<T> type, String name) {
     try {
       return Enum.valueOf(type, name.toUpperCase(Locale.ROOT));
@@ -453,6 +469,12 @@ public class Utils {
     }
   }
 
+  
+
+
+
+
+
   public static String getIfdefHeader(String ifdef) {
     if (ifdef.isEmpty()) {
       return "";
@@ -462,12 +484,24 @@ public class Utils {
     return "#ifdef " + ifdef + "\n";
   }
 
+  
+
+
+
+
+
   public static String getIfdefFooter(String ifdef) {
     if (ifdef.isEmpty()) {
       return "";
     }
     return "#endif // " + ifdef + "\n";
   }
+
+  
+
+
+
+
 
   public static boolean isJNIObject(Class<?> cls) {
     for (; cls != null; cls = cls.getSuperclass()) {

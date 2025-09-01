@@ -6,9 +6,13 @@ package org.mozilla.gecko.annotationProcessors;
 
 
 public class AnnotationInfo {
+  
   public enum ExceptionMode {
+    
     ABORT,
+    
     NSRESULT,
+    
     IGNORE;
 
     String nativeValue() {
@@ -16,9 +20,13 @@ public class AnnotationInfo {
     }
   }
 
+  
   public enum CallingThread {
+    
     GECKO,
+    
     UI,
+    
     ANY;
 
     String nativeValue() {
@@ -26,10 +34,15 @@ public class AnnotationInfo {
     }
   }
 
+  
   public enum DispatchTarget {
+    
     GECKO,
+    
     GECKO_PRIORITY,
+    
     PROXY,
+    
     CURRENT;
 
     String nativeValue() {
@@ -37,11 +50,29 @@ public class AnnotationInfo {
     }
   }
 
+  
   public final String wrapperName;
+
+  
   public final ExceptionMode exceptionMode;
+
+  
   public final CallingThread callingThread;
+
+  
   public final DispatchTarget dispatchTarget;
+
+  
   public final boolean noLiteral;
+
+  
+
+
+
+
+
+
+
 
   public AnnotationInfo(
       String wrapperName,
