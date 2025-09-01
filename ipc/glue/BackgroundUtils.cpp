@@ -884,8 +884,7 @@ nsresult LoadInfoArgsToLoadInfo(const LoadInfoArgs& loadInfoArgs,
       loadInfoArgs.integrityMetadata(),
       
       
-       false,
-      loadInfoArgs.requestMode(), loadInfoArgs.storagePermission(),
+       false, loadInfoArgs.storagePermission(),
       loadInfoArgs.parentIPAddressSpace(), loadInfoArgs.ipAddressSpace(),
       overriddenFingerprintingSettings, loadInfoArgs.isMetaRefresh(),
       loadingContext, loadInfoArgs.loadingEmbedderPolicy(),
