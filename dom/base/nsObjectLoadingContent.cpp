@@ -698,7 +698,6 @@ nsObjectLoadingContent::UpdateObjectParameters() {
 
   nsresult rv;
   nsAutoCString newMime;
-  nsAutoString typeAttr;
   nsCOMPtr<nsIURI> newURI;
   nsCOMPtr<nsIURI> newBaseURI;
   ObjectType newType;
@@ -726,7 +725,6 @@ nsObjectLoadingContent::UpdateObjectParameters() {
       el->HasNonEmptyAttr(nsGkAtoms::classid)) {
     
     
-    newMime.Truncate();
     stateInvalid = true;
   }
 
@@ -754,16 +752,6 @@ nsObjectLoadingContent::UpdateObjectParameters() {
   
   if (!newBaseURI) {
     newBaseURI = docBaseURI;
-  }
-
-  nsAutoString rawTypeAttr;
-  el->GetAttr(nsGkAtoms::type, rawTypeAttr);
-  if (!rawTypeAttr.IsEmpty()) {
-    typeAttr = rawTypeAttr;
-    nsAutoString params;
-    nsAutoString mime;
-    nsContentUtils::SplitMimeType(rawTypeAttr, mime, params);
-    CopyUTF16toUTF8(mime, newMime);
   }
 
   
@@ -797,6 +785,34 @@ nsObjectLoadingContent::UpdateObjectParameters() {
 
     if (NS_FAILED(rv)) {
       stateInvalid = true;
+    }
+  }
+
+  
+  
+  
+  nsAutoString rawTypeAttr;
+  el->GetAttr(nsGkAtoms::type, rawTypeAttr);
+  
+  
+  
+  if (!mRewrittenYoutubeEmbed && !rawTypeAttr.IsEmpty()) {
+    nsAutoString params;
+    nsAutoString mime;
+    nsContentUtils::SplitMimeType(rawTypeAttr, mime, params);
+
+    if (!StaticPrefs::dom_object_embed_type_hint_enabled()) {
+      NS_ConvertUTF16toUTF8 mimeUTF8(mime);
+      if (GetTypeOfContent(mimeUTF8) != ObjectType::Document) {
+        LOG(
+            ("OBJLC [%p]: MIME '%s' from type attribute is not supported, "
+             "forcing fallback.",
+             this, mimeUTF8.get()));
+        stateInvalid = true;
+      }
+      
+    } else {
+      CopyUTF16toUTF8(mime, newMime);
     }
   }
 
