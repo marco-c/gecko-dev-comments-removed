@@ -499,7 +499,7 @@ Memory.prototype = {
     }
     
     
-    return Cu.now();
+    return ChromeUtils.now();
   },
 };
 

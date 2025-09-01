@@ -54,14 +54,14 @@ add_task(async function zeroDelay() {
   
   
   
-  let startMs = Cu.now();
+  let startMs = ChromeUtils.now();
   enableMl(true);
   await TestUtils.waitForCondition(
     () => gInitializeStub.callCount > 0,
     "Waiting for initialize to be called"
   );
 
-  let elapsedMs = Cu.now() - startMs;
+  let elapsedMs = ChromeUtils.now() - startMs;
   Assert.less(
     elapsedMs,
     1000,

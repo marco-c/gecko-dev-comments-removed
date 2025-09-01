@@ -17,13 +17,13 @@ function measureIterations(metricName) {
 
 
     start() {
-      now = Cu.now();
+      now = ChromeUtils.now();
     },
     
 
 
     stop() {
-      accumulatedTime += Cu.now() - now;
+      accumulatedTime += ChromeUtils.now() - now;
       iterations++;
     },
     

@@ -698,7 +698,7 @@ DevTools.prototype = {
 
   logToolboxOpenTime(toolbox, startTime) {
     const toolId = toolbox.currentToolId || toolbox.defaultToolId;
-    const delay = Cu.now() - startTime;
+    const delay = ChromeUtils.now() - startTime;
     const panelName = this.makeToolIdHumanReadable(toolId);
 
     if (this._firstShowToolbox) {

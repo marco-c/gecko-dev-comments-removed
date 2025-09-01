@@ -387,7 +387,7 @@ async function ensureSecurityDelayReady(timeNewWindowOpened = 0) {
   );
 
   await TestUtils.waitForCondition(
-    () => Cu.now() - timeNewWindowOpened > secDelay,
+    () => ChromeUtils.now() - timeNewWindowOpened > secDelay,
     "Wait for performance.now() > SECURITY_DELAY",
     500,
     50

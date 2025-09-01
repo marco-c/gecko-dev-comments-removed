@@ -373,7 +373,7 @@ export var ProcessHangMonitor = {
       }
       let uptime = 0;
       if (info.notificationTime) {
-        uptime = Cu.now() - info.notificationTime;
+        uptime = ChromeUtils.now() - info.notificationTime;
       }
       uptime = "" + uptime;
       
@@ -383,7 +383,7 @@ export var ProcessHangMonitor = {
       
       
       let hangDuration =
-        report.hangDuration + Cu.now() - info.lastReportFromChild;
+        report.hangDuration + ChromeUtils.now() - info.lastReportFromChild;
       Glean.slowScriptWarning.shownContent.record({
         end_reason: endReason,
         hang_duration: hangDuration,
@@ -454,7 +454,7 @@ export var ProcessHangMonitor = {
     if (report) {
       let info = this._activeReports.get(report);
       if (info && !info.notificationTime) {
-        info.notificationTime = Cu.now();
+        info.notificationTime = ChromeUtils.now();
       }
       this.showNotification(win, report);
     } else {
@@ -639,7 +639,7 @@ export var ProcessHangMonitor = {
 
 
   reportHang(report) {
-    let now = Cu.now();
+    let now = ChromeUtils.now();
     if (this._shuttingDown) {
       this.stopHang(report, "shutdown-in-progress", {
         lastReportFromChild: now,
