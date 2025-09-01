@@ -222,7 +222,11 @@ class WebRenderCommandBuilder final {
 
   bool mComputingOpaqueRegion;
 
-  nsPoint mOpaqueRegionOffset;
+  
+  
+  
+  AutoTArray<std::pair<nsDisplayItem*, nsPoint>, 3> mOpaqueRegionWrappers;
+  struct AutoOpaqueRegionStateTracker;
 
  public:
   
