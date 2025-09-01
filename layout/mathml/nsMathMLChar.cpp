@@ -968,22 +968,9 @@ bool nsMathMLChar::StretchEnumContext::TryVariants(
       RefPtr<gfxFont> mathFont = aFontGroup->get()->GetFirstMathFont();
       
       
-      
       if (mathFont) {
         displayOperatorMinHeight = mathFont->MathTable()->Constant(
             gfxMathTable::DisplayOperatorMinHeight, oneDevPixel);
-        RefPtr<gfxTextRun> textRun =
-            aGlyphTable->MakeTextRun(mDrawTarget, oneDevPixel, *aFontGroup, ch);
-        nsBoundingMetrics bm = MeasureTextRun(mDrawTarget, textRun.get());
-        float largeopFactor = kLargeOpFactor;
-        if (nsMathMLOperators::IsIntegralOperator(mChar->mData)) {
-          
-          largeopFactor = kIntegralFactor;
-        }
-        nscoord minHeight = largeopFactor * (bm.ascent + bm.descent);
-        if (displayOperatorMinHeight < minHeight) {
-          displayOperatorMinHeight = minHeight;
-        }
       }
     }
   }
