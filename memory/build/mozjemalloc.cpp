@@ -822,6 +822,10 @@ struct arena_t {
 
     
     
+    bool ScanChunkForDirtyPage();
+
+    
+    
     
     std::pair<bool, arena_chunk_t*> UpdatePagesAndCounts()
         MOZ_REQUIRES(mArena.mLock);
@@ -2033,35 +2037,7 @@ bool arena_t::PurgeInfo::FindDirtyPages(bool aPurgedOnce) {
     return false;
   }
 
-  
-  
-  bool previous_page_is_allocated = true;
-  for (size_t i = gChunkHeaderNumPages; i < gChunkNumPages - 1; i++) {
-    size_t bits = mChunk->mPageMap[i].bits;
-
-    
-    
-    MOZ_ASSERT((bits & CHUNK_MAP_BUSY) == 0);
-
-    
-    
-    
-    
-    if ((bits & CHUNK_MAP_ALLOCATED) == 0 && (bits & ~gPageSizeMask) != 0 &&
-        previous_page_is_allocated) {
-      mFreeRunInd = i;
-      mFreeRunLen = bits >> gPageSize2Pow;
-    }
-
-    if (bits & CHUNK_MAP_DIRTY) {
-      MOZ_ASSERT((mChunk->mPageMap[i].bits &
-                  CHUNK_MAP_FRESH_MADVISED_OR_DECOMMITTED) == 0);
-      mDirtyInd = i;
-      break;
-    }
-
-    previous_page_is_allocated = bits & CHUNK_MAP_ALLOCATED;
-  }
+  MOZ_ALWAYS_TRUE(ScanChunkForDirtyPage());
   MOZ_ASSERT(mDirtyInd != 0);
   MOZ_ASSERT(mFreeRunInd >= gChunkHeaderNumPages);
   MOZ_ASSERT(mFreeRunInd <= mDirtyInd);
@@ -2101,6 +2077,61 @@ bool arena_t::PurgeInfo::FindDirtyPages(bool aPurgedOnce) {
     mArena.mRunsAvail.Remove(&mChunk->mPageMap[mFreeRunInd]);
   }
   return true;
+}
+
+
+bool arena_t::PurgeInfo::ScanChunkForDirtyPage() {
+  
+  
+  size_t run_pages;
+  for (size_t run_idx = gChunkHeaderNumPages; run_idx < gChunkNumPages;
+       run_idx += run_pages) {
+    size_t run_bits = mChunk->mPageMap[run_idx].bits;
+    
+    
+    MOZ_ASSERT((run_bits & CHUNK_MAP_BUSY) == 0);
+
+    
+    
+    if (run_bits & CHUNK_MAP_LARGE || !(run_bits & CHUNK_MAP_ALLOCATED)) {
+      size_t size = run_bits & ~gPageSizeMask;
+      run_pages = size >> gPageSize2Pow;
+    } else {
+      arena_run_t* run =
+          reinterpret_cast<arena_run_t*>(run_bits & ~gPageSizeMask);
+      MOZ_ASSERT(run == reinterpret_cast<arena_run_t*>(
+                            reinterpret_cast<uintptr_t>(mChunk) +
+                            (run_idx << gPageSize2Pow)));
+      run_pages = run->mBin->mRunSizePages;
+    }
+    MOZ_ASSERT(run_pages > 0);
+    MOZ_ASSERT(run_idx + run_pages <= gChunkNumPages);
+
+    if (run_bits & CHUNK_MAP_ALLOCATED) {
+      
+      continue;
+    }
+
+    mFreeRunInd = run_idx;
+    mFreeRunLen = run_pages;
+
+    
+    for (size_t page_idx = run_idx; page_idx < run_idx + run_pages;
+         page_idx++) {
+      size_t page_bits = mChunk->mPageMap[page_idx].bits;
+      
+      
+      MOZ_ASSERT((page_bits & CHUNK_MAP_BUSY) == 0);
+
+      if (page_bits & CHUNK_MAP_DIRTY) {
+        MOZ_ASSERT((page_bits & CHUNK_MAP_FRESH_MADVISED_OR_DECOMMITTED) == 0);
+        mDirtyInd = page_idx;
+        return true;
+      }
+    }
+  }
+
+  return false;
 }
 
 std::pair<bool, arena_chunk_t*> arena_t::PurgeInfo::UpdatePagesAndCounts() {
