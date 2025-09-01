@@ -5,21 +5,17 @@
 
 
 #include "ErrorList.h"
-#include "nsContentUtils.h"
 #include "nsError.h"
 #include "nsHtml5AttributeName.h"
 #include "nsHtml5HtmlAttributes.h"
 #include "nsHtml5String.h"
 #include "nsNetUtil.h"
-#include "js/loader/ScriptKind.h"
 #include "mozilla/dom/FetchPriority.h"
-#include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "mozilla/dom/ShadowRootBinding.h"
 #include "mozilla/glean/ParserHtmlMetrics.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/Likely.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/UniquePtr.h"
@@ -260,58 +256,60 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
 
           nsHtml5String type =
               aAttributes->getValue(nsHtml5AttributeName::ATTR_TYPE);
+          nsAutoString typeString;
+          getTypeString(type, typeString);
 
-          using ScriptKind = JS::loader::ScriptKind;
-          using ScriptLoader = mozilla::dom::ScriptLoader;
+          bool isModule = typeString.LowerCaseEqualsASCII("module");
+          bool importmap = typeString.LowerCaseEqualsASCII("importmap");
+          bool async = false;
+          bool defer = false;
+          bool nomodule =
+              aAttributes->contains(nsHtml5AttributeName::ATTR_NOMODULE);
 
           
-          auto kind = [&]() -> mozilla::Maybe<ScriptKind> {
-            if (type) {
-              nsAutoString typeString;
-              getTypeString(type, typeString);
-              if (typeString.IsEmpty()) {
-                return mozilla::Some(ScriptKind::eClassic);
-              }
-              if (typeString.LowerCaseEqualsASCII("module")) {
-                return mozilla::Some(ScriptKind::eModule);
-              }
-              if (typeString.LowerCaseEqualsASCII("importmap")) {
-                return mozilla::Some(ScriptKind::eImportMap);
-              }
-              if (nsContentUtils::IsJavascriptMIMEType(typeString)) {
-                return mozilla::Some(ScriptKind::eClassic);
-              }
-              return mozilla::Nothing();
-            }
-            nsHtml5String languageAttr =
-                aAttributes->getValue(nsHtml5AttributeName::ATTR_LANGUAGE);
-            if (!languageAttr) {
-              return mozilla::Some(ScriptKind::eClassic);
-            }
-            nsAutoString languageString;
-            languageAttr.ToString(languageString);
-            if (languageString.IsEmpty() ||
-                nsContentUtils::IsJavaScriptLanguage(languageString)) {
-              return mozilla::Some(ScriptKind::eClassic);
-            }
-            return mozilla::Nothing();
-          }();
-          if (kind == mozilla::Some(ScriptKind::eClassic)) {
-            if (aAttributes->contains(nsHtml5AttributeName::ATTR_NOMODULE)) {
-              kind = mozilla::Nothing();
-            } else if (nsHtml5String forAttr, eventAttr;
-                       (forAttr = aAttributes->getValue(
-                            nsHtml5AttributeName::ATTR_FOR)) &&
-                       (eventAttr = aAttributes->getValue(
-                            nsHtml5AttributeName::ATTR_EVENT))) {
-              nsString forString, eventString;
-              forAttr.ToString(forString);
-              eventAttr.ToString(eventString);
-              if (ScriptLoader::IsScriptEventHandler(forString, eventString)) {
-                kind = mozilla::Nothing();
-              }
-            }
-          } else if (kind == mozilla::Some(ScriptKind::eImportMap)) {
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+
+          if (importmap) {
             
             
             
@@ -325,70 +323,31 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
             
             mHasSeenImportMap = true;
           }
-
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          bool async = false;
-          bool defer = false;
-          if (nsHtml5String src;
-              ((kind == mozilla::Some(ScriptKind::eModule) &&
-                !mHasSeenImportMap) ||
-               kind == mozilla::Some(ScriptKind::eClassic)) &&
-              (src = aAttributes->getValue(nsHtml5AttributeName::ATTR_SRC))) {
-            nsHtml5String charset =
-                aAttributes->getValue(nsHtml5AttributeName::ATTR_CHARSET);
-            nsHtml5String crossOrigin =
-                aAttributes->getValue(nsHtml5AttributeName::ATTR_CROSSORIGIN);
-            nsHtml5String nonce =
-                aAttributes->getValue(nsHtml5AttributeName::ATTR_NONCE);
-            nsHtml5String fetchPriority =
-                aAttributes->getValue(nsHtml5AttributeName::ATTR_FETCHPRIORITY);
-            nsHtml5String integrity =
-                aAttributes->getValue(nsHtml5AttributeName::ATTR_INTEGRITY);
-            nsHtml5String referrerPolicy = aAttributes->getValue(
-                nsHtml5AttributeName::ATTR_REFERRERPOLICY);
+          nsHtml5String url =
+              aAttributes->getValue(nsHtml5AttributeName::ATTR_SRC);
+          if (url) {
             async = aAttributes->contains(nsHtml5AttributeName::ATTR_ASYNC);
             defer = aAttributes->contains(nsHtml5AttributeName::ATTR_DEFER);
-            mSpeculativeLoadQueue.AppendElement()->InitScript(
-                src, charset, type, crossOrigin,  nullptr, nonce,
-                fetchPriority, integrity, referrerPolicy,
-                mode == nsHtml5TreeBuilder::IN_HEAD, async, defer, false);
+            if ((isModule && !mHasSeenImportMap) ||
+                (!isModule && !importmap && !nomodule)) {
+              nsHtml5String charset =
+                  aAttributes->getValue(nsHtml5AttributeName::ATTR_CHARSET);
+              nsHtml5String crossOrigin =
+                  aAttributes->getValue(nsHtml5AttributeName::ATTR_CROSSORIGIN);
+              nsHtml5String nonce =
+                  aAttributes->getValue(nsHtml5AttributeName::ATTR_NONCE);
+              nsHtml5String fetchPriority = aAttributes->getValue(
+                  nsHtml5AttributeName::ATTR_FETCHPRIORITY);
+              nsHtml5String integrity =
+                  aAttributes->getValue(nsHtml5AttributeName::ATTR_INTEGRITY);
+              nsHtml5String referrerPolicy = aAttributes->getValue(
+                  nsHtml5AttributeName::ATTR_REFERRERPOLICY);
+              mSpeculativeLoadQueue.AppendElement()->InitScript(
+                  url, charset, type, crossOrigin,  nullptr,
+                  nonce, fetchPriority, integrity, referrerPolicy,
+                  mode == nsHtml5TreeBuilder::IN_HEAD, async, defer, false);
+            }
           }
-
           
           
           
@@ -396,7 +355,7 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
           
           
           mCurrentHtmlScriptCannotDocumentWriteOrBlock =
-              kind != mozilla::Some(ScriptKind::eClassic) || async || defer;
+              isModule || importmap || async || defer || nomodule;
         } else if (nsGkAtoms::link == aName) {
           nsHtml5String rel =
               aAttributes->getValue(nsHtml5AttributeName::ATTR_REL);

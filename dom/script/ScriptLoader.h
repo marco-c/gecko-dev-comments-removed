@@ -461,14 +461,6 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   static JS::loader::LoadedScript* GetActiveScript(JSContext* aCx);
 
-  
-
-
-
-
-
-  static bool IsScriptEventHandler(const nsAString&, const nsAString&);
-
   Document* GetDocument() const { return mDocument; }
 
   nsIURI* GetBaseURI() const override;
@@ -558,12 +550,6 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   static bool IsAboutPageLoadingChromeURI(ScriptLoadRequest* aRequest,
                                           Document* aDocument);
-
-  
-
-
-
-  static bool IsScriptEventHandler(ScriptKind kind, nsIContent* aScriptElement);
 
   
 
