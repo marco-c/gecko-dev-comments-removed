@@ -77,6 +77,7 @@ public class ContentBlocking {
   
   protected ContentBlocking() {}
 
+  
   @AnyThread
   public static class Settings extends RuntimeSettings {
     private final Map<String, SafeBrowsingProvider> mSafeBrowsingProviders = new HashMap<>();
@@ -86,6 +87,7 @@ public class ContentBlocking {
       ContentBlocking.GOOGLE_SAFE_BROWSING_PROVIDER
     };
 
+    
     @AnyThread
     public static class Builder extends RuntimeSettings.Builder<Settings> {
       @Override
@@ -1062,6 +1064,7 @@ public class ContentBlocking {
       return mCbhModePrivateBrowsing.get();
     }
 
+    
     public static final Parcelable.Creator<Settings> CREATOR =
         new Parcelable.Creator<Settings>() {
           @Override
@@ -1255,6 +1258,7 @@ public class ContentBlocking {
       return new Builder(provider);
     }
 
+    
     @AnyThread
     public static class Builder {
       final SafeBrowsingProvider mProvider;
@@ -1625,7 +1629,9 @@ public class ContentBlocking {
     return pref != null ? pref.split(",") : new String[] {};
   }
 
+  
   public static class AntiTracking {
+    
     public static final int NONE = 0;
 
     
@@ -1664,9 +1670,11 @@ public class ContentBlocking {
     
     public static final int STRICT = DEFAULT | CONTENT | CRYPTOMINING | FINGERPRINTING | EMAIL;
 
+    
     protected AntiTracking() {}
   }
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef(
       flag = true,
@@ -1686,7 +1694,9 @@ public class ContentBlocking {
       })
   public @interface CBAntiTracking {}
 
+  
   public static class SafeBrowsing {
+    
     public static final int NONE = 0;
 
     
@@ -1704,9 +1714,11 @@ public class ContentBlocking {
     
     public static final int DEFAULT = MALWARE | UNWANTED | HARMFUL | PHISHING;
 
+    
     protected SafeBrowsing() {}
   }
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef(
       flag = true,
@@ -1717,6 +1729,7 @@ public class ContentBlocking {
       })
   public @interface CBSafeBrowsing {}
 
+  
   
   public static class CookieBehavior {
     
@@ -1749,9 +1762,11 @@ public class ContentBlocking {
 
     public static final int ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS = 5;
 
+    
     protected CookieBehavior() {}
   }
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({
     CookieBehavior.ACCEPT_ALL,
@@ -1763,6 +1778,7 @@ public class ContentBlocking {
   })
   public @interface CBCookieBehavior {}
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({EtpLevel.NONE, EtpLevel.DEFAULT, EtpLevel.STRICT})
   public @interface CBEtpLevel {}
@@ -1781,6 +1797,7 @@ public class ContentBlocking {
     public static final int STRICT = 2;
   }
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({EtpCategory.STANDARD, EtpCategory.STRICT, EtpCategory.CUSTOM})
   public @interface CBEtpCategory {}
@@ -1789,10 +1806,10 @@ public class ContentBlocking {
   public static class EtpCategory {
     
     public static final int STANDARD = 0;
-    
+
     
     public static final int STRICT = 1;
-    
+
     
     public static final int CUSTOM = 2;
   }
@@ -1807,7 +1824,15 @@ public class ContentBlocking {
     private final @CBCookieBehavior int mCookieBehaviorCat;
     private final boolean mIsBlocking;
 
-    @SuppressWarnings("checkstyle:javadocmethod")
+    
+
+
+
+
+
+
+
+
     public BlockEvent(
         @NonNull final String uri,
         final @CBAntiTracking int atCat,
@@ -1877,8 +1902,12 @@ public class ContentBlocking {
           blocking);
     }
 
+    
+
+
+
+
     @UiThread
-    @SuppressWarnings("checkstyle:javadocmethod")
     public boolean isBlocking() {
       return mIsBlocking;
     }
@@ -2144,6 +2173,7 @@ public class ContentBlocking {
 
   
 
+  
   public static class CookieBannerMode {
     
     public static final int COOKIE_BANNER_MODE_DISABLED = 0;
@@ -2154,9 +2184,11 @@ public class ContentBlocking {
     
     public static final int COOKIE_BANNER_MODE_REJECT_OR_ACCEPT = 2;
 
+    
     protected CookieBannerMode() {}
   }
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({
     CookieBannerMode.COOKIE_BANNER_MODE_DISABLED,
@@ -2185,9 +2217,11 @@ public class ContentBlocking {
 
     public static final int BOUNCE_TRACKING_PROTECTION_MODE_ENABLED_DRY_RUN = 3;
 
+    
     protected BounceTrackingProtectionMode() {}
   }
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({
     BounceTrackingProtectionMode.BOUNCE_TRACKING_PROTECTION_MODE_DISABLED,

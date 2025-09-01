@@ -25,6 +25,7 @@ import org.mozilla.gecko.util.GeckoBundle;
 public class ContentBlockingController {
   private static final String LOGTAG = "GeckoContentBlocking";
 
+  
   public static class Event {
     
     
@@ -125,6 +126,7 @@ public class ContentBlockingController {
     
     public static final int BLOCKED_SUSPICIOUS_FINGERPRINTING = 0x00000004;
 
+    
     protected Event() {}
   }
 
@@ -133,6 +135,7 @@ public class ContentBlockingController {
   public static class LogEntry {
     
     public static class BlockingData {
+      
       @Retention(RetentionPolicy.SOURCE)
       @IntDef({
         Event.BLOCKED_TRACKING_CONTENT, Event.LOADED_LEVEL_1_TRACKING_CONTENT,
@@ -166,6 +169,7 @@ public class ContentBlockingController {
         count = bundle.getInt("count");
       }
 
+      
       protected BlockingData() {
         category = Event.BLOCKED_TRACKING_CONTENT;
         blocked = false;
@@ -189,6 +193,7 @@ public class ContentBlockingController {
       blockingData = Collections.unmodifiableList(dataArray);
     }
 
+    
     protected LogEntry() {
       origin = null;
       blockingData = null;
