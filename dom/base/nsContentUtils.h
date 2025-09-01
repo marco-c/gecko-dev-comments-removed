@@ -422,8 +422,6 @@ class nsContentUtils {
       bool aSetOuterWidth, bool aSetOuterHeight, int32_t* aOutputWidth,
       int32_t* aOutputHeight);
 
-  static bool IsInAutomation(JSContext* aCx, JSObject* aObj);
-
   
 
 

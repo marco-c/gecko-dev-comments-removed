@@ -295,9 +295,6 @@ class nsIGlobalObject : public nsISupports {
 
   RTPCallerType GetRTPCallerType() const;
 
-  bool IsRFPTargetActive(const nsAString& aTargetName,
-                         mozilla::ErrorResult& aRv);
-
   
 
 
