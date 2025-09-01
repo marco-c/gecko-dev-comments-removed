@@ -414,7 +414,6 @@ static_assert(sControlFunctions[Http2Session::FRAME_TYPE_PRIORITY_UPDATE] ==
 uint32_t Http2Session::RoomForMoreConcurrent() {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   if (mConcurrent > mMaxConcurrent) {
-    MOZ_ASSERT(false, "how does this happen?");
     return 0;
   }
   return mMaxConcurrent - mConcurrent;
@@ -2760,7 +2759,6 @@ nsresult Http2Session::ReadyToProcessDataFrame(
              newState == DISCARDING_DATA_FRAME_PADDING);
   ChangeDownstreamState(newState);
 
-  glean::spdy::chunk_recvd.Accumulate(mInputFrameDataSize >> 10);
   mLastDataReadEpoch = mLastReadEpoch;
 
   if (!mInputFrameID) {

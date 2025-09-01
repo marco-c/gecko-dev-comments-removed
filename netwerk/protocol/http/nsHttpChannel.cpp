@@ -2745,20 +2745,6 @@ nsresult nsHttpChannel::ProcessResponse(nsHttpConnectionInfo* aConnInfo) {
   if (Telemetry::CanRecordPrereleaseData()) {
     
     
-    nsAutoCString alt_service;
-    Unused << mResponseHead->GetHeader(nsHttp::Alternate_Service, alt_service);
-    uint32_t saw_quic = 0;
-    if (!alt_service.IsEmpty()) {
-      if (strstr(alt_service.get(), "h3-")) {
-        saw_quic = 1;
-      } else if (strstr(alt_service.get(), "quic")) {
-        saw_quic = 2;
-      }
-    }
-    glean::http::saw_quic_alt_protocol.AccumulateSingleSample(saw_quic);
-
-    
-    
     switch (httpStatus) {
       case 200:
         mozilla::glean::networking::http_response_status_code.Get("200_ok"_ns)
@@ -10967,17 +10953,6 @@ void nsHttpChannel::ReportRcwnStats(bool isFromNet) {
       gIOService->IncrementNetWonRequestNumber();
       glean::network::race_cache_bandwidth_race_network_win.Accumulate(
           mTransferSize);
-      if (mRaceDelay) {
-        glean::network::race_cache_with_network_usage
-            .EnumGet(glean::network::RaceCacheWithNetworkUsageLabel::
-                         eNetworkdelayedrace)
-            .Add();
-      } else {
-        glean::network::race_cache_with_network_usage
-            .EnumGet(
-                glean::network::RaceCacheWithNetworkUsageLabel::eNetworkrace)
-            .Add();
-      }
     } else {
       PROFILER_MARKER_TEXT(
           "RCWN", NETWORK, {},
@@ -10985,10 +10960,6 @@ void nsHttpChannel::ReportRcwnStats(bool isFromNet) {
               "Cache won or was replaced, valid = %d, channel %p, URI %s",
               LoadCachedContentIsValid(), this, mSpec.get()));
       glean::network::race_cache_bandwidth_not_race.Accumulate(mTransferSize);
-      glean::network::race_cache_with_network_usage
-          .EnumGet(
-              glean::network::RaceCacheWithNetworkUsageLabel::eNetworknorace)
-          .Add();
     }
   } else {
     if (mRaceCacheWithNetwork || mRaceDelay) {
@@ -10999,21 +10970,8 @@ void nsHttpChannel::ReportRcwnStats(bool isFromNet) {
       gIOService->IncrementCacheWonRequestNumber();
       glean::network::race_cache_bandwidth_race_cache_win.Accumulate(
           mTransferSize);
-      if (mRaceDelay) {
-        glean::network::race_cache_with_network_usage
-            .EnumGet(glean::network::RaceCacheWithNetworkUsageLabel::
-                         eCachedelayedrace)
-            .Add();
-      } else {
-        glean::network::race_cache_with_network_usage
-            .EnumGet(glean::network::RaceCacheWithNetworkUsageLabel::eCacherace)
-            .Add();
-      }
     } else {
       glean::network::race_cache_bandwidth_not_race.Accumulate(mTransferSize);
-      glean::network::race_cache_with_network_usage
-          .EnumGet(glean::network::RaceCacheWithNetworkUsageLabel::eCachenorace)
-          .Add();
     }
   }
 
