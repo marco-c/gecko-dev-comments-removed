@@ -70,6 +70,9 @@ class MediaResource : public DecoderDoctorLifeLogger<MediaResource> {
   
   
   
+  
+  
+  
   virtual nsresult ReadAt(int64_t aOffset, char* aBuffer, uint32_t aCount,
                           uint32_t* aBytes) = 0;
   
