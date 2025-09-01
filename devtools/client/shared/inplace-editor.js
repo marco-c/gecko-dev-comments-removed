@@ -241,25 +241,6 @@ function editableItem(options, callback) {
 
   
   
-  
-  
-  element.addEventListener("mousedown", function (evt) {
-    if (!isValidTargetForEditableItemCallback(evt.target)) {
-      return;
-    }
-
-    const cleanup = function () {
-      element.style.removeProperty("outline-style");
-      element.removeEventListener("mouseup", cleanup);
-      element.removeEventListener("mouseout", cleanup);
-    };
-    element.style.setProperty("outline-style", "none");
-    element.addEventListener("mouseup", cleanup);
-    element.addEventListener("mouseout", cleanup);
-  });
-
-  
-  
   element._editable = true;
   
   element.setAttribute("editable", "");
