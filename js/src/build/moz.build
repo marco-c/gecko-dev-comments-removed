@@ -109,13 +109,16 @@ DIST_INSTALL = True
 
 
 
-GeneratedFile(
-    "spidermonkey_checks",
-    script="/config/run_spidermonkey_checks.py",
-    inputs=[
-        "!%sjs_static.%s" % (CONFIG["LIB_PREFIX"], CONFIG["LIB_SUFFIX"]),
-        "/config/check_spidermonkey_style.py",
-        "/config/check_macroassembler_style.py",
-        "/config/check_js_opcode.py",
-    ],
-)
+if CONFIG["ENABLE_TESTS"] or CONFIG["JS_STANDALONE"]:
+    
+    
+    GeneratedFile(
+        "spidermonkey_checks",
+        script="/config/run_spidermonkey_checks.py",
+        inputs=[
+            "!%sjs_static.%s" % (CONFIG["LIB_PREFIX"], CONFIG["LIB_SUFFIX"]),
+            "/config/check_spidermonkey_style.py",
+            "/config/check_macroassembler_style.py",
+            "/config/check_js_opcode.py",
+        ],
+    )
