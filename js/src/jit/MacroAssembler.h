@@ -359,6 +359,8 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   
   
+  
+  
   CompileRealm* maybeRealm_ = nullptr;
 
   
@@ -383,9 +385,10 @@ class MacroAssembler : public MacroAssemblerSpecific {
   size_t instructionsSize() const { return size(); }
 
   CompileRealm* realm() const {
-    MOZ_ASSERT(maybeRealm_);
-    return maybeRealm_;
+    MOZ_ASSERT(maybeRealm());
+    return maybeRealm();
   }
+  CompileRealm* maybeRealm() const { return maybeRealm_; }
   CompileRuntime* runtime() const {
     MOZ_ASSERT(maybeRuntime_);
     return maybeRuntime_;

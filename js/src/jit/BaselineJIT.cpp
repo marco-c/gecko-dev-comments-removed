@@ -400,6 +400,11 @@ MethodStatus jit::BaselineCompile(JSContext* cx, JSScript* script,
 
   TempAllocator temp(&cx->tempLifoAlloc());
 
+  mozilla::Maybe<JSAutoNullableRealm> ar;
+  if (JS::Prefs::experimental_self_hosted_cache() && script->selfHosted()) {
+    
+    ar.emplace(cx, nullptr);
+  }
   StackMacroAssembler masm(cx, temp);
 
   BaselineCompiler compiler(temp, CompileRuntime::get(cx->runtime()), masm,
