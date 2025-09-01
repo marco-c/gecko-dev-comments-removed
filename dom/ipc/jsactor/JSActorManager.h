@@ -44,8 +44,8 @@ class JSActorManager : public nsISupports {
 
 
   void ReceiveRawMessage(const JSActorMessageMeta& aMetadata,
-                         UniquePtr<ipc::StructuredCloneData> aData,
-                         UniquePtr<ipc::StructuredCloneData> aStack);
+                         Maybe<ipc::StructuredCloneData>&& aData,
+                         Maybe<ipc::StructuredCloneData>&& aStack);
 
  protected:
   

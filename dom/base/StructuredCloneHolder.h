@@ -212,29 +212,10 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
             const JS::CloneDataPolicy& aCloneDataPolicy, ErrorResult& aRv);
 
   
-  
-  
-#define CLONED_DATA_MEMBERS  \
-  STMT(mBlobImplArray);      \
-  STMT(mWasmModuleArray);    \
-  STMT(mInputStreamArray);   \
-  STMT(mClonedSurfaces);     \
-  STMT(mVideoFrames);        \
-  STMT(mAudioData);          \
-  STMT(mEncodedVideoChunks); \
-  STMT(mEncodedAudioChunks); \
-  STMT(mPortIdentifiers);
-
-  
   bool HasClonedDOMObjects() const {
-#define STMT(_member)         \
-  if (!(_member).IsEmpty()) { \
-    return true;              \
-  }
-
-    CLONED_DATA_MEMBERS
-#undef STMT
-    return false;
+    return !mBlobImplArray.IsEmpty() || !mWasmModuleArray.IsEmpty() ||
+           !mClonedSurfaces.IsEmpty() || !mInputStreamArray.IsEmpty() ||
+           !mVideoFrames.IsEmpty() || !mEncodedVideoChunks.IsEmpty();
   }
 
   nsTArray<RefPtr<BlobImpl>>& BlobImpls() {

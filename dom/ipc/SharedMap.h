@@ -153,7 +153,7 @@ class SharedMap : public DOMEventTargetHelper {
 
 
 
-    void TakeData(UniquePtr<StructuredCloneData> aHolder);
+    void TakeData(StructuredCloneData&&);
 
     
 
@@ -202,8 +202,8 @@ class SharedMap : public DOMEventTargetHelper {
     uint16_t BlobCount() const { return mBlobCount; }
 
     Span<const RefPtr<BlobImpl>> Blobs() {
-      if (mData.is<UniquePtr<StructuredCloneData>>()) {
-        return mData.as<UniquePtr<StructuredCloneData>>()->BlobImpls();
+      if (mData.is<StructuredCloneData>()) {
+        return mData.as<StructuredCloneData>().BlobImpls();
       }
       return {&mMap.mBlobImpls[mBlobOffset], BlobCount()};
     }
@@ -213,7 +213,7 @@ class SharedMap : public DOMEventTargetHelper {
     
     
     const StructuredCloneData& Holder() const {
-      return *mData.as<UniquePtr<StructuredCloneData>>();
+      return mData.as<StructuredCloneData>();
     }
 
     SharedMap& mMap;
@@ -234,7 +234,7 @@ class SharedMap : public DOMEventTargetHelper {
 
 
 
-    Variant<uint32_t, UniquePtr<StructuredCloneData>> mData;
+    Variant<uint32_t, StructuredCloneData> mData;
 
     
     uint32_t mSize = 0;
