@@ -38,144 +38,24 @@ const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
 
 
-function BottomHost(hostTab) {
-  this.hostTab = hostTab;
-
-  EventEmitter.decorate(this);
-}
-
-BottomHost.prototype = {
-  type: "bottom",
-
-  heightPref: "devtools.toolbox.footer.height",
-
-  
 
 
-  async create() {
-    await gDevToolsBrowser.loadBrowserStyleSheet(this.hostTab.ownerGlobal);
-
-    const gBrowser = this.hostTab.ownerDocument.defaultView.gBrowser;
-    const ownerDocument = gBrowser.ownerDocument;
-    this._browserContainer = gBrowser.getBrowserContainer(
-      this.hostTab.linkedBrowser
-    );
-
-    this._splitter = ownerDocument.createXULElement("splitter");
-    this._splitter.setAttribute("class", "devtools-horizontal-splitter");
-    this._splitter.setAttribute("resizebefore", "none");
-    this._splitter.setAttribute("resizeafter", "sibling");
-
-    this.frame = createDevToolsFrame(
-      ownerDocument,
-      "devtools-toolbox-bottom-iframe"
-    );
-    this.frame.style.height =
-      Math.min(
-        Services.prefs.getIntPref(this.heightPref),
-        this._browserContainer.clientHeight - MIN_PAGE_SIZE
-      ) + "px";
-
-    this._browserContainer.appendChild(this._splitter);
-    this._browserContainer.appendChild(this.frame);
-
-    focusTab(this.hostTab);
-    return this.frame;
-  },
-
-  
-
-
-  raise() {
-    focusTab(this.hostTab);
-  },
-
+class BaseInBrowserHost {
   
 
 
 
-  setTitle() {},
-
-  
 
 
-  destroy() {
-    if (!this._destroyed) {
-      this._destroyed = true;
-
-      const height = parseInt(this.frame.style.height, 10);
-      if (!isNaN(height)) {
-        Services.prefs.setIntPref(this.heightPref, height);
-      }
-
-      this._browserContainer.removeChild(this._splitter);
-      this._browserContainer.removeChild(this.frame);
-      this.frame = null;
-      this._browserContainer = null;
-      this._splitter = null;
-    }
-
-    return Promise.resolve(null);
-  },
-};
-
-
-
-
-class SidebarHost {
   constructor(hostTab, type) {
     this.hostTab = hostTab;
     this.type = type;
-    this.widthPref = "devtools.toolbox.sidebar.width";
+    this.frame = null;
 
-    EventEmitter.decorate(this);
-  }
-
-  
-
-
-  async create() {
-    await gDevToolsBrowser.loadBrowserStyleSheet(this.hostTab.ownerGlobal);
-    const gBrowser = this.hostTab.ownerDocument.defaultView.gBrowser;
-    const ownerDocument = gBrowser.ownerDocument;
-    this._browserContainer = gBrowser.getBrowserContainer(
+    this._gBrowser = this.hostTab.ownerGlobal.gBrowser;
+    this._browserContainer = this._gBrowser.getBrowserContainer(
       this.hostTab.linkedBrowser
     );
-    this._browserPanel = gBrowser.getPanel(this.hostTab.linkedBrowser);
-
-    this._splitter = ownerDocument.createXULElement("splitter");
-    this._splitter.setAttribute("class", "devtools-side-splitter");
-
-    this.frame = createDevToolsFrame(
-      ownerDocument,
-      "devtools-toolbox-side-iframe"
-    );
-    this.frame.style.width =
-      Math.min(
-        Services.prefs.getIntPref(this.widthPref),
-        this._browserPanel.clientWidth - MIN_PAGE_SIZE
-      ) + "px";
-
-    
-    const topWindow = this.hostTab.ownerDocument.defaultView.top;
-    const topDoc = topWindow.document.documentElement;
-    const isLTR = topWindow.getComputedStyle(topDoc).direction === "ltr";
-
-    this._splitter.setAttribute("resizebefore", "none");
-    this._splitter.setAttribute("resizeafter", "none");
-
-    if ((isLTR && this.type == "right") || (!isLTR && this.type == "left")) {
-      this._splitter.setAttribute("resizeafter", "sibling");
-      this._browserPanel.appendChild(this._splitter);
-      this._browserPanel.appendChild(this.frame);
-    } else {
-      this._splitter.setAttribute("resizebefore", "sibling");
-      this._browserPanel.insertBefore(this.frame, this._browserContainer);
-      this._browserPanel.insertBefore(this._splitter, this._browserContainer);
-    }
-
-    focusTab(this.hostTab);
-    return this.frame;
   }
 
   
@@ -191,20 +71,156 @@ class SidebarHost {
 
   setTitle() {}
 
+  destroy() {
+    this._gBrowser = null;
+    this._browserContainer = null;
+  }
+}
+
+
+
+
+class BottomHost extends BaseInBrowserHost {
+  constructor(hostTab) {
+    super(hostTab, "bottom");
+
+    this.heightPref = "devtools.toolbox.footer.height";
+  }
+
+  #splitter;
+
+  #destroyed;
+
+  
+
+
+  async create() {
+    await gDevToolsBrowser.loadBrowserStyleSheet(this.hostTab.ownerGlobal);
+
+    const { ownerDocument } = this.hostTab;
+    this.#splitter = ownerDocument.createXULElement("splitter");
+    this.#splitter.setAttribute("class", "devtools-horizontal-splitter");
+    this.#splitter.setAttribute("resizebefore", "none");
+    this.#splitter.setAttribute("resizeafter", "sibling");
+
+    this.frame = createDevToolsFrame(
+      ownerDocument,
+      "devtools-toolbox-bottom-iframe"
+    );
+    this.frame.style.height =
+      Math.min(
+        Services.prefs.getIntPref(this.heightPref),
+        this._browserContainer.clientHeight - MIN_PAGE_SIZE
+      ) + "px";
+
+    this._browserContainer.appendChild(this.#splitter);
+    this._browserContainer.appendChild(this.frame);
+
+    focusTab(this.hostTab);
+    return this.frame;
+  }
+
   
 
 
   destroy() {
-    if (!this._destroyed) {
-      this._destroyed = true;
+    if (!this.#destroyed) {
+      this.#destroyed = true;
+
+      const height = parseInt(this.frame.style.height, 10);
+      if (!isNaN(height)) {
+        Services.prefs.setIntPref(this.heightPref, height);
+      }
+
+      this._browserContainer.removeChild(this.#splitter);
+      this._browserContainer.removeChild(this.frame);
+      this.frame = null;
+      this.#splitter = null;
+
+      super.destroy();
+    }
+
+    return Promise.resolve(null);
+  }
+}
+
+
+
+
+class SidebarHost extends BaseInBrowserHost {
+  constructor(hostTab, type) {
+    super(hostTab, type);
+
+    this.widthPref = "devtools.toolbox.sidebar.width";
+  }
+
+  #splitter;
+  #browserPanel;
+  #destroyed;
+
+  
+
+
+  async create() {
+    await gDevToolsBrowser.loadBrowserStyleSheet(this.hostTab.ownerGlobal);
+
+    this.#browserPanel = this._gBrowser.getPanel(this.hostTab.linkedBrowser);
+    const { ownerDocument } = this.hostTab;
+
+    this.#splitter = ownerDocument.createXULElement("splitter");
+    this.#splitter.setAttribute("class", "devtools-side-splitter");
+
+    this.frame = createDevToolsFrame(
+      ownerDocument,
+      "devtools-toolbox-side-iframe"
+    );
+    this.frame.style.width =
+      Math.min(
+        Services.prefs.getIntPref(this.widthPref),
+        this.#browserPanel.clientWidth - MIN_PAGE_SIZE
+      ) + "px";
+
+    
+    const topWindow = this.hostTab.ownerGlobal;
+    const topDoc = topWindow.document.documentElement;
+    const isLTR = topWindow.getComputedStyle(topDoc).direction === "ltr";
+
+    this.#splitter.setAttribute("resizebefore", "none");
+    this.#splitter.setAttribute("resizeafter", "none");
+
+    if ((isLTR && this.type == "right") || (!isLTR && this.type == "left")) {
+      this.#splitter.setAttribute("resizeafter", "sibling");
+      this.#browserPanel.appendChild(this.#splitter);
+      this.#browserPanel.appendChild(this.frame);
+    } else {
+      this.#splitter.setAttribute("resizebefore", "sibling");
+      this.#browserPanel.insertBefore(this.frame, this._browserContainer);
+      this.#browserPanel.insertBefore(this.#splitter, this._browserContainer);
+    }
+
+    focusTab(this.hostTab);
+    return this.frame;
+  }
+
+  
+
+
+  destroy() {
+    if (!this.#destroyed) {
+      this.#destroyed = true;
 
       const width = parseInt(this.frame.style.width, 10);
       if (!isNaN(width)) {
         Services.prefs.setIntPref(this.widthPref, width);
       }
 
-      this._browserPanel.removeChild(this._splitter);
-      this._browserPanel.removeChild(this.frame);
+      this.#browserPanel.removeChild(this.#splitter);
+      this.#browserPanel.removeChild(this.frame);
+      this.#browserPanel = null;
+      this.#splitter = null;
+      this.frame = null;
+
+      super.destroy();
     }
 
     return Promise.resolve(null);
@@ -429,7 +445,7 @@ PageHost.prototype = {
 
 
 function focusTab(tab) {
-  const browserWindow = tab.ownerDocument.defaultView;
+  const browserWindow = tab.ownerGlobal;
   browserWindow.focus();
   browserWindow.gBrowser.selectedTab = tab;
 }
@@ -440,6 +456,8 @@ function focusTab(tab) {
 function createDevToolsFrame(doc, className) {
   const frame = doc.createXULElement("browser");
   frame.setAttribute("type", "content");
+  
+  frame.setAttribute("manualactiveness", "true");
   frame.style.flex = "1 auto"; 
   frame.className = className;
 
