@@ -316,7 +316,8 @@ class SMILAnimationFunction {
 
 
 
-  double ScaleSimpleProgress(double aProgress, SMILCalcMode aCalcMode);
+  double ScaleSimpleProgress(double aProgress, SMILCalcMode aCalcMode,
+                             double aValueMultiplier);
   
 
 
