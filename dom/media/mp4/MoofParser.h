@@ -324,7 +324,9 @@ class MoofParser : public DecoderDoctorLifeLogger<MoofParser> {
   
   
   
-  bool BlockingReadNextMoof();
+  
+  
+  nsresult BlockingReadNextMoof();
 
   already_AddRefed<mozilla::MediaByteBuffer> Metadata();
   MediaByteRange FirstCompleteMediaSegment();
