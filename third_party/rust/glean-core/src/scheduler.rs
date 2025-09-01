@@ -209,53 +209,59 @@ fn start_scheduler(
     when: When,
 ) -> JoinHandle<()> {
     let pair = Arc::clone(&TASK_CONDVAR);
-    std::thread::Builder::new()
-        .name("glean.mps".into())
-        .spawn(move || {
-            let (cancelled_lock, condvar) = &*pair;
-            let mut when = when;
-            let mut now = now;
-            loop {
-                let dur = when.until(now);
-                log::info!("Scheduling for {} after {:?}, reason {:?}", now, dur, when);
-                let mut timed_out = false;
-                {
-                    match condvar.wait_timeout_while(cancelled_lock.lock().unwrap(), dur, |cancelled| !*cancelled) {
-                        Err(err) => {
-                            log::warn!("Condvar wait failure. MPS exiting. {}", err);
+    crate::thread::spawn("glean.mps", move || {
+        let (cancelled_lock, condvar) = &*pair;
+        let mut when = when;
+        let mut now = now;
+        loop {
+            let dur = when.until(now);
+            log::info!("Scheduling for {} after {:?}, reason {:?}", now, dur, when);
+            let mut timed_out = false;
+            {
+                match condvar.wait_timeout_while(cancelled_lock.lock().unwrap(), dur, |cancelled| {
+                    !*cancelled
+                }) {
+                    Err(err) => {
+                        log::warn!("Condvar wait failure. MPS exiting. {}", err);
+                        break;
+                    }
+                    Ok((cancelled, wait_result)) => {
+                        if *cancelled {
+                            log::info!("Metrics Ping Scheduler cancelled. Exiting.");
                             break;
-                        }
-                        Ok((cancelled, wait_result)) => {
-                            if *cancelled {
-                                log::info!("Metrics Ping Scheduler cancelled. Exiting.");
-                                break;
-                            } else if wait_result.timed_out() {
-                                
-                                timed_out = true;
-                            } else {
-                                
-                                
-                                
-                                
-                                log::warn!("Spurious wakeup of the MPS condvar should be impossible.");
-                            }
+                        } else if wait_result.timed_out() {
+                            
+                            timed_out = true;
+                        } else {
+                            
+                            
+                            
+                            
+                            log::warn!("Spurious wakeup of the MPS condvar should be impossible.");
                         }
                     }
                 }
-                
-                
-                
-                
-                
-                if timed_out {
-                    log::info!("Time to submit our metrics ping, {:?}", when);
-                    let glean = crate::core::global_glean().expect("Global Glean not present when trying to send scheduled 'metrics' ping?!").lock().unwrap();
-                    submitter.submit_metrics_ping(&glean, Some(when.reason()), now);
-                    when = When::Reschedule;
-                }
-                now = local_now_with_offset();
             }
-        }).expect("Unable to spawn Metrics Ping Scheduler thread.")
+            
+            
+            
+            
+            
+            if timed_out {
+                log::info!("Time to submit our metrics ping, {:?}", when);
+                let glean = crate::core::global_glean()
+                    .expect(
+                        "Global Glean not present when trying to send scheduled 'metrics' ping?!",
+                    )
+                    .lock()
+                    .unwrap();
+                submitter.submit_metrics_ping(&glean, Some(when.reason()), now);
+                when = When::Reschedule;
+            }
+            now = local_now_with_offset();
+        }
+    })
+    .expect("Unable to spawn Metrics Ping Scheduler thread.")
 }
 
 fn get_last_sent_time_metric() -> DatetimeMetric {

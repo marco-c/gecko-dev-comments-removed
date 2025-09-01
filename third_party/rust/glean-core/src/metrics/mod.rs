@@ -270,6 +270,25 @@ pub trait MetricIdentifier<'a> {
 }
 
 
+pub trait TestGetValue<T> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn test_get_value(&self, ping_name: Option<String>) -> Option<T>;
+}
+
+
 
 impl<'a, T> MetricIdentifier<'a> for T
 where

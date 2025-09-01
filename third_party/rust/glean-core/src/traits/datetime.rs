@@ -4,13 +4,13 @@
 
 #![allow(clippy::too_many_arguments)]
 
-use crate::ErrorType;
+use crate::{ErrorType, TestGetValue};
 
 
 
 
 
-pub trait Datetime {
+pub trait Datetime: TestGetValue<crate::metrics::Datetime> {
     
     
     
@@ -19,23 +19,6 @@ pub trait Datetime {
     
     
     fn set(&self, value: Option<crate::metrics::Datetime>);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn test_get_value<'a, S: Into<Option<&'a str>>>(
-        &self,
-        ping_name: S,
-    ) -> Option<crate::metrics::Datetime>;
 
     
     
