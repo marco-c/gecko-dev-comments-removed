@@ -269,7 +269,7 @@ struct nsTArrayInfallibleAllocator : nsTArrayInfallibleAllocatorBase {
 struct nsTArrayHeader {
   uint32_t mLength;
   uint32_t mCapacity : 31;
-  uint32_t mIsAutoArray : 1;
+  uint32_t mIsAutoBuffer : 1;
 };
 
 extern "C" {
@@ -566,48 +566,14 @@ class nsTArray_base {
                 size_type aElemSize, size_t aElemAlign);
 
   
-  class IsAutoArrayRestorer {
-   public:
-    IsAutoArrayRestorer(nsTArray_base<Alloc, RelocationStrategy>& aArray,
-                        size_t aElemAlign);
-    ~IsAutoArrayRestorer();
-
-   private:
-    nsTArray_base<Alloc, RelocationStrategy>& mArray;
-    size_t mElemAlign;
-    bool mIsAuto;
-  };
-
+  
   
   
   template <typename ActualAlloc>
-  bool EnsureNotUsingAutoArrayBuffer(size_type aElemSize);
+  Header* TakeHeaderForMove(size_type aElemSize);
 
   
-  bool IsAutoArray() const { return mHdr->mIsAutoArray; }
-
-  
-  Header* GetAutoArrayBuffer(size_t aElemAlign) {
-    MOZ_ASSERT(IsAutoArray(), "Should be an auto array to call this");
-    return GetAutoArrayBufferUnsafe(aElemAlign);
-  }
-  const Header* GetAutoArrayBuffer(size_t aElemAlign) const {
-    MOZ_ASSERT(IsAutoArray(), "Should be an auto array to call this");
-    return GetAutoArrayBufferUnsafe(aElemAlign);
-  }
-
-  
-  
-  Header* GetAutoArrayBufferUnsafe(size_t aElemAlign) {
-    return const_cast<Header*>(
-        static_cast<const nsTArray_base<Alloc, RelocationStrategy>*>(this)
-            ->GetAutoArrayBufferUnsafe(aElemAlign));
-  }
-  const Header* GetAutoArrayBufferUnsafe(size_t aElemAlign) const;
-
-  
-  
-  bool UsesAutoArrayBuffer() const;
+  bool UsesAutoArrayBuffer() const { return mHdr->mIsAutoBuffer; }
 
   
   
@@ -1067,7 +1033,7 @@ class nsTArray_Impl
   template <typename Allocator>
   explicit nsTArray_Impl(nsTArray_Impl<E, Allocator>&& aOther) noexcept {
     
-    MOZ_ASSERT(!this->IsAutoArray());
+    MOZ_ASSERT(!this->UsesAutoArrayBuffer());
 
     
     this->MoveConstructNonAutoArray(aOther, sizeof(value_type),
@@ -3093,6 +3059,32 @@ class MOZ_NON_MEMMOVABLE MOZ_GSL_OWNER AutoTArray : public nsTArray<E> {
     return result;
   }
 
+  
+  
+  void Clear() {
+    base_type::Clear();
+    Init();
+  }
+
+  void Compact() {
+    if (base_type::HasEmptyHeader() || base_type::UsesAutoArrayBuffer()) {
+      return;
+    }
+    auto length = base_type::Length();
+    if (N >= length) {
+      
+      auto* header = reinterpret_cast<Header*>(&mAutoBuf);
+      base_type::relocation_type::RelocateNonOverlappingRegionWithHeader(
+        header, this->mHdr, length, sizeof(value_type));
+      header->mCapacity = N;
+      header->mIsAutoBuffer = true;
+      nsTArrayFallibleAllocator::Free(this->mHdr);
+      this->mHdr = header;
+      return;
+    }
+    base_type::Compact();
+  }
+
  private:
   
   
@@ -3108,11 +3100,7 @@ class MOZ_NON_MEMMOVABLE MOZ_GSL_OWNER AutoTArray : public nsTArray<E> {
     *phdr = reinterpret_cast<Header*>(&mAutoBuf);
     (*phdr)->mLength = 0;
     (*phdr)->mCapacity = N;
-    (*phdr)->mIsAutoArray = 1;
-
-    MOZ_ASSERT(base_type::GetAutoArrayBuffer(alignof(value_type)) ==
-                   reinterpret_cast<Header*>(&mAutoBuf),
-               "GetAutoArrayBuffer needs to be fixed");
+    (*phdr)->mIsAutoBuffer = true;
   }
 
   
