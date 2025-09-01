@@ -19,12 +19,6 @@
 
 namespace webrtc {
 
-
-int GetCPUInfoNoASM(CPUFeature feature) {
-  (void)feature;
-  return 0;
-}
-
 #if defined(WEBRTC_ARCH_X86_FAMILY)
 
 #if defined(WEBRTC_ENABLE_AVX2)
