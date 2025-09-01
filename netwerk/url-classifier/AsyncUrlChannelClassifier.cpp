@@ -5,6 +5,7 @@
 
 
 #include "Classifier.h"
+#include "HttpBaseChannel.h"
 #include "mozilla/Components.h"
 #include "mozilla/ErrorNames.h"
 #include "mozilla/net/AsyncUrlChannelClassifier.h"
@@ -911,19 +912,43 @@ nsresult AsyncUrlChannelClassifier::CheckChannel(
     return NS_ERROR_FAILURE;
   }
 
+  
+  
+  EventQueuePriority eventPriority = EventQueuePriority::Normal;
+  if (nsCOMPtr<HttpBaseChannel> baseChannel = do_QueryInterface(aChannel)) {
+    uint32_t classOfServiceFlags = 0;
+    baseChannel->GetClassFlags(&classOfServiceFlags);
+    if (classOfServiceFlags &
+        (nsIClassOfService::Leader | nsIClassOfService::UrgentStart |
+         nsIClassOfService::Unblocked)) {
+      eventPriority = EventQueuePriority::MediumHigh;
+    }
+  }
+  if (nsCOMPtr<nsISupportsPriority> supportsPriority =
+          do_QueryInterface(aChannel)) {
+    int32_t priority = nsISupportsPriority::PRIORITY_NORMAL;
+    supportsPriority->GetPriority(&priority);
+    
+    if (priority <= nsISupportsPriority::PRIORITY_HIGH) {
+      eventPriority = EventQueuePriority::MediumHigh;
+    }
+  }
+
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
       "AsyncUrlChannelClassifier::CheckChannel",
-      [task, workerClassifier]() -> void {
+      [task, workerClassifier, eventPriority]() -> void {
         MOZ_ASSERT(!NS_IsMainThread());
         task->DoLookup(workerClassifier);
 
-        nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-            "AsyncUrlChannelClassifier::CheckChannel - return",
-            [task]() -> void { task->CompleteClassification(); });
-
-        NS_DispatchToMainThread(r);
+        NS_DispatchToMainThreadQueue(
+            NS_NewRunnableFunction(
+                "AsyncUrlChannelClassifier::CheckChannel - return",
+                [task]() -> void { task->CompleteClassification(); }),
+            eventPriority);
       });
 
+  
+  
   return nsUrlClassifierDBService::BackgroundThread()->Dispatch(
       r, NS_DISPATCH_NORMAL);
 }
