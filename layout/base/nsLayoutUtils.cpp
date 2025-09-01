@@ -5270,6 +5270,10 @@ gfxFloat nsLayoutUtils::GetMaybeSnappedBaselineY(nsIFrame* aFrame,
     return baseline;
   }
 
+  if (aContext->CurrentMatrix().IsSingular()) {
+    return baseline;
+  }
+
   gfxFloat appUnitsPerDevUnit = aFrame->PresContext()->AppUnitsPerDevPixel();
   gfxRect putativeRect(0, baseline / appUnitsPerDevUnit, 1, 1);
   if (!aContext->UserToDevicePixelSnapped(
@@ -5285,6 +5289,10 @@ gfxFloat nsLayoutUtils::GetMaybeSnappedBaselineX(nsIFrame* aFrame,
   gfxFloat baseline = gfxFloat(aX) + aAscent;
   
   if (StaticPrefs::layout_disable_pixel_alignment()) {
+    return baseline;
+  }
+
+  if (aContext->CurrentMatrix().IsSingular()) {
     return baseline;
   }
 
