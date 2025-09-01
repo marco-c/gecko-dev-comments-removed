@@ -28,6 +28,8 @@
 #define HIGHWAY_HWY_CONTRIB_SORT_VQSORT_H_
 
 
+#include <stddef.h>
+
 #include "hwy/base.h"
 #include "hwy/contrib/sort/order.h"  
 
@@ -80,6 +82,12 @@ HWY_CONTRIB_DLLEXPORT void VQSort(double* HWY_RESTRICT keys, size_t n,
 HWY_CONTRIB_DLLEXPORT void VQSort(double* HWY_RESTRICT keys, size_t n,
                                   SortDescending);
 
+HWY_CONTRIB_DLLEXPORT void VQSort(K32V32* HWY_RESTRICT keys, size_t n,
+                                  SortAscending);
+HWY_CONTRIB_DLLEXPORT void VQSort(K32V32* HWY_RESTRICT keys, size_t n,
+                                  SortDescending);
+
+
 HWY_CONTRIB_DLLEXPORT void VQSort(uint128_t* HWY_RESTRICT keys, size_t n,
                                   SortAscending);
 HWY_CONTRIB_DLLEXPORT void VQSort(uint128_t* HWY_RESTRICT keys, size_t n,
@@ -88,10 +96,131 @@ HWY_CONTRIB_DLLEXPORT void VQSort(K64V64* HWY_RESTRICT keys, size_t n,
                                   SortAscending);
 HWY_CONTRIB_DLLEXPORT void VQSort(K64V64* HWY_RESTRICT keys, size_t n,
                                   SortDescending);
-HWY_CONTRIB_DLLEXPORT void VQSort(K32V32* HWY_RESTRICT keys, size_t n,
-                                  SortAscending);
-HWY_CONTRIB_DLLEXPORT void VQSort(K32V32* HWY_RESTRICT keys, size_t n,
-                                  SortDescending);
+
+
+
+
+
+
+
+HWY_CONTRIB_DLLEXPORT void VQPartialSort(uint16_t* HWY_RESTRICT keys, size_t n,
+                                         size_t k, SortAscending);
+HWY_CONTRIB_DLLEXPORT void VQPartialSort(uint16_t* HWY_RESTRICT keys, size_t n,
+                                         size_t k, SortDescending);
+HWY_CONTRIB_DLLEXPORT void VQPartialSort(uint32_t* HWY_RESTRICT keys, size_t n,
+                                         size_t k, SortAscending);
+HWY_CONTRIB_DLLEXPORT void VQPartialSort(uint32_t* HWY_RESTRICT keys, size_t n,
+                                         size_t k, SortDescending);
+HWY_CONTRIB_DLLEXPORT void VQPartialSort(uint64_t* HWY_RESTRICT keys, size_t n,
+                                         size_t k, SortAscending);
+HWY_CONTRIB_DLLEXPORT void VQPartialSort(uint64_t* HWY_RESTRICT keys, size_t n,
+                                         size_t k, SortDescending);
+HWY_CONTRIB_DLLEXPORT void VQPartialSort(int16_t* HWY_RESTRICT keys, size_t n,
+                                         size_t k, SortAscending);
+HWY_CONTRIB_DLLEXPORT void VQPartialSort(int16_t* HWY_RESTRICT keys, size_t n,
+                                         size_t k, SortDescending);
+HWY_CONTRIB_DLLEXPORT void VQPartialSort(int32_t* HWY_RESTRICT keys, size_t n,
+                                         size_t k, SortAscending);
+HWY_CONTRIB_DLLEXPORT void VQPartialSort(int32_t* HWY_RESTRICT keys, size_t n,
+                                         size_t k, SortDescending);
+HWY_CONTRIB_DLLEXPORT void VQPartialSort(int64_t* HWY_RESTRICT keys, size_t n,
+                                         size_t k, SortAscending);
+HWY_CONTRIB_DLLEXPORT void VQPartialSort(int64_t* HWY_RESTRICT keys, size_t n,
+                                         size_t k, SortDescending);
+
+
+HWY_CONTRIB_DLLEXPORT void VQPartialSort(float16_t* HWY_RESTRICT keys, size_t n,
+                                         size_t k, SortAscending);
+HWY_CONTRIB_DLLEXPORT void VQPartialSort(float16_t* HWY_RESTRICT keys, size_t n,
+                                         size_t k, SortDescending);
+
+HWY_CONTRIB_DLLEXPORT void VQPartialSort(float* HWY_RESTRICT keys, size_t n,
+                                         size_t k, SortAscending);
+HWY_CONTRIB_DLLEXPORT void VQPartialSort(float* HWY_RESTRICT keys, size_t n,
+                                         size_t k, SortDescending);
+
+
+HWY_CONTRIB_DLLEXPORT void VQPartialSort(double* HWY_RESTRICT keys, size_t n,
+                                         size_t k, SortAscending);
+HWY_CONTRIB_DLLEXPORT void VQPartialSort(double* HWY_RESTRICT keys, size_t n,
+                                         size_t k, SortDescending);
+
+HWY_CONTRIB_DLLEXPORT void VQPartialSort(K32V32* HWY_RESTRICT keys, size_t n,
+                                         size_t k, SortAscending);
+HWY_CONTRIB_DLLEXPORT void VQPartialSort(K32V32* HWY_RESTRICT keys, size_t n,
+                                         size_t k, SortDescending);
+
+
+HWY_CONTRIB_DLLEXPORT void VQPartialSort(uint128_t* HWY_RESTRICT keys, size_t n,
+                                         size_t k, SortAscending);
+HWY_CONTRIB_DLLEXPORT void VQPartialSort(uint128_t* HWY_RESTRICT keys, size_t n,
+                                         size_t k, SortDescending);
+HWY_CONTRIB_DLLEXPORT void VQPartialSort(K64V64* HWY_RESTRICT keys, size_t n,
+                                         size_t k, SortAscending);
+HWY_CONTRIB_DLLEXPORT void VQPartialSort(K64V64* HWY_RESTRICT keys, size_t n,
+                                         size_t k, SortDescending);
+
+
+
+
+
+
+HWY_CONTRIB_DLLEXPORT void VQSelect(uint16_t* HWY_RESTRICT keys, size_t n,
+                                    size_t k, SortAscending);
+HWY_CONTRIB_DLLEXPORT void VQSelect(uint16_t* HWY_RESTRICT keys, size_t n,
+                                    size_t k, SortDescending);
+HWY_CONTRIB_DLLEXPORT void VQSelect(uint32_t* HWY_RESTRICT keys, size_t n,
+                                    size_t k, SortAscending);
+HWY_CONTRIB_DLLEXPORT void VQSelect(uint32_t* HWY_RESTRICT keys, size_t n,
+                                    size_t k, SortDescending);
+HWY_CONTRIB_DLLEXPORT void VQSelect(uint64_t* HWY_RESTRICT keys, size_t n,
+                                    size_t k, SortAscending);
+HWY_CONTRIB_DLLEXPORT void VQSelect(uint64_t* HWY_RESTRICT keys, size_t n,
+                                    size_t k, SortDescending);
+HWY_CONTRIB_DLLEXPORT void VQSelect(int16_t* HWY_RESTRICT keys, size_t n,
+                                    size_t k, SortAscending);
+HWY_CONTRIB_DLLEXPORT void VQSelect(int16_t* HWY_RESTRICT keys, size_t n,
+                                    size_t k, SortDescending);
+HWY_CONTRIB_DLLEXPORT void VQSelect(int32_t* HWY_RESTRICT keys, size_t n,
+                                    size_t k, SortAscending);
+HWY_CONTRIB_DLLEXPORT void VQSelect(int32_t* HWY_RESTRICT keys, size_t n,
+                                    size_t k, SortDescending);
+HWY_CONTRIB_DLLEXPORT void VQSelect(int64_t* HWY_RESTRICT keys, size_t n,
+                                    size_t k, SortAscending);
+HWY_CONTRIB_DLLEXPORT void VQSelect(int64_t* HWY_RESTRICT keys, size_t n,
+                                    size_t k, SortDescending);
+
+
+HWY_CONTRIB_DLLEXPORT void VQSelect(float16_t* HWY_RESTRICT keys, size_t n,
+                                    size_t k, SortAscending);
+HWY_CONTRIB_DLLEXPORT void VQSelect(float16_t* HWY_RESTRICT keys, size_t n,
+                                    size_t k, SortDescending);
+
+HWY_CONTRIB_DLLEXPORT void VQSelect(float* HWY_RESTRICT keys, size_t n,
+                                    size_t k, SortAscending);
+HWY_CONTRIB_DLLEXPORT void VQSelect(float* HWY_RESTRICT keys, size_t n,
+                                    size_t k, SortDescending);
+
+
+HWY_CONTRIB_DLLEXPORT void VQSelect(double* HWY_RESTRICT keys, size_t n,
+                                    size_t k, SortAscending);
+HWY_CONTRIB_DLLEXPORT void VQSelect(double* HWY_RESTRICT keys, size_t n,
+                                    size_t k, SortDescending);
+
+HWY_CONTRIB_DLLEXPORT void VQSelect(K32V32* HWY_RESTRICT keys, size_t n,
+                                    size_t k, SortAscending);
+HWY_CONTRIB_DLLEXPORT void VQSelect(K32V32* HWY_RESTRICT keys, size_t n,
+                                    size_t k, SortDescending);
+
+
+HWY_CONTRIB_DLLEXPORT void VQSelect(uint128_t* HWY_RESTRICT keys, size_t n,
+                                    size_t k, SortAscending);
+HWY_CONTRIB_DLLEXPORT void VQSelect(uint128_t* HWY_RESTRICT keys, size_t n,
+                                    size_t k, SortDescending);
+HWY_CONTRIB_DLLEXPORT void VQSelect(K64V64* HWY_RESTRICT keys, size_t n,
+                                    size_t k, SortAscending);
+HWY_CONTRIB_DLLEXPORT void VQSelect(K64V64* HWY_RESTRICT keys, size_t n,
+                                    size_t k, SortDescending);
 
 
 

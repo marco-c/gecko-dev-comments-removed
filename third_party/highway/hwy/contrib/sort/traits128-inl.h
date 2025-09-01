@@ -34,7 +34,8 @@ namespace hwy {
 namespace HWY_NAMESPACE {
 namespace detail {
 
-#if VQSORT_ENABLED || HWY_IDE
+
+#if HWY_TARGET != HWY_SCALAR || HWY_IDE
 
 
 
@@ -59,33 +60,34 @@ struct KeyAny128 {
     return CompressBlocksNot(keys, mask);
   }
 
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Vec<D> SetKey(D d, const TFromD<D>* key) const {
     return LoadDup128(d, key);
   }
 
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Vec<D> ReverseKeys(D d, Vec<D> v) const {
     return ReverseBlocks(d, v);
   }
 
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Vec<D> ReverseKeys2(D , const Vec<D> v) const {
+    HWY_DASSERT(Lanes(D()) >= 4);  
     return SwapAdjacentBlocks(v);
   }
 
   
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Vec<D> ReverseKeys4(D d, const Vec<D> v) const {
-    HWY_DASSERT(Lanes(d) <= 64 / sizeof(TFromD<D>));
+    HWY_DASSERT(Lanes(D()) == 8);  
     return ReverseKeys(d, v);
   }
 
   
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Vec<D> OddEvenPairs(D d, const Vec<D> odd,
                                  const Vec<D> even) const {
-    HWY_DASSERT(Lanes(d) <= 64 / sizeof(TFromD<D>));
+    HWY_DASSERT(Lanes(D()) == 8);  
     return ConcatUpperLower(d, odd, even);
   }
 
@@ -94,30 +96,30 @@ struct KeyAny128 {
     return OddEvenBlocks(odd, even);
   }
 
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Vec<D> ReverseKeys8(D, Vec<D>) const {
     HWY_ASSERT(0);  
   }
 
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Vec<D> ReverseKeys16(D, Vec<D>) const {
     HWY_ASSERT(0);  
   }
 
   
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Vec<D> SwapAdjacentPairs(D, Vec<D>) const {
     HWY_ASSERT(0);
   }
 
   
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Vec<D> SwapAdjacentQuads(D, Vec<D>) const {
     HWY_ASSERT(0);
   }
 
   
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Vec<D> OddEvenQuads(D, Vec<D>, Vec<D>) const {
     HWY_ASSERT(0);
   }
@@ -133,18 +135,18 @@ struct Key128 : public KeyAny128 {
 
   const char* KeyString() const { return "U128"; }
 
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Mask<D> EqualKeys(D d, Vec<D> a, Vec<D> b) const {
     return Eq128(d, a, b);
   }
 
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Mask<D> NotEqualKeys(D d, Vec<D> a, Vec<D> b) const {
     return Ne128(d, a, b);
   }
 
   
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE bool NoKeyDifference(D , Vec<D> diff) const {
     
     const RebindToUnsigned<D> du;
@@ -185,39 +187,35 @@ struct OrderAscending128 : public Key128 {
     return (a[1] == b[1]) ? a[0] < b[0] : a[1] < b[1];
   }
 
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Mask<D> Compare(D d, Vec<D> a, Vec<D> b) const {
     return Lt128(d, a, b);
   }
 
-  
-  template <class V>
-  HWY_INLINE Mask<DFromV<V> > CompareLanes(V a, V b) const {
-    return Lt(a, b);
-  }
-
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Vec<D> First(D d, const Vec<D> a, const Vec<D> b) const {
     return Min128(d, a, b);
   }
 
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Vec<D> Last(D d, const Vec<D> a, const Vec<D> b) const {
     return Max128(d, a, b);
   }
 
   
-  template <class D>
+
+  
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Vec<D> FirstValue(D d) const {
     return Set(d, hwy::LowestValue<TFromD<D> >());
   }
 
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Vec<D> LastValue(D d) const {
     return Set(d, hwy::HighestValue<TFromD<D> >());
   }
 
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Vec<D> PrevValue(D d, Vec<D> v) const {
     const Vec<D> k0 = Zero(d);
     const Vec<D> k1 = OddEven(k0, Set(d, uint64_t{1}));
@@ -225,6 +223,12 @@ struct OrderAscending128 : public Key128 {
     
     const Vec<D> adjust = ShiftLeftLanes<1>(IfThenElseZero(borrow, k1));
     return Sub(Sub(v, k1), adjust);
+  }
+
+  
+  template <class V>
+  HWY_INLINE Mask<DFromV<V> > CompareLanes(V a, V b) const {
+    return Lt(a, b);
   }
 };
 
@@ -236,39 +240,35 @@ struct OrderDescending128 : public Key128 {
     return (a[1] == b[1]) ? b[0] < a[0] : b[1] < a[1];
   }
 
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Mask<D> Compare(D d, Vec<D> a, Vec<D> b) const {
     return Lt128(d, b, a);
   }
 
-  
-  template <class V>
-  HWY_INLINE Mask<DFromV<V> > CompareLanes(V a, V b) const {
-    return Lt(b, a);
-  }
-
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Vec<D> First(D d, const Vec<D> a, const Vec<D> b) const {
     return Max128(d, a, b);
   }
 
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Vec<D> Last(D d, const Vec<D> a, const Vec<D> b) const {
     return Min128(d, a, b);
   }
 
   
-  template <class D>
+
+  
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Vec<D> FirstValue(D d) const {
     return Set(d, hwy::HighestValue<TFromD<D> >());
   }
 
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Vec<D> LastValue(D d) const {
     return Set(d, hwy::LowestValue<TFromD<D> >());
   }
 
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Vec<D> PrevValue(D d, Vec<D> v) const {
     const Vec<D> k1 = OddEven(Zero(d), Set(d, uint64_t{1}));
     const Vec<D> added = Add(v, k1);
@@ -276,6 +276,12 @@ struct OrderDescending128 : public Key128 {
     
     const Vec<D> adjust = ShiftLeftLanes<1>(IfThenElseZero(overflowed, k1));
     return Add(added, adjust);
+  }
+
+  
+  template <class V>
+  HWY_INLINE Mask<DFromV<V> > CompareLanes(V a, V b) const {
+    return Lt(b, a);
   }
 };
 
@@ -290,28 +296,28 @@ struct KeyValue128 : public KeyAny128 {
 
   const char* KeyString() const { return "k+v=128"; }
 
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Mask<D> EqualKeys(D d, Vec<D> a, Vec<D> b) const {
     return Eq128Upper(d, a, b);
   }
 
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Mask<D> NotEqualKeys(D d, Vec<D> a, Vec<D> b) const {
     return Ne128Upper(d, a, b);
   }
 
+  HWY_INLINE bool Equal1(const LaneType* a, const LaneType* b) const {
+    return a[1] == b[1];
+  }
+
   
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE bool NoKeyDifference(D , Vec<D> diff) const {
     
     const RebindToUnsigned<D> du;
     const Vec<decltype(du)> zero = Zero(du);
     const Vec<decltype(du)> keys = OddEven(diff, zero);  
     return AllTrue(du, Eq(BitCast(du, keys), zero));
-  }
-
-  HWY_INLINE bool Equal1(const LaneType* a, const LaneType* b) const {
-    return a[1] == b[1];
   }
 
   
@@ -332,42 +338,44 @@ struct OrderAscendingKV128 : public KeyValue128 {
     return a[1] < b[1];
   }
 
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Mask<D> Compare(D d, Vec<D> a, Vec<D> b) const {
     return Lt128Upper(d, a, b);
+  }
+
+  template <class D, HWY_IF_U64_D(D)>
+  HWY_INLINE Vec<D> First(D d, const Vec<D> a, const Vec<D> b) const {
+    return Min128Upper(d, a, b);
+  }
+
+  template <class D, HWY_IF_U64_D(D)>
+  HWY_INLINE Vec<D> Last(D d, const Vec<D> a, const Vec<D> b) const {
+    return Max128Upper(d, a, b);
+  }
+
+  
+
+  
+  template <class D, HWY_IF_U64_D(D)>
+  HWY_INLINE Vec<D> FirstValue(D d) const {
+    return Set(d, hwy::LowestValue<TFromD<D> >());
+  }
+
+  template <class D, HWY_IF_U64_D(D)>
+  HWY_INLINE Vec<D> LastValue(D d) const {
+    return Set(d, hwy::HighestValue<TFromD<D> >());
+  }
+
+  template <class D, HWY_IF_U64_D(D)>
+  HWY_INLINE Vec<D> PrevValue(D d, Vec<D> v) const {
+    const Vec<D> k1 = OddEven(Set(d, uint64_t{1}), Zero(d));
+    return Sub(v, k1);
   }
 
   
   template <class V>
   HWY_INLINE Mask<DFromV<V> > CompareLanes(V a, V b) const {
     return Lt(a, b);
-  }
-
-  template <class D>
-  HWY_INLINE Vec<D> First(D d, const Vec<D> a, const Vec<D> b) const {
-    return Min128Upper(d, a, b);
-  }
-
-  template <class D>
-  HWY_INLINE Vec<D> Last(D d, const Vec<D> a, const Vec<D> b) const {
-    return Max128Upper(d, a, b);
-  }
-
-  
-  template <class D>
-  HWY_INLINE Vec<D> FirstValue(D d) const {
-    return Set(d, hwy::LowestValue<TFromD<D> >());
-  }
-
-  template <class D>
-  HWY_INLINE Vec<D> LastValue(D d) const {
-    return Set(d, hwy::HighestValue<TFromD<D> >());
-  }
-
-  template <class D>
-  HWY_INLINE Vec<D> PrevValue(D d, Vec<D> v) const {
-    const Vec<D> k1 = OddEven(Set(d, uint64_t{1}), Zero(d));
-    return Sub(v, k1);
   }
 };
 
@@ -379,42 +387,44 @@ struct OrderDescendingKV128 : public KeyValue128 {
     return b[1] < a[1];
   }
 
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Mask<D> Compare(D d, Vec<D> a, Vec<D> b) const {
     return Lt128Upper(d, b, a);
+  }
+
+  template <class D, HWY_IF_U64_D(D)>
+  HWY_INLINE Vec<D> First(D d, const Vec<D> a, const Vec<D> b) const {
+    return Max128Upper(d, a, b);
+  }
+
+  template <class D, HWY_IF_U64_D(D)>
+  HWY_INLINE Vec<D> Last(D d, const Vec<D> a, const Vec<D> b) const {
+    return Min128Upper(d, a, b);
+  }
+
+  
+
+  
+  template <class D, HWY_IF_U64_D(D)>
+  HWY_INLINE Vec<D> FirstValue(D d) const {
+    return Set(d, hwy::HighestValue<TFromD<D> >());
+  }
+
+  template <class D, HWY_IF_U64_D(D)>
+  HWY_INLINE Vec<D> LastValue(D d) const {
+    return Set(d, hwy::LowestValue<TFromD<D> >());
+  }
+
+  template <class D, HWY_IF_U64_D(D)>
+  HWY_INLINE Vec<D> PrevValue(D d, Vec<D> v) const {
+    const Vec<D> k1 = OddEven(Set(d, uint64_t{1}), Zero(d));
+    return Add(v, k1);
   }
 
   
   template <class V>
   HWY_INLINE Mask<DFromV<V> > CompareLanes(V a, V b) const {
     return Lt(b, a);
-  }
-
-  template <class D>
-  HWY_INLINE Vec<D> First(D d, const Vec<D> a, const Vec<D> b) const {
-    return Max128Upper(d, a, b);
-  }
-
-  template <class D>
-  HWY_INLINE Vec<D> Last(D d, const Vec<D> a, const Vec<D> b) const {
-    return Min128Upper(d, a, b);
-  }
-
-  
-  template <class D>
-  HWY_INLINE Vec<D> FirstValue(D d) const {
-    return Set(d, hwy::HighestValue<TFromD<D> >());
-  }
-
-  template <class D>
-  HWY_INLINE Vec<D> LastValue(D d) const {
-    return Set(d, hwy::LowestValue<TFromD<D> >());
-  }
-
-  template <class D>
-  HWY_INLINE Vec<D> PrevValue(D d, Vec<D> v) const {
-    const Vec<D> k1 = OddEven(Set(d, uint64_t{1}), Zero(d));
-    return Add(v, k1);
   }
 };
 
@@ -443,8 +453,9 @@ HWY_INLINE V ReplicateTop4x(V v) {
 #if HWY_TARGET == HWY_SVE_256
   return svdup_lane_u64(v, 3);
 #else
-  HWY_ALIGN static constexpr uint64_t kIndices[8] = {3, 3, 3, 3, 7, 7, 7, 7};
   const ScalableTag<uint64_t> d;
+  HWY_DASSERT(Lanes(d) == 4 || Lanes(d) == 8);  
+  HWY_ALIGN static constexpr uint64_t kIndices[8] = {3, 3, 3, 3, 7, 7, 7, 7};
   return TableLookupLanes(v, SetTableIndices(d, kIndices));
 #endif
 }
@@ -457,7 +468,7 @@ struct Traits128 : public Base {
   using TraitsForSortingNetwork =
       Traits128<typename Base::OrderForSortingNetwork>;
 
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Vec<D> FirstOfLanes(D d, Vec<D> v,
                                  TFromD<D>* HWY_RESTRICT buf) const {
     const Base* base = static_cast<const Base*>(this);
@@ -470,7 +481,7 @@ struct Traits128 : public Base {
     return v;
   }
 
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Vec<D> LastOfLanes(D d, Vec<D> v,
                                 TFromD<D>* HWY_RESTRICT buf) const {
     const Base* base = static_cast<const Base*>(this);
@@ -483,7 +494,7 @@ struct Traits128 : public Base {
     return v;
   }
 
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE void Sort2(D d, Vec<D>& a, Vec<D>& b) const {
     const Base* base = static_cast<const Base*>(this);
 
@@ -494,8 +505,9 @@ struct Traits128 : public Base {
   }
 
   
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Vec<D> SortPairsDistance1(D d, Vec<D> v) const {
+    HWY_DASSERT(Lanes(d) >= 4);  
     const Base* base = static_cast<const Base*>(this);
     Vec<D> swapped = base->ReverseKeys2(d, v);
     const Vec<D> cmpHx = base->template CompareTop<Base>(d, v, swapped);
@@ -504,8 +516,9 @@ struct Traits128 : public Base {
 
   
   
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Vec<D> SortPairsReverse4(D d, Vec<D> v) const {
+    HWY_DASSERT(Lanes(d) == 8);  
     const Base* base = static_cast<const Base*>(this);
     Vec<D> swapped = base->ReverseKeys4(d, v);
 
@@ -518,7 +531,7 @@ struct Traits128 : public Base {
   }
 
   
-  template <class D>
+  template <class D, HWY_IF_U64_D(D)>
   HWY_INLINE Vec<D> SortPairsDistance4(D, Vec<D>) const {
     
     HWY_ASSERT(0);

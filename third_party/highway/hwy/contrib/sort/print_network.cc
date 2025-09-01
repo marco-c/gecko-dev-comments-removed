@@ -21,7 +21,7 @@
 
 
 
-void PrintMergeNetwork(int rows, int cols) {
+static void PrintMergeNetwork(int rows, int cols) {
   printf("\n%d x %d:\n", rows, cols);
   
   HWY_ASSERT(rows != 0 && (rows & (rows - 1)) == 0);

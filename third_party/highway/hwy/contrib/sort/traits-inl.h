@@ -64,7 +64,6 @@ struct KeyLaneBase {
 
 
 
-
 template <class D, HWY_IF_FLOAT_OR_SPECIAL_D(D)>
 Vec<D> LargestSortValue(D d) {
   return Inf(d);
@@ -90,7 +89,6 @@ Vec<D> LargerSortValue(D d, Vec<D> v) {
   using T = TFromD<decltype(d)>;
   const RebindToUnsigned<D> du;
   using VU = Vec<decltype(du)>;
-  using TU = TFromD<decltype(du)>;
 
   const VU vu = BitCast(du, Abs(v));
 
@@ -98,7 +96,14 @@ Vec<D> LargerSortValue(D d, Vec<D> v) {
   
   const Mask<decltype(du)> was_pos = Le(BitCast(du, v), SignBit(du));
   
+#if HWY_ARCH_ARM_V7
+  
+  const VU was_pos_u = VecFromMask(du, was_pos);
+  const VU add = Not(was_pos_u) - was_pos_u;
+#else
+  using TU = TFromD<decltype(du)>;
   const VU add = IfThenElse(was_pos, Set(du, 1u), Set(du, LimitsMax<TU>()));
+#endif
   
   v = BitCast(d, Add(vu, add));
   
@@ -146,8 +151,6 @@ template <class D, HWY_IF_NOT_FLOAT_NOR_SPECIAL_D(D)>
 Vec<D> SmallerSortValue(D d, Vec<D> v) {
   return Sub(v, Set(d, TFromD<D>{1}));
 }
-
-#if VQSORT_ENABLED || HWY_IDE
 
 
 
@@ -611,60 +614,6 @@ struct TraitsLane : public Base {
     return base->OddEvenQuads(d, swapped, v);
   }
 };
-
-#else
-
-template <typename T>
-struct OrderAscending : public KeyLaneBase<T, T> {
-  using Order = SortAscending;
-
-  HWY_INLINE bool Compare1(const T* a, const T* b) const { return *a < *b; }
-
-  template <class D>
-  HWY_INLINE Mask<D> Compare(D , Vec<D> a, Vec<D> b) {
-    return Lt(a, b);
-  }
-
-  template <class D>
-  HWY_INLINE Vec<D> LastValue(D d) const {
-    return LargestSortValue(d);
-  }
-};
-
-template <typename T>
-struct OrderDescending : public KeyLaneBase<T, T> {
-  using Order = SortDescending;
-
-  HWY_INLINE bool Compare1(const T* a, const T* b) const { return *b < *a; }
-
-  template <class D>
-  HWY_INLINE Mask<D> Compare(D , Vec<D> a, Vec<D> b) {
-    return Lt(b, a);
-  }
-
-  template <class D>
-  HWY_INLINE Vec<D> LastValue(D d) const {
-    return SmallestSortValue(d);
-  }
-};
-
-template <class Order>
-struct TraitsLane : public Order {
-  
-  template <typename T>  
-  HWY_INLINE void Swap(T* a, T* b) const {
-    const T temp = *a;
-    *a = *b;
-    *b = temp;
-  }
-
-  template <class D>
-  HWY_INLINE Vec<D> SetKey(D d, const TFromD<D>* key) const {
-    return Set(d, *key);
-  }
-};
-
-#endif  
 
 }  
 

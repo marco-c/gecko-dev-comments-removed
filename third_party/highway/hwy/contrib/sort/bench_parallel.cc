@@ -16,16 +16,18 @@
 
 
 
+
+
 #include <stdint.h>
 #include <stdio.h>
 
 #include <condition_variable>  
 #include <functional>
-#include <memory>
 #include <mutex>   
 #include <thread>  
-#include <utility>
 #include <vector>
+
+#include "hwy/timer.h"
 
 
 #undef HWY_TARGET_INCLUDE
@@ -178,8 +180,8 @@ void RunWithoutVerify(Traits st, const Dist dist, const size_t num_keys,
   (void)GenerateInput(dist, aligned.get(), num_lanes);
 
   const Timestamp t0;
-  Run<Order>(algo, reinterpret_cast<KeyType*>(aligned.get()), num_keys, shared,
-             thread);
+  Run(algo, reinterpret_cast<KeyType*>(aligned.get()), num_keys, shared, thread,
+      0, Order());
   HWY_ASSERT(aligned[0] < aligned[num_lanes - 1]);
 }
 
@@ -207,7 +209,7 @@ void BenchParallel() {
 
   SharedState shared;
 
-  std::vector<Result> results;
+  std::vector<SortResult> results;
   for (size_t nt = 1; nt < NT; nt += HWY_MAX(1, NT / 16)) {
     Timestamp t0;
     
@@ -233,6 +235,7 @@ namespace hwy {
 namespace {
 HWY_BEFORE_TEST(BenchParallel);
 HWY_EXPORT_AND_TEST_P(BenchParallel, BenchParallel);
+HWY_AFTER_TEST();
 }  
 }  
 

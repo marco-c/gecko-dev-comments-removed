@@ -30,6 +30,7 @@
 HWY_BEFORE_NAMESPACE();
 namespace hwy {
 namespace HWY_NAMESPACE {
+namespace {
 
 
 struct TestAlignedT {
@@ -133,17 +134,20 @@ struct TestUnalignedT {
 
 void TestUnaligned() { ForUnsignedTypes(TestUnalignedT()); }
 
+}  
 
 }  
 }  
 HWY_AFTER_NAMESPACE();
 
 #if HWY_ONCE
-
 namespace hwy {
+namespace {
 HWY_BEFORE_TEST(ImageTest);
 HWY_EXPORT_AND_TEST_P(ImageTest, TestAligned);
 HWY_EXPORT_AND_TEST_P(ImageTest, TestUnaligned);
+HWY_AFTER_TEST();
 }  
-
-#endif
+}  
+HWY_TEST_MAIN();
+#endif  

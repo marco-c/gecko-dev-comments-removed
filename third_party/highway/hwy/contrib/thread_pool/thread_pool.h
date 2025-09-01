@@ -20,77 +20,72 @@
 #ifndef HIGHWAY_HWY_CONTRIB_THREAD_POOL_THREAD_POOL_H_
 #define HIGHWAY_HWY_CONTRIB_THREAD_POOL_THREAD_POOL_H_
 
-
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>  
 
 #include <array>
-#include <thread>  
-
-
 #include <atomic>
+#include <string>
+#include <thread>  
 #include <vector>
 
+#include "hwy/detect_compiler_arch.h"
+#if HWY_OS_FREEBSD
+#include <pthread_np.h>
+#endif
+
 #include "hwy/aligned_allocator.h"  
+#include "hwy/auto_tune.h"
 #include "hwy/base.h"
 #include "hwy/cache_control.h"  
 #include "hwy/contrib/thread_pool/futex.h"
+#include "hwy/contrib/thread_pool/spin.h"
+#include "hwy/contrib/thread_pool/topology.h"
+#include "hwy/profiler.h"
+#include "hwy/stats.h"
+#include "hwy/timer.h"
 
 
-#define HWY_POOL_INLINE HWY_NOINLINE
-
-#ifndef HWY_POOL_SETRANGE_INLINE
-#if HWY_ARCH_ARM
-
-#define HWY_POOL_SETRANGE_INLINE HWY_NOINLINE
-#else
-#define HWY_POOL_SETRANGE_INLINE
-#endif
-#endif  
+#define HWY_POOL_PROFILE
 
 namespace hwy {
 
 
 
-class Divisor {
- public:
-  Divisor() = default;  
-  explicit Divisor(uint32_t divisor) : divisor_(divisor) {
-    if (divisor <= 1) return;
 
-    const uint32_t len =
-        static_cast<uint32_t>(31 - Num0BitsAboveMS1Bit_Nonzero32(divisor - 1));
-    const uint64_t u_hi = (2ULL << len) - divisor;
-    const uint32_t q = Truncate((u_hi << 32) / divisor);
+static inline void SetThreadName(const char* format, int thread) {
+  char buf[16] = {};  
+  const int chars_written = snprintf(buf, sizeof(buf), format, thread);
+  HWY_ASSERT(0 < chars_written &&
+             chars_written <= static_cast<int>(sizeof(buf) - 1));
 
-    mul_ = q + 1;
-    shift1_ = 1;
-    shift2_ = len;
-  }
-
-  uint32_t GetDivisor() const { return divisor_; }
-
+#if HWY_OS_LINUX && (!defined(__ANDROID__) || __ANDROID_API__ >= 19)
+  HWY_ASSERT(0 == pthread_setname_np(pthread_self(), buf));
+#elif HWY_OS_FREEBSD
+  HWY_ASSERT(0 == pthread_set_name_np(pthread_self(), buf));
+#elif HWY_OS_APPLE
   
-  uint32_t Divide(uint32_t n) const {
-    const uint64_t mul = mul_;
-    const uint32_t t = Truncate((mul * n) >> 32);
-    return (t + ((n - t) >> shift1_)) >> shift2_;
-  }
+  HWY_ASSERT(0 == pthread_setname_np(buf));
+#endif
+}
 
-  
-  uint32_t Remainder(uint32_t n) const { return n - (Divide(n) * divisor_); }
 
- private:
-  static uint32_t Truncate(uint64_t x) {
-    return static_cast<uint32_t>(x & 0xFFFFFFFFu);
-  }
+enum class PoolWaitMode : uint8_t { kBlock = 1, kSpin };
 
-  uint32_t divisor_;
-  uint32_t mul_ = 1;
-  uint32_t shift1_ = 0;
-  uint32_t shift2_ = 0;
-};
+namespace pool {
+
+#ifndef HWY_POOL_VERBOSITY
+#define HWY_POOL_VERBOSITY 0
+#endif
+
+static constexpr int kVerbosity = HWY_POOL_VERBOSITY;
+
+
+
+
+
+static constexpr size_t kMaxThreads = 63;
 
 
 class ShuffledIota {
@@ -99,10 +94,10 @@ class ShuffledIota {
   explicit ShuffledIota(uint32_t coprime) : coprime_(coprime) {}
 
   
-  uint32_t Next(uint32_t current, const Divisor& divisor) const {
+  uint32_t Next(uint32_t current, const Divisor64& divisor) const {
     HWY_DASSERT(current < divisor.GetDivisor());
     
-    return divisor.Remainder(current + coprime_);
+    return static_cast<uint32_t>(divisor.Remainder(current + coprime_));
   }
 
   
@@ -149,401 +144,750 @@ class ShuffledIota {
       }
     }
 
-    HWY_ABORT("unreachable");
+    HWY_UNREACHABLE;
   }
 
   uint32_t coprime_;
 };
 
 
+
+
+enum class WaitType : uint8_t {
+  kBlock,
+  kSpin1,
+  kSpinSeparate,
+  kSentinel  
+};
+enum class BarrierType : uint8_t {
+  kOrdered,
+  kCounter1,
+  kCounter2,
+  kCounter4,
+  kGroup2,
+  kGroup4,
+  kSentinel  
+};
+
+
+static inline const char* ToString(WaitType type) {
+  switch (type) {
+    case WaitType::kBlock:
+      return "Block";
+    case WaitType::kSpin1:
+      return "Single";
+    case WaitType::kSpinSeparate:
+      return "Separate";
+    case WaitType::kSentinel:
+      return nullptr;
+    default:
+      HWY_UNREACHABLE;
+  }
+}
+
+static inline const char* ToString(BarrierType type) {
+  switch (type) {
+    case BarrierType::kOrdered:
+      return "Ordered";
+    case BarrierType::kCounter1:
+      return "Counter1";
+    case BarrierType::kCounter2:
+      return "Counter2";
+    case BarrierType::kCounter4:
+      return "Counter4";
+    case BarrierType::kGroup2:
+      return "Group2";
+    case BarrierType::kGroup4:
+      return "Group4";
+    case BarrierType::kSentinel:
+      return nullptr;
+    default:
+      HWY_UNREACHABLE;
+  }
+}
+
+
 #pragma pack(push, 1)
 
-enum class PoolWaitMode : uint32_t { kBlock, kSpin };
 
 
-class PoolWorker {  
+
+
+
+class Config {  
+ public:
+  static std::vector<Config> AllCandidates(PoolWaitMode wait_mode,
+                                           size_t num_threads) {
+    std::vector<SpinType> spin_types(size_t{1}, DetectSpin());
+    
+    if (spin_types[0] != SpinType::kPause) {
+      spin_types.push_back(SpinType::kPause);
+    }
+
+    std::vector<WaitType> wait_types;
+    if (wait_mode == PoolWaitMode::kSpin) {
+      
+      for (size_t wait = 0;; ++wait) {
+        const WaitType wait_type = static_cast<WaitType>(wait);
+        if (wait_type == WaitType::kSentinel) break;
+        if (wait_type != WaitType::kBlock) wait_types.push_back(wait_type);
+      }
+    } else {
+      wait_types.push_back(WaitType::kBlock);
+    }
+
+    std::vector<BarrierType> barrier_types;
+    
+    
+    for (size_t barrier = 0;; ++barrier) {
+      const BarrierType barrier_type = static_cast<BarrierType>(barrier);
+      if (barrier_type == BarrierType::kSentinel) break;
+      
+      if (num_threads <= 1 && barrier_type == BarrierType::kCounter4) continue;
+      if (num_threads <= 1 && barrier_type == BarrierType::kGroup4) continue;
+      barrier_types.push_back(barrier_type);
+    }
+
+    std::vector<Config> candidates;
+    candidates.reserve(50);
+    for (const SpinType spin_type : spin_types) {
+      for (const WaitType wait_type : wait_types) {
+        for (const BarrierType barrier_type : barrier_types) {
+          candidates.emplace_back(spin_type, wait_type, barrier_type);
+        }
+      }
+    }
+    return candidates;
+  }
+
+  std::string ToString() const {
+    char buf[128];
+    snprintf(buf, sizeof(buf), "%14s %9s %9s", hwy::ToString(spin_type),
+             pool::ToString(wait_type), pool::ToString(barrier_type));
+    return buf;
+  }
+
+  Config() {}
+  Config(SpinType spin_type, WaitType wait_type, BarrierType barrier_type)
+      : spin_type(spin_type),
+        wait_type(wait_type),
+        barrier_type(barrier_type),
+        exit(false) {}
+
+  SpinType spin_type;
+  WaitType wait_type;
+  BarrierType barrier_type;
+  bool exit;
+  uint32_t reserved = 0;
+};
+static_assert(sizeof(Config) == 8, "");
+
+
+
+class alignas(HWY_ALIGNMENT) Worker {  
   static constexpr size_t kMaxVictims = 4;
 
- public:
-  PoolWorker(size_t thread, size_t num_workers) {
-    wait_mode_ = PoolWaitMode::kBlock;
-    num_victims_ = static_cast<uint32_t>(HWY_MIN(kMaxVictims, num_workers));
+  static constexpr auto kAcq = std::memory_order_acquire;
+  static constexpr auto kRel = std::memory_order_release;
 
-    const Divisor div_workers(static_cast<uint32_t>(num_workers));
+ public:
+  Worker(const size_t worker, const size_t num_threads,
+         const Divisor64& div_workers)
+      : worker_(worker), num_threads_(num_threads), workers_(this - worker) {
+    (void)padding_;
+
+    HWY_DASSERT(IsAligned(this, HWY_ALIGNMENT));
+    HWY_DASSERT(worker <= num_threads);
+    const size_t num_workers = static_cast<size_t>(div_workers.GetDivisor());
+    num_victims_ = static_cast<uint32_t>(HWY_MIN(kMaxVictims, num_workers));
 
     
     const uint32_t coprime = ShuffledIota::FindAnotherCoprime(
         static_cast<uint32_t>(num_workers),
-        static_cast<uint32_t>((thread + 1) * 257 + thread * 13));
+        static_cast<uint32_t>((worker + 1) * 257 + worker * 13));
     const ShuffledIota shuffled_iota(coprime);
 
     
-    victims_[0] = static_cast<uint32_t>(thread);
+    victims_[0] = static_cast<uint32_t>(worker);
     for (uint32_t i = 1; i < num_victims_; ++i) {
       victims_[i] = shuffled_iota.Next(victims_[i - 1], div_workers);
-      HWY_DASSERT(victims_[i] != thread);
+      HWY_DASSERT(victims_[i] != worker);
     }
-
-    (void)padding_;
-  }
-  ~PoolWorker() = default;
-
-  void SetWaitMode(PoolWaitMode wait_mode) {
-    wait_mode_.store(wait_mode, std::memory_order_release);
-  }
-  PoolWaitMode WorkerGetWaitMode() const {
-    return wait_mode_.load(std::memory_order_acquire);
   }
 
-  hwy::Span<const uint32_t> Victims() const {
+  
+  Worker(const Worker&) = delete;
+  Worker& operator=(const Worker&) = delete;
+
+  size_t Index() const { return worker_; }
+  Worker* AllWorkers() { return workers_; }
+  const Worker* AllWorkers() const { return workers_; }
+  size_t NumThreads() const { return num_threads_; }
+
+  
+
+  Config LatchedConfig() const { return latched_; }
+  
+  void LatchConfig(Config copy) { latched_ = copy; }
+
+  
+
+  
+  void SetRange(const uint64_t begin, const uint64_t end) {
+    my_begin_.store(begin, kRel);
+    my_end_.store(end, kRel);
+  }
+
+  uint64_t MyEnd() const { return my_end_.load(kAcq); }
+
+  Span<const uint32_t> Victims() const {
     return hwy::Span<const uint32_t>(victims_.data(),
                                      static_cast<size_t>(num_victims_));
   }
 
   
-  HWY_POOL_SETRANGE_INLINE void SetRange(uint64_t begin, uint64_t end) {
-    const auto rel = std::memory_order_release;
-    begin_.store(begin, rel);
-    end_.store(end, rel);
-  }
-
-  
-  uint64_t WorkerGetEnd() const { return end_.load(std::memory_order_acquire); }
-
-  
   uint64_t WorkerReserveTask() {
-    return begin_.fetch_add(1, std::memory_order_relaxed);
+    
+    return my_begin_.fetch_add(1, std::memory_order_relaxed);
   }
+
+  
+
+  
+  
+  
+  
+  
+
+  const std::atomic<uint32_t>& Waiter() const { return wait_epoch_; }
+  std::atomic<uint32_t>& MutableWaiter() { return wait_epoch_; }  
+  void StoreWaiter(uint32_t epoch) { wait_epoch_.store(epoch, kRel); }
+
+  
+
+  const std::atomic<uint32_t>& Barrier() const { return barrier_epoch_; }
+  std::atomic<uint32_t>& MutableBarrier() { return barrier_epoch_; }
+  void StoreBarrier(uint32_t epoch) { barrier_epoch_.store(epoch, kRel); }
 
  private:
-  std::atomic<uint64_t> begin_;
-  std::atomic<uint64_t> end_;  
+  
 
-  std::atomic<PoolWaitMode> wait_mode_;  
-  uint32_t num_victims_;                 
+  
+  alignas(8) std::atomic<uint64_t> my_begin_;
+  alignas(8) std::atomic<uint64_t> my_end_;
+
+  
+  alignas(4) std::atomic<uint32_t> wait_epoch_{0};
+  alignas(4) std::atomic<uint32_t> barrier_epoch_{0};  
+
+  uint32_t num_victims_;  
   std::array<uint32_t, kMaxVictims> victims_;
 
-  uint8_t padding_[HWY_ALIGNMENT - 16 - 8 - sizeof(victims_)];
+  
+  Config latched_;
+
+  const size_t worker_;
+  const size_t num_threads_;
+  Worker* const workers_;
+
+  uint8_t padding_[HWY_ALIGNMENT - 64 - sizeof(victims_)];
 };
-static_assert(sizeof(PoolWorker) == HWY_ALIGNMENT, "");
-
-
-class PoolTasks {  
-  
-  
-  
-  typedef void (*RunFunc)(const void* opaque, uint64_t task, size_t thread_id);
-
-  
-  template <class Closure>
-  static void CallClosure(const void* opaque, uint64_t task, size_t thread) {
-    (*reinterpret_cast<const Closure*>(opaque))(task, thread);
-  }
-
- public:
-  
-  template <class Closure>
-  void Store(const Closure& closure, uint64_t begin, uint64_t end) {
-    const auto rel = std::memory_order_release;
-    func_.store(static_cast<RunFunc>(&CallClosure<Closure>), rel);
-    opaque_.store(reinterpret_cast<const void*>(&closure), rel);
-    begin_.store(begin, rel);
-    end_.store(end, rel);
-  }
-
-  RunFunc WorkerGet(uint64_t& begin, uint64_t& end, const void*& opaque) const {
-    const auto acq = std::memory_order_acquire;
-    begin = begin_.load(acq);
-    end = end_.load(acq);
-    opaque = opaque_.load(acq);
-    return func_.load(acq);
-  }
-
- private:
-  std::atomic<RunFunc> func_;
-  std::atomic<const void*> opaque_;
-  std::atomic<uint64_t> begin_;
-  std::atomic<uint64_t> end_;
-};
-
-
-class PoolCommands {  
-  static constexpr uint32_t kInitial = 0;
-  static constexpr uint32_t kMask = 0xF;  
-  static constexpr size_t kShift = hwy::CeilLog2(kMask);
-
- public:
-  static constexpr uint32_t kTerminate = 1;
-  static constexpr uint32_t kWork = 2;
-  static constexpr uint32_t kNop = 3;
-
-  
-  
-  static uint32_t WorkerInitialSeqCmd() { return kInitial; }
-
-  
-  void Broadcast(uint32_t cmd) {
-    HWY_DASSERT(cmd <= kMask);
-    const uint32_t epoch = ++epoch_;
-    const uint32_t seq_cmd = (epoch << kShift) | cmd;
-    seq_cmd_.store(seq_cmd, std::memory_order_release);
-
-    
-    WakeAll(seq_cmd_);
-
-    
-    
-  }
-
-  
-  uint32_t WorkerWaitForNewCommand(PoolWaitMode wait_mode,
-                                   uint32_t& prev_seq_cmd) {
-    uint32_t seq_cmd;
-    if (HWY_LIKELY(wait_mode == PoolWaitMode::kSpin)) {
-      seq_cmd = SpinUntilDifferent(prev_seq_cmd, seq_cmd_);
-    } else {
-      seq_cmd = BlockUntilDifferent(prev_seq_cmd, seq_cmd_);
-    }
-    prev_seq_cmd = seq_cmd;
-    return seq_cmd & kMask;
-  }
-
- private:
-  static HWY_INLINE uint32_t SpinUntilDifferent(
-      const uint32_t prev_seq_cmd, std::atomic<uint32_t>& current) {
-    for (;;) {
-      hwy::Pause();
-      const uint32_t seq_cmd = current.load(std::memory_order_acquire);
-      if (seq_cmd != prev_seq_cmd) return seq_cmd;
-    }
-  }
-
-  
-  
-  
-  uint32_t epoch_{0};
-  std::atomic<uint32_t> seq_cmd_{kInitial};
-};
-
-
-
-class alignas(HWY_ALIGNMENT) PoolBarrier {  
-  static constexpr size_t kU64PerCacheLine = HWY_ALIGNMENT / sizeof(uint64_t);
-
- public:
-  void Reset() {
-    for (size_t i = 0; i < 4; ++i) {
-      num_finished_[i * kU64PerCacheLine].store(0, std::memory_order_release);
-    }
-  }
-
-  void WorkerArrive(size_t thread) {
-    const size_t i = (thread & 3);
-    num_finished_[i * kU64PerCacheLine].fetch_add(1, std::memory_order_release);
-  }
-
-  
-  
-  HWY_POOL_INLINE void WaitAll(size_t num_workers) {
-    const auto acq = std::memory_order_acquire;
-    for (;;) {
-      hwy::Pause();
-      const uint64_t sum = num_finished_[0 * kU64PerCacheLine].load(acq) +
-                           num_finished_[1 * kU64PerCacheLine].load(acq) +
-                           num_finished_[2 * kU64PerCacheLine].load(acq) +
-                           num_finished_[3 * kU64PerCacheLine].load(acq);
-      if (sum == num_workers) break;
-    }
-  }
-
- private:
-  
-  std::atomic<uint64_t> num_finished_[4 * kU64PerCacheLine];
-};
-
-
-struct alignas(HWY_ALIGNMENT) PoolMem {
-  PoolWorker& Worker(size_t thread) {
-    return *reinterpret_cast<PoolWorker*>(reinterpret_cast<uint8_t*>(&barrier) +
-                                          sizeof(barrier) +
-                                          thread * sizeof(PoolWorker));
-  }
-
-  PoolTasks tasks;
-  PoolCommands commands;
-  
-  uint8_t padding[HWY_ALIGNMENT - sizeof(tasks) - sizeof(commands)];
-
-  PoolBarrier barrier;
-  static_assert(sizeof(barrier) % HWY_ALIGNMENT == 0, "");
-
-  
-};
-
-
-class PoolMemOwner {
- public:
-  explicit PoolMemOwner(size_t num_threads)
-      
-      : num_workers_(HWY_MAX(num_threads, size_t{1})) {
-    const size_t size = sizeof(PoolMem) + num_workers_ * sizeof(PoolWorker);
-    bytes_ = hwy::AllocateAligned<uint8_t>(size);
-    HWY_ASSERT(bytes_);
-    mem_ = new (bytes_.get()) PoolMem();
-
-    for (size_t thread = 0; thread < num_workers_; ++thread) {
-      new (&mem_->Worker(thread)) PoolWorker(thread, num_workers_);
-    }
-
-    
-    
-    std::atomic_thread_fence(std::memory_order_release);
-  }
-
-  ~PoolMemOwner() {
-    for (size_t thread = 0; thread < num_workers_; ++thread) {
-      mem_->Worker(thread).~PoolWorker();
-    }
-    mem_->~PoolMem();
-  }
-
-  size_t NumWorkers() const { return num_workers_; }
-
-  PoolMem* Mem() const { return mem_; }
-
- private:
-  const size_t num_workers_;  
-  
-  hwy::AlignedFreeUniquePtr<uint8_t[]> bytes_;
-  PoolMem* mem_;
-};
-
-
-
-class ParallelFor {  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
- public:
-  
-  
-  
-  template <class Closure>
-  static bool Plan(uint64_t begin, uint64_t end, size_t num_workers,
-                   const Closure& closure, PoolMem& mem) {
-    
-    HWY_DASSERT(begin <= end);
-    const size_t num_tasks = static_cast<size_t>(end - begin);
-    if (HWY_UNLIKELY(num_tasks == 0)) return false;
-
-    
-    
-    if (HWY_UNLIKELY(num_workers <= 1)) {
-      for (uint64_t task = begin; task < end; ++task) {
-        closure(task, 0);
-      }
-      return false;
-    }
-
-    
-    
-    mem.tasks.Store(closure, begin, end);
-
-    
-    
-    const size_t remainder = num_tasks % num_workers;
-    const size_t min_tasks = num_tasks / num_workers;
-
-    uint64_t task = begin;
-    for (size_t thread = 0; thread < num_workers; ++thread) {
-      const uint64_t my_end = task + min_tasks + (thread < remainder);
-      mem.Worker(thread).SetRange(task, my_end);
-      task = my_end;
-    }
-    HWY_DASSERT(task == end);
-    return true;
-  }
-
-  
-  
-  static HWY_POOL_INLINE void WorkerRun(const size_t thread, size_t num_workers,
-                                        PoolMem& mem) {
-    
-    HWY_DASSERT(num_workers != 0);
-    HWY_DASSERT(thread < num_workers);
-
-    const PoolTasks& tasks = mem.tasks;
-
-    uint64_t begin, end;
-    const void* opaque;
-    const auto func = tasks.WorkerGet(begin, end, opaque);
-
-    
-    if (HWY_UNLIKELY(end <= begin + num_workers)) {
-      const uint64_t task = begin + thread;
-      if (HWY_LIKELY(task < end)) {
-        func(opaque, task, thread);
-      }
-      return;
-    }
-
-    
-    for (uint32_t victim : mem.Worker(thread).Victims()) {
-      PoolWorker* other_worker = &mem.Worker(victim);
-
-      
-      const uint64_t end = other_worker->WorkerGetEnd();
-      for (;;) {
-        
-        
-        
-        
-        uint64_t task = other_worker->WorkerReserveTask();
-
-        
-        
-        
-        HWY_DASSERT(task < end + num_workers);
-
-        if (HWY_UNLIKELY(task >= end)) {
-          hwy::Pause();  
-          break;
-        }
-        
-        
-        func(opaque, task, thread);
-      }
-    }
-  }
-};
+static_assert(sizeof(Worker) == HWY_ALIGNMENT, "");
 
 #pragma pack(pop)
 
 
 
+class WorkerLifecycle {  
+ public:
+  
+  
+  static Worker* Init(uint8_t* storage, size_t num_threads,
+                      const Divisor64& div_workers) {
+    Worker* workers = new (storage) Worker(0, num_threads, div_workers);
+    for (size_t worker = 1; worker <= num_threads; ++worker) {
+      new (Addr(storage, worker)) Worker(worker, num_threads, div_workers);
+      
+      HWY_DASSERT(reinterpret_cast<uintptr_t>(workers + worker) ==
+                  reinterpret_cast<uintptr_t>(Addr(storage, worker)));
+    }
 
-static inline void SetThreadName(const char* format, int thread) {
-#if HWY_OS_LINUX
-  char buf[16] = {};  
-  const int chars_written = snprintf(buf, sizeof(buf), format, thread);
-  HWY_ASSERT(0 < chars_written &&
-             chars_written <= static_cast<int>(sizeof(buf) - 1));
-  HWY_ASSERT(0 == pthread_setname_np(pthread_self(), buf));
-#else
-  (void)format;
-  (void)thread;
-#endif
+    
+    std::atomic_thread_fence(std::memory_order_release);
+
+    return workers;
+  }
+
+  static void Destroy(Worker* workers, size_t num_threads) {
+    for (size_t worker = 0; worker <= num_threads; ++worker) {
+      workers[worker].~Worker();
+    }
+  }
+
+ private:
+  static uint8_t* Addr(uint8_t* storage, size_t worker) {
+    return storage + worker * sizeof(Worker);
+  }
+};
+
+#pragma pack(push, 1)
+
+
+class alignas(8) Tasks {
+  static constexpr auto kAcq = std::memory_order_acquire;
+
+  
+  
+  
+  typedef void (*RunFunc)(const void* opaque, uint64_t task, size_t worker);
+
+ public:
+  Tasks() { HWY_DASSERT(IsAligned(this, 8)); }
+
+  template <class Closure>
+  void Set(uint64_t begin, uint64_t end, const Closure& closure) {
+    constexpr auto kRel = std::memory_order_release;
+    
+    HWY_DASSERT(begin <= end);
+    begin_.store(begin, kRel);
+    end_.store(end, kRel);
+    func_.store(static_cast<RunFunc>(&CallClosure<Closure>), kRel);
+    opaque_.store(reinterpret_cast<const void*>(&closure), kRel);
+  }
+
+  
+  
+  static void DivideRangeAmongWorkers(const uint64_t begin, const uint64_t end,
+                                      const Divisor64& div_workers,
+                                      Worker* workers) {
+    const size_t num_workers = static_cast<size_t>(div_workers.GetDivisor());
+    HWY_DASSERT(num_workers > 1);  
+    HWY_DASSERT(begin <= end);
+    const size_t num_tasks = static_cast<size_t>(end - begin);
+
+    
+    
+    
+    const size_t min_tasks = static_cast<size_t>(div_workers.Divide(num_tasks));
+    const size_t remainder =
+        static_cast<size_t>(div_workers.Remainder(num_tasks));
+
+    uint64_t my_begin = begin;
+    for (size_t worker = 0; worker < num_workers; ++worker) {
+      const uint64_t my_end = my_begin + min_tasks + (worker < remainder);
+      workers[worker].SetRange(my_begin, my_end);
+      my_begin = my_end;
+    }
+    HWY_DASSERT(my_begin == end);
+  }
+
+  
+  HWY_POOL_PROFILE void WorkerRun(Worker* worker) const {
+    if (NumTasks() > worker->NumThreads() + 1) {
+      WorkerRunWithStealing(worker);
+    } else {
+      WorkerRunSingle(worker->Index());
+    }
+  }
+
+ private:
+  
+  void WorkerRunSingle(size_t worker) const {
+    const uint64_t begin = begin_.load(kAcq);
+    const uint64_t end = end_.load(kAcq);
+    HWY_DASSERT(begin <= end);
+
+    const uint64_t task = begin + worker;
+    
+    if (HWY_LIKELY(task < end)) {
+      const void* opaque = Opaque();
+      const RunFunc func = Func();
+      func(opaque, task, worker);
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  HWY_POOL_PROFILE void WorkerRunWithStealing(Worker* worker) const {
+    Worker* workers = worker->AllWorkers();
+    const size_t index = worker->Index();
+    const RunFunc func = Func();
+    const void* opaque = Opaque();
+
+    
+    
+    for (uint32_t victim : worker->Victims()) {
+      Worker* other_worker = workers + victim;
+
+      
+      const uint64_t other_end = other_worker->MyEnd();
+      for (;;) {
+        
+        
+        
+        const uint64_t task = other_worker->WorkerReserveTask();
+        if (HWY_UNLIKELY(task >= other_end)) {
+          hwy::Pause();  
+          break;
+        }
+        
+        
+        func(opaque, task, index);
+      }
+    }
+  }
+
+  size_t NumTasks() const {
+    return static_cast<size_t>(end_.load(kAcq) - begin_.load(kAcq));
+  }
+
+  const void* Opaque() const { return opaque_.load(kAcq); }
+  RunFunc Func() const { return func_.load(kAcq); }
+
+  
+  template <class Closure>
+  static void CallClosure(const void* opaque, uint64_t task, size_t worker) {
+    (*reinterpret_cast<const Closure*>(opaque))(task, worker);
+  }
+
+  std::atomic<uint64_t> begin_;
+  std::atomic<uint64_t> end_;
+  std::atomic<RunFunc> func_;
+  std::atomic<const void*> opaque_;
+};
+static_assert(sizeof(Tasks) == 16 + 2 * sizeof(void*), "");
+#pragma pack(pop)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct WaitBlock {
+  WaitType Type() const { return WaitType::kBlock; }
+
+  
+  void WakeWorkers(Worker* workers, const uint32_t epoch) const {
+    HWY_DASSERT(epoch != 0);
+    workers[1].StoreWaiter(epoch);
+    WakeAll(workers[1].MutableWaiter());  
+  }
+
+  
+  template <class Spin>
+  void UntilWoken(const Worker* worker, const Spin& ,
+                  const uint32_t epoch) const {
+    HWY_DASSERT(worker->Index() != 0);  
+    const Worker* workers = worker->AllWorkers();
+    BlockUntilDifferent(epoch - 1, workers[1].Waiter());
+  }
+};
+
+
+
+
+struct WaitSpin1 {
+  WaitType Type() const { return WaitType::kSpin1; }
+
+  void WakeWorkers(Worker* workers, const uint32_t epoch) const {
+    workers[1].StoreWaiter(epoch);
+  }
+
+  template <class Spin>
+  void UntilWoken(const Worker* worker, const Spin& spin,
+                  const uint32_t epoch) const {
+    HWY_DASSERT(worker->Index() != 0);  
+    const Worker* workers = worker->AllWorkers();
+    (void)spin.UntilEqual(epoch, workers[1].Waiter());
+    
+  }
+};
+
+
+
+struct WaitSpinSeparate {
+  WaitType Type() const { return WaitType::kSpinSeparate; }
+
+  void WakeWorkers(Worker* workers, const uint32_t epoch) const {
+    for (size_t thread = 0; thread < workers->NumThreads(); ++thread) {
+      workers[1 + thread].StoreWaiter(epoch);
+    }
+  }
+
+  template <class Spin>
+  void UntilWoken(const Worker* worker, const Spin& spin,
+                  const uint32_t epoch) const {
+    HWY_DASSERT(worker->Index() != 0);  
+    (void)spin.UntilEqual(epoch, worker->Waiter());
+    
+  }
+};
+
+
+
+
+template <size_t kShards>
+class BarrierCounter {
+  static_assert(kShards == 1 || kShards == 2 || kShards == 4, "");  
+
+ public:
+  BarrierType Type() const {
+    return kShards == 1   ? BarrierType::kCounter1
+           : kShards == 2 ? BarrierType::kCounter2
+                          : BarrierType::kCounter4;
+  }
+
+  void Reset(Worker* workers) const {
+    for (size_t i = 0; i < kShards; ++i) {
+      
+      
+      workers[kMaxThreads - i].StoreBarrier(0);
+    }
+  }
+
+  template <class Spin>
+  void WorkerReached(Worker* worker, const Spin& ,
+                     uint32_t ) const {
+    Worker* workers = worker->AllWorkers();
+    const size_t shard = worker->Index() & (kShards - 1);
+    const auto kAcqRel = std::memory_order_acq_rel;
+    workers[kMaxThreads - shard].MutableBarrier().fetch_add(1, kAcqRel);
+  }
+
+  template <class Spin>
+  void UntilReached(size_t num_threads, const Worker* workers, const Spin& spin,
+                    uint32_t ) const {
+    HWY_IF_CONSTEXPR(kShards == 1) {
+      (void)spin.UntilEqual(static_cast<uint32_t>(num_threads),
+                            workers[kMaxThreads - 0].Barrier());
+    }
+    HWY_IF_CONSTEXPR(kShards == 2) {
+      const auto kAcq = std::memory_order_acquire;
+      for (;;) {
+        hwy::Pause();
+        const uint64_t sum = workers[kMaxThreads - 0].Barrier().load(kAcq) +
+                             workers[kMaxThreads - 1].Barrier().load(kAcq);
+        if (sum == num_threads) break;
+      }
+    }
+    HWY_IF_CONSTEXPR(kShards == 4) {
+      const auto kAcq = std::memory_order_acquire;
+      for (;;) {
+        hwy::Pause();
+        const uint64_t sum = workers[kMaxThreads - 0].Barrier().load(kAcq) +
+                             workers[kMaxThreads - 1].Barrier().load(kAcq) +
+                             workers[kMaxThreads - 2].Barrier().load(kAcq) +
+                             workers[kMaxThreads - 3].Barrier().load(kAcq);
+        if (sum == num_threads) break;
+      }
+    }
+  }
+};
+
+
+
+
+
+class BarrierOrdered {
+ public:
+  BarrierType Type() const { return BarrierType::kOrdered; }
+
+  void Reset(Worker* ) const {}
+
+  template <class Spin>
+  void WorkerReached(Worker* worker, const Spin&, uint32_t epoch) const {
+    HWY_DASSERT(worker->Index() != 0);  
+    worker->StoreBarrier(epoch);
+  }
+
+  template <class Spin>
+  void UntilReached(size_t num_threads, const Worker* workers, const Spin& spin,
+                    uint32_t epoch) const {
+    for (size_t i = 0; i < num_threads; ++i) {
+      (void)spin.UntilEqual(epoch, workers[1 + i].Barrier());
+    }
+  }
+};
+
+
+template <size_t kGroupSize>
+class BarrierGroup {
+ public:
+  BarrierType Type() const {
+    return kGroupSize == 2 ? BarrierType::kGroup2 : BarrierType::kGroup4;
+  }
+
+  void Reset(Worker* ) const {}
+
+  template <class Spin>
+  void WorkerReached(Worker* worker, const Spin& spin, uint32_t epoch) const {
+    const size_t w_idx = worker->Index();
+    HWY_DASSERT(w_idx != 0);  
+    
+    
+    const size_t rel_idx = w_idx - 1;
+
+    Worker* workers = worker->AllWorkers();
+    const size_t num_workers = 1 + workers->NumThreads();
+
+    
+    
+    if (rel_idx % kGroupSize == 0) {
+      for (size_t i = w_idx + 1; i < HWY_MIN(w_idx + kGroupSize, num_workers);
+           ++i) {
+        
+        (void)spin.UntilEqual(epoch, workers[i].Barrier());
+      }
+    }
+    worker->StoreBarrier(epoch);
+  }
+
+  template <class Spin>
+  void UntilReached(size_t num_threads, const Worker* workers, const Spin& spin,
+                    uint32_t epoch) const {
+    for (size_t i = 0; i < num_threads; i += kGroupSize) {
+      (void)spin.UntilEqual(epoch, workers[1 + i].Barrier());
+    }
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+template <class Func>
+class FunctorAddWait {
+ public:
+  FunctorAddWait(WaitType wait_type, Func&& func)
+      : func_(std::forward<Func>(func)), wait_type_(wait_type) {}
+
+  template <class Spin>
+  HWY_INLINE void operator()(const Spin& spin) {
+    switch (wait_type_) {
+      case WaitType::kBlock:
+        return func_(spin, WaitBlock());
+      case WaitType::kSpin1:
+        return func_(spin, WaitSpin1());
+      case WaitType::kSpinSeparate:
+        return func_(spin, WaitSpinSeparate());
+      default:
+        HWY_UNREACHABLE;
+    }
+  }
+
+ private:
+  Func&& func_;
+  WaitType wait_type_;
+};
+
+template <class Func>
+class FunctorAddBarrier {
+ public:
+  FunctorAddBarrier(BarrierType barrier_type, Func&& func)
+      : func_(std::forward<Func>(func)), barrier_type_(barrier_type) {}
+
+  template <class Wait>
+  HWY_INLINE void operator()(const Wait& wait) {
+    switch (barrier_type_) {
+      case BarrierType::kOrdered:
+        return func_(wait, BarrierOrdered());
+      case BarrierType::kCounter1:
+        return func_(wait, BarrierCounter<1>());
+      case BarrierType::kCounter2:
+        return func_(wait, BarrierCounter<2>());
+      case BarrierType::kCounter4:
+        return func_(wait, BarrierCounter<4>());
+      case BarrierType::kGroup2:
+        return func_(wait, BarrierGroup<2>());
+      case BarrierType::kGroup4:
+        return func_(wait, BarrierGroup<4>());
+      default:
+        HWY_UNREACHABLE;
+    }
+  }
+  template <class Spin, class Wait>
+  HWY_INLINE void operator()(const Spin& spin, const Wait& wait) {
+    switch (barrier_type_) {
+      case BarrierType::kOrdered:
+        return func_(spin, wait, BarrierOrdered());
+      case BarrierType::kCounter1:
+        return func_(spin, wait, BarrierCounter<1>());
+      case BarrierType::kCounter2:
+        return func_(spin, wait, BarrierCounter<2>());
+      case BarrierType::kCounter4:
+        return func_(spin, wait, BarrierCounter<4>());
+      case BarrierType::kGroup2:
+        return func_(spin, wait, BarrierGroup<2>());
+      case BarrierType::kGroup4:
+        return func_(spin, wait, BarrierGroup<4>());
+      default:
+        HWY_UNREACHABLE;
+    }
+  }
+
+ private:
+  Func&& func_;
+  BarrierType barrier_type_;
+};
+
+
+template <class Func>
+HWY_INLINE void CallWithConfig(const Config& config, Func&& func) {
+  CallWithSpin(
+      config.spin_type,
+      FunctorAddWait<FunctorAddBarrier<Func>>(
+          config.wait_type, FunctorAddBarrier<Func>(config.barrier_type,
+                                                    std::forward<Func>(func))));
+}
+
+
+template <class Func>
+HWY_INLINE void CallWithSpinWait(const Config& config, Func&& func) {
+  CallWithSpin(
+      config.spin_type,
+      FunctorAddWait<Func>(config.wait_type, std::forward<Func>(func)));
+}
+
+
+template <class Func>
+HWY_INLINE void CallWithSpinBarrier(const Config& config, Func&& func) {
+  CallWithSpin(
+      config.spin_type,
+      FunctorAddBarrier<Func>(config.barrier_type, std::forward<Func>(func)));
 }
 
 
@@ -551,78 +895,216 @@ static inline void SetThreadName(const char* format, int thread) {
 
 
 
+class MainAdapter {
+ public:
+  MainAdapter(Worker* main, const Tasks* tasks) : main_(main), tasks_(tasks) {
+    HWY_DASSERT(main_ == main->AllWorkers());  
+  }
 
+  void SetEpoch(uint32_t epoch) { epoch_ = epoch; }
 
+  template <class Spin, class Wait, class Barrier>
+  HWY_POOL_PROFILE void operator()(const Spin& spin, const Wait& wait,
+                                   const Barrier& barrier) const {
+    Worker* workers = main_->AllWorkers();
+    const size_t num_threads = main_->NumThreads();
+    barrier.Reset(workers);
 
-
-
-
-
-
-
-
-
-
-class ThreadPool {
-  static void ThreadFunc(size_t thread, size_t num_workers, PoolMem* mem) {
-    HWY_DASSERT(thread < num_workers);
-    SetThreadName("worker%03zu", static_cast<int>(thread));
+    wait.WakeWorkers(workers, epoch_);
+    
+    
 
     
-    std::atomic_thread_fence(std::memory_order_acquire);
+    tasks_->WorkerRun(main_);
 
-    PoolWorker& worker = mem->Worker(thread);
-    PoolCommands& commands = mem->commands;
-    uint32_t prev_seq_cmd = PoolCommands::WorkerInitialSeqCmd();
+    
+    
 
-    for (;;) {
-      const PoolWaitMode wait_mode = worker.WorkerGetWaitMode();
-      const uint32_t command =
-          commands.WorkerWaitForNewCommand(wait_mode, prev_seq_cmd);
-      if (HWY_UNLIKELY(command == PoolCommands::kTerminate)) {
-        return;  
-      } else if (HWY_LIKELY(command == PoolCommands::kWork)) {
-        ParallelFor::WorkerRun(thread, num_workers, *mem);
-        mem->barrier.WorkerArrive(thread);
-      } else if (command == PoolCommands::kNop) {
-        
-      } else {
-        HWY_DASSERT(false);  
-      }
-    }
+    barrier.UntilReached(num_threads, workers, spin, epoch_);
+
+    
+    
+  }
+
+ private:
+  Worker* const main_;
+  const Tasks* const tasks_;
+  uint32_t epoch_;
+};
+
+class WorkerAdapter {
+ public:
+  explicit WorkerAdapter(Worker* worker) : worker_(worker) {}
+
+  void SetEpoch(uint32_t epoch) { epoch_ = epoch; }
+
+ private:
+  template <class Spin, class Wait>
+  HWY_INLINE void CallImpl(hwy::SizeTag<1> ,
+                           const Spin& spin, const Wait& wait) const {
+    wait.UntilWoken(worker_, spin, epoch_);
+  }
+  template <class Spin, class Barrier>
+  HWY_INLINE void CallImpl(hwy::SizeTag<2> ,
+                           const Spin& spin, const Barrier& barrier) const {
+    barrier.WorkerReached(worker_, spin, epoch_);
   }
 
  public:
   
   
+  template <class Spin, class Param2>
+  hwy::EnableIf<hwy::IsSameEither<
+      hwy::RemoveCvRef<decltype(hwy::RemoveCvRef<Param2>().Type())>, WaitType,
+      BarrierType>()>
+  operator()(const Spin& spin, const Param2& wait_or_barrier) const {
+    
+    
+
+    constexpr size_t kType =
+        hwy::IsSame<
+            hwy::RemoveCvRef<decltype(hwy::RemoveCvRef<Param2>().Type())>,
+            WaitType>() ? 1 : 2;
+
+    
+    
+    this->CallImpl(hwy::SizeTag<kType>(), spin, wait_or_barrier);
+  }
+
+ private:
+  Worker* const worker_;
+  uint32_t epoch_;
+};
+
+
+
+class ThreadFunc {
+ public:
+  ThreadFunc(Worker* worker, Tasks* tasks, Config config)
+      : worker_(worker),
+        tasks_(tasks),
+        config_(config),
+        worker_adapter_(worker_) {
+    worker->LatchConfig(config);
+  }
+
+  HWY_POOL_PROFILE void operator()() {
+    
+    
+    std::atomic_thread_fence(std::memory_order_acquire);
+
+    HWY_DASSERT(worker_->Index() != 0);  
+    SetThreadName("worker%03zu", static_cast<int>(worker_->Index() - 1));
+    hwy::Profiler::InitThread();
+
+    
+    
+    for (uint32_t epoch = 1;; ++epoch) {
+      worker_adapter_.SetEpoch(epoch);
+      CallWithSpinWait(config_, worker_adapter_);
+
+      
+      config_ = worker_->LatchedConfig();
+
+      tasks_->WorkerRun(worker_);
+
+      
+      CallWithSpinBarrier(config_, worker_adapter_);
+
+      
+      if (HWY_UNLIKELY(config_.exit)) break;
+    }
+  }
+
+ private:
+  Worker* const worker_;
+  Tasks* const tasks_;
+
+  Config config_;
+  WorkerAdapter worker_adapter_;
+};
+
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class alignas(HWY_ALIGNMENT) ThreadPool {
+ public:
+  
+  
   static size_t MaxThreads() {
+    LogicalProcessorSet lps;
+    
+    
+    if (GetThreadAffinity(lps)) {
+      return lps.Count() - 1;
+    }
     return static_cast<size_t>(std::thread::hardware_concurrency() - 1);
   }
 
   
   
-  
-  explicit ThreadPool(size_t num_threads) : owner_(num_threads) {
-    (void)busy_;  
-    const size_t num_workers = owner_.NumWorkers();
+  explicit ThreadPool(size_t num_threads)
+      : have_timer_stop_(platform::HaveTimerStop(cpu100_)),
+        num_threads_(ClampedNumThreads(num_threads)),
+        div_workers_(1 + num_threads_),
+        workers_(pool::WorkerLifecycle::Init(worker_bytes_, num_threads_,
+                                             div_workers_)),
+        
+        main_adapter_(workers_ + 0, &tasks_) {
+    
+    
+    
+    for (PoolWaitMode mode : {PoolWaitMode::kSpin, PoolWaitMode::kBlock}) {
+      wait_mode_ = mode;  
+      AutoTuner().SetCandidates(
+          pool::Config::AllCandidates(mode, num_threads_));
+    }
+    config_ = AutoTuner().Candidates()[0];
+
+    threads_.reserve(num_threads_);
+    for (size_t thread = 0; thread < num_threads_; ++thread) {
+      threads_.emplace_back(
+          pool::ThreadFunc(workers_ + 1 + thread, &tasks_, config_));
+    }
 
     
     
-    threads_.reserve(num_workers - 1);
-    for (size_t thread = 0; thread < num_workers - 1; ++thread) {
-      threads_.emplace_back(ThreadFunc, thread, num_workers, owner_.Mem());
-    }
   }
 
   
   ~ThreadPool() {
-    PoolMem& mem = *owner_.Mem();
-    mem.commands.Broadcast(PoolCommands::kTerminate);  
+    
+    
+    
+    
+    pool::Config copy = config_;
+    copy.exit = true;
+    SendConfig(copy);
 
     for (std::thread& thread : threads_) {
-      HWY_ASSERT(thread.joinable());
+      HWY_DASSERT(thread.joinable());
       thread.join();
     }
+
+    pool::WorkerLifecycle::Destroy(workers_, num_threads_);
   }
 
   ThreadPool(const ThreadPool&) = delete;
@@ -630,32 +1112,25 @@ class ThreadPool {
 
   
   
-  size_t NumWorkers() const { return owner_.NumWorkers(); }
+  size_t NumWorkers() const {
+    return static_cast<size_t>(div_workers_.GetDivisor());
+  }
 
   
   
   
   
   void SetWaitMode(PoolWaitMode mode) {
-    
-    
-    HWY_DASSERT(busy_.fetch_add(1) == 0);
-
-    PoolMem& mem = *owner_.Mem();
-
-    
-    
-    for (size_t thread = 0; thread < owner_.NumWorkers(); ++thread) {
-      mem.Worker(thread).SetWaitMode(mode);
-    }
-
-    
-    
-    
-    mem.commands.Broadcast(PoolCommands::kNop);
-
-    HWY_DASSERT(busy_.fetch_add(-1) == 1);
+    wait_mode_ = mode;
+    SendConfig(AutoTuneComplete() ? *AutoTuner().Best()
+                                  : AutoTuner().NextConfig());
   }
+
+  
+  pool::Config config() const { return config_; }
+
+  bool AutoTuneComplete() const { return AutoTuner().Best(); }
+  Span<CostDistribution> AutoTuneCosts() { return AutoTuner().Costs(); }
 
   
   
@@ -666,59 +1141,176 @@ class ThreadPool {
   
   template <class Closure>
   void Run(uint64_t begin, uint64_t end, const Closure& closure) {
+    const size_t num_tasks = static_cast<size_t>(end - begin);
     const size_t num_workers = NumWorkers();
-    PoolMem& mem = *owner_.Mem();
 
-    if (HWY_LIKELY(ParallelFor::Plan(begin, end, num_workers, closure, mem))) {
-      
-      HWY_DASSERT(busy_.fetch_add(1) == 0);
+    
+    
+    if (HWY_UNLIKELY(num_tasks <= 1 || num_workers == 1)) {
+      for (uint64_t task = begin; task < end; ++task) {
+        closure(task, 0);
+      }
+      return;
+    }
 
-      mem.barrier.Reset();
-      mem.commands.Broadcast(PoolCommands::kWork);
+    SetBusy();
+    const bool is_root = PROFILER_IS_ROOT_RUN();
 
-      
-      const size_t thread = num_workers - 1;
-      ParallelFor::WorkerRun(thread, num_workers, mem);
-      mem.barrier.WorkerArrive(thread);
+    tasks_.Set(begin, end, closure);
 
-      mem.barrier.WaitAll(num_workers);
+    
+    if (HWY_LIKELY(num_tasks > num_workers)) {
+      pool::Tasks::DivideRangeAmongWorkers(begin, end, div_workers_, workers_);
+    }
 
-      HWY_DASSERT(busy_.fetch_add(-1) == 1);
+    main_adapter_.SetEpoch(++epoch_);
+
+    AutoTuneT& auto_tuner = AutoTuner();
+    if (HWY_LIKELY(auto_tuner.Best())) {
+      CallWithConfig(config_, main_adapter_);
+      if (is_root) {
+        PROFILER_END_ROOT_RUN();
+      }
+      ClearBusy();
+    } else {
+      const uint64_t t0 = timer::Start();
+      CallWithConfig(config_, main_adapter_);
+      const uint64_t t1 = have_timer_stop_ ? timer::Stop() : timer::Start();
+      auto_tuner.NotifyCost(t1 - t0);
+      if (is_root) {
+        PROFILER_END_ROOT_RUN();
+      }
+      ClearBusy();              
+      if (auto_tuner.Best()) {  
+        HWY_IF_CONSTEXPR(pool::kVerbosity >= 1) {
+          const size_t idx_best = static_cast<size_t>(
+              auto_tuner.Best() - auto_tuner.Candidates().data());
+          HWY_DASSERT(idx_best < auto_tuner.Costs().size());
+          auto& AT = auto_tuner.Costs()[idx_best];
+          const double best_cost = AT.EstimateCost();
+          HWY_DASSERT(best_cost > 0.0);  
+
+          Stats s_ratio;
+          for (size_t i = 0; i < auto_tuner.Costs().size(); ++i) {
+            if (i == idx_best) continue;
+            const double cost = auto_tuner.Costs()[i].EstimateCost();
+            s_ratio.Notify(static_cast<float>(cost / best_cost));
+          }
+
+          fprintf(stderr, "  %s %5.0f +/- %4.0f. Gain %.2fx [%.2fx, %.2fx]\n",
+                  auto_tuner.Best()->ToString().c_str(), best_cost, AT.Stddev(),
+                  s_ratio.GeometricMean(), s_ratio.Min(), s_ratio.Max());
+        }
+        SendConfig(*auto_tuner.Best());
+      } else {
+        HWY_IF_CONSTEXPR(pool::kVerbosity >= 2) {
+          fprintf(stderr, "  %s %5lu\n", config_.ToString().c_str(), t1 - t0);
+        }
+        SendConfig(auto_tuner.NextConfig());
+      }
     }
   }
 
+ private:
   
-  
-  static bool NoInit(size_t ) { return true; }  
-
-  
-  
-  size_t NumThreads() const { return NumWorkers(); }  
-
-  
-  
-  
-  
-  template <class InitClosure, class RunClosure>
-  bool Run(uint64_t begin, uint64_t end, const InitClosure& init_closure,
-           const RunClosure& run_closure) {
-    if (!init_closure(NumThreads())) return false;
-    Run(begin, end, run_closure);
-    return true;
+  static size_t ClampedNumThreads(size_t num_threads) {
+    
+    if (HWY_UNLIKELY(num_threads > pool::kMaxThreads)) {
+      HWY_WARN("ThreadPool: clamping num_threads %zu to %zu.", num_threads,
+               pool::kMaxThreads);
+      num_threads = pool::kMaxThreads;
+    }
+    return num_threads;
   }
 
   
-  PoolMem& InternalMem() const { return *owner_.Mem(); }
+  void SetBusy() { HWY_DASSERT(!busy_.test_and_set()); }
+  void ClearBusy() { HWY_IF_CONSTEXPR(HWY_IS_DEBUG_BUILD) busy_.clear(); }
 
- private:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  HWY_NOINLINE void SendConfig(pool::Config copy) {
+    if (NumWorkers() == 1) {
+      config_ = copy;
+      return;
+    }
+
+    SetBusy();
+
+    const auto closure = [this, copy](uint64_t task, size_t worker) {
+      (void)task;
+      HWY_DASSERT(task == worker);  
+      workers_[worker].LatchConfig(copy);
+    };
+
+    tasks_.Set(0, NumWorkers(), closure);
+    
+    main_adapter_.SetEpoch(++epoch_);
+    CallWithConfig(config_, main_adapter_);
+    
+
+    
+    tasks_.Set(0, 0, [](uint64_t , size_t ) {});
+    
+    
+    pool::Config new_barrier = config_;
+    new_barrier.barrier_type = copy.barrier_type;
+    main_adapter_.SetEpoch(++epoch_);
+    CallWithConfig(new_barrier, main_adapter_);
+    
+    
+    config_ = copy;
+
+    ClearBusy();
+  }
+
+  using AutoTuneT = AutoTune<pool::Config, 30>;
+  AutoTuneT& AutoTuner() {
+    static_assert(static_cast<size_t>(PoolWaitMode::kBlock) == 1, "");
+    return auto_tune_[static_cast<size_t>(wait_mode_) - 1];
+  }
+  const AutoTuneT& AutoTuner() const {
+    return auto_tune_[static_cast<size_t>(wait_mode_) - 1];
+  }
+
+  char cpu100_[100];
+  const bool have_timer_stop_;
+  const size_t num_threads_;  
+  const Divisor64 div_workers_;
+  pool::Worker* const workers_;  
+
+  pool::MainAdapter main_adapter_;
+
+  
+  pool::Tasks tasks_;    
+  pool::Config config_;  
+  uint32_t epoch_ = 0;   
+
+  
+  std::atomic_flag busy_ = ATOMIC_FLAG_INIT;
+
   
   std::vector<std::thread> threads_;
 
-  PoolMemOwner owner_;
+  PoolWaitMode wait_mode_;
+  AutoTuneT auto_tune_[2];  
 
   
   
-  std::atomic<int> busy_{0};
+  
+  alignas(HWY_ALIGNMENT) uint8_t
+      worker_bytes_[sizeof(pool::Worker) * (pool::kMaxThreads + 1)];
 };
 
 }  

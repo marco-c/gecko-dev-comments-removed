@@ -25,55 +25,19 @@
 #include <stdio.h>
 
 #include <atomic>
+#include <thread>  
 #include <vector>
 
-#include "gtest/gtest.h"
-#include "hwy/base.h"                  
-#include "hwy/detect_compiler_arch.h"  
-#include "hwy/tests/test_util-inl.h"   
+#include "hwy/base.h"  
+#include "hwy/contrib/thread_pool/spin.h"
+#include "hwy/contrib/thread_pool/topology.h"
+#include "hwy/profiler.h"
+#include "hwy/tests/hwy_gtest.h"
+#include "hwy/tests/test_util-inl.h"  
 
 namespace hwy {
+namespace pool {
 namespace {
-using HWY_NAMESPACE::AdjustedReps;
-
-
-TEST(ThreadPoolTest, TestDivisor) {
-  
-  for (uint32_t d = 1; d < 256; ++d) {
-    const Divisor divisor(d);
-    for (uint32_t n = 0; n < 256; ++n) {
-      HWY_ASSERT(divisor.Divide(n) == n / d);
-      HWY_ASSERT(divisor.Remainder(n) == n % d);
-    }
-  }
-
-  
-  for (uint32_t d = 0xFFFFFF00u; d != 0; ++d) {
-    const Divisor divisor(d);
-    for (uint32_t n = 0; n < 256; ++n) {
-      HWY_ASSERT(divisor.Divide(n) == n / d);
-      HWY_ASSERT(divisor.Remainder(n) == n % d);
-    }
-  }
-
-  
-  for (uint32_t d = 1; d < 256; ++d) {
-    const Divisor divisor(d);
-    for (uint32_t n = 0xFFFFFF00u; n != 0; ++n) {
-      HWY_ASSERT(divisor.Divide(n) == n / d);
-      HWY_ASSERT(divisor.Remainder(n) == n % d);
-    }
-  }
-
-  
-  for (uint32_t d = 0xFFFFFF00u; d != 0; ++d) {
-    const Divisor divisor(d);
-    for (uint32_t n = 0xFFFFFF00u; n != 0; ++n) {
-      HWY_ASSERT(divisor.Divide(n) == n / d);
-      HWY_ASSERT(divisor.Remainder(n) == n % d);
-    }
-  }
-}
 
 TEST(ThreadPoolTest, TestCoprime) {
   
@@ -124,7 +88,7 @@ TEST(ThreadPoolTest, TestCoprime) {
 }
 
 
-void VerifyPermutation(uint32_t size, const Divisor& divisor,
+void VerifyPermutation(uint32_t size, const Divisor64& divisor,
                        const ShuffledIota& shuffled, uint32_t current,
                        uint32_t* visited) {
   for (size_t i = 0; i < size; i++) {
@@ -148,7 +112,7 @@ TEST(ThreadPoolTest, TestRandomPermutation) {
 
   
   for (uint32_t size = 1; size < kMaxSize; ++size) {
-    const Divisor divisor(size);
+    const Divisor64 divisor(size);
 
     const uint32_t coprime = ShuffledIota::FindAnotherCoprime(size, 1);
     const ShuffledIota shuffled(coprime);
@@ -167,7 +131,7 @@ TEST(ThreadPoolTest, TestMultiplePermutations) {
   uint32_t current[kMaxSize];
 
   for (uint32_t size = 1; size < kMaxSize; ++size) {
-    const Divisor divisor(size);
+    const Divisor64 divisor(size);
 
     
     std::vector<ShuffledIota> shuffled;
@@ -238,15 +202,86 @@ TEST(ThreadPoolTest, TestMultiplePermutations) {
   }  
 }
 
+class DoWait {
+ public:
+  DoWait(Worker* worker, uint32_t epoch) : worker_(worker), epoch_(epoch) {}
+
+  template <class Spin, class Wait, class Barrier>
+  void operator()(const Spin& spin, const Wait& wait, const Barrier&) const {
+    wait.UntilWoken(worker_, spin, epoch_);
+  }
+
+ private:
+  Worker* const worker_;
+  const uint32_t epoch_;
+};
+
+class DoWakeWorkers {
+ public:
+  DoWakeWorkers(Worker* workers, uint32_t epoch)
+      : workers_(workers), epoch_(epoch) {}
+
+  template <class Spin, class Wait, class Barrier>
+  void operator()(const Spin&, const Wait& wait, const Barrier&) const {
+    wait.WakeWorkers(workers_, epoch_);
+  }
+
+ private:
+  Worker* const workers_;
+  const uint32_t epoch_;
+};
+
+
+TEST(ThreadPoolTest, TestWaiter) {
+  if (!hwy::HaveThreadingSupport()) return;
+
+  const uint32_t epoch = 1;
+
+  
+  for (size_t num_threads = 1; num_threads < 6; ++num_threads) {
+    const size_t num_workers = 1 + num_threads;
+    auto storage = hwy::AllocateAligned<uint8_t>(num_workers * sizeof(Worker));
+    HWY_ASSERT(storage);
+    const Divisor64 div_workers(num_workers);
+
+    for (WaitType wait_type :
+         {WaitType::kBlock, WaitType::kSpin1, WaitType::kSpinSeparate}) {
+      Worker* workers =
+          pool::WorkerLifecycle::Init(storage.get(), num_threads, div_workers);
+
+      alignas(8) const Config config(SpinType::kPause, wait_type,
+                                     BarrierType::kGroup4);
+
+      
+      
+      std::thread thread([&]() {
+        hwy::Profiler::InitThread();
+        CallWithConfig(config, DoWakeWorkers(workers, epoch));
+      });
+
+      
+      for (size_t worker = 1; worker < num_workers; ++worker) {
+        CallWithConfig(config, DoWait(workers + 1, epoch));
+      }
+      thread.join();
+
+      pool::WorkerLifecycle::Destroy(workers, num_workers);
+    }
+  }
+}
+
 
 TEST(ThreadPoolTest, TestTasks) {
-  for (size_t num_threads = 0; num_threads <= 8; ++num_threads) {
-    PoolMemOwner owner(num_threads);
-    PoolMem& mem = *owner.Mem();
-    const size_t num_workers = owner.NumWorkers();
+  for (size_t num_threads = 1; num_threads <= 8; ++num_threads) {
+    const size_t num_workers = num_threads + 1;
+    auto storage = hwy::AllocateAligned<uint8_t>(num_workers * sizeof(Worker));
+    HWY_ASSERT(storage);
+    const Divisor64 div_workers(num_workers);
+    Worker* workers =
+        WorkerLifecycle::Init(storage.get(), num_threads, div_workers);
 
     constexpr uint64_t kMaxTasks = 20;
-    uint64_t mementos[kMaxTasks];
+    uint64_t mementos[kMaxTasks];  
     for (uint64_t num_tasks = 0; num_tasks < 20; ++num_tasks) {
       for (uint64_t begin = 0; begin < AdjustedReps(32); ++begin) {
         const uint64_t end = begin + num_tasks;
@@ -259,12 +294,13 @@ TEST(ThreadPoolTest, TestTasks) {
           
           mementos[task - begin] = 1000 + task;
         };
+        Tasks tasks;
+        tasks.Set(begin, end, func);
 
-        if (ParallelFor::Plan(begin, end, num_workers, func, mem)) {
-          
-          for (size_t thread = 0; thread < num_workers; ++thread) {
-            ParallelFor::WorkerRun(thread, num_workers, mem);
-          }
+        Tasks::DivideRangeAmongWorkers(begin, end, div_workers, workers);
+        
+        for (size_t worker = 0; worker < num_workers; ++worker) {
+          tasks.WorkerRun(workers + worker);
         }
 
         
@@ -273,60 +309,75 @@ TEST(ThreadPoolTest, TestTasks) {
         }
       }
     }
+
+    WorkerLifecycle::Destroy(workers, num_workers);
   }
-}
-
-
-TEST(ThreadPoolTest, TestDeprecated) {
-  ThreadPool pool(0);
-  pool.Run(1, 10, &ThreadPool::NoInit,
-           [&](const uint64_t , size_t ) {});
 }
 
 
 
 
 TEST(ThreadPoolTest, TestPool) {
-  if (HWY_ARCH_WASM) return;  
+  if (!hwy::HaveThreadingSupport()) return;
 
-  ThreadPool inner(0);
+  hwy::ThreadPool inner(0);
+
+  constexpr uint64_t kMaxTasks = 20;
+  static std::atomic<uint64_t> mementos[kMaxTasks];
+  static std::atomic<uint64_t> a_begin;
+  static std::atomic<uint64_t> a_end;
+  static std::atomic<uint64_t> a_num_workers;
+
+  
+  const auto func = [&inner](uint64_t task, size_t worker) {
+    HWY_ASSERT(worker < a_num_workers.load());
+    const uint64_t begin = a_begin.load(std::memory_order_acquire);
+    const uint64_t end = a_end.load(std::memory_order_acquire);
+
+    if (!(begin <= task && task < end)) {
+      HWY_ABORT("Task %d not in [%d, %d]", static_cast<int>(task),
+                static_cast<int>(begin), static_cast<int>(end));
+    }
+
+    
+    mementos[task - begin].store(1000 + task);
+
+    
+    inner.Run(begin, end, [begin, end](uint64_t task, size_t worker) {
+      HWY_ASSERT(worker == 0);
+      HWY_ASSERT(begin <= task && task < end);
+    });
+  };
 
   for (size_t num_threads = 0; num_threads <= 6; num_threads += 3) {
-    ThreadPool pool(HWY_MIN(ThreadPool::MaxThreads(), num_threads));
+    hwy::ThreadPool pool(HWY_MIN(ThreadPool::MaxThreads(), num_threads));
+    a_num_workers.store(pool.NumWorkers());
+    for (bool spin : {true, false}) {
+      pool.SetWaitMode(spin ? PoolWaitMode::kSpin : PoolWaitMode::kBlock);
 
-    constexpr uint64_t kMaxTasks = 20;
-    std::atomic<uint64_t> mementos[kMaxTasks];
-    for (uint64_t num_tasks = 0; num_tasks < kMaxTasks; ++num_tasks) {
-      for (uint64_t begin = 0; begin < AdjustedReps(32); ++begin) {
-        const uint64_t end = begin + num_tasks;
-        std::atomic<uint64_t> a_begin;
-        std::atomic<uint64_t> a_end;
-        a_begin.store(begin, std::memory_order_release);
-        a_end.store(end, std::memory_order_release);
+      for (uint64_t num_tasks = 0; num_tasks < kMaxTasks; ++num_tasks) {
+        for (uint64_t all_begin = 0; all_begin < AdjustedReps(32);
+             ++all_begin) {
+          const uint64_t all_end = all_begin + num_tasks;
+          a_begin.store(all_begin, std::memory_order_release);
+          a_end.store(all_end, std::memory_order_release);
 
-        for (size_t i = 0; i < kMaxTasks; ++i) {
-          mementos[i].store(0);
-        }
-        pool.Run(begin, end,
-                 [&a_begin, &a_end, &mementos, &inner](uint64_t task,
-                                                       size_t ) {
-                   const uint64_t begin =
-                       a_begin.load(std::memory_order_acquire);
-                   const uint64_t end = a_end.load(std::memory_order_acquire);
-                   HWY_ASSERT(begin <= task && task < end);
+          for (size_t i = 0; i < kMaxTasks; ++i) {
+            mementos[i].store(0);
+          }
 
-                   
-                   mementos[task - begin].store(1000 + task);
+          pool.Run(all_begin, all_end, func);
 
-                   
-                   inner.Run(begin, end,
-                             [begin, end](uint64_t task, size_t ) {
-                               HWY_ASSERT(begin <= task && task < end);
-                             });
-                 });
-
-        for (uint64_t task = begin; task < end; ++task) {
-          HWY_ASSERT_EQ(1000 + task, mementos[task - begin].load());
+          for (uint64_t task = all_begin; task < all_end; ++task) {
+            const uint64_t expected = 1000 + task;
+            const uint64_t actual = mementos[task - all_begin].load();
+            if (expected != actual) {
+              HWY_ABORT(
+                  "threads %zu, tasks %d: task not run, expected %d, got %d\n",
+                  num_threads, static_cast<int>(num_tasks),
+                  static_cast<int>(expected), static_cast<int>(actual));
+            }
+          }
         }
       }
     }
@@ -345,7 +396,7 @@ struct SmallAssignmentState {
 
 
 TEST(ThreadPoolTest, TestSmallAssignments) {
-  if (HWY_ARCH_WASM) return;  
+  if (!hwy::HaveThreadingSupport()) return;
 
   static SmallAssignmentState state;
 
@@ -360,15 +411,15 @@ TEST(ThreadPoolTest, TestSmallAssignments) {
       state.id_bits.store(0);
       state.num_calls.store(0);
 
-      pool.Run(0, num_tasks, [](uint64_t task, size_t thread) {
+      pool.Run(0, num_tasks, [](uint64_t task, size_t worker) {
         HWY_ASSERT(task < state.num_tasks.load());
-        HWY_ASSERT(thread < state.num_workers.load());
+        HWY_ASSERT(worker < state.num_workers.load());
 
         state.num_calls.fetch_add(1);
 
         uint64_t bits = state.id_bits.load();
         while (!state.id_bits.compare_exchange_weak(bits,
-                                                    bits | (1ULL << thread))) {
+                                                    bits | (1ULL << worker))) {
         }
       });
 
@@ -395,30 +446,29 @@ struct Counter {
 
 
 TEST(ThreadPoolTest, TestWaitMode) {
-  if (HWY_ARCH_WASM) return;  
+  if (!hwy::HaveThreadingSupport()) return;
 
-  const size_t kNumThreads = 9;
-  ThreadPool pool(kNumThreads);
+  ThreadPool pool(9);
   RandomState rng;
-  for (size_t i = 0; i < 10; ++i) {
+  for (size_t i = 0; i < 100; ++i) {
     pool.SetWaitMode(Random32(&rng) ? PoolWaitMode::kSpin
                                     : PoolWaitMode::kBlock);
   }
 }
 
 TEST(ThreadPoolTest, TestCounter) {
-  if (HWY_ARCH_WASM) return;  
+  if (!hwy::HaveThreadingSupport()) return;
 
   const size_t kNumThreads = 12;
   ThreadPool pool(kNumThreads);
   for (PoolWaitMode mode : {PoolWaitMode::kSpin, PoolWaitMode::kBlock}) {
     pool.SetWaitMode(mode);
-    alignas(128) Counter counters[kNumThreads];
+    alignas(128) Counter counters[1+kNumThreads];
 
     const uint64_t kNumTasks = kNumThreads * 19;
     pool.Run(0, kNumTasks,
-             [&counters](const uint64_t task, const size_t thread) {
-               counters[thread].counter.fetch_add(task);
+             [&counters](const uint64_t task, const size_t worker) {
+               counters[worker].counter.fetch_add(task);
              });
 
     uint64_t expected = 0;
@@ -426,7 +476,7 @@ TEST(ThreadPoolTest, TestCounter) {
       expected += i;
     }
 
-    for (size_t i = 1; i < kNumThreads; ++i) {
+    for (size_t i = 1; i < pool.NumWorkers(); ++i) {
       counters[0].Assimilate(counters[i]);
     }
     HWY_ASSERT_EQ(expected, counters[0].counter.load());
@@ -435,3 +485,6 @@ TEST(ThreadPoolTest, TestCounter) {
 
 }  
 }  
+}  
+
+HWY_TEST_MAIN();

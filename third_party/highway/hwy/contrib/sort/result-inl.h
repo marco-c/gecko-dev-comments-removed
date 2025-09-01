@@ -19,14 +19,19 @@
 #ifndef HIGHWAY_HWY_CONTRIB_SORT_RESULT_INL_H_
 #define HIGHWAY_HWY_CONTRIB_SORT_RESULT_INL_H_
 
+#include <stdint.h>
+#include <stdio.h>
 #include <time.h>
 
 #include <algorithm>  
 #include <string>
+#include <vector>
 
+#include "hwy/aligned_allocator.h"
 #include "hwy/base.h"
-#include "hwy/nanobenchmark.h"
-#include "hwy/timer.h"
+#include "hwy/contrib/sort/order.h"
+#include "hwy/per_target.h"  
+#include "hwy/targets.h"     
 
 namespace hwy {
 
@@ -44,27 +49,11 @@ static inline double SummarizeMeasurements(std::vector<double>& seconds) {
   return sum / count;
 }
 
-}  
-#endif  
-
-
-#if defined(HIGHWAY_HWY_CONTRIB_SORT_RESULT_TOGGLE) == \
-    defined(HWY_TARGET_TOGGLE)
-#ifdef HIGHWAY_HWY_CONTRIB_SORT_RESULT_TOGGLE
-#undef HIGHWAY_HWY_CONTRIB_SORT_RESULT_TOGGLE
-#else
-#define HIGHWAY_HWY_CONTRIB_SORT_RESULT_TOGGLE
-#endif
-
-HWY_BEFORE_NAMESPACE();
-namespace hwy {
-namespace HWY_NAMESPACE {
-
-struct Result {
-  Result() {}
-  Result(const Algo algo, Dist dist, size_t num_keys, size_t num_threads,
-         double sec, size_t sizeof_key, const char* key_name)
-      : target(HWY_TARGET),
+struct SortResult {
+  SortResult() {}
+  SortResult(const Algo algo, Dist dist, size_t num_keys, size_t num_threads,
+             double sec, size_t sizeof_key, const char* key_name)
+      : target(DispatchedTarget()),
         algo(algo),
         dist(dist),
         num_keys(num_keys),
@@ -93,35 +82,206 @@ struct Result {
   std::string key_name;
 };
 
-template <class Traits, typename LaneType>
-bool VerifySort(Traits st, const InputStats<LaneType>& input_stats,
-                const LaneType* out, size_t num_lanes, const char* caller) {
-  constexpr size_t N1 = st.LanesPerKey();
-  HWY_ASSERT(num_lanes >= N1);
+}  
+#endif  
 
-  InputStats<LaneType> output_stats;
+
+#if defined(HIGHWAY_HWY_CONTRIB_SORT_RESULT_TOGGLE) == \
+    defined(HWY_TARGET_TOGGLE)
+#ifdef HIGHWAY_HWY_CONTRIB_SORT_RESULT_TOGGLE
+#undef HIGHWAY_HWY_CONTRIB_SORT_RESULT_TOGGLE
+#else
+#define HIGHWAY_HWY_CONTRIB_SORT_RESULT_TOGGLE
+#endif
+
+HWY_BEFORE_NAMESPACE();
+namespace hwy {
+namespace HWY_NAMESPACE {
+
+
+template <class Traits>
+class ReferenceSortVerifier {
+  using LaneType = typename Traits::LaneType;
+  using KeyType = typename Traits::KeyType;
+  using Order = typename Traits::Order;
+  static constexpr bool kAscending = Order::IsAscending();
+  static constexpr size_t kLPK = Traits().LanesPerKey();
+
+ public:
+  ReferenceSortVerifier(const LaneType* in_lanes, size_t num_lanes) {
+    num_lanes_ = num_lanes;
+    num_keys_ = num_lanes / kLPK;
+    in_lanes_ = hwy::AllocateAligned<LaneType>(num_lanes);
+    HWY_ASSERT(in_lanes_);
+    CopyBytes(in_lanes, in_lanes_.get(), num_lanes * sizeof(LaneType));
+  }
+
   
-  for (size_t i = 0; i < num_lanes - N1; i += N1) {
-    output_stats.Notify(out[i]);
-    if (N1 == 2) output_stats.Notify(out[i + 1]);
-    
-    if (st.Compare1(out + i + N1, out + i)) {
-      fprintf(stderr, "%s: i=%d of %d lanes: N1=%d", caller,
-              static_cast<int>(i), static_cast<int>(num_lanes),
-              static_cast<int>(N1));
-      fprintf(stderr, "%5.0f %5.0f vs. %5.0f %5.0f\n\n",
-              static_cast<double>(out[i + 1]), static_cast<double>(out[i + 0]),
-              static_cast<double>(out[i + N1 + 1]),
-              static_cast<double>(out[i + N1]));
-      HWY_ABORT("%d-bit sort is incorrect\n",
-                static_cast<int>(sizeof(LaneType) * 8 * N1));
+  void operator()(Algo algo, const LaneType* out_lanes, size_t k_keys) {
+    SharedState shared;
+    const Traits st;
+    const CappedTag<LaneType, kLPK> d;
+
+    HWY_ASSERT(hwy::IsAligned(in_lanes_.get(), sizeof(KeyType)));
+    KeyType* in_keys = HWY_RCAST_ALIGNED(KeyType*, in_lanes_.get());
+
+    char caption[10];
+    const char* algo_type = IsPartialSort(algo) ? "PartialSort" : "Sort";
+
+    HWY_ASSERT(k_keys <= num_keys_);
+    Run(ReferenceAlgoFor(algo), in_keys, num_keys_, shared, 0,
+        k_keys, Order());
+
+    if (IsSelect(algo)) {
+      
+      if (VQSORT_PRINT >= 3) {
+        const size_t begin_lane = k_keys < 3 ? 0 : (k_keys - 3) * kLPK;
+        const size_t end_lane = HWY_MIN(num_lanes_, (k_keys + 3) * kLPK);
+        fprintf(stderr, "\nExpected:\n");
+        for (size_t i = begin_lane; i < end_lane; i += kLPK) {
+          snprintf(caption, sizeof(caption), "%4zu ", i / kLPK);
+          Print(d, caption, st.SetKey(d, &in_lanes_[i]));
+        }
+        fprintf(stderr, "\n\nActual:\n");
+        for (size_t i = begin_lane; i < end_lane; i += kLPK) {
+          snprintf(caption, sizeof(caption), "%4zu ", i / kLPK);
+          Print(d, caption, st.SetKey(d, &out_lanes[i]));
+        }
+        fprintf(stderr, "\n\n");
+      }
+
+      
+      
+      const size_t k = k_keys * kLPK;
+      if (st.Compare1(&in_lanes_[k], &out_lanes[k]) ||
+          st.Compare1(&out_lanes[k], &in_lanes_[k])) {
+        Print(d, "Expected", st.SetKey(d, &in_lanes_[k]));
+        Print(d, "  Actual", st.SetKey(d, &out_lanes[k]));
+        HWY_ABORT("Select %s asc=%d: mismatch at k_keys=%zu, num_keys=%zu\n",
+                  st.KeyString(), kAscending, k_keys, num_keys_);
+      }
+    } else {
+      if (VQSORT_PRINT >= 3) {
+        const size_t lanes_to_print = HWY_MIN(40, k_keys * kLPK);
+        fprintf(stderr, "\nExpected:\n");
+        for (size_t i = 0; i < lanes_to_print; i += kLPK) {
+          snprintf(caption, sizeof(caption), "%4zu ", i / kLPK);
+          Print(d, caption, st.SetKey(d, &in_lanes_[i]));
+        }
+        fprintf(stderr, "\n\nActual:\n");
+        for (size_t i = 0; i < lanes_to_print; i += kLPK) {
+          snprintf(caption, sizeof(caption), "%4zu ", i / kLPK);
+          Print(d, caption, st.SetKey(d, &out_lanes[i]));
+        }
+        fprintf(stderr, "\n\n");
+      }
+
+      
+      
+      for (size_t i = 0; i < k_keys * kLPK; i += kLPK) {
+        
+        if (st.Compare1(&in_lanes_[i], &out_lanes[i]) ||
+            st.Compare1(&out_lanes[i], &in_lanes_[i])) {
+          Print(d, "Expected", st.SetKey(d, &in_lanes_[i]));
+          Print(d, "  Actual", st.SetKey(d, &out_lanes[i]));
+          HWY_ABORT("%s %s asc=%d: mismatch at %zu, k_keys=%zu, num_keys=%zu\n",
+                    algo_type, st.KeyString(), kAscending, i / kLPK, k_keys,
+                    num_keys_);
+        }
+      }
     }
   }
-  output_stats.Notify(out[num_lanes - N1]);
-  if (N1 == 2) output_stats.Notify(out[num_lanes - N1 + 1]);
 
-  return input_stats == output_stats;
-}
+ private:
+  hwy::AlignedFreeUniquePtr<LaneType[]> in_lanes_;
+  size_t num_lanes_;
+  size_t num_keys_;
+};
+
+
+
+
+
+template <class Traits>
+class SortOrderVerifier {
+  using LaneType = typename Traits::LaneType;
+  using Order = typename Traits::Order;
+  static constexpr bool kAscending = Order::IsAscending();
+  static constexpr size_t kLPK = Traits().LanesPerKey();
+
+ public:
+  void operator()(Algo algo, const InputStats<LaneType>& input_stats,
+                  const LaneType* output, size_t num_keys, size_t k_keys) {
+    if (IsSelect(algo)) {
+      CheckSelectOrder(input_stats, output, num_keys, k_keys);
+    } else {
+      CheckSortedOrder(algo, input_stats, output, num_keys, k_keys);
+    }
+  }
+
+ private:
+  
+  void CheckSortedOrder(const Algo algo,
+                        const InputStats<LaneType>& input_stats,
+                        const LaneType* output, const size_t num_keys,
+                        const size_t k_keys) {
+    const Traits st;
+    const CappedTag<LaneType, kLPK> d;
+    const size_t num_lanes = num_keys * kLPK;
+    const size_t k = k_keys * kLPK;
+    const char* algo_type = IsPartialSort(algo) ? "PartialSort" : "Sort";
+
+    InputStats<LaneType> output_stats;
+    
+    for (size_t i = 0; i < num_lanes - kLPK; i += kLPK) {
+      output_stats.Notify(output[i]);
+      if (kLPK == 2) output_stats.Notify(output[i + 1]);
+
+      
+      
+      if (i < k - kLPK && st.Compare1(output + i + kLPK, output + i)) {
+        Print(d, " cur", st.SetKey(d, &output[i]));
+        Print(d, "next", st.SetKey(d, &output[i + kLPK]));
+        HWY_ABORT(
+            "%s %s asc=%d: wrong order at %zu, k_keys=%zu, num_keys=%zu\n",
+            algo_type, st.KeyString(), kAscending, i / kLPK, k_keys, num_keys);
+      }
+    }
+    output_stats.Notify(output[num_lanes - kLPK]);
+    if (kLPK == 2) output_stats.Notify(output[num_lanes - kLPK + 1]);
+
+    HWY_ASSERT(input_stats == output_stats);
+  }
+
+  
+  void CheckSelectOrder(const InputStats<LaneType>& input_stats,
+                        const LaneType* output, const size_t num_keys,
+                        const size_t k_keys) {
+    const Traits st;
+    const CappedTag<LaneType, kLPK> d;
+    const size_t num_lanes = num_keys * kLPK;
+    const size_t k = k_keys * kLPK;
+
+    InputStats<LaneType> output_stats;
+    for (size_t i = 0; i < num_lanes - kLPK; i += kLPK) {
+      output_stats.Notify(output[i]);
+      if (kLPK == 2) output_stats.Notify(output[i + 1]);
+      
+      if (i < k ? st.Compare1(output + k, output + i)
+                : st.Compare1(output + i, output + k)) {
+        Print(d, "cur", st.SetKey(d, &output[i]));
+        Print(d, "kth", st.SetKey(d, &output[k]));
+        HWY_ABORT(
+            "Select %s asc=%d: wrong order at %zu, k_keys=%zu, num_keys=%zu\n",
+            st.KeyString(), kAscending, i / kLPK, k_keys, num_keys);
+      }
+    }
+    output_stats.Notify(output[num_lanes - kLPK]);
+    if (kLPK == 2) output_stats.Notify(output[num_lanes - kLPK + 1]);
+
+    HWY_ASSERT(input_stats == output_stats);
+  }
+};
 
 
 }  

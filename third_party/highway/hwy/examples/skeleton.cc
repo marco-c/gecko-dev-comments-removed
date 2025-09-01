@@ -40,6 +40,7 @@ namespace skeleton {
 
 
 namespace HWY_NAMESPACE {
+namespace {
 
 
 namespace hn = hwy::HWY_NAMESPACE;
@@ -87,6 +88,7 @@ void FloorLog2(const uint8_t* HWY_RESTRICT values, size_t count,
   }
 }
 
+}  
 
 }  
 }  

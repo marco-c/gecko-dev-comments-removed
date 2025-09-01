@@ -24,10 +24,24 @@
 
 
 
+#include <time.h>
+
 #include <atomic>
 #include <climits>  
 
 #include "hwy/base.h"
+
+#if HWY_OS_WIN
+
+
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif  
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif  
+#include <windows.h>
+#endif
 
 #if HWY_ARCH_WASM
 #include <emscripten/threading.h>
@@ -65,25 +79,65 @@ int __ulock_wake(uint32_t op, void* address, uint64_t zero);
 
 #elif HWY_OS_WIN && !defined(HWY_DISABLE_FUTEX)
 
-#include <windows.h>
+#if HWY_COMPILER_MSVC || HWY_COMPILER_CLANGCL
 #pragma comment(lib, "synchronization.lib")
+#endif
 
 #elif HWY_CXX_LANG < 202002L  
 #define HWY_FUTEX_SLEEP
-#include <chrono>  
 #endif
 
 namespace hwy {
 
 
 
-static inline uint32_t BlockUntilDifferent(const uint32_t prev,
-                                           std::atomic<uint32_t>& current) {
+static inline bool NanoSleep(uint64_t ns) {
+#if HWY_OS_WIN
+  static thread_local HANDLE hTimer = nullptr;
+  if (HWY_UNLIKELY(hTimer == nullptr)) {
+    
+    
+    hTimer = CreateWaitableTimer(nullptr, TRUE, nullptr);
+    if (hTimer == nullptr) return false;
+  }
+
+  
+  LARGE_INTEGER time;
+  time.QuadPart = -static_cast<LONGLONG>(ns / 100);
+  const LONG period = 0;  
+  if (!SetWaitableTimer(hTimer, &time, period, nullptr, nullptr, FALSE)) {
+    return false;
+  }
+
+  (void)WaitForSingleObject(hTimer, INFINITE);
+  return true;
+#else
+  timespec duration;
+  duration.tv_sec = static_cast<time_t>(ns / 1000000000);
+  duration.tv_nsec = static_cast<decltype(duration.tv_nsec)>(ns % 1000000000);
+  timespec remainder;
+  
+  
+  
+  
+  for (int rep = 0; rep < 3; ++rep) {
+    if (nanosleep(&duration, &remainder) == 0 || errno != EINTR) break;
+    duration = remainder;
+  }
+  return true;
+#endif
+}
+
+
+
+static inline uint32_t BlockUntilDifferent(
+    const uint32_t prev, const std::atomic<uint32_t>& current) {
   const auto acq = std::memory_order_acquire;
 
 #if HWY_ARCH_WASM
   
-  volatile void* address = static_cast<volatile void*>(&current);
+  volatile void* address =
+      const_cast<volatile void*>(static_cast<const volatile void*>(&current));
   const double max_ms = INFINITY;
   for (;;) {
     const uint32_t next = current.load(acq);
@@ -95,7 +149,7 @@ static inline uint32_t BlockUntilDifferent(const uint32_t prev,
 
 #elif HWY_OS_LINUX
   
-  uint32_t* address = reinterpret_cast<uint32_t*>(&current);
+  const uint32_t* address = reinterpret_cast<const uint32_t*>(&current);
   
   
   const int op = FUTEX_WAIT_PRIVATE;
@@ -112,7 +166,8 @@ static inline uint32_t BlockUntilDifferent(const uint32_t prev,
 
 #elif HWY_OS_WIN && !defined(HWY_DISABLE_FUTEX)
   
-  volatile void* address = static_cast<volatile void*>(&current);
+  volatile void* address =
+      const_cast<volatile void*>(static_cast<const volatile void*>(&current));
   
   PVOID pprev = const_cast<void*>(static_cast<const void*>(&prev));
   const DWORD max_ms = INFINITE;
@@ -126,7 +181,7 @@ static inline uint32_t BlockUntilDifferent(const uint32_t prev,
 
 #elif HWY_OS_APPLE && !defined(HWY_DISABLE_FUTEX)
   
-  void* address = static_cast<void*>(&current);
+  void* address = const_cast<void*>(static_cast<const void*>(&current));
   for (;;) {
     const uint32_t next = current.load(acq);
     if (next != prev) return next;
@@ -137,7 +192,7 @@ static inline uint32_t BlockUntilDifferent(const uint32_t prev,
   for (;;) {
     const uint32_t next = current.load(acq);
     if (next != prev) return next;
-    std::this_thread::sleep_for(std::chrono::microseconds(2));
+    NanoSleep(2000);
   }
 
 #elif HWY_CXX_LANG >= 202002L
@@ -183,7 +238,7 @@ static inline void WakeAll(std::atomic<uint32_t>& current) {
 
 #elif defined(HWY_FUTEX_SLEEP)
   
-
+  (void)current;
 #elif HWY_CXX_LANG >= 202002L
   current.notify_all();
 

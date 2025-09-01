@@ -16,12 +16,27 @@
 
 
 
+
+
 #ifndef HIGHWAY_HWY_CONTRIB_SORT_SHARED_INL_H_
 #define HIGHWAY_HWY_CONTRIB_SORT_SHARED_INL_H_
 
 #include "hwy/base.h"
 
 namespace hwy {
+
+
+static HWY_INLINE uint64_t RandomBits(uint64_t* HWY_RESTRICT state) {
+  const uint64_t a = state[0];
+  const uint64_t b = state[1];
+  const uint64_t w = state[2] + 1;
+  const uint64_t next = a ^ w;
+  state[0] = (b + (b << 3)) ^ (b >> 11);
+  const uint64_t rot = (b << 24) | (b >> 40);
+  state[1] = rot + next;
+  state[2] = w;
+  return next;
+}
 
 
 
@@ -75,9 +90,7 @@ struct SortConstants {
     
     
     
-    
-    
-    return (2 * kPartitionUnroll + 1 + 2) * N;
+    return 2 * (3 * kPartitionUnroll + 1) * N;
   }
 
   
@@ -106,8 +119,8 @@ struct SortConstants {
   }
 };
 
-static_assert(SortConstants::MaxBufBytes<1>(64) <= 1280, "Unexpectedly high");
-static_assert(SortConstants::MaxBufBytes<2>(64) <= 1280, "Unexpectedly high");
+static_assert(SortConstants::MaxBufBytes<1>(64) <= 1664, "Unexpectedly high");
+static_assert(SortConstants::MaxBufBytes<2>(64) <= 1664, "Unexpectedly high");
 
 }  
 
@@ -128,11 +141,21 @@ static_assert(SortConstants::MaxBufBytes<2>(64) <= 1280, "Unexpectedly high");
 
 
 
+
+
 #undef VQSORT_ENABLED
-#if (HWY_TARGET == HWY_SCALAR) ||                 \
-    (HWY_COMPILER_MSVC && !HWY_IS_DEBUG_BUILD) || \
-    (HWY_ARCH_ARM_V7 && HWY_IS_DEBUG_BUILD) ||    \
-    (HWY_ARCH_ARM_A64 && HWY_COMPILER_GCC_ACTUAL && HWY_IS_ASAN)
+#undef VQSORT_COMPILER_COMPATIBLE
+
+#if (HWY_COMPILER_MSVC && !HWY_IS_DEBUG_BUILD) ||                   \
+    (HWY_ARCH_ARM_V7 && HWY_IS_DEBUG_BUILD) ||                      \
+    (HWY_ARCH_ARM_A64 && HWY_COMPILER_GCC_ACTUAL && HWY_IS_ASAN) || \
+    (HWY_ARCH_RISCV)
+#define VQSORT_COMPILER_COMPATIBLE 0
+#else
+#define VQSORT_COMPILER_COMPATIBLE 1
+#endif
+
+#if (HWY_TARGET == HWY_SCALAR) || !VQSORT_COMPILER_COMPATIBLE
 #define VQSORT_ENABLED 0
 #else
 #define VQSORT_ENABLED 1

@@ -73,7 +73,11 @@
 
 
 #if defined(__apple_build_version__) || __clang_major__ >= 999
-#if __has_attribute(unsafe_buffer_usage)  
+#if __has_warning("-Woverriding-option")
+#define HWY_COMPILER_CLANG 1801
+
+
+#elif __has_builtin(__builtin_nondeterministic_value)
 #define HWY_COMPILER_CLANG 1700
 #elif __has_attribute(nouwtable)  
 #define HWY_COMPILER_CLANG 1600
@@ -115,7 +119,8 @@
 #define HWY_COMPILER3_CLANG 0
 #endif
 
-#if HWY_COMPILER_GCC && !HWY_COMPILER_CLANG && !HWY_COMPILER_ICC
+#if HWY_COMPILER_GCC && !HWY_COMPILER_CLANG && !HWY_COMPILER_ICC && \
+    !HWY_COMPILER_ICX
 #define HWY_COMPILER_GCC_ACTUAL HWY_COMPILER_GCC
 #else
 #define HWY_COMPILER_GCC_ACTUAL 0
@@ -123,16 +128,19 @@
 
 
 #if 0 == (HWY_COMPILER_MSVC + HWY_COMPILER_CLANGCL + HWY_COMPILER_ICC + \
-          HWY_COMPILER_GCC + HWY_COMPILER_CLANG)
+          HWY_COMPILER_ICX + HWY_COMPILER_GCC + HWY_COMPILER_CLANG)
 #error "Unsupported compiler"
 #endif
 
 
-#if 1 <                                                                     \
-    (!!HWY_COMPILER_MSVC + !!HWY_COMPILER_ICC + !!HWY_COMPILER_GCC_ACTUAL + \
-     !!(HWY_COMPILER_CLANGCL | HWY_COMPILER_CLANG))
+#if 1 < (!!HWY_COMPILER_MSVC + (!!HWY_COMPILER_ICC & !HWY_COMPILER_ICX) + \
+         !!HWY_COMPILER_GCC_ACTUAL +                                      \
+         !!(HWY_COMPILER_ICX | HWY_COMPILER_CLANGCL | HWY_COMPILER_CLANG))
 #error "Detected multiple compilers"
 #endif
+
+
+
 
 #ifdef __has_builtin
 #define HWY_HAS_BUILTIN(name) __has_builtin(name)
@@ -156,6 +164,44 @@
 #define HWY_HAS_FEATURE(name) __has_feature(name)
 #else
 #define HWY_HAS_FEATURE(name) 0
+#endif
+
+
+
+#if HWY_COMPILER_MSVC && defined(_MSVC_LANG) && _MSVC_LANG > __cplusplus
+#define HWY_CXX_LANG _MSVC_LANG
+#else
+#define HWY_CXX_LANG __cplusplus
+#endif
+
+#if defined(__cpp_constexpr) && __cpp_constexpr >= 201603L
+#define HWY_CXX17_CONSTEXPR constexpr
+#else
+#define HWY_CXX17_CONSTEXPR
+#endif
+
+#if defined(__cpp_constexpr) && __cpp_constexpr >= 201304L
+#define HWY_CXX14_CONSTEXPR constexpr
+#else
+#define HWY_CXX14_CONSTEXPR
+#endif
+
+#if HWY_CXX_LANG >= 201703L
+#define HWY_IF_CONSTEXPR if constexpr
+#else
+#define HWY_IF_CONSTEXPR if
+#endif
+
+
+
+#ifndef HWY_INLINE_VAR
+#if __cplusplus > 201402L
+
+
+#define HWY_INLINE_VAR inline
+#else
+#define HWY_INLINE_VAR
+#endif
 #endif
 
 
@@ -233,9 +279,34 @@
 #endif
 
 #ifdef __riscv
-#define HWY_ARCH_RVV 1
+#define HWY_ARCH_RISCV 1
 #else
-#define HWY_ARCH_RVV 0
+#define HWY_ARCH_RISCV 0
+#endif
+
+#define HWY_ARCH_RVV HWY_ARCH_RISCV
+
+#if HWY_ARCH_RISCV && defined(__riscv_xlen)
+
+#if __riscv_xlen == 32
+#define HWY_ARCH_RISCV_32 1
+#else
+#define HWY_ARCH_RISCV_32 0
+#endif
+
+#if __riscv_xlen == 64
+#define HWY_ARCH_RISCV_64 1
+#else
+#define HWY_ARCH_RISCV_64 0
+#endif
+
+#else  
+#define HWY_ARCH_RISCV_32 0
+#define HWY_ARCH_RISCV_64 0
+#endif  
+
+#if HWY_ARCH_RISCV_32 && HWY_ARCH_RISCV_64
+#error "Cannot have both RISCV_32 and RISCV_64"
 #endif
 
 #if defined(__s390x__)
@@ -244,12 +315,34 @@
 #define HWY_ARCH_S390X 0
 #endif
 
+#if defined(__loongarch64__) || defined(__loongarch64) || \
+    (defined(__loongarch_grlen) && __loongarch_grlen == 64)
+#define HWY_ARCH_LOONGARCH_64 1
+#else
+#define HWY_ARCH_LOONGARCH_64 0
+#endif
+
+#if defined(__loongarch__) && !HWY_ARCH_LOONGARCH_64
+#define HWY_ARCH_LOONGARCH_32 1
+#else
+#define HWY_ARCH_LOONGARCH_32 0
+#endif
+
+#if HWY_ARCH_LOONGARCH_64 || HWY_ARCH_LOONGARCH_32
+#define HWY_ARCH_LOONGARCH 1
+#else
+#define HWY_ARCH_LOONGARCH 0
+#endif
+
 
 
 #if (HWY_ARCH_X86 + HWY_ARCH_PPC + HWY_ARCH_ARM + HWY_ARCH_ARM_OLD + \
-     HWY_ARCH_WASM + HWY_ARCH_RVV + HWY_ARCH_S390X) > 1
+     HWY_ARCH_WASM + HWY_ARCH_RISCV + HWY_ARCH_S390X + HWY_ARCH_LOONGARCH) > 1
 #error "Must not detect more than one architecture"
 #endif
+
+
+
 
 #if defined(_WIN32) || defined(_WIN64)
 #define HWY_OS_WIN 1
@@ -268,6 +361,18 @@
 #define HWY_OS_APPLE 1
 #else
 #define HWY_OS_APPLE 0
+#endif
+
+#if defined(__FreeBSD__)
+#define HWY_OS_FREEBSD 1
+#else
+#define HWY_OS_FREEBSD 0
+#endif
+
+
+
+#if (HWY_OS_WIN + HWY_OS_LINUX + HWY_OS_APPLE + HWY_OS_FREEBSD) > 1
+#error "Must not detect more than one OS"
 #endif
 
 

@@ -16,6 +16,7 @@
 #ifndef HIGHWAY_HWY_CACHE_CONTROL_H_
 #define HIGHWAY_HWY_CACHE_CONTROL_H_
 
+#include "hwy/aligned_allocator.h"  
 #include "hwy/base.h"
 
 
@@ -65,6 +66,21 @@ HWY_INLINE HWY_ATTR_CACHE void LoadFence() {
 
 
 #pragma pop_macro("LoadFence")
+
+
+
+static HWY_INLINE void StreamCacheLine(const uint64_t* HWY_RESTRICT from,
+                                       uint64_t* HWY_RESTRICT to) {
+  HWY_DASSERT(IsAligned(from));
+  HWY_DASSERT(IsAligned(to));
+#if HWY_COMPILER_CLANG && !defined(HWY_DISABLE_CACHE_CONTROL)
+  for (size_t i = 0; i < HWY_ALIGNMENT / sizeof(uint64_t); ++i) {
+    __builtin_nontemporal_store(from[i], to + i);
+  }
+#else
+  hwy::CopyBytes(from, to, HWY_ALIGNMENT);
+#endif
+}
 
 
 

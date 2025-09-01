@@ -14,13 +14,15 @@
 
 
 
+
+
 #ifndef HIGHWAY_HWY_CONTRIB_SORT_VQSORT_INL_H_
 #define HIGHWAY_HWY_CONTRIB_SORT_VQSORT_INL_H_
 
 
 
 #include <stdio.h>
-#include <time.h>   
+#include <time.h>  
 
 
 #include "hwy/base.h"
@@ -158,8 +160,8 @@ void SiftDown(Traits st, T* HWY_RESTRICT lanes, const size_t num_lanes,
 template <class Traits, typename T>
 void HeapSort(Traits st, T* HWY_RESTRICT lanes, const size_t num_lanes) {
   constexpr size_t N1 = st.LanesPerKey();
-
-  if (num_lanes < 2 * N1) return;
+  HWY_DASSERT(num_lanes % N1 == 0);
+  if (num_lanes == N1) return;
 
   
   for (size_t i = ((num_lanes - N1) / N1 / 2) * N1; i != (~N1 + 1); i -= N1) {
@@ -167,12 +169,71 @@ void HeapSort(Traits st, T* HWY_RESTRICT lanes, const size_t num_lanes) {
   }
 
   for (size_t i = num_lanes - N1; i != 0; i -= N1) {
+
+
+#if HWY_COMPILER_GCC_ACTUAL
+    HWY_DIAGNOSTICS(push)
+    HWY_DIAGNOSTICS_OFF(disable : 4756,
+                        ignored "-Waggressive-loop-optimizations")
+#endif
     
     st.Swap(lanes + 0, lanes + i);
+
+#if HWY_COMPILER_GCC_ACTUAL
+    HWY_DIAGNOSTICS(pop)
+#endif
 
     
     SiftDown(st, lanes, i, 0);
   }
+}
+
+template <class Traits, typename T>
+void HeapSelect(Traits st, T* HWY_RESTRICT lanes, const size_t num_lanes,
+                const size_t k_lanes) {
+  constexpr size_t N1 = st.LanesPerKey();
+  const size_t k = k_lanes + N1;
+  HWY_DASSERT(num_lanes % N1 == 0);
+  if (num_lanes == N1) return;
+
+  const FixedTag<T, N1> d;
+
+  
+  for (size_t i = ((k - N1) / N1 / 2) * N1; i != (~N1 + 1); i -= N1) {
+    SiftDown(st, lanes, k, i);
+  }
+
+  for (size_t i = k; i <= num_lanes - N1; i += N1) {
+    if (AllTrue(d, st.Compare(d, st.SetKey(d, lanes + i),
+                              st.SetKey(d, lanes + 0)))) {
+
+
+#if HWY_COMPILER_GCC_ACTUAL
+      HWY_DIAGNOSTICS(push)
+      HWY_DIAGNOSTICS_OFF(disable : 4756,
+                          ignored "-Waggressive-loop-optimizations")
+#endif
+
+      
+      st.Swap(lanes + 0, lanes + i);
+
+#if HWY_COMPILER_GCC_ACTUAL
+      HWY_DIAGNOSTICS(pop)
+#endif
+
+      
+      SiftDown(st, lanes, k, 0);
+    }
+  }
+
+  st.Swap(lanes + 0, lanes + k - N1);
+}
+
+template <class Traits, typename T>
+void HeapPartialSort(Traits st, T* HWY_RESTRICT lanes, const size_t num_lanes,
+                     const size_t k_lanes) {
+  HeapSelect(st, lanes, num_lanes, k_lanes);
+  HeapSort(st, lanes, k_lanes);
 }
 
 #if VQSORT_ENABLED || HWY_IDE
@@ -529,16 +590,17 @@ HWY_NOINLINE void BaseCase(D d, TraitsKV, T* HWY_RESTRICT keys,
 
   using FuncPtr = decltype(&Sort2To2<Traits, T>);
   const FuncPtr funcs[9] = {
-     nullptr,  
-     &Sort2To2<Traits, T>,
-     &Sort3To4<Traits, T>,
-     &Sort8Rows<1, Traits, T>,  
-     kMaxKeysPerVector >= 2 ? &Sort8Rows<2, Traits, T> : nullptr,
-     kMaxKeysPerVector >= 4 ? &Sort8Rows<4, Traits, T> : nullptr,
-     kMaxKeysPerVector >= 4 ? &Sort16Rows<4, Traits, T> : nullptr,
-     kMaxKeysPerVector >= 8 ? &Sort16Rows<8, Traits, T> : nullptr,
+       nullptr,  
+       &Sort2To2<Traits, T>,
+       &Sort3To4<Traits, T>,
+       &Sort8Rows<1, Traits, T>,  
+       kMaxKeysPerVector >= 2 ? &Sort8Rows<2, Traits, T> : nullptr,
+       kMaxKeysPerVector >= 4 ? &Sort8Rows<4, Traits, T> : nullptr,
+       kMaxKeysPerVector >= 4 ? &Sort16Rows<4, Traits, T> : nullptr,
+       kMaxKeysPerVector >= 8 ? &Sort16Rows<8, Traits, T> : nullptr,
 #if !HWY_COMPILER_MSVC && !HWY_IS_DEBUG_BUILD
-     kMaxKeysPerVector >= 16 ? &Sort16Rows<16, Traits, T> : nullptr,
+       kMaxKeysPerVector >= 16 ? &Sort16Rows<16, Traits, T>
+                                           : nullptr,
 #endif
   };
   funcs[ceil_log2](st, keys, num_lanes, buf);
@@ -580,17 +642,24 @@ HWY_INLINE size_t PartitionRightmost(D d, Traits st, T* const keys,
       num_main = 0;
     }
   }
+
+  
+  
+  
+  
   HWY_DASSERT(num_here >= N);
 
   
   
   
   
-  
-  T* pWriteR = keys + num;
-  const T* pReadR = pWriteR;  
+  const size_t max_buf = (3 * kUnroll + 1) * N;
+  HWY_DASSERT(num_here <= max_buf);
 
-  bufL = 0;  
+  const T* pReadR = keys + num;  
+
+  bufL = 0;
+  size_t bufR = max_buf;  
 
   size_t i = 0;
   
@@ -602,9 +671,8 @@ HWY_INLINE size_t PartitionRightmost(D d, Traits st, T* const keys,
     const Mask<D> comp = st.Compare(d, pivot, v);
     const size_t numL = CompressStore(v, Not(comp), d, buf + bufL);
     bufL += numL;
-    pWriteR -= (N - numL);
-    HWY_DASSERT(pWriteR >= pReadR);
-    (void)CompressBlendedStore(v, comp, d, pWriteR);
+    (void)CompressStore(v, comp, d, buf + bufR);
+    bufR += (N - numL);
   }
 
   
@@ -618,19 +686,20 @@ HWY_INLINE size_t PartitionRightmost(D d, Traits st, T* const keys,
     const Mask<D> comp = st.Compare(d, pivot, v);
     const size_t numL = CompressStore(v, AndNot(comp, mask), d, buf + bufL);
     bufL += numL;
-    pWriteR -= (remaining - numL);
-    HWY_DASSERT(pWriteR >= pReadR);
-    (void)CompressBlendedStore(v, And(comp, mask), d, pWriteR);
+    (void)CompressStore(v, comp, d, buf + bufR);
+    bufR += (remaining - numL);
   }
 
-  HWY_DASSERT(bufL <= num_here);  
-  
-  detail::MaybeUnpoison(buf, bufL);
+  const size_t numWrittenR = bufR - max_buf;
 
-  writeR = static_cast<size_t>(pWriteR - keys);
-  const size_t numWrittenR = num - writeR;
-  (void)numWrittenR;                     
-  HWY_DASSERT(numWrittenR <= num_here);  
+#if HWY_COMPILER_CLANG && HWY_COMPILER_CLANG < 1600
+  detail::MaybeUnpoison(buf, bufL);
+  detail::MaybeUnpoison(buf + max_buf, numWrittenR);
+#endif
+
+  
+  writeR = num - numWrittenR;
+  hwy::CopyBytes(buf + max_buf, keys + writeR, numWrittenR * sizeof(T));
   
   HWY_DASSERT(pReadR == keys + num_main);
   HWY_DASSERT(bufL + numWrittenR == num_here);
@@ -698,9 +767,10 @@ HWY_INLINE void StoreRightAndBuf(D d, Traits st, const Vec<D> v,
   const size_t N = Lanes(d);
   const Mask<D> comp = st.Compare(d, pivot, v);
   const size_t numL = CompressStore(v, Not(comp), d, buf + bufL);
+  const size_t numR = N - numL;
   bufL += numL;
-  writeR -= (N - numL);
-  (void)CompressBlendedStore(v, comp, d, keys + writeR);
+  writeR -= numR;
+  StoreN(Compress(v, comp), d, keys + writeR, numR);
 }
 
 
@@ -901,7 +971,7 @@ HWY_NOINLINE bool MaybePartitionTwoValue(D d, Traits st, T* HWY_RESTRICT keys,
             StoreU(valueR, d, keys + writeL);
           }
         }
-        BlendedStore(valueR, FirstN(d, i - writeL), d, keys + writeL);
+        StoreN(valueR, d, keys + writeL, i - writeL);
         return false;
       }
       StoreU(valueL, d, keys + writeL);
@@ -932,10 +1002,10 @@ HWY_NOINLINE bool MaybePartitionTwoValue(D d, Traits st, T* HWY_RESTRICT keys,
         StoreU(valueR, d, keys + writeL);
       }
     }
-    BlendedStore(valueR, FirstN(d, i - writeL), d, keys + writeL);
+    StoreN(valueR, d, keys + writeL, i - writeL);
     return false;
   }
-  BlendedStore(valueL, valid, d, keys + writeL);
+  StoreN(valueL, d, keys + writeL, remaining);
   writeL += CountTrue(d, eqL);
 
   
@@ -945,7 +1015,7 @@ HWY_NOINLINE bool MaybePartitionTwoValue(D d, Traits st, T* HWY_RESTRICT keys,
       StoreU(valueR, d, keys + i);
     }
   }
-  BlendedStore(valueR, FirstN(d, num - i), d, keys + i);
+  StoreN(valueR, d, keys + i, num - i);
 
   if (VQSORT_PRINT >= 2) {
     fprintf(stderr, "Successful MaybePartitionTwoValue\n");
@@ -996,7 +1066,7 @@ HWY_INLINE bool MaybePartitionTwoValueR(D d, Traits st, T* HWY_RESTRICT keys,
           StoreU(valueL, d, keys + pos);
         }
       }
-      BlendedStore(valueL, FirstN(d, endL - pos), d, keys + pos);
+      StoreN(valueL, d, keys + pos, endL - pos);
       return false;
     }
     StoreU(valueR, d, keys + pos);
@@ -1031,7 +1101,7 @@ HWY_INLINE bool MaybePartitionTwoValueR(D d, Traits st, T* HWY_RESTRICT keys,
         StoreU(valueL, d, keys + pos);
       }
     }
-    BlendedStore(valueL, FirstN(d, endL - pos), d, keys + pos);
+    StoreN(valueL, d, keys + pos, endL - pos);
     return false;
   }
   const size_t lastR = CountTrue(d, eqR);
@@ -1129,19 +1199,6 @@ HWY_INLINE V MedianOf3(Traits st, V v0, V v1, V v2) {
   v1 = st.Last(d, v0, v1);
   v1 = st.First(d, v1, v2);
   return v1;
-}
-
-
-HWY_INLINE uint64_t RandomBits(uint64_t* HWY_RESTRICT state) {
-  const uint64_t a = state[0];
-  const uint64_t b = state[1];
-  const uint64_t w = state[2] + 1;
-  const uint64_t next = a ^ w;
-  state[0] = (b + (b << 3)) ^ (b >> 11);
-  const uint64_t rot = (b << 24) | (b >> 40);
-  state[1] = rot + next;
-  state[2] = w;
-  return next;
 }
 
 
@@ -1329,9 +1386,9 @@ HWY_INLINE Vec<D> ChoosePivotByRank(D d, Traits st,
     fprintf(stderr, "  Pivot rank %3zu\n", pivot_rank);
     HWY_ALIGN T pivot_lanes[MaxLanes(d)];
     Store(pivot, d, pivot_lanes);
-    using KeyType = typename Traits::KeyType;
-    KeyType key;
-    CopyBytes<sizeof(KeyType)>(pivot_lanes, &key);
+    using Key = typename Traits::KeyType;
+    Key key;
+    CopyBytes<sizeof(Key)>(pivot_lanes, &key);
     PrintValue(key);
   }
   
@@ -1659,6 +1716,18 @@ HWY_INLINE Vec<D> ChoosePivotForEqualSamples(D d, Traits st,
 
 
 
+enum class RecurseMode {
+  kSort,    
+  kSelect,  
+            
+            
+            
+            
+  kLooseSelect,  
+                 
+                 
+};
+
 template <class D, class Traits, typename T>
 HWY_NOINLINE void PrintMinMax(D d, Traits st, const T* HWY_RESTRICT keys,
                               size_t num, T* HWY_RESTRICT buf) {
@@ -1689,11 +1758,11 @@ HWY_NOINLINE void PrintMinMax(D d, Traits st, const T* HWY_RESTRICT keys,
   }
 }
 
-template <class D, class Traits, typename T>
+template <RecurseMode mode, class D, class Traits, typename T>
 HWY_NOINLINE void Recurse(D d, Traits st, T* HWY_RESTRICT keys,
                           const size_t num, T* HWY_RESTRICT buf,
                           uint64_t* HWY_RESTRICT state,
-                          const size_t remaining_levels) {
+                          const size_t remaining_levels, const size_t k = 0) {
   HWY_DASSERT(num != 0);
 
   const size_t N = Lanes(d);
@@ -1705,8 +1774,8 @@ HWY_NOINLINE void Recurse(D d, Traits st, T* HWY_RESTRICT keys,
 
   
   if (VQSORT_PRINT >= 1) {
-    fprintf(stderr, "\n\n=== Recurse depth=%zu len=%zu\n", remaining_levels,
-            num);
+    fprintf(stderr, "\n\n=== Recurse depth=%zu len=%zu k=%zu\n",
+            remaining_levels, num, k);
     PrintMinMax(d, st, keys, num, buf);
   }
 
@@ -1726,7 +1795,7 @@ HWY_NOINLINE void Recurse(D d, Traits st, T* HWY_RESTRICT keys,
     MaybePrintVector(d, "pivot", pivot, 0, st.LanesPerKey());
     MaybePrintVector(d, "second", second, 0, st.LanesPerKey());
 
-    Vec<D> third;
+    Vec<D> third = Zero(d);
     
     
     if (HWY_UNLIKELY(!st.IsKV() &&
@@ -1776,17 +1845,33 @@ HWY_NOINLINE void Recurse(D d, Traits st, T* HWY_RESTRICT keys,
   
   
   
-  HWY_DASSERT(bound != 0);
+  using Order = typename Traits::Order;
+  (void)Order::IsAscending();
+  HWY_DASSERT_M(bound != 0,
+                (Order::IsAscending() ? "Ascending" : "Descending"));
   
   
   
   HWY_DASSERT(bound != num || result == PivotResult::kWasLast);
 
-  if (HWY_LIKELY(result != PivotResult::kIsFirst)) {
-    Recurse(d, st, keys, bound, buf, state, remaining_levels - 1);
+  HWY_IF_CONSTEXPR(mode == RecurseMode::kSelect) {
+    if (HWY_LIKELY(result != PivotResult::kIsFirst) && k < bound) {
+      Recurse<RecurseMode::kSelect>(d, st, keys, bound, buf, state,
+                                    remaining_levels - 1, k);
+    } else if (HWY_LIKELY(result != PivotResult::kWasLast) && k >= bound) {
+      Recurse<RecurseMode::kSelect>(d, st, keys + bound, num - bound, buf,
+                                    state, remaining_levels - 1, k - bound);
+    }
   }
-  if (HWY_LIKELY(result != PivotResult::kWasLast)) {
-    Recurse(d, st, keys + bound, num - bound, buf, state, remaining_levels - 1);
+  HWY_IF_CONSTEXPR(mode == RecurseMode::kSort) {
+    if (HWY_LIKELY(result != PivotResult::kIsFirst)) {
+      Recurse<RecurseMode::kSort>(d, st, keys, bound, buf, state,
+                                  remaining_levels - 1);
+    }
+    if (HWY_LIKELY(result != PivotResult::kWasLast)) {
+      Recurse<RecurseMode::kSort>(d, st, keys + bound, num - bound, buf, state,
+                                  remaining_levels - 1);
+    }
   }
 }
 
@@ -1802,8 +1887,7 @@ HWY_INLINE bool HandleSpecialCases(D d, Traits st, T* HWY_RESTRICT keys,
   
   if (HWY_UNLIKELY(num <= base_case_num)) {
     if (VQSORT_PRINT >= 1) {
-      fprintf(stderr, "Special-casing small, %d lanes\n",
-              static_cast<int>(num));
+      fprintf(stderr, "Special-casing small, %zu lanes\n", num);
     }
     BaseCase(d, st, keys, num, buf);
     return true;
@@ -1822,8 +1906,8 @@ HWY_INLINE bool HandleSpecialCases(D d, Traits st, T* HWY_RESTRICT keys,
   const bool huge_vec = kPotentiallyHuge && (2 * N > base_case_num);
   if (partial_128 || huge_vec) {
     if (VQSORT_PRINT >= 1) {
-      fprintf(stderr, "WARNING: using slow HeapSort: partial %d huge %d\n",
-              partial_128, huge_vec);
+      HWY_WARN("using slow HeapSort: partial %d huge %d\n", partial_128,
+               huge_vec);
     }
     HeapSort(st, keys, num);
     return true;
@@ -1874,12 +1958,11 @@ HWY_INLINE size_t CountAndReplaceNaN(D, Traits, T* HWY_RESTRICT, size_t) {
 
 
 template <class D, class Traits, typename T>
-void Sort(D d, Traits st, T* HWY_RESTRICT keys, size_t num,
+void Sort(D d, Traits st, T* HWY_RESTRICT keys, const size_t num,
           T* HWY_RESTRICT buf) {
   if (VQSORT_PRINT >= 1) {
-    fprintf(stderr,
-            "=============== Sort num %zu is128 %d isKV %d vec bytes %d\n", num,
-            st.Is128(), st.IsKV(), static_cast<int>(sizeof(T) * Lanes(d)));
+    fprintf(stderr, "=============== Sort %s num=%zu, vec bytes=%zu\n",
+            st.KeyString(), num, sizeof(T) * Lanes(d));
   }
 
 #if HWY_MAX_BYTES > 64
@@ -1897,15 +1980,102 @@ void Sort(D d, Traits st, T* HWY_RESTRICT keys, size_t num,
     
     
     const size_t max_levels = 50;
-    detail::Recurse(d, st, keys, num, buf, state, max_levels);
+    detail::Recurse<detail::RecurseMode::kSort>(d, st, keys, num, buf, state,
+                                                max_levels);
   }
 #else   
   (void)d;
   (void)buf;
   if (VQSORT_PRINT >= 1) {
-    fprintf(stderr, "WARNING: using slow HeapSort because vqsort disabled\n");
+    HWY_WARN("using slow HeapSort because vqsort disabled\n");
   }
   detail::HeapSort(st, keys, num);
+#endif  
+
+  if (num_nan != 0) {
+    Fill(d, GetLane(NaN(d)), num_nan, keys + num - num_nan);
+  }
+}
+
+template <class D, class Traits, typename T>
+void PartialSort(D d, Traits st, T* HWY_RESTRICT keys, size_t num, size_t k,
+                 T* HWY_RESTRICT buf) {
+  if (VQSORT_PRINT >= 1) {
+    fprintf(stderr,
+            "=============== PartialSort %s num=%zu, k=%zu vec bytes=%zu\n",
+            st.KeyString(), num, k, sizeof(T) * Lanes(d));
+  }
+  HWY_DASSERT(k <= num);
+
+#if HWY_MAX_BYTES > 64
+  
+  if (HWY_UNLIKELY(Lanes(d) > 64 / sizeof(T))) {
+    return PartialSort(CappedTag<T, 64 / sizeof(T)>(), st, keys, num, k, buf);
+  }
+#endif  
+
+  const size_t num_nan = detail::CountAndReplaceNaN(d, st, keys, num);
+
+#if VQSORT_ENABLED || HWY_IDE
+  if (!detail::HandleSpecialCases(d, st, keys, num, buf)) {  
+    uint64_t* HWY_RESTRICT state = hwy::detail::GetGeneratorStateStatic();
+    
+    
+    const size_t max_levels = 50;
+    
+    detail::Recurse<detail::RecurseMode::kSelect>(d, st, keys, num, buf, state,
+                                                  max_levels, k);
+    detail::Recurse<detail::RecurseMode::kSort>(d, st, keys, k, buf, state,
+                                                max_levels);
+  }
+#else   
+  (void)d;
+  (void)buf;
+  if (VQSORT_PRINT >= 1) {
+    HWY_WARN("using slow HeapSort because vqsort disabled\n");
+  }
+  detail::HeapPartialSort(st, keys, num, k);
+#endif  
+
+  if (num_nan != 0) {
+    Fill(d, GetLane(NaN(d)), num_nan, keys + num - num_nan);
+  }
+}
+
+template <class D, class Traits, typename T>
+void Select(D d, Traits st, T* HWY_RESTRICT keys, const size_t num,
+            const size_t k, T* HWY_RESTRICT buf) {
+  if (VQSORT_PRINT >= 1) {
+    fprintf(stderr, "=============== Select %s num=%zu, k=%zu vec bytes=%zu\n",
+            st.KeyString(), num, k, sizeof(T) * Lanes(d));
+  }
+  HWY_DASSERT(k < num);
+
+#if HWY_MAX_BYTES > 64
+  
+  if (HWY_UNLIKELY(Lanes(d) > 64 / sizeof(T))) {
+    return Select(CappedTag<T, 64 / sizeof(T)>(), st, keys, num, k, buf);
+  }
+#endif  
+
+  const size_t num_nan = detail::CountAndReplaceNaN(d, st, keys, num);
+
+#if VQSORT_ENABLED || HWY_IDE
+  if (!detail::HandleSpecialCases(d, st, keys, num, buf)) {  
+    uint64_t* HWY_RESTRICT state = hwy::detail::GetGeneratorStateStatic();
+    
+    
+    const size_t max_levels = 50;
+    detail::Recurse<detail::RecurseMode::kSelect>(d, st, keys, num, buf, state,
+                                                  max_levels, k);
+  }
+#else   
+  (void)d;
+  (void)buf;
+  if (VQSORT_PRINT >= 1) {
+    HWY_WARN("using slow HeapSort because vqsort disabled\n");
+  }
+  detail::HeapSelect(st, keys, num, k);
 #endif  
 
   if (num_nan != 0) {
@@ -1925,91 +2095,113 @@ void Sort(D d, Traits st, T* HWY_RESTRICT keys, size_t num,
 
 
 
+
 template <class D, class Traits, typename T>
-HWY_API void Sort(D d, Traits st, T* HWY_RESTRICT keys, size_t num) {
+HWY_API void Sort(D d, Traits st, T* HWY_RESTRICT keys, const size_t num) {
   constexpr size_t kLPK = st.LanesPerKey();
   HWY_ALIGN T buf[SortConstants::BufBytes<T, kLPK>(HWY_MAX_BYTES) / sizeof(T)];
-  return Sort(d, st, keys, num, buf);
+  Sort(d, st, keys, num, buf);
 }
 
-#if VQSORT_ENABLED
+
+
+
+template <class D, class Traits, typename T>
+HWY_API void PartialSort(D d, Traits st, T* HWY_RESTRICT keys, const size_t num,
+                         const size_t k) {
+  constexpr size_t kLPK = st.LanesPerKey();
+  HWY_ALIGN T buf[SortConstants::BufBytes<T, kLPK>(HWY_MAX_BYTES) / sizeof(T)];
+  PartialSort(d, st, keys, num, k, buf);
+}
+
+
+
+
+
+template <class D, class Traits, typename T>
+HWY_API void Select(D d, Traits st, T* HWY_RESTRICT keys, const size_t num,
+                    const size_t k) {
+  constexpr size_t kLPK = st.LanesPerKey();
+  HWY_ALIGN T buf[SortConstants::BufBytes<T, kLPK>(HWY_MAX_BYTES) / sizeof(T)];
+  Select(d, st, keys, num, k, buf);
+}
+
 
 namespace detail {
 
 
-template <typename T>
+template <typename Key>
 struct KeyAdapter {
-  using Ascending = OrderAscending<T>;
-  using Descending = OrderDescending<T>;
-
   template <class Order>
-  using Traits = TraitsLane<Order>;
-};
-
-template <>
-struct KeyAdapter<hwy::uint128_t> {
-  using Ascending = OrderAscending128;
-  using Descending = OrderDescending128;
-
-  template <class Order>
-  using Traits = Traits128<Order>;
-};
-
-template <>
-struct KeyAdapter<hwy::K64V64> {
-  using Ascending = OrderAscendingKV128;
-  using Descending = OrderDescendingKV128;
-
-  template <class Order>
-  using Traits = Traits128<Order>;
+  using Traits = TraitsLane<
+      hwy::If<Order::IsAscending(), OrderAscending<Key>, OrderDescending<Key>>>;
 };
 
 template <>
 struct KeyAdapter<hwy::K32V32> {
-  using Ascending = OrderAscendingKV64;
-  using Descending = OrderDescendingKV64;
-
   template <class Order>
-  using Traits = TraitsLane<Order>;
+  using Traits = TraitsLane<
+      hwy::If<Order::IsAscending(), OrderAscendingKV64, OrderDescendingKV64>>;
 };
 
-}  
+
+#if HWY_TARGET != HWY_SCALAR
+
+template <>
+struct KeyAdapter<hwy::K64V64> {
+  template <class Order>
+  using Traits = Traits128<
+      hwy::If<Order::IsAscending(), OrderAscendingKV128, OrderDescendingKV128>>;
+};
+
+template <>
+struct KeyAdapter<hwy::uint128_t> {
+  template <class Order>
+  using Traits = Traits128<
+      hwy::If<Order::IsAscending(), OrderAscending128, OrderDescending128>>;
+};
+
 #endif  
 
+template <typename Key, class Order>
+using MakeTraits =
+    SharedTraits<typename KeyAdapter<Key>::template Traits<Order>>;
+
+}  
 
 
 
 
-template <typename T>
-void VQSortStatic(T* HWY_RESTRICT keys, size_t num, SortAscending) {
-#if VQSORT_ENABLED
-  using Adapter = detail::KeyAdapter<T>;
-  using Order = typename Adapter::Ascending;
-  const detail::SharedTraits<typename Adapter::template Traits<Order>> st;
+
+
+
+
+template <typename Key, class Order>
+void VQSortStatic(Key* HWY_RESTRICT keys, const size_t num_keys, Order) {
+  const detail::MakeTraits<Key, Order> st;
   using LaneType = typename decltype(st)::LaneType;
   const SortTag<LaneType> d;
-  Sort(d, st, reinterpret_cast<LaneType*>(keys), num * st.LanesPerKey());
-#else
-  (void)keys;
-  (void)num;
-  HWY_ASSERT(0);
-#endif  
+  Sort(d, st, reinterpret_cast<LaneType*>(keys), num_keys * st.LanesPerKey());
 }
 
-template <typename T>
-void VQSortStatic(T* HWY_RESTRICT keys, size_t num, SortDescending) {
-#if VQSORT_ENABLED
-  using Adapter = detail::KeyAdapter<T>;
-  using Order = typename Adapter::Descending;
-  const detail::SharedTraits<typename Adapter::template Traits<Order>> st;
+template <typename Key, class Order>
+void VQPartialSortStatic(Key* HWY_RESTRICT keys, const size_t num_keys,
+                         const size_t k_keys, Order) {
+  const detail::MakeTraits<Key, Order> st;
   using LaneType = typename decltype(st)::LaneType;
   const SortTag<LaneType> d;
-  Sort(d, st, reinterpret_cast<LaneType*>(keys), num * st.LanesPerKey());
-#else
-  (void)keys;
-  (void)num;
-  HWY_ASSERT(0);
-#endif  
+  PartialSort(d, st, reinterpret_cast<LaneType*>(keys),
+              num_keys * st.LanesPerKey(), k_keys * st.LanesPerKey());
+}
+
+template <typename Key, class Order>
+void VQSelectStatic(Key* HWY_RESTRICT keys, const size_t num_keys,
+                    const size_t k_keys, Order) {
+  const detail::MakeTraits<Key, Order> st;
+  using LaneType = typename decltype(st)::LaneType;
+  const SortTag<LaneType> d;
+  Select(d, st, reinterpret_cast<LaneType*>(keys), num_keys * st.LanesPerKey(),
+         k_keys * st.LanesPerKey());
 }
 
 

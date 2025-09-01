@@ -40,6 +40,7 @@ HWY_DLLEXPORT int64_t DispatchedTarget();
 HWY_DLLEXPORT size_t VectorBytes();
 
 
+HWY_DLLEXPORT bool HaveInteger64();
 HWY_DLLEXPORT bool HaveFloat16();
 HWY_DLLEXPORT bool HaveFloat64();
 

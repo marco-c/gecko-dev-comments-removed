@@ -15,80 +15,109 @@
 
 #include "hwy/targets.h"
 
-#include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>  
 
+#include "hwy/base.h"
+#include "hwy/detect_targets.h"
 #include "hwy/highway.h"
-#include "hwy/per_target.h"  
-
-#if HWY_IS_ASAN || HWY_IS_MSAN || HWY_IS_TSAN
-#include "sanitizer/common_interface_defs.h"  
-#endif
+#include "hwy/x86_cpuid.h"
 
 #if HWY_ARCH_X86
 #include <xmmintrin.h>
-#if HWY_COMPILER_MSVC
-#include <intrin.h>
-#else  
-#include <cpuid.h>
-#endif  
 
-#elif (HWY_ARCH_ARM || HWY_ARCH_PPC || HWY_ARCH_S390X) && HWY_OS_LINUX
+#elif (HWY_ARCH_ARM || HWY_ARCH_PPC || HWY_ARCH_S390X || HWY_ARCH_RISCV || \
+       HWY_ARCH_LOONGARCH) &&                                              \
+    HWY_OS_LINUX
 
 
-#ifndef TOOLCHAIN_MISS_ASM_HWCAP_H
+#if HWY_HAVE_ASM_HWCAP
 #include <asm/hwcap.h>
 #endif
-#ifndef TOOLCHAIN_MISS_SYS_AUXV_H
+#if HWY_HAVE_AUXV
 #include <sys/auxv.h>
 #endif
 
 #endif  
 
+#if HWY_OS_APPLE
+#include <sys/sysctl.h>
+#include <sys/utsname.h>
+#endif  
+
 namespace hwy {
-namespace {
 
+#if HWY_OS_APPLE
+static HWY_INLINE HWY_MAYBE_UNUSED bool HasCpuFeature(
+    const char* feature_name) {
+  int result = 0;
+  size_t len = sizeof(int);
+  return (sysctlbyname(feature_name, &result, &len, nullptr, 0) == 0 &&
+          result != 0);
+}
 
+static HWY_INLINE HWY_MAYBE_UNUSED bool ParseU32(const char*& ptr,
+                                                 uint32_t& parsed_val) {
+  uint64_t parsed_u64 = 0;
 
-int64_t supported_targets_for_test_ = 0;
+  const char* start_ptr = ptr;
+  for (char ch; (ch = (*ptr)) != '\0'; ++ptr) {
+    unsigned digit = static_cast<unsigned>(static_cast<unsigned char>(ch)) -
+                     static_cast<unsigned>(static_cast<unsigned char>('0'));
+    if (digit > 9u) {
+      break;
+    }
 
+    parsed_u64 = (parsed_u64 * 10u) + digit;
+    if (parsed_u64 > 0xFFFFFFFFu) {
+      return false;
+    }
+  }
 
-int64_t supported_mask_ = LimitsMax<int64_t>();
+  parsed_val = static_cast<uint32_t>(parsed_u64);
+  return (ptr != start_ptr);
+}
+
+static HWY_INLINE HWY_MAYBE_UNUSED bool IsMacOs12_2OrLater() {
+  utsname uname_buf;
+  ZeroBytes(&uname_buf, sizeof(utsname));
+
+  if ((uname(&uname_buf)) != 0) {
+    return false;
+  }
+
+  const char* ptr = uname_buf.release;
+  if (!ptr) {
+    return false;
+  }
+
+  uint32_t major;
+  uint32_t minor;
+  if (!ParseU32(ptr, major)) {
+    return false;
+  }
+
+  if (*ptr != '.') {
+    return false;
+  }
+
+  ++ptr;
+  if (!ParseU32(ptr, minor)) {
+    return false;
+  }
+
+  
+  
+  return (major > 21 || (major == 21 && minor >= 3));
+}
+#endif  
 
 #if HWY_ARCH_X86 && HWY_HAVE_RUNTIME_DISPATCH
 namespace x86 {
 
 
 
-HWY_INLINE void Cpuid(const uint32_t level, const uint32_t count,
-                      uint32_t* HWY_RESTRICT abcd) {
-#if HWY_COMPILER_MSVC
-  int regs[4];
-  __cpuidex(regs, level, count);
-  for (int i = 0; i < 4; ++i) {
-    abcd[i] = regs[i];
-  }
-#else   
-  uint32_t a;
-  uint32_t b;
-  uint32_t c;
-  uint32_t d;
-  __cpuid_count(level, count, a, b, c, d);
-  abcd[0] = a;
-  abcd[1] = b;
-  abcd[2] = c;
-  abcd[3] = d;
-#endif  
-}
-
-HWY_INLINE bool IsBitSet(const uint32_t reg, const int index) {
-  return (reg & (1U << index)) != 0;
-}
-
-
-
-uint32_t ReadXCR0() {
+static uint32_t ReadXCR0() {
 #if HWY_COMPILER_MSVC
   return static_cast<uint32_t>(_xgetbv(0));
 #else   
@@ -99,14 +128,6 @@ uint32_t ReadXCR0() {
                : "c"(index));
   return xcr0;
 #endif  
-}
-
-bool IsAMD() {
-  uint32_t abcd[4];
-  Cpuid(0, 0, abcd);
-  const uint32_t max_level = abcd[0];
-  return max_level >= 1 && abcd[1] == 0x68747541 && abcd[2] == 0x444d4163 &&
-         abcd[3] == 0x69746e65;
 }
 
 
@@ -136,6 +157,7 @@ enum class FeatureIndex : uint32_t {
   kAVX512DQ,
   kAVX512BW,
   kAVX512FP16,
+  kAVX512BF16,
 
   kVNNI,
   kVPCLMULQDQ,
@@ -146,17 +168,20 @@ enum class FeatureIndex : uint32_t {
   kBITALG,
   kGFNI,
 
+  kAVX10,
+  kAPX,
+
   kSentinel
 };
 static_assert(static_cast<size_t>(FeatureIndex::kSentinel) < 64,
               "Too many bits for u64");
 
-HWY_INLINE constexpr uint64_t Bit(FeatureIndex index) {
+static HWY_INLINE constexpr uint64_t Bit(FeatureIndex index) {
   return 1ull << static_cast<size_t>(index);
 }
 
 
-uint64_t FlagsFromCPUID() {
+static uint64_t FlagsFromCPUID() {
   uint64_t flags = 0;  
   uint32_t abcd[4];
   Cpuid(0, 0, abcd);
@@ -203,63 +228,81 @@ uint64_t FlagsFromCPUID() {
     flags |= IsBitSet(abcd[2], 14) ? Bit(FeatureIndex::kPOPCNTDQ) : 0;
 
     flags |= IsBitSet(abcd[3], 23) ? Bit(FeatureIndex::kAVX512FP16) : 0;
+
+    Cpuid(7, 1, abcd);
+    flags |= IsBitSet(abcd[0], 5) ? Bit(FeatureIndex::kAVX512BF16) : 0;
+    flags |= IsBitSet(abcd[3], 19) ? Bit(FeatureIndex::kAVX10) : 0;
+    flags |= IsBitSet(abcd[3], 21) ? Bit(FeatureIndex::kAPX) : 0;
   }
 
   return flags;
 }
 
 
-constexpr uint64_t kGroupSSE2 =
+static constexpr uint64_t kGroupSSE2 =
     Bit(FeatureIndex::kSSE) | Bit(FeatureIndex::kSSE2);
 
-constexpr uint64_t kGroupSSSE3 =
+static constexpr uint64_t kGroupSSSE3 =
     Bit(FeatureIndex::kSSE3) | Bit(FeatureIndex::kSSSE3) | kGroupSSE2;
 
-constexpr uint64_t kGroupSSE4 =
+#ifdef HWY_DISABLE_PCLMUL_AES
+static constexpr uint64_t kGroupSSE4 =
+    Bit(FeatureIndex::kSSE41) | Bit(FeatureIndex::kSSE42) | kGroupSSSE3;
+#else
+static constexpr uint64_t kGroupSSE4 =
     Bit(FeatureIndex::kSSE41) | Bit(FeatureIndex::kSSE42) |
     Bit(FeatureIndex::kCLMUL) | Bit(FeatureIndex::kAES) | kGroupSSSE3;
+#endif  
 
 
 
 
 
 #ifdef HWY_DISABLE_BMI2_FMA
-constexpr uint64_t kGroupBMI2_FMA = 0;
+static constexpr uint64_t kGroupBMI2_FMA = 0;
 #else
-constexpr uint64_t kGroupBMI2_FMA = Bit(FeatureIndex::kBMI) |
-                                    Bit(FeatureIndex::kBMI2) |
-                                    Bit(FeatureIndex::kFMA);
+static constexpr uint64_t kGroupBMI2_FMA = Bit(FeatureIndex::kBMI) |
+                                           Bit(FeatureIndex::kBMI2) |
+                                           Bit(FeatureIndex::kFMA);
 #endif
 
 #ifdef HWY_DISABLE_F16C
-constexpr uint64_t kGroupF16C = 0;
+static constexpr uint64_t kGroupF16C = 0;
 #else
-constexpr uint64_t kGroupF16C = Bit(FeatureIndex::kF16C);
+static constexpr uint64_t kGroupF16C = Bit(FeatureIndex::kF16C);
 #endif
 
-constexpr uint64_t kGroupAVX2 =
+static constexpr uint64_t kGroupAVX2 =
     Bit(FeatureIndex::kAVX) | Bit(FeatureIndex::kAVX2) |
     Bit(FeatureIndex::kLZCNT) | kGroupBMI2_FMA | kGroupF16C | kGroupSSE4;
 
-constexpr uint64_t kGroupAVX3 =
+static constexpr uint64_t kGroupAVX3 =
     Bit(FeatureIndex::kAVX512F) | Bit(FeatureIndex::kAVX512VL) |
     Bit(FeatureIndex::kAVX512DQ) | Bit(FeatureIndex::kAVX512BW) |
     Bit(FeatureIndex::kAVX512CD) | kGroupAVX2;
 
-constexpr uint64_t kGroupAVX3_DL =
+static constexpr uint64_t kGroupAVX3_DL =
     Bit(FeatureIndex::kVNNI) | Bit(FeatureIndex::kVPCLMULQDQ) |
     Bit(FeatureIndex::kVBMI) | Bit(FeatureIndex::kVBMI2) |
     Bit(FeatureIndex::kVAES) | Bit(FeatureIndex::kPOPCNTDQ) |
     Bit(FeatureIndex::kBITALG) | Bit(FeatureIndex::kGFNI) | kGroupAVX3;
 
-constexpr uint64_t kGroupAVX3_SPR =
-    Bit(FeatureIndex::kAVX512FP16) | kGroupAVX3_DL;
+static constexpr uint64_t kGroupAVX3_ZEN4 =
+    Bit(FeatureIndex::kAVX512BF16) | kGroupAVX3_DL;
 
-int64_t DetectTargets() {
+static constexpr uint64_t kGroupAVX3_SPR =
+    Bit(FeatureIndex::kAVX512FP16) | kGroupAVX3_ZEN4;
+
+static constexpr uint64_t kGroupAVX10 =
+    Bit(FeatureIndex::kAVX10) | Bit(FeatureIndex::kAPX) |
+    Bit(FeatureIndex::kVPCLMULQDQ) | Bit(FeatureIndex::kVAES) |
+    Bit(FeatureIndex::kGFNI) | kGroupAVX2;
+
+static int64_t DetectTargets() {
   int64_t bits = 0;  
-#if HWY_ARCH_X86_64
-  bits |= HWY_SSE2;  
-#endif
+  HWY_IF_CONSTEXPR(HWY_ARCH_X86_64) {
+    bits |= HWY_SSE2;  
+  }
 
   const uint64_t flags = FlagsFromCPUID();
   
@@ -281,48 +324,117 @@ int64_t DetectTargets() {
   if ((flags & kGroupSSSE3) == kGroupSSSE3) {
     bits |= HWY_SSSE3;
   }
-#if HWY_ARCH_X86_32
-  if ((flags & kGroupSSE2) == kGroupSSE2) {
-    bits |= HWY_SSE2;
+  HWY_IF_CONSTEXPR(HWY_ARCH_X86_32) {
+    if ((flags & kGroupSSE2) == kGroupSSE2) {
+      bits |= HWY_SSE2;
+    }
   }
-#endif
 
-  
-  
   uint32_t abcd[4];
-  Cpuid(1, 0, abcd);
-  const bool has_osxsave = IsBitSet(abcd[2], 27);
-  if (has_osxsave) {
-    const uint32_t xcr0 = ReadXCR0();
-    const int64_t min_avx3 = HWY_AVX3 | HWY_AVX3_DL | HWY_AVX3_SPR;
-    const int64_t min_avx2 = HWY_AVX2 | min_avx3;
-    
-    if (!IsBitSet(xcr0, 1)) {
-#if HWY_ARCH_X86_64
-      
-      
-      
-      
 
+  if ((flags & kGroupAVX10) == kGroupAVX10) {
+    Cpuid(0x24, 0, abcd);
+
+    
+    const uint32_t avx10_ver = abcd[1] & 0xFFu;
+
+    
+    
+    const bool has_avx10_with_512bit_vectors =
+        (avx10_ver >= 1) && IsBitSet(abcd[1], 18);
+
+    if (has_avx10_with_512bit_vectors) {
+      
+      
+      bits |= (HWY_AVX3_SPR | HWY_AVX3_DL | HWY_AVX3);
+
+      if (avx10_ver >= 2) {
+        
+        bits |= HWY_AVX10_2;
+      }
+    }
+  }
+
+  
+  
+
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  Cpuid(1, 0, abcd);
+  const bool has_xsave = IsBitSet(abcd[2], 26);
+  const bool has_osxsave = IsBitSet(abcd[2], 27);
+  constexpr int64_t min_avx2 = HWY_AVX2 | (HWY_AVX2 - 1);
+
+  if (has_xsave && has_osxsave) {
+#if HWY_OS_APPLE
+    
+    
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+
+    
+    
+    
+    const bool have_avx3_xsave_support =
+        IsMacOs12_2OrLater() && HasCpuFeature("hw.optional.avx512f");
+#endif
+
+    const uint32_t xcr0 = ReadXCR0();
+    constexpr int64_t min_avx3 = HWY_AVX3 | (HWY_AVX3 - 1);
+    
+    if (!IsBitSet(xcr0, 1) || !IsBitSet(xcr0, 2)) {
       
       bits &= ~min_avx2;
-#else
-      bits &= ~(HWY_SSE2 | HWY_SSSE3 | HWY_SSE4 | min_avx2);
+    }
+
+#if !HWY_OS_APPLE
+    
+    
+    const bool have_avx3_xsave_support =
+        IsBitSet(xcr0, 5) && IsBitSet(xcr0, 6) && IsBitSet(xcr0, 7);
 #endif
-    }
+
     
-    if (!IsBitSet(xcr0, 2)) {
-      bits &= ~min_avx2;
-    }
-    
-    if (!IsBitSet(xcr0, 5) || !IsBitSet(xcr0, 6) || !IsBitSet(xcr0, 7)) {
+    if (!have_avx3_xsave_support) {
       bits &= ~min_avx3;
     }
-  }  
+  } else {  
+    
+    bits &= ~min_avx2;
+  }
 
   
   
-  if ((bits & HWY_AVX3_DL) && IsAMD()) {
+  if ((bits & HWY_AVX3_DL) && (flags & kGroupAVX3_ZEN4) == kGroupAVX3_ZEN4 &&
+      IsAMD()) {
     bits |= HWY_AVX3_ZEN4;
   }
 
@@ -332,19 +444,69 @@ int64_t DetectTargets() {
 }  
 #elif HWY_ARCH_ARM && HWY_HAVE_RUNTIME_DISPATCH
 namespace arm {
-int64_t DetectTargets() {
-  int64_t bits = 0;               
+
+#if HWY_ARCH_ARM_A64 && !HWY_OS_APPLE &&        \
+    (HWY_COMPILER_GCC || HWY_COMPILER_CLANG) && \
+    ((HWY_TARGETS & HWY_ALL_SVE) != 0)
+HWY_PUSH_ATTRIBUTES("+sve")
+static int64_t DetectAdditionalSveTargets(int64_t detected_targets) {
+  uint64_t sve_vec_len;
+
+  
+  
+  
+  asm("cntb %0" : "=r"(sve_vec_len)::);
+
+  return ((sve_vec_len == 32)
+              ? HWY_SVE_256
+              : (((detected_targets & HWY_SVE2) != 0 && sve_vec_len == 16)
+                     ? HWY_SVE2_128
+                     : 0));
+}
+HWY_POP_ATTRIBUTES
+#endif
+
+static int64_t DetectTargets() {
+  int64_t bits = 0;  
+
   using CapBits = unsigned long;  
+#if HWY_OS_APPLE
+  const CapBits hw = 0UL;
+#else
+  
   const CapBits hw = getauxval(AT_HWCAP);
+#endif
   (void)hw;
 
 #if HWY_ARCH_ARM_A64
   bits |= HWY_NEON_WITHOUT_AES;  
 
+#if HWY_OS_APPLE
+  if (HasCpuFeature("hw.optional.arm.FEAT_AES")) {
+    bits |= HWY_NEON;
+
+    
+    
+    if ((HasCpuFeature("hw.optional.AdvSIMD_HPFPCvt") ||
+         HasCpuFeature("hw.optional.arm.AdvSIMD_HPFPCvt")) &&
+        HasCpuFeature("hw.optional.arm.FEAT_DotProd") &&
+        HasCpuFeature("hw.optional.arm.FEAT_BF16")) {
+      bits |= HWY_NEON_BF16;
+    }
+  }
+#else  
   
 #if defined(HWCAP_AES)
   if (hw & HWCAP_AES) {
     bits |= HWY_NEON;
+
+#if defined(HWCAP_ASIMDHP) && defined(HWCAP_ASIMDDP) && defined(HWCAP2_BF16)
+    const CapBits hw2 = getauxval(AT_HWCAP2);
+    const int64_t kGroupF16Dot = HWCAP_ASIMDHP | HWCAP_ASIMDDP;
+    if ((hw & kGroupF16Dot) == kGroupF16Dot && (hw2 & HWCAP2_BF16)) {
+      bits |= HWY_NEON_BF16;
+    }
+#endif  
   }
 #endif  
 
@@ -364,6 +526,16 @@ int64_t DetectTargets() {
   if ((hw2 & HWCAP2_SVE2) && (hw2 & HWCAP2_SVEAES)) {
     bits |= HWY_SVE2;
   }
+
+#if (HWY_COMPILER_GCC || HWY_COMPILER_CLANG) && \
+    ((HWY_TARGETS & HWY_ALL_SVE) != 0)
+  if ((bits & HWY_ALL_SVE) != 0) {
+    bits |= DetectAdditionalSveTargets(bits);
+  }
+#endif  
+        
+
+#endif  
 
 #else  
 
@@ -412,17 +584,19 @@ namespace ppc {
 using CapBits = unsigned long;  
 
 
-constexpr CapBits kGroupVSX = PPC_FEATURE_HAS_ALTIVEC | PPC_FEATURE_HAS_VSX;
+static constexpr CapBits kGroupVSX =
+    PPC_FEATURE_HAS_ALTIVEC | PPC_FEATURE_HAS_VSX;
 
 #if defined(HWY_DISABLE_PPC8_CRYPTO)
-constexpr CapBits kGroupPPC8 = PPC_FEATURE2_ARCH_2_07;
+static constexpr CapBits kGroupPPC8 = PPC_FEATURE2_ARCH_2_07;
 #else
-constexpr CapBits kGroupPPC8 = PPC_FEATURE2_ARCH_2_07 | PPC_FEATURE2_VEC_CRYPTO;
+static constexpr CapBits kGroupPPC8 =
+    PPC_FEATURE2_ARCH_2_07 | PPC_FEATURE2_VEC_CRYPTO;
 #endif
-constexpr CapBits kGroupPPC9 = kGroupPPC8 | PPC_FEATURE2_ARCH_3_00;
-constexpr CapBits kGroupPPC10 = kGroupPPC9 | PPC_FEATURE2_ARCH_3_1;
+static constexpr CapBits kGroupPPC9 = kGroupPPC8 | PPC_FEATURE2_ARCH_3_00;
+static constexpr CapBits kGroupPPC10 = kGroupPPC9 | PPC_FEATURE2_ARCH_3_1;
 
-int64_t DetectTargets() {
+static int64_t DetectTargets() {
   int64_t bits = 0;  
 
 #if defined(AT_HWCAP) && defined(AT_HWCAP2)
@@ -462,11 +636,11 @@ namespace s390x {
 
 using CapBits = unsigned long;  
 
-constexpr CapBits kGroupZ14 = HWCAP_S390_VX | HWCAP_S390_VXE;
-constexpr CapBits kGroupZ15 =
+static constexpr CapBits kGroupZ14 = HWCAP_S390_VX | HWCAP_S390_VXE;
+static constexpr CapBits kGroupZ15 =
     HWCAP_S390_VX | HWCAP_S390_VXE | HWCAP_S390_VXRS_EXT2;
 
-int64_t DetectTargets() {
+static int64_t DetectTargets() {
   int64_t bits = 0;
 
 #if defined(AT_HWCAP)
@@ -484,12 +658,78 @@ int64_t DetectTargets() {
   return bits;
 }
 }  
+#elif HWY_ARCH_RISCV && HWY_HAVE_RUNTIME_DISPATCH
+namespace rvv {
+
+#ifndef HWCAP_RVV
+#define COMPAT_HWCAP_ISA_V (1 << ('V' - 'A'))
+#endif
+
+using CapBits = unsigned long;  
+
+static int64_t DetectTargets() {
+  int64_t bits = 0;
+
+  const CapBits hw = getauxval(AT_HWCAP);
+
+  if ((hw & COMPAT_HWCAP_ISA_V) == COMPAT_HWCAP_ISA_V) {
+    size_t e8m1_vec_len;
+#if HWY_ARCH_RISCV_64
+    int64_t vtype_reg_val;
+#else
+    int32_t vtype_reg_val;
+#endif
+
+    
+    
+    asm volatile(
+        
+        
+        ".option push\n\t"
+        ".option arch, +v\n\t"
+        "vsetvli %0, zero, e8, m1, ta, ma\n\t"
+        "csrr %1, vtype\n\t"
+        ".option pop"
+        : "=r"(e8m1_vec_len), "=r"(vtype_reg_val));
+
+    
+    
+    
+    if (vtype_reg_val >= 0 && e8m1_vec_len >= 16) {
+      bits |= HWY_RVV;
+    }
+  }
+
+  return bits;
+}
+}  
+#elif HWY_ARCH_LOONGARCH && HWY_HAVE_RUNTIME_DISPATCH
+
+namespace loongarch {
+
+#ifndef LA_HWCAP_LSX
+#define LA_HWCAP_LSX (1u << 4)
+#endif
+#ifndef LA_HWCAP_LASX
+#define LA_HWCAP_LASX (1u << 5)
+#endif
+
+using CapBits = unsigned long;  
+
+static int64_t DetectTargets() {
+  int64_t bits = 0;
+  const CapBits hw = getauxval(AT_HWCAP);
+  if (hw & LA_HWCAP_LSX) bits |= HWY_LSX;
+  if (hw & LA_HWCAP_LASX) bits |= HWY_LASX;
+  return bits;
+}
+}  
 #endif  
 
 
 
 
-int64_t DetectTargets() {
+static int64_t DetectTargets() {
   
   
   int64_t bits = HWY_SCALAR | HWY_EMU128;
@@ -502,6 +742,10 @@ int64_t DetectTargets() {
   bits |= ppc::DetectTargets();
 #elif HWY_ARCH_S390X && HWY_HAVE_RUNTIME_DISPATCH
   bits |= s390x::DetectTargets();
+#elif HWY_ARCH_RISCV && HWY_HAVE_RUNTIME_DISPATCH
+  bits |= rvv::DetectTargets();
+#elif HWY_ARCH_LOONGARCH && HWY_HAVE_RUNTIME_DISPATCH
+  bits |= loongarch::DetectTargets();
 
 #else
   
@@ -514,46 +758,22 @@ int64_t DetectTargets() {
   if ((bits & HWY_ENABLED_BASELINE) != HWY_ENABLED_BASELINE) {
     const uint64_t bits_u = static_cast<uint64_t>(bits);
     const uint64_t enabled = static_cast<uint64_t>(HWY_ENABLED_BASELINE);
-    fprintf(stderr,
-            "WARNING: CPU supports 0x%08x%08x, software requires 0x%08x%08x\n",
-            static_cast<uint32_t>(bits_u >> 32),
-            static_cast<uint32_t>(bits_u & 0xFFFFFFFF),
-            static_cast<uint32_t>(enabled >> 32),
-            static_cast<uint32_t>(enabled & 0xFFFFFFFF));
+    HWY_WARN("CPU supports 0x%08x%08x, software requires 0x%08x%08x\n",
+             static_cast<uint32_t>(bits_u >> 32),
+             static_cast<uint32_t>(bits_u & 0xFFFFFFFF),
+             static_cast<uint32_t>(enabled >> 32),
+             static_cast<uint32_t>(enabled & 0xFFFFFFFF));
   }
 
   return bits;
 }
 
-}  
-
-HWY_DLLEXPORT HWY_NORETURN void HWY_FORMAT(3, 4)
-    Abort(const char* file, int line, const char* format, ...) {
-  char buf[800];
-  va_list args;
-  va_start(args, format);
-  vsnprintf(buf, sizeof(buf), format, args);
-  va_end(args);
-
-  fprintf(stderr, "Abort at %s:%d: %s\n", file, line, buf);
 
 
-#if HWY_IS_ASAN || HWY_IS_MSAN || HWY_IS_TSAN
-  __sanitizer_print_stack_trace();
-#endif  
-  fflush(stderr);
+static int64_t supported_targets_for_test_ = 0;
 
 
-#if HWY_ARCH_RVV
-  exit(1);  
-#elif HWY_IS_DEBUG_BUILD && !HWY_COMPILER_MSVC
-  
-  
-  __builtin_trap();
-#else
-  abort();  
-#endif
-}
+static int64_t supported_mask_ = LimitsMax<int64_t>();
 
 HWY_DLLEXPORT void DisableTargets(int64_t disabled_targets) {
   supported_mask_ = static_cast<int64_t>(~disabled_targets);
@@ -583,21 +803,6 @@ HWY_DLLEXPORT int64_t SupportedTargets() {
     
     
     GetChosenTarget().Update(targets);
-
-    
-    if (HWY_ARCH_ARM_A64) {
-      const size_t vec_bytes = VectorBytes();  
-      if ((targets & HWY_SVE) && vec_bytes == 32) {
-        targets = static_cast<int64_t>(targets | HWY_SVE_256);
-      } else {
-        targets = static_cast<int64_t>(targets & ~HWY_SVE_256);
-      }
-      if ((targets & HWY_SVE2) && vec_bytes == 16) {
-        targets = static_cast<int64_t>(targets | HWY_SVE2_128);
-      } else {
-        targets = static_cast<int64_t>(targets & ~HWY_SVE2_128);
-      }
-    }  
   }
 
   targets &= supported_mask_;

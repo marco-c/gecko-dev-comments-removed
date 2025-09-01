@@ -15,17 +15,27 @@
 
 #include "hwy/targets.h"
 
+#include <stdint.h>
+
 #include "hwy/detect_targets.h"
+#include "hwy/tests/hwy_gtest.h"
 #include "hwy/tests/test_util-inl.h"
 
+
 namespace fake {
+namespace {
 
 #define DECLARE_FUNCTION(TGT)                                                \
   namespace N_##TGT {                                                        \
     /* Function argument is just to ensure/demonstrate they are possible. */ \
-    int64_t FakeFunction(int) { return HWY_##TGT; }                          \
+    HWY_MAYBE_UNUSED int64_t FakeFunction(int) { return HWY_##TGT; }         \
+    template <typename T>                                                    \
+    int64_t FakeFunctionT(T) {                                               \
+      return HWY_##TGT;                                                      \
+    }                                                                        \
   }
 
+DECLARE_FUNCTION(AVX10_2)
 DECLARE_FUNCTION(AVX3_SPR)
 DECLARE_FUNCTION(AVX3_ZEN4)
 DECLARE_FUNCTION(AVX3_DL)
@@ -39,6 +49,7 @@ DECLARE_FUNCTION(SVE2_128)
 DECLARE_FUNCTION(SVE_256)
 DECLARE_FUNCTION(SVE2)
 DECLARE_FUNCTION(SVE)
+DECLARE_FUNCTION(NEON_BF16)
 DECLARE_FUNCTION(NEON)
 DECLARE_FUNCTION(NEON_WITHOUT_AES)
 
@@ -54,12 +65,26 @@ DECLARE_FUNCTION(WASM_EMU256)
 
 DECLARE_FUNCTION(RVV)
 
+DECLARE_FUNCTION(LASX)
+DECLARE_FUNCTION(LSX)
+
 DECLARE_FUNCTION(SCALAR)
 DECLARE_FUNCTION(EMU128)
 
 HWY_EXPORT(FakeFunction);
 
-void CallFunctionForTarget(int64_t target, int line) {
+template <typename T>
+int64_t FakeFunctionDispatcher(T value) {
+  
+  
+  HWY_EXPORT_T(FakeFunction1, FakeFunctionT<T>);
+  HWY_EXPORT_T(FakeFunction2, FakeFunctionT<bool>);
+  
+  return hwy::AddWithWraparound(HWY_DYNAMIC_DISPATCH_T(FakeFunction1)(value),
+                                HWY_DYNAMIC_DISPATCH_T(FakeFunction2)(true));
+}
+
+void CallFunctionForTarget(int64_t target, int ) {
   if ((HWY_TARGETS & target) == 0) return;
   hwy::SetSupportedTargetsForTest(target);
 
@@ -67,20 +92,23 @@ void CallFunctionForTarget(int64_t target, int line) {
   
   hwy::GetChosenTarget().Update(hwy::SupportedTargets());
 
-  EXPECT_EQ(target, HWY_DYNAMIC_DISPATCH(FakeFunction)(42)) << line;
+  HWY_ASSERT_EQ(target, HWY_DYNAMIC_DISPATCH(FakeFunction)(42));
+
+  
+  const int64_t target_times_2 =
+      static_cast<int64_t>(static_cast<uint64_t>(target) * 2ULL);
+  HWY_ASSERT_EQ(target_times_2, FakeFunctionDispatcher<float>(1.0f));
+  HWY_ASSERT_EQ(target_times_2, FakeFunctionDispatcher<double>(1.0));
 
   
   
   hwy::GetChosenTarget().DeInit();
 
-#if HWY_DISPATCH_WORKAROUND
-  EXPECT_EQ(HWY_STATIC_TARGET, HWY_DYNAMIC_DISPATCH(FakeFunction)(42)) << line;
-#else
-  EXPECT_EQ(target, HWY_DYNAMIC_DISPATCH(FakeFunction)(42)) << line;
-#endif
+  const int64_t expected = target;
+  HWY_ASSERT_EQ(expected, HWY_DYNAMIC_DISPATCH(FakeFunction)(42));
 
   
-  EXPECT_EQ(target, HWY_DYNAMIC_DISPATCH(FakeFunction)(42)) << line;
+  HWY_ASSERT_EQ(target, HWY_DYNAMIC_DISPATCH(FakeFunction)(42));
 }
 
 void CheckFakeFunction() {
@@ -98,6 +126,7 @@ void CheckFakeFunction() {
   CallFunctionForTarget(HWY_SVE_256, __LINE__);
   CallFunctionForTarget(HWY_SVE2, __LINE__);
   CallFunctionForTarget(HWY_SVE, __LINE__);
+  CallFunctionForTarget(HWY_NEON_BF16, __LINE__);
   CallFunctionForTarget(HWY_NEON, __LINE__);
   CallFunctionForTarget(HWY_NEON_WITHOUT_AES, __LINE__);
 
@@ -109,6 +138,10 @@ void CheckFakeFunction() {
   CallFunctionForTarget(HWY_WASM_EMU256, __LINE__);
 
   CallFunctionForTarget(HWY_RVV, __LINE__);
+
+  CallFunctionForTarget(HWY_LASX, __LINE__);
+  CallFunctionForTarget(HWY_LSX, __LINE__);
+
   
   
 #if defined(HWY_COMPILE_ONLY_SCALAR) || HWY_BROKEN_EMU128
@@ -119,23 +152,22 @@ void CheckFakeFunction() {
 }
 
 }  
+}  
 
 namespace hwy {
+namespace {
 
-class HwyTargetsTest : public testing::Test {
- protected:
-  void TearDown() override {
-    SetSupportedTargetsForTest(0);
-    DisableTargets(0);  
-  }
-};
+#if !HWY_TEST_STANDALONE
+class HwyTargetsTest : public testing::Test {};
+#endif
 
 
 
 
-TEST_F(HwyTargetsTest, ChosenTargetOrderTest) { fake::CheckFakeFunction(); }
+TEST(HwyTargetsTest, ChosenTargetOrderTest) { fake::CheckFakeFunction(); }
 
-TEST_F(HwyTargetsTest, DisabledTargetsTest) {
+TEST(HwyTargetsTest, DisabledTargetsTest) {
+  SetSupportedTargetsForTest(0);
   DisableTargets(~0LL);
   
   HWY_ASSERT(HWY_STATIC_TARGET == SupportedTargets());
@@ -160,3 +192,6 @@ TEST_F(HwyTargetsTest, DisabledTargetsTest) {
 }
 
 }  
+}  
+
+HWY_TEST_MAIN();
