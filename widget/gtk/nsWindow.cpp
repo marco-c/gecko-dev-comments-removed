@@ -7525,14 +7525,7 @@ MOZ_CAN_RUN_SCRIPT static void WaylandDragWorkaround(nsWindow* aWindow,
   NS_WARNING(
       "Quit unfinished Wayland Drag and Drop operation. Buggy Wayland "
       "compositor?");
-#if defined(NIGHTLY_BUILD)
-  
-  
-  
-  currentDragSession->EndDragSession(false, 0);
-#else
   currentDragSession->EndDragSession(true, 0);
-#endif
 }
 
 static nsWindow* get_window_for_gtk_widget(GtkWidget* widget) {
