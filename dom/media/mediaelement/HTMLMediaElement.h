@@ -356,6 +356,12 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   void RunAutoplay();
 
   
+  void StartObservingGVAutoplayIfNeeded();
+
+  
+  void StopObservingGVAutoplayIfNeeded();
+
+  
   bool ShouldCheckAllowOrigin();
 
   
@@ -867,6 +873,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   class AudioChannelAgentCallback;
   class ChannelLoader;
   class ErrorSink;
+  class GVAutoplayObserver;
   class MediaElementTrackSource;
   class MediaLoadListener;
   class MediaStreamRenderer;
@@ -1491,6 +1498,9 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   RefPtr<VideoStreamTrack> mSelectedVideoStreamTrack;
+
+  
+  RefPtr<GVAutoplayObserver> mGVAutoplayObserver;
 
   const RefPtr<ShutdownObserver> mShutdownObserver;
 

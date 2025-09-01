@@ -11,6 +11,8 @@
 class nsGlobalWindowInner;
 
 namespace mozilla::dom {
+inline constexpr const char kGVAutoplayAllowedTopic[] =
+    "geckoview-autoplay-allowed";
 
 
 
@@ -71,7 +73,11 @@ class GVAutoplayPermissionRequest : public ContentPermissionRequestBase {
 
 class GVAutoplayPermissionRequestor final {
  public:
+  
   static void AskForPermissionIfNeeded(nsPIDOMWindowInner* aWindow);
+
+  
+  static bool HasUnresolvedRequest(nsPIDOMWindowInner* aWindow);
 
  private:
   static bool HasEverAskForRequest(BrowsingContext* aContext,
