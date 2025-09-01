@@ -804,7 +804,8 @@ void InspectorUtils::HsvToRgb(GlobalObject&, float aH, float aS, float aV,
 }
 
 
-float InspectorUtils::RelativeLuminance(GlobalObject&, float aR, float aG, float aB) {
+float InspectorUtils::RelativeLuminance(GlobalObject&, float aR, float aG,
+                                        float aB) {
   return RelativeLuminanceUtils::Compute(aR, aG, aB);
 }
 
