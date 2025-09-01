@@ -3,6 +3,7 @@
 
 
 
+#define ENABLE_SET_CUBEB_BACKEND 1
 #include "CubebDeviceEnumerator.h"
 #include "MockCubeb.h"
 #include "gtest/gtest-printers.h"

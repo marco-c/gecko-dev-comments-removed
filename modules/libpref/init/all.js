@@ -372,9 +372,6 @@ pref("media.video-queue.send-to-compositor-size", 9999);
 pref("media.cubeb.output_voice_routing", true);
 
 
-pref("media.cubeb.force_mock_context", false);
-
-
 
 pref("apz.overscroll.stop_velocity_threshold", "0.01");
 pref("apz.overscroll.stretch_factor", "0.35");
