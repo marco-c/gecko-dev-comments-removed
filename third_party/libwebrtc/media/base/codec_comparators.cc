@@ -320,15 +320,11 @@ bool MatchesWithCodecRules(const Codec& left_codec, const Codec& right_codec) {
         
         
         
-        
-        
-        
-        return ((right_codec.clockrate == 0 ) ||
-                left_codec.clockrate == right_codec.clockrate) &&
-               (right_codec.bitrate == 0 || left_codec.bitrate <= 0 ||
-                left_codec.bitrate == right_codec.bitrate) &&
-               ((right_codec.channels < 2 && left_codec.channels < 2) ||
-                left_codec.channels == right_codec.channels);
+        return ((left_codec.clockrate == right_codec.clockrate) &&
+                (right_codec.bitrate == 0 || left_codec.bitrate <= 0 ||
+                 left_codec.bitrate == right_codec.bitrate) &&
+                ((right_codec.channels < 2 && left_codec.channels < 2) ||
+                 left_codec.channels == right_codec.channels));
 
       case Codec::Type::kVideo:
         return IsSameCodecSpecific(left_codec.name, left_codec.params,

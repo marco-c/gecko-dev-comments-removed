@@ -169,7 +169,7 @@ PayloadTypePicker::PayloadTypePicker() {
       
       
       
-      {{"reserved-do-not-use", 0, 0}, 102},
+      {{"reserved-do-not-use", 1, 0}, 102},
       {{kCnCodecName, 16000, 1}, 105},
       {{kCnCodecName, 32000, 1}, 106},
       {{kOpusCodecName,
