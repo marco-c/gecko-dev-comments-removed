@@ -73,14 +73,7 @@ bool MoofParser::RebuildFragmentedIndex(BoxContext& aContext) {
                 &mLastDecodeTime, mIsAudio, mTracksEndCts);
 
       if (!moof.IsValid()) {
-        if (!box.Next().IsAvailable()) {
-          
-          
-          LOG_WARN(Moof, "Invalid moof. moof may not be complete yet.");
-          break;
-        }
-        
-        continue;
+        continue;  
       }
 
       if (!mMoofs.IsEmpty()) {
