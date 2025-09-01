@@ -25,23 +25,20 @@ namespace {
 
 constexpr std::array<CascadedBiQuadFilter::BiQuadCoefficients, 1>
     kHighPassFilterCoefficients16kHz = {
-        CascadedBiQuadFilter::BiQuadCoefficients{
-            {0.972613898f, -1.945227797f, 0.972613898f},
-            {-1.944477658f, 0.945977936f}}};
+        {{{0.972613898f, -1.945227797f, 0.972613898f},
+          {-1.944477658f, 0.945977936f}}}};
 
 
 constexpr std::array<CascadedBiQuadFilter::BiQuadCoefficients, 1>
     kHighPassFilterCoefficients32kHz = {
-        CascadedBiQuadFilter::BiQuadCoefficients{
-            {0.986211925f, -1.972423849f, 0.986211925f},
-            {-1.972233729f, 0.972613969f}}};
+        {{{0.986211925f, -1.972423849f, 0.986211925f},
+          {-1.972233729f, 0.972613969f}}}};
 
 
 constexpr std::array<CascadedBiQuadFilter::BiQuadCoefficients, 1>
     kHighPassFilterCoefficients48kHz = {
-        CascadedBiQuadFilter::BiQuadCoefficients{
-            {0.990786698f, -1.981573396f, 0.990786698f},
-            {-1.981488509f, 0.981658283f}}};
+        {{{0.990786698f, -1.981573396f, 0.990786698f},
+          {-1.981488509f, 0.981658283f}}}};
 
 ArrayView<const CascadedBiQuadFilter::BiQuadCoefficients> ChooseCoefficients(
     int sample_rate_hz) {
