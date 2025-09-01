@@ -2,9 +2,7 @@
 
 
 
-import importlib.metadata
-
-__version__ = importlib.metadata.version("taskcluster-taskgraph")
+__version__ = "14.4.1"
 
 
 

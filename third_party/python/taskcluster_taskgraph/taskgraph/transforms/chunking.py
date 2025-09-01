@@ -10,7 +10,6 @@ from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.schema import Schema
 from taskgraph.util.templates import substitute
 
-
 CHUNK_SCHEMA = Schema(
     {
         
