@@ -4853,7 +4853,9 @@ bool jit::FoldLoadsWithUnbox(const MIRGenerator* mir, MIRGraph& graph) {
   
   
   
+  
 
+  Vector<MInstruction*, 16, SystemAllocPolicy> optimizedElements;
   for (MBasicBlockIterator block(graph.begin()); block != graph.end();
        block++) {
     if (mir->shouldCancel("FoldLoadsWithUnbox")) {
@@ -4942,6 +4944,16 @@ bool jit::FoldLoadsWithUnbox(const MIRGenerator* mir, MIRGraph& graph) {
           MOZ_ASSERT(unbox->fallible());
           replacement = MLoadElementAndUnbox::New(
               graph.alloc(), loadIns->elements(), loadIns->index(), mode, type);
+          MOZ_ASSERT(!IsMagicType(type));
+          
+          
+          
+          
+          if ((optimizedElements.empty() ||
+               optimizedElements.back() != loadIns) &&
+              !optimizedElements.append(loadIns->elements()->toInstruction())) {
+            return false;
+          }
           break;
         }
         default:
@@ -4967,6 +4979,50 @@ bool jit::FoldLoadsWithUnbox(const MIRGenerator* mir, MIRGraph& graph) {
         block->discard(lexicalCheck);
       }
       block->discard(load);
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  for (auto* elements : optimizedElements) {
+    bool canRemovePackedChecks = true;
+    Vector<MInstruction*, 4, SystemAllocPolicy> guards;
+    for (MUseDefIterator uses(elements); uses; uses++) {
+      MInstruction* use = uses.def()->toInstruction();
+      if (use->isGuardElementsArePacked()) {
+        if (!guards.append(use)) {
+          return false;
+        }
+      } else if (use->isLoadElement()) {
+        if (!use->toLoadElement()->needsHoleCheck()) {
+          canRemovePackedChecks = false;
+          break;
+        }
+      } else if (use->isStoreElement()) {
+        if (!use->toStoreElement()->needsHoleCheck()) {
+          canRemovePackedChecks = false;
+          break;
+        }
+      } else if (use->isLoadElementAndUnbox() || use->isInitializedLength() ||
+                 use->isArrayLength()) {
+        
+        continue;
+      } else {
+        canRemovePackedChecks = false;
+        break;
+      }
+    }
+    if (!canRemovePackedChecks) {
+      continue;
+    }
+    for (auto* guard : guards) {
+      guard->block()->discard(guard);
     }
   }
 
