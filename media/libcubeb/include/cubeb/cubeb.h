@@ -467,6 +467,8 @@ typedef void (*cubeb_device_changed_callback)(void * user_ptr);
 
 
 
+
+
 typedef void (*cubeb_device_collection_changed_callback)(cubeb * context,
                                                          void * user_ptr);
 
@@ -754,6 +756,8 @@ cubeb_enumerate_devices(cubeb * context, cubeb_device_type devtype,
 CUBEB_EXPORT int
 cubeb_device_collection_destroy(cubeb * context,
                                 cubeb_device_collection * collection);
+
+
 
 
 
