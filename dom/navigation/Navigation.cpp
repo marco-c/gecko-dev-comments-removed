@@ -1209,8 +1209,7 @@ bool Navigation::InnerFireNavigateEvent(
 
               
               if (apiMethodTracker) {
-                apiMethodTracker->mFinishedPromise->MaybeReject(
-                    aRejectionReason);
+                apiMethodTracker->RejectFinishedPromise(aRejectionReason);
               }
 
               
