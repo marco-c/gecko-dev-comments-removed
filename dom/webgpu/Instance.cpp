@@ -53,12 +53,9 @@ static inline nsDependentCString ToCString(const std::string_view s) {
   return true;
 }
 
- bool Instance::ExternalTextureEnabled(JSContext* aCx,
-                                                   JSObject* aObj) {
-  
-  
-  
-  return gfx::gfxVars::GetAllowWebGPUExternalTextureOrDefault();
+ bool Instance::ExternalTexturePrefEnabled(JSContext* aCx,
+                                                       JSObject* aObj) {
+  return StaticPrefs::dom_webgpu_external_texture_enabled_AtStartup();
 }
 
 
