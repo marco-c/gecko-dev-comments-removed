@@ -393,6 +393,7 @@ nsRect ViewportFrame::GetContainingBlockAdjustedForScrollbars(
       
       
       
+      
       LogicalMargin scrollbars(wm,
                                scrollContainerFrame->GetActualScrollbarSizes());
       computedSize.ISize(wm) =
