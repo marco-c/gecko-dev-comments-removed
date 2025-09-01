@@ -5,55 +5,48 @@
 
 
 
-use crate::computed_values::display::T as Display;
+use bitflags::Flags;
+
+use crate::computed_values::isolation::T as Isolation;
+use crate::computed_values::mix_blend_mode::T as MixBlendMode;
+use crate::computed_values::transform_style::T as TransformStyle;
+use crate::dom::TElement;
 use crate::matching::{StyleChange, StyleDifference};
-use crate::properties::ComputedValues;
+use crate::properties::{
+    restyle_damage_rebuild_box, restyle_damage_rebuild_stacking_context,
+    restyle_damage_recalculate_overflow, restyle_damage_repaint, style_structs, ComputedValues,
+};
+use crate::values::computed::basic_shape::ClipPath;
+use crate::values::computed::Perspective;
+use crate::values::generics::transform::{GenericRotate, GenericScale, GenericTranslate};
 use std::fmt;
 
 bitflags! {
-    /// Individual layout actions that may be necessary after restyling.
+    /// Major phases of layout that need to be run due to the damage to a node during restyling. In
+    /// addition to the 4 bytes used for that, the rest of the `u16` is exposed as an extension point
+    /// for users of the crate to add their own custom types of damage that correspond to the
+    /// layout system they are implementing.
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-    pub struct ServoRestyleDamage: u8 {
+    pub struct ServoRestyleDamage: u16 {
         /// Repaint the node itself.
         ///
-        /// Currently unused; need to decide how this propagates.
-        const REPAINT = 0x01;
+        /// Propagates both up and down the flow tree.
+        const REPAINT = 0b0001;
 
-        /// The stacking-context-relative position of this node or its
-        /// descendants has changed.
+        /// Rebuilds the stacking contexts.
         ///
         /// Propagates both up and down the flow tree.
-        const REPOSITION = 0x02;
+        const REBUILD_STACKING_CONTEXT = 0b0011;
 
-        /// Recompute the overflow regions (bounding box of object and all descendants).
+        /// Recalculates the scrollable overflow.
         ///
-        /// Propagates down the flow tree because the computation is bottom-up.
-        const STORE_OVERFLOW = 0x04;
+        /// Propagates both up and down the flow tree.
+        const RECALCULATE_OVERFLOW = 0b0111;
 
-        /// Recompute intrinsic inline_sizes (minimum and preferred).
+        /// Any other type of damage, which requires running layout again.
         ///
-        /// Propagates down the flow tree because the computation is.
-        /// bottom-up.
-        const BUBBLE_ISIZES = 0x08;
-
-        /// Recompute actual inline-sizes and block-sizes, only taking
-        /// out-of-flow children into account.
-        ///
-        /// Propagates up the flow tree because the computation is top-down.
-        const REFLOW_OUT_OF_FLOW = 0x10;
-
-        /// Recompute actual inline_sizes and block_sizes.
-        ///
-        /// Propagates up the flow tree because the computation is top-down.
-        const REFLOW = 0x20;
-
-        /// Re-resolve generated content.
-        ///
-        /// Propagates up the flow tree because the computation is inorder.
-        const RESOLVE_GENERATED_CONTENT = 0x40;
-
-        /// The entire flow needs to be reconstructed.
-        const RECONSTRUCT_FLOW = 0x80;
+        /// Propagates both up and down the flow tree.
+        const RELAYOUT = 0b1111;
     }
 }
 
@@ -62,91 +55,35 @@ malloc_size_of_is_0!(ServoRestyleDamage);
 impl ServoRestyleDamage {
     
     
-    pub fn compute_style_difference(old: &ComputedValues, new: &ComputedValues) -> StyleDifference {
-        let damage = compute_damage(old, new);
-        let change = if damage.is_empty() {
-            StyleChange::Unchanged
-        } else {
-            
-            
-            
-            StyleChange::Changed { reset_only: false }
-        };
+    pub fn compute_style_difference<E: TElement>(
+        old: &ComputedValues,
+        new: &ComputedValues,
+    ) -> StyleDifference {
+        let mut damage = compute_damage(old, new);
+        if damage.is_empty() {
+            return StyleDifference {
+                damage,
+                change: StyleChange::Unchanged,
+            };
+        }
+
+        if damage.contains(ServoRestyleDamage::RELAYOUT) {
+            damage |= E::compute_layout_damage(old, new);
+        }
+
+        
+        
+        
+        let change = StyleChange::Changed { reset_only: false };
+
         StyleDifference { damage, change }
     }
 
     
-    
-    
-    
-    
-    pub fn rebuild_and_reflow() -> ServoRestyleDamage {
-        ServoRestyleDamage::REPAINT
-            | ServoRestyleDamage::REPOSITION
-            | ServoRestyleDamage::STORE_OVERFLOW
-            | ServoRestyleDamage::BUBBLE_ISIZES
-            | ServoRestyleDamage::REFLOW_OUT_OF_FLOW
-            | ServoRestyleDamage::REFLOW
-            | ServoRestyleDamage::RECONSTRUCT_FLOW
-    }
-
-    
     pub fn reconstruct() -> ServoRestyleDamage {
-        ServoRestyleDamage::RECONSTRUCT_FLOW
-    }
-
-    
-    
-    pub fn damage_for_parent(self, child_is_absolutely_positioned: bool) -> ServoRestyleDamage {
-        if child_is_absolutely_positioned {
-            self & (ServoRestyleDamage::REPAINT
-                | ServoRestyleDamage::REPOSITION
-                | ServoRestyleDamage::STORE_OVERFLOW
-                | ServoRestyleDamage::REFLOW_OUT_OF_FLOW
-                | ServoRestyleDamage::RESOLVE_GENERATED_CONTENT)
-        } else {
-            self & (ServoRestyleDamage::REPAINT
-                | ServoRestyleDamage::REPOSITION
-                | ServoRestyleDamage::STORE_OVERFLOW
-                | ServoRestyleDamage::REFLOW
-                | ServoRestyleDamage::REFLOW_OUT_OF_FLOW
-                | ServoRestyleDamage::RESOLVE_GENERATED_CONTENT)
-        }
-    }
-
-    
-    
-    pub fn damage_for_child(
-        self,
-        parent_is_absolutely_positioned: bool,
-        child_is_absolutely_positioned: bool,
-    ) -> ServoRestyleDamage {
-        match (
-            parent_is_absolutely_positioned,
-            child_is_absolutely_positioned,
-        ) {
-            (false, true) => {
-                
-                
-                
-                self & (ServoRestyleDamage::REPAINT | ServoRestyleDamage::REPOSITION)
-            },
-            (true, false) => {
-                
-                
-                if self.contains(ServoRestyleDamage::REFLOW_OUT_OF_FLOW) {
-                    self | ServoRestyleDamage::REFLOW
-                } else {
-                    self
-                }
-            },
-            _ => {
-                
-                self & (ServoRestyleDamage::REPAINT
-                    | ServoRestyleDamage::REPOSITION
-                    | ServoRestyleDamage::REFLOW)
-            },
-        }
+        
+        
+        ServoRestyleDamage::from_bits_retain(<ServoRestyleDamage as Flags>::Bits::MAX)
     }
 }
 
@@ -162,16 +99,15 @@ impl fmt::Display for ServoRestyleDamage {
 
         let to_iter = [
             (ServoRestyleDamage::REPAINT, "Repaint"),
-            (ServoRestyleDamage::REPOSITION, "Reposition"),
-            (ServoRestyleDamage::STORE_OVERFLOW, "StoreOverflow"),
-            (ServoRestyleDamage::BUBBLE_ISIZES, "BubbleISizes"),
-            (ServoRestyleDamage::REFLOW_OUT_OF_FLOW, "ReflowOutOfFlow"),
-            (ServoRestyleDamage::REFLOW, "Reflow"),
             (
-                ServoRestyleDamage::RESOLVE_GENERATED_CONTENT,
-                "ResolveGeneratedContent",
+                ServoRestyleDamage::REBUILD_STACKING_CONTEXT,
+                "Rebuild stacking context",
             ),
-            (ServoRestyleDamage::RECONSTRUCT_FLOW, "ReconstructFlow"),
+            (
+                ServoRestyleDamage::RECALCULATE_OVERFLOW,
+                "Recalculate overflow",
+            ),
+            (ServoRestyleDamage::RELAYOUT, "Relayout"),
         ];
 
         for &(damage, damage_str) in &to_iter {
@@ -192,79 +128,67 @@ impl fmt::Display for ServoRestyleDamage {
     }
 }
 
+fn augmented_restyle_damage_rebuild_box(old: &ComputedValues, new: &ComputedValues) -> bool {
+    let old_box = old.get_box();
+    let new_box = new.get_box();
+    restyle_damage_rebuild_box(old, new)
+        || old_box.original_display != new_box.original_display
+        || old_box.has_transform_or_perspective() != new_box.has_transform_or_perspective()
+        || old.get_effects().filter.0.is_empty() != new.get_effects().filter.0.is_empty()
+}
+
+fn augmented_restyle_damage_rebuild_stacking_context(
+    old: &ComputedValues,
+    new: &ComputedValues,
+) -> bool {
+    restyle_damage_rebuild_stacking_context(old, new)
+        || old.guarantees_stacking_context() != new.guarantees_stacking_context()
+}
 fn compute_damage(old: &ComputedValues, new: &ComputedValues) -> ServoRestyleDamage {
     let mut damage = ServoRestyleDamage::empty();
 
     
     
-
+    if augmented_restyle_damage_rebuild_box(old, new) {
+        damage.insert(ServoRestyleDamage::RELAYOUT)
+    } else if restyle_damage_recalculate_overflow(old, new) {
+        damage.insert(ServoRestyleDamage::RECALCULATE_OVERFLOW)
+    } else if augmented_restyle_damage_rebuild_stacking_context(old, new) {
+        damage.insert(ServoRestyleDamage::REBUILD_STACKING_CONTEXT);
+    } else if restyle_damage_repaint(old, new) {
+        damage.insert(ServoRestyleDamage::REPAINT);
+    }
     
-    let _ = restyle_damage_rebuild_and_reflow!(
-        old,
-        new,
-        damage,
-        [
-            ServoRestyleDamage::REPAINT,
-            ServoRestyleDamage::REPOSITION,
-            ServoRestyleDamage::STORE_OVERFLOW,
-            ServoRestyleDamage::BUBBLE_ISIZES,
-            ServoRestyleDamage::REFLOW_OUT_OF_FLOW,
-            ServoRestyleDamage::REFLOW,
-            ServoRestyleDamage::RECONSTRUCT_FLOW
-        ],
-        old.get_box().original_display != new.get_box().original_display
-    ) || (new.get_box().display == Display::Inline
-        && restyle_damage_rebuild_and_reflow_inline!(
-            old,
-            new,
-            damage,
-            [
-                ServoRestyleDamage::REPAINT,
-                ServoRestyleDamage::REPOSITION,
-                ServoRestyleDamage::STORE_OVERFLOW,
-                ServoRestyleDamage::BUBBLE_ISIZES,
-                ServoRestyleDamage::REFLOW_OUT_OF_FLOW,
-                ServoRestyleDamage::REFLOW,
-                ServoRestyleDamage::RECONSTRUCT_FLOW
-            ]
-        ))
-        || restyle_damage_reflow!(
-            old,
-            new,
-            damage,
-            [
-                ServoRestyleDamage::REPAINT,
-                ServoRestyleDamage::REPOSITION,
-                ServoRestyleDamage::STORE_OVERFLOW,
-                ServoRestyleDamage::BUBBLE_ISIZES,
-                ServoRestyleDamage::REFLOW_OUT_OF_FLOW,
-                ServoRestyleDamage::REFLOW
-            ]
-        )
-        || restyle_damage_reflow_out_of_flow!(
-            old,
-            new,
-            damage,
-            [
-                ServoRestyleDamage::REPAINT,
-                ServoRestyleDamage::REPOSITION,
-                ServoRestyleDamage::STORE_OVERFLOW,
-                ServoRestyleDamage::REFLOW_OUT_OF_FLOW
-            ]
-        )
-        || restyle_damage_repaint!(old, new, damage, [ServoRestyleDamage::REPAINT]);
-
-    
-    
-    if !old.custom_properties_equal(new) {
+    else if !old.custom_properties_equal(new) {
         damage.insert(ServoRestyleDamage::REPAINT);
     }
 
-    
-    
-    if old.transform_requires_layer() != new.transform_requires_layer() {
-        damage.insert(ServoRestyleDamage::rebuild_and_reflow());
-    }
-
     damage
+}
+
+impl ComputedValues {
+    
+    
+    
+    
+    
+    
+    pub fn guarantees_stacking_context(&self) -> bool {
+        self.get_effects().opacity != 1.0
+            || self.get_effects().mix_blend_mode != MixBlendMode::Normal
+            || self.get_svg().clip_path != ClipPath::None
+            || self.get_box().isolation == Isolation::Isolate
+    }
+}
+
+impl style_structs::Box {
+    
+    pub fn has_transform_or_perspective(&self) -> bool {
+        !self.transform.0.is_empty()
+            || self.scale != GenericScale::None
+            || self.rotate != GenericRotate::None
+            || self.translate != GenericTranslate::None
+            || self.perspective != Perspective::None
+            || self.transform_style == TransformStyle::Preserve3d
+    }
 }
