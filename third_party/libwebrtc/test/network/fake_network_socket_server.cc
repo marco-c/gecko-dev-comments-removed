@@ -296,7 +296,7 @@ void FakeNetworkSocketServer::SetMessageQueue(Thread* thread) {
 }
 
 
-bool FakeNetworkSocketServer::Wait(webrtc::TimeDelta max_wait_duration,
+bool FakeNetworkSocketServer::Wait(TimeDelta max_wait_duration,
                                    bool process_io) {
   RTC_DCHECK(thread_ == Thread::Current());
   if (!max_wait_duration.IsZero())
