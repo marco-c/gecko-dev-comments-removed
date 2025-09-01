@@ -1310,7 +1310,7 @@ void P2PTransportChannel::FinishAddingRemoteCandidate(
   }
 
   
-  CreateConnections(new_remote_candidate, NULL);
+  CreateConnections(new_remote_candidate, nullptr);
 
   
   ice_controller_->OnImmediateSortAndSwitchRequest(
@@ -1371,7 +1371,7 @@ bool P2PTransportChannel::CreateConnections(const Candidate& remote_candidate,
     }
   }
 
-  if ((origin_port != NULL) && !absl::c_linear_search(ports_, origin_port)) {
+  if ((origin_port != nullptr) && !absl::c_linear_search(ports_, origin_port)) {
     if (CreateConnection(origin_port, remote_candidate, origin_port))
       created = true;
   }
