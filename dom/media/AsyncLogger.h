@@ -132,8 +132,9 @@ class AsyncLogger {
   
   
   
-  static_assert(sizeof(UnboundedMPSCQueue<TracePayload>::Message) == PAYLOAD_TOTAL_SIZE,
-                "UnboundedMPSCQueue internal allocations has an unexpected size.");
+  static_assert(
+      sizeof(UnboundedMPSCQueue<TracePayload>::Message) == PAYLOAD_TOTAL_SIZE,
+      "UnboundedMPSCQueue internal allocations has an unexpected size.");
 
   explicit AsyncLogger() : mThread(nullptr), mRunning(false) {}
 
