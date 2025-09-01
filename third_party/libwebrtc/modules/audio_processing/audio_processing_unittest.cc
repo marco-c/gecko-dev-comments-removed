@@ -2031,7 +2031,7 @@ class AudioProcessingTest
       
       RTC_DCHECK_EQ(out_cb.num_bands(), 1u);  
       DeinterleavedView<const float> deinterleaved_src(
-          out_cb.channels()[0], out_cb.num_frames(), out_cb.num_channels());
+          out_cb.channels(), out_cb.num_frames(), out_cb.num_channels());
       InterleavedView<float> interleaved_dst(
           float_data.get(), out_cb.num_frames(), out_cb.num_channels());
       Interleave(deinterleaved_src, interleaved_dst);
@@ -2043,7 +2043,7 @@ class AudioProcessingTest
       
       RTC_DCHECK_EQ(rev_out_cb.num_bands(), 1u);
       deinterleaved_src = DeinterleavedView<const float>(
-          rev_out_cb.channels()[0], rev_out_cb.num_frames(),
+          rev_out_cb.channels(), rev_out_cb.num_frames(),
           rev_out_cb.num_channels());
       interleaved_dst = InterleavedView<float>(
           float_data.get(), rev_out_cb.num_frames(), rev_out_cb.num_channels());
