@@ -18,8 +18,6 @@
 #include "nsString.h"
 #include "js/PropertyAndElement.h"  
 
-#import <Accessibility/Accessibility.h>
-
 #import "mozAccessible.h"
 
 using namespace mozilla::a11y;
@@ -324,14 +322,6 @@ nsresult xpcAccessibleMacInterface::NSObjectToJsValue(
     return nsContentUtils::WrapNative(
         aCx, obj, &NS_GET_IID(nsIAccessibleMacInterface), aResult);
   } else {
-    if (@available(macOS 11.0, *)) {
-      if ([aObj isKindOfClass:[AXCustomContent class]]) {
-        
-        AXCustomContent* customContent = (AXCustomContent*)aObj;
-        return NSObjectToJsValue(
-            @{[customContent label] : [customContent value]}, aCx, aResult);
-      }
-    }
     
     
     

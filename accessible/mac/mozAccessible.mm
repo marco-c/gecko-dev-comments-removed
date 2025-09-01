@@ -537,36 +537,14 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
 }
 
 - (NSString*)moxHelp {
-  nsAutoString desc;
-  EDescriptionValueFlag descFlag = mGeckoAccessible->Description(desc);
-
-  if (@available(macOS 11.0, *)) {
-    
-    return descFlag != eDescriptionFromARIA ? nsCocoaUtils::ToNSString(desc)
-                                            : nil;
-  }
-
-  
-  return nsCocoaUtils::ToNSString(desc);
-}
-
-- (NSArray*)moxCustomContent {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
-  if (@available(macOS 11.0, *)) {
-    nsAutoString desc;
-    EDescriptionValueFlag descFlag = mGeckoAccessible->Description(desc);
+  
+  
+  nsAutoString helpText;
+  mGeckoAccessible->Description(helpText);
 
-    if (!desc.IsEmpty() && descFlag == eDescriptionFromARIA) {
-      AXCustomContent* contentItem = [AXCustomContent
-          customContentWithLabel:@"description"
-                           value:nsCocoaUtils::ToNSString(desc)];
-      contentItem.importance = AXCustomContentImportanceHigh;
-      return @[ contentItem ];
-    }
-  }
-
-  return nil;
+  return nsCocoaUtils::ToNSString(helpText);
 
   NS_OBJC_END_TRY_BLOCK_RETURN(nil);
 }

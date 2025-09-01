@@ -381,9 +381,8 @@ LocalAccessible* XULListitemAccessible::GetListAccessible() const {
 
 
 
-EDescriptionValueFlag XULListitemAccessible::Description(
-    nsString& aDesc) const {
-  return AccessibleWrap::Description(aDesc);
+void XULListitemAccessible::Description(nsString& aDesc) const {
+  AccessibleWrap::Description(aDesc);
 }
 
 

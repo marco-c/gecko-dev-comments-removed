@@ -348,9 +348,6 @@
 - (NSString* _Nullable)moxKeyShortcutsValue;
 
 
-- (NSArray* _Nullable)moxCustomContent;
-
-
 - (NSString* _Nullable)moxMozDebugDescription;
 
 #pragma mark - AttributeSetters
