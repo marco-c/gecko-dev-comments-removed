@@ -64,9 +64,12 @@ impl PartialEq for CssUrlData {
 
 
 #[repr(u8)]
-pub enum LikelyBaseUriDependency {
+#[derive(PartialOrd, PartialEq)]
+pub enum NonLocalUriDependency {
     
-    No,
+    No = 0,
+    
+    Absolute,
     
     
     
@@ -76,29 +79,23 @@ pub enum LikelyBaseUriDependency {
     Full,
 }
 
-fn likely_base_uri_dependency(specified: &str) -> LikelyBaseUriDependency {
-    if specified.is_empty() {
-        
-        
-        return LikelyBaseUriDependency::No;
-    }
-    if specified.starts_with('#') || specified.starts_with('/') {
-        
-        return LikelyBaseUriDependency::No;
-    }
-    const COMMON_PROTOCOLS: [&str; 3] = ["http:", "https:", "data:"];
-    for protocol in COMMON_PROTOCOLS {
-        if specified.starts_with(protocol) {
+impl NonLocalUriDependency {
+    fn scan(specified: &str) -> Self {
+        if specified.is_empty() || specified.starts_with('#') || specified.starts_with("data:") {
             
-            return LikelyBaseUriDependency::No;
+            
+            return Self::No;
         }
-    }
-    if specified.starts_with('?') {
+        if specified.starts_with('/') || specified.starts_with("http:") || specified.starts_with("https:") {
+            return Self::Absolute;
+        }
+        if specified.starts_with('?') {
+            
+            return Self::Full;
+        }
         
-        return LikelyBaseUriDependency::Full;
+        Self::Path
     }
-    
-    LikelyBaseUriDependency::Path
 }
 
 impl CssUrl {
@@ -124,21 +121,21 @@ impl CssUrl {
                 .custom
                 .recorded(CustomUseCounter::MaybeHasFullBaseUriDependency)
             {
-                match likely_base_uri_dependency(&url) {
-                    LikelyBaseUriDependency::No => {},
-                    LikelyBaseUriDependency::Path => {
-                        counters
-                            .custom
-                            .record(CustomUseCounter::MaybeHasPathBaseUriDependency);
-                    },
-                    LikelyBaseUriDependency::Full => {
-                        counters
-                            .custom
-                            .record(CustomUseCounter::MaybeHasPathBaseUriDependency);
-                        counters
-                            .custom
-                            .record(CustomUseCounter::MaybeHasFullBaseUriDependency);
-                    },
+                let dep = NonLocalUriDependency::scan(&url);
+                if dep >= NonLocalUriDependency::Absolute {
+                    counters
+                        .custom
+                        .record(CustomUseCounter::HasNonLocalUriDependency);
+                }
+                if dep >= NonLocalUriDependency::Path {
+                    counters
+                        .custom
+                        .record(CustomUseCounter::MaybeHasPathBaseUriDependency);
+                }
+                if dep >= NonLocalUriDependency::Full {
+                    counters
+                        .custom
+                        .record(CustomUseCounter::MaybeHasFullBaseUriDependency);
                 }
             }
         }
