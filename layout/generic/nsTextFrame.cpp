@@ -5200,40 +5200,64 @@ nsRect nsTextFrame::UpdateTextEmphasis(WritingMode aWM,
       this, fm->GetThebesFontGroup(), computedStyle, styleText);
   info->advance = info->textRun->GetAdvanceWidth();
 
+  bool normalizeRubyMetrics = StaticPrefs::layout_css_ruby_normalize_metrics();
+
   
   LogicalSide side = styleText->TextEmphasisSide(aWM, StyleFont()->mLanguage);
   LogicalSize frameSize = GetLogicalSize(aWM);
   
   
   
-  LogicalRect overflowRect(aWM, -info->advance / 2,
-                            0,
-                           frameSize.ISize(aWM) + info->advance,
-                           fm->MaxAscent() + fm->MaxDescent());
+  LogicalRect overflowRect(
+      aWM, -info->advance / 2,  0,
+      frameSize.ISize(aWM) + info->advance,
+      normalizeRubyMetrics ? fm->TrimmedAscent() + fm->TrimmedDescent()
+                           : fm->MaxAscent() + fm->MaxDescent());
   RefPtr<nsFontMetrics> baseFontMetrics =
       isTextCombined
           ? nsLayoutUtils::GetInflatedFontMetricsForFrame(GetParent())
           : do_AddRef(aProvider.GetFontMetrics());
   
   
-  nscoord absOffset = (side == LogicalSide::BStart) != aWM.IsLineInverted()
-                          ? baseFontMetrics->MaxAscent() + fm->MaxDescent()
-                          : baseFontMetrics->MaxDescent() + fm->MaxAscent();
+  bool startSideOrInvertedLine =
+      (side == LogicalSide::BStart) != aWM.IsLineInverted();
+  nscoord absOffset;
+  if (normalizeRubyMetrics) {
+    absOffset = startSideOrInvertedLine
+                    ? baseFontMetrics->TrimmedAscent() + fm->TrimmedDescent()
+                    : baseFontMetrics->TrimmedDescent() + fm->TrimmedAscent();
+  } else {
+    absOffset = startSideOrInvertedLine
+                    ? baseFontMetrics->MaxAscent() + fm->MaxDescent()
+                    : baseFontMetrics->MaxDescent() + fm->MaxAscent();
+  }
   RubyBlockLeadings leadings;
   if (nsRubyFrame* ruby = FindFurthestInlineRubyAncestor(this)) {
     leadings = ruby->GetBlockLeadings();
+    if (normalizeRubyMetrics) {
+      
+      
+      auto [ascent, descent] = ruby->RubyMetrics();
+      absOffset = std::max(absOffset, side == LogicalSide::BStart
+                                          ? ascent + fm->TrimmedDescent()
+                                          : descent + fm->TrimmedAscent());
+    }
   }
   if (side == LogicalSide::BStart) {
-    info->baselineOffset = -absOffset - leadings.mStart;
+    info->baselineOffset =
+        normalizeRubyMetrics ? -absOffset : -absOffset - leadings.mStart;
     overflowRect.BStart(aWM) = -overflowRect.BSize(aWM) - leadings.mStart;
   } else {
     MOZ_ASSERT(side == LogicalSide::BEnd);
-    info->baselineOffset = absOffset + leadings.mEnd;
+    info->baselineOffset =
+        normalizeRubyMetrics ? absOffset : absOffset + leadings.mEnd;
     overflowRect.BStart(aWM) = frameSize.BSize(aWM) + leadings.mEnd;
   }
   
   if (isTextCombined) {
-    nscoord gap = (baseFontMetrics->MaxHeight() - frameSize.BSize(aWM)) / 2;
+    nscoord height = normalizeRubyMetrics ? baseFontMetrics->EmHeight()
+                                          : baseFontMetrics->MaxHeight();
+    nscoord gap = (height - frameSize.BSize(aWM)) / 2;
     overflowRect.BStart(aWM) += gap * (side == LogicalSide::BStart ? -1 : 1);
   }
 
