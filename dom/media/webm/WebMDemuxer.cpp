@@ -618,8 +618,6 @@ nsresult WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType,
 
   
   
-  
-  
   RefPtr<NesteggPacketHolder> next_holder;
   rv = NextPacket(aType, next_holder);
   if (NS_FAILED(rv) && rv != NS_ERROR_DOM_MEDIA_END_OF_STREAM) {
