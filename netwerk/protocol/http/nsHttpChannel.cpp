@@ -10907,7 +10907,21 @@ void nsHttpChannel::SetOriginHeader() {
 
   
   if (mRequestHead.IsGet() || mRequestHead.IsHead()) {
-    return;
+    
+    if (!StaticPrefs::dom_storage_access_enabled() ||
+        !StaticPrefs::dom_storage_access_headers_enabled()) {
+      
+      return;
+    } else {
+      
+      
+      nsAutoCString storageAccess;
+      nsresult rv =
+          GetRequestHeader("Sec-Fetch-Storage-Access"_ns, storageAccess);
+      if (NS_FAILED(rv) || !storageAccess.EqualsLiteral("inactive")) {
+        return;
+      }
+    }
   }
 
   if (!serializedOrigin.EqualsLiteral("null")) {
