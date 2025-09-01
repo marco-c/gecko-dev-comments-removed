@@ -85,8 +85,6 @@ class ParallelWorker : public GCParallelTask {
   WorkItem item_;
 };
 
-static constexpr size_t MaxParallelWorkers = 8;
-
 
 
 template <typename WorkItem, typename WorkItemIterator>
