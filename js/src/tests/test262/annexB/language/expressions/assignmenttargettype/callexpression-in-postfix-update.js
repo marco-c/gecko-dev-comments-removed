@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var fCalled = false;
+var fValueOfCalled = false;
+function f() {
+  fCalled = true;
+  return {
+    valueOf() { fValueOfCalled = true; return 1; }
+  };
+}
+
+assert.throws(ReferenceError, function() {
+  f()++;
+});
+
+assert(fCalled);
+assert(!fValueOfCalled);
+
+reportCompare(0, 0);

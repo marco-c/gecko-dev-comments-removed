@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var map = new WeakMap();
+
+var bar = {};
+
+assert.throws(Error, function() {
+  map.getOrInsertComputed(bar, function() {
+    throw new Error('throw in callback');
+  })
+}, Error);
+
+
+reportCompare(0, 0);
