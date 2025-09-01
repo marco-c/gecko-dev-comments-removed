@@ -265,8 +265,6 @@ class CacheKey {
   
   
   static constexpr nsStaticAtom* Viewport = nsGkAtoms::viewport;
-  
-  static constexpr nsStaticAtom* WritingMode = nsGkAtoms::writing_mode;
 };
 
 

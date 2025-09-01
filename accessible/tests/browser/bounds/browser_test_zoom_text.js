@@ -20,6 +20,14 @@ async function runTests(browser, accDoc) {
       [x, y, width, height],
       COORDTYPE_SCREEN_RELATIVE
     );
+    
+    testTextBounds(
+      hyperTextNode,
+      0,
+      0,
+      [0, 0, 0, 0],
+      COORDTYPE_SCREEN_RELATIVE
+    );
   }
 
   async function testEmptyInputNode(id) {
