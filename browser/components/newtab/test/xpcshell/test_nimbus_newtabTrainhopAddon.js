@@ -7,6 +7,13 @@
 
 
 
+const { AboutHomeStartupCache } = ChromeUtils.importESModule(
+  "resource:///modules/AboutHomeStartupCache.sys.mjs"
+);
+const { sinon } = ChromeUtils.importESModule(
+  "resource://testing-common/Sinon.sys.mjs"
+);
+
 add_task(async function test_download_and_staged_install_trainhop_addon() {
   Services.fog.testResetFOG();
 
@@ -459,6 +466,8 @@ add_task(async function test_builtin_version_upgrades() {
 });
 
 add_task(async function test_nonsystem_xpi_uninstalled() {
+  let sandbox = sinon.createSandbox();
+
   
   assertNewTabResourceMapping();
 
@@ -511,7 +520,14 @@ add_task(async function test_nonsystem_xpi_uninstalled() {
   await AddonTestUtils.promiseRestartManager();
   AboutNewTab.init();
   assertNewTabResourceMapping();
+
+  sandbox.stub(AboutHomeStartupCache, "clearCacheAndUninit").returns();
   await AboutNewTabResourceMapping.updateTrainhopAddonState();
+  Assert.ok(
+    AboutHomeStartupCache.clearCacheAndUninit.called,
+    "Uninstalling caused the startup cache to be cleared."
+  );
+
   
   
   await asyncAssertNewTabAddon({
@@ -527,4 +543,5 @@ add_task(async function test_nonsystem_xpi_uninstalled() {
   await cancelPendingInstall(pendingInstall);
 
   await nimbusFeatureCleanup();
+  sandbox.restore();
 });
