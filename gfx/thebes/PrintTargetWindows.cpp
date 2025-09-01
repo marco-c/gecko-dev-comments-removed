@@ -8,8 +8,13 @@
 #include "cairo-win32.h"
 #include "mozilla/gfx/HelpersCairo.h"
 #include "mozilla/StaticPrefs_browser.h"
+#include "mozilla/WidgetUtils.h"
 #include "nsCoord.h"
 #include "nsIContentAnalysis.h"
+#include "nsIWidget.h"
+#include "nsIWindowMediator.h"
+#include "nsPIDOMWindow.h"
+#include "nsServiceManagerUtils.h"
 #include "nsString.h"
 
 namespace mozilla {
@@ -54,6 +59,8 @@ already_AddRefed<PrintTargetWindows> PrintTargetWindows::CreateOrNull(HDC aDC) {
   return target.forget();
 }
 
+LazyLogModule gPrintingLog("printing");
+
 nsresult PrintTargetWindows::BeginPrinting(const nsAString& aTitle,
                                            const nsAString& aPrintToFileName,
                                            int32_t aStartPage,
@@ -81,14 +88,30 @@ nsresult PrintTargetWindows::BeginPrinting(const nsAString& aTitle,
   
   
   
-  
-  
-  bool lockSfw =
-      StaticPrefs::
-          browser_contentanalysis_windows_lock_foreground_window_on_print() &&
-      nsIContentAnalysis::MightBeActive();
-  if (lockSfw) {
-    ::LockSetForegroundWindow(LSFW_LOCK);
+  if (nsIContentAnalysis::MightBeActive() &&
+      StaticPrefs::browser_contentanalysis_print_set_foreground_window()) {
+    nsCOMPtr<nsIWindowMediator> winMediator =
+        do_GetService(NS_WINDOWMEDIATOR_CONTRACTID);
+    if (winMediator) {
+      nsCOMPtr<mozIDOMWindowProxy> domWindow;
+      nsresult rv =
+          winMediator->GetMostRecentBrowserWindow(getter_AddRefs(domWindow));
+      if (NS_SUCCEEDED(rv) && domWindow) {
+        nsPIDOMWindowOuter* win = nsPIDOMWindowOuter::From(domWindow);
+        if (win) {
+          nsCOMPtr<nsIWidget> widget =
+              widget::WidgetUtils::DOMWindowToWidget(win);
+          if (widget) {
+            HWND hwnd =
+                static_cast<HWND>(widget->GetNativeData(NS_NATIVE_WINDOW));
+            BOOL foregroundReturn = ::SetForegroundWindow(hwnd);
+            MOZ_LOG(gPrintingLog, mozilla::LogLevel::Debug,
+                    ("Called SetForegroundWindow(), which returned %d",
+                     foregroundReturn));
+          }
+        }
+      }
+    }
   }
   
   
@@ -99,12 +122,9 @@ nsresult PrintTargetWindows::BeginPrinting(const nsAString& aTitle,
   
   
   int result = ::StartDocW(mDC, &docinfo);
-  if (lockSfw) {
-    ::LockSetForegroundWindow(LSFW_UNLOCK);
-  }
-
   if (result <= 0) {
-    if (::GetLastError() == ERROR_CANCELLED) {
+    DWORD lastError = ::GetLastError();
+    if (lastError == ERROR_CANCELLED) {
       return NS_ERROR_ABORT;
     }
     return NS_ERROR_FAILURE;
