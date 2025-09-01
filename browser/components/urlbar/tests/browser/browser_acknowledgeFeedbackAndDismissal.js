@@ -178,11 +178,53 @@ add_task(async function acknowledgeDismissal_rowLabel() {
     resultIndex: 1,
     command: DISMISS_ALL_COMMAND,
     shouldBeSelected: false,
-    expectedLabel: "Firefox Suggest",
+    expectedLabelOnOriginalRow: "Firefox Suggest",
   });
 
   gTestProvider.results[0].suggestedIndex = suggestedIndex;
 });
+
+
+
+add_task(async function acknowledgeDismissal_hideRowLabel() {
+  
+  
+  let { suggestedIndex } = gTestProvider.results[0];
+  gTestProvider.results[0].suggestedIndex = 0;
+
+  
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "test",
+  });
+  await checkRowLabel(1, "Firefox Suggest");
+  await UrlbarTestUtils.promisePopupClose(window);
+
+  
+  gTestProvider.results[0].hideRowLabel = true;
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "test",
+  });
+
+  await checkRowLabel(1, null);
+  await checkRowLabel(2, "Firefox Suggest");
+
+  await doDismissTest({
+    resultIndex: 1,
+    command: DISMISS_ALL_COMMAND,
+    shouldBeSelected: false,
+    expectedLabelOnOriginalRow: null,
+    expectedLabelOnReplacementRow: "Firefox Suggest",
+  });
+
+  gTestProvider.results[0].suggestedIndex = suggestedIndex;
+  delete gTestProvider.results[0].hideRowLabel;
+});
+
+
+
+
 
 
 
@@ -212,7 +254,8 @@ async function doDismissTest({
   command,
   shouldBeSelected,
   resultIndex = 2,
-  expectedLabel = null,
+  expectedLabelOnOriginalRow = null,
+  expectedLabelOnReplacementRow = expectedLabelOnOriginalRow,
 }) {
   let details = await UrlbarTestUtils.getDetailsOfResultAt(window, resultIndex);
   Assert.equal(
@@ -242,7 +285,7 @@ async function doDismissTest({
   }
 
   info("Checking the row label on the original row");
-  await checkRowLabel(resultIndex, expectedLabel);
+  await checkRowLabel(resultIndex, expectedLabelOnOriginalRow);
 
   let resultCount = UrlbarTestUtils.getResultCount(window);
 
@@ -299,7 +342,7 @@ async function doDismissTest({
   );
 
   info("Checking the row label on the dismissal acknowledgment tip");
-  await checkRowLabel(resultIndex, expectedLabel);
+  await checkRowLabel(resultIndex, expectedLabelOnOriginalRow);
 
   
   let gotItButton = UrlbarTestUtils.getButtonForResultIndex(
@@ -353,7 +396,7 @@ async function doDismissTest({
   info(
     "Checking the row label on the row that replaced the dismissal acknowledgment tip"
   );
-  await checkRowLabel(resultIndex, expectedLabel);
+  await checkRowLabel(resultIndex, expectedLabelOnReplacementRow);
 
   await UrlbarTestUtils.promisePopupClose(window);
 }
