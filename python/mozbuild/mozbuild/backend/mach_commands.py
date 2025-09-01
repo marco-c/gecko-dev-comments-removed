@@ -9,6 +9,7 @@ import subprocess
 import sys
 
 import mozpack.path as mozpath
+from buildconfig import topsrcdir
 from mach.decorators import Command, CommandArgument
 from mozfile import which
 
@@ -48,7 +49,7 @@ def run(command_context, ide, no_interactive, args):
         return 1
 
     if ide == "vscode":
-        result = subprocess.run([sys.executable, "mach", "configure"])
+        result = subprocess.run([sys.executable, "mach", "configure"], cwd=topsrcdir)
         if result.returncode:
             return result.returncode
 
@@ -56,7 +57,8 @@ def run(command_context, ide, no_interactive, args):
         
         
         result = subprocess.run(
-            [sys.executable, "mach", "build", "pre-export", "export", "pre-compile"]
+            [sys.executable, "mach", "build", "pre-export", "export", "pre-compile"],
+            cwd=topsrcdir,
         )
         if result.returncode:
             return result.returncode
@@ -64,7 +66,7 @@ def run(command_context, ide, no_interactive, args):
         
         
         
-        result = subprocess.run([sys.executable, "mach", "build"])
+        result = subprocess.run([sys.executable, "mach", "build"], cwd=topsrcdir)
         if result.returncode:
             return result.returncode
 
@@ -80,7 +82,7 @@ def run(command_context, ide, no_interactive, args):
     if backend:
         
         result = subprocess.run(
-            [sys.executable, "mach", "build-backend", "-b", backend]
+            [sys.executable, "mach", "build-backend", "-b", backend], cwd=topsrcdir
         )
         if result.returncode:
             return result.returncode
@@ -165,6 +167,21 @@ def setup_vscode(command_context, interactive):
             "editor.defaultFormatter": "esbenp.prettier-vscode",
             "editor.formatOnSave": True,
         }
+
+    
+    new_settings = {
+        **new_settings,
+        "terminalLinks.matchers": [
+            {
+                "regex": "\\b[Bb]ug\\s*(\\d+)\\b",
+                "uri": "https://bugzilla.mozilla.org/show_bug.cgi?id=$1",
+            },
+            {
+                "regex": "\\b(D\\d+)\\b",
+                "uri": "https://phabricator.services.mozilla.com/$1",
+            },
+        ],
+    }
 
     import difflib
 
