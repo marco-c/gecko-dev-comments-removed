@@ -1440,9 +1440,7 @@ struct RTC_EXPORT PeerConnectionFactoryDependencies final {
   
   
   std::unique_ptr<PacketSocketFactory> packet_socket_factory;
-  
-  
-  
+  [[deprecated("Pass custom task queue factory through the 'env'")]]
   std::unique_ptr<TaskQueueFactory> task_queue_factory;
   std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory;
   std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory;
@@ -1458,9 +1456,7 @@ struct RTC_EXPORT PeerConnectionFactoryDependencies final {
   std::unique_ptr<NetworkMonitorFactory> network_monitor_factory;
   std::unique_ptr<NetEqFactory> neteq_factory;
   std::unique_ptr<SctpTransportFactoryInterface> sctp_factory;
-  
-  
-  
+  [[deprecated("Pass custom field trials through the 'env'")]]
   std::unique_ptr<FieldTrialsView> trials;
   std::unique_ptr<RtpTransportControllerSendFactoryInterface>
       transport_controller_send_factory;
