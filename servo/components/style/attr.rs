@@ -8,6 +8,7 @@
 
 use crate::color::{parsing::parse_color_keyword, AbsoluteColor};
 use crate::properties::PropertyDeclarationBlock;
+use crate::shadow_parts::ShadowParts;
 use crate::shared_lock::Locked;
 use crate::str::str_join;
 use crate::str::{read_exponent, read_fraction, HTML_SPACE_CHARACTERS};
@@ -72,6 +73,9 @@ pub enum AttrValue {
         String,
         #[ignore_malloc_size_of = "Arc"] Arc<Locked<PropertyDeclarationBlock>>,
     ),
+
+    
+    ShadowParts(String, ShadowParts),
 }
 
 
@@ -266,6 +270,11 @@ impl AttrValue {
         AttrValue::Dimension(string, parsed)
     }
 
+    pub fn from_shadow_parts(string: String) -> AttrValue {
+        let shadow_parts = ShadowParts::parse(&string);
+        AttrValue::ShadowParts(string, shadow_parts)
+    }
+
     
     
     
@@ -333,6 +342,21 @@ impl AttrValue {
     
     
     
+    pub fn as_int(&self) -> i32 {
+        if let AttrValue::Int(_, value) = *self {
+            value
+        } else {
+            panic!("Int not found");
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
     pub fn as_uint(&self) -> u32 {
         if let AttrValue::UInt(_, value) = *self {
             value
@@ -358,6 +382,22 @@ impl AttrValue {
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn as_shadow_parts(&self) -> &ShadowParts {
+        if let AttrValue::ShadowParts(_, value) = &self {
+            value
+        } else {
+            panic!("Not a shadowpart attribute");
+        }
+    }
+
     pub fn eval_selector(&self, selector: &AttrSelectorOperation<&AtomString>) -> bool {
         
         
@@ -380,6 +420,7 @@ impl ::std::ops::Deref for AttrValue {
             | AttrValue::Int(ref value, _)
             | AttrValue::ResolvedUrl(ref value, _)
             | AttrValue::Declaration(ref value, _)
+            | AttrValue::ShadowParts(ref value, _)
             | AttrValue::Dimension(ref value, _) => &value,
             AttrValue::Atom(ref value) => &value,
         }
