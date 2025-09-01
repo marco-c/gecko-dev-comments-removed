@@ -76,8 +76,7 @@ struct UrlMarker {
     using MS = MarkerSchema;
     MS schema(MS::Location::MarkerChart, MS::Location::MarkerTable);
     schema.SetTableLabel("{marker.name} - {marker.data.url}");
-    schema.AddKeyFormatSearchable("url", MS::Format::Url,
-                                  MS::Searchable::Searchable);
+    schema.AddKeyFormat("url", MS::Format::Url, MS::PayloadFlags::Searchable);
     schema.AddKeyLabelFormat("duration", "Duration", MS::Format::Duration);
     return schema;
   }
@@ -1779,20 +1778,6 @@ nsresult nsHttpConnectionMgr::DispatchAbstractTransaction(
   return rv;
 }
 
-void nsHttpConnectionMgr::ReportProxyTelemetry(ConnectionEntry* ent) {
-  enum { PROXY_NONE = 1, PROXY_HTTP = 2, PROXY_SOCKS = 3, PROXY_HTTPS = 4 };
-
-  if (!ent->mConnInfo->UsingProxy()) {
-    glean::http::proxy_type.AccumulateSingleSample(PROXY_NONE);
-  } else if (ent->mConnInfo->UsingHttpsProxy()) {
-    glean::http::proxy_type.AccumulateSingleSample(PROXY_HTTPS);
-  } else if (ent->mConnInfo->UsingHttpProxy()) {
-    glean::http::proxy_type.AccumulateSingleSample(PROXY_HTTP);
-  } else {
-    glean::http::proxy_type.AccumulateSingleSample(PROXY_SOCKS);
-  }
-}
-
 nsresult nsHttpConnectionMgr::ProcessNewTransaction(nsHttpTransaction* trans) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
@@ -1829,8 +1814,6 @@ nsresult nsHttpConnectionMgr::ProcessNewTransaction(nsHttpTransaction* trans) {
   if (nsHttpHandler::EchConfigEnabled(ci->IsHttp3())) {
     ent->MaybeUpdateEchConfig(ci);
   }
-
-  ReportProxyTelemetry(ent);
 
   
   

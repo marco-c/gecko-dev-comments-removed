@@ -14,7 +14,7 @@ pub type Location = mozilla::MarkerSchema_Location;
 pub type Format = mozilla::MarkerSchema_Format;
 
 
-pub type Searchable = mozilla::MarkerSchema_Searchable;
+pub type PayloadFlags = mozilla::MarkerSchema_PayloadFlags;
 
 
 
@@ -155,19 +155,21 @@ impl MarkerSchema {
     
     
     
-    pub fn add_key_format_searchable(
+    
+    
+    pub fn add_key_format_with_flags(
         &mut self,
         key: &str,
         format: Format,
-        searchable: Searchable,
+        payload_flags: PayloadFlags,
     ) -> &mut Self {
         unsafe {
-            bindings::gecko_profiler_marker_schema_add_key_format_searchable(
+            bindings::gecko_profiler_marker_schema_add_key_format_with_flags(
                 self.ptr,
                 key.as_ptr() as *const c_char,
                 key.len(),
                 format,
-                searchable,
+                payload_flags,
             );
         }
         self
@@ -179,22 +181,22 @@ impl MarkerSchema {
     
     
     
-    pub fn add_key_label_format_searchable(
+    pub fn add_key_label_format_with_flags(
         &mut self,
         key: &str,
         label: &str,
         format: Format,
-        searchable: Searchable,
+        payload_flags: PayloadFlags,
     ) -> &mut Self {
         unsafe {
-            bindings::gecko_profiler_marker_schema_add_key_label_format_searchable(
+            bindings::gecko_profiler_marker_schema_add_key_label_format_with_flags(
                 self.ptr,
                 key.as_ptr() as *const c_char,
                 key.len(),
                 label.as_ptr() as *const c_char,
                 label.len(),
                 format,
-                searchable,
+                payload_flags,
             );
         }
         self

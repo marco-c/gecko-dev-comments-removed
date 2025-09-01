@@ -35,17 +35,17 @@ impl gecko_profiler::ProfilerMarker for DatetimeMetricMarker {
         let mut schema = MarkerSchema::new(&[Location::MarkerChart, Location::MarkerTable]);
         schema.set_tooltip_label("{marker.data.cat}.{marker.data.id} {marker.data.time}");
         schema.set_table_label("{marker.data.cat}.{marker.data.id}: {marker.data.time}");
-        schema.add_key_label_format_searchable(
+        schema.add_key_label_format_with_flags(
             "cat",
             "Category",
             Format::UniqueString,
-            Searchable::Searchable,
+            PayloadFlags::Searchable,
         );
-        schema.add_key_label_format_searchable(
+        schema.add_key_label_format_with_flags(
             "id",
             "Metric",
             Format::UniqueString,
-            Searchable::Searchable,
+            PayloadFlags::Searchable,
         );
         
         

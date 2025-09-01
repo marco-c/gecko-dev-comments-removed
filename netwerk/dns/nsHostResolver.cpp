@@ -112,10 +112,10 @@ struct HostResolverMarker {
     using MS = MarkerSchema;
     MS schema(MS::Location::MarkerChart, MS::Location::MarkerTable);
     schema.SetTableLabel("{marker.name} - {marker.data.host}");
-    schema.AddKeyFormatSearchable("host", MS::Format::SanitizedString,
-                                  MS::Searchable::Searchable);
-    schema.AddKeyFormatSearchable("originSuffix", MS::Format::SanitizedString,
-                                  MS::Searchable::Searchable);
+    schema.AddKeyFormat("host", MS::Format::SanitizedString,
+                        MS::PayloadFlags::Searchable);
+    schema.AddKeyFormat("originSuffix", MS::Format::SanitizedString,
+                        MS::PayloadFlags::Searchable);
     schema.AddKeyFormat("qtype", MS::Format::Integer);
     schema.AddKeyFormat("flags", MS::Format::String);
     return schema;
@@ -269,10 +269,12 @@ void nsHostResolver::ClearPendingQueue(
 
 
 
-void nsHostResolver::FlushCache(bool aTrrToo) {
+void nsHostResolver::FlushCache(bool aTrrToo, bool aFlushEvictionQueue) {
   MutexAutoLock lock(mLock);
 
-  mQueue.FlushEvictionQ(mRecordDB, lock);
+  if (aFlushEvictionQueue) {
+    mQueue.FlushEvictionQ(mRecordDB, lock);
+  }
 
   
   for (auto iter = mRecordDB.Iter(); !iter.Done(); iter.Next()) {
