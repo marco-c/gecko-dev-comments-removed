@@ -280,7 +280,7 @@
         
         if (
           anchorBottom > bottomSpaceY &&
-          anchorBottom + panelHeight > winHeight
+          anchorBottom + panelHeight + VIEWPORT_PANEL_MIN_MARGIN > winHeight
         ) {
           
           topOffset = Math.max(
