@@ -13957,7 +13957,7 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
       showColorPicker: false,
       inputType: "radio",
       activeId: null,
-      customWallpaperErrorType: null
+      isCustomWallpaperError: false
     };
   }
   componentDidMount() {
@@ -14143,40 +14143,31 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
     
     fileInput.oncancel = async () => {
       this.setState({
-        customWallpaperErrorType: null
+        isCustomWallpaperError: false
       });
     };
 
     
     this.setState({
-      customWallpaperErrorType: null
+      isCustomWallpaperError: false
     });
 
     
     fileInput.onchange = async event => {
       const [file] = event.target.files;
-      if (file) {
-        
-        const isValidImage = file.type && file.type.startsWith("image/");
-        if (!isValidImage) {
-          console.error("Invalid file type");
-          this.setState({
-            customWallpaperErrorType: "fileType"
-          });
-          return;
-        }
 
-        
-        
-        
-        const maxSize = wallpaperUploadMaxFileSize * 1024 * 1024;
-        if (wallpaperUploadMaxFileSizeEnabled && file.size > maxSize) {
-          console.error("File size exceeds limit");
-          this.setState({
-            customWallpaperErrorType: "fileSize"
-          });
-          return;
-        }
+      
+      
+      
+      const maxSize = wallpaperUploadMaxFileSize * 1024 * 1024;
+      if (wallpaperUploadMaxFileSizeEnabled && file && file.size > maxSize) {
+        console.error("File size exceeds limit");
+        this.setState({
+          isCustomWallpaperError: true
+        });
+        return;
+      }
+      if (file) {
         this.props.dispatch(actionCreators.OnlyToMain({
           type: actionTypes.WALLPAPER_UPLOAD,
           data: file
@@ -14375,26 +14366,15 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
         htmlFor: category,
         "data-l10n-id": fluent_id
       }, fluent_id));
-    })), this.state.customWallpaperErrorType && external_React_default().createElement("div", {
+    })), this.state.isCustomWallpaperError && external_React_default().createElement("div", {
       className: "custom-wallpaper-error",
       id: "customWallpaperError"
     }, external_React_default().createElement("span", {
       className: "icon icon-info"
-    }), (() => {
-      switch (this.state.customWallpaperErrorType) {
-        case "fileSize":
-          return external_React_default().createElement("span", {
-            "data-l10n-id": "newtab-wallpaper-error-max-file-size",
-            "data-l10n-args": `{"file_size": ${wallpaperUploadMaxFileSize}}`
-          });
-        case "fileType":
-          return external_React_default().createElement("span", {
-            "data-l10n-id": "newtab-wallpaper-error-file-type"
-          });
-        default:
-          return null;
-      }
-    })())), external_React_default().createElement(external_ReactTransitionGroup_namespaceObject.CSSTransition, {
+    }), external_React_default().createElement("span", {
+      "data-l10n-id": "newtab-wallpaper-error-max-file-size",
+      "data-l10n-args": `{"file_size": ${wallpaperUploadMaxFileSize}}`
+    }))), external_React_default().createElement(external_ReactTransitionGroup_namespaceObject.CSSTransition, {
       in: !!activeCategory,
       timeout: 300,
       classNames: "wallpaper-list",
