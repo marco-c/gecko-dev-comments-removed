@@ -307,6 +307,9 @@ class WindowTracker extends WindowTrackerBase {
     if (!context.privateBrowsingAllowed) {
       options.private = false;
     }
+    
+    
+    options.allowFromInactiveWorkspace = true;
     return BrowserWindowTracker.getTopWindow(options);
   }
 }

@@ -160,7 +160,7 @@ var gViewSourceUtils = {
       let data = await sourceActor.sendQuery("ViewSource:GetSelection", {});
 
       let targetActor = this.getViewSourceActor(
-        aGetBrowserFn().browsingContext
+        (await aGetBrowserFn()).browsingContext
       );
       targetActor.sendAsyncMessage("ViewSource:LoadSourceWithSelection", data);
     }

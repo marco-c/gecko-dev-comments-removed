@@ -489,7 +489,9 @@ var BrowserCommands = {
     
     if (!tabBrowser || !window.toolbar.visible) {
       
-      const browserWindow = BrowserWindowTracker.getTopWindow();
+      const browserWindow =
+        BrowserWindowTracker.getTopWindow() ??
+        (await BrowserWindowTracker.promiseOpenWindow());
       tabBrowser = browserWindow.gBrowser;
     }
 

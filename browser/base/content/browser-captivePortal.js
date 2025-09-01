@@ -179,7 +179,7 @@ var CaptivePortalWatcher = {
     let win = BrowserWindowTracker.getTopWindow();
     
     
-    if (win.document.documentElement.getAttribute("ignorecaptiveportal")) {
+    if (win?.document.documentElement.getAttribute("ignorecaptiveportal")) {
       win = null;
     }
 

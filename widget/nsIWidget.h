@@ -773,6 +773,9 @@ class nsIWidget : public nsISupports {
   virtual void MoveToWorkspace(const nsAString& workspaceID) = 0;
 
   
+  virtual bool IsCloaked() const { return false; }
+
+  
 
 
   virtual void SuppressAnimation(bool aSuppress) {}
