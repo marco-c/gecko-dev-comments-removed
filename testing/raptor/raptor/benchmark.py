@@ -271,7 +271,21 @@ class Benchmark:
             LOG.info(f"Cloning the benchmarks to {external_repo_path}")
             
             
-            self._full_clone(benchmark_repository, external_repo_path)
+            
+            
+            
+            use_sparse_checkout = (
+                self.test.get("sparse_checkout", False) and not run_local
+            )
+
+            if use_sparse_checkout:
+                LOG.info("Performing a sparse clone...")
+                self._sparse_clone(benchmark_repository, external_repo_path)
+                LOG.info("Sparse clone successful")
+            else:
+                LOG.info("Performing a full clone...")
+                self._full_clone(benchmark_repository, external_repo_path)
+                LOG.info("Full clone successful")
         else:
             
             url = (
