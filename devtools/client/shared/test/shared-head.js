@@ -1644,7 +1644,8 @@ let allDownloads = [];
 
 
 
-async function waitUntilScreenshot({ isWindowPrivate = false } = {}) {
+
+async function waitUntilDownload({ isWindowPrivate = false } = {}) {
   const { Downloads } = ChromeUtils.importESModule(
     "resource://gre/modules/Downloads.sys.mjs"
   );
@@ -1707,7 +1708,7 @@ async function takeNodeScreenshot(inspector) {
   info(
     "Call screenshotNode() and wait until the screenshot is found in the Downloads"
   );
-  const whenScreenshotSucceeded = waitUntilScreenshot();
+  const whenScreenshotSucceeded = waitUntilDownload();
   inspector.screenshotNode();
   const filePath = await whenScreenshotSucceeded;
 
