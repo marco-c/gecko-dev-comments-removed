@@ -627,8 +627,14 @@ nsresult WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType,
   
   result = NextPacket(aType);
   if (result.isErr()) {
-    nsresult rv = result.unwrapErr();
-    if (rv != NS_ERROR_DOM_MEDIA_END_OF_STREAM) {
+    nsresult rv = result.inspectErr();
+    if (rv != NS_ERROR_DOM_MEDIA_END_OF_STREAM &&
+        
+        
+        
+        
+        
+        rv != NS_ERROR_DOM_MEDIA_WAITING_FOR_DATA) {
       WEBM_DEBUG("NextPacket: error");
       return rv;
     }
@@ -690,7 +696,7 @@ nsresult WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType,
 
   if (mIsMediaSource && next_tstamp == INT64_MIN) {
     WEBM_DEBUG("WebM is a media source, and next timestamp computation filed.");
-    return NS_ERROR_DOM_MEDIA_END_OF_STREAM;
+    return result.unwrapErr();
   }
 
   int64_t discardPadding = 0;
