@@ -5160,21 +5160,27 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
 
   
   
-  
-  
-  
-  
-  
   const bool shouldBlock = [&] {
     if (aForWindowDotPrint == IsForWindowDotPrint::No) {
+      
       return false;
     }
-    if (aIsPreview == IsPreview::Yes) {
+
+    
+    
+    
+    
+    
+    
+    
+    if (aIsPreview == IsPreview::Yes ||
+        StaticPrefs::print_prefer_system_dialog()) {
       return !hasPrintCallbacks;
     }
-    if (StaticPrefs::print_prefer_system_dialog()) {
-      return true;
-    }
+
+    
+    
+    
     return StaticPrefs::dom_window_print_fuzzing_block_while_printing();
   }();
 
