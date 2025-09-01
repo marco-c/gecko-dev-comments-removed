@@ -27,6 +27,9 @@ namespace webrtc {
 
 namespace {
 
+
+static_assert(AudioDecoder::kMaxNumberOfChannels <= 255, "");
+
 class OldStyleEncodedFrame final : public AudioDecoder::EncodedAudioFrame {
  public:
   OldStyleEncodedFrame(AudioDecoder* decoder, Buffer&& payload)

@@ -64,6 +64,10 @@ class AudioFrame {
   enum : size_t {
     
     
+    
+    
+    
+    
     kMaxDataSizeSamples = 7680,
     kMaxDataSizeBytes = kMaxDataSizeSamples * sizeof(int16_t),
   };

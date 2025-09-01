@@ -15,7 +15,6 @@
 #include <iterator>
 
 #include "api/array_view.h"
-#include "api/audio/channel_layout.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {
@@ -47,6 +46,13 @@ using MonoView = ArrayView<T>;
 
 
 
+
+
+
+static constexpr size_t kMaxNumberOfAudioChannels = 24;
+
+
+
 template <typename T>
 class InterleavedView {
  public:
@@ -59,7 +65,7 @@ class InterleavedView {
       : num_channels_(num_channels),
         samples_per_channel_(samples_per_channel),
         data_(data, num_channels * samples_per_channel) {
-    RTC_DCHECK_LE(num_channels_, kMaxConcurrentChannels);
+    RTC_DCHECK_LE(num_channels_, kMaxNumberOfAudioChannels);
     RTC_DCHECK(num_channels_ == 0u || samples_per_channel_ != 0u);
   }
 

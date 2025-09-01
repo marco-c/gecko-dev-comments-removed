@@ -24,6 +24,9 @@
 
 namespace webrtc {
 
+
+static_assert(AudioEncoder::kMaxNumberOfChannels <= 255, "");
+
 ANAStats::ANAStats() = default;
 ANAStats::~ANAStats() = default;
 ANAStats::ANAStats(const ANAStats&) = default;

@@ -75,7 +75,7 @@ class NetEqImpl : public webrtc::NetEq {
     kCodecPLC
   };
 
-  enum ErrorCodes {
+  enum Error : int {
     kNoError = 0,
     kOtherError,
     kUnknownRtpPayloadType,
@@ -92,7 +92,7 @@ class NetEqImpl : public webrtc::NetEq {
     kSampleUnderrun,
     kDecodedTooMuch,
     kRedundancySplitError,
-    kPacketBufferCorruption
+    kPacketBufferCorruption,
   };
 
   struct Dependencies {
@@ -217,9 +217,9 @@ class NetEqImpl : public webrtc::NetEq {
   
   
   
-  int InsertPacketInternal(const RTPHeader& rtp_header,
-                           ArrayView<const uint8_t> payload,
-                           const RtpPacketInfo& packet_info)
+  Error InsertPacketInternal(const RTPHeader& rtp_header,
+                             ArrayView<const uint8_t> payload,
+                             const RtpPacketInfo& packet_info)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   
@@ -332,6 +332,8 @@ class NetEqImpl : public webrtc::NetEq {
   int ExtractPackets(size_t required_samples, PacketList* packet_list)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
+  
+  
   
   
   void SetSampleRateAndChannels(int fs_hz, size_t channels)

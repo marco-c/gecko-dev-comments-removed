@@ -22,6 +22,7 @@
 
 namespace webrtc {
 
+
 class AudioMultiVector {
  public:
   
