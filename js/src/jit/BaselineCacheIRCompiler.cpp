@@ -2999,6 +2999,34 @@ void BaselineCacheIRCompiler::pushArguments(Register argcReg,
   }
 }
 
+void BaselineCacheIRCompiler::pushNewTarget() {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  masm.pushValue(Address(FramePointer, BaselineStubFrameLayout::Size()));
+}
+
 void BaselineCacheIRCompiler::pushStandardArguments(
     Register argcReg, Register scratch, Register scratch2, uint32_t argcFixed,
     bool isJitCall, bool isConstructing) {
@@ -3093,7 +3121,7 @@ void BaselineCacheIRCompiler::pushArrayArguments(Register argcReg,
 
   
   if (isConstructing) {
-    masm.pushValue(Address(FramePointer, BaselineStubFrameLayout::Size()));
+    pushNewTarget();
   }
 
   
