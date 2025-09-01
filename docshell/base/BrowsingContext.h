@@ -454,8 +454,7 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   void Navigate(nsIURI* aURI, nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv,
                 NavigationHistoryBehavior aHistoryHandling =
-                    NavigationHistoryBehavior::Auto,
-                bool aShouldNotForceReplaceInOnLoad = false);
+                    NavigationHistoryBehavior::Auto);
 
   
   

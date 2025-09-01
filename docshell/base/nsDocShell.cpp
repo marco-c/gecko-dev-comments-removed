@@ -1134,10 +1134,8 @@ bool nsDocShell::MaybeHandleSubframeHistory(
   nsCOMPtr<nsISHEntry> currentChildEntry;
   GetCurrentSHEntry(getter_AddRefs(currentChildEntry), &oshe);
 
-  if (mCurrentURI &&
-      (!NS_IsAboutBlank(mCurrentURI) || currentChildEntry || mLoadingEntry ||
-       mActiveEntry) &&
-      !aLoadState->ShouldNotForceReplaceInOnLoad()) {
+  if (mCurrentURI && (!NS_IsAboutBlank(mCurrentURI) || currentChildEntry ||
+                      mLoadingEntry || mActiveEntry)) {
     
     
     
@@ -9691,7 +9689,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
 
   
   if (RefPtr<Document> document = GetDocument();
-      !aLoadState->LoadIsFromSessionHistory() && document &&
+      document &&
       aLoadState->UserNavigationInvolvement() !=
           UserNavigationInvolvement::BrowserUI &&
       !document->IsInitialDocument() &&
