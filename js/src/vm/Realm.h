@@ -814,6 +814,10 @@ class JS::Realm : public JS::shadow::Realm {
   js::DateTimeInfo* getDateTimeInfo();
 
   
+  
+  void setTimeZone(const char* timeZone);
+
+  
   mozilla::non_crypto::XorShift128PlusRNG& getOrCreateRandomNumberGenerator();
 
   const mozilla::non_crypto::XorShift128PlusRNG*

@@ -194,6 +194,21 @@ class DateTimeInfo {
     return offset;
   }
 
+  
+
+
+
+  static int32_t timeZoneCacheKey(DateTimeInfo* dtInfo) {
+    if (MOZ_UNLIKELY(dtInfo)) {
+      
+      
+      return dtInfo->utcToLocalStandardOffsetSeconds_;
+    }
+
+    
+    return utcToLocalStandardOffsetSeconds();
+  }
+
   enum class TimeZoneOffset { UTC, Local };
 
 #if JS_HAS_INTL_API
@@ -265,6 +280,10 @@ class DateTimeInfo {
     return &DateTimeInfo::utcToLocalOffsetSeconds;
   }
 
+#if JS_HAS_INTL_API
+  void updateTimeZoneOverride(RefPtr<JS::TimeZoneString> timeZone);
+#endif
+
  private:
   
   friend void js::ResetTimeZoneInternal(ResetTimeZoneMode);
@@ -297,6 +316,10 @@ class DateTimeInfo {
   TimeZoneStatus timeZoneStatus_;
 
   
+
+
+
+
 
 
 

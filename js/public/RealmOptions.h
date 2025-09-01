@@ -217,12 +217,6 @@ class JS_PUBLIC_API RealmCreationOptions {
   
   
   
-  RefPtr<TimeZoneString> timeZone() const { return timeZone_; }
-  RealmCreationOptions& setTimeZoneCopyZ(const char* timeZone);
-
-  
-  
-  
   bool alwaysUseFdlibm() const { return alwaysUseFdlibm_; }
   RealmCreationOptions& setAlwaysUseFdlibm(bool flag) {
     alwaysUseFdlibm_ = flag;
@@ -244,7 +238,6 @@ class JS_PUBLIC_API RealmCreationOptions {
   };
   uint64_t profilerRealmID_ = 0;
   RefPtr<LocaleString> locale_;
-  RefPtr<TimeZoneString> timeZone_;
   bool invisibleToDebugger_ = false;
   bool preserveJitCode_ = false;
   bool sharedMemoryAndAtomics_ = false;
@@ -327,12 +320,20 @@ class JS_PUBLIC_API RealmBehaviors {
     return *this;
   };
 
+  
+  
+  
+  
+  RefPtr<TimeZoneString> timeZone() const { return timeZone_; }
+  RealmBehaviors& setTimeZoneCopyZ(const char* timeZone);
+
  private:
+  RefPtr<LocaleString> localeOverride_;
+  RefPtr<TimeZoneString> timeZone_;
   mozilla::Maybe<RTPCallerTypeToken> rtpCallerType;
   bool discardSource_ = false;
   bool clampAndJitterTime_ = true;
   bool isNonLive_ = false;
-  RefPtr<LocaleString> localeOverride_;
 };
 
 
