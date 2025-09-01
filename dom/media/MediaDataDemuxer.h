@@ -153,6 +153,11 @@ class MediaTrackDemuxer : public DecoderDoctorLifeLogger<MediaTrackDemuxer> {
   
   
   
+  
+  
+  
+  
+  
   virtual RefPtr<SamplesPromise> GetSamples(int32_t aNumSamples = 1) = 0;
 
   

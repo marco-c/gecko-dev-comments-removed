@@ -1743,6 +1743,10 @@ void TrackBuffersManager::OnDemuxFailed(TrackType aTrack,
       }
       break;
     default:
+      
+      
+      
+      
       RejectProcessing(aError, __func__);
       break;
   }
