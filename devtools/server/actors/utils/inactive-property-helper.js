@@ -389,6 +389,13 @@ class InactivePropertyHelper {
       },
       
       {
+        invalidProperties: ["text-overflow"],
+        when: () => !this.isBlockContainer(),
+        fixId: "inactive-css-not-block-container-fix",
+        msgId: "inactive-css-not-block-container",
+      },
+      
+      {
         invalidProperties: [
           "shape-image-threshold",
           "shape-margin",
@@ -983,6 +990,13 @@ class InactivePropertyHelper {
       "grid",
       "table",
     ]);
+  }
+
+  
+
+
+  isBlockContainer() {
+    return this.node ? InspectorUtils.isBlockContainer(this.node) : false;
   }
 
   
