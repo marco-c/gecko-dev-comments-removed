@@ -79,6 +79,13 @@ class ViewportFrame : public nsContainerFrame {
 
 
 
+  nsRect GetContainingBlockAdjustedForScrollbars(
+      const ReflowInput& aReflowInput) const;
+
+  
+
+
+
   void UpdateStyle(ServoRestyleState& aStyleSet);
 
   
@@ -94,10 +101,6 @@ class ViewportFrame : public nsContainerFrame {
   virtual nsresult GetFrameName(nsAString& aResult) const override;
 #endif
 
- protected:
-  ViewportFrame(ComputedStyle* aStyle, nsPresContext* aPresContext, ClassID aID)
-      : nsContainerFrame(aStyle, aPresContext, aID), mView(nullptr) {}
-
   
 
 
@@ -106,6 +109,10 @@ class ViewportFrame : public nsContainerFrame {
 
 
   nsPoint AdjustReflowInputForScrollbars(ReflowInput& aReflowInput) const;
+
+ protected:
+  ViewportFrame(ComputedStyle* aStyle, nsPresContext* aPresContext, ClassID aID)
+      : nsContainerFrame(aStyle, aPresContext, aID), mView(nullptr) {}
 
   nsView* GetViewInternal() const override { return mView; }
   void SetViewInternal(nsView* aView) override { mView = aView; }

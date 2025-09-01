@@ -381,6 +381,35 @@ nsRect ViewportFrame::AdjustReflowInputAsContainingBlock(
   return rect;
 }
 
+nsRect ViewportFrame::GetContainingBlockAdjustedForScrollbars(
+    const ReflowInput& aReflowInput) const {
+  const WritingMode wm = aReflowInput.GetWritingMode();
+
+  LogicalSize computedSize = aReflowInput.ComputedSize();
+  const nsPoint& origin = [&]() {
+    
+    nsIFrame* kidFrame = mFrames.FirstChild();
+    if (ScrollContainerFrame* scrollContainerFrame = do_QueryFrame(kidFrame)) {
+      
+      
+      
+      LogicalMargin scrollbars(wm,
+                               scrollContainerFrame->GetActualScrollbarSizes());
+      computedSize.ISize(wm) =
+          std::max(0, aReflowInput.ComputedISize() - scrollbars.IStartEnd(wm));
+      computedSize.BSize(wm) =
+          std::max(0, aReflowInput.ComputedBSize() - scrollbars.BStartEnd(wm));
+      return nsPoint(scrollbars.Left(wm), scrollbars.Top(wm));
+    }
+    return nsPoint(0, 0);
+  }();
+
+  nsRect rect(origin, computedSize.GetPhysicalSize(wm));
+  rect.SizeTo(AdjustViewportSizeForFixedPosition(rect));
+
+  return rect;
+}
+
 void ViewportFrame::Reflow(nsPresContext* aPresContext,
                            ReflowOutput& aDesiredSize,
                            const ReflowInput& aReflowInput,
@@ -466,11 +495,17 @@ void ViewportFrame::Reflow(nsPresContext* aPresContext,
       reflowInput.SetComputedBSize(maxSize.BSize(wm));
     }
 
-    nsRect rect = AdjustReflowInputAsContainingBlock(reflowInput);
-    AbsPosReflowFlags flags =
-        AbsPosReflowFlags::CBWidthAndHeightChanged;  
+    
+    
+    
+    
+    
+    
+    const nsRect cb(nsPoint(), reflowInput.ComputedPhysicalSize());
+    
+    AbsPosReflowFlags flags = AbsPosReflowFlags::CBWidthAndHeightChanged;
     GetAbsoluteContainingBlock()->Reflow(this, aPresContext, reflowInput,
-                                         aStatus, rect, flags,
+                                         aStatus, cb, flags,
                                           nullptr);
   }
 

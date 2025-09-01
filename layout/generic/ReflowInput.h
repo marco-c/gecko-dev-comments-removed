@@ -864,6 +864,11 @@ struct ReflowInput : public SizeComputationInput {
   
   
   
+  
+  
+  
+  
+  
   void CalculateHypotheticalPosition(
       nsPlaceholderFrame* aPlaceholderFrame, const ReflowInput* aCBReflowInput,
       nsHypotheticalPosition& aHypotheticalPos) const;

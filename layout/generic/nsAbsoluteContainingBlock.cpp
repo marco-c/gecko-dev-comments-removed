@@ -15,6 +15,7 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/ReflowInput.h"
 #include "mozilla/Sprintf.h"
+#include "mozilla/ViewportFrame.h"
 #include "nsAtomicContainerFrame.h"
 #include "nsCSSFrameConstructor.h"
 #include "nsContainerFrame.h"
@@ -146,6 +147,11 @@ static void MaybeMarkAncestorsAsHavingDescendantDependentOnItsStaticPos(
   }
 }
 
+static bool IsSnapshotContainingBlock(const nsIFrame* aFrame) {
+  return aFrame->Style()->GetPseudoType() ==
+         PseudoStyleType::mozSnapshotContainingBlock;
+}
+
 void nsAbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
                                        nsPresContext* aPresContext,
                                        const ReflowInput& aReflowInput,
@@ -187,10 +193,24 @@ void nsAbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
           kidFrame, aDelegatingFrame);
     }
 
-    nscoord availBSize = aReflowInput.AvailableBSize();
-    const nsRect& cb =
-        isGrid ? nsGridContainerFrame::GridItemCB(kidFrame) : aContainingBlock;
-    WritingMode containerWM = aReflowInput.GetWritingMode();
+    const nsRect usedCbForKid = [&] {
+      if (isGrid) {
+        return nsGridContainerFrame::GridItemCB(kidFrame);
+      }
+
+      if (ViewportFrame* viewport = do_QueryFrame(aDelegatingFrame)) {
+        if (!IsSnapshotContainingBlock(kidFrame)) {
+          return viewport->GetContainingBlockAdjustedForScrollbars(
+              aReflowInput);
+        }
+        
+        
+      }
+      return aContainingBlock;
+    }();
+
+    const nscoord availBSize = aReflowInput.AvailableBSize();
+    const WritingMode containerWM = aReflowInput.GetWritingMode();
     if (!kidNeedsReflow && availBSize != NS_UNCONSTRAINEDSIZE) {
       
       
@@ -203,13 +223,14 @@ void nsAbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
         
         kidNeedsReflow = true;
       } else {
-        nscoord kidBEnd = kidFrame->GetLogicalRect(cb.Size()).BEnd(kidWM);
+        nscoord kidBEnd =
+            kidFrame->GetLogicalRect(usedCbForKid.Size()).BEnd(kidWM);
         nscoord kidOverflowBEnd =
             LogicalRect(containerWM,
                         
                         kidFrame->ScrollableOverflowRectRelativeToSelf() +
                             kidFrame->GetPosition(),
-                        aContainingBlock.Size())
+                        usedCbForKid.Size())
                 .BEnd(containerWM);
         NS_ASSERTION(kidOverflowBEnd >= kidBEnd,
                      "overflow area should be at least as large as frame rect");
@@ -222,9 +243,9 @@ void nsAbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
     if (kidNeedsReflow && !aPresContext->HasPendingInterrupt()) {
       
       nsReflowStatus kidStatus;
-      ReflowAbsoluteFrame(aDelegatingFrame, aPresContext, aReflowInput, cb,
-                          aFlags, kidFrame, kidStatus, aOverflowAreas,
-                          referencedAnchors);
+      ReflowAbsoluteFrame(aDelegatingFrame, aPresContext, aReflowInput,
+                          usedCbForKid, aFlags, kidFrame, kidStatus,
+                          aOverflowAreas, referencedAnchors);
       MOZ_ASSERT(!kidStatus.IsInlineBreakBefore(),
                  "ShouldAvoidBreakInside should prevent this from happening");
       nsIFrame* nextFrame = kidFrame->GetNextInFlow();
@@ -875,6 +896,9 @@ void nsAbsoluteContainingBlock::ReflowAbsoluteFrame(
     NS_ASSERTION(
         aReflowInput.ComputedSize(wm).ISize(wm) != NS_UNCONSTRAINEDSIZE,
         "Must have a useful inline-size _somewhere_");
+    
+    
+    
     availISize = aReflowInput.ComputedSizeWithPadding(wm).ISize(wm);
   }
 
@@ -920,10 +944,29 @@ void nsAbsoluteContainingBlock::ReflowAbsoluteFrame(
                                        border.ConvertTo(wm, outerWM).BStart(wm)
                                  : NS_UNCONSTRAINEDSIZE;
 
-  ReflowInput kidReflowInput(aPresContext, aReflowInput, aKidFrame,
-                             LogicalSize(wm, availISize, availBSize),
-                             Some(logicalCBSize), initFlags, {}, {},
-                             aReferencedAnchors);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Maybe<ReflowInput> parentReflowInput;
+  if (const ViewportFrame* viewport = do_QueryFrame(aDelegatingFrame)) {
+    parentReflowInput.emplace(aReflowInput);
+    
+    
+    Unused << viewport->AdjustReflowInputForScrollbars(parentReflowInput.ref());
+  }
+  ReflowInput kidReflowInput(
+      aPresContext, parentReflowInput.refOr(aReflowInput), aKidFrame,
+      LogicalSize(wm, availISize, availBSize), Some(logicalCBSize), initFlags,
+      {}, {}, aReferencedAnchors);
 
   if (nscoord kidAvailBSize = kidReflowInput.AvailableBSize();
       kidAvailBSize != NS_UNCONSTRAINEDSIZE) {
