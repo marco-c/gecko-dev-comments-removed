@@ -131,6 +131,28 @@ impl glean::traits::Uuid for UuidMetric {
     
     
     
+    pub fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, storage_name: S) -> Option<Uuid> {
+        let storage_name = storage_name.into().map(|s| s.to_string());
+        match self {
+            UuidMetric::Parent { inner, .. } => inner
+                .test_get_value(storage_name)
+                .and_then(|s| Uuid::parse_str(&s).ok()),
+            UuidMetric::Child(_c) => panic!("Cannot get test value for in non-main process!"),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     pub fn test_get_num_recorded_errors(&self, error: glean::ErrorType) -> i32 {
         match self {
@@ -138,30 +160,6 @@ impl glean::traits::Uuid for UuidMetric {
             UuidMetric::Child(_c) => {
                 panic!("Cannot get test value for UuidMetric in non-main process!")
             }
-        }
-    }
-}
-
-#[inherent]
-impl glean::TestGetValue<Uuid> for UuidMetric {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<Uuid> {
-        match self {
-            UuidMetric::Parent { inner, .. } => inner
-                .test_get_value(ping_name)
-                .and_then(|s| Uuid::parse_str(&s).ok()),
-            UuidMetric::Child(_c) => panic!("Cannot get test value for in non-main process!"),
         }
     }
 }
@@ -179,7 +177,7 @@ mod test {
         let expected = Uuid::new_v4();
         metric.set(expected.clone());
 
-        assert_eq!(expected, metric.test_get_value(Some("test-ping".to_string())).unwrap());
+        assert_eq!(expected, metric.test_get_value("test-ping").unwrap());
     }
 
     #[test]
@@ -205,7 +203,7 @@ mod test {
 
         assert_eq!(
             expected,
-            parent_metric.test_get_value(Some("test-ping".to_string())).unwrap(),
+            parent_metric.test_get_value("test-ping").unwrap(),
             "UUID metrics should only work in the parent process"
         );
     }

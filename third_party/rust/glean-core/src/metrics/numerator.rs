@@ -9,8 +9,8 @@ use crate::error_recording::ErrorType;
 use crate::metrics::MetricType;
 use crate::metrics::Rate;
 use crate::metrics::RateMetric;
+use crate::CommonMetricData;
 use crate::Glean;
-use crate::{CommonMetricData, TestGetValue};
 
 
 
@@ -51,6 +51,25 @@ impl NumeratorMetric {
         self.0.add_to_numerator_sync(glean, amount)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<Rate> {
+        crate::block_on_dispatcher();
+        crate::core::with_glean(|glean| self.get_value(glean, ping_name.as_deref()))
+    }
+
     #[doc(hidden)]
     pub fn get_value<'a, S: Into<Option<&'a str>>>(
         &self,
@@ -73,26 +92,5 @@ impl NumeratorMetric {
     
     pub fn test_get_num_recorded_errors(&self, error: ErrorType) -> i32 {
         self.0.test_get_num_recorded_errors(error)
-    }
-}
-
-impl TestGetValue<Rate> for NumeratorMetric {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn test_get_value(&self, ping_name: Option<String>) -> Option<Rate> {
-        crate::block_on_dispatcher();
-        crate::core::with_glean(|glean| self.get_value(glean, ping_name.as_deref()))
     }
 }

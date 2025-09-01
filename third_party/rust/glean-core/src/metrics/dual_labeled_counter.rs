@@ -5,13 +5,12 @@
 use std::borrow::Cow;
 use std::char;
 use std::collections::{HashMap, HashSet};
-use std::mem;
 use std::sync::{Arc, Mutex};
 
 use crate::common_metric_data::{CommonMetricData, CommonMetricDataInternal, DynamicLabelType};
 use crate::error_recording::{record_error, test_get_num_recorded_errors, ErrorType};
 use crate::metrics::{CounterMetric, Metric, MetricType};
-use crate::{Glean, TestGetValue};
+use crate::Glean;
 
 const MAX_LABELS: usize = 16;
 const OTHER_LABEL: &str = "__other__";
@@ -36,40 +35,31 @@ pub struct DualLabeledCounterMetric {
 }
 
 impl ::malloc_size_of::MallocSizeOf for DualLabeledCounterMetric {
-    fn size_of(&self, ops: &mut malloc_size_of::MallocSizeOfOps) -> usize {
-        let mut n = 0;
-        n += self.keys.size_of(ops);
-        n += self.categories.size_of(ops);
-        n += self.counter.size_of(ops);
-
+    fn size_of(&self, _ops: &mut malloc_size_of::MallocSizeOfOps) -> usize {
         
         
-        let map = self.dual_label_map.lock().unwrap();
+        
 
         
         
         
-        let shallow_size = if ops.has_malloc_enclosing_size_of() {
-            map.values()
-                .next()
-                .map_or(0, |v| unsafe { ops.malloc_enclosing_size_of(v) })
-        } else {
-            map.capacity()
-                * (mem::size_of::<String>() 
-                    + mem::size_of::<Arc<CounterMetric>>() 
-                    + mem::size_of::<CounterMetric>() 
-                                                      
-                    + mem::size_of::<usize>())
-        };
+        
+        
+        
+        
+        
+        
+        
+        
 
-        let mut map_size = shallow_size;
-        for (k, v) in map.iter() {
-            map_size += k.size_of(ops);
-            map_size += v.size_of(ops);
-        }
-        n += map_size;
+        
+        
+        
+        
+        
 
-        n
+        
+        0
     }
 }
 
@@ -228,24 +218,6 @@ impl DualLabeledCounterMetric {
         crate::core::with_glean(|glean| {
             test_get_num_recorded_errors(glean, self.counter.meta(), error).unwrap_or(0)
         })
-    }
-}
-
-impl TestGetValue<HashMap<String, HashMap<String, i32>>> for DualLabeledCounterMetric {
-    fn test_get_value(
-        &self,
-        ping_name: Option<String>,
-    ) -> Option<HashMap<String, HashMap<String, i32>>> {
-        let mut out: HashMap<String, HashMap<String, i32>> = HashMap::new();
-        let map = self.dual_label_map.lock().unwrap();
-        for ((key, category), metric) in map.iter() {
-            if let Some(value) = metric.test_get_value(ping_name.clone()) {
-                out.entry(key.clone())
-                    .or_default()
-                    .insert(category.clone(), value);
-            }
-        }
-        Some(out)
     }
 }
 

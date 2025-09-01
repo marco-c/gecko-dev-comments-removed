@@ -45,7 +45,6 @@ pub enum WriteFlags {
 
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[cfg_attr(feature = "malloc-size-of", derive(malloc_size_of_derive::MallocSizeOf))]
 pub enum RecoveryStrategy {
     
     Error,

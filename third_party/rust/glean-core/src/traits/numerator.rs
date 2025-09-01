@@ -2,13 +2,13 @@
 
 
 
+use crate::ErrorType;
 use crate::Rate;
-use crate::{ErrorType, TestGetValue};
 
 
 
 
-pub trait Numerator: TestGetValue<Rate> {
+pub trait Numerator {
     
     
     
@@ -19,6 +19,18 @@ pub trait Numerator: TestGetValue<Rate> {
     
     
     fn add_to_numerator(&self, amount: i32);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<Rate>;
 
     
     

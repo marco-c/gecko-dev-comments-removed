@@ -10,8 +10,8 @@ use crate::error_recording::{record_error, test_get_num_recorded_errors, ErrorTy
 use crate::histogram::{Bucketing, Histogram, HistogramType, LinearOrExponential};
 use crate::metrics::{DistributionData, Metric, MetricType};
 use crate::storage::StorageManager;
+use crate::CommonMetricData;
 use crate::Glean;
-use crate::{CommonMetricData, TestGetValue};
 
 
 #[derive(Clone, Debug)]
@@ -242,6 +242,25 @@ impl CustomDistributionMetric {
     
     
     
+    
+    
+    
+    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<DistributionData> {
+        crate::block_on_dispatcher();
+        crate::core::with_glean(|glean| self.get_value(glean, ping_name.as_deref()))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn test_get_num_recorded_errors(&self, error: ErrorType) -> i32 {
         crate::block_on_dispatcher();
 
@@ -300,27 +319,6 @@ impl CustomDistributionMetric {
                     }
                 });
         });
-    }
-}
-
-impl TestGetValue<DistributionData> for CustomDistributionMetric {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn test_get_value(&self, ping_name: Option<String>) -> Option<DistributionData> {
-        crate::block_on_dispatcher();
-        crate::core::with_glean(|glean| self.get_value(glean, ping_name.as_deref()))
     }
 }
 

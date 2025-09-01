@@ -3,14 +3,14 @@
 
 
 use crate::metrics::DistributionData;
-use crate::{ErrorType, TestGetValue};
+use crate::ErrorType;
 
 
 
 
 
 
-pub trait MemoryDistribution: TestGetValue<DistributionData> {
+pub trait MemoryDistribution {
     
     
     
@@ -23,6 +23,21 @@ pub trait MemoryDistribution: TestGetValue<DistributionData> {
     
     
     fn accumulate(&self, sample: u64);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn test_get_value<'a, S: Into<Option<&'a str>>>(
+        &self,
+        ping_name: S,
+    ) -> Option<DistributionData>;
 
     
     

@@ -2,13 +2,13 @@
 
 
 
-use crate::{ErrorType, TestGetValue};
+use crate::ErrorType;
 
 
 
 
 
-pub trait Text: TestGetValue<String> {
+pub trait Text {
     
     
     
@@ -18,7 +18,22 @@ pub trait Text: TestGetValue<String> {
     
     
     
-    fn set<S: Into<String>>(&self, value: S);
+    fn set<S: Into<std::string::String>>(&self, value: S);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn test_get_value<'a, S: Into<Option<&'a str>>>(
+        &self,
+        ping_name: S,
+    ) -> Option<std::string::String>;
 
     
     

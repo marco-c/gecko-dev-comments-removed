@@ -28,7 +28,7 @@ use std::{
         atomic::{AtomicBool, AtomicUsize, Ordering},
         Arc,
     },
-    thread::JoinHandle,
+    thread::{self, JoinHandle},
     time::Duration,
 };
 
@@ -265,62 +265,66 @@ impl Dispatcher {
         let queue_preinit = Arc::new(AtomicBool::new(true));
         let overflow_count = Arc::new(AtomicUsize::new(0));
 
-        let worker = crate::thread::spawn("glean.dispatcher", move || {
-            match block_receiver.recv() {
-                Err(_) => {
-                    
-                    
-                    log::error!("The task producer was disconnected. Worker thread will exit.");
-                    return;
-                }
-                Ok(Blocked::Shutdown) => {
-                    
-                    return;
-                }
-                Ok(Blocked::Continue) => {
-                    
-                }
-            }
-
-            let mut receiver = preinit_receiver;
-            loop {
-                use Command::*;
-
-                match receiver.recv() {
-                    Ok(Shutdown) => {
-                        break;
-                    }
-
-                    Ok(Task(f)) => {
-                        (f)();
-                    }
-
-                    Ok(Swap(swap_done)) => {
-                        
-                        
-                        
-
-                        
-                        
-                        mem::swap(&mut receiver, &mut unbounded_receiver);
-
-                        
-                        
-                        
-                        swap_done
-                            .send(())
-                            .expect("The caller of `flush_init` has gone missing");
-                    }
-
-                    
+        let worker = thread::Builder::new()
+            .name("glean.dispatcher".into())
+            .spawn(move || {
+                match block_receiver.recv() {
                     Err(_) => {
+                        
+                        
                         log::error!("The task producer was disconnected. Worker thread will exit.");
                         return;
                     }
+                    Ok(Blocked::Shutdown) => {
+                        
+                        return;
+                    }
+                    Ok(Blocked::Continue) => {
+                        
+                    }
                 }
-            }
-        })
-        .expect("Failed to spawn Glean's dispatcher thread");
+
+                let mut receiver = preinit_receiver;
+                loop {
+                    use Command::*;
+
+                    match receiver.recv() {
+                        Ok(Shutdown) => {
+                            break;
+                        }
+
+                        Ok(Task(f)) => {
+                            (f)();
+                        }
+
+                        Ok(Swap(swap_done)) => {
+                            
+                            
+                            
+
+                            
+                            
+                            mem::swap(&mut receiver, &mut unbounded_receiver);
+
+                            
+                            
+                            
+                            swap_done
+                                .send(())
+                                .expect("The caller of `flush_init` has gone missing");
+                        }
+
+                        
+                        Err(_) => {
+                            log::error!(
+                                "The task producer was disconnected. Worker thread will exit."
+                            );
+                            return;
+                        }
+                    }
+                }
+            })
+            .expect("Failed to spawn Glean's dispatcher thread");
 
         let guard = DispatchGuard {
             queue_preinit,
@@ -358,7 +362,6 @@ mod test {
     use super::*;
     use std::sync::atomic::AtomicU8;
     use std::sync::Mutex;
-    use std::thread;
 
     fn enable_test_logging() {
         

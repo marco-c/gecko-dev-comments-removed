@@ -2,19 +2,31 @@
 
 
 
-use crate::{ErrorType, TestGetValue};
+use crate::ErrorType;
 
 
 
 
 
-pub trait Boolean: TestGetValue<bool> {
+pub trait Boolean {
     
     
     
     
     
     fn set(&self, value: bool);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<bool>;
 
     
     

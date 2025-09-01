@@ -41,7 +41,6 @@ pub static DEFAULT_MAX_DBS: c_uint = 5;
 
 
 #[derive(Debug)]
-#[cfg_attr(feature = "malloc-size-of", derive(malloc_size_of_derive::MallocSizeOf))]
 pub struct Rkv<E> {
     _path: PathBuf,
     env: E,
@@ -175,6 +174,10 @@ where
             self.env
                 .create_db(name.into(), opts.flags)
                 .map_err(|e| match e.into() {
+                    #[cfg(feature = "lmdb")]
+                    StoreError::LmdbError(lmdb::Error::BadRslot) => {
+                        StoreError::open_during_transaction()
+                    }
                     StoreError::SafeModeError(SafeModeError::DbsIllegalOpen) => {
                         StoreError::open_during_transaction()
                     }
@@ -182,6 +185,10 @@ where
                 })
         } else {
             self.env.open_db(name.into()).map_err(|e| match e.into() {
+                #[cfg(feature = "lmdb")]
+                StoreError::LmdbError(lmdb::Error::BadRslot) => {
+                    StoreError::open_during_transaction()
+                }
                 StoreError::SafeModeError(SafeModeError::DbsIllegalOpen) => {
                     StoreError::open_during_transaction()
                 }
@@ -234,6 +241,8 @@ where
     
     
     
+    
+    
     pub fn sync(&self, force: bool) -> Result<(), StoreError> {
         self.env.sync(force).map_err(|e| e.into())
     }
@@ -271,6 +280,7 @@ where
         self.env.load_ratio().map_err(|e| e.into())
     }
 
+    
     
     
     

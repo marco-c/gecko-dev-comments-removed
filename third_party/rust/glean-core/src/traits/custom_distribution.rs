@@ -2,14 +2,14 @@
 
 
 
-use crate::{DistributionData, ErrorType, TestGetValue};
+use crate::ErrorType;
 
 
 
 
 
 
-pub trait CustomDistribution: TestGetValue<DistributionData> {
+pub trait CustomDistribution {
     
     
     
@@ -43,6 +43,21 @@ pub trait CustomDistribution: TestGetValue<DistributionData> {
     
     
     fn accumulate_single_sample_signed(&self, sample: i64);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn test_get_value<'a, S: Into<Option<&'a str>>>(
+        &self,
+        ping_name: S,
+    ) -> Option<crate::metrics::DistributionData>;
 
     
     

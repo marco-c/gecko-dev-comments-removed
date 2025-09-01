@@ -283,6 +283,31 @@ impl Datetime for DatetimeMetric {
     
     
     
+    pub fn test_get_value<'a, S: Into<Option<&'a str>>>(
+        &self,
+        ping_name: S,
+    ) -> Option<glean::Datetime> {
+        let ping_name = ping_name.into().map(|s| s.to_string());
+        match self {
+            DatetimeMetric::Parent { inner, .. } => inner.test_get_value(ping_name),
+            DatetimeMetric::Child(_) => {
+                panic!("Cannot get test value for DatetimeMetric in non-main process!")
+            }
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     pub fn test_get_num_recorded_errors(&self, error: glean::ErrorType) -> i32 {
         match self {
@@ -290,30 +315,6 @@ impl Datetime for DatetimeMetric {
             DatetimeMetric::Child(_) => panic!(
                 "Cannot get the number of recorded errors for DatetimeMetric in non-main process!"
             ),
-        }
-    }
-}
-
-#[inherent]
-impl glean::TestGetValue<glean::Datetime> for DatetimeMetric {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<glean::Datetime> {
-        match self {
-            DatetimeMetric::Parent { inner, .. } => inner.test_get_value(ping_name),
-            DatetimeMetric::Child(_) => {
-                panic!("Cannot get test value for DatetimeMetric in non-main process!")
-            }
         }
     }
 }
@@ -339,7 +340,7 @@ mod test {
         let expected: glean::Datetime = DateTime::parse_from_rfc3339("2020-05-07T11:58:00+05:00")
             .unwrap()
             .into();
-        assert_eq!(expected, metric.test_get_value(Some("test-ping".to_string())).unwrap());
+        assert_eq!(expected, metric.test_get_value("test-ping").unwrap());
     }
 
     #[test]
@@ -353,7 +354,7 @@ mod test {
         let expected: glean::Datetime = DateTime::parse_from_rfc3339("2020-05-07T11:58:00+05:00")
             .unwrap()
             .into();
-        assert_eq!(expected, metric.test_get_value(Some("test-ping".to_string())).unwrap());
+        assert_eq!(expected, metric.test_get_value("test-ping").unwrap());
     }
 
     #[test]
@@ -387,6 +388,6 @@ mod test {
         let expected: glean::Datetime = DateTime::parse_from_rfc3339("2020-10-13T16:41:00+05:00")
             .unwrap()
             .into();
-        assert_eq!(expected, parent_metric.test_get_value(Some("test-ping".to_string())).unwrap());
+        assert_eq!(expected, parent_metric.test_get_value("test-ping").unwrap());
     }
 }

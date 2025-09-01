@@ -2,14 +2,14 @@
 
 
 
-use crate::{ErrorType, TestGetValue};
+use crate::ErrorType;
 use std::time::Duration;
 
 
 
 
 
-pub trait Timespan: TestGetValue<u64> {
+pub trait Timespan {
     
     
     
@@ -39,6 +39,18 @@ pub trait Timespan: TestGetValue<u64> {
     
     
     fn set_raw(&self, elapsed: Duration);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<u64>;
 
     
     

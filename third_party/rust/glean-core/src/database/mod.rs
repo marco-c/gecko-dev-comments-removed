@@ -145,27 +145,30 @@ pub struct Database {
 }
 
 impl MallocSizeOf for Database {
-    fn size_of(&self, ops: &mut malloc_size_of::MallocSizeOfOps) -> usize {
+    fn size_of(&self, _ops: &mut malloc_size_of::MallocSizeOfOps) -> usize {
         
 
-        let mut n = 0;
+        
 
-        n += self.rkv.size_of(ops);
-        n += self.user_store.size_of(ops);
-        n += self.ping_store.size_of(ops);
-        n += self.application_store.size_of(ops);
 
-        n += self
-            .ping_lifetime_data
-            .as_ref()
-            .map(|data| {
-                
-                let lock = data.read().unwrap();
-                (*lock).size_of(ops)
-            })
-            .unwrap_or(0);
 
-        n
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        0
     }
 }
 

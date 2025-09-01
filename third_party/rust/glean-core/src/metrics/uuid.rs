@@ -11,8 +11,8 @@ use crate::error_recording::{record_error, test_get_num_recorded_errors, ErrorTy
 use crate::metrics::Metric;
 use crate::metrics::MetricType;
 use crate::storage::StorageManager;
+use crate::CommonMetricData;
 use crate::Glean;
-use crate::{CommonMetricData, TestGetValue};
 
 
 
@@ -83,8 +83,6 @@ impl UuidMetric {
     }
 
     
-    
-    
     pub fn generate_and_set(&self) -> String {
         let uuid = Uuid::new_v4();
 
@@ -136,35 +134,33 @@ impl UuidMetric {
     
     
     
+    
+    
+    
+    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<String> {
+        crate::block_on_dispatcher();
+        crate::core::with_glean(|glean| {
+            self.get_value(glean, ping_name.as_deref())
+                .map(|uuid| uuid.to_string())
+        })
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn test_get_num_recorded_errors(&self, error: ErrorType) -> i32 {
         crate::block_on_dispatcher();
 
         crate::core::with_glean(|glean| {
             test_get_num_recorded_errors(glean, self.meta(), error).unwrap_or(0)
-        })
-    }
-}
-
-impl TestGetValue<String> for UuidMetric {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn test_get_value(&self, ping_name: Option<String>) -> Option<String> {
-        crate::block_on_dispatcher();
-        crate::core::with_glean(|glean| {
-            self.get_value(glean, ping_name.as_deref())
-                .map(|uuid| uuid.to_string())
         })
     }
 }
