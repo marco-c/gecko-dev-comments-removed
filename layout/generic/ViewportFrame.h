@@ -73,7 +73,7 @@ class ViewportFrame : public nsContainerFrame {
 
 
 
-  nsRect AdjustReflowInputAsContainingBlock(ReflowInput* aReflowInput) const;
+  nsRect AdjustReflowInputAsContainingBlock(ReflowInput& aReflowInput) const;
 
   
 
@@ -105,7 +105,7 @@ class ViewportFrame : public nsContainerFrame {
 
 
 
-  nsPoint AdjustReflowInputForScrollbars(ReflowInput* aReflowInput) const;
+  nsPoint AdjustReflowInputForScrollbars(ReflowInput& aReflowInput) const;
 
   nsView* GetViewInternal() const override { return mView; }
   void SetViewInternal(nsView* aView) override { mView = aView; }

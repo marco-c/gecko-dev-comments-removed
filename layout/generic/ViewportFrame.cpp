@@ -348,7 +348,7 @@ nscoord ViewportFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
 }
 
 nsPoint ViewportFrame::AdjustReflowInputForScrollbars(
-    ReflowInput* aReflowInput) const {
+    ReflowInput& aReflowInput) const {
   
   nsIFrame* kidFrame = mFrames.FirstChild();
 
@@ -356,16 +356,16 @@ nsPoint ViewportFrame::AdjustReflowInputForScrollbars(
     
     
     
-    WritingMode wm = aReflowInput->GetWritingMode();
+    WritingMode wm = aReflowInput.GetWritingMode();
     LogicalMargin scrollbars(wm,
                              scrollContainerFrame->GetActualScrollbarSizes());
-    aReflowInput->SetComputedISize(
-        aReflowInput->ComputedISize() - scrollbars.IStartEnd(wm),
+    aReflowInput.SetComputedISize(
+        aReflowInput.ComputedISize() - scrollbars.IStartEnd(wm),
         ReflowInput::ResetResizeFlags::No);
-    aReflowInput->SetAvailableISize(aReflowInput->AvailableISize() -
-                                    scrollbars.IStartEnd(wm));
-    aReflowInput->SetComputedBSize(
-        aReflowInput->ComputedBSize() - scrollbars.BStartEnd(wm),
+    aReflowInput.SetAvailableISize(aReflowInput.AvailableISize() -
+                                   scrollbars.IStartEnd(wm));
+    aReflowInput.SetComputedBSize(
+        aReflowInput.ComputedBSize() - scrollbars.BStartEnd(wm),
         ReflowInput::ResetResizeFlags::No);
     return nsPoint(scrollbars.Left(wm), scrollbars.Top(wm));
   }
@@ -373,9 +373,9 @@ nsPoint ViewportFrame::AdjustReflowInputForScrollbars(
 }
 
 nsRect ViewportFrame::AdjustReflowInputAsContainingBlock(
-    ReflowInput* aReflowInput) const {
+    ReflowInput& aReflowInput) const {
   const nsPoint origin = AdjustReflowInputForScrollbars(aReflowInput);
-  nsRect rect(origin, aReflowInput->ComputedPhysicalSize());
+  nsRect rect(origin, aReflowInput.ComputedPhysicalSize());
   rect.SizeTo(AdjustViewportSizeForFixedPosition(rect));
 
   return rect;
@@ -466,7 +466,7 @@ void ViewportFrame::Reflow(nsPresContext* aPresContext,
       reflowInput.SetComputedBSize(maxSize.BSize(wm));
     }
 
-    nsRect rect = AdjustReflowInputAsContainingBlock(&reflowInput);
+    nsRect rect = AdjustReflowInputAsContainingBlock(reflowInput);
     AbsPosReflowFlags flags =
         AbsPosReflowFlags::CBWidthAndHeightChanged;  
     GetAbsoluteContainingBlock()->Reflow(this, aPresContext, reflowInput,
