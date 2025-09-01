@@ -1419,9 +1419,6 @@ void CodeGenerator::visitShiftI(LShiftI* ins) {
         MOZ_CRASH("Unexpected shift op");
     }
   } else {
-    
-    masm.ma_and(dest, ToRegister(rhs), Imm32(0x1F));
-
     switch (ins->bitop()) {
       case JSOp::Lsh:
         masm.sllw(dest, lhs, dest);
