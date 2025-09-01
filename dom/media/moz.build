@@ -329,6 +329,9 @@ if CONFIG["OS_TARGET"] == "Linux":
 else:
     UNIFIED_SOURCES += ["UnderrunHandlerNoop.cpp"]
 
+if CONFIG["ENABLE_TESTS"] or CONFIG["FUZZING"]:
+    UNIFIED_SOURCES += ["MockCubeb.cpp"]
+
 
 
 
