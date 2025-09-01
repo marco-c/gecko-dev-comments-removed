@@ -49,6 +49,7 @@ def get_excluded_files():
 
 def get_excluded_dirs():
     return [
+        "build_overrides",
         
         
         "sdk/android",
