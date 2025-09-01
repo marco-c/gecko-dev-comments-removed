@@ -75,7 +75,6 @@
 #include "nsICachingChannel.h"
 #include "nsIClassOfService.h"
 #include "nsIClassifiedChannel.h"
-#include "nsIConsoleService.h"
 #include "nsIContentPolicy.h"
 #include "nsICookieJarSettings.h"
 #include "nsIDOMEventListener.h"
@@ -2760,23 +2759,6 @@ nsresult XMLHttpRequestMainThread::InitiateFetch(
       Unused << httpChannel->SetReferrerInfoWithoutClone(referrerInfo);
     }
 
-    
-    
-    
-    
-    
-    nsCOMPtr<nsIUploadChannel2> uploadChannel2 = do_QueryInterface(httpChannel);
-    if (!uploadChannel2) {
-      nsCOMPtr<nsIConsoleService> consoleService =
-          do_GetService(NS_CONSOLESERVICE_CONTRACTID);
-      if (consoleService) {
-        consoleService->LogStringMessage(
-            u"Http channel implementation doesn't support nsIUploadChannel2. "
-            "An extension has supplied a non-functional http protocol handler. "
-            "This will break behavior and in future releases not work at all.");
-      }
-    }
-
     if (uploadStream) {
       
       
@@ -2791,28 +2773,11 @@ nsresult XMLHttpRequestMainThread::InitiateFetch(
 
       
       
-      nsCOMPtr<nsIUploadChannel2> uploadChannel2(
-          do_QueryInterface(httpChannel));
-      
-      NS_ASSERTION(uploadChannel2, "http must support nsIUploadChannel2");
-      if (uploadChannel2) {
-        uploadChannel2->ExplicitSetUploadStream(
-            uploadStream, aUploadContentType, mUploadTotal, mRequestMethod,
-            false);
-      } else {
-        
-        
-        if (aUploadContentType.IsEmpty()) {
-          aUploadContentType.AssignLiteral("application/octet-stream");
-        }
-        nsCOMPtr<nsIUploadChannel> uploadChannel =
-            do_QueryInterface(httpChannel);
-        uploadChannel->SetUploadStream(uploadStream, aUploadContentType,
-                                       mUploadTotal);
-        
-        rv = httpChannel->SetRequestMethod(mRequestMethod);
-        MOZ_ASSERT(NS_SUCCEEDED(rv));
-      }
+      nsCOMPtr<nsIUploadChannel2> uploadChannel(do_QueryInterface(httpChannel));
+      NS_ASSERTION(uploadChannel, "http must support nsIUploadChannel");
+      rv = uploadChannel->ExplicitSetUploadStream(
+          uploadStream, aUploadContentType, mUploadTotal, mRequestMethod,
+          PR_FALSE);
     }
   }
 
