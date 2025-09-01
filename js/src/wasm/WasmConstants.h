@@ -1170,7 +1170,9 @@ static const unsigned MaxFunctionBytes = 7654321;
 static const unsigned MaxArrayNewFixedElements = 10000;
 
 
-static_assert((PageSize * MaxMemory64PagesValidation) <= (uint64_t(1) << 53) -1);
+
+static_assert((PageSize * MaxMemory64PagesValidation) <=
+              (uint64_t(1) << 53) - 1);
 
 
 
