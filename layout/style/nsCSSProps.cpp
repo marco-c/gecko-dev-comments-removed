@@ -79,13 +79,19 @@ void nsCSSProps::RecomputeEnabledState(const char* aPref, void*) {
        pref->mPropID != eCSSProperty_UNKNOWN; pref++) {
     if (!aPref || !strcmp(aPref, pref->mPref)) {
       foundPref = true;
-#ifdef FUZZING
-      gPropertyEnabled[pref->mPropID] = true;
-#else
       gPropertyEnabled[pref->mPropID] = Preferences::GetBool(pref->mPref);
       if (pref->mPropID == eCSSProperty_backdrop_filter) {
         gPropertyEnabled[pref->mPropID] &=
             gfx::gfxVars::GetAllowBackdropFilterOrDefault();
+      }
+#ifdef FUZZING
+      
+      
+      
+      if (pref->mPropID != eCSSProperty_overflow_clip_box &&
+          pref->mPropID != eCSSProperty_overflow_clip_box_block &&
+          pref->mPropID != eCSSProperty_overflow_clip_box_inline) {
+        gPropertyEnabled[pref->mPropID] = true;
       }
 #endif
     }
