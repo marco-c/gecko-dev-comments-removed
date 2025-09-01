@@ -348,6 +348,47 @@ static nsresult DoSOPChecks(nsIURI* aURI, nsILoadInfo* aLoadInfo,
   return NS_OK;
 }
 
+
+
+
+
+
+static nsIPrincipal* DeterminePrincipalForCORSChecks(nsILoadInfo* aLoadInfo) {
+  nsIPrincipal* const triggeringPrincipal = aLoadInfo->TriggeringPrincipal();
+
+  if (StaticPrefs::content_cors_use_triggering_principal()) {
+    
+    
+    
+    return triggeringPrincipal;
+  }
+
+  if (!StaticPrefs::extensions_content_web_accessible_enabled() &&
+      triggeringPrincipal->GetIsAddonOrExpandedAddonPrincipal()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return triggeringPrincipal;
+  }
+
+  
+  return aLoadInfo->GetLoadingPrincipal();
+}
+
 static nsresult DoCORSChecks(nsIChannel* aChannel, nsILoadInfo* aLoadInfo,
                              nsCOMPtr<nsIStreamListener>& aInAndOutListener) {
   MOZ_RELEASE_ASSERT(aInAndOutListener,
@@ -358,19 +399,11 @@ static nsresult DoCORSChecks(nsIChannel* aChannel, nsILoadInfo* aLoadInfo,
     return NS_OK;
   }
 
-  nsIPrincipal* principal = aLoadInfo->GetLoadingPrincipal();
-  if (StaticPrefs::content_cors_use_triggering_principal()) {
-    
-    
-    
-    
-    
-    
-    
-    principal = aLoadInfo->TriggeringPrincipal();
-  }
+  nsIPrincipal* principalForCORSCheck =
+      DeterminePrincipalForCORSChecks(aLoadInfo);
+
   RefPtr<nsCORSListenerProxy> corsListener = new nsCORSListenerProxy(
-      aInAndOutListener, principal,
+      aInAndOutListener, principalForCORSCheck,
       aLoadInfo->GetCookiePolicy() == nsILoadInfo::SEC_COOKIES_INCLUDE);
   
   
