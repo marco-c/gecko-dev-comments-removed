@@ -115,7 +115,7 @@ else:
     
     HOST_LDFLAGS += ["-brepro"]
 
-DIRS += [
+TEST_DIRS += [
     "tests",
 ]
 
