@@ -20,6 +20,7 @@
 
 #include "absl/strings/string_view.h"
 #include "api/array_view.h"
+#include "api/audio/audio_view.h"
 #include "api/audio_codecs/audio_encoder.h"
 #include "api/function_view.h"
 #include "modules/audio_coding/acm2/acm_remixing.h"
@@ -126,6 +127,13 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   
   
   
+  void SetInputTimestamps(const AudioFrame& in_frame)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(acm_mutex_);
+
+  
+  
+  
+  
   
   
   
@@ -135,6 +143,20 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   
   int PreprocessToAddData(const AudioFrame& in_frame,
                           const AudioFrame** ptr_out)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(acm_mutex_);
+
+  
+  
+  
+  
+  
+  const AudioFrame* AddDataNoPreProcess(const AudioFrame& in_frame)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(acm_mutex_);
+
+  
+  
+  bool ResampleToPreProcessFrame(InterleavedView<const int16_t> source,
+                                 int sample_rate)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(acm_mutex_);
 
   
@@ -410,24 +432,7 @@ int AudioCodingModuleImpl::Add10MsDataInternal(const AudioFrame& audio_frame,
   return 0;
 }
 
-
-
-
-
-
-
-int AudioCodingModuleImpl::PreprocessToAddData(const AudioFrame& in_frame,
-                                               const AudioFrame** ptr_out) {
-  const bool resample =
-      in_frame.sample_rate_hz_ != encoder_stack_->SampleRateHz();
-
-  
-  
-  
-  
-  const bool down_mix =
-      in_frame.num_channels_ == 2 && encoder_stack_->NumChannels() == 1;
-
+void AudioCodingModuleImpl::SetInputTimestamps(const AudioFrame& in_frame) {
   if (!first_10ms_data_) {
     expected_in_ts_ = in_frame.timestamp_;
     expected_codec_ts_ = in_frame.timestamp_;
@@ -442,68 +447,75 @@ int AudioCodingModuleImpl::PreprocessToAddData(const AudioFrame& in_frame,
             static_cast<double>(in_frame.sample_rate_hz_));
     expected_in_ts_ = in_frame.timestamp_;
   }
+}
+
+
+
+
+
+
+
+int AudioCodingModuleImpl::PreprocessToAddData(const AudioFrame& in_frame,
+                                               const AudioFrame** ptr_out) {
+  SetInputTimestamps(in_frame);
+
+  const bool resample =
+      in_frame.sample_rate_hz_ != encoder_stack_->SampleRateHz();
+
+  
+  
+  
+  
+  const bool down_mix =
+      in_frame.num_channels_ == 2 && encoder_stack_->NumChannels() == 1;
 
   if (!down_mix && !resample) {
     
-    if (expected_in_ts_ == expected_codec_ts_) {
-      
-      *ptr_out = &in_frame;
-    } else {
-      
-      
-      preprocess_frame_.CopyFrom(in_frame);
-      preprocess_frame_.timestamp_ = expected_codec_ts_;
-      *ptr_out = &preprocess_frame_;
-    }
-
-    expected_in_ts_ += static_cast<uint32_t>(in_frame.samples_per_channel_);
-    expected_codec_ts_ += static_cast<uint32_t>(in_frame.samples_per_channel_);
+    *ptr_out = AddDataNoPreProcess(in_frame);
     return 0;
   }
 
+  
   *ptr_out = &preprocess_frame_;
-  preprocess_frame_.num_channels_ = in_frame.num_channels_;
+  preprocess_frame_.timestamp_ = expected_codec_ts_;
   preprocess_frame_.samples_per_channel_ = in_frame.samples_per_channel_;
-  std::array<int16_t, AudioFrame::kMaxDataSizeSamples> audio;
-  const int16_t* src_ptr_audio;
-  if (down_mix) {
-    
-    
-    int16_t* dest_ptr_audio =
-        resample ? audio.data() : preprocess_frame_.mutable_data();
-    RTC_DCHECK_GE(audio.size(), preprocess_frame_.samples_per_channel_);
-    RTC_DCHECK_GE(audio.size(), in_frame.samples_per_channel_);
-    DownMixFrame(in_frame,
-                 ArrayView<int16_t>(dest_ptr_audio,
-                                    preprocess_frame_.samples_per_channel_));
-    preprocess_frame_.num_channels_ = 1;
 
+  
+  std::array<int16_t, AudioFrame::kMaxDataSizeSamples> audio;
+  
+  InterleavedView<const int16_t> resample_src_audio;
+
+  if (down_mix) {
+    RTC_DCHECK_GE(audio.size(), in_frame.samples_per_channel());
+    preprocess_frame_.num_channels_ = 1;  
     
-    src_ptr_audio = audio.data();
+    
+    auto downmixed =
+        resample
+            ? InterleavedView<int16_t>(audio.data(),
+                                       in_frame.samples_per_channel(), 1)
+            : preprocess_frame_.mutable_data(in_frame.samples_per_channel(), 1);
+    DownMixFrame(in_frame, downmixed.AsMono());
+    if (resample) {
+      
+      resample_src_audio = downmixed;
+    }
   } else {
-    
-    src_ptr_audio = in_frame.data();
+    preprocess_frame_.num_channels_ = in_frame.num_channels_;
+    if (resample) {
+      
+      resample_src_audio = in_frame.data_view();
+    }
   }
 
-  preprocess_frame_.timestamp_ = expected_codec_ts_;
-  preprocess_frame_.sample_rate_hz_ = in_frame.sample_rate_hz_;
-  
+  RTC_DCHECK(resample_src_audio.empty() || resample);
+  preprocess_frame_.SetSampleRateAndChannelSize(encoder_stack_->SampleRateHz());
+
   if (resample) {
-    
-    int16_t* dest_ptr_audio = preprocess_frame_.mutable_data();
-
-    int samples_per_channel = resampler_.Resample10Msec(
-        src_ptr_audio, in_frame.sample_rate_hz_, encoder_stack_->SampleRateHz(),
-        preprocess_frame_.num_channels_, AudioFrame::kMaxDataSizeSamples,
-        dest_ptr_audio);
-
-    if (samples_per_channel < 0) {
-      RTC_LOG(LS_ERROR) << "Cannot add 10 ms audio, resampling failed";
+    if (!ResampleToPreProcessFrame(resample_src_audio,
+                                   in_frame.sample_rate_hz())) {
       return -1;
     }
-    preprocess_frame_.samples_per_channel_ =
-        static_cast<size_t>(samples_per_channel);
-    preprocess_frame_.sample_rate_hz_ = encoder_stack_->SampleRateHz();
   }
 
   expected_codec_ts_ +=
@@ -511,6 +523,45 @@ int AudioCodingModuleImpl::PreprocessToAddData(const AudioFrame& in_frame,
   expected_in_ts_ += static_cast<uint32_t>(in_frame.samples_per_channel_);
 
   return 0;
+}
+
+const AudioFrame* AudioCodingModuleImpl::AddDataNoPreProcess(
+    const AudioFrame& in_frame) {
+  const AudioFrame* ret = nullptr;
+  
+  if (expected_in_ts_ == expected_codec_ts_) {
+    
+    ret = &in_frame;
+  } else {
+    
+    
+    preprocess_frame_.CopyFrom(in_frame);
+    preprocess_frame_.timestamp_ = expected_codec_ts_;
+    ret = &preprocess_frame_;
+  }
+
+  expected_in_ts_ += static_cast<uint32_t>(in_frame.samples_per_channel_);
+  expected_codec_ts_ += static_cast<uint32_t>(in_frame.samples_per_channel_);
+
+  return ret;
+}
+
+bool AudioCodingModuleImpl::ResampleToPreProcessFrame(
+    InterleavedView<const int16_t> source,
+    int sample_rate) {
+  int samples_per_channel = resampler_.Resample10Msec(
+      source, sample_rate,
+      preprocess_frame_.mutable_data(preprocess_frame_.samples_per_channel(),
+                                     preprocess_frame_.num_channels()),
+      preprocess_frame_.sample_rate_hz());
+
+  
+  
+  if (samples_per_channel < 0) {
+    RTC_LOG(LS_ERROR) << "Cannot add 10 ms audio, resampling failed";
+  }
+
+  return samples_per_channel >= 0;
 }
 
 

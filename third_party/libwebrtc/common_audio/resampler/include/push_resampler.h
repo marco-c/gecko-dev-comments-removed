@@ -11,6 +11,7 @@
 #ifndef COMMON_AUDIO_RESAMPLER_INCLUDE_PUSH_RESAMPLER_H_
 #define COMMON_AUDIO_RESAMPLER_INCLUDE_PUSH_RESAMPLER_H_
 
+#include <cstddef>
 #include <memory>
 #include <vector>
 
@@ -34,6 +35,7 @@ class PushResampler final {
   
   
   int Resample(InterleavedView<const T> src, InterleavedView<T> dst);
+  
   
   
   int Resample(MonoView<const T> src, MonoView<T> dst);
