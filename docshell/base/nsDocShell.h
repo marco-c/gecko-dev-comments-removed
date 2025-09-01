@@ -1016,18 +1016,8 @@ class nsDocShell final : public nsDocLoader,
                  nsIURI* aPreviousURI);
   nsPresContext* GetEldestPresContext();
   nsresult CheckLoadingPermissions();
-
-  
   MOZ_CAN_RUN_SCRIPT
   void MaybeFireTraverseHistory(nsDocShellLoadState* aLoadState);
-  
-  
-  
-  MOZ_CAN_RUN_SCRIPT
-  bool MaybeFireTraversableTraverseHistory(
-      const mozilla::dom::SessionHistoryInfo& aInfo,
-      mozilla::Maybe<mozilla::dom::UserNavigationInvolvement> aUserInvolvement);
-
   nsresult LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType,
                             bool aUserActivation);
   nsresult LoadHistoryEntry(
@@ -1196,10 +1186,6 @@ class nsDocShell final : public nsDocLoader,
  private:
   MOZ_CAN_RUN_SCRIPT
   void InformNavigationAPIAboutAbortingNavigation();
-
-  
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  void InformNavigationAPIAboutChildNavigableDestruction();
 
   enum class OngoingNavigation : uint8_t { NavigationID, Traversal };
   enum class UnsetOngoingNavigation : bool { No, Yes };
