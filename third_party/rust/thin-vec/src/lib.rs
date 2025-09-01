@@ -200,10 +200,6 @@ mod impl_details {
     
     
     
-    
-    
-    
-    
 
     pub type SizeType = u32;
 
@@ -215,7 +211,7 @@ mod impl_details {
     
     #[cfg(target_endian = "little")]
     pub fn pack_capacity(cap: SizeType) -> SizeType {
-        cap as SizeType
+        cap
     }
     #[cfg(target_endian = "little")]
     pub fn unpack_capacity(cap: SizeType) -> usize {
@@ -225,13 +221,17 @@ mod impl_details {
     pub fn is_auto(cap: SizeType) -> bool {
         (cap & (1 << 31)) != 0
     }
+    #[cfg(target_endian = "little")]
+    pub fn pack_capacity_and_auto(cap: SizeType, auto: bool) -> SizeType {
+        cap | ((auto as SizeType) << 31)
+    }
 
     
     
     
     #[cfg(target_endian = "big")]
     pub fn pack_capacity(cap: SizeType) -> SizeType {
-        (cap as SizeType) << 1
+        cap << 1
     }
     #[cfg(target_endian = "big")]
     pub fn unpack_capacity(cap: SizeType) -> usize {
@@ -240,6 +240,10 @@ mod impl_details {
     #[cfg(target_endian = "big")]
     pub fn is_auto(cap: SizeType) -> bool {
         (cap & 1) != 0
+    }
+    #[cfg(target_endian = "big")]
+    pub fn pack_capacity_and_auto(cap: SizeType, auto: bool) -> SizeType {
+        (cap << 1) | (auto as SizeType)
     }
 
     #[inline]
@@ -2557,6 +2561,108 @@ impl<I: Iterator> Drop for Splice<'_, I> {
         }
         
     }
+}
+
+#[cfg(feature = "gecko-ffi")]
+#[repr(C)]
+struct AutoBuffer<T, const N: usize> {
+    header: Header,
+    buffer: mem::MaybeUninit<[T; N]>,
+}
+
+
+#[doc(hidden)]
+#[cfg(feature = "gecko-ffi")]
+#[repr(C)]
+pub struct AutoThinVec<T, const N: usize> {
+    inner: ThinVec<T>,
+    buffer: AutoBuffer<T, N>,
+    _pinned: std::marker::PhantomPinned,
+}
+
+#[cfg(feature = "gecko-ffi")]
+impl<T, const N: usize> AutoThinVec<T, N> {
+    
+    #[inline]
+    #[doc(hidden)]
+    pub fn new_unpinned() -> Self {
+        
+        assert!(std::mem::align_of::<T>() <= 8, "Can't handle alignments greater than 8");
+        Self {
+            inner: ThinVec::new(),
+            buffer: AutoBuffer {
+                header: Header {
+                    _len: 0,
+                    _cap: pack_capacity_and_auto(N as SizeType, true),
+                },
+                buffer: mem::MaybeUninit::uninit(),
+            },
+            _pinned: std::marker::PhantomPinned,
+        }
+    }
+
+    
+    
+    
+    pub fn as_mut_ptr(self: std::pin::Pin<&mut Self>) -> *mut ThinVec<T> {
+        unsafe { &mut self.get_unchecked_mut().inner }
+    }
+
+    #[inline]
+    pub unsafe fn shrink_to_fit_known_singleton(self: std::pin::Pin<&mut Self>) {
+        debug_assert!(self.is_singleton());
+        let this = unsafe { self.get_unchecked_mut() };
+        this.buffer.header.set_len(0);
+        this.inner.ptr = NonNull::new_unchecked(&mut this.buffer.header);
+    }
+
+    pub fn shrink_to_fit(self: std::pin::Pin<&mut Self>) {
+        if self.inner.is_singleton() {
+            return unsafe { self.shrink_to_fit_known_singleton() };
+        }
+        let this = unsafe { self.get_unchecked_mut() };
+        if !this.inner.has_allocation() {
+            return;
+        }
+        let len = this.len();
+        if len > N {
+            return this.inner.shrink_to_fit();
+        }
+        let old_header = this.inner.ptr();
+        let old_cap = this.inner.capacity();
+        unsafe {
+            (this.buffer.buffer.as_mut_ptr() as *mut T).copy_from_nonoverlapping(this.inner.data_raw(), len);
+        }
+        this.buffer.header.set_len(len);
+        unsafe {
+            this.inner.ptr = NonNull::new_unchecked(&mut this.buffer.header);
+            dealloc(old_header as *mut u8, layout::<T>(old_cap));
+        }
+    }
+}
+
+
+#[cfg(feature = "gecko-ffi")]
+impl<T, const N: usize> Deref for AutoThinVec<T, N> {
+    type Target = ThinVec<T>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+
+
+
+
+#[cfg(feature = "gecko-ffi")]
+#[macro_export]
+macro_rules! auto_thin_vec {
+    (let $name:ident : [$ty:ty; $cap:literal]) => {
+        let mut auto_vec = $crate::AutoThinVec::<$ty, $cap>::new_unpinned();
+        let mut $name = core::pin::pin!(auto_vec);
+        unsafe { $name.as_mut().shrink_to_fit_known_singleton() };
+    };
 }
 
 
