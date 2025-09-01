@@ -11,8 +11,6 @@
 
 #include <math.h>
 
-#include <numbers>
-
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/safe_conversions.h"
 
@@ -73,7 +71,7 @@ double Random::Gaussian(double mean, double standard_deviation) {
   
   
   
-  const double kPi = std::numbers::pi;
+  const double kPi = 3.14159265358979323846;
   double u1 = static_cast<double>(NextOutput()) /
               static_cast<double>(0xFFFFFFFFFFFFFFFFull);
   double u2 = static_cast<double>(NextOutput()) /
