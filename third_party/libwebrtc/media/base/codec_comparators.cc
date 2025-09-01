@@ -398,14 +398,13 @@ bool IsSameRtpCodecIgnoringLevel(const Codec& codec,
   
   
   
-  if (rtp_codec.kind == webrtc::MediaType::VIDEO && rtp_codec.IsMediaCodec()) {
+  if (rtp_codec.kind == MediaType::VIDEO && rtp_codec.IsMediaCodec()) {
     return IsSameCodecSpecific(rtp_codec.name, params1, rtp_codec2.name,
                                params2);
   }
   
   
-  if (rtp_codec.kind == webrtc::MediaType::AUDIO &&
-      rtp_codec.name == kRedCodecName) {
+  if (rtp_codec.kind == MediaType::AUDIO && rtp_codec.name == kRedCodecName) {
     return true;
   }
 

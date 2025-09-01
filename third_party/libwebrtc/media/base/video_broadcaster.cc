@@ -74,7 +74,7 @@ void VideoBroadcaster::OnFrame(const VideoFrame& frame) {
   bool current_frame_was_discarded = false;
   for (auto& sink_pair : sink_pairs()) {
     if (sink_pair.wants.rotation_applied &&
-        frame.rotation() != webrtc::kVideoRotation_0) {
+        frame.rotation() != kVideoRotation_0) {
       
       
       
