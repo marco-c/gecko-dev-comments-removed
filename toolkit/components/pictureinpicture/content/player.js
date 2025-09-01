@@ -206,6 +206,11 @@ let Player = {
   
 
 
+  isUnpipWithoutPauseShortcut: e => e.shiftKey === true,
+
+  
+
+
 
 
 
@@ -444,7 +449,7 @@ let Player = {
             document.exitFullscreen();
           } else {
             
-            this.onClose();
+            this.onClose(this.isUnpipWithoutPauseShortcut(event));
           }
         } else if (
           Services.prefs.getBoolPref(KEYBOARD_CONTROLS_ENABLED_PREF, false) &&
@@ -692,7 +697,7 @@ let Player = {
       }
 
       case "close": {
-        this.onClose();
+        this.onClose(this.isUnpipWithoutPauseShortcut(event));
         break;
       }
 
@@ -798,10 +803,15 @@ let Player = {
     }
   },
 
-  onClose() {
-    this.actor.sendAsyncMessage("PictureInPicture:Pause", {
-      reason: "pip-closed",
-    });
+  onClose(bypassPause = false) {
+    
+    
+    if (!bypassPause) {
+      this.actor.sendAsyncMessage("PictureInPicture:Pause", {
+        reason: "pip-closed",
+      });
+    }
+
     this.closePipWindow({ reason: "CloseButton" });
   },
 
