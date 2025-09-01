@@ -32,11 +32,11 @@ void ParseY4mHeader(std::string filepath,
                     Resolution* resolution,
                     int* header_size) {
   FILE* file = fopen(filepath.c_str(), "r");
-  RTC_CHECK(file != NULL) << "Cannot open " << filepath;
+  RTC_CHECK(file != nullptr) << "Cannot open " << filepath;
 
   
   char h[1024];
-  RTC_CHECK(fgets(h, sizeof(h), file) != NULL)
+  RTC_CHECK(fgets(h, sizeof(h), file) != nullptr)
       << "File " << filepath << " is too small";
   fclose(file);
 
