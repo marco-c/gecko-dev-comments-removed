@@ -1983,13 +1983,18 @@ void RuntimeService::MemoryPressureAllWorkers() {
   BroadcastAllWorkers([](auto& worker) { worker.MemoryPressure(); });
 }
 
-uint32_t RuntimeService::ClampedHardwareConcurrency(
-    bool aShouldResistFingerprinting) const {
+uint32_t RuntimeService::ClampedHardwareConcurrency(bool aRFPHardcoded,
+                                                    bool aRFPTiered) const {
   
   
   
-  if (MOZ_UNLIKELY(aShouldResistFingerprinting)) {
-    return 2;
+  
+  if (MOZ_UNLIKELY(aRFPHardcoded)) {
+#ifdef XP_MACOSX
+    return 8;
+#else
+    return 4;
+#endif
   }
 
   
@@ -2015,6 +2020,13 @@ uint32_t RuntimeService::ClampedHardwareConcurrency(
     }
     Unused << unclampedHardwareConcurrency.compareExchange(0,
                                                            numberOfProcessors);
+  }
+
+  if (MOZ_UNLIKELY(aRFPTiered)) {
+    if (unclampedHardwareConcurrency >= 8) {
+      return 8;
+    }
+    return 4;
   }
 
   return std::min(uint32_t(unclampedHardwareConcurrency),
