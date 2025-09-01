@@ -44,6 +44,20 @@ struct llama_model_loader {
               std::abort();
             }
         }
+
+        llama_tensor_weight(size_t buffer_size, uint16_t idx, const struct gguf_context * gguf_ctx, ggml_tensor * tensor) : idx(idx), tensor(tensor) {
+            const int tensor_idx = gguf_find_tensor(gguf_ctx,  ggml_get_name(tensor));
+            if (tensor_idx < 0) {
+                
+                std::abort();
+            }
+
+            offs = gguf_get_data_offset(gguf_ctx) + gguf_get_tensor_offset(gguf_ctx, tensor_idx);
+            if (offs + ggml_nbytes(tensor) < offs || offs + ggml_nbytes(tensor) > buffer_size) {
+                
+                std::abort();
+            }
+        }
     };
 
     
@@ -74,6 +88,14 @@ struct llama_model_loader {
     bool use_mmap = false;
     bool check_tensors;
 
+    
+    const void * buffer_data = nullptr;
+    size_t buffer_size = 0;
+
+    
+    FILE * file_handle = nullptr;
+    bool owns_file_handle = false;
+
     llama_files files;
     llama_ftype ftype;
     llama_fver  fver;
@@ -98,6 +120,19 @@ struct llama_model_loader {
         const std::string & fname,
         std::vector<std::string> & splits, 
         bool use_mmap,
+        bool check_tensors,
+        const llama_model_kv_override * param_overrides_p,
+        const llama_model_tensor_buft_override * param_tensor_buft_overrides_p);
+
+    llama_model_loader(
+        const void * buffer,
+        size_t buffer_size,
+        bool check_tensors,
+        const llama_model_kv_override * param_overrides_p,
+        const llama_model_tensor_buft_override * param_tensor_buft_overrides_p);
+
+    llama_model_loader(
+        FILE * file,
         bool check_tensors,
         const llama_model_kv_override * param_overrides_p,
         const llama_model_tensor_buft_override * param_tensor_buft_overrides_p);
