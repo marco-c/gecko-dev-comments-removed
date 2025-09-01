@@ -123,6 +123,15 @@ pub enum RelativeDependencyInvalidationKind {
 
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, MallocSizeOf)]
+pub enum ScopeDependencyInvalidationKind {
+    
+    ExplicitScope,
+    
+    ImplicitScope,
+}
+
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, MallocSizeOf)]
 pub enum DependencyInvalidationKind {
     
     
@@ -131,6 +140,8 @@ pub enum DependencyInvalidationKind {
     Normal(NormalDependencyInvalidationKind),
     
     Relative(RelativeDependencyInvalidationKind),
+    
+    Scope(ScopeDependencyInvalidationKind),
 }
 
 
@@ -173,6 +184,20 @@ fn get_relative_kind(match_hint: RelativeSelectorMatchHint) -> RelativeDependenc
 }
 
 impl Dependency {
+    
+    pub fn new(
+        selector: Selector<SelectorImpl>,
+        selector_offset: usize,
+        next: Option<ThinArc<(), Dependency>>,
+        kind: DependencyInvalidationKind
+    ) -> Self{
+        Self{
+            selector,
+            selector_offset,
+            next,
+            kind,
+        }
+    }
     
     
     
