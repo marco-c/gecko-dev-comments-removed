@@ -25,7 +25,7 @@ var testRan = 0;
 const tests = [
   
   { path: "data/file.webm", expected: "video/webm" },
-  { path: "data/file.mkv", expected: "application/octet-stream" },
+  { path: "data/file.mkv", expected: "video/x-matroska" },
   
   
   
