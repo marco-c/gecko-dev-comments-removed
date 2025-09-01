@@ -55,16 +55,6 @@ function base64UrlDecode(s) {
 }
 
 
-function addResourceAlias() {
-  const resProt = Services.io
-    .getProtocolHandler("resource")
-    .QueryInterface(Ci.nsIResProtocolHandler);
-  let uri = Services.io.newURI("resource://gre/modules/services-crypto/");
-  resProt.setSubstitution("services-crypto", uri);
-}
-addResourceAlias();
-
-
 
 
 
