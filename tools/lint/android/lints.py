@@ -369,9 +369,7 @@ def javadoc(_paths, config, **lintargs):
             for issue in issues:
                 
                 
-                issue["level"] = (
-                    "error" if issue["message"] != ": no comment" else "warning"
-                )
+                issue["level"] = "error"
                 results.append(result.from_config(config, **issue))
 
     return results
