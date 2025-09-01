@@ -75,6 +75,21 @@ test(function() {
 
     
     [
+      ["abcd"],
+      [{start: 0.5, contents: "abcd"},
+       {start: 1.5, contents: "cd"},
+       {start: 2.5, contents: "cd"},
+       {start: 3.5, contents: ""},
+       {start: 0,   end: 0.5, contents: ""},
+       {start: 0,   end: 1.5, contents: "ab"},
+       {start: 0,   end: 2.5, contents: "ab"},
+       {start: 0,   end: 3.5, contents: "abcd"},
+       {start: 1.5, end: 2.5, contents: ""},
+       {start: 1.5, end: 3.5, contents: "cd"}]
+    ],
+
+    
+    [
       ["foo", "bar", "baz"],
       [{start:  0, end:  9, contents: "foobarbaz"},
        {start:  0, end:  3, contents: "foo"},
