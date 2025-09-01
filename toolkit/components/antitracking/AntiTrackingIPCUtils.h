@@ -53,7 +53,7 @@ struct ParamTraits<nsILoadInfo::StoragePermissionState>
     : public ContiguousEnumSerializerInclusive<
           nsILoadInfo::StoragePermissionState,
           nsILoadInfo::StoragePermissionState::NoStoragePermission,
-          nsILoadInfo::StoragePermissionState::StoragePermissionAllowListed> {};
+          nsILoadInfo::StoragePermissionState::InactiveStoragePermission> {};
 
 
 template <>
