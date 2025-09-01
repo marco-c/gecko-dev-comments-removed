@@ -13,6 +13,8 @@
 #include <cstddef>
 #include <vector>
 
+#include "api/rtc_event_log/rtc_event_log.h"
+#include "api/test/network_emulation_manager.h"
 #include "api/test/simulated_network.h"
 #include "api/transport/network_types.h"
 #include "api/units/data_rate.h"
@@ -32,11 +34,38 @@ class FeedbackGenerator {
   virtual ~FeedbackGenerator() = default;
   virtual Timestamp Now() = 0;
   virtual void Sleep(TimeDelta duration) = 0;
+  
   virtual void SendPacket(size_t size) = 0;
   virtual std::vector<TransportPacketsFeedback> PopFeedback() = 0;
   virtual void SetSendConfig(BuiltInNetworkBehaviorConfig config) = 0;
   virtual void SetReturnConfig(BuiltInNetworkBehaviorConfig config) = 0;
   virtual void SetSendLinkCapacity(DataRate capacity) = 0;
+  virtual RtcEventLog& event_log() = 0;
 };
+
+
+
+class FeedbackGeneratorWithoutNetwork {
+ public:
+  struct Config {
+    std::vector<EmulatedNetworkNode*> sent_via_nodes;
+    std::vector<EmulatedNetworkNode*> received_via_nodes;
+    TimeDelta feedback_interval = TimeDelta::Millis(50);
+    DataSize feedback_packet_size = DataSize::Bytes(20);
+  };
+
+  virtual ~FeedbackGeneratorWithoutNetwork() = default;
+
+  
+  
+  
+  
+  
+  
+  virtual void SendPacket(size_t total_size, size_t overhead) = 0;
+  virtual std::vector<TransportPacketsFeedback> PopFeedback() = 0;
+  virtual RtcEventLog& event_log() = 0;
+};
+
 }  
 #endif  

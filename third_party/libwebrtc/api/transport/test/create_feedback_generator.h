@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+#ifndef API_TRANSPORT_TEST_CREATE_FEEDBACK_GENERATOR_H_
+#define API_TRANSPORT_TEST_CREATE_FEEDBACK_GENERATOR_H_
+
+#include <memory>
+
+#include "api/test/network_emulation_manager.h"
+#include "api/transport/test/feedback_generator_interface.h"
+
+namespace webrtc {
+std::unique_ptr<FeedbackGenerator> CreateFeedbackGenerator(
+    FeedbackGenerator::Config confg);
+
+std::unique_ptr<FeedbackGeneratorWithoutNetwork>
+CreateFeedbackGeneratorWithoutNetwork(
+    FeedbackGeneratorWithoutNetwork::Config config,
+    NetworkEmulationManager& network_emulation_manager);
+}  
+#endif  
