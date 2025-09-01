@@ -43,7 +43,7 @@ MOZ_RUNINIT CookiePrefix gCookiePrefixes[] = {
               aCookieData.isHttpOnly();
      }},
 
-    {CookiePrefixes::eHostHttp, "__HostHttp-"_ns, u"__HostHttp-"_ns,
+    {CookiePrefixes::eHostHttp, "__Host-Http-"_ns, u"__Host-Http-"_ns,
      [](const CookieStruct& aCookieData, bool aSecureRequest) -> bool {
        
        
