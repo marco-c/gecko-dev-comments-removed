@@ -492,16 +492,13 @@ class nsTArray_base {
   
   
   
-  
-  void ShrinkCapacity(size_type aElemSize, size_t aElemAlign);
+  void ShrinkCapacity(size_type aElemSize);
 
   
   
   
-  
-  void ShrinkCapacityToZero(size_type aElemSize, size_t aElemAlign);
+  void ShrinkCapacityToZero(size_type aElemSize);
 
-  
   
   
   
@@ -511,7 +508,7 @@ class nsTArray_base {
   
   template <typename ActualAlloc>
   void ShiftData(index_type aStart, size_type aOldLen, size_type aNewLen,
-                 size_type aElemSize, size_t aElemAlign);
+                 size_type aElemSize);
 
   
   
@@ -519,10 +516,8 @@ class nsTArray_base {
   
   
   
-  
   template <typename ActualAlloc>
-  void SwapFromEnd(index_type aStart, size_type aCount, size_type aElemSize,
-                   size_t aElemAlign);
+  void SwapFromEnd(index_type aStart, size_type aCount, size_type aElemSize);
 
   
   
@@ -544,26 +539,24 @@ class nsTArray_base {
   
   
   
-  
   template <typename ActualAlloc>
   typename ActualAlloc::ResultTypeProxy InsertSlotsAt(index_type aIndex,
                                                       size_type aCount,
-                                                      size_type aElementSize,
-                                                      size_t aElemAlign);
+                                                      size_type aElementSize);
 
   template <typename ActualAlloc, class Allocator>
   typename ActualAlloc::ResultTypeProxy SwapArrayElements(
-      nsTArray_base<Allocator, RelocationStrategy>& aOther, size_type aElemSize,
-      size_t aElemAlign);
+      nsTArray_base<Allocator, RelocationStrategy>& aOther,
+      size_type aElemSize);
 
   template <class Allocator>
   void MoveConstructNonAutoArray(
-      nsTArray_base<Allocator, RelocationStrategy>& aOther, size_type aElemSize,
-      size_t aElemAlign);
+      nsTArray_base<Allocator, RelocationStrategy>& aOther,
+      size_type aElemSize);
 
   template <class Allocator>
   void MoveInit(nsTArray_base<Allocator, RelocationStrategy>& aOther,
-                size_type aElemSize, size_t aElemAlign);
+                size_type aElemSize);
 
   
   
@@ -1036,8 +1029,7 @@ class nsTArray_Impl
     MOZ_ASSERT(!this->UsesAutoArrayBuffer());
 
     
-    this->MoveConstructNonAutoArray(aOther, sizeof(value_type),
-                                    alignof(value_type));
+    this->MoveConstructNonAutoArray(aOther, sizeof(value_type));
   }
 
   
@@ -1082,7 +1074,7 @@ class nsTArray_Impl
   self_type& operator=(self_type&& aOther) {
     if (this != &aOther) {
       Clear();
-      this->MoveInit(aOther, sizeof(value_type), alignof(value_type));
+      this->MoveInit(aOther, sizeof(value_type));
     }
     return *this;
   }
@@ -1128,7 +1120,7 @@ class nsTArray_Impl
   template <typename Allocator>
   self_type& operator=(nsTArray_Impl<E, Allocator>&& aOther) {
     Clear();
-    this->MoveInit(aOther, sizeof(value_type), alignof(value_type));
+    this->MoveInit(aOther, sizeof(value_type));
     return *this;
   }
 
@@ -1447,7 +1439,7 @@ class nsTArray_Impl
   template <class Allocator>
   void Assign(nsTArray_Impl<E, Allocator>&& aOther) {
     Clear();
-    this->MoveInit(aOther, sizeof(value_type), alignof(value_type));
+    this->MoveInit(aOther, sizeof(value_type));
   }
 
   
@@ -1922,7 +1914,7 @@ class nsTArray_Impl
 
   void Clear() {
     ClearAndRetainStorage();
-    base_type::ShrinkCapacityToZero(sizeof(value_type), alignof(value_type));
+    base_type::ShrinkCapacityToZero(sizeof(value_type));
   }
 
   
@@ -1987,8 +1979,8 @@ class nsTArray_Impl
     
     
     
-    this->template SwapArrayElements<InfallibleAlloc>(
-        aOther, sizeof(value_type), alignof(value_type));
+    this->template SwapArrayElements<InfallibleAlloc>(aOther,
+                                                      sizeof(value_type));
   }
 
   template <size_t N>
@@ -1998,8 +1990,8 @@ class nsTArray_Impl
     
     static_assert(!std::is_same_v<Alloc, FallibleAlloc> ||
                   sizeof(E) * N <= 1024);
-    this->template SwapArrayElements<InfallibleAlloc>(
-        aOther, sizeof(value_type), alignof(value_type));
+    this->template SwapArrayElements<InfallibleAlloc>(aOther,
+                                                      sizeof(value_type));
   }
 
   template <class Allocator>
@@ -2008,8 +2000,8 @@ class nsTArray_Impl
     
     
     return FallibleAlloc::Result(
-        this->template SwapArrayElements<FallibleAlloc>(
-            aOther, sizeof(value_type), alignof(value_type)));
+        this->template SwapArrayElements<FallibleAlloc>(aOther,
+                                                        sizeof(value_type)));
   }
 
  private:
@@ -2285,7 +2277,7 @@ class nsTArray_Impl
   template <typename ActualAlloc>
   value_type* InsertElementsAtInternal(index_type aIndex, size_type aCount) {
     if (!ActualAlloc::Successful(this->template InsertSlotsAt<ActualAlloc>(
-            aIndex, aCount, sizeof(value_type), alignof(value_type)))) {
+            aIndex, aCount, sizeof(value_type)))) {
       return nullptr;
     }
 
@@ -2328,7 +2320,7 @@ class nsTArray_Impl
   }
 
   
-  void Compact() { ShrinkCapacity(sizeof(value_type), alignof(value_type)); }
+  void Compact() { ShrinkCapacity(sizeof(value_type)); }
 
   
   
@@ -2472,8 +2464,8 @@ auto nsTArray_Impl<E, Alloc>::ReplaceElementsAtInternal(index_type aStart,
     return nullptr;
   }
   DestructRange(aStart, aCount);
-  this->template ShiftData<ActualAlloc>(
-      aStart, aCount, aArrayLen, sizeof(value_type), alignof(value_type));
+  this->template ShiftData<ActualAlloc>(aStart, aCount, aArrayLen,
+                                        sizeof(value_type));
   AssignRange(aStart, aArrayLen, aArray);
   return Elements() + aStart;
 }
@@ -2497,8 +2489,8 @@ template <typename E, class Alloc>
 void nsTArray_Impl<E, Alloc>::RemoveElementsAtUnsafe(index_type aStart,
                                                      size_type aCount) {
   DestructRange(aStart, aCount);
-  this->template ShiftData<InfallibleAlloc>(
-      aStart, aCount, 0, sizeof(value_type), alignof(value_type));
+  this->template ShiftData<InfallibleAlloc>(aStart, aCount, 0,
+                                            sizeof(value_type));
 }
 
 template <typename E, class Alloc>
@@ -2517,8 +2509,8 @@ void nsTArray_Impl<E, Alloc>::UnorderedRemoveElementsAt(index_type aStart,
   
   
   DestructRange(aStart, aCount);
-  this->template SwapFromEnd<InfallibleAlloc>(
-      aStart, aCount, sizeof(value_type), alignof(value_type));
+  this->template SwapFromEnd<InfallibleAlloc>(aStart, aCount,
+                                              sizeof(value_type));
 }
 
 template <typename E, class Alloc>
@@ -2561,7 +2553,7 @@ auto nsTArray_Impl<E, Alloc>::InsertElementsAtInternal(index_type aIndex,
                                                        const Item& aItem)
     -> value_type* {
   if (!ActualAlloc::Successful(this->template InsertSlotsAt<ActualAlloc>(
-          aIndex, aCount, sizeof(value_type), alignof(value_type)))) {
+          aIndex, aCount, sizeof(value_type)))) {
     return nullptr;
   }
 
@@ -2588,8 +2580,7 @@ auto nsTArray_Impl<E, Alloc>::InsertElementAtInternal(index_type aIndex)
           Length() + 1, sizeof(value_type)))) {
     return nullptr;
   }
-  this->template ShiftData<ActualAlloc>(aIndex, 0, 1, sizeof(value_type),
-                                        alignof(value_type));
+  this->template ShiftData<ActualAlloc>(aIndex, 0, 1, sizeof(value_type));
   value_type* elem = Elements() + aIndex;
   elem_traits::Construct(elem);
   return elem;
@@ -2609,8 +2600,7 @@ auto nsTArray_Impl<E, Alloc>::InsertElementAtInternal(index_type aIndex,
           Length() + 1, sizeof(value_type)))) {
     return nullptr;
   }
-  this->template ShiftData<ActualAlloc>(aIndex, 0, 1, sizeof(value_type),
-                                        alignof(value_type));
+  this->template ShiftData<ActualAlloc>(aIndex, 0, 1, sizeof(value_type));
   value_type* elem = Elements() + aIndex;
   elem_traits::Construct(elem, std::forward<Item>(aItem));
   return elem;
@@ -2641,8 +2631,8 @@ auto nsTArray_Impl<E, Alloc>::AppendElementsInternal(
   if (Length() == 0) {
     
     
-    this->ShrinkCapacityToZero(sizeof(value_type), alignof(value_type));
-    this->MoveInit(aArray, sizeof(value_type), alignof(value_type));
+    this->ShrinkCapacityToZero(sizeof(value_type));
+    this->MoveInit(aArray, sizeof(value_type));
     return Elements();
   }
 
@@ -2655,8 +2645,7 @@ auto nsTArray_Impl<E, Alloc>::AppendElementsInternal(
   relocation_type::RelocateNonOverlappingRegion(
       Elements() + len, aArray.Elements(), otherLen, sizeof(value_type));
   this->IncrementLength(otherLen);
-  aArray.template ShiftData<ActualAlloc>(0, otherLen, 0, sizeof(value_type),
-                                         alignof(value_type));
+  aArray.template ShiftData<ActualAlloc>(0, otherLen, 0, sizeof(value_type));
   return Elements() + len;
 }
 
@@ -3021,7 +3010,7 @@ class MOZ_NON_MEMMOVABLE MOZ_GSL_OWNER AutoTArray : public nsTArray<E> {
 
   AutoTArray(self_type&& aOther) : nsTArray<E>() {
     Init();
-    this->MoveInit(aOther, sizeof(value_type), alignof(value_type));
+    this->MoveInit(aOther, sizeof(value_type));
     MOZ_ASSERT(!this->HasEmptyHeader());
     if (aOther.HasEmptyHeader()) {
       aOther.Init();
@@ -3030,13 +3019,13 @@ class MOZ_NON_MEMMOVABLE MOZ_GSL_OWNER AutoTArray : public nsTArray<E> {
 
   explicit AutoTArray(base_type&& aOther) : mAlign() {
     Init();
-    this->MoveInit(aOther, sizeof(value_type), alignof(value_type));
+    this->MoveInit(aOther, sizeof(value_type));
   }
 
   template <typename Allocator>
   explicit AutoTArray(nsTArray_Impl<value_type, Allocator>&& aOther) {
     Init();
-    this->MoveInit(aOther, sizeof(value_type), alignof(value_type));
+    this->MoveInit(aOther, sizeof(value_type));
   }
 
   MOZ_IMPLICIT AutoTArray(std::initializer_list<E> aIL) : mAlign() {
