@@ -269,8 +269,14 @@ struct nsTArrayInfallibleAllocator : nsTArrayInfallibleAllocatorBase {
 struct nsTArrayHeader {
   uint32_t mLength;
   uint32_t mCapacity : 31;
-  uint32_t mIsAutoBuffer : 1;
+  uint32_t mIsAutoArray : 1;
 };
+
+
+
+
+
+constexpr static size_t kAutoTArrayHeaderOffset = 8;
 
 extern "C" {
 extern const nsTArrayHeader sEmptyTArrayHeader;
@@ -451,8 +457,7 @@ class nsTArray_base {
 #endif
 
  protected:
-  nsTArray_base();
-
+  nsTArray_base() = default;
   ~nsTArray_base();
 
   nsTArray_base(const nsTArray_base&);
@@ -496,8 +501,7 @@ class nsTArray_base {
 
   
   
-  
-  void ShrinkCapacityToZero(size_type aElemSize);
+  void ShrinkCapacityToZero();
 
   
   
@@ -566,11 +570,18 @@ class nsTArray_base {
   Header* TakeHeaderForMove(size_type aElemSize);
 
   
-  bool UsesAutoArrayBuffer() const { return mHdr->mIsAutoBuffer; }
+  bool UsesAutoArrayBuffer() const { return mHdr == GetAutoArrayHeader(); }
+  Header* GetAutoArrayHeader() const {
+    if (!mHdr->mIsAutoArray) {
+      return nullptr;
+    }
+    return const_cast<Header*>(reinterpret_cast<const Header*>(
+        reinterpret_cast<const uint8_t*>(this) + kAutoTArrayHeaderOffset));
+  }
 
   
   
-  Header* mHdr;
+  Header* mHdr{EmptyHdr()};
 
   Header* Hdr() const MOZ_NONNULL_RETURN { return mHdr; }
   Header** PtrToHdr() MOZ_NONNULL_RETURN { return &mHdr; }
@@ -1914,7 +1925,7 @@ class nsTArray_Impl
 
   void Clear() {
     ClearAndRetainStorage();
-    base_type::ShrinkCapacityToZero(sizeof(value_type));
+    base_type::ShrinkCapacityToZero();
   }
 
   
@@ -2628,15 +2639,15 @@ auto nsTArray_Impl<E, Alloc>::AppendElementsInternal(
   if constexpr (std::is_same_v<Alloc, Allocator>) {
     MOZ_ASSERT(&aArray != this, "argument must be different aArray");
   }
-  if (Length() == 0) {
+  index_type len = Length();
+  if (len == 0) {
     
     
-    this->ShrinkCapacityToZero(sizeof(value_type));
+    this->ShrinkCapacityToZero();
     this->MoveInit(aArray, sizeof(value_type));
     return Elements();
   }
 
-  index_type len = Length();
   index_type otherLen = aArray.Length();
   if (!ActualAlloc::Successful(this->template ExtendCapacity<ActualAlloc>(
           len, otherLen, sizeof(value_type)))) {
@@ -3006,30 +3017,30 @@ class MOZ_NON_MEMMOVABLE MOZ_GSL_OWNER AutoTArray : public nsTArray<E> {
   typedef typename base_type::Header Header;
   typedef typename base_type::value_type value_type;
 
-  AutoTArray() : mAlign() { Init(); }
-
-  AutoTArray(self_type&& aOther) : nsTArray<E>() {
-    Init();
-    this->MoveInit(aOther, sizeof(value_type));
-    MOZ_ASSERT(!this->HasEmptyHeader());
-    if (aOther.HasEmptyHeader()) {
-      aOther.Init();
-    }
+  AutoTArray() {
+    static_assert(alignof(value_type) <= 8,
+                  "can't handle alignments greater than 8, "
+                  "see nsTArray_base::UsesAutoArrayBuffer()");
+    static_assert(offsetof(AutoTArray, mAutoBuf) == kAutoTArrayHeaderOffset);
+    this->mHdr = &mAutoBuf.mHdr;
   }
 
-  explicit AutoTArray(base_type&& aOther) : mAlign() {
-    Init();
+  AutoTArray(self_type&& aOther) : AutoTArray() {
+    this->MoveInit(aOther, sizeof(value_type));
+    MOZ_ASSERT(!this->HasEmptyHeader());
+  }
+
+  explicit AutoTArray(base_type&& aOther) : AutoTArray() {
     this->MoveInit(aOther, sizeof(value_type));
   }
 
   template <typename Allocator>
-  explicit AutoTArray(nsTArray_Impl<value_type, Allocator>&& aOther) {
-    Init();
+  explicit AutoTArray(nsTArray_Impl<value_type, Allocator>&& aOther)
+      : AutoTArray() {
     this->MoveInit(aOther, sizeof(value_type));
   }
 
-  MOZ_IMPLICIT AutoTArray(std::initializer_list<E> aIL) : mAlign() {
-    Init();
+  MOZ_IMPLICIT AutoTArray(std::initializer_list<E> aIL) : AutoTArray() {
     this->AppendElements(aIL.begin(), aIL.size());
   }
 
@@ -3052,62 +3063,26 @@ class MOZ_NON_MEMMOVABLE MOZ_GSL_OWNER AutoTArray : public nsTArray<E> {
     return result;
   }
 
-  
-  
-  void Clear() {
-    base_type::Clear();
-    Init();
-  }
-
-  void Compact() {
-    if (this->HasEmptyHeader() || this->UsesAutoArrayBuffer()) {
-      return;
-    }
-    auto length = base_type::Length();
-    if (N >= length) {
-      
-      auto* header = reinterpret_cast<Header*>(&mAutoBuf);
-      base_type::relocation_type::RelocateNonOverlappingRegionWithHeader(
-          header, this->mHdr, length, sizeof(value_type));
-      header->mCapacity = N;
-      header->mIsAutoBuffer = true;
-      nsTArrayFallibleAllocator::Free(this->mHdr);
-      this->mHdr = header;
-      return;
-    }
-    base_type::Compact();
-  }
-
  private:
   
   
   template <class Allocator, class RelocationStrategy>
   friend class nsTArray_base;
 
-  void Init() {
-    static_assert(alignof(value_type) <= 8,
-                  "can't handle alignments greater than 8, "
-                  "see nsTArray_base::UsesAutoArrayBuffer()");
-    
-    Header** phdr = base_type::PtrToHdr();
-    *phdr = reinterpret_cast<Header*>(&mAutoBuf);
-    (*phdr)->mLength = 0;
-    (*phdr)->mCapacity = N;
-    (*phdr)->mIsAutoBuffer = true;
-  }
-
   
   
   
   
-  union {
-    char mAutoBuf[sizeof(nsTArrayHeader) + N * sizeof(value_type)];
-    
-    mozilla::AlignedElem<(alignof(Header) > alignof(value_type))
-                             ? alignof(Header)
-                             : alignof(value_type)>
-        mAlign;
-  };
+  struct alignas(8) AutoBuffer {
+    nsTArrayHeader mHdr;
+    union {
+      value_type mElements[N];
+    };
+    AutoBuffer() : mHdr{.mLength = 0, .mCapacity = N, .mIsAutoArray = true} {}
+    ~AutoBuffer() {}
+  } mAutoBuf;
+  static_assert(offsetof(AutoBuffer, mElements) == sizeof(nsTArrayHeader),
+                "Shouldn't have padding");
 };
 
 
@@ -3193,30 +3168,9 @@ class CopyableAutoTArray : public AutoTArray<E, N> {
 
 
 
-static_assert(sizeof(AutoTArray<uint32_t, 2>) ==
-                  sizeof(void*) + sizeof(nsTArrayHeader) + sizeof(uint32_t) * 2,
-              "AutoTArray shouldn't contain any extra padding, "
-              "see the comment");
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <class Alloc, class RelocationStrategy>
-nsTArray_base<Alloc, RelocationStrategy>::nsTArray_base() : mHdr(EmptyHdr()) {}
 
 template <class Alloc, class RelocationStrategy>
 nsTArray_base<Alloc, RelocationStrategy>::~nsTArray_base() {
@@ -3288,7 +3242,7 @@ nsTArray_base<Alloc, RelocationStrategy>::EnsureCapacityImpl(
     }
     header->mLength = 0;
     header->mCapacity = aCapacity;
-    header->mIsAutoBuffer = 0;
+    header->mIsAutoArray = false;
     mHdr = header;
 
     return ActualAlloc::SuccessResult();
@@ -3340,7 +3294,6 @@ nsTArray_base<Alloc, RelocationStrategy>::EnsureCapacityImpl(
   size_t newCapacity = (bytesToAlloc - sizeof(Header)) / aElemSize;
   MOZ_ASSERT(newCapacity >= aCapacity, "Didn't enlarge the array enough!");
   header->mCapacity = newCapacity;
-  header->mIsAutoBuffer = false;
 
   mHdr = header;
 
@@ -3352,19 +3305,32 @@ nsTArray_base<Alloc, RelocationStrategy>::EnsureCapacityImpl(
 template <class Alloc, class RelocationStrategy>
 void nsTArray_base<Alloc, RelocationStrategy>::ShrinkCapacity(
     size_type aElemSize) {
-  if (HasEmptyHeader() || UsesAutoArrayBuffer()) {
-    return;
-  }
-
-  if (mHdr->mLength >= mHdr->mCapacity) {  
+  if (HasEmptyHeader()) {
     return;
   }
 
   size_type length = Length();
-
   if (length == 0) {
-    nsTArrayFallibleAllocator::Free(mHdr);
-    mHdr = EmptyHdr();
+    ShrinkCapacityToZero();
+    return;
+  }
+
+  
+  if (auto* autoHdr = GetAutoArrayHeader()) {
+    if (mHdr == autoHdr) {
+      return;
+    }
+    if (autoHdr->mCapacity >= length) {
+      RelocationStrategy::RelocateNonOverlappingRegion(autoHdr + 1, mHdr + 1,
+                                                       length, aElemSize);
+      autoHdr->mLength = length;
+      nsTArrayFallibleAllocator::Free(mHdr);
+      mHdr = autoHdr;
+      return;
+    }
+  }
+
+  if (length >= mHdr->mCapacity) {  
     return;
   }
 
@@ -3394,22 +3360,27 @@ void nsTArray_base<Alloc, RelocationStrategy>::ShrinkCapacity(
 
   mHdr = newHeader;
   mHdr->mCapacity = length;
-  
-  
-  mHdr->mIsAutoBuffer = false;
 }
 
 template <class Alloc, class RelocationStrategy>
-void nsTArray_base<Alloc, RelocationStrategy>::ShrinkCapacityToZero(
-    size_type aElemSize) {
+void nsTArray_base<Alloc, RelocationStrategy>::ShrinkCapacityToZero() {
   MOZ_ASSERT(mHdr->mLength == 0);
 
-  if (HasEmptyHeader() || UsesAutoArrayBuffer()) {
+  if (HasEmptyHeader()) {
     return;
   }
 
+  Header* newHdr = EmptyHdr();
+  if (auto* autoBuf = GetAutoArrayHeader()) {
+    if (mHdr == autoBuf) {
+      return;
+    }
+    newHdr = autoBuf;
+    newHdr->mLength = 0;
+  }
+
   nsTArrayFallibleAllocator::Free(mHdr);
-  mHdr = EmptyHdr();
+  mHdr = newHdr;
 }
 
 template <class Alloc, class RelocationStrategy>
@@ -3428,20 +3399,20 @@ void nsTArray_base<Alloc, RelocationStrategy>::ShiftData(index_type aStart,
   
   mHdr->mLength += aNewLen - aOldLen;
   if (mHdr->mLength == 0) {
-    ShrinkCapacityToZero(aElemSize);
-  } else {
-    
-    if (num == 0) {
-      return;
-    }
-    
-    aStart *= aElemSize;
-    aNewLen *= aElemSize;
-    aOldLen *= aElemSize;
-    char* baseAddr = reinterpret_cast<char*>(mHdr + 1) + aStart;
-    RelocationStrategy::RelocateOverlappingRegion(
-        baseAddr + aNewLen, baseAddr + aOldLen, num, aElemSize);
+    ShrinkCapacityToZero();
+    return;
   }
+  
+  if (num == 0) {
+    return;
+  }
+  
+  aStart *= aElemSize;
+  aNewLen *= aElemSize;
+  aOldLen *= aElemSize;
+  char* baseAddr = reinterpret_cast<char*>(mHdr + 1) + aStart;
+  RelocationStrategy::RelocateOverlappingRegion(
+      baseAddr + aNewLen, baseAddr + aOldLen, num, aElemSize);
 }
 
 template <class Alloc, class RelocationStrategy>
@@ -3462,8 +3433,7 @@ void nsTArray_base<Alloc, RelocationStrategy>::SwapFromEnd(
 
   if (mHdr->mLength == 0) {
     
-    ShrinkCapacityToZero(aElemSize);
-    return;
+    return ShrinkCapacityToZero();
   }
 
   
@@ -3535,15 +3505,18 @@ nsTArray_base<Alloc, RelocationStrategy>::SwapArrayElements(
       
       
       MOZ_ASSERT(UsesAutoArrayBuffer() || HasEmptyHeader());
+      thisHdr->mIsAutoArray = mHdr->mIsAutoArray;
       mHdr = thisHdr;
       return ActualAlloc::FailureResult();
     }
     
     
     if (otherHdr != EmptyHdr()) {
+      otherHdr->mIsAutoArray = mHdr->mIsAutoArray;
       mHdr = otherHdr;
     }
     if (thisHdr != EmptyHdr()) {
+      thisHdr->mIsAutoArray = aOther.mHdr->mIsAutoArray;
       aOther.mHdr = thisHdr;
     }
     return ActualAlloc::SuccessResult();
@@ -3603,19 +3576,12 @@ nsTArray_base<Alloc, RelocationStrategy>::SwapArrayElements(
       largerElements, temp.Elements(), smallerLength, aElemSize);
 
   
-  MOZ_ASSERT((aOther.Length() == 0 || !HasEmptyHeader()) &&
-                 (Length() == 0 || !aOther.HasEmptyHeader()),
-             "Don't set sEmptyTArrayHeader's length.");
-  size_type tempLength = Length();
-
+  MOZ_ASSERT(!HasEmptyHeader() && !aOther.HasEmptyHeader(),
+             "Both arrays should have capacity");
   
-  
-  if (!HasEmptyHeader()) {
-    mHdr->mLength = aOther.Length();
-  }
-  if (!aOther.HasEmptyHeader()) {
-    aOther.mHdr->mLength = tempLength;
-  }
+  mHdr->mLength = aOther.Length();
+  aOther.mHdr->mLength = 0;
+  aOther.ShrinkCapacityToZero();
 
   return ActualAlloc::SuccessResult();
 }
@@ -3632,13 +3598,25 @@ void nsTArray_base<Alloc, RelocationStrategy>::MoveInit(
   MOZ_ASSERT(Length() == 0);
   MOZ_ASSERT(Capacity() == 0 || UsesAutoArrayBuffer());
 
+  if (aOther.IsEmpty()) {
+    return;
+  }
+
   
   
   
   if ((!UsesAutoArrayBuffer() || Capacity() < aOther.Length()) &&
       !aOther.UsesAutoArrayBuffer()) {
+    const bool thisIsAuto = mHdr->mIsAutoArray;
+    Header* otherAutoHeader = aOther.GetAutoArrayHeader();
     mHdr = aOther.mHdr;
-    aOther.mHdr = EmptyHdr();
+    mHdr->mIsAutoArray = thisIsAuto;
+    if (otherAutoHeader) {
+      aOther.mHdr = otherAutoHeader;
+      otherAutoHeader->mLength = 0;
+    } else {
+      aOther.mHdr = EmptyHdr();
+    }
     return;
   }
 
@@ -3656,18 +3634,13 @@ void nsTArray_base<Alloc, RelocationStrategy>::MoveInit(
                                                    aOther.Length(), aElemSize);
 
   
-  MOZ_ASSERT((aOther.Length() == 0 || !HasEmptyHeader()) &&
-                 (Length() == 0 || !aOther.HasEmptyHeader()),
-             "Don't set sEmptyTArrayHeader's length.");
+  MOZ_ASSERT(!HasEmptyHeader() && !aOther.HasEmptyHeader(),
+             "Both arrays should have capacity");
 
   
-  
-  if (!HasEmptyHeader()) {
-    mHdr->mLength = aOther.Length();
-  }
-  if (!aOther.HasEmptyHeader()) {
-    aOther.mHdr->mLength = 0;
-  }
+  mHdr->mLength = aOther.Length();
+  aOther.mHdr->mLength = 0;
+  aOther.ShrinkCapacityToZero();
 }
 
 template <class Alloc, class RelocationStrategy>
@@ -3681,6 +3654,7 @@ void nsTArray_base<Alloc, RelocationStrategy>::MoveConstructNonAutoArray(
   
   mHdr =
       aOther.template TakeHeaderForMove<nsTArrayInfallibleAllocator>(aElemSize);
+  MOZ_ASSERT(!mHdr->mIsAutoArray);
 }
 
 template <class Alloc, class RelocationStrategy>
@@ -3690,8 +3664,17 @@ auto nsTArray_base<Alloc, RelocationStrategy>::TakeHeaderForMove(
   if (IsEmpty()) {
     return EmptyHdr();
   }
+
   if (!UsesAutoArrayBuffer()) {
-    return std::exchange(mHdr, EmptyHdr());
+    auto* old = mHdr;
+    mHdr = GetAutoArrayHeader();
+    if (mHdr) {
+      mHdr->mLength = 0;
+    } else {
+      mHdr = EmptyHdr();
+    }
+    old->mIsAutoArray = false;
+    return old;
   }
 
   size_type size = sizeof(Header) + Length() * aElemSize;
@@ -3703,7 +3686,8 @@ auto nsTArray_base<Alloc, RelocationStrategy>::TakeHeaderForMove(
   RelocationStrategy::RelocateNonOverlappingRegionWithHeader(
       header, mHdr, Length(), aElemSize);
   header->mCapacity = Length();
-  header->mIsAutoBuffer = false;
+  
+  header->mIsAutoArray = false;
 
   mHdr->mLength = 0;
   MOZ_ASSERT(UsesAutoArrayBuffer());
@@ -3864,23 +3848,5 @@ std::ostream& operator<<(std::ostream& aOut,
                          const nsTArray_Impl<E, Alloc>& aTArray) {
   return aOut << mozilla::Span(aTArray);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static_assert(sizeof(AutoTArray<uint32_t, 2>) ==
-                  sizeof(void*) + sizeof(nsTArrayHeader) + sizeof(uint32_t) * 2,
-              "AutoTArray shouldn't contain any extra padding, "
-              "see the comment");
 
 #endif  
