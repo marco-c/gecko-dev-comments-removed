@@ -23,6 +23,10 @@ LOCAL_INCLUDES += [
     '/media/libwebp',
 ]
 
+
+
+
+
 if CONFIG['TARGET_CPU'] == 'arm' and CONFIG['BUILD_ARM_NEON']:
     SOURCES += [
         'alpha_processing_neon.c',
