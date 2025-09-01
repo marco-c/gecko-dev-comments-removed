@@ -1060,67 +1060,72 @@ static FutexThread::WaitResult AtomicsWaitAsyncCriticalSection(
   
   
   AutoLockHelperThreadState helperThreadLock;
-  AutoLockFutexAPI futexLock;
-
-  
-  SharedMem<T*> addr =
-      sarb->dataPointerShared().cast<T*>() + (byteOffset / sizeof(T));
-  if (jit::AtomicOperations::loadSafeWhenRacy(addr) != value) {
-    return FutexThread::WaitResult::NotEqual;
-  }
-
-  
-  bool hasTimeout = timeout.isSome();
-  if (hasTimeout && timeout.value().IsZero()) {
-    return FutexThread::WaitResult::TimedOut;
-  }
-
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-  auto notifyTask = js::MakeUnique<WaitAsyncNotifyTask>(cx, promise);
-  if (!notifyTask) {
-    JS_ReportOutOfMemory(cx);
-    return FutexThread::WaitResult::Error;
-  }
-  auto waiter = js::MakeUnique<AsyncFutexWaiter>(cx, byteOffset);
-  if (!waiter) {
-    JS_ReportOutOfMemory(cx);
-    return FutexThread::WaitResult::Error;
-  }
-
-  notifyTask->setWaiter(waiter.get());
-  waiter->setNotifyTask(notifyTask.get());
 
   UniquePtr<WaitAsyncTimeoutTask> timeoutTask;
-  if (hasTimeout) {
-    timeoutTask = js::MakeUnique<WaitAsyncTimeoutTask>(waiter.get());
-    if (!timeoutTask) {
+  {
+    AutoLockFutexAPI futexLock;
+
+    
+    SharedMem<T*> addr =
+        sarb->dataPointerShared().cast<T*>() + (byteOffset / sizeof(T));
+    if (jit::AtomicOperations::loadSafeWhenRacy(addr) != value) {
+      return FutexThread::WaitResult::NotEqual;
+    }
+
+    
+    bool hasTimeout = timeout.isSome();
+    if (hasTimeout && timeout.value().IsZero()) {
+      return FutexThread::WaitResult::TimedOut;
+    }
+
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    auto notifyTask = js::MakeUnique<WaitAsyncNotifyTask>(cx, promise);
+    if (!notifyTask) {
       JS_ReportOutOfMemory(cx);
       return FutexThread::WaitResult::Error;
     }
-    waiter->setTimeoutTask(timeoutTask.get());
-  }
+    auto waiter = js::MakeUnique<AsyncFutexWaiter>(cx, byteOffset);
+    if (!waiter) {
+      JS_ReportOutOfMemory(cx);
+      return FutexThread::WaitResult::Error;
+    }
+
+    notifyTask->setWaiter(waiter.get());
+    waiter->setNotifyTask(notifyTask.get());
+
+    if (hasTimeout) {
+      timeoutTask = js::MakeUnique<WaitAsyncTimeoutTask>(waiter.get());
+      if (!timeoutTask) {
+        JS_ReportOutOfMemory(cx);
+        return FutexThread::WaitResult::Error;
+      }
+      waiter->setTimeoutTask(timeoutTask.get());
+    }
+
+    
+    
+    if (!js::OffThreadPromiseTask::InitCancellable(cx, helperThreadLock,
+                                                   std::move(notifyTask))) {
+      return FutexThread::WaitResult::Error;
+    }
+
+    
+    AddWaiter(sarb, waiter.release(), futexLock);
+  }  
 
   
   
-  if (!js::OffThreadPromiseTask::InitCancellable(cx, helperThreadLock,
-                                                 std::move(notifyTask))) {
-    return FutexThread::WaitResult::Error;
-  }
-
   
-  AddWaiter(sarb, waiter.release(), futexLock);
-
-  if (hasTimeout) {
-    MOZ_ASSERT(!!timeoutTask);
+  if (timeoutTask) {
     OffThreadPromiseRuntimeState& state =
         cx->runtime()->offThreadPromiseState.ref();
     
