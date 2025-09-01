@@ -160,12 +160,20 @@ async function CanFrameWriteCookies(frame, keep_after_writing = false) {
 
 
 
-async function SetFirstPartyCookieAndUnsetStorageAccessPermission(origin) {
-  let frame = await CreateFrame(`${origin}/storage-access-api/resources/script-with-cookie-header.py?script=embedded_responder.js`);
-  await SetPermissionInFrame(frame, [{ name: 'storage-access' }, 'granted']);
-  await RequestStorageAccessInFrame(frame);
-  await SetDocumentCookieFromFrame(frame, `cookie=unpartitioned;Secure;SameSite=None;Path=/`);
-  await SetPermissionInFrame(frame, [{ name: 'storage-access' }, 'prompt']);
+async function SetFirstPartyCookie(origin, cookie="cookie=unpartitioned;Secure;SameSite=None;Path=/") {
+  return new Promise((resolve) => {
+    const onMessage = (event) => {
+      if (event && event.data === 'set-document-cookie-complete') {
+        window.removeEventListener('message', onMessage);
+        resolve();
+      }
+    };
+    window.addEventListener('message', onMessage, { once: true });
+
+    RunCallbackWithGesture(() => {
+      window.open(`${origin}/storage-access-api/resources/set-document-cookie.html?${cookie}`);
+    });
+  });
 }
 
 
