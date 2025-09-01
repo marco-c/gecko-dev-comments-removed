@@ -32,7 +32,7 @@ class SampleIterator {
   media::TimeUnit GetNextKeyframeTime();
 
  private:
-  Sample* Get();
+  Result<Sample*, nsresult> Get();
 
   
   
