@@ -2684,10 +2684,10 @@ void nsFocusManager::Focus(
     
     
     
-    if (RefPtr elementToFocus = FlushAndCheckIfFocusable(aElement, aFlags)) {
-      aWindow->SetFocusedElement(elementToFocus, focusMethod);
+    if (aElement) {
+      aWindow->SetFocusedElement(aElement, focusMethod);
       if (aFocusChanged) {
-        ScrollIntoView(presShell, elementToFocus, aFlags);
+        ScrollIntoView(presShell, aElement, aFlags);
       }
     }
     return;
@@ -2762,21 +2762,14 @@ void nsFocusManager::Focus(
     }
   }
 
-  const RefPtr<Element> elementToFocus =
-      [&]() MOZ_CAN_RUN_SCRIPT_FOR_DEFINITION -> Element* {
+  const RefPtr<Element> elementToFocus = [&]() -> Element* {
     if (!aElement || !aElement->IsInComposedDoc() ||
         aElement->GetComposedDoc() != aWindow->GetExtantDoc()) {
       
       
       return nullptr;
     }
-    if (aBlurredElementInfo) {
-      
-      
-      
-      return aElement;
-    }
-    return FlushAndCheckIfFocusable(aElement, aFlags);
+    return aElement;
   }();
   if (elementToFocus && !mFocusedElement &&
       GetFocusedBrowsingContext() == aWindow->GetBrowsingContext()) {
