@@ -14,8 +14,8 @@
 
 
 
-#ifndef mozilla_MPSCQueue_h
-#define mozilla_MPSCQueue_h
+#ifndef mozilla_BoundedMPSCQueue_h
+#define mozilla_BoundedMPSCQueue_h
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
@@ -367,7 +367,7 @@ class MPSCRingBufferBase {
 
 
 template <typename T>
-using MPSCQueue = MPSCRingBufferBase<T>;
+using BoundedMPSCQueue = MPSCRingBufferBase<T>;
 
 }  
 
