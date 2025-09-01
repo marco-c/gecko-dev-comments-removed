@@ -2029,7 +2029,7 @@ void WebrtcVideoConduit::GenerateKeyFrame(const Maybe<std::string>& aRid,
 
         
         
-        if (!mSendStream || !mCurSendCodecConfig || !mEngineTransmitting) {
+        if (!mSendStream || !mCurSendCodecConfig) {
           CopyableErrorResult result;
           result.ThrowInvalidStateError("No encoders");
           proxy->GenerateKeyFrameError(aRid, result);
