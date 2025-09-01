@@ -250,6 +250,12 @@ class ScriptLoadRequest : public nsISupports,
   State mState;           
   bool mFetchSourceOnly;  
 
+  
+  
+  
+  
+  bool mHasSourceMapURL_;
+
   enum class CachingPlan : uint8_t {
     
     Uninitialized,
@@ -276,8 +282,23 @@ class ScriptLoadRequest : public nsISupports,
   RefPtr<mozilla::SubResourceNetworkMetadataHolder> mNetworkMetadata;
   const SRIMetadata mIntegrity;
   const nsCOMPtr<nsIURI> mReferrer;
-  mozilla::Maybe<nsString>
-      mSourceMapURL;  
+
+  
+  
+  
+  
+  nsString mMaybeSourceMapURL_;
+
+  bool HasSourceMapURL() const { return mHasSourceMapURL_; }
+  const nsString& GetSourceMapURL() const {
+    MOZ_ASSERT(mHasSourceMapURL_);
+    return mMaybeSourceMapURL_;
+  }
+  void SetSourceMapURL(const nsString& aSourceMapURL) {
+    MOZ_ASSERT(!mHasSourceMapURL_);
+    mMaybeSourceMapURL_ = aSourceMapURL;
+    mHasSourceMapURL_ = true;
+  }
 
   const nsCOMPtr<nsIURI> mURI;
   nsCOMPtr<nsIPrincipal> mOriginPrincipal;
