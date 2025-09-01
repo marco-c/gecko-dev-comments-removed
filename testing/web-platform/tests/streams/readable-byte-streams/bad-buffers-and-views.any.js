@@ -123,8 +123,7 @@ promise_test(t => {
 async_test(t => {
   const stream = new ReadableStream({
     pull: t.step_func_done(c => {
-      
-      reader.read(c.byobRequest.view);
+      c.byobRequest.view.buffer.transfer();
 
       assert_throws_js(TypeError, () => c.byobRequest.respond(1),
         'respond() must throw if the corresponding view has become detached');
@@ -141,9 +140,7 @@ async_test(t => {
   const stream = new ReadableStream({
     pull: t.step_func_done(c => {
       c.close();
-
-      
-      reader.read(c.byobRequest.view);
+      c.byobRequest.view.buffer.transfer();
 
       assert_throws_js(TypeError, () => c.byobRequest.respond(0),
         'respond() must throw if the corresponding view has become detached');
@@ -159,9 +156,8 @@ async_test(t => {
 async_test(t => {
   const stream = new ReadableStream({
     pull: t.step_func_done(c => {
-      
       const view = new Uint8Array([1, 2, 3]);
-      reader.read(view);
+      view.buffer.transfer();
 
       assert_throws_js(TypeError, () => c.byobRequest.respondWithNewView(view));
     }),
@@ -364,8 +360,7 @@ async_test(t => {
 async_test(t => {
   const stream = new ReadableStream({
     pull: t.step_func_done(c => {
-      
-      reader.read(c.byobRequest.view);
+      c.byobRequest.view.buffer.transfer();
 
       assert_throws_js(TypeError, () => c.enqueue(new Uint8Array([1])),
         'enqueue() must throw if the BYOB request\'s buffer has become detached');
@@ -382,9 +377,7 @@ async_test(t => {
   const stream = new ReadableStream({
     pull: t.step_func_done(c => {
       c.close();
-
-      
-      reader.read(c.byobRequest.view);
+      c.byobRequest.view.buffer.transfer();
 
       assert_throws_js(TypeError, () => c.enqueue(new Uint8Array([1])),
         'enqueue() must throw if the BYOB request\'s buffer has become detached');
