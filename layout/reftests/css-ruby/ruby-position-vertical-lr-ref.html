@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="reftest-wait">
 <head>
   <meta charset="UTF-8">
   <title>Bug 1055665 - Test for ruby-position</title>
@@ -10,7 +10,7 @@
       writing-mode: vertical-lr;
     }
     body {
-      font-family: monospace;
+      font: 50px Ahem;
     }
     .annotation, .annotation > div {
       position: absolute;
@@ -25,14 +25,17 @@
         <div style="right: -100%;"><span>right#</span></div>
         <div style="right: 200%;"><span>left2#</span></div>
         <div style="right: -200%;"><span>right2</span></div>
-        
+        <!-- to give container the proper block-axis size -->
         <span>&nbsp;</span>
       </div>
       <span>base##</span>
     </div>
   </div>
   <script type="text/javascript">
-    makeBSizeOfParentMatch(document.getElementsByTagName('span'));
+    document.fonts.ready.then(() => {
+      makeBSizeOfParentMatch(document.getElementsByTagName('span'));
+      document.documentElement.classList.remove("reftest-wait");
+    })
   </script>
 </body>
 </html>
