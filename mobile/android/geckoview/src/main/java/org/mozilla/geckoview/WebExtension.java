@@ -128,10 +128,9 @@ public class WebExtension {
           "websiteContent");
 
   
+  
   public static class Flags {
     
-
-
     public static final long NONE = 0;
 
     
@@ -144,6 +143,7 @@ public class WebExtension {
     protected Flags() {}
   }
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @LongDef(
       flag = true,
@@ -208,6 +208,7 @@ public class WebExtension {
     mDelegateController.onMessageDelegate(nativeApp, messageDelegate);
   }
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @LongDef(
       value = {
@@ -308,14 +309,28 @@ public class WebExtension {
 
     
     class Type {
+      
       protected Type() {}
 
+      
       public static final long CACHE = 1 << 0;
+
+      
       public static final long COOKIES = 1 << 1;
+
+      
       public static final long DOWNLOADS = 1 << 2;
+
+      
       public static final long FORM_DATA = 1 << 3;
+
+      
       public static final long HISTORY = 1 << 4;
+
+      
       public static final long LOCAL_STORAGE = 1 << 5;
+
+      
       public static final long PASSWORDS = 1 << 6;
     }
 
@@ -818,11 +833,21 @@ public class WebExtension {
     mDelegateController.onTabDelegate(delegate);
   }
 
+  
+
+
+
+
   @UiThread
   @Nullable
   public BrowsingDataDelegate getBrowsingDataDelegate() {
     return mDelegateController.getBrowsingDataDelegate();
   }
+
+  
+
+
+
 
   @UiThread
   public void setBrowsingDataDelegate(final @Nullable BrowsingDataDelegate delegate) {
@@ -1131,6 +1156,7 @@ public class WebExtension {
 
     public final @Nullable GeckoSession session;
 
+    
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({ENV_TYPE_UNKNOWN, ENV_TYPE_EXTENSION, ENV_TYPE_CONTENT_SCRIPT})
     public @interface EnvType {}
@@ -1303,6 +1329,7 @@ public class WebExtension {
      static final int TYPE_BROWSER_ACTION = 1;
      static final int TYPE_PAGE_ACTION = 2;
 
+    
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({TYPE_BROWSER_ACTION, TYPE_PAGE_ACTION})
     public @interface ActionType {}
@@ -1561,6 +1588,7 @@ public class WebExtension {
 
   
   public static class InstallException extends Exception {
+    
     public static class ErrorCodes {
       
       public static final int ERROR_NETWORK_FAILURE = -1;
@@ -1641,6 +1669,7 @@ public class WebExtension {
       }
     }
 
+    
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
         value = {
@@ -1778,6 +1807,7 @@ public class WebExtension {
      static final int LAST = PRIVILEGED;
   }
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({
     SignedStateFlags.UNKNOWN,
@@ -1818,6 +1848,7 @@ public class WebExtension {
     public static final int VULNERABLE_NO_UPDATE = 5;
   }
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({
     BlocklistStateFlags.NOT_BLOCKED,
@@ -1829,6 +1860,7 @@ public class WebExtension {
   })
   public @interface BlocklistState {}
 
+  
   public static class DisabledFlags {
     
     public static final int USER = 1 << 1;
@@ -1861,6 +1893,7 @@ public class WebExtension {
     public static final int SOFT_BLOCKLIST = 1 << 6;
   }
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef(
       flag = true,
@@ -2226,6 +2259,7 @@ public class WebExtension {
 
   
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef(
       flag = true,
@@ -2335,6 +2369,7 @@ public class WebExtension {
 
   static class MenuItem {
 
+    
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
         flag = false,
@@ -2451,6 +2486,7 @@ public class WebExtension {
     }
   }
 
+  
   public interface DownloadDelegate {
     
 
@@ -2651,33 +2687,82 @@ public class WebExtension {
     public @interface DownloadInterruptReason {}
 
     
+    
     public static final int INTERRUPT_REASON_NO_INTERRUPT = 0;
+
+    
     public static final int INTERRUPT_REASON_FILE_FAILED = 1;
+
+    
     public static final int INTERRUPT_REASON_FILE_ACCESS_DENIED = 2;
+
+    
     public static final int INTERRUPT_REASON_FILE_NO_SPACE = 3;
+
+    
     public static final int INTERRUPT_REASON_FILE_NAME_TOO_LONG = 4;
+
+    
     public static final int INTERRUPT_REASON_FILE_TOO_LARGE = 5;
+
+    
     public static final int INTERRUPT_REASON_FILE_VIRUS_INFECTED = 6;
+
+    
     public static final int INTERRUPT_REASON_FILE_TRANSIENT_ERROR = 7;
+
+    
     public static final int INTERRUPT_REASON_FILE_BLOCKED = 8;
+
+    
     public static final int INTERRUPT_REASON_FILE_SECURITY_CHECK_FAILED = 9;
+
+    
     public static final int INTERRUPT_REASON_FILE_TOO_SHORT = 10;
+
+    
     
     public static final int INTERRUPT_REASON_NETWORK_FAILED = 11;
+
+    
     public static final int INTERRUPT_REASON_NETWORK_TIMEOUT = 12;
+
+    
     public static final int INTERRUPT_REASON_NETWORK_DISCONNECTED = 13;
+
+    
     public static final int INTERRUPT_REASON_NETWORK_SERVER_DOWN = 14;
+
+    
     public static final int INTERRUPT_REASON_NETWORK_INVALID_REQUEST = 15;
+
+    
     
     public static final int INTERRUPT_REASON_SERVER_FAILED = 16;
+
+    
     public static final int INTERRUPT_REASON_SERVER_NO_RANGE = 17;
+
+    
     public static final int INTERRUPT_REASON_SERVER_BAD_CONTENT = 18;
+
+    
     public static final int INTERRUPT_REASON_SERVER_UNAUTHORIZED = 19;
+
+    
     public static final int INTERRUPT_REASON_SERVER_CERT_PROBLEM = 20;
+
+    
     public static final int INTERRUPT_REASON_SERVER_FORBIDDEN = 21;
+
+    
     
     public static final int INTERRUPT_REASON_USER_CANCELED = 22;
+
+    
     public static final int INTERRUPT_REASON_USER_SHUTDOWN = 23;
+
+    
     
     public static final int INTERRUPT_REASON_CRASH = 24;
 
@@ -2882,6 +2967,7 @@ public class WebExtension {
 
     public final boolean allowHttpErrors;
 
+    
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
         flag = true,
@@ -2896,6 +2982,11 @@ public class WebExtension {
 
     
     public static final int CONFLICT_ACTION_PROMPT = 1 << 1;
+
+    
+
+
+
 
     protected DownloadRequest(final DownloadRequest.Builder builder) {
       this.request = builder.mRequest;
@@ -3018,8 +3109,17 @@ public class WebExtension {
 
   
   public static class DownloadInitData {
+    
     @NonNull public final WebExtension.Download download;
+
+    
     @NonNull public final Download.Info initData;
+
+    
+
+
+
+
 
     public DownloadInitData(final Download download, final Download.Info initData) {
       this.download = download;
