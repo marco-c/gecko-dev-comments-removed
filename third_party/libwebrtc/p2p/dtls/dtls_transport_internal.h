@@ -66,6 +66,9 @@ class DtlsTransportInternal : public PacketTransportInternal {
   virtual bool GetSslVersionBytes(int* version) const = 0;
   
   
+  virtual uint16_t GetSslGroupId() const = 0;
+  
+  
   virtual bool GetSrtpCryptoSuite(int* cipher) const = 0;
 
   

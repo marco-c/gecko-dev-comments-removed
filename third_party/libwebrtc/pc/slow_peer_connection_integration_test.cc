@@ -471,7 +471,7 @@ TEST_P(PeerConnectionIntegrationTest, CallTransferredForCallee) {
   
   std::unique_ptr<PeerConnectionIntegrationWrapper> original_peer(
       SetCallerPcWrapperAndReturnCurrent(
-          CreatePeerConnectionWrapperWithAlternateKey().release()));
+          CreatePeerConnectionWrapperWithAlternateKey()));
   
   
   original_peer->pc()->Close();
@@ -504,7 +504,7 @@ TEST_P(PeerConnectionIntegrationTest, CallTransferredForCaller) {
   
   std::unique_ptr<PeerConnectionIntegrationWrapper> original_peer(
       SetCalleePcWrapperAndReturnCurrent(
-          CreatePeerConnectionWrapperWithAlternateKey().release()));
+          CreatePeerConnectionWrapperWithAlternateKey()));
   
   
   original_peer->pc()->Close();

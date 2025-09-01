@@ -179,6 +179,9 @@ class DtlsTransportInternalImpl : public webrtc::DtlsTransportInternal {
   
   bool GetSslVersionBytes(int* version) const override;
   
+  
+  uint16_t GetSslGroupId() const override;
+  
   bool GetSrtpCryptoSuite(int* cipher) const override;
 
   
