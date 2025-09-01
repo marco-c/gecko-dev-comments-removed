@@ -1789,6 +1789,13 @@ void nsWindow::Show(bool aState) {
           
           ClearWindow(mWnd);
           CloakWindow(mWnd, FALSE);
+          
+          
+          
+          
+          
+          AsyncUpdateWorkspaceID();
+
           mHasBeenShown = true;
         }
 
@@ -2242,7 +2249,10 @@ nsString DoGetWorkspaceID(HWND aWnd) {
   }
 
   GUID desktop;
+  MOZ_LOG(gWindowsLog, LogLevel::Debug, ("calling GetWindowDesktopId"));
   HRESULT hr = desktopManager->GetWindowDesktopId(aWnd, &desktop);
+  MOZ_LOG(gWindowsLog, LogLevel::Debug,
+          ("called GetWindowDesktopId, hr=%08lX", hr));
   if (FAILED(hr)) {
     return ret;
   }
@@ -2261,8 +2271,12 @@ void nsWindow::GetWorkspaceID(nsAString& workspaceID) {
   
   AssertIsOnMainThread();
   if (mDesktopId.IsEmpty()) {
+    MOZ_LOG(gWindowsLog, LogLevel::Debug,
+            ("GetWorkspaceId - calling DoGetWorkspaceID() (synchronously)"));
     mDesktopId = DoGetWorkspaceID(mWnd);
   } else {
+    MOZ_LOG(gWindowsLog, LogLevel::Debug,
+            ("GetWorkspaceId - calling AsyncUpdateWorkspaceID()"));
     AsyncUpdateWorkspaceID();
   }
   workspaceID = mDesktopId;
