@@ -271,6 +271,25 @@ pub struct ScopeRootCandidate {
     pub proximity: ScopeProximity,
 }
 
+impl ScopeRootCandidate {
+    
+    pub fn get_scope_root_element<E>(&self, originating_element: E) -> Option<E>
+    where
+        E: TElement,
+    {
+        
+        
+        
+        let mut e = originating_element;
+        let hops = self.proximity.get()?;
+        for _ in 0..hops {
+            e = e.parent_element()?;
+        }
+        debug_assert_eq!(e.opaque(), self.root);
+        Some(e)
+    }
+}
+
 
 
 pub fn collect_scope_roots<E>(

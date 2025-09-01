@@ -169,6 +169,11 @@ impl ScopeProximity {
     pub fn infinity() -> Self {
         Self(PROXIMITY_INFINITY)
     }
+
+    
+    pub fn get(&self) -> Option<u16> {
+        (self.0 != PROXIMITY_INFINITY).then(|| self.0)
+    }
 }
 
 
