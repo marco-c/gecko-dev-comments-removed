@@ -463,14 +463,7 @@ class FirefoxDataProvider {
 
     
     this.emitForTests(TEST_EVENTS.NETWORK_EVENT_UPDATED, resource.actor);
-    if (
-      
-      
-      
-      !this.commands.watcherFront.traits.multipleNetworkEventUpdates ||
-      (this.commands.watcherFront.traits.multipleNetworkEventUpdates &&
-        update.resourceUpdates.responseEndAvailable)
-    ) {
+    if (update.resourceUpdates.responseEndAvailable) {
       this.pendingRequests.delete(resource.actor);
       
       this.emit(EVENTS.PAYLOAD_READY, resource);
