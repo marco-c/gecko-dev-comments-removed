@@ -119,12 +119,12 @@ nsresult TaskQueue::DispatchLocked(nsCOMPtr<nsIRunnable>& aRunnable,
   PROFILER_MARKER("TaskQueue::DispatchLocked", OTHER, {}, FlowMarker,
                   Flow::FromPointer(aRunnable.get()));
   LogRunnable::LogDispatch(aRunnable);
-  mTasks.EmplaceBack(TaskStruct{std::move(aRunnable), aFlags});
+  mTasks.Push({std::move(aRunnable), aFlags});
 
   if (mIsRunning) {
     return NS_OK;
   }
-  auto runner = MakeRefPtr<Runner>(this, mTarget, mObserver, std::move(mTasks));
+  RefPtr<nsIRunnable> runner(new Runner(this));
   nsresult rv =
       mTarget->Dispatch(runner.forget(), aFlags | NS_DISPATCH_FALLIBLE);
   if (NS_FAILED(rv)) {
@@ -228,10 +228,7 @@ void TaskQueue::MaybeResolveShutdown() {
 
 bool TaskQueue::IsEmpty() {
   MonitorAutoLock mon(mQueueMonitor);
-  
-  
-  
-  return !mIsRunning;
+  return mTasks.IsEmpty();
 }
 
 bool TaskQueue::IsCurrentThreadIn() const {
@@ -246,61 +243,68 @@ void TaskQueue::SetObserver(Observer* aObserver) {
 }
 
 nsresult TaskQueue::Runner::Run() {
-  MOZ_ASSERT(mNextTask < mTasks.Length(), "No tasks to do?");
-
-  
+  TaskStruct event;
+  RefPtr<Observer> observer;
   {
-    AutoTaskGuard g(mQueue, mObserver);
-
-    TaskStruct& task = mTasks[mNextTask++];
-    MOZ_ASSERT(task.event);
-
-    LogRunnable::Run log(task.event);
-
-    AUTO_PROFILE_FOLLOWING_RUNNABLE(task.event);
-    task.event->Run();
-
-    
-    
-    
-    
-    
-    
-    task.event = nullptr;
-  }
-
-  
-  if (mNextTask >= mTasks.Length()) {
     MonitorAutoLock mon(mQueue->mQueueMonitor);
     MOZ_ASSERT(mQueue->mIsRunning);
-
-    
     if (mQueue->mTasks.IsEmpty()) {
       mQueue->mIsRunning = false;
       mQueue->MaybeResolveShutdown();
       mon.NotifyAll();
       return NS_OK;
     }
+    event = mQueue->mTasks.Pop();
+    observer = mQueue->mObserver;
+  }
+  MOZ_ASSERT(event.event);
 
-    
-    mTarget = mQueue->mTarget;
-    mObserver = mQueue->mObserver;
-    mTasks = std::move(mQueue->mTasks);
-    mNextTask = 0;
+  
+  
+  
+  
+  
+  {
+    AutoTaskGuard g(mQueue, observer);
+    {
+      LogRunnable::Run log(event.event);
+
+      AUTO_PROFILE_FOLLOWING_RUNNABLE(event.event);
+      event.event->Run();
+
+      
+      
+      
+      
+      
+      event.event = nullptr;
+    }
+  }
+
+  {
+    MonitorAutoLock mon(mQueue->mQueueMonitor);
+    if (mQueue->mTasks.IsEmpty()) {
+      
+      mQueue->mIsRunning = false;
+      mQueue->MaybeResolveShutdown();
+      mon.NotifyAll();
+      return NS_OK;
+    }
   }
 
   
   
   
   
-  MOZ_ASSERT(mNextTask < mTasks.Length());
-  nsresult rv =
-      mTarget->Dispatch(this, mTasks[mNextTask].flags | NS_DISPATCH_AT_END |
-                                  NS_DISPATCH_FALLIBLE);
+  
+  nsresult rv;
+  {
+    MonitorAutoLock mon(mQueue->mQueueMonitor);
+    rv = mQueue->mTarget->Dispatch(this, mQueue->mTasks.FirstElement().flags |
+                                             NS_DISPATCH_AT_END |
+                                             NS_DISPATCH_FALLIBLE);
+  }
   if (NS_FAILED(rv)) {
-    NS_WARNING("Underlying EventTarget for TaskQueue not accepting new tasks");
-
-    
     
     MonitorAutoLock mon(mQueue->mQueueMonitor);
     mQueue->mIsRunning = false;

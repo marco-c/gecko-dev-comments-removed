@@ -11,6 +11,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/Queue.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TaskDispatcher.h"
 #include "mozilla/ThreadSafeWeakPtr.h"
@@ -181,18 +182,13 @@ class TaskQueue final : public AbstractThread,
   
   Monitor mQueueMonitor;
 
-  struct TaskStruct {
+  typedef struct TaskStruct {
     nsCOMPtr<nsIRunnable> event;
     DispatchFlags flags;
-  };
-  
-  
-  
-  
-  using TaskArray = AutoTArray<TaskStruct, 4>;
+  } TaskStruct;
 
   
-  TaskArray mTasks MOZ_GUARDED_BY(mQueueMonitor);
+  Queue<TaskStruct> mTasks MOZ_GUARDED_BY(mQueueMonitor);
 
   
   nsTArray<nsCOMPtr<nsITargetShutdownTask>> mShutdownTasks
@@ -282,31 +278,12 @@ class TaskQueue final : public AbstractThread,
 
   class Runner : public Runnable {
    public:
-    Runner(TaskQueue* aQueue, nsIEventTarget* aTarget, Observer* aObserver,
-           TaskArray&& aTasks)
-        : Runnable("TaskQueue::Runner"),
-          mQueue(aQueue),
-          mTarget(aTarget),
-          mObserver(aObserver),
-          mTasks(std::move(aTasks)) {}
+    explicit Runner(TaskQueue* aQueue)
+        : Runnable("TaskQueue::Runner"), mQueue(aQueue) {}
     NS_IMETHOD Run() override;
 
    private:
     RefPtr<TaskQueue> mQueue;
-
-    
-    
-    
-    nsCOMPtr<nsIEventTarget> mTarget;
-    RefPtr<Observer> mObserver;
-
-    
-    TaskArray mTasks;
-
-    
-    
-    
-    size_t mNextTask = 0;
   };
 };
 
