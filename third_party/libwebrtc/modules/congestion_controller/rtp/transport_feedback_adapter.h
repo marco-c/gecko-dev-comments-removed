@@ -35,16 +35,13 @@ struct PacketFeedback {
   
   Timestamp creation_time = Timestamp::MinusInfinity();
   SentPacket sent;
-  
-  
-  
-  Timestamp receive_time = Timestamp::PlusInfinity();
 
   
   NetworkRoute network_route;
 
   uint32_t ssrc = 0;
   uint16_t rtp_sequence_number = 0;
+  bool is_retransmission = false;
 };
 
 class InFlightBytesTracker {

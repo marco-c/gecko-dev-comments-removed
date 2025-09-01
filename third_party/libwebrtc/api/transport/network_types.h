@@ -154,11 +154,16 @@ struct RTC_EXPORT TransportLossReport {
 };
 
 
-
 struct RTC_EXPORT PacketResult {
   class ReceiveTimeOrder {
    public:
     bool operator()(const PacketResult& lhs, const PacketResult& rhs);
+  };
+
+  struct RtpPacketInfo {
+    uint32_t ssrc = 0;
+    uint16_t rtp_sequence_number = 0;
+    bool is_retransmission = false;
   };
 
   PacketResult();
@@ -170,6 +175,9 @@ struct RTC_EXPORT PacketResult {
   SentPacket sent_packet;
   Timestamp receive_time = Timestamp::PlusInfinity();
   EcnMarking ecn = EcnMarking::kNotEct;
+
+  
+  std::optional<RtpPacketInfo> rtp_packet_info;
 };
 
 struct RTC_EXPORT TransportPacketsFeedback {
