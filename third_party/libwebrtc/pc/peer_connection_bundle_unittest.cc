@@ -88,6 +88,9 @@ using ::testing::Values;
 
 class FakeNetworkManagerWithNoAnyNetwork : public FakeNetworkManager {
  public:
+  FakeNetworkManagerWithNoAnyNetwork()
+      : FakeNetworkManager(Thread::Current()) {}
+
   std::vector<const Network*> GetAnyAddressNetworks() override {
     
     
