@@ -11,8 +11,8 @@ use crate::metrics::time_unit::TimeUnit;
 use crate::metrics::Metric;
 use crate::metrics::MetricType;
 use crate::storage::StorageManager;
-use crate::CommonMetricData;
 use crate::Glean;
+use crate::{CommonMetricData, TestGetValue};
 
 
 
@@ -244,30 +244,6 @@ impl TimespanMetric {
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<i64> {
-        crate::block_on_dispatcher();
-        crate::core::with_glean(|glean| {
-            self.get_value(glean, ping_name.as_deref()).map(|val| {
-                val.try_into()
-                    .expect("Timespan can't be represented as i64")
-            })
-        })
-    }
-
-    
     #[doc(hidden)]
     pub fn get_value<'a, S: Into<Option<&'a str>>>(
         &self,
@@ -305,6 +281,32 @@ impl TimespanMetric {
 
         crate::core::with_glean(|glean| {
             test_get_num_recorded_errors(glean, self.meta(), error).unwrap_or(0)
+        })
+    }
+}
+
+impl TestGetValue<i64> for TimespanMetric {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn test_get_value(&self, ping_name: Option<String>) -> Option<i64> {
+        crate::block_on_dispatcher();
+        crate::core::with_glean(|glean| {
+            self.get_value(glean, ping_name.as_deref()).map(|val| {
+                val.try_into()
+                    .expect("Timespan can't be represented as i64")
+            })
         })
     }
 }

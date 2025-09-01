@@ -2,13 +2,13 @@
 
 
 
-use crate::ErrorType;
+use crate::{ErrorType, TestGetValue};
 
 
 
 
 
-pub trait Quantity {
+pub trait Quantity: TestGetValue<i64> {
     
     
     
@@ -19,18 +19,6 @@ pub trait Quantity {
     
     
     fn set(&self, value: i64);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<i64>;
 
     
     
