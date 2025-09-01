@@ -7,7 +7,6 @@
 
 
 
-
 add_task(async function () {
   const URL = "https://not-existed.com/";
   const { monitor } = await initNetMonitor(URL, {
@@ -32,7 +31,10 @@ add_task(async function () {
     const value = firstItem.querySelector(
       ".requests-list-transferred"
     ).innerText;
-    return value.includes("NS_ERROR") ? value : false;
+    if (value == "") {
+      return false;
+    }
+    return value;
   });
 
   is(
