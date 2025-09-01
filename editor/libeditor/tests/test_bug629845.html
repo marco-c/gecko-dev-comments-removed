@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=629845
+-->
 <head>
   <title>Test for Bug 629845</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -21,7 +21,7 @@ function initFrame(frame) {
   document.getElementsByTagName("button")[0].click();
 }
 
-function command(aName) {
+function handleCommand(aName) {
   var frame = document.getElementsByTagName("iframe")[0];
 
   is(frame.contentDocument.designMode, "on", "design mode should be on!");
@@ -42,7 +42,7 @@ function command(aName) {
 </script>
 
 <div id="content">
-  <button type="button" onclick="command('bold');">Bold</button>
+  <button type="button" onclick="handleCommand('bold');">Bold</button>
   <iframe onload="initFrame(this);"></iframe>
 </div>
 <pre id="test">
