@@ -176,6 +176,9 @@ async function renderProviders() {
   }
 
   
+  clearWarningMessage();
+
+  
   select.appendChild(document.createElement("hr"));
   document.l10n.setAttributes(addOption(), "genai-provider-view-details");
 
@@ -557,3 +560,66 @@ function showOnboarding(length) {
 var onboardingPromise = new Promise(resolve => {
   showOnboarding.resolve = resolve;
 });
+
+
+
+
+
+function clearWarningMessage() {
+  const messageContainer = document.getElementById("message-container");
+
+  if (messageContainer?.hasChildNodes()) {
+    messageContainer.replaceChildren();
+  }
+}
+
+
+
+
+
+
+async function showSummarizeWarning(length) {
+  const messageContainer = document.getElementById("message-container");
+  const warningEl = lazy.GenAI.createWarningEl(document, null, true);
+
+  if (!messageContainer) {
+    return;
+  }
+
+  const provider = lazy.GenAI.getProviderId();
+  const type = "page_summarization";
+  document.l10n.setAttributes(warningEl, "genai-page-warning");
+  messageContainer.hidden = false;
+  messageContainer.appendChild(warningEl);
+
+  
+  Glean.genaiChatbot.lengthDisclaimer.record({
+    type,
+    length,
+    provider,
+  });
+
+  await customElements.whenDefined("moz-message-bar");
+  const dismissButton = warningEl.shadowRoot.querySelector(".close");
+  dismissButton?.addEventListener("click", () => {
+    Glean.genaiChatbot.lengthDisclaimerDismissed.record({
+      type,
+      provider,
+    });
+    messageContainer.hidden = true;
+  });
+}
+
+
+
+
+
+
+
+window.onNewPrompt = async function (opt = {}) {
+  if (opt.show) {
+    await showSummarizeWarning(opt.contextLength);
+  } else {
+    clearWarningMessage();
+  }
+};
