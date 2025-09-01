@@ -10,6 +10,7 @@
 #include <algorithm>
 
 #include "mozilla/RefPtr.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/StructuredCloneHolder.h"
 #include "nsIInputStream.h"
 #include "nsISupportsImpl.h"
@@ -140,19 +141,23 @@ class StructuredCloneData : public StructuredCloneHolder {
  public:
   StructuredCloneData();
 
+  
+  
   StructuredCloneData(const StructuredCloneData&) = delete;
+  StructuredCloneData& operator=(const StructuredCloneData& aOther) = delete;
 
-  StructuredCloneData(StructuredCloneData&& aOther);
+  
+  
+  
+  
+  StructuredCloneData(StructuredCloneData&& aOther) = delete;
+  StructuredCloneData& operator=(StructuredCloneData&& aOther) = delete;
 
   
   StructuredCloneData(StructuredCloneScope aScope,
                       TransferringSupport aSupportsTransferring);
 
   ~StructuredCloneData();
-
-  StructuredCloneData& operator=(const StructuredCloneData& aOther) = delete;
-
-  StructuredCloneData& operator=(StructuredCloneData&& aOther);
 
   const nsTArray<RefPtr<BlobImpl>>& BlobImpls() const { return mBlobImplArray; }
 
