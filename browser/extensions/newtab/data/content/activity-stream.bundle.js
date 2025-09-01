@@ -14469,6 +14469,7 @@ const WallpaperCategories = (0,external_ReactRedux_namespaceObject.connect)(stat
   };
 })(_WallpaperCategories);
 ;
+function ContentSection_extends() { return ContentSection_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, ContentSection_extends.apply(null, arguments); }
 
 
 
@@ -14540,7 +14541,7 @@ class ContentSection extends (external_React_default()).PureComponent {
     if (drawerRef) {
       let drawerHeight = parseFloat(window.getComputedStyle(drawerRef)?.height) || 0;
       if (isOpen) {
-        drawerRef.style.marginTop = "var(--space-large)";
+        drawerRef.style.marginTop = "var(--space-small)";
       } else {
         drawerRef.style.marginTop = `-${drawerHeight + 3}px`;
       }
@@ -14705,15 +14706,18 @@ class ContentSection extends (external_React_default()).PureComponent {
     }))))))), pocketRegion && external_React_default().createElement("div", {
       id: "pocket-section",
       className: "section"
-    }, external_React_default().createElement("moz-toggle", {
+    }, external_React_default().createElement("moz-toggle", ContentSection_extends({
       id: "pocket-toggle",
       pressed: pocketEnabled || null,
       onToggle: this.onPreferenceSelect,
       "aria-describedby": "custom-pocket-subtitle",
       "data-preference": "feeds.section.topstories",
-      "data-eventSource": "TOP_STORIES",
+      "data-eventSource": "TOP_STORIES"
+    }, mayHaveInferredPersonalization ? {
+      label: "Stories"
+    } : {
       "data-l10n-id": "newtab-custom-stories-toggle"
-    }, external_React_default().createElement("div", {
+    }), external_React_default().createElement("div", {
       slot: "nested"
     }, (mayHaveInferredPersonalization || mayHaveTopicSections) && external_React_default().createElement("div", {
       className: "more-info-pocket-wrapper"
@@ -14735,7 +14739,7 @@ class ContentSection extends (external_React_default()).PureComponent {
     }), external_React_default().createElement("label", {
       className: "customize-menu-checkbox-label",
       htmlFor: "inferred-personalization"
-    }, "Recommendations inferred from your activity with the feed")), mayHaveTopicSections && external_React_default().createElement(SectionsMgmtPanel, {
+    }, "Personalized stories based on your activity")), mayHaveTopicSections && external_React_default().createElement(SectionsMgmtPanel, {
       exitEventFired: exitEventFired
     }))))))), external_React_default().createElement("span", {
       className: "divider",
