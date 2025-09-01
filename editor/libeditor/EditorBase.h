@@ -1988,8 +1988,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  MarkElementDirty(Element& aElement) const;
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult MarkElementDirty(Element& aElement);
 
   MOZ_CAN_RUN_SCRIPT nsresult
   DoTransactionInternal(nsITransaction* aTransaction);
@@ -2824,7 +2823,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  nsresult SetTextDirectionTo(TextDirection aTextDirection);
+  MOZ_CAN_RUN_SCRIPT nsresult SetTextDirectionTo(TextDirection aTextDirection);
 
  protected:  
   

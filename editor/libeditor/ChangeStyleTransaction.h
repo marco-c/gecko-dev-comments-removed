@@ -8,7 +8,8 @@
 
 #include "EditTransactionBase.h"  
 
-#include "nsCOMPtr.h"                      
+#include "EditorForwards.h"
+
 #include "nsCycleCollectionParticipant.h"  
 #include "nsString.h"                      
 
@@ -27,7 +28,8 @@ class Element;
 
 class ChangeStyleTransaction final : public EditTransactionBase {
  protected:
-  ChangeStyleTransaction(nsStyledElement& aStyledElement, nsAtom& aProperty,
+  ChangeStyleTransaction(HTMLEditor& aHTMLEditor,
+                         nsStyledElement& aStyledElement, nsAtom& aProperty,
                          const nsAString& aValue, bool aRemove);
 
  public:
@@ -39,8 +41,8 @@ class ChangeStyleTransaction final : public EditTransactionBase {
 
 
   static already_AddRefed<ChangeStyleTransaction> Create(
-      nsStyledElement& aStyledElement, nsAtom& aProperty,
-      const nsAString& aValue);
+      HTMLEditor& aHTMLEditor, nsStyledElement& aStyledElement,
+      nsAtom& aProperty, const nsAString& aValue);
 
   
 
@@ -50,8 +52,8 @@ class ChangeStyleTransaction final : public EditTransactionBase {
 
 
   static already_AddRefed<ChangeStyleTransaction> CreateToRemove(
-      nsStyledElement& aStyledElement, nsAtom& aProperty,
-      const nsAString& aValue);
+      HTMLEditor& aHTMLEditor, nsStyledElement& aStyledElement,
+      nsAtom& aProperty, const nsAString& aValue);
 
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ChangeStyleTransaction,
                                            EditTransactionBase)
@@ -104,6 +106,8 @@ class ChangeStyleTransaction final : public EditTransactionBase {
 
   MOZ_CAN_RUN_SCRIPT nsresult SetStyle(bool aAttributeWasSet,
                                        nsACString& aValue);
+
+  RefPtr<HTMLEditor> mHTMLEditor;
 
   
   RefPtr<nsStyledElement> mStyledElement;

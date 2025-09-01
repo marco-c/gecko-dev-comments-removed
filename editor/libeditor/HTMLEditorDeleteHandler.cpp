@@ -12,6 +12,7 @@
 #include "AutoClonedRangeArray.h"
 #include "CSSEditUtils.h"
 #include "EditAction.h"
+#include "EditorDOMAPIWrapper.h"
 #include "EditorDOMPoint.h"
 #include "EditorLineBreak.h"
 #include "EditorUtils.h"
@@ -6698,15 +6699,20 @@ nsresult HTMLEditor::MoveAllChildren(nsINode& aContainer,
   if (!aContainer.HasChildren()) {
     return NS_OK;
   }
-  nsIContent* firstChild = aContainer.GetFirstChild();
+  nsIContent* const firstChild = aContainer.GetFirstChild();
   if (NS_WARN_IF(!firstChild)) {
     return NS_ERROR_FAILURE;
   }
-  nsIContent* lastChild = aContainer.GetLastChild();
+  nsIContent* const lastChild = aContainer.GetLastChild();
   if (NS_WARN_IF(!lastChild)) {
     return NS_ERROR_FAILURE;
   }
-  nsresult rv = MoveChildrenBetween(*firstChild, *lastChild, aPointToInsert);
+  nsresult rv = MoveChildrenBetween(
+      
+      
+      
+      
+      MOZ_KnownLive(*firstChild), MOZ_KnownLive(*lastChild), aPointToInsert);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "HTMLEditor::MoveChildrenBetween() failed");
   return rv;
@@ -6736,9 +6742,9 @@ nsresult HTMLEditor::MoveChildrenBetween(
     return NS_ERROR_INVALID_ARG;
   }
 
-  nsCOMPtr<nsIContent> newContainer = aPointToInsert.ContainerAs<nsIContent>();
+  const nsCOMPtr<nsIContent> newContainer =
+      aPointToInsert.ContainerAs<nsIContent>();
   nsCOMPtr<nsIContent> nextNode = aPointToInsert.GetChild();
-  IgnoredErrorResult error;
   for (size_t i = children.Length(); i > 0; --i) {
     nsCOMPtr<nsIContent>& child = children[i - 1];
     if (child->GetParentNode() != oldContainer) {
@@ -6749,39 +6755,26 @@ nsresult HTMLEditor::MoveChildrenBetween(
     if (NS_WARN_IF(!HTMLEditUtils::IsRemovableNode(*child))) {
       return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
     }
-    oldContainer->RemoveChild(*child, error);
-    if (NS_WARN_IF(Destroyed())) {
-      return NS_ERROR_EDITOR_DESTROYED;
-    }
-    if (error.Failed()) {
-      NS_WARNING("nsINode::RemoveChild() failed");
-      return error.StealNSResult();
-    }
-    if (nextNode) {
-      
-      
-      
-      EditorRawDOMPoint pointToInsert(nextNode);
-      if (NS_WARN_IF(!pointToInsert.IsSet()) ||
-          NS_WARN_IF(pointToInsert.GetContainer() != newContainer)) {
-        
-        
-        
-        return NS_ERROR_FAILURE;
+    {
+      nsresult rv = AutoNodeAPIWrapper(*this, *oldContainer)
+                        .RemoveChild(MOZ_KnownLive(*child));
+      if (NS_FAILED(rv)) {
+        NS_WARNING("AutoNodeAPIWrapper::RemoveChild() failed");
+        return rv;
       }
     }
-    if (NS_WARN_IF(
-            newContainer->IsInComposedDoc() &&
-            !EditorUtils::IsEditableContent(*newContainer, EditorType::HTML))) {
-      return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
+    if (NS_WARN_IF(nextNode && nextNode->GetParentNode() != newContainer) ||
+        NS_WARN_IF(newContainer->IsInComposedDoc() &&
+                   !HTMLEditUtils::IsSimplyEditableNode(*newContainer))) {
+      return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
     }
-    newContainer->InsertBefore(*child, nextNode, error);
-    if (NS_WARN_IF(Destroyed())) {
-      return NS_ERROR_EDITOR_DESTROYED;
-    }
-    if (error.Failed()) {
-      NS_WARNING("nsINode::InsertBefore() failed");
-      return error.StealNSResult();
+    {
+      nsresult rv = AutoNodeAPIWrapper(*this, *newContainer)
+                        .InsertBefore(MOZ_KnownLive(*child), nextNode);
+      if (NS_FAILED(rv)) {
+        NS_WARNING("AutoNodeAPIWrapper::InsertBefore() failed");
+        return rv;
+      }
     }
     
     
@@ -6797,16 +6790,21 @@ nsresult HTMLEditor::MovePreviousSiblings(
   if (NS_WARN_IF(!aChild.GetParentNode())) {
     return NS_ERROR_INVALID_ARG;
   }
-  nsIContent* firstChild = aChild.GetParentNode()->GetFirstChild();
+  nsIContent* const firstChild = aChild.GetParentNode()->GetFirstChild();
   if (NS_WARN_IF(!firstChild)) {
     return NS_ERROR_FAILURE;
   }
-  nsIContent* lastChild =
+  nsIContent* const lastChild =
       &aChild == firstChild ? firstChild : aChild.GetPreviousSibling();
   if (NS_WARN_IF(!lastChild)) {
     return NS_ERROR_FAILURE;
   }
-  nsresult rv = MoveChildrenBetween(*firstChild, *lastChild, aPointToInsert);
+  nsresult rv = MoveChildrenBetween(
+      
+      
+      
+      
+      MOZ_KnownLive(*firstChild), MOZ_KnownLive(*lastChild), aPointToInsert);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "HTMLEditor::MoveChildrenBetween() failed");
   return rv;
@@ -6817,11 +6815,16 @@ nsresult HTMLEditor::MoveInclusiveNextSiblings(
   if (NS_WARN_IF(!aChild.GetParentNode())) {
     return NS_ERROR_INVALID_ARG;
   }
-  nsIContent* lastChild = aChild.GetParentNode()->GetLastChild();
+  nsIContent* const lastChild = aChild.GetParentNode()->GetLastChild();
   if (NS_WARN_IF(!lastChild)) {
     return NS_ERROR_FAILURE;
   }
-  nsresult rv = MoveChildrenBetween(aChild, *lastChild, aPointToInsert);
+  nsresult rv = MoveChildrenBetween(
+      
+      
+      
+      
+      aChild, MOZ_KnownLive(*lastChild), aPointToInsert);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "HTMLEditor::MoveChildrenBetween() failed");
   return rv;

@@ -2015,8 +2015,8 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] nsresult MoveAllChildren(
-      nsINode& aContainer, const EditorRawDOMPoint& aPointToInsert);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  MoveAllChildren(nsINode& aContainer, const EditorRawDOMPoint& aPointToInsert);
 
   
 
@@ -2034,9 +2034,9 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] nsresult MoveChildrenBetween(
-      nsIContent& aFirstChild, nsIContent& aLastChild,
-      const EditorRawDOMPoint& aPointToInsert);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  MoveChildrenBetween(nsIContent& aFirstChild, nsIContent& aLastChild,
+                      const EditorRawDOMPoint& aPointToInsert);
 
   
 
@@ -2048,7 +2048,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] nsresult MovePreviousSiblings(
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult MovePreviousSiblings(
       nsIContent& aChild, const EditorRawDOMPoint& aPointToInsert);
 
   
@@ -2060,7 +2060,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] nsresult MoveInclusiveNextSiblings(
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult MoveInclusiveNextSiblings(
       nsIContent& aChild, const EditorRawDOMPoint& aPointToInsert);
 
   
@@ -4296,13 +4296,16 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  void HideAnonymousEditingUIs();
+
+
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void HideAnonymousEditingUIs();
 
   
 
 
 
-  void HideAnonymousEditingUIsIfUnnecessary();
+  MOZ_CAN_RUN_SCRIPT void HideAnonymousEditingUIsIfUnnecessary();
 
   
 
@@ -4332,7 +4335,7 @@ class HTMLEditor final : public EditorBase,
   
 
 
-  void HideGrabberInternal();
+  MOZ_CAN_RUN_SCRIPT void HideGrabberInternal();
 
   
 
