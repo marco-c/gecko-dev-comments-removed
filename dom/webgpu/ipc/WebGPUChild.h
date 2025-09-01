@@ -40,22 +40,12 @@ using DevicePromise = MozPromise<bool, ipc::ResponseRejectReason, true>;
 
 ffi::WGPUByteBuf* ToFFI(ipc::ByteBuf* x);
 
-
-
-
-
-
-
-
-
-
-
-
-class WebGPUChild final : public PWebGPUChild {
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WebGPUChild, override)
-
+class WebGPUChild final : public PWebGPUChild, public SupportsWeakPtr {
  public:
   friend class layers::CompositorBridgeChild;
+
+  NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(WebGPUChild)
+  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING_INHERITED(WebGPUChild)
 
  public:
   explicit WebGPUChild();
@@ -81,25 +71,11 @@ class WebGPUChild final : public PWebGPUChild {
 
   static void JsWarning(nsIGlobalObject* aGlobal, const nsACString& aMessage);
 
-  void SendSerializedMessages(uint32_t aNrOfMessages,
-                              ipc::ByteBuf aSerializedMessages);
-
  private:
   virtual ~WebGPUChild();
 
   UniquePtr<ffi::WGPUClient> const mClient;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  std::unordered_map<RawId, WeakPtr<Device>> mDeviceMap;
-
+  std::unordered_map<RawId, RefPtr<Device>> mDeviceMap;
   nsTArray<RawId> mSwapChainTexturesWaitingForSubmit;
 
   bool mScheduledFlushQueuedMessages = false;
