@@ -188,7 +188,7 @@ already_AddRefed<nsITimer> DelayedKill(pid_t aPid) {
         
         
       },
-      kMaxWaitMs, nsITimer::TYPE_ONE_SHOT, "ProcessWatcher::DelayedKill"_ns,
+      kMaxWaitMs, nsITimer::TYPE_ONE_SHOT, "ProcessWatcher::DelayedKill",
       XRE_GetAsyncIOEventTarget());
 
   

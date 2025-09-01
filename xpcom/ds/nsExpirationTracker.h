@@ -92,7 +92,7 @@ class ExpirationTrackerImpl {
 
 
 
-  ExpirationTrackerImpl(uint32_t aTimerPeriod, const nsACString& aName,
+  ExpirationTrackerImpl(uint32_t aTimerPeriod, const char* aName,
                         nsIEventTarget* aEventTarget = nullptr)
       : mTimerPeriod(aTimerPeriod),
         mNewestGeneration(0),
@@ -371,7 +371,7 @@ class ExpirationTrackerImpl {
   uint32_t mTimerPeriod;
   uint32_t mNewestGeneration;
   bool mInAgeOneGeneration;
-  const nsCString mName;  
+  const char* const mName;  
   const nsCOMPtr<nsIEventTarget> mEventTarget;
 
   
@@ -497,7 +497,7 @@ class nsExpirationTracker
   virtual void NotifyExpired(T* aObj) = 0;
 
  public:
-  nsExpirationTracker(uint32_t aTimerPeriod, const nsACString& aName,
+  nsExpirationTracker(uint32_t aTimerPeriod, const char* aName,
                       nsIEventTarget* aEventTarget = nullptr)
       : ::detail::SingleThreadedExpirationTracker<T, K>(aTimerPeriod, aName,
                                                         aEventTarget) {}

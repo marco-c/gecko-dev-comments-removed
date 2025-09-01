@@ -532,7 +532,7 @@ void DarwinGamepadService::RunEventLoopOnce() {
   if (mIsRunning) {
     mPollingTimer->InitWithNamedFuncCallback(
         EventLoopOnceCallback, this, kDarwinGamepadPollInterval,
-        nsITimer::TYPE_ONE_SHOT, "EventLoopOnceCallback"_ns);
+        nsITimer::TYPE_ONE_SHOT, "EventLoopOnceCallback");
   } else {
     
     

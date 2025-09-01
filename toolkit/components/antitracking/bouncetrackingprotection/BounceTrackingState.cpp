@@ -749,7 +749,7 @@ nsresult BounceTrackingState::OnResponseReceived(
       },
       StaticPrefs::
           privacy_bounceTrackingProtection_clientBounceDetectionTimerPeriodMS(),
-      nsITimer::TYPE_ONE_SHOT, "mClientBounceDetectionTimeout"_ns);
+      nsITimer::TYPE_ONE_SHOT, "mClientBounceDetectionTimeout");
   NS_ENSURE_SUCCESS(rv, rv);
 
   

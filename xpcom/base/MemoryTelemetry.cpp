@@ -214,8 +214,7 @@ void MemoryTelemetry::Poke() {
     RefPtr<MemoryTelemetry> self(this);
     auto res = NS_NewTimerWithCallback(
         [self](nsITimer* aTimer) { self->GatherReports(); }, delay,
-        nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY,
-        "MemoryTelemetry::GatherReports"_ns);
+        nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY, "MemoryTelemetry::GatherReports");
 
     if (res.isOk()) {
       

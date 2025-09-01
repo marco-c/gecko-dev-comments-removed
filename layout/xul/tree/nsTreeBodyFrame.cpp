@@ -1559,8 +1559,7 @@ nsresult nsTreeBodyFrame::IsCellCropped(int32_t aRow, nsTreeColumn* aCol,
 
 nsresult nsTreeBodyFrame::CreateTimer(const LookAndFeel::IntID aID,
                                       nsTimerCallbackFunc aFunc, int32_t aType,
-                                      nsITimer** aTimer,
-                                      const nsACString& aName) {
+                                      nsITimer** aTimer, const char* aName) {
   
   int32_t delay = LookAndFeel::GetInt(aID, 0);
 
@@ -2268,7 +2267,7 @@ nsresult nsTreeBodyFrame::HandleEvent(nsPresContext* aPresContext,
         
         CreateTimer(LookAndFeel::IntID::TreeLazyScrollDelay, LazyScrollCallback,
                     nsITimer::TYPE_ONE_SHOT, getter_AddRefs(mSlots->mTimer),
-                    "nsTreeBodyFrame::LazyScrollCallback"_ns);
+                    "nsTreeBodyFrame::LazyScrollCallback");
       }
 #endif
       
@@ -2308,7 +2307,7 @@ nsresult nsTreeBodyFrame::HandleEvent(nsPresContext* aPresContext,
               CreateTimer(LookAndFeel::IntID::TreeOpenDelay, OpenCallback,
                           nsITimer::TYPE_ONE_SHOT,
                           getter_AddRefs(mSlots->mTimer),
-                          "nsTreeBodyFrame::OpenCallback"_ns);
+                          "nsTreeBodyFrame::OpenCallback");
             }
           }
         }
@@ -2386,7 +2385,7 @@ nsresult nsTreeBodyFrame::HandleEvent(nsPresContext* aPresContext,
       
       CreateTimer(LookAndFeel::IntID::TreeCloseDelay, CloseCallback,
                   nsITimer::TYPE_ONE_SHOT, getter_AddRefs(mSlots->mTimer),
-                  "nsTreeBodyFrame::CloseCallback"_ns);
+                  "nsTreeBodyFrame::CloseCallback");
     }
   }
 
@@ -3946,7 +3945,7 @@ void nsTreeBodyFrame::LazyScrollCallback(nsITimer* aTimer, void* aClosure) {
       self->CreateTimer(LookAndFeel::IntID::TreeScrollDelay, ScrollCallback,
                         nsITimer::TYPE_REPEATING_SLACK,
                         getter_AddRefs(self->mSlots->mTimer),
-                        "nsTreeBodyFrame::ScrollCallback"_ns);
+                        "nsTreeBodyFrame::ScrollCallback");
       self->ScrollByLines(self->mSlots->mScrollLines);
       
     }

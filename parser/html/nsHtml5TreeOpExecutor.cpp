@@ -452,7 +452,7 @@ void nsHtml5TreeOpExecutor::ContinueInterruptedParsingAsync() {
     
     gBackgroundFlushRunner = IdleTaskRunner::Create(
         &BackgroundFlushCallback,
-        "nsHtml5TreeOpExecutor::BackgroundFlushCallback"_ns,
+        "nsHtml5TreeOpExecutor::BackgroundFlushCallback",
         0,  
         TimeDuration::FromMilliseconds(250),  
         TimeDuration::FromMicroseconds(

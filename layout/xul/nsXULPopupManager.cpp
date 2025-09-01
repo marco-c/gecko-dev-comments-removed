@@ -1629,7 +1629,7 @@ void nsXULPopupManager::HidePopupAfterDelay(nsMenuPopupFrame* aPopup,
           pm->KillMenuTimer();
         }
       },
-      nullptr, aDelay, nsITimer::TYPE_ONE_SHOT, "KillMenuTimer"_ns, target);
+      nullptr, aDelay, nsITimer::TYPE_ONE_SHOT, "KillMenuTimer", target);
   
   
   mTimerMenu = aPopup;
