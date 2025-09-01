@@ -10,10 +10,13 @@
 
 
 
+#include "modules/audio_coding/neteq/time_stretch.h"
+
+#include <cstddef>
+#include <cstdint>
 #include <map>
 #include <memory>
 
-#include "common_audio/signal_processing/include/signal_processing_library.h"
 #include "modules/audio_coding/neteq/accelerate.h"
 #include "modules/audio_coding/neteq/background_noise.h"
 #include "modules/audio_coding/neteq/preemptive_expand.h"

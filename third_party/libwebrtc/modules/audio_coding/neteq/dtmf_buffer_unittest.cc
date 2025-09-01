@@ -10,14 +10,14 @@
 
 #include "modules/audio_coding/neteq/dtmf_buffer.h"
 
+#include <cstdint>
+
 #ifdef WIN32
 #include <winsock2.h>  
 #else
-#include <arpa/inet.h>  
 #endif
 
-#include <iostream>
-
+#include "rtc_base/ip_address.h"
 #include "test/gtest.h"
 
 

@@ -13,8 +13,12 @@
 #include <string.h>  
 
 #include <algorithm>  
+#include <cstdint>
 
 #include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "modules/audio_coding/neteq/audio_multi_vector.h"
+#include "modules/audio_coding/neteq/audio_vector.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

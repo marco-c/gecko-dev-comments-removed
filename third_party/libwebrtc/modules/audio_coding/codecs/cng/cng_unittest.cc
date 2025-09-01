@@ -7,10 +7,15 @@
 
 
 
-#include <memory>
+#include <cstddef>
+#include <cstdint>
+#include <cstdio>
 #include <string>
 
+#include "api/array_view.h"
 #include "modules/audio_coding/codecs/cng/webrtc_cng.h"
+#include "rtc_base/buffer.h"
+#include "rtc_base/checks.h"
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"
 

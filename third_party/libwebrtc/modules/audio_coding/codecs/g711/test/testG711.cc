@@ -21,6 +21,8 @@
 
 
 #include <time.h>
+
+#include <cstdint>
 #define CLOCKS_PER_SEC_G711 1000
 
 
