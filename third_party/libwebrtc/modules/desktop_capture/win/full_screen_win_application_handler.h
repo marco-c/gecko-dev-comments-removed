@@ -14,8 +14,41 @@
 #include <memory>
 
 #include "modules/desktop_capture/full_screen_application_handler.h"
+#include "modules/desktop_capture/win/window_capture_utils.h"
 
 namespace webrtc {
+
+class FullScreenPowerPointHandler : public FullScreenApplicationHandler {
+ public:
+  enum class WindowType { kEditor, kSlideShow, kOther };
+
+  explicit FullScreenPowerPointHandler(DesktopCapturer::SourceId sourceId);
+
+  ~FullScreenPowerPointHandler() override {}
+
+  DesktopCapturer::SourceId FindFullScreenWindow(
+      const DesktopCapturer::SourceList& window_list,
+      int64_t timestamp) const override;
+
+ private:
+  WindowType GetWindowType(HWND window) const;
+
+  
+  
+  
+  std::string GetDocumentTitleFromEditor(HWND window) const;
+
+  
+  
+  
+  
+  
+  std::string GetDocumentTitleFromSlideShow(HWND window) const;
+
+  bool IsEditorWindow(HWND window) const;
+
+  bool IsSlideShowWindow(HWND window) const;
+};
 
 std::unique_ptr<FullScreenApplicationHandler>
 CreateFullScreenWinApplicationHandler(DesktopCapturer::SourceId sourceId);
