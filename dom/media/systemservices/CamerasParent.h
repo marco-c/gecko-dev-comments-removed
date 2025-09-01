@@ -39,8 +39,6 @@ class CallbackHelper : public webrtc::VideoSinkInterface<webrtc::VideoFrame> {
         mTrackingId(CaptureEngineToTrackingSourceStr(aCapEng), aStreamId),
         mParent(aParent) {};
 
-  
-  
   void OnCaptureEnded();
   void OnFrame(const webrtc::VideoFrame& aVideoFrame) override;
 
