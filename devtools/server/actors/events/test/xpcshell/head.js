@@ -1,0 +1,10 @@
+
+
+
+"use strict";
+
+
+
+const { require } = ChromeUtils.importESModule(
+  "resource://devtools/shared/loader/Loader.sys.mjs"
+);
