@@ -127,6 +127,11 @@ add_setup(async function () {
       ["accessibility.tabfocus", 7],
       
       ["extensions.pocket.enabled", true],
+      
+      
+      
+      
+      ["browser.taskbarTabs.enabled", false],
     ],
   });
   resetToolbarWithoutDevEditionButtons();
@@ -277,9 +282,9 @@ add_task(async function testTabStopsWithBookmarksToolbarVisible() {
   await BrowserTestUtils.withNewTab("about:blank", async function () {
     CustomizableUI.setToolbarVisibility("PersonalToolbar", true);
     await TestUtils.waitForCondition(() => {
-      return document
+      return !document
         .getElementById("PersonalToolbar")
-        .getAttribute("collapsed");
+        .hasAttribute("collapsed");
     });
     startFromUrlBar();
     await expectFocusAfterKey("Tab", afterUrlBarButton);
@@ -299,7 +304,7 @@ add_task(async function testTabStopsWithBookmarksToolbarHidden() {
     
     CustomizableUI.setToolbarVisibility("PersonalToolbar", false);
     const toolbar = document.getElementById("PersonalToolbar");
-    await TestUtils.waitForCondition(() => toolbar.getAttribute("collapsed"));
+    await TestUtils.waitForCondition(() => toolbar.hasAttribute("collapsed"));
     startFromUrlBar();
     await expectFocusAfterKey("Tab", afterUrlBarButton);
     if (sidebarRevampEnabled) {
