@@ -3045,21 +3045,27 @@ struct nsGridContainerFrame::Tracks {
   }
 
   
-  Maybe<nscoord> GetFirstBaseline(uint32_t aTrack) const {
-    if (aTrack >= mBaselines.Length()) {
-      return {};
-    }
-
-    return mBaselines[aTrack][BaselineSharingGroup::First];
-  }
-
   
-  Maybe<nscoord> GetLastBaseline(uint32_t aTrack) const {
+  
+  Maybe<nscoord> GetBaseline(uint32_t aTrack,
+                             BaselineSharingGroup aBaselineSharingGroup) const {
     if (aTrack >= mBaselines.Length()) {
       return {};
     }
 
-    return mBaselines[aTrack][BaselineSharingGroup::Last];
+    const auto& trackBaselines = mBaselines[aTrack];
+    if (auto b = trackBaselines[aBaselineSharingGroup]) {
+      return b;
+    }
+    if (auto b = trackBaselines[GetOppositeBaselineSharingGroup(
+            aBaselineSharingGroup)]) {
+      
+      
+      
+      return Some(mSizes[aTrack].mBase - *b);
+    }
+
+    return {};
   }
 
 #ifdef DEBUG
@@ -3118,8 +3124,9 @@ void nsGridContainerFrame::Tracks::Dump() const {
   }
 
   fmt::println(FMT_STRING("  first baseline: {}, last baseline: {}"),
-               BaselineToStr(GetFirstBaseline(0)),
-               BaselineToStr(GetLastBaseline(mBaselines.Length() - 1)));
+               BaselineToStr(GetBaseline(0, BaselineSharingGroup::First)),
+               BaselineToStr(GetBaseline(mBaselines.Length() - 1,
+                                         BaselineSharingGroup::Last)));
   fmt::println(FMT_STRING("  {} gap: {}, content-box {}-size: {}"), trackName,
                CoordToStr(mGridGap),
                mAxis == LogicalAxis::Inline ? "inline" : "block",
@@ -10436,7 +10443,7 @@ void nsGridContainerFrame::CalculateBaselines(
     nscoord aCBBorderPaddingEnd, nscoord aCBSize) {
   const auto axis = aTracks.mAxis;
 
-  auto firstBaseline = aTracks.GetFirstBaseline(0);
+  auto firstBaseline = aTracks.GetBaseline(0, BaselineSharingGroup::First);
   if (!(aBaselineSet & BaselineSet::eFirst)) {
     mBaseline[axis][BaselineSharingGroup::First] =
         ::SynthesizeBaselineFromBorderBox(BaselineSharingGroup::First, aWM,
@@ -10463,7 +10470,8 @@ void nsGridContainerFrame::CalculateBaselines(
         aCBBorderPaddingStart + gapBeforeStartTrack + *firstBaseline;
   }
 
-  auto lastBaseline = aTracks.GetLastBaseline(aTracks.mBaselines.Length() - 1);
+  auto lastBaseline = aTracks.GetBaseline(aTracks.mBaselines.Length() - 1,
+                                          BaselineSharingGroup::Last);
   if (!(aBaselineSet & BaselineSet::eLast)) {
     mBaseline[axis][BaselineSharingGroup::Last] =
         ::SynthesizeBaselineFromBorderBox(BaselineSharingGroup::Last, aWM, axis,

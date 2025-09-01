@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
-
-
-
-
+<!--
+     Any copyright is dedicated to the Public Domain.
+     http://creativecommons.org/publicdomain/zero/1.0/
+-->
 <html><head>
   <meta charset="utf-8">
   <title>CSS Grid Test: Grid container baselines</title>
@@ -62,19 +62,19 @@ span:nth-child(2) {font-size:12px; padding-block-end:20px;}
 
 A<div class="grid"><span>B<br>B</span><span>C<br>C</span></div>
 <div class="grid"><span>B<br>B</span><span class="sfb">C<br>C</span></div>
-<div class="grid"><span>B<br>B</span><span class="slb">C<br>C</span></div>
+<!-- <div class="grid"><span>B<br>B</span><span class="slb">C<br>C</span></div> -->
 
-
-
+<!-- <div class="grid"><span>B<br>B</span><span class="sfb">C<br>C</span><span class="sfb">C<br>C</span></div> -->
+<!-- <div class="grid"><span>B<br>B</span><span class="sfb">C<br>C</span><span class="sfb vl" style="padding:20px 0">D<br>D</span></div> -->
 
 <div class="grid"><span class="slb">B<br>B</span><span class="slb">C<br>C</span></div>
 <div class="grid"><span style="order:1">B<br>B</span><span>C<br>C</span></div>
 <div class="grid"><span style="order:1">B<br>B</span><span class="sfb">C<br>C</span></div>
 
-
-
-
-
+<!--
+<div class="grid r2"><span style="grid-row:2">B<br>B</span><span style="grid-row:2">C<br>C</span></div>
+<div class="grid r2"><span style="grid-row:2; order:1">B<br>B</span><span style="grid-row:2">C<br>C</span></div>
+-->
 
 <div class="grid r2"><span style="grid-row:span 2">B<br>B</span><span style="grid-row:span 2">C<br>C</span></div>
 <div class="grid r2"><span style="grid-row:span 2; order:1">B<br>B</span><span style="grid-row:span 2">C<br>C</span></div>
@@ -82,11 +82,11 @@ A<div class="grid"><span>B<br>B</span><span>C<br>C</span></div>
 <div class="grid r3"><span style="grid-row:span 2; order:1">B<br>B</span><span style="grid-row:span 2">C<br>C</span></div>
 
 <br>
-A
-
-
-
-<div class="grid"><div class="grid r3"><span style="grid-row:2">B<br>B</span><span style="grid-row:2">C<br>C</span></div></div>
+A<!--<div class="grid r4"><span>B<br>B</span><span>C<br>C</span></div>
+<div class="grid r4"><span style="order:1">B<br>B</span><span>C<br>C</span></div>
+<div class="grid"><div class="grid"><span>B<br>B</span><span>C<br>C</span></div></div>
+<div class="grid"><div class="grid"><div class="grid"><span>B<br>B</span><span>C<br>C</span></div></div></div>
+--><div class="grid"><div class="grid r3"><span style="grid-row:2">B<br>B</span><span style="grid-row:2">C<br>C</span></div></div>
 
 </body>
 </html>

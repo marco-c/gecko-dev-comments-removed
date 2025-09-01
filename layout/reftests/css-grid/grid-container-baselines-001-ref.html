@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
-
-
-
-
+<!--
+     Any copyright is dedicated to the Public Domain.
+     http://creativecommons.org/publicdomain/zero/1.0/
+-->
 <html><head>
   <meta charset="utf-8">
   <title>Reference: Grid container baselines</title>
@@ -60,18 +60,18 @@ span:nth-child(2) {padding-block-end:20px; }
 
 A<div class="ib"><span>B<br>B</span><span style="float:right">C<br>C</span></div>
 <div class="ib"><span style="float:left">B<br>B</span><span style="display:inline-flex">C<br>C</span></div>
-<div class="ib"><span>B<br>B</span><span style="float:right; visibility:hidden">C<br>C</span><span style="position:absolute; bottom:2px; right:2px; padding-bottom:20px;">C<br>C</span></div>
+<!-- <div class="ib"><span>B<br>B</span><span style="float:right; visibility:hidden">C<br>C</span><span style="position:absolute; bottom:2px; right:2px; padding-bottom:20px;">C<br>C</span></div> -->
 
-
-
+<!-- TODO: figure out a reference for the corresponding test -->
+<!-- TODO: figure out a reference for the corresponding test -->
 
 <div class="ib"><div style="display:inline-grid; align-self:baseline; grid: 120px / auto auto"><span class="slb">B<br>B</span><span class="slb">C<br>C</span></div></div>
 <div class="ib"><span style="float:right">B<br>B</span><span>C<br>C</span></div>
 <div class="ib"><span style="float:right">B<br>B</span><span style="display:inline-flex">C<br>C</span></div>
-
-
-
-
+<!--
+<div class="ib"><span style="vertical-align:bottom; margin-bottom:-1px">B<br>B</span><span style="float:right">C<br>C</span></div>
+<div class="ib"><span style="float:right">B<br>B</span><span style="vertical-align:bottom; margin-bottom:-21px">C<br>C</span></div>
+-->
 <div class="ib"><span>B<br>B</span><span style="float:right">C<br>C</span></div>
 <div class="ib"><span style="float:right">B<br>B</span><span>C<br>C</span></div>
 <div class="ib"><span>B<br>B</span><span style="float:right">C<br>C</span></div>
@@ -79,11 +79,11 @@ A<div class="ib"><span>B<br>B</span><span style="float:right">C<br>C</span></div
 
 <br>
 
-A
-
-
-
-<div class="ib"><span style="vertical-align:bottom; margin-top:50px">B<br>B</span><span style="float:right; margin-top:50px">C<br>C</span></div>
+A<!--<div class="ib"><span>B<br>B</span><span style="float:right">C<br>C</span></div>
+<div class="ib"><span style="float:right">B<br>B</span><span>C<br>C</span></div>
+<div class="ib"><span>B<br>B</span><span style="float:right">C<br>C</span></div>
+<div class="ib"><span>B<br>B</span><span style="float:right">C<br>C</span></div>
+--><div class="ib"><span style="vertical-align:bottom; margin-top:50px">B<br>B</span><span style="float:right; margin-top:50px">C<br>C</span></div>
 
 </body>
 </html>
