@@ -24,8 +24,10 @@
 #include "examples/peerconnection/server/data_socket.h"
 #include "examples/peerconnection/server/peer_channel.h"
 #include "rtc_base/checks.h"
-#include "system_wrappers/include/field_trial.h"
-#include "test/field_trial.h"
+
+
+
+
 
 ABSL_FLAG(
     std::string,
@@ -69,11 +71,6 @@ int main(int argc, char* argv[]) {
   absl::SetProgramUsageMessage(
       "Example usage: ./peerconnection_server --port=8888\n");
   absl::ParseCommandLine(argc, argv);
-
-  
-  
-  const std::string force_field_trials = absl::GetFlag(FLAGS_force_fieldtrials);
-  webrtc::field_trial::InitFieldTrialsFromString(force_field_trials.c_str());
 
   int port = absl::GetFlag(FLAGS_port);
 
