@@ -13257,11 +13257,14 @@ function WidgetsFeatureHighlight({
     arrowPosition: "arrow-top-center",
     openedOverride: true,
     showButtonIcon: false,
-    feature: messageData.content.feature,
+    feature: messageData?.content?.feature,
     modalClassName: "widget-highlight-wrapper",
     message: React.createElement("div", {
       className: "widget-highlight"
-    }, React.createElement("h3", {
+    }, React.createElement("img", {
+      src: "chrome://newtab/content/data/content/assets/widget-message.png",
+      alt: ""
+    }), React.createElement("h3", {
       "data-l10n-id": "newtab-widget-message-title"
     }), React.createElement("p", {
       "data-l10n-id": "newtab-widget-message-copy"
