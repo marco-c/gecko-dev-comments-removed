@@ -179,9 +179,6 @@ var allowlist = [
   },
 
   
-  { file: "chrome://global/content/third_party/d3/d3.js" },
-
-  
   { file: "resource://gre/modules/reflect.sys.mjs" },
 
   
