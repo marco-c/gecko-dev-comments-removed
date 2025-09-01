@@ -778,7 +778,7 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
           
           
           
-          webrtc::CorruptionDetectionSettingsGenerator::TransientParameters{
+          CorruptionDetectionSettingsGenerator::TransientParameters{
               .max_qp = 127,
               .keyframe_threshold_offset = 1,
               .keyframe_stddev_offset = 2.0,

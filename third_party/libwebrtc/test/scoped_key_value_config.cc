@@ -115,7 +115,7 @@ std::string ScopedKeyValueConfig::LookupRecurse(absl::string_view key) const {
 
   
   
-  return webrtc::field_trial::FindFullName(std::string(key));
+  return field_trial::FindFullName(std::string(key));
 }
 
 }  

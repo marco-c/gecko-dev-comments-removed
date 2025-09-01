@@ -447,10 +447,9 @@ bool VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters) {
 int VCMFecMethod::BitsPerFrame(const VCMProtectionParameters* parameters) {
   
   
-  const float bitRateRatio =
-      webrtc::SimulcastRateAllocator::GetTemporalRateAllocation(
-          parameters->numLayers, 0,
-          rate_control_settings_.Vp8BaseHeavyTl3RateAllocation());
+  const float bitRateRatio = SimulcastRateAllocator::GetTemporalRateAllocation(
+      parameters->numLayers, 0,
+      rate_control_settings_.Vp8BaseHeavyTl3RateAllocation());
   float frameRateRatio = powf(1 / 2.0, parameters->numLayers - 1);
   float bitRate = parameters->bitRate * bitRateRatio;
   float frameRate = parameters->frameRate * frameRateRatio;
