@@ -7,6 +7,7 @@
 
 import logging
 import os
+import traceback
 from abc import ABCMeta, abstractmethod
 
 from manifestparser import TestManifest
@@ -14,6 +15,7 @@ from manifestparser.filters import chunk_by_runtime, tags
 from mozbuild.util import memoize
 from mozinfo.platforminfo import PlatformInfo
 from moztest.resolve import TEST_SUITES, TestManifestLoader, TestResolver
+from requests.exceptions import RetryError
 from taskgraph.util import json
 from taskgraph.util.yaml import load_yaml
 
@@ -251,9 +253,10 @@ class DefaultLoader(BaseManifestLoader):
         if "web-platform-tests" in suite:
             manifests = set()
             subsuite = [x for x in WPT_SUBSUITES.keys() if mozinfo[x]]
+            mozinfo_tags = json.loads(mozinfo["tag"])
             for t in tests:
-                if json.loads(mozinfo["tag"]) and not any(
-                    x in t.get("tags", []) for x in json.loads(mozinfo["tag"])
+                if mozinfo_tags and not any(
+                    x in t.get("tags", []) for x in mozinfo_tags
                 ):
                     continue
                 if subsuite:
@@ -343,7 +346,8 @@ class BugbugLoader(DefaultLoader):
 
         try:
             data = push_schedules(self.params["project"], self.params["head_rev"])
-        except BugbugTimeoutException:
+        except (BugbugTimeoutException, RetryError):
+            traceback.print_exc()
             logger.warning("Timed out waiting for bugbug, loading all test manifests.")
             self.timedout = True
             return self.get_manifests(suite, mozinfo)
