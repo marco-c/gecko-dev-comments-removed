@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "nsXULAppAPI.h"
 #include "mozilla/XREAppData.h"
@@ -49,7 +49,7 @@
 #endif
 #include "BinaryPath.h"
 
-#include "nsXPCOMPrivate.h"  // for MAXPATHLEN and XPCOM_DLL
+#include "nsXPCOMPrivate.h"  
 
 #include "mozilla/Sprintf.h"
 #include "mozilla/StartupTimeline.h"
@@ -64,11 +64,11 @@
 #  include "mozilla/Unused.h"
 
 static bool IsSSE2Available() {
-  // The rest of the app has been compiled to assume that SSE2 is present
-  // unconditionally, so we can't use the normal copy of SSE.cpp here.
-  // Since SSE.cpp caches the results and we need them only transiently,
-  // instead of #including SSE.cpp here, let's just inline the specific check
-  // that's needed.
+  
+  
+  
+  
+  
   unsigned int level = 1u;
   unsigned int eax, ebx, ecx, edx;
   unsigned int bits = (1u << 26);
@@ -89,11 +89,11 @@ __attribute__((constructor)) static void SSE2Check() {
   if (IsSSE2Available()) {
     return;
   }
-  // Using write() in order to avoid jemalloc-based buffering. Ignoring return
-  // values, since there isn't much we could do on failure and there is no
-  // point in trying to recover from errors.
+  
+  
+  
   MOZ_UNUSED(write(STDERR_FILENO, sSSE2Message, std::size(sSSE2Message) - 1));
-  // _exit() instead of exit() to avoid running the usual "at exit" code.
+  
   _exit(255);
 }
 #endif
@@ -104,9 +104,6 @@ __attribute__((constructor)) static void SSE2Check() {
 
 using namespace mozilla;
 
-#ifdef XP_MACOSX
-#  define kOSXResourcesFolder "Resources"
-#endif
 #define kDesktopFolder "browser"
 
 static MOZ_FORMAT_PRINTF(1, 2) void Output(const char* fmt, ...) {
@@ -124,8 +121,8 @@ static MOZ_FORMAT_PRINTF(1, 2) void Output(const char* fmt, ...) {
 #  if MOZ_WINCONSOLE
   fwprintf_s(stderr, wide_msg);
 #  else
-  // Linking user32 at load-time interferes with the DLL blocklist (bug 932100).
-  // This is a rare codepath, so we can load user32 at run-time instead.
+  
+  
   HMODULE user32 = LoadLibraryW(L"user32.dll");
   if (user32) {
     decltype(MessageBoxW)* messageBoxW =
@@ -142,9 +139,9 @@ static MOZ_FORMAT_PRINTF(1, 2) void Output(const char* fmt, ...) {
   va_end(ap);
 }
 
-/**
- * Return true if |arg| matches the given argument name.
- */
+
+
+
 static bool IsArg(const char* arg, const char* s) {
   if (*arg == '-') {
     if (*++arg == '-') ++arg;
@@ -161,8 +158,8 @@ static bool IsArg(const char* arg, const char* s) {
 MOZ_RUNINIT Bootstrap::UniquePtr gBootstrap;
 
 static int do_main(int argc, char* argv[], char* envp[]) {
-  // Allow firefox.exe to launch XULRunner apps via -app <application.ini>
-  // Note that -app must be the *first* argument.
+  
+  
   const char* appDataFile = getenv("XUL_APP_FILE");
   if ((!appDataFile || !*appDataFile) && (argc > 1 && IsArg(argv[1], "app"))) {
     if (argc == 2) {
@@ -207,7 +204,7 @@ static int do_main(int argc, char* argv[], char* envp[]) {
     config.appData = nullptr;
     config.appDataPath = appDataFile;
   } else {
-    // no -app flag so we use the compiled-in app data
+    
     config.appData = &sAppData;
     config.appDataPath = kDesktopFolder;
   }
@@ -252,25 +249,25 @@ static nsresult InitXPCOMGlue(LibLoadingStrategy aLibLoadingStrategy) {
 
   gBootstrap = bootstrapResult.unwrap();
 
-  // This will set this thread as the main thread.
+  
   gBootstrap->NS_LogInit();
 
   return NS_OK;
 }
 
 #ifdef HAS_DLL_BLOCKLIST
-// NB: This must be extern, as this value is checked elsewhere
+
 uint32_t gBlocklistInitFlags = eDllBlocklistInitFlagDefault;
 #endif
 
 #if defined(XP_UNIX)
 static void ReserveDefaultFileDescriptors() {
-  // Reserve the lower positions of the file descriptors to make sure
-  // we don't reuse stdin/stdout/stderr in case they were closed
-  // before launch.
-  // Otherwise code explicitly writing to fd 1 or 2 might accidentally
-  // write to something else, like in bug 1820896 where FD 1 is
-  // reused for the X server display connection.
+  
+  
+  
+  
+  
+  
   int fd = open("/dev/null", O_RDONLY);
   for (int i = 0; i < 2; i++) {
     mozilla::Unused << dup(fd);
@@ -285,7 +282,7 @@ int main(int argc, char* argv[], char* envp[]) {
 
 #ifdef MOZ_BROWSER_CAN_BE_CONTENTPROC
   if (argc > 1 && IsArg(argv[1], "contentproc")) {
-    // Set the process type and gecko child id.
+    
     SetGeckoProcessType(argv[--argc]);
     SetGeckoChildID(argv[--argc]);
 
@@ -296,19 +293,19 @@ int main(int argc, char* argv[], char* envp[]) {
         return 255;
       }
 
-      // Run a fork server in this process, single thread. When it returns, it
-      // means the fork server have been stopped or a new child process is
-      // created.
-      //
-      // For the latter case, XRE_ForkServer() will return false, running in a
-      // child process just forked from the fork server process. argc & argv
-      // will be updated with the values passing from the chrome process, as
-      // will GeckoProcessType and GeckoChildID. With the new values, this
-      // function continues the reset of the code acting as a child process.
+      
+      
+      
+      
+      
+      
+      
+      
+      
       if (gBootstrap->XRE_ForkServer(&argc, &argv)) {
-        // Return from the fork server in the fork server process.
-        // Stop the fork server.
-        // InitXPCOMGlue calls NS_LogInit, so we need to balance it here.
+        
+        
+        
         gBootstrap->NS_LogTerm();
         return 0;
       }
@@ -322,23 +319,23 @@ int main(int argc, char* argv[], char* envp[]) {
   AUTO_BASE_PROFILER_INIT;
   AUTO_BASE_PROFILER_LABEL("nsBrowserApp main", OTHER);
 
-  // Register an external module to report on otherwise uncatchable exceptions.
-  // Note that in child processes this must be called after Gecko process type
-  // has been set.
+  
+  
+  
   CrashReporter::RegisterRuntimeExceptionModule();
 
-  // Make sure we unregister the runtime exception module before returning.
+  
   auto unregisterRuntimeExceptionModule =
       MakeScopeExit([] { CrashReporter::UnregisterRuntimeExceptionModule(); });
 
 #ifdef MOZ_BROWSER_CAN_BE_CONTENTPROC
-  // We are launching as a content process, delegate to the appropriate
-  // main
+  
+  
   if (GetGeckoProcessType() != GeckoProcessType_Default) {
 #  if defined(XP_WIN) && defined(MOZ_SANDBOX)
-    // We need to set whether our process is supposed to have win32k locked down
-    // from the command line setting before DllBlocklist_Initialize,
-    // GetInitializedTargetServices and WindowsDpiInitialization.
+    
+    
+    
     Maybe<bool> win32kLockedDown =
         mozilla::geckoargs::sWin32kLockedDown.Get(argc, argv);
     if (win32kLockedDown.isSome() && *win32kLockedDown) {
@@ -351,27 +348,27 @@ int main(int argc, char* argv[], char* envp[]) {
         gBlocklistInitFlags | eDllBlocklistInitFlagIsChildProcess;
     SetDllBlocklistProcessTypeFlags(initFlags, GetGeckoProcessType());
     DllBlocklist_Initialize(initFlags);
-#  endif  // HAS_DLL_BLOCKLIST
+#  endif  
 
 #  if defined(XP_WIN) && defined(MOZ_SANDBOX)
-    // We need to initialize the sandbox TargetServices before InitXPCOMGlue
-    // because we might need the sandbox broker to give access to some files.
+    
+    
     if (IsSandboxedProcess() && !sandboxing::GetInitializedTargetServices()) {
       Output("Failed to initialize the sandbox target services.");
       return 255;
     }
 #  endif
 #  if defined(XP_WIN)
-    // Ideally, we would be able to set our DPI awareness in
-    // firefox.exe.manifest Unfortunately, that would cause Win32k calls when
-    // user32.dll gets loaded, which would be incompatible with Win32k Lockdown
-    //
-    // MSDN says that it's allowed-but-not-recommended to initialize DPI
-    // programatically, as long as it's done before any HWNDs are created.
-    // Thus, we do it almost as soon as we possibly can
+    
+    
+    
+    
+    
+    
+    
     {
       auto result = mozilla::WindowsDpiInitialization();
-      (void)result;  // Ignore errors since some tools block DPI calls
+      (void)result;  
     }
 #  endif
 
@@ -400,7 +397,7 @@ int main(int argc, char* argv[], char* envp[]) {
     DllBlocklist_Shutdown();
 #  endif
 
-    // InitXPCOMGlue calls NS_LogInit, so we need to balance it here.
+    
     gBootstrap->NS_LogTerm();
 
     return NS_FAILED(rv) ? 1 : 0;
@@ -411,15 +408,15 @@ int main(int argc, char* argv[], char* envp[]) {
   DllBlocklist_Initialize(gBlocklistInitFlags);
 #endif
 
-// We will likely only ever support this as a command line argument on Windows
-// and OSX, so we're ifdefing here just to not create any expectations.
+
+
 #if defined(XP_WIN) || defined(XP_MACOSX)
   if (argc > 1 && IsArg(argv[1], "silentmode")) {
     ::putenv(const_cast<char*>("MOZ_APP_SILENT_START=1"));
 #  if defined(XP_WIN)
-    // On windows We also want to set a separate variable, which we want to
-    // persist across restarts, which will let us keep the process alive
-    // even if the last window is closed.
+    
+    
+    
     ::putenv(const_cast<char*>("MOZ_APP_ALLOW_WINDOWLESS=1"));
 #  endif
 #  if defined(XP_MACOSX)
@@ -430,21 +427,21 @@ int main(int argc, char* argv[], char* envp[]) {
 
 #if defined(XP_WIN)
 
-  // Ideally, we would be able to set our DPI awareness in firefox.exe.manifest
-  // Unfortunately, that would cause Win32k calls when user32.dll gets loaded,
-  // which would be incompatible with Win32k Lockdown
-  //
-  // MSDN says that it's allowed-but-not-recommended to initialize DPI
-  // programatically, as long as it's done before any HWNDs are created.
-  // Thus, we do it almost as soon as we possibly can
+  
+  
+  
+  
+  
+  
+  
   {
     auto result = mozilla::WindowsDpiInitialization();
-    (void)result;  // Ignore errors since some tools block DPI calls
+    (void)result;  
   }
 
-  // Once the browser process hits the main function, we no longer need
-  // a writable section handle because all dependent modules have been
-  // loaded.
+  
+  
+  
   mozilla::freestanding::gSharedSection.ConvertToReadOnly();
 
   mozilla::CreateAndStorePreXULSkeletonUI(GetModuleHandle(nullptr), argc, argv);
@@ -474,11 +471,11 @@ int main(int argc, char* argv[], char* envp[]) {
 #endif
 
 #ifdef XP_MACOSX
-  // Allow writes again. While we would like to catch writes from static
-  // destructors to allow early exits to use _exit, we know that there is
-  // at least one such write that we don't control (see bug 826029). For
-  // now we enable writes again and early exits will have to use exit instead
-  // of _exit.
+  
+  
+  
+  
+  
   gBootstrap->XRE_StopLateWriteChecks();
 #endif
 
