@@ -39,7 +39,7 @@ static const srtp_auth_test_case_t kExternalHmacTestCase0 = {
     const_cast<uint8_t*>(kExternalHmacTestCase0Data),  
     10,                                                
     const_cast<uint8_t*>(kExternalHmacFakeTag),        
-    NULL                                               
+    nullptr                                            
                                                        
 };
 
@@ -75,7 +75,7 @@ srtp_err_status_t external_hmac_alloc(srtp_auth_t** a,
 
   
   pointer = new uint8_t[(sizeof(ExternalHmacContext) + sizeof(srtp_auth_t))];
-  if (pointer == NULL)
+  if (pointer == nullptr)
     return srtp_err_status_alloc_fail;
 
   

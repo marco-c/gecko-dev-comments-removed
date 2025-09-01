@@ -306,7 +306,7 @@ TEST_F(DtmfSenderTest, InsertDtmfWhileSenderIsDeleted) {
                    .clock = &fake_clock_}),
               webrtc::IsRtcOk());
   
-  dtmf_ = NULL;
+  dtmf_ = nullptr;
   
   fake_clock_.AdvanceTime(webrtc::TimeDelta::Millis(200));
   EXPECT_EQ(1U, observer_->tones().size());
