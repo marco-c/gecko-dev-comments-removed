@@ -872,9 +872,9 @@ void TransportLayerDtls::StateChange(TransportLayer* layer, State state) {
         timer_->SetTarget(target_);
         
         
-        timer_->InitWithNamedFuncCallback(TimerCallback, this, 0,
-                                          nsITimer::TYPE_ONE_SHOT,
-                                          "TransportLayerDtls::TimerCallback");
+        timer_->InitWithNamedFuncCallback(
+            TimerCallback, this, 0, nsITimer::TYPE_ONE_SHOT,
+            "TransportLayerDtls::TimerCallback"_ns);
         TL_SET_STATE(TS_CONNECTING);
       } else {
         
@@ -956,7 +956,7 @@ void TransportLayerDtls::Handshake() {
           timer_->SetTarget(target_);
           timer_->InitWithNamedFuncCallback(
               TimerCallback, this, timeout_ms, nsITimer::TYPE_ONE_SHOT,
-              "TransportLayerDtls::TimerCallback");
+              "TransportLayerDtls::TimerCallback"_ns);
         }
         break;
       default:

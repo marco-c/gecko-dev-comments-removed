@@ -1155,7 +1155,8 @@ class nsPresContext : public nsISupports,
   
   
   already_AddRefed<nsITimer> CreateTimer(nsTimerCallbackFunc aCallback,
-                                         const char* aName, uint32_t aDelay);
+                                         const nsACString& aName,
+                                         uint32_t aDelay);
 
   struct TransactionInvalidations {
     TransactionId mTransactionId;

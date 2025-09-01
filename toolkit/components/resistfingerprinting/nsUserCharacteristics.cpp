@@ -781,7 +781,7 @@ const RefPtr<PopulatePromise>& TimoutPromise(
         
         REJECT(promise, funcName, NS_ERROR_FAILURE, "TIMEOUT");
       },
-      delay, nsITimer::TYPE_ONE_SHOT, "UserCharacteristicsPromiseTimeout");
+      delay, nsITimer::TYPE_ONE_SHOT, "UserCharacteristicsPromiseTimeout"_ns);
   if (NS_FAILED(rv)) {
     REJECT(promise, funcName, rv, "TIMEOUT_CREATION");
   }

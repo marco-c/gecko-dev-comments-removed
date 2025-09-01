@@ -581,7 +581,7 @@ nsThreadPool::ShutdownWithTimeout(int32_t aTimeoutMs) {
           }
         },
         aTimeoutMs, nsITimer::TYPE_ONE_SHOT,
-        "nsThreadPool::ShutdownWithTimeout");
+        "nsThreadPool::ShutdownWithTimeout"_ns);
   }
 
   

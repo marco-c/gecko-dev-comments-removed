@@ -138,7 +138,8 @@ class nsTimerImpl {
 
   nsresult InitWithClosureCallback(std::function<void(nsITimer*)>&& aCallback,
                                    const mozilla::TimeDuration& aDelay,
-                                   uint32_t aType, const char* aNameString);
+                                   uint32_t aType,
+                                   const nsACString& aNameString);
 
   
   
@@ -191,7 +192,8 @@ class nsTimer final : public nsITimer {
   
   nsresult InitWithClosureCallback(std::function<void(nsITimer*)>&& aCallback,
                                    const mozilla::TimeDuration& aDelay,
-                                   uint32_t aType, const char* aNameString) {
+                                   uint32_t aType,
+                                   const nsACString& aNameString) {
     return mImpl ? mImpl->InitWithClosureCallback(std::move(aCallback), aDelay,
                                                   aType, aNameString)
                  : NS_ERROR_NULL_POINTER;
