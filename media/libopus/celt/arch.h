@@ -121,7 +121,7 @@ void celt_fatal(const char *str, const char *file, int line)
 
 
 
-#if defined(__x86_64__) || defined(__LP64__) || defined(_WIN64)
+#if defined(__x86_64__) || defined(__LP64__) || defined(_WIN64) || defined (__mips)
 #define OPUS_FAST_INT64 1
 #else
 #define OPUS_FAST_INT64 0
