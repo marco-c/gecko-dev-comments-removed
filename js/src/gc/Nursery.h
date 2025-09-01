@@ -181,6 +181,9 @@ class Nursery {
                          size_t oldBytes, size_t newBytes);
 
   
+  void freeBuffer(JS::Zone* zone, gc::Cell* cell, void* buffer, size_t bytes);
+
+  
   static const size_t MaxNurseryBufferSize = 1024;
 
   
