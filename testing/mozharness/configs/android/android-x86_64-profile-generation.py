@@ -8,7 +8,7 @@
 
 
 config = {
-    "emulator_avd_name": "mozemulator-x86_64",
+    "emulator_avd_name": "mozemulator-android34-x86_64",
     "emulator_process_name": "qemu-system-x86_64",
     "emulator_extra_args": [
         "-gpu",
@@ -20,15 +20,11 @@ config = {
         "-selinux",
         "permissive",
         "-memory",
-        "3072",
+        "4096",
         "-cores",
         "4",
         "-skin",
-        "800x1280",
-        
-        
-        
-        "-no-accel",
+        "1080x1920",
         "-no-snapstorage",
         "-no-snapshot",
         
@@ -44,6 +40,6 @@ config = {
         
     },
     "bogomips_minimum": 3000,
-    "android_version": 24,
+    "android_version": 34,
     "is_emulator": True,
 }
