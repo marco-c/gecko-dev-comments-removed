@@ -536,13 +536,11 @@ nsTimerEvent::Run() {
 
   if (profiler_thread_is_being_profiled_for_markers(mTimerThreadId)) {
     MutexAutoLock lock(mTimer->mMutex);
-    nsAutoCString name;
-    mTimer->GetName(name, lock);
     
     
     
     profiler_add_marker(
-        name, geckoprofiler::category::TIMER,
+        mTimer->mName, geckoprofiler::category::TIMER,
         MarkerOptions(MOZ_LIKELY(mInitTime)
                           ? MarkerTiming::Interval(
                                 mTimer->mTimeout - mTimer->mDelay, mInitTime)
@@ -558,7 +556,7 @@ nsTimerEvent::Run() {
                           ? MarkerTiming::IntervalUntilNowFrom(mInitTime)
                           : MarkerTiming::InstantNow(),
                       MarkerThreadId(mTimerThreadId)),
-        AddRemoveTimerMarker{}, name, mTimer->mDelay.ToMilliseconds(),
+        AddRemoveTimerMarker{}, mTimer->mName, mTimer->mDelay.ToMilliseconds(),
         MarkerThreadId::CurrentThread());
   }
 
@@ -1001,17 +999,15 @@ nsresult TimerThread::AddTimer(nsTimerImpl* aTimer,
   }
 
   if (profiler_thread_is_being_profiled_for_markers(mProfilerThreadId)) {
-    nsAutoCString name;
-    aTimer->GetName(name, aProofOfLock);
-
     nsLiteralCString prefix("Anonymous_");
     profiler_add_marker(
         "AddTimer", geckoprofiler::category::OTHER,
-        MarkerOptions(MarkerThreadId(mProfilerThreadId),
-                      MarkerStack::MaybeCapture(
-                          name.Equals("nonfunction:JS") ||
-                          StringHead(name, prefix.Length()) == prefix)),
-        AddRemoveTimerMarker{}, name, aTimer->mDelay.ToMilliseconds(),
+        MarkerOptions(
+            MarkerThreadId(mProfilerThreadId),
+            MarkerStack::MaybeCapture(
+                aTimer->mName.Equals("nonfunction:JS") ||
+                StringHead(aTimer->mName, prefix.Length()) == prefix)),
+        AddRemoveTimerMarker{}, aTimer->mName, aTimer->mDelay.ToMilliseconds(),
         MarkerThreadId::CurrentThread());
   }
 
@@ -1046,23 +1042,21 @@ nsresult TimerThread::RemoveTimer(nsTimerImpl* aTimer,
   
 
   if (profiler_thread_is_being_profiled_for_markers(mProfilerThreadId)) {
-    nsAutoCString name;
-    aTimer->GetName(name, aProofOfLock);
-
     nsLiteralCString prefix("Anonymous_");
     
     profiler_add_marker(
         "RemoveTimer", geckoprofiler::category::OTHER,
-        MarkerOptions(MarkerThreadId(mProfilerThreadId),
-                      MarkerStack::MaybeCapture(
-                          name.Equals("nonfunction:JS") ||
-                          StringHead(name, prefix.Length()) == prefix)),
-        AddRemoveTimerMarker{}, name, aTimer->mDelay.ToMilliseconds(),
+        MarkerOptions(
+            MarkerThreadId(mProfilerThreadId),
+            MarkerStack::MaybeCapture(
+                aTimer->mName.Equals("nonfunction:JS") ||
+                StringHead(aTimer->mName, prefix.Length()) == prefix)),
+        AddRemoveTimerMarker{}, aTimer->mName, aTimer->mDelay.ToMilliseconds(),
         MarkerThreadId::CurrentThread());
     
     
     
-    profiler_add_marker(name, geckoprofiler::category::TIMER,
+    profiler_add_marker(aTimer->mName, geckoprofiler::category::TIMER,
                         MarkerOptions(MarkerTiming::IntervalUntilNowFrom(
                                           aTimer->mTimeout - aTimer->mDelay),
                                       MarkerThreadId(mProfilerThreadId)),
