@@ -50,12 +50,6 @@ class AudioDeviceModuleImpl : public AudioDeviceModuleForTest {
       const Environment& env,
       AudioLayer audio_layer);
 
-  
-  
-  static absl_nullable scoped_refptr<AudioDeviceModuleImpl> Create(
-      AudioLayer audio_layer,
-      TaskQueueFactory* task_queue_factory);
-
   AudioDeviceModuleImpl(AudioLayer audio_layer,
                         TaskQueueFactory* task_queue_factory);
   
