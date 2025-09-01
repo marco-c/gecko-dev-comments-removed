@@ -62,6 +62,25 @@ enum ENameValueFlag {
 
 
 
+enum EDescriptionValueFlag {
+  
+
+
+
+
+
+  eDescriptionOK,
+
+  
+
+
+
+  eDescriptionFromARIA,
+};
+
+
+
+
 struct GroupPos {
   GroupPos() : level(0), posInSet(0), setSize(0) {}
   GroupPos(int32_t aLevel, int32_t aPosInSet, int32_t aSetSize)
@@ -320,7 +339,7 @@ class Accessible {
   
 
 
-  virtual void Description(nsString& aDescription) const = 0;
+  virtual EDescriptionValueFlag Description(nsString& aDescription) const = 0;
 
   
 

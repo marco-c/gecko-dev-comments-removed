@@ -142,7 +142,8 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
-  virtual void Description(nsString& aDescription) const override;
+  virtual EDescriptionValueFlag Description(
+      nsString& aDescription) const override;
 
   
 
@@ -875,7 +876,7 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
-  void ARIADescription(nsString& aDescription) const;
+  bool ARIADescription(nsString& aDescription) const;
 
   
 
