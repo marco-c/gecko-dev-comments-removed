@@ -107,8 +107,6 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
   Maybe<nsSize> GetNewBorderBoxSize(nsAtom* aName) const;
   Maybe<nsPoint> GetOldInkOverflowOffset(nsAtom* aName) const;
   Maybe<nsPoint> GetNewInkOverflowOffset(nsAtom* aName) const;
-  Maybe<nsRect> GetOldActiveRect(nsAtom* aName) const;
-  Maybe<nsRect> GetNewActiveRect(nsAtom* aName) const;
   
   
   
@@ -126,9 +124,6 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
   const wr::ImageKey* GetImageKeyForCapturedFrame(
       nsIFrame* aFrame, layers::RenderRootStateManager*,
       wr::IpcResourceUpdateQueue&) const;
-  void UpdateActiveRectForCapturedFrame(
-      nsIFrame* capturedFrame, const gfx::MatrixScales& aInheritedScale,
-      nsRect& aOutCapturedRect);
 
   Element* FindPseudo(const PseudoStyleRequest&) const;
 
