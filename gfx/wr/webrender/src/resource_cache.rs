@@ -669,6 +669,21 @@ impl ResourceCache {
 
         
         
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        
+        
         let image_result = self.cached_images.entry(image_key).or_insert_with(|| {
             ImageResult::UntiledAuto(CachedImageInfo {
                 texture_cache_handle: TextureCacheHandle::invalid(),
@@ -678,7 +693,7 @@ impl ResourceCache {
         });
 
         let ImageResult::UntiledAuto(ref mut info) = *image_result else {
-            unreachable!("Expected untiled image for snapshot");
+            unreachable!("Expected untiled image with auto filter for snapshot");
         };
 
         let flags = if is_opaque {
@@ -694,6 +709,9 @@ impl ResourceCache {
             flags,
         );
 
+        
+        
+        
         
         
         
@@ -1082,7 +1100,7 @@ impl ResourceCache {
     
     pub fn request_image(
         &mut self,
-        request: ImageRequest,
+        mut request: ImageRequest,
         gpu_cache: &mut GpuCache,
     ) -> DeviceIntSize {
         debug_assert_eq!(self.state, State::AddResources);
@@ -1104,6 +1122,14 @@ impl ResourceCache {
         
         if !template.data.uses_texture_cache() {
             return size;
+        }
+
+        if template.data.is_snapshot() {
+            
+            
+            
+            
+            request.rendering = ImageRendering::Auto;
         }
 
         let side_size =
