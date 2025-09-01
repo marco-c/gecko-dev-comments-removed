@@ -744,7 +744,8 @@ bool WorkerScriptLoader::DispatchLoadScripts(
     nsTArray<RefPtr<ThreadSafeRequestHandle>>&& aLoadingList) {
   MOZ_ASSERT(mWorkerRef->Private()->IsOnWorkerThread());
 
-  nsTArray<RefPtr<ThreadSafeRequestHandle>> scriptLoadList = std::move(aLoadingList);
+  nsTArray<RefPtr<ThreadSafeRequestHandle>> scriptLoadList =
+      std::move(aLoadingList);
   if (!scriptLoadList.Length()) {
     
     scriptLoadList = GetLoadingList();

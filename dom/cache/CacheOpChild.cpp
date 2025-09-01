@@ -9,12 +9,12 @@
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/Request.h"
 #include "mozilla/dom/Response.h"
+#include "mozilla/dom/cache/BoundStorageKey.h"
+#include "mozilla/dom/cache/BoundStorageKeyCache.h"
 #include "mozilla/dom/cache/Cache.h"
 #include "mozilla/dom/cache/CacheChild.h"
 #include "mozilla/dom/cache/CacheStreamControlChild.h"
 #include "mozilla/dom/cache/CacheWorkerRef.h"
-#include "mozilla/dom/cache/BoundStorageKey.h"
-#include "mozilla/dom/cache/BoundStorageKeyCache.h"
 
 namespace mozilla::dom {
 
@@ -142,7 +142,8 @@ void CacheOpChild::SettlePromise(
     
     
     MOZ_ASSERT(res.isNullOrUndefined());
-    target->Resolve(nullptr , __func__);
+    target->Resolve(nullptr ,
+                    __func__);
   } else if constexpr (std::is_same_v<ValueType, StorageOpenResultType>) {
     
     
@@ -254,7 +255,8 @@ void CacheOpChild::HandleAndSettle(TResponse&& aRes) {
         GetWorkerRefPtr().clonePtr(), CacheWorkerRef::eIPCWorkerRef));
     Settle<OP_TYPE>(StorageOpenResultType{actor, res.ns()});
   } else {
-    static_assert(std::is_same_v<ValueType, void>, "There should be a block handling this type");
+    static_assert(std::is_same_v<ValueType, void>,
+                  "There should be a block handling this type");
   }
 }
 
@@ -282,7 +284,8 @@ mozilla::ipc::IPCResult CacheOpChild::Recv__delete__(
     }
     case CacheOpResult::TCachePutAllResult: {
       
-      HandleAndSettle<CacheOpResult::TCachePutAllResult>(JS::UndefinedHandleValue);
+      HandleAndSettle<CacheOpResult::TCachePutAllResult>(
+          JS::UndefinedHandleValue);
       break;
     }
     case CacheOpResult::TCacheDeleteResult: {
