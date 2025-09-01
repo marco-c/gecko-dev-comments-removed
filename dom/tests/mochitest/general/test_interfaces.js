@@ -319,6 +319,8 @@ let interfaceNamesInGlobalScope = [
     android: false,
   },
   
+  { name: "CommandEvent", insecureContext: true },
+  
   { name: "Comment", insecureContext: true },
   
   { name: "CompositionEvent", insecureContext: true },
@@ -1755,6 +1757,8 @@ let interfaceNamesInGlobalScope = [
   { name: "onclick", insecureContext: true },
   
   { name: "onclose", insecureContext: true },
+  
+  { name: "oncommand", insecureContext: true },
   
   { name: "oncontentvisibilityautostatechange", insecureContext: true },
   
