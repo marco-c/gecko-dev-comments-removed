@@ -12,21 +12,12 @@
 
 #include <memory>
 
-#include "api/peer_connection_interface.h"
 #include "api/test/time_controller.h"
 
 namespace webrtc {
 
 
 std::unique_ptr<TimeController> CreateSimulatedTimeController();
-
-
-
-
-[[deprecated("Inject Clock through the deps.env instead.")]]
-void EnableMediaWithDefaultsAndTimeController(
-    TimeController& time_controller,
-    PeerConnectionFactoryDependencies& deps);
 
 }  
 
