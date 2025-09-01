@@ -23,14 +23,16 @@
 
 
 
-use crate::parser::{Combinator, Component, RelativeSelector, Selector, SelectorImpl, ParseRelative};
+use crate::parser::{
+    Combinator, Component, ParseRelative, RelativeSelector, Selector, SelectorImpl,
+};
 use crate::sink::Push;
+use bitflags::bitflags;
+use derive_more::{Add, AddAssign};
 use servo_arc::{Arc, ThinArc};
 use smallvec::SmallVec;
 use std::cmp;
 use std::slice;
-use bitflags::bitflags;
-use derive_more::{Add, AddAssign};
 
 #[cfg(feature = "to_shmem")]
 use to_shmem_derive::ToShmem;
@@ -88,9 +90,15 @@ impl<Impl: SelectorImpl> SelectorBuilder<Impl> {
 
     
     #[inline(always)]
-    pub fn build(&mut self, parse_relative: ParseRelative) -> ThinArc<SpecificityAndFlags, Component<Impl>> {
+    pub fn build(
+        &mut self,
+        parse_relative: ParseRelative,
+    ) -> ThinArc<SpecificityAndFlags, Component<Impl>> {
         
-        let sf = specificity_and_flags(self.components.iter(),  false);
+        let sf = specificity_and_flags(
+            self.components.iter(),
+             false,
+        );
         self.build_with_specificity_and_flags(sf, parse_relative)
     }
 
@@ -103,17 +111,23 @@ impl<Impl: SelectorImpl> SelectorBuilder<Impl> {
         parse_relative: ParseRelative,
     ) -> ThinArc<SpecificityAndFlags, Component<Impl>> {
         let implicit_addition = match parse_relative {
-            ParseRelative::ForNesting if !spec.flags.intersects(SelectorFlags::HAS_PARENT) => Some((Component::ParentSelector, SelectorFlags::HAS_PARENT)),
-            ParseRelative::ForScope if !spec.flags.intersects(SelectorFlags::HAS_SCOPE | SelectorFlags::HAS_PARENT) => Some((Component::ImplicitScope, SelectorFlags::HAS_SCOPE)),
+            ParseRelative::ForNesting if !spec.flags.intersects(SelectorFlags::HAS_PARENT) => {
+                Some((Component::ParentSelector, SelectorFlags::HAS_PARENT))
+            },
+            ParseRelative::ForScope
+                if !spec
+                    .flags
+                    .intersects(SelectorFlags::HAS_SCOPE | SelectorFlags::HAS_PARENT) =>
+            {
+                Some((Component::ImplicitScope, SelectorFlags::HAS_SCOPE))
+            },
             _ => None,
         };
         let implicit_selector_and_combinator;
         let implicit_selector = if let Some((component, flag)) = implicit_addition {
             spec.flags.insert(flag);
-            implicit_selector_and_combinator = [
-                Component::Combinator(Combinator::Descendant),
-                component,
-            ];
+            implicit_selector_and_combinator =
+                [Component::Combinator(Combinator::Descendant), component];
             &implicit_selector_and_combinator[..]
         } else {
             &[]
@@ -122,14 +136,22 @@ impl<Impl: SelectorImpl> SelectorBuilder<Impl> {
         
         
         if self.last_compound_start.is_none() {
-            return Arc::from_header_and_iter(spec, ExactChain(self.components.drain(..), implicit_selector.iter().cloned()));
+            return Arc::from_header_and_iter(
+                spec,
+                ExactChain(self.components.drain(..), implicit_selector.iter().cloned()),
+            );
         }
 
         self.reverse_last_compound();
-        Arc::from_header_and_iter(spec, ExactChain(self.components.drain(..).rev(), implicit_selector.iter().cloned()))
+        Arc::from_header_and_iter(
+            spec,
+            ExactChain(
+                self.components.drain(..).rev(),
+                implicit_selector.iter().cloned(),
+            ),
+        )
     }
 }
-
 
 impl<Impl: SelectorImpl> Default for SelectorBuilder<Impl> {
     #[inline(always)]
@@ -304,9 +326,7 @@ where
                     specificity.element_selectors += pseudo.specificity_count();
                 }
             },
-            Component::LocalName(..) => {
-                specificity.element_selectors += 1
-            },
+            Component::LocalName(..) => specificity.element_selectors += 1,
             Component::Slotted(ref selector) => {
                 flags.insert(SelectorFlags::HAS_SLOTTED);
                 if !for_nesting_parent {
@@ -357,7 +377,10 @@ where
                 
                 
                 specificity.class_like_selectors += 1;
-                let sf = selector_list_specificity_and_flags(nth_of_data.selectors().iter(), for_nesting_parent);
+                let sf = selector_list_specificity_and_flags(
+                    nth_of_data.selectors().iter(),
+                    for_nesting_parent,
+                );
                 *specificity += Specificity::from(sf.specificity);
                 flags.insert(sf.flags);
             },
@@ -369,14 +392,20 @@ where
             Component::Where(ref list) |
             Component::Negation(ref list) |
             Component::Is(ref list) => {
-                let sf = selector_list_specificity_and_flags(list.slice().iter(),  true);
+                let sf = selector_list_specificity_and_flags(
+                    list.slice().iter(),
+                     true,
+                );
                 if !matches!(*simple_selector, Component::Where(..)) {
                     *specificity += Specificity::from(sf.specificity);
                 }
                 flags.insert(sf.flags);
             },
             Component::Has(ref relative_selectors) => {
-                let sf = relative_selector_list_specificity_and_flags(relative_selectors, for_nesting_parent);
+                let sf = relative_selector_list_specificity_and_flags(
+                    relative_selectors,
+                    for_nesting_parent,
+                );
                 *specificity += Specificity::from(sf.specificity);
                 flags.insert(sf.flags);
             },
@@ -417,7 +446,9 @@ pub(crate) fn selector_list_specificity_and_flags<'a, Impl: SelectorImpl>(
     let mut flags = SelectorFlags::empty();
     for selector in itr {
         let selector_flags = selector.flags();
-        let selector_specificity = if for_nesting_parent && selector_flags.intersects(SelectorFlags::forbidden_for_nesting()) {
+        let selector_specificity = if for_nesting_parent &&
+            selector_flags.intersects(SelectorFlags::forbidden_for_nesting())
+        {
             
             specificity_and_flags(selector.iter_raw_match_order(), for_nesting_parent).specificity
         } else {

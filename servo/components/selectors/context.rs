@@ -332,7 +332,10 @@ where
     where
         F: FnOnce(&mut Self) -> R,
     {
-        debug_assert!(self.matching_for_invalidation(), "Not matching for invalidation?");
+        debug_assert!(
+            self.matching_for_invalidation(),
+            "Not matching for invalidation?"
+        );
         let prev = self.matching_for_invalidation;
         self.matching_for_invalidation = MatchingForInvalidation::YesForComparison;
         let result = f(self);
@@ -379,11 +382,7 @@ where
 
     
     #[inline]
-    pub fn with_featureless<F, R>(
-        &mut self,
-        featureless: bool,
-        f: F,
-    ) -> R
+    pub fn with_featureless<F, R>(&mut self, featureless: bool, f: F) -> R
     where
         F: FnOnce(&mut Self) -> R,
     {

@@ -2,10 +2,10 @@
 
 
 
+use crate::to_computed_value;
 use proc_macro2::TokenStream;
 use syn::DeriveInput;
 use synstructure::BindStyle;
-use crate::to_computed_value;
 
 pub fn derive(input: DeriveInput) -> TokenStream {
     let trait_impl = |from_body, to_body| {

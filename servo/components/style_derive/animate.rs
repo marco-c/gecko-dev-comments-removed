@@ -2,8 +2,8 @@
 
 
 
-use darling::util::PathList;
 use crate::cg;
+use darling::util::PathList;
 use proc_macro2::TokenStream;
 use quote::TokenStreamExt;
 use syn::{DeriveInput, WhereClause};
