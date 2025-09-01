@@ -675,7 +675,9 @@ RuleEditor.prototype = {
       }
     }
 
-    if (focusedElSelector) {
+    
+    
+    if (this.doc.hasFocus() && focusedElSelector) {
       const elementToFocus = this.doc.querySelector(focusedElSelector);
       if (elementToFocus && this.element.contains(elementToFocus)) {
         
