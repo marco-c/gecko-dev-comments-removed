@@ -529,8 +529,24 @@ static Maybe<nsRect> ComputeTheIntersection(
 
   
   
-  intersectionRect =
-      intersectionRectRelativeToRoot.EdgeInclusiveIntersection(aRootBounds);
+  
+  
+  
+  
+  if (aRemoteDocumentVisibleRect) {
+    MOZ_ASSERT(aRoot->PresContext()->IsRootContentDocumentInProcess() &&
+               !aRoot->PresContext()->IsRootContentDocumentCrossProcess());
+
+    intersectionRect = intersectionRectRelativeToRoot.EdgeInclusiveIntersection(
+        *aRemoteDocumentVisibleRect);
+    if (intersectionRect.isNothing()) {
+      return Nothing();
+    }
+  } else {
+    intersectionRect =
+        intersectionRectRelativeToRoot.EdgeInclusiveIntersection(aRootBounds);
+  }
+
   if (intersectionRect.isNothing()) {
     return Nothing();
   }
@@ -546,21 +562,6 @@ static Maybe<nsRect> ComputeTheIntersection(
             aTarget->PresShell()->GetRootScrollContainerFrame()) {
       nsLayoutUtils::TransformRect(aRoot, rootScrollContainerFrame, rect);
     }
-  }
-
-  
-  
-  
-  if (aRemoteDocumentVisibleRect) {
-    MOZ_ASSERT(aRoot->PresContext()->IsRootContentDocumentInProcess() &&
-               !aRoot->PresContext()->IsRootContentDocumentCrossProcess());
-
-    intersectionRect =
-        rect.EdgeInclusiveIntersection(*aRemoteDocumentVisibleRect);
-    if (intersectionRect.isNothing()) {
-      return Nothing();
-    }
-    rect = intersectionRect.value();
   }
 
   
