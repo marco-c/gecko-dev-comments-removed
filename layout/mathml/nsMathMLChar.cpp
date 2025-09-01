@@ -535,12 +535,6 @@ class nsGlyphTableList final : public nsIObserver {
   nsresult Initialize();
   nsresult Finalize();
 
-  
-  nsGlyphTable* AddGlyphTable(const nsACString& aPrimaryFontName);
-
-  
-  nsGlyphTable* GetGlyphTableFor(const nsACString& aFamily);
-
  private:
   ~nsGlyphTableList() = default;
 
@@ -598,32 +592,6 @@ nsresult nsGlyphTableList::Finalize() {
   return rv;
 }
 
-nsGlyphTable* nsGlyphTableList::AddGlyphTable(
-    const nsACString& aPrimaryFontName) {
-  
-  nsGlyphTable* glyphTable = GetGlyphTableFor(aPrimaryFontName);
-  if (glyphTable != &mUnicodeTable) {
-    return glyphTable;
-  }
-
-  
-  glyphTable = mPropertiesTableList.AppendElement(aPrimaryFontName);
-  return glyphTable;
-}
-
-nsGlyphTable* nsGlyphTableList::GetGlyphTableFor(const nsACString& aFamily) {
-  for (int32_t i = 0; i < PropertiesTableCount(); i++) {
-    nsPropertiesTable* glyphTable = PropertiesTableAt(i);
-    const nsCString& primaryFontName = glyphTable->PrimaryFontName();
-    
-    if (primaryFontName.Equals(aFamily, nsCaseInsensitiveCStringComparator)) {
-      return glyphTable;
-    }
-  }
-  
-  return &mUnicodeTable;
-}
-
 
 
 static nsresult InitCharGlobals() {
@@ -641,12 +609,6 @@ static nsresult InitCharGlobals() {
   }
   
   
-  
-  
-  if (!glyphTableList->AddGlyphTable("STIXGeneral"_ns)) {
-    rv = NS_ERROR_OUT_OF_MEMORY;
-  }
-
   glyphTableList.forget(&gGlyphTableList);
   return rv;
 }
@@ -1331,13 +1293,8 @@ bool nsMathMLChar::StretchEnumContext::EnumCallback(
     openTypeTable = nsOpenTypeTable::Create(font);
     if (openTypeTable) {
       glyphTable = openTypeTable.get();
-    } else if (StaticPrefs::mathml_stixgeneral_operator_stretching_disabled()) {
-      glyphTable = &gGlyphTableList->mUnicodeTable;
     } else {
-      
-      
-      glyphTable = gGlyphTableList->GetGlyphTableFor(
-          nsAtomCString(aFamily.AsFamilyName().name.AsAtom()));
+      glyphTable = &gGlyphTableList->mUnicodeTable;
     }
   }
 
@@ -1555,15 +1512,6 @@ nsresult nsMathMLChar::StretchInternal(
     for (const StyleSingleFontFamily& name :
          font.family.families.list.AsSpan()) {
       if (StretchEnumContext::EnumCallback(name, &enumData)) {
-        if (name.IsNamedFamily(u"STIXGeneral"_ns)) {
-          AutoTArray<nsString, 1> params{
-              u"https://developer.mozilla.org/docs/Mozilla/"
-              "MathML_Project/Fonts"_ns};
-          aForFrame->PresContext()->Document()->WarnOnceAbout(
-              dom::DeprecatedOperations::
-                  eMathML_DeprecatedStixgeneralOperatorStretching,
-              false, params);
-        }
         break;
       }
     }
