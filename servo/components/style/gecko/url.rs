@@ -86,7 +86,10 @@ impl NonLocalUriDependency {
             
             return Self::No;
         }
-        if specified.starts_with('/') || specified.starts_with("http:") || specified.starts_with("https:") {
+        if specified.starts_with('/')
+            || specified.starts_with("http:")
+            || specified.starts_with("https:")
+        {
             return Self::Absolute;
         }
         if specified.starts_with('?') {
