@@ -83,6 +83,8 @@ class ExternalTexture : public ObjectBase,
   void OnSubmit(uint64_t aSubmissionIndex);
   void OnSubmittedWorkDone(uint64_t aSubmissionIndex);
 
+  RefPtr<ExternalTextureSourceClient> Source() { return mSource; }
+
   const RawId mId;
 
  private:
@@ -234,6 +236,12 @@ class ExternalTextureSourceHost {
   ffi::WGPUExternalTextureDescriptorFromSource GetExternalTextureDescriptor(
       ffi::WGPUPredefinedColorSpace aDestColorSpace) const;
 
+  
+  
+  
+  bool OnBeforeQueueSubmit(WebGPUParent* aParent, RawId aDeviceId,
+                           RawId aQueueId);
+
  private:
   ExternalTextureSourceHost(Span<const RawId> aTextureIds,
                             Span<const RawId> aViewIds, gfx::IntSize aSize,
@@ -246,6 +254,14 @@ class ExternalTextureSourceHost {
       WebGPUParent* aParent, RawId aDeviceId, RawId aQueueId,
       const ExternalTextureSourceDescriptor& aDesc,
       const layers::BufferDescriptor& aSd, uint8_t* aBuffer);
+  static ExternalTextureSourceHost CreateFromD3D10Desc(
+      WebGPUParent* aParent, RawId aDeviceId, RawId aQueueId,
+      const ExternalTextureSourceDescriptor& aDesc,
+      const layers::SurfaceDescriptorD3D10& aSd, gfx::SurfaceFormat aFormat);
+  static ExternalTextureSourceHost CreateFromDXGIYCbCrDesc(
+      WebGPUParent* aParent, RawId aDeviceId, RawId aQueueId,
+      const ExternalTextureSourceDescriptor& aDesc,
+      const layers::SurfaceDescriptorDXGIYCbCr& aSd);
 
   
   
@@ -264,6 +280,16 @@ class ExternalTextureSourceHost {
   const gfx::YUVRangedColorSpace mColorSpace;
   const std::array<float, 6> mSampleTransform;
   const std::array<float, 6> mLoadTransform;
+
+#ifdef XP_WIN
+  
+  
+  
+  
+  
+  
+  Maybe<layers::CompositeProcessFencesHolderId> mFenceId;
+#endif
 };
 
 }  
