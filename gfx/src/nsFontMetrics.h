@@ -141,12 +141,12 @@ class nsFontMetrics final {
   
 
 
-  nscoord EmAscent() const;
+  nscoord TrimmedAscent() const;
 
   
 
 
-  nscoord EmDescent() const;
+  nscoord TrimmedDescent() const;
 
   
 
