@@ -72,6 +72,8 @@ function setVariableTooltip(
     outputParser.parseCssProperty(variableName, value, {
       ...outputParserOptions,
       colorSwatchReadOnly: true,
+      
+      showJumpToVariableButton: false,
     });
 
   const valueEl = doc.createElementNS(XHTML_NS, "section");

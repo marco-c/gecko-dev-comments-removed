@@ -17,8 +17,15 @@ const {
 
 const STYLE_INSPECTOR_PROPERTIES =
   "devtools/shared/locales/styleinspector.properties";
-const { LocalizationHelper } = require("resource://devtools/shared/l10n.js");
-const STYLE_INSPECTOR_L10N = new LocalizationHelper(STYLE_INSPECTOR_PROPERTIES);
+
+loader.lazyGetter(this, "STYLE_INSPECTOR_L10N", function () {
+  const { LocalizationHelper } = require("resource://devtools/shared/l10n.js");
+  return new LocalizationHelper(STYLE_INSPECTOR_PROPERTIES);
+});
+
+loader.lazyGetter(this, "VARIABLE_JUMP_DEFINITION_TITLE", function () {
+  return STYLE_INSPECTOR_L10N.getStr("rule.variableJumpDefinition.title");
+});
 
 
 const ANGLE_TAKING_FUNCTIONS = new Set([
@@ -302,10 +309,12 @@ class OutputParser {
     let varFallbackValue;
     let varSubstitutedValue;
     let varComputedValue;
+    let varName;
 
     
     if (tokens && tokens.length === 1) {
-      varData = options.getVariableData(tokens[0].text);
+      varName = tokens[0].text;
+      varData = options.getVariableData(varName);
       const varValue =
         typeof varData.value === "string"
           ? varData.value
@@ -358,22 +367,29 @@ class OutputParser {
         
         firstOpts["data-registered-property-inherits"] = `${inherits}`;
       }
-    } else {
+
+      const customPropNode = this.#createNode("span", firstOpts, result);
+      if (options.showJumpToVariableButton) {
+        customPropNode.append(
+          this.#createNode("button", {
+            class: "ruleview-variable-link jump-definition",
+            "data-variable-name": varName,
+            title: VARIABLE_JUMP_DEFINITION_TITLE,
+          })
+        );
+      }
+
+      variableNode.appendChild(customPropNode);
+    } else if (varName) {
       
       firstOpts.class = options.unmatchedClass;
 
-      
-      const varName = text.substring(
-        tokens[0].startOffset,
-        tokens[0].endOffset
-      );
       firstOpts["data-variable"] = STYLE_INSPECTOR_L10N.getFormatStr(
         "rule.variableUnset",
         varName
       );
+      variableNode.appendChild(this.#createNode("span", firstOpts, result));
     }
-
-    variableNode.appendChild(this.#createNode("span", firstOpts, result));
 
     
     
@@ -2270,6 +2286,8 @@ class OutputParser {
    *          - {RegisteredPropertyResource|undefined} registeredProperty: The registered
    *            property data (syntax, initial value, inherits). Undefined if the variable
    *            is not a registered property.
+   * @param {Boolean} overrides.showJumpToVariableButton: Should we show a jump to
+   *        definition for CSS variables. Defaults to true.
    * @param {Boolean} overrides.isDarkColorScheme: Is the currently applied color scheme dark.
    * @param {Boolean} overrides.isValid: Is the name+value valid.
    * @return {Object} Overridden options object
@@ -2295,6 +2313,7 @@ class OutputParser {
       fontFamilyClass: null,
       baseURI: undefined,
       getVariableData: null,
+      showJumpToVariableButton: true,
       unmatchedClass: null,
       inStartingStyleRule: false,
       isDarkColorScheme: null,

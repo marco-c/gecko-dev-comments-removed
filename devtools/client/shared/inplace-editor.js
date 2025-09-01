@@ -211,14 +211,16 @@ function editableItem(options, callback) {
   const trigger = options.trigger || "click";
   const element = options.element;
   element.addEventListener(trigger, function (evt) {
-    if (evt.target.nodeName !== "a") {
-      const win = this.ownerDocument.defaultView;
-      const selection = win.getSelection();
-      if (trigger != "click" || selection.isCollapsed) {
-        callback(element, evt);
-      }
-      evt.stopPropagation();
+    if (!isValidTargetForEditableItemCallback(evt.target)) {
+      return;
     }
+
+    const win = this.ownerDocument.defaultView;
+    const selection = win.getSelection();
+    if (trigger != "click" || selection.isCollapsed) {
+      callback(element, evt);
+    }
+    evt.stopPropagation();
   });
 
   
@@ -226,7 +228,7 @@ function editableItem(options, callback) {
   element.addEventListener(
     "keypress",
     function (evt) {
-      if (evt.target.nodeName === "button") {
+      if (!isValidTargetForEditableItemCallback(evt.target)) {
         return;
       }
 
@@ -242,16 +244,18 @@ function editableItem(options, callback) {
   
   
   element.addEventListener("mousedown", function (evt) {
-    if (evt.target.nodeName !== "a") {
-      const cleanup = function () {
-        element.style.removeProperty("outline-style");
-        element.removeEventListener("mouseup", cleanup);
-        element.removeEventListener("mouseout", cleanup);
-      };
-      element.style.setProperty("outline-style", "none");
-      element.addEventListener("mouseup", cleanup);
-      element.addEventListener("mouseout", cleanup);
+    if (!isValidTargetForEditableItemCallback(evt.target)) {
+      return;
     }
+
+    const cleanup = function () {
+      element.style.removeProperty("outline-style");
+      element.removeEventListener("mouseup", cleanup);
+      element.removeEventListener("mouseout", cleanup);
+    };
+    element.style.setProperty("outline-style", "none");
+    element.addEventListener("mouseup", cleanup);
+    element.addEventListener("mouseout", cleanup);
   });
 
   
@@ -272,6 +276,19 @@ function editableItem(options, callback) {
 }
 
 exports.editableItem = editableItem;
+
+
+
+
+
+
+
+
+function isValidTargetForEditableItemCallback(eventTarget) {
+  const { nodeName } = eventTarget;
+  
+  return nodeName !== "a" && nodeName !== "button";
+}
 
 
 

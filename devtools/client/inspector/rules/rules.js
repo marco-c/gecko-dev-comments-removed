@@ -82,7 +82,8 @@ const PREF_INPLACE_EDITOR_FOCUS_NEXT_ON_ENTER =
   "devtools.inspector.rule-view.focusNextOnEnter";
 const FILTER_CHANGED_TIMEOUT = 150;
 
-const PROPERTY_FLASHING_DURATION = 1000;
+
+const PROPERTY_FLASHING_DURATION = flags.testing ? 100 : 1000;
 
 
 const FILTER_PROP_RE = /\s*([^:\s]*)\s*:\s*(.*?)\s*;?$/;
@@ -2143,14 +2144,25 @@ CssRuleView.prototype = {
 
 
 
-  highlightProperty(name) {
+
+
+
+
+
+  highlightProperty(name, { ruleValidator } = {}) {
+    
+    this._onClearSearch();
+
+    let scrollBehavior = "auto";
+    const hasRuleValidator = typeof ruleValidator === "function";
     for (const rule of this.rules) {
+      if (hasRuleValidator && !ruleValidator(rule)) {
+        continue;
+      }
       for (const textProp of rule.textProps) {
         if (textProp.overridden || textProp.invisible || !textProp.enabled) {
           continue;
         }
-
-        let scrollBehavior = "smooth";
 
         
         if (textProp.name === name) {
@@ -2209,6 +2221,30 @@ CssRuleView.prototype = {
         }
       }
     }
+    
+    
+    if (name.startsWith("--")) {
+      
+      const propertyContainer = this.styleDocument.getElementById(
+        REGISTERED_PROPERTIES_CONTAINER_ID
+      );
+      if (propertyContainer) {
+        const propertyEl = propertyContainer.querySelector(
+          `[data-name="${name}"]`
+        );
+        if (propertyEl) {
+          const toggle = this.styleDocument.querySelector(
+            `[aria-controls="${REGISTERED_PROPERTIES_CONTAINER_ID}"]`
+          );
+          if (toggle.ariaExpanded === "false") {
+            this._toggleContainerVisibility(toggle, propertyContainer);
+          }
+
+          this._highlightElementInRule(null, propertyEl, scrollBehavior);
+        }
+        return true;
+      }
+    }
 
     return false;
   },
@@ -2221,9 +2257,13 @@ CssRuleView.prototype = {
 
 
   _highlightElementInRule(rule, element, scrollBehavior) {
-    this._scrollToElement(rule.editor.selectorText, element, scrollBehavior);
+    if (rule) {
+      this._scrollToElement(rule.editor.selectorText, element, scrollBehavior);
+    } else {
+      this._scrollToElement(element, null, scrollBehavior);
+    }
     this._flashElement(element).then(() =>
-      this.emitForTests("element-highlighted")
+      this.emitForTests("element-highlighted", element)
     );
   },
 
