@@ -80,6 +80,9 @@ function ToolboxHostManager(commands, hostType, hostOptions) {
   this.eventController = new AbortController();
   this.host = this.createHost(hostType, hostOptions);
   this.hostType = hostType;
+  
+  
+  this.collectPendingMessages = null;
   this.setMinWidthWithZoom = this.setMinWidthWithZoom.bind(this);
   this._onMessage = this._onMessage.bind(this);
   Services.prefs.addObserver(ZOOM_VALUE_PREF, this.setMinWidthWithZoom);
@@ -169,6 +172,10 @@ ToolboxHostManager.prototype = {
     
     
     if (msg.frameId != this.frameId) {
+      return;
+    }
+    if (this.collectPendingMessages) {
+      this.collectPendingMessages.push(event);
       return;
     }
     switch (msg.name) {
@@ -277,6 +284,12 @@ ToolboxHostManager.prototype = {
 
     
     newIframe.swapFrameLoaders(iframe);
+
+    
+    
+    iframe.docShellIsActive = false;
+    newIframe.docShellIsActive = true;
+
     if (destroyPreviousHost) {
       this.destroyHost();
     }
@@ -287,7 +300,6 @@ ToolboxHostManager.prototype = {
     ) {
       Services.prefs.setCharPref(PREVIOUS_HOST, this.hostType);
     }
-
     this.host = newHost;
     if (this.currentTab) {
       this.hostPerTab.set(this.currentTab, newHost);
@@ -339,7 +351,15 @@ ToolboxHostManager.prototype = {
         newHost.frame.swapFrameLoaders(this.host.frame);
         this.host = newHost;
       } else {
+        
+        
+        const pendingMessages = [];
+        this.collectPendingMessages = pendingMessages;
         await this.switchHost(this.hostType, false);
+        this.collectPendingMessages = null;
+        for (const message of pendingMessages) {
+          this._onMessage(message);
+        }
       }
       previousTab.addEventListener(
         "TabSelect",

@@ -312,6 +312,9 @@ function Toolbox({
 
   this._windowHostShortcuts = null;
 
+  
+  this._visibleIframes = new Set();
+
   this._toolRegistered = this._toolRegistered.bind(this);
   this._toolUnregistered = this._toolUnregistered.bind(this);
   this._refreshHostTitle = this._refreshHostTitle.bind(this);
@@ -2970,20 +2973,42 @@ Toolbox.prototype = {
 
 
   setIframeVisible(iframe, visible) {
-    const state = visible ? "visible" : "hidden";
+    
+    
+    
+    
+    
+    
+    
+    
     const win = iframe.contentWindow;
     const doc = win.document;
-    if (doc.visibilityState != state) {
+    if (visible && !this._visibleIframes.has(iframe)) {
+      this._visibleIframes.add(iframe);
+
       
       
       Object.defineProperty(doc, "visibilityState", {
-        value: state,
+        get: () => {
+          
+          
+          return this.win?.browsingContext.isActive ? "visible" : "hidden";
+        },
         configurable: true,
       });
+    } else if (!visible && this._visibleIframes.has(iframe)) {
+      this._visibleIframes.delete(iframe);
 
-      
-      doc.dispatchEvent(new win.Event("visibilitychange"));
+      Object.defineProperty(doc, "visibilityState", {
+        value: "hidden",
+        configurable: true,
+      });
+    } else {
+      return;
     }
+
+    
+    doc.dispatchEvent(new win.Event("visibilitychange"));
   },
 
   
@@ -4482,6 +4507,7 @@ Toolbox.prototype = {
             this._descriptorFront = null;
             this.resourceCommand = null;
             this.commands = null;
+            this._visibleIframes.clear();
 
             
             
