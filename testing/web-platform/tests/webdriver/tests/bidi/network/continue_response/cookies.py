@@ -98,7 +98,7 @@ async def test_cookie_response_started(
     SET_COOKIE_TEST_PARAMETERS,
     ids=SET_COOKIE_TEST_IDS,
 )
-async def test_cookie_attributes_before_request_sent(
+async def test_cookie_attributes_response_started(
     setup_blocked_request,
     subscribe_events,
     bidi_session,
@@ -114,11 +114,11 @@ async def test_cookie_attributes_before_request_sent(
     if with_domain == "default domain":
         domain = ""
         cookie["domain"] = domain_value()
-        expected_cookie["domain"] = f".{domain_value()}"
+        expected_cookie["domain"] = domain_value()
     elif with_domain == "alt domain":
         domain = "alt"
         cookie["domain"] = domain_value("alt")
-        expected_cookie["domain"] = f".{domain_value('alt')}"
+        expected_cookie["domain"] = domain_value('alt')
     else:
         
         
