@@ -101,8 +101,6 @@ pub struct Config {
     
     pub events_dir: Option<PathBuf>,
     
-    pub ping_dir: Option<PathBuf>,
-    
     pub profile_dir: Option<PathBuf>,
     
     
@@ -151,7 +149,6 @@ impl Config {
         self.run_memtest = env_bool(ekey!("RUN_MEMTEST"));
         self.data_dir = env_path(ekey!("DATA_DIRECTORY"));
         self.events_dir = env_path(ekey!("EVENTS_DIRECTORY"));
-        self.ping_dir = env_path(ekey!("PING_DIRECTORY"));
         self.app_file = std::env::var_os(ekey!("RESTART_XUL_APP_FILE"));
 
         self.update_log_file();
