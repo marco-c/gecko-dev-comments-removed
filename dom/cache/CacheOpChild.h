@@ -11,15 +11,16 @@
 #include "mozilla/dom/cache/ActorChild.h"
 #include "mozilla/dom/cache/PCacheOpChild.h"
 #include "mozilla/dom/cache/TypeUtils.h"
+#include "mozilla/dom/cache/BoundStorageKey.h"
+#include "mozilla/InitializedOnce.h"
+#include "mozilla/RefPtr.h"
 
 class nsIGlobalObject;
 
 namespace mozilla::dom {
-
 class Promise;
 
 namespace cache {
-
 class CacheOpChild final : public PCacheOpChild,
                            public CacheActorChild,
                            public TypeUtils {
@@ -31,11 +32,27 @@ class CacheOpChild final : public PCacheOpChild,
   NS_INLINE_DECL_REFCOUNTING(CacheOpChild, override)
 
  private:
+
+  
+  
+  
+  using PromiseType =
+      Variant<RefPtr<mozilla::dom::Promise>, RefPtr<CacheStoragePromise>>;
+
+  template <typename T>
+  struct PromiseTrait;
+
   
   
   CacheOpChild(SafeRefPtr<CacheWorkerRef> aWorkerRef, nsIGlobalObject* aGlobal,
-               nsISupports* aParent, Promise* aPromise,
+               nsISupports* aParent, RefPtr<Promise>& aPromise,
                ActorChild* aParentActor);
+
+  
+  CacheOpChild(SafeRefPtr<CacheWorkerRef> aWorkerRef, nsIGlobalObject* aGlobal,
+               nsISupports* aParent, RefPtr<CacheStoragePromise>& aPromise,
+               ActorChild* aParentActor);
+
   ~CacheOpChild();
 
   
@@ -55,17 +72,34 @@ class CacheOpChild final : public PCacheOpChild,
 #endif
 
   
-  void HandleResponse(const Maybe<CacheResponse>& aMaybeResponse);
 
-  void HandleResponseList(const nsTArray<CacheResponse>& aResponseList);
+  
 
-  void HandleRequestList(const nsTArray<CacheRequest>& aRequestList);
+  template <CacheOpResult::Type OP_TYPE, typename ResponseType>
+  void HandleAndSettle(ResponseType&&);
+
+  
+  
+  
+  template <CacheOpResult::Type OP_TYPE, typename ResultType>
+  void Settle(ResultType&& aRes, ErrorResult&& aRv = ErrorResult(NS_OK));
+
+  
+  template <CacheOpResult::Type OP_TYPE, typename ResultType>
+  void SettlePromise(ResultType&& aRes, ErrorResult&& aRv,
+                     const RefPtr<CacheStoragePromise>& aThePromise);
+
+  
+  template <typename CacheOpResult::Type OP_TYPE, typename ResultType>
+  void SettlePromise(ResultType&& aRes, ErrorResult&& aRv,
+                     const RefPtr<Promise>& aThePromise);
 
   nsCOMPtr<nsIGlobalObject> mGlobal;
+
   
   
   nsCOMPtr<nsISupports> mParent;
-  RefPtr<Promise> mPromise;
+  LazyInitializedOnceEarlyDestructible<const PromiseType> mPromise;
   ActorChild* mParentActor;
 };
 
