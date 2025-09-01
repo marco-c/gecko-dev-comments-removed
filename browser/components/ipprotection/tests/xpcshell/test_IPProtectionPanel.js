@@ -35,6 +35,9 @@ class FakeIPProtectionPanelElement {
 }
 
 add_setup(async function () {
+  
+  do_get_profile();
+
   IPProtectionService.init();
 
   registerCleanupFunction(async () => {
