@@ -946,6 +946,14 @@ AsyncGetFaviconForPageRunnable::Run() {
   return NS_OK;
 }
 
+AsyncGetFaviconForPageRunnable::~AsyncGetFaviconForPageRunnable() {
+  
+  
+  
+  
+  mPromise->Reject(NS_ERROR_ABORT, __func__);
+}
+
 
 
 
