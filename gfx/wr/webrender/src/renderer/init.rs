@@ -202,6 +202,9 @@ pub struct WebRenderOptions {
     
     pub low_quality_pinch_zoom: bool,
     pub max_shared_surface_size: i32,
+
+    
+    pub precise_gradients: bool,
 }
 
 impl WebRenderOptions {
@@ -274,6 +277,7 @@ impl Default for WebRenderOptions {
             reject_software_rasterizer: false,
             low_quality_pinch_zoom: false,
             max_shared_surface_size: 2048,
+            precise_gradients: false,
         }
     }
 }
@@ -570,6 +574,7 @@ pub fn create_webrender_instance(
         low_quality_pinch_zoom: options.low_quality_pinch_zoom,
         max_shared_surface_size: options.max_shared_surface_size,
         enable_dithering: options.enable_dithering,
+        precise_gradients: options.precise_gradients,
     };
     info!("WR {:?}", config);
 
