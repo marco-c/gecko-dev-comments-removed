@@ -51,6 +51,8 @@ class TransformableFrameInterface {
   virtual void SetData(ArrayView<const uint8_t> data) = 0;
 
   virtual uint8_t GetPayloadType() const = 0;
+  virtual bool CanSetPayloadType() const { return false; }
+  virtual void SetPayloadType(uint8_t payload_type) { RTC_DCHECK_NOTREACHED(); }
   virtual uint32_t GetSsrc() const = 0;
   virtual uint32_t GetTimestamp() const = 0;
   virtual void SetRTPTimestamp(uint32_t timestamp) = 0;
@@ -89,7 +91,13 @@ class TransformableFrameInterface {
   
   
   
+  
+  
   virtual std::optional<Timestamp> CaptureTime() const = 0;
+  virtual bool CanSetCaptureTime() const { return false; }
+  virtual void SetCaptureTime(std::optional<Timestamp> capture_time) {
+    RTC_DCHECK_NOTREACHED();
+  }
 
   
   
@@ -135,6 +143,10 @@ class TransformableAudioFrameInterface : public TransformableFrameInterface {
   
   
   virtual std::optional<uint8_t> AudioLevel() const = 0;
+  virtual bool CanSetAudioLevel() const { return false; }
+  virtual void SetAudioLevel(std::optional<uint8_t> audio_level_dbov) {
+    RTC_DCHECK_NOTREACHED();
+  }
 };
 
 
