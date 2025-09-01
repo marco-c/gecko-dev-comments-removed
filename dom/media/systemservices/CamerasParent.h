@@ -153,7 +153,7 @@ class CamerasParent final : public PCamerasParent {
 
   void OnShutdown();
 
-  nsTArray<CallbackHelper*> mCallbacks;
+  nsTArray<UniquePtr<CallbackHelper>> mCallbacks;
   
   
   const UniquePtr<media::ShutdownBlockingTicket> mShutdownBlocker;
