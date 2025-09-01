@@ -1328,8 +1328,28 @@ var gPrivacyPane = {
         privateBrowsingPref.value;
     }
 
-    setSyncFromPrefListener("contentBlockingBaselineExceptionsCustom", () =>
-      this.readBaselineExceptionState()
+    setEventListener(
+      "contentBlockingBaselineExceptionsStrict",
+      "change",
+      gPrivacyPane.onBaselineCheckboxChange
+    );
+
+    setEventListener(
+      "contentBlockingBaselineExceptionsCustom",
+      "change",
+      gPrivacyPane.onBaselineCheckboxChange
+    );
+
+    setEventListener(
+      "contentBlockingConvenienceExceptionsStrict",
+      "change",
+      gPrivacyPane.maybeNotifyUserToReload
+    );
+
+    setEventListener(
+      "contentBlockingConvenienceExceptionsCustom",
+      "change",
+      gPrivacyPane.maybeNotifyUserToReload
     );
 
     
@@ -1422,6 +1442,15 @@ var gPrivacyPane = {
     
     
     for (let pref of CONTENT_BLOCKING_PREFS) {
+      
+      
+      
+      if (
+        pref == "privacy.trackingprotection.allow_list.baseline.enabled" ||
+        pref == "privacy.trackingprotection.allow_list.convenience.enabled"
+      ) {
+        continue;
+      }
       Preferences.get(pref).on("change", gPrivacyPane.maybeNotifyUserToReload);
       
       
@@ -3646,16 +3675,65 @@ var gPrivacyPane = {
 
 
 
-  readBaselineExceptionState() {
-    const isBaselineEnabled = Preferences.get(
-      "privacy.trackingprotection.allow_list.baseline.enabled"
-    ).value;
+
+
+
+
+  async onBaselineCheckboxChange(event) {
+    
+    if (event.target.slot === "nested") {
+      return;
+    }
 
     
-    if (!isBaselineEnabled) {
+    if (event.target.checked) {
+      this.maybeNotifyUserToReload();
+      return;
+    }
+
+    let [title, body, okButtonText, cancelButtonText] =
+      await document.l10n.formatValues([
+        { id: "content-blocking-baseline-uncheck-warning-dialog-title" },
+        { id: "content-blocking-baseline-uncheck-warning-dialog-body" },
+        { id: "content-blocking-baseline-uncheck-warning-dialog-ok-button" },
+        {
+          id: "content-blocking-baseline-uncheck-warning-dialog-cancel-button",
+        },
+      ]);
+
+    let flags =
+      Services.prompt.BUTTON_TITLE_IS_STRING * Services.prompt.BUTTON_POS_1 +
+      Services.prompt.BUTTON_TITLE_IS_STRING * Services.prompt.BUTTON_POS_0 +
+      Services.prompt.BUTTON_POS_0_DEFAULT;
+
+    const result = await Services.prompt.asyncConfirmEx(
+      window.browsingContext,
+      Services.prompt.MODAL_TYPE_CONTENT,
+      title,
+      body,
+      flags,
+      cancelButtonText,
+      okButtonText,
+      null,
+      null,
+      false,
+      {
+        useTitle: true,
+      }
+    );
+
+    const propertyBag = result.QueryInterface(Ci.nsIPropertyBag2);
+
+    if (propertyBag.get("buttonNumClicked") == 1) {
+      
+      event.target.checked = false;
+      this.maybeNotifyUserToReload();
+    } else {
+      
+      event.target.checked = true;
       Services.prefs.setBoolPref(
-        "privacy.trackingprotection.allow_list.convenience.enabled",
-        false
+        "privacy.trackingprotection.allow_list.baseline.enabled",
+        true
       );
     }
   },
