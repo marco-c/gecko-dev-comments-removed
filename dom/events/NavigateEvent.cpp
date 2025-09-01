@@ -9,11 +9,17 @@
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/dom/AbortController.h"
+#include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/NavigateEventBinding.h"
 #include "mozilla/dom/Navigation.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
 #include "nsDocShell.h"
 #include "nsGlobalWindowInner.h"
+
+extern mozilla::LazyLogModule gNavigationLog;
+
+#define LOG_FMT(format, ...) \
+  MOZ_LOG_FMT(gNavigationLog, LogLevel::Debug, format, ##__VA_ARGS__);
 
 namespace mozilla::dom {
 
@@ -348,7 +354,7 @@ void NavigateEvent::PotentiallyResetFocus() {
   }
 
   
-  Element* focusTarget = document->GetDocumentElement();
+  RefPtr<Element> focusTarget = document->GetDocumentElement();
   if (focusTarget) {
     focusTarget =
         focusTarget->GetAutofocusDelegate(mozilla::IsFocusableFlags(0));
@@ -365,11 +371,9 @@ void NavigateEvent::PotentiallyResetFocus() {
   }
 
   
-
-  
-  
-  
-  
+  FocusOptions options;
+  LOG_FMT("Set focus for {}", *focusTarget->AsNode());
+  focusTarget->Focus(options, CallerType::NonSystem, IgnoredErrorResult());
 }
 
 
@@ -453,3 +457,5 @@ void NavigateEvent::ProcessScrollBehavior() {
   document->ScrollToRef();
 }
 }  
+
+#undef LOG_FMT
