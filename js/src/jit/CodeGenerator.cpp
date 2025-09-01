@@ -6799,7 +6799,6 @@ void CodeGenerator::emitAllocateSpaceForApply(Register argcreg,
     MOZ_ASSERT(frameSize() % JitStackAlignment == 0,
                "Stack padding assumes that the frameSize is correct");
     MOZ_ASSERT(JitStackValueAlignment == 2);
-    Label noPaddingNeeded;
     
     
     
@@ -6807,9 +6806,12 @@ void CodeGenerator::emitAllocateSpaceForApply(Register argcreg,
     
     
     
-    masm.branchTestPtr(Assembler::NonZero, argcreg, Imm32(1), &noPaddingNeeded);
-    masm.addPtr(Imm32(1), scratch);
-    masm.bind(&noPaddingNeeded);
+    
+    
+    
+    
+    
+    masm.orPtr(Imm32(1), scratch);
   }
 
   
