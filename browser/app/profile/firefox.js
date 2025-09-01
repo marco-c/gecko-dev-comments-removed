@@ -1808,7 +1808,7 @@ pref("browser.newtabpage.activity-stream.mobileDownloadModal.variant-b", false);
 pref("browser.newtabpage.activity-stream.mobileDownloadModal.variant-c", false);
 
 
-pref("browser.newtabpage.activity-stream.discoverystream.refinedCardsLayout.enabled", false);
+pref("browser.newtabpage.activity-stream.discoverystream.refinedCardsLayout.enabled", true);
 
 
 pref("browser.newtabpage.activity-stream.unifiedAds.tiles.enabled", true);
@@ -2039,7 +2039,7 @@ pref("browser.newtabpage.activity-stream.telemetry.surfaceId", "");
 pref("browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.searchTopsitesCompact", true);
 
 
-pref("browser.newtabpage.activity-stream.discoverystream.publisherFavicon.enabled", false);
+pref("browser.newtabpage.activity-stream.discoverystream.publisherFavicon.enabled", true);
 
 
 pref("browser.newtabpage.activity-stream.feeds.section.topstories", true);
