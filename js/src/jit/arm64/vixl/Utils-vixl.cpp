@@ -391,7 +391,7 @@ float FPToFloat(double value,
   }
 
   VIXL_UNREACHABLE();
-  return static_cast<float>(value);
+  return value;
 }
 
 

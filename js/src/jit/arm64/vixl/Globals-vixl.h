@@ -70,8 +70,7 @@ typedef uint8_t byte;
 const int KBytes = 1024;
 const int MBytes = 1024 * KBytes;
 
-const int kBitsPerByteLog2 = 3;
-const int kBitsPerByte = 1 << kBitsPerByteLog2;
+const int kBitsPerByte = 8;
 
 template <int SizeInBits>
 struct Unsigned;
@@ -201,25 +200,13 @@ inline void USE(const T1&, const T2&, const T3&, const T4&) {}
 #if __has_warning("-Wimplicit-fallthrough") && __cplusplus >= 201103L
 #define VIXL_FALLTHROUGH() [[clang::fallthrough]]
 
-#elif defined(__GNUC__) && __GNUC__ >= 7
+#elif __GNUC__ >= 7
 #define VIXL_FALLTHROUGH() __attribute__((fallthrough))
 #else
 #define VIXL_FALLTHROUGH() \
   do {                     \
   } while (0)
 #endif
-
-
-
-
-#define VIXL_DEFINE_OR_RETURN(name, init) \
-  auto opt##name = init;                  \
-  if (!opt##name) return;                 \
-  auto name = *opt##name;
-#define VIXL_DEFINE_OR_RETURN_FALSE(name, init) \
-  auto opt##name = init;                        \
-  if (!opt##name) return false;                 \
-  auto name = *opt##name;
 
 #if __cplusplus >= 201103L
 #define VIXL_NO_RETURN [[noreturn]]
@@ -234,19 +221,8 @@ inline void USE(const T1&, const T2&, const T3&, const T4&) {}
 
 #if __cplusplus >= 201103L
 #define VIXL_OVERRIDE override
-#define VIXL_CONSTEXPR constexpr
-#define VIXL_HAS_CONSTEXPR 1
 #else
 #define VIXL_OVERRIDE
-#define VIXL_CONSTEXPR
-#endif
-
-
-
-#if defined(VIXL_NEGATIVE_TESTING) && __cplusplus >= 201103L
-#define VIXL_NEGATIVE_TESTING_ALLOW_EXCEPTION noexcept(false)
-#else
-#define VIXL_NEGATIVE_TESTING_ALLOW_EXCEPTION
 #endif
 
 #ifdef VIXL_INCLUDE_SIMULATOR_AARCH64

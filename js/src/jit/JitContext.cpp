@@ -109,9 +109,6 @@ bool jit::InitializeJit() {
 #ifdef JS_CODEGEN_ARM64
   
   vixl::CPU::SetUp();
-
-  
-  ARM64Flags::Init();
 #endif
 
 #ifndef JS_CODEGEN_NONE
