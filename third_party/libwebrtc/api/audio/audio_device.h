@@ -61,6 +61,7 @@ class AudioDeviceModule : public webrtc::RefCountInterface {
 
  public:
   
+  [[deprecated("Use CreateAudioDeviceModule instead")]]
   static scoped_refptr<AudioDeviceModule> Create(
       AudioLayer audio_layer, TaskQueueFactory* task_queue_factory);
 
