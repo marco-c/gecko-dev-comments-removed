@@ -29,8 +29,8 @@ use quote::ToTokens;
 use std::borrow::Cow;
 use std::cell::{Cell, RefCell};
 use std::collections::{BTreeSet, HashMap as StdHashMap};
-use std::iter::IntoIterator;
 use std::mem;
+use std::path::Path;
 
 
 #[derive(Debug, Copy, Clone, Eq, PartialOrd, Ord, Hash)]
@@ -196,8 +196,8 @@ impl From<ItemId> for usize {
 
 impl ItemId {
     
-    pub(crate) fn as_usize(&self) -> usize {
-        (*self).into()
+    pub(crate) fn as_usize(self) -> usize {
+        self.into()
     }
 }
 
@@ -317,7 +317,7 @@ pub(crate) struct BindgenContext {
 
     
     
-    type_params: HashMap<clang::Cursor, TypeId>,
+    type_params: HashMap<Cursor, TypeId>,
 
     
     modules: HashMap<Cursor, ModuleId>,
@@ -334,7 +334,7 @@ pub(crate) struct BindgenContext {
     
     
     
-    semantic_parents: HashMap<clang::Cursor, ItemId>,
+    semantic_parents: HashMap<Cursor, ItemId>,
 
     
     
@@ -378,10 +378,16 @@ pub(crate) struct BindgenContext {
     translation_unit: clang::TranslationUnit,
 
     
+    fallback_tu: Option<clang::FallbackTranslationUnit>,
+
+    
     target_info: clang::TargetInfo,
 
     
     options: BindgenOptions,
+
+    
+    generated_opaque_array: RefCell<HashSet<usize>>,
 
     
     generated_bindgen_complex: Cell<bool>,
@@ -496,7 +502,7 @@ struct AllowlistedItemsTraversal<'ctx> {
     traversal: ItemTraversal<'ctx, ItemSet, Vec<ItemId>>,
 }
 
-impl<'ctx> Iterator for AllowlistedItemsTraversal<'ctx> {
+impl Iterator for AllowlistedItemsTraversal<'_> {
     type Item = ItemId;
 
     fn next(&mut self) -> Option<ItemId> {
@@ -585,10 +591,12 @@ If you encounter an error missing from this list, please file an issue or a PR!"
             collected_typerefs: false,
             in_codegen: false,
             translation_unit,
+            fallback_tu: None,
             target_info,
             options,
             generated_bindgen_complex: Cell::new(false),
             generated_bindgen_float16: Cell::new(false),
+            generated_opaque_array: Default::default(),
             allowlisted: None,
             blocklisted_types_implement_traits: Default::default(),
             codegen_items: None,
@@ -692,10 +700,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
         declaration: Option<Cursor>,
         location: Option<Cursor>,
     ) {
-        debug!(
-            "BindgenContext::add_item({:?}, declaration: {:?}, loc: {:?}",
-            item, declaration, location
-        );
+        debug!("BindgenContext::add_item({item:?}, declaration: {declaration:?}, loc: {location:?}");
         debug_assert!(
             declaration.is_some() ||
                 !item.kind().is_type() ||
@@ -719,7 +724,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
             self.need_bitfield_allocation.push(id);
         }
 
-        let old_item = mem::replace(&mut self.items[id.0], Some(item));
+        let old_item = self.items[id.0].replace(item);
         assert!(
             old_item.is_none(),
             "should not have already associated an item with the given id"
@@ -747,8 +752,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
                 
                 
                 debug!(
-                    "Invalid declaration {:?} found for type {:?}",
-                    declaration,
+                    "Invalid declaration {declaration:?} found for type {:?}",
                     self.resolve_item_fallible(id)
                         .unwrap()
                         .kind()
@@ -762,10 +766,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
             } else if let Some(usr) = declaration.usr() {
                 TypeKey::Usr(usr)
             } else {
-                warn!(
-                    "Valid declaration with no USR: {:?}, {:?}",
-                    declaration, location
-                );
+                warn!("Valid declaration with no USR: {declaration:?}, {location:?}");
                 TypeKey::Declaration(declaration)
             };
 
@@ -779,7 +780,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
     
     
     fn add_item_to_module(&mut self, item: &Item) {
-        assert!(item.id() != self.root_module);
+        assert_ne!(item.id(), self.root_module);
         assert!(self.resolve_item_fallible(item.id()).is_none());
 
         if let Some(ref mut parent) = self.items[item.parent_id().0] {
@@ -801,7 +802,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
             self.current_module
         );
 
-        self.items[(self.current_module.0).0]
+        self.items[self.current_module.0 .0]
             .as_mut()
             .expect("Should always have an item for self.current_module")
             .as_module_mut()
@@ -811,15 +812,8 @@ If you encounter an error missing from this list, please file an issue or a PR!"
     }
 
     
-    pub(crate) fn add_type_param(
-        &mut self,
-        item: Item,
-        definition: clang::Cursor,
-    ) {
-        debug!(
-            "BindgenContext::add_type_param: item = {:?}; definition = {:?}",
-            item, definition
-        );
+    pub(crate) fn add_type_param(&mut self, item: Item, definition: Cursor) {
+        debug!("BindgenContext::add_type_param: item = {item:?}; definition = {definition:?}");
 
         assert!(
             item.expect_type().is_type_param(),
@@ -833,7 +827,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
         self.add_item_to_module(&item);
 
         let id = item.id();
-        let old_item = mem::replace(&mut self.items[id.0], Some(item));
+        let old_item = self.items[id.0].replace(item);
         assert!(
             old_item.is_none(),
             "should not have already associated an item with the given id"
@@ -850,15 +844,12 @@ If you encounter an error missing from this list, please file an issue or a PR!"
 
     
     
-    pub(crate) fn get_type_param(
-        &self,
-        definition: &clang::Cursor,
-    ) -> Option<TypeId> {
+    pub(crate) fn get_type_param(&self, definition: &Cursor) -> Option<TypeId> {
         assert_eq!(
             definition.kind(),
             clang_sys::CXCursor_TemplateTypeParameter
         );
-        self.type_params.get(definition).cloned()
+        self.type_params.get(definition).copied()
     }
 
     
@@ -874,7 +865,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
                 "abstract" | "alignof" | "as" | "async" | "await" | "become" |
                     "box" | "break" | "const" | "continue" | "crate" | "do" |
                     "dyn" | "else" | "enum" | "extern" | "false" | "final" |
-                    "fn" | "for" | "if" | "impl" | "in" | "let" | "loop" |
+                    "fn" | "for" | "gen" | "if" | "impl" | "in" | "let" | "loop" |
                     "macro" | "match" | "mod" | "move" | "mut" | "offsetof" |
                     "override" | "priv" | "proc" | "pub" | "pure" | "ref" |
                     "return" | "Self" | "self" | "sizeof" | "static" |
@@ -927,23 +918,20 @@ If you encounter an error missing from this list, please file an issue or a PR!"
     
     fn collect_typerefs(
         &mut self,
-    ) -> Vec<(ItemId, clang::Type, clang::Cursor, Option<ItemId>)> {
+    ) -> Vec<(ItemId, clang::Type, Cursor, Option<ItemId>)> {
         debug_assert!(!self.collected_typerefs);
         self.collected_typerefs = true;
         let mut typerefs = vec![];
 
         for (id, item) in self.items() {
             let kind = item.kind();
-            let ty = match kind.as_type() {
-                Some(ty) => ty,
-                None => continue,
-            };
+            let Some(ty) = kind.as_type() else { continue };
 
             if let TypeKind::UnresolvedTypeRef(ref ty, loc, parent_id) =
                 *ty.kind()
             {
                 typerefs.push((id, *ty, loc, parent_id));
-            };
+            }
         }
         typerefs
     }
@@ -999,7 +987,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
 
         let result = f(self, &mut item);
 
-        let existing = mem::replace(&mut self.items[id.0], Some(item));
+        let existing = self.items[id.0].replace(item);
         assert!(existing.is_none());
 
         result
@@ -1074,9 +1062,8 @@ If you encounter an error missing from this list, please file an issue or a PR!"
 
             
             
-            let ty = match item.kind().as_type() {
-                Some(ty) => ty,
-                None => continue,
+            let Some(ty) = item.kind().as_type() else {
+                continue;
             };
 
             match *ty.kind() {
@@ -1105,7 +1092,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
         }
 
         for (id, replacement_id) in replacements {
-            debug!("Replacing {:?} with {:?}", id, replacement_id);
+            debug!("Replacing {id:?} with {replacement_id:?}");
             let new_parent = {
                 let item_id: ItemId = id.into();
                 let item = self.items[item_id.0].as_mut().unwrap();
@@ -1142,7 +1129,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
                     .chain(Some(immut_self.root_module.into()))
                     .find(|id| {
                         let item = immut_self.resolve_item(*id);
-                        item.as_module().map_or(false, |m| {
+                        item.as_module().is_some_and(|m| {
                             m.children().contains(&replacement_id.into())
                         })
                     })
@@ -1241,9 +1228,9 @@ If you encounter an error missing from this list, please file an issue or a PR!"
 
     fn assert_no_dangling_item_traversal(
         &self,
-    ) -> traversal::AssertNoDanglingItemsTraversal {
+    ) -> traversal::AssertNoDanglingItemsTraversal<'_> {
         assert!(self.in_codegen_phase());
-        assert!(self.current_module == self.root_module);
+        assert_eq!(self.current_module, self.root_module);
 
         let roots = self.items().map(|(id, _)| id);
         traversal::AssertNoDanglingItemsTraversal::new(
@@ -1259,7 +1246,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
     fn assert_every_item_in_a_module(&self) {
         if cfg!(feature = "__testing_only_extra_assertions") {
             assert!(self.in_codegen_phase());
-            assert!(self.current_module == self.root_module);
+            assert_eq!(self.current_module, self.root_module);
 
             for (id, _item) in self.items() {
                 if id == self.root_module {
@@ -1277,19 +1264,13 @@ If you encounter an error missing from this list, please file an issue or a PR!"
                         id.ancestors(self)
                             .chain(Some(self.root_module.into()))
                             .any(|ancestor| {
-                                debug!(
-                                    "Checking if {:?} is a child of {:?}",
-                                    id, ancestor
-                                );
+                                debug!("Checking if {id:?} is a child of {ancestor:?}");
                                 self.resolve_item(ancestor)
                                     .as_module()
-                                    .map_or(false, |m| {
-                                        m.children().contains(&id)
-                                    })
+                                    .is_some_and(|m| m.children().contains(&id))
                             })
                     },
-                    "{:?} should be in some ancestor module's children set",
-                    id
+                    "{id:?} should be in some ancestor module's children set"
                 );
             }
         }
@@ -1314,7 +1295,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
             .as_ref()
             .unwrap()
             .get(&id)
-            .cloned()
+            .copied()
             .unwrap_or(SizednessResult::ZeroSized)
     }
 
@@ -1338,7 +1319,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
             .as_ref()
             .unwrap()
             .get(&id.into())
-            .cloned()
+            .copied()
             .unwrap_or(HasVtableResult::No)
     }
 
@@ -1418,8 +1399,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
         self.used_template_parameters
             .as_ref()
             .expect("should have found template parameter usage if we're in codegen")
-            .get(&item)
-            .map_or(false, |items_used_params| items_used_params.contains(&template_param))
+            .get(&item).is_some_and(|items_used_params| items_used_params.contains(&template_param))
     }
 
     
@@ -1438,7 +1418,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
                 "should have template parameter usage info in codegen phase",
             )
             .get(&item)
-            .map_or(false, |used| !used.is_empty())
+            .is_some_and(|used| !used.is_empty())
     }
 
     
@@ -1450,11 +1430,11 @@ If you encounter an error missing from this list, please file an issue or a PR!"
     
     
     fn add_builtin_item(&mut self, item: Item) {
-        debug!("add_builtin_item: item = {:?}", item);
+        debug!("add_builtin_item: item = {item:?}");
         debug_assert!(item.kind().is_type());
         self.add_item_to_module(&item);
         let id = item.id();
-        let old_item = mem::replace(&mut self.items[id.0], Some(item));
+        let old_item = self.items[id.0].replace(item);
         assert!(old_item.is_none(), "Inserted type twice?");
     }
 
@@ -1509,7 +1489,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
         let item_id = item_id.into();
         match self.resolve_item_fallible(item_id) {
             Some(item) => item,
-            None => panic!("Not an item: {:?}", item_id),
+            None => panic!("Not an item: {item_id:?}"),
         }
     }
 
@@ -1528,7 +1508,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
     
     pub(crate) fn add_semantic_parent(
         &mut self,
-        definition: clang::Cursor,
+        definition: Cursor,
         parent_id: ItemId,
     ) {
         self.semantic_parents.insert(definition, parent_id);
@@ -1537,9 +1517,9 @@ If you encounter an error missing from this list, please file an issue or a PR!"
     
     pub(crate) fn known_semantic_parent(
         &self,
-        definition: clang::Cursor,
+        definition: Cursor,
     ) -> Option<ItemId> {
-        self.semantic_parents.get(&definition).cloned()
+        self.semantic_parents.get(&definition).copied()
     }
 
     
@@ -1587,7 +1567,6 @@ If you encounter an error missing from this list, please file an issue or a PR!"
                         self.currently_parsed_types()
                             .iter()
                             .find(|partial_ty| *partial_ty.decl() == referenced)
-                            .cloned()
                     })
                     .and_then(|template_decl| {
                         let num_template_params =
@@ -1643,7 +1622,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
         with_id: ItemId,
         template: TypeId,
         ty: &clang::Type,
-        location: clang::Cursor,
+        location: Cursor,
     ) -> Option<TypeId> {
         let num_expected_args =
             self.resolve_type(template).num_self_template_params(self);
@@ -1776,8 +1755,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
                         
                         debug!(
                             "instantiate_template: inserting nested \
-                             instantiation item: {:?}",
-                            sub_item
+                             instantiation item: {sub_item:?}"
                         );
                         self.add_item_to_module(&sub_item);
                         debug_assert_eq!(sub_id, sub_item.id());
@@ -1787,8 +1765,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
                 }
                 _ => {
                     warn!(
-                        "Found template arg cursor we can't handle: {:?}",
-                        child
+                        "Found template arg cursor we can't handle: {child:?}"
                     );
                     found_const_arg = true;
                 }
@@ -1839,7 +1816,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
         );
 
         
-        debug!("instantiate_template: inserting item: {:?}", item);
+        debug!("instantiate_template: inserting item: {item:?}");
         self.add_item_to_module(&item);
         debug_assert_eq!(with_id, item.id());
         self.items[with_id.0] = Some(item);
@@ -1859,7 +1836,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
                     .usr()
                     .and_then(|usr| self.types.get(&TypeKey::Usr(usr)))
             })
-            .cloned()
+            .copied()
     }
 
     
@@ -1869,19 +1846,15 @@ If you encounter an error missing from this list, please file an issue or a PR!"
         with_id: ItemId,
         parent_id: Option<ItemId>,
         ty: &clang::Type,
-        location: Option<clang::Cursor>,
+        location: Option<Cursor>,
     ) -> Option<TypeId> {
         use clang_sys::{CXCursor_TypeAliasTemplateDecl, CXCursor_TypeRef};
-        debug!(
-            "builtin_or_resolved_ty: {:?}, {:?}, {:?}, {:?}",
-            ty, location, with_id, parent_id
-        );
+        debug!("builtin_or_resolved_ty: {ty:?}, {location:?}, {with_id:?}, {parent_id:?}");
 
         if let Some(decl) = ty.canonical_declaration(location.as_ref()) {
             if let Some(id) = self.get_resolved_type(&decl) {
                 debug!(
-                    "Already resolved ty {:?}, {:?}, {:?} {:?}",
-                    id, decl, ty, location
+                    "Already resolved ty {id:?}, {decl:?}, {ty:?} {location:?}"
                 );
                 
                 
@@ -2006,6 +1979,9 @@ If you encounter an error missing from this list, please file an issue or a PR!"
             CXType_Short => TypeKind::Int(IntKind::Short),
             CXType_UShort => TypeKind::Int(IntKind::UShort),
             CXType_WChar => TypeKind::Int(IntKind::WChar),
+            CXType_Char16 if self.options().use_distinct_char16_t => {
+                TypeKind::Int(IntKind::Char16)
+            }
             CXType_Char16 => TypeKind::Int(IntKind::U16),
             CXType_Char32 => TypeKind::Int(IntKind::U32),
             CXType_Long => TypeKind::Int(IntKind::Long),
@@ -2029,8 +2005,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
                     CXType_LongDouble => FloatKind::LongDouble,
                     CXType_Float128 => FloatKind::Float128,
                     _ => panic!(
-                        "Non floating-type complex? {:?}, {:?}",
-                        ty, float_type,
+                        "Non floating-type complex? {ty:?}, {float_type:?}",
                     ),
                 };
                 TypeKind::Complex(float_kind)
@@ -2059,6 +2034,93 @@ If you encounter an error missing from this list, please file an issue or a PR!"
     
     pub(crate) fn translation_unit(&self) -> &clang::TranslationUnit {
         &self.translation_unit
+    }
+
+    
+    
+    pub(crate) fn try_ensure_fallback_translation_unit(
+        &mut self,
+    ) -> Option<&mut clang::FallbackTranslationUnit> {
+        if self.fallback_tu.is_none() {
+            let file = format!(
+                "{}/.macro_eval.c",
+                match self.options().clang_macro_fallback_build_dir {
+                    Some(ref path) => path.as_os_str().to_str()?,
+                    None => ".",
+                }
+            );
+
+            let index = clang::Index::new(false, false);
+
+            let mut header_names_to_compile = Vec::new();
+            let mut header_paths = Vec::new();
+            let mut header_includes = Vec::new();
+            let single_header = self.options().input_headers.last().cloned()?;
+            for input_header in &self.options.input_headers
+                [..self.options.input_headers.len() - 1]
+            {
+                let path = Path::new(input_header.as_ref());
+                if let Some(header_path) = path.parent() {
+                    if header_path == Path::new("") {
+                        header_paths.push(".");
+                    } else {
+                        header_paths.push(header_path.as_os_str().to_str()?);
+                    }
+                } else {
+                    header_paths.push(".");
+                }
+                let header_name = path.file_name()?.to_str()?;
+                header_includes.push(header_name.to_string());
+                header_names_to_compile
+                    .push(header_name.split(".h").next()?.to_string());
+            }
+            let pch = format!(
+                "{}/{}",
+                match self.options().clang_macro_fallback_build_dir {
+                    Some(ref path) => path.as_os_str().to_str()?,
+                    None => ".",
+                },
+                header_names_to_compile.join("-") + "-precompile.h.pch"
+            );
+
+            let mut c_args = self.options.fallback_clang_args.clone();
+            c_args.push("-x".to_string().into_boxed_str());
+            c_args.push("c-header".to_string().into_boxed_str());
+            for header_path in header_paths {
+                c_args.push(format!("-I{header_path}").into_boxed_str());
+            }
+            for header_include in header_includes {
+                c_args.push("-include".to_string().into_boxed_str());
+                c_args.push(header_include.into_boxed_str());
+            }
+            let mut tu = clang::TranslationUnit::parse(
+                &index,
+                &single_header,
+                &c_args,
+                &[],
+                clang_sys::CXTranslationUnit_ForSerialization,
+            )?;
+            tu.save(&pch).ok()?;
+
+            let mut c_args = vec![
+                "-include-pch".to_string().into_boxed_str(),
+                pch.clone().into_boxed_str(),
+            ];
+            let mut skip_next = false;
+            for arg in &self.options.fallback_clang_args {
+                if arg.as_ref() == "-include" {
+                    skip_next = true;
+                } else if skip_next {
+                    skip_next = false;
+                } else {
+                    c_args.push(arg.clone());
+                }
+            }
+            self.fallback_tu =
+                Some(clang::FallbackTranslationUnit::new(file, pch, &c_args)?);
+        }
+
+        self.fallback_tu.as_mut()
     }
 
     
@@ -2096,19 +2158,14 @@ If you encounter an error missing from this list, please file an issue or a PR!"
     pub(crate) fn replace(&mut self, name: &[String], potential_ty: ItemId) {
         match self.replacements.entry(name.into()) {
             Entry::Vacant(entry) => {
-                debug!(
-                    "Defining replacement for {:?} as {:?}",
-                    name, potential_ty
-                );
+                debug!("Defining replacement for {name:?} as {potential_ty:?}");
                 entry.insert(potential_ty);
             }
             Entry::Occupied(occupied) => {
                 warn!(
-                    "Replacement for {:?} already defined as {:?}; \
-                     ignoring duplicate replacement definition as {:?}",
-                    name,
+                    "Replacement for {name:?} already defined as {:?}; \
+                     ignoring duplicate replacement definition as {potential_ty:?}",
                     occupied.get(),
-                    potential_ty
                 );
             }
         }
@@ -2143,7 +2200,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
     
     fn tokenize_namespace(
         &self,
-        cursor: &clang::Cursor,
+        cursor: &Cursor,
     ) -> (Option<String>, ModuleKind) {
         assert_eq!(
             cursor.kind(),
@@ -2154,7 +2211,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
         let mut module_name = None;
         let spelling = cursor.spelling();
         if !spelling.is_empty() {
-            module_name = Some(spelling)
+            module_name = Some(spelling);
         }
 
         let mut kind = ModuleKind::Normal;
@@ -2194,25 +2251,23 @@ If you encounter an error missing from this list, please file an issue or a PR!"
                             );
                         }
                         break;
-                    } else {
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        warn!(
-                            "Ignored unknown namespace prefix '{}' at {:?} in {:?}",
-                            String::from_utf8_lossy(name),
-                            token,
-                            cursor
-                        );
                     }
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    warn!("Ignored unknown namespace prefix '{}' at {token:?} in {cursor:?}", String::from_utf8_lossy(name));
                 }
             }
+        }
+
+        if cursor.is_inline_namespace() {
+            kind = ModuleKind::Inline;
         }
 
         (module_name, kind)
@@ -2220,7 +2275,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
 
     
     
-    pub(crate) fn module(&mut self, cursor: clang::Cursor) -> ModuleId {
+    pub(crate) fn module(&mut self, cursor: Cursor) -> ModuleId {
         use clang_sys::*;
         assert_eq!(cursor.kind(), CXCursor_Namespace, "Be a nice person");
         let cursor = cursor.canonical();
@@ -2271,7 +2326,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
     
     pub(crate) fn allowlisted_items(&self) -> &ItemSet {
         assert!(self.in_codegen_phase());
-        assert!(self.current_module == self.root_module);
+        assert_eq!(self.current_module, self.root_module);
 
         self.allowlisted.as_ref().unwrap()
     }
@@ -2284,7 +2339,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
         derive_trait: DeriveTrait,
     ) -> CanDerive {
         assert!(self.in_codegen_phase());
-        assert!(self.current_module == self.root_module);
+        assert_eq!(self.current_module, self.root_module);
 
         *self
             .blocklisted_types_implement_traits
@@ -2332,14 +2387,14 @@ If you encounter an error missing from this list, please file an issue or a PR!"
     
     pub(crate) fn codegen_items(&self) -> &ItemSet {
         assert!(self.in_codegen_phase());
-        assert!(self.current_module == self.root_module);
+        assert_eq!(self.current_module, self.root_module);
         self.codegen_items.as_ref().unwrap()
     }
 
     
     fn compute_allowlisted_and_codegen_items(&mut self) {
         assert!(self.in_codegen_phase());
-        assert!(self.current_module == self.root_module);
+        assert_eq!(self.current_module, self.root_module);
         assert!(self.allowlisted.is_none());
         let _t = self.timer("compute_allowlisted_and_codegen_items");
 
@@ -2384,7 +2439,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
                     }
 
                     let name = item.path_for_allowlisting(self)[1..].join("::");
-                    debug!("allowlisted_items: testing {:?}", name);
+                    debug!("allowlisted_items: testing {name:?}");
 
                     if self.options().allowlisted_items.matches(&name) {
                         return true;
@@ -2438,9 +2493,8 @@ If you encounter an error missing from this list, please file an issue or a PR!"
                                 return false;
                             }
 
-                            let enum_ = match *ty.kind() {
-                                TypeKind::Enum(ref e) => e,
-                                _ => return false,
+                            let TypeKind::Enum(ref enum_) = *ty.kind() else {
+                                return false;
                             };
 
                             if ty.name().is_some() {
@@ -2455,7 +2509,11 @@ If you encounter an error missing from this list, please file an issue or a PR!"
                                 );
                                 let name = prefix_path[1..].join("::");
                                 prefix_path.pop().unwrap();
-                                self.options().allowlisted_vars.matches(name)
+                                self.options().allowlisted_vars.matches(&name)
+                                    || self
+                                        .options()
+                                        .allowlisted_items
+                                        .matches(name)
                             })
                         }
                     }
@@ -2530,8 +2588,25 @@ If you encounter an error missing from this list, please file an issue or a PR!"
     }
 
     
+    pub(crate) fn generated_opaque_array(&self, align: usize) {
+        self.generated_opaque_array.borrow_mut().insert(align);
+    }
+
+    
+    pub(crate) fn opaque_array_types_needed(&self) -> Vec<usize> {
+        let mut alignments = self
+            .generated_opaque_array
+            .borrow()
+            .iter()
+            .copied()
+            .collect::<Vec<_>>();
+        alignments.sort_unstable();
+        alignments
+    }
+
+    
     pub(crate) fn generated_bindgen_complex(&self) {
-        self.generated_bindgen_complex.set(true)
+        self.generated_bindgen_complex.set(true);
     }
 
     
@@ -2541,7 +2616,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
 
     
     pub(crate) fn generated_bindgen_float16(&self) {
-        self.generated_bindgen_float16.set(true)
+        self.generated_bindgen_float16.set(true);
     }
 
     
@@ -2749,7 +2824,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
             .as_ref()
             .unwrap()
             .get(&id)
-            .cloned()
+            .copied()
             .unwrap_or(CanDerive::Yes)
     }
 
@@ -3007,7 +3082,7 @@ impl TemplateParameters for PartialType {
                             num_params += 1;
                         }
                         _ => {}
-                    };
+                    }
                     clang_sys::CXChildVisit_Continue
                 });
                 num_params
@@ -3018,7 +3093,7 @@ impl TemplateParameters for PartialType {
 }
 
 fn unused_regex_diagnostic(item: &str, name: &str, _ctx: &BindgenContext) {
-    warn!("unused option: {} {}", name, item);
+    warn!("unused option: {name} {item}");
 
     #[cfg(feature = "experimental")]
     if _ctx.options().emit_diagnostics {
@@ -3026,11 +3101,11 @@ fn unused_regex_diagnostic(item: &str, name: &str, _ctx: &BindgenContext) {
 
         Diagnostic::default()
             .with_title(
-                format!("Unused regular expression: `{}`.", item),
-                Level::Warn,
+                format!("Unused regular expression: `{item}`."),
+                Level::Warning,
             )
             .add_annotation(
-                format!("This regular expression was passed to `{}`.", name),
+                format!("This regular expression was passed to `{name}`."),
                 Level::Note,
             )
             .display();

@@ -87,7 +87,7 @@ impl ObjCInterface {
     
     pub(crate) fn rust_name(&self) -> String {
         if let Some(ref cat) = self.category {
-            format!("{}_{}", self.name(), cat)
+            format!("{}_{cat}", self.name())
         } else if self.is_protocol {
             format!("P{}", self.name())
         } else {
@@ -147,8 +147,8 @@ impl ObjCInterface {
                     let needle = format!("P{}", c.spelling());
                     let items_map = ctx.items();
                     debug!(
-                        "Interface {} conforms to {}, find the item",
-                        interface.name, needle
+                        "Interface {} conforms to {needle}, find the item",
+                        interface.name,
                     );
 
                     for (id, item) in items_map {
@@ -163,10 +163,7 @@ impl ObjCInterface {
                                         ty.name()
                                     );
                                     if Some(needle.as_ref()) == ty.name() {
-                                        debug!(
-                                            "Found conforming protocol {:?}",
-                                            item
-                                        );
+                                        debug!("Found conforming protocol {item:?}");
                                         interface.conforms_to.push(id);
                                         break;
                                     }
@@ -262,10 +259,7 @@ impl ObjCMethod {
                     
                     
                     if ["crate", "self", "super", "Self"].contains(&name) {
-                        Some(Ident::new(
-                            &format!("{}_", name),
-                            Span::call_site(),
-                        ))
+                        Some(Ident::new(&format!("{name}_"), Span::call_site()))
                     } else {
                         Some(Ident::new(name, Span::call_site()))
                     }
@@ -278,11 +272,11 @@ impl ObjCMethod {
                     Some(
                         syn::parse_str::<Ident>(name)
                             .or_else(|err| {
-                                syn::parse_str::<Ident>(&format!("r#{}", name))
+                                syn::parse_str::<Ident>(&format!("r#{name}"))
                                     .map_err(|_| err)
                             })
                             .or_else(|err| {
-                                syn::parse_str::<Ident>(&format!("{}_", name))
+                                syn::parse_str::<Ident>(&format!("{name}_"))
                                     .map_err(|_| err)
                             })
                             .expect("Invalid identifier"),
@@ -300,20 +294,15 @@ impl ObjCMethod {
         }
 
         
-        assert!(
-            args.len() == split_name.len() - 1,
-            "Incorrect method name or arguments for objc method, {:?} vs {:?}",
-            args,
-            split_name
-        );
+        assert_eq!(args.len(), split_name.len() - 1, "Incorrect method name or arguments for objc method, {args:?} vs {split_name:?}");
 
         
         let mut args_without_types = vec![];
-        for arg in args.iter() {
+        for arg in args {
             let arg = arg.to_string();
             let name_and_sig: Vec<&str> = arg.split(' ').collect();
             let name = name_and_sig[0];
-            args_without_types.push(Ident::new(name, Span::call_site()))
+            args_without_types.push(Ident::new(name, Span::call_site()));
         }
 
         let args = split_name.into_iter().zip(args_without_types).map(

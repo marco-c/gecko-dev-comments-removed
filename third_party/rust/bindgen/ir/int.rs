@@ -58,6 +58,9 @@ pub enum IntKind {
     U16,
 
     
+    Char16,
+
+    
     I32,
 
     
@@ -94,14 +97,12 @@ impl IntKind {
             
             
             Bool | UChar | UShort | UInt | ULong | ULongLong | U8 | U16 |
-            WChar | U32 | U64 | U128 => false,
+            Char16 | WChar | U32 | U64 | U128 => false,
 
             SChar | Short | Int | Long | LongLong | I8 | I16 | I32 | I64 |
             I128 => true,
 
-            Char { is_signed } => is_signed,
-
-            Custom { is_signed, .. } => is_signed,
+            Char { is_signed } | Custom { is_signed, .. } => is_signed,
         }
     }
 
@@ -112,7 +113,7 @@ impl IntKind {
         use self::IntKind::*;
         Some(match *self {
             Bool | UChar | SChar | U8 | I8 | Char { .. } => 1,
-            U16 | I16 => 2,
+            U16 | I16 | Char16 => 2,
             U32 | I32 => 4,
             U64 | I64 => 8,
             I128 | U128 => 16,

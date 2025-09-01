@@ -6,7 +6,7 @@ use std::cell::Cell;
 
 
 #[derive(Clone, Debug, Default)]
-pub struct RegexSet {
+pub(crate) struct RegexSet {
     items: Vec<Box<str>>,
     
     
@@ -18,17 +18,12 @@ pub struct RegexSet {
 
 impl RegexSet {
     
-    pub fn new() -> RegexSet {
-        RegexSet::default()
-    }
-
-    
-    pub fn is_empty(&self) -> bool {
+    pub(crate) fn is_empty(&self) -> bool {
         self.items.is_empty()
     }
 
     
-    pub fn insert<S>(&mut self, string: S)
+    pub(crate) fn insert<S>(&mut self, string: S)
     where
         S: AsRef<str>,
     {
@@ -38,13 +33,13 @@ impl RegexSet {
     }
 
     
-    pub fn get_items(&self) -> &[Box<str>] {
+    pub(crate) fn get_items(&self) -> &[Box<str>] {
         &self.items
     }
 
     
     
-    pub fn unmatched_items(&self) -> impl Iterator<Item = &str> {
+    pub(crate) fn unmatched_items(&self) -> impl Iterator<Item = &str> {
         self.items.iter().enumerate().filter_map(move |(i, item)| {
             if !self.record_matches || self.matched[i].get() {
                 return None;
@@ -59,8 +54,9 @@ impl RegexSet {
     
     
     #[inline]
-    pub fn build(&mut self, record_matches: bool) {
-        self.build_inner(record_matches, None)
+    #[allow(unused)]
+    pub(crate) fn build(&mut self, record_matches: bool) {
+        self.build_inner(record_matches, None);
     }
 
     #[cfg(all(feature = "__cli", feature = "experimental"))]
@@ -70,12 +66,12 @@ impl RegexSet {
     
     
     #[inline]
-    pub fn build_with_diagnostics(
+    pub(crate) fn build_with_diagnostics(
         &mut self,
         record_matches: bool,
         name: Option<&'static str>,
     ) {
-        self.build_inner(record_matches, name)
+        self.build_inner(record_matches, name);
     }
 
     #[cfg(all(not(feature = "__cli"), feature = "experimental"))]
@@ -90,7 +86,7 @@ impl RegexSet {
         record_matches: bool,
         name: Option<&'static str>,
     ) {
-        self.build_inner(record_matches, name)
+        self.build_inner(record_matches, name);
     }
 
     fn build_inner(
@@ -98,12 +94,12 @@ impl RegexSet {
         record_matches: bool,
         _name: Option<&'static str>,
     ) {
-        let items = self.items.iter().map(|item| format!("^({})$", item));
+        let items = self.items.iter().map(|item| format!("^({item})$"));
         self.record_matches = record_matches;
         self.set = match RxSet::new(items) {
             Ok(x) => Some(x),
             Err(e) => {
-                warn!("Invalid regex in {:?}: {:?}", self.items, e);
+                warn!("Invalid regex in {:?}: {e:?}", self.items);
                 #[cfg(feature = "experimental")]
                 if let Some(name) = _name {
                     invalid_regex_warning(self, e, name);
@@ -114,14 +110,13 @@ impl RegexSet {
     }
 
     
-    pub fn matches<S>(&self, string: S) -> bool
+    pub(crate) fn matches<S>(&self, string: S) -> bool
     where
         S: AsRef<str>,
     {
         let s = string.as_ref();
-        let set = match self.set {
-            Some(ref set) => set,
-            None => return false,
+        let Some(ref set) = self.set else {
+            return false;
         };
 
         if !self.record_matches {
@@ -132,7 +127,7 @@ impl RegexSet {
         if !matches.matched_any() {
             return false;
         }
-        for i in matches.iter() {
+        for i in &matches {
             self.matched[i].set(true);
         }
 
@@ -180,20 +175,20 @@ fn invalid_regex_warning(
 
                 diagnostic.with_title(
                     "Error while parsing a regular expression.",
-                    Level::Warn,
+                    Level::Warning,
                 );
             } else {
-                diagnostic.with_title(string, Level::Warn);
+                diagnostic.with_title(string, Level::Warning);
             }
         }
         err => {
             let err = err.to_string();
-            diagnostic.with_title(err, Level::Warn);
+            diagnostic.with_title(err, Level::Warning);
         }
     }
 
     diagnostic.add_annotation(
-        format!("This regular expression was passed via `{}`.", name),
+        format!("This regular expression was passed via `{name}`."),
         Level::Note,
     );
 

@@ -4,22 +4,19 @@ pub use crate::ir::analysis::DeriveTrait;
 pub use crate::ir::derive::CanDerive as ImplementsTrait;
 pub use crate::ir::enum_ty::{EnumVariantCustomBehavior, EnumVariantValue};
 pub use crate::ir::int::IntKind;
+pub use cexpr::token::Kind as TokenKind;
+pub use cexpr::token::Token;
 use std::fmt;
 
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
 pub enum MacroParsingBehavior {
     
     
     Ignore,
     
+    #[default]
     Default,
-}
-
-impl Default for MacroParsingBehavior {
-    fn default() -> Self {
-        MacroParsingBehavior::Default
-    }
 }
 
 
@@ -53,6 +50,9 @@ pub trait ParseCallbacks: fmt::Debug {
     ) -> Option<String> {
         None
     }
+
+    
+    fn modify_macro(&self, _name: &str, _tokens: &mut Vec<Token>) {}
 
     
     
@@ -95,7 +95,7 @@ pub trait ParseCallbacks: fmt::Debug {
     }
 
     
-    fn item_name(&self, _original_item_name: &str) -> Option<String> {
+    fn item_name(&self, _item_info: ItemInfo) -> Option<String> {
         None
     }
 
@@ -135,6 +135,14 @@ pub trait ParseCallbacks: fmt::Debug {
     }
 
     
+    
+    
+    
+    fn add_attributes(&self, _info: &AttributeInfo<'_>) -> Vec<String> {
+        vec![]
+    }
+
+    
     fn process_comment(&self, _comment: &str) -> Option<String> {
         None
     }
@@ -159,13 +167,107 @@ pub trait ParseCallbacks: fmt::Debug {
     fn wrap_as_variadic_fn(&self, _name: &str) -> Option<String> {
         None
     }
+
+    
+    fn new_item_found(
+        &self,
+        _id: DiscoveredItemId,
+        _item: DiscoveredItem,
+        _source_location: Option<&SourceLocation>,
+    ) {
+    }
+
+    
+}
+
+
+#[derive(Ord, PartialOrd, PartialEq, Eq, Hash, Debug, Clone, Copy)]
+pub struct DiscoveredItemId(usize);
+
+impl DiscoveredItemId {
+    
+    pub fn new(value: usize) -> Self {
+        Self(value)
+    }
 }
 
 
 
-#[derive(Debug)]
+#[derive(Debug, Hash, Clone, Ord, PartialOrd, Eq, PartialEq)]
+pub enum DiscoveredItem {
+    
+    Struct {
+        
+        
+        original_name: Option<String>,
+
+        
+        final_name: String,
+    },
+
+    
+    Union {
+        
+        
+        original_name: Option<String>,
+
+        
+        final_name: String,
+    },
+
+    
+    
+    
+    
+    
+    
+    
+    Alias {
+        
+        alias_name: String,
+
+        
+        alias_for: DiscoveredItemId,
+    },
+
+    
+    Enum {
+        
+        final_name: String,
+    },
+
+    
+    Function {
+        
+        final_name: String,
+    },
+
+    
+    Method {
+        
+        final_name: String,
+
+        
+        parent: DiscoveredItemId,
+    }, 
+}
+
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct DeriveInfo<'a> {
+    
+    pub name: &'a str,
+    
+    pub kind: TypeKind,
+}
+
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct AttributeInfo<'a> {
     
     pub name: &'a str,
     
@@ -184,6 +286,7 @@ pub enum TypeKind {
 }
 
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct ItemInfo<'a> {
     
@@ -193,8 +296,13 @@ pub struct ItemInfo<'a> {
 }
 
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum ItemKind {
+    
+    Module,
+    
+    Type,
     
     Function,
     
@@ -203,11 +311,27 @@ pub enum ItemKind {
 
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct FieldInfo<'a> {
     
     pub type_name: &'a str,
     
     pub field_name: &'a str,
+    
+    pub field_type_name: Option<&'a str>,
+}
+
+
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SourceLocation {
+    
+    pub line: usize,
+    
+    pub col: usize,
+    
+    pub byte_offset: usize,
+    
+    pub file_name: Option<String>,
 }

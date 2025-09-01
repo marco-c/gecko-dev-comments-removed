@@ -94,10 +94,6 @@ use crate::clang;
 
 
 
-
-
-
-
 pub(crate) trait TemplateParameters: Sized {
     
     
@@ -266,17 +262,14 @@ impl TemplateInstantiation {
             })
         };
 
-        let definition = match definition {
-            Some(def) => def,
-            None => {
-                if !ty.declaration().is_builtin() {
-                    warn!(
-                        "Could not find template definition for template \
+        let Some(definition) = definition else {
+            if !ty.declaration().is_builtin() {
+                warn!(
+                    "Could not find template definition for template \
                          instantiation"
-                    );
-                }
-                return None;
+                );
             }
+            return None;
         };
 
         let template_definition =

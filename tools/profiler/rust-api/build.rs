@@ -88,6 +88,11 @@ fn generate_bindings() {
         
         
         .opaque_type("std::string")
+        .opaque_type("std::unique_ptr")
+        .opaque_type("mozilla::Maybe")
+        .opaque_type("mozilla::MallocAllocPolicy")
+        .opaque_type("mozilla::Variant")
+        .opaque_type("mozilla::baseprofiler::UniqueJSONStrings")
         
         
         

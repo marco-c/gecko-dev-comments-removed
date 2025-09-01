@@ -287,8 +287,7 @@ impl<'ctx> TraversalStorage<'ctx> for Paths<'ctx> {
             }
             path.reverse();
             panic!(
-                "Found reference to dangling id = {:?}\nvia path = {:?}",
-                item, path
+                "Found reference to dangling id = {item:?}\nvia path = {path:?}"
             );
         }
 
@@ -345,7 +344,7 @@ where
     F: FnMut(ItemId, EdgeKind),
 {
     fn visit_kind(&mut self, item: ItemId, kind: EdgeKind) {
-        (*self)(item, kind)
+        (*self)(item, kind);
     }
 }
 
@@ -438,7 +437,7 @@ where
         let is_newly_discovered =
             self.seen.add(self.currently_traversing, item);
         if is_newly_discovered {
-            self.queue.push(item)
+            self.queue.push(item);
         }
     }
 }

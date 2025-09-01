@@ -13,7 +13,7 @@ enum Kind {
 
 
 pub(crate) fn preprocess(comment: &str) -> String {
-    match self::kind(comment) {
+    match kind(comment) {
         Some(Kind::SingleLines) => preprocess_single_lines(comment),
         Some(Kind::MultiLine) => preprocess_multi_line(comment),
         None => comment.to_owned(),
@@ -58,7 +58,7 @@ fn preprocess_multi_line(comment: &str) -> String {
         .collect();
 
     
-    if lines.last().map_or(false, |l| l.trim().is_empty()) {
+    if lines.last().is_some_and(|l| l.trim().is_empty()) {
         lines.pop();
     }
 

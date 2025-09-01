@@ -92,9 +92,10 @@ pub(crate) trait CanDeriveOrd {
 
 
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub enum CanDerive {
     
+    #[default]
     Yes,
 
     
@@ -105,12 +106,6 @@ pub enum CanDerive {
 
     
     No,
-}
-
-impl Default for CanDerive {
-    fn default() -> CanDerive {
-        CanDerive::Yes
-    }
 }
 
 impl CanDerive {
@@ -130,6 +125,6 @@ impl ops::BitOr for CanDerive {
 
 impl ops::BitOrAssign for CanDerive {
     fn bitor_assign(&mut self, rhs: Self) {
-        *self = self.join(rhs)
+        *self = self.join(rhs);
     }
 }

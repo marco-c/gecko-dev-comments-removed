@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::RegexSet;
+use crate::regex_set::RegexSet;
 
 
 pub(super) trait AsArgs {
