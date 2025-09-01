@@ -160,9 +160,7 @@ bool TypedArrayObject::ensureHasBuffer(JSContext* cx,
   
   
   size_t nbytes = RoundUp(byteLength, sizeof(Value));
-  Nursery& nursery = cx->nursery();
-  if (tarray->isTenured() && !tarray->hasInlineElements() &&
-      !nursery.isInside(tarray->elements())) {
+  if (tarray->isTenured() && tarray->hasMallocedElements(cx)) {
     js_free(tarray->elements());
     RemoveCellMemory(tarray, nbytes, MemoryUse::TypedArrayElements);
   }
@@ -301,6 +299,10 @@ void FixedLengthTypedArrayObject::setInlineElements() {
   char* dataSlot = reinterpret_cast<char*>(this) + dataOffset();
   *reinterpret_cast<void**>(dataSlot) =
       this->fixedData(FixedLengthTypedArrayObject::FIXED_DATA_START);
+}
+
+bool FixedLengthTypedArrayObject::hasMallocedElements(JSContext* cx) const {
+  return !hasInlineElements() && !cx->nursery().isInside(elements());
 }
 
 
