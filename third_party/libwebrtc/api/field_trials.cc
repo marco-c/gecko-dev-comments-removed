@@ -10,20 +10,16 @@
 
 #include "api/field_trials.h"
 
-#include <atomic>
-#include <memory>
 #include <string>
 #include <utility>
 
 #include "absl/strings/string_view.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/containers/flat_map.h"
-#include "system_wrappers/include/field_trial.h"
 
-namespace {
+namespace webrtc {
 
-webrtc::flat_map<std::string, std::string> InsertIntoMap(absl::string_view s) {
-  webrtc::flat_map<std::string, std::string> key_value_map;
+FieldTrials::FieldTrials(absl::string_view s) {
   while (!s.empty()) {
     absl::string_view::size_type separator_pos = s.find('/');
     RTC_CHECK_NE(separator_pos, absl::string_view::npos)
@@ -43,61 +39,16 @@ webrtc::flat_map<std::string, std::string> InsertIntoMap(absl::string_view s) {
 
     
     
-    
-    key_value_map.emplace(key, value);
-  }
-
-  return key_value_map;
-}
-
-
-
-
-std::atomic<bool> instance_created_{false};
-
-}  
-
-namespace webrtc {
-
-FieldTrials::FieldTrials(absl::string_view s)
-    : uses_global_(true),
-      field_trial_string_(s),
-      previous_field_trial_string_(webrtc::field_trial::GetFieldTrialString()),
-      key_value_map_(InsertIntoMap(s)) {
-  
-  field_trial::InitFieldTrialsFromString(field_trial_string_.c_str());
-  RTC_CHECK(!instance_created_.exchange(true))
-      << "Only one instance may be instanciated at any given time!";
-}
-
-std::unique_ptr<FieldTrials> FieldTrials::CreateNoGlobal(absl::string_view s) {
-  return std::unique_ptr<FieldTrials>(new FieldTrials(s, true));
-}
-
-FieldTrials::FieldTrials(absl::string_view s, bool)
-    : uses_global_(false),
-      previous_field_trial_string_(nullptr),
-      key_value_map_(InsertIntoMap(s)) {}
-
-FieldTrials::~FieldTrials() {
-  
-  if (uses_global_) {
-    field_trial::InitFieldTrialsFromString(previous_field_trial_string_);
-    RTC_CHECK(instance_created_.exchange(false));
+    key_value_map_.emplace(key, value);
   }
 }
 
 std::string FieldTrials::GetValue(absl::string_view key) const {
   auto it = key_value_map_.find(key);
-  if (it != key_value_map_.end())
+  if (it != key_value_map_.end()) {
     return it->second;
-
-  
-  
-  
-  if (uses_global_) {
-    return field_trial::FindFullName(key);
   }
+
   return "";
 }
 
