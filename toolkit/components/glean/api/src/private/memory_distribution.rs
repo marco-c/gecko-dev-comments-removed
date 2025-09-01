@@ -207,34 +207,6 @@ impl MemoryDistribution for MemoryDistributionMetric {
     
     
     
-    pub fn test_get_value<'a, S: Into<Option<&'a str>>>(
-        &self,
-        ping_name: S,
-    ) -> Option<DistributionData> {
-        let ping_name = ping_name.into().map(|s| s.to_string());
-        match self {
-            MemoryDistributionMetric::Parent { inner, .. } => inner.test_get_value(ping_name),
-            MemoryDistributionMetric::Child(meta) => {
-                panic!(
-                    "Cannot get test value for {:?} in non-parent process!",
-                    meta.id
-                )
-            }
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     pub fn test_get_num_recorded_errors(&self, error: glean::ErrorType) -> i32 {
         match self {
@@ -245,6 +217,33 @@ impl MemoryDistribution for MemoryDistributionMetric {
                 "Cannot get the number of recorded errors for {:?} in non-parent process!",
                 meta.id
             ),
+        }
+    }
+}
+
+#[inherent]
+impl glean::TestGetValue<DistributionData> for MemoryDistributionMetric {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<DistributionData> {
+        match self {
+            MemoryDistributionMetric::Parent { inner, .. } => inner.test_get_value(ping_name),
+            MemoryDistributionMetric::Child(meta) => {
+                panic!(
+                    "Cannot get test value for {:?} in non-parent process!",
+                    meta.id
+                )
+            }
         }
     }
 }
@@ -272,7 +271,7 @@ mod test {
 
         metric.accumulate(42);
 
-        let metric_data = metric.test_get_value("test-ping").unwrap();
+        let metric_data = metric.test_get_value(Some("test-ping".to_string())).unwrap();
         assert_eq!(1, metric_data.values[&42494]);
         assert_eq!(43008, metric_data.sum);
     }
@@ -292,7 +291,7 @@ mod test {
             child_metric.accumulate(13 * 9);
         }
 
-        let metric_data = parent_metric.test_get_value("test-ping").unwrap();
+        let metric_data = parent_metric.test_get_value(Some("test-ping".to_string())).unwrap();
         assert_eq!(1, metric_data.values[&42494]);
         assert_eq!(43008, metric_data.sum);
 

@@ -791,29 +791,6 @@ impl TimingDistribution for TimingDistributionMetric {
     
     
     
-    pub fn test_get_value<'a, S: Into<Option<&'a str>>>(
-        &self,
-        ping_name: S,
-    ) -> Option<DistributionData> {
-        let ping_name = ping_name.into().map(|s| s.to_string());
-        match self {
-            TimingDistributionMetric::Parent { inner, .. } => inner.test_get_value(ping_name),
-            TimingDistributionMetric::Child(c) => {
-                panic!("Cannot get test value for {:?} in non-parent process!", c)
-            }
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -826,6 +803,28 @@ impl TimingDistribution for TimingDistributionMetric {
                 "Cannot get number of recorded errors for {:?} in non-parent process!",
                 c
             ),
+        }
+    }
+}
+
+#[inherent]
+impl glean::TestGetValue<DistributionData> for TimingDistributionMetric {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<DistributionData> {
+        match self {
+            TimingDistributionMetric::Parent { inner, .. } => inner.test_get_value(ping_name),
+            TimingDistributionMetric::Child(c) => {
+                panic!("Cannot get test value for {:?} in non-parent process!", c)
+            }
         }
     }
 }
@@ -856,7 +855,7 @@ mod test {
         metric.cancel(id);
 
         
-        assert!(metric.test_get_value("test-ping").is_none());
+        assert!(metric.test_get_value(Some("test-ping".to_string())).is_none());
     }
 
     #[test]
@@ -888,7 +887,7 @@ mod test {
         assert!(ipc::replay_from_buf(&buf).is_ok());
 
         let data = parent_metric
-            .test_get_value("test-ping")
+            .test_get_value(Some("test-ping".to_string()))
             .expect("should have some data");
 
         
