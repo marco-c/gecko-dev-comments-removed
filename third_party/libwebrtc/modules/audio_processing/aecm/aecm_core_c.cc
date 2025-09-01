@@ -243,7 +243,7 @@ static void InverseFFTAndWindow(AecmCore* aecm,
   memcpy(aecm->xBuf, aecm->xBuf + PART_LEN, sizeof(int16_t) * PART_LEN);
   memcpy(aecm->dBufNoisy, aecm->dBufNoisy + PART_LEN,
          sizeof(int16_t) * PART_LEN);
-  if (nearendClean != NULL) {
+  if (nearendClean != nullptr) {
     memcpy(aecm->dBufClean, aecm->dBufClean + PART_LEN,
            sizeof(int16_t) * PART_LEN);
   }
@@ -390,7 +390,7 @@ int RTC_NO_SANITIZE("signed-integer-overflow")
   uint16_t dfaNoisy[PART_LEN1];
   uint16_t dfaClean[PART_LEN1];
   uint16_t* ptrDfaClean = dfaClean;
-  const uint16_t* far_spectrum_ptr = NULL;
+  const uint16_t* far_spectrum_ptr = nullptr;
 
   
   
@@ -435,7 +435,7 @@ int RTC_NO_SANITIZE("signed-integer-overflow")
   
   memcpy(aecm->xBuf + PART_LEN, farend, sizeof(int16_t) * PART_LEN);
   memcpy(aecm->dBufNoisy + PART_LEN, nearendNoisy, sizeof(int16_t) * PART_LEN);
-  if (nearendClean != NULL) {
+  if (nearendClean != nullptr) {
     memcpy(aecm->dBufClean + PART_LEN, nearendClean,
            sizeof(int16_t) * PART_LEN);
   }
@@ -449,7 +449,7 @@ int RTC_NO_SANITIZE("signed-integer-overflow")
   aecm->dfaNoisyQDomainOld = aecm->dfaNoisyQDomain;
   aecm->dfaNoisyQDomain = (int16_t)zerosDBufNoisy;
 
-  if (nearendClean == NULL) {
+  if (nearendClean == nullptr) {
     ptrDfaClean = dfaNoisy;
     aecm->dfaCleanQDomainOld = aecm->dfaNoisyQDomainOld;
     aecm->dfaCleanQDomain = aecm->dfaNoisyQDomain;
@@ -487,7 +487,7 @@ int RTC_NO_SANITIZE("signed-integer-overflow")
   
   far_spectrum_ptr = WebRtcAecm_AlignedFarend(aecm, &far_q, delay);
   zerosXBuf = (int16_t)far_q;
-  if (far_spectrum_ptr == NULL) {
+  if (far_spectrum_ptr == nullptr) {
     return -1;
   }
 

@@ -77,7 +77,7 @@ TEST(AecDumper, WriteToFile) {
   
   
   FILE* fid = fopen(filename.c_str(), "r");
-  ASSERT_TRUE(fid != NULL);
+  ASSERT_TRUE(fid != nullptr);
 
   
   ASSERT_EQ(0, fclose(fid));
