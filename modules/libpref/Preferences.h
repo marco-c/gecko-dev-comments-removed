@@ -30,6 +30,7 @@
 #include <functional>
 
 class nsIFile;
+class nsIPrefOverrideMap;
 
 
 
@@ -458,9 +459,11 @@ class Preferences final : public nsIPrefService,
 
   
   nsresult SavePrefFileInternal(nsIFile* aFile, SaveMethod aSaveMethod);
+
   nsresult WritePrefFile(
       nsIFile* aFile, SaveMethod aSaveMethod,
-      UniquePtr<MozPromiseHolder<WritePrefFilePromise>> aPromise = nullptr);
+      UniquePtr<MozPromiseHolder<WritePrefFilePromise>> aPromise = nullptr,
+      const nsIPrefOverrideMap* aPrefOverrideMap = nullptr);
 
   nsresult ResetUserPrefs();
 

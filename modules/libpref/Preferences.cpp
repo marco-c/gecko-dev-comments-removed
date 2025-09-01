@@ -1300,20 +1300,40 @@ class MOZ_STACK_CLASS PrefWrapper : public PrefWrapperBase {
   }
 
   
-  bool UserValueToStringForSaving(nsCString& aStr) {
+  bool UserValueToStringForSaving(nsCString& aStr,
+                                  const nsIPrefOverrideMap* aPrefOverrideMap) {
+    auto getPrefValue = [&]() -> Result<PrefValue, bool> {
+      if (aPrefOverrideMap) {
+        auto& overrideMap =
+            static_cast<const nsPrefOverrideMap*>(aPrefOverrideMap)->Ref();
+        if (auto it = overrideMap.lookup(NameString())) {
+          if (it->value().isNothing()) {
+            
+            return Err(false);
+          }
+          return it->value()->GetPrefValue();
+        }
+      }
+      
+      if (!HasUserValue()) {
+        return Err(false);
+      }
+      return GetValue();
+    };
+    PrefValue prefValue = MOZ_TRY(getPrefValue());
+
     
     
-    if (HasUserValue() &&
-        (!ValueMatches(PrefValueKind::Default, Type(), GetValue()) ||
-         IsSticky())) {
+    if (!ValueMatches(PrefValueKind::Default, Type(), prefValue) ||
+        IsSticky()) {
       if (IsTypeString()) {
-        StrEscape(GetStringValue().get(), aStr);
+        StrEscape(prefValue.Get<nsDependentCString>().get(), aStr);
 
       } else if (IsTypeInt()) {
-        aStr.AppendInt(GetIntValue());
+        aStr.AppendInt(prefValue.Get<int32_t>());
 
       } else if (IsTypeBool()) {
-        aStr = GetBoolValue() ? "true" : "false";
+        aStr = prefValue.Get<bool>() ? "true" : "false";
       }
       return true;
     }
@@ -1759,14 +1779,14 @@ static void NotifyCallbacks(const nsCString& aPrefName,
 constexpr size_t kHashTableInitialLengthParent = 3000;
 constexpr size_t kHashTableInitialLengthContent = 64;
 
-static PrefSaveData pref_savePrefs() {
+static PrefSaveData pref_savePrefs(const nsIPrefOverrideMap* aPrefOverrideMap) {
   MOZ_ASSERT(NS_IsMainThread());
 
   PrefSaveData savedPrefs(HashTable()->count());
 
   for (auto& pref : PrefsIter(HashTable(), gSharedMap)) {
     nsAutoCString prefValueStr;
-    if (!pref->UserValueToStringForSaving(prefValueStr)) {
+    if (!pref->UserValueToStringForSaving(prefValueStr, aPrefOverrideMap)) {
       continue;
     }
 
@@ -4201,8 +4221,8 @@ Preferences::SavePrefFile(nsIFile* aFile) {
 }
 
 NS_IMETHODIMP
-Preferences::BackupPrefFile(nsIFile* aFile, JSContext* aCx,
-                            Promise** aPromise) {
+Preferences::BackupPrefFile(nsIFile* aFile, nsIPrefOverrideMap* aJSOverrideMap,
+                            JSContext* aCx, Promise** aPromise) {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (!aFile) {
@@ -4238,8 +4258,9 @@ Preferences::BackupPrefFile(nsIFile* aFile, JSContext* aCx,
   RefPtr<WritePrefFilePromise> writePrefPromise =
       mozPromiseHolder->Ensure(__func__);
 
+  
   nsresult rv = WritePrefFile(aFile, SaveMethod::Asynchronous,
-                              std::move(mozPromiseHolder));
+                              std::move(mozPromiseHolder), aJSOverrideMap);
   if (NS_FAILED(rv)) {
     
     
@@ -4612,7 +4633,8 @@ nsresult Preferences::SavePrefFileInternal(nsIFile* aFile,
 nsresult Preferences::WritePrefFile(
     nsIFile* aFile, SaveMethod aSaveMethod,
     UniquePtr<MozPromiseHolder<WritePrefFilePromise>>
-        aPromiseHolder ) {
+        aPromiseHolder ,
+    const nsIPrefOverrideMap* aPrefOverrideMap ) {
   MOZ_ASSERT(XRE_IsParentProcess());
 
 #define REJECT_IF_PROMISE_HOLDER_EXISTS(rv)       \
@@ -4628,7 +4650,8 @@ nsresult Preferences::WritePrefFile(
   AUTO_PROFILER_LABEL("Preferences::WritePrefFile", OTHER);
 
   if (AllowOffMainThreadSave()) {
-    UniquePtr<PrefSaveData> prefs = MakeUnique<PrefSaveData>(pref_savePrefs());
+    UniquePtr<PrefSaveData> prefs =
+        MakeUnique<PrefSaveData>(pref_savePrefs(aPrefOverrideMap));
 
     nsresult rv = NS_OK;
     bool writingToCurrent = false;
@@ -4699,7 +4722,7 @@ nsresult Preferences::WritePrefFile(
   
   
   
-  PrefSaveData prefsData = pref_savePrefs();
+  PrefSaveData prefsData = pref_savePrefs(aPrefOverrideMap);
 
   
   
