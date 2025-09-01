@@ -3911,7 +3911,7 @@ void MacroAssembler::generateBailoutTail(Register scratch,
             FramePointer);
 
     
-    pushFrameDescriptor(FrameType::BaselineJS);
+    push(FrameDescriptor(FrameType::BaselineJS));
     push(Address(bailoutInfo, offsetof(BaselineBailoutInfo, resumeAddr)));
     push(FramePointer);
     

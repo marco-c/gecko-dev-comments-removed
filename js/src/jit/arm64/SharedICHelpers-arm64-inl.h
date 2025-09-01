@@ -31,7 +31,7 @@ inline void EmitBaselineTailCallVM(TrampolinePtr target, MacroAssembler& masm,
 
   
   static_assert(ICTailCallReg == lr);
-  masm.pushFrameDescriptor(FrameType::BaselineJS);
+  masm.push(FrameDescriptor(FrameType::BaselineJS));
 
   
   
@@ -42,7 +42,7 @@ inline void EmitBaselineTailCallVM(TrampolinePtr target, MacroAssembler& masm,
 }
 
 inline void EmitBaselineCallVM(TrampolinePtr target, MacroAssembler& masm) {
-  masm.pushFrameDescriptor(FrameType::BaselineStub);
+  masm.push(FrameDescriptor(FrameType::BaselineStub));
   masm.call(target);
 }
 
@@ -60,7 +60,7 @@ inline void EmitBaselineEnterStubFrame(MacroAssembler& masm, Register scratch) {
 
   
   
-  masm.PushFrameDescriptor(FrameType::BaselineJS);
+  masm.Push(FrameDescriptor(FrameType::BaselineJS));
   masm.Push(ICTailCallReg);
   masm.Push(FramePointer);
 

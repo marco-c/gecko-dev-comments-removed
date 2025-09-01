@@ -267,7 +267,7 @@ void IonCacheIRCompiler::enterStubFrame(MacroAssembler& masm,
                                         const AutoSaveLiveRegisters&) {
   MOZ_ASSERT(!enteredStubFrame_);
   pushStubCodePointer();
-  masm.PushFrameDescriptor(FrameType::IonJS);
+  masm.Push(FrameDescriptor(FrameType::IonJS));
   masm.Push(ImmPtr(GetReturnAddressToIonCode(cx_)));
 
   masm.Push(FramePointer);
@@ -966,7 +966,7 @@ bool IonCacheIRCompiler::emitCallScriptedGetterResult(
   }
 
   masm.Push(callee);
-  masm.PushFrameDescriptorForJitCall(FrameType::IonICCall,  0);
+  masm.Push(FrameDescriptor(FrameType::IonICCall,  0));
 
   
   
@@ -1059,7 +1059,7 @@ bool IonCacheIRCompiler::emitCallScriptedProxyGetShared(
   masm.Push(scratchVal);
 
   masm.Push(callee);
-  masm.PushFrameDescriptorForJitCall(FrameType::IonICCall,  3);
+  masm.Push(FrameDescriptor(FrameType::IonICCall,  3));
 
   
   
@@ -1733,7 +1733,7 @@ bool IonCacheIRCompiler::emitCallScriptedSetter(ObjOperandId receiverId,
   }
 
   masm.Push(callee);
-  masm.PushFrameDescriptorForJitCall(FrameType::IonICCall,  1);
+  masm.Push(FrameDescriptor(FrameType::IonICCall,  1));
 
   
   
@@ -2115,7 +2115,7 @@ bool IonCacheIRCompiler::emitCloseIterScriptedResult(ObjOperandId iterId,
   masm.Push(TypedOrValueRegister(MIRType::Object, AnyRegister(iter)));
 
   masm.Push(callee);
-  masm.PushFrameDescriptorForJitCall(FrameType::IonICCall,  0);
+  masm.Push(FrameDescriptor(FrameType::IonICCall,  0));
 
   masm.loadJitCodeRaw(callee, callee);
   masm.callJit(callee);
