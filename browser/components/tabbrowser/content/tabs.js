@@ -2293,6 +2293,9 @@
       let numPinned = gBrowser.pinnedTabCount;
       let allTabs = this.ariaFocusableItems;
       let isGrid = this.#isContainerVerticalPinnedGrid(tab);
+      let periphery = document.getElementById(
+        "tabbrowser-arrowscrollbox-periphery"
+      );
 
       if (isPinned && this.verticalMode) {
         this.pinnedTabsContainer.setAttribute("dragActive", "");
@@ -2440,9 +2443,6 @@
       }
 
       if (!isPinned && this.arrowScrollbox.hasAttribute("overflowing")) {
-        let periphery = document.getElementById(
-          "tabbrowser-arrowscrollbox-periphery"
-        );
         if (this.verticalMode) {
           periphery.style.marginBlockStart =
             rect.height * movingTabs.length + "px";
@@ -2513,15 +2513,12 @@
       
       
       if (!this.overflowing && !isPinned) {
-        let newTabButton = document.getElementById(
-          "tabbrowser-arrowscrollbox-periphery"
-        );
         if (this.verticalMode) {
-          newTabButton.style.transform = `translateY(${Math.round(movingTabs.length * rect.height)}px)`;
+          periphery.style.top = `${Math.round(movingTabs.length * rect.height)}px`;
         } else if (this.#rtlMode) {
-          newTabButton.style.transform = `translateX(${Math.round(movingTabs.length * -rect.width)}px)`;
+          periphery.style.left = `${Math.round(movingTabs.length * -rect.width)}px`;
         } else {
-          newTabButton.style.transform = `translateX(${Math.round(movingTabs.length * rect.width)}px)`;
+          periphery.style.left = `${Math.round(movingTabs.length * rect.width)}px`;
         }
       }
     }
@@ -2765,6 +2762,7 @@
       let size = this.verticalMode ? "height" : "width";
       let translateAxis = this.verticalMode ? "translateY" : "translateX";
       let { width: tabWidth, height: tabHeight } = bounds(draggedTab);
+      let tabSize = this.verticalMode ? tabHeight : tabWidth;
       let translateX = event.screenX - dragData.screenX;
       let translateY = event.screenY - dragData.screenY;
 
@@ -2774,7 +2772,6 @@
       dragData.translateY = translateY;
 
       
-      let lastTab = allTabs.at(-1);
       let periphery = document.getElementById(
         "tabbrowser-arrowscrollbox-periphery"
       );
@@ -2787,31 +2784,26 @@
       let translate = screen - dragData[screenAxis];
 
       
-      let startBound = this[screenAxis] - firstMovingTabScreen;
       
-      let endBound;
-      if (!numPinned && lastTab == draggedTab) {
-        endBound =
-          periphery[screenAxis] -
-          lastMovingTabScreen +
-          
-          
-          (this.#rtlMode ? bounds(periphery).width : bounds(draggedTab)[size]);
-      } else {
-        endBound = endEdge(lastTab) - lastMovingTabScreen;
-      }
-
-      translate = this.#rtlMode
-        ? Math.min(Math.max(translate, endBound), startBound)
-        : Math.min(Math.max(translate, startBound), endBound);
+      let startBound = this.#rtlMode
+        ? endEdge(periphery) + 1 - firstMovingTabScreen
+        : this[screenAxis] - firstMovingTabScreen;
+      let endBound = this.#rtlMode
+        ? endEdge(this) - lastMovingTabScreen
+        : periphery[screenAxis] - 1 - lastMovingTabScreen;
+      translate = Math.min(Math.max(translate, startBound), endBound);
 
       
+      let draggedTabScreenAxis = draggedTab[screenAxis] + translate;
       if (
-        screen < draggedTab[screenAxis] + translate ||
-        screen > endEdge(draggedTab) + translate
+        (screen < draggedTabScreenAxis ||
+          screen > draggedTabScreenAxis + tabSize) &&
+        draggedTabScreenAxis + tabSize < endBound &&
+        draggedTabScreenAxis > startBound
       ) {
-        translate =
-          screen - draggedTab[screenAxis] - bounds(draggedTab)[size] / 2;
+        translate = screen - draggedTab[screenAxis] - tabSize / 2;
+        
+        translate = Math.min(Math.max(translate, startBound), endBound);
       }
 
       if (!gBrowser.pinnedTabCount) {
@@ -3392,10 +3384,8 @@
       );
       periphery.style.marginBlockStart = "";
       periphery.style.marginInlineStart = "";
-      let newTabButton = draggedTabDocument.getElementById(
-        "tabbrowser-arrowscrollbox-periphery"
-      );
-      newTabButton.style.transform = "";
+      periphery.style.left = "";
+      periphery.style.top = "";
       let pinnedTabsContainer = draggedTabDocument.getElementById(
         "pinned-tabs-container"
       );
