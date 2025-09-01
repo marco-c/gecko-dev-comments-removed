@@ -544,11 +544,14 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
 
   if (@available(macOS 11.0, *)) {
     
-    return descFlag != eDescriptionFromARIA ? nsCocoaUtils::ToNSString(desc)
-                                            : nil;
+    
+    if (descFlag == eDescriptionFromARIA &&
+        mGeckoAccessible->Role() != roles::GROUPING &&
+        mGeckoAccessible->Role() != roles::RADIO_GROUP) {
+      return nil;
+    }
   }
 
-  
   return nsCocoaUtils::ToNSString(desc);
 }
 
