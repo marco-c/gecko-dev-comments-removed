@@ -3075,13 +3075,15 @@ class MOZ_NON_MEMMOVABLE MOZ_GSL_OWNER AutoTArray : public nsTArray<E> {
   
   struct alignas(8) AutoBuffer {
     nsTArrayHeader mHdr;
-    union {
-      value_type mElements[N];
+    union alignas(value_type) {
+      
+      
+      char mStorage[sizeof(value_type) * N];
     };
     AutoBuffer() : mHdr{.mLength = 0, .mCapacity = N, .mIsAutoArray = true} {}
     ~AutoBuffer() {}
   } mAutoBuf;
-  static_assert(offsetof(AutoBuffer, mElements) == sizeof(nsTArrayHeader),
+  static_assert(offsetof(AutoBuffer, mStorage) == sizeof(nsTArrayHeader),
                 "Shouldn't have padding");
 };
 
