@@ -3,8 +3,8 @@
 
 
 MOZ_SRC_FILES += [
-    "file.txt",
     "dir/file1.txt",
     "dir/file2.txt",
     "dir/subdir/otherfile.txt",
+    "file.txt",
 ]
