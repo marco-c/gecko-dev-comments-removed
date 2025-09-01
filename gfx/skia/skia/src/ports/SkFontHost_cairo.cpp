@@ -201,8 +201,11 @@ public:
             rec->setHinting(SkFontHinting::kNone);
         }
 
+#ifndef SK_GAMMA_APPLY_TO_A8
+        
         
         rec->ignorePreBlend();
+#endif
     }
 
     void onGetFontDescriptor(SkFontDescriptor*, bool*) const override
