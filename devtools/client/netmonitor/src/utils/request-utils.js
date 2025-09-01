@@ -361,9 +361,9 @@ function getUrlDetails(url) {
   
   
   const isLocal =
-    hostname.match(/(.+\.)?localhost$/) ||
-    hostname.match(/^127\.\d{1,3}\.\d{1,3}\.\d{1,3}/) ||
-    hostname.match(/\[[0:]+1\]/);
+    /^(.+\.)?localhost$/.test(hostname) ||
+    /^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname) ||
+    /^\[[0:]+1\]$/.test(hostname);
 
   return {
     baseNameWithQuery,
