@@ -10,11 +10,11 @@ use crate::properties::ComputedValues;
 use crate::selector_parser::{Direction, HorizontalDirection, SelectorParser};
 use crate::str::starts_with_ignore_ascii_case;
 use crate::string_cache::{Atom, Namespace, WeakAtom, WeakNamespace};
-use crate::values::{AtomIdent, AtomString};
-use cssparser::{parse_nth, CowRcStr, SourceLocation, ToCss, Token};
+use crate::values::{AtomIdent, AtomString, CSSInteger};
+use cssparser::{CowRcStr, SourceLocation, ToCss, Token};
 use cssparser::{BasicParseError, BasicParseErrorKind, Parser};
 use dom::{DocumentState, ElementState, HEADING_LEVEL_OFFSET};
-use selectors::parser::{AnPlusB, SelectorParseErrorKind};
+use selectors::parser::SelectorParseErrorKind;
 use std::fmt;
 use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss as ToCss_};
 use thin_vec::ThinVec;
@@ -48,7 +48,7 @@ pub struct CustomState(pub AtomIdent);
 
 
 #[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToShmem)]
-pub struct HeadingSelectorData(pub ThinVec<AnPlusB>);
+pub struct HeadingSelectorData(pub ThinVec<CSSInteger>);
 
 impl HeadingSelectorData {
     
@@ -68,7 +68,7 @@ impl HeadingSelectorData {
         }
         let level = (bits >> HEADING_LEVEL_OFFSET) as i32;
         debug_assert!(level > 0 && level < 16);
-        self.0.iter().any(|anb| anb.matches_index(level))
+        self.0.iter().any(|item| *item == level)
     }
 }
 
@@ -132,12 +132,12 @@ impl ToCss for NonTSPseudoClass {
                         }
                         dest.write_str("(")?;
                         let mut first = true;
-                        for anb in levels.0.iter() {
+                        for item in levels.0.iter() {
                             if !first {
                                 dest.write_str(", ")?;
                             }
                             first = false;
-                            anb.to_css(dest)?;
+                            ToCss::to_css(item, dest)?;
                         }
                         return dest.write_str(")");
                     },
@@ -508,10 +508,7 @@ impl<'a, 'i> ::selectors::Parser<'i> for SelectorParser<'a> {
                 NonTSPseudoClass::CustomState(CustomState(result))
             },
             "heading" => {
-                let result = parser.parse_comma_separated(|input| {
-                    let (a, b) = parse_nth(input)?;
-                    Ok(AnPlusB(a,b))
-                })?;
+                let result = parser.parse_comma_separated(|input| Ok(input.expect_integer()?))?;
                 if result.is_empty() {
                     return Err(parser.new_custom_error(StyleParseErrorKind::UnspecifiedError));
                 }
