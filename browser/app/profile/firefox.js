@@ -752,6 +752,13 @@ pref("browser.urlbar.update2.engineAliasRefresh", true);
 
 pref("browser.urlbar.market.minKeywordLength", 0);
 
+
+pref("browser.urlbar.importantDates.featureGate", false);
+
+
+
+pref("browser.urlbar.suggest.importantDates", true);
+
 pref("browser.altClickSave", false);
 
 
