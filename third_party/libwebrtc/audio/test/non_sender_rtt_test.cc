@@ -60,7 +60,7 @@ TEST_F(NonSenderRttTest, NonSenderRttStats) {
       
       EXPECT_THAT(
           WaitUntil([&] { return HasRoundTripTimeMeasurement(); }, IsTrue(),
-                    {.timeout = webrtc::TimeDelta::Millis(kLongTimeoutMs)}),
+                    {.timeout = TimeDelta::Millis(kLongTimeoutMs)}),
           IsRtcOk());
     }
 

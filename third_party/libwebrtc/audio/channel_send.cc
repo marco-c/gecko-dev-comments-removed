@@ -157,7 +157,7 @@ class ChannelSend : public ChannelSendInterface,
               Transport* rtp_transport,
               RtcpRttStats* rtcp_rtt_stats,
               FrameEncryptorInterface* frame_encryptor,
-              const webrtc::CryptoOptions& crypto_options,
+              const CryptoOptions& crypto_options,
               bool extmap_allow_mixed,
               int rtcp_report_interval_ms,
               uint32_t ssrc,
@@ -229,8 +229,7 @@ class ChannelSend : public ChannelSendInterface,
   
   
   void SetEncoderToPacketizerFrameTransformer(
-      scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer)
-      override;
+      scoped_refptr<FrameTransformerInterface> frame_transformer) override;
 
   
   void RtcpPacketTypesCounterUpdated(
@@ -274,7 +273,7 @@ class ChannelSend : public ChannelSendInterface,
   void OnReceivedRtt(int64_t rtt_ms);
 
   void InitFrameTransformerDelegate(
-      scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer);
+      scoped_refptr<FrameTransformerInterface> frame_transformer);
 
   
   void CallEncoderAsync(absl::AnyInvocable<void(AudioEncoder*)> modifier);
@@ -328,7 +327,7 @@ class ChannelSend : public ChannelSendInterface,
   scoped_refptr<FrameEncryptorInterface> frame_encryptor_
       RTC_GUARDED_BY(encoder_queue_checker_);
   
-  const webrtc::CryptoOptions crypto_options_;
+  const CryptoOptions crypto_options_;
 
   
   
@@ -416,7 +415,7 @@ int32_t ChannelSend::SendData(AudioFrameType frameType,
     
     char buf[1024];
     SimpleStringBuilder mime_type(buf);
-    mime_type << webrtc::MediaTypeToString(webrtc::MediaType::AUDIO) << "/"
+    mime_type << MediaTypeToString(MediaType::AUDIO) << "/"
               << encoder_format_.name;
     frame_transformer_delegate_->Transform(
         frameType, payloadType, rtp_timestamp + rtp_rtcp_->StartTimestamp(),
@@ -448,13 +447,13 @@ int32_t ChannelSend::SendRtpAudio(AudioFrameType frameType,
       
       
       size_t max_ciphertext_size = frame_encryptor_->GetMaxCiphertextByteSize(
-          webrtc::MediaType::AUDIO, payload.size());
+          MediaType::AUDIO, payload.size());
       encrypted_audio_payload.SetSize(max_ciphertext_size);
 
       
       size_t bytes_written = 0;
       int encrypt_status =
-          frame_encryptor_->Encrypt(webrtc::MediaType::AUDIO, rtp_rtcp_->SSRC(),
+          frame_encryptor_->Encrypt(MediaType::AUDIO, rtp_rtcp_->SSRC(),
                                     nullptr, payload,
                                     encrypted_audio_payload, &bytes_written);
       if (encrypt_status != 0) {
@@ -516,7 +515,7 @@ ChannelSend::ChannelSend(
     Transport* rtp_transport,
     RtcpRttStats* rtcp_rtt_stats,
     FrameEncryptorInterface* frame_encryptor,
-    const webrtc::CryptoOptions& crypto_options,
+    const CryptoOptions& crypto_options,
     bool extmap_allow_mixed,
     int rtcp_report_interval_ms,
     uint32_t ssrc,
@@ -948,7 +947,7 @@ void ChannelSend::SetFrameEncryptor(
 }
 
 void ChannelSend::SetEncoderToPacketizerFrameTransformer(
-    scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer) {
+    scoped_refptr<FrameTransformerInterface> frame_transformer) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   if (!frame_transformer)
     return;
@@ -966,7 +965,7 @@ void ChannelSend::OnReceivedRtt(int64_t rtt_ms) {
 }
 
 void ChannelSend::InitFrameTransformerDelegate(
-    scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer) {
+    scoped_refptr<FrameTransformerInterface> frame_transformer) {
   RTC_DCHECK_RUN_ON(&encoder_queue_checker_);
   RTC_DCHECK(frame_transformer);
   RTC_DCHECK(!frame_transformer_delegate_);
@@ -1000,7 +999,7 @@ std::unique_ptr<ChannelSendInterface> CreateChannelSend(
     Transport* rtp_transport,
     RtcpRttStats* rtcp_rtt_stats,
     FrameEncryptorInterface* frame_encryptor,
-    const webrtc::CryptoOptions& crypto_options,
+    const CryptoOptions& crypto_options,
     bool extmap_allow_mixed,
     int rtcp_report_interval_ms,
     uint32_t ssrc,
