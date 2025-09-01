@@ -3317,24 +3317,52 @@ void BaselineCacheIRCompiler::pushBoundFunctionArguments(
     Register argcReg, Register calleeReg, Register scratch, Register scratch2,
     CallFlags flags, uint32_t numBoundArgs, bool isJitCall) {
   bool isConstructing = flags.isConstructing();
-  uint32_t additionalArgc = 1 + isConstructing;  
 
   
   Register countReg = scratch;
-  masm.computeEffectiveAddress(Address(argcReg, numBoundArgs + additionalArgc),
-                               countReg);
+  masm.computeEffectiveAddress(Address(argcReg, numBoundArgs), countReg);
 
-  
-  
+  Address boundTarget(calleeReg, BoundFunctionObject::offsetOfTargetSlot());
+
   if (isJitCall) {
-    masm.alignJitStackBasedOnNArgs(countReg,  true);
-  }
-
-  if (isConstructing) {
     
-    Address boundTarget(calleeReg, BoundFunctionObject::offsetOfTargetSlot());
+    
+    
+    
+    
+    
+    bool countIncludesThis = isConstructing;
+
+    Label noUnderflow, readyForArgs;
+    masm.unboxObject(boundTarget, scratch2);
+    masm.loadFunctionArgCount(scratch2, scratch2);
+    masm.branch32(Assembler::AboveOrEqual, countReg, scratch2, &noUnderflow);
+
+    masm.alignJitStackBasedOnNArgs(scratch2, countIncludesThis);
+    if (isConstructing) {
+      masm.pushValue(boundTarget);
+    }
+
+    Label undefLoop;
+    masm.bind(&undefLoop);
+    masm.Push(UndefinedValue());
+    masm.sub32(Imm32(1), scratch2);
+    masm.branch32(Assembler::Above, scratch2, countReg, &undefLoop);
+    masm.jump(&readyForArgs);
+
+    masm.bind(&noUnderflow);
+    masm.alignJitStackBasedOnNArgs(countReg, countIncludesThis);
+    if (isConstructing) {
+      masm.pushValue(boundTarget);
+    }
+    masm.bind(&readyForArgs);
+  } else if (isConstructing) {
     masm.pushValue(boundTarget);
   }
+
+  
+  Label noArgs;
+  masm.branchTest32(Assembler::Zero, argcReg, argcReg, &noArgs);
 
   
   Register argPtr = scratch2;
@@ -3346,17 +3374,16 @@ void BaselineCacheIRCompiler::pushBoundFunctionArguments(
   masm.computeEffectiveAddress(argAddress, argPtr);
 
   
-  Label loop, done;
-  masm.branchTest32(Assembler::Zero, argcReg, argcReg, &done);
+  Label argsLoop;
   masm.move32(argcReg, countReg);
-  masm.bind(&loop);
+  masm.bind(&argsLoop);
   {
     masm.pushValue(Address(argPtr, 0));
     masm.addPtr(Imm32(sizeof(Value)), argPtr);
 
-    masm.branchSub32(Assembler::NonZero, Imm32(1), countReg, &loop);
+    masm.branchSub32(Assembler::NonZero, Imm32(1), countReg, &argsLoop);
   }
-  masm.bind(&done);
+  masm.bind(&noArgs);
 
   
   constexpr size_t inlineArgsOffset =
@@ -4070,18 +4097,6 @@ bool BaselineCacheIRCompiler::emitCallBoundScriptedFunction(
   masm.PushCalleeToken(calleeReg, isConstructing);
   masm.PushFrameDescriptorForJitCall(FrameType::BaselineStub, argcReg, scratch);
 
-  
-  Label noUnderflow;
-  masm.loadFunctionArgCount(calleeReg, calleeReg);
-  masm.branch32(Assembler::AboveOrEqual, argcReg, calleeReg, &noUnderflow);
-  {
-    
-    TrampolinePtr argumentsRectifier =
-        cx_->runtime()->jitRuntime()->getArgumentsRectifier();
-    masm.movePtr(argumentsRectifier, code);
-  }
-
-  masm.bind(&noUnderflow);
   masm.callJit(code);
 
   if (isConstructing) {
