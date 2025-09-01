@@ -82,13 +82,6 @@ bool nsAlertsService::ShouldShowAlert() {
   return result;
 }
 
-bool nsAlertsService::ShouldUseSystemBackend() {
-  if (!mBackend) {
-    return false;
-  }
-  return StaticPrefs::alerts_useSystemBackend();
-}
-
 NS_IMETHODIMP nsAlertsService::ShowAlertNotification(
     const nsAString& aImageUrl, const nsAString& aAlertTitle,
     const nsAString& aAlertText, bool aAlertTextClickable,
@@ -109,18 +102,6 @@ NS_IMETHODIMP nsAlertsService::ShowAlertNotification(
   return ShowAlert(alert, aAlertListener);
 }
 
-static bool ShouldFallBackToXUL() {
-#if defined(XP_WIN) || defined(XP_MACOSX)
-  
-  
-  return false;
-#else
-  
-  
-  return true;
-#endif
-}
-
 NS_IMETHODIMP nsAlertsService::ShowAlert(nsIAlertNotification* aAlert,
                                          nsIObserver* aAlertListener) {
   NS_ENSURE_ARG(aAlert);
@@ -137,14 +118,11 @@ NS_IMETHODIMP nsAlertsService::ShowAlert(nsIAlertNotification* aAlert,
 
   
   
-  if (ShouldUseSystemBackend()) {
-    rv = mBackend->ShowAlert(aAlert, aAlertListener);
-    if (NS_SUCCEEDED(rv) || !ShouldFallBackToXUL()) {
-      return rv;
+  if (StaticPrefs::alerts_useSystemBackend()) {
+    if (!mBackend) {
+      return NS_ERROR_NOT_AVAILABLE;
     }
-    
-    
-    mBackend = nullptr;
+    return mBackend->ShowAlert(aAlert, aAlertListener);
   }
 
   if (!ShouldShowAlert()) {
@@ -163,21 +141,24 @@ NS_IMETHODIMP nsAlertsService::ShowAlert(nsIAlertNotification* aAlert,
 
 NS_IMETHODIMP nsAlertsService::CloseAlert(const nsAString& aAlertName,
                                           bool aContextClosed) {
-  nsresult rv;
-  
-  if (ShouldUseSystemBackend()) {
-    rv = mBackend->CloseAlert(aAlertName, aContextClosed);
-    if (NS_WARN_IF(NS_FAILED(rv)) && ShouldFallBackToXUL()) {
-      
-      
-      mBackend = nullptr;
-    }
-  } else {
+  if (!StaticPrefs::alerts_useSystemBackend()) {
     nsCOMPtr<nsIAlertsService> xulBackend(nsXULAlerts::GetInstance());
     NS_ENSURE_TRUE(xulBackend, NS_ERROR_FAILURE);
-    rv = xulBackend->CloseAlert(aAlertName, aContextClosed);
+    return xulBackend->CloseAlert(aAlertName, aContextClosed);
   }
-  return rv;
+  if (!mBackend) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  return mBackend->CloseAlert(aAlertName, aContextClosed);
+}
+
+NS_IMETHODIMP nsAlertsService::GetHistory(nsTArray<nsString>& aResult) {
+  if (!mBackend) {
+    return NS_OK;
+  }
+
+  return mBackend->GetHistory(aResult);
 }
 
 
@@ -225,7 +206,7 @@ NS_IMETHODIMP nsAlertsService::SetSuppressForScreenSharing(bool aSuppress) {
 already_AddRefed<nsIAlertsDoNotDisturb> nsAlertsService::GetDNDBackend() {
   nsCOMPtr<nsIAlertsService> backend;
   
-  if (ShouldUseSystemBackend()) {
+  if (StaticPrefs::alerts_useSystemBackend()) {
     backend = mBackend;
   }
   if (!backend) {
@@ -249,7 +230,7 @@ NS_IMETHODIMP nsAlertsService::Observe(nsISupports* aSubject,
 NS_IMETHODIMP nsAlertsService::Teardown() {
   nsCOMPtr<nsIAlertsService> backend;
   
-  if (ShouldUseSystemBackend()) {
+  if (StaticPrefs::alerts_useSystemBackend()) {
     backend = mBackend;
   }
   if (!backend) {
@@ -262,7 +243,7 @@ NS_IMETHODIMP nsAlertsService::Teardown() {
 NS_IMETHODIMP nsAlertsService::PbmTeardown() {
   nsCOMPtr<nsIAlertsService> backend;
   
-  if (ShouldUseSystemBackend()) {
+  if (StaticPrefs::alerts_useSystemBackend()) {
     backend = mBackend;
   }
   if (!backend) {
