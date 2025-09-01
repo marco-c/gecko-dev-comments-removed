@@ -60,7 +60,7 @@ bool UniqueStringGenerator::AddKnownId(absl::string_view value) {
   
   
   std::optional<uint32_t> int_value =
-      webrtc::StringToNumber<uint32_t>(std::string(value));
+      StringToNumber<uint32_t>(std::string(value));
   
   
   if (int_value.has_value()) {

@@ -33,9 +33,6 @@
 
 namespace webrtc {
 
-using ::webrtc::MutexLock;
-using ::webrtc::TaskQueueBase;
-using ::webrtc::TimeDelta;
 
 #if defined(WEBRTC_WIN)
 const in_addr kInitialNextIPv4 = {{{0x01, 0, 0, 0}}};
@@ -552,7 +549,7 @@ int VirtualSocket::SendUdp(const void* pv,
   
   if (local_addr_.IsNil()) {
     local_addr_ = server_->AssignBindAddress(
-        webrtc::EmptySocketAddressWithFamily(addr.ipaddr().family()));
+        EmptySocketAddressWithFamily(addr.ipaddr().family()));
     int result = server_->Bind(this, local_addr_);
     if (result != 0) {
       local_addr_.Clear();
@@ -683,8 +680,7 @@ VirtualSocketServer::~VirtualSocketServer() {
 IPAddress VirtualSocketServer::GetNextIP(int family) {
   if (family == AF_INET) {
     IPAddress next_ip(next_ipv4_);
-    next_ipv4_.s_addr =
-        webrtc::HostToNetwork32(webrtc::NetworkToHost32(next_ipv4_.s_addr) + 1);
+    next_ipv4_.s_addr = HostToNetwork32(NetworkToHost32(next_ipv4_.s_addr) + 1);
     return next_ip;
   } else if (family == AF_INET6) {
     IPAddress next_ip(next_ipv6_);
@@ -793,7 +789,7 @@ int VirtualSocketServer::Bind(VirtualSocket* socket,
                               const SocketAddress& addr) {
   RTC_DCHECK(nullptr != socket);
   
-  RTC_DCHECK(!webrtc::IPIsUnspec(addr.ipaddr()));
+  RTC_DCHECK(!IPIsUnspec(addr.ipaddr()));
   RTC_DCHECK(addr.port() != 0);
 
   
@@ -805,7 +801,7 @@ int VirtualSocketServer::Bind(VirtualSocket* socket,
 
 SocketAddress VirtualSocketServer::AssignBindAddress(
     const SocketAddress& app_addr) {
-  RTC_DCHECK(!webrtc::IPIsUnspec(app_addr.ipaddr()));
+  RTC_DCHECK(!IPIsUnspec(app_addr.ipaddr()));
 
   
   SocketAddress addr;
@@ -842,12 +838,12 @@ VirtualSocket* VirtualSocketServer::LookupBinding(const SocketAddress& addr) {
   }
 
   IPAddress default_ip = GetDefaultSourceAddress(addr.ipaddr().family());
-  if (!webrtc::IPIsUnspec(default_ip) && addr.ipaddr() == default_ip) {
+  if (!IPIsUnspec(default_ip) && addr.ipaddr() == default_ip) {
     
     
     
     SocketAddress sock_addr =
-        webrtc::EmptySocketAddressWithFamily(addr.ipaddr().family());
+        EmptySocketAddressWithFamily(addr.ipaddr().family());
     sock_addr.SetPort(addr.port());
     return LookupBinding(sock_addr);
   }
@@ -1098,7 +1094,7 @@ void VirtualSocketServer::AddPacketToNetwork(VirtualSocket* sender,
   
   SocketAddress sender_addr = sender->GetLocalAddress();
   IPAddress default_ip = GetDefaultSourceAddress(sender_addr.ipaddr().family());
-  if (sender_addr.IsAnyIP() && !webrtc::IPIsUnspec(default_ip)) {
+  if (sender_addr.IsAnyIP() && !IPIsUnspec(default_ip)) {
     sender_addr.SetIP(default_ip);
   }
 
@@ -1287,15 +1283,13 @@ bool VirtualSocketServer::CanInteractWith(VirtualSocket* local,
   
   int remote_v6_only = 0;
   remote->GetOption(Socket::OPT_IPV6_V6ONLY, &remote_v6_only);
-  if (local_ip.family() == AF_INET && !remote_v6_only &&
-      webrtc::IPIsAny(remote_ip)) {
+  if (local_ip.family() == AF_INET && !remote_v6_only && IPIsAny(remote_ip)) {
     return true;
   }
   
   int local_v6_only = 0;
   local->GetOption(Socket::OPT_IPV6_V6ONLY, &local_v6_only);
-  if (remote_ip.family() == AF_INET && !local_v6_only &&
-      webrtc::IPIsAny(local_ip)) {
+  if (remote_ip.family() == AF_INET && !local_v6_only && IPIsAny(local_ip)) {
     return true;
   }
 
@@ -1321,7 +1315,7 @@ IPAddress VirtualSocketServer::GetDefaultSourceAddress(int family) {
   return IPAddress();
 }
 void VirtualSocketServer::SetDefaultSourceAddress(const IPAddress& from_addr) {
-  RTC_DCHECK(!webrtc::IPIsAny(from_addr));
+  RTC_DCHECK(!IPIsAny(from_addr));
   if (from_addr.family() == AF_INET) {
     default_source_address_v4_ = from_addr;
   } else if (from_addr.family() == AF_INET6) {

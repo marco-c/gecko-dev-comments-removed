@@ -173,7 +173,7 @@ TYPED_TEST(UniqueIdGeneratorTest,
 
 
 TEST(UniqueNumberGenerator, UsedOnSecondaryThread) {
-  const auto* current_tq = webrtc::TaskQueueBase::Current();
+  const auto* current_tq = TaskQueueBase::Current();
   
   
   
@@ -181,7 +181,7 @@ TEST(UniqueNumberGenerator, UsedOnSecondaryThread) {
 
   FakeTaskQueue fake_task_queue;
   
-  ASSERT_NE(current_tq, webrtc::TaskQueueBase::Current());
+  ASSERT_NE(current_tq, TaskQueueBase::Current());
 
   
   generator.Generate();

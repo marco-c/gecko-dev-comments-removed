@@ -415,10 +415,9 @@ TEST(OperationsChainTest, OnChainEmptyCallback) {
   
   unblock_async_operation_event0.Set();
   async_operation_completed_event0->Wait(Event::kForever);
-  EXPECT_THAT(
-      webrtc::WaitUntil([&] { return on_empty_callback_counter == 1u; },
+  EXPECT_THAT(WaitUntil([&] { return on_empty_callback_counter == 1u; },
                         ::testing::IsTrue(), {.timeout = kDefaultTimeout}),
-      webrtc::IsRtcOk());
+              IsRtcOk());
 
   
   Event unblock_async_operation_event1;
@@ -430,25 +429,22 @@ TEST(OperationsChainTest, OnChainEmptyCallback) {
       operation_tracker_proxy.PostAsynchronousOperation(
           &unblock_async_operation_event2);
   
-  EXPECT_THAT(
-      webrtc::WaitUntil([&] { return on_empty_callback_counter == 1u; },
+  EXPECT_THAT(WaitUntil([&] { return on_empty_callback_counter == 1u; },
                         ::testing::IsTrue(), {.timeout = kDefaultTimeout}),
-      webrtc::IsRtcOk());
+              IsRtcOk());
   
   
   unblock_async_operation_event1.Set();
   async_operation_completed_event1->Wait(Event::kForever);
-  EXPECT_THAT(
-      webrtc::WaitUntil([&] { return on_empty_callback_counter == 1u; },
+  EXPECT_THAT(WaitUntil([&] { return on_empty_callback_counter == 1u; },
                         ::testing::IsTrue(), {.timeout = kDefaultTimeout}),
-      webrtc::IsRtcOk());
+              IsRtcOk());
   
   unblock_async_operation_event2.Set();
   async_operation_completed_event2->Wait(Event::kForever);
-  EXPECT_THAT(
-      webrtc::WaitUntil([&] { return on_empty_callback_counter == 2u; },
+  EXPECT_THAT(WaitUntil([&] { return on_empty_callback_counter == 2u; },
                         ::testing::IsTrue(), {.timeout = kDefaultTimeout}),
-      webrtc::IsRtcOk());
+              IsRtcOk());
 }
 
 TEST(OperationsChainTest,

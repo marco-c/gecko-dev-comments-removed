@@ -80,25 +80,25 @@ TEST(CpuTimeTest, MAYBE_TEST(TwoThreads)) {
   
   EXPECT_LE(thread_duration_nanos,
             (kProcessingTimeMillisecs - kAllowedErrorMillisecs) *
-                webrtc::kNumNanosecsPerMillisec);
+                kNumNanosecsPerMillisec);
   
   
   EXPECT_GE(process_duration_nanos,
             kWorkingThreads *
                 (kProcessingTimeMillisecs - kAllowedErrorMillisecs) *
-                webrtc::kNumNanosecsPerMillisec);
+                kNumNanosecsPerMillisec);
 }
 
 TEST(CpuTimeTest, MAYBE_TEST(Sleeping)) {
   int64_t process_start_time_nanos = GetProcessCpuTimeNanos();
-  webrtc::SleepMs(kProcessingTimeMillisecs);
+  SleepMs(kProcessingTimeMillisecs);
   int64_t process_duration_nanos =
       GetProcessCpuTimeNanos() - process_start_time_nanos;
   
   
   EXPECT_LE(process_duration_nanos,
             (kProcessingTimeMillisecs - kAllowedErrorMillisecs) *
-                webrtc::kNumNanosecsPerMillisec);
+                kNumNanosecsPerMillisec);
 }
 
 }  
