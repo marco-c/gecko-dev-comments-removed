@@ -22,7 +22,12 @@
 #include "absl/strings/string_view.h"
 #include "rtc_base/platform_thread_types.h"
 
+#include "rtc_base/deprecated/recursive_critical_section.h"
+
 namespace webrtc {
+
+
+class PlatformUIThread;
 
 enum class ThreadPriority {
   kLow = 1,
@@ -114,6 +119,8 @@ class PlatformThread final {
 
   std::optional<Handle> handle_;
   bool joinable_ = false;
+  
+  friend PlatformUIThread;
 };
 
 }  

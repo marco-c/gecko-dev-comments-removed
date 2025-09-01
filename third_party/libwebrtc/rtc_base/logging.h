@@ -48,6 +48,14 @@
 #ifndef RTC_BASE_LOGGING_H_
 #define RTC_BASE_LOGGING_H_
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wvarargs"
+
+#if defined(__clang__)
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wclass-varargs"
+#endif
+
 #include <errno.h>
 
 #include <atomic>
@@ -754,5 +762,10 @@ using ::webrtc::LS_VERBOSE;
 using ::webrtc::LS_WARNING;
 }  
 #endif  
+
+#pragma GCC diagnostic pop
+#if defined(__clang__)
+#  pragma clang diagnostic pop
+#endif
 
 #endif  
