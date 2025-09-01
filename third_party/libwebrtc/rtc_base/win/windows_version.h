@@ -50,6 +50,9 @@ enum Version {
   VERSION_WIN10_21H2 = 19,   
   VERSION_SERVER_2022 = 20,  
   VERSION_WIN11 = 21,        
+  VERSION_WIN11_22H2 = 22,   
+  VERSION_WIN11_23H2 = 23,   
+  VERSION_WIN11_24H2 = 24,   
   VERSION_WIN_LAST,          
 };
 

@@ -29,6 +29,7 @@
 #include "rtc_base/time_utils.h"
 #include "rtc_base/win/create_direct3d_device.h"
 #include "rtc_base/win/get_activation_factory.h"
+#include "rtc_base/win/windows_version.h"
 #include "system_wrappers/include/metrics.h"
 #include "system_wrappers/include/sleep.h"
 
@@ -96,6 +97,11 @@ bool SizeHasChanged(ABI::Windows::Graphics::SizeInt32 size_new,
                     ABI::Windows::Graphics::SizeInt32 size_old) {
   return (size_new.Height != size_old.Height ||
           size_new.Width != size_old.Width);
+}
+
+bool DoesWgcSkipStaticFrames() {
+  return (webrtc::rtc_win::GetVersion() >=
+          webrtc::rtc_win::Version::VERSION_WIN11_24H2);
 }
 
 }  
@@ -479,6 +485,7 @@ HRESULT WgcCaptureSession::ProcessFrame() {
   } else {
     if (!GetHmonitorFromDeviceIndex(source_id_, &monitor)) {
       RTC_LOG(LS_ERROR) << "Failed to get HMONITOR from device index.";
+      d3d_context->Unmap(mapped_texture_.Get(), 0);
       return E_FAIL;
     }
   }
@@ -502,7 +509,11 @@ HRESULT WgcCaptureSession::ProcessFrame() {
   
   
   
-  bool frame_content_has_changed = false;
+  
+  
+  
+  
+  bool frame_content_has_changed = DoesWgcSkipStaticFrames();
 
   
   const bool frame_content_can_be_compared = FrameContentCanBeCompared();
