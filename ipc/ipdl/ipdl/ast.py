@@ -404,19 +404,17 @@ class Param(Node):
 
 
 class TypeSpec(Node):
-    def __init__(self, loc, spec):
+    def __init__(self, loc, spec, nullable, modifiers=[]):
         Node.__init__(self, loc)
         assert isinstance(spec, str)
         self.spec = spec  
-        self.array = False  
-        self.maybe = False  
-        self.nullable = False  
-        self.uniqueptr = False  
+        self.nullable = nullable  
+        self.modifiers = modifiers  
+
+    def withModifier(self, modifier):
+        return TypeSpec(self.loc, self.spec, self.nullable, self.modifiers + [modifier])
 
     def basename(self):
-        return self.spec
-
-    def __str__(self):
         return self.spec
 
 
