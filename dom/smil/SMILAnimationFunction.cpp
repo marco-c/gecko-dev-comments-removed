@@ -357,7 +357,7 @@ nsresult SMILAnimationFunction::InterpolateResult(const SMILValueArray& aValues,
     const SMILValue* to = nullptr;
     
     
-    double intervalProgress = -1.0;
+    double intervalProgress = -1.f;
     if (IsToAnimation()) {
       from = &aBaseValue;
       to = &aValues[0];
@@ -380,7 +380,7 @@ nsresult SMILAnimationFunction::InterpolateResult(const SMILValueArray& aValues,
       double scaledSimpleProgress =
           ScaleSimpleProgress(simpleProgress, calcMode);
       uint32_t index =
-          (uint32_t)std::floor(scaledSimpleProgress * (aValues.Length() - 1));
+          (uint32_t)floor(scaledSimpleProgress * (aValues.Length() - 1));
       from = &aValues[index];
       to = &aValues[index + 1];
       intervalProgress = scaledSimpleProgress * (aValues.Length() - 1) - index;
@@ -390,7 +390,7 @@ nsresult SMILAnimationFunction::InterpolateResult(const SMILValueArray& aValues,
     if (NS_SUCCEEDED(rv)) {
       MOZ_ASSERT(from, "NULL from-value during interpolation");
       MOZ_ASSERT(to, "NULL to-value during interpolation");
-      MOZ_ASSERT(0.0 <= intervalProgress && intervalProgress < 1.0,
+      MOZ_ASSERT(0.0f <= intervalProgress && intervalProgress < 1.0f,
                  "Interval progress should be in the range [0, 1)");
       rv = from->Interpolate(*to, intervalProgress, aResult);
     }
@@ -403,16 +403,29 @@ nsresult SMILAnimationFunction::InterpolateResult(const SMILValueArray& aValues,
     double scaledSimpleProgress =
         ScaleSimpleProgress(simpleProgress, CALC_DISCRETE);
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    static const double kFloatingPointFudgeFactor = 1.0e-16;
+    if (scaledSimpleProgress + kFloatingPointFudgeFactor <= 1.0) {
+      scaledSimpleProgress += kFloatingPointFudgeFactor;
+    }
+
     if (IsToAnimation()) {
       
       
       
       
-      uint32_t index = (uint32_t)std::floor(scaledSimpleProgress * 2);
+      uint32_t index = (uint32_t)floor(scaledSimpleProgress * 2);
       aResult = index == 0 ? aBaseValue : aValues[0];
     } else {
-      uint32_t index =
-          (uint32_t)std::floor(scaledSimpleProgress * aValues.Length());
+      uint32_t index = (uint32_t)floor(scaledSimpleProgress * aValues.Length());
       aResult = aValues[index];
 
       
@@ -581,57 +594,38 @@ double SMILAnimationFunction::ComputePacedTotalDistance(
 
 double SMILAnimationFunction::ScaleSimpleProgress(double aProgress,
                                                   SMILCalcMode aCalcMode) {
-  auto Scale = [this](double aProgress, SMILCalcMode aCalcMode) {
-    if (!HasAttr(nsGkAtoms::keyTimes)) return aProgress;
+  if (!HasAttr(nsGkAtoms::keyTimes)) return aProgress;
 
-    uint32_t numTimes = mKeyTimes.Length();
+  uint32_t numTimes = mKeyTimes.Length();
 
-    if (numTimes < 2) return aProgress;
+  if (numTimes < 2) return aProgress;
 
-    uint32_t i = 0;
-    for (; i < numTimes - 2 && aProgress >= mKeyTimes[i + 1]; ++i) {
-    }
-
-    if (aCalcMode == CALC_DISCRETE) {
-      
-      
-      
-      
-      if (aProgress >= mKeyTimes[i + 1]) {
-        MOZ_ASSERT(i == numTimes - 2,
-                   "aProgress is not in range of the current interval, yet the "
-                   "current interval is not the last bounded interval either.");
-        ++i;
-      }
-      return (double)i / numTimes;
-    }
-
-    double& intervalStart = mKeyTimes[i];
-    double& intervalEnd = mKeyTimes[i + 1];
-
-    double intervalLength = intervalEnd - intervalStart;
-    if (intervalLength <= 0.0) return intervalStart;
-
-    return (i + (aProgress - intervalStart) / intervalLength) /
-           double(numTimes - 1);
-  };
-
-  double scaledSimpleProgress = Scale(aProgress, aCalcMode);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  static const double kFloatingPointFudgeFactor = 1.0e-16;
-  if (scaledSimpleProgress + kFloatingPointFudgeFactor <= 1.0) {
-    scaledSimpleProgress += kFloatingPointFudgeFactor;
+  uint32_t i = 0;
+  for (; i < numTimes - 2 && aProgress >= mKeyTimes[i + 1]; ++i) {
   }
-  return scaledSimpleProgress;
+
+  if (aCalcMode == CALC_DISCRETE) {
+    
+    
+    
+    
+    if (aProgress >= mKeyTimes[i + 1]) {
+      MOZ_ASSERT(i == numTimes - 2,
+                 "aProgress is not in range of the current interval, yet the "
+                 "current interval is not the last bounded interval either.");
+      ++i;
+    }
+    return (double)i / numTimes;
+  }
+
+  double& intervalStart = mKeyTimes[i];
+  double& intervalEnd = mKeyTimes[i + 1];
+
+  double intervalLength = intervalEnd - intervalStart;
+  if (intervalLength <= 0.0) return intervalStart;
+
+  return (i + (aProgress - intervalStart) / intervalLength) /
+         double(numTimes - 1);
 }
 
 double SMILAnimationFunction::ScaleIntervalProgress(double aProgress,
