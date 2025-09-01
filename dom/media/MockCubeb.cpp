@@ -539,7 +539,12 @@ void MockCubebStream::NotifyDeviceChanged() {
 MockCubeb::MockCubeb() : MockCubeb(MockCubeb::RunningMode::Automatic) {}
 
 MockCubeb::MockCubeb(RunningMode aRunningMode)
-    : ops(&mock_ops), mRunningMode(aRunningMode) {}
+    : ops(&mock_ops), mRunningMode(aRunningMode) {
+  
+  
+  
+  (void)ops;
+}
 
 MockCubeb::~MockCubeb() { MOZ_RELEASE_ASSERT(!mFakeAudioThreadRunning); }
 
