@@ -176,7 +176,11 @@ nsresult LoadInfoArgsToLoadInfo(const mozilla::net::LoadInfoArgs& aLoadInfoArgs,
   SETTER(bool, IsMediaInitialRequest)                                          \
                                                                                \
   GETTER(bool, IsFromObjectOrEmbed, isFromObjectOrEmbed, false)                \
-  SETTER(bool, IsFromObjectOrEmbed)
+  SETTER(bool, IsFromObjectOrEmbed)                                            \
+                                                                               \
+  GETTER(nsILoadInfo::CrossOriginEmbedderPolicy, LoadingEmbedderPolicy,        \
+         loadingEmbedderPolicy, nsILoadInfo::EMBEDDER_POLICY_NULL)             \
+  SETTER(nsILoadInfo::CrossOriginEmbedderPolicy, LoadingEmbedderPolicy)
 
 
 
@@ -388,7 +392,6 @@ class LoadInfo final : public nsILoadInfo {
            nsILoadInfo::IPAddressSpace aIPAddressSpace,
            const Maybe<RFPTargetSet>& aOverriddenFingerprintingSettings,
            nsINode* aLoadingContext,
-           nsILoadInfo::CrossOriginEmbedderPolicy aLoadingEmbedderPolicy,
            bool aIsOriginTrialCoepCredentiallessEnabledForTopLevel,
            nsIURI* aUnstrippedURI, nsIInterceptionInfo* aInterceptionInfo,
            bool aHasInjectedCookieForCookieBannerHandling,
@@ -502,13 +505,6 @@ class LoadInfo final : public nsILoadInfo {
   
   bool mOverriddenFingerprintingSettingsIsSet = false;
 #endif
-
-  
-  
-  
-  
-  nsILoadInfo::CrossOriginEmbedderPolicy mLoadingEmbedderPolicy =
-      nsILoadInfo::EMBEDDER_POLICY_NULL;
 
   bool mIsOriginTrialCoepCredentiallessEnabledForTopLevel = false;
 

@@ -1596,6 +1596,10 @@ interface nsILoadInfo : nsISupports
 
 
 
+
+
+
+
   [infallible] attribute nsILoadInfo_CrossOriginEmbedderPolicy
         loadingEmbedderPolicy;
 
