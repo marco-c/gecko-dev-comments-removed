@@ -67,8 +67,7 @@ class MediaBlockCacheBase {
   
   
   
-  virtual nsresult Read(int64_t aOffset, uint8_t* aData, int32_t aLength,
-                        int32_t* aBytes) = 0;
+  virtual nsresult Read(int64_t aOffset, uint8_t* aData, int32_t aLength) = 0;
 
   
   

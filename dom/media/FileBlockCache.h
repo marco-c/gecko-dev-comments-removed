@@ -78,8 +78,7 @@ class FileBlockCache : public MediaBlockCacheBase {
   
   
   
-  nsresult Read(int64_t aOffset, uint8_t* aData, int32_t aLength,
-                int32_t* aBytes) override;
+  nsresult Read(int64_t aOffset, uint8_t* aData, int32_t aLength) override;
 
   
   
