@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim:set ts=2 sw=2 sts=2 et cindent: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef MOZILLA_DOM_OFFSCREENCANVAS_H_
 #define MOZILLA_DOM_OFFSCREENCANVAS_H_
@@ -41,10 +41,10 @@ struct ImageEncodeOptions;
 using OwningOffscreenRenderingContext = class
     OwningOffscreenCanvasRenderingContext2DOrImageBitmapRenderingContextOrWebGLRenderingContextOrWebGL2RenderingContextOrGPUCanvasContext;
 
-
-
-
-
+// This is helper class for transferring OffscreenCanvas to worker thread.
+// Because OffscreenCanvas is not thread-safe. So we cannot pass Offscreen-
+// Canvas to worker thread directly. Thus, we create this helper class and
+// store necessary data in it then pass it to worker thread.
 struct OffscreenCanvasCloneData final {
   OffscreenCanvasCloneData(OffscreenCanvasDisplayHelper* aDisplay,
                            uint32_t aWidth, uint32_t aHeight,
@@ -113,7 +113,7 @@ class OffscreenCanvas final : public DOMEventTargetHelper,
                                    JS::Handle<JS::Value> aParams,
                                    ErrorResult& aRv);
 
-  Maybe<uint64_t> GetWindowID();
+  Maybe<uint64_t> GetWindowID() const;
 
   nsICanvasRenderingContextInternal* GetContext() const {
     return mCurrentContext;
@@ -163,7 +163,7 @@ class OffscreenCanvas final : public DOMEventTargetHelper,
 
   bool IsWriteOnly() const { return mIsWriteOnly; }
 
-  
+  // Determines if the caller should be able to read the content.
   bool CallerCanRead(nsIPrincipal& aPrincipal) const;
 
   layers::LayersBackend GetCompositorBackendType() const {
@@ -199,7 +199,7 @@ class OffscreenCanvas final : public DOMEventTargetHelper,
   const FontVisibility mFontVisibility;
 };
 
-}  
-}  
+}  // namespace dom
+}  // namespace mozilla
 
-#endif  
+#endif  // MOZILLA_DOM_OFFSCREENCANVAS_H_

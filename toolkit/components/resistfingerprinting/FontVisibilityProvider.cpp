@@ -67,19 +67,14 @@ FontVisibility FontVisibilityProvider::ComputeFontVisibility() const {
     return *maybeVis;
   }
 
-  dom::Document* doc = GetDocument();
   
   
-  if (doc && doc->ChromeRulesEnabled()) {
+  if (IsChrome()) {
     return FontVisibility::User;
   }
 
   
-  bool isPrivate = false;
-  if (nsCOMPtr<nsILoadContext> loadContext =
-          doc ? doc->GetLoadContext() : nullptr) {
-    isPrivate = loadContext->UsePrivateBrowsing();
-  }
+  bool isPrivate = IsPrivateBrowsing();
 
   int32_t level;
   

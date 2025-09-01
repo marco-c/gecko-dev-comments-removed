@@ -907,9 +907,6 @@ class nsPresContext : public nsISupports,
 
   bool IsPrintPreview() const { return mType == eContext_PrintPreview; }
 
-  
-  bool IsChrome() const;
-
   gfxUserFontSet* GetUserFontSet();
 
   gfxMissingFontRecorder* MissingFontRecorder() { return mMissingFonts.get(); }
