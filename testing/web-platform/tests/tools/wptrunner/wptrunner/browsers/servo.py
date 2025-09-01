@@ -116,7 +116,10 @@ class ServoWdspecBrowser(WebDriverBrowser):
                    
                    
                    "--ignore-certificate-errors",
-                   "--headless"] + self.webdriver_args
+                   "--headless",
+                   "--window-size",
+                   "800x600",
+                   "about:blank"] + self.webdriver_args
         if self.binary_args:
             command += self.binary_args
         return command
