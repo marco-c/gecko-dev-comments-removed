@@ -367,7 +367,6 @@ class ElementStyle {
         
         
         if (!computedProp.textProp.isValid()) {
-          computedProp.overridden = true;
           continue;
         }
 
@@ -951,6 +950,11 @@ class ElementStyle {
 
 
   _updatePropertyOverridden(prop) {
+    if (!prop.isValid() && !prop.computed.length) {
+      prop.overridden = false;
+      return false;
+    }
+
     let overridden = true;
     let dirty = false;
 
