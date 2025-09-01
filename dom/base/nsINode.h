@@ -1735,6 +1735,7 @@ class nsINode : public mozilla::dom::EventTarget {
   
   bool IsRootElement() const {
     
+    
     const bool isRoot = !GetParent() && IsInUncomposedDoc() && IsElement();
 #ifdef DEBUG
     AssertIsRootElementSlow(isRoot);
