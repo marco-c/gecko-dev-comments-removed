@@ -6,11 +6,11 @@
 
 #include "video_capture_factory.h"
 
-#include "mozilla/StaticPrefs_media.h"
+#include "VideoEngine.h"
 #include "desktop_capture_impl.h"
 #include "fake_video_capture/device_info_fake.h"
 #include "fake_video_capture/video_capture_fake.h"
-#include "VideoEngine.h"
+#include "mozilla/StaticPrefs_media.h"
 
 #if defined(WEBRTC_USE_PIPEWIRE)
 #  include "video_engine/placeholder_device_info.h"
@@ -24,12 +24,7 @@
 
 namespace mozilla {
 
-VideoCaptureFactory::VideoCaptureFactory()
-    :  
-       
-       
-       
-      mUseFakeCamera(StaticPrefs::media_getusermedia_camera_fake_force()) {
+VideoCaptureFactory::VideoCaptureFactory() {
 #if (defined(WEBRTC_LINUX) || defined(WEBRTC_BSD)) && !defined(WEBRTC_ANDROID)
   mVideoCaptureOptions = std::make_unique<webrtc::VideoCaptureOptions>();
   
@@ -54,7 +49,10 @@ VideoCaptureFactory::CreateDeviceInfo(
     int32_t aId, mozilla::camera::CaptureDeviceType aType) {
   if (aType == mozilla::camera::CaptureDeviceType::Camera) {
     std::shared_ptr<webrtc::VideoCaptureModule::DeviceInfo> deviceInfo;
-    if (mUseFakeCamera) {
+    mUseFakeCamera = mUseFakeCamera.orElse([] {
+      return Some(StaticPrefs::media_getusermedia_camera_fake_force());
+    });
+    if (*mUseFakeCamera) {
       deviceInfo.reset(new webrtc::videocapturemodule::DeviceInfoFake());
       return deviceInfo;
     }
@@ -93,7 +91,7 @@ VideoCaptureFactory::CreateVideoCapture(
     mozilla::camera::CaptureDeviceType aType) {
   CreateVideoCaptureResult result;
   if (aType == mozilla::camera::CaptureDeviceType::Camera) {
-    if (mUseFakeCamera) {
+    if (mUseFakeCamera.valueOr(false)) {
       nsCOMPtr<nsISerialEventTarget> target;
       NS_CreateBackgroundTaskQueue("VideoCaptureFake::mTarget",
                                    getter_AddRefs(target));
@@ -250,5 +248,7 @@ void VideoCaptureFactory::OnInitialized(
       return;
   }
 }
+
+void VideoCaptureFactory::Invalidate() { mUseFakeCamera = Nothing(); }
 
 }  
