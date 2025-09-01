@@ -33,7 +33,7 @@ public abstract class RuntimeSettings implements Parcelable {
   public abstract static class Builder<Settings extends RuntimeSettings> {
     private final Settings mSettings;
 
-    @SuppressWarnings("checkstyle:javadocmethod")
+    
     public Builder() {
       mSettings = newSettings(null);
     }
@@ -47,6 +47,11 @@ public abstract class RuntimeSettings implements Parcelable {
     public @NonNull Settings build() {
       return newSettings(mSettings);
     }
+
+    
+
+
+
 
     @AnyThread
     protected @NonNull Settings getSettings() {
@@ -70,6 +75,12 @@ public abstract class RuntimeSettings implements Parcelable {
     private T mValue;
     private boolean mIsSet;
 
+    
+
+
+
+
+
     public Pref(@NonNull final String name, final T defaultValue) {
       this.name = name;
       this.defaultValue = defaultValue;
@@ -78,10 +89,20 @@ public abstract class RuntimeSettings implements Parcelable {
       RuntimeSettings.this.addPref(this);
     }
 
+    
+
+
+
+
     public void set(final T newValue) {
       mValue = newValue;
       mIsSet = true;
     }
+
+    
+
+
+
 
     public void commit(final T newValue) {
       if (newValue.equals(mValue)) {
@@ -91,6 +112,7 @@ public abstract class RuntimeSettings implements Parcelable {
       commit();
     }
 
+    
     public void commit() {
       final GeckoRuntime runtime = RuntimeSettings.this.getRuntime();
       if (runtime == null) {
@@ -101,18 +123,34 @@ public abstract class RuntimeSettings implements Parcelable {
       runtime.setDefaultPrefs(prefs);
     }
 
+    
+
+
+
+
     public T get() {
       return mValue;
     }
+
+    
+
+
+
 
     public boolean isSet() {
       return mIsSet;
     }
 
+    
+
+
+
+
     public boolean hasDefault() {
       return true;
     }
 
+    
     public void reset() {
       mValue = defaultValue;
       mIsSet = false;
@@ -141,14 +179,29 @@ public abstract class RuntimeSettings implements Parcelable {
 
 
 
-   class PrefWithoutDefault<T> extends Pref<T> {
+  class PrefWithoutDefault<T> extends Pref<T> {
+    
+
+
+
+
     public PrefWithoutDefault(@NonNull final String name) {
       super(name, null);
     }
 
+    
+
+
+
+
     public boolean hasDefault() {
       return false;
     }
+
+    
+
+
+
 
     public @Nullable T get() {
       if (!isSet()) {
@@ -157,6 +210,7 @@ public abstract class RuntimeSettings implements Parcelable {
       return super.get();
     }
 
+    
     public void commit() {
       if (!isSet()) {
         
@@ -178,6 +232,7 @@ public abstract class RuntimeSettings implements Parcelable {
   private final ArrayList<RuntimeSettings> mChildren;
   private final ArrayList<Pref<?>> mPrefs;
 
+  
   protected RuntimeSettings() {
     this(null );
   }
@@ -219,13 +274,23 @@ public abstract class RuntimeSettings implements Parcelable {
     }
   }
 
-   @Nullable
+  
+
+
+
+
+  @Nullable
   GeckoRuntime getRuntime() {
     if (mParent != null) {
       return mParent.getRuntime();
     }
     return null;
   }
+
+  
+
+
+
 
   private void setParent(final @Nullable RuntimeSettings parent) {
     mParent = parent;
@@ -234,11 +299,21 @@ public abstract class RuntimeSettings implements Parcelable {
     }
   }
 
+  
+
+
+
+
   private void addChild(final @NonNull RuntimeSettings child) {
     mChildren.add(child);
   }
 
-   void addPref(final Pref<?> pref) {
+  
+
+
+
+
+  void addPref(final Pref<?> pref) {
     mPrefs.add(pref);
   }
 
@@ -247,7 +322,7 @@ public abstract class RuntimeSettings implements Parcelable {
 
 
 
-   @NonNull
+  @NonNull
   Map<String, Object> getPrefsMap() {
     final ArrayMap<String, Object> prefs = new ArrayMap<>();
     forAllPrefs(pref -> prefs.put(pref.name, pref.get()));
@@ -256,6 +331,8 @@ public abstract class RuntimeSettings implements Parcelable {
   }
 
   
+
+
 
 
 
@@ -306,9 +383,13 @@ public abstract class RuntimeSettings implements Parcelable {
     }
   }
 
-  @AnyThread
   
-  @SuppressWarnings("checkstyle:javadocmethod")
+  
+
+
+
+
+  @AnyThread
   public void readFromParcel(final @NonNull Parcel source) {
     for (final Pref<?> pref : mPrefs) {
       if (pref.hasDefault()) {
