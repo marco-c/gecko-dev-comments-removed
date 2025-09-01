@@ -415,9 +415,14 @@ class JujutsuRepository(Repository):
         return datetime.strptime(date, "%Y-%m-%d %H:%M:%S.%f %z")
 
     def config_key_list_value_missing(self, key: str):
-        output = self._run_read_only("config", "list", key, stderr=subprocess.STDOUT)
-        warning_prefix = "Warning: No matching config key"
-        if output.startswith(warning_prefix):
+        output = self._run_read_only(
+            "config", "list", key, stderr=subprocess.DEVNULL
+        ).strip()
+
+        
+        
+        
+        if not output:
             return True
 
         if output.startswith(key):
@@ -505,10 +510,33 @@ class JujutsuRepository(Repository):
 
             
             if which("watchman"):
-                self._set_default_if_missing("core.fsmonitor", "watchman")
-                self._set_default_if_missing(
-                    "core.watchman.register-snapshot-trigger", False
-                )
+                
+                if jj_version >= Version("0.32"):
+                    
+                    for key in [
+                        "core.fsmonitor",
+                        "core.watchman.register-snapshot-trigger",
+                    ]:
+                        self._run(
+                            "config",
+                            "unset",
+                            "--repo",
+                            key,
+                            return_codes=[0, 1],
+                            stderr=subprocess.DEVNULL,
+                        )
+
+                    
+                    self._set_default_if_missing("fsmonitor.backend", "watchman")
+                    self._set_default_if_missing(
+                        "fsmonitor.watchman.register-snapshot-trigger", False
+                    )
+                else:
+                    
+                    self._set_default_if_missing("core.fsmonitor", "watchman")
+                    self._set_default_if_missing(
+                        "core.watchman.register-snapshot-trigger", False
+                    )
 
                 print("Checking if watchman is enabled...")
                 output = self._run_read_only("debug", "watchman", "status")
