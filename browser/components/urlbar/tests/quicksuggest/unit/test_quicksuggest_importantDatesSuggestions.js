@@ -87,7 +87,6 @@ add_setup(async function () {
     prefs: [
       ["importantDates.featureGate", true],
       ["quicksuggest.dynamicSuggestionTypes", "other_suggestions"],
-      ["suggest.quicksuggest.nonsponsored", true],
     ],
   });
   await Services.search.init();
@@ -103,6 +102,71 @@ add_task(async function telemetryType() {
     "important_dates",
     "Telemetry type should be 'important_dates'"
   );
+});
+
+
+
+add_task(async function enablingPrefs() {
+  setTime("2025-03-01T00:00");
+
+  let query = "event 1";
+  let expected = makeExpectedResult({
+    date: "Wednesday, March 5, 2025",
+    descriptionL10n: {
+      id: "urlbar-result-dates-countdown",
+      args: { name: "Event 1", daysUntilStart: 4 },
+    },
+  });
+
+  for (let pref of ["importantDates.featureGate", "suggest.importantDates"]) {
+    info("Doing enabling-pref test: " + pref);
+
+    
+    await checkDatesResults(query, expected);
+
+    
+    UrlbarPrefs.set(pref, false);
+    await checkDatesResults(query, null);
+
+    
+    UrlbarPrefs.set(pref, true);
+    await QuickSuggestTestUtils.forceSync();
+  }
+});
+
+
+
+
+add_task(async function neitherSponsoredNorNonsponsored() {
+  setTime("2025-03-01T00:00");
+
+  let query = "event 1";
+  let expected = makeExpectedResult({
+    date: "Wednesday, March 5, 2025",
+    descriptionL10n: {
+      id: "urlbar-result-dates-countdown",
+      args: { name: "Event 1", daysUntilStart: 4 },
+    },
+  });
+
+  for (let sponsored of [true, false]) {
+    for (let nonsponsored of [true, false]) {
+      info(
+        "Doing sponsored/nonsponsored test: " +
+          JSON.stringify({ sponsored, nonsponsored })
+      );
+
+      UrlbarPrefs.set("suggest.quicksuggest.sponsored", sponsored);
+      UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", nonsponsored);
+      await QuickSuggestTestUtils.forceSync();
+
+      await checkDatesResults(query, expected);
+    }
+  }
+
+  UrlbarPrefs.clear("suggest.quicksuggest.sponsored");
+  UrlbarPrefs.clear("suggest.quicksuggest.nonsponsored");
+  await QuickSuggestTestUtils.forceSync();
 });
 
 add_task(async function fourDaysBefore() {
@@ -207,6 +271,10 @@ add_task(async function lastDayDuringMultiDay() {
 
 
 add_task(async function testTwoSuggestions() {
+  
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
+  await QuickSuggestTestUtils.forceSync();
+
   setTime("2025-03-01T00:00");
 
   
@@ -248,6 +316,9 @@ add_task(async function testTwoSuggestions() {
     expectedDateSuggestion,
     expectedOtherSuggestion,
   ]);
+
+  UrlbarPrefs.clear("suggest.quicksuggest.nonsponsored");
+  await QuickSuggestTestUtils.forceSync();
 });
 
 
