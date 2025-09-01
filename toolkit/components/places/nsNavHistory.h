@@ -307,6 +307,16 @@ class nsNavHistory final : public nsSupportsWeakReference,
 
 
 
+
+
+
+  int64_t CalculateFrecency(int32_t aVisitAgeInDays, int32_t aNumVisits,
+                            bool aBookmarked) const;
+
+  
+
+
+
   void UpdateDaysOfHistory(PRTime visitTime);
 
   
