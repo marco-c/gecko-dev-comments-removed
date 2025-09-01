@@ -35,6 +35,7 @@
 #include "mozilla/Preferences.h"
 #include "nsNetUtil.h"
 #include "mozilla/glean/NetwerkMetrics.h"
+#include "mozilla/FileUtils.h"
 
 #ifdef MOZ_BACKGROUNDTASKS
 #  include "mozilla/BackgroundTasksRunner.h"
@@ -83,6 +84,56 @@ bool CacheFileHandle::DispatchRelease() {
       nsIEventTarget::DISPATCH_NORMAL);
   return NS_SUCCEEDED(rv);
 }
+
+#if defined(MOZ_CACHE_ASYNC_IO)
+void CacheFileHandle::StartAsyncOperation() {
+  mAsyncRunning++;
+  CacheFileIOManager::gInstance->mAsyncRunning++;
+}
+
+bool CacheFileHandle::WaitForAsyncCompletion(nsIRunnable* aEvent,
+                                             uint32_t aLevel) {
+  if (mAsyncRunning) {
+    mPendingEvents.AppendElement(PendingItem(aEvent, aLevel));
+    return true;
+  }
+  return false;
+}
+
+#  define GUARD_ASYNC_WRITE()                                           \
+    if (mHandle->WaitForAsyncCompletion(                                \
+            this, mHandle->IsPriority() ? CacheIOThread::WRITE_PRIORITY \
+                                        : CacheIOThread::WRITE)) {      \
+      return NS_OK;                                                     \
+    }
+
+class PendingItemComparator {
+ public:
+  using PendingItem = CacheFileHandle::PendingItem;
+  bool LessThan(const PendingItem& a, const PendingItem& b) const {
+    return a.second < b.second;
+  }
+};
+
+void CacheFileHandle::EndAsyncOperation() {
+  MOZ_ASSERT(mAsyncRunning, "EndAsyncOperation called without async operation");
+  MOZ_ASSERT(CacheFileIOManager::gInstance->mIOThread->IsCurrentThread());
+
+  if (--mAsyncRunning == 0) {
+    
+    auto pendingEvents = std::move(mPendingEvents);
+    pendingEvents.StableSort(PendingItemComparator());
+    for (auto& event : pendingEvents) {
+      event.first->Run();
+    }
+  }
+  if (--CacheFileIOManager::gInstance->mAsyncRunning == 0) {
+    CacheFileIOManager::gInstance->DispatchPendingEvents();
+  }
+}
+#else
+#  define GUARD_ASYNC_WRITE()
+#endif
 
 NS_IMPL_ADDREF(CacheFileHandle)
 NS_IMETHODIMP_(MozExternalRefCountType)
@@ -536,6 +587,16 @@ class ShutdownEvent : public Runnable, nsITimerCallback {
 
  public:
   NS_IMETHOD Run() override {
+#if defined(MOZ_CACHE_ASYNC_IO)
+    if (CacheFileIOManager::gInstance->mAsyncRunning > 0) {
+      
+      
+      LOG(("CacheFileIOManager::ShutdownEvent - waiting for async operations"));
+      CacheFileIOManager::gInstance->mPendingEvents.AppendElement(
+          CacheFileIOManager::PendingItem(this, CacheIOThread::WRITE));
+      return NS_OK;
+    }
+#endif
     CacheFileIOManager::gInstance->ShutdownInternal();
 
     mNotified = true;
@@ -719,22 +780,58 @@ class ReadEvent : public Runnable, public IOPerfReportEvent {
   ~ReadEvent() = default;
 
  public:
-  NS_IMETHOD Run() override {
+  nsresult InlineRun(bool aAsyncDataRead) {
     nsresult rv;
+
+    MOZ_ASSERT(CacheFileIOManager::IsOnIOThread());
 
     if (mHandle->IsClosed() || (mCallback && mCallback->IsKilled())) {
       rv = NS_ERROR_NOT_INITIALIZED;
     } else {
       rv = CacheFileIOManager::gInstance->ReadInternal(mHandle, mOffset, mBuf,
-                                                       mCount);
+                                                       mCount, this);
       if (NS_SUCCEEDED(rv)) {
+#if !defined(MOZ_CACHE_ASYNC_IO)
         Report(CacheFileIOManager::gInstance->mIOThread);
+#else
+        
+
+
+        return NS_OK;
+#endif
       }
     }
+
+#if defined(MOZ_CACHE_ASYNC_IO)
+    if (aAsyncDataRead) {
+      nsCOMPtr<nsIEventTarget> ioTarget = CacheFileIOManager::IOTarget();
+      ioTarget->Dispatch(NS_NewRunnableFunction(
+          "net::ReadEvent::Callback", [self = RefPtr(this), rv]() {
+            self->mCallback->OnDataRead(self->mHandle, self->mBuf, rv);
+          }));
+      return NS_OK;
+    }
+#endif
 
     mCallback->OnDataRead(mHandle, mBuf, rv);
     return NS_OK;
   }
+
+  NS_IMETHOD Run() override { return InlineRun(false); }
+
+#if defined(MOZ_CACHE_ASYNC_IO)
+  nsresult OnComplete(nsresult aStatus) {
+    nsresult result = aStatus;
+
+    if (NS_SUCCEEDED(result)) {
+      Report(CacheFileIOManager::gInstance->mIOThread);
+    }
+
+    mCallback->OnDataRead(mHandle, mBuf, result);
+    mHandle->EndAsyncOperation();
+    return NS_OK;
+  }
+#endif
 
  protected:
   RefPtr<CacheFileHandle> mHandle;
@@ -772,6 +869,7 @@ class WriteEvent : public Runnable, public IOPerfReportEvent {
 
  public:
   NS_IMETHOD Run() override {
+    GUARD_ASYNC_WRITE();
     nsresult rv;
 
     if (mHandle->IsClosed() || (mCallback && mCallback->IsKilled())) {
@@ -920,6 +1018,7 @@ class TruncateSeekSetEOFEvent : public Runnable {
 
  public:
   NS_IMETHOD Run() override {
+    GUARD_ASYNC_WRITE();
     nsresult rv;
 
     if (mHandle->IsClosed() || (mCallback && mCallback->IsKilled())) {
@@ -957,6 +1056,7 @@ class RenameFileEvent : public Runnable {
 
  public:
   NS_IMETHOD Run() override {
+    GUARD_ASYNC_WRITE();
     nsresult rv;
 
     if (mHandle->IsClosed()) {
@@ -1164,6 +1264,12 @@ nsresult CacheFileIOManager::Init() {
   NS_ENSURE_SUCCESS(rv, rv);
 
   gInstance = std::move(ioMan);
+
+  
+  nsCOMPtr<nsIEventTarget> target =
+      do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID, &rv);
+  Unused << target;
+
   return NS_OK;
 }
 
@@ -1966,6 +2072,17 @@ nsresult CacheFileIOManager::Read(CacheFileHandle* aHandle, int64_t aOffset,
 
   RefPtr<ReadEvent> ev =
       new ReadEvent(aHandle, aOffset, aBuf, aCount, aCallback);
+#if defined(MOZ_CACHE_ASYNC_IO)
+  if (IsOnIOThread()) {
+    
+    
+    
+    
+    ev->InlineRun(true);
+    return NS_OK;
+  }
+#endif
+
   rv = ioMan->mIOThread->Dispatch(ev, aHandle->IsPriority()
                                           ? CacheIOThread::READ_PRIORITY
                                           : CacheIOThread::READ);
@@ -1976,7 +2093,8 @@ nsresult CacheFileIOManager::Read(CacheFileHandle* aHandle, int64_t aOffset,
 
 nsresult CacheFileIOManager::ReadInternal(CacheFileHandle* aHandle,
                                           int64_t aOffset, char* aBuf,
-                                          int32_t aCount) {
+                                          int32_t aCount,
+                                          ReadEvent* aReadEvent) {
   LOG(("CacheFileIOManager::ReadInternal() [handle=%p, offset=%" PRId64
        ", count=%d]",
        aHandle, aOffset, aCount));
@@ -2008,6 +2126,9 @@ nsresult CacheFileIOManager::ReadInternal(CacheFileHandle* aHandle,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
+  MOZ_ASSERT(aOffset + aCount <= aHandle->mFileSize);
+
+#if !defined(MOZ_CACHE_ASYNC_IO)
   int64_t offset = PR_Seek64(aHandle->mFD, aOffset, PR_SEEK_SET);
   if (offset == -1) {
     return NS_ERROR_FAILURE;
@@ -2017,6 +2138,72 @@ nsresult CacheFileIOManager::ReadInternal(CacheFileHandle* aHandle,
   if (bytesRead != aCount) {
     return NS_ERROR_FAILURE;
   }
+#else
+  PRFileDesc* fd;
+  AutoFDClose autoFd;
+
+  if (!aHandle->IsAsyncOperationRunning()) {
+    
+    
+    fd = aHandle->mFD;
+  } else {
+    PRFileDesc* rawFd = nullptr;
+    rv = aHandle->mFile->OpenNSPRFileDesc(PR_RDONLY, 0600, &rawFd);
+    if (NS_FAILED(rv)) {
+      return NS_ERROR_FAILURE;
+    }
+
+    
+    autoFd.reset(rawFd);
+    fd = autoFd.get();
+  }
+
+  nsCOMPtr<nsIEventTarget> target =
+      do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID, &rv);
+  MOZ_ASSERT(target);
+  const bool isPriority = aHandle->IsPriority();
+  rv = target->Dispatch(
+      NS_NewRunnableFunction(
+          "CacheFileIOManager::ReadInternal",
+          [fd, autoFd = std::move(autoFd), aBuf, aCount, aOffset,
+           readevent = RefPtr(aReadEvent), isPriority]() mutable {
+            nsresult rv = NS_OK;
+            int64_t offset = PR_Seek64(fd, aOffset, PR_SEEK_SET);
+            if (offset == -1) {
+              LOG(
+                  ("CacheFileIOManager::ReadInternal() - PR_Seek64 failed "
+                   "[offset=%d]\n",
+                   static_cast<int32_t>(aOffset)));
+              rv = NS_ERROR_FAILURE;
+            }
+
+            if (NS_SUCCEEDED(rv)) {
+              int32_t bytesRead = PR_Read(fd, aBuf, aCount);
+              if (bytesRead != aCount) {
+                LOG(
+                    ("CacheFileIOManager::ReadInternal() - PR_Read failed "
+                     "[bytesRead=%d]\n",
+                     bytesRead));
+                rv = NS_ERROR_FAILURE;
+              }
+            }
+
+            
+            
+            DebugOnly<nsresult> rv_dispatch = gInstance->mIOThread->Dispatch(
+                NewRunnableMethod<nsresult>(
+                    "CacheFileIOManager::ReadEvent::OnComplete", readevent,
+                    &ReadEvent::OnComplete, rv),
+                isPriority ? CacheIOThread::READ_PRIORITY
+                           : CacheIOThread::READ);
+
+            MOZ_ASSERT(NS_SUCCEEDED(rv_dispatch));
+          }),
+      NS_DISPATCH_NORMAL);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  aHandle->StartAsyncOperation();
+#endif
 
   return NS_OK;
 }
@@ -2488,7 +2675,26 @@ nsresult CacheFileIOManager::MaybeReleaseNSPRHandleInternal(
     return NS_OK;
   }
 
-  CacheIOThread::Cancelable cancelable(!aHandle->IsSpecialFile());
+  bool cancelable = !aHandle->IsSpecialFile();
+#if defined(MOZ_CACHE_ASYNC_IO)
+  if (aHandle->mAsyncRunning) {
+    
+    
+    RefPtr<nsIRunnable> closeFunc = NS_NewRunnableFunction(
+        "CacheFileIOManager::MaybeReleaseNSPRHandleInternal",
+        [fd, cancelable]() {
+          CacheIOThread::Cancelable _cancelable(cancelable);
+
+          PR_Close(fd);
+        });
+
+    if (aHandle->WaitForAsyncCompletion(closeFunc, CacheIOThread::OPEN)) {
+      return NS_OK;
+    }
+  }
+#endif
+
+  CacheIOThread::Cancelable _cancelable(cancelable);
 
   PRStatus status = PR_Close(fd);
   if (status != PR_SUCCESS) {
@@ -4508,5 +4714,14 @@ size_t CacheFileIOManager::SizeOfIncludingThis(
     mozilla::MallocSizeOf mallocSizeOf) {
   return mallocSizeOf(gInstance) + SizeOfExcludingThis(mallocSizeOf);
 }
+
+#if defined(MOZ_CACHE_ASYNC_IO)
+void CacheFileIOManager::DispatchPendingEvents() {
+  auto pendingEvents = std::move(mPendingEvents);
+  for (auto& event : pendingEvents) {
+    mIOThread->Dispatch(event.first, event.second);
+  }
+}
+#endif
 
 }  

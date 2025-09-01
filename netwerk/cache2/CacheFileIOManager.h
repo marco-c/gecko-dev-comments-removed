@@ -22,17 +22,22 @@
 #include "prio.h"
 
 
+#if !defined(MOZ_WIDGET_ANDROID)
+#  define MOZ_CACHE_ASYNC_IO 1
+#endif
 
 class nsIFile;
 class nsITimer;
 class nsIDirectoryEnumerator;
 class nsILoadContextInfo;
+class nsIRunnable;
 
 namespace mozilla {
 namespace net {
 
 class CacheFile;
 class CacheFileIOListener;
+class PendingItemComparator;
 
 #ifdef DEBUG_HANDLES
 class CacheFileHandlesEntry;
@@ -73,10 +78,19 @@ class CacheFileHandle final : public nsISupports {
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
+#if defined(MOZ_CACHE_ASYNC_IO)
+  void StartAsyncOperation();
+  void EndAsyncOperation();
+  bool IsAsyncOperationRunning() const { return mAsyncRunning > 0; }
+
+  bool WaitForAsyncCompletion(nsIRunnable* aEvent, uint32_t aLevel);
+#endif
+
  private:
   friend class CacheFileIOManager;
   friend class CacheFileHandles;
   friend class ReleaseNSPRHandleEvent;
+  friend class PendingItemComparator;
 
   virtual ~CacheFileHandle();
 
@@ -113,6 +127,10 @@ class CacheFileHandle final : public nsISupports {
   
   
   bool mKilled : 1;
+#if defined(MOZ_CACHE_ASYNC_IO)
+  
+  uint32_t mAsyncRunning{0};
+#endif
   
   
   
@@ -125,6 +143,11 @@ class CacheFileHandle final : public nsISupports {
   Atomic<int64_t, Relaxed> mFileSize;
   PRFileDesc* mFD;  
   nsCString mKey;
+#if defined(MOZ_CACHE_ASYNC_IO)
+  using PendingItem = std::pair<RefPtr<nsIRunnable>, uint32_t>;
+  
+  nsTArray<PendingItem> mPendingEvents;
+#endif
 };
 
 class CacheFileHandles {
@@ -384,7 +407,7 @@ class CacheFileIOManager final : public nsITimerCallback, public nsINamed {
                                    CacheFileHandle** _retval);
   void CloseHandleInternal(CacheFileHandle* aHandle);
   nsresult ReadInternal(CacheFileHandle* aHandle, int64_t aOffset, char* aBuf,
-                        int32_t aCount);
+                        int32_t aCount, ReadEvent* aReadEvent);
   nsresult WriteInternal(CacheFileHandle* aHandle, int64_t aOffset,
                          const char* aBuf, int32_t aCount, bool aValidate,
                          bool aTruncate);
@@ -443,6 +466,10 @@ class CacheFileIOManager final : public nsITimerCallback, public nsINamed {
                              const nsCString& aSecondsToWait,
                              const nsCString& aPurgeExtension);
 
+#if defined(MOZ_CACHE_ASYNC_IO)
+  void DispatchPendingEvents();
+#endif
+
   
   
   
@@ -486,6 +513,14 @@ class CacheFileIOManager final : public nsITimerCallback, public nsINamed {
   nsTArray<nsCString> mFailedTrashDirs;
   RefPtr<CacheFileContextEvictor> mContextEvictor;
   TimeStamp mLastSmartSizeTime;
+#if defined(MOZ_CACHE_ASYNC_IO)
+  using PendingItem = std::pair<RefPtr<nsIRunnable>, uint32_t>;
+  nsTArray<PendingItem> mPendingEvents;
+  
+  
+  
+  uint32_t mAsyncRunning{0};
+#endif
 };
 
 }  
