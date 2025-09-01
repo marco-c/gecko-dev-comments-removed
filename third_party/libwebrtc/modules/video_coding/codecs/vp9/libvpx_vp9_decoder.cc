@@ -245,7 +245,7 @@ int LibvpxVp9Decoder::Decode(const EncodedImage& input_image,
   
   
   if (vpx_codec_decode(decoder_, buffer,
-                       static_cast<unsigned int>(input_image.size()), 0,
+                       static_cast<unsigned int>(input_image.size()), nullptr,
                        VPX_DL_REALTIME)) {
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
