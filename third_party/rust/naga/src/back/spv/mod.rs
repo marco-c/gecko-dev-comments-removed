@@ -5,6 +5,7 @@
 
 
 mod block;
+mod f16_polyfill;
 mod helpers;
 mod image;
 mod index;
@@ -745,6 +746,7 @@ pub struct Writer {
     bounds_check_policies: BoundsCheckPolicies,
     zero_initialize_workgroup_memory: ZeroInitializeWorkgroupMemoryMode,
     force_loop_bounding: bool,
+    use_storage_input_output_16: bool,
     void_type: Word,
     
     lookup_type: crate::FastHashMap<LookupType, Word>,
@@ -771,6 +773,10 @@ pub struct Writer {
 
     ray_get_committed_intersection_function: Option<Word>,
     ray_get_candidate_intersection_function: Option<Word>,
+
+    
+    
+    io_f16_polyfills: f16_polyfill::F16IoPolyfill,
 }
 
 bitflags::bitflags! {
@@ -853,6 +859,10 @@ pub struct Options<'a> {
     
     pub force_loop_bounding: bool,
 
+    
+    
+    pub use_storage_input_output_16: bool,
+
     pub debug_info: Option<DebugInfo<'a>>,
 }
 
@@ -872,6 +882,7 @@ impl Default for Options<'_> {
             bounds_check_policies: BoundsCheckPolicies::default(),
             zero_initialize_workgroup_memory: ZeroInitializeWorkgroupMemoryMode::Polyfill,
             force_loop_bounding: true,
+            use_storage_input_output_16: true,
             debug_info: None,
         }
     }

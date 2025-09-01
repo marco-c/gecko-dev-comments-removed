@@ -45,6 +45,29 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use alloc::{
     format,
     string::{String, ToString},
@@ -71,6 +94,19 @@ pub enum BindSamplerTarget {
     Inline(InlineSamplerIndex),
 }
 
+
+
+
+
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+pub struct BindExternalTextureTarget {
+    pub planes: [Slot; 3],
+    pub params: Slot,
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
@@ -79,6 +115,7 @@ pub struct BindTarget {
     pub buffer: Option<Slot>,
     pub texture: Option<Slot>,
     pub sampler: Option<BindSamplerTarget>,
+    pub external_texture: Option<BindExternalTextureTarget>,
     pub mutable: bool,
 }
 

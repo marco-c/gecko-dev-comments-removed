@@ -591,6 +591,11 @@ impl super::Validator {
                 }
 
                 
+                if matches!(class, crate::ImageClass::External) && !clamp_to_edge {
+                    return Err(ExpressionError::InvalidImageClass(class));
+                }
+
+                
                 match level {
                     crate::SampleLevel::Auto => ShaderStages::FRAGMENT,
                     crate::SampleLevel::Zero => ShaderStages::all(),
