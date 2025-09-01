@@ -8,11 +8,13 @@
 #define vm_DateTime_h
 
 #include "mozilla/Atomics.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 
 #include <stdint.h>
 
 #include "js/AllocPolicy.h"
+#include "js/RealmOptions.h"
 #include "js/Utility.h"
 #include "js/Vector.h"
 #include "threading/ExclusiveData.h"
@@ -122,14 +124,8 @@ using TimeZoneIdentifierVector =
 
 
 class DateTimeInfo {
- public:
   
-  
-  enum class ForceUTC { No, Yes };
-
- private:
   static ExclusiveData<DateTimeInfo>* instance;
-  static ExclusiveData<DateTimeInfo>* instanceUTC;
 
   static constexpr int32_t InvalidOffset = INT32_MIN;
 
@@ -144,12 +140,10 @@ class DateTimeInfo {
   friend bool InitDateTimeState();
   friend void FinishDateTimeState();
 
-  explicit DateTimeInfo(bool forceUTC);
-  ~DateTimeInfo();
+  DateTimeInfo();
 
-  static auto acquireLockWithValidTimeZone(ForceUTC forceUTC) {
-    auto guard =
-        forceUTC == ForceUTC::Yes ? instanceUTC->lock() : instance->lock();
+  static auto acquireLockWithValidTimeZone() {
+    auto guard = instance->lock();
     if (guard->timeZoneStatus_ != TimeZoneStatus::Valid) {
       guard->updateTimeZone();
     }
@@ -157,7 +151,10 @@ class DateTimeInfo {
   }
 
  public:
-  static ForceUTC forceUTC(JS::Realm* realm);
+#if JS_HAS_INTL_API
+  explicit DateTimeInfo(RefPtr<JS::TimeZoneString> timeZone);
+#endif
+  ~DateTimeInfo();
 
   
   
@@ -169,9 +166,12 @@ class DateTimeInfo {
 
 
 
-  static int32_t getDSTOffsetMilliseconds(ForceUTC forceUTC,
+  static int32_t getDSTOffsetMilliseconds(DateTimeInfo* dtInfo,
                                           int64_t utcMilliseconds) {
-    auto guard = acquireLockWithValidTimeZone(forceUTC);
+    if (MOZ_UNLIKELY(dtInfo)) {
+      return dtInfo->internalGetDSTOffsetMilliseconds(utcMilliseconds);
+    }
+    auto guard = acquireLockWithValidTimeZone();
     return guard->internalGetDSTOffsetMilliseconds(utcMilliseconds);
   }
 
@@ -180,12 +180,7 @@ class DateTimeInfo {
 
 
 
-  static int32_t utcToLocalStandardOffsetSeconds(ForceUTC forceUTC) {
-    
-    if (forceUTC == ForceUTC::Yes) {
-      return 0;
-    }
-
+  static int32_t utcToLocalStandardOffsetSeconds() {
     
     int32_t offset = utcToLocalOffsetSeconds;
     if (offset != InvalidOffset) {
@@ -193,7 +188,7 @@ class DateTimeInfo {
     }
 
     
-    auto guard = acquireLockWithValidTimeZone(forceUTC);
+    auto guard = acquireLockWithValidTimeZone();
     offset = guard->utcToLocalStandardOffsetSeconds_;
     utcToLocalOffsetSeconds = offset;
     return offset;
@@ -206,9 +201,13 @@ class DateTimeInfo {
 
 
 
-  static int32_t getOffsetMilliseconds(ForceUTC forceUTC, int64_t milliseconds,
+  static int32_t getOffsetMilliseconds(DateTimeInfo* dtInfo,
+                                       int64_t milliseconds,
                                        TimeZoneOffset offset) {
-    auto guard = acquireLockWithValidTimeZone(forceUTC);
+    if (MOZ_UNLIKELY(dtInfo)) {
+      return dtInfo->internalGetOffsetMilliseconds(milliseconds, offset);
+    }
+    auto guard = acquireLockWithValidTimeZone();
     return guard->internalGetOffsetMilliseconds(milliseconds, offset);
   }
 
@@ -216,18 +215,26 @@ class DateTimeInfo {
 
 
 
-  static bool timeZoneDisplayName(ForceUTC forceUTC,
+  static bool timeZoneDisplayName(DateTimeInfo* dtInfo,
                                   TimeZoneDisplayNameVector& result,
                                   int64_t utcMilliseconds, const char* locale) {
-    auto guard = acquireLockWithValidTimeZone(forceUTC);
+    if (MOZ_UNLIKELY(dtInfo)) {
+      return dtInfo->internalTimeZoneDisplayName(result, utcMilliseconds,
+                                                 locale);
+    }
+    auto guard = acquireLockWithValidTimeZone();
     return guard->internalTimeZoneDisplayName(result, utcMilliseconds, locale);
   }
 
   
 
 
-  static bool timeZoneId(ForceUTC forceUTC, TimeZoneIdentifierVector& result) {
-    auto guard = acquireLockWithValidTimeZone(forceUTC);
+  static bool timeZoneId(DateTimeInfo* dtInfo,
+                         TimeZoneIdentifierVector& result) {
+    if (MOZ_UNLIKELY(dtInfo)) {
+      return dtInfo->internalTimeZoneId(result);
+    }
+    auto guard = acquireLockWithValidTimeZone();
     return guard->internalTimeZoneId(result);
   }
 
@@ -235,8 +242,11 @@ class DateTimeInfo {
 
 
   static mozilla::Result<int32_t, mozilla::intl::ICUError> getRawOffsetMs(
-      ForceUTC forceUTC) {
-    auto guard = acquireLockWithValidTimeZone(forceUTC);
+      DateTimeInfo* dtInfo) {
+    if (MOZ_UNLIKELY(dtInfo)) {
+      return dtInfo->timeZone()->GetRawOffsetMs();
+    }
+    auto guard = acquireLockWithValidTimeZone();
     return guard->timeZone()->GetRawOffsetMs();
   }
 #else
@@ -244,8 +254,8 @@ class DateTimeInfo {
 
 
 
-  static int32_t localTZA(ForceUTC forceUTC) {
-    return utcToLocalStandardOffsetSeconds(forceUTC) * msPerSecond;
+  static int32_t localTZA() {
+    return utcToLocalStandardOffsetSeconds() * msPerSecond;
   }
 #endif 
 
@@ -260,19 +270,11 @@ class DateTimeInfo {
   friend void js::ResetTimeZoneInternal(ResetTimeZoneMode);
 
   static void resetTimeZone(ResetTimeZoneMode mode) {
-    {
-      auto guard = instance->lock();
-      guard->internalResetTimeZone(mode);
+    auto guard = instance->lock();
+    guard->internalResetTimeZone(mode);
 
-      
-      utcToLocalOffsetSeconds = InvalidOffset;
-    }
-    {
-      
-      
-      auto guard = instanceUTC->lock();
-      guard->internalResetTimeZone(mode);
-    }
+    
+    utcToLocalOffsetSeconds = InvalidOffset;
   }
 
   struct RangeCache {
@@ -289,8 +291,6 @@ class DateTimeInfo {
 
     void sanityCheck();
   };
-
-  bool forceUTC_;
 
   enum class TimeZoneStatus : uint8_t { Valid, NeedsUpdate, UpdateIfChanged };
 
@@ -347,6 +347,11 @@ class DateTimeInfo {
   
 
 
+  RefPtr<JS::TimeZoneString> timeZoneOverride_;
+
+  
+
+
 
   mozilla::UniquePtr<mozilla::intl::TimeZone> timeZone_;
 
@@ -377,11 +382,13 @@ class DateTimeInfo {
 
   void internalResetTimeZone(ResetTimeZoneMode mode);
 
+  void resetState();
+
   void updateTimeZone();
 
   void internalResyncICUDefaultTimeZone();
 
-  int64_t toClampedSeconds(int64_t milliseconds);
+  static int64_t toClampedSeconds(int64_t milliseconds);
 
   using ComputeFn = int32_t (DateTimeInfo::*)(int64_t);
 
