@@ -43,22 +43,11 @@ class Transport {
  public:
   virtual bool SendRtp(ArrayView<const uint8_t> packet,
                        const PacketOptions& options) = 0;
-  
   virtual bool SendRtcp(ArrayView<const uint8_t> packet,
-                        const PacketOptions& ) {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    return SendRtcp(packet);
-#pragma clang diagnostic pop
-  }
-  [[deprecated("Pass PacketOptions")]]
-  
-  virtual bool SendRtcp(ArrayView<const uint8_t> packet) {
-    return SendRtcp(packet, {});
-  }
+                        const PacketOptions& options) = 0;
 
  protected:
-  virtual ~Transport() {}
+  virtual ~Transport() = default;
 };
 
 }  
