@@ -173,7 +173,7 @@ nsresult WorkerThread::DispatchPrimaryRunnable(
   }
 #endif
 
-  nsresult rv = nsThread::Dispatch(runnable.forget(), NS_DISPATCH_FALLIBLE);
+  nsresult rv = nsThread::Dispatch(runnable.forget(), NS_DISPATCH_NORMAL);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -203,7 +203,7 @@ nsresult WorkerThread::DispatchAnyThread(
 #endif
 
   nsresult rv =
-      nsThread::Dispatch(aWorkerRunnable.forget(), NS_DISPATCH_FALLIBLE);
+      nsThread::Dispatch(aWorkerRunnable.forget(), NS_DISPATCH_NORMAL);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -216,21 +216,23 @@ nsresult WorkerThread::DispatchAnyThread(
 }
 
 NS_IMETHODIMP
-WorkerThread::DispatchFromScript(nsIRunnable* aRunnable, DispatchFlags aFlags) {
-  return Dispatch(do_AddRef(aRunnable), aFlags);
+WorkerThread::DispatchFromScript(nsIRunnable* aRunnable, uint32_t aFlags) {
+  nsCOMPtr<nsIRunnable> runnable(aRunnable);
+  return Dispatch(runnable.forget(), aFlags);
 }
 
 NS_IMETHODIMP
 WorkerThread::Dispatch(already_AddRefed<nsIRunnable> aRunnable,
-                       DispatchFlags aFlags) {
+                       uint32_t aFlags) {
   
-
-  
-  
-  
-  nsCOMPtr<nsIRunnable> runnable(aRunnable);
+  nsCOMPtr<nsIRunnable> runnable(aRunnable);  
 
   LOGV(("WorkerThread::Dispatch [%p] runnable: %p", this, runnable.get()));
+
+  
+  if (NS_WARN_IF(aFlags != NS_DISPATCH_NORMAL)) {
+    return NS_ERROR_UNEXPECTED;
+  }
 
   const bool onWorkerThread = PR_GetCurrentThread() == mThread;
 
@@ -261,7 +263,7 @@ WorkerThread::Dispatch(already_AddRefed<nsIRunnable> aRunnable,
   }
 
   nsresult rv;
-  rv = nsThread::Dispatch(runnable.forget(), aFlags);
+  rv = nsThread::Dispatch(runnable.forget(), NS_DISPATCH_NORMAL);
 
   if (!onWorkerThread && workerPrivate) {
     

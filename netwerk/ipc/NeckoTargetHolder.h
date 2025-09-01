@@ -27,9 +27,8 @@ class NeckoTargetHolder {
   virtual already_AddRefed<nsISerialEventTarget> GetNeckoTarget();
   
   
-  nsresult Dispatch(
-      already_AddRefed<nsIRunnable>&& aRunnable,
-      nsIEventTarget::DispatchFlags aDispatchFlags = NS_DISPATCH_NORMAL);
+  nsresult Dispatch(already_AddRefed<nsIRunnable>&& aRunnable,
+                    uint32_t aDispatchFlags = NS_DISPATCH_NORMAL);
 
   
   nsCOMPtr<nsISerialEventTarget> mNeckoTarget;

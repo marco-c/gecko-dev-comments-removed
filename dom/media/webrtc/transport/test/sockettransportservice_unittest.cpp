@@ -138,7 +138,7 @@ void SocketTransportServiceTest::SetUp() {
   
   
   
-  rv = target_->Dispatch(new RegisterEvent(this), NS_DISPATCH_NORMAL);
+  rv = target_->Dispatch(new RegisterEvent(this), 0);
   ASSERT_TRUE(NS_SUCCEEDED(rv));
   ASSERT_TRUE_WAIT(registered_, 10000);
 }
@@ -155,7 +155,7 @@ void SocketTransportServiceTest::RegisterHandler() {
 void SocketTransportServiceTest::SendEvent() {
   nsresult rv;
 
-  rv = target_->Dispatch(new EventReceived(this), NS_DISPATCH_NORMAL);
+  rv = target_->Dispatch(new EventReceived(this), 0);
   ASSERT_TRUE(NS_SUCCEEDED(rv));
   ASSERT_TRUE_WAIT(Received() == 1, 10000);
 }

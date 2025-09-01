@@ -7,7 +7,7 @@
 #include "nsThreadUtils.h"
 
 #include "chrome/common/ipc_message.h"  
-#include "MaybeLeakRefPtr.h"
+#include "LeakRefPtr.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Likely.h"
 #include "mozilla/TaskQueue.h"
@@ -200,6 +200,7 @@ nsresult NS_GetMainThread(nsIThread** aResult) {
 }
 
 nsresult NS_DispatchToCurrentThread(already_AddRefed<nsIRunnable>&& aEvent) {
+  nsresult rv;
   nsCOMPtr<nsIRunnable> event(aEvent);
   
   nsISerialEventTarget* thread = NS_GetCurrentThread();
@@ -208,38 +209,48 @@ nsresult NS_DispatchToCurrentThread(already_AddRefed<nsIRunnable>&& aEvent) {
   }
   
   
-  
-  return thread->Dispatch(event.forget(), NS_DISPATCH_FALLIBLE);
+  nsIRunnable* temp = event.get();
+  rv = thread->Dispatch(event.forget(), NS_DISPATCH_NORMAL);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    
+    
+    
+    NS_RELEASE(temp);
+  }
+  return rv;
 }
 
 
 
 
 nsresult NS_DispatchToCurrentThread(nsIRunnable* aEvent) {
-  return NS_DispatchToCurrentThread(do_AddRef(aEvent));
+  nsCOMPtr<nsIRunnable> event(aEvent);
+  return NS_DispatchToCurrentThread(event.forget());
 }
 
 nsresult NS_DispatchToMainThread(already_AddRefed<nsIRunnable>&& aEvent,
-                                 nsIEventTarget::DispatchFlags aDispatchFlags) {
-  MaybeLeakRefPtr<nsIRunnable> event(std::move(aEvent),
-                                     aDispatchFlags & NS_DISPATCH_FALLIBLE);
+                                 uint32_t aDispatchFlags) {
+  LeakRefPtr<nsIRunnable> event(std::move(aEvent));
   nsCOMPtr<nsIThread> thread;
   nsresult rv = NS_GetMainThread(getter_AddRefs(thread));
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    NS_ASSERTION(aDispatchFlags & NS_DISPATCH_FALLIBLE,
+    NS_ASSERTION(false,
                  "Failed NS_DispatchToMainThread() in shutdown; leaking");
+    
+    
     return rv;
   }
-  return thread->Dispatch(event.forget(), aDispatchFlags);
+  return thread->Dispatch(event.take(), aDispatchFlags);
 }
 
 
 
 
 
-nsresult NS_DispatchToMainThread(nsIRunnable* aEvent,
-                                 nsIEventTarget::DispatchFlags aDispatchFlags) {
-  return NS_DispatchToMainThread(do_AddRef(aEvent), aDispatchFlags);
+
+nsresult NS_DispatchToMainThread(nsIRunnable* aEvent, uint32_t aDispatchFlags) {
+  nsCOMPtr<nsIRunnable> event(aEvent);
+  return NS_DispatchToMainThread(event.forget(), aDispatchFlags);
 }
 
 nsresult NS_DelayedDispatchToCurrentThread(
@@ -258,15 +269,24 @@ nsresult NS_DelayedDispatchToCurrentThread(
 nsresult NS_DispatchToThreadQueue(already_AddRefed<nsIRunnable>&& aEvent,
                                   nsIThread* aThread,
                                   EventQueuePriority aQueue) {
+  nsresult rv;
   nsCOMPtr<nsIRunnable> event(aEvent);
   NS_ENSURE_TRUE(event, NS_ERROR_INVALID_ARG);
   if (!aThread) {
     return NS_ERROR_UNEXPECTED;
   }
+  
+  
+  nsIRunnable* temp = event.get();
+  rv = aThread->DispatchToQueue(event.forget(), aQueue);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    
+    
+    
+    NS_RELEASE(temp);
+  }
 
-  
-  
-  return aThread->DispatchToQueue(event.forget(), aQueue);
+  return rv;
 }
 
 nsresult NS_DispatchToCurrentThreadQueue(already_AddRefed<nsIRunnable>&& aEvent,
@@ -277,11 +297,10 @@ nsresult NS_DispatchToCurrentThreadQueue(already_AddRefed<nsIRunnable>&& aEvent,
 
 extern nsresult NS_DispatchToMainThreadQueue(
     already_AddRefed<nsIRunnable>&& aEvent, EventQueuePriority aQueue) {
-  nsCOMPtr<nsIRunnable> event(std::move(aEvent));
   nsCOMPtr<nsIThread> mainThread;
   nsresult rv = NS_GetMainThread(getter_AddRefs(mainThread));
   if (NS_SUCCEEDED(rv)) {
-    return NS_DispatchToThreadQueue(event.forget(), mainThread, aQueue);
+    return NS_DispatchToThreadQueue(std::move(aEvent), mainThread, aQueue);
   }
   return rv;
 }
@@ -494,9 +513,8 @@ nsCString nsThreadPoolNaming::GetNextThreadName(const nsACString& aPoolName) {
   return name;
 }
 
-nsresult NS_DispatchBackgroundTask(
-    already_AddRefed<nsIRunnable> aEvent,
-    nsIEventTarget::DispatchFlags aDispatchFlags) {
+nsresult NS_DispatchBackgroundTask(already_AddRefed<nsIRunnable> aEvent,
+                                   uint32_t aDispatchFlags) {
   nsCOMPtr<nsIRunnable> event(aEvent);
   return nsThreadManager::get().DispatchToBackgroundThread(event,
                                                            aDispatchFlags);
@@ -706,8 +724,8 @@ bool NS_IsOnCurrentThread(nsIEventTarget* aTarget) {
   return aTarget->IsOnCurrentThread();
 }
 
-nsresult NS_DispatchBackgroundTask(
-    nsIRunnable* aEvent, nsIEventTarget::DispatchFlags aDispatchFlags) {
+nsresult NS_DispatchBackgroundTask(nsIRunnable* aEvent,
+                                   uint32_t aDispatchFlags) {
   return nsThreadManager::get().DispatchToBackgroundThread(aEvent,
                                                            aDispatchFlags);
 }
@@ -740,13 +758,10 @@ nsresult NS_DispatchAndSpinEventLoopUntilComplete(
 
   RefPtr<nsThreadSyncDispatch> wrapper =
       new nsThreadSyncDispatch(current.forget(), std::move(aEvent));
-
-  
-  
-  
-  nsresult rv =
-      aEventTarget->Dispatch(do_AddRef(wrapper), NS_DISPATCH_FALLIBLE);
+  nsresult rv = aEventTarget->Dispatch(do_AddRef(wrapper));
   if (NS_WARN_IF(NS_FAILED(rv))) {
+    
+    
     return rv;
   }
 

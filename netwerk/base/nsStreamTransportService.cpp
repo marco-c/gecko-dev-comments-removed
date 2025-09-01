@@ -277,15 +277,14 @@ NS_IMPL_ISUPPORTS(nsStreamTransportService, nsIStreamTransportService,
 
 NS_IMETHODIMP
 nsStreamTransportService::DispatchFromScript(nsIRunnable* task,
-                                             DispatchFlags flags) {
-  return Dispatch(do_AddRef(task), flags);
+                                             uint32_t flags) {
+  nsCOMPtr<nsIRunnable> event(task);
+  return Dispatch(event.forget(), flags);
 }
 
 NS_IMETHODIMP
 nsStreamTransportService::Dispatch(already_AddRefed<nsIRunnable> task,
-                                   DispatchFlags flags) {
-  
-  
+                                   uint32_t flags) {
   nsCOMPtr<nsIRunnable> event(task);  
   nsCOMPtr<nsIThreadPool> pool;
   {

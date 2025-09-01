@@ -10,7 +10,6 @@
 #include "nsCOMPtr.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Atomics.h"
-#include "mozilla/TypedEnumBits.h"
 
 class nsITargetShutdownTask;
 %}
@@ -22,84 +21,50 @@ native alreadyAddRefed_nsIRunnable(already_AddRefed<nsIRunnable>);
 interface nsIEventTarget : nsISupports
 {
   
+%{C++
+    nsresult Dispatch(nsIRunnable* aEvent, uint32_t aFlags) {
+      return Dispatch(nsCOMPtr<nsIRunnable>(aEvent).forget(), aFlags);
+    }
+%}
 
+  
 
 
 
 
+  const unsigned long DISPATCH_NORMAL = 0;
 
+  
 
+  
 
 
 
-  cenum DispatchFlags : 32 {
-    
 
 
 
 
-    DISPATCH_NORMAL = 0,
 
-    
 
-    
+  const unsigned long DISPATCH_AT_END = 2;
 
+  
 
 
 
 
 
 
-    DISPATCH_AT_END = 1 << 1,
+  const unsigned long DISPATCH_EVENT_MAY_BLOCK = 4;
 
-    
+  
 
 
 
 
 
 
-    DISPATCH_EVENT_MAY_BLOCK = 1 << 2,
-
-    
-
-
-
-
-
-
-    DISPATCH_IGNORE_BLOCK_DISPATCH = 1 << 3,
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    DISPATCH_FALLIBLE = 1 << 4,
-  };
+  const unsigned long DISPATCH_IGNORE_BLOCK_DISPATCH = 8;
 
   
 
@@ -150,14 +115,6 @@ public:
   boolean isOnCurrentThread();
 
   
-%{C++
-    nsresult Dispatch(nsIRunnable* aEvent, DispatchFlags aFlags) {
-      return Dispatch(nsCOMPtr<nsIRunnable>(aEvent).forget(), aFlags);
-    }
-%}
-
-  
-
 
 
 
@@ -175,8 +132,7 @@ public:
 
 
   [noscript, binaryname(Dispatch)] void dispatchFromC(in alreadyAddRefed_nsIRunnable event,
-                                                      [default(DISPATCH_NORMAL)] in nsIEventTarget_DispatchFlags flags);
-
+                                                      [default(DISPATCH_NORMAL)] in unsigned long flags);
   
 
 
@@ -193,8 +149,7 @@ public:
 
 
 
-  [binaryname(DispatchFromScript)] void dispatch(in nsIRunnable event, in nsIEventTarget_DispatchFlags flags);
-
+  [binaryname(DispatchFromScript)] void dispatch(in nsIRunnable event, in unsigned long flags);
   
 
 
@@ -262,10 +217,6 @@ public:
 #define NS_DISPATCH_AT_END nsIEventTarget::DISPATCH_AT_END
 #define NS_DISPATCH_EVENT_MAY_BLOCK nsIEventTarget::DISPATCH_EVENT_MAY_BLOCK
 #define NS_DISPATCH_IGNORE_BLOCK_DISPATCH nsIEventTarget::DISPATCH_IGNORE_BLOCK_DISPATCH
-#define NS_DISPATCH_FALLIBLE nsIEventTarget::DISPATCH_FALLIBLE
-
-
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(nsIEventTarget::DispatchFlags)
 
 
 #define NS_DECL_NSIEVENTTARGET_FULL                                   \

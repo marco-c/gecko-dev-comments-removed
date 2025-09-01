@@ -10,15 +10,11 @@
 namespace mozilla {
 
 
-nsresult SchedulerGroup::Dispatch(already_AddRefed<nsIRunnable>&& aRunnable,
-                                  nsIEventTarget::DispatchFlags aFlags) {
+nsresult SchedulerGroup::Dispatch(already_AddRefed<nsIRunnable>&& aRunnable) {
   if (NS_IsMainThread()) {
-    
-    
-    
     return NS_DispatchToCurrentThread(std::move(aRunnable));
   }
-  return NS_DispatchToMainThread(std::move(aRunnable), aFlags);
+  return NS_DispatchToMainThread(std::move(aRunnable));
 }
 
 }  

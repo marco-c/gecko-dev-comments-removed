@@ -100,11 +100,10 @@ class WorkerThread final : public nsThread {
   
   
   NS_IMETHOD
-  Dispatch(already_AddRefed<nsIRunnable> aRunnable,
-           DispatchFlags aFlags) override;
+  Dispatch(already_AddRefed<nsIRunnable> aRunnable, uint32_t aFlags) override;
 
   NS_IMETHOD
-  DispatchFromScript(nsIRunnable* aRunnable, DispatchFlags aFlags) override;
+  DispatchFromScript(nsIRunnable* aRunnable, uint32_t aFlags) override;
 
   NS_IMETHOD
   DelayedDispatch(already_AddRefed<nsIRunnable>, uint32_t) override;
