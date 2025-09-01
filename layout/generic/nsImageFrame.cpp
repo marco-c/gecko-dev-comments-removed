@@ -2374,18 +2374,16 @@ nsRect nsDisplayImage::GetDestRectViewTransition() const {
   
   
   
-  nsPoint inkOverflowOffset;
-  nsSize inkOverflowBoxSize, borderBoxSize;
+  nsRect inkOverflowRect;
+  nsSize borderBoxSize;
   Maybe<nsRect> activeRect;
 
   if (image->Style()->GetPseudoType() == PseudoStyleType::viewTransitionOld) {
-    inkOverflowOffset = vt->GetOldInkOverflowOffset(name).value();
-    inkOverflowBoxSize = vt->GetOldInkOverflowBoxSize(name).value();
+    inkOverflowRect = vt->GetOldInkOverflowRect(name).value();
     borderBoxSize = vt->GetOldBorderBoxSize(name).value();
     activeRect = vt->GetOldActiveRect(name);
   } else {
-    inkOverflowOffset = vt->GetNewInkOverflowOffset(name).value();
-    inkOverflowBoxSize = vt->GetNewInkOverflowBoxSize(name).value();
+    inkOverflowRect = vt->GetNewInkOverflowRect(name).value();
     borderBoxSize = vt->GetNewBorderBoxSize(name).value();
     activeRect = vt->GetNewActiveRect(name);
   }
@@ -2396,26 +2394,26 @@ nsRect nsDisplayImage::GetDestRectViewTransition() const {
 
   
   
-  auto xRatio =
-      static_cast<float>(inkOverflowOffset.X()) / borderBoxSize.Width();
+  auto xRatio = static_cast<float>(inkOverflowRect.X()) / borderBoxSize.Width();
   auto yRatio =
-      static_cast<float>(inkOverflowOffset.Y()) / borderBoxSize.Height();
+      static_cast<float>(inkOverflowRect.Y()) / borderBoxSize.Height();
   auto scaledX = std::round(xRatio * destRect.Width());
   auto scaledY = std::round(yRatio * destRect.Height());
 
-  inkOverflowOffset = nsPoint(scaledX, scaledY);
+  const nsPoint scaledInkOverflowOffset(scaledX, scaledY);
 
   
   
   auto widthRatio =
-      static_cast<float>(inkOverflowBoxSize.Width()) / borderBoxSize.Width();
+      static_cast<float>(inkOverflowRect.Width()) / borderBoxSize.Width();
   auto heightRatio =
-      static_cast<float>(inkOverflowBoxSize.Height()) / borderBoxSize.Height();
-  auto scaledWidth = std::round(widthRatio * destRect.Width());
-  auto scaledHeight = std::round(heightRatio * destRect.Height());
+      static_cast<float>(inkOverflowRect.Height()) / borderBoxSize.Height();
+  const nsSize scaledInkOverflowSize(
+      std::round(widthRatio * destRect.Width()),
+      std::round(heightRatio * destRect.Height()));
 
-  destRect = nsRect(destRect.TopLeft() + inkOverflowOffset,
-                    nsSize(scaledWidth, scaledHeight));
+  destRect = nsRect(destRect.TopLeft() + scaledInkOverflowOffset,
+                    scaledInkOverflowSize);
 
   if (activeRect) {
     destRect = destRect.Intersect(activeRect.value());
