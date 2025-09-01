@@ -178,20 +178,32 @@ class nsTextFrame : public nsIFrame {
     const mozilla::dom::CharacterDataBuffer* mCharacterDataBuffer;
     const nsIFrame* mLineContainer;
     nsTextFrame* mFrame;
-    gfxSkipCharsIterator mStart;  
+
+    
+    gfxSkipCharsIterator mStart;
+
     const gfxSkipCharsIterator mTempIterator;
 
     
     mutable nsTextFrame::TabWidthStore* mTabWidths;
+
     
     
     
     mutable uint32_t mTabWidthsAnalyzedLimit;
 
-    int32_t mLength;                  
-    const gfxFloat mWordSpacing;      
-    const gfxFloat mLetterSpacing;    
-    mutable gfxFloat mMinTabAdvance;  
+    
+    int32_t mLength;
+
+    
+    const gfxFloat mWordSpacing;
+
+    
+    const gfxFloat mLetterSpacing;
+
+    
+    mutable gfxFloat mMinTabAdvance;
+
     mutable gfxFloat mHyphenWidth;
     mutable gfxFloat mOffsetFromBlockOriginForTabs;
 
