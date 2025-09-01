@@ -6289,7 +6289,6 @@ void CodeGenerator::visitCallGeneric(LCallGeneric* call) {
   
   masm.setFramePushed(frameSize());
   emitRestoreStackPointerFromFP();
-
 }
 
 void JitRuntime::generateIonGenericCallArgumentsShift(
