@@ -239,6 +239,34 @@ add_task(async function test_tabGroupCollapseWhileSelected() {
   await removeTabGroup(group);
 });
 
+
+
+
+
+add_task(async function test_tabGroupOverflowCounterScrollable() {
+  let win = await BrowserTestUtils.openNewBrowserWindow();
+  await BrowserTestUtils.overflowTabs(null, win, {
+    overflowAtStart: false,
+    overflowTabFactor: 3,
+  });
+  let group = win.gBrowser.addTabGroup([
+    win.gBrowser.tabs.at(-2),
+    win.gBrowser.tabs.at(-1),
+  ]);
+  win.gBrowser.selectedTab = win.gBrowser.tabs.at(-2);
+  
+  await TabGroupTestUtils.toggleCollapsed(group);
+  await TabGroupTestUtils.toggleCollapsed(group);
+  
+  await TabGroupTestUtils.toggleCollapsed(group);
+  Assert.ok(
+    !win.gBrowser.tabContainer.arrowScrollbox.hasAttribute("scrolledtoend"),
+    "Scrollbox correctly overflows at end"
+  );
+  await TabGroupTestUtils.removeTabGroup(group);
+  BrowserTestUtils.closeWindow(win);
+});
+
 add_task(async function test_multiselectedTabsInTabGroupDeselectedOnCollapse() {
   let tabInGroup = BrowserTestUtils.addTab(gBrowser, "about:blank");
   let secondTabInGroup = BrowserTestUtils.addTab(gBrowser, "about:blank");

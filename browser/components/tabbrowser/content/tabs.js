@@ -116,9 +116,21 @@
       
       
       this.arrowScrollbox._getScrollableElements = () => {
-        return this.ariaFocusableItems.filter(
-          this.arrowScrollbox._canScrollToElement
-        );
+        return this.ariaFocusableItems.reduce((elements, item) => {
+          if (this.arrowScrollbox._canScrollToElement(item)) {
+            elements.push(item);
+            if (
+              isTab(item) &&
+              item.group &&
+              item.group.collapsed &&
+              item.selected
+            ) {
+              
+              elements.push(item.group.overflowContainer);
+            }
+          }
+          return elements;
+        }, []);
       };
       this.arrowScrollbox._canScrollToElement = element => {
         if (isTab(element)) {
