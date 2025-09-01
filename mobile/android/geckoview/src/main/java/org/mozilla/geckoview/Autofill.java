@@ -34,12 +34,16 @@ import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.ThreadUtils;
 
+
 public class Autofill {
   private static final boolean DEBUG = false;
 
+  
   public @interface AutofillNotify {}
 
+  
   public static final class Hint {
+    
     private Hint() {}
 
     
@@ -57,8 +61,13 @@ public class Autofill {
     
     public static final int USERNAME = 3;
 
+    
+
+
+
+
+
     @AnyThread
-    @SuppressWarnings("checkstyle:javadocmethod")
     public static @Nullable String toString(final @AutofillHint int hint) {
       final int idx = hint + 1;
       final String[] map = new String[] {"NONE", "EMAIL", "PASSWORD", "URI", "USERNAME"};
@@ -70,11 +79,14 @@ public class Autofill {
     }
   }
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({Hint.NONE, Hint.EMAIL_ADDRESS, Hint.PASSWORD, Hint.URI, Hint.USERNAME})
   public @interface AutofillHint {}
 
+  
   public static final class InputType {
+    
     private InputType() {}
 
     
@@ -89,8 +101,13 @@ public class Autofill {
     
     public static final int PHONE = 2;
 
+    
+
+
+
+
+
     @AnyThread
-    @SuppressWarnings("checkstyle:javadocmethod")
     public static @Nullable String toString(final @AutofillInputType int type) {
       final int idx = type + 1;
       final String[] map = new String[] {"NONE", "TEXT", "NUMBER", "PHONE"};
@@ -102,6 +119,7 @@ public class Autofill {
     }
   }
 
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({InputType.NONE, InputType.TEXT, InputType.NUMBER, InputType.PHONE})
   public @interface AutofillInputType {}
@@ -114,6 +132,12 @@ public class Autofill {
     String value;
     Node node;
     EventCallback callback;
+
+    
+
+
+
+
 
     NodeData(final int id, final Node node) {
       this.id = id;
@@ -155,21 +179,35 @@ public class Autofill {
     
     private String mFocusedUuid = null;
 
-     Session(@NonNull final GeckoSession geckoSession) {
+    
+
+
+
+
+    Session(@NonNull final GeckoSession geckoSession) {
       mGeckoSession = geckoSession;
       
       clear(UUID.randomUUID().toString());
     }
 
+    
+
+
+
+
     @UiThread
-    @SuppressWarnings("checkstyle:javadocmethod")
     public @NonNull Rect getDefaultDimensions() {
       final Rect rect = new Rect();
       mGeckoSession.getSurfaceBounds(rect);
       return rect;
     }
 
-     void clear(final String newSessionId) {
+    
+
+
+
+
+    void clear(final String newSessionId) {
       mId = newSessionId;
       mFocusedUuid = null;
       mRoot = Node.newDummyRoot(getDefaultDimensions(), newSessionId);
@@ -178,7 +216,12 @@ public class Autofill {
       addNode(mRoot);
     }
 
-     boolean isEmpty() {
+    
+
+
+
+
+    boolean isEmpty() {
       
       return mUuidToNodeData.size() == 1;
     }
@@ -247,7 +290,13 @@ public class Autofill {
       }
     }
 
-     void addRoot(@NonNull final Node node, final EventCallback callback) {
+    
+
+
+
+
+
+    void addRoot(@NonNull final Node node, final EventCallback callback) {
       if (DEBUG) {
         Log.d(LOGTAG, "addRoot: " + node);
       }
@@ -257,7 +306,12 @@ public class Autofill {
       dataFor(node).callback = callback;
     }
 
-     void addNode(@NonNull final Node node) {
+    
+
+
+
+
+    void addNode(@NonNull final Node node) {
       if (DEBUG) {
         Log.d(LOGTAG, "addNode: " + node);
       }
@@ -318,7 +372,12 @@ public class Autofill {
       return getNode(mFocusedUuid);
     }
 
-     void setFocus(final Node node) {
+    
+
+
+
+
+    void setFocus(final Node node) {
       mFocusedUuid = node != null ? node.getUuid() : null;
     }
 
@@ -333,7 +392,13 @@ public class Autofill {
       return focused != null ? dataFor(focused) : null;
     }
 
-     @Nullable
+    
+
+
+
+
+
+    @Nullable
     Node getNode(final String uuid) {
       if (uuid == null) {
         return null;
@@ -345,7 +410,13 @@ public class Autofill {
       return nodeData.node;
     }
 
-     Node getNode(final int id) {
+    
+
+
+
+
+
+    Node getNode(final int id) {
       return mIdToNode.get(id);
     }
 
@@ -360,7 +431,12 @@ public class Autofill {
       return mRoot;
     }
 
-     String getId() {
+    
+
+
+
+
+    String getId() {
       return mId;
     }
 
@@ -383,18 +459,31 @@ public class Autofill {
       return builder.toString();
     }
 
+    
+
+
+
+
+
+
     @TargetApi(23)
     @UiThread
-    @SuppressWarnings("checkstyle:javadocmethod")
     public void fillViewStructure(
         @NonNull final View view, @NonNull final ViewStructure structure, final int flags) {
       ThreadUtils.assertOnUiThread();
       fillViewStructure(getRoot(), view, structure, flags);
     }
 
+    
+
+
+
+
+
+
+
     @TargetApi(23)
     @UiThread
-    @SuppressWarnings("checkstyle:javadocmethod")
     public void fillViewStructure(
         final @NonNull Node node,
         @NonNull final View view,
@@ -547,18 +636,30 @@ public class Autofill {
     private final String mSessionId;
 
     
+
+
+
+
     @NonNull
     String getUuid() {
       return mUuid;
     }
 
     
+
+
+
+
     @Nullable
     Node getRoot() {
       return mRoot;
     }
 
     
+
+
+
+
     @Nullable
     Node getParent() {
       return mParent;
@@ -570,8 +671,13 @@ public class Autofill {
 
 
 
+    
+
+
+
+
     @AnyThread
-     @NonNull
+    @NonNull
     Rect getDimensions() {
       return mDimens;
     }
@@ -592,7 +698,12 @@ public class Autofill {
 
 
 
-     void setScreenRect(final @NonNull RectF screenRectF) {
+    
+
+
+
+
+    void setScreenRect(final @NonNull RectF screenRectF) {
       screenRectF.roundOut(mScreenRect);
     }
 
@@ -607,6 +718,11 @@ public class Autofill {
     }
 
     
+
+
+
+
+
     @NonNull
     Node addChild(@NonNull final Node child) {
       mChildren.put(child.getUuid(), child);
@@ -623,8 +739,13 @@ public class Autofill {
       return mAttributes;
     }
 
+    
+
+
+
+
+
     @AnyThread
-    @SuppressWarnings("checkstyle:javadocmethod")
     public @Nullable String getAttribute(@NonNull final String key) {
       return mAttributes.get(key);
     }
@@ -690,11 +811,23 @@ public class Autofill {
     }
 
     
+
+
+
+
+
+
     static Node newDummyRoot(final Rect dimensions, final String sessionId) {
       return new Node(dimensions, sessionId);
     }
 
-     Node(final Rect dimensions, final String sessionId) {
+    
+
+
+
+
+
+    Node(final Rect dimensions, final String sessionId) {
       mRoot = null;
       mParent = null;
       mUuid = UUID.randomUUID().toString();
@@ -755,12 +888,27 @@ public class Autofill {
       return builder.toString();
     }
 
-     Node(
-        @NonNull final GeckoBundle bundle, final Rect defaultDimensions, final String sessionId) {
+    
+
+
+
+
+
+
+    Node(@NonNull final GeckoBundle bundle, final Rect defaultDimensions, final String sessionId) {
       this(bundle,  null,  null, defaultDimensions, sessionId);
     }
 
-     Node(
+    
+
+
+
+
+
+
+
+
+    Node(
         @NonNull final GeckoBundle bundle,
         final Node root,
         final Node parent,
@@ -885,6 +1033,7 @@ public class Autofill {
     }
   }
 
+  
   public interface Delegate {
 
     
@@ -989,11 +1138,17 @@ public class Autofill {
     private @NonNull final Session mAutofillSession;
     private Delegate mDelegate;
 
+    
+
+
+
+
     public Support(@NonNull final GeckoSession geckoSession) {
       mGeckoSession = geckoSession;
       mAutofillSession = new Session(mGeckoSession);
     }
 
+    
     public void registerListeners() {
       mGeckoSession
           .getEventDispatcher()
@@ -1047,8 +1202,13 @@ public class Autofill {
       return mAutofillSession;
     }
 
-     void addNode(
-        @NonNull final GeckoBundle message, @NonNull final EventCallback callback) {
+    
+
+
+
+
+
+    void addNode(@NonNull final GeckoBundle message, @NonNull final EventCallback callback) {
       final Session session = getAutofillSession();
       final Node node = new Node(message, session.getDefaultDimensions(), session.getId());
 
@@ -1059,6 +1219,11 @@ public class Autofill {
         mDelegate.onNodeAdd(mGeckoSession, node, getAutofillSession().dataFor(node));
       }
     }
+
+    
+
+
+
 
     private void addValues(final GeckoBundle message) {
       final String uuid = message.getString("uuid");
@@ -1085,7 +1250,12 @@ public class Autofill {
       }
     }
 
-     void start(@Nullable final String sessionId) {
+    
+
+
+
+
+    void start(@Nullable final String sessionId) {
       
       getAutofillSession().clear(sessionId);
       if (mDelegate != null) {
@@ -1093,7 +1263,12 @@ public class Autofill {
       }
     }
 
-     void commit(@Nullable final GeckoBundle message) {
+    
+
+
+
+
+    void commit(@Nullable final GeckoBundle message) {
       if (getAutofillSession().isEmpty() || message == null) {
         return;
       }
@@ -1114,7 +1289,12 @@ public class Autofill {
       }
     }
 
-     void update(@Nullable final GeckoBundle message) {
+    
+
+
+
+
+    void update(@Nullable final GeckoBundle message) {
       if (getAutofillSession().isEmpty() || message == null) {
         return;
       }
@@ -1149,7 +1329,8 @@ public class Autofill {
       }
     }
 
-     void clear() {
+    
+    void clear() {
       if (getAutofillSession().isEmpty()) {
         return;
       }
@@ -1164,7 +1345,12 @@ public class Autofill {
       }
     }
 
-     void onFocusChanged(@Nullable final GeckoBundle message) {
+    
+
+
+
+
+    void onFocusChanged(@Nullable final GeckoBundle message) {
       final Session session = getAutofillSession();
       if (session.isEmpty()) {
         return;
