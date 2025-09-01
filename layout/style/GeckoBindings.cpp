@@ -8,6 +8,7 @@
 
 #include "mozilla/GeckoBindings.h"
 
+#include "AnchorPositioningUtils.h"
 #include "ChildIterator.h"
 #include "ErrorReporter.h"
 #include "gfxFontFeatures.h"
@@ -1824,22 +1825,6 @@ StyleFontFamilyList StyleFontFamilyList::WithOneUnquotedFamily(
   return WithNames(std::move(names));
 }
 
-
-static const nsIFrame* TraverseUpToContainerChild(const nsIFrame* aContainer,
-                                                  const nsIFrame* aDescendant) {
-  const auto* current = aDescendant;
-  while (true) {
-    const auto* parent = current->GetParent();
-    if (!parent) {
-      return nullptr;
-    }
-    if (parent == aContainer) {
-      return current;
-    }
-    current = parent;
-  }
-}
-
 static bool AnchorSideUsesCBWM(
     const StyleAnchorSideKeyword& aAnchorSideKeyword) {
   switch (aAnchorSideKeyword) {
@@ -1861,13 +1846,6 @@ static bool AnchorSideUsesCBWM(
   }
   return false;
 }
-
-struct AnchorPosInfo {
-  
-  
-  nsRect mRect;
-  const nsIFrame* mContainingBlock;
-};
 
 static const nsAtom* GetUsedAnchorName(const nsIFrame* aPositioned,
                                        const nsAtom* aAnchorName) {
@@ -1928,57 +1906,8 @@ static Maybe<AnchorPosInfo> GetAnchorPosRect(
     return Nothing{};
   }
 
-  auto rect = [&]() -> Maybe<nsRect> {
-    if (aCBRectIsvalid) {
-      const nsRect result = anchor->GetRectRelativeToSelf();
-      const auto offset = anchor->GetOffsetTo(containingBlock);
-      
-      return Some(result + offset);
-    }
-
-    
-    
-    
-    
-    const auto* containerChild =
-        TraverseUpToContainerChild(containingBlock, anchor);
-    if (!containerChild) {
-      return Nothing{};
-    }
-
-    if (anchor == containerChild) {
-      
-      return Some(anchor->GetRect());
-    }
-
-    
-    
-    const nsRect rectToContainerChild = anchor->GetRectRelativeToSelf();
-    const auto offset = anchor->GetOffsetTo(containerChild);
-    return Some(rectToContainerChild + offset + containerChild->GetPosition());
-  }();
-  return rect.map([&](const nsRect& aRect) {
-    
-    
-    
-    
-    const auto border = containingBlock->GetUsedBorder();
-    const nsPoint borderTopLeft{border.left, border.top};
-    const auto rect = aRect - borderTopLeft;
-    if (entry) {
-      
-      
-      MOZ_ASSERT_IF(*entry, entry->ref().mSize == rect.Size());
-      *entry = Some(AnchorPosResolutionData{
-          rect.Size(),
-          Some(rect.TopLeft()),
-      });
-    }
-    return AnchorPosInfo{
-        .mRect = rect,
-        .mContainingBlock = containingBlock,
-    };
-  });
+  return AnchorPositioningUtils::GetAnchorPosRect(containingBlock, anchor,
+                                                  aCBRectIsvalid, entry);
 }
 
 bool Gecko_GetAnchorPosOffset(const AnchorPosOffsetResolutionParams* aParams,
