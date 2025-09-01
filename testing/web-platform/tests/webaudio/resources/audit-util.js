@@ -240,14 +240,6 @@ function assert_array_equals_exact(actual, expected, message) {
 
 
 
-
-
-
-
-
-
-
-
 function assert_not_constant_value(array, constantValue, message) {
   const notAllSame = array.some(value => value !== constantValue);
   assert_true(notAllSame, message);
