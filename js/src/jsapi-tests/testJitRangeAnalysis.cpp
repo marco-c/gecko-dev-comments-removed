@@ -195,17 +195,24 @@ BEGIN_TEST(testJitRangeAnalysis_MathSignBeta) {
                          Range::NewDoubleSingletonRange(func.alloc, -0.0)));
 
   
+  
+  
+  
+  
+  
+  
   CHECK(EquivalentRanges(
       thenAdd->range(),
       new (func.alloc)
           Range(Range::NoInt32LowerBound, 0, Range::IncludesFractionalParts,
-                Range::ExcludesNegativeZero, Range::IncludesInfinity)));
+                Range::IncludesNegativeZero, Range::IncludesInfinity)));
 
+  
   
   CHECK(EquivalentRanges(thenSign->range(),
                          new (func.alloc)
                              Range(-1, 0, Range::ExcludesFractionalParts,
-                                   Range::ExcludesNegativeZero, 0)));
+                                   Range::IncludesNegativeZero, 0)));
 
   
   CHECK(EquivalentRanges(
@@ -293,7 +300,7 @@ BEGIN_TEST(testJitRangeAnalysis_StrictCompareBeta) {
     return false;
   }
   CHECK(EquivalentRanges(thenAdd->range(),
-                         Range::NewDoubleRange(func.alloc, 0.0, 0.0)));
+                         Range::NewDoubleRange(func.alloc, -0.0, 0.0)));
 
   return true;
 }
