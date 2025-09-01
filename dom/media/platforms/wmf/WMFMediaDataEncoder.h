@@ -29,6 +29,9 @@ class WMFMediaDataEncoder final : public MediaDataEncoder {
   RefPtr<EncodePromise> Drain() override;
   RefPtr<ShutdownPromise> Shutdown() override;
   RefPtr<GenericPromise> SetBitrate(uint32_t aBitsPerSec) override;
+  bool IsHardwareAccelerated(nsACString& aFailureReason) const override {
+    return mIsHardwareAccelerated;
+  }
 
   RefPtr<ReconfigurationPromise> Reconfigure(
       const RefPtr<const EncoderConfigurationChangeList>& aConfigurationChanges)
@@ -94,6 +97,9 @@ class WMFMediaDataEncoder final : public MediaDataEncoder {
   RefPtr<MFTEncoder> mEncoder;
   
   RefPtr<MediaByteBuffer> mConfigData;
+
+  
+  Atomic<bool> mIsHardwareAccelerated;
 
   MozPromiseHolder<EncodePromise> mEncodePromise;
   MozPromiseRequestHolder<MFTEncoder::EncodePromise> mEncodeRequest;
