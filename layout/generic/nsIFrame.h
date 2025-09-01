@@ -179,6 +179,18 @@ enum class LayoutFrameType : uint8_t {
 #undef FRAME_TYPE
 };
 
+
+
+struct RubyMetrics {
+  nscoord mAscent = 0;
+  nscoord mDescent = 0;
+
+  void CombineWith(const RubyMetrics& aOther) {
+    mAscent = std::max(mAscent, aOther.mAscent);
+    mDescent = std::max(mDescent, aOther.mDescent);
+  }
+};
+
 }  
 
 enum nsSelectionAmount {
@@ -1703,6 +1715,15 @@ class nsIFrame : public nsQueryFrame {
 
 
   nscoord OneEmInAppUnits() const;
+
+  
+
+
+
+
+
+
+  virtual mozilla::RubyMetrics RubyMetrics() const;
 
   
 
