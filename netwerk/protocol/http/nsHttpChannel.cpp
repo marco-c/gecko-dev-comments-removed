@@ -2852,16 +2852,18 @@ nsresult nsHttpChannel::ProcessResponse(nsHttpConnectionInfo* aConnInfo) {
   
   
   
-  nsCOMPtr<nsIURI> referrer = GetReferringPage();
-  if (!referrer && mReferrerInfo) {
-    referrer = mReferrerInfo->GetOriginalReferrer();
-  }
+  if (StaticPrefs::network_predictor_enabled()) {
+    nsCOMPtr<nsIURI> referrer = GetReferringPage();
+    if (!referrer && mReferrerInfo) {
+      referrer = mReferrerInfo->GetOriginalReferrer();
+    }
 
-  if (referrer) {
-    nsCOMPtr<nsILoadContextInfo> lci = GetLoadContextInfo(this);
-    mozilla::net::Predictor::UpdateCacheability(
-        referrer, mURI, httpStatus, mRequestHead, mResponseHead.get(), lci,
-        IsThirdPartyTrackingResource());
+    if (referrer) {
+      nsCOMPtr<nsILoadContextInfo> lci = GetLoadContextInfo(this);
+      mozilla::net::Predictor::UpdateCacheability(
+          referrer, mURI, httpStatus, mRequestHead, mResponseHead.get(), lci,
+          IsThirdPartyTrackingResource());
+    }
   }
 
   

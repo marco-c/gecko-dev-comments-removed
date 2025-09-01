@@ -16,6 +16,66 @@ async function setCookies(aBrowser) {
   });
 }
 
+
+
+
+async function warmHttpCacheForAllContexts() {
+  let loadContextInfos = [
+    Services.loadContextInfo.default,
+    Services.loadContextInfo.custom(false, { userContextId: 1 }),
+    Services.loadContextInfo.custom(false, { userContextId: 2 }),
+    Services.loadContextInfo.custom(false, { firstPartyDomain: "example.com" }),
+    Services.loadContextInfo.custom(false, { firstPartyDomain: "example.org" }),
+  ];
+
+  const uri = Services.io.newURI(TEST_DOMAIN);
+
+  
+  function putEntry(lci) {
+    return new Promise(resolve => {
+      let storage = Services.cache2.diskCacheStorage(lci);
+      storage.asyncOpenURI(
+        uri,
+         "",
+        Ci.nsICacheStorage.OPEN_TRUNCATE,
+        {
+          onCacheEntryAvailable(entry, isNew, appCache, status) {
+            try {
+              if (Components.isSuccessCode(status)) {
+                
+                entry.setMetaDataElement("request-method", "GET");
+                entry.setMetaDataElement(
+                  "response-head",
+                  "HTTP/1.1 200 OK\r\n" +
+                    "Date: Mon, 01 Jan 2000 00:00:00 GMT\r\n" +
+                    "Content-Type: text/plain\r\n" +
+                    "Cache-Control: max-age=600\r\n" +
+                    "Content-Length: 2\r\n\r\n"
+                );
+                
+                let os = entry.openOutputStream(0);
+                os.write("OK", 2);
+                os.close();
+              }
+            } catch (e) {
+              info("Failed to write cache entry: " + e);
+            } finally {
+              try {
+                entry.close();
+              } catch (_) {}
+              resolve();
+            }
+          },
+        }
+      );
+    });
+  }
+
+  for (let lci of loadContextInfos) {
+    await putEntry(lci);
+  }
+}
+
 function cacheDataForContext(loadContextInfo) {
   return new Promise(resolve => {
     let cachedURIs = [];
@@ -81,6 +141,10 @@ add_setup(async function () {
 
 
 IsolationTestTools.runTests(TEST_DOMAIN, setCookies, () => true);
+
+add_task(async function warmCache() {
+  await warmHttpCacheForAllContexts();
+});
 
 add_task(checkCacheExists(true));
 
