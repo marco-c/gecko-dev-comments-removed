@@ -381,5 +381,12 @@ module.exports = {
         ],
       },
     },
+    {
+      
+      files: ["browser/components/extensions/**"],
+      rules: {
+        "stylelint-plugin-mozilla/use-border-radius-tokens": false,
+      },
+    },
   ],
 };
