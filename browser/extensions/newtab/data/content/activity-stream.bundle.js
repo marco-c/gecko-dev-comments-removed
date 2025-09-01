@@ -12055,7 +12055,6 @@ const USER_ACTION_TYPES = {
   TASK_COMPLETE: "task_complete"
 };
 const PREF_WIDGETS_LISTS_MAX_LISTS = "widgets.lists.maxLists";
-const PREF_WIDGETS_LISTS_MAX_LISTITEMS = "widgets.lists.maxListItems";
 function Lists({
   dispatch
 }) {
@@ -12458,14 +12457,6 @@ function Lists({
   
   const maxListsCount = Math.max(1, prefs[PREF_WIDGETS_LISTS_MAX_LISTS]);
   const isAtMaxListsLimit = currentListsCount >= maxListsCount;
-
-  
-  
-  const currentSelectedListItemsCount = selectedList?.tasks.length + selectedList?.completed.length;
-
-  
-  const maxListItemsCount = Math.max(1, prefs[PREF_WIDGETS_LISTS_MAX_LISTITEMS]);
-  const isAtMaxListItemsLimit = currentSelectedListItemsCount >= maxListItemsCount;
   return external_React_default().createElement("article", {
     className: "lists",
     ref: el => {
@@ -12521,7 +12512,7 @@ function Lists({
   }))), external_React_default().createElement("div", {
     className: "add-task-container"
   }, external_React_default().createElement("span", {
-    className: `icon icon-add ${isAtMaxListItemsLimit ? "icon-disabled" : ""}`
+    className: "icon icon-add"
   }), external_React_default().createElement("input", {
     ref: inputRef,
     onBlur: () => saveTask(),
@@ -12531,8 +12522,7 @@ function Lists({
     className: "add-task-input",
     onKeyDown: handleKeyDown,
     type: "text",
-    maxLength: 100,
-    disabled: isAtMaxListItemsLimit
+    maxLength: 100
   })), external_React_default().createElement("div", {
     className: "task-list-wrapper"
   }, external_React_default().createElement("moz-reorderable-list", {
