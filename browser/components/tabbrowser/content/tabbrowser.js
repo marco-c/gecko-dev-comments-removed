@@ -179,6 +179,7 @@
       }
 
       Services.obs.addObserver(this, "contextual-identity-updated");
+      Services.obs.addObserver(this, "intl:app-locales-changed");
 
       document.addEventListener("keydown", this, { mozSystemGroup: true });
       document.addEventListener("keypress", this, { mozSystemGroup: true });
@@ -204,7 +205,6 @@
 
       this._setFindbarData();
 
-      
       
       
       
@@ -1117,39 +1117,36 @@
       }
     }
 
-    getWindowTitleForBrowser(aBrowser) {
-      let docElement = document.documentElement;
-      let title = "";
-      let dataSuffix =
-        docElement.getAttribute("privatebrowsingmode") == "temporary"
-          ? "Private"
-          : "Default";
-
-      if (
-        SelectableProfileService?.isEnabled &&
-        SelectableProfileService.currentProfile
-      ) {
-        dataSuffix += "WithProfile";
+    #cachedTitleInfo = null;
+    #populateTitleCache() {
+      this.#cachedTitleInfo = {};
+      for (let id of [
+        "mainWindowTitle",
+        "privateWindowTitle",
+        "privateWindowSuffixForContent",
+      ]) {
+        this.#cachedTitleInfo[id] =
+          document.getElementById(id)?.textContent || "";
       }
-      let defaultTitle = docElement.dataset["title" + dataSuffix].replace(
-        "PROFILENAME",
-        () => SelectableProfileService.currentProfile.name.replace(/\0/g, "")
-      );
+    }
 
+    #determineContentTitle(browser) {
+      let title = "";
       if (
         !this._shouldExposeContentTitle ||
         (PrivateBrowsingUtils.isWindowPrivate(window) &&
           !this._shouldExposeContentTitlePbm)
       ) {
-        return defaultTitle;
+        return title;
       }
 
+      let docElement = document.documentElement;
       
       
       
       try {
         if (docElement.getAttribute("chromehidden").includes("location")) {
-          const uri = Services.io.createExposableURI(aBrowser.currentURI);
+          const uri = Services.io.createExposableURI(browser.currentURI);
           let prefix = uri.prePath;
           if (uri.scheme == "about") {
             prefix = uri.spec;
@@ -1172,33 +1169,53 @@
         title += docElement.getAttribute("titlepreface");
       }
 
-      let tab = this.getTabForBrowser(aBrowser);
+      let tab = this.getTabForBrowser(browser);
       if (tab._labelIsContentTitle) {
         
         
         
         title += tab.getAttribute("label").replace(/\0/g, "");
       }
+      return title;
+    }
 
-      if (title) {
-        
-        
-        
-        
-        
-        return docElement.dataset["contentTitle" + dataSuffix]
-          .replace("CONTENTTITLE", () => title)
-          .replace(
-            "PROFILENAME",
-            () =>
-              SelectableProfileService?.currentProfile?.name.replace(
-                /\0/g,
-                ""
-              ) ?? ""
-          );
+    getWindowTitleForBrowser(browser) {
+      if (!this.#cachedTitleInfo) {
+        this.#populateTitleCache();
+      }
+      let contentTitle = this.#determineContentTitle(browser);
+      let docElement = document.documentElement;
+      let isTemporaryPrivateWindow =
+        docElement.getAttribute("privatebrowsingmode") == "temporary";
+
+      let profileIdentifier =
+        SelectableProfileService?.isEnabled &&
+        SelectableProfileService.currentProfile?.name.replace(/\0/g, "");
+      
+      let parts = [contentTitle, profileIdentifier];
+
+      
+      
+      
+      if (
+        AppConstants.platform == "macosx" &&
+        contentTitle &&
+        isTemporaryPrivateWindow
+      ) {
+        parts.push(this.#cachedTitleInfo.privateWindowSuffixForContent);
       }
 
-      return defaultTitle;
+      
+      
+      if (!contentTitle || AppConstants.platform != "macosx") {
+        parts.push(
+          this.#cachedTitleInfo[
+            isTemporaryPrivateWindow ? "privateWindowTitle" : "mainWindowTitle"
+          ]
+        );
+      }
+
+      return parts.filter(p => !!p).join(" — ");
     }
 
     updateTitlebar() {
@@ -7332,6 +7349,11 @@
           }
           break;
         }
+        case "intl:app-locales-changed": {
+          this.#populateTitleCache();
+          this.updateTitlebar();
+          break;
+        }
       }
     }
 
@@ -7392,6 +7414,7 @@
     destroy() {
       this.tabContainer.destroy();
       Services.obs.removeObserver(this, "contextual-identity-updated");
+      Services.obs.removeObserver(this, "intl:app-locales-changed");
 
       for (let tab of this.tabs) {
         let browser = tab.linkedBrowser;
