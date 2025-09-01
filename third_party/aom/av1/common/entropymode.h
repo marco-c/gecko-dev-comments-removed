@@ -25,8 +25,8 @@ extern "C" {
 
 #define TX_SIZE_CONTEXTS 3
 
-#define INTER_OFFSET(mode) ((mode)-NEARESTMV)
-#define INTER_COMPOUND_OFFSET(mode) (uint8_t)((mode)-NEAREST_NEARESTMV)
+#define INTER_OFFSET(mode) ((mode) - NEARESTMV)
+#define INTER_COMPOUND_OFFSET(mode) (uint8_t)((mode) - NEAREST_NEARESTMV)
 
 
 

@@ -706,14 +706,14 @@ void av1_warp_plane(WarpedMotionParams *wm, int use_hbd, int bd,
 
 
 
-#define LS_SQUARE(a)                                          \
-  (((a) * (a)*4 + (a)*4 * LS_STEP + LS_STEP * LS_STEP * 2) >> \
+#define LS_SQUARE(a)                                              \
+  (((a) * (a) * 4 + (a) * 4 * LS_STEP + LS_STEP * LS_STEP * 2) >> \
    (2 + LS_MAT_DOWN_BITS))
-#define LS_PRODUCT1(a, b)                                           \
-  (((a) * (b)*4 + ((a) + (b)) * 2 * LS_STEP + LS_STEP * LS_STEP) >> \
+#define LS_PRODUCT1(a, b)                                             \
+  (((a) * (b) * 4 + ((a) + (b)) * 2 * LS_STEP + LS_STEP * LS_STEP) >> \
    (2 + LS_MAT_DOWN_BITS))
-#define LS_PRODUCT2(a, b)                                               \
-  (((a) * (b)*4 + ((a) + (b)) * 2 * LS_STEP + LS_STEP * LS_STEP * 2) >> \
+#define LS_PRODUCT2(a, b)                                                 \
+  (((a) * (b) * 4 + ((a) + (b)) * 2 * LS_STEP + LS_STEP * LS_STEP * 2) >> \
    (2 + LS_MAT_DOWN_BITS))
 
 #define USE_LIMITED_PREC_MULT 0

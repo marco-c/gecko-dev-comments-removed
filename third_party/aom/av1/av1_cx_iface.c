@@ -100,7 +100,7 @@ struct av1_extracfg {
   unsigned int enable_chroma_deltaq;
   AQ_MODE aq_mode;
   DELTAQ_MODE deltaq_mode;
-  int deltaq_strength;
+  unsigned int deltaq_strength;
   int deltalf_mode;
   unsigned int frame_periodic_boost;
   aom_tune_content content;
@@ -444,45 +444,45 @@ static const struct av1_extracfg default_extra_cfg = {
   NULL,                         
   0,                            
 #if CONFIG_FPMT_TEST
-  0,                            
+  0,  
 #endif
-  1,                            
-  0,                            
-  0,                            
-  0,                            
-  4,                            
-  128,                          
-  0,                            
-  0,                            
-  0,                            
-  1,                            
-  1,                            
-  0,                            
-  3,                            
-  0,                            
-  0,                            
-  0,                            
-  0,                            
-  0,                            
-  0,                            
-  0,                            
-  0,                            
-  0,                            
-  0,                            
-  0,                            
-  0,                            
-  0,                            
-  0,                            
-  0,                            
-  0,                            
-  0,                            
-  1,   
-  1,   
-  0,   
-  0,   
-  1,   
-  0,   
-  0,   
+  1,    
+  0,    
+  0,    
+  0,    
+  4,    
+  128,  
+  0,    
+  0,    
+  0,    
+  1,    
+  1,    
+  0,    
+  3,    
+  0,    
+  0,    
+  0,    
+  0,    
+  0,    
+  0,    
+  0,    
+  0,    
+  0,    
+  0,    
+  0,    
+  0,    
+  0,    
+  0,    
+  0,    
+  0,    
+  0,    
+  1,    
+  1,    
+  0,    
+  0,    
+  1,    
+  0,    
+  0,    
 #if CONFIG_DENOISE
   0,   
   32,  
@@ -914,7 +914,7 @@ static aom_codec_err_t validate_config(aom_codec_alg_priv_t *ctx,
     }
   }
 
-  RANGE_CHECK(extra_cfg, deltaq_strength, 0, 1000);
+  RANGE_CHECK_HI(extra_cfg, deltaq_strength, 1000);
   RANGE_CHECK_HI(extra_cfg, loopfilter_control, 3);
   RANGE_CHECK_BOOL(extra_cfg, skip_postproc_filtering);
   RANGE_CHECK_HI(extra_cfg, enable_cdef, 3);
@@ -1870,6 +1870,8 @@ static aom_codec_err_t handle_tuning(aom_codec_alg_priv_t *ctx,
     extra_cfg->enable_chroma_deltaq = 1;
     
     extra_cfg->deltaq_mode = DELTA_Q_VARIANCE_BOOST;
+    
+    extra_cfg->screen_detection_mode = AOM_SCREEN_DETECTION_ANTIALIASING_AWARE;
   }
   if (extra_cfg->tuning == AOM_TUNE_IQ) {
     
@@ -3288,7 +3290,19 @@ static aom_codec_err_t encoder_encode(aom_codec_alg_priv_t *ctx,
     AV1_COMP *cpi = ppi->cpi;
 
     
-    if (ctx->base.init_flags & AOM_CODEC_USE_PSNR) ppi->b_calculate_psnr = 1;
+    if ((flags & AOM_EFLAG_CALCULATE_PSNR) && ctx->cfg.g_lag_in_frames != 0) {
+      aom_internal_error(
+          &ppi->error, AOM_CODEC_INCAPABLE,
+          "Cannot calculate per-frame PSNR when g_lag_in_frames is nonzero");
+    }
+
+    
+#if CONFIG_INTERNAL_STATS
+    assert(ppi->b_calculate_psnr == 1);
+#else
+    ppi->b_calculate_psnr = (ctx->base.init_flags & AOM_CODEC_USE_PSNR) ||
+                            (flags & AOM_EFLAG_CALCULATE_PSNR);
+#endif  
 
     if (img != NULL) {
       if (!ctx->pts_offset_initialized) {
@@ -4710,7 +4724,6 @@ static aom_codec_ctrl_fn_map_t encoder_ctrl_maps[] = {
   { AOME_SET_ENABLEAUTOALTREF, ctrl_set_enable_auto_alt_ref },
   { AOME_SET_ENABLEAUTOBWDREF, ctrl_set_enable_auto_bwd_ref },
   { AOME_SET_SHARPNESS, ctrl_set_sharpness },
-  { AV1E_SET_ENABLE_ADAPTIVE_SHARPNESS, ctrl_set_enable_adaptive_sharpness },
   { AOME_SET_STATIC_THRESHOLD, ctrl_set_static_thresh },
   { AV1E_SET_ROW_MT, ctrl_set_row_mt },
   { AV1E_SET_FP_MT, ctrl_set_fp_mt },
@@ -4851,6 +4864,7 @@ static aom_codec_ctrl_fn_map_t encoder_ctrl_maps[] = {
     ctrl_set_enable_low_complexity_decode },
   { AV1E_SET_SCREEN_CONTENT_DETECTION_MODE,
     ctrl_set_screen_content_detection_mode },
+  { AV1E_SET_ENABLE_ADAPTIVE_SHARPNESS, ctrl_set_enable_adaptive_sharpness },
 
   
   { AOME_GET_LAST_QUANTIZER, ctrl_get_quantizer },

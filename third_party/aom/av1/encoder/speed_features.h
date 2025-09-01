@@ -361,6 +361,8 @@ typedef enum {
   SIMPLE_AGG_LVL1,     
   SIMPLE_AGG_LVL2,     
   SIMPLE_AGG_LVL3,     
+  SIMPLE_AGG_LVL4,     
+  SIMPLE_AGG_LVL5,     
   QIDX_BASED_AGG_LVL1, 
 
 
@@ -368,7 +370,7 @@ typedef enum {
 
   TOTAL_QINDEX_BASED_AGG_LVLS =
       QIDX_BASED_AGG_LVL1 -
-      SIMPLE_AGG_LVL3, 
+      SIMPLE_AGG_LVL5, 
 
   TOTAL_AGG_LVLS = TOTAL_SIMPLE_AGG_LVLS +
                    TOTAL_QINDEX_BASED_AGG_LVLS, 
@@ -666,7 +668,13 @@ typedef struct PARTITION_SPEED_FEATURES {
   int partition_search_breakout_rate_thr;
 
   
-  int ml_partition_search_breakout_thresh[PARTITION_BLOCK_SIZES];
+  float ml_partition_search_breakout_thresh[PARTITION_BLOCK_SIZES];
+
+  
+  int ml_partition_search_breakout_model_index;
+
+  
+  int ml_4_partition_search_level_index;
 
   
   
@@ -915,6 +923,7 @@ typedef struct MV_SPEED_FEATURES {
   
   int prune_intrabc_candidate_block_hash_search;
 
+  
   
   
   

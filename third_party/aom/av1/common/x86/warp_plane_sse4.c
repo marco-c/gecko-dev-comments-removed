@@ -137,6 +137,8 @@ DECLARE_ALIGNED(8, const int8_t,
 };
 
 
+#if !CONFIG_HIGHWAY
+
 
 
 
@@ -906,3 +908,5 @@ void av1_warp_affine_sse4_1(const int32_t *mat, const uint8_t *ref, int width,
     }
   }
 }
+
+#endif  

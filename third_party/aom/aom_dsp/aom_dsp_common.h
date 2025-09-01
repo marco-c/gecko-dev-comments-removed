@@ -39,12 +39,12 @@ extern "C" {
 
 #define IMPLIES(a, b) (!(a) || (b))  //  Logical 'a implies b' (or 'a -> b')
 
-#define IS_POWER_OF_TWO(x) (((x) & ((x)-1)) == 0)
+#define IS_POWER_OF_TWO(x) (((x) & ((x) - 1)) == 0)
 
 
 
 
-#define AOM_SIGNED_SHL(x, shift) ((x) * (((x)*0 + 1) << (shift)))
+#define AOM_SIGNED_SHL(x, shift) ((x) * (((x) * 0 + 1) << (shift)))
 
 
 

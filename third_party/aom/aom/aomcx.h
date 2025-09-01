@@ -1411,6 +1411,7 @@ enum aome_enc_control_id {
 
 
 
+
   AV1E_SET_DELTAQ_STRENGTH = 148,
 
   
@@ -1607,6 +1608,13 @@ enum aome_enc_control_id {
 
 
 
+
+
+
+
+
+
+
   AV1E_SET_ENABLE_ADAPTIVE_SHARPNESS = 172,
 
   
@@ -1704,6 +1712,8 @@ typedef enum {
   AOM_TIMING_EQUAL,
   AOM_TIMING_DEC_MODEL
 } aom_timing_info_type_t;
+
+
 
 
 

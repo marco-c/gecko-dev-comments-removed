@@ -44,7 +44,7 @@ extern "C" {
 #define MAX_TX_TYPE_PROB 1024
 
 
-#define COLOR_SENS_IDX(plane) ((plane)-1)
+#define COLOR_SENS_IDX(plane) ((plane) - 1)
 
 
 #define COLLECT_NONRD_PICK_MODE_STAT 0

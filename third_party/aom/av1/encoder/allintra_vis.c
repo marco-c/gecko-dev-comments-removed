@@ -1077,11 +1077,15 @@ int av1_get_sbq_variance_boost(const AV1_COMP *cpi, const MACROBLOCK *x) {
   
   assert(cm->seq_params->sb_size == BLOCK_64X64);
 
-  
-  
-  
-  const int strength = 3;
   unsigned int variance = av1_get_variance_boost_block_variance(cpi, x);
+  
+  double strength = (cpi->oxcf.q_cfg.deltaq_strength / 100.0) * 3.0;
+
+  
+  
+  
+  
+  strength = fclamp(strength, 0.0, 6.0);
 
   
   
@@ -1092,8 +1096,6 @@ int av1_get_sbq_variance_boost(const AV1_COMP *cpi, const MACROBLOCK *x) {
   
   
   
-  assert(strength >= 1 && strength <= 4);
-
   
   double qstep_ratio = 0.15 * strength * (-log2((double)variance) + 10.0) + 1.0;
   qstep_ratio = fclamp(qstep_ratio, 1.0, VAR_BOOST_MAX_BOOST);

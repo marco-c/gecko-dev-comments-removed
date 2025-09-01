@@ -378,6 +378,8 @@ typedef long aom_enc_frame_flags_t;
 
 #define AOM_EFLAG_FORCE_KF (1 << 0)
 
+#define AOM_EFLAG_CALCULATE_PSNR (1 << 1)
+
 
 
 

@@ -27,6 +27,10 @@ typedef struct _CRC32C {
 
 void av1_crc32c_calculator_init(CRC32C *p_crc32c);
 
+
+
+
+
 #define AOM_BUFFER_SIZE_FOR_BLOCK_HASH (4096)
 
 #ifdef __cplusplus

@@ -805,7 +805,7 @@ typedef struct {
   
   DELTAQ_MODE deltaq_mode;
   
-  DELTAQ_MODE deltaq_strength;
+  unsigned int deltaq_strength;
   
   bool enable_chroma_deltaq;
   
@@ -1480,7 +1480,8 @@ typedef struct ThreadData {
   PC_TREE_SHARED_BUFFERS shared_coeff_buf;
   SIMPLE_MOTION_DATA_TREE *sms_tree;
   SIMPLE_MOTION_DATA_TREE *sms_root;
-  uint32_t *hash_value_buffer[2][2];
+  
+  uint32_t *hash_value_buffer[2];
   OBMCBuffer obmc_buffer;
   PALETTE_BUFFER *palette_buffer;
   CompoundTypeRdBuffers comp_rd_buffer;

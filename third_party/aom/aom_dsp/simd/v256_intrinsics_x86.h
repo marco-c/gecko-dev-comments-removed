@@ -665,7 +665,7 @@ SIMD_INLINE v256 v256_shr_s64(v256 a, unsigned int c) {
                   v128_shl_n_byte(v256_low_v128(a), n))                      \
             : _mm256_inserti128_si256(                                       \
                   _mm256_setzero_si256(),                                    \
-                  v128_shl_n_byte(v256_low_v128(a), (n)-16), 1))
+                  v128_shl_n_byte(v256_low_v128(a), (n) - 16), 1))
 
 
 #define v256_shr_n_byte(a, n)                                                 \
@@ -675,7 +675,7 @@ SIMD_INLINE v256 v256_shr_s64(v256 a, unsigned int c) {
        : ((n) == 16 ? _mm256_permute2x128_si256(_mm256_setzero_si256(), a, 3) \
                     : _mm256_inserti128_si256(                                \
                           _mm256_setzero_si256(),                             \
-                          v128_shr_n_byte(v256_high_v128(a), (n)-16), 0)))
+                          v128_shr_n_byte(v256_high_v128(a), (n) - 16), 0)))
 
 
 #define v256_align(a, b, c) \

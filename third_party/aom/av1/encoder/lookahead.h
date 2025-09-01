@@ -66,13 +66,10 @@ struct lookahead_ctx {
 
 
 
-struct lookahead_ctx *av1_lookahead_init(int width, int height,
-                                         int subsampling_x, int subsampling_y,
-                                         int use_highbitdepth, int depth,
-                                         const int border_in_pixels,
-                                         int byte_alignment,
-                                         int num_lap_buffers, bool is_all_intra,
-                                         bool alloc_pyramid);
+struct lookahead_ctx *av1_lookahead_init(
+    int width, int height, int subsampling_x, int subsampling_y,
+    int use_highbitdepth, int depth, int border_in_pixels, int byte_alignment,
+    int num_lap_buffers, bool is_all_intra, bool alloc_pyramid);
 
 
 
