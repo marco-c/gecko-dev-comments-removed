@@ -124,6 +124,8 @@ enum IcePriorityValue : uint8_t {
   ICE_TYPE_PREFERENCE_HOST = 126
 };
 
+const int kMaxTurnUsernameLength = 509;  
+
 }  
 
 
