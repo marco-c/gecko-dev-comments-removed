@@ -64,11 +64,6 @@ impl Http3Parameters {
         self
     }
 
-    #[must_use]
-    pub const fn get_max_table_size_encoder(&self) -> u64 {
-        self.qpack_settings.max_table_size_encoder
-    }
-
     
     
     
@@ -123,6 +118,7 @@ impl Http3Parameters {
         self.webtransport
     }
 
+    
     #[must_use]
     pub const fn http3_datagram(mut self, http3_datagram: bool) -> Self {
         self.http3_datagram = http3_datagram;

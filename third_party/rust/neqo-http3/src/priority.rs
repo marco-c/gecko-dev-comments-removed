@@ -7,9 +7,9 @@
 use std::fmt;
 
 use neqo_transport::StreamId;
-use sfv::{BareItem, Item, ListEntry, Parser};
+use sfv::{BareItem, Dictionary, Integer, Item, ListEntry, Parser};
 
-use crate::{frames::HFrame, Error, Header, Res};
+use crate::{frames::HFrame, Error, Res};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Priority {
@@ -40,33 +40,19 @@ impl Priority {
     }
 
     
-    #[must_use]
-    pub fn header(self) -> Option<Header> {
-        match self {
-            Self {
-                urgency: 3,
-                incremental: false,
-            } => None,
-            other => Some(Header::new("priority", format!("{other}"))),
-        }
-    }
-
-    
-    
-    
-    
-    
     
     
     
     
     pub fn from_bytes(bytes: &[u8]) -> Res<Self> {
-        let dict = Parser::parse_dictionary(bytes).map_err(|_| Error::HttpFrame)?;
+        let dict: Dictionary = Parser::new(bytes).parse().map_err(|_| Error::HttpFrame)?;
         let urgency = match dict.get("u") {
             Some(ListEntry::Item(Item {
                 bare_item: BareItem::Integer(u),
                 ..
-            })) if (0..=7).contains(u) => u8::try_from(*u).map_err(|_| Error::Internal)?,
+            })) if (Integer::constant(0)..=Integer::constant(7)).contains(u) => {
+                u8::try_from(*u).map_err(|_| Error::Internal)?
+            }
             _ => 3,
         };
         let incremental = match dict.get("i") {

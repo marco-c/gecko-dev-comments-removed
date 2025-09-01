@@ -722,22 +722,8 @@ impl SendStream {
         ss
     }
 
-    pub fn write_frames<B: Buffer>(
-        &mut self,
-        priority: TransmissionPriority,
-        builder: &mut packet::Builder<B>,
-        tokens: &mut recovery::Tokens,
-        stats: &mut FrameStats,
-    ) {
-        qtrace!("write STREAM frames at priority {priority:?}");
-        if !self.write_reset_frame(priority, builder, tokens, stats) {
-            self.write_blocked_frame(priority, builder, tokens, stats);
-            self.write_stream_frame(priority, builder, tokens, stats);
-        }
-    }
-
     
-    pub fn write_frames_with_early_return<B: Buffer>(
+    pub fn write_frames<B: Buffer>(
         &mut self,
         priority: TransmissionPriority,
         builder: &mut packet::Builder<B>,
@@ -1684,7 +1670,6 @@ impl SendStreams {
         tokens: &mut recovery::Tokens,
         stats: &mut FrameStats,
     ) {
-        qtrace!("write STREAM frames at priority {priority:?}");
         
         
 
@@ -1722,7 +1707,7 @@ impl SendStreams {
         for stream in self.map.values_mut() {
             if !stream.is_fair() {
                 qtrace!("   {stream}");
-                if !stream.write_frames_with_early_return(priority, builder, tokens, stats) {
+                if !stream.write_frames(priority, builder, tokens, stats) {
                     break;
                 }
             }
@@ -1741,7 +1726,7 @@ impl SendStreams {
                 } else {
                     qtrace!("   None");
                 }
-                if !stream.write_frames_with_early_return(priority, builder, tokens, stats) {
+                if !stream.write_frames(priority, builder, tokens, stats) {
                     break;
                 }
             }

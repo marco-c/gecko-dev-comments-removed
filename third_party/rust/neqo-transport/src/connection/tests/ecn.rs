@@ -6,7 +6,7 @@
 
 use std::time::Duration;
 
-use neqo_common::{Datagram, Ecn, Tos};
+use neqo_common::{event::Provider as _, Datagram, Ecn, Tos};
 use strum::IntoEnumIterator as _;
 use test_fixture::{
     assertions::{assert_v4_path, assert_v6_path},
@@ -22,7 +22,7 @@ use crate::{
     },
     ecn, packet,
     path::MAX_PATH_PROBES,
-    ConnectionId, ConnectionParameters, StreamType,
+    ConnectionEvent, ConnectionId, ConnectionParameters, Output, StreamType,
 };
 
 fn assert_ecn_enabled(tos: Tos) {
@@ -74,6 +74,8 @@ fn drop_ecn_marked_datagrams() -> fn(Datagram) -> Option<Datagram> {
     |d| (!d.tos().is_ecn_marked()).then_some(d)
 }
 
+
+
 #[test]
 fn handshake_delay_with_ecn_blackhole() {
     let start = now();
@@ -94,8 +96,73 @@ fn handshake_delay_with_ecn_blackhole() {
 
     assert_eq!(
         (finish - start).as_millis() / DEFAULT_RTT.as_millis(),
-        45,
-        "expected 3 RTT for first client PTO + 6 RTT for second PTO + 12 RTT for third PTO + another 21 RTT for the same on the server side + 3 RTT for handshake to be confirmed",
+        3,
+        "expect ECN path validation to start after handshake",
+    );
+}
+
+#[test]
+fn request_response_delay_after_handshake_with_ecn_blackhole() {
+    let mut now = now();
+    let mut client = new_client(ConnectionParameters::default().mlkem(false));
+    let mut server = default_server();
+    now = handshake_with_modifier(
+        &mut client,
+        &mut server,
+        now,
+        DEFAULT_RTT,
+        drop_ecn_marked_datagrams(),
+    );
+
+    let start = now;
+    let stream_id = client.stream_create(StreamType::BiDi).unwrap();
+    client.stream_send(stream_id, b"ping").unwrap();
+    client.stream_close_send(stream_id).unwrap();
+
+    
+    let client_dg = loop {
+        match client.process_output(now) {
+            Output::Datagram(dg) if !dg.tos().is_ecn_marked() => break dg,
+            Output::Callback(dur) => now += dur,
+            _ => {}
+        }
+    };
+
+    server.process_input(client_dg, now);
+    let stream_id = server
+        .events()
+        .find_map(|e| match e {
+            ConnectionEvent::RecvStreamReadable { stream_id, .. } => Some(stream_id),
+            _ => None,
+        })
+        .unwrap();
+    let mut buf = vec![];
+    server.stream_recv(stream_id, &mut buf).unwrap();
+    server.stream_send(stream_id, b"pong").unwrap();
+    server.stream_close_send(stream_id).unwrap();
+
+    
+    let server_dg = loop {
+        match server.process_output(now) {
+            Output::Datagram(dg) if !dg.tos().is_ecn_marked() => break dg,
+            Output::Callback(dur) => now += dur,
+            _ => {}
+        }
+    };
+
+    client.process_input(server_dg, now);
+    client
+        .events()
+        .find_map(|e| match e {
+            ConnectionEvent::RecvStreamReadable { stream_id, .. } => Some(stream_id),
+            _ => None,
+        })
+        .unwrap();
+
+    assert_eq!(
+        (now - start).as_millis() / DEFAULT_RTT.as_millis(),
+        8,
+        "expect ECN path validation to start after handshake",
     );
 }
 
@@ -118,10 +185,10 @@ fn migration_delay_to_ecn_blackhole() {
     let mut probes = 0;
     while probes < MAX_PATH_PROBES * 2 {
         match client.process_output(now) {
-            crate::Output::Callback(t) => {
+            Output::Callback(t) => {
                 now += t;
             }
-            crate::Output::Datagram(d) => {
+            Output::Datagram(d) => {
                 
                 if d.source().is_ipv4() {
                     
@@ -137,7 +204,7 @@ fn migration_delay_to_ecn_blackhole() {
                     }
                 }
             }
-            crate::Output::None => panic!("unexpected output"),
+            Output::None => panic!("unexpected output"),
         }
     }
 }

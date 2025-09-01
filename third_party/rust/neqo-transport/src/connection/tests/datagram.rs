@@ -601,8 +601,8 @@ fn multiple_quic_datagrams_in_one_packet() {
 
 
 
-#[test]
-fn datagram_fill() {
+fn datagram_overfill(client: &mut Connection, server: &mut Connection, gap: usize) {
+    
     struct PanickingFrameWriter {}
     impl crate::connection::test_internal::FrameWriter for PanickingFrameWriter {
         fn write_frames(&mut self, builder: &mut packet::Builder<&mut Vec<u8>>) {
@@ -612,6 +612,56 @@ fn datagram_fill() {
             );
         }
     }
+
+    
+    let space = {
+        let p = client.paths.primary().unwrap();
+        let path = p.borrow();
+        
+        
+        path.plpmtu() - path.remote_cid().unwrap().len() - 19
+    };
+    assert!(space >= 64); 
+
+    
+    if client.test_frame_writer.is_none() {
+        client.test_frame_writer = Some(Box::new(PanickingFrameWriter {}));
+    }
+
+    
+    send_datagram(client, server, vec![9; space - gap]);
+}
+
+#[test]
+#[should_panic(expected = "test_frame_writer set on full packet")]
+fn datagram_fill_gap0() {
+    let (mut client, mut server) = connect_datagram();
+    datagram_overfill(&mut client, &mut server, 0);
+}
+
+#[test]
+#[should_panic(expected = "test_frame_writer set on full packet")]
+fn datagram_fill_gap1() {
+    let (mut client, mut server) = connect_datagram();
+    datagram_overfill(&mut client, &mut server, 1);
+}
+
+#[test]
+#[should_panic(expected = "test_frame_writer set on full packet")]
+fn datagram_fill_gap2() {
+    let (mut client, mut server) = connect_datagram();
+    datagram_overfill(&mut client, &mut server, 2);
+}
+
+#[test]
+#[should_panic(expected = "test_frame_writer set on full packet")]
+fn datagram_fill_gap3() {
+    let (mut client, mut server) = connect_datagram();
+    datagram_overfill(&mut client, &mut server, 3);
+}
+
+#[test]
+fn datagram_fill_gap4() {
     struct TrackingFrameWriter {
         called: Rc<RefCell<bool>>,
     }
@@ -625,35 +675,10 @@ fn datagram_fill() {
     let (mut client, mut server) = connect_datagram();
 
     
-    let space = {
-        let p = client.paths.primary().unwrap();
-        let path = p.borrow();
-        
-        
-        path.plpmtu() - path.remote_cid().unwrap().len() - 19
-    };
-    assert!(space >= 64); 
-
-    
-    client.test_frame_writer = Some(Box::new(PanickingFrameWriter {}));
-
-    let buf = vec![9; space];
-    
-    send_datagram(&mut client, &mut server, buf.clone());
-    
-    send_datagram(&mut client, &mut server, buf[..buf.len() - 1].to_vec());
-    
-    
-    send_datagram(&mut client, &mut server, buf[..buf.len() - 2].to_vec());
-    
-    
-    send_datagram(&mut client, &mut server, buf[..buf.len() - 3].to_vec());
-
-    
     let called = Rc::new(RefCell::new(false));
     client.test_frame_writer = Some(Box::new(TrackingFrameWriter {
         called: Rc::clone(&called),
     }));
-    send_datagram(&mut client, &mut server, buf[..buf.len() - 4].to_vec());
+    datagram_overfill(&mut client, &mut server, 4);
     assert!(*called.borrow());
 }

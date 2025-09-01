@@ -58,7 +58,6 @@ impl Record {
 
     
     pub(crate) fn write(self, fd: *mut ssl::PRFileDesc) -> Res<()> {
-        qtrace!("write {self:?}");
         unsafe {
             ssl::SSL_RecordLayerData(
                 fd,

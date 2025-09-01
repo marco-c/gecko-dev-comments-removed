@@ -275,10 +275,6 @@ const fn alpn_from_quic_version(version: Version) -> &'static str {
 
 
 
-
-
-
-
 pub struct Http3Client {
     conn: Connection,
     base_handler: Http3Connection,
@@ -343,11 +339,6 @@ impl Http3Client {
             push_handler: Rc::new(RefCell::new(PushController::new(push_streams, events))),
             base_handler,
         }
-    }
-
-    #[must_use]
-    pub const fn role(&self) -> Role {
-        self.conn.role()
     }
 
     
@@ -422,23 +413,6 @@ impl Http3Client {
     
     
     
-    pub fn take_resumption_token(&mut self, now: Instant) -> Option<ResumptionToken> {
-        let t = self.conn.take_resumption_token(now)?;
-        self.encode_resumption_token(&t)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     pub fn enable_resumption<A: AsRef<[u8]>>(&mut self, now: Instant, token: A) -> Res<()> {
         if self.base_handler.state() != &Http3State::Initializing {
@@ -494,17 +468,6 @@ impl Http3Client {
             self.events
                 .connection_state_change(self.base_handler.state().clone());
         }
-    }
-
-    
-    
-    
-    
-    
-    
-    pub fn initiate_key_update(&mut self) -> Res<()> {
-        self.conn.initiate_key_update()?;
-        Ok(())
     }
 
     
@@ -796,8 +759,6 @@ impl Http3Client {
     
     
     
-    
-    
     pub fn webtransport_set_sendorder(
         &mut self,
         stream_id: StreamId,
@@ -806,6 +767,8 @@ impl Http3Client {
         Http3Connection::stream_set_sendorder(&mut self.conn, stream_id, sendorder)
     }
 
+    
+    
     
     
     
@@ -1254,22 +1217,6 @@ impl Http3Client {
         Ok(())
     }
 
-    
-    
-    
-    
-    
-    
-    pub fn set_stream_max_data(&mut self, stream_id: StreamId, max_data: u64) -> Res<()> {
-        self.conn.set_stream_max_data(stream_id, max_data)?;
-        Ok(())
-    }
-
-    #[must_use]
-    pub fn qpack_decoder_stats(&self) -> QpackStats {
-        self.base_handler.qpack_decoder().borrow().stats()
-    }
-
     #[must_use]
     pub fn qpack_encoder_stats(&self) -> QpackStats {
         self.base_handler.qpack_encoder().borrow().stats()
@@ -1390,6 +1337,8 @@ mod tests {
     const CLIENT_SIDE_CONTROL_STREAM_ID: StreamId = StreamId::new(2);
     const CLIENT_SIDE_ENCODER_STREAM_ID: StreamId = StreamId::new(6);
     const CLIENT_SIDE_DECODER_STREAM_ID: StreamId = StreamId::new(10);
+
+    const DEFAULT_IDLE_TIMEOUT: Duration = ConnectionParameters::DEFAULT_IDLE_TIMEOUT;
 
     struct TestServer {
         settings: HFrame,
@@ -2638,8 +2587,10 @@ mod tests {
         let (mut client, mut server, _request_stream_id) = connect_and_send_request(true);
         force_idle(&mut client, &mut server);
 
-        let idle_timeout = ConnectionParameters::default().get_idle_timeout();
-        assert_eq!(client.process_output(now()).callback(), idle_timeout / 2);
+        assert_eq!(
+            client.process_output(now()).callback(),
+            DEFAULT_IDLE_TIMEOUT / 2
+        );
     }
 
     
@@ -5114,7 +5065,6 @@ mod tests {
     #[test]
     fn push_keep_alive() {
         let (mut client, mut server, request_stream_id) = connect_and_send_request(true);
-        let idle_timeout = ConnectionParameters::default().get_idle_timeout();
 
         
         send_push_promise(&mut server.conn, request_stream_id, PushId::new(0));
@@ -5137,7 +5087,10 @@ mod tests {
 
         
         force_idle(&mut client, &mut server);
-        assert_eq!(client.process_output(now()).callback(), idle_timeout);
+        assert_eq!(
+            client.process_output(now()).callback(),
+            DEFAULT_IDLE_TIMEOUT
+        );
 
         
         _ = send_push_data(&mut server.conn, PushId::new(0), false);
@@ -5152,7 +5105,10 @@ mod tests {
         assert!(!fin);
 
         force_idle(&mut client, &mut server);
-        assert_eq!(client.process_output(now()).callback(), idle_timeout / 2);
+        assert_eq!(
+            client.process_output(now()).callback(),
+            DEFAULT_IDLE_TIMEOUT / 2
+        );
     }
 
     #[test]

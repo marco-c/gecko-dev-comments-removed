@@ -158,7 +158,7 @@ fn rebind(
 
     
     let delay = client.process(Some(s4_reb), now).callback();
-    assert_eq!(delay, ConnectionParameters::default().get_idle_timeout());
+    assert_eq!(delay, ConnectionParameters::DEFAULT_IDLE_TIMEOUT);
 
     let client_uses_zero_len_cid = client
         .paths
@@ -174,7 +174,7 @@ fn rebind(
         match server.process_output(now) {
             Output::Callback(t) => {
                 total_delay += t;
-                if total_delay == ConnectionParameters::default().get_idle_timeout() {
+                if total_delay == ConnectionParameters::DEFAULT_IDLE_TIMEOUT {
                     
                     
                     assert!(client_uses_zero_len_cid);
@@ -572,7 +572,7 @@ fn migrate_same_fail() {
     assert_path_challenge_min_len(&client, &probe, now);
 
     
-    for _ in 0..MAX_PATH_PROBES - 1 {
+    for _ in 0..MAX_PATH_PROBES * 2 - 1 {
         let cb = client.process_output(now).callback();
         assert_ne!(cb, Duration::new(0, 0));
         now += cb;

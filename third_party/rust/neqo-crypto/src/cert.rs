@@ -94,11 +94,13 @@ impl CertificateInfo {
         self.certs.into_iter()
     }
 
+    
     #[must_use]
     pub const fn stapled_ocsp_responses(&self) -> Option<&Vec<Vec<u8>>> {
         self.stapled_ocsp_responses.as_ref()
     }
 
+    
     #[must_use]
     pub const fn signed_cert_timestamp(&self) -> Option<&Vec<u8>> {
         self.signed_cert_timestamp.as_ref()

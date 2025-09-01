@@ -71,7 +71,7 @@ impl SendProfile {
         Self {
             limit: max(ACK_ONLY_SIZE_LIMIT - 1, limit),
             pto: None,
-            probe: PacketNumberSpaceSet::default(),
+            probe: PacketNumberSpaceSet::empty(),
             paced: false,
         }
     }
@@ -82,7 +82,7 @@ impl SendProfile {
         Self {
             limit: ACK_ONLY_SIZE_LIMIT - 1,
             pto: None,
-            probe: PacketNumberSpaceSet::default(),
+            probe: PacketNumberSpaceSet::empty(),
             paced: true,
         }
     }
@@ -90,7 +90,6 @@ impl SendProfile {
     #[must_use]
     pub fn new_pto(pn_space: PacketNumberSpace, mtu: usize, probe: PacketNumberSpaceSet) -> Self {
         debug_assert!(mtu > ACK_ONLY_SIZE_LIMIT);
-        debug_assert!(probe.contains(pn_space));
         Self {
             limit: mtu,
             pto: Some(pn_space),
@@ -425,35 +424,22 @@ struct PtoState {
 }
 
 impl PtoState {
-    
-    fn pto_packet_count(space: PacketNumberSpace) -> usize {
-        if space == PacketNumberSpace::ApplicationData {
-            MAX_PTO_PACKET_COUNT
-        } else {
-            
-            
-            
-            
-            1
-        }
-    }
-
     pub fn new(space: PacketNumberSpace, probe: PacketNumberSpaceSet) -> Self {
         debug_assert!(probe.contains(space));
         Self {
             space,
             count: 1,
-            packets: Self::pto_packet_count(space),
+            packets: MAX_PTO_PACKET_COUNT,
             probe,
         }
     }
 
     pub fn pto(&mut self, space: PacketNumberSpace, probe: PacketNumberSpaceSet) {
         debug_assert!(probe.contains(space));
-        self.space = space;
+        self.space = min(space, self.space);
         self.count += 1;
-        self.packets = Self::pto_packet_count(space);
-        self.probe = probe;
+        self.packets = MAX_PTO_PACKET_COUNT;
+        self.probe |= probe;
     }
 
     pub const fn count(&self) -> usize {
@@ -468,10 +454,20 @@ impl PtoState {
     
     pub fn send_profile(&mut self, mtu: usize) -> Option<SendProfile> {
         (self.packets > 0).then(|| {
-            
             self.packets -= 1;
+            
             SendProfile::new_pto(self.space, mtu, self.probe)
         })
+    }
+
+    pub fn pto_sent(&mut self, space: PacketNumberSpace) {
+        
+        
+        
+        
+        if self.packets < MAX_PTO_PACKET_COUNT && space != PacketNumberSpace::ApplicationData {
+            self.probe -= space;
+        }
     }
 }
 
@@ -530,6 +526,9 @@ impl Loss {
     pub fn on_packet_sent(&mut self, path: &PathRef, mut sent_packet: sent::Packet, now: Instant) {
         let pn_space = PacketNumberSpace::from(sent_packet.packet_type());
         qtrace!("[{self}] packet {pn_space}-{} sent", sent_packet.pn());
+        if let Some(pto) = self.pto_state.as_mut() {
+            pto.pto_sent(pn_space);
+        }
         if let Some(space) = self.spaces.get_mut(pn_space) {
             path.borrow_mut().packet_sent(&mut sent_packet, now);
             space.on_packet_sent(sent_packet);
@@ -963,7 +962,7 @@ mod tests {
         cid::{ConnectionId, ConnectionIdEntry},
         ecn, packet,
         path::{Path, PathRef},
-        recovery::{self, sent},
+        recovery::{self, sent, MAX_PTO_PACKET_COUNT},
         stats::{Stats, StatsCell},
         ConnectionParameters,
     };
@@ -1564,7 +1563,7 @@ mod tests {
                 recovery::Tokens::new(),
                 ON_SENT_SIZE,
             ),
-            Instant::now(),
+            now(),
         );
 
         let handshake_pto = lr.path.borrow().rtt().pto(false);
@@ -1576,5 +1575,159 @@ mod tests {
         assert!(!profile.should_probe(PacketNumberSpace::Initial));
         assert!(!profile.should_probe(PacketNumberSpace::Handshake));
         assert!(!profile.should_probe(PacketNumberSpace::ApplicationData));
+    }
+
+    
+    #[test]
+    fn pto_two_spaces() {
+        let mut lr = Fixture::default();
+        let now = now();
+        lr.on_packet_sent(
+            sent::Packet::new(
+                packet::Type::Initial,
+                0,
+                now,
+                true,
+                recovery::Tokens::new(),
+                ON_SENT_SIZE,
+            ),
+            now,
+        );
+        lr.on_packet_sent(
+            sent::Packet::new(
+                packet::Type::Handshake,
+                0,
+                now,
+                true,
+                recovery::Tokens::new(),
+                ON_SENT_SIZE,
+            ),
+            now,
+        );
+
+        let handshake_pto = lr.path.borrow().rtt().pto(false);
+        let expected_pto = now + handshake_pto;
+        assert_eq!(lr.pto_time(PacketNumberSpace::Initial), Some(expected_pto));
+        assert_eq!(
+            lr.pto_time(PacketNumberSpace::Handshake),
+            Some(expected_pto)
+        );
+
+        
+        
+        let now = expected_pto;
+        let lost = lr.timeout(now);
+        assert_eq!(2, lost.len());
+        assert!(lost
+            .iter()
+            .any(|x| x.packet_type() == packet::Type::Initial));
+        assert!(lost
+            .iter()
+            .any(|x| x.packet_type() == packet::Type::Handshake));
+
+        
+        let profile = lr.send_profile(now);
+        assert!(profile.pto.is_some());
+        assert!(profile.should_probe(PacketNumberSpace::Initial));
+        assert!(profile.should_probe(PacketNumberSpace::Handshake));
+        assert!(!profile.should_probe(PacketNumberSpace::ApplicationData));
+
+        
+        lr.on_packet_sent(
+            sent::Packet::new(
+                packet::Type::Handshake,
+                0,
+                now,
+                true,
+                recovery::Tokens::new(),
+                ON_SENT_SIZE,
+            ),
+            now,
+        );
+        let profile = lr.send_profile(now);
+        assert!(profile.pto.is_some());
+        assert!(profile.should_probe(PacketNumberSpace::Initial));
+        assert!(!profile.should_probe(PacketNumberSpace::Handshake)); 
+        assert!(!profile.should_probe(PacketNumberSpace::ApplicationData));
+
+        assert_eq!(2, MAX_PTO_PACKET_COUNT); 
+        let profile = lr.send_profile(now);
+        assert!(profile.pto.is_none());
+    }
+
+    
+    #[test]
+    fn pto_two_spaces_staggered() {
+        let mut lr = Fixture::default();
+        let start_time = now();
+        let now = start_time;
+        lr.on_packet_sent(
+            sent::Packet::new(
+                packet::Type::Initial,
+                0,
+                now,
+                true,
+                recovery::Tokens::new(),
+                ON_SENT_SIZE,
+            ),
+            now,
+        );
+
+        let initial_pto = now + lr.path.borrow().rtt().pto(false);
+        assert_eq!(lr.pto_time(PacketNumberSpace::Initial), Some(initial_pto));
+        assert!(lr.pto_time(PacketNumberSpace::ApplicationData).is_none());
+
+        
+        let now = initial_pto;
+        let _lost = lr.timeout(now);
+        let profile = lr.send_profile(now);
+        assert!(profile.pto.is_some());
+        assert!(profile.should_probe(PacketNumberSpace::Initial));
+        assert!(!profile.should_probe(PacketNumberSpace::Handshake));
+        assert!(!profile.should_probe(PacketNumberSpace::ApplicationData));
+
+        
+        lr.on_packet_sent(
+            sent::Packet::new(
+                packet::Type::Short,
+                0,
+                now,
+                true,
+                recovery::Tokens::new(),
+                ON_SENT_SIZE,
+            ),
+            now,
+        );
+
+        
+        let two_pto = 2 * lr.path.borrow().rtt().pto(false);
+        let initial_pto2 = start_time + two_pto;
+        let app_pto = now + two_pto;
+        assert_eq!(lr.pto_time(PacketNumberSpace::Initial), Some(initial_pto2));
+        assert_eq!(
+            lr.pto_time(PacketNumberSpace::ApplicationData),
+            Some(app_pto)
+        );
+
+        
+        let now = app_pto;
+        let _lost = lr.timeout(now);
+        let profile = lr.send_profile(now);
+        assert!(profile.pto.is_some());
+        assert!(profile.should_probe(PacketNumberSpace::Initial));
+        assert!(!profile.should_probe(PacketNumberSpace::Handshake));
+        assert!(profile.should_probe(PacketNumberSpace::ApplicationData));
+
+        
+        let profile = lr.send_profile(now);
+        assert!(profile.pto.is_some());
+        assert!(profile.should_probe(PacketNumberSpace::Initial));
+        assert!(!profile.should_probe(PacketNumberSpace::Handshake));
+        assert!(profile.should_probe(PacketNumberSpace::ApplicationData));
+
+        
+        assert_eq!(2, MAX_PTO_PACKET_COUNT); 
+        let profile = lr.send_profile(now);
+        assert!(profile.pto.is_none());
     }
 }
