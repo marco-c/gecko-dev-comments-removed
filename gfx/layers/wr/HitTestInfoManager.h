@@ -49,6 +49,17 @@ class HitTestInfoManager {
   bool ProcessItem(nsDisplayItem* aItem, wr::DisplayListBuilder& aBuilder,
                    nsDisplayListBuilder* aDisplayListBuilder);
 
+  
+
+
+
+
+
+
+  void ProcessItemAsImage(nsDisplayItem* aItem, const wr::LayoutRect& aRect,
+                          wr::DisplayListBuilder& aBuilder,
+                          nsDisplayListBuilder* aDisplayListBuilder);
+
  private:
   bool Update(const nsRect& aArea, const gfx::CompositorHitTestInfo& aFlags,
               const ScrollableLayerGuid::ViewID& aViewId,

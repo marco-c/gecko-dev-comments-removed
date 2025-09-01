@@ -7,6 +7,8 @@
 #include "HitTestInfoManager.h"
 #include "HitTestInfo.h"
 
+#include "mozilla/gfx/CompositorHitTestInfo.h"
+#include "mozilla/layers/ScrollableLayerGuid.h"
 #include "nsDisplayList.h"
 
 #define DEBUG_HITTEST_INFO 0
@@ -105,6 +107,27 @@ bool HitTestInfoManager::ProcessItem(
   CreateWebRenderCommands(aBuilder, aItem, area, flags, viewId);
 
   return true;
+}
+
+void HitTestInfoManager::ProcessItemAsImage(
+    nsDisplayItem* aItem, const wr::LayoutRect& aRect,
+    wr::DisplayListBuilder& aBuilder,
+    nsDisplayListBuilder* aDisplayListBuilder) {
+  
+  
+  
+  if (!aItem->HasChildren()) {
+    return;
+  }
+  const auto* asr = aItem->GetActiveScrolledRoot();
+  SideBits sideBits =
+      aBuilder.GetContainingFixedPosSideBits(asr).valueOr(SideBits::eNone);
+  gfx::CompositorHitTestInfo hitInfo = mFlags;
+  if (hitInfo.contains(gfx::CompositorHitTestFlags::eVisibleToHitTest)) {
+    hitInfo += gfx::CompositorHitTestFlags::eIrregularArea;
+  }
+  aBuilder.PushHitTest(aRect, aRect, !aItem->BackfaceIsHidden(), mViewId,
+                       hitInfo, sideBits);
 }
 
 
