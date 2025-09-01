@@ -25,7 +25,7 @@ use crate::style_resolver::StyleResolverForElement;
 use crate::stylesheets::keyframes_rule::{KeyframesAnimation, KeyframesStep, KeyframesStepValue};
 use crate::stylesheets::layer_rule::LayerOrder;
 use crate::values::animated::{Animate, Procedure};
-use crate::values::computed::{Time, TimingFunction};
+use crate::values::computed::TimingFunction;
 use crate::values::generics::easing::BeforeFlag;
 use crate::values::specified::TransitionBehavior;
 use crate::Atom;
@@ -55,31 +55,6 @@ impl PropertyAnimation {
     pub fn property_id(&self) -> PropertyDeclarationId {
         debug_assert_eq!(self.from.id(), self.to.id());
         self.from.id()
-    }
-
-    fn from_property_declaration(
-        property_declaration: &PropertyDeclarationId,
-        timing_function: TimingFunction,
-        duration: Time,
-        old_style: &ComputedValues,
-        new_style: &ComputedValues,
-    ) -> Option<PropertyAnimation> {
-        
-        let property_declaration = property_declaration.to_physical(new_style.writing_mode);
-        let from = AnimationValue::from_computed_values(property_declaration, old_style)?;
-        let to = AnimationValue::from_computed_values(property_declaration, new_style)?;
-        let duration = duration.seconds() as f64;
-
-        if from == to || duration == 0.0 {
-            return None;
-        }
-
-        Some(PropertyAnimation {
-            from,
-            to,
-            timing_function,
-            duration,
-        })
     }
 
     
@@ -131,6 +106,11 @@ impl AnimationState {
     fn needs_to_be_ticked(&self) -> bool {
         *self == AnimationState::Running || *self == AnimationState::Pending
     }
+}
+
+enum IgnoreTransitions {
+    Canceled,
+    CanceledAndFinished,
 }
 
 
@@ -760,6 +740,31 @@ pub struct Transition {
 }
 
 impl Transition {
+    fn new(
+        start_time: f64,
+        delay: f64,
+        duration: f64,
+        from: AnimationValue,
+        to: AnimationValue,
+        timing_function: &TimingFunction,
+    ) -> Self {
+        let property_animation = PropertyAnimation {
+            from: from.clone(),
+            to,
+            timing_function: timing_function.clone(),
+            duration,
+        };
+        Self {
+            start_time,
+            delay,
+            property_animation,
+            state: AnimationState::Pending,
+            is_new: true,
+            reversing_adjusted_start_value: from,
+            reversing_shortening_factor: 1.0,
+        }
+    }
+
     fn update_for_possibly_reversed_transition(
         &mut self,
         replaced_transition: &Transition,
@@ -880,7 +885,6 @@ impl ElementAnimationSet {
     }
 
     
-    #[cfg(feature = "servo")]
     pub fn apply_active_animations(
         &self,
         context: &SharedStyleContext,
@@ -894,7 +898,7 @@ impl ElementAnimationSet {
             }
         }
 
-        if let Some(map) = self.get_value_map_for_active_transitions(now) {
+        if let Some(map) = self.get_value_map_for_transitions(now, IgnoreTransitions::Canceled) {
             for value in map.values() {
                 value.set_in_style_for_servo(mutable_style);
             }
@@ -976,7 +980,6 @@ impl ElementAnimationSet {
 
     
     
-    #[cfg(feature = "servo")]
     pub fn update_transitions_for_new_style(
         &mut self,
         might_need_transitions_update: bool,
@@ -1014,8 +1017,21 @@ impl ElementAnimationSet {
         );
 
         
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         for transition in self.transitions.iter_mut() {
-            if transition.state == AnimationState::Finished {
+            if transition.state == AnimationState::Finished
+                || transition.state == AnimationState::Canceled
+            {
                 continue;
             }
             if transitioning_properties.contains(transition.property_animation.property_id()) {
@@ -1038,88 +1054,193 @@ impl ElementAnimationSet {
         let allow_discrete =
             style.transition_behavior_mod(index) == TransitionBehavior::AllowDiscrete;
 
-        if !property_declaration_id.is_animatable()
-            || (!allow_discrete && property_declaration_id.is_discrete_animatable())
-        {
+        
+        let Some(from) = AnimationValue::from_computed_values(*property_declaration_id, old_style)
+        else {
             return;
-        }
+        };
+        let Some(to) = AnimationValue::from_computed_values(*property_declaration_id, new_style)
+        else {
+            return;
+        };
 
         let timing_function = style.transition_timing_function_mod(index);
-        let duration = style.transition_duration_mod(index);
+        let duration = style.transition_duration_mod(index).seconds() as f64;
         let delay = style.transition_delay_mod(index).seconds() as f64;
         let now = context.current_time_for_animations;
+        let transitionable = property_declaration_id.is_animatable()
+            && (allow_discrete || !property_declaration_id.is_discrete_animatable())
+            && (allow_discrete || from.interpolable_with(&to));
 
-        
-        
-        let property_animation = match PropertyAnimation::from_property_declaration(
-            property_declaration_id,
-            timing_function,
-            duration,
-            old_style,
-            new_style,
-        ) {
-            Some(property_animation) => property_animation,
-            None => return,
-        };
+        let mut existing_transition = self.transitions.iter_mut().find(|transition| {
+            transition.property_animation.property_id() == *property_declaration_id
+        });
 
         
         
         
         
-        if !allow_discrete
-            && !property_animation
-                .from
-                .interpolable_with(&property_animation.to)
-        {
-            return;
-        }
-
         
         
         
         
-        if self
-            .transitions
-            .iter()
-            .filter(|transition| transition.state != AnimationState::Canceled)
-            .any(|transition| transition.property_animation.to == property_animation.to)
-        {
-            return;
-        }
-
         
         
-        let reversing_adjusted_start_value = property_animation.from.clone();
-        let mut new_transition = Transition {
-            start_time: now + delay,
-            delay,
-            property_animation,
-            state: AnimationState::Pending,
-            is_new: true,
-            reversing_adjusted_start_value,
-            reversing_shortening_factor: 1.0,
-        };
-
-        if let Some(old_transition) = self
-            .transitions
-            .iter_mut()
-            .filter(|transition| transition.state == AnimationState::Running)
-            .find(|transition| {
-                transition.property_animation.property_id() == *property_declaration_id
-            })
+        
+        
+        
+        
+        let has_running_transition = existing_transition.as_ref().is_some_and(|transition| {
+            transition.state != AnimationState::Finished
+                && transition.state != AnimationState::Canceled
+        });
+        let no_completed_transition_or_end_values_differ =
+            existing_transition.as_ref().is_none_or(|transition| {
+                transition.state != AnimationState::Finished
+                    || transition.property_animation.to != to
+            });
+        if !has_running_transition
+            && from != to
+            && transitionable
+            && no_completed_transition_or_end_values_differ
+            && (duration + delay > 0.0)
         {
             
-            old_transition.state = AnimationState::Canceled;
-            new_transition.update_for_possibly_reversed_transition(old_transition, delay, now);
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            self.transitions.push(Transition::new(
+                now + delay, 
+                delay,
+                duration,
+                from,
+                to,
+                &timing_function,
+            ));
+            self.dirty = true;
+            return;
         }
 
-        self.transitions.push(new_transition);
-        self.dirty = true;
+        
+        
+        
+        
+        
+        
+        
+        
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        let Some(existing_transition) = existing_transition.as_mut() else {
+            return;
+        };
+
+        
+        
+        
+        
+        if has_running_transition && existing_transition.property_animation.to != to {
+            
+            
+            
+            
+            let current_value = existing_transition.calculate_value(now);
+            let transitionable_from_current_value =
+                transitionable && (allow_discrete || current_value.interpolable_with(&to));
+            if current_value == to || !transitionable_from_current_value {
+                existing_transition.state = AnimationState::Canceled;
+                self.dirty = true;
+                return;
+            }
+
+            
+            
+            
+            
+            
+            if duration + delay <= 0.0 {
+                existing_transition.state = AnimationState::Canceled;
+                self.dirty = true;
+                return;
+            }
+
+            
+            
+            
+            
+            
+            if existing_transition.reversing_adjusted_start_value == to {
+                existing_transition.state = AnimationState::Canceled;
+
+                let mut transition = Transition::new(
+                    now + delay, 
+                    delay,
+                    duration,
+                    from,
+                    to,
+                    &timing_function,
+                );
+
+                
+                
+                transition.update_for_possibly_reversed_transition(
+                    &existing_transition,
+                    delay,
+                    now,
+                );
+
+                self.transitions.push(transition);
+                self.dirty = true;
+                return;
+            }
+
+            
+            
+            
+            
+            
+            
+            
+            
+            existing_transition.state = AnimationState::Canceled;
+            self.transitions.push(Transition::new(
+                now + delay, 
+                delay,
+                duration,
+                current_value,
+                to,
+                &timing_function,
+            ));
+            self.dirty = true;
+        }
     }
 
     
     
-    pub fn get_value_map_for_active_transitions(&self, now: f64) -> Option<AnimationValueMap> {
+    
+    fn get_value_map_for_transitions(
+        &self,
+        now: f64,
+        ignore_transitions: IgnoreTransitions,
+    ) -> Option<AnimationValueMap> {
         if !self.has_active_transition() {
             return None;
         }
@@ -1127,9 +1248,21 @@ impl ElementAnimationSet {
         let mut map =
             AnimationValueMap::with_capacity_and_hasher(self.transitions.len(), Default::default());
         for transition in &self.transitions {
-            if transition.state == AnimationState::Canceled {
-                continue;
+            match ignore_transitions {
+                IgnoreTransitions::Canceled => {
+                    if transition.state == AnimationState::Canceled {
+                        continue;
+                    }
+                },
+                IgnoreTransitions::CanceledAndFinished => {
+                    if transition.state == AnimationState::Canceled
+                        || transition.state == AnimationState::Finished
+                    {
+                        continue;
+                    }
+                },
             }
+
             let value = transition.calculate_value(now);
             map.insert(value.id().to_owned(), value);
         }
@@ -1243,7 +1376,9 @@ impl DocumentAnimationSet {
         self.sets
             .read()
             .get(key)
-            .and_then(|set| set.get_value_map_for_active_transitions(time))
+            .and_then(|set| {
+                set.get_value_map_for_transitions(time, IgnoreTransitions::CanceledAndFinished)
+            })
             .map(|map| {
                 let block = PropertyDeclarationBlock::from_animation_value_map(&map);
                 Arc::new(shared_lock.wrap(block))
@@ -1268,10 +1403,12 @@ impl DocumentAnimationSet {
             let block = PropertyDeclarationBlock::from_animation_value_map(&map);
             Arc::new(shared_lock.wrap(block))
         });
-        let transitions = set.get_value_map_for_active_transitions(time).map(|map| {
-            let block = PropertyDeclarationBlock::from_animation_value_map(&map);
-            Arc::new(shared_lock.wrap(block))
-        });
+        let transitions = set
+            .get_value_map_for_transitions(time, IgnoreTransitions::CanceledAndFinished)
+            .map(|map| {
+                let block = PropertyDeclarationBlock::from_animation_value_map(&map);
+                Arc::new(shared_lock.wrap(block))
+            });
         AnimationDeclarations {
             animations,
             transitions,
@@ -1294,8 +1431,25 @@ pub fn start_transitions_if_applicable(
     new_style: &Arc<ComputedValues>,
     animation_state: &mut ElementAnimationSet,
 ) -> PropertyDeclarationIdSet {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let mut transition_properties = new_style.transition_properties().collect::<Vec<_>>();
+    transition_properties.reverse();
+
     let mut properties_that_transition = PropertyDeclarationIdSet::default();
-    for transition in new_style.transition_properties() {
+    for transition in transition_properties {
         let physical_property = transition
             .property
             .as_borrowed()
