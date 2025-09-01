@@ -16,6 +16,8 @@ const EventEmitter = require("resource://devtools/shared/event-emitter.js");
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
 const CONTAINER_WIDTH = 500;
 
+const L10N_USERDEFINED = L10N.getStr("eventsTooltip.userDefined");
+
 const L10N_BUBBLING = L10N.getStr("eventsTooltip.Bubbling");
 const L10N_CAPTURING = L10N.getStr("eventsTooltip.Capturing");
 
@@ -158,6 +160,7 @@ class EventTooltip extends EventEmitter {
       attributesContainer.className = "event-tooltip-attributes-container";
       header.appendChild(attributesContainer);
 
+      
       if (listener.tags) {
         for (const tag of listener.tags.split(",")) {
           const attributesBox = doc.createElementNS(XHTML_NS, "div");
@@ -170,6 +173,18 @@ class EventTooltip extends EventEmitter {
           tagBox.setAttribute("title", tag);
           attributesBox.appendChild(tagBox);
         }
+        
+        
+      } else if (listener.isUserDefined) {
+        const attributesBox = doc.createElementNS(XHTML_NS, "div");
+        attributesBox.className = "event-tooltip-attributes-box";
+        attributesContainer.appendChild(attributesBox);
+
+        const capturing = doc.createElementNS(XHTML_NS, "span");
+        capturing.className = "event-tooltip-attributes";
+
+        capturing.textContent = L10N_USERDEFINED;
+        attributesBox.appendChild(capturing);
       }
 
       if (!listener.hide.capturing) {

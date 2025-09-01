@@ -17,6 +17,12 @@ const Debugger = require("Debugger");
 const {
   EXCLUDED_LISTENER,
 } = require("resource://devtools/server/actors/inspector/constants.js");
+loader.lazyRequireGetter(
+  this,
+  "isUserDefinedEventName",
+  "resource://devtools/server/actors/events/events.js",
+  true
+);
 
 
 const JQUERY_LIVE_REGEX =
@@ -925,6 +931,7 @@ class EventCollector {
 
 
 
+
   
   processHandlerForEvent(listener, dbg, normalizeListener) {
     let globalDO;
@@ -948,7 +955,7 @@ class EventCollector {
       const hide = listener.hide || {};
       const override = listener.override || {};
       const tags = listener.tags || "";
-      const type = listener.type || "";
+      const type = override.type || listener.type || "";
       const enabled = !!listener.enabled;
       let functionSource = handler.toString();
       let line = 0;
@@ -1051,7 +1058,7 @@ class EventCollector {
       }
 
       eventObj = {
-        type: override.type || type,
+        type,
         handler: override.handler || functionSource.trim(),
         origin: override.origin || origin,
         tags: override.tags || tags,
@@ -1064,6 +1071,7 @@ class EventCollector {
         sourceActor,
         nsIEventListenerInfo: listener.nsIEventListenerInfo,
         enabled,
+        isUserDefined: isUserDefinedEventName(type),
       };
 
       
