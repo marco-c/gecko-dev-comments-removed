@@ -9,6 +9,13 @@ function run_test() {
   
   ok(SSService.isSecureURI(uri));
 
+  let longUri = Services.io.newURI(
+    "https://a.b.c.d.e.f.g.h.i.j.k.l.m.n.o.p.q.r.s.t.u.v.w.x.y.z.a.b.c.d.e.f.g.h.i.j.k.l.m.n.o.p.q.r.s.t.u.v.w.x.y.z.a.b.c.d.e.f.g.h.i.j.k.l.m.n.o.p.q.r.s.t.u.v.w.x.y.z.a.b.c.d.e.f.g.h.i.j.k.l.m.n.o.p.q.r.s.t.u.v.w.x.y.z.a.b.c.d.e.f.g.includesubdomains.preloaded.test"
+  );
+
+  
+  ok(!SSService.isSecureURI(longUri));
+
   
   let offsetSeconds = 19 * 7 * 24 * 60 * 60;
   Services.prefs.setIntPref("test.currentTimeOffsetSeconds", offsetSeconds);

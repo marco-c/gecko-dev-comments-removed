@@ -23,6 +23,7 @@
 #include "nsPromiseFlatString.h"
 #include "nsReadableUtils.h"
 #include "nsSecurityHeaderParser.h"
+#include "nsURLHelper.h"
 #include "nsVariant.h"
 #include "nsXULAppAPI.h"
 #include "prnetdb.h"
@@ -727,13 +728,72 @@ nsSiteSecurityService::IsSecureURI(nsIURI* aURI,
   nsAutoCString hostname;
   nsresult rv = GetHost(aURI, hostname);
   NS_ENSURE_SUCCESS(rv, rv);
+  *aResult = false;
+
   
-  if (HostIsIPAddress(hostname)) {
-    *aResult = false;
+  const nsCString& flatHost = PromiseFlatCString(hostname);
+  if (HostIsIPAddress(flatHost)) {
     return NS_OK;
   }
 
-  return IsSecureHost(hostname, aOriginAttributes, aResult);
+  
+  if (!net_IsValidDNSHost(flatHost)) {
+    return NS_OK;
+  }
+
+  nsAutoCString host(
+      PublicKeyPinningService::CanonicalizeHostname(flatHost.get()));
+
+  
+  bool hostMatchesHSTSEntry = false;
+  rv = HostMatchesHSTSEntry(host, false, aOriginAttributes,
+                            hostMatchesHSTSEntry);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  if (hostMatchesHSTSEntry) {
+    *aResult = true;
+    return NS_OK;
+  }
+
+  SSSLOG(("%s not congruent match for any known HSTS host", host.get()));
+  const char* superdomain;
+
+  uint32_t offset = 0;
+  for (offset = host.FindChar('.', offset) + 1; offset > 0;
+       offset = host.FindChar('.', offset) + 1) {
+    superdomain = host.get() + offset;
+
+    
+    if (strlen(superdomain) < 1) {
+      break;
+    }
+
+    
+    
+    
+    nsAutoCString superdomainString(superdomain);
+    hostMatchesHSTSEntry = false;
+    rv = HostMatchesHSTSEntry(superdomainString, true, aOriginAttributes,
+                              hostMatchesHSTSEntry);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+    if (hostMatchesHSTSEntry) {
+      *aResult = true;
+      return NS_OK;
+    }
+
+    SSSLOG(
+        ("superdomain %s not known HSTS host (or includeSubdomains not set), "
+         "walking up domain",
+         superdomain));
+  }
+
+  
+  
+  *aResult = false;
+  return NS_OK;
 }
 
 
@@ -907,73 +967,6 @@ nsresult nsSiteSecurityService::HostMatchesHSTSEntry(
         aRequireIncludeSubdomains ? includeSubdomains : true;
   }
 
-  return NS_OK;
-}
-
-nsresult nsSiteSecurityService::IsSecureHost(
-    const nsACString& aHost, const OriginAttributes& aOriginAttributes,
-    bool* aResult) {
-  NS_ENSURE_ARG(aResult);
-  *aResult = false;
-
-  
-  const nsCString& flatHost = PromiseFlatCString(aHost);
-  if (HostIsIPAddress(flatHost)) {
-    return NS_OK;
-  }
-
-  nsAutoCString host(
-      PublicKeyPinningService::CanonicalizeHostname(flatHost.get()));
-
-  
-  bool hostMatchesHSTSEntry = false;
-  nsresult rv = HostMatchesHSTSEntry(host, false, aOriginAttributes,
-                                     hostMatchesHSTSEntry);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-  if (hostMatchesHSTSEntry) {
-    *aResult = true;
-    return NS_OK;
-  }
-
-  SSSLOG(("%s not congruent match for any known HSTS host", host.get()));
-  const char* superdomain;
-
-  uint32_t offset = 0;
-  for (offset = host.FindChar('.', offset) + 1; offset > 0;
-       offset = host.FindChar('.', offset) + 1) {
-    superdomain = host.get() + offset;
-
-    
-    if (strlen(superdomain) < 1) {
-      break;
-    }
-
-    
-    
-    
-    nsAutoCString superdomainString(superdomain);
-    hostMatchesHSTSEntry = false;
-    rv = HostMatchesHSTSEntry(superdomainString, true, aOriginAttributes,
-                              hostMatchesHSTSEntry);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-    if (hostMatchesHSTSEntry) {
-      *aResult = true;
-      return NS_OK;
-    }
-
-    SSSLOG(
-        ("superdomain %s not known HSTS host (or includeSubdomains not set), "
-         "walking up domain",
-         superdomain));
-  }
-
-  
-  
-  *aResult = false;
   return NS_OK;
 }
 
