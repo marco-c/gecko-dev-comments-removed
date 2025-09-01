@@ -4222,7 +4222,8 @@ nsresult nsDocShell::StopInternal(
   RefPtr kungFuDeathGrip = this;
   if (RefPtr<Document> doc = GetDocument();
       aUnsetOngoingNavigation == UnsetOngoingNavigation::Yes && doc &&
-      !doc->ShouldIgnoreOpens()) {
+      !doc->ShouldIgnoreOpens() &&
+      mOngoingNavigation == Some(OngoingNavigation::NavigationID)) {
     SetOngoingNavigation(Nothing());
   }
 
@@ -4511,6 +4512,11 @@ nsDocShell::Destroy() {
     
     
     
+  }
+
+  if (BrowsingContext* browsingContext = GetBrowsingContext();
+      browsingContext && !browsingContext->IsTop()) {
+    InformNavigationAPIAboutChildNavigableDestruction();
   }
 
   
@@ -9642,6 +9648,10 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
       mBrowsingContext->Focus(CallerType::System, IgnoreErrors());
     }
     if (sameDocument) {
+      if (aLoadState->LoadIsFromSessionHistory() &&
+          (mLoadType & LOAD_CMD_HISTORY)) {
+        SetOngoingNavigation(Nothing());
+      }
       return rv;
     }
   }
@@ -9668,6 +9678,11 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   
   if (mTiming && !isDownload) {
     mTiming->NotifyBeforeUnload();
+  }
+
+  if (!aLoadState->LoadIsFromSessionHistory() && mOngoingNavigation &&
+      *mOngoingNavigation == OngoingNavigation::Traversal) {
+    return NS_OK;
   }
 
   
@@ -9819,6 +9834,11 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
       
       
       document->DisallowBFCaching(flags);
+    }
+
+    if (aLoadState->LoadIsFromSessionHistory() &&
+        (mLoadType & LOAD_CMD_HISTORY)) {
+      SetOngoingNavigation(Nothing());
     }
   }
 
@@ -12552,6 +12572,26 @@ void nsDocShell::MaybeFireTraverseHistory(nsDocShellLoadState* aLoadState) {
   }
 }
 
+bool nsDocShell::MaybeFireTraversableTraverseHistory(
+    const SessionHistoryInfo& aInfo,
+    Maybe<UserNavigationInvolvement> aUserInvolvement) {
+  MOZ_DIAGNOSTIC_ASSERT(GetBrowsingContext());
+  MOZ_DIAGNOSTIC_ASSERT(GetBrowsingContext()->IsTop());
+
+  SetOngoingNavigation(Some(OngoingNavigation::Traversal));
+
+  if (RefPtr<nsPIDOMWindowInner> activeWindow = GetActiveWindow()) {
+    if (RefPtr navigation = activeWindow->Navigation()) {
+      if (AutoJSAPI jsapi; jsapi.Init(activeWindow)) {
+        return navigation->FireTraverseNavigateEvent(jsapi.cx(), aInfo,
+                                                     aUserInvolvement);
+      }
+    }
+  }
+
+  return true;
+}
+
 nsresult nsDocShell::LoadHistoryEntry(nsDocShellLoadState* aLoadState,
                                       uint32_t aLoadType,
                                       bool aLoadingCurrentEntry) {
@@ -14444,7 +14484,6 @@ nsPIDOMWindowInner* nsDocShell::GetActiveWindow() {
 void nsDocShell::InformNavigationAPIAboutAbortingNavigation() {
   
   
-  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
 
   
   RefPtr<nsPIDOMWindowInner> window = GetActiveWindow();
@@ -14470,6 +14509,31 @@ void nsDocShell::InformNavigationAPIAboutAbortingNavigation() {
 
   
   navigation->AbortOngoingNavigation(jsapi.cx());
+}
+
+
+void nsDocShell::InformNavigationAPIAboutChildNavigableDestruction() {
+  
+  InformNavigationAPIAboutAbortingNavigation();
+
+  
+  RefPtr<nsPIDOMWindowInner> window = GetActiveWindow();
+  if (!window) {
+    return;
+  }
+
+  
+  RefPtr<Navigation> navigation = window->Navigation();
+  if (!navigation) {
+    return;
+  }
+
+  AutoJSAPI jsapi;
+  if (!jsapi.Init(navigation->GetOwnerGlobal())) {
+    return;
+  }
+
+  navigation->InformAboutChildNavigableDestruction(jsapi.cx());
 }
 
 
