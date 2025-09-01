@@ -307,6 +307,7 @@ class MockCubebStream {
   const cubeb_devid mOutputDeviceID;
 
   float mDriftFactor MOZ_GUARDED_BY(mMutex) = 1.0;
+  bool mFastMode MOZ_GUARDED_BY(mMutex) = false;
   bool mForceErrorState MOZ_GUARDED_BY(mMutex) = false;
   bool mForceDeviceChanged MOZ_GUARDED_BY(mMutex) = false;
   bool mDestroyed MOZ_GUARDED_BY(mMutex) = false;
@@ -502,6 +503,7 @@ class MockCubeb {
   
   void* mInputDeviceCollectionChangeUserPtr = nullptr;
   void* mOutputDeviceCollectionChangeUserPtr = nullptr;
+  void* mUserPtr = nullptr;
   
   
   
