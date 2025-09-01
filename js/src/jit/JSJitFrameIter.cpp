@@ -537,7 +537,7 @@ bool JSJitProfilingFrameIterator::tryInitWithTable(JitcodeGlobalTable* table,
 
   MOZ_ASSERT(entry->isIon() || entry->isIonIC() || entry->isBaseline() ||
              entry->isBaselineInterpreter() || entry->isDummy() ||
-             entry->isSelfHostedShared());
+             entry->isRealmIndependentShared());
 
   
   if (entry->isDummy()) {
@@ -579,7 +579,7 @@ bool JSJitProfilingFrameIterator::tryInitWithTable(JitcodeGlobalTable* table,
     return true;
   }
 
-  if (entry->isSelfHostedShared()) {
+  if (entry->isRealmIndependentShared()) {
     
     
     type_ = FrameType::BaselineJS;
