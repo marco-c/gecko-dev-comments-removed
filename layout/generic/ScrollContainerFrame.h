@@ -1239,7 +1239,8 @@ class ScrollContainerFrame : public nsContainerFrame,
   
   void ApzSmoothScrollTo(const nsPoint& aDestination, ScrollMode, ScrollOrigin,
                          ScrollTriggeredByScript,
-                         UniquePtr<ScrollSnapTargetIds> aSnapTargetIds);
+                         UniquePtr<ScrollSnapTargetIds> aSnapTargetIds,
+                         ViewportType aViewportToScroll);
 
   
   
