@@ -70,9 +70,16 @@ add_task(async function test_tools_prefs() {
 
   
   const newWin = await BrowserTestUtils.openNewBrowserWindow();
+  await newWin.SidebarController.waitUntilStable();
   const newSidebar = newWin.document.querySelector("sidebar-main");
-  ok(newSidebar, "New Window sidebar is shown.");
-  await newSidebar.updateComplete;
+
+  Assert.ok(
+    BrowserTestUtils.isHidden(newSidebar),
+    "The sidebar launcher is initially hidden"
+  );
+  
+  await ensureSidebarLauncherIsVisible(newWin);
+
   info("Waiting for customize button to be present");
   await BrowserTestUtils.waitForMutationCondition(
     newSidebar,
