@@ -499,7 +499,14 @@ int nestegg_has_cues(nestegg * context);
 
 
 
-int nestegg_sniff(unsigned char const * buffer, size_t length);
+int nestegg_sniff_webm(unsigned char const* buffer, size_t length);
+
+
+
+
+
+
+int nestegg_sniff_mkv(unsigned char const * buffer, size_t length);
 
 #if defined(__cplusplus)
 }
