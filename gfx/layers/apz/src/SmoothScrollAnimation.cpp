@@ -9,6 +9,7 @@
 #include "ScrollAnimationBezierPhysics.h"
 #include "ScrollAnimationMSDPhysics.h"
 #include "ScrollPositionUpdate.h"
+#include "Units.h"
 #include "mozilla/StaticPrefs_general.h"
 #include "nsLayoutUtils.h"
 
@@ -25,6 +26,16 @@ already_AddRefed<SmoothScrollAnimation> SmoothScrollAnimation::Create(
       new SmoothScrollAnimation(ScrollAnimationKind::Smooth, aApzc, aOrigin);
   return result.forget();
 }
+
+already_AddRefed<SmoothScrollAnimation> SmoothScrollAnimation::CreateMsd(
+    AsyncPanZoomController& aApzc) {
+  
+  
+  RefPtr<SmoothScrollAnimation> result = new SmoothScrollAnimation(
+      ScrollAnimationKind::SmoothMsd, aApzc, ScrollOrigin::NotSpecified);
+  return result.forget();
+}
+
 
 already_AddRefed<SmoothScrollAnimation>
 SmoothScrollAnimation::CreateForKeyboard(AsyncPanZoomController& aApzc,
@@ -74,10 +85,21 @@ SmoothScrollAnimation::SmoothScrollAnimation(ScrollAnimationKind aKind,
   
   
   
-  if (nsLayoutUtils::IsSmoothScrollingEnabled() &&
-      StaticPrefs::general_smoothScroll_msdPhysics_enabled()) {
-    mAnimationPhysics =
-        MakeUnique<ScrollAnimationMSDPhysics>(mFinalDestination);
+  if (mKind == ScrollAnimationKind::SmoothMsd ||
+      (nsLayoutUtils::IsSmoothScrollingEnabled() &&
+       StaticPrefs::general_smoothScroll_msdPhysics_enabled())) {
+    nscoord smallestVisibleIncrement = 1;
+    if (mKind == ScrollAnimationKind::SmoothMsd &&
+        mApzc.GetFrameMetrics().GetZoom() != CSSToParentLayerScale(0)) {
+      
+      
+      
+      
+      smallestVisibleIncrement = CSSPixel::ToAppUnits(
+          ParentLayerCoord(1) / mApzc.GetFrameMetrics().GetZoom());
+    }
+    mAnimationPhysics = MakeUnique<ScrollAnimationMSDPhysics>(
+        mKind, mFinalDestination, smallestVisibleIncrement);
   } else {
     mAnimationPhysics = MakeUnique<ScrollAnimationBezierPhysics>(
         mFinalDestination,
@@ -191,9 +213,18 @@ bool SmoothScrollAnimation::DoSample(FrameMetrics& aFrameMetrics,
       ToString(adjustedOffset).c_str(), ToString(overscroll).c_str());
   if (!IsZero(displacement / zoom) && IsZero(adjustedOffset / zoom)) {
     
-    return false;
+    finished = true;
+  } else {
+    mApzc.ScrollBy(adjustedOffset / zoom);
   }
-  mApzc.ScrollBy(adjustedOffset / zoom);
+  if (finished && mKind == ScrollAnimationKind::SmoothMsd) {
+    
+    
+    
+    
+    mApzc.ClampAndSetVisualScrollOffset(
+        CSSPoint::FromAppUnits(mFinalDestination));
+  }
   return !finished;
 }
 

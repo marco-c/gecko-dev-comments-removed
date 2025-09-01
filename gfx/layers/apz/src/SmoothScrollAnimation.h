@@ -12,6 +12,7 @@
 #include "ScrollPositionUpdate.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/ScrollOrigin.h"
+#include "mozilla/layers/APZPublicUtils.h"
 #include "mozilla/layers/KeyboardScrollAction.h"
 
 namespace mozilla {
@@ -22,22 +23,16 @@ namespace layers {
 
 class AsyncPanZoomController;
 
-enum class ScrollAnimationKind : uint8_t {
-  
-  
-  
-  Smooth,
-  
-  Keyboard,
-  
-  Wheel
-};
-
-class SmoothScrollAnimation final : public AsyncPanZoomAnimation {
+class SmoothScrollAnimation : public AsyncPanZoomAnimation {
  public:
+  using ScrollAnimationKind = apz::ScrollAnimationKind;
+
   
   static already_AddRefed<SmoothScrollAnimation> Create(
       AsyncPanZoomController& aApzc, ScrollOrigin aOrigin);
+  
+  static already_AddRefed<SmoothScrollAnimation> CreateMsd(
+      AsyncPanZoomController& aApzc);
   
   static already_AddRefed<SmoothScrollAnimation> CreateForKeyboard(
       AsyncPanZoomController& aApzc, ScrollOrigin aOrigin);

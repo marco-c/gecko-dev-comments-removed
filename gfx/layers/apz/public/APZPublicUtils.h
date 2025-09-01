@@ -74,6 +74,30 @@ ScrollAnimationBezierPhysicsSettings ComputeBezierAnimationSettingsForOrigin(
 
 ScrollMode GetScrollModeForOrigin(ScrollOrigin origin);
 
+
+
+
+
+
+enum class ScrollAnimationKind : uint8_t {
+  
+  
+  
+  
+  Smooth,
+  
+  
+  
+  
+  SmoothMsd,
+  
+  
+  Keyboard,
+  
+  
+  Wheel
+};
+
 }  
 
 }  
