@@ -2006,10 +2006,6 @@ pref("browser.newtabpage.activity-stream.discoverystream.recs.personalized", fal
 pref("browser.newtabpage.activity-stream.discoverystream.spocs.personalized", true);
 
 
-pref("browser.newtabpage.activity-stream.discoverystream.onboardingExperience.dismissed", false);
-pref("browser.newtabpage.activity-stream.discoverystream.onboardingExperience.enabled", false);
-
-
 pref("browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.locale-thumbs-config", "en-US, en-GB, en-CA");
 
 pref("browser.newtabpage.activity-stream.telemetry.privatePing.enabled", false);
