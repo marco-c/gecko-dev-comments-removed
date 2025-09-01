@@ -8,7 +8,7 @@
 
 
 config = {
-    "emulator_avd_name": "mozemulator-x86_64",
+    "emulator_avd_name": "mozemulator-android34-x86_64",
     "emulator_process_name": "qemu-system-x86_64",
     "emulator_extra_args": [
         "-gpu",
