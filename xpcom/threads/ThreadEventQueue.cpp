@@ -7,7 +7,7 @@
 #include "mozilla/ThreadEventQueue.h"
 #include "mozilla/EventQueue.h"
 
-#include "LeakRefPtr.h"
+#include "MaybeLeakRefPtr.h"
 #include "nsComponentManagerUtils.h"
 #include "nsITargetShutdownTask.h"
 #include "nsIThreadInternal.h"
@@ -25,9 +25,9 @@ class ThreadEventQueue::NestedSink : public ThreadTargetSink {
   NestedSink(EventQueue* aQueue, ThreadEventQueue* aOwner)
       : mQueue(aQueue), mOwner(aOwner) {}
 
-  bool PutEvent(already_AddRefed<nsIRunnable>&& aEvent,
+  bool PutEvent(RefPtr<nsIRunnable>& aEvent,
                 EventQueuePriority aPriority) final {
-    return mOwner->PutEventInternal(std::move(aEvent), aPriority, this);
+    return mOwner->PutEventInternal(aEvent, aPriority, this);
   }
 
   void Disconnect(const MutexAutoLock& aProofOfLock) final { mQueue = nullptr; }
@@ -68,17 +68,17 @@ ThreadEventQueue::ThreadEventQueue(UniquePtr<EventQueue> aQueue,
 
 ThreadEventQueue::~ThreadEventQueue() { MOZ_ASSERT(mNestedQueues.IsEmpty()); }
 
-bool ThreadEventQueue::PutEvent(already_AddRefed<nsIRunnable>&& aEvent,
+bool ThreadEventQueue::PutEvent(RefPtr<nsIRunnable>& aEvent,
                                 EventQueuePriority aPriority) {
-  return PutEventInternal(std::move(aEvent), aPriority, nullptr);
+  return PutEventInternal(aEvent, aPriority, nullptr);
 }
 
-bool ThreadEventQueue::PutEventInternal(already_AddRefed<nsIRunnable>&& aEvent,
+bool ThreadEventQueue::PutEventInternal(RefPtr<nsIRunnable>& aEvent,
                                         EventQueuePriority aPriority,
                                         NestedSink* aSink) {
   
   
-  LeakRefPtr<nsIRunnable> event(std::move(aEvent));
+  
   nsCOMPtr<nsIThreadObserver> obs;
 
   {
@@ -86,8 +86,8 @@ bool ThreadEventQueue::PutEventInternal(already_AddRefed<nsIRunnable>&& aEvent,
     
     
     if (mIsMainThread) {
-      auto* e = event.get();  
-      if (nsCOMPtr<nsIRunnablePriority> runnablePrio = do_QueryInterface(e)) {
+      if (nsCOMPtr<nsIRunnablePriority> runnablePrio =
+              do_QueryInterface(aEvent)) {
         uint32_t prio = nsIRunnablePriority::PRIORITY_NORMAL;
         runnablePrio->GetPriority(&prio);
         if (prio == nsIRunnablePriority::PRIORITY_CONTROL) {
@@ -121,9 +121,9 @@ bool ThreadEventQueue::PutEventInternal(already_AddRefed<nsIRunnable>&& aEvent,
         return false;
       }
 
-      aSink->mQueue->PutEvent(event.take(), aPriority, lock);
+      aSink->mQueue->PutEvent(aEvent.forget(), aPriority, lock);
     } else {
-      mBaseQueue->PutEvent(event.take(), aPriority, lock);
+      mBaseQueue->PutEvent(aEvent.forget(), aPriority, lock);
     }
 
     mEventsAvailable.Notify();
