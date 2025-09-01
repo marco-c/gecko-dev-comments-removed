@@ -5,17 +5,29 @@ const { IPProtectionPanel } = ChromeUtils.importESModule(
   "resource:///modules/ipprotection/IPProtectionPanel.sys.mjs"
 );
 
-const { IPProtectionWidget } = ChromeUtils.importESModule(
+const { IPProtection, IPProtectionWidget } = ChromeUtils.importESModule(
   "resource:///modules/ipprotection/IPProtection.sys.mjs"
 );
 
-const { IPProtection } = ChromeUtils.importESModule(
-  "resource:///modules/ipprotection/IPProtection.sys.mjs"
+const { IPProtectionService } = ChromeUtils.importESModule(
+  "resource:///modules/ipprotection/IPProtectionService.sys.mjs"
 );
 
 const { HttpServer, HTTP_403 } = ChromeUtils.importESModule(
   "resource://testing-common/httpd.sys.mjs"
 );
+
+const { NimbusTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/NimbusTestUtils.sys.mjs"
+);
+
+ChromeUtils.defineESModuleGetters(this, {
+  sinon: "resource://testing-common/Sinon.sys.mjs",
+  UIState: "resource://services-sync/UIState.sys.mjs",
+  ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
+  CustomizableUI:
+    "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
+});
 
 
 function waitForPanelEvent(document, eventName) {
@@ -24,6 +36,25 @@ function waitForPanelEvent(document, eventName) {
       return true;
     }
     return false;
+  });
+}
+
+
+async function waitForWidgetAdded() {
+  let widget = CustomizableUI.getWidget(IPProtectionWidget.WIDGET_ID);
+  if (widget) {
+    return;
+  }
+  await new Promise(resolve => {
+    let listener = {
+      onWidgetAdded: widgetId => {
+        if (widgetId == IPProtectionWidget.WIDGET_ID) {
+          CustomizableUI.removeListener(listener);
+          resolve();
+        }
+      },
+    };
+    CustomizableUI.addListener(listener);
   });
 }
 
@@ -38,9 +69,11 @@ const defaultState = new IPProtectionPanel().state;
 
 
 
-async function openPanel(state = defaultState, win = window) {
+async function openPanel(state, win = window) {
   let panel = IPProtection.getPanel(win);
-  panel.setState(state);
+  if (state) {
+    panel.setState(state);
+  }
 
   IPProtection.openPanel(win);
 
@@ -153,5 +186,118 @@ async function withProxyServer(testFn) {
     gotConnection: promise,
   });
   return server;
+}
+
+
+let DEFAULT_EXPERIMENT = {
+  enabled: true,
+  variant: "alpha",
+  isRollout: false,
+};
+
+
+let DEFAULT_SERVICE_STATUS = {
+  isSignedIn: false,
+  isEnrolled: false,
+  canEnroll: true,
+};
+
+
+let STUBS = {
+  UIState: undefined,
+  isLinkedToGuardian: undefined,
+  enroll: undefined,
+};
+
+
+let setupSandbox = sinon.createSandbox();
+add_setup(async function setupVPN() {
+  setupStubs();
+
+  setupService();
+
+  IPProtectionService.init();
+
+  if (DEFAULT_EXPERIMENT) {
+    await setupExperiment();
+  }
+
+  registerCleanupFunction(async () => {
+    cleanupService();
+    IPProtectionService.uninit();
+    setupSandbox.restore();
+    cleanupExperiment();
+  });
+});
+
+function setupStubs(stubs = STUBS) {
+  stubs.UIState = setupSandbox.stub(UIState, "get");
+  stubs.isLinkedToGuardian = setupSandbox.stub(
+    IPProtectionService.guardian,
+    "isLinkedToGuardian"
+  );
+  stubs.enroll = setupSandbox.stub(IPProtectionService.guardian, "enroll");
+}
+
+
+function setupService(
+  { isSignedIn, isEnrolled, canEnroll } = DEFAULT_SERVICE_STATUS,
+  stubs = STUBS
+) {
+  if (typeof isSignedIn != "undefined") {
+    stubs.UIState.returns({
+      status: isSignedIn
+        ? UIState.STATUS_SIGNED_IN
+        : UIState.STATUS_NOT_CONFIGURED,
+    });
+  }
+
+  if (typeof isEnrolled != "undefined") {
+    stubs.isLinkedToGuardian.returns(isEnrolled);
+  }
+
+  if (typeof canEnroll != "undefined") {
+    stubs.enroll.returns({
+      ok: canEnroll,
+    });
+  }
+}
+
+
+async function cleanupService() {
+  setupService(DEFAULT_SERVICE_STATUS);
+}
+
+
+NimbusTestUtils.init(this);
+let cleanupExistingExperiment;
+async function setupExperiment({
+  enabled,
+  variant,
+  isRollout,
+} = DEFAULT_EXPERIMENT) {
+  await ExperimentAPI.ready();
+  cleanupExistingExperiment = await NimbusTestUtils.enrollWithFeatureConfig(
+    {
+      featureId: "ipProtection",
+      value: {
+        enabled,
+        variant,
+      },
+    },
+    {
+      slug: "vpn-test",
+      branchSlug: variant,
+      isRollout,
+    }
+  );
+  return cleanupExistingExperiment;
+}
+
+
+async function cleanupExperiment() {
+  if (cleanupExistingExperiment) {
+    await cleanupExistingExperiment();
+  }
 }
 

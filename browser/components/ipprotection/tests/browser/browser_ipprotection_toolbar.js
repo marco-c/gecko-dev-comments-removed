@@ -30,12 +30,12 @@ add_task(async function toolbar_added_and_removed() {
     "IP Protection widget added in the correct position"
   );
   
-  Services.prefs.clearUserPref("browser.ipProtection.enabled");
+  await cleanupExperiment();
   widget = document.getElementById(IPProtectionWidget.WIDGET_ID);
   Assert.equal(widget, null, "IP Protection widget is removed");
 
   
-  Services.prefs.setBoolPref("browser.ipProtection.enabled", true);
+  await setupExperiment();
   widget = document.getElementById(IPProtectionWidget.WIDGET_ID);
   Assert.ok(
     BrowserTestUtils.isVisible(widget),
@@ -67,6 +67,11 @@ add_task(async function toolbar_icon_status() {
     IPProtectionWidget.PANEL_ID
   );
   let content = panelView.querySelector(IPProtectionPanel.CONTENT_TAGNAME);
+  setupService({
+    isSignedIn: true,
+    isEnrolled: true,
+  });
+  IPProtectionService.isEnrolled = true;
   content.state.isSignedIn = true;
   content.requestUpdate();
   await content.updateComplete;
@@ -98,6 +103,9 @@ add_task(async function toolbar_icon_status() {
     !button.classList.contains("ipprotection-on"),
     "Toolbar icon should now show disconnected status"
   );
+
+  cleanupService();
+  IPProtectionService.isEnrolled = false;
 
   
   let panelHiddenPromise = waitForPanelEvent(document, "popuphidden");
