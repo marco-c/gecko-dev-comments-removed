@@ -65,7 +65,13 @@ nsresult GlobalTeardownObserver::CheckCurrentGlobalCorrectness() const {
     }
   }
 
-  if (mParentObject->IsDying() && !NS_IsMainThread()) {
+  if (NS_IsMainThread()) {
+    return NS_OK;
+  }
+
+  
+  
+  if (mParentObject->IsDying()) {
     return NS_ERROR_FAILURE;
   }
 
