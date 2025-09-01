@@ -790,18 +790,6 @@ class ICU4XIsoDateDeleter {
 using UniqueICU4XIsoDate =
     mozilla::UniquePtr<icu4x::capi::IsoDate, ICU4XIsoDateDeleter>;
 
-
-
-
-#if defined(__clang__)
-#  if (__clang_major__ >= 12)
-#    define IMPLEMENTS_DR2126
-#  endif
-#else
-#  define IMPLEMENTS_DR2126
-#endif
-
-#ifdef IMPLEMENTS_DR2126
 static constexpr size_t EraNameMaxLength() {
   size_t length = 0;
   for (auto calendar : AvailableCalendars()) {
@@ -813,7 +801,6 @@ static constexpr size_t EraNameMaxLength() {
   }
   return length;
 }
-#endif
 
 static mozilla::Maybe<EraCode> EraForString(CalendarId calendar,
                                             JSLinearString* string) {
@@ -821,10 +808,8 @@ static mozilla::Maybe<EraCode> EraForString(CalendarId calendar,
 
   
   constexpr size_t MaxLength = 24;
-#ifdef IMPLEMENTS_DR2126
   static_assert(MaxLength >= EraNameMaxLength(),
                 "Storage size is at least as large as the largest known era");
-#endif
 
   if (string->length() > MaxLength || !StringIsAscii(string)) {
     return mozilla::Nothing();
@@ -1449,7 +1434,6 @@ static UniqueICU4XDate CreateDateFrom(JSContext* cx, CalendarId calendarId,
   MOZ_CRASH("invalid calendar id");
 }
 
-#ifdef IMPLEMENTS_DR2126
 static constexpr size_t ICUEraNameMaxLength() {
   size_t length = 0;
   for (auto calendar : AvailableCalendars()) {
@@ -1460,12 +1444,10 @@ static constexpr size_t ICUEraNameMaxLength() {
   }
   return length;
 }
-#endif
 
 class EraName {
   
   static constexpr size_t MaxLength = 7;
-#ifdef IMPLEMENTS_DR2126
 
 
 
@@ -1480,8 +1462,6 @@ class EraName {
 #  ifdef __clang__
 #    pragma clang diagnostic pop
 #  endif
-
-#endif
 
   
   char buf[MaxLength + 1] = {};
