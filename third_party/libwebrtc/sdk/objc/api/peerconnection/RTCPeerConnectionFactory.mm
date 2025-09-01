@@ -238,12 +238,6 @@
 
 - (instancetype)initWithMediaAndDependencies:
     (webrtc::PeerConnectionFactoryDependencies &)dependencies {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-  
-  RTC_CHECK(dependencies.audio_processing == nullptr);
-#pragma clang diagnostic pop
-
 #ifndef WEBRTC_EXCLUDE_AUDIO_PROCESSING_MODULE
   if (dependencies.audio_processing_builder == nullptr) {
     dependencies.audio_processing_builder =
