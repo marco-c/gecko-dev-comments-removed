@@ -332,6 +332,12 @@ var allowlist = [
   {
     file: "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustTracing.sys.mjs",
   },
+
+  
+  
+  {
+    file: "resource://app/modules/backup/CookiesBackupResource.sys.mjs",
+  },
 ];
 
 if (AppConstants.NIGHTLY_BUILD) {
