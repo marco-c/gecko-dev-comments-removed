@@ -359,7 +359,6 @@ static nsTArray<SVCBWrapper> FlattenRecords(const nsACString& aHost,
     if (alpnList.IsEmpty()) {
       result.AppendElement(SVCBWrapper(record));
     } else {
-      bool h1AlpnAdded = false;
       if (!hasNoDefaultAlpn) {
         
         
@@ -375,32 +374,15 @@ static nsTArray<SVCBWrapper> FlattenRecords(const nsACString& aHost,
         if (!aHost.Equals(record.mSvcDomainName) || record.mHasEchConfig) {
           alpnList.AppendElement(
               std::make_tuple(""_ns, SupportedAlpnRank::HTTP_1_1));
-          h1AlpnAdded = true;
         }
       }
       for (const auto& alpn : alpnList) {
-        const auto alpnRank = std::get<1>(alpn);
-        if (IsHttp3(alpnRank)) {
+        SVCBWrapper wrapper(record);
+        wrapper.mAlpn = Some(alpn);
+        if (IsHttp3(std::get<1>(alpn))) {
           aH3RecordCount++;
         }
-
-        
-        if (alpnRank == SupportedAlpnRank::HTTP_2 && h1AlpnAdded) {
-          continue;
-        }
-
-        
-        
-        
-        
-        
-        auto chosen =
-            (alpnRank == SupportedAlpnRank::HTTP_2 && !hasNoDefaultAlpn)
-                ? std::make_tuple(""_ns, alpnRank)
-                : alpn;
-        SVCBWrapper wrapper(record);
-        wrapper.mAlpn = Some(chosen);
-        result.AppendElement(std::move(wrapper));
+        result.AppendElement(wrapper);
       }
     }
   }
