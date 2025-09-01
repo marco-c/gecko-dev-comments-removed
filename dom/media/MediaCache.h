@@ -453,7 +453,7 @@ class MediaCacheStream : public DecoderDoctorLifeLogger<MediaCacheStream> {
   
   
   
-  void FlushPartialBlockInternal(AutoLock&, bool aNotifyAll);
+  void FlushPartialBlockInternal(AutoLock&);
 
   void NotifyDataStartedInternal(uint32_t aLoadID, int64_t aOffset,
                                  bool aSeekable, int64_t aLength);
