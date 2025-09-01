@@ -101,9 +101,7 @@ class ScrollPositionUpdate {
   
   CSSPoint GetDelta() const;
 
-  ViewportType GetViewportType() const {
-    return mViewportType;
-  }
+  ViewportType GetViewportType() const { return mViewportType; }
   ScrollTriggeredByScript GetScrollTriggeredByScript() const {
     return mTriggeredByScript;
   }
