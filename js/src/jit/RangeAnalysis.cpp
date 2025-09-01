@@ -547,12 +547,8 @@ Range* Range::intersect(TempAllocator& alloc, const Range* lhs,
 
   FractionalPartFlag newCanHaveFractionalPart = FractionalPartFlag(
       lhs->canHaveFractionalPart_ && rhs->canHaveFractionalPart_);
-
-  
-  
   NegativeZeroFlag newMayIncludeNegativeZero =
-      NegativeZeroFlag((lhs->canBeNegativeZero_ && rhs->canBeZero()) ||
-                       (rhs->canBeNegativeZero_ && lhs->canBeZero()));
+      NegativeZeroFlag(lhs->canBeNegativeZero_ && rhs->canBeNegativeZero_);
 
   uint16_t newExponent = std::min(lhs->max_exponent_, rhs->max_exponent_);
 
@@ -734,27 +730,17 @@ void Range::setDouble(double l, double h) {
   
   
   
-  
-  
-  const double doubleMin = mozilla::BitwiseCast<double>(
-      mozilla::SpecificFloatingPointBits<double, 0, 1, 0>::value);
-  bool includesNegative = std::isnan(l) || l < doubleMin;
-  bool includesPositive = std::isnan(h) || h > -doubleMin;
-  bool crossesZero = includesNegative && includesPositive;
-
-  
-  
-  
-  
   uint16_t minExp = std::min(lExp, hExp);
+  bool includesNegative = std::isnan(l) || l < 0;
+  bool includesPositive = std::isnan(h) || h > 0;
+  bool crossesZero = includesNegative && includesPositive;
   if (crossesZero || minExp < MaxTruncatableExponent) {
     canHaveFractionalPart_ = IncludesFractionalParts;
   }
 
   
   
-  
-  if (crossesZero && (std::isnan(l) || mozilla::IsNegative(l))) {
+  if (!(l > 0) && !(h < 0)) {
     canBeNegativeZero_ = IncludesNegativeZero;
   }
 
@@ -763,6 +749,14 @@ void Range::setDouble(double l, double h) {
 
 void Range::setDoubleSingleton(double d) {
   setDouble(d, d);
+
+  
+  
+  
+  if (!IsNegativeZero(d)) {
+    canBeNegativeZero_ = ExcludesNegativeZero;
+  }
+
   assertInvariants();
 }
 
