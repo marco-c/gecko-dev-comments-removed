@@ -909,8 +909,13 @@ bool MediaEngineRemoteVideoSource::ChooseCapability(
       
       
       
-      aCapability.maxFPS =
+      constexpr int32_t nativeRefreshRate = 60;
+      const int32_t constrainedFramerate =
           SaturatingCast<int32_t>(std::lround(c.mFrameRate.Get(aPrefs.mFPS)));
+      aCapability.maxFPS =
+          aCalculate == kFeasibility
+              ? constrainedFramerate
+              : std::max(constrainedFramerate, nativeRefreshRate);
       return true;
     }
     default:
