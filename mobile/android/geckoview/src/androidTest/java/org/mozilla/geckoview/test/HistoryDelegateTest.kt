@@ -256,9 +256,6 @@ class HistoryDelegateTest : BaseSessionTest() {
 
     @Test fun onHistoryStateChangeSavingState() {
         
-        assumeThat(sessionRule.env.isFission, equalTo(false))
-
-        
         mainSession.loadTestPath(HELLO_HTML_PATH)
 
         sessionRule.waitUntilCalled(object : HistoryDelegate {
@@ -388,5 +385,34 @@ class HistoryDelegateTest : BaseSessionTest() {
             "SHIP is running.",
             sessionRule.isSessionHistoryInParentRunning,
         )
+    }
+
+    @Test fun flushSessionStateTriggersHistoryChange() {
+        mainSession.loadTestPath(HELLO_HTML_PATH)
+        mainSession.loadTestPath(HELLO2_HTML_PATH)
+
+        sessionRule.delegateUntilTestEnd(object : HistoryDelegate {
+            @AssertCalled(count = 1)
+            override fun onHistoryStateChange(session: GeckoSession, state: GeckoSession.HistoryDelegate.HistoryList) {
+                assertThat(
+                    "History should have two entries",
+                    state.size,
+                    equalTo(2),
+                )
+                assertThat(
+                    "URLs should match",
+                    state[state.currentIndex].uri,
+                    endsWith(HELLO2_HTML_PATH),
+                )
+                assertThat(
+                    "History index should be 1",
+                    state.currentIndex,
+                    equalTo(1),
+                )
+            }
+        })
+
+        sessionRule.waitForPageStops(2)
+        mainSession.flushSessionState()
     }
 }

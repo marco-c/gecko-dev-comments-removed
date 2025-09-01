@@ -2665,6 +2665,18 @@ public class GeckoSession {
 
 
 
+  @AnyThread
+  public void flushSessionState() {
+    mEventDispatcher.dispatch("GeckoView:FlushSessionState", null);
+  }
+
+  
+
+
+
+
+
+
 
 
 
@@ -2675,7 +2687,7 @@ public class GeckoSession {
     mEventDispatcher.dispatch("GeckoView:SetActive", msg);
 
     if (!active) {
-      mEventDispatcher.dispatch("GeckoView:FlushSessionState", null);
+      flushSessionState();
       ThreadUtils.postToUiThreadDelayed(mNotifyMemoryPressure, NOTIFY_MEMORY_PRESSURE_DELAY_MS);
     } else {
       
