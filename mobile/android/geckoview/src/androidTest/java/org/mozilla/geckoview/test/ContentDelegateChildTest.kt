@@ -443,8 +443,15 @@ class ContentDelegateChildTest : BaseSessionTest() {
     @WithDisplay(width = 100, height = 100)
     @Test
     fun requestContextMenuOnVideo() {
-        
-        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+        if (sessionRule.env.isIsolatedProcess) {
+            
+            
+            sessionRule.setPrefsUntilTestEnd(
+                mapOf(
+                    "media.android-media-codec.enabled" to false,
+                ),
+            )
+        }
         mainSession.loadTestPath(CONTEXT_MENU_VIDEO_HTML_PATH)
         mainSession.waitForPageStop()
         sendLongPress(50f, 50f)
