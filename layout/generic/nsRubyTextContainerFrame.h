@@ -54,7 +54,7 @@ class nsRubyTextContainerFrame final : public nsContainerFrame {
   
   
   
-  mozilla::RubyMetrics RubyMetrics() const override;
+  mozilla::RubyMetrics RubyMetrics(float aRubyMetricsFactor) const override;
 
  protected:
   friend nsContainerFrame* NS_NewRubyTextContainerFrame(

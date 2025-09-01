@@ -1723,7 +1723,11 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual mozilla::RubyMetrics RubyMetrics() const;
+
+
+
+
+  virtual mozilla::RubyMetrics RubyMetrics(float aRubyMetricsFactor) const;
 
   
 

@@ -913,7 +913,8 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
 
-  mozilla::RubyMetrics RubyMetricsIncludingChildren() const;
+  mozilla::RubyMetrics RubyMetricsIncludingChildren(
+      float aRubyMetricsFactor) const;
 
   
 

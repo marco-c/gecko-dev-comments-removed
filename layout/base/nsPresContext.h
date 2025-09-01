@@ -1132,6 +1132,18 @@ class nsPresContext : public nsISupports,
     return mMarkPaintTimingStart;
   }
 
+  
+  
+  bool NormalizeRubyMetrics();
+
+  
+  
+  
+  float RubyPositioningFactor() const {
+    MOZ_ASSERT(mRubyPositioningFactor > 0.0f);
+    return mRubyPositioningFactor;
+  }
+
  protected:
   
   void Destroy();
@@ -1196,10 +1208,13 @@ class nsPresContext : public nsISupports,
 
   float mTextZoom;  
   float mFullZoom;  
+
   gfxSize mLastFontInflationScreenSize;
 
   int32_t mCurAppUnitsPerDevPixel;
   int32_t mAutoQualityMinFontSizePixelsPref;
+
+  float mRubyPositioningFactor = -1.0f;  
 
   nsCOMPtr<nsITheme> mTheme;
   nsCOMPtr<nsIPrintSettings> mPrintSettings;

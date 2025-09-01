@@ -285,13 +285,15 @@ void nsRubyFrame::ReflowSegment(nsPresContext* aPresContext,
   
   
   
-  bool normalizeRubyMetrics = StaticPrefs::layout_css_ruby_normalize_metrics();
+  bool normalizeRubyMetrics = aPresContext->NormalizeRubyMetrics();
+  float rubyMetricsFactor =
+      normalizeRubyMetrics ? aPresContext->RubyPositioningFactor() : 0.0f;
   mozilla::RubyMetrics rubyMetrics;
 
   if (normalizeRubyMetrics) {
     
     
-    rubyMetrics = aBaseContainer->RubyMetrics();
+    rubyMetrics = aBaseContainer->RubyMetrics(rubyMetricsFactor);
     offsetRect.BStart(lineWM) +=
         baseMetrics.BlockStartAscent() - rubyMetrics.mAscent;
     offsetRect.BSize(lineWM) = rubyMetrics.mAscent + rubyMetrics.mDescent;
@@ -326,7 +328,7 @@ void nsRubyFrame::ReflowSegment(nsPresContext* aPresContext,
     nscoord ascentDelta = 0;
     nscoord bStartMargin = 0;
     if (normalizeRubyMetrics) {
-      auto [ascent, descent] = textContainer->RubyMetrics();
+      auto [ascent, descent] = textContainer->RubyMetrics(rubyMetricsFactor);
       const auto* firstChild = textContainer->PrincipalChildList().FirstChild();
       textEmHeight = ascent + descent;
       nscoord textBlockStartAscent =

@@ -31,8 +31,9 @@ class nsRubyBaseFrame final : public nsRubyContentFrame {
   nsresult GetFrameName(nsAString& aResult) const override;
 #endif
 
-  mozilla::RubyMetrics RubyMetrics() const override {
-    return RubyMetricsIncludingChildren();  
+  mozilla::RubyMetrics RubyMetrics(float aRubyMetricsFactor) const override {
+    
+    return RubyMetricsIncludingChildren(aRubyMetricsFactor);
   }
 
  protected:
