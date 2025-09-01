@@ -3796,9 +3796,12 @@ impl<'ctx> CoreStreamData<'ctx> {
             
             
             
+            
+            
+            
             let params = unsafe {
                 let mut p = *self.input_stream_params.as_ptr();
-                p.channels = device_channel_count;
+                p.channels = cmp::min(input_hw_desc.mChannelsPerFrame, device_channel_count);
                 
                 
                 p.rate = input_hw_desc.mSampleRate as _;
