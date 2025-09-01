@@ -1,0 +1,9 @@
+
+
+
+"use strict";
+
+ChromeUtils.defineLazyGetter(this, "bar", "resource:///bar.sys.mjs");
+
+
+var bar1 = 1;
