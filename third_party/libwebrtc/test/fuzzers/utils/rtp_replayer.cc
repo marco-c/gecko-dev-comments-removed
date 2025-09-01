@@ -52,7 +52,7 @@ void RtpReplayer::Replay(
   
   
   
-  fake_clock.SetTime(webrtc::Timestamp::Millis(1));
+  fake_clock.SetTime(Timestamp::Millis(1));
 
   
   auto rtp_reader = CreateRtpReader(rtp_dump_data, rtp_dump_size);
@@ -170,7 +170,7 @@ void RtpReplayer::ReplayPackets(
     if (deliver_in_ms > 0) {
       
       
-      clock->AdvanceTime(webrtc::TimeDelta::Millis(
+      clock->AdvanceTime(TimeDelta::Millis(
           std::min(deliver_in_ms, static_cast<int64_t>(100))));
     }
 
