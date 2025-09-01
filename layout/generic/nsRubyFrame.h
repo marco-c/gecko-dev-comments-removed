@@ -42,6 +42,8 @@ class nsRubyFrame final : public nsInlineFrame {
 
   mozilla::RubyBlockLeadings GetBlockLeadings() const { return mLeadings; }
 
+  mozilla::RubyMetrics RubyMetrics() const override { return mRubyMetrics; }
+
  protected:
   friend nsContainerFrame* NS_NewRubyFrame(mozilla::PresShell* aPresShell,
                                            ComputedStyle* aStyle);
@@ -60,6 +62,9 @@ class nsRubyFrame final : public nsInlineFrame {
   
   
   mozilla::RubyBlockLeadings mLeadings;
+
+  
+  mozilla::RubyMetrics mRubyMetrics;
 };
 
 #endif 
