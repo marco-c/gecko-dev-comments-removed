@@ -1257,6 +1257,20 @@ void HTMLCanvasElement::InvalidateCanvasPlaceholder(uint32_t aWidth,
   MOZ_ASSERT(!rv.Failed());
 }
 
+static bool InvalidateCanvasData(nsIFrame* aFrame, uint32_t aKey) {
+  RefPtr data = GetWebRenderUserData<WebRenderCanvasData>(aFrame, aKey);
+  if (!data) {
+    return false;
+  }
+  CanvasRenderer* renderer = data->GetCanvasRenderer();
+  if (!renderer) {
+    return false;
+  }
+  renderer->SetDirty();
+  aFrame->SchedulePaint(nsIFrame::PAINT_COMPOSITE_ONLY);
+  return true;
+}
+
 void HTMLCanvasElement::InvalidateCanvasContent(const gfx::Rect* damageRect) {
   
   if (mOffscreenDisplay) {
@@ -1266,23 +1280,23 @@ void HTMLCanvasElement::InvalidateCanvasContent(const gfx::Rect* damageRect) {
   
   
   nsIFrame* frame = GetPrimaryFrame();
-  if (!frame) return;
-
-  
-  
-  
-  CanvasRenderer* renderer = nullptr;
-  const auto key = static_cast<uint32_t>(DisplayItemType::TYPE_CANVAS);
-  RefPtr<WebRenderCanvasData> data =
-      GetWebRenderUserData<WebRenderCanvasData>(frame, key);
-  if (data) {
-    renderer = data->GetCanvasRenderer();
+  if (!frame) {
+    return;
   }
 
-  if (renderer) {
-    renderer->SetDirty();
-    frame->SchedulePaint(nsIFrame::PAINT_COMPOSITE_ONLY);
-  } else {
+  
+  
+  
+  bool invalidated = false;
+  for (auto* item : frame->DisplayItems()) {
+    if (item->GetType() == DisplayItemType::TYPE_CANVAS) {
+      invalidated |= InvalidateCanvasData(frame, item->GetPerFrameKey());
+    }
+  }
+  invalidated =
+      invalidated ||
+      InvalidateCanvasData(frame, uint32_t(DisplayItemType::TYPE_CANVAS));
+  if (!invalidated) {
     if (damageRect) {
       CSSIntSize size = GetWidthHeight();
       if (size.width != 0 && size.height != 0) {
@@ -1305,9 +1319,7 @@ void HTMLCanvasElement::InvalidateCanvasContent(const gfx::Rect* damageRect) {
 
 
 
-  nsPIDOMWindowInner* win = OwnerDoc()->GetInnerWindow();
-
-  if (win) {
+  if (nsPIDOMWindowInner* win = OwnerDoc()->GetInnerWindow()) {
     if (JSObject* obj = win->AsGlobal()->GetGlobalJSObject()) {
       js::NotifyAnimationActivity(obj);
     }
