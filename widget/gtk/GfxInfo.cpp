@@ -1085,12 +1085,31 @@ const nsTArray<RefPtr<GfxDriverInfo>>& GfxInfo::GetGfxDriverInfo() {
     
     
     
+#ifdef NIGHTLY_BUILD
+    
+    APPEND_TO_DRIVER_BLOCKLIST_EXT(
+        OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
+        WindowProtocol::All, DriverVendor::NonMesaAll, DeviceFamily::NvidiaAll,
+        nsIGfxInfo::FEATURE_DMABUF_WEBGL, nsIGfxInfo::FEATURE_BLOCKED_DEVICE,
+        DRIVER_LESS_THAN, V(470, 256, 2, 0), "FEATURE_FAILURE_BUG_1981326",
+        "NVIDIA 470.256.02 / 580.76.05");
+
+    
+    APPEND_TO_DRIVER_BLOCKLIST_RANGE_EXT(
+        OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
+        WindowProtocol::All, DriverVendor::NonMesaAll, DeviceFamily::NvidiaAll,
+        nsIGfxInfo::FEATURE_DMABUF_WEBGL,
+        nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION,
+        DRIVER_BETWEEN_INCLUSIVE_START, V(471, 0, 0, 0), V(580, 76, 5, 0),
+        "FEATURE_FAILURE_BUG_1981326", "NVIDIA 470.256.02 / 580.76.05");
+#else
     APPEND_TO_DRIVER_BLOCKLIST_EXT(
         OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
         WindowProtocol::All, DriverVendor::NonMesaAll, DeviceFamily::NvidiaAll,
         nsIGfxInfo::FEATURE_DMABUF_WEBGL, nsIGfxInfo::FEATURE_BLOCKED_DEVICE,
         DRIVER_COMPARISON_IGNORED, V(0, 0, 0, 0), "FEATURE_FAILURE_BUG_1924578",
         "");
+#endif
 
     
     
