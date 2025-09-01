@@ -83,7 +83,6 @@ class nsCSSBorderRenderer final {
   typedef mozilla::gfx::Path Path;
   typedef mozilla::gfx::Point Point;
   typedef mozilla::gfx::Rect Rect;
-  typedef mozilla::gfx::Margin Margin;
   typedef mozilla::gfx::RectCornerRadii RectCornerRadii;
   typedef mozilla::gfx::StrokeOptions StrokeOptions;
 
@@ -94,8 +93,7 @@ class nsCSSBorderRenderer final {
   nsCSSBorderRenderer(nsPresContext* aPresContext, DrawTarget* aDrawTarget,
                       const Rect& aDirtyRect, Rect& aOuterRect,
                       const mozilla::StyleBorderStyle* aBorderStyles,
-                      const Margin& aBorderWidths,
-                      RectCornerRadii& aBorderRadii,
+                      const Float* aBorderWidths, RectCornerRadii& aBorderRadii,
                       const nscolor* aBorderColors, bool aBackfaceIsVisible,
                       const mozilla::Maybe<Rect>& aClipRect);
 
@@ -109,7 +107,7 @@ class nsCSSBorderRenderer final {
 
   
   static void ComputeInnerRadii(const RectCornerRadii& aRadii,
-                                const Margin& aBorderSizes,
+                                const Float* aBorderSizes,
                                 RectCornerRadii* aInnerRadiiRet);
 
   
@@ -117,7 +115,7 @@ class nsCSSBorderRenderer final {
   
   
   static void ComputeOuterRadii(const RectCornerRadii& aRadii,
-                                const Margin& aBorderSizes,
+                                const Float* aBorderSizes,
                                 RectCornerRadii* aOuterRadiiRet);
 
   static bool AllCornersZeroSize(const RectCornerRadii& corners);
@@ -137,7 +135,7 @@ class nsCSSBorderRenderer final {
 
   
   mozilla::StyleBorderStyle mBorderStyles[4];
-  Margin mBorderWidths;
+  Float mBorderWidths[4];
   RectCornerRadii mBorderRadii;
 
   
@@ -210,7 +208,7 @@ class nsCSSBorderRenderer final {
   
   void FillSolidBorder(const Rect& aOuterRect, const Rect& aInnerRect,
                        const RectCornerRadii& aBorderRadii,
-                       const Margin& aBorderSizes, mozilla::SideBits aSides,
+                       const Float* aBorderSizes, mozilla::SideBits aSides,
                        const ColorPattern& aColor);
 
   

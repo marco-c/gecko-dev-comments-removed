@@ -87,7 +87,7 @@ struct ShapeUtils final {
   
   
   static bool ComputeRectRadii(const StyleBorderRadius&, const nsRect& aRefBox,
-                               const nsRect& aRect, nsRectCornerRadii&);
+                               const nsRect& aRect, nscoord aRadii[8]);
 
   
   
@@ -138,8 +138,9 @@ struct ShapeUtils final {
   
   
   
+  
   static already_AddRefed<gfx::Path> BuildRectPath(const nsRect& aRect,
-                                                   const nsRectCornerRadii*,
+                                                   const nscoord aRadii[8],
                                                    const nsRect& aRefBox,
                                                    nscoord aAppUnitsPerPixel,
                                                    gfx::PathBuilder*);

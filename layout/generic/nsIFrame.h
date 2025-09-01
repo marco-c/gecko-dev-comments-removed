@@ -1673,7 +1673,7 @@ class nsIFrame : public nsQueryFrame {
   static bool ComputeBorderRadii(const mozilla::BorderRadius&,
                                  const nsSize& aFrameSize,
                                  const nsSize& aBorderArea, Sides aSkipSides,
-                                 nsRectCornerRadii&);
+                                 nscoord aRadii[8]);
 
   
 
@@ -1689,7 +1689,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  static void AdjustBorderRadii(nsRectCornerRadii&, const nsMargin& aOffsets);
+  static void AdjustBorderRadii(nscoord aRadii[8], const nsMargin& aOffsets);
 
   
 
@@ -1703,13 +1703,13 @@ class nsIFrame : public nsQueryFrame {
 
   virtual bool GetBorderRadii(const nsSize& aFrameSize,
                               const nsSize& aBorderArea, Sides aSkipSides,
-                              nsRectCornerRadii&) const;
-  bool GetBorderRadii(nsRectCornerRadii&) const;
-  bool GetMarginBoxBorderRadii(nsRectCornerRadii&) const;
-  bool GetPaddingBoxBorderRadii(nsRectCornerRadii&) const;
-  bool GetContentBoxBorderRadii(nsRectCornerRadii&) const;
-  bool GetBoxBorderRadii(nsRectCornerRadii&, const nsMargin& aOffset) const;
-  bool GetShapeBoxBorderRadii(nsRectCornerRadii&) const;
+                              nscoord aRadii[8]) const;
+  bool GetBorderRadii(nscoord aRadii[8]) const;
+  bool GetMarginBoxBorderRadii(nscoord aRadii[8]) const;
+  bool GetPaddingBoxBorderRadii(nscoord aRadii[8]) const;
+  bool GetContentBoxBorderRadii(nscoord aRadii[8]) const;
+  bool GetBoxBorderRadii(nscoord aRadii[8], const nsMargin& aOffset) const;
+  bool GetShapeBoxBorderRadii(nscoord aRadii[8]) const;
 
   
 
@@ -3231,7 +3231,7 @@ class nsIFrame : public nsQueryFrame {
 
   bool ComputeOverflowClipRectRelativeToSelf(
       const mozilla::PhysicalAxes aClipAxes, nsRect& aOutRect,
-      nsRectCornerRadii& aOutRadii) const;
+      nscoord aOutRadii[8]) const;
 
   
   nsSize OverflowClipMargin(mozilla::PhysicalAxes aClipAxes) const;

@@ -138,7 +138,7 @@ void AppendRoundedRectToPath(PathBuilder* aPathBuilder, const Rect& aRect,
 
   for (int i = 0; i < 4; ++i) {
     
-    auto c = Corner(aDrawClockwise ? ((i + 1) % 4) : ((4 - i) % 4));
+    int c = aDrawClockwise ? ((i + 1) % 4) : ((4 - i) % 4);
 
     
     

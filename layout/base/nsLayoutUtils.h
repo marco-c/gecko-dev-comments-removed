@@ -1102,7 +1102,7 @@ class nsLayoutUtils {
 
 
   static nsRegion RoundedRectIntersectRect(const nsRect& aRoundedRect,
-                                           const nsRectCornerRadii&,
+                                           const nscoord aRadii[8],
                                            const nsRect& aContainedRect);
   static nsIntRegion RoundedRectIntersectIntRect(
       const nsIntRect& aRoundedRect, const RectCornerRadii& aCornerRadii,
@@ -1114,7 +1114,7 @@ class nsLayoutUtils {
 
 
   static bool RoundedRectIntersectsRect(const nsRect& aRoundedRect,
-                                        const nsRectCornerRadii&,
+                                        const nscoord aRadii[8],
                                         const nsRect& aTestRect);
 
   enum class PaintFrameFlags : uint32_t {
