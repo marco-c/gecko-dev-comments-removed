@@ -34,7 +34,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 
 - (instancetype)initWithMediaAndDependencies:
-    (webrtc::PeerConnectionFactoryDependencies)dependencies;
+    (webrtc::PeerConnectionFactoryDependencies &)dependencies;
 
 
 
