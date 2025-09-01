@@ -536,7 +536,7 @@ export var BrowserUtils = {
     
     
     let callSingleListener = async fn => {
-      let startTime = profilerMarker ? Cu.now() : 0;
+      let startTime = profilerMarker ? ChromeUtils.now() : 0;
       try {
         await fn(...args);
       } catch (ex) {

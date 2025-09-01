@@ -116,8 +116,8 @@ function expectStack(marker, thread) {
 
 add_task(async () => {
   await ProfilerTestUtils.startProfilerForMarkerTests();
-  startTime = Cu.now();
-  while (Cu.now() < startTime + 1) {
+  startTime = ChromeUtils.now();
+  while (ChromeUtils.now() < startTime + 1) {
     
     
     
