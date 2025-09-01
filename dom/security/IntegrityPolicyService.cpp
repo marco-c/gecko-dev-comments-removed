@@ -157,7 +157,7 @@ bool IntegrityPolicyService::ShouldRequestBeBlocked(nsIURI* aContentLocation,
   
   
   RefPtr<IntegrityPolicy> policy = IntegrityPolicy::Cast(
-      PolicyContainer::Cast(policyContainer)->IntegrityPolicy());
+      PolicyContainer::Cast(policyContainer)->GetIntegrityPolicy());
   if (!policy) {
     
     
