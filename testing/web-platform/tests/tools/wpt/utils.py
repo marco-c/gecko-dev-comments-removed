@@ -145,7 +145,7 @@ def get_download_to_descriptor(fd, url, max_retries=5):
                 
                 raise
 
-def rmtree(path):
+def rmtree(path: str) -> None:
     
     
     
