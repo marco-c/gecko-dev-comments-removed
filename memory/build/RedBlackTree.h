@@ -675,6 +675,10 @@ class RedBlackTree {
  public:
   class Iterator {
     TreeNode mPath[3 * ((sizeof(void*) << 3) - (LOG2(sizeof(void*)) + 1))];
+
+    
+    
+    
     unsigned mDepth;
 
    public:
@@ -710,10 +714,7 @@ class RedBlackTree {
       }
     };
 
-    Item<Iterator> begin() {
-      return Item<Iterator>(this,
-                            mDepth > 0 ? mPath[mDepth - 1].Get() : nullptr);
-    }
+    Item<Iterator> begin() { return Item<Iterator>(this, Current()); }
 
     Item<Iterator> end() { return Item<Iterator>(this, nullptr); }
 
@@ -734,8 +735,12 @@ class RedBlackTree {
           }
         }
       }
-      return mDepth > 0 ? mPath[mDepth - 1].Get() : nullptr;
+      return Current();
     }
+
+    T* Current() { return mDepth > 0 ? mPath[mDepth - 1].Get() : nullptr; }
+
+    bool NotDone() { return !!mDepth; }
   };
 
   Iterator iter() { return Iterator(this); }
