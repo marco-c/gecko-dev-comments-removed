@@ -153,6 +153,14 @@ void RenderAndroidSurfaceTextureHost::PrepareForUse() {
 void RenderAndroidSurfaceTextureHost::NotifyForUse() {
   MOZ_ASSERT(RenderThread::IsInRenderThread());
 
+  if (mPrepareStatus == STATUS_NONE) {
+    
+    
+    
+    
+    PrepareForUse();
+  }
+
   if (mPrepareStatus == STATUS_MIGHT_BE_USED_BY_WR) {
     
     
@@ -198,12 +206,7 @@ void RenderAndroidSurfaceTextureHost::NotifyNotUsed() {
 void RenderAndroidSurfaceTextureHost::UpdateTexImageIfNecessary() {
   if (mIsRemoteTexture) {
     EnsureAttachedToGLContext();
-    if (mPrepareStatus == STATUS_NONE) {
-      PrepareForUse();
-    }
-    if (mPrepareStatus == STATUS_MIGHT_BE_USED_BY_WR) {
-      NotifyForUse();
-    }
+    NotifyForUse();
   }
 
   if (mContinuousUpdate) {
