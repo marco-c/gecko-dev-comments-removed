@@ -1000,8 +1000,17 @@ nsresult nsUrlClassifierUtils::ReadProvidersFromPrefs(ProviderDictType& aDict) {
     
     nsTArray<nsCString> tables;
     Classifier::SplitTables(owningLists, tables);
+    nsAutoCString providerToUse(provider);
     for (auto tableName : tables) {
-      aDict.InsertOrUpdate(tableName, MakeUnique<nsCString>(provider));
+      
+      
+      
+      if (!mozilla::Preferences::GetBool(
+              "browser.safebrowsing.provider.google5.enabled") &&
+          providerToUse.EqualsLiteral("google5")) {
+        providerToUse.AssignLiteral("google4");
+      }
+      aDict.InsertOrUpdate(tableName, MakeUnique<nsCString>(providerToUse));
     }
   }
 
