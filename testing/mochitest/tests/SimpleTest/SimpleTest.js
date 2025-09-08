@@ -1275,14 +1275,34 @@ SimpleTest.promiseClipboardChange = async function (
 
 
 
-SimpleTest.waitForCondition = function (aCond, aCallback, aErrorMsg) {
-  this.promiseWaitForCondition(aCond, aErrorMsg).then(() => aCallback());
+
+
+
+
+
+
+
+SimpleTest.waitForCondition = function (
+  aCond,
+  aCallback,
+  aErrorMsg,
+  interval = 100,
+  maxTries = 30
+) {
+  this.promiseWaitForCondition(aCond, aErrorMsg, interval, maxTries).then(() =>
+    aCallback()
+  );
 };
-SimpleTest.promiseWaitForCondition = async function (aCond, aErrorMsg) {
-  for (let tries = 0; tries < 30; ++tries) {
+SimpleTest.promiseWaitForCondition = async function (
+  aCond,
+  aErrorMsg,
+  interval = 100,
+  maxTries = 30
+) {
+  for (let tries = 0; tries < maxTries; ++tries) {
     
     await new Promise(resolve => {
-      SimpleTest._originalSetTimeout.apply(window, [resolve, 100]);
+      SimpleTest._originalSetTimeout.apply(window, [resolve, interval]);
     });
 
     let conditionPassed;
