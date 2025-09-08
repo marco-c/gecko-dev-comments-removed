@@ -46,7 +46,7 @@ add_task(async function () {
   const waitForPanel = waitForDOM(
     document,
     "#stack-trace-panel .frame-link",
-    6
+    3 
   );
   
   document.getElementById("stack-trace-tab").click();

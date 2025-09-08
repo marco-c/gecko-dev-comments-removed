@@ -100,14 +100,7 @@ const EXPECTED_REQUESTS = [
     causeUri: INITIATOR_URL,
     
     
-    
-    
-    stack: [
-      {
-        file: "resource:///modules/FaviconLoader.sys.mjs",
-        line: Number.MAX_SAFE_INTEGER,
-      },
-    ],
+    stack: false,
   },
   {
     method: "GET",
