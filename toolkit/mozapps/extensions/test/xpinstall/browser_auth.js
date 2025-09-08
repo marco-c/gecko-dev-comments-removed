@@ -16,9 +16,6 @@ const ADDON_ID = "amosigned-xpi@tests.mozilla.org";
 
 
 async function testAuthRequiredInstall({ authInfo, expectFailure }) {
-  
-  setInstallTriggerPrefs();
-
   const deferredInstallCompleted = Promise.withResolvers();
 
   let promiseAddonStarted;

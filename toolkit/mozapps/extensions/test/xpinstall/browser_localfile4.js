@@ -3,9 +3,6 @@
 
 function test() {
   
-  setInstallTriggerPrefs();
-
-  
   SpecialPowers.pushPrefEnv({
     set: [["extensions.postDownloadThirdPartyPrompt", false]],
   });
@@ -28,15 +25,10 @@ function test() {
   } catch (ex) {
     
   }
-  var triggers = encodeURIComponent(
-    JSON.stringify({
-      "Unsigned XPI": TESTROOT + "amosigned.xpi",
-    })
-  );
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
   BrowserTestUtils.startLoadingURIString(
     gBrowser,
-    xpipath + "installtrigger.html?" + triggers
+    xpipath + "navigate.html?amosigned.xpi"
   );
 }
 
