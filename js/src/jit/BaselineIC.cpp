@@ -167,11 +167,11 @@ void FallbackICSpew(JSContext* cx, ICFallbackStub* stub, const char* fmt, ...) {
 }
 #endif  
 
-void ICEntry::trace(JSTracer* trc) {
+void ICEntry::trace(JSTracer* trc, ICFallbackStub* fallbackStub) {
   ICStub* stub = firstStub();
 
   
-  while (!stub->isFallback()) {
+  while (stub != fallbackStub) {
     stub->toCacheIRStub()->trace(trc);
     stub = stub->toCacheIRStub()->next();
   }
@@ -180,24 +180,14 @@ void ICEntry::trace(JSTracer* trc) {
   MOZ_ASSERT(stub->usesTrampolineCode());
 }
 
-inline ICFallbackStub* GetFallbackStub(ICEntry* entry) {
-  ICStub* stub = entry->firstStub();
-  while (!stub->isFallback()) {
-    stub = stub->toCacheIRStub()->next();
-  }
-  return stub->toFallbackStub();
-}
-
-bool ICEntry::traceWeak(JSTracer* trc) {
+bool ICEntry::traceWeak(JSTracer* trc, ICFallbackStub* fallbackStub) {
   
   
-
-  ICFallbackStub* fallbackStub = GetFallbackStub(this);
 
   ICStub* stub = firstStub();
   ICCacheIRStub* prev = nullptr;
   bool allSurvived = true;
-  while (!stub->isFallback()) {
+  while (stub != fallbackStub) {
     ICCacheIRStub* cacheIRStub = stub->toCacheIRStub();
     if (!cacheIRStub->traceWeak(trc)) {
       fallbackStub->unlinkStubUnbarriered(this, prev, cacheIRStub);
