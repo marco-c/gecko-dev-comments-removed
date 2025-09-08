@@ -6680,6 +6680,24 @@ nsresult nsHttpChannel::CancelInternal(nsresult status) {
   mCanceled = true;
   mStatus = NS_FAILED(status) ? status : NS_ERROR_ABORT;
 
+  
+  
+  
+  if (mWaitingForLNAPermission) {
+    LOG(
+        ("nsHttpChannel::CancelInternal [this=%p] cancelling while waiting for "
+         "LNA permission, denying permission",
+         this));
+    
+    const nsACString& permissionKey =
+        (mTransaction && mTransaction->GetTargetIPAddressSpace() ==
+                             nsILoadInfo::IPAddressSpace::Local)
+            ? LOCAL_HOST_PERMISSION_KEY
+            : LOCAL_NETWORK_PERMISSION_KEY;
+    OnPermissionPromptResult(false, permissionKey);
+    return NS_OK;
+  }
+
   if (StaticPrefs::network_http_network_error_logging_enabled() &&
       LoadUsedNetwork() && !mReportedNEL) {
     if (nsCOMPtr<nsINetworkErrorLogging> nel =
@@ -8217,6 +8235,7 @@ nsresult nsHttpChannel::ProcessLNAActions() {
   
   
   
+  mWaitingForLNAPermission = true;
   Suspend();
   auto permissionKey = mTransaction->GetTargetIPAddressSpace() ==
                                nsILoadInfo::IPAddressSpace::Local
@@ -8570,6 +8589,7 @@ void nsHttpChannel::MaybeUpdateDocumentIPAddressSpaceFromCache() {
 
 nsresult nsHttpChannel::OnPermissionPromptResult(bool aGranted,
                                                  const nsACString& aType) {
+  mWaitingForLNAPermission = false;
   if (aGranted) {
     LOG(
         ("nsHttpChannel::OnPermissionPromptResult [this=%p] "
@@ -8624,6 +8644,12 @@ nsresult nsHttpChannel::OnPermissionPromptResult(bool aGranted,
     mLNAPermission.mLocalNetworkPermission = LNAPermission::Denied;
   }
 
+  if (!mSuspendCount) {
+    return ContinueOnStartRequest1(
+        nsresult::NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED);
+  }
+  
+  
   return CallOrWaitForResume([](auto* self) {
     return self->ContinueOnStartRequest1(
         nsresult::NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED);

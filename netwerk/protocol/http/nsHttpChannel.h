@@ -867,6 +867,10 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   LNAPerms mLNAPermission{};
 
+  
+  
+  bool mWaitingForLNAPermission{false};
+
  protected:
   virtual void DoNotifyListenerCleanup() override;
 
