@@ -72,8 +72,6 @@ NSSCertDBTrustDomain::NSSCertDBTrustDomain(
     const nsTArray<Input>& thirdPartyRootInputs,
     const nsTArray<Input>& thirdPartyIntermediateInputs,
     const Maybe<nsTArray<nsTArray<uint8_t>>>& extraCertificates,
-    const mozilla::pkix::Input& encodedSCTsFromTLS,
-    const UniquePtr<mozilla::ct::MultiLogCTVerifier>& ctVerifier,
      nsTArray<nsTArray<uint8_t>>& builtChain,
      PinningTelemetryInfo* pinningTelemetryInfo,
      const char* hostname)
@@ -92,8 +90,6 @@ NSSCertDBTrustDomain::NSSCertDBTrustDomain(
       mThirdPartyRootInputs(thirdPartyRootInputs),
       mThirdPartyIntermediateInputs(thirdPartyIntermediateInputs),
       mExtraCertificates(extraCertificates),
-      mEncodedSCTsFromTLS(encodedSCTsFromTLS),
-      mCTVerifier(ctVerifier),
       mBuiltChain(builtChain),
       mIsBuiltChainRootBuiltInRoot(false),
       mPinningTelemetryInfo(pinningTelemetryInfo),
@@ -679,6 +675,26 @@ CRLiteTimestamp::GetTimestamp(uint64_t* aTimestamp) {
   return NS_OK;
 }
 
+Result BuildCRLiteTimestampArray(
+    Input sctExtension,
+     nsTArray<RefPtr<nsICRLiteTimestamp>>& timestamps) {
+  Input sctList;
+  Result rv =
+      ExtractSignedCertificateTimestampListFromExtension(sctExtension, sctList);
+  if (rv != Success) {
+    return rv;
+  }
+  std::vector<SignedCertificateTimestamp> decodedSCTs;
+  size_t decodingErrors;
+  DecodeSCTs(sctList, decodedSCTs, decodingErrors);
+  Unused << decodingErrors;
+
+  for (const auto& sct : decodedSCTs) {
+    timestamps.AppendElement(new CRLiteTimestamp(sct));
+  }
+  return Success;
+}
+
 Result NSSCertDBTrustDomain::CheckCRLite(
     const nsTArray<uint8_t>& issuerSubjectPublicKeyInfoBytes,
     const nsTArray<uint8_t>& serialNumberBytes,
@@ -751,48 +767,6 @@ Result NSSCertDBTrustDomain::CheckRevocation(
   
   
   
-  
-  if (mCTVerifyResult.isNothing()) {
-    MOZ_ASSERT(mBuiltChain.Length() > 0);
-
-    CTVerifyResult ctVerifyResult;
-    Input leafCertificate;
-    const nsTArray<uint8_t>& endEntityBytes = mBuiltChain.ElementAt(0);
-    Result rv = leafCertificate.Init(endEntityBytes.Elements(),
-                                     endEntityBytes.Length());
-    if (rv != Success) {
-      return rv;
-    }
-
-    
-    
-    Input encodedSCTsFromExtension;
-    if (sctExtension) {
-      rv = ExtractSignedCertificateTimestampListFromExtension(
-          *sctExtension, encodedSCTsFromExtension);
-      if (rv != Success) {
-        return rv;
-      }
-    }
-
-    Input encodedSCTsFromOCSP;  
-    rv = mCTVerifier->Verify(leafCertificate, certID.issuerSubjectPublicKeyInfo,
-                             encodedSCTsFromExtension, encodedSCTsFromOCSP,
-                             mEncodedSCTsFromTLS, time, GetDistrustAfterTime(),
-                             ctVerifyResult);
-    if (rv != Success) {
-      MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-              ("SCT verification failed with fatal error %" PRId32 "\n",
-               static_cast<uint32_t>(rv)));
-      return rv;
-    }
-
-    mCTVerifyResult.emplace(std::move(ctVerifyResult));
-  }
-
-  
-  
-  
   nsCString aiaLocation(VoidCString());
   if (aiaExtension) {
     UniquePLArenaPool arena(PORT_NewArena(DER_DEFAULT_CHUNKSIZE));
@@ -808,8 +782,9 @@ Result NSSCertDBTrustDomain::CheckRevocation(
 
   bool crliteCoversCertificate = false;
   Result crliteResult = Success;
-  if (mCRLiteMode != CRLiteMode::Disabled) {
-    crliteResult = CheckRevocationByCRLite(certID, crliteCoversCertificate);
+  if (mCRLiteMode != CRLiteMode::Disabled && sctExtension) {
+    crliteResult =
+        CheckRevocationByCRLite(certID, *sctExtension, crliteCoversCertificate);
 
     
     
@@ -864,7 +839,8 @@ Result NSSCertDBTrustDomain::CheckRevocation(
 }
 
 Result NSSCertDBTrustDomain::CheckRevocationByCRLite(
-    const CertID& certID,  bool& crliteCoversCertificate) {
+    const CertID& certID, const Input& sctExtension,
+     bool& crliteCoversCertificate) {
   crliteCoversCertificate = false;
   MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
           ("NSSCertDBTrustDomain::CheckRevocation: checking CRLite"));
@@ -877,12 +853,13 @@ Result NSSCertDBTrustDomain::CheckRevocationByCRLite(
                                    certID.serialNumber.GetLength());
 
   nsTArray<RefPtr<nsICRLiteTimestamp>> timestamps;
-  if (mCTVerifyResult.isSome()) {
-    for (const auto& sct : mCTVerifyResult->verifiedScts) {
-      timestamps.AppendElement(new CRLiteTimestamp(sct));
-    }
+  Result rv = BuildCRLiteTimestampArray(sctExtension, timestamps);
+  if (rv != Success) {
+    MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
+            ("decoding SCT extension failed - CRLite will be not be "
+             "consulted"));
+    return Success;
   }
-
   return CheckCRLite(issuerSubjectPublicKeyInfoBytes, serialNumberBytes,
                      timestamps, crliteCoversCertificate);
 }
@@ -1560,10 +1537,6 @@ Input NSSCertDBTrustDomain::GetSCTListFromCertificate() const {
 
 Input NSSCertDBTrustDomain::GetSCTListFromOCSPStapling() const {
   return SECItemToInput(mSCTListFromOCSPStapling);
-}
-
-Maybe<CTVerifyResult>& NSSCertDBTrustDomain::GetCachedCTVerifyResult() {
-  return mCTVerifyResult;
 }
 
 bool NSSCertDBTrustDomain::GetIsBuiltChainRootBuiltInRoot() const {
