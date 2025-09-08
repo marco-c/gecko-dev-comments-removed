@@ -14,7 +14,9 @@
   class MozTabbrowserTabGroup extends MozXULElement {
     static markup = `
       <vbox class="tab-group-label-container" pack="center">
-        <label class="tab-group-label" role="button"/>
+        <vbox class="tab-group-label-hover-highlight" pack="center">
+          <label class="tab-group-label" role="button" />
+        </vbox>
       </vbox>
       <html:slot/>
       <vbox class="tab-group-overflow-count-container" pack="center">
@@ -30,6 +32,9 @@
 
     
     #labelElement;
+
+    
+    #labelContainerElement;
 
     
     #overflowCountLabel;
@@ -100,12 +105,15 @@
       this.addEventListener("click", this);
 
       this.#labelElement = this.querySelector(".tab-group-label");
+      this.#labelContainerElement = this.querySelector(
+        ".tab-group-label-container"
+      );
       
       this.#labelElement.container = gBrowser.tabContainer;
       this.#labelElement.group = this;
 
-      this.#labelElement.addEventListener("mouseover", this);
-      this.#labelElement.addEventListener("mouseout", this);
+      this.#labelContainerElement.addEventListener("mouseover", this);
+      this.#labelContainerElement.addEventListener("mouseout", this);
       this.#labelElement.addEventListener("contextmenu", e => {
         e.preventDefault();
         gBrowser.tabGroupMenu.openEditModal(this);
@@ -434,6 +442,13 @@
       return this.#labelElement;
     }
 
+    
+
+
+    get labelContainerElement() {
+      return this.#labelContainerElement;
+    }
+
     get overflowCountLabel() {
       return this.#overflowCountLabel;
     }
@@ -457,6 +472,20 @@
 
     set isBeingDragged(val) {
       this.toggleAttribute("movingtabgroup", val);
+    }
+
+    
+
+
+    get hoverPreviewPanelActive() {
+      return this.hasAttribute("previewpanelactive");
+    }
+
+    
+
+
+    set hoverPreviewPanelActive(val) {
+      this.toggleAttribute("previewpanelactive", val);
     }
 
     
@@ -551,7 +580,9 @@
 
 
     on_mouseover(event) {
-      if (event.target === this.#labelElement) {
+      
+      
+      if (!this.#labelContainerElement.contains(event.relatedTarget)) {
         this.#labelElement.dispatchEvent(
           new CustomEvent("TabGroupLabelHoverStart", { bubbles: true })
         );
@@ -562,7 +593,9 @@
 
 
     on_mouseout(event) {
-      if (event.target === this.#labelElement) {
+      
+      
+      if (!this.#labelContainerElement.contains(event.relatedTarget)) {
         this.#labelElement.dispatchEvent(
           new CustomEvent("TabGroupLabelHoverEnd", { bubbles: true })
         );
