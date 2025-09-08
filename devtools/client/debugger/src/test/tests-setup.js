@@ -2,8 +2,6 @@
 
 
 
-global.Worker = require("workerjs");
-
 import path from "path";
 import { prefs } from "../utils/prefs";
 
