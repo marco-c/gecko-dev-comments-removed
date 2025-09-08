@@ -2496,9 +2496,7 @@ NS_IMETHODIMP nsDocumentViewer::GetContents(const char* mimeType,
 
 NS_IMETHODIMP nsDocumentViewer::GetCanGetContents(bool* aCanGetContents) {
   NS_ENSURE_ARG_POINTER(aCanGetContents);
-  *aCanGetContents = false;
-  NS_ENSURE_STATE(mDocument);
-  *aCanGetContents = nsCopySupport::CanCopy(mDocument);
+  *aCanGetContents = mDocument && nsCopySupport::CanCopy(mDocument);
   return NS_OK;
 }
 
@@ -2753,40 +2751,19 @@ already_AddRefed<nsIImageLoadingContent> nsDocumentViewer::GetPopupImageNode() {
 
 
 NS_IMETHODIMP nsDocumentViewer::GetInLink(bool* aInLink) {
-#ifdef DEBUG_dr
-  printf("dr :: nsDocumentViewer::GetInLink\n");
-#endif
-
   NS_ENSURE_ARG_POINTER(aInLink);
-
-  
-  *aInLink = false;
-
-  
   nsCOMPtr<nsINode> node = GetPopupLinkNode();
-  if (!node) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  *aInLink = true;
+  *aInLink = !!node;
   return NS_OK;
 }
 
 NS_IMETHODIMP nsDocumentViewer::GetInImage(bool* aInImage) {
-#ifdef DEBUG_dr
-  printf("dr :: nsDocumentViewer::GetInImage\n");
-#endif
-
   NS_ENSURE_ARG_POINTER(aInImage);
-
-  
   *aInImage = false;
-
   
   nsCOMPtr<nsIImageLoadingContent> node = GetPopupImageNode();
   if (!node) {
-    return NS_ERROR_FAILURE;
+    return NS_OK;
   }
 
   
@@ -2798,7 +2775,6 @@ NS_IMETHODIMP nsDocumentViewer::GetInImage(bool* aInImage) {
     
     *aInImage = true;
   }
-
   return NS_OK;
 }
 
