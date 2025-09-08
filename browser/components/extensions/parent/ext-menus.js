@@ -48,6 +48,14 @@ var gNextRadioGroupID = 0;
 
 var gMaxLabelLength = 64;
 
+
+
+
+
+function encodeSrcset(url) {
+  return url.replaceAll(/[\t\n\f\r ]/g, encodeURIComponent);
+}
+
 var gMenuBuilder = {
   
   
@@ -487,7 +495,7 @@ var gMenuBuilder = {
       element.setAttribute("class", "menuitem-iconic");
     }
 
-    element.setAttribute("image", encodeURI(resolvedURL));
+    element.setAttribute("image", encodeSrcset(resolvedURL));
   },
 
   
