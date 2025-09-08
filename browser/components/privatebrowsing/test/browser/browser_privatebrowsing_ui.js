@@ -19,7 +19,7 @@ function test() {
     BrowserTestUtils.browserLoaded(aWindow.gBrowser.selectedBrowser, {
       wantLoad: () => true,
     }).then(function () {
-      ok(aWindow.gPrivateBrowsingUI, "The gPrivateBrowsingUI object exists");
+      ok(PrivateBrowsingUI, "The PrivateBrowsingUI module exists");
 
       pbMenuItem = aWindow.document.getElementById("menu_newPrivateWindow");
       ok(pbMenuItem, "The Private Browsing menu item exists");

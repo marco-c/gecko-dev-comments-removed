@@ -66,6 +66,7 @@ ChromeUtils.defineESModuleGetters(this, {
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   PopupBlockerObserver: "resource:///modules/PopupBlockerObserver.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+  PrivateBrowsingUI: "moz-src:///browser/modules/PrivateBrowsingUI.sys.mjs",
   ProcessHangMonitor: "resource:///modules/ProcessHangMonitor.sys.mjs",
   ProfilesDatastoreService:
     "moz-src:///toolkit/profile/ProfilesDatastoreService.sys.mjs",
@@ -3962,65 +3963,6 @@ const gRemoteControl = {
     }
 
     return null;
-  },
-};
-
-
-
-var gPrivateBrowsingUI = {
-  init: function PBUI_init() {
-    
-    if (!PrivateBrowsingUtils.isWindowPrivate(window)) {
-      return;
-    }
-
-    
-    
-    document.getElementById("Tools:Sanitize").setAttribute("disabled", "true");
-
-    if (window.location.href != AppConstants.BROWSER_CHROME_URL) {
-      return;
-    }
-
-    
-    let docElement = document.documentElement;
-    docElement.setAttribute(
-      "privatebrowsingmode",
-      PrivateBrowsingUtils.permanentPrivateBrowsing ? "permanent" : "temporary"
-    );
-
-    gBrowser.updateTitlebar();
-
-    if (PrivateBrowsingUtils.permanentPrivateBrowsing) {
-      let hideNewWindowItem = (windowItem, privateWindowItem) => {
-        
-        
-        
-        
-        
-        
-        
-        privateWindowItem.hidden = true;
-        windowItem.setAttribute(
-          "data-l10n-id",
-          privateWindowItem.getAttribute("data-l10n-id")
-        );
-      };
-
-      
-      hideNewWindowItem(
-        document.getElementById("menu_newNavigator"),
-        document.getElementById("menu_newPrivateWindow")
-      );
-      
-      hideNewWindowItem(
-        PanelMultiView.getViewNode(document, "appMenu-new-window-button2"),
-        PanelMultiView.getViewNode(
-          document,
-          "appMenu-new-private-window-button2"
-        )
-      );
-    }
   },
 };
 

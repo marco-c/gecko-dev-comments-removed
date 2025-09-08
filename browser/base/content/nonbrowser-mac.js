@@ -122,7 +122,9 @@ var NonBrowserWindow = {
     BrowserOffline.init();
 
     
-    gPrivateBrowsingUI.init();
+    if (PrivateBrowsingUtils.isWindowPrivate(window)) {
+      PrivateBrowsingUI.init(window);
+    }
   },
 
   shutdown() {
