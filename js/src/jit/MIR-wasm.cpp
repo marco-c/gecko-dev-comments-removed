@@ -343,7 +343,7 @@ MDefinition::AliasType MWasmLoadGlobalCell::mightAlias(
 
 HashNumber MWasmLoadInstanceDataField::valueHash() const {
   
-  HashNumber hash = MDefinition::valueHash();
+  HashNumber hash = MUnaryInstruction::valueHash();
   hash = addU32ToHash(hash, instanceDataOffset_);
   return hash;
 }
