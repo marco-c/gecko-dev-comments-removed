@@ -224,6 +224,12 @@ class FragmentOrElement : public nsIContent {
     
 
 
+
+    nsWeakPtr mAssociatedPopover;
+
+    
+
+
     nsTArray<RefPtr<nsAtom>> mCustomStates;
 
     
