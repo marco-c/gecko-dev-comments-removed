@@ -62,6 +62,7 @@ fedcm/support/${manifest_filename}`;
       providers: [{
         configURL: manifest_path,
         clientId: '1',
+        
         nonce: '2'
       }]
     },
