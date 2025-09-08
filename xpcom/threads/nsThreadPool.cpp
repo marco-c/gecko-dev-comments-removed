@@ -139,116 +139,87 @@ void nsThreadPool::DebugLogPoolStatus(MutexAutoLock& aProofOfLock,
 }
 #endif
 
-nsresult nsThreadPool::PutEvent(nsIRunnable* aEvent) {
+nsresult nsThreadPool::PutEvent(nsIRunnable* aEvent,
+                                MutexAutoLock& aProofOfLock) {
   nsCOMPtr<nsIRunnable> event(aEvent);
-  return PutEvent(event.forget(), NS_DISPATCH_NORMAL);
+  return PutEvent(event.forget(), NS_DISPATCH_NORMAL, aProofOfLock);
 }
 
 nsresult nsThreadPool::PutEvent(already_AddRefed<nsIRunnable> aEvent,
-                                DispatchFlags aFlags) {
+                                DispatchFlags aFlags,
+                                MutexAutoLock& aProofOfLock) {
   
   
   nsCOMPtr<nsIRunnable> event(aEvent);
 
-  
-  bool spawnThread = false;
-  uint32_t stackSize = 0;
-  nsCString name;
-  {
-    MutexAutoLock lock(mMutex);
-
-    if (NS_WARN_IF(mShutdown)) {
-      return NS_ERROR_NOT_AVAILABLE;
-    }
-
-    LogRunnable::LogDispatch(event);
-    mEvents.PutEvent(event.forget(), EventQueuePriority::Normal, lock);
-
-#ifdef DEBUG
-    DebugLogPoolStatus(lock, nullptr);
-#endif
-
-    
-    
-    if (aFlags & NS_DISPATCH_AT_END) {
-      
-      
-      
-      MOZ_ASSERT(IsOnCurrentThreadInfallible(),
-                 "NS_DISPATCH_AT_END can only be set when "
-                 "dispatching from on the thread pool.");
-      LOG(("THRD-P(%p) put [%zd %d %d]: NS_DISPATCH_AT_END w/out Notify.\n",
-           this, mMRUIdleThreads.length(), mThreads.Count(), mThreadLimit));
-    } else if (auto* mruThread = mMRUIdleThreads.getFirst()) {
-      
-      
-      
-      mruThread->remove();
-      mruThread->mEventsAvailable.Notify();
-#ifdef DEBUG
-      mruThread->mNotifiedSince = TimeStamp::Now();
-#endif
-      LOG(("THRD-P(%p) put [%zd %d %d]: Notify idle thread via entry(%p).\n",
-           this, mMRUIdleThreads.length(), mThreads.Count(), mThreadLimit,
-           mruThread));
-    } else if (mThreads.Count() < (int32_t)mThreadLimit) {
-      
-      
-      spawnThread = true;
-      LOG(("THRD-P(%p) put [%zd %d %d]: Spawn a new thread.\n", this,
-           mMRUIdleThreads.length(), mThreads.Count(), mThreadLimit));
-    } else {
-      
-      
-      LOG(("THRD-P(%p) put [%zd %d %d]: No idle or new thread available.\n",
-           this, mMRUIdleThreads.length(), mThreads.Count(), mThreadLimit));
-    }
-
-    MOZ_ASSERT(spawnThread || mThreads.Count() > 0);
-    stackSize = mStackSize;
-    name = mName;
+  if (NS_WARN_IF(mShutdown)) {
+    return NS_ERROR_NOT_AVAILABLE;
   }
 
-  auto delay = MakeScopeExit([&]() {
-    
-    DelayForChaosMode(ChaosFeature::TaskDispatching, 1000);
-  });
+  LogRunnable::LogDispatch(event);
+  mEvents.PutEvent(event.forget(), EventQueuePriority::Normal, aProofOfLock);
 
-  if (!spawnThread) {
+#ifdef DEBUG
+  DebugLogPoolStatus(aProofOfLock, nullptr);
+#endif
+
+  
+  
+  if (aFlags & NS_DISPATCH_AT_END) {
+    
+    
+    
+    MOZ_ASSERT(IsOnCurrentThreadInfallible(),
+               "NS_DISPATCH_AT_END can only be set when "
+               "dispatching from on the thread pool.");
+    LOG(("THRD-P(%p) put [%zd %d %d]: NS_DISPATCH_AT_END w/out Notify.\n", this,
+         mMRUIdleThreads.length(), mThreads.Count(), mThreadLimit));
     return NS_OK;
   }
 
+  if (auto* mruThread = mMRUIdleThreads.getFirst()) {
+    
+    
+    
+    mruThread->remove();
+    mruThread->mEventsAvailable.Notify();
+#ifdef DEBUG
+    mruThread->mNotifiedSince = TimeStamp::Now();
+#endif
+    LOG(("THRD-P(%p) put [%zd %d %d]: Notify idle thread via entry(%p).\n",
+         this, mMRUIdleThreads.length(), mThreads.Count(), mThreadLimit,
+         mruThread));
+    return NS_OK;
+  }
+  if (mThreads.Count() >= (int32_t)mThreadLimit) {
+    
+    
+    LOG(("THRD-P(%p) put [%zd %d %d]: No idle or new thread available.\n", this,
+         mMRUIdleThreads.length(), mThreads.Count(), mThreadLimit));
+    return NS_OK;
+  }
+
+  
+  
+  
+  
+  
+  
   nsCOMPtr<nsIThread> thread;
   nsresult rv = NS_NewNamedThread(
-      mThreadNaming.GetNextThreadName(name), getter_AddRefs(thread), nullptr,
-      {.stackSize = stackSize, .blockDispatch = true});
+      mThreadNaming.GetNextThreadName(mName), getter_AddRefs(thread), this,
+      {.stackSize = mStackSize, .blockDispatch = true});
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return NS_ERROR_UNEXPECTED;
   }
 
-  bool killThread = false;
-  {
-    MutexAutoLock lock(mMutex);
-    if (mShutdown) {
-      killThread = true;
-    } else if (mThreads.Count() < (int32_t)mThreadLimit) {
-      mThreads.AppendObject(thread);
-      if (mThreads.Count() >= (int32_t)mThreadLimit) {
-        mIsAPoolThreadFree = false;
-      }
-    } else {
-      
-      killThread = true;  
-    }
+  mThreads.AppendObject(thread);
+  if (mThreads.Count() >= (int32_t)mThreadLimit) {
+    mIsAPoolThreadFree = false;
   }
-  LOG(("THRD-P(%p) put [%p kill=%d]\n", this, thread.get(), killThread));
-  if (killThread) {
-    
-    
-    ShutdownThread(thread);
-  } else {
-    thread->Dispatch(this, NS_DISPATCH_IGNORE_BLOCK_DISPATCH);
-  }
+
+  LOG(("THRD-P(%p) put [%zd %d %d]: Spawn a new thread.\n", this,
+       mMRUIdleThreads.length(), mThreads.Count(), mThreadLimit));
 
   return NS_OK;
 }
@@ -490,18 +461,16 @@ nsThreadPool::DispatchFromScript(nsIRunnable* aEvent, DispatchFlags aFlags) {
 NS_IMETHODIMP
 nsThreadPool::Dispatch(already_AddRefed<nsIRunnable> aEvent,
                        DispatchFlags aFlags) {
-  
-  
-  nsCOMPtr<nsIRunnable> event(aEvent);
-
-  LOG(("THRD-P(%p) dispatch [%p %x]\n", this, event.get(), aFlags));
-
-  if (NS_WARN_IF(mShutdown)) {
-    return NS_ERROR_NOT_AVAILABLE;
+  nsresult rv = NS_OK;
+  {
+    MutexAutoLock lock(mMutex);
+    rv = PutEvent(std::move(aEvent), aFlags, lock);
   }
 
-  PutEvent(event.forget(), aFlags);
-  return NS_OK;
+  
+  DelayForChaosMode(ChaosFeature::TaskDispatching, 1000);
+
+  return rv;
 }
 
 NS_IMETHODIMP
