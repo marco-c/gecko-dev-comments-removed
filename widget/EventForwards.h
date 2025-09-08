@@ -420,7 +420,7 @@ const char* ToChar(Command aCommand);
 
 
 
-Command GetInternalCommand(const char* aCommandName,
+Command GetInternalCommand(const nsACString& aCommandName,
                            const nsCommandParams* aCommandParams = nullptr);
 
 }  

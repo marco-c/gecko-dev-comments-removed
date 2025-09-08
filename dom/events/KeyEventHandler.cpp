@@ -149,7 +149,7 @@ bool KeyEventHandler::TryConvertToKeyboardShortcut(
 
   NS_LossyConvertUTF16toASCII commandText(mCommand);
   KeyboardScrollAction action;
-  if (!nsGlobalWindowCommands::FindScrollCommand(commandText.get(), &action)) {
+  if (!nsGlobalWindowCommands::FindScrollCommand(commandText, &action)) {
     
     
     *aOut = KeyboardShortcut(eventType, keyCode, charCode, modifiers,

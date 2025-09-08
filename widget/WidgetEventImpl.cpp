@@ -292,17 +292,13 @@ const nsCString GetDOMKeyCodeName(uint32_t aKeyCode) {
 
 
 
-static nsTHashMap<nsDepCharHashKey, Command>* sCommandHashtable = nullptr;
+static nsTHashMap<nsCStringHashKey, Command>* sCommandHashtable = nullptr;
 
-Command GetInternalCommand(const char* aCommandName,
+Command GetInternalCommand(const nsACString& aCommandName,
                            const nsCommandParams* aCommandParams) {
-  if (!aCommandName) {
-    return Command::DoNothing;
-  }
-
   
   
-  if (!strcmp(aCommandName, "cmd_align")) {
+  if (aCommandName.EqualsLiteral("cmd_align")) {
     if (!aCommandParams) {
       
       
@@ -338,9 +334,9 @@ Command GetInternalCommand(const char* aCommandName,
   }
 
   if (!sCommandHashtable) {
-    sCommandHashtable = new nsTHashMap<nsDepCharHashKey, Command>();
+    sCommandHashtable = new nsTHashMap<nsCStringHashKey, Command>();
 #define NS_DEFINE_COMMAND(aName, aCommandStr) \
-  sCommandHashtable->InsertOrUpdate(#aCommandStr, Command::aName);
+  sCommandHashtable->InsertOrUpdate(#aCommandStr ""_ns, Command::aName);
 
 #define NS_DEFINE_COMMAND_WITH_PARAM(aName, aCommandStr, aParam)
 

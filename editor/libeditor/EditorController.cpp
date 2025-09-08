@@ -11,19 +11,13 @@
 #include "nsDebug.h"
 #include "nsError.h"
 
-class nsIControllerCommand;
-
 namespace mozilla {
 
-#define NS_REGISTER_COMMAND(_cmdClass, _cmdName)                       \
-  {                                                                    \
-    aCommandTable->RegisterCommand(                                    \
-        _cmdName,                                                      \
-        static_cast<nsIControllerCommand*>(_cmdClass::GetInstance())); \
-  }
+#define NS_REGISTER_COMMAND(_cmdClass, _cmdName) \
+  aCommandTable->RegisterCommand(_cmdName ""_ns, _cmdClass::GetInstance());
 
 
-nsresult EditorController::RegisterEditingCommands(
+void EditorController::RegisterEditingCommands(
     nsControllerCommandTable* aCommandTable) {
   
   
@@ -55,12 +49,10 @@ nsresult EditorController::RegisterEditingCommands(
   NS_REGISTER_COMMAND(InsertParagraphCommand, "cmd_insertParagraph");
   NS_REGISTER_COMMAND(InsertLineBreakCommand, "cmd_insertLineBreak");
   NS_REGISTER_COMMAND(PasteQuotationCommand, "cmd_pasteQuote");
-
-  return NS_OK;
 }
 
 
-nsresult EditorController::RegisterEditorCommands(
+void EditorController::RegisterEditorCommands(
     nsControllerCommandTable* aCommandTable) {
   
 
@@ -110,8 +102,6 @@ nsresult EditorController::RegisterEditorCommands(
   NS_REGISTER_COMMAND(SelectionMoveCommands, "cmd_selectRight2");
   NS_REGISTER_COMMAND(SelectionMoveCommands, "cmd_selectUp2");
   NS_REGISTER_COMMAND(SelectionMoveCommands, "cmd_selectDown2");
-
-  return NS_OK;
 }
 
 
