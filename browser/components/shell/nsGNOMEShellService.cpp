@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Preferences.h"
@@ -26,6 +26,7 @@
 #include "mozilla/GUniquePtr.h"
 #include "mozilla/WidgetUtilsGtk.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/Promise.h"
 #include "nsImageToPixbuf.h"
 #include "nsXULAppAPI.h"
 #include "gfxPlatform.h"
@@ -48,18 +49,18 @@ struct MimeTypeAssociation {
 };
 
 static const ProtocolAssociation appProtocols[] = {
-    
+    // clang-format off
   { "http",   true     },
   { "https",  true     },
   { "chrome", false }
-    
+    // clang-format on
 };
 
 static const MimeTypeAssociation appTypes[] = {
-    
+    // clang-format off
   { "text/html",             "htm html shtml" },
   { "application/xhtml+xml", "xhtml xht"      }
-    
+    // clang-format on
 };
 
 #define kDesktopBGSchema "org.gnome.desktop.background"_ns
@@ -72,8 +73,8 @@ nsresult nsGNOMEShellService::Init() {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  
-  
+  // GSettings or GIO _must_ be available, or we do not allow
+  // CreateInstance to succeed.
 
 #ifdef MOZ_ENABLE_DBUS
   if (widget::IsGnomeDesktopEnvironment() &&
@@ -82,8 +83,8 @@ nsresult nsGNOMEShellService::Init() {
   }
 #endif
 
-  
-  
+  // Check G_BROKEN_FILENAMES.  If it's set, then filenames in glib use
+  // the locale encoding.  If it's not set, they use UTF-8.
   mUseLocaleFilenames = PR_GetEnv("G_BROKEN_FILENAMES") != nullptr;
 
   if (GetAppPathFromLauncher()) return NS_OK;
@@ -155,8 +156,8 @@ bool nsGNOMEShellService::CheckHandlerMatchesAppName(
   gchar** argv;
   nsAutoCString command(handler);
 
-  
-  
+  // The string will be something of the form: [/path/to/]browser "%s"
+  // We want to remove all of the parameters and get just the binary name.
 
   if (g_shell_parse_argv(command.get(), &argc, &argv, nullptr) && argc > 0) {
     command.Assign(argv[0]);
@@ -164,7 +165,7 @@ bool nsGNOMEShellService::CheckHandlerMatchesAppName(
   }
 
   if (!KeyMatchesAppName(command.get()))
-    return false;  
+    return false;  // the handler is set to another app
 
   return true;
 }
@@ -280,26 +281,26 @@ nsGNOMEShellService::SetDefaultBrowser(bool aForAllUsers) {
     nsAutoString brandShortName;
     brandBundle->GetStringFromName("brandShortName", brandShortName);
 
-    
+    // use brandShortName as the application id.
     NS_ConvertUTF16toUTF8 id(brandShortName);
     nsCOMPtr<nsIGIOMimeApp> appInfo;
     rv = giovfs->FindAppFromCommand(mAppPath, getter_AddRefs(appInfo));
     if (NS_FAILED(rv)) {
-      
-      
+      // Application was not found in the list of installed applications
+      // provided by OS. Fallback to create appInfo from command and name.
       rv = giovfs->CreateAppFromCommand(mAppPath, id, getter_AddRefs(appInfo));
       NS_ENSURE_SUCCESS(rv, rv);
     }
 
-    
+    // set handler for the protocols
     for (unsigned int i = 0; i < std::size(appProtocols); ++i) {
       appInfo->SetAsDefaultForURIScheme(
           nsDependentCString(appProtocols[i].name));
     }
 
-    
-    
-    
+    // set handler for .html and xhtml files and MIME types:
+    // Add mime types for html, xhtml extension and set app to just created
+    // appinfo.
     for (unsigned int i = 0; i < std::size(appTypes); ++i) {
       appInfo->SetAsDefaultForMimeType(
           nsDependentCString(appTypes[i].mimeType));
@@ -311,8 +312,8 @@ nsGNOMEShellService::SetDefaultBrowser(bool aForAllUsers) {
   nsCOMPtr<nsIPrefBranch> prefs(do_GetService(NS_PREFSERVICE_CONTRACTID));
   if (prefs) {
     (void)prefs->SetBoolPref(PREF_CHECKDEFAULTBROWSER, true);
-    
-    
+    // Reset the number of times the dialog should be shown
+    // before it is silenced.
     (void)prefs->SetIntPref(PREF_DEFAULTBROWSERCHECKCOUNT, 0);
   }
 
@@ -321,8 +322,8 @@ nsGNOMEShellService::SetDefaultBrowser(bool aForAllUsers) {
 
 NS_IMETHODIMP
 nsGNOMEShellService::GetCanSetDesktopBackground(bool* aResult) {
-  
-  
+  // setting desktop background is currently only supported
+  // for Gnome or desktops using the same GSettings keys
   if (widget::IsGnomeDesktopEnvironment()) {
     *aResult = true;
     return NS_OK;
@@ -332,8 +333,10 @@ nsGNOMEShellService::GetCanSetDesktopBackground(bool* aResult) {
   return NS_OK;
 }
 
-static nsresult WriteImage(const nsCString& aPath, imgIContainer* aImage) {
-  RefPtr<GdkPixbuf> pixbuf = nsImageToPixbuf::ImageToPixbuf(aImage);
+static nsresult WriteImage(const nsCString& aPath, imgIContainer* aImage,
+                           const Maybe<nsIntSize>& aOverrideSize = Nothing()) {
+  RefPtr<GdkPixbuf> pixbuf =
+      nsImageToPixbuf::ImageToPixbuf(aImage, aOverrideSize);
   if (!pixbuf) {
     return NS_ERROR_NOT_AVAILABLE;
   }
@@ -351,7 +354,7 @@ nsGNOMEShellService::SetDesktopBackground(dom::Element* aElement,
     return NS_ERROR_FAILURE;
   }
 
-  
+  // get the image container
   nsCOMPtr<imgIRequest> request;
   imageContent->GetRequest(nsIImageLoadingContent::CURRENT_REQUEST,
                            getter_AddRefs(request));
@@ -364,7 +367,7 @@ nsGNOMEShellService::SetDesktopBackground(dom::Element* aElement,
     return NS_ERROR_FAILURE;
   }
 
-  
+  // Set desktop wallpaper filling style
   nsAutoCString options;
   if (aPosition == BACKGROUND_TILE)
     options.AssignLiteral("wallpaper");
@@ -379,11 +382,11 @@ nsGNOMEShellService::SetDesktopBackground(dom::Element* aElement,
   else
     options.AssignLiteral("centered");
 
-  
+  // Write the background file to the home directory.
   nsAutoCString filePath(PR_GetEnv("HOME"));
   nsAutoString brandName;
 
-  
+  // get the product brand name from localized strings
   if (nsCOMPtr<nsIStringBundleService> bundleService =
           components::StringBundle::Service()) {
     nsCOMPtr<nsIStringBundle> brandBundle;
@@ -393,12 +396,12 @@ nsGNOMEShellService::SetDesktopBackground(dom::Element* aElement,
     }
   }
 
-  
+  // build the file name
   filePath.Append('/');
   filePath.Append(NS_ConvertUTF16toUTF8(brandName));
   filePath.AppendLiteral("_wallpaper.png");
 
-  
+  // write the image to a file in the home dir
   MOZ_TRY(WriteImage(filePath, container));
 
   widget::GSettings::Collection bgSettings(kDesktopBGSchema);
@@ -443,7 +446,7 @@ nsGNOMEShellService::GetDesktopBackgroundColor(uint32_t* aColor) {
 }
 
 static void ColorToCString(uint32_t aColor, nsCString& aResult) {
-  
+  // The #rrrrggggbbbb format is used to match gdk_color_to_string()
   aResult.SetLength(13);
   char* buf = aResult.BeginWriting();
   if (!buf) return;
@@ -491,5 +494,61 @@ nsGNOMEShellService::SetGSettingsString(const nsACString& aSchema,
                           PromiseFlatCString(aValue))) {
     return NS_ERROR_FAILURE;
   }
+  return NS_OK;
+}
+
+NS_IMETHODIMP nsGNOMEShellService::GetIconExtension(nsACString& aExtension) {
+  aExtension.AssignLiteral("png");
+  return NS_OK;
+}
+
+NS_IMETHODIMP nsGNOMEShellService::CreateIcon(nsIFile* aFile,
+                                              imgIContainer* aImage,
+                                              JSContext* aCx,
+                                              dom::Promise** aPromise) {
+  NS_ENSURE_ARG_POINTER(aFile);
+  NS_ENSURE_ARG_POINTER(aImage);
+  NS_ENSURE_ARG_POINTER(aCx);
+  NS_ENSURE_ARG_POINTER(aPromise);
+
+  if (!NS_IsMainThread()) {
+    return NS_ERROR_NOT_SAME_THREAD;
+  }
+
+  ErrorResult rv;
+  RefPtr<dom::Promise> promise =
+      dom::Promise::Create(xpc::CurrentNativeGlobal(aCx), rv);
+
+  if (MOZ_UNLIKELY(rv.Failed())) {
+    return rv.StealNSResult();
+  }
+
+  auto promiseHolder = MakeRefPtr<nsMainThreadPtrHolder<dom::Promise>>(
+      "CreateIcon promise", promise);
+
+  NS_DispatchBackgroundTask(
+      NS_NewRunnableFunction(
+          "CreateIcon",
+          [file = nsCOMPtr<nsIFile>(aFile),
+           image = nsCOMPtr<imgIContainer>(aImage),
+           promiseHolder = std::move(promiseHolder)] {
+            nsIntSize wanted{256, 256};
+            nsresult rv = WriteImage(file->NativePath(), image, Some(wanted));
+
+            NS_DispatchToMainThread(NS_NewRunnableFunction(
+                "CreateIcon callback",
+                [rv, promiseHolder = std::move(promiseHolder)] {
+                  dom::Promise* promise = promiseHolder.get()->get();
+
+                  if (NS_SUCCEEDED(rv)) {
+                    promise->MaybeResolveWithUndefined();
+                  } else {
+                    promise->MaybeReject(rv);
+                  }
+                }));
+          }),
+      NS_DISPATCH_EVENT_MAY_BLOCK);
+
+  promise.forget(aPromise);
   return NS_OK;
 }

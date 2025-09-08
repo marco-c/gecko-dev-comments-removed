@@ -6,6 +6,7 @@
 #include "nsISupports.idl"
 
 interface nsIFile;
+interface imgIContainer;
 
 webidl Element;
 
@@ -63,4 +64,29 @@ interface nsIShellService : nsISupports
 
 
   attribute unsigned long desktopBackgroundColor;
+
+  
+
+
+  readonly attribute ACString iconExtension;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  [implicit_jscontext]
+  Promise createIcon(
+    in nsIFile aFile,
+    in imgIContainer aContainer
+  );
 };
