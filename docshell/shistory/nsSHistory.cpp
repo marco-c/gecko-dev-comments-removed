@@ -1515,9 +1515,16 @@ static bool MaybeCheckUnloadingIsCanceled(
   
   
   
+
+  
+  
+  nsIDocumentViewer::PermitUnloadAction action =
+      windowGlobalParent->NeedsBeforeUnload()
+          ? nsIDocumentViewer::PermitUnloadAction::ePrompt
+          : nsIDocumentViewer::PermitUnloadAction::eDontPromptAndUnload;
   windowGlobalParent->PermitUnloadTraversable(
-      targetEntry->Info(),
-      [loadResults = CopyableTArray(std::move(aLoadResults)),
+      targetEntry->Info(), action,
+      [action, loadResults = CopyableTArray(std::move(aLoadResults)),
        windowGlobalParent, aResolver](bool aAllow) mutable {
         if (!aAllow) {
           aResolver(loadResults, aAllow);
@@ -1527,6 +1534,7 @@ static bool MaybeCheckUnloadingIsCanceled(
         
         
         windowGlobalParent->PermitUnloadChildNavigables(
+            action,
             [loadResults = std::move(loadResults), aResolver](
                 bool aAllow) mutable { aResolver(loadResults, aAllow); });
       });
