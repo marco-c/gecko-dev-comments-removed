@@ -1374,7 +1374,15 @@ var SidebarController = {
         this.dismissSidebarBadge(commandID);
       }
 
-      if (this.sidebarRevampEnabled && badgePref && isSidebarClosed) {
+      
+      const tool = this.toolsAndExtensions.get(commandID);
+      if (
+        this.sidebarRevampEnabled &&
+        badgePref &&
+        !tool.disabled &&
+        !tool.hidden &&
+        isSidebarClosed
+      ) {
         this._showToolbarButtonBadge();
       } else {
         this._clearToolbarButtonBadge();
