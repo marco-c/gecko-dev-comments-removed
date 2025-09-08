@@ -1,6 +1,6 @@
 
 
-#![allow(warnings)]
+#![allow(dangerous_implicit_autorefs)]
 
 
 
