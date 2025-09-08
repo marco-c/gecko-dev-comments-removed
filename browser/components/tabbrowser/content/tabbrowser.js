@@ -2999,6 +2999,88 @@
 
 
 
+    _createTabSplitView(id) {
+      let splitview = document.createXULElement("tab-split-view-wrapper", {
+        is: "tab-split-view-wrapper",
+      });
+      splitview.splitViewId = id;
+      return splitview;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    addTabSplitView(tabs, { id = null, insertBefore = null } = {}) {
+      if (!tabs?.length) {
+        throw new Error("Cannot create split view with zero tabs");
+      }
+
+      if (!id) {
+        id = `${Date.now()}-${Math.round(Math.random() * 100)}`;
+      }
+      let splitview = this._createTabSplitView(id);
+      this.tabContainer.insertBefore(
+        splitview,
+        insertBefore?.splitview ?? insertBefore
+      );
+      splitview.addTabs(tabs);
+
+      
+      
+      if (!splitview.tabs.length) {
+        splitview.remove();
+        return null;
+      }
+
+      return splitview;
+    }
+
+    
+
+
+
+
+
+
+    async removeSplitView(splitView) {
+      this.removeTabs(splitView.tabs);
+      splitView.remove();
+    }
+
+    
+
+
+
+
+
+    unsplitTabs(splitview) {
+      if (!splitview) {
+        return;
+      }
+
+      for (const tab of splitview.tabs) {
+        this.#handleTabMove(tab, () =>
+          gBrowser.tabContainer.insertBefore(tab, splitview.nextElementSibling)
+        );
+      }
+      splitview.remove();
+    }
+
+    
+
+
+
 
 
 
@@ -6258,6 +6340,32 @@
           metricsContext
         );
       }
+    }
+
+    
+
+
+
+
+    moveTabToSplitView(aTab, aSplitViewWrapper) {
+      if (!this.isTab(aTab)) {
+        throw new Error("Can only move a tab into a split view wrapper");
+      }
+      if (aTab.pinned) {
+        return;
+      }
+      if (
+        aTab.splitview &&
+        aTab.splitview.splitViewId === aSplitViewWrapper.splitViewId
+      ) {
+        return;
+      }
+
+      this.#handleTabMove(aTab, () =>
+        aSplitViewWrapper.wrapper.appendChild(aTab)
+      );
+      this.removeFromMultiSelectedTabs(aTab);
+      this.tabContainer._notifyBackgroundTab(aTab);
     }
 
     

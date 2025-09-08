@@ -1814,7 +1814,10 @@
       
       
       for (let i = unpinnedChildren.length - 1; i >= 0; i--) {
-        if (unpinnedChildren[i].tagName == "tab-group") {
+        if (
+          unpinnedChildren[i].tagName == "tab-group" ||
+          unpinnedChildren[i].tagName == "tab-split-view-wrapper"
+        ) {
           unpinnedChildren.splice(i, 1, ...unpinnedChildren[i].tabs);
         }
       }
