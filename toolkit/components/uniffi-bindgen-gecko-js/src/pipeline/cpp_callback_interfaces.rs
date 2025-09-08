@@ -88,7 +88,16 @@ fn map_method(
     };
     let kind = match meth.callable.async_data.as_ref() {
         
-        None => CallbackMethodKind::FireAndForget,
+        
+        None => match &meth.callable.concurrency_mode {
+            ConcurrencyMode::Sync => CallbackMethodKind::Sync,
+            ConcurrencyMode::FireAndForget => CallbackMethodKind::FireAndForget,
+            _ => bail!(
+                "Invalid concurrency_mode for callback method: {} ({:?})",
+                meth.callable.name,
+                meth.callable.concurrency_mode,
+            ),
+        },
         
         Some(async_data) => CallbackMethodKind::Async(CppCallbackInterfaceMethodAsyncData {
             complete_callback_type_name: async_data.ffi_foreign_future_complete.0.clone(),

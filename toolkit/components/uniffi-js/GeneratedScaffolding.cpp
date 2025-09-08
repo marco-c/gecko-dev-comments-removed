@@ -11429,105 +11429,59 @@ static StaticRefPtr<dom::UniFFICallbackHandler> gUniffiCallbackHandlerContextIdC
 
 
 
-
-
-
-
-
-class CallbackInterfaceMethodContextIdContextIdCallbackPersist final : public AsyncCallbackMethodHandlerBase {
-private:
-  
-  FfiValueRustBuffer mContextId{};
-  FfiValueInt<int64_t> mCreationDate{};
-
-public:
-  CallbackInterfaceMethodContextIdContextIdCallbackPersist(
-      uint64_t aUniffiHandle,
-      RustBuffer aContextId,
-      int64_t aCreationDate
-  ) : AsyncCallbackMethodHandlerBase ("ContextIdCallback.callback_interface_context_id_context_id_callback_persist", aUniffiHandle),
-      mContextId(FfiValueRustBuffer::FromRust(aContextId)),
-      mCreationDate(FfiValueInt<int64_t>::FromRust(aCreationDate)){ }
-
-  MOZ_CAN_RUN_SCRIPT
-  already_AddRefed<dom::Promise>
-  MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler, ErrorResult& aError) override {
-    
-    nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
-    if (!uniffiArgs.AppendElements(2, mozilla::fallible)) {
-      aError.Throw(NS_ERROR_OUT_OF_MEMORY);
-      return nullptr;
-    }
-    mContextId.Lift(aCx, &uniffiArgs[0], aError);
-    if (aError.Failed()) {
-      return nullptr;
-    }
-    mCreationDate.Lift(aCx, &uniffiArgs[1], aError);
-    if (aError.Failed()) {
-      return nullptr;
-    }
-
-    RefPtr<dom::Promise> result = aJsHandler->CallAsync(mUniffiHandle.IntoRust(), 0, uniffiArgs, aError);
-    return nullptr;
-  }
-};
-
-
-
-
-
-
 extern "C" void callback_interface_context_id_context_id_callback_persist(
   uint64_t aUniffiHandle,
   RustBuffer aContextId,
   int64_t aCreationDate,
   void* aUniffiOutReturn,
-  RustCallStatus* uniffiOutStatus
+  RustCallStatus* aUniffiOutStatus
 ) {
-  UniquePtr<AsyncCallbackMethodHandlerBase> handler = MakeUnique<CallbackInterfaceMethodContextIdContextIdCallbackPersist>(aUniffiHandle, aContextId, aCreationDate);
-  AsyncCallbackMethodHandlerBase::ScheduleAsyncCall(std::move(handler), &gUniffiCallbackHandlerContextIdContextIdCallback);
-}
-
-
-
-
-
-
-
-
-
-
-class CallbackInterfaceMethodContextIdContextIdCallbackRotated final : public AsyncCallbackMethodHandlerBase {
-private:
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   
-  FfiValueRustBuffer mOldContextId{};
-
-public:
-  CallbackInterfaceMethodContextIdContextIdCallbackRotated(
-      uint64_t aUniffiHandle,
-      RustBuffer aOldContextId
-  ) : AsyncCallbackMethodHandlerBase ("ContextIdCallback.callback_interface_context_id_context_id_callback_rotated", aUniffiHandle),
-      mOldContextId(FfiValueRustBuffer::FromRust(aOldContextId)){ }
-
-  MOZ_CAN_RUN_SCRIPT
-  already_AddRefed<dom::Promise>
-  MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler, ErrorResult& aError) override {
-    
-    nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
-    if (!uniffiArgs.AppendElements(1, mozilla::fallible)) {
-      aError.Throw(NS_ERROR_OUT_OF_MEMORY);
-      return nullptr;
-    }
-    mOldContextId.Lift(aCx, &uniffiArgs[0], aError);
-    if (aError.Failed()) {
-      return nullptr;
-    }
-
-    RefPtr<dom::Promise> result = aJsHandler->CallAsync(mUniffiHandle.IntoRust(), 1, uniffiArgs, aError);
-    return nullptr;
+  
+  RefPtr<dom::UniFFICallbackHandler> jsHandler = gUniffiCallbackHandlerContextIdContextIdCallback;
+  
+  JSObject* global = jsHandler->CallbackGlobalOrNull();
+  if (!global) {
+    MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_context_id_context_id_callback_persist] JS handler has null global"));
+    return;
   }
-};
+  dom::AutoEntryScript aes(global, "callback_interface_context_id_context_id_callback_persist");
 
+  
+  nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+  if (!uniffiArgs.AppendElements(2, mozilla::fallible)) {
+    MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_context_id_context_id_callback_persist] Failed to allocate arguments"));
+    return;
+  }
+  IgnoredErrorResult error;
+  FfiValueRustBuffer contextId = FfiValueRustBuffer::FromRust(aContextId);
+  contextId.Lift(aes.cx(), &uniffiArgs[0], error);
+  if (error.Failed()) {
+    MOZ_LOG(
+        gUniffiLogger, LogLevel::Error,
+        ("[callback_interface_context_id_context_id_callback_persist] Failed to lift aContextId"));
+    return;
+  }
+  FfiValueInt<int64_t> creationDate = FfiValueInt<int64_t>::FromRust(aCreationDate);
+  creationDate.Lift(aes.cx(), &uniffiArgs[1], error);
+  if (error.Failed()) {
+    MOZ_LOG(
+        gUniffiLogger, LogLevel::Error,
+        ("[callback_interface_context_id_context_id_callback_persist] Failed to lift aCreationDate"));
+    return;
+  }
+
+  RootedDictionary<UniFFIScaffoldingCallResult> callResult(aes.cx());
+  jsHandler->CallSync(aUniffiHandle, 0, uniffiArgs, callResult, error);
+  if (error.Failed()) {
+    MOZ_LOG(
+        gUniffiLogger, LogLevel::Error,
+        ("[callback_interface_context_id_context_id_callback_persist] Error invoking JS handler"));
+    return;
+  }
+  CallbackLowerReturnVoid::Lower(callResult, aUniffiOutStatus, error);
+  }
 
 
 
@@ -11537,11 +11491,46 @@ extern "C" void callback_interface_context_id_context_id_callback_rotated(
   uint64_t aUniffiHandle,
   RustBuffer aOldContextId,
   void* aUniffiOutReturn,
-  RustCallStatus* uniffiOutStatus
+  RustCallStatus* aUniffiOutStatus
 ) {
-  UniquePtr<AsyncCallbackMethodHandlerBase> handler = MakeUnique<CallbackInterfaceMethodContextIdContextIdCallbackRotated>(aUniffiHandle, aOldContextId);
-  AsyncCallbackMethodHandlerBase::ScheduleAsyncCall(std::move(handler), &gUniffiCallbackHandlerContextIdContextIdCallback);
-}
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  
+  
+  RefPtr<dom::UniFFICallbackHandler> jsHandler = gUniffiCallbackHandlerContextIdContextIdCallback;
+  
+  JSObject* global = jsHandler->CallbackGlobalOrNull();
+  if (!global) {
+    MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_context_id_context_id_callback_rotated] JS handler has null global"));
+    return;
+  }
+  dom::AutoEntryScript aes(global, "callback_interface_context_id_context_id_callback_rotated");
+
+  
+  nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+  if (!uniffiArgs.AppendElements(1, mozilla::fallible)) {
+    MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_context_id_context_id_callback_rotated] Failed to allocate arguments"));
+    return;
+  }
+  IgnoredErrorResult error;
+  FfiValueRustBuffer oldContextId = FfiValueRustBuffer::FromRust(aOldContextId);
+  oldContextId.Lift(aes.cx(), &uniffiArgs[0], error);
+  if (error.Failed()) {
+    MOZ_LOG(
+        gUniffiLogger, LogLevel::Error,
+        ("[callback_interface_context_id_context_id_callback_rotated] Failed to lift aOldContextId"));
+    return;
+  }
+
+  RootedDictionary<UniFFIScaffoldingCallResult> callResult(aes.cx());
+  jsHandler->CallSync(aUniffiHandle, 1, uniffiArgs, callResult, error);
+  if (error.Failed()) {
+    MOZ_LOG(
+        gUniffiLogger, LogLevel::Error,
+        ("[callback_interface_context_id_context_id_callback_rotated] Error invoking JS handler"));
+    return;
+  }
+  CallbackLowerReturnVoid::Lower(callResult, aUniffiOutStatus, error);
+  }
 
 extern "C" void callback_free_context_id_context_id_callback(uint64_t uniffiHandle) {
    
@@ -11562,56 +11551,50 @@ static StaticRefPtr<dom::UniFFICallbackHandler> gUniffiCallbackHandlerTracingEve
 
 
 
-
-
-
-
-
-class CallbackInterfaceMethodTracingEventSinkOnEvent final : public AsyncCallbackMethodHandlerBase {
-private:
-  
-  FfiValueRustBuffer mEvent{};
-
-public:
-  CallbackInterfaceMethodTracingEventSinkOnEvent(
-      uint64_t aUniffiHandle,
-      RustBuffer aEvent
-  ) : AsyncCallbackMethodHandlerBase ("EventSink.callback_interface_tracing_event_sink_on_event", aUniffiHandle),
-      mEvent(FfiValueRustBuffer::FromRust(aEvent)){ }
-
-  MOZ_CAN_RUN_SCRIPT
-  already_AddRefed<dom::Promise>
-  MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler, ErrorResult& aError) override {
-    
-    nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
-    if (!uniffiArgs.AppendElements(1, mozilla::fallible)) {
-      aError.Throw(NS_ERROR_OUT_OF_MEMORY);
-      return nullptr;
-    }
-    mEvent.Lift(aCx, &uniffiArgs[0], aError);
-    if (aError.Failed()) {
-      return nullptr;
-    }
-
-    RefPtr<dom::Promise> result = aJsHandler->CallAsync(mUniffiHandle.IntoRust(), 0, uniffiArgs, aError);
-    return nullptr;
-  }
-};
-
-
-
-
-
-
 extern "C" void callback_interface_tracing_event_sink_on_event(
   uint64_t aUniffiHandle,
   RustBuffer aEvent,
   void* aUniffiOutReturn,
-  RustCallStatus* uniffiOutStatus
+  RustCallStatus* aUniffiOutStatus
 ) {
-  UniquePtr<AsyncCallbackMethodHandlerBase> handler = MakeUnique<CallbackInterfaceMethodTracingEventSinkOnEvent>(aUniffiHandle, aEvent);
-  AsyncCallbackMethodHandlerBase::ScheduleAsyncCall(std::move(handler), &gUniffiCallbackHandlerTracingEventSink);
-}
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  
+  
+  RefPtr<dom::UniFFICallbackHandler> jsHandler = gUniffiCallbackHandlerTracingEventSink;
+  
+  JSObject* global = jsHandler->CallbackGlobalOrNull();
+  if (!global) {
+    MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_tracing_event_sink_on_event] JS handler has null global"));
+    return;
+  }
+  dom::AutoEntryScript aes(global, "callback_interface_tracing_event_sink_on_event");
+
+  
+  nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+  if (!uniffiArgs.AppendElements(1, mozilla::fallible)) {
+    MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_tracing_event_sink_on_event] Failed to allocate arguments"));
+    return;
+  }
+  IgnoredErrorResult error;
+  FfiValueRustBuffer event = FfiValueRustBuffer::FromRust(aEvent);
+  event.Lift(aes.cx(), &uniffiArgs[0], error);
+  if (error.Failed()) {
+    MOZ_LOG(
+        gUniffiLogger, LogLevel::Error,
+        ("[callback_interface_tracing_event_sink_on_event] Failed to lift aEvent"));
+    return;
+  }
+
+  RootedDictionary<UniFFIScaffoldingCallResult> callResult(aes.cx());
+  jsHandler->CallSync(aUniffiHandle, 0, uniffiArgs, callResult, error);
+  if (error.Failed()) {
+    MOZ_LOG(
+        gUniffiLogger, LogLevel::Error,
+        ("[callback_interface_tracing_event_sink_on_event] Error invoking JS handler"));
+    return;
+  }
+  CallbackLowerReturnVoid::Lower(callResult, aUniffiOutStatus, error);
+  }
 
 extern "C" void callback_free_tracing_event_sink(uint64_t uniffiHandle) {
    
@@ -11984,82 +11967,41 @@ static StaticRefPtr<dom::UniFFICallbackHandler> gUniffiCallbackHandlerUniffiBind
 
 
 
-
-
-
-
-
-class CallbackInterfaceMethodUniffiBindingsTestsTestCallbackInterfaceNoop final : public AsyncCallbackMethodHandlerBase {
-private:
-  
-
-public:
-  CallbackInterfaceMethodUniffiBindingsTestsTestCallbackInterfaceNoop(
-      uint64_t aUniffiHandle
-  ) : AsyncCallbackMethodHandlerBase ("TestCallbackInterface.callback_interface_uniffi_bindings_tests_test_callback_interface_noop", aUniffiHandle){ }
-
-  MOZ_CAN_RUN_SCRIPT
-  already_AddRefed<dom::Promise>
-  MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler, ErrorResult& aError) override {
-    
-    nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
-    if (!uniffiArgs.AppendElements(0, mozilla::fallible)) {
-      aError.Throw(NS_ERROR_OUT_OF_MEMORY);
-      return nullptr;
-    }
-
-    RefPtr<dom::Promise> result = aJsHandler->CallAsync(mUniffiHandle.IntoRust(), 0, uniffiArgs, aError);
-    return nullptr;
-  }
-};
-
-
-
-
-
-
 extern "C" void callback_interface_uniffi_bindings_tests_test_callback_interface_noop(
   uint64_t aUniffiHandle,
   void* aUniffiOutReturn,
-  RustCallStatus* uniffiOutStatus
+  RustCallStatus* aUniffiOutStatus
 ) {
-  UniquePtr<AsyncCallbackMethodHandlerBase> handler = MakeUnique<CallbackInterfaceMethodUniffiBindingsTestsTestCallbackInterfaceNoop>(aUniffiHandle);
-  AsyncCallbackMethodHandlerBase::ScheduleAsyncCall(std::move(handler), &gUniffiCallbackHandlerUniffiBindingsTestsTestCallbackInterface);
-}
-
-
-
-
-
-
-
-
-
-
-class CallbackInterfaceMethodUniffiBindingsTestsTestCallbackInterfaceGetValue final : public AsyncCallbackMethodHandlerBase {
-private:
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   
-
-public:
-  CallbackInterfaceMethodUniffiBindingsTestsTestCallbackInterfaceGetValue(
-      uint64_t aUniffiHandle
-  ) : AsyncCallbackMethodHandlerBase ("TestCallbackInterface.callback_interface_uniffi_bindings_tests_test_callback_interface_get_value", aUniffiHandle){ }
-
-  MOZ_CAN_RUN_SCRIPT
-  already_AddRefed<dom::Promise>
-  MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler, ErrorResult& aError) override {
-    
-    nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
-    if (!uniffiArgs.AppendElements(0, mozilla::fallible)) {
-      aError.Throw(NS_ERROR_OUT_OF_MEMORY);
-      return nullptr;
-    }
-
-    RefPtr<dom::Promise> result = aJsHandler->CallAsync(mUniffiHandle.IntoRust(), 1, uniffiArgs, aError);
-    return nullptr;
+  
+  RefPtr<dom::UniFFICallbackHandler> jsHandler = gUniffiCallbackHandlerUniffiBindingsTestsTestCallbackInterface;
+  
+  JSObject* global = jsHandler->CallbackGlobalOrNull();
+  if (!global) {
+    MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_uniffi_bindings_tests_test_callback_interface_noop] JS handler has null global"));
+    return;
   }
-};
+  dom::AutoEntryScript aes(global, "callback_interface_uniffi_bindings_tests_test_callback_interface_noop");
 
+  
+  nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+  if (!uniffiArgs.AppendElements(0, mozilla::fallible)) {
+    MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_uniffi_bindings_tests_test_callback_interface_noop] Failed to allocate arguments"));
+    return;
+  }
+  IgnoredErrorResult error;
+
+  RootedDictionary<UniFFIScaffoldingCallResult> callResult(aes.cx());
+  jsHandler->CallSync(aUniffiHandle, 0, uniffiArgs, callResult, error);
+  if (error.Failed()) {
+    MOZ_LOG(
+        gUniffiLogger, LogLevel::Error,
+        ("[callback_interface_uniffi_bindings_tests_test_callback_interface_noop] Error invoking JS handler"));
+    return;
+  }
+  CallbackLowerReturnVoid::Lower(callResult, aUniffiOutStatus, error);
+  }
 
 
 
@@ -12068,52 +12010,38 @@ public:
 extern "C" void callback_interface_uniffi_bindings_tests_test_callback_interface_get_value(
   uint64_t aUniffiHandle,
   uint32_t* aUniffiOutReturn,
-  RustCallStatus* uniffiOutStatus
+  RustCallStatus* aUniffiOutStatus
 ) {
-  UniquePtr<AsyncCallbackMethodHandlerBase> handler = MakeUnique<CallbackInterfaceMethodUniffiBindingsTestsTestCallbackInterfaceGetValue>(aUniffiHandle);
-  AsyncCallbackMethodHandlerBase::ScheduleAsyncCall(std::move(handler), &gUniffiCallbackHandlerUniffiBindingsTestsTestCallbackInterface);
-}
-
-
-
-
-
-
-
-
-
-
-class CallbackInterfaceMethodUniffiBindingsTestsTestCallbackInterfaceSetValue final : public AsyncCallbackMethodHandlerBase {
-private:
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   
-  FfiValueInt<uint32_t> mValue{};
-
-public:
-  CallbackInterfaceMethodUniffiBindingsTestsTestCallbackInterfaceSetValue(
-      uint64_t aUniffiHandle,
-      uint32_t aValue
-  ) : AsyncCallbackMethodHandlerBase ("TestCallbackInterface.callback_interface_uniffi_bindings_tests_test_callback_interface_set_value", aUniffiHandle),
-      mValue(FfiValueInt<uint32_t>::FromRust(aValue)){ }
-
-  MOZ_CAN_RUN_SCRIPT
-  already_AddRefed<dom::Promise>
-  MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler, ErrorResult& aError) override {
-    
-    nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
-    if (!uniffiArgs.AppendElements(1, mozilla::fallible)) {
-      aError.Throw(NS_ERROR_OUT_OF_MEMORY);
-      return nullptr;
-    }
-    mValue.Lift(aCx, &uniffiArgs[0], aError);
-    if (aError.Failed()) {
-      return nullptr;
-    }
-
-    RefPtr<dom::Promise> result = aJsHandler->CallAsync(mUniffiHandle.IntoRust(), 2, uniffiArgs, aError);
-    return nullptr;
+  
+  RefPtr<dom::UniFFICallbackHandler> jsHandler = gUniffiCallbackHandlerUniffiBindingsTestsTestCallbackInterface;
+  
+  JSObject* global = jsHandler->CallbackGlobalOrNull();
+  if (!global) {
+    MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_uniffi_bindings_tests_test_callback_interface_get_value] JS handler has null global"));
+    return;
   }
-};
+  dom::AutoEntryScript aes(global, "callback_interface_uniffi_bindings_tests_test_callback_interface_get_value");
 
+  
+  nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+  if (!uniffiArgs.AppendElements(0, mozilla::fallible)) {
+    MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_uniffi_bindings_tests_test_callback_interface_get_value] Failed to allocate arguments"));
+    return;
+  }
+  IgnoredErrorResult error;
+
+  RootedDictionary<UniFFIScaffoldingCallResult> callResult(aes.cx());
+  jsHandler->CallSync(aUniffiHandle, 1, uniffiArgs, callResult, error);
+  if (error.Failed()) {
+    MOZ_LOG(
+        gUniffiLogger, LogLevel::Error,
+        ("[callback_interface_uniffi_bindings_tests_test_callback_interface_get_value] Error invoking JS handler"));
+    return;
+  }
+  *aUniffiOutReturn = CallbackLowerReturnUInt32::Lower(callResult, aUniffiOutStatus, error);
+  }
 
 
 
@@ -12123,52 +12051,46 @@ extern "C" void callback_interface_uniffi_bindings_tests_test_callback_interface
   uint64_t aUniffiHandle,
   uint32_t aValue,
   void* aUniffiOutReturn,
-  RustCallStatus* uniffiOutStatus
+  RustCallStatus* aUniffiOutStatus
 ) {
-  UniquePtr<AsyncCallbackMethodHandlerBase> handler = MakeUnique<CallbackInterfaceMethodUniffiBindingsTestsTestCallbackInterfaceSetValue>(aUniffiHandle, aValue);
-  AsyncCallbackMethodHandlerBase::ScheduleAsyncCall(std::move(handler), &gUniffiCallbackHandlerUniffiBindingsTestsTestCallbackInterface);
-}
-
-
-
-
-
-
-
-
-
-
-class CallbackInterfaceMethodUniffiBindingsTestsTestCallbackInterfaceThrowIfEqual final : public AsyncCallbackMethodHandlerBase {
-private:
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   
-  FfiValueRustBuffer mNumbers{};
-
-public:
-  CallbackInterfaceMethodUniffiBindingsTestsTestCallbackInterfaceThrowIfEqual(
-      uint64_t aUniffiHandle,
-      RustBuffer aNumbers
-  ) : AsyncCallbackMethodHandlerBase ("TestCallbackInterface.callback_interface_uniffi_bindings_tests_test_callback_interface_throw_if_equal", aUniffiHandle),
-      mNumbers(FfiValueRustBuffer::FromRust(aNumbers)){ }
-
-  MOZ_CAN_RUN_SCRIPT
-  already_AddRefed<dom::Promise>
-  MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler, ErrorResult& aError) override {
-    
-    nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
-    if (!uniffiArgs.AppendElements(1, mozilla::fallible)) {
-      aError.Throw(NS_ERROR_OUT_OF_MEMORY);
-      return nullptr;
-    }
-    mNumbers.Lift(aCx, &uniffiArgs[0], aError);
-    if (aError.Failed()) {
-      return nullptr;
-    }
-
-    RefPtr<dom::Promise> result = aJsHandler->CallAsync(mUniffiHandle.IntoRust(), 3, uniffiArgs, aError);
-    return nullptr;
+  
+  RefPtr<dom::UniFFICallbackHandler> jsHandler = gUniffiCallbackHandlerUniffiBindingsTestsTestCallbackInterface;
+  
+  JSObject* global = jsHandler->CallbackGlobalOrNull();
+  if (!global) {
+    MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_uniffi_bindings_tests_test_callback_interface_set_value] JS handler has null global"));
+    return;
   }
-};
+  dom::AutoEntryScript aes(global, "callback_interface_uniffi_bindings_tests_test_callback_interface_set_value");
 
+  
+  nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+  if (!uniffiArgs.AppendElements(1, mozilla::fallible)) {
+    MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_uniffi_bindings_tests_test_callback_interface_set_value] Failed to allocate arguments"));
+    return;
+  }
+  IgnoredErrorResult error;
+  FfiValueInt<uint32_t> value = FfiValueInt<uint32_t>::FromRust(aValue);
+  value.Lift(aes.cx(), &uniffiArgs[0], error);
+  if (error.Failed()) {
+    MOZ_LOG(
+        gUniffiLogger, LogLevel::Error,
+        ("[callback_interface_uniffi_bindings_tests_test_callback_interface_set_value] Failed to lift aValue"));
+    return;
+  }
+
+  RootedDictionary<UniFFIScaffoldingCallResult> callResult(aes.cx());
+  jsHandler->CallSync(aUniffiHandle, 2, uniffiArgs, callResult, error);
+  if (error.Failed()) {
+    MOZ_LOG(
+        gUniffiLogger, LogLevel::Error,
+        ("[callback_interface_uniffi_bindings_tests_test_callback_interface_set_value] Error invoking JS handler"));
+    return;
+  }
+  CallbackLowerReturnVoid::Lower(callResult, aUniffiOutStatus, error);
+  }
 
 
 
@@ -12178,11 +12100,46 @@ extern "C" void callback_interface_uniffi_bindings_tests_test_callback_interface
   uint64_t aUniffiHandle,
   RustBuffer aNumbers,
   RustBuffer* aUniffiOutReturn,
-  RustCallStatus* uniffiOutStatus
+  RustCallStatus* aUniffiOutStatus
 ) {
-  UniquePtr<AsyncCallbackMethodHandlerBase> handler = MakeUnique<CallbackInterfaceMethodUniffiBindingsTestsTestCallbackInterfaceThrowIfEqual>(aUniffiHandle, aNumbers);
-  AsyncCallbackMethodHandlerBase::ScheduleAsyncCall(std::move(handler), &gUniffiCallbackHandlerUniffiBindingsTestsTestCallbackInterface);
-}
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  
+  
+  RefPtr<dom::UniFFICallbackHandler> jsHandler = gUniffiCallbackHandlerUniffiBindingsTestsTestCallbackInterface;
+  
+  JSObject* global = jsHandler->CallbackGlobalOrNull();
+  if (!global) {
+    MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_uniffi_bindings_tests_test_callback_interface_throw_if_equal] JS handler has null global"));
+    return;
+  }
+  dom::AutoEntryScript aes(global, "callback_interface_uniffi_bindings_tests_test_callback_interface_throw_if_equal");
+
+  
+  nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+  if (!uniffiArgs.AppendElements(1, mozilla::fallible)) {
+    MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_uniffi_bindings_tests_test_callback_interface_throw_if_equal] Failed to allocate arguments"));
+    return;
+  }
+  IgnoredErrorResult error;
+  FfiValueRustBuffer numbers = FfiValueRustBuffer::FromRust(aNumbers);
+  numbers.Lift(aes.cx(), &uniffiArgs[0], error);
+  if (error.Failed()) {
+    MOZ_LOG(
+        gUniffiLogger, LogLevel::Error,
+        ("[callback_interface_uniffi_bindings_tests_test_callback_interface_throw_if_equal] Failed to lift aNumbers"));
+    return;
+  }
+
+  RootedDictionary<UniFFIScaffoldingCallResult> callResult(aes.cx());
+  jsHandler->CallSync(aUniffiHandle, 3, uniffiArgs, callResult, error);
+  if (error.Failed()) {
+    MOZ_LOG(
+        gUniffiLogger, LogLevel::Error,
+        ("[callback_interface_uniffi_bindings_tests_test_callback_interface_throw_if_equal] Error invoking JS handler"));
+    return;
+  }
+  *aUniffiOutReturn = CallbackLowerReturnRustBuffer::Lower(callResult, aUniffiOutStatus, error);
+  }
 
 extern "C" void callback_free_uniffi_bindings_tests_test_callback_interface(uint64_t uniffiHandle) {
    
@@ -12556,82 +12513,41 @@ static StaticRefPtr<dom::UniFFICallbackHandler> gUniffiCallbackHandlerUniffiBind
 
 
 
-
-
-
-
-
-class CallbackInterfaceMethodUniffiBindingsTestsTestTraitInterfaceNoop final : public AsyncCallbackMethodHandlerBase {
-private:
-  
-
-public:
-  CallbackInterfaceMethodUniffiBindingsTestsTestTraitInterfaceNoop(
-      uint64_t aUniffiHandle
-  ) : AsyncCallbackMethodHandlerBase ("TestTraitInterface.callback_interface_uniffi_bindings_tests_test_trait_interface_noop", aUniffiHandle){ }
-
-  MOZ_CAN_RUN_SCRIPT
-  already_AddRefed<dom::Promise>
-  MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler, ErrorResult& aError) override {
-    
-    nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
-    if (!uniffiArgs.AppendElements(0, mozilla::fallible)) {
-      aError.Throw(NS_ERROR_OUT_OF_MEMORY);
-      return nullptr;
-    }
-
-    RefPtr<dom::Promise> result = aJsHandler->CallAsync(mUniffiHandle.IntoRust(), 0, uniffiArgs, aError);
-    return nullptr;
-  }
-};
-
-
-
-
-
-
 extern "C" void callback_interface_uniffi_bindings_tests_test_trait_interface_noop(
   uint64_t aUniffiHandle,
   void* aUniffiOutReturn,
-  RustCallStatus* uniffiOutStatus
+  RustCallStatus* aUniffiOutStatus
 ) {
-  UniquePtr<AsyncCallbackMethodHandlerBase> handler = MakeUnique<CallbackInterfaceMethodUniffiBindingsTestsTestTraitInterfaceNoop>(aUniffiHandle);
-  AsyncCallbackMethodHandlerBase::ScheduleAsyncCall(std::move(handler), &gUniffiCallbackHandlerUniffiBindingsTestsTestTraitInterface);
-}
-
-
-
-
-
-
-
-
-
-
-class CallbackInterfaceMethodUniffiBindingsTestsTestTraitInterfaceGetValue final : public AsyncCallbackMethodHandlerBase {
-private:
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   
-
-public:
-  CallbackInterfaceMethodUniffiBindingsTestsTestTraitInterfaceGetValue(
-      uint64_t aUniffiHandle
-  ) : AsyncCallbackMethodHandlerBase ("TestTraitInterface.callback_interface_uniffi_bindings_tests_test_trait_interface_get_value", aUniffiHandle){ }
-
-  MOZ_CAN_RUN_SCRIPT
-  already_AddRefed<dom::Promise>
-  MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler, ErrorResult& aError) override {
-    
-    nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
-    if (!uniffiArgs.AppendElements(0, mozilla::fallible)) {
-      aError.Throw(NS_ERROR_OUT_OF_MEMORY);
-      return nullptr;
-    }
-
-    RefPtr<dom::Promise> result = aJsHandler->CallAsync(mUniffiHandle.IntoRust(), 1, uniffiArgs, aError);
-    return nullptr;
+  
+  RefPtr<dom::UniFFICallbackHandler> jsHandler = gUniffiCallbackHandlerUniffiBindingsTestsTestTraitInterface;
+  
+  JSObject* global = jsHandler->CallbackGlobalOrNull();
+  if (!global) {
+    MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_uniffi_bindings_tests_test_trait_interface_noop] JS handler has null global"));
+    return;
   }
-};
+  dom::AutoEntryScript aes(global, "callback_interface_uniffi_bindings_tests_test_trait_interface_noop");
 
+  
+  nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+  if (!uniffiArgs.AppendElements(0, mozilla::fallible)) {
+    MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_uniffi_bindings_tests_test_trait_interface_noop] Failed to allocate arguments"));
+    return;
+  }
+  IgnoredErrorResult error;
+
+  RootedDictionary<UniFFIScaffoldingCallResult> callResult(aes.cx());
+  jsHandler->CallSync(aUniffiHandle, 0, uniffiArgs, callResult, error);
+  if (error.Failed()) {
+    MOZ_LOG(
+        gUniffiLogger, LogLevel::Error,
+        ("[callback_interface_uniffi_bindings_tests_test_trait_interface_noop] Error invoking JS handler"));
+    return;
+  }
+  CallbackLowerReturnVoid::Lower(callResult, aUniffiOutStatus, error);
+  }
 
 
 
@@ -12640,52 +12556,38 @@ public:
 extern "C" void callback_interface_uniffi_bindings_tests_test_trait_interface_get_value(
   uint64_t aUniffiHandle,
   uint32_t* aUniffiOutReturn,
-  RustCallStatus* uniffiOutStatus
+  RustCallStatus* aUniffiOutStatus
 ) {
-  UniquePtr<AsyncCallbackMethodHandlerBase> handler = MakeUnique<CallbackInterfaceMethodUniffiBindingsTestsTestTraitInterfaceGetValue>(aUniffiHandle);
-  AsyncCallbackMethodHandlerBase::ScheduleAsyncCall(std::move(handler), &gUniffiCallbackHandlerUniffiBindingsTestsTestTraitInterface);
-}
-
-
-
-
-
-
-
-
-
-
-class CallbackInterfaceMethodUniffiBindingsTestsTestTraitInterfaceSetValue final : public AsyncCallbackMethodHandlerBase {
-private:
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   
-  FfiValueInt<uint32_t> mValue{};
-
-public:
-  CallbackInterfaceMethodUniffiBindingsTestsTestTraitInterfaceSetValue(
-      uint64_t aUniffiHandle,
-      uint32_t aValue
-  ) : AsyncCallbackMethodHandlerBase ("TestTraitInterface.callback_interface_uniffi_bindings_tests_test_trait_interface_set_value", aUniffiHandle),
-      mValue(FfiValueInt<uint32_t>::FromRust(aValue)){ }
-
-  MOZ_CAN_RUN_SCRIPT
-  already_AddRefed<dom::Promise>
-  MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler, ErrorResult& aError) override {
-    
-    nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
-    if (!uniffiArgs.AppendElements(1, mozilla::fallible)) {
-      aError.Throw(NS_ERROR_OUT_OF_MEMORY);
-      return nullptr;
-    }
-    mValue.Lift(aCx, &uniffiArgs[0], aError);
-    if (aError.Failed()) {
-      return nullptr;
-    }
-
-    RefPtr<dom::Promise> result = aJsHandler->CallAsync(mUniffiHandle.IntoRust(), 2, uniffiArgs, aError);
-    return nullptr;
+  
+  RefPtr<dom::UniFFICallbackHandler> jsHandler = gUniffiCallbackHandlerUniffiBindingsTestsTestTraitInterface;
+  
+  JSObject* global = jsHandler->CallbackGlobalOrNull();
+  if (!global) {
+    MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_uniffi_bindings_tests_test_trait_interface_get_value] JS handler has null global"));
+    return;
   }
-};
+  dom::AutoEntryScript aes(global, "callback_interface_uniffi_bindings_tests_test_trait_interface_get_value");
 
+  
+  nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+  if (!uniffiArgs.AppendElements(0, mozilla::fallible)) {
+    MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_uniffi_bindings_tests_test_trait_interface_get_value] Failed to allocate arguments"));
+    return;
+  }
+  IgnoredErrorResult error;
+
+  RootedDictionary<UniFFIScaffoldingCallResult> callResult(aes.cx());
+  jsHandler->CallSync(aUniffiHandle, 1, uniffiArgs, callResult, error);
+  if (error.Failed()) {
+    MOZ_LOG(
+        gUniffiLogger, LogLevel::Error,
+        ("[callback_interface_uniffi_bindings_tests_test_trait_interface_get_value] Error invoking JS handler"));
+    return;
+  }
+  *aUniffiOutReturn = CallbackLowerReturnUInt32::Lower(callResult, aUniffiOutStatus, error);
+  }
 
 
 
@@ -12695,52 +12597,46 @@ extern "C" void callback_interface_uniffi_bindings_tests_test_trait_interface_se
   uint64_t aUniffiHandle,
   uint32_t aValue,
   void* aUniffiOutReturn,
-  RustCallStatus* uniffiOutStatus
+  RustCallStatus* aUniffiOutStatus
 ) {
-  UniquePtr<AsyncCallbackMethodHandlerBase> handler = MakeUnique<CallbackInterfaceMethodUniffiBindingsTestsTestTraitInterfaceSetValue>(aUniffiHandle, aValue);
-  AsyncCallbackMethodHandlerBase::ScheduleAsyncCall(std::move(handler), &gUniffiCallbackHandlerUniffiBindingsTestsTestTraitInterface);
-}
-
-
-
-
-
-
-
-
-
-
-class CallbackInterfaceMethodUniffiBindingsTestsTestTraitInterfaceThrowIfEqual final : public AsyncCallbackMethodHandlerBase {
-private:
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   
-  FfiValueRustBuffer mNumbers{};
-
-public:
-  CallbackInterfaceMethodUniffiBindingsTestsTestTraitInterfaceThrowIfEqual(
-      uint64_t aUniffiHandle,
-      RustBuffer aNumbers
-  ) : AsyncCallbackMethodHandlerBase ("TestTraitInterface.callback_interface_uniffi_bindings_tests_test_trait_interface_throw_if_equal", aUniffiHandle),
-      mNumbers(FfiValueRustBuffer::FromRust(aNumbers)){ }
-
-  MOZ_CAN_RUN_SCRIPT
-  already_AddRefed<dom::Promise>
-  MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler, ErrorResult& aError) override {
-    
-    nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
-    if (!uniffiArgs.AppendElements(1, mozilla::fallible)) {
-      aError.Throw(NS_ERROR_OUT_OF_MEMORY);
-      return nullptr;
-    }
-    mNumbers.Lift(aCx, &uniffiArgs[0], aError);
-    if (aError.Failed()) {
-      return nullptr;
-    }
-
-    RefPtr<dom::Promise> result = aJsHandler->CallAsync(mUniffiHandle.IntoRust(), 3, uniffiArgs, aError);
-    return nullptr;
+  
+  RefPtr<dom::UniFFICallbackHandler> jsHandler = gUniffiCallbackHandlerUniffiBindingsTestsTestTraitInterface;
+  
+  JSObject* global = jsHandler->CallbackGlobalOrNull();
+  if (!global) {
+    MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_uniffi_bindings_tests_test_trait_interface_set_value] JS handler has null global"));
+    return;
   }
-};
+  dom::AutoEntryScript aes(global, "callback_interface_uniffi_bindings_tests_test_trait_interface_set_value");
 
+  
+  nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+  if (!uniffiArgs.AppendElements(1, mozilla::fallible)) {
+    MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_uniffi_bindings_tests_test_trait_interface_set_value] Failed to allocate arguments"));
+    return;
+  }
+  IgnoredErrorResult error;
+  FfiValueInt<uint32_t> value = FfiValueInt<uint32_t>::FromRust(aValue);
+  value.Lift(aes.cx(), &uniffiArgs[0], error);
+  if (error.Failed()) {
+    MOZ_LOG(
+        gUniffiLogger, LogLevel::Error,
+        ("[callback_interface_uniffi_bindings_tests_test_trait_interface_set_value] Failed to lift aValue"));
+    return;
+  }
+
+  RootedDictionary<UniFFIScaffoldingCallResult> callResult(aes.cx());
+  jsHandler->CallSync(aUniffiHandle, 2, uniffiArgs, callResult, error);
+  if (error.Failed()) {
+    MOZ_LOG(
+        gUniffiLogger, LogLevel::Error,
+        ("[callback_interface_uniffi_bindings_tests_test_trait_interface_set_value] Error invoking JS handler"));
+    return;
+  }
+  CallbackLowerReturnVoid::Lower(callResult, aUniffiOutStatus, error);
+  }
 
 
 
@@ -12750,11 +12646,46 @@ extern "C" void callback_interface_uniffi_bindings_tests_test_trait_interface_th
   uint64_t aUniffiHandle,
   RustBuffer aNumbers,
   RustBuffer* aUniffiOutReturn,
-  RustCallStatus* uniffiOutStatus
+  RustCallStatus* aUniffiOutStatus
 ) {
-  UniquePtr<AsyncCallbackMethodHandlerBase> handler = MakeUnique<CallbackInterfaceMethodUniffiBindingsTestsTestTraitInterfaceThrowIfEqual>(aUniffiHandle, aNumbers);
-  AsyncCallbackMethodHandlerBase::ScheduleAsyncCall(std::move(handler), &gUniffiCallbackHandlerUniffiBindingsTestsTestTraitInterface);
-}
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  
+  
+  RefPtr<dom::UniFFICallbackHandler> jsHandler = gUniffiCallbackHandlerUniffiBindingsTestsTestTraitInterface;
+  
+  JSObject* global = jsHandler->CallbackGlobalOrNull();
+  if (!global) {
+    MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_uniffi_bindings_tests_test_trait_interface_throw_if_equal] JS handler has null global"));
+    return;
+  }
+  dom::AutoEntryScript aes(global, "callback_interface_uniffi_bindings_tests_test_trait_interface_throw_if_equal");
+
+  
+  nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+  if (!uniffiArgs.AppendElements(1, mozilla::fallible)) {
+    MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_uniffi_bindings_tests_test_trait_interface_throw_if_equal] Failed to allocate arguments"));
+    return;
+  }
+  IgnoredErrorResult error;
+  FfiValueRustBuffer numbers = FfiValueRustBuffer::FromRust(aNumbers);
+  numbers.Lift(aes.cx(), &uniffiArgs[0], error);
+  if (error.Failed()) {
+    MOZ_LOG(
+        gUniffiLogger, LogLevel::Error,
+        ("[callback_interface_uniffi_bindings_tests_test_trait_interface_throw_if_equal] Failed to lift aNumbers"));
+    return;
+  }
+
+  RootedDictionary<UniFFIScaffoldingCallResult> callResult(aes.cx());
+  jsHandler->CallSync(aUniffiHandle, 3, uniffiArgs, callResult, error);
+  if (error.Failed()) {
+    MOZ_LOG(
+        gUniffiLogger, LogLevel::Error,
+        ("[callback_interface_uniffi_bindings_tests_test_trait_interface_throw_if_equal] Error invoking JS handler"));
+    return;
+  }
+  *aUniffiOutReturn = CallbackLowerReturnRustBuffer::Lower(callResult, aUniffiOutStatus, error);
+  }
 
 extern "C" void callback_free_uniffi_bindings_tests_test_trait_interface(uint64_t uniffiHandle) {
    
@@ -12777,48 +12708,41 @@ static StaticRefPtr<dom::UniFFICallbackHandler> gUniffiCallbackHandlerUniffiBind
 
 
 
-
-
-
-
-
-class CallbackInterfaceMethodUniffiBindingsTestsCollisionTestCallbackInterfaceGetValue final : public AsyncCallbackMethodHandlerBase {
-private:
-  
-
-public:
-  CallbackInterfaceMethodUniffiBindingsTestsCollisionTestCallbackInterfaceGetValue(
-      uint64_t aUniffiHandle
-  ) : AsyncCallbackMethodHandlerBase ("TestCallbackInterface.callback_interface_uniffi_bindings_tests_collision_test_callback_interface_get_value", aUniffiHandle){ }
-
-  MOZ_CAN_RUN_SCRIPT
-  already_AddRefed<dom::Promise>
-  MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler, ErrorResult& aError) override {
-    
-    nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
-    if (!uniffiArgs.AppendElements(0, mozilla::fallible)) {
-      aError.Throw(NS_ERROR_OUT_OF_MEMORY);
-      return nullptr;
-    }
-
-    RefPtr<dom::Promise> result = aJsHandler->CallAsync(mUniffiHandle.IntoRust(), 0, uniffiArgs, aError);
-    return nullptr;
-  }
-};
-
-
-
-
-
-
 extern "C" void callback_interface_uniffi_bindings_tests_collision_test_callback_interface_get_value(
   uint64_t aUniffiHandle,
   RustBuffer* aUniffiOutReturn,
-  RustCallStatus* uniffiOutStatus
+  RustCallStatus* aUniffiOutStatus
 ) {
-  UniquePtr<AsyncCallbackMethodHandlerBase> handler = MakeUnique<CallbackInterfaceMethodUniffiBindingsTestsCollisionTestCallbackInterfaceGetValue>(aUniffiHandle);
-  AsyncCallbackMethodHandlerBase::ScheduleAsyncCall(std::move(handler), &gUniffiCallbackHandlerUniffiBindingsTestsCollisionTestCallbackInterface);
-}
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  
+  
+  RefPtr<dom::UniFFICallbackHandler> jsHandler = gUniffiCallbackHandlerUniffiBindingsTestsCollisionTestCallbackInterface;
+  
+  JSObject* global = jsHandler->CallbackGlobalOrNull();
+  if (!global) {
+    MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_uniffi_bindings_tests_collision_test_callback_interface_get_value] JS handler has null global"));
+    return;
+  }
+  dom::AutoEntryScript aes(global, "callback_interface_uniffi_bindings_tests_collision_test_callback_interface_get_value");
+
+  
+  nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+  if (!uniffiArgs.AppendElements(0, mozilla::fallible)) {
+    MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_uniffi_bindings_tests_collision_test_callback_interface_get_value] Failed to allocate arguments"));
+    return;
+  }
+  IgnoredErrorResult error;
+
+  RootedDictionary<UniFFIScaffoldingCallResult> callResult(aes.cx());
+  jsHandler->CallSync(aUniffiHandle, 0, uniffiArgs, callResult, error);
+  if (error.Failed()) {
+    MOZ_LOG(
+        gUniffiLogger, LogLevel::Error,
+        ("[callback_interface_uniffi_bindings_tests_collision_test_callback_interface_get_value] Error invoking JS handler"));
+    return;
+  }
+  *aUniffiOutReturn = CallbackLowerReturnRustBuffer::Lower(callResult, aUniffiOutStatus, error);
+  }
 
 extern "C" void callback_free_uniffi_bindings_tests_collision_test_callback_interface(uint64_t uniffiHandle) {
    
