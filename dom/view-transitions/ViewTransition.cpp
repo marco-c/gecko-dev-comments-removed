@@ -104,67 +104,6 @@ static inline nsRect CapturedRect(const nsIFrame* aFrame,
                   aFrame->PresContext()->AppUnitsPerDevPixel());
 }
 
-
-
-
-
-
-
-template <typename IDGenerator>
-static already_AddRefed<nsAtom> DocumentScopedTransitionNameForWithGenerator(
-    nsIFrame* aFrame, IDGenerator&& aFunc) {
-  
-  const auto& computed = aFrame->StyleUIReset()->mViewTransitionName;
-
-  
-  if (computed.IsNone()) {
-    return nullptr;
-  }
-
-  
-  if (computed.IsIdent()) {
-    return RefPtr<nsAtom>{computed.AsIdent().AsAtom()}.forget();
-  }
-
-  
-  
-  
-  MOZ_ASSERT(computed.IsMatchElement());
-
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-  nsIContent* content = aFrame->GetContent();
-  if (MOZ_UNLIKELY(!content || !content->IsElement())) {
-    return nullptr;
-  }
-
-  
-  
-  Maybe<uint64_t> id = aFunc(content->AsElement());
-  if (!id) {
-    return nullptr;
-  }
-
-  
-  
-  
-  
-  nsCString name;
-  
-  
-  name.AppendLiteral("-ua-view-transition-name-");
-  name.AppendInt(*id);
-  return NS_Atomize(name);
-}
-
 static StyleViewTransitionClass DocumentScopedClassListFor(
     const nsIFrame* aFrame) {
   return aFrame->StyleUIReset()->mViewTransitionClass;
@@ -1841,10 +1780,63 @@ uint64_t ViewTransition::EnsureElementIdentifier(Element* aElement) {
 
 already_AddRefed<nsAtom> ViewTransition::DocumentScopedTransitionNameFor(
     nsIFrame* aFrame) {
-  return DocumentScopedTransitionNameForWithGenerator(
-      aFrame, [this](Element* aElement) {
-        return Some(EnsureElementIdentifier(aElement));
-      });
+  
+  
+  
+  
+  
+  
+  
+  const auto& computed = aFrame->StyleUIReset()->mViewTransitionName;
+
+  
+  if (computed.IsNone()) {
+    return nullptr;
+  }
+
+  
+  
+  if (aFrame->IsTableFrame()) {
+    return nullptr;
+  }
+
+  
+  if (computed.IsIdent()) {
+    return RefPtr<nsAtom>{computed.AsIdent().AsAtom()}.forget();
+  }
+
+  
+  
+  
+  MOZ_ASSERT(computed.IsMatchElement());
+
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  nsIContent* content = aFrame->GetContent();
+  if (MOZ_UNLIKELY(!content || !content->IsElement())) {
+    return nullptr;
+  }
+
+  uint64_t id = EnsureElementIdentifier(content->AsElement());
+
+  
+  
+  
+  
+  nsCString name;
+  
+  
+  name.AppendLiteral("-ua-view-transition-name-");
+  name.AppendInt(id);
+  return NS_Atomize(name);
 }
 
 JSObject* ViewTransition::WrapObject(JSContext* aCx,
