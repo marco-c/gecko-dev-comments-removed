@@ -193,7 +193,7 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
   
   
   
-  virtual nsresult ChildListChanged(int32_t aModType);
+  virtual nsresult ChildListChanged();
 
   
   
