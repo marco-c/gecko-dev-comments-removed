@@ -224,7 +224,7 @@ class RequestPanel extends Component {
 
     
     
-    if (postData && limit <= postData.length) {
+    if (postData && limit > 0 && limit <= postData.length) {
       error = REQUEST_TRUNCATED;
     }
     if (formDataSections && formDataSections.length === 0 && postData) {
