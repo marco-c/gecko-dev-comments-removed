@@ -720,45 +720,6 @@ UiaTextRange::GetBoundingRectangles(__RPC__deref_out_opt SAFEARRAY** aRetVal) {
 
   
   nsTArray<LayoutDeviceIntRect> lineRects = range.LineRects();
-  TextLeafPoint start = range.Start();
-  if (lineRects.IsEmpty() && start == range.End()) {
-    
-    
-    
-    
-    
-    
-    
-    LayoutDeviceIntRect charBounds;
-    bool maybeUseCaretRect;
-    if (mIsEndOfLineInsertionPoint) {
-      
-      
-      maybeUseCaretRect = true;
-    } else {
-      charBounds = start.CharBounds();
-      
-      
-      
-      
-      maybeUseCaretRect = charBounds.IsEmpty();
-    }
-    if (maybeUseCaretRect && start == TextLeafPoint::GetCaret(start.mAcc)) {
-      
-      HyperTextAccessibleBase* ht = start.mAcc->AsHyperTextBase();
-      if (!ht) {
-        Accessible* parent = start.mAcc->Parent();
-        if (parent) {
-          ht = parent->AsHyperTextBase();
-        }
-      }
-      if (ht) {
-        charBounds = ht->GetCaretRect().first;
-      }
-    }
-    lineRects.AppendElement(charBounds);
-  }
-
   
   
   SAFEARRAY* rectsVec = SafeArrayCreateVector(VT_R8, 0, lineRects.Length() * 4);
