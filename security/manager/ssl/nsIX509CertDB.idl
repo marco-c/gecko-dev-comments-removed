@@ -316,12 +316,14 @@ interface nsIX509CertDB : nsISupports {
 
 
 
+
   [must_use]
   void asyncVerifyCertAtTime(in nsIX509Cert aCert,
                              in nsIX509CertDB_VerifyUsage aUsage,
                              in uint32_t aFlags,
                              in ACString aHostname,
                              in uint64_t aTime,
+                             in Array<uint8_t> aSctsFromTls,
                              in nsICertVerificationCallback aCallback);
 
   
