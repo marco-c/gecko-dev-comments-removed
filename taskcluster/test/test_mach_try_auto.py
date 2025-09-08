@@ -17,7 +17,7 @@ PARAMS.update(
         ],
         "head_repository": "https://hg.mozilla.org/try",
         "project": "try",
-        "target_kind": "test",
+        "target_kind": "mochitest",
         
         
         
@@ -41,7 +41,7 @@ def test_only_important_manifests(params, full_task_graph, filter_tasks):
     }
 
     
-    for task in filter_tasks(full_task_graph, lambda t: t.kind == "test"):
+    for task in filter_tasks(full_task_graph, lambda t: t.kind == "mochitest"):
         attr = task.attributes.get
 
         if "test_manifests" in task.attributes:
@@ -61,7 +61,7 @@ def test_only_important_manifests(params, full_task_graph, filter_tasks):
     (
         pytest.param(
             lambda t: (
-                t.kind == "test"
+                t.kind == "mochitest"
                 and t.attributes["unittest_suite"] == "mochitest-browser-chrome"
             ),
             5,
