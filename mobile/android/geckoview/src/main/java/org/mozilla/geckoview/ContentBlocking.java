@@ -75,6 +75,17 @@ public class ContentBlocking {
           .build();
 
   
+  public static final SafeBrowsingProvider GOOGLE_SAFE_BROWSING_V5_PROVIDER =
+      SafeBrowsingProvider.withName("google5")
+          .lists("")
+          .updateUrl(
+              "https://safebrowsing.googleapis.com/v5/hashLists:batchGet?key=%GOOGLE_SAFEBROWSING_API_KEY%")
+          .getHashUrl(
+              "https://safebrowsing.googleapis.com/v5/hashes:search?key=%GOOGLE_SAFEBROWSING_API_KEY%")
+          .enabled(false)
+          .build();
+
+  
   protected ContentBlocking() {}
 
   
@@ -84,7 +95,8 @@ public class ContentBlocking {
 
     private static final SafeBrowsingProvider[] DEFAULT_PROVIDERS = {
       ContentBlocking.GOOGLE_LEGACY_SAFE_BROWSING_PROVIDER,
-      ContentBlocking.GOOGLE_SAFE_BROWSING_PROVIDER
+      ContentBlocking.GOOGLE_SAFE_BROWSING_PROVIDER,
+      ContentBlocking.GOOGLE_SAFE_BROWSING_V5_PROVIDER
     };
 
     
@@ -563,6 +575,7 @@ public class ContentBlocking {
     }
 
     
+
 
 
 
@@ -1208,6 +1221,8 @@ public class ContentBlocking {
 
 
 
+
+
   @AnyThread
   public static class SafeBrowsingProvider extends RuntimeSettings {
     private static final String ROOT = "browser.safebrowsing.provider.";
@@ -1225,6 +1240,7 @@ public class ContentBlocking {
      final Pref<String> mAdvisoryName;
      final Pref<String> mDataSharingUrl;
      final Pref<Boolean> mDataSharingEnabled;
+     final Pref<Boolean> mEnabled;
 
     
 
@@ -1411,6 +1427,17 @@ public class ContentBlocking {
 
 
 
+
+      public @NonNull Builder enabled(final boolean enabled) {
+        mProvider.mEnabled.set(enabled);
+        return this;
+      }
+
+      
+
+
+
+
       public @NonNull SafeBrowsingProvider build() {
         return new SafeBrowsingProvider(mProvider);
       }
@@ -1452,6 +1479,7 @@ public class ContentBlocking {
       mAdvisoryName = new Pref<>(ROOT + mName + ".advisoryName", null);
       mDataSharingUrl = new Pref<>(ROOT + mName + ".dataSharingURL", null);
       mDataSharingEnabled = new Pref<>(ROOT + mName + ".dataSharing.enabled", false);
+      mEnabled = new Pref<>(ROOT + mName + ".enabled", false);
 
       if (source != null) {
         updatePrefs(source);
@@ -1576,6 +1604,15 @@ public class ContentBlocking {
 
     public @Nullable Boolean getDataSharingEnabled() {
       return mDataSharingEnabled.get();
+    }
+
+    
+
+
+
+
+    public @Nullable Boolean getEnabled() {
+      return mEnabled.get();
     }
 
     @Override 
