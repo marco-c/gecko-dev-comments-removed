@@ -1558,9 +1558,6 @@ CanvasTranslator::MaybeRecycleDataSurfaceForSurfaceDescriptor(
     return do_AddRef(usedWrapper);
   }
 
-  usedWrapper = nullptr;
-  usedDescriptor = Some(aSurfaceDescriptor);
-
   bool isYuvVideo = false;
   if (aTextureHost->AsMacIOSurfaceTextureHost()) {
     if (aTextureHost->GetFormat() == SurfaceFormat::NV12 ||
@@ -1571,24 +1568,22 @@ CanvasTranslator::MaybeRecycleDataSurfaceForSurfaceDescriptor(
     isYuvVideo = true;
   }
 
-  if (isYuvVideo && usedSurf && usedSurf->refCount() == 1 &&
-      usedSurf->GetFormat() == gfx::SurfaceFormat::B8G8R8X8 &&
-      aTextureHost->GetSize() == usedSurf->GetSize()) {
-    
-    
-    usedSurf = aTextureHost->GetAsSurface(usedSurf);
-    
-    
-    usedWrapper =
-        new gfx::DataSourceSurfaceWrapper(mUsedDataSurfaceForSurfaceDescriptor);
-    return do_AddRef(usedWrapper);
+  
+  
+  bool reuseSurface = isYuvVideo && usedSurf && usedSurf->refCount() == 1 &&
+                      usedSurf->GetFormat() == gfx::SurfaceFormat::B8G8R8X8 &&
+                      aTextureHost->GetSize() == usedSurf->GetSize();
+  usedSurf =
+      aTextureHost->GetAsSurface(reuseSurface ? usedSurf.get() : nullptr);
+  if (NS_WARN_IF(!usedSurf)) {
+    usedWrapper = nullptr;
+    usedDescriptor = Nothing();
+    return nullptr;
   }
-
-  usedSurf = aTextureHost->GetAsSurface(nullptr);
   
   
-  usedWrapper =
-      new gfx::DataSourceSurfaceWrapper(mUsedDataSurfaceForSurfaceDescriptor);
+  usedDescriptor = Some(aSurfaceDescriptor);
+  usedWrapper = new gfx::DataSourceSurfaceWrapper(usedSurf);
   return do_AddRef(usedWrapper);
 }
 
