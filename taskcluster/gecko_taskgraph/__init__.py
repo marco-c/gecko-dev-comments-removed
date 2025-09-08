@@ -16,6 +16,7 @@ from taskgraph.util import taskcluster as tc_util
 from gecko_taskgraph.config import graph_config_schema
 
 GECKO = os.path.normpath(os.path.realpath(os.path.join(__file__, "..", "..", "..")))
+TEST_CONFIGS = os.path.join(GECKO, "taskcluster", "test_configs")
 
 
 taskgraph_config.graph_config_schema = graph_config_schema
