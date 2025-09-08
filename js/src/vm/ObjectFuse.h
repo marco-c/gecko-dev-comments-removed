@@ -12,6 +12,7 @@
 
 #include "gc/Barrier.h"
 #include "jit/InvalidationScriptSet.h"
+#include "jit/JitOptions.h"
 #include "js/SweepingAPI.h"
 #include "vm/PropertyInfo.h"
 
@@ -279,6 +280,14 @@ class ObjectFuseMap {
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 };
+
+
+
+
+
+inline bool ShouldUseObjectFuses() {
+  return jit::IsBaselineInterpreterEnabled();
+}
 
 }  
 
