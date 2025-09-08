@@ -47,13 +47,12 @@
 #include "mozilla/DebugOnly.h"                
 #include "mozilla/EditorSpellCheck.h"         
 #include "mozilla/Encoding.h"  
-#include "mozilla/EventDispatcher.h"     
-#include "mozilla/FlushType.h"           
-#include "mozilla/IMEContentObserver.h"  
-#include "mozilla/IMEStateManager.h"     
-#include "mozilla/InputEventOptions.h"   
-#include "mozilla/IntegerRange.h"        
-#include "mozilla/InternalMutationEvent.h"  
+#include "mozilla/EventDispatcher.h"        
+#include "mozilla/FlushType.h"              
+#include "mozilla/IMEContentObserver.h"     
+#include "mozilla/IMEStateManager.h"        
+#include "mozilla/InputEventOptions.h"      
+#include "mozilla/IntegerRange.h"           
 #include "mozilla/Logging.h"                
 #include "mozilla/mozalloc.h"               
 #include "mozilla/mozInlineSpellChecker.h"  
@@ -3435,59 +3434,15 @@ Result<InsertTextResult, nsresult> EditorBase::InsertTextWithTransaction(
                           EditorDOMPoint::AtEndOf(*newTextNode));
 }
 
-static bool TextFragmentBeginsWithStringAtOffset(
-    const CharacterDataBuffer& aCharacterDataBuffer, const uint32_t aOffset,
-    const nsAString& aString) {
-  const uint32_t stringLength = aString.Length();
-
-  if (aOffset + stringLength > aCharacterDataBuffer.GetLength()) {
-    return false;
-  }
-
-  if (aCharacterDataBuffer.Is2b()) {
-    return aString.Equals(aCharacterDataBuffer.Get2b() + aOffset);
-  }
-
-  return aString.EqualsLatin1(aCharacterDataBuffer.Get1b() + aOffset,
-                              stringLength);
-}
-
-static std::tuple<EditorDOMPointInText, EditorDOMPointInText>
-AdjustTextInsertionRange(const EditorDOMPointInText& aInsertedPoint,
-                         const nsAString& aInsertedString) {
-  if (TextFragmentBeginsWithStringAtOffset(
-          aInsertedPoint.ContainerAs<Text>()->DataBuffer(),
-          aInsertedPoint.Offset(), aInsertedString)) {
-    return {aInsertedPoint,
-            EditorDOMPointInText(
-                aInsertedPoint.ContainerAs<Text>(),
-                aInsertedPoint.Offset() + aInsertedString.Length())};
-  }
-
-  return {EditorDOMPointInText(aInsertedPoint.ContainerAs<Text>(), 0),
-          EditorDOMPointInText::AtEndOf(*aInsertedPoint.ContainerAs<Text>())};
-}
-
 std::tuple<EditorDOMPointInText, EditorDOMPointInText>
 EditorBase::ComputeInsertedRange(const EditorDOMPointInText& aInsertedPoint,
                                  const nsAString& aInsertedString) const {
   MOZ_ASSERT(aInsertedPoint.IsSet());
 
-  
-  
-  
-  if (!MayHaveMutationEventListeners(
-          NS_EVENT_BITS_MUTATION_CHARACTERDATAMODIFIED)) {
-    EditorDOMPointInText endOfInsertion(
-        aInsertedPoint.ContainerAs<Text>(),
-        aInsertedPoint.Offset() + aInsertedString.Length());
-    return {aInsertedPoint, endOfInsertion};
-  }
-  if (aInsertedPoint.ContainerAs<Text>()->IsInComposedDoc()) {
-    EditorDOMPointInText begin, end;
-    return AdjustTextInsertionRange(aInsertedPoint, aInsertedString);
-  }
-  return {EditorDOMPointInText(), EditorDOMPointInText()};
+  EditorDOMPointInText endOfInsertion(
+      aInsertedPoint.ContainerAs<Text>(),
+      aInsertedPoint.Offset() + aInsertedString.Length());
+  return {aInsertedPoint, endOfInsertion};
 }
 
 Result<InsertTextResult, nsresult>

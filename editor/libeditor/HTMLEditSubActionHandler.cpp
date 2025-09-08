@@ -2479,12 +2479,6 @@ HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
           break;  
         }
       }
-      if (MayHaveMutationEventListeners(
-              NS_EVENT_BITS_MUTATION_CHARACTERDATAMODIFIED) &&
-          (NS_WARN_IF(!trackingEndToDelete.IsSetAndValid()) ||
-           NS_WARN_IF(!trackingEndToDelete.IsInTextNode()))) {
-        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-      }
       MOZ_ASSERT(trackingEndToDelete.IsInTextNode());
       endToDelete.Set(trackingEndToDelete.ContainerAs<Text>(),
                       trackingEndToDelete.Offset());
@@ -2492,11 +2486,6 @@ HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
       
       startToDelete =
           EditorDOMPointInText::AtEndOf(*startToDelete.ContainerAs<Text>());
-      if (MayHaveMutationEventListeners(
-              NS_EVENT_BITS_MUTATION_CHARACTERDATAMODIFIED) &&
-          NS_WARN_IF(!startToDelete.IsBefore(endToDelete))) {
-        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-      }
     }
     
     
@@ -2533,7 +2522,6 @@ HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
           break;  
         }
         if (MayHaveMutationEventListeners(
-                NS_EVENT_BITS_MUTATION_CHARACTERDATAMODIFIED |
                 NS_EVENT_BITS_MUTATION_NODEREMOVED |
                 NS_EVENT_BITS_MUTATION_NODEREMOVEDFROMDOCUMENT |
                 NS_EVENT_BITS_MUTATION_SUBTREEMODIFIED) &&
