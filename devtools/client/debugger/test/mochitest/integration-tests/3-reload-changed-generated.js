@@ -136,6 +136,8 @@ addIntegrationTask(async function testReloadingChangedGeneratedSource(
     
     assertNotPaused(dbg);
   }
+
+  await selectSource(dbg, "original-with-no-update.js");
   await waitForBreakpoint(dbg, "original-with-no-update.js", 6);
   await assertBreakpoint(dbg, 6);
 

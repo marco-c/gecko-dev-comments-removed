@@ -8,13 +8,12 @@
 
 import { selectSource } from "./sources/index";
 
-import { getSelectedLocation, getSourcesForTabs } from "../selectors/index";
+import { getSelectedLocation, getOpenedSources } from "../selectors/index";
 
-export function addTab(source, sourceActor) {
+export function addTab(source) {
   return {
     type: "ADD_TAB",
     source,
-    sourceActor,
   };
 }
 
@@ -34,11 +33,13 @@ export function moveTabBySourceId(sourceId, tabIndex) {
   };
 }
 
-export function closeTab(source) {
-  return closeTabs([source]);
+export function closeTabForSource(source) {
+  return ({ dispatch }) => {
+    dispatch(closeTabsForSources([source]));
+  };
 }
 
-export function closeTabs(sources) {
+export function closeTabsForSources(sources) {
   return ({ dispatch, getState }) => {
     if (!sources.length) {
       return;
@@ -48,7 +49,7 @@ export function closeTabs(sources) {
     
     const newSourceToSelect = getNewSourceToSelect(getState(), sources);
 
-    dispatch({ type: "CLOSE_TABS", sources });
+    dispatch({ type: "CLOSE_TABS_FOR_SOURCES", sources });
 
     dispatch(selectSource(newSourceToSelect));
   };
@@ -63,35 +64,44 @@ export function closeTabs(sources) {
 
 
 
-function getNewSourceToSelect(state, closedTabsSources) {
+function getNewSourceToSelect(state, closedSources) {
   const selectedLocation = getSelectedLocation(state);
   
   if (!selectedLocation) {
     return null;
   }
+  let selectedSource = selectedLocation.source;
+
   
-  if (!closedTabsSources.includes(selectedLocation.source)) {
-    return selectedLocation.source;
-  }
-  const tabsSources = getSourcesForTabs(state);
-  
-  
-  const lastRemovedTabSource = closedTabsSources.at(-1);
-  const lastRemovedTabIndex = tabsSources.indexOf(lastRemovedTabSource);
-  if (lastRemovedTabIndex == -1) {
-    
-    return null;
-  }
-  
-  if (lastRemovedTabIndex + 1 < tabsSources.length) {
-    return tabsSources[lastRemovedTabIndex + 1];
+  if (selectedSource.isPrettyPrinted) {
+    selectedSource = selectedSource.generatedSource;
   }
 
   
-  const firstRemovedTabIndex =
-    lastRemovedTabIndex - (closedTabsSources.length - 1);
-  if (firstRemovedTabIndex > 0) {
-    return tabsSources[firstRemovedTabIndex - 1];
+  if (!closedSources.includes(selectedSource)) {
+    return selectedSource;
+  }
+  const openedSources = getOpenedSources(state);
+  const selectedSourceIndex = openedSources.indexOf(selectedSource);
+
+  
+  for (
+    let index = selectedSourceIndex + 1;
+    index < openedSources.length;
+    index++
+  ) {
+    const source = openedSources[index];
+    if (!closedSources.includes(source)) {
+      return source;
+    }
+  }
+
+  
+  for (let index = selectedSourceIndex - 1; index >= 0; index--) {
+    const source = openedSources[index];
+    if (!closedSources.includes(source)) {
+      return source;
+    }
   }
 
   

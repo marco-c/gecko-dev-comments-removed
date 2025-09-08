@@ -12,24 +12,28 @@
 
 
 
-export function getHiddenTabs(sourceTabs, sourceTabEls) {
-  sourceTabEls = [].slice.call(sourceTabEls);
+export function getHiddenTabsSources(openedSources, sourceTabEls) {
+  sourceTabEls = Array.from(sourceTabEls);
   function getTopOffset() {
     const topOffsets = sourceTabEls.map(t => t.getBoundingClientRect().top);
     return Math.min(...topOffsets);
   }
+  const tabTopOffset = getTopOffset();
 
   function hasTopOffset(el) {
     
     
-    const tabTopOffset = getTopOffset();
     return el.getBoundingClientRect().top > tabTopOffset + 10;
   }
 
-  return sourceTabs.filter((tab, index) => {
-    const element = sourceTabEls[index];
-    return element && hasTopOffset(element);
-  });
+  const hiddenSources = [];
+  for (let i = 0; i < openedSources.length; i++) {
+    const element = sourceTabEls[i];
+    if (element && hasTopOffset(element)) {
+      hiddenSources.push(openedSources[i]);
+    }
+  }
+  return hiddenSources;
 }
 
 export function getTabMenuItems() {
@@ -89,33 +93,4 @@ export function getTabMenuItems() {
       disabled: false,
     },
   };
-}
-
-
-
-
-
-
-
-
-export function isSimilarTab(tab, url, isOriginal) {
-  return tab.url === url && tab.isOriginal === isOriginal;
-}
-
-
-
-
-
-
-
-
-
-export function persistTabs(tabs) {
-  return [...tabs]
-    .filter(tab => tab.url)
-    .map(tab => ({
-      ...tab,
-      source: null,
-      sourceActor: null,
-    }));
 }

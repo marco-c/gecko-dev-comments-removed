@@ -7,7 +7,7 @@
 
 
 import { prettyPrintSource, prettyPrintAndSelectSource } from "./prettyPrint";
-import { addTab, closeTab } from "../tabs";
+import { addTab, closeTabForSource } from "../tabs";
 import { loadSourceText } from "./loadSourceText";
 import { setBreakableLines } from "./breakableLines";
 
@@ -31,7 +31,7 @@ import {
   tabExists,
   hasSource,
   hasSourceActor,
-  hasPrettyTab,
+  isPrettyPrinted,
   isSourceActorWithSourceMap,
 } from "../../selectors/index";
 
@@ -99,9 +99,12 @@ export function selectSourceURL(url, options) {
 
 export function selectMayBePrettyPrintedLocation(location) {
   return async ({ dispatch, getState }) => {
-    const prettySource = getPrettySource(getState(), location.source.id);
-    if (prettySource) {
-      location = createLocation({ source: prettySource });
+    const sourceIsPrettyPrinted = isPrettyPrinted(getState(), location.source);
+    if (sourceIsPrettyPrinted) {
+      const prettySource = getPrettySource(getState(), location.source.id);
+      if (prettySource) {
+        location = createLocation({ source: prettySource });
+      }
     }
     await dispatch(selectSpecificLocation(location));
   };
@@ -145,6 +148,7 @@ export function selectSource(source, sourceActor) {
 
 async function mayBeSelectMappedSource(location, keepContext, thunkArgs) {
   const { getState, dispatch } = thunkArgs;
+
   
   
   
@@ -155,20 +159,38 @@ async function mayBeSelectMappedSource(location, keepContext, thunkArgs) {
   
   let shouldSelectOriginalLocation =
     getShouldSelectOriginalLocation(getState());
-  if (keepContext) {
+
+  
+  
+  
+  
+  
+  const sourceIsPrettyPrinted = isPrettyPrinted(getState(), location.source);
+  if (!location.source.isOriginal && sourceIsPrettyPrinted) {
     
     
-    const sourceHasPrettyTab = hasPrettyTab(getState(), location.source);
-    if (
-      !location.source.isOriginal &&
-      shouldSelectOriginalLocation &&
-      sourceHasPrettyTab
-    ) {
-      
-      
-      
-      await dispatch(prettyPrintSource(location.source));
+    
+    const prettyPrintedSource = await dispatch(
+      prettyPrintSource(location.source)
+    );
+    
+    
+    if (location.line == 0 && !location.column) {
+      return {
+        shouldSelectOriginalLocation,
+        newLocation: createLocation({
+          ...location,
+          source: prettyPrintedSource,
+          line: 1,
+          column: 0,
+        }),
+      };
     }
+    location = await getRelatedMapLocation(location, thunkArgs);
+    return { shouldSelectOriginalLocation, newLocation: location };
+  }
+
+  if (keepContext) {
     if (shouldSelectOriginalLocation != location.source.isOriginal) {
       
       
@@ -177,7 +199,7 @@ async function mayBeSelectMappedSource(location, keepContext, thunkArgs) {
       if (
         location.source.isOriginal ||
         isSourceActorWithSourceMap(getState(), location.sourceActor.id) ||
-        sourceHasPrettyTab
+        sourceIsPrettyPrinted
       ) {
         
         
@@ -276,8 +298,8 @@ export function selectLocation(
       location = createLocation({ ...location, sourceActor });
     }
 
-    if (!tabExists(getState(), source.id)) {
-      dispatch(addTab(source, sourceActor));
+    if (!tabExists(getState(), source)) {
+      dispatch(addTab(source));
     }
     dispatch(
       setSelectedLocation(
@@ -319,7 +341,7 @@ export function selectLocation(
       isMinified(source, sourceTextContent)
     ) {
       await dispatch(prettyPrintAndSelectSource(loadedSource));
-      dispatch(closeTab(loadedSource));
+      dispatch(closeTabForSource(loadedSource));
     }
 
     

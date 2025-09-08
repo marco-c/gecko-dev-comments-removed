@@ -2,30 +2,20 @@
 
 
 
-import { createSelector } from "devtools/client/shared/vendor/reselect";
-import { getPrettySourceURL } from "../utils/source";
-
-import { getSpecificSourceByURL } from "./sources";
-import { isSimilarTab } from "../utils/tabs";
-
-export const getTabs = state => state.tabs.tabs;
+export const getOpenedURLs = state => state.tabs.urls;
 
 
-export const getSourceTabs = createSelector(getTabs, tabs =>
-  tabs.filter(tab => tab.source)
-);
 
-export const getSourcesForTabs = createSelector(getSourceTabs, sourceTabs => {
-  return sourceTabs.map(tab => tab.source);
-});
+export const getOpenedSources = state => state.tabs.openedSources;
 
-export function tabExists(state, sourceId) {
-  return !!getSourceTabs(state).find(tab => tab.source.id == sourceId);
-}
+export const getPrettyPrintedURLs = state => state.tabs.prettyPrintedURLs;
 
-export function hasPrettyTab(state, source) {
-  const prettyUrl = getPrettySourceURL(source.url);
-  return getTabs(state).some(tab => tab.url === prettyUrl);
+export function tabExists(state, source) {
+  
+  
+  return getOpenedSources(state).some(
+    s => s == (source.isPrettyPrinted ? source.generatedSource : source)
+  );
 }
 
 
@@ -34,56 +24,6 @@ export function hasPrettyTab(state, source) {
 
 
 
-export function getNewSelectedSource(state, tabList) {
-  const { selectedLocation } = state.sources;
-  const availableTabs = getTabs(state);
-  if (!selectedLocation) {
-    return null;
-  }
-
-  const selectedSource = selectedLocation.source;
-  if (!selectedSource) {
-    return null;
-  }
-
-  const matchingTab = availableTabs.find(tab =>
-    isSimilarTab(tab, selectedSource.url, selectedSource.isOriginal)
-  );
-
-  if (matchingTab) {
-    const specificSelectedSource = getSpecificSourceByURL(
-      state,
-      selectedSource.url,
-      selectedSource.isOriginal
-    );
-
-    if (specificSelectedSource) {
-      return specificSelectedSource;
-    }
-
-    return null;
-  }
-
-  const tabUrls = tabList.map(tab => tab.url);
-  const leftNeighborIndex = Math.max(
-    tabUrls.indexOf(selectedSource.url) - 1,
-    0
-  );
-  const lastAvailbleTabIndex = availableTabs.length - 1;
-  const newSelectedTabIndex = Math.min(leftNeighborIndex, lastAvailbleTabIndex);
-  const availableTab = availableTabs[newSelectedTabIndex];
-
-  if (availableTab) {
-    const tabSource = getSpecificSourceByURL(
-      state,
-      availableTab.url,
-      availableTab.isOriginal
-    );
-
-    if (tabSource) {
-      return tabSource;
-    }
-  }
-
-  return null;
+export function isPrettyPrinted(state, source) {
+  return source.url && state.tabs.prettyPrintedURLs.has(source.url);
 }

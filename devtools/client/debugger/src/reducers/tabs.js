@@ -6,39 +6,65 @@
 
 
 
+export function initialTabState({ urls = [], prettyPrintedURLs = [] } = {}) {
+  return {
+    
+    
+    
+    
+    
+    
+    urls,
 
-import { isSimilarTab } from "../utils/tabs";
+    
+    
+    
+    
+    prettyPrintedURLs,
 
-export function initialTabState() {
-  return { tabs: [] };
+    
+    
+    
+    
+    openedSources: [],
+  };
 }
 
 function update(state = initialTabState(), action) {
   switch (action.type) {
     case "ADD_TAB":
-      return updateTabList(state, action.source, action.sourceActor);
+      return updateTabsWithNewActiveSource(state, [action.source], true);
 
     case "MOVE_TAB":
-      return moveTabInList(state, action);
+      return moveTabInList(state, action.url, action.tabIndex);
 
     case "MOVE_TAB_BY_SOURCE_ID":
-      return moveTabInListBySourceId(state, action);
+      return moveTabInListBySourceId(state, action.sourceId, action.tabIndex);
 
-    case "CLOSE_TABS":
-      return removeSourcesFromTabList(state, action);
+    case "CLOSE_TABS_FOR_SOURCES":
+      return closeTabsForSources(state, action.sources, true);
 
-    case "ADD_ORIGINAL_SOURCES":
-      return addVisibleTabsForOriginalSources(
+    case "ADD_ORIGINAL_SOURCES": {
+      return updateTabsWithNewActiveSource(
         state,
         action.originalSources,
-        action.generatedSourceActor
+        false
       );
+    }
 
-    case "INSERT_SOURCE_ACTORS":
-      return addVisibleTabsForSourceActors(state, action.sourceActors);
+    case "INSERT_SOURCE_ACTORS": {
+      const sources = action.sourceActors.map(
+        sourceActor => sourceActor.sourceObject
+      );
+      return updateTabsWithNewActiveSource(state, sources, false);
+    }
 
-    case "REMOVE_THREAD": {
-      return resetTabsForThread(state, action.threadActorID);
+    case "REMOVE_SOURCES": {
+      return closeTabsForSources(state, action.sources, false);
+    }
+
+    case "REMOVE_PRETTY_PRINTED_SOURCE": {
+      return removePrettyPrintedSource(state, action.source);
     }
 
     default:
@@ -46,155 +72,198 @@ function update(state = initialTabState(), action) {
   }
 }
 
-function matchesSource(tab, source) {
-  return tab.source?.id === source.id || matchesUrl(tab, source);
-}
 
-function matchesUrl(tab, source) {
-  return (
-    source.url && tab.url === source.url && tab.isOriginal == source.isOriginal
-  );
-}
 
-function addVisibleTabsForSourceActors(state, sourceActors) {
-  let changed = false;
-  
-  
-  
-  const tabs = state.tabs.map(tab => {
-    const sourceActor = sourceActors.find(actor =>
-      matchesUrl(tab, actor.sourceObject)
-    );
-    if (!sourceActor) {
-      return tab;
-    }
-    changed = true;
-    return {
-      ...tab,
-      source: sourceActor.sourceObject,
-      sourceActor,
-    };
-  });
 
-  return changed ? { tabs } : state;
-}
-
-function addVisibleTabsForOriginalSources(
-  state,
-  sources,
-  generatedSourceActor
-) {
-  let changed = false;
-
-  
-  
-  
-  const tabs = state.tabs.map(tab => {
-    const source = sources.find(s => matchesUrl(tab, s));
-    if (!source) {
-      return tab;
-    }
-    changed = true;
-    return {
-      ...tab,
-      source,
-      
-      sourceActor: generatedSourceActor,
-    };
-  });
-
-  return changed ? { tabs } : state;
-}
-
-function removeSourcesFromTabList(state, { sources }) {
-  const newTabs = sources.reduce(
-    (tabList, source) => tabList.filter(tab => !matchesSource(tab, source)),
-    state.tabs
-  );
-  if (newTabs.length == state.tabs.length) {
-    return state;
-  }
-
-  return { tabs: newTabs };
-}
-
-function resetTabsForThread(state, threadActorID) {
-  let changed = false;
-  
-  
-  
-  
-  
-  const tabs = state.tabs.map(tab => {
-    if (tab.sourceActor?.thread != threadActorID) {
-      return tab;
-    }
-    changed = true;
-    return {
-      ...tab,
-      source: null,
-      sourceActor: null,
-    };
-  });
-
-  return changed ? { tabs } : state;
+function removePrettyPrintedSource(state, source) {
+  const prettyPrintedURLs = new Set(state.prettyPrintedURLs);
+  prettyPrintedURLs.delete(source.generatedSource.url);
+  return { ...state, prettyPrintedURLs };
 }
 
 
 
 
-function updateTabList(state, source, sourceActor) {
-  const { url } = source;
-  const isOriginal = source.isOriginal;
 
-  let { tabs } = state;
-  
-  
-  const currentIndex = url
-    ? tabs.findIndex(tab => isSimilarTab(tab, url, isOriginal))
-    : -1;
 
-  if (currentIndex === -1) {
-    const newTab = {
-      url,
-      source,
-      isOriginal,
-      sourceActor,
-    };
+
+
+
+
+
+
+
+
+
+function updateTabsWithNewActiveSource(state, sources, forceAdding = false) {
+  let { urls, openedSources, prettyPrintedURLs } = state;
+  for (let source of sources) {
     
-    tabs = [newTab, ...tabs];
-  } else {
+    
+    
+    
+    if (source.isPrettyPrinted) {
+      source = source.generatedSource;
+
+      
+      if (state.prettyPrintedURLs == prettyPrintedURLs) {
+        prettyPrintedURLs = new Set(prettyPrintedURLs);
+      }
+      prettyPrintedURLs.add(source.url);
+    }
+
+    const { url } = source;
+    
+    
+    
+    
+    
+    if (
+      openedSources.includes(source) ||
+      (!forceAdding && (!url || !urls.includes(url)))
+    ) {
+      continue;
+    }
+
+    
+    if (openedSources === state.openedSources) {
+      openedSources = [...openedSources];
+    }
+
+    let index = -1;
+    if (url) {
+      if (!urls.includes(url)) {
+        
+        if (urls === state.urls) {
+          urls = [...state.urls];
+        }
+        
+        urls.unshift(url);
+      } else {
+        
+        
+        
+        const indexInUrls = urls.indexOf(url);
+        for (let i = indexInUrls - 1; i >= 0; i--) {
+          const previousSourceUrl = urls[i];
+          index = openedSources.findIndex(s => s.url === previousSourceUrl);
+          if (index != -1) {
+            break;
+          }
+        }
+      }
+    }
+
+    if (index == -1) {
+      
+      openedSources.unshift(source);
+    } else {
+      
+      
+      openedSources.splice(index + 1, 0, source);
+    }
+  }
+
+  if (
+    openedSources != state.openedSources ||
+    urls != state.urls ||
+    prettyPrintedURLs != state.prettyPrintedURLs
+  ) {
+    return { ...state, urls, openedSources, prettyPrintedURLs };
+  }
+  return state;
+}
+
+function closeTabsForSources(state, sources, permanent = false) {
+  if (!sources.length) {
+    return state;
+  }
+  
+  const tabSources = sources.map(s =>
+    s.isPrettyPrinted ? s.generatedSource : s
+  );
+
+  const newOpenedSources = state.openedSources.filter(source => {
+    return !tabSources.includes(source);
+  });
+
+  
+  if (newOpenedSources.length == state.openedSources.length) {
     return state;
   }
 
-  return { ...state, tabs };
+  
+  
+  let { urls, prettyPrintedURLs } = state;
+  if (permanent) {
+    const sourceURLs = tabSources.map(source => source.url);
+    urls = state.urls.filter(url => !sourceURLs.includes(url));
+
+    
+    
+    
+    prettyPrintedURLs = new Set(state.prettyPrintedURLs);
+    for (const url of sourceURLs) {
+      prettyPrintedURLs.delete(url);
+    }
+  }
+  return { ...state, urls, prettyPrintedURLs, openedSources: newOpenedSources };
 }
 
-function moveTabInList(state, { url, tabIndex: newIndex }) {
-  const currentIndex = state.tabs.findIndex(tab => tab.url == url);
+function moveTabInList(state, url, newIndex) {
+  const currentIndex = state.openedSources.findIndex(
+    source => source.url == url
+  );
   return moveTab(state, currentIndex, newIndex);
 }
 
-function moveTabInListBySourceId(state, { sourceId, tabIndex: newIndex }) {
-  const currentIndex = state.tabs.findIndex(tab => tab.source?.id == sourceId);
+function moveTabInListBySourceId(state, sourceId, newIndex) {
+  const currentIndex = state.openedSources.findIndex(
+    source => source.id == sourceId
+  );
   return moveTab(state, currentIndex, newIndex);
 }
 
 function moveTab(state, currentIndex, newIndex) {
-  const { tabs } = state;
-  const item = tabs[currentIndex];
   
   if (currentIndex == newIndex || isNaN(newIndex)) {
     return state;
   }
 
-  const newTabs = Array.from(tabs);
-  
-  newTabs.splice(currentIndex, 1);
-  
-  newTabs.splice(newIndex, 0, item);
+  const { openedSources } = state;
+  const source = openedSources[currentIndex];
 
-  return { tabs: newTabs };
+  const newOpenedSources = Array.from(openedSources);
+  
+  newOpenedSources.splice(currentIndex, 1);
+  
+  newOpenedSources.splice(newIndex, 0, source);
+
+  
+  let newUrls = state.urls;
+  const { url } = source;
+  if (url) {
+    const urlIndex = state.urls.indexOf(url);
+    let newUrlIndex = 0;
+    
+    
+    for (let i = newIndex; i >= 0; i--) {
+      const previousTabUrl = newOpenedSources[i].url;
+      if (previousTabUrl) {
+        newUrlIndex = state.urls.indexOf(previousTabUrl);
+        break;
+      }
+    }
+    if (urlIndex != -1 && newUrlIndex != -1) {
+      newUrls = Array.from(state.urls);
+      
+      newUrls.splice(urlIndex, 1);
+      
+      newUrls.splice(newUrlIndex, 0, url);
+    }
+  }
+
+  return { ...state, urls: newUrls, openedSources: newOpenedSources };
 }
 
 export default update;
