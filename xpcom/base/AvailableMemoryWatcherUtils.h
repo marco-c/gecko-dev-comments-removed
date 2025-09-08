@@ -18,7 +18,7 @@ struct MemoryInfo {
 };
 
 
-MOZ_MAYBE_UNUSED
+[[maybe_unused]]
 static nsresult ReadMemoryFile(const char* meminfoPath, MemoryInfo& aResult) {
   FILE* fd;
   if ((fd = fopen(meminfoPath, "r")) == nullptr) {
