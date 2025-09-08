@@ -9,7 +9,7 @@ ChromeUtils.defineESModuleGetters(this, {
   Utils: "resource://services-settings/Utils.sys.mjs",
   reducers: "resource://newtab/common/Reducers.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
-  WallpaperFeed: "resource://newtab/lib/WallpaperFeed.sys.mjs",
+  WallpaperFeed: "resource://newtab/lib/Wallpapers/WallpaperFeed.sys.mjs",
 });
 
 const PREF_WALLPAPERS_ENABLED =
@@ -128,7 +128,7 @@ add_task(async function test_onAction_WALLPAPER_UPLOAD() {
 
   feed.onAction({
     type: actionTypes.WALLPAPER_UPLOAD,
-    data: fileData,
+    data: { file: fileData },
   });
 
   Assert.ok(feed.wallpaperUpload.calledOnce);
@@ -147,6 +147,12 @@ add_task(async function test_Wallpaper_Upload() {
     "File uploaded via WallpaperFeed.wallpaperUpload should match the saved file"
   );
 
+  const fakeWorker = {
+    post: sandbox.stub().resolves("light"),
+    terminate: sandbox.stub(),
+  };
+
+  sandbox.stub(feed, "BasePromiseWorker").callsFake(() => fakeWorker);
   
   const testUploadContents = "custom-wallpaper-upload-test";
   const testFileName = "test-wallpaper.jpg";
@@ -179,6 +185,12 @@ add_task(async function test_Wallpaper_Upload() {
   
   Assert.equal(writtenUUID, storedUUID);
 
+  Assert.ok(
+    feed.store.dispatch.calledWith(
+      actionCreators.SetPref("newtabWallpapers.customWallpaper.theme", "light")
+    )
+  );
+
   
   await IOUtils.remove(testWallpaperFile);
   await IOUtils.remove(writtenFile);
@@ -194,6 +206,13 @@ add_task(async function test_Wallpaper_Upload() {
 add_task(async function test_Wallpaper_objectURI() {
   let sandbox = sinon.createSandbox();
   let feed = getWallpaperFeedForTest(sandbox);
+
+  const fakeWorker = {
+    post: sandbox.stub().resolves("light"),
+    terminate: sandbox.stub(),
+  };
+
+  sandbox.stub(feed, "BasePromiseWorker").callsFake(() => fakeWorker);
 
   
   
@@ -222,7 +241,7 @@ add_task(async function test_Wallpaper_objectURI() {
     feed.store.dispatch.calledWith(
       actionCreators.BroadcastToContent({
         type: actionTypes.WALLPAPERS_CUSTOM_SET,
-        data: sinon.match("blob:null/"),
+        data: sandbox.match("blob:null/"),
       })
     )
   );
