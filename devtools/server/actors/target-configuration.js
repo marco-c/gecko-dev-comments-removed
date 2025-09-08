@@ -476,7 +476,9 @@ class TargetConfigurationActor extends Actor {
 
 
   _setRDMPaneOrientation({ type, angle }) {
-    this._browsingContext.setRDMPaneOrientation(type, angle);
+    if (this._browsingContext.inRDMPane) {
+      this._browsingContext.setOrientationOverride(type, angle);
+    }
   }
 
   

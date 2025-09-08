@@ -717,8 +717,8 @@ class ResponsiveUI {
   }
 
   async onRotateViewport(event) {
-    const { orientationType: type, angle, isViewportRotated } = event.data;
-    await this.updateScreenOrientation(type, angle, isViewportRotated);
+    const { orientationType: type, angle } = event.data;
+    await this.updateScreenOrientation(type, angle);
   }
 
   async onScreenshot() {
@@ -954,20 +954,11 @@ class ResponsiveUI {
 
 
 
-
-
-
-
-
-
-  async updateScreenOrientation(type, angle, isViewportRotated = false) {
-    await this.commands.targetConfigurationCommand.simulateScreenOrientationChange(
-      {
-        type,
-        angle,
-        isViewportRotated,
-      }
-    );
+  async updateScreenOrientation(type, angle) {
+    
+    await this.commands.targetConfigurationCommand.updateConfiguration({
+      rdmPaneOrientation: { type, angle },
+    });
   }
 
   

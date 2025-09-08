@@ -69,17 +69,6 @@ class ResponsiveActor extends Actor {
   setElementPickerState(state, pickerType) {
     this.targetActor.touchSimulator.setElementPickerState(state, pickerType);
   }
-
-  
-
-
-
-  async dispatchOrientationChangeEvent() {
-    const { CustomEvent } = this.win;
-    const orientationChangeEvent = new CustomEvent("orientationchange");
-    this.win.dispatchEvent(orientationChangeEvent);
-    this.win.screen.orientation.dispatchEvent(new CustomEvent("change"));
-  }
 }
 
 exports.ResponsiveActor = ResponsiveActor;
