@@ -17,7 +17,7 @@ async function test() {
   ok(doc.querySelector(".cm-trailingspace"));
 
   
-  ed.setMode(Editor.modes.javascript);
+  ed.setMode(Editor.modes.js);
   ed.setText("function main() {\nreturn 'Hello, World!';\n}");
   executeSoon(() => testFold(doc, ed, win));
 }

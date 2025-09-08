@@ -165,9 +165,7 @@ class Editor extends EventEmitter {
     haxe: { name: "haxe" },
     http: { name: "http" },
     html: { name: "htmlmixed" },
-    xml: { name: "xml" },
-    javascript: { name: "javascript" },
-    json: { name: "json" },
+    js: { name: "javascript" },
     text: { name: "text" },
     vs: { name: "x-shader/x-vertex" },
     wasm: { name: "wasm" },
@@ -670,22 +668,11 @@ class Editor extends EventEmitter {
     if (!this.config.cm6) {
       return;
     }
-    const {
-      codemirrorLangJavascript,
-      codemirrorLangJson,
-      codemirrorLangHtml,
-      codemirrorLangXml,
-      codemirrorLangCss,
-    } = this.#CodeMirror6;
-
+    const { codemirrorLangJavascript } = this.#CodeMirror6;
     this.#languageModes.set(
-      Editor.modes.javascript,
+      Editor.modes.js.name,
       codemirrorLangJavascript.javascript()
     );
-    this.#languageModes.set(Editor.modes.json, codemirrorLangJson.json());
-    this.#languageModes.set(Editor.modes.html, codemirrorLangHtml.html());
-    this.#languageModes.set(Editor.modes.xml, codemirrorLangXml.xml());
-    this.#languageModes.set(Editor.modes.css, codemirrorLangCss.css());
   }
 
   
@@ -770,8 +757,8 @@ class Editor extends EventEmitter {
     this.#setupLanguageModes();
 
     const languageMode = [];
-    if (this.config.mode && this.#languageModes.has(this.config.mode)) {
-      languageMode.push(this.#languageModes.get(this.config.mode));
+    if (this.config.mode && this.#languageModes.has(this.config.mode.name)) {
+      languageMode.push(this.#languageModes.get(this.config.mode.name));
     }
 
     const extensions = [
@@ -2000,23 +1987,16 @@ class Editor extends EventEmitter {
 
 
 
-
-
-  setMode(mode) {
+  setMode(value) {
     if (this.config.cm6) {
       const cm = editors.get(this);
-      
-      const languageMode = this.#languageModes.has(mode)
-        ? this.#languageModes.get(mode)
-        : this.#languageModes.get(Editor.modes.javascript);
-
       return cm.dispatch({
         effects: this.#compartments.languageCompartment.reconfigure([
-          languageMode,
+          this.#languageModes.get(value),
         ]),
       });
     }
-    this.setOption("mode", mode);
+    this.setOption("mode", value);
 
     // If autocomplete was set up and the mode is changing, then
     // turn it off and back on again so the proper mode can be used.

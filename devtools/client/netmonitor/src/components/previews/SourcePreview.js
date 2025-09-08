@@ -23,7 +23,7 @@ class SourcePreview extends Component {
   static get propTypes() {
     return {
       
-      mimeType: PropTypes.string,
+      mode: PropTypes.string,
       
       text: PropTypes.string,
       
@@ -35,24 +35,24 @@ class SourcePreview extends Component {
   }
 
   componentDidMount() {
-    const { mimeType, text } = this.props;
-    this.loadEditor(mimeType, text);
+    const { mode, text } = this.props;
+    this.loadEditor(mode, text);
   }
 
   shouldComponentUpdate(nextProps) {
     return (
-      nextProps.mimeType !== this.props.mimeType ||
+      nextProps.mode !== this.props.mode ||
       nextProps.text !== this.props.text ||
       nextProps.targetSearchResult !== this.props.targetSearchResult
     );
   }
 
   componentDidUpdate(prevProps) {
-    const { mimeType, targetSearchResult, text } = this.props;
+    const { mode, targetSearchResult, text } = this.props;
 
     if (prevProps.text !== text) {
       
-      this.updateEditor(mimeType, text);
+      this.updateEditor(mode, text);
     } else if (prevProps.targetSearchResult !== targetSearchResult) {
       this.findSearchResult();
     }
@@ -62,12 +62,7 @@ class SourcePreview extends Component {
     this.unloadEditor();
   }
 
-  getSourceEditorModeForMimetype(mimeType) {
-    const lang = mimeType.split("/")[1];
-    return Editor.modes[lang];
-  }
-
-  loadEditor(mimeType, text) {
+  loadEditor(mode, text) {
     this.editor = new Editor({
       lineNumbers: true,
       lineWrapping: false,
@@ -87,14 +82,13 @@ class SourcePreview extends Component {
       
       this.editorSetModeTimeout = setTimeout(() => {
         this.editorSetModeTimeout = null;
-        const mode = this.getSourceEditorModeForMimetype(mimeType);
         this.editor.setMode(mode);
         this.findSearchResult();
       });
     });
   }
 
-  updateEditor(mimeType, text) {
+  updateEditor(mode, text) {
     
     
     if (this?.editor?.hasCodeMirror) {
@@ -111,7 +105,6 @@ class SourcePreview extends Component {
     
     this.editorSetModeTimeout = setTimeout(() => {
       this.editorSetModeTimeout = null;
-      const mode = this.getSourceEditorModeForMimetype(mimeType);
       this.editor.setMode(mode);
       this.findSearchResult();
     });
