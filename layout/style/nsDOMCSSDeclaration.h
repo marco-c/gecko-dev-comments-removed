@@ -24,6 +24,7 @@
 class nsIPrincipal;
 struct JSContext;
 class JSObject;
+enum class AttrModType : uint8_t;  
 
 namespace mozilla {
 enum class StyleCssRuleType : uint8_t;
@@ -43,7 +44,7 @@ struct MutationClosureData {
 
   mozilla::dom::Element* mElement = nullptr;
   Maybe<nsAttrValue> mOldValue;
-  uint8_t mModType = 0;
+  AttrModType mModType{0};  
   bool mWasCalled = false;
   bool mShouldBeCalled = false;
 };

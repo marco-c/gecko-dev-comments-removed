@@ -865,7 +865,7 @@ class Element : public FragmentOrElement {
   bool MaybeCheckSameAttrVal(int32_t aNamespaceID, const nsAtom* aName,
                              const nsAtom* aPrefix,
                              const nsAttrValueOrString& aValue, bool aNotify,
-                             nsAttrValue& aOldValue, uint8_t* aModType,
+                             nsAttrValue& aOldValue, AttrModType* aModType,
                              bool* aHasListeners, bool* aOldValueSet);
 
   
@@ -891,7 +891,7 @@ class Element : public FragmentOrElement {
   bool OnlyNotifySameValueSet(int32_t aNamespaceID, nsAtom* aName,
                               nsAtom* aPrefix,
                               const nsAttrValueOrString& aValue, bool aNotify,
-                              nsAttrValue& aOldValue, uint8_t* aModType,
+                              nsAttrValue& aOldValue, AttrModType* aModType,
                               bool* aHasListeners, bool* aOldValueSet);
 
   
@@ -2080,13 +2080,13 @@ class Element : public FragmentOrElement {
 
 
 
-
   nsresult SetAttrAndNotify(int32_t aNamespaceID, nsAtom* aName,
                             nsAtom* aPrefix, const nsAttrValue* aOldValue,
                             nsAttrValue& aParsedValue,
-                            nsIPrincipal* aSubjectPrincipal, uint8_t aModType,
-                            bool aFireMutation, bool aNotify,
-                            bool aCallAfterSetAttr, Document* aComposedDocument,
+                            nsIPrincipal* aSubjectPrincipal,
+                            AttrModType aModType, bool aFireMutation,
+                            bool aNotify, bool aCallAfterSetAttr,
+                            Document* aComposedDocument,
                             const mozAutoDocUpdate& aGuard);
 
   

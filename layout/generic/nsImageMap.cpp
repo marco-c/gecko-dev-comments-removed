@@ -772,7 +772,7 @@ void nsImageMap::MaybeUpdateAreas(nsIContent* aContent) {
 }
 
 void nsImageMap::AttributeChanged(dom::Element* aElement, int32_t aNameSpaceID,
-                                  nsAtom* aAttribute, int32_t aModType,
+                                  nsAtom* aAttribute, AttrModType aModType,
                                   const nsAttrValue* aOldValue) {
   
   
