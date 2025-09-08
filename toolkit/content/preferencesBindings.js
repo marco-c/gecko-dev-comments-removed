@@ -345,6 +345,87 @@ const Preferences = (window.Preferences = (function () {
     removeSyncToPrefListener(aElement) {
       this._syncToPrefListeners.delete(aElement);
     },
+
+    
+
+
+
+
+    AsyncSetting: class AsyncSetting extends EventEmitter {
+      
+      static id = "";
+
+      
+      static controllingExtensionInfo;
+
+      defaultValue = "";
+      defaultDisabled = false;
+      defaultVisible = true;
+      defaultGetControlConfig = {};
+
+      
+
+
+
+      emitChange() {
+        this.emit("change");
+      }
+
+      
+
+
+
+
+      setup() {}
+
+      
+
+
+
+
+      async get() {}
+
+      
+
+
+
+
+
+      async set() {}
+
+      
+
+
+
+      async disabled() {
+        return false;
+      }
+
+      
+
+
+
+      async visible() {
+        return true;
+      }
+
+      
+
+
+
+
+      async getControlConfig() {
+        return {};
+      }
+
+      
+
+
+
+
+
+      async onUserChange() {}
+    },
   };
 
   Services.prefs.addObserver("", Preferences);
@@ -699,6 +780,124 @@ const Preferences = (window.Preferences = (function () {
     }
   }
 
+  
+
+
+
+  class AsyncSettingHandler {
+    
+    asyncSetting;
+
+    
+    #emitChange;
+
+    
+    deps;
+
+    
+    setting;
+
+    
+
+
+    constructor(asyncSetting) {
+      this.asyncSetting = asyncSetting;
+      this.#emitChange = () => {};
+
+      
+      this.cachedValue = asyncSetting.defaultValue;
+      this.cachedDisabled = asyncSetting.defaultDisabled;
+      this.cachedVisible = asyncSetting.defaultVisible;
+      this.cachedGetControlConfig = asyncSetting.defaultGetControlConfig;
+
+      
+      this.asyncSetting.on("change", () => this.refresh());
+    }
+
+    
+
+
+
+
+
+    setup(emitChange, deps, setting) {
+      let teardown = this.asyncSetting.setup();
+
+      this.#emitChange = emitChange;
+      this.deps = deps;
+      this.setting = setting;
+
+      this.refresh();
+      return teardown;
+    }
+
+    
+
+
+    async refresh() {
+      [
+        this.cachedValue,
+        this.cachedDisabled,
+        this.cachedVisible,
+        this.cachedGetControlConfig,
+      ] = await Promise.all([
+        this.asyncSetting.get(),
+        this.asyncSetting.disabled(),
+        this.asyncSetting.visible(),
+        this.asyncSetting.getControlConfig(),
+      ]);
+      this.#emitChange();
+    }
+
+    
+
+
+    get() {
+      return this.cachedValue;
+    }
+
+    
+
+
+
+    set(value) {
+      return this.asyncSetting.set(value);
+    }
+
+    
+
+
+    disabled() {
+      return this.cachedDisabled;
+    }
+
+    
+
+
+    visible() {
+      return this.cachedVisible;
+    }
+
+    
+
+
+
+    getControlConfig(config) {
+      return {
+        ...config,
+        ...this.cachedGetControlConfig,
+      };
+    }
+
+    
+
+
+
+    onUserChange(value) {
+      return this.asyncSetting.onUserChange(value);
+    }
+  }
+
   class Setting extends EventEmitter {
     
 
@@ -736,6 +935,11 @@ const Preferences = (window.Preferences = (function () {
     }
     constructor(id, config) {
       super();
+
+      if (Object.getPrototypeOf(config) == Preferences.AsyncSetting) {
+        config = new AsyncSettingHandler(new config());
+      }
+
       this.id = id;
       this.config = config;
       this.pref = config.pref && Preferences.get(config.pref);
