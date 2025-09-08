@@ -87,29 +87,6 @@ static MOZ_ALWAYS_INLINE bool WeakCollectionPutEntryInternal(
   return true;
 }
 
-
-static MOZ_ALWAYS_INLINE bool CanBeHeldWeakly(JSContext* cx,
-                                              HandleValue value) {
-  
-  if (value.isObject()) {
-    return true;
-  }
-
-#ifdef NIGHTLY_BUILD
-  bool symbolsAsWeakMapKeysEnabled =
-      JS::Prefs::experimental_symbols_as_weakmap_keys();
-
-  
-  if (symbolsAsWeakMapKeysEnabled && value.isSymbol() &&
-      value.toSymbol()->code() != JS::SymbolCode::InSymbolRegistry) {
-    return true;
-  }
-#endif
-
-  
-  return false;
-}
-
 static unsigned GetErrorNumber(bool isWeakMap) {
 #ifdef NIGHTLY_BUILD
   bool symbolsAsWeakMapKeysEnabled =

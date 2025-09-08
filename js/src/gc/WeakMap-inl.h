@@ -21,6 +21,7 @@
 #include "js/Prefs.h"
 #include "js/TraceKind.h"
 #include "vm/JSContext.h"
+#include "vm/SymbolType.h"
 
 #include "gc/AtomMarking-inl.h"
 #include "gc/Marking-inl.h"
@@ -459,6 +460,28 @@ void WeakMap<K, V>::checkAfterMovingGC() const {
   }
 }
 #endif  
+
+
+static MOZ_ALWAYS_INLINE bool CanBeHeldWeakly(Value value) {
+  
+  if (value.isObject()) {
+    return true;
+  }
+
+#ifdef NIGHTLY_BUILD
+  bool symbolsAsWeakMapKeysEnabled =
+      JS::Prefs::experimental_symbols_as_weakmap_keys();
+
+  
+  if (symbolsAsWeakMapKeysEnabled && value.isSymbol() &&
+      value.toSymbol()->code() != JS::SymbolCode::InSymbolRegistry) {
+    return true;
+  }
+#endif
+
+  
+  return false;
+}
 
 inline HashNumber GetSymbolHash(JS::Symbol* sym) { return sym->hash(); }
 
