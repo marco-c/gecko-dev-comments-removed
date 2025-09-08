@@ -5,6 +5,7 @@
 
 
 SOURCES += [
+    "ConfigHelpers.cpp",
     "sandboxBroker.cpp",
 ]
 
