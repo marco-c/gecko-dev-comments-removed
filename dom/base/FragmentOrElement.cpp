@@ -1970,12 +1970,7 @@ void FragmentOrElement::SetInnerHTMLInternal(const nsAString& aInnerHTML,
     return;
   }
 
-  
-  
-  Document* const doc = target->OwnerDoc();
-
-  
-  mozAutoSubtreeModified subtree(doc, nullptr);
+  const RefPtr<Document> doc = target->OwnerDoc();
 
   target->FireNodeRemovedForChildren();
 

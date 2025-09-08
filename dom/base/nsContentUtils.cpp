@@ -5752,7 +5752,7 @@ bool nsContentUtils::HasNonEmptyAttr(const nsIContent* aContent,
 
 
 bool nsContentUtils::WantMutationEvents(
-    nsINode* aNode, uint32_t aType, nsINode* aTargetForSubtreeModified,
+    nsINode* aNode, uint32_t aType,
     IgnoreDevToolsMutationObserver aIgnoreDevToolsMutationObserver ) {
   Document* doc = aNode->OwnerDoc();
   if (MOZ_LIKELY(!doc->MutationEventsEnabled() &&
@@ -5766,7 +5766,6 @@ bool nsContentUtils::WantMutationEvents(
   }
 
   
-  
   if (!nsContentUtils::HasMutationListeners(doc, aType,
                                             aIgnoreDevToolsMutationObserver)) {
     return false;
@@ -5775,8 +5774,6 @@ bool nsContentUtils::WantMutationEvents(
   if (aNode->ChromeOnlyAccess() || aNode->IsInShadowTree()) {
     return false;
   }
-
-  doc->MayDispatchMutationEvent(aTargetForSubtreeModified);
 
   
   if (aNode->IsInUncomposedDoc()) {
@@ -5812,7 +5809,6 @@ bool nsContentUtils::HasMutationListeners(
   nsPIDOMWindowInner* window =
       aDocument ? aDocument->GetInnerWindow() : nullptr;
 
-  
   
   if (!window || window->HasMutationListeners(aType)) {
     return true;
@@ -5870,12 +5866,10 @@ void nsContentUtils::MaybeFireNodeRemoved(nsINode* aChild, nsINode* aParent) {
     }
   }
 
-  if (WantMutationEvents(aChild, NS_EVENT_BITS_MUTATION_NODEREMOVED, aParent,
+  if (WantMutationEvents(aChild, NS_EVENT_BITS_MUTATION_NODEREMOVED,
                          IgnoreDevToolsMutationObserver::Yes)) {
     InternalMutationEvent mutation(true, eLegacyNodeRemoved);
     mutation.mRelatedNode = aParent;
-
-    mozAutoSubtreeModified subtree(aParent->OwnerDoc(), aParent);
     EventDispatcher::Dispatch(aChild, nullptr, &mutation);
   }
 }
@@ -6176,7 +6170,7 @@ static void SetAndFilterHTML(
     FragmentOrElement* aTarget, Element* aContext, const nsAString& aHTML,
     const OwningSanitizerOrSanitizerConfigOrSanitizerPresets& aSanitizerOptions,
     const bool aSafe, ErrorResult& aError) {
-  RefPtr<Document> doc = aTarget->OwnerDoc();
+  const RefPtr<Document> doc = aTarget->OwnerDoc();
 
   
   
@@ -6201,9 +6195,6 @@ static void SetAndFilterHTML(
   if (aError.Failed()) {
     return;
   }
-
-  
-  mozAutoSubtreeModified subtree(doc, nullptr);
 
   aTarget->FireNodeRemovedForChildren();
 
@@ -6583,30 +6574,19 @@ nsresult nsContentUtils::SetNodeTextContent(
   nsCOMPtr<nsIContent> owningContent;
 
   
-  mozAutoSubtreeModified subtree(nullptr, nullptr);
-
-  
-  
-  {
-    
-    
-    Document* doc = aContent->OwnerDoc();
-
-    
-    if (HasMutationListeners(doc, NS_EVENT_BITS_MUTATION_NODEREMOVED)) {
-      subtree.UpdateTarget(doc, nullptr);
-      owningContent = aContent;
-      nsCOMPtr<nsINode> child;
-      bool skipFirst = aTryReuse;
-      for (child = aContent->GetFirstChild();
-           child && child->GetParentNode() == aContent;
-           child = child->GetNextSibling()) {
-        if (skipFirst && child->IsText()) {
-          skipFirst = false;
-          continue;
-        }
-        nsContentUtils::MaybeFireNodeRemoved(child, aContent);
+  if (HasMutationListeners(aContent->OwnerDoc(),
+                           NS_EVENT_BITS_MUTATION_NODEREMOVED)) {
+    owningContent = aContent;
+    nsCOMPtr<nsINode> child;
+    bool skipFirst = aTryReuse;
+    for (child = aContent->GetFirstChild();
+         child && child->GetParentNode() == aContent;
+         child = child->GetNextSibling()) {
+      if (skipFirst && child->IsText()) {
+        skipFirst = false;
+        continue;
       }
+      nsContentUtils::MaybeFireNodeRemoved(child, aContent);
     }
   }
 

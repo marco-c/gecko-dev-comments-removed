@@ -1880,9 +1880,6 @@ void nsRange::CutContents(DocumentFragment** aFragment,
   nsCOMPtr<nsINode> commonCloneAncestor = retval.get();
 
   
-  mozAutoSubtreeModified subtree(mRoot ? mRoot->OwnerDoc() : nullptr, nullptr);
-
-  
   
 
   nsCOMPtr<nsINode> startContainer = GetMayCrossShadowBoundaryStartContainer();

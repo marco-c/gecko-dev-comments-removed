@@ -2533,19 +2533,6 @@ class Document : public nsINode,
 
 
 
-
-
-
-  void MayDispatchMutationEvent(nsINode* aTarget) {
-    if (mSubtreeModifiedDepth > 0) {
-      mSubtreeModifiedTargets.AppendObject(aTarget);
-    }
-  }
-
-  
-
-
-
   void MarkUncollectableForCCGeneration(uint32_t aGeneration) {
     mMarkedCCGeneration = aGeneration;
   }
@@ -4642,16 +4629,6 @@ class Document : public nsINode,
   
   bool InternalAllowXULXBL();
 
-  
-
-
-
-
-
-  void WillDispatchMutationEvent(nsINode* aTarget);
-  void MutationEventDispatched(nsINode* aTarget);
-  friend class mozAutoSubtreeModified;
-
   virtual Element* GetNameSpaceElement() override { return GetRootElement(); }
 
   nsCString GetContentTypeInternal() const { return mContentType; }
@@ -5228,9 +5205,6 @@ class Document : public nsINode,
 
   PresShell* mPresShell;
 
-  nsCOMArray<nsINode> mSubtreeModifiedTargets;
-  uint32_t mSubtreeModifiedDepth;
-
   
   
   
@@ -5674,42 +5648,6 @@ class Document : public nsINode,
                                               const nsAString& aHTML,
                                               const SetHTMLOptions& aOptions,
                                               ErrorResult& aError);
-};
-
-
-
-
-
-
-class MOZ_STACK_CLASS mozAutoSubtreeModified {
- public:
-  
-
-
-
-
-
-  mozAutoSubtreeModified(Document* aSubtreeOwner, nsINode* aTarget) {
-    UpdateTarget(aSubtreeOwner, aTarget);
-  }
-
-  ~mozAutoSubtreeModified() { UpdateTarget(nullptr, nullptr); }
-
-  void UpdateTarget(Document* aSubtreeOwner, nsINode* aTarget) {
-    if (mSubtreeOwner) {
-      mSubtreeOwner->MutationEventDispatched(mTarget);
-    }
-
-    mTarget = aTarget;
-    mSubtreeOwner = aSubtreeOwner;
-    if (mSubtreeOwner) {
-      mSubtreeOwner->WillDispatchMutationEvent(mTarget);
-    }
-  }
-
- private:
-  nsCOMPtr<nsINode> mTarget;
-  RefPtr<Document> mSubtreeOwner;
 };
 
 enum class SyncOperationBehavior { eSuspendInput, eAllowInput };

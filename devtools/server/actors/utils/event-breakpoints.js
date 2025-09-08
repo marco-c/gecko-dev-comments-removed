@@ -186,7 +186,6 @@ const AVAILABLE_BREAKPOINTS = [
 
       
       nodeEvent("dom-mutation", "DOMNodeRemoved"),
-      nodeEvent("dom-mutation", "DOMSubtreeModified"),
 
       
       nodeEvent("dom-mutation", "DOMContentLoaded"),

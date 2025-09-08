@@ -4420,9 +4420,6 @@ void Element::InsertAdjacentHTML(
   nsAutoScriptLoaderDisabler sld(doc);
 
   
-  mozAutoSubtreeModified subtree(doc, nullptr);
-
-  
   if (doc->IsHTMLDocument() && !OwnerDoc()->MayHaveDOMMutationObservers() &&
       (position == eBeforeEnd || (position == eAfterEnd && !GetNextSibling()) ||
        (position == eAfterBegin && !GetFirstChild()))) {

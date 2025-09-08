@@ -1087,11 +1087,7 @@ void nsINode::Normalize() {
     return;
   }
 
-  
-  RefPtr<Document> doc = OwnerDoc();
-
-  
-  mozAutoSubtreeModified subtree(doc, nullptr);
+  const RefPtr<Document> doc = OwnerDoc();
 
   
   
@@ -2348,12 +2344,10 @@ void nsINode::ReplaceChildren(nsINode* aNode, ErrorResult& aRv,
     }
   }
   nsCOMPtr<nsINode> node = aNode;
-
-  
-  mozAutoSubtreeModified subtree(OwnerDoc(), nullptr);
+  const RefPtr<Document> doc = OwnerDoc();
 
   if (nsContentUtils::HasMutationListeners(
-          OwnerDoc(), NS_EVENT_BITS_MUTATION_NODEREMOVED)) {
+          doc, NS_EVENT_BITS_MUTATION_NODEREMOVED)) {
     FireNodeRemovedForChildren();
     if (node) {
       if (node->NodeType() == DOCUMENT_FRAGMENT_NODE) {
@@ -2365,7 +2359,7 @@ void nsINode::ReplaceChildren(nsINode* aNode, ErrorResult& aRv,
   }
 
   
-  mozAutoDocUpdate updateBatch(OwnerDoc(), true);
+  mozAutoDocUpdate updateBatch(doc, true);
 
   nsAutoMutationBatch mb(this, true, true);
 

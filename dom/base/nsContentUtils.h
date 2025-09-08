@@ -1525,12 +1525,8 @@ class nsContentUtils {
 
 
 
-
-
-
-
   static bool WantMutationEvents(
-      nsINode* aNode, uint32_t aType, nsINode* aTargetForSubtreeModified,
+      nsINode* aNode, uint32_t aType,
       IgnoreDevToolsMutationObserver aIgnoreDevToolsMutationObserver =
           IgnoreDevToolsMutationObserver::No);
 

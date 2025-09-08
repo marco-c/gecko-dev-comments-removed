@@ -119,8 +119,6 @@ void CharacterData::SetNodeValueInternal(
 void CharacterData::SetTextContentInternal(
     const nsAString& aTextContent, nsIPrincipal* aSubjectPrincipal,
     ErrorResult& aError, MutationEffectOnScript aMutationEffectOnScript) {
-  
-  mozAutoSubtreeModified subtree(OwnerDoc(), nullptr);
   return SetNodeValueInternal(aTextContent, aError, aMutationEffectOnScript);
 }
 
