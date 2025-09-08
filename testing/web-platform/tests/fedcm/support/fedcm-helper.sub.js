@@ -223,9 +223,9 @@ export function fedcm_get_dialog_type_promise(t) {
       } catch (ex) {
         if (String(ex).includes("no such alert")) {
           if (t) {
-            t.step_timeout(helper, 100);
+            t.step_timeout(helper, 10);
           } else{
-            window.setTimeout(helper, 100);
+            window.setTimeout(helper, 10);
           }
         } else {
           reject(ex);
@@ -267,7 +267,7 @@ export function fedcm_get_title_promise(t) {
         const title = await window.test_driver.get_fedcm_dialog_title();
         resolve(title);
       } catch (ex) {
-        t.step_timeout(helper, 100);
+        t.step_timeout(helper, 10);
       }
     }
     helper();
@@ -304,7 +304,7 @@ export function fedcm_error_dialog_dismiss(t) {
         await window.test_driver.cancel_fedcm_dialog();
         resolve();
       } catch (ex) {
-        t.step_timeout(helper, 100);
+        t.step_timeout(helper, 10);
       }
     }
     helper();
@@ -322,7 +322,7 @@ export function fedcm_error_dialog_click_button(t, button) {
         await window.test_driver.click_fedcm_dialog_button(button);
         resolve();
       } catch (ex) {
-        t.step_timeout(helper, 100);
+        t.step_timeout(helper, 10);
       }
     }
     helper();
