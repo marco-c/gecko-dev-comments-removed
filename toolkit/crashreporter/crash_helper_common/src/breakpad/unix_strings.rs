@@ -30,7 +30,11 @@ impl BreakpadString for OsString {
     }
 
     fn into_raw(self) -> *mut BreakpadChar {
-        let chars: Vec<u8> = self.into_vec();
+        let chars: Vec<u8> = self
+            .into_vec()
+            .into_iter()
+            .chain(std::iter::once(0))
+            .collect();
         let layout = Layout::from_size_align(chars.len(), align_of::<u8>())
             .expect("Impossible layout for raw string");
         unsafe {
@@ -59,5 +63,5 @@ impl BreakpadString for OsString {
 
 
 unsafe fn array_from_c_char_string(ptr: *const c_char) -> Vec<u8> {
-    std::ffi::CStr::from_ptr(ptr).to_bytes_with_nul().to_owned()
+    std::ffi::CStr::from_ptr(ptr).to_bytes().to_owned()
 }
