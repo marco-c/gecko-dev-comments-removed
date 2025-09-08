@@ -1648,20 +1648,18 @@ void CodeGenerator::visitStrictConstantCompareBoolean(
   JSOp op = comp->mir()->jsop();
   Register output = ToRegister(comp->output());
 
-  Label fail, pass, done;
-  Register boolUnboxed = ToRegister(comp->temp0());
-  masm.fallibleUnboxBoolean(value, boolUnboxed,
-                            op == JSOp::StrictEq ? &fail : &pass);
-  masm.branch32(JSOpToCondition(op, true), boolUnboxed, Imm32(constantVal),
-                &pass);
+  masm.move32(Imm32(op == JSOp::StrictNe), output);
 
-  masm.bind(&fail);
-  masm.move32(Imm32(0), output);
-  masm.jump(&done);
-
-  masm.bind(&pass);
-  masm.move32(Imm32(1), output);
-
+  Label done;
+  masm.fallibleUnboxBoolean(value, output, &done);
+  {
+    
+    
+    if (constantVal) {
+      op = NegateCompareOp(op);
+    }
+    masm.cmp32Set(JSOpToCondition(op, true), output, Imm32(0), output);
+  }
   masm.bind(&done);
 }
 
@@ -12601,6 +12599,22 @@ void CodeGenerator::visitTruncF(LTruncF* lir) {
   Label bail;
   masm.truncFloat32ToInt32(input, output, &bail);
   bailoutFrom(&bail, lir->snapshot());
+}
+
+void CodeGenerator::visitNearbyInt(LNearbyInt* lir) {
+  FloatRegister input = ToFloatRegister(lir->input());
+  FloatRegister output = ToFloatRegister(lir->output());
+
+  RoundingMode roundingMode = lir->mir()->roundingMode();
+  masm.nearbyIntDouble(roundingMode, input, output);
+}
+
+void CodeGenerator::visitNearbyIntF(LNearbyIntF* lir) {
+  FloatRegister input = ToFloatRegister(lir->input());
+  FloatRegister output = ToFloatRegister(lir->output());
+
+  RoundingMode roundingMode = lir->mir()->roundingMode();
+  masm.nearbyIntFloat32(roundingMode, input, output);
 }
 
 void CodeGenerator::visitCompareS(LCompareS* lir) {
