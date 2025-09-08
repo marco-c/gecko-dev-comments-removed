@@ -11,10 +11,10 @@
 
 #include "mozilla/Assertions.h"
 
-#include <algorithm>
 #include <cmath>
-#include <climits>
-#include <cstdint>
+#include <algorithm>
+#include <limits.h>
+#include <stdint.h>
 #include <type_traits>
 
 namespace mozilla {
@@ -100,13 +100,79 @@ inline long double Abs<long double>(const long double aLongDouble) {
 
 }  
 
+#if defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_AMD64) || \
+                          defined(_M_X64) || defined(_M_ARM64))
+#  define MOZ_BITSCAN_WINDOWS
+
+#  include <intrin.h>
+#  pragma intrinsic(_BitScanForward, _BitScanReverse)
+
+#  if defined(_M_AMD64) || defined(_M_X64) || defined(_M_ARM64)
+#    define MOZ_BITSCAN_WINDOWS64
+#    pragma intrinsic(_BitScanForward64, _BitScanReverse64)
+#  endif
+
+#endif
+
 namespace mozilla {
 
 namespace detail {
 
+#if defined(MOZ_BITSCAN_WINDOWS)
 
+inline uint_fast8_t CountLeadingZeroes32(uint32_t aValue) {
+  unsigned long index;
+  if (!_BitScanReverse(&index, static_cast<unsigned long>(aValue))) return 32;
+  return uint_fast8_t(31 - index);
+}
 
-#if defined(__clang__) || defined(__GNUC__)
+inline uint_fast8_t CountTrailingZeroes32(uint32_t aValue) {
+  unsigned long index;
+  if (!_BitScanForward(&index, static_cast<unsigned long>(aValue))) return 32;
+  return uint_fast8_t(index);
+}
+
+inline uint_fast8_t CountPopulation32(uint32_t aValue) {
+  uint32_t x = aValue - ((aValue >> 1) & 0x55555555);
+  x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
+  return (((x + (x >> 4)) & 0xf0f0f0f) * 0x1010101) >> 24;
+}
+inline uint_fast8_t CountPopulation64(uint64_t aValue) {
+  return uint_fast8_t(CountPopulation32(aValue & 0xffffffff) +
+                      CountPopulation32(aValue >> 32));
+}
+
+inline uint_fast8_t CountLeadingZeroes64(uint64_t aValue) {
+#  if defined(MOZ_BITSCAN_WINDOWS64)
+  unsigned long index;
+  if (!_BitScanReverse64(&index, static_cast<unsigned __int64>(aValue)))
+    return 64;
+  return uint_fast8_t(63 - index);
+#  else
+  uint32_t hi = uint32_t(aValue >> 32);
+  if (hi != 0) {
+    return CountLeadingZeroes32(hi);
+  }
+  return 32u + CountLeadingZeroes32(uint32_t(aValue));
+#  endif
+}
+
+inline uint_fast8_t CountTrailingZeroes64(uint64_t aValue) {
+#  if defined(MOZ_BITSCAN_WINDOWS64)
+  unsigned long index;
+  if (!_BitScanForward64(&index, static_cast<unsigned __int64>(aValue)))
+    return 64;
+  return uint_fast8_t(index);
+#  else
+  uint32_t lo = uint32_t(aValue);
+  if (lo != 0) {
+    return CountTrailingZeroes32(lo);
+  }
+  return 32u + CountTrailingZeroes32(uint32_t(aValue >> 32));
+#  endif
+}
+
+#elif defined(__clang__) || defined(__GNUC__)
 
 #  if defined(__clang__)
 #    if !__has_builtin(__builtin_ctz) || !__has_builtin(__builtin_clz)
@@ -116,38 +182,38 @@ namespace detail {
 
 #  endif
 
-constexpr uint_fast8_t CountLeadingZeroes32(uint32_t aValue) {
+inline uint_fast8_t CountLeadingZeroes32(uint32_t aValue) {
   return static_cast<uint_fast8_t>(__builtin_clz(aValue));
 }
 
-constexpr uint_fast8_t CountTrailingZeroes32(uint32_t aValue) {
+inline uint_fast8_t CountTrailingZeroes32(uint32_t aValue) {
   return static_cast<uint_fast8_t>(__builtin_ctz(aValue));
 }
 
-constexpr uint_fast8_t CountPopulation32(uint32_t aValue) {
+inline uint_fast8_t CountPopulation32(uint32_t aValue) {
   return static_cast<uint_fast8_t>(__builtin_popcount(aValue));
 }
 
-constexpr uint_fast8_t CountPopulation64(uint64_t aValue) {
+inline uint_fast8_t CountPopulation64(uint64_t aValue) {
   return static_cast<uint_fast8_t>(__builtin_popcountll(aValue));
 }
 
-constexpr uint_fast8_t CountLeadingZeroes64(uint64_t aValue) {
+inline uint_fast8_t CountLeadingZeroes64(uint64_t aValue) {
   return static_cast<uint_fast8_t>(__builtin_clzll(aValue));
 }
 
-constexpr uint_fast8_t CountTrailingZeroes64(uint64_t aValue) {
+inline uint_fast8_t CountTrailingZeroes64(uint64_t aValue) {
   return static_cast<uint_fast8_t>(__builtin_ctzll(aValue));
 }
 
 #else
 #  error "Implement these!"
-constexpr uint_fast8_t CountLeadingZeroes32(uint32_t aValue) = delete;
-constexpr uint_fast8_t CountTrailingZeroes32(uint32_t aValue) = delete;
-constexpr uint_fast8_t CountPopulation32(uint32_t aValue) = delete;
-constexpr uint_fast8_t CountPopulation64(uint64_t aValue) = delete;
-constexpr uint_fast8_t CountLeadingZeroes64(uint64_t aValue) = delete;
-constexpr uint_fast8_t CountTrailingZeroes64(uint64_t aValue) = delete;
+inline uint_fast8_t CountLeadingZeroes32(uint32_t aValue) = delete;
+inline uint_fast8_t CountTrailingZeroes32(uint32_t aValue) = delete;
+inline uint_fast8_t CountPopulation32(uint32_t aValue) = delete;
+inline uint_fast8_t CountPopulation64(uint64_t aValue) = delete;
+inline uint_fast8_t CountLeadingZeroes64(uint64_t aValue) = delete;
+inline uint_fast8_t CountTrailingZeroes64(uint64_t aValue) = delete;
 #endif
 
 }  
@@ -163,7 +229,7 @@ constexpr uint_fast8_t CountTrailingZeroes64(uint64_t aValue) = delete;
 
 
 
-constexpr uint_fast8_t CountLeadingZeroes32(uint32_t aValue) {
+inline uint_fast8_t CountLeadingZeroes32(uint32_t aValue) {
   MOZ_ASSERT(aValue != 0);
   return detail::CountLeadingZeroes32(aValue);
 }
@@ -179,7 +245,7 @@ constexpr uint_fast8_t CountLeadingZeroes32(uint32_t aValue) {
 
 
 
-constexpr uint_fast8_t CountTrailingZeroes32(uint32_t aValue) {
+inline uint_fast8_t CountTrailingZeroes32(uint32_t aValue) {
   MOZ_ASSERT(aValue != 0);
   return detail::CountTrailingZeroes32(aValue);
 }
@@ -187,23 +253,23 @@ constexpr uint_fast8_t CountTrailingZeroes32(uint32_t aValue) {
 
 
 
-constexpr uint_fast8_t CountPopulation32(uint32_t aValue) {
+inline uint_fast8_t CountPopulation32(uint32_t aValue) {
   return detail::CountPopulation32(aValue);
 }
 
 
-constexpr uint_fast8_t CountPopulation64(uint64_t aValue) {
+inline uint_fast8_t CountPopulation64(uint64_t aValue) {
   return detail::CountPopulation64(aValue);
 }
 
 
-constexpr uint_fast8_t CountLeadingZeroes64(uint64_t aValue) {
+inline uint_fast8_t CountLeadingZeroes64(uint64_t aValue) {
   MOZ_ASSERT(aValue != 0);
   return detail::CountLeadingZeroes64(aValue);
 }
 
 
-constexpr uint_fast8_t CountTrailingZeroes64(uint64_t aValue) {
+inline uint_fast8_t CountTrailingZeroes64(uint64_t aValue) {
   MOZ_ASSERT(aValue != 0);
   return detail::CountTrailingZeroes64(aValue);
 }
@@ -216,7 +282,7 @@ class CeilingLog2;
 template <typename T>
 class CeilingLog2<T, 4> {
  public:
-  static constexpr uint_fast8_t compute(const T aValue) {
+  static uint_fast8_t compute(const T aValue) {
     
     return aValue <= 1 ? 0u : 32u - CountLeadingZeroes32(aValue - 1);
   }
@@ -225,7 +291,7 @@ class CeilingLog2<T, 4> {
 template <typename T>
 class CeilingLog2<T, 8> {
  public:
-  static constexpr uint_fast8_t compute(const T aValue) {
+  static uint_fast8_t compute(const T aValue) {
     
     return aValue <= 1 ? 0u : 64u - CountLeadingZeroes64(aValue - 1);
   }
@@ -243,12 +309,12 @@ class CeilingLog2<T, 8> {
 
 
 template <typename T>
-constexpr uint_fast8_t CeilingLog2(const T aValue) {
+inline uint_fast8_t CeilingLog2(const T aValue) {
   return detail::CeilingLog2<T>::compute(aValue);
 }
 
 
-constexpr uint_fast8_t CeilingLog2Size(size_t aValue) {
+inline uint_fast8_t CeilingLog2Size(size_t aValue) {
   return CeilingLog2(aValue);
 }
 
@@ -257,7 +323,7 @@ constexpr uint_fast8_t CeilingLog2Size(size_t aValue) {
 
 
 template <typename T>
-constexpr uint_fast8_t FindMostSignificantBit(T aValue) {
+inline uint_fast8_t FindMostSignificantBit(T aValue) {
   static_assert(sizeof(T) <= 8);
   static_assert(std::is_integral_v<T>);
   MOZ_ASSERT(aValue != 0);
@@ -280,20 +346,18 @@ constexpr uint_fast8_t FindMostSignificantBit(T aValue) {
 
 
 template <typename T>
-constexpr uint_fast8_t FloorLog2(const T aValue) {
+inline constexpr uint_fast8_t FloorLog2(const T aValue) {
   return FindMostSignificantBit(aValue | 1);
 }
 
 
-constexpr uint_fast8_t FloorLog2Size(size_t aValue) {
-  return FloorLog2(aValue);
-}
+inline uint_fast8_t FloorLog2Size(size_t aValue) { return FloorLog2(aValue); }
 
 
 
 
 
-constexpr size_t RoundUpPow2(size_t aValue) {
+inline size_t RoundUpPow2(size_t aValue) {
   MOZ_ASSERT(aValue <= (size_t(1) << (sizeof(size_t) * CHAR_BIT - 1)),
              "can't round up -- will overflow!");
   return size_t(1) << CeilingLog2(aValue);
@@ -303,8 +367,8 @@ constexpr size_t RoundUpPow2(size_t aValue) {
 
 
 template <typename T>
-MOZ_NO_SANITIZE_UNSIGNED_OVERFLOW constexpr T RotateLeft(const T aValue,
-                                                         uint_fast8_t aShift) {
+MOZ_NO_SANITIZE_UNSIGNED_OVERFLOW inline T RotateLeft(const T aValue,
+                                                      uint_fast8_t aShift) {
   static_assert(std::is_unsigned_v<T>, "Rotates require unsigned values");
 
   MOZ_ASSERT(aShift < sizeof(T) * CHAR_BIT, "Shift value is too large!");
@@ -321,8 +385,8 @@ MOZ_NO_SANITIZE_UNSIGNED_OVERFLOW constexpr T RotateLeft(const T aValue,
 
 
 template <typename T>
-MOZ_NO_SANITIZE_UNSIGNED_OVERFLOW constexpr T RotateRight(const T aValue,
-                                                          uint_fast8_t aShift) {
+MOZ_NO_SANITIZE_UNSIGNED_OVERFLOW inline T RotateRight(const T aValue,
+                                                       uint_fast8_t aShift) {
   static_assert(std::is_unsigned_v<T>, "Rotates require unsigned values");
 
   MOZ_ASSERT(aShift < sizeof(T) * CHAR_BIT, "Shift value is too large!");
@@ -346,7 +410,7 @@ constexpr bool IsPowerOfTwo(T x) {
 }
 
 template <typename T>
-constexpr uint_fast8_t CountTrailingZeroes(T aValue) {
+inline uint_fast8_t CountTrailingZeroes(T aValue) {
   static_assert(sizeof(T) <= 8);
   static_assert(std::is_integral_v<T>);
   
