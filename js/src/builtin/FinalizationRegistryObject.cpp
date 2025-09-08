@@ -17,6 +17,7 @@
 #include "vm/Interpreter.h"
 
 #include "gc/GCContext-inl.h"
+#include "gc/WeakMap-inl.h"
 #include "vm/JSObject-inl.h"
 #include "vm/NativeObject-inl.h"
 
@@ -315,8 +316,8 @@ bool FinalizationRegistryObject::construct(JSContext* cx, unsigned argc,
     return false;
   }
 
-  Rooted<UniquePtr<ObjectWeakMap>> registrations(
-      cx, cx->make_unique<ObjectWeakMap>(cx));
+  Rooted<UniquePtr<RegistrationsWeakMap>> registrations(
+      cx, cx->make_unique<RegistrationsWeakMap>(cx));
   if (!registrations) {
     return false;
   }
@@ -354,7 +355,7 @@ void FinalizationRegistryObject::trace(JSTracer* trc, JSObject* obj) {
   
 
   auto* registry = &obj->as<FinalizationRegistryObject>();
-  if (ObjectWeakMap* registrations = registry->registrations()) {
+  if (RegistrationsWeakMap* registrations = registry->registrations()) {
     registrations->trace(trc);
   }
 }
@@ -364,7 +365,8 @@ void FinalizationRegistryObject::traceWeak(JSTracer* trc) {
   
 
   MOZ_ASSERT(registrations());
-  for (ObjectWeakMap::Enum e(*registrations()); !e.empty(); e.popFront()) {
+  for (RegistrationsWeakMap::Enum e(*registrations()); !e.empty();
+       e.popFront()) {
     auto* registrations =
         &e.front().value()->as<FinalizationRegistrationsObject>();
     if (!registrations->traceWeak(trc)) {
@@ -393,12 +395,13 @@ FinalizationQueueObject* FinalizationRegistryObject::queue() const {
   return &value.toObject().as<FinalizationQueueObject>();
 }
 
-ObjectWeakMap* FinalizationRegistryObject::registrations() const {
+FinalizationRegistryObject::RegistrationsWeakMap*
+FinalizationRegistryObject::registrations() const {
   Value value = getReservedSlot(RegistrationsSlot);
   if (value.isUndefined()) {
     return nullptr;
   }
-  return static_cast<ObjectWeakMap*>(value.toPrivate());
+  return static_cast<RegistrationsWeakMap*>(value.toPrivate());
 }
 
 
@@ -409,9 +412,6 @@ bool FinalizationRegistryObject::register_(JSContext* cx, unsigned argc,
                                            Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
-  
-  
-  
   
   
   if (!args.thisv().isObject() ||
@@ -426,36 +426,30 @@ bool FinalizationRegistryObject::register_(JSContext* cx, unsigned argc,
       cx, &args.thisv().toObject().as<FinalizationRegistryObject>());
 
   
-  if (!args.get(0).isObject()) {
-    JS_ReportErrorNumberASCII(
-        cx, GetErrorMessage, nullptr, JSMSG_OBJECT_REQUIRED,
-        "target argument to FinalizationRegistry.register");
+  RootedValue target(cx, args.get(0));
+  if (!CanBeHeldWeakly(target)) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_BAD_FINALIZATION_REGISTRY_TARGET);
     return false;
   }
 
-  RootedObject target(cx, &args[0].toObject());
-
   
-  if (args.get(1).isObject() && &args.get(1).toObject() == target) {
+  HandleValue heldValue = args.get(1);
+  if (heldValue == target) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_BAD_HELD_VALUE);
     return false;
   }
 
-  HandleValue heldValue = args.get(1);
-
   
   
-  if (!args.get(2).isUndefined() && !args.get(2).isObject()) {
+  
+  RootedValue unregisterToken(cx, args.get(2));
+  if (!CanBeHeldWeakly(unregisterToken) && !unregisterToken.isUndefined()) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_BAD_UNREGISTER_TOKEN,
                               "FinalizationRegistry.register");
     return false;
-  }
-
-  RootedObject unregisterToken(cx);
-  if (!args.get(2).isUndefined()) {
-    unregisterToken = &args[2].toObject();
   }
 
   
@@ -467,36 +461,40 @@ bool FinalizationRegistryObject::register_(JSContext* cx, unsigned argc,
   }
 
   
-  if (unregisterToken &&
+  if (!unregisterToken.isUndefined() &&
       !addRegistration(cx, registry, unregisterToken, record)) {
     return false;
   }
 
   auto registrationsGuard = mozilla::MakeScopeExit([&] {
-    if (unregisterToken) {
+    if (!unregisterToken.isUndefined()) {
       removeRegistrationOnError(registry, unregisterToken, record);
     }
   });
 
   
-  RootedObject unwrappedTarget(cx);
-  unwrappedTarget = CheckedUnwrapDynamic(target, cx);
-  if (!unwrappedTarget) {
-    ReportAccessDenied(cx);
-    return false;
-  }
+  if (target.isObject()) {
+    RootedObject object(cx, CheckedUnwrapDynamic(&target.toObject(), cx));
+    if (!object) {
+      ReportAccessDenied(cx);
+      return false;
+    }
 
-  
-  if (!preserveDOMWrapper(cx, target)) {
-    return false;
+    target = ObjectValue(*object);
+
+    
+    if (!preserveDOMWrapper(cx, object)) {
+      return false;
+    }
   }
 
   
   gc::GCRuntime* gc = &cx->runtime()->gc;
-  if (!gc->registerWithFinalizationRegistry(cx, unwrappedTarget, record)) {
+  if (!gc->registerWithFinalizationRegistry(cx, target, record)) {
     return false;
   }
 
+  
   registrationsGuard.release();
   args.rval().setUndefined();
   return true;
@@ -517,11 +515,11 @@ bool FinalizationRegistryObject::preserveDOMWrapper(JSContext* cx,
 
 bool FinalizationRegistryObject::addRegistration(
     JSContext* cx, HandleFinalizationRegistryObject registry,
-    HandleObject unregisterToken, HandleFinalizationRecordObject record) {
+    HandleValue unregisterToken, HandleFinalizationRecordObject record) {
   
   
 
-  MOZ_ASSERT(unregisterToken);
+  MOZ_ASSERT(CanBeHeldWeakly(unregisterToken));
   MOZ_ASSERT(registry->registrations());
 
   auto& map = *registry->registrations();
@@ -546,13 +544,13 @@ bool FinalizationRegistryObject::addRegistration(
 }
 
  void FinalizationRegistryObject::removeRegistrationOnError(
-    HandleFinalizationRegistryObject registry, HandleObject unregisterToken,
+    HandleFinalizationRegistryObject registry, HandleValue unregisterToken,
     HandleFinalizationRecordObject record) {
   
   
   
 
-  MOZ_ASSERT(unregisterToken);
+  MOZ_ASSERT(CanBeHeldWeakly(unregisterToken));
   MOZ_ASSERT(registry->registrations());
   JS::AutoAssertNoGC nogc;
 
@@ -591,14 +589,13 @@ bool FinalizationRegistryObject::unregister(JSContext* cx, unsigned argc,
       cx, &args.thisv().toObject().as<FinalizationRegistryObject>());
 
   
-  if (!args.get(0).isObject()) {
+  RootedValue unregisterToken(cx, args[0]);
+  if (!CanBeHeldWeakly(unregisterToken)) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_BAD_UNREGISTER_TOKEN,
                               "FinalizationRegistry.unregister");
     return false;
   }
-
-  RootedObject unregisterToken(cx, &args[0].toObject());
 
   
   bool removed = false;

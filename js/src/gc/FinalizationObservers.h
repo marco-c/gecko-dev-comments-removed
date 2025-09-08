@@ -159,9 +159,8 @@ class FinalizationObservers {
   
   
   
-  using RecordMap =
-      GCHashMap<HeapPtr<JSObject*>, ObserverList,
-                StableCellHasher<HeapPtr<JSObject*>>, ZoneAllocPolicy>;
+  using RecordMap = GCHashMap<HeapPtr<Value>, ObserverList, WeakTargetHasher,
+                              ZoneAllocPolicy>;
   RecordMap recordMap;
 
   using WeakRefMap = GCHashMap<HeapPtr<Value>, ObserverList, WeakTargetHasher,
@@ -174,7 +173,7 @@ class FinalizationObservers {
 
   
   bool addRegistry(Handle<FinalizationRegistryObject*> registry);
-  bool addRecord(HandleObject target, Handle<FinalizationRecordObject*> record);
+  bool addRecord(HandleValue target, Handle<FinalizationRecordObject*> record);
   void clearRecords();
 
   void removeRecord(FinalizationRecordObject* record);
