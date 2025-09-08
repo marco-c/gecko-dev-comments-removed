@@ -1,21 +1,24 @@
 
 
 
-import cmakeparser as cp
 
 import copy
 import datetime
 import os
 import re
 import subprocess
+import sys
+
+from mozcmakeparser import parse as cmake_parse
+
 
 AOM_DIR = '../../third_party/aom'
 
 def write_aom_config(system, arch, variables, cache_variables):
     
     variables['year'] = datetime.datetime.now().year
-    cp.parse(variables, [], os.path.join(AOM_DIR, 'build', 'cmake',
-          'generate_aom_config_templates.cmake'))
+    cmake_parse(variables, [], [AOM_DIR], os.path.join(AOM_DIR, 'build', 'cmake',
+                'generate_aom_config_templates.cmake'), 'libaom')
 
     
     cache_variables = [x for x in sorted(cache_variables)
@@ -112,8 +115,8 @@ if __name__ == '__main__':
             variables['MSVC'] = 1
 
         cache_variables = []
-        sources = cp.parse(variables, cache_variables,
-                           os.path.join(AOM_DIR, 'CMakeLists.txt'))
+        sources = cmake_parse(variables, cache_variables, [AOM_DIR],
+                              os.path.join(AOM_DIR, 'CMakeLists.txt'), 'libaom')
 
         
         cache_variables.remove('HAVE_UNISTD_H')
