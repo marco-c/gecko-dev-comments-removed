@@ -1606,7 +1606,10 @@ function FillHistoryMenu(event) {
       if (j != index) {
         
         
-        item.style.setProperty("--menuitem-icon", `url(page-icon:${uri})`);
+        item.style.setProperty(
+          "--menuitem-icon",
+          `url(page-icon:${CSS.escape(uri)})`
+        );
       }
 
       if (j < index) {
