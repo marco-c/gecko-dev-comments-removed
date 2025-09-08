@@ -41,9 +41,9 @@
 
 
 #ifndef MALLOC_RUNTIME_CONFIG
-#  if !defined(__ia64__) && !defined(__sparc__) && !defined(__mips__) &&       \
-      !defined(__aarch64__) && !defined(__powerpc__) && !defined(XP_MACOSX) && \
-      !defined(__loongarch__)
+#  if !defined(XP_MACOSX) && !defined(ANDROID) && !defined(__ia64__) &&     \
+      !defined(__sparc__) && !defined(__mips__) && !defined(__aarch64__) && \
+      !defined(__powerpc__) && !defined(__loongarch__)
 #    define MALLOC_STATIC_PAGESIZE 1
 #  endif
 #endif
