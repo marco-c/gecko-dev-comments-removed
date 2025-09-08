@@ -274,7 +274,7 @@ class JsepCodecDescription {
   bool mStronglyPreferred;
   sdp::Direction mDirection;
   
-  EncodingConstraints mConstraints;
+  VideoEncodingConstraints mConstraints;
 };
 
 class JsepAudioCodecDescription final : public JsepCodecDescription {

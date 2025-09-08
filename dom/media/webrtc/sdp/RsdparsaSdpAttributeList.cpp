@@ -1205,7 +1205,7 @@ void RsdparsaSdpAttributeList::LoadRids(RustAttributeList* attributeList) {
     auto direction = static_cast<sdp::Direction>(rid.direction);
     std::vector<uint16_t> formats = convertU16Vec(rid.formats);
 
-    EncodingConstraints parameters;
+    VideoEncodingConstraints parameters;
     parameters.maxWidth = rid.params.max_width;
     parameters.maxHeight = rid.params.max_height;
     
