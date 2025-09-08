@@ -78,16 +78,18 @@ bool NativeLayerRootRemoteMacChild::CommitToScreen() {
 
   
   
-  
-
-  
-  
   for (auto layer : mNativeLayers) {
     RefPtr<NativeLayerRemoteMac> layerRemoteMac(
         layer->AsNativeLayerRemoteMac());
     MOZ_ASSERT(layerRemoteMac);
     layerRemoteMac->FlushDirtyLayerInfoToCommandQueue();
   }
+
+  
+  
+  
+  nsTArray<NativeLayerCommand> commands;
+  mCommandQueue->FlushToArray(commands);
 
   if (mNativeLayersChanged) {
     
@@ -98,15 +100,9 @@ bool NativeLayerRootRemoteMacChild::CommitToScreen() {
       auto ID = reinterpret_cast<uint64_t>(layer.get());
       setLayerIDs.AppendElement(ID);
     }
-    mCommandQueue->AppendCommand(
-        mozilla::layers::CommandSetLayers(setLayerIDs));
+    commands.AppendElement(mozilla::layers::CommandSetLayers(setLayerIDs));
     mNativeLayersChanged = false;
   }
-
-  
-  
-  nsTArray<NativeLayerCommand> commands;
-  mCommandQueue->FlushToArray(commands);
 
   if (!commands.IsEmpty()) {
     
