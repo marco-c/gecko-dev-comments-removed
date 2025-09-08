@@ -323,7 +323,8 @@ void CPUInfo::ComputeFlags() {
 
   static constexpr int AVXBit = 1 << 28;
   static constexpr int XSAVEBit = 1 << 27;
-  avxPresent = (flagsEcx & AVXBit) && (flagsEcx & XSAVEBit) && avxEnabled;
+  bool avxSupported = (flagsEcx & AVXBit);
+  avxPresent = avxSupported && (flagsEcx & XSAVEBit) && avxEnabled;
 
   
   if (avxPresent) {
@@ -360,10 +361,23 @@ void CPUInfo::ComputeFlags() {
   flagsEax = 0x7;
   ReadCPUInfo(&flagsEax, &flagsEbx, &flagsEcx, &flagsEdx);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   static constexpr int BMI1Bit = 1 << 3;
   static constexpr int BMI2Bit = 1 << 8;
   static constexpr int AVX2Bit = 1 << 5;
-  bmi1Present = (flagsEbx & BMI1Bit);
+  bmi1Present = avxSupported && (flagsEbx & BMI1Bit);
   bmi2Present = bmi1Present && (flagsEbx & BMI2Bit);
   avx2Present = avxPresent && (flagsEbx & AVX2Bit);
 
