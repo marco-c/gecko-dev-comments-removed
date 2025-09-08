@@ -166,25 +166,13 @@ class CssCompatibilityTooltipHelper {
 
   async setContent(data, tooltip) {
     const fragment = this.getTemplate(data, tooltip);
-    const { doc } = tooltip;
-
-    tooltip.panel.innerHTML = "";
 
     tooltip.panel.addEventListener("click", this.addTab);
     tooltip.once("hidden", () => {
       tooltip.panel.removeEventListener("click", this.addTab);
     });
 
-    
-    
-    
-    await doc.l10n.translateFragment(fragment);
-    doc.l10n.pauseObserving();
-    tooltip.panel.appendChild(fragment);
-    doc.l10n.resumeObserving();
-
-    
-    tooltip.setContentSize({ width: 267 });
+    await tooltip.setLocalizedFragment(fragment, { width: 267 });
   }
 
   

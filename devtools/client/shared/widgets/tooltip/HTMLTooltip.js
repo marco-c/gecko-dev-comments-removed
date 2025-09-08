@@ -459,6 +459,30 @@ HTMLTooltip.prototype = {
 
 
 
+  async setLocalizedFragment(fragment, contentSizeOptions) {
+    this.panel.innerHTML = "";
+
+    
+    
+    
+    await this.doc.l10n.translateFragment(fragment);
+    this.doc.l10n.pauseObserving();
+    this.panel.append(fragment);
+    this.doc.l10n.resumeObserving();
+
+    this.setContentSize(contentSizeOptions);
+  },
+
+  
+
+
+
+
+
+
+
+
+
 
 
 
