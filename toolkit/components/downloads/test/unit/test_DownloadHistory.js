@@ -184,7 +184,7 @@ add_task(async function test_DownloadHistory() {
   
   let historyList = await DownloadHistory.getList();
   let view = new TestView(testDownloads);
-  await historyList.addView(view);
+  historyList.addView(view);
   await view.waitForExpected();
 
   
@@ -221,7 +221,7 @@ add_task(async function test_DownloadHistory() {
   
   let allHistoryList = await DownloadHistory.getList({ type: Downloads.ALL });
   let allView = new TestView(view.expected);
-  await allHistoryList.addView(allView);
+  allHistoryList.addView(allView);
   await allView.waitForExpected();
 
   
@@ -244,7 +244,7 @@ add_task(async function test_DownloadHistory() {
   
   
   let allView2 = new TestView(allView.expected.slice(3));
-  await allHistoryList2.addView(allView2);
+  allHistoryList2.addView(allView2);
   await allView2.waitForExpected();
 
   
@@ -254,8 +254,8 @@ add_task(async function test_DownloadHistory() {
     maxHistoryResults: 3,
   });
   let dummyView = new TestView([]);
-  await dummyList.addView(dummyView);
-  await dummyList.removeView(dummyView);
+  dummyList.addView(dummyView);
+  dummyList.removeView(dummyView);
 
   
   

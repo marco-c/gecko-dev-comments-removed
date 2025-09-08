@@ -304,23 +304,21 @@ function promiseStartLegacyDownload(aSourceUrl, aOptions) {
       .then(function (aList) {
         
         
-        aList
-          .addView({
-            onDownloadAdded(aDownload) {
-              aList.removeView(this).catch(do_report_unexpected_exception);
+        aList.addView({
+          onDownloadAdded(aDownload) {
+            aList.removeView(this);
 
-              
-              
-              let promise = aList.remove(aDownload);
+            
+            
+            let promise = aList.remove(aDownload);
 
-              
-              promise.then(
-                () => resolve(aDownload),
-                do_report_unexpected_exception
-              );
-            },
-          })
-          .catch(do_report_unexpected_exception);
+            
+            promise.then(
+              () => resolve(aDownload),
+              do_report_unexpected_exception
+            );
+          },
+        });
 
         let isPrivate = aOptions && aOptions.isPrivate;
         let referrerInfo = aOptions ? aOptions.referrerInfo : null;
@@ -387,23 +385,21 @@ function promiseStartExternalHelperAppServiceDownload(aSourceUrl) {
       .then(function (aList) {
         
         
-        aList
-          .addView({
-            onDownloadAdded(aDownload) {
-              aList.removeView(this).catch(do_report_unexpected_exception);
+        aList.addView({
+          onDownloadAdded(aDownload) {
+            aList.removeView(this);
 
-              
-              
-              let promise = aList.remove(aDownload);
+            
+            
+            let promise = aList.remove(aDownload);
 
-              
-              promise.then(
-                () => resolve(aDownload),
-                do_report_unexpected_exception
-              );
-            },
-          })
-          .catch(do_report_unexpected_exception);
+            
+            promise.then(
+              () => resolve(aDownload),
+              do_report_unexpected_exception
+            );
+          },
+        });
 
         let channel = NetUtil.newChannel({
           uri: sourceURI,
