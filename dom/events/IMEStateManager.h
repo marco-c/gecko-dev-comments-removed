@@ -170,8 +170,11 @@ class IMEStateManager {
 
 
 
+
+
+
   MOZ_CAN_RUN_SCRIPT static void OnParentChainChangedOfObservingElement(
-      IMEContentObserver& aObserver);
+      IMEContentObserver& aObserver, nsIContent& aContent);
 
   
 
@@ -329,9 +332,6 @@ class IMEStateManager {
   static nsresult NotifyIME(IMEMessage aMessage, nsPresContext* aPresContext,
                             BrowserParent* aBrowserParent = nullptr);
 
-  static nsINode* GetRootEditableNode(const nsPresContext& aPresContext,
-                                      const dom::Element* aElement);
-
   
 
 
@@ -382,8 +382,6 @@ class IMEStateManager {
       const nsPresContext& aPresContext, const dom::Element* aFocusedElement);
 
   static void DestroyIMEContentObserver();
-
-  [[nodiscard]] static bool IsEditable(nsINode* node);
 
   [[nodiscard]] static bool IsIMEObserverNeeded(const IMEState& aState);
 

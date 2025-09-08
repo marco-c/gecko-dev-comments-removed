@@ -49,6 +49,7 @@ class IMEContentObserver final : public nsStubMutationObserver,
   using TextChangeDataBase = widget::IMENotification::TextChangeDataBase;
   using IMENotificationRequests = widget::IMENotificationRequests;
   using IMEMessage = widget::IMEMessage;
+  enum class ForRemoval : bool { No, Yes };
 
   IMEContentObserver();
 
@@ -207,8 +208,38 @@ class IMEContentObserver final : public nsStubMutationObserver,
 
   void OnTextControlValueChangedWhileNotObservable(const nsAString& aNewValue);
 
+  
+
+
+
+
+
+
   dom::Element* GetObservingElement() const {
     return mIsObserving ? mRootElement.get() : nullptr;
+  }
+
+  
+
+
+
+
+
+
+  dom::Element* GetObservingEditingHostOrTextControlElement() const {
+    return mIsTextControl ? GetObservingTextControlElement()
+                          : GetObservingElement();
+  }
+
+  
+
+
+
+  dom::Element* GetObservingTextControlElement() const {
+    return mIsObserving && mIsTextControl
+               ? dom::Element::FromNodeOrNull(
+                     mRootEditableNodeOrTextControlElement)
+               : nullptr;
   }
 
  private:
@@ -226,8 +257,13 @@ class IMEContentObserver final : public nsStubMutationObserver,
                                          EditorBase& aEditorBase);
   void OnIMEReceivedFocus();
   void Clear();
-  [[nodiscard]] bool IsObservingContent(const nsPresContext& aPresContext,
+
+  
+
+
+  [[nodiscard]] bool IsObservingElement(const nsPresContext& aPresContext,
                                         const dom::Element* aElement) const;
+
   [[nodiscard]] bool IsReflowLocked() const;
   [[nodiscard]] bool IsSafeToNotifyIME() const;
   [[nodiscard]] bool IsEditorComposing() const;
@@ -355,14 +391,26 @@ class IMEContentObserver final : public nsStubMutationObserver,
 
   MOZ_CAN_RUN_SCRIPT bool UpdateSelectionCache(bool aRequireFlush = true);
 
+  
+
+
+
+  [[nodiscard]] static nsINode* GetMostDistantInclusiveEditableAncestorNode(
+      const nsPresContext& aPresContext, const dom::Element* aElement);
+
   nsCOMPtr<nsIWidget> mWidget;
   
   
   
   nsCOMPtr<nsIWidget> mFocusedWidget;
   RefPtr<dom::Selection> mSelection;
+  
+  
   RefPtr<dom::Element> mRootElement;
-  nsCOMPtr<nsINode> mEditableNode;
+  
+  
+  
+  nsCOMPtr<nsINode> mRootEditableNodeOrTextControlElement;
   nsCOMPtr<nsIDocShell> mDocShell;
   RefPtr<EditorBase> mEditorBase;
 
@@ -563,8 +611,10 @@ class IMEContentObserver final : public nsStubMutationObserver,
 
 
 
+
     [[nodiscard]] static Result<uint32_t, nsresult> ComputeTextLengthOfContent(
-        const nsIContent& aContent, const dom::Element* aRootElement);
+        const nsIContent& aContent, const dom::Element* aRootElement,
+        ForRemoval = ForRemoval::No);
 
     
 
@@ -640,8 +690,8 @@ class IMEContentObserver final : public nsStubMutationObserver,
 
 
     [[nodiscard]] Maybe<uint32_t> GetFlatTextLengthBeforeContent(
-        const nsIContent& aContent, const nsIContent* aPreviousSibling,
-        const dom::Element* aRootElement) const;
+        const nsIContent& aContent, const dom::Element* aRootElement,
+        ForRemoval = ForRemoval::No) const;
 
     
 
@@ -677,10 +727,9 @@ class IMEContentObserver final : public nsStubMutationObserver,
 
 
 
-    void ContentRemoved(const nsIContent& aContent,
-                        const nsIContent* aPreviousSibling,
-                        uint32_t aFlatTextLengthOfContent,
-                        const dom::Element* aRootElement);
+    void ContentWillBeRemoved(const nsIContent& aContent,
+                              uint32_t aFlatTextLengthOfContent,
+                              const dom::Element* aRootElement);
 
    public:
     
@@ -757,16 +806,6 @@ class IMEContentObserver final : public nsStubMutationObserver,
     bool TryToCache(const nsIContent& aFirstContent,
                     const nsIContent& aLastContent,
                     const dom::Element* aRootElement);
-
-    
-
-
-
-
-
-    [[nodiscard]] bool ContentRemoved(const nsIContent& aContent,
-                                      const nsIContent* aPreviousSibling,
-                                      const dom::Element* aRootElement);
 
     
 

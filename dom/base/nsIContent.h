@@ -554,7 +554,7 @@ class nsIContent : public nsINode {
 
 
 
-  mozilla::dom::Element* GetEditingHost();
+  mozilla::dom::Element* GetEditingHost() const;
 
   bool SupportsLangAttr() const {
     return IsHTMLElement() || IsSVGElement() || IsXULElement();

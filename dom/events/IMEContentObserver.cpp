@@ -71,7 +71,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(IMEContentObserver)
 
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSelection)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mRootElement)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mEditableNode)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mRootEditableNodeOrTextControlElement)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocShell)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mEditorBase)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocumentObserver)
@@ -90,7 +90,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(IMEContentObserver)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFocusedWidget)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSelection)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mRootElement)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEditableNode)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mRootEditableNodeOrTextControlElement)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocShell)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEditorBase)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocumentObserver)
@@ -214,12 +214,12 @@ void IMEContentObserver::OnIMEReceivedFocus() {
 bool IMEContentObserver::InitWithEditor(nsPresContext& aPresContext,
                                         Element* aElement,
                                         EditorBase& aEditorBase) {
-  
-  
-  
-  
-  mEditableNode = IMEStateManager::GetRootEditableNode(aPresContext, aElement);
-  if (NS_WARN_IF(!mEditableNode)) {
+  mRootEditableNodeOrTextControlElement =
+      aEditorBase.IsTextEditor()
+          ? aEditorBase.GetExposedRoot()
+          : IMEContentObserver::GetMostDistantInclusiveEditableAncestorNode(
+                aPresContext, aElement);
+  if (NS_WARN_IF(!mRootEditableNodeOrTextControlElement)) {
     return false;
   }
 
@@ -229,20 +229,17 @@ bool IMEContentObserver::InitWithEditor(nsPresContext& aPresContext,
 
   
   nsCOMPtr<nsISelectionController> selCon;
-  if (mEditableNode->IsContent()) {
-    nsIFrame* frame = mEditableNode->AsContent()->GetPrimaryFrame();
-    if (NS_WARN_IF(!frame)) {
+  if (mRootEditableNodeOrTextControlElement->IsElement()) {
+    selCon = aEditorBase.GetSelectionController();
+    if (NS_WARN_IF(!selCon)) {
       return false;
     }
-
-    frame->GetSelectionController(&aPresContext, getter_AddRefs(selCon));
   } else {
-    
+    MOZ_ASSERT(mRootEditableNodeOrTextControlElement->IsDocument());
     selCon = presShell;
-  }
-
-  if (NS_WARN_IF(!selCon)) {
-    return false;
+    if (NS_WARN_IF(!selCon)) {
+      return false;
+    }
   }
 
   mSelection = selCon->GetSelection(nsISelectionController::SELECTION_NORMAL);
@@ -272,22 +269,21 @@ bool IMEContentObserver::InitWithEditor(nsPresContext& aPresContext,
     nsCOMPtr<nsINode> startContainer = selRange->GetStartContainer();
     mRootElement =
         Element::FromNodeOrNull(startContainer->GetSelectionRootContent(
-            presShell,
-            nsINode::IgnoreOwnIndependentSelection::No,  
+            presShell, nsINode::IgnoreOwnIndependentSelection::Yes,
             nsINode::AllowCrossShadowBoundary::No));
   } else {
     MOZ_ASSERT(!mIsTextControl);
     
     
     
-    nsCOMPtr<nsINode> editableNode = mEditableNode;
+    const OwningNonNull<nsINode> rootEditableNode(
+        *mRootEditableNodeOrTextControlElement);
     mRootElement =
-        Element::FromNodeOrNull(editableNode->GetSelectionRootContent(
-            presShell,
-            nsINode::IgnoreOwnIndependentSelection::No,  
+        Element::FromNodeOrNull(rootEditableNode->GetSelectionRootContent(
+            presShell, nsINode::IgnoreOwnIndependentSelection::Yes,
             nsINode::AllowCrossShadowBoundary::No));
   }
-  if (!mRootElement && mEditableNode->IsDocument()) {
+  if (!mRootElement && mRootEditableNodeOrTextControlElement->IsDocument()) {
     
     
     return false;
@@ -310,7 +306,7 @@ bool IMEContentObserver::InitWithEditor(nsPresContext& aPresContext,
 void IMEContentObserver::Clear() {
   mEditorBase = nullptr;
   mSelection = nullptr;
-  mEditableNode = nullptr;
+  mRootEditableNodeOrTextControlElement = nullptr;
   mRootElement = nullptr;
   mDocShell = nullptr;
   
@@ -465,7 +461,7 @@ bool IMEContentObserver::MaybeReinitialize(nsIWidget& aWidget,
                                            nsPresContext& aPresContext,
                                            Element* aElement,
                                            EditorBase& aEditorBase) {
-  if (!IsObservingContent(aPresContext, aElement)) {
+  if (!IsObservingElement(aPresContext, aElement)) {
     return false;
   }
 
@@ -483,9 +479,10 @@ bool IMEContentObserver::IsObserving(const nsPresContext& aPresContext,
   
   
   
-  if (!aElement || !aElement->IsTextControlElement() ||
-      !static_cast<const TextControlElement*>(aElement)
-           ->IsSingleLineTextControlOrTextArea()) {
+  const auto* const textControlElement =
+      TextControlElement::FromNodeOrNull(aElement);
+  if (!textControlElement ||
+      !textControlElement->IsSingleLineTextControlOrTextArea()) {
     if (mIsTextControl) {
       return false;
     }
@@ -496,14 +493,14 @@ bool IMEContentObserver::IsObserving(const nsPresContext& aPresContext,
   else if (!mIsTextControl) {
     return false;
   }
-  return IsObservingContent(aPresContext, aElement);
+  return IsObservingElement(aPresContext, aElement);
 }
 
 bool IMEContentObserver::IsBeingInitializedFor(
     const nsPresContext& aPresContext, const Element* aElement,
     const EditorBase& aEditorBase) const {
   return GetState() == eState_Initializing && mEditorBase == &aEditorBase &&
-         IsObservingContent(aPresContext, aElement);
+         IsObservingElement(aPresContext, aElement);
 }
 
 bool IMEContentObserver::IsObserving(
@@ -520,7 +517,7 @@ bool IMEContentObserver::IsObserving(
   }
   auto* const elementHavingComposition =
       Element::FromNodeOrNull(aTextComposition.GetEventTargetNode());
-  bool isObserving = IsObservingContent(*presContext, elementHavingComposition);
+  bool isObserving = IsObservingElement(*presContext, elementHavingComposition);
 #ifdef DEBUG
   if (isObserving) {
     if (mIsTextControl) {
@@ -558,7 +555,7 @@ bool IMEContentObserver::IsObserving(
 }
 
 IMEContentObserver::State IMEContentObserver::GetState() const {
-  if (!mSelection || !mRootElement || !mEditableNode) {
+  if (!mSelection || !mRootElement || !mRootEditableNodeOrTextControlElement) {
     return eState_NotObserving;  
   }
   if (!mRootElement->IsInComposedDoc()) {
@@ -568,10 +565,47 @@ IMEContentObserver::State IMEContentObserver::GetState() const {
   return mIsObserving ? eState_Observing : eState_Initializing;
 }
 
-bool IMEContentObserver::IsObservingContent(const nsPresContext& aPresContext,
+bool IMEContentObserver::IsObservingElement(const nsPresContext& aPresContext,
                                             const Element* aElement) const {
-  return mEditableNode ==
-         IMEStateManager::GetRootEditableNode(aPresContext, aElement);
+  MOZ_ASSERT_IF(aElement,
+                aElement->GetPresContext(
+                    Element::PresContextFor::eForComposedDoc) == &aPresContext);
+
+  if (GetPresContext() != &aPresContext) {
+    return false;
+  }
+  
+  
+  
+  if (mIsTextControl) {
+    return !aElement->IsInDesignMode() &&
+           aElement == mRootEditableNodeOrTextControlElement;
+  }
+  
+  
+  
+  
+  return mRootEditableNodeOrTextControlElement ==
+         IMEContentObserver::GetMostDistantInclusiveEditableAncestorNode(
+             aPresContext, aElement);
+}
+
+
+nsINode* IMEContentObserver::GetMostDistantInclusiveEditableAncestorNode(
+    const nsPresContext& aPresContext, const Element* aElement) {
+  if (aElement) {
+    
+    
+    if (aElement->IsInDesignMode()) {
+      return aElement->GetComposedDoc();
+    }
+    
+    return aElement->GetEditingHost();
+  }
+
+  return aPresContext.Document() && aPresContext.Document()->IsInDesignMode()
+             ? aPresContext.Document()
+             : nullptr;
 }
 
 bool IMEContentObserver::IsEditorHandlingEventForComposition() const {
@@ -599,7 +633,7 @@ bool IMEContentObserver::IsEditorComposing() const {
 
 nsresult IMEContentObserver::GetSelectionAndRoot(Selection** aSelection,
                                                  Element** aRootElement) const {
-  if (!mEditableNode || !mSelection) {
+  if (!mRootEditableNodeOrTextControlElement || !mSelection) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
@@ -1258,6 +1292,7 @@ void IMEContentObserver::ContentWillBeRemoved(nsIContent* aChild,
 
 MOZ_CAN_RUN_SCRIPT_BOUNDARY void IMEContentObserver::ParentChainChanged(
     nsIContent* aContent) {
+  MOZ_ASSERT(aContent);
   
   
   
@@ -1273,7 +1308,7 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void IMEContentObserver::ParentChainChanged(
   
   MOZ_ASSERT(mIsObserving);
   OwningNonNull<IMEContentObserver> observer(*this);
-  IMEStateManager::OnParentChainChangedOfObservingElement(observer);
+  IMEStateManager::OnParentChainChangedOfObservingElement(observer, *aContent);
 }
 
 void IMEContentObserver::OnTextControlValueChangedWhileNotObservable(
@@ -1314,7 +1349,6 @@ void IMEContentObserver::UnsuppressNotifyingIME() {
   MOZ_LOG(sIMECOLog, LogLevel::Debug,
           ("0x%p UnsuppressNotifyingIME(), mSuppressNotifications=%u", this,
            mSuppressNotifications));
-
   if (!mSuppressNotifications || --mSuppressNotifications) {
     return;
   }

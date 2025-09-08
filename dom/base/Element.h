@@ -1998,7 +1998,7 @@ class Element : public FragmentOrElement {
 
 
   enum PresContextFor { eForComposedDoc, eForUncomposedDoc };
-  nsPresContext* GetPresContext(PresContextFor aFor);
+  nsPresContext* GetPresContext(PresContextFor aFor) const;
 
   
 

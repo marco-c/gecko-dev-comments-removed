@@ -5019,7 +5019,7 @@ already_AddRefed<nsIAutoCompletePopup> Element::AsAutoCompletePopup() {
   return value.forget();
 }
 
-nsPresContext* Element::GetPresContext(PresContextFor aFor) {
+nsPresContext* Element::GetPresContext(PresContextFor aFor) const {
   
   Document* doc =
       (aFor == eForComposedDoc) ? GetComposedDoc() : GetUncomposedDoc();

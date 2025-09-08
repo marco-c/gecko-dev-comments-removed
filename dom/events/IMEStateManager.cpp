@@ -434,7 +434,9 @@ nsresult IMEStateManager::OnRemoveContent(nsPresContext& aPresContext,
       
       (!sFocusedElement &&
        (!sActiveIMEContentObserver ||
-        sActiveIMEContentObserver->GetObservingElement() != &aElement))) {
+        sActiveIMEContentObserver
+                ->GetObservingEditingHostOrTextControlElement() !=
+            &aElement))) {
     return NS_OK;
   }
   MOZ_ASSERT(sFocusedPresContext == &aPresContext);
@@ -490,23 +492,37 @@ nsresult IMEStateManager::OnRemoveContent(nsPresContext& aPresContext,
 
 
 void IMEStateManager::OnParentChainChangedOfObservingElement(
-    IMEContentObserver& aObserver) {
+    IMEContentObserver& aObserver, nsIContent& aContent) {
   if (!sFocusedPresContext || sActiveIMEContentObserver != &aObserver) {
     return;
   }
-  RefPtr<nsPresContext> presContext = aObserver.GetPresContext();
-  RefPtr<Element> element = aObserver.GetObservingElement();
-  if (NS_WARN_IF(!presContext) || NS_WARN_IF(!element)) {
+  if (Element* const textControlElement =
+          aObserver.GetObservingTextControlElement()) {
+    
+    
+    
+    
+    
+    MOZ_ASSERT(textControlElement->IsTextControlElement());
+    if (!textControlElement->IsInclusiveDescendantOf(&aContent)) {
+      return;
+    }
+  }
+  const RefPtr<nsPresContext> presContext = aObserver.GetPresContext();
+  const RefPtr<Element> editingHostOrTextControlElement =
+      aObserver.GetObservingEditingHostOrTextControlElement();
+  if (NS_WARN_IF(!presContext) ||
+      NS_WARN_IF(!editingHostOrTextControlElement)) {
     return;
   }
   MOZ_LOG(sISMLog, LogLevel::Info,
           ("OnParentChainChangedOfObservingElement(aObserver=0x%p), "
            "sFocusedPresContext=0x%p, sFocusedElement=0x%p, "
            "aObserver->GetPresContext()=0x%p, "
-           "aObserver->GetObservingElement()=0x%p",
+           "aObserver->GetObservingEditingHostOrTextControlElement()=0x%p",
            &aObserver, sFocusedPresContext.get(), sFocusedElement.get(),
-           presContext.get(), element.get()));
-  OnRemoveContent(*presContext, *element);
+           presContext.get(), editingHostOrTextControlElement.get()));
+  OnRemoveContent(*presContext, *editingHostOrTextControlElement);
 }
 
 
@@ -2491,53 +2507,6 @@ nsresult IMEStateManager::NotifyIME(IMEMessage aMessage,
     return NS_ERROR_NOT_AVAILABLE;
   }
   return NotifyIME(aMessage, widget, aBrowserParent);
-}
-
-
-bool IMEStateManager::IsEditable(nsINode* node) {
-  if (node->IsEditable()) {
-    return true;
-  }
-  
-  if (node->IsElement() &&
-      node->AsElement()->State().HasState(ElementState::READWRITE)) {
-    return true;
-  }
-  return false;
-}
-
-
-nsINode* IMEStateManager::GetRootEditableNode(const nsPresContext& aPresContext,
-                                              const Element* aElement) {
-  if (aElement) {
-    
-    
-    if (aElement->IsInDesignMode()) {
-      return aElement->GetComposedDoc();
-    }
-
-    nsINode* candidateRootNode = const_cast<Element*>(aElement);
-    for (nsINode* node = candidateRootNode; node && IsEditable(node);
-         node = node->GetParentNode()) {
-      
-      
-      
-      
-      
-      
-      
-      
-      if (node->IsContent() && node->AsContent()->HasIndependentSelection()) {
-        return node;
-      }
-      candidateRootNode = node;
-    }
-    return candidateRootNode;
-  }
-
-  return aPresContext.Document() && aPresContext.Document()->IsInDesignMode()
-             ? aPresContext.Document()
-             : nullptr;
 }
 
 
