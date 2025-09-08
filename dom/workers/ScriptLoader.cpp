@@ -1717,6 +1717,9 @@ bool ScriptExecutorRunnable::ProcessModuleScript(
 
   WorkerLoadContext* loadContext = request->GetWorkerLoadContext();
   ModuleLoadRequest* moduleRequest = request->AsModuleRequest();
+  if (aWorkerPrivate->GetReferrerPolicy() != ReferrerPolicy::_empty) {
+    moduleRequest->UpdateReferrerPolicy(aWorkerPrivate->GetReferrerPolicy());
+  }
 
   
   

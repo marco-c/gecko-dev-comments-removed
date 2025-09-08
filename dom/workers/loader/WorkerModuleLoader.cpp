@@ -101,12 +101,14 @@ already_AddRefed<ModuleLoadRequest> WorkerModuleLoader::CreateDynamicImport(
 
   RefPtr<ScriptFetchOptions> options;
   nsIURI* baseURL = nullptr;
+  ReferrerPolicy referrerPolicy;
   if (aMaybeActiveScript) {
     
     
     
     options = aMaybeActiveScript->GetFetchOptions();
     baseURL = aMaybeActiveScript->BaseURL();
+    referrerPolicy = aMaybeActiveScript->ReferrerPolicy();
   } else {
     
     
@@ -121,6 +123,7 @@ already_AddRefed<ModuleLoadRequest> WorkerModuleLoader::CreateDynamicImport(
         CORSMode::CORS_NONE,  u""_ns, RequestPriority::Auto,
         JS::loader::ParserMetadata::NotParserInserted, nullptr);
     baseURL = GetBaseURI();
+    referrerPolicy = workerPrivate->GetReferrerPolicy();
   }
 
   Maybe<ClientInfo> clientInfo = GetGlobalObject()->GetClientInfo();
@@ -137,7 +140,6 @@ already_AddRefed<ModuleLoadRequest> WorkerModuleLoader::CreateDynamicImport(
       true);
 
   JS::ModuleType moduleType = JS::GetModuleRequestType(aCx, aModuleRequestObj);
-  ReferrerPolicy referrerPolicy = workerPrivate->GetReferrerPolicy();
   RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
       aURI, moduleType, referrerPolicy, options, SRIMetadata(), baseURL,
       context, ModuleLoadRequest::Kind::DynamicImport, this, nullptr);
