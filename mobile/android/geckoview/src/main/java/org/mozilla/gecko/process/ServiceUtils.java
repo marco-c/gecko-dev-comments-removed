@@ -51,7 +51,7 @@ import androidx.annotation.NonNull;
 
 
   public static String buildIsolatedSvcName(@NonNull final GeckoProcessType type) {
-    if (type == GeckoProcessType.CONTENT || type == GeckoProcessType.CONTENT_ISOLATED) {
+    if (type == GeckoProcessType.CONTENT) {
       return buildSvcName(type, DEFAULT_ISOLATED_CONTENT_SERVICE_NAME_SUFFIX);
     }
 
