@@ -32,10 +32,12 @@
 #include "frontend/StencilXdr.h"  
 #include "gc/AllocKind.h"         
 #include "gc/Tracer.h"            
-#include "jit/BaselineJIT.h"      
-#include "jit/JitRuntime.h"       
-#include "jit/JitScript.h"        
-#include "js/CallArgs.h"          
+#include "jit/BaselineCompileTask.h"  
+#include "jit/BaselineJIT.h"  
+#include "jit/JitContext.h"     
+#include "jit/JitRuntime.h"     
+#include "jit/JitScript.h"      
+#include "js/CallArgs.h"        
 #include "js/CompileOptions.h"  
 #include "js/experimental/CompileScript.h"  
 #include "js/experimental/JSStencil.h"      
@@ -68,6 +70,7 @@
 #include "vm/StringType.h"    
 #include "wasm/AsmJS.h"       
 
+#include "jit/JitHints-inl.h"          
 #include "jit/JitScript-inl.h"         
 #include "vm/EnvironmentObject-inl.h"  
 #include "vm/JSFunction-inl.h"         
@@ -2654,6 +2657,91 @@ CompilationStencil::CompilationStencil(
 }
 
 
+
+
+
+
+
+static bool MaybeDoEagerBaselineCompilations(JSContext* cx,
+                                             const CompilationStencil& stencil,
+                                             CompilationGCOutput& gcOutput,
+                                             bool doAggressive) {
+  if (!jit::IsBaselineInterpreterEnabled()) {
+    return true;
+  }
+
+  if (!cx->zone()->ensureJitZoneExists(cx)) {
+    return false;
+  }
+
+  jit::JitHintsMap* jitHints = nullptr;
+  if (!doAggressive) {
+    if (jit::JitOptions.disableJitHints ||
+        !cx->runtime()->jitRuntime()->hasJitHintsMap()) {
+      return true;
+    }
+    jitHints = cx->runtime()->jitRuntime()->getJitHintsMap();
+  }
+
+  jit::AutoKeepJitScripts keepJitScript(cx);
+  RootedScript script(cx);
+  Rooted<JSFunction*> fn(cx);
+  jit::BaselineCompileQueue& queue = cx->realm()->baselineCompileQueue();
+
+  for (auto item :
+       CompilationStencil::functionScriptStencils(stencil, gcOutput)) {
+    fn = item.function;
+    if (!fn->hasBytecode()) {
+      continue;
+    }
+
+    script = fn->nonLazyScript();
+
+    
+    
+    if (!doAggressive) {
+      if (!jitHints->mightHaveEagerBaselineHint(script)) {
+        continue;
+      }
+    }
+
+    if (script->baselineDisabled()) {
+      continue;
+    }
+
+    if (!jit::CanBaselineInterpretScript(script)) {
+      continue;
+    }
+
+    if (!jit::BaselineCompileTask::OffThreadBaselineCompilationAvailable(
+            cx, script,  true)) {
+      continue;
+    }
+
+    
+    if (queue.numQueued() >= jit::JitOptions.baselineQueueCapacity) {
+      if (!jit::DispatchOffThreadBaselineBatchEager(cx)) {
+        return false;
+      }
+    }
+
+    
+    if (!queue.enqueue(script)) {
+      return false;
+    }
+  }
+
+  
+  if (queue.numQueued() > 0) {
+    if (!jit::DispatchOffThreadBaselineBatchEager(cx)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
 bool CompilationStencil::instantiateStencils(JSContext* cx,
                                              CompilationInput& input,
                                              const CompilationStencil& stencil,
@@ -2663,7 +2751,23 @@ bool CompilationStencil::instantiateStencils(JSContext* cx,
     return false;
   }
 
-  return instantiateStencilAfterPreparation(cx, input, stencil, gcOutput);
+  if (!instantiateStencilAfterPreparation(cx, input, stencil, gcOutput)) {
+    return false;
+  }
+
+  if (input.options.eagerBaselineStrategy() != JS::EagerBaselineOption::None) {
+    MOZ_ASSERT(!input.isDelazifying(),
+               "No current support for eager baseline during delazifications.");
+
+    bool doAggressive = input.options.eagerBaselineStrategy() ==
+                        JS::EagerBaselineOption::Aggressive;
+    if (!MaybeDoEagerBaselineCompilations(cx, stencil, gcOutput,
+                                          doAggressive)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 
@@ -5046,6 +5150,25 @@ struct DumpOptionsFields {
 
       FOREACH_DELAZIFICATION_STRATEGY(SelectValueStr_)
 #  undef SelectValueStr_
+    }
+    json.property(name, valueStr);
+  }
+
+  void operator()(const char* name, JS::EagerBaselineOption value) {
+    const char* valueStr = nullptr;
+    switch (value) {
+      case JS::EagerBaselineOption::None:
+        valueStr = "JS::EagerBaselineOption::None";
+        break;
+      case JS::EagerBaselineOption::JitHints:
+        valueStr = "JS::EagerBaselineOption::JitHints";
+        break;
+      case JS::EagerBaselineOption::Aggressive:
+        valueStr = "JS::EagerBaselineOption::Aggressive";
+        break;
+      default:
+        MOZ_CRASH("Unknown JS::EagerBaselineOption enum");
+        break;
     }
     json.property(name, valueStr);
   }

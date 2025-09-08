@@ -2579,6 +2579,32 @@ already_AddRefed<nsIScriptGlobalObject> ScriptLoader::GetScriptGlobalObject() {
   return globalObject.forget();
 }
 
+static void ApplyEagerBaselineStrategy(JS::CompileOptions* aOptions) {
+  uint32_t strategyIndex = StaticPrefs::
+      javascript_options_baselinejit_offthread_compilation_strategy();
+
+  JS::EagerBaselineOption strategy;
+  switch (strategyIndex) {
+    
+    
+    case 2:
+    case 3:
+      strategy = JS::EagerBaselineOption::JitHints;
+      break;
+    case 4:
+      strategy = JS::EagerBaselineOption::Aggressive;
+      break;
+    default:
+      
+      
+      
+      strategy = JS::EagerBaselineOption::None;
+      break;
+  }
+
+  aOptions->setEagerBaselineStrategy(strategy);
+}
+
 nsresult ScriptLoader::FillCompileOptionsForRequest(
     JSContext* aCx, ScriptLoadRequest* aRequest, JS::CompileOptions* aOptions,
     JS::MutableHandle<JSScript*> aIntroductionScript) {
@@ -2636,6 +2662,8 @@ nsresult ScriptLoader::FillCompileOptionsForRequest(
   aOptions->setDeferDebugMetadata(true);
 
   aOptions->borrowBuffer = true;
+
+  ApplyEagerBaselineStrategy(aOptions);
 
   return NS_OK;
 }

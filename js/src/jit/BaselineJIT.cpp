@@ -207,9 +207,9 @@ JitExecStatus jit::EnterBaselineInterpreterAtBranch(JSContext* cx,
   return JitExec_Ok;
 }
 
-static bool OffThreadBaselineCompilationAvailable(JSContext* cx,
-                                                  JSScript* script) {
-  if (!cx->runtime()->canUseOffthreadBaselineCompilation()) {
+bool BaselineCompileTask::OffThreadBaselineCompilationAvailable(
+    JSContext* cx, JSScript* script, bool isEager) {
+  if (!isEager && !cx->runtime()->canUseOffthreadBaselineCompilation()) {
     return false;
   }
   
@@ -228,7 +228,8 @@ static bool OffThreadBaselineCompilationAvailable(JSContext* cx,
 static bool DispatchOffThreadBaselineCompile(JSContext* cx,
                                              BaselineSnapshot& snapshot) {
   JSScript* script = snapshot.script();
-  MOZ_ASSERT(OffThreadBaselineCompilationAvailable(cx, script));
+  MOZ_ASSERT(
+      BaselineCompileTask::OffThreadBaselineCompilationAvailable(cx, script));
 
   auto alloc = cx->make_unique<LifoAlloc>(TempAllocator::PreferredLifoChunkSize,
                                           js::BackgroundMallocArena);
@@ -268,7 +269,10 @@ static bool DispatchOffThreadBaselineCompile(JSContext* cx,
   return true;
 }
 
-bool jit::DispatchOffThreadBaselineBatch(JSContext* cx) {
+
+
+
+static bool DispatchOffThreadBaselineBatchImpl(JSContext* cx, bool isEager) {
   BaselineCompileQueue& queue = cx->realm()->baselineCompileQueue();
   MOZ_ASSERT(queue.numQueued() > 0);
 
@@ -291,7 +295,9 @@ bool jit::DispatchOffThreadBaselineBatch(JSContext* cx) {
   Rooted<JSScript*> script(cx);
   while (!queue.isEmpty()) {
     script = queue.pop();
-    script->jitScript()->clearIsBaselineQueued(script);
+    if (script->hasJitScript()) {
+      script->jitScript()->clearIsBaselineQueued(script);
+    }
 
     MOZ_ASSERT(cx->realm() == script->realm());
 
@@ -300,7 +306,8 @@ bool jit::DispatchOffThreadBaselineBatch(JSContext* cx) {
       continue;
     }
 
-    if (!OffThreadBaselineCompilationAvailable(cx, script)) {
+    if (!BaselineCompileTask::OffThreadBaselineCompilationAvailable(cx, script,
+                                                                    isEager)) {
       BaselineOptions options({BaselineOption::ForceMainThreadCompilation});
       MethodStatus status = BaselineCompile(cx, script, options);
       if (status != Method_Compiled) {
@@ -356,6 +363,14 @@ bool jit::DispatchOffThreadBaselineBatch(JSContext* cx) {
   return true;
 }
 
+bool jit::DispatchOffThreadBaselineBatchEager(JSContext* cx) {
+  return DispatchOffThreadBaselineBatchImpl(cx, true);
+}
+
+bool jit::DispatchOffThreadBaselineBatch(JSContext* cx) {
+  return DispatchOffThreadBaselineBatchImpl(cx, false);
+}
+
 MethodStatus jit::BaselineCompile(JSContext* cx, JSScript* script,
                                   BaselineOptions options) {
   cx->check(script);
@@ -395,7 +410,8 @@ MethodStatus jit::BaselineCompile(JSContext* cx, JSScript* script,
                             baseWarmUpThreshold, isIonCompileable,
                             compileDebugInstrumentation);
 
-  if (OffThreadBaselineCompilationAvailable(cx, script) && !forceMainThread) {
+  if (BaselineCompileTask::OffThreadBaselineCompilationAvailable(cx, script) &&
+      !forceMainThread) {
     if (!DispatchOffThreadBaselineCompile(cx, snapshot)) {
       ReportOutOfMemory(cx);
       return Method_Error;
