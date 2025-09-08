@@ -319,11 +319,6 @@ class NativeLayerCA : public NativeLayer {
 
   
   
-  void InvalidateRegionThroughoutSwapchain(const MutexAutoLock& aProofOfLock,
-                                           const gfx::IntRegion& aRegion);
-
-  
-  
   
   
   
