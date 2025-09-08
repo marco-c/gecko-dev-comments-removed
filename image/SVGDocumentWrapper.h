@@ -21,8 +21,6 @@ class nsIRequest;
 class nsILoadGroup;
 class nsIFrame;
 
-#define OBSERVER_SVC_CID "@mozilla.org/observer-service;1"
-
 namespace mozilla {
 class PresShell;
 namespace dom {
@@ -49,25 +47,25 @@ class SVGDocumentWrapper final : public nsIStreamListener,
   
 
 
-  mozilla::dom::SVGDocument* GetDocument();
+  mozilla::dom::SVGDocument* GetDocument() const;
 
   
 
 
 
-  mozilla::dom::SVGSVGElement* GetRootSVGElem();
+  mozilla::dom::SVGSVGElement* GetRootSVGElem() const;
 
   
 
 
 
 
-  nsIFrame* GetRootLayoutFrame();
+  nsIFrame* GetRootLayoutFrame() const;
 
   
 
 
-  inline mozilla::PresShell* GetPresShell() { return mViewer->GetPresShell(); }
+  mozilla::PresShell* GetPresShell() const { return mViewer->GetPresShell(); }
 
   
 
@@ -92,7 +90,7 @@ class SVGDocumentWrapper final : public nsIStreamListener,
 
 
 
-  bool IsAnimated();
+  bool IsAnimated() const;
 
   
 
@@ -115,7 +113,7 @@ class SVGDocumentWrapper final : public nsIStreamListener,
   void StartAnimation();
   void StopAnimation();
   void ResetAnimation();
-  float GetCurrentTimeAsFloat();
+  float GetCurrentTimeAsFloat() const;
   void SetCurrentTime(float aTime);
   void TickRefreshDriver();
 
