@@ -26,7 +26,30 @@ using namespace mozilla::a11y;
     
     toFilter = [static_cast<mozMenuAccessible*>(self) moxVisibleChildren];
   } else {
-    toFilter = [self moxUnignoredChildren];
+    NSMutableArray* flattened = [[[NSMutableArray alloc] init] autorelease];
+    void (^__block unnest)(NSArray*);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    unnest = ^(NSArray* children) {
+      for (mozAccessible* child : children) {
+        if ([[child moxRole] isEqualToString:@"AXGroup"]) {
+          unnest([child moxUnignoredChildren]);
+        } else {
+          [flattened addObject:child];
+        }
+      }
+    };
+    
+    
+    unnest([self moxUnignoredChildren]);
+    toFilter = flattened;
   }
   return [toFilter
       filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(
