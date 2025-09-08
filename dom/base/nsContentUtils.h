@@ -470,7 +470,7 @@ class nsContentUtils {
 
 
 
-  static nsINode* Retarget(nsINode* aTargetA, nsINode* aTargetB);
+  static nsINode* Retarget(nsINode* aTargetA, const nsINode* aTargetB);
 
   
 
