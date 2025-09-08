@@ -5517,7 +5517,8 @@ static OffsetResult GetUnretargetedOffsetsFor(const Element& aElement) {
       }
     }
 
-    if (isAbsolutelyPositioned && !offsetParent) {
+    if (isAbsolutelyPositioned && !offsetParent &&
+        !frame->GetParent()->IsViewportFrame()) {
       
       
       

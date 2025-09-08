@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1345119
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 1345119</title>
@@ -93,8 +93,7 @@ addTest(function() {
   gWalker.querySelector(gWalker.rootNode, "#fixed").then(node => {
     return gWalker.getOffsetParent(node);
   }).then(offsetParent => {
-    ok(offsetParent === gBodyNode || offsetParent === gHTMLNode,
-      "The node's offset parent is the body or html node");
+    ok(!offsetParent, "The node's offset parent is the null");
     runNextTest();
   });
 });
