@@ -9971,6 +9971,13 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   if (NS_FAILED(rv)) {
     nsCOMPtr<nsIChannel> chan(do_QueryInterface(req));
     UnblockEmbedderLoadEventForFailure();
+
+    
+    
+    if (NS_ERROR_DOM_SECURITY_ERR == rv) {
+      return NS_OK;
+    }
+
     nsCOMPtr<nsIURI> uri = aLoadState->URI();
     if (DisplayLoadError(rv, uri, nullptr, chan) &&
         
@@ -9983,12 +9990,6 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
     
     
     if (NS_ERROR_UNKNOWN_PROTOCOL == rv) {
-      return NS_OK;
-    }
-
-    
-    
-    if (NS_ERROR_DOM_SECURITY_ERR == rv) {
       return NS_OK;
     }
   }
