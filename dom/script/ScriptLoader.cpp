@@ -407,34 +407,22 @@ static bool IsScriptEventHandler(ScriptKind kind, nsIContent* aScriptElement) {
   }
 
   const nsAString& for_str =
-      nsContentUtils::TrimWhitespace<nsCRT::IsAsciiSpace>(forAttr);
+      nsContentUtils::TrimWhitespace<nsContentUtils::IsHTMLWhitespace>(forAttr);
   if (!for_str.LowerCaseEqualsLiteral("window")) {
     return true;
   }
 
   
   const nsAString& event_str =
-      nsContentUtils::TrimWhitespace<nsCRT::IsAsciiSpace>(eventAttr, false);
-  if (!StringBeginsWith(event_str, u"onload"_ns,
-                        nsCaseInsensitiveStringComparator)) {
-    
-
+      nsContentUtils::TrimWhitespace<nsContentUtils::IsHTMLWhitespace>(
+          eventAttr);
+  if (!event_str.LowerCaseEqualsLiteral("onload") &&
+      !event_str.LowerCaseEqualsLiteral("onload()")) {
     return true;
   }
 
-  nsAutoString::const_iterator start, end;
-  event_str.BeginReading(start);
-  event_str.EndReading(end);
-
-  start.advance(6);  
-
-  if (start != end && *start != '(' && *start != ' ') {
-    
-    
-
-    return true;
-  }
-
+  
+  
   return false;
 }
 
