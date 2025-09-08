@@ -5334,24 +5334,8 @@ GeneralParser<ParseHandler, Unit>::importDeclaration() {
   NameNodeType moduleSpec;
   MOZ_TRY_VAR(moduleSpec, stringLiteral());
 
-  
-  
-  if (!tokenStream.peekTokenSameLine(&tt, TokenStream::SlashIsRegExp)) {
+  if (!tokenStream.peekToken(&tt, TokenStream::SlashIsRegExp)) {
     return errorResult();
-  }
-
-  
-  
-  if (tt == TokenKind::Eol) {
-    
-    TokenKind peekedToken;
-    if (!tokenStream.peekToken(&peekedToken, TokenStream::SlashIsRegExp)) {
-      return errorResult();
-    }
-
-    if (peekedToken == TokenKind::With) {
-      tt = TokenKind::With;
-    }
   }
 
   ListNodeType importAttributeList;
@@ -5706,25 +5690,8 @@ GeneralParser<ParseHandler, Unit>::exportFrom(uint32_t begin, Node specList) {
   MOZ_TRY_VAR(moduleSpec, stringLiteral());
 
   TokenKind tt;
-
-  
-  
-  if (!tokenStream.peekTokenSameLine(&tt, TokenStream::SlashIsRegExp)) {
+  if (!tokenStream.peekToken(&tt, TokenStream::SlashIsRegExp)) {
     return errorResult();
-  }
-
-  
-  
-  if (tt == TokenKind::Eol) {
-    
-    TokenKind peekedToken;
-    if (!tokenStream.peekToken(&peekedToken, TokenStream::SlashIsRegExp)) {
-      return errorResult();
-    }
-
-    if (peekedToken == TokenKind::With) {
-      tt = TokenKind::With;
-    }
   }
 
   uint32_t moduleSpecPos = pos().begin;
