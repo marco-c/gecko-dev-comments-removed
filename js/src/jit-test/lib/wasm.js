@@ -517,6 +517,9 @@ let WasmNonNullExternrefValues = [
 let WasmExternrefValues = [null, ...WasmNonNullExternrefValues];
 
 
+let MaxMemories = 100
+
+
 
 
 function iota(len, k=0) {
