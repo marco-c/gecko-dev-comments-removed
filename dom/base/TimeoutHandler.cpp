@@ -152,11 +152,22 @@ void CallbackTimeoutHandler::ReleaseJSObjects() {
   mozilla::DropJSObjectsWithKey(this);
 }
 
+
+
+
+
+static const nsTArray<JS::Value>& CastArgs(
+    const nsTArray<JS::Heap<JS::Value>>& aArgs) {
+  static_assert(sizeof(JS::Value) == sizeof(JS::Heap<JS::Value>),
+                "JS::Heap<Value> must be binary compatible with Value.");
+  return *reinterpret_cast<const nsTArray<JS::Value>*>(&aArgs);
+}
+
 bool CallbackTimeoutHandler::Call(const char* aExecutionReason) {
   IgnoredErrorResult rv;
   JS::Rooted<JS::Value> ignoredVal(RootingCx());
-  MOZ_KnownLive(mFunction)->Call(MOZ_KnownLive(mGlobal), mArgs, &ignoredVal, rv,
-                                 aExecutionReason);
+  MOZ_KnownLive(mFunction)->Call(MOZ_KnownLive(mGlobal), CastArgs(mArgs),
+                                 &ignoredVal, rv, aExecutionReason);
   return !rv.IsUncatchableException();
 }
 
