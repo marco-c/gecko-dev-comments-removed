@@ -495,6 +495,22 @@
 #  define MOZ_LIFETIME_CAPTURE_BY(x)
 #endif
 
+
+
+
+
+
+
+#if defined(__clang__) && defined(__has_cpp_attribute)
+#  if __has_cpp_attribute(clang::standalone_debug)
+#    define MOZ_STANDALONE_DEBUG [[clang::standalone_debug]]
+#  else
+#    define MOZ_STANDALONE_DEBUG
+#  endif
+#else
+#  define MOZ_STANDALONE_DEBUG
+#endif
+
 #ifdef __cplusplus
 
 
