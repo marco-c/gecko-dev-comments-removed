@@ -3611,14 +3611,15 @@ void nsTArray_base<Alloc, RelocationStrategy>::MoveInit(
   MOZ_ASSERT(Capacity() == 0 || UsesAutoArrayBuffer());
 
   const auto newLength = aOther.Length();
-  if (!newLength) {
+  if (aOther.HasEmptyHeader()) {
     return;
   }
 
   
   
   
-  if (Capacity() < newLength && !aOther.UsesAutoArrayBuffer()) {
+  if (!aOther.UsesAutoArrayBuffer() &&
+      (!mHdr->mIsAutoArray || Capacity() < newLength)) {
     const bool thisIsAuto = mHdr->mIsAutoArray;
     Header* otherAutoHeader = aOther.GetAutoArrayHeader();
     mHdr = aOther.mHdr;
@@ -3632,26 +3633,27 @@ void nsTArray_base<Alloc, RelocationStrategy>::MoveInit(
     return;
   }
 
-  
-  
+  if (newLength) {
+    
+    
+    EnsureCapacity<nsTArrayInfallibleAllocator>(newLength, aElemSize);
 
-  EnsureCapacity<nsTArrayInfallibleAllocator>(newLength, aElemSize);
+    
+    
+    MOZ_ASSERT(UsesAutoArrayBuffer() || aOther.UsesAutoArrayBuffer(),
+               "One of the arrays should be using its auto buffer.");
 
-  
-  
-  MOZ_ASSERT(UsesAutoArrayBuffer() || aOther.UsesAutoArrayBuffer(),
-             "One of the arrays should be using its auto buffer.");
+    RelocationStrategy::RelocateNonOverlappingRegion(
+        Hdr() + 1, aOther.Hdr() + 1, newLength, aElemSize);
 
-  RelocationStrategy::RelocateNonOverlappingRegion(Hdr() + 1, aOther.Hdr() + 1,
-                                                   newLength, aElemSize);
+    
+    MOZ_ASSERT(!HasEmptyHeader() && !aOther.HasEmptyHeader(),
+               "Both arrays should have capacity");
 
-  
-  MOZ_ASSERT(!HasEmptyHeader() && !aOther.HasEmptyHeader(),
-             "Both arrays should have capacity");
-
-  
-  mHdr->mLength = newLength;
-  aOther.mHdr->mLength = 0;
+    
+    mHdr->mLength = newLength;
+    aOther.mHdr->mLength = 0;
+  }
   aOther.ShrinkCapacityToZero();
 }
 
