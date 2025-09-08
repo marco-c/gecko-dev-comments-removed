@@ -1337,10 +1337,10 @@ nsChangeHint nsStylePosition::CalcDifference(
   
   
   
-  
   if (mOffset != aNewData.mOffset) {
     if (IsEqualInsetType(mOffset, aNewData.mOffset) &&
         aNewData.mOffset.All([](const StyleInset& aInset) {
+          
           
           return !aInset.HasAnchorPositioningFunction();
         })) {
