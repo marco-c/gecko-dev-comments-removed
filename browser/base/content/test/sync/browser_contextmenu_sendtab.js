@@ -3,7 +3,7 @@
 
 "use strict";
 
-const kForceOverflowWidthPx = 500;
+const kForceOverflowWidthPx = 450;
 
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/browser/base/content/test/general/head.js",
@@ -127,51 +127,20 @@ add_task(
     let navbar = document.getElementById("nav-bar");
 
     
-    
-    
     let originalWidth = window.outerWidth;
     window.resizeTo(kForceOverflowWidthPx, window.outerHeight);
-    CustomizableUI.addWidgetToArea(
-      "history-panelmenu",
-      CustomizableUI.AREA_NAVBAR,
-      0
-    );
-    CustomizableUI.addWidgetToArea(
-      "email-link-button",
-      CustomizableUI.AREA_NAVBAR,
-      0
-    );
-    CustomizableUI.addWidgetToArea(
-      "panic-button",
-      CustomizableUI.AREA_NAVBAR,
-      0
-    );
-
     await TestUtils.waitForCondition(() => navbar.hasAttribute("overflowing"));
 
     await checkForConfirmationHint("PanelUI-menu-button");
     document.documentElement.setAttribute("fxastatus", "not_configured");
 
     window.resizeTo(originalWidth, window.outerHeight);
-    CustomizableUI.reset();
     await TestUtils.waitForCondition(() => !navbar.hasAttribute("overflowing"));
+    CustomizableUI.reset();
   }
 );
 
 add_task(async function test_sendTabToDevice_showsConfirmationHint_appMenu() {
-  
-  
-  CustomizableUI.addWidgetToArea(
-    "history-panelmenu",
-    CustomizableUI.AREA_NAVBAR,
-    0
-  );
-  CustomizableUI.addWidgetToArea(
-    "wrapper-privatebrowsing-button",
-    CustomizableUI.AREA_NAVBAR,
-    0
-  );
-
   
   
   is(

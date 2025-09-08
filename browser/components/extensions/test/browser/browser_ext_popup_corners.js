@@ -102,14 +102,7 @@ add_task(async function testPopupBorderRadius() {
 
   {
     info("Test overflowed browserAction popup");
-    const kForceOverflowWidthPx = 500;
-    
-    
-    CustomizableUI.addWidgetToArea(
-      "history-panelmenu",
-      CustomizableUI.AREA_NAVBAR
-    );
-
+    const kForceOverflowWidthPx = 450;
     let overflowPanel = document.getElementById("widget-overflow");
 
     let originalWindowWidth = window.outerWidth;
