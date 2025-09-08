@@ -7,6 +7,7 @@
 
 
 #include "mozilla/BufferList.h"
+#include "mozilla/MulOverflowMask.h"
 
 
 
@@ -14,7 +15,7 @@ class InfallibleAllocPolicy {
  public:
   template <typename T>
   T* pod_malloc(size_t aNumElems) {
-    if (aNumElems & mozilla::tl::MulOverflowMask<sizeof(T)>::value) {
+    if (aNumElems & mozilla::MulOverflowMask<sizeof(T)>()) {
       MOZ_CRASH("TestBufferList.cpp: overflow");
     }
     T* rv = static_cast<T*>(malloc(aNumElems * sizeof(T)));
