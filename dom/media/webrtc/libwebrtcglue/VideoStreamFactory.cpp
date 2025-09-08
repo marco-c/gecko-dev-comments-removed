@@ -18,6 +18,7 @@
 #include "VideoConduit.h"
 #include "common/browser_logging/CSFLog.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/TemplateLib.h"
 #include "mozilla/gfx/Point.h"
 #include "video/config/video_encoder_config.h"
 
@@ -55,14 +56,14 @@ namespace mozilla {
 
 
 
-static constexpr VideoStreamFactory::ResolutionAndBitrateLimits
+static VideoStreamFactory::ResolutionAndBitrateLimits
     kResolutionAndBitrateLimits[] = {
         
   {MB_OF(1920, 1200), KBPS(1500), KBPS(2000), KBPS(10000)}, 
   {MB_OF(1280, 720), KBPS(1200), KBPS(1500), KBPS(5000)}, 
   {MB_OF(800, 480), KBPS(200), KBPS(800), KBPS(2500)}, 
   {MB_OF(480, 270), KBPS(150), KBPS(500), KBPS(2000)}, 
-  {std::max(MB_OF(400, 240), MB_OF(352, 288)), KBPS(125), KBPS(300), KBPS(1300)}, 
+  {tl::Max<MB_OF(400, 240), MB_OF(352, 288)>::value, KBPS(125), KBPS(300), KBPS(1300)}, 
   {MB_OF(176, 144), KBPS(100), KBPS(150), KBPS(500)}, 
   {0 , KBPS(40), KBPS(80), KBPS(250)} 
         

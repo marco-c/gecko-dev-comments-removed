@@ -3,7 +3,6 @@
 
 
 #include <cstdlib>
-#include <climits>
 
 #if defined(XP_WIN)
 #  include <windows.h>  
