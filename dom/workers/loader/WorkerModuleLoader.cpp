@@ -95,12 +95,7 @@ already_AddRefed<ModuleLoadRequest> WorkerModuleLoader::CreateDynamicImport(
     return nullptr;
   }
 
-  
-  
-  
-  if (workerPrivate->IsServiceWorker()) {
-    return nullptr;
-  }
+  MOZ_ASSERT(!workerPrivate->IsServiceWorker());
   MOZ_ASSERT(aModuleRequestObj);
   MOZ_ASSERT(aPromise);
 
@@ -155,11 +150,10 @@ already_AddRefed<ModuleLoadRequest> WorkerModuleLoader::CreateDynamicImport(
 
 bool WorkerModuleLoader::IsDynamicImportSupported() {
   WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
-  if (workerPrivate->IsServiceWorker()) {
-    return false;
-  }
-
-  return true;
+  
+  
+  
+  return !workerPrivate->IsServiceWorker();
 }
 
 bool WorkerModuleLoader::CanStartLoad(ModuleLoadRequest* aRequest,
