@@ -1782,8 +1782,10 @@ bool nsWindow::WaylandPopupConfigure() {
     mPopupContextMenu = WaylandPopupIsContextMenu();
   }
 
-  LOG("nsWindow::WaylandPopupConfigure tracked %d anchored %d hint %d\n",
-      mPopupTrackInHierarchy, mPopupAnchored, int(mPopupType));
+  LOG("nsWindow::WaylandPopupConfigure tracked %d anchored %d hint %d "
+      "permanent %d\n",
+      mPopupTrackInHierarchy, mPopupAnchored, int(mPopupType),
+      WaylandPopupIsPermanent());
 
   
   
@@ -2216,16 +2218,12 @@ void nsWindow::WaylandPopupSetDirectPosition() {
   if (popupWidth > parentWidth) {
     mPopupPosition.x = -(parentWidth - popupWidth) / 2 + x;
   } else {
-    if (IsPopupDirectionRTL()) {
+    if (mPopupPosition.x < x) {
       
-      if (mPopupPosition.x < x) {
-        mPopupPosition.x = x;
-      }
-    } else {
+      mPopupPosition.x = x;
+    } else if (mPopupPosition.x + popupWidth > parentWidth + x) {
       
-      if (mPopupPosition.x + popupWidth > parentWidth + x) {
-        mPopupPosition.x = parentWidth + x - popupWidth;
-      }
+      mPopupPosition.x = parentWidth + x - popupWidth;
     }
   }
 
@@ -5562,7 +5560,7 @@ void nsWindow::OnScaleEvent() {
   RefreshScale( true);
 }
 
-void nsWindow::RefreshScale(bool aRefreshScreen) {
+void nsWindow::RefreshScale(bool aRefreshScreen, bool aForceRefresh) {
   if (!IsTopLevelWidget()) {
     return;
   }
@@ -5572,8 +5570,8 @@ void nsWindow::RefreshScale(bool aRefreshScreen) {
 
   MOZ_DIAGNOSTIC_ASSERT(mIsMapped && mGdkWindow);
   int ceiledScale = gdk_window_get_scale_factor(mGdkWindow);
-  const bool scaleChanged = GdkCeiledScaleFactor() != ceiledScale;
-
+  const bool scaleChanged =
+      aForceRefresh || GdkCeiledScaleFactor() != ceiledScale;
 #ifdef MOZ_WAYLAND
   if (GdkIsWaylandDisplay()) {
     WaylandSurfaceLock lock(mSurface);

@@ -331,7 +331,9 @@ class nsWindow final : public nsBaseWidget {
   
   
   
-  void RefreshScale(bool aRefreshScreen);
+  
+  
+  void RefreshScale(bool aRefreshScreen, bool aForceRefresh = false);
 
   static guint32 sLastButtonPressTime;
 
