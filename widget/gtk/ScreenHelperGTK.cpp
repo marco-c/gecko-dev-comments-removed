@@ -66,67 +66,13 @@ static uint32_t GetGTKPixelDepth() {
 
 static already_AddRefed<Screen> MakeScreenGtk(unsigned int aMonitor,
                                               bool aIsHDR) {
-  gint geometryScaleFactor =
-      ScreenHelperGTK::GetGTKMonitorScaleFactor(aMonitor);
   GdkScreen* defaultScreen = gdk_screen_get_default();
+  gint gdkScaleFactor = ScreenHelperGTK::GetGTKMonitorScaleFactor(aMonitor);
 
-  GdkRectangle workarea;
-  gdk_screen_get_monitor_workarea(defaultScreen, aMonitor, &workarea);
-  LayoutDeviceIntRect availRect(workarea.x * geometryScaleFactor,
-                                workarea.y * geometryScaleFactor,
-                                workarea.width * geometryScaleFactor,
-                                workarea.height * geometryScaleFactor);
-
-  LayoutDeviceIntRect rect;
-  DesktopToLayoutDeviceScale contentsScale(1.0);
-  CSSToLayoutDeviceScale defaultCssScale(geometryScaleFactor);
-  if (GdkIsX11Display()) {
-    GdkRectangle monitor;
-    gdk_screen_get_monitor_geometry(defaultScreen, aMonitor, &monitor);
-    rect = LayoutDeviceIntRect(monitor.x * geometryScaleFactor,
-                               monitor.y * geometryScaleFactor,
-                               monitor.width * geometryScaleFactor,
-                               monitor.height * geometryScaleFactor);
-  } else {
-    
-    contentsScale.scale = geometryScaleFactor;
-
-    if (StaticPrefs::widget_wayland_fractional_scale_enabled_AtStartup()) {
-      
-      
-      nsWaylandDisplay::MonitorConfig* config =
-          WaylandDisplayGet()->GetMonitorConfig(workarea.x, workarea.y);
-      Unused << NS_WARN_IF(!config);
-      if (config && workarea.width > config->pixelWidth / geometryScaleFactor &&
-          workarea.height > config->pixelHeight / geometryScaleFactor) {
-        float fractionalScale = (float)config->pixelWidth / workarea.width;
-        LOG_SCREEN("Monitor %d uses fractional scale %f", aMonitor,
-                   fractionalScale);
-        availRect.width = config->pixelWidth;
-        availRect.height = config->pixelHeight;
-        defaultCssScale = CSSToLayoutDeviceScale(fractionalScale);
-        contentsScale.scale = fractionalScale;
-      }
-    }
-    
-    availRect.MoveTo(0, 0);
-    
-    rect = availRect;
-  }
-
-  uint32_t pixelDepth = GetGTKPixelDepth();
-  if (pixelDepth == 32) {
-    
-    
-    
-    pixelDepth = 24;
-  }
-
-  float dpi = 96.0f;
-  gint heightMM = gdk_screen_get_monitor_height_mm(defaultScreen, aMonitor);
-  if (heightMM > 0) {
-    dpi = rect.height / (heightMM / MM_PER_INCH_FLOAT);
-  }
+  
+  
+  
+  gint geometryScaleFactor = gdkScaleFactor;
 
   gint refreshRate = [&] {
     
@@ -143,6 +89,46 @@ static already_AddRefed<Screen> MakeScreenGtk(unsigned int aMonitor,
     
     return NSToIntRound(s_gdk_monitor_get_refresh_rate(monitor) / 1000.0f);
   }();
+
+  GdkRectangle workarea;
+  gdk_screen_get_monitor_workarea(defaultScreen, aMonitor, &workarea);
+  LayoutDeviceIntRect availRect(workarea.x * geometryScaleFactor,
+                                workarea.y * geometryScaleFactor,
+                                workarea.width * geometryScaleFactor,
+                                workarea.height * geometryScaleFactor);
+  LayoutDeviceIntRect rect;
+  DesktopToLayoutDeviceScale contentsScale(1.0);
+  if (GdkIsX11Display()) {
+    GdkRectangle monitor;
+    gdk_screen_get_monitor_geometry(defaultScreen, aMonitor, &monitor);
+    rect = LayoutDeviceIntRect(monitor.x * geometryScaleFactor,
+                               monitor.y * geometryScaleFactor,
+                               monitor.width * geometryScaleFactor,
+                               monitor.height * geometryScaleFactor);
+  } else {
+    
+    availRect.MoveTo(0, 0);
+    
+    rect = availRect;
+    
+    contentsScale.scale = gdkScaleFactor;
+  }
+
+  uint32_t pixelDepth = GetGTKPixelDepth();
+  if (pixelDepth == 32) {
+    
+    
+    
+    pixelDepth = 24;
+  }
+
+  CSSToLayoutDeviceScale defaultCssScale(gdkScaleFactor);
+
+  float dpi = 96.0f;
+  gint heightMM = gdk_screen_get_monitor_height_mm(defaultScreen, aMonitor);
+  if (heightMM > 0) {
+    dpi = rect.height / (heightMM / MM_PER_INCH_FLOAT);
+  }
 
   LOG_SCREEN(
       "New monitor %d size [%d,%d -> %d x %d] depth %d scale %f CssScale %f  "
