@@ -133,6 +133,14 @@ class nsExternalHelperAppService : public nsIExternalHelperAppService,
 
 
 
+  static bool ExternalProtocolIsBlockedBySandbox(
+      mozilla::dom::BrowsingContext* aBrowsingContext,
+      const bool aHasValidUserGestureActivation);
+
+  
+
+
+
 
   static mozilla::LazyLogModule sLog;
 
