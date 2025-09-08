@@ -76,22 +76,27 @@ class NativeLayerRemoteMac final : public NativeLayer {
  protected:
   Maybe<NativeLayerMacSurfaceHandler> mSurfaceHandler;
   RefPtr<NativeLayerCommandQueue> mCommandQueue;
+  const bool mIsOpaque = false;
+  const gfx::DeviceColor mColor;
 
-  CFTypeRefPtr<IOSurfaceRef> mExternalImage;
-  bool mIsDRM = false;
-  bool mIsHDR = false;
+  bool mDirtyLayerInfo = true;
+  
   gfx::IntPoint mPosition;
   gfx::Matrix4x4 mTransform;
   gfx::IntRect mDisplayRect;
-  gfx::IntSize mSize;
   Maybe<gfx::IntRect> mClipRect;
   Maybe<gfx::RoundedRect> mRoundedClipRect;
   gfx::SamplingFilter mSamplingFilter = gfx::SamplingFilter::POINT;
   float mBackingScale = 1.0f;
   bool mSurfaceIsFlipped = false;
-  gfx::DeviceColor mColor;
-  const bool mIsOpaque = false;
-  bool mDirty = false;
+
+  bool mDirtyChangedSurface = true;
+  
+  
+  CFTypeRefPtr<IOSurfaceRef> mExternalImage;
+  bool mIsDRM = false;
+  bool mIsHDR = false;
+  gfx::IntSize mSize;
 };
 
 }  

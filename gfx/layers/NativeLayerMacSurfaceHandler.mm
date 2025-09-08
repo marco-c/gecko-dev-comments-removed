@@ -3,7 +3,6 @@
 
 
 
-
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/MacIOSurface.h"
