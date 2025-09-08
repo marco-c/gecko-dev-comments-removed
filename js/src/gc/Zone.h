@@ -23,12 +23,14 @@
 #include "gc/ArenaList.h"
 #include "gc/Barrier.h"
 #include "gc/BufferAllocator.h"
+#include "gc/FinalizationObservers.h"
 #include "gc/FindSCCs.h"
 #include "gc/GCMarker.h"
 #include "gc/NurseryAwareHashMap.h"
 #include "gc/Policy.h"
 #include "gc/Pretenuring.h"
 #include "gc/Statistics.h"
+#include "gc/WeakMap.h"
 #include "gc/ZoneAllocator.h"
 #include "js/GCHashTable.h"
 #include "js/Vector.h"
@@ -540,11 +542,10 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   friend class js::gc::ZoneList;
 
   using KeptAliveSet =
-      JS::GCHashSet<js::HeapPtr<JSObject*>,
-                    js::StableCellHasher<js::HeapPtr<JSObject*>>,
+      JS::GCHashSet<js::HeapPtr<Value>, js::gc::WeakTargetHasher,
                     js::ZoneAllocPolicy>;
   friend class js::WeakRefObject;
-  js::MainThreadOrGCTaskData<KeptAliveSet> keptObjects;
+  js::MainThreadOrGCTaskData<KeptAliveSet> keptAliveSet;
 
   
   
@@ -920,7 +921,7 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
 
   
   
-  bool addToKeptObjects(HandleObject target);
+  bool addToKeptObjects(HandleValue target);
 
   void traceKeptObjects(JSTracer* trc);
 
