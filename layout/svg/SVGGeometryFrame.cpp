@@ -64,8 +64,7 @@ void SVGGeometryFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 }
 
 nsresult SVGGeometryFrame::AttributeChanged(int32_t aNameSpaceID,
-                                            nsAtom* aAttribute,
-                                            int32_t aModType) {
+                                            nsAtom* aAttribute, AttrModType) {
   
   
   

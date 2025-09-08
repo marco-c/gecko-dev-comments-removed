@@ -646,7 +646,7 @@ nsMathMLmtableWrapperFrame::~nsMathMLmtableWrapperFrame() = default;
 
 nsresult nsMathMLmtableWrapperFrame::AttributeChanged(int32_t aNameSpaceID,
                                                       nsAtom* aAttribute,
-                                                      int32_t aModType) {
+                                                      AttrModType aModType) {
   
   
   
@@ -1020,7 +1020,7 @@ nsMathMLmtrFrame::~nsMathMLmtrFrame() = default;
 
 nsresult nsMathMLmtrFrame::AttributeChanged(int32_t aNameSpaceID,
                                             nsAtom* aAttribute,
-                                            int32_t aModType) {
+                                            AttrModType aModType) {
   
   
   
@@ -1073,7 +1073,7 @@ void nsMathMLmtdFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 
 nsresult nsMathMLmtdFrame::AttributeChanged(int32_t aNameSpaceID,
                                             nsAtom* aAttribute,
-                                            int32_t aModType) {
+                                            AttrModType aModType) {
   
   
   

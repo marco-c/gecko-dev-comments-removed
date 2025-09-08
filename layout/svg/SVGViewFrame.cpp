@@ -51,7 +51,7 @@ class SVGViewFrame final : public nsIFrame {
 #endif
 
   nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                            int32_t aModType) override;
+                            AttrModType aModType) override;
 
   bool ComputeCustomOverflow(OverflowAreas& aOverflowAreas) override {
     
@@ -82,7 +82,8 @@ void SVGViewFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 #endif 
 
 nsresult SVGViewFrame::AttributeChanged(int32_t aNameSpaceID,
-                                        nsAtom* aAttribute, int32_t aModType) {
+                                        nsAtom* aAttribute,
+                                        AttrModType aModType) {
   
 
   if (aNameSpaceID == kNameSpaceID_None &&

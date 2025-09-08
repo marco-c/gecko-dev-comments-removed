@@ -161,8 +161,7 @@ bool nsTableCellFrame::NeedsToObserve(const ReflowInput& aReflowInput) {
 }
 
 nsresult nsTableCellFrame::AttributeChanged(int32_t aNameSpaceID,
-                                            nsAtom* aAttribute,
-                                            int32_t aModType) {
+                                            nsAtom* aAttribute, AttrModType) {
   
   
   if (aNameSpaceID == kNameSpaceID_None && aAttribute == nsGkAtoms::nowrap &&

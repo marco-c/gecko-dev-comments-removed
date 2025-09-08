@@ -227,7 +227,7 @@ void nsSplitterFrame::Destroy(DestroyContext& aContext) {
 
 nsresult nsSplitterFrame::AttributeChanged(int32_t aNameSpaceID,
                                            nsAtom* aAttribute,
-                                           int32_t aModType) {
+                                           AttrModType aModType) {
   nsresult rv =
       SimpleXULLeafFrame::AttributeChanged(aNameSpaceID, aAttribute, aModType);
   if (aAttribute == nsGkAtoms::state) {
@@ -601,7 +601,7 @@ nsresult nsSplitterFrameInner::MouseDown(Event* aMouseEvent) {
         
         
         if (element->GetXULBoolAttr(nsGkAtoms::fixed) ||
-            element->GetXULBoolAttr(nsGkAtoms::hidden)) {
+            element->GetBoolAttr(nsGkAtoms::hidden)) {
           return false;
         }
       }

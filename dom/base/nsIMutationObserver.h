@@ -44,6 +44,13 @@ inline std::ostream& operator<<(
 }
 
 
+enum class AttrModType : uint8_t {
+  Modification = 1,
+  Addition = 2,
+  Removal = 3,
+};
+
+
 
 
 

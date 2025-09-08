@@ -126,6 +126,8 @@ class nsStyleChangeList;
 class nsViewManager;
 class nsWindowSizes;
 
+enum class AttrModType : uint8_t;  
+
 struct CharacterDataChangeInfo;
 
 namespace mozilla {
@@ -2591,7 +2593,7 @@ class nsIFrame : public nsQueryFrame {
 
 
   virtual nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                                    int32_t aModType);
+                                    AttrModType aModType);
 
   
 
