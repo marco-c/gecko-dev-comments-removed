@@ -507,9 +507,13 @@ pub trait MakeWriterExt<'a>: MakeWriter<'a> {
 
 
 
+
+
 #[derive(Default, Debug)]
 pub struct TestWriter {
-    _p: (),
+    
+    
+    use_stderr: bool,
 }
 
 
@@ -708,12 +712,23 @@ impl TestWriter {
     pub fn new() -> Self {
         Self::default()
     }
+
+    
+    pub fn with_stderr() -> Self {
+        Self {
+            use_stderr: true,
+        }
+    }
 }
 
 impl io::Write for TestWriter {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         let out_str = String::from_utf8_lossy(buf);
-        print!("{}", out_str);
+        if self.use_stderr {
+            eprint!("{}", out_str)
+        } else {
+            print!("{}", out_str)
+        }
         Ok(buf.len())
     }
 
@@ -1186,7 +1201,7 @@ impl io::Write for WriteAdaptor<'_> {
             .write_str(s)
             .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
 
-        Ok(s.as_bytes().len())
+        Ok(s.len())
     }
 
     fn flush(&mut self) -> io::Result<()> {

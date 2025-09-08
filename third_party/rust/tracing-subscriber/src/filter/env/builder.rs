@@ -133,6 +133,11 @@ impl Builder {
 
     
     
+    
+    
+    
+    
+    
     pub fn parse_lossy<S: AsRef<str>>(&self, dirs: S) -> EnvFilter {
         let directives = dirs
             .as_ref()
@@ -150,6 +155,11 @@ impl Builder {
 
     
     
+    
+    
+    
+    
+    
     pub fn parse<S: AsRef<str>>(&self, dirs: S) -> Result<EnvFilter, directive::ParseError> {
         let dirs = dirs.as_ref();
         if dirs.is_empty() {
@@ -165,6 +175,11 @@ impl Builder {
 
     
     
+    
+    
+    
+    
+    
     pub fn from_env_lossy(&self) -> EnvFilter {
         let var = env::var(self.env_var_name()).unwrap_or_default();
         self.parse_lossy(var)
@@ -174,11 +189,21 @@ impl Builder {
     
     
     
+    
+    
+    
+    
+    
     pub fn from_env(&self) -> Result<EnvFilter, FromEnvError> {
         let var = env::var(self.env_var_name()).unwrap_or_default();
         self.parse(var).map_err(Into::into)
     }
 
+    
+    
+    
+    
+    
     
     
     
