@@ -8,7 +8,7 @@
 #define gc_FinalizationObservers_h
 
 #include "gc/Barrier.h"
-#include "gc/WeakMap.h"
+#include "gc/WeakMap.h"  
 #include "gc/ZoneAllocator.h"
 #include "js/GCHashTable.h"
 #include "js/GCVector.h"
@@ -146,35 +146,21 @@ class ObserverList {
 
 
 class FinalizationObservers {
-  Zone* const zone;
-
-  
   
   using RegistrySet =
-      GCHashSet<HeapPtr<JSObject*>, StableCellHasher<HeapPtr<JSObject*>>,
+      GCHashSet<HeapPtr<FinalizationRegistryObject*>,
+                StableCellHasher<HeapPtr<FinalizationRegistryObject*>>,
                 ZoneAllocPolicy>;
   RegistrySet registries;
-
-  
-  using RecordVector = GCVector<HeapPtr<JSObject*>, 1, ZoneAllocPolicy>;
 
   
   
   
   
   using RecordMap =
-      GCHashMap<HeapPtr<JSObject*>, RecordVector,
+      GCHashMap<HeapPtr<JSObject*>, ObserverList,
                 StableCellHasher<HeapPtr<JSObject*>>, ZoneAllocPolicy>;
   RecordMap recordMap;
-
-  
-  
-  
-  
-  
-  
-  using WrapperWeakSet = ObjectValueWeakMap;
-  WrapperWeakSet crossZoneRecords;
 
   using WeakRefMap =
       GCHashMap<HeapPtr<JSObject*>, ObserverList,
@@ -187,11 +173,10 @@ class FinalizationObservers {
 
   
   bool addRegistry(Handle<FinalizationRegistryObject*> registry);
-  bool addRecord(HandleObject target, HandleObject record);
+  bool addRecord(HandleObject target, Handle<FinalizationRecordObject*> record);
   void clearRecords();
 
-  void updateForRemovedRecord(JSObject* wrapper,
-                              FinalizationRecordObject* record);
+  void removeRecord(FinalizationRecordObject* record);
 
   
   bool addWeakRefTarget(Handle<JSObject*> target,
@@ -199,17 +184,9 @@ class FinalizationObservers {
   void removeWeakRefTarget(Handle<JSObject*> target,
                            Handle<WeakRefObject*> weakRef);
 
-  void traceRoots(JSTracer* trc);
   void traceWeakEdges(JSTracer* trc);
 
-#ifdef DEBUG
-  void checkTables() const;
-#endif
-
  private:
-  bool addCrossZoneWrapper(WrapperWeakSet& weakSet, JSObject* wrapper);
-  void removeCrossZoneWrapper(WrapperWeakSet& weakSet, JSObject* wrapper);
-
   void traceWeakFinalizationRegistryEdges(JSTracer* trc);
   void traceWeakWeakRefEdges(JSTracer* trc);
   void traceWeakWeakRefList(JSTracer* trc, ObserverList& weakRefs,

@@ -799,10 +799,6 @@ void Zone::traceRootsInMajorGC(JSTracer* trc) {
   
   
   traceScriptTableRoots(trc);
-
-  if (FinalizationObservers* observers = finalizationObservers()) {
-    observers->traceRoots(trc);
-  }
 }
 
 void Zone::traceScriptTableRoots(JSTracer* trc) {

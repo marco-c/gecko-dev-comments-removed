@@ -793,12 +793,6 @@ bool Compartment::findSweepGroupEdges() {
 bool Zone::findSweepGroupEdges(Zone* atomsZone) {
   MOZ_ASSERT_IF(this != atomsZone, !isAtomsZone());
 
-#ifdef DEBUG
-  if (FinalizationObservers* observers = finalizationObservers()) {
-    observers->checkTables();
-  }
-#endif
-
   
   
   if (atomsZone->wasGCStarted() && !addSweepGroupEdgeTo(atomsZone)) {
@@ -1156,16 +1150,6 @@ void js::NotifyGCNukeWrapper(JSContext* cx, JSObject* wrapper) {
 
 
   RemoveFromGrayList(wrapper);
-
-  
-
-
-
-  JSObject* target = UncheckedUnwrapWithoutExpose(wrapper);
-  if (target->is<FinalizationRecordObject>()) {
-    auto* record = &target->as<FinalizationRecordObject>();
-    cx->runtime()->gc.nukeFinalizationRecordWrapper(wrapper, record);
-  }
 }
 
 enum {
