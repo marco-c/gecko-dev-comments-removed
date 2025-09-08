@@ -18,7 +18,6 @@
 #include "mozilla/SelectionState.h"
 #include "mozilla/OwningNonNull.h"
 #include "mozilla/StaticPrefs_editor.h"  
-#include "mozilla/InternalMutationEvent.h"
 #include "mozilla/dom/AncestorIterator.h"
 
 #include "nsCRT.h"

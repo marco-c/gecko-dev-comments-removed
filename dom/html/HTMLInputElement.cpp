@@ -18,7 +18,6 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventStateManager.h"
-#include "mozilla/InternalMutationEvent.h"
 #include "mozilla/MappedDeclarationsBuilder.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MouseEvents.h"
@@ -49,7 +48,6 @@
 #include "mozilla/dom/HTMLOptionElement.h"
 #include "mozilla/dom/InputType.h"
 #include "mozilla/dom/MouseEvent.h"
-#include "mozilla/dom/MutationEventBinding.h"
 #include "mozilla/dom/NumericInputTypes.h"
 #include "mozilla/dom/ProgressEvent.h"
 #include "mozilla/dom/UnionTypes.h"
@@ -3168,9 +3166,7 @@ bool HTMLInputElement::NeedToInitializeEditorForEvent(
   
   
   
-  
-  if (!IsSingleLineTextControl(false) ||
-      aVisitor.mEvent->mClass == eMutationEventClass) {
+  if (!IsSingleLineTextControl(false)) {
     return false;
   }
 

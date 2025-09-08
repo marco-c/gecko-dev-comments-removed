@@ -7,7 +7,6 @@
 
 #include "mozilla/PresShell.h"
 #include "mozilla/SVGObserverUtils.h"
-#include "mozilla/dom/MutationEventBinding.h"
 #include "mozilla/dom/SVGFEImageElement.h"
 #include "nsContainerFrame.h"
 #include "nsGkAtoms.h"
