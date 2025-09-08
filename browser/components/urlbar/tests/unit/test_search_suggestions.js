@@ -1030,6 +1030,34 @@ add_task(async function prohibit_suggestions() {
     ],
   });
 
+  context = createContext("user:pass@mozilla.org", { isPrivate: false });
+  await check_results({
+    context,
+    matches: [
+      makeVisitResult(context, {
+        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        uri: "http://user:pass@mozilla.org/",
+        fallbackTitle: "user:pass@mozilla.org/",
+        iconUri: "",
+        heuristic: true,
+      }),
+    ],
+  });
+
+  context = createContext("mozilla.org:1234", { isPrivate: false });
+  await check_results({
+    context,
+    matches: [
+      makeVisitResult(context, {
+        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        uri: "http://mozilla.org:1234/",
+        fallbackTitle: "mozilla.org:1234/",
+        iconUri: "",
+        heuristic: true,
+      }),
+    ],
+  });
+
   context = createContext("data:text/plain,Content", { isPrivate: false });
   await check_results({
     context,
@@ -1058,40 +1086,107 @@ add_task(async function prohibit_suggestions() {
   await cleanUpSuggestions();
 });
 
+add_task(async function simple_origin_queries() {
+  Services.prefs.setBoolPref(SUGGEST_PREF, true);
+  Services.prefs.setBoolPref(SUGGEST_ENABLED_PREF, true);
+
+  
+  
+  let queries = ["mozilla.org", "example.com", "example.co", "readme.md"];
+
+  for (let allow of [false, true]) {
+    Services.prefs.setBoolPref(
+      "browser.urlbar.allowSearchSuggestionsForSimpleOrigins",
+      allow
+    );
+
+    for (let query of queries) {
+      info("Testing: " + JSON.stringify({ allow, query }));
+
+      let context = createContext(query, { isPrivate: false });
+      let expected = [
+        makeVisitResult(context, {
+          source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+          fallbackTitle: `${query}/`,
+          uri: `http://${query}/`,
+          iconUri: "",
+          heuristic: true,
+        }),
+      ];
+      if (allow) {
+        expected.push(
+          ...makeRemoteSuggestionResults(context, { suggestionPrefix: query })
+        );
+      }
+      expected.push(
+        makeSearchResult(context, {
+          query,
+          engineName: SUGGESTIONS_ENGINE_NAME,
+        })
+      );
+
+      await check_results({
+        context,
+        matches: expected,
+      });
+    }
+  }
+
+  await cleanUpSuggestions();
+  Services.prefs.clearUserPref(
+    "browser.urlbar.allowSearchSuggestionsForSimpleOrigins"
+  );
+});
+
+add_task(async function simple_origin_like_queries() {
+  Services.prefs.setBoolPref(SUGGEST_PREF, true);
+  Services.prefs.setBoolPref(SUGGEST_ENABLED_PREF, true);
+
+  
+  
+  
+  let queries = ["mozilla.o", "mozilla."];
+
+  for (let allow of [false, true]) {
+    Services.prefs.setBoolPref(
+      "browser.urlbar.allowSearchSuggestionsForSimpleOrigins",
+      allow
+    );
+
+    for (let query of queries) {
+      info("Testing: " + JSON.stringify({ allow, query }));
+
+      let context = createContext(query, { isPrivate: false });
+      let expected = [
+        makeSearchResult(context, {
+          engineName: SUGGESTIONS_ENGINE_NAME,
+          heuristic: true,
+        }),
+      ];
+      if (allow) {
+        expected.push(
+          ...makeRemoteSuggestionResults(context, { suggestionPrefix: query })
+        );
+      }
+
+      await check_results({
+        context,
+        matches: expected,
+      });
+    }
+  }
+
+  await cleanUpSuggestions();
+  Services.prefs.clearUserPref(
+    "browser.urlbar.allowSearchSuggestionsForSimpleOrigins"
+  );
+});
+
 add_task(async function uri_like_queries() {
   Services.prefs.setBoolPref(SUGGEST_PREF, true);
   Services.prefs.setBoolPref(SUGGEST_ENABLED_PREF, true);
 
   
-  let query = "mozilla.org";
-  let context = createContext(query, { isPrivate: false });
-  await check_results({
-    context,
-    matches: [
-      makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
-        fallbackTitle: `${query}/`,
-        uri: `http://${query}/`,
-        iconUri: "",
-        heuristic: true,
-      }),
-      makeSearchResult(context, { query, engineName: SUGGESTIONS_ENGINE_NAME }),
-    ],
-  });
-
-  
-  query = "mozilla.o";
-  context = createContext(query, { isPrivate: false });
-  await check_results({
-    context,
-    matches: [
-      makeSearchResult(context, {
-        engineName: SUGGESTIONS_ENGINE_NAME,
-        heuristic: true,
-      }),
-    ],
-  });
-
   
   
   const uriLikeQueries = [
@@ -1102,23 +1197,36 @@ add_task(async function uri_like_queries() {
     "Google vs.",
     "5.8 cm",
   ];
-  for (query of uriLikeQueries) {
-    context = createContext(query, { isPrivate: false });
-    await check_results({
-      context,
-      matches: [
-        makeSearchResult(context, {
-          engineName: SUGGESTIONS_ENGINE_NAME,
-          heuristic: true,
-        }),
-        ...makeRemoteSuggestionResults(context, {
-          suggestionPrefix: query,
-        }),
-      ],
-    });
+
+  for (let allow of [false, true]) {
+    Services.prefs.setBoolPref(
+      "browser.urlbar.allowSearchSuggestionsForSimpleOrigins",
+      allow
+    );
+
+    for (let query of uriLikeQueries) {
+      info("Testing: " + JSON.stringify({ allow, query }));
+
+      let context = createContext(query, { isPrivate: false });
+      await check_results({
+        context,
+        matches: [
+          makeSearchResult(context, {
+            engineName: SUGGESTIONS_ENGINE_NAME,
+            heuristic: true,
+          }),
+          ...makeRemoteSuggestionResults(context, {
+            suggestionPrefix: query,
+          }),
+        ],
+      });
+    }
   }
 
   await cleanUpSuggestions();
+  Services.prefs.clearUserPref(
+    "browser.urlbar.allowSearchSuggestionsForSimpleOrigins"
+  );
 });
 
 add_task(async function avoid_remote_url_suggestions_1() {
