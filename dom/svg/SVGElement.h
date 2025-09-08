@@ -112,7 +112,7 @@ class SVGElement : public SVGElementBase
   nsresult BindToTree(BindContext&, nsINode& aParent) override;
 
   nsChangeHint GetAttributeChangeHint(const nsAtom* aAttribute,
-                                      int32_t aModType) const override;
+                                      AttrModType aModType) const override;
 
   
 

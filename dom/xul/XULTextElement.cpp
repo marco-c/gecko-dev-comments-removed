@@ -13,20 +13,19 @@
 #include "nsCOMPtr.h"
 #include "nsChangeHint.h"
 #include "nsIContent.h"
+#include "nsIMutationObserver.h"
 #include "nsPresContext.h"
 
 namespace mozilla::dom {
 
-nsChangeHint XULTextElement::GetAttributeChangeHint(const nsAtom* aAttribute,
-                                                    int32_t aModType) const {
+nsChangeHint XULTextElement::GetAttributeChangeHint(
+    const nsAtom* aAttribute, AttrModType aModType) const {
   const bool reframe = [&] {
     if (aAttribute == nsGkAtoms::value) {
       
       
       
-      return aModType == MutationEvent_Binding::ADDITION ||
-             aModType == MutationEvent_Binding::REMOVAL ||
-             HasAttr(nsGkAtoms::accesskey);
+      return IsAdditionOrRemoval(aModType) || HasAttr(nsGkAtoms::accesskey);
     }
     if (aAttribute == nsGkAtoms::crop || aAttribute == nsGkAtoms::accesskey) {
       
