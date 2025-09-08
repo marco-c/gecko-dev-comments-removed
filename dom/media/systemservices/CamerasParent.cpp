@@ -392,15 +392,13 @@ void CallbackHelper::OnFrame(const webrtc::VideoFrame& aVideoFrame) {
     
     auto c = mConfiguration.Lock();
 
-    const double maxFramerate =
-        std::clamp(static_cast<double>(
-                       c->mCapability.maxFPS > 0 ? c->mCapability.maxFPS : 120),
-                   0.01, 120.);
-    const double targetFramerate =
+    const double maxFramerate = static_cast<double>(
+        c->mCapability.maxFPS > 0 ? c->mCapability.maxFPS : 120);
+    const double desiredFramerate =
         c->mResizeMode == VideoResizeModeEnum::Crop_and_scale
-            ? std::min(maxFramerate,
-                       c->mConstraints.mFrameRate.Get(maxFramerate))
+            ? c->mConstraints.mFrameRate.Get(maxFramerate)
             : maxFramerate;
+    const double targetFramerate = std::clamp(desiredFramerate, 0.01, 120.);
 
     
     
