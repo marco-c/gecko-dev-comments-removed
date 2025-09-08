@@ -23,8 +23,13 @@
 #include "nsCOMPtr.h"
 #include "nsICryptoHash.h"
 #include "mozilla/glean/SecurityManagerSslMetrics.h"
+#include "mozilla/StaticPrefs_network.h"
 
 #include <windows.h>
+
+
+#include "nss/mozpkix/pkixutil.h"
+#include "nss/mozpkix/pkixder.h"
 
 #define SEC_SUCCESS(Status) ((Status) >= 0)
 
@@ -276,8 +281,6 @@ nsAuthSSPI::GetNextToken(const void* inToken, uint32_t inTokenLen,
   
   const char end_point[] = "tls-server-end-point:";
   const int end_point_length = sizeof(end_point) - 1;
-  const int hash_size = 32;  
-  const int cbt_size = hash_size + end_point_length;
 
   SECURITY_STATUS rc;
   MS_TimeStamp ignored;
@@ -333,6 +336,62 @@ nsAuthSSPI::GetNextToken(const void* inToken, uint32_t inTokenLen,
       
       if (mCertDERLength > 0) {
         
+        uint32_t hashAlgorithm = nsICryptoHash::SHA256;
+        uint32_t hashSize = 32;  
+
+        
+        [&]() {
+          if (!mozilla::StaticPrefs::network_auth_sspi_detect_hash()) {
+            
+            
+            return;
+          }
+          using namespace mozilla::pkix;
+          Input certDER;
+
+          mozilla::pkix::Result pkixResult = certDER.Init(
+              static_cast<const uint8_t*>(mCertDERData), mCertDERLength);
+          if (pkixResult != Success) {
+            return;
+          }
+
+          BackCert cert(certDER, EndEntityOrCA::MustBeEndEntity, nullptr);
+          pkixResult = cert.Init();
+          if (pkixResult != Success) {
+            return;
+          }
+
+          
+          der::PublicKeyAlgorithm publicKeyAlg;
+          DigestAlgorithm digestAlg;
+          Reader signatureAlgorithmReader(cert.GetSignedData().algorithm);
+          pkixResult = der::SignatureAlgorithmIdentifierValue(
+              signatureAlgorithmReader, publicKeyAlg, digestAlg);
+
+          if (pkixResult != Success) {
+            return;
+          }
+          
+          switch (digestAlg) {
+            case DigestAlgorithm::sha384:
+              hashAlgorithm = nsICryptoHash::SHA384;
+              hashSize = 48;  
+              break;
+            case DigestAlgorithm::sha512:
+              hashAlgorithm = nsICryptoHash::SHA512;
+              hashSize = 64;  
+              break;
+            case DigestAlgorithm::sha256:
+            default:
+              
+              hashAlgorithm = nsICryptoHash::SHA256;
+              hashSize = 32;
+              break;
+          }
+        }();
+
+        
+        const int cbt_size = hashSize + end_point_length;
         pendpoint_binding.dwInitiatorAddrType = 0;
         pendpoint_binding.cbInitiatorLength = 0;
         pendpoint_binding.dwInitiatorOffset = 0;
@@ -363,17 +422,19 @@ nsAuthSSPI::GetNextToken(const void* inToken, uint32_t inTokenLen,
         memcpy(sspi_cbt_ptr, end_point, end_point_length);
         sspi_cbt_ptr += end_point_length;
 
-        
-        
         nsAutoCString hashString;
+        nsresult rv = NS_ERROR_FAILURE;
 
-        nsresult rv;
         nsCOMPtr<nsICryptoHash> crypto;
         crypto = do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID, &rv);
-        if (NS_SUCCEEDED(rv)) rv = crypto->Init(nsICryptoHash::SHA256);
-        if (NS_SUCCEEDED(rv))
+        if (NS_SUCCEEDED(rv)) {
+          rv = crypto->Init(hashAlgorithm);
+        }
+        if (NS_SUCCEEDED(rv)) {
           rv = crypto->Update((unsigned char*)mCertDERData, mCertDERLength);
+        }
         if (NS_SUCCEEDED(rv)) rv = crypto->Finish(false, hashString);
+
         if (NS_FAILED(rv)) {
           free(mCertDERData);
           mCertDERData = nullptr;
@@ -384,8 +445,7 @@ nsAuthSSPI::GetNextToken(const void* inToken, uint32_t inTokenLen,
 
         
         
-        
-        memcpy(sspi_cbt_ptr, hashString.get(), hash_size);
+        memcpy(sspi_cbt_ptr, hashString.get(), hashSize);
 
         
         free(mCertDERData);
