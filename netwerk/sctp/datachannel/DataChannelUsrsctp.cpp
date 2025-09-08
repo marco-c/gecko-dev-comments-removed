@@ -797,6 +797,16 @@ void DataChannelConnectionUsrsctp::OnStreamOpen(uint16_t stream) {
   });
 }
 
+bool DataChannelConnectionUsrsctp::HasQueuedData(uint16_t aStream) const {
+  MOZ_ASSERT(mSTS->IsOnCurrentThread());
+  for (const auto& data : mQueuedData) {
+    if (data->mStream == aStream) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void DataChannelConnectionUsrsctp::HandleDataMessageChunk(
     const void* data, size_t length, uint32_t ppid, uint16_t stream,
     uint16_t messageId, int flags) {
@@ -810,7 +820,7 @@ void DataChannelConnectionUsrsctp::HandleDataMessageChunk(
   
   
   
-  if (!channel) {
+  if (!channel || HasQueuedData(stream)) {
     
     
     
