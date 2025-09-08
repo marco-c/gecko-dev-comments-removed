@@ -75,7 +75,70 @@ Cargo.lock to the HEAD version, run `git checkout -- Cargo.lock` or
 """
 
 
-PACKAGES_WE_DONT_WANT = {}
+
+
+
+
+
+PACKAGES_WE_DONT_WANT = {
+    "icu": "Use the specific ICU4X crate (crates whose name starts with icu_) instead of the metacrate.",
+    "rust_icu": "Use ICU4X (crates whose name starts with icu_) instead",
+    "unic": "Use ICU4X (crates whose name starts with icu_) instead",
+    "unicode-canonical-combining-class": "Use icu_normalizer instead",
+    "unicode-case-mapping": "Use icu_casemap instead",
+    "unicode-bidi-mirroring": "Use icu_properties instead",
+    "unicode-ccc": "Use icu_normalizer instead",
+    "unicode-general-category": "Use icu_properties instead",
+    "unicode-id": "Use icu_properties instead",
+    "unicode-id-start": "Use icu_properties instead",
+    
+    
+    "unicode-joining-type": "Use icu_properties instead",
+    "unicode-linebreak": "Use icu_segmenter instead",
+    
+    
+    "unicode-properties": "Use icu_properties instead",
+    "unicode-script": "Use icu_properties instead",
+    "unicode-segmentation": "Use icu_segmenter instead",
+    "unicode-xid": "Use icu_properties instead",
+    "unicode_categories": "Use icu_properties instead",
+    "unicode_names": "Avoid including data for Unicode character names",
+    "unicode_names2": "Avoid including data for Unicode character names",
+    "feruca": "Use icu_collator instead",
+    "idna_mapping": "Make sure to use a version of idna_adapter that uses ICU4X",
+    "unic-bidi": "Use unicode-bidi instead",
+    "unic-idna": "Use idna instead",
+    "unic-normal": "Use icu_normalizer instead",
+    "unic-segment": "Use icu_segmenter instead",
+    "unic-ucd": "Use icu_properties instead",
+    "num-format": "Use icu_decimal instead",
+    "encoding": "Use encoding_rs instead",
+    
+    
+}
+
+PREFIXES_WE_DONT_WANT = {
+    "unicode-": "Use ICU4X (crates whose name starts with icu_) instead",
+    "unic-": "Use ICU4X (crates whose name starts with icu_) instead",
+    "rust_icu_": "Use ICU4X (crates whose name starts with icu_) instead",
+    "unicode_": "Use ICU4X (crates whose name starts with icu_) instead",
+}
+
+ALLOWED_DESPITE_PREFIX = {
+    "unicode-bidi",  
+    "unicode-bidi-ffi",  
+    "unicode-ident",  
+    "unicode-normalization",  
+    "unicode-width",  
+    "unic-char-property",  
+    "unic-char-range",  
+    "unic-common",  
+    "unic-ucd-ident",  
+    "unic-ucd-version",  
+    "unic-langid",  
+    "unic-langid-ffi",  
+    "unic-langid-impl",  
+}
 
 PACKAGES_WE_ALWAYS_WANT_AN_OVERRIDE_OF = [
     "autocfg",
@@ -84,6 +147,16 @@ PACKAGES_WE_ALWAYS_WANT_AN_OVERRIDE_OF = [
     "windows",
     "windows-targets",
 ]
+
+
+def dont_want_package(name):
+    if reason := PACKAGES_WE_DONT_WANT.get(name):
+        return reason
+    if name in ALLOWED_DESPITE_PREFIX:
+        return None
+    for prefix, reason in PREFIXES_WE_DONT_WANT.items():
+        if name.startswith(prefix):
+            return reason
 
 
 class VendorRust(MozbuildObject):
@@ -603,14 +676,14 @@ license file's hash.
                             "and comes from {source}.",
                         )
                         failed = True
-                elif package["name"] in PACKAGES_WE_DONT_WANT:
+                elif reason := dont_want_package(package["name"]):
                     self.log(
                         logging.ERROR,
                         "undesirable",
                         {
                             "crate": package["name"],
                             "version": package["version"],
-                            "reason": PACKAGES_WE_DONT_WANT[package["name"]],
+                            "reason": reason,
                         },
                         "Crate {crate} is not desirable: {reason}",
                     )
