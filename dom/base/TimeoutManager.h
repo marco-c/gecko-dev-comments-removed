@@ -126,9 +126,7 @@ class TimeoutManager final {
   
   
   
-  nsGlobalWindowInner* GetInnerWindow() const {
-    return nsGlobalWindowInner::Cast(mGlobalObject.GetAsInnerWindow());
-  }
+  nsGlobalWindowInner* GetInnerWindow() const;
 
   
   bool RescheduleTimeout(mozilla::dom::Timeout* aTimeout,

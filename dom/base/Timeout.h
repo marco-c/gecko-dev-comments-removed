@@ -11,12 +11,13 @@
 #include "mozilla/LinkedList.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/PopupBlocker.h"
-#include "mozilla/dom/TimeoutHandler.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsGlobalWindowInner.h"
 #include "nsTHashMap.h"
 
 namespace mozilla::dom {
+
+class TimeoutHandler;
 
 
 
@@ -136,7 +137,7 @@ class Timeout final : protected LinkedListElement<RefPtr<Timeout>> {
   
   TimeStamp mSubmitTime;
 
-  ~Timeout() { SetTimeoutContainer(nullptr); }
+  ~Timeout();
 
  public:
   
