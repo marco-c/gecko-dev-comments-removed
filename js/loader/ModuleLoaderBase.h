@@ -25,6 +25,7 @@
 #include "mozilla/CORSMode.h"
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/ReferrerPolicyBinding.h"
 #include "ResolveResult.h"
 
 class nsIURI;
@@ -315,6 +316,21 @@ class ModuleLoaderBase : public nsISupports {
   virtual already_AddRefed<ModuleLoadRequest> CreateDynamicImport(
       JSContext* aCx, nsIURI* aURI, LoadedScript* aMaybeActiveScript,
       Handle<JSObject*> aModuleRequestObj, Handle<JSObject*> aPromise) = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  virtual nsIURI* GetClientReferrerURI() { return nullptr; }
+
+  
+  virtual already_AddRefed<JS::loader::ScriptFetchOptions>
+  CreateDefaultScriptFetchOptions() {
+    return nullptr;
+  }
 
   virtual bool IsDynamicImportSupported() { return true; }
 

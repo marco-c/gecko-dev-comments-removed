@@ -40,6 +40,22 @@ nsIURI* WorkerModuleLoader::GetBaseURI() const {
   return workerPrivate->GetBaseURI();
 }
 
+nsIURI* WorkerModuleLoader::GetClientReferrerURI() {
+  
+  
+  
+  
+  
+  
+  return GetBaseURI();
+}
+
+already_AddRefed<JS::loader::ScriptFetchOptions>
+WorkerModuleLoader::CreateDefaultScriptFetchOptions() {
+  RefPtr<ScriptFetchOptions> options = ScriptFetchOptions::CreateDefault();
+  return options.forget();
+}
+
 already_AddRefed<ModuleLoadRequest> WorkerModuleLoader::CreateStaticImport(
     nsIURI* aURI, JS::ModuleType aModuleType,
     JS::loader::ModuleScript* aReferrerScript,
