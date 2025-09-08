@@ -71,7 +71,7 @@ already_AddRefed<ModuleLoadRequest> WorkletModuleLoader::CreateStaticImport(
   
   
   
-  nsIURI* referrer = aReferrerScript->GetURI();
+  nsIURI* referrer = aReferrerScript->BaseURL();
   RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
       aURI, aModuleType, aReferrerScript->ReferrerPolicy(),
       aReferrerScript->GetFetchOptions(), SRIMetadata(), referrer, loadContext,
