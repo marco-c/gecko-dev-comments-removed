@@ -1234,25 +1234,6 @@ void FragmentOrElement::SaveSubtreeState() {
 
 
 
-void FragmentOrElement::FireNodeInserted(
-    Document* aDoc, nsINode* aParent,
-    const nsTArray<nsCOMPtr<nsIContent>>& aNodes) {
-  for (const nsCOMPtr<nsIContent>& childContent : aNodes) {
-    if (nsContentUtils::WantMutationEvents(
-            childContent, NS_EVENT_BITS_MUTATION_NODEINSERTED, aParent)) {
-      InternalMutationEvent mutation(true, eLegacyNodeInserted);
-      mutation.mRelatedNode = aParent;
-
-      mozAutoSubtreeModified subtree(aDoc, aParent);
-      AsyncEventDispatcher::RunDOMEventWhenSafe(*childContent, mutation);
-    }
-  }
-}
-
-
-
-
-
 #define SUBTREE_UNBINDINGS_PER_RUNNABLE 500
 
 class ContentUnbinder : public Runnable {
@@ -2020,7 +2001,6 @@ void FragmentOrElement::SetInnerHTMLInternal(const nsAString& aInnerHTML,
     nsAtom* contextLocalName = parseContext->NodeInfo()->NameAtom();
     int32_t contextNameSpaceID = parseContext->GetNameSpaceID();
 
-    int32_t oldChildCount = target->GetChildCount();
     aError = nsContentUtils::ParseFragmentHTML(
         aInnerHTML, target, contextLocalName, contextNameSpaceID,
         doc->GetCompatibilityMode() == eCompatibility_NavQuirks, true);
@@ -2030,9 +2010,6 @@ void FragmentOrElement::SetInnerHTMLInternal(const nsAString& aInnerHTML,
                                                {});
     }
     mb.NodesAdded();
-    
-    nsContentUtils::FireMutationEventsForDirectParsing(doc, target,
-                                                       oldChildCount);
   } else {
     RefPtr<DocumentFragment> df = nsContentUtils::CreateContextualFragment(
         parseContext, aInnerHTML, true, aError);

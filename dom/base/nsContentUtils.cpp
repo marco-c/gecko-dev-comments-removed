@@ -6248,8 +6248,6 @@ static void SetAndFilterHTML(
   
   nsAutoScriptBlockerSuppressNodeRemoved scriptBlocker;
 
-  int32_t oldChildCount = static_cast<int32_t>(aTarget->GetChildCount());
-
   
   sanitizer->Sanitize(fragment, aSafe, aError);
   if (aError.Failed()) {
@@ -6263,8 +6261,6 @@ static void SetAndFilterHTML(
   }
 
   mb.NodesAdded();
-  nsContentUtils::FireMutationEventsForDirectParsing(doc, aTarget,
-                                                     oldChildCount);
 }
 
 
@@ -8202,25 +8198,6 @@ bool nsContentUtils::HaveEqualPrincipals(Document* aDoc1, Document* aDoc2) {
   bool principalsEqual = false;
   aDoc1->NodePrincipal()->Equals(aDoc2->NodePrincipal(), &principalsEqual);
   return principalsEqual;
-}
-
-
-void nsContentUtils::FireMutationEventsForDirectParsing(
-    Document* aDoc, nsIContent* aDest, int32_t aOldChildCount) {
-  
-  int32_t newChildCount = aDest->GetChildCount();
-  if (newChildCount && nsContentUtils::HasMutationListeners(
-                           aDoc, NS_EVENT_BITS_MUTATION_NODEINSERTED)) {
-    AutoTArray<nsCOMPtr<nsIContent>, 50> childNodes;
-    NS_ASSERTION(newChildCount - aOldChildCount >= 0,
-                 "What, some unexpected dom mutation has happened?");
-    childNodes.SetCapacity(newChildCount - aOldChildCount);
-    for (nsIContent* child = aDest->GetFirstChild(); child;
-         child = child->GetNextSibling()) {
-      childNodes.AppendElement(child);
-    }
-    FragmentOrElement::FireNodeInserted(aDoc, aDest, childNodes);
-  }
 }
 
 

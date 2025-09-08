@@ -2587,18 +2587,6 @@ class nsContentUtils {
 
 
 
-
-
-
-
-  static void FireMutationEventsForDirectParsing(Document* aDoc,
-                                                 nsIContent* aDest,
-                                                 int32_t aOldChildCount);
-
-  
-
-
-
   static Document* GetInProcessSubtreeRootDocument(Document* aDoc) {
     return const_cast<Document*>(
         GetInProcessSubtreeRootDocument(const_cast<const Document*>(aDoc)));
