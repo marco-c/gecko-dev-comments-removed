@@ -267,13 +267,17 @@ class DevToolsPageDefinition {
     
     for (let toolbox of DevToolsShim.getToolboxes()) {
       if (
+        
+        
+        toolbox.isDestroying ||
+        
         !toolbox.commands.descriptorFront.isLocalTab ||
+        
+        
         !this.extension.canAccessWindow(
           toolbox.commands.descriptorFront.localTab.ownerGlobal
         )
       ) {
-        
-        
         continue;
       }
 
