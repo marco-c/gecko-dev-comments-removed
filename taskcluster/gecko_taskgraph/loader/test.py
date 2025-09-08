@@ -5,6 +5,7 @@
 
 import logging
 
+from mozbuild.util import memoize
 from taskgraph.loader.transform import loader as transform_loader
 from taskgraph.util.copy import deepcopy
 from taskgraph.util.yaml import load_yaml
@@ -34,7 +35,7 @@ def loader(kind, path, config, params, loaded_tasks):
 
     
     test_sets_cfg = load_yaml(TEST_CONFIGS, "test-sets.yml")
-    test_platforms = expand_tests(test_sets_cfg, test_platforms)
+    test_platforms = expand_tests(test_sets_cfg, test_platforms, kind)
 
     
     tests = transform_loader(kind, path, config, params, loaded_tasks)
@@ -118,7 +119,25 @@ def get_test_platforms(
     return test_platforms
 
 
-def expand_tests(test_sets_cfg, test_platforms):
+PREFIX_BY_KIND = {}
+
+
+@memoize
+def is_test_for_kind(test_name, kind):
+    if kind == "test":
+        
+        
+        
+        for prefixes in PREFIX_BY_KIND.values():
+            if any([test_name.startswith(prefix) for prefix in prefixes]):
+                return False
+        return True
+    else:
+        test_set_prefixes = PREFIX_BY_KIND[kind]
+        return any([test_name.startswith(prefix) for prefix in test_set_prefixes])
+
+
+def expand_tests(test_sets_cfg, test_platforms, kind):
     """Expand the test sets in `test_platforms` out to sets of test names.
     Returns a dictionary like `get_test_platforms`, with an additional
     `test-names` key for each test platform, containing a set of test
@@ -134,7 +153,15 @@ def expand_tests(test_sets_cfg, test_platforms):
             )
         test_names = set()
         for test_set in test_sets:
-            test_names.update(test_sets_cfg[test_set])
+            for test_name in test_sets_cfg[test_set]:
+                
+                
+                
+                
+                
+                
+                if is_test_for_kind(test_name, kind):
+                    test_names.add(test_name)
         rv[test_platform] = cfg.copy()
         rv[test_platform]["test-names"] = test_names
     return rv
