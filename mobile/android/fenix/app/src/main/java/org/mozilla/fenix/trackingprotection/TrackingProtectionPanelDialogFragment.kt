@@ -6,7 +6,6 @@ package org.mozilla.fenix.trackingprotection
 
 import android.app.Dialog
 import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -19,6 +18,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatDialogFragment
 import androidx.appcompat.view.ContextThemeWrapper
+import androidx.core.graphics.drawable.toDrawable
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withStarted
 import androidx.navigation.fragment.findNavController
@@ -49,6 +49,7 @@ import org.mozilla.fenix.databinding.FragmentTrackingProtectionBinding
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.settings.SupportUtils
+import com.google.android.material.R as materialR
 
 @Suppress("TooManyFunctions")
 class TrackingProtectionPanelDialogFragment : AppCompatDialogFragment(), UserInteractionHandler {
@@ -170,8 +171,7 @@ class TrackingProtectionPanelDialogFragment : AppCompatDialogFragment(), UserInt
         return if (args.gravity == Gravity.BOTTOM) {
             BottomSheetDialog(requireContext(), this.theme).apply {
                 setOnShowListener {
-                    val bottomSheet =
-                        findViewById<View>(com.google.android.material.R.id.design_bottom_sheet) as FrameLayout
+                    val bottomSheet = findViewById<View>(materialR.id.design_bottom_sheet) as FrameLayout
                     val behavior = BottomSheetBehavior.from(bottomSheet)
                     behavior.state = BottomSheetBehavior.STATE_EXPANDED
                 }
@@ -201,7 +201,7 @@ class TrackingProtectionPanelDialogFragment : AppCompatDialogFragment(), UserInt
 
         window?.apply {
             setGravity(args.gravity)
-            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
             // This must be called after addContentView, or it won't fully fill to the edge.
             setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         }
