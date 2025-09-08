@@ -182,7 +182,7 @@ def _get_build_variables(
     )
 
     
-    build_variables["CHANGELOG_DATE"] = application_ini_data["timestamp"].strftime(
+    build_variables["CHANGELOG_DATE"] = build_variables["TIMESTAMP"].strftime(
         "%a %b %d %Y"
     )
 
