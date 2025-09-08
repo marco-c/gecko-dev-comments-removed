@@ -6884,8 +6884,12 @@ nsresult QuotaManager::InitializeTemporaryStorageInternal() {
   
   
   
+  
+  
   if (!QuotaPrefs::LazyOriginInitializationEnabled()) {
     CleanupTemporaryStorage();
+
+    RecordTemporaryStorageMetrics();
   }
 
   if (mCacheUsable) {
@@ -7884,6 +7888,18 @@ void QuotaManager::MaybeInsertNonPersistedOriginInfos(
       [](const auto& originInfo) { return !originInfo->LockedPersisted(); });
 }
 
+template <typename Iterator>
+void QuotaManager::MaybeInsertNonPersistedZeroUsageOriginInfos(
+    Iterator aDest, const RefPtr<GroupInfo>& aTemporaryGroupInfo,
+    const RefPtr<GroupInfo>& aDefaultGroupInfo,
+    const RefPtr<GroupInfo>& aPrivateGroupInfo) {
+  return MaybeInsertOriginInfos(aDest, aTemporaryGroupInfo, aDefaultGroupInfo,
+                                aPrivateGroupInfo, [](const auto& originInfo) {
+                                  return !originInfo->LockedPersisted() &&
+                                         originInfo->LockedUsage() == 0;
+                                });
+}
+
 template <typename Collect, typename Pred>
 QuotaManager::OriginInfosFlatTraversable
 QuotaManager::CollectLRUOriginInfosUntil(Collect&& aCollect, Pred&& aPred) {
@@ -7957,6 +7973,8 @@ QuotaManager::GetOriginInfosExceedingGroupLimit() const {
   return originInfos;
 }
 
+
+
 QuotaManager::OriginInfosNestedTraversable
 QuotaManager::GetOriginInfosExceedingGlobalLimit() const {
   MutexAutoLock lock(mQuotaMutex);
@@ -7988,6 +8006,33 @@ QuotaManager::GetOriginInfosExceedingGlobalLimit() const {
         doomedUsage += originInfo->LockedUsage();
         return false;
       }));
+
+  return res;
+}
+
+QuotaManager::OriginInfosNestedTraversable
+QuotaManager::GetOriginInfosWithZeroUsage() const {
+  MutexAutoLock lock(mQuotaMutex);
+
+  QuotaManager::OriginInfosNestedTraversable res;
+
+  OriginInfosFlatTraversable originInfos;
+
+  auto inserter = MakeBackInserter(originInfos);
+
+  for (const auto& entry : mGroupInfoPairs) {
+    const auto& pair = entry.GetData();
+
+    MOZ_ASSERT(!entry.GetKey().IsEmpty());
+    MOZ_ASSERT(pair);
+
+    MaybeInsertNonPersistedZeroUsageOriginInfos(
+        inserter, pair->LockedGetGroupInfo(PERSISTENCE_TYPE_TEMPORARY),
+        pair->LockedGetGroupInfo(PERSISTENCE_TYPE_DEFAULT),
+        pair->LockedGetGroupInfo(PERSISTENCE_TYPE_PRIVATE));
+  }
+
+  res.AppendElement(std::move(originInfos));
 
   return res;
 }
@@ -8053,12 +8098,31 @@ void QuotaManager::CleanupTemporaryStorage() {
   
   
   
+
+  
+  
+  
   ClearOrigins(GetOriginInfosExceedingGroupLimit());
   ClearOrigins(GetOriginInfosExceedingGlobalLimit());
 
   if (mTemporaryStorageUsage > mTemporaryStorageLimit) {
     
     NotifyStoragePressure(*this, mTemporaryStorageUsage);
+  }
+}
+
+void QuotaManager::RecordTemporaryStorageMetrics() {
+  AssertIsOnIOThread();
+
+  {
+    const auto originInfos = GetOriginInfosWithZeroUsage();
+
+    auto range = Flatten<OriginInfosFlatTraversable::value_type>(originInfos);
+
+    size_t count = std::distance(range.begin(), range.end());
+
+    glean::quotamanager_initialize_temporarystorage::
+        non_persisted_zero_usage_origins.AccumulateSingleSample(count);
   }
 }
 
