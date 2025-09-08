@@ -58,6 +58,7 @@ class nsUrlClassifierStreamUpdater final
                        bool aIsPostRequest, const nsACString& aTable);
   
   nsresult FetchUpdate(const nsACString& aURI, const nsACString& aRequest,
+                       const nsACString& aRequestQueryParameters,
                        bool aIsPostRequest, const nsACString& aTable);
 
   
@@ -68,7 +69,9 @@ class nsUrlClassifierStreamUpdater final
   struct UpdateRequest {
     nsCString mTables;
     nsCString mRequestPayload;
+    nsCString mRequestQueryParameters;
     bool mIsPostRequest;
+    nsCString mProvider;
     nsCString mUrl;
     nsCOMPtr<nsIUrlClassifierCallback> mSuccessCallback;
     nsCOMPtr<nsIUrlClassifierCallback> mUpdateErrorCallback;
@@ -77,7 +80,9 @@ class nsUrlClassifierStreamUpdater final
   
   void BuildUpdateRequest(const nsACString& aRequestTables,
                           const nsACString& aRequestPayload,
-                          bool aIsPostRequest, const nsACString& aUpdateUrl,
+                          const nsACString& aRequestQueryParameters,
+                          bool aIsPostRequest, const nsACString& aProvider,
+                          const nsACString& aUpdateUrl,
                           nsIUrlClassifierCallback* aSuccessCallback,
                           nsIUrlClassifierCallback* aUpdateErrorCallback,
                           nsIUrlClassifierCallback* aDownloadErrorCallback,
