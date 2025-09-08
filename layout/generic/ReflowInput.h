@@ -528,6 +528,14 @@ struct ReflowInput : public SizeComputationInput {
     
     
     bool mCanHaveClassABreakpoints : 1;
+
+    
+    
+    
+    
+    
+    
+    bool mDeferAutoMarginComputation : 1;
   };
   Flags mFlags;
 

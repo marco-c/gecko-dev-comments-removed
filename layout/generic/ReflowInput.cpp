@@ -1829,8 +1829,8 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
   }
 
   SetComputedLogicalOffsets(cbwm, offsets);
-
-  if (wm.IsOrthogonalTo(cbwm)) {
+  const bool isOrthogonal = wm.IsOrthogonalTo(cbwm);
+  if (isOrthogonal) {
     if (bStartIsAuto || bEndIsAuto) {
       mComputeSizeFlags += ComputeSizeFlag::ShrinkWrap;
     }
@@ -1876,6 +1876,20 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
   bool marginIEndIsAuto = false;
   bool marginBStartIsAuto = false;
   bool marginBEndIsAuto = false;
+  const bool hasIntrinsicKeywordForBSize =
+      mFrame->HasIntrinsicKeywordForBSize();
+  
+  
+  
+  const bool nonZeroAutoMarginOnUnconstrainedSize =
+      isOrthogonal ? computedSize.ISize(cbwm) == NS_UNCONSTRAINEDSIZE &&
+                         !(iStartIsAuto || iEndIsAuto)
+                   : computedSize.BSize(cbwm) == NS_UNCONSTRAINEDSIZE &&
+                         !(bStartIsAuto || bEndIsAuto);
+  
+  
+  mFlags.mDeferAutoMarginComputation =
+      nonZeroAutoMarginOnUnconstrainedSize || hasIntrinsicKeywordForBSize;
   if (iStartIsAuto) {
     
     
@@ -1904,8 +1918,7 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
                            computedSize.ISize(cbwm) - margin.IStartEnd(cbwm) -
                            borderPadding.IStartEnd(cbwm);
     }
-  } else if (!mFrame->HasIntrinsicKeywordForBSize() ||
-             !wm.IsOrthogonalTo(cbwm)) {
+  } else if (!mFlags.mDeferAutoMarginComputation || !isOrthogonal) {
     
     
     
@@ -1950,8 +1963,7 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
                            borderPadding.BStartEnd(cbwm) -
                            computedSize.BSize(cbwm) - offsets.BStart(cbwm);
     }
-  } else if (!mFrame->HasIntrinsicKeywordForBSize() ||
-             wm.IsOrthogonalTo(cbwm)) {
+  } else if (!mFlags.mDeferAutoMarginComputation || isOrthogonal) {
     
     nscoord autoBSize = cbSize.BSize(cbwm) - margin.BStartEnd(cbwm) -
                         borderPadding.BStartEnd(cbwm) - offsets.BStartEnd(cbwm);
