@@ -11,9 +11,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.Icon
-import androidx.compose.material.Text
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -24,7 +24,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.theme.AcornTheme
-import mozilla.components.ui.icons.R
+import mozilla.components.ui.icons.R as iconsR
 
 const val DEFAULT_MAX_LINES = 2
 
@@ -57,14 +57,13 @@ private fun Button(
     // Required to detect if font increased due to accessibility.
     val fontScale: Float = LocalConfiguration.current.fontScale
 
-    androidx.compose.material.Button(
+    androidx.compose.material3.Button(
         onClick = onClick,
         modifier = modifier,
         enabled = enabled,
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-        elevation = ButtonDefaults.elevation(defaultElevation = 0.dp, pressedElevation = 0.dp),
         colors = ButtonDefaults.outlinedButtonColors(
-            backgroundColor = backgroundColor,
+            containerColor = backgroundColor,
         ),
     ) {
         icon?.let { painter ->
@@ -264,25 +263,25 @@ private fun ButtonPreview() {
         ) {
             PrimaryButton(
                 text = "Label",
-                icon = painterResource(R.drawable.mozac_ic_collection_24),
+                icon = painterResource(iconsR.drawable.mozac_ic_collection_24),
                 onClick = {},
             )
 
             SecondaryButton(
                 text = "Label",
-                icon = painterResource(R.drawable.mozac_ic_collection_24),
+                icon = painterResource(iconsR.drawable.mozac_ic_collection_24),
                 onClick = {},
             )
 
             TertiaryButton(
                 text = "Label",
-                icon = painterResource(R.drawable.mozac_ic_collection_24),
+                icon = painterResource(iconsR.drawable.mozac_ic_collection_24),
                 onClick = {},
             )
 
             DestructiveButton(
                 text = "Label",
-                icon = painterResource(R.drawable.mozac_ic_collection_24),
+                icon = painterResource(iconsR.drawable.mozac_ic_collection_24),
                 onClick = {},
             )
         }
