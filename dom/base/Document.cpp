@@ -1473,7 +1473,7 @@ Document::Document(const char* aContentType)
       mAllowDeclarativeShadowRoots(false),
       mSuspendDOMNotifications(false),
       mForceLoadAtTop(false),
-      mFireMutationEvents(true),
+      mSuppressNotifyingDevToolsOfNodeRemovals(false),
       mHasPolicyWithRequireTrustedTypesForDirective(false),
       mClipboardCopyTriggered(false),
       mXMLDeclarationBits(0),
@@ -10391,8 +10391,11 @@ Document* Document::Open(const Optional<nsAString>& ,
   
   
   {
-    bool oldFlag = FireMutationEvents();
-    SetFireMutationEvents(false);
+    
+    
+    
+    AutoSuppressNotifyingDevToolsOfNodeRemovals suppressNotifyingDevTools(
+        *this);
 
     
     
@@ -10401,7 +10404,6 @@ Document* Document::Open(const Optional<nsAString>& ,
     
     IgnoreOpensDuringUnload ignoreOpenGuard(this);
     DisconnectNodeTree();
-    SetFireMutationEvents(oldFlag);
   }
 
   
@@ -10851,12 +10853,8 @@ nsINode* Document::AdoptNode(nsINode& aAdoptedNode, ErrorResult& rv,
     return nullptr;
   }
 
-  
-  
-  {
-    if (nsCOMPtr<nsINode> parent = adoptedNode->GetParentNode()) {
-      nsContentUtils::MaybeFireNodeRemoved(adoptedNode, parent);
-    }
+  if (adoptedNode->GetParentNode()) {
+    nsContentUtils::NotifyDevToolsOfNodeRemoval(*adoptedNode);
   }
 
   nsAutoScriptBlocker scriptBlocker;

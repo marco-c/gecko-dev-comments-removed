@@ -1513,8 +1513,6 @@ class nsContentUtils {
 
   static bool IsPreloadType(nsContentPolicyType aType);
 
-  enum class IgnoreDevToolsMutationObserver : bool { No, Yes };
-
   
 
 
@@ -1522,42 +1520,8 @@ class nsContentUtils {
 
 
 
-
-
-
-  static bool WantMutationEvents(
-      nsINode* aNode, uint32_t aType,
-      IgnoreDevToolsMutationObserver aIgnoreDevToolsMutationObserver =
-          IgnoreDevToolsMutationObserver::No);
-
-  
-
-
-
-
-
-
-
-
-
-
-  static bool HasMutationListeners(
-      Document* aDocument, uint32_t aType,
-      IgnoreDevToolsMutationObserver aIgnoreDevToolsMutationObserver =
-          IgnoreDevToolsMutationObserver::No);
-  
-
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT static void MaybeFireNodeRemoved(nsINode* aChild,
-                                                      nsINode* aParent);
+  MOZ_CAN_RUN_SCRIPT static void NotifyDevToolsOfNodeRemoval(
+      nsINode& aRemovingNode);
 
   
 

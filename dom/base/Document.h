@@ -229,6 +229,7 @@ class Rule;
 namespace dom {
 class AnonymousContent;
 class Attr;
+class AutoSuppressNotifyingDevToolsOfNodeRemovals;
 class XULBroadcastManager;
 class XULPersist;
 class BrowserBridgeChild;
@@ -3767,8 +3768,13 @@ class Document : public nsINode,
   bool ForceLoadAtTop() const { return mForceLoadAtTop; }
 
   
-  bool FireMutationEvents() const { return mFireMutationEvents; }
-  void SetFireMutationEvents(bool aFire) { mFireMutationEvents = aFire; }
+
+
+
+  [[nodiscard]] bool SuppressedNotifyingDevToolsOfNodeRemovals() const {
+    return mSuppressNotifyingDevToolsOfNodeRemovals;
+  }
+  friend class AutoSuppressNotifyingDevToolsOfNodeRemovals;
 
   
   bool HasPolicyWithRequireTrustedTypesForDirective() const {
@@ -5083,7 +5089,7 @@ class Document : public nsINode,
 
   bool mForceLoadAtTop : 1;
 
-  bool mFireMutationEvents : 1;
+  bool mSuppressNotifyingDevToolsOfNodeRemovals : 1;
 
   
   bool mHasPolicyWithRequireTrustedTypesForDirective : 1;
@@ -5712,6 +5718,31 @@ class MOZ_RAII IgnoreOpensDuringUnload final {
 
  private:
   Document* mDoc;
+};
+
+
+
+
+
+
+class MOZ_RAII AutoSuppressNotifyingDevToolsOfNodeRemovals final {
+ public:
+  explicit AutoSuppressNotifyingDevToolsOfNodeRemovals(Document& aDoc)
+      : mDoc(aDoc),
+        mDidSuppress(
+            static_cast<bool>(aDoc.mSuppressNotifyingDevToolsOfNodeRemovals)) {
+    mDoc->mSuppressNotifyingDevToolsOfNodeRemovals = true;
+  }
+  ~AutoSuppressNotifyingDevToolsOfNodeRemovals() {
+    MOZ_ASSERT(mDoc->mSuppressNotifyingDevToolsOfNodeRemovals);
+    mDoc->mSuppressNotifyingDevToolsOfNodeRemovals = mDidSuppress;
+  }
+
+  Document& Doc() const { return mDoc; }
+
+ private:
+  const OwningNonNull<Document> mDoc;
+  bool mDidSuppress;
 };
 
 bool IsInFocusedTab(Document* aDoc);

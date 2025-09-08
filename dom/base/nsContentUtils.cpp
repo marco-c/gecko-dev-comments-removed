@@ -5750,89 +5750,7 @@ bool nsContentUtils::HasNonEmptyAttr(const nsIContent* aContent,
              AttrArray::ATTR_VALUE_NO_MATCH;
 }
 
-
-bool nsContentUtils::WantMutationEvents(
-    nsINode* aNode, uint32_t aType,
-    IgnoreDevToolsMutationObserver aIgnoreDevToolsMutationObserver ) {
-  Document* doc = aNode->OwnerDoc();
-  if (MOZ_LIKELY(!doc->MutationEventsEnabled() &&
-                 (static_cast<bool>(aIgnoreDevToolsMutationObserver) ||
-                  !doc->DevToolsWatchingDOMMutations()))) {
-    return false;
-  }
-
-  if (!doc->FireMutationEvents()) {
-    return false;
-  }
-
-  
-  if (!nsContentUtils::HasMutationListeners(doc, aType,
-                                            aIgnoreDevToolsMutationObserver)) {
-    return false;
-  }
-
-  if (aNode->ChromeOnlyAccess() || aNode->IsInShadowTree()) {
-    return false;
-  }
-
-  
-  if (aNode->IsInUncomposedDoc()) {
-    
-    if (const nsCOMPtr<EventTarget> piTarget =
-            do_QueryInterface(doc->GetInnerWindow())) {
-      EventListenerManager* manager = piTarget->GetExistingListenerManager();
-      if (manager && manager->HasMutationListeners()) {
-        return true;
-      }
-    }
-  }
-
-  
-  
-  
-  while (aNode) {
-    EventListenerManager* manager = aNode->GetExistingListenerManager();
-    if (manager && manager->HasMutationListeners()) {
-      return true;
-    }
-
-    aNode = aNode->GetParentNode();
-  }
-
-  return false;
-}
-
-
-bool nsContentUtils::HasMutationListeners(
-    Document* aDocument, uint32_t aType,
-    IgnoreDevToolsMutationObserver aIgnoreDevToolsMutationObserver ) {
-  nsPIDOMWindowInner* window =
-      aDocument ? aDocument->GetInnerWindow() : nullptr;
-
-  
-  if (!window || window->HasMutationListeners(aType)) {
-    return true;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  return !static_cast<bool>(aIgnoreDevToolsMutationObserver) &&
-         aDocument->DevToolsWatchingDOMMutations() &&
-         (aType & NS_EVENT_BITS_MUTATION_NODEREMOVED);
-}
-
-void nsContentUtils::MaybeFireNodeRemoved(nsINode* aChild, nsINode* aParent) {
-  MOZ_ASSERT(aChild, "Missing child");
-  MOZ_ASSERT(aChild->GetParentNode() == aParent, "Wrong parent");
-  MOZ_ASSERT(aChild->OwnerDoc() == aParent->OwnerDoc(), "Wrong owner-doc");
-
+void nsContentUtils::NotifyDevToolsOfNodeRemoval(nsINode& aRemovingNode) {
   
   
   
@@ -5849,28 +5767,19 @@ void nsContentUtils::MaybeFireNodeRemoved(nsINode* aChild, nsINode* aParent) {
     
     
     
-    if (!aChild->IsInNativeAnonymousSubtree() &&
+    if (!aRemovingNode.IsInNativeAnonymousSubtree() &&
         !sDOMNodeRemovedSuppressCount) {
-      NS_ERROR("Want to fire DOMNodeRemoved event, but it's not safe");
-      WarnScriptWasIgnored(aChild->OwnerDoc());
+      NS_ERROR(
+          "Want to fire \"devtoolschildremoved\" event, but it's not safe");
+      WarnScriptWasIgnored(aRemovingNode.OwnerDoc());
     }
     return;
   }
 
-  {
-    Document* doc = aParent->OwnerDoc();
-    if (MOZ_UNLIKELY(doc->DevToolsWatchingDOMMutations()) &&
-        aChild->IsInComposedDoc() && !aChild->ChromeOnlyAccess()) {
-      DispatchChromeEvent(doc, aChild, u"devtoolschildremoved"_ns,
-                          CanBubble::eNo, Cancelable::eNo);
-    }
-  }
-
-  if (WantMutationEvents(aChild, NS_EVENT_BITS_MUTATION_NODEREMOVED,
-                         IgnoreDevToolsMutationObserver::Yes)) {
-    InternalMutationEvent mutation(true, eLegacyNodeRemoved);
-    mutation.mRelatedNode = aParent;
-    EventDispatcher::Dispatch(aChild, nullptr, &mutation);
+  if (MOZ_UNLIKELY(aRemovingNode.DevToolsShouldBeNotifiedOfThisRemoval())) {
+    const RefPtr<Document> doc = aRemovingNode.OwnerDoc();
+    DispatchChromeEvent(doc, &aRemovingNode, u"devtoolschildremoved"_ns,
+                        CanBubble::eNo, Cancelable::eNo);
   }
 }
 
@@ -6196,7 +6105,7 @@ static void SetAndFilterHTML(
     return;
   }
 
-  aTarget->FireNodeRemovedForChildren();
+  aTarget->NotifyDevToolsOfRemovalsOfChildren();
 
   
   mozAutoDocUpdate updateBatch(doc, true);
@@ -6571,22 +6480,21 @@ nsresult nsContentUtils::SetNodeTextContent(
     nsIContent* aContent, const nsAString& aValue, bool aTryReuse,
     MutationEffectOnScript aMutationEffectOnScript) {
   
-  nsCOMPtr<nsIContent> owningContent;
-
-  
-  if (HasMutationListeners(aContent->OwnerDoc(),
-                           NS_EVENT_BITS_MUTATION_NODEREMOVED)) {
-    owningContent = aContent;
-    nsCOMPtr<nsINode> child;
-    bool skipFirst = aTryReuse;
-    for (child = aContent->GetFirstChild();
-         child && child->GetParentNode() == aContent;
-         child = child->GetNextSibling()) {
-      if (skipFirst && child->IsText()) {
-        skipFirst = false;
-        continue;
+  if (MOZ_UNLIKELY(
+          aContent->MaybeNeedsToNotifyDevToolsOfNodeRemovalsInOwnerDoc())) {
+    if (aTryReuse) {
+      bool skipFirstText = true;
+      for (nsCOMPtr<nsINode> child = aContent->GetFirstChild();
+           child && child->GetParentNode() == aContent;
+           child = child->GetNextSibling()) {
+        if (skipFirstText && child->IsText()) {
+          skipFirstText = false;
+          continue;
+        }
+        nsContentUtils::NotifyDevToolsOfNodeRemoval(*child);
       }
-      nsContentUtils::MaybeFireNodeRemoved(child, aContent);
+    } else {
+      aContent->NotifyDevToolsOfRemovalsOfChildren();
     }
   }
 

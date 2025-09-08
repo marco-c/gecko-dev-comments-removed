@@ -152,25 +152,7 @@ class EditorBase : public nsIEditor,
 
 
 
-
-  bool MayHaveMutationEventListeners(
-      uint32_t aMutationEventType = 0xFFFFFFFF) const {
-    if (IsTextEditor()) {
-      
-      
-      return false;
-    }
-#ifdef DEBUG
-    
-    
-    
-    
-    return true;
-#else   
-    nsPIDOMWindowInner* window = GetInnerWindow();
-    return window ? window->HasMutationListeners(aMutationEventType) : false;
-#endif  
-  }
+  [[nodiscard]] bool MaybeNodeRemovalsObservedByDevTools() const;
 
   
 

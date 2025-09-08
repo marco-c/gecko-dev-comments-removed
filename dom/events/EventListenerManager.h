@@ -153,7 +153,6 @@ class EventListenerManagerBase {
 
   EventMessage mNoListenerForEvents[3];
   uint16_t mMayHaveDOMActivateEventListener : 1;
-  uint16_t mMayHaveMutationListeners : 1;
   uint16_t mMayHaveCapturingListeners : 1;
   uint16_t mMayHaveSystemGroupListeners : 1;
   uint16_t mMayHaveTouchEventListener : 1;
@@ -476,11 +475,6 @@ class EventListenerManager final : public EventListenerManagerBase {
   
 
 
-  bool HasMutationListeners();
-
-  
-
-
   bool HasUnloadListeners();
 
   
@@ -488,14 +482,6 @@ class EventListenerManager final : public EventListenerManagerBase {
 
 
   bool HasBeforeUnloadListeners();
-
-  
-
-
-
-
-
-  uint32_t MutationListenerBits();
 
   
 

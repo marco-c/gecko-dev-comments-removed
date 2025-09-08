@@ -1040,7 +1040,7 @@ nsINode* nsINode::RemoveChildInternal(
   }
 
   if (aOldChild.GetParentNode() == this) {
-    nsContentUtils::MaybeFireNodeRemoved(&aOldChild, this);
+    nsContentUtils::NotifyDevToolsOfNodeRemoval(aOldChild);
   }
 
   
@@ -1091,14 +1091,14 @@ void nsINode::Normalize() {
 
   
   
-  bool hasRemoveListeners = nsContentUtils::HasMutationListeners(
-      doc, NS_EVENT_BITS_MUTATION_NODEREMOVED);
-  if (hasRemoveListeners) {
-    for (nsCOMPtr<nsIContent>& node : nodes) {
+  const bool notifyDevToolsOfNodeRemovals =
+      MaybeNeedsToNotifyDevToolsOfNodeRemovalsInOwnerDoc();
+  if (MOZ_UNLIKELY(notifyDevToolsOfNodeRemovals)) {
+    for (const nsCOMPtr<nsIContent>& node : nodes) {
       
-      if (nsCOMPtr<nsINode> parentNode = node->GetParentNode()) {
+      if (node->GetParentNode()) {
         
-        nsContentUtils::MaybeFireNodeRemoved(MOZ_KnownLive(node), parentNode);
+        nsContentUtils::NotifyDevToolsOfNodeRemoval(MOZ_KnownLive(*node));
       }
     }
   }
@@ -1114,11 +1114,12 @@ void nsINode::Normalize() {
         node->GetCharacterDataBuffer();
     if (characterDataBuffer->GetLength()) {
       nsIContent* target = node->GetPreviousSibling();
-      NS_ASSERTION(
-          (target && target->NodeType() == TEXT_NODE) || hasRemoveListeners,
-          "Should always have a previous text sibling unless "
-          "mutation events messed us up");
-      if (!hasRemoveListeners || (target && target->NodeType() == TEXT_NODE)) {
+      NS_ASSERTION((target && target->NodeType() == TEXT_NODE) ||
+                       notifyDevToolsOfNodeRemovals,
+                   "Should always have a previous text sibling unless "
+                   "mutation events messed us up");
+      if (MOZ_LIKELY(!notifyDevToolsOfNodeRemovals) ||
+          (target && target->NodeType() == TEXT_NODE)) {
         nsTextNode* t = static_cast<nsTextNode*>(target);
         if (characterDataBuffer->Is2b()) {
           t->AppendTextForNormalize(characterDataBuffer->Get2b(),
@@ -1134,7 +1135,7 @@ void nsINode::Normalize() {
 
     
     nsCOMPtr<nsINode> parent = node->GetParentNode();
-    NS_ASSERTION(parent || hasRemoveListeners,
+    NS_ASSERTION(parent || notifyDevToolsOfNodeRemovals,
                  "Should always have a parent unless "
                  "mutation events messed us up");
     if (parent) {
@@ -2346,14 +2347,17 @@ void nsINode::ReplaceChildren(nsINode* aNode, ErrorResult& aRv,
   nsCOMPtr<nsINode> node = aNode;
   const RefPtr<Document> doc = OwnerDoc();
 
-  if (nsContentUtils::HasMutationListeners(
-          doc, NS_EVENT_BITS_MUTATION_NODEREMOVED)) {
-    FireNodeRemovedForChildren();
+  if (MOZ_UNLIKELY(MaybeNeedsToNotifyDevToolsOfNodeRemovalsInOwnerDoc())) {
+    NotifyDevToolsOfRemovalsOfChildren();
+    
+    
+    
+    
     if (node) {
       if (node->NodeType() == DOCUMENT_FRAGMENT_NODE) {
-        node->FireNodeRemovedForChildren();
-      } else if (nsCOMPtr<nsINode> parent = node->GetParentNode()) {
-        nsContentUtils::MaybeFireNodeRemoved(node, parent);
+        node->NotifyDevToolsOfRemovalsOfChildren();
+      } else if (node->GetParentNode()) {
+        nsContentUtils::NotifyDevToolsOfNodeRemoval(*node);
       }
     }
   }
@@ -2449,16 +2453,22 @@ void nsINode::MoveBefore(nsINode& aNode, nsINode* aChild, ErrorResult& aRv) {
   
   
   mozAutoDocUpdate updateBatch(GetComposedDoc(), true);
-  RefPtr<Document> doc = OwnerDoc();
-  bool oldMutationFlag = doc->FireMutationEvents();
-  doc->SetFireMutationEvents(false);
-  oldParent->RemoveChildNode(aNode.AsContent(), true, nullptr, &newParent);
+  {  
+    
+    
+    
+    
+    AutoSuppressNotifyingDevToolsOfNodeRemovals suppressNotifyingDevTools(
+        *OwnerDoc());
+    oldParent->RemoveChildNode(aNode.AsContent(), true, nullptr, &newParent);
 
-  
-  InsertChildBefore(aNode.AsContent(),
-                    referenceChild ? referenceChild->AsContent() : nullptr,
-                    true, aRv, oldParent);
-  doc->SetFireMutationEvents(oldMutationFlag);
+    
+    
+    
+    InsertChildBefore(aNode.AsContent(),
+                      referenceChild ? referenceChild->AsContent() : nullptr,
+                      true, aRv, oldParent);
+  }
 }
 
 void nsINode::RemoveChildNode(nsIContent* aKid, bool aNotify,
@@ -2798,19 +2808,20 @@ nsINode* nsINode::ReplaceOrInsertBefore(
     
     
     if (aReplace && aRefChild != aNewChild) {
-      nsContentUtils::MaybeFireNodeRemoved(aRefChild, this);
+      nsContentUtils::NotifyDevToolsOfNodeRemoval(*aRefChild);
     }
 
     
     
-    if (nsCOMPtr<nsINode> oldParent = aNewChild->GetParentNode()) {
-      nsContentUtils::MaybeFireNodeRemoved(aNewChild, oldParent);
+    if (aNewChild->GetParentNode()) {
+      nsContentUtils::NotifyDevToolsOfNodeRemoval(*aNewChild);
     }
 
     
     
     if (nodeType == DOCUMENT_FRAGMENT_NODE) {
-      static_cast<FragmentOrElement*>(aNewChild)->FireNodeRemovedForChildren();
+      static_cast<FragmentOrElement*>(aNewChild)
+          ->NotifyDevToolsOfRemovalsOfChildren();
     }
 
     if (guard.Mutated(0)) {
@@ -3775,7 +3786,6 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
     if (nsPIDOMWindowInner* window = newDoc->GetInnerWindow()) {
       EventListenerManager* elm = aNode->GetExistingListenerManager();
       if (elm) {
-        window->SetMutationListeners(elm->MutationListenerBits());
         if (elm->MayHaveDOMActivateListeners()) {
           window->SetHasDOMActivateEventListeners();
         }
@@ -4086,18 +4096,30 @@ void nsINode::RemoveMutationObserver(
   }
 }
 
-void nsINode::FireNodeRemovedForChildren() {
-  Document* doc = OwnerDoc();
+bool nsINode::MaybeNeedsToNotifyDevToolsOfNodeRemovalsInOwnerDoc() const {
   
-  if (!nsContentUtils::HasMutationListeners(
-          doc, NS_EVENT_BITS_MUTATION_NODEREMOVED)) {
+  
+  
+  return OwnerDoc()->DevToolsWatchingDOMMutations();
+}
+
+bool nsINode::DevToolsShouldBeNotifiedOfThisRemoval() const {
+  return MOZ_UNLIKELY(MaybeNeedsToNotifyDevToolsOfNodeRemovalsInOwnerDoc()) &&
+         IsInComposedDoc() &&
+         !OwnerDoc()->SuppressedNotifyingDevToolsOfNodeRemovals() &&
+         !ChromeOnlyAccess();
+}
+
+void nsINode::NotifyDevToolsOfRemovalsOfChildren() {
+  
+  if (MOZ_LIKELY(!MaybeNeedsToNotifyDevToolsOfNodeRemovalsInOwnerDoc())) {
     return;
   }
 
-  nsCOMPtr<nsINode> child;
-  for (child = GetFirstChild(); child && child->GetParentNode() == this;
+  for (nsCOMPtr<nsIContent> child = GetFirstChild();
+       child && child->GetParentNode() == this;
        child = child->GetNextSibling()) {
-    nsContentUtils::MaybeFireNodeRemoved(child, this);
+    nsContentUtils::NotifyDevToolsOfNodeRemoval(*child);
   }
 }
 

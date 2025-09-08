@@ -1940,7 +1940,19 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void FireNodeRemovedForChildren();
+  [[nodiscard]] bool MaybeNeedsToNotifyDevToolsOfNodeRemovalsInOwnerDoc() const;
+
+  
+
+
+
+  [[nodiscard]] bool DevToolsShouldBeNotifiedOfThisRemoval() const;
+
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void NotifyDevToolsOfRemovalsOfChildren();
 
   void QueueDevtoolsAnonymousEvent(bool aIsRemove);
 

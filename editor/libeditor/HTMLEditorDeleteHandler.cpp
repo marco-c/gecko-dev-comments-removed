@@ -1155,8 +1155,7 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::Run(
           if (NS_WARN_IF(rangesToDelete.Ranges().IsEmpty())) {
             return Err(NS_ERROR_FAILURE);
           }
-          if (aHTMLEditor.MayHaveMutationEventListeners(
-                  NS_EVENT_BITS_MUTATION_NODEREMOVED)) {
+          if (aHTMLEditor.MaybeNodeRemovalsObservedByDevTools()) {
             
             
             const WSRunScanner wsRunScannerAtCaret(
@@ -3089,7 +3088,7 @@ HTMLEditor::AutoDeleteRangesHandler::HandleDeleteNonCollapsedRanges(
       return EditActionResult::HandledResult();
     }
     if (NS_WARN_IF(!aRangesToDelete.FirstRangeRef()->IsPositioned()) ||
-        (aHTMLEditor.MayHaveMutationEventListeners() &&
+        (aHTMLEditor.MaybeNodeRemovalsObservedByDevTools() &&
          NS_WARN_IF(!aRangesToDelete.IsFirstRangeEditable(aEditingHost)))) {
       NS_WARNING(
           "WhiteSpaceVisibilityKeeper::PrepareToDeleteRange() made the first "
@@ -3135,8 +3134,7 @@ HTMLEditor::AutoDeleteRangesHandler::HandleDeleteNonCollapsedRanges(
           rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
           "CaretPoint::SuggestCaretPointTo() failed, but ignored");
       if (NS_WARN_IF(!aRangesToDelete.FirstRangeRef()->IsPositioned()) ||
-          (aHTMLEditor.MayHaveMutationEventListeners(
-               NS_EVENT_BITS_MUTATION_NODEREMOVED) &&
+          (aHTMLEditor.MaybeNodeRemovalsObservedByDevTools() &&
            NS_WARN_IF(!aRangesToDelete.IsFirstRangeEditable(aEditingHost)))) {
         NS_WARNING(
             "HTMLEditor::DeleteRangesWithTransaction() made the first range "
@@ -4898,7 +4896,7 @@ HTMLEditor::AutoDeleteRangesHandler::DeleteParentBlocksWithTransactionIfEmpty(
 
   
   
-  if (aHTMLEditor.MayHaveMutationEventListeners()) {
+  if (aHTMLEditor.MaybeNodeRemovalsObservedByDevTools()) {
     if (NS_WARN_IF(nextSibling &&
                    !nextSibling->IsInclusiveDescendantOf(&aEditingHost)) ||
         NS_WARN_IF(!parentNode->IsInclusiveDescendantOf(&aEditingHost))) {
@@ -6237,7 +6235,7 @@ Result<MoveNodeResult, nsresult> HTMLEditor::AutoMoveOneLineHandler::Run(
     }
     
     
-    else if (aHTMLEditor.MayHaveMutationEventListeners() &&
+    else if (aHTMLEditor.MaybeNodeRemovalsObservedByDevTools() &&
              MOZ_UNLIKELY(!moveContentsInLineResult.NextInsertionPointRef()
                                .IsSetAndValid())) {
       mPointToInsert.SetToEndOf(mPointToInsert.GetContainer());
@@ -6251,7 +6249,7 @@ Result<MoveNodeResult, nsresult> HTMLEditor::AutoMoveOneLineHandler::Run(
           moveContentsInLineResult.NextInsertionPointRef().IsSet());
       mPointToInsert = moveContentsInLineResult.NextInsertionPointRef();
       pointToInsert = NextInsertionPointRef();
-      if (!aHTMLEditor.MayHaveMutationEventListeners() ||
+      if (!aHTMLEditor.MaybeNodeRemovalsObservedByDevTools() ||
           movedContentRange.EndRef().IsBefore(pointToInsert)) {
         MOZ_ASSERT(pointToInsert.IsSet());
         MOZ_ASSERT(
@@ -6629,7 +6627,7 @@ Result<MoveNodeResult, nsresult> HTMLEditor::MoveNodeOrChildrenWithTransaction(
       return Err(rv);
     }
   }
-  if (!MayHaveMutationEventListeners()) {
+  if (!MaybeNodeRemovalsObservedByDevTools()) {
     return std::move(unwrappedMoveNodeResult);
   }
   

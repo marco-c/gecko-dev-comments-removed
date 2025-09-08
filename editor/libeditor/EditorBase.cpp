@@ -365,6 +365,24 @@ nsresult EditorBase::InitInternal(Document& aDocument, Element* aRootElement,
   return NS_OK;
 }
 
+bool EditorBase::MaybeNodeRemovalsObservedByDevTools() const {
+  if (IsTextEditor()) {
+    
+    
+    return false;
+  }
+#ifdef DEBUG
+  
+  
+  
+  
+  return true;
+#else   
+  Document* const doc = GetDocument();
+  return doc && doc->MaybeNeedsToNotifyDevToolsOfNodeRemovalsInOwnerDoc();
+#endif  
+}
+
 nsresult EditorBase::EnsureEmptyTextFirstChild() {
   MOZ_ASSERT(IsTextEditor());
   RefPtr<Element> root = GetRoot();

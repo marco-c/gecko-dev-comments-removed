@@ -53,13 +53,6 @@ class InternalMutationEvent : public WidgetEvent {
   }
 };
 
-
-
-
-#define NS_EVENT_BITS_MUTATION_NODEREMOVED 0x04
-
-#define NS_EVENT_BITS_MUTATION_ALL (NS_EVENT_BITS_MUTATION_NODEREMOVED)
-
 }  
 
 #endif  
