@@ -15,7 +15,6 @@
 #include "mozilla/MemoryChecking.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Span.h"
-#include "mozilla/TemplateLib.h"
 #include "mozilla/TextUtils.h"
 #include "mozilla/Utf8.h"
 
@@ -667,7 +666,7 @@ JS::ColumnNumberUnsignedOffset TokenStreamAnyChars::computeColumnOffsetForUTF8(
   
   
   
-  constexpr uint32_t ColumnChunkLength = mozilla::tl::RoundUpPow2<100>::value;
+  constexpr uint32_t ColumnChunkLength = mozilla::RoundUpPow2(100);
 
   
   const uint32_t chunkIndex = offsetInLine / ColumnChunkLength;
