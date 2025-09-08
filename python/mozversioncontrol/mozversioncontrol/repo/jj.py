@@ -122,8 +122,7 @@ class JujutsuRepository(Repository):
 
     @property
     def base_ref(self):
-        ref = self._resolve_to_change("latest(roots(::@ & mutable())-)")
-        return ref if ref else self.head_ref
+        return self._resolve_to_change("roots((::@ & mutable())-)")
 
     def _resolve_to_commit(self, revset):
         commit = self._run_read_only(
@@ -199,13 +198,55 @@ class JujutsuRepository(Repository):
 
         return changed
 
+    
+    
+    
+    
+    
+    
+    
+    def _translate_exclude_expr(self, pattern):
+        if not pattern or pattern.startswith("#"):
+            return None  
+        
+        pattern = pattern.replace(".*/", "**/")
+        
+        pattern = re.sub(r"[.][*][^/]", "*", pattern)
+        
+        pattern = pattern.replace("(^|[^/]).*", "**/*")
+        
+        pattern = pattern.replace(".*", "*/**/*")
+        selector = "glob"
+        if pattern.startswith("^"):
+            selector = "root-glob"
+            pattern = pattern[1:]
+        elif "*" not in pattern:
+            selector = "root-file"
+        return f'{selector}:"{pattern}"'
+
     def diff_stream(self, rev=None, extensions=(), exclude_file=None, context=8):
         if rev is None:
             rev = self.HEAD_REVSET
-        rev = self._resolve_to_commit(rev)
-        return self._git.diff_stream(
-            rev=rev, extensions=extensions, exclude_file=exclude_file, context=context
-        )
+        args = ["diff", "--from", f"roots({rev})-", "--to", f"heads({rev})", "--git"]
+
+        
+        patterns = [f'glob:"*{dot_extension}"' for dot_extension in extensions]
+        if not patterns:
+            patterns = ["all()"]
+
+        
+        excludes = []
+        if exclude_file is not None:
+            with open(exclude_file) as fh:
+                excludes.extend(line.strip() for line in fh)
+        exclude_patterns = []
+
+        
+        
+        fileset = " ~ ".join(["(" + " | ".join(patterns) + ")"] + exclude_patterns)
+        args.append(fileset)
+
+        return self._pipefrom(*args)
 
     def get_outgoing_files(self, diff_filter="ADM", upstream=None):
         assert all(f.lower() in self._valid_diff_filter for f in diff_filter)
