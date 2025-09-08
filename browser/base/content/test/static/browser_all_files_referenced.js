@@ -126,6 +126,10 @@ var gExceptionPaths = [
   
   
   "chrome://browser/skin/illustrations/market-opt-in.svg",
+
+  
+  
+  "chrome://browser/skin/illustrations/yelpRealtime-opt-in.svg",
 ];
 
 
