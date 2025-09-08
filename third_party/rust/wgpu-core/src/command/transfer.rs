@@ -13,7 +13,6 @@ use crate::device::trace::Command as TraceCommand;
 use crate::{
     api_log,
     command::{clear_texture, CommandEncoderError, EncoderStateError},
-    conv,
     device::{Device, MissingDownlevelFlags},
     global::Global,
     id::{BufferId, CommandEncoderId, TextureId},
@@ -133,13 +132,17 @@ pub enum TransferError {
     CopyDstMissingAspects,
     #[error("Copy aspect must refer to a single aspect of texture format")]
     CopyAspectNotOne,
+    #[error("Copying from textures with format {0:?} is forbidden")]
+    CopyFromForbiddenTextureFormat(wgt::TextureFormat),
     #[error("Copying from textures with format {format:?} and aspect {aspect:?} is forbidden")]
-    CopyFromForbiddenTextureFormat {
+    CopyFromForbiddenTextureFormatAspect {
         format: wgt::TextureFormat,
         aspect: wgt::TextureAspect,
     },
+    #[error("Copying to textures with format {0:?} is forbidden")]
+    CopyToForbiddenTextureFormat(wgt::TextureFormat),
     #[error("Copying to textures with format {format:?} and aspect {aspect:?} is forbidden")]
-    CopyToForbiddenTextureFormat {
+    CopyToForbiddenTextureFormatAspect {
         format: wgt::TextureFormat,
         aspect: wgt::TextureAspect,
     },
@@ -200,8 +203,10 @@ impl WebGpuError for TransferError {
             | Self::CopySrcMissingAspects
             | Self::CopyDstMissingAspects
             | Self::CopyAspectNotOne
-            | Self::CopyFromForbiddenTextureFormat { .. }
-            | Self::CopyToForbiddenTextureFormat { .. }
+            | Self::CopyFromForbiddenTextureFormat(..)
+            | Self::CopyFromForbiddenTextureFormatAspect { .. }
+            | Self::CopyToForbiddenTextureFormat(..)
+            | Self::CopyToForbiddenTextureFormatAspect { .. }
             | Self::ExternalCopyToForbiddenTextureFormat(..)
             | Self::TextureFormatsNotCopyCompatible { .. }
             | Self::MissingDownlevelFlags(..)
@@ -362,6 +367,54 @@ pub(crate) fn validate_linear_texture_data(
     }
 
     Ok((bytes_in_copy, image_stride_bytes))
+}
+
+
+
+
+
+
+
+
+
+pub(crate) fn validate_texture_copy_src_format(
+    format: wgt::TextureFormat,
+    aspect: wgt::TextureAspect,
+) -> Result<(), TransferError> {
+    use wgt::TextureAspect as Ta;
+    use wgt::TextureFormat as Tf;
+    match (format, aspect) {
+        (Tf::Depth24Plus, _) => Err(TransferError::CopyFromForbiddenTextureFormat(format)),
+        (Tf::Depth24PlusStencil8, Ta::DepthOnly) => {
+            Err(TransferError::CopyFromForbiddenTextureFormatAspect { format, aspect })
+        }
+        _ => Ok(()),
+    }
+}
+
+
+
+
+
+
+
+
+
+pub(crate) fn validate_texture_copy_dst_format(
+    format: wgt::TextureFormat,
+    aspect: wgt::TextureAspect,
+) -> Result<(), TransferError> {
+    use wgt::TextureAspect as Ta;
+    use wgt::TextureFormat as Tf;
+    match (format, aspect) {
+        (Tf::Depth24Plus | Tf::Depth32Float, _) => {
+            Err(TransferError::CopyToForbiddenTextureFormat(format))
+        }
+        (Tf::Depth24PlusStencil8 | Tf::Depth32FloatStencil8, Ta::DepthOnly) => {
+            Err(TransferError::CopyToForbiddenTextureFormatAspect { format, aspect })
+        }
+        _ => Ok(()),
+    }
 }
 
 
@@ -945,14 +998,7 @@ impl Global {
                 .map(|pending| pending.into_hal(dst_raw))
                 .collect::<Vec<_>>();
 
-            if !conv::is_valid_copy_dst_texture_format(dst_texture.desc.format, destination.aspect)
-            {
-                return Err(TransferError::CopyToForbiddenTextureFormat {
-                    format: dst_texture.desc.format,
-                    aspect: destination.aspect,
-                }
-                .into());
-            }
+            validate_texture_copy_dst_format(dst_texture.desc.format, destination.aspect)?;
 
             validate_texture_buffer_copy(
                 destination,
@@ -1073,13 +1119,7 @@ impl Global {
                 .into());
             }
 
-            if !conv::is_valid_copy_src_texture_format(src_texture.desc.format, source.aspect) {
-                return Err(TransferError::CopyFromForbiddenTextureFormat {
-                    format: src_texture.desc.format,
-                    aspect: source.aspect,
-                }
-                .into());
-            }
+            validate_texture_copy_src_format(src_texture.desc.format, source.aspect)?;
 
             validate_texture_buffer_copy(
                 source,

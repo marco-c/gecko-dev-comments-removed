@@ -497,6 +497,10 @@ pub extern "C" fn wgpu_client_request_device(
         
         
         trace: wgt::Trace::Off,
+        
+        
+        
+        experimental_features: wgt::ExperimentalFeatures::disabled(),
     };
     let message = Message::RequestDevice {
         adapter_id,

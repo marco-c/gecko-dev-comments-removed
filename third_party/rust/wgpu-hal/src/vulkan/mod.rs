@@ -575,6 +575,7 @@ struct PrivateCapabilities {
     
     can_present: bool,
     non_coherent_map_mask: wgt::BufferAddress,
+    multi_draw_indirect: bool,
 
     
     

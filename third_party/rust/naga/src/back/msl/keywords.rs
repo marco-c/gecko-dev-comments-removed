@@ -1,6 +1,5 @@
+use crate::proc::KeywordSet;
 use crate::racy_lock::RacyLock;
-
-use hashbrown::HashSet;
 
 
 
@@ -364,11 +363,4 @@ pub const RESERVED: &[&str] = &[
 
 
 
-pub static RESERVED_SET: RacyLock<HashSet<&'static str>> = RacyLock::new(|| {
-    let mut set = HashSet::default();
-    set.reserve(RESERVED.len());
-    for &word in RESERVED {
-        set.insert(word);
-    }
-    set
-});
+pub static RESERVED_SET: RacyLock<KeywordSet> = RacyLock::new(|| KeywordSet::from_iter(RESERVED));

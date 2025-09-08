@@ -41,11 +41,13 @@ pub mod error;
 mod features;
 pub mod instance;
 pub mod math;
+mod tokens;
 mod transfers;
 
 pub use counters::*;
 pub use features::*;
 pub use instance::*;
+pub use tokens::*;
 pub use transfers::*;
 
 
@@ -1190,7 +1192,7 @@ impl DownlevelCapabilities {
 bitflags::bitflags! {
     /// Binary flags listing features that may or may not be present on downlevel adapters.
     ///
-    /// A downlevel adapter is a GPU adapter that WGPU supports, but with potentially limited
+    /// A downlevel adapter is a GPU adapter that wgpu supports, but with potentially limited
     /// features, due to the lack of hardware feature support.
     ///
     /// Flags that are **not** present for a downlevel adapter or device usually indicates
@@ -1323,6 +1325,12 @@ bitflags::bitflags! {
         /// Not Supported by:
         /// - GL ES / WebGL
         const NONBLOCKING_QUERY_RESOLVE = 1 << 22;
+
+        /// Allows shaders to use `quantizeToF16`, `pack2x16float`, and `unpack2x16float`, which
+        /// operate on `f16`-precision values stored in `f32`s.
+        ///
+        /// Not supported by Vulkan on Mesa when [`Features::SHADER_F16`] is absent.
+        const SHADER_F16_IN_F32 = 1 << 23;
     }
 }
 
@@ -1463,6 +1471,9 @@ pub struct DeviceDescriptor<L> {
     
     pub required_limits: Limits,
     
+    #[cfg_attr(feature = "serde", serde(skip))]
+    pub experimental_features: ExperimentalFeatures,
+    
     pub memory_hints: MemoryHints,
     
     
@@ -1477,6 +1488,7 @@ impl<L> DeviceDescriptor<L> {
             label: fun(&self.label),
             required_features: self.required_features,
             required_limits: self.required_limits.clone(),
+            experimental_features: self.experimental_features,
             memory_hints: self.memory_hints.clone(),
             trace: self.trace.clone(),
         }
@@ -4549,6 +4561,12 @@ pub enum PollError {
         error("The requested Wait timed out before the submission was completed.")
     )]
     Timeout,
+    
+    #[cfg_attr(
+        feature = "std",
+        error("Tried to wait using a submission index ({0}) that has not been returned by a successful submission (last successful submission: {1})")
+    )]
+    WrongSubmissionIndex(u64, u64),
 }
 
 

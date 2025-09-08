@@ -4,9 +4,8 @@
 
 
 
+use crate::proc::KeywordSet;
 use crate::racy_lock::RacyLock;
-
-use hashbrown::HashSet;
 
 
 
@@ -37,6 +36,7 @@ pub const RESERVED: &[&str] = &[
     "texture_3d",
     "texture_cube",
     "texture_cube_array",
+    "texture_external",
     "texture_multisampled_2d",
     "texture_storage_1d",
     "texture_storage_2d",
@@ -238,11 +238,4 @@ pub const RESERVED: &[&str] = &[
 
 
 
-pub static RESERVED_SET: RacyLock<HashSet<&'static str>> = RacyLock::new(|| {
-    let mut set = HashSet::default();
-    set.reserve(RESERVED.len());
-    for &word in RESERVED {
-        set.insert(word);
-    }
-    set
-});
+pub static RESERVED_SET: RacyLock<KeywordSet> = RacyLock::new(|| KeywordSet::from_iter(RESERVED));
