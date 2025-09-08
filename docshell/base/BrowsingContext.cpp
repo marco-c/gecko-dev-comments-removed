@@ -85,6 +85,7 @@
 #include "nsContentUtils.h"
 #include "nsQueryObject.h"
 #include "nsSandboxFlags.h"
+#include "nsScreen.h"
 #include "nsScriptError.h"
 #include "nsThreadUtils.h"
 #include "xpcprivate.h"
@@ -2972,7 +2973,51 @@ void BrowsingContext::DidSet(FieldIndex<IDX_InRDMPane>, bool aOldValue) {
   if (GetInRDMPane() == aOldValue) {
     return;
   }
+
+  
+  if (!GetInRDMPane()) {
+    ResetOrientationOverride();
+  }
+
   PresContextAffectingFieldChanged();
+}
+
+void BrowsingContext::DidSet(FieldIndex<IDX_HasOrientationOverride>,
+                             bool aOldValue) {
+  bool hasOrientationOverride = GetHasOrientationOverride();
+  OrientationType type = GetCurrentOrientationType();
+  float angle = GetCurrentOrientationAngle();
+
+  PreOrderWalk([&](BrowsingContext* aBrowsingContext) {
+    if (RefPtr<WindowContext> windowContext =
+            aBrowsingContext->GetCurrentWindowContext()) {
+      if (nsCOMPtr<nsPIDOMWindowInner> window =
+              windowContext->GetInnerWindow()) {
+        ScreenOrientation* orientation =
+            nsGlobalWindowInner::Cast(window)->Screen()->Orientation();
+
+        float screenOrientationAngle =
+            orientation->DeviceAngle(CallerType::System);
+        OrientationType screenOrientationType =
+            orientation->DeviceType(CallerType::System);
+
+        bool overrideIsDifferentThanDevice =
+            screenOrientationType != type || screenOrientationAngle != angle;
+
+        
+        if (!hasOrientationOverride && aOldValue) {
+          Unused << aBrowsingContext->SetCurrentOrientation(
+              screenOrientationType, screenOrientationAngle);
+        } else if (!aBrowsingContext->IsTop()) {
+          
+          Unused << aBrowsingContext->SetCurrentOrientation(type, angle);
+        }
+
+        orientation->MaybeDispatchEventsForOverride(
+            aBrowsingContext, aOldValue, overrideIsDifferentThanDevice);
+      }
+    }
+  });
 }
 
 void BrowsingContext::DidSet(FieldIndex<IDX_ForceDesktopViewport>,

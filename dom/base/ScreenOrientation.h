@@ -33,6 +33,15 @@ class ScreenOrientation final : public DOMEventTargetHelper {
   
   void MaybeChanged();
 
+  
+  void MaybeDispatchChangeEvent(BrowsingContext* aBrowsingContext);
+
+  
+  
+  void MaybeDispatchEventsForOverride(BrowsingContext* aBrowsingContext,
+                                      bool aOldHasOrientationOverride,
+                                      bool aOverrideIsDifferentThanDevice);
+
   ScreenOrientation(nsPIDOMWindowInner* aWindow, nsScreen* aScreen);
 
   already_AddRefed<Promise> Lock(OrientationLockType aOrientation,
