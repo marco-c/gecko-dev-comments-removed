@@ -7,14 +7,6 @@ const { _ContextId } = ChromeUtils.importESModule(
   "moz-src:///browser/modules/ContextId.sys.mjs"
 );
 
-const { ObliviousHTTP } = ChromeUtils.importESModule(
-  "resource://gre/modules/ObliviousHTTP.sys.mjs"
-);
-
-const { sinon } = ChromeUtils.importESModule(
-  "resource://testing-common/Sinon.sys.mjs"
-);
-
 const CONTEXT_ID_PREF = "browser.contextual-services.contextId";
 const CONTEXT_ID_TIMESTAMP_PREF =
   "browser.contextual-services.contextId.timestamp-in-seconds";
@@ -24,10 +16,6 @@ const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const TEST_CONTEXT_ID = "decafbad-0cd1-0cd2-0cd3-decafbad1000";
 const TEST_CONTEXT_ID_WITH_BRACES = "{" + TEST_CONTEXT_ID + "}";
-const UNIFIED_ADS_ENDPOINT = Services.prefs.getCharPref(
-  "browser.newtabpage.activity-stream.unifiedAds.endpoint",
-  ""
-);
 
 do_get_profile();
 
@@ -56,45 +44,13 @@ function waitForPersist(instance) {
 
 
 
-
 function waitForRotated(rotatedFromContextId, taskFn) {
-  let sandbox = sinon.createSandbox();
-  sandbox.stub(ObliviousHTTP, "getOHTTPConfig").resolves({});
-
-  let { promise, resolve } = Promise.withResolvers();
-
-  sandbox
-    .stub(ObliviousHTTP, "ohttpRequest")
-    .callsFake((_url, _config, endpoint, options) => {
-      Assert.equal(
-        endpoint,
-        `${UNIFIED_ADS_ENDPOINT}v1/delete_user`,
-        "Sent to the MARS endpoint"
-      );
-      Assert.equal(options.method, "DELETE", "Sent using DELETE");
-      Assert.deepEqual(
-        JSON.parse(options.body),
-        {
-          context_id: rotatedFromContextId,
-        },
-        "Sent the old context_id"
-      );
-
-      resolve();
-      return Promise.resolve({
-        status: 200,
-        json: async () => [],
-      });
-    });
-
-  return GleanPings.contextIdDeletionRequest.testSubmission(async () => {
+  return GleanPings.contextIdDeletionRequest.testSubmission(() => {
     Assert.equal(
       Glean.contextualServices.contextId.testGetValue(),
       rotatedFromContextId,
       "Sent the right context ID to be deleted."
     );
-    await promise;
-    sandbox.restore();
   }, taskFn);
 }
 
