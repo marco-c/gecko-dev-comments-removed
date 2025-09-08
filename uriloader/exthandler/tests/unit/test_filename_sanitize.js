@@ -265,9 +265,13 @@ add_task(async function validate_filename_method() {
     "sound.m4a",
     "sound.m4a"
   );
+  
+  
+  
+  let isOldAndroid = AppConstants.isPlatformAndVersionAtMost("android", "33.9");
   Assert.equal(
     mimeService.validateFileNameForSaving("sound.m4b", "audio/mp4", 0),
-    AppConstants.platform == "android" ? "sound.m4a" : "sound.m4b",
+    isOldAndroid ? "sound.m4a" : "sound.m4b",
     "sound.m4b"
   );
   Assert.equal(
