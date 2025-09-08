@@ -2,8 +2,26 @@ const PAGE = "about:logging";
 
 function clearLoggingPrefs() {
   for (let pref of Services.prefs.getBranch("logging.").getChildList("")) {
+    if (pref === "config.clear_on_startup") {
+      
+      
+      continue;
+    }
     info(`Clearing: ${pref}`);
     Services.prefs.clearUserPref("logging." + pref);
+  }
+
+  
+  const devtoolsPrefs = [
+    "devtools.performance.recording.preset",
+    "devtools.performance.recording.entries",
+    "devtools.performance.recording.threads",
+    "devtools.performance.recording.features",
+    "devtools.performance.popup.intro-displayed",
+  ];
+
+  for (let pref of devtoolsPrefs) {
+    Services.prefs.clearUserPref(pref);
   }
 }
 
@@ -56,11 +74,6 @@ add_setup(async function saveRestoreLogModules() {
   registerCleanupFunction(() => {
     clearLoggingPrefs();
     info(" -- Restoring log modules: " + savedLogModules);
-    for (let pref of savedLogModules.split(",")) {
-      let [logModule, level] = pref.split(":");
-      Services.prefs.setIntPref("logging." + logModule, parseInt(level));
-    }
-    
     Services.env.set("MOZ_LOG", savedLogModules);
   });
 });
