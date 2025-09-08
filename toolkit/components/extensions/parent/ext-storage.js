@@ -308,6 +308,9 @@ this.storage = class extends ExtensionAPIPersistent {
             get(spec) {
               return ExtensionStorage.get(extension.id, spec);
             },
+            getBytesInUse(keys) {
+              return ExtensionStorage.getBytesInUse(extension.id, keys);
+            },
             getKeys() {
               return ExtensionStorage.getKeys(extension.id);
             },
@@ -410,6 +413,12 @@ this.storage = class extends ExtensionAPIPersistent {
             enforceNoTemporaryAddon(extension.id);
             let data = await getManagedStorageManifestData(extension, context);
             return ExtensionStorage._filterProperties(extension.id, data, keys);
+          },
+          async getBytesInUse() {
+            enforceNoTemporaryAddon(extension.id);
+            
+            
+            return 0;
           },
           async getKeys() {
             enforceNoTemporaryAddon(extension.id);
