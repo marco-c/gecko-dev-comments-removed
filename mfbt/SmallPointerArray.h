@@ -36,6 +36,12 @@ namespace mozilla {
 
 template <typename T>
 class SmallPointerArray {
+  
+  
+  
+  static_assert(!std::is_same_v<T, bool>,
+                "SmallPointerArray<bool> is not supported");
+
  public:
   SmallPointerArray() {
     
@@ -64,7 +70,7 @@ class SmallPointerArray {
   void Clear() {
     if (first()) {
       first() = nullptr;
-      new (&mArray[1].mValue) std::vector<T*>*(nullptr);
+      new (&mArray[1].mVector) std::vector<T*>*(nullptr);
       return;
     }
 
