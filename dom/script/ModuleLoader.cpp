@@ -369,56 +369,91 @@ already_AddRefed<ModuleLoadRequest> ModuleLoader::CreateTopLevel(
   return request.forget();
 }
 
-already_AddRefed<ModuleLoadRequest> ModuleLoader::CreateRequest(
-    JSContext* aCx, nsIURI* aURI, JS::Handle<JSObject*> aModuleRequest,
-    JS::Handle<JS::Value> aHostDefined, JS::Handle<JS::Value> aPayload,
-    bool aIsDynamicImport, ScriptFetchOptions* aOptions,
-    ReferrerPolicy aReferrerPolicy, nsIURI* aBaseURL,
-    const SRIMetadata& aSriMetadata) {
-  RefPtr<ScriptLoadContext> context = new ScriptLoadContext();
-  context->mIsInline = false;
-  ModuleLoadRequest::Kind kind;
-  ModuleLoadRequest* root = nullptr;
-  if (aIsDynamicImport) {
-    context->mScriptMode = ScriptLoadContext::ScriptMode::eAsync;
-    kind = ModuleLoadRequest::Kind::DynamicImport;
-  } else {
-    MOZ_ASSERT(!aHostDefined.isUndefined());
-    root = static_cast<ModuleLoadRequest*>(aHostDefined.toPrivate());
-    MOZ_ASSERT(root);
-    LoadContextBase* loadContext = root->mLoadContext;
-    context->mScriptMode = loadContext->AsWindowContext()->mScriptMode;
-    kind = ModuleLoadRequest::Kind::StaticImport;
-  }
+already_AddRefed<ModuleLoadRequest> ModuleLoader::CreateStaticImport(
+    nsIURI* aURI, JS::ModuleType aModuleType, ModuleScript* aReferrerScript,
+    const mozilla::dom::SRIMetadata& aSriMetadata,
+    JS::loader::LoadContextBase* aLoadContext,
+    JS::loader::ModuleLoaderBase* aLoader) {
+  RefPtr<ScriptLoadContext> newContext = new ScriptLoadContext();
+  newContext->mIsInline = false;
+  
+  
+  newContext->mScriptMode = aLoadContext->AsWindowContext()->mScriptMode;
 
-  JS::ModuleType moduleType = GetModuleRequestType(aCx, aModuleRequest);
-  RefPtr<ModuleLoadRequest> request =
-      new ModuleLoadRequest(aURI, moduleType, aReferrerPolicy, aOptions,
-                            aSriMetadata, aBaseURL, context, kind, this, root);
+  RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
+      aURI, aModuleType, aReferrerScript->ReferrerPolicy(),
+      aReferrerScript->GetFetchOptions(), aSriMetadata,
+      aReferrerScript->GetURI(), newContext,
+      ModuleLoadRequest::Kind::StaticImport, aLoader,
+      aLoadContext->mRequest->AsModuleRequest()->GetRootModule());
 
   GetScriptLoader()->TryUseCache(request);
 
   return request.forget();
 }
 
-already_AddRefed<ScriptFetchOptions>
-ModuleLoader::CreateDefaultScriptFetchOptions() {
-  RefPtr<ScriptFetchOptions> options = ScriptFetchOptions::CreateDefault();
-  nsCOMPtr<nsIPrincipal> principal = GetGlobalObject()->PrincipalOrNull();
-  options->SetTriggeringPrincipal(principal);
-  return options.forget();
-}
+already_AddRefed<ModuleLoadRequest> ModuleLoader::CreateDynamicImport(
+    JSContext* aCx, nsIURI* aURI, LoadedScript* aMaybeActiveScript,
+    JS::Handle<JSObject*> aModuleRequestObj, JS::Handle<JSObject*> aPromise) {
+  MOZ_ASSERT(aModuleRequestObj);
+  MOZ_ASSERT(aPromise);
 
-nsIURI* ModuleLoader::GetClientReferrerURI() {
-  Document* document = GetScriptLoader()->GetDocument();
-#ifdef DEBUG
-  nsCOMPtr<nsIPrincipal> principal = GetGlobalObject()->PrincipalOrNull();
-#endif  
-  MOZ_ASSERT_IF(GetKind() == WebExtension,
-                BasePrincipal::Cast(principal)->ContentScriptAddonPolicy());
-  MOZ_ASSERT_IF(GetKind() == Normal, principal == document->NodePrincipal());
+  RefPtr<ScriptFetchOptions> options = nullptr;
+  nsIURI* baseURL = nullptr;
+  RefPtr<ScriptLoadContext> context = new ScriptLoadContext();
+  ReferrerPolicy referrerPolicy;
 
-  return document->GetDocBaseURI();
+  if (aMaybeActiveScript) {
+    
+    
+    
+    options = aMaybeActiveScript->GetFetchOptions();
+    referrerPolicy = aMaybeActiveScript->ReferrerPolicy();
+    baseURL = aMaybeActiveScript->BaseURL();
+  } else {
+    
+    
+    
+    
+    Document* document = GetScriptLoader()->GetDocument();
+
+    nsCOMPtr<nsIPrincipal> principal = GetGlobalObject()->PrincipalOrNull();
+    MOZ_ASSERT_IF(GetKind() == WebExtension,
+                  BasePrincipal::Cast(principal)->ContentScriptAddonPolicy());
+    MOZ_ASSERT_IF(GetKind() == Normal, principal == document->NodePrincipal());
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    options = new ScriptFetchOptions(
+        mozilla::CORS_NONE,  u""_ns, RequestPriority::Auto,
+        ParserMetadata::NotParserInserted, principal);
+    referrerPolicy = document->GetReferrerPolicy();
+    baseURL = document->GetDocBaseURI();
+  }
+
+  context->mIsInline = false;
+  context->mScriptMode = ScriptLoadContext::ScriptMode::eAsync;
+
+  JS::ModuleType moduleType = JS::GetModuleRequestType(aCx, aModuleRequestObj);
+  SRIMetadata sriMetadata;
+  GetImportMapSRI(aURI, baseURL, mLoader->GetConsoleReportCollector(),
+                  &sriMetadata);
+
+  RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
+      aURI, moduleType, referrerPolicy, options, sriMetadata, baseURL, context,
+      ModuleLoadRequest::Kind::DynamicImport, this, nullptr);
+
+  request->SetDynamicImport(aMaybeActiveScript, aModuleRequestObj, aPromise);
+
+  GetScriptLoader()->TryUseCache(request);
+  return request.forget();
 }
 
 ModuleLoader::~ModuleLoader() {

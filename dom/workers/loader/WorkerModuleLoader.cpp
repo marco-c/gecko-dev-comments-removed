@@ -40,65 +40,30 @@ nsIURI* WorkerModuleLoader::GetBaseURI() const {
   return workerPrivate->GetBaseURI();
 }
 
-nsIURI* WorkerModuleLoader::GetClientReferrerURI() {
+already_AddRefed<ModuleLoadRequest> WorkerModuleLoader::CreateStaticImport(
+    nsIURI* aURI, JS::ModuleType aModuleType,
+    JS::loader::ModuleScript* aReferrerScript,
+    const mozilla::dom::SRIMetadata& aSriMetadata,
+    JS::loader::LoadContextBase* aLoadContext,
+    JS::loader::ModuleLoaderBase* aLoader) {
   
   
   
   
   
   
-  return GetBaseURI();
-}
-
-already_AddRefed<JS::loader::ScriptFetchOptions>
-WorkerModuleLoader::CreateDefaultScriptFetchOptions() {
-  RefPtr<ScriptFetchOptions> options = ScriptFetchOptions::CreateDefault();
-  return options.forget();
-}
-
-already_AddRefed<ModuleLoadRequest> WorkerModuleLoader::CreateRequest(
-    JSContext* aCx, nsIURI* aURI, JS::Handle<JSObject*> aModuleRequest,
-    JS::Handle<JS::Value> aHostDefined, JS::Handle<JS::Value> aPayload,
-    bool aIsDynamicImport, ScriptFetchOptions* aOptions,
-    mozilla::dom::ReferrerPolicy aReferrerPolicy, nsIURI* aBaseURL,
-    const mozilla::dom::SRIMetadata& aSriMetadata) {
   Maybe<ClientInfo> clientInfo = GetGlobalObject()->GetClientInfo();
 
-  ModuleLoadRequest::Kind kind;
-  RefPtr<WorkerLoadContext> loadContext;
-  ModuleLoadRequest* root = nullptr;
-  if (aIsDynamicImport) {
-    if (!CreateDynamicImportLoader()) {
-      return nullptr;
-    }
-
-    loadContext = new WorkerLoadContext(
-        WorkerLoadContext::Kind::DynamicImport, clientInfo,
-        GetCurrentScriptLoader(),
-        
-        
-        
-        
-        
-        
-        true);
-
-    kind = ModuleLoadRequest::Kind::DynamicImport;
-  } else {
-    MOZ_ASSERT(!aHostDefined.isUndefined());
-    root = static_cast<ModuleLoadRequest*>(aHostDefined.toPrivate());
-    MOZ_ASSERT(root);
-    WorkerLoadContext* context = root->mLoadContext->AsWorkerContext();
-    loadContext = new WorkerLoadContext(
-        WorkerLoadContext::Kind::StaticImport, clientInfo,
-        context->mScriptLoader, context->mOnlyExistingCachedResourcesAllowed);
-    kind = ModuleLoadRequest::Kind::StaticImport;
-  }
-
-  JS::ModuleType moduleType = JS::GetModuleRequestType(aCx, aModuleRequest);
+  WorkerLoadContext* context = aLoadContext->AsWorkerContext();
+  RefPtr<WorkerLoadContext> loadContext = new WorkerLoadContext(
+      WorkerLoadContext::Kind::StaticImport, clientInfo, context->mScriptLoader,
+      context->mOnlyExistingCachedResourcesAllowed);
   RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
-      aURI, moduleType, aReferrerPolicy, aOptions, SRIMetadata(), aBaseURL,
-      loadContext, kind, this, root);
+      aURI, aModuleType, aReferrerScript->ReferrerPolicy(),
+      aReferrerScript->GetFetchOptions(), SRIMetadata(),
+      aReferrerScript->GetURI(), loadContext,
+      ModuleLoadRequest::Kind::StaticImport, this,
+      aLoadContext->mRequest->AsModuleRequest()->GetRootModule());
 
   request->mURL = request->mURI->GetSpecOrDefault();
   request->NoCacheEntryFound();
@@ -121,12 +86,80 @@ bool WorkerModuleLoader::CreateDynamicImportLoader() {
   return true;
 }
 
+already_AddRefed<ModuleLoadRequest> WorkerModuleLoader::CreateDynamicImport(
+    JSContext* aCx, nsIURI* aURI, LoadedScript* aMaybeActiveScript,
+    JS::Handle<JSObject*> aModuleRequestObj, JS::Handle<JSObject*> aPromise) {
+  WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
+
+  if (!CreateDynamicImportLoader()) {
+    return nullptr;
+  }
+
+  
+  
+  
+  if (workerPrivate->IsServiceWorker()) {
+    return nullptr;
+  }
+  MOZ_ASSERT(aModuleRequestObj);
+  MOZ_ASSERT(aPromise);
+
+  RefPtr<ScriptFetchOptions> options;
+  nsIURI* baseURL = nullptr;
+  if (aMaybeActiveScript) {
+    
+    
+    
+    options = aMaybeActiveScript->GetFetchOptions();
+    baseURL = aMaybeActiveScript->BaseURL();
+  } else {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    options = new ScriptFetchOptions(
+        CORSMode::CORS_NONE,  u""_ns, RequestPriority::Auto,
+        JS::loader::ParserMetadata::NotParserInserted, nullptr);
+    baseURL = GetBaseURI();
+  }
+
+  Maybe<ClientInfo> clientInfo = GetGlobalObject()->GetClientInfo();
+
+  RefPtr<WorkerLoadContext> context = new WorkerLoadContext(
+      WorkerLoadContext::Kind::DynamicImport, clientInfo,
+      GetCurrentScriptLoader(),
+      
+      
+      
+      
+      
+      
+      true);
+
+  JS::ModuleType moduleType = JS::GetModuleRequestType(aCx, aModuleRequestObj);
+  ReferrerPolicy referrerPolicy = workerPrivate->GetReferrerPolicy();
+  RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
+      aURI, moduleType, referrerPolicy, options, SRIMetadata(), baseURL,
+      context, ModuleLoadRequest::Kind::DynamicImport, this, nullptr);
+
+  request->SetDynamicImport(aMaybeActiveScript, aModuleRequestObj, aPromise);
+  request->NoCacheEntryFound();
+
+  return request.forget();
+}
+
 bool WorkerModuleLoader::IsDynamicImportSupported() {
   WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
-  
-  
-  
-  return !workerPrivate->IsServiceWorker();
+  if (workerPrivate->IsServiceWorker()) {
+    return false;
+  }
+
+  return true;
 }
 
 bool WorkerModuleLoader::CanStartLoad(ModuleLoadRequest* aRequest,

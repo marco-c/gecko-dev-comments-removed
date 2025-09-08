@@ -42,7 +42,6 @@ using mozilla::Preferences;
 using mozilla::UniquePtr;
 using mozilla::WrapNotNull;
 using mozilla::dom::AutoJSAPI;
-using mozilla::dom::ReferrerPolicy;
 
 namespace JS::loader {
 
@@ -152,6 +151,9 @@ bool ModuleLoaderBase::HostLoadImportedModule(JSContext* aCx,
                                               Handle<JSObject*> aModuleRequest,
                                               Handle<Value> aHostDefined,
                                               Handle<Value> aPayload) {
+  
+
+  
   Rooted<JSObject*> object(aCx);
   if (aPayload.isObject()) {
     object = &aPayload.toObject();
@@ -173,21 +175,24 @@ bool ModuleLoaderBase::HostLoadImportedModule(JSContext* aCx,
     return false;
   }
 
-  RefPtr<ModuleLoaderBase> loader = GetCurrentModuleLoader(aCx);
-  if (!loader) {
-    return false;
-  }
-
-  if (isDynamicImport && !loader->IsDynamicImportSupported()) {
-    JS_ReportErrorNumberASCII(aCx, js::GetErrorMessage, nullptr,
-                              JSMSG_DYNAMIC_IMPORT_NOT_SUPPORTED);
-    return false;
-  }
-
   {
     
     
     RefPtr<LoadedScript> script(GetLoadedScriptOrNull(aReferrer));
+
+    RefPtr<ModuleLoaderBase> loader = GetCurrentModuleLoader(aCx);
+    if (!loader) {
+      return false;
+    }
+
+    if (isDynamicImport && !loader->IsDynamicImportSupported()) {
+      JS_ReportErrorNumberASCII(aCx, js::GetErrorMessage, nullptr,
+                                JSMSG_DYNAMIC_IMPORT_NOT_SUPPORTED);
+      return false;
+    }
+
+    
+    
 
     
     
@@ -197,6 +202,8 @@ bool ModuleLoaderBase::HostLoadImportedModule(JSContext* aCx,
 
     
     if (result.isErr()) {
+      
+      
       Rooted<Value> error(aCx);
       nsresult rv =
           loader->HandleResolveFailure(aCx, script, string, result.unwrapErr(),
@@ -218,6 +225,11 @@ bool ModuleLoaderBase::HostLoadImportedModule(JSContext* aCx,
     nsCOMPtr<nsIURI> uri = result.unwrap();
     MOZ_ASSERT(uri, "Failed to resolve module specifier");
 
+    LOG(
+        ("ModuleLoaderBase::HostLoadImportedModule loader (%p) uri %s referrer "
+         "(%p)",
+         loader.get(), uri->GetSpecOrDefault().get(), aReferrer.get()));
+
     ModuleType moduleType = GetModuleRequestType(aCx, aModuleRequest);
     if (!ModuleTypeAllowed(moduleType)) {
       LOG(("ModuleLoaderBase::HostLoadImportedModule uri %s, bad module type",
@@ -231,71 +243,31 @@ bool ModuleLoaderBase::HostLoadImportedModule(JSContext* aCx,
       return false;
     }
 
-    RefPtr<ScriptFetchOptions> options = nullptr;
-    ReferrerPolicy referrerPolicy;
-    nsIURI* fetchReferrer = nullptr;
-    if (script) {
-      options = script->GetFetchOptions();
-      referrerPolicy = script->ReferrerPolicy();
-      fetchReferrer = script->BaseURL();
-    } else {
-      options = loader->CreateDefaultScriptFetchOptions();
-      referrerPolicy = ReferrerPolicy::_empty;
-      fetchReferrer = loader->GetClientReferrerURI();
-    }
-
-    mozilla::dom::SRIMetadata sriMetadata;
-    loader->GetImportMapSRI(
-        uri, fetchReferrer,
-        loader->GetScriptLoaderInterface()->GetConsoleReportCollector(),
-        &sriMetadata);
-
-    RefPtr<ModuleLoadRequest> request = loader->CreateRequest(
-        aCx, uri, aModuleRequest, aHostDefined, aPayload, isDynamicImport,
-        options, referrerPolicy, fetchReferrer, sriMetadata);
-    if (!request) {
-      MOZ_ASSERT(isDynamicImport);
-      nsAutoCString url;
-      uri->GetSpec(url);
-      JS_ReportErrorNumberASCII(aCx, js::GetErrorMessage, nullptr,
-                                JSMSG_DYNAMIC_IMPORT_FAILED, url.get());
-      return false;
-    }
-
-    LOG(
-        ("ModuleLoaderBase::HostLoadImportedModule loader (%p) uri %s referrer "
-         "(%p) request (%p)",
-         loader.get(), uri->GetSpecOrDefault().get(), aReferrer.get(),
-         request.get()));
-
-    request->SetImport(aReferrer, aModuleRequest, aPayload);
-
     if (isDynamicImport) {
-      loader->AppendDynamicImport(request);
-    }
+      Rooted<JSObject*> promise(aCx, &aPayload.toObject());
+      RefPtr<ModuleLoadRequest> request = loader->CreateDynamicImport(
+          aCx, uri, script, aModuleRequest, promise);
+      if (!request) {
+        
+        JS_ReportErrorNumberASCII(aCx, js::GetErrorMessage, nullptr,
+                                  JSMSG_DYNAMIC_IMPORT_NOT_SUPPORTED);
+        return false;
+      }
 
-    nsresult rv = loader->StartModuleLoad(request);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      MOZ_ASSERT(!request->mModuleScript);
-      loader->GetScriptLoaderInterface()->ReportErrorToConsole(request, rv);
-      if (isDynamicImport) {
-        loader->RemoveDynamicImport(request);
-
+      nsresult rv = loader->StartDynamicImport(request);
+      if (NS_SUCCEEDED(rv)) {
+        loader->OnDynamicImportStarted(request);
+      } else {
         nsAutoCString url;
         uri->GetSpec(url);
         JS_ReportErrorNumberASCII(aCx, js::GetErrorMessage, nullptr,
                                   JSMSG_DYNAMIC_IMPORT_FAILED, url.get());
-      } else {
-        request->LoadFailed();
-        loader->OnFetchFailed(request);
-        return true;
+        return false;
       }
-
-      return false;
-    }
-
-    if (isDynamicImport) {
-      loader->OnDynamicImportStarted(request);
+    } else {
+      loader->StartFetchingModuleAndDependencies(
+          aCx, ModuleMapKey(uri, moduleType), aReferrer, aModuleRequest,
+          aHostDefined, aPayload);
     }
   }
 
@@ -329,7 +301,11 @@ bool ModuleLoaderBase::FinishLoadingImportedModule(
   MOZ_ALWAYS_TRUE(JS::FinishLoadingImportedModule(aCx, referrer, moduleReqObj,
                                                   payload, module, usePromise));
   MOZ_ASSERT(!JS_IsExceptionPending(aCx));
-  aRequest->ClearImport();
+
+  aRequest->mReferrerScript = nullptr;
+  aRequest->mModuleRequestObj = nullptr;
+  aRequest->mPayload.setUndefined();
+  aRequest->ClearDynamicImport();
 
   return true;
 }
@@ -868,7 +844,9 @@ void ModuleLoaderBase::OnFetchFailed(ModuleLoadRequest* aRequest) {
     MOZ_ASSERT(!statePrivate.isUndefined());
     FinishLoadingImportedModuleFailed(cx, statePrivate, error);
 
-    aRequest->ClearImport();
+    aRequest->mReferrerScript = nullptr;
+    aRequest->mModuleRequestObj = nullptr;
+    aRequest->mPayload.setUndefined();
   }
 }
 
@@ -1325,9 +1303,59 @@ bool ModuleLoaderBase::GetImportMapSRI(
   return true;
 }
 
-void ModuleLoaderBase::AppendDynamicImport(ModuleLoadRequest* aRequest) {
+void ModuleLoaderBase::StartFetchingModuleAndDependencies(
+    JSContext* aCx, const ModuleMapKey& aRequestedModule,
+    Handle<JSScript*> aReferrer, Handle<JSObject*> aModuleRequest,
+    Handle<Value> aHostDefined, Handle<Value> aPayload) {
+  MOZ_ASSERT(aReferrer);
+  Rooted<Value> referrerPrivate(aCx, GetScriptPrivate(aReferrer));
+  RefPtr<LoadedScript> referrer = GetLoadedScriptOrNull(aReferrer);
+
+  
+  mozilla::dom::SRIMetadata sriMetadata;
+  GetImportMapSRI(aRequestedModule.mUri, referrer->GetURI(),
+                  mLoader->GetConsoleReportCollector(), &sriMetadata);
+
+  ModuleLoadRequest* root =
+      static_cast<ModuleLoadRequest*>(aHostDefined.toPrivate());
+  MOZ_ASSERT(root);
+  LoadContextBase* loadContext = root->mLoadContext;
+
+  RefPtr<ModuleLoadRequest> childRequest = CreateStaticImport(
+      aRequestedModule.mUri, aRequestedModule.mModuleType,
+      referrer->AsModuleScript(), sriMetadata, loadContext, this);
+  LOG(("ScriptLoadRequest (%p): start fetch dependencies: root (%p)",
+       childRequest.get(), root));
+
+  childRequest->mReferrerScript = aReferrer;
+  childRequest->mModuleRequestObj = aModuleRequest;
+  childRequest->mPayload = aPayload;
+
+  
+  mozilla::HoldJSObjects(childRequest.get());
+
+  nsresult rv = StartModuleLoad(childRequest);
+  if (NS_FAILED(rv)) {
+    MOZ_ASSERT(!childRequest->mModuleScript);
+    mLoader->ReportErrorToConsole(childRequest, rv);
+    childRequest->LoadFailed();
+    OnFetchFailed(childRequest);
+  }
+}
+
+nsresult ModuleLoaderBase::StartDynamicImport(ModuleLoadRequest* aRequest) {
   MOZ_ASSERT(aRequest->mLoader == this);
+
+  LOG(("ScriptLoadRequest (%p): Start dynamic import", aRequest));
+
   mDynamicImportRequests.AppendElement(aRequest);
+
+  nsresult rv = StartModuleLoad(aRequest);
+  if (NS_FAILED(rv)) {
+    mLoader->ReportErrorToConsole(aRequest, rv);
+    RemoveDynamicImport(aRequest);
+  }
+  return rv;
 }
 
 void ModuleLoaderBase::FinishDynamicImportAndReject(ModuleLoadRequest* aRequest,
@@ -1358,7 +1386,7 @@ void ModuleLoaderBase::FinishDynamicImportAndReject(ModuleLoadRequest* aRequest,
     FinishLoadingImportedModuleFailed(cx, payload, UndefinedHandleValue);
   }
 
-  aRequest->ClearImport();
+  aRequest->ClearDynamicImport();
 }
 
 ModuleLoaderBase::ModuleLoaderBase(ScriptLoaderInterface* aLoader,
