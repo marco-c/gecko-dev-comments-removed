@@ -188,6 +188,10 @@ mozilla::ipc::IPCResult CanvasTranslator::RecvInitTranslator(
   }
 
   
+  if (aBufferHandles.IsEmpty()) {
+    Deactivate();
+    return IPC_FAIL(this, "No canvas buffer shared memory supplied.");
+  }
   mDefaultBufferSize = aBufferHandles[0].Size();
   auto handleIter = aBufferHandles.begin();
   mCurrentShmem.shmem = std::move(*handleIter).Map();
@@ -443,11 +447,19 @@ void CanvasTranslator::RemoveExportSurface(gfx::ReferencePtr aRefPtr) {
 }
 
 void CanvasTranslator::RecycleBuffer() {
+  if (!mCurrentShmem.IsValid()) {
+    return;
+  }
+
   mCanvasShmems.emplace(std::move(mCurrentShmem));
   NextBuffer();
 }
 
 void CanvasTranslator::NextBuffer() {
+  if (mCanvasShmems.empty()) {
+    return;
+  }
+
   
   
   CheckAndSignalWriter();
