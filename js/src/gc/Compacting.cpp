@@ -475,6 +475,7 @@ void GCRuntime::sweepZoneAfterCompacting(MovingTracer* trc, Zone* zone) {
   zone->traceWeakMaps(trc);
   zone->sweepObjectsWithWeakPointers(trc);
 
+  
   traceWeakFinalizationObserverEdges(trc, zone);
 
   for (auto* cache : zone->weakCaches()) {

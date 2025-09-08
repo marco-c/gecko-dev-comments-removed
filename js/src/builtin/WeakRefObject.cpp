@@ -17,6 +17,8 @@
 #include "vm/JSObject-inl.h"
 #include "vm/NativeObject-inl.h"
 
+using namespace js::gc;
+
 namespace js {
 
 
@@ -64,21 +66,6 @@ bool WeakRefObject::construct(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  
-  
-  RootedObject wrappedWeakRef(cx, weakRef);
-  bool sameZone = target->zone() == weakRef->zone();
-  AutoRealm ar(cx, sameZone ? weakRef : target);
-  if (!JS_WrapObject(cx, &wrappedWeakRef)) {
-    return false;
-  }
-
-  if (JS_IsDeadWrapper(wrappedWeakRef)) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_DEAD_OBJECT);
-    return false;
-  }
-
-  
   if (!target->zone()->addToKeptObjects(target)) {
     ReportOutOfMemory(cx);
     return false;
@@ -87,7 +74,7 @@ bool WeakRefObject::construct(JSContext* cx, unsigned argc, Value* vp) {
   
   
   gc::GCRuntime* gc = &cx->runtime()->gc;
-  if (!gc->registerWeakRef(target, wrappedWeakRef)) {
+  if (!gc->registerWeakRef(cx, target, weakRef)) {
     ReportOutOfMemory(cx);
     return false;
   };
@@ -97,6 +84,7 @@ bool WeakRefObject::construct(JSContext* cx, unsigned argc, Value* vp) {
 
   
   args.rval().setObject(*weakRef);
+
   return true;
 }
 
@@ -117,6 +105,9 @@ bool WeakRefObject::preserveDOMWrapper(JSContext* cx, HandleObject obj) {
 void WeakRefObject::trace(JSTracer* trc, JSObject* obj) {
   WeakRefObject* weakRef = &obj->as<WeakRefObject>();
 
+  
+  
+
   if (trc->traceWeakEdges()) {
     JSObject* target = weakRef->target();
     if (target) {
@@ -128,11 +119,8 @@ void WeakRefObject::trace(JSTracer* trc, JSObject* obj) {
 
 
 void WeakRefObject::finalize(JS::GCContext* gcx, JSObject* obj) {
-  
-  
-  
-  
-  MOZ_ASSERT(!obj->as<WeakRefObject>().target());
+  auto* weakRef = &obj->as<WeakRefObject>();
+  weakRef->clearTargetAndUnlink();
 }
 
 const JSClassOps WeakRefObject::classOps_ = {
@@ -162,9 +150,7 @@ const JSClass WeakRefObject::class_ = {
     "WeakRef",
     JSCLASS_HAS_RESERVED_SLOTS(SlotCount) |
         JSCLASS_HAS_CACHED_PROTO(JSProto_WeakRef) | JSCLASS_FOREGROUND_FINALIZE,
-    &classOps_,
-    &classSpec_,
-};
+    &classOps_, &classSpec_, &classExtension_};
 
 const JSClass WeakRefObject::protoClass_ = {
     
@@ -237,7 +223,8 @@ void WeakRefObject::setTargetUnbarriered(JSObject* target) {
   setReservedSlotGCThingAsPrivateUnbarriered(TargetSlot, target);
 }
 
-void WeakRefObject::clearTarget() {
+void WeakRefObject::clearTargetAndUnlink() {
+  unlink();
   clearReservedSlotGCThingAsPrivate(TargetSlot);
 }
 

@@ -1160,18 +1160,8 @@ void js::NotifyGCNukeWrapper(JSContext* cx, JSObject* wrapper) {
   
 
 
+
   JSObject* target = UncheckedUnwrapWithoutExpose(wrapper);
-  if (target->is<WeakRefObject>()) {
-    WeakRefObject* weakRef = &target->as<WeakRefObject>();
-    if (weakRef->target()) {
-      cx->runtime()->gc.nukeWeakRefWrapper(wrapper, weakRef);
-    }
-  }
-
-  
-
-
-
   if (target->is<FinalizationRecordObject>()) {
     auto* record = &target->as<FinalizationRecordObject>();
     cx->runtime()->gc.nukeFinalizationRecordWrapper(wrapper, record);
