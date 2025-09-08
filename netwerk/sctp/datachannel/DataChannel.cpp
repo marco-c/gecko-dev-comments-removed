@@ -176,6 +176,10 @@ void DataChannelConnection::SetMaxMessageSize(uint64_t aMaxMessageSize) {
   DC_DEBUG(("Maximum message size (outgoing data): %" PRIu64 " (enforced=%s)",
             mMaxMessageSize,
             aMaxMessageSize != mMaxMessageSize ? "yes" : "no"));
+
+  for (auto& channel : mChannels.GetAll()) {
+    channel->SetMaxMessageSize(GetMaxMessageSize());
+  }
 }
 
 double DataChannelConnection::GetMaxMessageSize() {
@@ -207,17 +211,10 @@ RefPtr<DataChannelConnection::StatsPromise> DataChannelConnection::GetStats(
 RefPtr<DataChannelStatsPromise> DataChannel::GetStats(
     const DOMHighResTimeStamp aTimestamp) {
   MOZ_ASSERT(NS_IsMainThread());
-  if (!mDomEventTarget) {
-    
-    
-    
-    
-    return nullptr;
-  }
 
   return InvokeAsync(mDomEventTarget, __func__,
                      [this, self = RefPtr<DataChannel>(this), aTimestamp] {
-                       if (!mDomDataChannel) {
+                       if (!GetDomDataChannel()) {
                          
                          
                          
@@ -225,7 +222,7 @@ RefPtr<DataChannelStatsPromise> DataChannel::GetStats(
                              dom::RTCDataChannelStats(), __func__);
                        }
                        return DataChannelStatsPromise::CreateAndResolve(
-                           mDomDataChannel->GetStats(aTimestamp), __func__);
+                           GetDomDataChannel()->GetStats(aTimestamp), __func__);
                      });
 }
 
@@ -1132,14 +1129,7 @@ void DataChannelConnection::ReadBlob(
 
 int DataChannelConnection::SendDataMessage(uint16_t aStream, nsACString&& aMsg,
                                            bool aIsBinary) {
-  MOZ_ASSERT(NS_IsMainThread());
-
   
-  if (mMaxMessageSize != 0 && aMsg.Length() > mMaxMessageSize) {
-    DC_ERROR(("Message rejected, too large (%zu > %" PRIu64 ")", aMsg.Length(),
-              mMaxMessageSize));
-    return EMSGSIZE;
-  }
 
   nsCString temp(std::move(aMsg));
 
@@ -1358,33 +1348,88 @@ DataChannel::DataChannel(DataChannelConnection* connection, uint16_t stream,
       mOrdered(ordered),
       mStream(stream),
       mConnection(connection),
-      mDomEventTarget(connection->GetNeckoTarget()) {
+      mDomEventTarget(new StopGapEventTarget) {
+  DC_INFO(
+      ("Necko DataChannel created. Waiting for RTCDataChannel to be created."));
   NS_ASSERTION(mConnection, "NULL connection");
 }
 
 DataChannel::~DataChannel() {}
 
-void DataChannel::ReleaseConnection() {
-  MOZ_ASSERT(mDomEventTarget->IsOnCurrentThread());
-  mConnection = nullptr;
+void DataChannel::SetMainthreadDomDataChannel(dom::RTCDataChannel* aChannel) {
+  MOZ_ASSERT(NS_IsMainThread());
+  DC_INFO(
+      ("Mainthread RTCDataChannel created. Waiting for confirmation of event "
+       "target."));
+  mMainthreadDomDataChannel = aChannel;
+  SetMaxMessageSize(mConnection->GetMaxMessageSize());
+  if (GetStream()) {
+    mMainthreadDomDataChannel->SetId(*GetStream());
+  }
 }
 
-void DataChannel::SetDomDataChannel(dom::RTCDataChannel* aChannel) {
+void DataChannel::OnWorkerTransferStarted() {
   MOZ_ASSERT(NS_IsMainThread());
-  
-  mDomDataChannel = aChannel;
-  if (mDomDataChannel && GetStream()) {
-    mDomDataChannel->SetId(*GetStream());
-    mDomDataChannel->SetMaxMessageSize(mConnection->GetMaxMessageSize());
+  DC_INFO(
+      ("RTCDataChannel is being transferred. Disabling synchronous updates. "
+       "Mainthread will not be our event target, waiting to learn worker "
+       "thread."));
+  mHasWorkerDomDataChannel = true;
+}
+
+void DataChannel::OnWorkerTransferComplete(dom::RTCDataChannel* aChannel) {
+  MOZ_ASSERT(!NS_IsMainThread());
+  DC_INFO(
+      ("Worker RTCDataChannel has been created. Worker thread is our event "
+       "target."));
+  mWorkerDomDataChannel = aChannel;
+  mDomEventTarget->SetRealEventTarget(GetCurrentSerialEventTarget());
+}
+
+void DataChannel::OnWorkerTransferDisabled() {
+  MOZ_ASSERT(NS_IsMainThread());
+  DC_INFO(
+      ("Mainthread RTCDataChannel is no longer eligible for transfer. "
+       "Mainthread is our event target."));
+  mDomEventTarget->SetRealEventTarget(GetCurrentSerialEventTarget());
+}
+
+void DataChannel::UnsetMainthreadDomDataChannel() {
+  MOZ_ASSERT(NS_IsMainThread());
+  mMainthreadDomDataChannel = nullptr;
+  if (mHasWorkerDomDataChannel) {
+    DC_INFO(
+        ("Mainthread RTCDataChannel is being destroyed. Dispatching task to "
+         "inform corresponding worker RTCDataChannel."));
+    mDomEventTarget->Dispatch(
+        NS_NewRunnableFunction("DataChannel::UnsetMainthreadDomDataChannel",
+                               [this, self = RefPtr<DataChannel>(this)] {
+                                 if (mWorkerDomDataChannel) {
+                                   mWorkerDomDataChannel->UnsetWorkerNeedsUs();
+                                 }
+                               }));
+  } else {
+    DC_INFO(
+        ("Mainthread RTCDataChannel is being destroyed, with no worker "
+         "RTCDataChannel. Closing."));
+    FinishClose();
   }
+}
+
+void DataChannel::UnsetWorkerDomDataChannel() {
+  MOZ_ASSERT(!NS_IsMainThread());
+  MOZ_ASSERT(mDomEventTarget->IsOnCurrentThread());
+  DC_INFO(("Worker RTCDataChannel is being destroyed. Closing."));
+  mWorkerDomDataChannel = nullptr;
+  FinishClose();
 }
 
 void DataChannel::DecrementBufferedAmount(size_t aSize) {
   mDomEventTarget->Dispatch(NS_NewRunnableFunction(
       "DataChannel::DecrementBufferedAmount",
       [this, self = RefPtr<DataChannel>(this), aSize] {
-        if (mDomDataChannel) {
-          mDomDataChannel->DecrementBufferedAmount(aSize);
+        if (GetDomDataChannel()) {
+          GetDomDataChannel()->DecrementBufferedAmount(aSize);
         }
       }));
 }
@@ -1394,12 +1439,14 @@ void DataChannel::AnnounceOpen() {
   
   
   
+  DC_INFO(
+      ("DataChannel is open. Queueing AnnounceOpen call to RTCDataChannel."));
 
   mDomEventTarget->Dispatch(NS_NewRunnableFunction(
       "DataChannel::AnnounceOpen", [this, self = RefPtr<DataChannel>(this)] {
-        if (mDomDataChannel && mConnection) {
-          mDomDataChannel->SetMaxMessageSize(mConnection->GetMaxMessageSize());
-          mDomDataChannel->AnnounceOpen();
+        if (GetDomDataChannel()) {
+          DC_INFO(("Calling AnnounceOpen on RTCDataChannel."));
+          GetDomDataChannel()->AnnounceOpen();
         }
 
         
@@ -1423,11 +1470,15 @@ void DataChannel::AnnounceOpen() {
 void DataChannel::AnnounceClosed() {
   
   
+  DC_INFO(
+      ("DataChannel is closed. Queueing AnnounceClosed call to "
+       "RTCDataChannel."));
 
   mDomEventTarget->Dispatch(NS_NewRunnableFunction(
       "DataChannel::AnnounceClosed", [this, self = RefPtr<DataChannel>(this)] {
-        if (mDomDataChannel) {
-          mDomDataChannel->AnnounceClosed();
+        if (GetDomDataChannel()) {
+          DC_INFO(("Calling AnnounceClosed on RTCDataChannel."));
+          GetDomDataChannel()->AnnounceClosed();
         }
 
         if (mConnection) {
@@ -1452,9 +1503,9 @@ void DataChannel::GracefulClose() {
 
   mDomEventTarget->Dispatch(NS_NewRunnableFunction(
       "DataChannel::GracefulClose", [this, self = RefPtr<DataChannel>(this)] {
-        if (mDomDataChannel) {
+        if (GetDomDataChannel()) {
           DC_INFO(("Calling GracefulClose on RTCDataChannel."));
-          mDomDataChannel->GracefulClose();
+          GetDomDataChannel()->GracefulClose();
         }
       }));
 }
@@ -1482,13 +1533,43 @@ void DataChannel::SetStream(uint16_t aId) {
   
   
   
-  
-  
-  
-  
-  
-  
-  mDomDataChannel->SetId(aId);
+  if (mHasWorkerDomDataChannel) {
+    DC_INFO(
+        ("DataChannel has been allocated a stream ID. Queueing task to inform "
+         "worker RTCDataChannel."));
+    mDomEventTarget->Dispatch(NS_NewRunnableFunction(
+        __func__, [this, self = RefPtr<DataChannel>(this), aId] {
+          if (mWorkerDomDataChannel) {
+            mWorkerDomDataChannel->SetId(aId);
+          }
+        }));
+  } else {
+    DC_INFO(
+        ("DataChannel has been allocated a stream ID. Synchronously informing "
+         "mainthread RTCDataChannel."));
+    mMainthreadDomDataChannel->SetId(aId);
+  }
+}
+
+void DataChannel::SetMaxMessageSize(double aMaxMessageSize) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (mHasWorkerDomDataChannel) {
+    DC_INFO(
+        ("DataChannel has updated its maximum message size. Queueing task to "
+         "inform worker RTCDataChannel."));
+    mDomEventTarget->Dispatch(NS_NewRunnableFunction(
+        __func__, [this, self = RefPtr<DataChannel>(this), aMaxMessageSize] {
+          if (mWorkerDomDataChannel) {
+            mWorkerDomDataChannel->SetMaxMessageSize(aMaxMessageSize);
+          }
+        }));
+  } else {
+    DC_INFO(
+        ("DataChannel has updated its maximum message size. Synchronously "
+         "informing mainthread RTCDataChannel."));
+    mMainthreadDomDataChannel->SetMaxMessageSize(aMaxMessageSize);
+  }
 }
 
 void DataChannel::OnMessageReceived(nsCString&& aMsg, bool aIsBinary) {
@@ -1502,8 +1583,8 @@ void DataChannel::OnMessageReceived(nsCString&& aMsg, bool aIsBinary) {
   mDomEventTarget->Dispatch(NS_NewRunnableFunction(
       "DataChannel::OnMessageReceived", [this, self = RefPtr<DataChannel>(this),
                                          msg = std::move(aMsg), aIsBinary]() {
-        if (mDomDataChannel) {
-          mDomDataChannel->DoOnMessageAvailable(msg, aIsBinary);
+        if (GetDomDataChannel()) {
+          GetDomDataChannel()->DoOnMessageAvailable(msg, aIsBinary);
         }
       }));
 }
