@@ -859,18 +859,13 @@ class Element : public FragmentOrElement {
 
 
 
-
-
-
   bool MaybeCheckSameAttrVal(int32_t aNamespaceID, const nsAtom* aName,
                              const nsAtom* aPrefix,
                              const nsAttrValueOrString& aValue, bool aNotify,
                              nsAttrValue& aOldValue, AttrModType* aModType,
-                             bool* aHasListeners, bool* aOldValueSet);
+                             bool* aOldValueSet);
 
   
-
-
 
 
 
@@ -892,7 +887,7 @@ class Element : public FragmentOrElement {
                               nsAtom* aPrefix,
                               const nsAttrValueOrString& aValue, bool aNotify,
                               nsAttrValue& aOldValue, AttrModType* aModType,
-                              bool* aHasListeners, bool* aOldValueSet);
+                              bool* aOldValueSet);
 
   
 
@@ -2026,8 +2021,6 @@ class Element : public FragmentOrElement {
 
 
 
-  static const bool kFireMutationEvent = true;
-  static const bool kDontFireMutationEvent = false;
   static const bool kNotifyDocumentObservers = true;
   static const bool kDontNotifyDocumentObservers = false;
   static const bool kCallAfterSetAttr = true;
@@ -2078,15 +2071,12 @@ class Element : public FragmentOrElement {
 
 
 
-
-
   nsresult SetAttrAndNotify(int32_t aNamespaceID, nsAtom* aName,
                             nsAtom* aPrefix, const nsAttrValue* aOldValue,
                             nsAttrValue& aParsedValue,
                             nsIPrincipal* aSubjectPrincipal,
-                            AttrModType aModType, bool aFireMutation,
-                            bool aNotify, bool aCallAfterSetAttr,
-                            Document* aComposedDocument,
+                            AttrModType aModType, bool aNotify,
+                            bool aCallAfterSetAttr, Document* aComposedDocument,
                             const mozAutoDocUpdate& aGuard);
 
   

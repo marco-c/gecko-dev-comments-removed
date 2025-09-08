@@ -2766,30 +2766,21 @@ bool Element::MaybeCheckSameAttrVal(int32_t aNamespaceID, const nsAtom* aName,
                                     const nsAtom* aPrefix,
                                     const nsAttrValueOrString& aValue,
                                     bool aNotify, nsAttrValue& aOldValue,
-                                    AttrModType* aModType, bool* aHasListeners,
-                                    bool* aOldValueSet) {
+                                    AttrModType* aModType, bool* aOldValueSet) {
   bool modification = false;
-  *aHasListeners =
-      aNotify && nsContentUtils::WantMutationEvents(
-                     this, NS_EVENT_BITS_MUTATION_ATTRMODIFIED, this);
   *aOldValueSet = false;
 
   
   
   
   
-  
-  if (*aHasListeners || aNotify) {
+  if (aNotify) {
     BorrowedAttrInfo info(GetAttrInfo(aNamespaceID, aName));
     if (info.mValue) {
       
       
       
-      
-      if (*aHasListeners || GetCustomElementData()) {
-        
-        
-        
+      if (GetCustomElementData()) {
         
         
         
@@ -2814,11 +2805,10 @@ bool Element::OnlyNotifySameValueSet(int32_t aNamespaceID, nsAtom* aName,
                                      nsAtom* aPrefix,
                                      const nsAttrValueOrString& aValue,
                                      bool aNotify, nsAttrValue& aOldValue,
-                                     AttrModType* aModType, bool* aHasListeners,
+                                     AttrModType* aModType,
                                      bool* aOldValueSet) {
   if (!MaybeCheckSameAttrVal(aNamespaceID, aName, aPrefix, aValue, aNotify,
-                             aOldValue, aModType, aHasListeners,
-                             aOldValueSet)) {
+                             aOldValue, aModType, aOldValueSet)) {
     return false;
   }
 
@@ -2847,7 +2837,6 @@ nsresult Element::SetClassAttrFromParser(nsAtom* aValue) {
                           nullptr,  
                           value, nullptr, AttrModType::Addition,
                           false,  
-                          false,  
                           kCallAfterSetAttr, document, updateBatch);
 }
 
@@ -2862,15 +2851,13 @@ nsresult Element::SetAttr(int32_t aNamespaceID, nsAtom* aName, nsAtom* aPrefix,
                "Don't call SetAttr with unknown namespace");
 
   AttrModType modType{0};  
-  bool hasListeners;
   nsAttrValue oldValue;
   bool oldValueSet;
 
   {
     const nsAttrValueOrString value(aValue);
     if (OnlyNotifySameValueSet(aNamespaceID, aName, aPrefix, value, aNotify,
-                               oldValue, &modType, &hasListeners,
-                               &oldValueSet)) {
+                               oldValue, &modType, &oldValueSet)) {
       OnAttrSetButNotChanged(aNamespaceID, aName, value, aNotify);
       return NS_OK;
     }
@@ -2898,7 +2885,7 @@ nsresult Element::SetAttr(int32_t aNamespaceID, nsAtom* aName, nsAtom* aPrefix,
 
   return SetAttrAndNotify(aNamespaceID, aName, aPrefix,
                           oldValueSet ? &oldValue : nullptr, attrValue,
-                          aSubjectPrincipal, modType, hasListeners, aNotify,
+                          aSubjectPrincipal, modType, aNotify,
                           kCallAfterSetAttr, document, updateBatch);
 }
 
@@ -2912,15 +2899,13 @@ nsresult Element::SetParsedAttr(int32_t aNamespaceID, nsAtom* aName,
                "Don't call SetAttr with unknown namespace");
 
   AttrModType modType{0};  
-  bool hasListeners;
   nsAttrValue oldValue;
   bool oldValueSet;
 
   {
     const nsAttrValueOrString value(aParsedValue);
     if (OnlyNotifySameValueSet(aNamespaceID, aName, aPrefix, value, aNotify,
-                               oldValue, &modType, &hasListeners,
-                               &oldValueSet)) {
+                               oldValue, &modType, &oldValueSet)) {
       OnAttrSetButNotChanged(aNamespaceID, aName, value, aNotify);
       return NS_OK;
     }
@@ -2940,15 +2925,15 @@ nsresult Element::SetParsedAttr(int32_t aNamespaceID, nsAtom* aName,
 
   return SetAttrAndNotify(aNamespaceID, aName, aPrefix,
                           oldValueSet ? &oldValue : nullptr, aParsedValue,
-                          nullptr, modType, hasListeners, aNotify,
-                          kCallAfterSetAttr, document, updateBatch);
+                          nullptr, modType, aNotify, kCallAfterSetAttr,
+                          document, updateBatch);
 }
 
 nsresult Element::SetAttrAndNotify(
     int32_t aNamespaceID, nsAtom* aName, nsAtom* aPrefix,
     const nsAttrValue* aOldValue, nsAttrValue& aParsedValue,
-    nsIPrincipal* aSubjectPrincipal, AttrModType aModType, bool aFireMutation,
-    bool aNotify, bool aCallAfterSetAttr, Document* aComposedDocument,
+    nsIPrincipal* aSubjectPrincipal, AttrModType aModType, bool aNotify,
+    bool aCallAfterSetAttr, Document* aComposedDocument,
     const mozAutoDocUpdate& aGuard) {
   nsMutationGuard::DidMutate();
 
@@ -3056,30 +3041,6 @@ nsresult Element::SetAttrAndNotify(
     MutationObservers::NotifyAttributeChanged(
         this, aNamespaceID, aName, aModType,
         aParsedValue.StoresOwnData() ? &aParsedValue : nullptr);
-  }
-
-  if (aFireMutation) {
-    InternalMutationEvent mutation(true, eLegacyAttrModified);
-
-    nsAutoString ns;
-    nsNameSpaceManager::GetInstance()->GetNameSpaceURI(aNamespaceID, ns);
-    Attr* attrNode =
-        GetAttributeNodeNSInternal(ns, nsDependentAtomString(aName));
-    mutation.mRelatedNode = attrNode;
-
-    mutation.mAttrName = aName;
-    nsAutoString newValue;
-    GetAttr(aNamespaceID, aName, newValue);
-    if (!newValue.IsEmpty()) {
-      mutation.mNewAttrValue = NS_Atomize(newValue);
-    }
-    if (oldValue && !oldValue->IsEmptyString()) {
-      mutation.mPrevAttrValue = oldValue->GetAsAtom();
-    }
-    mutation.mAttrChange = static_cast<uint8_t>(aModType);
-
-    mozAutoSubtreeModified subtree(OwnerDoc(), this);
-    AsyncEventDispatcher::RunDOMEventWhenSafe(*this, mutation);
   }
 
   return NS_OK;
@@ -3305,19 +3266,7 @@ nsresult Element::UnsetAttr(int32_t aNameSpaceID, nsAtom* aName, bool aNotify) {
 
   BeforeSetAttr(aNameSpaceID, aName, nullptr, aNotify);
 
-  bool hasMutationListeners =
-      aNotify && nsContentUtils::WantMutationEvents(
-                     this, NS_EVENT_BITS_MUTATION_ATTRMODIFIED, this);
-
   PreIdMaybeChange(aNameSpaceID, aName, nullptr);
-
-  
-  RefPtr<Attr> attrNode;
-  if (hasMutationListeners) {
-    nsAutoString ns;
-    nsNameSpaceManager::GetInstance()->GetNameSpaceURI(aNameSpaceID, ns);
-    attrNode = GetAttributeNodeNSInternal(ns, nsDependentAtomString(aName));
-  }
 
   
   nsDOMSlots* slots = GetExistingDOMSlots();
@@ -3378,21 +3327,6 @@ nsresult Element::UnsetAttr(int32_t aNameSpaceID, nsAtom* aName, bool aNotify) {
 
   if (aNameSpaceID == kNameSpaceID_None && aName == nsGkAtoms::dir) {
     OnSetDirAttr(this, nullptr, hadValidDir, hadDirAuto, aNotify);
-  }
-
-  if (hasMutationListeners) {
-    InternalMutationEvent mutation(true, eLegacyAttrModified);
-
-    mutation.mRelatedNode = attrNode;
-    mutation.mAttrName = aName;
-
-    nsAutoString value;
-    oldValue.ToString(value);
-    if (!value.IsEmpty()) mutation.mPrevAttrValue = NS_Atomize(value);
-    mutation.mAttrChange = MutationEvent_Binding::REMOVAL;
-
-    mozAutoSubtreeModified subtree(OwnerDoc(), this);
-    AsyncEventDispatcher::RunDOMEventWhenSafe(*this, mutation);
   }
 
   return NS_OK;

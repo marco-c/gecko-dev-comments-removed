@@ -420,7 +420,6 @@ nsresult HTMLEditor::RefreshEditingUI() {
 
   
   
-  
 
   if (IsAbsolutePositionEditorEnabled() && mAbsolutelyPositionedObject &&
       absPosElement != mAbsolutelyPositionedObject) {
