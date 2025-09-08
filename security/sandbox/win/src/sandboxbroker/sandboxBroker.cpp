@@ -1293,7 +1293,9 @@ void SandboxBroker::SetSecurityLevelForGPUProcess(int32_t aSandboxLevel) {
 
   AddShaderCachesToPolicy(&trackingConfig, aSandboxLevel);
 
-  if (aSandboxLevel >= 2) {
+  
+  
+  if (aSandboxLevel >= 2 && sLocalAppDataDir) {
     
     
     EnsureWindowsDirCached(FOLDERID_Profile, sWindowsProfileDir,
