@@ -17,7 +17,7 @@ const perfMetadata = {
       perfherder: true,
       perfherder_metrics: [
         
-        { name: "A11Y_TotalTime", unit: "ms", shouldAlert: false },
+        { name: "A11Y_TotalTime", unit: "ms", shouldAlert: true },
 
         
 
