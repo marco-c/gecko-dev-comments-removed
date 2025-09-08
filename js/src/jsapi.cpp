@@ -2200,7 +2200,9 @@ JS_PUBLIC_API void JS_SetAllNonReservedSlotsToUndefined(JS::HandleObject obj) {
   
   
   
+  
   MOZ_RELEASE_ASSERT(nobj.is<GlobalObject>() ||
+                     nobj.is<GlobalLexicalEnvironmentObject>() ||
                      !Watchtower::watchesPropertyValueChange(&nobj));
 
   const JSClass* clasp = obj->getClass();

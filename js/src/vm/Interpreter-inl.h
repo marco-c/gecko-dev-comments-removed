@@ -260,6 +260,9 @@ inline void InitGlobalLexicalOperation(
   MOZ_ASSERT(prop.isSome());
   MOZ_ASSERT(IsUninitializedLexical(lexicalEnv->getSlot(prop->slot())));
 
+  
+  
+  
   lexicalEnv->setSlot(prop->slot(), value);
 }
 
