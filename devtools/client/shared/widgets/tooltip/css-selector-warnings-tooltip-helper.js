@@ -19,12 +19,20 @@ class CssSelectorWarningsTooltipHelper {
 
 
   async setContent(data, tooltip) {
+    const { doc } = tooltip;
     const fragment = this.#getTemplate(data, tooltip);
     tooltip.panel.innerHTML = "";
-    tooltip.panel.append(fragment);
 
     
-    tooltip.setContentSize({ width: 267, height: Infinity });
+    
+    
+    await doc.l10n.translateFragment(fragment);
+    doc.l10n.pauseObserving();
+    tooltip.panel.appendChild(fragment);
+    doc.l10n.resumeObserving();
+
+    
+    tooltip.setContentSize({ width: 267 });
   }
 
   
