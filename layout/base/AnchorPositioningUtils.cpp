@@ -102,14 +102,8 @@ bool IsAnchorLaidOutStrictlyBeforeElement(
   
   
   const nsIFrame* positionedContainingBlock = aPositionedFrame->GetParent();
-  
-  
-  
-  
-  
-  
-  
-  const nsIFrame* anchorContainingBlock = aPossibleAnchorFrame->GetParent();
+  const nsIFrame* anchorContainingBlock =
+      aPossibleAnchorFrame->GetContainingBlock();
 
   
   
@@ -128,7 +122,7 @@ bool IsAnchorLaidOutStrictlyBeforeElement(
          &positionedContainingBlock]() -> bool {
       const nsIFrame* it = anchorContainingBlock;
       while (it) {
-        const nsIFrame* parentContainingBlock = it->GetParent();
+        const nsIFrame* parentContainingBlock = it->GetContainingBlock();
         if (!parentContainingBlock) {
           return false;
         }
