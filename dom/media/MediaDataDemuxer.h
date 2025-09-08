@@ -26,8 +26,6 @@ class TrackMetadataHolder;
 DDLoggedTypeDeclName(MediaDataDemuxer);
 DDLoggedTypeName(MediaTrackDemuxer);
 
-inline mozilla::LazyLogModule gMediaDemuxerLog("MediaDemuxer");
-
 
 
 
