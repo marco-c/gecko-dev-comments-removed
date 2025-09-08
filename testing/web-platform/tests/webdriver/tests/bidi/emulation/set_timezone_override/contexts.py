@@ -86,6 +86,10 @@ async def test_iframe(
     
     assert await get_current_timezone(iframe) == some_timezone
 
+    sandbox_name = "test"
+    
+    assert await get_current_timezone(iframe, sandbox_name) == some_timezone
+
     
     await bidi_session.emulation.set_timezone_override(
         contexts=[new_tab["context"]], timezone=another_timezone
@@ -93,6 +97,8 @@ async def test_iframe(
 
     
     assert await get_current_timezone(iframe) == another_timezone
+    
+    assert await get_current_timezone(iframe, sandbox_name) == another_timezone
 
 
 async def test_timezone_override_applies_to_new_sandbox(

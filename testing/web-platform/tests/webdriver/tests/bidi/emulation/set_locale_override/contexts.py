@@ -84,6 +84,10 @@ async def test_iframe(
     
     assert await get_current_locale(iframe) == some_locale
 
+    sandbox_name = "test"
+    
+    assert await get_current_locale(iframe, sandbox_name) == some_locale
+
     
     await bidi_session.emulation.set_locale_override(
         contexts=[new_tab["context"]], locale=another_locale
@@ -91,48 +95,32 @@ async def test_iframe(
 
     
     assert await get_current_locale(iframe) == another_locale
+    
+    assert await get_current_locale(iframe, sandbox_name) == another_locale
 
 
 async def test_locale_override_applies_to_new_sandbox(
-    bidi_session, new_tab, some_locale
+    bidi_session, new_tab, some_locale, get_current_locale
 ):
     await bidi_session.emulation.set_locale_override(
         contexts=[new_tab["context"]], locale=some_locale
     )
 
-    result = await bidi_session.script.evaluate(
-        expression="new Intl.DateTimeFormat().resolvedOptions().locale",
-        target=ContextTarget(new_tab["context"], sandbox="test"),
-        await_promise=False,
-    )
-
     
-    assert result["value"] == some_locale
+    assert await get_current_locale(new_tab, "test") == some_locale
 
 
 async def test_locale_override_applies_to_existing_sandbox(
-    bidi_session, new_tab, default_locale, another_locale
+    bidi_session, new_tab, default_locale, another_locale, get_current_locale
 ):
     sandbox_name = "test"
 
     
-    result = await bidi_session.script.evaluate(
-        expression="new Intl.DateTimeFormat().resolvedOptions().locale",
-        target=ContextTarget(new_tab["context"], sandbox=sandbox_name),
-        await_promise=False,
-    )
-
-    assert result["value"] == default_locale
+    assert await get_current_locale(new_tab, sandbox_name) == default_locale
 
     await bidi_session.emulation.set_locale_override(
         contexts=[new_tab["context"]], locale=another_locale
     )
 
-    result = await bidi_session.script.evaluate(
-        expression="new Intl.DateTimeFormat().resolvedOptions().locale",
-        target=ContextTarget(new_tab["context"], sandbox=sandbox_name),
-        await_promise=False,
-    )
-
     
-    assert result["value"] == another_locale
+    assert await get_current_locale(new_tab, sandbox_name) == another_locale
