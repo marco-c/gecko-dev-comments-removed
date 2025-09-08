@@ -14220,29 +14220,34 @@ if (IsCSSPropertyPrefEnabled("layout.css.text-autospace.enabled")) {
         "ideograph-alpha",
         "ideograph-numeric",
         "ideograph-alpha ideograph-numeric",
-        "punctuation",
-        "punctuation ideograph-alpha",
-        "ideograph-alpha punctuation",
-        "punctuation ideograph-alpha ideograph-numeric",
-        "ideograph-alpha ideograph-numeric punctuation",
         "ideograph-alpha insert",
         "ideograph-numeric insert",
         "ideograph-alpha ideograph-numeric insert",
-        "punctuation insert",
-        "punctuation ideograph-alpha insert",
-        "ideograph-alpha punctuation insert",
         "insert ideograph-alpha",
         "ideograph-alpha insert",
         "insert ideograph-numeric",
         "ideograph-numeric insert",
         "insert ideograph-alpha ideograph-numeric",
         "ideograph-alpha ideograph-numeric insert",
-        "insert punctuation",
-        "punctuation insert",
-        "insert punctuation ideograph-alpha",
-        "ideograph-alpha punctuation insert",
-        "insert punctuation ideograph-alpha ideograph-numeric",
-        "ideograph-alpha ideograph-numeric punctuation insert",
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
         
         
