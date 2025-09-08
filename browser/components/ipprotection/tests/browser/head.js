@@ -151,24 +151,35 @@ async function closePanel(win = window) {
 
 
 
-async function withProxyServer(testFn) {
-  const server = new HttpServer();
 
+async function withProxyServer(testFn, handler) {
+  const server = new HttpServer();
   let { promise, resolve } = Promise.withResolvers();
 
   server.registerPathHandler("/", (request, response) => {
+    console.log("Received request:", request.method, request.path);
+    if (handler) {
+      handler(request, response);
+      resolve();
+      return;
+    }
     if (request.host !== "example.com") {
       throw HTTP_403;
     }
-    console.log("Received request:", request.method, request.path);
+
     response.setStatusLine(request.httpVersion, 200, "OK");
     response.setHeader("Content-Type", "text/plain");
     response.write("hello world");
     resolve();
   });
 
-  server.registerPathHandler("CONNECT", (request, _response) => {
+  server.registerPathHandler("CONNECT", (request, response) => {
     console.log("Received request:", request.method, request.path);
+    if (handler) {
+      handler(request, response);
+      resolve();
+      return;
+    }
     let hostHeader = request.getHeader("host");
     Assert.equal(
       hostHeader,
