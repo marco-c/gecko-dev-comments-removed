@@ -28,6 +28,7 @@
 #include "js/AllocationRecording.h"
 #include "js/BuildId.h"  
 #include "js/Context.h"
+#include "js/DOMEventDispatch.h"
 #include "js/experimental/CTypes.h"     
 #include "js/friend/StackLimits.h"      
 #include "js/friend/UsageStatistics.h"  
@@ -479,6 +480,9 @@ struct JSRuntime {
   
   js::MainThreadData<JSSizeOfIncludingThisCompartmentCallback>
       sizeOfIncludingThisCompartmentCallback;
+
+  
+  js::MainThreadData<JS::DispatchDOMEventCallback> dispatchDOMEventCallback;
 
   
 

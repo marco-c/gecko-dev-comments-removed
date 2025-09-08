@@ -39,6 +39,7 @@
 #include "jit/JitScript.h"      
 #include "js/CallArgs.h"        
 #include "js/CompileOptions.h"  
+#include "js/DOMEventDispatch.h"            
 #include "js/experimental/CompileScript.h"  
 #include "js/experimental/JSStencil.h"      
 #include "js/GCAPI.h"                       
@@ -2723,12 +2724,14 @@ static bool MaybeDoEagerBaselineCompilations(JSContext* cx,
       if (!jit::DispatchOffThreadBaselineBatchEager(cx)) {
         return false;
       }
+      TRACE_FOR_TEST_DOM(cx, "omt_eager_baseline_dispatch");
     }
 
     
     if (!queue.enqueue(script)) {
       return false;
     }
+    TRACE_FOR_TEST_DOM(cx, "omt_eager_baseline_function", script);
   }
 
   
@@ -2736,6 +2739,7 @@ static bool MaybeDoEagerBaselineCompilations(JSContext* cx,
     if (!jit::DispatchOffThreadBaselineBatchEager(cx)) {
       return false;
     }
+    TRACE_FOR_TEST_DOM(cx, "omt_eager_baseline_dispatch");
   }
 
   return true;
