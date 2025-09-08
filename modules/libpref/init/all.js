@@ -794,10 +794,6 @@ pref("dom.disable_window_move_resize",      false);
 
 pref("dom.allow_scripts_to_close_windows",          false);
 
-
-
-pref("dom.mutation_events.forceEnable", "");
-
 pref("dom.popup_allowed_events", "change click dblclick auxclick mousedown mouseup pointerdown pointerup notificationclick reset submit touchend contextmenu");
 
 pref("dom.storage.shadow_writes", false);
