@@ -767,6 +767,18 @@ pref("browser.urlbar.importantDates.featureGate", false);
 
 pref("browser.urlbar.suggest.importantDates", true);
 
+
+pref("browser.urlbar.yelpRealtime.featureGate", false);
+
+
+
+pref("browser.urlbar.suggest.yelpRealtime", true);
+
+
+
+
+pref("browser.urlbar.yelpRealtime.minKeywordLength", 0);
+
 pref("browser.altClickSave", false);
 
 

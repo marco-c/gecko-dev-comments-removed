@@ -46,19 +46,30 @@ export class RealtimeSuggestProvider extends SuggestProvider {
   // The following getters depend on `realtimeType` and should be overridden as
   // necessary.
 
+  /**
+   * @returns {string[]}
+   *   The opt-in suggestion is a dynamic Rust suggestion. `suggestion_type` in
+   *   the RS record is `${this.realtimeType}_opt_in` by default.
+   */
   get dynamicRustSuggestionTypes() {
-    // The realtime type's opt-in suggestion is a dynamic Rust suggestion whose
-    // `suggestion_type` is `this.realtimeType` in the RS record.
-    return [this.realtimeType];
+    return [this.realtimeType + "_opt_in"];
   }
 
+  /**
+   * @returns {string}
+   *   The online suggestions are served by Merino. The Merino provider is
+   *   `this.realtimeType` by default.
+   */
   get merinoProvider() {
-    // The realtime type's online suggestions are served by Merino.
     return this.realtimeType;
   }
 
   get baseTelemetryType() {
     return this.realtimeType;
+  }
+
+  get realtimeTypeForFtl() {
+    return this.realtimeType.replace(/([A-Z])/g, "-$1").toLowerCase();
   }
 
   get featureGatePref() {
@@ -77,15 +88,34 @@ export class RealtimeSuggestProvider extends SuggestProvider {
     return this.realtimeType + ".showLessFrequentlyCount";
   }
 
+  get optInIcon() {
+    return `chrome://browser/skin/illustrations/${this.realtimeType}-opt-in.svg`;
+  }
+
+  get optInTitleL10n() {
+    return {
+      id: `urlbar-result-${this.realtimeTypeForFtl}-opt-in-title`,
+      cacheable: true,
+    };
+  }
+
+  get optInDescriptionL10n() {
+    return {
+      id: `urlbar-result-${this.realtimeTypeForFtl}-opt-in-description`,
+      cacheable: true,
+      parseMarkup: true,
+    };
+  }
+
   get notInterestedCommandL10n() {
     return {
-      id: "urlbar-result-menu-dont-show-" + this.realtimeType,
+      id: "urlbar-result-menu-dont-show-" + this.realtimeTypeForFtl,
     };
   }
 
   get acknowledgeDismissalL10n() {
     return {
-      id: "urlbar-result-dismissal-acknowledgment-" + this.realtimeType,
+      id: "urlbar-result-dismissal-acknowledgment-" + this.realtimeTypeForFtl,
     };
   }
 
@@ -306,16 +336,9 @@ export class RealtimeSuggestProvider extends SuggestProvider {
         {
           // This `type` is the tip type, required for `TIP` results.
           type: "realtime_opt_in",
-          icon: "chrome://browser/skin/illustrations/market-opt-in.svg",
-          titleL10n: {
-            id: "urlbar-result-market-opt-in-title",
-            cacheable: true,
-          },
-          descriptionL10n: {
-            id: "urlbar-result-market-opt-in-description",
-            cacheable: true,
-            parseMarkup: true,
-          },
+          icon: this.optInIcon,
+          titleL10n: this.optInTitleL10n,
+          descriptionL10n: this.optInDescriptionL10n,
           descriptionLearnMoreTopic: lazy.QuickSuggest.HELP_TOPIC,
           buttons: [
             {
