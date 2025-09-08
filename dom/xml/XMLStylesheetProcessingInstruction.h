@@ -38,8 +38,9 @@ class XMLStylesheetProcessingInstruction final : public ProcessingInstruction,
                                            ProcessingInstruction)
 
   
-  virtual void SetNodeValueInternal(const nsAString& aNodeValue,
-                                    mozilla::ErrorResult& aError) override;
+  virtual void SetNodeValueInternal(
+      const nsAString& aNodeValue, mozilla::ErrorResult& aError,
+      MutationEffectOnScript aMutationEffectOnScript) override;
 
   
   virtual nsresult BindToTree(BindContext&, nsINode& aParent) override;
@@ -57,9 +58,10 @@ class XMLStylesheetProcessingInstruction final : public ProcessingInstruction,
   
   void GetCharset(nsAString& aCharset) override;
 
-  virtual void SetData(const nsAString& aData,
-                       mozilla::ErrorResult& rv) override {
-    CharacterData::SetData(aData, rv);
+  virtual void SetDataInternal(const nsAString& aData,
+                               MutationEffectOnScript aMutationEffectOnScript,
+                               mozilla::ErrorResult& rv) override {
+    CharacterData::SetDataInternal(aData, aMutationEffectOnScript, rv);
     if (rv.Failed()) {
       return;
     }

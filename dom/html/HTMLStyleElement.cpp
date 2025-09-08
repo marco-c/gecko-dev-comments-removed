@@ -158,7 +158,8 @@ void HTMLStyleElement::SetInnerHTMLTrusted(const nsAString& aInnerHTML,
 
 void HTMLStyleElement::SetTextContentInternal(const nsAString& aTextContent,
                                               nsIPrincipal* aScriptedPrincipal,
-                                              ErrorResult& aError) {
+                                              ErrorResult& aError,
+                                              MutationEffectOnScript) {
   
   
   

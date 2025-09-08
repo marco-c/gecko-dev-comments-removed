@@ -2057,8 +2057,12 @@ class nsContentUtils {
 
 
 
+
+
   MOZ_CAN_RUN_SCRIPT_BOUNDARY static nsresult SetNodeTextContent(
-      nsIContent* aContent, const nsAString& aValue, bool aTryReuse);
+      nsIContent* aContent, const nsAString& aValue, bool aTryReuse,
+      MutationEffectOnScript aMutationEffectOnScript =
+          MutationEffectOnScript::DropTrustWorthiness);
 
   
 
