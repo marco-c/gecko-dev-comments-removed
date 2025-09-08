@@ -1145,7 +1145,7 @@ void WaylandSurface::RemoveTransactionLocked(
   if (mBufferTransactions.IsEmpty()) {
     return;
   }
-  LOGWAYLAND("WaylandSurface::RemoveTransactionLocked() [%p]",
+  LOGVERBOSE("WaylandSurface::RemoveTransactionLocked() [%p]",
              (void*)aTransaction);
   MOZ_DIAGNOSTIC_ASSERT(aTransaction->IsDeleted());
   [[maybe_unused]] bool removed =
@@ -1154,17 +1154,24 @@ void WaylandSurface::RemoveTransactionLocked(
 }
 
 BufferTransaction* WaylandSurface::GetNextTransactionLocked(
-    const WaylandSurfaceLock& aProofOfLock, WaylandBuffer* aBuffer) {
-  auto* nextTransaction = aBuffer->GetTransaction();
+    const WaylandSurfaceLock& aSurfaceLock, WaylandBuffer* aBuffer) {
+  auto* nextTransaction = aBuffer->GetTransaction(aSurfaceLock);
   if (!nextTransaction) {
     return nullptr;
   }
 
+  
+  
+  
   auto transactions = std::move(mBufferTransactions);
   bool addedNext = false;
   
   
   for (auto t : transactions) {
+    LOGVERBOSE(
+        "WaylandSurface::GetNextTransactionLocked() transaction [%p] det %d "
+        "del %d",
+        t.get(), t->IsDetached(), t->IsDeleted());
     if (t == nextTransaction) {
       mBufferTransactions.AppendElement(nextTransaction);
       addedNext = true;
@@ -1173,7 +1180,7 @@ BufferTransaction* WaylandSurface::GetNextTransactionLocked(
     MOZ_DIAGNOSTIC_ASSERT(!t->IsDeleted());
     
     if (t->IsDetached() && !t->MatchesBuffer(mLatestAttachedBuffer)) {
-      t->DeleteTransactionLocked(aProofOfLock);
+      t->DeleteTransactionLocked(aSurfaceLock);
     } else {
       mBufferTransactions.AppendElement(t);
     }

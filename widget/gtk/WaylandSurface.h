@@ -300,6 +300,7 @@ class WaylandSurface final {
   void Commit(WaylandSurfaceLock* aProofOfLock, bool aForceCommit,
               bool aForceDisplayFlush);
 
+  
   BufferTransaction* GetNextTransactionLocked(
       const WaylandSurfaceLock& aSurfaceLock, WaylandBuffer* aBuffer);
   
