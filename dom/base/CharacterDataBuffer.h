@@ -247,6 +247,7 @@ class CharacterDataBuffer final {
   [[nodiscard]] char16_t SafeFirstChar() const {
     return MOZ_LIKELY(mState.mLength) ? FirstChar() : static_cast<char16_t>(0);
   }
+
   
 
 
