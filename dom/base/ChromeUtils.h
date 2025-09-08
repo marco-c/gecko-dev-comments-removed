@@ -350,10 +350,6 @@ class ChromeUtils {
       nsIPrincipal* aLoadingPrincipal, ErrorResult& aRv);
 
   static bool IsJSIdentifier(GlobalObject& aGlobal, const nsAString& aStr);
-
- private:
-  
-  static std::atomic<uint32_t> sDevToolsOpenedCount;
 };
 
 }  
