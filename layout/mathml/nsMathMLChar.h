@@ -87,8 +87,8 @@ class nsMathMLChar {
     mComputedStyle = nullptr;
     mUnscaledAscent = 0;
     mScaleX = mScaleY = 1.0;
-    mDraw = DRAW_NORMAL;
-    mMirrored = false;
+    mDrawingMethod = DrawingMethod::Normal;
+    mMirroringMethod = MirroringMethod::None;
   }
 
   
@@ -182,11 +182,23 @@ class nsMathMLChar {
   
   
   
-  enum DrawingMethod { DRAW_NORMAL, DRAW_VARIANT, DRAW_PARTS };
-  DrawingMethod mDraw;
+  enum class DrawingMethod { Normal, Variant, Parts };
+  DrawingMethod mDrawingMethod;
 
   
-  bool mMirrored;
+  
+  
+  
+  
+  
+  
+  enum class MirroringMethod : uint8_t {
+    None,
+    Character,
+    Glyph,
+    ScaleFallback,
+  };
+  MirroringMethod mMirroringMethod;
 
   class StretchEnumContext;
   friend class StretchEnumContext;

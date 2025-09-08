@@ -86,6 +86,7 @@ class nsMathMLOperators {
 
   
   static bool IsMirrorableOperator(const nsString& aOperator);
+  static nsString GetMirroredOperator(const nsString& aOperator);
 
   
   

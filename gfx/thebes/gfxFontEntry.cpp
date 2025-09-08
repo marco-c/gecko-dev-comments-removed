@@ -453,7 +453,7 @@ class gfxFontEntry::FontTableBlobData {
 
  private:
   
-  nsTArray<uint8_t> mTableData;
+  const nsTArray<uint8_t> mTableData;
 
   
   
@@ -536,10 +536,16 @@ hb_blob_t* gfxFontEntry::ShareFontTableAndGetBlob(uint32_t aTag,
     mFontTableCache = MakeUnique<FontTableCache>(8);
   }
 
-  FontTableHashEntry* entry = mFontTableCache->PutEntry(aTag);
-  if (MOZ_UNLIKELY(!entry)) {  
-    return nullptr;
+  FontTableHashEntry* entry;
+  if (MOZ_UNLIKELY(entry = mFontTableCache->GetEntry(aTag))) {
+    
+    
+    
+    return entry->GetBlob();
   }
+
+  
+  entry = mFontTableCache->PutEntry(aTag);
 
   if (!aBuffer) {
     
@@ -820,7 +826,8 @@ bool gfxFontEntry::SupportsOpenTypeFeature(Script aScript,
                    aFeatureTag == HB_TAG('c', '2', 'p', 'c') ||
                    aFeatureTag == HB_TAG('s', 'u', 'p', 's') ||
                    aFeatureTag == HB_TAG('s', 'u', 'b', 's') ||
-                   aFeatureTag == HB_TAG('v', 'e', 'r', 't'),
+                   aFeatureTag == HB_TAG('v', 'e', 'r', 't') ||
+                   aFeatureTag == HB_TAG('r', 't', 'l', 'm'),
                "use of unknown feature tag");
 
   
@@ -875,7 +882,8 @@ const hb_set_t* gfxFontEntry::InputsForOpenTypeFeature(Script aScript,
 
   NS_ASSERTION(aFeatureTag == HB_TAG('s', 'u', 'p', 's') ||
                    aFeatureTag == HB_TAG('s', 'u', 'b', 's') ||
-                   aFeatureTag == HB_TAG('v', 'e', 'r', 't'),
+                   aFeatureTag == HB_TAG('v', 'e', 'r', 't') ||
+                   aFeatureTag == HB_TAG('r', 't', 'l', 'm'),
                "use of unknown feature tag");
 
   uint32_t scriptFeature = SCRIPT_FEATURE(aScript, aFeatureTag);

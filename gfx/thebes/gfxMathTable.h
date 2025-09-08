@@ -112,7 +112,8 @@ class gfxMathTable {
 
 
 
-  uint32_t VariantsSize(uint32_t aGlyphID, bool aVertical,
+
+  uint32_t VariantsSize(uint32_t aGlyphID, bool aVertical, bool aRTL,
                         uint16_t aSize) const;
 
   
@@ -129,7 +130,8 @@ class gfxMathTable {
 
 
 
-  bool VariantsParts(uint32_t aGlyphID, bool aVertical,
+
+  bool VariantsParts(uint32_t aGlyphID, bool aVertical, bool aRTL,
                      uint32_t aGlyphs[4]) const;
 
  private:
@@ -140,13 +142,15 @@ class gfxMathTable {
   struct MathVariantCacheEntry {
     uint32_t glyphID;
     bool vertical;
+    bool isRTL;
     uint32_t sizes[kMaxCachedSizeCount];
     uint32_t parts[4];
     bool arePartsValid;
   };
   mutable MathVariantCacheEntry mMathVariantCache;
   void ClearCache() const;
-  void UpdateMathVariantCache(uint32_t aGlyphID, bool aVertical) const;
+  void UpdateMathVariantCache(uint32_t aGlyphID, bool aVertical,
+                              bool aRTL) const;
 };
 
 #endif
