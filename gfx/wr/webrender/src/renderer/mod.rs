@@ -3880,12 +3880,13 @@ impl Renderer {
 
         if window_is_opaque {
             match input_layers.last_mut() {
-                Some(layer) => {
+                Some(_layer) => {
                     
                     
-                    if let CompositorSurfaceUsage::Content = layer.usage {
-                        layer.is_opaque = true;
-                    }
+                    
+                    
+                    
+                    
                 }
                 None => {
                     
