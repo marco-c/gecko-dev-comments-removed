@@ -9,8 +9,7 @@ use crate::values::animated::{Context as AnimatedContext, ToAnimatedValue};
 use crate::values::computed::{NonNegativeNumber, Zoom};
 use crate::values::generics::length as generics;
 use crate::values::generics::length::{
-    GenericAnchorSizeFunction, GenericLengthOrNumber, GenericLengthPercentageOrNormal,
-    GenericMaxSize, GenericSize,
+    GenericLengthOrNumber, GenericLengthPercentageOrNormal, GenericMaxSize, GenericSize,
 };
 use crate::values::generics::NonNegative;
 use crate::values::resolved::{Context as ResolvedContext, ToResolvedValue};
@@ -530,45 +529,40 @@ pub type Size = GenericSize<NonNegativeLengthPercentage>;
 
 pub type MaxSize = GenericMaxSize<NonNegativeLengthPercentage>;
 
-
-pub type AnchorSizeFunction = GenericAnchorSizeFunction<LengthPercentage>;
-
 #[cfg(feature = "gecko")]
 use crate::{
     gecko_bindings::structs::AnchorPosResolutionParams, logical_geometry::PhysicalAxis,
     values::generics::length::AnchorSizeKeyword, values::DashedIdent,
 };
 
-impl AnchorSizeFunction {
-    
-    
-    
-    #[cfg(feature = "gecko")]
-    pub fn resolve(
-        anchor_name: &DashedIdent,
-        prop_axis: PhysicalAxis,
-        anchor_size_keyword: AnchorSizeKeyword,
-        params: &AnchorPosResolutionParams,
-    ) -> Result<Length, ()> {
-        use crate::gecko_bindings::structs::Gecko_GetAnchorPosSize;
 
-        let mut offset = Length::zero();
-        let valid = unsafe {
-            Gecko_GetAnchorPosSize(
-                params,
-                anchor_name.0.as_ptr(),
-                prop_axis as u8,
-                anchor_size_keyword as u8,
-                &mut offset,
-            )
-        };
 
-        if !valid {
-            return Err(());
-        }
 
-        Ok(offset)
+#[cfg(feature = "gecko")]
+pub fn resolve_anchor_size(
+    anchor_name: &DashedIdent,
+    prop_axis: PhysicalAxis,
+    anchor_size_keyword: AnchorSizeKeyword,
+    params: &AnchorPosResolutionParams,
+) -> Result<Length, ()> {
+    use crate::gecko_bindings::structs::Gecko_GetAnchorPosSize;
+
+    let mut offset = Length::zero();
+    let valid = unsafe {
+        Gecko_GetAnchorPosSize(
+            params,
+            anchor_name.0.as_ptr(),
+            prop_axis as u8,
+            anchor_size_keyword as u8,
+            &mut offset,
+        )
+    };
+
+    if !valid {
+        return Err(());
     }
+
+    Ok(offset)
 }
 
 

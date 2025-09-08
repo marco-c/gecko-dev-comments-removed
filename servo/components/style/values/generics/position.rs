@@ -286,11 +286,7 @@ pub enum GenericInset<P, LP> {
     
     
     
-    AnchorSizeFunction(
-        #[animation(field_bound)]
-        #[distance(field_bound)]
-        Box<GenericAnchorSizeFunction<LP>>,
-    ),
+    AnchorSizeFunction(Box<GenericAnchorSizeFunction<Self>>),
     
     
     AnchorContainingCalcFunction(LP),
