@@ -3302,6 +3302,12 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
   auto CheckCandidate = [&](gfxFont* f, FontMatchType t) -> bool {
     
     
+    
+    if (t.generic != StyleGenericFontFamily::None && IsPUA(aCh)) {
+      return false;
+    }
+    
+    
     if (presentation == FontPresentation::Any ||
         (!IsExplicitPresentation(presentation) &&
          t.kind == FontMatchType::Kind::kFontGroup &&
