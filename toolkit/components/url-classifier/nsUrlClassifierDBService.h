@@ -231,6 +231,8 @@ class nsUrlClassifierDBServiceWorker final : public nsIUrlClassifierDBService {
   
   mozilla::UniquePtr<ProtocolParser> mProtocolParser;
 
+  nsCString mProvider;
+
   
   nsCOMPtr<nsIFile> mCacheDir;
 
