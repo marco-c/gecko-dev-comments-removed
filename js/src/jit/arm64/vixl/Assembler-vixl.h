@@ -3430,6 +3430,28 @@ class Assembler : public MozBaseAssembler {
                const VRegister& vn);
 
   
+  void abs(const Register& rd, const Register& rn);
+
+  
+  void cnt(const Register& rd, const Register& rn);
+
+  
+  void ctz(const Register& rd, const Register& rn);
+
+  
+  void smax(const Register& rd, const Register& rn, const Operand& op);
+
+  
+  void smin(const Register& rd, const Register& rn, const Operand& op);
+
+  
+  void umax(const Register& rd, const Register& rn, const Operand& op);
+
+  
+  void umin(const Register& rd, const Register& rn, const Operand& op);
+
+  
+
   
   void dci(Instr raw_inst) { Emit(raw_inst); }
 
@@ -3512,6 +3534,26 @@ class Assembler : public MozBaseAssembler {
 
   static Instr Cond(Condition cond) {
     return cond << Condition_offset;
+  }
+
+  
+  template <int hibit, int lobit>
+  static Instr ImmField(int64_t imm) {
+    VIXL_STATIC_ASSERT((hibit >= lobit) && (lobit >= 0));
+    VIXL_STATIC_ASSERT(hibit < (sizeof(Instr) * kBitsPerByte));
+    int fieldsize = hibit - lobit + 1;
+    VIXL_ASSERT(IsIntN(fieldsize, imm));
+    return static_cast<Instr>(TruncateToUintN(fieldsize, imm) << lobit);
+  }
+
+  
+  
+  template <int hibit, int lobit>
+  static Instr ImmUnsignedField(uint64_t imm) {
+    VIXL_STATIC_ASSERT((hibit >= lobit) && (lobit >= 0));
+    VIXL_STATIC_ASSERT(hibit < (sizeof(Instr) * kBitsPerByte));
+    VIXL_ASSERT(IsUintN(hibit - lobit + 1, imm));
+    return static_cast<Instr>(imm << lobit);
   }
 
   
