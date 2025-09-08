@@ -2,15 +2,17 @@
 
 
 
+from pathlib import Path
+
 import mozfile
 from mach.decorators import Command, CommandArgument
-from mach.site import MozSiteMetadata
 
 
 @Command(
     "install-moz-phab",
     category="misc",
     description="Install patch submission tool.",
+    virtualenv_name="uv",
 )
 @CommandArgument(
     "--force",
@@ -20,121 +22,57 @@ from mach.site import MozSiteMetadata
 )
 def install_moz_phab(command_context, force=False):
     import logging
-    import os
-    import re
     import subprocess
     import sys
 
-    existing = mozfile.which("moz-phab")
-    if existing and not force:
+    moz_phab_executable = mozfile.which("moz-phab")
+    if moz_phab_executable and not force:
         command_context.log(
-            logging.ERROR,
+            logging.INFO,
             "already_installed",
             {},
-            "moz-phab is already installed in %s." % existing,
+            f"moz-phab is already installed in {moz_phab_executable}.",
         )
-        sys.exit(1)
+        sys.exit(0)
 
-    active_metadata = MozSiteMetadata.from_runtime()
-    original_python = active_metadata.original_python.python_path
-    is_external_python_virtualenv = (
-        subprocess.check_output(
-            [
-                original_python,
-                "-c",
-                "import sys; print(sys.prefix != sys.base_prefix)",
-            ]
-        ).strip()
-        == b"True"
-    )
+    command_context.log(logging.INFO, "run", {}, "Installing moz-phab using uv")
 
-    
-    
-    
-    has_pip = subprocess.run([original_python, "-c", "import pip"]).returncode == 0
-    if not has_pip:
+    cmd = ["uv", "tool", "install", "MozPhab"]
+    if force:
+        cmd.append("--force")
+
+    result = subprocess.run(cmd)
+
+    if result.returncode != 0:
         command_context.log(
             logging.ERROR,
-            "pip_not_installed",
+            "install_failed",
             {},
-            "Python 3's `pip` is not installed. Try installing it with your system "
-            "package manager.",
+            "Failed to install moz-phab. Please check that uv is working correctly.",
         )
         sys.exit(1)
 
-    command = [original_python, "-m", "pip", "install", "--upgrade", "MozPhab"]
+    
+    
+    tool_dir_result = subprocess.run(
+        ["uv", "tool", "dir", "--bin"], capture_output=True, text=True
+    )
 
-    if (
-        sys.platform.startswith("linux")
-        or sys.platform.startswith("openbsd")
-        or sys.platform.startswith("dragonfly")
-        or sys.platform.startswith("freebsd")
-        or sys.platform.startswith("netbsd")
-    ):
-        
-        platform_prefers_user_install = True
+    if tool_dir_result.returncode == 0:
+        tool_dir = Path(tool_dir_result.stdout.strip())
+        moz_phab_path = tool_dir / "moz-phab"
 
-    elif sys.platform.startswith("darwin"):
-        
-        platform_prefers_user_install = False
+        if not moz_phab_path.exists():
+            moz_phab_path = moz_phab_path.with_suffix(".exe")
 
-    elif sys.platform.startswith("win32") or sys.platform.startswith("msys"):
-        
-        platform_prefers_user_install = False
-
+        subprocess.run([moz_phab_path, "install-certificate"])
     else:
-        
         command_context.log(
             logging.WARNING,
-            "unsupported_platform",
+            "certificate_setup_skipped",
             {},
-            "Unsupported platform (%s), assuming per-user installation is "
-            "preferred." % sys.platform,
+            "Could not locate installed moz-phab. Please run 'moz-phab install-certificate' manually after restarting your shell.",
         )
-        platform_prefers_user_install = True
-
-    command_env = os.environ.copy()
-
-    if platform_prefers_user_install and not is_external_python_virtualenv:
-        
-        
-        command.append("--user")
-        
-        
-        command_env["PIP_BREAK_SYSTEM_PACKAGES"] = "1"
-
-    command_context.log(logging.INFO, "run", {}, "Installing moz-phab")
-    subprocess.run(command, env=command_env)
 
     
-    
-    
-    
-    
-    
-    
-
-    info = subprocess.check_output(
-        [original_python, "-m", "pip", "show", "-f", "MozPhab"],
-        universal_newlines=True,
-    )
-    mozphab_package_location = re.compile(r"Location: (.*)").search(info).group(1)
-    
-    
-    potential_cli_paths = re.compile(
-        r"([^\s]*moz-phab(?:\.exe)?)$", re.MULTILINE
-    ).findall(info)
-
-    if len(potential_cli_paths) != 1:
-        command_context.log(
-            logging.WARNING,
-            "no_mozphab_console_script",
-            {},
-            "Could not find the CLI script for moz-phab. Skipping install-certificate step.",
-        )
-        sys.exit(1)
-
-    console_script = os.path.realpath(
-        os.path.join(mozphab_package_location, potential_cli_paths[0])
-    )
-    subprocess.run([console_script, "install-certificate"])
+    subprocess.run(["uv", "tool", "update-shell"])
