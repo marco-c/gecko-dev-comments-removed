@@ -218,7 +218,11 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
 
 
-  bool ProcessScriptElement(nsIScriptElement* aElement);
+
+
+
+  bool ProcessScriptElement(nsIScriptElement* aElement,
+                            const nsAString& aSourceText);
 
   
 
@@ -470,9 +474,10 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   already_AddRefed<ScriptLoadRequest> CreateLoadRequest(
       ScriptKind aKind, nsIURI* aURI, nsIScriptElement* aElement,
-      nsIPrincipal* aTriggeringPrincipal, mozilla::CORSMode aCORSMode,
-      const nsAString& aNonce, RequestPriority aRequestPriority,
-      const SRIMetadata& aIntegrity, ReferrerPolicy aReferrerPolicy,
+      const nsAString& aScriptContent, nsIPrincipal* aTriggeringPrincipal,
+      mozilla::CORSMode aCORSMode, const nsAString& aNonce,
+      RequestPriority aRequestPriority, const SRIMetadata& aIntegrity,
+      ReferrerPolicy aReferrerPolicy,
       JS::loader::ParserMetadata aParserMetadata,
       ScriptLoadRequestType aRequestType);
 
@@ -508,7 +513,8 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   bool ProcessExternalScript(nsIScriptElement* aElement, ScriptKind aScriptKind,
                              nsIContent* aScriptContent);
 
-  bool ProcessInlineScript(nsIScriptElement* aElement, ScriptKind aScriptKind);
+  bool ProcessInlineScript(nsIScriptElement* aElement, ScriptKind aScriptKind,
+                           const nsAString& aSourceText);
 
   enum class CacheBehavior : uint8_t {
     DoNothing,

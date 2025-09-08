@@ -632,7 +632,7 @@ nsCSPContext::GetAllowsInline(CSPDirective aDirective, bool aHasUnsafeHash,
                               const nsAString& aNonce, bool aParserCreated,
                               Element* aTriggeringElement,
                               nsICSPEventListener* aCSPEventListener,
-                              const nsAString& aContentOfPseudoScript,
+                              const nsAString& aSourceText,
                               uint32_t aLineNumber, uint32_t aColumnNumber,
                               bool* outAllowsInline) {
   *outAllowsInline = true;
@@ -684,14 +684,14 @@ nsCSPContext::GetAllowsInline(CSPDirective aDirective, bool aHasUnsafeHash,
     
     
     if (content.IsEmpty()) {
-      if (aContentOfPseudoScript.IsVoid()) {
+      if (aSourceText.IsVoid()) {
         
         nsCOMPtr<nsIScriptElement> element =
             do_QueryInterface(aTriggeringElement);
         MOZ_ASSERT(element);
         element->GetScriptText(content);
       } else {
-        content = aContentOfPseudoScript;
+        content = aSourceText;
       }
     }
 

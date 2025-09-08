@@ -49,8 +49,14 @@ class ScriptElement : public nsIScriptElement, public nsStubMutationObserver {
 
   virtual bool MaybeProcessScript() override;
 
+  virtual MOZ_CAN_RUN_SCRIPT nsresult
+  GetTrustedTypesCompliantInlineScriptText(nsString& aSourceText) override;
+
+ private:
   
   void UpdateTrustWorthiness(MutationEffectOnScript aMutationEffectOnScript);
+
+  bool MaybeProcessScript(const nsAString& aSourceText);
 };
 
 }  

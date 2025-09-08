@@ -14,6 +14,8 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/MutationEventBinding.h"
+#include "mozilla/dom/TrustedTypeUtils.h"
+#include "mozilla/dom/TrustedTypesConstants.h"
 #include "nsContentSink.h"
 #include "nsContentUtils.h"
 #include "nsGkAtoms.h"
@@ -146,17 +148,51 @@ bool ScriptElement::MaybeProcessScript() {
     return false;
   }
 
-  bool hasScriptContent = HasExternalScriptContent() ||
-                          nsContentUtils::HasNonEmptyTextContent(cont);
-  if (!hasScriptContent) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!HasExternalScriptContent() && !mIsTrusted) {
     
     
     
-    if (mKind == JS::loader::ScriptKind::eClassic && !mExternal) {
-      nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
-          "ScriptElement::MaybeProcessScript", []() { nsAutoMicroTask mt; }));
-    }
+    nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
+        "ScriptElement::MaybeProcessScript",
+        [self = RefPtr<nsIScriptElement>(this)]()
+            MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+              nsString sourceText;
+              self->GetTrustedTypesCompliantInlineScriptText(sourceText);
+              ((ScriptElement*)self.get())->MaybeProcessScript(sourceText);
+            }));
     return false;
+  }
+  return MaybeProcessScript(VoidString());
+}
+
+bool ScriptElement::MaybeProcessScript(const nsAString& aSourceText) {
+  nsIContent* cont = GetAsContent();
+  if (!HasExternalScriptContent()) {
+    bool hasInlineScriptContent =
+        mIsTrusted ? nsContentUtils::HasNonEmptyTextContent(cont)
+                   : !aSourceText.IsEmpty();
+    if (!hasInlineScriptContent) {
+      
+      
+      
+      if (mKind == JS::loader::ScriptKind::eClassic && !mExternal) {
+        nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
+            "ScriptElement::MaybeProcessScript", []() { nsAutoMicroTask mt; }));
+      }
+      return false;
+    }
+    MOZ_ASSERT(mIsTrusted == aSourceText.IsVoid());
   }
 
   
@@ -214,7 +250,7 @@ bool ScriptElement::MaybeProcessScript() {
   }
 
   RefPtr<ScriptLoader> loader = ownerDoc->ScriptLoader();
-  return loader->ProcessScriptElement(this);
+  return loader->ProcessScriptElement(this, aSourceText);
 }
 
 bool ScriptElement::GetScriptType(nsAString& aType) {
@@ -249,4 +285,27 @@ void ScriptElement::UpdateTrustWorthiness(
       StaticPrefs::dom_security_trusted_types_enabled()) {
     mIsTrusted = false;
   }
+}
+
+nsresult ScriptElement::GetTrustedTypesCompliantInlineScriptText(
+    nsString& aSourceText) {
+  MOZ_ASSERT(!mIsTrusted);
+
+  RefPtr<Element> element = GetAsContent()->AsElement();
+  nsAutoString sourceText;
+  GetScriptText(sourceText);
+
+  MOZ_ASSERT(element->IsHTMLElement() || element->IsSVGElement());
+  Maybe<nsAutoString> compliantStringHolder;
+  constexpr nsLiteralString htmlSinkName = u"HTMLScriptElement text"_ns;
+  constexpr nsLiteralString svgSinkName = u"SVGScriptElement text"_ns;
+  ErrorResult error;
+  const nsAString* compliantString =
+      TrustedTypeUtils::GetTrustedTypesCompliantStringForTrustedScript(
+          sourceText, element->IsHTMLElement() ? htmlSinkName : svgSinkName,
+          kTrustedTypesOnlySinkGroup, *element, compliantStringHolder, error);
+  if (!error.Failed()) {
+    aSourceText.Assign(*compliantString);
+  }
+  return error.StealNSResult();
 }

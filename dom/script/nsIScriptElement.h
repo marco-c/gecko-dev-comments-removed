@@ -252,6 +252,14 @@ class nsIScriptElement : public nsIScriptLoaderObserver {
 
   virtual nsresult FireErrorEvent() = 0;
 
+  
+
+
+
+
+  virtual MOZ_CAN_RUN_SCRIPT nsresult
+  GetTrustedTypesCompliantInlineScriptText(nsString& aSourceText) = 0;
+
  protected:
   
 
