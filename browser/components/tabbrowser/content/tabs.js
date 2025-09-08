@@ -2357,7 +2357,9 @@
         }
         
         
-        t.style.maxWidth = tabRect.width + "px";
+        if (!this.expandOnHover) {
+          t.style.maxWidth = tabRect.width + "px";
+        }
         
         
         
@@ -2524,6 +2526,25 @@
             setGridElPosition(t);
           }
         }
+      }
+
+      if (this.expandOnHover) {
+        
+        
+        const { SidebarController } = tab.ownerGlobal;
+        SidebarController.expandOnHoverComplete.then(async () => {
+          const width = await window.promiseDocumentFlushed(
+            () => SidebarController.sidebarMain.clientWidth
+          );
+          requestAnimationFrame(() => {
+            for (const t of movingTabs) {
+              t.style.width = width + "px";
+            }
+            
+            this.arrowScrollbox.scrollbox.style.width = "";
+            this.pinnedTabsContainer.scrollbox.style.width = "";
+          });
+        });
       }
 
       
