@@ -1471,15 +1471,17 @@ static bool MaybeCheckUnloadingIsCanceled(
   
   
   RefPtr<nsDocShellLoadState> loadState =
-      needsBeforeUnload ? found->mLoadState : aLoadResults[0].mLoadState;
+      needsBeforeUnload ? found->mLoadState : nullptr;
   RefPtr<CanonicalBrowsingContext> browsingContext = aTraversable->Canonical();
   MOZ_DIAGNOSTIC_ASSERT(!needsBeforeUnload ||
                         found->mBrowsingContext == browsingContext);
 
-  nsCOMPtr<SessionHistoryEntry> targetEntry =
-      do_QueryInterface(loadState->SHEntry());
   nsCOMPtr<SessionHistoryEntry> currentEntry =
       browsingContext->GetActiveSessionHistoryEntry();
+  
+  
+  nsCOMPtr<SessionHistoryEntry> targetEntry =
+      loadState ? do_QueryInterface(loadState->SHEntry()) : currentEntry;
 
   
   if (!currentEntry || currentEntry->GetID() == targetEntry->GetID()) {
