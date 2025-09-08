@@ -1,5 +1,10 @@
 
 
+
+
+
+
+
 gczeal(0);
 
 var strLatin1 = newString("abcdefghijklmnopqrstuvwxyz".repeat(10), {newStringBuffer: true});

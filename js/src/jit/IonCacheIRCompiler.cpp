@@ -903,6 +903,30 @@ bool IonCacheIRCompiler::emitLoadValueResult(uint32_t valOffset) {
   return true;
 }
 
+bool IonCacheIRCompiler::emitUncheckedLoadWeakValueResult(uint32_t valOffset) {
+  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
+  AutoOutputRegister output(*this);
+
+  
+  
+  
+  masm.moveValue(weakValueStubField(valOffset), output.valueReg());
+  return true;
+}
+
+bool IonCacheIRCompiler::emitUncheckedLoadWeakObjectResult(uint32_t objOffset) {
+  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
+  AutoOutputRegister output(*this);
+  AutoScratchRegisterMaybeOutput scratch(allocator, masm, output);
+
+  
+  
+  
+  Value result = ObjectValue(*weakObjectStubField(objOffset));
+  masm.moveValue(result, output.valueReg());
+  return true;
+}
+
 bool IonCacheIRCompiler::emitLoadFixedSlotResult(ObjOperandId objId,
                                                  uint32_t offsetOffset) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);

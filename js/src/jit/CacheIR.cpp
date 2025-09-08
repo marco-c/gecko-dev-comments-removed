@@ -2235,6 +2235,11 @@ bool IRGenerator::canOptimizeConstantDataProperty(NativeObject* holder,
     return false;
   }
 
+  if (!(*objFuse)->tryOptimizeConstantProperty(prop)) {
+    return false;
+  }
+
+  
   
   
   
@@ -2245,7 +2250,21 @@ bool IRGenerator::canOptimizeConstantDataProperty(NativeObject* holder,
     return false;
   }
 
-  return (*objFuse)->tryOptimizeConstantProperty(prop);
+  
+  
+  
+  
+  if (result.isString() && !result.toString()->isAtom()) {
+    JSAtom* atom = AtomizeString(cx_, result.toString());
+    if (!atom) {
+      cx_->recoverFromOutOfMemory();
+      return false;
+    }
+    result.setString(atom);
+    holder->setSlot(prop.slot(), result);
+  }
+
+  return true;
 }
 
 void IRGenerator::emitConstantDataPropertyResult(NativeObject* holder,
@@ -2263,14 +2282,38 @@ void IRGenerator::emitConstantDataPropertyResult(NativeObject* holder,
   writer.assertPropertyLookup(holderId, key, prop.slot());
 #endif
 
-  
-  
   Value result = holder->getSlot(prop.slot());
-  if (result.isObject()) {
-    ObjOperandId resObjId = writer.loadObject(&result.toObject());
-    writer.loadObjectResult(resObjId);
+  MOZ_RELEASE_ASSERT(!result.isMagic());
+  MOZ_ASSERT_IF(result.isString(), result.toString()->isAtom());
+
+  if (result.isGCThing()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (holder->isFixedSlot(prop.slot())) {
+      size_t offset = NativeObject::getFixedSlotOffset(prop.slot());
+      writer.checkWeakValueResultForFixedSlot(holderId, offset, result);
+    } else {
+      size_t offset = holder->dynamicSlotIndex(prop.slot()) * sizeof(Value);
+      writer.checkWeakValueResultForDynamicSlot(holderId, offset, result);
+    }
+
+    
+    
+    if (result.isObject()) {
+      writer.uncheckedLoadWeakObjectResult(&result.toObject());
+    } else {
+      writer.uncheckedLoadWeakValueResult(result);
+    }
   } else {
-    MOZ_RELEASE_ASSERT(!result.isMagic());
     writer.loadValueResult(result);
   }
 }
