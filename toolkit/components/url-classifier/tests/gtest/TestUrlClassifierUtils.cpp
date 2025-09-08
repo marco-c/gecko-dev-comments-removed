@@ -274,7 +274,7 @@ TEST(UrlClassifierUtils, MakeUpdateRequestV5)
   
   
   ASSERT_TRUE(request.EqualsLiteral(
-      "CgZ1d3MtNGISGwoNCAMQBhgBIgMwMDEwARDHyhEaAhgJuW4h-A=="));
+      "&names=uws-4b&version=Cg0IAxAGGAEiAzAwMTABEMfKERoCGAm5biH4"));
 }
 
 TEST(UrlClassifierUtils, makeFindFullHashRequestV5)
