@@ -3,10 +3,12 @@
 
 "use strict";
 
-const kForceOverflowWidthPx = 450;
-
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/browser/base/content/test/general/head.js",
+  this
+);
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/browser/components/customizableui/test/head.js",
   this
 );
 
@@ -127,20 +129,24 @@ add_task(
     let navbar = document.getElementById("nav-bar");
 
     
-    let originalWidth = window.outerWidth;
-    window.resizeTo(kForceOverflowWidthPx, window.outerHeight);
+    
+    
+    let originalWidth = ensureToolbarOverflow(window, false);
+
     await TestUtils.waitForCondition(() => navbar.hasAttribute("overflowing"));
 
     await checkForConfirmationHint("PanelUI-menu-button");
     document.documentElement.setAttribute("fxastatus", "not_configured");
 
-    window.resizeTo(originalWidth, window.outerHeight);
+    unensureToolbarOverflow(window, originalWidth);
     await TestUtils.waitForCondition(() => !navbar.hasAttribute("overflowing"));
     CustomizableUI.reset();
   }
 );
 
 add_task(async function test_sendTabToDevice_showsConfirmationHint_appMenu() {
+  ensureToolbarOverflow(window);
+
   
   
   is(
