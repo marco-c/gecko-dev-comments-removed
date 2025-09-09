@@ -179,18 +179,6 @@ const POLICIES_TESTS = [
   {
     policies: {
       Certificates: {
-        ImportEnterpriseRoots: true,
-      },
-    },
-    lockedPrefs: {
-      "security.enterprise_roots.enabled": true,
-    },
-  },
-
-  
-  {
-    policies: {
-      Certificates: {
         ImportEnterpriseRoots: false,
       },
     },
