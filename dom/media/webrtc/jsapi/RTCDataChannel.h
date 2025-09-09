@@ -123,7 +123,7 @@ class RTCDataChannel final : public DOMEventTargetHelper {
   
   RefPtr<RTCDataChannel> mSelfRef;
   
-  RefPtr<DataChannel> mDataChannel;
+  const RefPtr<DataChannel> mDataChannel;
   bool mCheckMustKeepAlive = true;
   RTCDataChannelType mBinaryType = RTCDataChannelType::Arraybuffer;
 
