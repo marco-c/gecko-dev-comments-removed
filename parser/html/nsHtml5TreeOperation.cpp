@@ -51,6 +51,12 @@ using namespace mozilla::dom;
 
 
 
+static_assert(sizeof(nsHtml5TreeOperation) <= 56);
+
+
+
+
+
 class MOZ_STACK_CLASS nsHtml5OtherDocUpdate {
  public:
   nsHtml5OtherDocUpdate(Document* aCurrentDoc, Document* aExecutorDoc) {
