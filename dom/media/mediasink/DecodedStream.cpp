@@ -994,9 +994,10 @@ void DecodedStream::SendVideo(const PrincipalHandle& aPrincipalHandle) {
       
       
       
-      TimeStamp t =
-          std::max(mData->mLastVideoTimeStamp,
-                   currentTime + (lastEnd - currentPosition).ToTimeDuration());
+      TimeStamp t = std::max(mData->mLastVideoTimeStamp,
+                             currentTime + (lastEnd - currentPosition)
+                                               .ToTimeDuration()
+                                               .MultDouble(1 / mPlaybackRate));
       mData->WriteVideoToSegment(mData->mLastVideoImage, lastEnd, v->mTime,
                                  mData->mLastVideoImageDisplaySize, t, &output,
                                  aPrincipalHandle, mPlaybackRate);
@@ -1008,9 +1009,10 @@ void DecodedStream::SendVideo(const PrincipalHandle& aPrincipalHandle) {
       
       
       
-      TimeStamp t =
-          std::max(mData->mLastVideoTimeStamp,
-                   currentTime + (lastEnd - currentPosition).ToTimeDuration());
+      TimeStamp t = std::max(mData->mLastVideoTimeStamp,
+                             currentTime + (lastEnd - currentPosition)
+                                               .ToTimeDuration()
+                                               .MultDouble(1 / mPlaybackRate));
       TimeUnit end = std::max(
           v->GetEndTime(),
           lastEnd + TimeUnit::FromMicroseconds(
@@ -1143,6 +1145,11 @@ TimeUnit DecodedStream::GetPositionImpl(TimeStamp aNow,
 AwakeTimeStamp DecodedStream::LastOutputSystemTime() const {
   AssertOwnerThread();
   return *mLastOutputSystemTime;
+}
+
+TimeStamp DecodedStream::LastVideoTimeStamp() const {
+  AssertOwnerThread();
+  return mData->mLastVideoTimeStamp;
 }
 
 void DecodedStream::NotifyOutput(int64_t aTime, TimeStamp aSystemTime,
