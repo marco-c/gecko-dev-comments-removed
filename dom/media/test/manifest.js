@@ -479,6 +479,33 @@ if (!win32) {
   gPlayTests.push({ name: "av1.mp4", type: "video/mp4", duration: 1.0 });
 }
 
+var gMKVtests = [
+  
+  
+  {
+    name: "output_aac.mkv",
+    type: "audio/matroska",
+    duration: 1.0,
+  },
+  
+  
+  {
+    name: "output_avc.mkv",
+    type: "video/matroska",
+    duration: 1.0,
+  },
+  
+  
+  
+  
+  
+  {
+    name: "output_avc_hl41_1080p_aaclc_44100.mkv",
+    type: "video/matroska",
+    duration: 1.0,
+  },
+];
+
 
 
 gPlayTests.push(
