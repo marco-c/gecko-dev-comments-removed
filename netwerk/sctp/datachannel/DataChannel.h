@@ -15,6 +15,7 @@
 #include "nsISupports.h"
 #include "nsCOMPtr.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/StopGapEventTarget.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/RTCStatsReportBinding.h"
@@ -398,9 +399,32 @@ class DataChannel {
   
   
   
-  void ReleaseConnection();
+  
+  
+  void SetMainthreadDomDataChannel(dom::RTCDataChannel* aChannel);
 
-  void SetDomDataChannel(dom::RTCDataChannel* aChannel);
+  
+  
+  
+  
+  void OnWorkerTransferStarted();
+
+  
+  
+  void OnWorkerTransferComplete(dom::RTCDataChannel* aChannel);
+
+  
+  
+  
+  void OnWorkerTransferDisabled();
+
+  
+  
+  
+  void UnsetMainthreadDomDataChannel();
+
+  
+  void UnsetWorkerDomDataChannel();
 
   
   static void SendErrnoToErrorResult(int error, size_t aMessageSize,
@@ -429,6 +453,8 @@ class DataChannel {
   }
 
   void SetStream(uint16_t aId);
+  void SetMaxMessageSize(double aMaxMessageSize);
+  double GetMaxMessageSize() const { return mConnection->GetMaxMessageSize(); }
 
   void OnMessageReceived(nsCString&& aMsg, bool aIsBinary);
 
@@ -436,6 +462,14 @@ class DataChannel {
       const DOMHighResTimeStamp aTimestamp);
 
   void FinishClose();
+
+  dom::RTCDataChannel* GetDomDataChannel() const {
+    MOZ_ASSERT(mDomEventTarget->IsOnCurrentThread());
+    if (NS_IsMainThread()) {
+      return mMainthreadDomDataChannel;
+    }
+    return mWorkerDomDataChannel;
+  }
 
  private:
   nsresult AddDataToBinaryMsg(const char* data, uint32_t size);
@@ -451,8 +485,8 @@ class DataChannel {
   
   
   
-  
-  dom::RTCDataChannel* mDomDataChannel = nullptr;
+  dom::RTCDataChannel* mMainthreadDomDataChannel = nullptr;
+  bool mHasWorkerDomDataChannel = false;
   bool mEverOpened = false;
   uint16_t mStream;
   RefPtr<DataChannelConnection> mConnection;
@@ -465,7 +499,17 @@ class DataChannel {
   std::map<uint16_t, IncomingMsg> mRecvBuffers;
 
   
-  nsCOMPtr<nsISerialEventTarget> mDomEventTarget;
+  
+  
+  
+  const RefPtr<StopGapEventTarget> mDomEventTarget;
+
+  
+  
+  
+  
+  
+  dom::RTCDataChannel* mWorkerDomDataChannel = nullptr;
 };
 
 static constexpr const char* ToString(DataChannelConnectionState state) {
