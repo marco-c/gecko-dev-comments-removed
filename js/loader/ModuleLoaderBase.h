@@ -417,6 +417,10 @@ class ModuleLoaderBase : public nsISupports {
   
   void DisallowImportMaps() { mImportMapsAllowed = false; }
 
+  virtual bool IsModuleTypeAllowed(ModuleType aModuleType) {
+    return aModuleType != ModuleType::Unknown;
+  }
+
   
   
   bool GetImportMapSRI(nsIURI* aURI, nsIURI* aSourceURI,
