@@ -27,7 +27,6 @@ function WeakMapConstructorInit(iterable) {
   }
 }
 
-#ifdef NIGHTLY_BUILD
 
 
 
@@ -75,4 +74,3 @@ function WeakMapGetOrInsertComputed(key, callbackfn) {
   
   return value;
 }
-#endif  // #ifdef NIGHTLY_BUILD
