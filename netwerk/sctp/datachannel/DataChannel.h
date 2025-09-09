@@ -14,8 +14,10 @@
 #include <errno.h>
 #include "nsISupports.h"
 #include "nsCOMPtr.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
+#include "mozilla/dom/RTCStatsReportBinding.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
 #include "nsTArray.h"
@@ -122,6 +124,10 @@ class IncomingMsg {
 };
 
 
+typedef MozPromise<dom::RTCDataChannelStats, nsresult, true>
+    DataChannelStatsPromise;
+
+
 class DataChannelConnection : public net::NeckoTargetHolder {
   friend class DataChannel;
   friend class DataChannelConnectRunnable;
@@ -204,8 +210,8 @@ class DataChannelConnection : public net::NeckoTargetHolder {
   void ProcessQueuedOpens();
   void OnStreamsReset(std::vector<uint16_t>&& aStreams);
 
-  void AppendStatsToReport(const UniquePtr<dom::RTCStatsCollection>& aReport,
-                           const DOMHighResTimeStamp aTimestamp) const;
+  typedef DataChannelStatsPromise::AllPromiseType StatsPromise;
+  RefPtr<StatsPromise> GetStats(const DOMHighResTimeStamp aTimestamp) const;
 
   bool ConnectToTransport(const std::string& aTransportId, const bool aClient,
                           const uint16_t aLocalPort,
@@ -426,8 +432,8 @@ class DataChannel {
 
   void OnMessageReceived(nsCString&& aMsg, bool aIsBinary);
 
-  void AppendStatsToReport(const UniquePtr<dom::RTCStatsCollection>& aReport,
-                           const DOMHighResTimeStamp aTimestamp) const;
+  RefPtr<DataChannelStatsPromise> GetStats(
+      const DOMHighResTimeStamp aTimestamp);
 
   void FinishClose();
 
