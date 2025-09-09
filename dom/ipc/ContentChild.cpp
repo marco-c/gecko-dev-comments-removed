@@ -4358,7 +4358,7 @@ mozilla::ipc::IPCResult ContentChild::RecvDispatchBeforeUnloadToSubtree(
     const mozilla::Maybe<SessionHistoryInfo>& aInfo,
     DispatchBeforeUnloadToSubtreeResolver&& aResolver) {
   if (aStartingAt.IsNullOrDiscarded()) {
-    aResolver(nsIDocumentViewer::eAllowNavigation);
+    aResolver(nsIDocumentViewer::eContinue);
   } else {
     DispatchBeforeUnloadToSubtree(aStartingAt.get(), aInfo, aResolver);
   }
@@ -4376,7 +4376,6 @@ mozilla::ipc::IPCResult ContentChild::RecvInitNextGenLocalStorageEnabled(
     BrowsingContext* aStartingAt,
     const mozilla::Maybe<SessionHistoryInfo>& aInfo,
     const DispatchBeforeUnloadToSubtreeResolver& aResolver) {
-  bool block = false;
   bool resolved = false;
 
   aStartingAt->PreOrderWalk(
@@ -4385,10 +4384,14 @@ mozilla::ipc::IPCResult ContentChild::RecvInitNextGenLocalStorageEnabled(
             if (RefPtr docShell = nsDocShell::Cast(aBC->GetDocShell())) {
               nsCOMPtr<nsIDocumentViewer> viewer;
               docShell->GetDocViewer(getter_AddRefs(viewer));
-              if (viewer && viewer->DispatchBeforeUnload() ==
-                                nsIDocumentViewer::eRequestBlockNavigation) {
-                block = true;
-              } else if (aBC->IsTop() && aInfo) {
+              nsIDocumentViewer::PermitUnloadResult finalStatus =
+                  nsIDocumentViewer::eContinue;
+              if (viewer) {
+                finalStatus = viewer->DispatchBeforeUnload();
+              }
+
+              if (finalStatus == nsIDocumentViewer::eContinue && aBC->IsTop() &&
+                  aInfo) {
                 
                 
                 
@@ -4397,21 +4400,22 @@ mozilla::ipc::IPCResult ContentChild::RecvInitNextGenLocalStorageEnabled(
                 
                 
                 
-                block = !docShell->MaybeFireTraversableTraverseHistory(
+                finalStatus = docShell->MaybeFireTraversableTraverseHistory(
                     *aInfo, Nothing());
               }
-              if (!resolved && block) {
+
+              if (!resolved && finalStatus != nsIDocumentViewer::eContinue) {
                 
                 
                 
-                aResolver(nsIDocumentViewer::eRequestBlockNavigation);
+                aResolver(finalStatus);
                 resolved = true;
               }
             }
           });
 
   if (!resolved) {
-    aResolver(nsIDocumentViewer::eAllowNavigation);
+    aResolver(nsIDocumentViewer::eContinue);
   }
 }
 

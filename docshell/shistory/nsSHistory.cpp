@@ -1007,6 +1007,12 @@ static void LogEntry(nsISHEntry* aEntry, int32_t aIndex, int32_t aTotal,
           (" %s%s  Has User Interaction = %s\n", prefix.get(),
            childCount > 0 ? "|" : " ",
            aEntry->GetHasUserInteraction() ? "true" : "false"));
+  if (nsCOMPtr<SessionHistoryEntry> entry = do_QueryInterface(aEntry)) {
+    MOZ_LOG(gSHLog, LogLevel::Debug,
+            (" %s%s  Navigation key = %s\n", prefix.get(),
+             childCount > 0 ? "|" : " ",
+             entry->Info().NavigationKey().ToString().get()));
+  }
 
   nsCOMPtr<nsISHEntry> prevChild;
   for (int32_t i = 0; i < childCount; ++i) {
@@ -1394,22 +1400,24 @@ static bool MaybeLoadBFCache(nsSHistory::LoadEntryResult& aLoadEntry) {
                     ->GetCurrentWindowGlobal()) {
           wgp->PermitUnload(
               [canonicalBC, loadState, she, frameLoader, currentFrameLoader,
-               canSave](bool aAllow) MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
-                if (aAllow && !canonicalBC->IsReplaced()) {
-                  FinishRestore(canonicalBC, loadState, she, frameLoader,
-                                canSave && canonicalBC->AllowedInBFCache(
-                                               Nothing(), nullptr));
-                } else if (currentFrameLoader
-                               ->GetMaybePendingBrowsingContext()) {
-                  nsISHistory* shistory =
-                      currentFrameLoader->GetMaybePendingBrowsingContext()
-                          ->Canonical()
-                          ->GetSessionHistory();
-                  if (shistory) {
-                    shistory->InternalSetRequestedIndex(-1);
-                  }
-                }
-              });
+               canSave](nsIDocumentViewer::PermitUnloadResult aResult)
+                  MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+                    bool allow = aResult == nsIDocumentViewer::eContinue;
+                    if (allow && !canonicalBC->IsReplaced()) {
+                      FinishRestore(canonicalBC, loadState, she, frameLoader,
+                                    canSave && canonicalBC->AllowedInBFCache(
+                                                   Nothing(), nullptr));
+                    } else if (currentFrameLoader
+                                   ->GetMaybePendingBrowsingContext()) {
+                      nsISHistory* shistory =
+                          currentFrameLoader->GetMaybePendingBrowsingContext()
+                              ->Canonical()
+                              ->GetSessionHistory();
+                      if (shistory) {
+                        shistory->InternalSetRequestedIndex(-1);
+                      }
+                    }
+                  });
           return true;
         }
       }
@@ -1450,8 +1458,8 @@ MOZ_CAN_RUN_SCRIPT
 static bool MaybeCheckUnloadingIsCanceled(
     nsTArray<nsSHistory::LoadEntryResult>& aLoadResults,
     BrowsingContext* aTraversable,
-    std::function<void(nsTArray<nsSHistory::LoadEntryResult>&, bool)>&&
-        aResolver) {
+    std::function<void(nsTArray<nsSHistory::LoadEntryResult>&,
+                       nsIDocumentViewer::PermitUnloadResult)>&& aResolver) {
   
   if (!aTraversable || !aTraversable->IsTop() || !SessionHistoryInParent() ||
       !aLoadResults.Length() || !Navigation::IsAPIEnabled()) {
@@ -1527,18 +1535,20 @@ static bool MaybeCheckUnloadingIsCanceled(
   windowGlobalParent->PermitUnloadTraversable(
       targetEntry->Info(), action,
       [action, loadResults = CopyableTArray(std::move(aLoadResults)),
-       windowGlobalParent, aResolver](bool aAllow) mutable {
-        if (!aAllow) {
-          aResolver(loadResults, aAllow);
+       windowGlobalParent,
+       aResolver](nsIDocumentViewer::PermitUnloadResult aResult) mutable {
+        if (aResult != nsIDocumentViewer::eContinue) {
+          aResolver(loadResults, aResult);
           return;
         }
 
         
         
         windowGlobalParent->PermitUnloadChildNavigables(
-            action,
-            [loadResults = std::move(loadResults), aResolver](
-                bool aAllow) mutable { aResolver(loadResults, aAllow); });
+            action, [loadResults = std::move(loadResults), aResolver](
+                        nsIDocumentViewer::PermitUnloadResult aResult) mutable {
+              aResolver(loadResults, aResult);
+            });
       });
 
   return true;
@@ -1546,38 +1556,56 @@ static bool MaybeCheckUnloadingIsCanceled(
 
 
 void nsSHistory::LoadURIs(nsTArray<LoadEntryResult>& aLoadResults,
+                          const std::function<void(nsresult)>& aResolver,
                           BrowsingContext* aTraversable) {
   
   
   if (MaybeCheckUnloadingIsCanceled(
           aLoadResults, aTraversable,
-          [traversable = RefPtr{aTraversable}](
+          [traversable = RefPtr{aTraversable}, aResolver](
               nsTArray<LoadEntryResult>& aLoadResults,
-              bool aAllow) MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
-            if (!aAllow) {
-              if (nsCOMPtr<nsFrameLoaderOwner> frameLoaderOwner =
-                      do_QueryInterface(traversable->GetEmbedderElement())) {
-                if (RefPtr<nsFrameLoader> currentFrameLoader =
-                        frameLoaderOwner->GetFrameLoader()) {
-                  nsISHistory* shistory =
-                      currentFrameLoader->GetMaybePendingBrowsingContext()
-                          ->Canonical()
-                          ->GetSessionHistory();
-                  if (shistory) {
-                    shistory->InternalSetRequestedIndex(-1);
+              nsIDocumentViewer::PermitUnloadResult aResult)
+              MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+                if (aResult != nsIDocumentViewer::eContinue) {
+                  if (nsCOMPtr<nsFrameLoaderOwner> frameLoaderOwner =
+                          do_QueryInterface(
+                              traversable->GetEmbedderElement())) {
+                    if (RefPtr<nsFrameLoader> currentFrameLoader =
+                            frameLoaderOwner->GetFrameLoader()) {
+                      nsISHistory* shistory =
+                          currentFrameLoader->GetMaybePendingBrowsingContext()
+                              ->Canonical()
+                              ->GetSessionHistory();
+                      if (shistory) {
+                        shistory->InternalSetRequestedIndex(-1);
+                      }
+                    }
                   }
-                }
-              }
-              return;
-            }
 
-            for (LoadEntryResult& loadEntry : aLoadResults) {
-              loadEntry.mLoadState->SetNotifiedBeforeUnloadListeners(true);
-              LoadURIOrBFCache(loadEntry);
-            }
-          })) {
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  if (aResult == nsIDocumentViewer::eCanceledByBeforeUnload) {
+                    return aResolver(nsresult::NS_ERROR_DOM_ABORT_ERR);
+                  }
+
+                  return aResolver(NS_OK);
+                }
+
+                for (LoadEntryResult& loadEntry : aLoadResults) {
+                  loadEntry.mLoadState->SetNotifiedBeforeUnloadListeners(true);
+                  LoadURIOrBFCache(loadEntry);
+                }
+              })) {
     return;
   }
+
+  
+  aResolver(NS_OK);
 
   
   
