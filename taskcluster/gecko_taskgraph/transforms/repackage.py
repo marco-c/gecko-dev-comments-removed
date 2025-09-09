@@ -328,7 +328,7 @@ PACKAGE_FORMATS = {
             "--release-type",
             "{release_type}",
             "--input-xpi-dir",
-            "{fetch-dir}",
+            "{fetch-dir}/extensions",
         ],
         "inputs": {
             "input": "target{archive_format}",
@@ -551,7 +551,7 @@ def make_job_description(config, jobs):
                 package=config.kind.split("-")[1],
             )
 
-        elif config.kind == "repackage-flatpak":
+        if config.kind in ("repackage-flatpak", "repackage-rpm"):
             assert not locale
 
             if attributes.get("l10n_chunk") or attributes.get("chunk_locales"):
@@ -562,10 +562,17 @@ def make_job_description(config, jobs):
             
             
             for t in config.kind_dependencies_tasks.values():
+                
+                
+                
                 if attributes.get("shippable"):
-                    if (
-                        t.kind != "shippable-l10n-signing"
-                        or t.attributes["build_platform"] != "linux64-shippable"
+                    if t.kind != "shippable-l10n-signing":
+                        continue
+                    if t.attributes["shipping_product"] != job["shipping-product"]:
+                        continue
+                    if t.attributes["build_platform"] not in (
+                        "linux64-shippable",
+                        "linux64-devedition",
                     ):
                         continue
                 elif t.kind != "l10n" or t.attributes["build_platform"] != "linux64":
