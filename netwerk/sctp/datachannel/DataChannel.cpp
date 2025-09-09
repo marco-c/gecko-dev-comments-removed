@@ -26,7 +26,6 @@
 #include "mozilla/Unused.h"
 #include "mozilla/dom/RTCDataChannel.h"
 #include "mozilla/dom/RTCDataChannelBinding.h"
-#include "mozilla/dom/RTCStatsReportBinding.h"
 #ifdef MOZ_PEERCONNECTION
 #  include "transport/runnable_utils.h"
 #  include "jsapi/MediaTransportHandler.h"
@@ -188,27 +187,46 @@ double DataChannelConnection::GetMaxMessageSize() {
   return std::numeric_limits<double>::infinity();
 }
 
-void DataChannelConnection::AppendStatsToReport(
-    const UniquePtr<dom::RTCStatsCollection>& aReport,
+RefPtr<DataChannelConnection::StatsPromise> DataChannelConnection::GetStats(
     const DOMHighResTimeStamp aTimestamp) const {
   MOZ_ASSERT(NS_IsMainThread());
+  nsTArray<RefPtr<DataChannelStatsPromise>> statsPromises;
   for (const RefPtr<DataChannel>& chan : mChannels.GetAll()) {
-    
-    if (!chan) {
-      continue;
+    if (chan) {
+      RefPtr<DataChannelStatsPromise> statsPromise(chan->GetStats(aTimestamp));
+      if (statsPromise) {
+        statsPromises.AppendElement(std::move(statsPromise));
+      }
     }
-    chan->AppendStatsToReport(aReport, aTimestamp);
   }
+
+  return DataChannelStatsPromise::All(GetMainThreadSerialEventTarget(),
+                                      statsPromises);
 }
 
-void DataChannel::AppendStatsToReport(
-    const UniquePtr<dom::RTCStatsCollection>& aReport,
-    const DOMHighResTimeStamp aTimestamp) const {
-  
-  
-  if (mDomDataChannel) {
-    mDomDataChannel->AppendStatsToReport(aReport, aTimestamp);
+RefPtr<DataChannelStatsPromise> DataChannel::GetStats(
+    const DOMHighResTimeStamp aTimestamp) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!mDomEventTarget) {
+    
+    
+    
+    
+    return nullptr;
   }
+
+  return InvokeAsync(mDomEventTarget, __func__,
+                     [this, self = RefPtr<DataChannel>(this), aTimestamp] {
+                       if (!mDomDataChannel) {
+                         
+                         
+                         
+                         return DataChannelStatsPromise::CreateAndResolve(
+                             dom::RTCDataChannelStats(), __func__);
+                       }
+                       return DataChannelStatsPromise::CreateAndResolve(
+                           mDomDataChannel->GetStats(aTimestamp), __func__);
+                     });
 }
 
 bool DataChannelConnection::ConnectToTransport(const std::string& aTransportId,
