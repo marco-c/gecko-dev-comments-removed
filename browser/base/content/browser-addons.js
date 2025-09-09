@@ -859,6 +859,13 @@ customElements.define(
             BrowserAddonUI.openAddonsMgr(
               "addons://detail/" + encodeURIComponent(addonId)
             );
+            
+            
+            
+            
+            
+            
+            event.preventDefault();
           }
           break;
         }
