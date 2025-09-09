@@ -229,6 +229,20 @@ inline void TraceRoot(JSTracer* trc, const HeapPtr<T>* thingp,
 
 
 
+template <typename T>
+void TraceBufferRoot(JSTracer* trc, JS::Zone* zone, T** bufferp,
+                     const char* name) {
+  void** ptrp = reinterpret_cast<void**>(bufferp);
+  gc::TraceBufferEdgeInternal(trc, zone, ptrp, name);
+}
+
+template <typename T>
+void BufferHolder<T>::trace(JSTracer* trc) {
+  TraceBufferRoot(trc, zone, &buffer, "BufferHolder buffer");
+}
+
+
+
 
 template <typename T>
 inline void TraceNullableRoot(JSTracer* trc, T* thingp, const char* name) {
