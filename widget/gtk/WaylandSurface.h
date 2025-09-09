@@ -203,13 +203,8 @@ class WaylandSurface final {
 
   
   
-  
   static constexpr const double sNoScale = -1;
   double GetScale();
-
-  
-  
-  double GetScaleSafe();
 
   
   
