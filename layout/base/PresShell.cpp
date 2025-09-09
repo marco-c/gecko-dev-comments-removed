@@ -12165,6 +12165,40 @@ void PresShell::MergeAnchorPosAnchorChanges() {
   mLazyAnchorPosAnchorChanges.Clear();
 }
 
+static bool NeedReflowForAnchorPos(const nsIFrame* aAnchor, const nsIFrame* aPositioned,
+                       const Maybe<AnchorPosResolutionData>& aData) {
+  const bool validityChanged = (aAnchor && !aData) || (!aAnchor && aData);
+  if (validityChanged) {
+    return true;
+  }
+  if (!aData) {
+    
+    return false;
+  }
+  
+  if (!aAnchor) {
+    MOZ_ASSERT_UNREACHABLE("Anchor is supposed to be valid");
+    return false;
+  }
+  const auto& anchorReference = aData.ref();
+  const auto anchorSize = aAnchor->GetSize();
+  if (anchorReference.mSize != anchorSize) {
+    
+    return true;
+  }
+  if (!anchorReference.mOrigin) {
+    
+    return false;
+  }
+  const auto posInfo = AnchorPositioningUtils::GetAnchorPosRect(
+      aPositioned->GetParent(), aAnchor, true, nullptr);
+  MOZ_ASSERT(posInfo, "Can't resolve anchor rect?");
+  const auto newOrigin = posInfo.ref().mRect.TopLeft();
+  const auto& prevOrigin = anchorReference.mOrigin.ref();
+  
+  return newOrigin != prevOrigin;
+}
+
 PresShell::AnchorPosUpdateResult PresShell::UpdateAnchorPosLayout() {
   if (mAnchorPosPositioned.IsEmpty()) {
     return AnchorPosUpdateResult::NotApplicable;
@@ -12174,11 +12208,6 @@ PresShell::AnchorPosUpdateResult PresShell::UpdateAnchorPosLayout() {
   DoFlushLayout( false);
 
   auto result = AnchorPosUpdateResult::Flushed;
-  const auto MarkForReflow = [&](nsIFrame* aFrame) {
-    result = AnchorPosUpdateResult::NeedReflow;
-    
-    FrameNeedsReflow(aFrame, IntrinsicDirty::None, NS_FRAME_HAS_DIRTY_CHILDREN);
-  };
   AUTO_PROFILER_MARKER_UNTYPED("UpdateAnchorPosLayout", LAYOUT, {});
   for (auto* positioned : mAnchorPosPositioned) {
     MOZ_ASSERT(positioned->IsAbsolutelyPositioned(),
@@ -12200,40 +12229,11 @@ PresShell::AnchorPosUpdateResult PresShell::UpdateAnchorPosLayout() {
       const auto& data = kv.GetData();
       const auto& anchorName = kv.GetKey();
       const auto* anchor = GetAnchorPosAnchor(anchorName, positioned);
-      const bool validityChanged = (anchor && !data) || (!anchor && data);
-      if (validityChanged) {
-        MarkForReflow(positioned);
-        break;
-      }
-      if (!data) {
+      if (NeedReflowForAnchorPos(anchor, positioned, data)) {
+        result = AnchorPosUpdateResult::NeedReflow;
         
-        continue;
-      }
-      
-      if (!anchor) {
-        MOZ_ASSERT_UNREACHABLE("Anchor is supposed to be valid");
-        continue;
-      }
-      const auto& anchorReference = data.ref();
-      const auto anchorSize = anchor->GetSize();
-      if (anchorReference.mSize != anchorSize) {
-        
-        MarkForReflow(positioned);
-        break;
-      }
-      if (!anchorReference.mOrigin) {
-        
-        continue;
-      }
-      const auto posInfo = AnchorPositioningUtils::GetAnchorPosRect(
-          positioned->GetParent(), anchor, true, nullptr);
-      MOZ_ASSERT(posInfo, "Can't resolve anchor rect?");
-      const auto newOrigin = posInfo.ref().mRect.TopLeft();
-      const auto& prevOrigin = anchorReference.mOrigin.ref();
-      if (newOrigin != prevOrigin) {
-        
-        MarkForReflow(positioned);
-        break;
+        FrameNeedsReflow(positioned, IntrinsicDirty::None,
+                         NS_FRAME_HAS_DIRTY_CHILDREN);
       }
     }
   }
