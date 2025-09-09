@@ -5839,10 +5839,7 @@ nsresult XREMain::XRE_mainRun() {
     
     
     SandboxInfo sandboxInfo = SandboxInfo::Get();
-    glean::sandbox::has_user_namespaces
-        .EnumGet(static_cast<glean::sandbox::HasUserNamespacesLabel>(
-            sandboxInfo.Test(SandboxInfo::kHasUserNamespaces)))
-        .Add();
+    
 
     CrashReporter::RecordAnnotationU32(
         CrashReporter::Annotation::ContentSandboxCapabilities,
