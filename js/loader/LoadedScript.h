@@ -55,17 +55,6 @@ class LoadContextBase;
 
 
 class LoadedScript : public nsIMemoryReporter {
- private:
-  ScriptKind mKind;
-
- protected:
-  mozilla::dom::ReferrerPolicy mReferrerPolicy;
-
- private:
-  RefPtr<ScriptFetchOptions> mFetchOptions;
-  nsCOMPtr<nsIURI> mURI;
-  nsCOMPtr<nsIURI> mBaseURL;
-
  protected:
   LoadedScript(ScriptKind aKind, mozilla::dom::ReferrerPolicy aReferrerPolicy,
                ScriptFetchOptions* aFetchOptions, nsIURI* aURI);
@@ -257,6 +246,22 @@ class LoadedScript : public nsIMemoryReporter {
   
   DataType mDataType;
 
+ private:
+  ScriptKind mKind;
+
+ protected:
+  mozilla::dom::ReferrerPolicy mReferrerPolicy;
+
+ public:
+  
+  uint32_t mBytecodeOffset;
+
+ private:
+  RefPtr<ScriptFetchOptions> mFetchOptions;
+  nsCOMPtr<nsIURI> mURI;
+  nsCOMPtr<nsIURI> mBaseURL;
+
+ public:
   
   mozilla::Maybe<
       Variant<ScriptTextBuffer<char16_t>, ScriptTextBuffer<Utf8Unit>>>
@@ -270,7 +275,6 @@ class LoadedScript : public nsIMemoryReporter {
   
   
   TranscodeBuffer mScriptBytecode;
-  uint32_t mBytecodeOffset;  
 
   RefPtr<Stencil> mStencil;
 };
