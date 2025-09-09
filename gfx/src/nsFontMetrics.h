@@ -189,6 +189,11 @@ class nsFontMetrics final {
   
 
 
+  nscoord InterScriptSpacingWidth() const;
+
+  
+
+
 
   const nsFont& Font() const { return mFont; }
 

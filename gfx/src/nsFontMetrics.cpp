@@ -281,6 +281,19 @@ nscoord nsFontMetrics::SpaceWidth() const {
           .spaceWidth);
 }
 
+nscoord nsFontMetrics::InterScriptSpacingWidth() const {
+  const auto& m = GetMetrics(this);
+  
+  
+  LayoutDeviceDoubleCoord ic =
+      m.ideographicWidth >= 0.0 ? m.ideographicWidth : m.emHeight;
+
+  
+  
+  constexpr double kFraction = 0.125;
+  return LayoutDevicePixel::ToAppUnits(ic * kFraction, AppUnitsPerDevPixel());
+}
+
 int32_t nsFontMetrics::GetMaxStringLength() const {
   const double x = 32767.0 / std::max(1.0, GetMetrics(this).maxAdvance);
   int32_t len = (int32_t)floor(x);
