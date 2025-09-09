@@ -1,0 +1,12 @@
+
+
+
+
+
+"use strict";
+
+
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/devtools/client/inspector/markup/test/head.js",
+  this
+);
