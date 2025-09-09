@@ -672,23 +672,13 @@ function _maybeSynthesizeDragOver(left, top, aEvent, aWindow) {
 
 
 
-
-
-function synthesizeMouse(
-  aTarget,
-  aOffsetX,
-  aOffsetY,
-  aEvent,
-  aWindow,
-  aCallback
-) {
+function synthesizeMouse(aTarget, aOffsetX, aOffsetY, aEvent, aWindow) {
   var rect = aTarget.getBoundingClientRect();
   return synthesizeMouseAtPoint(
     rect.left + aOffsetX,
     rect.top + aOffsetY,
     aEvent,
-    aWindow,
-    aCallback
+    aWindow
   );
 }
 
@@ -709,15 +699,7 @@ function synthesizeMouse(
 
 
 
-
-
-function synthesizeMouseAtPoint(
-  aLeft,
-  aTop,
-  aEvent,
-  aWindow = window,
-  aCallback
-) {
+function synthesizeMouseAtPoint(aLeft, aTop, aEvent, aWindow = window) {
   if (aEvent.allowToHandleDragDrop) {
     if (aEvent.type == "mouseup" || !aEvent.type) {
       if (_maybeEndDragSession(aLeft, aTop, aEvent, aWindow)) {
@@ -798,8 +780,7 @@ function synthesizeMouseAtPoint(
             isDOMEventSynthesized,
             isWidgetEventSynthesized,
             isAsyncEnabled,
-          },
-          aCallback
+          }
         );
       } else {
         defaultPrevented = utils.sendMouseEvent(
@@ -836,8 +817,7 @@ function synthesizeMouseAtPoint(
           isDOMEventSynthesized,
           isWidgetEventSynthesized,
           isAsyncEnabled,
-        },
-        aCallback
+        }
       );
       _EU_maybeWrap(aWindow).synthesizeMouseEvent(
         "mouseup",
@@ -856,8 +836,7 @@ function synthesizeMouseAtPoint(
           isDOMEventSynthesized,
           isWidgetEventSynthesized,
           isAsyncEnabled,
-        },
-        aCallback
+        }
       );
     } else {
       utils.sendMouseEvent(
@@ -909,9 +888,7 @@ function synthesizeMouseAtPoint(
 
 
 
-
-
-function synthesizeMouseAtCenter(aTarget, aEvent, aWindow, aCallback) {
+function synthesizeMouseAtCenter(aTarget, aEvent, aWindow) {
   var rect = aTarget.getBoundingClientRect();
 
   return synthesizeMouse(
@@ -919,8 +896,7 @@ function synthesizeMouseAtCenter(aTarget, aEvent, aWindow, aCallback) {
     rect.width / 2,
     rect.height / 2,
     aEvent,
-    aWindow,
-    aCallback
+    aWindow
   );
 }
 
