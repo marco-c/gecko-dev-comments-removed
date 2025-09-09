@@ -1204,7 +1204,7 @@ void DataChannelConnection::FinishClose(DataChannel* aChannel) {
 }
 
 void DataChannel::FinishClose() {
-  MOZ_ASSERT(mDomEventTarget->IsOnCurrentThread());
+  
   if (mConnection) {
     mConnection->FinishClose(this);
   }
@@ -1475,7 +1475,7 @@ int DataChannel::SendBinaryBlob(nsIInputStream* aBlob) {
 }
 
 void DataChannel::SetStream(uint16_t aId) {
-  MOZ_ASSERT(mDomEventTarget->IsOnCurrentThread());
+  MOZ_ASSERT(NS_IsMainThread());
   mStream = aId;
 
   
