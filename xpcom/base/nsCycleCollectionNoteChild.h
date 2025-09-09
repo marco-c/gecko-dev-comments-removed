@@ -14,6 +14,8 @@
 #include "nsCycleCollectionTraversalCallback.h"
 #include "mozilla/Likely.h"
 
+#include <type_traits>
+
 enum { CycleCollectionEdgeNameArrayFlag = 1 };
 
 
