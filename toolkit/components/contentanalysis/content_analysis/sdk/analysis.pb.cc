@@ -1,7 +1,7 @@
 
 
 
-#include "content_analysis/sdk/analysis.pb.h"
+#include "analysis.pb.h"
 
 #include <algorithm>
 
