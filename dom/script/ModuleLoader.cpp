@@ -30,6 +30,8 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/RequestBinding.h"
+#include "mozilla/StyleSheet.h"
+#include "mozilla/StyleSheetInlines.h"
 #include "nsContentSecurityManager.h"
 #include "nsError.h"
 #include "nsIContent.h"
@@ -219,9 +221,10 @@ nsresult ModuleLoader::CompileFetchedModule(
       MOZ_CRASH("Unexpected module type");
     case JS::ModuleType::JavaScript:
       return CompileJavaScriptModule(aCx, aOptions, aRequest, aModuleOut);
-    case JS::ModuleType::JSON: {
+    case JS::ModuleType::JSON:
       return CompileJsonModule(aCx, aOptions, aRequest, aModuleOut);
-    }
+    case JS::ModuleType::CSS:
+      return CompileCssModule(aCx, aOptions, aRequest, aModuleOut);
   }
 
   MOZ_CRASH("Unhandled module type");
@@ -350,6 +353,85 @@ nsresult ModuleLoader::CompileJsonModule(
   }
 
   aModuleOut.set(jsonModule);
+  return NS_OK;
+}
+
+nsresult ModuleLoader::CompileCssModule(
+    JSContext* aCx, JS::CompileOptions& aOptions, ModuleLoadRequest* aRequest,
+    JS::MutableHandle<JSObject*> aModuleOut) {
+  MOZ_ASSERT(!aRequest->GetScriptLoadContext()->mWasCompiledOMT);
+  MOZ_ASSERT(mozilla::StaticPrefs::layout_css_module_scripts_enabled());
+
+  MOZ_ASSERT(aRequest->IsTextSource());
+  ModuleLoader::MaybeSourceText maybeSource;
+  nsresult rv = aRequest->GetScriptSource(aCx, &maybeSource,
+                                          aRequest->mLoadContext.get());
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  ErrorResult error;
+  auto compile = [&](auto& source) -> JSObject* {
+    using T = decltype(source);
+    static_assert(std::is_same_v<T, JS::SourceText<char16_t>&> || std::is_same_v<T, JS::SourceText<Utf8Unit>&>);
+
+    nsCOMPtr<nsPIDOMWindowInner> window =
+      do_QueryInterface(aRequest->GetGlobalObject());
+    if (!window) {
+      error.ThrowNotSupportedError("Not supported when there is no document");
+      return nullptr;
+    }
+
+    Document* constructorDocument = window->GetExtantDoc();
+    if (!constructorDocument) {
+      error.ThrowNotSupportedError("Not supported when there is no document");
+      return nullptr;
+    }
+
+    
+    
+    
+    
+    dom::CSSStyleSheetInit options;
+    RefPtr<StyleSheet> sheet = StyleSheet::CreateConstructedSheet(*constructorDocument, aRequest->mBaseURL, options, error);
+    if (error.Failed()) {
+      return nullptr;
+    }
+
+    
+    
+    
+    if constexpr (std::is_same_v<T, JS::SourceText<mozilla::Utf8Unit>&>) {
+      nsDependentCSubstring text(source.get(), source.length());
+      sheet->ReplaceSync(text, error);
+    } else if constexpr (std::is_same_v<T, JS::SourceText<char16_t>&>) {
+      nsDependentSubstring text(source.get(), source.length());
+      sheet->ReplaceSync(NS_ConvertUTF16toUTF8(text), error);
+    }
+    if (error.Failed()) {
+      return nullptr;
+    }
+
+    JS::Rooted<JS::Value> val(aCx, JS::NullValue());
+    if (!GetOrCreateDOMReflector(aCx, sheet, &val) || !val.isObject()) {
+      if (!JS_IsExceptionPending(aCx)) {
+        error.ThrowUnknownError("Internal error");
+      }
+      return nullptr;
+    }
+
+    
+    return JS::CreateCssModule(aCx, aOptions, val);
+  };
+
+  auto* cssModule = maybeSource.mapNonEmpty(compile);
+  if (!cssModule) {
+    if (error.Failed()) {
+      MOZ_ALWAYS_TRUE(error.MaybeSetPendingException(aCx));
+    }
+    return NS_ERROR_FAILURE;
+  }
+
+  aModuleOut.set(cssModule);
   return NS_OK;
 }
 
