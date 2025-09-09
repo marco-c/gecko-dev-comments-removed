@@ -18,10 +18,13 @@
 
 #include "js/Utility.h"  
 
-#include "vm/Scope.h"       
 #include "vm/StringType.h"  
 
 namespace js {
+
+template <typename NameT>
+class AbstractBaseScopeData;
+
 namespace frontend {
 
 struct CompilationAtomCache;
