@@ -335,6 +335,8 @@ class nsDocLoader : public nsIDocumentLoader,
   
 
 
+
+
   bool mIsLoadingJavascriptURI = false;
 
   bool mNotifyAboutBackgroundRequests;

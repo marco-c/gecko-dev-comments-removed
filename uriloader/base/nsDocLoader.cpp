@@ -429,7 +429,24 @@ nsDocLoader::OnStartRequest(nsIRequest* request) {
   
   if (loadFlags & nsIRequest::LOAD_BACKGROUND) {
     if (nsCOMPtr<nsIScriptChannel> scriptChannel = do_QueryInterface(request)) {
-      mIsLoadingJavascriptURI = scriptChannel->GetIsDocumentLoad();
+      if (scriptChannel->GetIsDocumentLoad()) {
+        RefPtr<Document> doc = do_GetInterface(GetAsSupports(this));
+        
+        
+        
+        
+        
+        if (doc && doc->IsInitialDocument()) {
+          nsCOMPtr<nsIChannel> channel = do_QueryInterface(request);
+          MOZ_ASSERT(channel, "How can the request not be a channel?");
+
+          nsCOMPtr<nsILoadInfo> loadInfo;
+          channel->GetLoadInfo(getter_AddRefs(loadInfo));
+          if (loadInfo && loadInfo->GetOriginalFrameSrcLoad()) {
+            mIsLoadingJavascriptURI = true;
+          }
+        }
+      }
     }
     return NS_OK;
   }
@@ -538,28 +555,16 @@ nsDocLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
   if (lf & nsIRequest::LOAD_BACKGROUND) {
     if (nsCOMPtr<nsIScriptChannel> scriptChannel =
             do_QueryInterface(aRequest)) {
-      if (mIsLoadingJavascriptURI && scriptChannel->GetIsDocumentLoad()) {
+      if (mIsLoadingJavascriptURI) {
+        MOZ_ASSERT(scriptChannel->GetIsDocumentLoad(),
+                   "This should be a document load");
+        
         
         
         
         if (NS_FAILED(aStatus)) {
-          RefPtr<Document> doc = do_GetInterface(GetAsSupports(this));
-          
-          
-          
-          
-          
-          if (doc && doc->IsInitialDocument()) {
-            nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
-            MOZ_ASSERT(channel, "How can the request not be a channel?");
-
-            nsCOMPtr<nsILoadInfo> loadInfo;
-            channel->GetLoadInfo(getter_AddRefs(loadInfo));
-            if (loadInfo && loadInfo->GetOriginalFrameSrcLoad()) {
-              DocLoaderIsEmpty(false);
-              return NS_OK;
-            }
-          }
+          DocLoaderIsEmpty(false);
+          return NS_OK;
         }
 
         
@@ -834,6 +839,30 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout,
       }
     } else {
       MOZ_ASSERT(mDocumentOpenedButNotLoaded || mIsLoadingJavascriptURI);
+
+      if (mIsLoadingJavascriptURI) {
+        
+        nsCOMPtr<nsISimpleEnumerator> requests;
+        mLoadGroup->GetRequests(getter_AddRefs(requests));
+        bool hasMore = false;
+        while (NS_SUCCEEDED(requests->HasMoreElements(&hasMore)) && hasMore) {
+          nsCOMPtr<nsISupports> elem;
+          requests->GetNext(getter_AddRefs(elem));
+
+          nsCOMPtr<nsIScriptChannel> scriptChannel(do_QueryInterface(elem));
+          if (scriptChannel && scriptChannel->GetIsDocumentLoad()) {
+            if (nsCOMPtr<nsIRequest> request = do_QueryInterface(elem)) {
+              bool isPending = false;
+              request->IsPending(&isPending);
+              if (isPending) {
+                
+                return;
+              }
+            }
+          }
+        }
+      }
+
       mDocumentOpenedButNotLoaded = false;
       mIsLoadingJavascriptURI = false;
 
@@ -851,6 +880,7 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout,
           
           
           if (nsCOMPtr<Document> doc = do_GetInterface(GetAsSupports(this))) {
+            MOZ_ASSERT_IF(mIsLoadingJavascriptURI, doc->IsInitialDocument());
             doc->SetReadyStateInternal(Document::READYSTATE_COMPLETE,
                                         false);
             doc->StopDocumentLoad();
@@ -858,8 +888,9 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout,
             nsCOMPtr<nsPIDOMWindowOuter> window = doc->GetWindow();
             if (window && !doc->SkipLoadEventAfterClose()) {
               MOZ_LOG(gDocLoaderLog, LogLevel::Debug,
-                      ("DocLoader:%p: Firing load event for document.open\n",
-                       this));
+                      ("DocLoader:%p: Firing load event for %s\n", this,
+                       mIsLoadingJavascriptURI ? "javascript URI"
+                                               : "document.open"));
 
               
               
