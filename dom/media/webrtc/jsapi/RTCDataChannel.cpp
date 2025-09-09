@@ -21,6 +21,8 @@
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/dom/TypedArray.h"
+#include "mozilla/dom/WorkerCommon.h"
+#include "mozilla/dom/WorkerRef.h"
 #include "nsContentUtils.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsError.h"
@@ -53,12 +55,11 @@ static constexpr const char* ToString(RTCDataChannelState state) {
 };
 
 RTCDataChannel::~RTCDataChannel() {
-  
-  
-  
-  DC_DEBUG(("%p: Close()ing %p", this, mDataChannel.get()));
-  mDataChannel->SetDomDataChannel(nullptr);
-  mDataChannel->FinishClose();
+  if (NS_IsMainThread()) {
+    mDataChannel->UnsetMainthreadDomDataChannel();
+  } else {
+    mDataChannel->UnsetWorkerDomDataChannel();
+  }
 }
 
 
@@ -97,15 +98,52 @@ RTCDataChannel::RTCDataChannel(const nsACString& aLabel,
       mOrdered(aOrdered),
       mMaxPacketLifeTime(aMaxLifeTime),
       mMaxRetransmits(aMaxRetransmits),
-      mProtocol(aProtocol),
+      mDataChannelProtocol(aProtocol),
       mNegotiated(aNegotiated),
       mDataChannel(aDataChannel),
-      mEventTarget(GetCurrentSerialEventTarget()) {}
+      mEventTarget(GetCurrentSerialEventTarget()) {
+  DC_INFO(("RTCDataChannel created on main"));
+  mDataChannel->SetMainthreadDomDataChannel(this);
+}
 
 nsresult RTCDataChannel::Init() {
-  MOZ_ASSERT(mDataChannel);
-  mDataChannel->SetDomDataChannel(this);
   MOZ_ASSERT(mEventTarget->IsOnCurrentThread());
+
+  UpdateMustKeepAlive();
+
+  if (WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate()) {
+    
+    
+    RefPtr<StrongWorkerRef> strongWorkerRef =
+        StrongWorkerRef::Create(workerPrivate, "RTCDataChannel::Init",
+                                [this, self = RefPtr<RTCDataChannel>(this)]() {
+                                  
+                                  
+                                  mDataChannel->UnsetWorkerDomDataChannel();
+                                  
+                                  UnsetWorkerNeedsUs();
+                                  mWorkerRef = nullptr;
+                                });
+    if (NS_WARN_IF(!strongWorkerRef)) {
+      
+      
+      mDataChannel->UnsetWorkerDomDataChannel();
+      
+      UnsetWorkerNeedsUs();
+      return NS_ERROR_FAILURE;
+    }
+
+    MOZ_ASSERT(!mWorkerRef);
+    mWorkerRef = std::move(strongWorkerRef);
+  }
+
+  if (NS_IsMainThread()) {
+    
+    GetMainThreadSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
+        __func__, [this, self = RefPtr<RTCDataChannel>(this)]() {
+          DisableWorkerTransfer();
+        }));
+  }
 
   
   
@@ -126,21 +164,120 @@ void RTCDataChannel::GetLabel(nsACString& aLabel) const {
 
 void RTCDataChannel::GetProtocol(nsACString& aProtocol) const {
   MOZ_ASSERT(mEventTarget->IsOnCurrentThread());
-  aProtocol = mProtocol;
+  aProtocol = mDataChannelProtocol;
 }
 
 Nullable<uint16_t> RTCDataChannel::GetId() const {
   MOZ_ASSERT(mEventTarget->IsOnCurrentThread());
-  return mId;
+  return mDataChannelId;
+}
+
+
+RTCDataChannel::DataHolder::DataHolder(const RTCDataChannel& aValue)
+    :  
+      mReadyState(aValue.mReadyState),
+      
+      mLabel(aValue.mLabel),
+      
+      mOrdered(aValue.mOrdered),
+      
+      mMaxPacketLifeTime(aValue.mMaxPacketLifeTime),
+      
+      mMaxRetransmits(aValue.mMaxRetransmits),
+      
+      
+      mDataChannelProtocol(aValue.mDataChannelProtocol),
+      
+      mNegotiated(aValue.mNegotiated),
+      
+      mDataChannelId(aValue.mDataChannelId),
+      
+      
+      mDataChannel(aValue.mDataChannel),
+      
+      mMaxMessageSize(aValue.mMaxMessageSize),
+      mOrigin(aValue.mOrigin) {}
+
+RTCDataChannel::DataHolder::~DataHolder() = default;
+
+
+UniquePtr<RTCDataChannel::DataHolder> RTCDataChannel::Transfer() {
+  MOZ_ASSERT(NS_IsMainThread());
+  
+
+  
+  
+  if (!mIsTransferable) {
+    return nullptr;
+  }
+
+  
+  UniquePtr<DataHolder> dataHolder = MakeUnique<DataHolder>(*this);
+
+  
+  mIsTransferable = false;
+
+  
+  mReadyState = RTCDataChannelState::Closed;
+
+  mDataChannel->OnWorkerTransferStarted();
+
+  return dataHolder;
+}
+
+
+
+
+RTCDataChannel::RTCDataChannel(nsIGlobalObject* aGlobal,
+                               const DataHolder& aDataHolder)
+    : DOMEventTargetHelper(aGlobal),
+      mUuid(nsID::GenerateUUID()),
+      mOrigin(aDataHolder.mOrigin),
+      
+      
+      mLabel(aDataHolder.mLabel),
+      
+      mOrdered(aDataHolder.mOrdered),
+      
+      
+      mMaxPacketLifeTime(aDataHolder.mMaxPacketLifeTime),
+      
+      mMaxRetransmits(aDataHolder.mMaxRetransmits),
+      
+      
+      mDataChannelProtocol(aDataHolder.mDataChannelProtocol),
+      
+      mNegotiated(aDataHolder.mNegotiated),
+      
+      
+      mDataChannel(aDataHolder.mDataChannel),
+      
+      mDataChannelId(aDataHolder.mDataChannelId),
+      
+      mReadyState(aDataHolder.mReadyState),
+      
+      
+      
+      mWorkerNeedsUs(true),
+      
+      mIsTransferable(false),
+      
+      mMaxMessageSize(aDataHolder.mMaxMessageSize),
+      mEventTarget(GetCurrentSerialEventTarget()) {
+  MOZ_ASSERT(!NS_IsMainThread());
+  DC_INFO(("RTCDataChannel created on worker"));
+  mDataChannel->OnWorkerTransferComplete(this);
 }
 
 void RTCDataChannel::SetId(uint16_t aId) {
   MOZ_ASSERT(mEventTarget->IsOnCurrentThread());
-  mId.SetValue(aId);
+  mDataChannelId.SetValue(aId);
 }
 
 void RTCDataChannel::SetMaxMessageSize(double aMaxMessageSize) {
   MOZ_ASSERT(mEventTarget->IsOnCurrentThread());
+  DC_INFO(("RTCDataChannel updating maximum message size: %f -> %f",
+           mMaxMessageSize, aMaxMessageSize));
   mMaxMessageSize = aMaxMessageSize;
 }
 
@@ -176,7 +313,8 @@ void RTCDataChannel::SetReadyState(const RTCDataChannelState aState) {
       ("RTCDataChannel labeled %s(%p) (stream %d) changing ready "
        "state "
        "%s -> %s",
-       mLabel.get(), this, mId.IsNull() ? INVALID_STREAM : mId.Value(),
+       mLabel.get(), this,
+       mDataChannelId.IsNull() ? INVALID_STREAM : mDataChannelId.Value(),
        ToString(mReadyState), ToString(aState)));
 
   mReadyState = aState;
@@ -198,11 +336,6 @@ void RTCDataChannel::SetBufferedAmountLowThreshold(size_t aThreshold) {
 }
 
 void RTCDataChannel::Close() {
-  
-
-  
-  
-
   MOZ_ASSERT(mEventTarget->IsOnCurrentThread());
   
   
@@ -229,6 +362,7 @@ void RTCDataChannel::Close() {
 void RTCDataChannel::Send(const nsAString& aData, ErrorResult& aRv) {
   MOZ_ASSERT(mEventTarget->IsOnCurrentThread());
 
+  DisableWorkerTransfer();
   if (!CheckReadyState(aRv)) {
     return;
   }
@@ -255,6 +389,7 @@ void RTCDataChannel::Send(const nsAString& aData, ErrorResult& aRv) {
 void RTCDataChannel::Send(Blob& aData, ErrorResult& aRv) {
   MOZ_ASSERT(mEventTarget->IsOnCurrentThread());
 
+  DisableWorkerTransfer();
   if (!CheckReadyState(aRv)) {
     return;
   }
@@ -290,6 +425,7 @@ void RTCDataChannel::Send(Blob& aData, ErrorResult& aRv) {
 void RTCDataChannel::Send(const ArrayBuffer& aData, ErrorResult& aRv) {
   MOZ_ASSERT(mEventTarget->IsOnCurrentThread());
 
+  DisableWorkerTransfer();
   if (!CheckReadyState(aRv)) {
     return;
   }
@@ -315,6 +451,7 @@ void RTCDataChannel::Send(const ArrayBuffer& aData, ErrorResult& aRv) {
 void RTCDataChannel::Send(const ArrayBufferView& aData, ErrorResult& aRv) {
   MOZ_ASSERT(mEventTarget->IsOnCurrentThread());
 
+  DisableWorkerTransfer();
   if (!CheckReadyState(aRv)) {
     return;
   }
@@ -400,8 +537,8 @@ void RTCDataChannel::AnnounceOpen() {
     
     SetReadyState(RTCDataChannelState::Open);
     
-    DC_DEBUG(("%s: sending open for %s/%s: %u", __FUNCTION__, mLabel.get(),
-              mProtocol.get(), mId.Value()));
+    DC_INFO(("%s: sending open for %s/%s: %u", __FUNCTION__, mLabel.get(),
+             mDataChannelProtocol.get(), mDataChannelId.Value()));
     OnSimpleEvent(u"open"_ns);
   }
 }
@@ -450,9 +587,9 @@ dom::RTCDataChannelStats RTCDataChannel::GetStats(
   
   
   stats.mLabel.Construct(NS_ConvertUTF8toUTF16(mLabel));
-  stats.mProtocol.Construct(NS_ConvertUTF8toUTF16(mProtocol));
-  if (!mId.IsNull()) {
-    stats.mDataChannelIdentifier.Construct(mId.Value());
+  stats.mProtocol.Construct(NS_ConvertUTF8toUTF16(mDataChannelProtocol));
+  if (!mDataChannelId.IsNull()) {
+    stats.mDataChannelIdentifier.Construct(mDataChannelId.Value());
   }
   stats.mState.Construct(mReadyState);
 
@@ -476,12 +613,13 @@ void RTCDataChannel::DecrementBufferedAmount(size_t aSize) {
   mBufferedAmount -= aSize;
   if (!wasLow && mBufferedAmount <= mBufferedThreshold) {
     DC_DEBUG(("%s: sending bufferedamountlow for %s/%s: %u", __FUNCTION__,
-              mLabel.get(), mProtocol.get(), mId.Value()));
+              mLabel.get(), mDataChannelProtocol.get(),
+              mDataChannelId.Value()));
     OnSimpleEvent(u"bufferedamountlow"_ns);
   }
   if (mBufferedAmount == 0) {
     DC_DEBUG(("%s: no queued sends for %s/%s: %u", __FUNCTION__, mLabel.get(),
-              mProtocol.get(), mId.Value()));
+              mDataChannelProtocol.get(), mDataChannelId.Value()));
     
     UpdateMustKeepAlive();
     if (mReadyState == RTCDataChannelState::Closing) {
@@ -502,6 +640,20 @@ bool RTCDataChannel::CheckSendSize(uint64_t aSize, ErrorResult& aRv) const {
     return false;
   }
   return true;
+}
+
+void RTCDataChannel::DisableWorkerTransfer() {
+  MOZ_ASSERT(mEventTarget->IsOnCurrentThread());
+  
+  
+  if (mIsTransferable) {
+    
+    mIsTransferable = false;
+    
+    
+    
+    mDataChannel->OnWorkerTransferDisabled();
+  }
 }
 
 bool RTCDataChannel::CheckReadyState(ErrorResult& aRv) {
@@ -542,11 +694,14 @@ nsresult RTCDataChannel::DoOnMessageAvailable(const nsACString& aData,
 
   nsresult rv = CheckCurrentGlobalCorrectness();
   if (NS_FAILED(rv)) {
+    DC_ERROR(
+        ("RTCDataChannel::%s: CheckCurrentGlobalCorrectness failed", __func__));
     return NS_OK;
   }
 
   AutoJSAPI jsapi;
-  if (NS_WARN_IF(!jsapi.Init(GetOwnerWindow()))) {
+  if (NS_WARN_IF(!jsapi.Init(GetParentObject()))) {
+    DC_ERROR(("RTCDataChannel::%s: jsapi.Init failed", __func__));
     return NS_ERROR_FAILURE;
   }
   JSContext* cx = jsapi.cx();
@@ -558,10 +713,12 @@ nsresult RTCDataChannel::DoOnMessageAvailable(const nsACString& aData,
       RefPtr<Blob> blob =
           Blob::CreateStringBlob(GetOwnerGlobal(), aData, u""_ns);
       if (NS_WARN_IF(!blob)) {
+        DC_ERROR(("RTCDataChannel::%s: CreateStringBlob failed", __func__));
         return NS_ERROR_FAILURE;
       }
 
       if (!ToJSValue(cx, blob, &jsData)) {
+        DC_ERROR(("RTCDataChannel::%s: ToJSValue failed", __func__));
         return NS_ERROR_FAILURE;
       }
     } else if (mBinaryType == RTCDataChannelType::Arraybuffer) {
@@ -592,6 +749,14 @@ nsresult RTCDataChannel::DoOnMessageAvailable(const nsACString& aData,
   ++mMessagesReceived;
   mBytesReceived += aData.Length();
 
+  
+  if (mMessagesReceived < 5) {
+    DC_INFO(("Firing \"message\" event #%zu", mMessagesReceived));
+  } else if (mMessagesReceived == 5) {
+    DC_INFO(("Firing \"message\" event #%zu, will not log more message events",
+             mMessagesReceived));
+  }
+
   DC_DEBUG(
       ("%p(%p): %s - Dispatching\n", this, (void*)mDataChannel, __FUNCTION__));
   ErrorResult err;
@@ -610,6 +775,12 @@ nsresult RTCDataChannel::OnSimpleEvent(const nsAString& aName) {
   nsresult rv = CheckCurrentGlobalCorrectness();
   if (NS_FAILED(rv)) {
     return NS_OK;
+  }
+
+  if (MOZ_LOG_TEST(mozilla::gDataChannelLog, mozilla::LogLevel::Info)) {
+    
+    
+    DC_INFO(("Firing \"%s\" event", NS_ConvertUTF16toUTF8(aName).get()));
   }
 
   RefPtr<Event> event = NS_NewDOMEvent(this, nullptr, nullptr);
@@ -636,54 +807,59 @@ void RTCDataChannel::UpdateMustKeepAlive() {
     return;
   }
 
-  bool shouldKeepAlive = false;
+  bool shouldKeepAlive = mWorkerNeedsUs;
 
-  switch (mReadyState) {
-    case RTCDataChannelState::Connecting: {
-      if (mListenerManager &&
-          (mListenerManager->HasListenersFor(nsGkAtoms::onopen) ||
-           mListenerManager->HasListenersFor(nsGkAtoms::onmessage) ||
-           mListenerManager->HasListenersFor(nsGkAtoms::onerror) ||
-           mListenerManager->HasListenersFor(nsGkAtoms::onbufferedamountlow) ||
-           mListenerManager->HasListenersFor(nsGkAtoms::onclose))) {
-        shouldKeepAlive = true;
-      }
-    } break;
+  if (!shouldKeepAlive) {
+    switch (mReadyState) {
+      case RTCDataChannelState::Connecting: {
+        if (mListenerManager &&
+            (mListenerManager->HasListenersFor(nsGkAtoms::onopen) ||
+             mListenerManager->HasListenersFor(nsGkAtoms::onmessage) ||
+             mListenerManager->HasListenersFor(nsGkAtoms::onerror) ||
+             mListenerManager->HasListenersFor(
+                 nsGkAtoms::onbufferedamountlow) ||
+             mListenerManager->HasListenersFor(nsGkAtoms::onclose))) {
+          shouldKeepAlive = true;
+        }
+      } break;
 
-    case RTCDataChannelState::Open:
-    case RTCDataChannelState::Closing: {
-      if (mBufferedAmount != 0 ||
-          (mListenerManager &&
-           (mListenerManager->HasListenersFor(nsGkAtoms::onmessage) ||
-            mListenerManager->HasListenersFor(nsGkAtoms::onerror) ||
-            mListenerManager->HasListenersFor(nsGkAtoms::onbufferedamountlow) ||
-            mListenerManager->HasListenersFor(nsGkAtoms::onclose)))) {
-        shouldKeepAlive = true;
-      }
-    } break;
+      case RTCDataChannelState::Open:
+      case RTCDataChannelState::Closing: {
+        if (mBufferedAmount != 0 ||
+            (mListenerManager &&
+             (mListenerManager->HasListenersFor(nsGkAtoms::onmessage) ||
+              mListenerManager->HasListenersFor(nsGkAtoms::onerror) ||
+              mListenerManager->HasListenersFor(
+                  nsGkAtoms::onbufferedamountlow) ||
+              mListenerManager->HasListenersFor(nsGkAtoms::onclose)))) {
+          shouldKeepAlive = true;
+        }
+      } break;
 
-    case RTCDataChannelState::Closed: {
-      shouldKeepAlive = false;
+      case RTCDataChannelState::Closed:;
     }
   }
 
   if (mSelfRef && !shouldKeepAlive) {
+    DC_INFO(("RTCDataChannel is no longer protected from GC."));
     ReleaseSelf();
   } else if (!mSelfRef && shouldKeepAlive) {
+    DC_INFO(("RTCDataChannel is protected from GC."));
     mSelfRef = this;
   }
 }
 
 void RTCDataChannel::DontKeepAliveAnyMore() {
   MOZ_ASSERT(mEventTarget->IsOnCurrentThread());
+  mCheckMustKeepAlive = false;
+
+  
+  mWorkerRef = nullptr;
 
   if (mSelfRef) {
     
-    
     ReleaseSelf();
   }
-
-  mCheckMustKeepAlive = false;
 }
 
 void RTCDataChannel::ReleaseSelf() {
@@ -694,11 +870,27 @@ void RTCDataChannel::ReleaseSelf() {
 
 void RTCDataChannel::EventListenerAdded(nsAtom* aType) {
   MOZ_ASSERT(mEventTarget->IsOnCurrentThread());
+  if (MOZ_LOG_TEST(mozilla::gDataChannelLog, mozilla::LogLevel::Info)) {
+    nsString name;
+    aType->ToString(name);
+    DC_INFO(
+        ("RTCDataChannel \"%s\" event listener added, calling "
+         "UpdateMustKeepAlive.",
+         NS_ConvertUTF16toUTF8(name).get()));
+  }
   UpdateMustKeepAlive();
 }
 
 void RTCDataChannel::EventListenerRemoved(nsAtom* aType) {
   MOZ_ASSERT(mEventTarget->IsOnCurrentThread());
+  if (MOZ_LOG_TEST(mozilla::gDataChannelLog, mozilla::LogLevel::Info)) {
+    nsString name;
+    aType->ToString(name);
+    DC_INFO(
+        ("RTCDataChannel \"%s\" event listener removed, calling "
+         "UpdateMustKeepAlive.",
+         NS_ConvertUTF16toUTF8(name).get()));
+  }
   UpdateMustKeepAlive();
 }
 

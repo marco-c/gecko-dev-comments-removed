@@ -446,6 +446,8 @@ let interfaceNamesInGlobalScope = [
   
   "PushSubscriptionOptions",
   
+  { name: "RTCDataChannel", insecureContext: true },
+  
   { name: "RTCEncodedAudioFrame", insecureContext: true },
   
   { name: "RTCEncodedVideoFrame", insecureContext: true },
