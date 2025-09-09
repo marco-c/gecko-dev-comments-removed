@@ -102,10 +102,6 @@ struct IntersectionOutput {
   const nsRect mRootBounds;
   const nsRect mTargetRect;
   const Maybe<nsRect> mIntersectionRect;
-  
-  
-  
-  const bool mPreservesAxisAlignedRectangles;
 
   bool Intersects() const { return mIntersectionRect.isSome(); }
 };
@@ -170,9 +166,6 @@ class DOMIntersectionObserver final : public nsISupports,
   };
   static IntersectionOutput Intersect(
       const IntersectionInput&, const Element&, BoxToUse = BoxToUse::Border,
-      IsForProximityToViewport = IsForProximityToViewport::No);
-  static IntersectionOutput Intersect(
-      const IntersectionInput&, nsIFrame*, BoxToUse = BoxToUse::Border,
       IsForProximityToViewport = IsForProximityToViewport::No);
   
   static IntersectionOutput Intersect(const IntersectionInput&, const nsRect&);

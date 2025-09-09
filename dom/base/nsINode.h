@@ -1245,9 +1245,6 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-
-
-
   inline mozilla::dom::Element* GetAsElementOrParentElement() const;
 
   
