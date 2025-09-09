@@ -95,7 +95,9 @@ class WorkerModuleLoader : public JS::loader::ModuleLoaderBase {
   bool IsModuleTypeAllowed(JS::ModuleType aModuleType) override {
     
     
-    return aModuleType != JS::ModuleType::Unknown && aModuleType != JS::ModuleType::CSS;
+    
+    return aModuleType != JS::ModuleType::Unknown &&
+           aModuleType != JS::ModuleType::CSS;
   }
 };
 

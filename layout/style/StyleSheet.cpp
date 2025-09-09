@@ -97,7 +97,8 @@ already_AddRefed<StyleSheet> StyleSheet::Constructor(
     return nullptr;
   }
 
-  return CreateConstructedSheet(*constructorDocument, constructorDocument->GetBaseURI(), aOptions, aRv);
+  return CreateConstructedSheet(
+      *constructorDocument, constructorDocument->GetBaseURI(), aOptions, aRv);
 }
 
 StyleSheet::~StyleSheet() {
@@ -1154,9 +1155,8 @@ void StyleSheet::FixUpAfterInnerClone() {
 
 
 already_AddRefed<StyleSheet> StyleSheet::CreateConstructedSheet(
-    dom::Document& aConstructorDocument,  nsIURI* aBaseURI, const dom::CSSStyleSheetInit& aOptions,
-    ErrorResult& aRv) {
-
+    dom::Document& aConstructorDocument, nsIURI* aBaseURI,
+    const dom::CSSStyleSheetInit& aOptions, ErrorResult& aRv) {
   
   auto sheet =
       MakeRefPtr<StyleSheet>(css::SheetParsingMode::eAuthorSheetFeatures,
@@ -1169,7 +1169,7 @@ already_AddRefed<StyleSheet> StyleSheet::CreateConstructedSheet(
     baseURI = aBaseURI;
   } else {
     nsresult rv = NS_NewURI(getter_AddRefs(baseURI), aOptions.mBaseURL.Value(),
-                    nullptr, aConstructorDocument.GetBaseURI());
+                            nullptr, aConstructorDocument.GetBaseURI());
     if (NS_FAILED(rv)) {
       aRv.ThrowNotAllowedError(
           "Constructed style sheets must have a valid base URL");

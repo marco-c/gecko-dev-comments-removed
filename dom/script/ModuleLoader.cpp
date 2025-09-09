@@ -26,12 +26,12 @@
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/LoadInfo.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/StyleSheet.h"
+#include "mozilla/StyleSheetInlines.h"
 #include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/RequestBinding.h"
-#include "mozilla/StyleSheet.h"
-#include "mozilla/StyleSheetInlines.h"
 #include "nsContentSecurityManager.h"
 #include "nsError.h"
 #include "nsIContent.h"
@@ -372,10 +372,11 @@ nsresult ModuleLoader::CompileCssModule(
   ErrorResult error;
   auto compile = [&](auto& source) -> JSObject* {
     using T = decltype(source);
-    static_assert(std::is_same_v<T, JS::SourceText<char16_t>&> || std::is_same_v<T, JS::SourceText<Utf8Unit>&>);
+    static_assert(std::is_same_v<T, JS::SourceText<char16_t>&> ||
+                  std::is_same_v<T, JS::SourceText<Utf8Unit>&>);
 
     nsCOMPtr<nsPIDOMWindowInner> window =
-      do_QueryInterface(aRequest->GetGlobalObject());
+        do_QueryInterface(aRequest->GetGlobalObject());
     if (!window) {
       error.ThrowNotSupportedError("Not supported when there is no document");
       return nullptr;
@@ -391,8 +392,11 @@ nsresult ModuleLoader::CompileCssModule(
     
     
     
+    
+    
     dom::CSSStyleSheetInit options;
-    RefPtr<StyleSheet> sheet = StyleSheet::CreateConstructedSheet(*constructorDocument, aRequest->mBaseURL, options, error);
+    RefPtr<StyleSheet> sheet = StyleSheet::CreateConstructedSheet(
+        *constructorDocument, aRequest->mBaseURL, options, error);
     if (error.Failed()) {
       return nullptr;
     }
