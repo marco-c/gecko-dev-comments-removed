@@ -49,6 +49,20 @@ mozilla::LazyLogModule gNavigationLog("Navigation");
 
 namespace mozilla::dom {
 
+static void InitNavigationResult(NavigationResult& aResult,
+                                 const RefPtr<Promise>& aCommitted,
+                                 const RefPtr<Promise>& aFinished) {
+  if (aCommitted) {
+    aResult.mCommitted.Reset();
+    aResult.mCommitted.Construct(*aCommitted);
+  }
+
+  if (aFinished) {
+    aResult.mFinished.Reset();
+    aResult.mFinished.Construct(*aFinished);
+  }
+}
+
 struct NavigationAPIMethodTracker final : public nsISupports {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(NavigationAPIMethodTracker)
@@ -117,13 +131,11 @@ struct NavigationAPIMethodTracker final : public nsISupports {
     
     
     
-    aResult.mCommitted.Reset();
-    aResult.mCommitted.Construct(OwningNonNull<Promise>(*mCommittedPromise));
-    aResult.mFinished.Reset();
-    aResult.mFinished.Construct(OwningNonNull<Promise>(*mFinishedPromise));
+    InitNavigationResult(aResult, mCommittedPromise, mFinishedPromise);
   }
 
   Promise* CommittedPromise() { return mCommittedPromise; }
+  Promise* FinishedPromise() { return mFinishedPromise; }
 
   RefPtr<Navigation> mNavigationObject;
   Maybe<nsID> mKey;
@@ -394,13 +406,18 @@ void Navigation::SetEarlyErrorResult(JSContext* aCx, NavigationResult& aResult,
   }
   JS::Rooted<JS::Value> rootedExceptionValue(aCx);
   MOZ_ALWAYS_TRUE(ToJSValue(aCx, std::move(aRv), &rootedExceptionValue));
-  aResult.mCommitted.Reset();
-  aResult.mCommitted.Construct(Promise::CreateInfallible(global));
-  aResult.mCommitted.Value()->MaybeReject(rootedExceptionValue);
 
-  aResult.mFinished.Reset();
-  aResult.mFinished.Construct(Promise::CreateInfallible(global));
-  aResult.mFinished.Value()->MaybeReject(rootedExceptionValue);
+  InitNavigationResult(
+      aResult, Promise::Reject(global, rootedExceptionValue, IgnoreErrors()),
+      Promise::Reject(global, rootedExceptionValue, IgnoreErrors()));
+}
+
+void Navigation::SetEarlyStateErrorResult(JSContext* aCx,
+                                          NavigationResult& aResult,
+                                          const nsACString& aMessage) const {
+  ErrorResult rv;
+  rv.ThrowInvalidStateError(aMessage);
+  SetEarlyErrorResult(aCx, aResult, std::move(rv));
 }
 
 bool Navigation::CheckIfDocumentIsFullyActiveAndMaybeSetEarlyErrorResult(
@@ -441,12 +458,9 @@ Navigation::CreateSerializedStateAndMaybeSetEarlyErrorResult(
     JS::Rooted<JS::Value> exception(aCx);
     if (JS_GetPendingException(aCx, &exception)) {
       JS_ClearPendingException(aCx);
-      aResult.mCommitted.Reset();
-      aResult.mCommitted.Construct(
-          Promise::Reject(global, exception, IgnoreErrors()));
-      aResult.mFinished.Reset();
-      aResult.mFinished.Construct(
-          Promise::Reject(global, exception, IgnoreErrors()));
+      InitNavigationResult(aResult,
+                           Promise::Reject(global, exception, IgnoreErrors()),
+                           Promise::Reject(global, exception, IgnoreErrors()));
       return nullptr;
     }
     SetEarlyErrorResult(aCx, aResult, ErrorResult(rv));
@@ -571,7 +585,125 @@ void Navigation::Navigate(JSContext* aCx, const nsAString& aUrl,
 
 void Navigation::PerformNavigationTraversal(JSContext* aCx, const nsID& aKey,
                                             const NavigationOptions& aOptions,
-                                            NavigationResult& aResult) {}
+                                            NavigationResult& aResult) {
+  LOG_FMT("traverse navigation to {}", aKey.ToString().get());
+  
+  
+  const Document* document = GetAssociatedDocument();
+
+  
+  
+  if (!document || !document->IsFullyActive()) {
+    SetEarlyStateErrorResult(aCx, aResult, "Document is not fully active"_ns);
+    return;
+  }
+
+  
+  
+  if (document->ShouldIgnoreOpens()) {
+    SetEarlyStateErrorResult(aCx, aResult, "Document is unloading"_ns);
+    return;
+  }
+
+  
+  RefPtr<NavigationHistoryEntry> current = GetCurrentEntry();
+  if (!current) {
+    SetEarlyStateErrorResult(aCx, aResult,
+                             "No current navigation history entry"_ns);
+    return;
+  }
+
+  
+  
+  
+  RefPtr global = GetOwnerGlobal();
+  if (!global) {
+    return;
+  }
+
+  if (current->Key() == aKey) {
+    InitNavigationResult(aResult,
+                         Promise::Resolve(global, current, IgnoreErrors()),
+                         Promise::Resolve(global, current, IgnoreErrors()));
+    return;
+  }
+
+  
+  
+  
+  if (auto maybeTracker =
+          mUpcomingTraverseAPIMethodTrackers.MaybeGet(aKey).valueOr(nullptr)) {
+    maybeTracker->CreateResult(aResult);
+    return;
+  }
+
+  
+  JS::Rooted<JS::Value> info(aCx, aOptions.mInfo);
+
+  
+  
+  RefPtr apiMethodTracker = AddUpcomingTraverseAPIMethodTracker(aKey, info);
+
+  
+  RefPtr<BrowsingContext> navigable = document->GetBrowsingContext();
+
+  
+  RefPtr<BrowsingContext> traversable = navigable->Top();
+  
+  
+
+  
+  
+  apiMethodTracker->CreateResult(aResult);
+
+  
+  auto* childSHistory = traversable->GetChildSessionHistory();
+  auto performNaviationTraversalSteps =
+      [finished =
+           RefPtr(apiMethodTracker->FinishedPromise())](nsresult aResult) {
+        switch (aResult) {
+          case NS_ERROR_DOM_INVALID_STATE_ERR:
+            
+            
+            
+            finished->MaybeRejectWithInvalidStateError(
+                "No such entry with key found");
+            break;
+          case NS_ERROR_DOM_ABORT_ERR:
+            
+            
+            
+            
+            
+            finished->MaybeRejectWithAbortError("Navigation was canceled");
+            break;
+          case NS_ERROR_DOM_SECURITY_ERR:
+            
+            
+            
+            
+            
+            
+            finished->MaybeRejectWithSecurityError(
+                "Navigation was not allowed");
+            break;
+          case NS_OK:
+            
+            
+            break;
+          default:
+            MOZ_DIAGNOSTIC_ASSERT(false, "Unexpected result");
+            break;
+        }
+      };
+
+  
+  
+  
+  childSHistory->AsyncGo(aKey, navigable, false,
+                         false,
+                         performNaviationTraversalSteps);
+}
 
 
 void Navigation::Reload(JSContext* aCx, const NavigationReloadOptions& aOptions,
@@ -683,9 +815,8 @@ void Navigation::Back(JSContext* aCx, const NavigationOptions& aOptions,
   
   if (mCurrentEntryIndex.isNothing() || *mCurrentEntryIndex == 0 ||
       *mCurrentEntryIndex > mEntries.Length() - 1) {
-    ErrorResult rv;
-    rv.ThrowInvalidStateError("Current entry index is unexpectedly -1 or 0");
-    SetEarlyErrorResult(aCx, aResult, std::move(rv));
+    SetEarlyStateErrorResult(aCx, aResult,
+                             "Current entry index is unexpectedly -1 or 0"_ns);
     return;
   }
 
