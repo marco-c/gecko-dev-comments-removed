@@ -3325,15 +3325,6 @@ void nsIFrame::BuildDisplayListForStackingContext(
       HasAnyStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION) &&
       !style.IsRootElementStyle();
 
-  if (capturedByViewTransition) {
-    
-    
-    
-    
-    visibleRect = InkOverflowRectRelativeToSelf();
-    dirtyRect = InkOverflowRectRelativeToSelf();
-  }
-
   const bool usingFilter = effects->HasFilters() && !style.IsRootElementStyle();
   const SVGUtils::MaskUsage maskUsage =
       SVGUtils::DetermineMaskUsage(this, false);
