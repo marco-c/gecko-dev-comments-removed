@@ -382,10 +382,30 @@ module.exports = {
       },
     },
     {
-      
-      files: ["browser/components/extensions/**"],
+      name: "design-token-rules-off",
+      files: [
+        
+        "browser/components/extensions/**",
+        
+        
+        "browser/extensions/webcompat/injections/css/**",
+        
+        
+        
+        "devtools/**",
+      ],
       rules: {
         "stylelint-plugin-mozilla/use-border-radius-tokens": false,
+      },
+    },
+    {
+      name: "design-token-rules-on",
+      files: [
+        
+        "devtools/client/aboutdebugging/src/**",
+      ],
+      rules: {
+        "stylelint-plugin-mozilla/use-border-radius-tokens": true,
       },
     },
   ],
