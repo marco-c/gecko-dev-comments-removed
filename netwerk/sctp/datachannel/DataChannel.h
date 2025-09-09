@@ -14,11 +14,8 @@
 #include <errno.h>
 #include "nsISupports.h"
 #include "nsCOMPtr.h"
-#include "mozilla/MozPromise.h"
-#include "mozilla/StopGapEventTarget.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
-#include "mozilla/dom/RTCStatsReportBinding.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
 #include "nsTArray.h"
@@ -125,10 +122,6 @@ class IncomingMsg {
 };
 
 
-typedef MozPromise<dom::RTCDataChannelStats, nsresult, true>
-    DataChannelStatsPromise;
-
-
 class DataChannelConnection : public net::NeckoTargetHolder {
   friend class DataChannel;
   friend class DataChannelConnectRunnable;
@@ -211,8 +204,8 @@ class DataChannelConnection : public net::NeckoTargetHolder {
   void ProcessQueuedOpens();
   void OnStreamsReset(std::vector<uint16_t>&& aStreams);
 
-  typedef DataChannelStatsPromise::AllPromiseType StatsPromise;
-  RefPtr<StatsPromise> GetStats(const DOMHighResTimeStamp aTimestamp) const;
+  void AppendStatsToReport(const UniquePtr<dom::RTCStatsCollection>& aReport,
+                           const DOMHighResTimeStamp aTimestamp) const;
 
   bool ConnectToTransport(const std::string& aTransportId, const bool aClient,
                           const uint16_t aLocalPort,
@@ -399,32 +392,9 @@ class DataChannel {
   
   
   
-  
-  
-  void SetMainthreadDomDataChannel(dom::RTCDataChannel* aChannel);
+  void ReleaseConnection();
 
-  
-  
-  
-  
-  void OnWorkerTransferStarted();
-
-  
-  
-  void OnWorkerTransferComplete(dom::RTCDataChannel* aChannel);
-
-  
-  
-  
-  void OnWorkerTransferDisabled();
-
-  
-  
-  
-  void UnsetMainthreadDomDataChannel();
-
-  
-  void UnsetWorkerDomDataChannel();
+  void SetDomDataChannel(dom::RTCDataChannel* aChannel);
 
   
   static void SendErrnoToErrorResult(int error, size_t aMessageSize,
@@ -442,7 +412,6 @@ class DataChannel {
   void DecrementBufferedAmount(size_t aSize);
   void AnnounceOpen();
   void AnnounceClosed();
-  void GracefulClose();
 
   Maybe<uint16_t> GetStream() const {
     MOZ_ASSERT(NS_IsMainThread());
@@ -453,23 +422,13 @@ class DataChannel {
   }
 
   void SetStream(uint16_t aId);
-  void SetMaxMessageSize(double aMaxMessageSize);
-  double GetMaxMessageSize() const { return mConnection->GetMaxMessageSize(); }
 
   void OnMessageReceived(nsCString&& aMsg, bool aIsBinary);
 
-  RefPtr<DataChannelStatsPromise> GetStats(
-      const DOMHighResTimeStamp aTimestamp);
+  void AppendStatsToReport(const UniquePtr<dom::RTCStatsCollection>& aReport,
+                           const DOMHighResTimeStamp aTimestamp) const;
 
   void FinishClose();
-
-  dom::RTCDataChannel* GetDomDataChannel() const {
-    MOZ_ASSERT(mDomEventTarget->IsOnCurrentThread());
-    if (NS_IsMainThread()) {
-      return mMainthreadDomDataChannel;
-    }
-    return mWorkerDomDataChannel;
-  }
 
  private:
   nsresult AddDataToBinaryMsg(const char* data, uint32_t size);
@@ -485,8 +444,8 @@ class DataChannel {
   
   
   
-  dom::RTCDataChannel* mMainthreadDomDataChannel = nullptr;
-  bool mHasWorkerDomDataChannel = false;
+  
+  dom::RTCDataChannel* mDomDataChannel = nullptr;
   bool mEverOpened = false;
   uint16_t mStream;
   RefPtr<DataChannelConnection> mConnection;
@@ -499,17 +458,7 @@ class DataChannel {
   std::map<uint16_t, IncomingMsg> mRecvBuffers;
 
   
-  
-  
-  
-  const RefPtr<StopGapEventTarget> mDomEventTarget;
-
-  
-  
-  
-  
-  
-  dom::RTCDataChannel* mWorkerDomDataChannel = nullptr;
+  nsCOMPtr<nsISerialEventTarget> mDomEventTarget;
 };
 
 static constexpr const char* ToString(DataChannelConnectionState state) {

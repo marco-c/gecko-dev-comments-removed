@@ -161,8 +161,6 @@ enum StructuredCloneTags : uint32_t {
 
   SCTAG_DOM_ENCODEDAUDIOCHUNK,
 
-  SCTAG_DOM_RTCDATACHANNEL,
-
   
   
 };
