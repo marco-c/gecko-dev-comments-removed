@@ -158,21 +158,36 @@ class nsTextFrameUtils {
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(nsTextFrameUtils::Flags)
 
+
+
+
+
+
+
+
+
+
 class nsSkipCharsRunIterator {
  public:
+  
+  
   enum LengthMode {
     LENGTH_UNSKIPPED_ONLY = false,
     LENGTH_INCLUDES_SKIPPED = true
   };
   nsSkipCharsRunIterator(const gfxSkipCharsIterator& aStart,
-                         LengthMode aLengthIncludesSkipped, uint32_t aLength)
+                         LengthMode aLengthIncludesSkipped,
+                         uint32_t aRemainingLength)
       : mIterator(aStart),
-        mRemainingLength(aLength),
+        mRemainingLength(aRemainingLength),
         mRunLength(0),
         mSkipped(false),
         mVisitSkipped(false),
         mLengthIncludesSkipped(aLengthIncludesSkipped) {}
+
+  
   void SetVisitSkipped() { mVisitSkipped = true; }
+
   void SetOriginalOffset(int32_t aOffset) {
     mIterator.SetOriginalOffset(aOffset);
   }
@@ -181,10 +196,15 @@ class nsSkipCharsRunIterator {
   }
 
   
+  
   bool NextRun();
+
+  
   bool IsSkipped() const { return mSkipped; }
+
   
   int32_t GetRunLength() const { return mRunLength; }
+
   const gfxSkipCharsIterator& GetPos() const { return mIterator; }
   int32_t GetOriginalOffset() const { return mIterator.GetOriginalOffset(); }
   uint32_t GetSkippedOffset() const { return mIterator.GetSkippedOffset(); }
