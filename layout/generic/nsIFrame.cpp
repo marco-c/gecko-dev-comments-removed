@@ -3173,10 +3173,21 @@ void nsIFrame::BuildDisplayListForStackingContext(
 
   
   
-  
-  const bool hasViewTransitionName =
-      style.StyleUIReset()->HasViewTransitionName() &&
+  const bool capturedByViewTransition =
+      HasAnyStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION) &&
       !style.IsRootElementStyle();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (capturedByViewTransition && aBuilder->IsForEventDelivery()) {
+    return;
+  }
 
   if (aBuilder->IsForPainting() && disp->mWillChange.bits) {
     aBuilder->AddToWillChangeBudget(this, GetSize());
@@ -3318,12 +3329,6 @@ void nsIFrame::BuildDisplayListForStackingContext(
       }
     }
   }
-
-  
-  
-  const bool capturedByViewTransition =
-      HasAnyStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION) &&
-      !style.IsRootElementStyle();
 
   const bool usingFilter = effects->HasFilters() && !style.IsRootElementStyle();
   const SVGUtils::MaskUsage maskUsage =
@@ -3567,6 +3572,12 @@ void nsIFrame::BuildDisplayListForStackingContext(
       
       return reasons;
     }
+    
+    
+    
+    const bool hasViewTransitionName =
+        style.StyleUIReset()->HasViewTransitionName() &&
+        !style.IsRootElementStyle();
     if ((disp->mWillChange.bits & StyleWillChangeBits::BACKDROP_ROOT) ||
         hasViewTransitionName) {
       reasons |= StackingContextBits::ContainsBackdropFilter;
