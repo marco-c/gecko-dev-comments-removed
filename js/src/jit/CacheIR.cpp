@@ -12555,8 +12555,6 @@ AttachDecision CallIRGenerator::tryAttachFunApply(HandleFunction calleeFunc) {
     }
     format = CallFlags::FunApplyArgsObj;
   } else if (args_[1].isObject() && args_[1].toObject().is<ArrayObject>() &&
-             args_[1].toObject().as<ArrayObject>().length() <=
-                 JIT_ARGS_LENGTH_MAX &&
              IsPackedArray(&args_[1].toObject())) {
     format = CallFlags::FunApplyArray;
   } else {
@@ -12582,6 +12580,12 @@ AttachDecision CallIRGenerator::tryAttachFunApply(HandleFunction calleeFunc) {
     InlinableNativeIRGenerator nativeGen(*this, target, newTarget, thisValue,
                                          args, targetFlags);
     TRY_ATTACH(nativeGen.tryAttachStub());
+  }
+  if (format == CallFlags::FunApplyArray &&
+      args_[1].toObject().as<ArrayObject>().length() > JIT_ARGS_LENGTH_MAX) {
+    
+    
+    return AttachDecision::NoAction;
   }
 
   if (mode_ == ICState::Mode::Specialized && !isScripted &&
@@ -12874,6 +12878,11 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
     
     MOZ_ASSERT(!hasBoundArguments());
 
+    
+    
+    
+    
+    
     switch (native) {
       case InlinableNative::MathMin:
         return tryAttachSpreadMathMinMax( false);
@@ -13555,13 +13564,15 @@ AttachDecision CallIRGenerator::tryAttachCallNative(HandleFunction calleeFunc) {
   }
 
   
-  if (isSpread && args_.length() > JIT_ARGS_LENGTH_MAX) {
-    return AttachDecision::NoAction;
+  if (isSpecialized) {
+    TRY_ATTACH(tryAttachInlinableNative(calleeFunc, flags));
   }
 
   
-  if (isSpecialized) {
-    TRY_ATTACH(tryAttachInlinableNative(calleeFunc, flags));
+  
+  
+  if (isSpread && args_.length() > JIT_ARGS_LENGTH_MAX) {
+    return AttachDecision::NoAction;
   }
 
   
