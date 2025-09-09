@@ -1571,6 +1571,39 @@ bool BaselineCodeGen<Handler>::emitInterruptCheck() {
   return true;
 }
 
+template <typename Handler>
+bool BaselineCodeGen<Handler>::emitTrialInliningCheck(Register count,
+                                                      Register icScript,
+                                                      Register scratch) {
+  if (JitOptions.disableInlining) {
+    return true;
+  }
+
+  
+  
+  
+  
+  Label noTrialInlining;
+  masm.branch32(Assembler::NotEqual, count,
+                Imm32(JitOptions.trialInliningWarmUpThreshold),
+                &noTrialInlining);
+  prepareVMCall();
+
+  masm.PushBaselineFramePtr(FramePointer, scratch);
+
+  using Fn = bool (*)(JSContext*, BaselineFrame*);
+  if (!callVMNonOp<Fn, DoTrialInlining>()) {
+    return false;
+  }
+  
+  Address warmUpCounterAddr(icScript, ICScript::offsetOfWarmUpCount());
+  masm.loadPtr(frame.addressOfICScript(), icScript);
+  masm.load32(warmUpCounterAddr, count);
+  masm.bind(&noTrialInlining);
+
+  return true;
+}
+
 template <>
 bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
   frame.assertSyncedStack();
@@ -1607,27 +1640,8 @@ bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
   masm.add32(Imm32(1), countReg);
   masm.store32(countReg, warmUpCounterAddr);
 
-  if (!JitOptions.disableInlining) {
-    
-    
-    
-    
-    Label noTrialInlining;
-    masm.branch32(Assembler::NotEqual, countReg,
-                  Imm32(JitOptions.trialInliningWarmUpThreshold),
-                  &noTrialInlining);
-    prepareVMCall();
-
-    masm.PushBaselineFramePtr(FramePointer, R0.scratchReg());
-
-    using Fn = bool (*)(JSContext*, BaselineFrame*);
-    if (!callVMNonOp<Fn, DoTrialInlining>()) {
-      return false;
-    }
-    
-    masm.loadPtr(frame.addressOfICScript(), scriptReg);
-    masm.load32(warmUpCounterAddr, countReg);
-    masm.bind(&noTrialInlining);
+  if (!emitTrialInliningCheck(countReg, scriptReg, R1.scratchReg())) {
+    return false;
   }
 
   if (JSOp(*pc) == JSOp::LoopHead) {
@@ -1772,6 +1786,10 @@ bool BaselineInterpreterCodeGen::emitWarmUpCounterIncrement() {
   masm.load32(warmUpCounterAddr, countReg);
   masm.add32(Imm32(1), countReg);
   masm.store32(countReg, warmUpCounterAddr);
+
+  if (!emitTrialInliningCheck(countReg, scriptReg, R1.scratchReg())) {
+    return false;
+  }
 
   if (JitOptions.baselineBatching) {
     Register scratch = R1.scratchReg();
