@@ -199,6 +199,17 @@ const searchParams = new URLSearchParams(location.search);
 const variant = searchParams.get('device') || location.search.substring(1);
 const contextOptions = kContextOptionsForVariant[variant];
 
+async function getContext() {
+  let context;
+  try {
+    context = await navigator.ml.createContext(contextOptions);
+  } catch (e) {
+    throw new AssertionError(
+        `Unable to create context for ${variant} variant. ${e}`);
+  }
+  return context;
+}
+
 const tcNameArray = searchParams.getAll('tc');
 
 function isTargetTest(test) {
@@ -244,7 +255,9 @@ const toHalf = (value) => {
     bits |= 0x7c00;
     
 
-    bits |= ((e == 255) ? 0 : 1) && (x & 0x007fffff);
+    if (e == 255 && (x & 0x007fffff)) {
+      bits |= 1;
+    }
     return bits;
   }
 
@@ -1282,34 +1295,26 @@ function getOutputMinimumLimits(operatorsResources, outputOperandName) {
   return minimumDataTypeSet[operatorName][outputsName];
 }
 
-function getMinimumDataTypeSetJson() {
-  const xhr = new XMLHttpRequest();
-  xhr.open('GET', '../resources/minimum_datatype_set.json', false);
-
+async function getMinimumDataTypeSetJson() {
   try {
-    xhr.send();
+    const response = await fetch('/webnn/resources/minimum_datatype_set.json');
 
-    if (xhr.status !== 200) {
-      throw new Error(`HTTP error! Status: ${xhr.status}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
     }
 
-    const text = xhr.responseText;
+    const text = await response.text();
     const jsonText =
         text.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '');  
-    const data = JSON.parse(jsonText);
-    return data;
+    minimumDataTypeSet = JSON.parse(jsonText);
   } catch (error) {
-    throw new AssertionError(
-        `Error fetching and parsing JSON, ${error.message}`);
+    throw new Error(`Error fetching and parsing JSON: ${error.message}`);
   }
+  return minimumDataTypeSet;
 }
 
 function isMinimumTest(test) {
   let isMinimum = false;
-  if (minimumDataTypeSet === undefined) {
-    minimumDataTypeSet = getMinimumDataTypeSetJson();
-  }
-
   const graphResources = test.graph;
   const inputsResources = graphResources.inputs;
 
@@ -1371,31 +1376,44 @@ function isMinimumTest(test) {
   return isMinimum;
 }
 
-const webnn_conformance_test =
-    (buildAndExecuteGraphFunc, toleranceFunc, testResources) => {
-      promise_test(
-          async () => {
-            let context;
-            try {
-              context = await navigator.ml.createContext(contextOptions);
-            } catch (e) {
-              throw new AssertionError(
-                  `Unable to create context for ${variant} variant. ${e}`);
-            }
-            if (!validateContextSupportsGraph(context, testResources.graph) &&
-                !isMinimumTest(testResources)) {
-              
-              
-              return;
-            }
-            const builder = new MLGraphBuilder(context);
-            const {result, intermediateOperands} =
-                await buildAndExecuteGraphFunc(
-                    context, builder, testResources.graph);
-            assertResultsEquals(
-                toleranceFunc, result, testResources.graph,
-                intermediateOperands);
-          },
-          `${isMinimumTest(testResources) ? '[required]' : '[optional]'} ${
-              testResources.name}`);
-    };
+
+
+
+const testsToSkip = [];
+
+async function webnn_conformance_test(
+    tests, buildAndExecuteGraphFunc, toleranceFunc) {
+  if (navigator.ml === undefined) {
+    test(() => assert_implements(navigator.ml, 'missing navigator.ml'));
+  } else {
+    const testsToRun = [];
+    promise_setup(async () => {
+      
+      const context = await getContext();
+      minimumDataTypeSet = await getMinimumDataTypeSetJson();
+      tests.filter(isTargetTest).forEach((test) => {
+        if (validateContextSupportsGraph(context, test.graph) ||
+            isMinimumTest(test)) {
+          testsToRun.push(test);
+        } else {
+          
+          testsToSkip.push(test);
+        }
+      });
+    });
+
+    promise_test(async () => {
+      testsToRun.map((test) => {
+        promise_test(async () => {
+          
+          const context = await getContext();
+          const builder = new MLGraphBuilder(context);
+          const {result, intermediateOperands} =
+              await buildAndExecuteGraphFunc(context, builder, test.graph);
+          assertResultsEquals(
+              toleranceFunc, result, test.graph, intermediateOperands);
+        }, `${isMinimumTest(test) ? '[required]' : '[optional]'} ${test.name}`);
+      });
+    });
+  }
+}
