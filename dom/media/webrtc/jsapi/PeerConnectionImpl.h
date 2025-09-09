@@ -672,6 +672,7 @@ class PeerConnectionImpl final
   RefPtr<PeerConnectionObserver> mPCObserver;
 
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
+  nsString mOrigin;
 
   
   std::string mLocalRequestedSDP;
