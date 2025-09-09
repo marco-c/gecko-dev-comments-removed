@@ -2254,7 +2254,16 @@ bool IRGenerator::canOptimizeConstantDataProperty(NativeObject* holder,
   
   
   
+  
+  
+  
+  
+  
   if (result.isString() && !result.toString()->isAtom()) {
+    static constexpr size_t MaxLengthForAtomize = 1000;
+    if (result.toString()->length() > MaxLengthForAtomize) {
+      return false;
+    }
     JSAtom* atom = AtomizeString(cx_, result.toString());
     if (!atom) {
       cx_->recoverFromOutOfMemory();
