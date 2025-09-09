@@ -400,6 +400,13 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
   
   RefPtr<dom::Event> mTriggerEvent;
 
+  
+
+
+
+
+  Maybe<uint64_t> mCallbackId;
+
   void AssignMouseEventData(const WidgetMouseEvent& aEvent, bool aCopyTargets) {
     AssignMouseEventBaseData(aEvent, aCopyTargets);
     AssignPointerHelperData(aEvent,  true);
@@ -412,6 +419,8 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
     mIgnoreCapturingContent = aEvent.mIgnoreCapturingContent;
     mClickEventPrevented = aEvent.mClickEventPrevented;
     mTriggerEvent = aEvent.mTriggerEvent;
+    
+    
   }
 
   

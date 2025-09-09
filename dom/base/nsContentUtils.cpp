@@ -9453,14 +9453,70 @@ nsView* nsContentUtils::GetViewToDispatchEvent(nsPresContext* aPresContext,
   return viewManager->GetRootView();
 }
 
+namespace {
+
+class SynthesizedMouseEventCallback final : public nsISynthesizedEventCallback {
+  NS_DECL_ISUPPORTS
+
+ public:
+  explicit SynthesizedMouseEventCallback(VoidFunction& aCallback)
+      : mCallback(&aCallback) {}
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD OnCompleteDispatch() override {
+    MOZ_ASSERT(mCallback, "How can we have a null mCallback here?");
+
+    ErrorResult rv;
+    MOZ_KnownLive(mCallback)->Call(rv);
+    if (MOZ_UNLIKELY(rv.Failed())) {
+      return rv.StealNSResult();
+    }
+
+    return NS_OK;
+  }
+
+ private:
+  virtual ~SynthesizedMouseEventCallback() = default;
+
+  const RefPtr<VoidFunction> mCallback;
+};
+
+NS_IMPL_ISUPPORTS(SynthesizedMouseEventCallback, nsISynthesizedEventCallback)
+
+}  
+
 Result<bool, nsresult> nsContentUtils::SynthesizeMouseEvent(
     mozilla::PresShell* aPresShell, nsIWidget* aWidget, const nsAString& aType,
     LayoutDeviceIntPoint& aRefPoint,
     const SynthesizeMouseEventData& aMouseEventData,
-    const SynthesizeMouseEventOptions& aOptions) {
+    const SynthesizeMouseEventOptions& aOptions,
+    const Optional<OwningNonNull<VoidFunction>>& aCallback) {
   MOZ_ASSERT(aPresShell);
   MOZ_ASSERT(aWidget);
   AUTO_PROFILER_LABEL("nsContentUtils::SynthesizeMouseEvent", OTHER);
+
+  if (aCallback.WasPassed()) {
+    if (!XRE_IsParentProcess()) {
+      
+      
+      
+      
+      NS_WARNING(
+          "nsContentUtils::SynthesizeMouseEvent() does not support being "
+          "called in the content process with a callback");
+      return Err(NS_ERROR_FAILURE);
+    }
+
+    if (!aOptions.mIsDOMEventSynthesized) {
+      
+      
+      
+      NS_WARNING(
+          "nsContentUtils::SynthesizeMouseEvent() does not support being "
+          "called in the parent process with isDOMEventSynthesized=false, due "
+          "to the callback doesn't not support on coalesced events");
+      return Err(NS_ERROR_FAILURE);
+    }
+  }
 
   EventMessage msg;
   Maybe<WidgetMouseEvent::ExitFrom> exitFrom;
@@ -9516,6 +9572,14 @@ Result<bool, nsresult> nsContentUtils::SynthesizeMouseEvent(
                        contextMenuKey ? WidgetMouseEvent::eContextMenuKey
                                       : WidgetMouseEvent::eNormal);
   }
+
+  nsCOMPtr<nsISynthesizedEventCallback> callback;
+  if (aCallback.WasPassed()) {
+    callback = MakeAndAddRef<SynthesizedMouseEventCallback>(aCallback.Value());
+  }
+
+  mozilla::widget::AutoSynthesizedEventCallbackNotifier notifier(callback);
+
   WidgetMouseEvent& mouseOrPointerEvent =
       pointerEvent.isSome() ? pointerEvent.ref() : mouseEvent.ref();
   mouseOrPointerEvent.pointerId = aMouseEventData.mIdentifier;
@@ -9537,6 +9601,7 @@ Result<bool, nsresult> nsContentUtils::SynthesizeMouseEvent(
   mouseOrPointerEvent.mFlags.mIsSynthesizedForTests =
       aOptions.mIsDOMEventSynthesized;
   mouseOrPointerEvent.mExitFrom = exitFrom;
+  mouseOrPointerEvent.mCallbackId = notifier.SaveCallback();
 
   nsPresContext* presContext = aPresShell->GetPresContext();
   if (!presContext) {
@@ -9568,6 +9633,15 @@ Result<bool, nsresult> nsContentUtils::SynthesizeMouseEvent(
       return Err(rv);
     }
   }
+
+  
+  
+  
+  if (mouseOrPointerEvent.mCallbackId.isSome()) {
+    mozilla::widget::AutoSynthesizedEventCallbackNotifier::NotifySavedCallback(
+        mouseOrPointerEvent.mCallbackId.ref());
+  }
+
   return status == nsEventStatus_eConsumeNoDefault;
 }
 
