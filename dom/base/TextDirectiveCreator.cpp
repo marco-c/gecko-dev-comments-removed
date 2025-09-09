@@ -236,17 +236,26 @@ RangeBasedTextDirectiveCreator::CollectContextTerms() {
             dom_text_fragments_create_text_fragment_exact_match_max_length());
     const auto [wordStart, wordEnd] =
         intl::WordBreaker::FindWord(mStartContent, mStartContent.Length() / 2);
+    
+    
     if (wordStart == 0 && wordEnd == mStartContent.Length()) {
-      
-      
       TEXT_FRAGMENT_LOG(
           "Target range only contains one word, which is longer than the "
           "maximum length. Aborting.");
       return false;
     }
 
-    mEndContent = Substring(mStartContent, wordEnd);
-    mStartContent = Substring(mStartContent, 0, wordEnd);
+    
+    
+    
+    
+    if (wordEnd == mStartContent.Length()) {
+      mEndContent = Substring(mStartContent, wordStart);
+      mStartContent = Substring(mStartContent, 0, wordStart);
+    } else {
+      mEndContent = Substring(mStartContent, wordEnd);
+      mStartContent = Substring(mStartContent, 0, wordEnd);
+    }
   }
   if (mStartContent.Length() > kMaxContextTermLength) {
     TEXT_FRAGMENT_LOG(
