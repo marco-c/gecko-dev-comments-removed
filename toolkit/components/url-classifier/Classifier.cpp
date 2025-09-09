@@ -93,7 +93,14 @@ nsresult Classifier::GetPrivateStoreDirectory(
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  rv = providerDirectory->AppendNative(aProvider);
+  if (aProvider.EqualsLiteral("google5")) {
+    
+    
+    
+    rv = providerDirectory->AppendNative("google4"_ns);
+  } else {
+    rv = providerDirectory->AppendNative(aProvider);
+  }
   NS_ENSURE_SUCCESS(rv, rv);
 
   
