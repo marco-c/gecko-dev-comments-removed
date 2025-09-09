@@ -81,6 +81,8 @@
 
 
 
+
+
 #ifndef builtin_FinalizationRegistryObject_h
 #define builtin_FinalizationRegistryObject_h
 
@@ -197,7 +199,7 @@ using FinalizationRecordVector =
 
 
 class FinalizationRegistryObject : public NativeObject {
-  enum { QueueSlot = 0, RecordsSlot, RegistrationsSlot, SlotCount };
+  enum { QueueSlot = 0, RegistrationsSlot, SlotCount };
 
  public:
   using RegistrationsWeakMap = WeakMap<Value, JSObject*>;
@@ -206,7 +208,6 @@ class FinalizationRegistryObject : public NativeObject {
   static const JSClass protoClass_;
 
   FinalizationQueueObject* queue() const;
-  FinalizationRecordVector* records() const;
   RegistrationsWeakMap* registrations() const;
 
   void traceWeak(JSTracer* trc);

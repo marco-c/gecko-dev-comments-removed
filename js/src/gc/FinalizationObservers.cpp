@@ -323,8 +323,15 @@ bool FinalizationObservers::addRecord(
   
   
 
+  GlobalObject* registryGlobal = &record->global();
+  auto* globalData = registryGlobal->getOrCreateFinalizationRegistryData();
+  if (!globalData || !globalData->addRecord(record)) {
+    return false;
+  }
+
   auto ptr = recordMap.lookupForAdd(target);
   if (!ptr && !recordMap.add(ptr, target, ObserverList())) {
+    globalData->removeRecord(record);
     return false;
   }
 
@@ -384,10 +391,8 @@ void FinalizationObservers::traceWeakFinalizationRegistryEdges(JSTracer* trc) {
 
       
       
-      
       FinalizationQueueObject* queue = registry->queue();
       if (queue->hasRecordsToCleanUp()) {
-        MOZ_ASSERT(shouldQueueFinalizationRegistryForCleanup(queue));
         gc->queueFinalizationRegistryForCleanup(queue);
       }
     }
@@ -402,9 +407,12 @@ void FinalizationObservers::traceWeakFinalizationRegistryEdges(JSTracer* trc) {
       MOZ_ASSERT(record->isInRecordMap());
       auto result =
           TraceManuallyBarrieredWeakEdge(trc, &record, "FinalizationRecord");
-      if (result.isDead()) {
+      MOZ_ASSERT_IF(result.isLive(),
+                    result.finalTarget() == result.initialTarget());
+      bool shouldRemove = result.isDead() || shouldRemoveRecord(record);
+      if (shouldRemove) {
         record = result.initialTarget();
-        record->setInRecordMap(false);
+        removeRecord(record);
         record->unlink();
       }
     }
@@ -414,31 +422,50 @@ void FinalizationObservers::traceWeakFinalizationRegistryEdges(JSTracer* trc) {
                        "FinalizationRecord target")) {
       for (auto iter = records.iter(); !iter.done(); iter.next()) {
         auto* record = &iter->as<FinalizationRecordObject>();
-        record->setInRecordMap(false);
-        record->unlink();
+        removeRecord(record);
+
         FinalizationQueueObject* queue = record->queue();
+        MOZ_ASSERT(queue->hasRegistry());
         queue->queueRecordToBeCleanedUp(record);
-        if (shouldQueueFinalizationRegistryForCleanup(queue)) {
+
+        
+        
+        Zone* zone = record->zone();
+        bool shouldQueue =
+            !zone->wasGCStarted() || zone->gcState() >= Zone::Sweep;
+        if (shouldQueue) {
           gc->queueFinalizationRegistryForCleanup(queue);
         }
+
+        record->unlink();
       }
       e.removeFront();
     }
   }
 }
 
-bool FinalizationObservers::shouldQueueFinalizationRegistryForCleanup(
-    FinalizationQueueObject* queue) {
+
+bool FinalizationObservers::shouldRemoveRecord(
+    FinalizationRecordObject* record) {
+  MOZ_ASSERT(record);
+  
+  return !record->isRegistered() ||        
+         !record->queue()->hasRegistry();  
+}
+
+void FinalizationObservers::removeRecord(FinalizationRecordObject* record) {
   
   
+  MOZ_ASSERT(record->isInRecordMap());
+
+  GlobalObject* registryGlobal = &record->global();
+  auto* globalData = registryGlobal->maybeFinalizationRegistryData();
+  globalData->removeRecord(record);
+
   
-  
-  
-  
-  
-  
-  Zone* zone = queue->zone();
-  return !zone->wasGCStarted() || zone->gcState() >= Zone::Sweep;
+  AutoTouchingGrayThings atgt;
+
+  record->setInRecordMap(false);
 }
 
 void GCRuntime::queueFinalizationRegistryForCleanup(
@@ -550,4 +577,23 @@ void FinalizationObservers::traceWeakWeakRefList(JSTracer* trc,
       weakRef->setTargetUnbarriered(target);
     }
   }
+}
+
+FinalizationRegistryGlobalData::FinalizationRegistryGlobalData(Zone* zone)
+    : recordSet(zone) {}
+
+bool FinalizationRegistryGlobalData::addRecord(
+    FinalizationRecordObject* record) {
+  return recordSet.putNew(record);
+}
+
+void FinalizationRegistryGlobalData::removeRecord(
+    FinalizationRecordObject* record) {
+  MOZ_ASSERT_IF(!record->runtimeFromMainThread()->gc.isShuttingDown(),
+                recordSet.has(record));
+  recordSet.remove(record);
+}
+
+void FinalizationRegistryGlobalData::trace(JSTracer* trc) {
+  recordSet.trace(trc);
 }

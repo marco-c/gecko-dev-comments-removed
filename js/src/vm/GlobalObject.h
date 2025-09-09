@@ -63,6 +63,10 @@ class PropertyIteratorObject;
 class RegExpStatics;
 class SetObject;
 
+namespace gc {
+class FinalizationRegistryGlobalData;
+}  
+
 
 
 enum class PlainObjectSlotsKind {
@@ -222,6 +226,8 @@ class GlobalObjectData {
   
   
   GCPtr<ScriptSourceObject*> selfHostingScriptSource;
+
+  UniquePtr<gc::FinalizationRegistryGlobalData> finalizationRegistryData;
 
   
   
@@ -1134,6 +1140,11 @@ class GlobalObject : public NativeObject {
   
   static JSObject* getOrCreateRealmKeyObject(JSContext* cx,
                                              Handle<GlobalObject*> global);
+
+  gc::FinalizationRegistryGlobalData* getOrCreateFinalizationRegistryData();
+  gc::FinalizationRegistryGlobalData* maybeFinalizationRegistryData() const {
+    return data().finalizationRegistryData.get();
+  }
 
   static size_t offsetOfGlobalDataSlot() {
     return getFixedSlotOffset(GLOBAL_DATA_SLOT);
