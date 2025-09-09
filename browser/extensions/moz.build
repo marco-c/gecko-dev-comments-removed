@@ -5,6 +5,7 @@
 
 
 DIRS += [
+    "data-leak-blocker",
     "formautofill",
     "webcompat",
     "pictureinpicture",
