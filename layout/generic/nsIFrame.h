@@ -3744,13 +3744,6 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  nsIFrame* FindAnchorPosAnchor(const nsAtom* aAnchorSpec) const;
-
-  
-
-
-
-
 
 
 
