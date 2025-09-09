@@ -4358,7 +4358,7 @@ mozilla::ipc::IPCResult ContentChild::RecvDispatchBeforeUnloadToSubtree(
     const mozilla::Maybe<SessionHistoryInfo>& aInfo,
     DispatchBeforeUnloadToSubtreeResolver&& aResolver) {
   if (aStartingAt.IsNullOrDiscarded()) {
-    aResolver(nsIDocumentViewer::eContinue);
+    aResolver(nsIDocumentViewer::eAllowNavigation);
   } else {
     DispatchBeforeUnloadToSubtree(aStartingAt.get(), aInfo, aResolver);
   }
@@ -4385,13 +4385,10 @@ mozilla::ipc::IPCResult ContentChild::RecvInitNextGenLocalStorageEnabled(
             if (RefPtr docShell = nsDocShell::Cast(aBC->GetDocShell())) {
               nsCOMPtr<nsIDocumentViewer> viewer;
               docShell->GetDocViewer(getter_AddRefs(viewer));
-              nsIDocumentViewer::PermitUnloadResult finalStatus =
-                  nsIDocumentViewer::eContinue;
-              if (viewer) {
-                finalStatus = viewer->DispatchBeforeUnload();
-              }
-
-              if (!block && aBC->IsTop() && aInfo) {
+              if (viewer && viewer->DispatchBeforeUnload() ==
+                                nsIDocumentViewer::eRequestBlockNavigation) {
+                block = true;
+              } else if (aBC->IsTop() && aInfo) {
                 
                 
                 
@@ -4400,21 +4397,21 @@ mozilla::ipc::IPCResult ContentChild::RecvInitNextGenLocalStorageEnabled(
                 
                 
                 
-                finalStatus = docShell->MaybeFireTraversableTraverseHistory(
+                block = !docShell->MaybeFireTraversableTraverseHistory(
                     *aInfo, Nothing());
               }
-              if (!resolved && finalStatus != nsIDocumentViewer::eContinue) {
+              if (!resolved && block) {
                 
                 
                 
-                aResolver(finalStatus);
+                aResolver(nsIDocumentViewer::eRequestBlockNavigation);
                 resolved = true;
               }
             }
           });
 
   if (!resolved) {
-    aResolver(nsIDocumentViewer::eContinue);
+    aResolver(nsIDocumentViewer::eAllowNavigation);
   }
 }
 

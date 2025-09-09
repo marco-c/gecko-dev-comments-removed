@@ -230,29 +230,6 @@ class Promise : public SupportsWeakPtr, public JSHolderBase {
   
   
   
-  template <typename T>
-  static already_AddRefed<Promise> Resolve(
-      nsIGlobalObject* aGlobal, T&& aValue, ErrorResult& aError,
-      PropagateUserInteraction aPropagateUserInteraction =
-          eDontPropagateUserInteraction) {
-    AutoJSAPI jsapi;
-    if (!jsapi.Init(aGlobal)) {
-      aError.Throw(NS_ERROR_UNEXPECTED);
-      return nullptr;
-    }
-
-    JSContext* cx = jsapi.cx();
-    JS::Rooted<JS::Value> val(cx);
-    if (!ToJSValue(cx, std::forward<T>(aValue), &val)) {
-      return Promise::RejectWithExceptionFromContext(aGlobal, cx, aError);
-    }
-
-    return Resolve(aGlobal, cx, val, aError, aPropagateUserInteraction);
-  }
-
-  
-  
-  
   static already_AddRefed<Promise> Reject(nsIGlobalObject* aGlobal,
                                           JSContext* aCx,
                                           JS::Handle<JS::Value> aValue,
