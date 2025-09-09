@@ -25,10 +25,71 @@ namespace mozilla {
 
 namespace {
 
-bool IsAnchorInScopeForPositionedElement(
-    const nsIFrame* ,
-    const nsIFrame* ) {
-  return true;  
+
+
+
+
+
+
+bool IsAnchorInScopeForPositionedElement(const nsAtom* aName,
+                                         const nsIFrame* aPossibleAnchorFrame,
+                                         const nsIFrame* aPositionedFrame) {
+  
+  const auto* positionedContainingBlockContent =
+      aPositionedFrame->GetParent()->GetContent();
+
+  auto getAnchorPosNearestScope =
+      [&positionedContainingBlockContent](
+          const nsAtom* aName, const nsIFrame* aFrame) -> const nsIContent* {
+    
+    
+    
+    
+    for (const nsIContent* cp = aFrame->GetContent();
+         cp && cp != positionedContainingBlockContent;
+         cp = cp->GetFlattenedTreeParentElementForStyle()) {
+      
+      
+      const nsIFrame* f = cp->GetPrimaryFrame();
+      if (!f) {
+        continue;
+      }
+
+      const StyleAnchorScope& anchorScope = f->StyleDisplay()->mAnchorScope;
+      if (anchorScope.IsNone()) {
+        continue;
+      }
+
+      if (anchorScope.IsAll()) {
+        return cp;
+      }
+
+      MOZ_ASSERT(anchorScope.IsIdents());
+      for (const StyleAtom& ident : anchorScope.AsIdents().AsSpan()) {
+        const auto* id = ident.AsAtom();
+        if (aName->Equals(id->GetUTF16String(), id->GetLength())) {
+          return cp;
+        }
+      }
+    }
+
+    return nullptr;
+  };
+
+  const nsIContent* nearestScopeForAnchor =
+      getAnchorPosNearestScope(aName, aPossibleAnchorFrame);
+  const nsIContent* nearestScopeForPositioned =
+      getAnchorPosNearestScope(aName, aPositionedFrame);
+  if (!nearestScopeForAnchor) {
+    
+    
+    return !nearestScopeForPositioned ||
+           aPossibleAnchorFrame->GetContent() == nearestScopeForPositioned;
+  }
+
+  
+  
+  return nearestScopeForAnchor == nearestScopeForPositioned;
 };
 
 bool IsFullyStyleableTreeAbidingOrNotPseudoElement(const nsIFrame* aFrame) {
@@ -250,7 +311,8 @@ struct LazyAncestorHolder {
 };
 
 bool IsAcceptableAnchorElement(
-    const nsIFrame* aPossibleAnchorFrame, const nsIFrame* aPositionedFrame,
+    const nsIFrame* aPossibleAnchorFrame, const nsAtom* aName,
+    const nsIFrame* aPositionedFrame,
     LazyAncestorHolder& aPositionedFrameAncestorHolder) {
   MOZ_ASSERT(aPossibleAnchorFrame);
   MOZ_ASSERT(aPositionedFrame);
@@ -269,11 +331,11 @@ bool IsAcceptableAnchorElement(
   
   
   return (IsFullyStyleableTreeAbidingOrNotPseudoElement(aPossibleAnchorFrame) &&
-          IsAnchorInScopeForPositionedElement(aPossibleAnchorFrame,
-                                              aPositionedFrame) &&
           IsAnchorLaidOutStrictlyBeforeElement(
               aPossibleAnchorFrame, aPositionedFrame,
               aPositionedFrameAncestorHolder.GetAncestors()) &&
+          IsAnchorInScopeForPositionedElement(aName, aPossibleAnchorFrame,
+                                              aPositionedFrame) &&
           IsPositionedElementAlsoSkippedWhenAnchorIsSkipped(
               aPossibleAnchorFrame, aPositionedFrame));
 }
@@ -281,13 +343,13 @@ bool IsAcceptableAnchorElement(
 }  
 
 nsIFrame* AnchorPositioningUtils::FindFirstAcceptableAnchor(
-    const nsIFrame* aPositionedFrame,
+    const nsAtom* aName, const nsIFrame* aPositionedFrame,
     const nsTArray<nsIFrame*>& aPossibleAnchorFrames) {
   LazyAncestorHolder positionedFrameAncestorHolder(aPositionedFrame);
   for (auto it = aPossibleAnchorFrames.rbegin();
        it != aPossibleAnchorFrames.rend(); ++it) {
     
-    if (IsAcceptableAnchorElement(*it, aPositionedFrame,
+    if (IsAcceptableAnchorElement(*it, aName, aPositionedFrame,
                                   positionedFrameAncestorHolder)) {
       return *it;
     }
