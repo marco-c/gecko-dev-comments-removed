@@ -52,7 +52,7 @@ add_task(async function () {
   
   await toolbox.getPanelWhenReady("jsdebugger");
   const dbg = createDebuggerContext(toolbox);
-  await waitForSelectedSource(dbg, URL_ROOT_SSL + "lib_jquery_1.0.js");
+  await waitForSelectedSource(dbg, URL_ROOT_SSL + "events/lib_jquery_1.0.js");
 
   
   
