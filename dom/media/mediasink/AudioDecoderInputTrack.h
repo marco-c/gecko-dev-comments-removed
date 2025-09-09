@@ -12,7 +12,6 @@
 #include "MediaTrackGraph.h"
 #include "TimeUnits.h"
 #include "mozilla/SPSCQueue.h"
-#include "mozilla/StateMirroring.h"
 #include "mozilla/TimeStamp.h"
 #include "nsISerialEventTarget.h"
 
@@ -101,7 +100,7 @@ class AudioDecoderInputTrack final : public ProcessedMediaTrack {
   void Close();
   bool HasBatchedData() const;
 
-  MediaEventSource<int64_t>& OnOutput() { return mOnOutput; }
+  MediaEventSource<int64_t, AwakeTimeStamp>& OnOutput() { return mOnOutput; }
   MediaEventSource<void>& OnEnd() { return mOnEnd; }
 
   
@@ -177,7 +176,8 @@ class AudioDecoderInputTrack final : public ProcessedMediaTrack {
   const RefPtr<nsISerialEventTarget> mDecoderThread;
 
   
-  MediaEventProducer<int64_t> mOnOutput;
+  
+  MediaEventProducer<int64_t, AwakeTimeStamp> mOnOutput;
   
   MediaEventProducer<void> mOnEnd;
 
