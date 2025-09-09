@@ -21,6 +21,7 @@
 
 #include "builtin/ModuleObject.h"  
 #include "frontend/ParserAtom.h"   
+#include "gc/Allocator.h"          
 #include "gc/Barrier.h"            
 #include "gc/Cell.h"               
 #include "js/GCPolicyAPI.h"        
@@ -29,7 +30,6 @@
 #include "js/TraceKind.h"          
 #include "js/TypeDecls.h"          
 #include "js/UbiNode.h"            
-#include "js/UniquePtr.h"          
 #include "util/Poison.h"  
 #include "vm/JSFunction.h"  
 #include "vm/ScopeKind.h"   
@@ -347,8 +347,7 @@ class Scope : public gc::TenuredCellWithNonGCPointer<BaseScopeData> {
                        Handle<SharedShape*> envShape);
 
   template <typename ConcreteScope>
-  void initData(
-      MutableHandle<UniquePtr<typename ConcreteScope::RuntimeData>> data);
+  void initData(HandleBuffer<typename ConcreteScope::RuntimeData> data);
 
   template <typename F>
   void applyScopeDataTyped(F&& f);
@@ -361,7 +360,7 @@ class Scope : public gc::TenuredCellWithNonGCPointer<BaseScopeData> {
   static ConcreteScope* create(
       JSContext* cx, ScopeKind kind, Handle<Scope*> enclosing,
       Handle<SharedShape*> envShape,
-      MutableHandle<UniquePtr<typename ConcreteScope::RuntimeData>> data);
+      HandleBuffer<typename ConcreteScope::RuntimeData> data);
 
   static const JS::TraceKind TraceKind = JS::TraceKind::Scope;
 
@@ -434,9 +433,8 @@ class Scope : public gc::TenuredCellWithNonGCPointer<BaseScopeData> {
   }
 
   void traceChildren(JSTracer* trc);
-  void finalize(JS::GCContext* gcx);
 
-  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+  size_t sizeOfExcludingThis() const;
 
   void dump();
 #if defined(DEBUG) || defined(JS_JITSPEW)
@@ -865,9 +863,8 @@ class GlobalScope : public Scope {
   static GlobalScope* createEmpty(JSContext* cx, ScopeKind kind);
 
  private:
-  static GlobalScope* createWithData(
-      JSContext* cx, ScopeKind kind,
-      MutableHandle<UniquePtr<RuntimeData>> data);
+  static GlobalScope* createWithData(JSContext* cx, ScopeKind kind,
+                                     HandleBuffer<RuntimeData> data);
 
   RuntimeData& data() { return *static_cast<RuntimeData*>(rawData()); }
 
@@ -1884,7 +1881,7 @@ template <>
 struct GCPolicy<js::ScopeKind> : public IgnoreGCPolicy<js::ScopeKind> {};
 
 template <typename T>
-struct ScopeDataGCPolicy : public NonGCPointerPolicy<T> {};
+using ScopeDataGCPolicy = NonGCPointerPolicy<T>;
 
 #define DEFINE_SCOPE_DATA_GCPOLICY(Data)              \
   template <>                                         \
@@ -1902,6 +1899,7 @@ DEFINE_SCOPE_DATA_GCPOLICY(js::GlobalScope::RuntimeData);
 DEFINE_SCOPE_DATA_GCPOLICY(js::EvalScope::RuntimeData);
 DEFINE_SCOPE_DATA_GCPOLICY(js::ModuleScope::RuntimeData);
 DEFINE_SCOPE_DATA_GCPOLICY(js::WasmFunctionScope::RuntimeData);
+DEFINE_SCOPE_DATA_GCPOLICY(js::WasmInstanceScope::RuntimeData);
 
 #undef DEFINE_SCOPE_DATA_GCPOLICY
 
