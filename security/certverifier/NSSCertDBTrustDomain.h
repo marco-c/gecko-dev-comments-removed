@@ -135,6 +135,7 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
       const nsTArray<mozilla::pkix::Input>& thirdPartyRootInputs,
       const nsTArray<mozilla::pkix::Input>& thirdPartyIntermediateInputs,
       const Maybe<nsTArray<nsTArray<uint8_t>>>& extraCertificates,
+      const mozilla::pkix::Input& encodedSCTsFromTLS,
        nsTArray<nsTArray<uint8_t>>& builtChain,
        PinningTelemetryInfo* pinningTelemetryInfo = nullptr,
        const char* hostname = nullptr);
@@ -248,7 +249,7 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
   TimeDuration GetOCSPTimeout() const;
 
   Result CheckRevocationByCRLite(const mozilla::pkix::CertID& certID,
-                                 const mozilla::pkix::Input& sctExtension,
+                                 const mozilla::pkix::Input* sctExtension,
                                   bool& crliteCoversCertificate);
 
   Result CheckRevocationByOCSP(
@@ -291,6 +292,7 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
   const nsTArray<mozilla::pkix::Input>&
       mThirdPartyIntermediateInputs;                             
   const Maybe<nsTArray<nsTArray<uint8_t>>>& mExtraCertificates;  
+  const mozilla::pkix::Input& mEncodedSCTsFromTLS;               
   nsTArray<nsTArray<uint8_t>>& mBuiltChain;                      
   bool mIsBuiltChainRootBuiltInRoot;
   PinningTelemetryInfo* mPinningTelemetryInfo;
