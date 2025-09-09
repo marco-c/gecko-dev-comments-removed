@@ -643,9 +643,28 @@ class NetworkEventActor extends Actor {
 
 
 
+  addResponseContentComplete({ blockedReason, blockingExtension }) {
+    
+    if (this.isDestroyed()) {
+      return;
+    }
+
+    this._onEventUpdate(
+      lazy.NetworkUtils.NETWORK_EVENT_TYPES.RESPONSE_CONTENT_COMPLETE,
+      {
+        blockedReason,
+        blockingExtension,
+      }
+    );
+  }
+
+  
 
 
-  addResponseContent(content, { blockedReason, blockingExtension }) {
+
+
+
+  addResponseContent(content) {
     
     if (this.isDestroyed()) {
       return;
@@ -664,8 +683,6 @@ class NetworkEventActor extends Actor {
         mimeType: content.mimeType,
         contentSize: content.size,
         transferredSize: content.transferredSize,
-        blockedReason,
-        blockingExtension,
       }
     );
   }

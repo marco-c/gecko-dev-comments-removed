@@ -113,8 +113,18 @@ function fetchNetworkUpdatePacket(requestData, request, updateTypes) {
   if (request) {
     updateTypes.forEach(updateType => {
       
+      
+      
       if (updateType === "stackTrace") {
         if (request.cause.stacktraceAvailable && !request.stacktrace) {
+          promises.push(requestData(request.id, updateType));
+        }
+        return;
+      }
+      
+      
+      if (updateType === "responseContent") {
+        if (request.responseContentAvailable) {
           promises.push(requestData(request.id, updateType));
         }
         return;
