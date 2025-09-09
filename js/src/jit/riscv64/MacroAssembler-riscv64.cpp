@@ -4997,20 +4997,28 @@ void MacroAssemblerRiscv64::InsertBits(Register dest, Register source, int pos,
   MOZ_ASSERT(size < 32);
 #endif
   UseScratchRegisterScope temps(this);
-  Register mask = temps.Acquire();
   BlockTrampolinePoolScope block_trampoline_pool(this, 9);
   Register source_ = temps.Acquire();
-  
-  ma_li(mask, Imm32(1));
-  slli(mask, mask, size);
-  addi(mask, mask, -1);
-  and_(source_, mask, source);
-  slli(source_, source_, pos);
-  
-  slli(mask, mask, pos);
-  not_(mask, mask);
-  
-  and_(dest, mask, dest);
+  if (pos != 0) {
+    Register mask = temps.Acquire();
+    
+    ma_li(mask, Imm32(1));
+    slli(mask, mask, size);
+    addi(mask, mask, -1);
+    and_(source_, mask, source);
+    slli(source_, source_, pos);
+    
+    slli(mask, mask, pos);
+    not_(mask, mask);
+    
+    and_(dest, mask, dest);
+  } else {
+    
+    slli(source_, source, 64 - size);
+    srli(source_, source_, 64 - size);
+    srli(dest, dest, size);
+    slli(dest, dest, size);
+  }
   
   or_(dest, dest, source_);
 }
