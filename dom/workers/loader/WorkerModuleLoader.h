@@ -91,14 +91,6 @@ class WorkerModuleLoader : public JS::loader::ModuleLoaderBase {
   void OnModuleLoadComplete(ModuleLoadRequest* aRequest) override;
 
   bool IsModuleEvaluationAborted(ModuleLoadRequest* aRequest) override;
-
-  bool IsModuleTypeAllowed(JS::ModuleType aModuleType) override {
-    
-    
-    
-    return aModuleType != JS::ModuleType::Unknown &&
-           aModuleType != JS::ModuleType::CSS;
-  }
 };
 
 }  

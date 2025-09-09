@@ -417,19 +417,6 @@ class ModuleLoaderBase : public nsISupports {
   
   void DisallowImportMaps() { mImportMapsAllowed = false; }
 
-  virtual bool IsModuleTypeAllowed(ModuleType aModuleType) {
-    if (aModuleType == ModuleType::Unknown) {
-      return false;
-    }
-
-    if (aModuleType == ModuleType::CSS &&
-        !mozilla::StaticPrefs::layout_css_module_scripts_enabled()) {
-      return false;
-    }
-
-    return true;
-  }
-
   
   
   bool GetImportMapSRI(nsIURI* aURI, nsIURI* aSourceURI,

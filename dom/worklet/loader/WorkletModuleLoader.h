@@ -96,14 +96,6 @@ class WorkletModuleLoader : public JS::loader::ModuleLoaderBase {
                                     const nsAString& aSpecifier,
                                     nsAString& aResult) override;
 
-  bool IsModuleTypeAllowed(JS::ModuleType aModuleType) override {
-    
-    
-    
-    return aModuleType != JS::ModuleType::Unknown &&
-           aModuleType != JS::ModuleType::CSS;
-  }
-
   
   
   nsRefPtrHashtable<nsURIHashKey, JS::loader::ModuleLoadRequest>

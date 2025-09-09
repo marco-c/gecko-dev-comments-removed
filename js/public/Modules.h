@@ -42,9 +42,8 @@ enum class ModuleType : uint32_t {
   Unknown = 0,
   JavaScript,
   JSON,
-  CSS,
 
-  Limit = CSS,
+  Limit = JSON,
 };
 
 
@@ -193,15 +192,6 @@ extern JS_PUBLIC_API JSObject* CompileJsonModule(
 extern JS_PUBLIC_API JSObject* CompileJsonModule(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     SourceText<mozilla::Utf8Unit>& srcBuf);
-
-
-
-
-
-
-extern JS_PUBLIC_API JSObject* CreateCssModule(
-    JSContext* cx, const ReadOnlyCompileOptions& options,
-    const Value& cssValue);
 
 
 
