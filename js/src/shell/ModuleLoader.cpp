@@ -547,6 +547,12 @@ JSObject* ModuleLoader::loadAndParse(JSContext* cx, HandleString pathArg,
         return nullptr;
       }
       break;
+    case JS::ModuleType::CSS:
+      
+      
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_BAD_MODULE_TYPE);
+      return nullptr;
   }
 
   if (!addModuleToRegistry(cx, moduleType, path, module)) {
