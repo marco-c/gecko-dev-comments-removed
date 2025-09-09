@@ -1281,9 +1281,6 @@ mod value {
         }
     }
 
-    
-    
-    #[allow(clippy::needless_continue)]
     fn parse_lit_str_cooked(mut s: &str) -> (Box<str>, Box<str>) {
         assert_eq!(byte(s, 0), b'"');
         s = &s[1..];
@@ -1376,9 +1373,6 @@ mod value {
         }
     }
 
-    
-    
-    #[allow(clippy::needless_continue)]
     fn parse_lit_byte_str_cooked(mut s: &str) -> (Vec<u8>, Box<str>) {
         assert_eq!(byte(s, 0), b'b');
         assert_eq!(byte(s, 1), b'"');
@@ -1455,9 +1449,6 @@ mod value {
         }
     }
 
-    
-    
-    #[allow(clippy::needless_continue)]
     fn parse_lit_c_str_cooked(mut s: &str) -> (CString, Box<str>) {
         assert_eq!(byte(s, 0), b'c');
         assert_eq!(byte(s, 1), b'"');
@@ -1537,7 +1528,7 @@ mod value {
         assert_eq!(byte(s, 1), b'\'');
 
         
-        let mut v = s[2..].as_bytes();
+        let mut v = &s.as_bytes()[2..];
 
         let b = match byte(v, 0) {
             b'\\' => {

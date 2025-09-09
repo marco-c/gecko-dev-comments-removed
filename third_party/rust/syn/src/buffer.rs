@@ -10,6 +10,7 @@ use proc_macro2::extra::DelimSpan;
 use proc_macro2::{Delimiter, Group, Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree};
 use std::cmp::Ordering;
 use std::marker::PhantomData;
+use std::ptr;
 
 
 
@@ -133,7 +134,7 @@ impl<'a> Cursor<'a> {
         
         
         while let Entry::End(..) = unsafe { &*ptr } {
-            if ptr == scope {
+            if ptr::eq(ptr, scope) {
                 break;
             }
             ptr = unsafe { ptr.add(1) };
@@ -180,7 +181,7 @@ impl<'a> Cursor<'a> {
     
     pub fn eof(self) -> bool {
         
-        self.ptr == self.scope
+        ptr::eq(self.ptr, self.scope)
     }
 
     
@@ -390,7 +391,7 @@ impl<'a> Eq for Cursor<'a> {}
 
 impl<'a> PartialEq for Cursor<'a> {
     fn eq(&self, other: &Self) -> bool {
-        self.ptr == other.ptr
+        ptr::eq(self.ptr, other.ptr)
     }
 }
 
@@ -405,11 +406,11 @@ impl<'a> PartialOrd for Cursor<'a> {
 }
 
 pub(crate) fn same_scope(a: Cursor, b: Cursor) -> bool {
-    a.scope == b.scope
+    ptr::eq(a.scope, b.scope)
 }
 
 pub(crate) fn same_buffer(a: Cursor, b: Cursor) -> bool {
-    start_of_buffer(a) == start_of_buffer(b)
+    ptr::eq(start_of_buffer(a), start_of_buffer(b))
 }
 
 fn start_of_buffer(cursor: Cursor) -> *const Entry {

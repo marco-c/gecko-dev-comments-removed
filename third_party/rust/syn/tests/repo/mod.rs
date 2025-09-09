@@ -15,25 +15,62 @@ use std::path::{Path, PathBuf};
 use tar::Archive;
 use walkdir::{DirEntry, WalkDir};
 
-const REVISION: &str = "86d69c705a552236a622eee3fdea94bf13c5f102";
+
+const REVISION: &str = "3672a55b7cfd0a12e7097197b6242872473ffaa7";
 
 #[rustfmt::skip]
 static EXCLUDE_FILES: &[&str] = &[
     
     
-    "src/tools/rustfmt/tests/source/issue_5721.rs",
-    "src/tools/rustfmt/tests/source/non-lifetime-binders.rs",
-    "src/tools/rustfmt/tests/target/issue_5721.rs",
-    "src/tools/rustfmt/tests/target/non-lifetime-binders.rs",
-    "tests/rustdoc-json/non_lifetime_binders.rs",
-    "tests/rustdoc/inline_cross/auxiliary/non_lifetime_binders.rs",
-    "tests/rustdoc/non_lifetime_binders.rs",
+    "src/tools/clippy/tests/ui/assign_ops.rs",
+    "src/tools/clippy/tests/ui/missing_const_for_fn/const_trait.rs",
+    "src/tools/clippy/tests/ui/trait_duplication_in_bounds.rs",
+    "src/tools/rust-analyzer/crates/test-utils/src/minicore.rs",
 
     
     
-    "src/tools/rust-analyzer/crates/parser/test_data/parser/inline/ok/return_type_syntax_assoc_type_bound.rs",
+    "src/tools/rustfmt/tests/source/unsafe-binders.rs",
+    "src/tools/rustfmt/tests/target/unsafe-binders.rs",
+    "tests/mir-opt/gvn_on_unsafe_binder.rs",
+    "tests/rustdoc/auxiliary/unsafe-binder-dep.rs",
+    "tests/rustdoc/unsafe-binder.rs",
+    "tests/ui/unsafe-binders/cat-projection.rs",
+
+    
+    
+    "src/tools/clippy/tests/ui/derive.rs",
+    "src/tools/rust-analyzer/crates/parser/test_data/parser/inline/ok/record_field_list.rs",
+    "src/tools/rustfmt/tests/source/unsafe-field.rs",
+    "src/tools/rustfmt/tests/target/unsafe-field.rs",
+    "tests/ui/unsafe-fields/auxiliary/unsafe-fields-crate-dep.rs",
+
+    
+    
+    "src/tools/rustfmt/tests/target/guard_patterns.rs",
+    "tests/ui/pattern/rfc-3637-guard-patterns/only-gather-locals-once.rs",
+
+    
+    
+    "compiler/rustc_errors/src/markdown/parse.rs",
+    "compiler/rustc_session/src/config.rs",
+    "src/tools/clippy/tests/ui/exhaustive_items.rs",
+    "src/tools/rust-analyzer/crates/parser/test_data/parser/inline/ok/record_field_default_values.rs",
+    "src/tools/rustfmt/tests/source/default-field-values.rs",
+    "src/tools/rustfmt/tests/target/default-field-values.rs",
+    "tests/ui/structs/default-field-values/auxiliary/struct_field_default.rs",
+    "tests/ui/structs/default-field-values/const-trait-default-field-value.rs",
+    "tests/ui/structs/default-field-values/field-references-param.rs",
+    "tests/ui/structs/default-field-values/support.rs",
+    "tests/ui/structs/default-field-values/use-normalized-ty-for-default-struct-value.rs",
+
+    
+    
     "src/tools/rust-analyzer/crates/parser/test_data/parser/inline/ok/return_type_syntax_in_path.rs",
     "src/tools/rustfmt/tests/target/return-type-notation.rs",
+    "tests/rustdoc-json/return-type-notation.rs",
+    "tests/rustdoc/return-type-notation.rs",
+    "tests/ui/associated-type-bounds/all-generics-lookup.rs",
+    "tests/ui/associated-type-bounds/implied-from-self-where-clause.rs",
     "tests/ui/associated-type-bounds/return-type-notation/basic.rs",
     "tests/ui/associated-type-bounds/return-type-notation/higher-ranked-bound-works.rs",
     "tests/ui/associated-type-bounds/return-type-notation/namespace-conflict.rs",
@@ -41,8 +78,10 @@ static EXCLUDE_FILES: &[&str] = &[
     "tests/ui/associated-type-bounds/return-type-notation/path-self-qself.rs",
     "tests/ui/associated-type-bounds/return-type-notation/path-works.rs",
     "tests/ui/associated-type-bounds/return-type-notation/unpretty-parenthesized.rs",
+    "tests/ui/async-await/return-type-notation/issue-110963-late.rs",
     "tests/ui/async-await/return-type-notation/normalizing-self-auto-trait-issue-109924.rs",
     "tests/ui/async-await/return-type-notation/rtn-implied-in-supertrait.rs",
+    "tests/ui/async-await/return-type-notation/super-method-bound.rs",
     "tests/ui/async-await/return-type-notation/supertrait-bound.rs",
     "tests/ui/borrowck/alias-liveness/rtn-static.rs",
     "tests/ui/feature-gates/feature-gate-return_type_notation.rs",
@@ -59,7 +98,12 @@ static EXCLUDE_FILES: &[&str] = &[
     
     
     "compiler/rustc_codegen_cranelift/example/gen_block_iterate.rs",
+    "compiler/rustc_hir_analysis/src/collect/resolve_bound_vars.rs",
+    "compiler/rustc_metadata/src/rmeta/decoder.rs",
+    "compiler/rustc_middle/src/ty/closure.rs",
+    "compiler/rustc_middle/src/ty/context.rs",
     "src/tools/rust-analyzer/crates/parser/test_data/parser/inline/ok/gen_blocks.rs",
+    "tests/ui/async-await/async-drop/assign-incompatible-types.rs",
     "tests/ui/coroutine/async-gen-deduce-yield.rs",
     "tests/ui/coroutine/async-gen-yield-ty-is-unit.rs",
     "tests/ui/coroutine/async_gen_fn_iter.rs",
@@ -75,7 +119,14 @@ static EXCLUDE_FILES: &[&str] = &[
 
     
     
+    "tests/pretty/postfix-yield.rs",
+    "tests/ui/coroutine/postfix-yield.rs",
+
+    
+    
     "tests/mir-opt/building/match/never_patterns.rs",
+    "tests/pretty/never-pattern.rs",
+    "tests/ui/rfcs/rfc-0000-never_patterns/always-read-in-closure-capture.rs",
     "tests/ui/rfcs/rfc-0000-never_patterns/diverges.rs",
     "tests/ui/rfcs/rfc-0000-never_patterns/use-bindings.rs",
 
@@ -84,8 +135,8 @@ static EXCLUDE_FILES: &[&str] = &[
     "src/tools/miri/tests/pass/async-closure-captures.rs",
     "src/tools/miri/tests/pass/async-closure-drop.rs",
     "src/tools/rust-analyzer/crates/parser/test_data/parser/inline/ok/async_trait_bound.rs",
+    "src/tools/rust-analyzer/crates/parser/test_data/parser/inline/ok/for_binder_bound.rs",
     "src/tools/rustfmt/tests/target/asyncness.rs",
-    "tests/codegen/async-closure-debug.rs",
     "tests/coverage/async_closure.rs",
     "tests/ui/async-await/async-closures/async-fn-mut-for-async-fn.rs",
     "tests/ui/async-await/async-closures/async-fn-once-for-async-fn.rs",
@@ -125,6 +176,7 @@ static EXCLUDE_FILES: &[&str] = &[
 
     
     
+    "src/tools/clippy/tests/ui/unnecessary_semicolon.rs",
     "src/tools/rustfmt/tests/source/postfix-match/pf-match.rs",
     "src/tools/rustfmt/tests/target/postfix-match/pf-match.rs",
     "tests/pretty/postfix-match/simple-matches.rs",
@@ -135,6 +187,7 @@ static EXCLUDE_FILES: &[&str] = &[
     
     
     "tests/pretty/delegation.rs",
+    "tests/pretty/hir-delegation.rs",
     "tests/ui/delegation/body-identity-glob.rs",
     "tests/ui/delegation/body-identity-list.rs",
     "tests/ui/delegation/explicit-paths-in-traits-pass.rs",
@@ -167,12 +220,6 @@ static EXCLUDE_FILES: &[&str] = &[
 
     
     
-    "src/tools/rust-analyzer/crates/parser/test_data/parser/inline/ok/const_trait_bound.rs",
-    "tests/ui/generic-const-items/const-trait-impl.rs",
-    "tests/ui/traits/const-traits/tilde-const-syntax.rs",
-
-    
-    
     "src/tools/rust-analyzer/crates/parser/test_data/parser/inline/ok/range_pat.rs",
     "tests/ui/consts/miri_unleashed/const_refers_to_static_cross_crate.rs",
 
@@ -180,17 +227,61 @@ static EXCLUDE_FILES: &[&str] = &[
     
     "src/tools/rustfmt/tests/source/pin_sugar.rs",
     "src/tools/rustfmt/tests/target/pin_sugar.rs",
-    "tests/ui/async-await/pin-sugar.rs",
+    "tests/pretty/pin-ergonomics-hir.rs",
+    "tests/pretty/pin-ergonomics.rs",
+    "tests/ui/pin-ergonomics/borrow.rs",
+    "tests/ui/pin-ergonomics/sugar-self.rs",
+    "tests/ui/pin-ergonomics/sugar.rs",
+
+    
+    
+    "src/tools/rustfmt/tests/target/cfg_attribute_in_where.rs",
+
+    
+    
+    "src/tools/rust-analyzer/crates/parser/test_data/parser/inline/ok/let_stmt.rs",
+
+    
+    
+    "tests/codegen-llvm/ergonomic-clones/closure.rs",
+    "tests/mir-opt/ergonomic-clones/closure.rs",
+    "tests/ui/ergonomic-clones/async/basic.rs",
+    "tests/ui/ergonomic-clones/closure/basic.rs",
+    "tests/ui/ergonomic-clones/closure/const-closure.rs",
+    "tests/ui/ergonomic-clones/closure/mutation.rs",
+    "tests/ui/ergonomic-clones/closure/nested.rs",
+    "tests/ui/ergonomic-clones/closure/once-move-out-on-heap.rs",
+    "tests/ui/ergonomic-clones/closure/with-binders.rs",
+    "tests/ui/ergonomic-clones/dotuse/basic.rs",
+    "tests/ui/ergonomic-clones/dotuse/block.rs",
+
+    
+    
+    "tests/ui/contracts/internal_machinery/contract-ast-extensions-nest.rs",
+    "tests/ui/contracts/internal_machinery/contract-ast-extensions-tail.rs",
+    "tests/ui/contracts/internal_machinery/contracts-lowering-ensures-is-not-inherited-when-nesting.rs",
+    "tests/ui/contracts/internal_machinery/contracts-lowering-requires-is-not-inherited-when-nesting.rs",
+
+    
+    
+    "tests/ui/frontmatter/auxiliary/lib.rs",
+    "tests/ui/frontmatter/dot-in-infostring-non-leading.rs",
+    "tests/ui/frontmatter/escape.rs",
+    "tests/ui/frontmatter/frontmatter-inner-hyphens-1.rs",
+    "tests/ui/frontmatter/frontmatter-inner-hyphens-2.rs",
+    "tests/ui/frontmatter/frontmatter-non-lexible-tokens.rs",
+    "tests/ui/frontmatter/frontmatter-whitespace-3.rs",
+    "tests/ui/frontmatter/frontmatter-whitespace-4.rs",
+    "tests/ui/frontmatter/shebang.rs",
+    "tests/ui/unpretty/frontmatter.rs",
 
     
     "src/tools/rust-analyzer/crates/parser/test_data/parser/inline/ok/closure_range_method_call.rs",
     "src/tools/rustfmt/tests/source/issue-4808.rs",
 
     
-    "tests/ui/unpretty/expanded-exhaustive.rs",
-
-    
-    "src/tools/rust-analyzer/crates/parser/test_data/parser/ok/0073_safe_declarations_in_extern_blocks.rs",
+    "src/tools/rustfmt/tests/source/negative-impl.rs",
+    "src/tools/rustfmt/tests/target/negative-impl.rs",
 
     
     "tests/ui/const-generics/early/closing-args-token.rs",
@@ -217,10 +308,13 @@ static EXCLUDE_FILES: &[&str] = &[
     
     "src/tools/rustfmt/tests/source/trait.rs",
     "src/tools/rustfmt/tests/target/trait.rs",
-    "tests/ui/issues/issue-13105.rs",
-    "tests/ui/issues/issue-13775.rs",
+    "tests/pretty/hir-fn-params.rs",
+    "tests/rustdoc/anon-fn-params.rs",
+    "tests/rustdoc/auxiliary/ext-anon-fn-params.rs",
+    "tests/ui/fn/anonymous-parameters-trait-13105.rs",
     "tests/ui/issues/issue-34074.rs",
     "tests/ui/proc-macro/trait-fn-args-2015.rs",
+    "tests/ui/trait-bounds/anonymous-parameters-13775.rs",
 
     
     "src/tools/rustfmt/tests/source/issue_4257.rs",
@@ -231,10 +325,8 @@ static EXCLUDE_FILES: &[&str] = &[
     "tests/rustdoc/generic-associated-types/gats.rs",
 
     
-    "src/tools/rust-analyzer/crates/parser/test_data/parser/inline/ok/bare_dyn_types_with_paren_as_generic_args.rs",
     "src/tools/rust-analyzer/crates/parser/test_data/parser/inline/ok/path_fn_trait_args.rs",
     "src/tools/rust-analyzer/crates/parser/test_data/parser/inline/ok/typepathfn_with_coloncolon.rs",
-    "src/tools/rust-analyzer/crates/parser/test_data/parser/inline/ok/value_parameters_no_patterns.rs",
     "src/tools/rustfmt/tests/source/attrib.rs",
     "src/tools/rustfmt/tests/source/closure.rs",
     "src/tools/rustfmt/tests/source/existential_type.rs",
@@ -259,8 +351,6 @@ static EXCLUDE_FILES: &[&str] = &[
     "tests/pretty/closure-reform-pretty.rs",
     "tests/run-make/reproducible-build-2/reproducible-build.rs",
     "tests/run-make/reproducible-build/reproducible-build.rs",
-    "tests/ui/auxiliary/typeid-intrinsic-aux1.rs",
-    "tests/ui/auxiliary/typeid-intrinsic-aux2.rs",
     "tests/ui/impl-trait/generic-with-implicit-hrtb-without-dyn.rs",
     "tests/ui/lifetimes/auxiliary/lifetime_bound_will_change_warning_lib.rs",
     "tests/ui/lifetimes/bare-trait-object-borrowck.rs",
@@ -268,7 +358,13 @@ static EXCLUDE_FILES: &[&str] = &[
     "tests/ui/parser/bounds-obj-parens.rs",
 
     
+    "src/tools/rust-analyzer/crates/parser/test_data/parser/inline/ok/assoc_type_bound.rs",
     "src/tools/rust-analyzer/crates/parser/test_data/parser/inline/ok/const_param_default_path.rs",
+    "src/tools/rust-analyzer/crates/parser/test_data/parser/inline/ok/field_expr.rs",
+    "src/tools/rust-analyzer/crates/parser/test_data/parser/inline/ok/generic_arg_bounds.rs",
+    "src/tools/rust-analyzer/crates/parser/test_data/parser/inline/ok/global_asm.rs",
+    "src/tools/rust-analyzer/crates/parser/test_data/parser/inline/ok/question_for_type_trait_bound.rs",
+    "src/tools/rust-analyzer/crates/parser/test_data/parser/inline/ok/ref_expr.rs",
     "src/tools/rust-analyzer/crates/parser/test_data/parser/inline/ok/use_tree_abs_star.rs",
     "src/tools/rust-analyzer/crates/parser/test_data/parser/ok/0015_use_tree.rs",
     "src/tools/rust-analyzer/crates/parser/test_data/parser/ok/0029_range_forms.rs",
@@ -279,6 +375,11 @@ static EXCLUDE_FILES: &[&str] = &[
     "src/tools/rust-analyzer/crates/syntax/test_data/parser/validation/0038_endless_inclusive_range.rs",
     "src/tools/rust-analyzer/crates/syntax/test_data/parser/validation/0045_ambiguous_trait_object.rs",
     "src/tools/rust-analyzer/crates/syntax/test_data/parser/validation/0046_mutable_const_item.rs",
+    "src/tools/rust-analyzer/crates/syntax/test_data/parser/validation/0224_dangling_dyn.rs",
+    "src/tools/rust-analyzer/crates/syntax/test_data/parser/validation/0261_dangling_impl_undeclared_lifetime.rs",
+    "src/tools/rust-analyzer/crates/syntax/test_data/parser/validation/dangling_impl.rs",
+    "src/tools/rust-analyzer/crates/syntax/test_data/parser/validation/dangling_impl_reference.rs",
+    "src/tools/rust-analyzer/crates/syntax/test_data/parser/validation/impl_trait_lifetime_only.rs",
 
     
     "compiler/rustc_errors/src/translation.rs",
@@ -305,6 +406,7 @@ static EXCLUDE_FILES: &[&str] = &[
     "tests/ui/dyn-keyword/dyn-2015-no-warnings-without-lints.rs",
     "tests/ui/editions/edition-keywords-2015-2015.rs",
     "tests/ui/editions/edition-keywords-2015-2018.rs",
+    "tests/ui/lint/keyword-idents/auxiliary/multi_file_submod.rs",
     "tests/ui/lint/lint_pre_expansion_extern_module_aux.rs",
     "tests/ui/macros/macro-comma-support-rpass.rs",
     "tests/ui/macros/try-macro.rs",
@@ -315,6 +417,7 @@ static EXCLUDE_FILES: &[&str] = &[
     "tests/ui/issues/issue-74564-if-expr-stack-overflow.rs",
 
     
+    "src/tools/clippy/tests/ui/non_expressive_names_error_recovery.rs",
     "src/tools/rustfmt/tests/coverage/target/comments.rs",
     "src/tools/rustfmt/tests/parser/issue-4126/invalid.rs",
     "src/tools/rustfmt/tests/parser/issue_4418.rs",
@@ -497,10 +600,9 @@ pub fn clone_rust() {
 }
 
 fn download_and_unpack() -> Result<()> {
-    let url = format!(
-        "https://github.com/rust-lang/rust/archive/{}.tar.gz",
-        REVISION
-    );
+    let url = format!("https://github.com/rust-lang/rust/archive/{REVISION}.tar.gz");
+    errorf!("downloading {url}\n");
+
     let response = reqwest::blocking::get(url)?.error_for_status()?;
     let progress = Progress::new(response);
     let decoder = GzDecoder::new(progress);
