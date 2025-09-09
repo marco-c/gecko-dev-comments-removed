@@ -129,13 +129,6 @@ class nsDocLoader : public nsIDocumentLoader,
     DocLoaderIsEmpty(true);
   }
 
-  
-  
-  
-  static nsresult FormatStatusMessage(
-      nsresult aStatus, const nsAString& aHost, nsAString& aRetVal,
-      RefPtr<mozilla::intl::Localization>& aL10n);
-
  protected:
   explicit nsDocLoader(bool aNotifyAboutBackgroundRequests);
   virtual ~nsDocLoader();
@@ -379,6 +372,8 @@ class nsDocLoader : public nsIDocumentLoader,
 
   RefPtr<mozilla::intl::Localization> mL10n;
   static mozilla::Maybe<nsLiteralCString> StatusCodeToL10nId(nsresult aStatus);
+  nsresult FormatStatusMessage(nsresult aStatus, const nsAString& aHost,
+                               nsAString& aRetVal);
 };
 
 static inline nsISupports* ToSupports(nsDocLoader* aDocLoader) {

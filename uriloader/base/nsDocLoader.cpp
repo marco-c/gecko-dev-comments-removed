@@ -1254,7 +1254,7 @@ NS_IMETHODIMP nsDocLoader::OnStatus(nsIRequest* aRequest, nsresult aStatus,
     host.Append(aStatusArg);
 
     nsAutoString msg;
-    nsresult rv = FormatStatusMessage(aStatus, host, msg, mL10n);
+    nsresult rv = FormatStatusMessage(aStatus, host, msg);
     if (NS_FAILED(rv)) return rv;
 
     
@@ -1321,9 +1321,9 @@ mozilla::Maybe<nsLiteralCString> nsDocLoader::StatusCodeToL10nId(
   }
 }
 
-nsresult nsDocLoader::FormatStatusMessage(
-    nsresult aStatus, const nsAString& aHost, nsAString& aRetVal,
-    RefPtr<mozilla::intl::Localization>& aL10n) {
+nsresult nsDocLoader::FormatStatusMessage(nsresult aStatus,
+                                          const nsAString& aHost,
+                                          nsAString& aRetVal) {
   auto l10nId = StatusCodeToL10nId(aStatus);
 
   if (!l10nId) {
@@ -1341,17 +1341,17 @@ nsresult nsDocLoader::FormatStatusMessage(
       NS_ConvertUTF16toUTF8(aHost));
 
   
-  if (!aL10n) {
+  if (!mL10n) {
     nsTArray<nsCString> resIds = {
         "netwerk/necko.ftl"_ns,
     };
-    aL10n = mozilla::intl::Localization::Create(resIds, true);
+    mL10n = mozilla::intl::Localization::Create(resIds, true);
   }
   MOZ_LOG(gDocLoaderLog, LogLevel::Debug,
-          ("DocLoader: FormatStatusMessage, [aL10n=%d]\n", !!aL10n));
-  MOZ_RELEASE_ASSERT(aL10n);
+          ("DocLoader:%p: FormatStatusMessage, [mL10n=%d]\n", this, !!mL10n));
+  MOZ_RELEASE_ASSERT(mL10n);
 
-  aL10n->FormatValueSync(*l10nId, l10nArgs, RetVal, rv);
+  mL10n->FormatValueSync(*l10nId, l10nArgs, RetVal, rv);
   aRetVal = NS_ConvertUTF8toUTF16(RetVal);
   if (rv.Failed()) {
     return rv.StealNSResult();
