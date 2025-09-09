@@ -12385,11 +12385,10 @@ int32_t nsContentUtils::CompareTreePosition(const nsINode* aNode1,
   return static_cast<int32_t>(static_cast<int64_t>(*index1) - *index2);
 }
 
-nsIContent* nsContentUtils::AttachDeclarativeShadowRoot(nsIContent* aHost,
-                                                        ShadowRootMode aMode,
-                                                        bool aIsClonable,
-                                                        bool aIsSerializable,
-                                                        bool aDelegatesFocus) {
+nsIContent* nsContentUtils::AttachDeclarativeShadowRoot(
+    nsIContent* aHost, ShadowRootMode aMode, bool aIsClonable,
+    bool aIsSerializable, bool aDelegatesFocus,
+    const nsAString& aReferenceTarget) {
   RefPtr<Element> host = mozilla::dom::Element::FromNodeOrNull(aHost);
   if (!host || host->GetShadowRoot()) {
     
@@ -12409,6 +12408,7 @@ nsIContent* nsContentUtils::AttachDeclarativeShadowRoot(nsIContent* aHost,
         nsGenericHTMLFormControlElement::ShadowRootDeclarative::Yes);
     
     shadowRoot->SetAvailableToElementInternals();
+    shadowRoot->SetReferenceTarget(aReferenceTarget);
   }
   return shadowRoot;
 }
