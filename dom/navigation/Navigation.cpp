@@ -566,6 +566,11 @@ void Navigation::Navigate(JSContext* aCx, const nsAString& aUrl,
 }
 
 
+void Navigation::PerformNavigationTraversal(JSContext* aCx, const nsID& aKey,
+                                            const NavigationOptions& aOptions,
+                                            NavigationResult& aResult) {}
+
+
 void Navigation::Reload(JSContext* aCx, const NavigationReloadOptions& aOptions,
                         NavigationResult& aResult) {
   
@@ -626,6 +631,88 @@ void Navigation::Reload(JSContext* aCx, const NavigationReloadOptions& aOptions,
   
   
   apiMethodTracker->CreateResult(aResult);
+}
+
+
+void Navigation::TraverseTo(JSContext* aCx, const nsAString& aKey,
+                            const NavigationOptions& aOptions,
+                            NavigationResult& aResult) {
+  
+  
+  if (mCurrentEntryIndex.isNothing()) {
+    ErrorResult rv;
+    rv.ThrowInvalidStateError("Current entry index is unexpectedly -1");
+    SetEarlyErrorResult(aCx, aResult, std::move(rv));
+    return;
+  }
+
+  
+  
+  
+  nsID key{};
+  const bool foundKey =
+      key.Parse(NS_ConvertUTF16toUTF8(aKey).Data()) &&
+      std::find_if(mEntries.begin(), mEntries.end(), [&](const auto& aEntry) {
+        return aEntry->Key() == key;
+      }) != mEntries.end();
+  if (!foundKey) {
+    ErrorResult rv;
+    rv.ThrowInvalidStateError("Session history entry key does not exist");
+    SetEarlyErrorResult(aCx, aResult, std::move(rv));
+    return;
+  }
+
+  
+  
+  PerformNavigationTraversal(aCx, key, aOptions, aResult);
+}
+
+
+void Navigation::Back(JSContext* aCx, const NavigationOptions& aOptions,
+                      NavigationResult& aResult) {
+  
+  
+  if (mCurrentEntryIndex.isNothing() || *mCurrentEntryIndex == 0 ||
+      *mCurrentEntryIndex > mEntries.Length() - 1) {
+    ErrorResult rv;
+    rv.ThrowInvalidStateError("Current entry index is unexpectedly -1 or 0");
+    SetEarlyErrorResult(aCx, aResult, std::move(rv));
+    return;
+  }
+
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(mEntries[*mCurrentEntryIndex - 1]);
+  const nsID key = mEntries[*mCurrentEntryIndex - 1]->Key();
+
+  
+  
+  PerformNavigationTraversal(aCx, key, aOptions, aResult);
+}
+
+
+void Navigation::Forward(JSContext* aCx, const NavigationOptions& aOptions,
+                         NavigationResult& aResult) {
+  
+  
+  
+  if (mCurrentEntryIndex.isNothing() ||
+      *mCurrentEntryIndex >= mEntries.Length() - 1) {
+    ErrorResult rv;
+    rv.ThrowInvalidStateError(
+        "Current entry index is unexpectedly -1 or entry list's size - 1");
+    SetEarlyErrorResult(aCx, aResult, std::move(rv));
+    return;
+  }
+
+  
+  
+  MOZ_ASSERT(mEntries[*mCurrentEntryIndex + 1]);
+  const nsID& key = mEntries[*mCurrentEntryIndex + 1]->Key();
+
+  
+  
+  PerformNavigationTraversal(aCx, key, aOptions, aResult);
 }
 
 namespace {
