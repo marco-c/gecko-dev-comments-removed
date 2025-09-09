@@ -330,10 +330,13 @@ let forms = [
                   <input id="phone">
                   </form>`,
     results: {
-      ADDRESS_US_LOCAL: { tel: "6172535702", tel2: "6172535702" },
-      ADDRESS_US_REMOTE: { tel: "030983333000", tel2: "030983333000" },
-      ADDRESS_DE_LOCAL: { tel: "030983333001", tel2: "030983333001" },
-      ADDRESS_DE_REMOTE: { tel: "03334564947391", tel2: "03334564947391" },
+      ADDRESS_US_LOCAL: { "tel-country-code": "+1", tel: "6172535702" },
+      ADDRESS_US_REMOTE: { "tel-country-code": "+49", tel: "030983333000" },
+      ADDRESS_DE_LOCAL: { "tel-country-code": "+49", tel: "030983333001" },
+      ADDRESS_DE_REMOTE: {
+        "tel-country-code": "+49",
+        tel: "03334564947391",
+      },
     },
   },
   
@@ -348,15 +351,32 @@ let forms = [
                   <input id="lastname">
                   <input id="tel-country">
                   <input id="tel">
+                  <input id="country">
                   </form>`,
     results: {
       
       
       
-      ADDRESS_US_LOCAL: { country: "US", tel: "6172535702" },
-      ADDRESS_US_REMOTE: { country: "US", tel: "030983333000" },
-      ADDRESS_DE_LOCAL: { country: "DE", tel: "030983333001" },
-      ADDRESS_DE_REMOTE: { country: "DE", tel: "03334564947391" },
+      ADDRESS_US_LOCAL: {
+        "tel-country-code": "+1",
+        tel: "6172535702",
+        country: "US",
+      },
+      ADDRESS_US_REMOTE: {
+        "tel-country-code": "+49",
+        tel: "030983333000",
+        country: "US",
+      },
+      ADDRESS_DE_LOCAL: {
+        "tel-country-code": "+49",
+        tel: "030983333001",
+        country: "DE",
+      },
+      ADDRESS_DE_REMOTE: {
+        "tel-country-code": "+49",
+        tel: "03334564947391",
+        country: "DE",
+      },
     },
   },
 
@@ -421,25 +441,25 @@ let forms = [
       
       
       ADDRESS_US_LOCAL: {
-        "tel-country-code": "@+1",
+        "tel-country-code": "+1",
         "tel-area-code": "@617",
         "tel-local-prefix": "@253",
         "tel-local-suffix": "@5702",
       },
       ADDRESS_US_REMOTE: {
-        "tel-country-code": "@+49",
+        "tel-country-code": "+49",
         "tel-area-code": "@",
         "tel-local-prefix": "@",
         "tel-local-suffix": "@",
       },
       ADDRESS_DE_LOCAL: {
-        "tel-country-code": "@+49",
+        "tel-country-code": "+49",
         "tel-area-code": "@",
         "tel-local-prefix": "@",
         "tel-local-suffix": "@",
       },
       ADDRESS_DE_REMOTE: {
-        "tel-country-code": "@+49",
+        "tel-country-code": "+49",
         "tel-area-code": "@",
         "tel-local-prefix": "@",
         "tel-local-suffix": "@",
@@ -462,10 +482,11 @@ let forms = [
       
       
       
-      ADDRESS_US_LOCAL: { country: "US" },
-      ADDRESS_US_REMOTE: { country: "US" },
-      ADDRESS_DE_LOCAL: { country: "DE" },
-      ADDRESS_DE_REMOTE: { country: "DE" },
+      
+      ADDRESS_US_LOCAL: { "tel-country-code": "+1" },
+      ADDRESS_US_REMOTE: { "tel-country-code": "+49" },
+      ADDRESS_DE_LOCAL: { "tel-country-code": "+49" },
+      ADDRESS_DE_REMOTE: { "tel-country-code": "+49" },
     },
   },
   {
@@ -484,10 +505,30 @@ let forms = [
       
       
       
-      ADDRESS_US_LOCAL: { tel: "617", tel2: "617", tel3: "617", tel4: "617" },
-      ADDRESS_US_REMOTE: { tel: "030", tel2: "030", tel3: "030", tel4: "030" },
-      ADDRESS_DE_LOCAL: { tel: "030", tel2: "030", tel3: "030", tel4: "030" },
-      ADDRESS_DE_REMOTE: { tel: "033", tel2: "030", tel3: "030", tel4: "030" },
+      ADDRESS_US_LOCAL: {
+        "tel-country-code": "+1",
+        tel: "617",
+        tel2: "617",
+        tel3: "617",
+      },
+      ADDRESS_US_REMOTE: {
+        "tel-country-code": "+49",
+        tel: "030",
+        tel2: "030",
+        tel3: "030",
+      },
+      ADDRESS_DE_LOCAL: {
+        "tel-country-code": "+49",
+        tel: "030",
+        tel2: "030",
+        tel3: "030",
+      },
+      ADDRESS_DE_REMOTE: {
+        "tel-country-code": "+49",
+        tel: "033",
+        tel2: "033",
+        tel3: "033",
+      },
     },
   },
   {
@@ -571,10 +612,10 @@ let forms = [
                 </form>`,
     results: {
       
-      ADDRESS_US_LOCAL: { tel: "6172535702", tel2: "6172535702" },
-      ADDRESS_US_REMOTE: { tel: "030983333000", tel2: "030983333000" },
-      ADDRESS_DE_LOCAL: { tel: "030983333001", tel2: "030983333001" },
-      ADDRESS_DE_REMOTE: { tel: "03334564947391", tel2: "03334564947391" },
+      ADDRESS_US_LOCAL: { "tel-country-code": "+1", tel: "6172535702" },
+      ADDRESS_US_REMOTE: { "tel-country-code": "+49", tel: "030983333000" },
+      ADDRESS_DE_LOCAL: { "tel-country-code": "+49", tel: "030983333001" },
+      ADDRESS_DE_REMOTE: { "tel-country-code": "+49", tel: "03334564947391" },
     },
   },
   {
