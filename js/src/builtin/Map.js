@@ -197,6 +197,7 @@ function MapGroupBy(items, callbackfn) {
   return map;
 }
 
+#ifdef NIGHTLY_BUILD
 
 
 
@@ -248,3 +249,5 @@ function MapGetOrInsertComputed(key, callbackfn) {
   
   return value;
 }
+#endif  // #ifdef NIGHTLY_BUILD
+

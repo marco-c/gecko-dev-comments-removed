@@ -738,6 +738,7 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
     return true;
   }
 
+#ifdef NIGHTLY_BUILD
   
 
 
@@ -767,6 +768,7 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
     new (entry) Data(std::forward<ElementInput>(element), chain);
     return &entry->element;
   }
+#endif  
 
   
 
@@ -1351,11 +1353,13 @@ class MOZ_STACK_CLASS OrderedHashMapImpl {
     return impl.put(cx, Entry(std::forward<K>(key), std::forward<V>(value)));
   }
 
+#ifdef NIGHTLY_BUILD
   template <typename K, typename V>
   [[nodiscard]] Entry* getOrAdd(JSContext* cx, K&& key, V&& value) {
     return impl.getOrAdd(cx,
                          Entry(std::forward<K>(key), std::forward<V>(value)));
   }
+#endif  
 
 #ifdef DEBUG
   mozilla::Maybe<HashNumber> hash(const Lookup& key) const {
