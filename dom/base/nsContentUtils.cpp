@@ -8659,6 +8659,11 @@ bool nsContentUtils::IsJsonMimeType(const nsAString& aMimeType) {
   return StringEndsWith(subtype, u"+json"_ns);
 }
 
+
+bool nsContentUtils::IsCssMimeType(const nsAString& aMimeType) {
+  return aMimeType.LowerCaseEqualsLiteral("text/css");
+}
+
 bool nsContentUtils::PrefetchPreloadEnabled(nsIDocShell* aDocShell) {
   
   

@@ -430,20 +430,32 @@ nsContentPolicyType ScriptLoadRequestToContentPolicyType(
     ScriptLoadRequest* aRequest) {
   if (aRequest->GetScriptLoadContext()->IsPreload()) {
     if (aRequest->IsModuleRequest()) {
-      return aRequest->AsModuleRequest()->mModuleType ==
-                     JS::ModuleType::JavaScript
-                 ? nsIContentPolicy::TYPE_INTERNAL_MODULE_PRELOAD
-                 : nsIContentPolicy::TYPE_INTERNAL_JSON_PRELOAD;
+      switch (aRequest->AsModuleRequest()->mModuleType) {
+        case JS::ModuleType::JavaScript:
+          return nsIContentPolicy::TYPE_INTERNAL_MODULE_PRELOAD;
+        case JS::ModuleType::JSON:
+          return nsIContentPolicy::TYPE_INTERNAL_JSON_PRELOAD;
+        case JS::ModuleType::CSS:
+          return nsIContentPolicy::TYPE_INTERNAL_STYLESHEET_PRELOAD;
+        case JS::ModuleType::Unknown:
+          MOZ_ASSERT_UNREACHABLE("Unknown module type");
+      }
     }
 
     return nsIContentPolicy::TYPE_INTERNAL_SCRIPT_PRELOAD;
   }
 
   if (aRequest->IsModuleRequest()) {
-    return aRequest->AsModuleRequest()->mModuleType ==
-                   JS::ModuleType::JavaScript
-               ? nsIContentPolicy::TYPE_INTERNAL_MODULE
-               : nsIContentPolicy::TYPE_JSON;
+    switch (aRequest->AsModuleRequest()->mModuleType) {
+      case JS::ModuleType::Unknown:
+        MOZ_CRASH("Unexpected module type");
+      case JS::ModuleType::JavaScript:
+        return nsIContentPolicy::TYPE_INTERNAL_MODULE;
+      case JS::ModuleType::JSON:
+        return nsIContentPolicy::TYPE_JSON;
+      case JS::ModuleType::CSS:
+        return nsIContentPolicy::TYPE_STYLESHEET;
+    }
   }
 
   return nsIContentPolicy::TYPE_INTERNAL_SCRIPT;
@@ -1965,8 +1977,10 @@ nsresult ScriptLoader::AttemptOffThreadScriptCompile(
 
   
   
+  
   if (aRequest->IsModuleRequest() &&
-      aRequest->AsModuleRequest()->mModuleType == JS::ModuleType::JSON) {
+      (aRequest->AsModuleRequest()->mModuleType == JS::ModuleType::JSON ||
+       aRequest->AsModuleRequest()->mModuleType == JS::ModuleType::CSS)) {
     return NS_OK;
   }
 
@@ -4416,6 +4430,11 @@ static bool MimeTypeMatchesExpectedModuleType(
 
   if (expectedModuleType == JS::ModuleType::JSON &&
       nsContentUtils::IsJsonMimeType(typeString)) {
+    return true;
+  }
+
+  if (expectedModuleType == JS::ModuleType::CSS &&
+      nsContentUtils::IsCssMimeType(typeString)) {
     return true;
   }
 
