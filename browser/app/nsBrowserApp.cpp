@@ -275,6 +275,26 @@ static void ReserveDefaultFileDescriptors() {
 }
 #endif
 
+#ifdef XP_LINUX
+
+
+
+
+
+
+
+
+static void ExpandFileDescriptorTable() {
+  
+  
+  
+  
+  mozilla::UniqueFileHandle fdTableExpander(fcntl(0, F_DUPFD, 256));
+  
+  
+}
+#endif
+
 int main(int argc, char* argv[], char* envp[]) {
 #if defined(XP_UNIX)
   ReserveDefaultFileDescriptors();
@@ -312,6 +332,12 @@ int main(int argc, char* argv[], char* envp[]) {
     }
 #  endif
   }
+#endif
+
+#ifdef XP_LINUX
+  
+  
+  ExpandFileDescriptorTable();
 #endif
 
   mozilla::TimeStamp start = mozilla::TimeStamp::Now();
