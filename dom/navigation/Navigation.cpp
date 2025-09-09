@@ -459,6 +459,9 @@ Navigation::CreateSerializedStateAndMaybeSetEarlyErrorResult(
 void Navigation::Navigate(JSContext* aCx, const nsAString& aUrl,
                           const NavigationNavigateOptions& aOptions,
                           NavigationResult& aResult) {
+  MOZ_LOG_FMT(gNavigationLog, LogLevel::Debug,
+              "Called navigation.navigate() with url = {}",
+              NS_ConvertUTF16toUTF8(aUrl));
   
   const RefPtr<Document> document = GetAssociatedDocument();
   if (!document) {
@@ -573,6 +576,7 @@ void Navigation::PerformNavigationTraversal(JSContext* aCx, const nsID& aKey,
 
 void Navigation::Reload(JSContext* aCx, const NavigationReloadOptions& aOptions,
                         NavigationResult& aResult) {
+  MOZ_LOG(gNavigationLog, LogLevel::Debug, ("Called navigation.reload()"));
   
   const RefPtr<Document> document = GetAssociatedDocument();
   if (!document) {
@@ -637,6 +641,10 @@ void Navigation::Reload(JSContext* aCx, const NavigationReloadOptions& aOptions,
 void Navigation::TraverseTo(JSContext* aCx, const nsAString& aKey,
                             const NavigationOptions& aOptions,
                             NavigationResult& aResult) {
+  MOZ_LOG_FMT(gNavigationLog, LogLevel::Debug,
+              "Called navigation.traverseTo() with key = {}",
+              NS_ConvertUTF16toUTF8(aKey).get());
+
   
   
   if (mCurrentEntryIndex.isNothing()) {
@@ -670,6 +678,7 @@ void Navigation::TraverseTo(JSContext* aCx, const nsAString& aKey,
 
 void Navigation::Back(JSContext* aCx, const NavigationOptions& aOptions,
                       NavigationResult& aResult) {
+  MOZ_LOG(gNavigationLog, LogLevel::Debug, ("Called navigation.back()"));
   
   
   if (mCurrentEntryIndex.isNothing() || *mCurrentEntryIndex == 0 ||
@@ -693,6 +702,8 @@ void Navigation::Back(JSContext* aCx, const NavigationOptions& aOptions,
 
 void Navigation::Forward(JSContext* aCx, const NavigationOptions& aOptions,
                          NavigationResult& aResult) {
+  MOZ_LOG(gNavigationLog, LogLevel::Debug, ("Called navigation.forward()"));
+
   
   
   
