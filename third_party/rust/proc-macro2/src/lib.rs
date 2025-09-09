@@ -84,9 +84,7 @@
 
 
 
-
-
-#![doc(html_root_url = "https://docs.rs/proc-macro2/1.0.86")]
+#![doc(html_root_url = "https://docs.rs/proc-macro2/1.0.101")]
 #![cfg_attr(any(proc_macro_span, super_unstable), feature(proc_macro_span))]
 #![cfg_attr(super_unstable, feature(proc_macro_def_site))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
@@ -96,15 +94,18 @@
     clippy::cast_possible_truncation,
     clippy::checked_conversions,
     clippy::doc_markdown,
+    clippy::elidable_lifetime_names,
     clippy::incompatible_msrv,
     clippy::items_after_statements,
     clippy::iter_without_into_iter,
     clippy::let_underscore_untyped,
     clippy::manual_assert,
     clippy::manual_range_contains,
+    clippy::missing_panics_doc,
     clippy::missing_safety_doc,
     clippy::must_use_candidate,
     clippy::needless_doctest_main,
+    clippy::needless_lifetimes,
     clippy::new_without_default,
     clippy::return_self_not_must_use,
     clippy::shadow_unrelated,
@@ -114,6 +115,7 @@
     clippy::used_underscore_binding,
     clippy::vec_init_then_push
 )]
+#![allow(unknown_lints, mismatched_lifetime_syntaxes)]
 
 #[cfg(all(procmacro2_semver_exempt, wrap_proc_macro, not(super_unstable)))]
 compile_error! {"\
@@ -139,6 +141,7 @@ extern crate proc_macro;
 
 mod marker;
 mod parse;
+mod probe;
 mod rcvec;
 
 #[cfg(wrap_proc_macro)]
@@ -171,7 +174,7 @@ use core::ops::RangeBounds;
 use core::str::FromStr;
 use std::error::Error;
 use std::ffi::CStr;
-#[cfg(procmacro2_semver_exempt)]
+#[cfg(span_locations)]
 use std::path::PathBuf;
 
 #[cfg(span_locations)]
@@ -207,7 +210,7 @@ impl TokenStream {
 
     fn _new_fallback(inner: fallback::TokenStream) -> Self {
         TokenStream {
-            inner: inner.into(),
+            inner: imp::TokenStream::from(inner),
             _marker: MARKER,
         }
     }
@@ -243,11 +246,13 @@ impl FromStr for TokenStream {
     type Err = LexError;
 
     fn from_str(src: &str) -> Result<TokenStream, LexError> {
-        let e = src.parse().map_err(|e| LexError {
-            inner: e,
-            _marker: MARKER,
-        })?;
-        Ok(TokenStream::_new(e))
+        match imp::TokenStream::from_str_checked(src) {
+            Ok(tokens) => Ok(TokenStream::_new(tokens)),
+            Err(lex) => Err(LexError {
+                inner: lex,
+                _marker: MARKER,
+            }),
+        }
     }
 }
 
@@ -255,7 +260,7 @@ impl FromStr for TokenStream {
 #[cfg_attr(docsrs, doc(cfg(feature = "proc-macro")))]
 impl From<proc_macro::TokenStream> for TokenStream {
     fn from(inner: proc_macro::TokenStream) -> Self {
-        TokenStream::_new(inner.into())
+        TokenStream::_new(imp::TokenStream::from(inner))
     }
 }
 
@@ -263,7 +268,7 @@ impl From<proc_macro::TokenStream> for TokenStream {
 #[cfg_attr(docsrs, doc(cfg(feature = "proc-macro")))]
 impl From<TokenStream> for proc_macro::TokenStream {
     fn from(inner: TokenStream) -> Self {
-        inner.inner.into()
+        proc_macro::TokenStream::from(inner.inner)
     }
 }
 
@@ -336,57 +341,6 @@ impl Display for LexError {
 impl Error for LexError {}
 
 
-
-
-#[cfg(all(procmacro2_semver_exempt, any(not(wrap_proc_macro), super_unstable)))]
-#[cfg_attr(docsrs, doc(cfg(procmacro2_semver_exempt)))]
-#[derive(Clone, PartialEq, Eq)]
-pub struct SourceFile {
-    inner: imp::SourceFile,
-    _marker: ProcMacroAutoTraits,
-}
-
-#[cfg(all(procmacro2_semver_exempt, any(not(wrap_proc_macro), super_unstable)))]
-impl SourceFile {
-    fn _new(inner: imp::SourceFile) -> Self {
-        SourceFile {
-            inner,
-            _marker: MARKER,
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn path(&self) -> PathBuf {
-        self.inner.path()
-    }
-
-    
-    
-    pub fn is_real(&self) -> bool {
-        self.inner.is_real()
-    }
-}
-
-#[cfg(all(procmacro2_semver_exempt, any(not(wrap_proc_macro), super_unstable)))]
-impl Debug for SourceFile {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        Debug::fmt(&self.inner, f)
-    }
-}
-
-
 #[derive(Copy, Clone)]
 pub struct Span {
     inner: imp::Span,
@@ -403,7 +357,7 @@ impl Span {
 
     fn _new_fallback(inner: fallback::Span) -> Self {
         Span {
-            inner: inner.into(),
+            inner: imp::Span::from(inner),
             _marker: MARKER,
         }
     }
@@ -470,15 +424,6 @@ impl Span {
     
     
     
-    #[cfg(all(procmacro2_semver_exempt, any(not(wrap_proc_macro), super_unstable)))]
-    #[cfg_attr(docsrs, doc(cfg(procmacro2_semver_exempt)))]
-    pub fn source_file(&self) -> SourceFile {
-        SourceFile::_new(self.inner.source_file())
-    }
-
-    
-    
-    
     
     
     
@@ -523,6 +468,27 @@ impl Span {
 
     
     
+    
+    
+    
+    #[cfg(span_locations)]
+    #[cfg_attr(docsrs, doc(cfg(feature = "span-locations")))]
+    pub fn file(&self) -> String {
+        self.inner.file()
+    }
+
+    
+    
+    
+    
+    
+    
+    #[cfg(span_locations)]
+    #[cfg_attr(docsrs, doc(cfg(feature = "span-locations")))]
+    pub fn local_file(&self) -> Option<PathBuf> {
+        self.inner.local_file()
+    }
+
     
     
     
@@ -707,7 +673,7 @@ impl Group {
 
     fn _new_fallback(inner: fallback::Group) -> Self {
         Group {
-            inner: inner.into(),
+            inner: imp::Group::from(inner),
         }
     }
 
@@ -833,10 +799,16 @@ impl Punct {
     
     
     pub fn new(ch: char, spacing: Spacing) -> Self {
-        Punct {
-            ch,
-            spacing,
-            span: Span::call_site(),
+        if let '!' | '#' | '$' | '%' | '&' | '\'' | '*' | '+' | ',' | '-' | '.' | '/' | ':' | ';'
+        | '<' | '=' | '>' | '?' | '@' | '^' | '|' | '~' = ch
+        {
+            Punct {
+                ch,
+                spacing,
+                span: Span::call_site(),
+            }
+        } else {
+            panic!("unsupported proc macro punctuation character {:?}", ch);
         }
     }
 
@@ -957,6 +929,13 @@ impl Ident {
     fn _new(inner: imp::Ident) -> Self {
         Ident {
             inner,
+            _marker: MARKER,
+        }
+    }
+
+    fn _new_fallback(inner: fallback::Ident) -> Self {
+        Ident {
+            inner: imp::Ident::from(inner),
             _marker: MARKER,
         }
     }
@@ -1130,7 +1109,7 @@ impl Literal {
 
     fn _new_fallback(inner: fallback::Literal) -> Self {
         Literal {
-            inner: inner.into(),
+            inner: imp::Literal::from(inner),
             _marker: MARKER,
         }
     }
@@ -1279,8 +1258,6 @@ impl Literal {
     
     
     
-    
-    
     pub fn subspan<R: RangeBounds<usize>>(&self, range: R) -> Option<Span> {
         self.inner.subspan(range).map(Span::_new)
     }
@@ -1299,10 +1276,13 @@ impl FromStr for Literal {
     type Err = LexError;
 
     fn from_str(repr: &str) -> Result<Self, LexError> {
-        repr.parse().map(Literal::_new).map_err(|inner| LexError {
-            inner,
-            _marker: MARKER,
-        })
+        match imp::Literal::from_str_checked(repr) {
+            Ok(lit) => Ok(Literal::_new(lit)),
+            Err(lex) => Err(LexError {
+                inner: lex,
+                _marker: MARKER,
+            }),
+        }
     }
 }
 
