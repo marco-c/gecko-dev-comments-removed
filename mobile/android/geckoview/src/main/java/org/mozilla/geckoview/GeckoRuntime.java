@@ -201,10 +201,12 @@ public final class GeckoRuntime implements Parcelable {
       
       
       
-      ThreadUtils.sGeckoHandler.post(
-          () -> {
-            Clipboard.updateSequenceNumber(GeckoAppShell.getApplicationContext());
-          });
+      if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
+        ThreadUtils.sGeckoHandler.post(
+            () -> {
+              Clipboard.updateSequenceNumber(GeckoAppShell.getApplicationContext());
+            });
+      }
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
