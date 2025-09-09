@@ -92,6 +92,7 @@ static already_AddRefed<Screen> MakeScreenGtk(unsigned int aMonitor,
     
     contentsScale.scale = geometryScaleFactor;
 
+#ifdef MOZ_WAYLAND
     if (StaticPrefs::widget_wayland_fractional_scale_enabled()) {
       
       
@@ -109,6 +110,7 @@ static already_AddRefed<Screen> MakeScreenGtk(unsigned int aMonitor,
         contentsScale.scale = fractionalScale;
       }
     }
+#endif
     
     availRect.MoveTo(0, 0);
     
