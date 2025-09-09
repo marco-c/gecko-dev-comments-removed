@@ -1,5 +1,3 @@
-
-
 let src = `
 function f0() {
     return f0;
