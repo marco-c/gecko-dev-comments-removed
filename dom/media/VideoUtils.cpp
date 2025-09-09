@@ -1112,6 +1112,32 @@ bool IsH264CodecString(const nsAString& aCodec) {
                                  H264CodecStringStrictness::Lenient);
 }
 
+bool IsAllowedH264Codec(const nsAString& aCodec) {
+  uint8_t profile = 0, constraint = 0;
+  H264_LEVEL level;
+
+  
+  if (!ExtractH264CodecDetails(aCodec, profile, constraint, level,
+                               H264CodecStringStrictness::Lenient)) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  return level >= H264_LEVEL::H264_LEVEL_1 &&
+         level <= H264_LEVEL::H264_LEVEL_6_2 &&
+         (profile == H264_PROFILE_BASE || profile == H264_PROFILE_MAIN ||
+          profile == H264_PROFILE_EXTENDED || profile == H264_PROFILE_HIGH);
+}
+
 bool IsH265CodecString(const nsAString& aCodec) {
   uint8_t profile = 0;
   uint8_t level = 0;
