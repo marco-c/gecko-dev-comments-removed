@@ -316,6 +316,12 @@ bool FinalizationRegistryObject::construct(JSContext* cx, unsigned argc,
     return false;
   }
 
+  Rooted<UniquePtr<FinalizationRecordVector>> records(
+      cx, cx->make_unique<FinalizationRecordVector>(cx->zone()));
+  if (!records) {
+    return false;
+  }
+
   Rooted<UniquePtr<RegistrationsWeakMap>> registrations(
       cx, cx->make_unique<RegistrationsWeakMap>(cx));
   if (!registrations) {
@@ -335,6 +341,8 @@ bool FinalizationRegistryObject::construct(JSContext* cx, unsigned argc,
   }
 
   registry->initReservedSlot(QueueSlot, ObjectValue(*queue));
+  InitReservedSlot(registry, RecordsSlot, records.release(),
+                   MemoryUse::FinalizationRecordVector);
   InitReservedSlot(registry, RegistrationsSlot, registrations.release(),
                    MemoryUse::FinalizationRegistryRegistrations);
 
@@ -351,10 +359,14 @@ bool FinalizationRegistryObject::construct(JSContext* cx, unsigned argc,
 
 void FinalizationRegistryObject::trace(JSTracer* trc, JSObject* obj) {
   
-  
-  
-
   auto* registry = &obj->as<FinalizationRegistryObject>();
+  if (FinalizationRecordVector* records = registry->records()) {
+    records->trace(trc);
+  }
+
+  
+  
+  
   if (RegistrationsWeakMap* registrations = registry->registrations()) {
     registrations->trace(trc);
   }
@@ -363,7 +375,6 @@ void FinalizationRegistryObject::trace(JSTracer* trc, JSObject* obj) {
 void FinalizationRegistryObject::traceWeak(JSTracer* trc) {
   
   
-
   MOZ_ASSERT(registrations());
   for (RegistrationsWeakMap::Enum e(*registrations()); !e.empty();
        e.popFront()) {
@@ -383,8 +394,17 @@ void FinalizationRegistryObject::finalize(JS::GCContext* gcx, JSObject* obj) {
   
   MOZ_ASSERT_IF(registry->queue(), !registry->queue()->hasRegistry());
 
+  gcx->delete_(obj, registry->records(), MemoryUse::FinalizationRecordVector);
   gcx->delete_(obj, registry->registrations(),
                MemoryUse::FinalizationRegistryRegistrations);
+}
+
+FinalizationRecordVector* FinalizationRegistryObject::records() const {
+  Value value = getReservedSlot(RecordsSlot);
+  if (value.isUndefined()) {
+    return nullptr;
+  }
+  return static_cast<FinalizationRecordVector*>(value.toPrivate());
 }
 
 FinalizationQueueObject* FinalizationRegistryObject::queue() const {
@@ -461,11 +481,18 @@ bool FinalizationRegistryObject::register_(JSContext* cx, unsigned argc,
   }
 
   
+  if (!registry->records()->append(record)) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+  auto recordsGuard =
+      mozilla::MakeScopeExit([&] { registry->records()->popBack(); });
+
+  
   if (!unregisterToken.isUndefined() &&
       !addRegistration(cx, registry, unregisterToken, record)) {
     return false;
   }
-
   auto registrationsGuard = mozilla::MakeScopeExit([&] {
     if (!unregisterToken.isUndefined()) {
       removeRegistrationOnError(registry, unregisterToken, record);
@@ -495,6 +522,7 @@ bool FinalizationRegistryObject::register_(JSContext* cx, unsigned argc,
   }
 
   
+  recordsGuard.release();
   registrationsGuard.release();
   args.rval().setUndefined();
   return true;
@@ -617,6 +645,13 @@ bool FinalizationRegistryObject::unregister(JSContext* cx, unsigned argc,
       }
     }
     registry->registrations()->remove(unregisterToken);
+
+    
+    if (removed) {
+      registry->records()->eraseIf([](FinalizationRecordObject* record) {
+        return !record->isRegistered();
+      });
+    }
   }
 
   
@@ -630,6 +665,9 @@ bool FinalizationRegistryObject::unregisterRecord(
   if (!record->isRegistered()) {
     return false;
   }
+
+  
+  record->unlink();
 
   
   
@@ -828,6 +866,8 @@ JSFunction* FinalizationQueueObject::doCleanupFunction() const {
 
 void FinalizationQueueObject::queueRecordToBeCleanedUp(
     FinalizationRecordObject* record) {
+  MOZ_ASSERT(hasRegistry());
+
   MOZ_ASSERT(!record->isInQueue());
   record->setInQueue(true);
 
@@ -889,6 +929,8 @@ bool FinalizationQueueObject::cleanupQueuedRecords(
   while (!records->empty()) {
     FinalizationRecordObject* record = records->popCopy();
     MOZ_ASSERT(!record->isInRecordMap());
+
+    JS::ExposeObjectToActiveJS(record);
 
     MOZ_ASSERT(record->isInQueue());
     record->setInQueue(false);
