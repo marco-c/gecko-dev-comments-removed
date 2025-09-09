@@ -6,16 +6,22 @@
 
 #include "BlankDecoderModule.h"
 #include "DecodedStream.h"
+#include "ImageContainer.h"
 #include "MediaData.h"
 #include "MediaQueue.h"
 #include "MediaTrackGraphImpl.h"
 #include "MediaTrackListener.h"
 #include "MockCubeb.h"
+#include "VideoSegment.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "mozilla/gtest/WaitFor.h"
 #include "nsJSEnvironment.h"
 
+using mozilla::layers::ImageContainer;
+using mozilla::layers::ImageUsageType;
 using mozilla::media::TimeUnit;
+using testing::ElementsAre;
 using testing::Test;
 
 namespace mozilla {
@@ -71,6 +77,17 @@ class OnFallbackListener : public MediaTrackListener {
   }
 };
 
+template <typename Segment>
+class CapturingListener : public MediaTrackListener {
+ public:
+  Segment mSegment;
+
+  void NotifyQueuedChanges(MediaTrackGraph* aGraph, TrackTime aTrackOffset,
+                           const MediaSegment& aQueuedMedia) {
+    mSegment.AppendSlice(aQueuedMedia, 0, aQueuedMedia.GetDuration());
+  }
+};
+
 class TestableDecodedStream : public DecodedStream {
  public:
   TestableDecodedStream(
@@ -87,6 +104,7 @@ class TestableDecodedStream : public DecodedStream {
 
   using DecodedStream::GetPositionImpl;
   using DecodedStream::LastOutputSystemTime;
+  using DecodedStream::LastVideoTimeStamp;
 };
 
 template <MediaType Type>
@@ -202,6 +220,8 @@ class TestDecodedStream : public Test {
   }
 
   MediaInfo CreateMediaInfo() { return mozilla::CreateMediaInfo<Type>(); }
+
+  void TestVideoTimestampsWithPlaybackRate(double aPlaybackRate);
 };
 
 using TestDecodedStreamA = TestDecodedStream<Audio>;
@@ -277,5 +297,86 @@ TEST_F(TestDecodedStreamA, InterpolatedPosition) {
             (TimeUnit(512, kRate) + TimeUnit(10, 1000)).ToMicroseconds());
 
   mDecodedStream->Stop();
+}
+
+template <MediaType Type>
+void TestDecodedStream<Type>::TestVideoTimestampsWithPlaybackRate(
+    double aPlaybackRate) {
+  static_assert(Type == MediaType::Video);
+
+  auto imageContainer = MakeRefPtr<ImageContainer>(ImageUsageType::Webrtc,
+                                                   ImageContainer::SYNCHRONOUS);
+  
+  
+  RefPtr capturingListener = new CapturingListener<VideoSegment>();
+  mOutputTracks[0]->AddListener(capturingListener);
+  VideoSegment* segment = &capturingListener->mSegment;
+
+  {
+    
+    
+    BlankVideoDataCreator creator(640, 480, imageContainer);
+    TimeUnit t = TimeUnit::Zero();
+    for (size_t i = 0; i < 4; ++i) {
+      constexpr TimeUnit kDuration = TimeUnit(kRate / 10, kRate);
+      auto raw = MakeRefPtr<MediaRawData>();
+      raw->mTime = t;
+      raw->mDuration = kDuration;
+      t += kDuration;
+      mVideoQueue.Push(RefPtr(creator.Create(raw))->template As<VideoData>());
+    }
+  }
+
+  mDecodedStream->SetPlaybackRate(aPlaybackRate);
+  mDecodedStream->Start(TimeUnit::Zero(), CreateMediaInfo());
+  mDecodedStream->SetPlaying(true);
+  NS_ProcessPendingEvents(nullptr);
+  mMockCubebStream->ManualDataCallback(0);
+
+  
+  long duration = 0;
+  while (duration < static_cast<long>((static_cast<double>(kRate) / 10) * 3 /
+                                      aPlaybackRate)) {
+    constexpr long kChunk = 512;
+    mMockCubebStream->ManualDataCallback(kChunk);
+    NS_ProcessPendingEvents(nullptr);
+    duration += kChunk;
+  }
+  EXPECT_EQ(segment->GetDuration(), duration);
+
+  
+  
+  
+  const auto frameGap =
+      TimeDuration::FromMilliseconds(100).MultDouble(1 / aPlaybackRate);
+  TimeStamp videoStartOffset =
+      mDecodedStream->LastVideoTimeStamp() - frameGap * 3;
+
+  
+  AutoTArray<TrackTime, 3> durations;
+  AutoTArray<TimeDuration, 3> timestamps;
+  for (VideoSegment::ConstChunkIterator i(*segment);
+       durations.Length() < 3 && !i.IsEnded(); i.Next()) {
+    durations.AppendElement(i->GetDuration());
+    timestamps.AppendElement(i->mTimeStamp - videoStartOffset);
+  }
+  const TrackTime d =
+      static_cast<TrackTime>(static_cast<double>(kRate) / 10 / aPlaybackRate);
+  EXPECT_THAT(durations, ElementsAre(d, d, d));
+  EXPECT_THAT(timestamps,
+              ElementsAre(frameGap * 0, frameGap * 1, frameGap * 2));
+
+  mOutputTracks[0]->RemoveListener(capturingListener);
+  mDecodedStream->Stop();
+}
+
+TEST_F(TestDecodedStreamV, VideoTimeStamps) {
+  TestVideoTimestampsWithPlaybackRate(1.0);
+}
+TEST_F(TestDecodedStreamV, VideoTimeStampsFaster) {
+  TestVideoTimestampsWithPlaybackRate(2.0);
+}
+TEST_F(TestDecodedStreamV, VideoTimeStampsSlower) {
+  TestVideoTimestampsWithPlaybackRate(0.5);
 }
 }  
