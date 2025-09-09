@@ -225,6 +225,9 @@ class nsTextFrame : public nsIFrame {
 
     void InitFontGroupAndFontMetrics() const;
 
+    
+    void InitTextAutospace();
+
     const RefPtr<gfxTextRun> mTextRun;
     mutable gfxFontGroup* mFontGroup;
     mutable RefPtr<nsFontMetrics> mFontMetrics;
@@ -254,6 +257,9 @@ class nsTextFrame : public nsIFrame {
 
     
     const gfxFloat mLetterSpacing;
+
+    
+    Maybe<mozilla::TextAutospace> mTextAutospace;
 
     
     mutable gfxFloat mMinTabAdvance;
