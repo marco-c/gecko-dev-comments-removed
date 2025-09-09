@@ -1,18 +1,18 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-
-
+/*
+ * Layout of a fixed sidebar item
+ *
+ *  +--------+----------------+
+ *  | Icon   | Name           |
+ *  +--------+----------------+
+ */
 
 .sidebar-fixed-item__container {
   align-items: center;
-  border-radius: 2px;
+  border-radius: var(--border-radius-xsmall);
   display: grid;
   grid-template-columns: 34px 1fr;
   height: 100%;
