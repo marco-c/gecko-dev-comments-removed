@@ -66,23 +66,16 @@ exports.ScreenshotContentActor = class ScreenshotContentActor extends Actor {
     const windowZoom = getCurrentZoom(window);
     const messages = [];
 
-    
-    
-    if (!fullpage && !selector && !nodeActorID) {
-      return {
-        rect: null,
-        messages,
-        windowDpr,
-        windowZoom,
-      };
-    }
-
     let left;
     let top;
     let width;
     let height;
 
-    if (fullpage) {
+    
+    
+    
+    
+    if (fullpage || (!selector && !nodeActorID)) {
       
       const winUtils = window.windowUtils;
       const scrollbarHeight = {};
@@ -91,16 +84,12 @@ exports.ScreenshotContentActor = class ScreenshotContentActor extends Actor {
 
       left = 0;
       top = 0;
-      width =
-        window.innerWidth +
-        window.scrollMaxX -
-        window.scrollMinX -
-        scrollbarWidth.value;
-      height =
-        window.innerHeight +
-        window.scrollMaxY -
-        window.scrollMinY -
-        scrollbarHeight.value;
+      width = window.innerWidth - scrollbarWidth.value;
+      height = window.innerHeight - scrollbarHeight.value;
+      if (fullpage) {
+        width = width + window.scrollMaxX - window.scrollMinX;
+        height = height + window.scrollMaxY - window.scrollMinY;
+      }
     } else if (selector) {
       const node = window.document.querySelector(selector);
 
