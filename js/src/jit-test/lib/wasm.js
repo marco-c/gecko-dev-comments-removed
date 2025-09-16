@@ -520,6 +520,12 @@ let WasmExternrefValues = [null, ...WasmNonNullExternrefValues];
 let MaxMemories = 100
 
 
+const MaxMemory64PagesValidation = BigInt(Math.pow(2, 37) - 1); 
+const MaxTable64ElemsValidation = 0xFFFF_FFFF_FFFF_FFFFn; 
+const MaxTableElemsRuntime = 10000000; 
+const MaxUint32 = 0xFFFF_FFFF;
+
+
 
 
 function iota(len, k=0) {

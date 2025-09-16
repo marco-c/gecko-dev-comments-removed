@@ -103,6 +103,13 @@ struct Pages {
   }
 
   
+  uint64_t byteLength64() const {
+    mozilla::CheckedInt<uint64_t> length(value_);
+    length *= PageSize;
+    return length.value();
+  }
+
+  
   
   
   bool checkedIncrement(Pages delta) {

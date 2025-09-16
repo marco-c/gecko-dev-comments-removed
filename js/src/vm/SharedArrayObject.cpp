@@ -332,6 +332,28 @@ bool SharedArrayBufferObject::maxByteLengthGetterImpl(JSContext* cx,
   auto* buffer = &args.thisv().toObject().as<SharedArrayBufferObject>();
 
   
+  
+  if (buffer->isWasm()) {
+    auto* wasmBuffer = buffer->rawWasmBufferObject();
+
+    args.rval().setNumber(
+        double(wasmBuffer->wasmSourceMaxPages().value() * wasm::PageSize));
+    return true;
+  }
+  
+  
+  if (buffer->isWasm()) {
+    Pages sourceMaxPages = buffer->rawWasmBufferObject()->wasmSourceMaxPages();
+    uint64_t sourceMaxBytes = sourceMaxPages.byteLength64();
+
+    MOZ_ASSERT(sourceMaxBytes <=
+               wasm::PageSize * wasm::MaxMemory64PagesValidation);
+    args.rval().setNumber(double(sourceMaxBytes));
+
+    return true;
+  }
+
+  
   args.rval().setNumber(buffer->byteLengthOrMaxByteLength());
   return true;
 }
