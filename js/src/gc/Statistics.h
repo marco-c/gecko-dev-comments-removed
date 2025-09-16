@@ -21,6 +21,7 @@
 #include "js/GCAPI.h"
 #include "js/SliceBudget.h"
 #include "js/Vector.h"
+#include "vm/Logging.h"
 
 namespace js {
 
@@ -201,7 +202,7 @@ struct Statistics {
   void nonincremental(GCAbortReason reason) {
     MOZ_ASSERT(reason != GCAbortReason::None);
     nonincrementalReason_ = reason;
-    log("Non-incremental reason: %s", nonincrementalReason());
+    JS_LOG(gc, Info, "non-incremental for reason %s", nonincrementalReason());
   }
 
   bool nonincremental() const {
@@ -324,21 +325,11 @@ struct Statistics {
 
   bool bufferAllocStatsEnabled() const { return enableBufferAllocStats_; }
 
-#ifdef DEBUG
-  
-  void log(const char* fmt, ...);
-#else
-  void log(const char* fmt, ...) {};
-#endif
-
  private:
   gc::GCRuntime* const gc;
 
   
   FILE* gcTimerFile;
-
-  
-  FILE* gcDebugFile;
 
   
   FILE* gcProfileFile;
