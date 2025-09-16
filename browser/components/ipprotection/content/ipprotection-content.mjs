@@ -13,6 +13,11 @@ import {
   ERRORS,
 } from "chrome://browser/content/ipprotection/ipprotection-constants.mjs";
 
+import {
+  connectionTimer,
+  defaultTimeValue,
+} from "chrome://browser/content/ipprotection/ipprotection-timer.mjs";
+
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/ipprotection/ipprotection-header.mjs";
 // eslint-disable-next-line import/no-unassigned-import
@@ -23,8 +28,6 @@ import "chrome://browser/content/ipprotection/ipprotection-message-bar.mjs";
 import "chrome://browser/content/ipprotection/ipprotection-signedout.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/elements/moz-toggle.mjs";
-
-const TIMER_INTERVAL_MS = 1000;
 
 export default class IPProtectionContentElement extends MozLitElement {
   static queries = {
@@ -38,18 +41,11 @@ export default class IPProtectionContentElement extends MozLitElement {
     upgradeEl: "#upgrade-vpn-content",
     activeSubscriptionEl: "#active-subscription-vpn-content",
     supportLinkEl: "#vpn-support-link",
-    downloadButtonEl: "#download-vpn-button",
   };
 
   static properties = {
     state: { type: Object, attribute: false },
     showAnimation: { type: Boolean, state: true },
-    /**
-     * _timeString is the current value shown on the panel,
-     * and is separate from protectionEnabledSince. We will use
-     * protectionEnabledSince to calculate what _timeString should be.
-     */
-    _timeString: { type: String, state: true },
     _showMessageBar: { type: Boolean, state: true },
     _messageDismissed: { type: Boolean, state: true },
     _enabled: { type: Boolean, state: true },
@@ -65,8 +61,6 @@ export default class IPProtectionContentElement extends MozLitElement {
     this._showMessageBar = false;
     this._messageDismissed = false;
     this.showAnimation = false;
-    this._timeString = "";
-    this._connectionTimeInterval = null;
     this._enabled = null;
   }
 
@@ -78,13 +72,6 @@ export default class IPProtectionContentElement extends MozLitElement {
       "ipprotection-message-bar:user-dismissed",
       this.#messageBarListener
     );
-
-    // If we're able to show the time string right away, do it.
-    if (this.canShowConnectionTime) {
-      this._timeString = this.#getFormattedTime(
-        this.state.protectionEnabledSince
-      );
-    }
   }
 
   disconnectedCallback() {
@@ -95,8 +82,6 @@ export default class IPProtectionContentElement extends MozLitElement {
       "ipprotection-message-bar:user-dismissed",
       this.#messageBarListener
     );
-
-    this.#stopTimer();
   }
 
   get canShowConnectionTime() {
@@ -104,51 +89,12 @@ export default class IPProtectionContentElement extends MozLitElement {
       this.state &&
       this.state.isProtectionEnabled &&
       this.state.protectionEnabledSince &&
-      this.state.isSignedIn
+      !this.state.isSignedOut
     );
   }
 
   get #hasErrors() {
     return !this.state || this.state.error !== "";
-  }
-
-  #startTimerIfUnset() {
-    if (this._connectionTimeInterval) {
-      return;
-    }
-
-    this._connectionTimeInterval = setInterval(() => {
-      this._timeString = this.#getFormattedTime(
-        this.state.protectionEnabledSince
-      );
-    }, TIMER_INTERVAL_MS);
-  }
-
-  #stopTimer() {
-    clearInterval(this._connectionTimeInterval);
-    this._connectionTimeInterval = null;
-    this._timeString = "";
-  }
-
-  /**
-   * Returns the formatted connection duration time string as HH:MM:SS (hours, minutes, seconds).
-   *
-   * @param {number} startMS
-   *  The timestamp in milliseconds since a connection to the proxy was made.
-   * @returns {string}
-   *  The formatted time in HH:MM:SS.
-   */
-  #getFormattedTime(startMS) {
-    let duration = window.Temporal.Duration.from({
-      milliseconds: Math.ceil(ChromeUtils.now() - startMS),
-    }).round({ smallestUnit: "seconds", largestUnit: "hours" });
-
-    let formatter = new Intl.DurationFormat("en-US", {
-      style: "digital",
-      hoursDisplay: "always",
-      hours: "2-digit",
-    });
-    return formatter.format(duration);
   }
 
   handleClickSupportLink(event) {
@@ -190,17 +136,8 @@ export default class IPProtectionContentElement extends MozLitElement {
     Glean.ipprotection.clickUpgradeButton.record();
   }
 
-  handleDownload(event) {
-    const win = event.target.ownerGlobal;
-    win.openWebLinkIn(LINKS.DOWNLOAD_URL, "tab");
-    // Close the panel
-    this.dispatchEvent(
-      new CustomEvent("IPProtection:Close", { bubbles: true })
-    );
-  }
-
   focus() {
-    if (!this.state.isSignedIn) {
+    if (this.state.isSignedOut) {
       this.signedOutEl?.focus();
     } else {
       this.connectionToggleEl?.focus();
@@ -242,11 +179,6 @@ export default class IPProtectionContentElement extends MozLitElement {
   updated(changedProperties) {
     super.updated(changedProperties);
 
-    // If the only updates are time string changes, ignore them.
-    if (changedProperties.size == 1 && changedProperties.has("_timeString")) {
-      return;
-    }
-
     // Set the toggle to the protection enabled state, if it hasn't just changed.
     if (!changedProperties.has("_enabled")) {
       this._enabled = this.state.isProtectionEnabled;
@@ -267,12 +199,6 @@ export default class IPProtectionContentElement extends MozLitElement {
       this.showAnimation = true;
     } else {
       this.showAnimation = false;
-    }
-
-    if (this.canShowConnectionTime && this.isConnected) {
-      this.#startTimerIfUnset(this.state.protectionEnabledSince);
-    } else {
-      this.#stopTimer();
     }
   }
 
@@ -314,9 +240,9 @@ export default class IPProtectionContentElement extends MozLitElement {
       ? "chrome://browser/content/ipprotection/assets/ipprotection-connection-on.svg"
       : "chrome://browser/content/ipprotection/assets/ipprotection-connection-off.svg";
 
-    // Time is rendered as blank until we have a value to show.
-    let time =
-      this.canShowConnectionTime && this._timeString ? this._timeString : "";
+    let time = this.canShowConnectionTime
+      ? connectionTimer(this.state.protectionEnabledSince)
+      : defaultTimeValue;
 
     return html` <moz-box-group class="vpn-status-group">
       ${this.showAnimation ? this.animationRingsTemplate() : null}
@@ -328,7 +254,7 @@ export default class IPProtectionContentElement extends MozLitElement {
         layout="large-icon"
         iconsrc=${statusIcon}
         data-l10n-id=${statusCardL10nId}
-        data-l10n-args=${JSON.stringify({ time })}
+        data-l10n-args=${time}
       >
         <moz-toggle
           id="connection-toggle"
@@ -381,40 +307,14 @@ export default class IPProtectionContentElement extends MozLitElement {
     `;
   }
 
-  afterUpgradeTemplate() {
-    return html`<div
-      id="active-subscription-vpn-content"
-      class="vpn-bottom-content"
-    >
-      <h2
-        id="active-subscription-vpn-title"
-        class="vpn-subtitle"
-        data-l10n-id="active-subscription-vpn-title"
-      ></h2>
-      <p
-        id="active-subscription-vpn-message"
-        data-l10n-id="active-subscription-vpn-message"
-      ></p>
-      <moz-button
-        id="download-vpn-button"
-        class="vpn-button"
-        @click=${this.handleDownload}
-        data-l10n-id="get-vpn-button"
-        type="primary"
-      ></moz-button>
-    </div>`;
-  }
-
   mainContentTemplate() {
     // TODO: Update support-page with new SUMO link for Mozilla VPN - Bug 1975474
-    if (!this.state.isSignedIn) {
+    if (this.state.isSignedOut) {
       return html` <ipprotection-signedout></ipprotection-signedout> `;
     }
     return html`
       ${this.statusCardTemplate()}
-      ${this.state.hasUpgraded
-        ? this.afterUpgradeTemplate()
-        : this.beforeUpgradeTemplate()}
+      ${!this.state.hasUpgraded ? this.beforeUpgradeTemplate() : null}
     `;
   }
 
