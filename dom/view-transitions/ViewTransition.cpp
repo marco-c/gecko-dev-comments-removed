@@ -268,24 +268,6 @@ Element* ViewTransition::GetViewTransitionTreeRoot() const {
              : nullptr;
 }
 
-void ViewTransition::GetCapturedFrames(
-    nsTArray<nsIFrame*>& aCapturedFrames) const {
-  if (mOldCaptureElements) {
-    for (const auto& [f, _] : *mOldCaptureElements) {
-      aCapturedFrames.AppendElement(f);
-    }
-  }
-
-  for (const auto& entry : mNamedElements) {
-    CapturedElement& capturedElement = *entry.GetData();
-    if (capturedElement.mNewElement &&
-        capturedElement.mNewElement->GetPrimaryFrame()) {
-      aCapturedFrames.AppendElement(
-          capturedElement.mNewElement->GetPrimaryFrame());
-    }
-  }
-}
-
 Maybe<nsRect> ViewTransition::GetOldInkOverflowRect(nsAtom* aName) const {
   auto* el = mNamedElements.Get(aName);
   if (NS_WARN_IF(!el)) {
@@ -1285,7 +1267,7 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureOldState() {
   
   nsTHashSet<nsAtom*> usedTransitionNames;
   
-  OldCaptureFramesArray captureElements;
+  AutoTArray<std::pair<nsIFrame*, RefPtr<nsAtom>>, 32> captureElements;
 
   
   
@@ -1346,8 +1328,6 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureOldState() {
   }
 
   if (!captureElements.IsEmpty()) {
-    AutoRestore guard{mOldCaptureElements};
-    mOldCaptureElements = &captureElements;
     
     if (RefPtr<PresShell> ps =
             nsContentUtils::GetInProcessSubtreeRootDocument(mDocument)

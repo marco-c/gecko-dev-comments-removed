@@ -100,8 +100,6 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
   
   
   Element* GetViewTransitionTreeRoot() const;
-  
-  void GetCapturedFrames(nsTArray<nsIFrame*>& aCapturedFrames) const;
 
   Maybe<nsRect> GetOldInkOverflowRect(nsAtom* aName) const;
   Maybe<nsRect> GetNewInkOverflowRect(nsAtom* aName) const;
@@ -190,11 +188,6 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
   
   
   AutoTArray<RefPtr<nsAtom>, 8> mNames;
-
-  using OldCaptureFramesArray =
-      AutoTArray<std::pair<nsIFrame*, RefPtr<nsAtom>>, 32>;
-  
-  OldCaptureFramesArray* mOldCaptureElements = nullptr;
 
   
   

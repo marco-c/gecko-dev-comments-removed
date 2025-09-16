@@ -3355,15 +3355,6 @@ void nsIFrame::BuildDisplayListForStackingContext(
       (DisplayPortUtils::IsFixedPosFrameInDisplayPort(this) ||
        BuilderHasScrolledClip(aBuilder));
 
-  if (capturedByViewTransition) {
-    
-    
-    
-    
-    visibleRect = InkOverflowRectRelativeToSelf();
-    dirtyRect = InkOverflowRectRelativeToSelf();
-  }
-
   nsDisplayListBuilder::AutoBuildingDisplayList buildingDisplayList(
       aBuilder, this, visibleRect, dirtyRect, isTransformed);
 
