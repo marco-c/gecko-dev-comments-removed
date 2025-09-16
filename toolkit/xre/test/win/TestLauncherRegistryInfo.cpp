@@ -24,11 +24,13 @@ static const wchar_t kBrowserSuffix[] = L"|Browser";
 static const wchar_t kLauncherSuffix[] = L"|Launcher";
 static const wchar_t kImageSuffix[] = L"|Image";
 static const wchar_t kTelemetrySuffix[] = L"|Telemetry";
+static const wchar_t kCrashTimestampSuffix[] = L"|LauncherCrashTime";
 
 MOZ_RUNINIT static std::wstring gBrowserValue;
 MOZ_RUNINIT static std::wstring gLauncherValue;
 MOZ_RUNINIT static std::wstring gImageValue;
 MOZ_RUNINIT static std::wstring gTelemetryValue;
+MOZ_RUNINIT static std::wstring gCrashTimestampValue;
 
 static DWORD gMyImageTimestamp;
 
@@ -216,7 +218,12 @@ static mozilla::LauncherVoidResult DeleteAllRegstryValues() {
     return vr;
   }
 
-  return DeleteRegistryValueData(gTelemetryValue);
+  vr = DeleteRegistryValueData(gTelemetryValue);
+  if (vr.isErr()) {
+    return vr;
+  }
+
+  return DeleteRegistryValueData(gCrashTimestampValue);
 }
 
 bool GetInstallHash(const char16_t*, mozilla::UniquePtr<NS_tchar[]>& result) {
@@ -734,6 +741,175 @@ static mozilla::LauncherVoidResult TestReEnable() {
   return mozilla::Ok();
 }
 
+static mozilla::LauncherVoidResult TestCrashTimeoutReenabling() {
+  
+  mozilla::LauncherVoidResult vr = SetupEnabledScenario();
+  if (vr.isErr()) {
+    return vr;
+  }
+
+  mozilla::LauncherRegistryInfo info;
+  vr = info.DisableDueToFailure();
+  if (vr.isErr()) {
+    return vr.propagateErr();
+  }
+
+  
+  EXPECT_ENABLED_STATE_IS(EnabledState::FailDisabled);
+
+  
+  vr = DeleteRegistryValueData(gLauncherValue);
+  if (vr.isErr()) {
+    return vr;
+  }
+  EXPECT_ENABLED_STATE_IS(EnabledState::ForceDisabled);
+
+  EXPECT_REG_QWORD_EXISTS(gCrashTimestampValue);
+
+  
+  EXPECT_CHECK_RESULT_IS(ProcessType::Launcher, ProcessType::Browser);
+  EXPECT_COMMIT_IS_OK();
+  EXPECT_ENABLED_STATE_IS(EnabledState::ForceDisabled);
+
+  
+  
+  FILETIME currentTime;
+  ::GetSystemTimeAsFileTime(&currentTime);
+  uint64_t currentTimestamp =
+      (static_cast<uint64_t>(currentTime.dwHighDateTime) << 32) |
+      currentTime.dwLowDateTime;
+
+  
+  constexpr uint64_t kTimeoutInterval = 46ULL * 24 * 60 * 60 * 10000000ULL;
+  uint64_t oldCrashTime = currentTimestamp - kTimeoutInterval;
+
+  
+  vr = WriteRegistryValueData<uint64_t>(gCrashTimestampValue, REG_QWORD,
+                                        oldCrashTime);
+  if (vr.isErr()) {
+    return vr;
+  }
+
+  
+  EXPECT_CHECK_RESULT_IS(ProcessType::Launcher, ProcessType::Launcher);
+  EXPECT_COMMIT_IS_OK();
+
+  EXPECT_REG_QWORD_DOES_NOT_EXIST(gCrashTimestampValue);
+
+  
+  EXPECT_REG_QWORD_DOES_NOT_EXIST(gBrowserValue);
+
+  
+  EXPECT_REG_QWORD_EXISTS(gLauncherValue);
+
+  return mozilla::Ok();
+}
+
+static mozilla::LauncherVoidResult TestCrashTimeoutNotExpired() {
+  
+  mozilla::LauncherVoidResult vr = SetupEnabledScenario();
+  if (vr.isErr()) {
+    return vr;
+  }
+
+  mozilla::LauncherRegistryInfo info;
+  vr = info.DisableDueToFailure();
+  if (vr.isErr()) {
+    return vr.propagateErr();
+  }
+
+  
+  vr = DeleteRegistryValueData(gLauncherValue);
+  if (vr.isErr()) {
+    return vr;
+  }
+  EXPECT_ENABLED_STATE_IS(EnabledState::ForceDisabled);
+
+  
+  FILETIME currentTime;
+  ::GetSystemTimeAsFileTime(&currentTime);
+  uint64_t currentTimestamp =
+      (static_cast<uint64_t>(currentTime.dwHighDateTime) << 32) |
+      currentTime.dwLowDateTime;
+
+  
+  constexpr uint64_t kPartialTimeoutInterval =
+      30ULL * 24 * 60 * 60 * 10000000ULL;
+  uint64_t recentCrashTime = currentTimestamp - kPartialTimeoutInterval;
+
+  vr = WriteRegistryValueData<uint64_t>(gCrashTimestampValue, REG_QWORD,
+                                        recentCrashTime);
+  if (vr.isErr()) {
+    return vr;
+  }
+
+  
+  EXPECT_CHECK_RESULT_IS(ProcessType::Launcher, ProcessType::Browser);
+  EXPECT_COMMIT_IS_OK();
+  EXPECT_ENABLED_STATE_IS(EnabledState::ForceDisabled);
+
+  
+  EXPECT_REG_QWORD_EXISTS_AND_EQ(gCrashTimestampValue, recentCrashTime);
+
+  
+  EXPECT_REG_QWORD_EXISTS_AND_EQ(gBrowserValue, 0ULL);
+
+  return mozilla::Ok();
+}
+
+static mozilla::LauncherVoidResult TestCrashTimeoutInFuture() {
+  
+  mozilla::LauncherVoidResult vr = SetupEnabledScenario();
+  if (vr.isErr()) {
+    return vr;
+  }
+
+  mozilla::LauncherRegistryInfo info;
+  vr = info.DisableDueToFailure();
+  if (vr.isErr()) {
+    return vr.propagateErr();
+  }
+
+  
+  vr = DeleteRegistryValueData(gLauncherValue);
+  if (vr.isErr()) {
+    return vr;
+  }
+  EXPECT_ENABLED_STATE_IS(EnabledState::ForceDisabled);
+
+  
+  FILETIME currentTime;
+  ::GetSystemTimeAsFileTime(&currentTime);
+  uint64_t currentTimestamp =
+      (static_cast<uint64_t>(currentTime.dwHighDateTime) << 32) |
+      currentTime.dwLowDateTime;
+
+  
+  constexpr uint64_t kPartialTimeoutInterval =
+      30ULL * 24 * 60 * 60 * 10000000ULL;
+  uint64_t recentCrashTime = currentTimestamp + kPartialTimeoutInterval;
+
+  vr = WriteRegistryValueData<uint64_t>(gCrashTimestampValue, REG_QWORD,
+                                        recentCrashTime);
+  if (vr.isErr()) {
+    return vr;
+  }
+
+  
+  EXPECT_CHECK_RESULT_IS(ProcessType::Launcher, ProcessType::Launcher);
+  EXPECT_COMMIT_IS_OK();
+
+  EXPECT_REG_QWORD_DOES_NOT_EXIST(gCrashTimestampValue);
+
+  
+  EXPECT_REG_QWORD_DOES_NOT_EXIST(gBrowserValue);
+
+  
+  EXPECT_REG_QWORD_EXISTS(gLauncherValue);
+
+  return mozilla::Ok();
+}
+
 int main(int argc, char* argv[]) {
   auto fullPath = mozilla::GetFullBinaryPath();
   if (!fullPath) {
@@ -752,6 +928,9 @@ int main(int argc, char* argv[]) {
 
   gTelemetryValue = fullPath.get();
   gTelemetryValue += kTelemetrySuffix;
+
+  gCrashTimestampValue = fullPath.get();
+  gCrashTimestampValue += kCrashTimestampSuffix;
 
   mozilla::LauncherResult<DWORD> timestamp = 0;
   RUN_TEST(timestamp, GetCurrentImageTimestamp);
@@ -778,6 +957,9 @@ int main(int argc, char* argv[]) {
   RUN_TEST(vr, TestDisableDuringLauncherLaunch);
   RUN_TEST(vr, TestDisableDuringBrowserLaunch);
   RUN_TEST(vr, TestReEnable);
+  RUN_TEST(vr, TestCrashTimeoutReenabling);
+  RUN_TEST(vr, TestCrashTimeoutNotExpired);
+  RUN_TEST(vr, TestCrashTimeoutInFuture);
 
   return 0;
 }

@@ -17,6 +17,12 @@
 #include <string>
 #include <type_traits>
 
+
+
+
+static constexpr uint64_t kCrashTimeoutInterval =
+    45ULL * 24 * 60 * 60 * 10000000ULL;
+
 #define EXPAND_STRING_MACRO2(t) t
 #define EXPAND_STRING_MACRO(t) EXPAND_STRING_MACRO2(t)
 
@@ -148,6 +154,8 @@ const wchar_t LauncherRegistryInfo::kBrowserSuffix[] = L"|Browser";
 const wchar_t LauncherRegistryInfo::kImageTimestampSuffix[] = L"|Image";
 const wchar_t LauncherRegistryInfo::kTelemetrySuffix[] = L"|Telemetry";
 const wchar_t LauncherRegistryInfo::kBlocklistSuffix[] = L"|Blocklist";
+const wchar_t LauncherRegistryInfo::kLauncherCrashTimestampSuffix[] =
+    L"|LauncherCrashTime";
 
 bool LauncherRegistryInfo::sAllowCommit = true;
 
@@ -300,7 +308,45 @@ LauncherResult<LauncherRegistryInfo::ProcessType> LauncherRegistryInfo::Check(
 
   ProcessType typeToRunAs = aDesiredType;
 
-  if (lastLauncherTimestamp.isSome() != lastBrowserTimestamp.isSome()) {
+  
+  if (lastBrowserTimestamp.isSome() && lastBrowserTimestamp.value() == 0ULL) {
+    
+    typeToRunAs = ProcessType::Browser;
+    LauncherResult<Maybe<uint64_t>> crashTimestampResult =
+        GetLauncherCrashTimestamp();
+    if (crashTimestampResult.isOk() &&
+        crashTimestampResult.inspect().isSome()) {
+      uint64_t crashTimestamp = crashTimestampResult.inspect().value();
+
+      FILETIME currentTime;
+      ::GetSystemTimeAsFileTime(&currentTime);
+      uint64_t currentTimestamp =
+          (static_cast<uint64_t>(currentTime.dwHighDateTime) << 32) |
+          currentTime.dwLowDateTime;
+
+      bool clearForceDisabled =
+          
+          
+          
+          (crashTimestamp > currentTimestamp) ||
+          
+          (currentTimestamp - crashTimestamp >= kCrashTimeoutInterval);
+      if (clearForceDisabled) {
+        
+        LauncherResult<bool> clearedBrowserTimestamp =
+            ClearBrowserStartTimestamp();
+        LauncherResult<bool> clearedCrashTimestamp =
+            ClearLauncherCrashTimestamp();
+
+        if (clearedBrowserTimestamp.isOk() && clearedCrashTimestamp.isOk()) {
+          
+          sAllowCommit = true;
+          typeToRunAs =
+              aDesiredType;  
+        }
+      }
+    }
+  } else if (lastLauncherTimestamp.isSome() != lastBrowserTimestamp.isSome()) {
     
     
     
@@ -357,6 +403,20 @@ LauncherVoidResult LauncherRegistryInfo::DisableDueToFailure() {
   if (disposition.isErr()) {
     return disposition.propagateErr();
   }
+
+  
+  FILETIME currentTime;
+  ::GetSystemTimeAsFileTime(&currentTime);
+  uint64_t crashTime =
+      (static_cast<uint64_t>(currentTime.dwHighDateTime) << 32) |
+      currentTime.dwLowDateTime;
+
+  LauncherVoidResult crashTimestampResult =
+      WriteLauncherCrashTimestamp(crashTime);
+  if (crashTimestampResult.isErr()) {
+    return crashTimestampResult.propagateErr();
+  }
+
   LauncherVoidResult result = WriteBrowserStartTimestamp(0ULL);
   if (result.isOk()) {
     
@@ -514,6 +574,18 @@ const std::wstring& LauncherRegistryInfo::ResolveBlocklistValueName() {
   return mBlocklistValueName;
 }
 
+const std::wstring&
+LauncherRegistryInfo::ResolveLauncherCrashTimestampValueName() {
+  if (mLauncherCrashTimestampValueName.empty()) {
+    mLauncherCrashTimestampValueName.assign(mBinPath);
+    mLauncherCrashTimestampValueName.append(
+        kLauncherCrashTimestampSuffix,
+        std::size(kLauncherCrashTimestampSuffix) - 1);
+  }
+
+  return mLauncherCrashTimestampValueName;
+}
+
 LauncherVoidResult LauncherRegistryInfo::WriteLauncherStartTimestamp(
     uint64_t aValue) {
   return WriteRegistryValueData(mRegKey, ResolveLauncherValueName(), REG_QWORD,
@@ -558,6 +630,12 @@ LauncherVoidResult LauncherRegistryInfo::ClearStartTimestamps() {
   }
 
   
+  LauncherResult<bool> clearedCrashTimestamp = ClearLauncherCrashTimestamp();
+  if (clearedCrashTimestamp.isErr()) {
+    return clearedCrashTimestamp.propagateErr();
+  }
+
+  
   mLauncherTimestampToWrite = mBrowserTimestampToWrite = Nothing();
 
   
@@ -581,6 +659,23 @@ LauncherResult<Maybe<uint64_t>>
 LauncherRegistryInfo::GetBrowserStartTimestamp() {
   return ReadRegistryValueData<uint64_t>(mRegKey, ResolveBrowserValueName(),
                                          REG_QWORD);
+}
+
+LauncherVoidResult LauncherRegistryInfo::WriteLauncherCrashTimestamp(
+    uint64_t aValue) {
+  return WriteRegistryValueData(
+      mRegKey, ResolveLauncherCrashTimestampValueName(), REG_QWORD, aValue);
+}
+
+LauncherResult<Maybe<uint64_t>>
+LauncherRegistryInfo::GetLauncherCrashTimestamp() {
+  return ReadRegistryValueData<uint64_t>(
+      mRegKey, ResolveLauncherCrashTimestampValueName(), REG_QWORD);
+}
+
+LauncherResult<bool> LauncherRegistryInfo::ClearLauncherCrashTimestamp() {
+  return DeleteRegistryValueData(mRegKey,
+                                 ResolveLauncherCrashTimestampValueName());
 }
 
 LauncherResult<std::wstring>
