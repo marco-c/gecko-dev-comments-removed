@@ -776,6 +776,29 @@ const POLICIES_TESTS = [
   },
 
   
+  {
+    policies: {
+      LocalNetworkAccess: {
+        Enabled: true,
+      },
+    },
+    unlockedPrefs: {
+      "network.lna.enabled": true,
+    },
+  },
+  {
+    policies: {
+      LocalNetworkAccess: {
+        Enabled: false,
+        Locked: true,
+      },
+    },
+    lockedPrefs: {
+      "network.lna.enabled": false,
+    },
+  },
+
+  
 
   {
     policies: {
@@ -1173,6 +1196,16 @@ const POLICIES_TESTS = [
       "termsofuse.acceptedVersion": 999,
       
       
+    },
+  },
+
+  
+  {
+    policies: {
+      VisualSearchEnabled: false,
+    },
+    lockedPrefs: {
+      "browser.search.visualSearch.featureGate": false,
     },
   },
 ];
