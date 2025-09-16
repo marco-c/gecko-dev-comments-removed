@@ -39,6 +39,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.fragment.findNavController
 import androidx.preference.PreferenceManager
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar.LENGTH_LONG
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers.IO
@@ -794,7 +795,7 @@ abstract class BaseBrowserFragment :
                             getString(downloadsR.string.mozac_feature_downloads_dialog_title_with_unknown_size)
                         }
 
-                        downloadDialog = AlertDialog.Builder(requireContext())
+                        downloadDialog = MaterialAlertDialogBuilder(requireContext())
                             .setTitle(title)
                             .setMessage(filename.value)
                             .setPositiveButton(downloadsR.string.mozac_feature_downloads_dialog_download) { dialog, _ ->
@@ -835,7 +836,7 @@ abstract class BaseBrowserFragment :
                 }
             },
             fileHasNotEnoughStorageDialog = { filename ->
-                AlertDialog.Builder(requireContext())
+                MaterialAlertDialogBuilder(requireContext())
                     .setTitle(R.string.download_file_has_not_enough_storage_dialog_title)
                     .setMessage(
                         HtmlCompat.fromHtml(
@@ -1511,7 +1512,7 @@ abstract class BaseBrowserFragment :
      * Shows a dialog warning about setting up a device lock PIN.
      */
     private fun showPinDialogWarning(context: Context) {
-        AlertDialog.Builder(context).apply {
+        MaterialAlertDialogBuilder(context).apply {
             setTitle(getString(R.string.credit_cards_warning_dialog_title_2))
             setMessage(getString(R.string.credit_cards_warning_dialog_message_3))
 
@@ -2520,60 +2521,27 @@ abstract class BaseBrowserFragment :
     }
 
     private fun setupIMEInsetsHandling(view: View) {
-        when (context?.settings()?.toolbarPosition) {
-            ToolbarPosition.BOTTOM -> {
-                val toolbar = listOf(
-                    _bottomToolbarContainerView?.toolbarContainerView,
-                    _browserToolbarView?.layout,
-                ).firstOrNull { it != null } ?: return
-
-                ImeInsetsSynchronizer.setup(
-                    targetView = toolbar,
-                    onIMEAnimationStarted = { isKeyboardShowingUp, keyboardHeight ->
-                        // If the keyboard is hiding have the engine view immediately expand to the entire height of the
-                        // screen and ensure the toolbar is shown above keyboard before both would be animated down.
-                        if (!isKeyboardShowingUp) {
-                            (view.layoutParams as? ViewGroup.MarginLayoutParams)?.bottomMargin = 0
-                            (toolbar.layoutParams as? ViewGroup.MarginLayoutParams)?.bottomMargin = keyboardHeight
-                            view.requestLayout()
-                        }
-                    },
-                    onIMEAnimationFinished = { isKeyboardShowingUp, keyboardHeight ->
-                        // If the keyboard is showing up keep the engine view covering the entire height
-                        // of the screen until the animation is finished to avoid reflowing the web content
-                        // together with the keyboard animation in a short burst of updates.
-                        if (isKeyboardShowingUp || keyboardHeight == 0) {
-                            (view.layoutParams as? ViewGroup.MarginLayoutParams)?.bottomMargin = keyboardHeight
-                            (toolbar.layoutParams as? ViewGroup.MarginLayoutParams)?.bottomMargin = 0
-                            view.requestLayout()
-                        }
-                    },
-                )
-            }
-
-            ToolbarPosition.TOP -> {
-                ImeInsetsSynchronizer.setup(
-                    targetView = view,
-                    synchronizeViewWithIME = false,
-                    onIMEAnimationStarted = { isKeyboardShowingUp, _ ->
-                        if (!isKeyboardShowingUp) {
-                            (view.layoutParams as? ViewGroup.MarginLayoutParams)?.bottomMargin = 0
-                            view.requestLayout()
-                        }
-                    },
-                    onIMEAnimationFinished = { isKeyboardShowingUp, keyboardHeight ->
-                        if (isKeyboardShowingUp || keyboardHeight == 0) {
-                            (view.layoutParams as? ViewGroup.MarginLayoutParams)?.bottomMargin = keyboardHeight
-                            view.requestLayout()
-                        }
-                    },
-                )
-            }
-
-            else -> {
-                // no-op
-            }
-        }
+        ImeInsetsSynchronizer.setup(
+            targetView = view,
+            synchronizeViewWithIME = context?.settings()?.toolbarPosition == ToolbarPosition.BOTTOM,
+            onIMEAnimationStarted = { isKeyboardShowingUp, keyboardHeight ->
+                // If the keyboard is hiding have the engine view immediately expand to the entire height of the
+                // screen and ensure the toolbar is shown above keyboard before both would be animated down.
+                if (!isKeyboardShowingUp) {
+                    (view.layoutParams as? ViewGroup.MarginLayoutParams)?.bottomMargin = 0
+                    view.requestLayout()
+                }
+            },
+            onIMEAnimationFinished = { isKeyboardShowingUp, keyboardHeight ->
+                // If the keyboard is showing up keep the engine view covering the entire height
+                // of the screen until the animation is finished to avoid reflowing the web content
+                // together with the keyboard animation in a short burst of updates.
+                if (isKeyboardShowingUp || keyboardHeight == 0) {
+                    (view.layoutParams as? ViewGroup.MarginLayoutParams)?.bottomMargin = keyboardHeight
+                    view.requestLayout()
+                }
+            },
+        )
     }
 
     private fun openManageStorageSettings() {
