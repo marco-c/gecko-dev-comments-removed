@@ -577,8 +577,6 @@
           
           
           this._ignoreFocus = document.activeElement == this._textbox;
-
-          this.textbox.mController.resetSession();
         },
         true
       );
