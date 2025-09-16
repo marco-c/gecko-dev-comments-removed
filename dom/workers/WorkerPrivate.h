@@ -1445,6 +1445,16 @@ class WorkerPrivate final
 
   
   
+  
+  
+  
+  
+  
+  
+  uint32_t mDispatchingControlRunnables MOZ_GUARDED_BY(mMutex);
+
+  
+  
   JSContext* mJSContext MOZ_GUARDED_BY(mMutex);
   
   RefPtr<WorkerThread> mThread MOZ_GUARDED_BY(mMutex);
