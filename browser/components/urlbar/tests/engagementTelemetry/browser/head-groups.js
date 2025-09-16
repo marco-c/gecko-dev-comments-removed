@@ -6,7 +6,8 @@
 
 
 ChromeUtils.defineESModuleGetters(this, {
-  UrlbarProvidersManager: "resource:///modules/UrlbarProvidersManager.sys.mjs",
+  UrlbarProvidersManager:
+    "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs",
 });
 
 async function doHeuristicsTest({ trigger, assert }) {

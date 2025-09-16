@@ -114,12 +114,19 @@
           "moz-src:///browser/components/tabbrowser/TabMetrics.sys.mjs",
         TabStateFlusher:
           "resource:///modules/sessionstore/TabStateFlusher.sys.mjs",
+        TaskbarTabsUtils:
+          "resource:///modules/taskbartabs/TaskbarTabsUtils.sys.mjs",
+        TaskbarTabs: "resource:///modules/taskbartabs/TaskbarTabs.sys.mjs",
         UrlbarProviderOpenTabs:
-          "resource:///modules/UrlbarProviderOpenTabs.sys.mjs",
+          "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs",
       });
       ChromeUtils.defineLazyGetter(this, "tabLocalization", () => {
         return new Localization(
-          ["browser/tabbrowser.ftl", "branding/brand.ftl"],
+          [
+            "browser/tabbrowser.ftl",
+            "browser/taskbartabs.ftl",
+            "branding/brand.ftl",
+          ],
           true
         );
       });
@@ -1130,6 +1137,95 @@
       }
     }
 
+    
+
+
+
+
+
+    #taskbarTab = null;
+
+    
+
+
+
+
+
+    #taskbarTabTitle = null;
+
+    
+
+
+
+
+
+
+    #taskbarTabTitleLastProfile = null;
+
+    
+
+
+
+
+
+
+
+
+
+
+    #determineTaskbarTabTitle(aProfile) {
+      if (!this._shouldExposeContentTitle) {
+        
+        return null;
+      }
+
+      if (
+        this.#taskbarTabTitle &&
+        this.#taskbarTabTitleLastProfile == aProfile
+      ) {
+        return this.#taskbarTabTitle;
+      }
+
+      let id = this.TaskbarTabsUtils.getTaskbarTabIdFromWindow(window);
+      if (!id) {
+        return null;
+      }
+
+      if (!this.#taskbarTab) {
+        this.TaskbarTabs.getTaskbarTab(id)
+          .then(tt => {
+            this.#taskbarTab = tt;
+            this.updateTitlebar();
+          })
+          .catch(() => {
+            
+          });
+        return null;
+      }
+
+      let containerLabel = this.#taskbarTab.userContextId
+        ? ContextualIdentityService.getUserContextLabel(
+            this.#taskbarTab.userContextId
+          )
+        : "";
+
+      let stringName = "taskbar-tab-title-default";
+      if (containerLabel && aProfile) {
+        stringName = "taskbar-tab-title-container-profile";
+      } else if (containerLabel && !aProfile) {
+        stringName = "taskbar-tab-title-container";
+      } else if (!containerLabel && aProfile) {
+        stringName = "taskbar-tab-title-profile";
+      }
+
+      this.#taskbarTabTitle = this.tabLocalization.formatValueSync(stringName, {
+        name: this.#taskbarTab.name,
+        container: containerLabel,
+        profile: aProfile,
+      });
+      return this.#taskbarTabTitle;
+    }
+
     #determineContentTitle(browser) {
       let title = "";
       if (
@@ -1192,7 +1288,9 @@
         SelectableProfileService?.isEnabled &&
         SelectableProfileService.currentProfile?.name.replace(/\0/g, "");
       
-      let parts = [contentTitle, profileIdentifier];
+
+      let taskbarTabTitle = this.#determineTaskbarTabTitle(profileIdentifier);
+      let parts = [contentTitle, taskbarTabTitle ?? profileIdentifier];
 
       
       
@@ -1207,7 +1305,11 @@
 
       
       
-      if (!contentTitle || AppConstants.platform != "macosx") {
+      
+      if (
+        !taskbarTabTitle &&
+        (!contentTitle || AppConstants.platform != "macosx")
+      ) {
         parts.push(
           this.#cachedTitleInfo[
             isTemporaryPrivateWindow ? "privateWindowTitle" : "mainWindowTitle"
@@ -1279,11 +1381,19 @@
       this._updateVisibleNotificationBox(newBrowser);
 
       let oldBrowserPopupsBlocked =
-        oldBrowser.popupBlocker.getBlockedPopupCount();
+        oldBrowser.popupAndRedirectBlocker.getBlockedPopupCount();
       let newBrowserPopupsBlocked =
-        newBrowser.popupBlocker.getBlockedPopupCount();
+        newBrowser.popupAndRedirectBlocker.getBlockedPopupCount();
       if (oldBrowserPopupsBlocked != newBrowserPopupsBlocked) {
-        newBrowser.popupBlocker.updateBlockedPopupsUI();
+        newBrowser.popupAndRedirectBlocker.sendObserverUpdateBlockedPopupsEvent();
+      }
+
+      let oldBrowserRedirectBlocked =
+        oldBrowser.popupAndRedirectBlocker.isRedirectBlocked();
+      let newBrowserRedirectBlocked =
+        newBrowser.popupAndRedirectBlocker.isRedirectBlocked();
+      if (oldBrowserRedirectBlocked != newBrowserRedirectBlocked) {
+        newBrowser.popupAndRedirectBlocker.sendObserverUpdateBlockedRedirectEvent();
       }
 
       
