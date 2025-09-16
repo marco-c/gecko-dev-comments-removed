@@ -767,7 +767,7 @@ class MOZ_STACK_CLASS JS_PUBLIC_API AutoSetAsyncStackForNewCalls {
   
   
   
-  AutoSetAsyncStackForNewCalls(JSContext* cx, HandleObject stack,
+  AutoSetAsyncStackForNewCalls(JSContext* cx, JSObject* stack,
                                const char* asyncCause,
                                AsyncCallKind kind = AsyncCallKind::IMPLICIT);
   ~AutoSetAsyncStackForNewCalls();
