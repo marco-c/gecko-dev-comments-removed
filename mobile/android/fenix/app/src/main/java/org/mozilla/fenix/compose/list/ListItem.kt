@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -53,7 +54,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.Divider
 import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.ui.colors.PhotonColors
 import org.mozilla.fenix.compose.Favicon
@@ -190,6 +190,7 @@ fun TextListItem(
  * @param faviconShape The shape used to clip the favicon. Defaults to a slightly rounded rectangle.
  * @param labelModifier [Modifier] to be applied to the label.
  * @param description An optional description text below the label.
+ * @param maxDescriptionLines An optional maximum number of lines for the description text to span.
  * @param faviconPainter Optional painter to use when fetching a new favicon is unnecessary.
  * @param onClick Called when the user clicks on the item.
  * @param onLongClick Called when the user long clicks on the item.
@@ -209,6 +210,7 @@ fun FaviconListItem(
     faviconShape: Shape = RoundedCornerShape(2.dp),
     labelModifier: Modifier = Modifier,
     description: String? = null,
+    maxDescriptionLines: Int = 1,
     faviconPainter: Painter? = null,
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
@@ -224,6 +226,7 @@ fun FaviconListItem(
         modifier = modifier,
         labelModifier = labelModifier,
         description = description,
+        maxDescriptionLines = maxDescriptionLines,
         onClick = onClick,
         onLongClick = onLongClick,
         beforeListItemAction = {
@@ -251,7 +254,7 @@ fun FaviconListItem(
             if (showDivider) {
                 Spacer(modifier = Modifier.width(8.dp))
 
-                Divider(
+                HorizontalDivider(
                     modifier = Modifier
                         .padding(vertical = DIVIDER_VERTICAL_PADDING)
                         .fillMaxHeight()
@@ -369,7 +372,7 @@ fun IconListItem(
             if (showDivider) {
                 Spacer(modifier = Modifier.width(8.dp))
 
-                Divider(
+                HorizontalDivider(
                     modifier = Modifier
                         .padding(vertical = DIVIDER_VERTICAL_PADDING)
                         .fillMaxHeight()
@@ -524,7 +527,7 @@ fun SelectableFaviconListItem(
             if (showDivider) {
                 Spacer(modifier = Modifier.width(8.dp))
 
-                Divider(
+                HorizontalDivider(
                     modifier = Modifier
                         .padding(vertical = DIVIDER_VERTICAL_PADDING)
                         .fillMaxHeight()
@@ -561,6 +564,7 @@ fun SelectableFaviconListItem(
  * @param label The label in the list item.
  * @param isSelected The selected state of the item.
  * @param modifier [Modifier] to be applied to the layout.
+ * @param labelModifier [Modifier] to be applied to the label layout.
  * @param labelTextColor [Color] to be applied to the label.
  * @param descriptionTextColor [Color] to be applied to the description.
  * @param maxLabelLines An optional maximum number of lines for the label text to span.
@@ -588,6 +592,7 @@ fun SelectableIconListItem(
     label: String,
     isSelected: Boolean,
     modifier: Modifier = Modifier,
+    labelModifier: Modifier = modifier,
     labelTextColor: Color = FirefoxTheme.colors.textPrimary,
     descriptionTextColor: Color = FirefoxTheme.colors.textSecondary,
     maxLabelLines: Int = 1,
@@ -609,6 +614,7 @@ fun SelectableIconListItem(
     ListItem(
         label = label,
         modifier = modifier,
+        labelModifier = labelModifier,
         labelTextColor = labelTextColor,
         descriptionTextColor = descriptionTextColor,
         maxLabelLines = maxLabelLines,
@@ -641,7 +647,7 @@ fun SelectableIconListItem(
             if (showDivider) {
                 Spacer(modifier = Modifier.width(8.dp))
 
-                Divider(
+                HorizontalDivider(
                     modifier = Modifier
                         .padding(vertical = DIVIDER_VERTICAL_PADDING)
                         .fillMaxHeight()
