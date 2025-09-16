@@ -678,20 +678,9 @@ class WebConsoleUI {
       window: this.window,
     });
 
-    let clearShortcut;
-    if (lazy.AppConstants.platform === "macosx") {
-      const alternativaClearShortcut = l10n.getStr(
-        "webconsole.clear.alternativeKeyOSX"
-      );
-      shortcuts.on(alternativaClearShortcut, event =>
-        this.clearOutput(true, event)
-      );
-      clearShortcut = l10n.getStr("webconsole.clear.keyOSX");
-    } else {
-      clearShortcut = l10n.getStr("webconsole.clear.key");
+    for (const clearShortcut of this.getClearKeyShortcuts()) {
+      shortcuts.on(clearShortcut, event => this.clearOutput(true, event));
     }
-
-    shortcuts.on(clearShortcut, event => this.clearOutput(true, event));
 
     if (this.isBrowserConsole) {
       
@@ -719,6 +708,23 @@ class WebConsoleUI {
         }
       });
     }
+  }
+
+  
+
+
+
+
+
+  getClearKeyShortcuts() {
+    if (lazy.AppConstants.platform === "macosx") {
+      return [
+        l10n.getStr("webconsole.clear.alternativeKeyOSX"),
+        l10n.getStr("webconsole.clear.keyOSX"),
+      ];
+    }
+
+    return [l10n.getStr("webconsole.clear.key")];
   }
 
   

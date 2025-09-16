@@ -166,7 +166,7 @@ KeyShortcuts.parseElectronKey = function (str) {
   return shortcut;
 };
 
-KeyShortcuts.stringify = function (shortcut) {
+KeyShortcuts.stringifyShortcut = function (shortcut) {
   if (shortcut === null) {
     
     return "";
@@ -193,6 +193,39 @@ KeyShortcuts.stringify = function (shortcut) {
   }
   list.push(key);
   return list.join("+");
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+KeyShortcuts.stringifyFromElectronKey = function (electronKeyString) {
+  
+  const ctrlString = globalThis.L10N ? globalThis.L10N.getStr("ctrl") : "Ctrl";
+
+  if (isOSX) {
+    return electronKeyString
+      .replace(/Shift\+/g, "\u21E7")
+      .replace(/Command\+|Cmd\+/g, "\u2318")
+      .replace(/CommandOrControl\+|CmdOrCtrl\+/g, "\u2318")
+      .replace(/Alt\+/g, "\u2325");
+  }
+  return electronKeyString
+    .replace(/CommandOrControl\+|CmdOrCtrl\+/g, `${ctrlString}+`)
+    .replace(/Shift\+/g, "Shift+");
 };
 
 
