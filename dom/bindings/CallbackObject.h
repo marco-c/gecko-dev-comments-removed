@@ -282,11 +282,7 @@ class CallbackObjectBase {
     Maybe<AutoIncumbentScript> mAutoIncumbentScript;
 
     Maybe<JS::Rooted<JSObject*>> mRootedCallable;
-    
-    Maybe<JS::Rooted<JSObject*>> mRootedCallableGlobal;
 
-    
-    Maybe<JS::Rooted<JSObject*>> mAsyncStack;
     Maybe<JS::AutoSetAsyncStackForNewCalls> mAsyncStackSetter;
 
     

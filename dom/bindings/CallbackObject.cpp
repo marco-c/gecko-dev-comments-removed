@@ -298,11 +298,9 @@ CallbackObjectBase::CallSetup::CallSetup(CallbackObjectBase* aCallback,
   
   
   mRootedCallable.emplace(cx, aCallback->CallbackOrNull());
-  mRootedCallableGlobal.emplace(cx, aCallback->CallbackGlobalOrNull());
-
-  mAsyncStack.emplace(cx, aCallback->GetCreationStack());
-  if (*mAsyncStack) {
-    mAsyncStackSetter.emplace(cx, *mAsyncStack, aExecutionReason);
+  JSObject* asyncStack = aCallback->GetCreationStack();
+  if (asyncStack) {
+    mAsyncStackSetter.emplace(cx, asyncStack, aExecutionReason);
   }
 
   
@@ -310,7 +308,7 @@ CallbackObjectBase::CallSetup::CallSetup(CallbackObjectBase* aCallback,
   
   
   
-  mAr.emplace(cx, *mRootedCallableGlobal);
+  mAr.emplace(cx, aCallback->CallbackGlobalOrNull());
 
   
   mCx = cx;
