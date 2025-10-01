@@ -15977,8 +15977,7 @@ void Document::HideAllPopoversUntil(nsINode& aEndpoint,
   auto closeAllOpenPopovers = [&aFocusPreviousElement, &aFireEvents,
                                this]() MOZ_CAN_RUN_SCRIPT_FOR_DEFINITION {
     while (RefPtr<Element> topmost = GetTopmostAutoPopover()) {
-      HidePopover(*topmost, aFocusPreviousElement, aFireEvents,
-                   nullptr, IgnoreErrors());
+      HidePopover(*topmost, aFocusPreviousElement, aFireEvents, IgnoreErrors());
     }
   };
 
@@ -16024,8 +16023,7 @@ void Document::HideAllPopoversUntil(nsINode& aEndpoint,
       if (!topmost) {
         break;
       }
-      HidePopover(*topmost, aFocusPreviousElement, fireEvents,
-                   nullptr, IgnoreErrors());
+      HidePopover(*topmost, aFocusPreviousElement, fireEvents, IgnoreErrors());
     }
 
     repeatingHide = needRepeatingHide();
@@ -16037,8 +16035,7 @@ void Document::HideAllPopoversUntil(nsINode& aEndpoint,
 
 
 void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
-                           bool aFireEvents, Element* aSource,
-                           ErrorResult& aRv) {
+                           bool aFireEvents, ErrorResult& aRv) {
   RefPtr<nsGenericHTMLElement> popoverHTMLEl =
       nsGenericHTMLElement::FromNode(aPopover);
   NS_ASSERTION(popoverHTMLEl, "Not a HTML element");
@@ -16106,6 +16103,7 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
 
   auto* data = popoverHTMLEl->GetPopoverData();
   MOZ_ASSERT(data, "Should have popover data");
+  data->SetInvoker(nullptr);
 
   
   
@@ -16115,8 +16113,8 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
     
     
     
-    popoverHTMLEl->FireToggleEvent(u"open"_ns, u"closed"_ns, u"beforetoggle"_ns,
-                                   aSource);
+    popoverHTMLEl->FireToggleEvent(u"open"_ns, u"closed"_ns,
+                                   u"beforetoggle"_ns);
 
     
     
@@ -16138,7 +16136,7 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
     
 
     
-    data->SetInvoker(nullptr);
+    
   }
 
   
@@ -16147,7 +16145,7 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
   RemovePopoverFromTopLayer(aPopover);
 
   
-  data->SetInvoker(nullptr);
+  
 
   
   
@@ -16158,8 +16156,7 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
   
   
   if (fireEvents) {
-    popoverHTMLEl->QueuePopoverEventTask(PopoverVisibilityState::Showing,
-                                         aSource);
+    popoverHTMLEl->QueuePopoverEventTask(PopoverVisibilityState::Showing);
   }
 
   
