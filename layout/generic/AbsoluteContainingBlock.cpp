@@ -9,7 +9,7 @@
 
 
 
-#include "nsAbsoluteContainingBlock.h"
+#include "mozilla/AbsoluteContainingBlock.h"
 
 #include "AnchorPositioningUtils.h"
 #include "mozilla/CSSAlignUtils.h"

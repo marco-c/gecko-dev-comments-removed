@@ -9,8 +9,8 @@
 
 
 
-#ifndef nsAbsoluteContainingBlock_h___
-#define nsAbsoluteContainingBlock_h___
+#ifndef LAYOUT_GENERIC_ABSOLUTE_CONTAINING_BLOCK_H_
+#define LAYOUT_GENERIC_ABSOLUTE_CONTAINING_BLOCK_H_
 
 #include "nsFrameList.h"
 #include "nsIFrame.h"
