@@ -480,7 +480,7 @@ ScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
 
   
   if (NS_FAILED(rv)) {
-    mRequest->mCacheInfo = nullptr;
+    mRequest->DropDiskCacheReference();
   }
 
   return rv;
