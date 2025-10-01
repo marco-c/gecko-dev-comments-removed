@@ -70,6 +70,10 @@ class MOZ_STACK_CLASS TextAutospace final {
 
   
   
+  static bool ShouldSuppressLetterNumeralSpacing(const nsIFrame* aFrame);
+
+  
+  
   static bool IsIdeograph(char32_t aChar);
 
   
