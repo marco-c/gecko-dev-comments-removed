@@ -2,9 +2,28 @@
 
 
 
+use crate::cg;
+use crate::to_css::CssVariantAttrs;
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{Data, DataEnum, DeriveInput, Fields};
+use synstructure::Structure;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -21,21 +40,35 @@ pub fn derive(input: DeriveInput) -> TokenStream {
     let name = &input.ident;
 
     
-    let mut all_unit = false;
-
-    
-    if let Data::Enum(DataEnum { variants, .. }) = &input.data {
+    let body = if let Data::Enum(DataEnum { variants, .. }) = &input.data {
         
-        all_unit = variants.iter().all(|v| matches!(v.fields, Fields::Unit));
-    }
+        let all_unit = variants.iter().all(|v| matches!(v.fields, Fields::Unit));
 
-    
-    
-    let body = if all_unit {
-        quote! {
-            fn to_typed(&self) -> Option<style_traits::TypedValue> {
-                let s = style_traits::ToCss::to_css_cssstring(self);
-                Some(style_traits::TypedValue::Keyword(s))
+        if all_unit {
+            
+            
+            
+            
+            quote! {
+                fn to_typed(&self) -> Option<style_traits::TypedValue> {
+                  let s = style_traits::ToCss::to_css_cssstring(self);
+                  Some(style_traits::TypedValue::Keyword(s))
+                }
+            }
+        } else {
+            
+            
+            
+            
+            let s = Structure::new(&input);
+            let match_body = s.each_variant(|variant| derive_variant_arm(variant));
+
+            quote! {
+                fn to_typed(&self) -> Option<style_traits::TypedValue> {
+                    match *self {
+                        #match_body
+                    }
+                }
             }
         }
     } else {
@@ -48,6 +81,59 @@ pub fn derive(input: DeriveInput) -> TokenStream {
     quote! {
         impl #impl_generics style_traits::ToTyped for #name #ty_generics #where_clause {
             #body
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+fn derive_variant_arm(variant: &synstructure::VariantInfo) -> TokenStream {
+    
+    let ast = variant.ast();
+    let identifier = &ast.ident;
+
+    
+    let variant_attrs = cg::parse_variant_attrs_from_ast::<CssVariantAttrs>(&ast);
+
+    
+    
+    if variant_attrs.skip {
+        return quote!(None);
+    }
+
+    assert!(
+        variant_attrs.keyword.is_none(),
+        "Unhandled keyword attribute"
+    );
+
+    
+    if ast.fields.is_empty() {
+        
+        
+        let keyword = cg::to_css_identifier(&identifier.to_string());
+
+        
+        quote! {
+            Some(style_traits::TypedValue::Keyword(
+                style_traits::CssString::from(#keyword)
+            ))
+        }
+    } else {
+        
+        
+        quote! {
+            None
         }
     }
 }
