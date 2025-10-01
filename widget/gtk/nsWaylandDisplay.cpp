@@ -11,7 +11,6 @@
 #include "base/task.h"            
 #include "mozilla/gfx/Logging.h"  
 #include "mozilla/StaticMutex.h"
-#include "mozilla/Array.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/ThreadLocal.h"
 #include "mozilla/StaticPrefs_widget.h"
