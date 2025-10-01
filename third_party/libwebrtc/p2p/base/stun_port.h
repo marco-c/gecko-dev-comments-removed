@@ -222,7 +222,7 @@ class RTC_EXPORT UDPPort : public Port {
   
   
   int GetStunKeepaliveLifetime() {
-    return (network_cost() >= webrtc::kNetworkCostHigh)
+    return (network_cost() >= kNetworkCostHigh)
                ? HIGH_COST_PORT_KEEPALIVE_LIFETIME
                : INFINITE_LIFETIME;
   }

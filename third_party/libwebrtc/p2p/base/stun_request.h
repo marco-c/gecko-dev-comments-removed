@@ -42,8 +42,7 @@ class StunRequestManager {
  public:
   StunRequestManager(
       TaskQueueBase* thread,
-      std::function<void(const void*, size_t, webrtc::StunRequest*)>
-          send_packet);
+      std::function<void(const void*, size_t, StunRequest*)> send_packet);
   ~StunRequestManager();
 
   
@@ -85,8 +84,7 @@ class StunRequestManager {
 
   TaskQueueBase* const thread_;
   RequestMap requests_ RTC_GUARDED_BY(thread_);
-  const std::function<void(const void*, size_t, webrtc::StunRequest*)>
-      send_packet_;
+  const std::function<void(const void*, size_t, StunRequest*)> send_packet_;
 };
 
 

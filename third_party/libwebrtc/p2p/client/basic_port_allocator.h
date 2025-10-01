@@ -103,7 +103,7 @@ class RTC_EXPORT BasicPortAllocator : public PortAllocator {
   NetworkManager* network_manager_;
   
   PacketSocketFactory* const socket_factory_;
-  int network_ignore_mask_ = webrtc::kDefaultNetworkIgnoreMask;
+  int network_ignore_mask_ = kDefaultNetworkIgnoreMask;
 
   AlwaysValidPointer<RelayPortFactoryInterface, TurnPortFactory>
       relay_port_factory_;
@@ -286,7 +286,7 @@ class RTC_EXPORT BasicPortAllocatorSession : public PortAllocatorSession {
   std::vector<AllocationSequence*> sequences_;
   std::vector<PortData> ports_;
   std::vector<IceCandidateErrorEvent> candidate_error_events_;
-  uint32_t candidate_filter_ = webrtc::CF_ALL;
+  uint32_t candidate_filter_ = CF_ALL;
   
   PortPrunePolicy turn_port_prune_policy_;
   SessionState state_ = SessionState::CLEARED;

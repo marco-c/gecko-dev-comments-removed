@@ -54,10 +54,10 @@ namespace webrtc {
 
 class StreamInterfaceChannel : public StreamInterface {
  public:
-  explicit StreamInterfaceChannel(webrtc::IceTransportInternal* ice_transport);
+  explicit StreamInterfaceChannel(IceTransportInternal* ice_transport);
 
   void SetDtlsStunPiggybackController(
-      webrtc::DtlsStunPiggybackController* dtls_stun_piggyback_controller);
+      DtlsStunPiggybackController* dtls_stun_piggyback_controller);
 
   StreamInterfaceChannel(const StreamInterfaceChannel&) = delete;
   StreamInterfaceChannel& operator=(const StreamInterfaceChannel&) = delete;
@@ -78,11 +78,11 @@ class StreamInterfaceChannel : public StreamInterface {
   bool Flush() override;
 
  private:
-  webrtc::IceTransportInternal* const ice_transport_;  
-  webrtc::DtlsStunPiggybackController* dtls_stun_piggyback_controller_ =
+  IceTransportInternal* const ice_transport_;  
+  DtlsStunPiggybackController* dtls_stun_piggyback_controller_ =
       nullptr;  
   StreamState state_ RTC_GUARDED_BY(callback_sequence_);
-  webrtc::BufferQueue packets_ RTC_GUARDED_BY(callback_sequence_);
+  BufferQueue packets_ RTC_GUARDED_BY(callback_sequence_);
 };
 
 
@@ -113,7 +113,7 @@ class StreamInterfaceChannel : public StreamInterface {
 
 
 
-class DtlsTransportInternalImpl : public webrtc::DtlsTransportInternal {
+class DtlsTransportInternalImpl : public DtlsTransportInternal {
  public:
   
   
@@ -124,10 +124,10 @@ class DtlsTransportInternalImpl : public webrtc::DtlsTransportInternal {
   
   
   DtlsTransportInternalImpl(
-      webrtc::IceTransportInternal* ice_transport,
-      const webrtc::CryptoOptions& crypto_options,
-      webrtc::RtcEventLog* event_log,
-      webrtc::SSLProtocolVersion max_version = webrtc::SSL_PROTOCOL_DTLS_12);
+      IceTransportInternal* ice_transport,
+      const CryptoOptions& crypto_options,
+      RtcEventLog* event_log,
+      SSLProtocolVersion max_version = SSL_PROTOCOL_DTLS_12);
 
   ~DtlsTransportInternalImpl() override;
 
@@ -135,7 +135,7 @@ class DtlsTransportInternalImpl : public webrtc::DtlsTransportInternal {
   DtlsTransportInternalImpl& operator=(const DtlsTransportInternalImpl&) =
       delete;
 
-  webrtc::DtlsTransportState dtls_state() const override;
+  DtlsTransportState dtls_state() const override;
   const std::string& transport_name() const override;
   int component() const override;
 
@@ -151,8 +151,8 @@ class DtlsTransportInternalImpl : public webrtc::DtlsTransportInternal {
   
   
   bool SetLocalCertificate(
-      const scoped_refptr<webrtc::RTCCertificate>& certificate) override;
-  scoped_refptr<webrtc::RTCCertificate> GetLocalCertificate() const override;
+      const scoped_refptr<RTCCertificate>& certificate) override;
+  scoped_refptr<RTCCertificate> GetLocalCertificate() const override;
 
   
   
@@ -162,11 +162,10 @@ class DtlsTransportInternalImpl : public webrtc::DtlsTransportInternal {
                             size_t digest_len) override;
 
   
-  webrtc::RTCError SetRemoteParameters(
-      absl::string_view digest_alg,
-      const uint8_t* digest,
-      size_t digest_len,
-      std::optional<webrtc::SSLRole> role) override;
+  RTCError SetRemoteParameters(absl::string_view digest_alg,
+                               const uint8_t* digest,
+                               size_t digest_len,
+                               std::optional<SSLRole> role) override;
 
   
   int SendPacket(const char* data,
@@ -174,7 +173,7 @@ class DtlsTransportInternalImpl : public webrtc::DtlsTransportInternal {
                  const AsyncSocketPacketOptions& options,
                  int flags) override;
 
-  bool GetOption(webrtc::Socket::Option opt, int* value) override;
+  bool GetOption(Socket::Option opt, int* value) override;
 
   
   bool GetSslVersionBytes(int* version) const override;
@@ -190,8 +189,8 @@ class DtlsTransportInternalImpl : public webrtc::DtlsTransportInternal {
   
   uint16_t GetSslPeerSignatureAlgorithm() const override;
 
-  bool GetDtlsRole(webrtc::SSLRole* role) const override;
-  bool SetDtlsRole(webrtc::SSLRole role) override;
+  bool GetDtlsRole(SSLRole* role) const override;
+  bool SetDtlsRole(SSLRole role) override;
 
   
   bool GetSslCipherSuite(int* cipher) const override;
@@ -200,7 +199,7 @@ class DtlsTransportInternalImpl : public webrtc::DtlsTransportInternal {
   
   
   
-  std::unique_ptr<webrtc::SSLCertChain> GetRemoteSSLCertChain() const override;
+  std::unique_ptr<SSLCertChain> GetRemoteSSLCertChain() const override;
 
   
   
@@ -208,7 +207,7 @@ class DtlsTransportInternalImpl : public webrtc::DtlsTransportInternal {
   bool ExportSrtpKeyingMaterial(
       ZeroOnFreeBuffer<uint8_t>& keying_material) override;
 
-  webrtc::IceTransportInternal* ice_transport() override;
+  IceTransportInternal* ice_transport() override;
 
   
   
@@ -220,9 +219,9 @@ class DtlsTransportInternalImpl : public webrtc::DtlsTransportInternal {
 
   int GetError() override;
 
-  std::optional<webrtc::NetworkRoute> network_route() const override;
+  std::optional<NetworkRoute> network_route() const override;
 
-  int SetOption(webrtc::Socket::Option opt, int value) override;
+  int SetOption(Socket::Option opt, int value) override;
 
   std::string ToString() const {
     const absl::string_view RECEIVING_ABBREV[2] = {"_", "R"};
@@ -247,48 +246,47 @@ class DtlsTransportInternalImpl : public webrtc::DtlsTransportInternal {
  private:
   void ConnectToIceTransport();
 
-  void OnWritableState(webrtc::PacketTransportInternal* transport);
-  void OnReadPacket(webrtc::PacketTransportInternal* transport,
+  void OnWritableState(PacketTransportInternal* transport);
+  void OnReadPacket(PacketTransportInternal* transport,
                     const ReceivedIpPacket& packet,
                     bool piggybacked);
-  void OnSentPacket(webrtc::PacketTransportInternal* transport,
+  void OnSentPacket(PacketTransportInternal* transport,
                     const SentPacketInfo& sent_packet);
-  void OnReadyToSend(webrtc::PacketTransportInternal* transport);
-  void OnReceivingState(webrtc::PacketTransportInternal* transport);
+  void OnReadyToSend(PacketTransportInternal* transport);
+  void OnReceivingState(PacketTransportInternal* transport);
   void OnDtlsEvent(int sig, int err);
-  void OnNetworkRouteChanged(std::optional<webrtc::NetworkRoute> network_route);
+  void OnNetworkRouteChanged(std::optional<NetworkRoute> network_route);
   bool SetupDtls();
   void MaybeStartDtls();
   bool HandleDtlsPacket(ArrayView<const uint8_t> payload);
-  void OnDtlsHandshakeError(webrtc::SSLHandshakeError error);
+  void OnDtlsHandshakeError(SSLHandshakeError error);
   void ConfigureHandshakeTimeout();
 
   void set_receiving(bool receiving);
   void set_writable(bool writable);
   
-  void set_dtls_state(webrtc::DtlsTransportState state);
+  void set_dtls_state(DtlsTransportState state);
   void SetPiggybackDtlsDataCallback(
-      absl::AnyInvocable<void(webrtc::PacketTransportInternal* transport,
-                              const webrtc::ReceivedIpPacket& packet)>
-          callback);
+      absl::AnyInvocable<void(PacketTransportInternal* transport,
+                              const ReceivedIpPacket& packet)> callback);
   void PeriodicRetransmitDtlsPacketUntilDtlsConnected();
 
-  RTC_NO_UNIQUE_ADDRESS webrtc::SequenceChecker thread_checker_;
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker thread_checker_;
 
   const int component_;
-  webrtc::DtlsTransportState dtls_state_ = webrtc::DtlsTransportState::kNew;
+  DtlsTransportState dtls_state_ = DtlsTransportState::kNew;
   
-  webrtc::IceTransportInternal* const ice_transport_;
-  std::unique_ptr<webrtc::SSLStreamAdapter> dtls_;  
+  IceTransportInternal* const ice_transport_;
+  std::unique_ptr<SSLStreamAdapter> dtls_;  
   StreamInterfaceChannel*
       downward_;  
   const std::vector<int> srtp_ciphers_;  
   
   const std::vector<uint16_t> ephemeral_key_exchange_cipher_groups_;
   bool dtls_active_ = false;
-  scoped_refptr<webrtc::RTCCertificate> local_certificate_;
-  std::optional<webrtc::SSLRole> dtls_role_;
-  const webrtc::SSLProtocolVersion ssl_max_version_;
+  scoped_refptr<RTCCertificate> local_certificate_;
+  std::optional<SSLRole> dtls_role_;
+  const SSLProtocolVersion ssl_max_version_;
   Buffer remote_fingerprint_value_;
   std::string remote_fingerprint_algorithm_;
 
@@ -306,7 +304,7 @@ class DtlsTransportInternalImpl : public webrtc::DtlsTransportInternal {
   
   bool ice_has_been_writable_ = false;
 
-  webrtc::RtcEventLog* const event_log_;
+  RtcEventLog* const event_log_;
 
   
   
@@ -314,10 +312,9 @@ class DtlsTransportInternalImpl : public webrtc::DtlsTransportInternal {
   bool dtls_in_stun_ = false;
 
   
-  webrtc::DtlsStunPiggybackController dtls_stun_piggyback_controller_;
+  DtlsStunPiggybackController dtls_stun_piggyback_controller_;
 
-  absl::AnyInvocable<void(webrtc::PacketTransportInternal*,
-                          const webrtc::ReceivedIpPacket&)>
+  absl::AnyInvocable<void(PacketTransportInternal*, const ReceivedIpPacket&)>
       piggybacked_dtls_callback_;
 
   
@@ -325,7 +322,7 @@ class DtlsTransportInternalImpl : public webrtc::DtlsTransportInternal {
   
   
   bool pending_periodic_retransmit_dtls_packet_ = false;
-  webrtc::ScopedTaskSafetyDetached safety_flag_;
+  ScopedTaskSafetyDetached safety_flag_;
 };
 
 }  

@@ -83,8 +83,8 @@ class RTC_EXPORT PacketTransportInternal : public sigslot::has_slots<> {
   
   void RegisterReceivedPacketCallback(
       void* id,
-      absl::AnyInvocable<void(webrtc::PacketTransportInternal*,
-                              const webrtc::ReceivedIpPacket&)> callback);
+      absl::AnyInvocable<void(PacketTransportInternal*,
+                              const ReceivedIpPacket&)> callback);
 
   void DeregisterReceivedPacketCallback(void* id);
 

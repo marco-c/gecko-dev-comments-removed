@@ -32,14 +32,13 @@ class DtlsStunPiggybackCallbacks {
       
       absl::AnyInvocable<std::pair<std::optional<absl::string_view>,
                                    std::optional<absl::string_view>>(
-           webrtc::StunMessageType)>&& send_data,
+           StunMessageType)>&& send_data,
 
       
       
-      absl::AnyInvocable<
-          void(const webrtc::StunByteStringAttribute* ,
-               const webrtc::StunByteStringAttribute* )>&&
-          recv_data)
+      absl::AnyInvocable<void(
+          const StunByteStringAttribute* ,
+          const StunByteStringAttribute* )>&& recv_data)
       : send_data_(std::move(send_data)), recv_data_(std::move(recv_data)) {
     RTC_DCHECK(
         
@@ -69,11 +68,11 @@ class DtlsStunPiggybackCallbacks {
  private:
   absl::AnyInvocable<std::pair<std::optional<absl::string_view>,
                                std::optional<absl::string_view>>(
-       webrtc::StunMessageType)>
+       StunMessageType)>
       send_data_;
   absl::AnyInvocable<void(
-      const webrtc::StunByteStringAttribute* ,
-      const webrtc::StunByteStringAttribute* )>
+      const StunByteStringAttribute* ,
+      const StunByteStringAttribute* )>
       recv_data_;
 };
 

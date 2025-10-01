@@ -343,7 +343,7 @@ class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
 
   void AddGatheringStateCallback(
       const void* removal_tag,
-      absl::AnyInvocable<void(webrtc::IceTransportInternal*)> callback);
+      absl::AnyInvocable<void(IceTransportInternal*)> callback);
   void RemoveGatheringStateCallback(const void* removal_tag);
 
   
@@ -351,15 +351,14 @@ class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
       SignalCandidateGathered;
 
   void SetCandidateErrorCallback(
-      absl::AnyInvocable<void(webrtc::IceTransportInternal*,
-                              const webrtc::IceCandidateErrorEvent&)>
-          callback) {
+      absl::AnyInvocable<void(IceTransportInternal*,
+                              const IceCandidateErrorEvent&)> callback) {
     RTC_DCHECK(!candidate_error_callback_);
     candidate_error_callback_ = std::move(callback);
   }
 
   void SetCandidatesRemovedCallback(
-      absl::AnyInvocable<void(webrtc::IceTransportInternal*, const Candidates&)>
+      absl::AnyInvocable<void(IceTransportInternal*, const Candidates&)>
           callback) {
     RTC_DCHECK(!candidates_removed_callback_);
     candidates_removed_callback_ = std::move(callback);
@@ -374,8 +373,7 @@ class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
   sigslot::signal2<IceTransportInternal*, const Candidate&> SignalRouteChange;
 
   void SetCandidatePairChangeCallback(
-      absl::AnyInvocable<void(const webrtc::CandidatePairChangeEvent&)>
-          callback) {
+      absl::AnyInvocable<void(const CandidatePairChangeEvent&)> callback) {
     RTC_DCHECK(!candidate_pair_change_callback_);
     candidate_pair_change_callback_ = std::move(callback);
   }
@@ -436,14 +434,13 @@ class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
 
   CallbackList<IceTransportInternal*> gathering_state_callback_list_;
 
-  absl::AnyInvocable<void(webrtc::IceTransportInternal*,
-                          const webrtc::IceCandidateErrorEvent&)>
+  absl::AnyInvocable<void(IceTransportInternal*, const IceCandidateErrorEvent&)>
       candidate_error_callback_;
 
-  absl::AnyInvocable<void(webrtc::IceTransportInternal*, const Candidates&)>
+  absl::AnyInvocable<void(IceTransportInternal*, const Candidates&)>
       candidates_removed_callback_;
 
-  absl::AnyInvocable<void(const webrtc::CandidatePairChangeEvent&)>
+  absl::AnyInvocable<void(const CandidatePairChangeEvent&)>
       candidate_pair_change_callback_;
 };
 

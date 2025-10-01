@@ -121,7 +121,7 @@ class PortInterface {
   
   
   virtual void SubscribePortDestroyed(
-      std::function<void(webrtc::PortInterface*)> callback) = 0;
+      std::function<void(PortInterface*)> callback) = 0;
 
   
   sigslot::signal1<PortInterface*> SignalRoleConflict;
