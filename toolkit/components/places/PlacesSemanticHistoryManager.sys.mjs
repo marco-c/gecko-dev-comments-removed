@@ -74,7 +74,7 @@ class PlacesSemanticHistoryManager {
   /**
    * Constructor for PlacesSemanticHistoryManager.
    *
-   * @param {Object} options - Configuration options.
+   * @param {object} options - Configuration options.
    * @param {number} [options.embeddingSize=384] - Size of embeddings used for vector operations.
    * @param {number} [options.rowLimit=10000] - Maximum number of rows to process from the database.
    * @param {string} [options.samplingAttrib="frecency"] - Attribute used for sampling rows.
@@ -299,7 +299,6 @@ class PlacesSemanticHistoryManager {
    * It re-arms the DeferredTask for updates if not finalized.
    *
    * @private
-   * @returns Promise<void>
    */
   async onPagesRankChanged() {
     if (this.#updateTask && !this.#updateTask.isFinalized) {
@@ -315,6 +314,7 @@ class PlacesSemanticHistoryManager {
 
   /**
    * Sets the DeferredTask interval for testing purposes.
+   *
    * @param {number} val minimum milliseconds between deferred task executions.
    */
   setDeferredTaskIntervalForTests(val) {
@@ -469,7 +469,7 @@ class PlacesSemanticHistoryManager {
    * Find semantic vector entries to be added.
    *
    * @param {OpenedConnection} conn a SQLite connection to the database.
-   * @returns Promise<{count: number, results: { url_hash: string } }>}
+   * @returns {Promise<{count: number, results: { url_hash: string } }>}
    *   Resolves to an array of objects containing results, limited to
    *   DEFAULT_CHUNK_SIZE elements, and the total count of found entries.
    */
@@ -519,7 +519,7 @@ class PlacesSemanticHistoryManager {
    * - Broken Mappings: rowid has no corresponding entry in vec_history
    *
    * @param {OpenedConnection} conn a SQLite connection to the database.
-   * @returns Promise<{count: number, results: { url_hash: string } }>}
+   * @returns {Promise<{count: number, results: { url_hash: string } }>}
    *   Resolves to an array of objects containing results, limited to
    *   DEFAULT_CHUNK_SIZE elements, and the total count of found entries.
    */
@@ -634,7 +634,10 @@ class PlacesSemanticHistoryManager {
               INSERT INTO vec_history (rowid, embedding, embedding_coarse)
               VALUES (:rowid, :vector, vec_quantize_binary(:vector))
               `,
-              { rowid, vector: this.tensorToBindable(tensor) }
+              {
+                rowid,
+                vector: lazy.PlacesUtils.tensorToSQLBindable(tensor),
+              }
             );
           } catch (error) {
             lazy.logger.trace(
@@ -654,7 +657,10 @@ class PlacesSemanticHistoryManager {
               INSERT INTO vec_history (rowid, embedding, embedding_coarse)
               VALUES (:rowid, :vector, vec_quantize_binary(:vector))
               `,
-              { rowid, vector: this.tensorToBindable(tensor) }
+              {
+                rowid,
+                vector: lazy.PlacesUtils.tensorToSQLBindable(tensor),
+              }
             );
           }
 
@@ -728,13 +734,6 @@ class PlacesSemanticHistoryManager {
     lazy.logger.info("PlacesSemanticHistoryManager shut down.");
   }
 
-  tensorToBindable(tensor) {
-    if (!tensor) {
-      throw new Error("tensorToBindable received an undefined tensor");
-    }
-    return new Uint8ClampedArray(new Float32Array(tensor).buffer);
-  }
-
   /**
    * Executes an inference operation using the ML engine.
    *
@@ -805,7 +804,7 @@ class PlacesSemanticHistoryManager {
       ORDER BY distance
       `,
       {
-        vector: this.tensorToBindable(tensor),
+        vector: lazy.PlacesUtils.tensorToSQLBindable(tensor),
         distanceThreshold: this.#distanceThreshold,
       }
     );
@@ -908,7 +907,8 @@ let gSingleton = null;
 
 /**
  * Get the one shared semantic‐history manager.
- * @param {Object} [options] invokes PlacesSemanticHistoryManager constructor on first call or if recreate==true
+ *
+ * @param {object} [options] invokes PlacesSemanticHistoryManager constructor on first call or if recreate==true
  * @param {boolean} recreate set could true only for testing purposes and should not be true in production
  */
 export function getPlacesSemanticHistoryManager(
