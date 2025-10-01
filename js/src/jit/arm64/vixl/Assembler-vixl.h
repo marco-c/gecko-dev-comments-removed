@@ -164,7 +164,7 @@ class Assembler : public MozBaseAssembler {
   }
 
   
-  static inline Condition SwapCmdOperandsCondition(Condition cond) {
+  static inline Condition InvertCmpCondition(Condition cond) {
     
     
     switch (cond) {
@@ -172,13 +172,13 @@ class Assembler : public MozBaseAssembler {
     case ne:
       return cond;
     case gt:
-      return lt;
-    case le:
-      return ge;
-    case ge:
       return le;
-    case lt:
+    case le:
       return gt;
+    case ge:
+      return lt;
+    case lt:
+      return ge;
     case hi:
       return lo;
     case lo:
