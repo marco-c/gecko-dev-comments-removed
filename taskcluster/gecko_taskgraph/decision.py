@@ -35,7 +35,6 @@ from .files_changed import get_changed_files
 from .parameters import get_app_version, get_version
 from .util.backstop import ANDROID_PERFTEST_BACKSTOP_INDEX, BACKSTOP_INDEX, is_backstop
 from .util.bugbug import push_schedules
-from .util.chunking import resolver
 from .util.hg import get_hg_commit_message, get_hg_revision_branch, get_hg_revision_info
 from .util.partials import populate_release_history
 from .util.taskcluster import insert_index
@@ -218,7 +217,10 @@ def taskgraph_decision(options, parameters=None):
     )
 
     
-    write_artifact("tests-by-manifest.json.gz", resolver.tests_by_manifest)
+    
+    
+    
+    
 
     
     _, _ = TaskGraph.from_json(full_task_json)
