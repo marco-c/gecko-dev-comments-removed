@@ -67,6 +67,13 @@ _IWYU_MAPPING = {
 
 _SUFFICES = [".cc", ".h"]
 
+
+_IGNORED_HEADERS = [
+    ".pb.h",  
+    "pipewire/.*.h",  
+    "spa/.*.h",  
+]
+
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Runs the include-cleaner tool on a list of files",
@@ -239,7 +246,7 @@ def main() -> None:
     
     cmd = [str(_CLEANER_BINARY_PATH), "-p", str(args.work_dir)]
     
-    cmd.append("--ignore-headers=.pb.h")
+    cmd.append("--ignore-headers=" + ",".join(_IGNORED_HEADERS))
     for extra_arg in _EXTRA_ARGS:
         cmd.append(f"--extra-arg={extra_arg}")
     if args.print or args.check_for_changes:
