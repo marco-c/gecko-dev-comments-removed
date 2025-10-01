@@ -28,7 +28,7 @@ const isRunningObserver = {
   observe(subject, topic) {
     switch (topic) {
       case "profiler-started":
-      case "profiler-stopped":
+      case "profiler-stopped": {
         
         
         
@@ -39,6 +39,7 @@ const isRunningObserver = {
           isRunningPromise.then(observer);
         }
         break;
+      }
     }
   },
 
