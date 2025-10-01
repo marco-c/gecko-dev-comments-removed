@@ -6,4 +6,5 @@
 'use strict';
 
 const largeBlob = new Blob([' '.repeat(largeSendDataLength)]);
-rtc_data_channel_send_close_test( largeBlob);
+rtc_data_channel_send_close_test( largeBlob,
+                                  {});

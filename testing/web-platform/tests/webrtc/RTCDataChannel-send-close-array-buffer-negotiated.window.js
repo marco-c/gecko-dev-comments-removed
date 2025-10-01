@@ -7,5 +7,6 @@
 
 const largeString = ' '.repeat(largeSendDataLength);
 const largeArrayBuffer = new TextEncoder('utf-8').encode(largeString);
-rtc_data_channel_send_close_test( largeArrayBuffer,
-                                  {});
+rtc_data_channel_send_close_test(
+     largeArrayBuffer,
+     {negotiated: true, id: 0});
