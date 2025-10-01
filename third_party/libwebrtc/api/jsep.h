@@ -27,6 +27,9 @@
 #include <string>
 #include <vector>
 
+#include "absl/base/nullability.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 #include "api/candidate.h"
 #include "api/ref_count.h"
 #include "api/rtc_error.h"
@@ -45,40 +48,81 @@ struct SdpParseError {
 };
 
 
-
-
-
-
-
-class RTC_EXPORT IceCandidateInterface {
+class RTC_EXPORT IceCandidate final {
  public:
-  virtual ~IceCandidateInterface() {}
+  IceCandidate(absl::string_view sdp_mid,
+               int sdp_mline_index,
+               const Candidate& candidate);
+  ~IceCandidate() = default;
+
+  IceCandidate(const IceCandidate&) = delete;
+  IceCandidate& operator=(const IceCandidate&) = delete;
+
   
   
-  virtual std::string sdp_mid() const = 0;
   
   
-  virtual int sdp_mline_index() const = 0;
+  static std::unique_ptr<IceCandidate> Create(
+      absl::string_view mid,
+      int sdp_mline_index,
+      absl::string_view sdp,
+      SdpParseError* absl_nullable error = nullptr);
+
   
-  virtual const Candidate& candidate() const = 0;
   
   
+  std::string sdp_mid() const { return sdp_mid_; }
+
   
-  virtual std::string server_url() const;
   
-  virtual bool ToString(std::string* out) const = 0;
+  int sdp_mline_index() const { return sdp_mline_index_; }
+
+  
+  const Candidate& candidate() const { return candidate_; }
+
+  
+  
+  std::string server_url() const { return candidate_.url(); }
+
+  
+  std::string ToString() const;
+
+  
+  
+  bool ToString(std::string* out) const {
+    if (!out)
+      return false;
+    *out = ToString();
+    return !out->empty();
+  }
+
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const IceCandidate& c) {
+    absl::Format(&sink, "IceCandidate: {'%s', %i, '%s'}", c.sdp_mid_.c_str(),
+                 c.sdp_mline_index_, c.ToString().c_str());
+  }
+
+ private:
+  const std::string sdp_mid_;
+  const int sdp_mline_index_;
+  const Candidate candidate_;
 };
 
 
 
-
-RTC_EXPORT IceCandidateInterface* CreateIceCandidate(const std::string& sdp_mid,
-                                                     int sdp_mline_index,
-                                                     const std::string& sdp,
-                                                     SdpParseError* error);
+using JsepIceCandidate = IceCandidate;
+using IceCandidateInterface = IceCandidate;
 
 
-RTC_EXPORT std::unique_ptr<IceCandidateInterface> CreateIceCandidate(
+
+
+RTC_EXPORT IceCandidate* CreateIceCandidate(const std::string& sdp_mid,
+                                            int sdp_mline_index,
+                                            const std::string& sdp,
+                                            SdpParseError* error);
+
+
+RTC_EXPORT std::unique_ptr<IceCandidate> CreateIceCandidate(
     const std::string& sdp_mid,
     int sdp_mline_index,
     const Candidate& candidate);
@@ -90,8 +134,8 @@ class IceCandidateCollection {
   virtual ~IceCandidateCollection() {}
   virtual size_t count() const = 0;
   
-  virtual bool HasCandidate(const IceCandidateInterface* candidate) const = 0;
-  virtual const IceCandidateInterface* at(size_t index) const = 0;
+  virtual bool HasCandidate(const IceCandidate* candidate) const = 0;
+  virtual const IceCandidate* at(size_t index) const = 0;
 };
 
 
@@ -167,7 +211,7 @@ class RTC_EXPORT SessionDescriptionInterface {
   
   
   
-  virtual bool AddCandidate(const IceCandidateInterface* candidate) = 0;
+  virtual bool AddCandidate(const IceCandidate* candidate) = 0;
 
   
   

@@ -1094,8 +1094,7 @@ class PeerConnectionIntegrationWrapper : public PeerConnectionObserver,
     
     EXPECT_GT(candidates_expected_, 1);
     candidates_expected_--;
-    std::string ice_sdp;
-    EXPECT_TRUE(candidate->ToString(&ice_sdp));
+    std::string ice_sdp = candidate->ToString();
     if (signaling_message_receiver_ == nullptr || !signal_ice_candidates_) {
       
       return;
