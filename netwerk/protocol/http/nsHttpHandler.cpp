@@ -27,13 +27,11 @@
 #include "nsCOMPtr.h"
 #include "nsNetCID.h"
 #include "mozilla/AppShutdown.h"
-#include "mozilla/Base64.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Components.h"
 #include "mozilla/Printf.h"
 #include "mozilla/RandomNum.h"
 #include "mozilla/SHA1.h"
-#include "mozilla/ScopeExit.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPrefs_privacy.h"
@@ -361,8 +359,6 @@ nsresult nsHttpHandler::Init() {
   
   if (!IsNeckoChild()) {
     if (XRE_IsParentProcess()) {
-      mDictionaryCache = DictionaryCache::GetInstance();
-
       std::bitset<3> usageOfHTTPSRRPrefs;
       usageOfHTTPSRRPrefs[0] = StaticPrefs::network_dns_upgrade_with_https_rr();
       usageOfHTTPSRRPrefs[1] =
@@ -653,88 +649,8 @@ nsresult nsHttpHandler::InitConnectionMgr() {
                         mBeConservativeForProxy);
 }
 
-
-
-nsresult nsHttpHandler::AddAcceptAndDictionaryHeaders(
-    nsIURI* aURI, ExtContentPolicyType aType, nsHttpRequestHead* aRequest,
-    bool aSecure, bool& aAsync,
-    const std::function<bool(bool, DictionaryCacheEntry*)>& aCallback) {
-  LOG(("Adding Dictionary headers"));
-  auto guard = MakeScopeExit([&]() { (aCallback)(false, nullptr); });
-
-  nsresult rv = NS_OK;
-  
-  if (aSecure) {
-    
-    if (StaticPrefs::network_http_dictionaries_enable()) {
-      
-      
-      guard.release();
-      mDictionaryCache->GetDictionaryFor(
-          aURI, aType, aAsync,
-          [self = RefPtr(this), aRequest, aCallback](
-              bool aNeedsResume, DictionaryCacheEntry* aDict) {
-            if (!aDict) {
-              
-              (aCallback)(aNeedsResume, nullptr);
-              return NS_OK;
-            }
-
-            nsAutoCStringN<64> encodedHash = ":"_ns + aDict->GetHash() + ":"_ns;
-
-            
-            
-            
-            
-            
-            
-            aRequest->SetDictionary(aDict);
-
-            
-            
-            
-            
-            
-            
-            
-            
-            if ((aCallback)(aNeedsResume, aDict)) {
-              LOG_DICTIONARIES(
-                  ("Setting Available-Dictionary: %s", encodedHash.get()));
-              nsresult rv = aRequest->SetHeader(
-                  nsHttp::Available_Dictionary, encodedHash, false,
-                  nsHttpHeaderArray::eVarietyRequestOverride);
-              if (NS_FAILED(rv)) {
-                return rv;
-              }
-              if (!aDict->GetId().IsEmpty()) {
-                nsPrintfCString id("\"%s\"", aDict->GetId().get());
-                LOG_DICTIONARIES(("Setting Dictionary-Id: %s", id.get()));
-                rv = aRequest->SetHeader(
-                    nsHttp::Dictionary_Id, id, false,
-                    nsHttpHeaderArray::eVarietyRequestOverride);
-                if (NS_FAILED(rv)) {
-                  return rv;
-                }
-              }
-              return aRequest->SetHeader(
-                  nsHttp::Accept_Encoding, self->mDictionaryAcceptEncodings,
-                  false, nsHttpHeaderArray::eVarietyRequestOverride);
-            }
-            return NS_OK;
-          });
-    } else {
-      aAsync = false;
-    }
-  } else {
-    aAsync = false;
-  }
-  
-  return rv;
-}
-
 nsresult nsHttpHandler::AddStandardRequestHeaders(
-    nsHttpRequestHead* request, nsIURI* aURI, bool aIsHTTPS,
+    nsHttpRequestHead* request, bool isSecure,
     ExtContentPolicyType aContentPolicyType, bool aShouldResistFingerprinting) {
   nsresult rv;
 
@@ -782,18 +698,20 @@ nsresult nsHttpHandler::AddStandardRequestHeaders(
   }
 
   
-  if (mSafeHintEnabled || sParentalControlsEnabled) {
-    rv = request->SetHeader(nsHttp::Prefer, "safe"_ns, false,
-                            nsHttpHeaderArray::eVarietyRequestDefault);
-    if (NS_FAILED(rv)) return rv;
-  }
-
-  if (aIsHTTPS) {
+  if (isSecure) {
     rv = request->SetHeader(nsHttp::Accept_Encoding, mHttpsAcceptEncodings,
                             false, nsHttpHeaderArray::eVarietyRequestDefault);
   } else {
     rv = request->SetHeader(nsHttp::Accept_Encoding, mHttpAcceptEncodings,
                             false, nsHttpHeaderArray::eVarietyRequestDefault);
+  }
+  if (NS_FAILED(rv)) return rv;
+
+  
+  if (mSafeHintEnabled || sParentalControlsEnabled) {
+    rv = request->SetHeader(nsHttp::Prefer, "safe"_ns, false,
+                            nsHttpHeaderArray::eVarietyRequestDefault);
+    if (NS_FAILED(rv)) return rv;
   }
   return NS_OK;
 }
@@ -823,10 +741,8 @@ bool nsHttpHandler::IsAcceptableEncoding(const char* enc, bool isSecure) {
   
   bool rv;
   if (isSecure) {
-    
-    
-    rv = nsHttp::FindToken(mDictionaryAcceptEncodings.get(), enc,
-                           HTTP_LWS ",") != nullptr;
+    rv = nsHttp::FindToken(mHttpsAcceptEncodings.get(), enc, HTTP_LWS ",") !=
+         nullptr;
   } else {
     rv = nsHttp::FindToken(mHttpAcceptEncodings.get(), enc, HTTP_LWS ",") !=
          nullptr;
@@ -1500,30 +1416,17 @@ void nsHttpHandler::PrefsChanged(const char* pref) {
     nsAutoCString acceptEncodings;
     rv = Preferences::GetCString(HTTP_PREF("accept-encoding"), acceptEncodings);
     if (NS_SUCCEEDED(rv)) {
-      rv = SetAcceptEncodings(acceptEncodings.get(), false, false);
+      rv = SetAcceptEncodings(acceptEncodings.get(), false);
       MOZ_ASSERT(NS_SUCCEEDED(rv));
     }
   }
 
-  if (PREF_CHANGED(HTTP_PREF("accept-encoding.secure")) ||
-      PREF_CHANGED(HTTP_PREF("accept-encoding.dictionary"))) {
+  if (PREF_CHANGED(HTTP_PREF("accept-encoding.secure"))) {
     nsAutoCString acceptEncodings;
     rv = Preferences::GetCString(HTTP_PREF("accept-encoding.secure"),
                                  acceptEncodings);
     if (NS_SUCCEEDED(rv)) {
-      rv = SetAcceptEncodings(acceptEncodings.get(), true, false);
-
-      
-      
-      
-      nsAutoCString acceptDictionaryEncodings;
-      rv = Preferences::GetCString(HTTP_PREF("accept-encoding.dictionary"),
-                                   acceptDictionaryEncodings);
-      if (NS_SUCCEEDED(rv) && !acceptDictionaryEncodings.IsEmpty()) {
-        acceptEncodings.Append(", "_ns);
-        acceptEncodings.Append(acceptDictionaryEncodings);
-        rv = SetAcceptEncodings(acceptEncodings.get(), true, true);
-      }
+      rv = SetAcceptEncodings(acceptEncodings.get(), true);
       MOZ_ASSERT(NS_SUCCEEDED(rv));
     }
   }
@@ -2099,10 +2002,8 @@ nsresult nsHttpHandler::SetAcceptLanguages() {
 }
 
 nsresult nsHttpHandler::SetAcceptEncodings(const char* aAcceptEncodings,
-                                           bool isSecure, bool isDictionary) {
-  if (isDictionary) {
-    mDictionaryAcceptEncodings = aAcceptEncodings;
-  } else if (isSecure) {
+                                           bool isSecure) {
+  if (isSecure) {
     mHttpsAcceptEncodings = aAcceptEncodings;
   } else {
     

@@ -46,8 +46,7 @@ class nsHttpHeaderArray {
     
     eVarietyResponseNetOriginalAndResponse,
     eVarietyResponseNetOriginal,
-    eVarietyResponse,
-    eVarietyResponseOverride,
+    eVarietyResponse
   };
 
   

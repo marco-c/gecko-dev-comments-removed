@@ -660,8 +660,8 @@ void CacheFileContextEvictor::EvictEntries() {
       
       LOG(
           ("CacheFileContextEvictor::EvictEntries() - Skipping entry since we "
-           "found an active handle. [handle=%p key=%s]",
-           handle.get(), handle->Key().get()));
+           "found an active handle. [handle=%p]",
+           handle.get()));
       continue;
     }
 
@@ -685,21 +685,19 @@ void CacheFileContextEvictor::EvictEntries() {
     }
 
     
-    RefPtr<CacheFileMetadata> metadata = new CacheFileMetadata();
-    {
+    if (!mEntries[0]->mBaseDomain.IsEmpty() ||
+        !mEntries[0]->mOrigin.IsEmpty()) {
       
       nsCOMPtr<nsIFile> file;
       CacheFileIOManager::gInstance->GetFile(&hash, getter_AddRefs(file));
 
+      
+      RefPtr<CacheFileMetadata> metadata = new CacheFileMetadata();
       rv = metadata->SyncReadMetadata(file);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         continue;
       }
-    }
 
-    
-    if (!mEntries[0]->mBaseDomain.IsEmpty() ||
-        !mEntries[0]->mOrigin.IsEmpty()) {
       
       nsAutoCString uriSpec;
       RefPtr<nsILoadContextInfo> info =
@@ -822,7 +820,7 @@ void CacheFileContextEvictor::EvictEntries() {
 
     LOG(("CacheFileContextEvictor::EvictEntries - Removing entry."));
     file->Remove(false);
-    CacheIndex::RemoveEntry(&hash, metadata->GetKey());
+    CacheIndex::RemoveEntry(&hash);
   }
 
   MOZ_ASSERT_UNREACHABLE("We should never get here");
