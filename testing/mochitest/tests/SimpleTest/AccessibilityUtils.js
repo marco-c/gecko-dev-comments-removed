@@ -385,6 +385,48 @@ this.AccessibilityUtils = (function () {
 
 
 
+
+
+
+
+  function isKeyboardFocusableSpinbuttonSibling(accessible) {
+    const node = accessible.DOMNode;
+    if (!node || !node.ownerGlobal) {
+      return false;
+    }
+
+    
+    if (accessible.role != Ci.nsIAccessibleRole.ROLE_PUSHBUTTON) {
+      return false;
+    }
+
+    
+    for (const sibling of [
+      node.previousElementSibling,
+      node.nextElementSibling,
+    ]) {
+      if (!sibling) {
+        continue;
+      }
+      const siblingAcc = getAccessible(sibling);
+      if (
+        siblingAcc &&
+        siblingAcc.role == Ci.nsIAccessibleRole.ROLE_SPINBUTTON &&
+        matchState(siblingAcc, STATE_FOCUSABLE)
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  
+
+
+
+
+
+
   function isKeyboardFocusableTabInTablist(accessible) {
     const node = accessible.DOMNode;
     if (!node || !node.ownerGlobal) {
@@ -709,7 +751,8 @@ this.AccessibilityUtils = (function () {
       isKeyboardFocusableUrlbarButton(accessible) ||
       isKeyboardFocusableXULTab(accessible) ||
       isKeyboardFocusableTabInTablist(accessible) ||
-      isKeyboardFocusableFxviewControlInApplication(accessible)
+      isKeyboardFocusableFxviewControlInApplication(accessible) ||
+      isKeyboardFocusableSpinbuttonSibling(accessible)
     ) {
       return true;
     }
