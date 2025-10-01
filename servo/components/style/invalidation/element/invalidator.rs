@@ -15,7 +15,7 @@ use selectors::matching::matches_compound_selector_from;
 use selectors::matching::{CompoundSelectorMatchingResult, MatchingContext};
 use selectors::parser::{Combinator, Component};
 use selectors::OpaqueElement;
-use smallvec::SmallVec;
+use smallvec::{SmallVec, smallvec};
 use std::fmt;
 use std::fmt::Write;
 
@@ -358,7 +358,7 @@ impl<'a> fmt::Debug for Invalidation<'a> {
 }
 
 
-struct SingleInvalidationResult {
+struct ProcessInvalidationResult {
     
     invalidated_self: bool,
     
@@ -876,6 +876,95 @@ where
         invalidated
     }
 
+    #[inline(always)]
+    fn handle_fully_matched(
+        &mut self,
+        invalidation: &Invalidation<'b>,
+    ) -> (ProcessInvalidationResult, SmallVec<[Invalidation<'b>; 1]>){
+        debug!(" > Invalidation matched completely");
+        
+        
+        let mut to_process: SmallVec<[&Dependency; 1]> = SmallVec::from([invalidation.dependency]);
+        let mut next_invalidations: SmallVec<[Invalidation; 1]> = SmallVec::new();
+        let mut result = ProcessInvalidationResult {
+            invalidated_self: false,
+            matched: false,
+        };
+
+        while !to_process.is_empty() {
+            let mut next_dependencies: SmallVec<[&Dependency; 1]> = SmallVec::new();
+
+            while let Some(dependency) = to_process.pop() {
+                match dependency.next {
+                    None => {
+                        result.invalidated_self = true;
+                        result.matched = true;
+                    },
+                    Some(ref deps) => {
+                        for n in deps.as_ref().slice(){
+
+                            let invalidation_kind = n.invalidation_kind();
+                            match invalidation_kind {
+                                DependencyInvalidationKind::FullSelector => unreachable!(),
+                                DependencyInvalidationKind::Normal(_) => next_dependencies.push(n),
+                                
+                                DependencyInvalidationKind::Scope(_) => {
+                                    next_dependencies.push(n);
+                                },
+                                DependencyInvalidationKind::Relative(kind) => {
+                                    self.processor.found_relative_selector_invalidation(
+                                        self.element,
+                                        kind,
+                                        n,
+                                    );
+                                    result.matched = true;
+                                },
+                            }
+                        }
+                    },
+                };
+            }
+
+
+            for cur_dependency in next_dependencies.as_ref(){
+                let scope = matches!(invalidation.dependency.invalidation_kind(), DependencyInvalidationKind::Scope(_)).then(|| self.element.opaque());
+                debug!(" > Checking outer dependency {:?}", cur_dependency);
+
+                
+                
+                
+                if !self
+                .processor
+                .check_outer_dependency(cur_dependency, self.element, scope)
+                {
+                    
+                    continue;
+                }
+
+                let invalidation_kind = cur_dependency.invalidation_kind();
+                if  matches!(invalidation_kind,
+                    DependencyInvalidationKind::Normal(NormalDependencyInvalidationKind::Element))
+                    || (
+                    matches!(invalidation_kind,
+                        DependencyInvalidationKind::Scope(_))
+                        && cur_dependency.selector_offset == 0
+                    )
+                {
+                    
+                    to_process.push(cur_dependency);
+                    continue;
+                }
+
+                debug!(" > Generating invalidation");
+                next_invalidations.push(Invalidation::new(cur_dependency, invalidation.host, scope));
+            }
+        }
+        return (
+            result,
+            next_invalidations
+        );
+    }
+
     
     
     
@@ -888,7 +977,7 @@ where
         descendant_invalidations: &mut DescendantInvalidationLists<'b>,
         sibling_invalidations: &mut InvalidationVector<'b>,
         invalidation_kind: InvalidationKind,
-    ) -> SingleInvalidationResult {
+    ) -> ProcessInvalidationResult {
         debug!(
             "TreeStyleInvalidator::process_invalidation({:?}, {:?}, {:?})",
             self.element, invalidation, invalidation_kind
@@ -908,231 +997,171 @@ where
             })
         };
 
-        let next_invalidation = match matching_result {
+        let (result, next_invalidations) = match matching_result {
             CompoundSelectorMatchingResult::NotMatched => {
-                return SingleInvalidationResult {
+                return ProcessInvalidationResult {
                     invalidated_self: false,
                     matched: false,
                 }
             },
             CompoundSelectorMatchingResult::FullyMatched => {
-                debug!(" > Invalidation matched completely");
-                
-                
-                let mut cur_dependency = invalidation.dependency;
-                loop {
-                    let mut scope = invalidation.scope;
-                    cur_dependency = match cur_dependency.next {
-                        None => {
-                            return SingleInvalidationResult {
-                                invalidated_self: true,
-                                matched: true,
-                            }
-                        },
-                        Some(ref deps) => {
-                            let n = &deps.as_ref().slice()[0];
-                            let invalidation_kind = n.invalidation_kind();
-                            match invalidation_kind {
-                                DependencyInvalidationKind::FullSelector => unreachable!(),
-                                DependencyInvalidationKind::Normal(_) => n,
-                                
-                                DependencyInvalidationKind::Scope(_) => {
-                                    scope = Some(self.element.opaque());
-                                    n
-                                },
-                                DependencyInvalidationKind::Relative(kind) => {
-                                    self.processor.found_relative_selector_invalidation(
-                                        self.element,
-                                        kind,
-                                        n,
-                                    );
-                                    return SingleInvalidationResult {
-                                        invalidated_self: false,
-                                        matched: true,
-                                    };
-                                },
-                            }
-                        },
-                    };
-
-                    debug!(" > Checking outer dependency {:?}", cur_dependency);
-
-                    
-                    
-                    
-                    if !self
-                        .processor
-                        .check_outer_dependency(cur_dependency, self.element, invalidation.scope)
-                    {
-                        return SingleInvalidationResult {
-                            invalidated_self: false,
-                            matched: false,
-                        };
-                    }
-
-                    let invalidation_kind = cur_dependency.invalidation_kind();
-                    if matches!(invalidation_kind,
-                        DependencyInvalidationKind::Normal(NormalDependencyInvalidationKind::Element))
-                        || (
-                            matches!(invalidation_kind,
-                            DependencyInvalidationKind::Scope(_))
-                            && cur_dependency.selector_offset == 0
-                        )
-                    {
-                        continue;
-                    }
-
-                    debug!(" > Generating invalidation");
-                    break Invalidation::new(cur_dependency, invalidation.host, scope);
-                }
+                self.handle_fully_matched(invalidation)
             },
             CompoundSelectorMatchingResult::Matched {
                 next_combinator_offset,
-            } => Invalidation {
-                dependency: invalidation.dependency,
-                host: invalidation.host,
-                scope: invalidation.scope,
-                offset: next_combinator_offset + 1,
-                matched_by_any_previous: false,
-            },
+            } => (
+                ProcessInvalidationResult {
+                    invalidated_self: false,
+                    matched: true,
+                },
+                smallvec![Invalidation {
+                    dependency: invalidation.dependency,
+                    host: invalidation.host,
+                    scope: invalidation.scope,
+                    offset: next_combinator_offset + 1,
+                    matched_by_any_previous: false,
+                }],
+            ),
         };
 
-        debug_assert_ne!(
-            next_invalidation.offset, 0,
-            "Rightmost selectors shouldn't generate more invalidations",
-        );
-
-        let mut invalidated_self = false;
-        let next_combinator = next_invalidation
-            .dependency
-            .selector
-            .combinator_at_parse_order(next_invalidation.offset - 1);
-
-        if matches!(next_combinator, Combinator::PseudoElement)
-            && self.processor.invalidates_on_pseudo_element()
-        {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            invalidated_self = true;
-        }
-
-        debug!(
-            " > Invalidation matched, next: {:?}, ({:?})",
-            next_invalidation, next_combinator
-        );
-
-        let next_invalidation_kind = next_invalidation.kind();
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        let can_skip_pushing = next_invalidation_kind == invalidation_kind
-            && invalidation.matched_by_any_previous
-            && next_invalidation.effective_for_next();
-
-        if can_skip_pushing {
-            debug!(
-                " > Can avoid push, since the invalidation had \
-                 already been matched before"
+        let mut invalidated_self = result.invalidated_self;
+        for next_invalidation in next_invalidations{
+            debug_assert_ne!(
+                next_invalidation.offset, 0,
+                "Rightmost selectors shouldn't generate more invalidations",
             );
-        } else {
-            match next_invalidation_kind {
-                InvalidationKind::Descendant(DescendantInvalidationKind::Dom) => {
-                    descendant_invalidations
-                        .dom_descendants
-                        .push(next_invalidation);
-                },
-                InvalidationKind::Descendant(DescendantInvalidationKind::Part) => {
-                    descendant_invalidations.parts.push(next_invalidation);
-                },
-                InvalidationKind::Descendant(DescendantInvalidationKind::Slotted) => {
-                    descendant_invalidations
-                        .slotted_descendants
-                        .push(next_invalidation);
-                },
-                InvalidationKind::Sibling => {
-                    sibling_invalidations.push(next_invalidation);
-                },
+
+            let next_combinator = next_invalidation
+                .dependency
+                .selector
+                .combinator_at_parse_order(next_invalidation.offset - 1);
+
+            if matches!(next_combinator, Combinator::PseudoElement)
+                && self.processor.invalidates_on_pseudo_element()
+            {
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                invalidated_self = true;
+            }
+
+            debug!(
+                " > Invalidation matched, next: {:?}, ({:?})",
+                next_invalidation, next_combinator
+            );
+
+            let next_invalidation_kind = next_invalidation.kind();
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let can_skip_pushing = next_invalidation_kind == invalidation_kind
+                && invalidation.matched_by_any_previous
+                && next_invalidation.effective_for_next();
+
+            if can_skip_pushing {
+                debug!(
+                    " > Can avoid push, since the invalidation had \
+                    already been matched before"
+                );
+            } else {
+                match next_invalidation_kind {
+                    InvalidationKind::Descendant(DescendantInvalidationKind::Dom) => {
+                        descendant_invalidations
+                            .dom_descendants
+                            .push(next_invalidation);
+                    },
+                    InvalidationKind::Descendant(DescendantInvalidationKind::Part) => {
+                        descendant_invalidations.parts.push(next_invalidation);
+                    },
+                    InvalidationKind::Descendant(DescendantInvalidationKind::Slotted) => {
+                        descendant_invalidations
+                            .slotted_descendants
+                            .push(next_invalidation);
+                    },
+                    InvalidationKind::Sibling => {
+                        sibling_invalidations.push(next_invalidation);
+                    },
+                }
             }
         }
 
-        SingleInvalidationResult {
+        ProcessInvalidationResult {
             invalidated_self,
             matched: true,
         }
