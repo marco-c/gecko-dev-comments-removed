@@ -8,14 +8,20 @@ const nsPerMinute = 60 * 1000 * 1000 * 1000;
 
 const defaultTimeZone = "PST8PDT";
 
+assertEq(["PST", "PDT"].includes(getTimeZone()), true);
+
+const canonicalDefaultTimeZone = new Intl.DateTimeFormat("en", {
+  timeZone: defaultTimeZone
+}).resolvedOptions().timeZone;
+
 function test(timeZone) {
   
-  assertEq(getRealmTimeZone(), defaultTimeZone);
+  assertEq(getRealmTimeZone(), canonicalDefaultTimeZone);
 
   
   var g = newGlobal({timeZone});
 
-  var initialTimeZone = timeZone ?? defaultTimeZone;
+  var initialTimeZone = timeZone ?? canonicalDefaultTimeZone;
 
   
   assertEq(g.getRealmTimeZone(), initialTimeZone);
@@ -36,7 +42,7 @@ function test(timeZone) {
   assertEq(g.getRealmTimeZone(), "Asia/Tokyo");
 
   
-  assertEq(getRealmTimeZone(), defaultTimeZone);
+  assertEq(getRealmTimeZone(), canonicalDefaultTimeZone);
 
   
   assertEq(
@@ -48,7 +54,7 @@ function test(timeZone) {
   g.setRealmTimeZone(undefined);
 
   
-  assertEq(g.getRealmTimeZone(), defaultTimeZone);
+  assertEq(g.getRealmTimeZone(), canonicalDefaultTimeZone);
 
   
   assertEq(
