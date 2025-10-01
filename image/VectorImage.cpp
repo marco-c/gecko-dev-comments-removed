@@ -629,6 +629,9 @@ VectorImage::GetFrame(uint32_t aWhichFrame, uint32_t aFlags) {
   if (!width.IsLength() || !height.IsLength()) {
     
     
+    NS_WARNING(
+        "VectorImage::GetFrame called on image without an intrinsic width or "
+        "height");
     return nullptr;
   }
 
