@@ -113,6 +113,12 @@ class JS_PUBLIC_API JobQueue {
 
   virtual bool isDrainingStopped() const = 0;
 
+  
+
+
+
+  virtual bool useDebugQueue(JSObject* global) const { return false; }
+
  protected:
   friend class AutoDebuggerJobQueueInterruption;
 
