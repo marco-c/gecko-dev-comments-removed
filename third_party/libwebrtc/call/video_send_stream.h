@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "api/adaptation/resource.h"
+#include "api/array_view.h"
 #include "api/call/transport.h"
 #include "api/crypto/crypto_options.h"
 #include "api/frame_transformer_interface.h"
@@ -258,6 +259,9 @@ class VideoSendStream {
 
   
   virtual void SetStats(const Stats& stats) { RTC_CHECK_NOTREACHED(); }
+
+  
+  virtual void SetCsrcs(ArrayView<const uint32_t> csrcs) = 0;
 
   virtual void GenerateKeyFrame(const std::vector<std::string>& rids) = 0;
 
