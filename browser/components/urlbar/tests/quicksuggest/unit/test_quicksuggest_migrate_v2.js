@@ -16,10 +16,9 @@ const DEFAULT_PREFS = {
 
 
 
-
-
-
-const TEST_OVERRIDES = undefined;
+const TEST_OVERRIDES = {
+  migrationVersion: 2,
+};
 
 add_setup(async () => {
   await UrlbarTestUtils.initNimbusFeature();

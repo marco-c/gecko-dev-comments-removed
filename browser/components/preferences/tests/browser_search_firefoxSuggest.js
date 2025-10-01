@@ -61,6 +61,14 @@ requestLongerTimeout(10);
 add_setup(async function () {
   
   await QuickSuggestTestUtils.ensureQuickSuggestInit();
+
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.quicksuggest.settingsUi", QuickSuggest.SETTINGS_UI.FULL],
+    ],
+  });
 });
 
 

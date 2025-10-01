@@ -29,6 +29,16 @@ const EXPECTED = {
 
 requestLongerTimeout(10);
 
+add_setup(async () => {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.quicksuggest.settingsUi", QuickSuggest.SETTINGS_UI.FULL],
+    ],
+  });
+});
+
 
 
 
