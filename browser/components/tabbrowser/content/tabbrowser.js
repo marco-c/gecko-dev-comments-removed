@@ -2757,6 +2757,10 @@
     
 
 
+
+
+
+
     addWebTab(aURI, params = {}) {
       if (!params.triggeringPrincipal) {
         params.triggeringPrincipal =
@@ -2771,6 +2775,12 @@
       }
       return this.addTab(aURI, params);
     }
+
+    
+
+
+
+
 
     addAdjacentNewTab(tab) {
       Services.obs.notifyObservers(
@@ -2787,6 +2797,29 @@
         },
         "browser-open-newtab-start"
       );
+    }
+
+    
+
+
+
+
+
+
+
+    addAdjacentTab(adjacentTab, uriString, options = {}) {
+      
+      
+      
+      const tabIndex =
+        !options.tabGroup && adjacentTab.group
+          ? adjacentTab.group.tabs.at(-1)._tPos + 1
+          : adjacentTab._tPos + 1;
+
+      return this.addTab(uriString, {
+        ...options,
+        tabIndex,
+      });
     }
 
     
