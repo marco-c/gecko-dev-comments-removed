@@ -1391,6 +1391,9 @@ pref("browser.sessionstore.loglevel", "Warn");
 pref("browser.sessionstore.log.appender.file.maxErrorAge", 864000); 
 
 
+pref("browser.sessionstore.logFlushIntervalSeconds", 3600);
+
+
 
 pref("browser.sessionstore.privacy_level", 0);
 
