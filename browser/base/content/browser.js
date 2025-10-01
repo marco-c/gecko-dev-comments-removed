@@ -1025,11 +1025,6 @@ const gClickAndHoldListenersOnElement = {
   },
 };
 
-
-
-
-
-
 const gSessionHistoryObserver = {
   observe(subject, topic) {
     if (topic != "browser:purge-session-history") {
@@ -1037,9 +1032,9 @@ const gSessionHistoryObserver = {
     }
 
     var backCommand = document.getElementById("Browser:Back");
-    backCommand.setAttribute("wasdisabled", "true");
+    backCommand.setAttribute("disabled", "true");
     var fwdCommand = document.getElementById("Browser:Forward");
-    fwdCommand.setAttribute("wasdisabled", "true");
+    fwdCommand.setAttribute("disabled", "true");
 
     
     gURLBar.editor.clearUndoRedo();
