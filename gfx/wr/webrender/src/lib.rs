@@ -41,7 +41,12 @@
 
 
 
-#![allow(clippy::unreadable_literal, clippy::new_without_default, clippy::too_many_arguments)]
+#![allow(
+    clippy::unreadable_literal,
+    clippy::new_without_default,
+    clippy::too_many_arguments,
+    mismatched_lifetime_syntaxes
+)]
 
 
 
@@ -147,7 +152,7 @@ pub mod shader_source {
 extern crate bincode;
 extern crate byteorder;
 pub extern crate euclid;
-extern crate fxhash;
+extern crate rustc_hash;
 extern crate gleam;
 extern crate num_traits;
 extern crate plane_split;
