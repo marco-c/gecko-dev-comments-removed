@@ -5,23 +5,34 @@ const TEST_PATH = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
   "https://example.com"
 );
-const TEST_IMG_PATH = TEST_PATH + "file_image_header.sjs?image";
+
+function doLoad(url, forceMediaDocument, contentFn) {
+  return BrowserTestUtils.withNewTab({ gBrowser }, async function (browser) {
+    browser.loadURI(Services.io.newURI(url), {
+      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+      forceMediaDocument,
+    });
+
+    await BrowserTestUtils.browserLoaded(browser, false, url);
+
+    await SpecialPowers.spawn(browser, [], contentFn);
+  });
+}
 
 add_task(async function test_img() {
-  await BrowserTestUtils.withNewTab({ gBrowser }, async function (browser) {
-    browser.loadURI(Services.io.newURI(TEST_IMG_PATH), {
-      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
-      forceMediaDocument: "image",
-    });
+  await doLoad(TEST_PATH + "file_image_header.sjs?imagePNG", "image", () => {
+    
+    
+    let img = content.document.querySelector("img");
+    is(img.width, 1, "PNG width");
+    is(img.height, 1, "PNG height");
+  });
+});
 
-    await BrowserTestUtils.browserLoaded(browser, false, TEST_IMG_PATH);
-
-    await SpecialPowers.spawn(browser, [], () => {
-      
-      
-      let img = content.document.querySelector("img");
-      is(img.width, 1);
-      is(img.height, 1);
-    });
+add_task(async function test_img() {
+  await doLoad(TEST_PATH + "file_image_header.sjs?imageSVG", "image", () => {
+    let img = content.document.querySelector("img");
+    is(img.width, 100, "SVG width");
+    is(img.height, 100, "SVG height");
   });
 });
