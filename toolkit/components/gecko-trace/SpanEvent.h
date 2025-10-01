@@ -11,12 +11,9 @@ namespace mozilla::gecko_trace {
 
 using string_view = std::string_view;
 
-
-using AttributeValue = Variant<bool, int64_t, string_view
-                               
-                               
-                               
-                               >;
+using AttributeValue =
+    Variant<bool, int64_t, string_view, mozilla::Span<const bool>,
+            mozilla::Span<const int64_t>, mozilla::Span<const string_view>>;
 
 
 
