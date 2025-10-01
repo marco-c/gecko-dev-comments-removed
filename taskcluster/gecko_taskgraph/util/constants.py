@@ -2,4 +2,4 @@
 
 
 
-TEST_KINDS = ("browsertime", "mochitest", "reftest", "test")
+TEST_KINDS = ("browsertime", "mochitest", "reftest", "test", "web-platform-tests")

@@ -81,7 +81,7 @@ def loader(kind, path, config, params, loaded_tasks, write_artifacts):
     
     
     
-    if kind == "test" and write_artifacts:
+    if kind == "web-platform-tests" and write_artifacts:
         if not os.path.isdir(ARTIFACTS_DIR):
             os.mkdir(ARTIFACTS_DIR)
         path = os.path.join(ARTIFACTS_DIR, "tests-by-manifest.json.gz")
@@ -145,6 +145,11 @@ PREFIX_BY_KIND = {
     "browsertime": {"browsertime"},
     "mochitest": {"mochitest"},
     "reftest": {"crashtest", "jsreftest", "reftest"},
+    "web-platform-tests": {
+        "web-platform-tests",
+        "test-coverage-wpt",
+        "test-verify-wpt",
+    },
 }
 
 
