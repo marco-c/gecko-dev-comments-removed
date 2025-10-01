@@ -11213,7 +11213,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDateGet(
   }
 
   
-  if (cx_->realm()->behaviors().timeZone()) {
+  if (cx_->realm()->behaviors().timeZoneOverride()) {
     return AttachDecision::NoAction;
   }
 

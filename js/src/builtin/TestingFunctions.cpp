@@ -8736,10 +8736,10 @@ static bool SetRealmTimeZone(JSContext* cx, unsigned argc, Value* vp) {
       return false;
     }
 
-    cx->realm()->setTimeZone(timeZone.get());
+    cx->realm()->setTimeZoneOverride(timeZone.get());
   } else {
     
-    cx->realm()->setTimeZone(nullptr);
+    cx->realm()->setTimeZoneOverride(nullptr);
   }
 
   args.rval().setUndefined();

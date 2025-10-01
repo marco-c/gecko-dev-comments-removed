@@ -514,10 +514,6 @@ class JS::Realm : public JS::shadow::Realm {
     behaviors_.setReduceTimerPrecisionCallerType(type);
   }
 
-  void setLocaleOverride(const char* locale) {
-    behaviors_.setLocaleOverride(locale);
-  }
-
   
   bool preserveJitCode() { return creationOptions_.preserveJitCode(); }
 
@@ -811,11 +807,17 @@ class JS::Realm : public JS::shadow::Realm {
 
   
   
+  void setLocaleOverride(const char* locale) {
+    behaviors_.setLocaleOverride(locale);
+  }
+
+  
+  
   js::DateTimeInfo* getDateTimeInfo();
 
   
   
-  void setTimeZone(const char* timeZone);
+  void setTimeZoneOverride(const char* timeZone);
 
   
   mozilla::non_crypto::XorShift128PlusRNG& getOrCreateRandomNumberGenerator();

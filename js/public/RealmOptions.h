@@ -294,6 +294,14 @@ class JS_PUBLIC_API RealmBehaviors {
     return *this;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
   RefPtr<LocaleString> localeOverride() const { return localeOverride_; }
   RealmBehaviors& setLocaleOverride(const char* locale);
 
@@ -301,12 +309,14 @@ class JS_PUBLIC_API RealmBehaviors {
   
   
   
-  RefPtr<TimeZoneString> timeZone() const { return timeZone_; }
-  RealmBehaviors& setTimeZoneCopyZ(const char* timeZone);
+  
+  
+  RefPtr<TimeZoneString> timeZoneOverride() const { return timeZoneOverride_; }
+  RealmBehaviors& setTimeZoneOverride(const char* timeZone);
 
  private:
   RefPtr<LocaleString> localeOverride_;
-  RefPtr<TimeZoneString> timeZone_;
+  RefPtr<TimeZoneString> timeZoneOverride_;
   mozilla::Maybe<RTPCallerTypeToken> rtpCallerType;
   bool discardSource_ = false;
   bool clampAndJitterTime_ = true;
