@@ -36,6 +36,18 @@ worker.log = function (...args) {
   info("Controller: " + args.join(" "));
 };
 
+add_setup(() => {
+  
+  
+  registerCleanupFunction(() => {
+    Assert.equal(
+      worker._deferredJobs.size,
+      0,
+      "Deferred jobs list should be empty."
+    );
+  });
+});
+
 
 add_task(async function test_simple_args() {
   let message = ["test_simple_args", Math.random()];
