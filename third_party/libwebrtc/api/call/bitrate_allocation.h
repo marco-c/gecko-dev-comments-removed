@@ -24,11 +24,6 @@ struct BitrateAllocationUpdate {
   
   DataRate target_bitrate = DataRate::Zero();
   
-  
-  
-  
-  DataRate stable_target_bitrate = DataRate::Zero();
-  
   double packet_loss_ratio = 0;
   
   TimeDelta round_trip_time = TimeDelta::PlusInfinity();
