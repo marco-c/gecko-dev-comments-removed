@@ -9,7 +9,7 @@
 #include <utility>
 
 #include "APZCCallbackHelper.h"
-#include "ActiveElementManager.h"
+#include "ElementStateManager.h"
 #include "TouchManager.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/BasicEvents.h"
@@ -53,7 +53,7 @@ APZEventState::APZEventState(nsIWidget* aWidget,
                              ContentReceivedInputBlockCallback&& aCallback)
     : mWidget(nullptr)  
       ,
-      mActiveElementManager(new ActiveElementManager()),
+      mElementStateManager(new ElementStateManager()),
       mContentReceivedInputBlockCallback(std::move(aCallback)),
       mPendingTouchPreventedBlockId(0),
       mEndTouchState(apz::SingleTapState::NotClick) {
@@ -93,7 +93,7 @@ void APZEventState::ProcessSingleTap(const CSSPoint& aPoint,
         mPrecedingPointerDownState, localWidget, mLastTouchSynthesizedForTests);
   }
 
-  mActiveElementManager->ProcessSingleTap();
+  mElementStateManager->ProcessSingleTap();
 }
 
 PreventDefaultResult APZEventState::FireContextmenuEvents(
@@ -124,7 +124,7 @@ PreventDefaultResult APZEventState::FireContextmenuEvents(
   if (preventDefaultResult != PreventDefaultResult::No) {
     
     
-    mActiveElementManager->ClearActivation();
+    mElementStateManager->ClearActivation();
 #ifndef XP_WIN
   } else {
     
@@ -240,7 +240,7 @@ void APZEventState::ProcessTouchEvent(
     nsEventStatus aContentResponse,
     nsTArray<TouchBehaviorFlags>&& aAllowedTouchBehaviors) {
   if (aEvent.mMessage == eTouchStart && aEvent.mTouches.Length() > 0) {
-    mActiveElementManager->SetTargetElement(
+    mElementStateManager->SetTargetElement(
         aEvent.mTouches[0]->GetOriginalTarget());
     mLastTouchIdentifier = aEvent.mTouches[0]->Identifier();
     mLastTouchSynthesizedForTests =
@@ -315,7 +315,7 @@ void APZEventState::ProcessTouchEvent(
       }
       [[fallthrough]];
     case eTouchCancel:
-      if (mActiveElementManager->HandleTouchEndEvent(mEndTouchState)) {
+      if (mElementStateManager->HandleTouchEndEvent(mEndTouchState)) {
         mEndTouchState = apz::SingleTapState::NotClick;
       }
       [[fallthrough]];
@@ -485,7 +485,7 @@ void APZEventState::ProcessAPZStateChange(ViewID aViewId,
     }
     case APZStateChange::eStartTouch: {
       bool canBePanOrZoom = aArg;
-      mActiveElementManager->HandleTouchStart(canBePanOrZoom);
+      mElementStateManager->HandleTouchStart(canBePanOrZoom);
       
       
       
@@ -497,12 +497,12 @@ void APZEventState::ProcessAPZStateChange(ViewID aViewId,
     }
     case APZStateChange::eStartPanning: {
       
-      mActiveElementManager->ClearActivation();
+      mElementStateManager->ClearActivation();
       break;
     }
     case APZStateChange::eEndTouch: {
       mEndTouchState = static_cast<apz::SingleTapState>(aArg);
-      if (mActiveElementManager->HandleTouchEnd(mEndTouchState)) {
+      if (mElementStateManager->HandleTouchEnd(mEndTouchState)) {
         mEndTouchState = apz::SingleTapState::NotClick;
       }
       break;
@@ -510,7 +510,7 @@ void APZEventState::ProcessAPZStateChange(ViewID aViewId,
   }
 }
 
-void APZEventState::Destroy() { mActiveElementManager->Destroy(); }
+void APZEventState::Destroy() { mElementStateManager->Destroy(); }
 
 void APZEventState::SendPendingTouchPreventedResponse(bool aPreventDefault) {
   if (mPendingTouchPreventedResponse) {
