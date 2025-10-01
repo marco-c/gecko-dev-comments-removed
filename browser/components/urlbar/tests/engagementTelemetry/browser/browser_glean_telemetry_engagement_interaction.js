@@ -74,6 +74,15 @@ add_task(async function pasted() {
 
     assertEngagementTelemetry([{ interaction: "pasted" }]);
   });
+
+  await doTest(async () => {
+    
+    
+    await doPaste("a\nb");
+    await doEnter();
+
+    assertEngagementTelemetry([{ interaction: "pasted" }]);
+  });
 });
 
 add_task(async function topsite_search() {
