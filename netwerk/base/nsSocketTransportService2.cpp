@@ -816,11 +816,16 @@ nsSocketTransportService::Init() {
   
   
   if (obsSvc) {
-    obsSvc->AddObserver(this, "last-pb-context-exited", false);
-    obsSvc->AddObserver(this, NS_WIDGET_SLEEP_OBSERVER_TOPIC, true);
-    obsSvc->AddObserver(this, NS_WIDGET_WAKE_OBSERVER_TOPIC, true);
-    obsSvc->AddObserver(this, "xpcom-shutdown-threads", false);
-    obsSvc->AddObserver(this, NS_NETWORK_LINK_TOPIC, false);
+    MOZ_ALWAYS_SUCCEEDS(
+        obsSvc->AddObserver(this, "last-pb-context-exited", false));
+    MOZ_ALWAYS_SUCCEEDS(
+        obsSvc->AddObserver(this, NS_WIDGET_SLEEP_OBSERVER_TOPIC, false));
+    MOZ_ALWAYS_SUCCEEDS(
+        obsSvc->AddObserver(this, NS_WIDGET_WAKE_OBSERVER_TOPIC, false));
+    MOZ_ALWAYS_SUCCEEDS(
+        obsSvc->AddObserver(this, "xpcom-shutdown-threads", false));
+    MOZ_ALWAYS_SUCCEEDS(
+        obsSvc->AddObserver(this, NS_NETWORK_LINK_TOPIC, false));
   }
 
   
