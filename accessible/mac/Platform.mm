@@ -208,11 +208,7 @@ enum class Client : uint64_t {
   VoiceOver,
   SwitchControl,
   FullKeyboardAccess,
-  VoiceControl,
-  SpeakSelection,
-  SpeakItemUnderMouse,
-  SpeakTypingFeedback,
-  HoverText
+  VoiceControl
 };
 
 
@@ -235,115 +231,71 @@ std::pair<EnumSet<Client>, Client> GetClients() {
              [[NSWorkspace sharedWorkspace] isSwitchControlEnabled]) {
     AddClient(Client::SwitchControl);
   } else {
-    Boolean foundSpecificClient = false;
-
     
     
     
     
     
     Boolean exists;
-    long val = CFPreferencesGetAppIntegerValue(
+    int val = CFPreferencesGetAppIntegerValue(
         CFSTR("FullKeyboardAccessEnabled"), CFSTR("com.apple.Accessibility"),
         &exists);
     if (exists && val == 1) {
-      foundSpecificClient = true;
       AddClient(Client::FullKeyboardAccess);
-    }
-
-    val = CFPreferencesGetAppIntegerValue(CFSTR("CommandAndControlEnabled"),
-                                          CFSTR("com.apple.Accessibility"),
-                                          &exists);
-    if (exists && val == 1) {
-      foundSpecificClient = true;
-      AddClient(Client::VoiceControl);
-    }
-
-    val = CFPreferencesGetAppIntegerValue(
-        CFSTR("SpeakThisEnabled"), CFSTR("com.apple.universalaccess"), &exists);
-    if (exists && val == 1) {
-      foundSpecificClient = true;
-      AddClient(Client::SpeakSelection);
-
-      val = CFPreferencesGetAppIntegerValue(CFSTR("speakItemUnderMouseEnabled"),
-                                            CFSTR("com.apple.universalaccess"),
+    } else {
+      val = CFPreferencesGetAppIntegerValue(CFSTR("CommandAndControlEnabled"),
+                                            CFSTR("com.apple.Accessibility"),
                                             &exists);
       if (exists && val == 1) {
-        foundSpecificClient = true;
-        AddClient(Client::SpeakItemUnderMouse);
-      }
-
-      val = CFPreferencesGetAppIntegerValue(CFSTR("typingEchoEnabled"),
-                                            CFSTR("com.apple.universalaccess"),
-                                            &exists);
-      if (exists && val == 1) {
-        foundSpecificClient = true;
-        AddClient(Client::SpeakTypingFeedback);
-      }
-
-      val = CFPreferencesGetAppIntegerValue(CFSTR("hoverTextEnabled"),
-                                            CFSTR("com.apple.universalaccess"),
-                                            &exists);
-      if (exists && val == 1) {
-        foundSpecificClient = true;
-        AddClient(Client::HoverText);
-      }
-
-      if (!foundSpecificClient) {
+        AddClient(Client::VoiceControl);
+      } else {
         AddClient(Client::Unknown);
       }
     }
-    return std::make_pair(clients, clientToLog.value());
   }
+  return std::make_pair(clients, clientToLog.value());
+}
 
+
+constexpr const char* GetStringForClient(Client aClient) {
+  switch (aClient) {
+    case Client::Unknown:
+      return "Unknown";
+    case Client::VoiceOver:
+      return "VoiceOver";
+    case Client::SwitchControl:
+      return "SwitchControl";
+    case Client::FullKeyboardAccess:
+      return "FullKeyboardAccess";
+    case Client::VoiceControl:
+      return "VoiceControl";
+    default:
+      break;
+  }
+  MOZ_ASSERT_UNREACHABLE("Unknown Client enum value!");
+  return "";
+}
+
+uint64_t GetCacheDomainsForKnownClients(uint64_t aCacheDomains) {
+  auto [clients, _] = GetClients();
   
-  constexpr const char* GetStringForClient(Client aClient) {
-    switch (aClient) {
-      case Client::Unknown:
-        return "Unknown";
-      case Client::VoiceOver:
-        return "VoiceOver";
-      case Client::SwitchControl:
-        return "SwitchControl";
-      case Client::FullKeyboardAccess:
-        return "FullKeyboardAccess";
-      case Client::VoiceControl:
-        return "VoiceControl";
-      case Client::SpeakSelection:
-        return "SpeakSelection";
-      case Client::SpeakItemUnderMouse:
-        return "SpeakItemUnderMouse";
-      case Client::SpeakTypingFeedback:
-        return "SpeakTypingFeedback";
-      case Client::HoverText:
-        return "HoverText";
-      default:
-        break;
-    }
-    MOZ_ASSERT_UNREACHABLE("Unknown Client enum value!");
-    return "";
+  if (clients.contains(Client::VoiceOver)) {
+    return CacheDomain::All;
   }
-
-  uint64_t GetCacheDomainsForKnownClients(uint64_t aCacheDomains) {
-    auto [clients, _] = GetClients();
+  if (clients.contains(Client::FullKeyboardAccess)) {
+    aCacheDomains |= CacheDomain::Bounds;
+  }
+  if (clients.contains(Client::SwitchControl)) {
     
-    if (clients.contains(Client::VoiceOver)) {
-      return CacheDomain::All;
-    }
-    if (clients.contains(Client::FullKeyboardAccess)) {
-      aCacheDomains |= CacheDomain::Bounds;
-    }
-    if (clients.contains(Client::SwitchControl)) {
-      
-      
-      return CacheDomain::All;
-    }
-    if (clients.contains(Client::VoiceControl)) {
-      
-      return CacheDomain::All;
-    }
-    return aCacheDomains;
+    
+    return CacheDomain::All;
   }
+  if (clients.contains(Client::VoiceControl)) {
+    
+    return CacheDomain::All;
+  }
+  return aCacheDomains;
+}
 
 }  
 }  
