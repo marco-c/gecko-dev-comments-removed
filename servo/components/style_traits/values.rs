@@ -7,8 +7,6 @@
 use app_units::Au;
 use cssparser::ToCss as CssparserToCss;
 use cssparser::{serialize_string, ParseError, Parser, Token, UnicodeRange};
-#[cfg(feature = "gecko")]
-use nsstring::nsCString;
 use servo_arc::Arc;
 use std::fmt::{self, Write};
 
@@ -100,9 +98,8 @@ pub trait ToCss {
     
     
     #[inline]
-    #[cfg(feature = "gecko")]
-    fn to_css_nscstring(&self) -> nsCString {
-        let mut s = nsCString::new();
+    fn to_css_cssstring(&self) -> CssString {
+        let mut s = CssString::new();
         self.to_css(&mut CssWriter::new(&mut s)).unwrap();
         s
     }
@@ -233,6 +230,9 @@ where
 
 #[cfg(feature = "gecko")]
 pub type CssStringWriter = ::nsstring::nsACString;
+
+
+
 
 
 
