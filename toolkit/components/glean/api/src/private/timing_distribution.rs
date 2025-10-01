@@ -855,7 +855,9 @@ mod test {
         metric.cancel(id);
 
         
-        assert!(metric.test_get_value(Some("test-ping".to_string())).is_none());
+        assert!(metric
+            .test_get_value(Some("test-ping".to_string()))
+            .is_none());
     }
 
     #[test]

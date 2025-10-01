@@ -3,20 +3,16 @@
 
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
-use crate::platform::linux::{
-    server_addr, set_socket_cloexec, set_socket_default_flags, unix_socket,
-};
+use crate::platform::linux::{set_socket_cloexec, set_socket_default_flags};
 #[cfg(target_os = "macos")]
-use crate::platform::macos::{
-    server_addr, set_socket_cloexec, set_socket_default_flags, unix_socket,
-};
-use crate::{ignore_eintr, Pid, ProcessHandle, IO_TIMEOUT};
+use crate::platform::macos::{set_socket_cloexec, set_socket_default_flags};
+use crate::{ignore_eintr, ProcessHandle, IO_TIMEOUT};
 
 use nix::{
     cmsg_space,
     errno::Errno,
     poll::{poll, PollFd, PollFlags, PollTimeout},
-    sys::socket::{connect, recvmsg, sendmsg, ControlMessage, ControlMessageOwned, MsgFlags},
+    sys::socket::{recvmsg, sendmsg, ControlMessage, ControlMessageOwned, MsgFlags},
 };
 use std::{
     ffi::{CStr, CString},
@@ -64,40 +60,6 @@ impl IPCConnector {
     
     
     
-    
-    pub fn connect(pid: Pid) -> Result<IPCConnector, IPCError> {
-        let socket = unix_socket().map_err(IPCError::ConnectionFailure)?;
-        set_socket_default_flags(socket.as_fd()).map_err(IPCError::ConnectionFailure)?;
-        set_socket_cloexec(socket.as_fd()).map_err(IPCError::ConnectionFailure)?;
-
-        let server_addr = server_addr(pid).map_err(IPCError::ConnectionFailure)?;
-
-        loop {
-            let timeout = PollTimeout::from(IO_TIMEOUT);
-            let res = ignore_eintr!(poll(
-                &mut [PollFd::new(socket.as_fd(), PollFlags::POLLOUT)],
-                timeout
-            ));
-            match res {
-                Err(e) => return Err(IPCError::ConnectionFailure(e)),
-                Ok(_res @ 0) => return Err(IPCError::ConnectionFailure(Errno::ETIMEDOUT)),
-                Ok(_) => {}
-            }
-
-            let res = ignore_eintr!(connect(socket.as_raw_fd(), &server_addr));
-            match res {
-                Ok(_) => break,
-                Err(_e @ Errno::EAGAIN) => continue, 
-                Err(e) => return Err(IPCError::ConnectionFailure(e)),
-            }
-        }
-
-        Ok(IPCConnector { socket })
-    }
-
-    
-    
-    
     pub fn serialize(&self) -> CString {
         CString::new(self.socket.as_raw_fd().to_string()).unwrap()
     }
@@ -131,7 +93,7 @@ impl IPCConnector {
         Ok(self.raw_fd())
     }
 
-    pub fn as_raw_ref(&self) -> BorrowedFd {
+    pub fn as_raw_ref(&self) -> BorrowedFd<'_> {
         self.socket.as_fd()
     }
 

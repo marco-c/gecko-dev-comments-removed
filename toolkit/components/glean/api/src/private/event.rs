@@ -246,7 +246,9 @@ mod test {
         
         metric.record(None);
 
-        let recorded = metric.test_get_value(Some("test-ping".to_string())).unwrap();
+        let recorded = metric
+            .test_get_value(Some("test-ping".to_string()))
+            .unwrap();
 
         assert!(recorded.iter().any(|e| e.name == "event_metric"));
     }
@@ -286,7 +288,9 @@ mod test {
 
         assert!(ipc::replay_from_buf(&ipc::take_buf().unwrap()).is_ok());
 
-        let events = parent_metric.test_get_value(Some("test-ping".to_string())).unwrap();
+        let events = parent_metric
+            .test_get_value(Some("test-ping".to_string()))
+            .unwrap();
         assert_eq!(events.len(), 4);
 
         
