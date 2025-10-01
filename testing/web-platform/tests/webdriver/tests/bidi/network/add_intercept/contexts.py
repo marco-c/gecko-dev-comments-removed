@@ -1,4 +1,5 @@
 import asyncio
+import random
 
 import pytest
 from webdriver.bidi.modules.script import ScriptEvaluateResultException
@@ -52,7 +53,7 @@ async def test_frame_context(
     frame = contexts[0]["children"][0]
 
     
-    text_url = url(PAGE_EMPTY_TEXT)
+    text_url = f"{url(PAGE_EMPTY_TEXT)}?nocache={random.random()}"
     await add_intercept(
         phases=[phase],
         url_patterns=[{"type": "string", "pattern": text_url}],
@@ -97,12 +98,19 @@ async def test_other_context(
     )
 
     
-    text_url = url(PAGE_EMPTY_TEXT)
+    text_url = f"{url(PAGE_EMPTY_TEXT)}?nocache={random.random()}"
+
+    
+    
+    
+    text_url_other = f"{url(PAGE_EMPTY_TEXT)}?othercontext&nocache={random.random()}"
+
     await add_intercept(
         phases=[phase],
-        url_patterns=[{"type": "string", "pattern": text_url}],
+        
+        
+        url_patterns=[{"type": "pattern", "pathname": PAGE_EMPTY_TEXT}],
     )
-
 
     
     [event_name, assert_network_event] = PHASE_TO_EVENT_MAP[phase]
@@ -113,7 +121,7 @@ async def test_other_context(
 
     
     
-    await asyncio.ensure_future(fetch(text_url, context=other_context))
+    await asyncio.ensure_future(fetch(text_url_other, context=other_context))
 
 
 @pytest.mark.asyncio
@@ -144,7 +152,7 @@ async def test_other_context_with_event_subscription(
     )
 
     
-    text_url = url(PAGE_EMPTY_TEXT)
+    text_url = f"{url(PAGE_EMPTY_TEXT)}?nocache={random.random()}"
     await add_intercept(
         phases=["beforeRequestSent"],
         url_patterns=[{"type": "string", "pattern": text_url}],
@@ -193,7 +201,7 @@ async def test_two_contexts_same_intercept(
     )
 
     
-    text_url = url(PAGE_EMPTY_TEXT)
+    text_url = f"{url(PAGE_EMPTY_TEXT)}?nocache={random.random()}"
     intercept = await add_intercept(
         phases=["beforeRequestSent"],
         url_patterns=[{"type": "string", "pattern": text_url}],
@@ -242,7 +250,7 @@ async def test_two_contexts_global_intercept(
     )
 
     
-    text_url = url(PAGE_EMPTY_TEXT)
+    text_url = f"{url(PAGE_EMPTY_TEXT)}?nocache={random.random()}"
     context_intercept = await add_intercept(
         phases=["beforeRequestSent"],
         url_patterns=[{"type": "string", "pattern": text_url}],
