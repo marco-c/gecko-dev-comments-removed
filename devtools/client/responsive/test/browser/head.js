@@ -887,8 +887,8 @@ async function testViewportZoomWidthAndHeight(msg, ui, zoom, width, height) {
   if (typeof width !== "undefined" || typeof height !== "undefined") {
     const innerSize = await spawnViewportTask(ui, {}, function () {
       return {
-        width: content.innerWidth,
-        height: content.innerHeight,
+        width: content.document.documentElement.clientWidth,
+        height: content.document.documentElement.clientHeight,
       };
     });
     if (typeof width !== "undefined") {
