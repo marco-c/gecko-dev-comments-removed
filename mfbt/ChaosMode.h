@@ -7,10 +7,11 @@
 #ifndef mozilla_ChaosMode_h
 #define mozilla_ChaosMode_h
 
-#include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"
+#include "mozilla/EnumSet.h"
 
-#include <cstdint>
+#include <stdint.h>
+#include <stdlib.h>
 
 namespace mozilla {
 
@@ -35,23 +36,25 @@ enum class ChaosFeature : uint32_t {
   Any = 0xffffffff,
 };
 
+namespace detail {
+extern MFBT_DATA Atomic<uint32_t, Relaxed> gChaosModeCounter;
+extern MFBT_DATA ChaosFeature gChaosFeatures;
+}  
+
 
 
 
 
 
 class ChaosMode {
-  static MFBT_DATA Atomic<uint32_t, Relaxed> ChaosModeCounter;
-  static MFBT_DATA ChaosFeature ChaosFeatures;
-
  public:
   static void SetChaosFeature(ChaosFeature aChaosFeature) {
-    ChaosFeatures = aChaosFeature;
+    detail::gChaosFeatures = aChaosFeature;
   }
 
   static bool isActive(ChaosFeature aFeature) {
-    return ChaosModeCounter > 0 &&
-           (uint32_t(ChaosFeatures) & uint32_t(aFeature));
+    return detail::gChaosModeCounter > 0 &&
+           (uint32_t(detail::gChaosFeatures) & uint32_t(aFeature));
   }
 
   
@@ -59,14 +62,14 @@ class ChaosMode {
 
 
 
-  static void enterChaosMode() { ChaosModeCounter++; }
+  static void enterChaosMode() { detail::gChaosModeCounter++; }
 
   
 
 
   static void leaveChaosMode() {
-    MOZ_ASSERT(ChaosModeCounter > 0);
-    ChaosModeCounter--;
+    MOZ_ASSERT(detail::gChaosModeCounter > 0);
+    detail::gChaosModeCounter--;
   }
 
   
