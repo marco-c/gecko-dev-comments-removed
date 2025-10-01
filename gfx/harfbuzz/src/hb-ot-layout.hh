@@ -217,8 +217,6 @@ _hb_glyph_info_set_unicode_props (hb_glyph_info_t *info, hb_buffer_t *buffer)
 
   if (u >= 0x80u)
   {
-    buffer->scratch_flags |= HB_BUFFER_SCRATCH_FLAG_HAS_NON_ASCII;
-
     if (unlikely (unicode->is_default_ignorable (u)))
     {
       buffer->scratch_flags |= HB_BUFFER_SCRATCH_FLAG_HAS_DEFAULT_IGNORABLES;
@@ -247,6 +245,7 @@ _hb_glyph_info_set_unicode_props (hb_glyph_info_t *info, hb_buffer_t *buffer)
 
     if (unlikely (HB_UNICODE_GENERAL_CATEGORY_IS_MARK (gen_cat)))
     {
+      buffer->scratch_flags |= HB_BUFFER_SCRATCH_FLAG_HAS_CONTINUATIONS;
       props |= UPROPS_MASK_CONTINUATION;
       props |= unicode->modified_combining_class (u)<<8;
     }
@@ -361,8 +360,9 @@ _hb_glyph_info_unhide (hb_glyph_info_t *info)
 }
 
 static inline void
-_hb_glyph_info_set_continuation (hb_glyph_info_t *info)
+_hb_glyph_info_set_continuation (hb_glyph_info_t *info, hb_buffer_t *buffer)
 {
+  buffer->scratch_flags |= HB_BUFFER_SCRATCH_FLAG_HAS_CONTINUATIONS;
   info->unicode_props() |= UPROPS_MASK_CONTINUATION;
 }
 static inline void
@@ -408,18 +408,6 @@ static inline bool
 _hb_glyph_info_is_zwj (const hb_glyph_info_t *info)
 {
   return _hb_glyph_info_is_unicode_format (info) && (info->unicode_props() & UPROPS_MASK_Cf_ZWJ);
-}
-static inline bool
-_hb_glyph_info_is_joiner (const hb_glyph_info_t *info)
-{
-  return _hb_glyph_info_is_unicode_format (info) && (info->unicode_props() & (UPROPS_MASK_Cf_ZWNJ|UPROPS_MASK_Cf_ZWJ));
-}
-static inline void
-_hb_glyph_info_flip_joiners (hb_glyph_info_t *info)
-{
-  if (!_hb_glyph_info_is_unicode_format (info))
-    return;
-  info->unicode_props() ^= UPROPS_MASK_Cf_ZWNJ | UPROPS_MASK_Cf_ZWJ;
 }
 static inline bool
 _hb_glyph_info_is_aat_deleted (const hb_glyph_info_t *info)
