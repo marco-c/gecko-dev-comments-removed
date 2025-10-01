@@ -92,7 +92,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   static_assert(OsrFrameReg == IntArgReg3);
 
 #if defined(_WIN64)
-  const Address token = Address(rbp, 16 + ShadowStackSpace);
+  const Operand token = Operand(rbp, 16 + ShadowStackSpace);
   const Operand scopeChain = Operand(rbp, 24 + ShadowStackSpace);
   const Operand numStackValuesAddr = Operand(rbp, 32 + ShadowStackSpace);
   const Operand result = Operand(rbp, 40 + ShadowStackSpace);
@@ -142,72 +142,12 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   
   
 
-  
-  masm.mov(reg_argc, r13);
+  masm.movq(token, r12);
+  generateEnterJitShared(masm, reg_argc, reg_argv, r12, r13, r14, r15);
 
-  
-  {
-    Label noNewTarget;
-    masm.branchTest32(Assembler::Zero, token,
-                      Imm32(CalleeToken_FunctionConstructing), &noNewTarget);
-
-    masm.addq(Imm32(1), r13);
-
-    masm.bind(&noNewTarget);
-  }
-
-  masm.shll(Imm32(3), r13);  
-  static_assert(sizeof(Value) == 1 << 3, "Constant is baked in assembly code");
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  masm.mov(rsp, r12);
-  masm.subq(r13, r12);
-  static_assert(
-      sizeof(JitFrameLayout) % JitStackAlignment == 0,
-      "No need to consider the JitFrameLayout for aligning the stack");
-  masm.andl(Imm32(JitStackAlignment - 1), r12);
-  masm.subq(r12, rsp);
-
-  
-
-
-
-  
-  masm.addq(reg_argv, r13);  
-
-  
-  {
-    Label header, footer;
-    masm.bind(&header);
-
-    masm.cmpPtr(r13, reg_argv);
-    masm.j(AssemblerX86Shared::BelowOrEqual, &footer);
-
-    masm.subq(Imm32(8), r13);
-    masm.push(Operand(r13, 0));
-    masm.jmp(&header);
-
-    masm.bind(&footer);
-  }
-
-  
-  
   
   masm.movq(result, reg_argc);
   masm.unboxInt32(Operand(reg_argc, 0), reg_argc);
-
-  
-  masm.push(token);
-
-  
   masm.pushFrameDescriptorForJitCall(FrameType::CppToJSJit, reg_argc, reg_argc);
 
   CodeLabel returnLabel;

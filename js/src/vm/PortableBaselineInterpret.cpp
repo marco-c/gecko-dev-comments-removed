@@ -9249,9 +9249,8 @@ debug:;
 
 
 bool PortableBaselineTrampoline(JSContext* cx, size_t argc, Value* argv,
-                                size_t numFormals, size_t numActuals,
-                                CalleeToken calleeToken, JSObject* envChain,
-                                Value* result) {
+                                size_t numFormals, CalleeToken calleeToken,
+                                JSObject* envChain, Value* result) {
   State state(cx);
   Stack stack(cx->portableBaselineStack());
   StackVal* sp = stack.top;
@@ -9278,28 +9277,30 @@ bool PortableBaselineTrampoline(JSContext* cx, size_t argc, Value* argv,
   
   
 
-  bool constructing = CalleeTokenIsConstructing(calleeToken);
-  size_t numCalleeActuals = std::max(numActuals, numFormals);
-  size_t numUndefs = numCalleeActuals - numActuals;
+  if (CalleeTokenIsFunction(calleeToken)) {
+    bool constructing = CalleeTokenIsConstructing(calleeToken);
+    size_t numCalleeActuals = std::max(argc, numFormals);
+    size_t numUndefs = numCalleeActuals - argc;
 
-  
-  
-  
-  
-  
+    
+    
+    
+    
+    
 
-  if (constructing) {
-    PUSH(StackVal(argv[argc]));
-  }
-  for (size_t i = 0; i < numUndefs; i++) {
-    PUSH(StackVal(UndefinedValue()));
-  }
-  for (size_t i = 0; i < argc; i++) {
-    PUSH(StackVal(argv[argc - 1 - i]));
+    if (constructing) {
+      PUSH(StackVal(argv[argc]));
+    }
+    for (size_t i = 0; i < numUndefs; i++) {
+      PUSH(StackVal(UndefinedValue()));
+    }
+    for (size_t i = 0; i < argc + 1; i++) {
+      PUSH(StackVal(argv[argc - 1 - i]));
+    }
   }
   PUSHNATIVE(StackValNative(calleeToken));
   PUSHNATIVE(StackValNative(
-      MakeFrameDescriptorForJitCall(FrameType::CppToJSJit, numActuals)));
+      MakeFrameDescriptorForJitCall(FrameType::CppToJSJit, argc)));
 
   JSScript* script = ScriptFromCalleeToken(calleeToken);
   jsbytecode* pc = script->code();

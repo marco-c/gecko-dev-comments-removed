@@ -318,8 +318,8 @@ bool jit::CallTrampolineNativeJitCode(JSContext* cx, TrampolineNative native,
   CalleeToken calleeToken = CalleeToToken(&args.callee().as<JSFunction>(),
                                            false);
 
-  Value* maxArgv = args.array() - 1;  
-  size_t maxArgc = args.length() + 1;
+  Value* maxArgv = args.array();
+  size_t maxArgc = args.length();
 
   Rooted<Value> result(cx, Int32Value(args.length()));
 

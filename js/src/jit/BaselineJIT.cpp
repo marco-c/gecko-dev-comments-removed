@@ -99,6 +99,8 @@ struct EnterJitData {
   RootedValue result;
 
   bool constructing;
+
+  Value& thisv() const { return maxArgv[-1]; }
 };
 
 static JitExecStatus EnterBaseline(JSContext* cx, EnterJitData& data) {
@@ -128,8 +130,8 @@ static JitExecStatus EnterBaseline(JSContext* cx, EnterJitData& data) {
 
   
   MOZ_ASSERT_IF(data.constructing,
-                data.maxArgv[0].isObject() ||
-                    data.maxArgv[0].isMagic(JS_UNINITIALIZED_LEXICAL));
+                data.thisv().isObject() ||
+                data.thisv().isMagic(JS_UNINITIALIZED_LEXICAL));
 
   data.result.setInt32(data.numActualArgs);
   {
@@ -153,8 +155,8 @@ static JitExecStatus EnterBaseline(JSContext* cx, EnterJitData& data) {
   
   if (!data.result.isMagic() && data.constructing &&
       data.result.isPrimitive()) {
-    MOZ_ASSERT(data.maxArgv[0].isObject());
-    data.result = data.maxArgv[0];
+    MOZ_ASSERT(data.thisv().isObject());
+    data.result = data.thisv();
   }
 
   
@@ -184,9 +186,8 @@ JitExecStatus jit::EnterBaselineInterpreterAtBranch(JSContext* cx,
   if (fp->isFunctionFrame()) {
     data.constructing = fp->isConstructing();
     data.numActualArgs = fp->numActualArgs();
-    data.maxArgc = std::max(fp->numActualArgs(), fp->numFormalArgs()) +
-                   1;               
-    data.maxArgv = fp->argv() - 1;  
+    data.maxArgc = std::max(fp->numActualArgs(), fp->numFormalArgs());
+    data.maxArgv = fp->argv();
     data.envChain = nullptr;
     data.calleeToken = CalleeToToken(&fp->callee(), data.constructing);
   } else {

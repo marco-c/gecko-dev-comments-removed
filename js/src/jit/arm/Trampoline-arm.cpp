@@ -107,8 +107,6 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
 
   static_assert(OsrFrameReg == r3);
 
-  Assembler* aasm = &masm;
-
   
   
   
@@ -138,67 +136,14 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   
   masm.movePtr(sp, r11);
 
-  
+ 
   masm.loadPtr(slot_vp, r10);
   masm.unboxInt32(Address(r10, 0), r10);
 
-  {
-    Label noNewTarget;
-    masm.branchTest32(Assembler::Zero, r9,
-                      Imm32(CalleeToken_FunctionConstructing), &noNewTarget);
-
-    masm.add32(Imm32(1), r1);
-
-    masm.bind(&noNewTarget);
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  aasm->as_sub(r4, sp, O2RegImmShift(r1, LSL, 3));  
-  aasm->as_bic(r4, r4, Imm8(JitStackAlignment - 1));
-  
-  static_assert(
-      sizeof(JitFrameLayout) % JitStackAlignment == 0,
-      "No need to consider the JitFrameLayout for aligning the stack");
-  
-  masm.movePtr(r4, sp);
-
-  
-  
-  aasm->as_mov(r5, O2Reg(r1), SetCC);
-
-  
-  
-  {
-    Label header, footer;
-    
-    aasm->as_b(&footer, Assembler::Zero);
-    
-    masm.bind(&header);
-    aasm->as_sub(r5, r5, Imm8(1), SetCC);
-    
-    
-    
-    
-    aasm->as_extdtr(IsLoad, 64, true, PostIndex, r6,
-                    EDtrAddr(r2, EDtrOffImm(8)));
-    aasm->as_extdtr(IsStore, 64, true, PostIndex, r6,
-                    EDtrAddr(r4, EDtrOffImm(8)));
-    aasm->as_b(&header, Assembler::NonZero);
-    masm.bind(&footer);
-  }
-
-  
-  masm.push(r9);
+  Register argcReg = r1;
+  Register argvReg = r2;
+  Register calleeTokenReg = r9;
+  generateEnterJitShared(masm, argcReg, argvReg, calleeTokenReg, r4, r5, r6);
 
   
   masm.pushFrameDescriptorForJitCall(FrameType::CppToJSJit, r10, r10);
