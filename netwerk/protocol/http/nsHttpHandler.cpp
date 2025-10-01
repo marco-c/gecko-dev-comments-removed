@@ -33,6 +33,7 @@
 #include "mozilla/Printf.h"
 #include "mozilla/RandomNum.h"
 #include "mozilla/SHA1.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPrefs_privacy.h"
@@ -659,72 +660,77 @@ nsresult nsHttpHandler::AddAcceptAndDictionaryHeaders(
     bool aSecure, bool& aAsync,
     const std::function<bool(bool, DictionaryCacheEntry*)>& aCallback) {
   LOG(("Adding Dictionary headers"));
+  auto guard = MakeScopeExit([&]() { (aCallback)(false, nullptr); });
+
   nsresult rv = NS_OK;
   
   if (aSecure) {
     
     if (StaticPrefs::network_http_dictionaries_enable()) {
+      
+      
+      guard.release();
       mDictionaryCache->GetDictionaryFor(
           aURI, aType, aAsync,
           [self = RefPtr(this), aRequest, aCallback](
               bool aNeedsResume, DictionaryCacheEntry* aDict) {
             nsresult rv;
-            if (aDict) {
-              nsAutoCStringN<64> encodedHash =
-                  ":"_ns + aDict->GetHash() + ":"_ns;
+            if (!aDict) {
+              rv = aRequest->SetHeader(
+                  nsHttp::Accept_Encoding, self->mHttpsAcceptEncodings, false,
+                  nsHttpHeaderArray::eVarietyRequestOverride);
+              (aCallback)(false, nullptr);
+              return rv;
+            }
 
-              
-              
-              
-              
-              
-              
-              aRequest->SetDictionary(aDict);
+            nsAutoCStringN<64> encodedHash = ":"_ns + aDict->GetHash() + ":"_ns;
 
-              
-              
-              
-              
-              
-              
-              
-              
-              if ((aCallback)(aNeedsResume, aDict)) {
-                LOG_DICTIONARIES(
-                    ("Setting Available-Dictionary: %s", encodedHash.get()));
+            
+            
+            
+            
+            
+            
+            aRequest->SetDictionary(aDict);
+
+            
+            
+            
+            
+            
+            
+            
+            
+            if ((aCallback)(aNeedsResume, aDict)) {
+              LOG_DICTIONARIES(
+                  ("Setting Available-Dictionary: %s", encodedHash.get()));
+              rv = aRequest->SetHeader(
+                  nsHttp::Available_Dictionary, encodedHash, false,
+                  nsHttpHeaderArray::eVarietyRequestOverride);
+              if (NS_FAILED(rv)) {
+                return rv;
+              }
+              if (!aDict->GetId().IsEmpty()) {
+                nsPrintfCString id("\"%s\"", aDict->GetId().get());
+                LOG_DICTIONARIES(("Setting Dictionary-Id: %s", id.get()));
                 rv = aRequest->SetHeader(
-                    nsHttp::Available_Dictionary, encodedHash, false,
+                    nsHttp::Dictionary_Id, id, false,
                     nsHttpHeaderArray::eVarietyRequestOverride);
                 if (NS_FAILED(rv)) {
                   return rv;
                 }
-                if (!aDict->GetId().IsEmpty()) {
-                  nsCString id(nsPrintfCString("\"%s\"", aDict->GetId().get()));
-                  rv = aRequest->SetHeader(
-                      nsHttp::Dictionary_Id, aDict->GetId(), false,
-                      nsHttpHeaderArray::eVarietyRequestOverride);
-                  if (NS_FAILED(rv)) {
-                    return rv;
-                  }
-                }
-                return aRequest->SetHeader(
-                    nsHttp::Accept_Encoding, self->mDictionaryAcceptEncodings,
-                    false, nsHttpHeaderArray::eVarietyRequestOverride);
               }
-              return NS_OK;
+              return aRequest->SetHeader(
+                  nsHttp::Accept_Encoding, self->mDictionaryAcceptEncodings,
+                  false, nsHttpHeaderArray::eVarietyRequestOverride);
             }
-            rv = aRequest->SetHeader(
-                nsHttp::Accept_Encoding, self->mHttpsAcceptEncodings, false,
-                nsHttpHeaderArray::eVarietyRequestOverride);
-            (aCallback)(false, nullptr);
-            return rv;
+            return NS_OK;
           });
     } else {
       rv = aRequest->SetHeader(nsHttp::Accept_Encoding, mHttpsAcceptEncodings,
                                false,
                                nsHttpHeaderArray::eVarietyRequestOverride);
       aAsync = false;
-      (aCallback)(false, nullptr);
     }
   } else {
     
@@ -737,8 +743,8 @@ nsresult nsHttpHandler::AddAcceptAndDictionaryHeaders(
                                nsHttpHeaderArray::eVarietyRequestOverride);
     }
     aAsync = false;
-    (aCallback)(false, nullptr);
   }
+  
   return rv;
 }
 
