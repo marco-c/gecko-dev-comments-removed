@@ -754,7 +754,10 @@ void NativeLayerWayland::SetScalelocked(
 
 void NativeLayerWayland::UpdateLayerPlacementLocked(
     const widget::WaylandSurfaceLock& aProofOfLock) {
-  MOZ_DIAGNOSTIC_ASSERT(IsMapped());
+  
+  if (!IsMapped()) {
+    return;
+  }
 
   if (!mState.mMutatedPlacement) {
     return;
@@ -890,9 +893,9 @@ bool NativeLayerWayland::Map(WaylandSurfaceLock* aParentWaylandSurfaceLock) {
   if (auto* external = AsNativeLayerWaylandExternal()) {
     if (RefPtr surface = external->GetSurface()) {
       if (auto* surfaceYUV = surface->GetAsDMABufSurfaceYUV()) {
-        mSurface->SetColorRepresentationLocked(surfaceLock,
-                                               surfaceYUV->GetYUVColorSpace(),
-                                               surfaceYUV->IsFullRange());
+        mSurface->SetColorRepresentationLocked(
+            surfaceLock, surfaceYUV->GetYUVColorSpace(),
+            surfaceYUV->IsFullRange(), surfaceYUV->GetWPChromaLocation());
       }
     }
   }
