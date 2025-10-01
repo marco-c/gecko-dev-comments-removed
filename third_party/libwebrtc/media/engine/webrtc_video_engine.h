@@ -268,14 +268,14 @@ class WebRtcVideoSendChannel : public MediaChannelUtil,
     if (!send_codec()) {
       return false;
     }
-    return webrtc::HasLntf(send_codec()->codec);
+    return HasLntf(send_codec()->codec);
   }
   bool SendCodecHasNack() const override {
     RTC_DCHECK_RUN_ON(&thread_checker_);
     if (!send_codec()) {
       return false;
     }
-    return webrtc::HasNack(send_codec()->codec);
+    return HasNack(send_codec()->codec);
   }
   std::optional<int> SendCodecRtxTime() const override {
     RTC_DCHECK_RUN_ON(&thread_checker_);

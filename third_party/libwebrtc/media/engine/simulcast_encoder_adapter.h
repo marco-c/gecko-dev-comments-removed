@@ -158,11 +158,11 @@ class RTC_EXPORT SimulcastEncoderAdapter : public VideoEncoder {
   std::unique_ptr<EncoderContext> FetchOrCreateEncoderContext(
       bool is_lowest_quality_stream) const;
 
-  webrtc::VideoCodec MakeStreamCodec(const webrtc::VideoCodec& codec,
-                                     int stream_idx,
-                                     uint32_t start_bitrate_kbps,
-                                     bool is_lowest_quality_stream,
-                                     bool is_highest_quality_stream);
+  VideoCodec MakeStreamCodec(const VideoCodec& codec,
+                             int stream_idx,
+                             uint32_t start_bitrate_kbps,
+                             bool is_lowest_quality_stream,
+                             bool is_highest_quality_stream);
 
   EncodedImageCallback::Result OnEncodedImage(
       size_t stream_idx,

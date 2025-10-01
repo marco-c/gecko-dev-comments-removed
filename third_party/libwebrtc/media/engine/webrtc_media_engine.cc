@@ -129,19 +129,18 @@ std::vector<RtpExtension> FilterRtpExtensions(
   
   
   
-  absl::c_sort(result, [](const webrtc::RtpExtension& rhs,
-                          const webrtc::RtpExtension& lhs) {
+  absl::c_sort(result, [](const RtpExtension& rhs, const RtpExtension& lhs) {
     return rhs.encrypt == lhs.encrypt ? rhs.uri < lhs.uri
                                       : rhs.encrypt > lhs.encrypt;
   });
 
   
   if (filter_redundant_extensions) {
-    auto it = std::unique(
-        result.begin(), result.end(),
-        [](const webrtc::RtpExtension& rhs, const webrtc::RtpExtension& lhs) {
-          return rhs.uri == lhs.uri && rhs.encrypt == lhs.encrypt;
-        });
+    auto it =
+        std::unique(result.begin(), result.end(),
+                    [](const RtpExtension& rhs, const RtpExtension& lhs) {
+                      return rhs.uri == lhs.uri && rhs.encrypt == lhs.encrypt;
+                    });
     result.erase(it, result.end());
 
     

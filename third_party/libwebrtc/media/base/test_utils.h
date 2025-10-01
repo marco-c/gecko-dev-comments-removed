@@ -33,6 +33,7 @@ template <class T>
 inline std::vector<T> MakeVector(const T a[], size_t s) {
   return std::vector<T>(a, a + s);
 }
+
 #define MAKE_VECTOR(a) webrtc::MakeVector(a, std::size(a))
 
 

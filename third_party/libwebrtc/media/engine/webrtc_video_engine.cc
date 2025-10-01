@@ -161,7 +161,7 @@ void AddDefaultFeedbackParams(Codec* codec, const FieldTrialsView& trials) {
 
 
 template <class T>
-std::vector<webrtc::SdpVideoFormat> GetDefaultSupportedFormats(
+std::vector<SdpVideoFormat> GetDefaultSupportedFormats(
     const T* factory,
     bool is_decoder_factory,
     const FieldTrialsView& trials) {
@@ -228,7 +228,7 @@ RTCErrorOr<Codec> AddRtx(const Codec& primary_codec,
 
 
 template <class T>
-std::vector<webrtc::Codec> GetPayloadTypesAndDefaultCodecs(
+std::vector<Codec> GetPayloadTypesAndDefaultCodecs(
     const T* factory,
     bool is_decoder_factory,
     bool include_rtx,
@@ -514,11 +514,9 @@ void FallbackToDefaultScalabilityModeIfNotSupported(
     const Codec& codec,
     const VideoSendStream::Config& config,
     std::vector<RtpEncodingParameters>& encodings) {
-  if (!absl::c_any_of(encodings,
-                      [](const webrtc::RtpEncodingParameters& encoding) {
-                        return encoding.scalability_mode &&
-                               !encoding.scalability_mode->empty();
-                      })) {
+  if (!absl::c_any_of(encodings, [](const RtpEncodingParameters& encoding) {
+        return encoding.scalability_mode && !encoding.scalability_mode->empty();
+      })) {
     
     
     return;

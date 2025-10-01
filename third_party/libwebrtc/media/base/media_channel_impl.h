@@ -139,7 +139,7 @@ class MediaChannelUtil {
     MediaChannelNetworkInterface* network_interface_
         RTC_GUARDED_BY(network_thread_) = nullptr;
     DiffServCodePoint preferred_dscp_ RTC_GUARDED_BY(network_thread_) =
-        webrtc::DSCP_DEFAULT;
+        DSCP_DEFAULT;
   };
 
   bool extmap_allow_mixed_ = false;
