@@ -272,10 +272,14 @@ void CanonicalBrowsingContext::ReplacedBy(
   txn.SetTopInnerSizeForRFP(GetTopInnerSizeForRFP());
   txn.SetIPAddressSpace(GetIPAddressSpace());
 
-  
-  txn.SetLanguageOverride(GetLanguageOverride());
-  
-  txn.SetTimezoneOverride(GetTimezoneOverride());
+  if (!GetLanguageOverride().IsEmpty()) {
+    
+    txn.SetLanguageOverride(GetLanguageOverride());
+  }
+  if (!GetTimezoneOverride().IsEmpty()) {
+    
+    txn.SetTimezoneOverride(GetTimezoneOverride());
+  }
 
   
   
@@ -647,17 +651,47 @@ CanonicalBrowsingContext::CreateLoadingSessionHistoryEntryForLoad(
       return loadingInfo;
     }
 
+    if (*navigationType == NavigationType::Traverse && !mActiveEntry) {
+      
+      
+      auto* shistory = static_cast<nsSHistory*>(GetSessionHistory());
+      MOZ_ASSERT(mActiveEntryList.isEmpty());
+      mActiveEntryList.insertFront(entry);
+
+      SessionHistoryEntry* currEntry = entry;
+      while (auto* prevEntry =
+                 shistory->FindAdjacentContiguousEntryFor(currEntry, -1)) {
+        currEntry->setPrevious(prevEntry);
+        currEntry = prevEntry;
+      }
+
+      currEntry = entry;
+      while (auto* nextEntry =
+                 shistory->FindAdjacentContiguousEntryFor(currEntry, 1)) {
+        currEntry->setNext(nextEntry);
+        currEntry = nextEntry;
+      }
+    }
+
     nsCOMPtr<nsIURI> uri = mActiveEntry ? mActiveEntry->GetURI() : nullptr;
     bool sameOrigin =
         NS_SUCCEEDED(nsContentUtils::GetSecurityManager()->CheckSameOriginURI(
             targetURI, uri, false, false));
-    MOZ_DIAGNOSTIC_ASSERT(mActiveEntry || !sameOrigin);
-    if (sameOrigin && mActiveEntry->isInList()) {
+    if (entry->isInList() || (mActiveEntry && mActiveEntry->isInList())) {
+      nsCOMPtr<nsIURI> sameOriginURI = entry->GetURI();
       nsSHistory::WalkContiguousEntriesInOrder(
-          mActiveEntry, [activeEntry = mActiveEntry,
-                         entries = &loadingInfo->mContiguousEntries,
-                         navigationType = *navigationType](auto* aEntry) {
+          entry->isInList() ? entry : mActiveEntry,
+          [sameOriginURI, activeEntry = mActiveEntry,
+           entries = &loadingInfo->mContiguousEntries,
+           navigationType = *navigationType](auto* aEntry) {
             if (nsCOMPtr<SessionHistoryEntry> entry = do_QueryObject(aEntry)) {
+              nsCOMPtr candidateURI = entry->GetURI();
+              if (NS_FAILED(
+                      nsContentUtils::GetSecurityManager()->CheckSameOriginURI(
+                          candidateURI, sameOriginURI, false, false))) {
+                return false;
+              }
+
               if (navigationType == NavigationType::Replace &&
                   entry == activeEntry) {
                 
@@ -671,8 +705,10 @@ CanonicalBrowsingContext::CreateLoadingSessionHistoryEntryForLoad(
                 
                 return false;
               }
+
+              return true;
             }
-            return true;
+            return false;
           });
     }
 
@@ -706,6 +742,24 @@ CanonicalBrowsingContext::CreateLoadingSessionHistoryEntryForLoad(
     loadingInfo->mTriggeringNavigationType = navigationType;
     MOZ_LOG_FMT(gNavigationLog, LogLevel::Verbose,
                 "Triggering navigation type was {}.", *navigationType);
+
+    [[maybe_unused]] auto pred = [&](auto& entry) {
+      return entry.NavigationKey() == loadingInfo->mInfo.NavigationKey();
+    };
+    if (StaticPrefs::dom_navigation_api_strict_enabled()) {
+      
+      MOZ_DIAGNOSTIC_ASSERT(
+          mozilla::AnyOf(loadingInfo->mContiguousEntries.begin(),
+                         loadingInfo->mContiguousEntries.end(), pred),
+          "The target entry now needs to be a part of the contiguous list of "
+          "entries.");
+    } else {
+      MOZ_ASSERT(
+          mozilla::AnyOf(loadingInfo->mContiguousEntries.begin(),
+                         loadingInfo->mContiguousEntries.end(), pred),
+          "The target entry now needs to be a part of the contiguous list of "
+          "entries.");
+    }
   }
 
   MOZ_ASSERT(SessionHistoryEntry::GetByLoadId(loadingInfo->mLoadId)->mEntry ==
@@ -1155,7 +1209,8 @@ void CanonicalBrowsingContext::SessionHistoryCommit(
 
           if (!addEntry) {
             shistory->ReplaceEntry(index, newActiveEntry);
-            if (Navigation::IsAPIEnabled() && mActiveEntry->isInList()) {
+            if (Navigation::IsAPIEnabled() && mActiveEntry &&
+                mActiveEntry->isInList()) {
               RefPtr entry = mActiveEntry;
               while (entry) {
                 entry = entry->removeAndGetNext();
@@ -1191,7 +1246,7 @@ void CanonicalBrowsingContext::SessionHistoryCommit(
         } else if (!mActiveEntry) {
           MOZ_LOG_FMT(gSHLog, LogLevel::Verbose,
                       "IsTop: No active entry, adding new entry");
-          if (Navigation::IsAPIEnabled()) {
+          if (Navigation::IsAPIEnabled() && !newActiveEntry->isInList()) {
             mActiveEntryList.insertBack(newActiveEntry);
           }
           mActiveEntry = newActiveEntry;
@@ -1274,7 +1329,7 @@ void CanonicalBrowsingContext::SessionHistoryCommit(
               MOZ_LOG_FMT(gSHLog, LogLevel::Verbose,
                           "NotTop: Adding entry without an active entry");
               mActiveEntry = newActiveEntry;
-              if (Navigation::IsAPIEnabled()) {
+              if (Navigation::IsAPIEnabled() && !mActiveEntry->isInList()) {
                 mActiveEntryList.insertBack(mActiveEntry);
               }
               
