@@ -243,6 +243,11 @@ struct FeatureImplementationStatus {
         return unimplemented(
             "https://bugzilla.mozilla.org/show_bug.cgi?id=1955417");
 
+      case dom::GPUFeatureName::Primitive_index:
+        
+        return unimplemented(
+            "https://bugzilla.mozilla.org/show_bug.cgi?id=1989116");
+
       case dom::GPUFeatureName::Core_features_and_limits:
         
         
