@@ -152,7 +152,9 @@ nsresult nsThreadPool::PutEvent(already_AddRefed<nsIRunnable> aEvent,
   
   nsCOMPtr<nsIRunnable> event(aEvent);
 
-  if (NS_WARN_IF(mShutdown)) {
+  
+  
+  if (NS_WARN_IF(mShutdown && mThreads.IsEmpty())) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
@@ -165,6 +167,7 @@ nsresult nsThreadPool::PutEvent(already_AddRefed<nsIRunnable> aEvent,
 
   
   
+
   if (aFlags & NS_DISPATCH_AT_END) {
     
     
@@ -191,9 +194,12 @@ nsresult nsThreadPool::PutEvent(already_AddRefed<nsIRunnable> aEvent,
          mruThread));
     return NS_OK;
   }
-  if (mThreads.Count() >= (int32_t)mThreadLimit) {
+
+  if (mThreads.Count() >= (int32_t)mThreadLimit || mShutdown) {
     
     
+    MOZ_ASSERT(!mThreads.IsEmpty(),
+               "There must be a thread which will handle this dispatch");
     LOG(("THRD-P(%p) put [%zd %d %d]: No idle or new thread available.\n", this,
          mMRUIdleThreads.length(), mThreads.Count(), mThreadLimit));
     return NS_OK;
@@ -379,10 +385,19 @@ nsThreadPool::Run() {
             idleEntry.remove();
           }
 
-          shutdownThreadOnExit = mThreads.RemoveObject(current);
+          
+          
+          shutdownThreadOnExit = !mShutdown;
 
           
-          mIsAPoolThreadFree = (mThreads.Count() < (int32_t)mThreadLimit);
+          
+          DebugOnly<bool> found = mThreads.RemoveObject(current);
+          MOZ_ASSERT(found || (mShutdown && mThreads.IsEmpty()));
+
+          
+          
+          mIsAPoolThreadFree =
+              !mShutdown && (mThreads.Count() < (int32_t)mThreadLimit);
         } else {
           current->SetRunningEventDelay(TimeDuration(), TimeStamp());
 
@@ -496,7 +511,7 @@ nsThreadPool::IsOnCurrentThreadInfallible() {
 NS_IMETHODIMP
 nsThreadPool::IsOnCurrentThread(bool* aResult) {
   MutexAutoLock lock(mMutex);
-  if (NS_WARN_IF(mShutdown)) {
+  if (NS_WARN_IF(mShutdown && mThreads.IsEmpty())) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
@@ -510,7 +525,6 @@ nsThreadPool::Shutdown() { return ShutdownWithTimeout(-1); }
 NS_IMETHODIMP
 nsThreadPool::ShutdownWithTimeout(int32_t aTimeoutMs) {
   nsCOMArray<nsIThread> threads;
-  nsCOMPtr<nsIThreadPoolListener> listener;
   nsCString name;
   {
     MutexAutoLock lock(mMutex);
@@ -519,15 +533,13 @@ nsThreadPool::ShutdownWithTimeout(int32_t aTimeoutMs) {
     }
     name = mName;
     mShutdown = true;
+    mIsAPoolThreadFree = false;
     NotifyChangeToAllIdleThreads();
 
+    
+    
+    
     threads.AppendObjects(mThreads);
-    mThreads.Clear();
-
-    
-    
-    
-    mListener.swap(listener);
   }
 
   nsTArray<nsCOMPtr<nsIThreadShutdown>> contexts;
@@ -545,6 +557,11 @@ nsThreadPool::ShutdownWithTimeout(int32_t aTimeoutMs) {
     NS_NewTimerWithCallback(
         getter_AddRefs(timer),
         [&](nsITimer*) {
+          {
+            
+            MutexAutoLock lock(mMutex);
+            mThreads.Clear();
+          }
           for (auto& context : contexts) {
             context->StopWaitingAndLeakThread();
           }
@@ -570,6 +587,14 @@ nsThreadPool::ShutdownWithTimeout(int32_t aTimeoutMs) {
     timer->Cancel();
   }
   onCompletion->Cancel();
+
+  nsCOMPtr<nsIThreadPoolListener> listener;
+  {
+    MutexAutoLock lock(mMutex);
+    MOZ_RELEASE_ASSERT(mThreads.IsEmpty(),
+                       "Thread wasn't removed from mThreads");
+    listener = mListener.forget();
+  }
 
   return NS_OK;
 }
