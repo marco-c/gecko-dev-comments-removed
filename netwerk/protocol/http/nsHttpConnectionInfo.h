@@ -269,10 +269,6 @@ class nsHttpConnectionInfo final : public ARefBase {
   
   bool UsingConnect() const { return mUsingConnect; }
 
-  bool UsingConnectUDP() const {
-    return mProxyInfo ? mProxyInfo->IsConnectUDP() : false;
-  }
-
   
   bool HostIsLocalIPLiteral() const;
 

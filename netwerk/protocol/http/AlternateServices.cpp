@@ -60,7 +60,7 @@ bool AltSvcMapping::AcceptableProxy(nsProxyInfo* proxyInfo) {
   
   
   return !proxyInfo || proxyInfo->IsDirect() || proxyInfo->IsSOCKS() ||
-         proxyInfo->IsConnectUDP();
+         proxyInfo->IsHttp3Proxy();
 }
 
 void AltSvcMapping::ProcessHeader(

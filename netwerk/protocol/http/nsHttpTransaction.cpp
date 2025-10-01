@@ -3351,8 +3351,10 @@ nsresult nsHttpTransaction::OnHTTPSRRAvailable(
       mConnInfo->CloneAndAdoptHTTPSSVCRecord(svcbRecord);
   
   
+  
+  
   bool needFastFallback = newInfo->IsHttp3() && !newInfo->GetWebTransport() &&
-                          !newInfo->UsingConnectUDP();
+                          !newInfo->IsHttp3ProxyConnection();
   bool foundInPendingQ = gHttpHandler->ConnMgr()->RemoveTransFromConnEntry(
       this, mHashKeyOfConnectionEntry);
 
