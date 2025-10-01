@@ -99,29 +99,6 @@ export function selectSourceURL(url, options) {
 
 
 
-export function selectMayBePrettyPrintedLocation(location) {
-  return async ({ dispatch, getState }) => {
-    const sourceIsPrettyPrinted = isPrettyPrinted(getState(), location.source);
-    if (sourceIsPrettyPrinted) {
-      const prettySource = getPrettySource(getState(), location.source.id);
-      if (prettySource) {
-        location = createLocation({ source: prettySource });
-      }
-    }
-    await dispatch(selectSpecificLocation(location));
-  };
-}
-
-
-
-
-
-
-
-
-
-
-
 
 export function selectSource(source, sourceActor) {
   return async ({ dispatch }) => {
