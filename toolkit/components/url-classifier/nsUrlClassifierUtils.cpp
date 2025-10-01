@@ -640,12 +640,8 @@ nsUrlClassifierUtils::MakeFindFullHashRequestV5(
   
   
   for (uint32_t i = 0; i < aHashPrefixes.Length(); i++) {
-    nsAutoCString hashEncoded;
-    nsresult rv = Base64Encode(aHashPrefixes[i], hashEncoded);
-    NS_ENSURE_SUCCESS(rv, rv);
-
     aRequest.AppendLiteral("hashPrefixes=");
-    aRequest.Append(hashEncoded);
+    aRequest.Append(aHashPrefixes[i]);
     if (i != aHashPrefixes.Length() - 1) {
       aRequest.AppendLiteral("&");
     }
@@ -920,6 +916,37 @@ nsUrlClassifierUtils::ParseFindFullHashResponseV4(
 
   glean::urlclassifier::completion_error.AccumulateSingleSample(
       hasUnknownThreatType ? UNKNOWN_THREAT_TYPE : SUCCESS);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsUrlClassifierUtils::ParseFindFullHashResponseV5(
+    const nsACString& aResponse,
+    nsIUrlClassifierParseFindFullHashCallback* aCallback) {
+  v5::SearchHashesResponse response;
+
+  if (!response.ParseFromArray(aResponse.BeginReading(), aResponse.Length())) {
+    NS_WARNING("Invalid V5 find full hash response");
+    return NS_ERROR_FAILURE;
+  }
+
+  auto cacheDurationSec = response.cache_duration().seconds();
+
+  for (auto& fullHash : response.full_hashes()) {
+    auto& hash = fullHash.full_hash();
+
+    aCallback->OnCompleteHashFound(
+        nsDependentCString(hash.c_str(), hash.length()), ""_ns,
+        cacheDurationSec);
+  }
+
+  
+  
+  
+  
+  
+  aCallback->OnResponseParsed(0, cacheDurationSec);
+
   return NS_OK;
 }
 
