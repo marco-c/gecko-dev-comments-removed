@@ -108,7 +108,7 @@ class DcSctpTransport : public SctpTransportInternal,
   void OnTransportReadPacket(PacketTransportInternal* transport,
                              const ReceivedIpPacket& packet);
   void OnDtlsTransportState(DtlsTransportInternal* transport,
-                            webrtc::DtlsTransportState);
+                            DtlsTransportState);
   void MaybeConnectSocket();
 
   Thread* network_thread_;
@@ -137,7 +137,7 @@ class DcSctpTransport : public SctpTransportInternal,
     bool outgoing_reset_done = false;
     
     dcsctp::StreamPriority priority =
-        dcsctp::StreamPriority(PriorityValue(webrtc::Priority::kLow).value());
+        dcsctp::StreamPriority(PriorityValue(Priority::kLow).value());
   };
 
   
