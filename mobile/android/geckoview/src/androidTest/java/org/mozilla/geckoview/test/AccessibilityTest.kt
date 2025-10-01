@@ -1291,11 +1291,16 @@ class AccessibilityTest : BaseSessionTest() {
             @AssertCalled(count = 1, order = [1])
             override fun onAccessibilityFocused(event: AccessibilityEvent) {
                 nodeId = getSourceId(event)
+                var node = createNodeInfo(nodeId)
+                assertThat("Focused node is not scrollable", node.isScrollable, equalTo(false))
                 assertThat("Focused node is onscreen", screenContainsNode(nodeId), equalTo(true))
             }
 
             @AssertCalled(count = 1, order = [2])
             override fun onScrolled(event: AccessibilityEvent) {
+                nodeId = getSourceId(event)
+                var node = createNodeInfo(nodeId)
+                assertThat("View is scrollable", node.isScrollable, equalTo(true))
                 assertThat("View is scrolled for focused node to be onscreen", event.scrollY, greaterThan(0))
                 assertThat("View is not scrolled to the end", event.scrollY, lessThan(event.maxScrollY))
             }
@@ -1663,6 +1668,7 @@ class AccessibilityTest : BaseSessionTest() {
         })
     }
 
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
     @Test fun testRemoteAccessibilityFocusIframe() {
         testAccessibilityFocusIframe(REMOTE_IFRAME)
     }
@@ -1707,6 +1713,7 @@ class AccessibilityTest : BaseSessionTest() {
         assertThat("inner node in inner doc bounds", innerDocBounds.contains(nodeBounds), equalTo(true))
     }
 
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
     @Test
     fun testRemoteIframeTree() {
         testIframeTree(REMOTE_IFRAME)

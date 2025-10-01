@@ -471,6 +471,11 @@ class Accessible {
   
 
 
+  virtual bool IsScrollable() const = 0;
+
+  
+
+
   virtual nsAtom* TagName() const = 0;
 
   
