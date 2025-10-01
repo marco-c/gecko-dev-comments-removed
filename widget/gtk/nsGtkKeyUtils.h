@@ -227,7 +227,13 @@ class KeymapWrapper {
   
 
 
-  static void ResetRepeatState();
+  static void SetFocusIn(wl_surface* aFocusSurface, uint32_t aFocusSerial);
+  static void SetFocusOut(wl_surface* aFocusSurface);
+  static void GetFocusInfo(wl_surface** aFocusSurface, uint32_t* aFocusSerial);
+
+  
+
+
   static void KeyboardHandlerForWayland(uint32_t aSerial,
                                         uint32_t aHardwareKeycode,
                                         uint32_t aState);
@@ -526,6 +532,11 @@ class KeymapWrapper {
 
   void SetModifierMask(xkb_keymap* aKeymap, ModifierIndex aModifierIndex,
                        const char* aModifierName);
+#endif
+
+#ifdef MOZ_WAYLAND
+  wl_surface* mFocusSurface = nullptr;
+  uint32_t mFocusSerial = 0;
 #endif
 };
 
