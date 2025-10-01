@@ -114,11 +114,7 @@ class VideoStreamEncoderInterface {
   
   
   
-  
-  
-  
   virtual void OnBitrateUpdated(DataRate target_bitrate,
-                                DataRate stable_target_bitrate,
                                 DataRate link_allocation,
                                 uint8_t fraction_lost,
                                 int64_t round_trip_time_ms,

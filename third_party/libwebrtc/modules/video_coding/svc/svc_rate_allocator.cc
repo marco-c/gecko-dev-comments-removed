@@ -249,7 +249,6 @@ SvcRateAllocator::SvcRateAllocator(const VideoCodec& codec,
                                    const FieldTrialsView& field_trials)
     : codec_(codec),
       num_layers_(GetNumLayers(codec)),
-      experiment_settings_(field_trials),
       cumulative_layer_start_bitrates_(GetLayerStartBitrates(codec)),
       last_active_layer_count_(0) {
   RTC_DCHECK_GT(num_layers_.spatial, 0);
@@ -295,29 +294,7 @@ VideoBitrateAllocation SvcRateAllocator::Allocate(
   }
 
   
-  if (experiment_settings_.IsEnabled() &&
-      parameters.stable_bitrate > DataRate::Zero()) {
-    double hysteresis_factor;
-    if (codec_.mode == VideoCodecMode::kScreensharing) {
-      hysteresis_factor = experiment_settings_.GetScreenshareHysteresisFactor();
-    } else {
-      hysteresis_factor = experiment_settings_.GetVideoHysteresisFactor();
-    }
-
-    DataRate stable_rate = std::min(total_bitrate, parameters.stable_bitrate);
-    
-    size_t num_enabled_with_hysteresis =
-        FindNumEnabledLayers(stable_rate / hysteresis_factor);
-    if (num_enabled_with_hysteresis >= last_active_layer_count_) {
-      num_spatial_layers = num_enabled_with_hysteresis;
-    } else {
-      
-      num_spatial_layers =
-          std::min(last_active_layer_count_, FindNumEnabledLayers(stable_rate));
-    }
-  } else {
-    num_spatial_layers = FindNumEnabledLayers(total_bitrate);
-  }
+  num_spatial_layers = FindNumEnabledLayers(total_bitrate);
   last_active_layer_count_ = num_spatial_layers;
 
   std::vector<DataRate> spatial_layer_bitrates;
