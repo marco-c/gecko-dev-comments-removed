@@ -9532,6 +9532,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   
   
   MOZ_TRY(mBrowsingContext->CheckSandboxFlags(aLoadState));
+  MOZ_TRY(mBrowsingContext->CheckFramebusting(aLoadState));
 
   NS_ENSURE_STATE(!HasUnloadedParent());
 
@@ -12551,9 +12552,11 @@ void nsDocShell::MaybeFireTraverseHistory(nsDocShellLoadState* aLoadState) {
     return;
   }
 
+  nsCOMPtr activeURI = mActiveEntry->GetURIOrInheritedForAboutBlank();
+  nsCOMPtr<nsIURI> loadingURI = aLoadState->GetLoadingSessionHistoryInfo()
+                                    ->mInfo.GetURIOrInheritedForAboutBlank();
   if (NS_FAILED(nsContentUtils::GetSecurityManager()->CheckSameOriginURI(
-          mActiveEntry->GetURI(),
-          aLoadState->GetLoadingSessionHistoryInfo()->mInfo.GetURI(),
+          activeURI, loadingURI,
           true,
           false))) {
     return;
