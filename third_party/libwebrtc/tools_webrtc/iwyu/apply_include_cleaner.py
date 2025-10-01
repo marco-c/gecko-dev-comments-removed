@@ -63,6 +63,8 @@ _IWYU_MAPPING = {
 }
 
 
+_SUFFICES = [".cc", ".h"]
+
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Runs the include-cleaner tool on a list of files",
@@ -205,7 +207,7 @@ def _apply_include_cleaner_to_file(file_path: pathlib.Path,
     if output:
         print(output)
     else:
-        print(f"Successfuly ran include cleaner on {file_path}")
+        print(f"Successfully ran include cleaner on {file_path}")
     return bool(output)
 
 
@@ -241,6 +243,8 @@ def main() -> None:
     
     
     for file in args.files:
+        if not file.suffix in _SUFFICES:
+            continue
         changes_generated = (_apply_include_cleaner_to_file(
             file, should_modify, tuple(cmd)) or changes_generated)
 
