@@ -222,16 +222,7 @@ void ElementStateManager::TriggerElementActivation() {
   } else {
     CancelTask();  
                    
-    MOZ_ASSERT(mSetActiveTask == nullptr);
-
-    RefPtr<CancelableRunnable> task =
-        NewCancelableRunnableMethod<nsCOMPtr<dom::Element>>(
-            "layers::ElementStateManager::SetActiveTask", this,
-            &ElementStateManager::SetActiveTask, mTarget);
-    mSetActiveTask = task;
-    NS_GetCurrentThread()->DelayedDispatch(
-        task.forget(), StaticPrefs::ui_touch_activation_delay_ms());
-    ESM_LOG("Scheduling mSetActiveTask %p\n", mSetActiveTask.get());
+    ScheduleSetActiveTask();
   }
   ESM_LOG(
       "Got both touch-end event and end touch notiication, clearing pan "
@@ -359,6 +350,19 @@ void ElementStateManager::ResetTouchBlockState() {
   
   
   
+}
+
+void ElementStateManager::ScheduleSetActiveTask() {
+  MOZ_ASSERT(mSetActiveTask == nullptr);
+
+  RefPtr<CancelableRunnable> task =
+      NewCancelableRunnableMethod<nsCOMPtr<dom::Element>>(
+          "layers::ElementStateManager::SetActiveTask", this,
+          &ElementStateManager::SetActiveTask, mTarget);
+  mSetActiveTask = task;
+  NS_GetCurrentThread()->DelayedDispatch(
+      task.forget(), StaticPrefs::ui_touch_activation_delay_ms());
+  ESM_LOG("Scheduling mSetActiveTask %p\n", mSetActiveTask.get());
 }
 
 void ElementStateManager::SetActiveTask(const nsCOMPtr<dom::Element>& aTarget) {
