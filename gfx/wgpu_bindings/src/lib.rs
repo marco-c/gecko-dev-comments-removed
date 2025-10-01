@@ -2,8 +2,6 @@
 
 
 
-#![allow(mismatched_lifetime_syntaxes)]
-
 use crate::command::{RecordedComputePass, RecordedRenderPass};
 use wgc::id;
 
