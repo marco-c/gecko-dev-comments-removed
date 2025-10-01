@@ -776,6 +776,8 @@ this.AccessibilityUtils = (function () {
         
         (role === Ci.nsIAccessibleRole.ROLE_RADIOBUTTON &&
           node.getRootNode().host?.localName === "moz-radio") ||
+        (role === Ci.nsIAccessibleRole.ROLE_RADIOBUTTON &&
+          node.getRootNode().host?.localName === "moz-visual-picker-item") ||
         shouldIgnoreTabIndex(node))
     );
   }

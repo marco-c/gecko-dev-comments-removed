@@ -159,13 +159,17 @@ add_task(async function testSettingGroupTelemetry() {
 
       let picker = doc.getElementById("test-picker");
       let secondItem = doc.getElementById("test-picker-dark");
-      EventUtils.synthesizeMouseAtCenter(secondItem, {}, win);
+      AccessibilityUtils.setEnv({
+        mustHaveAccessibleRule: false,
+      });
+      EventUtils.synthesizeMouseAtCenter(secondItem.itemEl, {}, win);
 
       
       await picker.updateComplete;
 
       
       EventUtils.synthesizeKey("KEY_ArrowRight", {}, win);
+      AccessibilityUtils.resetEnv();
 
       
       const { TelemetryTestUtils } = ChromeUtils.importESModule(
