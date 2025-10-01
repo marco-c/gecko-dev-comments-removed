@@ -25,7 +25,7 @@ SVGArcConverter::SVGArcConverter(const Point& from, const Point& to,
   MOZ_ASSERT(radii.x != 0.0f && radii.y != 0.0f, "Bad radii");
 
   const double radPerDeg = M_PI / 180.0;
-  mSegIndex = 0;
+  mTo = to;
 
   if (from == to) {
     mNumSegs = 0;
@@ -90,11 +90,34 @@ SVGArcConverter::SVGArcConverter(const Point& from, const Point& to,
   mT = 8.0 / 3.0 * sin(mDelta / 4.0) * sin(mDelta / 4.0) / sin(mDelta / 2.0);
 
   mFrom = from;
+
+  if (fabs(dtheta) < 1e-8) {
+    
+    
+    
+    
+    
+    
+    
+    
+    mFallBackToSingleLine = true;
+    mNumSegs = 1;
+  }
 }
 
 bool SVGArcConverter::GetNextSegment(Point* cp1, Point* cp2, Point* to) {
   if (mSegIndex == mNumSegs) {
     return false;
+  }
+
+  if (mFallBackToSingleLine) {
+    Point ctrl = (mFrom + mTo) * 0.5;
+    *cp1 = ctrl;
+    *cp2 = ctrl;
+    *to = mTo;
+    mSegIndex = 1;
+    mFallBackToSingleLine = false;
+    return true;
   }
 
   double cosTheta1 = cos(mTheta);
@@ -103,9 +126,16 @@ bool SVGArcConverter::GetNextSegment(Point* cp1, Point* cp2, Point* to) {
   double cosTheta2 = cos(theta2);
   double sinTheta2 = sin(theta2);
 
-  
-  to->x = mCosPhi * mRx * cosTheta2 - mSinPhi * mRy * sinTheta2 + mC.x;
-  to->y = mSinPhi * mRx * cosTheta2 + mCosPhi * mRy * sinTheta2 + mC.y;
+  if (mSegIndex + 1 == mNumSegs) {
+    
+    
+    
+    *to = mTo;
+  } else {
+    
+    to->x = mCosPhi * mRx * cosTheta2 - mSinPhi * mRy * sinTheta2 + mC.x;
+    to->y = mSinPhi * mRx * cosTheta2 + mCosPhi * mRy * sinTheta2 + mC.y;
+  }
 
   
   cp1->x =
