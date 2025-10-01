@@ -29,6 +29,7 @@ import org.mozilla.gecko.util.BundleEventListener;
 import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.geckoview.WebExtension.InstallException;
+import org.mozilla.geckoview.WebExtension.InvalidMetaDataException;
 
 
 
@@ -287,62 +288,12 @@ public class WebExtensionController {
 
 
 
-
-
-    @Nullable
-    @Deprecated
-    @DeprecationSchedule(id = "web-extension-on-update-prompt", version = 144)
-    default GeckoResult<AllowOrDeny> onUpdatePrompt(
-        @NonNull final WebExtension currentlyInstalled,
-        @NonNull final WebExtension updatedExtension,
-        @NonNull final String[] newPermissions,
-        @NonNull final String[] newOrigins) {
-      return null;
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
     @Nullable
     default GeckoResult<AllowOrDeny> onUpdatePrompt(
         @NonNull final WebExtension extension,
         @NonNull final String[] newPermissions,
         @NonNull final String[] newOrigins,
         @NonNull final String[] newDataCollectionPermissions) {
-      return null;
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    @Nullable
-    @Deprecated
-    @DeprecationSchedule(id = "web-extension-on-optional-prompt", version = 144)
-    default GeckoResult<AllowOrDeny> onOptionalPrompt(
-        final @NonNull WebExtension extension,
-        final @NonNull String[] permissions,
-        final @NonNull String[] origins) {
       return null;
     }
 
@@ -1101,52 +1052,60 @@ public class WebExtensionController {
 
     Log.d(LOGTAG, "handleMessage " + event);
 
-    if ("GeckoView:WebExtension:InstallPrompt".equals(event)) {
-      installPromptRequest(bundle, callback);
-      return;
-    } else if ("GeckoView:WebExtension:UpdatePrompt".equals(event)) {
-      updatePrompt(bundle, callback);
-      return;
-    } else if ("GeckoView:WebExtension:DebuggerListUpdated".equals(event)) {
-      if (mDebuggerDelegate != null) {
-        mDebuggerDelegate.onExtensionListUpdated();
+    try {
+      if ("GeckoView:WebExtension:InstallPrompt".equals(event)) {
+        installPromptRequest(bundle, callback);
+        return;
+      } else if ("GeckoView:WebExtension:UpdatePrompt".equals(event)) {
+        updatePrompt(bundle, callback);
+        return;
+      } else if ("GeckoView:WebExtension:DebuggerListUpdated".equals(event)) {
+        if (mDebuggerDelegate != null) {
+          mDebuggerDelegate.onExtensionListUpdated();
+        }
+        return;
+      } else if ("GeckoView:WebExtension:OnDisabling".equals(event)) {
+        onDisabling(bundle);
+        return;
+      } else if ("GeckoView:WebExtension:OnOptionalPermissionsChanged".equals(event)) {
+        onOptionalPermissionsChanged(bundle);
+        return;
+      } else if ("GeckoView:WebExtension:OnDisabled".equals(event)) {
+        onDisabled(bundle);
+        return;
+      } else if ("GeckoView:WebExtension:OnEnabling".equals(event)) {
+        onEnabling(bundle);
+        return;
+      } else if ("GeckoView:WebExtension:OnEnabled".equals(event)) {
+        onEnabled(bundle);
+        return;
+      } else if ("GeckoView:WebExtension:OnUninstalling".equals(event)) {
+        onUninstalling(bundle);
+        return;
+      } else if ("GeckoView:WebExtension:OnUninstalled".equals(event)) {
+        onUninstalled(bundle);
+        return;
+      } else if ("GeckoView:WebExtension:OnInstalling".equals(event)) {
+        onInstalling(bundle);
+        return;
+      } else if ("GeckoView:WebExtension:OnInstalled".equals(event)) {
+        onInstalled(bundle);
+        return;
+      } else if ("GeckoView:WebExtension:OnDisabledProcessSpawning".equals(event)) {
+        onDisabledProcessSpawning();
+        return;
+      } else if ("GeckoView:WebExtension:OnInstallationFailed".equals(event)) {
+        onInstallationFailed(bundle);
+        return;
+      } else if ("GeckoView:WebExtension:OnReady".equals(event)) {
+        onReady(bundle);
+        return;
       }
-      return;
-    } else if ("GeckoView:WebExtension:OnDisabling".equals(event)) {
-      onDisabling(bundle);
-      return;
-    } else if ("GeckoView:WebExtension:OnOptionalPermissionsChanged".equals(event)) {
-      onOptionalPermissionsChanged(bundle);
-      return;
-    } else if ("GeckoView:WebExtension:OnDisabled".equals(event)) {
-      onDisabled(bundle);
-      return;
-    } else if ("GeckoView:WebExtension:OnEnabling".equals(event)) {
-      onEnabling(bundle);
-      return;
-    } else if ("GeckoView:WebExtension:OnEnabled".equals(event)) {
-      onEnabled(bundle);
-      return;
-    } else if ("GeckoView:WebExtension:OnUninstalling".equals(event)) {
-      onUninstalling(bundle);
-      return;
-    } else if ("GeckoView:WebExtension:OnUninstalled".equals(event)) {
-      onUninstalled(bundle);
-      return;
-    } else if ("GeckoView:WebExtension:OnInstalling".equals(event)) {
-      onInstalling(bundle);
-      return;
-    } else if ("GeckoView:WebExtension:OnInstalled".equals(event)) {
-      onInstalled(bundle);
-      return;
-    } else if ("GeckoView:WebExtension:OnDisabledProcessSpawning".equals(event)) {
-      onDisabledProcessSpawning();
-      return;
-    } else if ("GeckoView:WebExtension:OnInstallationFailed".equals(event)) {
-      onInstallationFailed(bundle);
-      return;
-    } else if ("GeckoView:WebExtension:OnReady".equals(event)) {
-      onReady(bundle);
+    } catch (final InvalidMetaDataException e) {
+      Log.e(LOGTAG, "Unexpected invalid bundle data on event " + event, e);
+      if (callback != null) {
+        callback.sendError("Unexpected invalid WebExtensions metaData on event " + event);
+      }
       return;
     }
 
@@ -1273,34 +1232,21 @@ public class WebExtensionController {
   }
 
   private void updatePrompt(final GeckoBundle message, final EventCallback callback) {
-    final WebExtension currentExtension =
-        new WebExtension(mDelegateControllerProvider, message.getBundle("currentlyInstalled"));
-    final WebExtension updatedExtension =
-        new WebExtension(mDelegateControllerProvider, message.getBundle("updatedExtension"));
+    final WebExtension extension =
+        new WebExtension(mDelegateControllerProvider, message.getBundle("extension"));
     final String[] newPermissions = message.getStringArray("newPermissions");
     final String[] newOrigins = message.getStringArray("newOrigins");
+    final String[] newDataCollectionPermissions =
+        message.getStringArray("newDataCollectionPermissions");
 
     if (mPromptDelegate == null) {
-      Log.e(
-          LOGTAG,
-          "Tried to update extension " + currentExtension.id + " but no delegate is registered");
+      Log.e(LOGTAG, "Tried to update extension " + extension.id + " but no delegate is registered");
       return;
     }
 
-    
-    
-    
-    GeckoResult<AllowOrDeny> promptResponse =
+    final GeckoResult<AllowOrDeny> promptResponse =
         mPromptDelegate.onUpdatePrompt(
-            currentExtension, updatedExtension, newPermissions, newOrigins);
-
-    if (promptResponse == null) {
-      final String[] newDataCollectionPermissions =
-          message.getStringArray("newDataCollectionPermissions");
-      promptResponse =
-          mPromptDelegate.onUpdatePrompt(
-              updatedExtension, newPermissions, newOrigins, newDataCollectionPermissions);
-    }
+            extension, newPermissions, newOrigins, newDataCollectionPermissions);
 
     if (promptResponse == null) {
       return;
@@ -1328,21 +1274,12 @@ public class WebExtensionController {
     final String[] permissions =
         message.bundle.getBundle("permissions").getStringArray("permissions");
     final String[] origins = message.bundle.getBundle("permissions").getStringArray("origins");
+    final String[] dataCollectionPermissions =
+        message.bundle.getBundle("permissions").getStringArray("data_collection");
 
-    
-    
-    
-    GeckoResult<AllowOrDeny> promptResponse =
-        mPromptDelegate.onOptionalPrompt(extension, permissions, origins);
-
-    if (promptResponse == null) {
-      final String[] dataCollectionPermissions =
-          message.bundle.getBundle("permissions").getStringArray("data_collection");
-
-      promptResponse =
-          mPromptDelegate.onOptionalPrompt(
-              extension, permissions, origins, dataCollectionPermissions);
-    }
+    final GeckoResult<AllowOrDeny> promptResponse =
+        mPromptDelegate.onOptionalPrompt(
+            extension, permissions, origins, dataCollectionPermissions);
 
     if (promptResponse == null) {
       return;
