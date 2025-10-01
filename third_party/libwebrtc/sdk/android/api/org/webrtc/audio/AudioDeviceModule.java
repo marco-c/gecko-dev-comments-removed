@@ -22,14 +22,10 @@ public interface AudioDeviceModule {
 
 
 
-  @Deprecated
-  default long getNativeAudioDeviceModulePointer() {
-    return 0;
-  }
 
-  public default long getNative(long webrtcEnvRef) {
-    return getNativeAudioDeviceModulePointer();
-  }
+
+
+  long getNative(long webrtcEnvRef);
 
   
 
