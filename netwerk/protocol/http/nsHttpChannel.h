@@ -205,11 +205,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   NS_IMETHOD SetResponseStatus(uint32_t aStatus,
                                const nsACString& aStatusText) override;
 
-  NS_IMETHOD GetDecompressDictionary(
-      DictionaryCacheEntry** aDictionary) override;
-  NS_IMETHOD SetDecompressDictionary(
-      DictionaryCacheEntry* aDictionary) override;
-
   void SetWarningReporter(HttpChannelSecurityWarningReporter* aReporter);
   HttpChannelSecurityWarningReporter* GetWarningReporter();
 
@@ -417,10 +412,7 @@ class nsHttpChannel final : public HttpBaseChannel,
   void CloseCacheEntry(bool doomOnFailure);
   [[nodiscard]] nsresult InitCacheEntry();
   void UpdateInhibitPersistentCachingFlag();
-  bool ParseDictionary(nsICacheEntry* aEntry, nsHttpResponseHead* aResponseHead,
-                       bool aModified);
-  [[nodiscard]] nsresult AddCacheEntryHeaders(nsICacheEntry* entry,
-                                              bool aModified);
+  [[nodiscard]] nsresult AddCacheEntryHeaders(nsICacheEntry* entry);
   [[nodiscard]] nsresult FinalizeCacheEntry();
   [[nodiscard]] nsresult InstallCacheListener(int64_t offset = 0);
   void MaybeInvalidateCacheEntryForSubsequentGet();
@@ -562,16 +554,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   
   RefPtr<nsChannelClassifier> mChannelClassifier;
-
-  
-  
-  RefPtr<DictionaryCacheEntry> mDictDecompress;
-  
-  
-  RefPtr<DictionaryCacheEntry> mDictSaving;
-  
-  
-  
 
   
   void ReleaseMainThreadOnlyReferences();
@@ -897,10 +879,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   
   bool mWaitingForLNAPermission{false};
-
-  bool mUsingDictionary{false};  
-  bool mShouldSuspendForDictionary{false};
-  bool mSuspendedForDictionary{false};
 
  protected:
   virtual void DoNotifyListenerCleanup() override;

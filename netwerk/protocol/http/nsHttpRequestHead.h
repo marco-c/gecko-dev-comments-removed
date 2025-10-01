@@ -23,8 +23,6 @@ struct ParamTraits;
 namespace mozilla {
 namespace net {
 
-class DictionaryCacheEntry;
-
 
 
 
@@ -56,8 +54,6 @@ class nsHttpRequestHead {
   void SetVersion(HttpVersion version);
   void SetRequestURI(const nsACString& s);
   void SetPath(const nsACString& s);
-  
-  void SetDictionary(DictionaryCacheEntry* aDict);
   uint32_t HeaderCount();
 
   
@@ -139,8 +135,6 @@ class nsHttpRequestHead {
   
   nsCString mRequestURI MOZ_GUARDED_BY(mRecursiveMutex);
   nsCString mPath MOZ_GUARDED_BY(mRecursiveMutex);
-
-  RefPtr<DictionaryCacheEntry> mDict MOZ_GUARDED_BY(mRecursiveMutex);
 
   nsCString mOrigin MOZ_GUARDED_BY(mRecursiveMutex);
   ParsedMethodType mParsedMethod MOZ_GUARDED_BY(mRecursiveMutex){kMethod_Get};

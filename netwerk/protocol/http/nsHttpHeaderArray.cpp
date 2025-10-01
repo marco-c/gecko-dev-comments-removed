@@ -43,7 +43,6 @@ nsresult nsHttpHeaderArray::SetHeader(
   MOZ_ASSERT(
       (variety == eVarietyResponse) || (variety == eVarietyRequestDefault) ||
           (variety == eVarietyRequestOverride) ||
-          (variety == eVarietyResponseOverride) ||
           (variety == eVarietyRequestEnforceDefault),
       "Net original headers can only be set using SetHeader_internal().");
 
@@ -51,9 +50,7 @@ nsresult nsHttpHeaderArray::SetHeader(
   int32_t index = LookupEntry(header, &entry);
 
   
-  
-  if (value.IsEmpty() && header != nsHttp::X_Frame_Options &&
-      variety != eVarietyResponseOverride) {
+  if (value.IsEmpty() && header != nsHttp::X_Frame_Options) {
     if (!merge && entry) {
       if (entry->variety == eVarietyResponseNetOriginalAndResponse) {
         MOZ_ASSERT(variety == eVarietyResponse);
@@ -82,8 +79,7 @@ nsresult nsHttpHeaderArray::SetHeader(
   if (!IsIgnoreMultipleHeader(header)) {
     
     if (entry->variety == eVarietyResponseNetOriginalAndResponse) {
-      MOZ_ASSERT(variety == eVarietyResponse ||
-                 variety == eVarietyResponseOverride);
+      MOZ_ASSERT(variety == eVarietyResponse);
       entry->variety = eVarietyResponseNetOriginal;
       return SetHeader_internal(header, headerName, value, variety);
     }

@@ -347,6 +347,7 @@ nsresult HttpBaseChannel::Init(nsIURI* aURI, uint32_t aCaps,
   
   nsAutoCString host;
   int32_t port = -1;
+  bool isHTTPS = isSecureOrTrustworthyURL(mURI);
 
   nsresult rv = mURI->GetAsciiHost(host);
   if (NS_FAILED(rv)) return rv;
@@ -393,7 +394,7 @@ nsresult HttpBaseChannel::Init(nsIURI* aURI, uint32_t aCaps,
   }
 
   rv = gHttpHandler->AddStandardRequestHeaders(
-      &mRequestHead, aURI, contentPolicyType,
+      &mRequestHead, isHTTPS, contentPolicyType,
       nsContentUtils::ShouldResistFingerprinting(this,
                                                  RFPTarget::HttpUserAgent));
   if (NS_FAILED(rv)) return rv;
@@ -1470,23 +1471,6 @@ HttpBaseChannel::DoApplyContentConversions(nsIStreamListener* aNextListener,
 
   LOG(("HttpBaseChannel::DoApplyContentConversions [this=%p]\n", this));
 
-#ifdef DEBUG
-  {
-    nsAutoCString contentEncoding;
-    nsresult rv =
-        mResponseHead->GetHeader(nsHttp::Content_Encoding, contentEncoding);
-    if (NS_SUCCEEDED(rv) && !contentEncoding.IsEmpty()) {
-      nsAutoCString newEncoding;
-      char* cePtr = contentEncoding.BeginWriting();
-      while (char* val = nsCRT::strtok(cePtr, HTTP_LWS ",", &cePtr)) {
-        if (strcmp(val, "dcb") == 0 || strcmp(val, "dcz") == 0) {
-          MOZ_ASSERT(LoadApplyConversion() && !LoadHasAppliedConversion());
-        }
-      }
-    }
-  }
-#endif
-
   if (!LoadApplyConversion()) {
     LOG(("not applying conversion per ApplyConversion\n"));
     return NS_OK;
@@ -1517,11 +1501,11 @@ HttpBaseChannel::DoApplyContentConversions(nsIStreamListener* aNextListener,
   
   
 
-  nsAutoCString newEncoding;
   char* cePtr = contentEncoding.BeginWriting();
   uint32_t count = 0;
   while (char* val = nsCRT::strtok(cePtr, HTTP_LWS ",", &cePtr)) {
     if (++count > 16) {
+      
       
       
       LOG(("Too many Content-Encodings. Ignoring remainder.\n"));
@@ -1540,7 +1524,7 @@ HttpBaseChannel::DoApplyContentConversions(nsIStreamListener* aNextListener,
         return rv;
       }
 
-      LOG(("Adding converter for content-encoding '%s'", val));
+      LOG(("converter removed '%s' content-encoding\n", val));
       if (Telemetry::CanRecordPrereleaseData()) {
         int mode = 0;
         if (from.EqualsLiteral("gzip") || from.EqualsLiteral("x-gzip")) {
@@ -1558,18 +1542,8 @@ HttpBaseChannel::DoApplyContentConversions(nsIStreamListener* aNextListener,
       nextListener = converter;
     } else {
       if (val) LOG(("Unknown content encoding '%s', ignoring\n", val));
-      
-      
-      
-      newEncoding += val;
     }
   }
-
-  LOG(("Changing Content-Encoding from %s to %s", contentEncoding.get(),
-       newEncoding.get()));
-  
-  rv = mResponseHead->SetHeaderOverride(nsHttp::Content_Encoding, newEncoding);
-
   *aNewNextListener = do_AddRef(nextListener).take();
   return NS_OK;
 }
