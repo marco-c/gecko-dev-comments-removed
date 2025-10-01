@@ -288,7 +288,7 @@ class DocAccessibleParent : public RemoteAccessible,
   
   
   
-  nsTHashMap<uint64_t, nsTHashMap<RelationType, nsTArray<uint64_t>>>
+  nsTHashMap<uint64_t, nsTHashMap<const RelationData*, nsTArray<uint64_t>>>
       mReverseRelations;
 
   
