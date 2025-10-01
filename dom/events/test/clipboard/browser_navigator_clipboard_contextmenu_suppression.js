@@ -101,6 +101,8 @@ function testPasteContextMenuSuppression(aWriteFun, aMsg) {
 
         info("Dismiss paste button, cross-origin request should be rejected");
         await promiseDismissPasteButton();
+        
+        await promiseDismissPasteButton();
         await Assert.rejects(
           readTextRequest1,
           /NotAllowedError/,
