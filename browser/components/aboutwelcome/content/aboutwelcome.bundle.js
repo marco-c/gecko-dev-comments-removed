@@ -3447,8 +3447,6 @@ __webpack_require__.r(__webpack_exports__);
  });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
- var _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3);
-
 
 
 
@@ -3456,19 +3454,6 @@ __webpack_require__.r(__webpack_exports__);
 
 const EmbeddedBackupRestore = () => {
   const ref = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)();
-  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
-    
-    
-    _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_1__.AboutWelcomeUtils.handleUserAction({
-      type: "SET_PREF",
-      data: {
-        pref: {
-          name: "showRestoreFromBackup",
-          value: false
-        }
-      }
-    });
-  }, []);
   return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("restore-from-backup", {
     aboutWelcomeEmbedded: "true",
     labelFontWeight: "600",
