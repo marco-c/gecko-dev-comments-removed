@@ -1914,7 +1914,16 @@ ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
     
     
     
-    chunk = mChunksDirty.Last();
+    if (mSpare && mSpare->mNumDirty && !mSpare->mIsPurging) {
+      
+      
+      
+      
+      
+      chunk = mSpare;
+    } else {
+      chunk = mChunksDirty.Last();
+    }
     if (!chunk) {
       
       
