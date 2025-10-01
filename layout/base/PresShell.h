@@ -1265,10 +1265,6 @@ class PresShell final : public nsStubDocumentObserver,
   nsSize GetLayoutViewportSize() const;
 
   
-  
-  nsSize GetInnerSize() const;
-
-  
 
 
   bool IsNeverPainting() { return mIsNeverPainting; }
