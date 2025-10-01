@@ -34,6 +34,8 @@
 
 
 
+
+
 #define FOR_EACH_PERFSTATS_METRIC(MACRO)          \
   MACRO(DisplayListBuilding)                      \
   MACRO(Rasterizing)                              \
@@ -155,6 +157,10 @@ class PerfStats {
                              const nsACString& aPerfStats) {
     GetSingleton()->StorePerfStatsInternal(aParent, aPerfStats);
   }
+
+  
+  
+  static MetricMask GetFeatureMask(const char* aMetricName);
 
  private:
   static PerfStats* GetSingleton();
