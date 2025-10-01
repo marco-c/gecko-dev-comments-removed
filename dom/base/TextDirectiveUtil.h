@@ -225,6 +225,30 @@ class TextDirectiveUtil final {
   static bool WordIsJustWhitespaceOrPunctuation(const nsAString& aString,
                                                 uint32_t aWordBegin,
                                                 uint32_t aWordEnd);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  template <TextScanDirection direction>
+  static uint32_t RemoveFirstWordFromStringAndDistanceArray(
+      nsAString& aString, nsTArray<uint32_t>& aWordDistances);
 };
 
 class TimeoutWatchdog final {
@@ -551,10 +575,8 @@ template <TextScanDirection direction>
     return 0;
   }
 
-  MOZ_DIAGNOSTIC_ASSERT(
-      !nsContentUtils::IsHTMLWhitespace(aReferenceString.First()));
-  MOZ_DIAGNOSTIC_ASSERT(
-      !nsContentUtils::IsHTMLWhitespace(aReferenceString.Last()));
+  MOZ_ASSERT(!nsContentUtils::IsHTMLWhitespace(aReferenceString.First()));
+  MOZ_ASSERT(!nsContentUtils::IsHTMLWhitespace(aReferenceString.Last()));
   uint32_t referenceStringPosition =
       direction == TextScanDirection::Left ? aReferenceString.Length() - 1 : 0;
 
@@ -647,6 +669,50 @@ template <TextScanDirection direction>
   return commonLength;
 }
 
+template <TextScanDirection direction>
+ uint32_t
+TextDirectiveUtil::RemoveFirstWordFromStringAndDistanceArray(
+    nsAString& aString, nsTArray<uint32_t>& aWordDistances) {
+  MOZ_DIAGNOSTIC_ASSERT(!aString.IsEmpty());
+  MOZ_DIAGNOSTIC_ASSERT(aWordDistances.Length() > 1);
+  auto lengthOfFirstWordPlusWhitespaceAndPunctuation = aWordDistances[0];
+  auto chIsWhitespaceOrPunctuation = [&](uint32_t distance) {
+    const char16_t ch = aString.CharAt(direction == TextScanDirection::Right
+                                           ? distance
+                                           : aString.Length() - distance - 1);
+    return nsContentUtils::IsHTMLWhitespace(ch) ||
+           mozilla::IsPunctuationForWordSelect(ch);
+  };
+  while (lengthOfFirstWordPlusWhitespaceAndPunctuation < aString.Length() &&
+         chIsWhitespaceOrPunctuation(
+             lengthOfFirstWordPlusWhitespaceAndPunctuation)) {
+    ++lengthOfFirstWordPlusWhitespaceAndPunctuation;
+  }
+  if (lengthOfFirstWordPlusWhitespaceAndPunctuation == aString.Length()) {
+    
+    
+    aWordDistances.Clear();
+    return lengthOfFirstWordPlusWhitespaceAndPunctuation;
+  }
+  
+  
+  
+  
+  for (auto& wordDistance : aWordDistances) {
+    wordDistance -= lengthOfFirstWordPlusWhitespaceAndPunctuation;
+  }
+  aWordDistances.RemoveElementsBy([&aString](uint32_t distance) {
+    return distance == 0 || distance > aString.Length();
+  });
+  if constexpr (direction == TextScanDirection::Right) {
+    aString = Substring(aString, lengthOfFirstWordPlusWhitespaceAndPunctuation);
+  } else {
+    aString = Substring(
+        aString, 0,
+        aString.Length() - lengthOfFirstWordPlusWhitespaceAndPunctuation);
+  }
+  return lengthOfFirstWordPlusWhitespaceAndPunctuation;
+}
 }  
 
 #endif
