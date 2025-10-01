@@ -33,6 +33,7 @@ settings-data-backup-last-backup-date = Last backup: { DATETIME($date, timeStyle
 settings-data-backup-last-backup-location = Location
 settings-data-backup-last-backup-location-show-in-folder = Show in folder
 settings-data-backup-last-backup-location-edit = Edit…
+settings-data-create-backup-error = There was an error creating your backup on { DATETIME($date, timeStyle: "short") }, { DATETIME($date, dateStyle: "short") }
 
 # Variables:
 #   $fileName (String) - The file name of the last backup that was created.
@@ -86,6 +87,7 @@ turn-on-scheduled-backups-confirm-button = Turn on backup
 # Tell the user there was an error accessing the user's selected backup
 # folder. The folder may be invalid or inaccessible.
 turn-on-scheduled-backups-error-file-system = There was a problem with your selected backup folder. Choose a different folder and try again.
+backup-error-file-system = There was a problem with your selected backup folder while backing up { -brand-short-name }.
 
 ## These strings are displayed in a modal when users want to turn off scheduled backups.
 
@@ -127,12 +129,12 @@ restore-from-backup-restoring-button = Restoring…
 # User is not authorized to restore a particular backup file, usually because
 # the backup file is encrypted and the user provided a recovery password that
 # was different than the password the user configured for their backup file
-restore-from-backup-error-incorrect-password = Incorrect password. <a data-l10n-name="incorrect-password-support-link">Still having problems?</a>
+backup-service-error-incorrect-password = Incorrect password. <a data-l10n-name="incorrect-password-support-link">Still having problems?</a>
 
 # The backup file (or specific data files within the backup file) could not be
 # loaded and parsed correctly, most likely due to data corruption of the
 # backup file itself
-restore-from-backup-error-corrupt-file =
+backup-service-error-corrupt-file =
     .heading = This file isn’t working
     .message = There was a problem with your backup file. Choose a different file and try again.
 
@@ -140,28 +142,28 @@ restore-from-backup-error-corrupt-file =
 # be too old and may not support features in the backed up profile.
 # Alternatively, the backup file may be too old and some of the feature in
 # the backed up profile may no longer be supported.
-restore-from-backup-error-unsupported-version =
+backup-service-error-unsupported-version =
     .heading = This file isn’t working
     .message = The file you chose isn’t compatible with this version of { -brand-short-name }. Choose a different file and try again.
 
 # The backup file cannot be restored. The currently running application is not
 # the same application that created the backup file (e.g. Firefox cannot
 # restore a Thunderbird profile backup).
-restore-from-backup-error-unsupported-application =
+backup-service-error-unsupported-application =
     .heading = This file isn’t working
     .message = The file you chose was not created by { -brand-short-name }. Choose a different file and try again.
 
 # Recovery from backup did not succeed. Potential causes could be file system
 # errors, internal code errors, decryption errors, etc.
-restore-from-backup-error-recovery-failed =
+backup-service-error-recovery-failed =
     .heading = { -brand-short-name } couldn’t restore
     .message = Restart { -brand-short-name } and try restoring your backup again.
 
 # There was some error in the backup service but we don't have a more specific
 # idea of what went wrong
-restore-from-backup-error-went-wrong =
+backup-service-error-went-wrong =
     .heading = Something went wrong
-    .message = There was a problem restoring { -brand-short-name }. Please try again or restart { -brand-short-name }.
+    .message = There was a problem with the backup process for { -brand-short-name }. Please try again or restart { -brand-short-name }.
 
 ## These strings are displayed in a modal when users want to enable encryption or change the password for an existing backup.
 
@@ -222,16 +224,18 @@ backup-file-header = { -brand-short-name } is ready to be restored
 backup-file-title = Restore { -brand-short-name }
 backup-file-intro = Get back to browsing and recover all your bookmarks, history, and other data. <a data-l10n-name="backup-file-support-link">Learn more</a>
 
-# Variables:
-#   $date (string) - Date to be formatted based on locale
-backup-file-last-backed-up = <strong>Last backed up:</strong> { DATETIME($date, timeStyle: "short") }, { DATETIME($date, dateStyle: "short") }
+backup-file-path-label = Backup file:
 
-backup-file-encryption-state-encrypted = Encrypted
-backup-file-encryption-state-not-encrypted = Not encrypted
+backup-file-encryption-state-label = Encrypted:
+backup-file-encryption-state-value-encrypted = Yes
+backup-file-encryption-state-value-not-encrypted = No
 
+backup-file-creation-device-label = Device:
+
+backup-file-creation-date-label = Created:
 # Variables:
-#   $machineName (String) - Name of the machine that the backup was created on.
-backup-file-creation-device = Created on { $machineName }
+#   $date (Datetime) - The date the backup was created
+backup-file-creation-date-value = { DATETIME($date, timeStyle: "short") }, { DATETIME($date, dateStyle: "short") }
 
 backup-file-how-to-restore-header = How to restore your data:
 backup-file-moz-browser-restore-step-1 = Go to Settings > Backup
@@ -242,4 +246,19 @@ backup-file-other-browser-restore-step-1 = Download and install { -brand-short-n
 backup-file-download-moz-browser-button = Download { -brand-short-name }
 backup-file-other-browser-restore-step-2 = Open { -brand-short-name } and restore your backup
 
-##
+## These strings are used in the about:restore and about:welcome pages
+## These pages guide the user on browser startup to help them restore a backup
+## if they have one on their file system.
+
+# Variables:
+# $numberOfOtherBackupsFound (number) - The number of backups found other than the displayed default backup
+other-backup-files-founds =
+    { $numberOfOtherBackupsFound ->
+        [one] <b>Note:</b> { $numberOfOtherBackupsFound } other backup file found
+       *[other] <b>Note:</b> { $numberOfOtherBackupsFound } other backup files found
+    }
+
+# Variables:
+#   $date (Datetime) - The date the backup was created
+#   $machineName (String) - Name of the machine that the backup was created on.
+backup-file-creation-date-and-device = Created on { DATETIME($date, year: "numeric", month: "numeric", day: "numeric") } on { $machineName }

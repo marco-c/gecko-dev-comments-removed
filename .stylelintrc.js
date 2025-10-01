@@ -406,6 +406,10 @@ module.exports = {
         "toolkit/content/widgets/datetimebox.css",
         "toolkit/content/widgets/marquee.css",
         "toolkit/themes/shared/media/textrecognition.css",
+        
+        
+        
+        "browser/components/backup/content/archive.css",
       ],
       rules: {
         "stylelint-plugin-mozilla/use-border-radius-tokens": false,
