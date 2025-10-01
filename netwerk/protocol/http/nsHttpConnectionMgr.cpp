@@ -1226,7 +1226,7 @@ bool nsHttpConnectionMgr::AtActiveConnectionLimit(ConnectionEntry* ent,
   nsHttpConnectionInfo* ci = ent->mConnInfo;
   uint32_t totalCount = ent->TotalActiveConnections();
 
-  if (ci->IsHttp3()) {
+  if (ci->IsHttp3() || ci->IsHttp3ProxyConnection()) {
     if (ci->GetWebTransport()) {
       
       return false;
@@ -1850,8 +1850,13 @@ nsresult nsHttpConnectionMgr::ProcessNewTransaction(nsHttpTransaction* trans) {
   } else if (isWildcard) {
     
     
+    
+    
+    
+    
+    bool isHttp3Proxy = ci->IsHttp3ProxyConnection();
     RefPtr<HttpConnectionBase> conn =
-        GetH2orH3ActiveConn(ent, false, !ci->IsHttp3());
+        GetH2orH3ActiveConn(ent, isHttp3Proxy, !isHttp3Proxy);
     if (ci->UsingHttpsProxy() && ci->UsingConnect()) {
       LOG(("About to create new tunnel conn from [%p]", conn.get()));
       ConnectionEntry* specificEnt = mCT.GetWeak(ci->HashKey());
@@ -2057,9 +2062,10 @@ HttpConnectionBase* nsHttpConnectionMgr::GetH2orH3ActiveConn(
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   MOZ_ASSERT(ent);
 
+  bool isHttp3 = ent->IsHttp3() || ent->IsHttp3ProxyConnection();
   
   
-  if ((!aNoHttp3 && ent->IsHttp3()) || (!aNoHttp2 && !ent->IsHttp3())) {
+  if ((!aNoHttp3 && isHttp3) || (!aNoHttp2 && !isHttp3)) {
     HttpConnectionBase* conn = ent->GetH2orH3ActiveConn();
     if (conn) {
       return conn;
@@ -3723,9 +3729,10 @@ void nsHttpConnectionMgr::MoveToWildCardConnEntry(
   LOG(
       ("nsHttpConnectionMgr::MakeConnEntryWildCard conn %p using ent %p (spdy "
        "%d, h3=%d)\n",
-       proxyConn, ent, ent ? ent->mUsingSpdy : 0, ent ? ent->IsHttp3() : 0));
+       proxyConn, ent, ent ? ent->mUsingSpdy : 0,
+       ent ? ent->IsHttp3ProxyConnection() : 0));
 
-  if (!ent || (!ent->mUsingSpdy && !ent->IsHttp3())) {
+  if (!ent || (!ent->mUsingSpdy && !ent->IsHttp3ProxyConnection())) {
     return;
   }
 
@@ -3740,7 +3747,7 @@ void nsHttpConnectionMgr::MoveToWildCardConnEntry(
   if (ent->mUsingSpdy) {
     wcEnt->mUsingSpdy = true;
   } else {
-    MOZ_ASSERT(wcEnt->IsHttp3());
+    MOZ_ASSERT(wcEnt->IsHttp3ProxyConnection());
   }
 
   LOG(

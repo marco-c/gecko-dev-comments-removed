@@ -57,7 +57,10 @@ static nsresult SchemeIsHTTPS(const nsACString& originScheme,
 }
 
 bool AltSvcMapping::AcceptableProxy(nsProxyInfo* proxyInfo) {
-  return !proxyInfo || proxyInfo->IsDirect() || proxyInfo->IsSOCKS();
+  
+  
+  return !proxyInfo || proxyInfo->IsDirect() || proxyInfo->IsSOCKS() ||
+         proxyInfo->IsConnectUDP();
 }
 
 void AltSvcMapping::ProcessHeader(
