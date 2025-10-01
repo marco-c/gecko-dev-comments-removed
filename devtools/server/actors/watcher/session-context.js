@@ -178,18 +178,10 @@ function getWatcherSupportedTargets(type) {
 
 
 
-function getWatcherSupportedResources(type) {
-  
-  
-  
-  
-  
-  const isTabOrWebExtensionToolbox =
-    type == SESSION_TYPES.BROWSER_ELEMENT || type == SESSION_TYPES.WEBEXTENSION;
-
+function getWatcherSupportedResources(_type) {
   return {
     [Resources.TYPES.CONSOLE_MESSAGE]: true,
-    [Resources.TYPES.CSS_CHANGE]: isTabOrWebExtensionToolbox,
+    [Resources.TYPES.CSS_CHANGE]: true,
     [Resources.TYPES.CSS_MESSAGE]: true,
     [Resources.TYPES.CSS_REGISTERED_PROPERTIES]: true,
     [Resources.TYPES.DOCUMENT_EVENT]: true,
