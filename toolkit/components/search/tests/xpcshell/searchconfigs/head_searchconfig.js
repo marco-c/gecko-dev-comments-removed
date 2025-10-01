@@ -84,6 +84,44 @@ async function maybeSetupConfig() {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class SearchConfigTest {
   
 
@@ -93,9 +131,14 @@ class SearchConfigTest {
   
 
 
+  #testDetails;
 
-  constructor(config = {}) {
-    this._config = config;
+  
+
+
+
+  constructor(testDetails) {
+    this.#testDetails = testDetails;
   }
 
   
@@ -270,13 +313,13 @@ class SearchConfigTest {
 
   _assertEngineRules(engines, region, locale, section) {
     const infoString = `region: "${region}" locale: "${locale}"`;
-    const config = this._config[section];
-    const hasIncluded = "included" in config;
-    const hasExcluded = "excluded" in config;
+    const testSection = this.#testDetails[section];
+    const hasIncluded = "included" in testSection;
+    const hasExcluded = "excluded" in testSection;
     const identifierIncluded = !!this._findEngine(
       engines,
-      this._config.identifier,
-      this._config.identifierExactMatch ?? false
+      this.#testDetails.identifier,
+      this.#testDetails.identifierExactMatch ?? false
     );
 
     
@@ -291,13 +334,15 @@ class SearchConfigTest {
 
     
     
+    
+    
     let included =
       hasIncluded &&
-      this._localeRegionInSection(config.included, region, locale);
+      this._localeRegionInSection(testSection.included, region, locale);
 
     let excluded =
       hasExcluded &&
-      this._localeRegionInSection(config.excluded, region, locale);
+      this._localeRegionInSection(testSection.excluded, region, locale);
     if (
       (included && (!hasExcluded || !excluded)) ||
       (!hasIncluded && hasExcluded && !excluded)
@@ -367,7 +412,7 @@ class SearchConfigTest {
 
 
   _assertEngineDetails(region, locale, engines) {
-    const details = this._config.details.filter(value => {
+    const details = this.#testDetails.details.filter(value => {
       const included = this._localeRegionInSection(
         value.included,
         region,
@@ -386,15 +431,15 @@ class SearchConfigTest {
 
     const engine = this._findEngine(
       engines,
-      this._config.identifier,
-      this._config.identifierExactMatch ?? false
+      this.#testDetails.identifier,
+      this.#testDetails.identifierExactMatch ?? false
     );
     this.assertOk(engine, "Should have an engine present");
 
-    if (this._config.aliases) {
+    if (this.#testDetails.aliases) {
       this.assertDeepEqual(
         engine.aliases,
-        this._config.aliases,
+        this.#testDetails.aliases,
         "Should have the correct aliases for the engine"
       );
     }
@@ -459,12 +504,12 @@ class SearchConfigTest {
     );
 
     submission = engine.getSubmission("test", URLTYPE_SUGGEST_JSON);
-    if (this._config.noSuggestionsURL || rules.noSuggestionsURL) {
+    if (this.#testDetails.noSuggestionsURL || rules.noSuggestionsURL) {
       this.assertOk(!submission, "Should not have a submission url");
-    } else if (this._config.suggestionUrlBase) {
+    } else if (this.#testDetails.suggestionUrlBase) {
       this.assertEqual(
         submission.uri.prePath + submission.uri.filePath,
-        this._config.suggestionUrlBase,
+        this.#testDetails.suggestionUrlBase,
         `Should have the correct domain for type: ${URLTYPE_SUGGEST_JSON} ${location}.`
       );
       this.assertOk(
