@@ -90,7 +90,7 @@ user_pref("security.webauth.webauthn_enable_softtoken", true);
 
 user_pref("security.webauth.webauthn_enable_usbtoken", false);
 
-user_pref("security.webauth.webauthn_testing_allow_direct_attestation", true);
+user_pref("security.webauthn.always_allow_direct_attestation", true);
 
 user_pref("security.webauthn.enable_conditional_mediation", true);
 
