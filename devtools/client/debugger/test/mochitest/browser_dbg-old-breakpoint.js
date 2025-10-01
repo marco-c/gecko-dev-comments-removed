@@ -49,22 +49,25 @@ add_task(async function () {
     "jsdebugger"
   );
   const dbg = createDebuggerContext(toolbox);
+
+  
+  await selectSource(dbg, "doc-scripts.html");
+
   const onBreakpoint = waitForDispatch(dbg.store, "SET_BREAKPOINT", 2);
-
-  
-  
-  await waitUntil(() => {
-    invokeInTab("main");
-    return isPaused(dbg);
-  });
-  await onBreakpoint;
-
-  ok(true, "paused at unmapped breakpoint");
-  await waitForState(
+  const breakpointsVisible = await waitForState(
     dbg,
     state => dbg.selectors.getBreakpointCount(state) == 2
   );
-  ok(true, "unmapped breakpoints shown in UI");
+  
+  
+  await waitUntil(async () => {
+    invokeInTab("main");
+    return isPaused(dbg);
+  });
+  ok(true, "Paused at unmapped breakpoint");
+  await Promise.any([breakpointsVisible, onBreakpoint]);
+
+  is(dbg.selectors.getBreakpointCount(), 2, "Unmapped breakpoints shown in UI");
 });
 
 
