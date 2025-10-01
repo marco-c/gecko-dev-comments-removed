@@ -8,8 +8,12 @@
 
 
 
+#include <memory>
+#include <utility>
+
 #include "modules/desktop_capture/desktop_capture_options.h"
 #include "modules/desktop_capture/desktop_capturer.h"
+#include "modules/desktop_capture/rgba_color.h"
 #include "modules/desktop_capture/win/window_capturer_win_gdi.h"
 
 #if defined(RTC_ENABLE_WIN_WGC)
