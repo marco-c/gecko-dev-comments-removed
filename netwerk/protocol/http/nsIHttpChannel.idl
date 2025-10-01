@@ -516,7 +516,5 @@ interface nsIHttpChannel : nsIIdentChannel
     
 
 
-    [noscript] attribute DictionaryCacheEntry dictionary;
-
-    
+    [noscript] attribute DictionaryCacheEntry decompressDictionary;
 };
