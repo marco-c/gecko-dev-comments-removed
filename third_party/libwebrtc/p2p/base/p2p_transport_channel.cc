@@ -196,6 +196,7 @@ P2PTransportChannel::P2PTransportChannel(
       field_trials_(field_trials) {
   TRACE_EVENT0("webrtc", "P2PTransportChannel::P2PTransportChannel");
   RTC_DCHECK(allocator_ != nullptr);
+  RTC_DCHECK(!transport_name_.empty());
   
   
   RTC_DCHECK(config_.IsValid().ok());
