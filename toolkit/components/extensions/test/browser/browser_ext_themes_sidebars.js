@@ -2,6 +2,13 @@
 
 
 
+registerCleanupFunction(async function () {
+  
+  if (!document.getElementById("sidebar-box").hidden) {
+    SidebarController.hide({ dismissPanel: true });
+  }
+});
+
 
 
 
