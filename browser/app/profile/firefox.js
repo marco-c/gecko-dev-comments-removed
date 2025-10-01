@@ -450,6 +450,8 @@ pref("browser.urlbar.deduplication.thresholdDays", 0);
 
 pref("browser.urlbar.scotchBonnet.enableOverride", true);
 
+pref("browser.urlbar.trustPanel.featureGate", false);
+
 
 
 
