@@ -472,14 +472,17 @@ let JSWINDOWACTORS = {
     allFrames: true,
   },
 
-  PopupBlocking: {
+  PopupAndRedirectBlocking: {
     parent: {
-      esModuleURI: "resource://gre/actors/PopupBlockingParent.sys.mjs",
+      esModuleURI:
+        "resource://gre/actors/PopupAndRedirectBlockingParent.sys.mjs",
     },
     child: {
-      esModuleURI: "resource://gre/actors/PopupBlockingChild.sys.mjs",
+      esModuleURI:
+        "resource://gre/actors/PopupAndRedirectBlockingChild.sys.mjs",
       events: {
         DOMPopupBlocked: { capture: true },
+        DOMRedirectBlocked: { capture: true },
         // Only listen for the `pageshow` event after the actor has already been
         // created for some other reason.
         pageshow: { createActor: false },
@@ -593,16 +596,7 @@ let JSWINDOWACTORS = {
         DOMContentLoaded: {},
       },
     },
-    matches: [
-      "http://*/*",
-      "https://*/*",
-      "file:///*",
-      "moz-extension://*",
-
-      // The actor is explicitly loaded by this page,
-      // so it needs to be allowed for it.
-      "about:translations",
-    ],
+    matches: ["http://*/*", "https://*/*", "file:///*", "moz-extension://*"],
     messageManagerGroups: ["browsers"],
     enablePreference: "browser.translations.enable",
   },
