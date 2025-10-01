@@ -9,41 +9,48 @@ use tracing_subscriber::{
     prelude::*,
 };
 
-static TESTING_SUBSCRIBER: Once = Once::new();
 
 
 
 
-
-pub fn init_for_tests() {
+pub fn init_from_env() {
     
     
-    TESTING_SUBSCRIBER.call_once(|| {
-        tracing_subscriber::registry()
-            .with(fmt::layer())
-            .with(build_targets_from_env(LevelFilter::ERROR))
-            .init();
-    });
+    tracing_subscriber::registry()
+        .with(fmt::layer())
+        .with(build_targets_from_env(LevelFilter::ERROR, None))
+        .init();
 }
 
 
-pub fn init_for_tests_with_level(level: crate::Level) {
+pub fn init_from_env_with_level(level: crate::Level) {
+    let level_filter = LevelFilter::from_level(level.into());
     
     
-    TESTING_SUBSCRIBER.call_once(|| {
-        tracing_subscriber::registry()
-            .with(fmt::layer())
-            .with(build_targets_from_env(LevelFilter::from_level(
-                level.into(),
-            )))
-            .init();
-    });
+    tracing_subscriber::registry()
+        .with(fmt::layer())
+        .with(build_targets_from_env(level_filter, None))
+        .init();
 }
 
-fn build_targets_from_env(default: LevelFilter) -> Targets {
-    let mut targets = Targets::new().with_default(default);
-    let Ok(env) = env::var("RUST_LOG") else {
-        return targets;
+
+pub fn init_from_env_with_default(default_env: &str) {
+    
+    
+    tracing_subscriber::registry()
+        .with(fmt::layer())
+        .with(build_targets_from_env(LevelFilter::OFF, Some(default_env)))
+        .init();
+}
+
+fn build_targets_from_env(default_level: LevelFilter, default_env: Option<&str>) -> Targets {
+    let mut targets = Targets::new().with_default(default_level);
+    let env = match env::var("RUST_LOG") {
+        Ok(env) => env,
+        Err(_) => match default_env {
+            Some(env) => env.to_string(),
+            None => return targets,
+        },
     };
     for item in env.split(",") {
         let item = item.trim();
@@ -81,4 +88,22 @@ fn try_parse_level(env_part: &str) -> Option<LevelFilter> {
         "off" => Some(LevelFilter::OFF),
         _ => None,
     }
+}
+
+static TESTING_SUBSCRIBER: Once = Once::new();
+
+
+
+
+
+pub fn init_for_tests() {
+    TESTING_SUBSCRIBER.call_once(init_from_env);
+}
+
+
+
+
+
+pub fn init_for_tests_with_level(level: crate::Level) {
+    TESTING_SUBSCRIBER.call_once(|| init_from_env_with_level(level));
 }
