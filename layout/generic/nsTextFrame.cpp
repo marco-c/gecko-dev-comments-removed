@@ -5814,7 +5814,6 @@ void nsTextFrame::UnionAdditionalOverflow(nsPresContext* aPresContext,
       params.vertical = verticalDec;
       params.sidewaysLeft = mTextRun->IsSidewaysLeft();
 
-      nscoord topOrLeft(nscoord_MAX), bottomOrRight(nscoord_MIN);
       typedef gfxFont::Metrics Metrics;
       auto accumulateDecorationRect =
           [&](const LineDecoration& dec, gfxFloat Metrics::* lineSize,
@@ -5845,18 +5844,12 @@ void nsTextFrame::UnionAdditionalOverflow(nsPresContext* aPresContext,
                 metrics, appUnitsPerDevUnit, this, parentWM.IsCentralBaseline(),
                 swapUnderline);
 
-            const nsRect decorationRect =
+            nsRect decorationRect =
                 nsCSSRendering::GetTextDecorationRect(aPresContext, params) +
                 (verticalDec ? nsPoint(frameBStart - dec.mBaselineOffset, 0)
                              : nsPoint(0, -dec.mBaselineOffset));
 
-            if (verticalDec) {
-              topOrLeft = std::min(decorationRect.x, topOrLeft);
-              bottomOrRight = std::max(decorationRect.XMost(), bottomOrRight);
-            } else {
-              topOrLeft = std::min(decorationRect.y, topOrLeft);
-              bottomOrRight = std::max(decorationRect.YMost(), bottomOrRight);
-            }
+            aInkOverflowRect->UnionRect(*aInkOverflowRect, decorationRect);
           };
 
       
@@ -5876,12 +5869,6 @@ void nsTextFrame::UnionAdditionalOverflow(nsPresContext* aPresContext,
         accumulateDecorationRect(dec, &Metrics::strikeoutSize,
                                  params.decoration);
       }
-
-      aInkOverflowRect->UnionRect(
-          *aInkOverflowRect,
-          verticalDec
-              ? nsRect(topOrLeft, 0, bottomOrRight - topOrLeft, measure)
-              : nsRect(0, topOrLeft, measure, bottomOrRight - topOrLeft));
     }
 
     aInkOverflowRect->UnionRect(*aInkOverflowRect,
@@ -7567,6 +7554,40 @@ void nsTextFrame::DrawTextRunAndDecorations(
     }
   }
 
+  
+  
+  
+  Maybe<gfxRect> clipRect;
+
+  
+  
+  
+  
+  if (aRange.Length() != mTextRun->GetLength() && verticalDec == verticalRun) {
+    
+    gfxFloat clipLength = mTextRun->GetAdvanceWidth(aRange, aParams.provider);
+    nsRect visualRect = InkOverflowRect();
+
+    const bool isInlineReversed = mTextRun->IsInlineReversed();
+    gfxFloat x, y, w, h;
+    if (verticalDec) {
+      x = aParams.framePt.x + visualRect.x;
+      y = isInlineReversed ? aTextBaselinePt.y.value - clipLength
+                           : aTextBaselinePt.y.value;
+      w = visualRect.width;
+      h = clipLength;
+    } else {
+      x = isInlineReversed ? aTextBaselinePt.x.value - clipLength
+                           : aTextBaselinePt.x.value;
+      y = aParams.framePt.y + visualRect.y;
+      w = clipLength;
+      h = visualRect.height;
+    }
+    clipRect.emplace(x, y, w, h);
+    clipRect->Scale(1 / app);
+    clipRect->Round();
+  }
+
   typedef gfxFont::Metrics Metrics;
   auto paintDecorationLine = [&](const LineDecoration& dec,
                                  gfxFloat Metrics::* lineSize,
@@ -7596,45 +7617,16 @@ void nsTextFrame::DrawTextRunAndDecorations(
 
     params.style = dec.mStyle;
     params.allowInkSkipping = dec.mAllowInkSkipping;
+    gfxClipAutoSaveRestore clipRestore(params.context);
+    
+    
+    
+    
+    if (clipRect && !params.HasNegativeTrim()) {
+      clipRestore.Clip(*clipRect);
+    }
     PaintDecorationLine(params);
   };
-
-  
-  
-  
-
-  
-  
-  
-  
-  bool skipClipping =
-      aRange.Length() == mTextRun->GetLength() || verticalDec != verticalRun;
-
-  gfxRect clipRect;
-  if (!skipClipping) {
-    
-    gfxFloat clipLength = mTextRun->GetAdvanceWidth(aRange, aParams.provider);
-    nsRect visualRect = InkOverflowRect();
-
-    const bool isInlineReversed = mTextRun->IsInlineReversed();
-    if (verticalDec) {
-      clipRect.x = aParams.framePt.x + visualRect.x;
-      clipRect.y = isInlineReversed ? aTextBaselinePt.y.value - clipLength
-                                    : aTextBaselinePt.y.value;
-      clipRect.width = visualRect.width;
-      clipRect.height = clipLength;
-    } else {
-      clipRect.x = isInlineReversed ? aTextBaselinePt.x.value - clipLength
-                                    : aTextBaselinePt.x.value;
-      clipRect.y = aParams.framePt.y + visualRect.y;
-      clipRect.width = clipLength;
-      clipRect.height = visualRect.height;
-    }
-
-    clipRect.Scale(1 / app);
-    clipRect.Round();
-    params.context->Clip(clipRect);
-  }
 
   
   params.decoration = StyleTextDecorationLine::UNDERLINE;
@@ -7650,9 +7642,7 @@ void nsTextFrame::DrawTextRunAndDecorations(
 
   
   
-  if (!skipClipping) {
-    params.context->PopClip();
-  }
+  
 
   {
     gfxContextMatrixAutoSaveRestore unscaledRestorer;
@@ -7671,18 +7661,9 @@ void nsTextFrame::DrawTextRunAndDecorations(
                     aRange, aParams.decorationOverrideColor, aParams.provider);
 
   
-  if (!skipClipping) {
-    params.context->Clip(clipRect);
-  }
-
-  
   params.decoration = StyleTextDecorationLine::LINE_THROUGH;
   for (const LineDecoration& dec : Reversed(aDecorations.mStrikes)) {
     paintDecorationLine(dec, &Metrics::strikeoutSize, params.decoration);
-  }
-
-  if (!skipClipping) {
-    params.context->PopClip();
   }
 }
 

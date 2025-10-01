@@ -3990,36 +3990,37 @@ static void SkipInk(nsIFrame* aFrame, DrawTarget& aDrawTarget,
                     const nsTArray<SkScalar>& aIntercepts, Float aPadding,
                     Rect& aRect) {
   nsCSSRendering::PaintDecorationLineParams clipParams = aParams;
-  int length = aIntercepts.Length();
+  const unsigned length = aIntercepts.Length();
 
-  SkScalar startIntercept = 0;
-  SkScalar endIntercept = 0;
-
-  
-  
-  
-  
-  Float dir = 1.0f;
   Float lineStart = aParams.vertical ? aParams.pt.y : aParams.pt.x;
   Float lineEnd = lineStart + aParams.lineSize.width;
-  if (aParams.sidewaysLeft) {
-    dir = -1.0f;
-    std::swap(lineStart, lineEnd);
-  }
 
-  for (int i = 0; i <= length; i += 2) {
+  
+  const Float trimLineStart = lineStart + (aParams.trimLeft - aPadding);
+  const Float trimLineEnd = lineEnd - (aParams.trimRight - aPadding);
+
+  for (unsigned i = 0; i <= length; i += 2) {
     
-    startIntercept = (i > 0) ? (dir * aIntercepts[i - 1]) + lineStart
-                             : lineStart - (dir * aPadding);
-    endIntercept = (i < length) ? (dir * aIntercepts[i]) + lineStart
-                                : lineEnd + (dir * aPadding);
+    
+    
+    
+    SkScalar startIntercept = trimLineStart;
+    if (i > 0) {
+      startIntercept = std::max(aIntercepts[i - 1] + lineStart, startIntercept);
+    }
+    SkScalar endIntercept = trimLineEnd;
+    if (i < length) {
+      endIntercept = std::min(aIntercepts[i] + lineStart, endIntercept);
+    }
 
     
     
     
     clipParams.lineSize.width =
-        (dir * (endIntercept - startIntercept)) - (2.0 * aPadding);
+        endIntercept - startIntercept - (2.0 * aPadding);
 
+    
+    
     
     
     if (clipParams.lineSize.width < std::max(aPadding * 0.5, 1.0)) {
@@ -4030,8 +4031,9 @@ static void SkipInk(nsIFrame* aFrame, DrawTarget& aDrawTarget,
     
     
     if (aParams.vertical) {
-      clipParams.pt.y = aParams.sidewaysLeft ? endIntercept + aPadding
-                                             : startIntercept + aPadding;
+      clipParams.pt.y = aParams.sidewaysLeft
+                            ? lineEnd - (endIntercept - lineStart) + aPadding
+                            : startIntercept + aPadding;
       aRect.y = std::floor(clipParams.pt.y + 0.5);
       aRect.SetBottomEdge(
           std::floor(clipParams.pt.y + clipParams.lineSize.width + 0.5));
@@ -4656,6 +4658,11 @@ gfxRect nsCSSRendering::GetTextDecorationRectInternal(
   } else {
     MOZ_ASSERT_UNREACHABLE("Invalid text decoration value");
   }
+
+  
+  r.x += aParams.sidewaysLeft ? aParams.trimRight : aParams.trimLeft;
+  r.width -= aParams.trimLeft + aParams.trimRight;
+  r.width = std::max(r.width, 0.0);
 
   
   

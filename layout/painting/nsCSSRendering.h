@@ -560,6 +560,11 @@ struct nsCSSRendering {
     
     
     
+    bool HasNegativeTrim() const { return trimLeft < 0.0 || trimRight < 0.0; }
+
+    
+    
+    
     
     Size lineSize;
     
@@ -589,6 +594,11 @@ struct nsCSSRendering {
     
     mozilla::StyleTextDecorationStyle style =
         mozilla::StyleTextDecorationStyle::None;
+    
+    
+    
+    Float trimLeft = 0.0f;
+    Float trimRight = 0.0f;
     bool vertical = false;
     bool sidewaysLeft = false;
     gfxTextRun::Range glyphRange;
