@@ -98,6 +98,7 @@
 #include "api/ice_transport_interface.h"
 #include "api/jsep.h"
 #include "api/legacy_stats_types.h"
+#include "api/local_network_access_permission.h"
 #include "api/media_stream_interface.h"
 #include "api/media_types.h"
 #include "api/metronome/metronome.h"
@@ -1397,6 +1398,10 @@ struct RTC_EXPORT PeerConnectionDependencies final {
   
   
   std::unique_ptr<NetworkControllerFactoryInterface> network_controller_factory;
+
+  
+  std::unique_ptr<LocalNetworkAccessPermissionFactoryInterface>
+      lna_permission_factory;
 
   
   

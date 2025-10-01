@@ -147,6 +147,7 @@ ScenarioIceConnectionImpl::ScenarioIceConnectionImpl(
                                       network_thread_,
                                       port_allocator_.get(),
                                        nullptr,
+                                       nullptr,
                                       payload_type_picker_,
                                       CreateJsepConfig())) {
   SendTask(network_thread_, [this] {

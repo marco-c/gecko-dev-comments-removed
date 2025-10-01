@@ -138,7 +138,8 @@ class JsepTransportControllerTest : public JsepTransportController::Observer,
     config.on_dtls_handshake_error_ = [](SSLHandshakeError s) {};
     transport_controller_ = std::make_unique<JsepTransportController>(
         env_, network_thread, port_allocator,
-        nullptr , payload_type_picker_,
+        nullptr,
+        nullptr, payload_type_picker_,
         std::move(config));
     SendTask(network_thread, [&] { ConnectTransportControllerSignals(); });
   }
