@@ -152,7 +152,7 @@ void ElementStateManager::SetTargetElement(dom::EventTarget* aTarget) {
   if (mTarget) {
     
     ESM_LOG("Multiple fingers on-screen, clearing target element\n");
-    CancelTask();
+    CancelActiveTask();
     ResetActive();
     ResetTouchBlockState();
     return;
@@ -168,7 +168,7 @@ void ElementStateManager::HandleTouchStart(bool aCanBePanOrZoom) {
   if (mCanBePanOrZoomSet) {
     
     ESM_LOG("Multiple fingers on-screen, clearing touch block state\n");
-    CancelTask();
+    CancelActiveTask();
     ResetActive();
     ResetTouchBlockState();
     return;
@@ -220,8 +220,8 @@ void ElementStateManager::TriggerElementActivation() {
       mDelayedClearElementActivation->StartTimer();
     }
   } else {
-    CancelTask();  
-                   
+    CancelActiveTask();  
+                         
     ScheduleSetActiveTask();
   }
   ESM_LOG(
@@ -232,7 +232,7 @@ void ElementStateManager::TriggerElementActivation() {
 
 void ElementStateManager::ClearActivation() {
   ESM_LOG("Clearing element activation\n");
-  CancelTask();
+  CancelActiveTask();
   ResetActive();
 }
 
@@ -257,7 +257,7 @@ bool ElementStateManager::MaybeChangeActiveState(apz::SingleTapState aState) {
     return false;
   }
 
-  CancelTask();
+  CancelActiveTask();
 
   mSingleTapState = aState;
 
@@ -375,8 +375,8 @@ void ElementStateManager::SetActiveTask(const nsCOMPtr<dom::Element>& aTarget) {
   SetActive(aTarget);
 }
 
-void ElementStateManager::CancelTask() {
-  ESM_LOG("Cancelling task %p\n", mSetActiveTask.get());
+void ElementStateManager::CancelActiveTask() {
+  ESM_LOG("Cancelling active task %p\n", mSetActiveTask.get());
 
   if (mSetActiveTask) {
     mSetActiveTask->Cancel();
