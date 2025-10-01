@@ -306,9 +306,14 @@ class nsLayoutUtils {
 
 
 
+
+
+  static const nsIFrame* GetClosestFrameOfType(
+      const nsIFrame* aFrame, mozilla::LayoutFrameType aFrameType,
+      const nsIFrame* aStopAt = nullptr);
   static nsIFrame* GetClosestFrameOfType(nsIFrame* aFrame,
                                          mozilla::LayoutFrameType aFrameType,
-                                         nsIFrame* aStopAt = nullptr);
+                                         const nsIFrame* aStopAt = nullptr);
 
   
 
