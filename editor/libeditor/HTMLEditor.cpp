@@ -1388,8 +1388,7 @@ nsresult HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
       }
 
       
-      if (HTMLEditUtils::IsAnyTableElementExceptColumnElement(
-              *editableBlockElement)) {
+      if (HTMLEditUtils::IsAnyTableElement(editableBlockElement)) {
         Result<EditActionResult, nsresult> result =
             HandleTabKeyPressInTable(aKeyboardEvent);
         if (MOZ_UNLIKELY(result.isErr())) {
@@ -1407,7 +1406,7 @@ nsresult HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
       }
 
       
-      if (HTMLEditUtils::IsListItemElement(*editableBlockElement)) {
+      if (HTMLEditUtils::IsListItem(editableBlockElement)) {
         aKeyboardEvent->PreventDefault();
         if (!aKeyboardEvent->IsShift()) {
           nsresult rv = IndentAsAction();
@@ -1656,12 +1655,12 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleTabKeyPressInTable(
       postOrderIter.Next();
     }
 
-    const RefPtr<Element> element =
-        Element::FromNode(postOrderIter.GetCurrentNode());
-    if (element && HTMLEditUtils::IsTableCellElement(*element) &&
-        HTMLEditUtils::GetClosestAncestorTableElement(*element) == table) {
+    nsCOMPtr<nsINode> node = postOrderIter.GetCurrentNode();
+    if (node && HTMLEditUtils::IsTableCell(node) &&
+        HTMLEditUtils::GetClosestAncestorTableElement(*node->AsElement()) ==
+            table) {
       aKeyboardEvent->PreventDefault();
-      CollapseSelectionToDeepestNonTableFirstChild(element);
+      CollapseSelectionToDeepestNonTableFirstChild(node);
       if (NS_WARN_IF(Destroyed())) {
         return Err(NS_ERROR_EDITOR_DESTROYED);
       }
@@ -1739,7 +1738,7 @@ void HTMLEditor::CollapseSelectionToDeepestNonTableFirstChild(nsINode* aNode) {
   for (nsIContent* child = node->GetFirstChild(); child;
        child = child->GetFirstChild()) {
     
-    if (child->IsHTMLElement(nsGkAtoms::table) ||
+    if (HTMLEditUtils::IsTable(child) ||
         !HTMLEditUtils::IsContainerNode(*child)) {
       break;
     }
@@ -1878,7 +1877,7 @@ nsresult HTMLEditor::InsertElementAtSelectionAsAction(
     
     
     
-    if (HTMLEditUtils::IsNamedAnchorElement(*aElement)) {
+    if (HTMLEditUtils::IsNamedAnchor(aElement)) {
       IgnoredErrorResult ignoredError;
       SelectionRef().CollapseToStart(ignoredError);
       if (NS_WARN_IF(Destroyed())) {
@@ -1990,7 +1989,7 @@ nsresult HTMLEditor::InsertElementAtSelectionAsAction(
 
   
   
-  if (!aElement->IsHTMLElement(nsGkAtoms::table) ||
+  if (!HTMLEditUtils::IsTable(aElement) ||
       !HTMLEditUtils::IsLastChild(*aElement,
                                   {WalkTreeOption::IgnoreNonEditableNode})) {
     return NS_OK;
@@ -2023,7 +2022,7 @@ HTMLEditor::InsertNodeIntoProperAncestorWithTransaction(
     NodeType& aContentToInsert, const EditorDOMPoint& aPointToInsert,
     SplitAtEdges aSplitAtEdges) {
   MOZ_ASSERT(aPointToInsert.IsSetAndValidInComposedDoc());
-  if (NS_WARN_IF(!aPointToInsert.IsInContentNode())) {
+  if (NS_WARN_IF(!aPointToInsert.IsSet())) {
     return Err(NS_ERROR_FAILURE);
   }
   MOZ_ASSERT(aPointToInsert.IsSetAndValid());
@@ -2035,14 +2034,14 @@ HTMLEditor::InsertNodeIntoProperAncestorWithTransaction(
 
   
   EditorDOMPoint pointToInsert(aPointToInsert);
-  MOZ_ASSERT(pointToInsert.IsInContentNode());
+  MOZ_ASSERT(pointToInsert.IsSet());
   while (!HTMLEditUtils::CanNodeContain(*pointToInsert.GetContainer(),
                                         aContentToInsert)) {
     
     
-    if (MOZ_UNLIKELY(pointToInsert.IsContainerHTMLElement(nsGkAtoms::body) ||
-                     HTMLEditUtils::IsAnyTableElementExceptColumnElement(
-                         *pointToInsert.ContainerAs<nsIContent>()))) {
+    if (MOZ_UNLIKELY(
+            pointToInsert.IsContainerHTMLElement(nsGkAtoms::body) ||
+            HTMLEditUtils::IsAnyTableElement(pointToInsert.GetContainer()))) {
       NS_WARNING(
           "There was no proper container element to insert the content node in "
           "the document");
@@ -3069,8 +3068,7 @@ Element* HTMLEditor::GetInclusiveAncestorByTagNameInternal(
 
   bool lookForLink = IsLinkTag(aTagName);
   bool lookForNamedAnchor = IsNamedAnchorTag(aTagName);
-  for (Element* const element :
-       currentElement->InclusiveAncestorsOfType<Element>()) {
+  for (Element* element : currentElement->InclusiveAncestorsOfType<Element>()) {
     
     
     
@@ -3079,22 +3077,22 @@ Element* HTMLEditor::GetInclusiveAncestorByTagNameInternal(
     }
     if (lookForLink) {
       
-      if (HTMLEditUtils::IsHyperlinkElement(*element)) {
+      if (HTMLEditUtils::IsLink(element)) {
         return element;
       }
     } else if (lookForNamedAnchor) {
       
-      if (HTMLEditUtils::IsNamedAnchorElement(*element)) {
+      if (HTMLEditUtils::IsNamedAnchor(element)) {
         return element;
       }
     } else if (&aTagName == nsGkAtoms::list) {
       
-      if (HTMLEditUtils::IsListElement(*element)) {
+      if (HTMLEditUtils::IsAnyListElement(element)) {
         return element;
       }
     } else if (&aTagName == nsGkAtoms::td) {
       
-      if (HTMLEditUtils::IsTableCellElement(*element)) {
+      if (HTMLEditUtils::IsTableCell(element)) {
         return element;
       }
     } else if (&aTagName == element->NodeInfo()->NameAtom()) {
@@ -3203,8 +3201,8 @@ already_AddRefed<Element> HTMLEditor::GetSelectedElement(const nsAtom* aTagName,
 
   
   if (startRef.GetContainer() == endRef.GetContainer()) {
-    nsIContent* const startContent = startRef.GetChildAtOffset();
-    nsIContent* const endContent = endRef.GetChildAtOffset();
+    nsIContent* startContent = startRef.GetChildAtOffset();
+    nsIContent* endContent = endRef.GetChildAtOffset();
     if (startContent && endContent &&
         startContent->GetNextSibling() == endContent) {
       if (!aTagName) {
@@ -3217,9 +3215,8 @@ already_AddRefed<Element> HTMLEditor::GetSelectedElement(const nsAtom* aTagName,
       }
       
       if (aTagName == startContent->NodeInfo()->NameAtom() ||
-          (isLinkTag && HTMLEditUtils::IsHyperlinkElement(*startContent)) ||
-          (isNamedAnchorTag &&
-           HTMLEditUtils::IsNamedAnchorElement(*startContent))) {
+          (isLinkTag && HTMLEditUtils::IsLink(startContent)) ||
+          (isNamedAnchorTag && HTMLEditUtils::IsNamedAnchor(startContent))) {
         MOZ_ASSERT(startContent->IsElement());
         return do_AddRef(startContent->AsElement());
       }
@@ -3316,12 +3313,11 @@ already_AddRefed<Element> HTMLEditor::GetSelectedElement(const nsAtom* aTagName,
       continue;
     }
 
-    if (isLinkTag && HTMLEditUtils::IsHyperlinkElement(*lastElementInRange)) {
+    if (isLinkTag && HTMLEditUtils::IsLink(lastElementInRange)) {
       continue;
     }
 
-    if (isNamedAnchorTag &&
-        HTMLEditUtils::IsNamedAnchorElement(*lastElementInRange)) {
+    if (isNamedAnchorTag && HTMLEditUtils::IsNamedAnchor(lastElementInRange)) {
       continue;
     }
 
@@ -4333,7 +4329,7 @@ nsresult HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak(
             *aNextOrAfterModifiedPoint.ContainerAs<nsIContent>(),
             HTMLEditUtils::ClosestEditableBlockElement,
             BlockInlineCheck::UseComputedDisplayStyle);
-    if (blockElement && HTMLEditUtils::IsMailCiteElement(*blockElement) &&
+    if (blockElement && HTMLEditUtils::IsMailCite(*blockElement) &&
         HTMLEditUtils::IsInlineContent(*blockElement,
                                        BlockInlineCheck::UseHTMLDefaultStyle)) {
       return NS_OK;
@@ -4785,7 +4781,7 @@ bool HTMLEditor::SetCaretInTableCell(Element* aElement) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   if (!aElement || !aElement->IsHTMLElement() ||
-      !HTMLEditUtils::IsAnyTableElementExceptColumnElement(*aElement)) {
+      !HTMLEditUtils::IsAnyTableElement(aElement)) {
     return false;
   }
   const RefPtr<Element> editingHost = ComputeEditingHost();
@@ -6683,7 +6679,7 @@ HTMLEditor::CopyLastEditableChildStylesWithTransaction(
   for (RefPtr<Element> elementInPreviousBlock = deepestVisibleEditableElement;
        elementInPreviousBlock && elementInPreviousBlock != &aPreviousBlock;
        elementInPreviousBlock = elementInPreviousBlock->GetParentElement()) {
-    if (!HTMLEditUtils::IsInlineStyleElement(*elementInPreviousBlock) &&
+    if (!HTMLEditUtils::IsInlineStyle(elementInPreviousBlock) &&
         !elementInPreviousBlock->IsHTMLElement(nsGkAtoms::span)) {
       continue;
     }

@@ -804,7 +804,7 @@ nsresult HTMLEditor::SetPositionToStatic(Element& aElement) {
       "CSSEditUtils::RemoveCSSPropertyWithTransaction(nsGkAtoms::z_index) "
       "failed, but ignored");
 
-  if (!HTMLEditUtils::IsImageElement(*styledElement)) {
+  if (!HTMLEditUtils::IsImage(styledElement)) {
     
     
     rv = CSSEditUtils::RemoveCSSPropertyWithTransaction(

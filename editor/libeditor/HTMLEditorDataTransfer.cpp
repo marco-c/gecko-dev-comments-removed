@@ -501,8 +501,7 @@ HTMLEditor::HTMLWithContextInserter::GetNewCaretPointAfterInsertingHTML(
 
   
   nsIContent* containerContent = nullptr;
-  if (!aLastInsertedPoint.GetChild() ||
-      !aLastInsertedPoint.GetChild()->IsHTMLElement(nsGkAtoms::table)) {
+  if (!HTMLEditUtils::IsTable(aLastInsertedPoint.GetChild())) {
     containerContent = HTMLEditUtils::GetLastLeafContent(
         *aLastInsertedPoint.GetChild(), {LeafNodeType::OnlyEditableLeafNode},
         BlockInlineCheck::Unused,
@@ -514,7 +513,7 @@ HTMLEditor::HTMLWithContextInserter::GetNewCaretPointAfterInsertingHTML(
            maybeTableElement &&
            maybeTableElement != aLastInsertedPoint.GetChild();
            maybeTableElement = maybeTableElement->GetParentElement()) {
-        if (maybeTableElement->IsHTMLElement(nsGkAtoms::table)) {
+        if (HTMLEditUtils::IsTable(maybeTableElement)) {
           mostDistantInclusiveAncestorTableElement = maybeTableElement;
         }
       }
@@ -535,7 +534,7 @@ HTMLEditor::HTMLWithContextInserter::GetNewCaretPointAfterInsertingHTML(
   
   if (containerContent->IsText() ||
       (HTMLEditUtils::IsContainerNode(*containerContent) &&
-       !containerContent->IsHTMLElement(nsGkAtoms::table))) {
+       !HTMLEditUtils::IsTable(containerContent))) {
     pointToPutCaret.SetToEndOf(containerContent);
   }
   
@@ -710,8 +709,7 @@ Result<EditActionResult, nsresult> HTMLEditor::HTMLWithContextInserter::Run(
     
     
     
-    if (!HTMLEditUtils::IsAnyTableElementExceptColumnElement(
-            *arrayOfTopMostChildContents[0])) {
+    if (!HTMLEditUtils::IsAnyTableElement(arrayOfTopMostChildContents[0])) {
       cellSelectionMode = false;
     }
   }
@@ -957,8 +955,7 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
 
   EditorDOMPoint lastInsertedPoint;
   nsCOMPtr<nsIContent> insertedContextParentContent;
-  for (const OwningNonNull<nsIContent>& content :
-       aArrayOfTopMostChildContents) {
+  for (OwningNonNull<nsIContent>& content : aArrayOfTopMostChildContents) {
     if (NS_WARN_IF(content == aFragmentAsNode) ||
         NS_WARN_IF(content->IsHTMLElement(nsGkAtoms::body))) {
       return Err(NS_ERROR_FAILURE);
@@ -982,11 +979,10 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
     
     
     bool inserted = false;
-    if (HTMLEditUtils::IsTableRowElement(*content) &&
-        HTMLEditUtils::IsTableRowElement(
-            pointToInsert.GetContainerAs<nsIContent>()) &&
-        (content->IsHTMLElement(nsGkAtoms::table) ||
-         pointToInsert.IsContainerHTMLElement(nsGkAtoms::table))) {
+    if (HTMLEditUtils::IsTableRow(content) &&
+        HTMLEditUtils::IsTableRow(pointToInsert.GetContainer()) &&
+        (HTMLEditUtils::IsTable(content) ||
+         HTMLEditUtils::IsTable(pointToInsert.GetContainer()))) {
       
       AutoTArray<OwningNonNull<nsIContent>, 24> children;
       HTMLEditUtils::CollectAllChildren(*content, children);
@@ -1041,24 +1037,21 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
     
     
     
-    else if (HTMLEditUtils::IsListElement(*content) &&
-             (HTMLEditUtils::IsListElement(
-                  pointToInsert.GetContainerAs<nsIContent>()) ||
-              HTMLEditUtils::IsListItemElement(
-                  pointToInsert.GetContainerAs<nsIContent>()))) {
+    else if (HTMLEditUtils::IsAnyListElement(content) &&
+             (HTMLEditUtils::IsAnyListElement(pointToInsert.GetContainer()) ||
+              HTMLEditUtils::IsListItem(pointToInsert.GetContainer()))) {
       AutoTArray<OwningNonNull<nsIContent>, 24> children;
       HTMLEditUtils::CollectAllChildren(*content, children);
       EditorDOMPoint pointToPutCaret;
       for (const OwningNonNull<nsIContent>& child : children) {
-        if (HTMLEditUtils::IsListItemElement(*child) ||
-            HTMLEditUtils::IsListElement(*child)) {
+        if (HTMLEditUtils::IsListItem(child) ||
+            HTMLEditUtils::IsAnyListElement(child)) {
           
           
           
           
           
-          if (HTMLEditUtils::IsListItemElement(
-                  pointToInsert.GetContainerAs<nsIContent>()) &&
+          if (HTMLEditUtils::IsListItem(pointToInsert.GetContainer()) &&
               HTMLEditUtils::IsEmptyNode(
                   *pointToInsert.GetContainer(),
                   {EmptyCheckOption::TreatNonEditableContentAsInvisible})) {
@@ -1157,9 +1150,8 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
     }
     
     
-    else if (maybeNonEditableBlockElement &&
-             maybeNonEditableBlockElement->IsHTMLElement(nsGkAtoms::pre) &&
-             content->IsHTMLElement(nsGkAtoms::pre)) {
+    else if (HTMLEditUtils::IsPre(maybeNonEditableBlockElement) &&
+             HTMLEditUtils::IsPre(content)) {
       
       AutoTArray<OwningNonNull<nsIContent>, 24> children;
       HTMLEditUtils::CollectAllChildren(*content, children);
@@ -1326,7 +1318,7 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
 
 nsresult HTMLEditor::HTMLWithContextInserter::MoveCaretOutsideOfLink(
     Element& aLinkElement, const EditorDOMPoint& aPointToPutCaret) {
-  MOZ_ASSERT(HTMLEditUtils::IsHyperlinkElement(aLinkElement));
+  MOZ_ASSERT(HTMLEditUtils::IsLink(&aLinkElement));
 
   
   
@@ -1375,8 +1367,7 @@ Element* HTMLEditor::GetLinkElement(nsINode* aNode) {
   }
   nsINode* node = aNode;
   while (node) {
-    if (node->IsElement() &&
-        HTMLEditUtils::IsHyperlinkElement(*node->AsElement())) {
+    if (HTMLEditUtils::IsLink(node)) {
       return node->AsElement();
     }
     node = node->GetParentNode();
@@ -1394,7 +1385,7 @@ nsresult HTMLEditor::HTMLWithContextInserter::FragmentFromPasteCreator::
     
     if (parent) {
       if (aNodesToRemove == NodesToRemove::eAll ||
-          HTMLEditUtils::IsListElement(nsIContent::FromNode(parent))) {
+          HTMLEditUtils::IsAnyListElement(parent)) {
         ErrorResult error;
         parent->RemoveChild(aNode, error);
         NS_WARNING_ASSERTION(!error.Failed(), "nsINode::RemoveChild() failed");
@@ -3765,7 +3756,7 @@ void HTMLEditor::HTMLWithContextInserter::FragmentFromPasteCreator::
   nsIContent* child = aNode.GetFirstChild();
   while (child) {
     bool isEmptyNodeShouldNotInserted = false;
-    if (HTMLEditUtils::IsListElement(*child)) {
+    if (HTMLEditUtils::IsAnyListElement(child)) {
       
       
       
@@ -4281,8 +4272,8 @@ void HTMLEditor::AutoHTMLFragmentBoundariesFixer::
         nsTArray<OwningNonNull<Element>>& aOutArrayOfListAndTableElements) {
   for (Element* element = aContent.GetAsElementOrParentElement(); element;
        element = element->GetParentElement()) {
-    if (HTMLEditUtils::IsListElement(*element) ||
-        element->IsHTMLElement(nsGkAtoms::table)) {
+    if (HTMLEditUtils::IsAnyListElement(element) ||
+        HTMLEditUtils::IsTable(element)) {
       aOutArrayOfListAndTableElements.AppendElement(*element);
     }
   }
@@ -4295,10 +4286,8 @@ Element* HTMLEditor::AutoHTMLFragmentBoundariesFixer::
         const nsTArray<OwningNonNull<Element>>&
             aInclusiveAncestorsTableOrListElements) {
   Element* lastFoundAncestorListOrTableElement = nullptr;
-  for (const OwningNonNull<nsIContent>& content :
-       aArrayOfTopMostChildContents) {
-    if (HTMLEditUtils::IsAnyTableElementExceptTableElementAndColumElement(
-            content)) {
+  for (auto& content : aArrayOfTopMostChildContents) {
+    if (HTMLEditUtils::IsAnyTableElementButNotTable(content)) {
       Element* tableElement =
           HTMLEditUtils::GetClosestAncestorTableElement(*content);
       if (!tableElement) {
@@ -4324,7 +4313,7 @@ Element* HTMLEditor::AutoHTMLFragmentBoundariesFixer::
       continue;
     }
 
-    if (!HTMLEditUtils::IsListItemElement(*content)) {
+    if (!HTMLEditUtils::IsListItem(content)) {
       continue;
     }
     Element* listElement =
@@ -4370,7 +4359,7 @@ HTMLEditor::AutoHTMLFragmentBoundariesFixer::FindReplaceableTableElement(
   for (Element* element =
            aContentMaybeInTableElement.GetAsElementOrParentElement();
        element; element = element->GetParentElement()) {
-    if (!HTMLEditUtils::IsAnyTableElementExceptColumnElement(*element) ||
+    if (!HTMLEditUtils::IsAnyTableElement(element) ||
         element->IsHTMLElement(nsGkAtoms::table)) {
       
       
@@ -4399,7 +4388,7 @@ HTMLEditor::AutoHTMLFragmentBoundariesFixer::FindReplaceableTableElement(
 
 bool HTMLEditor::AutoHTMLFragmentBoundariesFixer::IsReplaceableListElement(
     Element& aListElement, nsIContent& aContentMaybeInListElement) const {
-  MOZ_ASSERT(HTMLEditUtils::IsListElement(aListElement));
+  MOZ_ASSERT(HTMLEditUtils::IsAnyListElement(&aListElement));
   
   
   
@@ -4409,7 +4398,7 @@ bool HTMLEditor::AutoHTMLFragmentBoundariesFixer::IsReplaceableListElement(
   for (Element* element =
            aContentMaybeInListElement.GetAsElementOrParentElement();
        element; element = element->GetParentElement()) {
-    if (!HTMLEditUtils::IsListItemElement(*element)) {
+    if (!HTMLEditUtils::IsListItem(element)) {
       
       
       
@@ -4474,7 +4463,7 @@ void HTMLEditor::AutoHTMLFragmentBoundariesFixer::
 
   
   Element* replaceElement;
-  if (HTMLEditUtils::IsListElement(*listOrTableElement)) {
+  if (HTMLEditUtils::IsAnyListElement(listOrTableElement)) {
     if (!IsReplaceableListElement(*listOrTableElement,
                                   firstOrLastChildContent)) {
       return;

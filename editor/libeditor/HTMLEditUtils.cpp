@@ -471,8 +471,12 @@ bool HTMLEditUtils::IsVisibleElementEvenIfLeafNode(const nsIContent& aContent) {
   return false;
 }
 
-bool HTMLEditUtils::IsInlineStyleElement(const nsIContent& aContent) {
-  return aContent.IsAnyOfHTMLElements(
+
+
+
+bool HTMLEditUtils::IsInlineStyle(nsINode* aNode) {
+  MOZ_ASSERT(aNode);
+  return aNode->IsAnyOfHTMLElements(
       nsGkAtoms::b, nsGkAtoms::i, nsGkAtoms::u, nsGkAtoms::tt, nsGkAtoms::s,
       nsGkAtoms::strike, nsGkAtoms::big, nsGkAtoms::small, nsGkAtoms::sub,
       nsGkAtoms::sup, nsGkAtoms::font);
@@ -526,88 +530,150 @@ bool HTMLEditUtils::IsRemovableInlineStyleElement(Element& aElement) {
   return tagName.LowerCaseEqualsASCII("blink");
 }
 
-bool HTMLEditUtils::IsOutdentable(const nsIContent& aContent) {
-  return aContent.IsAnyOfHTMLElements(
-      nsGkAtoms::ul, nsGkAtoms::ol, nsGkAtoms::dl, nsGkAtoms::li, nsGkAtoms::dd,
-      nsGkAtoms::dt, nsGkAtoms::blockquote);
+
+
+
+
+bool HTMLEditUtils::IsNodeThatCanOutdent(nsINode* aNode) {
+  MOZ_ASSERT(aNode);
+  return aNode->IsAnyOfHTMLElements(nsGkAtoms::ul, nsGkAtoms::ol, nsGkAtoms::dl,
+                                    nsGkAtoms::li, nsGkAtoms::dd, nsGkAtoms::dt,
+                                    nsGkAtoms::blockquote);
 }
 
-bool HTMLEditUtils::IsHeadingElement(const nsIContent& aContent) {
-  return aContent.IsAnyOfHTMLElements(nsGkAtoms::h1, nsGkAtoms::h2,
-                                      nsGkAtoms::h3, nsGkAtoms::h4,
-                                      nsGkAtoms::h5, nsGkAtoms::h6);
+
+
+
+bool HTMLEditUtils::IsHeader(nsINode& aNode) {
+  return aNode.IsAnyOfHTMLElements(nsGkAtoms::h1, nsGkAtoms::h2, nsGkAtoms::h3,
+                                   nsGkAtoms::h4, nsGkAtoms::h5, nsGkAtoms::h6);
 }
 
-bool HTMLEditUtils::IsListItemElement(const nsIContent& aContent) {
-  return aContent.IsAnyOfHTMLElements(nsGkAtoms::li, nsGkAtoms::dd,
-                                      nsGkAtoms::dt);
+
+
+
+bool HTMLEditUtils::IsListItem(const nsINode* aNode) {
+  MOZ_ASSERT(aNode);
+  return aNode->IsAnyOfHTMLElements(nsGkAtoms::li, nsGkAtoms::dd,
+                                    nsGkAtoms::dt);
 }
 
-bool HTMLEditUtils::IsAnyTableElementExceptColumnElement(
-    const nsIContent& aContent) {
-  return aContent.IsAnyOfHTMLElements(
+
+
+
+bool HTMLEditUtils::IsAnyTableElement(const nsINode* aNode) {
+  MOZ_ASSERT(aNode);
+  return aNode->IsAnyOfHTMLElements(
       nsGkAtoms::table, nsGkAtoms::tr, nsGkAtoms::td, nsGkAtoms::th,
       nsGkAtoms::thead, nsGkAtoms::tfoot, nsGkAtoms::tbody, nsGkAtoms::caption);
 }
 
-bool HTMLEditUtils::IsAnyTableElementExceptTableElementAndColumElement(
-    const nsIContent& aContent) {
-  return aContent.IsAnyOfHTMLElements(
-      nsGkAtoms::tr, nsGkAtoms::td, nsGkAtoms::th, nsGkAtoms::thead,
-      nsGkAtoms::tfoot, nsGkAtoms::tbody, nsGkAtoms::caption);
+
+
+
+
+bool HTMLEditUtils::IsAnyTableElementButNotTable(const nsINode* aNode) {
+  MOZ_ASSERT(aNode);
+  return aNode->IsAnyOfHTMLElements(nsGkAtoms::tr, nsGkAtoms::td, nsGkAtoms::th,
+                                    nsGkAtoms::thead, nsGkAtoms::tfoot,
+                                    nsGkAtoms::tbody, nsGkAtoms::caption);
 }
 
-bool HTMLEditUtils::IsTableRowElement(const nsIContent& aContent) {
-  return aContent.IsHTMLElement(nsGkAtoms::tr);
+
+
+
+bool HTMLEditUtils::IsTable(const nsINode* aNode) {
+  return aNode && aNode->IsHTMLElement(nsGkAtoms::table);
 }
 
-bool HTMLEditUtils::IsTableCellElement(const nsIContent& aContent) {
-  return aContent.IsAnyOfHTMLElements(nsGkAtoms::td, nsGkAtoms::th);
+
+
+
+bool HTMLEditUtils::IsTableRow(nsINode* aNode) {
+  return aNode && aNode->IsHTMLElement(nsGkAtoms::tr);
 }
 
-bool HTMLEditUtils::IsTableCellOrCaptionElement(const nsIContent& aContent) {
-  return aContent.IsAnyOfHTMLElements(nsGkAtoms::td, nsGkAtoms::th,
-                                      nsGkAtoms::caption);
+
+
+
+bool HTMLEditUtils::IsTableCell(const nsINode* aNode) {
+  MOZ_ASSERT(aNode);
+  return aNode->IsAnyOfHTMLElements(nsGkAtoms::td, nsGkAtoms::th);
 }
 
-bool HTMLEditUtils::IsListElement(const nsIContent& aContent) {
-  return aContent.IsAnyOfHTMLElements(nsGkAtoms::ul, nsGkAtoms::ol,
-                                      nsGkAtoms::dl);
+
+
+
+bool HTMLEditUtils::IsTableCellOrCaption(nsINode& aNode) {
+  return aNode.IsAnyOfHTMLElements(nsGkAtoms::td, nsGkAtoms::th,
+                                   nsGkAtoms::caption);
 }
 
-bool HTMLEditUtils::IsImageElement(const nsIContent& aContent) {
-  
-  return aContent.IsHTMLElement(nsGkAtoms::img);
+
+
+
+bool HTMLEditUtils::IsAnyListElement(const nsINode* aNode) {
+  MOZ_ASSERT(aNode);
+  return aNode->IsAnyOfHTMLElements(nsGkAtoms::ul, nsGkAtoms::ol,
+                                    nsGkAtoms::dl);
 }
 
-bool HTMLEditUtils::IsHyperlinkElement(const nsIContent& aContent) {
-  const dom::HTMLAnchorElement* const anchor =
-      dom::HTMLAnchorElement::FromNode(aContent);
+
+
+
+bool HTMLEditUtils::IsPre(const nsINode* aNode) {
+  return aNode && aNode->IsHTMLElement(nsGkAtoms::pre);
+}
+
+
+
+
+bool HTMLEditUtils::IsImage(nsINode* aNode) {
+  return aNode && aNode->IsHTMLElement(nsGkAtoms::img);
+}
+
+bool HTMLEditUtils::IsLink(const nsINode* aNode) {
+  MOZ_ASSERT(aNode);
+
+  if (!aNode->IsContent()) {
+    return false;
+  }
+
+  RefPtr<const dom::HTMLAnchorElement> anchor =
+      dom::HTMLAnchorElement::FromNodeOrNull(aNode->AsContent());
   if (!anchor) {
     return false;
   }
-  
+
   nsAutoCString tmpText;
   anchor->GetHref(tmpText);
   return !tmpText.IsEmpty();
 }
 
-bool HTMLEditUtils::IsNamedAnchorElement(const nsIContent& aContent) {
-  const dom::HTMLAnchorElement* const anchor =
-      dom::HTMLAnchorElement::FromNode(aContent);
-  if (!anchor) {
+bool HTMLEditUtils::IsNamedAnchor(const nsINode* aNode) {
+  MOZ_ASSERT(aNode);
+  if (!aNode->IsHTMLElement(nsGkAtoms::a)) {
     return false;
   }
-  return anchor->HasName();
+
+  nsAutoString text;
+  return aNode->AsElement()->GetAttr(nsGkAtoms::name, text) && !text.IsEmpty();
 }
 
-bool HTMLEditUtils::IsMozDivElement(const nsIContent& aContent) {
-  return aContent.IsHTMLElement(nsGkAtoms::div) &&
-         aContent.AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
-                                           u"_moz"_ns, eIgnoreCase);
+
+
+
+bool HTMLEditUtils::IsMozDiv(const nsINode* aNode) {
+  MOZ_ASSERT(aNode);
+  return aNode->IsHTMLElement(nsGkAtoms::div) &&
+         aNode->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
+                                         u"_moz"_ns, eIgnoreCase);
 }
 
-bool HTMLEditUtils::IsMailCiteElement(const Element& aElement) {
+
+
+
+bool HTMLEditUtils::IsMailCite(const Element& aElement) {
   
   if (aElement.AttrValueIs(kNameSpaceID_None, nsGkAtoms::type, u"cite"_ns,
                            eIgnoreCase)) {
@@ -623,15 +689,19 @@ bool HTMLEditUtils::IsMailCiteElement(const Element& aElement) {
   return false;
 }
 
-bool HTMLEditUtils::IsFormWidgetElement(const nsIContent& aContent) {
-  return aContent.IsAnyOfHTMLElements(nsGkAtoms::textarea, nsGkAtoms::select,
-                                      nsGkAtoms::button, nsGkAtoms::output,
-                                      nsGkAtoms::progress, nsGkAtoms::meter,
-                                      nsGkAtoms::input);
+
+
+
+bool HTMLEditUtils::IsFormWidget(const nsINode* aNode) {
+  MOZ_ASSERT(aNode);
+  return aNode->IsAnyOfHTMLElements(nsGkAtoms::textarea, nsGkAtoms::select,
+                                    nsGkAtoms::button, nsGkAtoms::output,
+                                    nsGkAtoms::progress, nsGkAtoms::meter,
+                                    nsGkAtoms::input);
 }
 
-bool HTMLEditUtils::IsAlignAttrSupported(const nsIContent& aContent) {
-  return aContent.IsAnyOfHTMLElements(
+bool HTMLEditUtils::SupportsAlignAttr(nsINode& aNode) {
+  return aNode.IsAnyOfHTMLElements(
       nsGkAtoms::hr, nsGkAtoms::table, nsGkAtoms::tbody, nsGkAtoms::tfoot,
       nsGkAtoms::thead, nsGkAtoms::tr, nsGkAtoms::td, nsGkAtoms::th,
       nsGkAtoms::div, nsGkAtoms::p, nsGkAtoms::h1, nsGkAtoms::h2, nsGkAtoms::h3,
@@ -1361,10 +1431,10 @@ bool HTMLEditUtils::IsEmptyNode(nsPresContext* aPresContext,
       !IsContainerNode(*aNode.AsContent()) ||
       
       
-      IsNamedAnchorElement(*aNode.AsContent()) ||
+      IsNamedAnchor(&aNode) ||
       
       
-      IsFormWidgetElement(*aNode.AsContent())) {
+      IsFormWidget(&aNode)) {
     return false;
   }
 
@@ -1383,13 +1453,11 @@ bool HTMLEditUtils::IsEmptyNode(nsPresContext* aPresContext,
     
     
     if (MOZ_UNLIKELY(!elementStyle)) {
-      return {IsListItemElement(*aNode.AsContent()),
-              IsTableCellElement(*aNode.AsContent()), false};
+      return {IsListItem(&aNode), IsTableCell(&aNode), false};
     }
     const nsStyleDisplay* styleDisplay = elementStyle->StyleDisplay();
     if (NS_WARN_IF(!styleDisplay)) {
-      return {IsListItemElement(*aNode.AsContent()),
-              IsTableCellElement(*aNode.AsContent()), false};
+      return {IsListItem(&aNode), IsTableCell(&aNode), false};
     }
     if (styleDisplay->mDisplay != StyleDisplay::None &&
         styleDisplay->HasAppearance()) {
@@ -1873,17 +1941,16 @@ bool HTMLEditUtils::IsContainerNode(nsHTMLTag aTagId) {
   return kElements[aTagId - 1].mIsContainer;
 }
 
-bool HTMLEditUtils::IsNonListSingleLineContainer(const nsIContent& aContent) {
-  return aContent.IsAnyOfHTMLElements(
+bool HTMLEditUtils::IsNonListSingleLineContainer(const nsINode& aNode) {
+  return aNode.IsAnyOfHTMLElements(
       nsGkAtoms::address, nsGkAtoms::div, nsGkAtoms::h1, nsGkAtoms::h2,
       nsGkAtoms::h3, nsGkAtoms::h4, nsGkAtoms::h5, nsGkAtoms::h6,
       nsGkAtoms::listing, nsGkAtoms::p, nsGkAtoms::pre, nsGkAtoms::xmp);
 }
 
-bool HTMLEditUtils::IsSingleLineContainer(const nsIContent& aContent) {
-  return IsNonListSingleLineContainer(aContent) ||
-         aContent.IsAnyOfHTMLElements(nsGkAtoms::li, nsGkAtoms::dt,
-                                      nsGkAtoms::dd);
+bool HTMLEditUtils::IsSingleLineContainer(const nsINode& aNode) {
+  return IsNonListSingleLineContainer(aNode) ||
+         aNode.IsAnyOfHTMLElements(nsGkAtoms::li, nsGkAtoms::dt, nsGkAtoms::dd);
 }
 
 
@@ -2099,8 +2166,8 @@ EditorDOMPointType HTMLEditUtils::GetPreviousEditablePoint(
     InvisibleWhiteSpaces aInvisibleWhiteSpaces,
     TableBoundary aHowToTreatTableBoundary) {
   MOZ_ASSERT(HTMLEditUtils::IsSimplyEditableNode(aContent));
-  NS_ASSERTION(!HTMLEditUtils::IsAnyTableElementExceptColumnElement(aContent) ||
-                   HTMLEditUtils::IsTableCellOrCaptionElement(aContent),
+  NS_ASSERTION(!HTMLEditUtils::IsAnyTableElement(&aContent) ||
+                   HTMLEditUtils::IsTableCellOrCaption(aContent),
                "HTMLEditUtils::GetPreviousEditablePoint() may return a point "
                "between table structure elements");
 
@@ -2115,7 +2182,7 @@ EditorDOMPointType HTMLEditUtils::GetPreviousEditablePoint(
       return EditorDOMPointType();
     }
     nsIContent* inclusiveAncestor = &aContent;
-    for (Element* const parentElement : aContent.AncestorsOfType<Element>()) {
+    for (Element* parentElement : aContent.AncestorsOfType<Element>()) {
       if (parentElement == aAncestorLimiter ||
           !HTMLEditUtils::IsSimplyEditableNode(*parentElement) ||
           !HTMLEditUtils::CanCrossContentBoundary(*parentElement,
@@ -2127,9 +2194,8 @@ EditorDOMPointType HTMLEditUtils::GetPreviousEditablePoint(
 
       
       
-      if (!HTMLEditUtils::IsAnyTableElementExceptColumnElement(
-              *parentElement) ||
-          HTMLEditUtils::IsTableCellOrCaptionElement(*parentElement)) {
+      if (!HTMLEditUtils::IsAnyTableElement(parentElement) ||
+          HTMLEditUtils::IsTableCellOrCaption(*parentElement)) {
         inclusiveAncestor = parentElement;
       }
 
@@ -2213,8 +2279,8 @@ EditorDOMPointType HTMLEditUtils::GetNextEditablePoint(
     InvisibleWhiteSpaces aInvisibleWhiteSpaces,
     TableBoundary aHowToTreatTableBoundary) {
   MOZ_ASSERT(HTMLEditUtils::IsSimplyEditableNode(aContent));
-  NS_ASSERTION(!HTMLEditUtils::IsAnyTableElementExceptColumnElement(aContent) ||
-                   HTMLEditUtils::IsTableCellOrCaptionElement(aContent),
+  NS_ASSERTION(!HTMLEditUtils::IsAnyTableElement(&aContent) ||
+                   HTMLEditUtils::IsTableCellOrCaption(aContent),
                "HTMLEditUtils::GetPreviousEditablePoint() may return a point "
                "between table structure elements");
 
@@ -2229,7 +2295,7 @@ EditorDOMPointType HTMLEditUtils::GetNextEditablePoint(
       return EditorDOMPointType();
     }
     nsIContent* inclusiveAncestor = &aContent;
-    for (Element* const parentElement : aContent.AncestorsOfType<Element>()) {
+    for (Element* parentElement : aContent.AncestorsOfType<Element>()) {
       if (parentElement == aAncestorLimiter ||
           !HTMLEditUtils::IsSimplyEditableNode(*parentElement) ||
           !HTMLEditUtils::CanCrossContentBoundary(*parentElement,
@@ -2241,9 +2307,8 @@ EditorDOMPointType HTMLEditUtils::GetNextEditablePoint(
 
       
       
-      if (!HTMLEditUtils::IsAnyTableElementExceptColumnElement(
-              *parentElement) ||
-          HTMLEditUtils::IsTableCellOrCaptionElement(*parentElement)) {
+      if (!HTMLEditUtils::IsAnyTableElement(parentElement) ||
+          HTMLEditUtils::IsTableCellOrCaption(*parentElement)) {
         inclusiveAncestor = parentElement;
       }
 
@@ -2573,8 +2638,8 @@ Element* HTMLEditUtils::GetInclusiveAncestorElement(
 
 Element* HTMLEditUtils::GetClosestAncestorAnyListElement(
     const nsIContent& aContent) {
-  for (Element* const element : aContent.AncestorsOfType<Element>()) {
-    if (HTMLEditUtils::IsListElement(*element)) {
+  for (Element* element : aContent.AncestorsOfType<Element>()) {
+    if (HTMLEditUtils::IsAnyListElement(element)) {
       return element;
     }
   }
@@ -2584,8 +2649,8 @@ Element* HTMLEditUtils::GetClosestAncestorAnyListElement(
 
 Element* HTMLEditUtils::GetClosestInclusiveAncestorAnyListElement(
     const nsIContent& aContent) {
-  for (Element* const element : aContent.InclusiveAncestorsOfType<Element>()) {
-    if (HTMLEditUtils::IsListElement(*element)) {
+  for (Element* element : aContent.InclusiveAncestorsOfType<Element>()) {
+    if (HTMLEditUtils::IsAnyListElement(element)) {
       return element;
     }
   }
@@ -2935,10 +3000,10 @@ size_t HTMLEditUtils::CollectChildren(
            GetFirstChild(aNode, {WalkTreeOption::IgnoreNonEditableNode});
        content; content = content->GetNextSibling()) {
     if ((aOptions.contains(CollectChildrenOption::CollectListChildren) &&
-         (HTMLEditUtils::IsListElement(*content) ||
-          HTMLEditUtils::IsListItemElement(*content))) ||
+         (HTMLEditUtils::IsAnyListElement(content) ||
+          HTMLEditUtils::IsListItem(content))) ||
         (aOptions.contains(CollectChildrenOption::CollectTableChildren) &&
-         HTMLEditUtils::IsAnyTableElementExceptColumnElement(*content))) {
+         HTMLEditUtils::IsAnyTableElement(content))) {
       numberOfFoundChildren += HTMLEditUtils::CollectChildren(
           *content, aOutArrayOfContents,
           aIndexToInsertChildren + numberOfFoundChildren, aOptions);

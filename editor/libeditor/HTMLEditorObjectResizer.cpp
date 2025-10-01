@@ -122,7 +122,7 @@ ManualNACPtr HTMLEditor::CreateShadow(nsIContent& aParentContent,
                                       Element& aOriginalObject) {
   
   RefPtr<nsAtom> name;
-  if (HTMLEditUtils::IsImageElement(aOriginalObject)) {
+  if (HTMLEditUtils::IsImage(&aOriginalObject)) {
     name = nsGkAtoms::img;
   } else {
     name = nsGkAtoms::span;
@@ -658,8 +658,7 @@ nsresult HTMLEditor::StartResizing(Element& aHandleElement) {
   }
 
   
-  const bool preserveRatio =
-      mResizedObject && HTMLEditUtils::IsImageElement(*mResizedObject);
+  const bool preserveRatio = HTMLEditUtils::IsImage(mResizedObject);
 
   
   
@@ -987,7 +986,7 @@ nsresult HTMLEditor::SetShadowPosition(Element& aShadowElement,
     }
   }
 
-  if (!HTMLEditUtils::IsImageElement(aElement)) {
+  if (!HTMLEditUtils::IsImage(&aElement)) {
     return NS_OK;
   }
 

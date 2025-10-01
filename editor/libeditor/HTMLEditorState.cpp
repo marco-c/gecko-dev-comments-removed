@@ -415,7 +415,7 @@ AlignStateAtSelection::AlignStateAtSelection(HTMLEditor& aHTMLEditor,
       }
     }
 
-    if (!HTMLEditUtils::IsAlignAttrSupported(*containerElement)) {
+    if (!HTMLEditUtils::SupportsAlignAttr(*containerElement)) {
       continue;
     }
 
@@ -682,7 +682,7 @@ nsresult ParagraphStateAtSelection::CollectEditableFormatNodesInSelection(
 
   
   for (size_t index : Reversed(IntegerRange(aArrayOfContents.Length()))) {
-    const OwningNonNull<nsIContent> content = aArrayOfContents[index];
+    OwningNonNull<nsIContent> content = aArrayOfContents[index];
 
     
     if (!EditorUtils::IsEditableContent(content, EditorType::HTML)) {
@@ -693,9 +693,9 @@ nsresult ParagraphStateAtSelection::CollectEditableFormatNodesInSelection(
     
     
     
-    if (HTMLEditUtils::IsAnyTableElementExceptColumnElement(content) ||
-        HTMLEditUtils::IsListElement(*content) ||
-        HTMLEditUtils::IsListItemElement(*content)) {
+    if (HTMLEditUtils::IsAnyTableElement(content) ||
+        HTMLEditUtils::IsAnyListElement(content) ||
+        HTMLEditUtils::IsListItem(content)) {
       aArrayOfContents.RemoveElementAt(index);
       HTMLEditUtils::CollectChildren(
           content, aArrayOfContents, index,
