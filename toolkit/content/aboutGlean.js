@@ -216,6 +216,28 @@ function handleRedesign() {
     document
       .getElementById("enable-new-features")
       .setAttribute("data-l10n-id", "about-glean-disable-new-features-button");
+
+    
+
+
+
+
+
+    let inputTimeout = undefined;
+    document.getElementById("filter-metrics").addEventListener("input", e => {
+      clearTimeout(inputTimeout);
+      inputTimeout = setTimeout(() => {
+        updateFilteredMetricData(e.target.value ?? "");
+      }, 200);
+    });
+
+    
+    document.getElementById("load-all").addEventListener("click", () => {
+      MAPPED_METRIC_DATA.forEach(datum => {
+        updateDatum(datum);
+      });
+      updateTable();
+    });
   } else {
     document
       .getElementById("enable-new-features")
@@ -276,28 +298,6 @@ function onLoad() {
   handleRedesign();
 
   DOCUMENT_BODY_SEL = d3.select(document.body);
-
-  
-
-
-
-
-
-  let inputTimeout = undefined;
-  document.getElementById("filter-metrics").addEventListener("input", e => {
-    clearTimeout(inputTimeout);
-    inputTimeout = setTimeout(() => {
-      updateFilteredMetricData(e.target.value ?? "");
-    }, 200);
-  });
-
-  
-  document.getElementById("load-all").addEventListener("click", () => {
-    MAPPED_METRIC_DATA.forEach(datum => {
-      updateDatum(datum);
-    });
-    updateTable();
-  });
 
   document
     .getElementById("enable-new-features")
