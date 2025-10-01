@@ -249,7 +249,7 @@ class SimulatedClockWithFrames : public SimulatedClock {
       : SimulatedClock(0),
         stream_generator_(stream_generator),
         receiver_(receiver) {}
-  virtual ~SimulatedClockWithFrames() {}
+  ~SimulatedClockWithFrames() override {}
 
   
   
@@ -381,7 +381,7 @@ class VCMReceiverTimingTest : public ::testing::Test {
             std::unique_ptr<EventWrapper>(new FrameInjectEvent(&clock_, true)),
             field_trials_) {}
 
-  virtual void SetUp() {}
+  void SetUp() override {}
 
   FieldTrials field_trials_;
   SimulatedClockWithFrames clock_;

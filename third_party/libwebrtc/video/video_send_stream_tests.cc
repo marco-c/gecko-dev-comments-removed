@@ -862,7 +862,7 @@ class FlexfecObserver : public test::EndToEndTest {
     return SEND_PACKET;
   }
 
-  BuiltInNetworkBehaviorConfig GetSendTransportConfig() const {
+  BuiltInNetworkBehaviorConfig GetSendTransportConfig() const override {
     
     
     const int kNetworkDelayMs = 100;
@@ -872,7 +872,7 @@ class FlexfecObserver : public test::EndToEndTest {
     return config;
   }
 
-  BuiltInNetworkBehaviorConfig GetReceiveTransportConfig() const {
+  BuiltInNetworkBehaviorConfig GetReceiveTransportConfig() const override {
     
     
     BuiltInNetworkBehaviorConfig config;
@@ -1667,7 +1667,7 @@ TEST_F(VideoSendStreamTest, ChangingNetworkRoute) {
       extensions_.Register<TransportSequenceNumber>(kExtensionId);
     }
 
-    ~ChangingNetworkRouteTest() {
+    ~ChangingNetworkRouteTest() override {
       
       
       SendTask(task_queue_, [] {});
@@ -1786,7 +1786,7 @@ TEST_F(VideoSendStreamTest, DISABLED_RelayToDirectRoute) {
       task_queue_thread_.Detach();
     }
 
-    ~RelayToDirectRouteTest() {
+    ~RelayToDirectRouteTest() override {
       
       
       SendTask(task_queue_, [] {});
@@ -1957,7 +1957,7 @@ class MaxPaddingSetTest : public test::SendTest {
     task_queue_thread_.Detach();
   }
 
-  ~MaxPaddingSetTest() {
+  ~MaxPaddingSetTest() override {
     
     
     SendTask(task_queue_, [] {});

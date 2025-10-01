@@ -72,7 +72,7 @@ class PseudoTcpTestBase : public ::testing::Test,
     
     webrtc::SetRandomTestMode(true);
   }
-  ~PseudoTcpTestBase() {
+  ~PseudoTcpTestBase() override {
     
     webrtc::SetRandomTestMode(false);
   }
@@ -133,7 +133,7 @@ class PseudoTcpTestBase : public ::testing::Test,
     UpdateLocalClock();
   }
 
-  virtual void OnTcpOpen(PseudoTcp* tcp) {
+  void OnTcpOpen(PseudoTcp* tcp) override {
     
     
     RTC_LOG(LS_VERBOSE) << "Opened";
@@ -146,7 +146,7 @@ class PseudoTcpTestBase : public ::testing::Test,
   
   
   
-  virtual void OnTcpClosed(PseudoTcp* tcp, uint32_t error) {
+  void OnTcpClosed(PseudoTcp* tcp, uint32_t error) override {
     
     
     
@@ -156,9 +156,9 @@ class PseudoTcpTestBase : public ::testing::Test,
       have_disconnected_ = true;
     }
   }
-  virtual WriteResult TcpWritePacket(PseudoTcp* tcp,
-                                     const char* buffer,
-                                     size_t len) {
+  WriteResult TcpWritePacket(PseudoTcp* tcp,
+                             const char* buffer,
+                             size_t len) override {
     
     if (drop_next_packet_) {
       drop_next_packet_ = false;
@@ -278,7 +278,7 @@ class PseudoTcpTest : public PseudoTcpTestBase {
  private:
   
 
-  virtual void OnTcpReadable(PseudoTcp* tcp) {
+  void OnTcpReadable(PseudoTcp* tcp) override {
     
     if (tcp == &remote_) {
       ReadData();
@@ -293,7 +293,7 @@ class PseudoTcpTest : public PseudoTcpTestBase {
         OnTcpClosed(&remote_, 0);
     }
   }
-  virtual void OnTcpWriteable(PseudoTcp* tcp) {
+  void OnTcpWriteable(PseudoTcp* tcp) override {
     
     
     if (tcp == &local_) {
@@ -399,7 +399,7 @@ class PseudoTcpTestPingPong : public PseudoTcpTestBase {
  private:
   
 
-  virtual void OnTcpReadable(PseudoTcp* tcp) {
+  void OnTcpReadable(PseudoTcp* tcp) override {
     if (tcp != receiver_) {
       RTC_LOG_F(LS_ERROR) << "unexpected OnTcpReadable";
       return;
@@ -426,7 +426,7 @@ class PseudoTcpTestPingPong : public PseudoTcpTestBase {
       OnTcpWriteable(sender_);
     }
   }
-  virtual void OnTcpWriteable(PseudoTcp* tcp) {
+  void OnTcpWriteable(PseudoTcp* tcp) override {
     if (tcp != sender_)
       return;
     
@@ -545,9 +545,9 @@ class PseudoTcpTestReceiveWindow : public PseudoTcpTestBase {
 
  private:
   
-  virtual void OnTcpReadable(PseudoTcp* ) {}
+  void OnTcpReadable(PseudoTcp* ) override {}
 
-  virtual void OnTcpWriteable(PseudoTcp* ) {}
+  void OnTcpWriteable(PseudoTcp* ) override {}
 
   void ReadUntilIOPending() {
     char block[kBlockSize];

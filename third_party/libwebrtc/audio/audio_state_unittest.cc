@@ -132,13 +132,9 @@ struct ConfigHelper {
 
 class FakeAudioSource : public AudioMixer::Source {
  public:
-  
-  
-  
-  
-  int Ssrc() const  { return 0; }
+  int Ssrc() const override { return 0; }
 
-  int PreferredSampleRate() const  { return kSampleRate; }
+  int PreferredSampleRate() const override { return kSampleRate; }
 
   MOCK_METHOD(AudioFrameInfo,
               GetAudioFrameWithInfo,

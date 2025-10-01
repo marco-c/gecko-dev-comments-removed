@@ -39,7 +39,7 @@ class FakeInterface : public RefCountInterface {
   virtual std::string Method2(std::string s1, std::string s2) = 0;
 
  protected:
-  virtual ~FakeInterface() {}
+  ~FakeInterface() override {}
 };
 
 
@@ -60,7 +60,7 @@ class Fake : public FakeInterface {
 
  protected:
   Fake() {}
-  ~Fake() { Destroy(); }
+  ~Fake() override { Destroy(); }
 };
 
 

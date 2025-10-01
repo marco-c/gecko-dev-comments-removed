@@ -339,7 +339,7 @@ class LatencyAudioStream : public AudioStream {
 class MockAudioTransport : public test::MockAudioTransport {
  public:
   explicit MockAudioTransport(TransportType type) : type_(type) {}
-  ~MockAudioTransport() {}
+  ~MockAudioTransport() override {}
 
   
   
@@ -572,7 +572,7 @@ class MAYBE_AudioDeviceTest
   
   void PreTearDown() { EXPECT_EQ(0, audio_device_->Terminate()); }
 
-  virtual ~MAYBE_AudioDeviceTest() {
+  ~MAYBE_AudioDeviceTest() override {
     if (audio_device_) {
       EXPECT_EQ(0, audio_device_->Terminate());
     }

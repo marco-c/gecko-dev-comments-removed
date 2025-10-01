@@ -43,7 +43,7 @@ class PipeWireStreamTest : public ::testing::Test,
                            public SharedScreenCastStream::Observer {
  public:
   PipeWireStreamTest() = default;
-  ~PipeWireStreamTest() = default;
+  ~PipeWireStreamTest() override = default;
 
   
   MOCK_METHOD(void, OnBufferAdded, (), (override));
