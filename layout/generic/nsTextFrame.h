@@ -57,7 +57,7 @@ class MOZ_STACK_CLASS TextAutospace final {
 
   
   static bool Enabled(const StyleTextAutospace& aStyleTextAutospace,
-                      const StyleTextOrientation aStyleTextOrientation,
+                      const nsIFrame* aFrame,
                       const dom::CharacterDataBuffer& aBuffer);
 
   TextAutospace(const StyleTextAutospace& aStyleTextAutospace,
@@ -71,11 +71,11 @@ class MOZ_STACK_CLASS TextAutospace final {
 
   
   
-  bool IsIdeograph(char32_t aChar) const;
+  static bool IsIdeograph(char32_t aChar);
 
   
   
-  CharClass GetCharClass(char32_t aChar) const;
+  static CharClass GetCharClass(char32_t aChar);
 
  private:
   BoundarySet InitBoundarySet(
