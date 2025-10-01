@@ -25,6 +25,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/protections/ContentBlockingPrefs.sys.mjs",
   ContextualIdentityService:
     "resource://gre/modules/ContextualIdentityService.sys.mjs",
+  DAPIncrementality: "resource://gre/modules/DAPIncrementality.sys.mjs",
   DAPTelemetrySender: "resource://gre/modules/DAPTelemetrySender.sys.mjs",
   DAPVisitCounter: "resource://gre/modules/DAPVisitCounter.sys.mjs",
   DefaultBrowserCheck:
@@ -52,8 +53,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   ProfileDataUpgrader:
     "moz-src:///browser/components/ProfileDataUpgrader.sys.mjs",
-  RemoteSecuritySettings:
-    "resource://gre/modules/psm/RemoteSecuritySettings.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   SafeBrowsing: "resource://gre/modules/SafeBrowsing.sys.mjs",
   Sanitizer: "resource:///modules/Sanitizer.sys.mjs",
@@ -1269,6 +1268,7 @@ BrowserGlue.prototype = {
         task: async () => {
           await lazy.DAPTelemetrySender.startup();
           await lazy.DAPVisitCounter.startup();
+          await lazy.DAPIncrementality.startup();
         },
       },
 
@@ -1346,10 +1346,6 @@ BrowserGlue.prototype = {
         lazy.RemoteSettings.init();
         this._addBreachesSyncHandler();
       }.bind(this),
-
-      function RemoteSecuritySettingsInit() {
-        lazy.RemoteSecuritySettings.init();
-      },
 
       function searchBackgroundChecks() {
         Services.search.runBackgroundChecks();
