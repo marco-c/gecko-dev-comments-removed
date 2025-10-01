@@ -13,9 +13,14 @@
 
 #include <stdint.h>
 
+#include <memory>
 #include <optional>
 
+#include "absl/strings/string_view.h"
+#include "api/field_trials_view.h"
+#include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
+#include "rtc_base/experiments/struct_parameters_parser.h"
 #include "rtc_base/numerics/sequence_number_unwrapper.h"
 
 namespace webrtc {
@@ -23,15 +28,63 @@ namespace webrtc {
 
 class TimestampExtrapolator {
  public:
-  explicit TimestampExtrapolator(Timestamp start);
+  
+  
+  struct Config {
+    inline static constexpr absl::string_view kFieldTrialsKey =
+        "WebRTC-TimestampExtrapolatorConfig";
+
+    
+    
+    static Config ParseAndValidate(const FieldTrialsView& field_trials);
+
+    std::unique_ptr<StructParametersParser> Parser() {
+      
+      return StructParametersParser::Create(
+        "hard_reset_timeout", &hard_reset_timeout,
+        "alarm_threshold", &alarm_threshold,
+        "acc_drift", &acc_drift,
+        "acc_max_error", &acc_max_error,
+        "reset_full_cov_on_alarm", &reset_full_cov_on_alarm);
+      
+    }
+
+    
+    TimeDelta hard_reset_timeout = TimeDelta::Seconds(10);
+
+    
+    
+    
+    
+    int alarm_threshold = 60000;  
+
+    
+    int acc_drift = 6600;  
+
+    
+    
+    int acc_max_error = 7000;  
+
+    
+    
+    
+    
+    bool reset_full_cov_on_alarm = false;
+  };
+
+  TimestampExtrapolator(Timestamp start, const FieldTrialsView& field_trials);
   ~TimestampExtrapolator();
   void Update(Timestamp now, uint32_t ts90khz);
   std::optional<Timestamp> ExtrapolateLocalTime(uint32_t timestamp90khz) const;
   void Reset(Timestamp start);
 
+  Config GetConfigForTest() const { return config_; }
+
  private:
   void CheckForWrapArounds(uint32_t ts90khz);
   bool DelayChangeDetection(double error);
+
+  const Config config_;
 
   double w_[2];
   double p_[2][2];
