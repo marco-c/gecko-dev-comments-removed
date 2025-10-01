@@ -1330,7 +1330,7 @@ nsresult nsHttpChannel::Connect() {
   
   
   nsAutoCString rangeVal;
-  if (NS_SUCCEEDED(GetRequestHeader("Range"_ns, rangeVal))) {
+  if (NS_SUCCEEDED(mRequestHead.GetHeader(nsHttp::Range, rangeVal))) {
     SetRequestHeader("Accept-Encoding"_ns, "identity"_ns, true);
   }
 
@@ -1953,6 +1953,15 @@ nsresult nsHttpChannel::SetupChannelForTransaction() {
         MOZ_ASSERT(NS_SUCCEEDED(rv));
       }
     }
+  } else {
+    
+    
+    
+    
+    
+    rv = mHttpHandler->AddEncodingHeaders(&mRequestHead,
+                                          mURI->SchemeIs("https"), mURI);
+    if (NS_FAILED(rv)) return rv;
   }
 
   
