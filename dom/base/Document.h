@@ -546,6 +546,15 @@ enum class SheetPreloadStatus : uint8_t {
 
 
 
+enum class LoadedAsData : uint8_t {
+  
+  No,
+  
+  AsData,
+  
+  AsDataWithStyling,
+};
+
 
 
 class Document : public nsINode,
@@ -559,7 +568,7 @@ class Document : public nsINode,
   friend class LinkedListElement<Document>;
 
  protected:
-  explicit Document(const char* aContentType);
+  Document(const char* aContentType, LoadedAsData aLoadedAsData);
   virtual ~Document();
 
   Document(const Document&) = delete;
@@ -1710,13 +1719,16 @@ class Document : public nsINode,
   
 
 
-  css::Loader* CSSLoader() const { return mCSSLoader; }
+
+
+  css::Loader* GetCSSLoader() const { return mCSSLoader; }
 
   
 
 
 
-  css::ImageLoader* StyleImageLoader() const { return mStyleImageLoader; }
+
+  css::ImageLoader* GetStyleImageLoader() const { return mStyleImageLoader; }
 
   
 
@@ -1819,7 +1831,8 @@ class Document : public nsINode,
   
 
 
-  dom::ScriptLoader* ScriptLoader() { return mScriptLoader; }
+
+  dom::ScriptLoader* GetScriptLoader() { return mScriptLoader; }
 
   
 
@@ -2560,7 +2573,9 @@ class Document : public nsINode,
            !NodePrincipal()->SchemeIs("file");
   }
 
-  bool IsLoadedAsData() { return mLoadedAsData; }
+  bool IsLoadedAsData() const {
+    return mLoadedAsData != mozilla::dom::LoadedAsData::No;
+  }
 
   void SetAddedToMemoryReportAsDataDocument() {
     mAddedToMemoryReportingAsDataDocument = true;
@@ -3041,13 +3056,6 @@ class Document : public nsINode,
                                   css::StylePreloadKind,
                                   uint64_t aEarlyHintPreloaderId,
                                   const nsAString& aFetchPriority);
-
-  
-
-
-
-
-  RefPtr<StyleSheet> LoadChromeSheetSync(nsIURI* aURI);
 
   
 
@@ -4775,6 +4783,10 @@ class Document : public nsINode,
 
   DocumentState mState{DocumentState::LTR_LOCALE};
 
+  
+  
+  const mozilla::dom::LoadedAsData mLoadedAsData;
+
   RefPtr<Promise> mReadyForIdle;
 
   RefPtr<mozilla::dom::FeaturePolicy> mFeaturePolicy;
@@ -4810,10 +4822,6 @@ class Document : public nsINode,
   bool mIsEverInitialDocumentInWindow : 1;
 
   bool mIgnoreDocGroupMismatches : 1;
-
-  
-  
-  bool mLoadedAsData : 1;
 
   
   
@@ -5751,20 +5759,21 @@ bool IsInActiveTab(Document* aDoc);
 NON_VIRTUAL_ADDREF_RELEASE(mozilla::dom::Document)
 
 
-nsresult NS_NewHTMLDocument(mozilla::dom::Document** aInstancePtrResult,
-                            nsIPrincipal* aPrincipal,
-                            nsIPrincipal* aPartitionedPrincipal,
-                            bool aLoadedAsData = false);
+nsresult NS_NewHTMLDocument(
+    mozilla::dom::Document** aInstancePtrResult, nsIPrincipal* aPrincipal,
+    nsIPrincipal* aPartitionedPrincipal,
+    mozilla::dom::LoadedAsData aLoadedAsData = mozilla::dom::LoadedAsData::No);
 
-nsresult NS_NewXMLDocument(mozilla::dom::Document** aInstancePtrResult,
-                           nsIPrincipal* aPrincipal,
-                           nsIPrincipal* aPartitionedPrincipal,
-                           bool aLoadedAsData = false,
-                           bool aIsPlainDocument = false);
+nsresult NS_NewXMLDocument(
+    mozilla::dom::Document** aInstancePtrResult, nsIPrincipal* aPrincipal,
+    nsIPrincipal* aPartitionedPrincipal,
+    mozilla::dom::LoadedAsData aLoadedAsData = mozilla::dom::LoadedAsData::No,
+    bool aIsPlainDocument = false);
 
-nsresult NS_NewSVGDocument(mozilla::dom::Document** aInstancePtrResult,
-                           nsIPrincipal* aPrincipal,
-                           nsIPrincipal* aPartitionedPrincipal);
+nsresult NS_NewSVGDocument(
+    mozilla::dom::Document** aInstancePtrResult, nsIPrincipal* aPrincipal,
+    nsIPrincipal* aPartitionedPrincipal,
+    mozilla::dom::LoadedAsData aLoadedAsData = mozilla::dom::LoadedAsData::No);
 
 nsresult NS_NewImageDocument(mozilla::dom::Document** aInstancePtrResult,
                              nsIPrincipal* aPrincipal,
@@ -5790,7 +5799,8 @@ nsresult NS_NewDOMDocument(
     mozilla::dom::Document** aInstancePtrResult, const nsAString& aNamespaceURI,
     const nsAString& aQualifiedName, mozilla::dom::DocumentType* aDoctype,
     nsIURI* aDocumentURI, nsIURI* aBaseURI, nsIPrincipal* aPrincipal,
-    bool aLoadedAsData, nsIGlobalObject* aEventObject, DocumentFlavor aFlavor);
+    mozilla::dom::LoadedAsData aLoadedAsData, nsIGlobalObject* aEventObject,
+    DocumentFlavor aFlavor);
 
 inline mozilla::dom::Document* nsINode::GetOwnerDocument() const {
   mozilla::dom::Document* ownerDoc = OwnerDoc();

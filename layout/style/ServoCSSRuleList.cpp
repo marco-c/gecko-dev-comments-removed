@@ -210,7 +210,7 @@ nsresult ServoCSSRuleList::InsertRule(const nsACString& aRule,
   
   
   if (Document* doc = mStyleSheet->GetAssociatedDocument()) {
-    loader = doc->CSSLoader();
+    loader = doc->GetCSSLoader();
   }
   auto containingState = css::Rule::ContainingRuleState::From(mParentRule);
   StyleCssRuleType type;
