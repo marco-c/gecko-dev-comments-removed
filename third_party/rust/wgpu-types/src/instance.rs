@@ -360,6 +360,8 @@ pub struct Dx12BackendOptions {
     
     pub shader_compiler: Dx12Compiler,
     
+    pub presentation_system: Dx12SwapchainKind,
+    
     pub latency_waitable_object: Dx12UseFrameLatencyWaitableObject,
 }
 
@@ -370,10 +372,12 @@ impl Dx12BackendOptions {
     #[must_use]
     pub fn from_env_or_default() -> Self {
         let compiler = Dx12Compiler::from_env().unwrap_or_default();
+        let presentation_system = Dx12SwapchainKind::from_env().unwrap_or_default();
         let latency_waitable_object =
             Dx12UseFrameLatencyWaitableObject::from_env().unwrap_or_default();
         Self {
             shader_compiler: compiler,
+            presentation_system,
             latency_waitable_object,
         }
     }
@@ -384,10 +388,11 @@ impl Dx12BackendOptions {
     #[must_use]
     pub fn with_env(self) -> Self {
         let shader_compiler = self.shader_compiler.with_env();
+        let presentation_system = self.presentation_system.with_env();
         let latency_waitable_object = self.latency_waitable_object.with_env();
-
         Self {
             shader_compiler,
+            presentation_system,
             latency_waitable_object,
         }
     }
@@ -435,6 +440,58 @@ impl NoopBackendOptions {
             "1" => Some(true),
             "0" => Some(false),
             _ => None,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, Copy, PartialEq, Eq)]
+
+pub enum Dx12SwapchainKind {
+    
+    
+    
+    #[default]
+    DxgiFromHwnd,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    DxgiFromVisual,
+}
+
+impl Dx12SwapchainKind {
+    
+    
+    
+    
+    
+    #[must_use]
+    pub fn from_env() -> Option<Self> {
+        let value = crate::env::var("WGPU_DX12_PRESENTATION_SYSTEM")
+            .as_deref()?
+            .to_lowercase();
+        match value.as_str() {
+            "dxgifromvisual" | "visual" => Some(Self::DxgiFromVisual),
+            "dxgifromhwnd" | "hwnd" => Some(Self::DxgiFromHwnd),
+            _ => None,
+        }
+    }
+
+    
+    
+    
+    #[must_use]
+    pub fn with_env(self) -> Self {
+        if let Some(presentation_system) = Self::from_env() {
+            presentation_system
+        } else {
+            self
         }
     }
 }

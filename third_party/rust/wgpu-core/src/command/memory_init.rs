@@ -15,7 +15,7 @@ use crate::{
     FastHashMap,
 };
 
-use super::{clear::clear_texture, BakedCommands, ClearError};
+use super::{clear_texture, BakedCommands, ClearError};
 
 
 
