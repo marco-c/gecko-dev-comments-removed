@@ -54,6 +54,12 @@ class ElementStateManager final {
 
 
   void HandleTouchStart(bool aCanBePanOrZoom);
+
+  
+
+
+  void HandleStartPanning();
+
   
 
 
@@ -120,17 +126,26 @@ class ElementStateManager final {
   RefPtr<CancelableRunnable> mSetActiveTask;
 
   
+
+
+  RefPtr<CancelableRunnable> mSetHoverTask;
+
+  
   
   RefPtr<DelayedClearElementActivation> mDelayedClearElementActivation;
 
   
   void TriggerElementActivation();
   void SetActive(dom::Element* aTarget);
+  void SetHover(dom::Element* aTarget);
   void ResetActive();
   void ResetTouchBlockState();
   void ScheduleSetActiveTask();
   void SetActiveTask(const nsCOMPtr<dom::Element>& aTarget);
   void CancelActiveTask();
+  void ScheduleSetHoverTask();
+  void SetHoverTask(const nsCOMPtr<dom::Element>& aTarget);
+  void CancelHoverTask();
   
   bool MaybeChangeActiveState(apz::SingleTapState aState);
 };
