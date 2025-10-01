@@ -5569,7 +5569,16 @@
         } else {
           allTabsUnloaded = true;
           
-          if (FirefoxViewHandler.tab || FirefoxViewHandler.button) {
+          
+          
+          
+          let firefoxViewAvailable =
+            FirefoxViewHandler.tab &&
+            FirefoxViewHandler.button?.checkVisibility({
+              checkVisibilityCSS: true,
+              visibilityProperty: true,
+            });
+          if (firefoxViewAvailable) {
             FirefoxViewHandler.openTab("opentabs");
           } else {
             this.selectedTab = this.addTrustedTab(BROWSER_NEW_TAB_URL, {
