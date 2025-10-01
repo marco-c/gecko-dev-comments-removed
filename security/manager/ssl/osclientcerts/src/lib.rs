@@ -29,7 +29,7 @@ extern crate xpcom;
 
 use nserror::{nsresult, NS_OK};
 use pkcs11_bindings::*;
-use rsclientcerts::manager::Manager;
+use rsclientcerts::manager::{IsSearchingForClientCerts, Manager};
 use std::convert::TryInto;
 use std::os::raw::c_char;
 use std::sync::Mutex;
@@ -54,7 +54,7 @@ use crate::backend_windows::Backend;
 
 
 
-static MANAGER: Mutex<Option<Manager<Backend>>> = Mutex::new(None);
+static MANAGER: Mutex<Option<Manager<Backend, IsGeckoSearchingForClientCerts>>> = Mutex::new(None);
 
 
 
@@ -117,6 +117,18 @@ impl ShutdownObserver {
             let _ = unsafe { service.RemoveObserver(self.coerce(), topic) };
         }
         Ok(())
+    }
+}
+
+extern "C" {
+    fn IsGeckoSearchingForClientAuthCertificates() -> bool;
+}
+
+struct IsGeckoSearchingForClientCerts;
+
+impl IsSearchingForClientCerts for IsGeckoSearchingForClientCerts {
+    fn is_searching_for_client_certs() -> bool {
+        unsafe { IsGeckoSearchingForClientAuthCertificates() }
     }
 }
 
@@ -218,7 +230,7 @@ extern "C" fn C_GetInfo(pInfo: CK_INFO_PTR) -> CK_RV {
 
 
 extern "C" fn C_GetSlotList(
-    _tokenPresent: CK_BBOOL,
+    tokenPresent: CK_BBOOL,
     pSlotList: CK_SLOT_ID_PTR,
     pulCount: CK_ULONG_PTR,
 ) -> CK_RV {
@@ -228,7 +240,7 @@ extern "C" fn C_GetSlotList(
     }
     let mut manager_guard = try_to_get_manager_guard!();
     let manager = manager_guard_to_manager!(manager_guard);
-    let slot_ids = manager.get_slot_ids();
+    let slot_ids = manager.get_slot_ids(if tokenPresent == CK_TRUE { true } else { false });
     let slot_count: CK_ULONG = slot_ids.len().try_into().unwrap();
     if !pSlotList.is_null() {
         if unsafe { *pulCount } < slot_count {
@@ -566,7 +578,9 @@ extern "C" fn C_SetAttributeValue(
 }
 
 fn trace_attr(prefix: &str, attr: &CK_ATTRIBUTE) {
-    let typ = match unsafe_packed_field_access!(attr.type_) {
+    
+    let typ = attr.type_;
+    let typ = match typ {
         CKA_CLASS => "CKA_CLASS".to_string(),
         CKA_TOKEN => "CKA_TOKEN".to_string(),
         CKA_LABEL => "CKA_LABEL".to_string(),
@@ -579,17 +593,18 @@ fn trace_attr(prefix: &str, attr: &CK_ATTRIBUTE) {
         CKA_KEY_TYPE => "CKA_KEY_TYPE".to_string(),
         CKA_MODULUS => "CKA_MODULUS".to_string(),
         CKA_EC_PARAMS => "CKA_EC_PARAMS".to_string(),
-        _ => format!("0x{:x}", unsafe_packed_field_access!(attr.type_)),
+        _ => format!("0x{:x}", typ),
     };
     let value =
         unsafe { std::slice::from_raw_parts(attr.pValue as *const u8, attr.ulValueLen as usize) };
+    let len = attr.ulValueLen;
     log_with_thread_id!(
         trace,
         "{}CK_ATTRIBUTE {{ type: {}, pValue: {:?}, ulValueLen: {} }}",
         prefix,
         typ,
         value,
-        unsafe_packed_field_access!(attr.ulValueLen)
+        len
     );
 }
 
@@ -846,10 +861,11 @@ extern "C" fn C_SignInit(
     log_with_thread_id!(debug, "C_SignInit: mechanism is {:?}", mechanism);
     let mechanism_params = if mechanism.mechanism == CKM_RSA_PKCS_PSS {
         if mechanism.ulParameterLen as usize != std::mem::size_of::<CK_RSA_PKCS_PSS_PARAMS>() {
+            let len = mechanism.ulParameterLen;
             log_with_thread_id!(
                 error,
                 "C_SignInit: bad ulParameterLen for CKM_RSA_PKCS_PSS: {}",
-                unsafe_packed_field_access!(mechanism.ulParameterLen)
+                len
             );
             return CKR_ARGUMENTS_BAD;
         }
