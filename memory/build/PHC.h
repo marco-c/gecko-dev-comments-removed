@@ -141,6 +141,9 @@ struct MemoryUsage {
   
   
   size_t mFragmentationBytes = 0;
+
+  
+  size_t mAllocatedBytes = 0;
 };
 
 MOZ_JEMALLOC_API void PHCMemoryUsage(MemoryUsage& aMemoryUsage);
