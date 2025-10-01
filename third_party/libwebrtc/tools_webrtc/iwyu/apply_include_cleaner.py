@@ -54,7 +54,12 @@ _EXTRA_ARGS = [
 _IWYU_MAPPING = {
     '"gmock/gmock.h"': '"test/gmock.h"',
     '"gtest/gtest.h"': '"test/gtest.h"',
-    "<sys/socket.h>": '"rtc_base/net_helpers.h"',
+    '<sys/socket.h>': '"rtc_base/net_helpers.h"',
+
+    
+    '"libyuv/': '"third_party/libyuv/include/libyuv/',
+    '"aom/': '"third_party/libaom/source/libaom/',
+    '"vpx/': '"third_party/libvpx/source/libvpx/',
 }
 
 
@@ -182,20 +187,18 @@ def _apply_include_cleaner_to_file(file_path: pathlib.Path,
         if value in modified_content:
             
             
-            output = output.replace(f'+ {key.replace("#include ", "")}', "")
-            if should_modify:
-                modified_content = re.sub(rf"^#include {re.escape(key)}.*\n?",
-                                          "",
-                                          modified_content,
-                                          flags=re.MULTILINE)
-
-        elif should_modify:
+            output = re.sub(rf"^\+ {re.escape(key)}$",
+                            "",
+                            output,
+                            flags=re.MULTILINE)
+        if should_modify:
             
             
             modified_content = re.sub(rf"^#include {re.escape(key)}",
                                       f"#include {value}",
                                       modified_content,
                                       flags=re.MULTILINE)
+
     if should_modify and content != modified_content:
         file_path.write_text(modified_content)
 
