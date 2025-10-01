@@ -8,6 +8,7 @@
 #include "xpcprivate.h"
 
 
+bool xpc::SelfHostedShmem::sSelfHostedUseSharedMemory = false;
 mozilla::StaticRefPtr<xpc::SelfHostedShmem>
     xpc::SelfHostedShmem::sSelfHostedXdr;
 

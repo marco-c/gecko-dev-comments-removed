@@ -37,6 +37,12 @@ class SelfHostedShmem final : public nsIMemoryReporter {
 
   static SelfHostedShmem& GetSingleton();
 
+  static void SetSelfHostedUseSharedMemory(bool aSelfHostedUseSharedMemory) {
+    sSelfHostedUseSharedMemory = aSelfHostedUseSharedMemory;
+  }
+
+  static bool SelfHostedUseSharedMemory() { return sSelfHostedUseSharedMemory; }
+
   
   
   
@@ -73,6 +79,8 @@ class SelfHostedShmem final : public nsIMemoryReporter {
   SelfHostedShmem() = default;
   ~SelfHostedShmem() = default;
 
+  
+  static bool sSelfHostedUseSharedMemory;
   static mozilla::StaticRefPtr<SelfHostedShmem> sSelfHostedXdr;
 
   

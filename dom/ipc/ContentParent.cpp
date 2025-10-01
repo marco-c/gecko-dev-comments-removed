@@ -231,6 +231,7 @@
 #if defined(MOZ_WIDGET_GTK) || defined(XP_WIN)
 #  include "nsIconChannel.h"
 #endif
+#include "XPCSelfHostedShmem.h"
 #include "nsFrameLoaderOwner.h"
 #include "nsMemoryInfoDumper.h"
 #include "nsMemoryReporterManager.h"
@@ -2415,7 +2416,9 @@ bool ContentParent::BeginSubprocessLaunch(ProcessPriority aPriority) {
   
   
   
-  ::mozilla::ipc::ExportSharedJSInit(*mSubprocess, extraArgs);
+  if (xpc::SelfHostedShmem::SelfHostedUseSharedMemory()) {
+    ::mozilla::ipc::ExportSharedJSInit(*mSubprocess, extraArgs);
+  }
 
   
   
