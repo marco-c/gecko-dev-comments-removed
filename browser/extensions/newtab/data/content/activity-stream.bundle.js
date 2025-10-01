@@ -13373,15 +13373,29 @@ const FocusTimer = ({
     
     const newTime = isRunning ? calculateTimeRemaining(duration, startTime) : duration;
     setTimeLeft(newTime);
+
+    
+    if (!isRunning && duration < initialDuration) {
+      
+      setProgress((initialDuration - duration) / initialDuration);
+    } else if (!isRunning) {
+      
+      setProgress(0);
+    }
     return () => clearInterval(interval);
   }, [isRunning, startTime, duration, initialDuration, dispatch, resetProgressCircle, timerType, initialTimerDuration]);
 
   
   (0,external_React_namespaceObject.useEffect)(() => {
     if (arcRef?.current) {
-      arcRef.current.style.clipPath = getClipPath(progress);
+      
+      if (progress > 0 || isRunning) {
+        arcRef.current.style.clipPath = getClipPath(progress);
+      } else {
+        arcRef.current.style.clipPath = "";
+      }
     }
-  }, [progress, timerType]);
+  }, [progress, isRunning]);
 
   
   const setTimerDuration = () => {
