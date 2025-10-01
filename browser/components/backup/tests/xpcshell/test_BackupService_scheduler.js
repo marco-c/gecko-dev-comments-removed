@@ -193,7 +193,7 @@ add_task(async function test_BackupService_idle_no_backup_exists() {
 
 add_task(async function test_BackupService_idle_not_expired_backup() {
   
-  let fiveSecondsAgo = ChromeUtils.now() - 5000; 
+  let fiveSecondsAgo = Date.now() - 5000; 
   let lastBackupPrefValue = Math.floor(fiveSecondsAgo / 1000);
   Services.prefs.setIntPref(
     LAST_BACKUP_TIMESTAMP_PREF_NAME,

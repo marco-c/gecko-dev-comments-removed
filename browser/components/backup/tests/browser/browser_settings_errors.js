@@ -28,6 +28,7 @@ add_task(async function test_error_visibility_heuristic() {
       .stub(bs, "resolveArchiveDestFolderPath")
       .rejects(new BackupError("forced failure", ERRORS.UNKNOWN));
 
+    
     settings.triggerBackupButtonEl.click();
 
     
