@@ -175,7 +175,8 @@ void nsTableRowGroupFrame::InitRepeatedFrame(
 }
 
 
-static void DisplayRows(nsDisplayListBuilder* aBuilder, nsTableRowGroupFrame* aFrame,
+static void DisplayRows(nsDisplayListBuilder* aBuilder,
+                        nsTableRowGroupFrame* aFrame,
                         const nsDisplayListSet& aLists) {
   if (aFrame->HidesContent()) {
     return;
@@ -191,8 +192,8 @@ static void DisplayRows(nsDisplayListBuilder* aBuilder, nsTableRowGroupFrame* aF
   
   nsIFrame* kid = aBuilder->ShouldDescendIntoFrame(aFrame, true)
                       ? nullptr
-                      : aFrame->GetFirstRowContaining(aBuilder->GetVisibleRect().y,
-                                                 &overflowAbove);
+                      : aFrame->GetFirstRowContaining(
+                            aBuilder->GetVisibleRect().y, &overflowAbove);
 
   if (kid) {
     
