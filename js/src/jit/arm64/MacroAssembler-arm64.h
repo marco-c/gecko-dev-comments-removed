@@ -260,7 +260,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
     vixl::UseScratchRegisterScope temps(this);
     const Register scratch = temps.AcquireX().asUnsized();
     MOZ_ASSERT(scratch != reg);
-    tagValue(type, reg, ValueOperand(scratch));
+    boxValue(type, reg, scratch);
     storeValue(ValueOperand(scratch), dest);
   }
   template <typename T>
@@ -297,11 +297,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
   void loadUnalignedValue(const Address& src, ValueOperand dest) {
     loadValue(src, dest);
   }
-  void tagValue(JSValueType type, Register payload, ValueOperand dest) {
-    
-    Orr(ARMRegister(dest.valueReg(), 64), ARMRegister(payload, 64),
-        Operand(ImmShiftedTag(type).value));
-  }
+  void tagValue(JSValueType type, Register payload, ValueOperand dest);
   void pushValue(ValueOperand val) {
     vixl::MacroAssembler::Push(ARMRegister(val.valueReg(), 64));
   }
@@ -327,7 +323,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
     vixl::UseScratchRegisterScope temps(this);
     const Register scratch = temps.AcquireX().asUnsized();
     MOZ_ASSERT(scratch != reg);
-    tagValue(type, reg, ValueOperand(scratch));
+    boxValue(type, reg, scratch);
     push(scratch);
   }
   void pushValue(const Address& addr) {
@@ -340,31 +336,6 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
   void pushValue(const BaseIndex& addr, Register scratch) {
     loadValue(addr, ValueOperand(scratch));
     pushValue(ValueOperand(scratch));
-  }
-  template <typename T>
-  void storeUnboxedPayload(ValueOperand value, T address, size_t nbytes,
-                           JSValueType type) {
-    switch (nbytes) {
-      case 8: {
-        vixl::UseScratchRegisterScope temps(this);
-        const Register scratch = temps.AcquireX().asUnsized();
-        if (type == JSVAL_TYPE_OBJECT) {
-          unboxObjectOrNull(value, scratch);
-        } else {
-          unboxNonDouble(value, scratch, type);
-        }
-        storePtr(scratch, address);
-        return;
-      }
-      case 4:
-        store32(value.valueReg(), address);
-        return;
-      case 1:
-        store8(value.valueReg(), address);
-        return;
-      default:
-        MOZ_CRASH("Bad payload width");
-    }
   }
   void moveValue(const Value& val, Register dest) {
     if (val.isGCThing()) {
@@ -397,6 +368,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
   }
 
   void boxValue(JSValueType type, Register src, Register dest);
+  void boxValue(Register type, Register src, Register dest);
 
   void splitSignExtTag(Register src, Register dest) {
     sbfx(ARMRegister(dest, 64), ARMRegister(src, 64), JSVAL_TAG_SHIFT,
@@ -1355,6 +1327,9 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
   void boxNonDouble(JSValueType type, Register src, const ValueOperand& dest) {
     boxValue(type, src, dest.valueReg());
   }
+  void boxNonDouble(Register type, Register src, const ValueOperand& dest) {
+    boxValue(type, src, dest.valueReg());
+  }
 
   
   
@@ -1431,13 +1406,6 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
   void unboxObject(const BaseIndex& src, Register dest) {
     doBaseIndex(ARMRegister(dest, 64), src, vixl::LDR_x);
     unboxNonDouble(dest, dest, JSVAL_TYPE_OBJECT);
-  }
-
-  template <typename T>
-  void unboxObjectOrNull(const T& src, Register dest) {
-    unboxNonDouble(src, dest, JSVAL_TYPE_OBJECT);
-    And(ARMRegister(dest, 64), ARMRegister(dest, 64),
-        Operand(~JS::detail::ValueObjectOrNullBit));
   }
 
   
@@ -1979,15 +1947,15 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
     }
   }
   void writeDataRelocation(const Value& val, BufferOffset load) {
+    MOZ_ASSERT(val.isGCThing(), "only called for gc-things");
+
     
     
-    if (val.isGCThing()) {
-      gc::Cell* cell = val.toGCThing();
-      if (cell && gc::IsInsideNursery(cell)) {
-        embedsNurseryPointers_ = true;
-      }
-      dataRelocations_.writeUnsigned(load.getOffset());
+    gc::Cell* cell = val.toGCThing();
+    if (cell && gc::IsInsideNursery(cell)) {
+      embedsNurseryPointers_ = true;
     }
+    dataRelocations_.writeUnsigned(load.getOffset());
   }
 
   void computeEffectiveAddress(const Address& address, Register dest) {
