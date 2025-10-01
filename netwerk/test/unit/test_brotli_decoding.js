@@ -8,6 +8,9 @@
 
 
 
+const { NodeHTTP2Server } = ChromeUtils.importESModule(
+  "resource://testing-common/NodeServer.sys.mjs"
+);
 
 let endChunk2ReceivedInTime = false;
 

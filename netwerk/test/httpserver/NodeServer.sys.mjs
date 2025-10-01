@@ -1,31 +1,20 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
-
-
-"use strict";
-
-
-
-
-
-const { NodeServer } = ChromeUtils.importESModule(
-  "resource://testing-common/httpd.sys.mjs"
-);
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
-
-
+/* globals require, __dirname, global, Buffer, process */
 
 class BaseNodeHTTPServerCode {
   static globalHandler(req, resp) {
-    let path = new URL(req.url, "http://example.com").pathname;
+    let path = new URL(req.url, "https://example.com").pathname;
     let handler = global.path_handlers[path];
     if (handler) {
       return handler(req, resp);
     }
 
-    
+    // Didn't find a handler for this path.
     let response = `<h1> 404 Path not found: ${path}</h1>`;
     resp.setHeader("Content-Type", "text/html");
     resp.setHeader("Content-Length", response.length);
@@ -42,11 +31,11 @@ class ADB {
 
   static async forwardPort(port, remove = false) {
     if (!process.env.MOZ_ANDROID_DATA_DIR) {
-      
+      // Not android, or we don't know how to do the forwarding
       return true;
     }
-    
-    
+    // When creating a server on Android we must make sure that the port
+    // is forwarded from the host machine to the emulator.
     let adb_path = "adb";
     if (process.env.MOZ_FETCHES_DIR) {
       adb_path = `${process.env.MOZ_FETCHES_DIR}/android-sdk-linux/platform-tools/adb`;
@@ -69,7 +58,7 @@ class ADB {
             console.log(`stderr: ${stderr}`);
             reject(stderr);
           } else {
-            
+            // console.log(`stdout: ${stdout}`);
             resolve();
           }
         });
@@ -100,7 +89,7 @@ class ADB {
         `Port forwarding failed. Retrying (${retryCount}/${maxRetries})...`
       );
       server.close();
-      
+      // eslint-disable-next-line no-undef
       await new Promise(resolve => setTimeout(resolve, 500));
     }
 
@@ -125,7 +114,7 @@ class BaseNodeServer {
     return `localhost`;
   }
 
-  
+  /// Stops the server
   async stop() {
     if (this.processId) {
       await this.execute(`ADB.stopForwarding(${this.port()})`);
@@ -134,14 +123,14 @@ class BaseNodeServer {
     }
   }
 
-  
+  /// Executes a command in the context of the node server
   async execute(command) {
     return NodeServer.execute(this.processId, command);
   }
 
-  
-  
-  
+  /// @path : string - the path on the server that we're handling. ex: /path
+  /// @handler : function(req, resp, url) - function that processes request and
+  ///     emits a response.
   async registerPathHandler(path, handler) {
     return this.execute(
       `global.path_handlers["${path}"] = ${handler.toString()}`
@@ -149,7 +138,7 @@ class BaseNodeServer {
   }
 }
 
-
+// HTTP
 
 class NodeHTTPServerCode extends BaseNodeHTTPServerCode {
   static async startServer(port) {
@@ -161,12 +150,12 @@ class NodeHTTPServerCode extends BaseNodeHTTPServerCode {
   }
 }
 
-class NodeHTTPServer extends BaseNodeServer {
+export class NodeHTTPServer extends BaseNodeServer {
   _protocol = "http";
   _version = "http/1.1";
-  
-  
-  
+  /// Starts the server
+  /// @port - default 0
+  ///    when provided, will attempt to listen on that port.
   async start(port = 0) {
     this.processId = await NodeServer.fork();
 
@@ -178,7 +167,7 @@ class NodeHTTPServer extends BaseNodeServer {
   }
 }
 
-
+// HTTPS
 
 class NodeHTTPSServerCode extends BaseNodeHTTPServerCode {
   static async startServer(port) {
@@ -198,12 +187,12 @@ class NodeHTTPSServerCode extends BaseNodeHTTPServerCode {
   }
 }
 
-class NodeHTTPSServer extends BaseNodeServer {
+export class NodeHTTPSServer extends BaseNodeServer {
   _protocol = "https";
   _version = "http/1.1";
-  
-  
-  
+  /// Starts the server
+  /// @port - default 0
+  ///    when provided, will attempt to listen on that port.
   async start(port = 0) {
     this.processId = await NodeServer.fork();
 
@@ -215,7 +204,7 @@ class NodeHTTPSServer extends BaseNodeServer {
   }
 }
 
-
+// HTTP2
 
 class NodeHTTP2ServerCode extends BaseNodeHTTPServerCode {
   static async startServer(port) {
@@ -249,12 +238,12 @@ class NodeHTTP2ServerCode extends BaseNodeHTTPServerCode {
   }
 }
 
-class NodeHTTP2Server extends BaseNodeServer {
+export class NodeHTTP2Server extends BaseNodeServer {
   _protocol = "https";
   _version = "h2";
-  
-  
-  
+  /// Starts the server
+  /// @port - default 0
+  ///    when provided, will attempt to listen on that port.
   async start(port = 0) {
     this.processId = await NodeServer.fork();
 
@@ -271,7 +260,7 @@ class NodeHTTP2Server extends BaseNodeServer {
   }
 }
 
-
+// Base HTTP proxy
 
 class BaseProxyCode {
   static proxyHandler(req, res) {
@@ -329,14 +318,14 @@ class BaseProxyCode {
       return;
     }
     const net = require("net");
-    
+    // Connect to an origin server
     const { port, hostname } = new URL(`https://${req.url}`);
     const serverSocket = net
       .connect(
         {
           port: port || 443,
           host: hostname,
-          family: 4, 
+          family: 4, // Specifies to use IPv4
         },
         () => {
           clientSocket.write(
@@ -351,14 +340,14 @@ class BaseProxyCode {
       )
       .on("error", e => {
         console.log("error" + e);
-        
-        
+        // The socket will error out when we kill the connection
+        // just ignore it.
       });
 
     clientSocket.on("error", e => {
       console.log("client error" + e);
-      
-      
+      // Sometimes we got ECONNRESET error on windows platform.
+      // Ignore it for now.
     });
   }
 }
@@ -374,9 +363,6 @@ class BaseHTTPProxy extends BaseNodeServer {
       0
     );
     pps.registerFilter(this.filter, 10);
-    registerCleanupFunction(() => {
-      this.unregisterFilter();
-    });
   }
 
   unregisterFilter() {
@@ -388,7 +374,7 @@ class BaseHTTPProxy extends BaseNodeServer {
     }
   }
 
-  
+  /// Stops the server
   async stop() {
     this.unregisterFilter();
     await super.stop();
@@ -399,9 +385,9 @@ class BaseHTTPProxy extends BaseNodeServer {
   }
 }
 
+// HTTP1 Proxy
 
-
-class NodeProxyFilter {
+export class NodeProxyFilter {
   constructor(type, host, port, flags) {
     this._type = type;
     this._host = host;
@@ -438,11 +424,11 @@ class HTTPProxyCode {
   }
 }
 
-class NodeHTTPProxyServer extends BaseHTTPProxy {
+export class NodeHTTPProxyServer extends BaseHTTPProxy {
   _protocol = "http";
-  
-  
-  
+  /// Starts the server
+  /// @port - default 0
+  ///    when provided, will attempt to listen on that port.
   async start(port = 0) {
     this.processId = await NodeServer.fork();
 
@@ -456,7 +442,7 @@ class NodeHTTPProxyServer extends BaseHTTPProxy {
   }
 }
 
-
+// HTTPS proxy
 
 class HTTPSProxyCode {
   static async startServer(port) {
@@ -474,11 +460,11 @@ class HTTPSProxyCode {
   }
 }
 
-class NodeHTTPSProxyServer extends BaseHTTPProxy {
+export class NodeHTTPSProxyServer extends BaseHTTPProxy {
   _protocol = "https";
-  
-  
-  
+  /// Starts the server
+  /// @port - default 0
+  ///    when provided, will attempt to listen on that port.
   async start(port = 0) {
     this.processId = await NodeServer.fork();
 
@@ -492,7 +478,7 @@ class NodeHTTPSProxyServer extends BaseHTTPProxy {
   }
 }
 
-
+// HTTP2 proxy
 
 class HTTP2ProxyCode {
   static async startServer(port, auth, maxConcurrentStreams) {
@@ -535,7 +521,7 @@ class HTTP2ProxyCode {
             },
             proxyresp => {
               let proxyheaders = Object.assign({}, proxyresp.headers);
-              
+              // Filter out some prohibited headers.
               ["connection", "transfer-encoding", "keep-alive"].forEach(
                 prop => {
                   delete proxyheaders[prop];
@@ -549,7 +535,7 @@ class HTTP2ProxyCode {
                   )
                 );
               } catch (e) {
-                
+                // The channel may have been closed already.
                 if (e.message != "The stream has been destroyed") {
                   throw e;
                 }
@@ -581,7 +567,7 @@ class HTTP2ProxyCode {
         return;
       }
       if (headers[":method"] !== "CONNECT") {
-        
+        // Only accept CONNECT requests
         stream.respond({ ":status": 405 });
         stream.end();
         return;
@@ -616,8 +602,8 @@ class HTTP2ProxyCode {
       socket.on("error", error => {
         const status = error.errno == "ENOTFOUND" ? 404 : 502;
         try {
-          
-          
+          // If we already sent headers when the socket connected
+          // then sending the status again would throw.
           if (!stream.sentHeaders) {
             stream.respond({ ":status": status });
           }
@@ -649,11 +635,11 @@ class HTTP2ProxyCode {
   }
 }
 
-class NodeHTTP2ProxyServer extends BaseHTTPProxy {
+export class NodeHTTP2ProxyServer extends BaseHTTPProxy {
   _protocol = "https";
-  
-  
-  
+  /// Starts the server
+  /// @port - default 0
+  ///    when provided, will attempt to listen on that port.
   async start(port = 0, auth, maxConcurrentStreams = 100) {
     this.processId = await NodeServer.fork();
 
@@ -674,7 +660,7 @@ class NodeHTTP2ProxyServer extends BaseHTTPProxy {
   }
 }
 
-
+// websocket server
 
 class NodeWebSocketServerCode extends BaseNodeHTTPServerCode {
   static messageHandler(data, ws) {
@@ -699,9 +685,9 @@ class NodeWebSocketServerCode extends BaseNodeHTTPServerCode {
     );
 
     let node_ws_root = `${__dirname}/../node-ws`;
-    const WebSocket = require(`${node_ws_root}/lib/websocket`);
-    WebSocket.Server = require(`${node_ws_root}/lib/websocket-server`);
-    global.webSocketServer = new WebSocket.Server({ server: global.server });
+    const WS = require(`${node_ws_root}/lib/websocket`);
+    WS.Server = require(`${node_ws_root}/lib/websocket-server`);
+    global.webSocketServer = new WS.Server({ server: global.server });
     global.webSocketServer.on("connection", function connection(ws) {
       ws.on("message", data =>
         NodeWebSocketServerCode.messageHandler(data, ws)
@@ -713,11 +699,11 @@ class NodeWebSocketServerCode extends BaseNodeHTTPServerCode {
   }
 }
 
-class NodeWebSocketServer extends BaseNodeServer {
+export class NodeWebSocketServer extends BaseNodeServer {
   _protocol = "wss";
-  
-  
-  
+  /// Starts the server
+  /// @port - default 0
+  ///    when provided, will attempt to listen on that port.
   async start(port = 0) {
     this.processId = await NodeServer.fork();
 
@@ -736,9 +722,9 @@ class NodeWebSocketServer extends BaseNodeServer {
   }
 }
 
-
-
-
+// websocket http2 server
+// This code is inspired by
+// https://github.com/szmarczak/http2-wrapper/blob/master/examples/ws/server.js
 class NodeWebSocketHttp2ServerCode extends BaseNodeHTTPServerCode {
   static async startServer(port, fallbackToH1) {
     const fs = require("fs");
@@ -754,13 +740,13 @@ class NodeWebSocketHttp2ServerCode extends BaseNodeHTTPServerCode {
     global.h2Server = http2.createSecureServer(options);
 
     let node_ws_root = `${__dirname}/../node-ws`;
-    const WebSocket = require(`${node_ws_root}/lib/websocket`);
+    const WS = require(`${node_ws_root}/lib/websocket`);
 
     global.h2Server.on("stream", (stream, headers) => {
       if (headers[":method"] === "CONNECT") {
         stream.respond();
 
-        const ws = new WebSocket(null);
+        const ws = new WS(null);
         stream.setNoDelay = () => {};
         ws.setSocket(stream, Buffer.from(""), 100 * 1024 * 1024);
 
@@ -783,11 +769,11 @@ class NodeWebSocketHttp2ServerCode extends BaseNodeHTTPServerCode {
   }
 }
 
-class NodeWebSocketHttp2Server extends BaseNodeServer {
+export class NodeWebSocketHttp2Server extends BaseNodeServer {
   _protocol = "h2ws";
-  
-  
-  
+  /// Starts the server
+  /// @port - default 0
+  ///    when provided, will attempt to listen on that port.
   async start(port = 0, fallbackToH1 = false) {
     this.processId = await NodeServer.fork();
 
@@ -806,39 +792,18 @@ class NodeWebSocketHttp2Server extends BaseNodeServer {
   }
 }
 
+// Helper functions
 
-
-async function with_node_servers(arrayOfClasses, asyncClosure) {
+export async function with_node_servers(arrayOfClasses, asyncClosure) {
   for (let s of arrayOfClasses) {
     let server = new s();
     await server.start();
-    registerCleanupFunction(async () => {
-      await server.stop();
-    });
     await asyncClosure(server);
     await server.stop();
   }
 }
 
-
-
-
-
-function getTestServerCertificate() {
-  const certDB = Cc["@mozilla.org/security/x509certdb;1"].getService(
-    Ci.nsIX509CertDB
-  );
-  const certFile = do_get_file("client-cert.p12");
-  certDB.importPKCS12File(certFile, "password");
-  for (const cert of certDB.getCerts()) {
-    if (cert.commonName == "Test End-entity") {
-      return cert;
-    }
-  }
-  return null;
-}
-
-class WebSocketConnection {
+export class WebSocketConnection {
   constructor() {
     this._openPromise = new Promise(resolve => {
       this._openCallback = resolve;
@@ -895,32 +860,32 @@ class WebSocketConnection {
       Ci.nsIWebSocketChannel
     );
     chan.initLoadInfo(
-      null, 
+      null, // aLoadingNode
       Services.scriptSecurityManager.getSystemPrincipal(),
-      null, 
+      null, // aTriggeringPrincipal
       Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
       Ci.nsIContentPolicy.TYPE_WEBSOCKET
     );
     return chan;
   }
-  
+  // Returns a promise that resolves when the websocket channel is opened.
   open(url) {
     this._ws = WebSocketConnection.makeWebSocketChan();
     let uri = Services.io.newURI(url);
     this._ws.asyncOpen(uri, url, {}, 0, this, null);
     return this._openPromise;
   }
-  
+  // Closes the inner websocket. code and reason arguments are optional.
   close(code, reason) {
     this._ws.close(code || Ci.nsIWebSocketChannel.CLOSE_NORMAL, reason || "");
   }
-  
+  // Sends a message to the server.
   send(msg) {
     this._ws.sendMsg(msg);
   }
-  
-  
-  
+  // Returns a promise that resolves when the channel's onStop is called.
+  // Promise resolves with an `{status}` object, where status is the
+  // result passed to onStop.
   finished() {
     return this._stopPromise;
   }
@@ -928,10 +893,10 @@ class WebSocketConnection {
     return this._proxyAvailablePromise;
   }
 
-  
-  
-  
-  
+  // Returned promise resolves with an array of received messages
+  // If messages have been received in the the past before calling
+  // receiveMessages, the promise will immediately resolve. Otherwise
+  // it will resolve when the first message is received.
   async receiveMessages() {
     await this._msgPromise;
     this._msgPromise = new Promise(resolve => {
@@ -943,8 +908,11 @@ class WebSocketConnection {
   }
 }
 
-class HTTP3Server {
+export class HTTP3Server {
   protocol() {
+    return "https";
+  }
+  version() {
     return "h3";
   }
   origin() {
@@ -957,7 +925,7 @@ class HTTP3Server {
     return `localhost`;
   }
 
-  
+  /// Stops the server
   async stop() {
     if (this.processId) {
       await NodeServer.kill(this.processId);
@@ -972,20 +940,118 @@ class HTTP3Server {
     );
     this.processId = result.id;
 
-    
+    /* eslint-disable no-control-regex */
     const regex =
       /HTTP3 server listening on ports (\d+), (\d+), (\d+), (\d+) and (\d+). EchConfig is @([\x00-\x7F]+)@/;
 
-    
+    // Execute the regex on the input string
     let match = regex.exec(result.output);
 
     if (match) {
-      
+      // Extract the ports as an array of numbers
       let ports = match.slice(1, 6).map(Number);
       this._port = ports[0];
       return ports[0];
     }
 
     return undefined;
+  }
+}
+
+export class NodeServer {
+  // Executes command in the context of a node server.
+  // See handler in moz-http2.js
+  //
+  // Example use:
+  // let id = NodeServer.fork(); // id is a random string
+  // await NodeServer.execute(id, `"hello"`)
+  // > "hello"
+  // await NodeServer.execute(id, `(() => "hello")()`)
+  // > "hello"
+  // await NodeServer.execute(id, `(() => var_defined_on_server)()`)
+  // > "0"
+  // await NodeServer.execute(id, `var_defined_on_server`)
+  // > "0"
+  // function f(param) { if (param) return param; return "bla"; }
+  // await NodeServer.execute(id, f); // Defines the function on the server
+  // await NodeServer.execute(id, `f()`) // executes defined function
+  // > "bla"
+  // let result = await NodeServer.execute(id, `f("test")`);
+  // > "test"
+  // await NodeServer.kill(id); // shuts down the server
+
+  // Forks a new node server using moz-http2-child.js as a starting point
+  static fork() {
+    return this.sendCommand("", "/fork");
+  }
+  // Executes command in the context of the node server indicated by `id`
+  static execute(id, command) {
+    return this.sendCommand(command, `/execute/${id}`);
+  }
+  // Shuts down the server
+  static kill(id) {
+    return this.sendCommand("", `/kill/${id}`);
+  }
+
+  // Issues a request to the node server (handler defined in moz-http2.js)
+  // This method should not be called directly.
+  static sendCommand(command, path) {
+    let h2Port = Services.env.get("MOZNODE_EXEC_PORT");
+    if (!h2Port) {
+      throw new Error("Could not find MOZNODE_EXEC_PORT");
+    }
+
+    let req = new XMLHttpRequest({ mozAnon: true, mozSystem: true });
+    const serverIP =
+      AppConstants.platform == "android" ? "10.0.2.2" : "127.0.0.1";
+    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    req.open("POST", `http://${serverIP}:${h2Port}${path}`);
+    req.channel.QueryInterface(Ci.nsIHttpChannelInternal).bypassProxy = true;
+    req.channel.loadFlags |= Ci.nsIChannel.LOAD_BYPASS_URL_CLASSIFIER;
+    // Prevent HTTPS-Only Mode from upgrading the request.
+    req.channel.loadInfo.httpsOnlyStatus |= Ci.nsILoadInfo.HTTPS_ONLY_EXEMPT;
+    // Allow deprecated HTTP request from SystemPrincipal
+    req.channel.loadInfo.allowDeprecatedSystemRequests = true;
+
+    // Passing a function to NodeServer.execute will define that function
+    // in node. It can be called in a later execute command.
+    let isFunction = function (obj) {
+      return !!(obj && obj.constructor && obj.call && obj.apply);
+    };
+    let payload = command;
+    if (isFunction(command)) {
+      payload = `${command.name} = ${command.toString()};`;
+    }
+
+    return new Promise((resolve, reject) => {
+      req.onload = () => {
+        let x = null;
+
+        if (req.statusText != "OK") {
+          reject(`XHR request failed: ${req.statusText}`);
+          return;
+        }
+
+        try {
+          x = JSON.parse(req.responseText);
+        } catch (e) {
+          reject(`Failed to parse ${req.responseText} - ${e}`);
+          return;
+        }
+
+        if (x.error) {
+          let e = new Error(x.error, "", 0);
+          e.stack = x.errorStack;
+          reject(e);
+          return;
+        }
+        resolve(x.result);
+      };
+      req.onerror = e => {
+        reject(e);
+      };
+
+      req.send(payload.toString());
+    });
   }
 }

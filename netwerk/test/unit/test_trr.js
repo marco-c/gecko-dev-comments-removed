@@ -2,7 +2,12 @@
 
 
 
+
 const gDefaultPref = Services.prefs.getDefaultBranch("");
+
+const { NodeServer } = ChromeUtils.importESModule(
+  "resource://testing-common/NodeServer.sys.mjs"
+);
 
 SetParentalControlEnabled(false);
 

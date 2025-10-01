@@ -3,6 +3,16 @@
 
 "use strict";
 
+const {
+  NodeHTTPServer,
+  NodeHTTPSServer,
+  NodeHTTP2Server,
+  NodeHTTPProxyServer,
+  NodeHTTPSProxyServer,
+  NodeHTTP2ProxyServer,
+  with_node_servers,
+} = ChromeUtils.importESModule("resource://testing-common/NodeServer.sys.mjs");
+
 
 
 Services.prefs.setBoolPref("network.proxy.allow_hijacking_localhost", true);

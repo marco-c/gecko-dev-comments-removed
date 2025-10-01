@@ -8,10 +8,17 @@
 
 
 
-
-var { setTimeout } = ChromeUtils.importESModule(
+const { setTimeout } = ChromeUtils.importESModule(
   "resource://gre/modules/Timer.sys.mjs"
 );
+
+const {
+  NodeHTTPServer,
+  NodeHTTPSServer,
+  NodeHTTP2Server,
+  NodeHTTP2ProxyServer,
+  with_node_servers,
+} = ChromeUtils.importESModule("resource://testing-common/NodeServer.sys.mjs");
 
 add_setup(async function () {
   Services.prefs.setBoolPref("network.proxy.allow_hijacking_localhost", true);

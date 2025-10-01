@@ -9,6 +9,14 @@
 
 
 
+const {
+  NodeWebSocketServer,
+  NodeWebSocketHttp2Server,
+  WebSocketConnection,
+  NodeHTTPSProxyServer,
+  NodeHTTPProxyServer,
+  NodeHTTP2ProxyServer,
+} = ChromeUtils.importESModule("resource://testing-common/NodeServer.sys.mjs");
 
 
 

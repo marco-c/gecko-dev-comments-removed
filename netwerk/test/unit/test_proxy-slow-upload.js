@@ -4,6 +4,15 @@
 
 "use strict";
 
+const {
+  NodeHTTPProxyServer,
+  NodeHTTPSProxyServer,
+  NodeHTTP2ProxyServer,
+  with_node_servers,
+  NodeHTTPServer,
+  NodeHTTPSServer,
+  NodeHTTP2Server,
+} = ChromeUtils.importESModule("resource://testing-common/NodeServer.sys.mjs");
 
 
 

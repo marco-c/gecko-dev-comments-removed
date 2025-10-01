@@ -8,9 +8,12 @@
 
 
 
-
 const gDashboard = Cc["@mozilla.org/network/dashboard;1"].getService(
   Ci.nsIDashboard
+);
+
+const { NodeHTTP2Server } = ChromeUtils.importESModule(
+  "resource://testing-common/NodeServer.sys.mjs"
 );
 
 const { TestUtils } = ChromeUtils.importESModule(

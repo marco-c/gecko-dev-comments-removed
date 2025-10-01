@@ -18,6 +18,7 @@ var { setTimeout } = ChromeUtils.importESModule(
 
 
 
+
 let filter;
 let systemProxySettings;
 let trrProxy;

@@ -8,10 +8,18 @@
 
 
 
-
 ChromeUtils.defineESModuleGetters(this, {
   ObjectUtils: "resource://gre/modules/ObjectUtils.sys.mjs",
 });
+
+const {
+  WebSocketConnection,
+  NodeWebSocketHttp2Server,
+  NodeWebSocketServer,
+  NodeHTTPProxyServer,
+  NodeHTTPSProxyServer,
+  NodeHTTP2ProxyServer,
+} = ChromeUtils.importESModule("resource://testing-common/NodeServer.sys.mjs");
 
 add_setup(async function () {
   Services.prefs.setCharPref("network.dns.localDomains", "foo.example.com");

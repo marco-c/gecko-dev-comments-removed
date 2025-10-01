@@ -8,10 +8,12 @@
 
 
 
-
 const { MockRegistrar } = ChromeUtils.importESModule(
   "resource://testing-common/MockRegistrar.sys.mjs"
 );
+
+const { NodeHTTPProxyServer, NodeHTTPSProxyServer, NodeHTTP2ProxyServer } =
+  ChromeUtils.importESModule("resource://testing-common/NodeServer.sys.mjs");
 
 const certOverrideService = Cc[
   "@mozilla.org/security/certoverride;1"

@@ -10,7 +10,6 @@
 
 
 
-
 Services.prefs.setBoolPref("network.proxy.allow_hijacking_localhost", true);
 registerCleanupFunction(() => {
   Services.prefs.clearUserPref("network.proxy.allow_hijacking_localhost");
@@ -19,6 +18,15 @@ registerCleanupFunction(() => {
 const { HttpServer } = ChromeUtils.importESModule(
   "resource://testing-common/httpd.sys.mjs"
 );
+const {
+  NodeHTTPServer,
+  NodeHTTPSServer,
+  NodeHTTP2Server,
+  NodeHTTPProxyServer,
+  NodeHTTPSProxyServer,
+  NodeHTTP2ProxyServer,
+  with_node_servers,
+} = ChromeUtils.importESModule("resource://testing-common/NodeServer.sys.mjs");
 
 function makeChan(uri) {
   let chan = NetUtil.newChannel({

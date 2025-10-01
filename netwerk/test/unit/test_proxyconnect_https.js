@@ -8,9 +8,12 @@
 
 
 
-
 const { TestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/TestUtils.sys.mjs"
+);
+
+const { NodeHTTPSProxyServer, NodeHTTPSServer } = ChromeUtils.importESModule(
+  "resource://testing-common/NodeServer.sys.mjs"
 );
 
 

@@ -4,8 +4,11 @@
 
 
 
-
 "use strict";
+
+const { NodeServer } = ChromeUtils.importESModule(
+  "resource://testing-common/NodeServer.sys.mjs"
+);
 
 add_task(async function test_socks5_installed() {
   let id = await NodeServer.fork();

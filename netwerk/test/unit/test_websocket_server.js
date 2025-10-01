@@ -8,6 +8,14 @@
 
 
 
+const {
+  NodeWebSocketServer,
+  NodeWebSocketHttp2Server,
+  NodeHTTPProxyServer,
+  NodeHTTPSProxyServer,
+  NodeHTTP2ProxyServer,
+  WebSocketConnection,
+} = ChromeUtils.importESModule("resource://testing-common/NodeServer.sys.mjs");
 
 const certOverrideService = Cc[
   "@mozilla.org/security/certoverride;1"
