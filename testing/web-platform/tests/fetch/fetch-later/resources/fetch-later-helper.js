@@ -308,6 +308,11 @@ class FetchLaterIframeOptions {
     
 
 
+    this.sandbox;
+
+    
+
+
 
     this.expect;
   }
@@ -460,6 +465,7 @@ async function loadFetchLaterIframe(origin, {
   bodyType = undefined,
   bodySize = undefined,
   allowDeferredFetch = false,
+  sandbox = undefined,
   expect = undefined
 } = {}) {
   if (uuid && targetUrl && !targetUrl.includes(uuid)) {
@@ -488,6 +494,9 @@ async function loadFetchLaterIframe(origin, {
   const iframe = document.createElement('iframe');
   if (allowDeferredFetch) {
     iframe.allow = 'deferred-fetch';
+  }
+  if (sandbox) {
+    iframe.sandbox = sandbox;
   }
   iframe.src = url;
 
