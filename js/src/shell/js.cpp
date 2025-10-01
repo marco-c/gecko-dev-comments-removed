@@ -3292,6 +3292,14 @@ static int js_fgets(char* buf, int size, FILE* file) {
 static bool ReadLine(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
+  
+  
+  if (GetShellContext(cx)->isWorker) {
+    JS_ReportErrorASCII(cx, "readline() is not supported on worker threads");
+    return false;
+  }
+
   static constexpr size_t BUFSIZE = 256;
   FILE* from = stdin;
   size_t buflength = 0;
