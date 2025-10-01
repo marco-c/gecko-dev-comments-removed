@@ -171,7 +171,8 @@ class Registers {
       (1U << Registers::a3) | (1U << Registers::a4) | (1U << Registers::a5) |
       (1U << Registers::a6) | (1U << Registers::a7) | (1U << Registers::t0) |
       (1U << Registers::t1) | (1U << Registers::t2) | (1U << Registers::t3) |
-      (1U << Registers::t4) | (1U << Registers::t5) | (1U << Registers::t6);
+      (1U << Registers::t4) | (1U << Registers::t5) | (1U << Registers::t6) |
+      (1U << Registers::t7) | (1U << Registers::t8);
 
   
   
@@ -185,6 +186,7 @@ class Registers {
       (1U << Registers::zero) |  
       (1U << Registers::t7) |    
       (1U << Registers::t8) |    
+      (1U << Registers::s8) |    
       (1U << Registers::rx) |    
       (1U << Registers::ra) | (1U << Registers::tp) | (1U << Registers::sp) |
       (1U << Registers::fp);
