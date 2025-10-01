@@ -7,9 +7,6 @@
 "use strict";
 
 add_task(async function () {
-  
-  await pushPref("devtools.debugger.features.javascript-tracing", true);
-
   const dbg = await initDebugger("doc-scripts.html");
 
   info("Force the log method to be the debugger sidebar");

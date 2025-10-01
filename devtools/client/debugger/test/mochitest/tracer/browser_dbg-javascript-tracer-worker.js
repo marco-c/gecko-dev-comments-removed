@@ -6,8 +6,6 @@
 
 "use strict";
 add_task(async function testTracingWorker() {
-  await pushPref("devtools.debugger.features.javascript-tracing", true);
-
   
   await pushPref("dom.worker.console.dispatch_events_to_main_thread", false);
 
