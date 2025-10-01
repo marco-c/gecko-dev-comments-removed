@@ -5,6 +5,7 @@
 package org.mozilla.fenix.search
 
 import android.os.Looper
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle.State.RESUMED
 import androidx.lifecycle.LifecycleOwner
 import androidx.navigation.NavController
@@ -45,12 +46,12 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.GleanMetrics.Events
-import org.mozilla.fenix.GleanMetrics.UnifiedSearch
-import org.mozilla.fenix.GleanMetrics.VoiceSearch
+import org.mozilla.fenix.GleanMetrics.Toolbar
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.BrowserFragmentDirections
@@ -81,6 +82,11 @@ import org.mozilla.fenix.search.ext.searchEngineShortcuts
 import org.mozilla.fenix.search.fixtures.assertSearchSelectorEquals
 import org.mozilla.fenix.search.fixtures.buildExpectedSearchSelector
 import org.mozilla.fenix.settings.SupportUtils
+import org.mozilla.fenix.telemetry.ACTION_CLEAR_CLICKED
+import org.mozilla.fenix.telemetry.ACTION_MICROPHONE_CLICKED
+import org.mozilla.fenix.telemetry.ACTION_QR_CLICKED
+import org.mozilla.fenix.telemetry.ACTION_SEARCH_ENGINE_SELECTOR_CLICKED
+import org.mozilla.fenix.telemetry.SOURCE_ADDRESS_BAR
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
@@ -107,6 +113,15 @@ class BrowserToolbarSearchMiddlewareTest {
         every { navigate(any<Int>()) } just Runs
     }
     val browsingModeManager: BrowsingModeManager = mockk()
+    private lateinit var fragment: Fragment
+
+    @Before
+    fun setup() {
+        fragment = spyk(Fragment()).apply {
+            every { context } returns testContext
+        }
+        every { fragment.getViewLifecycleOwner() } returns lifecycleOwner
+    }
 
     @Test
     fun `GIVEN an environment was already set WHEN it is cleared THEN reset it to null`() {
@@ -189,7 +204,7 @@ class BrowserToolbarSearchMiddlewareTest {
 
         store.dispatch(clearButton.onClick as BrowserToolbarEvent)
         assertEquals(store.state.editState.query, "")
-        assertNotNull(Events.browserToolbarInputCleared.testGetValue())
+        assertTelemetryRecorded(ACTION_CLEAR_CLICKED)
     }
 
     @Test
@@ -205,7 +220,7 @@ class BrowserToolbarSearchMiddlewareTest {
         assertEquals(expectedQrButton, qrButton)
 
         store.dispatch(qrButton.onClick as BrowserToolbarEvent)
-        assertNotNull(Events.browserToolbarQrScanTapped.testGetValue())
+        assertTelemetryRecorded(ACTION_QR_CLICKED)
         verify { appStore.dispatch(QrScannerRequested) }
     }
 
@@ -224,7 +239,7 @@ class BrowserToolbarSearchMiddlewareTest {
         assertEquals(expectedVoiceSearchButton, voiceSearchButton)
 
         store.dispatch(voiceSearchButton.onClick as BrowserToolbarEvent)
-        assertNotNull(VoiceSearch.tapped.testGetValue())
+        assertTelemetryRecorded(ACTION_MICROPHONE_CLICKED)
         verify { appStore.dispatch(VoiceInputRequested) }
     }
 
@@ -234,7 +249,7 @@ class BrowserToolbarSearchMiddlewareTest {
 
         store.dispatch(SearchSelectorClicked)
 
-        assertNotNull(UnifiedSearch.searchMenuTapped.testGetValue())
+        assertTelemetryRecorded(ACTION_SEARCH_ENGINE_SELECTOR_CLICKED)
     }
 
     @Test
@@ -850,19 +865,17 @@ class BrowserToolbarSearchMiddlewareTest {
         browserStore: BrowserStore = this.browserStore,
         components: Components = this.components,
         settings: Settings = this.settings,
-        lifecycleOwner: LifecycleOwner = this.lifecycleOwner,
         navController: NavController = this.navController,
         browsingModeManager: BrowsingModeManager = this.browsingModeManager,
     ): Pair<BrowserToolbarSearchMiddleware, BrowserToolbarStore> {
         val middleware = buildMiddleware(appStore, browserStore, components, settings)
-        val store = buildStore(middleware, lifecycleOwner, navController, browsingModeManager)
+        val store = buildStore(middleware, navController, browsingModeManager)
 
         return middleware to store
     }
 
     private fun buildStore(
         middleware: BrowserToolbarSearchMiddleware = buildMiddleware(),
-        lifecycleOwner: LifecycleOwner = this.lifecycleOwner,
         navController: NavController = this.navController,
         browsingModeManager: BrowsingModeManager = this.browsingModeManager,
     ) = BrowserToolbarStore(
@@ -871,7 +884,7 @@ class BrowserToolbarSearchMiddlewareTest {
             it.dispatch(
                 EnvironmentRehydrated(
                     BrowserToolbarEnvironment(
-                        testContext, lifecycleOwner, navController, browsingModeManager,
+                        testContext, fragment, navController, browsingModeManager,
                     ),
                 ),
             )
@@ -919,4 +932,12 @@ class BrowserToolbarSearchMiddlewareTest {
         userSelectedSearchEngineId = "engine-c",
         userSelectedSearchEngineName = null,
     )
+
+    private fun assertTelemetryRecorded(item: String) {
+       val values = Toolbar.buttonTapped.testGetValue()
+       assertNotNull(values)
+       val last = values!!.last()
+       assertEquals(item, last.extra?.get("item"))
+       assertEquals(SOURCE_ADDRESS_BAR, last.extra?.get("source"))
+    }
 }
