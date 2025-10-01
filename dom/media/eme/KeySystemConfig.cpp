@@ -314,8 +314,6 @@ void KeySystemConfig::GetGMPKeySystemConfigs(dom::Promise* aPromise) {
             info->mCapabilities = config.GetDebugInfo();
             info->mClearlead = DoesKeySystemSupportClearLead(config.mKeySystem);
             
-            info->mIsHDCP22Compatible = false;
-            
             info->mIsHardwareDecryption = false;
           }
           promise->MaybeResolve(cdmInfo);
@@ -368,7 +366,6 @@ nsString KeySystemConfig::GetDebugInfo() const {
   debugInfo.AppendLiteral(" WEBM={");
   debugInfo.Append(NS_ConvertUTF8toUTF16(mWebM.GetDebugInfo()));
   debugInfo.AppendLiteral("}");
-  debugInfo.AppendPrintf(" isHDCP22Compatible=%d", mIsHDCP22Compatible);
   return debugInfo;
 }
 
