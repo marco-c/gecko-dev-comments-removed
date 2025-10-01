@@ -57,6 +57,8 @@ SIGNING_SCOPE_ALIAS_TO_PROJECT = [
             "larch",
             
             "maple",
+            
+            "cypress",
         },
     ],
     [
@@ -111,6 +113,8 @@ BEETMOVER_SCOPE_ALIAS_TO_PROJECT = [
             "pine",
             
             "larch",
+            
+            "cypress",
         },
     ],
     [
@@ -156,6 +160,8 @@ BEETMOVER_ACTION_SCOPES = {
     "nightly-pine": "beetmover:action:push-to-nightly",
     
     "nightly-larch": "beetmover:action:push-to-nightly",
+    
+    "nightly-cypress": "beetmover:action:push-to-nightly",
     "default": "beetmover:action:push-to-candidates",
 }
 
@@ -190,6 +196,8 @@ BALROG_SCOPE_ALIAS_TO_PROJECT = [
             "pine",
             
             "larch",
+            
+            "cypress",
         },
     ],
     [
