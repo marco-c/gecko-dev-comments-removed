@@ -238,13 +238,13 @@ class CallbackObjectBase {
   JS::TenuredHeap<JSObject*> mIncumbentJSGlobal;
 };
 
+
+
+
+
+
+
 class MOZ_STACK_CLASS CallSetup {
-  
-
-
-
-
-
  public:
   
   
@@ -270,6 +270,25 @@ class MOZ_STACK_CLASS CallSetup {
   CallSetup(const CallSetup&) = delete;
 
   bool ShouldRethrowException(JS::Handle<JS::Value> aException);
+
+  static nsIGlobalObject* GetActiveGlobalObjectForCall(
+      JSObject* callbackOrGlobal, bool aIsMainThread,
+      bool aIsJSImplementedWebIDL, ErrorResult& aRv);
+
+  static bool CheckBeforeExecution(nsIGlobalObject* aGlobalObject,
+                                   JSObject* aCallbackOrGlobal,
+                                   bool aIsJSImplementedWebIDL,
+                                   ErrorResult& aRv);
+
+  
+  
+  void SetupForExecution(nsIGlobalObject* aGlobalObject,
+                         nsIGlobalObject* aIncumbentGlobal,
+                         JS::Handle<JSObject*> aCallbackOrGlobal,
+                         JS::Handle<JSObject*> aCallbackGlobal,
+                         JS::Handle<JSObject*> aCreationStack,
+                         nsIPrincipal* aWebIDLCallerPrincipal,
+                         const char* aExecutionReason, ErrorResult& aRv);
 
   
   JSContext* mCx;
