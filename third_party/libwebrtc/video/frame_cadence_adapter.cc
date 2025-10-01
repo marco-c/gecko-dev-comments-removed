@@ -108,8 +108,7 @@ class ZeroHertzAdapterMode : public AdapterMode {
                        Clock* clock,
                        FrameCadenceAdapterInterface::Callback* callback,
                        double max_fps,
-                       std::atomic<int>& frames_scheduled_for_processing,
-                       bool zero_hertz_queue_overload);
+                       std::atomic<int>& frames_scheduled_for_processing);
   ~ZeroHertzAdapterMode() override { refresh_frame_requester_.Stop(); }
 
   
@@ -226,9 +225,6 @@ class ZeroHertzAdapterMode : public AdapterMode {
   
   
   const std::atomic<int>& frames_scheduled_for_processing_;
-
-  
-  const bool zero_hertz_queue_overload_enabled_;
 
   
   const TimeDelta frame_delay_ = TimeDelta::Seconds(1) / max_fps_;
@@ -394,12 +390,6 @@ class FrameCadenceAdapterImpl : public FrameCadenceAdapterInterface {
   TaskQueueBase* const queue_;
 
   
-  const bool frame_cadence_adapter_zero_hertz_queue_overload_enabled_;
-
-  
-  
-  const bool use_video_frame_timestamp_;
-  
   std::optional<Timestamp> last_incoming_frame_timestamp_;
 
   
@@ -445,14 +435,12 @@ ZeroHertzAdapterMode::ZeroHertzAdapterMode(
     Clock* clock,
     FrameCadenceAdapterInterface::Callback* callback,
     double max_fps,
-    std::atomic<int>& frames_scheduled_for_processing,
-    bool zero_hertz_queue_overload_enabled)
+    std::atomic<int>& frames_scheduled_for_processing)
     : queue_(queue),
       clock_(clock),
       callback_(callback),
       max_fps_(max_fps),
-      frames_scheduled_for_processing_(frames_scheduled_for_processing),
-      zero_hertz_queue_overload_enabled_(zero_hertz_queue_overload_enabled) {
+      frames_scheduled_for_processing_(frames_scheduled_for_processing) {
   sequence_checker_.Detach();
   MaybeStartRefreshFrameRequester();
 }
@@ -720,10 +708,6 @@ void ZeroHertzAdapterMode::SendFrameNow(std::optional<Timestamp> post_time,
                      frame);
 
   
-  if (!zero_hertz_queue_overload_enabled_)
-    return;
-
-  
   
   
   
@@ -855,10 +839,6 @@ FrameCadenceAdapterImpl::FrameCadenceAdapterImpl(
     const FieldTrialsView& field_trials)
     : clock_(clock),
       queue_(queue),
-      frame_cadence_adapter_zero_hertz_queue_overload_enabled_(
-          !field_trials.IsDisabled("WebRTC-ZeroHertzQueueOverload")),
-      use_video_frame_timestamp_(field_trials.IsEnabled(
-          "WebRTC-FrameCadenceAdapter-UseVideoFrameTimestamp")),
       metronome_(metronome),
       worker_queue_(worker_queue) {}
 
@@ -1003,9 +983,7 @@ void FrameCadenceAdapterImpl::OnFrameOnMainQueue(Timestamp post_time,
         << " last: " << last_incoming_frame_timestamp_.value().us();
   }
   last_incoming_frame_timestamp_ = Timestamp::Micros(frame.timestamp_us());
-  Timestamp update_frame_rate_timestamp =
-      use_video_frame_timestamp_ ? *last_incoming_frame_timestamp_ : post_time;
-  UpdateFrameRate(update_frame_rate_timestamp);
+  UpdateFrameRate(post_time);
 }
 
 bool FrameCadenceAdapterImpl::IsZeroHertzScreenshareEnabled() const {
@@ -1037,10 +1015,9 @@ void FrameCadenceAdapterImpl::MaybeReconfigureAdapters(
     if (!was_zero_hertz_enabled || max_fps_has_changed) {
       RTC_LOG(LS_INFO) << "Zero hertz mode enabled (max_fps="
                        << source_constraints_->max_fps.value() << ")";
-      zero_hertz_adapter_.emplace(
-          queue_, clock_, callback_, source_constraints_->max_fps.value(),
-          frames_scheduled_for_processing_,
-          frame_cadence_adapter_zero_hertz_queue_overload_enabled_);
+      zero_hertz_adapter_.emplace(queue_, clock_, callback_,
+                                  source_constraints_->max_fps.value(),
+                                  frames_scheduled_for_processing_);
       zero_hertz_adapter_->UpdateVideoSourceRestrictions(
           restricted_max_frame_rate_);
     }
