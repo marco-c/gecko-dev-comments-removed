@@ -391,7 +391,7 @@ class EyeDropper {
 
   handleEvent(e) {
     switch (e.type) {
-      case "mousemove":
+      case "mousemove": {
         
         const [xOffset, yOffset] = getFrameOffsets(this.win, e.target);
         const x = xOffset + e.pageX - this.win.scrollX;
@@ -404,6 +404,7 @@ class EyeDropper {
         
         this.moveTo(x, y);
         break;
+      }
       
       
       case "click":
@@ -599,12 +600,12 @@ function toColorString(rgb, format) {
       return hexString(rgb);
     case "rgb":
       return "rgb(" + r + ", " + g + ", " + b + ")";
-    case "hsl":
+    case "hsl": {
       const [h, s, l] = rgbToHsl(rgb);
       return "hsl(" + h + ", " + s + "%, " + l + "%)";
+    }
     case "name":
-      const str = InspectorUtils.rgbToColorName(r, g, b) || hexString(rgb);
-      return str;
+      return InspectorUtils.rgbToColorName(r, g, b) || hexString(rgb);
     default:
       return hexString(rgb);
   }
