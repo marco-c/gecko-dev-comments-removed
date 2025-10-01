@@ -707,6 +707,8 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
       JS::Handle<JSScript*> aDebuggerIntroductionScript, ErrorResult& aRv);
 
   static nsCString& BytecodeMimeTypeFor(ScriptLoadRequest* aRequest);
+  static nsCString& BytecodeMimeTypeFor(
+      JS::loader::LoadedScript* aLoadedScript);
 
   
   
@@ -772,17 +774,14 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
 
 
-  already_AddRefed<JS::Stencil> FinishCollectingDelazifications(
-      JSContext* aCx, ScriptLoadRequest* aRequest);
+  void FinishCollectingDelazifications(JSContext* aCx,
+                                       ScriptLoadRequest* aRequest);
 
   
 
 
-  void EncodeBytecodeAndSave(JSContext* aCx, ScriptLoadRequest* aRequest,
-                             nsCOMPtr<nsICacheInfoChannel>& aCacheInfo,
-                             nsCString& aMimeType,
-                             const JS::TranscodeBuffer& aSRI,
-                             JS::Stencil* aStencil);
+  void EncodeBytecodeAndSave(JSContext* aCx,
+                             JS::loader::LoadedScript* aLoadedScript);
 
   
 
