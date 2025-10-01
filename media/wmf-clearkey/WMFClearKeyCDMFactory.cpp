@@ -17,7 +17,7 @@ using Microsoft::WRL::MakeAndInitialize;
 
 ActivatableClass(WMFClearKeyCDMFactory);
 
-bool isRequiringHDCP22OrAbove(LPCWSTR aType) {
+static bool isRequiringHDCP22OrAbove(LPCWSTR aType) {
   if (aType == nullptr || *aType == L'\0') {
     return false;
   }
@@ -44,10 +44,7 @@ WMFClearKeyCDMFactory::IsTypeSupported(_In_ LPCWSTR aKeySystem,
   
   
   
-  if (needHDCP22OrAbove) {
-    return false;
-  }
-  return true;
+  return !needHDCP22OrAbove;
 }
 
 STDMETHODIMP
@@ -74,6 +71,17 @@ WMFClearKeyCDMFactory::CreateContentDecryptionModuleAccess(
       MakeAndInitialize<WMFClearKeyCDMAccess, IMFContentDecryptionModuleAccess>(
           aCdmAccess)));
   ENTRY_LOG_ARGS("Created CDM access!");
+  return S_OK;
+}
+
+STDMETHODIMP WMFClearKeyCDMFactory::IsTypeSupportedEx(
+    BSTR aType, BSTR aKeySystem, MF_MEDIA_ENGINE_CANPLAY* aPAnswer) {
+  if (!aPAnswer) {
+    return E_POINTER;
+  }
+  *aPAnswer = IsTypeSupported(aKeySystem, aType)
+                  ? MF_MEDIA_ENGINE_CANPLAY_PROBABLY
+                  : MF_MEDIA_ENGINE_CANPLAY_NOT_SUPPORTED;
   return S_OK;
 }
 
