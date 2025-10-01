@@ -38,7 +38,7 @@ class FrameEncryptorInterface : public RefCountInterface {
   
   
   
-  virtual int Encrypt(webrtc::MediaType media_type,
+  virtual int Encrypt(MediaType media_type,
                       uint32_t ssrc,
                       ArrayView<const uint8_t> additional_data,
                       ArrayView<const uint8_t> frame,
@@ -48,7 +48,7 @@ class FrameEncryptorInterface : public RefCountInterface {
   
   
   
-  virtual size_t GetMaxCiphertextByteSize(webrtc::MediaType media_type,
+  virtual size_t GetMaxCiphertextByteSize(MediaType media_type,
                                           size_t frame_size) = 0;
 };
 

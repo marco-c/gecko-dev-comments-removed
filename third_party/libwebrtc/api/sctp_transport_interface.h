@@ -75,7 +75,7 @@ class SctpTransportObserverInterface {
 
 
 
-class SctpTransportInterface : public webrtc::RefCountInterface {
+class SctpTransportInterface : public RefCountInterface {
  public:
   
   virtual scoped_refptr<DtlsTransportInterface> dtls_transport() const = 0;

@@ -162,7 +162,7 @@ class RTC_EXPORT Candidate {
   
   
   void set_network_cost(uint16_t network_cost) {
-    RTC_DCHECK_LE(network_cost, webrtc::kNetworkCostMax);
+    RTC_DCHECK_LE(network_cost, kNetworkCostMax);
     network_cost_ = network_cost;
   }
   uint16_t network_cost() const { return network_cost_; }

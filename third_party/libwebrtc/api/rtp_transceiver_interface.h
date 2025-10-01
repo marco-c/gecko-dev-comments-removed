@@ -59,11 +59,11 @@ struct RTC_EXPORT RtpTransceiverInit final {
 
 
 
-class RTC_EXPORT RtpTransceiverInterface : public webrtc::RefCountInterface {
+class RTC_EXPORT RtpTransceiverInterface : public RefCountInterface {
  public:
   
   
-  virtual webrtc::MediaType media_type() const = 0;
+  virtual MediaType media_type() const = 0;
 
   
   
@@ -165,7 +165,7 @@ class RTC_EXPORT RtpTransceiverInterface : public webrtc::RefCountInterface {
   
   
   
-  virtual webrtc::RTCError SetHeaderExtensionsToNegotiate(
+  virtual RTCError SetHeaderExtensionsToNegotiate(
       ArrayView<const RtpHeaderExtensionCapability> header_extensions) = 0;
 
  protected:

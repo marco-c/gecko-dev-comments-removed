@@ -41,7 +41,7 @@ class DtmfSenderObserverInterface {
 
 
 
-class DtmfSenderInterface : public webrtc::RefCountInterface {
+class DtmfSenderInterface : public RefCountInterface {
  public:
   
   static const int kDtmfDefaultCommaDelayMs = 2000;

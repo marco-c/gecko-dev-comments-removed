@@ -40,13 +40,13 @@ class RtpReceiverObserverInterface {
   
   
   
-  virtual void OnFirstPacketReceived(webrtc::MediaType media_type) = 0;
+  virtual void OnFirstPacketReceived(MediaType media_type) = 0;
 
  protected:
   virtual ~RtpReceiverObserverInterface() {}
 };
 
-class RTC_EXPORT RtpReceiverInterface : public webrtc::RefCountInterface,
+class RTC_EXPORT RtpReceiverInterface : public RefCountInterface,
                                         public FrameTransformerHost {
  public:
   virtual scoped_refptr<MediaStreamTrackInterface> track() const = 0;
@@ -68,7 +68,7 @@ class RTC_EXPORT RtpReceiverInterface : public webrtc::RefCountInterface,
   virtual std::vector<scoped_refptr<MediaStreamInterface>> streams() const;
 
   
-  virtual webrtc::MediaType media_type() const = 0;
+  virtual MediaType media_type() const = 0;
 
   
   

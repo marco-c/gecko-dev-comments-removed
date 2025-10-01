@@ -41,7 +41,7 @@ class RefCountedBase {
   virtual ~RefCountedBase() = default;
 
  private:
-  mutable webrtc::webrtc_impl::RefCounter ref_count_{0};
+  mutable webrtc_impl::RefCounter ref_count_{0};
 };
 
 
@@ -91,7 +91,7 @@ class RefCountedNonVirtual {
   ~RefCountedNonVirtual() = default;
 
  private:
-  mutable webrtc::webrtc_impl::RefCounter ref_count_{0};
+  mutable webrtc_impl::RefCounter ref_count_{0};
 };
 
 }  

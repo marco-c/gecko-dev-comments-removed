@@ -56,7 +56,7 @@ class NotifierInterface {
 
 
 
-class RTC_EXPORT MediaSourceInterface : public webrtc::RefCountInterface,
+class RTC_EXPORT MediaSourceInterface : public RefCountInterface,
                                         public NotifierInterface {
  public:
   enum SourceState { kInitializing, kLive, kEnded, kMuted };
@@ -71,7 +71,7 @@ class RTC_EXPORT MediaSourceInterface : public webrtc::RefCountInterface,
 
 
 
-class RTC_EXPORT MediaStreamTrackInterface : public webrtc::RefCountInterface,
+class RTC_EXPORT MediaStreamTrackInterface : public RefCountInterface,
                                              public NotifierInterface {
  public:
   enum TrackState {
@@ -161,7 +161,7 @@ class VideoTrackSourceInterface : public MediaSourceInterface,
   
   
   virtual void ProcessConstraints(
-      const webrtc::VideoTrackSourceConstraints& ) {}
+      const VideoTrackSourceConstraints& ) {}
 
  protected:
   ~VideoTrackSourceInterface() override = default;
@@ -269,7 +269,7 @@ class RTC_EXPORT AudioSourceInterface : public MediaSourceInterface {
 
 
 
-class AudioProcessorInterface : public webrtc::RefCountInterface {
+class AudioProcessorInterface : public RefCountInterface {
  public:
   struct AudioProcessorStatistics {
     bool typing_noise_detected = false;
@@ -323,7 +323,7 @@ typedef std::vector<scoped_refptr<VideoTrackInterface> > VideoTrackVector;
 
 
 
-class MediaStreamInterface : public webrtc::RefCountInterface,
+class MediaStreamInterface : public RefCountInterface,
                              public NotifierInterface {
  public:
   virtual std::string id() const = 0;

@@ -79,14 +79,14 @@ class AsyncDnsResolverFactoryInterface {
   
   
   
-  virtual std::unique_ptr<webrtc::AsyncDnsResolverInterface> CreateAndResolve(
+  virtual std::unique_ptr<AsyncDnsResolverInterface> CreateAndResolve(
       const SocketAddress& addr,
       absl::AnyInvocable<void()> callback) = 0;
   
   
   
   
-  virtual std::unique_ptr<webrtc::AsyncDnsResolverInterface> CreateAndResolve(
+  virtual std::unique_ptr<AsyncDnsResolverInterface> CreateAndResolve(
       const SocketAddress& addr,
       int family,
       absl::AnyInvocable<void()> callback) = 0;
@@ -94,7 +94,7 @@ class AsyncDnsResolverFactoryInterface {
   
   
   
-  virtual std::unique_ptr<webrtc::AsyncDnsResolverInterface> Create() = 0;
+  virtual std::unique_ptr<AsyncDnsResolverInterface> Create() = 0;
 };
 
 }  

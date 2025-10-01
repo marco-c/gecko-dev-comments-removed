@@ -317,8 +317,7 @@ std::unique_ptr<SessionDescriptionInterface> CreateSessionDescription(
     std::unique_ptr<SessionDescription> description);
 
 
-class RTC_EXPORT CreateSessionDescriptionObserver
-    : public webrtc::RefCountInterface {
+class RTC_EXPORT CreateSessionDescriptionObserver : public RefCountInterface {
  public:
   
   
@@ -337,8 +336,7 @@ class RTC_EXPORT CreateSessionDescriptionObserver
 };
 
 
-class RTC_EXPORT SetSessionDescriptionObserver
-    : public webrtc::RefCountInterface {
+class RTC_EXPORT SetSessionDescriptionObserver : public RefCountInterface {
  public:
   virtual void OnSuccess() = 0;
   

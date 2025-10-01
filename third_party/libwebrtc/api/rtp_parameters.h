@@ -137,7 +137,7 @@ struct RTC_EXPORT RtpCodec {
   std::string name;
 
   
-  webrtc::MediaType kind = webrtc::MediaType::AUDIO;
+  MediaType kind = MediaType::AUDIO;
 
   
   std::optional<int> clock_rate;
@@ -195,7 +195,7 @@ struct RTC_EXPORT RtpCodecCapability : public RtpCodec {
 
   template <typename Sink>
   friend void AbslStringify(Sink& sink, const RtpCodecCapability& cap) {
-    if (cap.kind == webrtc::MediaType::AUDIO) {
+    if (cap.kind == MediaType::AUDIO) {
       absl::Format(&sink, "[audio/%s/%d/%d]", cap.name,
                    cap.clock_rate.value_or(0), cap.num_channels.value_or(1));
     } else {

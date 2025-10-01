@@ -110,7 +110,7 @@ class DtlsTransportObserverInterface {
 
 
 
-class DtlsTransportInterface : public webrtc::RefCountInterface {
+class DtlsTransportInterface : public RefCountInterface {
  public:
   
   virtual scoped_refptr<IceTransportInterface> ice_transport() = 0;

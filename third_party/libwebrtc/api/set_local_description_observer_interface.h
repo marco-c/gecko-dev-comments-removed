@@ -19,7 +19,7 @@ namespace webrtc {
 
 
 
-class SetLocalDescriptionObserverInterface : public webrtc::RefCountInterface {
+class SetLocalDescriptionObserverInterface : public RefCountInterface {
  public:
   
   virtual void OnSetLocalDescriptionComplete(RTCError error) = 0;

@@ -203,7 +203,7 @@ bool RtpExtension::IsEncryptionSupported(absl::string_view uri) {
       
       
       
-      uri != webrtc::RtpExtension::kAbsSendTimeUri &&
+      uri != RtpExtension::kAbsSendTimeUri &&
 #endif
       uri != RtpExtension::kEncryptHeaderExtensionsUri;
 }

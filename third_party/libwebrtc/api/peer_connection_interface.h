@@ -155,7 +155,7 @@ class MediaFactory;
 
 
 
-class StreamCollectionInterface : public webrtc::RefCountInterface {
+class StreamCollectionInterface : public RefCountInterface {
  public:
   
   virtual size_t count() = 0;
@@ -169,7 +169,7 @@ class StreamCollectionInterface : public webrtc::RefCountInterface {
   ~StreamCollectionInterface() override = default;
 };
 
-class StatsObserver : public webrtc::RefCountInterface {
+class StatsObserver : public RefCountInterface {
  public:
   virtual void OnComplete(const StatsReports& reports) = 0;
 
@@ -184,7 +184,7 @@ enum class SdpSemantics {
   kUnifiedPlan,
 };
 
-class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
+class RTC_EXPORT PeerConnectionInterface : public RefCountInterface {
  public:
   
   enum SignalingState {
@@ -613,7 +613,7 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
     
     
     
-    webrtc::TurnCustomizer* turn_customizer = nullptr;
+    TurnCustomizer* turn_customizer = nullptr;
 
     
     
@@ -868,9 +868,9 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   
   
   virtual RTCErrorOr<scoped_refptr<RtpTransceiverInterface>> AddTransceiver(
-      webrtc::MediaType media_type) = 0;
+      MediaType media_type) = 0;
   virtual RTCErrorOr<scoped_refptr<RtpTransceiverInterface>> AddTransceiver(
-      webrtc::MediaType media_type,
+      MediaType media_type,
       const RtpTransceiverInit& init) = 0;
 
   
@@ -1390,13 +1390,11 @@ struct RTC_EXPORT PeerConnectionDependencies final {
   
   std::unique_ptr<PortAllocator> allocator;
   
-  std::unique_ptr<webrtc::AsyncDnsResolverFactoryInterface>
-      async_dns_resolver_factory;
-  std::unique_ptr<webrtc::IceTransportFactory> ice_transport_factory;
+  std::unique_ptr<AsyncDnsResolverFactoryInterface> async_dns_resolver_factory;
+  std::unique_ptr<IceTransportFactory> ice_transport_factory;
   std::unique_ptr<RTCCertificateGeneratorInterface> cert_generator;
   std::unique_ptr<SSLCertificateVerifier> tls_cert_verifier;
-  std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>
-      video_bitrate_allocator_factory;
+  std::unique_ptr<VideoBitrateAllocatorFactory> video_bitrate_allocator_factory;
   
   
   std::unique_ptr<NetworkControllerFactoryInterface> network_controller_factory;
@@ -1497,8 +1495,7 @@ struct RTC_EXPORT PeerConnectionFactoryDependencies final {
 
 
 
-class RTC_EXPORT PeerConnectionFactoryInterface
-    : public webrtc::RefCountInterface {
+class RTC_EXPORT PeerConnectionFactoryInterface : public RefCountInterface {
  public:
   class Options {
    public:
@@ -1543,14 +1540,12 @@ class RTC_EXPORT PeerConnectionFactoryInterface
   
   
   
-  virtual RtpCapabilities GetRtpSenderCapabilities(
-      webrtc::MediaType kind) const = 0;
+  virtual RtpCapabilities GetRtpSenderCapabilities(MediaType kind) const = 0;
 
   
   
   
-  virtual RtpCapabilities GetRtpReceiverCapabilities(
-      webrtc::MediaType kind) const = 0;
+  virtual RtpCapabilities GetRtpReceiverCapabilities(MediaType kind) const = 0;
 
   virtual scoped_refptr<MediaStreamInterface> CreateLocalMediaStream(
       const std::string& stream_id) = 0;

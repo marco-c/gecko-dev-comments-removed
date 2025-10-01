@@ -60,7 +60,7 @@ class FrameDecryptorInterface : public RefCountInterface {
   
   
   
-  virtual Result Decrypt(webrtc::MediaType media_type,
+  virtual Result Decrypt(MediaType media_type,
                          const std::vector<uint32_t>& csrcs,
                          ArrayView<const uint8_t> additional_data,
                          ArrayView<const uint8_t> encrypted_frame,
@@ -69,7 +69,7 @@ class FrameDecryptorInterface : public RefCountInterface {
   
   
   
-  virtual size_t GetMaxPlaintextByteSize(webrtc::MediaType media_type,
+  virtual size_t GetMaxPlaintextByteSize(MediaType media_type,
                                          size_t encrypted_frame_size) = 0;
 };
 

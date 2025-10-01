@@ -42,13 +42,13 @@ class RtpSenderObserverInterface {
  public:
   
   
-  virtual void OnFirstPacketSent(webrtc::MediaType media_type) = 0;
+  virtual void OnFirstPacketSent(MediaType media_type) = 0;
 
  protected:
   virtual ~RtpSenderObserverInterface() {}
 };
 
-class RTC_EXPORT RtpSenderInterface : public webrtc::RefCountInterface,
+class RTC_EXPORT RtpSenderInterface : public RefCountInterface,
                                       public FrameTransformerHost {
  public:
   
@@ -68,7 +68,7 @@ class RTC_EXPORT RtpSenderInterface : public webrtc::RefCountInterface,
   virtual uint32_t ssrc() const = 0;
 
   
-  virtual webrtc::MediaType media_type() const = 0;
+  virtual MediaType media_type() const = 0;
 
   
   
