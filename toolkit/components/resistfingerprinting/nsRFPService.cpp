@@ -15,6 +15,7 @@
 #include <new>
 #include <type_traits>
 #include <utility>
+#include <mutex>
 
 #include "MainThreadUtils.h"
 #include "ScopedNSSTypes.h"
@@ -117,6 +118,7 @@ static mozilla::LazyLogModule gTimestamps("Timestamps");
 #define GLEAN_DATA_SUBMISSION_PREF "datareporting.healthreport.uploadEnabled"
 #define USER_CHARACTERISTICS_UUID_PREF \
   "toolkit.telemetry.user_characteristics_ping.uuid"
+#define INTL_ACCEPT_LANGUAGES_PREF "intl.accept_languages"
 
 #define RFP_TIMER_UNCONDITIONAL_VALUE 20
 #define LAST_PB_SESSION_EXITED_TOPIC "last-pb-context-exited"
@@ -169,6 +171,7 @@ NS_IMPL_ISUPPORTS(nsRFPService, nsIObserver, nsIRFPService)
 
 static StaticRefPtr<nsRFPService> sRFPService;
 static bool sInitialized = false;
+static inline StaticAutoPtr<nsTArray<nsCString>> sAllowedFonts;
 
 
 static StaticMutex sEnabledFingerprintingProtectionsMutex;
@@ -1734,13 +1737,67 @@ nsresult nsRFPService::RandomizePixels(nsICookieJarSettings* aCookieJarSettings,
                                        uint32_t aWidth, uint32_t aHeight,
                                        uint32_t aSize,
                                        gfx::SurfaceFormat aSurfaceFormat) {
+#ifdef __clang__
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wunreachable-code"
+#endif
+  if (false) {
+    
+    
+    
+    
+    
+    static int calls = 0;
+    char filename[256];
+    SprintfLiteral(filename, "rendered_image_%dx%d_%d_pre", aWidth, aHeight,
+                   calls);
+    FILE* outputFile = fopen(filename, "wb");  
+    fwrite(aData, 1, aSize, outputFile);
+    fclose(outputFile);
+    calls++;
+  }
+#ifdef __clang__
+#  pragma clang diagnostic pop
+#endif
+
+  constexpr uint8_t bytesPerChannel = 1;
+  constexpr uint8_t bytesPerPixel = 4 * bytesPerChannel;
+
+  uint8_t offset = 0;
+  switch (aSurfaceFormat) {
+    case gfx::SurfaceFormat::B8G8R8A8:
+      offset = 0;
+      break;
+    case gfx::SurfaceFormat::A8R8G8B8:
+      offset = 1;
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE(
+          "Unsupported surface format for pixel randomization");
+      return NS_ERROR_INVALID_ARG;
+  }
+  return RandomizeElements(aCookieJarSettings, aPrincipal, aData, aSize,
+                           bytesPerPixel, bytesPerChannel, offset, true);
+}
+
+
+nsresult nsRFPService::RandomizeElements(
+    nsICookieJarSettings* aCookieJarSettings, nsIPrincipal* aPrincipal,
+    uint8_t* aData, uint32_t aSizeInBytes, uint8_t aElementsPerGroup,
+    uint8_t aBytesPerElement, uint8_t aElementOffset, bool aSkipLastElement) {
   NS_ENSURE_ARG_POINTER(aData);
+  MOZ_ASSERT(aElementsPerGroup >= 1);
+  MOZ_ASSERT(aBytesPerElement >= 1);
+  MOZ_ASSERT(aElementOffset < aElementsPerGroup);
 
   if (!aCookieJarSettings) {
     return NS_OK;
   }
 
-  if (aSize <= 4) {
+  uint32_t groupSize = aElementsPerGroup * aBytesPerElement;
+  uint32_t groupCount = aSizeInBytes / groupSize;
+
+  if (groupCount <= 1) {
     return NS_OK;
   }
 
@@ -1750,20 +1807,17 @@ nsresult nsRFPService::RandomizePixels(nsICookieJarSettings* aCookieJarSettings,
   }
 
   
-  static constexpr size_t bytesPerPixel = 4;
-  MOZ_ASSERT(aSize == aWidth * aHeight * bytesPerPixel,
-             "Pixels must be tightly-packed");
-  const bool allPixelsMatch = [&]() {
-    auto itr = RangedPtr<const uint8_t>(aData, aSize);
-    const auto itrEnd = itr + aSize;
-    for (; itr != itrEnd; itr += bytesPerPixel) {
-      if (memcmp(itr.get(), aData, bytesPerPixel) != 0) {
+  const bool allGroupsMatch = [&]() {
+    auto itr = RangedPtr<const uint8_t>(aData, aSizeInBytes);
+    const auto itrEnd = itr + (groupCount * groupSize);
+    for (; itr != itrEnd; itr += groupSize) {
+      if (memcmp(itr.get(), aData, groupSize) != 0) {
         return false;
       }
     }
     return true;
   }();
-  if (allPixelsMatch) {
+  if (allGroupsMatch) {
     return NS_OK;
   }
 
@@ -1771,17 +1825,14 @@ nsresult nsRFPService::RandomizePixels(nsICookieJarSettings* aCookieJarSettings,
       glean::fingerprinting_protection::canvas_noise_calculate_time_2.Start();
 
   nsTArray<uint8_t> canvasKey;
-  nsresult rv = GenerateCanvasKeyFromImageData(aCookieJarSettings, aData, aSize,
-                                               canvasKey);
+  nsresult rv = GenerateCanvasKeyFromImageData(aCookieJarSettings, aData,
+                                               aSizeInBytes, canvasKey);
+
   if (NS_FAILED(rv)) {
     glean::fingerprinting_protection::canvas_noise_calculate_time_2.Cancel(
         std::move(timerId));
     return rv;
   }
-
-  
-  
-  uint32_t pixelCnt = aSize / 4;
 
   
   
@@ -1811,43 +1862,46 @@ nsresult nsRFPService::RandomizePixels(nsICookieJarSettings* aCookieJarSettings,
   
   uint8_t numNoises = std::clamp<uint8_t>(rnd3, 20, 255);
 
-#ifdef __clang__
-#  pragma clang diagnostic push
-#  pragma clang diagnostic ignored "-Wunreachable-code"
-#endif
-  if (false) {
-    
-    
-    
-    
-    
-    static int calls = 0;
-    char filename[256];
-    SprintfLiteral(filename, "rendered_image_%dx%d_%d_pre", aWidth, aHeight,
-                   calls);
-    FILE* outputFile = fopen(filename, "wb");  
-    fwrite(aData, 1, aSize, outputFile);
-    fclose(outputFile);
-    calls++;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  uint8_t moduloDivisor = aElementsPerGroup;
+  if (moduloDivisor > 1 && aSkipLastElement) {
+    moduloDivisor -= 1;
   }
-#ifdef __clang__
-#  pragma clang diagnostic pop
-#endif
 
   while (numNoises--) {
     
     
     
-    uint32_t channel;
-    if (aSurfaceFormat == gfx::SurfaceFormat::B8G8R8A8) {
-      channel = rng1.next() % 3;
-    } else if (aSurfaceFormat == gfx::SurfaceFormat::A8R8G8B8) {
-      channel = rng1.next() % 3 + 1;
-    } else {
-      return NS_ERROR_INVALID_ARG;
-    }
+    uint8_t element = rng1.next() % moduloDivisor + aElementOffset;
+    MOZ_ASSERT(element < aElementsPerGroup,
+               "Element index should be less than elements per group");
 
-    uint32_t idx = 4 * (rng1.next() % pixelCnt) + channel;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    uint32_t idx =
+        groupSize * (rng1.next() % groupCount) + element * aBytesPerElement;
+    MOZ_ASSERT(idx < aSizeInBytes,
+               "Index should be less than the size of the data");
     uint8_t bit = rng2.next();
 
     
@@ -2758,4 +2812,137 @@ uint32_t nsRFPService::CollapseMaxTouchPoints(uint32_t aMaxTouchPoints) {
   
   
   return 5;
+}
+
+
+void nsRFPService::CalculateFontLocaleAllowlist() {
+  static bool sAcceptLanguagesIsDirty = true;
+
+  enum MatchSetting : uint8_t { StartsWith, EndsWith, Exact };
+
+  struct LocaleMatchingRule {
+    const char* lang;
+    MatchSetting matchSetting;
+  };
+
+  struct FontInclusionRule {
+    const char* fontName;
+    const LocaleMatchingRule* langs;
+  };
+
+#define FONT_RULE(font, ...)                          \
+  []() -> FontInclusionRule {                         \
+    static const LocaleMatchingRule _langs[] = {      \
+        __VA_ARGS__, {nullptr, MatchSetting::Exact}}; \
+    return FontInclusionRule{font, _langs};           \
+  }(),
+
+  static const FontInclusionRule fontInclusionRules[] = {
+#define FontInclusionByLocaleRules
+
+#ifdef XP_WIN
+#  include "../../gfx/thebes/StandardFonts-win10.inc"
+#elif defined(XP_MACOSX)
+#  include "../../gfx/thebes/StandardFonts-macos.inc"
+#elif defined(XP_LINUX)
+#  include "../../gfx/thebes/StandardFonts-linux.inc"
+#elif defined(XP_ANDROID)
+#  include "../../gfx/thebes/StandardFonts-android.inc"
+#endif
+
+#undef FontInclusionByLocaleRules
+  };
+
+#undef FONT_RULE
+
+  static std::once_flag sOnce;
+  std::call_once(sOnce, []() {
+    Preferences::RegisterCallback(
+        [](const char*, void*) { sAcceptLanguagesIsDirty = true; },
+        INTL_ACCEPT_LANGUAGES_PREF);
+  });
+
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (sAcceptLanguagesIsDirty) {
+    if (!sAllowedFonts) {
+      sAllowedFonts = new nsTArray<nsCString>();
+      ClearOnShutdown(&sAllowedFonts);
+    } else {
+      sAllowedFonts->ClearAndRetainStorage();
+    }
+
+    nsAutoCString acceptLang;
+    nsresult rv = Preferences::GetLocalizedCString(INTL_ACCEPT_LANGUAGES_PREF,
+                                                   acceptLang);
+    NS_ENSURE_SUCCESS_VOID(rv);
+
+    ToLowerCase(acceptLang);
+
+    for (const nsDependentCSubstring& locale :
+         nsCCharSeparatedTokenizer(acceptLang, ',').ToRange()) {
+      for (const FontInclusionRule& fontRules : fontInclusionRules) {
+        for (const LocaleMatchingRule* localeRule = fontRules.langs;
+             localeRule->lang != nullptr; localeRule++) {
+          bool matched = false;
+          switch (localeRule->matchSetting) {
+            case MatchSetting::Exact: {
+              if (locale.Equals(localeRule->lang)) {
+                matched = true;
+              }
+              break;
+            }
+            case MatchSetting::StartsWith: {
+              if (StringBeginsWith(locale,
+                                   nsDependentCString(localeRule->lang))) {
+                matched = true;
+              }
+              break;
+            }
+            case MatchSetting::EndsWith: {
+              if (StringEndsWith(locale,
+                                 nsDependentCString(localeRule->lang))) {
+                matched = true;
+              }
+              break;
+            }
+            default: {
+              MOZ_ASSERT_UNREACHABLE("Unknown match setting");
+              break;
+            }
+          }
+          if (matched) {
+            sAllowedFonts->AppendElement(fontRules.fontName);
+            break;
+          }
+        }
+      }
+    }
+
+    sAcceptLanguagesIsDirty = false;
+  }
+}
+
+
+bool nsRFPService::FontIsAllowedByLocale(const nsACString& aName) {
+  if (NS_IsMainThread()) {
+    CalculateFontLocaleAllowlist();
+  } else {
+    NS_DispatchToMainThread(
+        NS_NewRunnableFunction("CalculateFontLocaleAllowlist",
+                               &nsRFPService::CalculateFontLocaleAllowlist));
+  }
+
+  if (!sAllowedFonts || sAllowedFonts->IsEmpty() || aName.IsEmpty()) {
+    return false;
+  }
+
+  
+  for (const nsCString& font : *sAllowedFonts) {
+    if (aName.Equals(font, nsCaseInsensitiveCStringComparator)) {
+      return true;
+    }
+  }
+
+  return false;
 }

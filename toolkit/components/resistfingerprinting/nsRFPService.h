@@ -346,12 +346,21 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
       bool aForeignByAncestorContext);
 
   
-  
   static nsresult RandomizePixels(nsICookieJarSettings* aCookieJarSettings,
                                   nsIPrincipal* aPrincipal, uint8_t* aData,
                                   uint32_t aWidth, uint32_t aHeight,
                                   uint32_t aSize,
                                   mozilla::gfx::SurfaceFormat aSurfaceFormat);
+  
+  
+  
+  
+  
+  
+  static nsresult RandomizeElements(
+      nsICookieJarSettings* aCookieJarSettings, nsIPrincipal* aPrincipal,
+      uint8_t* aData, uint32_t aSizeInBytes, uint8_t aElementsPerGroup,
+      uint8_t aBytesPerElement, uint8_t aElementOffset, bool aSkipLastElement);
 
   
 
@@ -427,6 +436,9 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
   static bool IsWebCodecsRFPTargetEnabled(JSContext* aCx);
 
   static uint32_t CollapseMaxTouchPoints(uint32_t aMaxTouchPoints);
+
+  static void CalculateFontLocaleAllowlist();
+  static bool FontIsAllowedByLocale(const nsACString& aName);
 
   static Maybe<RFPTarget> TextToRFPTarget(const nsAString& aText);
 
