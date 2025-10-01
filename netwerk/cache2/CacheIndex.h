@@ -93,22 +93,11 @@ struct CacheIndexRecord {
 
 
 
-
   uint32_t mFlags{0};
 
   CacheIndexRecord() = default;
 };
 #pragma pack(pop)
-
-
-
-
-
-
-
-
-
-
 
 static_assert(sizeof(CacheIndexRecord::mHash) +
                       sizeof(CacheIndexRecord::mFrecency) +
@@ -389,9 +378,7 @@ class CacheIndexEntry : public PLDHashEntryHdr {
 
   
   static const uint32_t kHasAltDataMask = 0x02000000;
-
-  
-  static const uint32_t kDictionaryMask = 0x01000000;
+  static const uint32_t kReservedMask = 0x01000000;
 
   
   static const uint32_t kFileSizeMask = 0x00FFFFFF;
@@ -747,8 +734,7 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
                             bool aPinned);
 
   
-  static nsresult RemoveEntry(const SHA1Sum::Hash* aHash,
-                              const nsACString& aKey);
+  static nsresult RemoveEntry(const SHA1Sum::Hash* aHash);
 
   
   
