@@ -10508,6 +10508,14 @@ nsresult nsDocShell::PerformTrustedTypesPreNavigationCheck(
 
   
   
+  if (auto principal = BasePrincipal::Cast(aLoadState->TriggeringPrincipal())) {
+    if (principal->ContentScriptAddonPolicyCore()) {
+      return NS_OK;
+    }
+  }
+
+  
+  
   
   bool shouldBlockOnError = csp->GetRequireTrustedTypesForDirectiveState() ==
                             RequireTrustedTypesForDirectiveState::ENFORCE;
