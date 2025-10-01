@@ -1976,8 +1976,7 @@ void DCSurfaceVideo::AttachExternalImage(wr::ExternalImageId aExternalImage) {
   
   
   if (!texture || !texture->AsRenderDXGITextureHost() ||
-      ((texture->GetFormat() != gfx::SurfaceFormat::NV12) &&
-       (texture->GetFormat() != gfx::SurfaceFormat::P010))) {
+      texture->GetFormat() != gfx::SurfaceFormat::NV12) {
     gfxCriticalNote << "Unsupported RenderTexture for overlay: "
                     << gfx::hexa(texture);
     return;
