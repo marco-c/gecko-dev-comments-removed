@@ -11920,12 +11920,9 @@ class _Weather extends (external_React_default()).PureComponent {
     const nimbusOptInDisplayed = Prefs.values.trainhopConfig?.weather?.optInDisplayed;
     const optInUserChoice = Prefs.values["weather.optInAccepted"];
     const nimbusOptInUserChoice = Prefs.values.trainhopConfig?.weather?.optInAccepted;
-    const staticWeather = Prefs.values["weather.staticData.enabled"];
-    const nimbusStaticWeather = Prefs.values.trainhopConfig?.weather?.staticDataEnabled;
     const optInPrompt = nimbusOptInDisplayed ?? optInDisplayed ?? false;
     const userChoice = nimbusOptInUserChoice ?? optInUserChoice ?? false;
     const isUserWeatherEnabled = Prefs.values.showWeather;
-    const staticDataEnabled = nimbusStaticWeather ?? staticWeather ?? false;
 
     
     
@@ -11935,14 +11932,8 @@ class _Weather extends (external_React_default()).PureComponent {
     const shouldShowOptInDialog = isUserWeatherEnabled && isOptInEnabled && optInPrompt && !userChoice;
 
     
-    
-    
-    
-    const showStaticData = isUserWeatherEnabled && isOptInEnabled && staticDataEnabled;
-
-    
     const WEATHER_SOURCE_CONTEXT_MENU_OPTIONS = [...(Prefs.values["weather.locationSearchEnabled"] ? ["ChangeWeatherLocation"] : []), ...(Prefs.values["weather.temperatureUnits"] === "f" ? ["ChangeTempUnitCelsius"] : ["ChangeTempUnitFahrenheit"]), ...(Prefs.values["weather.display"] === "simple" ? ["ChangeWeatherDisplayDetailed"] : ["ChangeWeatherDisplaySimple"]), "HideWeather", "OpenLearnMoreURL"];
-    const WEATHER_SOURCE_SHORTENED_CONTEXT_MENU_OPTIONS = [...(Prefs.values["weather.locationSearchEnabled"] ? ["ChangeWeatherLocation"] : []), "HideWeather", "OpenLearnMoreURL"];
+    const WEATHER_SOURCE_ERROR_CONTEXT_MENU_OPTIONS = [...(Prefs.values["weather.locationSearchEnabled"] ? ["ChangeWeatherLocation"] : []), "HideWeather", "OpenLearnMoreURL"];
     const contextMenu = contextOpts => external_React_default().createElement("div", {
       className: "weatherButtonContextMenuWrapper"
     }, external_React_default().createElement("button", {
@@ -11973,23 +11964,7 @@ class _Weather extends (external_React_default()).PureComponent {
         className: outerClassName
       }, external_React_default().createElement("div", {
         className: "weatherCard"
-      }, showStaticData ? external_React_default().createElement("div", {
-        className: "weatherInfoLink staticWeatherInfo"
-      }, external_React_default().createElement("div", {
-        className: "weatherIconCol"
-      }, external_React_default().createElement("span", {
-        className: "weatherIcon iconId3"
-      })), external_React_default().createElement("div", {
-        className: "weatherText"
-      }, external_React_default().createElement("div", {
-        className: "weatherForecastRow"
-      }, external_React_default().createElement("span", {
-        className: "weatherTemperature"
-      }, "22\xB0", Prefs.values["weather.temperatureUnits"])), external_React_default().createElement("div", {
-        className: "weatherCityRow"
-      }, external_React_default().createElement("span", {
-        className: "weatherCity"
-      }, "New York City")))) : external_React_default().createElement("a", {
+      }, external_React_default().createElement("a", {
         "data-l10n-id": "newtab-weather-see-forecast",
         "data-l10n-args": "{\"provider\": \"AccuWeather\xAE\"}",
         href: WEATHER_SUGGESTION.forecast.url,
@@ -12015,7 +11990,7 @@ class _Weather extends (external_React_default()).PureComponent {
         className: "weatherHighLowTemps"
       }, external_React_default().createElement("span", null, WEATHER_SUGGESTION.forecast.high[Prefs.values["weather.temperatureUnits"]], "\xB0", Prefs.values["weather.temperatureUnits"]), external_React_default().createElement("span", null, "\u2022"), external_React_default().createElement("span", null, WEATHER_SUGGESTION.forecast.low[Prefs.values["weather.temperatureUnits"]], "\xB0", Prefs.values["weather.temperatureUnits"])), external_React_default().createElement("span", {
         className: "weatherTextSummary"
-      }, WEATHER_SUGGESTION.current_conditions.summary)) : null)), contextMenu(showStaticData ? WEATHER_SOURCE_SHORTENED_CONTEXT_MENU_OPTIONS : WEATHER_SOURCE_CONTEXT_MENU_OPTIONS)), external_React_default().createElement("span", {
+      }, WEATHER_SUGGESTION.current_conditions.summary)) : null)), contextMenu(WEATHER_SOURCE_CONTEXT_MENU_OPTIONS)), external_React_default().createElement("span", {
         className: "weatherSponsorText"
       }, external_React_default().createElement("span", {
         "data-l10n-id": "newtab-weather-sponsored",
@@ -12051,7 +12026,7 @@ class _Weather extends (external_React_default()).PureComponent {
       className: "icon icon-info-warning"
     }), " ", external_React_default().createElement("p", {
       "data-l10n-id": "newtab-weather-error-not-available"
-    }), contextMenu(WEATHER_SOURCE_SHORTENED_CONTEXT_MENU_OPTIONS)));
+    }), contextMenu(WEATHER_SOURCE_ERROR_CONTEXT_MENU_OPTIONS)));
   }
 }
 const Weather_Weather = (0,external_ReactRedux_namespaceObject.connect)(state => ({
