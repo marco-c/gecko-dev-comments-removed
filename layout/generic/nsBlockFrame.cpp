@@ -1771,8 +1771,7 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
         
         
         
-        for (nsIFrame* kid = absoluteContainer->GetChildList().FirstChild();
-             kid; kid = kid->GetNextSibling()) {
+        for (nsIFrame* kid : absoluteContainer->GetChildList()) {
           ConsiderChildOverflow(aMetrics.mOverflowAreas, kid);
         }
       }
