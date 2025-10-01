@@ -155,6 +155,12 @@ class GCVector {
   void popBack() { return vector.popBack(); }
   T popCopy() { return vector.popCopy(); }
 
+  void swap(GCVector& other) {
+    
+    
+    vector.swap(other.vector);
+  }
+
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
     return vector.sizeOfExcludingThis(mallocSizeOf);
   }
