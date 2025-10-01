@@ -10,6 +10,7 @@
 
 #include "mozilla/Likely.h"
 #define INITGUID
+#include <prinrval.h>
 #include <propkeydef.h>   
 #include <propvarutil.h>  
 
@@ -34,6 +35,7 @@
 #include "mozilla/ipc/UtilityProcessManager.h"
 #include "mozilla/ipc/UtilityProcessParent.h"
 #include "nsTHashMap.h"
+#include "nsTextFormatter.h"
 
 #ifdef MOZ_WMF_CDM_LPAC_SANDBOX
 #  include "sandboxBroker.h"
@@ -182,18 +184,6 @@ static inline LPCWSTR InitDataTypeToString(const nsAString& aInitDataType) {
   } else {
     return L"unknown";
   }
-}
-
-
-
-
-
-static nsString GetHdcpPolicy(const dom::HDCPVersion& aMinHdcpVersion) {
-  if (aMinHdcpVersion == dom::HDCPVersion::_2_2 ||
-      aMinHdcpVersion == dom::HDCPVersion::_2_3) {
-    return nsString(u"hdcp=2");
-  }
-  return nsString(u"hdcp=1");
 }
 
 static bool RequireClearLead(const nsString& aKeySystem) {
@@ -775,20 +765,84 @@ static bool FactorySupports(ComPtr<IMFContentDecryptionModuleFactory>& aFactory,
   return support;
 }
 
-static nsresult IsHDCPVersionSupported(
-    ComPtr<IMFContentDecryptionModuleFactory>& aFactory,
-    const nsString& aKeySystem, const dom::HDCPVersion& aMinHdcpVersion,
-    nsISerialEventTarget* aManagerThread) {
+static MF_MEDIA_ENGINE_CANPLAY RunHDCPSupportCheck(
+    const nsString& aKeySystem, const dom::HDCPVersion& aMinHdcpVersion) {
+  const auto getHDCPPolicyValue = [](const dom::HDCPVersion& aMinHdcpVersion) {
+    
+    
+    
+    
+    return (aMinHdcpVersion == dom::HDCPVersion::_2_2 ||
+            aMinHdcpVersion == dom::HDCPVersion::_2_3)
+               ? 2
+               : 1;
+  };
+
+  
+  const char16_t* kFmt = u"video/mp4;codecs=\"avc1\";features=\"hdcp=%d\"";
+  nsAutoString contentType;
+  nsTextFormatter::ssprintf(contentType, kFmt,
+                            getHDCPPolicyValue(aMinHdcpVersion));
+  MOZ_ASSERT(!contentType.IsEmpty());
+  if (StaticPrefs::media_eme_playready_istypesupportedex()) {
+    ComPtr<IMFExtendedDRMTypeSupport> spDrmTypeSupport;
+    {
+      auto mediaEngineClassFactory = sMediaEngineClassFactory.Lock();
+      HRESULT rv = (*mediaEngineClassFactory).As(&spDrmTypeSupport);
+      if (FAILED(rv)) {
+        MFCDM_PARENT_SLOG("Failed to get IMFExtendedDRMTypeSupport!");
+        return MF_MEDIA_ENGINE_CANPLAY_NOT_SUPPORTED;
+      }
+    }
+    
+    nsCString keySystemWithoutPostfix =
+        NS_ConvertUTF16toUTF8(MapKeySystem(aKeySystem));
+    BSTR keySystem = CreateBSTRFromConstChar(keySystemWithoutPostfix.get());
+    MF_MEDIA_ENGINE_CANPLAY canPlay;
+    spDrmTypeSupport->IsTypeSupportedEx(SysAllocString(contentType.get()),
+                                        keySystem, &canPlay);
+    MFCDM_PARENT_SLOG(
+        "IsTypeSupportedEx for HDCP, canplay=%d (key-system=%ls, "
+        "content-type=%s)",
+        static_cast<int32_t>(canPlay), keySystem,
+        NS_ConvertUTF16toUTF8(contentType).get());
+    return canPlay;
+  }
+  
+  return MF_MEDIA_ENGINE_CANPLAY_NOT_SUPPORTED;
+}
+
+
+
+StaticMutex sHDCPMutex;
+
+static nsresult IsHDCPVersionSupported(const nsString& aKeySystem,
+                                       const dom::HDCPVersion& aMinHdcpVersion,
+                                       nsISerialEventTarget* aManagerThread) {
   MOZ_ASSERT(!aManagerThread->IsOnCurrentThread(),
              "Should not block the manager thread!");
-  nsresult rv = NS_OK;
+
+  StaticMutexAutoLock lock(sHDCPMutex);
   
-  if (!FactorySupports(aFactory, aKeySystem, nsCString("avc1"),
-                       KeySystemConfig::EMECodecString(""),
-                       GetHdcpPolicy(aMinHdcpVersion))) {
-    rv = NS_ERROR_DOM_MEDIA_CDM_HDCP_NOT_SUPPORT;
+  
+  
+  
+  
+  constexpr auto kPollIntervalMs = 500;
+  constexpr auto kMaxWaitSec = 10;
+  const TimeStamp start = TimeStamp::Now();
+  while ((TimeStamp::Now() - start) < TimeDuration::FromSeconds(kMaxWaitSec)) {
+    MF_MEDIA_ENGINE_CANPLAY canplay =
+        RunHDCPSupportCheck(aKeySystem, aMinHdcpVersion);
+    if (canplay != MF_MEDIA_ENGINE_CANPLAY_MAYBE) {
+      return canplay == MF_MEDIA_ENGINE_CANPLAY_PROBABLY
+                 ? NS_OK
+                 : NS_ERROR_DOM_MEDIA_CDM_HDCP_NOT_SUPPORT;
+    }
+    MFCDM_PARENT_SLOG("HDCP support is MAYBE, waiting to check it again...");
+    PR_Sleep(PR_MillisecondsToInterval(kPollIntervalMs));
   }
-  return rv;
+  return NS_ERROR_DOM_MEDIA_CDM_HDCP_NOT_SUPPORT;
 }
 
 static bool IsKeySystemHWSecure(
@@ -1418,7 +1472,7 @@ mozilla::ipc::IPCResult MFCDMParent::RecvGetStatusForPolicy(
   RefPtr<HDCPPromise::Private> p = new HDCPPromise::Private(__func__);
   Unused << backgroundTaskQueue->Dispatch(NS_NewRunnableFunction(
       __func__, [self = RefPtr<MFCDMParent>(this), this, aMinHdcpVersion, p] {
-        auto rv = IsHDCPVersionSupported(mFactory, mKeySystem, aMinHdcpVersion,
+        auto rv = IsHDCPVersionSupported(mKeySystem, aMinHdcpVersion,
                                          mManagerThread);
         if (IsBeingProfiledOrLogEnabled()) {
           nsPrintfCString msg("HDCP version=%u, support=%s",
