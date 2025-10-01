@@ -16,6 +16,7 @@
 #include <linux/mman.h>
 #include <linux/net.h>
 #include <linux/sched.h>
+#include <linux/sockios.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
@@ -26,6 +27,8 @@
 #include <sys/utsname.h>
 #include <time.h>
 #include <unistd.h>
+
+#include <linux/wireless.h>
 
 #include <algorithm>
 #include <utility>
@@ -2257,16 +2260,21 @@ class SocketProcessSandboxPolicy final : public SandboxPolicyCommon {
         auto shifted_type = request & kIoctlTypeMask;
 
         
-        return If(request == FIOCLEX, Allow())
+        return Switch(request)
+            .Case(FIOCLEX, Allow())
             
-            .ElseIf(request == FIONBIO, Allow())
+            .Case(FIONBIO, Allow())
             
-            .ElseIf(request == FIONREAD, Allow())
+            .Case(FIONREAD, Allow())
             
-            .ElseIf(
-                BelowLevel(2) ? shifted_type != kTtyIoctls : BoolConst(false),
-                Allow())
-            .Else(SandboxPolicyCommon::EvaluateSyscall(sysno));
+            .Cases({SIOCGIFNAME, SIOCGIFFLAGS, SIOCETHTOOL, SIOCGIWRATE},
+                   Allow())
+            .Default(
+                
+                If(BelowLevel(2) ? shifted_type != kTtyIoctls
+                                 : BoolConst(false),
+                   Allow())
+                    .Else(SandboxPolicyCommon::EvaluateSyscall(sysno)));
       }
 
       CASES_FOR_fcntl: {
