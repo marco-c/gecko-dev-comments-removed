@@ -673,7 +673,7 @@ var ctrlTab = {
           }
         }
         break;
-      case "TabSelect":
+      case "TabSelect": {
         this.attachTab(event.target, 0);
         
         
@@ -682,6 +682,7 @@ var ctrlTab = {
           this.detachTab(previousTab);
         }
         break;
+      }
       case "TabOpen":
         this.attachTab(event.target, 1);
         break;

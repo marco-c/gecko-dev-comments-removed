@@ -2,9 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const lazy = {};
+// eslint-disable-next-line mozilla/use-static-import
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
 
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   AboutReaderParent: "resource:///actors/AboutReaderParent.sys.mjs",
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
   EveryWindow: "resource:///modules/EveryWindow.sys.mjs",
@@ -13,13 +16,18 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
-});
 
-ChromeUtils.defineLazyGetter(lazy, "log", () => {
-  const { Logger } = ChromeUtils.importESModule(
-    "resource://messaging-system/lib/Logger.sys.mjs"
-  );
-  return new Logger("ASRouterTriggerListeners");
+  log: () => {
+    const { Logger } = ChromeUtils.importESModule(
+      "resource://messaging-system/lib/Logger.sys.mjs"
+    );
+    return new Logger("ASRouterTriggerListeners");
+  },
+
+  newtabPageEnabled: {
+    pref: "browser.newtabpage.enabled",
+    default: true,
+  },
 });
 
 const FEW_MINUTES = 15 * 60 * 1000; // 15 mins
@@ -692,7 +700,7 @@ export const ASRouterTriggerListeners = new Map([
 
       observe(aSubject, aTopic) {
         switch (aTopic) {
-          case "SiteProtection:ContentBlockingEvent":
+          case "SiteProtection:ContentBlockingEvent": {
             const { browser, host, event } = aSubject.wrappedJSObject;
             if (this._events.filter(e => (e & event) === e).length) {
               this._triggerHandler(browser, {
@@ -707,6 +715,7 @@ export const ASRouterTriggerListeners = new Map([
               });
             }
             break;
+          }
           case "SiteProtection:ContentBlockingMilestone":
             if (this._events.includes(aSubject.wrappedJSObject.event)) {
               this._triggerHandler(
@@ -772,7 +781,7 @@ export const ASRouterTriggerListeners = new Map([
 
       observe(aSubject, aTopic) {
         switch (aTopic) {
-          case "captive-portal-login-success":
+          case "captive-portal-login-success": {
             const browser = Services.wm.getMostRecentBrowserWindow();
             // The check is here rather than in init because some
             // folks leave their browsers running for a long time,
@@ -785,6 +794,7 @@ export const ASRouterTriggerListeners = new Map([
               });
             }
             break;
+          }
         }
       },
 
@@ -819,7 +829,7 @@ export const ASRouterTriggerListeners = new Map([
 
       observe(aSubject, aTopic, aData) {
         switch (aTopic) {
-          case "nsPref:changed":
+          case "nsPref:changed": {
             const browser = Services.wm.getMostRecentBrowserWindow();
             if (browser && this._observedPrefs.includes(aData)) {
               this._triggerHandler(browser.gBrowser.selectedBrowser, {
@@ -830,6 +840,7 @@ export const ASRouterTriggerListeners = new Map([
               });
             }
             break;
+          }
         }
       },
 
@@ -1193,7 +1204,7 @@ export const ASRouterTriggerListeners = new Map([
             lastWakeTime: this._lastWakeTime,
           });
           switch (topic) {
-            case "idle":
+            case "idle": {
               const now = Date.now();
               // If the idle notification is within 1 second of the last wake
               // notification, ignore it. We do this to avoid counting time the
@@ -1205,6 +1216,7 @@ export const ASRouterTriggerListeners = new Map([
                 this._idleSince = now - subject.idleTime;
               }
               break;
+            }
             case "active":
               // Trigger when user returns from being idle.
               if (this._isVisible) {
@@ -1649,7 +1661,8 @@ export const ASRouterTriggerListeners = new Map([
         const existingCallout = this._callouts.get(win);
         const isNewtabOrHome =
           browser.currentURI.spec.startsWith("about:home") ||
-          browser.currentURI.spec.startsWith("about:newtab");
+          (browser.currentURI.spec.startsWith("about:newtab") &&
+            lazy.newtabPageEnabled);
         if (
           existingCallout &&
           (existingCallout.panelId !== tab.linkedPanel || !isNewtabOrHome)
@@ -1682,7 +1695,8 @@ export const ASRouterTriggerListeners = new Map([
             const existingCallout = this._callouts.get(win);
             const isNewtabOrHome =
               browser.currentURI.spec.startsWith("about:home") ||
-              browser.currentURI.spec.startsWith("about:newtab");
+              (browser.currentURI.spec.startsWith("about:newtab") &&
+                lazy.newtabPageEnabled);
             if (
               existingCallout &&
               (existingCallout.panelId !== tab.linkedPanel || !isNewtabOrHome)
