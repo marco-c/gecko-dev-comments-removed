@@ -166,23 +166,3 @@ pub fn string_as_ascii_lowercase<'a>(input: &'a str) -> Cow<'a, str> {
         Cow::Borrowed(input)
     }
 }
-
-
-
-
-
-#[cfg(feature = "gecko")]
-pub type CssStringWriter = ::nsstring::nsACString;
-
-
-
-#[cfg(feature = "gecko")]
-pub type CssString = ::nsstring::nsCString;
-
-
-#[cfg(feature = "servo")]
-pub type CssStringWriter = String;
-
-
-#[cfg(feature = "servo")]
-pub type CssString = String;

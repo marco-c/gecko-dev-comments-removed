@@ -228,6 +228,26 @@ where
 }
 
 
+
+
+
+#[cfg(feature = "gecko")]
+pub type CssStringWriter = ::nsstring::nsACString;
+
+
+
+#[cfg(feature = "gecko")]
+pub type CssString = ::nsstring::nsCString;
+
+
+#[cfg(feature = "servo")]
+pub type CssStringWriter = String;
+
+
+#[cfg(feature = "servo")]
+pub type CssString = String;
+
+
 pub struct SequenceWriter<'a, 'b: 'a, W: 'b> {
     inner: &'a mut CssWriter<'b, W>,
     separator: &'static str,

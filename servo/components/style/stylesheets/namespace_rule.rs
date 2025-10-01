@@ -5,11 +5,10 @@
 
 
 use crate::shared_lock::{SharedRwLockReadGuard, ToCssWithGuard};
-use crate::str::CssStringWriter;
 use crate::{Namespace, Prefix};
 use cssparser::SourceLocation;
 use std::fmt::{self, Write};
-use style_traits::{CssWriter, ToCss};
+use style_traits::{CssStringWriter, CssWriter, ToCss};
 
 
 #[derive(Clone, Debug, PartialEq, ToShmem)]
