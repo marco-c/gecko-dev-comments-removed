@@ -94,6 +94,10 @@
 #  include "mozilla/layers/TextureClientOGL.h"
 #endif
 
+#if defined(MOZ_WIDGET_ANDROID) && defined(FFVPX_VERSION)
+#  include "mozilla/MediaDrmRemoteCDMParent.h"
+#endif
+
 #if defined(MOZ_USE_HWDECODE) && defined(MOZ_WIDGET_GTK)
 
 typedef int VAStatus;
@@ -1576,6 +1580,30 @@ gfx::SurfaceFormat FFmpegVideoDecoder<LIBAV_VER>::GetSurfaceFormat() const {
   }
 }
 
+#if defined(MOZ_WIDGET_GTK) && defined(MOZ_USE_HWDECODE)
+
+
+static uint32_t AVChromaLocationToWPChromaLocation(uint32_t aAVChromaLocation) {
+  switch (aAVChromaLocation) {
+    case AVCHROMA_LOC_UNSPECIFIED:
+    default:
+      return 0;  
+    case AVCHROMA_LOC_LEFT:
+      return 1;
+    case AVCHROMA_LOC_CENTER:
+      return 2;
+    case AVCHROMA_LOC_TOPLEFT:
+      return 3;
+    case AVCHROMA_LOC_TOP:
+      return 4;
+    case AVCHROMA_LOC_BOTTOMLEFT:
+      return 5;
+    case AVCHROMA_LOC_BOTTOM:
+      return 6;
+  }
+}
+#endif
+
 MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImage(
     int64_t aOffset, int64_t aPts, int64_t aDuration,
     MediaDataDecoder::DecodedData& aResults) {
@@ -1691,6 +1719,8 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImage(
         if (mInfo.mTransferFunction) {
           surface->SetTransferFunction(mInfo.mTransferFunction.value());
         }
+        surface->SetWPChromaLocation(
+            AVChromaLocationToWPChromaLocation(mFrame->chroma_location));
         FFMPEG_LOGV(
             "Uploaded frame DMABuf surface UID %d HDR %d color space %s/%s "
             "transfer %s",
