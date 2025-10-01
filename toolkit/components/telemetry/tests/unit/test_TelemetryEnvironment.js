@@ -1,6 +1,15 @@
 
 
 
+
+
+
+
+
+
+
+
+
 const { AddonManager, AddonManagerPrivate } = ChromeUtils.importESModule(
   "resource://gre/modules/AddonManager.sys.mjs"
 );
@@ -130,7 +139,7 @@ function createMockAddonProvider(aName) {
   return mockProvider;
 }
 
-add_task(async function setup() {
+add_setup(async function setup() {
   TelemetryEnvironmentTesting.registerFakeSysInfo();
   TelemetryEnvironmentTesting.spoofGfxAdapter();
   do_get_profile();
@@ -138,16 +147,6 @@ add_task(async function setup() {
   
   Services.fog.initializeFOG();
 
-  
-  const distroDir = FileUtils.getDir("ProfD", ["sysfeatures", "app0"]);
-  distroDir.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
-  do_get_file("system.xpi").copyTo(
-    distroDir,
-    "tel-system-xpi@tests.mozilla.org.xpi"
-  );
-  let system_addon = FileUtils.File(distroDir.path);
-  system_addon.append("tel-system-xpi@tests.mozilla.org.xpi");
-  system_addon.lastModifiedTime = SYSTEM_ADDON_INSTALL_DATE;
   await loadAddonManager(APP_ID, APP_NAME, APP_VERSION, PLATFORM_VERSION);
 
   TelemetryEnvironmentTesting.init(gAppInfo);
@@ -158,7 +157,7 @@ add_task(async function setup() {
   
   
   await AddonTestUtils.promiseShutdownManager();
-  await AddonTestUtils.overrideBuiltIns({ system: [] });
+  await AddonTestUtils.overrideBuiltIns({ builtins: [] });
   AddonTestUtils.addonStartup.remove(true);
   await AddonTestUtils.promiseStartupManager();
 
@@ -179,7 +178,6 @@ add_task(async function setup() {
       await TelemetryEnvironmentTesting.cleanupAttributionData;
     });
   }
-
   await TelemetryEnvironmentTesting.spoofProfileReset();
   await TelemetryEnvironment.delayedInit();
   
@@ -567,7 +565,7 @@ add_task(async function test_addons() {
     userDisabled: false,
     appDisabled: false,
     version: "1.0",
-    scope: 1,
+    scope: AddonManager.SCOPE_PROFILE,
     type: "extension",
     foreignInstall: false,
     hasBinaryComponents: false,
@@ -590,12 +588,12 @@ add_task(async function test_addons() {
     userDisabled: false,
     appDisabled: false,
     version: "1.0",
-    scope: 1,
+    scope: AddonManager.SCOPE_APPLICATION,
     type: "extension",
     foreignInstall: false,
     hasBinaryComponents: false,
-    installDay: truncateToDays(SYSTEM_ADDON_INSTALL_DATE),
-    updateDay: truncateToDays(SYSTEM_ADDON_INSTALL_DATE),
+    installDay: 0,
+    updateDay: 0,
     signedState: undefined,
     isSystem: true,
     isWebExtension: true,
@@ -615,7 +613,7 @@ add_task(async function test_addons() {
     userDisabled: false,
     appDisabled: false,
     version: "1.0",
-    scope: 1,
+    scope: AddonManager.SCOPE_PROFILE,
     type: "extension",
     foreignInstall: false,
     hasBinaryComponents: false,
@@ -787,7 +785,7 @@ add_task(async function test_signedAddon() {
     userDisabled: false,
     appDisabled: false,
     version: "2.2",
-    scope: 1,
+    scope: AddonManager.SCOPE_PROFILE,
     type: "extension",
     foreignInstall: false,
     hasBinaryComponents: false,
@@ -926,7 +924,7 @@ add_task(async function test_collectionWithbrokenAddonData() {
     userDisabled: false,
     appDisabled: false,
     version: "1.0",
-    scope: 1,
+    scope: AddonManager.SCOPE_PROFILE,
     type: "extension",
     foreignInstall: false,
     hasBinaryComponents: false,
@@ -1003,6 +1001,115 @@ add_task(async function test_collectionWithbrokenAddonData() {
   
   await addon.startupPromise;
   await addon.uninstall();
+});
+
+
+
+
+
+
+
+
+add_task(async function test_nonSystemBuiltinAddonDidnChangeEnvironment() {
+  let data = TelemetryEnvironment.currentEnvironment;
+  TelemetryEnvironmentTesting.checkEnvironmentData(data);
+
+  const LISTENER_NAME = "test_nonSystemBuiltinAddonDidnChangeEnvironment";
+
+  let deferred = Promise.withResolvers();
+  let receivedNotifications = 0;
+  TelemetryEnvironment.registerChangeListener(LISTENER_NAME, reason => {
+    Assert.equal(reason, "addons-changed");
+    receivedNotifications++;
+    deferred.resolve();
+  });
+
+  
+  const ADDON_ID_NONSYSTEM_BUILTIN =
+    "tel-nonsystem-builtin-addon@tests.mozilla.org";
+  const addon_res_url_path = "telemetry-test-nonsystem-builtin-addon";
+  let xpi = await AddonTestUtils.createTempWebExtensionFile({
+    manifest: {
+      name: "XPI Telemetry non-System Built-in Add-on Test",
+      description: "A system addon which is shipped with Firefox.",
+      version: "1.0",
+      browser_specific_settings: {
+        gecko: { id: ADDON_ID_NONSYSTEM_BUILTIN },
+      },
+    },
+  });
+  let base = Services.io.newURI(`jar:file:${xpi.path}!/`);
+  let resProto = Services.io
+    .getProtocolHandler("resource")
+    .QueryInterface(Ci.nsIResProtocolHandler);
+  resProto.setSubstitution(addon_res_url_path, base);
+  
+  
+  const builtinAddon = await AddonManager.maybeInstallBuiltinAddon(
+    ADDON_ID_NONSYSTEM_BUILTIN,
+    "1.0",
+    `resource://${addon_res_url_path}/`
+  );
+  
+  Assert.equal(
+    builtinAddon.isBuiltin,
+    true,
+    `Expect ${ADDON_ID_NONSYSTEM_BUILTIN} isBuiltin to be true`
+  );
+  Assert.equal(
+    builtinAddon.isSystem,
+    false,
+    `Expect ${ADDON_ID_NONSYSTEM_BUILTIN} isSystem to be false`
+  );
+  Assert.equal(
+    builtinAddon.scope,
+    AddonManager.SCOPE_APPLICATION,
+    `Expect ${ADDON_ID_NONSYSTEM_BUILTIN} to be installed in SCOPE_APPLICATION`
+  );
+
+  
+  
+  const ADDON_ID = "test-addon@tests.mozilla.org";
+  let webextension = ExtensionTestUtils.loadExtension({
+    useAddonManager: "permanent",
+    manifest: {
+      name: "XPI Telemetry WebExtension Add-on Test",
+      description: "A webextension addon.",
+      version: "1.0",
+      browser_specific_settings: {
+        gecko: {
+          id: ADDON_ID,
+        },
+      },
+    },
+  });
+
+  await webextension.startup();
+  await deferred.promise;
+
+  data = TelemetryEnvironment.currentEnvironment;
+
+  Assert.ok(
+    ADDON_ID in data.addons.activeAddons,
+    "Expect the last test extension installed to be found"
+  );
+
+  Assert.ok(
+    !(ADDON_ID_NONSYSTEM_BUILTIN in data.addons.activeAddons),
+    "Expect the non-system built-in test extension to NOT be found"
+  );
+
+  Assert.equal(
+    receivedNotifications,
+    1,
+    "Expect only 1 environment change to be triggered by both extensions installation"
+  );
+
+  TelemetryEnvironment.unregisterChangeListener(LISTENER_NAME);
+
+  await builtinAddon.startupPromise;
+  await builtinAddon.uninstall();
+  await webextension.unload();
 });
 
 add_task(
