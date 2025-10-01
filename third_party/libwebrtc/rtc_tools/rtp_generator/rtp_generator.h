@@ -75,7 +75,7 @@ std::optional<RtpGeneratorOptions> ParseRtpGeneratorOptionsFromFile(
 
 
 
-class RtpGenerator final : public webrtc::Transport {
+class RtpGenerator final : public Transport {
  public:
   
   explicit RtpGenerator(const RtpGeneratorOptions& options);

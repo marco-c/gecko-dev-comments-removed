@@ -40,7 +40,7 @@ class GrpcSignalingServerInterface {
   
   
   static std::unique_ptr<GrpcSignalingServerInterface> Create(
-      std::function<void(webrtc::SignalingInterface*)> callback,
+      std::function<void(SignalingInterface*)> callback,
       int port,
       bool oneshot);
 };
@@ -53,7 +53,7 @@ class GrpcSignalingClientInterface {
 
   
   virtual bool Start() = 0;
-  virtual webrtc::SignalingInterface* signaling_client() = 0;
+  virtual SignalingInterface* signaling_client() = 0;
 
   
   static std::unique_ptr<GrpcSignalingClientInterface> Create(
