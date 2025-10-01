@@ -303,6 +303,13 @@ class nsAccUtils {
                                      nsCaseTreatment aCaseSensitive);
 
   static bool IsEditableARIACombobox(const LocalAccessible* aAccessible);
+
+  
+
+
+
+  static bool IsValidDetailsTargetForAnchor(const Accessible* aDetails,
+                                            const Accessible* aTarget);
 };
 
 }  
