@@ -17,7 +17,7 @@ function getPersistentStoragePermStatus(origin) {
 
 
 
-add_task(async function test_list_sites() {
+add_task(async function () {
   
   await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_OFFLINE_URL);
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
@@ -69,7 +69,7 @@ add_task(async function test_list_sites() {
 }).skip(); 
 
 
-add_task(async function test_ui_loading_state() {
+add_task(async function () {
   let updatedPromise = promiseSiteDataManagerSitesUpdated();
   await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
   await updatedPromise;
@@ -78,7 +78,7 @@ add_task(async function test_ui_loading_state() {
   let doc = gBrowser.selectedBrowser.contentDocument;
   let clearBtn = doc.getElementById("clearSiteDataButton");
   let settingsButton = doc.getElementById("siteDataSettings");
-  let totalSiteDataSizeLabel = doc.getElementById("siteDataSize");
+  let totalSiteDataSizeLabel = doc.getElementById("totalSiteDataSize");
   is(
     clearBtn.disabled,
     false,
@@ -94,7 +94,7 @@ add_task(async function test_ui_loading_state() {
     Assert.deepEqual(
       doc.l10n.getAttributes(totalSiteDataSizeLabel),
       {
-        id: "sitedata-total-size2",
+        id: "sitedata-total-size",
         args: { value, unit },
       },
       "Should show the right total site data size"
@@ -102,9 +102,6 @@ add_task(async function test_ui_loading_state() {
   });
 
   Services.obs.notifyObservers(null, "sitedatamanager:updating-sites");
-  
-  await new Promise(resolve => requestAnimationFrame(resolve));
-
   is(
     clearBtn.disabled,
     true,
@@ -115,16 +112,16 @@ add_task(async function test_ui_loading_state() {
     true,
     "Should disable settings button while updating sites"
   );
-  Assert.equal(
-    doc.l10n.getAttributes(totalSiteDataSizeLabel).id,
-    "sitedata-total-size-calculating",
+  Assert.deepEqual(
+    doc.l10n.getAttributes(totalSiteDataSizeLabel),
+    {
+      id: "sitedata-total-size-calculating",
+      args: null,
+    },
     "Should show the loading message while updating"
   );
 
   Services.obs.notifyObservers(null, "sitedatamanager:sites-updated");
-  
-  await new Promise(resolve => setTimeout(resolve, 0));
-
   is(
     clearBtn.disabled,
     false,
@@ -141,7 +138,7 @@ add_task(async function test_ui_loading_state() {
     Assert.deepEqual(
       doc.l10n.getAttributes(totalSiteDataSizeLabel),
       {
-        id: "sitedata-total-size2",
+        id: "sitedata-total-size",
         args: { value, unit },
       },
       "Should show the right total site data size"
@@ -152,7 +149,7 @@ add_task(async function test_ui_loading_state() {
 });
 
 
-add_task(async function test_clear_service_worker() {
+add_task(async function () {
   
   await loadServiceWorkerTestPage(TEST_SERVICE_WORKER_URL);
   await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
@@ -189,7 +186,7 @@ add_task(async function test_clear_service_worker() {
 });
 
 
-add_task(async function test_manage_sites_with_cookies() {
+add_task(async function () {
   
   let uri = Services.io.newURI("https://example.com");
   let uri2 = Services.io.newURI("https://example.org");
