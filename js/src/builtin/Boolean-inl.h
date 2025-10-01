@@ -16,21 +16,18 @@ namespace js {
 
 inline bool EmulatesUndefined(JSObject* obj) {
   
-  
   AutoUnsafeCallWithABI unsafe(UnsafeABIStrictness::AllowPendingExceptions);
   JSObject* actual = MOZ_LIKELY(!obj->is<WrapperObject>())
                          ? obj
-                         : UncheckedUnwrapWithoutExpose(obj);
+                         : UncheckedUnwrap(obj);
   return actual->getClass()->emulatesUndefined();
 }
 
 inline bool EmulatesUndefinedCheckFuse(JSObject* obj, size_t fuseValue) {
-  
-  
-  AutoUnsafeCallWithABI unsafe(UnsafeABIStrictness::AllowPendingExceptions);
+  AutoUnsafeCallWithABI unsafe;
   JSObject* actual = MOZ_LIKELY(!obj->is<WrapperObject>())
                          ? obj
-                         : UncheckedUnwrapWithoutExpose(obj);
+                         : UncheckedUnwrap(obj);
   bool emulatesUndefined = actual->getClass()->emulatesUndefined();
   if (emulatesUndefined) {
     MOZ_RELEASE_ASSERT(fuseValue != 0);
