@@ -80,7 +80,7 @@ LazyLogModule gDictionaryLog("CompressionDictionaries");
 
 
 StaticRefPtr<DictionaryCache> gDictionaryCache;
-nsCOMPtr<nsICacheStorage> DictionaryCache::sCacheStorage;
+StaticRefPtr<nsICacheStorage> DictionaryCache::sCacheStorage;
 
 
 
@@ -770,14 +770,22 @@ nsresult DictionaryCache::Init() {
     if (!cacheStorageService) {
       return NS_ERROR_FAILURE;
     }
+    nsCOMPtr<nsICacheStorage> temp;
     nsresult rv = cacheStorageService->DiskCacheStorage(
-        nullptr, getter_AddRefs(sCacheStorage));  
+        nullptr, getter_AddRefs(temp));  
     if (NS_FAILED(rv)) {
       return rv;
     }
+    sCacheStorage = temp;
   }
   DICTIONARY_LOG(("Inited DictionaryCache %p", sCacheStorage.get()));
   return NS_OK;
+}
+
+
+void DictionaryCache::Shutdown() {
+  gDictionaryCache = nullptr;
+  sCacheStorage = nullptr;
 }
 
 nsresult DictionaryCache::AddEntry(nsIURI* aURI, const nsACString& aKey,
@@ -841,7 +849,7 @@ already_AddRefed<DictionaryCacheEntry> DictionaryCache::AddEntry(
                                                     
             
             
-            aDictEntry->WriteOnHash();
+            entry->WriteOnHash();
             return NS_OK;
           });
       
