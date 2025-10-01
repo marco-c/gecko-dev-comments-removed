@@ -5,8 +5,8 @@
 // Please pull this list from, and only from https://publicsuffix.org/list/public_suffix_list.dat,
 // rather than any other VCS sites. Pulling from any other URL is not guaranteed to be supported.
 
-// VERSION: 2025-09-04_10-39-28_UTC
-// COMMIT: a818607e99f2016e857e7a9b7cd9956aff9b5305
+// VERSION: 2025-09-18_10-47-47_UTC
+// COMMIT: 4a97adbc7f153c31b7d0f62a32bf856f0f1ee6c2
 
 // Instructions on pulling and using this list can be found at https://publicsuffix.org/list/.
 
@@ -12832,10 +12832,6 @@ dreamhosters.com
 // Submitted by Infra Team <infra@durumis.com>
 durumis.com
 
-// Drobo : http://www.drobo.com/
-// Submitted by Ricardo Padilha <rpadilha@drobo.com>
-mydrobo.com
-
 // DuckDNS : http://www.duckdns.org/
 // Submitted by Richard Harper <richard@duckdns.org>
 duckdns.org
@@ -14098,6 +14094,8 @@ myjino.ru
 // Submitted by Daniel Fariña <ingenieria@jotelulu.com>
 jote.cloud
 jotelulu.cloud
+jote-dr-lt1.com
+jote-rd-lt1.com
 
 // JouwWeb B.V. : https://www.jouwweb.nl
 // Submitted by Camilo Sperberg <tech@webador.com>
@@ -14253,10 +14251,6 @@ loginline.site
 // Lõhmus Family, The : https://lohmus.me/
 // Submitted by Heiki Lõhmus <hostmaster@lohmus.me>
 lohmus.me
-
-// Lokalized : https://lokalized.nl
-// Submitted by Noah Taheij <noah@lokalized.nl>
-servers.run
 
 // Lovable : https://lovable.dev
 // Submitted by Fabian Hedin <security@lovable.dev>
@@ -14855,6 +14849,10 @@ mypep.link
 // Perspecta : https://perspecta.com/
 // Submitted by Kenneth Van Alstyne <kvanalstyne@perspecta.com>
 perspecta.cloud
+
+// Plain : https://www.plain.com/
+// Submitted by Jesús Hernández <security@plain.com>
+support.site
 
 // Planet-Work : https://www.planet-work.com/
 // Submitted by Frédéric VANNIÈRE <f.vanniere@planet-work.com>
