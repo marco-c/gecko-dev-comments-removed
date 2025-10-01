@@ -254,29 +254,6 @@ function maybeGetByL10nId(l10nId, doc = document) {
 
 
 
-function logAction(...params) {
-  const error = new Error();
-  const stackLines = error.stack.split("\n");
-  const actionName = stackLines[1]?.split("@")[0] ?? "";
-  const taskFileLocation = stackLines[2]?.split("@")[1] ?? "";
-  if (taskFileLocation.includes("head.js")) {
-    
-    return;
-  }
-
-  info(`Action: ${actionName}(${params.join(", ")})`);
-  info(
-    `Source: ${taskFileLocation.replace(
-      "chrome://mochitests/content/browser/",
-      ""
-    )}`
-  );
-}
-
-
-
-
-
 
 function isFullPageTranslationsActive() {
   try {

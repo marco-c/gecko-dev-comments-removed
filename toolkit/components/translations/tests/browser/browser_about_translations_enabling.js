@@ -6,54 +6,46 @@
 
 
 
+add_task(async function test_about_translations_disabled() {
+  const { aboutTranslationsTestUtils, cleanup } = await openAboutTranslations({
+    disabled: true,
+    autoDownloadFromRemoteSettings: true,
+  });
 
+  await aboutTranslationsTestUtils.assertIsVisible({
+    pageHeader: false,
+    mainUserInterface: false,
+    sourceLanguageSelector: false,
+    targetLanguageSelector: false,
+    swapLanguagesButton: false,
+    sourceTextArea: false,
+    targetTextArea: false,
+    unsupportedInfoMessage: false,
+    languageLoadErrorMessage: false,
+  });
+
+  await cleanup();
+});
 
 
 
 
 add_task(async function test_about_translations_enabled() {
-  const { runInPage, cleanup } = await openAboutTranslations({
+  const { aboutTranslationsTestUtils, cleanup } = await openAboutTranslations({
+    disabled: false,
     autoDownloadFromRemoteSettings: true,
   });
 
-  await runInPage(async ({ selectors }) => {
-    const { document, window } = content;
-
-    await ContentTaskUtils.waitForCondition(
-      () => {
-        const trElement = document.querySelector(selectors.translationResult);
-        const trBlankElement = document.querySelector(
-          selectors.translationResultBlank
-        );
-        const { visibility: trVisibility } = window.getComputedStyle(trElement);
-        const { visibility: trBlankVisibility } =
-          window.getComputedStyle(trBlankElement);
-        return trVisibility === "hidden" && trBlankVisibility === "visible";
-      },
-      `Waiting for placeholder text to be visible."`,
-      100,
-      200
-    );
-
-    function checkElementIsVisible(expectVisible, name) {
-      const expected = expectVisible ? "visible" : "hidden";
-      const element = document.querySelector(selectors[name]);
-      ok(Boolean(element), `Element ${name} was found.`);
-      const { visibility } = window.getComputedStyle(element);
-      is(
-        visibility,
-        expected,
-        `Element ${name} was not ${expected} but should be.`
-      );
-    }
-
-    checkElementIsVisible(true, "pageHeader");
-    checkElementIsVisible(true, "fromLanguageSelect");
-    checkElementIsVisible(true, "toLanguageSelect");
-    checkElementIsVisible(true, "translationTextarea");
-    checkElementIsVisible(true, "translationResultBlank");
-
-    checkElementIsVisible(false, "translationResult");
+  await aboutTranslationsTestUtils.assertIsVisible({
+    pageHeader: true,
+    mainUserInterface: true,
+    sourceLanguageSelector: true,
+    targetLanguageSelector: true,
+    swapLanguagesButton: true,
+    sourceTextArea: true,
+    targetTextArea: true,
+    unsupportedInfoMessage: false,
+    languageLoadErrorMessage: false,
   });
 
   await cleanup();
@@ -62,90 +54,22 @@ add_task(async function test_about_translations_enabled() {
 
 
 
-add_task(async function test_about_translations_disabled() {
-  const { runInPage, cleanup } = await openAboutTranslations({
-    disabled: true,
+add_task(async function test_about_translations_engine_unsupported() {
+  const { aboutTranslationsTestUtils, cleanup } = await openAboutTranslations({
     autoDownloadFromRemoteSettings: true,
-  });
-
-  await runInPage(async ({ selectors }) => {
-    const { document, window } = content;
-
-    await ContentTaskUtils.waitForCondition(
-      () => {
-        const element = document.querySelector(selectors.translationResult);
-        const { visibility } = window.getComputedStyle(element);
-        return visibility === "hidden";
-      },
-      `Waiting for translated text to be hidden."`,
-      100,
-      200
-    );
-
-    function checkElementIsInvisible(name) {
-      const element = document.querySelector(selectors[name]);
-      ok(Boolean(element), `Element ${name} was found.`);
-      const { visibility } = window.getComputedStyle(element);
-      is(visibility, "hidden", `Element ${name} was invisible.`);
-    }
-
-    checkElementIsInvisible("pageHeader");
-    checkElementIsInvisible("fromLanguageSelect");
-    checkElementIsInvisible("toLanguageSelect");
-    checkElementIsInvisible("translationTextarea");
-    checkElementIsInvisible("translationResult");
-    checkElementIsInvisible("translationResultBlank");
-  });
-
-  await cleanup();
-});
-
-
-
-
-add_task(async function test_about_translations_disabling() {
-  const { runInPage, cleanup } = await openAboutTranslations({
     prefs: [["browser.translations.simulateUnsupportedEngine", true]],
-    autoDownloadFromRemoteSettings: true,
   });
 
-  await runInPage(async ({ selectors }) => {
-    const { document, window } = content;
-
-    info('Checking for the "no support" message.');
-    await ContentTaskUtils.waitForCondition(
-      () => document.querySelector(selectors.noSupportMessage),
-      'Waiting for the "no support" message.',
-      100,
-      200
-    );
-
-    
-    const fromSelect = document.querySelector(selectors.fromLanguageSelect);
-    
-    const toSelect = document.querySelector(selectors.toLanguageSelect);
-    
-    const translationTextarea = document.querySelector(
-      selectors.translationTextarea
-    );
-
-    ok(fromSelect.disabled, "The from select is disabled");
-    ok(toSelect.disabled, "The to select is disabled");
-    ok(translationTextarea.disabled, "The textarea is disabled");
-
-    function checkElementIsVisible(expectVisible, name) {
-      const expected = expectVisible ? "visible" : "hidden";
-      const element = document.querySelector(selectors[name]);
-      ok(Boolean(element), `Element ${name} was found.`);
-      const { visibility } = window.getComputedStyle(element);
-      is(
-        visibility,
-        expected,
-        `Element ${name} was not ${expected} but should be.`
-      );
-    }
-
-    checkElementIsVisible(true, "translationInfo");
+  await aboutTranslationsTestUtils.assertIsVisible({
+    pageHeader: true,
+    unsupportedInfoMessage: true,
+    mainUserInterface: false,
+    sourceLanguageSelector: false,
+    targetLanguageSelector: false,
+    swapLanguagesButton: false,
+    sourceTextArea: false,
+    targetTextArea: false,
+    languageLoadErrorMessage: false,
   });
 
   await cleanup();
