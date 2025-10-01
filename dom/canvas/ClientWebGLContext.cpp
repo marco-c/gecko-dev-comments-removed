@@ -5211,7 +5211,29 @@ void ClientWebGLContext::ReadPixels(GLint x, GLint y, GLsizei width,
                                             *uvec2::From(width, height),
                                             {format, type},
                                             state.mPixelPackState};
-    (void)DoReadPixels(desc, *range);
+    bool succeeded = DoReadPixels(desc, *range);
+    if (succeeded &&
+        ShouldResistFingerprinting(RFPTarget::WebGLRandomization)) {
+      const auto pii = webgl::PackingInfoInfo::For(desc.pi);
+      
+      MOZ_ASSERT(pii.isSome());
+
+      
+      
+      
+      
+      
+      
+      
+      constexpr uint8_t alphaChannelOffset = 0;
+      bool hasAlphaChannel =
+          format == LOCAL_GL_SRGB_ALPHA || format == LOCAL_GL_RGBA ||
+          format == LOCAL_GL_BGRA || format == LOCAL_GL_LUMINANCE_ALPHA;
+      nsRFPService::RandomizeElements(
+          GetCookieJarSettings(), PrincipalOrNull(), range->data(),
+          range->size_bytes(), pii->elementsPerPixel, pii->bytesPerElement,
+          alphaChannelOffset, hasAlphaChannel);
+    }
   });
 }
 

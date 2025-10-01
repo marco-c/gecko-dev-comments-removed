@@ -105,9 +105,7 @@ ITEM_VALUE(WebCodecs,                   71)
 ITEM_VALUE(MaxTouchPoints,              72)
 ITEM_VALUE(MaxTouchPointsCollapse,      73)
 ITEM_VALUE(NavigatorHWConcurrencyTiered,74)
-
-
-
+ITEM_VALUE(WebGLRandomization,          75)
 
 
 

@@ -1343,7 +1343,10 @@ nsresult nsRFPService::GetBrowsingSessionKey(
   
   if (!nsContentUtils::ShouldResistFingerprinting(
           "Checking the target activation globally without local context",
-          RFPTarget::CanvasRandomization)) {
+          RFPTarget::CanvasRandomization) &&
+      !nsContentUtils::ShouldResistFingerprinting(
+          "Checking the target activation globally without local context",
+          RFPTarget::WebGLRandomization)) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
@@ -1443,7 +1446,9 @@ Maybe<nsTArray<uint8_t>> nsRFPService::GenerateKey(nsIChannel* aChannel) {
   
   
   if (!nsContentUtils::ShouldResistFingerprinting(
-          aChannel, RFPTarget::CanvasRandomization)) {
+          aChannel, RFPTarget::CanvasRandomization) &&
+      !nsContentUtils::ShouldResistFingerprinting(
+          aChannel, RFPTarget::WebGLRandomization)) {
     return Nothing();
   }
   auto sessionKeyStr = sessionKey.ToString();
