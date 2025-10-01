@@ -6,12 +6,13 @@
 
 
 
-import { prettyPrintSource } from "./prettyPrint";
-import { addTab } from "../tabs";
+import { prettyPrintSource, prettyPrintAndSelectSource } from "./prettyPrint";
+import { addTab, closeTabForSource } from "../tabs";
 import { loadSourceText } from "./loadSourceText";
 import { setBreakableLines } from "./breakableLines";
-import { prefs } from "../../utils/prefs";
 
+import { prefs } from "../../utils/prefs";
+import { isMinified } from "../../utils/source";
 import { createLocation } from "../../utils/location";
 import {
   getRelatedMapLocation,
@@ -23,13 +24,15 @@ import {
   getSource,
   getFirstSourceActorForGeneratedSource,
   getSourceByURL,
+  getPrettySource,
   getSelectedLocation,
   getShouldSelectOriginalLocation,
+  canPrettyPrintSource,
+  getSourceTextContent,
   tabExists,
   hasSource,
   hasSourceActor,
   isPrettyPrinted,
-  isPrettyPrintedDisabled,
   isSourceActorWithSourceMap,
   getSelectedTraceIndex,
 } from "../../selectors/index";
@@ -96,6 +99,29 @@ export function selectSourceURL(url, options) {
 
 
 
+export function selectMayBePrettyPrintedLocation(location) {
+  return async ({ dispatch, getState }) => {
+    const sourceIsPrettyPrinted = isPrettyPrinted(getState(), location.source);
+    if (sourceIsPrettyPrinted) {
+      const prettySource = getPrettySource(getState(), location.source.id);
+      if (prettySource) {
+        location = createLocation({ source: prettySource });
+      }
+    }
+    await dispatch(selectSpecificLocation(location));
+  };
+}
+
+
+
+
+
+
+
+
+
+
+
 
 export function selectSource(source, sourceActor) {
   return async ({ dispatch }) => {
@@ -142,27 +168,13 @@ async function mayBeSelectMappedSource(location, keepContext, thunkArgs) {
   
   
   const sourceIsPrettyPrinted = isPrettyPrinted(getState(), location.source);
-  const shouldPrettyPrint =
-    !location.source.isOriginal &&
-    (sourceIsPrettyPrinted ||
-      (prefs.autoPrettyPrint &&
-        !isPrettyPrintedDisabled(getState(), location.source)));
-
-  if (shouldPrettyPrint) {
-    const isAutoPrettyPrinting =
-      !sourceIsPrettyPrinted && prefs.autoPrettyPrint;
+  if (!location.source.isOriginal && sourceIsPrettyPrinted) {
     
     
     
     const prettyPrintedSource = await dispatch(
-      prettyPrintSource({ source: location.source, isAutoPrettyPrinting })
+      prettyPrintSource(location.source)
     );
-
-    
-    if (!prettyPrintedSource) {
-      return { shouldSelectOriginalLocation, newLocation: location };
-    }
-
     
     
     if (location.line == 0 && !location.column) {
@@ -321,6 +333,19 @@ export function selectLocation(
     if (!loadedSource) {
       
       return;
+    }
+
+    const sourceTextContent = getSourceTextContent(getState(), location);
+
+    if (
+      keepContext &&
+      prefs.autoPrettyPrint &&
+      !getPrettySource(getState(), loadedSource.id) &&
+      canPrettyPrintSource(getState(), location) &&
+      isMinified(source, sourceTextContent)
+    ) {
+      await dispatch(prettyPrintAndSelectSource(loadedSource));
+      dispatch(closeTabForSource(loadedSource));
     }
 
     

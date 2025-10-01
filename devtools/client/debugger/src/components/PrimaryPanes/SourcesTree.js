@@ -19,6 +19,7 @@ const MenuButton = require("resource://devtools/client/shared/components/menu/Me
 const MenuItem = require("resource://devtools/client/shared/components/menu/MenuItem.js");
 const MenuList = require("resource://devtools/client/shared/components/menu/MenuList.js");
 import { prefs } from "../../utils/prefs";
+import { createLocation } from "../../utils/location";
 
 
 import {
@@ -68,7 +69,7 @@ class SourcesTree extends Component {
       focusItem: PropTypes.func.isRequired,
       focused: PropTypes.object,
       projectRoot: PropTypes.string.isRequired,
-      selectSource: PropTypes.func.isRequired,
+      selectMayBePrettyPrintedLocation: PropTypes.func.isRequired,
       setExpandedState: PropTypes.func.isRequired,
       rootItems: PropTypes.array.isRequired,
       clearProjectDirectoryRoot: PropTypes.func.isRequired,
@@ -109,7 +110,9 @@ class SourcesTree extends Component {
     
     
     
-    this.props.selectSource(item.source, item.sourceActor);
+    this.props.selectMayBePrettyPrintedLocation(
+      createLocation({ source: item.source, sourceActor: item.sourceActor })
+    );
   };
 
   onFocus = item => {
@@ -444,7 +447,7 @@ const mapStateToProps = state => {
 };
 
 export default connect(mapStateToProps, {
-  selectSource: actions.selectSource,
+  selectMayBePrettyPrintedLocation: actions.selectMayBePrettyPrintedLocation,
   setExpandedState: actions.setExpandedState,
   focusItem: actions.focusItem,
   clearProjectDirectoryRoot: actions.clearProjectDirectoryRoot,

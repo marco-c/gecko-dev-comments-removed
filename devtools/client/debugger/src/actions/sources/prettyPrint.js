@@ -11,11 +11,7 @@ import {
   updateBreakpointsForNewPrettyPrintedSource,
 } from "../breakpoints/index";
 
-import {
-  getPrettySourceURL,
-  isJavaScript,
-  isMinified,
-} from "../../utils/source";
+import { getPrettySourceURL, isJavaScript } from "../../utils/source";
 import { isFulfilled, fulfilled } from "../../utils/async-value";
 import {
   getOriginalLocation,
@@ -35,8 +31,6 @@ import {
   getFirstSourceActorForGeneratedSource,
   getSource,
   getSelectedLocation,
-  canPrettyPrintSource,
-  getSourceTextContentForSource,
 } from "../../selectors/index";
 
 import { selectSource } from "./select";
@@ -313,13 +307,7 @@ function selectPrettyLocation(prettySource) {
 
 
 
-
-
-export async function doPrettyPrintSource(
-  source,
-  isAutoPrettyPrinting,
-  thunkArgs
-) {
+export async function doPrettyPrintSource(source, thunkArgs) {
   const { dispatch, getState } = thunkArgs;
   recordEvent("pretty_print");
 
@@ -334,25 +322,6 @@ export async function doPrettyPrintSource(
   );
 
   await dispatch(loadGeneratedSourceText(sourceActor));
-
-  
-  
-  
-  
-  if (
-    isAutoPrettyPrinting &&
-    (!canPrettyPrintSource(getState(), source, sourceActor) ||
-      !isMinified(
-        source,
-        getSourceTextContentForSource(getState(), source, sourceActor)
-      ))
-  ) {
-    dispatch({
-      type: "REMOVE_PRETTY_PRINTED_SOURCE",
-      source,
-    });
-    return null;
-  }
 
   const newPrettySource = await dispatch(
     createPrettySource(source, sourceActor)
@@ -382,13 +351,13 @@ export async function doPrettyPrintSource(
   
   newPrettySource._loaded = true;
 
-  return fulfilled(newPrettySource);
+  return newPrettySource;
 }
 
 
 
 export const prettyPrintSource = memoizeableAction("prettyPrintSource", {
-  getValue: ({ source }, { getState }) => {
+  getValue: (source, { getState }) => {
     
     const url = getPrettyOriginalSourceURL(source);
     const id = generatedToOriginalId(source.id, url);
@@ -399,14 +368,13 @@ export const prettyPrintSource = memoizeableAction("prettyPrintSource", {
     }
     return fulfilled(s);
   },
-  createKey: ({ source }) => source.id,
-  action: ({ source, isAutoPrettyPrinting = false }, thunkArgs) =>
-    doPrettyPrintSource(source, isAutoPrettyPrinting, thunkArgs),
+  createKey: source => source.id,
+  action: (source, thunkArgs) => doPrettyPrintSource(source, thunkArgs),
 });
 
 export function prettyPrintAndSelectSource(source) {
   return async ({ dispatch }) => {
-    const prettySource = await dispatch(prettyPrintSource({ source }));
+    const prettySource = await dispatch(prettyPrintSource(source));
 
     
     
@@ -463,8 +431,8 @@ export function removePrettyPrintedSource(source) {
     
     if (location.source == generatedSource) {
       await dispatch(selectSpecificLocation(location));
-    } else {
-      await dispatch(selectSource(generatedSource));
     }
+
+    await dispatch(selectSource(generatedSource));
   };
 }
