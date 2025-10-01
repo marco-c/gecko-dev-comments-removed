@@ -33,7 +33,14 @@ bool js::InvalidatingRuntimeFuse::addFuseDependency(
   return scriptSet->addScriptForFuse(this, ionScript);
 }
 
+
+
+
 void js::InvalidatingRuntimeFuse::popFuse(JSContext* cx) {
+  if (!intact()) {
+    return;
+  }
+
   
   GuardFuse::popFuse(cx);
   JS_LOG(fuseInvalidation, Verbose, "Invalidating fuse popping: %s", name());
