@@ -3925,6 +3925,50 @@ static Maybe<TextAutospace::CharClass> GetPrecedingCharClassFromMappedFlows(
   return Nothing();
 }
 
+
+static Maybe<TextAutospace::CharClass> GetPrecedingCharClassFromFrameTree(
+    nsIFrame* aFrame) {
+  using CharClass = TextAutospace::CharClass;
+  while (!aFrame->GetPrevSibling() && aFrame->GetParent()->IsInlineFrame()) {
+    
+    
+    aFrame = aFrame->GetParent();
+  }
+  aFrame = aFrame->GetPrevSibling();
+  while (aFrame) {
+    if (aFrame->IsPlaceholderFrame()) {
+      
+      aFrame = aFrame->GetPrevSibling();
+      continue;
+    }
+    if (aFrame->IsInlineFrame()) {
+      
+      aFrame = aFrame->PrincipalChildList().LastChild();
+      continue;
+    }
+    if (nsTextFrame* f = do_QueryFrame(aFrame)) {
+      
+      Maybe<CharClass> prevClass = LastNonMarkCharClassInFrame(f);
+      if (prevClass) {
+        if ((*prevClass == CharClass::NonIdeographicLetter ||
+             *prevClass == CharClass::NonIdeographicNumeral) &&
+            (f->StyleVisibility()->mTextOrientation ==
+                 StyleTextOrientation::Upright ||
+             f->Style()->IsTextCombined())) {
+          
+          
+          return Some(CharClass::Other);
+        }
+        return prevClass;
+      }
+      aFrame = aFrame->GetPrevSibling();
+      continue;
+    }
+    return Nothing();
+  }
+  return Nothing();
+}
+
 void nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
                                                        Spacing* aSpacing,
                                                        bool aIgnoreTabs) const {
@@ -4003,6 +4047,11 @@ void nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
           if (!(mTextRun->GetFlags2() &
                 nsTextFrameUtils::Flags::IsSimpleFlow)) {
             prevClass = GetPrecedingCharClassFromMappedFlows(mFrame, mTextRun);
+          }
+          
+          
+          if (!prevClass) {
+            prevClass = GetPrecedingCharClassFromFrameTree(mFrame);
           }
         }
       }
