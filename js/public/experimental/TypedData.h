@@ -13,7 +13,6 @@
 #define js_experimental_TypedData_h
 
 #include "mozilla/Assertions.h"  
-#include "mozilla/Casting.h"     
 #include "mozilla/Span.h"
 
 #include <stddef.h>  

@@ -3,7 +3,6 @@
 
 
 #include "mozilla/intl/BidiEmbeddingLevel.h"
-#include "mozilla/Casting.h"
 #include "mozilla/intl/ICU4CGlue.h"
 
 namespace mozilla::intl {
