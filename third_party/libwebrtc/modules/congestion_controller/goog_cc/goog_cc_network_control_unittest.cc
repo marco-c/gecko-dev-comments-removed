@@ -652,17 +652,9 @@ TEST(GoogCcScenario, StableEstimateDoesNotVaryInSteadyState) {
   EXPECT_GE(min_stable_target / max_stable_target, min_target / max_target);
 }
 
-TEST(GoogCcScenario, LossBasedControlUpdatesTargetRateBasedOnLinkCapacity) {
-  
-  UpdatesTargetRateBasedOnLinkCapacity(
-      "_loss_based",
-      "WebRTC-Bwe-LossBasedControl/Enabled/");
-}
-
 TEST(GoogCcScenario, LossBasedControlDoesModestBackoffToHighLoss) {
   Scenario s("googcc_unit/high_loss_channel", false);
   CallClientConfig config;
-  config.field_trials.Set("WebRTC-Bwe-LossBasedControl", "Enabled");
   config.transport.rates.min_rate = DataRate::KilobitsPerSec(10);
   config.transport.rates.max_rate = DataRate::KilobitsPerSec(1500);
   config.transport.rates.start_rate = DataRate::KilobitsPerSec(300);
@@ -677,7 +669,6 @@ TEST(GoogCcScenario, LossBasedControlDoesModestBackoffToHighLoss) {
   auto* client = CreateVideoSendingClient(&s, config, {send_net}, {ret_net});
 
   s.RunFor(TimeDelta::Seconds(120));
-  
   EXPECT_GT(client->target_rate().kbps(), 100);
 }
 
