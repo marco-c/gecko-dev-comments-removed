@@ -72,7 +72,7 @@ struct RTC_EXPORT CryptoOptions {
 
   
   
-  class EphemeralKeyExchangeCipherGroups {
+  class RTC_EXPORT EphemeralKeyExchangeCipherGroups {
    public:
     
     
