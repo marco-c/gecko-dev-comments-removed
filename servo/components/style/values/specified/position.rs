@@ -802,6 +802,26 @@ impl PositionVisibility {
     }
 }
 
+#[derive(PartialEq)]
+
+
+pub enum PositionAreaType {
+    
+    Physical,
+    
+    Logical,
+    
+    SelfLogical,
+    
+    Inferred,
+    
+    SelfInferred,
+    
+    Common,
+    
+    None,
+}
+
 #[derive(
     Clone,
     Copy,
@@ -823,72 +843,90 @@ impl PositionVisibility {
 
 pub enum PositionAreaKeyword {
     #[default]
-    None,
+    None = 0,
 
     
-    Center,
-    SpanAll,
+    Center = 1,
+    SpanAll = 2,
 
     
-    Left,
-    Right,
-    SpanLeft,
-    SpanRight,
-    XStart,
-    XEnd,
-    SpanXStart,
-    SpanXEnd,
-    XSelfStart,
-    XSelfEnd,
-    SpanXSelfStart,
-    SpanXSelfEnd,
-    
-    Top,
-    Bottom,
-    SpanTop,
-    SpanBottom,
-    YStart,
-    YEnd,
-    SpanYStart,
-    SpanYEnd,
-    YSelfStart,
-    YSelfEnd,
-    SpanYSelfStart,
-    SpanYSelfEnd,
+    Left = 3,
+    Right = 4,
+    Top = 5,
+    Bottom = 6,
 
     
-    BlockStart,
-    BlockEnd,
-    SpanBlockStart,
-    SpanBlockEnd,
-    
-    InlineStart,
-    InlineEnd,
-    SpanInlineStart,
-    SpanInlineEnd,
+    XStart = 7,
+    XEnd = 8,
+    YStart = 9,
+    YEnd = 10,
 
     
-    SelfBlockStart,
-    SelfBlockEnd,
-    SpanSelfBlockStart,
-    SpanSelfBlockEnd,
-    
-    SelfInlineStart,
-    SelfInlineEnd,
-    SpanSelfInlineStart,
-    SpanSelfInlineEnd,
+    BlockStart = 11,
+    BlockEnd = 12,
+    InlineStart = 13,
+    InlineEnd = 14,
 
     
-    Start,
-    End,
-    SpanStart,
-    SpanEnd,
+    Start = 15,
+    End = 16,
 
     
-    SelfStart,
-    SelfEnd,
-    SpanSelfStart,
-    SpanSelfEnd,
+    
+    
+    
+    
+    #[css(skip)]
+    Span = 1u8 << 5,
+    #[css(skip)]
+    SelfWM = 1u8 << 6,  
+
+    
+    SpanLeft = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::Left as u8,
+    SpanRight = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::Right as u8,
+    SpanTop = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::Top as u8,
+    SpanBottom = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::Bottom as u8,
+
+    SpanXStart = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::XStart as u8,
+    SpanXEnd = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::XEnd as u8,
+    SpanYStart = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::YStart as u8,
+    SpanYEnd = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::YEnd as u8,
+
+    SpanBlockStart = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::BlockStart as u8,
+    SpanBlockEnd = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::BlockEnd as u8,
+    SpanInlineStart = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::InlineStart as u8,
+    SpanInlineEnd = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::InlineEnd as u8,
+
+    SpanStart = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::Start as u8,
+    SpanEnd = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::End as u8,
+
+    
+    XSelfStart = PositionAreaKeyword::SelfWM as u8 | PositionAreaKeyword::XStart as u8,
+    XSelfEnd = PositionAreaKeyword::SelfWM as u8 | PositionAreaKeyword::XEnd as u8,
+    YSelfStart = PositionAreaKeyword::SelfWM as u8 | PositionAreaKeyword::YStart as u8,
+    YSelfEnd = PositionAreaKeyword::SelfWM as u8 | PositionAreaKeyword::YEnd as u8,
+
+    SelfBlockStart = PositionAreaKeyword::SelfWM as u8 | PositionAreaKeyword::BlockStart as u8,
+    SelfBlockEnd = PositionAreaKeyword::SelfWM as u8 | PositionAreaKeyword::BlockEnd as u8,
+    SelfInlineStart = PositionAreaKeyword::SelfWM as u8 | PositionAreaKeyword::InlineStart as u8,
+    SelfInlineEnd = PositionAreaKeyword::SelfWM as u8 | PositionAreaKeyword::InlineEnd as u8,
+
+    SelfStart = PositionAreaKeyword::SelfWM as u8 | PositionAreaKeyword::Start as u8,
+    SelfEnd = PositionAreaKeyword::SelfWM as u8 | PositionAreaKeyword::End as u8,
+
+    
+    SpanXSelfStart = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::SelfWM as u8 | PositionAreaKeyword::XStart as u8,
+    SpanXSelfEnd = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::SelfWM as u8 | PositionAreaKeyword::XEnd as u8,
+    SpanYSelfStart = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::SelfWM as u8 | PositionAreaKeyword::YStart as u8,
+    SpanYSelfEnd = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::SelfWM as u8 | PositionAreaKeyword::YEnd as u8,
+
+    SpanSelfBlockStart = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::SelfWM as u8 | PositionAreaKeyword::BlockStart as u8,
+    SpanSelfBlockEnd = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::SelfWM as u8 | PositionAreaKeyword::BlockEnd as u8,
+    SpanSelfInlineStart = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::SelfWM as u8 | PositionAreaKeyword::InlineStart as u8,
+    SpanSelfInlineEnd = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::SelfWM as u8 | PositionAreaKeyword::InlineEnd as u8,
+
+    SpanSelfStart = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::SelfWM as u8 | PositionAreaKeyword::Start as u8,
+    SpanSelfEnd = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::SelfWM as u8 | PositionAreaKeyword::End as u8,
 }
 
 #[allow(missing_docs)]
@@ -903,132 +941,108 @@ impl PositionAreaKeyword {
     }
 
     
-    pub fn is_common(&self) -> bool {
-        *self == Self::Center || *self == Self::SpanAll
+    fn get_type(&self) -> PositionAreaType {
+        use PositionAreaKeyword::*;
+        match self {
+            
+            Left | Right | SpanLeft | SpanRight | XStart | XEnd | SpanXStart | SpanXEnd
+            | XSelfStart | XSelfEnd | SpanXSelfStart | SpanXSelfEnd => PositionAreaType::Physical,
+
+            
+            Top | Bottom | SpanTop | SpanBottom | YStart | YEnd | SpanYStart | SpanYEnd
+            | YSelfStart | YSelfEnd | SpanYSelfStart | SpanYSelfEnd => PositionAreaType::Physical,
+
+            
+            BlockStart | BlockEnd | SpanBlockStart | SpanBlockEnd => PositionAreaType::Logical,
+
+            
+            InlineStart | InlineEnd | SpanInlineStart | SpanInlineEnd => PositionAreaType::Logical,
+
+            
+            SelfBlockStart | SelfBlockEnd | SpanSelfBlockStart | SpanSelfBlockEnd => {
+                PositionAreaType::SelfLogical
+            },
+
+            
+            SelfInlineStart | SelfInlineEnd | SpanSelfInlineStart | SpanSelfInlineEnd => {
+                PositionAreaType::SelfLogical
+            },
+
+            
+            Start | End | SpanStart | SpanEnd => PositionAreaType::Inferred,
+
+            
+            SelfStart | SelfEnd | SpanSelfStart | SpanSelfEnd => PositionAreaType::SelfInferred,
+
+            
+            Center | SpanAll => PositionAreaType::Common,
+
+            None => PositionAreaType::None,
+
+            
+            SelfWM | Span => panic!("invalid PositionAreaKeyword value"),
+        }
     }
 
-    pub fn is_horizontal(&self) -> bool {
+    #[inline]
+    pub fn canonical_order_is_first(&self) -> bool {
+        use PositionAreaKeyword::*;
         matches!(
             self,
-            Self::Left
-                | Self::Right
-                | Self::SpanLeft
-                | Self::SpanRight
-                | Self::XStart
-                | Self::XEnd
-                | Self::SpanXStart
-                | Self::SpanXEnd
-                | Self::XSelfStart
-                | Self::XSelfEnd
-                | Self::SpanXSelfStart
-                | Self::SpanXSelfEnd
-        )
-    }
-    pub fn is_vertical(&self) -> bool {
-        matches!(
-            self,
-            Self::Top
-                | Self::Bottom
-                | Self::SpanTop
-                | Self::SpanBottom
-                | Self::YStart
-                | Self::YEnd
-                | Self::SpanYStart
-                | Self::SpanYEnd
-                | Self::YSelfStart
-                | Self::YSelfEnd
-                | Self::SpanYSelfStart
-                | Self::SpanYSelfEnd
-        )
-    }
-
-    pub fn is_block(&self) -> bool {
-        matches!(
-            self,
-            Self::BlockStart | Self::BlockEnd | Self::SpanBlockStart | Self::SpanBlockEnd
-        )
-    }
-    pub fn is_inline(&self) -> bool {
-        matches!(
-            self,
-            Self::InlineStart | Self::InlineEnd | Self::SpanInlineStart | Self::SpanInlineEnd
-        )
-    }
-
-    pub fn is_self_block(&self) -> bool {
-        matches!(
-            self,
-            Self::SelfBlockStart
-                | Self::SelfBlockEnd
-                | Self::SpanSelfBlockStart
-                | Self::SpanSelfBlockEnd
-        )
-    }
-    pub fn is_self_inline(&self) -> bool {
-        matches!(
-            self,
-            Self::SelfInlineStart
-                | Self::SelfInlineEnd
-                | Self::SpanSelfInlineStart
-                | Self::SpanSelfInlineEnd
-        )
-    }
-
-    pub fn is_inferred_logical(&self) -> bool {
-        matches!(
-            self,
-            Self::Start | Self::End | Self::SpanStart | Self::SpanEnd
+            Left | Right
+                | SpanLeft
+                | SpanRight
+                | XStart
+                | XEnd
+                | SpanXStart
+                | SpanXEnd
+                | XSelfStart
+                | XSelfEnd
+                | SpanXSelfStart
+                | SpanXSelfEnd
+                | BlockStart
+                | BlockEnd
+                | SpanBlockStart
+                | SpanBlockEnd
+                | SelfBlockStart
+                | SelfBlockEnd
+                | SpanSelfBlockStart
+                | SpanSelfBlockEnd
         )
     }
 
-    pub fn is_self_inferred_logical(&self) -> bool {
+    #[inline]
+    pub fn canonical_order_is_second(&self) -> bool {
+        use PositionAreaKeyword::*;
         matches!(
             self,
-            Self::SelfStart | Self::SelfEnd | Self::SpanSelfStart | Self::SpanSelfEnd
+            Top | Bottom
+                | SpanTop
+                | SpanBottom
+                | YStart
+                | YEnd
+                | SpanYStart
+                | SpanYEnd
+                | YSelfStart
+                | YSelfEnd
+                | SpanYSelfStart
+                | SpanYSelfEnd
+                | InlineStart
+                | InlineEnd
+                | SpanInlineStart
+                | SpanInlineEnd
+                | SelfInlineStart
+                | SelfInlineEnd
+                | SpanSelfInlineStart
+                | SpanSelfInlineEnd
         )
     }
-}
 
-#[inline]
-fn is_compatible_pairing(first: PositionAreaKeyword, second: PositionAreaKeyword) -> bool {
-    if first.is_none() || second.is_none() {
-        
-        
-        return false;
+    #[inline]
+    pub fn has_same_canonical_order(&self, other: PositionAreaKeyword) -> bool {
+        self.canonical_order_is_first() == other.canonical_order_is_first()
+            || self.canonical_order_is_second() == other.canonical_order_is_second()
     }
-    if first.is_common() || second.is_common() {
-        return true;
-    }
-    if first.is_horizontal() {
-        return second.is_vertical();
-    }
-    if first.is_vertical() {
-        return second.is_horizontal();
-    }
-    if first.is_block() {
-        return second.is_inline();
-    }
-    if first.is_inline() {
-        return second.is_block();
-    }
-    if first.is_self_block() {
-        return second.is_self_inline();
-    }
-    if first.is_self_inline() {
-        return second.is_self_block();
-    }
-    if first.is_inferred_logical() {
-        return second.is_inferred_logical();
-    }
-    if first.is_self_inferred_logical() {
-        return second.is_self_inferred_logical();
-    }
-
-    debug_assert!(false, "Not reached");
-
-    
-    
-    false
 }
 
 #[derive(
@@ -1039,7 +1053,6 @@ fn is_compatible_pairing(first: PositionAreaKeyword, second: PositionAreaKeyword
     MallocSizeOf,
     PartialEq,
     SpecifiedValueInfo,
-    ToComputedValue,
     ToCss,
     ToResolvedValue,
     ToShmem,
@@ -1076,6 +1089,41 @@ impl PositionArea {
         Self::parse_internal(context, input,  false)
     }
 
+    #[inline]
+    pub fn get_type(&self) -> PositionAreaType {
+        match (self.first.get_type(), self.second.get_type()) {
+            (PositionAreaType::Physical, PositionAreaType::Physical)
+                if !self.first.has_same_canonical_order(self.second) =>
+            {
+                PositionAreaType::Physical
+            },
+            (PositionAreaType::Logical, PositionAreaType::Logical)
+                if !self.first.has_same_canonical_order(self.second) =>
+            {
+                PositionAreaType::Logical
+            },
+            (PositionAreaType::SelfLogical, PositionAreaType::SelfLogical)
+                if !self.first.has_same_canonical_order(self.second) =>
+            {
+                PositionAreaType::SelfLogical
+            },
+            (PositionAreaType::Inferred, PositionAreaType::Inferred) => PositionAreaType::Inferred,
+            (PositionAreaType::SelfInferred, PositionAreaType::SelfInferred) => {
+                PositionAreaType::SelfInferred
+            },
+            (PositionAreaType::Common, PositionAreaType::Common) => PositionAreaType::Common,
+
+            
+            (PositionAreaType::Common, other) | (other, PositionAreaType::Common)
+                if other != PositionAreaType::None =>
+            {
+                other
+            },
+
+            _ => PositionAreaType::None,
+        }
+    }
+
     fn parse_internal<'i, 't>(
         _context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -1106,41 +1154,34 @@ impl PositionArea {
             return Ok(Self { first, second });
         }
 
-        if !is_compatible_pairing(first, second) {
+        let pair_type = Self { first, second }.get_type();
+
+        if pair_type == PositionAreaType::None {
+            
+            
             return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
         }
 
         
         
-        if first.is_inferred_logical()
-            || second.is_inferred_logical()
-            || first.is_self_inferred_logical()
-            || second.is_self_inferred_logical()
-            || (first.is_common() && second.is_common())
-        {
-            
-            
-            
-            if first == second {
+        
+        if matches!(
+            pair_type,
+            PositionAreaType::Physical | PositionAreaType::Logical | PositionAreaType::SelfLogical
+        ) {
+            if second == PositionAreaKeyword::SpanAll {
+                
+                
                 second = PositionAreaKeyword::None;
+            } else if first == PositionAreaKeyword::SpanAll {
+                first = second;
+                second = PositionAreaKeyword::None;
+            } else if first.canonical_order_is_second() || second.canonical_order_is_first() {
+                std::mem::swap(&mut first, &mut second);
             }
-        } else if second == PositionAreaKeyword::SpanAll {
-            
-            
+        }
+        if first == second {
             second = PositionAreaKeyword::None;
-        } else if first == PositionAreaKeyword::SpanAll {
-            
-            first = second;
-            second = PositionAreaKeyword::None;
-        } else if first.is_vertical()
-            || second.is_horizontal()
-            || first.is_inline()
-            || second.is_block()
-            || first.is_self_inline()
-            || second.is_self_block()
-        {
-            
-            std::mem::swap(&mut first, &mut second);
         }
 
         Ok(Self { first, second })
