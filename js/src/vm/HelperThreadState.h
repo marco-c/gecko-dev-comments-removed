@@ -13,7 +13,6 @@
 #ifndef vm_HelperThreadState_h
 #define vm_HelperThreadState_h
 
-#include "mozilla/AlreadyAddRefed.h"  
 #include "mozilla/Assertions.h"       
 #include "mozilla/Attributes.h"       
 #include "mozilla/EnumeratedArray.h"  

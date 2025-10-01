@@ -11,9 +11,8 @@
 
 #include "js/TypeDecls.h"  
 
-#include "mozilla/AlreadyAddRefed.h"  
-#include "mozilla/Variant.h"          
-#include "mozilla/RefPtr.h"           
+#include "mozilla/Variant.h"  
+#include "mozilla/RefPtr.h"   
 
 #include "nsDebug.h"  
 

@@ -6,7 +6,6 @@
 
 #include "frontend/Stencil.h"
 
-#include "mozilla/AlreadyAddRefed.h"        
 #include "mozilla/Assertions.h"             
 #include "mozilla/CheckedInt.h"             
 #include "mozilla/Maybe.h"                  

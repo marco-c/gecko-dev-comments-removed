@@ -13,7 +13,6 @@
 
 #include <cstdint>
 
-#include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/quota/CommonMetadata.h"
 #include "mozilla/dom/quota/PersistenceType.h"
