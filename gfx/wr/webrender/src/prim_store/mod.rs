@@ -1055,6 +1055,7 @@ pub enum PrimitiveInstanceKind {
         
         data_handle: LinearGradientDataHandle,
         visible_tiles_range: GradientTileRange,
+        use_legacy_path: bool,
     },
     
     
@@ -1067,13 +1068,13 @@ pub enum PrimitiveInstanceKind {
         
         data_handle: RadialGradientDataHandle,
         visible_tiles_range: GradientTileRange,
-        cached: bool,
+        use_legacy_path: bool,
     },
     ConicGradient {
         
         data_handle: ConicGradientDataHandle,
         visible_tiles_range: GradientTileRange,
-        cached: bool,
+        use_legacy_path: bool,
     },
     
     Clear {
