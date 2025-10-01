@@ -31,12 +31,16 @@ class V8_NODISCARD RegExpStackScope final {
   const ptrdiff_t old_sp_top_delta_;
 };
 
+
+
+
 class RegExpStack final {
  public:
-  RegExpStack();
-  ~RegExpStack();
   RegExpStack(const RegExpStack&) = delete;
   RegExpStack& operator=(const RegExpStack&) = delete;
+
+  static RegExpStack* New();
+  static void Delete(RegExpStack* instance);
 
 #if defined(V8_TARGET_ARCH_PPC64) || defined(V8_TARGET_ARCH_S390X)
   static constexpr int kSlotSize = kSystemPointerSize;
@@ -90,6 +94,11 @@ class RegExpStack final {
 
  private:
   
+  
+  RegExpStack();
+  ~RegExpStack();
+
+  
   static const Address kMemoryTop =
       static_cast<Address>(static_cast<uintptr_t>(-1));
 
@@ -103,6 +112,9 @@ class RegExpStack final {
   
   static_assert(kStaticStackSize >= 2 * kStackLimitSlackSize);
   static_assert(kStaticStackSize <= kMaximumStackSize);
+  
+  
+  
   uint8_t static_stack_[kStaticStackSize] = {0};
 
   
@@ -123,6 +135,9 @@ class RegExpStack final {
     uint8_t* memory_ = nullptr;
     uint8_t* memory_top_ = nullptr;
     size_t memory_size_ = 0;
+    
+    
+    
     uint8_t* stack_pointer_ = nullptr;
     Address limit_ = kNullAddress;
     bool owns_memory_ = false;  
@@ -132,6 +147,11 @@ class RegExpStack final {
       if (stack_pointer_ == memory_top_) ResetToStaticStack(regexp_stack);
     }
     void FreeAndInvalidate();
+
+    
+    static uint8_t* NewDynamicStack(size_t size);
+    
+    void DeleteDynamicStack();
   };
   static constexpr size_t kThreadLocalSize = sizeof(ThreadLocal);
 
