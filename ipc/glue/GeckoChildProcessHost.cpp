@@ -964,9 +964,6 @@ void BaseProcessLauncher::GetChildLogName(const char* origLogName,
 
 
 
-#if defined(XP_WIN) || defined(MOZ_WIDGET_ANDROID) || \
-    defined(MOZ_ENABLE_FORKSERVER)
-
 static mozilla::StaticMutex gIPCLaunchThreadMutex;
 static mozilla::StaticRefPtr<nsIThread> gIPCLaunchThread
     MOZ_GUARDED_BY(gIPCLaunchThreadMutex);
@@ -1018,20 +1015,6 @@ nsCOMPtr<nsIEventTarget> GetIPCLauncher() {
   MOZ_DIAGNOSTIC_ASSERT(thread);
   return thread;
 }
-
-#else  
-       
-
-
-
-nsCOMPtr<nsIEventTarget> GetIPCLauncher() {
-  nsCOMPtr<nsIEventTarget> pool =
-      mozilla::SharedThreadPool::Get("IPC Launch"_ns);
-  MOZ_DIAGNOSTIC_ASSERT(pool);
-  return pool;
-}
-
-#endif  
 
 void
 #if defined(XP_WIN)
