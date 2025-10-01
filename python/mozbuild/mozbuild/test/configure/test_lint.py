@@ -3,6 +3,7 @@
 
 
 import os
+import sys
 import textwrap
 import traceback
 import unittest
@@ -545,7 +546,8 @@ class TestLint(unittest.TestCase):
 
         
         
-        with self.assertRaisesFromLine(NameError, 2) as e:
+        line = 4 if sys.version_info >= (3, 13) else 2
+        with self.assertRaisesFromLine(NameError, line) as e:
             with self.moz_configure(
                 """
                 @template

@@ -352,9 +352,12 @@ class LintSandbox(ConfigureSandbox):
                 
                 
                 e = NameError(f"global name '{instr.argval}' is not defined")
-                if instr.starts_line is None:
+                
+                
+                line_number = getattr(instr, "line_number", instr.starts_line)
+                if line_number is None:
                     self._raise_from(e, func)
                 else:
-                    self._raise_from(e, func, instr.starts_line - code.co_firstlineno)
+                    self._raise_from(e, func, line_number - code.co_firstlineno)
 
         return wrapped
