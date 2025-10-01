@@ -1302,7 +1302,12 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
   }
 
   
-  const int use_4x4_partition = frame_is_intra_only(cm);
+  
+  
+  
+  
+  const int use_4x4_partition =
+      frame_is_intra_only(cm) && !cpi->sf.nonrd_keyframe;
   const int low_res = (cm->width <= 352 && cm->height <= 288);
   int variance4x4downsample[16];
   int segment_id;
@@ -3787,6 +3792,14 @@ static int rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
     if (do_rd_ml_partition_var_pruning) {
       ml_predict_var_rd_partitioning(cpi, x, pc_tree, bsize, mi_row, mi_col,
                                      &partition_none_allowed, &do_split);
+      
+      
+      
+      
+      if (bsize == BLOCK_8X8 && cpi->sf.disable_split_mask &&
+          partition_none_allowed == 0) {
+        partition_none_allowed = 1;
+      }
     } else {
       vp9_zero(pc_tree->mv);
     }

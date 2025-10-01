@@ -193,6 +193,7 @@ typedef struct vpx_codec_cx_pkt {
       unsigned int samples[4]; 
       uint64_t sse[4];         
       double psnr[4];          
+      int spatial_layer_id;    
     } psnr;                    
     vpx_fixed_buf_t raw;       
 

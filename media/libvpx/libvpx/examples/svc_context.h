@@ -39,6 +39,7 @@ typedef struct {
   int speed;                
   int threads;
   int aqmode;  
+  int use_psnr;
   
   void *internal;
 } SvcContext;
@@ -58,6 +59,7 @@ typedef struct SvcInternal {
   double psnr_sum[VPX_SS_MAX_LAYERS][COMPONENTS];  
   uint64_t sse_sum[VPX_SS_MAX_LAYERS][COMPONENTS];
   uint32_t bytes_sum[VPX_SS_MAX_LAYERS];
+  int number_of_frames[VPX_SS_MAX_LAYERS];
 
   
   int width;    
@@ -65,7 +67,6 @@ typedef struct SvcInternal {
   int kf_dist;  
 
   
-  int psnr_pkt_received;
   int layer;
   int use_multiple_frame_contexts;
 

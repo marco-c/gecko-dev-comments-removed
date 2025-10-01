@@ -22,7 +22,7 @@
 namespace svc_test {
 namespace {
 
-typedef enum {
+enum INTER_LAYER_PRED {
   
   INTER_LAYER_PRED_ON,
   
@@ -33,7 +33,7 @@ typedef enum {
   
   
   INTER_LAYER_PRED_ON_CONSTRAINED
-} INTER_LAYER_PRED;
+};
 
 class DatarateOnePassCbrSvc : public OnePassCbrSvc {
  public:
