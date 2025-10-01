@@ -1205,14 +1205,6 @@ TEST_F(SSLStreamAdapterTestDTLS,
 
 
 
-TEST_F(SSLStreamAdapterTestDTLS, DISABLED_TestDTLSConnectWithSmallMtu) {
-  SetMtu(700);
-  SetHandshakeWait(20000);
-  TestHandshake();
-}
-
-
-
 #ifdef OPENSSL_IS_BORINGSSL
 #define MAYBE_TestDTLSConnectTimeout TestDTLSConnectTimeout
 #else
