@@ -147,8 +147,8 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   PeerConnectionInterface::RTCConfiguration GetConfiguration();
   RTCError SetConfiguration(
       const PeerConnectionInterface::RTCConfiguration& configuration);
-  bool AddIceCandidate(const IceCandidateInterface* candidate);
-  void AddIceCandidate(std::unique_ptr<IceCandidateInterface> candidate,
+  bool AddIceCandidate(const IceCandidate* candidate);
+  void AddIceCandidate(std::unique_ptr<IceCandidate> candidate,
                        std::function<void(RTCError)> callback);
   bool RemoveIceCandidates(const std::vector<Candidate>& candidates);
   
@@ -502,18 +502,18 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   bool UseCandidatesInRemoteDescription();
   
-  bool UseCandidate(const IceCandidateInterface* candidate);
+  bool UseCandidate(const IceCandidate* candidate);
   
   
   
   
-  bool ReadyToUseRemoteCandidate(const IceCandidateInterface* candidate,
+  bool ReadyToUseRemoteCandidate(const IceCandidate* candidate,
                                  const SessionDescriptionInterface* remote_desc,
                                  bool* valid);
 
   RTCErrorOr<const ContentInfo*> FindContentInfo(
       const SessionDescriptionInterface* description,
-      const IceCandidateInterface* candidate) RTC_RUN_ON(signaling_thread());
+      const IceCandidate* candidate) RTC_RUN_ON(signaling_thread());
 
   
   
@@ -557,8 +557,7 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   
   
   
-  AddIceCandidateResult AddIceCandidateInternal(
-      const IceCandidateInterface* candidate);
+  AddIceCandidateResult AddIceCandidateInternal(const IceCandidate* candidate);
 
   void ReportInitialSdpMunging(bool had_local_description, SdpType type);
 

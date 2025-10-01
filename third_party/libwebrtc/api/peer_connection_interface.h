@@ -1117,12 +1117,11 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
   
   
   
-  virtual bool AddIceCandidate(const IceCandidateInterface* candidate) = 0;
+  virtual bool AddIceCandidate(const IceCandidate* candidate) = 0;
   
   
-  virtual void AddIceCandidate(
-      std::unique_ptr<IceCandidateInterface> ,
-      std::function<void(RTCError)> ) {}
+  virtual void AddIceCandidate(std::unique_ptr<IceCandidate> ,
+                               std::function<void(RTCError)> ) {}
 
   
   
@@ -1302,7 +1301,7 @@ class PeerConnectionObserver {
       PeerConnectionInterface::IceGatheringState new_state) = 0;
 
   
-  virtual void OnIceCandidate(const IceCandidateInterface* candidate) = 0;
+  virtual void OnIceCandidate(const IceCandidate* candidate) = 0;
 
   
   

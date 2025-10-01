@@ -151,8 +151,7 @@ class TestPeer final : public StatsProvider {
   }
 
   
-  bool AddIceCandidates(
-      std::vector<std::unique_ptr<IceCandidateInterface>> candidates);
+  bool AddIceCandidates(std::vector<std::unique_ptr<IceCandidate>> candidates);
 
   
   
@@ -185,7 +184,7 @@ class TestPeer final : public StatsProvider {
   std::unique_ptr<PeerConnectionWrapper> wrapper_;
   std::vector<PeerConfigurer::VideoSource> video_sources_;
 
-  std::vector<std::unique_ptr<IceCandidateInterface>> remote_ice_candidates_;
+  std::vector<std::unique_ptr<IceCandidate>> remote_ice_candidates_;
 };
 
 }  

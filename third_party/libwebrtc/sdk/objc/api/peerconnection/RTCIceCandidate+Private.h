@@ -23,15 +23,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 
 
-    @property(nonatomic, readonly)
-        std::unique_ptr<webrtc::IceCandidateInterface> nativeCandidate;
+    @property(nonatomic, readonly) std::unique_ptr<webrtc::IceCandidate>
+        nativeCandidate;
 
 
 
 
 
-- (instancetype)initWithNativeCandidate:
-    (const webrtc::IceCandidateInterface *)candidate;
+- (instancetype)initWithNativeCandidate:(const webrtc::IceCandidate *)candidate;
 
 @end
 

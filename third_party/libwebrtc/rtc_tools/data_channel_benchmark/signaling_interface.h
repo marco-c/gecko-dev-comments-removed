@@ -20,22 +20,20 @@ class SignalingInterface {
   virtual ~SignalingInterface() = default;
 
   
-  virtual void SendIceCandidate(
-      const webrtc::IceCandidateInterface* candidate) = 0;
+  virtual void SendIceCandidate(const IceCandidate* candidate) = 0;
 
   
-  virtual void SendDescription(
-      const webrtc::SessionDescriptionInterface* sdp) = 0;
+  virtual void SendDescription(const SessionDescriptionInterface* sdp) = 0;
 
   
   virtual void OnRemoteDescription(
-      std::function<void(std::unique_ptr<webrtc::SessionDescriptionInterface>
-                             sdp)> callback) = 0;
+      std::function<void(std::unique_ptr<SessionDescriptionInterface> sdp)>
+          callback) = 0;
 
   
   virtual void OnIceCandidate(
-      std::function<void(std::unique_ptr<webrtc::IceCandidateInterface>
-                             candidate)> callback) = 0;
+      std::function<void(std::unique_ptr<IceCandidate> candidate)>
+          callback) = 0;
 };
 }  
 

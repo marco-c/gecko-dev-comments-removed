@@ -43,7 +43,7 @@ std::string SdpSerialize(const JsepSessionDescription& jdesc);
 
 
 
-std::string SdpSerializeCandidate(const IceCandidateInterface& candidate);
+std::string SdpSerializeCandidate(const IceCandidate& candidate);
 
 
 

@@ -70,7 +70,7 @@ typedef PeerConnectionWrapperForUsageHistogramTest* RawWrapperPtr;
 
 class ObserverForUsageHistogramTest : public MockPeerConnectionObserver {
  public:
-  void OnIceCandidate(const IceCandidateInterface* candidate) override;
+  void OnIceCandidate(const IceCandidate* candidate) override;
 
   void OnInterestingUsage(int usage_pattern) override {
     interesting_usage_detected_ = usage_pattern;
@@ -126,9 +126,9 @@ class PeerConnectionWrapperForUsageHistogramTest
     return static_cast<ObserverForUsageHistogramTest*>(observer())
         ->HaveDataChannel();
   }
-  void BufferIceCandidate(const IceCandidateInterface* candidate) {
+  void BufferIceCandidate(const IceCandidate* candidate) {
     std::string sdp = candidate->ToString();
-    std::unique_ptr<IceCandidateInterface> candidate_copy(CreateIceCandidate(
+    std::unique_ptr<IceCandidate> candidate_copy(CreateIceCandidate(
         candidate->sdp_mid(), candidate->sdp_mline_index(), sdp, nullptr));
     buffered_candidates_.push_back(std::move(candidate_copy));
   }
@@ -188,12 +188,12 @@ class PeerConnectionWrapperForUsageHistogramTest
 
  private:
   
-  std::vector<std::unique_ptr<IceCandidateInterface>> buffered_candidates_;
+  std::vector<std::unique_ptr<IceCandidate>> buffered_candidates_;
 };
 
 
 void ObserverForUsageHistogramTest::OnIceCandidate(
-    const IceCandidateInterface* candidate) {
+    const IceCandidate* candidate) {
   
   if (candidate_target_) {
     this->candidate_target_->BufferIceCandidate(candidate);
