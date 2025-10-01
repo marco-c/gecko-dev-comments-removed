@@ -131,7 +131,10 @@ class AudioInputProcessing : public AudioDataListener {
            mPlatformProcessingSetParams != CUBEB_INPUT_PROCESSING_PARAM_NONE;
   }
 
+  
+  
   void Start(MediaTrackGraph* aGraph);
+  
   void Stop(MediaTrackGraph* aGraph);
 
   void DeviceChanged(MediaTrackGraph* aGraph) override;
@@ -179,7 +182,8 @@ class AudioInputProcessing : public AudioDataListener {
                      const MediaEnginePrefs& aSettings);
 
   
-  webrtc::AudioProcessing::Config AppliedConfig(MediaTrackGraph* aGraph) const;
+  const webrtc::AudioProcessing::Config& AppliedConfig(
+      MediaTrackGraph* aGraph) const;
 
   void End();
 
@@ -201,7 +205,7 @@ class AudioInputProcessing : public AudioDataListener {
  private:
   ~AudioInputProcessing() = default;
   webrtc::AudioProcessing::Config ConfigForPrefs(
-      const MediaEnginePrefs& aPrefs) const;
+      MediaTrackGraph* aGraph, const MediaEnginePrefs& aPrefs) const;
   void PassThroughChanged(MediaTrackGraph* aGraph);
   void RequestedInputChannelCountChanged(MediaTrackGraph* aGraph,
                                          CubebUtils::AudioDeviceID aDeviceId);
@@ -226,6 +230,14 @@ class AudioInputProcessing : public AudioDataListener {
   
   
   MediaEnginePrefs mSettings;
+  
+  
+  
+  
+  
+  
+  
+  webrtc::AudioProcessing::Config mAppliedConfig;
   
   
   bool mPlatformProcessingEnabled = false;

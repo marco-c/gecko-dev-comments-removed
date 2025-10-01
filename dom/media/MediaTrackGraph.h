@@ -1232,6 +1232,13 @@ class MediaTrackGraph {
 
 
   bool OutputForAECMightDrift();
+  
+
+
+
+
+
+  bool OutputForAECIsPrimary();
 
   void RegisterCaptureTrackForWindow(uint64_t aWindowId,
                                      ProcessedMediaTrack* aCaptureTrack);

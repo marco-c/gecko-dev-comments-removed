@@ -458,7 +458,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   TrackTime GraphTimeToTrackTimeWithBlocking(const MediaTrack* aTrack,
                                              GraphTime aTime) const;
 
- private:
+ protected:
   
 
 
@@ -561,7 +561,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
     mTrackOrderDirty = true;
   }
 
- private:
+ protected:
   
   
   struct OutputDeviceEntry;
@@ -580,6 +580,16 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   bool OutputForAECMightDrift() {
     AssertOnGraphThread();
     return mOutputDeviceForAEC != PrimaryOutputDeviceID();
+  }
+  
+
+
+
+
+  bool OutputForAECIsPrimary() {
+    
+    AssertOnGraphThread();
+    return mOutputDeviceForAEC == PrimaryOutputDeviceID();
   }
   
 
@@ -1009,7 +1019,6 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
  protected:
   virtual ~MediaTrackGraphImpl();
 
- private:
   MOZ_DEFINE_MALLOC_SIZE_OF(MallocSizeOf)
 
   
@@ -1120,14 +1129,12 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   const float mGlobalVolume;
 
 #ifdef DEBUG
- protected:
   
 
 
   bool mCanRunMessagesSynchronously;
 #endif
 
- private:
   
 
 
@@ -1160,7 +1167,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
   DeviceInputTrackManager mDeviceInputTrackManagerMainThread;
 
- private:
+ protected:
   
 
 
