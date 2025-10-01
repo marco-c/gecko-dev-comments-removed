@@ -487,15 +487,15 @@ class MacroAssemblerLOONG64Compat : public MacroAssemblerLOONG64 {
   void mov(Address src, Register dest) { MOZ_CRASH("NYI-IC"); }
 
   void writeDataRelocation(const Value& val) {
+    MOZ_ASSERT(val.isGCThing(), "only called for gc-things");
+
     
     
-    if (val.isGCThing()) {
-      gc::Cell* cell = val.toGCThing();
-      if (cell && gc::IsInsideNursery(cell)) {
-        embedsNurseryPointers_ = true;
-      }
-      dataRelocations_.writeUnsigned(currentOffset());
+    gc::Cell* cell = val.toGCThing();
+    if (cell && gc::IsInsideNursery(cell)) {
+      embedsNurseryPointers_ = true;
     }
+    dataRelocations_.writeUnsigned(currentOffset());
   }
 
   void branch(JitCode* c) {
@@ -636,14 +636,6 @@ class MacroAssemblerLOONG64Compat : public MacroAssemblerLOONG64 {
     as_xor(dest, src, scratch);
   }
 
-  template <typename T>
-  void unboxObjectOrNull(const T& src, Register dest) {
-    unboxNonDouble(src, dest, JSVAL_TYPE_OBJECT);
-    static_assert(JS::detail::ValueObjectOrNullBit ==
-                  (uint64_t(0x8) << JSVAL_TAG_SHIFT));
-    as_bstrins_d(dest, zero, JSVAL_TAG_SHIFT + 3, JSVAL_TAG_SHIFT + 3);
-  }
-
   void unboxGCThingForGCBarrier(const Address& src, Register dest) {
     loadPtr(src, dest);
     as_bstrpick_d(dest, dest, JSVAL_TAG_SHIFT - 1, 0);
@@ -715,7 +707,12 @@ class MacroAssemblerLOONG64Compat : public MacroAssemblerLOONG64 {
 
   
   void boxDouble(FloatRegister src, const ValueOperand& dest, FloatRegister);
-  void boxNonDouble(JSValueType type, Register src, const ValueOperand& dest);
+  void boxNonDouble(JSValueType type, Register src, const ValueOperand& dest) {
+    boxValue(type, src, dest.valueReg());
+  }
+  void boxNonDouble(Register type, Register src, const ValueOperand& dest) {
+    boxValue(type, src, dest.valueReg());
+  }
 
   
   
@@ -776,78 +773,8 @@ class MacroAssemblerLOONG64Compat : public MacroAssemblerLOONG64 {
     }
   }
 
-  void storeUnboxedPayload(ValueOperand value, BaseIndex address, size_t nbytes,
-                           JSValueType type) {
-    switch (nbytes) {
-      case 8: {
-        ScratchRegisterScope scratch(asMasm());
-        SecondScratchRegisterScope scratch2(asMasm());
-        if (type == JSVAL_TYPE_OBJECT) {
-          unboxObjectOrNull(value, scratch2);
-        } else {
-          unboxNonDouble(value, scratch2, type);
-        }
-        computeEffectiveAddress(address, scratch);
-        as_st_d(scratch2, scratch, 0);
-        return;
-      }
-      case 4:
-        store32(value.valueReg(), address);
-        return;
-      case 1:
-        store8(value.valueReg(), address);
-        return;
-      default:
-        MOZ_CRASH("Bad payload width");
-    }
-  }
-
-  void storeUnboxedPayload(ValueOperand value, Address address, size_t nbytes,
-                           JSValueType type) {
-    switch (nbytes) {
-      case 8: {
-        SecondScratchRegisterScope scratch2(asMasm());
-        if (type == JSVAL_TYPE_OBJECT) {
-          unboxObjectOrNull(value, scratch2);
-        } else {
-          unboxNonDouble(value, scratch2, type);
-        }
-        storePtr(scratch2, address);
-        return;
-      }
-      case 4:
-        store32(value.valueReg(), address);
-        return;
-      case 1:
-        store8(value.valueReg(), address);
-        return;
-      default:
-        MOZ_CRASH("Bad payload width");
-    }
-  }
-
-  void boxValue(JSValueType type, Register src, Register dest) {
-    ScratchRegisterScope scratch(asMasm());
-    if (src == dest) {
-      as_ori(scratch, src, 0);
-      src = scratch;
-    }
-#ifdef DEBUG
-    if (type == JSVAL_TYPE_INT32 || type == JSVAL_TYPE_BOOLEAN) {
-      Label upper32BitsSignExtended;
-      as_slli_w(dest, src, 0);
-      ma_b(src, dest, &upper32BitsSignExtended, Equal, ShortJump);
-      breakpoint();
-      bind(&upper32BitsSignExtended);
-    }
-#endif
-    ma_li(dest, ImmShiftedTag(type));
-    if (type == JSVAL_TYPE_INT32 || type == JSVAL_TYPE_BOOLEAN) {
-      as_bstrins_d(dest, src, 31, 0);
-    } else {
-      as_bstrins_d(dest, src, JSVAL_TAG_SHIFT - 1, 0);
-    }
-  }
+  void boxValue(JSValueType type, Register src, Register dest);
+  void boxValue(Register type, Register src, Register dest);
 
   void storeValue(ValueOperand val, const Address& dest);
   void storeValue(ValueOperand val, const BaseIndex& dest);
