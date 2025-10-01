@@ -442,17 +442,29 @@ bool FontFaceImpl::SetDescriptor(nsCSSFontDesc aFontDesc,
 
   
   
-  bool changed;
-  if (!Servo_FontFaceRule_SetDescriptor(GetData(), aFontDesc, &aValue, url,
-                                        &changed)) {
+  bool changed = false;
+  const bool valid = [&] {
+    if (Servo_FontFaceRule_SetDescriptor(GetData(), aFontDesc, &aValue, url,
+                                         &changed)) {
+      return true;
+    }
+    if (aFontDesc == eCSSFontDesc_Family) {
+      
+      nsAutoCString quoted;
+      nsStyleUtil::AppendEscapedCSSString(aValue, quoted, '"');
+      if (Servo_FontFaceRule_SetDescriptor(GetData(), aFontDesc, &quoted, url,
+                                           &changed)) {
+        return true;
+      }
+    }
     aRv.ThrowSyntaxError(
         nsPrintfCString("Invalid font descriptor %s: %s",
                         nsCSSProps::GetStringValue(aFontDesc).get(),
                         PromiseFlatCString(aValue).get()));
     return false;
-  }
+  }();
 
-  if (!changed) {
+  if (!valid || !changed) {
     return false;
   }
 
