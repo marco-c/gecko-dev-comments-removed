@@ -189,12 +189,12 @@ impl PerDocumentStyleData {
     }
 
     
-    pub fn borrow(&self) -> AtomicRef<PerDocumentStyleDataImpl> {
+    pub fn borrow(&self) -> AtomicRef<'_, PerDocumentStyleDataImpl> {
         self.0.borrow()
     }
 
     
-    pub fn borrow_mut(&self) -> AtomicRefMut<PerDocumentStyleDataImpl> {
+    pub fn borrow_mut(&self) -> AtomicRefMut<'_, PerDocumentStyleDataImpl> {
         self.0.borrow_mut()
     }
 }

@@ -462,14 +462,14 @@ pub trait TElement:
     }
 
     
-    fn style_attribute(&self) -> Option<ArcBorrow<Locked<PropertyDeclarationBlock>>>;
+    fn style_attribute(&self) -> Option<ArcBorrow<'_, Locked<PropertyDeclarationBlock>>>;
 
     
     
     fn unset_dirty_style_attribute(&self) {}
 
     
-    fn smil_override(&self) -> Option<ArcBorrow<Locked<PropertyDeclarationBlock>>> {
+    fn smil_override(&self) -> Option<ArcBorrow<'_, Locked<PropertyDeclarationBlock>>> {
         None
     }
 
@@ -670,7 +670,7 @@ pub trait TElement:
     
     
     
-    unsafe fn ensure_data(&self) -> AtomicRefMut<ElementData>;
+    unsafe fn ensure_data(&self) -> AtomicRefMut<'_, ElementData>;
 
     
     
@@ -681,10 +681,10 @@ pub trait TElement:
     fn has_data(&self) -> bool;
 
     
-    fn borrow_data(&self) -> Option<AtomicRef<ElementData>>;
+    fn borrow_data(&self) -> Option<AtomicRef<'_, ElementData>>;
 
     
-    fn mutate_data(&self) -> Option<AtomicRefMut<ElementData>>;
+    fn mutate_data(&self) -> Option<AtomicRefMut<'_, ElementData>>;
 
     
     

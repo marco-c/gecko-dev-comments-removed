@@ -109,7 +109,7 @@ impl PartialEq for Inner {
 }
 
 impl Inner {
-    fn iter(&self) -> Iter {
+    fn iter(&self) -> Iter<'_> {
         Iter {
             current: self,
             current_iter: self.own_properties.iter(),
@@ -215,7 +215,7 @@ impl CustomPropertiesMap {
     }
 
     
-    pub fn iter(&self) -> Iter {
+    pub fn iter(&self) -> Iter<'_> {
         self.0.iter()
     }
 }

@@ -1289,7 +1289,7 @@ impl PropertyId {
 impl PropertyDeclaration {
     
     #[inline]
-    pub fn id(&self) -> PropertyDeclarationId {
+    pub fn id(&self) -> PropertyDeclarationId<'_> {
         match *self {
             PropertyDeclaration::Custom(ref declaration) => {
                 return PropertyDeclarationId::Custom(&declaration.name)
@@ -1396,7 +1396,7 @@ pub use super::gecko::style_structs;
 
 #[cfg(feature = "servo")]
 pub mod style_structs {
-    use fxhash::FxHasher;
+    use rustc_hash::FxHasher;
     use super::longhands;
     use std::hash::{Hash, Hasher};
     use crate::values::specified::color::ColorSchemeFlags;
@@ -1578,7 +1578,7 @@ pub mod style_structs {
                 
                 #[allow(non_snake_case)]
                 #[inline]
-                pub fn ${longhand.ident}_iter(&self) -> ${longhand.camel_case}Iter {
+                pub fn ${longhand.ident}_iter(&self) -> ${longhand.camel_case}Iter<'_> {
                     ${longhand.camel_case}Iter {
                         style_struct: self,
                         current: 0,

@@ -162,7 +162,7 @@ impl<T> PerOrigin<T> {
 
     
     
-    pub fn iter_origins(&self) -> PerOriginIter<T> {
+    pub fn iter_origins(&self) -> PerOriginIter<'_, T> {
         PerOriginIter {
             data: &self,
             cur: 0,
@@ -172,7 +172,7 @@ impl<T> PerOrigin<T> {
 
     
     
-    pub fn iter_origins_rev(&self) -> PerOriginIter<T> {
+    pub fn iter_origins_rev(&self) -> PerOriginIter<'_, T> {
         PerOriginIter {
             data: &self,
             cur: 2,
@@ -182,7 +182,7 @@ impl<T> PerOrigin<T> {
 
     
     
-    pub fn iter_mut_origins(&mut self) -> PerOriginIterMut<T> {
+    pub fn iter_mut_origins(&mut self) -> PerOriginIterMut<'_, T> {
         PerOriginIterMut {
             data: self,
             cur: 0,

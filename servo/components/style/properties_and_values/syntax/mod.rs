@@ -194,7 +194,7 @@ impl Component {
 
     
     #[inline]
-    pub fn unpremultiplied(&self) -> Cow<Self> {
+    pub fn unpremultiplied(&self) -> Cow<'_, Self> {
         match self.name.unpremultiply() {
             Some(component) => {
                 debug_assert!(

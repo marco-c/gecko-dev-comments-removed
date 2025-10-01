@@ -31,7 +31,7 @@ use crate::stylist::Stylist;
 use crate::values::{computed, serialize_atom_name};
 use arrayvec::{ArrayVec, Drain as ArrayVecDrain};
 use cssparser::{Parser, ParserInput};
-use fxhash::FxHashMap;
+use rustc_hash::FxHashMap;
 use servo_arc::Arc;
 use std::{
     borrow::Cow,
@@ -438,7 +438,7 @@ impl PropertyId {
 
     
     
-    pub fn as_shorthand(&self) -> Result<ShorthandId, PropertyDeclarationId> {
+    pub fn as_shorthand(&self) -> Result<ShorthandId, PropertyDeclarationId<'_>> {
         match *self {
             Self::NonCustom(id) => match id.longhand_or_shorthand() {
                 Ok(lh) => Err(PropertyDeclarationId::Longhand(lh)),
@@ -962,7 +962,7 @@ impl OwnedPropertyDeclarationId {
 
     
     #[inline]
-    pub fn as_borrowed(&self) -> PropertyDeclarationId {
+    pub fn as_borrowed(&self) -> PropertyDeclarationId<'_> {
         match self {
             Self::Longhand(id) => PropertyDeclarationId::Longhand(*id),
             Self::Custom(name) => PropertyDeclarationId::Custom(name),
@@ -1193,7 +1193,7 @@ impl LonghandIdSet {
     }
 
     
-    pub fn iter(&self) -> LonghandIdSetIterator {
+    pub fn iter(&self) -> LonghandIdSetIterator<'_> {
         LonghandIdSetIterator {
             chunks: &self.storage,
             cur_chunk: 0,
@@ -1340,7 +1340,7 @@ impl SourcePropertyDeclaration {
     }
 
     
-    pub fn drain(&mut self) -> SourcePropertyDeclarationDrain {
+    pub fn drain(&mut self) -> SourcePropertyDeclarationDrain<'_> {
         SourcePropertyDeclarationDrain {
             declarations: self.declarations.drain(..),
             all_shorthand: mem::replace(&mut self.all_shorthand, AllShorthand::NotSet),
@@ -1550,7 +1550,7 @@ impl Default for AllShorthand {
 impl AllShorthand {
     
     #[inline]
-    pub fn declarations(&self) -> AllShorthandDeclarationIterator {
+    pub fn declarations(&self) -> AllShorthandDeclarationIterator<'_> {
         AllShorthandDeclarationIterator {
             all_shorthand: self,
             longhands: ShorthandId::All.longhands(),

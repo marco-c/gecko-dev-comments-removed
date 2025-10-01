@@ -131,7 +131,7 @@ impl StyleThreadPool {
     
     
     
-    pub fn pool(&self) -> RwLockReadGuard<Option<rayon::ThreadPool>> {
+    pub fn pool(&self) -> RwLockReadGuard<'_, Option<rayon::ThreadPool>> {
         self.style_thread_pool.read()
     }
 

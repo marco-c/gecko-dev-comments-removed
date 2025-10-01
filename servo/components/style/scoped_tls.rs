@@ -45,13 +45,13 @@ impl<'scope, T: Send> ScopedTLS<'scope, T> {
     }
 
     
-    pub fn borrow(&self) -> Ref<Option<T>> {
+    pub fn borrow(&self) -> Ref<'_, Option<T>> {
         let idx = self.current_thread_index();
         self.slots[idx].borrow()
     }
 
     
-    pub fn borrow_mut(&self) -> RefMut<Option<T>> {
+    pub fn borrow_mut(&self) -> RefMut<'_, Option<T>> {
         let idx = self.current_thread_index();
         self.slots[idx].borrow_mut()
     }
@@ -63,7 +63,7 @@ impl<'scope, T: Send> ScopedTLS<'scope, T> {
     
     
     #[inline(always)]
-    pub fn ensure<F: FnOnce(&mut Option<T>)>(&self, f: F) -> RefMut<T> {
+    pub fn ensure<F: FnOnce(&mut Option<T>)>(&self, f: F) -> RefMut<'_, T> {
         let mut opt = self.borrow_mut();
         if opt.is_none() {
             f(opt.deref_mut());

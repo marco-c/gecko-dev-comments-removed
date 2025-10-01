@@ -101,7 +101,7 @@ pub trait NonTSPseudoClass: Sized + ToCss {
 
 
 
-fn to_ascii_lowercase(s: &str) -> Cow<str> {
+fn to_ascii_lowercase(s: &str) -> Cow<'_, str> {
     if let Some(first_uppercase) = s.bytes().position(|byte| byte >= b'A' && byte <= b'Z') {
         let mut string = s.to_owned();
         string[first_uppercase..].make_ascii_lowercase();
@@ -1022,7 +1022,7 @@ impl<Impl: SelectorImpl> Selector<Impl> {
     
     
     #[inline]
-    pub fn iter(&self) -> SelectorIter<Impl> {
+    pub fn iter(&self) -> SelectorIter<'_, Impl> {
         SelectorIter {
             iter: self.iter_raw_match_order(),
             next_combinator: None,
@@ -1031,7 +1031,7 @@ impl<Impl: SelectorImpl> Selector<Impl> {
 
     
     #[inline]
-    pub fn iter_skip_relative_selector_anchor(&self) -> SelectorIter<Impl> {
+    pub fn iter_skip_relative_selector_anchor(&self) -> SelectorIter<'_, Impl> {
         if cfg!(debug_assertions) {
             let mut selector_iter = self.iter_raw_parse_order_from(0);
             assert!(
@@ -1056,7 +1056,7 @@ impl<Impl: SelectorImpl> Selector<Impl> {
     
     
     #[inline]
-    pub fn iter_from(&self, offset: usize) -> SelectorIter<Impl> {
+    pub fn iter_from(&self, offset: usize) -> SelectorIter<'_, Impl> {
         let iter = self.0.slice()[offset..].iter();
         SelectorIter {
             iter,
@@ -1080,7 +1080,7 @@ impl<Impl: SelectorImpl> Selector<Impl> {
     
     
     #[inline]
-    pub fn iter_raw_match_order(&self) -> slice::Iter<Component<Impl>> {
+    pub fn iter_raw_match_order(&self) -> slice::Iter<'_, Component<Impl>> {
         self.0.slice().iter()
     }
 
@@ -1101,7 +1101,10 @@ impl<Impl: SelectorImpl> Selector<Impl> {
     
     
     #[inline]
-    pub fn iter_raw_parse_order_from(&self, offset: usize) -> Rev<slice::Iter<Component<Impl>>> {
+    pub fn iter_raw_parse_order_from(
+        &self,
+        offset: usize,
+    ) -> Rev<slice::Iter<'_, Component<Impl>>> {
         self.0.slice()[..self.len() - offset].iter().rev()
     }
 

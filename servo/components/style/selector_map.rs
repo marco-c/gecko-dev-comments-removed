@@ -85,7 +85,7 @@ impl Hasher for PrecomputedHasher {
 
 pub trait SelectorMapEntry: Sized + Clone {
     
-    fn selector(&self) -> SelectorIter<SelectorImpl>;
+    fn selector(&self) -> SelectorIter<'_, SelectorImpl>;
 }
 
 
@@ -859,7 +859,7 @@ impl<V> MaybeCaseInsensitiveHashMap<Atom, V> {
         &mut self,
         mut key: Atom,
         quirks_mode: QuirksMode,
-    ) -> Result<hash_map::Entry<Atom, V>, AllocErr> {
+    ) -> Result<hash_map::Entry<'_, Atom, V>, AllocErr> {
         if quirks_mode == QuirksMode::Quirks {
             key = key.to_ascii_lowercase()
         }
@@ -874,7 +874,7 @@ impl<V> MaybeCaseInsensitiveHashMap<Atom, V> {
     }
 
     
-    pub fn iter(&self) -> hash_map::Iter<Atom, V> {
+    pub fn iter(&self) -> hash_map::Iter<'_, Atom, V> {
         self.0.iter()
     }
 

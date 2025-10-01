@@ -192,7 +192,7 @@ impl PropertyDeclarationIdSet {
     }
 
     
-    pub fn iter(&self) -> PropertyDeclarationIdSetIterator {
+    pub fn iter(&self) -> PropertyDeclarationIdSetIterator<'_> {
         PropertyDeclarationIdSetIterator {
             longhands: self.longhands.iter(),
             custom: self.custom.iter(),
@@ -405,7 +405,7 @@ impl PropertyDeclarationBlock {
 
     
     #[inline]
-    pub fn declaration_importance_iter(&self) -> DeclarationImportanceIterator {
+    pub fn declaration_importance_iter(&self) -> DeclarationImportanceIterator<'_> {
         DeclarationImportanceIterator::new(&self.declarations, &self.declarations_importance)
     }
 

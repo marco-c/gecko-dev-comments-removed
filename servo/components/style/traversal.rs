@@ -266,7 +266,7 @@ pub trait DomTraversal<E: TElement>: Sync {
     }
 
     
-    fn shared_context(&self) -> &SharedStyleContext;
+    fn shared_context(&self) -> &SharedStyleContext<'_>;
 }
 
 

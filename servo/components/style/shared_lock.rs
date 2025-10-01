@@ -113,27 +113,27 @@ impl SharedRwLock {
 
     
     #[cfg(feature = "servo")]
-    pub fn read(&self) -> SharedRwLockReadGuard {
+    pub fn read(&self) -> SharedRwLockReadGuard<'_> {
         mem::forget(self.arc.read());
         SharedRwLockReadGuard(self)
     }
 
     
     #[cfg(feature = "gecko")]
-    pub fn read(&self) -> SharedRwLockReadGuard {
+    pub fn read(&self) -> SharedRwLockReadGuard<'_> {
         SharedRwLockReadGuard(self.cell.as_ref().map(|cell| cell.borrow()))
     }
 
     
     #[cfg(feature = "servo")]
-    pub fn write(&self) -> SharedRwLockWriteGuard {
+    pub fn write(&self) -> SharedRwLockWriteGuard<'_> {
         mem::forget(self.arc.write());
         SharedRwLockWriteGuard(self)
     }
 
     
     #[cfg(feature = "gecko")]
-    pub fn write(&self) -> SharedRwLockWriteGuard {
+    pub fn write(&self) -> SharedRwLockWriteGuard<'_> {
         SharedRwLockWriteGuard(self.cell.as_ref().unwrap().borrow_mut())
     }
 }
