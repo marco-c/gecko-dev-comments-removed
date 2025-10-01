@@ -12,6 +12,8 @@
 #include "nsContentUtils.h"
 #include "mozilla/glean/NetwerkMetrics.h"
 
+#include "mozilla/dom/WindowGlobalParent.h"
+
 namespace mozilla::net {
 
 
@@ -36,9 +38,30 @@ LNAPermissionRequest::LNAPermissionRequest(PermissionPromptCallback&& aCallback,
   MOZ_ASSERT(aLoadInfo);
 
   aLoadInfo->GetTriggeringPrincipal(getter_AddRefs(mPrincipal));
-  mTopLevelPrincipal = aLoadInfo->GetTopLevelPrincipal();
+
+  RefPtr<mozilla::dom::BrowsingContext> bc;
+  aLoadInfo->GetBrowsingContext(getter_AddRefs(bc));
+  if (bc && bc->Top()) {
+    if (bc->Top()->Canonical()) {
+      RefPtr<mozilla::dom::WindowGlobalParent> topWindowGlobal =
+          bc->Top()->Canonical()->GetCurrentWindowGlobal();
+      if (topWindowGlobal) {
+        mTopLevelPrincipal = topWindowGlobal->DocumentPrincipal();
+      }
+    }
+  }
+
   if (!mTopLevelPrincipal) {
     
+    mTopLevelPrincipal = mPrincipal;
+  }
+
+  if (!mPrincipal->Equals(mTopLevelPrincipal)) {
+    
+    
+    
+    
+    mIsRequestDelegatedToUnsafeThirdParty = true;
     
     mTopLevelPrincipal = mPrincipal;
   }
