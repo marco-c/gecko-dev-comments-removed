@@ -1686,6 +1686,8 @@ export const kAllTextureFormats = keysOf(kAllTextureFormatInfo);
 
 
 
+
+
 const kTextureFormatInfo = {
   ...kRegularTextureFormatInfo,
   ...kSizedDepthStencilFormatInfo,
@@ -1828,7 +1830,48 @@ export const kOptionalTextureFormats = kAllTextureFormats.filter(
 );
 
 
-export const kValidTextureFormatsForCopyE2T = [
+
+
+
+
+const kValidTextureFormatsForCopyE2TTier1 = [
+'r16unorm',
+'r16snorm',
+'rg16unorm',
+'rg16snorm',
+'rgba16unorm',
+'rgba16snorm',
+'r8snorm',
+'rg8snorm',
+'rgba8snorm',
+'rg11b10ufloat'];
+
+
+
+export const kPossibleValidTextureFormatsForCopyE2T = [
+'r8unorm',
+'r16float',
+'r32float',
+'rg8unorm',
+'rg16float',
+'rg32float',
+'rgba8unorm',
+'rgba8unorm-srgb',
+'bgra8unorm',
+'bgra8unorm-srgb',
+'rgb10a2unorm',
+'rgba16float',
+'rgba32float',
+...kValidTextureFormatsForCopyE2TTier1];
+
+
+
+
+
+
+
+
+const kValidTextureFormatsForCopyE2T = [
 'r8unorm',
 'r16float',
 'r32float',
@@ -1843,6 +1886,21 @@ export const kValidTextureFormatsForCopyE2T = [
 'rgba16float',
 'rgba32float'];
 
+
+
+
+
+export function isTextureFormatUsableWithCopyExternalImageToTexture(
+device,
+format)
+{
+  if (device.features.has('texture-formats-tier1')) {
+    if (kValidTextureFormatsForCopyE2TTier1.includes(format)) {
+      return true;
+    }
+  }
+  return kValidTextureFormatsForCopyE2T.includes(format);
+}
 
 
 
