@@ -41,7 +41,6 @@
 
 using namespace mozilla;
 
-using AbsPosReflowFlags = nsAbsoluteContainingBlock::AbsPosReflowFlags;
 using AlignJustifyFlag = CSSAlignUtils::AlignJustifyFlag;
 using AlignJustifyFlags = CSSAlignUtils::AlignJustifyFlags;
 using GridItemCachedBAxisMeasurement =
@@ -9365,10 +9364,12 @@ nscoord nsGridContainerFrame::ReflowChildren(GridReflowInput& aGridRI,
       
       
       nsRect dummyRect;
-      AbsPosReflowFlags flags =
-          AbsPosReflowFlags::CBWidthAndHeightChanged;  
-      flags |= AbsPosReflowFlags::ConstrainHeight;
-      flags |= AbsPosReflowFlags::IsGridContainerCB;
+      
+      
+      AbsPosReflowFlags flags{AbsPosReflowFlag::ConstrainHeight,
+                              AbsPosReflowFlag::CBWidthChanged,
+                              AbsPosReflowFlag::CBHeightChanged,
+                              AbsPosReflowFlag::IsGridContainerCB};
       GetAbsoluteContainingBlock()->Reflow(
           this, PresContext(), *aGridRI.mReflowInput, aStatus, dummyRect, flags,
           &aDesiredSize.mOverflowAreas);

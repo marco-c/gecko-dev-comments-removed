@@ -27,8 +27,6 @@
 
 using namespace mozilla;
 
-using AbsPosReflowFlags = nsAbsoluteContainingBlock::AbsPosReflowFlags;
-
 
 static constexpr uint16_t kFirstTopLayerIndex = 2;
 enum class TopLayerIndex : uint16_t {
@@ -503,7 +501,9 @@ void ViewportFrame::Reflow(nsPresContext* aPresContext,
     
     const nsRect cb(nsPoint(), reflowInput.ComputedPhysicalSize());
     
-    AbsPosReflowFlags flags = AbsPosReflowFlags::CBWidthAndHeightChanged;
+    
+    AbsPosReflowFlags flags{AbsPosReflowFlag::CBWidthChanged,
+                            AbsPosReflowFlag::CBHeightChanged};
     GetAbsoluteContainingBlock()->Reflow(this, aPresContext, reflowInput,
                                          aStatus, cb, flags,
                                           nullptr);

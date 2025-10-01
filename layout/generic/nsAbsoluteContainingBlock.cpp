@@ -171,7 +171,10 @@ void nsAbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
 
   nsReflowStatus reflowStatus;
   const bool reflowAll = aReflowInput.ShouldReflowAllKids();
-  const bool isGrid = !!(aFlags & AbsPosReflowFlags::IsGridContainerCB);
+  const bool cbWidthChanged = aFlags.contains(AbsPosReflowFlag::CBWidthChanged);
+  const bool cbHeightChanged =
+      aFlags.contains(AbsPosReflowFlag::CBHeightChanged);
+  const bool isGrid = aFlags.contains(AbsPosReflowFlag::IsGridContainerCB);
   nsIFrame* kidFrame;
   nsOverflowContinuationTracker tracker(aDelegatingFrame, true);
   for (kidFrame = mAbsoluteFrames.FirstChild(); kidFrame;
@@ -186,9 +189,7 @@ void nsAbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
 
     bool kidNeedsReflow =
         reflowAll || kidFrame->IsSubtreeDirty() ||
-        FrameDependsOnContainer(kidFrame,
-                                !!(aFlags & AbsPosReflowFlags::CBWidthChanged),
-                                !!(aFlags & AbsPosReflowFlags::CBHeightChanged),
+        FrameDependsOnContainer(kidFrame, cbWidthChanged, cbHeightChanged,
                                 anchorPosReferenceData);
 
     if (kidFrame->IsSubtreeDirty()) {
@@ -904,7 +905,7 @@ void nsAbsoluteContainingBlock::ReflowAbsoluteFrame(
   nscoord availISize = logicalCBSize.ISize(wm);
 
   ReflowInput::InitFlags initFlags;
-  if (aFlags & AbsPosReflowFlags::IsGridContainerCB) {
+  if (aFlags.contains(AbsPosReflowFlag::IsGridContainerCB)) {
     
     
     
@@ -921,7 +922,7 @@ void nsAbsoluteContainingBlock::ReflowAbsoluteFrame(
       (aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE) &&
 
       
-      (aFlags & AbsPosReflowFlags::ConstrainHeight) &&
+      aFlags.contains(AbsPosReflowFlag::ConstrainHeight) &&
 
       
       
