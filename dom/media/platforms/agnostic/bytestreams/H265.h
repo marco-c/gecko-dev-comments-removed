@@ -406,11 +406,6 @@ class H265 final {
   static already_AddRefed<mozilla::MediaByteBuffer> CreateNewExtraData(
       const HVCCConfig& aConfig, const nsTArray<H265NALU>& aNALUs);
 
-  
-  
-  static Result<bool, nsresult> IsKeyFrame(
-      const mozilla::MediaRawData* aSample);
-
  private:
   
   static already_AddRefed<mozilla::MediaByteBuffer> DecodeNALUnit(
