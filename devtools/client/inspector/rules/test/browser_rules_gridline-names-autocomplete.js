@@ -16,9 +16,11 @@
 
 
 
+
 const OPEN = true,
   SELECTED = true,
-  CHANGE = true;
+  CHANGE = true,
+  SUBMIT_PROPERTY_NAME = true;
 const changeTestData = [
   ["c", {}, "col1-start", OPEN, SELECTED, CHANGE],
   ["o", {}, "col1-start", OPEN, SELECTED, CHANGE],
@@ -33,8 +35,9 @@ const newAreaTestData = [
   ["g", {}, "gap", OPEN, SELECTED, !CHANGE],
   ["VK_DOWN", {}, "grid", OPEN, SELECTED, !CHANGE],
   ["VK_DOWN", {}, "grid-area", OPEN, SELECTED, !CHANGE],
-  ["VK_TAB", {}, "", !OPEN, !SELECTED, !CHANGE],
-  "grid-line-names-updated",
+  
+  
+  ["VK_TAB", {}, "", OPEN, !SELECTED, !CHANGE, SUBMIT_PROPERTY_NAME],
   ["c", {}, "col1-start", OPEN, SELECTED, CHANGE],
   ["VK_BACK_SPACE", {}, "c", !OPEN, !SELECTED, CHANGE],
   ["VK_BACK_SPACE", {}, "", OPEN, !SELECTED, CHANGE],
@@ -56,8 +59,9 @@ const newRowTestData = [
   ["d", {}, "grid", OPEN, SELECTED, !CHANGE],
   ["-", {}, "grid-area", OPEN, SELECTED, !CHANGE],
   ["r", {}, "grid-row", OPEN, SELECTED, !CHANGE],
-  ["VK_TAB", {}, "", !OPEN, !SELECTED, !CHANGE],
-  "grid-line-names-updated",
+  
+  
+  ["VK_TAB", {}, "", OPEN, !SELECTED, !CHANGE, SUBMIT_PROPERTY_NAME],
   ["c", {}, "c", !OPEN, !SELECTED, CHANGE],
   ["VK_BACK_SPACE", {}, "", OPEN, !SELECTED, CHANGE],
   ["r", {}, "revert", OPEN, SELECTED, CHANGE],
@@ -109,14 +113,9 @@ async function runNewPropertyAutocompletionTest(
   info("Focusing the css property editable field");
   const ruleEditor = getRuleViewRuleEditor(view, 0);
   const editor = await focusNewRuleViewProperty(ruleEditor);
-  const gridLineNamesUpdated = inspector.once("grid-line-names-updated");
 
   info("Starting to test for css property completion");
   for (const data of testData) {
-    if (data == "grid-line-names-updated") {
-      await gridLineNamesUpdated;
-      continue;
-    }
     await testCompletion(data, editor, view);
   }
 }
@@ -148,44 +147,55 @@ async function runChangePropertyAutocompletionTest(
 }
 
 async function testCompletion(
-  [key, modifiers, completion, open, selected, change],
+  [key, modifiers, completion, open, selected, change, submitPropertyName],
   editor,
   view
 ) {
-  info("Pressing key " + key);
-  info("Expecting " + completion);
-  info("Is popup opened: " + open);
-  info("Is item selected: " + selected);
+  info(
+    `Pressing key "${key}", expecting "${completion}", popup opened: ${open}, item selected: ${selected}`
+  );
 
-  let onDone;
+  const promises = [];
+
   if (change) {
     
     
     
-    onDone = view.once("ruleview-changed");
-  } else {
+    promises.push(view.once("ruleview-changed"));
+  } else if (key !== "VK_RIGHT" && key !== "VK_BACK_SPACE") {
     
-    
-    onDone =
-      key !== "VK_RIGHT" && key !== "VK_BACK_SPACE"
-        ? editor.once("after-suggest")
-        : null;
+    promises.push(editor.once("after-suggest"));
   }
 
   
-  const popupEvent = open ? "popup-opened" : "popup-closed";
-  const onPopupEvent =
-    editor.popup.isOpen !== open ? once(editor.popup, popupEvent) : null;
+  
+  if (submitPropertyName) {
+    promises.push(
+      
+      editor.popup.once("popup-closed"),
+      
+      editor.popup.once("popup-opened"),
+      
+      view.inspector.once("grid-line-names-updated")
+    );
+  } else if (editor.popup.isOpen !== open) {
+    
+    
+    
+    promises.push(editor.popup.once(open ? "popup-opened" : "popup-closed"));
+  }
 
-  info("Synthesizing key " + key + ", modifiers: " + Object.keys(modifiers));
+  info(
+    `Synthesizing key "${key}", modifiers: ${JSON.stringify(Object.keys(modifiers))}`
+  );
 
   EventUtils.synthesizeKey(key, modifiers, view.styleWindow);
 
   
   view.debounce.flush();
 
-  await onDone;
-  await onPopupEvent;
+  
+  await Promise.all(promises);
 
   
   
