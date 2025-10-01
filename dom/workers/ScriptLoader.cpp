@@ -15,6 +15,7 @@
 #include "js/Exception.h"
 #include "js/SourceText.h"
 #include "js/TypeDecls.h"
+#include "js/loader/ModuleLoadRequest.h"
 #include "jsapi.h"
 #include "jsfriendapi.h"
 #include "mozilla/AntiTrackingUtils.h"
@@ -1729,16 +1730,8 @@ bool ScriptExecutorRunnable::ProcessModuleScript(
   moduleRequest->OnFetchComplete(loadContext->mLoadResult);
 
   if (NS_FAILED(loadContext->mLoadResult)) {
-    if (moduleRequest->IsDynamicImport()) {
-      if (request->isInList()) {
-        moduleRequest->CancelDynamicImport(loadContext->mLoadResult);
-        mScriptLoader->TryShutdown();
-      }
-    } else if (!moduleRequest->IsTopLevel()) {
-      moduleRequest->Cancel();
+    if (moduleRequest->IsDynamicImport() || !moduleRequest->IsTopLevel()) {
       mScriptLoader->TryShutdown();
-    } else {
-      moduleRequest->LoadFailed();
     }
   }
   return true;
