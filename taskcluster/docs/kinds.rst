@@ -27,10 +27,9 @@ per-ABI feature splits to produce arch-specific APKs.
 
 If you want to run this task locally, you need to specify these environment variable:
   - MOZ_ANDROID_FAT_AAR_ARCHITECTURES: must be a comma-separated list of architecture.
-    Eg: "armeabi-v7a,arm64-v8a,x86,x86_64".
+    Eg: "armeabi-v7a,arm64-v8a,x86_64".
   - each of MOZ_ANDROID_FAT_AAR_ARM64_V8A, MOZ_ANDROID_FAT_AAR_ARMEABI_V7A,
-    MOZ_ANDROID_FAT_AAR_X86, MOZ_ANDROID_FAT_AAR_X86_64 must be a path relative to
-    MOZ_FETCHES_DIR.
+    and MOZ_ANDROID_FAT_AAR_X86_64 must be a path relative to MOZ_FETCHES_DIR.
 
 build-signing
 -------------
@@ -175,6 +174,12 @@ toolchain
 Toolchain builds create the compiler toolchains used to build Firefox.  These
 will eventually be dependencies of the builds themselves, but for the moment
 are run manually via try pushes and the results uploaded to tooltool.
+
+toolchain-dxc-upload
+--------------------
+
+Upload Windows symbols for `DirectXShaderCompiler` to tecken, based on builds in `toolchain-dxc`.
+Maintained by Firefox's WebGPU team.
 
 spidermonkey
 ------------
