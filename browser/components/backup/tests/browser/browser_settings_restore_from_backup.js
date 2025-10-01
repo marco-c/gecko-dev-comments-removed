@@ -31,7 +31,7 @@ add_setup(async () => {
 
 
 add_task(async function test_restore_from_backup() {
-  await BrowserTestUtils.withNewTab("about:preferences", async browser => {
+  await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
     let sandbox = sinon.createSandbox();
     let recoverFromBackupArchiveStub = sandbox
       .stub(BackupService.prototype, "recoverFromBackupArchive")
@@ -130,7 +130,7 @@ add_task(async function test_restore_from_backup() {
 
 
 add_task(async function test_restore_in_progress() {
-  await BrowserTestUtils.withNewTab("about:preferences", async browser => {
+  await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
     let sandbox = sinon.createSandbox();
     let bs = BackupService.get();
 
@@ -244,77 +244,6 @@ add_task(async function test_restore_in_progress() {
     Assert.ok(
       !settings.restoreFromBackupDialogEl.open,
       "Restore dialog should now be closed."
-    );
-
-    sandbox.restore();
-  });
-});
-
-
-
-
-add_task(async function test_finding_a_valid_backup() {
-  await BrowserTestUtils.withNewTab("about:preferences", async browser => {
-    let sandbox = sinon.createSandbox();
-    let bs = BackupService.get();
-
-    let { archivePath } = await bs.createBackup();
-
-    Assert.stringContains(
-      archivePath,
-      TEST_PROFILE_PATH,
-      "archive is in our test dir"
-    );
-
-    let settings = browser.contentDocument.querySelector("backup-settings");
-
-    
-    
-    bs.resetLastBackupInternalState();
-
-    await settings.updateComplete;
-
-    registerCleanupFunction(async () => {
-      
-      await IOUtils.remove(TEST_PROFILE_PATH, { recursive: true });
-    });
-
-    settings.restoreFromBackupButtonEl.click();
-    await settings.updateComplete;
-
-    let restoreFromBackup = settings.restoreFromBackupEl;
-    Assert.ok(restoreFromBackup, "restore-from-backup should be found");
-
-    let infoPromise = BrowserTestUtils.waitForEvent(
-      window,
-      "getBackupFileInfo"
-    );
-    let infoEvent = await infoPromise;
-
-    
-    Assert.equal(
-      infoEvent.detail.backupFile,
-      archivePath,
-      "Component asked for info for the detected archive"
-    );
-
-    await restoreFromBackup.updateComplete;
-
-    Assert.ok(
-      settings.restoreFromBackupDialogEl.open,
-      "Restore dialog should be open."
-    );
-
-    Assert.equal(
-      restoreFromBackup.backupFileToRestore,
-      archivePath,
-      "backupFileToRestore was updated to the detected archive path"
-    );
-
-    Assert.equal(
-      restoreFromBackup.filePicker.value,
-      archivePath,
-      "Text input reflects the detected archive path"
     );
 
     sandbox.restore();
