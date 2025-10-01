@@ -29,6 +29,17 @@
 #  define MOZ_ALWAYS_INLINE_EVEN_DEBUG inline
 #endif
 
+
+
+
+
+#if defined(_MSC_VER)
+
+#  define MOZ_NO_UNIQUE_ADDRESS [[msvc::no_unique_address]]
+#else
+#  define MOZ_NO_UNIQUE_ADDRESS [[no_unique_address]]
+#endif
+
 #if !defined(DEBUG)
 #  define MOZ_ALWAYS_INLINE MOZ_ALWAYS_INLINE_EVEN_DEBUG
 #elif defined(_MSC_VER) && !defined(__cplusplus)
