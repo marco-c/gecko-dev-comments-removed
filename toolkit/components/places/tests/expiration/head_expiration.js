@@ -33,8 +33,6 @@ function force_expiration_start() {
 
 
 
-
-
 function promiseForceExpirationStep(aLimit) {
   let promise = promiseTopicObserved(PlacesUtils.TOPIC_EXPIRATION_FINISHED);
   let expire = Cc["@mozilla.org/places/expiration;1"].getService(
@@ -91,6 +89,7 @@ function clearHistoryEnabled() {
     Services.prefs.clearUserPref("places.history.enabled");
   } catch (ex) {}
 }
+
 
 
 

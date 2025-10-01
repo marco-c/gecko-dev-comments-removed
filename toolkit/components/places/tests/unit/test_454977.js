@@ -64,6 +64,7 @@ async function task_add_visit(aURI, aVisitType) {
 
 
 
+
 function check_results(aExpectedCount, aExpectedCountWithHidden) {
   let query = PlacesUtils.history.getNewQuery();
   

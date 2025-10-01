@@ -281,6 +281,7 @@ function compareArrayToResult(aArray, aRoot) {
 
 
 
+
 function nodeInResult(aQueryData, aRoot) {
   var rv = null;
   var uri;

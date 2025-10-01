@@ -27,8 +27,6 @@ var isWindows = "@mozilla.org/windows-registry-key;1" in Cc;
 
 
 
-
-
 async function checkFaviconDataConversion(
   aFileName,
   aFileMimeType,

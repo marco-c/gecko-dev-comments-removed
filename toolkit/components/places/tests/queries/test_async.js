@@ -165,7 +165,6 @@ Test.prototype = {
 
 
 
-
   checkState(aState, aExpectedMin, aExpectedMax) {
     let cnt = this.stateCounts[aState] || 0;
     if (aExpectedMax === undefined) {
@@ -307,7 +306,12 @@ var DataHelper = {
 
 
 
-  makeDataArray: function DH_makeDataArray(aData) {
+
+
+
+
+
+  makeDataArray(aData) {
     let self = this;
     return aData.map(function (dat) {
       let type = dat.type;
@@ -354,7 +358,18 @@ var DataHelper = {
 
 
 
-  _makeDataWithDefaults: function DH__makeDataWithDefaults(aData, aDefaults) {
+
+
+
+
+
+
+
+
+
+
+
+  _makeDataWithDefaults(aData, aDefaults) {
     let dat = {};
     for (let [prop, val] of Object.entries(aDefaults)) {
       dat[prop] = aData.hasOwnProperty(prop) ? aData[prop] : val;

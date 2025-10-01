@@ -11,6 +11,7 @@
 
 
 
+
 function uri_in_db(aURI) {
   var options = PlacesUtils.history.getNewQueryOptions();
   options.maxResults = 1;

@@ -516,6 +516,7 @@ function cartProd(aSequences, aCallback) {
 
 
 
+
 function choose(aSet, aHowMany, aCallback) {
   
   var ptrs = [];
@@ -575,7 +576,6 @@ function choose(aSet, aHowMany, aCallback) {
 
 
 
-
 function flagSwitchMatches(aQuery1, aQuery2) {
   if (aQuery1[this.flag] && aQuery2[this.flag]) {
     for (let p in this.subswitches) {
@@ -595,7 +595,6 @@ function flagSwitchMatches(aQuery1, aQuery2) {
 
   return true;
 }
-
 
 
 
@@ -682,8 +681,6 @@ function runQuerySequences(aHowManyLo, aHowManyHi) {
 
 
 
-
-
 function serializeDeserialize(aQuery, aQueryOptions) {
   let queryStr = PlacesUtils.history.queryToQueryString(aQuery, aQueryOptions);
   print("  " + queryStr);
@@ -698,7 +695,6 @@ function serializeDeserialize(aQuery, aQueryOptions) {
   
   Assert.ok(queryObjsEqual(queryOptionSwitches, aQueryOptions, opts2));
 }
-
 
 
 

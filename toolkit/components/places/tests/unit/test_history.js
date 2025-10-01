@@ -16,6 +16,7 @@ var histsvc = Cc["@mozilla.org/browser/nav-history-service;1"].getService(
 
 
 
+
 function uri_in_db(aURI) {
   var options = histsvc.getNewQueryOptions();
   options.maxResults = 1;

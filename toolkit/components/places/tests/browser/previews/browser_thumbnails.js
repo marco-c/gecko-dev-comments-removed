@@ -18,6 +18,7 @@ const TEST_URL2 = "https://example.org/";
 
 
 
+
 async function countTombstones() {
   await PlacesTestUtils.promiseAsyncUpdates();
   let db = await PlacesUtils.promiseDBConnection();
@@ -162,6 +163,7 @@ function fetchImage(url) {
     );
   });
 }
+
 
 
 

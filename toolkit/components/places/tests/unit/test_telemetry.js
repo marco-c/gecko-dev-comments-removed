@@ -41,9 +41,6 @@ const scalars = {
 
 
 
-
-
-
 function promiseForceExpirationStep(aLimit) {
   let promise = promiseTopicObserved(PlacesUtils.TOPIC_EXPIRATION_FINISHED);
   let expire = Cc["@mozilla.org/places/expiration;1"].getService(
@@ -52,6 +49,7 @@ function promiseForceExpirationStep(aLimit) {
   expire.observe(null, "places-debug-start-expiration", aLimit);
   return promise;
 }
+
 
 
 

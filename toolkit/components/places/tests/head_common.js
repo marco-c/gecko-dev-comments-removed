@@ -46,6 +46,10 @@ ChromeUtils.defineESModuleGetters(this, {
   TestUtils: "resource://testing-common/TestUtils.sys.mjs",
 });
 
+
+
+
+
 ChromeUtils.defineLazyGetter(this, "SMALLPNG_DATA_URI", function () {
   return NetUtil.newURI(
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAA" +
@@ -130,6 +134,7 @@ function DBConn(aForceNewConnection) {
 
 
 
+
 function readInputStreamData(aStream) {
   let bistream = Cc["@mozilla.org/binaryinputstream;1"].createInstance(
     Ci.nsIBinaryInputStream
@@ -146,6 +151,7 @@ function readInputStreamData(aStream) {
     bistream.close();
   }
 }
+
 
 
 
@@ -194,6 +200,7 @@ function readFileOfLength(aFileName, aExpectedLength) {
 
 
 
+
 async function readFileDataAsDataURL(file, mimeType) {
   const data = readFileData(file);
   return PlacesTestUtils.fileDataToDataURL(data, mimeType);
@@ -219,6 +226,7 @@ function base64EncodeString(aString) {
   );
   return encoder.encodeToString(stream, aString.length);
 }
+
 
 
 
@@ -267,6 +275,7 @@ function clearDB() {
     dump("Exception: " + ex);
   }
 }
+
 
 
 
@@ -325,6 +334,8 @@ function dump_table(aName, dbConn) {
 
 
 
+
+
 function page_in_database(aURI) {
   let url = aURI instanceof Ci.nsIURI ? aURI.spec : aURI;
   let stmt = DBConn().createStatement(
@@ -340,6 +351,8 @@ function page_in_database(aURI) {
     stmt.finalize();
   }
 }
+
+
 
 
 
@@ -364,7 +377,6 @@ function visits_in_database(aURI) {
     stmt.finalize();
   }
 }
-
 
 
 
@@ -451,6 +463,7 @@ function remove_bookmarks_html() {
 
 
 
+
 function check_bookmarks_html() {
   let profileBookmarksHTMLFile = gProfD.clone();
   profileBookmarksHTMLFile.append(FILENAME_BOOKMARKS_HTML);
@@ -511,6 +524,7 @@ function remove_all_JSON_backups() {
 
 
 
+
 function check_JSON_backup(aIsAutomaticBackup) {
   let profileBookmarksJSONFile;
   if (aIsAutomaticBackup) {
@@ -532,6 +546,7 @@ function check_JSON_backup(aIsAutomaticBackup) {
   Assert.ok(profileBookmarksJSONFile.exists());
   return profileBookmarksJSONFile;
 }
+
 
 
 
@@ -564,6 +579,7 @@ function isUrlHidden(aURI) {
 
 
 
+
 function is_time_ordered(before, after) {
   
   
@@ -584,8 +600,6 @@ function waitForConnectionClosed(aCallback) {
   promiseTopicObserved("places-connection-closed").then(aCallback);
   shutdownPlaces();
 }
-
-
 
 
 
@@ -632,6 +646,8 @@ async function check_guid_for_bookmark(aId, aGUID) {
     Assert.equal(guid, aGUID, "Should have the correct GUID for the bookmark");
   }
 }
+
+
 
 
 
@@ -779,6 +795,7 @@ async function compareFavicons(icon1, icon2, msg) {
 
 
 
+
 function mapItemGuidToInternalRootName(itemGuid) {
   switch (itemGuid) {
     case PlacesUtils.bookmarks.rootGuid:
@@ -832,6 +849,8 @@ async function setupPlacesDatabase(path, destFileName = DB_FILENAME) {
   await IOUtils.copy(src, dest);
   return dest;
 }
+
+
 
 
 

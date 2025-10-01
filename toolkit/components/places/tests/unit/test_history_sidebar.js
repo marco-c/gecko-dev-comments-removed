@@ -10,6 +10,7 @@ let nowObj = new Date();
 
 
 
+
 function toMidnight(inputDate) {
   let date = new Date(inputDate);
   date.setHours(0);

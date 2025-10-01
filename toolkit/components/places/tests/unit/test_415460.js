@@ -15,6 +15,7 @@ var hs = Cc["@mozilla.org/browser/nav-history-service;1"].getService(
 
 
 
+
 function search_has_result(aTerms) {
   var options = hs.getNewQueryOptions();
   options.maxResults = 1;

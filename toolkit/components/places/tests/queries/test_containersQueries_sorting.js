@@ -382,6 +382,7 @@ function test_result_sortingMode_change(
 
 
 
+
 function check_children_sorting(aRootNode, aExpectedSortingMode) {
   var results = [];
   print("Found children:");

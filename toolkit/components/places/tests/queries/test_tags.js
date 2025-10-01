@@ -503,14 +503,13 @@ async function task_doWithBookmark(aTags, aCallback) {
 
 
 
+
 function encodeTag(aTag) {
   return encodeURIComponent(aTag).replace(
     /[-_.!~*'()]/g, 
     s => "%" + s.charCodeAt(0).toString(16)
   );
 }
-
-
 
 
 
@@ -595,7 +594,6 @@ function queryResultsAre(aResultRoot, aExpectedURIs) {
     aResultRoot.containerOpen = false;
   }
 }
-
 
 
 
