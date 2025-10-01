@@ -16,31 +16,35 @@ t.step(function() {
   var canvas = new OffscreenCanvas(400, 200);
   var ctx = canvas.getContext('2d');
 
+  function getClusterIndexes(text) {
+    const clusters = ctx.measureText(text).getTextClusters();
+    const result = [];
+    for (let i = 0; i < clusters.length; i++) {
+      const end = clusters[i].end;
+      if (end === (i + 1 < clusters.length ? clusters[i + 1].start : text.length)) {
+        result.push(clusters[i].start);
+      } else {
+        result.push([clusters[i].start, clusters[i].end]);
+      }
+    }
+    return result;
+  }
+
+  function assertClusterIndexes(text, expected) {
+    const actual = getClusterIndexes(text);
+    assert_array_equals(actual, expected);
+  }
+
   ctx.font = '50px serif';
   const text = 'ABC ☺️❤️';
   ctx.fillText(text, 20, 100);
-  const tm = ctx.measureText(text);
-  const clusters = tm.getTextClusters();
+  assertClusterIndexes(text, [0, 1, 2, 3, 4, 6]);
+
   
-  _assertSame(clusters.length, 6, "clusters.length", "6");
   
-  _assertSame(clusters[0].start, 0, "clusters[\""+(0)+"\"].start", "0");
-  _assertSame(clusters[0].end, 1, "clusters[\""+(0)+"\"].end", "1");
+  assertClusterIndexes('X\u200DY', [0, 2]);
   
-  _assertSame(clusters[1].start, 1, "clusters[\""+(1)+"\"].start", "1");
-  _assertSame(clusters[1].end, 2, "clusters[\""+(1)+"\"].end", "2");
-  
-  _assertSame(clusters[2].start, 2, "clusters[\""+(2)+"\"].start", "2");
-  _assertSame(clusters[2].end, 3, "clusters[\""+(2)+"\"].end", "3");
-  
-  _assertSame(clusters[3].start, 3, "clusters[\""+(3)+"\"].start", "3");
-  _assertSame(clusters[3].end, 4, "clusters[\""+(3)+"\"].end", "4");
-  
-  _assertSame(clusters[4].start, 4, "clusters[\""+(4)+"\"].start", "4");
-  _assertSame(clusters[4].end, 6, "clusters[\""+(4)+"\"].end", "6");
-  
-  _assertSame(clusters[5].start, 6, "clusters[\""+(5)+"\"].start", "6");
-  _assertSame(clusters[5].end, 8, "clusters[\""+(5)+"\"].end", "8");
+  assertClusterIndexes('\u{1FFFD}\u200D\u{1FFFD}', [0]);
   t.done();
 });
 done();
