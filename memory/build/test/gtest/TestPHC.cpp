@@ -376,22 +376,15 @@ size_t GetNumAvailable() {
   return stats.mSlotsFreed + stats.mSlotsUnused;
 }
 
-TEST(PHC, TestPHCExhaustion)
-{
-  
-  size_t num_allocations = GetNumAvailable();
-
-  mozilla::phc::DisablePHCOnCurrentThread();
-  std::vector<uint8_t*> allocations(num_allocations);
-  mozilla::phc::ReenablePHCOnCurrentThread();
-
+#ifndef ANDROID
+static void TestExhaustion(std::vector<uint8_t*>& aAllocs) {
   
   
   
   
   mozilla::phc::SetPHCProbabilities(64, 64, 0);
 
-  for (auto& a : allocations) {
+  for (auto& a : aAllocs) {
     a = GetPHCAllocation(128);
     ASSERT_TRUE(a);
     TestInUseAllocation(a, 128);
@@ -402,10 +395,30 @@ TEST(PHC, TestPHCExhaustion)
   
   ASSERT_FALSE(GetPHCAllocation(128));
 
-  for (auto& a : allocations) {
+  
+  mozilla::phc::SetPHCProbabilities(
+      StaticPrefs::memory_phc_avg_delay_first(),
+      StaticPrefs::memory_phc_avg_delay_normal(),
+      StaticPrefs::memory_phc_avg_delay_page_reuse());
+}
+
+static void ReleaseVector(std::vector<uint8_t*>& aAllocs) {
+  for (auto& a : aAllocs) {
     free(a);
     TestFreedAllocation(a, 128);
   }
+}
+
+TEST(PHC, TestExhaustion)
+{
+  
+  size_t num_allocations = GetNumAvailable();
+  mozilla::phc::DisablePHCOnCurrentThread();
+  std::vector<uint8_t*> allocations(num_allocations);
+  mozilla::phc::ReenablePHCOnCurrentThread();
+
+  TestExhaustion(allocations);
+  ReleaseVector(allocations);
 
   
   
@@ -414,10 +427,41 @@ TEST(PHC, TestPHCExhaustion)
   uint8_t* r = GetPHCAllocation(128);
   ASSERT_TRUE(!!r);
   free(r);
+}
+
+static uint8_t* VectorMax(std::vector<uint8_t*>& aVec) {
+  uint8_t* max = 0;
+  for (auto a : aVec) {
+    max = a > max ? a : max;
+  }
+  return max;
+}
+
+TEST(PHC, TestBounds)
+{
+  
+  
+  
+
+  size_t num_allocations = GetNumAvailable();
+  mozilla::phc::DisablePHCOnCurrentThread();
+  std::vector<uint8_t*> allocations(num_allocations);
+  mozilla::phc::ReenablePHCOnCurrentThread();
+
+  TestExhaustion(allocations);
+
+  uint8_t* max = VectorMax(allocations);
+  ASSERT_TRUE(!!max);
 
   
-  mozilla::phc::SetPHCProbabilities(
-      StaticPrefs::memory_phc_avg_delay_first(),
-      StaticPrefs::memory_phc_avg_delay_normal(),
-      StaticPrefs::memory_phc_avg_delay_page_reuse());
+  phc::AddrInfo phcInfo;
+  ASSERT_TRUE(mozilla::phc::IsPHCAllocation(max + 128 + 1, &phcInfo));
+  ASSERT_TRUE(PHCInfoEq(phcInfo, phc::AddrInfo::Kind::GuardPage, max, 128, true,
+                        false));
+
+  
+  ASSERT_TRUE(!mozilla::phc::IsPHCAllocation(max + kPageSize * 2, &phcInfo));
+
+  ReleaseVector(allocations);
 }
+#endif
