@@ -137,7 +137,7 @@ pub const MAX_FONT_WEIGHT: f32 = 1000.;
 
 
 #[derive(
-    Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem,
+    Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
 )]
 pub enum FontWeight {
     
@@ -363,7 +363,7 @@ impl SpecifiedFontStyle {
 
 
 #[derive(
-    Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem,
+    Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
 )]
 #[allow(missing_docs)]
 pub enum FontStyle {
@@ -402,7 +402,7 @@ impl ToComputedValue for FontStyle {
 
 #[allow(missing_docs)]
 #[derive(
-    Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem,
+    Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
 )]
 pub enum FontStretch {
     Stretch(NonNegativePercentage),
@@ -619,7 +619,7 @@ impl SpecifiedValueInfo for KeywordInfo {
     }
 }
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
 
 pub enum FontSize {
     
@@ -645,7 +645,7 @@ pub enum FontSize {
 }
 
 
-#[derive(Clone, Debug, Eq, PartialEq, ToCss, ToShmem)]
+#[derive(Clone, Debug, Eq, PartialEq, ToCss, ToShmem, ToTyped)]
 #[cfg_attr(feature = "servo", derive(Hash))]
 pub enum FontFamily {
     
@@ -1128,6 +1128,7 @@ pub enum VariantAlternates {
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(transparent)]
 
@@ -1291,6 +1292,7 @@ impl Parse for FontVariantAlternates {
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[css(bitflags(
     single = "normal",
@@ -1359,6 +1361,7 @@ impl FontVariantEastAsian {
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[css(bitflags(
     single = "normal,none",
@@ -1424,6 +1427,7 @@ impl FontVariantLigatures {
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[css(bitflags(
     single = "normal",
@@ -1530,6 +1534,7 @@ impl Parse for FontLanguageOverride {
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 pub enum FontSynthesis {
     
@@ -1553,6 +1558,7 @@ pub enum FontSynthesis {
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 pub enum FontSynthesisStyle {
     
@@ -1573,6 +1579,7 @@ pub enum FontSynthesisStyle {
     ToComputedValue,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(C)]
 
@@ -1713,6 +1720,7 @@ impl MetricsOverride {
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(u8)]
 
@@ -1743,6 +1751,7 @@ impl XTextScale {
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 
@@ -1799,7 +1808,7 @@ impl Parse for MozScriptMinSize {
 
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[derive(Clone, Copy, Debug, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
+#[derive(Clone, Copy, Debug, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
 pub enum MathDepth {
     
     AutoAdd,

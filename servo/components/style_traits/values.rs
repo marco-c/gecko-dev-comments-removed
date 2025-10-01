@@ -573,3 +573,46 @@ pub mod specified {
         }
     }
 }
+
+
+
+
+
+
+#[derive(Clone, Debug)]
+pub enum TypedValue {}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub trait ToTyped {
+    
+    
+    
+    
+    
+    
+    fn to_typed(&self) -> Option<TypedValue> {
+        None
+    }
+}
+
+impl<T> ToTyped for Box<T>
+where
+    T: ?Sized + ToTyped,
+{
+    fn to_typed(&self) -> Option<TypedValue> {
+        (**self).to_typed()
+    }
+}

@@ -108,7 +108,7 @@ impl ToCss for Absolute {
 }
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem, ToTyped)]
 pub enum Color {
     
     CurrentColor,
@@ -838,7 +838,7 @@ impl SpecifiedValueInfo for Color {
 
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[derive(Clone, Debug, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
+#[derive(Clone, Debug, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
 pub struct ColorPropertyValue(pub Color);
 
 impl ToComputedValue for ColorPropertyValue {
@@ -922,6 +922,7 @@ bitflags! {
     ToComputedValue,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(C)]
 #[value_info(other_values = "normal")]
@@ -1037,6 +1038,7 @@ impl ToCss for ColorScheme {
     ToComputedValue,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(u8)]
 pub enum PrintColorAdjust {
@@ -1059,6 +1061,7 @@ pub enum PrintColorAdjust {
     ToComputedValue,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(u8)]
 pub enum ForcedColorAdjust {

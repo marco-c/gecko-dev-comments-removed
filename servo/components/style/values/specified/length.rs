@@ -1339,7 +1339,7 @@ impl Zero for NoCalcLength {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
 pub enum Length {
     
     NoCalc(NoCalcLength),
@@ -1640,7 +1640,7 @@ impl NonNegativeLength {
 
 
 #[allow(missing_docs)]
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
 pub enum LengthPercentage {
     Length(NoCalcLength),
     Percentage(computed::Percentage),

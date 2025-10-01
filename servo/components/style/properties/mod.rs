@@ -129,7 +129,7 @@ impl CSSWideKeyword {
 }
 
 
-#[derive(Clone, PartialEq, ToCss, ToShmem, MallocSizeOf)]
+#[derive(Clone, PartialEq, ToCss, ToShmem, MallocSizeOf, ToTyped)]
 pub struct WideKeywordDeclaration {
     #[css(skip)]
     id: LonghandId,
@@ -138,7 +138,7 @@ pub struct WideKeywordDeclaration {
 }
 
 
-#[derive(Clone, PartialEq, ToCss, ToShmem, MallocSizeOf)]
+#[derive(Clone, PartialEq, ToCss, ToShmem, MallocSizeOf, ToTyped)]
 pub struct VariableDeclaration {
     
     #[css(skip)]
@@ -161,7 +161,7 @@ pub enum CustomDeclarationValue {
 }
 
 
-#[derive(Clone, PartialEq, ToCss, ToShmem, MallocSizeOf)]
+#[derive(Clone, PartialEq, ToCss, ToShmem, MallocSizeOf, ToTyped)]
 pub struct CustomDeclaration {
     
     #[css(skip)]

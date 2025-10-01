@@ -116,6 +116,7 @@ impl<T: Into<f64>> From<Matrix3D<T>> for Transform3D<f64> {
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(C)]
 pub struct GenericTransformOrigin<H, V, Depth> {
@@ -322,6 +323,7 @@ pub use self::GenericTransformOperation as TransformOperation;
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(C)]
 
@@ -681,6 +683,7 @@ pub fn get_normalized_vector_and_angle<T: Zero>(
     ToComputedValue,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(C, u8)]
 
@@ -784,6 +787,7 @@ where
     ToComputedValue,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(C, u8)]
 
@@ -852,6 +856,7 @@ fn y_axis_and_z_axis_are_zero<LengthPercentage: Zero + ZeroNoPercent, Length: Ze
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(C, u8)]
 
@@ -897,6 +902,7 @@ pub use self::GenericTranslate as Translate;
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(u8)]
 pub enum TransformStyle {

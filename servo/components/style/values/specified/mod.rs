@@ -553,7 +553,16 @@ impl Parse for NonNegativeNumberOrPercentage {
 
 
 #[derive(
-    Clone, Copy, Debug, MallocSizeOf, PartialEq, PartialOrd, SpecifiedValueInfo, ToCss, ToShmem,
+    Clone,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    PartialOrd,
+    SpecifiedValueInfo,
+    ToCss,
+    ToShmem,
+    ToTyped,
 )]
 pub struct Opacity(Number);
 
@@ -596,7 +605,7 @@ impl ToComputedValue for Opacity {
 
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, PartialOrd, ToShmem)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, PartialOrd, ToShmem, ToTyped)]
 pub enum Integer {
     
     Literal(CSSInteger),

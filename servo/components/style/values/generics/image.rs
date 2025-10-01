@@ -18,7 +18,7 @@ use style_traits::{CssWriter, ToCss};
 
 
 
-#[derive(Clone, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToResolvedValue, ToShmem)]
+#[derive(Clone, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToResolvedValue, ToShmem, ToTyped)]
 #[repr(C, u8)]
 pub enum GenericImage<G, ImageUrl, Color, Percentage, Resolution> {
     

@@ -43,6 +43,7 @@ use style_traits::{values::SequenceWriter, CssWriter, ParseError, ToCss};
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(u8)]
 pub enum BorderStyle {
@@ -97,7 +98,7 @@ impl BorderImageSlice {
 }
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
 pub enum LineWidth {
     
     Thin,
@@ -165,7 +166,7 @@ impl ToComputedValue for LineWidth {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
 pub struct BorderSideWidth(LineWidth);
 
 impl BorderSideWidth {
@@ -326,6 +327,7 @@ pub enum BorderImageRepeatKeyword {
     ToComputedValue,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(C)]
 pub struct BorderImageRepeat(pub BorderImageRepeatKeyword, pub BorderImageRepeatKeyword);

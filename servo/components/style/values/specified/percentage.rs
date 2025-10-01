@@ -17,7 +17,7 @@ use style_traits::values::specified::AllowedNumericType;
 use style_traits::{CssWriter, ParseError, SpecifiedValueInfo, ToCss};
 
 
-#[derive(Clone, Copy, Debug, Default, MallocSizeOf, PartialEq, ToShmem)]
+#[derive(Clone, Copy, Debug, Default, MallocSizeOf, PartialEq, ToShmem, ToTyped)]
 pub struct Percentage {
     
     

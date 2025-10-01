@@ -239,7 +239,9 @@ fn direction_specified_and_angle_is_zero(direction: &OffsetRotateDirection, angl
 
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
+#[derive(
+    Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
+)]
 pub struct OffsetRotate {
     
     #[css(skip_if = "OffsetRotateDirection::is_none")]
