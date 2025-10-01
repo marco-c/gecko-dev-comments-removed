@@ -608,7 +608,7 @@ class Object {
 
 
 
-inline bool IsException(Object obj, Isolate*) {
+inline bool IsExceptionHole(Object obj, Isolate*) {
   return obj.value().isMagic(JS_INTERRUPT_REGEXP);
 }
 
