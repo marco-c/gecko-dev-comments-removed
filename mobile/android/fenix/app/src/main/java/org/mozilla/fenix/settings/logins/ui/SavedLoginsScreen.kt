@@ -4,7 +4,10 @@
 
 package org.mozilla.fenix.settings.logins.ui
 
+import android.view.WindowManager
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -81,6 +84,7 @@ internal fun SavedLoginsScreen(
     buildStore: (NavHostController) -> LoginsStore,
     startDestination: String = LoginsDestinations.LIST,
 ) {
+    val activityContext = LocalActivity.current as ComponentActivity
     val navController = rememberNavController()
     val store = buildStore(navController)
 
@@ -88,17 +92,35 @@ internal fun SavedLoginsScreen(
         val observer = object : DefaultLifecycleObserver {
             override fun onPause(owner: LifecycleOwner) {
                 super.onPause(owner)
-                store.dispatch(BiometricAuthenticationAction.AuthenticationFailed)
+                activityContext.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+
+                if (store.state.pinVerificationState != PinVerificationState.Started) {
+                    store.dispatch(BiometricAuthenticationAction.AuthenticationFailed)
+                    store.dispatch(BiometricAuthenticationDialogAction(false))
+                } else {
+                    store.dispatch(PinVerificationAction.Duplicate)
+                }
             }
 
             override fun onResume(owner: LifecycleOwner) {
                 super.onResume(owner)
-                store.dispatch(BiometricAuthenticationDialogAction(true))
+                activityContext.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+
+                val noPinVerification =
+                    store.state.pinVerificationState == PinVerificationState.Inert
+                val pinVerificationDuplicated =
+                    store.state.pinVerificationState == PinVerificationState.Duplicated
+                if (noPinVerification || pinVerificationDuplicated) {
+                    store.dispatch(BiometricAuthenticationDialogAction(true))
+                } else {
+                    store.dispatch(PinVerificationAction.None)
+                }
             }
         }
         ProcessLifecycleOwner.get().lifecycle.addObserver(observer)
 
         onDispose {
+            activityContext.window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
             store.dispatch(ViewDisposed)
             ProcessLifecycleOwner.get().lifecycle.removeObserver(observer)
         }
