@@ -61,9 +61,6 @@ class FilterNodeSoftware : public FilterNode,
   
   void FilterInvalidated(FilterNodeSoftware* aFilter) override;
 
- protected:
-  
-
   
 
 
@@ -71,6 +68,9 @@ class FilterNodeSoftware : public FilterNode,
 
 
   virtual int32_t InputIndex(uint32_t aInputEnumIndex) { return -1; }
+
+ protected:
+  
 
   
 
