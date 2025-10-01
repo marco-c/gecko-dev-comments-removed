@@ -3225,11 +3225,11 @@ bool SharedContextWebgl::BlurRectPass(
     
     clipRect = xformRect;
   } else {
-    
-    
     clipRect = mClipAARect;
-    clipRect.Inflate(0.5f);
   }
+  
+  
+  clipRect.Inflate(0.5f);
   Array<float, 4> clipData = {clipRect.x, clipRect.y, clipRect.XMost(),
                               clipRect.YMost()};
   MaybeUniformData(LOCAL_GL_FLOAT_VEC4, mBlurProgramClipBounds, clipData,
@@ -3596,7 +3596,7 @@ already_AddRefed<TextureHandle> SharedContextWebgl::ResolveFilterInputAccel(
   SkRect skiaRect = SkRect::MakeEmpty();
   
   
-  if (skiaPath.isRect(&skiaRect)) {
+  if (!aStrokeOptions && skiaPath.isRect(&skiaRect)) {
     RectDouble rect = SkRectToRectDouble(skiaRect);
     RectDouble xformRect = aDT->TransformDouble(rect);
     if (aPattern.GetType() == PatternType::COLOR) {
@@ -4810,16 +4810,10 @@ bool SharedContextWebgl::DrawPathAccel(
         return false;
       }
       
-      uint8_t* data = nullptr;
-      IntSize size;
-      int32_t stride = 0;
-      SurfaceFormat format = SurfaceFormat::UNKNOWN;
-      if (pathDT->LockBits(&data, &size, &stride, &format)) {
-        AlphaBoxBlur blur(Rect(pathDT->GetRect()), stride, aShadow->mSigma,
-                          aShadow->mSigma);
-        blur.Blur(data);
-        pathDT->ReleaseBits(data);
-      }
+      GaussianBlur blur(Rect(pathDT->GetRect()), IntSize(0, 0),
+                        Point(aShadow->mSigma, aShadow->mSigma), nullptr,
+                        nullptr, pathDT->GetFormat());
+      pathDT->Blur(blur);
     }
     RefPtr<SourceSurface> pathSurface = pathDT->Snapshot();
     

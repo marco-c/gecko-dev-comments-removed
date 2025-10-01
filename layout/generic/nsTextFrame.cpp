@@ -108,7 +108,7 @@ using namespace mozilla::gfx;
 namespace mozilla {
 
 bool TextAutospace::Enabled(const StyleTextAutospace& aStyleTextAutospace,
-                            const StyleTextOrientation aStyleTextOrientation,
+                            const nsIFrame* aFrame,
                             const CharacterDataBuffer& aBuffer) {
   if (aStyleTextAutospace == StyleTextAutospace::NO_AUTOSPACE) {
     return false;
@@ -121,7 +121,10 @@ bool TextAutospace::Enabled(const StyleTextAutospace& aStyleTextAutospace,
     return false;
   }
 
-  if (aStyleTextOrientation == StyleTextOrientation::Upright) {
+  WritingMode wm = aFrame->GetWritingMode();
+  if (wm.IsVertical() && !wm.IsVerticalSideways() &&
+      aFrame->StyleVisibility()->mTextOrientation ==
+          StyleTextOrientation::Upright) {
     
     
     
@@ -1907,18 +1910,6 @@ static gfxFont::Metrics GetFirstFontMetrics(gfxFontGroup* aFontGroup,
                                            : nsFontMetrics::eHorizontal);
 }
 
-static nscoord GetSpaceWidthAppUnits(const gfxTextRun* aTextRun) {
-  
-  
-  gfxFloat spaceWidthAppUnits =
-      NS_round(GetFirstFontMetrics(aTextRun->GetFontGroup(),
-                                   aTextRun->UseCenterBaseline())
-                   .spaceWidth *
-               aTextRun->GetAppUnitsPerDevUnit());
-
-  return spaceWidthAppUnits;
-}
-
 static gfxFloat GetMinTabAdvanceAppUnits(const gfxTextRun* aTextRun) {
   gfxFloat chWidthAppUnits = NS_round(
       GetFirstFontMetrics(aTextRun->GetFontGroup(), aTextRun->IsVertical())
@@ -1943,8 +1934,6 @@ static nscoord LetterSpacing(nsIFrame* aFrame, const nsStyleText& aStyleText) {
     
     
     
-    
-    
     return GetSVGFontSizeScaleFactor(aFrame) *
            aStyleText.mLetterSpacing.Resolve(
                [&] { return aFrame->StyleFont()->mSize.ToAppUnits(); });
@@ -1955,22 +1944,19 @@ static nscoord LetterSpacing(nsIFrame* aFrame, const nsStyleText& aStyleText) {
 }
 
 
-static nscoord WordSpacing(nsIFrame* aFrame, const gfxTextRun* aTextRun,
-                           const nsStyleText& aStyleText) {
+static nscoord WordSpacing(nsIFrame* aFrame, const nsStyleText& aStyleText) {
   if (aFrame->IsInSVGTextSubtree()) {
     
     
     
     
-    
-    
-    auto spacing = aStyleText.mWordSpacing;
-    spacing.ScaleLengthsBy(GetSVGFontSizeScaleFactor(aFrame));
-    return spacing.Resolve([&] { return GetSpaceWidthAppUnits(aTextRun); });
+    return GetSVGFontSizeScaleFactor(aFrame) *
+           aStyleText.mWordSpacing.Resolve(
+               [&] { return aFrame->StyleFont()->mSize.ToAppUnits(); });
   }
 
   return aStyleText.mWordSpacing.Resolve(
-      [&] { return GetSpaceWidthAppUnits(aTextRun); });
+      [&] { return aFrame->StyleFont()->mSize.ToAppUnits(); });
 }
 
 gfx::ShapedTextFlags nsTextFrame::GetSpacingFlags() const {
@@ -1984,8 +1970,7 @@ gfx::ShapedTextFlags nsTextFrame::GetSpacingFlags() const {
   
   bool nonStandardSpacing =
       !ls.IsDefinitelyZero() || !ws.IsDefinitelyZero() ||
-      TextAutospace::Enabled(styleText->EffectiveTextAutospace(),
-                             StyleVisibility()->mTextOrientation,
+      TextAutospace::Enabled(styleText->EffectiveTextAutospace(), this,
                              CharacterDataBuffer());
   return nonStandardSpacing ? gfx::ShapedTextFlags::TEXT_ENABLE_SPACING
                             : gfx::ShapedTextFlags();
@@ -3459,7 +3444,7 @@ nsTextFrame::PropertyProvider::PropertyProvider(
       mTabWidths(nullptr),
       mTabWidthsAnalyzedLimit(0),
       mLength(aLength),
-      mWordSpacing(WordSpacing(aFrame, mTextRun, *aTextStyle)),
+      mWordSpacing(WordSpacing(aFrame, *aTextStyle)),
       mLetterSpacing(LetterSpacing(aFrame, *aTextStyle)),
       mMinTabAdvance(-1.0),
       mHyphenWidth(-1),
@@ -3489,7 +3474,7 @@ nsTextFrame::PropertyProvider::PropertyProvider(
       mTabWidths(nullptr),
       mTabWidthsAnalyzedLimit(0),
       mLength(aFrame->GetContentLength()),
-      mWordSpacing(WordSpacing(aFrame, mTextRun, *mTextStyle)),
+      mWordSpacing(WordSpacing(aFrame, *mTextStyle)),
       mLetterSpacing(LetterSpacing(aFrame, *mTextStyle)),
       mMinTabAdvance(-1.0),
       mHyphenWidth(-1),
@@ -4317,8 +4302,7 @@ void nsTextFrame::PropertyProvider::InitFontGroupAndFontMetrics() const {
 
 void nsTextFrame::PropertyProvider::InitTextAutospace() {
   const auto styleTextAutospace = mTextStyle->EffectiveTextAutospace();
-  if (TextAutospace::Enabled(styleTextAutospace,
-                             mFrame->StyleVisibility()->mTextOrientation,
+  if (TextAutospace::Enabled(styleTextAutospace, mFrame,
                              mCharacterDataBuffer)) {
     mTextAutospace.emplace(styleTextAutospace,
                            GetFontMetrics()->InterScriptSpacingWidth());
@@ -7071,9 +7055,7 @@ void nsTextFrame::PaintShadows(Span<const StyleSimpleShadow> aShadows,
 
   
   
-  
-  
-  uint32_t blurFlags = nsContextBoxBlur::DISABLE_HARDWARE_ACCELERATION_BLUR;
+  uint32_t blurFlags = 0;
   uint32_t numGlyphRuns;
   const gfxTextRun::GlyphRun* run = mTextRun->GetGlyphRuns(&numGlyphRuns);
   while (numGlyphRuns-- > 0) {

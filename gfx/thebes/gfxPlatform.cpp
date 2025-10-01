@@ -1271,7 +1271,7 @@ void gfxPlatform::Shutdown() {
   
   gfxFontCache::Shutdown();
   gfxGradientCache::Shutdown();
-  gfxAlphaBoxBlur::ShutdownBlurCache();
+  gfxGaussianBlur::ShutdownBlurCache();
   gfxGraphiteShaper::Shutdown();
   gfxPlatformFontList::Shutdown();
   gfxFontMissingGlyphs::Shutdown();
@@ -3262,15 +3262,6 @@ void gfxPlatform::InitWebGPUConfig() {
     }
     featureWebGPU.Disable(FeatureStatus::Blocklisted, message.get(), failureId);
   }
-
-  
-  
-#if !(defined(NIGHTLY_BUILD) || defined(XP_WIN))
-  featureWebGPU.ForceDisable(
-      FeatureStatus::Blocked,
-      "WebGPU cannot be enabled unless in Nightly or on Windows.",
-      "WEBGPU_DISABLE_RELEASE_OR_NON_WINDOWS"_ns);
-#endif
 
   gfxVars::SetAllowWebGPU(featureWebGPU.IsEnabled());
 

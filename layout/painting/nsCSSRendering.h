@@ -765,7 +765,7 @@ class nsContextBoxBlur {
   typedef mozilla::gfx::RectCornerRadii RectCornerRadii;
 
  public:
-  enum { FORCE_MASK = 0x01, DISABLE_HARDWARE_ACCELERATION_BLUR = 0x02 };
+  enum { FORCE_MASK = 0x01 };
   
 
 
@@ -911,7 +911,7 @@ class nsContextBoxBlur {
                                      mozilla::gfx::IntSize& aOutSpreadRadius,
                                      bool aConstrainSpreadRadius = true);
 
-  gfxAlphaBoxBlur mAlphaBoxBlur;
+  gfxGaussianBlur mGaussianBlur;
   mozilla::UniquePtr<gfxContext> mOwnedContext;
   gfxContext* mContext;  
   gfxContext* mDestinationCtx;
