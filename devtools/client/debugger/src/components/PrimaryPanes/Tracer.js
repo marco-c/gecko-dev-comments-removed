@@ -428,7 +428,9 @@ export class Tracer extends Component {
             className,
             showFunctionName: true,
             showAnonymousFunctionName: true,
-            frame,
+            
+            
+            frame: { ...frame, column: frame.column + 1 },
             sourceMapURLService: window.sourceMapURLService,
           })
         );

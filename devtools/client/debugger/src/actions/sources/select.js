@@ -17,6 +17,7 @@ import { createLocation } from "../../utils/location";
 import {
   getRelatedMapLocation,
   getOriginalLocation,
+  getGeneratedLocation,
 } from "../../utils/source-maps";
 
 import {
@@ -33,6 +34,7 @@ import {
   hasSourceActor,
   isPrettyPrinted,
   isSourceActorWithSourceMap,
+  getSelectedTraceIndex,
 } from "../../selectors/index";
 
 
@@ -268,6 +270,8 @@ export function selectLocation(
       return;
     }
 
+    const lastSelectedTraceIndex = getSelectedTraceIndex(getState());
+
     let sourceActor = location.sourceActor;
     if (!sourceActor) {
       sourceActor = getFirstSourceActorForGeneratedSource(
@@ -367,6 +371,34 @@ export function selectLocation(
         type: "SET_ORIGINAL_SELECTED_LOCATION",
         location,
         originalLocation,
+      });
+    }
+
+    
+    if (location.source.isOriginal) {
+      const generatedLocation = await getGeneratedLocation(location, thunkArgs);
+      
+      
+      if (getSelectedTraceIndex(getState()) != lastSelectedTraceIndex) {
+        return;
+      }
+
+      
+      if (getSelectedLocation(getState()) != location) {
+        return;
+      }
+
+      if (!generatedLocation.sourceActor) {
+        generatedLocation.sourceActor = getFirstSourceActorForGeneratedSource(
+          getState(),
+          generatedLocation.source.id
+        );
+      }
+
+      dispatch({
+        type: "SET_GENERATED_SELECTED_LOCATION",
+        location,
+        generatedLocation,
       });
     }
   };
