@@ -261,6 +261,7 @@ class Components(private val context: Context) {
                 setupChecklistState = setupChecklistState(),
             ).run { filterState(blocklistHandler) },
             middlewares = listOf(
+                LogMiddleware(tag = "AppStore", shouldIncludeDetailedData = { Config.channel.isDebug }),
                 BlocklistMiddleware(blocklistHandler),
                 PocketMiddleware(
                     lazyMonitored { core.pocketStoriesService },
@@ -287,9 +288,13 @@ class Components(private val context: Context) {
                 SetupChecklistPreferencesMiddleware(DefaultSetupChecklistRepository(context)),
                 SetupChecklistTelemetryMiddleware(),
                 ReviewPromptMiddleware(
-                    settings = settings,
+                    isReviewPromptFeatureEnabled = { settings.customReviewPromptFeatureEnabled },
+                    isTelemetryEnabled = { settings.isTelemetryEnabled },
                     createJexlHelper = nimbus::createJexlHelper,
-                ),
+                    nimbusEventStore = nimbus.events,
+                ).also {
+                    settings.migrateLastReviewPromptTimePrefIfNeeded(nimbus.events)
+                },
                 AppVisualCompletenessMiddleware(performance.visualCompletenessQueue),
             ),
         ).also {
