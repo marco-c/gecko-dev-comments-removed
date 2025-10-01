@@ -2252,10 +2252,29 @@ bool SharedContextWebgl::UploadSurface(DataSourceSurface* aData,
                                        const IntPoint& aDstOffset, bool aInit,
                                        bool aZero,
                                        const RefPtr<WebGLTexture>& aTex) {
-  webgl::TexUnpackBlobDesc texDesc = {
-      LOCAL_GL_TEXTURE_2D,
-      {uint32_t(aSrcRect.width), uint32_t(aSrcRect.height), 1}};
+  webgl::TexUnpackBlobDesc texDesc = {LOCAL_GL_TEXTURE_2D};
+  IntRect srcRect(aSrcRect);
+  IntPoint dstOffset(aDstOffset);
+  if (srcRect.IsEmpty()) {
+    return true;
+  }
   if (aData) {
+    
+    
+    srcRect = srcRect.SafeIntersect(IntRect(IntPoint(0, 0), aData->GetSize()));
+    if (srcRect.IsEmpty()) {
+      return true;
+    }
+    
+    
+    dstOffset += srcRect.TopLeft() - aSrcRect.TopLeft();
+
+    
+    int32_t bpp = BytesPerPixel(aFormat);
+    if (bpp != BytesPerPixel(aData->GetFormat())) {
+      return false;
+    }
+
     
     
     
@@ -2264,13 +2283,11 @@ bool SharedContextWebgl::UploadSurface(DataSourceSurface* aData,
       return false;
     }
     int32_t stride = map.GetStride();
-    int32_t bpp = BytesPerPixel(aFormat);
     
     
     Span<const uint8_t> range(
-        map.GetData() + aSrcRect.y * size_t(stride) + aSrcRect.x * bpp,
-        std::max(aSrcRect.height - 1, 0) * size_t(stride) +
-            aSrcRect.width * bpp);
+        map.GetData() + srcRect.y * size_t(stride) + srcRect.x * bpp,
+        std::max(srcRect.height - 1, 0) * size_t(stride) + srcRect.width * bpp);
     texDesc.cpuData = Some(range);
     
     
@@ -2280,10 +2297,16 @@ bool SharedContextWebgl::UploadSurface(DataSourceSurface* aData,
   } else if (aZero) {
     
     
-    MOZ_ASSERT(aSrcRect.TopLeft() == IntPoint(0, 0));
-    size_t size =
-        size_t(GetAlignedStride<4>(aSrcRect.width, BytesPerPixel(aFormat))) *
-        aSrcRect.height;
+    if (srcRect.TopLeft() != IntPoint(0, 0)) {
+      MOZ_ASSERT_UNREACHABLE("Invalid origin for texture initialization.");
+      return false;
+    }
+    int32_t stride = GetAlignedStride<4>(srcRect.width, BytesPerPixel(aFormat));
+    if (stride <= 0) {
+      MOZ_ASSERT_UNREACHABLE("Invalid stride for texture initialization.");
+      return false;
+    }
+    size_t size = size_t(stride) * srcRect.height;
     if (!mZeroBuffer || size > mZeroSize) {
       ClearZeroBuffer();
       mZeroBuffer = mWebgl->CreateBuffer();
@@ -2299,6 +2322,7 @@ bool SharedContextWebgl::UploadSurface(DataSourceSurface* aData,
     }
     texDesc.pboOffset = Some(0);
   }
+  texDesc.size = uvec3(uint32_t(srcRect.width), uint32_t(srcRect.height), 1);
   
   
   
@@ -2313,7 +2337,7 @@ bool SharedContextWebgl::UploadSurface(DataSourceSurface* aData,
     mWebgl->BindTexture(LOCAL_GL_TEXTURE_2D, aTex);
   }
   mWebgl->TexImage(0, aInit ? intFormat : 0,
-                   {uint32_t(aDstOffset.x), uint32_t(aDstOffset.y), 0}, texPI,
+                   {uint32_t(dstOffset.x), uint32_t(dstOffset.y), 0}, texPI,
                    texDesc);
   if (aTex) {
     mWebgl->BindTexture(LOCAL_GL_TEXTURE_2D, mLastTexture);
