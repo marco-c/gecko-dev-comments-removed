@@ -742,6 +742,61 @@ impl DateTime<Utc> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    #[must_use]
+    pub const fn from_timestamp_secs(secs: i64) -> Option<Self> {
+        Self::from_timestamp(secs, 0)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     #[must_use]
     pub const fn from_timestamp(secs: i64, nsecs: u32) -> Option<Self> {
@@ -1881,7 +1936,7 @@ impl<Tz: TimeZone> From<DateTime<Tz>> for SystemTime {
 #[cfg(all(
     target_arch = "wasm32",
     feature = "wasmbind",
-    not(any(target_os = "emscripten", target_os = "wasi"))
+    not(any(target_os = "emscripten", target_os = "wasi", target_os = "linux"))
 ))]
 impl From<js_sys::Date> for DateTime<Utc> {
     fn from(date: js_sys::Date) -> DateTime<Utc> {
@@ -1892,7 +1947,7 @@ impl From<js_sys::Date> for DateTime<Utc> {
 #[cfg(all(
     target_arch = "wasm32",
     feature = "wasmbind",
-    not(any(target_os = "emscripten", target_os = "wasi"))
+    not(any(target_os = "emscripten", target_os = "wasi", target_os = "linux"))
 ))]
 impl From<&js_sys::Date> for DateTime<Utc> {
     fn from(date: &js_sys::Date) -> DateTime<Utc> {
@@ -1903,7 +1958,7 @@ impl From<&js_sys::Date> for DateTime<Utc> {
 #[cfg(all(
     target_arch = "wasm32",
     feature = "wasmbind",
-    not(any(target_os = "emscripten", target_os = "wasi"))
+    not(any(target_os = "emscripten", target_os = "wasi", target_os = "linux"))
 ))]
 impl From<DateTime<Utc>> for js_sys::Date {
     
@@ -1938,4 +1993,4 @@ where
 
 
 
-const UNIX_EPOCH_DAY: i64 = 719_163;
+pub(crate) const UNIX_EPOCH_DAY: i64 = 719_163;
