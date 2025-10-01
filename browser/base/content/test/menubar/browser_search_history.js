@@ -50,7 +50,7 @@ async function isUrlbarInHistorySearchMode(targetWin) {
   await UrlbarTestUtils.promisePopupOpen(targetWin, () => {});
 
   
-  let searchMode = UrlbarUtils.searchModeForToken("^");
+  let searchMode = targetWin.gURLBar.searchModeForToken("^");
   searchMode.entry = "historymenu";
   await UrlbarTestUtils.assertSearchMode(targetWin, searchMode);
 }

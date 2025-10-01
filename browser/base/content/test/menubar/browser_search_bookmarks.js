@@ -54,7 +54,7 @@ async function isUrlbarInBookmarksSearchMode(targetWin) {
   await UrlbarTestUtils.promisePopupOpen(targetWin, () => {});
 
   
-  let searchMode = UrlbarUtils.searchModeForToken("*");
+  let searchMode = targetWin.gURLBar.searchModeForToken("*");
   searchMode.entry = "bookmarkmenu";
   await UrlbarTestUtils.assertSearchMode(targetWin, searchMode);
 }
