@@ -43,19 +43,18 @@ add_setup(async function () {
   
   gTestProvider = new TestProvider({
     results: [
-      Object.assign(
-        new UrlbarResult(
-          UrlbarUtils.RESULT_TYPE.URL,
-          UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
-          {
-            url: "https://example.com/",
-            isBlockable: true,
-          }
-        ),
+      new UrlbarResult({
+        type: UrlbarUtils.RESULT_TYPE.URL,
+        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        payload: {
+          url: "https://example.com/",
+          isBlockable: true,
+        },
         
         
-        { suggestedIndex: 1, isSuggestedIndexRelativeToGroup: true }
-      ),
+        suggestedIndex: 1,
+        isSuggestedIndexRelativeToGroup: true,
+      }),
     ],
   });
 
