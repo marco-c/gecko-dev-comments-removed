@@ -6,10 +6,13 @@
 #ifndef MOZILLA_MEDIATRACKGRAPHIMPL_H_
 #define MOZILLA_MEDIATRACKGRAPHIMPL_H_
 
+#include <atomic>
+
 #include "AsyncLogger.h"
 #include "AudioMixer.h"
 #include "DeviceInputTrack.h"
 #include "GraphDriver.h"
+#include "MediaEventSource.h"
 #include "MediaTrackGraph.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Maybe.h"
@@ -31,6 +34,7 @@ class ShutdownBlocker;
 }
 
 class AudioContextOperationControlMessage;
+class CubebDeviceEnumerator;
 template <typename T>
 class LinkedList;
 class GraphRunner;
@@ -591,6 +595,20 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
     AssertOnGraphThread();
     return mOutputDeviceForAEC == PrimaryOutputDeviceID();
   }
+  CubebUtils::AudioDeviceID DefaultOutputDeviceID() const {
+    return mDefaultOutputDeviceID.load(std::memory_order_relaxed);
+  }
+  
+
+
+
+
+  virtual void UpdateEnumeratorDefaultDeviceTracking();
+  
+
+
+
+  void UpdateDefaultDevice();
   
 
 
@@ -1167,11 +1185,25 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
   DeviceInputTrackManager mDeviceInputTrackManagerMainThread;
 
+  
+
+
+
+
+  RefPtr<CubebDeviceEnumerator> mEnumeratorMainThread;
+
  protected:
   
 
 
   DeviceInputTrackManager mDeviceInputTrackManagerGraphThread;
+  MediaEventListener mOutputDevicesChangedListener;
+  
+
+
+
+
+  std::atomic<CubebUtils::AudioDeviceID> mDefaultOutputDeviceID = {nullptr};
   
 
 
