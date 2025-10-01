@@ -11,10 +11,13 @@
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 
 
-
 #if !defined(WEBRTC_APM_DEBUG_DUMP) || \
     (WEBRTC_APM_DEBUG_DUMP != 0 && WEBRTC_APM_DEBUG_DUMP != 1)
 #error "Set WEBRTC_APM_DEBUG_DUMP to either 0 or 1"
+#endif
+
+#if WEBRTC_APM_DEBUG_DUMP == 1
+#include "rtc_base/strings/string_builder.h"
 #endif
 
 namespace webrtc {
