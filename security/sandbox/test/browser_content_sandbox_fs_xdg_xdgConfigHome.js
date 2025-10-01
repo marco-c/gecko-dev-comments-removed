@@ -1,0 +1,38 @@
+
+
+
+"use strict";
+
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/" +
+    "security/sandbox/test/browser_content_sandbox_utils.js",
+  this
+);
+
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/" +
+    "security/sandbox/test/browser_content_sandbox_fs_tests.js",
+  this
+);
+
+SimpleTest.requestCompleteLog();
+
+add_setup(async function setup() {
+  
+  const xdgConfigHome = Services.env.get("XDG_CONFIG_HOME");
+  Assert.greater(xdgConfigHome.length, 1, "XDG_CONFIG_HOME is defined");
+
+  
+  sanityChecks();
+});
+
+add_task(async function () {
+  
+  add_task(testFileAccessAllPlatforms); 
+
+  
+  
+  add_task(testFileAccessLinuxOnly); 
+
+  add_task(cleanupBrowserTabs); 
+});

@@ -15,13 +15,22 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-add_task(async function () {
-  
-  const xdgConfigHome = Services.env.get("XDG_CONFIG_HOME");
-  Assert.greater(xdgConfigHome.length, 1, "XDG_CONFIG_HOME is defined");
+SimpleTest.requestCompleteLog();
+
+add_setup(async function setup() {
+  const xdgConfigHome = Services.env.exists("XDG_CONFIG_HOME");
+  Assert.equal(xdgConfigHome, false, `XDG_CONFIG_HOME is not set`);
+
+  const mozLegacyHome = Services.env.exists("MOZ_LEGACY_HOME");
+  Assert.equal(mozLegacyHome, false, "MOZ_LEGACY_HOME is not set");
 
   
   sanityChecks();
+});
+
+add_task(async function () {
+  
+  add_task(testFileAccessAllPlatforms); 
 
   
   

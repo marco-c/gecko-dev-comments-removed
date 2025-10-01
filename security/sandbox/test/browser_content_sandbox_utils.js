@@ -44,6 +44,18 @@ function sanityChecks() {
   }
 }
 
+function isXdgEnabled() {
+  try {
+    return Services.prefs.getBoolPref("widget.support-xdg-config");
+  } catch (ex) {
+    
+    if (ex.name === "NS_ERROR_UNEXPECTED") {
+      return false;
+    }
+    throw ex;
+  }
+}
+
 
 
 
@@ -376,6 +388,7 @@ function GetProfileEntry(name) {
 }
 
 function GetDir(path) {
+  info(`GetDir(${path})`);
   let dir = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
   dir.initWithPath(path);
   Assert.ok(dir.isDirectory(), `${path} is a directory`);
