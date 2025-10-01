@@ -506,6 +506,12 @@ var gMKVtests = [
   },
   
   {
+    name: "output_vorbis.mkv",
+    type: "audio/matroska",
+    duration: 1.0,
+  },
+  
+  {
     name: "output_opus.mkv",
     type: "audio/matroska",
     duration: 1.0,
@@ -552,12 +558,6 @@ var gUnsupportedMKVtests = [
   {
     name: "output_av1.mkv",
     type: "video/matroska",
-    duration: 1.0,
-  },
-  
-  {
-    name: "output_vorbis.mkv",
-    type: "audio/matroska",
     duration: 1.0,
   },
   
