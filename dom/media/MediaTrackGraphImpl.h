@@ -591,9 +591,18 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
   bool OutputForAECIsPrimary() {
-    
     AssertOnGraphThread();
-    return mOutputDeviceForAEC == PrimaryOutputDeviceID();
+    if (mOutputDeviceForAEC == PrimaryOutputDeviceID()) {
+      
+      
+      return true;
+    }
+    
+    
+    
+    
+    return PrimaryOutputDeviceID() == DEFAULT_OUTPUT_DEVICE &&
+           mOutputDeviceForAEC == mDefaultOutputDeviceID;
   }
   CubebUtils::AudioDeviceID DefaultOutputDeviceID() const {
     return mDefaultOutputDeviceID.load(std::memory_order_relaxed);
