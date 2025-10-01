@@ -183,3 +183,14 @@ const calculateScrollbarThickness = () => {
 
     return widthBefore - widthAfter;
 }
+
+
+
+
+
+
+function dropEffectOnDropCallBack(event) {
+  assert_equals(event.target.textContent, event.dataTransfer.dropEffect);
+  assert_equals(event.target.textContent, event.dataTransfer.effectAllowed);
+  return true;
+}
