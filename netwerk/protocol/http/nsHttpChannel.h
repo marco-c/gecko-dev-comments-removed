@@ -885,6 +885,10 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   bool mWaitingForLNAPermission{false};
 
+  bool mUsingDictionary{false};  
+  bool mShouldSuspendForDictionary{false};
+  bool mSuspendedForDictionary{false};
+
  protected:
   virtual void DoNotifyListenerCleanup() override;
 
