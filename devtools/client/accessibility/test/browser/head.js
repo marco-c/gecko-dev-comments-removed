@@ -450,8 +450,9 @@ async function checkToolbarState(doc, activeToolbarFilters) {
 
 
 
+
 async function checkSimulationState(doc, toolboxDoc, expected) {
-  const { buttonActive, checkedOptionIndices } = expected;
+  const { buttonActive, checkedOptionIndices, colorMatrix } = expected;
 
   
   await waitFor(
@@ -482,6 +483,19 @@ async function checkSimulationState(doc, toolboxDoc, expected) {
       );
     });
   }
+
+  const docShellColorMatrix = await SpecialPowers.spawn(
+    gBrowser.selectedBrowser,
+    [],
+    () => content.window.docShell.getColorMatrix()
+  );
+  Assert.deepEqual(
+    
+    
+    docShellColorMatrix.map(v => v.toFixed(6)),
+    colorMatrix,
+    `docShell color matrix has expected value`
+  );
 }
 
 
