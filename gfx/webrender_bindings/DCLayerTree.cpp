@@ -1639,6 +1639,12 @@ void DCSwapChain::Bind(const wr::DeviceIntRect* aDirtyRects,
 }
 
 bool DCSwapChain::Resize(wr::DeviceIntSize aSize) {
+  MOZ_ASSERT(mSwapChain);
+
+  if (!mSwapChain) {
+    return false;
+  }
+
   const auto gl = mDCLayerTree->GetGLContext();
 
   const auto& gle = gl::GLContextEGL::Cast(gl);
@@ -1702,6 +1708,12 @@ bool DCSwapChain::Resize(wr::DeviceIntSize aSize) {
 void DCSwapChain::Present(const wr::DeviceIntRect* aDirtyRects,
                           size_t aNumDirtyRects) {
   MOZ_ASSERT_IF(aNumDirtyRects > 0, !mFirstPresent);
+
+  MOZ_ASSERT(mSwapChain);
+
+  if (!mSwapChain) {
+    return;
+  }
 
   HRESULT hr = S_OK;
   int rectsCount = 0;
@@ -1964,7 +1976,8 @@ void DCSurfaceVideo::AttachExternalImage(wr::ExternalImageId aExternalImage) {
   
   
   if (!texture || !texture->AsRenderDXGITextureHost() ||
-      texture->GetFormat() != gfx::SurfaceFormat::NV12) {
+      ((texture->GetFormat() != gfx::SurfaceFormat::NV12) &&
+       (texture->GetFormat() != gfx::SurfaceFormat::P010))) {
     gfxCriticalNote << "Unsupported RenderTexture for overlay: "
                     << gfx::hexa(texture);
     return;
