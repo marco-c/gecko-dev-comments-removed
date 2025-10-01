@@ -74,19 +74,15 @@ Environment AssembleEnvironment(PeerConnectionFactoryDependencies& deps) {
   
   
   
-  EnvironmentFactory env_factory = deps.env.has_value()
-                                       ? EnvironmentFactory(*deps.env)
-                                       : EnvironmentFactory();
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-  env_factory.Set(std::move(deps.trials));
-  env_factory.Set(std::move(deps.task_queue_factory));
-#pragma clang diagnostic pop
+  if (!deps.env.has_value()) {
+    return CreateEnvironment();
+  }
 
+  Environment env = *std::move(deps.env);
   
   
   deps.env = std::nullopt;
-  return env_factory.Create();
+  return env;
 }
 
 }  
