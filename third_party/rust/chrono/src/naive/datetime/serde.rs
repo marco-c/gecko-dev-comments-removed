@@ -979,7 +979,7 @@ pub mod ts_seconds {
         where
             E: de::Error,
         {
-            DateTime::from_timestamp_secs(value)
+            DateTime::from_timestamp(value, 0)
                 .map(|dt| dt.naive_utc())
                 .ok_or_else(|| invalid_ts(value))
         }
@@ -991,7 +991,7 @@ pub mod ts_seconds {
             if value > i64::MAX as u64 {
                 Err(invalid_ts(value))
             } else {
-                DateTime::from_timestamp_secs(value as i64)
+                DateTime::from_timestamp(value as i64, 0)
                     .map(|dt| dt.naive_utc())
                     .ok_or_else(|| invalid_ts(value))
             }

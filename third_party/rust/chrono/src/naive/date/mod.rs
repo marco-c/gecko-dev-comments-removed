@@ -27,8 +27,6 @@ use rkyv::{Archive, Deserialize, Serialize};
 #[cfg(all(feature = "unstable-locales", feature = "alloc"))]
 use pure_rust_locales::Locale;
 
-use super::internals::{Mdf, YearFlags};
-use crate::datetime::UNIX_EPOCH_DAY;
 #[cfg(feature = "alloc")]
 use crate::format::DelayedFormat;
 use crate::format::{
@@ -39,6 +37,8 @@ use crate::month::Months;
 use crate::naive::{Days, IsoWeek, NaiveDateTime, NaiveTime, NaiveWeek};
 use crate::{Datelike, TimeDelta, Weekday};
 use crate::{expect, try_opt};
+
+use super::internals::{Mdf, YearFlags};
 
 #[cfg(test)]
 mod tests;
@@ -382,35 +382,6 @@ impl NaiveDate {
         let (year_mod_400, ordinal) = cycle_to_yo(cycle as u32);
         let flags = YearFlags::from_year_mod_400(year_mod_400 as i32);
         NaiveDate::from_ordinal_and_flags(year_div_400 * 400 + year_mod_400 as i32, ordinal, flags)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[must_use]
-    pub const fn from_epoch_days(days: i32) -> Option<NaiveDate> {
-        let ce_days = try_opt!(days.checked_add(UNIX_EPOCH_DAY as i32));
-        NaiveDate::from_num_days_from_ce_opt(ce_days)
     }
 
     
@@ -1440,23 +1411,6 @@ impl NaiveDate {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub const fn to_epoch_days(&self) -> i32 {
-        self.num_days_from_ce() - UNIX_EPOCH_DAY as i32
-    }
-
-    
-    
-    
-    
     #[inline]
     const fn from_yof(yof: i32) -> NaiveDate {
         
@@ -2274,7 +2228,7 @@ impl fmt::Debug for NaiveDate {
             write_hundreds(f, (year % 100) as u8)?;
         } else {
             
-            write!(f, "{year:+05}")?;
+            write!(f, "{:+05}", year)?;
         }
 
         f.write_char('-')?;
