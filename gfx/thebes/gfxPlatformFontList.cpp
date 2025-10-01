@@ -32,6 +32,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/StaticPrefs_mathml.h"
 #include "mozilla/glean/GfxMetrics.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/BlobImpl.h"
@@ -278,6 +279,9 @@ bool gfxPlatformFontList::Initialize(gfxPlatformFontList* aList) {
       StaticPrefs::gfx_font_list_omt_enabled_AtStartup() &&
       StaticPrefs::gfx_e10s_font_list_shared_AtStartup() &&
       !gfxPlatform::InSafeMode()) {
+    
+    
+    nsRFPService::CalculateFontLocaleAllowlist();
     sInitFontListThread = PR_CreateThread(
         PR_USER_THREAD, InitFontListCallback, aList, PR_PRIORITY_NORMAL,
         PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 0);
@@ -2255,6 +2259,15 @@ void gfxPlatformFontList::AddGenericFonts(
   AutoLock lock(mLock);
 
   
+  
+  
+  if (StaticPrefs::mathml_font_family_math_enabled() &&
+      aGenericType == StyleGenericFontFamily::Math) {
+    aGenericType = StyleGenericFontFamily::Serif;
+    aLanguage = nsGkAtoms::x_math;
+  }
+
+  
   nsAtom* langGroup = GetLangGroup(aLanguage);
 
   
@@ -2718,6 +2731,8 @@ nsAtom* gfxPlatformFontList::GetLangGroup(nsAtom* aLanguage) {
       return "cursive";
     case StyleGenericFontFamily::Fantasy:
       return "fantasy";
+    case StyleGenericFontFamily::Math:
+      return "math";
     case StyleGenericFontFamily::SystemUi:
       return "system-ui";
     case StyleGenericFontFamily::MozEmoji:

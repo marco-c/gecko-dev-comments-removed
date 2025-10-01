@@ -72,6 +72,11 @@ struct LangGroupFontPrefs {
         return &mDefaultCursiveFont;
       case StyleGenericFontFamily::Fantasy:
         return &mDefaultFantasyFont;
+      case StyleGenericFontFamily::Math:
+        
+        
+        
+        return &mDefaultSerifFont;
       case StyleGenericFontFamily::SystemUi:
         return &mDefaultSystemUiFont;
       case StyleGenericFontFamily::MozEmoji:

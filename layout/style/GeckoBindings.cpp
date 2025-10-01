@@ -1801,6 +1801,8 @@ void StyleSingleFontFamily::AppendToString(nsACString& aName,
       return aName.AppendLiteral("cursive");
     case StyleGenericFontFamily::Fantasy:
       return aName.AppendLiteral("fantasy");
+    case StyleGenericFontFamily::Math:
+      return aName.AppendLiteral("math");
     case StyleGenericFontFamily::SystemUi:
       return aName.AppendLiteral("system-ui");
   }
@@ -1963,25 +1965,30 @@ bool Gecko_GetAnchorPosOffset(const AnchorPosOffsetResolutionParams* aParams,
     return LogicalEdge::Start;
   }();
 
-  
-  const auto opposite =
-      propEdge != anchorEdge && propEdge != LogicalEdge::Start;
-  const auto size = logicalCBSize.Size(propAxis, wm);
-  const auto offset = anchorEdge == LogicalEdge::Start
-                          ? logicalAnchorRect.Start(propAxis, wm)
-                          : logicalAnchorRect.End(propAxis, wm);
-  const auto side = opposite ? size - offset : offset;
-  nscoord result = side;
+  nscoord result = [&]() {
+    
+    
+    const auto anchorOffsetFromStartEdge =
+        anchorEdge == LogicalEdge::Start ? logicalAnchorRect.Start(propAxis, wm)
+                                         : logicalAnchorRect.End(propAxis, wm);
+    if (propEdge == LogicalEdge::Start) {
+      return anchorOffsetFromStartEdge;
+    }
+    
+    const auto anchorOffsetFromEndEdge =
+        logicalCBSize.Size(propAxis, wm) - anchorOffsetFromStartEdge;
+    return anchorOffsetFromEndEdge;
+  }();
 
   
   
   if (aPercentage != 0.f) {
     const nscoord anchorSize = LogicalSize{wm, rect.Size()}.Size(propAxis, wm);
-    result = side + (opposite ? -1 : 1) *
-                        ((aPercentage != 1.f)
-                             ? NSToCoordRoundWithClamp(
-                                   aPercentage * static_cast<float>(anchorSize))
-                             : anchorSize);
+    result += (propEdge == LogicalEdge::End ? -1 : 1) *
+              ((aPercentage != 1.f)
+                   ? NSToCoordRoundWithClamp(aPercentage *
+                                             static_cast<float>(anchorSize))
+                   : anchorSize);
   }
   *aOut = Length::FromPixels(CSSPixel::FromAppUnits(result));
   return true;
