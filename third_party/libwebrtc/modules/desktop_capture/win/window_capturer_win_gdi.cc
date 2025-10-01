@@ -162,7 +162,7 @@ void WindowCapturerWinGdi::Start(Callback* callback) {
 
 void WindowCapturerWinGdi::CaptureFrame() {
   RTC_DCHECK(callback_);
-  int64_t capture_start_time_nanos = webrtc::TimeNanos();
+  int64_t capture_start_time_nanos = TimeNanos();
 
   CaptureResults results = CaptureFrame( true);
   if (!results.frame) {
@@ -173,8 +173,8 @@ void WindowCapturerWinGdi::CaptureFrame() {
     return;
   }
 
-  int capture_time_ms = (webrtc::TimeNanos() - capture_start_time_nanos) /
-                        webrtc::kNumNanosecsPerMillisec;
+  int capture_time_ms =
+      (TimeNanos() - capture_start_time_nanos) / kNumNanosecsPerMillisec;
   RTC_HISTOGRAM_COUNTS_1000(
       "WebRTC.DesktopCapture.Win.WindowGdiCapturerFrameTime", capture_time_ms);
   results.frame->set_capture_time_ms(capture_time_ms);
@@ -303,7 +303,7 @@ WindowCapturerWinGdi::CaptureResults WindowCapturerWinGdi::CaptureFrame(
   
   
   
-  if (webrtc::rtc_win::GetVersion() >= webrtc::rtc_win::Version::VERSION_WIN8) {
+  if (rtc_win::GetVersion() >= rtc_win::Version::VERSION_WIN8) {
     
     
     

@@ -84,7 +84,7 @@ class RTC_EXPORT DxgiDuplicatorController {
   static std::string ResultName(Result result);
 
   
-  static webrtc::scoped_refptr<DxgiDuplicatorController> Instance();
+  static scoped_refptr<DxgiDuplicatorController> Instance();
 
   
   static bool IsCurrentSessionSupported();
@@ -134,7 +134,7 @@ class RTC_EXPORT DxgiDuplicatorController {
 
   
   
-  friend class webrtc::scoped_refptr<DxgiDuplicatorController>;
+  friend class scoped_refptr<DxgiDuplicatorController>;
 
   
   
