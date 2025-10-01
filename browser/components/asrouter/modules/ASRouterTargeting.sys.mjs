@@ -38,6 +38,11 @@ const { ClientID } = ChromeUtils.importESModule(
   "resource://gre/modules/ClientID.sys.mjs"
 );
 
+// eslint-disable-next-line mozilla/use-static-import
+const { PlacesUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/PlacesUtils.sys.mjs"
+);
+
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -49,6 +54,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource:///modules/asrouter/ASRouterPreferences.sys.mjs",
   AttributionCode:
     "moz-src:///browser/components/attribution/AttributionCode.sys.mjs",
+  BackupService: "resource:///modules/backup/BackupService.sys.mjs",
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   ClientEnvironment: "resource://normandy/lib/ClientEnvironment.sys.mjs",
@@ -212,7 +218,12 @@ const { activityStreamProvider: asProvider } = NewTabUtils;
 const FRECENT_SITES_UPDATE_INTERVAL = 6 * 60 * 60 * 1000; // Six hours
 const FRECENT_SITES_IGNORE_BLOCKED = false;
 const FRECENT_SITES_NUM_ITEMS = 25;
-const FRECENT_SITES_MIN_FRECENCY = 100;
+// 2 visits, 30 days ago.
+const FRECENT_SITES_MIN_FRECENCY = PlacesUtils.history.pageFrecencyThreshold(
+  30,
+  2,
+  false
+);
 
 const CACHE_EXPIRATION = 5 * 60 * 1000;
 const jexlEvaluationCache = new Map();
@@ -408,6 +419,22 @@ export const QueryCache = {
       null,
       FRECENT_SITES_UPDATE_INTERVAL,
       ClientID
+    ),
+    backupsInfo: new CachedTargetingGetter(
+      "findBackupsInWellKnownLocations",
+      null,
+      FRECENT_SITES_UPDATE_INTERVAL,
+      {
+        async findBackupsInWellKnownLocations() {
+          let bs;
+          try {
+            bs = lazy.BackupService.get();
+          } catch {
+            bs = lazy.BackupService.init();
+          }
+          return bs.findBackupsInWellKnownLocations();
+        },
+      }
     ),
   },
 };
@@ -1268,6 +1295,10 @@ const TargetingGetters = {
 
   get buildId() {
     return parseInt(AppConstants.MOZ_BUILDID, 10);
+  },
+
+  get backupsInfo() {
+    return QueryCache.getters.backupsInfo.get().catch(() => null);
   },
 };
 

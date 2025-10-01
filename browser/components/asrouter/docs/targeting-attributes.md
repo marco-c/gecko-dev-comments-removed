@@ -16,6 +16,7 @@ Please note that some targeting attributes require stricter controls on the tele
 * [attachedFxAOAuthClients](#attachedfxaoauthclients)
 * [attributionData](#attributiondata)
 * [backgroundTaskName](#backgroundtaskname)
+* [backupsInfo](#backupsinfo)
 * [blockedCountByType](#blockedcountbytype)
 * [browserIsSelected](#browserisselected)
 * [browserSettings](#browsersettings)
@@ -555,9 +556,9 @@ Information about the browser's top 25 frecent sites.
 
 
 #### Examples
-* Is mozilla.com in the user's top frecent sites with a frececy greater than 400?
+* Is `mozilla.com` in the user's top frecent sites and with a last visit date greater than April 4th, 2018(UNIX Epoch timestamp 1522843725924)?
 ```java
-"mozilla.com" in topFrecentSites[.frecency >= 400]|mapToProperty("host")
+"mozilla.com" in topFrecentSites[.lastVisitDate > 1522843725924]|mapToProperty("host")
 ```
 
 #### Definition
@@ -568,6 +569,7 @@ interface TopSite {
   url: string;
   // e.g. foo.mozilla.com
   host: string;
+  // Deprecated property unsupported in Firefox 145+, refer to bug 1987415 for guidance on future options.
   frecency: number;
   lastVisitDate: UnixEpochNumber;
 }
@@ -1150,3 +1152,23 @@ Returns the stable profile group ID used for data reporting.
 ### `currentProfileId`
 
 The integer-valued identifier of the current selectable profile, as reported by `SelectableProfileService`, converted to a string.
+
+### `backupsInfo`
+
+Provides information about the backups a user has in the default directory.
+
+#### Definition
+
+```ts
+declare const backupsInfo: {
+  // True if exactly one backup was found.
+  found: boolean;
+
+  // True if multiple backups were found.
+  multipleBackupsFound: boolean;
+
+  // Absolute path to the selected backup to restore when `found` is true.
+  // Null when no single file is selected (none or multiple).
+  backupFileToRestore: string | null;
+};
+```
