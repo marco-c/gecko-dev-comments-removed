@@ -65,7 +65,8 @@ struct SHEntrySharedState {
         mPrincipalToInherit(aPrincipalToInherit),
         mPartitionedPrincipalToInherit(aPartitionedPrincipalToInherit),
         mPolicyContainer(aPolicyContainer),
-        mContentType(aContentType) {}
+        mContentType(aContentType),
+        mNavigationState(MakeRefPtr<nsStructuredCloneContainer>()) {}
 
   
   
