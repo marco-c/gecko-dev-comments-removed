@@ -7,6 +7,8 @@
 
 #include "Dictionary.h"
 
+#include "CacheFileUtils.h"
+#include "nsString.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsIAsyncInputStream.h"
 #include "nsICacheStorageService.h"
@@ -40,7 +42,6 @@
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/glean/NetwerkMetrics.h"
 
-#include "mozilla/net/MozURL.h"
 #include "mozilla/net/NeckoCommon.h"
 #include "mozilla/net/NeckoParent.h"
 #include "mozilla/net/NeckoChild.h"
@@ -95,6 +96,7 @@ bool DictionaryCacheEntry::Match(const nsACString& aFilePath,
     return false;
   }
   if (mNotCached) {
+    
     
     return false;
   }
@@ -159,6 +161,10 @@ nsresult DictionaryCacheEntry::Prefetch(nsILoadContextInfo* aLoadContextInfo,
   
   
   if (mWaitingPrefetch.IsEmpty()) {
+    
+    
+    
+    
     if (!mDictionaryDataComplete) {
       
       
@@ -190,6 +196,10 @@ nsresult DictionaryCacheEntry::Prefetch(nsILoadContextInfo* aLoadContextInfo,
         
         aShouldSuspend = false;
         
+        if (mOrigin) {
+          mOrigin->RemoveEntry(this);
+          mOrigin = nullptr;
+        }
         return NS_ERROR_FAILURE;
       }
       mWaitingPrefetch.AppendElement(aFunc);
@@ -256,7 +266,6 @@ void DictionaryCacheEntry::FinishHash() {
       if (!mBlocked) {
         mOrigin->FinishAddEntry(this);
       }
-      mOrigin = nullptr;
     }
   }
 }
@@ -325,6 +334,7 @@ nsresult DictionaryCacheEntry::Write(nsICacheEntry* aCacheEntry) {
 }
 
 nsresult DictionaryCacheEntry::RemoveEntry(nsICacheEntry* aCacheEntry) {
+  DICTIONARY_LOG(("RemoveEntry from metadata for %s", mURI.get()));
   return aCacheEntry->SetMetaDataElement(mURI.BeginReading(), nullptr);
 }
 
@@ -450,7 +460,7 @@ void DictionaryCacheEntry::UnblockAddEntry(DictionaryOrigin* aOrigin) {
   mBlocked = false;
 }
 
-void DictionaryCacheEntry::WriteOnHash(DictionaryOrigin* aOrigin) {
+void DictionaryCacheEntry::WriteOnHash() {
   bool hasHash = false;
   {
     MOZ_ASSERT(NS_IsMainThread());
@@ -458,12 +468,9 @@ void DictionaryCacheEntry::WriteOnHash(DictionaryOrigin* aOrigin) {
       hasHash = true;
     }
   }
-  if (hasHash) {
+  if (hasHash && mOrigin) {
     DICTIONARY_LOG(("Write already hashed"));
-    aOrigin->Write(this);
-  } else if (!mStopReceived) {
-    
-    mOrigin = aOrigin;
+    mOrigin->Write(this);
   }
 }
 
@@ -656,6 +663,7 @@ DictionaryOriginReader::OnStopRequest(nsIRequest* request, nsresult result) {
 
 
 already_AddRefed<DictionaryCache> DictionaryCache::GetInstance() {
+  
   if (!gDictionaryCache) {
     gDictionaryCache = new DictionaryCache();
     MOZ_ASSERT(NS_SUCCEEDED(gDictionaryCache->Init()));
@@ -721,15 +729,18 @@ already_AddRefed<DictionaryCacheEntry> DictionaryCache::AddEntry(
       
 
       
+      aDictEntry->SetOrigin(origin);
+
+      
       RefPtr<DictionaryOriginReader> reader = new DictionaryOriginReader();
       reader->Start(
           origin, prepath, aURI, this,
-          [origin, aDictEntry](
+          [entry = RefPtr(aDictEntry)](
               DictionaryCacheEntry*
                   aDict) {  
             
             
-            aDictEntry->WriteOnHash(origin);
+            aDictEntry->WriteOnHash();
             return NS_OK;
           });
       return origin;
@@ -746,6 +757,8 @@ nsresult DictionaryCache::RemoveEntry(nsIURI* aURI, const nsACString& aKey) {
   if (NS_FAILED(aURI->GetPrePath(prepath))) {
     return NS_ERROR_FAILURE;
   }
+  DICTIONARY_LOG(("Dictionary RemoveEntry for %s : %s", prepath.get(),
+                  PromiseFlatCString(aKey).get()));
   if (auto origin = mDictionaryCache.Lookup(prepath)) {
     return origin.Data()->RemoveEntry(aKey);
   }
@@ -760,16 +773,91 @@ void DictionaryCache::Clear() {
 }
 
 
-void DictionaryCache::RemoveDictionaryFor(const nsACString& aKey) {
-  RefPtr<MozURL> url;
-  nsresult rv = MozURL::Init(getter_AddRefs(url), aKey);
-  if (NS_SUCCEEDED(rv)) {
-    nsDependentCSubstring prepath = url->PrePath();
 
-    if (auto origin = mDictionaryCache.Lookup(prepath)) {
-      origin.Data()->RemoveEntry(aKey);
+void DictionaryCache::RemoveDictionaryFor(const nsACString& aKey) {
+  RefPtr<DictionaryCache> cache = GetInstance();
+  NS_DispatchToMainThread(NewRunnableMethod<const nsCString>(
+      "DictionaryCache::RemoveDictionaryFor", cache,
+      &DictionaryCache::RemoveDictionary, aKey));
+}
+
+
+void DictionaryCache::RemoveDictionary(const nsACString& aKey) {
+  DICTIONARY_LOG(
+      ("Removing dictionary for %s", PromiseFlatCString(aKey).get()));
+  nsCString enhance;
+  nsCString urlstring;
+  nsCOMPtr<nsILoadContextInfo> info =
+      CacheFileUtils::ParseKey(aKey, &enhance, &urlstring);
+  MOZ_ASSERT(info);
+  if (!info) {
+    DICTIONARY_LOG(("DictionaryCache::RemoveDictionary() - Cannot parse key!"));
+    return;
+  }
+  nsCOMPtr<nsIURI> url;
+  nsresult rv = NS_NewURI(getter_AddRefs(url), urlstring);
+  if (NS_SUCCEEDED(rv)) {
+    nsCString prepath;
+    if (NS_SUCCEEDED(url->GetPrePath(prepath))) {
+      if (auto origin = mDictionaryCache.Lookup(prepath)) {
+        origin.Data()->RemoveEntry(urlstring);
+      }
     }
   }
+}
+
+
+
+
+void DictionaryCache::RemoveDictionaries(nsIURI* aURI) {
+  RefPtr<DictionaryCache> cache = GetInstance();
+  nsDependentCSubstring spec;  
+  if (NS_FAILED(aURI->GetSpec(spec))) {
+    return;
+  }
+
+  DICTIONARY_LOG(("Removing all dictionaries for %s (%zu)",
+                  PromiseFlatCString(spec).get(), spec.Length()));
+  RefPtr<DictionaryOrigin> origin;
+  
+  
+  cache->mDictionaryCache.RemoveIf([&spec](auto& entry) {
+    
+    
+    
+    
+    
+    
+    if (entry.Data()->mOrigin.Length() > spec.Length() &&
+        (entry.Data()->mOrigin[spec.Length() - 1] == '/' ||   
+         entry.Data()->mOrigin[spec.Length() - 1] == ':')) {  
+      
+      nsDependentCSubstring host =
+          Substring(entry.Data()->mOrigin, 0,
+                    spec.Length() - 1);  
+      nsDependentCSubstring temp =
+          Substring(spec, 0, spec.Length() - 1);  
+      if (temp.Equals(host)) {
+        DICTIONARY_LOG(
+            ("Removing dictionary for %s", entry.Data()->mOrigin.get()));
+        entry.Data()->Clear();
+        return true;
+      }
+    }
+    return false;
+  });
+}
+
+
+
+void DictionaryCache::RemoveAllDictionaries() {
+  RefPtr<DictionaryCache> cache = GetInstance();
+
+  DICTIONARY_LOG(("Removing all dictionaries"));
+  for (auto& origin : cache->mDictionaryCache) {
+    origin.GetData()->Clear();
+  }
+  cache->mDictionaryCache.Clear();
 }
 
 
@@ -929,10 +1017,33 @@ already_AddRefed<DictionaryCacheEntry> DictionaryOrigin::AddEntry(
 }
 
 nsresult DictionaryOrigin::RemoveEntry(const nsACString& aKey) {
+  DICTIONARY_LOG(
+      ("DictionaryOrigin::RemoveEntry for %s", PromiseFlatCString(aKey).get()));
   for (const auto& dict : mEntries) {
     if (dict->GetURI().Equals(aKey)) {
+      
+      RefPtr<DictionaryCacheEntry> hold(dict);
       mEntries.RemoveElement(dict);
-      dict->RemoveEntry(mEntry);
+      hold->RemoveEntry(mEntry);
+      if (MOZ_UNLIKELY(
+              MOZ_LOG_TEST(gDictionaryLog, mozilla::LogLevel::Debug))) {
+        DumpEntries();
+      }
+      return NS_OK;
+    }
+  }
+  DICTIONARY_LOG(("DictionaryOrigin::RemoveEntry (pending) for %s",
+                  PromiseFlatCString(aKey).get()));
+  for (const auto& dict : mPendingEntries) {
+    if (dict->GetURI().Equals(aKey)) {
+      
+      RefPtr<DictionaryCacheEntry> hold(dict);
+      mPendingEntries.RemoveElement(dict);
+      hold->RemoveEntry(mEntry);
+      if (MOZ_UNLIKELY(
+              MOZ_LOG_TEST(gDictionaryLog, mozilla::LogLevel::Debug))) {
+        DumpEntries();
+      }
       return NS_OK;
     }
   }
@@ -949,7 +1060,19 @@ void DictionaryOrigin::FinishAddEntry(DictionaryCacheEntry* aEntry) {
 }
 
 void DictionaryOrigin::RemoveEntry(DictionaryCacheEntry* aEntry) {
-  mEntries.RemoveElement(aEntry);
+  DICTIONARY_LOG(("RemoveEntry(%s)", aEntry->mURI.get()));
+  if (!mEntries.RemoveElement(aEntry)) {
+    mPendingEntries.RemoveElement(aEntry);
+  }
+  if (MOZ_UNLIKELY(MOZ_LOG_TEST(gDictionaryLog, mozilla::LogLevel::Debug))) {
+    DumpEntries();
+  }
+}
+
+void DictionaryOrigin::Clear() {
+  mEntries.Clear();
+  mPendingEntries.Clear();
+  mEntry->AsyncDoom(nullptr);
 }
 
 
