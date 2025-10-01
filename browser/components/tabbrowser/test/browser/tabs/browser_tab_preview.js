@@ -111,6 +111,9 @@ async function resetState() {
 
   let openPanels = getOpenPanels();
   Assert.ok(!openPanels.length, `sanity check: no panels open`);
+
+  await Services.fog.testFlushAllChildren();
+  Services.fog.testResetFOG();
 }
 
 function createFakePanel(win = window) {
@@ -129,8 +132,6 @@ add_setup(async function () {
       ["browser.tabs.hoverPreview.enabled", true],
       ["browser.tabs.hoverPreview.showThumbnails", false],
       ["browser.tabs.tooltipsShowPidAndActiveness", false],
-      ["sidebar.revamp", false],
-      ["sidebar.verticalTabs", false],
       ["test.wait300msAfterTabSwitch", true],
       ["ui.tooltip.delay_ms", 0],
     ],
@@ -467,6 +468,7 @@ add_task(async function tabUrlBarInputTests() {
 
 
 add_task(async function tabWheelTests() {
+  let initialTab = gBrowser.tabs[0];
   const previewPanel = document.getElementById(TAB_PREVIEW_PANEL_ID);
   const tab1 = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
@@ -482,7 +484,7 @@ add_task(async function tabWheelTests() {
     gBrowser.tabContainer.arrowScrollbox,
     "overflow"
   );
-  BrowserTestUtils.overflowTabs(registerCleanupFunction, window, {
+  await BrowserTestUtils.overflowTabs(registerCleanupFunction, window, {
     overflowAtStart: false,
   });
   await scrollOverflowEvent;
@@ -494,10 +496,8 @@ add_task(async function tabWheelTests() {
     "Panel has rolluponmousewheel=true when tabs overflow"
   );
 
-  
-  while (gBrowser.tabs.length > 1) {
-    BrowserTestUtils.removeTab(gBrowser.tabs[0]);
-  }
+  await closeTabPreviews();
+  gBrowser.removeAllTabsBut(initialTab);
   await resetState();
 });
 
@@ -903,7 +903,7 @@ add_task(async function delayTests() {
     "Delay is not reset when moving between tabs"
   );
 
-  EventUtils.synthesizeMouseAtCenter(document.getElementById("reload-button"), {
+  EventUtils.synthesizeMouseAtCenter(document.getElementById("back-button"), {
     type: "mousemove",
   });
 
@@ -1477,4 +1477,52 @@ add_task(async function testTabAndTabGroupsWorkTogether() {
   BrowserTestUtils.removeTab(tabToLeft);
   BrowserTestUtils.removeTab(tabToRight);
   await removeTabGroup(group);
+});
+
+add_task(async function testTabGroupHoverPreviewTelemetry() {
+  const previewPanel = window.document.getElementById(
+    TAB_GROUP_PREVIEW_PANEL_ID
+  );
+  let tabGroups = [];
+
+  for (let i = 0; i < 5; i++) {
+    const tab = await addTabTo(gBrowser, `data:text/plain,tab${i + 1}`);
+    const tabGroup = gBrowser.addTabGroup([tab], { label: `group${i + 1}` });
+    await TabGroupTestUtils.toggleCollapsed(tabGroup, true);
+    tabGroups.push(tabGroup);
+  }
+
+  Assert.ok(
+    !Glean.tabgroup.groupInteractions.hover_preview.testGetValue(),
+    "hover preview interaction count should start out not set"
+  );
+
+  let interactionCount = 1;
+
+  for (const tabGroup of tabGroups) {
+    await openGroupPreview(tabGroup);
+    await BrowserTestUtils.waitForCondition(
+      () => previewPanel.anchorNode?.parentElement == tabGroup,
+      "panel re-anchored to the next tab group"
+    );
+    await BrowserTestUtils.waitForCondition(
+      () =>
+        Glean.tabgroup.groupInteractions.hover_preview.testGetValue() ==
+        interactionCount,
+      `hover preview interaction count incremented`
+    );
+    Assert.equal(
+      Glean.tabgroup.groupInteractions.hover_preview.testGetValue(),
+      interactionCount,
+      `hover preview interaction count should be ${interactionCount}`
+    );
+    interactionCount++;
+  }
+
+  await Promise.all(
+    tabGroups.map(tabGroup => TabGroupTestUtils.removeTabGroup(tabGroup))
+  );
+
+  TabGroupTestUtils.forgetSavedTabGroups();
+  await resetState();
 });
