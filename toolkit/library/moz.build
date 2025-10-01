@@ -235,6 +235,10 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
         "-framework CoreMedia",
         "-framework IOKit",
         "-weak_framework ScreenCaptureKit",
+        
+        
+        
+        "-weak_framework _LocationEssentials",
         "cups",
     ]
     USE_LIBS += [
