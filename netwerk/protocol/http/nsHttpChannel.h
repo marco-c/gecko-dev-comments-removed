@@ -312,6 +312,14 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   void AddStorageAccessHeadersToRequest();
 
+ public:
+  
+  
+  
+  
+  bool StorageAccessReloadedChannel();
+
+ private:
   
   
   
@@ -708,7 +716,8 @@ class nsHttpChannel final : public HttpBaseChannel,
     
     (uint32_t, HTTPSSVCTelemetryReported, 1),
     (uint32_t, EchConfigUsed, 1),
-    (uint32_t, AuthRedirectedChannel, 1)
+    (uint32_t, AuthRedirectedChannel, 1),
+    (uint32_t, StorageAccessReloadChannel, 1)
   ))
   
   enum CachedContentValidity : uint8_t { Unset = 0, Invalid = 1, Valid = 2 };

@@ -1195,6 +1195,33 @@ bool IsPrivateNetworkAccess(
 bool IsLocalHostAccess(const nsILoadInfo::IPAddressSpace aParentIPAddressSpace,
                        const nsILoadInfo::IPAddressSpace aTargetIPAddressSpace);
 
+enum ActivateStorageAccessVariant {
+  
+  
+  
+  
+  Load,
+  
+  
+  
+  
+  RetryOrigin,
+  
+  
+  
+  RetryAny,
+};
+
+struct ActivateStorageAccess {
+  ActivateStorageAccessVariant variant;
+  
+  
+  nsCString origin;
+};
+
+Result<ActivateStorageAccess, nsresult> ParseActivateStorageAccess(
+    const nsACString& aActivateStorageAcess);
+
 }  
 }  
 
