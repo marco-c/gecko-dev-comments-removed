@@ -3608,11 +3608,34 @@ void ScriptLoader::UpdateCache() {
 
     RefPtr<JS::Stencil> stencil;
     stencil = FinishCollectingDelazifications(aes.cx(), request);
-    if (stencil) {
-      MOZ_ASSERT_IF(request->IsStencil(), stencil == request->GetStencil());
+    if (mCache) {
+      if (stencil) {
+        MOZ_ASSERT_IF(request->IsStencil(), stencil == request->GetStencil());
 
-      
-      if (!mCache) {
+        
+        
+        
+        
+        
+        
+        MOZ_ASSERT_IF(request->HasDiskCacheReference(),
+                      !request->SRIAndBytecode().empty());
+
+        if (request->IsMarkedForDiskCache()) {
+          MOZ_ASSERT(request->HasDiskCacheReference());
+          MOZ_ASSERT(request->SRIAndBytecode().length() ==
+                     request->GetSRILength());
+
+          EncodeBytecodeAndSave(aes.cx(), request, request->mCacheInfo,
+                                BytecodeMimeTypeFor(request),
+                                request->SRIAndBytecode(), stencil);
+
+          request->DropBytecode();
+        }
+      }
+      request->DropDiskCacheReference();
+    } else {
+      if (stencil) {
         MOZ_ASSERT(request->SRIAndBytecode().length() ==
                    request->GetSRILength());
 
@@ -3622,8 +3645,8 @@ void ScriptLoader::UpdateCache() {
 
         request->DropBytecode();
       }
+      request->DropDiskCacheReference();
     }
-    request->DropDiskCacheReference();
   }
 }
 
@@ -3654,7 +3677,6 @@ void ScriptLoader::EncodeBytecodeAndSave(
     JSContext* aCx, ScriptLoadRequest* aRequest,
     nsCOMPtr<nsICacheInfoChannel>& aCacheInfo, nsCString& aMimeType,
     const JS::TranscodeBuffer& aSRI, JS::Stencil* aStencil) {
-  MOZ_ASSERT(!mCache);
   MOZ_ASSERT(aCacheInfo);
 
   using namespace mozilla::Telemetry;
