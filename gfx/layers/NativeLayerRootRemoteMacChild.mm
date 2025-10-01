@@ -5,7 +5,6 @@
 
 #include "mozilla/layers/NativeLayerRemoteMac.h"
 #include "mozilla/layers/NativeLayerRootRemoteMacChild.h"
-#include "mozilla/layers/NativeLayerRootRemoteMacSnapshotter.h"
 #include "mozilla/layers/SurfacePool.h"
 
 namespace mozilla {
@@ -70,19 +69,6 @@ void NativeLayerRootRemoteMacChild::SetLayers(
   mNativeLayers.AppendElements(layers);
 }
 
-UniquePtr<NativeLayerRootSnapshotter>
-NativeLayerRootRemoteMacChild::CreateSnapshotter() {
-  MOZ_RELEASE_ASSERT(!mWeakSnapshotter,
-                     "No NativeLayerRootSnapshotter for this NativeLayerRoot "
-                     "should exist when this is called");
-
-  auto cr = NativeLayerRootRemoteMacSnapshotter::Create(this);
-  if (cr) {
-    mWeakSnapshotter = cr.get();
-  }
-  return cr;
-}
-
 void NativeLayerRootRemoteMacChild::PrepareForCommit() {
   
 }
@@ -127,33 +113,6 @@ bool NativeLayerRootRemoteMacChild::CommitToScreen() {
     MOZ_ASSERT(mRemoteChild);
     mRemoteChild->SendCommitNativeLayerCommands(commands);
   }
-  return true;
-}
-
-bool NativeLayerRootRemoteMacChild::ReadbackPixels(
-    const gfx::IntSize& aSize, gfx::SurfaceFormat aFormat,
-    const Range<uint8_t>& aBuffer) {
-  
-  
-  
-  
-  
-  
-  if (aFormat != gfx::SurfaceFormat::B8G8R8A8) {
-    return false;
-  }
-
-  ipc::Shmem pixels;
-  if (!mRemoteChild->SendRequestReadback(aSize, &pixels)) {
-    return false;
-  }
-
-  
-  
-  auto byteCount = pixels.Size<uint8_t>();
-  MOZ_RELEASE_ASSERT(aBuffer.length() >= byteCount);
-  PodCopy(aBuffer.begin().get(), pixels.get<uint8_t>(), byteCount);
-
   return true;
 }
 
