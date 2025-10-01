@@ -17,7 +17,10 @@
 #include <vector>
 
 #include "rtc_base/containers/flat_tree.h"  
-#include "rtc_base/containers/identity.h"  
+
+#if __cplusplus < 202002
+#  include "rtc_base/containers/identity.h"  
+#endif
 
 namespace webrtc {
 
