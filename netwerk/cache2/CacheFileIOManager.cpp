@@ -2512,6 +2512,11 @@ nsresult CacheFileIOManager::DoomFileInternal(
   }
 
   if (!aHandle->IsSpecialFile()) {
+    
+    if (!mDictionaryCache) {
+      
+    }
+    
     CacheIndex::RemoveEntry(aHandle->Hash());
   }
 
@@ -2525,7 +2530,7 @@ nsresult CacheFileIOManager::DoomFileInternal(
           CacheFileUtils::ParseKey(aHandle->Key(), &idExtension, &url);
       MOZ_ASSERT(info);
       if (info) {
-        storageService->CacheFileDoomed(info, idExtension, url);
+        storageService->CacheFileDoomed(aHandle->mKey, info, idExtension, url);
       }
     }
   }
@@ -3515,7 +3520,8 @@ nsresult CacheFileIOManager::EvictByContextInternal(
       }
 
       
-      if (!origin.IsEmpty()) {
+      if (!origin.IsEmpty()) {  
+                                
         RefPtr<MozURL> url;
         rv = MozURL::Init(getter_AddRefs(url), uriSpec);
         if (NS_FAILED(rv)) {
