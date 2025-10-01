@@ -118,6 +118,14 @@ WebAuthnService::MakeCredential(uint64_t aTransactionId,
             nsIWebAuthnRegisterResult* result = aValue.ResolveValue();
             
             
+            bool attestationConsentPromptShown = false;
+            Unused << result->GetAttestationConsentPromptShown(
+                &attestationConsentPromptShown);
+            if (attestationConsentPromptShown) {
+              guard->ref().parentRegisterPromise.ref()->Resolve(result);
+              guard->reset();
+              return;
+            }
             
             
             bool resultIsIdentifying = true;
@@ -128,6 +136,7 @@ WebAuthnService::MakeCredential(uint64_t aTransactionId,
                                                  aBrowsingContextId);
               return;
             }
+            
             result->Anonymize();
             guard->ref().parentRegisterPromise.ref()->Resolve(result);
             guard->reset();
