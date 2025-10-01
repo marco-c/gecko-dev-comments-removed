@@ -64,7 +64,7 @@ class SwatchBasedEditorTooltip {
     });
 
     
-    this.swatches = new Map();
+    this.swatches = new WeakMap();
 
     
     
@@ -259,7 +259,6 @@ class SwatchBasedEditorTooltip {
   }
 
   destroy() {
-    this.swatches.clear();
     this.activeSwatch = null;
     this.tooltip.off("keydown", this._onTooltipKeydown);
     this.tooltip.destroy();
