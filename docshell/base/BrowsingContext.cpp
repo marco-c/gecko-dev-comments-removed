@@ -2015,6 +2015,87 @@ nsresult BrowsingContext::CheckSandboxFlags(nsDocShellLoadState* aLoadState) {
   return NS_OK;
 }
 
+nsresult BrowsingContext::CheckFramebusting(nsDocShellLoadState* aLoadState) {
+  if (!StaticPrefs::dom_security_framebusting_intervention_enabled()) {
+    return NS_OK;
+  }
+
+  
+  if (!IsTop()) {
+    return NS_OK;
+  }
+
+  if (aLoadState->HasValidUserGestureActivation()) {
+    return NS_OK;
+  }
+
+  const auto& sourceBC = aLoadState->SourceBrowsingContext();
+  if (sourceBC.IsNull()) {
+    return NS_OK;
+  }
+
+  if (BrowsingContext* bc = sourceBC.GetMaybeDiscarded()) {
+    if (bc->IsFramebustingAllowed(this)) {
+      return NS_OK;
+    }
+
+    if (bc->GetDOMWindow()) {
+      nsGlobalWindowOuter::Cast(bc->GetDOMWindow())
+          ->FireRedirectBlockedEvent(aLoadState->URI());
+    }
+
+    nsAutoCString frameURL;
+    if (bc->GetDocument() &&
+        NS_SUCCEEDED(
+            bc->GetDocument()->GetPrincipal()->GetAsciiSpec(frameURL))) {
+      nsContentUtils::ReportToConsoleNonLocalized(
+          NS_ConvertUTF8toUTF16(nsPrintfCString(
+              R"(Attempting to navigate the top-level browsing context from )"
+              R"(frame with url "%s" which is neither same-origin nor has )"
+              R"(the required user interaction.)",
+              frameURL.get())),
+          nsIScriptError::errorFlag, "DOM"_ns, bc->GetDocument());
+    }
+  }
+
+  return NS_ERROR_DOM_SECURITY_ERR;
+}
+
+bool BrowsingContext::IsFramebustingAllowed(BrowsingContext* aTarget) {
+  MOZ_ASSERT(aTarget->IsTop());
+
+  if (aTarget->BrowserId() == BrowserId()) {
+    return IsFramebustingAllowedInner() || IsPopupAllowed();
+  }
+
+  
+  
+  return true;
+}
+
+bool BrowsingContext::IsFramebustingAllowedInner() {
+  if (IsInProcess() && SameOriginWithTop()) {
+    return true;
+  }
+
+  
+  
+  
+  
+  Document* doc;
+  nsIChannel* channel;
+  if ((doc = GetExtantDocument()) && (channel = doc->GetChannel())) {
+    nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
+    uint32_t sandboxFlags = loadInfo->GetSandboxFlags();
+    if (sandboxFlags && !(sandboxFlags & SANDBOXED_TOPLEVEL_NAVIGATION)) {
+      BrowsingContext* parent = GetParent();
+      return !parent || parent->IsFramebustingAllowedInner();
+    }
+  }
+
+  return false;
+}
+
 nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
                                   bool aSetNavigating) {
   
@@ -2069,6 +2150,10 @@ nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
                           "triggered from content");
   }
 
+  
+  
+  MOZ_TRY(CheckFramebusting(aLoadState));
+
   MOZ_DIAGNOSTIC_ASSERT(!sourceBC || sourceBC->Group() == Group());
   if (sourceBC && sourceBC->IsInProcess()) {
     nsCOMPtr<nsPIDOMWindowOuter> win(sourceBC->GetDOMWindow());
@@ -2095,6 +2180,24 @@ nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
       }
 
       cp->TransmitBlobDataIfBlobURL(aLoadState->URI());
+
+#ifdef ANDROID
+      
+      
+      
+      
+      uint64_t androidLoadIdentifier = nsContentUtils::GenerateTabId();
+      MOZ_ALWAYS_SUCCEEDS(
+          SetAndroidAppLinkLoadIdentifier(Some(androidLoadIdentifier)));
+
+      uint32_t appLinkLaunchType = aLoadState->GetAppLinkLaunchType();
+      cp->SetAndroidAppLinkLaunchType(androidLoadIdentifier, appLinkLaunchType);
+
+      PROFILER_MARKER_FMT("BrowsingContext::LoadURI", NETWORK, {},
+                          "android appLinkLaunchType {} URL {}",
+                          appLinkLaunchType,
+                          aLoadState->URI()->GetSpecOrDefault().get());
+#endif
 
       
       
@@ -2163,6 +2266,10 @@ nsresult BrowsingContext::InternalLoad(nsDocShellLoadState* aLoadState) {
                           "Should never see a cross-process javascript: load "
                           "triggered from content");
   }
+
+  
+  
+  MOZ_TRY(CheckFramebusting(aLoadState));
 
   if (XRE_IsParentProcess()) {
     ContentParent* cp = Canonical()->GetContentParent();
@@ -3147,27 +3254,29 @@ void BrowsingContext::DidSet(FieldIndex<IDX_LanguageOverride>,
   const nsCString& languageOverride = GetLanguageOverride();
 
   PreOrderWalk([&](BrowsingContext* aBrowsingContext) {
-    RefPtr<WindowContext> windowContext =
-        aBrowsingContext->GetCurrentWindowContext();
+    if (RefPtr<WindowContext> windowContext =
+            aBrowsingContext->GetCurrentWindowContext()) {
+      if (nsCOMPtr<nsPIDOMWindowInner> window =
+              windowContext->GetInnerWindow()) {
+        JSObject* global =
+            nsGlobalWindowInner::Cast(window)->GetGlobalJSObject();
+        JS::Realm* realm = JS::GetObjectRealmOrNull(global);
 
-    if (nsCOMPtr<nsPIDOMWindowInner> window = windowContext->GetInnerWindow()) {
-      JSObject* global = nsGlobalWindowInner::Cast(window)->GetGlobalJSObject();
-      JS::Realm* realm = JS::GetObjectRealmOrNull(global);
-
-      if (mDefaultLocale == nullptr) {
-        AutoJSAPI jsapi;
-        if (jsapi.Init(window)) {
-          JSContext* context = jsapi.cx();
-          mDefaultLocale = JS_GetDefaultLocale(context);
+        if (mDefaultLocale == nullptr) {
+          AutoJSAPI jsapi;
+          if (jsapi.Init(window)) {
+            JSContext* context = jsapi.cx();
+            mDefaultLocale = JS_GetDefaultLocale(context);
+          }
         }
-      }
 
-      if (languageOverride.IsEmpty()) {
-        JS::SetRealmLocaleOverride(realm, mDefaultLocale.get());
-        mDefaultLocale = nullptr;
-      } else {
-        JS::SetRealmLocaleOverride(realm,
-                                   PromiseFlatCString(languageOverride).get());
+        if (languageOverride.IsEmpty()) {
+          JS::SetRealmLocaleOverride(realm, mDefaultLocale.get());
+          mDefaultLocale = nullptr;
+        } else {
+          JS::SetRealmLocaleOverride(
+              realm, PromiseFlatCString(languageOverride).get());
+        }
       }
     }
   });
@@ -3530,18 +3639,20 @@ void BrowsingContext::DidSet(FieldIndex<IDX_TimezoneOverride>,
   MOZ_ASSERT(IsTop());
 
   PreOrderWalk([&](BrowsingContext* aBrowsingContext) {
-    RefPtr<WindowContext> windowContext =
-        aBrowsingContext->GetCurrentWindowContext();
+    if (RefPtr<WindowContext> windowContext =
+            aBrowsingContext->GetCurrentWindowContext()) {
+      if (nsCOMPtr<nsPIDOMWindowInner> window =
+              windowContext->GetInnerWindow()) {
+        JSObject* global =
+            nsGlobalWindowInner::Cast(window)->GetGlobalJSObject();
+        JS::Realm* realm = JS::GetObjectRealmOrNull(global);
 
-    if (nsCOMPtr<nsPIDOMWindowInner> window = windowContext->GetInnerWindow()) {
-      JSObject* global = nsGlobalWindowInner::Cast(window)->GetGlobalJSObject();
-      JS::Realm* realm = JS::GetObjectRealmOrNull(global);
-
-      if (GetTimezoneOverride().IsEmpty()) {
-        JS::SetRealmTimezoneOverride(realm, nullptr);
-      } else {
-        JS::SetRealmTimezoneOverride(
-            realm, NS_ConvertUTF16toUTF8(GetTimezoneOverride()).get());
+        if (GetTimezoneOverride().IsEmpty()) {
+          JS::SetRealmTimezoneOverride(realm, nullptr);
+        } else {
+          JS::SetRealmTimezoneOverride(
+              realm, NS_ConvertUTF16toUTF8(GetTimezoneOverride()).get());
+        }
       }
     }
   });

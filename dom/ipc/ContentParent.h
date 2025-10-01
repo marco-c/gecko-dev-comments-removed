@@ -1187,7 +1187,9 @@ class ContentParent final : public PContentParent,
       const DiscardedData& aDiscardedData);
   mozilla::ipc::IPCResult RecvRecordPageLoadEvent(
       mozilla::performance::pageload_event::PageloadEventData&&
-          aPageloadEventData);
+          aPageLoadEventData,
+      const TimeStamp& aNavigationStartTime,
+      uint64_t aAndroidAppLinkLoadIdentifier);
   mozilla::ipc::IPCResult RecvRecordOrigin(const uint32_t& aMetricId,
                                            const nsACString& aOrigin);
   mozilla::ipc::IPCResult RecvReportContentBlockingLog(
@@ -1450,6 +1452,11 @@ class ContentParent final : public PContentParent,
     return mRemoteWorkerServiceActor;
   }
 
+  void SetAndroidAppLinkLaunchType(uint64_t aLoadIdentifier,
+                                   int32_t aAppLinkLaunchType);
+  int32_t GetAndroidAppLinkLaunchType(uint64_t aLoadIdentifier);
+  void ClearAndroidAppLinkLaunchType(uint64_t aLoadIdentifier);
+
  private:
   
   static UniqueContentParentKeepAlive GetUsedBrowserProcess(
@@ -1466,6 +1473,11 @@ class ContentParent final : public PContentParent,
   void AssertAlive();
 
   void StartRemoteWorkerService();
+
+  void RecordAndroidAppLinkTelemetry(
+      mozilla::performance::pageload_event::PageloadEventData*
+          aPageLoadEventData,
+      const TimeStamp& aNavStartTime, uint64_t aAppLinkLaunchTypeIdentifier);
 
  private:
   
@@ -1590,6 +1602,10 @@ class ContentParent final : public PContentParent,
   
   
   nsTArray<uint64_t> mLoadedOriginHashes;
+
+  
+  
+  nsTHashMap<uint64_t, int32_t> mAndroidLoadIdentifierToAppLinkLaunchType;
 
   UniquePtr<mozilla::ipc::CrashReporterHost> mCrashReporter;
 
