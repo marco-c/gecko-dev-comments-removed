@@ -394,7 +394,13 @@ struct AnchorPosResolutionData {
 
 
 
-class AnchorPosReferencedAnchors {
+
+
+
+
+
+
+class AnchorPosReferenceData {
  private:
   using Map =
       nsTHashMap<RefPtr<const nsAtom>, mozilla::Maybe<AnchorPosResolutionData>>;
@@ -402,13 +408,12 @@ class AnchorPosReferencedAnchors {
  public:
   using Value = mozilla::Maybe<AnchorPosResolutionData>;
 
-  AnchorPosReferencedAnchors() = default;
-  AnchorPosReferencedAnchors(const AnchorPosReferencedAnchors&) = delete;
-  AnchorPosReferencedAnchors(AnchorPosReferencedAnchors&&) = default;
+  AnchorPosReferenceData() = default;
+  AnchorPosReferenceData(const AnchorPosReferenceData&) = delete;
+  AnchorPosReferenceData(AnchorPosReferenceData&&) = default;
 
-  AnchorPosReferencedAnchors& operator=(const AnchorPosReferencedAnchors&) =
-      delete;
-  AnchorPosReferencedAnchors& operator=(AnchorPosReferencedAnchors&&) = default;
+  AnchorPosReferenceData& operator=(const AnchorPosReferenceData&) = delete;
+  AnchorPosReferenceData& operator=(AnchorPosReferenceData&&) = default;
 
   struct Result {
     bool mAlreadyResolved;
@@ -436,13 +441,13 @@ struct AnchorPosResolutionParams {
   mozilla::StylePositionProperty mPosition;
   
   
-  AnchorPosReferencedAnchors* const mReferencedAnchors = nullptr;
+  AnchorPosReferenceData* const mAnchorPosReferenceData = nullptr;
 
   
   
   static inline AnchorPosResolutionParams From(
       const nsIFrame* aFrame,
-      AnchorPosReferencedAnchors* aReferencedAnchors = nullptr);
+      AnchorPosReferenceData* aAnchorPosReferenceData = nullptr);
   static inline AnchorPosResolutionParams From(const mozilla::ReflowInput* aRI);
   static inline AnchorPosResolutionParams From(
       const nsComputedDOMStyle* aComputedDOMStyle);
