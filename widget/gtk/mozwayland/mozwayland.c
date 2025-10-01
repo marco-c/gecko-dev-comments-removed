@@ -35,6 +35,7 @@ const struct wl_interface wl_shm_pool_interface;
 const struct wl_interface wl_subcompositor_interface;
 const struct wl_interface wl_subsurface_interface;
 const struct wl_interface wl_surface_interface;
+const struct wl_interface wl_touch_interface;
 const struct wl_interface xdg_popup_interface;
 const struct wl_interface xdg_positioner_interface;
 const struct wl_interface xdg_surface_interface;
@@ -225,6 +226,9 @@ MOZ_EXPORT struct wl_surface* gdk_wayland_window_get_wl_surface(
     GdkWindow* window) {
   return NULL;
 }
+
+MOZ_EXPORT void gdk_wayland_window_set_use_custom_surface(
+    GdkWaylandWindow* window) {}
 
 MOZ_EXPORT struct wl_pointer* gdk_wayland_device_get_wl_pointer(
     GdkDevice* device) {
