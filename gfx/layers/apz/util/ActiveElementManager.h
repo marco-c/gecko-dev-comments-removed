@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_layers_ElementStateManager_h
-#define mozilla_layers_ElementStateManager_h
+#ifndef mozilla_layers_ActiveElementManager_h
+#define mozilla_layers_ActiveElementManager_h
 
 #include "nsCOMPtr.h"
 #include "nsISupportsImpl.h"
@@ -32,15 +32,14 @@ enum class SingleTapState : uint8_t;
 
 
 
-class ElementStateManager final {
-  ~ElementStateManager();
+class ActiveElementManager final {
+  ~ActiveElementManager();
 
  public:
-  NS_INLINE_DECL_REFCOUNTING(ElementStateManager)
+  NS_INLINE_DECL_REFCOUNTING(ActiveElementManager)
 
-  ElementStateManager();
+  ActiveElementManager();
 
-  enum class PreventDefault : bool { No, Yes };
   
 
 
@@ -48,20 +47,13 @@ class ElementStateManager final {
 
 
 
-  void SetTargetElement(dom::EventTarget* aTarget,
-                        PreventDefault aTouchStartPreventDefault);
+  void SetTargetElement(dom::EventTarget* aTarget);
   
 
 
 
 
   void HandleTouchStart(bool aCanBePanOrZoom);
-
-  
-
-
-  void HandleStartPanning();
-
   
 
 
@@ -128,26 +120,16 @@ class ElementStateManager final {
   RefPtr<CancelableRunnable> mSetActiveTask;
 
   
-
-
-  RefPtr<CancelableRunnable> mSetHoverTask;
-
-  
   
   RefPtr<DelayedClearElementActivation> mDelayedClearElementActivation;
 
   
   void TriggerElementActivation();
   void SetActive(dom::Element* aTarget);
-  void SetHover(dom::Element* aTarget);
   void ResetActive();
   void ResetTouchBlockState();
-  void ScheduleSetActiveTask();
   void SetActiveTask(const nsCOMPtr<dom::Element>& aTarget);
-  void CancelActiveTask();
-  void ScheduleSetHoverTask();
-  void SetHoverTask(const nsCOMPtr<dom::Element>& aTarget);
-  void CancelHoverTask();
+  void CancelTask();
   
   bool MaybeChangeActiveState(apz::SingleTapState aState);
 };
