@@ -2797,13 +2797,13 @@ bool nsIFrame::ComputeOverflowClipRectRelativeToSelf(
     
     
     
-    nsRect o = InkOverflowRect();
+    nsRect o = InkOverflowRectRelativeToSelf();
     aOutRect.x = o.x;
     aOutRect.width = o.width;
   }
   if (MOZ_UNLIKELY(!aClipAxes.contains(PhysicalAxis::Vertical))) {
     
-    nsRect o = InkOverflowRect();
+    nsRect o = InkOverflowRectRelativeToSelf();
     aOutRect.y = o.y;
     aOutRect.height = o.height;
   }
