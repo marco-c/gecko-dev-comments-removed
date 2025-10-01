@@ -399,8 +399,24 @@ extern JS_PUBLIC_API bool SetSettledPromiseIsHandled(JSContext* cx,
 
 
 
+
+
 extern JS_PUBLIC_API JSObject* GetPromiseAllocationSite(
     JS::HandleObject promise);
+
+
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API JSObject*
+MaybeGetPromiseAllocationSiteFromPossiblyWrappedPromise(
+    JS::HandleObject maybePromise);
 
 extern JS_PUBLIC_API JSObject* GetPromiseResolutionSite(
     JS::HandleObject promise);
