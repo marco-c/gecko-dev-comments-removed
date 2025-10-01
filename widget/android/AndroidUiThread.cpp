@@ -180,26 +180,9 @@ class CreateOnUiThread : public Runnable {
     
     
     
-
-    
-    char fallback;
-    char* stackTop = &fallback;
-
-    auto regOnExit = MakeScopeExit(
-        [&stackTop]() { profiler_register_thread("AndroidUI", stackTop); });
-
-    pthread_attr_t attrs;
-    if (pthread_getattr_np(pthread_self(), &attrs)) {
-      return;
-    }
-
-    void* stackBase;
-    size_t stackSize;
-    if (pthread_attr_getstack(&attrs, &stackBase, &stackSize)) {
-      return;
-    }
-
-    stackTop = static_cast<char*>(stackBase) + stackSize - 1;
+    const char* stackTop = static_cast<const char*>(sThread->StackBase()) +
+                           sThread->StackSize() - 1;
+    profiler_register_thread("AndroidUI", const_cast<char*>(stackTop));
 #endif  
   }
 };
