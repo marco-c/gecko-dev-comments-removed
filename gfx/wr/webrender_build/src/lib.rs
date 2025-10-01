@@ -2,7 +2,7 @@
 
 
 
-#![allow(clippy::new_without_default, mismatched_lifetime_syntaxes)]
+#![allow(clippy::new_without_default)]
 
 #[macro_use]
 extern crate bitflags;

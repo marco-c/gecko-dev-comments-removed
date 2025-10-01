@@ -41,12 +41,7 @@
 
 
 
-#![allow(
-    clippy::unreadable_literal,
-    clippy::new_without_default,
-    clippy::too_many_arguments,
-    mismatched_lifetime_syntaxes
-)]
+#![allow(clippy::unreadable_literal, clippy::new_without_default, clippy::too_many_arguments)]
 
 
 
