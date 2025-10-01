@@ -357,7 +357,9 @@ function quote(str) {
 function escapeNewline(txt) {
   if (isWin()) {
     
-    return txt.replace(/[\r\n]{1,2}/g, '"^$&$&"');
+    
+    
+    return txt.replace(/\r?\n|\r/g, "^\n\n");
   }
   return txt.replace(/\r/g, "\\r").replace(/\n/g, "\\n");
 }
