@@ -107,14 +107,25 @@ using namespace mozilla::gfx;
 
 namespace mozilla {
 
-
-
-static bool IsVerticalUpright(const nsIFrame* aFrame) {
-  return (aFrame->GetWritingMode().IsVertical() &&
-          !aFrame->GetWritingMode().IsVerticalSideways() &&
-          aFrame->StyleVisibility()->mTextOrientation ==
-              StyleTextOrientation::Upright) ||
-         aFrame->Style()->IsTextCombined();
+bool TextAutospace::ShouldSuppressLetterNumeralSpacing(const nsIFrame* aFrame) {
+  const auto wm = aFrame->GetWritingMode();
+  if (wm.IsVertical() && !wm.IsVerticalSideways() &&
+      aFrame->StyleVisibility()->mTextOrientation ==
+          StyleTextOrientation::Upright) {
+    
+    
+    return true;
+  }
+  if (aFrame->Style()->IsTextCombined()) {
+    
+    return true;
+  }
+  if (aFrame->StyleText()->mTextTransform & StyleTextTransform::FULL_WIDTH) {
+    
+    
+    return true;
+  }
+  return false;
 }
 
 bool TextAutospace::Enabled(const StyleTextAutospace& aStyleTextAutospace,
@@ -130,9 +141,7 @@ bool TextAutospace::Enabled(const StyleTextAutospace& aStyleTextAutospace,
     return false;
   }
 
-  if (IsVerticalUpright(aFrame)) {
-    
-    
+  if (ShouldSuppressLetterNumeralSpacing(aFrame)) {
     
     
     return false;
@@ -3960,9 +3969,7 @@ static Maybe<TextAutospace::CharClass> GetPrecedingCharClassFromFrameTree(
       if (prevClass) {
         if ((*prevClass == CharClass::NonIdeographicLetter ||
              *prevClass == CharClass::NonIdeographicNumeral) &&
-            IsVerticalUpright(f)) {
-          
-          
+            TextAutospace::ShouldSuppressLetterNumeralSpacing(f)) {
           return Some(CharClass::Other);
         }
         return prevClass;
