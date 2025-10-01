@@ -890,6 +890,37 @@ void ModuleLoaderBase::OnFetchFailed(ModuleLoadRequest* aRequest) {
   aRequest->ClearImport();
 }
 
+void ModuleLoaderBase::Cancel(ModuleLoadRequest* aRequest) {
+  if (aRequest->IsFinished()) {
+    return;
+  }
+
+  aRequest->ScriptLoadRequest::Cancel();
+  aRequest->mModuleScript = nullptr;
+
+  if (aRequest->mPayload.isUndefined()) {
+    return;
+  }
+
+  AutoJSAPI jsapi;
+  if (!jsapi.Init(mGlobalObject)) {
+    return;
+  }
+  JSContext* cx = jsapi.cx();
+
+  Rooted<Value> payload(cx, aRequest->mPayload);
+  Rooted<Value> error(cx, UndefinedValue());
+
+  LOG(
+      ("ScriptLoadRequest (%p): Canceled, calling "
+       "FinishLoadingImportedModuleFailed",
+       aRequest));
+
+  FinishLoadingImportedModuleFailed(cx, payload, error);
+  aRequest->ModuleErrored();
+  aRequest->ClearImport();
+}
+
 class ModuleErroredRunnable : public MicroTaskRunnable {
  public:
   explicit ModuleErroredRunnable(ModuleLoadRequest* aRequest)
@@ -1429,23 +1460,10 @@ ModuleLoaderBase::~ModuleLoaderBase() {
 void ModuleLoaderBase::CancelFetchingModules() {
   for (const auto& entry : mFetchingModules) {
     RefPtr<LoadingRequest> loadingRequest = entry.GetData();
-
-    
-    
-    
-    
-    bool isCompiling = loadingRequest->mRequest->IsCompiling();
-    if (isCompiling) {
-      OnFetchFailed(loadingRequest->mRequest);
-    }
-
     loadingRequest->mRequest->Cancel();
 
     for (const auto& request : loadingRequest->mWaiting) {
       request->Cancel();
-      if (isCompiling) {
-        OnFetchFailed(request);
-      }
     }
   }
 
