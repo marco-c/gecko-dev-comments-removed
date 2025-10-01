@@ -54,7 +54,7 @@ add_task(async function user_toggle_on_and_off() {
   });
   IPProtectionService.isEnrolled = true;
   IPProtectionService.isEntitled = true;
-  content.state.isSignedIn = true;
+  content.state.isSignedOut = false;
   content.requestUpdate();
   await content.updateComplete;
 
@@ -90,6 +90,11 @@ add_task(async function user_toggle_on_and_off() {
   Assert.equal(toggledEvents[1].name, "toggled");
   Assert.equal(toggledEvents[1].extra.enabled, "false");
   Assert.equal(toggledEvents[1].extra.userAction, "true");
+  Assert.greater(
+    Math.ceil(toggledEvents[1].extra.duration),
+    0,
+    "Should have positive duration"
+  );
 
   Services.fog.testResetFOG();
   IPProtectionService.isEnrolled = false;
@@ -135,7 +140,7 @@ add_task(async function toggle_off_on_shutdown() {
   });
   IPProtectionService.isEnrolled = true;
   IPProtectionService.isEntitled = true;
-  content.state.isSignedIn = true;
+  content.state.isSignedOut = false;
   content.requestUpdate();
   await content.updateComplete;
   lazy.IPProtectionService.isSignedIn = true;
@@ -168,6 +173,11 @@ add_task(async function toggle_off_on_shutdown() {
   Assert.equal(toggledEvents[1].name, "toggled");
   Assert.equal(toggledEvents[1].extra.enabled, "false");
   Assert.equal(toggledEvents[1].extra.userAction, "false");
+  Assert.greater(
+    Math.ceil(toggledEvents[1].extra.duration),
+    0,
+    "Should have positive duration"
+  );
 
   Services.fog.testResetFOG();
   
@@ -210,7 +220,7 @@ add_task(async function click_upgrade_button() {
 
   Assert.ok(content, "Panel content should be present");
 
-  content.state.isSignedIn = true;
+  content.state.isSignedOut = false;
   content.requestUpdate();
   await content.updateComplete;
 
