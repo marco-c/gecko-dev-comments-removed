@@ -1168,7 +1168,8 @@ pref("network.http.redirection-limit", 20);
 pref("network.http.accept-encoding", "gzip, deflate");
 pref("network.http.accept-encoding.secure", "gzip, deflate, br, zstd");
 
-pref("network.http.accept-encoding.dictionary", "gzip, deflate, br, zstd, dcb, dcz");
+
+pref("network.http.accept-encoding.dictionary", "dcb, dcz");
 
 
 pref("network.http.prompt-temp-redirect", false);
