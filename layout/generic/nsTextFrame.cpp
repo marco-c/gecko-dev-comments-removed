@@ -4119,7 +4119,11 @@ void nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
           aSpacing[runOffset].mAfter += mWordSpacing;
         }
         
+        
+        
         if (mTextAutospace &&
+            (mCharacterDataBuffer.Is2b() ||
+             run.GetOriginalOffset() + i == mFrame->GetContentOffset()) &&
             mTextRun->IsClusterStart(run.GetSkippedOffset() + i)) {
           const char32_t currScalar =
               mCharacterDataBuffer.ScalarValueAt(run.GetOriginalOffset() + i);
