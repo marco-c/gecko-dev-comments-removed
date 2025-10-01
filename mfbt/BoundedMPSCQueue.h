@@ -18,50 +18,18 @@
 #define mozilla_BoundedMPSCQueue_h
 
 #include "mozilla/Assertions.h"
-#include "mozilla/Attributes.h"
-#include "mozilla/PodOperations.h"
 #include <algorithm>
 #include <atomic>
+#include <cinttypes>
 #include <cstddef>
-#include <limits>
+#include <cstdint>
 #include <memory>
-#include <thread>
-#include <type_traits>
 #include <optional>
-#include <inttypes.h>
+#include <type_traits>
 
 namespace mozilla {
 
-namespace detail {
-template <typename T, bool IsPod = std::is_trivial<T>::value>
-struct MemoryOperations {
-  
-
-
-
-
-
-  static void MoveOrCopy(T* aDestination, T* aSource, size_t aCount);
-};
-
-template <typename T>
-struct MemoryOperations<T, true> {
-  static void MoveOrCopy(T* aDestination, T* aSource, size_t aCount) {
-    PodCopy(aDestination, aSource, aCount);
-  }
-};
-
-template <typename T>
-struct MemoryOperations<T, false> {
-  static void MoveOrCopy(T* aDestination, T* aSource, size_t aCount) {
-    std::move(aSource, aSource + aCount, aDestination);
-  }
-};
-}  
-
-static const bool MPSC_DEBUG = false;
-
-static const size_t kMaxCapacity = 16;
+static constexpr bool MPSC_DEBUG = false;
 
 
 
@@ -81,18 +49,19 @@ static const size_t kMaxCapacity = 16;
 
 
 
-template <typename T>
+template <typename T, size_t kCapacity>
 class MPSCRingBufferBase {
+  static constexpr size_t kMaxCapacity = 16;
+
  public:
-  explicit MPSCRingBufferBase(size_t aCapacity)
-      : mFree(0), mOccupied(0), mCapacity(aCapacity + 1) {
-    MOZ_RELEASE_ASSERT(aCapacity < kMaxCapacity);
+  explicit MPSCRingBufferBase() : mFree(0), mOccupied(0) {
+    static_assert(kCapacity < kMaxCapacity);
 
     if constexpr (MPSC_DEBUG) {
       fprintf(stderr,
               "[%s] this=%p { mCapacity=%zu, mBits=%" PRIu64
               ", mMask=0x%" PRIx64 " }\n",
-              __PRETTY_FUNCTION__, this, mCapacity, mBits, mMask);
+              __PRETTY_FUNCTION__, this, 1 + kCapacity, mBits, mMask);
     }
 
     
@@ -125,8 +94,7 @@ class MPSCRingBufferBase {
   [[nodiscard]] int Send(T& aElement) {
     std::optional<uint64_t> empty_idx = UnmarkSlot(mFree);
     if (empty_idx.has_value()) {
-      detail::MemoryOperations<T>::MoveOrCopy(&mData[*empty_idx - 1], &aElement,
-                                              1);
+      std::move(&aElement, &aElement + 1, &mData[*empty_idx - 1]);
       MarkSlot(mOccupied, *empty_idx);
       return *empty_idx;
     }
@@ -150,7 +118,7 @@ class MPSCRingBufferBase {
     std::optional<uint64_t> idx = UnmarkSlot(mOccupied);
     if (idx.has_value()) {
       if (aElement) {
-        detail::MemoryOperations<T>::MoveOrCopy(aElement, &mData[*idx - 1], 1);
+        std::move(&mData[*idx - 1], &mData[*idx], aElement);
       }
       MarkSlot(mFree, *idx);
       return *idx;
@@ -158,7 +126,7 @@ class MPSCRingBufferBase {
     return 0;
   }
 
-  size_t Capacity() const { return StorageCapacity() - 1; }
+  constexpr size_t Capacity() const { return StorageCapacity() - 1; }
 
  private:
   
@@ -333,7 +301,9 @@ class MPSCRingBufferBase {
   
   
   
-  [[nodiscard]] size_t StorageCapacity() const { return mCapacity; }
+  [[nodiscard]] constexpr size_t StorageCapacity() const {
+    return 1 + kCapacity;
+  }
 
   
   
@@ -350,15 +320,13 @@ class MPSCRingBufferBase {
   
   std::atomic<uint64_t> mOccupied;
 
-  const size_t mCapacity;
-
   
   std::unique_ptr<T[]> mData;
 
   
   
-  static const uint64_t mBits = 4;
-  static const uint64_t mMask = 0b1111;
+  static constexpr uint64_t mBits = 4;
+  static constexpr uint64_t mMask = 0b1111;
 };
 
 
@@ -366,8 +334,8 @@ class MPSCRingBufferBase {
 
 
 
-template <typename T>
-using BoundedMPSCQueue = MPSCRingBufferBase<T>;
+template <typename T, size_t Capacity>
+using BoundedMPSCQueue = MPSCRingBufferBase<T, Capacity>;
 
 }  
 
