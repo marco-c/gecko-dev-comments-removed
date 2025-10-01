@@ -60,6 +60,14 @@ export class WebRTCPreview extends MozLitElement {
     mediaSource = null,
     showPreviewControlButtons = null,
   } = {}) {
+    // We can only start preview once the element is connected to the DOM and
+    // the video element is available.
+    // If you run into this error you're calling the preview method too early,
+    // or you forgot to add it to the DOM.
+    if (!this.isConnected || !this.videoEl) {
+      throw new Error("Can not start preview: Not connected yet.");
+    }
+
     if (deviceId != null) {
       this.deviceId = deviceId;
     }
@@ -86,8 +94,8 @@ export class WebRTCPreview extends MozLitElement {
         mediaSource: this.mediaSource,
         deviceId: { exact: this.deviceId },
         frameRate: 30,
-        width: 1280,
-        height: 720,
+        width: 854,
+        height: 480,
       },
     };
 
