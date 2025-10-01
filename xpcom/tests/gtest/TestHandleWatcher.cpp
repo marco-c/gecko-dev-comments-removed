@@ -16,6 +16,7 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/SpinEventLoopUntil.h"
+#include "mozilla/TargetShutdownTaskSet.h"
 #include "mozilla/TaskQueue.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/WinHandleWatcher.h"
@@ -425,17 +426,15 @@ class MockEventTarget final : public nsIEventTarget {
 
  private:
   
-  
-  
-  nsTHashMap<RefPtr<nsITargetShutdownTask>, bool> mShutdownTasks;
+  TargetShutdownTaskSet mShutdownTasks;
   
   
   std::function<void(void)> mDeathAction;
 
   ~MockEventTarget() {
-    for (auto& task : mShutdownTasks) {
-      task.SetData(true);
-      task.GetKey()->TargetShutdown();
+    auto shutdownTasks = mShutdownTasks.Extract();
+    for (const auto& task : shutdownTasks) {
+      task->TargetShutdown();
     }
     if (mDeathAction) {
       mDeathAction();
@@ -445,23 +444,10 @@ class MockEventTarget final : public nsIEventTarget {
  public:
   
   NS_IMETHOD RegisterShutdownTask(nsITargetShutdownTask* task) override {
-    mShutdownTasks.WithEntryHandle(task, [&](auto entry) {
-      if (entry.HasEntry()) {
-        MOZ_CRASH("attempted to double-register shutdown task");
-      }
-      entry.Insert(false);
-    });
-    return NS_OK;
+    return mShutdownTasks.AddTask(task);
   }
   NS_IMETHOD UnregisterShutdownTask(nsITargetShutdownTask* task) override {
-    mozilla::Maybe<bool> res = mShutdownTasks.Extract(task);
-    if (!res.isSome()) {
-      MOZ_CRASH("attempted to unregister non-registered task");
-    }
-    if (res.value()) {
-      MOZ_CRASH("attempted to unregister already-executed shutdown task");
-    }
-    return NS_OK;
+    return mShutdownTasks.RemoveTask(task);
   }
   void RegisterDeathAction(std::function<void(void)>&& f) {
     mDeathAction = std::move(f);

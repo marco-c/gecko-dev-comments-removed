@@ -13,9 +13,11 @@
 #include "mozilla/MozPromise.h"
 #include "mozilla/Queue.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/TargetShutdownTaskSet.h"
 #include "mozilla/TaskDispatcher.h"
 #include "mozilla/ThreadSafeWeakPtr.h"
 #include "nsIDirectTaskDispatcher.h"
+#include "nsITargetShutdownTask.h"
 #include "nsThreadUtils.h"
 
 #define MOZILLA_TASKQUEUE_IID \
@@ -159,7 +161,7 @@ class TaskQueue final : public AbstractThread,
   TaskQueue(already_AddRefed<nsIEventTarget> aTarget, const char* aName,
             bool aSupportsTailDispatch);
 
-  virtual ~TaskQueue();
+  virtual ~TaskQueue() = default;
 
   
   
@@ -191,8 +193,7 @@ class TaskQueue final : public AbstractThread,
   Queue<TaskStruct> mTasks MOZ_GUARDED_BY(mQueueMonitor);
 
   
-  nsTArray<nsCOMPtr<nsITargetShutdownTask>> mShutdownTasks
-      MOZ_GUARDED_BY(mQueueMonitor);
+  TargetShutdownTaskSet mShutdownTasks MOZ_GUARDED_BY(mQueueMonitor);
 
   
   
