@@ -239,6 +239,8 @@ bool IsSameSite(nsIChannel* aHTTPChannel) {
 
 
 
+
+
 bool IsUserTriggeredForSecFetchSite(nsIHttpChannel* aHTTPChannel) {
   
 
@@ -250,8 +252,7 @@ bool IsUserTriggeredForSecFetchSite(nsIHttpChannel* aHTTPChannel) {
   ExtContentPolicyType contentType = loadInfo->GetExternalContentPolicyType();
 
   
-  if (loadInfo->TriggeringPrincipal()->IsSystemPrincipal() &&
-      contentType == ExtContentPolicy::TYPE_OTHER) {
+  if (loadInfo->TriggeringPrincipal()->IsSystemPrincipal()) {
     return true;
   }
 
@@ -286,12 +287,12 @@ bool IsUserTriggeredForSecFetchSite(nsIHttpChannel* aHTTPChannel) {
   if (referrerInfo) {
     nsCOMPtr<nsIURI> originalReferrer;
     referrerInfo->GetOriginalReferrer(getter_AddRefs(originalReferrer));
-    if (originalReferrer) {
-      return false;
+    if (!originalReferrer) {
+      return true;
     }
   }
 
-  return true;
+  return false;
 }
 
 void mozilla::dom::SecFetch::AddSecFetchDest(nsIHttpChannel* aHTTPChannel) {
