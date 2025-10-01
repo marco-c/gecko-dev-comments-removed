@@ -170,6 +170,22 @@ NSDictionary* StringAttributesFromAccAttributes(AccAttributes* aAttributes,
 
   return attrDict;
 }
+
+NSScreen* GetNSScreenForAcc(mozAccessible* aAcc) {
+  if (!aAcc) {
+    return nil;
+  }
+
+  NSWindow* window = [aAcc moxWindow];
+  NSScreen* screen = window ? [window screen] : nil;
+  if (!screen) {
+    
+    
+    screen = [[NSScreen screens] objectAtIndex:0];
+  }
+
+  return screen;
+}
 }  
 }  
 }  

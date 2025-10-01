@@ -55,6 +55,13 @@ bool DocumentExists(Accessible* aDoc, uintptr_t aDocPtr);
 
 NSDictionary* StringAttributesFromAccAttributes(AccAttributes* aAttributes,
                                                 Accessible* aContainer);
+
+
+
+
+
+
+NSScreen* GetNSScreenForAcc(mozAccessible* aAcc);
 }  
 }  
 }  

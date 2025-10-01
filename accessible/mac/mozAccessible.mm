@@ -200,11 +200,15 @@ using namespace mozilla::a11y;
   
   
   
+  NSScreen* scalingView = utils::GetNSScreenForAcc(self);
+  
+  
+  
   NSScreen* mainView = [[NSScreen screens] objectAtIndex:0];
   NSPoint tmpPoint =
       NSMakePoint(point.x, [mainView frame].size.height - point.y);
   LayoutDeviceIntPoint geckoPoint = nsCocoaUtils::CocoaPointsToDevPixels(
-      tmpPoint, nsCocoaUtils::GetBackingScaleFactor(mainView));
+      tmpPoint, nsCocoaUtils::GetBackingScaleFactor(scalingView));
 
   Accessible* child = mGeckoAccessible->ChildAtPoint(
       geckoPoint.x, geckoPoint.y, Accessible::EWhichChildAtPoint::DeepestChild);
@@ -650,13 +654,19 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
   MOZ_ASSERT(mGeckoAccessible);
 
   LayoutDeviceIntRect rect = mGeckoAccessible->Bounds();
-  NSScreen* mainView = [[NSScreen screens] objectAtIndex:0];
-  CGFloat scaleFactor = nsCocoaUtils::GetBackingScaleFactor(mainView);
+  NSScreen* screen = utils::GetNSScreenForAcc(self);
+  CGFloat scaleFactor = nsCocoaUtils::GetBackingScaleFactor(screen);
+
+  
+  
+  
+  NSScreen* mainScreen = [[NSScreen screens] objectAtIndex:0];
+  CGFloat mainScreenHeight = [mainScreen frame].size.height;
 
   return [NSValue
       valueWithRect:NSMakeRect(
                         static_cast<CGFloat>(rect.x) / scaleFactor,
-                        [mainView frame].size.height -
+                        mainScreenHeight -
                             static_cast<CGFloat>(rect.y + rect.height) /
                                 scaleFactor,
                         static_cast<CGFloat>(rect.width) / scaleFactor,

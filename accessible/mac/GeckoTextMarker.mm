@@ -521,9 +521,19 @@ int32_t GeckoTextMarkerRange::Length() const {
 
 NSValue* GeckoTextMarkerRange::Bounds() const {
   LayoutDeviceIntRect rect = mRange ? mRange.Bounds() : LayoutDeviceIntRect();
+  
+  
+  
+  
+  Accessible* acc = nsAccUtils::DocumentFor(mRange.Start().mAcc);
+  NSScreen* screen =
+      utils::GetNSScreenForAcc(GetNativeFromGeckoAccessible(acc));
+  CGFloat scaleFactor = nsCocoaUtils::GetBackingScaleFactor(screen);
 
+  
+  
+  
   NSScreen* mainView = [[NSScreen screens] objectAtIndex:0];
-  CGFloat scaleFactor = nsCocoaUtils::GetBackingScaleFactor(mainView);
   NSRect r =
       NSMakeRect(static_cast<CGFloat>(rect.x) / scaleFactor,
                  [mainView frame].size.height -
