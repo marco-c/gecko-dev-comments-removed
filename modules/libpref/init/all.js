@@ -3546,10 +3546,10 @@ pref("reader.content_width", 3);
 pref("reader.line_height", 4);
 
 
-pref("reader.character_spacing", 0);
+pref("reader.character_spacing", 1);
 
 
-pref("reader.word_spacing", 0);
+pref("reader.word_spacing", 1);
 
 
 pref("reader.text_alignment", "start");
