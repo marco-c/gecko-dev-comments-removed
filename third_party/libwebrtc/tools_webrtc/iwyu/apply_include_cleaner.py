@@ -60,8 +60,8 @@ _IWYU_MAPPING = {
 
     
     '"libyuv/': '"third_party/libyuv/include/libyuv/',
-    '"aom/': '"third_party/libaom/source/libaom/',
-    '"vpx/': '"third_party/libvpx/source/libvpx/',
+    '"aom/': '"third_party/libaom/source/libaom/aom/',
+    '"vpx/': '"third_party/libvpx/source/libvpx/vpx/',
 }
 
 
