@@ -7,6 +7,7 @@ package org.mozilla.fenix.snackbar
 import android.content.Context
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.navigation.NavController
+import com.google.android.material.snackbar.BaseTransientBottomBar.LENGTH_INDEFINITE
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -25,6 +26,7 @@ import mozilla.components.lib.state.helpers.AbstractBinding
 import mozilla.components.ui.widgets.SnackbarDelegate
 import org.mozilla.fenix.GleanMetrics.SentFromFirefox
 import org.mozilla.fenix.R
+import org.mozilla.fenix.bookmarks.BookmarksGlobalResultReport
 import org.mozilla.fenix.bookmarks.friendlyRootTitle
 import org.mozilla.fenix.browser.BrowserFragmentDirections
 import org.mozilla.fenix.components.AppStore
@@ -79,6 +81,10 @@ class SnackbarBinding(
                 when (state) {
                     is SnackbarState.BookmarkAdded -> {
                         showBookmarkAddedSnackbarFor(state)
+                    }
+
+                    is SnackbarState.BookmarkOperationResultReported -> {
+                        showBookmarkResultSnackbar(state)
                     }
 
                     is SnackbarState.ReportSent -> {
@@ -180,8 +186,8 @@ class SnackbarBinding(
                     is SnackbarState.SharedTabsSuccessfully -> {
                         snackbarDelegate.show(
                             text = when (state.tabs.size) {
-                                1 -> R.string.sync_sent_tab_snackbar
-                                else -> R.string.sync_sent_tabs_snackbar
+                                1 -> R.string.sync_sent_tab_snackbar_2
+                                else -> R.string.sync_sent_tabs_snackbar_2
                             },
                             duration = Snackbar.LENGTH_SHORT,
                         )
@@ -279,8 +285,9 @@ class SnackbarBinding(
                             text = context.getString(R.string.download_item_status_failed),
                             subText = state.fileName,
                             subTextOverflow = TextOverflow.MiddleEllipsis,
-                            duration = context.getSnackbarTimeout(hasAction = true).value.toInt(),
+                            duration = LENGTH_INDEFINITE,
                             action = context.getString(R.string.download_failed_snackbar_action_details),
+                            withDismissAction = true,
                         ) {
                             navController.navigate(
                                 BrowserFragmentDirections.actionGlobalDownloadsFragment(),
@@ -370,5 +377,18 @@ class SnackbarBinding(
         }
 
         appStore.dispatch(SnackbarAction.SnackbarShown)
+    }
+
+    private fun showBookmarkResultSnackbar(state: SnackbarState.BookmarkOperationResultReported) {
+        val id = when (state.result) {
+            BookmarksGlobalResultReport.EditBookmarkFailed -> R.string.bookmark_error_edit_bookmark
+            BookmarksGlobalResultReport.SelectFolderFailed -> R.string.bookmark_error_select_folder
+            BookmarksGlobalResultReport.AddFolderFailed -> R.string.bookmark_error_add_folder
+            BookmarksGlobalResultReport.EditFolderFailed -> R.string.bookmark_error_edit_folder
+        }
+        snackbarDelegate.show(
+            text = context.getString(id),
+            duration = Snackbar.LENGTH_LONG,
+        )
     }
 }
