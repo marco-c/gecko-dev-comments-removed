@@ -4107,9 +4107,9 @@ void nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
           
           aSpacing[runOffsetInSubstring + i].mAfter += after;
         }
-        if (IsCSSWordSpacingSpace(mCharacterDataBuffer,
-                                  i + run.GetOriginalOffset(), mFrame,
-                                  mTextStyle)) {
+        if (mWordSpacing && IsCSSWordSpacingSpace(mCharacterDataBuffer,
+                                                  i + run.GetOriginalOffset(),
+                                                  mFrame, mTextStyle)) {
           
           
           iter.SetSkippedOffset(run.GetSkippedOffset() + i);
