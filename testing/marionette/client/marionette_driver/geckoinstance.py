@@ -674,6 +674,9 @@ class DesktopInstance(GeckoInstance):
         "threads.lower_mainthread_priority_in_background.enabled": False,
         "dom.ipc.processPriorityManager.enabled": False,
         
+        
+        "places.semanticHistory.featureGate": False,
+        
         "startup.homepage_welcome_url": "about:blank",
         "startup.homepage_welcome_url.additional": "",
     }

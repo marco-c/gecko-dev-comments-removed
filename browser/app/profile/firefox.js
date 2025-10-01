@@ -684,7 +684,11 @@ pref("browser.urlbar.contextualSearch.enabled", true);
 pref("browser.urlbar.addons.featureGate", false);
 
 
+#if defined(EARLY_BETA_OR_EARLIER) || defined(MOZ_DEV_EDITION)
+pref("places.semanticHistory.featureGate", true);
+#else
 pref("places.semanticHistory.featureGate", false);
+#endif
 
 
 pref("browser.urlbar.suggest.semanticHistory.minLength", 5);

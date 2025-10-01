@@ -172,6 +172,9 @@ user_pref("network.sntp.pools", "{server}");
 
 
 user_pref("places.database.lastMaintenance", 2147483647);
+
+
+user_pref("places.semanticHistory.featureGate", false);
 user_pref("privacy.trackingprotection.introURL", "http://{server}/trackingprotection/tour");
 
 
