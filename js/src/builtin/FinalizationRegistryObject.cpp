@@ -236,7 +236,7 @@ bool FinalizationRegistryObject::construct(JSContext* cx, unsigned argc,
   }
 
   registry->initReservedSlot(QueueSlot, ObjectValue(*queue));
-  InitReservedSlot(registry, RecordsSlot, records.release(),
+  InitReservedSlot(registry, RecordsWithoutTokenSlot, records.release(),
                    MemoryUse::FinalizationRecordVector);
   InitReservedSlot(registry, RegistrationsSlot, registrations.release(),
                    MemoryUse::FinalizationRegistryRegistrations);
@@ -255,7 +255,7 @@ bool FinalizationRegistryObject::construct(JSContext* cx, unsigned argc,
 void FinalizationRegistryObject::trace(JSTracer* trc, JSObject* obj) {
   
   auto* registry = &obj->as<FinalizationRegistryObject>();
-  if (FinalizationRecordVector* records = registry->records()) {
+  if (FinalizationRecordVector* records = registry->recordsWithoutToken()) {
     records->trace(trc);
   }
 
@@ -276,6 +276,12 @@ void FinalizationRegistryObject::traceWeak(JSTracer* trc) {
     auto result = TraceWeakEdge(trc, &iter.getMutable().mutableKey(),
                                 "FinalizationRegistry unregister token");
     if (result.isDead()) {
+      
+      
+      AutoEnterOOMUnsafeRegion oomUnsafe;
+      if (!recordsWithoutToken()->appendAll(std::move(iter.get().value()))) {
+        oomUnsafe.crash("FinalizationRegistryObject::traceWeak");
+      }
       iter.remove();
     }
   }
@@ -289,13 +295,15 @@ void FinalizationRegistryObject::finalize(JS::GCContext* gcx, JSObject* obj) {
   
   MOZ_ASSERT_IF(registry->queue(), !registry->queue()->hasRegistry());
 
-  gcx->delete_(obj, registry->records(), MemoryUse::FinalizationRecordVector);
+  gcx->delete_(obj, registry->recordsWithoutToken(),
+               MemoryUse::FinalizationRecordVector);
   gcx->delete_(obj, registry->registrations(),
                MemoryUse::FinalizationRegistryRegistrations);
 }
 
-FinalizationRecordVector* FinalizationRegistryObject::records() const {
-  Value value = getReservedSlot(RecordsSlot);
+FinalizationRecordVector* FinalizationRegistryObject::recordsWithoutToken()
+    const {
+  Value value = getReservedSlot(RecordsWithoutTokenSlot);
   if (value.isUndefined()) {
     return nullptr;
   }
@@ -375,24 +383,11 @@ bool FinalizationRegistryObject::register_(JSContext* cx, unsigned argc,
     return false;
   }
 
-  
-  if (!registry->records()->append(record)) {
-    ReportOutOfMemory(cx);
+  if (!addRegistration(cx, registry, unregisterToken, record)) {
     return false;
   }
-  auto recordsGuard =
-      mozilla::MakeScopeExit([&] { registry->records()->popBack(); });
-
-  
-  if (!unregisterToken.isUndefined() &&
-      !addRegistration(cx, registry, unregisterToken, record)) {
-    return false;
-  }
-  auto registrationsGuard = mozilla::MakeScopeExit([&] {
-    if (!unregisterToken.isUndefined()) {
-      removeRegistrationOnError(registry, unregisterToken, record);
-    }
-  });
+  auto registrationGuard = mozilla::MakeScopeExit(
+      [&] { removeRegistrationOnError(registry, unregisterToken, record); });
 
   bool isPermanent = false;
   if (target.isObject()) {
@@ -424,8 +419,7 @@ bool FinalizationRegistryObject::register_(JSContext* cx, unsigned argc,
   }
 
   
-  recordsGuard.release();
-  registrationsGuard.release();
+  registrationGuard.release();
   args.rval().setUndefined();
   return true;
 }
@@ -449,8 +443,16 @@ bool FinalizationRegistryObject::addRegistration(
   
   
 
-  MOZ_ASSERT(CanBeHeldWeakly(unregisterToken));
   MOZ_ASSERT(registry->registrations());
+  MOZ_ASSERT(unregisterToken.isUndefined() || CanBeHeldWeakly(unregisterToken));
+
+  if (unregisterToken.isUndefined()) {
+    if (!registry->recordsWithoutToken()->append(record)) {
+      ReportOutOfMemory(cx);
+      return false;
+    }
+    return true;
+  }
 
   auto& map = *registry->registrations();
   auto ptr = map.lookupForAdd(unregisterToken.get());
@@ -468,21 +470,29 @@ bool FinalizationRegistryObject::addRegistration(
   return true;
 }
 
- void FinalizationRegistryObject::removeRegistrationOnError(
+
+void FinalizationRegistryObject::removeRegistrationOnError(
     HandleFinalizationRegistryObject registry, HandleValue unregisterToken,
     HandleFinalizationRecordObject record) {
   
   
   
 
-  MOZ_ASSERT(CanBeHeldWeakly(unregisterToken));
   MOZ_ASSERT(registry->registrations());
+  MOZ_ASSERT(unregisterToken.isUndefined() || CanBeHeldWeakly(unregisterToken));
   JS::AutoAssertNoGC nogc;
+
+  if (unregisterToken.isUndefined()) {
+    MOZ_ASSERT(registry->recordsWithoutToken()->back() == record);
+    registry->recordsWithoutToken()->popBack();
+    return;
+  }
 
   auto ptr = registry->registrations()->lookup(unregisterToken);
   MOZ_ASSERT(ptr.found());
   FinalizationRecordVector& records = ptr->value();
-  records.eraseIfEqual(record);
+  MOZ_ASSERT(records.back() == record);
+  records.popBack();
   if (records.empty()) {
     registry->registrations()->remove(ptr);
   }
@@ -529,7 +539,8 @@ bool FinalizationRegistryObject::unregister(JSContext* cx, unsigned argc,
   
   
 
-  auto ptr = registry->registrations()->lookup(unregisterToken);
+  RegistrationsMap* map = registry->registrations();
+  auto ptr = map->lookup(unregisterToken);
   if (ptr) {
     FinalizationRecordVector& records = ptr->value();
     MOZ_ASSERT(!records.empty());
@@ -538,14 +549,7 @@ bool FinalizationRegistryObject::unregister(JSContext* cx, unsigned argc,
         removed = true;
       }
     }
-    registry->registrations()->remove(unregisterToken);
-
-    
-    if (removed) {
-      registry->records()->eraseIf([](FinalizationRecordObject* record) {
-        return !record->isRegistered();
-      });
-    }
+    map->remove(unregisterToken);
   }
 
   
@@ -557,6 +561,7 @@ bool FinalizationRegistryObject::unregister(JSContext* cx, unsigned argc,
 bool FinalizationRegistryObject::unregisterRecord(
     FinalizationRecordObject* record) {
   if (!record->isRegistered()) {
+    MOZ_ASSERT(!record->isInList());
     return false;
   }
 

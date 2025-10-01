@@ -155,7 +155,7 @@ using FinalizationRecordVector =
 
 
 class FinalizationRegistryObject : public NativeObject {
-  enum { QueueSlot = 0, RecordsSlot, RegistrationsSlot, SlotCount };
+  enum { QueueSlot = 0, RegistrationsSlot, RecordsWithoutTokenSlot, SlotCount };
 
  public:
   using RegistrationsMap =
@@ -165,8 +165,8 @@ class FinalizationRegistryObject : public NativeObject {
   static const JSClass protoClass_;
 
   FinalizationQueueObject* queue() const;
-  FinalizationRecordVector* records() const;
   RegistrationsMap* registrations() const;
+  FinalizationRecordVector* recordsWithoutToken() const;
 
   void traceWeak(JSTracer* trc);
 

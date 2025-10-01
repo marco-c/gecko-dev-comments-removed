@@ -1,6 +1,8 @@
 
 
 
+gczeal(0);
+
 let vs = [];
 let r = new FinalizationRegistry(v => vs.push(v));
 let t;
