@@ -8,6 +8,7 @@
 
 #include "mozilla/LinkedList.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/ReverseIterator.h"
 
 using mozilla::AutoCleanLinkedList;
 using mozilla::LinkedList;
@@ -75,4 +76,59 @@ TEST(LinkedList, AutoCleanLinkedListRefPtr)
 
   EXPECT_TRUE(elt1->mCount == 1);
   EXPECT_TRUE(elt2->mCount == 0);
+}
+
+struct SomeClass : public LinkedListElement<SomeClass> {
+  unsigned int mValue;
+  explicit SomeClass(int aValue = 0) : mValue(aValue) {}
+  SomeClass(SomeClass&&) = default;
+  SomeClass& operator=(SomeClass&&) = default;
+  void incr() { ++mValue; }
+};
+
+TEST(LinkedList, TestReverseIterators)
+{
+  LinkedList<SomeClass> list;
+  SomeClass one(1), two(2), three(3);
+  list.insertBack(&one);
+  list.insertBack(&two);
+  list.insertBack(&three);
+
+  
+  unsigned int expect1[]{3, 2, 1};
+  size_t idx = 0;
+  for (auto it = list.rbegin(); it != list.rend(); ++it, ++idx) {
+    EXPECT_EQ((*it)->mValue, expect1[idx]);
+  }
+  EXPECT_EQ(idx, 3u);
+
+  
+  const LinkedList<SomeClass>& clist = list;
+  unsigned int expect2[]{3, 2, 1};
+  idx = 0;
+  for (auto it = clist.crbegin(); it != clist.crend(); ++it, ++idx) {
+    EXPECT_EQ((*it)->mValue, expect2[idx]);
+  }
+  EXPECT_EQ(idx, 3u);
+
+  
+  unsigned int expect3[]{3, 2, 1};
+  idx = 0;
+  for (SomeClass* entry : mozilla::Reversed(list)) {
+    EXPECT_EQ(entry->mValue, expect3[idx++]);
+  }
+  EXPECT_EQ(idx, 3u);
+
+  
+  auto rit = list.rbegin();
+  EXPECT_EQ((*rit)->mValue, 3u);
+  SomeClass* toRemove = *rit;
+  ++rit;               
+  toRemove->remove();  
+  EXPECT_EQ((*rit)->mValue, 2u);
+  toRemove = *rit;
+  ++rit;               
+  toRemove->remove();  
+  EXPECT_EQ(list.length(), 1u);
+  EXPECT_EQ(list.getFirst()->mValue, 1u);
 }
