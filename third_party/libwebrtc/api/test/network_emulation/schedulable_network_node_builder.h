@@ -23,25 +23,24 @@ namespace webrtc {
 class SchedulableNetworkNodeBuilder {
  public:
   SchedulableNetworkNodeBuilder(
-      webrtc::NetworkEmulationManager& net,
+      NetworkEmulationManager& net,
       network_behaviour::NetworkConfigSchedule schedule);
   
   
   
   
   
-  void set_start_condition(
-      absl::AnyInvocable<bool(webrtc::Timestamp)> start_condition);
+  void set_start_condition(absl::AnyInvocable<bool(Timestamp)> start_condition);
 
   
   
-  webrtc::EmulatedNetworkNode* Build(
+  EmulatedNetworkNode* Build(
       std::optional<uint64_t> random_seed = std::nullopt);
 
  private:
-  webrtc::NetworkEmulationManager& net_;
+  NetworkEmulationManager& net_;
   network_behaviour::NetworkConfigSchedule schedule_;
-  absl::AnyInvocable<bool(webrtc::Timestamp)> start_condition_;
+  absl::AnyInvocable<bool(Timestamp)> start_condition_;
 };
 
 }  

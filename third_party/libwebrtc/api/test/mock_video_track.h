@@ -23,7 +23,7 @@
 
 namespace webrtc {
 
-class MockVideoTrack : public RefCountedObject<webrtc::VideoTrackInterface> {
+class MockVideoTrack : public RefCountedObject<VideoTrackInterface> {
  public:
   static scoped_refptr<MockVideoTrack> Create() {
     return scoped_refptr<MockVideoTrack>(new MockVideoTrack());
@@ -49,14 +49,14 @@ class MockVideoTrack : public RefCountedObject<webrtc::VideoTrackInterface> {
   
   MOCK_METHOD(void,
               AddOrUpdateSink,
-              (webrtc::VideoSinkInterface<VideoFrame> * sink,
-               const webrtc::VideoSinkWants& wants),
+              (VideoSinkInterface<VideoFrame> * sink,
+               const VideoSinkWants& wants),
               (override));
   
   
   MOCK_METHOD(void,
               RemoveSink,
-              (webrtc::VideoSinkInterface<VideoFrame> * sink),
+              (VideoSinkInterface<VideoFrame> * sink),
               (override));
 
   
