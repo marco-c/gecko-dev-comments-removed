@@ -368,18 +368,7 @@ void LIRGenerator::visitCreateInlinedArgumentsObject(
 }
 
 void LIRGenerator::visitGetInlinedArgument(MGetInlinedArgument* ins) {
-#if defined(JS_PUNBOX64)
-  
-  
-  
-  
-  const bool useAtStart = false;
-#else
-  const bool useAtStart = true;
-#endif
-
-  LAllocation index =
-      useAtStart ? useRegisterAtStart(ins->index()) : useRegister(ins->index());
+  LAllocation index = useRegisterAtStart(ins->index());
   uint32_t numActuals = ins->numActuals();
   uint32_t numOperands =
       numActuals * BOX_PIECES + LGetInlinedArgument::NumNonArgumentOperands;
@@ -394,26 +383,15 @@ void LIRGenerator::visitGetInlinedArgument(MGetInlinedArgument* ins) {
   for (uint32_t i = 0; i < numActuals; i++) {
     MDefinition* arg = ins->getArg(i);
     uint32_t index = LGetInlinedArgument::ArgIndex(i);
-    lir->setBoxOperand(
-        index, useBoxOrTypedOrConstant(arg,
-                                        true, useAtStart));
+    lir->setBoxOperand(index, useBoxOrTypedOrConstant(arg,
+                                                       true,
+                                                       true));
   }
   defineBox(lir, ins);
 }
 
 void LIRGenerator::visitGetInlinedArgumentHole(MGetInlinedArgumentHole* ins) {
-#if defined(JS_PUNBOX64)
-  
-  
-  
-  
-  const bool useAtStart = false;
-#else
-  const bool useAtStart = true;
-#endif
-
-  LAllocation index =
-      useAtStart ? useRegisterAtStart(ins->index()) : useRegister(ins->index());
+  LAllocation index = useRegisterAtStart(ins->index());
   uint32_t numActuals = ins->numActuals();
   uint32_t numOperands =
       numActuals * BOX_PIECES + LGetInlinedArgumentHole::NumNonArgumentOperands;
@@ -428,9 +406,9 @@ void LIRGenerator::visitGetInlinedArgumentHole(MGetInlinedArgumentHole* ins) {
   for (uint32_t i = 0; i < numActuals; i++) {
     MDefinition* arg = ins->getArg(i);
     uint32_t index = LGetInlinedArgumentHole::ArgIndex(i);
-    lir->setBoxOperand(
-        index, useBoxOrTypedOrConstant(arg,
-                                        true, useAtStart));
+    lir->setBoxOperand(index, useBoxOrTypedOrConstant(arg,
+                                                       true,
+                                                       true));
   }
   assignSnapshot(lir, ins->bailoutKind());
   defineBox(lir, ins);
