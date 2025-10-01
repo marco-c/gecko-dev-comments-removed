@@ -1189,6 +1189,21 @@ void ScriptLoader::TryUseCache(ScriptLoadRequest* aRequest,
   return;
 }
 
+void ScriptLoader::StoreCacheInfo(LoadedScript* aLoadedScript,
+                                  ScriptLoadRequest* aRequest) {
+  MOZ_ASSERT(aRequest->mCacheInfo);
+  MOZ_ASSERT(!aRequest->SRIAndBytecode().empty());
+  MOZ_ASSERT(aRequest->SRIAndBytecode().length() == aRequest->GetSRILength());
+  MOZ_ASSERT(!aLoadedScript->mCacheInfo);
+  MOZ_ASSERT(aLoadedScript->mSRI.empty());
+
+  if (!aLoadedScript->mSRI.appendAll(aRequest->SRIAndBytecode())) {
+    return;
+  }
+
+  aLoadedScript->mCacheInfo = aRequest->mCacheInfo;
+}
+
 void ScriptLoader::EmulateNetworkEvents(ScriptLoadRequest* aRequest) {
   MOZ_ASSERT(aRequest->IsStencil());
   MOZ_ASSERT(aRequest->mNetworkMetadata);
@@ -2726,14 +2741,28 @@ void ScriptLoader::CalculateCacheFlag(ScriptLoadRequest* aRequest) {
 
   
   
-  
-  if (!aRequest->HasDiskCacheReference()) {
-    LOG(
-        ("ScriptLoadRequest (%p): Bytecode-cache: Skip disk: "
-         "!HasDiskCacheReference",
-         aRequest));
-    aRequest->MarkSkippedDiskCaching();
-    return;
+  if (aRequest->IsStencil()) {
+    
+    
+    if (!aRequest->getLoadedScript()->mCacheInfo) {
+      LOG(
+          ("ScriptLoadRequest (%p): Bytecode-cache: Skip disk: "
+           "!LoadedScript::mCacheInfo",
+           aRequest));
+      aRequest->MarkSkippedDiskCaching();
+      return;
+    }
+  } else {
+    
+    
+    if (!aRequest->HasDiskCacheReference()) {
+      LOG(
+          ("ScriptLoadRequest (%p): Bytecode-cache: Skip disk: "
+           "!HasDiskCacheReference",
+           aRequest));
+      aRequest->MarkSkippedDiskCaching();
+      return;
+    }
   }
 
   
@@ -3267,6 +3296,9 @@ void ScriptLoader::TryCacheRequest(ScriptLoadRequest* aRequest,
 
   if (cacheBehavior == CacheBehavior::Insert) {
     auto loadData = MakeRefPtr<ScriptLoadData>(this, aRequest);
+    if (aRequest->HasDiskCacheReference()) {
+      StoreCacheInfo(aRequest->getLoadedScript(), aRequest);
+    }
     mCache->Insert(*loadData);
     LOG(("ScriptLoader (%p): Inserting in-memory cache for %s.", this,
          aRequest->mURI->GetSpecOrDefault().get()));
@@ -3616,21 +3648,35 @@ void ScriptLoader::UpdateCache() {
         
         
         
-        
-        
-        MOZ_ASSERT_IF(request->HasDiskCacheReference(),
-                      !request->SRIAndBytecode().empty());
 
         if (request->IsMarkedForDiskCache()) {
-          MOZ_ASSERT(request->HasDiskCacheReference());
-          MOZ_ASSERT(request->SRIAndBytecode().length() ==
-                     request->GetSRILength());
+          if (request->HasDiskCacheReference()) {
+            
+            
+            
+            MOZ_ASSERT(request->SRIAndBytecode().length() ==
+                       request->GetSRILength());
 
-          EncodeBytecodeAndSave(aes.cx(), request, request->mCacheInfo,
-                                BytecodeMimeTypeFor(request),
-                                request->SRIAndBytecode(), stencil);
+            EncodeBytecodeAndSave(aes.cx(), request, request->mCacheInfo,
+                                  BytecodeMimeTypeFor(request),
+                                  request->SRIAndBytecode(), stencil);
 
-          request->DropBytecode();
+            request->DropBytecode();
+          } else if (request->getLoadedScript()->mCacheInfo) {
+            
+            
+            
+            
+            EncodeBytecodeAndSave(aes.cx(), request,
+                                  request->getLoadedScript()->mCacheInfo,
+                                  BytecodeMimeTypeFor(request),
+                                  request->getLoadedScript()->mSRI, stencil);
+
+            
+            
+            request->getLoadedScript()->mCacheInfo = nullptr;
+            request->getLoadedScript()->mSRI.clear();
+          }
         }
       }
       request->DropDiskCacheReference();

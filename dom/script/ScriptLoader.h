@@ -12,8 +12,10 @@
 #include "js/TypeDecls.h"
 #include "js/Utility.h"  
 #include "js/loader/LoadedScript.h"
+#include "js/loader/ModuleLoaderBase.h"
 #include "js/loader/ScriptKind.h"
 #include "js/loader/ScriptLoadRequest.h"
+#include "js/loader/ScriptLoadRequestList.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/MozPromise.h"
@@ -51,11 +53,9 @@ class SourceText;
 namespace loader {
 
 class LoadedScript;
-class ScriptLoaderInterface;
 class ModuleLoadRequest;
 class ModuleScript;
 class ScriptLoadRequest;
-class ScriptLoadRequestList;
 
 enum class ParserMetadata;
 
@@ -473,7 +473,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   ~ScriptLoader();
 
   already_AddRefed<ScriptLoadRequest> CreateLoadRequest(
-      ScriptKind aKind, nsIURI* aURI, nsIScriptElement* aElement,
+      JS::loader::ScriptKind aKind, nsIURI* aURI, nsIScriptElement* aElement,
       const nsAString& aScriptContent, nsIPrincipal* aTriggeringPrincipal,
       mozilla::CORSMode aCORSMode, const nsAString& aNonce,
       RequestPriority aRequestPriority, const SRIMetadata& aIntegrity,
@@ -510,10 +510,12 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   void ContinueParserAsync(ScriptLoadRequest* aParserBlockingRequest);
 
-  bool ProcessExternalScript(nsIScriptElement* aElement, ScriptKind aScriptKind,
+  bool ProcessExternalScript(nsIScriptElement* aElement,
+                             JS::loader::ScriptKind aScriptKind,
                              nsIContent* aScriptContent);
 
-  bool ProcessInlineScript(nsIScriptElement* aElement, ScriptKind aScriptKind,
+  bool ProcessInlineScript(nsIScriptElement* aElement,
+                           JS::loader::ScriptKind aScriptKind,
                            const nsAString& aSourceText);
 
   enum class CacheBehavior : uint8_t {
@@ -528,7 +530,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
                        RefPtr<JS::Stencil>& aStencil);
 
   JS::loader::ScriptLoadRequest* LookupPreloadRequest(
-      nsIScriptElement* aElement, ScriptKind aScriptKind,
+      nsIScriptElement* aElement, JS::loader::ScriptKind aScriptKind,
       const SRIMetadata& aSRIMetadata);
 
   void GetSRIMetadata(const nsAString& aIntegrityAttr,
@@ -784,6 +786,9 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
                              const JS::TranscodeBuffer& aSRI,
                              JS::Stencil* aStencil);
 
+  void StoreCacheInfo(JS::loader::LoadedScript* aLoadedScript,
+                      ScriptLoadRequest* aRequest);
+
   
 
 
@@ -849,41 +854,41 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   
   
-  ScriptLoadRequestList mNonAsyncExternalScriptInsertedRequests;
+  JS::loader::ScriptLoadRequestList mNonAsyncExternalScriptInsertedRequests;
 
   
   
-  ScriptLoadRequestList mLoadingAsyncRequests;
+  JS::loader::ScriptLoadRequestList mLoadingAsyncRequests;
 
   
   
   
-  ScriptLoadRequestList mLoadedAsyncRequests;
+  JS::loader::ScriptLoadRequestList mLoadedAsyncRequests;
 
   
   
-  ScriptLoadRequestList mDeferRequests;
+  JS::loader::ScriptLoadRequestList mDeferRequests;
 
   
   
-  ScriptLoadRequestList mXSLTRequests;
+  JS::loader::ScriptLoadRequestList mXSLTRequests;
 
   RefPtr<ScriptLoadRequest> mParserBlockingRequest;
 
   
   
   
-  ScriptLoadRequestList mOffThreadCompilingRequests;
+  JS::loader::ScriptLoadRequestList mOffThreadCompilingRequests;
 
   
   
   
   
-  ScriptLoadRequestList mCacheableDependencyModules;
+  JS::loader::ScriptLoadRequestList mCacheableDependencyModules;
 
   
   
-  ScriptLoadRequestList mCachingQueue;
+  JS::loader::ScriptLoadRequestList mCachingQueue;
 
   
   struct PreloadInfo {

@@ -22,6 +22,7 @@
 
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsICacheInfoChannel.h"  
 #include "nsIMemoryReporter.h"
 
 #include "jsapi.h"
@@ -283,6 +284,12 @@ class LoadedScript : public nsIMemoryReporter {
   TranscodeBuffer mScriptBytecode;
 
   RefPtr<Stencil> mStencil;
+
+  
+  nsCOMPtr<nsICacheInfoChannel> mCacheInfo;
+
+  
+  JS::TranscodeBuffer mSRI;
 };
 
 
