@@ -5,6 +5,7 @@
 
 
 #include "device_info_fake.h"
+
 #include <string.h>
 
 namespace webrtc::videocapturemodule {

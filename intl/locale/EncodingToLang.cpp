@@ -20,7 +20,7 @@ using namespace mozilla::intl;
 
 
 
-const mozilla::NotNull<const mozilla::Encoding *> *
+const mozilla::NotNull<const mozilla::Encoding*>*
     EncodingToLang::kEncodingsByRoughFrequency[] = {
 #define _(encoding, lang) &encoding,
 #include "EncodingsByFrequency.inc"

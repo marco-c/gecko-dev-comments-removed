@@ -6,19 +6,19 @@
 #ifndef _NS_DEVICECONTEXT_H_
 #define _NS_DEVICECONTEXT_H_
 
-#include <stdint.h>                   
-#include "gfxTypes.h"                 
-#include "mozilla/RefPtr.h"           
-#include "nsCOMPtr.h"                 
-#include "nsCoord.h"                  
-#include "nsError.h"                  
-#include "nsISupports.h"              
-#include "nsMathUtils.h"              
-#include "nscore.h"                   
-#include "mozilla/AppUnits.h"         
-#include "nsFontMetrics.h"            
-#include "mozilla/gfx/Point.h"        
-#include "mozilla/gfx/PrintPromise.h" 
+#include <stdint.h>                    
+#include "gfxTypes.h"                  
+#include "mozilla/RefPtr.h"            
+#include "nsCOMPtr.h"                  
+#include "nsCoord.h"                   
+#include "nsError.h"                   
+#include "nsISupports.h"               
+#include "nsMathUtils.h"               
+#include "nscore.h"                    
+#include "mozilla/AppUnits.h"          
+#include "nsFontMetrics.h"             
+#include "mozilla/gfx/Point.h"         
+#include "mozilla/gfx/PrintPromise.h"  
 
 class gfxContext;
 class gfxTextPerfMetrics;

@@ -11,14 +11,13 @@
 #include "device_info_android.h"
 
 #include <algorithm>
-#include <string>
 #include <sstream>
+#include <string>
 #include <vector>
 
-#include "rtc_base/logging.h"
 #include "modules/utility/include/helpers_android.h"
-
 #include "mozilla/jni/Utils.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 
@@ -239,7 +238,7 @@ int32_t DeviceInfoAndroid::GetDeviceName(
     uint32_t deviceNumber, char* deviceNameUTF8, uint32_t deviceNameLength,
     char* deviceUniqueIdUTF8, uint32_t deviceUniqueIdUTF8Length,
     char* , uint32_t ,
-    pid_t* ) {
+    pid_t* , bool* ) {
   if (deviceNumber >= g_camera_info->size()) {
     return -1;
   }
