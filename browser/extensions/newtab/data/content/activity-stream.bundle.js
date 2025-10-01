@@ -13875,6 +13875,9 @@ function Widgets() {
       dispatch(actionCreators.SetPref(prefName, true));
     }
   }
+  if (!(listsEnabled || timerEnabled)) {
+    return null;
+  }
   return external_React_default().createElement("div", {
     className: "widgets-wrapper"
   }, external_React_default().createElement("div", {
