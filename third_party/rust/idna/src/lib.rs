@@ -66,7 +66,7 @@ pub use crate::deprecated::{Config, Idna};
 pub struct Errors {}
 
 impl From<Errors> for Result<(), Errors> {
-    fn from(e: Errors) -> Result<(), Errors> {
+    fn from(e: Errors) -> Self {
         Err(e)
     }
 }
@@ -107,6 +107,33 @@ pub fn domain_to_ascii_cow(
     ascii_deny_list: AsciiDenyList,
 ) -> Result<Cow<'_, str>, Errors> {
     Uts46::new().to_ascii(
+        domain,
+        ascii_deny_list,
+        uts46::Hyphens::Allow,
+        uts46::DnsLength::Ignore,
+    )
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn domain_to_ascii_from_cow(
+    domain: Cow<'_, [u8]>,
+    ascii_deny_list: AsciiDenyList,
+) -> Result<Cow<'_, str>, Errors> {
+    Uts46::new().to_ascii_from_cow(
         domain,
         ascii_deny_list,
         uts46::Hyphens::Allow,

@@ -63,26 +63,26 @@ pub enum Origin {
 
 impl Origin {
     
-    pub fn new_opaque() -> Origin {
+    pub fn new_opaque() -> Self {
         static COUNTER: AtomicUsize = AtomicUsize::new(0);
-        Origin::Opaque(OpaqueOrigin(COUNTER.fetch_add(1, Ordering::SeqCst)))
+        Self::Opaque(OpaqueOrigin(COUNTER.fetch_add(1, Ordering::SeqCst)))
     }
 
     
     
     pub fn is_tuple(&self) -> bool {
-        matches!(*self, Origin::Tuple(..))
+        matches!(*self, Self::Tuple(..))
     }
 
     
     pub fn ascii_serialization(&self) -> String {
         match *self {
-            Origin::Opaque(_) => "null".to_owned(),
-            Origin::Tuple(ref scheme, ref host, port) => {
+            Self::Opaque(_) => "null".to_owned(),
+            Self::Tuple(ref scheme, ref host, port) => {
                 if default_port(scheme) == Some(port) {
-                    format!("{}://{}", scheme, host)
+                    format!("{scheme}://{host}")
                 } else {
-                    format!("{}://{}:{}", scheme, host, port)
+                    format!("{scheme}://{host}:{port}")
                 }
             }
         }
@@ -91,8 +91,8 @@ impl Origin {
     
     pub fn unicode_serialization(&self) -> String {
         match *self {
-            Origin::Opaque(_) => "null".to_owned(),
-            Origin::Tuple(ref scheme, ref host, port) => {
+            Self::Opaque(_) => "null".to_owned(),
+            Self::Tuple(ref scheme, ref host, port) => {
                 let host = match *host {
                     Host::Domain(ref domain) => {
                         let (domain, _errors) = idna::domain_to_unicode(domain);
@@ -101,9 +101,9 @@ impl Origin {
                     _ => host.clone(),
                 };
                 if default_port(scheme) == Some(port) {
-                    format!("{}://{}", scheme, host)
+                    format!("{scheme}://{host}")
                 } else {
-                    format!("{}://{}:{}", scheme, host, port)
+                    format!("{scheme}://{host}:{port}")
                 }
             }
         }

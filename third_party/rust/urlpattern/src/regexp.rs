@@ -5,7 +5,7 @@ pub trait RegExp: Sized {
 
   
   
-  fn parse(pattern: &str, flags: &str) -> Result<Self, ()>;
+  fn parse(pattern: &str, flags: &str, force_eval: bool) -> Result<Self, ()>;
 
   
   
@@ -22,7 +22,7 @@ impl RegExp for regex::Regex {
     RegexSyntax::Rust
   }
 
-  fn parse(pattern: &str, flags: &str) -> Result<Self, ()> {
+  fn parse(pattern: &str, flags: &str, _force_eval: bool) -> Result<Self, ()> {
     regex::Regex::new(&format!("(?{flags}){pattern}")).map_err(|_| ())
   }
 

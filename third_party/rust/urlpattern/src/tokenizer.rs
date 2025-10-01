@@ -2,6 +2,10 @@
 
 use crate::error::TokenizerError;
 use crate::Error;
+use icu_properties::{
+  props::{IdContinue, IdStart},
+  CodePointSetDataBorrowed,
+};
 
 
 
@@ -160,6 +164,14 @@ pub fn tokenize(
       );
       continue;
     }
+    if tokenizer.code_point == Some('\n')
+      || tokenizer.code_point == Some('\r')
+      || tokenizer.code_point == Some('\t')
+    {
+      
+      tokenizer.index = tokenizer.next_index;
+      continue;
+    }
     if tokenizer.code_point == Some('{') {
       tokenizer.add_token_with_default_pos_and_len(TokenType::Open);
       continue;
@@ -315,13 +327,18 @@ pub fn tokenize(
   Ok(tokenizer.token_list)
 }
 
+static ID_START: CodePointSetDataBorrowed<'_> =
+  CodePointSetDataBorrowed::new::<IdStart>();
+static ID_CONTINUE: CodePointSetDataBorrowed<'_> =
+  CodePointSetDataBorrowed::new::<IdContinue>();
+
 
 #[inline]
 pub(crate) fn is_valid_name_codepoint(code_point: char, first: bool) -> bool {
   if first {
-    unic_ucd_ident::is_id_start(code_point) || matches!(code_point, '$' | '_')
+    ID_START.contains(code_point) || matches!(code_point, '$' | '_')
   } else {
-    unic_ucd_ident::is_id_continue(code_point)
+    ID_CONTINUE.contains(code_point)
       || matches!(code_point, '$' | '\u{200C}' | '\u{200D}')
   }
 }

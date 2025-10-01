@@ -319,7 +319,7 @@ impl AsciiDenyList {
             bits |= 1u128 << b;
             i += 1;
         }
-        AsciiDenyList { bits }
+        Self { bits }
     }
 
     
@@ -332,14 +332,14 @@ impl AsciiDenyList {
     
     
     
-    pub const EMPTY: AsciiDenyList = AsciiDenyList::new(false, "");
+    pub const EMPTY: Self = Self::new(false, "");
 
     
     
     
     
     
-    pub const STD3: AsciiDenyList = AsciiDenyList { bits: ldh_mask() };
+    pub const STD3: Self = Self { bits: ldh_mask() };
 
     
     
@@ -348,7 +348,7 @@ impl AsciiDenyList {
     
     
     
-    pub const URL: AsciiDenyList = AsciiDenyList::new(true, "%#/:<>?@[\\]^|");
+    pub const URL: Self = Self::new(true, "%#/:<>?@[\\]^|");
 }
 
 
@@ -434,7 +434,7 @@ pub enum ProcessingError {
 
 impl From<core::fmt::Error> for ProcessingError {
     fn from(_: core::fmt::Error) -> Self {
-        ProcessingError::SinkError
+        Self::SinkError
     }
 }
 
@@ -531,9 +531,24 @@ impl Uts46 {
         hyphens: Hyphens,
         dns_length: DnsLength,
     ) -> Result<Cow<'a, str>, crate::Errors> {
+        self.to_ascii_from_cow(
+            Cow::Borrowed(domain_name),
+            ascii_deny_list,
+            hyphens,
+            dns_length,
+        )
+    }
+
+    pub(crate) fn to_ascii_from_cow<'a>(
+        &self,
+        domain_name: Cow<'a, [u8]>,
+        ascii_deny_list: AsciiDenyList,
+        hyphens: Hyphens,
+        dns_length: DnsLength,
+    ) -> Result<Cow<'a, str>, crate::Errors> {
         let mut s = String::new();
         match self.process(
-            domain_name,
+            &domain_name,
             ascii_deny_list,
             hyphens,
             ErrorPolicy::FailFast,
@@ -541,9 +556,12 @@ impl Uts46 {
             &mut s,
             None,
         ) {
-            
             Ok(ProcessingSuccess::Passthrough) => {
-                let cow = Cow::Borrowed(unsafe { core::str::from_utf8_unchecked(domain_name) });
+                
+                let cow = match domain_name {
+                    Cow::Borrowed(v) => Cow::Borrowed(unsafe { core::str::from_utf8_unchecked(v) }),
+                    Cow::Owned(v) => Cow::Owned(unsafe { String::from_utf8_unchecked(v) }),
+                };
                 if dns_length != DnsLength::Ignore
                     && !verify_dns_length(&cow, dns_length == DnsLength::VerifyAllowRootDot)
                 {

@@ -143,7 +143,7 @@
 
 
 #![no_std]
-#![doc(html_root_url = "https://docs.rs/url/2.5.4")]
+#![doc(html_root_url = "https://docs.rs/url/2.5.7")]
 #![cfg_attr(
     feature = "debugger_visualizer",
     debugger_visualizer(natvis_file = "../../debug_metadata/url.natvis")
@@ -174,6 +174,7 @@ use crate::net::IpAddr;
 ))]
 use crate::net::{SocketAddr, ToSocketAddrs};
 use crate::parser::{to_u32, Context, Parser, SchemeType, USERINFO};
+use alloc::borrow::Cow;
 use alloc::borrow::ToOwned;
 use alloc::str;
 use alloc::string::{String, ToString};
@@ -337,8 +338,8 @@ impl Url {
     
     
     #[inline]
-    pub fn parse(input: &str) -> Result<Url, crate::ParseError> {
-        Url::options().parse(input)
+    pub fn parse(input: &str) -> Result<Self, crate::ParseError> {
+        Self::options().parse(input)
     }
 
     
@@ -367,14 +368,14 @@ impl Url {
     
     
     #[inline]
-    pub fn parse_with_params<I, K, V>(input: &str, iter: I) -> Result<Url, crate::ParseError>
+    pub fn parse_with_params<I, K, V>(input: &str, iter: I) -> Result<Self, crate::ParseError>
     where
         I: IntoIterator,
         I::Item: Borrow<(K, V)>,
         K: AsRef<str>,
         V: AsRef<str>,
     {
-        let mut url = Url::options().parse(input);
+        let mut url = Self::options().parse(input);
 
         if let Ok(ref mut url) = url {
             url.query_pairs_mut().extend_pairs(iter);
@@ -448,7 +449,12 @@ impl Url {
     
     
     
-
+    
+    
+    
+    
+    
+    
     
     
     
@@ -462,8 +468,8 @@ impl Url {
     
     
     #[inline]
-    pub fn join(&self, input: &str) -> Result<Url, crate::ParseError> {
-        Url::options().base_url(Some(self)).parse(input)
+    pub fn join(&self, input: &str) -> Result<Self, crate::ParseError> {
+        Self::options().base_url(Some(self)).parse(input)
     }
 
     
@@ -507,7 +513,7 @@ impl Url {
     
     
     
-    pub fn make_relative(&self, url: &Url) -> Option<String> {
+    pub fn make_relative(&self, url: &Self) -> Option<String> {
         if self.cannot_be_a_base() {
             return None;
         }
@@ -783,7 +789,7 @@ impl Url {
             assert!(fragment_start > query_start);
         }
 
-        let other = Url::parse(self.as_str()).expect("Failed to parse myself?");
+        let other = Self::parse(self.as_str()).expect("Failed to parse myself?");
         assert_eq!(&self.serialization, &other.serialization);
         assert_eq!(self.scheme_end, other.scheme_end);
         assert_eq!(self.username_end, other.username_end);
@@ -1150,6 +1156,9 @@ impl Url {
     
     
     
+    
+    
+    
     pub fn host_str(&self) -> Option<&str> {
         if self.has_host() {
             Some(self.slice(self.host_start..self.host_end))
@@ -1198,6 +1207,10 @@ impl Url {
         }
     }
 
+    
+    
+    
+    
     
     
     
@@ -1492,7 +1505,6 @@ impl Url {
     
     
     
-
     #[inline]
     pub fn query_pairs(&self) -> form_urlencoded::Parse<'_> {
         form_urlencoded::parse(self.query().unwrap_or("").as_bytes())
@@ -1555,7 +1567,7 @@ impl Url {
     
     
     
-
+    
     
     
     
@@ -1904,7 +1916,7 @@ impl Url {
             (_, Some(new)) => {
                 let path_and_after = self.slice(self.path_start..).to_owned();
                 self.serialization.truncate(self.host_end as usize);
-                write!(&mut self.serialization, ":{}", new).unwrap();
+                write!(&mut self.serialization, ":{new}").unwrap();
                 let old_path_start = self.path_start;
                 let new_path_start = to_u32(self.serialization.len()).unwrap();
                 self.path_start = new_path_start;
@@ -2033,9 +2045,9 @@ impl Url {
                 }
             }
             if SchemeType::from(self.scheme()).is_special() {
-                self.set_host_internal(Host::parse(host_substr)?, None);
+                self.set_host_internal(Host::parse_cow(host_substr.into())?, None);
             } else {
-                self.set_host_internal(Host::parse_opaque(host_substr)?, None);
+                self.set_host_internal(Host::parse_opaque_cow(host_substr.into())?, None);
             }
         } else if self.has_host() {
             if scheme_type.is_special() && !scheme_type.is_file() {
@@ -2071,7 +2083,7 @@ impl Url {
     }
 
     
-    fn set_host_internal(&mut self, host: Host<String>, opt_new_port: Option<Option<u16>>) {
+    fn set_host_internal(&mut self, host: Host<Cow<'_, str>>, opt_new_port: Option<Option<u16>>) {
         let old_suffix_pos = if opt_new_port.is_some() {
             self.path_start
         } else {
@@ -2087,14 +2099,14 @@ impl Url {
             self.username_end += 2;
             self.host_start += 2;
         }
-        write!(&mut self.serialization, "{}", host).unwrap();
+        write!(&mut self.serialization, "{host}").unwrap();
         self.host_end = to_u32(self.serialization.len()).unwrap();
         self.host = host.into();
 
         if let Some(new_port) = opt_new_port {
             self.port = new_port;
             if let Some(port) = new_port {
-                write!(&mut self.serialization, ":{}", port).unwrap();
+                write!(&mut self.serialization, ":{port}").unwrap();
             }
         }
         let new_suffix_pos = to_u32(self.serialization.len()).unwrap();
@@ -2538,11 +2550,11 @@ impl Url {
         )
     ))]
     #[allow(clippy::result_unit_err)]
-    pub fn from_file_path<P: AsRef<std::path::Path>>(path: P) -> Result<Url, ()> {
+    pub fn from_file_path<P: AsRef<std::path::Path>>(path: P) -> Result<Self, ()> {
         let mut serialization = "file://".to_owned();
         let host_start = serialization.len() as u32;
         let (host_end, host) = path_to_file_url_segments(path.as_ref(), &mut serialization)?;
-        Ok(Url {
+        Ok(Self {
             serialization,
             scheme_end: "file".len() as u32,
             username_end: host_start,
@@ -2586,8 +2598,8 @@ impl Url {
         )
     ))]
     #[allow(clippy::result_unit_err)]
-    pub fn from_directory_path<P: AsRef<std::path::Path>>(path: P) -> Result<Url, ()> {
-        let mut url = Url::from_file_path(path)?;
+    pub fn from_directory_path<P: AsRef<std::path::Path>>(path: P) -> Result<Self, ()> {
+        let mut url = Self::from_file_path(path)?;
         if !url.serialization.ends_with('/') {
             url.serialization.push('/')
         }
@@ -2674,8 +2686,7 @@ impl Url {
             fragment_start,
         };
         if cfg!(debug_assertions) {
-            url.check_invariants()
-                .map_err(|reason| Error::custom(reason))?
+            url.check_invariants().map_err(Error::custom)?
         }
         Ok(url)
     }
@@ -2722,7 +2733,26 @@ impl Url {
                 _ => return Err(()),
             };
 
-            return file_url_segments_to_pathbuf(host, segments);
+            let str_len = self.as_str().len();
+            let estimated_capacity = if cfg!(target_os = "redox") {
+                let scheme_len = self.scheme().len();
+                let file_scheme_len = "file".len();
+                
+                if scheme_len < file_scheme_len {
+                    let scheme_diff = file_scheme_len - scheme_len;
+                    (str_len + scheme_diff).saturating_sub(2)
+                } else {
+                    let scheme_diff = scheme_len - file_scheme_len;
+                    str_len.saturating_sub(scheme_diff + 2)
+                }
+            } else if cfg!(windows) {
+                
+                str_len.saturating_sub(self.scheme().len() + 1)
+            } else {
+                
+                str_len.saturating_sub(self.scheme().len() + 3)
+            };
+            return file_url_segments_to_pathbuf(estimated_capacity, host, segments);
         }
         Err(())
     }
@@ -2748,8 +2778,8 @@ impl str::FromStr for Url {
     type Err = ParseError;
 
     #[inline]
-    fn from_str(input: &str) -> Result<Url, crate::ParseError> {
-        Url::parse(input)
+    fn from_str(input: &str) -> Result<Self, crate::ParseError> {
+        Self::parse(input)
     }
 }
 
@@ -2757,7 +2787,7 @@ impl<'a> TryFrom<&'a str> for Url {
     type Error = ParseError;
 
     fn try_from(s: &'a str) -> Result<Self, Self::Error> {
-        Url::parse(s)
+        Self::parse(s)
     }
 }
 
@@ -2771,7 +2801,7 @@ impl fmt::Display for Url {
 
 
 impl From<Url> for String {
-    fn from(value: Url) -> String {
+    fn from(value: Url) -> Self {
         value.serialization
     }
 }
@@ -2892,7 +2922,7 @@ impl<'de> serde::Deserialize<'de> for Url {
 
         struct UrlVisitor;
 
-        impl<'de> Visitor<'de> for UrlVisitor {
+        impl Visitor<'_> for UrlVisitor {
             type Value = Url;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -2903,7 +2933,7 @@ impl<'de> serde::Deserialize<'de> for Url {
             where
                 E: Error,
             {
-                Url::parse(s).map_err(|err| Error::custom(format!("{}: {:?}", err, s)))
+                Url::parse(s).map_err(|err| Error::custom(format!("{err}: {s:?}")))
             }
         }
 
@@ -2989,8 +3019,8 @@ fn path_to_file_url_segments_windows(
                 serialization.push(':');
             }
             Prefix::UNC(server, share) | Prefix::VerbatimUNC(server, share) => {
-                let host = Host::parse(server.to_str().ok_or(())?).map_err(|_| ())?;
-                write!(serialization, "{}", host).unwrap();
+                let host = Host::parse_cow(server.to_str().ok_or(())?.into()).map_err(|_| ())?;
+                write!(serialization, "{host}").unwrap();
                 host_end = to_u32(serialization.len()).unwrap();
                 host_internal = host.into();
                 serialization.push('/');
@@ -3032,6 +3062,7 @@ fn path_to_file_url_segments_windows(
     any(unix, target_os = "redox", target_os = "wasi", target_os = "hermit")
 ))]
 fn file_url_segments_to_pathbuf(
+    estimated_capacity: usize,
     host: Option<&str>,
     segments: str::Split<'_, char>,
 ) -> Result<PathBuf, ()> {
@@ -3043,17 +3074,16 @@ fn file_url_segments_to_pathbuf(
     use std::os::hermit::ffi::OsStrExt;
     #[cfg(any(unix, target_os = "redox"))]
     use std::os::unix::prelude::OsStrExt;
-    use std::path::PathBuf;
 
     if host.is_some() {
         return Err(());
     }
 
-    let mut bytes = if cfg!(target_os = "redox") {
-        b"file:".to_vec()
-    } else {
-        Vec::new()
-    };
+    let mut bytes = Vec::new();
+    bytes.try_reserve(estimated_capacity).map_err(|_| ())?;
+    if cfg!(target_os = "redox") {
+        bytes.extend(b"file:");
+    }
 
     for segment in segments {
         bytes.push(b'/');
@@ -3085,22 +3115,27 @@ fn file_url_segments_to_pathbuf(
 
 #[cfg(all(feature = "std", windows))]
 fn file_url_segments_to_pathbuf(
+    estimated_capacity: usize,
     host: Option<&str>,
     segments: str::Split<char>,
 ) -> Result<PathBuf, ()> {
-    file_url_segments_to_pathbuf_windows(host, segments)
+    file_url_segments_to_pathbuf_windows(estimated_capacity, host, segments)
 }
 
 
 #[cfg(feature = "std")]
 #[cfg_attr(not(windows), allow(dead_code))]
 fn file_url_segments_to_pathbuf_windows(
+    estimated_capacity: usize,
     host: Option<&str>,
     mut segments: str::Split<'_, char>,
 ) -> Result<PathBuf, ()> {
-    use percent_encoding::percent_decode;
-    let mut string = if let Some(host) = host {
-        r"\\".to_owned() + host
+    use percent_encoding::percent_decode_str;
+    let mut string = String::new();
+    string.try_reserve(estimated_capacity).map_err(|_| ())?;
+    if let Some(host) = host {
+        string.push_str(r"\\");
+        string.push_str(host);
     } else {
         let first = segments.next().ok_or(())?;
 
@@ -3110,7 +3145,7 @@ fn file_url_segments_to_pathbuf_windows(
                     return Err(());
                 }
 
-                first.to_owned()
+                string.push_str(first);
             }
 
             4 => {
@@ -3122,7 +3157,8 @@ fn file_url_segments_to_pathbuf_windows(
                     return Err(());
                 }
 
-                first[0..1].to_owned() + ":"
+                string.push_str(&first[0..1]);
+                string.push(':');
             }
 
             _ => return Err(()),
@@ -3133,10 +3169,19 @@ fn file_url_segments_to_pathbuf_windows(
         string.push('\\');
 
         
-        match String::from_utf8(percent_decode(segment.as_bytes()).collect()) {
+        match percent_decode_str(segment).decode_utf8() {
             Ok(s) => string.push_str(&s),
             Err(..) => return Err(()),
         }
+    }
+    
+    if cfg!(test) {
+        debug_assert!(
+            string.len() <= estimated_capacity,
+            "len: {}, capacity: {}",
+            string.len(),
+            estimated_capacity
+        );
     }
     let path = PathBuf::from(string);
     debug_assert!(
@@ -3177,7 +3222,7 @@ impl<'a> form_urlencoded::Target for UrlQuery<'a> {
     type Finished = &'a mut Url;
 }
 
-impl<'a> Drop for UrlQuery<'a> {
+impl Drop for UrlQuery<'_> {
     fn drop(&mut self) {
         if let Some(url) = self.url.take() {
             url.restore_already_parsed_fragment(self.fragment.take())
