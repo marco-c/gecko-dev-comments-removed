@@ -7,9 +7,8 @@
 #ifndef XPCOM_THREADS_TARGETSHUTDOWNTASKSET_H_
 #define XPCOM_THREADS_TARGETSHUTDOWNTASKSET_H_
 
-#include <random>
+#include "mozilla/LinkedList.h"
 #include "nsITargetShutdownTask.h"
-#include "nsTArray.h"
 
 class nsIRunnable;
 
@@ -19,7 +18,8 @@ class nsIRunnable;
 
 class TargetShutdownTaskSet {
  public:
-  using TasksArray = nsTArray<nsCOMPtr<nsITargetShutdownTask>>;
+  using TasksList = mozilla::LinkedList<RefPtr<nsITargetShutdownTask>>;
+  using TasksArray = AutoTArray<nsCOMPtr<nsITargetShutdownTask>, 8>;
 
   TargetShutdownTaskSet() = default;
   TargetShutdownTaskSet(TargetShutdownTaskSet&& aOther) = default;
@@ -28,13 +28,16 @@ class TargetShutdownTaskSet {
   
   
   
-  
-  
   nsresult AddTask(nsITargetShutdownTask* aTask) {
     MOZ_ASSERT(aTask);
     MOZ_ASSERT(!mShutdownTasksTaken);
-    MOZ_ASSERT(!mShutdownTasks.Contains(aTask));
-    mShutdownTasks.AppendElement(aTask);
+    if (aTask->isInList()) {
+      MOZ_ASSERT_UNREACHABLE(
+          "A shutdown task can only be registered to one target.");
+      return NS_ERROR_UNEXPECTED;
+    }
+    mShutdownTasks.insertBack(aTask);
+    ++mShutdownTaskCount;
     return NS_OK;
   }
 
@@ -44,34 +47,38 @@ class TargetShutdownTaskSet {
   
   nsresult RemoveTask(nsITargetShutdownTask* aTask) {
     MOZ_ASSERT(aTask);
-    
-    
-    
-    TasksArray::index_type idx = mShutdownTasks.LastIndexOf(aTask);
-    if (idx != TasksArray::NoIndex) {
-      mShutdownTasks.RemoveElementAt(idx);
-      return NS_OK;
+    if (!aTask->isInList()) {
+      return NS_ERROR_UNEXPECTED;
     }
-    return NS_ERROR_UNEXPECTED;
+    aTask->removeFrom(mShutdownTasks);
+    --mShutdownTaskCount;
+    return NS_OK;
   }
 
   
   
-  TasksArray Extract() {
+  inline TasksArray Extract() {
     MOZ_ASSERT(!mShutdownTasksTaken);
-    TasksArray ret = std::move(mShutdownTasks);
+    TasksArray ret;
+    ret.SetCapacity(mShutdownTaskCount);
+    while (!mShutdownTasks.isEmpty()) {
+      auto task = mShutdownTasks.popFirst();
+      ret.AppendElement(std::move(task));
+    }
+    mShutdownTaskCount = 0;
 #ifdef DEBUG
     mShutdownTasksTaken = true;
 #endif
     return ret;
   }
 
-  bool IsEmpty() { return mShutdownTasks.IsEmpty(); }
+  bool IsEmpty() { return mShutdownTasks.isEmpty(); }
 
-  ~TargetShutdownTaskSet() { MOZ_ASSERT(mShutdownTasks.IsEmpty()); }
+  ~TargetShutdownTaskSet() { MOZ_ASSERT(mShutdownTasks.isEmpty()); }
 
  private:
-  TasksArray mShutdownTasks;
+  TasksList mShutdownTasks;
+  uint32_t mShutdownTaskCount{0};
 #ifdef DEBUG
   bool mShutdownTasksTaken{false};
 #endif
