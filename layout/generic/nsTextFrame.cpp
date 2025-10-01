@@ -4133,7 +4133,7 @@ void nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
             
             if (!atStart && currClass != CharClass::Other &&
                 mTextAutospace->ShouldApplySpacing(
-                    prevClass.valueOr(findPrecedingClass()), currClass)) {
+                    prevClass.valueOrFrom(findPrecedingClass), currClass)) {
               aSpacing[runOffsetInSubstring + i].mBefore +=
                   mTextAutospace->InterScriptSpacing();
             }
