@@ -549,9 +549,22 @@ class ModuleLoaderBase : public nsISupports {
                                              Handle<Value> aHostDefined,
                                              Handle<Value> aError);
   static bool OnLoadRequestedModulesResolved(ModuleLoadRequest* aRequest);
-  static bool OnLoadRequestedModulesRejected(JSContext* aCx,
-                                             ModuleLoadRequest* aRequest,
+  static bool OnLoadRequestedModulesRejected(ModuleLoadRequest* aRequest,
                                              Handle<Value> aError);
+
+  
+
+
+
+
+
+
+
+
+
+
+  void FinishDynamicImportAndReject(ModuleLoadRequest* aRequest,
+                                    nsresult aResult);
 
   void RemoveDynamicImport(ModuleLoadRequest* aRequest);
 
@@ -560,7 +573,6 @@ class ModuleLoaderBase : public nsISupports {
 
   void OnFetchSucceeded(ModuleLoadRequest* aRequest);
   void OnFetchFailed(ModuleLoadRequest* aRequest);
-  void Cancel(ModuleLoadRequest* aRequest);
 
   
   enum class ImportMetaSlots : uint32_t { ModulePrivateSlot = 0, SlotCount };

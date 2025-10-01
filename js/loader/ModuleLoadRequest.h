@@ -50,6 +50,8 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
     StaticImport,
 
     
+    
+    
     DynamicImport,
   };
 
@@ -60,16 +62,16 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
                     LoadContextBase* aContext, Kind aKind,
                     ModuleLoaderBase* aLoader, ModuleLoadRequest* aRootModule);
 
-  bool IsTopLevel() const override { return mKind == Kind::TopLevel; }
-  bool IsStaticImport() const { return mKind == Kind::StaticImport; }
-  bool IsDynamicImport() const { return mKind == Kind::DynamicImport; }
+  bool IsTopLevel() const override { return mIsTopLevel; }
+
+  bool IsDynamicImport() const { return mIsDynamicImport; }
 
   bool IsErrored() const;
 
   nsIGlobalObject* GetGlobalObject();
 
   void SetReady() override;
-  void Cancel() override { mLoader->Cancel(this); };
+  void Cancel() override;
 
   void SetImport(Handle<JSScript*> aReferrerScript,
                  Handle<JSObject*> aModuleRequestObj, Handle<Value> aPayload);
@@ -116,20 +118,14 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
     mReferrerPolicy = aReferrerPolicy;
   }
 
-  const Kind mKind;
-
-  void SetErroredLoadingImports() {
-    MOZ_ASSERT(IsDynamicImport());
-    MOZ_ASSERT(IsFetching());
-    mErroredLoadingImports = true;
-  }
+  
+  const bool mIsTopLevel;
 
   
   const ModuleType mModuleType;
 
   
-  
-  bool mErroredLoadingImports;
+  const bool mIsDynamicImport;
 
   
   
