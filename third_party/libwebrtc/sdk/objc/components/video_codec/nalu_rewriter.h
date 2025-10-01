@@ -14,10 +14,12 @@
 
 #include <CoreMedia/CoreMedia.h>
 
+#include <cstddef>
+#include <cstdint>
 #include <vector>
 
+#include "api/array_view.h"
 #include "common_video/h264/h264_common.h"
-#include "modules/video_coding/codecs/h264/include/h264.h"
 #include "rtc_base/buffer.h"
 
 using webrtc::H264::NaluIndex;
@@ -37,8 +39,7 @@ bool H264CMSampleBufferToAnnexBBuffer(CMSampleBufferRef avcc_sample_buffer,
 
 
 
-bool H264AnnexBBufferToCMSampleBuffer(const uint8_t* annexb_buffer,
-                                      size_t annexb_buffer_size,
+bool H264AnnexBBufferToCMSampleBuffer(ArrayView<const uint8_t> annexb_buffer,
                                       CMVideoFormatDescriptionRef video_format,
                                       CMSampleBufferRef* out_sample_buffer,
                                       CMMemoryPoolRef memory_pool);
@@ -47,20 +48,19 @@ bool H264AnnexBBufferToCMSampleBuffer(const uint8_t* annexb_buffer,
 
 
 CMVideoFormatDescriptionRef CreateVideoFormatDescription(
-    const uint8_t* annexb_buffer,
-    size_t annexb_buffer_size);
+    ArrayView<const uint8_t> annexb_buffer);
 
 
 class AnnexBBufferReader final {
  public:
-  AnnexBBufferReader(const uint8_t* annexb_buffer, size_t length);
+  explicit AnnexBBufferReader(ArrayView<const uint8_t> annexb_buffer);
   ~AnnexBBufferReader();
   AnnexBBufferReader(const AnnexBBufferReader& other) = delete;
   void operator=(const AnnexBBufferReader& other) = delete;
 
   
   
-  bool ReadNalu(const uint8_t** out_nalu, size_t* out_length);
+  bool ReadNalu(ArrayView<const uint8_t>& out_nalu);
 
   
   
@@ -81,31 +81,28 @@ class AnnexBBufferReader final {
                             size_t length,
                             size_t offset) const;
 
-  const uint8_t* const start_;
+  const ArrayView<const uint8_t> buffer_;
   std::vector<NaluIndex> offsets_;
   std::vector<NaluIndex>::iterator offset_;
-  const size_t length_;
 };
 
 
 class AvccBufferWriter final {
  public:
-  AvccBufferWriter(uint8_t* const avcc_buffer, size_t length);
+  explicit AvccBufferWriter(ArrayView<uint8_t> avcc_buffer);
   ~AvccBufferWriter() {}
   AvccBufferWriter(const AvccBufferWriter& other) = delete;
   void operator=(const AvccBufferWriter& other) = delete;
 
   
   
-  bool WriteNalu(const uint8_t* data, size_t data_size);
+  bool WriteNalu(ArrayView<const uint8_t> data);
 
   
   size_t BytesRemaining() const;
 
  private:
-  uint8_t* const start_;
-  size_t offset_;
-  const size_t length_;
+  ArrayView<uint8_t> buffer_;
 };
 
 }  
