@@ -43,7 +43,6 @@
 #include "nsGkAtoms.h"           
 #include "nsHTMLTags.h"
 #include "nsIContentInlines.h"   
-#include "nsIFrameInlines.h"     
 #include "nsLiteralString.h"     
 #include "nsNameSpaceManager.h"  
 #include "nsPrintfCString.h"     
@@ -369,8 +368,46 @@ bool HTMLEditUtils::IsInlineContent(const nsIContent& aContent,
 }
 
 bool HTMLEditUtils::IsFlexOrGridItem(const Element& aElement) {
-  nsIFrame* frame = aElement.GetPrimaryFrame();
-  return frame && frame->IsFlexOrGridItem();
+  Element* const parentElement = aElement.GetParentElement();
+  
+  
+  
+  
+  
+  
+  if (MOZ_UNLIKELY(!parentElement)) {
+    return false;
+  }
+  
+  
+  
+  RefPtr<const ComputedStyle> elementStyle =
+      nsComputedDOMStyle::GetComputedStyleNoFlush(&aElement);
+  if (MOZ_UNLIKELY(!elementStyle)) {
+    return false;
+  }
+  const nsStyleDisplay* styleDisplay = elementStyle->StyleDisplay();
+  if (MOZ_UNLIKELY(styleDisplay->mDisplay == StyleDisplay::None)) {
+    return false;
+  }
+  const RefPtr<const ComputedStyle> parentElementStyle =
+      nsComputedDOMStyle::GetComputedStyleNoFlush(parentElement);
+  if (MOZ_UNLIKELY(!parentElementStyle)) {
+    return false;
+  }
+  const nsStyleDisplay* parentStyleDisplay = parentElementStyle->StyleDisplay();
+  const auto parentDisplayInside = parentStyleDisplay->DisplayInside();
+  const bool parentIsFlexContainerOrGridContainer =
+      parentDisplayInside == StyleDisplayInside::Flex ||
+      parentDisplayInside == StyleDisplayInside::Grid;
+  
+  
+  
+  
+  
+  MOZ_ASSERT_IF(parentIsFlexContainerOrGridContainer,
+                styleDisplay->IsBlockOutsideStyle());
+  return parentIsFlexContainerOrGridContainer;
 }
 
 bool HTMLEditUtils::IsInclusiveAncestorCSSDisplayNone(
