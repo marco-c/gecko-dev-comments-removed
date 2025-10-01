@@ -13,7 +13,7 @@
 
 #include <cstdint>
 #if defined(WEBRTC_POSIX)
-#include <arpa/inet.h>
+#include <arpa/inet.h>  
 #include <netdb.h>
 #include <netinet/in.h>  
 
@@ -46,6 +46,23 @@ enum IPv6AddressFlag {
   
   
   IPV6_ADDRESS_FLAG_DEPRECATED = 1 << 1,
+};
+
+
+
+enum class IPAddressType {
+  
+  kUnknown = 0,
+  
+  kAny = 1,
+  
+  kLoopback = 2,
+  
+  
+  kPrivate = 3,
+  
+  kPublic = 4,
+  kMaxValue = kPublic,
 };
 
 

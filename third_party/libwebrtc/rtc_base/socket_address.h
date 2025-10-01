@@ -11,6 +11,8 @@
 #ifndef RTC_BASE_SOCKET_ADDRESS_H_
 #define RTC_BASE_SOCKET_ADDRESS_H_
 
+#include <cstddef>
+#include <cstdint>
 #include <string>
 
 #include "absl/strings/string_view.h"
@@ -147,6 +149,9 @@ class RTC_EXPORT SocketAddress {
 
   
   bool IsUnresolvedIP() const;
+
+  
+  IPAddressType GetIPAddressType() const;
 
   
   bool operator==(const SocketAddress& addr) const;
