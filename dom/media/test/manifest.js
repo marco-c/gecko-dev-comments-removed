@@ -484,14 +484,14 @@ var gMKVtests = [
   
   {
     name: "output_aac.mkv",
-    type: "audio/matroska",
+    type: 'audio/matroska; codecs="mp4a.40.2"',
     duration: 1.0,
   },
   
   
   {
     name: "output_avc.mkv",
-    type: "video/matroska",
+    type: 'video/matroska; codecs="avc1.42C01F"',
     duration: 1.0,
   },
   
@@ -501,37 +501,37 @@ var gMKVtests = [
   
   {
     name: "output_avc_hl41_1080p_aaclc_44100.mkv",
-    type: "video/matroska",
+    type: 'video/matroska; codecs="avc1.640029, mp4a.40.2"',
     duration: 1.0,
   },
   
   {
     name: "output_vorbis.mkv",
-    type: "audio/matroska",
+    type: 'audio/matroska; codecs="vorbis"',
     duration: 1.0,
   },
   
   {
     name: "output_opus.mkv",
-    type: "audio/matroska",
+    type: 'audio/matroska; codecs="opus"',
     duration: 1.0,
   },
   
   {
     name: "output_vp8.mkv",
-    type: "video/matroska",
+    type: 'video/matroska; codecs="vp8"',
     duration: 1.0,
   },
   
   {
     name: "output_vp9.mkv",
-    type: "video/matroska",
+    type: 'video/matroska; codecs="vp9"',
     duration: 1.0,
   },
   
   {
     name: "output_av1.mkv",
-    type: "video/matroska",
+    type: 'video/matroska; codecs="av1"',
     duration: 1.0,
   },
 ];
@@ -547,7 +547,7 @@ if (
   
   gMKVtests.push({
     name: "output_hevc.mkv",
-    type: "video/matroska",
+    type: 'video/matroska;  codecs="hvc1.1.6.L63.B0"',
     duration: 1.0,
   });
 }
