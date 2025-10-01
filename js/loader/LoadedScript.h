@@ -118,9 +118,23 @@ class LoadedScript : public nsIMemoryReporter {
   
   
   enum class DataType : uint8_t {
+    
     eUnknown,
+
+    
+    
+    
+    
     eTextSource,
+
+    
+    
+    
     eBytecode,
+
+    
+    
+    
     eCachedStencil
   };
 
@@ -155,10 +169,10 @@ class LoadedScript : public nsIMemoryReporter {
     mDataType = DataType::eBytecode;
   }
 
-  void SetCachedStencil(already_AddRefed<Stencil> aStencil) {
+  void ConvertToCachedStencil() {
+    MOZ_ASSERT(HasStencil());
     SetUnknownDataType();
     mDataType = DataType::eCachedStencil;
-    mStencil = aStencil;
   }
 
   bool IsUTF16Text() const {
@@ -241,14 +255,24 @@ class LoadedScript : public nsIMemoryReporter {
     mScriptBytecode.clearAndFree();
   }
 
+  bool HasStencil() const { return mStencil; }
+
   Stencil* GetStencil() const {
-    MOZ_ASSERT(IsCachedStencil());
+    MOZ_ASSERT(!IsUnknownDataType());
+    MOZ_ASSERT(HasStencil());
     return mStencil;
+  }
+
+  void SetStencil(Stencil* aStencil) {
+    MOZ_ASSERT(aStencil);
+    MOZ_ASSERT(!HasStencil());
+    mStencil = aStencil;
   }
 
  public:
   
 
+  
   
   DataType mDataType;
 
@@ -288,6 +312,7 @@ class LoadedScript : public nsIMemoryReporter {
   
   TranscodeBuffer mScriptBytecode;
 
+  
   RefPtr<Stencil> mStencil;
 
   
@@ -337,9 +362,7 @@ class LoadedScriptDelegate {
 
   void SetBytecode() { GetLoadedScript()->SetBytecode(); }
 
-  void SetCachedStencil(already_AddRefed<Stencil> aStencil) {
-    GetLoadedScript()->SetCachedStencil(std::move(aStencil));
-  }
+  void ConvertToCachedStencil() { GetLoadedScript()->ConvertToCachedStencil(); }
 
   bool IsUTF16Text() const { return GetLoadedScript()->IsUTF16Text(); }
   bool IsUTF8Text() const { return GetLoadedScript()->IsUTF8Text(); }
@@ -390,7 +413,11 @@ class LoadedScriptDelegate {
 
   void DropBytecode() { GetLoadedScript()->DropBytecode(); }
 
+  bool HasStencil() const { return GetLoadedScript()->HasStencil(); }
   Stencil* GetStencil() const { return GetLoadedScript()->GetStencil(); }
+  void SetStencil(Stencil* aStencil) {
+    GetLoadedScript()->SetStencil(aStencil);
+  }
 };
 
 class ClassicScript final : public LoadedScript {
