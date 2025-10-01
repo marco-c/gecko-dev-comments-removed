@@ -135,10 +135,18 @@ class MediaContentDescription {
   }
   void set_rtp_header_extensions(const RtpHeaderExtensions& extensions) {
     rtp_header_extensions_ = extensions;
+    rtp_header_extensions_set_ = true;
   }
   void AddRtpHeaderExtension(const RtpExtension& ext) {
     rtp_header_extensions_.push_back(ext);
+    rtp_header_extensions_set_ = true;
   }
+  
+  
+  
+  
+  
+  bool rtp_header_extensions_set() const { return rtp_header_extensions_set_; }
   const StreamParamsVec& streams() const { return send_streams_; }
   
   
@@ -254,6 +262,7 @@ class MediaContentDescription {
   std::string bandwidth_type_ = kApplicationSpecificBandwidth;
 
   std::vector<RtpExtension> rtp_header_extensions_;
+  bool rtp_header_extensions_set_ = false;
   StreamParamsVec send_streams_;
   bool conference_mode_ = false;
   RtpTransceiverDirection direction_ = RtpTransceiverDirection::kSendRecv;

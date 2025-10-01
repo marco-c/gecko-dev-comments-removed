@@ -99,7 +99,11 @@ void MediaChannelParametersFromMediaDescription(
              desc->type() == MediaType::VIDEO);
   params->is_stream_active = is_stream_active;
   params->codecs = desc->codecs();
-  params->extensions = extensions;
+  
+  
+  if (desc->rtp_header_extensions_set()) {
+    params->extensions = extensions;
+  }
   params->rtcp.reduced_size = desc->rtcp_reduced_size();
   params->rtcp.remote_estimate = desc->remote_estimate();
 }
