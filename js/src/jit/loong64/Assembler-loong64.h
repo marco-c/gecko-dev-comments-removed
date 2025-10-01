@@ -985,7 +985,7 @@ class AssemblerLOONG64 : public AssemblerShared {
   static DoubleCondition InvertCondition(DoubleCondition cond);
   
   
-  static Condition InvertCmpCondition(Condition cond);
+  static Condition SwapCmdOperandsCondition(Condition cond);
 
   
   
