@@ -317,6 +317,22 @@ const validConfigs = [
     numberOfChannels: 2,
     opus: {},  
   },
+  {
+    codec: 'opus',
+    sampleRate: 48000,
+    numberOfChannels: 2,
+    opus: {
+      frameDuration: 7500, 
+    }
+  },
+  {
+    codec: 'opus',
+    sampleRate: 48000,
+    numberOfChannels: 2,
+    opus: {
+      frameDuration: 120000,
+    }
+  },
 ];
 
 validConfigs.forEach(config => {
