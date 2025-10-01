@@ -3087,6 +3087,12 @@ void DocAccessible::MaybeHandleChangeToHiddenNameOrDescription(
     if (HasAccessible(content)) {
       
       
+      
+      
+      if (content->IsHTMLElement(nsGkAtoms::meter)) {
+        FireDelayedEvent(nsIAccessibleEvent::EVENT_TEXT_VALUE_CHANGE,
+                         GetAccessible(content));
+      }
       break;
     }
     nsAtom* id = content->GetID();
