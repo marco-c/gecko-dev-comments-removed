@@ -3495,6 +3495,23 @@ void ClientWebGLContext::GetBufferSubData(GLenum target, GLintptr srcByteOffset,
       return;
     }
 
+    RefPtr<ClientWebGLContext> self(this);
+    auto randomizeOnExit = MakeScopeExit([&, self] {
+      if (self->ShouldResistFingerprinting(RFPTarget::WebGLRandomization)) {
+        
+        
+        uint8_t elementsPerGroup = 1,
+                bytesPerElement = static_cast<uint8_t>(elemSize),
+                elementOffset = 0;
+        bool skipLastElement = false;
+
+        nsRFPService::RandomizeElements(
+            GetCookieJarSettings(), PrincipalOrNull(), destView->data(),
+            destView->size_bytes(), elementsPerGroup, bytesPerElement,
+            elementOffset, skipLastElement);
+      }
+    });
+
     const auto& inProcessContext = notLost->inProcess;
     if (inProcessContext) {
       inProcessContext->GetBufferSubData(target, srcByteOffset, *destView);
