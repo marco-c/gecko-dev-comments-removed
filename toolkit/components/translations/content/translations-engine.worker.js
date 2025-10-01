@@ -639,7 +639,9 @@ class BergamotUtils {
       
       const bergamot = loadBergamot({
         
-        INITIAL_MEMORY: 234_291_200,
+        
+        
+        INITIAL_MEMORY: 41_943_040,
         print: log,
         onAbort() {
           reject(new Error("Error loading Bergamot wasm module."));
