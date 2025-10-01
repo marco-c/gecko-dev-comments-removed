@@ -425,6 +425,41 @@ static sk_sp<SkImage> ExtractSubset(sk_sp<SkImage> aImage,
 
 static void FreeAlphaPixels(void* aBuf, void*) { sk_free(aBuf); }
 
+static void FreeAlphaImage(const void*, void* aBuf) { sk_free(aBuf); }
+
+static sk_sp<SkImage> ExtractAlphaImage(const sk_sp<SkImage>& aImage,
+                                        bool aAllowReuse = false) {
+  SkPixmap pixmap;
+  if (aAllowReuse && aImage->isAlphaOnly()) {
+    return aImage;
+  }
+  SkImageInfo info = SkImageInfo::MakeA8(aImage->width(), aImage->height());
+  
+  
+  
+  size_t stride = GetAlignedStride<4>(info.width(), info.bytesPerPixel());
+  if (stride) {
+    CheckedInt<size_t> size = stride;
+    size *= info.height();
+    if (size.isValid()) {
+      void* buf = sk_malloc_flags(size.value(), 0);
+      if (buf) {
+        SkPixmap pixmap(info, buf, stride);
+        if (aImage->readPixels(pixmap, 0, 0)) {
+          if (sk_sp<SkImage> result =
+                  SkImages::RasterFromPixmap(pixmap, FreeAlphaImage, buf)) {
+            return result;
+          }
+        }
+        sk_free(buf);
+      }
+    }
+  }
+
+  gfxWarning() << "Failed reading alpha pixels for Skia bitmap";
+  return nullptr;
+}
+
 static void SetPaintPattern(SkPaint& aPaint, const Pattern& aPattern,
                             Maybe<MutexAutoLock>& aLock, Float aAlpha = 1.0,
                             const SkMatrix* aMatrix = nullptr,
@@ -769,14 +804,17 @@ void DrawTargetSkia::DrawSurfaceWithShadow(SourceSurface* aSurface,
 
   sk_sp<SkImageFilter> blurFilter(
       SkImageFilters::Blur(aShadow.mSigma, aShadow.mSigma, nullptr));
-  sk_sp<SkColorFilter> colorFilter(SkColorFilters::Blend(
-      ColorToSkColor(aShadow.mColor, 1.0f), SkBlendMode::kSrcIn));
 
   shadowPaint.setImageFilter(blurFilter);
-  shadowPaint.setColorFilter(colorFilter);
+  shadowPaint.setColor(ColorToSkColor(aShadow.mColor, 1.0f));
 
-  mCanvas->drawImage(image, shadowDest.x, shadowDest.y,
-                     SkSamplingOptions(SkFilterMode::kLinear), &shadowPaint);
+  
+  
+  
+  if (sk_sp<SkImage> alphaImage = ExtractAlphaImage(image, true)) {
+    mCanvas->drawImage(alphaImage, shadowDest.x, shadowDest.y,
+                       SkSamplingOptions(SkFilterMode::kLinear), &shadowPaint);
+  }
 
   if (aSurface->GetFormat() != SurfaceFormat::A8) {
     
@@ -1764,9 +1802,6 @@ bool DrawTargetSkia::Init(const IntSize& aSize, SurfaceFormat aFormat) {
     
     CheckedInt<size_t> size = stride;
     size *= info.height();
-    
-    
-    size += 3;
     if (!size.isValid()) {
       return false;
     }

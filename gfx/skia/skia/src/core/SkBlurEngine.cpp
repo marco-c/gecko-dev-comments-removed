@@ -64,9 +64,11 @@ public:
     explicit Pass(int border) : fBorder(border) {}
     virtual ~Pass() = default;
 
+    
+    template <typename T>
     void blur(int srcLeft, int srcRight, int dstRight,
-              const uint32_t* src, int srcStride,
-              uint32_t* dst, int dstStride) {
+              const T* src, int srcStride,
+              T* dst, int dstStride) {
         this->startBlur();
 
         auto srcStart = srcLeft - fBorder,
@@ -75,8 +77,8 @@ public:
                 srcIdx   = srcStart,
                 dstIdx   = 0;
 
-        const uint32_t* srcCursor = src;
-        uint32_t* dstCursor = dst;
+        const T* srcCursor = src;
+        T* dstCursor = dst;
 
         if (dstIdx < srcIdx) {
             
@@ -130,7 +132,7 @@ public:
 protected:
     virtual void startBlur() = 0;
     virtual void blurSegment(
-            int n, const uint32_t* src, int srcStride, uint32_t* dst, int dstStride) = 0;
+            int n, const void* src, int srcStride, void* dst, int dstStride) = 0;
 
 private:
     const int fBorder;
@@ -138,19 +140,240 @@ private:
 
 class PassMaker {
 public:
-    explicit PassMaker(int window) : fWindow{window} {}
+    explicit PassMaker(int window, float sigma) : fWindow{window},
+                                                  fSigma{sigma} {}
     virtual ~PassMaker() = default;
     virtual Pass* makePass(void* buffer, SkArenaAlloc* alloc) const = 0;
     virtual size_t bufferSizeBytes() const = 0;
     int window() const {return fWindow;}
+    float sigma() const {return fSigma;}
 
 private:
     const int fWindow;
+    const float fSigma;
 };
 
 
 
-class GaussPass final : public Pass {
+template <typename T>
+static sk_sp<SkSpecialImage> eval_blur_passes(PassMaker* makerX, PassMaker* makerY,
+                                              SkBitmap src, const SkIRect& originalSrcBounds,
+                                              const SkIRect& originalDstBounds,
+                                              SkArenaAlloc* alloc) {
+    static constexpr int N = sizeof(T) / sizeof(uint8_t);
+    static_assert(N*sizeof(uint8_t) == sizeof(T), "N must be the the size of T in bytes.");
+
+    SkIRect srcBounds = originalSrcBounds;
+    SkIRect dstBounds = originalDstBounds;
+    if (makerX->window() > 1) {
+        
+        
+        
+        
+        
+        
+        dstBounds.outset(0, SkBlurEngine::SigmaToRadius(makerY->sigma()));
+    }
+
+    SkBitmap dst;
+    const SkIPoint dstOrigin = dstBounds.topLeft();
+    if (!dst.tryAllocPixels(src.info().makeWH(dstBounds.width(), dstBounds.height()))) {
+        return nullptr;
+    }
+    dst.eraseColor(SK_ColorTRANSPARENT);
+
+    auto buffer = alloc->makeBytesAlignedTo(std::max(makerX->bufferSizeBytes(),
+                                            makerY->bufferSizeBytes()),
+                                            alignof(skvx::Vec<N, uint32_t>));
+
+    
+    
+    
+    
+    
+
+    
+    int loopStart  = std::max(srcBounds.left(),  dstBounds.left());
+    int loopEnd    = std::min(srcBounds.right(), dstBounds.right());
+    int dstYOffset = 0;
+
+    if (makerX->window() > 1) {
+        
+        
+        loopStart = std::max(srcBounds.top(),    dstBounds.top());
+        loopEnd   = std::min(srcBounds.bottom(), dstBounds.bottom());
+
+        auto srcAddr = reinterpret_cast<T*>(src.getAddr(0, loopStart - srcBounds.top()));
+        auto dstAddr = reinterpret_cast<T*>(dst.getAddr(0, loopStart - dstBounds.top()));
+
+        
+        Pass* pass = makerX->makePass(buffer, alloc);
+        for (int y = loopStart; y < loopEnd; ++y) {
+            pass->blur<T>(srcBounds.left()  - dstBounds.left(),
+                          srcBounds.right() - dstBounds.left(),
+                          dstBounds.width(),
+                          srcAddr, 1,
+                          dstAddr, 1);
+            srcAddr += src.rowBytesAsPixels();
+            dstAddr += dst.rowBytesAsPixels();
+        }
+
+        
+        src = dst;
+        loopStart = originalDstBounds.left();
+        loopEnd   = originalDstBounds.right();
+        
+        
+        
+        dstYOffset = originalDstBounds.top() - dstBounds.top();
+
+        srcBounds = dstBounds;
+        dstBounds = originalDstBounds;
+    }
+
+    
+    
+    
+    if (makerY->window() > 1) {
+        auto srcAddr = reinterpret_cast<T*>(src.getAddr(loopStart - srcBounds.left(), 0));
+        auto dstAddr = reinterpret_cast<T*>(dst.getAddr(loopStart - dstBounds.left(), dstYOffset));
+
+        Pass* pass = makerY->makePass(buffer, alloc);
+        for (int x = loopStart; x < loopEnd; ++x) {
+            pass->blur<T>(srcBounds.top()    - dstBounds.top(),
+                          srcBounds.bottom() - dstBounds.top(),
+                          dstBounds.height(),
+                          srcAddr, src.rowBytesAsPixels(),
+                          dstAddr, dst.rowBytesAsPixels());
+            srcAddr += 1;
+            dstAddr += 1;
+        }
+    }
+
+#if defined(SK_AVOID_SLOW_RASTER_PIPELINE_BLURS)
+    
+    if (makerX->window() == 1 && makerY->window() == 1) {
+        dst.writePixels(src.pixmap(),
+                        srcBounds.left() - dstBounds.left(),
+                        srcBounds.top()  - dstBounds.top());
+    }
+#endif 
+
+    dstBounds = originalDstBounds.makeOffset(-dstOrigin); 
+    return SkSpecialImages::MakeFromRaster(dstBounds, dst, SkSurfaceProps{});
+}
+
+
+
+
+template <typename T>
+class GaussianPass final : public Pass {
+public:
+    static constexpr int N = sizeof(T) / sizeof(uint8_t);
+    static_assert(N*sizeof(uint8_t) == sizeof(T), "N must be the the size of T in bytes.");
+
+    static constexpr float kMaxSigma = 2.f;
+
+    static PassMaker* MakeMaker(float sigma, SkArenaAlloc* alloc) {
+        if (sigma >= kMaxSigma) { return nullptr; }
+
+        class Maker : public PassMaker {
+        public:
+            explicit Maker(float sigma)
+                : PassMaker{2 * SkBlurEngine::SigmaToRadius(sigma) + 1, sigma} {}
+            Pass* makePass(void* buffer, SkArenaAlloc* alloc) const override {
+                return GaussianPass::Make(this->sigma(), buffer, alloc);
+            }
+            size_t bufferSizeBytes() const override {
+                
+                return this->window() * (sizeof(skvx::Vec<N, float>) + sizeof(float));
+
+            }
+        };
+
+        return alloc->make<Maker>(sigma);
+    }
+
+    static GaussianPass* Make(float sigma, void* buffers, SkArenaAlloc* alloc) {
+        int radius = SkBlurEngine::SigmaToRadius(sigma);
+        int kernelWidth = 2*radius + 1;
+
+        skvx::Vec<N, float>* srcBuffer = static_cast<skvx::Vec<N, float>*>(buffers);
+
+        float* kernelValues = reinterpret_cast<float*>(srcBuffer + kernelWidth);
+        SkShaderBlurAlgorithm::Compute1DBlurKernel(sigma, radius, {kernelValues, kernelWidth});
+
+        return alloc->make<GaussianPass>(radius, kernelValues, srcBuffer);
+    }
+
+
+    GaussianPass(int radius, float* kernel, skvx::Vec<N, float>* srcBuffer)
+        : Pass(radius),
+          fWindow(2 * radius + 1),
+          fKernel(kernel),
+          fSrcBuffer(srcBuffer),
+          fSrcBufferBase(0) {}
+
+private:
+    void startBlur() override {
+        
+        sk_bzero(fSrcBuffer, fWindow * sizeof(skvx::Vec<N, float>));
+        
+        fSrcBufferBase = 0;
+    }
+
+    void blurSegment(int n, const void* src, int srcStride, void* dst, int dstStride) override {
+        const T* srcPtr = reinterpret_cast<const T*>(src);
+        T* dstPtr = reinterpret_cast<T*>(dst);
+
+        
+        int base = fSrcBufferBase;
+
+        auto convolve = [this](int srcBase) {
+            skvx::Vec<N, float> sum = 0.f;
+            for (int i = 0; i < fWindow; ++i) {
+                int s = (i + srcBase) % fWindow;
+                sum += fSrcBuffer[s] * fKernel[i];
+            }
+            return skvx::cast<uint8_t>(skvx::pin(sum * 255.f + 0.5f,
+                                                 skvx::Vec<N, float>(0.f),
+                                                 skvx::Vec<N, float>(255.f)));
+        };
+
+        while (n-- > 0) {
+            skvx::Vec<N, float> leadingEdge = srcPtr
+                ? skvx::cast<float>(skvx::Vec<N, uint8_t>::Load(srcPtr)) * (1 / 255.0f)
+                : skvx::Vec<N, float>(0.f);
+
+            
+            fSrcBuffer[(base + fWindow - 1) % fWindow] = leadingEdge;
+
+            
+            if (dstPtr) {
+                convolve(base).store(dstPtr);
+                dstPtr += dstStride;
+            }
+
+            
+            if (srcPtr) {
+                srcPtr += srcStride;
+            }
+            base = (base + 1) % fWindow;
+        }
+
+        fSrcBufferBase = base;
+    }
+
+    const int fWindow;
+    float* fKernel;
+    skvx::Vec<N, float>* fSrcBuffer;
+    int fSrcBufferBase;
+};
+
+
+
+
+class ThreeBoxApproxPass final : public Pass {
 public:
     
     
@@ -173,9 +396,9 @@ public:
 
         class Maker : public PassMaker {
         public:
-            explicit Maker(int window) : PassMaker{window} {}
+            explicit Maker(int window, float sigma) : PassMaker{window, sigma} {}
             Pass* makePass(void* buffer, SkArenaAlloc* alloc) const override {
-                return GaussPass::Make(this->window(), buffer, alloc);
+                return ThreeBoxApproxPass::Make(this->window(), buffer, alloc);
             }
 
             size_t bufferSizeBytes() const override {
@@ -193,10 +416,10 @@ public:
             }
         };
 
-        return alloc->make<Maker>(window);
+        return alloc->make<Maker>(window, sigma);
     }
 
-    static GaussPass* Make(int window, void* buffers, SkArenaAlloc* alloc) {
+    static ThreeBoxApproxPass* Make(int window, void* buffers, SkArenaAlloc* alloc) {
         
         int passSize = window - 1;
         skvx::Vec<4, uint32_t>* buffer0 = static_cast<skvx::Vec<4, uint32_t>*>(buffers);
@@ -256,10 +479,11 @@ public:
         int window2 = window * window;
         int window3 = window2 * window;
         int divisor = (window & 1) == 1 ? window3 : window3 + window2;
-        return alloc->make<GaussPass>(buffer0, buffer1, buffer2, buffersEnd, border, divisor);
+        return alloc->make<ThreeBoxApproxPass>(buffer0, buffer1, buffer2,
+                                               buffersEnd, border, divisor);
     }
 
-    GaussPass(skvx::Vec<4, uint32_t>* buffer0,
+    ThreeBoxApproxPass(skvx::Vec<4, uint32_t>* buffer0,
               skvx::Vec<4, uint32_t>* buffer1,
               skvx::Vec<4, uint32_t>* buffer2,
               skvx::Vec<4, uint32_t>* buffersEnd,
@@ -325,7 +549,9 @@ private:
     
     
     void blurSegment(
-            int n, const uint32_t* src, int srcStride, uint32_t* dst, int dstStride) override {
+            int n, const void* src, int srcStride, void* dst, int dstStride) override {
+        const uint32_t* src32 = reinterpret_cast<const uint32_t*>(src);
+        uint32_t* dst32 = reinterpret_cast<uint32_t*>(dst);
 #if SK_CPU_LSX_LEVEL >= SK_CPU_LSX_LEVEL_LSX
         skvx::Vec<4, uint32_t>* buffer0Cursor = fBuffer0Cursor;
         skvx::Vec<4, uint32_t>* buffer1Cursor = fBuffer1Cursor;
@@ -361,33 +587,33 @@ private:
         };
 
         v4u32 zero = __lsx_vldi(0x0);
-        if (!src && !dst) {
+        if (!src32 && !dst32) {
             while (n --> 0) {
                 (void)processValue(zero);
             }
-        } else if (src && !dst) {
+        } else if (src32 && !dst32) {
             while (n --> 0) {
-                v4u32 edge = __lsx_vinsgr2vr_w(zero, *src, 0);
+                v4u32 edge = __lsx_vinsgr2vr_w(zero, *src32, 0);
                 edge = __lsx_vilvl_b(zero, edge);
                 edge = __lsx_vilvl_h(zero, edge);
                 (void)processValue(edge);
-                src += srcStride;
+                src32 += srcStride;
             }
-        } else if (!src && dst) {
+        } else if (!src32 && dst32) {
             while (n --> 0) {
                 v4u32 ret = processValue(zero);
-                __lsx_vstelm_w(ret, dst, 0, 0); 
-                dst += dstStride;
+                __lsx_vstelm_w(ret, dst32, 0, 0); 
+                dst32 += dstStride;
             }
-        } else if (src && dst) {
+        } else if (src32 && dst32) {
             while (n --> 0) {
-                v4u32 edge = __lsx_vinsgr2vr_w(zero, *src, 0);
+                v4u32 edge = __lsx_vinsgr2vr_w(zero, *src32, 0);
                 edge = __lsx_vilvl_b(zero, edge);
                 edge = __lsx_vilvl_h(zero, edge);
                 v4u32 ret = processValue(edge);
-                __lsx_vstelm_w(ret, dst, 0, 0);
-                src += srcStride;
-                dst += dstStride;
+                __lsx_vstelm_w(ret, dst32, 0, 0);
+                src32 += srcStride;
+                dst32 += dstStride;
             }
         }
 
@@ -432,25 +658,25 @@ private:
             return skvx::cast<uint32_t>(skvx::Vec<4, uint8_t>::Load(srcCursor));
         };
 
-        if (!src && !dst) {
+        if (!src32 && !dst32) {
             while (n --> 0) {
                 (void)processValue(0);
             }
-        } else if (src && !dst) {
+        } else if (src32 && !dst32) {
             while (n --> 0) {
-                (void)processValue(loadEdge(src));
-                src += srcStride;
+                (void)processValue(loadEdge(src32));
+                src32 += srcStride;
             }
-        } else if (!src && dst) {
+        } else if (!src32 && dst32) {
             while (n --> 0) {
-                processValue(0u).store(dst);
-                dst += dstStride;
+                processValue(0u).store(dst32);
+                dst32 += dstStride;
             }
-        } else if (src && dst) {
+        } else if (src32 && dst32) {
             while (n --> 0) {
-                processValue(loadEdge(src)).store(dst);
-                src += srcStride;
-                dst += dstStride;
+                processValue(loadEdge(src32)).store(dst32);
+                src32 += srcStride;
+                dst32 += dstStride;
             }
         }
 
@@ -510,7 +736,7 @@ public:
 
         class Maker : public PassMaker {
         public:
-            explicit Maker(int window) : PassMaker{window} {}
+            explicit Maker(int window, float sigma) : PassMaker{window, sigma} {}
             Pass* makePass(void* buffer, SkArenaAlloc* alloc) const override {
                 return TentPass::Make(this->window(), buffer, alloc);
             }
@@ -528,7 +754,7 @@ public:
             }
         };
 
-        return alloc->make<Maker>(tentWindow);
+        return alloc->make<Maker>(tentWindow, sigma);
     }
 
     static TentPass* Make(int window, void* buffers, SkArenaAlloc* alloc) {
@@ -644,7 +870,9 @@ private:
     
     
     void blurSegment(
-            int n, const uint32_t* src, int srcStride, uint32_t* dst, int dstStride) override {
+            int n, const void* src, int srcStride, void* dst, int dstStride) override {
+        const uint32_t* src32 = reinterpret_cast<const uint32_t*>(src);
+        uint32_t* dst32 = reinterpret_cast<uint32_t*>(dst);
         skvx::Vec<4, uint32_t>* buffer0Cursor = fBuffer0Cursor;
         skvx::Vec<4, uint32_t>* buffer1Cursor = fBuffer1Cursor;
         skvx::Vec<4, uint32_t> sum0 = skvx::Vec<4, uint32_t>::Load(fSum0);
@@ -671,25 +899,25 @@ private:
             return skvx::cast<uint32_t>(skvx::Vec<4, uint8_t>::Load(srcCursor));
         };
 
-        if (!src && !dst) {
+        if (!src32 && !dst32) {
             while (n --> 0) {
                 (void)processValue(0);
             }
-        } else if (src && !dst) {
+        } else if (src32 && !dst32) {
             while (n --> 0) {
-                (void)processValue(loadEdge(src));
-                src += srcStride;
+                (void)processValue(loadEdge(src32));
+                src32 += srcStride;
             }
-        } else if (!src && dst) {
+        } else if (!src32 && dst32) {
             while (n --> 0) {
-                processValue(0u).store(dst);
-                dst += dstStride;
+                processValue(0u).store(dst32);
+                dst32 += dstStride;
             }
-        } else if (src && dst) {
+        } else if (src32 && dst32) {
             while (n --> 0) {
-                processValue(loadEdge(src)).store(dst);
-                src += srcStride;
-                dst += dstStride;
+                processValue(loadEdge(src32)).store(dst32);
+                src32 += srcStride;
+                dst32 += dstStride;
             }
         }
 
@@ -710,6 +938,263 @@ private:
     char fSum1[sizeof(skvx::Vec<4, uint32_t>)];
     skvx::Vec<4, uint32_t>* fBuffer0Cursor;
     skvx::Vec<4, uint32_t>* fBuffer1Cursor;
+};
+
+class A8Pass final : public Pass {
+public:
+    static PassMaker* MakeMaker(float sigma, SkArenaAlloc* alloc) {
+        SkASSERT(0 <= sigma);
+        int possibleWindow = static_cast<int>(floor(sigma * 3 * sqrt(2 * SK_DoublePI) / 4 + 0.5));
+        int window = std::max(1, possibleWindow);
+
+        class Maker : public PassMaker {
+        public:
+            explicit Maker(int window, float sigma) : PassMaker{window, sigma} {}
+            Pass* makePass(void* buffer, SkArenaAlloc* alloc) const override {
+                return A8Pass::Make(this->window(), buffer, alloc);
+            }
+
+            size_t bufferSizeBytes() const override {
+                int window = this->window();
+                size_t pass0Size = window - 1;
+                size_t pass1Size = window - 1;
+                size_t pass2Size = (window & 1) == 1 ? window - 1 : window;
+                return (pass0Size + pass1Size + pass2Size) * sizeof(uint32_t);
+            }
+        };
+
+        return alloc->make<Maker>(window, sigma);
+    }
+
+    static A8Pass* Make(int window, void* buffers, SkArenaAlloc* alloc) {
+        size_t pass0Size = window - 1;
+        size_t pass1Size = window - 1;
+        size_t pass2Size = (window & 1) == 1 ? window - 1 : window;
+        uint32_t* buffer0, *buffer0End, *buffer1, *buffer1End, *buffer2, *buffer2End;
+        buffer0 = static_cast<uint32_t*>(buffers);
+        buffer0End = buffer1 = buffer0 + pass0Size;
+        buffer1End = buffer2 = buffer1 + pass1Size;
+        buffer2End = buffer2 + pass2Size;
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        int border = (window & 1) == 1 ? 3 * ((window - 1) / 2) : 3 * (window / 2) - 1;
+
+        
+        
+        auto window2 = window * window;
+        auto window3 = window2 * window;
+        auto divisor = (window & 1) == 1 ? window3 : window3 + window2;
+
+        uint64_t weight = static_cast<uint64_t>(round(1.0 / divisor * (1ull << 32)));
+
+        return alloc->make<A8Pass>(weight, buffer0, buffer0End, buffer1, buffer1End,
+                                   buffer2, buffer2End, border);
+    }
+
+    A8Pass(uint64_t weight,
+           uint32_t* buffer0, uint32_t* buffer0End,
+           uint32_t* buffer1, uint32_t* buffer1End,
+           uint32_t* buffer2, uint32_t* buffer2End,
+           int border)
+        : Pass{border}
+        , fWeight(weight)
+        , fBuffer0{buffer0}
+        , fBuffer0End{buffer0End}
+        , fBuffer1{buffer1}
+        , fBuffer1End{buffer1End}
+        , fBuffer2{buffer2}
+        , fBuffer2End{buffer2End} {}
+
+private:
+    void startBlur() override {
+        fSum0 = 0;
+        fSum1 = 0;
+        fSum2 = 0;
+
+        sk_bzero(fBuffer0, (fBuffer2End - fBuffer0) * sizeof(*fBuffer0));
+
+        fBuffer0Cursor = fBuffer0;
+        fBuffer1Cursor = fBuffer1;
+        fBuffer2Cursor = fBuffer2;
+    }
+
+    void blurSegment(
+      int n, const void* src, int srcStride, void* dst, int dstStride) override {
+      const uint8_t* src8 = reinterpret_cast<const uint8_t*>(src);
+      uint8_t* dst8 = reinterpret_cast<uint8_t*>(dst);
+      
+      if (n <= 0) {
+          return;
+      }
+
+      auto buffer0Cursor = fBuffer0Cursor;
+      auto buffer1Cursor = fBuffer1Cursor;
+      auto buffer2Cursor = fBuffer2Cursor;
+      uint32_t sum0 = fSum0;
+      uint32_t sum1 = fSum1;
+      uint32_t sum2 = fSum2;
+
+      auto processValue = [&](const uint32_t leadingEdge) {
+          sum0 += leadingEdge; sum1 += sum0; sum2 += sum1;
+
+          const uint8_t blurred = this->finalScale(sum2);
+
+          sum2 -= *buffer2Cursor; *buffer2Cursor = sum1;
+          buffer2Cursor = (buffer2Cursor + 1) < fBuffer2End ? buffer2Cursor + 1 : fBuffer2;
+          sum1 -= *buffer1Cursor; *buffer1Cursor = sum0;
+          buffer1Cursor = (buffer1Cursor + 1) < fBuffer1End ? buffer1Cursor + 1 : fBuffer1;
+          sum0 -= *buffer0Cursor; *buffer0Cursor = leadingEdge;
+          buffer0Cursor = (buffer0Cursor + 1) < fBuffer0End ? buffer0Cursor + 1 : fBuffer0;
+
+          return blurred;
+      };
+
+      if (!src8 && !dst8) {
+        while (n --> 0) {
+            (void)processValue(0);
+        }
+      } else if (src8 && !dst8) {
+          while (n --> 0) {
+              (void)processValue(*src8);
+              src8 += srcStride;
+          }
+      } else if (!src8 && dst8) {
+          while (n --> 0) {
+              *dst8 = processValue(0);
+              dst8 += dstStride;
+          }
+      } else if (src8 && dst8) {
+          while (n --> 0) {
+              *dst8 = processValue(*src8);
+              src8 += srcStride;
+              dst8 += dstStride;
+          }
+      }
+
+      
+      fBuffer0Cursor = buffer0Cursor;
+      fBuffer1Cursor = buffer1Cursor;
+      fBuffer2Cursor = buffer2Cursor;
+      fSum0 = sum0;
+      fSum1 = sum1;
+      fSum2 = sum2;
+  }
+
+    inline static constexpr uint64_t kHalf = static_cast<uint64_t>(1) << 31;
+
+    uint8_t finalScale(uint32_t sum) const {
+        return SkTo<uint8_t>((fWeight * sum + kHalf) >> 32);
+    }
+
+    
+    
+    uint64_t  fWeight;
+    uint32_t* fBuffer0;
+    uint32_t* fBuffer0End;
+    uint32_t* fBuffer1;
+    uint32_t* fBuffer1End;
+    uint32_t* fBuffer2;
+    uint32_t* fBuffer2End;
+
+    uint32_t* fBuffer0Cursor;
+    uint32_t* fBuffer1Cursor;
+    uint32_t* fBuffer2Cursor;
+    uint32_t fSum0;
+    uint32_t fSum1;
+    uint32_t fSum2;
+};
+
+class RasterA8BlurAlgorithm : public SkBlurEngine::Algorithm {
+public:
+    
+    float maxSigma() const override {
+        static constexpr float kMaxSigma = 135.f;
+        SkASSERT(SkBlurEngine::BoxBlurWindow(kMaxSigma) <= 255);
+        return kMaxSigma;
+    }
+
+    
+    
+    
+    
+    bool supportsOnlyDecalTiling() const override { return true; }
+
+    sk_sp<SkSpecialImage> blur(SkSize sigma,
+                               sk_sp<SkSpecialImage> input,
+                               const SkIRect& originalSrcBounds,
+                               SkTileMode tileMode,
+                               const SkIRect& originalDstBounds) const override {
+        SkASSERT(tileMode == SkTileMode::kDecal);
+        SkASSERT(SkIRect::MakeSize(input->dimensions()).contains(originalSrcBounds));
+
+        SkBitmap src;
+        if (!SkSpecialImages::AsBitmap(input.get(), &src)) {
+            return nullptr; 
+        }
+        
+        SkASSERT(src.colorType() == kAlpha_8_SkColorType);
+
+        
+        SkSTArenaAlloc<1024> alloc;
+        auto makeMaker = [&](float sigma) -> PassMaker* {
+            SkASSERT(0 <= sigma && sigma <= 135); 
+            if (PassMaker* maker = GaussianPass<uint8_t>::MakeMaker(sigma, &alloc)) {
+                return maker;
+            }
+            if (PassMaker* maker = A8Pass::MakeMaker(sigma, &alloc)) {
+                return maker;
+            }
+            SK_ABORT("Sigma is out of range.");
+        };
+
+        PassMaker* makerX = makeMaker(sigma.width());
+        PassMaker* makerY = makeMaker(sigma.height());
+
+        return eval_blur_passes<uint8_t>(makerX, makerY, src, originalSrcBounds,
+                                         originalDstBounds, &alloc);
+    }
 };
 
 class Raster8888BlurAlgorithm : public SkBlurEngine::Algorithm {
@@ -758,122 +1243,25 @@ public:
         SkSTArenaAlloc<1024> alloc;
         auto makeMaker = [&](float sigma) -> PassMaker* {
             SkASSERT(0 <= sigma && sigma <= 2183); 
-            if (PassMaker* maker = GaussPass::MakeMaker(sigma, &alloc)) {
+#ifndef SK_AVOID_SLOW_RASTER_PIPELINE_BLURS
+            if (PassMaker* maker = GaussianPass<uint32_t>::MakeMaker(sigma, &alloc)) {
+                return maker;
+            }
+#endif 
+            if (PassMaker* maker = ThreeBoxApproxPass::MakeMaker(sigma, &alloc)) {
                 return maker;
             }
             if (PassMaker* maker = TentPass::MakeMaker(sigma, &alloc)) {
                 return maker;
             }
             SK_ABORT("Sigma is out of range.");
-        };
+      };
 
         PassMaker* makerX = makeMaker(sigma.width());
         PassMaker* makerY = makeMaker(sigma.height());
 
-#if !defined(SK_AVOID_SLOW_RASTER_PIPELINE_BLURS)
-        
-        
-        SkASSERT(makerX->window() > 1 || makerY->window() > 1);
-#endif
-
-        SkIRect srcBounds = originalSrcBounds;
-        SkIRect dstBounds = originalDstBounds;
-        if (makerX->window() > 1) {
-            
-            
-            
-            
-            
-            
-            dstBounds.outset(0, SkBlurEngine::SigmaToRadius(sigma.height()));
-        }
-
-        SkBitmap dst;
-        const SkIPoint dstOrigin = dstBounds.topLeft();
-        if (!dst.tryAllocPixels(src.info().makeWH(dstBounds.width(), dstBounds.height()))) {
-            return nullptr;
-        }
-        dst.eraseColor(SK_ColorTRANSPARENT);
-
-        auto buffer = alloc.makeBytesAlignedTo(std::max(makerX->bufferSizeBytes(),
-                                                        makerY->bufferSizeBytes()),
-                                            alignof(skvx::Vec<4, uint32_t>));
-
-        
-        
-        
-        
-        
-
-        
-        int loopStart  = std::max(srcBounds.left(),  dstBounds.left());
-        int loopEnd    = std::min(srcBounds.right(), dstBounds.right());
-        int dstYOffset = 0;
-
-        if (makerX->window() > 1) {
-            
-            
-            loopStart = std::max(srcBounds.top(),    dstBounds.top());
-            loopEnd   = std::min(srcBounds.bottom(), dstBounds.bottom());
-
-            auto srcAddr = src.getAddr32(0, loopStart - srcBounds.top());
-            auto dstAddr = dst.getAddr32(0, loopStart - dstBounds.top());
-
-            
-            Pass* pass = makerX->makePass(buffer, &alloc);
-            for (int y = loopStart; y < loopEnd; ++y) {
-                pass->blur(srcBounds.left()  - dstBounds.left(),
-                           srcBounds.right() - dstBounds.left(),
-                           dstBounds.width(),
-                           srcAddr, 1,
-                           dstAddr, 1);
-                srcAddr += src.rowBytesAsPixels();
-                dstAddr += dst.rowBytesAsPixels();
-            }
-
-            
-            src = dst;
-            loopStart = originalDstBounds.left();
-            loopEnd   = originalDstBounds.right();
-            
-            
-            
-            dstYOffset = originalDstBounds.top() - dstBounds.top();
-
-            srcBounds = dstBounds;
-            dstBounds = originalDstBounds;
-        }
-
-        
-        
-        
-        if (makerY->window() > 1) {
-            auto srcAddr = src.getAddr32(loopStart - srcBounds.left(), 0);
-            auto dstAddr = dst.getAddr32(loopStart - dstBounds.left(), dstYOffset);
-
-            Pass* pass = makerY->makePass(buffer, &alloc);
-            for (int x = loopStart; x < loopEnd; ++x) {
-                pass->blur(srcBounds.top()    - dstBounds.top(),
-                           srcBounds.bottom() - dstBounds.top(),
-                           dstBounds.height(),
-                           srcAddr, src.rowBytesAsPixels(),
-                           dstAddr, dst.rowBytesAsPixels());
-                srcAddr += 1;
-                dstAddr += 1;
-            }
-        }
-
-#if defined(SK_AVOID_SLOW_RASTER_PIPELINE_BLURS)
-        
-        if (makerX->window() == 1 && makerY->window() == 1) {
-            dst.writePixels(src.pixmap(),
-                            srcBounds.left() - dstBounds.left(),
-                            srcBounds.top()  - dstBounds.top());
-        }
-#endif
-
-        dstBounds = originalDstBounds.makeOffset(-dstOrigin); 
-        return SkSpecialImages::MakeFromRaster(dstBounds, dst, SkSurfaceProps{});
+        return eval_blur_passes<uint32_t>(makerX, makerY, src, originalSrcBounds,
+                                          originalDstBounds, &alloc);
     }
 
 };
@@ -891,31 +1279,19 @@ public:
 class RasterBlurEngine : public SkBlurEngine {
 public:
     const Algorithm* findAlgorithm(SkSize sigma,  SkColorType colorType) const override {
-#if defined(SK_AVOID_SLOW_RASTER_PIPELINE_BLURS)
-        
-        
-        static constexpr float kBoxBlurMinSigma = 0.f;
-#else
-        static constexpr float kBoxBlurMinSigma = 2.f;
-
-        
-        
-        SkASSERT(SkBlurEngine::BoxBlurWindow(kBoxBlurMinSigma) > 1);
-#endif
-
-        
-        
-        
-        const bool smallBlur = sigma.width() < kBoxBlurMinSigma &&
-                               sigma.height() < kBoxBlurMinSigma;
         
         const bool rgba8Blur = colorType == kRGBA_8888_SkColorType ||
                                colorType == kBGRA_8888_SkColorType;
+        const bool a8Blur = colorType == kAlpha_8_SkColorType;
+
         
-        if (smallBlur || !rgba8Blur) {
-            return &fShaderBlurAlgorithm;
-        } else {
+        
+        if (a8Blur) {
+            return &fA8BlurAlgorithm;
+        } else if (rgba8Blur) {
             return &fRGBA8BlurAlgorithm;
+        } else {
+            return &fShaderBlurAlgorithm;
         }
     }
 
@@ -923,7 +1299,11 @@ private:
     
     RasterShaderBlurAlgorithm fShaderBlurAlgorithm;
     
+    
     Raster8888BlurAlgorithm fRGBA8BlurAlgorithm;
+    
+    
+    RasterA8BlurAlgorithm fA8BlurAlgorithm;
 };
 
 } 
