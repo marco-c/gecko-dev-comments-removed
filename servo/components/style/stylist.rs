@@ -49,7 +49,7 @@ use crate::stylesheets::scope_rule::{
 #[cfg(feature = "gecko")]
 use crate::stylesheets::{
     CounterStyleRule, FontFaceRule, FontFeatureValuesRule, FontPaletteValuesRule,
-    PagePseudoClassFlags,
+    PagePseudoClassFlags, PositionTryRule,
 };
 use crate::stylesheets::{
     CssRule, EffectiveRulesIterator, Origin, OriginSet, PageRule, PerOrigin, PerOriginIter,
@@ -1958,6 +1958,10 @@ pub struct ExtraStyleData {
 
     
     #[cfg(feature = "gecko")]
+    pub position_try_rules: LayerOrderedMap<Arc<Locked<PositionTryRule>>>,
+
+    
+    #[cfg(feature = "gecko")]
     pub pages: PageRuleMap,
 }
 
@@ -1990,6 +1994,18 @@ impl ExtraStyleData {
     }
 
     
+    fn add_position_try(
+        &mut self,
+        guard: &SharedRwLockReadGuard,
+        rule: &Arc<Locked<PositionTryRule>>,
+        layer: LayerId,
+    ) -> Result<(), AllocErr> {
+        let name = rule.read_with(guard).name.0.clone();
+        self.position_try_rules
+            .try_insert(name, rule.clone(), layer)
+    }
+
+    
     fn add_page(
         &mut self,
         guard: &SharedRwLockReadGuard,
@@ -2019,17 +2035,16 @@ impl ExtraStyleData {
         self.font_feature_values.sort(layers);
         self.font_palette_values.sort(layers);
         self.counter_styles.sort(layers);
+        self.position_try_rules.sort(layers);
     }
 
     fn clear(&mut self) {
-        #[cfg(feature = "gecko")]
-        {
-            self.font_faces.clear();
-            self.font_feature_values.clear();
-            self.font_palette_values.clear();
-            self.counter_styles.clear();
-            self.pages.clear();
-        }
+        self.font_faces.clear();
+        self.font_feature_values.clear();
+        self.font_palette_values.clear();
+        self.counter_styles.clear();
+        self.position_try_rules.clear();
+        self.pages.clear();
     }
 }
 
@@ -2065,6 +2080,7 @@ impl MallocSizeOf for ExtraStyleData {
         n += self.font_feature_values.shallow_size_of(ops);
         n += self.font_palette_values.shallow_size_of(ops);
         n += self.counter_styles.shallow_size_of(ops);
+        n += self.position_try_rules.shallow_size_of(ops);
         n += self.pages.shallow_size_of(ops);
         n
     }
@@ -3720,6 +3736,14 @@ impl CascadeData {
                 #[cfg(feature = "gecko")]
                 CssRule::CounterStyle(ref rule) => {
                     self.extra_data.add_counter_style(
+                        guard,
+                        rule,
+                        containing_rule_state.layer_id,
+                    )?;
+                },
+                #[cfg(feature = "gecko")]
+                CssRule::PositionTry(ref rule) => {
+                    self.extra_data.add_position_try(
                         guard,
                         rule,
                         containing_rule_state.layer_id,
