@@ -189,125 +189,20 @@ void CallbackObjectBase::GetDescription(nsACString& aOutString) {
   aOutString.Append(")");
 }
 
-
-
-
-
-nsIGlobalObject* CallSetup::GetActiveGlobalObjectForCall(
-    JSObject* callbackOrGlobal, bool aIsMainThread, bool aIsJSImplementedWebIDL,
-    ErrorResult& aRv) {
-  nsGlobalWindowInner* win = aIsMainThread && !aIsJSImplementedWebIDL
-                                 ? xpc::WindowGlobalOrNull(callbackOrGlobal)
-                                 : nullptr;
-  if (win) {
-    
-    
-    if (!win->HasActiveDocument()) {
-      aRv.ThrowNotSupportedError(
-          "Refusing to execute function from window whose document is no "
-          "longer active.");
-      return nullptr;
-    }
-    return win;
-  }
-
-  
-  auto* globalObject = xpc::NativeGlobal(callbackOrGlobal);
-  MOZ_ASSERT(globalObject);
-  return globalObject;
-}
-
-
-
-bool CallSetup::CheckBeforeExecution(nsIGlobalObject* aGlobalObject,
-                                     JSObject* aCallbackOrGlobal,
-                                     bool aIsJSImplementedWebIDL,
-                                     ErrorResult& aRv) {
-  if (aGlobalObject->IsScriptForbidden(aCallbackOrGlobal,
-                                       aIsJSImplementedWebIDL)) {
-    aRv.ThrowNotSupportedError(
-        "Refusing to execute function from global in which script is "
-        "disabled.");
-    return false;
-  }
-
-  
-  if (!aGlobalObject->HasJSGlobal()) {
-    aRv.ThrowNotSupportedError(
-        "Refusing to execute function from global which is being torn down.");
-    return false;
-  }
-
-  return true;
-}
-
-void CallSetup::SetupForExecution(
-    nsIGlobalObject* aGlobalObject, nsIGlobalObject* aIncumbentGlobal,
-    JSObject* aCallbackOrGlobal, JSObject* aCallbackGlobal,
-    JSObject* aCreationStack, nsIPrincipal* aWebIDLCallerPrincipal,
-    const char* aExecutionReason, ErrorResult& aRv) {
-  AutoAllowLegacyScriptExecution exemption;
-  mAutoEntryScript.emplace(aGlobalObject, aExecutionReason, mIsMainThread);
-  mAutoEntryScript->SetWebIDLCallerPrincipal(aWebIDLCallerPrincipal);
-
-  if (aIncumbentGlobal) {
-    
-    
-    
-    
-    
-    if (!aIncumbentGlobal->HasJSGlobal()) {
-      aRv.ThrowNotSupportedError(
-          "Refusing to execute function because our incumbent global is being "
-          "torn down.");
-      return;
-    }
-    mAutoIncumbentScript.emplace(aIncumbentGlobal);
-  }
-
-  JSContext* cx = mAutoEntryScript->cx();
-
-  
-  
-  
-  
-  
-  
-  
-  mRootedCallable.emplace(cx, aCallbackOrGlobal);
-
-  if (aCreationStack) {
-    mAsyncStackSetter.emplace(cx, aCreationStack, aExecutionReason);
-  }
-
-  
-  
-  
-  
-  
-  mAr.emplace(cx, aCallbackGlobal);
-
-  
-  mCx = cx;
-
-  
-  
-  mCallContext.emplace(cx, nullptr);
-}
-
-CallSetup::CallSetup(CallbackObjectBase* aCallback, ErrorResult& aRv,
-                     const char* aExecutionReason,
-                     CallbackObjectBase::ExceptionHandling aExceptionHandling,
-                     JS::Realm* aRealm, bool aIsJSImplementedWebIDL)
+CallbackObjectBase::CallSetup::CallSetup(CallbackObjectBase* aCallback,
+                                         ErrorResult& aRv,
+                                         const char* aExecutionReason,
+                                         ExceptionHandling aExceptionHandling,
+                                         JS::Realm* aRealm,
+                                         bool aIsJSImplementedWebIDL)
     : mCx(nullptr),
       mRealm(aRealm),
       mErrorResult(aRv),
       mExceptionHandling(aExceptionHandling),
       mIsMainThread(NS_IsMainThread()) {
-  MOZ_ASSERT_IF(
-      aExceptionHandling == CallbackObjectBase::eReportExceptions ||
-          aExceptionHandling == CallbackObjectBase::eRethrowExceptions,
-      !aRealm);
+  MOZ_ASSERT_IF(aExceptionHandling == eReportExceptions ||
+                    aExceptionHandling == eRethrowExceptions,
+                !aRealm);
 
   CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
   if (ccjs) {
@@ -336,72 +231,96 @@ CallSetup::CallSetup(CallbackObjectBase* aCallback, ErrorResult& aRv,
     JS::Rooted<JSObject*> realCallback(ccjs->RootingCx(),
                                        js::UncheckedUnwrap(wrappedCallback));
 
-    globalObject = GetActiveGlobalObjectForCall(realCallback, mIsMainThread,
-                                                aIsJSImplementedWebIDL, aRv);
-    if (!globalObject) {
-      MOZ_ASSERT(aRv.Failed());
-      return;
+    
+    
+    nsGlobalWindowInner* win = mIsMainThread && !aIsJSImplementedWebIDL
+                                   ? xpc::WindowGlobalOrNull(realCallback)
+                                   : nullptr;
+    if (win) {
+      
+      
+      if (!win->HasActiveDocument()) {
+        aRv.ThrowNotSupportedError(
+            "Refusing to execute function from window whose document is no "
+            "longer active.");
+        return;
+      }
+      globalObject = win;
+    } else {
+      
+      globalObject = xpc::NativeGlobal(realCallback);
+      MOZ_ASSERT(globalObject);
     }
 
     
     
-    if (!CheckBeforeExecution(globalObject, realCallback,
-                              aIsJSImplementedWebIDL, aRv)) {
+    if (globalObject->IsScriptForbidden(realCallback, aIsJSImplementedWebIDL)) {
+      aRv.ThrowNotSupportedError(
+          "Refusing to execute function from global in which script is "
+          "disabled.");
       return;
     }
   }
 
+  
+  if (!globalObject->HasJSGlobal()) {
+    aRv.ThrowNotSupportedError(
+        "Refusing to execute function from global which is being torn down.");
+    return;
+  }
+
+  AutoAllowLegacyScriptExecution exemption;
+  mAutoEntryScript.emplace(globalObject, aExecutionReason, mIsMainThread);
+  mAutoEntryScript->SetWebIDLCallerPrincipal(webIDLCallerPrincipal);
   nsIGlobalObject* incumbent = aCallback->IncumbentGlobalOrNull();
+  if (incumbent) {
+    
+    
+    
+    
+    
+    if (!incumbent->HasJSGlobal()) {
+      aRv.ThrowNotSupportedError(
+          "Refusing to execute function because our incumbent global is being "
+          "torn down.");
+      return;
+    }
+    mAutoIncumbentScript.emplace(incumbent);
+  }
+
+  JSContext* cx = mAutoEntryScript->cx();
 
   
-  SetupForExecution(globalObject, incumbent, aCallback->CallbackOrNull(),
-                    aCallback->CallbackGlobalOrNull(),
-                    aCallback->GetCreationStack(), webIDLCallerPrincipal,
-                    aExecutionReason, aRv);
+  
+  
+  
+  
+  
+  
+  mRootedCallable.emplace(cx, aCallback->CallbackOrNull());
+  JSObject* asyncStack = aCallback->GetCreationStack();
+  if (asyncStack) {
+    mAsyncStackSetter.emplace(cx, asyncStack, aExecutionReason);
+  }
+
+  
+  
+  
+  
+  
+  mAr.emplace(cx, aCallback->CallbackGlobalOrNull());
+
+  
+  mCx = cx;
+
+  
+  
+  mCallContext.emplace(cx, nullptr);
 }
 
-CallSetup::CallSetup(JSObject* aCallbackGlobal,
-                     nsIGlobalObject* aIncumbentGlobal,
-                     JSObject* aCreationStack, ErrorResult& aRv,
-                     const char* aExecutionReason,
-                     CallbackObjectBase::ExceptionHandling aExceptionHandling,
-                     JS::Realm* aRealm)
-    : mCx(nullptr),
-      mRealm(aRealm),
-      mErrorResult(aRv),
-      mExceptionHandling(aExceptionHandling),
-      mIsMainThread(NS_IsMainThread()) {
-  MOZ_ASSERT_IF(aExceptionHandling == CallbackFunction::eReportExceptions ||
-                    aExceptionHandling == CallbackFunction::eRethrowExceptions,
-                !aRealm);
-
-  CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
-  if (ccjs) {
-    ccjs->EnterMicroTask();
-  }
-
-  MOZ_RELEASE_ASSERT(aCallbackGlobal);
-  nsIGlobalObject* globalObject = GetActiveGlobalObjectForCall(
-      aCallbackGlobal, mIsMainThread, false, aRv);
-  if (!globalObject) {
-    MOZ_ASSERT(aRv.Failed());
-    return;
-  }
-
-  
-  if (!CheckBeforeExecution(globalObject, aCallbackGlobal,
-                            false, aRv)) {
-    return;
-  }
-
-  
-  SetupForExecution(globalObject, aIncumbentGlobal, aCallbackGlobal,
-                    aCallbackGlobal, aCreationStack,
-                    nullptr, aExecutionReason, aRv);
-}
-
-bool CallSetup::ShouldRethrowException(JS::Handle<JS::Value> aException) {
-  if (mExceptionHandling == CallbackObjectBase::eRethrowExceptions) {
+bool CallbackObjectBase::CallSetup::ShouldRethrowException(
+    JS::Handle<JS::Value> aException) {
+  if (mExceptionHandling == eRethrowExceptions) {
     MOZ_ASSERT(!mRealm);
     return true;
   }
@@ -420,7 +339,7 @@ bool CallSetup::ShouldRethrowException(JS::Handle<JS::Value> aException) {
   return js::GetNonCCWObjectRealm(obj) == mRealm;
 }
 
-CallSetup::~CallSetup() {
+CallbackObjectBase::CallSetup::~CallSetup() {
   
   
   
@@ -432,9 +351,8 @@ CallSetup::~CallSetup() {
   
   if (mCx) {
     bool needToDealWithException = mAutoEntryScript->HasException();
-    if ((mRealm &&
-         mExceptionHandling == CallbackObjectBase::eRethrowContentExceptions) ||
-        mExceptionHandling == CallbackObjectBase::eRethrowExceptions) {
+    if ((mRealm && mExceptionHandling == eRethrowContentExceptions) ||
+        mExceptionHandling == eRethrowExceptions) {
       mErrorResult.MightThrowJSException();
       if (needToDealWithException) {
         JS::Rooted<JS::Value> exn(mCx);

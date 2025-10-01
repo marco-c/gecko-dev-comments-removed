@@ -63,16 +63,6 @@ class JS_PUBLIC_API JobQueue {
 
 
 
-  virtual bool getHostDefinedGlobal(
-      JSContext* cx, JS::MutableHandle<JSObject*> data) const = 0;
-
-  
-
-
-
-
-
-
 
 
 
@@ -112,12 +102,6 @@ class JS_PUBLIC_API JobQueue {
 
 
   virtual bool isDrainingStopped() const = 0;
-
-  
-
-
-
-  virtual bool useDebugQueue(JSObject* global) const { return false; }
 
  protected:
   friend class AutoDebuggerJobQueueInterruption;
@@ -415,24 +399,8 @@ extern JS_PUBLIC_API bool SetSettledPromiseIsHandled(JSContext* cx,
 
 
 
-
-
 extern JS_PUBLIC_API JSObject* GetPromiseAllocationSite(
     JS::HandleObject promise);
-
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API JSObject*
-MaybeGetPromiseAllocationSiteFromPossiblyWrappedPromise(
-    JS::HandleObject maybePromise);
 
 extern JS_PUBLIC_API JSObject* GetPromiseResolutionSite(
     JS::HandleObject promise);

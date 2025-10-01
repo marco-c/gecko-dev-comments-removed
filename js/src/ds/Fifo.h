@@ -26,8 +26,7 @@ namespace js {
 
 
 template <typename T, size_t MinInlineCapacity = 0,
-          class AllocPolicy = TempAllocPolicy,
-          template <typename, size_t, class> class VectorType = Vector>
+          class AllocPolicy = TempAllocPolicy>
 class Fifo {
   static_assert(MinInlineCapacity % 2 == 0, "MinInlineCapacity must be even!");
 
@@ -40,8 +39,8 @@ class Fifo {
   
   
   
-  VectorType<T, MinInlineCapacity / 2, AllocPolicy> front_;
-  VectorType<T, MinInlineCapacity / 2, AllocPolicy> rear_;
+  Vector<T, MinInlineCapacity / 2, AllocPolicy> front_;
+  Vector<T, MinInlineCapacity / 2, AllocPolicy> rear_;
 
  private:
   
@@ -126,13 +125,6 @@ class Fifo {
     }
     fixup();
     return true;
-  }
-
-  
-  
-  template <typename... Args>
-  [[nodiscard]] bool emplaceFront(Args&&... args) {
-    return front_.emplaceBack(std::forward<Args>(args)...);
   }
 
   
