@@ -561,6 +561,12 @@ support-files = [
   "searchSuggestionEngine.sjs",
 ]
 
+["browser_searchSuggestions_ohttpSessions.js"]
+support-files = [
+  "searchSuggestionEngine.xml",
+  "searchSuggestionEngine.sjs",
+]
+
 ["browser_searchTelemetry.js"]
 support-files = [
   "searchSuggestionEngine.xml",
@@ -713,6 +719,8 @@ https_first_disabled = true
 ["browser_urlbar_annotation.js"]
 https_first_disabled = true
 support-files = ["redirect_to.sjs"]
+
+["browser_urlbar_modifiedClick.js"]
 
 ["browser_urlbar_selection.js"]
 skip-if = [
