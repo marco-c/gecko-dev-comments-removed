@@ -394,6 +394,18 @@ module.exports = {
         
         
         "devtools/**",
+        
+        "browser/fxr/**",
+        
+        "mobile/android/**",
+        
+        "docs/**",
+        
+        "toolkit/themes/shared/media/pipToggle.css",
+        "toolkit/themes/shared/media/videocontrols.css",
+        "toolkit/content/widgets/datetimebox.css",
+        "toolkit/content/widgets/marquee.css",
+        "toolkit/themes/shared/media/textrecognition.css",
       ],
       rules: {
         "stylelint-plugin-mozilla/use-border-radius-tokens": false,
