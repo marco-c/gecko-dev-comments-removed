@@ -784,8 +784,16 @@ struct arena_t {
 
   class PurgeInfo {
    private:
+    
+    
     size_t mDirtyInd = 0;
+    size_t mDirtyLen = 0;
+
+    
     size_t mDirtyNPages = 0;
+
+    
+    
     size_t mFreeRunInd = 0;
     size_t mFreeRunLen = 0;
 
@@ -807,7 +815,7 @@ struct arena_t {
       return (void*)(uintptr_t(mChunk) + (mDirtyInd << gPageSize2Pow));
     }
 
-    size_t DirtyLenBytes() const { return mDirtyNPages << gPageSize2Pow; }
+    size_t DirtyLenBytes() const { return mDirtyLen << gPageSize2Pow; }
 
     
     
@@ -822,7 +830,12 @@ struct arena_t {
 
     
     
-    bool ScanChunkForDirtyPage();
+    
+    bool ScanForFirstDirtyPage();
+
+    
+    
+    bool ScanForLastDirtyPage();
 
     
     
@@ -2088,31 +2101,46 @@ bool arena_t::PurgeInfo::FindDirtyPages(bool aPurgedOnce) {
     return false;
   }
 
-  MOZ_ALWAYS_TRUE(ScanChunkForDirtyPage());
-  MOZ_ASSERT(mDirtyInd != 0);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_ALWAYS_TRUE(ScanForFirstDirtyPage());
+  MOZ_ALWAYS_TRUE(ScanForLastDirtyPage());
+
   MOZ_ASSERT(mFreeRunInd >= gChunkHeaderNumPages);
   MOZ_ASSERT(mFreeRunInd <= mDirtyInd);
   MOZ_ASSERT(mFreeRunLen > 0);
+  MOZ_ASSERT(mDirtyInd != 0);
+  MOZ_ASSERT(mDirtyLen != 0);
+  MOZ_ASSERT(mDirtyLen <= mFreeRunLen);
+  MOZ_ASSERT(mDirtyInd + mDirtyLen <= mFreeRunInd + mFreeRunLen);
 
   
-  
-  for (size_t i = 0; mDirtyInd + i < gChunkNumPages; i++) {
+  mDirtyNPages = 0;
+  for (size_t i = 0; i < mDirtyLen; i++) {
     size_t& bits = mChunk->mPageMap[mDirtyInd + i].bits;
 
     
     
     MOZ_ASSERT(!(bits & CHUNK_MAP_BUSY));
 
-    if (!(bits & CHUNK_MAP_DIRTY)) {
-      mDirtyNPages = i;
-      break;
+    if (bits & CHUNK_MAP_DIRTY) {
+      MOZ_ASSERT((bits & CHUNK_MAP_FRESH_MADVISED_OR_DECOMMITTED) == 0);
+      mDirtyNPages++;
+      bits ^= CHUNK_MAP_DIRTY;
     }
-    MOZ_ASSERT((bits & CHUNK_MAP_FRESH_MADVISED_OR_DECOMMITTED) == 0);
-    bits ^= CHUNK_MAP_DIRTY;
   }
   MOZ_ASSERT(mDirtyNPages > 0);
   MOZ_ASSERT(mDirtyNPages <= mChunk->mNumDirty);
-  MOZ_ASSERT(mFreeRunInd + mFreeRunLen >= mDirtyInd + mDirtyNPages);
+  MOZ_ASSERT(mDirtyNPages <= mDirtyLen);
 
   
   
@@ -2131,7 +2159,7 @@ bool arena_t::PurgeInfo::FindDirtyPages(bool aPurgedOnce) {
 }
 
 
-bool arena_t::PurgeInfo::ScanChunkForDirtyPage() {
+bool arena_t::PurgeInfo::ScanForFirstDirtyPage() {
   
   
   size_t run_pages;
@@ -2186,19 +2214,52 @@ bool arena_t::PurgeInfo::ScanChunkForDirtyPage() {
   return false;
 }
 
+bool arena_t::PurgeInfo::ScanForLastDirtyPage() {
+  for (size_t i = mFreeRunInd + mFreeRunLen - 1; i >= mFreeRunInd; i--) {
+    size_t bits = mChunk->mPageMap[i].bits;
+    MOZ_ASSERT((bits & CHUNK_MAP_BUSY) == 0);
+    if (bits & CHUNK_MAP_DIRTY) {
+      mDirtyLen = i - mDirtyInd + 1;
+      return true;
+    }
+  }
+
+  return false;
+}
+
 std::pair<bool, arena_chunk_t*> arena_t::PurgeInfo::UpdatePagesAndCounts() {
-  for (size_t i = 0; i < mDirtyNPages; i++) {
+  size_t num_madvised = 0;
+  size_t num_decommitted = 0;
+  size_t num_fresh = 0;
+
+  for (size_t i = 0; i < mDirtyLen; i++) {
+    size_t& bits = mChunk->mPageMap[mDirtyInd + i].bits;
+
     
-    
-    MOZ_ASSERT((mChunk->mPageMap[mDirtyInd + i].bits &
-                (CHUNK_MAP_FRESH_MADVISED_OR_DECOMMITTED | CHUNK_MAP_DIRTY)) ==
-               0);
+    MOZ_ASSERT((bits & CHUNK_MAP_DIRTY) == 0);
+
 #ifdef MALLOC_DECOMMIT
-    const size_t free_operation = CHUNK_MAP_DECOMMITTED;
+    if (bits & CHUNK_MAP_DECOMMITTED) {
+      num_decommitted++;
+    }
 #else
-    const size_t free_operation = CHUNK_MAP_MADVISED;
+    if (bits & CHUNK_MAP_MADVISED) {
+      num_madvised++;
+    }
 #endif
-    mChunk->mPageMap[mDirtyInd + i].bits ^= free_operation;
+    else if (bits & CHUNK_MAP_FRESH) {
+      num_fresh++;
+    }
+
+    
+    bits &= ~CHUNK_MAP_FRESH_MADVISED_OR_DECOMMITTED;
+
+    
+#ifdef MALLOC_DECOMMIT
+    bits |= CHUNK_MAP_DECOMMITTED;
+#else
+    bits |= CHUNK_MAP_MADVISED;
+#endif
   }
 
   
@@ -2210,10 +2271,12 @@ std::pair<bool, arena_chunk_t*> arena_t::PurgeInfo::UpdatePagesAndCounts() {
   mChunk->mPageMap[FreeRunLastInd()].bits &= ~CHUNK_MAP_BUSY;
 
 #ifndef MALLOC_DECOMMIT
-  mArena.mNumMAdvised += mDirtyNPages;
+  mArena.mNumMAdvised += mDirtyLen - num_madvised;
 #endif
 
-  mArena.mStats.committed -= mDirtyNPages;
+  mArena.mNumFresh -= num_fresh;
+  mArena.mStats.committed -=
+      mDirtyLen - num_madvised - num_decommitted - num_fresh;
   mPurgeStats.pages += mDirtyNPages;
   mPurgeStats.system_calls++;
 
