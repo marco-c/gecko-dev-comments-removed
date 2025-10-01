@@ -4055,30 +4055,7 @@ bool PresShell::ScrollFrameIntoView(
 
     if (ScrollContainerFrame* sf = do_QueryFrame(container)) {
       nsPoint oldPosition = sf->GetScrollPosition();
-      nsRect targetRect = rect;
-      
-      
-      auto* disp = container->StyleDisplay();
-      if (disp->mOverflowClipBoxBlock == StyleOverflowClipBox::ContentBox ||
-          disp->mOverflowClipBoxInline == StyleOverflowClipBox::ContentBox) {
-        WritingMode wm = container->GetWritingMode();
-        bool cbH = (wm.IsVertical() ? disp->mOverflowClipBoxBlock
-                                    : disp->mOverflowClipBoxInline) ==
-                   StyleOverflowClipBox::ContentBox;
-        bool cbV = (wm.IsVertical() ? disp->mOverflowClipBoxInline
-                                    : disp->mOverflowClipBoxBlock) ==
-                   StyleOverflowClipBox::ContentBox;
-        nsMargin padding = container->GetUsedPadding();
-        if (!cbH) {
-          padding.left = padding.right = nscoord(0);
-        }
-        if (!cbV) {
-          padding.top = padding.bottom = nscoord(0);
-        }
-        targetRect.Inflate(padding);
-      }
-
-      targetRect -= sf->GetScrolledFrame()->GetPosition();
+      nsRect targetRect = rect - sf->GetScrolledFrame()->GetPosition();
 
       {
         AutoWeakFrame wf(container);
