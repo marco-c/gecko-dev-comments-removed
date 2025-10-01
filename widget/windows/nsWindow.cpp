@@ -1092,6 +1092,9 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
               .ToUnknownRect());
 
       
+      SetCustomTitlebar(true);
+
+      
       
       ::SetWindowLongPtrW(mWnd, GWLP_WNDPROC,
                           reinterpret_cast<LONG_PTR>(
@@ -2842,14 +2845,42 @@ void nsWindow::SetCustomTitlebar(bool aCustomTitlebar) {
 
   mCustomNonClient = aCustomTitlebar;
 
+  const LONG_PTR style = GetWindowLongPtrW(mWnd, GWL_STYLE);
   
   if (mCustomNonClient) {
+    if (style & WS_SYSMENU) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      ::GetSystemMenu(mWnd, FALSE);
+      ::SetWindowLongPtrW(mWnd, GWL_STYLE, style & ~WS_SYSMENU);
+    }
     UpdateNonClientMargins();
   } else {
+    if (WindowStyle() & WS_SYSMENU) {
+      
+      ::SetWindowLongPtrW(mWnd, GWL_STYLE, style | WS_SYSMENU);
+      
+      HICON icon =
+          (HICON)::SendMessageW(mWnd, WM_SETICON, (WPARAM)ICON_SMALL, 0);
+      ::SendMessageW(mWnd, WM_SETICON, (WPARAM)ICON_SMALL, (LPARAM)icon);
+    }
     mCustomNonClientMetrics = {};
     ResetLayout();
   }
-  WindowsUIUtils::SetIsTitlebarCollapsed(mWnd, mCustomNonClient);
 }
 
 void nsWindow::SetResizeMargin(mozilla::LayoutDeviceIntCoord aResizeMargin) {
@@ -4660,7 +4691,7 @@ static bool DisplaySystemMenu(HWND hWnd, nsSizeMode sizeMode, bool isRtl,
       NS_ASSERTION(false, "Did the argument come from invalid IPC?");
       break;
     default:
-      MOZ_ASSERT_UNREACHABLE("Unhandled nsSizeMode value detected");
+      MOZ_ASSERT_UNREACHABLE("Unhnalded nsSizeMode value detected");
       break;
   }
   LPARAM cmd = TrackPopupMenu(hMenu,
@@ -5839,7 +5870,7 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
         const auto sizeMode = mFrameState->GetSizeMode();
         
         
-        if (sizeMode == nsSizeMode_Fullscreen) {
+        if (sizeMode == nsSizeMode_Fullscreen || mCustomNonClient) {
           
           
           

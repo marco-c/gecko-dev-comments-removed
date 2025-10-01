@@ -12,10 +12,6 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
 
-
-
-typedef struct HWND__* HWND;
-
 using SharePromise =
     mozilla::MozPromise<bool, nsresult,  true>;
 
@@ -59,7 +55,6 @@ class WindowsUIUtils final : public nsIWindowsUIUtils {
   static bool ComputeOverlayScrollbars();
   static double ComputeTextScaleFactor();
   static bool ComputeTransparencyEffects();
-  static void SetIsTitlebarCollapsed(HWND aWnd, bool aIsCollapsed);
 
  protected:
   ~WindowsUIUtils();
