@@ -16,14 +16,7 @@ public interface AudioProcessingFactory {
 
 
 
-  
-  
-  @Deprecated
-  public default long createNative() {
-    return 0;
-  }
 
-  public default long createNative(long webrtcEnvRef) {
-    return createNative();
-  }
+
+  long createNative(long webrtcEnvRef);
 }
