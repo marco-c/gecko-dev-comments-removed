@@ -484,6 +484,7 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   void getStats(Stats& stats);
 
 #ifdef DEBUG
+  bool hasAlloc(void* alloc);
   void checkGCStateNotInUse();
   void checkGCStateNotInUse(MaybeLock& lock);
   void checkGCStateNotInUse(const AutoLock& lock);
@@ -615,8 +616,9 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   LargeBuffer* lookupLargeBuffer(void* alloc, MaybeLock& lock);
   bool needLockToAccessBufferMap() const;
 
-  void updateHeapSize(size_t bytes, bool checkThresholds,
-                      bool updateRetainedSize);
+  void increaseHeapSize(size_t bytes, bool checkThresholds,
+                        bool updateRetainedSize);
+  void decreaseHeapSize(size_t bytes, bool updateRetainedSize);
 
   
   friend void* TestAllocAligned(JS::Zone* zone, size_t bytes);
