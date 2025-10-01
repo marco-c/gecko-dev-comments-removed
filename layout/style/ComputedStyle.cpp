@@ -435,8 +435,6 @@ bool ComputedStyle::HasAnchorPosReference() const {
   if (pos->mPositionAnchor.IsIdent()) {
     
     
-    
-    
     return true;
   }
 
