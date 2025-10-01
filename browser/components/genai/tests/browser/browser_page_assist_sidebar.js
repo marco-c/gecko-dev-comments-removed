@@ -1,6 +1,16 @@
 
 
 
+registerCleanupFunction(() => {
+  
+  if (!document.getElementById("sidebar-box").hidden) {
+    info(
+      `Sidebar ${SidebarController.currentID} was left open, closing it in cleanup function`
+    );
+    SidebarController.hide({ dismissPanel: true });
+  }
+});
+
 
 
 
