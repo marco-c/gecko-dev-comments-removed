@@ -7,41 +7,50 @@
 
 "use strict";
 
-var h2Port;
-var prefs;
-var http2pref;
+const { NodeHTTP2Server } = ChromeUtils.importESModule(
+  "resource://testing-common/NodeServer.sys.mjs"
+);
 
-function run_test() {
-  h2Port = Services.env.get("MOZHTTP2_PORT");
-  Assert.notEqual(h2Port, null);
-  Assert.notEqual(h2Port, "");
+let server;
 
-  
+add_setup(async function test_setup() {
   do_get_profile();
-  prefs = Services.prefs;
+  Services.prefs.setBoolPref("network.http.http2.enabled", true);
+  Services.prefs.setCharPref("network.dns.localDomains", "foo.example.com");
 
-  http2pref = prefs.getBoolPref("network.http.http2.enabled");
-
-  prefs.setBoolPref("network.http.http2.enabled", true);
-  prefs.setCharPref(
-    "network.dns.localDomains",
-    "foo.example.com, alt1.example.com"
-  );
+  server = new NodeHTTP2Server();
+  await server.start();
+  registerCleanupFunction(async () => {
+    await server.stop();
+  });
 
   
-  
-  let certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
-    Ci.nsIX509CertDB
-  );
-  addCertFromFile(certdb, "http2-ca.pem", "CTu,u,u");
+  await server.registerPathHandler("/origin-1", (req, resp) => {
+    resp.setHeader("x-client-port", req.socket.remotePort);
+    resp.writeHead(200, { "Content-Type": "text/plain" });
+    resp.end("origin-1");
+  });
+  await server.registerPathHandler("/origin-2", (req, resp) => {
+    resp.setHeader("x-client-port", req.socket.remotePort);
+    resp.writeHead(200, { "Content-Type": "text/plain" });
+    resp.end("origin-2");
+  });
+  await server.registerPathHandler("/origin-3", (req, resp) => {
+    resp.setHeader("x-client-port", req.socket.remotePort);
+    resp.writeHead(200, { "Content-Type": "text/plain" });
+    resp.end("origin-3");
+  });
+  await server.registerPathHandler("/origin-4", (req, resp) => {
+    resp.setHeader("x-client-port", req.socket.remotePort);
+    resp.writeHead(200, { "Content-Type": "text/plain" });
+    resp.end("origin-4");
+  });
+});
 
-  doTest1();
-}
-
-function resetPrefs() {
-  prefs.setBoolPref("network.http.http2.enabled", http2pref);
-  prefs.clearUserPref("network.dns.localDomains");
-}
+registerCleanupFunction(() => {
+  Services.prefs.clearUserPref("network.http.http2.enabled");
+  Services.prefs.clearUserPref("network.dns.localDomains");
+});
 
 function makeChan(origin) {
   return NetUtil.newChannel({
@@ -50,126 +59,67 @@ function makeChan(origin) {
   }).QueryInterface(Ci.nsIHttpChannel);
 }
 
-var nextTest;
-var origin;
-var nextPortExpectedToBeSame = false;
-var currentPort = 0;
-var forceReload = false;
-var anonymous = false;
+function channelOpenPromise(chan, loadFlags = 0) {
+  return new Promise((resolve, reject) => {
+    chan.loadFlags = Ci.nsIChannel.LOAD_INITIAL_DOCUMENT_URI | loadFlags;
 
-var Listener = function () {};
-Listener.prototype.clientPort = 0;
-Listener.prototype = {
-  onStartRequest: function testOnStartRequest(request) {
-    Assert.ok(request instanceof Ci.nsIHttpChannel);
-
-    if (!Components.isSuccessCode(request.status)) {
-      do_throw("Channel should have a success code! (" + request.status + ")");
+    function finish(req, buffer) {
+      try {
+        Assert.ok(req instanceof Ci.nsIHttpChannel);
+        Assert.ok(Components.isSuccessCode(req.status));
+        Assert.equal(req.responseStatus, 200);
+        const clientPort = parseInt(req.getResponseHeader("x-client-port"));
+        resolve({ req, buffer, clientPort });
+      } catch (e) {
+        reject(e);
+      }
     }
-    Assert.equal(request.responseStatus, 200);
-    this.clientPort = parseInt(request.getResponseHeader("x-client-port"));
-  },
 
-  onDataAvailable: function testOnDataAvailable(request, stream, off, cnt) {
-    read_stream(stream, cnt);
-  },
-
-  onStopRequest: function testOnStopRequest(request, status) {
-    Assert.ok(Components.isSuccessCode(status));
-    if (nextPortExpectedToBeSame) {
-      Assert.equal(currentPort, this.clientPort);
-    } else {
-      Assert.notEqual(currentPort, this.clientPort);
-    }
-    currentPort = this.clientPort;
-    nextTest();
-    do_test_finished();
-  },
-};
-
-function testsDone() {
-  dump("testsDone\n");
-  resetPrefs();
+    chan.asyncOpen(new ChannelListener(finish, null, CL_ALLOW_UNKNOWN_CL));
+  });
 }
 
-function doTest() {
-  dump("execute doTest " + origin + "\n");
+add_task(async function test_anonymous_coalescing_sequence() {
+  let currentPort = 0;
 
-  var loadFlags = Ci.nsIChannel.LOAD_INITIAL_DOCUMENT_URI;
-  if (anonymous) {
-    loadFlags |= Ci.nsIRequest.LOAD_ANONYMOUS;
-  }
-  anonymous = false;
-  if (forceReload) {
-    loadFlags |= Ci.nsIRequest.LOAD_FRESH_CONNECTION;
-  }
-  forceReload = false;
-
-  var chan = makeChan(origin);
-  chan.loadFlags = loadFlags;
-
-  var listener = new Listener();
-  chan.asyncOpen(listener);
-}
-
-function doTest1() {
-  dump("doTest1()\n");
-  origin = "https://foo.example.com:" + h2Port + "/origin-1";
-  nextTest = doTest2;
-  nextPortExpectedToBeSame = false;
-  do_test_pending();
-  doTest();
-}
-
-function doTest2() {
   
-  dump("doTest2()\n");
-  origin = "https://foo.example.com:" + h2Port + "/origin-1";
-  nextTest = doTest3;
-  nextPortExpectedToBeSame = true;
-  do_test_pending();
-  doTest();
-}
+  info("Test 1: First non-anonymous request");
+  let chan = makeChan(`https://foo.example.com:${server.port()}/origin-1`);
+  let result = await channelOpenPromise(chan);
+  Assert.notEqual(currentPort, result.clientPort);
+  currentPort = result.clientPort;
 
-function doTest3() {
   
-  dump("doTest3()\n");
-  origin = "https://foo.example.com:" + h2Port + "/origin-2";
-  nextTest = doTest4;
-  nextPortExpectedToBeSame = true;
-  anonymous = true;
-  do_test_pending();
-  doTest();
-}
+  info("Test 2: Second non-anonymous request (same endpoint)");
+  chan = makeChan(`https://foo.example.com:${server.port()}/origin-1`);
+  result = await channelOpenPromise(chan);
+  Assert.equal(currentPort, result.clientPort);
 
-function doTest4() {
-  dump("doTest4()\n");
-  origin = "https://foo.example.com:" + h2Port + "/origin-3";
-  nextTest = doTest5;
-  nextPortExpectedToBeSame = false;
-  forceReload = true;
-  anonymous = true;
-  do_test_pending();
-  doTest();
-}
-
-function doTest5() {
   
-  
-  dump("doTest5()\n");
-  origin = "https://foo.example.com:" + h2Port + "/origin-3";
-  nextTest = doTest6;
-  nextPortExpectedToBeSame = true;
-  anonymous = true;
-  do_test_pending();
-  doTest();
-}
+  info("Test 3: Anonymous request should reuse connection");
+  chan = makeChan(`https://foo.example.com:${server.port()}/origin-2`);
+  result = await channelOpenPromise(chan, Ci.nsIRequest.LOAD_ANONYMOUS);
+  Assert.equal(currentPort, result.clientPort);
 
-function doTest6() {
-  dump("doTest6()\n");
-  origin = "https://foo.example.com:" + h2Port + "/origin-4";
-  nextTest = testsDone;
-  nextPortExpectedToBeSame = true;
-  do_test_pending();
-  doTest();
-}
+  
+  info("Test 4: Force new connection with anonymous request");
+  chan = makeChan(`https://foo.example.com:${server.port()}/origin-3`);
+  result = await channelOpenPromise(
+    chan,
+    Ci.nsIRequest.LOAD_ANONYMOUS | Ci.nsIRequest.LOAD_FRESH_CONNECTION
+  );
+  Assert.notEqual(currentPort, result.clientPort);
+  currentPort = result.clientPort;
+
+  
+  info("Test 5: Same anonymous request (mark connection experienced)");
+  chan = makeChan(`https://foo.example.com:${server.port()}/origin-3`);
+  result = await channelOpenPromise(chan, Ci.nsIRequest.LOAD_ANONYMOUS);
+  Assert.equal(currentPort, result.clientPort);
+
+  
+  info("Test 6: Non-anonymous request should reuse connection");
+  chan = makeChan(`https://foo.example.com:${server.port()}/origin-4`);
+  result = await channelOpenPromise(chan);
+  Assert.equal(currentPort, result.clientPort);
+});
