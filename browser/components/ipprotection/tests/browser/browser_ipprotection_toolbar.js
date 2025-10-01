@@ -24,9 +24,11 @@ add_task(async function toolbar_added_and_removed() {
   let position = CustomizableUI.getPlacementOfWidget(
     IPProtectionWidget.WIDGET_ID
   ).position;
+  
+  let expectedPosition = Services.prefs.getBoolPref("sidebar.revamp") ? 8 : 7;
   Assert.equal(
     position,
-    7,
+    expectedPosition,
     "IP Protection widget added in the correct position"
   );
   
@@ -73,7 +75,7 @@ add_task(async function toolbar_icon_status() {
   });
   IPProtectionService.isEnrolled = true;
   IPProtectionService.isEntitled = true;
-  content.state.isSignedIn = true;
+  content.state.isSignedOut = false;
   await putServerInRemoteSettings();
   content.requestUpdate();
   await content.updateComplete;
