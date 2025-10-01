@@ -537,7 +537,7 @@ void CodeGenerator::visitExtendInt32ToInt64(LExtendInt32ToInt64* lir) {
   if (lir->mir()->isUnsigned()) {
     masm.move32To64ZeroExtend(ToRegister(input), Register64(output));
   } else {
-    masm.slliw(output, ToRegister(input), 0);
+    masm.SignExtendWord(output, ToRegister(input));
   }
 }
 
@@ -860,7 +860,8 @@ void CodeGenerator::visitMulI(LMulI* ins) {
           
 
           if ((1 << shift) == constant) {
-            ScratchRegisterScope scratch(masm);
+            UseScratchRegisterScope temps(&masm);
+            Register scratch = temps.Acquire();
             
             masm.slliw(dest, src, shift % 32);
             
@@ -942,7 +943,8 @@ void CodeGenerator::visitMulIntPtr(LMulIntPtr* ins) {
           masm.slli(dest, lhs, FloorLog2(constant + 1));
           masm.sub(dest, dest, lhs);
         } else {
-          ScratchRegisterScope scratch(masm);
+          UseScratchRegisterScope temps(&masm);
+          Register scratch = temps.Acquire();
           masm.mv(scratch, lhs);
           masm.slli(dest, lhs, FloorLog2(constant + 1));
           masm.sub(dest, dest, scratch);
@@ -954,7 +956,8 @@ void CodeGenerator::visitMulIntPtr(LMulIntPtr* ins) {
           masm.slli(dest, lhs, FloorLog2(constant - 1));
           masm.add(dest, dest, lhs);
         } else {
-          ScratchRegisterScope scratch(masm);
+          UseScratchRegisterScope temps(&masm);
+          Register scratch = temps.Acquire();
           masm.mv(scratch, lhs);
           masm.slli(dest, lhs, FloorLog2(constant - 1));
           masm.add(dest, dest, scratch);
@@ -969,7 +972,8 @@ void CodeGenerator::visitMulIntPtr(LMulIntPtr* ins) {
       }
     }
 
-    ScratchRegisterScope scratch(masm);
+    UseScratchRegisterScope temps(&masm);
+    Register scratch = temps.Acquire();
     masm.ma_li(scratch, Imm64(constant));
     masm.mul(dest, lhs, scratch);
   } else {
@@ -1000,7 +1004,8 @@ void CodeGenerator::visitMulI64(LMulI64* lir) {
       default:
         if (constant > 0) {
           if (mozilla::IsPowerOfTwo(static_cast<uint64_t>(constant + 1))) {
-            ScratchRegisterScope scratch(masm);
+            UseScratchRegisterScope temps(&masm);
+            Register scratch = temps.Acquire();
             masm.movePtr(ToRegister64(lhs).reg, scratch);
             masm.slli(output.reg, ToRegister64(lhs).reg,
                       FloorLog2(constant + 1));
@@ -1009,7 +1014,8 @@ void CodeGenerator::visitMulI64(LMulI64* lir) {
           } else if (mozilla::IsPowerOfTwo(
                          static_cast<uint64_t>(constant - 1))) {
             int32_t shift = mozilla::FloorLog2(constant - 1);
-            ScratchRegisterScope scratch(masm);
+            UseScratchRegisterScope temps(&masm);
+            Register scratch = temps.Acquire();
             masm.movePtr(ToRegister64(lhs).reg, scratch);
             masm.slli(output.reg, ToRegister64(lhs).reg, shift);
             masm.add64(scratch, output);
@@ -1273,7 +1279,7 @@ void CodeGenerator::visitBitNotI(LBitNotI* ins) {
   const LDefinition* dest = ins->output();
   MOZ_ASSERT(!input->isConstant());
 
-  masm.nor(ToRegister(dest), ToRegister(input), zero);
+  masm.not_(ToRegister(dest), ToRegister(input));
 }
 
 void CodeGenerator::visitBitNotI64(LBitNotI64* ins) {
@@ -1281,7 +1287,7 @@ void CodeGenerator::visitBitNotI64(LBitNotI64* ins) {
   MOZ_ASSERT(!IsConstant(input));
   Register64 inputReg = ToRegister64(input);
   MOZ_ASSERT(inputReg == ToOutRegister64(ins));
-  masm.nor(inputReg.reg, inputReg.reg, zero);
+  masm.not_(inputReg.reg, inputReg.reg);
 }
 
 void CodeGenerator::visitBitOpI(LBitOpI* ins) {
@@ -1295,7 +1301,7 @@ void CodeGenerator::visitBitOpI(LBitOpI* ins) {
         masm.ma_or(ToRegister(dest), ToRegister(lhs), Imm32(ToInt32(rhs)));
       } else {
         masm.or_(ToRegister(dest), ToRegister(lhs), ToRegister(rhs));
-        masm.slliw(ToRegister(dest), ToRegister(dest), 0);
+        masm.SignExtendWord(ToRegister(dest), ToRegister(dest));
       }
       break;
     case JSOp::BitXor:
@@ -1304,7 +1310,7 @@ void CodeGenerator::visitBitOpI(LBitOpI* ins) {
       } else {
         masm.ma_xor(ToRegister(dest), ToRegister(lhs),
                     Operand(ToRegister(rhs)));
-        masm.slliw(ToRegister(dest), ToRegister(dest), 0);
+        masm.SignExtendWord(ToRegister(dest), ToRegister(dest));
       }
       break;
     case JSOp::BitAnd:
@@ -1312,7 +1318,7 @@ void CodeGenerator::visitBitOpI(LBitOpI* ins) {
         masm.ma_and(ToRegister(dest), ToRegister(lhs), Imm32(ToInt32(rhs)));
       } else {
         masm.and_(ToRegister(dest), ToRegister(lhs), ToRegister(rhs));
-        masm.slliw(ToRegister(dest), ToRegister(dest), 0);
+        masm.SignExtendWord(ToRegister(dest), ToRegister(dest));
       }
       break;
     default:
