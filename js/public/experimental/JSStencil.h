@@ -257,6 +257,14 @@ extern JS_PUBLIC_API void AbortCollectingDelazifications(
 
 extern JS_PUBLIC_API bool IsStencilCacheable(JS::Stencil* stencil);
 
+
+
+
+
+
+
+extern JS_PUBLIC_API size_t GetScriptSourceLength(JS::Stencil* stencil);
+
 }  
 
 #endif  
