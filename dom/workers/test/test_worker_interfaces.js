@@ -504,6 +504,16 @@ let interfaceNamesInGlobalScope = [
   
   { name: "TransformStreamDefaultController", insecureContext: true },
   
+  { name: "TrustedHTML", nightly: true, insecureContext: true },
+  
+  { name: "TrustedScript", nightly: true, insecureContext: true },
+  
+  { name: "TrustedScriptURL", nightly: true, insecureContext: true },
+  
+  { name: "TrustedTypePolicy", nightly: true, insecureContext: true },
+  
+  { name: "TrustedTypePolicyFactory", nightly: true, insecureContext: true },
+  
   { name: "URL", insecureContext: true },
   
   { name: "URLPattern", insecureContext: true },
