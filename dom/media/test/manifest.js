@@ -510,6 +510,18 @@ var gMKVtests = [
     type: "audio/matroska",
     duration: 1.0,
   },
+  
+  {
+    name: "output_vp8.mkv",
+    type: "video/matroska",
+    duration: 1.0,
+  },
+  
+  {
+    name: "output_vp9.mkv",
+    type: "video/matroska",
+    duration: 1.0,
+  },
 ];
 
 
@@ -530,18 +542,6 @@ if (
 
 
 var gUnsupportedMKVtests = [
-  
-  {
-    name: "output_vp8.mkv",
-    type: "video/matroska",
-    duration: 1.0,
-  },
-  
-  {
-    name: "output_vp9.mkv",
-    type: "video/matroska",
-    duration: 1.0,
-  },
   
   {
     name: "output_av1.mkv",
