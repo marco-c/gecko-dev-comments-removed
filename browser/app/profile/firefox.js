@@ -3107,9 +3107,12 @@ pref("devtools.netmonitor.har.multiple-pages", false);
 pref("devtools.netmonitor.audits.slow", 500);
 
 
-  pref("devtools.netmonitor.features.newEditAndResend", true);
+pref("devtools.netmonitor.features.newEditAndResend", true);
 
 pref("devtools.netmonitor.customRequest", '{}');
+
+
+pref("devtools.netmonitor.features.webtransport", false);
 
 
 pref("devtools.storage.enabled", true);
