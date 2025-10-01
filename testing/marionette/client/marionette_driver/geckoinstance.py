@@ -609,6 +609,8 @@ class DesktopInstance(GeckoInstance):
         
         "app.update.auto": False,
         
+        "browser.backup.enabled": False,
+        
         
         
         "browser.contentblocking.introCount": 99,

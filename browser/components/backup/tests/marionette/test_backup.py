@@ -20,7 +20,10 @@ class BackupTest(MarionetteTestCase):
 
         
         
-        self.marionette.enforce_gecko_prefs({"browser.backup.log": True})
+        
+        self.marionette.enforce_gecko_prefs(
+            {"browser.backup.enabled": True, "browser.backup.log": True}
+        )
 
         self.marionette.set_context("chrome")
 
