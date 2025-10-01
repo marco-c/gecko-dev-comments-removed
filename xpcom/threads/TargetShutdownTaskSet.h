@@ -28,6 +28,7 @@ class TargetShutdownTaskSet {
   
   
   
+  
   nsresult AddTask(nsITargetShutdownTask* aTask) {
     MOZ_ASSERT(aTask);
     MOZ_ASSERT(!mShutdownTasksTaken);
