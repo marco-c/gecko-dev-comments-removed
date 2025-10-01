@@ -96,20 +96,6 @@ class AntiTrackingUtils final {
 
   
   
-  static nsresult ActivateStoragePermissionStateInParent(nsIChannel* aChannel);
-
-  
-  
-  
-  static bool ProcessStorageAccessHeadersShouldRetry(nsIChannel* aChannel);
-
- private:
-  static nsresult ProcessStorageAccessHeaders(nsIChannel* aChannel,
-                                              bool* aOutReload);
-
- public:
-  
-  
   static uint64_t GetTopLevelAntiTrackingWindowId(
       dom::BrowsingContext* aBrowsingContext);
 
