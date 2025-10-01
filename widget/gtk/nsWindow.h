@@ -439,6 +439,7 @@ class nsWindow final : public nsBaseWidget {
   LayoutDeviceIntPoint GdkEventCoordsToDevicePixels(gdouble aX, gdouble aY);
   LayoutDeviceIntRect GdkRectToDevicePixels(const GdkRectangle&);
   LayoutDeviceIntMargin GtkBorderToDevicePixels(const GtkBorder&);
+  LayoutDeviceRect GdkRectToFloatDevicePixels(const GdkRectangle&);
 
   bool WidgetTypeSupportsAcceleration() override;
   bool WidgetTypeSupportsNativeCompositing() override;
@@ -625,8 +626,6 @@ class nsWindow final : public nsBaseWidget {
   LayoutDeviceIntPoint mLastMoveRequest;
   
   LayoutDeviceIntMargin mClientMargin;
-  
-  LayoutDeviceIntMargin mCsdMargin;
 
   
   guint32 mLastScrollEventTime = GDK_CURRENT_TIME;

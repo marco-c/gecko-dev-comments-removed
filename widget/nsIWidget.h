@@ -352,9 +352,11 @@ class nsIWidget : public nsISupports {
   typedef mozilla::widget::TextEventDispatcher TextEventDispatcher;
   typedef mozilla::widget::TextEventDispatcherListener
       TextEventDispatcherListener;
+  typedef mozilla::LayoutDeviceMargin LayoutDeviceMargin;
   typedef mozilla::LayoutDeviceIntMargin LayoutDeviceIntMargin;
   typedef mozilla::LayoutDeviceIntPoint LayoutDeviceIntPoint;
   typedef mozilla::LayoutDeviceIntRect LayoutDeviceIntRect;
+  typedef mozilla::LayoutDeviceRect LayoutDeviceRect;
   typedef mozilla::LayoutDeviceIntRegion LayoutDeviceIntRegion;
   typedef mozilla::LayoutDeviceIntSize LayoutDeviceIntSize;
   typedef mozilla::ScreenIntPoint ScreenIntPoint;
@@ -1080,8 +1082,11 @@ class nsIWidget : public nsISupports {
 
 
 
+  virtual void SetHideTitlebarSeparator(bool) {}
 
-  virtual void SetDrawsTitle(bool aDrawTitle) {}
+  
+  
+  virtual bool IsMacTitlebarDirectionRTL() { return false; }
 
   
 

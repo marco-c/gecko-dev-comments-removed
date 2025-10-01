@@ -999,11 +999,6 @@ bool nsWindow::DrawsToCSDTitlebar() const {
   return mGtkWindowDecoration == GTK_DECORATION_CLIENT && mDrawInTitlebar;
 }
 
-GdkPoint nsWindow::GetCsdOffsetInGdkCoords() {
-  return DevicePixelsToGdkPointRoundDown(
-      LayoutDeviceIntPoint(mCsdMargin.top, mCsdMargin.left));
-}
-
 void nsWindow::ApplySizeConstraints() {
   if (!mShell) {
     return;
@@ -3282,10 +3277,10 @@ void nsWindow::RecomputeBounds(MayChangeCsdMargin aMayChangeCsdMargin) {
       
       
       
-      return LayoutDeviceIntRect(b.x, b.y, b.width, b.height);
+      return LayoutDeviceRect(b.x, b.y, b.width, b.height);
     }
 #endif
-    auto result = GdkRectToDevicePixels(b);
+    auto result = GdkRectToFloatDevicePixels(b);
 #ifdef MOZ_X11
     if (isX11 && gtk_check_version(3, 24, 50)) {
       if (auto border = GetXWindowBorder(aWin)) {
@@ -3307,12 +3302,12 @@ void nsWindow::RecomputeBounds(MayChangeCsdMargin aMayChangeCsdMargin) {
       
       gdk_window_get_geometry(aWin, nullptr, nullptr, &b.width, &b.height);
       gdk_window_get_origin(aWin, &b.x, &b.y);
-      return GdkRectToDevicePixels(b);
+      return GdkRectToFloatDevicePixels(b);
     }
     gdk_window_get_position(aWin, &b.x, &b.y);
     b.width = gdk_window_get_width(aWin);
     b.height = gdk_window_get_height(aWin);
-    return GdkRectToDevicePixels(b);
+    return GdkRectToFloatDevicePixels(b);
   };
 
   const auto oldBounds = mBounds;
@@ -3322,47 +3317,49 @@ void nsWindow::RecomputeBounds(MayChangeCsdMargin aMayChangeCsdMargin) {
       IsTopLevelWidget() && mSizeMode != nsSizeMode_Fullscreen && !mUndecorated;
   const auto toplevelBounds = GetBounds(toplevel);
 
-  mBounds = frameBounds;
-  
-  
-  
-  mBounds.width = std::max(mBounds.width, toplevelBounds.width);
-  mBounds.height = std::max(mBounds.height, toplevelBounds.height);
+  mBounds = [&] {
+    auto bounds = frameBounds;
+    
+    
+    
+    
+    bounds.width = std::max(bounds.width, toplevelBounds.width);
+    bounds.height = std::max(bounds.height, toplevelBounds.height);
+    return LayoutDeviceIntRect::Round(bounds);
+  }();
 
-  
-  
-  
-  
-  mCsdMargin = [&] {
-    if (!decorated || !ToplevelUsesCSD()) {
-      return LayoutDeviceIntMargin{};
-    }
-    if (mayChangeCsdMargin && mGdkWindow) {
-      auto gdkWindowBounds = GetBounds(mGdkWindow);
-      if (gdkWindowBounds.X() >= 0 && gdkWindowBounds.Y() >= 0 &&
-          gdkWindowBounds.Width() > 1 && gdkWindowBounds.Height() > 1) {
-        return LayoutDeviceIntRect(LayoutDeviceIntPoint(),
-                                   toplevelBounds.Size()) -
-               gdkWindowBounds;
+  if (!decorated) {
+    mClientMargin = {};
+  } else if (mayChangeCsdMargin) {
+    const auto clientRectRelativeToFrame = [&] {
+      auto topLevelBoundsRelativeToFrame = toplevelBounds;
+      topLevelBoundsRelativeToFrame -= frameBounds.TopLeft();
+      if (!mGdkWindow) {
+        return topLevelBoundsRelativeToFrame;
       }
-    }
-    
-    
-    return mCsdMargin;
-  }();
+      auto gdkWindowBounds = GetBounds(mGdkWindow);
+      if (gdkWindowBounds.X() < 0 || gdkWindowBounds.Y() < 0 ||
+          gdkWindowBounds.Width() <= 1 || gdkWindowBounds.Height() <= 1) {
+        
+        return topLevelBoundsRelativeToFrame;
+      }
+      
+      return gdkWindowBounds + topLevelBoundsRelativeToFrame.TopLeft();
+    }();
 
-  mClientMargin = [&] {
-    if (!decorated) {
-      return LayoutDeviceIntMargin{};
-    }
-    if (mayChangeCsdMargin) {
-      const auto systemMargin = mBounds - toplevelBounds;
-      return systemMargin + mCsdMargin;
-    }
     
-    return mClientMargin;
-  }();
-  mClientMargin.EnsureAtLeast(LayoutDeviceIntMargin());
+    
+    
+    
+    const LayoutDeviceIntRect roundedClientRect(
+        LayoutDeviceIntPoint::Round(clientRectRelativeToFrame.TopLeft()),
+        LayoutDeviceIntSize::Round(clientRectRelativeToFrame.Size()));
+    mClientMargin =
+        LayoutDeviceIntRect(LayoutDeviceIntPoint(), mBounds.Size()) -
+        roundedClientRect;
+  } else {
+    
+  }
 
   if (IsPopup()) {
     
@@ -9120,10 +9117,15 @@ LayoutDeviceIntMargin nsWindow::GtkBorderToDevicePixels(
 }
 
 LayoutDeviceIntRect nsWindow::GdkRectToDevicePixels(const GdkRectangle& aRect) {
+  return LayoutDeviceIntRect::Round(GdkRectToFloatDevicePixels(aRect));
+}
+
+LayoutDeviceRect nsWindow::GdkRectToFloatDevicePixels(
+    const GdkRectangle& aRect) {
   double scale = FractionalScaleFactor();
-  return LayoutDeviceIntRect::RoundIn(
-      (float)(aRect.x * scale), (float)(aRect.y * scale),
-      (float)(aRect.width * scale), (float)(aRect.height * scale));
+  return LayoutDeviceRect((float)(aRect.x * scale), (float)(aRect.y * scale),
+                          (float)(aRect.width * scale),
+                          (float)(aRect.height * scale));
 }
 
 nsresult nsWindow::SynthesizeNativeMouseEvent(
