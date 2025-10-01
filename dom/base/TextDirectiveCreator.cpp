@@ -264,6 +264,7 @@ RangeBasedTextDirectiveCreator::CollectContextTerms() {
         mStartContent.Length(), kMaxContextTermLength);
     mStartContent = Substring(mStartContent, 0, kMaxContextTermLength);
   }
+  mStartContent.CompressWhitespace();
   mStartFoldCaseContent = mStartContent;
   ToFoldedCase(mStartFoldCaseContent);
   TEXT_FRAGMENT_LOG("Maximum possible start term:\n{}",
@@ -276,6 +277,7 @@ RangeBasedTextDirectiveCreator::CollectContextTerms() {
     mEndContent =
         Substring(mEndContent, mEndContent.Length() - kMaxContextTermLength);
   }
+  mEndContent.CompressWhitespace();
   mEndFoldCaseContent = mEndContent;
   ToFoldedCase(mEndFoldCaseContent);
   TEXT_FRAGMENT_LOG("Maximum possible end term:\n{}",
@@ -300,12 +302,18 @@ Result<Ok, ErrorResult> TextDirectiveCreator::CollectPrefixContextTerm() {
   mPrefixContent =
       MOZ_TRY(TextDirectiveUtil::RangeContentAsString(prefixRange));
   if (mPrefixContent.Length() > kMaxContextTermLength) {
+    
+    
+    auto [wordBegin, wordEnd] = intl::WordBreaker::FindWord(
+        mPrefixContent, mPrefixContent.Length() - kMaxContextTermLength);
+    while (nsContentUtils::IsHTMLWhitespace(mPrefixContent.CharAt(wordBegin))) {
+      ++wordBegin;
+    }
     TEXT_FRAGMENT_LOG(
         "Prefix term seems very long ({} chars), "
         "only considering the last {} chars.",
-        mPrefixContent.Length(), kMaxContextTermLength);
-    mPrefixContent = Substring(mPrefixContent,
-                               mPrefixContent.Length() - kMaxContextTermLength);
+        mPrefixContent.Length(), wordBegin);
+    mPrefixContent = Substring(mPrefixContent, wordBegin);
   }
   mPrefixFoldCaseContent = mPrefixContent;
   ToFoldedCase(mPrefixFoldCaseContent);
@@ -330,11 +338,19 @@ Result<Ok, ErrorResult> TextDirectiveCreator::CollectSuffixContextTerm() {
   mSuffixContent =
       MOZ_TRY(TextDirectiveUtil::RangeContentAsString(suffixRange));
   if (mSuffixContent.Length() > kMaxContextTermLength) {
+    
+    
+    auto [wordBegin, wordEnd] =
+        intl::WordBreaker::FindWord(mSuffixContent, kMaxContextTermLength);
+    while (
+        nsContentUtils::IsHTMLWhitespace(mSuffixContent.CharAt(wordEnd - 1))) {
+      --wordEnd;
+    }
     TEXT_FRAGMENT_LOG(
         "Suffix term seems very long ({} chars), "
         "only considering the first {} chars.",
-        mSuffixContent.Length(), kMaxContextTermLength);
-    mSuffixContent = Substring(mSuffixContent, 0, kMaxContextTermLength);
+        mSuffixContent.Length(), wordEnd + 1);
+    mSuffixContent = Substring(mSuffixContent, 0, wordEnd + 1);
   }
   mSuffixFoldCaseContent = mSuffixContent;
   ToFoldedCase(mSuffixFoldCaseContent);
@@ -378,20 +394,10 @@ void RangeBasedTextDirectiveCreator::CollectContextTermWordBoundaryDistances() {
     mStartWordEndDistances.Clear();
     TEXT_FRAGMENT_LOG("Start term cannot be extended.");
   } else {
-    
-    
-    auto [firstWordEndPos, secondWordBeginPos] =
-        intl::WordBreaker::FindWord(mStartContent, mStartWordEndDistances[0]);
-    MOZ_DIAGNOSTIC_ASSERT(firstWordEndPos == mStartWordEndDistances[0]);
-    mStartFirstWordLengthIncludingWhitespace = secondWordBeginPos;
-    mStartFoldCaseContent = Substring(mStartFoldCaseContent,
-                                      mStartFirstWordLengthIncludingWhitespace);
-    mStartWordEndDistances.RemoveElementAt(0);
-    for (auto& distance : mStartWordEndDistances) {
-      MOZ_DIAGNOSTIC_ASSERT(distance >=
-                            mStartFirstWordLengthIncludingWhitespace);
-      distance = distance - mStartFirstWordLengthIncludingWhitespace;
-    }
+    mStartFirstWordLengthIncludingWhitespace =
+        TextDirectiveUtil::RemoveFirstWordFromStringAndDistanceArray<
+            TextScanDirection::Right>(mStartFoldCaseContent,
+                                      mStartWordEndDistances);
     TEXT_FRAGMENT_LOG(
         "Word end distances for start term, starting at the beginning of the "
         "second word: {}",
@@ -414,22 +420,10 @@ void RangeBasedTextDirectiveCreator::CollectContextTermWordBoundaryDistances() {
     mEndWordBeginDistances.Clear();
     TEXT_FRAGMENT_LOG("End term cannot be extended.");
   } else {
-    
-    
-    auto [secondLastWordEndPos, lastWordBeginPos] = intl::WordBreaker::FindWord(
-        mEndContent, mEndContent.Length() - mEndWordBeginDistances[0] - 1);
-    MOZ_DIAGNOSTIC_ASSERT(lastWordBeginPos ==
-                          mEndContent.Length() - mEndWordBeginDistances[0]);
     mEndLastWordLengthIncludingWhitespace =
-        mEndContent.Length() - secondLastWordEndPos;
-
-    mEndFoldCaseContent =
-        Substring(mEndFoldCaseContent, 0, secondLastWordEndPos);
-    mEndWordBeginDistances.RemoveElementAt(0);
-    for (auto& distance : mEndWordBeginDistances) {
-      MOZ_DIAGNOSTIC_ASSERT(distance >= mEndLastWordLengthIncludingWhitespace);
-      distance = distance - mEndLastWordLengthIncludingWhitespace;
-    }
+        TextDirectiveUtil::RemoveFirstWordFromStringAndDistanceArray<
+            TextScanDirection::Left>(mEndFoldCaseContent,
+                                     mEndWordBeginDistances);
     TEXT_FRAGMENT_LOG(
         "Word begin distances for end term, starting at the end of the second "
         "last word: {}",
