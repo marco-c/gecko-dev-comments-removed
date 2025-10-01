@@ -24,7 +24,6 @@
 #include "nsILoadContextInfo.h"
 #include "nsILoadGroup.h"
 #include "nsIObserverService.h"
-#include "nsITimer.h"
 #include "nsIURI.h"
 #include "nsInputStreamPump.h"
 #include "nsNetUtil.h"
@@ -70,6 +69,8 @@ LazyLogModule gDictionaryLog("CompressionDictionaries");
 StaticRefPtr<DictionaryCache> gDictionaryCache;
 nsCOMPtr<nsICacheStorage> DictionaryCache::sCacheStorage;
 
+DictionaryCacheEntry::DictionaryCacheEntry(const char* aKey) { mURI = aKey; }
+
 DictionaryCacheEntry::DictionaryCacheEntry(const nsACString& aURI,
                                            const nsACString& aPattern,
                                            const nsACString& aId,
@@ -86,7 +87,10 @@ NS_IMPL_ISUPPORTS(DictionaryCacheEntry, nsICacheEntryOpenCallback,
 
 bool DictionaryCacheEntry::Match(const nsACString& aFilePath,
                                  uint32_t& aLongest) {
-  MOZ_ASSERT(NS_IsMainThread());
+  if (mHash.IsEmpty()) {
+    
+    return false;
+  }
   
   
   if (mPattern.Length() > aLongest) {
@@ -147,7 +151,7 @@ bool DictionaryCacheEntry::Prefetch(nsILoadContextInfo* aLoadContextInfo,
   
   
   if (mWaitingPrefetch.IsEmpty()) {
-    if (mDictionaryData.empty()) {
+    if (!mDictionaryDataComplete) {
       
       
       
@@ -166,8 +170,8 @@ bool DictionaryCacheEntry::Prefetch(nsILoadContextInfo* aLoadContextInfo,
       mWaitingPrefetch.AppendElement(aFunc);
       cacheStorage->AsyncOpenURIString(mURI, ""_ns,
                                        nsICacheStorage::OPEN_READONLY, this);
-      DICTIONARY_LOG(
-          ("Started Prefetch for %s", PromiseFlatCString(mURI).get()));
+      DICTIONARY_LOG(("Started Prefetch for %s, anonymous=%d", mURI.get(),
+                      aLoadContextInfo->IsAnonymous()));
       return true;
     }
     DICTIONARY_LOG(("Prefetch for %s - already have data in memory (%u users)",
@@ -197,6 +201,7 @@ void DictionaryCacheEntry::AccumulateHash(const char* aBuf, int32_t aCount) {
     return;  
   }
   if (!mCrypto) {
+    DICTIONARY_LOG(("Calculating new hash for %s", mURI.get()));
     
     
     nsresult rv;
@@ -212,29 +217,130 @@ void DictionaryCacheEntry::AccumulateHash(const char* aBuf, int32_t aCount) {
                   mDictionaryData.length()));
 }
 
-void DictionaryCacheEntry::AccumulateFile(const char* aBuf, int32_t aCount) {
-  AccumulateHash(aBuf, aCount);  
-  Unused << mDictionaryData.append(aBuf, aCount);
-  DICTIONARY_LOG(("Accumulate %p: %d bytes, total %zu", this, aCount,
-                  mDictionaryData.length()));
-}
-
-void DictionaryCacheEntry::FinishFile() {
+void DictionaryCacheEntry::FinishHash() {
   MOZ_ASSERT(NS_IsMainThread());
   if (mCrypto) {
-    DICTIONARY_LOG(("Hash was %s", mHash.get()));
     mCrypto->Finish(true, mHash);
-    DICTIONARY_LOG(("Set dictionary hash for %p to %s", this, mHash.get()));
     mCrypto = nullptr;
+    DICTIONARY_LOG(("Hash for %p (%s) is %s", this, mURI.get(), mHash.get()));
+    if (mOrigin) {
+      DICTIONARY_LOG(("Write on hash"));
+      
+      mOrigin->Write(this);
+      if (!mBlocked) {
+        mOrigin->FinishAddEntry(this);
+      }
+      mOrigin = nullptr;
+    }
   }
-  mDictionaryDataComplete = true;
-  DICTIONARY_LOG(("Unsuspending %zu channels, Dictionary len %zu",
-                  mWaitingPrefetch.Length(), mDictionaryData.length()));
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static void EscapeMetadataString(const nsACString& aInput, nsCString& aOutput) {
   
-  for (auto& lambda : mWaitingPrefetch) {
-    (lambda)();
+  
+  const char* src = aInput.BeginReading();
+  size_t len = 1;  
+  while (*src) {
+    if (*src == '|' || *src == '\\') {
+      len += 2;
+    } else {
+      len++;
+    }
+    src++;
   }
-  mWaitingPrefetch.Clear();
+  aOutput.SetCapacity(aOutput.Length() + len);
+  src = aInput.BeginReading();
+
+  aOutput.AppendLiteral("|");
+  while (*src) {
+    if (*src == '|' || *src == '\\') {
+      aOutput.AppendLiteral("\\");
+    }
+    aOutput.Append(*src++);
+  }
+}
+
+void DictionaryCacheEntry::MakeMetadataEntry(nsCString& aNewValue) {
+  EscapeMetadataString(mHash, aNewValue);
+  EscapeMetadataString(mPattern, aNewValue);
+  EscapeMetadataString(mId, aNewValue);
+  
+  
+  EscapeMetadataString(""_ns, aNewValue);
+  
+  
+  
+}
+
+nsresult DictionaryCacheEntry::Write(nsICacheEntry* aCacheEntry) {
+  nsAutoCStringN<2048> metadata;
+  MakeMetadataEntry(metadata);
+  DICTIONARY_LOG(
+      ("DictionaryCacheEntry::Write %s %s", mURI.get(), metadata.get()));
+  return aCacheEntry->SetMetaDataElement(mURI.get(), metadata.get());
+}
+
+nsresult DictionaryCacheEntry::RemoveEntry(nsICacheEntry* aCacheEntry) {
+  return aCacheEntry->SetMetaDataElement(mURI.BeginReading(), nullptr);
+}
+
+
+static const char* GetEncodedString(const char* aSrc, nsACString& aOutput) {
+  
+  aOutput.Truncate();
+  while (*aSrc) {
+    if (*aSrc == '|') {
+      break;
+    }
+    if (*aSrc == '\\') {
+      aSrc++;
+    }
+    aOutput.Append(*aSrc++);
+  }
+  return aSrc;
+}
+
+
+bool DictionaryCacheEntry::ParseMetadata(const char* aSrc) {
+  MOZ_ASSERT(*aSrc == '|');
+  aSrc++;
+  aSrc = GetEncodedString(aSrc, mHash);
+  aSrc = GetEncodedString(aSrc, mPattern);
+  aSrc = GetEncodedString(aSrc, mId);
+  nsAutoCString temp;
+  
+  do {
+    aSrc = GetEncodedString(aSrc, temp);
+    if (!temp.IsEmpty()) {
+      
+    }
+  } while (!temp.IsEmpty());
+  
+  aSrc = GetEncodedString(aSrc, temp);
+
+  DICTIONARY_LOG(("Parse entry %s: |%s| %s id=%s",
+                  PromiseFlatCString(mURI).get(),
+                  PromiseFlatCString(mHash).get(),
+                  PromiseFlatCString(mPattern).get(), mId.get()));
+  return true;
 }
 
 
@@ -264,7 +370,9 @@ nsresult DictionaryCacheEntry::ReadCacheData(
     uint32_t aToOffset, uint32_t aCount, uint32_t* aWriteCount) {
   DictionaryCacheEntry* self = static_cast<DictionaryCacheEntry*>(aClosure);
 
-  self->AccumulateFile(aFromSegment, aCount);
+  Unused << self->mDictionaryData.append(aFromSegment, aCount);
+  DICTIONARY_LOG(("Accumulate %p (%s): %d bytes, total %zu", self,
+                  self->mURI.get(), aCount, self->mDictionaryData.length()));
   *aWriteCount = aCount;
   return NS_OK;
 }
@@ -273,7 +381,14 @@ NS_IMETHODIMP
 DictionaryCacheEntry::OnStopRequest(nsIRequest* request, nsresult result) {
   DICTIONARY_LOG(("DictionaryCacheEntry %s OnStopRequest", mURI.get()));
   if (NS_SUCCEEDED(result)) {
-    FinishFile();
+    mDictionaryDataComplete = true;
+    DICTIONARY_LOG(("Unsuspending %zu channels, Dictionary len %zu",
+                    mWaitingPrefetch.Length(), mDictionaryData.length()));
+    
+    for (auto& lambda : mWaitingPrefetch) {
+      (lambda)();
+    }
+    mWaitingPrefetch.Clear();
   } else {
     
     
@@ -281,7 +396,49 @@ DictionaryCacheEntry::OnStopRequest(nsIRequest* request, nsresult result) {
     
     
   }
+
+  
+  RefPtr<DictionaryCacheEntry> self;
+  if (mReplacement) {
+    DICTIONARY_LOG(("Replacing entry %p with %p for %s", this,
+                    mReplacement.get(), mURI.get()));
+    
+    self = this;
+    mReplacement->mShouldSuspend = false;
+    mOrigin->RemoveEntry(this);
+    
+    mReplacement->UnblockAddEntry(mOrigin);
+    mOrigin = nullptr;
+  }
+
+  mStopReceived = true;
   return NS_OK;
+}
+
+void DictionaryCacheEntry::UnblockAddEntry(DictionaryOrigin* aOrigin) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!mHash.IsEmpty()) {
+    
+    aOrigin->FinishAddEntry(this);
+  }
+  mBlocked = false;
+}
+
+void DictionaryCacheEntry::WriteOnHash(DictionaryOrigin* aOrigin) {
+  bool hasHash = false;
+  {
+    MOZ_ASSERT(NS_IsMainThread());
+    if (!mHash.IsEmpty()) {
+      hasHash = true;
+    }
+  }
+  if (hasHash) {
+    DICTIONARY_LOG(("Write already hashed"));
+    aOrigin->Write(this);
+  } else if (!mStopReceived) {
+    
+    mOrigin = aOrigin;
+  }
 }
 
 
@@ -302,8 +459,8 @@ DictionaryCacheEntry::OnCacheEntryCheck(nsICacheEntry* aEntry,
 NS_IMETHODIMP
 DictionaryCacheEntry::OnCacheEntryAvailable(nsICacheEntry* entry, bool isNew,
                                             nsresult status) {
-  DICTIONARY_LOG(("OnCacheEntryAvailable %s, result %u",
-                  PromiseFlatCString(mURI).get(), (uint32_t)status));
+  DICTIONARY_LOG(("OnCacheEntryAvailable %s, result %u, entry %p", mURI.get(),
+                  (uint32_t)status, entry));
   if (entry) {
     nsCOMPtr<nsIInputStream> stream;
     entry->OpenInputStream(0, getter_AddRefs(stream));
@@ -322,6 +479,13 @@ DictionaryCacheEntry::OnCacheEntryAvailable(nsICacheEntry* entry, bool isNew,
       return NS_OK;  
     }
     DICTIONARY_LOG(("Waiting for data"));
+  } else {
+    
+    
+    
+    
+    
+    DICTIONARY_LOG(("Prefetched cache entry not available!"));
   }
 
   return NS_OK;
@@ -329,30 +493,55 @@ DictionaryCacheEntry::OnCacheEntryAvailable(nsICacheEntry* entry, bool isNew,
 
 
 
-class DictionaryOriginReader final : public nsICacheEntryOpenCallback {
+class DictionaryOriginReader final : public nsICacheEntryOpenCallback,
+                                     public nsIStreamListener {
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSICACHEENTRYOPENCALLBACK
+  NS_DECL_NSIREQUESTOBSERVER
+  NS_DECL_NSISTREAMLISTENER
 
   DictionaryOriginReader() {}
 
   
   
-  void Init(nsACString& aURI,
-            const std::function<nsresult(DictionaryCacheEntry*)>& aCallback) {
+  void Start(DictionaryOrigin* aOrigin, nsACString& aKey, nsIURI* aURI,
+             DictionaryCache* aCache,
+             const std::function<nsresult(DictionaryCacheEntry*)>& aCallback) {
+    mOrigin = aOrigin;
+    mURI = aURI;
     mCallback = aCallback;
+    mCache = aCache;
     mSelf = this;  
+
+    
+    
+
+    DICTIONARY_LOG(("DictionaryOriginReader::Start(%s): %p",
+                    PromiseFlatCString(aKey).get(), this));
     DictionaryCache::sCacheStorage->AsyncOpenURIString(
-        aURI, ""_ns, nsICacheStorage::OPEN_READONLY, this);
+        aKey, META_DICTIONARY_PREFIX,
+        aOrigin
+            ? nsICacheStorage::OPEN_NORMALLY
+            : nsICacheStorage::OPEN_READONLY | nsICacheStorage::OPEN_SECRETLY,
+        this);
   }
 
  private:
   ~DictionaryOriginReader() {}
 
+  RefPtr<DictionaryOrigin> mOrigin;
+  nsCOMPtr<nsIURI> mURI;
   std::function<nsresult(DictionaryCacheEntry*)> mCallback;
+  RefPtr<DictionaryCache> mCache;
   RefPtr<DictionaryOriginReader> mSelf;
 };
 
-NS_IMPL_ISUPPORTS(DictionaryOriginReader, nsICacheEntryOpenCallback)
+NS_IMPL_ISUPPORTS(DictionaryOriginReader, nsICacheEntryOpenCallback,
+                  nsIStreamListener)
+
+
+
+
 
 NS_IMETHODIMP DictionaryOriginReader::OnCacheEntryCheck(nsICacheEntry* entry,
                                                         uint32_t* result) {
@@ -364,14 +553,81 @@ NS_IMETHODIMP DictionaryOriginReader::OnCacheEntryCheck(nsICacheEntry* entry,
 }
 
 NS_IMETHODIMP DictionaryOriginReader::OnCacheEntryAvailable(
-    nsICacheEntry* entry, bool isNew, nsresult result) {
+    nsICacheEntry* aCacheEntry, bool isNew, nsresult result) {
   MOZ_ASSERT(NS_IsMainThread(), "Got cache entry off main thread!");
   DICTIONARY_LOG(
-      ("Dictionary::OnCacheEntryAvailable this=%p for entry %p", this, entry));
-  
+      ("DictionaryOriginReader::OnCacheEntryAvailable this=%p for entry %p",
+       this, aCacheEntry));
 
-  (mCallback)(nullptr);
-  mSelf = nullptr;  
+  if (!aCacheEntry) {
+    
+    (mCallback)(nullptr);
+    return NS_OK;
+  }
+
+  
+  if (mOrigin) {
+    mOrigin->SetCacheEntry(aCacheEntry);
+    
+    nsCOMPtr<nsICacheEntryMetaDataVisitor> metadata(mOrigin);
+    aCacheEntry->VisitMetaData(metadata);
+
+    
+    
+    (mCallback)(nullptr);
+    mSelf = nullptr;  
+    return NS_OK;
+  }
+
+  nsCString prepath;
+  if (NS_FAILED(mURI->GetPrePath(prepath))) {
+    (mCallback)(nullptr);
+    return NS_ERROR_FAILURE;
+  }
+  
+  Unused << mCache->mDictionaryCache.WithEntryHandle(
+      prepath, [&](auto&& entry) {
+        auto& origin = entry.OrInsertWith(
+            [&] { return new DictionaryOrigin(prepath, aCacheEntry); });
+
+        
+        nsCOMPtr<nsICacheEntryMetaDataVisitor> metadata(origin);
+        aCacheEntry->VisitMetaData(metadata);
+
+        nsCString path;
+        mURI->GetPathQueryRef(path);
+        RefPtr<DictionaryCacheEntry> result = origin->Match(path);
+
+        (mCallback)(result);
+        mSelf = nullptr;  
+        return NS_OK;
+      });
+  return NS_OK;
+}
+
+
+
+
+
+NS_IMETHODIMP
+DictionaryOriginReader::OnStartRequest(nsIRequest* request) {
+  DICTIONARY_LOG(("DictionaryOriginReader %p OnStartRequest", this));
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+DictionaryOriginReader::OnDataAvailable(nsIRequest* request,
+                                        nsIInputStream* aInputStream,
+                                        uint64_t aOffset, uint32_t aCount) {
+  uint32_t n;
+  DICTIONARY_LOG(
+      ("DictionaryOriginReader %p OnDataAvailable %u", this, aCount));
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+DictionaryOriginReader::OnStopRequest(nsIRequest* request, nsresult result) {
+  DICTIONARY_LOG(("DictionaryOriginReader %p OnStopRequest", this));
   return NS_OK;
 }
 
@@ -385,15 +641,17 @@ already_AddRefed<DictionaryCache> DictionaryCache::GetInstance() {
 }
 
 nsresult DictionaryCache::Init() {
-  nsCOMPtr<nsICacheStorageService> cacheStorageService(
-      components::CacheStorage::Service());
-  if (!cacheStorageService) {
-    return NS_ERROR_FAILURE;
-  }
-  nsresult rv = cacheStorageService->DiskCacheStorage(
-      nullptr, getter_AddRefs(sCacheStorage));  
-  if (NS_FAILED(rv)) {
-    return rv;
+  if (XRE_IsParentProcess()) {
+    nsCOMPtr<nsICacheStorageService> cacheStorageService(
+        components::CacheStorage::Service());
+    if (!cacheStorageService) {
+      return NS_ERROR_FAILURE;
+    }
+    nsresult rv = cacheStorageService->DiskCacheStorage(
+        nullptr, getter_AddRefs(sCacheStorage));  
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
   }
   DICTIONARY_LOG(("Inited DictionaryCache %p", sCacheStorage.get()));
   return NS_OK;
@@ -403,76 +661,61 @@ nsresult DictionaryCache::AddEntry(nsIURI* aURI, const nsACString& aKey,
                                    const nsACString& aPattern,
                                    const nsACString& aId,
                                    const Maybe<nsCString>& aHash,
+                                   bool aNewEntry,
                                    DictionaryCacheEntry** aDictEntry) {
   
   
   
-  nsCString hostport;
-  if (NS_FAILED(aURI->GetHostPort(hostport))) {
-    return NS_ERROR_FAILURE;
-  }
-  
-  Unused << mDictionaryCache.WithEntryHandle(hostport, [&](auto&& entry) {
-    auto& list = entry.OrInsertWith([&] { return new DictCacheList; });
-
-    for (const auto& dict : *list) {
-      
-      
-      if (dict->GetURI().Equals(aKey)) {
-        
-        
-        
-        
-        
-        
-        DICTIONARY_LOG(("Replacing dictionary for %s: %p",
-                        PromiseFlatCString(dict->GetURI()).get(), dict));
-        dict->remove();
-        break;
-      }
-    }
-    
-    RefPtr<DictionaryCacheEntry> dict =
-        new DictionaryCacheEntry(aKey, aPattern, aId, aHash);
-    DICTIONARY_LOG(("New dictionary for %s: %p", PromiseFlatCString(aKey).get(),
-                    dict.get()));
-    list->insertFront(dict);
+  RefPtr<DictionaryCacheEntry> dict =
+      new DictionaryCacheEntry(aKey, aPattern, aId, aHash);
+  dict = AddEntry(aURI, aNewEntry, dict);
+  if (dict) {
     *aDictEntry = do_AddRef(dict).take();
-
-    
-    
     return NS_OK;
-  });
-  return NS_OK;
+  }
+  DICTIONARY_LOG(
+      ("Failed adding entry for %s", PromiseFlatCString(aKey).get()));
+  *aDictEntry = nullptr;
+  return NS_ERROR_FAILURE;
 }
 
-nsresult DictionaryCache::AddEntry(nsIURI* aURI,
-                                   DictionaryCacheEntry* aDictEntry) {
+already_AddRefed<DictionaryCacheEntry> DictionaryCache::AddEntry(
+    nsIURI* aURI, bool aNewEntry, DictionaryCacheEntry* aDictEntry) {
   
   
   
   nsCString prepath;
   if (NS_FAILED(aURI->GetPrePath(prepath))) {
-    return NS_ERROR_FAILURE;
+    return nullptr;
   }
   
+  RefPtr<DictionaryCacheEntry> newEntry;
   Unused << mDictionaryCache.WithEntryHandle(prepath, [&](auto&& entry) {
-    auto& list = entry.OrInsertWith([&] { return new DictCacheList; });
+    auto& origin = entry.OrInsertWith([&] {
+      RefPtr<DictionaryOrigin> origin = new DictionaryOrigin(prepath, nullptr);
+      
+      
+      
 
-    
-    for (const auto& dict : *list) {
-      if (dict->GetURI().Equals(aDictEntry->GetURI())) {
-        
-        
-        dict->remove();
-        return NS_OK;
-      }
-    }
+      
+      RefPtr<DictionaryOriginReader> reader = new DictionaryOriginReader();
+      reader->Start(
+          origin, prepath, aURI, this,
+          [origin, aDictEntry](
+              DictionaryCacheEntry*
+                  aDict) {  
+            
+            
+            aDictEntry->WriteOnHash(origin);
+            return NS_OK;
+          });
+      return origin;
+    });
 
-    list->insertFront(aDictEntry);
+    newEntry = origin->AddEntry(aDictEntry, aNewEntry);
     return NS_OK;
   });
-  return NS_OK;
+  return newEntry.forget();
 }
 
 nsresult DictionaryCache::RemoveEntry(nsIURI* aURI, const nsACString& aKey) {
@@ -481,16 +724,14 @@ nsresult DictionaryCache::RemoveEntry(nsIURI* aURI, const nsACString& aKey) {
     return NS_ERROR_FAILURE;
   }
   if (auto origin = mDictionaryCache.Lookup(prepath)) {
-    for (const auto& dict : *(origin->get())) {
-      if (dict->GetURI().Equals(aKey)) {
-        dict->remove();
-        return NS_OK;
-      }
-    }
-    return NS_ERROR_FAILURE;
+    return origin.Data()->RemoveEntry(aKey);
   }
   return NS_ERROR_FAILURE;
 }
+
+
+
+
 
 
 void DictionaryCache::GetDictionaryFor(
@@ -506,21 +747,13 @@ void DictionaryCache::GetDictionaryFor(
   }
   if (auto origin = mDictionaryCache.Lookup(prepath)) {
     
-    uint32_t longest = 0;
     nsCString path;
     RefPtr<DictionaryCacheEntry> result;
 
     aURI->GetPathQueryRef(path);
+    DICTIONARY_LOG(("GetDictionaryFor(%s %s)", prepath.get(), path.get()));
 
-    for (const auto& dict : *(origin->get())) {
-      if (dict->Match(path, longest)) {
-        result = dict;
-      }
-    }
-    if (result) {
-      result->removeFrom(*(origin->get()));
-      origin->get()->insertFront(result);
-    }
+    result = origin.Data()->Match(path);
     (aCallback)(result);
     return;
   }
@@ -529,78 +762,188 @@ void DictionaryCache::GetDictionaryFor(
   
 
   
-  if (!sCacheStorage) {  
+  if (!sCacheStorage) {
+    (aCallback)(nullptr);  
     return;
   }
 
   
   
   
-  nsCString key("dict:"_ns + prepath);
+  DICTIONARY_LOG(
+      ("Reading %s for dictionary entries", PromiseFlatCString(prepath).get()));
   RefPtr<DictionaryOriginReader> reader = new DictionaryOriginReader();
-  reader->Init(key, aCallback);
-}
-
-static void MakeMetadataEntry() {
   
+  
+  reader->Start(nullptr, prepath, aURI, this, aCallback);
 }
 
-bool DictionaryCache::ParseMetaDataEntry(const char* key, const char* value,
-                                         nsCString& uri, uint32_t& hitCount,
-                                         uint32_t& lastHit, uint32_t& flags) {
-  MOZ_ASSERT(NS_IsMainThread());
 
-  DICTIONARY_LOG(("Dictionary::ParseMetaDataEntry key=%s value=%s",
-                  key ? key : "", value));
 
-  const char* comma = strchr(value, ',');
-  if (!comma) {
-    DICTIONARY_LOG(("    could not find first comma"));
-    return false;
+NS_IMPL_ISUPPORTS(DictionaryOrigin, nsICacheEntryMetaDataVisitor)
+
+void DictionaryOrigin::Write(DictionaryCacheEntry* aDictEntry) {
+  DICTIONARY_LOG(("DictionaryOrigin::Write %s %p", mOrigin.get(), aDictEntry));
+  aDictEntry->Write(mEntry);
+}
+
+already_AddRefed<DictionaryCacheEntry> DictionaryOrigin::AddEntry(
+    DictionaryCacheEntry* aDictEntry, bool aNewEntry) {
+  
+  for (size_t i = 0; i < mEntries.Length(); i++) {
+    if (mEntries[i]->GetURI().Equals(aDictEntry->GetURI())) {
+      DictionaryCacheEntry* oldEntry = mEntries[i];
+      if (aNewEntry) {
+        
+        
+        
+
+        
+        
+        
+        
+        
+        
+        
+
+        
+        
+        
+        
+
+        
+        
+        
+        
+        
+        
+
+        
+        
+        
+        
+
+        DICTIONARY_LOG((
+            "Replacing dictionary %p for %s: new will be %p", mEntries[i].get(),
+            PromiseFlatCString(oldEntry->GetURI()).get(), oldEntry));
+        
+        if (mEntries[i]->IsReading() && !aDictEntry->HasHash()) {
+          DICTIONARY_LOG(("Old entry is reading data"));
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          mEntries[i]->SetReplacement(aDictEntry, this);
+          
+          return do_AddRef(aDictEntry);
+        } else {
+          DICTIONARY_LOG(("Removing old entry, no users or already read data"));
+          
+          
+          
+          
+          mEntries[i]->RemoveEntry(mEntry);
+          mEntries.RemoveElementAt(i);
+        }
+      } else {
+        
+        
+        
+        DICTIONARY_LOG(
+            ("Updating dictionary for %s (%p)", mOrigin.get(), oldEntry));
+        oldEntry->CopyFrom(aDictEntry);
+        
+        
+        oldEntry->Write(mEntry);
+
+        
+        return nullptr;
+      }
+      break;
+    }
   }
 
-  uint32_t version = static_cast<uint32_t>(atoi(value));
-  DICTIONARY_LOG(("    version -> %u", version));
-
-  if (version != METADATA_DICTIONARY_VERSION) {
-    DICTIONARY_LOG(("    metadata version mismatch %u != %u", version,
-                    METADATA_DICTIONARY_VERSION));
-    return false;
-  }
-
-  value = comma + 1;
-  comma = strchr(value, ',');
-  if (!comma) {
-    DICTIONARY_LOG(("    could not find second comma"));
-    return false;
-  }
-
-  hitCount = static_cast<uint32_t>(atoi(value));
-  DICTIONARY_LOG(("    hitCount -> %u", hitCount));
-
-  value = comma + 1;
-  comma = strchr(value, ',');
-  if (!comma) {
-    DICTIONARY_LOG(("    could not find third comma"));
-    return false;
-  }
-
-  lastHit = static_cast<uint32_t>(atoi(value));
-  DICTIONARY_LOG(("    lastHit -> %u", lastHit));
-
-  value = comma + 1;
-  flags = static_cast<uint32_t>(atoi(value));
-  DICTIONARY_LOG(("    flags -> %u", flags));
-
-  if (key) {
-    const char* uriStart = key + (sizeof(META_DICTIONARY_PREFIX) - 1);
-    uri.AssignASCII(uriStart);
-    DICTIONARY_LOG(("    uri -> %s", uriStart));
+  DICTIONARY_LOG(("New dictionary %sfor %s: %p",
+                  aDictEntry->HasHash() ? "" : "(pending) ", mOrigin.get(),
+                  aDictEntry));
+  if (aDictEntry->HasHash()) {
+    mEntries.AppendElement(aDictEntry);
   } else {
-    uri.Truncate();
+    
+    
+    mPendingEntries.AppendElement(aDictEntry);
+    aDictEntry->SetReplacement(nullptr, this);
   }
 
-  return true;
+  
+  
+  return do_AddRef(aDictEntry);
+}
+
+nsresult DictionaryOrigin::RemoveEntry(const nsACString& aKey) {
+  for (const auto& dict : mEntries) {
+    if (dict->GetURI().Equals(aKey)) {
+      mEntries.RemoveElement(dict);
+      dict->RemoveEntry(mEntry);
+      return NS_OK;
+    }
+  }
+  return NS_ERROR_FAILURE;
+}
+
+void DictionaryOrigin::FinishAddEntry(DictionaryCacheEntry* aEntry) {
+  
+  if (mPendingEntries.RemoveElement(aEntry)) {
+    
+    
+    mEntries.InsertElementAt(0, aEntry);
+  }
+}
+
+void DictionaryOrigin::RemoveEntry(DictionaryCacheEntry* aEntry) {
+  mEntries.RemoveElement(aEntry);
+}
+
+
+DictionaryCacheEntry* DictionaryOrigin::Match(const nsACString& aPath) {
+  uint32_t longest = 0;
+  DictionaryCacheEntry* result = nullptr;
+
+  for (const auto& dict : mEntries) {
+    if (dict->Match(aPath, longest)) {
+      result = dict;
+    }
+  }
+  
+  
+  
+
+
+
+
+
+  return result;
+}
+
+
+
+
+nsresult DictionaryOrigin::OnMetaDataElement(const char* asciiKey,
+                                             const char* asciiValue) {
+  DICTIONARY_LOG(("DictionaryOrigin::OnMetaDataElement %s %s",
+                  asciiKey ? asciiKey : "", asciiValue));
+
+  RefPtr<DictionaryCacheEntry> entry = new DictionaryCacheEntry(asciiKey);
+  if (entry->ParseMetadata(asciiValue)) {
+    
+    mEntries.AppendElement(entry);
+  }
+  return NS_OK;
 }
 
 
