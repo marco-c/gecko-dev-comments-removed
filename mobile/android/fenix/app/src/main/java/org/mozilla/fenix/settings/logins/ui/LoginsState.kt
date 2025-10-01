@@ -14,7 +14,6 @@ import kotlin.collections.List
  * @property searchText The text to filter login items.
  * @property sortOrder The order to display the login items.
  * @property biometricAuthenticationState State representing the biometric authentication state.
- * @property biometricAuthenticationDialogState State representing the need of displaying the biometric auth dialog.
  * @property loginsListState State representing the list login subscreen, if visible.
  * @property loginsAddLoginState State representing the add login subscreen, if visible.
  * @property loginsEditLoginState State representing the edit login subscreen, if visible.
@@ -27,7 +26,6 @@ internal data class LoginsState(
     val searchText: String?,
     val sortOrder: LoginsSortOrder,
     val biometricAuthenticationState: BiometricAuthenticationState,
-    val biometricAuthenticationDialogState: BiometricAuthenticationDialogState,
     val loginsListState: LoginsListState?,
     val loginsAddLoginState: LoginsAddLoginState?,
     val loginsEditLoginState: LoginsEditLoginState?,
@@ -40,8 +38,7 @@ internal data class LoginsState(
             loginItems = listOf(),
             searchText = null,
             sortOrder = LoginsSortOrder.default,
-            biometricAuthenticationState = BiometricAuthenticationState.NonAuthorized,
-            biometricAuthenticationDialogState = BiometricAuthenticationDialogState(true),
+            biometricAuthenticationState = BiometricAuthenticationState.Inert,
             loginsListState = null,
             loginsAddLoginState = null,
             loginsEditLoginState = null,
@@ -53,14 +50,18 @@ internal data class LoginsState(
 }
 
 internal sealed class BiometricAuthenticationState {
-    data object Authorized : BiometricAuthenticationState()
+    data object Inert : BiometricAuthenticationState()
+    data object ReadyToLock : BiometricAuthenticationState()
     data object InProgress : BiometricAuthenticationState()
-    data object NonAuthorized : BiometricAuthenticationState()
-}
+    data object Authorized : BiometricAuthenticationState()
+    data object Failed : BiometricAuthenticationState()
 
-internal data class BiometricAuthenticationDialogState(
-    val shouldShow: Boolean,
-)
+    val isAuthorized: Boolean
+        get() = this is Authorized
+
+    val isReadyToLock: Boolean
+        get() = this is ReadyToLock
+}
 
 internal sealed class NewLoginState {
     data object None : NewLoginState()

@@ -52,22 +52,25 @@ internal fun loginsReducer(state: LoginsState, action: LoginsAction) = when (act
     is LoginsListBackClicked -> state.respondToLoginsListBackClick()
     is AddLoginBackClicked -> state.respondToAddLoginBackClick()
     is EditLoginBackClicked -> state.respondToEditLoginBackClick()
-    is BiometricAuthenticationAction.AuthenticationSucceeded -> state.copy(
+    is BiometricAuthenticationAction.Succeeded -> state.copy(
         biometricAuthenticationState = BiometricAuthenticationState.Authorized,
     )
-    is BiometricAuthenticationAction.AuthenticationInProgress -> state.copy(
+    is BiometricAuthenticationAction.Started -> state.copy(
         biometricAuthenticationState = BiometricAuthenticationState.InProgress,
     )
-    is BiometricAuthenticationAction.AuthenticationFailed -> state.copy(
-        biometricAuthenticationState = BiometricAuthenticationState.NonAuthorized,
+    is BiometricAuthenticationAction.Failed -> state.copy(
+        biometricAuthenticationState = BiometricAuthenticationState.Failed,
     )
-    is BiometricAuthenticationDialogAction -> state.copy(
-        biometricAuthenticationDialogState = BiometricAuthenticationDialogState(
-            action.shouldShowDialog,
-        ),
+    is LifecycleAction.OnPause -> state.takeIf { it.biometricAuthenticationState.isAuthorized }
+        ?.copy(biometricAuthenticationState = BiometricAuthenticationState.ReadyToLock) ?: state
+    is LifecycleAction.OnResume -> state.takeIf { it.biometricAuthenticationState.isReadyToLock }
+        ?.copy(biometricAuthenticationState = BiometricAuthenticationState.InProgress) ?: state
+
+    is UnlockScreenAction.UnlockTapped -> state.copy(
+        biometricAuthenticationState = BiometricAuthenticationState.InProgress,
     )
     ViewDisposed,
-    is Init, LearnMoreAboutSync,
+    is LoginsListAppeared, LearnMoreAboutSync, UnlockScreenAction.LeaveTapped,
     -> state
 }
 

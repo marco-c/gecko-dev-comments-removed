@@ -9,13 +9,6 @@ import org.junit.Test
 
 class LoginsReducerTest {
     @Test
-    fun `WHEN store initializes THEN no changes to state`() {
-        val state = LoginsState.default
-
-        assertEquals(state, loginsReducer(state, Init))
-    }
-
-    @Test
     fun `WHEN logins are loaded THEN they are added to state`() {
         val state = LoginsState.default
         val items = List(5) {
@@ -467,7 +460,7 @@ class LoginsReducerTest {
         )
         val result = loginsReducer(
             state,
-            action = BiometricAuthenticationAction.AuthenticationSucceeded,
+            action = BiometricAuthenticationAction.Succeeded,
         )
         assertEquals(
             BiometricAuthenticationState.Authorized,
@@ -476,102 +469,47 @@ class LoginsReducerTest {
     }
 
     @Test
-    fun `GIVEN a logins screen WHEN the biometric authentication dialog should be shown THEN reflect that into the state`() {
+    fun `GIVEN a logins screen WHEN the lifecycle action becomes paused THEN reflect that into the state`() {
         val state = LoginsState.default.copy(
-            biometricAuthenticationDialogState = BiometricAuthenticationDialogState(shouldShow = true),
+            biometricAuthenticationState = BiometricAuthenticationState.Authorized,
         )
         val result = loginsReducer(
             state,
-            action = BiometricAuthenticationDialogAction(shouldShowDialog = true),
+            action = LifecycleAction.OnPause,
         )
         assertEquals(
-            BiometricAuthenticationDialogState(shouldShow = true),
-            result.biometricAuthenticationDialogState,
-        )
-    }
-
-    @Test
-    fun `GIVEN we are on the add login screen and the biometric authentication dialog should be shown WHEN the back button is clicked THEN go back to login list state and show the dialog`() {
-        val items = List(7) {
-            LoginItem(
-                guid = "$it",
-                url = if (it % 2 == 0) "$it url" else "$it uri",
-                username = "user$it",
-                password = "pass$it",
-                timeLastUsed = System.currentTimeMillis(),
-            )
-        }
-
-        val state = LoginsState.default.copy(
-            loginItems = items,
-            biometricAuthenticationDialogState = BiometricAuthenticationDialogState(shouldShow = true),
-        )
-        loginsReducer(state, AddLoginAction.InitAdd)
-
-        val resultListStateAfterBackClick = loginsReducer(state, AddLoginBackClicked)
-        val expectedListStateAfterBackClick = state.copy(loginsAddLoginState = null)
-
-        assertEquals(resultListStateAfterBackClick, expectedListStateAfterBackClick)
-        assertEquals(
-            resultListStateAfterBackClick.biometricAuthenticationDialogState,
-            expectedListStateAfterBackClick.biometricAuthenticationDialogState,
-        )
-    }
-
-    @Test
-    fun `WHEN on login details screen and the biometric auth dialog should not be shown THEN this will be reflected in the state`() {
-        val state = LoginsState.default.copy(
-            biometricAuthenticationDialogState = BiometricAuthenticationDialogState(shouldShow = false),
-        )
-        val loginItem = LoginItem(
-            guid = "guid123",
-            url = "url123",
-            username = "user123",
-            password = "pass123",
-            timeLastUsed = System.currentTimeMillis(),
-        )
-
-        val result = loginsReducer(
-            state,
-            LoginClicked(item = loginItem),
-        )
-
-        val expected = state.copy(
-            loginsLoginDetailState = LoginsLoginDetailState(loginItem),
-            biometricAuthenticationDialogState = BiometricAuthenticationDialogState(shouldShow = false),
-        )
-        assertEquals(expected, result)
-    }
-
-    @Test
-    fun `GIVEN we are on the list logins screen, biometric auth is not authorized and the biometric dialog should be shown WHEN add login is clicked THEN reflect all these in the state`() {
-        val state = LoginsState.default.copy(
-            loginsAddLoginState = LoginsAddLoginState(
-                host = "",
-                username = "",
-                password = "",
-            ),
-            biometricAuthenticationState = BiometricAuthenticationState.NonAuthorized,
-            biometricAuthenticationDialogState = BiometricAuthenticationDialogState(shouldShow = true),
-        )
-
-        val result = loginsReducer(state, AddLoginAction.InitAdd)
-
-        assertEquals(
-            LoginsAddLoginState(
-                host = "",
-                username = "",
-                password = "",
-            ),
-            result.loginsAddLoginState,
-        )
-        assertEquals(
-            BiometricAuthenticationState.NonAuthorized,
+            BiometricAuthenticationState.ReadyToLock,
             result.biometricAuthenticationState,
         )
+    }
+
+    @Test
+    fun `GIVEN a logins screen WHEN the lifecycle action becomes resumed THEN reflect that into the state`() {
+        val state = LoginsState.default.copy(
+            biometricAuthenticationState = BiometricAuthenticationState.ReadyToLock,
+        )
+        val result = loginsReducer(
+            state,
+            action = LifecycleAction.OnResume,
+        )
         assertEquals(
-            BiometricAuthenticationDialogState(true),
-            result.biometricAuthenticationDialogState,
+            BiometricAuthenticationState.InProgress,
+            result.biometricAuthenticationState,
+        )
+    }
+
+    @Test
+    fun `GIVEN the lock screen presenting WHEN the unlock button is tapped THEN reflect that into the state`() {
+        val state = LoginsState.default.copy(
+            biometricAuthenticationState = BiometricAuthenticationState.ReadyToLock,
+        )
+        val result = loginsReducer(
+            state,
+            action = UnlockScreenAction.UnlockTapped,
+        )
+        assertEquals(
+            BiometricAuthenticationState.InProgress,
+            result.biometricAuthenticationState,
         )
     }
 }
