@@ -392,6 +392,7 @@ std::vector<std::pair<TSN, Data>> OutstandingData::GetChunksToBeRetransmitted(
 }
 
 void OutstandingData::ExpireOutstandingChunks(Timestamp now) {
+  std::vector<UnwrappedTSN> tsns_to_expire;
   UnwrappedTSN tsn = last_cumulative_tsn_ack_;
   for (const Item& item : outstanding_data_) {
     tsn.Increment();
@@ -401,14 +402,21 @@ void OutstandingData::ExpireOutstandingChunks(Timestamp now) {
     if (item.is_abandoned()) {
       
     } else if (item.is_nacked() && item.has_expired(now)) {
-      RTC_DLOG(LS_VERBOSE) << "Marking nacked chunk " << *tsn.Wrap()
-                           << " and message " << *item.data().mid
-                           << " as expired";
-      AbandonAllFor(item);
+      tsns_to_expire.push_back(tsn);
     } else {
       
       break;
     }
+  }
+
+  for (UnwrappedTSN tsn_to_expire : tsns_to_expire) {
+    
+    
+    Item& item = GetItem(tsn_to_expire);
+    RTC_DLOG(LS_WARNING) << "Marking nacked chunk " << *tsn_to_expire.Wrap()
+                         << " and message " << *item.data().mid
+                         << " as expired";
+    AbandonAllFor(item);
   }
   RTC_DCHECK(IsConsistent());
 }
