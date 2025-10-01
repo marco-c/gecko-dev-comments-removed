@@ -758,4 +758,9 @@ nsRect AnchorPositioningUtils::AdjustAbsoluteContainingBlockRectForPositionArea(
   return res;
 }
 
+
+void DeleteAnchorPosReferenceData(AnchorPosReferenceData* aData) {
+  delete aData;
+}
+
 }  
