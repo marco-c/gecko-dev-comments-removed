@@ -120,7 +120,34 @@ class WebGPUChild final : public PWebGPUChild {
   void ScheduleFlushQueuedMessages();
   void FlushQueuedMessages();
 
+  
+  
+  
+  
+  
+  void ClearStateForGlobal(nsIGlobalObject* aGlobal);
+
   void ActorDestroy(ActorDestroyReason) override;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   struct PendingRequestAdapterPromise {
     RefPtr<dom::Promise> promise;
