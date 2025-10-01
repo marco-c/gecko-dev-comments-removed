@@ -925,10 +925,12 @@ bool Sanitizer::AllowElement(
 
   
   
-  if (element.mAttributes || element.mRemoveAttributes) {
+  
+  if (element.mAttributes ||
+      (element.mRemoveAttributes && !element.mRemoveAttributes->IsEmpty())) {
     
     
-    LogLocalizedString("SanitizerAllowElementIgnroed", {},
+    LogLocalizedString("SanitizerAllowElementIgnored", {},
                        nsIScriptError::warningFlag);
 
     
