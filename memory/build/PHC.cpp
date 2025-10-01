@@ -343,60 +343,6 @@ static Delay CheckProbability(int64_t aProb) {
 
 
 
-
-
-
-
-class PtrKind {
- private:
-  enum class Tag : uint8_t {
-    Nothing,
-    GuardPage,
-    AllocPage,
-  };
-
-  Tag mTag;
-  uintptr_t mIndex;  
-
- public:
-  
-  
-  
-  PtrKind(const void* aPtr, const uint8_t* aPagesStart,
-          const uint8_t* aPagesLimit) {
-    if (!(aPagesStart <= aPtr && aPtr < aPagesLimit)) {
-      mTag = Tag::Nothing;
-    } else {
-      uintptr_t offset = static_cast<const uint8_t*>(aPtr) - aPagesStart;
-      uintptr_t allPageIndex = offset / kPageSize;
-      MOZ_ASSERT(allPageIndex < kNumAllPages);
-      if (allPageIndex & 1) {
-        
-        uintptr_t allocPageIndex = allPageIndex / 2;
-        MOZ_ASSERT(allocPageIndex < kNumAllocPages);
-        mTag = Tag::AllocPage;
-        mIndex = allocPageIndex;
-      } else {
-        
-        mTag = Tag::GuardPage;
-      }
-    }
-  }
-
-  bool IsNothing() const { return mTag == Tag::Nothing; }
-  bool IsGuardPage() const { return mTag == Tag::GuardPage; }
-
-  
-  
-  uintptr_t AllocPageIndex() const {
-    MOZ_RELEASE_ASSERT(mTag == Tag::AllocPage);
-    return mIndex;
-  }
-};
-
-
-
-
 #if !defined(XP_DARWIN)
 #  define PHC_THREAD_LOCAL(T) MOZ_THREAD_LOCAL(T)
 #else
@@ -628,12 +574,6 @@ class PHCRegion {
 
   constexpr PHCRegion() {}
 
-  class PtrKind PtrKind(const void* aPtr) {
-    MOZ_ASSERT(mPagesStart != nullptr && mPagesLimit != nullptr);
-    class PtrKind pk(aPtr, mPagesStart, mPagesLimit);
-    return pk;
-  }
-
   bool IsInFirstGuardPage(const void* aPtr) {
     MOZ_ASSERT(mPagesStart != nullptr && mPagesLimit != nullptr);
     return mPagesStart <= aPtr && aPtr < mPagesStart + kPageSize;
@@ -648,7 +588,16 @@ class PHCRegion {
     
     return mPagesStart + (2 * aIndex + 1) * kPageSize;
   }
+
+  MOZ_ALWAYS_INLINE bool WithinBounds(const void* aPtr) const {
+    MOZ_ASSERT(mPagesStart && mPagesLimit);
+    return aPtr >= mPagesStart && aPtr < mPagesLimit;
+  }
+
+  const uint8_t* PagesStart() const { return mPagesStart; }
 };
+
+class PtrKind;
 
 
 
@@ -683,6 +632,8 @@ class PHC {
   }
 
   uint64_t Random64() MOZ_REQUIRES(mMutex) { return mRNG.next(); }
+
+  PtrKind GetPtrKind(const void* aPtr);
 
   
   
@@ -1331,6 +1282,64 @@ class PHC {
 
 
 
+
+
+
+
+
+
+class PtrKind {
+ private:
+  enum class Tag : uint8_t {
+    GuardPage,
+    AllocPage,
+  };
+
+  Tag mTag;
+  uintptr_t mIndex;  
+
+ protected:
+  
+  
+  
+  PtrKind(const void* aPtr, const uint8_t* aPagesStart) {
+    uintptr_t offset = static_cast<const uint8_t*>(aPtr) - aPagesStart;
+    uintptr_t allPageIndex = offset / kPageSize;
+
+    MOZ_ASSERT(allPageIndex < kNumAllPages);
+    if (allPageIndex & 1) {
+      
+      uintptr_t allocPageIndex = allPageIndex / 2;
+      MOZ_ASSERT(allocPageIndex < kNumAllocPages);
+      mTag = Tag::AllocPage;
+      mIndex = allocPageIndex;
+    } else {
+      
+      mTag = Tag::GuardPage;
+    }
+  }
+  friend PtrKind PHC::GetPtrKind(const void* aPtr);
+
+ public:
+  bool IsGuardPage() const { return mTag == Tag::GuardPage; }
+
+  
+  uintptr_t AllocPageIndex() const {
+    MOZ_RELEASE_ASSERT(mTag == Tag::AllocPage);
+    return mIndex;
+  }
+};
+
+PtrKind PHC::GetPtrKind(const void* aPtr) {
+  MOZ_ASSERT(sRegion.WithinBounds(aPtr));
+  return PtrKind(aPtr, sRegion.PagesStart());
+}
+
+
+
+
+
+
 alignas(kCacheLineSize) PHCRegion PHC::sRegion;
 PHC* PHC::sPHC;
 
@@ -1629,8 +1638,7 @@ MOZ_ALWAYS_INLINE static bool FastIsPHCPtr(const void* aPtr) {
     return false;
   }
 
-  PtrKind pk = PHC::sRegion.PtrKind(aPtr);
-  return !pk.IsNothing();
+  return PHC::sRegion.WithinBounds(aPtr);
 }
 
 
@@ -1669,7 +1677,7 @@ MOZ_ALWAYS_INLINE static Maybe<void*> MaybePageRealloc(
     return Some(PageMalloc(aArenaId, aNewSize));
   }
 
-  if (!FastIsPHCPtr(aOldPtr)) {
+  if (MOZ_UNLIKELY(!FastIsPHCPtr(aOldPtr))) {
     
     return Nothing();
   }
@@ -1679,8 +1687,7 @@ MOZ_ALWAYS_INLINE static Maybe<void*> MaybePageRealloc(
 
 Maybe<void*> PHC::PageRealloc(const Maybe<arena_id_t>& aArenaId, void* aOldPtr,
                               size_t aNewSize) MOZ_EXCLUDES(mMutex) {
-  PtrKind pk = sRegion.PtrKind(aOldPtr);
-  MOZ_ASSERT(!pk.IsNothing());
+  PtrKind pk = GetPtrKind(aOldPtr);
 
   if (pk.IsGuardPage()) {
     CrashOnGuardPage(aOldPtr);
@@ -1775,8 +1782,8 @@ inline void* MozJemallocPHC::realloc(void* aOldPtr, size_t aNewSize) {
 
 void PHC::PageFree(const Maybe<arena_id_t>& aArenaId, void* aPtr)
     MOZ_EXCLUDES(mMutex) {
-  PtrKind pk = sRegion.PtrKind(aPtr);
-  MOZ_ASSERT(!pk.IsNothing());
+  PtrKind pk = GetPtrKind(aPtr);
+
   if (pk.IsGuardPage()) {
     PHC::CrashOnGuardPage(aPtr);
   }
@@ -1856,7 +1863,7 @@ inline void* MozJemallocPHC::memalign(size_t aAlignment, size_t aReqSize) {
 }
 
 inline size_t MozJemallocPHC::malloc_usable_size(usable_ptr_t aPtr) {
-  if (!FastIsPHCPtr(aPtr)) {
+  if (MOZ_LIKELY(!FastIsPHCPtr(aPtr))) {
     
     return MozJemalloc::malloc_usable_size(aPtr);
   }
@@ -1865,7 +1872,8 @@ inline size_t MozJemallocPHC::malloc_usable_size(usable_ptr_t aPtr) {
 }
 
 size_t PHC::PtrUsableSize(usable_ptr_t aPtr) MOZ_EXCLUDES(mMutex) {
-  PtrKind pk = sRegion.PtrKind(aPtr);
+  PtrKind pk = GetPtrKind(aPtr);
+
   if (pk.IsGuardPage()) {
     CrashOnGuardPage(const_cast<void*>(aPtr));
   }
@@ -1933,7 +1941,7 @@ inline void MozJemallocPHC::jemalloc_stats_lite(jemalloc_stats_lite_t* aStats) {
 
 inline void MozJemallocPHC::jemalloc_ptr_info(const void* aPtr,
                                               jemalloc_ptr_info_t* aInfo) {
-  if (!FastIsPHCPtr(aPtr)) {
+  if (MOZ_LIKELY(!FastIsPHCPtr(aPtr))) {
     
     MozJemalloc::jemalloc_ptr_info(aPtr, aInfo);
     return;
@@ -1947,7 +1955,8 @@ void PHC::PagePtrInfo(const void* aPtr, jemalloc_ptr_info_t* aInfo)
   
   
 
-  PtrKind pk = sRegion.PtrKind(aPtr);
+  PtrKind pk = GetPtrKind(aPtr);
+
   if (pk.IsGuardPage()) {
     
     *aInfo = {TagUnknown, nullptr, 0, 0};
@@ -1995,8 +2004,7 @@ inline void* MozJemallocPHC::moz_arena_memalign(arena_id_t aArenaId,
 }
 
 bool PHC::IsPHCAllocation(const void* aPtr, mozilla::phc::AddrInfo* aOut) {
-  PtrKind pk = sRegion.PtrKind(aPtr);
-  MOZ_ASSERT(!pk.IsNothing());
+  PtrKind pk = GetPtrKind(aPtr);
 
   bool isGuardPage = false;
   if (pk.IsGuardPage()) {
@@ -2009,12 +2017,12 @@ bool PHC::IsPHCAllocation(const void* aPtr, mozilla::phc::AddrInfo* aOut) {
       }
 
       
-      pk = sRegion.PtrKind(static_cast<const uint8_t*>(aPtr) - kPageSize);
+      pk = GetPtrKind(static_cast<const uint8_t*>(aPtr) - kPageSize);
 
     } else {
       
       
-      pk = sRegion.PtrKind(static_cast<const uint8_t*>(aPtr) + kPageSize);
+      pk = GetPtrKind(static_cast<const uint8_t*>(aPtr) + kPageSize);
     }
 
     
@@ -2043,7 +2051,7 @@ bool PHC::IsPHCAllocation(const void* aPtr, mozilla::phc::AddrInfo* aOut) {
 namespace mozilla::phc {
 
 bool IsPHCAllocation(const void* aPtr, AddrInfo* aOut) {
-  if (!FastIsPHCPtr(aPtr)) {
+  if (MOZ_LIKELY(!FastIsPHCPtr(aPtr))) {
     return false;
   }
 
