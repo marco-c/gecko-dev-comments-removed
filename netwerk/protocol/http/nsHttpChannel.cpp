@@ -3747,8 +3747,9 @@ nsresult nsHttpChannel::RedirectToNewChannelForAuthRetry() {
     if (mTransaction->Http3Disabled()) {
       httpChannelImpl->mCaps |= NS_HTTP_DISALLOW_HTTP3;
     }
-    httpChannelImpl->mCaps |= NS_HTTP_STICKY_CONNECTION;
   }
+  
+  httpChannelImpl->mCaps |= NS_HTTP_STICKY_CONNECTION;
 
   if (LoadAuthConnectionRestartable()) {
     httpChannelImpl->mCaps |= NS_HTTP_CONNECTION_RESTARTABLE;
