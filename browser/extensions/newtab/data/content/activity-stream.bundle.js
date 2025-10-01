@@ -11846,6 +11846,14 @@ class _Weather extends (external_React_default()).PureComponent {
       }
     }));
   }
+  handleRejectOptIn = () => {
+    this.props.dispatch(actionCreators.SetPref("weather.optInAccepted", false));
+    this.props.dispatch(actionCreators.SetPref("weather.optInDisplayed", false));
+  };
+  handleAcceptOptIn = () => {
+    this.props.dispatch(actionCreators.SetPref("weather.optInAccepted", true));
+    this.props.dispatch(actionCreators.SetPref("weather.optInDisplayed", false));
+  };
   render() {
     
     const isWeatherEnabled = this.props.Prefs.values["system.showWeather"];
@@ -11869,6 +11877,21 @@ class _Weather extends (external_React_default()).PureComponent {
     const WEATHER_SUGGESTION = Weather.suggestions?.[0];
     const outerClassName = ["weather", Weather.searchActive && "search", props.isInSection && "section-weather"].filter(v => v).join(" ");
     const showDetailedView = Prefs.values["weather.display"] === "detailed";
+    const isOptInEnabled = Prefs.values["system.showWeatherOptIn"];
+    const optInDisplayed = Prefs.values["weather.optInDisplayed"];
+    const nimbusOptInDisplayed = Prefs.values.trainhopConfig?.weather?.optInDisplayed;
+    const optInUserChoice = Prefs.values["weather.optInAccepted"];
+    const nimbusOptInUserChoice = Prefs.values.trainhopConfig?.weather?.optInAccepted;
+    const optInPrompt = nimbusOptInDisplayed ?? optInDisplayed ?? false;
+    const userChoice = nimbusOptInUserChoice ?? optInUserChoice ?? false;
+    const isUserWeatherEnabled = Prefs.values.showWeather;
+
+    
+    
+    
+    
+    
+    const shouldShowOptInDialog = isUserWeatherEnabled && isOptInEnabled && optInPrompt && !userChoice;
 
     
     const WEATHER_SOURCE_CONTEXT_MENU_OPTIONS = [...(Prefs.values["weather.locationSearchEnabled"] ? ["ChangeWeatherLocation"] : []), ...(Prefs.values["weather.temperatureUnits"] === "f" ? ["ChangeTempUnitCelsius"] : ["ChangeTempUnitFahrenheit"]), ...(Prefs.values["weather.display"] === "simple" ? ["ChangeWeatherDisplayDetailed"] : ["ChangeWeatherDisplaySimple"]), "HideWeather", "OpenLearnMoreURL"];
@@ -11934,7 +11957,27 @@ class _Weather extends (external_React_default()).PureComponent {
       }, external_React_default().createElement("span", {
         "data-l10n-id": "newtab-weather-sponsored",
         "data-l10n-args": "{\"provider\": \"AccuWeather\xAE\"}"
-      })));
+      })), shouldShowOptInDialog && external_React_default().createElement("div", {
+        className: "weatherOptIn"
+      }, external_React_default().createElement("dialog", {
+        open: true
+      }, external_React_default().createElement("span", {
+        className: "weatherOptInImg"
+      }), external_React_default().createElement("div", {
+        className: "weatherOptInContent"
+      }, external_React_default().createElement("h3", null, "Do you want to see the weather for your location?"), external_React_default().createElement("moz-button-group", {
+        className: "button-group"
+      }, external_React_default().createElement("moz-button", {
+        size: "small",
+        type: "default",
+        label: "Not now",
+        onClick: this.handleRejectOptIn
+      }), external_React_default().createElement("moz-button", {
+        size: "small",
+        type: "default",
+        label: "Yes",
+        onClick: this.handleAcceptOptIn
+      }))))));
     }
     return external_React_default().createElement("div", {
       ref: this.setErrorRef,
@@ -16332,6 +16375,14 @@ class BaseContent extends (external_React_default()).PureComponent {
   componentDidUpdate(prevProps) {
     this.applyBodyClasses();
     const prefs = this.props.Prefs.values;
+
+    
+    const wasWeatherDisabled = !prevProps.Prefs.values.showWeather;
+    const isWeatherEnabled = this.props.Prefs.values.showWeather;
+    if (wasWeatherDisabled && isWeatherEnabled) {
+      
+      this.props.dispatch(actionCreators.SetPref("weather.optInDisplayed", true));
+    }
     const wallpapersEnabled = prefs["newtabWallpapers.enabled"];
     if (wallpapersEnabled) {
       

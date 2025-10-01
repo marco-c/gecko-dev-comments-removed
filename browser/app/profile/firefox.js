@@ -1861,6 +1861,9 @@ pref("browser.newtabpage.activity-stream.images.smart", true);
 pref("browser.newtabpage.activity-stream.weather.locationSearchEnabled", true);
 
 
+pref("browser.newtabpage.activity-stream.weather.optInDisplayed", false);
+
+
 pref("browser.newtabpage.activity-stream.discoverystream.region-weather-config", "US,CA,DE,GB,FR,ES,IT,CH,AT,BE,IE,NL,PL,CZ,SE,SG,HU,SK,FI,DK,NO,PT");
 
 
