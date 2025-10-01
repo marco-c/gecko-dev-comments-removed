@@ -1078,8 +1078,7 @@ int WebRtcAecm_ProcessBlock(AecmCore* aecm,
     
     
     tmp32no1 = echoEst32[i] - aecm->echoFilt[i];
-    aecm->echoFilt[i] +=
-        webrtc::dchecked_cast<int32_t>((int64_t{tmp32no1} * 50) >> 8);
+    aecm->echoFilt[i] += dchecked_cast<int32_t>((int64_t{tmp32no1} * 50) >> 8);
 
     zeros32 = WebRtcSpl_NormW32(aecm->echoFilt[i]) + 1;
     zeros16 = WebRtcSpl_NormW16(supGain) + 1;

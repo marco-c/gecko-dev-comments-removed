@@ -17,7 +17,7 @@
 namespace webrtc {
 
 void ReplayRuntimeSetting(AudioProcessing* apm,
-                          const webrtc::audioproc::RuntimeSetting& setting);
+                          const audioproc::RuntimeSetting& setting);
 }
 
 #endif  
