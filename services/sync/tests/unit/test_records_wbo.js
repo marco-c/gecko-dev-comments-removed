@@ -1,8 +1,11 @@
 
 
 
-const { WBORecord } = ChromeUtils.importESModule(
+const { WBORecord, Collection } = ChromeUtils.importESModule(
   "resource://services-sync/record.sys.mjs"
+);
+const { Resource } = ChromeUtils.importESModule(
+  "resource://services-sync/resource.sys.mjs"
 );
 const { Service } = ChromeUtils.importESModule(
   "resource://services-sync/service.sys.mjs"
@@ -82,4 +85,35 @@ add_task(async function test_fetch() {
   } finally {
     await promiseStopServer(server);
   }
+});
+
+class FakeService {
+  constructor(storageURL) {
+    this.storageURL = storageURL;
+  }
+  resource(uri) {
+    
+    return new Resource(uri);
+  }
+}
+
+add_task(async function test_collection_invalid_url_handling() {
+  const service = new FakeService("http://example.com/storage/");
+
+  
+  const coll = new Collection("not-a-valid-url", WBORecord, service);
+
+  
+  Assert.throws(() => {
+    coll.full = true; 
+  }, /_rebuildURL called with null uri/);
+});
+
+add_task(async function test_wborecord_uri_makeURI_null() {
+  let record = new WBORecord("tabs", "abc123");
+
+  
+  Assert.throws(() => {
+    record.uri("not-a-valid-base-url");
+  }, /WBORecord\.uri\(\): makeURI returned null for base=/);
 });
