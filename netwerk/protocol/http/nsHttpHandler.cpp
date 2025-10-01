@@ -665,9 +665,8 @@ nsresult nsHttpHandler::AddAcceptAndDictionaryHeaders(
     
     
     
-    aDict =
-        mDictionaryCache ? mDictionaryCache->GetDictionaryFor(aURI) : nullptr;
-    if (aDict) {
+    if (StaticPrefs::network_http_dictionaries_enable() &&
+        (aDict = mDictionaryCache->GetDictionaryFor(aURI))) {
       rv = aRequest->SetHeader(nsHttp::Accept_Encoding,
                                mDictionaryAcceptEncodings, false,
                                nsHttpHeaderArray::eVarietyRequestOverride);
