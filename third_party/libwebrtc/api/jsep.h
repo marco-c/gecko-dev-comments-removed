@@ -258,6 +258,16 @@ class RTC_EXPORT SessionDescriptionInterface {
   
   
   
+  
+  
+  
+  virtual bool RemoveCandidate(const IceCandidate* candidate) = 0;
+
+  
+  
+  
+  
+  
   virtual size_t RemoveCandidates(const std::vector<Candidate>& candidates);
 
   

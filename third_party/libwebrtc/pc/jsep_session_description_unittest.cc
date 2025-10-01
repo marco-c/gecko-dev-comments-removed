@@ -30,8 +30,10 @@
 #include "rtc_base/crypto_random.h"
 #include "rtc_base/net_helper.h"
 #include "rtc_base/socket_address.h"
+#include "test/gmock.h"
 #include "test/gtest.h"
 
+using ::testing::NotNull;
 using ::testing::Values;
 using webrtc::IceCandidate;
 using webrtc::IceCandidateCollection;
@@ -180,6 +182,30 @@ TEST_F(JsepSessionDescriptionTest, AddCandidateWithoutMid) {
   EXPECT_TRUE(ice_candidate->candidate().IsEquivalent(candidate_));
   EXPECT_EQ(0, ice_candidate->sdp_mline_index());
   EXPECT_EQ("audio", ice_candidate->sdp_mid());
+  EXPECT_EQ(0u, jsep_desc_->candidates(1)->count());
+}
+
+
+
+TEST_F(JsepSessionDescriptionTest, AddAndRemoveIceCandidatesWithMid) {
+  
+  std::string mid = "video";
+  IceCandidate jsep_candidate(mid, 0, candidate_);
+  EXPECT_TRUE(jsep_desc_->AddCandidate(&jsep_candidate));
+  EXPECT_EQ(0u, jsep_desc_->candidates(0)->count());
+  const IceCandidateCollection* ice_candidates = jsep_desc_->candidates(1);
+  ASSERT_THAT(ice_candidates, NotNull());
+  EXPECT_EQ(1u, ice_candidates->count());
+  const IceCandidate* ice_candidate = ice_candidates->at(0);
+  ASSERT_THAT(ice_candidate, NotNull());
+  candidate_.set_username(kCandidateUfragVideo);
+  candidate_.set_password(kCandidatePwdVideo);
+  EXPECT_TRUE(ice_candidate->candidate().IsEquivalent(candidate_));
+  
+  EXPECT_EQ(1, ice_candidate->sdp_mline_index());
+
+  EXPECT_EQ(1u, jsep_desc_->RemoveCandidate(ice_candidate));
+  EXPECT_EQ(0u, jsep_desc_->candidates(0)->count());
   EXPECT_EQ(0u, jsep_desc_->candidates(1)->count());
 }
 

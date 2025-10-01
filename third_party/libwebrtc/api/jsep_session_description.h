@@ -59,6 +59,9 @@ class JsepSessionDescription : public SessionDescriptionInterface {
   virtual std::string type() const { return SdpTypeToString(type_); }
   
   virtual bool AddCandidate(const IceCandidate* candidate);
+  virtual bool RemoveCandidate(const IceCandidate* candidate);
+  
+  
   virtual size_t RemoveCandidates(const std::vector<Candidate>& candidates);
   virtual size_t number_of_mediasections() const;
   virtual const IceCandidateCollection* candidates(
