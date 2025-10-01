@@ -27,7 +27,6 @@ function WeakMapConstructorInit(iterable) {
   }
 }
 
-#ifdef NIGHTLY_BUILD
 
 
 
@@ -56,6 +55,10 @@ function WeakMapGetOrInsertComputed(key, callbackfn) {
   }
 
   
+  if (!CanBeHeldWeakly(key)) {
+    ThrowTypeError(JSMSG_WEAKMAP_KEY_CANT_BE_HELD_WEAKLY, DecompileArg(0, key));
+  }
+
   
   
   if (callFunction(std_WeakMap_has, M, key)) {
@@ -75,4 +78,3 @@ function WeakMapGetOrInsertComputed(key, callbackfn) {
   
   return value;
 }
-#endif  // #ifdef NIGHTLY_BUILD
