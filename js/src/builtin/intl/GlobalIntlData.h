@@ -39,7 +39,7 @@ class GlobalIntlData {
 
 
 
-  GCPtr<JSLinearString*> runtimeDefaultLocale_;
+  GCPtr<JSLinearString*> realmLocale_;
 
   
 
@@ -51,7 +51,7 @@ class GlobalIntlData {
 
 
 
-  GCPtr<JSLinearString*> runtimeDefaultTimeZone_;
+  GCPtr<JSLinearString*> realmTimeZone_;
 
   
 
@@ -134,11 +134,9 @@ class GlobalIntlData {
   
 
 
-
   JSLinearString* defaultTimeZone(JSContext* cx);
 
   
-
 
 
   temporal::TimeZoneObject* getOrCreateDefaultTimeZone(JSContext* cx);
@@ -178,8 +176,8 @@ class GlobalIntlData {
   void trace(JSTracer* trc);
 
  private:
-  bool ensureRuntimeDefaultLocale(JSContext* cx);
-  bool ensureRuntimeDefaultTimeZone(JSContext* cx);
+  bool ensureRealmLocale(JSContext* cx);
+  bool ensureRealmTimeZone(JSContext* cx);
 
   void resetCollator();
   void resetNumberFormat();
