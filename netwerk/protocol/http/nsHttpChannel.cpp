@@ -1565,7 +1565,10 @@ nsresult nsHttpChannel::DoConnectActual(
     return rv;
   }
 
-  return DispatchTransaction(aTransWithStickyConn);
+  return CallOrWaitForResume(
+      [trans = RefPtr(aTransWithStickyConn)](auto* self) {
+        return self->DispatchTransaction(trans);
+      });
 }
 
 nsresult nsHttpChannel::DispatchTransaction(
@@ -1960,10 +1963,16 @@ nsresult nsHttpChannel::SetupChannelForTransaction() {
     
     
     
+    bool async;
     rv = gHttpHandler->AddAcceptAndDictionaryHeaders(
         mURI, mLoadInfo->GetExternalContentPolicyType(), &mRequestHead,
-        IsHTTPS(), [self = RefPtr(this)](DictionaryCacheEntry* aDict) {
+        IsHTTPS(), async,
+        [self = RefPtr(this)](bool aNeedsResume, DictionaryCacheEntry* aDict) {
           self->mDictDecompress = aDict;
+          if (aNeedsResume) {
+            LOG_DICTIONARIES(("Resuming after getting Dictionary headers"));
+            self->Resume();
+          }
           if (self->mDictDecompress) {
             LOG_DICTIONARIES(
                 ("Added dictionary header for %p, DirectoryCacheEntry %p",
@@ -1991,6 +2000,11 @@ nsresult nsHttpChannel::SetupChannelForTransaction() {
           return true;
         });
     if (NS_FAILED(rv)) return rv;
+    if (async) {
+      
+      LOG_DICTIONARIES(("Suspending to get Dictionary headers"));
+      Suspend();
+    }
   }
 
   
@@ -5977,14 +5991,6 @@ nsresult DoAddCacheEntryHeaders(nsHttpChannel* self, nsICacheEntry* entry,
   if (NS_FAILED(rv)) return rv;
 
   
-  if (StaticPrefs::network_http_dictionaries_enable() && self->IsHTTPS()) {
-    if (!self->ParseDictionary(entry, responseHead, aModified)) {
-      LOG_DICTIONARIES(
-          ("Failed to parse use-as-dictionary from %s", head.get()));
-    }
-  }
-
-  
   rv = entry->MetaDataReady();
 
   return rv;
@@ -6021,8 +6027,12 @@ bool nsHttpChannel::ParseDictionary(nsICacheEntry* aEntry,
          matchIdVal.get(),
          matchDestItems.Length() > 0 ? matchDestItems[0].get() : "<none>",
          typeVal.get()));
+
+    uint32_t expTime = 0;
+    Unused << GetCacheTokenExpirationTime(&expTime);
+
     dicts->AddEntry(mURI, key, matchVal, matchDestItems, matchIdVal, Some(hash),
-                    aModified, getter_AddRefs(mDictSaving));
+                    aModified, expTime, getter_AddRefs(mDictSaving));
     
     
     
