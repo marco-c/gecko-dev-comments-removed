@@ -3350,8 +3350,12 @@ void nsWindow::RecomputeBounds(MayChangeCsdMargin aMayChangeCsdMargin) {
     if (!decorated) {
       return LayoutDeviceIntMargin{};
     }
-    const auto systemMargin = mBounds - toplevelBounds;
-    return systemMargin + mCsdMargin;
+    if (mayChangeCsdMargin) {
+      const auto systemMargin = mBounds - toplevelBounds;
+      return systemMargin + mCsdMargin;
+    }
+    
+    return mClientMargin;
   }();
   mClientMargin.EnsureAtLeast(LayoutDeviceIntMargin());
 
@@ -4130,9 +4134,7 @@ gboolean nsWindow::OnShellConfigureEvent(GdkEventConfigure* aEvent) {
     return FALSE;
   }
 
-  
-  
-  RecomputeBounds(MayChangeCsdMargin::No);
+  SchedulePendingBounds(MayChangeCsdMargin::No);
   return FALSE;
 }
 
