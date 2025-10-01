@@ -161,10 +161,6 @@ fn report_main() {
     
     let mut mock = mock::builder();
     mock.set(
-        Command::mock("work_dir/pingsender"),
-        Box::new(|_| Ok(crate::std::process::success_output())),
-    )
-    .set(
         Command::mock("curl"),
         Box::new(|_| {
             let mut output = crate::std::process::success_output();
