@@ -35,6 +35,17 @@ enum IdSource {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Debug)]
 pub(super) struct IdentityValues {
     free: Vec<(Index, Epoch)>,
@@ -47,6 +58,7 @@ pub(super) struct IdentityValues {
 }
 
 impl IdentityValues {
+    
     
     
     
@@ -70,6 +82,11 @@ impl IdentityValues {
         }
     }
 
+    
+    
+    
+    
+    
     pub fn mark_as_used<T: Marker>(&mut self, id: Id<T>) -> Id<T> {
         assert!(
             self.id_source != IdSource::Allocated,
@@ -81,6 +98,8 @@ impl IdentityValues {
         id
     }
 
+    
+    
     
     pub fn release<T: Marker>(&mut self, id: Id<T>) {
         if let IdSource::Allocated = self.id_source {

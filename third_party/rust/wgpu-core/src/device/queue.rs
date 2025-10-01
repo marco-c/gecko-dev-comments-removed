@@ -763,21 +763,21 @@ impl Queue {
             &destination,
             dst_base.aspect,
             &dst.desc,
-            data_layout.offset,
+            data_layout,
             false, 
         )?;
 
         
         
-        let (required_bytes_in_copy, _source_bytes_per_array_layer) = validate_linear_texture_data(
-            data_layout,
-            dst.desc.format,
-            destination.aspect,
-            data.len() as wgt::BufferAddress,
-            CopySide::Source,
-            size,
-            false,
-        )?;
+        let (required_bytes_in_copy, _source_bytes_per_array_layer, _) =
+            validate_linear_texture_data(
+                data_layout,
+                dst.desc.format,
+                destination.aspect,
+                data.len() as wgt::BufferAddress,
+                CopySide::Source,
+                size,
+            )?;
 
         if dst.desc.format.is_depth_stencil_format() {
             self.device
