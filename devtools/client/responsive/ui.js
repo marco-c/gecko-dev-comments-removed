@@ -460,13 +460,12 @@ class ResponsiveUI {
       case "message":
         this.handleMessage(event);
         break;
-      case "FullZoomChange": {
+      case "FullZoomChange":
         
         
         const { width, height } = this.getViewportSize();
         this.updateViewportSize(width, height);
         break;
-      }
       case "TabClose":
       case "unload":
         this.manager.closeIfNeeded(browserWindow, tab, {

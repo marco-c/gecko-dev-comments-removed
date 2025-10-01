@@ -526,7 +526,7 @@ class TabTracker extends TabTrackerBase {
     let nativeTab = event.target;
 
     switch (event.type) {
-      case "TabOpen": {
+      case "TabOpen":
         let { adoptedTab } = event.detail;
         if (adoptedTab) {
           
@@ -557,9 +557,8 @@ class TabTracker extends TabTrackerBase {
           });
         }
         break;
-      }
 
-      case "TabClose": {
+      case "TabClose":
         let { adoptedBy } = event.detail;
         if (adoptedBy) {
           
@@ -571,7 +570,6 @@ class TabTracker extends TabTrackerBase {
           this.emitRemoved(nativeTab, false);
         }
         break;
-      }
 
       case "TabSelect":
         

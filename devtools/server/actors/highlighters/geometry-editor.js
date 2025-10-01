@@ -412,7 +412,7 @@ class GeometryEditorHighlighter extends AutoRefreshHighlighter {
         }
 
         break;
-      case "mousedown": {
+      case "mousedown":
         
         if (!id) {
           return;
@@ -460,7 +460,6 @@ class GeometryEditorHighlighter extends AutoRefreshHighlighter {
           "true"
         );
         break;
-      }
       case "mouseup":
         
         if (this[_dragging]) {
@@ -472,7 +471,7 @@ class GeometryEditorHighlighter extends AutoRefreshHighlighter {
           this[_dragging] = null;
         }
         break;
-      case "mousemove": {
+      case "mousemove":
         if (!this[_dragging]) {
           return;
         }
@@ -499,7 +498,6 @@ class GeometryEditorHighlighter extends AutoRefreshHighlighter {
         );
 
         break;
-      }
     }
   }
 

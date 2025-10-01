@@ -258,7 +258,7 @@ class NetworkEventContentWatcher {
         resourceUpdates.fromCache = updateResource.fromCache;
         resourceUpdates.fromServiceWorker = updateResource.fromServiceWorker;
         break;
-      case NETWORK_EVENT_TYPES.RESPONSE_START: {
+      case NETWORK_EVENT_TYPES.RESPONSE_START:
         
         
         
@@ -278,7 +278,6 @@ class NetworkEventContentWatcher {
           NETWORK_EVENT_TYPES.RESPONSE_HEADERS,
         ]);
         break;
-      }
       case NETWORK_EVENT_TYPES.RESPONSE_CONTENT:
         resourceUpdates.contentSize = updateResource.contentSize;
         resourceUpdates.mimeType = updateResource.mimeType;

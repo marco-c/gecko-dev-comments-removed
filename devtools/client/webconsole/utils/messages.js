@@ -182,7 +182,7 @@ function transformConsoleAPICallResource(
       ];
       break;
     case "count":
-    case "countReset": {
+    case "countReset":
       
       type = MESSAGE_TYPE.LOG;
       const { counter } = consoleMessageResource;
@@ -202,7 +202,6 @@ function transformConsoleAPICallResource(
         parameters = null;
       }
       break;
-    }
     case "timeStamp":
       type = MESSAGE_TYPE.NULL_MESSAGE;
       break;

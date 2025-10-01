@@ -119,7 +119,7 @@ class ClientWrapper {
     const prefType = PREF_TO_TYPE[prefName];
     const preferenceFront = await this.client.mainRoot.getFront("preference");
     switch (prefType) {
-      case PREF_TYPES.BOOL: {
+      case PREF_TYPES.BOOL:
         
         
         let prefValue;
@@ -129,7 +129,6 @@ class ClientWrapper {
           prefValue = defaultValue;
         }
         return prefValue;
-      }
       default:
         throw new Error("Unsupported preference:" + prefName);
     }

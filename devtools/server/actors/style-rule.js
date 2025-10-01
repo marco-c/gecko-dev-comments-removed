@@ -406,7 +406,7 @@ class StyleRuleActor extends Actor {
         form.selectors = [];
         form.selectorsSpecificity = [];
         break;
-      case "CSSStyleRule": {
+      case "CSSStyleRule":
         form.selectors = [];
         form.selectorsSpecificity = [];
 
@@ -426,8 +426,7 @@ class StyleRuleActor extends Actor {
           form.selectorWarnings = selectorWarnings;
         }
         break;
-      }
-      case ELEMENT_STYLE: {
+      case ELEMENT_STYLE:
         
         
         
@@ -435,7 +434,6 @@ class StyleRuleActor extends Actor {
         form.href = doc.location ? doc.location.href : "";
         form.authoredText = this.rawNode.getAttribute("style");
         break;
-      }
       case PRES_HINTS:
         form.href = "";
         break;
@@ -1212,7 +1210,7 @@ class StyleRuleActor extends Actor {
     const data = this.metadata;
 
     switch (change.type) {
-      case "set": {
+      case "set":
         data.type = prevValue ? "declaration-add" : "declaration-update";
         
         
@@ -1250,7 +1248,6 @@ class StyleRuleActor extends Actor {
         }
 
         break;
-      }
 
       case "remove":
         data.type = "declaration-remove";
