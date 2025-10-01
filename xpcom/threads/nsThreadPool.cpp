@@ -494,13 +494,23 @@ nsThreadPool::DelayedDispatch(already_AddRefed<nsIRunnable>, uint32_t) {
 }
 
 NS_IMETHODIMP
-nsThreadPool::RegisterShutdownTask(nsITargetShutdownTask*) {
-  return NS_ERROR_NOT_IMPLEMENTED;
+nsThreadPool::RegisterShutdownTask(nsITargetShutdownTask* aTask) {
+  NS_ENSURE_ARG(aTask);
+  MutexAutoLock lock(mMutex);
+  if (mShutdown) {
+    return NS_ERROR_UNEXPECTED;
+  }
+  return mShutdownTasks.AddTask(aTask);
 }
 
 NS_IMETHODIMP
-nsThreadPool::UnregisterShutdownTask(nsITargetShutdownTask*) {
-  return NS_ERROR_NOT_IMPLEMENTED;
+nsThreadPool::UnregisterShutdownTask(nsITargetShutdownTask* aTask) {
+  NS_ENSURE_ARG(aTask);
+  MutexAutoLock lock(mMutex);
+  if (mShutdown) {
+    return NS_ERROR_UNEXPECTED;
+  }
+  return mShutdownTasks.RemoveTask(aTask);
 }
 
 NS_IMETHODIMP_(bool)
@@ -531,6 +541,28 @@ nsThreadPool::ShutdownWithTimeout(int32_t aTimeoutMs) {
     if (mShutdown) {
       return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
     }
+
+    
+    
+    if (!mShutdownTasks.IsEmpty()) {
+      PutEvent(
+          NS_NewRunnableFunction("nsThreadPool ShutdownTasks",
+                                 [tasks = mShutdownTasks.Extract()] {
+                                   for (nsITargetShutdownTask* task : tasks) {
+                                     task->TargetShutdown();
+                                   }
+                                 }),
+          NS_DISPATCH_NORMAL, lock);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
     name = mName;
     mShutdown = true;
     mIsAPoolThreadFree = false;
