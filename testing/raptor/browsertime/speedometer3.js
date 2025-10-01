@@ -62,9 +62,12 @@ module.exports = logTest(
         await startMeasurements(context, commands);
 
         
-        
         if (context.options.browser === "firefox") {
-          await commands.perfStats.start(0x1c_00_00_00);
+          await commands.perfStats.start([
+            "MinorGC",
+            "MajorGC",
+            "NonIdleMajorGC",
+          ]);
         }
 
         await commands.js.runAndWait(`
