@@ -2,6 +2,7 @@
 
 
 
+import hashlib
 from os.path import dirname
 from pathlib import Path
 
@@ -32,7 +33,14 @@ def generate_cpp_events(output_fd, *inputs):
     template = _jinja2_env().get_template("GeckoTraceEvents.h.jinja2")
     output_fd.write(
         template.render(
-            events=events, enabled=config.substs.get("GECKO_TRACE_ENABLE", False)
+            events=events,
+            enabled=config.substs.get("GECKO_TRACE_ENABLE", False),
+            
+            
+            
+            input_hash=hashlib.sha256("".join(inputs).encode())
+            .hexdigest()
+            .upper()[:15],
         )
     )
 
