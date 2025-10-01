@@ -1002,6 +1002,9 @@ nsresult nsUrlClassifierUtils::ReadProvidersFromPrefs(ProviderDictType& aDict) {
     providers.Insert(provider);
   }
 
+  bool isGoogle5Enabled = mozilla::Preferences::GetBool(
+      "browser.safebrowsing.provider.google5.enabled");
+
   
   
   
@@ -1024,9 +1027,7 @@ nsresult nsUrlClassifierUtils::ReadProvidersFromPrefs(ProviderDictType& aDict) {
       
       
       
-      if (!mozilla::Preferences::GetBool(
-              "browser.safebrowsing.provider.google5.enabled") &&
-          providerToUse.EqualsLiteral("google5")) {
+      if (!isGoogle5Enabled && providerToUse.EqualsLiteral("google5")) {
         providerToUse.AssignLiteral("google4");
       }
       aDict.InsertOrUpdate(tableName, MakeUnique<nsCString>(providerToUse));
