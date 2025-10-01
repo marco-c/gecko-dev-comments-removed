@@ -82,6 +82,7 @@ TaskbarProgress::SetPrimaryWindow(mozIDOMWindowProxy* aWindow) {
   auto* parent = nsPIDOMWindowOuter::From(aWindow);
   RefPtr<nsIWidget> widget =
       mozilla::widget::WidgetUtils::DOMWindowToWidget(parent);
+  NS_ENSURE_TRUE(widget, NS_ERROR_FAILURE);
 
   
   
