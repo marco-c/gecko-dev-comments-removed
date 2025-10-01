@@ -7,12 +7,13 @@
 
 
 
-
-#define _USE_MATH_DEFINES
 #include "modules/audio_processing/rms_level.h"
 
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
 #include <memory>
+#include <numbers>
 #include <vector>
 
 #include "api/array_view.h"
@@ -49,7 +50,8 @@ std::vector<int16_t> CreateInt16Sinusoid(int frequency_hz,
   std::vector<int16_t> x(num_samples);
   for (size_t n = 0; n < num_samples; ++n) {
     x[n] = saturated_cast<int16_t>(
-        amplitude * std::sin(2 * M_PI * n * frequency_hz / kSampleRateHz));
+        amplitude *
+        std::sin(2 * std::numbers::pi * n * frequency_hz / kSampleRateHz));
   }
   return x;
 }

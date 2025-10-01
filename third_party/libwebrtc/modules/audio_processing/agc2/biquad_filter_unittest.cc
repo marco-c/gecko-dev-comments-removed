@@ -13,10 +13,12 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstddef>
 
 
 
-#include "rtc_base/gunit.h"
+#include "api/array_view.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 namespace {
