@@ -69,6 +69,7 @@ pub fn rkv_new(path: &Path) -> std::result::Result<(Rkv, RkvLoadState), rkv::Sto
         
         
         Err(rkv::StoreError::FileInvalid) => {
+            log::debug!("rkv failed: invalid file. starting from scratch.");
             let safebin = path.join("data.safe.bin");
             fs::remove_file(safebin).map_err(|_| rkv::StoreError::FileInvalid)?;
             
@@ -76,6 +77,7 @@ pub fn rkv_new(path: &Path) -> std::result::Result<(Rkv, RkvLoadState), rkv::Sto
             Ok((rkv, RkvLoadState::Err(rkv::StoreError::FileInvalid)))
         }
         Err(rkv::StoreError::DatabaseCorrupted) => {
+            log::debug!("rkv failed: database corrupted. starting from scratch.");
             let safebin = path.join("data.safe.bin");
             fs::remove_file(safebin).map_err(|_| rkv::StoreError::DatabaseCorrupted)?;
             
