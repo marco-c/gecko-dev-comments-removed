@@ -138,15 +138,10 @@ class ContentCompositorBridgeParent final : public CompositorBridgeParentBase {
 
   bool IsSameProcess() const override;
 
-  PCompositorWidgetParent* AllocPCompositorWidgetParent(
+  already_AddRefed<PCompositorWidgetParent> AllocPCompositorWidgetParent(
       const CompositorWidgetInitData& aInitData) override {
     
     return nullptr;
-  }
-  bool DeallocPCompositorWidgetParent(
-      PCompositorWidgetParent* aActor) override {
-    
-    return false;
   }
 
   PAPZCTreeManagerParent* AllocPAPZCTreeManagerParent(
