@@ -547,38 +547,6 @@ nsresult nsHttpChannel::Init(nsIURI* uri, uint32_t caps, nsProxyInfo* proxyInfo,
                                       proxyURI, channelId, aLoadInfo);
   LOG1(("nsHttpChannel::Init [this=%p]\n", this));
 
-  if (NS_FAILED(rv)) return rv;
-  
-  
-  
-  rv = gHttpHandler->AddAcceptAndDictionaryHeaders(
-      uri, &mRequestHead, IsHTTPS(),
-      [self = RefPtr(this)](DictionaryCacheEntry* aDict) {
-        self->mDictDecompress = aDict;
-        if (self->mDictDecompress) {
-          LOG_DICTIONARIES(
-              ("Added dictionary header for %p, DirectoryCacheEntry %p",
-               self.get(), aDict));
-          
-          self->mDictDecompress->InUse();
-          self->mUsingDictionary = true;
-          self->mShouldSuspendForDictionary = self->mDictDecompress->Prefetch(
-              GetLoadContextInfo(self), [self]() {
-                
-                
-                MOZ_ASSERT(self->mDictDecompress->DictionaryReady());
-                if (self->mSuspendedForDictionary) {
-                  LOG(
-                      ("nsHttpChannel::Init [this=%p] Resuming channel "
-                       "suspended for "
-                       "Dictionary",
-                       self.get()));
-                  self->mSuspendedForDictionary = false;
-                  self->Resume();
-                }
-              });
-        }
-      });
   return rv;
 }
 
@@ -1988,6 +1956,41 @@ nsresult nsHttpChannel::SetupChannelForTransaction() {
         MOZ_ASSERT(NS_SUCCEEDED(rv));
       }
     }
+  } else {
+    
+    
+    
+    rv = gHttpHandler->AddAcceptAndDictionaryHeaders(
+        mURI, &mRequestHead, IsHTTPS(),
+        [self = RefPtr(this)](DictionaryCacheEntry* aDict) {
+          self->mDictDecompress = aDict;
+          if (self->mDictDecompress) {
+            LOG_DICTIONARIES(
+                ("Added dictionary header for %p, DirectoryCacheEntry %p",
+                 self.get(), aDict));
+            
+            self->mDictDecompress->InUse();
+            self->mUsingDictionary = true;
+            return NS_SUCCEEDED(self->mDictDecompress->Prefetch(
+                GetLoadContextInfo(self), self->mShouldSuspendForDictionary,
+                [self]() {
+                  
+                  
+                  MOZ_ASSERT(self->mDictDecompress->DictionaryReady());
+                  if (self->mSuspendedForDictionary) {
+                    LOG(
+                        ("nsHttpChannel::SetupChannelForTransaction [this=%p] "
+                         "Resuming channel "
+                         "suspended for Dictionary",
+                         self.get()));
+                    self->mSuspendedForDictionary = false;
+                    self->Resume();
+                  }
+                }));
+          }
+          return true;
+        });
+    if (NS_FAILED(rv)) return rv;
   }
 
   
