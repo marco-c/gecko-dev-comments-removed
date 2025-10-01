@@ -34,6 +34,7 @@
 #include "mozilla/StaticPresData.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/TextEvents.h"
+#include "mozilla/TextUtils.h"
 #include "mozilla/Unused.h"
 #include "mozilla/dom/CharacterDataBuffer.h"
 #include "mozilla/dom/PerformanceMainThread.h"
@@ -204,12 +205,8 @@ bool TextAutospace::IsIdeograph(char32_t aChar) {
   }
 
   
-  if (0x31C0 <= aChar && aChar <= 0x31EF) {
-    return true;
-  }
-
   
-  if (0x31F0 <= aChar && aChar <= 0x31FF) {
+  if (0x31C0 <= aChar && aChar <= 0x31FF) {
     return true;
   }
 
@@ -222,6 +219,14 @@ bool TextAutospace::IsIdeograph(char32_t aChar) {
 }
 
 TextAutospace::CharClass TextAutospace::GetCharClass(char32_t aChar) {
+  if (IsAsciiAlpha(aChar)) {
+    return CharClass::NonIdeographicLetter;
+  }
+
+  if (IsAsciiDigit(aChar)) {
+    return CharClass::NonIdeographicNumeral;
+  }
+
   if (IsIdeograph(aChar)) {
     return CharClass::Ideograph;
   }
