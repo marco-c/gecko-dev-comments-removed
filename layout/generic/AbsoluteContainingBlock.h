@@ -20,7 +20,9 @@ class nsPresContext;
 
 namespace mozilla {
 enum class AbsPosReflowFlag : uint8_t {
-  ConstrainHeight,
+  
+  
+  AllowFragmentation,
   CBWidthChanged,
   CBHeightChanged,
   IsGridContainerCB,

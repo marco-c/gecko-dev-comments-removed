@@ -7480,7 +7480,7 @@ void nsIFrame::ReflowAbsoluteFrames(nsPresContext* aPresContext,
     nsRect containingBlock(0, 0, containingBlockWidth, containingBlockHeight);
     
     
-    AbsPosReflowFlags flags{AbsPosReflowFlag::ConstrainHeight,
+    AbsPosReflowFlags flags{AbsPosReflowFlag::AllowFragmentation,
                             AbsPosReflowFlag::CBWidthChanged,
                             AbsPosReflowFlag::CBHeightChanged};
     absoluteContainer->Reflow(container, aPresContext, aReflowInput, aStatus,
