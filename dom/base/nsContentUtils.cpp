@@ -181,6 +181,7 @@
 #include "mozilla/dom/FormData.h"
 #include "mozilla/dom/FragmentOrElement.h"
 #include "mozilla/dom/FromParser.h"
+#include "mozilla/dom/FunctionBinding.h"
 #include "mozilla/dom/HTMLElement.h"
 #include "mozilla/dom/HTMLFormElement.h"
 #include "mozilla/dom/HTMLImageElement.h"
@@ -2733,6 +2734,19 @@ bool nsContentUtils::ShouldResistFingerprinting(nsIChannel* aChannel,
     return ShouldResistFingerprinting("Null Object", aTarget);
   }
 
+  bool isPBM = NS_UsePrivateBrowsing(aChannel);
+
+  if (MOZ_LOG_TEST(nsContentUtils::ResistFingerprintingLog(),
+                   mozilla::LogLevel::Debug)) {
+    nsCOMPtr<nsIURI> channelURI;
+    Unused << NS_GetFinalChannelURI(aChannel, getter_AddRefs(channelURI));
+    nsAutoCString channelSpec;
+    channelURI->GetSpec(channelSpec);
+    MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Debug,
+            ("Inside ShouldResistFingerprinting(nsIChannel*) for %s (PBM: %s)",
+             channelSpec.get(), isPBM ? "Yes" : "No"));
+  }
+
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
   if (!loadInfo) {
     MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Info,
@@ -2743,7 +2757,6 @@ bool nsContentUtils::ShouldResistFingerprinting(nsIChannel* aChannel,
 
   
   
-  bool isPBM = NS_UsePrivateBrowsing(aChannel);
   if (!ShouldResistFingerprinting_("Positive return check", isPBM, aTarget)) {
     MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Debug,
             ("Inside ShouldResistFingerprinting(nsIChannel*)"
@@ -2784,29 +2797,26 @@ bool nsContentUtils::ShouldResistFingerprinting(nsIChannel* aChannel,
       return true;
     }
 
-#if 0
-  if (loadInfo->GetExternalContentPolicyType() == ExtContentPolicy::TYPE_SUBDOCUMENT) {
-    nsCOMPtr<nsIURI> channelURI;
-    nsresult rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(channelURI));
     nsAutoCString channelSpec;
     channelURI->GetSpec(channelSpec);
 
-    if (!loadInfo->GetLoadingPrincipal()) {
-        MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Info,
-            ("Sub Document Type.  FinalChannelURI is %s, Loading Principal is NULL\n",
-                channelSpec.get()));
-
+    if (contentType == ExtContentPolicy::TYPE_SUBDOCUMENT) {
+      MOZ_LOG_DEBUG_ONLY(
+          nsContentUtils::ResistFingerprintingLog(), LogLevel::Info,
+          ("Sub Document Type.  FinalChannelURI is %s, Loading Principal %s\n",
+           channelSpec.get(),
+           loadInfo->GetLoadingPrincipal()
+           ? loadInfo->GetLoadingPrincipal()->GetOrigin(loadingPrincipalSpec),
+           loadingPrincipalSpec.get() : "is NULL"));
     } else {
-        nsAutoCString loadingPrincipalSpec;
-        loadInfo->GetLoadingPrincipal()->GetOrigin(loadingPrincipalSpec);
-
-        MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Info,
-            ("Sub Document Type.  FinalChannelURI is %s, Loading Principal Origin is %s\n",
-                channelSpec.get(), loadingPrincipalSpec.get()));
+      MOZ_LOG_DEBUG_ONLY(
+          nsContentUtils::ResistFingerprintingLog(), LogLevel::Info,
+          ("Document Type.  FinalChannelURI is %s, Loading Principal %s\n",
+           channelSpec.get(),
+           loadInfo->GetLoadingPrincipal()
+           ? loadInfo->GetLoadingPrincipal()->GetOrigin(loadingPrincipalSpec),
+           loadingPrincipalSpec.get() : "is NULL"));
     }
-  }
-
-#endif
 
     return ShouldResistFingerprinting_dangerous(
         channelURI, loadInfo->GetOriginAttributes(), "Internal Call", aTarget);
@@ -2832,6 +2842,12 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
   
   
   bool isPBM = aOriginAttributes.IsPrivateBrowsing();
+
+  MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Debug,
+          ("Inside ShouldResistFingerprinting_dangerous(nsIURI*,"
+           " OriginAttributes) and the URI is %s  (PBM: %s)",
+           aURI->GetSpecOrDefault().get(), isPBM ? "Yes" : "No"));
+
   if (!ShouldResistFingerprinting_("Positive return check", isPBM, aTarget)) {
     MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Debug,
             ("Inside ShouldResistFingerprinting_dangerous(nsIURI*,"
@@ -2887,6 +2903,17 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
   
   
   bool isPBM = originAttributes.IsPrivateBrowsing();
+
+  if (MOZ_LOG_TEST(nsContentUtils::ResistFingerprintingLog(),
+                   mozilla::LogLevel::Debug)) {
+    nsAutoCString origin;
+    aPrincipal->GetOrigin(origin);
+    MOZ_LOG(
+        nsContentUtils::ResistFingerprintingLog(), LogLevel::Debug,
+        ("Inside ShouldResistFingerprinting(nsIPrincipal*) for %s (PBM: %s)",
+         origin.get(), isPBM ? "Yes" : "No"));
+  }
+
   if (!ShouldResistFingerprinting_("Positive return check", isPBM, aTarget)) {
     MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Debug,
             ("Inside ShouldResistFingerprinting(nsIPrincipal*) Positive return "
@@ -8659,6 +8686,11 @@ bool nsContentUtils::IsJsonMimeType(const nsAString& aMimeType) {
   return StringEndsWith(subtype, u"+json"_ns);
 }
 
+
+bool nsContentUtils::IsCssMimeType(const nsAString& aMimeType) {
+  return aMimeType.LowerCaseEqualsLiteral("text/css");
+}
+
 bool nsContentUtils::PrefetchPreloadEnabled(nsIDocShell* aDocShell) {
   
   
@@ -9453,14 +9485,70 @@ nsView* nsContentUtils::GetViewToDispatchEvent(nsPresContext* aPresContext,
   return viewManager->GetRootView();
 }
 
+namespace {
+
+class SynthesizedMouseEventCallback final : public nsISynthesizedEventCallback {
+  NS_DECL_ISUPPORTS
+
+ public:
+  explicit SynthesizedMouseEventCallback(VoidFunction& aCallback)
+      : mCallback(&aCallback) {}
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD OnCompleteDispatch() override {
+    MOZ_ASSERT(mCallback, "How can we have a null mCallback here?");
+
+    ErrorResult rv;
+    MOZ_KnownLive(mCallback)->Call(rv);
+    if (MOZ_UNLIKELY(rv.Failed())) {
+      return rv.StealNSResult();
+    }
+
+    return NS_OK;
+  }
+
+ private:
+  virtual ~SynthesizedMouseEventCallback() = default;
+
+  const RefPtr<VoidFunction> mCallback;
+};
+
+NS_IMPL_ISUPPORTS(SynthesizedMouseEventCallback, nsISynthesizedEventCallback)
+
+}  
+
 Result<bool, nsresult> nsContentUtils::SynthesizeMouseEvent(
     mozilla::PresShell* aPresShell, nsIWidget* aWidget, const nsAString& aType,
     LayoutDeviceIntPoint& aRefPoint,
     const SynthesizeMouseEventData& aMouseEventData,
-    const SynthesizeMouseEventOptions& aOptions) {
+    const SynthesizeMouseEventOptions& aOptions,
+    const Optional<OwningNonNull<VoidFunction>>& aCallback) {
   MOZ_ASSERT(aPresShell);
   MOZ_ASSERT(aWidget);
   AUTO_PROFILER_LABEL("nsContentUtils::SynthesizeMouseEvent", OTHER);
+
+  if (aCallback.WasPassed()) {
+    if (!XRE_IsParentProcess()) {
+      
+      
+      
+      
+      NS_WARNING(
+          "nsContentUtils::SynthesizeMouseEvent() does not support being "
+          "called in the content process with a callback");
+      return Err(NS_ERROR_FAILURE);
+    }
+
+    if (!aOptions.mIsDOMEventSynthesized) {
+      
+      
+      
+      NS_WARNING(
+          "nsContentUtils::SynthesizeMouseEvent() does not support being "
+          "called in the parent process with isDOMEventSynthesized=false, due "
+          "to the callback doesn't not support on coalesced events");
+      return Err(NS_ERROR_FAILURE);
+    }
+  }
 
   EventMessage msg;
   Maybe<WidgetMouseEvent::ExitFrom> exitFrom;
@@ -9516,6 +9604,14 @@ Result<bool, nsresult> nsContentUtils::SynthesizeMouseEvent(
                        contextMenuKey ? WidgetMouseEvent::eContextMenuKey
                                       : WidgetMouseEvent::eNormal);
   }
+
+  nsCOMPtr<nsISynthesizedEventCallback> callback;
+  if (aCallback.WasPassed()) {
+    callback = MakeAndAddRef<SynthesizedMouseEventCallback>(aCallback.Value());
+  }
+
+  mozilla::widget::AutoSynthesizedEventCallbackNotifier notifier(callback);
+
   WidgetMouseEvent& mouseOrPointerEvent =
       pointerEvent.isSome() ? pointerEvent.ref() : mouseEvent.ref();
   mouseOrPointerEvent.pointerId = aMouseEventData.mIdentifier;
@@ -9537,6 +9633,7 @@ Result<bool, nsresult> nsContentUtils::SynthesizeMouseEvent(
   mouseOrPointerEvent.mFlags.mIsSynthesizedForTests =
       aOptions.mIsDOMEventSynthesized;
   mouseOrPointerEvent.mExitFrom = exitFrom;
+  mouseOrPointerEvent.mCallbackId = notifier.SaveCallback();
 
   nsPresContext* presContext = aPresShell->GetPresContext();
   if (!presContext) {
@@ -9568,6 +9665,15 @@ Result<bool, nsresult> nsContentUtils::SynthesizeMouseEvent(
       return Err(rv);
     }
   }
+
+  
+  
+  
+  if (mouseOrPointerEvent.mCallbackId.isSome()) {
+    mozilla::widget::AutoSynthesizedEventCallbackNotifier::NotifySavedCallback(
+        mouseOrPointerEvent.mCallbackId.ref());
+  }
+
   return status == nsEventStatus_eConsumeNoDefault;
 }
 
