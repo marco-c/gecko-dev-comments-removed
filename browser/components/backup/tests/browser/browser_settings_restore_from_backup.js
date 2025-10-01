@@ -75,19 +75,40 @@ add_task(async function test_restore_from_backup() {
 
     let infoPromise = BrowserTestUtils.waitForEvent(
       window,
-      "getBackupFileInfo"
+      "BackupUI:GetBackupFileInfo"
     );
 
     restoreFromBackup.chooseButtonEl.click();
 
     await filePickerShownPromise;
-    restoreFromBackup.backupFileToRestore = mockBackupFilePath;
+    restoreFromBackup.backupServiceState = {
+      ...restoreFromBackup.backupServiceState,
+      backupFileToRestore: mockBackupFilePath,
+    };
+    await restoreFromBackup.updateComplete;
+
+    
+    
+    restoreFromBackup.dispatchEvent(
+      new CustomEvent("BackupUI:SelectNewFilepickerPath", {
+        bubbles: true,
+        composed: true,
+        detail: {
+          path: mockBackupFilePath,
+          filename: mockBackupFile.leafName,
+          iconURL: "",
+        },
+      })
+    );
 
     await infoPromise;
     
-    restoreFromBackup.backupFileInfo = {
-      date: new Date(),
-      isEncrypted: true,
+    restoreFromBackup.backupServiceState = {
+      ...restoreFromBackup.backupServiceState,
+      backupFileInfo: {
+        date: new Date(),
+        isEncrypted: true,
+      },
     };
     await restoreFromBackup.updateComplete;
 
@@ -96,7 +117,7 @@ add_task(async function test_restore_from_backup() {
 
     let restorePromise = BrowserTestUtils.waitForEvent(
       window,
-      "restoreFromBackupConfirm"
+      "BackupUI:RestoreFromBackupFile"
     );
 
     Assert.ok(
@@ -181,8 +202,10 @@ add_task(async function test_restore_in_progress() {
       "backup.html"
     );
 
-    
-    restoreFromBackup.backupFileToRestore = mockBackupFilePath;
+    restoreFromBackup.backupServiceState = {
+      ...restoreFromBackup.backupServiceState,
+      backupFileToRestore: mockBackupFilePath,
+    };
     await restoreFromBackup.updateComplete;
 
     Assert.ok(
@@ -197,19 +220,16 @@ add_task(async function test_restore_in_progress() {
 
     let restorePromise = BrowserTestUtils.waitForEvent(
       window,
-      "restoreFromBackupConfirm"
+      "BackupUI:RestoreFromBackupFile"
     );
 
     restoreFromBackup.confirmButtonEl.click();
-    let currentState = bs.state;
-    let recoveryInProgressState = Object.assign(
-      { recoveryInProgress: true },
-      currentState
-    );
-    sandbox.stub(BackupService.prototype, "state").get(() => {
-      return recoveryInProgressState;
-    });
-    bs.stateUpdate();
+    restoreFromBackup.backupServiceState = {
+      ...restoreFromBackup.backupServiceState,
+      recoveryInProgress: true,
+    };
+    
+    await restoreFromBackup.requestUpdate();
 
     await restorePromise;
 

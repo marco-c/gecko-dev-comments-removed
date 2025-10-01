@@ -151,7 +151,7 @@ __webpack_require__.r(__webpack_exports__);
  var _MultiStageProtonScreen__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(6);
  var _LanguageSwitcher__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(7);
  var _SubmenuButton__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(12);
- var _lib_addUtmParams_mjs__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(23);
+ var _lib_addUtmParams_mjs__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(24);
 
 
 
@@ -446,55 +446,112 @@ const MultiStageAboutWelcome = props => {
     }) : null;
   })));
 };
-const SecondaryCTA = props => {
-  const targetElement = props.position ? `secondary_button_${props.position}` : `secondary_button`;
-  let buttonStyling = props.content.secondary_button?.has_arrow_icon ? `secondary arrow-icon` : `secondary`;
-  const isPrimary = props.content.secondary_button?.style === "primary";
-  const isTextLink = !["split", "callout"].includes(props.content.position) && props.content.tiles?.type !== "addons-picker" && !isPrimary;
-  const isSplitButton = props.content.submenu_button?.attached_to === targetElement;
+const renderSingleSecondaryCTAButton = ({
+  content,
+  button,
+  targetElement,
+  position,
+  handleAction,
+  activeMultiSelect,
+  isArrayItem,
+  index = null
+}) => {
+  let buttonStyling = button?.has_arrow_icon ? `secondary arrow-icon` : `secondary`;
+  const isPrimary = button?.style === "primary";
+  const isTextLink = !["split", "callout"].includes(content.position) && content.tiles?.type !== "addons-picker" && !isPrimary;
+  const isSplitButton = content.submenu_button?.attached_to === targetElement;
   let className = "secondary-cta";
-  if (props.position) {
-    className += ` ${props.position}`;
+  if (position) {
+    className += ` ${position}`;
   }
   if (isSplitButton) {
     className += " split-button-container";
   }
   const isDisabled = react__WEBPACK_IMPORTED_MODULE_0___default().useCallback(disabledValue => {
     if (disabledValue === "hasActiveMultiSelect") {
-      if (!props.activeMultiSelect) {
+      if (!activeMultiSelect) {
         return true;
       }
-      for (const key in props.activeMultiSelect) {
-        if (props.activeMultiSelect[key]?.length > 0) {
+      for (const key in activeMultiSelect) {
+        if (activeMultiSelect[key]?.length > 0) {
           return false;
         }
       }
       return true;
     }
     return disabledValue;
-  }, [props.activeMultiSelect]);
+  }, [activeMultiSelect]);
   if (isTextLink) {
     buttonStyling += " text-link";
   }
   if (isPrimary) {
-    buttonStyling = props.content.secondary_button?.has_arrow_icon ? `primary arrow-icon` : `primary`;
+    buttonStyling = button?.has_arrow_icon ? `primary arrow-icon` : `primary`;
   }
+
+  
+  
+  const shimmedHandleAction = event => {
+    if (isArrayItem && button?.action) {
+      return handleAction(event, button.action);
+    }
+    return handleAction(event);
+  };
+  let buttonId = "secondary_button";
+  buttonId += index !== null ? `_${index}` : "";
   return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-    className: className
+    className: className,
+    key: targetElement
   }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
-    text: props.content[targetElement].text
+    text: button?.text
   }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", null)), react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
-    text: props.content[targetElement].label
+    text: button?.label
   }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("button", {
-    id: "secondary_button",
+    id: buttonId,
     className: buttonStyling,
     value: targetElement,
-    disabled: isDisabled(props.content.secondary_button?.disabled),
-    onClick: props.handleAction
+    disabled: isDisabled(button?.disabled),
+    onClick: shimmedHandleAction
   })), isSplitButton ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_SubmenuButton__WEBPACK_IMPORTED_MODULE_5__.SubmenuButton, {
-    content: props.content,
-    handleAction: props.handleAction
+    content: content,
+    handleAction: handleAction
   }) : null);
+};
+const SecondaryCTA = props => {
+  const {
+    content,
+    position
+  } = props;
+  const targetElement = position ? `secondary_button_${position}` : "secondary_button";
+  const buttonData = content[targetElement];
+  if (!buttonData) {
+    return null;
+  }
+  if (Array.isArray(buttonData)) {
+    if (buttonData.length === 0) {
+      return null;
+    }
+    return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+      className: "secondary-buttons-top-container"
+    }, buttonData.map((button, index) => renderSingleSecondaryCTAButton({
+      content,
+      button,
+      targetElement: `${targetElement}_${index}`,
+      position,
+      handleAction: props.handleAction,
+      activeMultiSelect: props.activeMultiSelect,
+      isArrayItem: true,
+      index
+    })));
+  }
+  return renderSingleSecondaryCTAButton({
+    content,
+    button: buttonData,
+    targetElement,
+    position,
+    handleAction: props.handleAction,
+    activeMultiSelect: props.activeMultiSelect,
+    isArrayItem: false
+  });
 };
 const StepsIndicator = props => {
   let steps = [];
@@ -617,35 +674,40 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
       }
     }
   }
-  async handleAction(event) {
+  resolveActionFromContent(value, event, props) {
+    if (value === "submenu_button" && event.action) {
+      return event.action;
+    }
+    const {
+      content
+    } = props;
+    const targetContent = content[value] || content.tiles || content.languageSwitcher;
+    if (!targetContent) {
+      return null;
+    }
+    if (Array.isArray(targetContent)) {
+      for (const tile of targetContent) {
+        const matchedTile = tile.data.find(t => t.id === value);
+        if (matchedTile?.action) {
+          return matchedTile.action;
+        }
+      }
+      return null;
+    }
+    return targetContent.action ?? null;
+  }
+  async handleAction(event, providedAction = null) {
     const {
       props
     } = this;
     const value = event.currentTarget.value ?? event.currentTarget.getAttribute("value");
     const source = event.source || value;
-    let targetContent = props.content[value] || props.content.tiles || props.content.languageSwitcher;
-    if (value === "submenu_button" && event.action) {
-      targetContent = {
-        action: event.action
-      };
-    }
-    if (!targetContent) {
+    let action = providedAction || this.resolveActionFromContent(value, event, props);
+    if (!action) {
+      console.error("Failed to resolve action");
       return;
     }
-    let action;
-    if (Array.isArray(targetContent)) {
-      for (const tile of targetContent) {
-        const matchedTile = tile.data.find(t => t.id === value);
-        if (matchedTile?.action) {
-          action = matchedTile.action;
-          break;
-        }
-      }
-    } else if (!targetContent.action) {
-      return;
-    } else {
-      action = targetContent.action;
-    }
+
     
     this.logTelemetry({
       value,
@@ -2189,6 +2251,8 @@ __webpack_require__.r(__webpack_exports__);
  var _ActionChecklist__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(21);
  var _EmbeddedBrowser__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(22);
  var _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(3);
+ var _EmbeddedBackupRestore__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(23);
+
 
 
 
@@ -2417,6 +2481,11 @@ const ContentTiles = props => {
     }), tile.type === "embedded_browser" && tile.data?.url && react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_EmbeddedBrowser__WEBPACK_IMPORTED_MODULE_8__.EmbeddedBrowser, {
       url: tile.data.url,
       style: tile.data.style
+    }), tile.type === "backup_restore" && react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_EmbeddedBackupRestore__WEBPACK_IMPORTED_MODULE_10__.EmbeddedBackupRestore, {
+      handleAction: props.handleAction,
+      content: {
+        tiles: tile
+      }
     })) : null);
   };
   const renderContentTiles = () => {
@@ -3367,6 +3436,30 @@ const EmbeddedBrowserInner = ({
   });
 };
  const __WEBPACK_DEFAULT_EXPORT__ = (EmbeddedBrowser);
+
+ }),
+
+ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, {
+   EmbeddedBackupRestore: () => ( EmbeddedBackupRestore)
+ });
+ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
+ var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+
+
+
+
+
+const EmbeddedBackupRestore = () => {
+  const ref = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)();
+  return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("restore-from-backup", {
+    aboutWelcomeEmbedded: "true",
+    labelFontWeight: "600",
+    ref: ref
+  });
+};
 
  }),
 
