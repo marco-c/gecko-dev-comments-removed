@@ -135,31 +135,6 @@ async function DeleteCookieInFrame(frame, name, params) {
 
 
 
-
-
-
-async function CanFrameWriteCookies(frame, keep_after_writing = false) {
-  const cookie_suffix = "Secure;SameSite=None;Path=/";
-  await DeleteCookieInFrame(frame, "cookie", cookie_suffix);
-  await DeleteCookieInFrame(frame, "foo", cookie_suffix);
-
-  await SetDocumentCookieFromFrame(frame, `cookie=monster;${cookie_suffix}`);
-  await SetDocumentCookieFromFrame(frame, `foo=bar;${cookie_suffix}`);
-
-  const cookies = await GetJSCookiesFromFrame(frame);
-  const can_write = cookieStringHasCookie("cookie", "monster", cookies) &&
-      cookieStringHasCookie("foo", "bar", cookies);
-
-  if (!keep_after_writing) {
-    await DeleteCookieInFrame(frame, "cookie", cookie_suffix);
-    await DeleteCookieInFrame(frame, "foo", cookie_suffix);
-  }
-
-  return can_write;
-}
-
-
-
 async function SetFirstPartyCookie(origin, cookie="cookie=unpartitioned;Secure;SameSite=None;Path=/") {
   return new Promise((resolve) => {
     const onMessage = (event) => {
