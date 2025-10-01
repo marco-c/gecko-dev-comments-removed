@@ -16,7 +16,7 @@
 
 
 
-#include "s_scalbnf.cpp"
+#include <math.h>
 
 #include "math_private.h"
 

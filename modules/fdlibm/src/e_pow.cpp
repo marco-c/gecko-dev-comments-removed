@@ -57,8 +57,8 @@
 
 
 
-#include <cmath>
 #include <float.h>
+#include <math.h>
 #include "math_private.h"
 
 static const double
@@ -157,7 +157,7 @@ __ieee754_pow(double x, double y)
 	    if(hy==0x40000000) return x*x; 
 	    if(hy==0x3fe00000) {	
 		if(hx>=0)	
-		return std::sqrt(x);
+		return sqrt(x);
 	    }
 	}
 
