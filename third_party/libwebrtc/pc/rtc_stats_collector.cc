@@ -89,7 +89,7 @@ namespace {
 const char kDirectionInbound = 'I';
 const char kDirectionOutbound = 'O';
 
-static constexpr char kAudioPlayoutSingletonId[] = "AP";
+constexpr char kAudioPlayoutSingletonId[] = "AP";
 
 
 std::string RTCCertificateIDFromFingerprint(const std::string& fingerprint) {

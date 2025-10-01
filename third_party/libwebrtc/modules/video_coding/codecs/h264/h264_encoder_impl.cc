@@ -48,8 +48,8 @@ namespace {
 const bool kOpenH264EncoderDetailedLogging = false;
 
 
-static const int kLowH264QpThreshold = 24;
-static const int kHighH264QpThreshold = 37;
+const int kLowH264QpThreshold = 24;
+const int kHighH264QpThreshold = 37;
 
 
 enum H264EncoderImplEvent {

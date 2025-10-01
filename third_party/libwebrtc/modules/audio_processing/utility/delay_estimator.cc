@@ -24,24 +24,24 @@ namespace {
 
 
 
-static const int kShiftsAtZero = 13;  
-static const int kShiftsLinearSlope = 3;
+const int kShiftsAtZero = 13;  
+const int kShiftsLinearSlope = 3;
 
-static const int32_t kProbabilityOffset = 1024;      
-static const int32_t kProbabilityLowerLimit = 8704;  
-static const int32_t kProbabilityMinSpread = 2816;   
+const int32_t kProbabilityOffset = 1024;      
+const int32_t kProbabilityLowerLimit = 8704;  
+const int32_t kProbabilityMinSpread = 2816;   
 
 
-static const float kHistogramMax = 3000.f;
-static const float kLastHistogramMax = 250.f;
-static const float kMinHistogramThreshold = 1.5f;
-static const int kMinRequiredHits = 10;
-static const int kMaxHitsWhenPossiblyNonCausal = 10;
-static const int kMaxHitsWhenPossiblyCausal = 1000;
-static const float kQ14Scaling = 1.f / (1 << 14);  
-static const float kFractionSlope = 0.05f;
-static const float kMinFractionWhenPossiblyCausal = 0.5f;
-static const float kMinFractionWhenPossiblyNonCausal = 0.25f;
+const float kHistogramMax = 3000.f;
+const float kLastHistogramMax = 250.f;
+const float kMinHistogramThreshold = 1.5f;
+const int kMinRequiredHits = 10;
+const int kMaxHitsWhenPossiblyNonCausal = 10;
+const int kMaxHitsWhenPossiblyCausal = 1000;
+const float kQ14Scaling = 1.f / (1 << 14);  
+const float kFractionSlope = 0.05f;
+const float kMinFractionWhenPossiblyCausal = 0.5f;
+const float kMinFractionWhenPossiblyNonCausal = 0.25f;
 
 }  
 

@@ -67,8 +67,7 @@
 
 namespace {
 
-static constexpr absl::string_view kDtlsSrtpExporterLabel =
-    "EXTRACTOR-dtls_srtp";
+constexpr absl::string_view kDtlsSrtpExporterLabel = "EXTRACTOR-dtls_srtp";
 }  
 
 namespace webrtc {

@@ -197,7 +197,7 @@ class RtcHistogramMap {
 
 
 
-static std::atomic<RtcHistogramMap*> g_rtc_histogram_map(nullptr);
+std::atomic<RtcHistogramMap*> g_rtc_histogram_map(nullptr);
 
 void CreateMap() {
   RtcHistogramMap* map = g_rtc_histogram_map.load(std::memory_order_acquire);
@@ -211,7 +211,7 @@ void CreateMap() {
 
 
 #if RTC_DCHECK_IS_ON
-static std::atomic<int> g_rtc_histogram_called(0);
+std::atomic<int> g_rtc_histogram_called(0);
 #endif
 
 

@@ -28,7 +28,7 @@ const char kH265FmtpLevel[] = "level-id";
 
 
 
-static constexpr int kMinCbSizeYMax = 64;
+constexpr int kMinCbSizeYMax = 64;
 
 struct LevelConstraint {
   const int max_luma_picture_size;
@@ -45,7 +45,7 @@ struct LevelConstraint {
 
 
 
-static constexpr LevelConstraint kLevelConstraints[] = {
+constexpr LevelConstraint kLevelConstraints[] = {
     {36864, 552960, 536, H265Level::kLevel1},
     {122880, 3686400, 984, H265Level::kLevel2},
     {245760, 7372800, 1400, H265Level::kLevel2_1},

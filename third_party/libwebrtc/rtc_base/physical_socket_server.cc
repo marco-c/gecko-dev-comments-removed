@@ -125,7 +125,7 @@ typedef char* SockOptArg;
 namespace {
 
 
-static constexpr uint8_t kEcnMask = 0x03;
+constexpr uint8_t kEcnMask = 0x03;
 
 #if defined(WEBRTC_POSIX)
 

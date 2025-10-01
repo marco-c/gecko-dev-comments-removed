@@ -47,13 +47,13 @@ namespace webrtc {
 namespace {
 
 
-static constexpr size_t kMaxFramesBuffered = 800;
+constexpr size_t kMaxFramesBuffered = 800;
 
-static constexpr int kMaxFramesHistory = 1 << 13;
+constexpr int kMaxFramesHistory = 1 << 13;
 
 
 
-static constexpr size_t kZeroPlayoutDelayDefaultMaxDecodeQueueSize = 8;
+constexpr size_t kZeroPlayoutDelayDefaultMaxDecodeQueueSize = 8;
 
 struct FrameMetadata {
   explicit FrameMetadata(const EncodedFrame& frame)

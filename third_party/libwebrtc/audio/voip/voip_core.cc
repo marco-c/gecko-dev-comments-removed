@@ -33,7 +33,7 @@ constexpr uint16_t kAudioDeviceId = 0;
 
 
 
-static constexpr int kMaxChannelId = 100000;
+constexpr int kMaxChannelId = 100000;
 
 }  
 

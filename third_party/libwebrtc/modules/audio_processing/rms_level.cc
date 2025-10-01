@@ -22,9 +22,9 @@
 
 namespace webrtc {
 namespace {
-static constexpr float kMaxSquaredLevel = 32768 * 32768;
+constexpr float kMaxSquaredLevel = 32768 * 32768;
 
-static constexpr float kMinLevel = 1.995262314968883e-13f;
+constexpr float kMinLevel = 1.995262314968883e-13f;
 
 
 

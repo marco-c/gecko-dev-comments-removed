@@ -17,7 +17,7 @@
 
 namespace {
 constexpr size_t kDtmfOutbandMax = 20;
-}
+}  
 
 namespace webrtc {
 DtmfQueue::DtmfQueue() {}

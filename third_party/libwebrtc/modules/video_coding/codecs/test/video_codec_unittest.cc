@@ -47,7 +47,7 @@ static const int kMaxFramerate = 30;
 namespace webrtc {
 namespace {
 const VideoEncoder::Capabilities kCapabilities(false);
-}
+}  
 
 EncodedImageCallback::Result
 VideoCodecUnitTest::FakeEncodeCompleteCallback::OnEncodedImage(

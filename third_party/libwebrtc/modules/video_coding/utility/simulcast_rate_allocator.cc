@@ -33,15 +33,14 @@ namespace webrtc {
 namespace {
 
 
-static const float
-    kLayerRateAllocation[kMaxTemporalStreams][kMaxTemporalStreams] = {
-        {1.0f, 1.0f, 1.0f, 1.0f},  
-        {0.6f, 1.0f, 1.0f, 1.0f},  
-        {0.4f, 0.6f, 1.0f, 1.0f},  
-        {0.25f, 0.4f, 0.6f, 1.0f}  
+const float kLayerRateAllocation[kMaxTemporalStreams][kMaxTemporalStreams] = {
+    {1.0f, 1.0f, 1.0f, 1.0f},  
+    {0.6f, 1.0f, 1.0f, 1.0f},  
+    {0.4f, 0.6f, 1.0f, 1.0f},  
+    {0.25f, 0.4f, 0.6f, 1.0f}  
 };
 
-static const float kBaseHeavy3TlRateAllocation[kMaxTemporalStreams] = {
+const float kBaseHeavy3TlRateAllocation[kMaxTemporalStreams] = {
     0.6f, 0.8f, 1.0f, 1.0f  
 };
 

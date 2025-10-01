@@ -33,11 +33,11 @@ namespace {
 
 
 
-static const int kFirstDynamicPayloadTypeLowerRange = 35;
-static const int kLastDynamicPayloadTypeLowerRange = 63;
+const int kFirstDynamicPayloadTypeLowerRange = 35;
+const int kLastDynamicPayloadTypeLowerRange = 63;
 
-static const int kFirstDynamicPayloadTypeUpperRange = 96;
-static const int kLastDynamicPayloadTypeUpperRange = 127;
+const int kFirstDynamicPayloadTypeUpperRange = 96;
+const int kLastDynamicPayloadTypeUpperRange = 127;
 
 
 

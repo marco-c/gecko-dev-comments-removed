@@ -26,9 +26,9 @@
 namespace webrtc {
 
 namespace {
-static const int kHeaderSize = 32;
-static const int kFrameHeaderSize = 12;
-static uint8_t dummy_payload[4] = {0, 1, 2, 3};
+const int kHeaderSize = 32;
+const int kFrameHeaderSize = 12;
+uint8_t dummy_payload[4] = {0, 1, 2, 3};
 
 
 constexpr int kDefaultWidth = 1280;

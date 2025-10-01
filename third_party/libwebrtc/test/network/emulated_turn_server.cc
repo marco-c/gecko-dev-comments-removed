@@ -35,8 +35,8 @@
 
 namespace {
 
-static const char kTestRealm[] = "example.org";
-static const char kTestSoftware[] = "TestTurnServer";
+const char kTestRealm[] = "example.org";
+const char kTestSoftware[] = "TestTurnServer";
 
 
 class PacketSocketFactoryWrapper : public webrtc::PacketSocketFactory {

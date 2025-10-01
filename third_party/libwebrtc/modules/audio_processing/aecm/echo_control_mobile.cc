@@ -35,12 +35,12 @@ namespace {
 
 #define MAX_RESAMP_LEN (5 * FRAME_LEN)
 
-static const size_t kBufSizeSamp =
+const size_t kBufSizeSamp =
     BUF_SIZE_FRAMES * FRAME_LEN;  
-static const int kSampMsNb = 8;   
+const int kSampMsNb = 8;          
 
 
-static const int kInitCheck = 42;
+const int kInitCheck = 42;
 
 typedef struct {
   int sampFreq;

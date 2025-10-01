@@ -81,7 +81,7 @@ struct LevelConstraint {
 };
 
 
-static constexpr LevelConstraint kLevelConstraints[] = {
+constexpr LevelConstraint kLevelConstraints[] = {
     {1485, 99, H264Level::kLevel1},
     {1485, 99, H264Level::kLevel1_b},
     {3000, 396, H264Level::kLevel1_1},

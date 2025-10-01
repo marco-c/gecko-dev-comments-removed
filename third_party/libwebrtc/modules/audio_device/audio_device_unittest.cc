@@ -85,21 +85,21 @@ namespace {
 
 
 
-static constexpr size_t kNumCallbacks = 10;
+constexpr size_t kNumCallbacks = 10;
 
-static constexpr TimeDelta kTestTimeOut = TimeDelta::Seconds(10);
+constexpr TimeDelta kTestTimeOut = TimeDelta::Seconds(10);
 
-static constexpr size_t kNumCallbacksPerSecond = 100;
+constexpr size_t kNumCallbacksPerSecond = 100;
 
-static constexpr TimeDelta kFullDuplexTime = TimeDelta::Seconds(5);
+constexpr TimeDelta kFullDuplexTime = TimeDelta::Seconds(5);
 
 
 
-static constexpr TimeDelta kMeasureLatencyTime = TimeDelta::Seconds(10);
+constexpr TimeDelta kMeasureLatencyTime = TimeDelta::Seconds(10);
 
-static constexpr size_t kImpulseFrequencyInHz = 1;
+constexpr size_t kImpulseFrequencyInHz = 1;
 
-static constexpr int kImpulseThreshold = 1000;
+constexpr int kImpulseThreshold = 1000;
 
 enum class TransportType {
   kInvalid,

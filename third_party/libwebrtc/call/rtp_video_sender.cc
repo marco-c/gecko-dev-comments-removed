@@ -89,9 +89,9 @@ RtpStreamSender::~RtpStreamSender() = default;
 }  
 
 namespace {
-static const int kMinSendSidePacketHistorySize = 600;
+const int kMinSendSidePacketHistorySize = 600;
 
-static const size_t kPathMTU = 1500;
+const size_t kPathMTU = 1500;
 
 using webrtc_internal_rtp_video_sender::RtpStreamSender;
 

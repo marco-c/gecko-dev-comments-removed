@@ -46,7 +46,7 @@
 namespace webrtc {
 namespace {
 constexpr int kSilenceTimeoutMs = 2000;
-}
+}  
 
 class NetworkStateEndToEndTest : public test::CallTest {
  protected:

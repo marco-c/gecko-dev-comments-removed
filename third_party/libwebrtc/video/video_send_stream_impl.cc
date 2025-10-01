@@ -85,9 +85,9 @@ namespace internal {
 namespace {
 
 
-static constexpr int kMaxVbaSizeDifferencePercent = 10;
+constexpr int kMaxVbaSizeDifferencePercent = 10;
 
-static constexpr int64_t kMaxVbaThrottleTimeMs = 500;
+constexpr int64_t kMaxVbaThrottleTimeMs = 500;
 
 constexpr TimeDelta kEncoderTimeOut = TimeDelta::Seconds(2);
 
@@ -102,7 +102,7 @@ constexpr int kMinDefaultAv1BitrateBps =
 
 
 
-static constexpr double kStrictPacingMultiplier = 1.1;
+constexpr double kStrictPacingMultiplier = 1.1;
 
 bool TransportSeqNumExtensionConfigured(const VideoSendStream::Config& config) {
   const std::vector<RtpExtension>& extensions = config.rtp.extensions;

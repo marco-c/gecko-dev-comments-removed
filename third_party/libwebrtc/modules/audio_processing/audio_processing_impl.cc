@@ -132,13 +132,13 @@ bool MinimizeProcessingForUnusedOutput(const FieldTrialsView& field_trials) {
 
 
 
-static const size_t kMaxAllowedValuesOfSamplesPerBand = 160;
-static const size_t kMaxAllowedValuesOfSamplesPerFrame = 480;
+const size_t kMaxAllowedValuesOfSamplesPerBand = 160;
+const size_t kMaxAllowedValuesOfSamplesPerFrame = 480;
 
 
 
 
-static const size_t kMaxNumFramesToBuffer = 100;
+const size_t kMaxNumFramesToBuffer = 100;
 
 void PackRenderAudioBufferForEchoDetector(const AudioBuffer& audio,
                                           std::vector<float>& packed_buffer) {

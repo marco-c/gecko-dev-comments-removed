@@ -39,8 +39,8 @@ namespace {
 
 
 
-static const uint8_t kFakeAuthTag[10] = {0xba, 0xdd, 0xba, 0xdd, 0xba,
-                                         0xdd, 0xba, 0xdd, 0xba, 0xdd};
+const uint8_t kFakeAuthTag[10] = {0xba, 0xdd, 0xba, 0xdd, 0xba,
+                                  0xdd, 0xba, 0xdd, 0xba, 0xdd};
 
 void UpdateAbsSendTimeExtensionValue(uint8_t* extension_data,
                                      size_t length,

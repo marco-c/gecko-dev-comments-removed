@@ -90,9 +90,7 @@ size_t FindRequiredActiveLayers(const VideoEncoderConfig& encoder_config) {
 
 
 
-static int GetMaxDefaultVideoBitrateKbps(int width,
-                                         int height,
-                                         bool is_screenshare) {
+int GetMaxDefaultVideoBitrateKbps(int width, int height, bool is_screenshare) {
   int max_bitrate;
   if (width * height <= 320 * 240) {
     max_bitrate = 600;

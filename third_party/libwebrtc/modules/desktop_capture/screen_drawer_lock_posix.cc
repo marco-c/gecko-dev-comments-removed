@@ -25,7 +25,7 @@ namespace webrtc {
 namespace {
 
 
-static constexpr char kSemaphoreName[] = "GSDL54fe5552804711e6a7253f429a";
+constexpr char kSemaphoreName[] = "GSDL54fe5552804711e6a7253f429a";
 
 }  
 

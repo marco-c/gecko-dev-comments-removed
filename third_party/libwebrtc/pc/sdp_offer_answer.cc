@@ -145,15 +145,15 @@ const char kSessionError[] = "Session error code: ";
 const char kSessionErrorDesc[] = "Session error description: ";
 
 
-static const int kRtcpCnameLength = 16;
+const int kRtcpCnameLength = 16;
 
 
-static constexpr size_t kMidMaxSize = 16;
+constexpr size_t kMidMaxSize = 16;
 
 const char kDefaultStreamId[] = "default";
 
-static const char kDefaultAudioSenderId[] = "defaulta0";
-static const char kDefaultVideoSenderId[] = "defaultv0";
+const char kDefaultAudioSenderId[] = "defaulta0";
+const char kDefaultVideoSenderId[] = "defaultv0";
 
 void NoteAddIceCandidateResult(int result) {
   RTC_HISTOGRAM_ENUMERATION("WebRTC.PeerConnection.AddIceCandidate", result,

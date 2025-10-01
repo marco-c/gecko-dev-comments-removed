@@ -26,7 +26,7 @@ namespace {
 
 
 
-static constexpr double kMaxMediaUnderrunFrames = 5.0;
+constexpr double kMaxMediaUnderrunFrames = 5.0;
 }  
 
 EncoderOvershootDetector::EncoderOvershootDetector(int64_t window_size_ms,
