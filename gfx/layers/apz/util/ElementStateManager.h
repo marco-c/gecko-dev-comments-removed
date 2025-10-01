@@ -130,7 +130,7 @@ class ElementStateManager final {
   void ResetTouchBlockState();
   void ScheduleSetActiveTask();
   void SetActiveTask(const nsCOMPtr<dom::Element>& aTarget);
-  void CancelTask();
+  void CancelActiveTask();
   
   bool MaybeChangeActiveState(apz::SingleTapState aState);
 };
