@@ -118,13 +118,13 @@ void WritableStream::FinishErroring(JSContext* aCx, ErrorResult& aRv) {
   JS::Rooted<JS::Value> storedError(aCx, mStoredError);
 
   
-  for (const RefPtr<Promise>& writeRequest : mWriteRequests) {
+  while (!mWriteRequests.IsEmpty()) {
     
-    writeRequest->MaybeReject(storedError);
+    mWriteRequests.Pop()->MaybeReject(storedError);
   }
 
   
-  mWriteRequests.Clear();
+  
 
   
   if (!mPendingAbortRequestPromise) {
@@ -325,10 +325,8 @@ void WritableStream::MarkFirstWriteRequestInFlight() {
   MOZ_ASSERT(!mWriteRequests.IsEmpty());
 
   
-  RefPtr<Promise> writeRequest = mWriteRequests.ElementAt(0);
-
   
-  mWriteRequests.RemoveElementAt(0);
+  RefPtr<Promise> writeRequest = mWriteRequests.Pop();
 
   
   mInFlightWriteRequest = writeRequest;
