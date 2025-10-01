@@ -116,12 +116,24 @@ class ZLibDecompressionStreamAlgorithms : public DecompressionStreamAlgorithms {
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ZLibDecompressionStreamAlgorithms,
                                            DecompressionStreamAlgorithms)
 
-  explicit ZLibDecompressionStreamAlgorithms(CompressionFormat format) {
+  static Result<already_AddRefed<ZLibDecompressionStreamAlgorithms>, nsresult>
+  Create(CompressionFormat format) {
+    RefPtr<ZLibDecompressionStreamAlgorithms> alg =
+        new ZLibDecompressionStreamAlgorithms();
+    MOZ_TRY(alg->Init(format));
+    return alg.forget();
+  }
+
+ private:
+  ZLibDecompressionStreamAlgorithms() = default;
+
+  [[nodiscard]] nsresult Init(CompressionFormat format) {
     int8_t err = inflateInit2(&mZStream, ZLibWindowBits(format));
     if (err == Z_MEM_ERROR) {
-      MOZ_CRASH("Out of memory");
+      return NS_ERROR_OUT_OF_MEMORY;
     }
     MOZ_ASSERT(err == Z_OK);
+    return NS_OK;
   }
 
  private:
@@ -189,10 +201,6 @@ class ZLibDecompressionStreamAlgorithms : public DecompressionStreamAlgorithms {
           
           
           
-          if (mZStream.avail_in > 0) {
-            aRv.ThrowTypeError("Unexpected input after the end of stream");
-            return;
-          }
           mObservedStreamEnd = true;
           break;
         case Z_OK:
@@ -243,15 +251,6 @@ class ZLibDecompressionStreamAlgorithms : public DecompressionStreamAlgorithms {
     
     
 
-    if (aFlush == Flush::Yes && !mObservedStreamEnd) {
-      
-      
-      
-      
-      aRv.ThrowTypeError("The input is ended without reaching the stream end");
-      return;
-    }
-
     
     for (const auto& view : array) {
       JS::Rooted<JS::Value> value(aCx, JS::ObjectValue(*view));
@@ -259,6 +258,22 @@ class ZLibDecompressionStreamAlgorithms : public DecompressionStreamAlgorithms {
       if (aRv.Failed()) {
         return;
       }
+    }
+
+    
+    
+    if (mObservedStreamEnd && mZStream.avail_in > 0) {
+      aRv.ThrowTypeError("Unexpected input after the end of stream");
+      return;
+    }
+
+    
+    
+    
+    
+    if (aFlush == Flush::Yes && !mObservedStreamEnd) {
+      aRv.ThrowTypeError("The input is ended without reaching the stream end");
+      return;
     }
   }
 
@@ -285,19 +300,31 @@ class ZstdDecompressionStreamAlgorithms : public DecompressionStreamAlgorithms {
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ZstdDecompressionStreamAlgorithms,
                                            DecompressionStreamAlgorithms)
 
-  ZstdDecompressionStreamAlgorithms() {
+  static Result<already_AddRefed<ZstdDecompressionStreamAlgorithms>, nsresult>
+  Create() {
+    RefPtr<ZstdDecompressionStreamAlgorithms> alg =
+        new ZstdDecompressionStreamAlgorithms();
+    MOZ_TRY(alg->Init());
+    return alg.forget();
+  }
+
+ private:
+  ZstdDecompressionStreamAlgorithms() = default;
+
+  [[nodiscard]] nsresult Init() {
     mDStream = ZSTD_createDStream();
     if (!mDStream) {
-      NS_ABORT_OOM(0);
+      return NS_ERROR_OUT_OF_MEMORY;
     }
 
     
     
     static const uint8_t WINDOW_LOG_MAX = 23;
     ZSTD_DCtx_setParameter(mDStream, ZSTD_d_windowLogMax, WINDOW_LOG_MAX);
+
+    return NS_OK;
   }
 
- private:
   
   
   
@@ -321,7 +348,7 @@ class ZstdDecompressionStreamAlgorithms : public DecompressionStreamAlgorithms {
 
     JS::RootedVector<JSObject*> array(aCx);
 
-    while (inBuffer.pos < inBuffer.size) {
+    while (inBuffer.pos < inBuffer.size && !mObservedStreamEnd) {
       UniquePtr<uint8_t[], JS::FreePolicy> buffer(
           static_cast<uint8_t*>(JS_malloc(aCx, kBufferSize)));
       if (!buffer) {
@@ -342,10 +369,6 @@ class ZstdDecompressionStreamAlgorithms : public DecompressionStreamAlgorithms {
 
       if (rv == 0) {
         mObservedStreamEnd = true;
-        if (inBuffer.pos < inBuffer.size) {
-          aRv.ThrowTypeError("Unexpected input after the end of stream");
-          return;
-        }
       }
 
       
@@ -367,15 +390,6 @@ class ZstdDecompressionStreamAlgorithms : public DecompressionStreamAlgorithms {
       }
     }
 
-    if (aFlush == Flush::Yes && !mObservedStreamEnd) {
-      
-      
-      
-      
-      aRv.ThrowTypeError("The input is ended without reaching the stream end");
-      return;
-    }
-
     
     for (const auto& view : array) {
       JS::Rooted<JS::Value> value(aCx, JS::ObjectValue(*view));
@@ -383,6 +397,22 @@ class ZstdDecompressionStreamAlgorithms : public DecompressionStreamAlgorithms {
       if (aRv.Failed()) {
         return;
       }
+    }
+
+    
+    
+    if (mObservedStreamEnd && inBuffer.pos < inBuffer.size) {
+      aRv.ThrowTypeError("Unexpected input after the end of stream");
+      return;
+    }
+
+    
+    
+    
+    
+    if (aFlush == Flush::Yes && !mObservedStreamEnd) {
+      aRv.ThrowTypeError("The input is ended without reaching the stream end");
+      return;
     }
   }
 
@@ -410,16 +440,16 @@ NS_INTERFACE_MAP_END_INHERITING(DecompressionStreamAlgorithms)
 
 
 
-static already_AddRefed<DecompressionStreamAlgorithms>
+static Result<already_AddRefed<DecompressionStreamAlgorithms>, nsresult>
 CreateDecompressionStreamAlgorithms(CompressionFormat aFormat) {
   if (aFormat == CompressionFormat::Zstd) {
     RefPtr<DecompressionStreamAlgorithms> zstdAlgos =
-        new ZstdDecompressionStreamAlgorithms();
+        MOZ_TRY(ZstdDecompressionStreamAlgorithms::Create());
     return zstdAlgos.forget();
   }
 
   RefPtr<DecompressionStreamAlgorithms> zlibAlgos =
-      new ZLibDecompressionStreamAlgorithms(aFormat);
+      MOZ_TRY(ZLibDecompressionStreamAlgorithms::Create(aFormat));
   return zlibAlgos.forget();
 }
 
@@ -464,11 +494,17 @@ already_AddRefed<DecompressionStream> DecompressionStream::Constructor(
 
   
   
-  RefPtr<DecompressionStreamAlgorithms> algorithms =
-      CreateDecompressionStreamAlgorithms(aFormat);
 
+  Result<already_AddRefed<DecompressionStreamAlgorithms>, nsresult> algorithms =
+      CreateDecompressionStreamAlgorithms(aFormat);
+  if (algorithms.isErr()) {
+    aRv.ThrowUnknownError("Not enough memory");
+    return nullptr;
+  }
+
+  RefPtr<DecompressionStreamAlgorithms> alg = algorithms.unwrap();
   RefPtr<TransformStream> stream =
-      TransformStream::CreateGeneric(aGlobal, *algorithms, aRv);
+      TransformStream::CreateGeneric(aGlobal, *alg, aRv);
   if (aRv.Failed()) {
     return nullptr;
   }
