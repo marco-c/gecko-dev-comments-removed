@@ -833,9 +833,23 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
       return;
     }
 
-    const { bindingElement: node, pseudo } = getBindingElementAndPseudo(
-      this.currentNode
-    );
+    
+    
+    
+    let node = this.currentNode,
+      pseudo = "";
+    while (true) {
+      const res = getBindingElementAndPseudo(node);
+
+      
+      
+      if (res.bindingElement === node) {
+        break;
+      }
+
+      node = res.bindingElement;
+      pseudo = res.pseudo + pseudo;
+    }
 
     
     const displayName = getNodeDisplayName(node);
