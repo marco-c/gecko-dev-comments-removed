@@ -24,8 +24,8 @@
 #  include <atomic>
 #endif  
 
-#include <stddef.h>  
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
 #include <type_traits>
 
 #if defined(__i386) || defined(_M_IX86) || defined(__x86_64__) || \
