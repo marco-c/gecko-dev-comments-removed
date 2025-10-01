@@ -121,6 +121,10 @@ impl Epoch {
 #[derive(Deserialize, Serialize)]
 pub struct IdNamespace(pub u32);
 
+impl IdNamespace {
+    pub const DEBUGGER: IdNamespace = IdNamespace(!0);
+}
+
 
 
 
