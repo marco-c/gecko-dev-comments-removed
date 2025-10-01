@@ -898,12 +898,10 @@ void nsCocoaWindow::CreateCompositor(int aWidth, int aHeight) {
   
   
 
-  
-  
-  auto* platform = gfxPlatform::GetPlatform();
   auto* pm = mozilla::gfx::GPUProcessManager::Get();
-  MOZ_ASSERT(
-      pm, "Getting the gfxPlatform should have created the GPUProcessManager.");
+  if (!pm) {
+    return;
+  }
 
   
   
