@@ -108,8 +108,7 @@ using namespace mozilla::gfx;
 namespace mozilla {
 
 bool TextAutospace::Enabled(const StyleTextAutospace& aStyleTextAutospace,
-                            const nsIFrame* aFrame,
-                            const CharacterDataBuffer& aBuffer) {
+                            const nsIFrame* aFrame) {
   if (aStyleTextAutospace == StyleTextAutospace::NO_AUTOSPACE) {
     return false;
   }
@@ -130,11 +129,6 @@ bool TextAutospace::Enabled(const StyleTextAutospace& aStyleTextAutospace,
     
     
     
-    
-    return false;
-  }
-
-  if (!aBuffer.Is2b()) {
     
     return false;
   }
@@ -1970,8 +1964,7 @@ gfx::ShapedTextFlags nsTextFrame::GetSpacingFlags() const {
   
   bool nonStandardSpacing =
       !ls.IsDefinitelyZero() || !ws.IsDefinitelyZero() ||
-      TextAutospace::Enabled(styleText->EffectiveTextAutospace(), this,
-                             CharacterDataBuffer());
+      TextAutospace::Enabled(styleText->EffectiveTextAutospace(), this);
   return nonStandardSpacing ? gfx::ShapedTextFlags::TEXT_ENABLE_SPACING
                             : gfx::ShapedTextFlags();
 }
@@ -4302,8 +4295,7 @@ void nsTextFrame::PropertyProvider::InitFontGroupAndFontMetrics() const {
 
 void nsTextFrame::PropertyProvider::InitTextAutospace() {
   const auto styleTextAutospace = mTextStyle->EffectiveTextAutospace();
-  if (TextAutospace::Enabled(styleTextAutospace, mFrame,
-                             mCharacterDataBuffer)) {
+  if (TextAutospace::Enabled(styleTextAutospace, mFrame)) {
     mTextAutospace.emplace(styleTextAutospace,
                            GetFontMetrics()->InterScriptSpacingWidth());
   }

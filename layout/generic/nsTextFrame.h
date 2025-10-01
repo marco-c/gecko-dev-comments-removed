@@ -57,8 +57,7 @@ class MOZ_STACK_CLASS TextAutospace final {
 
   
   static bool Enabled(const StyleTextAutospace& aStyleTextAutospace,
-                      const nsIFrame* aFrame,
-                      const dom::CharacterDataBuffer& aBuffer);
+                      const nsIFrame* aFrame);
 
   TextAutospace(const StyleTextAutospace& aStyleTextAutospace,
                 nscoord aSpacing);
