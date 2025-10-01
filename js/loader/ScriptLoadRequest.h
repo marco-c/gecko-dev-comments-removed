@@ -29,8 +29,6 @@
 #include "ScriptKind.h"
 #include "ScriptFetchOptions.h"
 
-class nsICacheInfoChannel;
-
 namespace mozilla::dom {
 
 class ScriptLoadContext;
@@ -259,13 +257,6 @@ class ScriptLoadRequest : public nsISupports,
 
   mozilla::CORSMode CORSMode() const { return mFetchOptions->mCORSMode; }
 
-  
-  
-  bool HasDiskCacheReference() const { return !!mCacheInfo; }
-
-  
-  void DropDiskCacheReference();
-
   bool HasLoadContext() const { return mLoadContext; }
   bool HasScriptLoadContext() const;
   bool HasWorkerLoadContext() const;
@@ -370,10 +361,6 @@ class ScriptLoadRequest : public nsISupports,
   
   
   JS::Heap<JSScript*> mScriptForCache;
-
-  
-  
-  nsCOMPtr<nsICacheInfoChannel> mCacheInfo;
 
   
   

@@ -269,6 +269,13 @@ class LoadedScript : public nsIMemoryReporter {
     mStencil = aStencil;
   }
 
+  
+  
+  bool HasDiskCacheReference() const { return !!mCacheInfo; }
+
+  
+  void DropDiskCacheReference() { mCacheInfo = nullptr; }
+
  public:
   
 
@@ -315,6 +322,10 @@ class LoadedScript : public nsIMemoryReporter {
   
   RefPtr<Stencil> mStencil;
 
+  
+  
+  
+  
   
   nsCOMPtr<nsICacheInfoChannel> mCacheInfo;
 
