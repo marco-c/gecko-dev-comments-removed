@@ -1517,10 +1517,9 @@ HttpBaseChannel::DoApplyContentConversions(nsIStreamListener* aNextListener,
   
   
 
-  nsAutoCString newEncoding;
   char* cePtr = contentEncoding.BeginWriting();
   uint32_t count = 0;
-  bool removed_encoding = false;
+  bool removeEncodings = false;
   while (char* val = nsCRT::strtok(cePtr, HTTP_LWS ",", &cePtr)) {
     if (++count > 16) {
       
@@ -1561,15 +1560,17 @@ HttpBaseChannel::DoApplyContentConversions(nsIStreamListener* aNextListener,
         glean::http::content_encoding.AccumulateSingleSample(mode);
       }
       if (from.EqualsLiteral("dcb") || from.EqualsLiteral("dcz")) {
-        removed_encoding = true;
+        MOZ_ASSERT(XRE_IsParentProcess());
+        removeEncodings = true;
       }
       nextListener = converter;
     } else {
-      if (val) LOG(("Unknown content encoding '%s', ignoring\n", val));
+      if (val) {
+        LOG(("Unknown content encoding '%s'\n", val));
+      }
       
       
       
-      newEncoding += val;
     }
   }
 
@@ -1579,12 +1580,14 @@ HttpBaseChannel::DoApplyContentConversions(nsIStreamListener* aNextListener,
   
   
   
-  if (removed_encoding) {
-    LOG(("Changing Content-Encoding from %s to %s", contentEncoding.get(),
-         newEncoding.get()));
+  
+  if (removeEncodings) {
     
-    rv =
-        mResponseHead->SetHeaderOverride(nsHttp::Content_Encoding, newEncoding);
+    
+    
+    LOG(("Changing Content-Encoding from '%s' to ''", contentEncoding.get()));
+    
+    rv = mResponseHead->SetHeaderOverride(nsHttp::Content_Encoding, ""_ns);
   }
   *aNewNextListener = do_AddRef(nextListener).take();
   return NS_OK;
