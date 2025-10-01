@@ -8,19 +8,20 @@
 
 
 
-#include <stddef.h>
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
 
-#include <string>
-
-#include "system_wrappers/include/field_trial.h"
+#include "absl/strings/string_view.h"
+#include "api/field_trials.h"
 
 namespace webrtc {
 
 void FuzzOneInput(const uint8_t* data, size_t size) {
-  std::string field_trial(reinterpret_cast<const char*>(data), size);
-  field_trial::InitFieldTrialsFromString(field_trial.c_str());
-  field_trial::FindFullName(field_trial);
+  
+  
+  
+  FieldTrials::Create(
+      absl::string_view(reinterpret_cast<const char*>(data), size));
 }
 
 }  
