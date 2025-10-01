@@ -15,20 +15,13 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-SimpleTest.requestCompleteLog();
-
-add_setup(async function setup() {
+add_task(async function () {
   
   const xdgConfigHome = Services.env.get("XDG_CONFIG_HOME");
   Assert.greater(xdgConfigHome.length, 1, "XDG_CONFIG_HOME is defined");
 
   
   sanityChecks();
-});
-
-add_task(async function () {
-  
-  add_task(testFileAccessAllPlatforms); 
 
   
   

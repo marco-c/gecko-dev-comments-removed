@@ -440,33 +440,34 @@ async function testFileAccessLinuxOnly() {
   let configDir = GetHomeSubdir(".config");
 
   const xdgConfigHome = Services.env.get("XDG_CONFIG_HOME");
-  if (xdgConfigHome) {
+
+  if (xdgConfigHome.length > 1) {
     configDir = GetDir(xdgConfigHome);
     configDir.normalize();
+
+    tests.push({
+      desc: `$XDG_CONFIG_HOME (${configDir.path})`,
+      ok: true,
+      browser: webBrowser,
+      file: configDir,
+      minLevel: minHomeReadSandboxLevel(),
+      func: readDir,
+    });
   }
 
+  
   tests.push({
-    desc: `$XDG_CONFIG_HOME (${configDir.path})`,
-    ok: true, 
+    desc: `${configDir.path} dir`,
+    ok: true,
     browser: webBrowser,
     file: configDir,
     minLevel: minHomeReadSandboxLevel(),
     func: readDir,
   });
-
-  tests.push({
-    desc: `XDG_CONFIG_HOME=${configDir.path} dir should have rdonly`,
-    ok: true, 
-    browser: webBrowser,
-    file: configDir,
-    minLevel: minHomeReadSandboxLevel(),
-    func: readDir,
-  });
-
   if (fileContentProcessEnabled) {
     tests.push({
       desc: `${configDir.path} dir`,
-      ok: true, 
+      ok: true,
       browser: fileBrowser,
       file: configDir,
       minLevel: 0,
@@ -474,10 +475,11 @@ async function testFileAccessLinuxOnly() {
     });
   }
 
-  if (isXdgEnabled() && xdgConfigHome) {
+  if (xdgConfigHome.length > 1) {
+    
     const homeConfigDir = GetHomeSubdir(".config");
     tests.push({
-      desc: `XDG_CONFIG_HOME=${homeConfigDir.path} dir should deny $HOME/.config`,
+      desc: `${homeConfigDir.path} dir`,
       ok: false,
       browser: webBrowser,
       file: homeConfigDir,
@@ -501,7 +503,7 @@ async function testFileAccessLinuxOnly() {
     
     const homeConfigPrefix = GetHomeSubdir(".configlol");
     tests.push({
-      desc: `No XDG_CONFIG_HOME we dont allow ${homeConfigPrefix.path} access`,
+      desc: `${homeConfigPrefix.path} dir`,
       ok: false,
       browser: webBrowser,
       file: homeConfigPrefix,
@@ -510,7 +512,7 @@ async function testFileAccessLinuxOnly() {
     });
     if (fileContentProcessEnabled) {
       tests.push({
-        desc: `No XDG_CONFIG_HOME we dont allow ${homeConfigPrefix.path} access`,
+        desc: `${homeConfigPrefix.path} dir`,
         ok: false,
         browser: fileBrowser,
         file: homeConfigPrefix,
@@ -637,7 +639,7 @@ async function testFileAccessLinuxOnly() {
   });
 
   
-  if (isXdgEnabled()) {
+  if (xdgConfigHome.length > 1) {
     tests.push({
       desc: `$XDG_CONFIG_HOME (${configDir.path}) cleanup`,
       ok: true,

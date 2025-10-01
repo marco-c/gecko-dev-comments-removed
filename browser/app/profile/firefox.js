@@ -3514,10 +3514,3 @@ pref("toolkit.rust-components.logging.internal-level", "Warn");
 
 
 pref("browser.settings-redesign.enabled", false);
-
-
-
-
-#if defined(MOZ_WIDGET_GTK)
-pref("widget.support-xdg-config", true, locked);
-#endif
