@@ -331,7 +331,10 @@ class RtpSendChannelHelper : public Base, public MediaChannelUtil {
   RtpParameters GetRtpSendParameters(uint32_t ssrc) const override {
     auto parameters_iterator = rtp_send_parameters_.find(ssrc);
     if (parameters_iterator != rtp_send_parameters_.end()) {
-      return parameters_iterator->second;
+      
+      auto parameters = parameters_iterator->second;
+      parameters.header_extensions = send_extensions_;
+      return parameters;
     }
     return RtpParameters();
   }
