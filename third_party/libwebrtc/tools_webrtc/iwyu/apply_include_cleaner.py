@@ -72,6 +72,7 @@ _IGNORED_HEADERS = [
     ".pb.h",  
     "pipewire/.*.h",  
     "spa/.*.h",  
+    "openssl/.*.h",  
 ]
 
 def _parse_args() -> argparse.Namespace:
