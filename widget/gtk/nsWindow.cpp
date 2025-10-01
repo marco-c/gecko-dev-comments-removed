@@ -3322,10 +3322,12 @@ void nsWindow::RecomputeBounds(MayChangeCsdMargin aMayChangeCsdMargin) {
       IsTopLevelWidget() && mSizeMode != nsSizeMode_Fullscreen && !mUndecorated;
   const auto toplevelBounds = GetBounds(toplevel);
 
+  mBounds = frameBounds;
   
   
   
-  mBounds = frameBounds.Union(toplevelBounds);
+  mBounds.width = std::max(mBounds.width, toplevelBounds.width);
+  mBounds.height = std::max(mBounds.height, toplevelBounds.height);
 
   
   
