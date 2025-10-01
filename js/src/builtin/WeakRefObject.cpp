@@ -56,7 +56,9 @@ bool WeakRefObject::construct(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   RootedValue target(cx, args[0]);
+  bool isPermanent = false;
   if (target.isObject()) {
+    
     RootedObject object(cx, CheckedUnwrapDynamic(&target.toObject(), cx));
     if (!object) {
       ReportAccessDenied(cx);
@@ -69,21 +71,28 @@ bool WeakRefObject::construct(JSContext* cx, unsigned argc, Value* vp) {
     if (!preserveDOMWrapper(cx, object)) {
       return false;
     }
+  } else {
+    JS::Symbol* symbol = target.toSymbol();
+    isPermanent = symbol->isPermanentAndMayBeShared();
   }
 
   
-  if (!target.toGCThing()->zone()->addToKeptObjects(target)) {
-    ReportOutOfMemory(cx);
-    return false;
-  };
+  
+  if (!isPermanent) {
+    
+    if (!target.toGCThing()->zone()->addToKeptObjects(target)) {
+      ReportOutOfMemory(cx);
+      return false;
+    };
 
-  
-  
-  gc::GCRuntime* gc = &cx->runtime()->gc;
-  if (!gc->registerWeakRef(cx, target, weakRef)) {
-    ReportOutOfMemory(cx);
-    return false;
-  };
+    
+    
+    gc::GCRuntime* gc = &cx->runtime()->gc;
+    if (!gc->registerWeakRef(cx, target, weakRef)) {
+      ReportOutOfMemory(cx);
+      return false;
+    }
+  }
 
   
   weakRef->setReservedSlotGCThingAsPrivate(TargetSlot, target.toGCThing());
@@ -226,7 +235,10 @@ bool WeakRefObject::deref(JSContext* cx, unsigned argc, Value* vp) {
     return true;
   }
 
-  if (!target.toGCThing()->zone()->addToKeptObjects(target)) {
+  bool isPermanent =
+      target.isSymbol() && target.toSymbol()->isPermanentAndMayBeShared();
+  if (!isPermanent && !target.toGCThing()->zone()->addToKeptObjects(target)) {
+    ReportOutOfMemory(cx);
     return false;
   }
 
