@@ -483,6 +483,14 @@ struct RTC_EXPORT RtpEncodingParameters {
   
   
   
+  std::optional<std::vector<uint32_t>> csrcs;
+
+  
+  
+  
+  
+  
+  
   
   
   
@@ -561,7 +569,8 @@ struct RTC_EXPORT RtpEncodingParameters {
   std::optional<RtpCodec> codec;
 
   bool operator==(const RtpEncodingParameters& o) const {
-    return ssrc == o.ssrc && bitrate_priority == o.bitrate_priority &&
+    return ssrc == o.ssrc && csrcs == o.csrcs &&
+           bitrate_priority == o.bitrate_priority &&
            network_priority == o.network_priority &&
            max_bitrate_bps == o.max_bitrate_bps &&
            min_bitrate_bps == o.min_bitrate_bps &&
