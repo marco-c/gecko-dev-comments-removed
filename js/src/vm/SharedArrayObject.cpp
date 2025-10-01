@@ -333,16 +333,7 @@ bool SharedArrayBufferObject::maxByteLengthGetterImpl(JSContext* cx,
 
   
   
-  if (buffer->isWasm()) {
-    auto* wasmBuffer = buffer->rawWasmBufferObject();
-
-    args.rval().setNumber(
-        double(wasmBuffer->wasmSourceMaxPages().value() * wasm::PageSize));
-    return true;
-  }
-  
-  
-  if (buffer->isWasm()) {
+  if (buffer->isWasm() && buffer->isResizable()) {
     Pages sourceMaxPages = buffer->rawWasmBufferObject()->wasmSourceMaxPages();
     uint64_t sourceMaxBytes = sourceMaxPages.byteLength64();
 

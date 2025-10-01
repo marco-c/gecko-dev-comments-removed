@@ -548,9 +548,9 @@ bool ArrayBufferObject::maxByteLengthGetterImpl(JSContext* cx,
 
   
   
-  if (buffer->isWasm()) {
-    mozilla::Maybe<Pages> sourceMaxPages = buffer->wasmSourceMaxPages();
-    uint64_t sourceMaxBytes = sourceMaxPages->byteLength64();
+  if (buffer->isWasm() && buffer->isResizable()) {
+    Pages sourceMaxPages = buffer->wasmSourceMaxPages().value();
+    uint64_t sourceMaxBytes = sourceMaxPages.byteLength64();
 
     MOZ_ASSERT(sourceMaxBytes <=
                wasm::PageSize * wasm::MaxMemory64PagesValidation);
