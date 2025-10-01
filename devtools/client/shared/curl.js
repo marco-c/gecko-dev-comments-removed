@@ -476,8 +476,13 @@ const CurlUtils = {
 
         
         
+        .replace(/\r\n?/g, "\n")
+
         
-        .replace(/\r?\n|\r/g, "^\n\n") +
+        
+        
+        
+        .replace(/\n/g, '"^\r\n\r\n"') +
       encapsChars
     );
   },
