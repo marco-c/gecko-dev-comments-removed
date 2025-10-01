@@ -129,9 +129,6 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
   void SetIceParameters(const IceParameters& ice_params) override;
   void SetRemoteIceParameters(const IceParameters& ice_params) override;
   void SetRemoteIceMode(IceMode mode) override;
-  
-  
-  void Connect() {}
   void MaybeStartGathering() override;
   IceGatheringState gathering_state() const override;
   void ResolveHostnameCandidate(const Candidate& candidate);
