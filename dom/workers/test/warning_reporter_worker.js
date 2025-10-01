@@ -1,0 +1,11 @@
+let caught = false;
+try {
+  
+  
+  
+  new Function("return 0; 1;}");
+} catch (e) {
+  caught = true;
+}
+
+postMessage({ type: "finish", caught });
