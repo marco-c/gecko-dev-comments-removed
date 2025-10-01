@@ -6,6 +6,7 @@ Transform the partner repack task into an actual task description.
 """
 
 from taskgraph.transforms.base import TransformSequence
+from taskgraph.util.dependencies import get_dependencies
 from taskgraph.util.schema import resolve_keyed_by
 
 from gecko_taskgraph.util.attributes import release_level
@@ -127,10 +128,37 @@ def add_command_arguments(config, tasks):
         
         
         task["worker"]["env"]["UPSTREAM_TASKIDS"] = {
-            "task-reference": " ".join([f"<{dep}>" for dep in task["dependencies"]])
+            
+            "task-reference": " ".join(
+                [f"<{dep}>" for dep in task["dependencies"] if "signing" in dep]
+            )
         }
 
         
         task["worker"]["env"]["RELEASE_TYPE"] = config.params["release_type"]
 
+        yield task
+
+
+@transforms.add
+def add_macos_signing_artifacts(config, tasks):
+    for task in tasks:
+        if "macosx" not in task["name"]:
+            yield task
+            continue
+        build_dep = None
+        for dep_task in get_dependencies(config, task):
+            if dep_task.kind == "build":
+                build_dep = dep_task
+                break
+        assert build_dep, f"repackage job {task['name']} has no build dependency"
+        for path, artifact in build_dep.task["payload"]["artifacts"].items():
+            if path.startswith("public/build/security/"):
+                task["worker"].setdefault("artifacts", []).append(
+                    {
+                        "name": path,
+                        "path": artifact["path"],
+                        "type": "file",
+                    }
+                )
         yield task
