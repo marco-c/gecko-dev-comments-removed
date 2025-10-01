@@ -34,6 +34,16 @@ NS_IMPL_CYCLE_COLLECTION(WorkletScriptLoader)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(WorkletScriptLoader)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(WorkletScriptLoader)
 
+nsresult WorkletScriptLoader::FillCompileOptionsForRequest(
+    JSContext* cx, ScriptLoadRequest* aRequest, JS::CompileOptions* aOptions,
+    JS::MutableHandle<JSScript*> aIntroductionScript) {
+  aOptions->setIntroductionType("Worklet");
+  aOptions->setFileAndLine(aRequest->mURL.get(), 1);
+  aOptions->setIsRunOnce(true);
+  aOptions->setNoScriptRval(true);
+  return NS_OK;
+}
+
 
 
 
@@ -103,6 +113,8 @@ nsresult WorkletModuleLoader::CompileFetchedModule(
       return CompileJavaScriptModule(aCx, aOptions, aRequest, aModuleScript);
     case JS::ModuleType::JSON:
       return CompileJsonModule(aCx, aOptions, aRequest, aModuleScript);
+    case JS::ModuleType::CSS:
+      MOZ_CRASH("CSS modules are not supported in worklets");
   }
 
   MOZ_CRASH("Unhandled module type");
@@ -239,7 +251,7 @@ AddModuleThrowErrorRunnable::Run() {
 }
 
 void WorkletModuleLoader::OnModuleLoadComplete(ModuleLoadRequest* aRequest) {
-  if (!aRequest->IsTopLevel()) {
+  if (aRequest->IsStaticImport()) {
     return;
   }
 

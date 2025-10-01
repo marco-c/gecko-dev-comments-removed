@@ -17,7 +17,6 @@
 #include "js/ContextOptions.h"        
 #include "js/ErrorReport.h"           
 #include "js/friend/ErrorMessages.h"  
-#include "js/friend/StackLimits.h"    
 #include "js/Modules.h"  
 #include "js/PropertyAndElement.h"  
 #include "js/SourceText.h"
@@ -99,10 +98,6 @@ void ModuleLoaderBase::EnsureModuleHooksInitialized() {
   SetModuleMetadataHook(rt, HostPopulateImportMeta);
   SetScriptPrivateReferenceHooks(rt, HostAddRefTopLevelScript,
                                  HostReleaseTopLevelScript);
-}
-
-static bool ModuleTypeAllowed(ModuleType aModuleType) {
-  return aModuleType != ModuleType::Unknown;
 }
 
 static bool CreateBadModuleTypeError(JSContext* aCx, LoadedScript* aScript,
@@ -219,7 +214,7 @@ bool ModuleLoaderBase::HostLoadImportedModule(JSContext* aCx,
     MOZ_ASSERT(uri, "Failed to resolve module specifier");
 
     ModuleType moduleType = GetModuleRequestType(aCx, aModuleRequest);
-    if (!ModuleTypeAllowed(moduleType)) {
+    if (!loader->IsModuleTypeAllowed(moduleType)) {
       LOG(("ModuleLoaderBase::HostLoadImportedModule uri %s, bad module type",
            uri->GetSpecOrDefault().get()));
       Rooted<Value> error(aCx);
@@ -793,7 +788,7 @@ nsresult ModuleLoaderBase::OnFetchComplete(ModuleLoadRequest* aRequest,
 }
 
 void ModuleLoaderBase::OnFetchSucceeded(ModuleLoadRequest* aRequest) {
-  if (aRequest->IsTopLevel()) {
+  if (aRequest->IsTopLevel() || aRequest->IsDynamicImport()) {
     StartFetchingModuleDependencies(aRequest);
   } else {
     MOZ_ASSERT(!aRequest->IsDynamicImport());
@@ -1154,7 +1149,7 @@ void ModuleLoaderBase::StartFetchingModuleDependencies(
   ModuleScript* moduleScript = aRequest->mModuleScript;
   MOZ_ASSERT(moduleScript->ModuleRecord());
   MOZ_ASSERT(aRequest->IsFetching() || aRequest->IsCompiling());
-  MOZ_ASSERT(aRequest->IsTopLevel());
+  MOZ_ASSERT(aRequest->IsTopLevel() || aRequest->IsDynamicImport());
 
   AutoJSAPI jsapi;
   if (NS_WARN_IF(!jsapi.Init(mGlobalObject))) {
