@@ -351,6 +351,39 @@ bool IsAcceptableAnchorElement(
 
 }  
 
+AnchorPosReferenceData::Result AnchorPosReferenceData::InsertOrModify(
+    const nsAtom* aAnchorName, bool aNeedOffset) {
+  bool exists = true;
+  auto* result = &mMap.LookupOrInsertWith(aAnchorName, [&exists]() {
+    exists = false;
+    return Nothing{};
+  });
+
+  if (!exists) {
+    return {false, result};
+  }
+
+  
+  if (result->isNothing()) {
+    
+    return {true, result};
+  }
+  
+  if (!aNeedOffset) {
+    
+    return {true, result};
+  }
+
+  
+  
+  return {result->ref().mOrigin.isSome(), result};
+}
+
+const AnchorPosReferenceData::Value* AnchorPosReferenceData::Lookup(
+    const nsAtom* aAnchorName) const {
+  return mMap.Lookup(aAnchorName).DataPtrOrNull();
+}
+
 nsIFrame* AnchorPositioningUtils::FindFirstAcceptableAnchor(
     const nsAtom* aName, const nsIFrame* aPositionedFrame,
     const nsTArray<nsIFrame*>& aPossibleAnchorFrames) {
