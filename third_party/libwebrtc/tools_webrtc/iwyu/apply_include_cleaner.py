@@ -220,6 +220,8 @@ def main() -> None:
 
     
     cmd = [str(_CLEANER_BINARY_PATH), "-p", str(args.work_dir)]
+    
+    cmd.append("--ignore-headers=.pb.h")
     for extra_arg in _EXTRA_ARGS:
         cmd.append(f"--extra-arg={extra_arg}")
     if args.print or args.check_for_changes:
