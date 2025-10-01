@@ -2,7 +2,7 @@
 
 
 
-use crate::DebugFlags;
+use crate::{DebugFlags, PictureRect, DeviceRect};
 
 
 
@@ -41,4 +41,18 @@ pub enum DebuggerMessage {
     SetDebugFlags(SetDebugFlagsMessage),
     InitProfileCounters(InitProfileCountersMessage),
     UpdateProfileCounters(UpdateProfileCountersMessage),
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct CompositorDebugTile {
+    pub local_rect: PictureRect,
+    pub device_rect: DeviceRect,
+    pub clip_rect: DeviceRect,
+    pub z_id: i32,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct CompositorDebugInfo {
+    pub enabled_z_layers: u64,
+    pub tiles: Vec<CompositorDebugTile>,
 }
