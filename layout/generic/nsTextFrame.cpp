@@ -3860,6 +3860,71 @@ static gfxFloat ComputeTabWidthAppUnits(const nsIFrame* aFrame) {
           styleText->mWordSpacing.Resolve(spaceWidth));
 }
 
+
+
+static Maybe<TextAutospace::CharClass> LastNonMarkCharClass(
+    gfxSkipCharsIterator& aIter, const gfxTextRun* aTextRun,
+    const CharacterDataBuffer& aBuffer) {
+  while (aIter.GetOriginalOffset() > 0) {
+    aIter.AdvanceOriginal(-1);
+    FindClusterStart(aTextRun, 0, &aIter);
+    const char32_t ch = aBuffer.ScalarValueAt(aIter.GetOriginalOffset());
+    auto cls = TextAutospace::GetCharClass(ch);
+    if (cls != TextAutospace::CharClass::CombiningMark) {
+      return Some(cls);
+    }
+  }
+  return Nothing();
+}
+
+
+static Maybe<TextAutospace::CharClass> LastNonMarkCharClassInFrame(
+    nsTextFrame* aFrame) {
+  using CharClass = TextAutospace::CharClass;
+  gfxSkipCharsIterator iter = aFrame->EnsureTextRun(nsTextFrame::eInflated);
+  iter.SetOriginalOffset(aFrame->GetContentEnd());
+  Maybe<CharClass> prevClass =
+      LastNonMarkCharClass(iter, aFrame->GetTextRun(nsTextFrame::eInflated),
+                           aFrame->CharacterDataBuffer());
+  if (prevClass) {
+    return prevClass;
+  }
+  if (aFrame->GetPrevInFlow()) {
+    
+    
+    return Some(CharClass::Other);
+  }
+  return Nothing();
+}
+
+
+
+static Maybe<TextAutospace::CharClass> GetPrecedingCharClassFromMappedFlows(
+    const nsTextFrame* aFrame, const gfxTextRun* aTextRun) {
+  using CharClass = TextAutospace::CharClass;
+  TextRunMappedFlow* mappedFlows = GetMappedFlows(aTextRun);
+  auto data = static_cast<TextRunUserData*>(aTextRun->GetUserData());
+  MOZ_ASSERT(mappedFlows && data, "missing mapped-flow data!");
+
+  
+  uint32_t i = 0;
+  for (; i < data->mMappedFlowCount; ++i) {
+    if (mappedFlows[i].mStartFrame == aFrame) {
+      break;
+    }
+  }
+  MOZ_ASSERT(mappedFlows[i].mStartFrame == aFrame,
+             "aFrame not found in mapped flows!");
+
+  while (i > 0) {
+    nsTextFrame* f = mappedFlows[--i].mStartFrame->LastInFlow();
+    if (Maybe<CharClass> prevClass = LastNonMarkCharClassInFrame(f)) {
+      return prevClass;
+    }
+  }
+  return Nothing();
+}
+
 void nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
                                                        Spacing* aSpacing,
                                                        bool aIgnoreTabs) const {
@@ -3920,19 +3985,26 @@ void nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
     if (mTextAutospace) {
       
       
-      if (aRange.start > 0 && start.GetOriginalOffset() > 0) {
-        gfxSkipCharsIterator findPrevCluster = start;
-        do {
-          findPrevCluster.AdvanceOriginal(-1);
-          FindClusterStart(mTextRun, 0, &findPrevCluster);
-          const char32_t prevScalar = mCharacterDataBuffer.ScalarValueAt(
-              findPrevCluster.GetOriginalOffset());
-          prevClass = Some(TextAutospace::GetCharClass(prevScalar));
-        } while (*prevClass == CharClass::CombiningMark &&
-                 findPrevCluster.GetOriginalOffset() > 0);
-      } else {
+      if (aRange.start > 0) {
+        gfxSkipCharsIterator iter = start;
+        prevClass = LastNonMarkCharClass(iter, mTextRun, mCharacterDataBuffer);
+      }
+      
+      
+      if (!prevClass) {
         
         
+        if (mFrame->GetPrevInFlow()) {
+          prevClass = Some(CharClass::Other);
+        } else {
+          
+          
+          
+          if (!(mTextRun->GetFlags2() &
+                nsTextFrameUtils::Flags::IsSimpleFlow)) {
+            prevClass = GetPrecedingCharClassFromMappedFlows(mFrame, mTextRun);
+          }
+        }
       }
     }
     while (run.NextRun()) {
