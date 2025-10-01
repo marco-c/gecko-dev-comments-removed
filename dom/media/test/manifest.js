@@ -513,6 +513,22 @@ var gMKVtests = [
 ];
 
 
+
+if (
+  SpecialPowers.Services.prefs.getBoolPref(
+    "media.hardware-video-decoding.force-enabled",
+    0
+  )
+) {
+  
+  gMKVtests.push({
+    name: "output_hevc.mkv",
+    type: "video/matroska",
+    duration: 1.0,
+  });
+}
+
+
 var gUnsupportedMKVtests = [
   
   {
@@ -535,12 +551,6 @@ var gUnsupportedMKVtests = [
   
   {
     name: "output_av1.mkv",
-    type: "video/matroska",
-    duration: 1.0,
-  },
-  
-  {
-    name: "output_hevc.mkv",
     type: "video/matroska",
     duration: 1.0,
   },
