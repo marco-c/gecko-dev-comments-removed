@@ -1289,6 +1289,10 @@ void nsColumnSetFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                                                    this);
   }
 
+  if (HidesContent()) {
+    return;
+  }
+
   
   for (nsIFrame* f : mFrames) {
     BuildDisplayListForChild(aBuilder, f, aLists);

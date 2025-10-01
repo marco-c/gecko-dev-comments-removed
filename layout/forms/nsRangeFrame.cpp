@@ -135,7 +135,7 @@ void nsRangeFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     DisplayBorderBackgroundOutline(aBuilder, aLists);
     
     if (auto* thumb = mThumbDiv->GetPrimaryFrame();
-        thumb && aBuilder->IsForEventDelivery()) {
+        thumb && aBuilder->IsForEventDelivery() && !HidesContent()) {
       nsDisplayListSet set(aLists, aLists.Content());
       BuildDisplayListForChild(aBuilder, thumb, set, DisplayChildFlag::Inline);
     }

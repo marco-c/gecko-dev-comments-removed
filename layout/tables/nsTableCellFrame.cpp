@@ -1160,6 +1160,9 @@ void nsTableCellFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   
   DisplayOutline(aBuilder, aLists);
+  if (HidesContent()) {
+    return;
+  }
 
   
   

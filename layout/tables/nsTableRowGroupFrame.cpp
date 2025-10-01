@@ -175,10 +175,12 @@ void nsTableRowGroupFrame::InitRepeatedFrame(
 }
 
 
-static void DisplayRows(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
+static void DisplayRows(nsDisplayListBuilder* aBuilder, nsTableRowGroupFrame* aFrame,
                         const nsDisplayListSet& aLists) {
+  if (aFrame->HidesContent()) {
+    return;
+  }
   nscoord overflowAbove;
-  nsTableRowGroupFrame* f = static_cast<nsTableRowGroupFrame*>(aFrame);
   
   
   
@@ -187,9 +189,9 @@ static void DisplayRows(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
   
   
   
-  nsIFrame* kid = aBuilder->ShouldDescendIntoFrame(f, true)
+  nsIFrame* kid = aBuilder->ShouldDescendIntoFrame(aFrame, true)
                       ? nullptr
-                      : f->GetFirstRowContaining(aBuilder->GetVisibleRect().y,
+                      : aFrame->GetFirstRowContaining(aBuilder->GetVisibleRect().y,
                                                  &overflowAbove);
 
   if (kid) {
@@ -199,7 +201,7 @@ static void DisplayRows(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
           aBuilder->GetVisibleRect().YMost()) {
         break;
       }
-      f->BuildDisplayListForChild(aBuilder, kid, aLists);
+      aFrame->BuildDisplayListForChild(aBuilder, kid, aLists);
       kid = kid->GetNextSibling();
     }
     return;
@@ -207,14 +209,14 @@ static void DisplayRows(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
 
   
   
-  nsTableRowGroupFrame::FrameCursorData* cursor = f->SetupRowCursor();
-  kid = f->PrincipalChildList().FirstChild();
+  nsTableRowGroupFrame::FrameCursorData* cursor = aFrame->SetupRowCursor();
+  kid = aFrame->PrincipalChildList().FirstChild();
   while (kid) {
-    f->BuildDisplayListForChild(aBuilder, kid, aLists);
+    aFrame->BuildDisplayListForChild(aBuilder, kid, aLists);
 
     if (cursor) {
       if (!cursor->AppendFrame(kid)) {
-        f->ClearRowCursor();
+        aFrame->ClearRowCursor();
         return;
       }
     }
