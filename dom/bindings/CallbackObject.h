@@ -236,71 +236,70 @@ class CallbackObjectBase {
   
   nsCOMPtr<nsIGlobalObject> mIncumbentGlobal;
   JS::TenuredHeap<JSObject*> mIncumbentJSGlobal;
+};
 
-  class MOZ_STACK_CLASS CallSetup {
-    
-
-
-
+class MOZ_STACK_CLASS CallSetup {
+  
 
 
-   public:
-    
-    
-    
-    
-    
-    
-    
-    CallSetup(CallbackObjectBase* aCallback, ErrorResult& aRv,
-              const char* aExecutionReason,
-              ExceptionHandling aExceptionHandling, JS::Realm* aRealm = nullptr,
-              bool aIsJSImplementedWebIDL = false);
-    MOZ_CAN_RUN_SCRIPT ~CallSetup();
 
-    JSContext* GetContext() const { return mCx; }
 
-    
-    
-    BindingCallContext& GetCallContext() { return *mCallContext; }
 
-   private:
-    
-    CallSetup(const CallSetup&) = delete;
+ public:
+  
+  
+  
+  
+  
+  
+  
+  CallSetup(CallbackObjectBase* aCallback, ErrorResult& aRv,
+            const char* aExecutionReason,
+            CallbackObjectBase::ExceptionHandling aExceptionHandling,
+            JS::Realm* aRealm = nullptr, bool aIsJSImplementedWebIDL = false);
+  MOZ_CAN_RUN_SCRIPT ~CallSetup();
 
-    bool ShouldRethrowException(JS::Handle<JS::Value> aException);
+  JSContext* GetContext() const { return mCx; }
 
-    
-    JSContext* mCx;
+  
+  
+  BindingCallContext& GetCallContext() { return *mCallContext; }
 
-    
-    
-    JS::Realm* mRealm;
+ private:
+  
+  CallSetup(const CallSetup&) = delete;
 
-    
-    Maybe<AutoEntryScript> mAutoEntryScript;
-    Maybe<AutoIncumbentScript> mAutoIncumbentScript;
+  bool ShouldRethrowException(JS::Handle<JS::Value> aException);
 
-    Maybe<JS::Rooted<JSObject*>> mRootedCallable;
+  
+  JSContext* mCx;
 
-    Maybe<JS::AutoSetAsyncStackForNewCalls> mAsyncStackSetter;
+  
+  
+  JS::Realm* mRealm;
 
-    
-    
-    
-    
-    Maybe<JSAutoRealm> mAr;
+  
+  Maybe<AutoEntryScript> mAutoEntryScript;
+  Maybe<AutoIncumbentScript> mAutoIncumbentScript;
 
-    
-    
-    Maybe<BindingCallContext> mCallContext;
+  Maybe<JS::Rooted<JSObject*>> mRootedCallable;
+  Maybe<JS::AutoSetAsyncStackForNewCalls> mAsyncStackSetter;
 
-    
-    
-    ErrorResult& mErrorResult;
-    const ExceptionHandling mExceptionHandling;
-    const bool mIsMainThread;
-  };
+  
+  
+  
+  
+  Maybe<JSAutoRealm> mAr;
+
+  
+  
+  Maybe<BindingCallContext> mCallContext;
+
+  
+  
+  ErrorResult& mErrorResult;
+  const CallbackObjectBase::ExceptionHandling mExceptionHandling;
+  const bool mIsMainThread;
 };
 
 class CallbackObject : public nsISupports,
