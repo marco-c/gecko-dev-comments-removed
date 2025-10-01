@@ -2,9 +2,9 @@
 
 
 
-use api::{ColorF, ColorU, GradientStop, PremultipliedColorF};
+use api::{ColorF, ColorU, ExtendMode, GradientStop, PremultipliedColorF};
 use api::units::{LayoutRect, LayoutSize, LayoutVector2D};
-use crate::renderer::{GpuBufferAddress, GpuBufferBuilderF};
+use crate::renderer::{GpuBufferAddress, GpuBufferBuilderF, GpuBufferWriterF};
 use std::hash;
 
 mod linear;
@@ -16,6 +16,14 @@ pub use linear::MAX_CACHED_SIZE as LINEAR_MAX_CACHED_SIZE;
 pub use linear::*;
 pub use radial::*;
 pub use conic::*;
+
+#[repr(u8)]
+#[derive(Copy, Clone, Debug)]
+pub enum GradientKind {
+    #[allow(unused)] Linear = 0,
+    Radial = 1,
+    Conic = 2,
+}
 
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -60,6 +68,63 @@ fn stops_and_min_alpha(stop_keys: &[GradientStopKey]) -> (Vec<GradientStop>, f32
     }).collect();
 
     (stops, min_alpha)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+fn write_gpu_gradient_stops(
+    stops: &[GradientStop],
+    kind: GradientKind,
+    extend_mode: ExtendMode,
+    writer: &mut GpuBufferWriterF,
+) -> bool {
+    
+    writer.push_one([
+        (kind as u8) as f32,
+        stops.len() as f32,
+        if extend_mode == ExtendMode::Repeat { 1.0 } else { 0.0 },
+        0.0
+    ]);
+
+    
+    for chunk in stops.chunks(4) {
+        let mut block = [0.0; 4];
+        let mut i = 0;
+        for stop in chunk {
+            block[i] = stop.offset;
+            i += 1;
+        }
+        writer.push_one(block);
+    }
+
+    
+    let mut is_opaque = true;
+    for stop in stops {
+        writer.push_one(stop.color.premultiplied());
+        is_opaque &= stop.color.a == 1.0;
+    }
+
+    return is_opaque;
+}
+
+fn gpu_gradient_stops_blocks(num_stops: usize) -> usize {
+    let header = 1;
+    let offsets = f32::ceil((num_stops as f32) / 4.0) as usize;
+    let colors = num_stops;
+
+    header + offsets + colors
 }
 
 impl Eq for GradientStopKey {}
