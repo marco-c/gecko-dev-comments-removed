@@ -545,33 +545,37 @@ nsresult nsHttpChannel::Init(nsIURI* uri, uint32_t caps, nsProxyInfo* proxyInfo,
                              uint64_t channelId, nsILoadInfo* aLoadInfo) {
   nsresult rv = HttpBaseChannel::Init(uri, caps, proxyInfo, proxyResolveFlags,
                                       proxyURI, channelId, aLoadInfo);
-  if (NS_FAILED(rv)) return rv;
-  rv = gHttpHandler->AddAcceptAndDictionaryHeaders(uri, &mRequestHead,
-                                                   IsHTTPS(), mDict);
-  if (NS_FAILED(rv)) return rv;
-  if (mDict) {
-    
-    mDict->InUse();
-    mUsingDictionary = true;
-    mShouldSuspendForDictionary = mDict->Prefetch(
-        GetLoadContextInfo(this), [self = RefPtr<nsHttpChannel>(this)]() {
-          
-          
-          MOZ_ASSERT(self->mDict->DictionaryReady());
-          if (self->mSuspendedForDictionary) {
-            LOG(
-                ("nsHttpChannel::Init [this=%p] Resuming channel suspended for "
-                 "Dictionary",
-                 self.get()));
-            self->mSuspendedForDictionary = false;
-            self->Resume();
-          }
-          return NS_OK;
-        });
-  }
-
   LOG1(("nsHttpChannel::Init [this=%p]\n", this));
 
+  if (NS_FAILED(rv)) return rv;
+  
+  
+  
+  rv = gHttpHandler->AddAcceptAndDictionaryHeaders(
+      uri, &mRequestHead, IsHTTPS(),
+      [self = RefPtr(this)](DictionaryCacheEntry* aDict) {
+        self->mDict = aDict;
+        if (self->mDict) {
+          
+          self->mDict->InUse();
+          self->mUsingDictionary = true;
+          self->mShouldSuspendForDictionary =
+              self->mDict->Prefetch(GetLoadContextInfo(self), [self]() {
+                
+                
+                MOZ_ASSERT(self->mDict->DictionaryReady());
+                if (self->mSuspendedForDictionary) {
+                  LOG(
+                      ("nsHttpChannel::Init [this=%p] Resuming channel "
+                       "suspended for "
+                       "Dictionary",
+                       self.get()));
+                  self->mSuspendedForDictionary = false;
+                  self->Resume();
+                }
+              });
+        }
+      });
   return rv;
 }
 
@@ -1981,15 +1985,6 @@ nsresult nsHttpChannel::SetupChannelForTransaction() {
         MOZ_ASSERT(NS_SUCCEEDED(rv));
       }
     }
-  } else {
-    
-    
-    
-    
-    
-    rv = mHttpHandler->AddAcceptAndDictionaryHeaders(
-        mURI, &mRequestHead, mURI->SchemeIs("https"), mDict);
-    if (NS_FAILED(rv)) return rv;
   }
 
   
