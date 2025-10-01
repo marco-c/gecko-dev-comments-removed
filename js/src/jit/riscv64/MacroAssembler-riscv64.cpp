@@ -1365,7 +1365,7 @@ void MacroAssemblerRiscv64Compat::move32(Imm32 imm, Register dest) {
 }
 
 void MacroAssemblerRiscv64Compat::move32(Register src, Register dest) {
-  slliw(dest, src, 0);
+  SignExtendWord(dest, src);
 }
 
 FaultingCodeOffset MacroAssemblerRiscv64Compat::load8ZeroExtend(
@@ -1631,11 +1631,11 @@ void MacroAssemblerRiscv64Compat::testUndefinedSet(Condition cond,
 
 void MacroAssemblerRiscv64Compat::unboxInt32(const ValueOperand& operand,
                                              Register dest) {
-  slliw(dest, operand.valueReg(), 0);
+  SignExtendWord(dest, operand.valueReg());
 }
 
 void MacroAssemblerRiscv64Compat::unboxInt32(Register src, Register dest) {
-  slliw(dest, src, 0);
+  SignExtendWord(dest, src);
 }
 
 void MacroAssemblerRiscv64Compat::unboxInt32(const Address& src,
@@ -1775,6 +1775,109 @@ void MacroAssemblerRiscv64Compat::boxNonDouble(JSValueType type, Register src,
   boxValue(type, src, dest.valueReg());
 }
 
+void MacroAssemblerRiscv64Compat::boxNonDouble(Register type, Register src,
+                                               const ValueOperand& dest) {
+  MOZ_ASSERT(src != dest.valueReg());
+  boxValue(type, src, dest.valueReg());
+}
+
+void MacroAssemblerRiscv64Compat::boxValue(JSValueType type, Register src,
+                                           Register dest) {
+  MOZ_ASSERT(src != dest);
+
+  switch (type) {
+    case JSVAL_TYPE_INT32:
+    case JSVAL_TYPE_BOOLEAN:
+    case JSVAL_TYPE_MAGIC: {
+      
+      ma_li(dest, ImmShiftedTag(type));
+
+      UseScratchRegisterScope temps(this);
+      Register scratch = temps.Acquire();
+
+      
+      ZeroExtendWord(scratch, src);
+      or_(dest, dest, scratch);
+      return;
+    }
+    case JSVAL_TYPE_STRING:
+    case JSVAL_TYPE_SYMBOL:
+    case JSVAL_TYPE_PRIVATE_GCTHING:
+    case JSVAL_TYPE_BIGINT:
+    case JSVAL_TYPE_OBJECT: {
+#ifdef DEBUG
+      
+      Label done;
+      srli(dest, src, JSVAL_TAG_SHIFT);
+      ma_b(dest, Imm32(0), &done, Assembler::Equal, ShortJump);
+      breakpoint();
+      bind(&done);
+#endif
+
+      
+      ma_li(dest, ImmShiftedTag(type));
+
+      
+      or_(dest, dest, src);
+      return;
+    }
+    case JSVAL_TYPE_DOUBLE:
+    case JSVAL_TYPE_UNDEFINED:
+    case JSVAL_TYPE_NULL:
+    case JSVAL_TYPE_UNKNOWN:
+      break;
+  }
+  MOZ_CRASH("bad value type");
+}
+
+void MacroAssemblerRiscv64Compat::boxValue(Register type, Register src,
+                                           Register dest) {
+  MOZ_ASSERT(src != dest);
+
+#ifdef DEBUG
+  
+  Label check, done;
+  ma_b(type, Imm32(JSVAL_TYPE_INT32), &check, Assembler::Equal, ShortJump);
+  ma_b(type, Imm32(JSVAL_TYPE_BOOLEAN), &check, Assembler::Equal, ShortJump);
+  ma_b(type, Imm32(JSVAL_TYPE_NULL), &check, Assembler::Equal, ShortJump);
+  ma_b(type, Imm32(JSVAL_TYPE_UNDEFINED), &done, Assembler::NotEqual,
+       ShortJump);
+  {
+    bind(&check);
+
+    ScratchRegisterScope scratch(asMasm());
+    SignExtendWord(scratch, src);
+    ma_b(src, scratch, &done, Assembler::Equal, ShortJump);
+    breakpoint();
+  }
+  bind(&done);
+
+  
+  
+  Label ok;
+  ma_b(type, Imm32(JSVAL_TYPE_NULL), &ok, Assembler::BelowOrEqual, ShortJump);
+  breakpoint();
+  bind(&ok);
+#endif
+
+  
+  
+  
+  constexpr int64_t tag =
+      int64_t(uint64_t(JSVAL_TAG_MAX_DOUBLE) << JSVAL_TAG_SHIFT) >>
+      JSVAL_TAG_SHIFT;
+  static_assert(is_int12(tag), "ori requires int12 immediate");
+
+  ori(dest, type, tag);
+  slli(dest, dest, JSVAL_TAG_SHIFT);
+
+  
+  ScratchRegisterScope scratch(asMasm());
+  ZeroExtendWord(scratch, src);
+
+  ma_or(dest, dest, scratch);
+}
+
 void MacroAssemblerRiscv64Compat::loadConstantFloat32(float f,
                                                       FloatRegister dest) {
   ma_lis(dest, f);
@@ -1894,14 +1997,13 @@ void MacroAssemblerRiscv64Compat::storeValue(JSValueType type, Register reg,
   if (type == JSVAL_TYPE_INT32 || type == JSVAL_TYPE_BOOLEAN) {
     store32(reg, dest);
     JSValueShiftedTag tag = (JSValueShiftedTag)JSVAL_TYPE_TO_SHIFTED_TAG(type);
-    store32(((Imm64(tag)).hi()), Address(dest.base, dest.offset + 4));
+    store32(Imm64(tag).hi(), Address(dest.base, dest.offset + 4));
   } else {
-    ScratchRegisterScope SecondScratchReg(asMasm());
-    MOZ_ASSERT(dest.base != SecondScratchReg);
-    ma_li(SecondScratchReg, ImmTag(JSVAL_TYPE_TO_TAG(type)));
-    slli(SecondScratchReg, SecondScratchReg, JSVAL_TAG_SHIFT);
-    InsertBits(SecondScratchReg, reg, 0, JSVAL_TAG_SHIFT);
-    storePtr(SecondScratchReg, Address(dest.base, dest.offset));
+    UseScratchRegisterScope temps(this);
+    Register scratch = temps.Acquire();
+    MOZ_ASSERT(dest.base != scratch);
+    boxValue(type, reg, scratch);
+    storePtr(scratch, Address(dest.base, dest.offset));
   }
 }
 
@@ -1946,19 +2048,56 @@ void MacroAssemblerRiscv64Compat::loadValue(Address src, ValueOperand val) {
 
 void MacroAssemblerRiscv64Compat::tagValue(JSValueType type, Register payload,
                                            ValueOperand dest) {
-  UseScratchRegisterScope temps(this);
-  Register ScratchRegister = temps.Acquire();
-  MOZ_ASSERT(dest.valueReg() != ScratchRegister);
   JitSpew(JitSpew_Codegen, "[ tagValue");
-  if (payload != dest.valueReg()) {
-    mv(dest.valueReg(), payload);
+
+  if (payload == dest.valueReg()) {
+    UseScratchRegisterScope temps(this);
+    Register scratch = temps.Acquire();
+    MOZ_ASSERT(dest.valueReg() != scratch);
+
+    switch (type) {
+      case JSVAL_TYPE_INT32:
+      case JSVAL_TYPE_BOOLEAN:
+      case JSVAL_TYPE_MAGIC: {
+        
+        ma_li(scratch, ImmShiftedTag(type));
+
+        
+        ZeroExtendWord(payload, payload);
+        or_(dest.valueReg(), payload, scratch);
+        break;
+      }
+      case JSVAL_TYPE_STRING:
+      case JSVAL_TYPE_SYMBOL:
+      case JSVAL_TYPE_PRIVATE_GCTHING:
+      case JSVAL_TYPE_BIGINT:
+      case JSVAL_TYPE_OBJECT: {
+#ifdef DEBUG
+        
+        Label done;
+        srli(scratch, payload, JSVAL_TAG_SHIFT);
+        ma_b(scratch, Imm32(0), &done, Assembler::Equal, ShortJump);
+        breakpoint();
+        bind(&done);
+#endif
+
+        
+        ma_li(scratch, ImmShiftedTag(type));
+
+        
+        or_(dest.valueReg(), payload, scratch);
+        break;
+      }
+      case JSVAL_TYPE_DOUBLE:
+      case JSVAL_TYPE_UNDEFINED:
+      case JSVAL_TYPE_NULL:
+      case JSVAL_TYPE_UNKNOWN:
+        MOZ_CRASH("bad value type");
+    }
+  } else {
+    boxNonDouble(type, payload, dest);
   }
-  ma_li(ScratchRegister, ImmTag(JSVAL_TYPE_TO_TAG(type)));
-  InsertBits(dest.valueReg(), ScratchRegister, JSVAL_TAG_SHIFT,
-             64 - JSVAL_TAG_SHIFT);
-  if (type == JSVAL_TYPE_INT32 || type == JSVAL_TYPE_BOOLEAN) {
-    InsertBits(dest.valueReg(), zero, 32, JSVAL_TAG_SHIFT - 32);
-  }
+
   JitSpew(JitSpew_Codegen, "]");
 }
 
@@ -2370,7 +2509,7 @@ static void AtomicExchange(MacroAssembler& masm,
   masm.slliw(offsetTemp, offsetTemp, 3);
   masm.ma_li(maskTemp, Imm32(UINT32_MAX >> ((4 - nbytes) * 8)));
   masm.sllw(maskTemp, maskTemp, offsetTemp);
-  masm.nor(maskTemp, zero, maskTemp);
+  masm.not_(maskTemp, maskTemp);
   switch (nbytes) {
     case 1:
       masm.andi(valueTemp, value, 0xff);
@@ -2575,7 +2714,7 @@ static void AtomicEffectOp(MacroAssembler& masm,
   masm.slliw(offsetTemp, offsetTemp, 3);
   masm.ma_li(maskTemp, Imm32(UINT32_MAX >> ((4 - nbytes) * 8)));
   masm.sllw(maskTemp, maskTemp, offsetTemp);
-  masm.nor(maskTemp, zero, maskTemp);
+  masm.not_(maskTemp, maskTemp);
 
   masm.memoryBarrierBefore(sync);
 
@@ -2706,7 +2845,7 @@ static void AtomicFetchOp(MacroAssembler& masm,
   masm.slliw(offsetTemp, offsetTemp, 3);
   masm.ma_li(maskTemp, Imm32(UINT32_MAX >> ((4 - nbytes) * 8)));
   masm.sllw(maskTemp, maskTemp, offsetTemp);
-  masm.nor(maskTemp, zero, maskTemp);
+  masm.not_(maskTemp, maskTemp);
 
   masm.memoryBarrierBefore(sync);
 
@@ -2954,11 +3093,16 @@ void MacroAssembler::branchTestValue(Condition cond, const ValueOperand& lhs,
                                      const Value& rhs, Label* label) {
   MOZ_ASSERT(cond == Equal || cond == NotEqual);
   MOZ_ASSERT(!rhs.isNaN());
-  UseScratchRegisterScope temps(this);
-  Register scratch = temps.Acquire();
-  MOZ_ASSERT(lhs.valueReg() != scratch);
-  moveValue(rhs, ValueOperand(scratch));
-  ma_b(lhs.valueReg(), scratch, label, cond);
+
+  if (!rhs.isGCThing()) {
+    ma_b(lhs.valueReg(), ImmWord(rhs.asRawBits()), label, cond);
+  } else {
+    UseScratchRegisterScope temps(this);
+    Register scratch = temps.Acquire();
+    MOZ_ASSERT(lhs.valueReg() != scratch);
+    moveValue(rhs, ValueOperand(scratch));
+    ma_b(lhs.valueReg(), scratch, label, cond);
+  }
 }
 
 void MacroAssembler::branchTestNaNValue(Condition cond, const ValueOperand& val,
@@ -4215,9 +4359,8 @@ static void CompareExchange(MacroAssembler& masm,
     }
 
     masm.lr_w(true, true, output, scratch2);
-    masm.ma_li(scratch1, Imm64(UINT32_MAX));
-    masm.and_(oldval, oldval, scratch1);
-    masm.ma_b(output, oldval, &end, Assembler::NotEqual, ShortJump);
+    masm.SignExtendWord(scratch1, oldval);
+    masm.ma_b(output, scratch1, &end, Assembler::NotEqual, ShortJump);
     masm.mv(scratch1, newval);
     masm.sc_w(true, true, scratch1, scratch2, scratch1);
     masm.ma_b(scratch1, scratch1, &again, Assembler::NonZero, ShortJump);
@@ -4581,20 +4724,28 @@ void MacroAssemblerRiscv64::ma_push(Register r) {
   sd(r, StackPointer, 0);
 }
 
-
 void MacroAssemblerRiscv64::ma_mul32TestOverflow(Register rd, Register rj,
                                                  Register rk, Label* overflow) {
   UseScratchRegisterScope temps(this);
-  Register ScratchRegister = temps.Acquire();
-  MulOverflow32(rd, rj, rk, ScratchRegister);
-  ma_b(ScratchRegister, Register(zero), overflow, Assembler::NotEqual);
+  Register scratch = temps.Acquire();
+  MOZ_ASSERT(rd != scratch);
+
+  mul(rd, rj, rk);
+  sext_w(scratch, rd);
+  ma_b(scratch, rd, overflow, Assembler::NotEqual);
 }
 void MacroAssemblerRiscv64::ma_mul32TestOverflow(Register rd, Register rj,
                                                  Imm32 imm, Label* overflow) {
   UseScratchRegisterScope temps(this);
-  Register ScratchRegister = temps.Acquire();
-  MulOverflow32(rd, rj, Operand(imm.value), ScratchRegister);
-  ma_b(ScratchRegister, Register(zero), overflow, Assembler::NotEqual);
+  Register scratch = temps.Acquire();
+  Register scratch2 = temps.Acquire();
+  MOZ_ASSERT(rd != scratch && rj != scratch2);
+
+  ma_li(scratch2, imm);
+
+  mul(rd, rj, scratch2);
+  sext_w(scratch, rd);
+  ma_b(scratch, rd, overflow, Assembler::NotEqual);
 }
 
 void MacroAssemblerRiscv64::ma_mulPtrTestOverflow(Register rd, Register rj,
@@ -4618,34 +4769,6 @@ void MacroAssemblerRiscv64::ma_mulPtrTestOverflow(Register rd, Register rj,
   mulh(scratch, rj, rk);
   srai(scratch2, rd, 63);
   ma_b(scratch, Register(scratch2), overflow, Assembler::NotEqual);
-}
-
-
-void MacroAssemblerRiscv64::MulOverflow32(Register dst, Register left,
-                                          const Operand& right,
-                                          Register overflow) {
-  UseScratchRegisterScope temps(this);
-  BlockTrampolinePoolScope block_trampoline_pool(this, 11);
-  Register right_reg;
-  Register scratch = temps.Acquire();
-  Register scratch2 = temps.Acquire();
-  if (right.is_imm()) {
-    ma_li(scratch, right.immediate());
-    right_reg = scratch;
-  } else {
-    MOZ_ASSERT(right.is_reg());
-    right_reg = right.rm();
-  }
-
-  MOZ_ASSERT(left != scratch2 && right_reg != scratch2 && dst != scratch2 &&
-             overflow != scratch2);
-  MOZ_ASSERT(overflow != left && overflow != right_reg);
-  sext_w(overflow, left);
-  sext_w(scratch2, right_reg);
-
-  mul(overflow, overflow, scratch2);
-  sext_w(dst, overflow);
-  xor_(overflow, overflow, dst);
 }
 
 int32_t MacroAssemblerRiscv64::GetOffset(int32_t offset, Label* L,
