@@ -586,8 +586,8 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
 
   virtual nsresult GetControllers(nsIControllers** aControllers) = 0;
 
-  virtual nsresult GetInnerWidth(double* aWidth) = 0;
-  virtual nsresult GetInnerHeight(double* aHeight) = 0;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult GetInnerWidth(double* aWidth) = 0;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult GetInnerHeight(double* aHeight) = 0;
 
   virtual already_AddRefed<nsICSSDeclaration> GetComputedStyle(
       mozilla::dom::Element& aElt, const nsAString& aPseudoElt,
@@ -1054,9 +1054,14 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
   
 
 
-  virtual void FirePopupBlockedEvent(Document* aDoc, nsIURI* aPopupURI,
+  virtual void FirePopupBlockedEvent(nsIURI* aPopupURI,
                                      const nsAString& aPopupWindowName,
                                      const nsAString& aPopupWindowFeatures) = 0;
+
+  
+
+
+  virtual void FireRedirectBlockedEvent(nsIURI* aRedirectURI) = 0;
 
   
   void MarkUncollectableForCCGeneration(uint32_t aGeneration) {
@@ -1087,8 +1092,8 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
                               const nsAString& aOptions, nsIArray* aArguments,
                               mozilla::dom::BrowsingContext** _retval) = 0;
 
-  virtual nsresult GetInnerWidth(double* aWidth) = 0;
-  virtual nsresult GetInnerHeight(double* aHeight) = 0;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult GetInnerWidth(double* aWidth) = 0;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult GetInnerHeight(double* aHeight) = 0;
 
   virtual mozilla::dom::Element* GetFrameElement() = 0;
 

@@ -283,6 +283,12 @@ class ScrollContainerFrame : public nsContainerFrame,
 
 
 
+  nsSize GetSizeForWindowInnerSize() const;
+
+  
+
+
+
 
 
 
@@ -1324,6 +1330,11 @@ class ScrollContainerFrame : public nsContainerFrame,
 
   nsTArray<ScrollPositionUpdate> mScrollUpdates;
 
+  
+  
+  
+  
+  
   nsSize mMinimumScaleSize;
 
   

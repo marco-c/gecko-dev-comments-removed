@@ -213,6 +213,7 @@
 #include "mozilla/dom/PopupBlockedEvent.h"
 #include "mozilla/dom/PrimitiveConversions.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/RedirectBlockedEvent.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/ServiceWorkerRegistration.h"
 #include "mozilla/dom/VRDisplay.h"
@@ -277,6 +278,16 @@ static inline nsGlobalWindowInner* GetCurrentInnerWindowInternal(
     return err_rval;                                       \
   }                                                        \
   return GetCurrentInnerWindowInternal(this)->method args; \
+  PR_END_MACRO
+
+#define FORWARD_TO_INNER_WITH_STRONG_REF(method, args, err_rval)           \
+  PR_BEGIN_MACRO                                                           \
+  if (!mInnerWindow) {                                                     \
+    NS_WARNING("No inner window available!");                              \
+    return err_rval;                                                       \
+  }                                                                        \
+  RefPtr<nsGlobalWindowInner> inner = GetCurrentInnerWindowInternal(this); \
+  return inner->method args;                                               \
   PR_END_MACRO
 
 #define FORWARD_TO_INNER_VOID(method, args)         \
@@ -1940,7 +1951,8 @@ static JS::CompartmentIterResult FindSameOriginCompartment(
   }
 
   auto* compartmentPrivate = xpc::CompartmentPrivate::Get(aCompartment);
-  if (!compartmentPrivate->CanShareCompartmentWith(data->principal)) {
+  if (!compartmentPrivate ||
+      !compartmentPrivate->CanShareCompartmentWith(data->principal)) {
     
     return JS::CompartmentIterResult::KeepGoing;
   }
@@ -3408,7 +3420,14 @@ CSSToLayoutDeviceScale nsGlobalWindowOuter::CSSToDevScaleForBaseWindow(
 }
 
 nsresult nsGlobalWindowOuter::GetInnerSize(CSSSize& aSize) {
-  EnsureSizeAndPositionUpToDate();
+  if (mDoc && mDoc->IsTopLevelContentDocument() &&
+      nsLayoutUtils::ShouldHandleMetaViewport(mDoc)) {
+    
+    
+    FlushPendingNotifications(FlushType::Layout);
+  } else {
+    EnsureSizeAndPositionUpToDate();
+  }
 
   NS_ENSURE_STATE(mDocShell);
 
@@ -3426,14 +3445,13 @@ nsresult nsGlobalWindowOuter::GetInnerSize(CSSSize& aSize) {
     viewManager->FlushDelayedResize();
   }
 
-  
-  nsSize viewportSize = presContext->GetVisibleArea().Size();
+  nsSize innerSize = presShell->GetInnerSize();
   if (presContext->GetDynamicToolbarState() == DynamicToolbarState::Collapsed) {
-    viewportSize =
-        nsLayoutUtils::ExpandHeightForViewportUnits(presContext, viewportSize);
+    innerSize =
+        nsLayoutUtils::ExpandHeightForViewportUnits(presContext, innerSize);
   }
 
-  aSize = CSSPixel::FromAppUnits(viewportSize);
+  aSize = CSSPixel::FromAppUnits(innerSize);
 
   switch (StaticPrefs::dom_innerSize_rounding()) {
     case 1:
@@ -3458,7 +3476,8 @@ double nsGlobalWindowOuter::GetInnerWidthOuter(ErrorResult& aError) {
 }
 
 nsresult nsGlobalWindowOuter::GetInnerWidth(double* aInnerWidth) {
-  FORWARD_TO_INNER(GetInnerWidth, (aInnerWidth), NS_ERROR_UNEXPECTED);
+  FORWARD_TO_INNER_WITH_STRONG_REF(GetInnerWidth, (aInnerWidth),
+                                   NS_ERROR_UNEXPECTED);
 }
 
 double nsGlobalWindowOuter::GetInnerHeightOuter(ErrorResult& aError) {
@@ -3468,7 +3487,8 @@ double nsGlobalWindowOuter::GetInnerHeightOuter(ErrorResult& aError) {
 }
 
 nsresult nsGlobalWindowOuter::GetInnerHeight(double* aInnerHeight) {
-  FORWARD_TO_INNER(GetInnerHeight, (aInnerHeight), NS_ERROR_UNEXPECTED);
+  FORWARD_TO_INNER_WITH_STRONG_REF(GetInnerHeight, (aInnerHeight),
+                                   NS_ERROR_UNEXPECTED);
 }
 
 CSSIntSize nsGlobalWindowOuter::GetOuterSize(CallerType aCallerType,
@@ -5410,9 +5430,12 @@ already_AddRefed<nsPIWindowRoot> nsGlobalWindowOuter::GetTopWindowRoot() {
 }
 
 void nsGlobalWindowOuter::FirePopupBlockedEvent(
-    Document* aDoc, nsIURI* aPopupURI, const nsAString& aPopupWindowName,
+    nsIURI* aPopupURI, const nsAString& aPopupWindowName,
     const nsAString& aPopupWindowFeatures) {
-  MOZ_ASSERT(aDoc);
+  Document* doc = GetDoc();
+  if (!doc) {
+    return;
+  }
 
   
   
@@ -5427,11 +5450,32 @@ void nsGlobalWindowOuter::FirePopupBlockedEvent(
   init.mPopupWindowFeatures = aPopupWindowFeatures;
 
   RefPtr<PopupBlockedEvent> event =
-      PopupBlockedEvent::Constructor(aDoc, u"DOMPopupBlocked"_ns, init);
-
+      PopupBlockedEvent::Constructor(doc, u"DOMPopupBlocked"_ns, init);
   event->SetTrusted(true);
 
-  aDoc->DispatchEvent(*event);
+  doc->DispatchEvent(*event);
+}
+
+void nsGlobalWindowOuter::FireRedirectBlockedEvent(nsIURI* aRedirectURI) {
+  Document* doc = GetDoc();
+  if (!doc) {
+    return;
+  }
+
+  
+  
+  RedirectBlockedEventInit init;
+  init.mBubbles = true;
+  init.mCancelable = true;
+  init.mRequestingWindow = GetCurrentInnerWindowInternal(this);
+  init.mRedirectURI = aRedirectURI;
+
+  RefPtr<RedirectBlockedEvent> event =
+      RedirectBlockedEvent::Constructor(doc, u"DOMRedirectBlocked"_ns, init);
+  event->SetTrusted(true);
+  event->WidgetEventPtr()->mFlags.mOnlyChromeDispatch = true;
+
+  doc->DispatchEvent(*event);
 }
 
 
@@ -5444,32 +5488,6 @@ bool nsGlobalWindowOuter::CanSetProperty(const char* aPrefName) {
   
   
   return !Preferences::GetBool(aPrefName, true);
-}
-
-
-void nsGlobalWindowOuter::FireAbuseEvents(
-    const nsACString& aPopupURL, const nsAString& aPopupWindowName,
-    const nsAString& aPopupWindowFeatures) {
-  
-  nsCOMPtr<Document> currentDoc = GetDoc();
-  nsCOMPtr<nsIURI> popupURI;
-
-  
-  
-
-  
-
-  nsIURI* baseURL = nullptr;
-
-  nsCOMPtr<Document> doc = GetEntryDocument();
-  if (doc) baseURL = doc->GetDocBaseURI();
-
-  
-  Unused << NS_NewURI(getter_AddRefs(popupURI), aPopupURL, nullptr, baseURL);
-
-  
-  FirePopupBlockedEvent(currentDoc, popupURI, aPopupWindowName,
-                        aPopupWindowFeatures);
 }
 
 Nullable<WindowProxyHolder> nsGlobalWindowOuter::OpenOuter(
@@ -6727,6 +6745,7 @@ nsresult nsGlobalWindowOuter::OpenInternal(
   
   
   
+  
   if (!aUrl.IsEmpty()) {
     
     
@@ -6775,7 +6794,7 @@ nsresult nsGlobalWindowOuter::OpenInternal(
         }
       }
 
-      FireAbuseEvents(aUrl, windowName, aOptions);
+      FirePopupBlockedEvent(uri, windowName, aOptions);
       return aDoJSFixups ? NS_OK : NS_ERROR_FAILURE;
     }
   }

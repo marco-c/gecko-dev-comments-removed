@@ -452,8 +452,9 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   bool IsCleanedUp() const { return mCleanedUp; }
 
   virtual void FirePopupBlockedEvent(
-      Document* aDoc, nsIURI* aPopupURI, const nsAString& aPopupWindowName,
+      nsIURI* aPopupURI, const nsAString& aPopupWindowName,
       const nsAString& aPopupWindowFeatures) override;
+  virtual void FireRedirectBlockedEvent(nsIURI* aRedirectURI) override;
 
   void AddSizeOfIncludingThis(nsWindowSizes& aWindowSizes) const;
 
@@ -648,16 +649,16 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   virtual bool IsInSyncOperation() override;
 
  public:
-  double GetInnerWidthOuter(mozilla::ErrorResult& aError);
+  MOZ_CAN_RUN_SCRIPT double GetInnerWidthOuter(mozilla::ErrorResult& aError);
 
  protected:
-  nsresult GetInnerWidth(double* aInnerWidth) override;
+  MOZ_CAN_RUN_SCRIPT nsresult GetInnerWidth(double* aInnerWidth) override;
 
  public:
-  double GetInnerHeightOuter(mozilla::ErrorResult& aError);
+  MOZ_CAN_RUN_SCRIPT double GetInnerHeightOuter(mozilla::ErrorResult& aError);
 
  protected:
-  nsresult GetInnerHeight(double* aInnerHeight) override;
+  MOZ_CAN_RUN_SCRIPT nsresult GetInnerHeight(double* aInnerHeight) override;
   int32_t GetScreenXOuter(mozilla::dom::CallerType aCallerType,
                           mozilla::ErrorResult& aError);
   int32_t GetScreenYOuter(mozilla::dom::CallerType aCallerType,
@@ -760,9 +761,6 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
  public:
   mozilla::dom::PopupBlocker::PopupControlState RevisePopupAbuseLevel(
       mozilla::dom::PopupBlocker::PopupControlState aState);
-  void FireAbuseEvents(const nsACString& aPopupURL,
-                       const nsAString& aPopupWindowName,
-                       const nsAString& aPopupWindowFeatures);
 
   void FlushPendingNotifications(mozilla::FlushType aType);
 
@@ -798,7 +796,7 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   int32_t GetScrollBoundaryOuter(mozilla::Side aSide);
 
   
-  nsresult GetInnerSize(mozilla::CSSSize& aSize);
+  MOZ_CAN_RUN_SCRIPT nsresult GetInnerSize(mozilla::CSSSize& aSize);
   mozilla::CSSIntSize GetOuterSize(mozilla::dom::CallerType aCallerType,
                                    mozilla::ErrorResult& aError);
   nsRect GetInnerScreenRect();
