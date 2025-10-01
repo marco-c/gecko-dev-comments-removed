@@ -27,9 +27,12 @@
 #include "nsILoadGroup.h"
 #include "nsIObserverService.h"
 #include "nsIURI.h"
+#include "nsIURIMutator.h"
 #include "nsInputStreamPump.h"
 #include "nsNetUtil.h"
 #include "nsServiceManagerUtils.h"
+#include "nsSimpleURI.h"
+#include "nsStandardURL.h"
 #include "nsStreamUtils.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
@@ -72,6 +75,16 @@ LazyLogModule gDictionaryLog("CompressionDictionaries");
 
 StaticRefPtr<DictionaryCache> gDictionaryCache;
 nsCOMPtr<nsICacheStorage> DictionaryCache::sCacheStorage;
+
+
+
+static nsresult GetDictPath(nsIURI* aURI, nsACString& aPrePath) {
+  if (NS_FAILED(aURI->GetPrePath(aPrePath))) {
+    return NS_ERROR_FAILURE;
+  }
+  aPrePath += '/';
+  return NS_OK;
+}
 
 DictionaryCacheEntry::DictionaryCacheEntry(const char* aKey) { mURI = aKey; }
 
@@ -189,7 +202,8 @@ nsresult DictionaryCacheEntry::Prefetch(nsILoadContextInfo* aLoadContextInfo,
       if (NS_FAILED(cacheStorage->AsyncOpenURIString(
               mURI, ""_ns,
               nsICacheStorage::OPEN_READONLY |
-                  nsICacheStorage::OPEN_COMPLETE_ONLY,
+                  nsICacheStorage::OPEN_COMPLETE_ONLY |
+                  nsICacheStorage::CHECK_MULTITHREADED,
               this)) ||
           mNotCached) {
         
@@ -481,6 +495,8 @@ void DictionaryCacheEntry::WriteOnHash() {
 
 
 
+
+
 NS_IMETHODIMP
 DictionaryCacheEntry::OnCacheEntryCheck(nsICacheEntry* aEntry,
                                         uint32_t* result) {
@@ -535,6 +551,7 @@ class DictionaryOriginReader final : public nsICacheEntryOpenCallback,
 
   
   
+  
   void Start(DictionaryOrigin* aOrigin, nsACString& aKey, nsIURI* aURI,
              DictionaryCache* aCache,
              const std::function<nsresult(DictionaryCacheEntry*)>& aCallback) {
@@ -552,8 +569,10 @@ class DictionaryOriginReader final : public nsICacheEntryOpenCallback,
     DictionaryCache::sCacheStorage->AsyncOpenURIString(
         aKey, META_DICTIONARY_PREFIX,
         aOrigin
-            ? nsICacheStorage::OPEN_NORMALLY
-            : nsICacheStorage::OPEN_READONLY | nsICacheStorage::OPEN_SECRETLY,
+            ? nsICacheStorage::OPEN_NORMALLY |
+                  nsICacheStorage::CHECK_MULTITHREADED
+            : nsICacheStorage::OPEN_READONLY | nsICacheStorage::OPEN_SECRETLY |
+                  nsICacheStorage::CHECK_MULTITHREADED,
         this);
   }
 
@@ -569,6 +588,8 @@ class DictionaryOriginReader final : public nsICacheEntryOpenCallback,
 
 NS_IMPL_ISUPPORTS(DictionaryOriginReader, nsICacheEntryOpenCallback,
                   nsIStreamListener)
+
+
 
 
 
@@ -611,7 +632,7 @@ NS_IMETHODIMP DictionaryOriginReader::OnCacheEntryAvailable(
   }
 
   nsCString prepath;
-  if (NS_FAILED(mURI->GetPrePath(prepath))) {
+  if (NS_FAILED(GetDictPath(mURI, prepath))) {
     (mCallback)(nullptr);
     return NS_ERROR_FAILURE;
   }
@@ -716,7 +737,7 @@ already_AddRefed<DictionaryCacheEntry> DictionaryCache::AddEntry(
   
   
   nsCString prepath;
-  if (NS_FAILED(aURI->GetPrePath(prepath))) {
+  if (NS_FAILED(GetDictPath(aURI, prepath))) {
     return nullptr;
   }
   
@@ -754,7 +775,7 @@ already_AddRefed<DictionaryCacheEntry> DictionaryCache::AddEntry(
 
 nsresult DictionaryCache::RemoveEntry(nsIURI* aURI, const nsACString& aKey) {
   nsCString prepath;
-  if (NS_FAILED(aURI->GetPrePath(prepath))) {
+  if (NS_FAILED(GetDictPath(aURI, prepath))) {
     return NS_ERROR_FAILURE;
   }
   DICTIONARY_LOG(("Dictionary RemoveEntry for %s : %s", prepath.get(),
@@ -783,8 +804,6 @@ void DictionaryCache::RemoveDictionaryFor(const nsACString& aKey) {
 
 
 void DictionaryCache::RemoveDictionary(const nsACString& aKey) {
-  DICTIONARY_LOG(
-      ("Removing dictionary for %s", PromiseFlatCString(aKey).get()));
   nsCString enhance;
   nsCString urlstring;
   nsCOMPtr<nsILoadContextInfo> info =
@@ -794,14 +813,17 @@ void DictionaryCache::RemoveDictionary(const nsACString& aKey) {
     DICTIONARY_LOG(("DictionaryCache::RemoveDictionary() - Cannot parse key!"));
     return;
   }
-  nsCOMPtr<nsIURI> url;
-  nsresult rv = NS_NewURI(getter_AddRefs(url), urlstring);
-  if (NS_SUCCEEDED(rv)) {
-    nsCString prepath;
-    if (NS_SUCCEEDED(url->GetPrePath(prepath))) {
-      if (auto origin = mDictionaryCache.Lookup(prepath)) {
-        origin.Data()->RemoveEntry(urlstring);
-      }
+  DICTIONARY_LOG(("Removing dictionary for %s, enhance %s", urlstring.get(),
+                  enhance.get()));
+
+  nsCOMPtr<nsIURI> uri;
+  if (NS_FAILED(NS_NewURI(getter_AddRefs(uri), urlstring))) {
+    return;
+  }
+  nsAutoCString prepath;
+  if (NS_SUCCEEDED(GetDictPath(uri, prepath))) {
+    if (auto origin = mDictionaryCache.Lookup(prepath)) {
+      origin.Data()->RemoveEntry(urlstring);
     }
   }
 }
@@ -872,7 +894,7 @@ void DictionaryCache::GetDictionaryFor(
   
   
   nsCString prepath;
-  if (NS_FAILED(aURI->GetPrePath(prepath))) {
+  if (NS_FAILED(GetDictPath(aURI, prepath))) {
     (aCallback)(nullptr);
     return;
   }
@@ -899,14 +921,27 @@ void DictionaryCache::GetDictionaryFor(
   }
 
   
-  
-  
-  DICTIONARY_LOG(
-      ("Reading %s for dictionary entries", PromiseFlatCString(prepath).get()));
-  RefPtr<DictionaryOriginReader> reader = new DictionaryOriginReader();
-  
-  
-  reader->Start(nullptr, prepath, aURI, this, aCallback);
+  bool exists;
+  nsCOMPtr<nsIURI> prepathURI;
+
+  if (NS_SUCCEEDED(NS_MutateURI(new net::nsStandardURL::Mutator())
+                       .SetSpec(prepath)
+                       .Finalize(prepathURI)) &&
+      NS_SUCCEEDED(
+          sCacheStorage->Exists(prepathURI, META_DICTIONARY_PREFIX, &exists)) &&
+      exists) {
+    
+    
+    
+    DICTIONARY_LOG(("Reading %s for dictionary entries", prepath.get()));
+    RefPtr<DictionaryOriginReader> reader = new DictionaryOriginReader();
+    
+    
+    reader->Start(nullptr, prepath, aURI, this, aCallback);
+  } else {
+    
+    (aCallback)(nullptr);
+  }
 }
 
 
@@ -915,7 +950,22 @@ NS_IMPL_ISUPPORTS(DictionaryOrigin, nsICacheEntryMetaDataVisitor)
 
 void DictionaryOrigin::Write(DictionaryCacheEntry* aDictEntry) {
   DICTIONARY_LOG(("DictionaryOrigin::Write %s %p", mOrigin.get(), aDictEntry));
-  aDictEntry->Write(mEntry);
+  if (mEntry) {
+    aDictEntry->Write(mEntry);
+  } else {
+    
+    mDeferredWrites = true;
+  }
+}
+
+void DictionaryOrigin::SetCacheEntry(nsICacheEntry* aEntry) {
+  mEntry = aEntry;
+  if (mDeferredWrites) {
+    for (auto& entry : mEntries) {
+      Write(entry);
+    }
+  }
+  mDeferredWrites = false;
 }
 
 already_AddRefed<DictionaryCacheEntry> DictionaryOrigin::AddEntry(
