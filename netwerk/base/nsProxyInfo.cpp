@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:set ts=2 sw=2 sts=2 et cindent: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "nsProxyInfo.h"
 
@@ -12,11 +12,11 @@
 namespace mozilla {
 namespace net {
 
-// Yes, we support QI to nsProxyInfo
+
 NS_IMPL_ISUPPORTS(nsProxyInfo, nsProxyInfo, nsIProxyInfo)
 
-// These pointers are declared in nsProtocolProxyService.cpp and
-// comparison of mType by string pointer is valid within necko
+
+
 extern const char kProxyType_HTTP[];
 extern const char kProxyType_HTTPS[];
 extern const char kProxyType_SOCKS[];
@@ -24,7 +24,6 @@ extern const char kProxyType_SOCKS4[];
 extern const char kProxyType_SOCKS5[];
 extern const char kProxyType_DIRECT[];
 extern const char kProxyType_PROXY[];
-extern const char kProxyType_MASQUE[];
 
 nsProxyInfo::nsProxyInfo(const nsACString& aType, const nsACString& aHost,
                          int32_t aPort, const nsACString& aUsername,
@@ -32,13 +31,15 @@ nsProxyInfo::nsProxyInfo(const nsACString& aType, const nsACString& aHost,
                          uint32_t aTimeout, uint32_t aResolveFlags,
                          const nsACString& aProxyAuthorizationHeader,
                          const nsACString& aConnectionIsolationKey,
-                         const nsACString& aPathTemplate)
+                         const nsACString& aPathTemplate,
+                         const nsACString& aAlpn)
     : mHost(aHost),
       mUsername(aUsername),
       mPassword(aPassword),
       mProxyAuthorizationHeader(aProxyAuthorizationHeader),
       mConnectionIsolationKey(aConnectionIsolationKey),
       mPathTemplate(aPathTemplate),
+      mAlpn(aAlpn),
       mPort(aPort),
       mFlags(aFlags),
       mResolveFlags(aResolveFlags),
@@ -56,8 +57,6 @@ nsProxyInfo::nsProxyInfo(const nsACString& aType, const nsACString& aHost,
     mType = kProxyType_SOCKS5;
   } else if (aType.EqualsASCII(kProxyType_PROXY)) {
     mType = kProxyType_PROXY;
-  } else if (aType.EqualsASCII(kProxyType_MASQUE)) {
-    mType = kProxyType_MASQUE;
   } else {
     mType = kProxyType_DIRECT;
   }
@@ -162,6 +161,18 @@ nsProxyInfo::GetPathTemplate(nsACString& aPathTemplate) {
   return NS_OK;
 }
 
+NS_IMETHODIMP
+nsProxyInfo::SetAlpn(const nsACString& aAlpn) {
+  mAlpn = aAlpn;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsProxyInfo::GetAlpn(nsACString& aAlpn) {
+  aAlpn = mAlpn;
+  return NS_OK;
+}
+
 bool nsProxyInfo::IsDirect() {
   if (!mType) return true;
   return mType == kProxyType_DIRECT;
@@ -169,18 +180,16 @@ bool nsProxyInfo::IsDirect() {
 
 bool nsProxyInfo::IsHTTP() { return mType == kProxyType_HTTP; }
 
-bool nsProxyInfo::IsHTTPS() {
-  return mType == kProxyType_HTTPS || mType == kProxyType_MASQUE;
-}
+bool nsProxyInfo::IsHTTPS() { return mType == kProxyType_HTTPS; }
 
 bool nsProxyInfo::IsSOCKS() {
   return mType == kProxyType_SOCKS || mType == kProxyType_SOCKS4 ||
          mType == kProxyType_SOCKS5;
 }
 
-bool nsProxyInfo::IsHttp3Proxy() { return mType == kProxyType_MASQUE; }
+bool nsProxyInfo::IsHttp3Proxy() { return mAlpn.Equals("h3"_ns); }
 
-/* static */
+
 void nsProxyInfo::SerializeProxyInfo(nsProxyInfo* aProxyInfo,
                                      nsTArray<ProxyInfoCloneArgs>& aResult) {
   for (nsProxyInfo* iter = aProxyInfo; iter; iter = iter->mNext) {
@@ -189,6 +198,7 @@ void nsProxyInfo::SerializeProxyInfo(nsProxyInfo* aProxyInfo,
     arg->host() = iter->Host();
     arg->port() = iter->Port();
     arg->pathTemplate() = iter->PathTemplate();
+    arg->alpn() = iter->Alpn();
     arg->username() = iter->Username();
     arg->password() = iter->Password();
     arg->proxyAuthorizationHeader() = iter->ProxyAuthorizationHeader();
@@ -199,7 +209,7 @@ void nsProxyInfo::SerializeProxyInfo(nsProxyInfo* aProxyInfo,
   }
 }
 
-/* static */
+
 nsProxyInfo* nsProxyInfo::DeserializeProxyInfo(
     const nsTArray<ProxyInfoCloneArgs>& aArgs) {
   nsProxyInfo *pi = nullptr, *first = nullptr, *last = nullptr;
@@ -207,10 +217,11 @@ nsProxyInfo* nsProxyInfo::DeserializeProxyInfo(
     pi = new nsProxyInfo(info.type(), info.host(), info.port(), info.username(),
                          info.password(), info.flags(), info.timeout(),
                          info.resolveFlags(), info.proxyAuthorizationHeader(),
-                         info.connectionIsolationKey(), info.pathTemplate());
+                         info.connectionIsolationKey(), info.pathTemplate(),
+                         info.alpn());
     if (last) {
       last->mNext = pi;
-      // |mNext| will be released in |last|'s destructor.
+      
       NS_IF_ADDREF(last->mNext);
     } else {
       first = pi;
@@ -239,8 +250,8 @@ already_AddRefed<nsProxyInfo> nsProxyInfo::CreateFallbackProxyInfo() {
   SerializeProxyInfo(this, args);
 
   for (auto& arg : args) {
-    if (arg.type().Equals("masque"_ns)) {
-      arg.type() = "https";
+    if (arg.alpn().Equals("h3"_ns)) {
+      arg.alpn().Truncate();
     }
   }
 
@@ -248,5 +259,5 @@ already_AddRefed<nsProxyInfo> nsProxyInfo::CreateFallbackProxyInfo() {
   return result.forget();
 }
 
-}  // namespace net
-}  // namespace mozilla
+}  
+}  
