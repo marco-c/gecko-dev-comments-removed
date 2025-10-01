@@ -423,8 +423,9 @@ bool ChannelPosix::ProcessIncomingMessages() {
           error = "Message needs unreceived descriptors";
         }
 
-        if (m.header()->num_handles >
-            IPC::Message::MAX_DESCRIPTORS_PER_MESSAGE) {
+        size_t maxHandles = std::min<size_t>(
+            m.size(), IPC::Message::MAX_DESCRIPTORS_PER_MESSAGE);
+        if (m.header()->num_handles > maxHandles) {
           
           error = "Message requires an excessive number of descriptors";
         }
@@ -540,8 +541,9 @@ bool ChannelPosix::ProcessOutgoingMessages() {
       }
 #endif
 
-      if (msg->attached_handles_.Length() >
-          IPC::Message::MAX_DESCRIPTORS_PER_MESSAGE) {
+      size_t maxHandles = std::min<size_t>(
+          msg->size(), IPC::Message::MAX_DESCRIPTORS_PER_MESSAGE);
+      if (msg->attached_handles_.Length() > maxHandles) {
         MOZ_DIAGNOSTIC_CRASH("Too many file descriptors!");
         CHROMIUM_LOG(FATAL) << "Too many file descriptors!";
         
