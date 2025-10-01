@@ -443,6 +443,11 @@ class nsDocShellLoadState final {
   mozilla::dom::FormData* GetFormDataEntryList();
   void SetFormDataEntryList(mozilla::dom::FormData* aFormDataEntryList);
 
+  
+  
+  uint32_t GetAppLinkLaunchType() const;
+  void SetAppLinkLaunchType(uint32_t aAppLinkLaunchType);
+
  protected:
   
   
@@ -714,6 +719,9 @@ class nsDocShellLoadState final {
   nsCOMPtr<nsIStructuredCloneContainer> mNavigationAPIState;
 
   RefPtr<mozilla::dom::FormData> mFormDataEntryList;
+
+  
+  uint32_t mAppLinkLaunchType = 0;
 };
 
 #endif 

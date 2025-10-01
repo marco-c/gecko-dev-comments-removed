@@ -10,7 +10,6 @@ import static org.mozilla.geckoview.GeckoSession.GeckoPrintException.ERROR_NO_PR
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
@@ -43,6 +42,7 @@ import androidx.annotation.IntDef;
 import androidx.annotation.LongDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.annotation.StringDef;
 import androidx.annotation.UiThread;
 import java.io.ByteArrayInputStream;
@@ -190,7 +190,7 @@ public class GeckoSession {
     default void dismiss() {}
   }
 
-  @TargetApi(Build.VERSION_CODES.P)
+  @RequiresApi(Build.VERSION_CODES.P)
   private class SessionMagnifierP implements GeckoSession.SessionMagnifier {
     private @Nullable View mView;
     private @Nullable Magnifier mMagnifier;
@@ -2016,6 +2016,41 @@ public class GeckoSession {
 
 
 
+  public static final int APP_LINK_LAUNCH_TYPE_COLD = 1;
+
+  
+
+
+
+  public static final int APP_LINK_LAUNCH_TYPE_WARM = 2;
+
+  
+
+
+
+  public static final int APP_LINK_LAUNCH_TYPE_HOT = 3;
+
+  
+
+
+
+  public static final int APP_LINK_LAUNCH_TYPE_UNKNOWN = 0;
+
+  
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef(
+      value = {
+        APP_LINK_LAUNCH_TYPE_COLD,
+        APP_LINK_LAUNCH_TYPE_WARM,
+        APP_LINK_LAUNCH_TYPE_HOT,
+        APP_LINK_LAUNCH_TYPE_UNKNOWN,
+      })
+  public @interface AppLinkLaunchType {}
+
+  
+
+
+
 
 
 
@@ -2053,6 +2088,7 @@ public class GeckoSession {
     private @HeaderFilter int mHeaderFilter = HEADER_FILTER_CORS_SAFELISTED;
     private @Nullable String mOriginalInput;
     private boolean mTextDirectiveUserActivation;
+    private @AppLinkLaunchType int mAppLinkLaunchType = APP_LINK_LAUNCH_TYPE_UNKNOWN;
 
     private static @NonNull String createDataUri(
         @NonNull final byte[] bytes, @Nullable final String mimeType) {
@@ -2266,6 +2302,20 @@ public class GeckoSession {
       mTextDirectiveUserActivation = textDirectiveUserActivation;
       return this;
     }
+
+    
+
+
+
+
+
+
+
+    @NonNull
+    public Loader appLinkLaunchType(final @AppLinkLaunchType int appLinkLaunchType) {
+      mAppLinkLaunchType = appLinkLaunchType;
+      return this;
+    }
   }
 
   
@@ -2351,6 +2401,8 @@ public class GeckoSession {
               if (request.mOriginalInput != null) {
                 msg.putString("originalInput", request.mOriginalInput);
               }
+
+              msg.putInt("appLinkLaunchType", request.mAppLinkLaunchType);
 
               mEventDispatcher.dispatch("GeckoView:LoadUri", msg);
             });
@@ -4023,7 +4075,7 @@ public class GeckoSession {
 
 
 
-    @TargetApi(Build.VERSION_CODES.N)
+    @RequiresApi(Build.VERSION_CODES.N)
     @UiThread
     default void onPointerIconChange(
         @NonNull final GeckoSession session, @NonNull final PointerIcon icon) {
