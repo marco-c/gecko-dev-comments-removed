@@ -318,11 +318,11 @@ class AV1ConvolveTest : public ::testing::TestWithParam<TestParam<T>> {
 
 
 
-typedef void (*convolve_x_func)(const uint8_t *src, int src_stride,
-                                uint8_t *dst, int dst_stride, int w, int h,
-                                const InterpFilterParams *filter_params_x,
-                                const int subpel_x_qn,
-                                ConvolveParams *conv_params);
+using convolve_x_func = void (*)(const uint8_t *src, int src_stride,
+                                 uint8_t *dst, int dst_stride, int w, int h,
+                                 const InterpFilterParams *filter_params_x,
+                                 const int subpel_x_qn,
+                                 ConvolveParams *conv_params);
 
 class AV1ConvolveXTest : public AV1ConvolveTest<convolve_x_func> {
  public:
@@ -535,10 +535,10 @@ INSTANTIATE_TEST_SUITE_P(RVV, AV1ConvolveXIntraBCTest,
 
 
 
-typedef void (*highbd_convolve_x_func)(
-    const uint16_t *src, int src_stride, uint16_t *dst, int dst_stride, int w,
-    int h, const InterpFilterParams *filter_params_x, const int subpel_x_qn,
-    ConvolveParams *conv_params, int bd);
+using highbd_convolve_x_func =
+    void (*)(const uint16_t *src, int src_stride, uint16_t *dst, int dst_stride,
+             int w, int h, const InterpFilterParams *filter_params_x,
+             const int subpel_x_qn, ConvolveParams *conv_params, int bd);
 
 class AV1ConvolveXHighbdTest : public AV1ConvolveTest<highbd_convolve_x_func> {
  public:
@@ -754,10 +754,10 @@ INSTANTIATE_TEST_SUITE_P(
 
 
 
-typedef void (*convolve_y_func)(const uint8_t *src, int src_stride,
-                                uint8_t *dst, int dst_stride, int w, int h,
-                                const InterpFilterParams *filter_params_y,
-                                const int subpel_y_qn);
+using convolve_y_func = void (*)(const uint8_t *src, int src_stride,
+                                 uint8_t *dst, int dst_stride, int w, int h,
+                                 const InterpFilterParams *filter_params_y,
+                                 const int subpel_y_qn);
 
 class AV1ConvolveYTest : public AV1ConvolveTest<convolve_y_func> {
  public:
@@ -951,10 +951,10 @@ INSTANTIATE_TEST_SUITE_P(RVV, AV1ConvolveYIntraBCTest,
 
 
 
-typedef void (*highbd_convolve_y_func)(
-    const uint16_t *src, int src_stride, uint16_t *dst, int dst_stride, int w,
-    int h, const InterpFilterParams *filter_params_y, const int subpel_y_qn,
-    int bd);
+using highbd_convolve_y_func =
+    void (*)(const uint16_t *src, int src_stride, uint16_t *dst, int dst_stride,
+             int w, int h, const InterpFilterParams *filter_params_y,
+             const int subpel_y_qn, int bd);
 
 class AV1ConvolveYHighbdTest : public AV1ConvolveTest<highbd_convolve_y_func> {
  public:
@@ -1151,9 +1151,9 @@ INSTANTIATE_TEST_SUITE_P(
 
 
 
-typedef void (*convolve_copy_func)(const uint8_t *src, ptrdiff_t src_stride,
-                                   uint8_t *dst, ptrdiff_t dst_stride, int w,
-                                   int h);
+using convolve_copy_func = void (*)(const uint8_t *src, ptrdiff_t src_stride,
+                                    uint8_t *dst, ptrdiff_t dst_stride, int w,
+                                    int h);
 
 class AV1ConvolveCopyTest : public AV1ConvolveTest<convolve_copy_func> {
  public:
@@ -1195,9 +1195,9 @@ INSTANTIATE_TEST_SUITE_P(NEON, AV1ConvolveCopyTest,
 
 
 
-typedef void (*highbd_convolve_copy_func)(const uint16_t *src,
-                                          ptrdiff_t src_stride, uint16_t *dst,
-                                          ptrdiff_t dst_stride, int w, int h);
+using highbd_convolve_copy_func = void (*)(const uint16_t *src,
+                                           ptrdiff_t src_stride, uint16_t *dst,
+                                           ptrdiff_t dst_stride, int w, int h);
 
 class AV1ConvolveCopyHighbdTest
     : public AV1ConvolveTest<highbd_convolve_copy_func> {
@@ -1241,12 +1241,12 @@ INSTANTIATE_TEST_SUITE_P(NEON, AV1ConvolveCopyHighbdTest,
 
 
 
-typedef void (*convolve_2d_func)(const uint8_t *src, int src_stride,
-                                 uint8_t *dst, int dst_stride, int w, int h,
-                                 const InterpFilterParams *filter_params_x,
-                                 const InterpFilterParams *filter_params_y,
-                                 const int subpel_x_qn, const int subpel_y_qn,
-                                 ConvolveParams *conv_params);
+using convolve_2d_func = void (*)(const uint8_t *src, int src_stride,
+                                  uint8_t *dst, int dst_stride, int w, int h,
+                                  const InterpFilterParams *filter_params_x,
+                                  const InterpFilterParams *filter_params_y,
+                                  const int subpel_x_qn, const int subpel_y_qn,
+                                  ConvolveParams *conv_params);
 
 class AV1Convolve2DTest : public AV1ConvolveTest<convolve_2d_func> {
  public:
@@ -1483,11 +1483,11 @@ INSTANTIATE_TEST_SUITE_P(RVV, AV1Convolve2DIntraBCTest,
 
 
 
-typedef void (*highbd_convolve_2d_func)(
-    const uint16_t *src, int src_stride, uint16_t *dst, int dst_stride, int w,
-    int h, const InterpFilterParams *filter_params_x,
-    const InterpFilterParams *filter_params_y, const int subpel_x_qn,
-    const int subpel_y_qn, ConvolveParams *conv_params, int bd);
+using highbd_convolve_2d_func =
+    void (*)(const uint16_t *src, int src_stride, uint16_t *dst, int dst_stride,
+             int w, int h, const InterpFilterParams *filter_params_x,
+             const InterpFilterParams *filter_params_y, const int subpel_x_qn,
+             const int subpel_y_qn, ConvolveParams *conv_params, int bd);
 
 class AV1Convolve2DHighbdTest
     : public AV1ConvolveTest<highbd_convolve_2d_func> {
@@ -2143,9 +2143,9 @@ INSTANTIATE_TEST_SUITE_P(
 
 
 
-typedef void (*compound_conv_2d_copy_func)(const uint8_t *src, int src_stride,
-                                           uint8_t *dst, int dst_stride, int w,
-                                           int h, ConvolveParams *conv_params);
+using compound_conv_2d_copy_func = void (*)(const uint8_t *src, int src_stride,
+                                            uint8_t *dst, int dst_stride, int w,
+                                            int h, ConvolveParams *conv_params);
 
 class AV1Convolve2DCopyCompoundTest
     : public AV1ConvolveTest<compound_conv_2d_copy_func> {
@@ -2266,11 +2266,9 @@ INSTANTIATE_TEST_SUITE_P(
 
 
 
-typedef void (*highbd_compound_conv_2d_copy_func)(const uint16_t *src,
-                                                  int src_stride, uint16_t *dst,
-                                                  int dst_stride, int w, int h,
-                                                  ConvolveParams *conv_params,
-                                                  int bd);
+using highbd_compound_conv_2d_copy_func =
+    void (*)(const uint16_t *src, int src_stride, uint16_t *dst, int dst_stride,
+             int w, int h, ConvolveParams *conv_params, int bd);
 
 class AV1Convolve2DCopyHighbdCompoundTest
     : public AV1ConvolveTest<highbd_compound_conv_2d_copy_func> {

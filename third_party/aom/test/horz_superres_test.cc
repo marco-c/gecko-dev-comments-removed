@@ -32,7 +32,7 @@ using std::tuple;
 
 const int kBitrate = 40;
 
-typedef struct {
+struct TestVideoParam {
   const char *filename;
   aom_img_fmt fmt;
   aom_bit_depth_t bit_depth;
@@ -41,7 +41,7 @@ typedef struct {
   unsigned int screen_content;
   double psnr_threshold;   
   double psnr_threshold2;  
-} TestVideoParam;
+};
 
 std::ostream &operator<<(std::ostream &os, const TestVideoParam &test_arg) {
   return os << "TestVideoParam { filename:" << test_arg.filename
@@ -69,7 +69,7 @@ const aom_superres_mode kSuperresModesWithoutParams[] = { AOM_SUPERRES_RANDOM,
                                                           AOM_SUPERRES_AUTO };
 
 
-typedef tuple<int, int> SuperresDenominatorPair;
+using SuperresDenominatorPair = tuple<int, int>;
 const SuperresDenominatorPair kSuperresDenominators[] = {
   make_tuple(16, 9),  make_tuple(13, 11), make_tuple(9, 9),
   make_tuple(13, 13), make_tuple(11, 16), make_tuple(8, 16),
@@ -77,7 +77,7 @@ const SuperresDenominatorPair kSuperresDenominators[] = {
 };
 
 
-typedef tuple<int, int> SuperresQThresholdPair;
+using SuperresQThresholdPair = tuple<int, int>;
 const SuperresQThresholdPair kSuperresQThresholds[] = {
   make_tuple(63, 63), make_tuple(63, 41), make_tuple(17, 63),
   make_tuple(41, 11), make_tuple(1, 37),  make_tuple(11, 11),
@@ -88,9 +88,8 @@ const SuperresQThresholdPair kSuperresQThresholds[] = {
 
 
 
-typedef tuple<const libaom_test::CodecFactory *, TestVideoParam,
-              aom_superres_mode>
-    HorzSuperresTestParam;
+using HorzSuperresTestParam =
+    tuple<const libaom_test::CodecFactory *, TestVideoParam, aom_superres_mode>;
 
 class HorzSuperresEndToEndTest
     : public ::testing::TestWithParam<HorzSuperresTestParam>,
@@ -187,9 +186,9 @@ AV1_INSTANTIATE_TEST_SUITE(HorzSuperresEndToEndTest,
 
 
 
-typedef tuple<const libaom_test::CodecFactory *, TestVideoParam,
-              SuperresDenominatorPair>
-    HorzSuperresFixedTestParam;
+using HorzSuperresFixedTestParam =
+    tuple<const libaom_test::CodecFactory *, TestVideoParam,
+          SuperresDenominatorPair>;
 
 class HorzSuperresFixedEndToEndTest
     : public ::testing::TestWithParam<HorzSuperresFixedTestParam>,
@@ -297,9 +296,9 @@ AV1_INSTANTIATE_TEST_SUITE(HorzSuperresFixedEndToEndTest,
 
 
 
-typedef tuple<const libaom_test::CodecFactory *, TestVideoParam,
-              SuperresQThresholdPair>
-    HorzSuperresQThreshTestParam;
+using HorzSuperresQThreshTestParam =
+    tuple<const libaom_test::CodecFactory *, TestVideoParam,
+          SuperresQThresholdPair>;
 
 class HorzSuperresQThreshEndToEndTest
     : public ::testing::TestWithParam<HorzSuperresQThreshTestParam>,

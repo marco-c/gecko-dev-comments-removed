@@ -22,9 +22,6 @@
 #define MAX_UPSAMPLE_SZ 16
 
 
-#if AOM_ARCH_AARCH64
-
-
 
 DECLARE_ALIGNED(16, const uint8_t,
                 av1_filter_intra_taps_neon[FILTER_INTRA_MODES][7][8]) = {
@@ -113,7 +110,7 @@ void av1_filter_intra_predictor_neon(uint8_t *dst, ptrdiff_t stride,
       uint8x8_t s6 = vld1_dup_u8(&buffer[r + 1][c - 1]);
 
       do {
-        uint8x8_t s1234 = load_u8_4x1(&buffer[r - 1][c - 1] + 1);
+        uint8x8_t s1234 = load_unaligned_u8_4x1(&buffer[r - 1][c - 1] + 1);
         uint8x8_t s1 = vdup_lane_u8(s1234, 0);
         uint8x8_t s2 = vdup_lane_u8(s1234, 1);
         uint8x8_t s3 = vdup_lane_u8(s1234, 2);
@@ -212,7 +209,6 @@ void av1_filter_intra_predictor_neon(uint8_t *dst, ptrdiff_t stride,
     } while (r < height + 1);
   }
 }
-#endif
 
 void av1_filter_intra_edge_neon(uint8_t *p, int sz, int strength) {
   if (!strength) return;

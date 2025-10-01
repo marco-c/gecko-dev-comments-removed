@@ -161,10 +161,26 @@ typedef enum aom_chroma_sample_position {
 
 
 
+
+
+
+
+
+
+
+
+
+
 typedef enum aom_metadata_insert_flags {
   AOM_MIF_NON_KEY_FRAME = 0, 
   AOM_MIF_KEY_FRAME = 1,     
-  AOM_MIF_ANY_FRAME = 2      
+  AOM_MIF_ANY_FRAME = 2,     
+  
+  AOM_MIF_NON_KEY_FRAME_LAYER_SPECIFIC = 16,
+  
+  AOM_MIF_KEY_FRAME_LAYER_SPECIFIC = 17,
+  
+  AOM_MIF_ANY_FRAME_LAYER_SPECIFIC = 18,
 } aom_metadata_insert_flags_t;
 
 
@@ -286,8 +302,37 @@ aom_image_t *aom_img_alloc(aom_image_t *img, aom_img_fmt_t fmt,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 aom_image_t *aom_img_wrap(aom_image_t *img, aom_img_fmt_t fmt, unsigned int d_w,
-                          unsigned int d_h, unsigned int align,
+                          unsigned int d_h, unsigned int stride_align,
                           unsigned char *img_data);
 
 

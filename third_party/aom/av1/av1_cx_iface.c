@@ -1338,10 +1338,14 @@ static void set_encoder_config(AV1EncoderConfig *oxcf,
 
   
   
+  
+  const int is_low_complexity_decode_mode_supported =
+      (cfg->g_usage == AOM_USAGE_GOOD_QUALITY) &&
+      (oxcf->speed >= 1 && oxcf->speed <= 3) && (cfg->g_w < cfg->g_h) &&
+      (AOMMIN(cfg->g_w, cfg->g_h) >= 608 && AOMMIN(cfg->g_w, cfg->g_h) <= 720);
   oxcf->enable_low_complexity_decode =
       extra_cfg->enable_low_complexity_decode &&
-      cfg->g_usage == AOM_USAGE_GOOD_QUALITY && oxcf->speed >= 1 &&
-      oxcf->speed <= 3;
+      is_low_complexity_decode_mode_supported;
 
   
   color_cfg->color_primaries = extra_cfg->color_primaries;

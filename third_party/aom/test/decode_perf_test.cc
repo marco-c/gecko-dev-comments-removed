@@ -37,7 +37,7 @@ const char kNewEncodeOutputFile[] = "new_encode.ivf";
 
 
 
-typedef std::tuple<const char *, unsigned> DecodePerfParam;
+using DecodePerfParam = std::tuple<const char *, unsigned int>;
 
 
 
