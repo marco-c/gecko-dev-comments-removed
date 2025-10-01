@@ -152,6 +152,12 @@ class RtpVideoSender : public RtpVideoSenderInterface,
   void SetEncodingData(size_t width, size_t height, size_t num_temporal_layers)
       RTC_LOCKS_EXCLUDED(mutex_) override;
 
+  
+  
+  
+  void SetCsrcs(ArrayView<const uint32_t> csrcs)
+      RTC_LOCKS_EXCLUDED(mutex_) override;
+
   std::vector<RtpSequenceNumberMap::Info> GetSentRtpPacketInfos(
       uint32_t ssrc,
       ArrayView<const uint16_t> sequence_numbers) const
@@ -200,6 +206,9 @@ class RtpVideoSender : public RtpVideoSenderInterface,
       rtp_streams_;
   const RtpConfig rtp_config_;
   RtpTransportControllerSendInterface* const transport_;
+
+  
+  std::vector<uint32_t> csrcs_ RTC_GUARDED_BY(mutex_);
 
   
   
