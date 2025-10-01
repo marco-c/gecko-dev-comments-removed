@@ -5,7 +5,6 @@
 package org.mozilla.fenix.components.menu.compose
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -80,7 +79,6 @@ internal fun AddonMenuItem(
                 .background(
                     color = FirefoxTheme.colors.layer3,
                 )
-                .clickable {}
                 .semantics {
                     role = Role.Button
                     collectionItemInfo =
@@ -94,6 +92,7 @@ internal fun AddonMenuItem(
                 },
             labelModifier = Modifier.testTag(RECOMMENDED_ADDON_ITEM_TITLE),
             description = description,
+            maxDescriptionLines = 1,
             faviconPainter = BitmapPainter(image = addonIcon.asImageBitmap()),
             onClick = onClick,
             showDivider = showDivider,
@@ -119,6 +118,7 @@ internal fun AddonMenuItem(
             label = label,
             beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_extension_24),
             description = description,
+            maxDescriptionLines = 1,
             onClick = onClick,
             showDivider = showDivider,
             afterIconPainter = iconPainter,
