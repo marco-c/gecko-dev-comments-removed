@@ -127,7 +127,7 @@ class RTC_EXPORT VideoFrame {
 
    private:
     uint16_t id_ = kNotSetId;
-    scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer_;
+    scoped_refptr<VideoFrameBuffer> video_frame_buffer_;
     int64_t timestamp_us_ = 0;
     std::optional<Timestamp> presentation_timestamp_;
     std::optional<Timestamp> reference_time_;
@@ -142,7 +142,7 @@ class RTC_EXPORT VideoFrame {
 
   
   VideoFrame(const scoped_refptr<VideoFrameBuffer>& buffer,
-             webrtc::VideoRotation rotation,
+             VideoRotation rotation,
              int64_t timestamp_us);
   VideoFrame(const scoped_refptr<VideoFrameBuffer>& buffer,
              uint32_t timestamp_rtp,
@@ -241,7 +241,7 @@ class RTC_EXPORT VideoFrame {
 
   
   
-  scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer() const;
+  scoped_refptr<VideoFrameBuffer> video_frame_buffer() const;
 
   void set_video_frame_buffer(const scoped_refptr<VideoFrameBuffer>& buffer);
 
@@ -299,7 +299,7 @@ class RTC_EXPORT VideoFrame {
 
   uint16_t id_;
   
-  scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer_;
+  scoped_refptr<VideoFrameBuffer> video_frame_buffer_;
   uint32_t timestamp_rtp_;
   int64_t ntp_time_ms_;
   int64_t timestamp_us_;

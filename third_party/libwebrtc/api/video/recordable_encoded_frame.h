@@ -42,11 +42,11 @@ class RecordableEncodedFrame {
 
   
   
-  virtual std::optional<webrtc::ColorSpace> color_space() const = 0;
+  virtual std::optional<ColorSpace> color_space() const = 0;
 
   
   
-  virtual std::optional<webrtc::VideoRotation> video_rotation() const = 0;
+  virtual std::optional<VideoRotation> video_rotation() const = 0;
 
   
   virtual VideoCodecType codec() const = 0;

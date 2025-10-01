@@ -41,7 +41,7 @@ class EncodedFrame : public EncodedImage {
   virtual int64_t ReceivedTime() const { return -1; }
   
   
-  std::optional<webrtc::Timestamp> ReceivedTimestamp() const;
+  std::optional<Timestamp> ReceivedTimestamp() const;
 
   
   
@@ -50,7 +50,7 @@ class EncodedFrame : public EncodedImage {
   int64_t RenderTimeMs() const { return _renderTimeMs; }
   
   
-  std::optional<webrtc::Timestamp> RenderTimestamp() const;
+  std::optional<Timestamp> RenderTimestamp() const;
 
   
   

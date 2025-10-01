@@ -45,7 +45,7 @@ class NV12BufferInterface;
 
 
 
-class RTC_EXPORT VideoFrameBuffer : public webrtc::RefCountInterface {
+class RTC_EXPORT VideoFrameBuffer : public RefCountInterface {
  public:
   
   

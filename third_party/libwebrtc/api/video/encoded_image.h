@@ -220,11 +220,9 @@ class RTC_EXPORT EncodedImage {
     is_steady_state_refresh_frame_ = refresh_frame;
   }
 
-  webrtc::VideoFrameType FrameType() const { return _frameType; }
+  VideoFrameType FrameType() const { return _frameType; }
 
-  void SetFrameType(webrtc::VideoFrameType frame_type) {
-    _frameType = frame_type;
-  }
+  void SetFrameType(VideoFrameType frame_type) { _frameType = frame_type; }
   VideoContentType contentType() const { return content_type_; }
   VideoRotation rotation() const { return rotation_; }
 
