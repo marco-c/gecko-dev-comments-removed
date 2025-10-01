@@ -643,9 +643,13 @@ function loadBergamot(Module) {
       receiveInstance(result.instance);
     }
     function instantiateArrayBuffer(receiver) {
+      
+      
       return getBinaryPromise()
-        .then(function (binary) {
-          return WebAssembly.instantiate(binary, info);
+        .then(binary => {
+          const module = new WebAssembly.Module(binary);
+          const instance = new WebAssembly.Instance(module, info);
+          return { module, instance };
         })
         .then(function (instance) {
           return instance;
