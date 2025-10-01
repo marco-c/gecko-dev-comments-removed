@@ -26,6 +26,7 @@
 #include "mozilla/StaticPrefs_webgl.h"
 #include "mozilla/dom/BufferSourceBinding.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/GeneratePlaceholderCanvasData.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/dom/TypedArray.h"
 #include "mozilla/dom/WebGLContextEvent.h"
@@ -3476,6 +3477,26 @@ static inline size_t SizeOfViewElem(const dom::ArrayBufferView& view) {
   return js::Scalar::byteSize(elemType);
 }
 
+CanvasUtils::ImageExtraction ImageExtractionResult(
+    dom::HTMLCanvasElement* aCanvasElement,
+    dom::OffscreenCanvas* aOffscreenCanvas) {
+  if (aCanvasElement) {
+    return CanvasUtils::ImageExtractionResult(
+        aCanvasElement, nsContentUtils::GetCurrentJSContext(),
+        aCanvasElement->NodePrincipal());
+  }
+  if (aOffscreenCanvas) {
+    return CanvasUtils::ImageExtractionResult(
+        aOffscreenCanvas, nsContentUtils::GetCurrentJSContext(),
+        aOffscreenCanvas->GetOwnerGlobal()->PrincipalOrNull());
+  }
+
+  MOZ_ASSERT_UNREACHABLE(
+      "Who called ReadPixels or GetBufferSubData without a canvas and how?");
+
+  return CanvasUtils::ImageExtraction::Unrestricted;
+}
+
 void ClientWebGLContext::GetBufferSubData(GLenum target, GLintptr srcByteOffset,
                                           const dom::ArrayBufferView& dstData,
                                           GLuint dstElemOffset,
@@ -3497,7 +3518,13 @@ void ClientWebGLContext::GetBufferSubData(GLenum target, GLintptr srcByteOffset,
 
     RefPtr<ClientWebGLContext> self(this);
     auto randomizeOnExit = MakeScopeExit([&, self] {
-      if (self->ShouldResistFingerprinting(RFPTarget::WebGLRandomization)) {
+      CanvasUtils::ImageExtraction extraction =
+          ImageExtractionResult(self->mCanvasElement, self->mOffscreenCanvas);
+
+      if (extraction == CanvasUtils::ImageExtraction::Placeholder) {
+        dom::GeneratePlaceholderCanvasData(destView->size_bytes(),
+                                           destView->Elements());
+      } else if (extraction == CanvasUtils::ImageExtraction::Randomize) {
         
         
         uint8_t elementsPerGroup = 1,
@@ -5229,27 +5256,33 @@ void ClientWebGLContext::ReadPixels(GLint x, GLint y, GLsizei width,
                                             {format, type},
                                             state.mPixelPackState};
     bool succeeded = DoReadPixels(desc, *range);
-    if (succeeded &&
-        ShouldResistFingerprinting(RFPTarget::WebGLRandomization)) {
-      const auto pii = webgl::PackingInfoInfo::For(desc.pi);
-      
-      MOZ_ASSERT(pii.isSome());
+    if (succeeded) {
+      CanvasUtils::ImageExtraction extraction =
+          ImageExtractionResult(mCanvasElement, mOffscreenCanvas);
 
-      
-      
-      
-      
-      
-      
-      
-      constexpr uint8_t alphaChannelOffset = 0;
-      bool hasAlphaChannel =
-          format == LOCAL_GL_SRGB_ALPHA || format == LOCAL_GL_RGBA ||
-          format == LOCAL_GL_BGRA || format == LOCAL_GL_LUMINANCE_ALPHA;
-      nsRFPService::RandomizeElements(
-          GetCookieJarSettings(), PrincipalOrNull(), range->data(),
-          range->size_bytes(), pii->elementsPerPixel, pii->bytesPerElement,
-          alphaChannelOffset, hasAlphaChannel);
+      if (extraction == CanvasUtils::ImageExtraction::Placeholder) {
+        dom::GeneratePlaceholderCanvasData(range->size(), range->Elements());
+      } else if (extraction == CanvasUtils::ImageExtraction::Randomize) {
+        const auto pii = webgl::PackingInfoInfo::For(desc.pi);
+        
+        MOZ_ASSERT(pii.isSome());
+
+        
+        
+        
+        
+        
+        
+        
+        constexpr uint8_t alphaChannelOffset = 0;
+        bool hasAlphaChannel =
+            format == LOCAL_GL_SRGB_ALPHA || format == LOCAL_GL_RGBA ||
+            format == LOCAL_GL_BGRA || format == LOCAL_GL_LUMINANCE_ALPHA;
+        nsRFPService::RandomizeElements(
+            GetCookieJarSettings(), PrincipalOrNull(), range->data(),
+            range->size_bytes(), pii->elementsPerPixel, pii->bytesPerElement,
+            alphaChannelOffset, hasAlphaChannel);
+      }
     }
   });
 }
