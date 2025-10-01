@@ -47,6 +47,8 @@ class AndroidDecoderModule : public PlatformDecoderModule {
   
   static media::MediaCodecsSupported GetSupportedCodecs();
 
+  static bool IsJavaDecoderModuleAllowed();
+
  protected:
   bool SupportsColorDepth(
       gfx::ColorDepth aColorDepth,

@@ -13,6 +13,7 @@
 #endif
 
 #ifdef MOZ_WIDGET_ANDROID
+#  include "AndroidDecoderModule.h"
 #  include "AndroidEncoderModule.h"
 #endif
 
@@ -233,7 +234,7 @@ void PEMFactory::InitContentPEMs() {
 #endif
 
 #ifdef MOZ_WIDGET_ANDROID
-    if (StaticPrefs::media_android_media_codec_enabled()) {
+    if (AndroidDecoderModule::IsJavaDecoderModuleAllowed()) {
       mCurrentPEMs.AppendElement(new AndroidEncoderModule());
     }
 #endif
@@ -294,7 +295,7 @@ void PEMFactory::InitDefaultPEMs() {
 #endif
 
 #ifdef MOZ_WIDGET_ANDROID
-  if (StaticPrefs::media_android_media_codec_enabled()) {
+  if (AndroidDecoderModule::IsJavaDecoderModuleAllowed()) {
     mCurrentPEMs.AppendElement(new AndroidEncoderModule());
   }
 #endif
@@ -388,7 +389,7 @@ PEMFactory::CheckAndMaybeCreateEncoder(const EncoderConfig& aConfig,
   return PlatformEncoderModule::CreateEncoderPromise::CreateAndReject(
       MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                   nsPrintfCString("Error no encoder found for %s",
-                                  GetCodecTypeString(aConfig.mCodec))
+                                  EnumValueToString(aConfig.mCodec))
                       .get()),
       __func__);
 }
@@ -434,11 +435,11 @@ EncodeSupportSet PEMFactory::Supports(const EncoderConfig& aConfig) const {
     if (!supports.isEmpty()) {
       
       LOG("Checking if %s supports codec %s: yes", m->GetName(),
-          GetCodecTypeString(aConfig.mCodec));
+          EnumValueToString(aConfig.mCodec));
       return supports;
     }
     LOG("Checking if %s supports codec %s: no", m->GetName(),
-        GetCodecTypeString(aConfig.mCodec));
+        EnumValueToString(aConfig.mCodec));
   }
   return EncodeSupportSet{};
 }
