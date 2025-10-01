@@ -4,13 +4,17 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 144.0 (In Development)
+# 145.0 (In Development)
+
+# 144.0
 * **feature-customtabs**
   * 🚒 Bug fixed [Bug 1983103](https://bugzilla.mozilla.org/show_bug.cgi?id=1983103). Fixed issues with system status bars not being correctly themed for custom tabs and PWAs when used on devices with edge-to-edge enabled.
 * **support-ktx**
   * 🆕 New `Window.setSystemBarsBackground()` allows to still theme the status bar, navigation bar and other insets background in landscape mode even when edge-to-edge is enabled and Android doesn't theme these anymore. [Bug 1981861](https://bugzilla.mozilla.org/show_bug.cgi?id=1981861)
 * **feature-sitepermissions**
   * 🆕 New `SitePermissionsLearnMoreUrlProvider` interface that allows customizing whether to show "learn more" links in permission prompts and what URl to link to. [Bug 1985629](https://bugzilla.mozilla.org/show_bug.cgi?id=1985629)
+* **feature-framebusting**
+  * 🆕 New `GeckoSession.PromptDelegate.RedirectPrompt` prompt that is displayed when a third-party redirect is blocked. [Bug 1988107](https://bugzilla.mozilla.org/show_bug.cgi?id=1988107)
 
 # 143.0
 * **feature-downloads**:

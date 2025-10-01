@@ -6145,6 +6145,43 @@ public class GeckoSession {
     }
 
     
+
+
+    class RedirectPrompt extends BasePrompt {
+      
+      public final @Nullable String targetUri;
+
+      
+
+
+
+
+
+
+      protected RedirectPrompt(
+          @NonNull final String id,
+          @Nullable final String targetUri,
+          @NonNull final Observer observer) {
+        super(id, null, observer);
+        this.targetUri = targetUri;
+      }
+
+      
+
+
+
+
+
+
+      @UiThread
+      public @NonNull PromptResponse confirm(@NonNull final AllowOrDeny response) {
+        final boolean res = AllowOrDeny.ALLOW == response;
+        ensureResult().putBoolean("response", res);
+        return super.confirm();
+      }
+    }
+
+    
     class SharePrompt extends BasePrompt {
       
       @Retention(RetentionPolicy.SOURCE)
@@ -6479,6 +6516,21 @@ public class GeckoSession {
     @UiThread
     default @Nullable GeckoResult<PromptResponse> onPopupPrompt(
         @NonNull final GeckoSession session, @NonNull final PopupPrompt prompt) {
+      return null;
+    }
+
+    
+
+
+
+
+
+
+
+
+    @UiThread
+    default @Nullable GeckoResult<PromptResponse> onRedirectPrompt(
+        @NonNull final GeckoSession session, @NonNull final RedirectPrompt prompt) {
       return null;
     }
 
