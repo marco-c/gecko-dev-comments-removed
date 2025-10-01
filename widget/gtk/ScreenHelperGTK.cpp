@@ -558,8 +558,6 @@ void ScreenGetterGtk::Finish() {
 }
 
 RefPtr<Screen> ScreenHelperGTK::GetScreenForWindow(nsWindow* aWindow) {
-  LOG_SCREEN("GetScreenForWindow() [%p]", aWindow);
-
   static auto s_gdk_display_get_monitor_at_window =
       (GdkMonitor * (*)(GdkDisplay*, GdkWindow*))
           dlsym(RTLD_DEFAULT, "gdk_display_get_monitor_at_window");
@@ -585,8 +583,15 @@ RefPtr<Screen> ScreenHelperGTK::GetScreenForWindow(nsWindow* aWindow) {
   int index = -1;
   while (GdkMonitor* m = GdkDisplayGetMonitor(display, ++index)) {
     if (m == monitor) {
-      return ScreenManager::GetSingleton().CurrentScreenList().SafeElementAt(
-          index);
+      RefPtr<Screen> screen =
+          ScreenManager::GetSingleton().CurrentScreenList().SafeElementAt(
+              index);
+#ifdef MOZ_LOGGING
+      auto rect = screen->GetRect();
+      LOG_SCREEN("GetScreenForWindow() [%p] [%d] screen [%d, %d] -> [%d x %d]",
+                 aWindow, index, rect.x, rect.y, rect.width, rect.height);
+#endif
+      return screen.forget();
     }
   }
 
@@ -685,13 +690,20 @@ gint ScreenHelperGTK::GetGTKMonitorScaleFactor(gint aMonitor) {
 }
 
 float ScreenHelperGTK::GetGTKMonitorFractionalScaleFactor(gint aMonitor) {
-  auto& screens = widget::ScreenManager::GetSingleton().CurrentScreenList();
-  auto scale = (size_t)aMonitor < screens.Length()
-                   ? screens[aMonitor]->GetContentsScaleFactor()
-                   : 1.0f;
-  LOG_SCREEN("ScreenHelperGTK::GetGTKMonitorFractionalScaleFactor(%d) scale %f",
-             aMonitor, scale);
-  return scale;
+#ifdef MOZ_WAYLAND
+  if (GdkIsWaylandDisplay()) {
+    auto& screens = widget::ScreenManager::GetSingleton().CurrentScreenList();
+    auto scale = (size_t)aMonitor < screens.Length()
+                     ? screens[aMonitor]->GetContentsScaleFactor()
+                     : 1.0f;
+    LOG_SCREEN(
+        "ScreenHelperGTK::GetGTKMonitorFractionalScaleFactor(%d) scale %f",
+        aMonitor, scale);
+    return scale;
+  }
+#endif
+  
+  return GetGTKMonitorScaleFactor(aMonitor);
 }
 
 static void monitors_changed(GdkScreen* aScreen, gpointer unused) {
@@ -730,6 +742,7 @@ static GdkFilterReturn root_window_event_filter(GdkXEvent* aGdkXEvent,
   return GDK_FILTER_CONTINUE;
 }
 
+#ifdef MOZ_WAYLAND
 
 void ScreenHelperGTK::ScreensPrefChanged(const char* aPrefIgnored,
                                          void* aDataIgnored) {
@@ -737,6 +750,7 @@ void ScreenHelperGTK::ScreensPrefChanged(const char* aPrefIgnored,
   MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
   ScreenHelperGTK::RequestRefreshScreens();
 }
+#endif
 
 ScreenHelperGTK::ScreenHelperGTK() {
   LOG_SCREEN("ScreenHelperGTK::ScreenHelperGTK() created");
@@ -780,11 +794,11 @@ ScreenHelperGTK::ScreenHelperGTK() {
     LOG_SCREEN("ScreenHelperGTK() query HDR Wayland display");
     RequestRefreshScreens( true);
   }
-#endif
   Preferences::RegisterCallback(
       ScreenHelperGTK::ScreensPrefChanged,
       nsDependentCString(
           StaticPrefs::GetPrefName_widget_wayland_fractional_scale_enabled()));
+#endif
 }
 
 int ScreenHelperGTK::GetMonitorCount() {
