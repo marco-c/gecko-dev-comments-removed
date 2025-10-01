@@ -70,13 +70,11 @@ struct CommandChangedSurface {
 
 
 
-
 [NeedsOtherPid, ParentProc=Parent, ChildProc=GPU]
-sync protocol PNativeLayerRemote
+async protocol PNativeLayerRemote
 {
 parent:
   async CommitNativeLayerCommands(NativeLayerCommand[] commands);
-  sync RequestReadback(IntSize size) returns (Shmem pixels);
 };
 
 } 
