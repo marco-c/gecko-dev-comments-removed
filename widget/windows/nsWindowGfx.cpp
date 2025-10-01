@@ -317,7 +317,7 @@ void nsWindow::NotifyOcclusionState(mozilla::widget::OcclusionState aState) {
   if (mFrameState->GetSizeMode() == nsSizeMode_Minimized) {
     isFullyOccluded = false;
   }
-  if (isFullyOccluded && !HasTaskbarIconBeenCreated()) {
+  if (isFullyOccluded && !mHasBeenShown) {
     
     
     isFullyOccluded = false;
