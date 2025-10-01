@@ -138,6 +138,7 @@
 ::before::marker,
 ::after::marker {
   text-align: end;
+  text-align-last: end;
   text-transform: none;
   unicode-bidi: isolate;
   font-variant-numeric: tabular-nums;
@@ -506,9 +507,7 @@ parsererror|sourcetext {
 }
 
 :root::view-transition {
-  /* This is confusing and we probably should use "position: absolute".
-   * https://github.com/w3c/csswg-drafts/issues/12116 */
-  position: fixed;
+  position: absolute;
   inset: 0;
 }
 
