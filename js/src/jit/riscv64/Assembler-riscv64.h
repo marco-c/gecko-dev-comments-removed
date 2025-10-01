@@ -443,9 +443,11 @@ class Assembler : public AssemblerShared,
     
     
     
-    Assembler::WriteLoad64Instructions(inst, SavedScratchRegister, (uint64_t)dest);
+    Assembler::WriteLoad64Instructions(inst, SavedScratchRegister,
+                                       (uint64_t)dest);
     Instr jalr_ = JALR | (ra.code() << kRdShift) | (0x0 << kFunct3Shift) |
-                  (SavedScratchRegister.code() << kRs1Shift) | (0x0 << kImm12Shift);
+                  (SavedScratchRegister.code() << kRs1Shift) |
+                  (0x0 << kImm12Shift);
     *reinterpret_cast<Instr*>(inst + 6 * kInstrSize) = jalr_;
   }
   static void WriteLoad64Instructions(Instruction* inst0, Register reg,
@@ -580,6 +582,7 @@ class BlockTrampolinePoolScope {
 
 class UseScratchRegisterScope {
  public:
+  explicit UseScratchRegisterScope(Assembler& assembler);
   explicit UseScratchRegisterScope(Assembler* assembler);
   ~UseScratchRegisterScope();
 
