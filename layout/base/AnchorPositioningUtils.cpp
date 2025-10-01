@@ -496,6 +496,11 @@ static inline StylePositionAreaKeyword StripSpanAndSelfWMFlags(
                                     uint8_t(StylePositionAreaKeyword::SelfWM)));
 }
 
+static inline uint8_t SpanAndSelfWM(StylePositionAreaKeyword aValue) {
+  return uint8_t(aValue) & (uint8_t(StylePositionAreaKeyword::Span) |
+                            uint8_t(StylePositionAreaKeyword::SelfWM));
+}
+
 
 
 
@@ -523,6 +528,72 @@ static inline StylePositionArea MakeMissingSecondExplicit(
   return aPositionArea;
 }
 
+static StylePositionAreaKeyword FlipInAxis(StylePositionAreaKeyword aKw,
+                                           PhysicalAxis aAxis) {
+  auto bits = SpanAndSelfWM(aKw);
+  auto stripped = StripSpanAndSelfWMFlags(aKw);
+  switch (stripped) {
+    case StylePositionAreaKeyword::Top:
+    case StylePositionAreaKeyword::Bottom:
+      if (aAxis != PhysicalAxis::Vertical) {
+        break;
+      }
+      return StylePositionAreaKeyword(
+          uint8_t(stripped == StylePositionAreaKeyword::Top
+                      ? StylePositionAreaKeyword::Bottom
+                      : StylePositionAreaKeyword::Top) |
+          bits);
+    case StylePositionAreaKeyword::Left:
+    case StylePositionAreaKeyword::Right:
+      if (aAxis != PhysicalAxis::Horizontal) {
+        break;
+      }
+      return StylePositionAreaKeyword(
+          uint8_t(stripped == StylePositionAreaKeyword::Left
+                      ? StylePositionAreaKeyword::Right
+                      : StylePositionAreaKeyword::Left) |
+          bits);
+    case StylePositionAreaKeyword::Center:
+    case StylePositionAreaKeyword::SpanAll:
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE("Expected a physical position area");
+      break;
+  }
+  return aKw;
+}
+
+static void FlipInAxis(StylePositionArea& aArea, PhysicalAxis aAxis) {
+  aArea.first = FlipInAxis(aArea.first, aAxis);
+  aArea.second = FlipInAxis(aArea.second, aAxis);
+}
+
+static void ApplyFallbackTactic(
+    StylePositionArea& aPhysicalArea,
+    StylePositionTryFallbacksTryTacticKeyword aTactic, WritingMode aWM) {
+  switch (aTactic) {
+    case StylePositionTryFallbacksTryTacticKeyword::None:
+      return;
+    case StylePositionTryFallbacksTryTacticKeyword::FlipBlock:
+      FlipInAxis(aPhysicalArea, aWM.PhysicalAxis(LogicalAxis::Block));
+      break;
+    case StylePositionTryFallbacksTryTacticKeyword::FlipInline:
+      FlipInAxis(aPhysicalArea, aWM.PhysicalAxis(LogicalAxis::Inline));
+      break;
+    case StylePositionTryFallbacksTryTacticKeyword::FlipStart:
+      
+      return;
+  }
+}
+
+static void ApplyFallbackTactic(StylePositionArea& aArea,
+                                StylePositionTryFallbacksTryTactic aTactic,
+                                WritingMode aWM) {
+  ApplyFallbackTactic(aArea, aTactic._0, aWM);
+  ApplyFallbackTactic(aArea, aTactic._1, aWM);
+  ApplyFallbackTactic(aArea, aTactic._2, aWM);
+}
+
 
 
 
@@ -533,7 +604,7 @@ static inline StylePositionArea MakeMissingSecondExplicit(
 static StylePositionArea ToPhysicalPositionArea(StylePositionArea aPosArea,
                                                 WritingMode aCbWM,
                                                 WritingMode aPosWM) {
-  auto pa = MakeMissingSecondExplicit(aPosArea);
+  aPosArea = MakeMissingSecondExplicit(aPosArea);
 
   auto toPhysical = [=](StylePositionAreaKeyword aValue,
                         bool aImplicitIsBlock) -> StylePositionAreaKeyword {
@@ -611,24 +682,24 @@ static StylePositionArea ToPhysicalPositionArea(StylePositionArea aPosArea,
     return StylePositionAreaKeyword(uint8_t(aValue) | span);
   };
 
-  pa.first = toPhysical(pa.first,  true);
-  pa.second = toPhysical(pa.second,  false);
+  aPosArea.first = toPhysical(aPosArea.first,  true);
+  aPosArea.second = toPhysical(aPosArea.second,  false);
 
   
   
   
-  switch (StripSpanAndSelfWMFlags(pa.first)) {
+  switch (StripSpanAndSelfWMFlags(aPosArea.first)) {
     case StylePositionAreaKeyword::Top:
     case StylePositionAreaKeyword::Bottom:
-      std::swap(pa.first, pa.second);
+      std::swap(aPosArea.first, aPosArea.second);
       break;
 
     case StylePositionAreaKeyword::Center:
     case StylePositionAreaKeyword::SpanAll:
-      switch (StripSpanAndSelfWMFlags(pa.second)) {
+      switch (StripSpanAndSelfWMFlags(aPosArea.second)) {
         case StylePositionAreaKeyword::Left:
         case StylePositionAreaKeyword::Right:
-          std::swap(pa.first, pa.second);
+          std::swap(aPosArea.first, aPosArea.second);
           break;
         default:
           break;
@@ -638,13 +709,14 @@ static StylePositionArea ToPhysicalPositionArea(StylePositionArea aPosArea,
     default:
       break;
   }
-
-  return pa;
+  return aPosArea;
 }
 
 nsRect AnchorPositioningUtils::AdjustAbsoluteContainingBlockRectForPositionArea(
     nsIFrame* aPositionedFrame, nsIFrame* aContainingBlock,
-    const nsRect& aCBRect, AnchorPosReferenceData* aAnchorPosReferenceData) {
+    const nsRect& aCBRect, AnchorPosReferenceData* aAnchorPosReferenceData,
+    const StylePositionArea& aPosArea,
+    const StylePositionTryFallbacksTryTactic* aFallbackTactic) {
   
   
   const auto& defaultAnchor =
@@ -714,8 +786,12 @@ nsRect AnchorPositioningUtils::AdjustAbsoluteContainingBlockRectForPositionArea(
   nsRect res = aCBRect;
 
   
-  auto posArea = ToPhysicalPositionArea(
-      aPositionedFrame->StylePosition()->mPositionArea, cbWM, posWM);
+  StylePositionArea posArea = ToPhysicalPositionArea(aPosArea, cbWM, posWM);
+  if (aFallbackTactic) {
+    
+    
+    ApplyFallbackTactic(posArea, *aFallbackTactic, posWM);
+  }
 
   nscoord right = ltrEdges[3];
   if (posArea.first == StylePositionAreaKeyword::Left) {

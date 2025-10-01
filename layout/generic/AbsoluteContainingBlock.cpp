@@ -154,6 +154,9 @@ static bool IsSnapshotContainingBlock(const nsIFrame* aFrame) {
          PseudoStyleType::mozSnapshotContainingBlock;
 }
 
+
+NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(LastSuccessfulPositionFallback, uint32_t);
+
 void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
                                      nsPresContext* aPresContext,
                                      const ReflowInput& aReflowInput,
@@ -872,242 +875,306 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
 
   const bool isGrid = aFlags.contains(AbsPosReflowFlag::IsGridContainerCB);
   const auto* stylePos = aKidFrame->StylePosition();
-  const nsRect usedCb = [&] {
-    if (isGrid) {
-      
-      return nsGridContainerFrame::GridItemCB(aKidFrame);
-    }
-
-    if (!stylePos->mPositionArea.IsNone()) {
-      return AnchorPositioningUtils::
-          AdjustAbsoluteContainingBlockRectForPositionArea(
-              aKidFrame, aDelegatingFrame, aOriginalContainingBlockRect,
-              aAnchorPosReferenceData);
-    }
-
-    if (ViewportFrame* viewport = do_QueryFrame(aDelegatingFrame)) {
-      if (!IsSnapshotContainingBlock(aKidFrame)) {
-        return viewport->GetContainingBlockAdjustedForScrollbars(
-            aReflowInput);
+  
+  auto fallbacks = stylePos->mPositionTryFallbacks._0.AsSpan();
+  Maybe<uint32_t> currentFallbackIndex;
+  
+  
+  if (aAnchorPosReferenceData) {
+    bool found = false;
+    uint32_t index =
+        aKidFrame->GetProperty(LastSuccessfulPositionFallback(), &found);
+    if (found) {
+      if (index >= fallbacks.Length()) {
+        
+        
+        aKidFrame->RemoveProperty(LastSuccessfulPositionFallback());
+      } else {
+        currentFallbackIndex.emplace(index);
       }
-      return dom::ViewTransition::SnapshotContainingBlockRect(
-          viewport->PresContext());
-    }
-    return aOriginalContainingBlockRect;
-  }();
-
-  WritingMode wm = aKidFrame->GetWritingMode();
-  LogicalSize logicalCBSize(wm, usedCb.Size());
-  nscoord availISize = logicalCBSize.ISize(wm);
-
-  ReflowInput::InitFlags initFlags;
-  if (aFlags.contains(AbsPosReflowFlag::IsGridContainerCB)) {
-    
-    
-    
-    
-    
-    
-    nsIFrame* placeholder = aKidFrame->GetPlaceholderFrame();
-    if (placeholder && placeholder->GetParent() == aDelegatingFrame) {
-      initFlags += ReflowInput::InitFlag::StaticPosIsCBOrigin;
     }
   }
-
-  const bool kidFrameMaySplit =
-      (aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE) &&
-
-      
-      aFlags.contains(AbsPosReflowFlag::AllowFragmentation) &&
-
-      
-      
-      !aDelegatingFrame->IsInlineFrame() &&
-
-      
-      !aKidFrame->IsColumnSetWrapperFrame() &&
-
-      
-      
-      
-      (aKidFrame->GetLogicalRect(usedCb.Size()).BStart(wm) <=
-       aReflowInput.AvailableBSize());
-
-  
-  const WritingMode outerWM = aReflowInput.GetWritingMode();
-  const LogicalMargin border = aDelegatingFrame->GetLogicalUsedBorder(outerWM);
-
-  const nscoord availBSize = kidFrameMaySplit
-                                 ? aReflowInput.AvailableBSize() -
-                                       border.ConvertTo(wm, outerWM).BStart(wm)
-                                 : NS_UNCONSTRAINEDSIZE;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  Maybe<ReflowInput> parentReflowInput;
-  if (const ViewportFrame* viewport = do_QueryFrame(aDelegatingFrame)) {
-    parentReflowInput.emplace(aReflowInput);
-    
-    
-    Unused << viewport->AdjustReflowInputForScrollbars(parentReflowInput.ref());
-  }
-  ReflowInput kidReflowInput(
-      aPresContext, parentReflowInput.refOr(aReflowInput), aKidFrame,
-      LogicalSize(wm, availISize, availBSize), Some(logicalCBSize), initFlags,
-      {}, {}, aAnchorPosReferenceData);
-
-  if (nscoord kidAvailBSize = kidReflowInput.AvailableBSize();
-      kidAvailBSize != NS_UNCONSTRAINEDSIZE) {
-    
-    kidAvailBSize -= kidReflowInput.ComputedLogicalMargin(wm).BStart(wm);
-    const nscoord kidOffsetBStart =
-        kidReflowInput.ComputedLogicalOffsets(wm).BStart(wm);
-    if (NS_AUTOOFFSET != kidOffsetBStart) {
-      kidAvailBSize -= kidOffsetBStart;
-    }
-    kidReflowInput.SetAvailableBSize(kidAvailBSize);
-  }
-
-  
-  ReflowOutput kidDesiredSize(kidReflowInput);
-  aKidFrame->Reflow(aPresContext, kidDesiredSize, kidReflowInput, aStatus);
-
-  
-  
-  if (!aKidFrame->IsMenuPopupFrame()) {
-    const LogicalSize kidSize = kidDesiredSize.Size(outerWM);
-
-    LogicalMargin offsets = kidReflowInput.ComputedLogicalOffsets(outerWM);
-    LogicalMargin margin = kidReflowInput.ComputedLogicalMargin(outerWM);
-
-    
-    
-    
-    if (kidReflowInput.mFlags.mIOffsetsNeedCSSAlign) {
-      margin.IStart(outerWM) = margin.IEnd(outerWM) = 0;
-    }
-    if (kidReflowInput.mFlags.mBOffsetsNeedCSSAlign) {
-      margin.BStart(outerWM) = margin.BEnd(outerWM) = 0;
+  do {
+    const StylePositionTryFallbacksItem* currentFallback = nullptr;
+    if (currentFallbackIndex) {
+      currentFallback = &fallbacks[*currentFallbackIndex];
     }
 
-    
-    
-    ResolveSizeDependentOffsets(aPresContext, kidReflowInput, kidSize, margin,
-                                &offsets, &logicalCBSize);
+    const nsRect usedCb = [&] {
+      if (isGrid) {
+        
+        return nsGridContainerFrame::GridItemCB(aKidFrame);
+      }
 
-    if (kidReflowInput.mFlags.mDeferAutoMarginComputation) {
-      ResolveAutoMarginsAfterLayout(kidReflowInput, &logicalCBSize, kidSize,
-                                    margin, offsets);
-    }
+      auto positionArea = stylePos->mPositionArea;
+      const StylePositionTryFallbacksTryTactic* tactic = nullptr;
+      if (currentFallback) {
+        if (currentFallback->IsPositionArea()) {
+          positionArea = currentFallback->AsPositionArea();
+        } else if (currentFallback->IsIdentAndOrTactic()) {
+          const auto& item = currentFallback->AsIdentAndOrTactic();
+          tactic = &item.try_tactic;
+        }
+      }
 
-    
-    
-    
-    
-    const auto* stylePos = aKidFrame->StylePosition();
-    const auto anchorResolutionParams =
-        AnchorPosOffsetResolutionParams::UseCBFrameSize(
-            AnchorPosResolutionParams::From(aKidFrame,
-                                            aAnchorPosReferenceData));
-    const bool iInsetAuto =
-        stylePos
-            ->GetAnchorResolvedInset(LogicalSide::IStart, outerWM,
-                                     anchorResolutionParams)
-            ->IsAuto() ||
-        stylePos
-            ->GetAnchorResolvedInset(LogicalSide::IEnd, outerWM,
-                                     anchorResolutionParams)
-            ->IsAuto();
-    const bool bInsetAuto =
-        stylePos
-            ->GetAnchorResolvedInset(LogicalSide::BStart, outerWM,
-                                     anchorResolutionParams)
-            ->IsAuto() ||
-        stylePos
-            ->GetAnchorResolvedInset(LogicalSide::BEnd, outerWM,
-                                     anchorResolutionParams)
-            ->IsAuto();
-    const LogicalSize logicalCBSizeOuterWM(outerWM, usedCb.Size());
-    const LogicalSize kidMarginBox{
-        outerWM, margin.IStartEnd(outerWM) + kidSize.ISize(outerWM),
-        margin.BStartEnd(outerWM) + kidSize.BSize(outerWM)};
-    const auto* placeholderContainer =
-        GetPlaceholderContainer(kidReflowInput.mFrame);
+      if (!positionArea.IsNone()) {
+        return AnchorPositioningUtils::
+            AdjustAbsoluteContainingBlockRectForPositionArea(
+                aKidFrame, aDelegatingFrame, aOriginalContainingBlockRect,
+                aAnchorPosReferenceData, positionArea, tactic);
+      }
 
-    if (!iInsetAuto) {
-      MOZ_ASSERT(!kidReflowInput.mFlags.mIOffsetsNeedCSSAlign,
-                 "Non-auto inline inset but requires CSS alignment for static "
-                 "position?");
-      auto alignOffset = OffsetToAlignedStaticPos(
-          kidReflowInput, kidMarginBox, logicalCBSizeOuterWM,
-          placeholderContainer, outerWM, LogicalAxis::Inline,
-          Some(NonAutoAlignParams{
-              offsets.IStart(outerWM),
-              offsets.IEnd(outerWM),
-          }));
+      if (ViewportFrame* viewport = do_QueryFrame(aDelegatingFrame)) {
+        if (!IsSnapshotContainingBlock(aKidFrame)) {
+          return viewport->GetContainingBlockAdjustedForScrollbars(
+              aReflowInput);
+        }
+        return dom::ViewTransition::SnapshotContainingBlockRect(
+            viewport->PresContext());
+      }
+      return aOriginalContainingBlockRect;
+    }();
 
-      offsets.IStart(outerWM) += alignOffset;
-      offsets.IEnd(outerWM) =
-          logicalCBSizeOuterWM.ISize(outerWM) -
-          (offsets.IStart(outerWM) + kidMarginBox.ISize(outerWM));
-    }
-    if (!bInsetAuto) {
-      MOZ_ASSERT(!kidReflowInput.mFlags.mBOffsetsNeedCSSAlign,
-                 "Non-auto block inset but requires CSS alignment for static "
-                 "position?");
-      auto alignOffset = OffsetToAlignedStaticPos(
-          kidReflowInput, kidMarginBox, logicalCBSizeOuterWM,
-          placeholderContainer, outerWM, LogicalAxis::Block,
-          Some(NonAutoAlignParams{
-              offsets.BStart(outerWM),
-              offsets.BEnd(outerWM),
-          }));
-      offsets.BStart(outerWM) += alignOffset;
-      offsets.BEnd(outerWM) =
-          logicalCBSizeOuterWM.BSize(outerWM) -
-          (offsets.BStart(outerWM) + kidMarginBox.BSize(outerWM));
-    }
+    WritingMode wm = aKidFrame->GetWritingMode();
+    LogicalSize logicalCBSize(wm, usedCb.Size());
+    nscoord availISize = logicalCBSize.ISize(wm);
 
-    LogicalRect rect(outerWM,
-                     border.StartOffset(outerWM) +
-                         offsets.StartOffset(outerWM) +
-                         margin.StartOffset(outerWM),
-                     kidSize);
-    nsRect r = rect.GetPhysicalRect(
-        outerWM, logicalCBSize.GetPhysicalSize(wm) +
-                     border.Size(outerWM).GetPhysicalSize(outerWM));
-
-    
-    r += usedCb.TopLeft();
-
-    aKidFrame->SetRect(r);
-
-    nsView* view = aKidFrame->GetView();
-    if (view) {
+    ReflowInput::InitFlags initFlags;
+    if (aFlags.contains(AbsPosReflowFlag::IsGridContainerCB)) {
       
       
-      nsContainerFrame::SyncFrameViewAfterReflow(
-          aPresContext, aKidFrame, view, kidDesiredSize.InkOverflow());
+      
+      
+      
+      
+      nsIFrame* placeholder = aKidFrame->GetPlaceholderFrame();
+      if (placeholder && placeholder->GetParent() == aDelegatingFrame) {
+        initFlags += ReflowInput::InitFlag::StaticPosIsCBOrigin;
+      }
+    }
+
+    const bool kidFrameMaySplit =
+        aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE &&
+
+        
+        aFlags.contains(AbsPosReflowFlag::AllowFragmentation) &&
+
+        
+        
+        !aDelegatingFrame->IsInlineFrame() &&
+
+        
+        
+        !aKidFrame->IsColumnSetWrapperFrame() &&
+
+        
+        
+        
+        (aKidFrame->GetLogicalRect(usedCb.Size()).BStart(wm) <=
+         aReflowInput.AvailableBSize());
+
+    
+    const WritingMode outerWM = aReflowInput.GetWritingMode();
+    const LogicalMargin border =
+        aDelegatingFrame->GetLogicalUsedBorder(outerWM);
+
+    const nscoord availBSize =
+        kidFrameMaySplit ? aReflowInput.AvailableBSize() -
+                               border.ConvertTo(wm, outerWM).BStart(wm)
+                         : NS_UNCONSTRAINEDSIZE;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Maybe<ReflowInput> parentReflowInput;
+    if (const ViewportFrame* viewport = do_QueryFrame(aDelegatingFrame)) {
+      parentReflowInput.emplace(aReflowInput);
+      
+      
+      Unused << viewport->AdjustReflowInputForScrollbars(
+          parentReflowInput.ref());
+    }
+    ReflowInput kidReflowInput(
+        aPresContext, parentReflowInput.refOr(aReflowInput), aKidFrame,
+        LogicalSize(wm, availISize, availBSize), Some(logicalCBSize), initFlags,
+        {}, {}, aAnchorPosReferenceData);
+
+    if (nscoord kidAvailBSize = kidReflowInput.AvailableBSize();
+        kidAvailBSize != NS_UNCONSTRAINEDSIZE) {
+      
+      kidAvailBSize -= kidReflowInput.ComputedLogicalMargin(wm).BStart(wm);
+      const nscoord kidOffsetBStart =
+          kidReflowInput.ComputedLogicalOffsets(wm).BStart(wm);
+      if (NS_AUTOOFFSET != kidOffsetBStart) {
+        kidAvailBSize -= kidOffsetBStart;
+      }
+      kidReflowInput.SetAvailableBSize(kidAvailBSize);
+    }
+
+    
+    ReflowOutput kidDesiredSize(kidReflowInput);
+    aKidFrame->Reflow(aPresContext, kidDesiredSize, kidReflowInput, aStatus);
+
+    
+    
+    if (!aKidFrame->IsMenuPopupFrame()) {
+      const LogicalSize kidSize = kidDesiredSize.Size(outerWM);
+
+      LogicalMargin offsets = kidReflowInput.ComputedLogicalOffsets(outerWM);
+      LogicalMargin margin = kidReflowInput.ComputedLogicalMargin(outerWM);
+
+      
+      
+      
+      
+      if (kidReflowInput.mFlags.mIOffsetsNeedCSSAlign) {
+        margin.IStart(outerWM) = margin.IEnd(outerWM) = 0;
+      }
+      if (kidReflowInput.mFlags.mBOffsetsNeedCSSAlign) {
+        margin.BStart(outerWM) = margin.BEnd(outerWM) = 0;
+      }
+
+      
+      
+      ResolveSizeDependentOffsets(aPresContext, kidReflowInput, kidSize, margin,
+                                  &offsets, &logicalCBSize);
+
+      if (kidReflowInput.mFlags.mDeferAutoMarginComputation) {
+        ResolveAutoMarginsAfterLayout(kidReflowInput, &logicalCBSize, kidSize,
+                                      margin, offsets);
+      }
+
+      
+      
+      
+      
+      const auto* stylePos = aKidFrame->StylePosition();
+      const auto anchorResolutionParams =
+          AnchorPosOffsetResolutionParams::UseCBFrameSize(
+              AnchorPosResolutionParams::From(aKidFrame,
+                                              aAnchorPosReferenceData));
+      const bool iInsetAuto =
+          stylePos
+              ->GetAnchorResolvedInset(LogicalSide::IStart, outerWM,
+                                       anchorResolutionParams)
+              ->IsAuto() ||
+          stylePos
+              ->GetAnchorResolvedInset(LogicalSide::IEnd, outerWM,
+                                       anchorResolutionParams)
+              ->IsAuto();
+      const bool bInsetAuto =
+          stylePos
+              ->GetAnchorResolvedInset(LogicalSide::BStart, outerWM,
+                                       anchorResolutionParams)
+              ->IsAuto() ||
+          stylePos
+              ->GetAnchorResolvedInset(LogicalSide::BEnd, outerWM,
+                                       anchorResolutionParams)
+              ->IsAuto();
+      const LogicalSize logicalCBSizeOuterWM(outerWM, usedCb.Size());
+      const LogicalSize kidMarginBox{
+          outerWM, margin.IStartEnd(outerWM) + kidSize.ISize(outerWM),
+          margin.BStartEnd(outerWM) + kidSize.BSize(outerWM)};
+      const auto* placeholderContainer =
+          GetPlaceholderContainer(kidReflowInput.mFrame);
+
+      if (!iInsetAuto) {
+        MOZ_ASSERT(
+            !kidReflowInput.mFlags.mIOffsetsNeedCSSAlign,
+            "Non-auto inline inset but requires CSS alignment for static "
+            "position?");
+        auto alignOffset = OffsetToAlignedStaticPos(
+            kidReflowInput, kidMarginBox, logicalCBSizeOuterWM,
+            placeholderContainer, outerWM, LogicalAxis::Inline,
+            Some(NonAutoAlignParams{
+                offsets.IStart(outerWM),
+                offsets.IEnd(outerWM),
+            }));
+
+        offsets.IStart(outerWM) += alignOffset;
+        offsets.IEnd(outerWM) =
+            logicalCBSizeOuterWM.ISize(outerWM) -
+            (offsets.IStart(outerWM) + kidMarginBox.ISize(outerWM));
+      }
+      if (!bInsetAuto) {
+        MOZ_ASSERT(!kidReflowInput.mFlags.mBOffsetsNeedCSSAlign,
+                   "Non-auto block inset but requires CSS alignment for static "
+                   "position?");
+        auto alignOffset = OffsetToAlignedStaticPos(
+            kidReflowInput, kidMarginBox, logicalCBSizeOuterWM,
+            placeholderContainer, outerWM, LogicalAxis::Block,
+            Some(NonAutoAlignParams{
+                offsets.BStart(outerWM),
+                offsets.BEnd(outerWM),
+            }));
+        offsets.BStart(outerWM) += alignOffset;
+        offsets.BEnd(outerWM) =
+            logicalCBSizeOuterWM.BSize(outerWM) -
+            (offsets.BStart(outerWM) + kidMarginBox.BSize(outerWM));
+      }
+
+      LogicalRect rect(outerWM,
+                       border.StartOffset(outerWM) +
+                           offsets.StartOffset(outerWM) +
+                           margin.StartOffset(outerWM),
+                       kidSize);
+      nsRect r = rect.GetPhysicalRect(
+          outerWM, logicalCBSize.GetPhysicalSize(wm) +
+                       border.Size(outerWM).GetPhysicalSize(outerWM));
+
+      
+      r += usedCb.TopLeft();
+
+      aKidFrame->SetRect(r);
+
+      nsView* view = aKidFrame->GetView();
+      if (view) {
+        
+        
+        nsContainerFrame::SyncFrameViewAfterReflow(
+            aPresContext, aKidFrame, view, kidDesiredSize.InkOverflow());
+      } else {
+        nsContainerFrame::PositionChildViews(aKidFrame);
+      }
+    }
+
+    aKidFrame->DidReflow(aPresContext, &kidReflowInput);
+
+    if (fallbacks.IsEmpty() ||
+        (currentFallbackIndex &&
+         *currentFallbackIndex >= fallbacks.Length() - 1) ||
+        (usedCb.Contains(aKidFrame->GetRect()) && aStatus.IsComplete())) {
+      
+      break;
+    }
+
+    
+    aKidFrame->AddStateBits(NS_FRAME_IS_DIRTY);
+    if (currentFallbackIndex) {
+      (*currentFallbackIndex)++;
     } else {
-      nsContainerFrame::PositionChildViews(aKidFrame);
+      currentFallbackIndex.emplace(0);
     }
+    aStatus.Reset();
+  } while (true);
+
+  if (currentFallbackIndex) {
+    aKidFrame->SetProperty(LastSuccessfulPositionFallback(),
+                           *currentFallbackIndex);
   }
 
-  aKidFrame->DidReflow(aPresContext, &kidReflowInput);
-
-  const nsRect r = aKidFrame->GetRect();
 #ifdef DEBUG
   if (nsBlockFrame::gNoisyReflow) {
+    const nsRect r = aKidFrame->GetRect();
     nsIFrame::IndentBy(stdout, nsBlockFrame::gNoiseIndent - 1);
     printf("abs pos ");
     nsAutoString name;
@@ -1119,6 +1186,6 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
 #endif
 
   if (aOverflowAreas) {
-    aOverflowAreas->UnionWith(kidDesiredSize.mOverflowAreas + r.TopLeft());
+    aOverflowAreas->UnionWith(aKidFrame->GetOverflowAreasRelativeToParent());
   }
 }
