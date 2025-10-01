@@ -236,96 +236,71 @@ class CallbackObjectBase {
   
   nsCOMPtr<nsIGlobalObject> mIncumbentGlobal;
   JS::TenuredHeap<JSObject*> mIncumbentJSGlobal;
-};
+
+  class MOZ_STACK_CLASS CallSetup {
+    
 
 
 
 
 
+   public:
+    
+    
+    
+    
+    
+    
+    
+    CallSetup(CallbackObjectBase* aCallback, ErrorResult& aRv,
+              const char* aExecutionReason,
+              ExceptionHandling aExceptionHandling, JS::Realm* aRealm = nullptr,
+              bool aIsJSImplementedWebIDL = false);
+    MOZ_CAN_RUN_SCRIPT ~CallSetup();
 
+    JSContext* GetContext() const { return mCx; }
 
-class MOZ_STACK_CLASS CallSetup {
- public:
-  
-  
-  
-  
-  
-  
-  
-  CallSetup(CallbackObjectBase* aCallback, ErrorResult& aRv,
-            const char* aExecutionReason,
-            CallbackObjectBase::ExceptionHandling aExceptionHandling,
-            JS::Realm* aRealm = nullptr, bool aIsJSImplementedWebIDL = false);
+    
+    
+    BindingCallContext& GetCallContext() { return *mCallContext; }
 
-  CallSetup(JSObject* aCallbackGlobal, nsIGlobalObject* aIncumbentGlobal,
-            JSObject* aCreationStack, ErrorResult& aRv,
-            const char* aExecutionReason,
-            CallbackObjectBase::ExceptionHandling aExceptionHandling,
-            JS::Realm* aRealm = nullptr);
+   private:
+    
+    CallSetup(const CallSetup&) = delete;
 
-  MOZ_CAN_RUN_SCRIPT ~CallSetup();
+    bool ShouldRethrowException(JS::Handle<JS::Value> aException);
 
-  JSContext* GetContext() const { return mCx; }
+    
+    JSContext* mCx;
 
-  
-  
-  BindingCallContext& GetCallContext() { return *mCallContext; }
+    
+    
+    JS::Realm* mRealm;
 
- private:
-  
-  CallSetup(const CallSetup&) = delete;
+    
+    Maybe<AutoEntryScript> mAutoEntryScript;
+    Maybe<AutoIncumbentScript> mAutoIncumbentScript;
 
-  bool ShouldRethrowException(JS::Handle<JS::Value> aException);
+    Maybe<JS::Rooted<JSObject*>> mRootedCallable;
 
-  static nsIGlobalObject* GetActiveGlobalObjectForCall(
-      JSObject* callbackOrGlobal, bool aIsMainThread,
-      bool aIsJSImplementedWebIDL, ErrorResult& aRv);
+    Maybe<JS::AutoSetAsyncStackForNewCalls> mAsyncStackSetter;
 
-  static bool CheckBeforeExecution(nsIGlobalObject* aGlobalObject,
-                                   JSObject* aCallbackOrGlobal,
-                                   bool aIsJSImplementedWebIDL,
-                                   ErrorResult& aRv);
+    
+    
+    
+    
+    Maybe<JSAutoRealm> mAr;
 
-  
-  
-  void SetupForExecution(nsIGlobalObject* aGlobalObject,
-                         nsIGlobalObject* aIncumbentGlobal,
-                         JS::Handle<JSObject*> aCallbackOrGlobal,
-                         JS::Handle<JSObject*> aCallbackGlobal,
-                         JS::Handle<JSObject*> aCreationStack,
-                         nsIPrincipal* aWebIDLCallerPrincipal,
-                         const char* aExecutionReason, ErrorResult& aRv);
+    
+    
+    Maybe<BindingCallContext> mCallContext;
 
-  
-  JSContext* mCx;
-
-  
-  
-  JS::Realm* mRealm;
-
-  
-  Maybe<AutoEntryScript> mAutoEntryScript;
-  Maybe<AutoIncumbentScript> mAutoIncumbentScript;
-
-  Maybe<JS::Rooted<JSObject*>> mRootedCallable;
-  Maybe<JS::AutoSetAsyncStackForNewCalls> mAsyncStackSetter;
-
-  
-  
-  
-  
-  Maybe<JSAutoRealm> mAr;
-
-  
-  
-  Maybe<BindingCallContext> mCallContext;
-
-  
-  
-  ErrorResult& mErrorResult;
-  const CallbackObjectBase::ExceptionHandling mExceptionHandling;
-  const bool mIsMainThread;
+    
+    
+    ErrorResult& mErrorResult;
+    const ExceptionHandling mExceptionHandling;
+    const bool mIsMainThread;
+  };
 };
 
 class CallbackObject : public nsISupports,
