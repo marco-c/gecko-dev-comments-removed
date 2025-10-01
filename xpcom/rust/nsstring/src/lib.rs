@@ -112,6 +112,7 @@
 
 
 
+#![allow(unknown_lints, mismatched_lifetime_syntaxes)]
 #![allow(non_camel_case_types)]
 #![allow(clippy::missing_safety_doc)]
 #![allow(clippy::new_without_default)]
