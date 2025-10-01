@@ -31,7 +31,7 @@ const webl10n = new LocalizationHelper(
   "devtools/client/locales/webconsole.properties"
 );
 
-function savedFrameToLocation(frame) {
+function savedFrameToDebuggerLocation(frame) {
   const { source: url, line, column, sourceId } = frame;
   return {
     url,
@@ -41,7 +41,10 @@ function savedFrameToLocation(frame) {
 
     
     
-    column: column - 1,
+    
+    
+    
+    column: column >= 1 ? column - 1 : null,
 
     
     
@@ -118,7 +121,7 @@ class Frame extends Component {
 
   componentDidMount() {
     if (this.props.sourceMapURLService) {
-      const location = savedFrameToLocation(this.props.frame);
+      const location = savedFrameToDebuggerLocation(this.props.frame);
       
       
       
@@ -152,21 +155,17 @@ class Frame extends Component {
     const { frame } = this.props;
     const { originalLocation } = this.state;
 
-    const generatedLocation = savedFrameToLocation(frame);
+    const generatedLocation = savedFrameToDebuggerLocation(frame);
     const currentLocation = originalLocation || generatedLocation;
 
-    const source = currentLocation.url || "";
-    const line =
-      currentLocation.line != void 0 ? Number(currentLocation.line) : null;
-    
-    const column =
-      currentLocation.column != void 0
-        ? Number(currentLocation.column) + 1
-        : null;
+    const column = Number.parseInt(currentLocation.column, 10);
+
     return {
-      source,
-      line,
-      column,
+      sourceURL: currentLocation.url || "",
+      
+      line: Number(currentLocation.line) || null,
+      
+      column: typeof column == "number" ? column + 1 : null,
     };
   };
 
@@ -175,9 +174,9 @@ class Frame extends Component {
 
 
   #getCurrentLocationUnicodeHostName = () => {
-    const { source } = this.#getCurrentLocationInfo();
+    const { sourceURL } = this.#getCurrentLocationInfo();
 
-    const { host } = getSourceNames(source);
+    const { host } = getSourceNames(sourceURL);
     return host ? getUnicodeHostname(host) : "";
   };
 
@@ -189,7 +188,7 @@ class Frame extends Component {
     const { frame } = this.props;
     const { originalLocation } = this.state;
 
-    const generatedLocation = savedFrameToLocation(frame);
+    const generatedLocation = savedFrameToDebuggerLocation(frame);
 
     
     
@@ -210,8 +209,8 @@ class Frame extends Component {
   #getTopElementProps = () => {
     const { className } = this.props;
 
-    const { source, line, column } = this.#getCurrentLocationInfo();
-    const { long } = getSourceNames(source);
+    const { sourceURL, line, column } = this.#getCurrentLocationInfo();
+    const { long } = getSourceNames(sourceURL);
     const props = {
       "data-url": long,
       className: "frame-link" + (className ? ` ${className}` : ""),
@@ -237,9 +236,9 @@ class Frame extends Component {
   #getSourceElementsProps = () => {
     const { frame, onClick, messageSource } = this.props;
 
-    const generatedLocation = savedFrameToLocation(frame);
-    const { source, line, column } = this.#getCurrentLocationInfo();
-    const { long } = getSourceNames(source);
+    const generatedLocation = savedFrameToDebuggerLocation(frame);
+    const { sourceURL, line, column } = this.#getCurrentLocationInfo();
+    const { long } = getSourceNames(sourceURL);
     let url = getUnicodeUrl(long);
 
     
@@ -275,7 +274,7 @@ class Frame extends Component {
             onClick(generatedLocation);
           }
         },
-        href: source,
+        href: sourceURL,
         draggable: false,
       };
     }
@@ -327,8 +326,8 @@ class Frame extends Component {
     const { showEmptyPathAsHost, showFullSourceUrl } = this.props;
     const { originalLocation } = this.state;
 
-    const { source } = this.#getCurrentLocationInfo();
-    const { short, long, host } = getSourceNames(source);
+    const { sourceURL } = this.#getCurrentLocationInfo();
+    const { short, long, host } = getSourceNames(sourceURL);
     const unicodeShort = getUnicodeUrlPath(short);
     const unicodeLong = getUnicodeUrl(long);
     let displaySource = showFullSourceUrl ? unicodeLong : unicodeShort;

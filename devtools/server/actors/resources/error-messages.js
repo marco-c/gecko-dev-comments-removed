@@ -135,7 +135,9 @@ class ErrorMessageWatcher extends nsIConsoleListenerWatcher {
     if (!sourceName && !sourceId && !lineNumber && !columnNumber && stack) {
       sourceName = stack[0].filename;
       sourceId = stack[0].sourceId;
+      
       lineNumber = stack[0].lineNumber;
+      
       columnNumber = stack[0].columnNumber;
     }
 

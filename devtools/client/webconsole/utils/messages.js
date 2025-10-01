@@ -276,6 +276,7 @@ function transformConsoleAPICallResource(
     ? {
         source: consoleMessageResource.filename,
         sourceId: consoleMessageResource.sourceId,
+        
         line: consoleMessageResource.lineNumber,
         column: consoleMessageResource.columnNumber,
       }
@@ -344,6 +345,7 @@ function transformPageErrorResource(pageErrorResource, override = {}) {
     ? {
         source: pageError.sourceName,
         sourceId: pageError.sourceId,
+        
         line: pageError.lineNumber,
         column: pageError.columnNumber,
       }

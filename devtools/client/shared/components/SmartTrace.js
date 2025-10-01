@@ -96,7 +96,8 @@ class SmartTrace extends Component {
                     id: sourceId,
                     url: filename.split(" -> ").pop(),
                     line: lineNumber,
-                    column: columnNumber,
+                    
+                    column: columnNumber - 1,
                   },
                   callback
                 )
@@ -235,6 +236,10 @@ class SmartTrace extends Component {
     const { onViewSourceInDebugger, onViewSource, stacktrace } = this.props;
     const { originalLocations } = this.state;
 
+    
+    
+    
+    
     const frames = stacktrace.map(
       (
         {
@@ -250,8 +255,10 @@ class SmartTrace extends Component {
         
         const sourceUrl = filename.split(" -> ").pop();
         const generatedLocation = {
+          
           line: lineNumber,
-          column: columnNumber,
+          
+          column: columnNumber - 1,
           source: {
             
             id: sourceId,
@@ -266,7 +273,9 @@ class SmartTrace extends Component {
         const originalLocation = originalLocations?.[i];
         if (originalLocation) {
           location = {
+            
             line: originalLocation.line,
+            
             column: originalLocation.column,
             source: {
               url: originalLocation.url,
