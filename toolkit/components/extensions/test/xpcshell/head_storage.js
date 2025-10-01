@@ -209,6 +209,36 @@ async function test_background_page_storage(testAreaName) {
       );
     }
 
+    
+    async function testDeeplyNestedObject(areaName) {
+      const obj = {};
+      let current = obj;
+      for (let i = 0; i < 127; i++) {
+        const next = {};
+        current.foo = next;
+        current = next;
+      }
+      let storage = browser.storage[areaName];
+      if (areaName == "sync") {
+        
+        
+        let errorMessage = null;
+        try {
+          await storage.set(obj);
+        } catch (e) {
+          errorMessage = e.toString();
+        }
+        browser.test.assertTrue(
+          errorMessage === null ||
+            errorMessage.includes("An unexpected error occurred"),
+          `Invalid exception message when storing deeply nested object: ${errorMessage}`
+        );
+      } else {
+        
+        await storage.set(obj);
+      }
+    }
+
     async function testFalseyValues(areaName) {
       let storage = browser.storage[areaName];
       const dataInitial = {
@@ -622,6 +652,13 @@ async function test_background_page_storage(testAreaName) {
           ["test-prop1", "test-prop2"],
           "getKeys() returns the correct keys"
         );
+        clearGlobalChanges();
+        await storage.clear();
+        await globalChanges;
+
+        clearGlobalChanges();
+        await testDeeplyNestedObject(areaName);
+        await globalChanges;
         clearGlobalChanges();
         await storage.clear();
         await globalChanges;
