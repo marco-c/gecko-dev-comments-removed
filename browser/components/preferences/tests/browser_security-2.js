@@ -20,6 +20,20 @@ registerCleanupFunction(function () {
   );
 });
 
+function waitForSettingChange(setting) {
+  return new Promise(resolve => {
+    setting.on("change", function handler() {
+      setting.off("change", handler);
+      resolve();
+    });
+  });
+}
+
+async function waitForSettingControlChange(control) {
+  await waitForSettingChange(control.setting);
+  await new Promise(resolve => requestAnimationFrame(resolve));
+}
+
 
 
 
@@ -51,14 +65,15 @@ add_task(async function () {
       !val,
       "block uncommon checkbox is set correctly"
     );
-
+    let update = waitForSettingControlChange(checkbox.control);
     
     checkbox.scrollIntoView();
     EventUtils.synthesizeMouseAtCenter(
-      checkbox,
+      checkbox.inputEl,
       {},
       gBrowser.selectedBrowser.contentWindow
     );
+    await update;
 
     
     is(

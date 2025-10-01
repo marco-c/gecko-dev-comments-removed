@@ -20,6 +20,20 @@ registerCleanupFunction(function () {
   );
 });
 
+function waitForSettingChange(setting) {
+  return new Promise(resolve => {
+    setting.on("change", function handler() {
+      setting.off("change", handler);
+      resolve();
+    });
+  });
+}
+
+async function waitForSettingControlChange(control) {
+  await waitForSettingChange(control.setting);
+  await new Promise(resolve => requestAnimationFrame(resolve));
+}
+
 
 
 
@@ -65,12 +79,13 @@ add_task(async function () {
 
     
     checkbox.scrollIntoView();
+    let update = waitForSettingControlChange(checkbox.control);
     EventUtils.synthesizeMouseAtCenter(
-      checkbox,
+      checkbox.inputEl,
       {},
       gBrowser.selectedBrowser.contentWindow
     );
-
+    await update;
     
     is(
       Services.prefs.getBoolPref("browser.safebrowsing.phishing.enabled"),
@@ -87,12 +102,12 @@ add_task(async function () {
     checked = checkbox.checked;
     if (blockDownloads) {
       is(
-        blockDownloads.hasAttribute("disabled"),
+        blockDownloads.disabled,
         !checked,
         "block downloads checkbox is set correctly"
       );
       is(
-        blockUncommon.hasAttribute("disabled"),
+        blockUncommon.disabled,
         !checked || !blockDownloads.checked,
         "block uncommon checkbox is set correctly"
       );
