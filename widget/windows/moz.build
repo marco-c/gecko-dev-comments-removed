@@ -146,6 +146,13 @@ SOURCES += [
     "TSFUtils.cpp",
 ]
 
+
+
+SOURCES["WindowsUIUtils.cpp"].flags += [
+    "-Xclang",
+    "-fcxx-exceptions",
+]
+
 if CONFIG["NS_PRINTING"]:
     UNIFIED_SOURCES += [
         "nsDeviceContextSpecWin.cpp",
