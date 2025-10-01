@@ -1761,7 +1761,7 @@ void nsHttpChannelAuthProvider::SetAuthorizationHeader(
     if (mProxyInfo) {
       nsAutoCString type;
       mProxyInfo->GetType(type);
-      if (type.EqualsLiteral("https") || type.EqualsLiteral("connect-udp")) {
+      if (type.EqualsLiteral("https") || type.EqualsLiteral("masque")) {
         
         auto const& pa = mProxyInfo->ProxyAuthorizationHeader();
         if (!pa.IsEmpty()) {
