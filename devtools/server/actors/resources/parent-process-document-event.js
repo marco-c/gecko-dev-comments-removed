@@ -142,6 +142,11 @@ class ParentProcessDocumentEventWatcher {
         this._onceWillNavigate.delete(innerWindowId);
         callback();
       }
+
+      
+      if (browsingContext == this.watcherActor.browserElement.browsingContext) {
+        this.watcherActor.emit("top-browsing-context-will-navigate");
+      }
     }
   }
 

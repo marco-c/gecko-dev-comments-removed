@@ -175,11 +175,10 @@ async function testClearedRequests() {
     content.document.querySelector("iframe").remove();
   });
 
-  
-  
-  
   const har = await copyAllAsHARWithContextMenu(monitor);
-  is(har.log.entries.length, 2, "There must be two requests");
+  
+  
+  is(har.log.entries.length, 3, "There must be three requests");
   is(
     har.log.entries[0].request.url,
     topDocumentURL,

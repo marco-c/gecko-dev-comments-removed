@@ -5,10 +5,6 @@
 "use strict";
 
 const { Pool } = require("resource://devtools/shared/protocol/Pool.js");
-const { isWindowGlobalPartOfContext } = ChromeUtils.importESModule(
-  "resource://devtools/server/actors/watcher/browsing-context-helpers.sys.mjs",
-  { global: "contextual" }
-);
 const { ParentProcessWatcherRegistry } = ChromeUtils.importESModule(
   "resource://devtools/server/actors/watcher/ParentProcessWatcherRegistry.sys.mjs",
   
@@ -80,7 +76,10 @@ class NetworkEventWatcher {
       onNetworkEvent: this.onNetworkEvent.bind(this),
     });
 
-    Services.obs.addObserver(this, "window-global-destroyed");
+    this.watcherActor.on(
+      "top-browsing-context-will-navigate",
+      this.#onTopBrowsingContextWillNavigate
+    );
   }
 
   
@@ -201,54 +200,34 @@ class NetworkEventWatcher {
 
 
 
-  observe(windowGlobal, topic) {
-    if (topic !== "window-global-destroyed") {
-      return;
-    }
-    
-    
-    if (this.persist || this.watcherActor.sessionContext.type == "all") {
-      return;
-    }
-    
-    if (
-      !isWindowGlobalPartOfContext(
-        windowGlobal,
-        this.watcherActor.sessionContext
-      )
-    ) {
-      return;
-    }
-    const { innerWindowId } = windowGlobal;
 
+
+
+  #onTopBrowsingContextWillNavigate = () => {
+    
+    if (this.persist) {
+      return;
+    }
+
+    const { innerWindowId } =
+      this.watcherActor.browserElement.browsingContext.currentWindowGlobal;
+
+    
+    
+    
+    
+    
+    
+    
     for (const child of this.pool.poolChildren()) {
-      
-      if (!child.isNavigationRequest()) {
-        if (child.getInnerWindowId() == innerWindowId) {
-          child.destroy();
-        }
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-      } else if (
-        child.getInnerWindowId() &&
-        child.getInnerWindowId() != innerWindowId &&
-        windowGlobal.browsingContext ==
-          this.watcherActor.browserElement?.browsingContext
+      if (
+        !child.isNavigationRequest() ||
+        (child.getInnerWindowId() && child.getInnerWindowId() != innerWindowId)
       ) {
         child.destroy();
       }
     }
-  }
+  };
 
   
 
@@ -471,7 +450,10 @@ class NetworkEventWatcher {
     if (this.listener) {
       this.clear();
       this.listener.destroy();
-      Services.obs.removeObserver(this, "window-global-destroyed");
+      this.watcherActor.off(
+        "top-browsing-context-will-navigate",
+        this.#onTopBrowsingContextWillNavigate
+      );
     }
   }
 }

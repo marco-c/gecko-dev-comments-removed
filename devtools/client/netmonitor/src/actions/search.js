@@ -71,6 +71,19 @@ function search(connector, query) {
       }
 
       
+      
+      
+      if (
+        request.innerWindowId &&
+        !request.isNavigationRequest &&
+        !connector.commands.watcherFront.getWindowGlobalTargetByInnerWindowId(
+          request.innerWindowId
+        )
+      ) {
+        continue;
+      }
+
+      
       await loadResource(connector, request);
       if (canceled) {
         return;
