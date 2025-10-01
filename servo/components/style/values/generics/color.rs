@@ -13,7 +13,7 @@ use style_traits::{CssWriter, ToCss};
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToAnimatedValue, ToShmem)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToAnimatedValue, ToShmem, ToTyped)]
 #[repr(C)]
 pub enum GenericColor<Percentage> {
     

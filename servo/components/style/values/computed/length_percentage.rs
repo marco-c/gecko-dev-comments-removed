@@ -112,6 +112,7 @@ pub struct TagVariant {
 
 
 
+#[derive(ToTyped)]
 #[repr(transparent)]
 pub struct LengthPercentage(LengthPercentageUnion);
 

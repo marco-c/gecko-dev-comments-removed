@@ -191,7 +191,7 @@ bitflags! {
 
 
 
-#[derive(Copy, Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
+#[derive(Copy, Clone, Debug, MallocSizeOf, PartialEq, ToShmem, ToTyped)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[repr(C)]
 pub struct AbsoluteColor {

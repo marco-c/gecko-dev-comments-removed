@@ -21,7 +21,7 @@ pub use specified::PageName;
 
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToResolvedValue, ToShmem)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToResolvedValue, ToShmem, ToTyped)]
 #[repr(C, u8)]
 pub enum PageSize {
     
