@@ -1846,35 +1846,16 @@ pref("browser.newtabpage.activity-stream.showWeather", true);
 pref("browser.newtabpage.activity-stream.weather.query", "");
 pref("browser.newtabpage.activity-stream.weather.display", "simple");
 
-
-pref("browser.newtabpage.activity-stream.weather.optInDisplayed", false);
-
-
-pref("browser.newtabpage.activity-stream.weather.optInAccepted", false);
-
-
-pref("browser.newtabpage.activity-stream.weather.staticData.enabled", false);
-
 pref("browser.newtabpage.activity-stream.images.smart", true);
 
 
 pref("browser.newtabpage.activity-stream.weather.locationSearchEnabled", true);
 
 
-pref("browser.newtabpage.activity-stream.weather.optInDisplayed", false);
+pref("browser.newtabpage.activity-stream.discoverystream.region-weather-config", "US,CA");
 
 
-pref("browser.newtabpage.activity-stream.discoverystream.region-weather-config", "US,CA,DE,GB,FR,ES,IT,CH,AT,BE,IE,NL,PL,CZ,SE,SG,HU,SK,FI,DK,NO,PT");
-
-
-pref("browser.newtabpage.activity-stream.discoverystream.locale-weather-config", "en-US,en-GB,en-CA,fr,de");
-
-
-pref("browser.newtabpage.activity-stream.discoverystream.optIn-region-weather-config", "DE,GB,FR,ES,IT,CH,AT,BE,IE,NL,PL,CZ,SE,SG,HU,SK,FI,DK,NO,PT");
-
-
-
-pref("browser.newtabpage.activity-stream.discoverystream.optIn-locale-weather-config", "fr,de");
+pref("browser.newtabpage.activity-stream.discoverystream.locale-weather-config", "en-US,en-GB,en-CA");
 
 
 pref("browser.newtabpage.activity-stream.discoverystream.promoCard.visible", true);
