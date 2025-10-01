@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "api/array_view.h"
+#include "api/audio/audio_view.h"
 #include "modules/audio_coding/neteq/audio_vector.h"
 
 namespace webrtc {
@@ -88,6 +89,19 @@ class AudioMultiVector {
 
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  bool ReadInterleavedFromIndex(const size_t start_index,
+                                InterleavedView<int16_t> dst) const;
+
+  
+  
   size_t ReadInterleavedFromEnd(size_t length, int16_t* destination) const;
 
   
@@ -129,7 +143,7 @@ class AudioMultiVector {
   AudioVector& operator[](size_t index);
 
  protected:
-  std::vector<std::unique_ptr<AudioVector>> channels_;
+  const std::vector<std::unique_ptr<AudioVector>> channels_;
 };
 
 }  
