@@ -18,6 +18,9 @@ function mockServicesChromeScript() {
 
   let activeNotifications = Object.create(null);
 
+  let throwHistory = false;
+  let history = [];
+
   const mockAlertsService = {
     showAlert(alert, listener) {
       activeNotifications[alert.name] = {
@@ -79,6 +82,13 @@ function mockServicesChromeScript() {
         }
         delete activeNotifications[name];
       }
+    },
+
+    getHistory() {
+      if (throwHistory) {
+        throw new Error("no history, sorry");
+      }
+      return history;
     },
 
     QueryInterface: ChromeUtils.generateQI(["nsIAlertsService"]),
@@ -155,6 +165,14 @@ function mockServicesChromeScript() {
     Object.keys(activeNotifications)
   );
 
+  addMessageListener("mock-alert-service:set-history", value => {
+    history = value;
+  });
+
+  addMessageListener("mock-alert-service:set-throw-history", value => {
+    throwHistory = value;
+  });
+
   sendAsyncMessage("mock-alert-service:registered");
 }
 
@@ -224,6 +242,18 @@ const MockAlertsService = {
   async getNotificationIds() {
     return await this._chromeScript.sendQuery(
       "mock-alert-service:get-notification-ids"
+    );
+  },
+  async setHistory(ids) {
+    return await this._chromeScript.sendQuery(
+      "mock-alert-service:set-history",
+      ids
+    );
+  },
+  async setThrowHistory(throws) {
+    return await this._chromeScript.sendQuery(
+      "mock-alert-service:set-throw-history",
+      throws
     );
   },
 };

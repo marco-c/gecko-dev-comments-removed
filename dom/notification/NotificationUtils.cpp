@@ -303,10 +303,12 @@ nsresult ShowAlertWithCleanup(nsIAlertNotification* aAlert,
     
     
     
+    
+    
+    
     nsTArray<nsString> history;
-    if (NS_SUCCEEDED(alertService->GetHistory(history))) {
-      UnpersistAllNotificationsExcept(history);
-    }
+    (void)alertService->GetHistory(history);
+    UnpersistAllNotificationsExcept(history);
   }
 
   MOZ_TRY(alertService->ShowAlert(aAlert, aAlertListener));
