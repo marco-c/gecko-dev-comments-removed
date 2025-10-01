@@ -1261,8 +1261,11 @@ bool RStrictConstantCompareInt32::recover(JSContext* cx,
                                           SnapshotIterator& iter) const {
   JS::Value lhs = iter.read();
 
-  iter.storeInstructionResult(
-      BooleanValue(lhs.isNumber() && lhs.toNumber() == constant_));
+  bool result = lhs.isNumber() && lhs.toNumber() == constant_;
+  if (jsop_ == JSOp::StrictNe) {
+    result = !result;
+  }
+  iter.storeInstructionResult(BooleanValue(result));
   return true;
 }
 
@@ -1288,8 +1291,11 @@ bool RStrictConstantCompareBoolean::recover(JSContext* cx,
                                             SnapshotIterator& iter) const {
   JS::Value lhs = iter.read();
 
-  iter.storeInstructionResult(
-      BooleanValue(lhs.isBoolean() && lhs.toBoolean() == constant_));
+  bool result = lhs == BooleanValue(constant_);
+  if (jsop_ == JSOp::StrictNe) {
+    result = !result;
+  }
+  iter.storeInstructionResult(BooleanValue(result));
   return true;
 }
 
@@ -2192,6 +2198,36 @@ bool RFunctionWithProto::recover(JSContext* cx, SnapshotIterator& iter) const {
   }
 
   iter.storeInstructionResult(ObjectValue(*resultObject));
+  return true;
+}
+
+bool MCallee::writeRecoverData(CompactBufferWriter& writer) const {
+  MOZ_ASSERT(canRecoverOnBailout());
+  writer.writeUnsigned(uint32_t(RInstruction::Recover_Callee));
+  return true;
+}
+
+RCallee::RCallee(CompactBufferReader& reader) {}
+
+bool RCallee::recover(JSContext* cx, SnapshotIterator& iter) const {
+  JSFunction* callee = CalleeTokenToFunction(iter.frame()->calleeToken());
+  iter.storeInstructionResult(ObjectValue(*callee));
+  return true;
+}
+
+bool MFunctionEnvironment::writeRecoverData(CompactBufferWriter& writer) const {
+  MOZ_ASSERT(canRecoverOnBailout());
+  writer.writeUnsigned(uint32_t(RInstruction::Recover_FunctionEnvironment));
+  return true;
+}
+
+RFunctionEnvironment::RFunctionEnvironment(CompactBufferReader& reader) {}
+
+bool RFunctionEnvironment::recover(JSContext* cx,
+                                   SnapshotIterator& iter) const {
+  JSObject* obj = iter.readObject();
+  JSObject* env = obj->as<JSFunction>().environment();
+  iter.storeInstructionResult(ObjectValue(*env));
   return true;
 }
 
