@@ -8,6 +8,9 @@
 
 
 
+
+
+
 ChromeUtils.defineESModuleGetters(this, {
   BackgroundUpdate: "resource://gre/modules/BackgroundUpdate.sys.mjs",
   UpdateListener: "resource://gre/modules/UpdateListener.sys.mjs",
@@ -655,6 +658,9 @@ Preferences.addSetting({
   },
 });
 
+
+
+
 let SETTINGS_CONFIG = {
   zoom: {
     
@@ -855,9 +861,13 @@ let SETTINGS_CONFIG = {
   },
 };
 
+
+
+
 function initSettingGroup(id) {
+  
   let group = document.querySelector(`setting-group[groupid=${id}]`);
-  let config = SETTINGS_CONFIG[id];
+  const config = SETTINGS_CONFIG[id];
   if (group && config) {
     if (config.inProgress && !srdSectionEnabled(id)) {
       group.remove();
