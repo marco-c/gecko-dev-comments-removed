@@ -9273,7 +9273,8 @@ class TopSiteLink extends (external_React_default()).PureComponent {
       link,
       onClick,
       title,
-      isAddButton
+      isAddButton,
+      visibleTopSites
     } = this.props;
     const topSiteOuterClassName = `top-site-outer${className ? ` ${className}` : ""}${link.isDragged ? " dragged" : ""}${link.searchTopSite ? " search-shortcut" : ""}`;
     const [letterFallback] = title;
@@ -9328,7 +9329,8 @@ class TopSiteLink extends (external_React_default()).PureComponent {
           tile_id: link.sponsored_tile_id || -1,
           reporting_url: link.sponsored_impression_url,
           advertiser: title.toLocaleLowerCase(),
-          source: NEWTAB_SOURCE
+          source: NEWTAB_SOURCE,
+          visible_topsites: visibleTopSites
         }
         
         ,
@@ -9344,7 +9346,8 @@ class TopSiteLink extends (external_React_default()).PureComponent {
           position: this.props.index,
           source: NEWTAB_SOURCE,
           isPinned: this.props.link.isPinned,
-          guid: this.props.link.guid
+          guid: this.props.link.guid,
+          visible_topsites: visibleTopSites
         }
         
         ,
@@ -9543,7 +9546,8 @@ class TopSite extends (external_React_default()).PureComponent {
             tile_id: this.props.link.sponsored_tile_id || -1,
             reporting_url: this.props.link.sponsored_click_url,
             advertiser: title.toLocaleLowerCase(),
-            source: NEWTAB_SOURCE
+            source: NEWTAB_SOURCE,
+            visible_topsites: this.props.visibleTopSites
           }
         }));
       } else {
@@ -9555,7 +9559,8 @@ class TopSite extends (external_React_default()).PureComponent {
             position: this.props.index,
             source: NEWTAB_SOURCE,
             isPinned: this.props.link.isPinned,
-            guid: this.props.link.guid
+            guid: this.props.link.guid,
+            visible_topsites: this.props.visibleTopSites
           }
         }));
       }
@@ -9902,7 +9907,8 @@ class _TopSiteList extends (external_React_default()).PureComponent {
           onFocus: () => {
             this.onTopsiteFocus(i);
           },
-          Messages: this.props.Messages
+          Messages: this.props.Messages,
+          visibleTopSites: this.props.visibleTopSites
         }));
       } else {
         topSiteLink = external_React_default().createElement(TopSite, TopSite_extends({
@@ -9917,7 +9923,8 @@ class _TopSiteList extends (external_React_default()).PureComponent {
           tabIndex: i === this.state.focusedIndex ? 0 : -1,
           onFocus: () => {
             this.onTopsiteFocus(i);
-          }
+          },
+          visibleTopSites: this.props.visibleTopSites
         }));
       }
       topSitesUI.push(topSiteLink);
@@ -10342,7 +10349,13 @@ class _TopSites extends (external_React_default()).PureComponent {
       showSearchShortcutsForm
     } = props.TopSites;
     const extraMenuOptions = ["AddTopSite"];
+    let visibleTopSites;
     const colors = props.Prefs.values["newNewtabExperience.colors"];
+
+    
+    if (!props.App.isForStartupCache.TopSites) {
+      visibleTopSites = this._getVisibleTopSites()?.length;
+    }
     if (props.Prefs.values["improvesearch.topSiteSearchShortcuts"]) {
       extraMenuOptions.push("AddSearchShortcut");
     }
@@ -10370,7 +10383,8 @@ class _TopSites extends (external_React_default()).PureComponent {
       TopSitesRows: props.TopSitesRows,
       dispatch: props.dispatch,
       topSiteIconType: topSiteIconType,
-      colors: colors
+      colors: colors,
+      visibleTopSites: visibleTopSites
     }), external_React_default().createElement("div", {
       className: "edit-topsites-wrapper"
     }, editForm && external_React_default().createElement("div", {
@@ -10397,6 +10411,7 @@ class _TopSites extends (external_React_default()).PureComponent {
   }
 }
 const TopSites_TopSites = (0,external_ReactRedux_namespaceObject.connect)(state => ({
+  App: state.App,
   TopSites: state.TopSites,
   Prefs: state.Prefs,
   TopSitesRows: state.Prefs.values.topSitesRows
@@ -11418,6 +11433,8 @@ function InterestPicker({
       checked: checked,
       "aria-checked": checked,
       onChange: e => handleChange(e, index),
+      key: `${interest.sectionId}-${checked}` 
+      ,
       tabIndex: index === focusedIndex ? 0 : -1,
       onFocus: () => {
         onItemFocus(index);
@@ -12299,7 +12316,7 @@ function CardSections({
     messageData
   } = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Messages);
   const weatherPlacement = (0,external_ReactRedux_namespaceObject.useSelector)(selectWeatherPlacement);
-  const dailyBriefSectionId = prefs.trainhopConfig?.dailyBriefing.sectionId || prefs[CardSections_PREF_DAILY_BRIEF_SECTIONID];
+  const dailyBriefSectionId = prefs.trainhopConfig?.dailyBriefing?.sectionId || prefs[CardSections_PREF_DAILY_BRIEF_SECTIONID];
   const weatherEnabled = prefs.showWeather;
   const personalizationEnabled = prefs[PREF_SECTIONS_PERSONALIZATION_ENABLED];
   const interestPickerEnabled = prefs[PREF_INTEREST_PICKER_ENABLED];
@@ -12431,6 +12448,8 @@ const USER_ACTION_TYPES = {
 };
 const PREF_WIDGETS_LISTS_MAX_LISTS = "widgets.lists.maxLists";
 const PREF_WIDGETS_LISTS_MAX_LISTITEMS = "widgets.lists.maxListItems";
+const PREF_WIDGETS_LISTS_BADGE_ENABLED = "widgets.lists.badge.enabled";
+const PREF_WIDGETS_LISTS_BADGE_LABEL = "widgets.lists.badge.label";
 function Lists({
   dispatch,
   handleUserInteraction
@@ -12732,6 +12751,15 @@ function Lists({
     setPendingNewList(id);
     handleListInteraction();
   }
+  function handleCancelNewList() {
+    
+    if (!selectedList?.label && selectedList?.tasks?.length === 0) {
+      const updatedLists = {
+        ...lists
+      };
+      delete updatedLists[selected];
+    }
+  }
   function handleDeleteList() {
     let updatedLists = {
       ...lists
@@ -12861,6 +12889,12 @@ function Lists({
   const listKeys = Object.keys(lists);
   const selectedIndex = Math.max(0, listKeys.indexOf(selected));
   const listNamePlaceholder = currentListsCount > 1 && selectedIndex !== 0 ? "newtab-widget-lists-name-placeholder-new" : "newtab-widget-lists-name-placeholder-default";
+  const nimbusBadgeEnabled = prefs.widgetsConfig?.listsBadgeEnabled;
+  const nimbusBadgeLabel = prefs.widgetsConfig?.listsBadgeLabel;
+  const nimbusBadgeTrainhopEnabled = prefs.trainhopConfig?.widgets?.listsBadgeEnabled;
+  const nimbusBadgeTrainhopLabel = prefs.trainhopConfig?.widgets?.listsBadgeLabel;
+  const badgeEnabled = (nimbusBadgeEnabled || nimbusBadgeTrainhopEnabled) ?? prefs[PREF_WIDGETS_LISTS_BADGE_ENABLED] ?? false;
+  const badgeLabel = (nimbusBadgeLabel || nimbusBadgeTrainhopLabel) ?? prefs[PREF_WIDGETS_LISTS_BADGE_LABEL] ?? "";
   return external_React_default().createElement("article", {
     className: "lists",
     ref: el => {
@@ -12873,6 +12907,7 @@ function Lists({
     onSave: handleListNameSave,
     isEditing: isEditing,
     setIsEditing: setIsEditing,
+    onCancel: handleCancelNewList,
     type: "list",
     maxLength: 30,
     dataL10nId: listNamePlaceholder
@@ -12887,8 +12922,16 @@ function Lists({
     label: list.label
   } : {
     "data-l10n-id": "newtab-widget-lists-name-label-default"
-  }))))), !isEditing && external_React_default().createElement("moz-badge", {
-    "data-l10n-id": "newtab-widget-lists-label-new"
+  }))))), !isEditing && badgeEnabled && badgeLabel && external_React_default().createElement("moz-badge", {
+    "data-l10n-id": (() => {
+      if (badgeLabel === "New") {
+        return "newtab-widget-lists-label-new";
+      }
+      if (badgeLabel === "Beta") {
+        return "newtab-widget-lists-label-beta";
+      }
+      return "";
+    })()
   }), external_React_default().createElement("moz-button", {
     className: "lists-panel-button",
     iconSrc: "chrome://global/skin/icons/more.svg",
@@ -12939,7 +12982,7 @@ function Lists({
     ref: reorderListRef,
     itemSelector: "fieldset .task-type-tasks",
     dragSelector: ".checkbox-wrapper"
-  }, external_React_default().createElement("fieldset", null, selectedList?.tasks.length >= 1 ? selectedList.tasks.map((task, index) => external_React_default().createElement(ListItem, {
+  }, external_React_default().createElement("fieldset", null, selectedList?.tasks.length >= 1 && selectedList.tasks.map((task, index) => external_React_default().createElement(ListItem, {
     type: TASK_TYPE.IN_PROGRESS,
     task: task,
     key: task.id,
@@ -12949,11 +12992,9 @@ function Lists({
     isValidUrl: isValidUrl,
     isFirst: index === 0,
     isLast: index === selectedList.tasks.length - 1
-  })) : external_React_default().createElement("p", {
-    className: "empty-list-text",
-    "data-l10n-id": "newtab-widget-lists-empty-cta"
-  }), selectedList?.completed.length >= 1 && external_React_default().createElement("details", {
-    className: "completed-task-wrapper"
+  })), selectedList?.completed.length >= 1 && external_React_default().createElement("details", {
+    className: "completed-task-wrapper",
+    open: selectedList?.tasks.length < 1
   }, external_React_default().createElement("summary", null, external_React_default().createElement("span", {
     "data-l10n-id": "newtab-widget-lists-completed-list",
     "data-l10n-args": JSON.stringify({
@@ -12966,7 +13007,22 @@ function Lists({
     task: completedTask,
     deleteTask: deleteTask,
     updateTask: updateTask
-  })))))), external_React_default().createElement("canvas", {
+  }))))), selectedList?.tasks.length < 1 && selectedList?.completed.length < 1 && external_React_default().createElement("div", {
+    className: "empty-list"
+  }, external_React_default().createElement("picture", null, external_React_default().createElement("source", {
+    srcSet: "chrome://newtab/content/data/content/assets/lists-empty-state-dark.svg",
+    media: "(prefers-color-scheme: dark)"
+  }), external_React_default().createElement("source", {
+    srcSet: "chrome://newtab/content/data/content/assets/lists-empty-state-light.svg",
+    media: "(prefers-color-scheme: light)"
+  }), external_React_default().createElement("img", {
+    width: "100",
+    height: "100",
+    alt: ""
+  })), external_React_default().createElement("p", {
+    className: "empty-list-text",
+    "data-l10n-id": "newtab-widget-lists-empty-cta"
+  }))), external_React_default().createElement("canvas", {
     className: "confetti-canvas",
     ref: canvasRef
   }));
@@ -13031,9 +13087,10 @@ function ListItem({
     target: "_blank",
     className: "task-label",
     title: task.value
-  }, task.value) : external_React_default().createElement("span", {
+  }, task.value) : external_React_default().createElement("label", {
     className: "task-label",
     title: task.value,
+    htmlFor: `task-${task.id}`,
     onClick: () => setIsEditing(true)
   }, task.value);
   return external_React_default().createElement("div", {
@@ -13046,7 +13103,8 @@ function ListItem({
   }, external_React_default().createElement("input", {
     type: "checkbox",
     onChange: handleCheckboxChange,
-    checked: task.completed || exiting
+    checked: task.completed || exiting,
+    id: `task-${task.id}`
   }), isCompleted ? taskLabel : external_React_default().createElement(EditableText, {
     isEditing: isEditing,
     setIsEditing: setIsEditing,
@@ -13087,6 +13145,7 @@ function EditableText({
   isEditing,
   setIsEditing,
   onSave,
+  onCancel,
   children,
   type,
   dataL10nId = null,
@@ -13111,6 +13170,7 @@ function EditableText({
     } else if (e.key === "Escape") {
       setIsEditing(false);
       setTempValue(value);
+      onCancel?.();
     }
   }
   function handleOnBlur() {
@@ -13133,6 +13193,7 @@ function EditableText({
 }
 
 ;
+function FocusTimer_extends() { return FocusTimer_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, FocusTimer_extends.apply(null, arguments); }
 
 
 
@@ -13219,11 +13280,8 @@ const FocusTimer = ({
   const [timeLeft, setTimeLeft] = (0,external_React_namespaceObject.useState)(0);
   
   const [progress, setProgress] = (0,external_React_namespaceObject.useState)(0);
-  const [progressVisible, setProgressVisible] = (0,external_React_namespaceObject.useState)(false);
   const activeMinutesRef = (0,external_React_namespaceObject.useRef)(null);
   const activeSecondsRef = (0,external_React_namespaceObject.useRef)(null);
-  const idleMinutesRef = (0,external_React_namespaceObject.useRef)(null);
-  const idleSecondsRef = (0,external_React_namespaceObject.useRef)(null);
   const arcRef = (0,external_React_namespaceObject.useRef)(null);
   const timerType = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.TimerWidget.timerType);
   const timerData = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.TimerWidget);
@@ -13251,14 +13309,6 @@ const FocusTimer = ({
   }, [arcRef, handleTimerInteraction]);
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
   const showSystemNotifications = prefs["widgets.focusTimer.showSystemNotifications"];
-
-  
-  
-  (0,external_React_namespaceObject.useEffect)(() => {
-    if (isRunning) {
-      setProgressVisible(true);
-    }
-  }, [isRunning]);
   (0,external_React_namespaceObject.useEffect)(() => {
     
     let interval;
@@ -13294,9 +13344,6 @@ const FocusTimer = ({
 
             
             setTimeout(() => {
-              
-              setProgressVisible(false);
-
               
               
               (0,external_ReactRedux_namespaceObject.batch)(() => {
@@ -13334,12 +13381,12 @@ const FocusTimer = ({
     if (arcRef?.current) {
       arcRef.current.style.clipPath = getClipPath(progress);
     }
-  }, [progress]);
+  }, [progress, timerType]);
 
   
   const setTimerDuration = () => {
-    const minutesEl = progressVisible ? activeMinutesRef.current : idleMinutesRef.current;
-    const secondsEl = progressVisible ? activeSecondsRef.current : idleSecondsRef.current;
+    const minutesEl = activeMinutesRef.current;
+    const secondsEl = activeSecondsRef.current;
     const minutesValue = minutesEl.innerText.trim() || "0";
     const secondsValue = secondsEl.innerText.trim() || "0";
     let minutes = parseInt(minutesValue || "0", 10);
@@ -13373,7 +13420,6 @@ const FocusTimer = ({
   
   const toggleTimer = () => {
     if (!isRunning && duration > 0) {
-      setProgressVisible(true);
       (0,external_ReactRedux_namespaceObject.batch)(() => {
         dispatch(actionCreators.AlsoToMain({
           type: actionTypes.WIDGETS_TIMER_PLAY,
@@ -13431,11 +13477,6 @@ const FocusTimer = ({
 
     
     resetProgressCircle();
-
-    
-    if (progressVisible) {
-      setProgressVisible(false);
-    }
     handleTimerInteraction();
   };
 
@@ -13573,18 +13614,10 @@ const FocusTimer = ({
       timerRef.current = [el];
     }
   }, external_React_default().createElement("div", {
-    className: "focus-timer-tabs"
-  }, external_React_default().createElement("div", {
-    className: "focus-timer-tabs-buttons"
-  }, external_React_default().createElement("moz-button", {
-    type: timerType === "focus" ? "primary" : "ghost",
-    "data-l10n-id": "newtab-widget-timer-mode-focus",
-    onClick: () => toggleType("focus")
-  }), external_React_default().createElement("moz-button", {
-    type: timerType === "break" ? "primary" : "ghost",
-    "data-l10n-id": "newtab-widget-timer-mode-break",
-    onClick: () => toggleType("break")
-  })), external_React_default().createElement("div", {
+    className: "newtab-widget-timer-notification-title-wrapper"
+  }, external_React_default().createElement("h3", {
+    "data-l10n-id": "newtab-widget-timer-notification-title"
+  }), external_React_default().createElement("div", {
     className: "focus-timer-context-menu-wrapper"
   }, external_React_default().createElement("moz-button", {
     className: "focus-timer-context-menu-button",
@@ -13607,19 +13640,33 @@ const FocusTimer = ({
     "data-l10n-id": "newtab-widget-timer-menu-learn-more",
     onClick: handleLearnMore
   })))), external_React_default().createElement("div", {
-    role: "progress",
-    className: `progress-circle-wrapper${progressVisible ? " visible" : ""}`
+    className: "focus-timer-tabs"
   }, external_React_default().createElement("div", {
-    className: "progress-circle-background"
+    className: "focus-timer-tabs-buttons"
+  }, external_React_default().createElement("moz-button", {
+    type: timerType === "focus" ? "default" : "ghost",
+    "data-l10n-id": "newtab-widget-timer-mode-focus",
+    size: "small",
+    onClick: () => toggleType("focus")
+  }), external_React_default().createElement("moz-button", {
+    type: timerType === "break" ? "default" : "ghost",
+    "data-l10n-id": "newtab-widget-timer-mode-break",
+    size: "small",
+    onClick: () => toggleType("break")
+  }))), external_React_default().createElement("div", {
+    role: "progress",
+    className: `progress-circle-wrapper ${!showSystemNotifications && !timerData[timerType].isRunning ? "is-small" : ""}`
+  }, external_React_default().createElement("div", {
+    className: `progress-circle-background${timerType === "break" ? "-break" : ""}`
   }), external_React_default().createElement("div", {
     className: `progress-circle ${timerType === "focus" ? "focus-visible" : "focus-hidden"}`,
     ref: timerType === "focus" ? arcRef : null
   }), external_React_default().createElement("div", {
-    className: `progress-circle ${timerType === "break" ? "progress-circle-break break-visible" : "break-hidden"}`,
+    className: `progress-circle ${timerType === "break" ? "break-visible" : "break-hidden"}`,
     ref: timerType === "break" ? arcRef : null
   }), external_React_default().createElement("div", {
     className: `progress-circle-complete${progress === 1 ? " visible" : ""}`
-  }), progressVisible && external_React_default().createElement("div", {
+  }), external_React_default().createElement("div", {
     role: "timer",
     className: "progress-circle-label"
   }, external_React_default().createElement(EditableTimerFields, {
@@ -13633,31 +13680,19 @@ const FocusTimer = ({
   }))), external_React_default().createElement("div", {
     className: "set-timer-controls-wrapper"
   }, external_React_default().createElement("div", {
-    role: "timer",
-    className: `set-timer-countdown progress-circle-label${progressVisible ? " hidden" : ""}`,
-    "aria-hidden": progressVisible
-  }, external_React_default().createElement(EditableTimerFields, {
-    minutesRef: idleMinutesRef,
-    secondsRef: idleSecondsRef,
-    onKeyDown: handleKeyDown,
-    onBeforeInput: handleBeforeInput,
-    onFocus: handleFocus,
-    timeLeft: timeLeft,
-    tabIndex: progressVisible ? -1 : 0,
-    onBlur: () => setTimerDuration()
-  })), external_React_default().createElement("div", {
-    className: `focus-timer-controls ${progressVisible ? "timer-running" : " "}`
-  }, external_React_default().createElement("moz-button", {
-    type: "primary",
+    className: `focus-timer-controls timer-running`
+  }, external_React_default().createElement("moz-button", FocusTimer_extends({}, !isRunning ? {
+    type: "primary"
+  } : {}, {
     iconsrc: `chrome://global/skin/media/${isRunning ? "pause" : "play"}-fill.svg`,
-    "data-l10n-id": isRunning ? "newtab-widget-timer-pause" : "newtab-widget-timer-play",
+    "data-l10n-id": isRunning ? "newtab-widget-timer-label-pause" : "newtab-widget-timer-label-play",
     onClick: toggleTimer
-  }), external_React_default().createElement("moz-button", {
+  })), isRunning && external_React_default().createElement("moz-button", {
     type: "icon ghost",
     iconsrc: "chrome://newtab/content/data/content/assets/arrow-clockwise-16.svg",
     "data-l10n-id": "newtab-widget-timer-reset",
     onClick: resetTimer
-  }))), !showSystemNotifications && !timerData[timerType].isRunning && !progressVisible && external_React_default().createElement("p", {
+  }))), !showSystemNotifications && !timerData[timerType].isRunning && external_React_default().createElement("p", {
     className: "timer-notification-status",
     "data-l10n-id": "newtab-widget-timer-notification-warning"
   })) : null;
@@ -13745,23 +13780,18 @@ const PREF_WIDGETS_LISTS_ENABLED = "widgets.lists.enabled";
 const PREF_WIDGETS_SYSTEM_LISTS_ENABLED = "widgets.system.lists.enabled";
 const PREF_WIDGETS_TIMER_ENABLED = "widgets.focusTimer.enabled";
 const PREF_WIDGETS_SYSTEM_TIMER_ENABLED = "widgets.system.focusTimer.enabled";
+const PREF_FEEDS_SECTION_TOPSTORIES = "feeds.section.topstories";
 function Widgets() {
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
   const {
     messageData
   } = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Messages);
-  const listsState = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.ListsWidget);
-  const timerState = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.TimerWidget);
-  const timerType = timerState?.timerType;
   const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
   const nimbusListsEnabled = prefs.widgetsConfig?.listsEnabled;
   const nimbusTimerEnabled = prefs.widgetsConfig?.timerEnabled;
   const listsEnabled = (nimbusListsEnabled || prefs[PREF_WIDGETS_SYSTEM_LISTS_ENABLED]) && prefs[PREF_WIDGETS_LISTS_ENABLED];
   const timerEnabled = (nimbusTimerEnabled || prefs[PREF_WIDGETS_SYSTEM_TIMER_ENABLED]) && prefs[PREF_WIDGETS_TIMER_ENABLED];
-  const tasksCount = listsEnabled && listsState?.lists && listsState?.selected ? listsState.lists[listsState.selected]?.tasks?.length ?? 0 : 0;
-  const manyTasks = tasksCount >= 4;
-  const isTimerRunning = timerState?.[timerType].isRunning;
-  const showScrollMessage = manyTasks || isTimerRunning;
+  const recommendedStoriesEnabled = prefs[PREF_FEEDS_SECTION_TOPSTORIES];
   function handleUserInteraction(widgetName) {
     const prefName = `widgets.${widgetName}.interaction`;
     const hasInteracted = prefs[prefName];
@@ -13780,7 +13810,7 @@ function Widgets() {
   }), timerEnabled && external_React_default().createElement(FocusTimer, {
     dispatch: dispatch,
     handleUserInteraction: handleUserInteraction
-  })), showScrollMessage && external_React_default().createElement("div", {
+  })), recommendedStoriesEnabled && external_React_default().createElement("div", {
     className: "widgets-scroll-message fade-in",
     "aria-live": "polite"
   }, external_React_default().createElement("p", {
