@@ -52,7 +52,9 @@ class JitterEstimator {
           "num_stddev_delay_outlier", &num_stddev_delay_outlier,
           "num_stddev_size_outlier", &num_stddev_size_outlier,
           "congestion_rejection_factor", &congestion_rejection_factor,
-          "estimate_noise_when_congested", &estimate_noise_when_congested);
+          "estimate_noise_when_congested", &estimate_noise_when_congested,
+          "nack_limit", &nack_limit,
+          "nack_count_timeout", &nack_count_timeout);
       
     }
 
@@ -103,6 +105,14 @@ class JitterEstimator {
     
     
     bool estimate_noise_when_congested = true;
+
+    
+    
+    std::optional<int> nack_limit = std::nullopt;
+
+    
+    
+    std::optional<TimeDelta> nack_count_timeout = std::nullopt;
   };
 
   JitterEstimator(Clock* clock, const FieldTrialsView& field_trials);
@@ -205,7 +215,7 @@ class JitterEstimator {
   Timestamp latest_nack_ = Timestamp::Zero();
   
   
-  size_t nack_count_;
+  int nack_count_;
   RttFilter rtt_filter_;
 
   
