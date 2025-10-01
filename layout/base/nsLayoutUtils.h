@@ -324,6 +324,7 @@ class nsLayoutUtils {
 
 
   static nsIFrame* GetPageFrame(nsIFrame* aFrame);
+  static const nsIFrame* GetPageFrame(const nsIFrame* aFrame);
 
   
 
@@ -3169,6 +3170,18 @@ class nsLayoutUtils {
 
 
   static void RecomputeSmoothScrollDefault();
+
+  
+
+
+
+
+
+
+
+
+  static nsRect GetCombinedFragmentRects(const nsIFrame* aFrame,
+                                         bool aRelativeToSelf = true);
 
  private:
   

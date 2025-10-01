@@ -939,6 +939,11 @@ nsIFrame* nsLayoutUtils::GetPageFrame(nsIFrame* aFrame) {
 }
 
 
+const nsIFrame* nsLayoutUtils::GetPageFrame(const nsIFrame* aFrame) {
+  return GetClosestFrameOfType(aFrame, LayoutFrameType::Page);
+}
+
+
 nsIFrame* nsLayoutUtils::GetStyleFrame(nsIFrame* aPrimaryFrame) {
   MOZ_ASSERT(aPrimaryFrame);
   if (const nsTableWrapperFrame* const table = do_QueryFrame(aPrimaryFrame)) {
@@ -9994,4 +9999,40 @@ CSSSize nsLayoutUtils::ExpandHeightForDynamicToolbar(
 nsSize nsLayoutUtils::ExpandHeightForDynamicToolbar(
     const nsPresContext* aPresContext, const nsSize& aSize) {
   return ExpandHeightForDynamicToolbarImpl(aPresContext, aSize);
+}
+
+nsRect nsLayoutUtils::GetCombinedFragmentRects(const nsIFrame* aFrame,
+                                               bool aRelativeToSelf) {
+  bool isPaginated = aFrame->PresContext()->IsPaginated();
+
+  
+  Maybe<const nsIFrame*> maybePageFrame;
+  auto currPageFrame = [=, &maybePageFrame]() -> const nsIFrame* {
+    MOZ_ASSERT(isPaginated);
+    if (!maybePageFrame) {
+      maybePageFrame.emplace(nsLayoutUtils::GetPageFrame(aFrame));
+    }
+    return maybePageFrame.ref();
+  };
+
+  
+  
+  auto onSamePage = [=](const nsIFrame* aContinuation) -> bool {
+    return !isPaginated ||
+           nsLayoutUtils::GetPageFrame(aContinuation) == currPageFrame();
+  };
+
+  
+  
+  nsRect rect = aFrame->GetRectRelativeToSelf();
+  for (const nsIFrame* f = aFrame->GetNextContinuation(); f && onSamePage(f);
+       f = f->GetNextContinuation()) {
+    rect = rect.Union(f->GetRectRelativeToSelf() + f->GetOffsetTo(aFrame));
+  }
+  for (const nsIFrame* f = aFrame->GetPrevContinuation(); f && onSamePage(f);
+       f = f->GetPrevContinuation()) {
+    rect = rect.Union(f->GetRectRelativeToSelf() + f->GetOffsetTo(aFrame));
+  }
+
+  return aRelativeToSelf ? rect : rect + aFrame->GetPosition();
 }
