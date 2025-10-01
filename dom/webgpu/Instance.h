@@ -8,7 +8,6 @@
 
 #include "ObjectModel.h"
 #include "mozilla/AlreadyAddRefed.h"
-#include "mozilla/GlobalTeardownObserver.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/WebGPUBinding.h"
 #include "mozilla/layers/BuildConstants.h"
@@ -49,10 +48,9 @@ class WGSLLanguageFeatures final : public nsWrapperCache,
   }
 };
 
-class Instance final : public GlobalTeardownObserver, public nsWrapperCache {
+class Instance final : public nsWrapperCache {
  public:
-  NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(Instance)
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
+  GPU_DECL_CYCLE_COLLECTION(Instance)
   GPU_DECL_JS_WRAP(Instance)
 
   nsIGlobalObject* GetParentObject() const { return mOwner; }
@@ -87,19 +85,6 @@ class Instance final : public GlobalTeardownObserver, public nsWrapperCache {
     RefPtr<WGSLLanguageFeatures> features = mWgslLanguageFeatures;
     return features.forget();
   }
-
- protected:
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  void DisconnectFromOwner() override;
 };
 
 }  
