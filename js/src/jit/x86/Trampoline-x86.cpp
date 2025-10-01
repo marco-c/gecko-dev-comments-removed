@@ -70,25 +70,87 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   masm.push(esi);
   masm.push(edi);
 
-  Register reg_argc = eax;
-  masm.loadPtr(Address(ebp, ARG_ARGC), reg_argc);
+  
+  masm.loadPtr(Address(ebp, ARG_ARGC), eax);
 
-  Register reg_argv = ebx;
-  masm.loadPtr(Address(ebp, ARG_ARGV), reg_argv);
+  
+  {
+    Label noNewTarget;
+    masm.loadPtr(Address(ebp, ARG_CALLEETOKEN), edx);
+    masm.branchTest32(Assembler::Zero, edx,
+                      Imm32(CalleeToken_FunctionConstructing), &noNewTarget);
 
-  Register reg_token = edx;
-  masm.loadPtr(Address(ebp, ARG_CALLEETOKEN), reg_token);
+    masm.addl(Imm32(1), eax);
 
-  generateEnterJitShared(masm, reg_argc, reg_argv, reg_token, ecx, esi, edi);
+    masm.bind(&noNewTarget);
+  }
 
+  
+  masm.shll(Imm32(3), eax);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  masm.movl(esp, ecx);
+  masm.subl(eax, ecx);
+  static_assert(
+      sizeof(JitFrameLayout) % JitStackAlignment == 0,
+      "No need to consider the JitFrameLayout for aligning the stack");
+
+  
+  masm.andl(Imm32(JitStackAlignment - 1), ecx);
+  masm.subl(ecx, esp);
+
+  
+
+
+
+  
+  masm.loadPtr(Address(ebp, ARG_ARGV), ebx);
+
+  
+  masm.addl(ebx, eax);
+
+  
+  {
+    Label header, footer;
+    masm.bind(&header);
+
+    masm.cmp32(eax, ebx);
+    masm.j(Assembler::BelowOrEqual, &footer);
+
+    
+    masm.subl(Imm32(8), eax);
+
+    
+    masm.push(Operand(eax, 4));
+    masm.push(Operand(eax, 0));
+
+    masm.jmp(&header);
+    masm.bind(&footer);
+  }
+
+  
+  
   
   masm.mov(Operand(ebp, ARG_RESULT), eax);
   masm.unboxInt32(Address(eax, 0x0), eax);
-  masm.pushFrameDescriptorForJitCall(FrameType::CppToJSJit, eax, eax);
+
+  
+  masm.push(Operand(ebp, ARG_CALLEETOKEN));
 
   
   
   masm.loadPtr(Address(ebp, ARG_STACKFRAME), OsrFrameReg);
+
+  
+  masm.pushFrameDescriptorForJitCall(FrameType::CppToJSJit, eax, eax);
 
   CodeLabel returnLabel;
   Label oomReturnLabel;

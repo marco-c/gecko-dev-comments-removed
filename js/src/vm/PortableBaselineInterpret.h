@@ -293,7 +293,8 @@ namespace pbl {
 
 
 bool PortableBaselineTrampoline(JSContext* cx, size_t argc, Value* argv,
-                                size_t numFormals, jit::CalleeToken calleeToken,
+                                size_t numActuals, size_t numFormals,
+                                jit::CalleeToken calleeToken,
                                 JSObject* envChain, Value* result);
 
 
