@@ -99,6 +99,13 @@ fn write_gpu_gradient_stops(
     ]);
 
     
+    let mut is_opaque = true;
+    for stop in stops {
+        writer.push_one(stop.color.premultiplied());
+        is_opaque &= stop.color.a == 1.0;
+    }
+
+    
     for chunk in stops.chunks(4) {
         let mut block = [0.0; 4];
         let mut i = 0;
@@ -107,13 +114,6 @@ fn write_gpu_gradient_stops(
             i += 1;
         }
         writer.push_one(block);
-    }
-
-    
-    let mut is_opaque = true;
-    for stop in stops {
-        writer.push_one(stop.color.premultiplied());
-        is_opaque &= stop.color.a == 1.0;
     }
 
     return is_opaque;

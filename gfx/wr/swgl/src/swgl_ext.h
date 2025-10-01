@@ -1913,8 +1913,8 @@ static bool commitRadialGradientFromStops(sampler2D sampler, int offsetsAddress,
                                           uint32_t* buf, int span) {
   assert(sampler->format == TextureFormat::RGBA32F);
   
-  assert(offsetsAddress >= 0 && offsetsAddress < colorsAddress);
-  assert(colorsAddress >= 0 && colorsAddress + stopCount < int(sampler->height * sampler->stride));
+  assert(colorsAddress >= 0 && colorsAddress < offsetsAddress);
+  assert(offsetsAddress >= 0 && offsetsAddress + (stopCount + 3) / 4 < int(sampler->height * sampler->stride));
   float* stopOffsets = (float*)&sampler->buf[offsetsAddress];
   Float* stopColors = (Float*)&sampler->buf[colorsAddress];
   
