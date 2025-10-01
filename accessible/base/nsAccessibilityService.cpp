@@ -674,48 +674,6 @@ void nsAccessibilityService::NotifyOfDevPixelRatioChange(
   }
 }
 
-void nsAccessibilityService::NotifyAnchorPositionedRemoved(
-    mozilla::PresShell* aPresShell, nsIFrame* aFrame) {
-  DocAccessible* document = aPresShell->GetDocAccessible();
-  if (!document) {
-    return;
-  }
-
-  nsIFrame* anchorFrame =
-      nsCoreUtils::GetAnchorForPositionedFrame(aPresShell, aFrame);
-  if (!anchorFrame) {
-    return;
-  }
-
-  if (LocalAccessible* anchorAcc =
-          document->GetAccessible(anchorFrame->GetContent())) {
-    document->QueueCacheUpdate(anchorAcc, CacheDomain::Relations);
-  }
-}
-
-void nsAccessibilityService::NotifyAnchorRemoved(mozilla::PresShell* aPresShell,
-                                                 nsIFrame* aFrame) {
-  DocAccessible* document = aPresShell->GetDocAccessible();
-  if (!document) {
-    return;
-  }
-
-  nsIFrame* positionedFrame =
-      nsCoreUtils::GetPositionedFrameForAnchor(aPresShell, aFrame);
-  if (!positionedFrame) {
-    return;
-  }
-
-  if (LocalAccessible* positionedAcc =
-          document->GetAccessible(positionedFrame->GetContent())) {
-    
-    
-    
-    
-    document->RefreshAnchorRelationCacheForTarget(positionedAcc);
-  }
-}
-
 void nsAccessibilityService::NotifyAttrElementWillChange(
     mozilla::dom::Element* aElement, nsAtom* aAttr) {
   mozilla::dom::Document* doc = aElement->OwnerDoc();

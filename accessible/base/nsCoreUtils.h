@@ -353,25 +353,6 @@ class nsCoreUtils {
            aContent->IsGeneratedContentContainerForAfter() ||
            aContent->IsGeneratedContentContainerForMarker();
   }
-
-  
-
-
-
-
-
-  static nsIFrame* GetAnchorForPositionedFrame(
-      const PresShell* aPresShell, const nsIFrame* aPositionedFrame);
-
-  
-
-
-
-
-
-
-  static nsIFrame* GetPositionedFrameForAnchor(const PresShell* aPresShell,
-                                               const nsIFrame* aAnchorFrame);
 };
 
 #endif

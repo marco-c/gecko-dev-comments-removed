@@ -464,27 +464,6 @@ void DocAccessible::QueueCacheUpdateForDependentRelations(
     }
     QueueCacheUpdate(relatedAcc, CacheDomain::Relations);
   }
-
-  if (nsIFrame* anchorFrame = nsCoreUtils::GetAnchorForPositionedFrame(
-          mPresShell, aAcc->GetFrame())) {
-    
-    
-    if (LocalAccessible* anchorAcc = GetAccessible(anchorFrame->GetContent())) {
-      if (!mInsertedAccessibles.Contains(anchorAcc)) {
-        QueueCacheUpdate(anchorAcc, CacheDomain::Relations);
-      }
-    }
-  }
-
-  if (nsIFrame* positionedFrame = nsCoreUtils::GetPositionedFrameForAnchor(
-          mPresShell, aAcc->GetFrame())) {
-    
-    
-    if (LocalAccessible* targetAcc =
-            GetAccessible(positionedFrame->GetContent())) {
-      RefreshAnchorRelationCacheForTarget(targetAcc);
-    }
-  }
 }
 
 
@@ -3181,27 +3160,4 @@ bool DocAccessible::ProcessAnchorJump() {
   
   mAnchorJumpElm = nullptr;
   return true;
-}
-
-void DocAccessible::RefreshAnchorRelationCacheForTarget(
-    LocalAccessible* aTarget) {
-  nsIFrame* frame = aTarget->GetFrame();
-  if (!frame || !frame->HasProperty(nsIFrame::AnchorPosReferences())) {
-    return;
-  }
-
-  AnchorPosReferenceData* referencedAnchors =
-      frame->GetProperty(nsIFrame::AnchorPosReferences());
-  for (auto& entry : *referencedAnchors) {
-    const auto& anchorName = entry.GetKey();
-    if (const nsIFrame* anchorFrame =
-            mPresShell->GetAnchorPosAnchor(anchorName, frame)) {
-      if (LocalAccessible* anchorAcc =
-              GetAccessible(anchorFrame->GetContent())) {
-        if (!mInsertedAccessibles.Contains(anchorAcc)) {
-          QueueCacheUpdate(anchorAcc, CacheDomain::Relations);
-        }
-      }
-    }
-  }
 }
