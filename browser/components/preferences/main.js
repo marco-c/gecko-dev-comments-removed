@@ -321,7 +321,22 @@ Preferences.addSetting({
   pref: "browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features",
 });
 
+Preferences.addSetting({ id: "zoomPlaceholder" });
+
 let SETTINGS_CONFIG = {
+  zoom: {
+    
+    inProgress: true,
+    items: [
+      {
+        id: "zoomPlaceholder",
+        control: "moz-message-bar",
+        controlAttrs: {
+          message: "Placeholder for updated zoom controls",
+        },
+      },
+    ],
+  },
   browsing: {
     l10nId: "browsing-group-label",
     items: [
@@ -415,12 +430,39 @@ let SETTINGS_CONFIG = {
       },
     ],
   },
+  securityPrivacyStatus: {
+    items: [
+      {
+        id: "privacyCard",
+        control: "security-privacy-card",
+      },
+      {
+        id: "securityWarningsGroup",
+        control: "moz-box-group",
+        controlAttrs: {
+          type: "list",
+        },
+      },
+    ],
+  },
 };
 
 function initSettingGroup(id) {
   let group = document.querySelector(`setting-group[groupid=${id}]`);
-  if (group && SETTINGS_CONFIG[id]) {
-    group.config = SETTINGS_CONFIG[id];
+  let config = SETTINGS_CONFIG[id];
+  if (group && config) {
+    if (config.inProgress && !srdSectionEnabled(id)) {
+      group.remove();
+      return;
+    }
+
+    let legacySections = document.querySelectorAll(`[data-srd-groupid=${id}]`);
+    for (let section of legacySections) {
+      section.hidden = true;
+      section.removeAttribute("data-category");
+      section.setAttribute("data-hidden-from-search", "true");
+    }
+    group.config = config;
     group.getSetting = Preferences.getSetting.bind(Preferences);
   }
 }
@@ -563,6 +605,7 @@ var gMainPane = {
 
     gMainPane.initTranslations();
 
+    initSettingGroup("zoom");
     initSettingGroup("browsing");
 
     if (AppConstants.platform == "win") {
@@ -761,13 +804,6 @@ var gMainPane = {
 
     if (Services.policies && !Services.policies.isAllowed("profileImport")) {
       document.getElementById("dataMigrationGroup").remove();
-    }
-
-    if (
-      Services.prefs.getBoolPref("browser.backup.preferences.ui.enabled", false)
-    ) {
-      let backupGroup = document.getElementById("dataBackupGroup");
-      backupGroup.removeAttribute("data-hidden-from-search");
     }
 
     if (!SelectableProfileService.isEnabled) {
