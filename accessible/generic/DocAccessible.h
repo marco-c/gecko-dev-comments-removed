@@ -415,6 +415,12 @@ class DocAccessible : public HyperTextAccessible,
   void AttrElementWillChange(dom::Element* aElement, nsAtom* aAttr);
   void AttrElementChanged(dom::Element* aElement, nsAtom* aAttr);
 
+  
+
+
+
+  void RefreshAnchorRelationCacheForTarget(LocalAccessible* aTarget);
+
  protected:
   virtual ~DocAccessible();
 
