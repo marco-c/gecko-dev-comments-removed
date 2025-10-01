@@ -5,8 +5,6 @@
 import os
 import sys
 
-from unittest import skipIf
-
 
 sys.path.append(os.path.dirname(__file__))
 
@@ -28,10 +26,6 @@ class TestSwitchWindowChrome(TestSwitchToWindowContent):
         
         pass
 
-    @skipIf(
-        sys.platform.startswith("linux"),
-        "Bug 1511970 - New window isn't moved to the background on Linux",
-    )
     def test_switch_tabs_for_new_background_window_without_focus_change(self):
         
         
