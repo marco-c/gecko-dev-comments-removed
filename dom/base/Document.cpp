@@ -17301,12 +17301,6 @@ void Document::ReportLCP() {
 
   mozilla::glean::perf::largest_contentful_paint.AccumulateRawDuration(
       lcpTime - timing->GetNavigationStartTimeStamp());
-  
-  
-  
-  
-  mozilla::glean::glam_experiment::largest_contentful_paint
-      .AccumulateRawDuration(lcpTime - timing->GetNavigationStartTimeStamp());
 
   if (!GetChannel()) {
     return;

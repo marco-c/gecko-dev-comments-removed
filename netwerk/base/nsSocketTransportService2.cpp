@@ -432,12 +432,6 @@ bool nsSocketTransportService::CanAttachSocket() {
     static bool reported_socket_limit_reached = false;
     if (!reported_socket_limit_reached) {
       mozilla::glean::networking::os_socket_limit_reached.Add(1);
-      
-      
-      
-      
-      glean::glam_experiment::os_socket_limit_reached.Add(1);
-      
       reported_socket_limit_reached = true;
     }
     SOCKET_LOG(

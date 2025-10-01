@@ -385,24 +385,12 @@ void RecordPowerMetrics() {
     int32_t nNewCpuTime = int32_t(newCpuTime);
     if (newCpuTime < std::numeric_limits<int32_t>::max()) {
       power::total_cpu_time_ms.Add(nNewCpuTime);
-      
-      
-      
-      
-      glam_experiment::total_cpu_time_ms.Add(nNewCpuTime);
-      
       power::cpu_time_per_process_type_ms.Get(type).Add(nNewCpuTime);
       if (!trackerType.IsEmpty()) {
         power::cpu_time_per_tracker_type_ms.Get(trackerType).Add(nNewCpuTime);
       }
     } else {
       power::cpu_time_bogus_values.Add(1);
-      
-      
-      
-      
-      glam_experiment::cpu_time_bogus_values.Add(1);
-      
     }
     PROFILER_MARKER("Process CPU Time", OTHER, {}, ProcessingTimeMarker,
                     nNewCpuTime, type, trackerType);
