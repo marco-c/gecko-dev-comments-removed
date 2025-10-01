@@ -504,18 +504,9 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
     return !obj->getReservedSlot(Slots::DataSlot).isUndefined();
   }
 
-  static MOZ_ALWAYS_INLINE bool calcAllocSize(uint32_t dataCapacity,
-                                              uint32_t buckets,
-                                              size_t* numBytes) {
-    using CheckedSize = mozilla::CheckedInt<size_t>;
-    auto res = CheckedSize(dataCapacity) * sizeof(Data) +
-               CheckedSize(sizeof(HashCodeScrambler)) +
-               CheckedSize(buckets) * sizeof(Data*);
-    if (MOZ_UNLIKELY(!res.isValid())) {
-      return false;
-    }
-    *numBytes = res.value();
-    return true;
+  static constexpr size_t calcAllocSize(size_t dataCapacity, size_t buckets) {
+    return dataCapacity * sizeof(Data) + sizeof(HashCodeScrambler) +
+           buckets * sizeof(Data*);
   }
 
   
@@ -527,11 +518,11 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
     MOZ_ASSERT(dataCapacity <= MaxDataCapacity);
     MOZ_ASSERT(buckets <= MaxHashBuckets);
 
-    size_t numBytes = 0;
-    if (MOZ_UNLIKELY(!calcAllocSize(dataCapacity, buckets, &numBytes))) {
-      ReportAllocationOverflow(cx);
-      return {};
-    }
+    
+    
+    static_assert(calcAllocSize(MaxDataCapacity, MaxHashBuckets) <= INT32_MAX);
+
+    size_t numBytes = calcAllocSize(dataCapacity, buckets);
 
     void* buf = obj->allocateCellBuffer(cx, numBytes);
     if (!buf) {
@@ -644,8 +635,7 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
     uint32_t dataCapacity = getDataCapacity();
     uint32_t buckets = hashBuckets();
 
-    size_t numBytes = 0;
-    MOZ_ALWAYS_TRUE(calcAllocSize(dataCapacity, buckets, &numBytes));
+    size_t numBytes = calcAllocSize(dataCapacity, buckets);
 
     void* buf = oldData;
     Nursery::WasBufferMoved result =
@@ -738,7 +728,6 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
     return true;
   }
 
-#ifdef NIGHTLY_BUILD
   
 
 
@@ -768,7 +757,6 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
     new (entry) Data(std::forward<ElementInput>(element), chain);
     return &entry->element;
   }
-#endif  
 
   
 
@@ -1098,8 +1086,7 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
 
     destroyData(data, length);
 
-    size_t numBytes;
-    MOZ_ALWAYS_TRUE(calcAllocSize(capacity, hashBuckets, &numBytes));
+    size_t numBytes = calcAllocSize(capacity, hashBuckets);
 
     obj->freeCellBuffer(cx, data, numBytes);
   }
@@ -1353,13 +1340,11 @@ class MOZ_STACK_CLASS OrderedHashMapImpl {
     return impl.put(cx, Entry(std::forward<K>(key), std::forward<V>(value)));
   }
 
-#ifdef NIGHTLY_BUILD
   template <typename K, typename V>
   [[nodiscard]] Entry* getOrAdd(JSContext* cx, K&& key, V&& value) {
     return impl.getOrAdd(cx,
                          Entry(std::forward<K>(key), std::forward<V>(value)));
   }
-#endif  
 
 #ifdef DEBUG
   mozilla::Maybe<HashNumber> hash(const Lookup& key) const {
