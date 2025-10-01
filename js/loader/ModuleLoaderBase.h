@@ -553,20 +553,6 @@ class ModuleLoaderBase : public nsISupports {
                                              ModuleLoadRequest* aRequest,
                                              Handle<Value> aError);
 
-  
-
-
-
-
-
-
-
-
-
-
-  void FinishDynamicImportAndReject(ModuleLoadRequest* aRequest,
-                                    nsresult aResult);
-
   void RemoveDynamicImport(ModuleLoadRequest* aRequest);
 
   nsresult CreateModuleScript(ModuleLoadRequest* aRequest);
