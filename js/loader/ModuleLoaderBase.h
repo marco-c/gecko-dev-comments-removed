@@ -8,7 +8,7 @@
 #define js_loader_ModuleLoaderBase_h
 
 #include "LoadedScript.h"
-#include "ScriptLoadRequest.h"
+#include "ScriptLoadRequestList.h"
 
 #include "ImportMap.h"
 #include "js/ColumnNumber.h"  
@@ -18,7 +18,6 @@
 #include "nsCOMArray.h"
 #include "nsCOMPtr.h"
 #include "nsILoadInfo.h"    
-#include "nsINode.h"        
 #include "nsThreadUtils.h"  
 #include "nsURIHashKey.h"
 #include "mozilla/Attributes.h"  
@@ -26,14 +25,20 @@
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/ReferrerPolicyBinding.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "ResolveResult.h"
 
+class nsIConsoleReportCollector;
 class nsIURI;
 
 namespace mozilla {
 
 class LazyLogModule;
 union Utf8Unit;
+
+namespace dom {
+class SRIMetadata;
+}  
 
 }  
 
@@ -417,6 +422,19 @@ class ModuleLoaderBase : public nsISupports {
   
   void DisallowImportMaps() { mImportMapsAllowed = false; }
 
+  virtual bool IsModuleTypeAllowed(ModuleType aModuleType) {
+    if (aModuleType == ModuleType::Unknown) {
+      return false;
+    }
+
+    if (aModuleType == ModuleType::CSS &&
+        !mozilla::StaticPrefs::layout_css_module_scripts_enabled()) {
+      return false;
+    }
+
+    return true;
+  }
+
   
   
   bool GetImportMapSRI(nsIURI* aURI, nsIURI* aSourceURI,
@@ -531,7 +549,8 @@ class ModuleLoaderBase : public nsISupports {
                                              Handle<Value> aHostDefined,
                                              Handle<Value> aError);
   static bool OnLoadRequestedModulesResolved(ModuleLoadRequest* aRequest);
-  static bool OnLoadRequestedModulesRejected(ModuleLoadRequest* aRequest,
+  static bool OnLoadRequestedModulesRejected(JSContext* aCx,
+                                             ModuleLoadRequest* aRequest,
                                              Handle<Value> aError);
 
   
