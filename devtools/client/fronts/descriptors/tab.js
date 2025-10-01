@@ -298,7 +298,7 @@ class TabDescriptorFront extends DescriptorMixin(
 
   async _handleTabEvent(event) {
     switch (event.type) {
-      case "TabClose":
+      case "TabClose": {
         
         
         
@@ -308,6 +308,7 @@ class TabDescriptorFront extends DescriptorMixin(
           await toolbox.destroy();
         }
         break;
+      }
       case "TabRemotenessChange":
         this._onRemotenessChange();
         break;

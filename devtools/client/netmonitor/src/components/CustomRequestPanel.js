@@ -129,7 +129,7 @@ class CustomRequestPanel extends Component {
             ? { method: this.initialRequestMethod }
             : { method: val.trim() };
         break;
-      case "custom-postdata-value":
+      case "custom-postdata-value": {
         
         
         const { requestHeaders } = request;
@@ -152,7 +152,8 @@ class CustomRequestPanel extends Component {
           },
         };
         break;
-      case "custom-query-value":
+      }
+      case "custom-query-value": {
         let customQueryValue = val || "";
         
         const queryArray = customQueryValue
@@ -177,6 +178,7 @@ class CustomRequestPanel extends Component {
           url,
         };
         break;
+      }
       case "custom-url-value":
         data = {
           customQueryValue: null,

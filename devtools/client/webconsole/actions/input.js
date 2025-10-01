@@ -211,7 +211,7 @@ function handleHelperResult(response) {
         case "clearHistory":
           dispatch(historyActions.clearHistory());
           break;
-        case "historyOutput":
+        case "historyOutput": {
           const history = getState().history.entries || [];
           const columns = new Map([
             ["_index", "(index)"],
@@ -230,6 +230,7 @@ function handleHelperResult(response) {
             ])
           );
           break;
+        }
         case "inspectObject": {
           const objectActor = helperResult.object;
           if (hud.toolbox && !helperResult.forceExpandInConsole) {
@@ -255,7 +256,7 @@ function handleHelperResult(response) {
             ])
           );
           break;
-        case "screenshotOutput":
+        case "screenshotOutput": {
           const { args, value } = helperResult;
           const targetFront =
             getSelectedTarget(hud.commands.targetCommand.store.getState()) ||
@@ -295,7 +296,8 @@ function handleHelperResult(response) {
             );
           }
           break;
-        case "blockURL":
+        }
+        case "blockURL": {
           const blockURL = helperResult.args.url;
           
           
@@ -320,7 +322,8 @@ function handleHelperResult(response) {
             ])
           );
           break;
-        case "unblockURL":
+        }
+        case "unblockURL": {
           const unblockURL = helperResult.args.url;
           await hud.commands.networkCommand.unblockRequestForUrl(unblockURL);
           toolbox
@@ -342,6 +345,7 @@ function handleHelperResult(response) {
           );
           
           return;
+        }
 
         
         
