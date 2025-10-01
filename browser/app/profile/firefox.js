@@ -872,7 +872,7 @@ pref("browser.search.widget.removeAfterDaysUnused", 120);
 pref("browser.search.totalSearches", 0);
 
 
-pref("browser.search.visualSearch.featureGate", false);
+pref("browser.search.visualSearch.featureGate", true);
 
 
 pref("browser.search.suggest.ohttp.featureGate", false);
