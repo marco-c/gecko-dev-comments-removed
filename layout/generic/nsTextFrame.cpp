@@ -107,6 +107,16 @@ using namespace mozilla::gfx;
 
 namespace mozilla {
 
+
+
+static bool IsVerticalUpright(const nsIFrame* aFrame) {
+  return (aFrame->GetWritingMode().IsVertical() &&
+          !aFrame->GetWritingMode().IsVerticalSideways() &&
+          aFrame->StyleVisibility()->mTextOrientation ==
+              StyleTextOrientation::Upright) ||
+         aFrame->Style()->IsTextCombined();
+}
+
 bool TextAutospace::Enabled(const StyleTextAutospace& aStyleTextAutospace,
                             const nsIFrame* aFrame) {
   if (aStyleTextAutospace == StyleTextAutospace::NO_AUTOSPACE) {
@@ -120,12 +130,7 @@ bool TextAutospace::Enabled(const StyleTextAutospace& aStyleTextAutospace,
     return false;
   }
 
-  WritingMode wm = aFrame->GetWritingMode();
-  if (wm.IsVertical() && !wm.IsVerticalSideways() &&
-      aFrame->StyleVisibility()->mTextOrientation ==
-          StyleTextOrientation::Upright) {
-    
-    
+  if (IsVerticalUpright(aFrame)) {
     
     
     
@@ -3952,9 +3957,7 @@ static Maybe<TextAutospace::CharClass> GetPrecedingCharClassFromFrameTree(
       if (prevClass) {
         if ((*prevClass == CharClass::NonIdeographicLetter ||
              *prevClass == CharClass::NonIdeographicNumeral) &&
-            (f->StyleVisibility()->mTextOrientation ==
-                 StyleTextOrientation::Upright ||
-             f->Style()->IsTextCombined())) {
+            IsVerticalUpright(f)) {
           
           
           return Some(CharClass::Other);
