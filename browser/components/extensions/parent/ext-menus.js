@@ -48,14 +48,6 @@ var gNextRadioGroupID = 0;
 
 var gMaxLabelLength = 64;
 
-
-
-
-
-function encodeSrcset(url) {
-  return url.replaceAll(/[\t\n\f\r ]/g, encodeURIComponent);
-}
-
 var gMenuBuilder = {
   
   
@@ -495,7 +487,7 @@ var gMenuBuilder = {
       element.setAttribute("class", "menuitem-iconic");
     }
 
-    element.setAttribute("image", encodeSrcset(resolvedURL));
+    element.setAttribute("image", ChromeUtils.encodeURIForSrcset(resolvedURL));
   },
 
   
