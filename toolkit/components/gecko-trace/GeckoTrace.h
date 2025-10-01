@@ -10,7 +10,7 @@
 #include <memory>
 #include <string_view>
 
-#include "mozilla/gecko_trace/SpanEvent.h"
+#include "mozilla/GeckoTraceEvents.h"
 
 #define GECKO_TRACE_SCOPE(component, span_name)                  \
   auto GECKO_TRACE_SCOPE_##__COUNTER__ =                         \
@@ -125,5 +125,14 @@ constexpr void Init() {}
 #endif  
 
 }  
+
+#ifdef GECKO_TRACE_ENABLE
+extern "C" {
+void recv_gecko_trace_export(const uint8_t* buffer, uintptr_t length);
+}
+#else
+inline constexpr void recv_gecko_trace_export(const uint8_t* ,
+                                              uintptr_t ) {}
+#endif
 
 #endif  

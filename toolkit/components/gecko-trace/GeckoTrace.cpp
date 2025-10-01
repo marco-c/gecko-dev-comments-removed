@@ -6,27 +6,27 @@
 
 #include "mozilla/Logging.h"
 #include "mozilla/StaticPrefs_toolkit.h"
-#include "nsXULAppAPI.h"
-
-#include <memory>
-#include <utility>
+#include "mozilla/dom/ContentChild.h"
+#include "mozilla/ipc/UtilityProcessChild.h"
+#include "mozilla/net/SocketProcessChild.h"
 
 #include "opentelemetry/context/runtime_context.h"
 #include "opentelemetry/sdk/common/global_log_handler.h"
-#include "opentelemetry/sdk/instrumentationscope/scope_configurator.h"
 #include "opentelemetry/sdk/trace/random_id_generator_factory.h"
 #include "opentelemetry/sdk/trace/samplers/always_on_factory.h"
-#include "opentelemetry/sdk/trace/tracer_config.h"
-#include "opentelemetry/sdk/trace/tracer_provider_factory.h"
+#include "opentelemetry/sdk/trace/tracer_provider.h"
+#include "opentelemetry/semconv/service_attributes.h"
 #include "opentelemetry/trace/provider.h"
 
 #include "SemanticConventions.h"
-#include "SpanEvent.h"
+#include "SpanProcessing.h"
 
 namespace otel = opentelemetry;
 namespace otel_sdk_log = opentelemetry::sdk::common::internal_log;
 
 namespace mozilla::gecko_trace {
+
+LazyLogModule gLog("gecko-trace");
 
 namespace {
 
@@ -164,6 +164,15 @@ std::shared_ptr<gecko_trace::Span> Tracer::GetCurrentSpan() {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
   static thread_local auto sDefaultOTelSpan = std::make_shared<OTelSpanAdapter>(
       std::make_shared<otel::trace::DefaultSpan>(
           otel::trace::SpanContext::GetInvalid()));
@@ -181,37 +190,134 @@ void SetOpenTelemetryInternalLogLevel(mozilla::LogLevel aLogLevel) {
   otel_sdk_log::GlobalLogHandler::SetLogLevel(ToOTelLevel(aLogLevel));
 }
 
+void InitializeTracerProvider() {
+  switch (XRE_GetProcessType()) {
+    case GeckoProcessType_Default:
+      [[fallthrough]];
+    case GeckoProcessType_Content:
+      [[fallthrough]];
+    case GeckoProcessType_Socket:
+      [[fallthrough]];
+    case GeckoProcessType_Utility:
+      break;
+    default:
+      MOZ_LOG(gLog, LogLevel::Warning,
+              ("InitializeTracerProvider: Unsupported process type %s - "
+               "tracing disabled",
+               XRE_GetProcessTypeString()));
+      return;
+  }
+
+  auto processor = std::make_unique<LocalSpanProcessor>(
+      std::make_unique<ProtobufExporter>([](ipc::ByteBuf&& aBuffer) {
+        switch (XRE_GetProcessType()) {
+          case GeckoProcessType_Default:
+            recv_gecko_trace_export(aBuffer.mData, aBuffer.mLen);
+            return true;
+          case GeckoProcessType_Content:
+            return mozilla::dom::ContentChild::GetSingleton()
+                ->SendGeckoTraceExport(std::move(aBuffer));
+          case GeckoProcessType_Socket:
+            return net::SocketProcessChild::GetSingleton()
+                ->SendGeckoTraceExport(std::move(aBuffer));
+          case GeckoProcessType_Utility:
+            
+            return ipc::UtilityProcessChild::GetSingleton()
+                ->SendGeckoTraceExport(std::move(aBuffer));
+          default:
+            MOZ_LOG(gLog, LogLevel::Error, ("unsupported process type"));
+            return false;
+        }
+      }));
+
+  std::vector<std::unique_ptr<otel::sdk::trace::SpanProcessor>> processors{};
+  processors.push_back(std::move(processor));
+
+  auto resource = otel::sdk::resource::Resource::Create({
+      {otel::semconv::service::kServiceName, "Firefox"},
+      {semantic_conventions::kProcessID, XRE_GetChildID()},
+      {semantic_conventions::kProcessType, XRE_GetProcessTypeString()},
+  });
+
+  bool tracingEnabled = StaticPrefs::toolkit_gecko_trace_enable();
+
+  auto configurator =
+      otel::sdk::instrumentationscope::
+          ScopeConfigurator<otel::sdk::trace::TracerConfig>::Builder(
+              tracingEnabled ? otel::sdk::trace::TracerConfig::Enabled()
+                             : otel::sdk::trace::TracerConfig::Disabled())
+              .Build();
+
+  auto context = std::make_unique<otel::sdk::trace::TracerContext>(
+      std::move(processors), resource,
+      otel::sdk::trace::AlwaysOnSamplerFactory::Create(),
+      otel::sdk::trace::RandomIdGeneratorFactory::Create(),
+      std::make_unique<otel::sdk::instrumentationscope::ScopeConfigurator<
+          otel::sdk::trace::TracerConfig>>(configurator));
+
+  auto tracerProvider =
+      std::make_shared<otel::sdk::trace::TracerProvider>(std::move(context));
+
+  otel::trace::Provider::SetTracerProvider(tracerProvider);
+}
+
+void InitializeShutdownHandlers() {
+  const auto shutdownTracerProvider = [] {
+    MOZ_LOG(gLog, LogLevel::Info, ("Shutting down tracer provider"));
+
+    
+    
+    
+    
+    otel::trace::Provider::SetTracerProvider(
+        std::make_shared<otel::trace::NoopTracerProvider>());
+  };
+
+  switch (XRE_GetProcessType()) {
+    case GeckoProcessType_Default:
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      RunOnShutdown(shutdownTracerProvider, ShutdownPhase::XPCOMWillShutdown);
+      break;
+    case GeckoProcessType_Content:
+      
+      
+      RunOnShutdown(shutdownTracerProvider,
+                    ShutdownPhase::AppShutdownConfirmed);
+      break;
+    default:
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      RunOnShutdown(shutdownTracerProvider, ShutdownPhase::XPCOMShutdownFinal);
+      break;
+  }
+}
+
 void Init() {
   
   otel_sdk_log::GlobalLogHandler::SetLogHandler(
       std::make_shared<OTelToMozLogHandler>());
 
-  
-  auto resource = otel::sdk::resource::Resource::Create({
-      {semantic_conventions::kProcessType, XRE_GetProcessTypeString()},
-      {semantic_conventions::kProcessID, XRE_GetChildID()},
-  });
-
-  
-  std::vector<std::unique_ptr<otel::sdk::trace::SpanProcessor>> processors{};
-
-  auto sampler = otel::sdk::trace::AlwaysOnSamplerFactory::Create();
-  auto idGenerator = otel::sdk::trace::RandomIdGeneratorFactory::Create();
-  auto configurator =
-      otel::sdk::instrumentationscope::
-          ScopeConfigurator<otel::sdk::trace::TracerConfig>::Builder(
-              StaticPrefs::toolkit_gecko_trace_enable()
-                  ? otel::sdk::trace::TracerConfig::Enabled()
-                  : otel::sdk::trace::TracerConfig::Disabled())
-              .Build();
-  auto provider = otel::sdk::trace::TracerProviderFactory::Create(
-      std::move(processors), resource, std::move(sampler),
-      std::move(idGenerator),
-      std::make_unique<otel::sdk::instrumentationscope::ScopeConfigurator<
-          otel::sdk::trace::TracerConfig>>(configurator));
-
-  
-  otel::trace::Provider::SetTracerProvider(std::move(provider));
+  InitializeTracerProvider();
+  InitializeShutdownHandlers();
 }
 
 }  

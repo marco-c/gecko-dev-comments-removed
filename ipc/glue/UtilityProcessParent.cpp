@@ -4,6 +4,7 @@
 
 
 #include "mozilla/ipc/UtilityProcessParent.h"
+#include "mozilla/GeckoTrace.h"
 #include "mozilla/ipc/UtilityProcessManager.h"
 
 #if defined(XP_WIN)
@@ -62,6 +63,12 @@ mozilla::ipc::IPCResult UtilityProcessParent::RecvAddMemoryReport(
 
 mozilla::ipc::IPCResult UtilityProcessParent::RecvFOGData(ByteBuf&& aBuf) {
   glean::FOGData(std::move(aBuf));
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult UtilityProcessParent::RecvGeckoTraceExport(
+    ByteBuf&& aBuf) {
+  recv_gecko_trace_export(aBuf.mData, aBuf.mLen);
   return IPC_OK();
 }
 

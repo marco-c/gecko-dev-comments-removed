@@ -61,6 +61,8 @@ parent:
   
   async FOGData(ByteBuf buf);
 
+  async GeckoTraceExport(ByteBuf aBuf);
+
 #if defined(XP_WIN)
   async GetModulesTrust(ModulePaths aModPaths, bool aRunAtNormalPriority)
       returns (ModulesMapResult? modMapResult);
