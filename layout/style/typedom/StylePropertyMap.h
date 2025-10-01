@@ -28,12 +28,13 @@ class Sequence;
 
 class StylePropertyMap final : public StylePropertyMapReadOnly {
  public:
-  explicit StylePropertyMap(nsCOMPtr<nsISupports> aParent);
+  StylePropertyMap(nsCOMPtr<nsISupports> aParent, bool aComputed);
 
   JSObject* WrapObject(JSContext*, JS::Handle<JSObject*> aGivenProto) override;
 
   
 
+  
   void Set(const nsACString& aProperty,
            const Sequence<OwningCSSStyleValueOrUTF8String>& aValues,
            ErrorResult& aRv);
