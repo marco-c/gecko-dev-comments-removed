@@ -756,11 +756,7 @@ nsMathMLmoFrame::Stretch(DrawTarget* aDrawTarget,
   
   PlaceFlags flags(PlaceFlag::IgnoreBorderPadding,
                    PlaceFlag::DoNotAdjustForWidthAndHeight);
-  nsresult rv = Place(aDrawTarget, flags, aDesiredStretchSize);
-  if (NS_FAILED(rv)) {
-    
-    DidReflowChildren(mFrames.FirstChild());
-  }
+  Place(aDrawTarget, flags, aDesiredStretchSize);
 
   if (useMathMLChar) {
     
@@ -962,14 +958,9 @@ void nsMathMLmoFrame::Reflow(nsPresContext* aPresContext,
   nsMathMLTokenFrame::Reflow(aPresContext, aDesiredSize, aReflowInput, aStatus);
 }
 
-nsresult nsMathMLmoFrame::Place(DrawTarget* aDrawTarget,
-                                const PlaceFlags& aFlags,
-                                ReflowOutput& aDesiredSize) {
-  nsresult rv = nsMathMLTokenFrame::Place(aDrawTarget, aFlags, aDesiredSize);
-
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
+void nsMathMLmoFrame::Place(DrawTarget* aDrawTarget, const PlaceFlags& aFlags,
+                            ReflowOutput& aDesiredSize) {
+  nsMathMLTokenFrame::Place(aDrawTarget, aFlags, aDesiredSize);
 
   
 
@@ -986,7 +977,7 @@ nsresult nsMathMLmoFrame::Place(DrawTarget* aDrawTarget,
       StyleFont()->mMathStyle == StyleMathStyle::Normal &&
       NS_MATHML_OPERATOR_IS_LARGEOP(mFlags) && UseMathMLChar()) {
     nsBoundingMetrics newMetrics;
-    rv = mMathMLChar.Stretch(
+    nsresult rv = mMathMLChar.Stretch(
         this, aDrawTarget, nsLayoutUtils::FontSizeInflationFor(this),
         NS_STRETCH_DIRECTION_VERTICAL, aDesiredSize.mBoundingMetrics,
         newMetrics, NS_STRETCH_LARGEOP,
@@ -994,7 +985,7 @@ nsresult nsMathMLmoFrame::Place(DrawTarget* aDrawTarget,
 
     if (NS_FAILED(rv)) {
       
-      return NS_OK;
+      return;
     }
 
     aDesiredSize.mBoundingMetrics = newMetrics;
@@ -1010,7 +1001,6 @@ nsresult nsMathMLmoFrame::Place(DrawTarget* aDrawTarget,
     aDesiredSize.Width() = newMetrics.width;
     mBoundingMetrics = newMetrics;
   }
-  return NS_OK;
 }
 
 

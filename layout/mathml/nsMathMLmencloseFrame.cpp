@@ -267,9 +267,9 @@ void nsMathMLmencloseFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 }
 
 
-nsresult nsMathMLmencloseFrame::Place(DrawTarget* aDrawTarget,
-                                      const PlaceFlags& aFlags,
-                                      ReflowOutput& aDesiredSize) {
+void nsMathMLmencloseFrame::Place(DrawTarget* aDrawTarget,
+                                  const PlaceFlags& aFlags,
+                                  ReflowOutput& aDesiredSize) {
   
   
   
@@ -277,12 +277,7 @@ nsresult nsMathMLmencloseFrame::Place(DrawTarget* aDrawTarget,
   PlaceFlags flags = aFlags + PlaceFlag::MeasureOnly +
                      PlaceFlag::IgnoreBorderPadding +
                      PlaceFlag::DoNotAdjustForWidthAndHeight;
-  nsresult rv = nsMathMLContainerFrame::Place(aDrawTarget, flags, baseSize);
-
-  if (NS_FAILED(rv)) {
-    DidReflowChildren(PrincipalChildList().FirstChild());
-    return rv;
-  }
+  nsMathMLContainerFrame::Place(aDrawTarget, flags, baseSize);
 
   nsBoundingMetrics bmBase = baseSize.mBoundingMetrics;
   nscoord dx_left = 0, dx_right = 0;
@@ -571,8 +566,6 @@ nsresult nsMathMLmencloseFrame::Place(DrawTarget* aDrawTarget,
     PositionRowChildFrames(dx_left + borderPadding.left,
                            aDesiredSize.BlockStartAscent());
   }
-
-  return NS_OK;
 }
 
 nscoord nsMathMLmencloseFrame::FixInterFrameSpacing(

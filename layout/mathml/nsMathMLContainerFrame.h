@@ -187,8 +187,8 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
 
 
 
-  virtual nsresult Place(DrawTarget* aDrawTarget, const PlaceFlags& aFlags,
-                         ReflowOutput& aDesiredSize);
+  virtual void Place(DrawTarget* aDrawTarget, const PlaceFlags& aFlags,
+                     ReflowOutput& aDesiredSize);
 
   
   
@@ -211,8 +211,8 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
 
 
 
-  nsresult PlaceAsMrow(DrawTarget* aDrawTarget, const PlaceFlags& aFlags,
-                       ReflowOutput& aDesiredSize);
+  void PlaceAsMrow(DrawTarget* aDrawTarget, const PlaceFlags& aFlags,
+                   ReflowOutput& aDesiredSize);
 
   
 
@@ -359,12 +359,6 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
   
   
   void GatherAndStoreOverflow(ReflowOutput* aMetrics);
-
-  
-
-
-
-  static void DidReflowChildren(nsIFrame* aFirst);
 
   
 

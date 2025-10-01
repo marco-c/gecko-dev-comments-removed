@@ -392,11 +392,7 @@ nsMathMLContainerFrame::Stretch(DrawTarget* aDrawTarget,
 
         
         PlaceFlags flags;
-        nsresult rv = Place(aDrawTarget, flags, aDesiredStretchSize);
-        if (NS_FAILED(rv)) {
-          
-          DidReflowChildren(mFrames.FirstChild());
-        }
+        Place(aDrawTarget, flags, aDesiredStretchSize);
 
         
         
@@ -478,19 +474,7 @@ nsresult nsMathMLContainerFrame::FinalizeReflow(DrawTarget* aDrawTarget,
   if (!placeOrigin) {
     flags += PlaceFlag::MeasureOnly;
   }
-  nsresult rv = Place(aDrawTarget, flags, aDesiredSize);
-
-  
-  
-  
-  
-  
-  
-  if (NS_FAILED(rv)) {
-    GatherAndStoreOverflow(&aDesiredSize);
-    DidReflowChildren(PrincipalChildList().FirstChild());
-    return rv;
-  }
+  Place(aDrawTarget, flags, aDesiredSize);
 
   bool parentWillFireStretch = false;
   if (!placeOrigin) {
@@ -989,10 +973,7 @@ void nsMathMLContainerFrame::GetIntrinsicISizeMetrics(
 
   
   PlaceFlags flags(PlaceFlag::IntrinsicSize, PlaceFlag::MeasureOnly);
-  nsresult rv = Place(aRenderingContext->GetDrawTarget(), flags, aDesiredSize);
-  if (NS_FAILED(rv)) {
-    PlaceAsMrow(aRenderingContext->GetDrawTarget(), flags, aDesiredSize);
-  }
+  Place(aRenderingContext->GetDrawTarget(), flags, aDesiredSize);
 
   ClearSavedChildMetrics();
 }
@@ -1210,9 +1191,9 @@ class nsMathMLContainerFrame::RowChildFrameIterator {
 };
 
 
-nsresult nsMathMLContainerFrame::Place(DrawTarget* aDrawTarget,
-                                       const PlaceFlags& aFlags,
-                                       ReflowOutput& aDesiredSize) {
+void nsMathMLContainerFrame::Place(DrawTarget* aDrawTarget,
+                                   const PlaceFlags& aFlags,
+                                   ReflowOutput& aDesiredSize) {
   
   mBoundingMetrics = nsBoundingMetrics();
 
@@ -1266,14 +1247,12 @@ nsresult nsMathMLContainerFrame::Place(DrawTarget* aDrawTarget,
   if (!aFlags.contains(PlaceFlag::MeasureOnly)) {
     PositionRowChildFrames(shiftX, aDesiredSize.BlockStartAscent());
   }
-
-  return NS_OK;
 }
 
-nsresult nsMathMLContainerFrame::PlaceAsMrow(DrawTarget* aDrawTarget,
-                                             const PlaceFlags& aFlags,
-                                             ReflowOutput& aDesiredSize) {
-  return nsMathMLContainerFrame::Place(aDrawTarget, aFlags, aDesiredSize);
+void nsMathMLContainerFrame::PlaceAsMrow(DrawTarget* aDrawTarget,
+                                         const PlaceFlags& aFlags,
+                                         ReflowOutput& aDesiredSize) {
+  nsMathMLContainerFrame::Place(aDrawTarget, aFlags, aDesiredSize);
 }
 
 void nsMathMLContainerFrame::PositionRowChildFrames(nscoord aOffsetX,
@@ -1367,20 +1346,6 @@ nscoord nsMathMLContainerFrame::FixInterFrameSpacing(
     }
   }
   return gap;
-}
-
-
-void nsMathMLContainerFrame::DidReflowChildren(nsIFrame* aFirst) {
-  for (nsIFrame* frame = aFirst; frame; frame = frame->GetNextSibling()) {
-    if (!frame->HasAnyStateBits(NS_FRAME_IN_REFLOW)) {
-      continue;
-    }
-    if (nsIFrame* grandchild = frame->PrincipalChildList().FirstChild()) {
-      
-      DidReflowChildren(grandchild);
-    }
-    frame->DidReflow(frame->PresContext(), nullptr);
-  }
 }
 
 

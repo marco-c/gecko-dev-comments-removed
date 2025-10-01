@@ -146,9 +146,9 @@ nscoord nsMathMLmfracFrame::FixInterFrameSpacing(ReflowOutput& aDesiredSize) {
 }
 
 
-nsresult nsMathMLmfracFrame::Place(DrawTarget* aDrawTarget,
-                                   const PlaceFlags& aFlags,
-                                   ReflowOutput& aDesiredSize) {
+void nsMathMLmfracFrame::Place(DrawTarget* aDrawTarget,
+                               const PlaceFlags& aFlags,
+                               ReflowOutput& aDesiredSize) {
   
   
   nsBoundingMetrics bmNum, bmDen;
@@ -406,6 +406,4 @@ nsresult nsMathMLmfracFrame::Place(DrawTarget* aDrawTarget,
     mLineRect.SetRect(leftSpace, dy, width - (leftSpace + rightSpace),
                       actualRuleThickness);
   }
-
-  return NS_OK;
 }
