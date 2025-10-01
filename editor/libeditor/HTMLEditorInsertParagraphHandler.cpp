@@ -368,7 +368,7 @@ HTMLEditor::AutoInsertParagraphHandler::Run() {
     return EditActionResult::HandledResult();
   }
 
-  if (HTMLEditUtils::IsHeader(*editableBlockElement)) {
+  if (HTMLEditUtils::IsHeadingElement(*editableBlockElement)) {
     Result<InsertParagraphResult, nsresult>
         insertParagraphInHeadingElementResult =
             HandleInHeadingElement(*editableBlockElement, pointToInsert);
@@ -1304,7 +1304,7 @@ HTMLEditor::AutoInsertParagraphHandler::GetBetterPointToSplitParagraph(
                  candidatePointToSplit.GetContainerOrContainerParentElement();
              container && container != commonAncestor;
              container = container->GetParentElement()) {
-          if (!HTMLEditUtils::IsLink(container)) {
+          if (!HTMLEditUtils::IsHyperlinkElement(*container)) {
             continue;
           }
           
@@ -1348,7 +1348,7 @@ HTMLEditor::AutoInsertParagraphHandler::GetBetterPointToSplitParagraph(
                candidatePointToSplit.GetContainerOrContainerParentElement();
            container && container != commonAncestor;
            container = container->GetParentElement()) {
-        if (!HTMLEditUtils::IsLink(container)) {
+        if (!HTMLEditUtils::IsHyperlinkElement(*container)) {
           continue;
         }
         
@@ -1843,7 +1843,7 @@ Element* HTMLEditor::AutoInsertParagraphHandler::
 Result<InsertParagraphResult, nsresult>
 HTMLEditor::AutoInsertParagraphHandler::HandleInListItemElement(
     Element& aListItemElement, const EditorDOMPoint& aPointToSplit) {
-  MOZ_ASSERT(HTMLEditUtils::IsListItem(&aListItemElement));
+  MOZ_ASSERT(HTMLEditUtils::IsListItemElement(aListItemElement));
 
   
   if (&mEditingHost != aListItemElement.GetParentElement() &&
@@ -1881,13 +1881,14 @@ HTMLEditor::AutoInsertParagraphHandler::HandleInListItemElement(
     }
 
     auto afterLeftListElement = EditorDOMPoint::After(leftListElement);
-    if (MOZ_UNLIKELY(!afterLeftListElement.IsSet())) {
+    if (MOZ_UNLIKELY(!afterLeftListElement.IsInContentNode())) {
       return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
     }
 
     
     
-    if (HTMLEditUtils::IsAnyListElement(afterLeftListElement.GetContainer())) {
+    if (HTMLEditUtils::IsListElement(
+            *afterLeftListElement.ContainerAs<nsIContent>())) {
       Result<MoveNodeResult, nsresult> moveListItemElementResult =
           mHTMLEditor.MoveNodeWithTransaction(aListItemElement,
                                               afterLeftListElement);

@@ -1880,7 +1880,7 @@ bool HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
 
   
   
-  if (HTMLEditUtils::IsAnyTableElement(&aOtherBlockElement)) {
+  if (HTMLEditUtils::IsAnyTableElementExceptColumnElement(aOtherBlockElement)) {
     return false;
   }
 
@@ -2513,7 +2513,8 @@ bool HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
 
   
   
-  if (HTMLEditUtils::IsAnyTableElement(&aCurrentBlockElement)) {
+  if (HTMLEditUtils::IsAnyTableElementExceptColumnElement(
+          aCurrentBlockElement)) {
     return false;
   }
 
@@ -3255,8 +3256,8 @@ bool HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
       HTMLEditUtils::CanContentsBeJoined(*mLeftContent, *mRightContent) &&
       
       (mLeftContent->IsHTMLElement(nsGkAtoms::p) ||
-       HTMLEditUtils::IsListItem(mLeftContent) ||
-       HTMLEditUtils::IsHeader(*mLeftContent))) {
+       HTMLEditUtils::IsListItemElement(*mLeftContent) ||
+       HTMLEditUtils::IsHeadingElement(*mLeftContent))) {
     mMode = Mode::JoinBlocksInSameParent;
     return true;
   }
@@ -3992,7 +3993,8 @@ Result<Element*, nsresult> HTMLEditor::AutoDeleteRangesHandler::
                !aScanResult.ElementPtr()->IsAnyOfHTMLElements(
                    nsGkAtoms::body, nsGkAtoms::head, nsGkAtoms::html) &&
                
-               !HTMLEditUtils::IsAnyTableElement(aScanResult.ElementPtr());
+               !HTMLEditUtils::IsAnyTableElementExceptColumnElement(
+                   *aScanResult.ElementPtr());
       };
 
   const WSScanResult prevVisibleThing =
@@ -4827,7 +4829,8 @@ HTMLEditor::AutoDeleteRangesHandler::DeleteParentBlocksWithTransactionIfEmpty(
     
     return NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND;
   }
-  if (HTMLEditUtils::IsTableCellOrCaption(*prevVisibleThing.ElementPtr())) {
+  if (HTMLEditUtils::IsTableCellOrCaptionElement(
+          *prevVisibleThing.ElementPtr())) {
     
     
     
@@ -5358,8 +5361,9 @@ Result<bool, nsresult> HTMLEditor::AutoDeleteRangesHandler::
     return false;
   }
 
-  if (HTMLEditUtils::IsAnyTableElement(mLeftBlockElement) ||
-      HTMLEditUtils::IsAnyTableElement(mRightBlockElement)) {
+  if (HTMLEditUtils::IsAnyTableElementExceptColumnElement(*mLeftBlockElement) ||
+      HTMLEditUtils::IsAnyTableElementExceptColumnElement(
+          *mRightBlockElement)) {
     
     mCanJoinBlocks = false;
     return false;
@@ -5373,8 +5377,8 @@ Result<bool, nsresult> HTMLEditor::AutoDeleteRangesHandler::
   }
 
   
-  if (HTMLEditUtils::IsAnyListElement(mLeftBlockElement) &&
-      HTMLEditUtils::IsListItem(mRightBlockElement) &&
+  if (HTMLEditUtils::IsListElement(*mLeftBlockElement) &&
+      HTMLEditUtils::IsListItemElement(*mRightBlockElement) &&
       mRightBlockElement->GetParentNode() == mLeftBlockElement) {
     mCanJoinBlocks = false;
     return true;
@@ -5382,8 +5386,8 @@ Result<bool, nsresult> HTMLEditor::AutoDeleteRangesHandler::
 
   
   
-  if (HTMLEditUtils::IsListItem(mLeftBlockElement) &&
-      HTMLEditUtils::IsListItem(mRightBlockElement)) {
+  if (HTMLEditUtils::IsListItemElement(*mLeftBlockElement) &&
+      HTMLEditUtils::IsListItemElement(*mRightBlockElement)) {
     
     Element* leftListElement = mLeftBlockElement->GetParentElement();
     Element* rightListElement = mRightBlockElement->GetParentElement();
@@ -6828,7 +6832,8 @@ Result<DeleteRangeResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
         HTMLEditor& aHTMLEditor, nsIContent& aContent) {
   MOZ_ASSERT(aHTMLEditor.IsEditActionDataAvailable());
 
-  if (!HTMLEditUtils::IsAnyTableElementButNotTable(&aContent)) {
+  if (!HTMLEditUtils::IsAnyTableElementExceptTableElementAndColumElement(
+          aContent)) {
     nsCOMPtr<nsINode> parentNode = aContent.GetParentNode();
     if (NS_WARN_IF(!parentNode)) {
       return Err(NS_ERROR_FAILURE);
@@ -6880,7 +6885,7 @@ Result<DeleteRangeResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
   
   
   
-  if (!HTMLEditUtils::IsTableCellOrCaption(aContent) ||
+  if (!HTMLEditUtils::IsTableCellOrCaptionElement(aContent) ||
       aContent.GetChildCount()) {
     return DeleteRangeResult(EditorDOMRange(EditorDOMPoint(&aContent, 0u),
                                             EditorDOMPoint::AtEndOf(aContent)),
@@ -6985,13 +6990,14 @@ Element* HTMLEditor::AutoDeleteRangesHandler::AutoEmptyBlockAncestorDeleter::
   
   while (editableBlockElement &&
          HTMLEditUtils::IsRemovableFromParentNode(*editableBlockElement) &&
-         !HTMLEditUtils::IsAnyTableElement(editableBlockElement) &&
+         !HTMLEditUtils::IsAnyTableElementExceptColumnElement(
+             *editableBlockElement) &&
          HTMLEditUtils::IsEmptyNode(*editableBlockElement)) {
     
     
-    if (HTMLEditUtils::IsListItem(editableBlockElement)) {
+    if (HTMLEditUtils::IsListItemElement(*editableBlockElement)) {
       Element* const parentElement = editableBlockElement->GetParentElement();
-      if (parentElement && HTMLEditUtils::IsAnyListElement(parentElement) &&
+      if (parentElement && HTMLEditUtils::IsListElement(*parentElement) &&
           !HTMLEditUtils::IsRemovableFromParentNode(*parentElement) &&
           HTMLEditUtils::IsEmptyNode(*parentElement)) {
         break;
@@ -7097,7 +7103,8 @@ HTMLEditor::AutoDeleteRangesHandler::AutoEmptyBlockAncestorDeleter::
     MaybeInsertBRElementBeforeEmptyListItemElement(HTMLEditor& aHTMLEditor) {
   MOZ_ASSERT(mEmptyInclusiveAncestorBlockElement);
   MOZ_ASSERT(mEmptyInclusiveAncestorBlockElement->GetParentElement());
-  MOZ_ASSERT(HTMLEditUtils::IsListItem(mEmptyInclusiveAncestorBlockElement));
+  MOZ_ASSERT(
+      HTMLEditUtils::IsListItemElement(*mEmptyInclusiveAncestorBlockElement));
 
   
   
@@ -7115,10 +7122,11 @@ HTMLEditor::AutoDeleteRangesHandler::AutoEmptyBlockAncestorDeleter::
 
   const EditorDOMPoint atParentOfEmptyListItem(
       mEmptyInclusiveAncestorBlockElement->GetParentElement());
-  if (NS_WARN_IF(!atParentOfEmptyListItem.IsSet())) {
+  if (NS_WARN_IF(!atParentOfEmptyListItem.IsInContentNode())) {
     return Err(NS_ERROR_FAILURE);
   }
-  if (HTMLEditUtils::IsAnyListElement(atParentOfEmptyListItem.GetContainer())) {
+  if (HTMLEditUtils::IsListElement(
+          *atParentOfEmptyListItem.ContainerAs<nsIContent>())) {
     return CreateLineBreakResult::NotHandled();
   }
   Result<CreateLineBreakResult, nsresult> insertBRElementResultOrError =
@@ -7243,7 +7251,8 @@ HTMLEditor::AutoDeleteRangesHandler::AutoEmptyBlockAncestorDeleter::Run(
 
   auto caretPointOrError = [&]() MOZ_CAN_RUN_SCRIPT MOZ_NEVER_INLINE_DEBUG
       -> Result<CaretPoint, nsresult> {
-    if (HTMLEditUtils::IsListItem(mEmptyInclusiveAncestorBlockElement)) {
+    if (HTMLEditUtils::IsListItemElement(
+            *mEmptyInclusiveAncestorBlockElement)) {
       Result<CreateLineBreakResult, nsresult> insertBRElementResultOrError =
           MaybeInsertBRElementBeforeEmptyListItemElement(aHTMLEditor);
       if (MOZ_UNLIKELY(insertBRElementResultOrError.isErr())) {
@@ -7279,7 +7288,7 @@ HTMLEditor::AutoDeleteRangesHandler::AutoEmptyBlockAncestorDeleter::Run(
   EditorDOMPoint pointToPutCaret =
       caretPointOrError.unwrap().UnwrapCaretPoint();
   const bool unwrapAncestorBlocks =
-      !HTMLEditUtils::IsListItem(mEmptyInclusiveAncestorBlockElement) &&
+      !HTMLEditUtils::IsListItemElement(*mEmptyInclusiveAncestorBlockElement) &&
       pointToPutCaret.GetContainer() ==
           mEmptyInclusiveAncestorBlockElement->GetParentNode();
   EditorDOMPoint atEmptyInclusiveAncestorBlockElement(
@@ -7363,12 +7372,12 @@ Result<DeleteRangeResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
         HTMLEditor& aHTMLEditor) {
   
   
-  if (!HTMLEditUtils::IsAnyListElement(mEmptyInclusiveAncestorBlockElement)) {
+  if (!HTMLEditUtils::IsListElement(mEmptyInclusiveAncestorBlockElement)) {
     return DeleteRangeResult::IgnoredResult();
   }
   const RefPtr<Element> parentElement =
       mEmptyInclusiveAncestorBlockElement->GetParentElement();
-  if (!parentElement || !HTMLEditUtils::IsAnyListElement(parentElement) ||
+  if (!HTMLEditUtils::IsListElement(parentElement) ||
       !HTMLEditUtils::IsEmptyNode(
           *parentElement,
           {EmptyCheckOption::TreatNonEditableContentAsInvisible})) {
@@ -7480,7 +7489,7 @@ HTMLEditor::AutoDeleteRangesHandler::ExtendOrShrinkRangeToDelete(
   
   if (const Element* maybeListElement =
           HTMLEditUtils::GetElementIfOnlyOneSelected(aRangeToDelete)) {
-    if (HTMLEditUtils::IsAnyListElement(maybeListElement) &&
+    if (HTMLEditUtils::IsListElement(*maybeListElement) &&
         !HTMLEditUtils::IsEmptyAnyListElement(*maybeListElement)) {
       EditorRawDOMRange range =
           HTMLEditUtils::GetRangeSelectingAllContentInAllListItems<
@@ -7517,8 +7526,8 @@ HTMLEditor::AutoDeleteRangesHandler::ExtendOrShrinkRangeToDelete(
       }
       
       
-      if (HTMLEditUtils::IsAnyTableElement(
-              backwardScanFromStartResult.GetContent()) ||
+      if (HTMLEditUtils::IsAnyTableElementExceptColumnElement(
+              *backwardScanFromStartResult.GetContent()) ||
           backwardScanFromStartResult.GetContent() ==
               closestBlockAncestorOrInlineEditingHost ||
           backwardScanFromStartResult.GetContent() == closestEditingHost) {
@@ -7526,8 +7535,8 @@ HTMLEditor::AutoDeleteRangesHandler::ExtendOrShrinkRangeToDelete(
       }
       
       
-      if (HTMLEditUtils::IsAnyListElement(
-              backwardScanFromStartResult.GetContent()) &&
+      if (HTMLEditUtils::IsListElement(
+              *backwardScanFromStartResult.GetContent()) &&
           !HTMLEditUtils::IsEmptyAnyListElement(
               *backwardScanFromStartResult.ElementPtr())) {
         break;
@@ -7582,8 +7591,8 @@ HTMLEditor::AutoDeleteRangesHandler::ExtendOrShrinkRangeToDelete(
         MOZ_ASSERT(forwardScanFromEndResult.ContentIsElement());
         
         
-        if (HTMLEditUtils::IsAnyTableElement(
-                forwardScanFromEndResult.GetContent()) ||
+        if (HTMLEditUtils::IsAnyTableElementExceptColumnElement(
+                *forwardScanFromEndResult.GetContent()) ||
             forwardScanFromEndResult.GetContent() ==
                 closestBlockAncestorOrInlineEditingHost) {
           break;
@@ -7754,7 +7763,7 @@ EditorRawDOMRange HTMLEditor::AutoDeleteRangesHandler::
       if (aRangeToDelete.StartRef().GetContainer() == maybeList) {
         break;
       }
-      if (HTMLEditUtils::IsAnyListElement(maybeList) &&
+      if (HTMLEditUtils::IsListElement(*maybeList) &&
           HTMLEditUtils::IsEmptyAnyListElement(*maybeList->AsElement())) {
         deepestStartPointOfStartList.Set(maybeList);
       }
@@ -7767,7 +7776,7 @@ EditorRawDOMRange HTMLEditor::AutoDeleteRangesHandler::
       if (aRangeToDelete.EndRef().GetContainer() == maybeList) {
         break;
       }
-      if (HTMLEditUtils::IsAnyListElement(maybeList) &&
+      if (HTMLEditUtils::IsListElement(*maybeList) &&
           HTMLEditUtils::IsEmptyAnyListElement(*maybeList->AsElement())) {
         deepestEndPointOfEndList.SetAfter(maybeList);
       }
