@@ -392,4 +392,4 @@ void JitRuntime::generateEnterJitShared(MacroAssembler& masm, Register argcReg,
   
   masm.push(calleeTokenReg);
 }
-#endif 
+#endif  

@@ -136,7 +136,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   
   masm.movePtr(sp, r11);
 
- 
+  
   masm.loadPtr(slot_vp, r10);
   masm.unboxInt32(Address(r10, 0), r10);
 
