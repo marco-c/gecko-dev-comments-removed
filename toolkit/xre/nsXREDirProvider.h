@@ -70,33 +70,6 @@ class nsXREDirProvider final : public nsIDirectoryServiceProvider2,
 
   static nsresult GetUserDataDirectory(nsIFile** aFile, bool aLocal);
 
-#if defined(MOZ_WIDGET_GTK)
-  static nsresult GetLegacyOrXDGEnvValue(const char* aHomeDir,
-                                         const char* aEnvName,
-                                         nsCString aSubdir, nsIFile** aFile,
-                                         bool* aWasFromEnv);
-  static nsresult GetLegacyOrXDGCachePath(const char* aHomeDir,
-                                          nsIFile** aFile);
-  static nsresult GetLegacyOrXDGHomePath(const char* aHomeDir, nsIFile** aFile,
-                                         bool aForceLegacy = false);
-  static nsresult AppendFromAppData(nsIFile* aFile, bool aIsDotted);
-
-  static bool IsForceLegacyHome();
-
-  static bool LegacyHomeExists(nsIFile** aFile);
-
-  static nsresult GetLegacyOrXDGConfigHome(const char* aHomeDir,
-                                           nsIFile** aFile);
-
-  enum legacyOrXDGHomeTelemetry {
-    empty,
-    legacyExists,
-    legacyForced,
-    xdgDefault,
-    xdgConfigHome
-  };
-#endif  
-
   
   nsIFile* GetGREDir() { return mGREDir; }
   nsIFile* GetGREBinDir() { return mGREBinDir; }
@@ -132,26 +105,10 @@ class nsXREDirProvider final : public nsIDirectoryServiceProvider2,
 
   nsresult GetProfileDir(nsIFile** aResult);
 
-  
-
-
-
-  static nsresult ClearUserDataProfileDirectoryFromGTest(nsIFile** aLocal,
-                                                         nsIFile** aGlobal);
-
-  static nsresult RestoreUserDataProfileDirectoryFromGTest(
-      nsCOMPtr<nsIFile>& aLocal, nsCOMPtr<nsIFile>& aGlobal);
-
  private:
   nsresult GetFilesInternal(const char* aProperty,
                             nsISimpleEnumerator** aResult);
-
-  
-  
-  
-  static nsresult GetUserDataDirectoryHome(nsIFile** aFile, bool aLocal,
-                                           bool aForceLegacy = false);
-  static nsresult GetNativeUserManifestsDirectory(nsIFile** aFile);
+  static nsresult GetUserDataDirectoryHome(nsIFile** aFile, bool aLocal);
   static nsresult GetSysUserExtensionsDirectory(nsIFile** aFile);
 #if defined(XP_UNIX) || defined(XP_MACOSX)
   static nsresult GetSystemExtensionsDirectory(nsIFile** aFile);
