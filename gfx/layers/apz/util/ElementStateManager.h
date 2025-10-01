@@ -40,6 +40,7 @@ class ElementStateManager final {
 
   ElementStateManager();
 
+  enum class PreventDefault : bool { No, Yes };
   
 
 
@@ -47,7 +48,8 @@ class ElementStateManager final {
 
 
 
-  void SetTargetElement(dom::EventTarget* aTarget);
+  void SetTargetElement(dom::EventTarget* aTarget,
+                        PreventDefault aTouchStartPreventDefault);
   
 
 
