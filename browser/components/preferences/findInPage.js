@@ -50,9 +50,6 @@ var gSearchResultsPane = {
     }
     this.inited = true;
     this.searchInput = document.getElementById("searchInput");
-    this.searchTooltipContainer = document.getElementById(
-      "search-tooltip-container"
-    );
 
     window.addEventListener("resize", () => {
       this._recomputeTooltipPositions();
@@ -495,8 +492,7 @@ var gSearchResultsPane = {
       
       if (
         keywordsResult &&
-        (nodeObject instanceof HTMLElement ||
-          nodeObject.localName === "button" ||
+        (nodeObject.localName === "button" ||
           nodeObject.localName == "menulist")
       ) {
         this.listSearchTooltips.add(nodeObject);
@@ -683,7 +679,7 @@ var gSearchResultsPane = {
     
     anchorNode.tooltipNode = searchTooltip;
     anchorNode.parentElement.classList.add("search-tooltip-parent");
-    this.searchTooltipContainer.append(searchTooltip);
+    anchorNode.parentElement.appendChild(searchTooltip);
 
     this._applyTooltipPosition(
       searchTooltip,
@@ -717,24 +713,15 @@ var gSearchResultsPane = {
     
     
     let anchorRect = anchorNode.getBoundingClientRect();
-    let tooltipContainerRect =
-      this.searchTooltipContainer.getBoundingClientRect();
+    let containerRect = anchorNode.parentElement.getBoundingClientRect();
     let tooltipRect = searchTooltip.getBoundingClientRect();
 
-    let top = anchorRect.top - tooltipContainerRect.top;
-
-    let left;
-    if (anchorRect.left <= tooltipContainerRect.left + 20) {
-      
-      left = 8;
-    } else {
-      
-      left =
-        anchorRect.left -
-        tooltipContainerRect.left +
-        anchorRect.width / 2 -
-        tooltipRect.width / 2;
-    }
+    let left =
+      anchorRect.left -
+      containerRect.left +
+      anchorRect.width / 2 -
+      tooltipRect.width / 2;
+    let top = anchorRect.top - containerRect.top;
     return { left, top };
   },
 
