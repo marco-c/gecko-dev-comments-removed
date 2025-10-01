@@ -59,14 +59,9 @@ static constexpr Register sp{Registers::sp};
 static constexpr Register fp{Registers::fp};
 static constexpr Register ra{Registers::ra};
 
+
+
 static constexpr Register ScratchRegister = t9;
-
-
-
-struct ScratchRegisterScope : public AutoRegisterScope {
-  explicit ScratchRegisterScope(MacroAssembler& masm)
-      : AutoRegisterScope(masm, ScratchRegister) {}
-};
 
 class AssemblerMIPSShared;
 
@@ -76,6 +71,7 @@ class UseScratchRegisterScope {
   ~UseScratchRegisterScope();
 
   Register Acquire();
+  void Release(const Register& reg);
   bool hasAvailable() const;
   void Include(const GeneralRegisterSet& list) {
     *available_ = GeneralRegisterSet::Union(*available_, list);
