@@ -1554,6 +1554,11 @@ void TransportLayerDtls::RecordTlsTelemetry() {
     MOZ_MTLOG(ML_DEBUG, "cipher: " << oss.str());
   }
 
+  
+  
+  mozilla::glean::webrtcdtls::key_exchange_algorithm.AccumulateSingleSample(
+      info.keaType);
+
   uint16_t cipher;
   nsresult rv = GetSrtpCipher(&cipher);
 
