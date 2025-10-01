@@ -7055,9 +7055,7 @@ void nsTextFrame::PaintShadows(Span<const StyleSimpleShadow> aShadows,
 
   
   
-  
-  
-  uint32_t blurFlags = nsContextBoxBlur::DISABLE_HARDWARE_ACCELERATION_BLUR;
+  uint32_t blurFlags = 0;
   uint32_t numGlyphRuns;
   const gfxTextRun::GlyphRun* run = mTextRun->GetGlyphRuns(&numGlyphRuns);
   while (numGlyphRuns-- > 0) {
