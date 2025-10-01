@@ -47,6 +47,11 @@ class SessionManager:
         self.refresh_endpoint_unavailable = False
         self.response_session_id_override = None
         self.allowed_refresh_initiators = ["*"]
+        self.provider_session_id = None
+        self.provider_url = None
+        self.provider_key = None
+        self.use_empty_response = False
+        self.registration_extra_cookies = []
 
     def next_session_id(self):
         return len(self.session_to_key_map)
@@ -132,6 +137,28 @@ class SessionManager:
         if allowed_refresh_initiators is not None:
             self.allowed_refresh_initiators = allowed_refresh_initiators
 
+        provider_session_id = configuration.get("providerSessionId")
+        if provider_session_id is not None:
+            self.provider_session_id = provider_session_id
+
+        provider_url = configuration.get("providerUrl")
+        if provider_url is not None:
+            self.provider_url = provider_url
+
+        provider_key = configuration.get("providerKey")
+        if provider_key is not None:
+            self.provider_key = provider_key
+
+        use_empty_response = configuration.get("useEmptyResponse")
+        if use_empty_response is not None:
+            self.use_empty_response = use_empty_response
+
+        registration_extra_cookies = configuration.get("registrationExtraCookies")
+        if registration_extra_cookies is not None:
+            self.registration_extra_cookies = []
+            for detail in registration_extra_cookies:
+                self.registration_extra_cookies.append(CookieDetail(detail.get("nameAndValue"), detail.get("attributes")))
+
     def get_should_refresh_end_session(self):
         return self.should_refresh_end_session
 
@@ -177,7 +204,7 @@ class SessionManager:
     def get_session_instructions_response_set_cookie_headers(self, session_id, request):
         header_values = list(map(
             lambda cookie_detail: f"{cookie_detail.get_name_and_value()}; {cookie_detail.get_attributes(request)}",
-            self.get_cookie_details(session_id)
+            self.get_cookie_details(session_id) + self.registration_extra_cookies
         ))
         return [("Set-Cookie", header_value) for header_value in header_values]
 
@@ -211,7 +238,17 @@ class SessionManager:
             ("Cache-Control", "no-store")
         ]
 
-        return (200, headers, json.dumps(response_body))
+        response_body = "" if self.use_empty_response else json.dumps(response_body)
+        return (200, headers, response_body)
 
     def get_refresh_endpoint_unavailable(self):
         return self.refresh_endpoint_unavailable
+
+    def get_provider_session_id(self):
+        return self.provider_session_id
+
+    def get_provider_url(self):
+        return self.provider_url
+
+    def get_provider_key(self):
+        return self.provider_key
