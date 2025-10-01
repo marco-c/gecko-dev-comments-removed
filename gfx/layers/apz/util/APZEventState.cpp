@@ -497,7 +497,7 @@ void APZEventState::ProcessAPZStateChange(ViewID aViewId,
     }
     case APZStateChange::eStartPanning: {
       
-      mElementStateManager->ClearActivation();
+      mElementStateManager->HandleStartPanning();
       break;
     }
     case APZStateChange::eEndTouch: {
