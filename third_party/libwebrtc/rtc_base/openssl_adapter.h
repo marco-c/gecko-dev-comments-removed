@@ -148,7 +148,7 @@ class OpenSSLAdapter final : public SSLAdapter {
 #ifdef OPENSSL_IS_BORINGSSL
   std::unique_ptr<BoringSSLIdentity> identity_;
 #else
-  std::unique_ptr<webrtc::OpenSSLIdentity> identity_;
+  std::unique_ptr<OpenSSLIdentity> identity_;
 #endif
   
   SSLRole role_;
@@ -211,8 +211,8 @@ class OpenSSLAdapterFactory : public SSLAdapterFactory {
 
  private:
   
-  SSLMode ssl_mode_ = webrtc::SSL_MODE_TLS;
-  SSLRole ssl_role_ = webrtc::SSL_CLIENT;
+  SSLMode ssl_mode_ = SSL_MODE_TLS;
+  SSLRole ssl_role_ = SSL_CLIENT;
   bool ignore_bad_cert_ = false;
 
   std::unique_ptr<SSLIdentity> identity_;

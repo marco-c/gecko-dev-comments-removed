@@ -131,8 +131,7 @@ class FakeNetworkManager : public NetworkManagerBase {
       } else if (it->socket_address.ipaddr().family() == AF_INET6) {
         prefix_length = kFakeIPv6NetworkPrefixLength;
       }
-      IPAddress prefix =
-          webrtc::TruncateIP(it->socket_address.ipaddr(), prefix_length);
+      IPAddress prefix = TruncateIP(it->socket_address.ipaddr(), prefix_length);
       auto net = std::make_unique<Network>(
           it->socket_address.hostname(), it->socket_address.hostname(), prefix,
           prefix_length, it->adapter_type);

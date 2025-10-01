@@ -25,7 +25,7 @@ namespace webrtc {
 
 class BitBufferWriter {
  public:
-  static constexpr DataSize kMaxLeb128Length = webrtc::DataSize::Bytes(10);
+  static constexpr DataSize kMaxLeb128Length = DataSize::Bytes(10);
 
   
   BitBufferWriter(uint8_t* bytes, size_t byte_count);

@@ -77,7 +77,7 @@ class NetworkMonitorInterface {
     AdapterType adapter_type;
 
     
-    AdapterType underlying_type_for_vpn = webrtc::ADAPTER_TYPE_UNKNOWN;
+    AdapterType underlying_type_for_vpn = ADAPTER_TYPE_UNKNOWN;
 
     
     NetworkPreference network_preference = NetworkPreference::NEUTRAL;

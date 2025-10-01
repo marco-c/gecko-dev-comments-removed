@@ -317,7 +317,7 @@ void OpenSSLStreamAdapter::SetIdentity(std::unique_ptr<SSLIdentity> identity) {
 #ifdef OPENSSL_IS_BORINGSSL
   identity_.reset(static_cast<BoringSSLIdentity*>(identity.release()));
 #else
-  identity_.reset(static_cast<webrtc::OpenSSLIdentity*>(identity.release()));
+  identity_.reset(static_cast<OpenSSLIdentity*>(identity.release()));
 #endif
 }
 
@@ -1203,7 +1203,7 @@ int OpenSSLStreamAdapter::SSLVerifyCallback(X509_STORE_CTX* store, void* arg) {
   
   X509* cert = X509_STORE_CTX_get0_cert(store);
   stream->peer_cert_chain_.reset(
-      new SSLCertChain(std::make_unique<webrtc::OpenSSLCertificate>(cert)));
+      new SSLCertChain(std::make_unique<OpenSSLCertificate>(cert)));
 
   
   

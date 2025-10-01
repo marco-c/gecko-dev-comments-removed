@@ -64,7 +64,7 @@ struct RTC_EXPORT AsyncSocketPacketOptions {
   
   
   int64_t packet_id = -1;
-  webrtc::PacketTimeUpdateParams packet_time_params;
+  PacketTimeUpdateParams packet_time_params;
   
   PacketInfo info_signaled_after_sent;
   
@@ -127,12 +127,11 @@ class RTC_EXPORT AsyncPacketSocket : public sigslot::has_slots<> {
   
   void SubscribeCloseEvent(
       const void* removal_tag,
-      std::function<void(webrtc::AsyncPacketSocket*, int)> callback);
+      std::function<void(AsyncPacketSocket*, int)> callback);
   void UnsubscribeCloseEvent(const void* removal_tag);
 
   void RegisterReceivedPacketCallback(
-      absl::AnyInvocable<void(webrtc::AsyncPacketSocket*,
-                              const webrtc::ReceivedIpPacket&)>
+      absl::AnyInvocable<void(AsyncPacketSocket*, const ReceivedIpPacket&)>
           received_packet_callback);
   void DeregisterReceivedPacketCallback();
 
@@ -173,8 +172,7 @@ class RTC_EXPORT AsyncPacketSocket : public sigslot::has_slots<> {
  private:
   CallbackList<AsyncPacketSocket*, int> on_close_
       RTC_GUARDED_BY(&network_checker_);
-  absl::AnyInvocable<void(webrtc::AsyncPacketSocket*,
-                          const webrtc::ReceivedIpPacket&)>
+  absl::AnyInvocable<void(AsyncPacketSocket*, const ReceivedIpPacket&)>
       received_packet_callback_ RTC_GUARDED_BY(&network_checker_);
 };
 

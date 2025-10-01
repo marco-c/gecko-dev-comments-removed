@@ -128,7 +128,7 @@ class ScopedDisallowWait {
    public:
     void YieldExecution() override { RTC_DCHECK_NOTREACHED(); }
   } handler_;
-  webrtc::ScopedYieldPolicy policy{&handler_};
+  ScopedYieldPolicy policy{&handler_};
 };
 #endif
 

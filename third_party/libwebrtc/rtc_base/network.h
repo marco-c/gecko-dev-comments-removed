@@ -52,7 +52,7 @@ extern const char kPublicIPv6Host[];
 class Network;
 
 
-const int kDefaultNetworkIgnoreMask = webrtc::ADAPTER_TYPE_LOOPBACK;
+const int kDefaultNetworkIgnoreMask = ADAPTER_TYPE_LOOPBACK;
 
 namespace webrtc_network_internal {
 bool CompareNetworks(const std::unique_ptr<Network>& a,
@@ -201,7 +201,7 @@ class RTC_EXPORT Network {
                 description,
                 prefix,
                 prefix_length,
-                webrtc::ADAPTER_TYPE_UNKNOWN) {}
+                ADAPTER_TYPE_UNKNOWN) {}
 
   Network(absl::string_view name,
           absl::string_view description,
@@ -314,8 +314,8 @@ class RTC_EXPORT Network {
       return;
     }
     type_ = type;
-    if (type != webrtc::ADAPTER_TYPE_VPN) {
-      underlying_type_for_vpn_ = webrtc::ADAPTER_TYPE_UNKNOWN;
+    if (type != ADAPTER_TYPE_VPN) {
+      underlying_type_for_vpn_ = ADAPTER_TYPE_UNKNOWN;
     }
     SignalTypeChanged(this);
   }
@@ -328,17 +328,17 @@ class RTC_EXPORT Network {
     SignalTypeChanged(this);
   }
 
-  bool IsVpn() const { return type_ == webrtc::ADAPTER_TYPE_VPN; }
+  bool IsVpn() const { return type_ == ADAPTER_TYPE_VPN; }
 
   bool IsCellular() const { return IsCellular(type_); }
 
   static bool IsCellular(AdapterType type) {
     switch (type) {
-      case webrtc::ADAPTER_TYPE_CELLULAR:
-      case webrtc::ADAPTER_TYPE_CELLULAR_2G:
-      case webrtc::ADAPTER_TYPE_CELLULAR_3G:
-      case webrtc::ADAPTER_TYPE_CELLULAR_4G:
-      case webrtc::ADAPTER_TYPE_CELLULAR_5G:
+      case ADAPTER_TYPE_CELLULAR:
+      case ADAPTER_TYPE_CELLULAR_2G:
+      case ADAPTER_TYPE_CELLULAR_3G:
+      case ADAPTER_TYPE_CELLULAR_4G:
+      case ADAPTER_TYPE_CELLULAR_5G:
         return true;
       default:
         return false;
@@ -398,7 +398,7 @@ class RTC_EXPORT Network {
   int scope_id_;
   bool ignored_;
   AdapterType type_;
-  AdapterType underlying_type_for_vpn_ = webrtc::ADAPTER_TYPE_UNKNOWN;
+  AdapterType underlying_type_for_vpn_ = ADAPTER_TYPE_UNKNOWN;
   int preference_;
   bool active_ = true;
   uint16_t id_ = 0;

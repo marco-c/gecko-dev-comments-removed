@@ -30,8 +30,7 @@ class RTCCertificateGeneratorInterface {
  public:
   
   
-  using Callback =
-      absl::AnyInvocable<void(scoped_refptr<webrtc::RTCCertificate>) &&>;
+  using Callback = absl::AnyInvocable<void(scoped_refptr<RTCCertificate>) &&>;
 
   virtual ~RTCCertificateGeneratorInterface() = default;
 
