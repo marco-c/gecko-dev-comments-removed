@@ -662,7 +662,7 @@ void Navigation::PerformNavigationTraversal(JSContext* aCx, const nsID& aKey,
 
   
   auto* childSHistory = traversable->GetChildSessionHistory();
-  auto performNavigationTraversalSteps =
+  auto performNaviationTraversalSteps =
       [finished =
            RefPtr(apiMethodTracker->FinishedPromise())](nsresult aResult) {
         switch (aResult) {
@@ -706,8 +706,7 @@ void Navigation::PerformNavigationTraversal(JSContext* aCx, const nsID& aKey,
   
   childSHistory->AsyncGo(aKey, navigable, false,
                          false,
-                         true,
-                         performNavigationTraversalSteps);
+                         performNaviationTraversalSteps);
 }
 
 
@@ -1148,20 +1147,6 @@ NS_IMPL_CYCLE_COLLECTING_ADDREF(NavigationWaitForAllScope)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(NavigationWaitForAllScope)
 
 
-static void ResumeApplyTheHistoryStep(
-    SessionHistoryInfo* aTarget, BrowsingContext* aTraversable,
-    UserNavigationInvolvement aUserInvolvement) {
-  MOZ_DIAGNOSTIC_ASSERT(aTraversable->IsTop());
-  auto* childSHistory = aTraversable->GetChildSessionHistory();
-  
-  
-  childSHistory->AsyncGo(aTarget->NavigationKey(), aTraversable,
-                          false,
-                          false,
-                          false, [](auto) {});
-}
-
-
 bool Navigation::InnerFireNavigateEvent(
     JSContext* aCx, NavigationType aNavigationType,
     NavigationDestination* aDestination,
@@ -1342,23 +1327,6 @@ bool Navigation::InnerFireNavigateEvent(
       case NavigationType::Traverse:
         
         mSuppressNormalScrollRestorationDuringOngoingNavigation = true;
-        
-        
-        
-        
-        if (auto* entry = aDestination->GetEntry()) {
-          
-          UserNavigationInvolvement userInvolvement =
-              UserNavigationInvolvement::None;
-          
-          if (event->UserInitiated()) {
-            userInvolvement = UserNavigationInvolvement::Activation;
-          }
-          
-          ResumeApplyTheHistoryStep(entry->SessionHistoryInfo(),
-                                    navigable->Top(), userInvolvement);
-        }
-
         break;
       case NavigationType::Push:
       case NavigationType::Replace:
