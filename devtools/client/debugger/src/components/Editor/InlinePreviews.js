@@ -11,8 +11,6 @@ import InlinePreview from "./InlinePreview";
 import { connect } from "devtools/client/shared/vendor/react-redux";
 import { getInlinePreviews } from "../../selectors/index";
 
-import { markerTypes } from "../../constants";
-
 function hasPreviews(previews) {
   return !!previews && !!Object.keys(previews).length;
 }
@@ -43,12 +41,12 @@ class InlinePreviews extends Component {
     } = this.props;
 
     if (!previews) {
-      editor.removeLineContentMarker(markerTypes.INLINE_PREVIEW_MARKER);
+      editor.removeLineContentMarker(editor.markerTypes.INLINE_PREVIEW_MARKER);
       return;
     }
 
     editor.setLineContentMarker({
-      id: markerTypes.INLINE_PREVIEW_MARKER,
+      id: editor.markerTypes.INLINE_PREVIEW_MARKER,
       lines: Object.keys(previews).map(line => {
         
         
@@ -86,9 +84,8 @@ class InlinePreviews extends Component {
   }
 
   componentWillUnmount() {
-    this.props.editor.removeLineContentMarker(
-      markerTypes.INLINE_PREVIEW_MARKER
-    );
+    const { editor } = this.props;
+    editor.removeLineContentMarker(editor.markerTypes.INLINE_PREVIEW_MARKER);
   }
 
   render() {

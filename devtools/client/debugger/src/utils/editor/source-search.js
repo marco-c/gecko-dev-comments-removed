@@ -3,7 +3,6 @@
 
 
 import buildQuery from "../build-query";
-import { markerTypes } from "../../constants";
 
 
 
@@ -79,7 +78,7 @@ function doSearch(
     return null;
   }
   editor.setPositionContentMarker({
-    id: markerTypes.ACTIVE_SELECTION_MARKER,
+    id: editor.markerTypes.ACTIVE_SELECTION_MARKER,
     positionClassName: "cm-matchhighlight",
     positions: [{ from: cursor.from, to: cursor.to }],
   });
