@@ -160,8 +160,9 @@ async function testScriptOverrideWithOptions(options) {
     OVERRIDDEN_SCRIPT,
     
     
-    Services.prefs.getBoolPref("dom.script_loader.navigation_cache") &&
-      options.enableCache
+    Services.prefs.getBoolPref(
+      "dom.script_loader.experimental.navigation_cache"
+    ) && options.enableCache
   );
 
   

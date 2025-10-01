@@ -220,7 +220,7 @@ ScriptLoader::ScriptLoader(Document* aDocument)
   
   
   if (!LoaderPrincipal()->IsSystemPrincipal() &&
-      StaticPrefs::dom_script_loader_navigation_cache()) {
+      StaticPrefs::dom_script_loader_experimental_navigation_cache()) {
     mCache = SharedScriptCache::Get();
     RegisterToCache();
     LOG(("ScriptLoader (%p): Using in-memory cache.", this));
