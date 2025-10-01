@@ -40,7 +40,7 @@ class RtpPacket;
 class RtpPacketToSend;
 namespace rtcp {
 class TransportFeedback;
-}
+}  
 
 const int kVideoPayloadTypeFrequency = 90000;
 
@@ -310,7 +310,7 @@ struct RtpPacketCounter {
   size_t packets;        
   
   
-  webrtc::TimeDelta total_packet_delay = webrtc::TimeDelta::Zero();
+  TimeDelta total_packet_delay = TimeDelta::Zero();
 };
 
 
@@ -399,7 +399,7 @@ struct RtpReceiveStats {
   
   uint32_t jitter = 0;
   
-  webrtc::TimeDelta interarrival_jitter = webrtc::TimeDelta::Zero();
+  TimeDelta interarrival_jitter = TimeDelta::Zero();
 
   
   

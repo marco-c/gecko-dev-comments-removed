@@ -121,7 +121,7 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
 
   void AddReceiveCodec(uint8_t payload_type,
                        VideoCodecType video_codec,
-                       const webrtc::CodecParameterMap& codec_params,
+                       const CodecParameterMap& codec_params,
                        bool raw_payload);
 
   
@@ -440,11 +440,11 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   
   
   
-  std::map<uint8_t, webrtc::CodecParameterMap> pt_codec_params_
+  std::map<uint8_t, CodecParameterMap> pt_codec_params_
       RTC_GUARDED_BY(packet_sequence_checker_);
 
   
-  std::map<uint8_t, webrtc::VideoCodecType> pt_codec_
+  std::map<uint8_t, VideoCodecType> pt_codec_
       RTC_GUARDED_BY(packet_sequence_checker_);
 
   int16_t last_payload_type_ RTC_GUARDED_BY(packet_sequence_checker_) = -1;
