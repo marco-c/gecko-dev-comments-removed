@@ -100,24 +100,21 @@ const void* CompileRuntime::addressOfLastBufferedWholeCell() {
   return runtime()->gc.addressOfLastBufferedWholeCell();
 }
 
-const void* CompileRuntime::addressOfHasSeenObjectEmulateUndefinedFuse() {
+const void* CompileRuntime::addressOfRuntimeFuse(
+    RuntimeFuses::FuseIndex index) {
   
   
-  return runtime()->hasSeenObjectEmulateUndefinedFuse.refNoCheck().fuseRef();
+  return runtime()->runtimeFuses.refNoCheck().getFuseByIndex(index)->fuseRef();
 }
 
-bool CompileRuntime::hasSeenObjectEmulateUndefinedFuseIntact() {
+bool CompileRuntime::runtimeFuseIntact(RuntimeFuses::FuseIndex index) {
   
   
   
   
   
   
-  return runtime()->hasSeenObjectEmulateUndefinedFuse.ref().intact();
-}
-
-bool CompileRuntime::hasSeenArrayExceedsInt32LengthFuseIntact() {
-  return runtime()->hasSeenArrayExceedsInt32LengthFuse.ref().intact();
+  return runtime()->runtimeFuses.ref().getFuseByIndex(index)->intact();
 }
 
 const DOMCallbacks* CompileRuntime::DOMcallbacks() {

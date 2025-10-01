@@ -47,6 +47,7 @@
 #include "vm/FunctionFlags.h"
 #include "vm/Opcodes.h"
 #include "vm/RealmFuses.h"
+#include "vm/RuntimeFuses.h"
 #include "wasm/WasmAnyRef.h"
 
 
@@ -1543,20 +1544,10 @@ class MacroAssembler : public MacroAssemblerSpecific {
   inline void branch16(Condition cond, const Address& lhs, Imm32 rhs,
                        Label* label) PER_SHARED_ARCH;
 
-  
-  
-  
-  
-  
-  
-  enum class LhsHighBitsAreClean { Yes, No };
-
-  inline void branch32(Condition cond, Register lhs, Register rhs, Label* label,
-                       LhsHighBitsAreClean clean = LhsHighBitsAreClean::Yes)
-      PER_SHARED_ARCH;
-  inline void branch32(Condition cond, Register lhs, Imm32 rhs, Label* label,
-                       LhsHighBitsAreClean clean = LhsHighBitsAreClean::Yes)
-      PER_SHARED_ARCH;
+  inline void branch32(Condition cond, Register lhs, Register rhs,
+                       Label* label) PER_SHARED_ARCH;
+  inline void branch32(Condition cond, Register lhs, Imm32 rhs,
+                       Label* label) PER_SHARED_ARCH;
 
   inline void branch32(Condition cond, Register lhs, const Address& rhs,
                        Label* label) DEFINED_ON(arm64);
@@ -5069,6 +5060,10 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void loadGlobalObjectData(Register dest);
 
   void loadRealmFuse(RealmFuses::FuseIndex index, Register dest);
+
+  void loadRuntimeFuse(RuntimeFuses::FuseIndex index, Register dest);
+
+  void guardRuntimeFuse(RuntimeFuses::FuseIndex index, Label* fail);
 
   void switchToRealm(Register realm);
   void switchToRealm(const void* realm, Register scratch);

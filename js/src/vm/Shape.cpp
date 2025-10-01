@@ -859,7 +859,9 @@ bool NativeObject::removeProperty(JSContext* cx, Handle<NativeObject*> obj,
   }
 
   PropertyInfo prop = propMap->getPropertyInfo(propIndex);
-  if (!Watchtower::watchPropertyRemove(cx, obj, id, prop)) {
+  bool wasTrackedObjectFuseProp = false;
+  if (!Watchtower::watchPropertyRemove(cx, obj, id, prop,
+                                       &wasTrackedObjectFuseProp)) {
     return false;
   }
 
@@ -877,7 +879,19 @@ bool NativeObject::removeProperty(JSContext* cx, Handle<NativeObject*> obj,
     
     
     
-    if (propMap == map && propIndex == mapLength - 1) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (propMap == map && propIndex == mapLength - 1 &&
+        !wasTrackedObjectFuseProp) {
       MOZ_ASSERT(obj->getLastProperty().key() == id);
 
       Rooted<SharedPropMap*> sharedMap(cx, map->asShared());
@@ -1136,7 +1150,8 @@ BaseShape::BaseShape(JSContext* cx, const JSClass* clasp, JS::Realm* realm,
   MOZ_ASSERT_IF(proto.isObject(), !IsWindow(proto.toObject()));
 
   if (MOZ_UNLIKELY(clasp->emulatesUndefined())) {
-    cx->runtime()->hasSeenObjectEmulateUndefinedFuse.ref().popFuse(cx);
+    cx->runtime()->runtimeFuses.ref().hasSeenObjectEmulateUndefinedFuse.popFuse(
+        cx);
   }
 
 #ifdef DEBUG

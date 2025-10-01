@@ -311,9 +311,10 @@ bool Compartment::getOrCreateWrapper(JSContext* cx, HandleObject existing,
 
   
   
-  MOZ_ASSERT_IF(
-      obj->getClass()->emulatesUndefined(),
-      !cx->runtime()->hasSeenObjectEmulateUndefinedFuse.ref().intact());
+  MOZ_ASSERT_IF(obj->getClass()->emulatesUndefined(),
+                !cx->runtime()
+                     ->runtimeFuses.ref()
+                     .hasSeenObjectEmulateUndefinedFuse.intact());
 
   
   auto wrap = cx->runtime()->wrapObjectCallbacks->wrap;
