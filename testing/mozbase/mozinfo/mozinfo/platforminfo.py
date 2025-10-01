@@ -81,8 +81,6 @@ class PlatformInfo:
             
             if cleaned_name == "mac" and version == "1100":
                 return "11.20"
-            if len(version) == 5 and version[2] == ".":
-                return version  
             return version[0:2] + "." + version[2:4]
         if cleaned_name == "android":
             android_version = self.android_os_to_sdk_map.get(version)
