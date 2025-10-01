@@ -1,0 +1,49 @@
+
+
+
+"use strict";
+
+const { ERRORS } = ChromeUtils.importESModule(
+  "chrome://browser/content/backup/backup-constants.mjs"
+);
+
+const { BackupError } = ChromeUtils.importESModule(
+  "resource:///modules/backup/BackupError.mjs"
+);
+
+const SCHEDULED_BACKUPS_ENABLED_PREF = "browser.backup.scheduled.enabled";
+const BACKUP_ERROR_CODE_PREF_NAME = "browser.backup.errorCode";
+
+add_task(async function test_error_visibility_heuristic() {
+  await SpecialPowers.pushPrefEnv({
+    set: [[SCHEDULED_BACKUPS_ENABLED_PREF, true]],
+  });
+
+  await BrowserTestUtils.withNewTab("about:preferences", async browser => {
+    let settings = browser.contentDocument.querySelector("backup-settings");
+    let sandbox = sinon.createSandbox();
+
+    const bs = BackupService.get();
+    sandbox
+      .stub(bs, "resolveArchiveDestFolderPath")
+      .rejects(new BackupError("forced failure", ERRORS.UNKNOWN));
+
+    settings.triggerBackupButtonEl.click();
+
+    
+    await TestUtils.waitForPrefChange(
+      BACKUP_ERROR_CODE_PREF_NAME,
+      val => val == ERRORS.UNKNOWN
+    );
+    
+    
+    await new Promise(resolve => SimpleTest.executeSoon(resolve));
+    
+    
+    await new Promise(resolve => SimpleTest.executeSoon(resolve));
+    await settings.updateComplete;
+
+    Assert.ok(settings.backupErrorBarEl, "Error bar is visible");
+    sandbox.restore();
+  });
+});
