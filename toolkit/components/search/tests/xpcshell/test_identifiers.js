@@ -50,14 +50,6 @@ function checkIdentifier(engineName, expectedIdentifier, expectedTelemetryId) {
     expectedTelemetryId,
     "Should have the correct telemetry Id"
   );
-
-  
-  
-  Assert.equal(
-    engine.identifier,
-    expectedIdentifier,
-    "Should have the correct identifier"
-  );
 }
 
 add_task(async function test_appProvided_basic() {

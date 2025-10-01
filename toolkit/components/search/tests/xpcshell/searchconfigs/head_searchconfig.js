@@ -129,6 +129,8 @@ async function maybeSetupConfig() {
 
 
 
+
+
 class SearchConfigTest {
   
 
@@ -305,13 +307,11 @@ class SearchConfigTest {
 
 
 
-
-
-  _findEngine(engines, identifier, exactMatch) {
+  _findEngine(engines, testDetails) {
     return engines.find(engine =>
-      exactMatch
-        ? engine.identifier == identifier
-        : engine.identifier.startsWith(identifier)
+      testDetails.identifier
+        ? engine.id == testDetails.identifier
+        : engine.id.startsWith(testDetails.identifierStartsWith)
     );
   }
 
@@ -335,11 +335,7 @@ class SearchConfigTest {
     const testSection = this.#testDetails[section];
     const hasIncluded = "included" in testSection;
     const hasExcluded = "excluded" in testSection;
-    const identifierIncluded = !!this._findEngine(
-      engines,
-      this.#testDetails.identifier,
-      this.#testDetails.identifierExactMatch ?? false
-    );
+    const identifierIncluded = !!this._findEngine(engines, this.#testDetails);
 
     
     if (section == "default" && !hasIncluded && !hasExcluded) {
@@ -456,11 +452,7 @@ class SearchConfigTest {
       `Should have just one details section for region: ${region} locale: ${locale}`
     );
 
-    const engine = this._findEngine(
-      engines,
-      this.#testDetails.identifier,
-      this.#testDetails.identifierExactMatch ?? false
-    );
+    const engine = this._findEngine(engines, this.#testDetails);
     this.assertOk(engine, "Should have an engine present");
 
     if (this.#testDetails.aliases) {

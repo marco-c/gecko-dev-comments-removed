@@ -1,5 +1,5 @@
-/* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+
+
 
 "use strict";
 
@@ -15,18 +15,18 @@ const DOMAIN_LOCALES = {
 };
 
 const test = new SearchConfigTest({
-  identifier: "ebay",
+  identifierStartsWith: "ebay",
   aliases: ["@ebay"],
   default: {
-    // Not included anywhere.
+    
   },
   available: {
     included: [
       {
-        // We don't currently enforce by region, but do locale instead.
-        // regions: [
-        //   "us", "gb", "ca", "ie", "fr", "it", "de", "at", "es", "nl", "ch", "au"
-        // ],
+        
+        
+        
+        
         locales: [
           "an",
           "ast",
@@ -71,9 +71,9 @@ const test = new SearchConfigTest({
   suggestionUrlBase: "https://autosug.ebay.com/autosug",
   details: [
     {
-      // Note: These should be based on region, but we don't currently enforce that.
-      // Note: the order here is important. A region/locale match higher up in the
-      // list will override a region/locale match lower down.
+      
+      
+      
       domain: "www.befr.ebay.be",
       telemetryId: "ebay-be",
       included: [
