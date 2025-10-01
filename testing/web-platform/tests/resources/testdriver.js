@@ -2169,6 +2169,32 @@
 
         clear_display_features: function(context=null) {
             return window.test_driver_internal.clear_display_features(context);
+        },
+
+        
+
+
+
+
+
+
+        get_global_privacy_control: function() {
+            return window.test_driver_internal.get_global_privacy_control();
+        },
+
+        
+
+
+
+
+
+
+
+
+
+
+        set_global_privacy_control: function(newValue) {
+            return window.test_driver_internal.set_global_privacy_control(newValue);
         }
     };
 
@@ -2486,6 +2512,14 @@
 
         async clear_display_features(context=null) {
             throw new Error("clear_display_features() is not implemented by testdriver-vendor.js");
+        },
+
+        async set_global_privacy_control(newValue) {
+            throw new Error("set_global_privacy_control() is not implemented by testdriver-vendor.js");
+        },
+
+        async get_global_privacy_control() {
+            throw new Error("get_global_privacy_control() is not implemented by testdriver-vendor.js");
         }
     };
 })();
