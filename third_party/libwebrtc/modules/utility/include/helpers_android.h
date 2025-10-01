@@ -13,10 +13,6 @@
 
 #include <jni.h>
 
-#include <string>
-
-#include "rtc_base/system/arch.h"
-
 
 
 #define CHECK_EXCEPTION(jni)        \
