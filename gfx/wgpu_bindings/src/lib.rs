@@ -2,6 +2,8 @@
 
 
 
+#![allow(unknown_lints, mismatched_lifetime_syntaxes)]
+
 use crate::command::{RecordedComputePass, RecordedRenderPass};
 use wgc::id;
 
