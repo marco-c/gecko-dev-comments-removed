@@ -304,25 +304,42 @@ static CanonicalElementWithAttributes CanonicalizeElementWithAttributes(
 
     
     if (elem.mAttributes.WasPassed()) {
+      
       ListSet<CanonicalName> attributes;
+
+      
       for (const auto& attribute : elem.mAttributes.Value()) {
         
         
         attributes.Insert(CanonicalizeAttribute(attribute));
       }
+
+      
       result.mAttributes = Some(std::move(attributes));
     }
 
     
     if (elem.mRemoveAttributes.WasPassed()) {
+      
       ListSet<CanonicalName> attributes;
+
+      
       for (const auto& attribute : elem.mRemoveAttributes.Value()) {
         
         
         attributes.Insert(CanonicalizeAttribute(attribute));
       }
+
+      
       result.mRemoveAttributes = Some(std::move(attributes));
     }
+  }
+
+  
+  
+  if (!result.mAttributes && !result.mRemoveAttributes) {
+    
+    result.mRemoveAttributes = Some(ListSet<CanonicalName>());
   }
 
   
