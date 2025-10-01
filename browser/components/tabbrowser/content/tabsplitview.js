@@ -20,6 +20,9 @@
     #tabChangeObserver;
 
     
+    #tabs = [];
+
+    
 
 
     get hasActiveTab() {
@@ -63,6 +66,7 @@
     disconnectedCallback() {
       this.#tabChangeObserver?.disconnect();
       this.ownerGlobal.removeEventListener("TabSelect", this);
+      this.#deactivate();
     }
 
     #observeTabChanges() {
@@ -97,10 +101,36 @@
     
 
 
+    #activate() {
+      gBrowser.showSplitViewPanels(this.#tabs);
+      this.dispatchEvent(
+        new CustomEvent("TabSplitViewActivate", {
+          detail: { tabs: this.#tabs },
+          bubbles: true,
+        })
+      );
+    }
+
+    
+
+
+    #deactivate() {
+      gBrowser.hideSplitViewPanels(this.#tabs);
+      this.dispatchEvent(
+        new CustomEvent("TabSplitViewDeactivate", {
+          detail: { tabs: this.#tabs },
+          bubbles: true,
+        })
+      );
+    }
+
+    
+
+
 
 
     addTabs(tabs) {
-      for (let [tab] of tabs.entries()) {
+      for (let tab of tabs) {
         if (tab.pinned) {
           return;
         }
@@ -111,7 +141,14 @@
                 tabIndex: gBrowser.tabs.at(-1)._tPos + 1,
                 selectTab: tab.selected,
               });
+        this.#tabs.push(tabToMove);
         gBrowser.moveTabToSplitView(tabToMove, this);
+        if (tab === gBrowser.selectedTab) {
+          this.hasActiveTab = true;
+        }
+      }
+      if (this.hasActiveTab) {
+        this.#activate();
       }
     }
 
@@ -134,6 +171,11 @@
 
     on_TabSelect(event) {
       this.hasActiveTab = event.target.splitview === this;
+      if (this.hasActiveTab) {
+        this.#activate();
+      } else {
+        this.#deactivate();
+      }
     }
   }
 

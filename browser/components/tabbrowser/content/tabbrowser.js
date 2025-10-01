@@ -198,6 +198,8 @@
       window.addEventListener("TabGroupCreateByUser", this);
       window.addEventListener("TabGrouped", this);
       window.addEventListener("TabUngrouped", this);
+      window.addEventListener("TabSplitViewActivate", this);
+      window.addEventListener("TabSplitViewDeactivate", this);
 
       this.tabContainer.init();
       this._setupInitialBrowserAndTab();
@@ -377,6 +379,24 @@
 
     _printPreviewBrowsers = new Set();
 
+    
+    #activeSplitView = null;
+
+    
+
+
+
+
+    get splitViewBrowsers() {
+      const browsers = [];
+      if (this.#activeSplitView) {
+        for (const tab of this.#activeSplitView.tabs) {
+          browsers.push(tab.linkedBrowser);
+        }
+      }
+      return browsers;
+    }
+
     _switcher = null;
 
     _soundPlayingAttrRemovalTimer = 0;
@@ -459,6 +479,13 @@
 
     get selectedBrowser() {
       return this._selectedBrowser;
+    }
+
+    get selectedBrowsers() {
+      const splitViewBrowsers = this.splitViewBrowsers;
+      return splitViewBrowsers.length
+        ? splitViewBrowsers
+        : [this._selectedBrowser];
     }
 
     _setupInitialBrowserAndTab() {
@@ -3218,6 +3245,32 @@
         );
       }
       splitview.remove();
+    }
+
+    
+
+
+
+
+    showSplitViewPanels(tabs) {
+      const panels = [];
+      for (const tab of tabs) {
+        this._insertBrowser(tab);
+        tab.linkedBrowser.docShellIsActive = true;
+        panels.push(tab.linkedPanel);
+      }
+      this.tabpanels.splitViewPanels = panels;
+    }
+
+    
+
+
+
+
+    hideSplitViewPanels(tabs) {
+      for (const tab of tabs) {
+        this.tabpanels.removePanelFromSplitView(tab.linkedPanel);
+      }
     }
 
     
@@ -7527,8 +7580,10 @@
         case "visibilitychange": {
           const inactive = document.hidden;
           if (!this._switcher) {
-            this.selectedBrowser.preserveLayers(inactive);
-            this.selectedBrowser.docShellIsActive = !inactive;
+            for (const browser of this.selectedBrowsers) {
+              browser.preserveLayers(inactive);
+              browser.docShellIsActive = !inactive;
+            }
           }
           break;
         }
@@ -7585,6 +7640,14 @@
           }
           break;
         }
+        case "TabSplitViewActivate":
+          this.#activeSplitView = aEvent.originalTarget;
+          break;
+        case "TabSplitViewDeactivate":
+          if (this.#activeSplitView === aEvent.originalTarget) {
+            this.#activeSplitView = null;
+          }
+          break;
         case "activate":
         
         case "deactivate":
