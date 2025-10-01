@@ -403,7 +403,8 @@ void nsHttpTransaction::OnPendingQueueInserted(
   }
 
   
-  if (mConnInfo->IsHttp3() && !mOrigConnInfo && !mConnInfo->GetWebTransport()) {
+  if (mConnInfo->IsHttp3() && !mOrigConnInfo && !mConnInfo->GetWebTransport() &&
+      !mConnInfo->UsingConnectUDP()) {
     
     if (!mHttp3BackupTimerCreated) {
       CreateAndStartTimer(mHttp3BackupTimer, this,
@@ -3343,7 +3344,8 @@ nsresult nsHttpTransaction::OnHTTPSRRAvailable(
       mConnInfo->CloneAndAdoptHTTPSSVCRecord(svcbRecord);
   
   
-  bool needFastFallback = newInfo->IsHttp3() && !newInfo->GetWebTransport();
+  bool needFastFallback = newInfo->IsHttp3() && !newInfo->GetWebTransport() &&
+                          !newInfo->UsingConnectUDP();
   bool foundInPendingQ = gHttpHandler->ConnMgr()->RemoveTransFromConnEntry(
       this, mHashKeyOfConnectionEntry);
 

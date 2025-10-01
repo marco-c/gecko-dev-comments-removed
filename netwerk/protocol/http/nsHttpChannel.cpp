@@ -1102,6 +1102,8 @@ nsresult nsHttpChannel::ContinueOnBeforeConnect(bool aShouldUpgrade,
       mCaps |= NS_HTTP_DISALLOW_SPDY;
     }
     
+    
+    
     mCaps |= NS_HTTP_DISALLOW_HTTP3;
     
     

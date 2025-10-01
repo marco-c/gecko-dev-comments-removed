@@ -189,7 +189,7 @@ class Http3Session final : public Http3SessionBase,
   nsresult Init(const nsHttpConnectionInfo* aConnInfo, nsINetAddr* selfAddr,
                 nsINetAddr* peerAddr, HttpConnectionUDP* udpConn,
                 uint32_t aProviderFlags, nsIInterfaceRequestor* callbacks,
-                nsIUDPSocket* socket);
+                nsIUDPSocket* socket, bool aIsTunnel = false);
 
   bool IsConnected() const { return mState == CONNECTED; }
   bool CanSendData() const {
@@ -286,6 +286,11 @@ class Http3Session final : public Http3SessionBase,
   void FinishTunnelSetup(nsAHttpTransaction* aTransaction) override;
 
   Http3Stats GetStats();
+
+  
+  already_AddRefed<HttpConnectionUDP> CreateTunnelStream(
+      nsAHttpTransaction* aHttpTransaction, nsIInterfaceRequestor* aCallbacks);
+  void SetIsInTunnel() { mIsInTunnel = true; }
 
  private:
   ~Http3Session();
@@ -442,6 +447,7 @@ class Http3Session final : public Http3SessionBase,
 
   nsTArray<RefPtr<Http3StreamBase>> mWebTransportSessions;
   nsTArray<RefPtr<Http3StreamBase>> mWebTransportStreams;
+  nsTArray<RefPtr<Http3StreamBase>> mTunnelStreams;
 
   bool mHasWebTransportSession = false;
   
@@ -451,6 +457,7 @@ class Http3Session final : public Http3SessionBase,
   
   nsIUDPSocket* mSocket;
   uint32_t mTrrStreams = 0;
+  bool mIsInTunnel = false;
 };
 
 }  
