@@ -25,8 +25,13 @@ namespace js {
 
 
 
+
+
+
 template <typename T, size_t MinInlineCapacity = 0,
-          class AllocPolicy = TempAllocPolicy>
+          class AllocPolicy = TempAllocPolicy,
+          template <typename, size_t, class, typename...> class VectorType =
+              Vector>
 class Fifo {
   static_assert(MinInlineCapacity % 2 == 0, "MinInlineCapacity must be even!");
 
@@ -39,8 +44,8 @@ class Fifo {
   
   
   
-  Vector<T, MinInlineCapacity / 2, AllocPolicy> front_;
-  Vector<T, MinInlineCapacity / 2, AllocPolicy> rear_;
+  VectorType<T, MinInlineCapacity / 2, AllocPolicy> front_;
+  VectorType<T, MinInlineCapacity / 2, AllocPolicy> rear_;
 
  private:
   
