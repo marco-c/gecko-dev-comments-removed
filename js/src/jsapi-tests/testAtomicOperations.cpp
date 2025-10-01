@@ -5,7 +5,6 @@
 
 
 
-#include "mozilla/Alignment.h"
 #include "mozilla/Assertions.h"
 
 #include "jit/AtomicOperations.h"
@@ -86,8 +85,8 @@ END_TEST(testAtomicFence)
 
 
 
-MOZ_ALIGNED_DECL(8, static uint8_t atomicMem[8]);
-MOZ_ALIGNED_DECL(8, static uint8_t atomicMem2[8]);
+alignas(8) static uint8_t atomicMem[8];
+alignas(8) static uint8_t atomicMem2[8];
 
 
 

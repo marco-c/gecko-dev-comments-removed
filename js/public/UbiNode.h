@@ -383,11 +383,11 @@ class StackFrame {
   
   
   StackFrame(const StackFrame& rhs) {
-    memcpy(storage.u.mBytes, rhs.storage.u.mBytes, sizeof(storage.u));
+    memcpy(storage.bytes(), rhs.storage.bytes(), sizeof(storage));
   }
 
   StackFrame& operator=(const StackFrame& rhs) {
-    memcpy(storage.u.mBytes, rhs.storage.u.mBytes, sizeof(storage.u));
+    memcpy(storage.bytes(), rhs.storage.bytes(), sizeof(storage));
     return *this;
   }
 
@@ -755,11 +755,11 @@ class Node {
   
   
   Node(const Node& rhs) {
-    memcpy(storage.u.mBytes, rhs.storage.u.mBytes, sizeof(storage.u));
+    memcpy(storage.bytes(), rhs.storage.bytes(), sizeof(storage));
   }
 
   Node& operator=(const Node& rhs) {
-    memcpy(storage.u.mBytes, rhs.storage.u.mBytes, sizeof(storage.u));
+    memcpy(storage.bytes(), rhs.storage.bytes(), sizeof(storage));
     return *this;
   }
 

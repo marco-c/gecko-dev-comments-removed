@@ -10,8 +10,8 @@
 #define mozilla_Alignment_h
 
 #include "mozilla/Attributes.h"
-#include <stddef.h>
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
 
 namespace mozilla {
 
@@ -19,69 +19,21 @@ namespace mozilla {
 
 
 
-
-
-
-
-
-
-#if defined(__GNUC__)
-#  define MOZ_ALIGNED_DECL(_align, _type) _type __attribute__((aligned(_align)))
-#elif defined(_MSC_VER)
-#  define MOZ_ALIGNED_DECL(_align, _type) __declspec(align(_align)) _type
-#else
-#  warning "We don't know how to align variables on this compiler."
-#  define MOZ_ALIGNED_DECL(_align, _type) _type
-#endif
-
-
-
-
-
-
-
 template <size_t Align>
-struct AlignedElem;
-
-
-
-
-
-
-template <>
-struct AlignedElem<1> {
-  MOZ_ALIGNED_DECL(1, uint8_t elem);
-};
-
-template <>
-struct AlignedElem<2> {
-  MOZ_ALIGNED_DECL(2, uint8_t elem);
-};
-
-template <>
-struct AlignedElem<4> {
-  MOZ_ALIGNED_DECL(4, uint8_t elem);
-};
-
-template <>
-struct AlignedElem<8> {
-  MOZ_ALIGNED_DECL(8, uint8_t elem);
-};
-
-template <>
-struct AlignedElem<16> {
-  MOZ_ALIGNED_DECL(16, uint8_t elem);
-};
+struct alignas(Align) AlignedElem {};
 
 template <typename T>
 struct MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS AlignedStorage2 {
-  union U {
-    char mBytes[sizeof(T)];
+  union {
+    unsigned char mBytes[sizeof(T)];
     uint64_t mDummy;
-  } u;
+  };
 
-  const T* addr() const { return reinterpret_cast<const T*>(u.mBytes); }
-  T* addr() { return static_cast<T*>(static_cast<void*>(u.mBytes)); }
+  const T* addr() const { return reinterpret_cast<const T*>(mBytes); }
+  T* addr() { return static_cast<T*>(static_cast<void*>(mBytes)); }
+
+  const void* bytes() const { return static_cast<const void*>(mBytes); }
+  void* bytes() { return static_cast<void*>(mBytes); }
 
   AlignedStorage2() = default;
 

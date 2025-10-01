@@ -13,7 +13,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "mozilla/Alignment.h"
 #include "mozilla/AllocPolicy.h"
 #include "mozilla/ArrayUtils.h"  
 #include "mozilla/Assertions.h"

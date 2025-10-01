@@ -238,7 +238,7 @@ class alignas(16) Instance {
   
   
   
-  MOZ_ALIGNED_DECL(16, char data_);
+  alignas(16) char data_;
 
   
   FuncDefInstanceData* funcDefInstanceData(uint32_t funcIndex) const;
