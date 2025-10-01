@@ -141,10 +141,6 @@ class MediaContentDescription {
     rtp_header_extensions_.push_back(ext);
     rtp_header_extensions_set_ = true;
   }
-  void ClearRtpHeaderExtensions() {
-    rtp_header_extensions_.clear();
-    rtp_header_extensions_set_ = true;
-  }
   
   
   

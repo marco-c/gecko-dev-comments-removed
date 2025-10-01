@@ -794,7 +794,7 @@ TEST_P(PeerConnectionIntegrationTest, RotatedVideoWithoutCVOExtension) {
       [](std::unique_ptr<SessionDescriptionInterface>& sdp) {
         VideoContentDescription* video =
             GetFirstVideoContentDescription(sdp->description());
-        video->ClearRtpHeaderExtensions();
+        video->set_rtp_header_extensions({});
       });
   
   caller()->CreateAndSetAndSignalOffer();

@@ -268,7 +268,6 @@ LocalAndRemoteSdp SignalingInterceptor::PatchVp8Offer(
       ++ext_it;
     }
 
-    prototype_media_desc->ClearRtpHeaderExtensions();
     prototype_media_desc->set_rtp_header_extensions(extensions);
 
     
@@ -447,7 +446,6 @@ LocalAndRemoteSdp SignalingInterceptor::PatchVp8Answer(
     extensions.push_back(info.mid_extension);
     extensions.push_back(info.rid_extension);
     
-    media_desc->ClearRtpHeaderExtensions();
     media_desc->set_rtp_header_extensions(extensions);
 
     
