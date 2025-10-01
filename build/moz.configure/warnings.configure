@@ -103,7 +103,12 @@ check_and_add_warning("-Wvolatile", cxx_compiler)
 
 check_and_add_warning("-Wno-deprecated-anon-enum-enum-conversion", cxx_compiler)
 check_and_add_warning("-Wno-deprecated-enum-enum-conversion", cxx_compiler)
+
+
+
+
 check_and_add_warning("-Wno-deprecated-this-capture", cxx_compiler)
+check_and_add_warning("-Wno-error=deprecated", when=building_with_gcc)
 
 
 check_and_add_warning("-Wcomma", cxx_compiler)
