@@ -4,26 +4,27 @@
 
 "use strict";
 
-const TrackChangeEmitter = require("resource://devtools/server/actors/utils/track-change-emitter.js");
-
-
-
-
-
-
-
-
-
-
-
 class CSSChangeWatcher {
   constructor() {
     this.onTrackChange = this.onTrackChange.bind(this);
   }
 
+  #targetActor;
+
+  
+
+
+
+
+
+
+
+
+
   async watch(targetActor, { onAvailable }) {
+    this.#targetActor = targetActor;
     this.onAvailable = onAvailable;
-    TrackChangeEmitter.on("track-change", this.onTrackChange);
+    this.#targetActor.on("track-css-change", this.onTrackChange);
   }
 
   onTrackChange(change) {
@@ -31,7 +32,8 @@ class CSSChangeWatcher {
   }
 
   destroy() {
-    TrackChangeEmitter.off("track-change", this.onTrackChange);
+    this.#targetActor.off("track-css-change", this.onTrackChange);
+    this.#targetActor = null;
   }
 }
 
