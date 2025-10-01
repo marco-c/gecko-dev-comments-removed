@@ -46,6 +46,7 @@ registerCleanupFunction(() => {
 async function test_tls_fail_on_direct_ws_server_handshake() {
   
   let wss = new NodeWebSocketServer();
+  wss._skipCert = true;
   await wss.start();
   registerCleanupFunction(async () => {
     await wss.stop();
@@ -72,9 +73,8 @@ async function test_tls_fail_on_direct_ws_server_handshake() {
 
 async function test_tls_fail_on_proxy_handshake() {
   
-  addCertFromFile(certdb, "http2-ca.pem", "CTu,u,u");
-
   let proxy = new NodeHTTPSProxyServer();
+  proxy._skipCert = true;
   await proxy.start();
 
   let wss = new NodeWebSocketServer();
