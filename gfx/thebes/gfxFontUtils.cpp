@@ -4,7 +4,6 @@
 
 
 #include "mozilla/ArrayUtils.h"
-#include "mozilla/BinarySearch.h"
 
 #include "gfxFontUtils.h"
 #include "gfxFontEntry.h"
