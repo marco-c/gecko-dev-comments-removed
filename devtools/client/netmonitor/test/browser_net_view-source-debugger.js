@@ -11,11 +11,6 @@ const { PromiseTestUtils } = ChromeUtils.importESModule(
 PromiseTestUtils.allowMatchingRejectionsGlobally(/Component not initialized/);
 PromiseTestUtils.allowMatchingRejectionsGlobally(/Connection closed/);
 
-Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/devtools/client/debugger/test/mochitest/shared-head.js",
-  this
-);
-
 
 
 
@@ -53,28 +48,11 @@ add_task(async function () {
   await waitForPanel;
 
   const frameLinkNode = document.querySelector(".frame-link");
-  await checkClickOnNode(toolbox, frameLinkNode);
+  await clickAndAssertFrameLinkNode(toolbox, frameLinkNode, {
+    url: POST_DATA_URL,
+    line: 49,
+    column: 15,
+  });
 
   await teardown(monitor);
 });
-
-
-
-
-async function checkClickOnNode(toolbox, frameLinkNode) {
-  info("checking click on node location");
-
-  const url = frameLinkNode.getAttribute("data-url");
-  ok(url, `source url found ("${url}")`);
-
-  const line = frameLinkNode.getAttribute("data-line");
-  ok(line, `source line found ("${line}")`);
-
-  
-  frameLinkNode.querySelector(".frame-link-source").click();
-
-  
-  await toolbox.getPanelWhenReady("jsdebugger");
-  const dbg = createDebuggerContext(toolbox);
-  await waitForSelectedSource(dbg, url);
-}
