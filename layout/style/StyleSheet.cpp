@@ -97,52 +97,8 @@ already_AddRefed<StyleSheet> StyleSheet::Constructor(
     return nullptr;
   }
 
-  
-  auto sheet =
-      MakeRefPtr<StyleSheet>(css::SheetParsingMode::eAuthorSheetFeatures,
-                             CORSMode::CORS_NONE, dom::SRIMetadata());
-
-  
-  
-  RefPtr<nsIURI> baseURI;
-  if (!aOptions.mBaseURL.WasPassed()) {
-    baseURI = constructorDocument->GetBaseURI();
-  } else {
-    nsresult rv = NS_NewURI(getter_AddRefs(baseURI), aOptions.mBaseURL.Value(),
-                            nullptr, constructorDocument->GetBaseURI());
-    if (NS_FAILED(rv)) {
-      aRv.ThrowNotAllowedError(
-          "Constructed style sheets must have a valid base URL");
-      return nullptr;
-    }
-  }
-
-  nsIURI* sheetURI = constructorDocument->GetDocumentURI();
-  nsIURI* originalURI = nullptr;
-  sheet->SetURIs(sheetURI, originalURI, baseURI);
-
-  sheet->SetPrincipal(constructorDocument->NodePrincipal());
-  auto referrerInfo = MakeRefPtr<ReferrerInfo>(*constructorDocument);
-  sheet->SetReferrerInfo(referrerInfo);
-  sheet->mConstructorDocument = constructorDocument;
-
-  
-  if (aOptions.mMedia.IsUTF8String()) {
-    sheet->SetMedia(MediaList::Create(aOptions.mMedia.GetAsUTF8String()));
-  } else {
-    sheet->SetMedia(aOptions.mMedia.GetAsMediaList()->Clone());
-  }
-
-  
-  sheet->SetDisabled(aOptions.mDisabled);
-  sheet->SetURLExtraData();
-  sheet->SetComplete();
-
-  sheet->ReplaceSync(""_ns, aRv);
-  MOZ_ASSERT(!aRv.Failed());
-
-  
-  return sheet.forget();
+  return CreateConstructedSheet(
+      *constructorDocument, constructorDocument->GetBaseURI(), aOptions, aRv);
 }
 
 StyleSheet::~StyleSheet() {
@@ -721,12 +677,18 @@ already_AddRefed<dom::Promise> StyleSheet::Replace(const nsACString& aText,
     return promise.forget();
   }
 
+  if (!mConstructorDocument || !mConstructorDocument->GetCSSLoader()) {
+    promise->MaybeRejectWithNotAllowedError(
+        "Must not use this on documents loaded as data.");
+    return promise.forget();
+  }
+
   
   SetModificationDisallowed(true);
 
   
   
-  auto* loader = mConstructorDocument->CSSLoader();
+  auto* loader = mConstructorDocument->GetCSSLoader();
   auto loadData = MakeRefPtr<css::SheetLoadData>(
       loader,  nullptr, this, css::SyncLoad::No,
       css::Loader::UseSystemPrincipal::No, css::StylePreloadKind::None,
@@ -769,9 +731,14 @@ void StyleSheet::ReplaceSync(const nsACString& aText, ErrorResult& aRv) {
         "Can only be called on modifiable style sheets");
   }
 
+  if (!mConstructorDocument->GetCSSLoader()) {
+    return aRv.ThrowNotAllowedError(
+        "Must not use this on documents loaded as data");
+  }
+
   
   
-  auto* loader = mConstructorDocument->CSSLoader();
+  auto* loader = mConstructorDocument->GetCSSLoader();
   RefPtr<const StyleStylesheetContents> rawContent =
       Servo_StyleSheet_FromUTF8Bytes(
           loader, this,
@@ -1196,6 +1163,59 @@ void StyleSheet::FixUpAfterInnerClone() {
   }
 }
 
+
+
+already_AddRefed<StyleSheet> StyleSheet::CreateConstructedSheet(
+    dom::Document& aConstructorDocument, nsIURI* aBaseURI,
+    const dom::CSSStyleSheetInit& aOptions, ErrorResult& aRv) {
+  
+  auto sheet =
+      MakeRefPtr<StyleSheet>(css::SheetParsingMode::eAuthorSheetFeatures,
+                             CORSMode::CORS_NONE, dom::SRIMetadata());
+
+  
+  
+  RefPtr<nsIURI> baseURI;
+  if (!aOptions.mBaseURL.WasPassed()) {
+    baseURI = aBaseURI;
+  } else {
+    nsresult rv = NS_NewURI(getter_AddRefs(baseURI), aOptions.mBaseURL.Value(),
+                            nullptr, aConstructorDocument.GetBaseURI());
+    if (NS_FAILED(rv)) {
+      aRv.ThrowNotAllowedError(
+          "Constructed style sheets must have a valid base URL");
+      return nullptr;
+    }
+  }
+
+  nsIURI* sheetURI = aConstructorDocument.GetDocumentURI();
+  nsIURI* originalURI = nullptr;
+  sheet->SetURIs(sheetURI, originalURI, baseURI);
+
+  sheet->SetPrincipal(aConstructorDocument.NodePrincipal());
+  auto referrerInfo = MakeRefPtr<ReferrerInfo>(aConstructorDocument);
+  sheet->SetReferrerInfo(referrerInfo);
+  sheet->mConstructorDocument = &aConstructorDocument;
+
+  
+  if (aOptions.mMedia.IsUTF8String()) {
+    sheet->SetMedia(MediaList::Create(aOptions.mMedia.GetAsUTF8String()));
+  } else {
+    sheet->SetMedia(aOptions.mMedia.GetAsMediaList()->Clone());
+  }
+
+  
+  sheet->SetDisabled(aOptions.mDisabled);
+  sheet->SetURLExtraData();
+  sheet->SetComplete();
+
+  sheet->ReplaceSync(""_ns, aRv);
+  MOZ_ASSERT(!aRv.Failed());
+
+  
+  return sheet.forget();
+}
+
 already_AddRefed<StyleSheet> StyleSheet::CreateEmptyChildSheet(
     already_AddRefed<dom::MediaList> aMediaList) const {
   auto child =
@@ -1330,9 +1350,12 @@ void StyleSheet::ReparseSheet(const nsACString& aInput, ErrorResult& aRv) {
   
   RefPtr<css::Loader> loader;
   if (Document* doc = GetAssociatedDocument()) {
-    loader = doc->CSSLoader();
-    NS_ASSERTION(loader, "Document with no CSS loader!");
-  } else {
+    loader = doc->GetCSSLoader();
+    MOZ_ASSERT(loader,
+               "Should not come here without a CSS loader, i.e. in the "
+               "loadedAsData case");
+  }
+  if (!loader) {
     loader = new css::Loader;
   }
 

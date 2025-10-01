@@ -43,6 +43,7 @@
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/FileBinding.h"
+#include "mozilla/dom/FunctionBinding.h"
 #include "mozilla/dom/Touch.h"
 #include "mozilla/dom/UserActivation.h"
 #include "mozilla/layers/APZCCallbackHelper.h"
@@ -1287,8 +1288,12 @@ nsDOMWindowUtils::GetParsedStyleSheets(uint32_t* aSheets) {
   if (!doc) {
     return NS_ERROR_UNEXPECTED;
   }
-
-  *aSheets = doc->CSSLoader()->ParsedSheetCount();
+  css::Loader* cssLoader = doc->GetCSSLoader();
+  if (cssLoader) {
+    *aSheets = cssLoader->ParsedSheetCount();
+  } else {
+    *aSheets = 0;
+  }
   return NS_OK;
 }
 
@@ -3083,6 +3088,8 @@ struct CaretInfo {
   CSSRect textFrameBoundsRelativeToRootScroller;
   
   Maybe<nsRect> caretRectRelativeToTextFrame;
+  
+  nsIFrame* frame;
 };
 
 static CaretInfo GetCaretContentAndBounds(
@@ -3091,7 +3098,7 @@ static CaretInfo GetCaretContentAndBounds(
   CSSRect bounds;
 
   if (!aRootScrollContainerFrame) {
-    return CaretInfo{content, bounds, Nothing()};
+    return CaretInfo{content, bounds, Nothing(), content->GetPrimaryFrame()};
   }
 
   Maybe<nsRect> caretRect;
@@ -3102,7 +3109,8 @@ static CaretInfo GetCaretContentAndBounds(
     RefPtr<nsCaret> caret = frame->PresShell()->GetCaret();
     if (caret && caret->IsVisible()) {
       nsRect rect;
-      if (nsIFrame* frame = caret->GetGeometry(&rect)) {
+      if (nsIFrame* textFrame = caret->GetGeometry(&rect)) {
+        
         
         
         
@@ -3110,6 +3118,7 @@ static CaretInfo GetCaretContentAndBounds(
                                                      aRootScrollContainerFrame);
         content = frame->GetContent();
         caretRect = Some(rect);
+        frame = textFrame;
       }
     }
   }
@@ -3119,7 +3128,7 @@ static CaretInfo GetCaretContentAndBounds(
                                                    aRootScrollContainerFrame);
   }
 
-  return CaretInfo{content, bounds, caretRect};
+  return CaretInfo{content, bounds, caretRect, frame};
 }
 
 NS_IMETHODIMP
@@ -3162,14 +3171,12 @@ nsDOMWindowUtils::ZoomToFocusedInput() {
               ToString(caretInfo.caretRectRelativeToTextFrame).c_str());
 
   
-  RefPtr<nsIContent> refContent = caretInfo.textContent;
   
   
   
-  
-  if (nsIFrame* frame = refContent->GetPrimaryFrame()) {
+  if (caretInfo.frame) {
     presShell->ScrollFrameIntoView(
-        frame, caretInfo.caretRectRelativeToTextFrame,
+        caretInfo.frame, caretInfo.caretRectRelativeToTextFrame,
         ScrollAxis(WhereToScroll::Center, WhenToScroll::IfNotVisible),
         ScrollAxis(WhereToScroll::Center, WhenToScroll::IfNotVisible),
         ScrollFlags::ScrollOverflowHidden);
@@ -4943,7 +4950,8 @@ nsDOMWindowUtils::SendMozMouseHitTestEvent(float aX, float aY,
 
   auto result = nsContentUtils::SynthesizeMouseEvent(
       presShell, widget, u"MozMouseHittest"_ns, refPoint,
-      SynthesizeMouseEventData{}, options);
+      SynthesizeMouseEventData{}, options,
+      Optional<OwningNonNull<VoidFunction>>{});
   return result.isOk() ? NS_OK : result.unwrapErr();
 }
 
