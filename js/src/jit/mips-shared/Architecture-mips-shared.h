@@ -164,7 +164,8 @@ class Registers {
       (1 << Registers::a1) | (1 << Registers::a2) | (1 << Registers::a3) |
       (1 << Registers::t0) | (1 << Registers::t1) | (1 << Registers::t2) |
       (1 << Registers::t3) | (1 << Registers::ta0) | (1 << Registers::ta1) |
-      (1 << Registers::ta2) | (1 << Registers::ta3);
+      (1 << Registers::ta2) | (1 << Registers::ta3) | (1 << Registers::t8) |
+      (1 << Registers::t9);
 
   
   

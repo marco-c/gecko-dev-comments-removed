@@ -27,9 +27,6 @@ static constexpr Register ICTailCallReg = ra;
 static constexpr Register ICStubReg = a5;
 
 
-static constexpr Register BaselineSecondScratchReg = SecondScratchReg;
-
-
 
 
 
