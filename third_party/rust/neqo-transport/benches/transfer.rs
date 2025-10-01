@@ -13,7 +13,7 @@ use test_fixture::{
     sim::{
         connection::{Node, ReachState, ReceiveData, SendData},
         network::{RandomDelay, TailDrop},
-        ReadySimulator, Simulator,
+        Simulator,
     },
 };
 
@@ -27,46 +27,73 @@ const TRANSFER_AMOUNT: usize = 1 << 22;
 )]
 fn benchmark_transfer(c: &mut Criterion, label: &str, seed: Option<impl AsRef<str>>) {
     for pacing in [false, true] {
-        let mut group = c.benchmark_group(format!("transfer/pacing-{pacing}"));
+        let setup = || {
+            let nodes = boxed![
+                Node::new_client(
+                    ConnectionParameters::default()
+                        .pmtud(true)
+                        .pacing(pacing)
+                        .mlkem(false),
+                    boxed![ReachState::new(State::Confirmed)],
+                    boxed![SendData::new(TRANSFER_AMOUNT)]
+                ),
+                TailDrop::dsl_uplink(),
+                RandomDelay::new(ZERO..JITTER),
+                Node::new_server(
+                    ConnectionParameters::default()
+                        .pmtud(true)
+                        .pacing(pacing)
+                        .mlkem(false),
+                    boxed![ReachState::new(State::Confirmed)],
+                    boxed![ReceiveData::new(TRANSFER_AMOUNT)]
+                ),
+                TailDrop::dsl_downlink(),
+                RandomDelay::new(ZERO..JITTER),
+            ];
+            let mut sim = Simulator::new(label, nodes);
+            if let Some(seed) = &seed {
+                sim.seed_str(seed);
+            }
+            sim.setup()
+        };
+
+        
+        {
+            let mut group =
+                c.benchmark_group(format!("transfer/pacing-{pacing}/{label}/wallclock-time"));
+            group.noise_threshold(0.03);
+            group.bench_function("run", |b| {
+                b.iter_batched(
+                    setup,
+                    |s| {
+                        black_box(s.run());
+                    },
+                    SmallInput,
+                );
+            });
+        }
+
         
         
-        group.noise_threshold(0.03);
-        group.bench_function(label, |b| {
-            b.iter_batched(
-                || {
-                    let nodes = boxed![
-                        Node::new_client(
-                            ConnectionParameters::default()
-                                .pmtud(true)
-                                .pacing(pacing)
-                                .mlkem(false),
-                            boxed![ReachState::new(State::Confirmed)],
-                            boxed![SendData::new(TRANSFER_AMOUNT)]
-                        ),
-                        TailDrop::dsl_uplink(),
-                        RandomDelay::new(ZERO..JITTER),
-                        Node::new_server(
-                            ConnectionParameters::default()
-                                .pmtud(true)
-                                .pacing(pacing)
-                                .mlkem(false),
-                            boxed![ReachState::new(State::Confirmed)],
-                            boxed![ReceiveData::new(TRANSFER_AMOUNT)]
-                        ),
-                        TailDrop::dsl_downlink(),
-                        RandomDelay::new(ZERO..JITTER),
-                    ];
-                    let mut sim = Simulator::new(label, nodes);
-                    if let Some(seed) = &seed {
-                        sim.seed_str(seed);
+        
+        
+        
+        {
+            let mut group =
+                c.benchmark_group(format!("transfer/pacing-{pacing}/{label}/simulated-time"));
+            group.throughput(criterion::Throughput::Bytes(TRANSFER_AMOUNT as u64));
+            group.bench_function("run", |b| {
+                b.iter_custom(|iters| {
+                    let mut d_sum = Duration::ZERO;
+                    for _i in 0..iters {
+                        
+                        
+                        d_sum += setup().run();
                     }
-                    sim.setup()
-                },
-                black_box(ReadySimulator::run),
-                SmallInput,
-            );
-        });
-        group.finish();
+                    d_sum
+                });
+            });
+        }
     }
 }
 

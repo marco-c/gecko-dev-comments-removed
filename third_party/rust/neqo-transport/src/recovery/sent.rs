@@ -9,6 +9,7 @@
 use std::{
     collections::BTreeMap,
     ops::RangeInclusive,
+    rc::Rc,
     time::{Duration, Instant},
 };
 
@@ -21,7 +22,7 @@ pub struct Packet {
     ack_eliciting: bool,
     time_sent: Instant,
     primary_path: bool,
-    tokens: recovery::Tokens,
+    tokens: Rc<recovery::Tokens>,
 
     time_declared_lost: Option<Instant>,
     
@@ -32,7 +33,7 @@ pub struct Packet {
 
 impl Packet {
     #[must_use]
-    pub const fn new(
+    pub fn new(
         pt: packet::Type,
         pn: packet::Number,
         time_sent: Instant,
@@ -46,7 +47,7 @@ impl Packet {
             time_sent,
             ack_eliciting,
             primary_path: true,
-            tokens,
+            tokens: Rc::new(tokens),
             time_declared_lost: None,
             pto: false,
             len,
@@ -104,8 +105,8 @@ impl Packet {
 
     
     #[must_use]
-    pub const fn tokens(&self) -> &recovery::Tokens {
-        &self.tokens
+    pub fn tokens(&self) -> &recovery::Tokens {
+        self.tokens.as_ref()
     }
 
     

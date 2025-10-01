@@ -4,6 +4,12 @@
 
 
 
+#![allow(
+    clippy::allow_attributes,
+    clippy::unwrap_in_result,
+    reason = "OK in tests."
+)]
+
 use std::{
     cell::RefCell,
     net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr},

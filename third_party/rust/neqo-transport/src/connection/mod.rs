@@ -370,6 +370,7 @@ impl Connection {
             c.conn_params.get_versions().compatible(),
             Role::Client,
             &dcid,
+            c.conn_params.randomize_first_pn_enabled(),
         )?;
         c.original_destination_cid = Some(dcid);
         let path = Path::temporary(
@@ -1265,7 +1266,7 @@ impl Connection {
         if self.test_frame_writer.is_none() {
             if let OutputBatch::DatagramBatch(batch) = &output {
                 for dgram in batch.iter() {
-                    neqo_common::write_item_to_fuzzing_corpus("packet", dgram);
+                    neqo_common::write_item_to_fuzzing_corpus("packet", &dgram);
                 }
             }
         }
@@ -1316,6 +1317,7 @@ impl Connection {
             self.conn_params.get_versions().compatible(),
             self.role,
             &retry_scid,
+            false, 
         )?;
         self.address_validation = AddressValidationInfo::Retry {
             token: packet.token().to_vec(),
@@ -1503,7 +1505,11 @@ impl Connection {
                 
                 
                 let dcid = ConnectionId::from(packet.dcid());
-                self.crypto.states_mut().init_server(version, &dcid)?;
+                self.crypto.states_mut().init_server(
+                    version,
+                    &dcid,
+                    self.conn_params.randomize_first_pn_enabled(),
+                )?;
                 self.original_destination_cid = Some(dcid);
                 self.set_state(State::WaitInitial, now);
 
@@ -2532,10 +2538,6 @@ impl Connection {
     }
 
     
-    #[expect(
-        clippy::unwrap_in_result,
-        reason = "expect() used on internal invariants"
-    )]
     fn output_dgram_batch_on_path(
         &mut self,
         path: &PathRef,
@@ -2545,18 +2547,40 @@ impl Connection {
     ) -> Res<SendOptionBatch> {
         let packet_tos = path.borrow().tos();
         let mut send_buffer = Vec::new();
-
-        let mut datagram_size = None;
+        let mut max_datagram_size = None;
         let mut num_datagrams = 0;
+        let mtu = path.borrow().plpmtu();
+        let address_family_max_mtu = path.borrow().pmtud().address_family_max_mtu();
 
         loop {
             if max_datagrams.get() <= num_datagrams {
                 break;
             }
+            if path.borrow().pmtud().needs_probe() && num_datagrams != 0 {
+                
+                
+                
+                
+                
+                break;
+            }
+
+            let send_buffer_len_before = send_buffer.len();
 
             
-            if datagram_size.is_some_and(|datagram_size| {
-                min(datagram_size, DatagramBatch::MAX - send_buffer.len()) < path.borrow().plpmtu()
+            if max_datagram_size.is_some_and(|datagram_size| {
+                
+                
+                
+                
+                
+                datagram_size < mtu
+                
+                
+                
+                
+                
+                || address_family_max_mtu - send_buffer.len() < mtu
             }) {
                 break;
             }
@@ -2574,11 +2598,19 @@ impl Connection {
                 packet_tos,
             )? {
                 SendOption::Yes => {
+                    debug_assert_eq!(
+                        mtu,
+                        path.borrow().plpmtu(),
+                        "MTU does not change within batch"
+                    );
                     num_datagrams += 1;
-                    let datagram_size = *datagram_size.get_or_insert(send_buffer.len());
-                    if ((send_buffer.len()) % datagram_size) > 0 {
-                        
-                        
+                    let datagram_size = send_buffer.len() - send_buffer_len_before;
+                    let max_datagram_size = *max_datagram_size.get_or_insert(datagram_size);
+
+                    
+                    
+                    debug_assert!(datagram_size <= max_datagram_size);
+                    if datagram_size < max_datagram_size {
                         
                         
                         break;
@@ -2599,7 +2631,7 @@ impl Connection {
             send_buffer,
             packet_tos,
             num_datagrams,
-            datagram_size.expect("one or more datagrams"),
+            max_datagram_size.ok_or(Error::Internal)?,
             &mut self.stats.borrow_mut(),
         );
 
@@ -3052,7 +3084,8 @@ impl Connection {
                 .original_destination_cid
                 .as_ref()
                 .ok_or(Error::ProtocolViolation)?;
-            self.crypto.states_mut().init_server(version, dcid)?;
+            
+            self.crypto.states_mut().init_server(version, dcid, false)?;
             version
         };
 

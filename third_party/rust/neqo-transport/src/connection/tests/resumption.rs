@@ -90,7 +90,8 @@ fn ticket_rtt(rtt: Duration) -> Duration {
     let mut client = new_client(
         ConnectionParameters::default()
             .versions(Version::Version1, vec![Version::Version1])
-            .mlkem(false),
+            .mlkem(false)
+            .randomize_first_pn(false),
     );
     let mut server = default_server();
     let mut now = now();
@@ -109,7 +110,6 @@ fn ticket_rtt(rtt: Duration) -> Duration {
     
     let (aead, hp) = initial_aead_and_hp(&client_dcid, Role::Server);
     let (header, pn) = header_protection::remove(&hp, protected_header, payload);
-    assert_eq!(pn, 0);
     let pn_len = header.len() - protected_header.len();
     let mut buf = vec![0; payload.len()];
     let mut plaintext = aead

@@ -133,37 +133,47 @@ impl Cubic {
     
     
     
-    fn calc_k(&self, curr_cwnd: f64, max_datagram_size: usize) -> f64 {
-        ((self.w_max - curr_cwnd) / CUBIC_C / convert_to_f64(max_datagram_size)).cbrt()
+    fn calc_k(&self, curr_cwnd: f64, max_datagram_size: f64) -> f64 {
+        ((self.w_max - curr_cwnd) / CUBIC_C / max_datagram_size).cbrt()
     }
 
     
     
     
     
-    fn w_cubic(&self, t: f64, max_datagram_size: usize) -> f64 {
-        (CUBIC_C * (t - self.k).powi(3)).mul_add(convert_to_f64(max_datagram_size), self.w_max)
+    fn w_cubic(&self, t: f64, max_datagram_size: f64) -> f64 {
+        (CUBIC_C * (t - self.k).powi(3)).mul_add(max_datagram_size, self.w_max)
     }
 
     fn start_epoch(
         &mut self,
-        curr_cwnd_f64: f64,
-        new_acked_f64: f64,
-        max_datagram_size: usize,
+        curr_cwnd: f64,
+        new_acked: f64,
+        max_datagram_size: f64,
         now: Instant,
     ) {
         self.ca_epoch_start = Some(now);
         
-        self.tcp_acked_bytes = new_acked_f64;
-        self.estimated_tcp_cwnd = curr_cwnd_f64;
-        if self.last_max_cwnd <= curr_cwnd_f64 {
-            self.w_max = curr_cwnd_f64;
+        self.tcp_acked_bytes = new_acked;
+        self.estimated_tcp_cwnd = curr_cwnd;
+        if self.last_max_cwnd <= curr_cwnd {
+            self.w_max = curr_cwnd;
             self.k = 0.0;
         } else {
             self.w_max = self.last_max_cwnd;
-            self.k = self.calc_k(curr_cwnd_f64, max_datagram_size);
+            self.k = self.calc_k(curr_cwnd, max_datagram_size);
         }
         qtrace!("[{self}] New epoch");
+    }
+
+    #[cfg(test)]
+    pub const fn last_max_cwnd(&self) -> f64 {
+        self.last_max_cwnd
+    }
+
+    #[cfg(test)]
+    pub fn set_last_max_cwnd(&mut self, last_max_cwnd: f64) {
+        self.last_max_cwnd = last_max_cwnd;
     }
 }
 
@@ -183,9 +193,10 @@ impl WindowAdjustment for Cubic {
     ) -> usize {
         let curr_cwnd_f64 = convert_to_f64(curr_cwnd);
         let new_acked_f64 = convert_to_f64(new_acked_bytes);
+        let max_datagram_size_f64 = convert_to_f64(max_datagram_size);
         if self.ca_epoch_start.is_none() {
             
-            self.start_epoch(curr_cwnd_f64, new_acked_f64, max_datagram_size, now);
+            self.start_epoch(curr_cwnd_f64, new_acked_f64, max_datagram_size_f64, now);
         } else {
             self.tcp_acked_bytes += new_acked_f64;
         }
@@ -206,17 +217,16 @@ impl WindowAdjustment for Cubic {
                 }
             })
             .as_secs_f64();
-        let target_cubic = self.w_cubic(time_ca, max_datagram_size);
+        let target_cubic = self.w_cubic(time_ca, max_datagram_size_f64);
 
         
         
         
-        let max_datagram_size = convert_to_f64(max_datagram_size);
         let tcp_cnt = self.estimated_tcp_cwnd / CUBIC_ALPHA;
         let incr = (self.tcp_acked_bytes / tcp_cnt).floor();
         if incr > 0.0 {
             self.tcp_acked_bytes -= incr * tcp_cnt;
-            self.estimated_tcp_cwnd += incr * max_datagram_size;
+            self.estimated_tcp_cwnd += incr * max_datagram_size_f64;
         }
 
         
@@ -237,11 +247,12 @@ impl WindowAdjustment for Cubic {
         
         
         let mut acked_to_increase =
-            max_datagram_size * curr_cwnd_f64 / (target_cwnd - curr_cwnd_f64).max(1.0);
+            max_datagram_size_f64 * curr_cwnd_f64 / (target_cwnd - curr_cwnd_f64).max(1.0);
 
         
         
-        acked_to_increase = acked_to_increase.max(EXPONENTIAL_GROWTH_REDUCTION * max_datagram_size);
+        acked_to_increase =
+            acked_to_increase.max(EXPONENTIAL_GROWTH_REDUCTION * max_datagram_size_f64);
         acked_to_increase as usize
     }
 
@@ -277,15 +288,5 @@ impl WindowAdjustment for Cubic {
         
         
         self.ca_epoch_start = None;
-    }
-
-    #[cfg(test)]
-    fn last_max_cwnd(&self) -> f64 {
-        self.last_max_cwnd
-    }
-
-    #[cfg(test)]
-    fn set_last_max_cwnd(&mut self, last_max_cwnd: f64) {
-        self.last_max_cwnd = last_max_cwnd;
     }
 }

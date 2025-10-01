@@ -360,6 +360,36 @@ impl Server {
         }
     }
 
+    
+    pub fn process_multiple_input<
+        A: AsRef<[u8]> + AsMut<[u8]>,
+        I: IntoIterator<Item = Datagram<A>>,
+    >(
+        &mut self,
+        dgrams: I,
+        now: Instant,
+    ) -> OutputBatch {
+        
+        while let Some(SavedDatagram { d, t }) = self.saved_datagrams.pop_front() {
+            if let OutputBatch::DatagramBatch(b) = self.process_input(std::iter::once(d), t) {
+                self.saved_datagrams
+                    .extend(dgrams.into_iter().map(|d| SavedDatagram {
+                        d: d.to_owned(),
+                        t: now,
+                    }));
+                return OutputBatch::DatagramBatch(b);
+            }
+        }
+
+        
+        if let o @ OutputBatch::DatagramBatch(_) = self.process_input(dgrams, now) {
+            return o;
+        }
+
+        OutputBatch::None
+    }
+
+    
     fn process_input<A: AsRef<[u8]> + AsMut<[u8]>, I: IntoIterator<Item = Datagram<A>>>(
         &mut self,
         dgrams: I,
@@ -528,21 +558,7 @@ impl Server {
         now: Instant,
         max_datagrams: NonZeroUsize,
     ) -> OutputBatch {
-        
-        while let Some(SavedDatagram { d, t }) = self.saved_datagrams.pop_front() {
-            if let OutputBatch::DatagramBatch(b) = self.process_input(std::iter::once(d), t) {
-                self.saved_datagrams
-                    .extend(dgrams.into_iter().map(|d| SavedDatagram {
-                        d: d.to_owned(),
-                        t: now,
-                    }));
-                
-                return OutputBatch::DatagramBatch(b);
-            }
-        }
-
-        
-        if let o @ OutputBatch::DatagramBatch(_) = self.process_input(dgrams, now) {
+        if let o @ OutputBatch::DatagramBatch(_) = self.process_multiple_input(dgrams, now) {
             
             return o;
         }

@@ -145,6 +145,14 @@ impl Pmtud {
     }
 
     
+    
+    #[expect(clippy::missing_panics_doc, reason = "search table is never empty")]
+    #[must_use]
+    pub fn address_family_max_mtu(&self) -> usize {
+        *self.search_table.last().expect("search table is empty")
+    }
+
+    
     fn is_probe(&self, p: &sent::Packet) -> bool {
         self.is_probe_filter()(p)
     }
@@ -362,7 +370,7 @@ mod tests {
         Some(u16::MAX as usize),
     ];
 
-    const fn make_sent_packet(pn: u64, now: Instant, len: usize) -> sent::Packet {
+    fn make_sent_packet(pn: u64, now: Instant, len: usize) -> sent::Packet {
         sent::Packet::new(
             packet::Type::Short,
             pn,
