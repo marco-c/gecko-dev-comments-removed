@@ -94,15 +94,15 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared {
   
   
   void writeDataRelocation(const Value& val) {
+    MOZ_ASSERT(val.isGCThing(), "only called for gc-things");
+
     
     
-    if (val.isGCThing()) {
-      gc::Cell* cell = val.toGCThing();
-      if (cell && gc::IsInsideNursery(cell)) {
-        embedsNurseryPointers_ = true;
-      }
-      dataRelocations_.writeUnsigned(masm.currentOffset());
+    gc::Cell* cell = val.toGCThing();
+    if (cell && gc::IsInsideNursery(cell)) {
+      embedsNurseryPointers_ = true;
     }
+    dataRelocations_.writeUnsigned(masm.currentOffset());
   }
 
   
@@ -185,15 +185,7 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared {
   void loadUnalignedValue(const Address& src, ValueOperand dest) {
     loadValue(src, dest);
   }
-  void tagValue(JSValueType type, Register payload, ValueOperand dest) {
-    ScratchRegisterScope scratch(asMasm());
-    MOZ_ASSERT(dest.valueReg() != scratch);
-    if (payload != dest.valueReg()) {
-      movq(payload, dest.valueReg());
-    }
-    mov(ImmShiftedTag(type), scratch);
-    orq(scratch, dest.valueReg());
-  }
+  void tagValue(JSValueType type, Register payload, ValueOperand dest);
   void pushValue(ValueOperand val) { push(val.valueReg()); }
   void popValue(ValueOperand val) { pop(val.valueReg()); }
   void pushValue(const Value& val) {
@@ -218,6 +210,7 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared {
   }
 
   void boxValue(JSValueType type, Register src, Register dest);
+  void boxValue(Register type, Register src, Register dest);
 
   Condition testUndefined(Condition cond, Register tag) {
     MOZ_ASSERT(cond == Equal || cond == NotEqual);
@@ -764,7 +757,9 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared {
     vmovq(src, dest.valueReg());
   }
   void boxNonDouble(JSValueType type, Register src, const ValueOperand& dest) {
-    MOZ_ASSERT(src != dest.valueReg());
+    boxValue(type, src, dest.valueReg());
+  }
+  void boxNonDouble(Register type, Register src, const ValueOperand& dest) {
     boxValue(type, src, dest.valueReg());
   }
 
@@ -899,14 +894,6 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared {
   }
   void unboxObject(const BaseIndex& src, Register dest) {
     unboxNonDouble(Operand(src), dest, JSVAL_TYPE_OBJECT);
-  }
-
-  template <typename T>
-  void unboxObjectOrNull(const T& src, Register dest) {
-    unboxNonDouble(src, dest, JSVAL_TYPE_OBJECT);
-    ScratchRegisterScope scratch(asMasm());
-    mov(ImmWord(~JS::detail::ValueObjectOrNullBit), scratch);
-    andq(scratch, dest);
   }
 
   
@@ -1157,34 +1144,6 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared {
       loadInt32OrDouble(src, dest.fpu());
     } else {
       unboxNonDouble(Operand(src), dest.gpr(), ValueTypeFromMIRType(type));
-    }
-  }
-
-  template <typename T>
-  void storeUnboxedPayload(ValueOperand value, T address, size_t nbytes,
-                           JSValueType type) {
-    switch (nbytes) {
-      case 8: {
-        ScratchRegisterScope scratch(asMasm());
-        unboxNonDouble(value, scratch, type);
-        storePtr(scratch, address);
-        if (type == JSVAL_TYPE_OBJECT) {
-          
-          
-          
-          mov(ImmWord(~JS::detail::ValueObjectOrNullBit), scratch);
-          andq(scratch, Operand(address));
-        }
-        return;
-      }
-      case 4:
-        store32(value.valueReg(), address);
-        return;
-      case 1:
-        store8(value.valueReg(), address);
-        return;
-      default:
-        MOZ_CRASH("Bad payload width");
     }
   }
 
