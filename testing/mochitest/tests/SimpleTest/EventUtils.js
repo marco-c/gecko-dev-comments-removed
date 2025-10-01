@@ -321,6 +321,8 @@ function isHidden(aElement) {
 
 
 
+
+
 function sendDragEvent(aEvent, aTarget, aWindow = window) {
   if (
     ![
@@ -672,13 +674,23 @@ function _maybeSynthesizeDragOver(left, top, aEvent, aWindow) {
 
 
 
-function synthesizeMouse(aTarget, aOffsetX, aOffsetY, aEvent, aWindow) {
+
+
+function synthesizeMouse(
+  aTarget,
+  aOffsetX,
+  aOffsetY,
+  aEvent,
+  aWindow,
+  aCallback
+) {
   var rect = aTarget.getBoundingClientRect();
   return synthesizeMouseAtPoint(
     rect.left + aOffsetX,
     rect.top + aOffsetY,
     aEvent,
-    aWindow
+    aWindow,
+    aCallback
   );
 }
 
@@ -699,7 +711,15 @@ function synthesizeMouse(aTarget, aOffsetX, aOffsetY, aEvent, aWindow) {
 
 
 
-function synthesizeMouseAtPoint(aLeft, aTop, aEvent, aWindow = window) {
+
+
+function synthesizeMouseAtPoint(
+  aLeft,
+  aTop,
+  aEvent,
+  aWindow = window,
+  aCallback
+) {
   if (aEvent.allowToHandleDragDrop) {
     if (aEvent.type == "mouseup" || !aEvent.type) {
       if (_maybeEndDragSession(aLeft, aTop, aEvent, aWindow)) {
@@ -780,7 +800,8 @@ function synthesizeMouseAtPoint(aLeft, aTop, aEvent, aWindow = window) {
             isDOMEventSynthesized,
             isWidgetEventSynthesized,
             isAsyncEnabled,
-          }
+          },
+          aCallback
         );
       } else {
         defaultPrevented = utils.sendMouseEvent(
@@ -817,7 +838,8 @@ function synthesizeMouseAtPoint(aLeft, aTop, aEvent, aWindow = window) {
           isDOMEventSynthesized,
           isWidgetEventSynthesized,
           isAsyncEnabled,
-        }
+        },
+        aCallback
       );
       _EU_maybeWrap(aWindow).synthesizeMouseEvent(
         "mouseup",
@@ -836,7 +858,8 @@ function synthesizeMouseAtPoint(aLeft, aTop, aEvent, aWindow = window) {
           isDOMEventSynthesized,
           isWidgetEventSynthesized,
           isAsyncEnabled,
-        }
+        },
+        aCallback
       );
     } else {
       utils.sendMouseEvent(
@@ -888,7 +911,9 @@ function synthesizeMouseAtPoint(aLeft, aTop, aEvent, aWindow = window) {
 
 
 
-function synthesizeMouseAtCenter(aTarget, aEvent, aWindow) {
+
+
+function synthesizeMouseAtCenter(aTarget, aEvent, aWindow, aCallback) {
   var rect = aTarget.getBoundingClientRect();
 
   return synthesizeMouse(
@@ -896,7 +921,8 @@ function synthesizeMouseAtCenter(aTarget, aEvent, aWindow) {
     rect.width / 2,
     rect.height / 2,
     aEvent,
-    aWindow
+    aWindow,
+    aCallback
   );
 }
 
