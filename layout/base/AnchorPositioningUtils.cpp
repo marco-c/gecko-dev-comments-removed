@@ -25,6 +25,15 @@ namespace mozilla {
 
 namespace {
 
+bool DoTreeScopedPropertiesOfElementApplyToContent(
+    const nsINode* aStylePropertyElement, const nsINode* aStyledContent) {
+  
+  
+  
+  return aStylePropertyElement->GetContainingDocumentOrShadowRoot() ==
+         aStyledContent->GetContainingDocumentOrShadowRoot();
+}
+
 
 
 
@@ -346,8 +355,17 @@ nsIFrame* AnchorPositioningUtils::FindFirstAcceptableAnchor(
     const nsAtom* aName, const nsIFrame* aPositionedFrame,
     const nsTArray<nsIFrame*>& aPossibleAnchorFrames) {
   LazyAncestorHolder positionedFrameAncestorHolder(aPositionedFrame);
+  const auto* positionedContent = aPositionedFrame->GetContent();
+
   for (auto it = aPossibleAnchorFrames.rbegin();
        it != aPossibleAnchorFrames.rend(); ++it) {
+    const nsIFrame* possibleAnchorFrame = *it;
+    if (!DoTreeScopedPropertiesOfElementApplyToContent(
+            possibleAnchorFrame->GetContent(), positionedContent)) {
+      
+      continue;
+    }
+
     
     if (IsAcceptableAnchorElement(*it, aName, aPositionedFrame,
                                   positionedFrameAncestorHolder)) {
