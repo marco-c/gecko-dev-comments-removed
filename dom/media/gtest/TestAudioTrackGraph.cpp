@@ -3400,16 +3400,13 @@ TEST(TestAudioTrackGraph, EmptyProcessingInterval)
   (void)WaitFor(destroyPromise).unwrap()[0];
 }
 
-#ifndef ANDROID  
 TEST(TestAudioTrackGraph, DefaultOutputDeviceIDTracking)
 {
-#  if 0  
-#    ifdef ANDROID
+#ifdef ANDROID
   GTEST_SKIP() << "On Android CubebDeviceEnumerator, not the cubeb backend, "
                   "handles device enumeration, exposing only a single input "
                   "and output device. Both with devid 0.";
-#    endif
-#  endif
+#else
   MockCubeb* cubeb = new MockCubeb(MockCubeb::RunningMode::Manual);
   AddDevices(cubeb, 1, CUBEB_DEVICE_TYPE_INPUT);
   AddDevices(cubeb, 2, CUBEB_DEVICE_TYPE_OUTPUT);
@@ -3515,8 +3512,8 @@ TEST(TestAudioTrackGraph, DefaultOutputDeviceIDTracking)
   
   
   (void)WaitFor(destroyPromise).unwrap()[0];
-}
 #endif
+}
 
 #undef Invoke
 #undef DispatchFunction
