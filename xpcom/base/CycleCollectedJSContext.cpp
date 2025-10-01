@@ -1281,10 +1281,7 @@ void CycleCollectedJSContext::PerformDebuggerMicroTaskCheckpoint() {
   
 
   JSContext* cx = Context();
-
   if (StaticPrefs::javascript_options_use_js_microtask_queue()) {
-    MOZ_ASSERT(GetDebuggerMicroTaskQueue().empty());
-
     while (JS::HasDebuggerMicroTasks(cx)) {
       MOZ_ASSERT(mDebuggerMicroTaskQueue.empty());
       MOZ_ASSERT(mPendingMicroTaskRunnables.empty());
