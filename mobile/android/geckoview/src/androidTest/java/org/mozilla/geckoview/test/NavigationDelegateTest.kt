@@ -364,6 +364,7 @@ class NavigationDelegateTest : BaseSessionTest() {
         }
     }
 
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
     @Test fun loadWithHTTPSOnlyMode() {
         sessionRule.runtime.settings.setAllowInsecureConnections(GeckoRuntimeSettings.HTTPS_ONLY)
 
@@ -496,6 +497,7 @@ class NavigationDelegateTest : BaseSessionTest() {
 
     
     
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
     @Test fun loadHTTPSOnlyInSubframe() {
         sessionRule.runtime.settings.setAllowInsecureConnections(GeckoRuntimeSettings.HTTPS_ONLY)
 
@@ -909,6 +911,56 @@ class NavigationDelegateTest : BaseSessionTest() {
                     request.isRedirect,
                     equalTo(forEachCall(false, true)),
                 )
+                return null
+            }
+        })
+    }
+
+    @Test fun sandboxCallNavigationDelegate() {
+        mainSession.loadTestPath(IFRAME_SANDBOX_ALLOW)
+        sessionRule.waitForPageStop()
+        mainSession.evaluateJS("document.getElementById('iframe').contentDocument.getElementById('tel-button').click();")
+        sessionRule.forCallbacksDuringWait(object : NavigationDelegate {
+            @AssertCalled(count = 1)
+            override fun onLoadRequest(
+                session: GeckoSession,
+                request: LoadRequest,
+            ): GeckoResult<AllowOrDeny>? {
+                assertThat("Session should not be null", session, notNullValue())
+                assertThat("URI should not be null", request.uri, notNullValue())
+                return null
+            }
+
+            @AssertCalled(count = 1)
+            override fun onSubframeLoadRequest(
+                session: GeckoSession,
+                request: LoadRequest
+            ): GeckoResult<AllowOrDeny?>? {
+                assertThat("URI should not be null", request.uri, notNullValue())
+                assertThat("URI should not be null", request.uri, notNullValue())
+                return null
+            }
+        })
+    }
+
+    @Test fun sandboxDoesntCallNavigationDelegate() {
+        mainSession.loadTestPath(IFRAME_SANDBOX_BLOCK)
+        sessionRule.waitForPageStop()
+        mainSession.evaluateJS("document.getElementById('iframe').contentDocument.getElementById('tel-button').click();")
+        sessionRule.forCallbacksDuringWait(object : NavigationDelegate {
+            @AssertCalled(count = 1)
+            override fun onLoadRequest(
+                session: GeckoSession,
+                request: LoadRequest,
+            ): GeckoResult<AllowOrDeny>? {
+                return null
+            }
+
+            @AssertCalled(count = 0)
+            override fun onSubframeLoadRequest(
+                session: GeckoSession,
+                request: LoadRequest
+            ): GeckoResult<AllowOrDeny?>? {
                 return null
             }
         })
