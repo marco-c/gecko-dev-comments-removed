@@ -7,8 +7,13 @@
 
 
 
+#include "api/transport/bitrate_settings.h"
+#include "api/units/data_rate.h"
+#include "api/units/time_delta.h"
+#include "api/video_codecs/scalability_mode.h"
 #include "test/gtest.h"
 #include "test/scenario/scenario.h"
+#include "test/scenario/scenario_config.h"
 
 namespace webrtc {
 namespace test {
