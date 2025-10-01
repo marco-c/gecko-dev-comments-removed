@@ -30,8 +30,8 @@ class nsLabelsNodeList;
 class nsDOMAttributeMap;
 class nsDOMTokenList;
 class nsIControllers;
-class nsICSSDeclaration;
 class nsDOMCSSAttributeDeclaration;
+class nsDOMCSSDeclaration;
 class nsDOMStringMap;
 class nsIURI;
 
@@ -302,7 +302,7 @@ class FragmentOrElement : public nsIContent {
 
 
 
-    nsCOMPtr<nsICSSDeclaration> mStyle;
+    nsCOMPtr<nsDOMCSSDeclaration> mStyle;
 
     
 

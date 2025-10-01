@@ -2583,7 +2583,9 @@ nsIDOMWindowUtils* nsGlobalWindowInner::GetWindowUtils(ErrorResult& aRv) {
 bool nsGlobalWindowInner::SynthesizeMouseEvent(
     const nsAString& aType, float aOffsetX, float aOffsetY,
     const SynthesizeMouseEventData& aMouseEventData,
-    const SynthesizeMouseEventOptions& aOptions, ErrorResult& aError) {
+    const SynthesizeMouseEventOptions& aOptions,
+    const Optional<OwningNonNull<VoidFunction>>& aCallback,
+    ErrorResult& aError) {
   nsIDocShell* docShell = GetDocShell();
   RefPtr<PresShell> presShell = docShell ? docShell->GetPresShell() : nullptr;
   if (!presShell) {
@@ -2601,7 +2603,7 @@ bool nsGlobalWindowInner::SynthesizeMouseEvent(
   LayoutDeviceIntPoint refPoint = nsContentUtils::ToWidgetPoint(
       CSSPoint(aOffsetX, aOffsetY), offset, presShell->GetPresContext());
   auto result = nsContentUtils::SynthesizeMouseEvent(
-      presShell, widget, aType, refPoint, aMouseEventData, aOptions);
+      presShell, widget, aType, refPoint, aMouseEventData, aOptions, aCallback);
   if (result.isErr()) {
     aError.Throw(result.unwrapErr());
     return false;
@@ -4549,21 +4551,23 @@ nsresult nsGlobalWindowInner::DispatchSyncPopState() {
   return err.StealNSResult();
 }
 
-already_AddRefed<nsICSSDeclaration> nsGlobalWindowInner::GetComputedStyle(
+already_AddRefed<nsDOMCSSDeclaration> nsGlobalWindowInner::GetComputedStyle(
     Element& aElt, const nsAString& aPseudoElt, ErrorResult& aError) {
   return GetComputedStyleHelper(aElt, aPseudoElt, false, aError);
 }
 
-already_AddRefed<nsICSSDeclaration>
+already_AddRefed<nsDOMCSSDeclaration>
 nsGlobalWindowInner::GetDefaultComputedStyle(Element& aElt,
                                              const nsAString& aPseudoElt,
                                              ErrorResult& aError) {
   return GetComputedStyleHelper(aElt, aPseudoElt, true, aError);
 }
 
-already_AddRefed<nsICSSDeclaration> nsGlobalWindowInner::GetComputedStyleHelper(
-    Element& aElt, const nsAString& aPseudoElt, bool aDefaultStylesOnly,
-    ErrorResult& aError) {
+already_AddRefed<nsDOMCSSDeclaration>
+nsGlobalWindowInner::GetComputedStyleHelper(Element& aElt,
+                                            const nsAString& aPseudoElt,
+                                            bool aDefaultStylesOnly,
+                                            ErrorResult& aError) {
   FORWARD_TO_OUTER_OR_THROW(GetComputedStyleHelperOuter,
                             (aElt, aPseudoElt, aDefaultStylesOnly, aError),
                             aError, nullptr);
