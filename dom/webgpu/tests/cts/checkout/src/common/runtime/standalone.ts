@@ -25,15 +25,16 @@ import {
 import { TestDedicatedWorker, TestSharedWorker, TestServiceWorker } from './helper/test_worker.js';
 
 const rootQuerySpec = 'webgpu:*';
-let promptBeforeReload = false;
 let isFullCTS = false;
 
 globalTestConfig.frameworkDebugLog = console.log;
 
-window.onbeforeunload = () => {
-  
-  return promptBeforeReload ? false : undefined;
-};
+
+function enablePromptBeforeReload() {
+  window.addEventListener('beforeunload', () => {
+    return false;
+  });
+}
 
 const kOpenTestLinkAltText = 'Open';
 
@@ -283,7 +284,7 @@ function makeSubtreeHTML(n: TestSubtree, parentLevel: TestQueryLevel): Visualize
       progressElem.style.display = '';
       
       if (isFullCTS && n.query.filePathParts.length === 0) {
-        promptBeforeReload = true;
+        enablePromptBeforeReload();
       }
     }
     if (stopRequested) {
@@ -696,8 +697,25 @@ void (async () => {
     setTreeCheckedRecursively();
   });
 
+  function getResultsText() {
+    const saveOptionElement = document.getElementById('saveOnlyFailures') as HTMLInputElement;
+    const onlyFailures = saveOptionElement.checked;
+    const predFunc = (key: string, value: LiveTestCaseResult) =>
+      value.status === 'fail' || !onlyFailures;
+    return logger.asJSON(2, predFunc);
+  }
+
   document.getElementById('copyResultsJSON')!.addEventListener('click', () => {
-    void navigator.clipboard.writeText(logger.asJSON(2));
+    void navigator.clipboard.writeText(getResultsText());
+  });
+
+  document.getElementById('saveResultsJSON')!.addEventListener('click', () => {
+    const text = getResultsText();
+    const blob = new Blob([text], { type: 'text/plain' });
+    const link = document.createElement('a');
+    link.download = 'results-webgpu-cts.json';
+    link.href = window.URL.createObjectURL(blob);
+    link.click();
   });
 
   if (runnow) {
