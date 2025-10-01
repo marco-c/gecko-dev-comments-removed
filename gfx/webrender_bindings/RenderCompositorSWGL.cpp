@@ -78,8 +78,10 @@ bool RenderCompositorSWGL::AllocateMappedBuffer(
   MOZ_ASSERT(!mDT);
   mDT = mWidget->StartRemoteDrawingInRegion(mDirtyRegion);
   if (!mDT) {
+#if !defined(MOZ_WAYLAND)
     gfxCriticalNoteOnce
         << "RenderCompositorSWGL failed mapping default framebuffer, no dt";
+#endif
     return false;
   }
   
@@ -263,18 +265,19 @@ RenderedFrameId RenderCompositorSWGL::EndFrame(
 }
 
 bool RenderCompositorSWGL::RequestFullRender() {
-#ifdef MOZ_WIDGET_ANDROID
+#if defined(MOZ_WIDGET_ANDROID)
   
   return true;
-#endif
-#ifdef MOZ_WIDGET_GTK
+#elif defined(MOZ_WIDGET_GTK)
   
   if (mRequestFullRender) {
     mRequestFullRender = false;
     return true;
   }
-#endif
   return false;
+#else
+  return false;
+#endif
 }
 
 void RenderCompositorSWGL::Pause() {}
