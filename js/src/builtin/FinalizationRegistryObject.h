@@ -75,12 +75,6 @@
 
 
 
-
-
-
-
-
-
 #ifndef builtin_FinalizationRegistryObject_h
 #define builtin_FinalizationRegistryObject_h
 
@@ -156,42 +150,6 @@ class FinalizationRecordObject : public gc::ObserverListObject {
   static void finalize(JS::GCContext* gcx, JSObject* obj);
 };
 
-
-using WeakFinalizationRecordVector =
-    GCVector<WeakHeapPtr<FinalizationRecordObject*>, 1, js::CellAllocPolicy>;
-
-
-
-
-
-
-class FinalizationRegistrationsObject : public NativeObject {
-  enum { RecordsSlot = 0, SlotCount };
-
- public:
-  static const JSClass class_;
-
-  static FinalizationRegistrationsObject* create(JSContext* cx);
-
-  WeakFinalizationRecordVector* records();
-  const WeakFinalizationRecordVector* records() const;
-
-  bool isEmpty() const;
-
-  bool append(HandleFinalizationRecordObject record);
-  void remove(HandleFinalizationRecordObject record);
-
-  bool traceWeak(JSTracer* trc);
-
- private:
-  static const JSClassOps classOps_;
-
-  void* privatePtr() const;
-
-  static void trace(JSTracer* trc, JSObject* obj);
-  static void finalize(JS::GCContext* gcx, JSObject* obj);
-};
-
 using FinalizationRecordVector =
     GCVector<HeapPtr<FinalizationRecordObject*>, 1, js::CellAllocPolicy>;
 
@@ -200,14 +158,15 @@ class FinalizationRegistryObject : public NativeObject {
   enum { QueueSlot = 0, RecordsSlot, RegistrationsSlot, SlotCount };
 
  public:
-  using RegistrationsWeakMap = WeakMap<Value, JSObject*>;
+  using RegistrationsMap =
+      GCHashMap<HeapPtr<Value>, FinalizationRecordVector, gc::WeakTargetHasher>;
 
   static const JSClass class_;
   static const JSClass protoClass_;
 
   FinalizationQueueObject* queue() const;
   FinalizationRecordVector* records() const;
-  RegistrationsWeakMap* registrations() const;
+  RegistrationsMap* registrations() const;
 
   void traceWeak(JSTracer* trc);
 
