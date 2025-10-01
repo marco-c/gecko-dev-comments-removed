@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "api/field_trials.h"
 #include "api/test/videocodec_test_stats.h"
 #include "api/video/encoded_image.h"
 #include "api/video/video_codec_type.h"
@@ -90,6 +91,8 @@ class VideoCodecTestFixture {
 
     
     std::string test_name;
+
+    FieldTrials field_trials;
 
     
     std::string filename;
