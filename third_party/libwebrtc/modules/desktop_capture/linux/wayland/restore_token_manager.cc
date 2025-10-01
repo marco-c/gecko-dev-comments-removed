@@ -18,7 +18,7 @@ namespace webrtc {
 
 
 RestoreTokenManager& RestoreTokenManager::GetInstance() {
-  static webrtc::RestoreTokenManager* manager = new RestoreTokenManager();
+  static RestoreTokenManager* manager = new RestoreTokenManager();
   return *manager;
 }
 

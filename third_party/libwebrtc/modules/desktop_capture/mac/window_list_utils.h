@@ -30,10 +30,9 @@ namespace webrtc {
 
 
 
-bool RTC_EXPORT
-GetWindowList(webrtc::FunctionView<bool(CFDictionaryRef)> on_window,
-              bool ignore_minimized,
-              bool only_zero_layer);
+bool RTC_EXPORT GetWindowList(FunctionView<bool(CFDictionaryRef)> on_window,
+                              bool ignore_minimized,
+                              bool only_zero_layer);
 
 
 bool RTC_EXPORT GetWindowList(DesktopCapturer::SourceList* windows,

@@ -54,7 +54,7 @@ bool ToUtf8(const CFStringRef str16, std::string* str8) {
 
 
 bool GetWindowRef(CGWindowID id,
-                  webrtc::FunctionView<void(CFDictionaryRef)> on_window) {
+                  FunctionView<void(CFDictionaryRef)> on_window) {
   RTC_DCHECK(on_window);
 
   
@@ -85,7 +85,7 @@ bool GetWindowRef(CGWindowID id,
 
 }  
 
-bool GetWindowList(webrtc::FunctionView<bool(CFDictionaryRef)> on_window,
+bool GetWindowList(FunctionView<bool(CFDictionaryRef)> on_window,
                    bool ignore_minimized,
                    bool only_zero_layer) {
   RTC_DCHECK(on_window);
