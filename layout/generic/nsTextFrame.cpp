@@ -3916,7 +3916,7 @@ void nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
 
     using CharClass = TextAutospace::CharClass;
     
-    CharClass prevClass = CharClass::Other;
+    Maybe<CharClass> prevClass;
     if (mTextAutospace) {
       
       
@@ -3927,8 +3927,8 @@ void nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
           FindClusterStart(mTextRun, 0, &findPrevCluster);
           const char32_t prevScalar = mCharacterDataBuffer.ScalarValueAt(
               findPrevCluster.GetOriginalOffset());
-          prevClass = TextAutospace::GetCharClass(prevScalar);
-        } while (prevClass == CharClass::CombiningMark &&
+          prevClass = Some(TextAutospace::GetCharClass(prevScalar));
+        } while (*prevClass == CharClass::CombiningMark &&
                  findPrevCluster.GetOriginalOffset() > 0);
       } else {
         
@@ -3972,12 +3972,12 @@ void nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
           
           
           if (currClass != CharClass::CombiningMark) {
-            if (!atStart &&
-                mTextAutospace->ShouldApplySpacing(prevClass, currClass)) {
+            if (!atStart && prevClass &&
+                mTextAutospace->ShouldApplySpacing(*prevClass, currClass)) {
               aSpacing[runOffsetInSubstring + i].mBefore +=
                   mTextAutospace->InterScriptSpacing();
             }
-            prevClass = currClass;
+            prevClass = Some(currClass);
           }
         }
         atStart = false;
