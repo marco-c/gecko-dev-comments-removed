@@ -8,12 +8,14 @@
 #define mozilla_PostTraversalTask_h
 
 #include "nscore.h"
+#include "nsString.h"
 
 
 
 namespace mozilla {
 class ServoStyleSet;
 namespace dom {
+enum class FontFaceLoadedRejectReason : uint8_t;
 class FontFace;
 class FontFaceSet;
 class FontFaceSetImpl;
@@ -43,11 +45,13 @@ class PostTraversalTask {
     return task;
   }
 
-  static PostTraversalTask RejectFontFaceLoadedPromise(dom::FontFace* aFontFace,
-                                                       nsresult aResult) {
+  static PostTraversalTask RejectFontFaceLoadedPromise(
+      dom::FontFace* aFontFace, dom::FontFaceLoadedRejectReason aReason,
+      nsCString&& aMessage) {
     auto task = PostTraversalTask(Type::ResolveFontFaceLoadedPromise);
     task.mTarget = aFontFace;
-    task.mResult = aResult;
+    task.mResult.emplace(aReason);
+    task.mMessage = std::move(aMessage);
     return task;
   }
 
@@ -115,12 +119,12 @@ class PostTraversalTask {
     FontInfoUpdate,
   };
 
-  explicit PostTraversalTask(Type aType)
-      : mType(aType), mTarget(nullptr), mResult(NS_OK) {}
+  explicit PostTraversalTask(Type aType) : mType(aType) {}
 
-  Type mType;
-  void* mTarget;
-  nsresult mResult;
+  const Type mType;
+  void* mTarget = nullptr;
+  nsCString mMessage;
+  Maybe<dom::FontFaceLoadedRejectReason> mResult;
 };
 
 }  
