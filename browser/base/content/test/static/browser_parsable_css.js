@@ -186,10 +186,6 @@ let propNameAllowlist = [
   
   
   { propName: /--color-[a-z]+-\d+/, isFromDevTools: false },
-
-  
-  
-  { propName: "--border-radius-xsmall", isFromDevTools: false },
 ];
 
 
