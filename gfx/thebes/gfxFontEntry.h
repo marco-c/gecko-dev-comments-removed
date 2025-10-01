@@ -606,9 +606,10 @@ class gfxFontEntry {
 
   
   
-  uint32_t mDefaultSubSpaceFeatures[(int(Script::NUM_SCRIPT_CODES) + 31) / 32];
-  uint32_t
-      mNonDefaultSubSpaceFeatures[(int(Script::NUM_SCRIPT_CODES) + 31) / 32];
+  uint32_t mDefaultSubSpaceFeatures[(int(Script::NUM_SCRIPT_CODES) + 31) /
+                                    32] MOZ_GUARDED_BY(mFeatureInfoLock);
+  uint32_t mNonDefaultSubSpaceFeatures[(int(Script::NUM_SCRIPT_CODES) + 31) /
+                                       32] MOZ_GUARDED_BY(mFeatureInfoLock);
 
   mozilla::Atomic<uint32_t> mUVSOffset;
 
