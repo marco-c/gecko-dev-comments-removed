@@ -94,8 +94,8 @@
 #include <limits>
 
 #include "rtc_base/checks.h"
+#include "rtc_base/cpu_info.h"
 #include "rtc_base/system/arch.h"
-#include "system_wrappers/include/cpu_features_wrapper.h"  
 
 namespace webrtc {
 
@@ -127,9 +127,10 @@ void SincResampler::InitializeCPUSpecificFeatures() {
   convolve_proc_ = Convolve_NEON;
 #elif defined(WEBRTC_ARCH_X86_FAMILY)
   
-  if (GetCPUInfo(kAVX2) && GetCPUInfo(kFMA3))
+  if (cpu_info::Supports(cpu_info::ISA::kAVX2) &&
+      cpu_info::Supports(cpu_info::ISA::kFMA3))
     convolve_proc_ = Convolve_AVX2;
-  else if (GetCPUInfo(kSSE2))
+  else if (cpu_info::Supports(cpu_info::ISA::kSSE2))
     convolve_proc_ = Convolve_SSE;
   else
     convolve_proc_ = Convolve_C;

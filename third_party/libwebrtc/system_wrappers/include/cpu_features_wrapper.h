@@ -16,18 +16,12 @@
 namespace webrtc {
 
 
-typedef enum { kSSE2, kSSE3, kAVX2, kFMA3 } CPUFeature;
-
-
 enum {
   kCPUFeatureARMv7 = (1 << 0),
   kCPUFeatureVFPv3 = (1 << 1),
   kCPUFeatureNEON = (1 << 2),
   kCPUFeatureLDREXSTREX = (1 << 3)
 };
-
-
-int GetCPUInfo(CPUFeature feature);
 
 
 

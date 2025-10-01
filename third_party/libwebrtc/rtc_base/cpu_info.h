@@ -20,6 +20,11 @@ namespace cpu_info {
 
 uint32_t DetectNumberOfCores();
 
+enum class ISA { kSSE2 = 0, kSSE3, kAVX2, kFMA3, kNeon };
+
+
+bool Supports(ISA instruction_set_architecture);
+
 }  
 
 }  
