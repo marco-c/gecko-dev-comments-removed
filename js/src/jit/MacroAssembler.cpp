@@ -793,6 +793,7 @@ void MacroAssembler::preserveWrapper(Register wrapper, Register scratchSuccess,
   addPtr(Imm32(1), scratchSuccess);
   storePtr(scratchSuccess,
            AbsoluteAddress(zone->zone()->addressOfPreservedWrappersCount()));
+  move32(Imm32(1), scratchSuccess);
 
   jump(&done);
   bind(&abiCall);
@@ -4614,7 +4615,7 @@ void MacroAssembler::moveValue(const TypedOrValueRegister& src,
   AnyRegister reg = src.typedReg();
 
   if (!IsFloatingPointType(type)) {
-    boxNonDouble(ValueTypeFromMIRType(type), reg.gpr(), dest);
+    tagValue(ValueTypeFromMIRType(type), reg.gpr(), dest);
     return;
   }
 
