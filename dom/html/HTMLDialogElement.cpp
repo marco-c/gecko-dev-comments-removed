@@ -48,12 +48,16 @@ class DialogCloseWatcherListener : public nsIDOMEventListener {
     mDialog = do_GetWeakReference(aDialog);
   }
 
+  
   NS_IMETHODIMP HandleEvent(Event* aEvent) override {
     RefPtr<nsINode> node = do_QueryReferent(mDialog);
     if (HTMLDialogElement* dialog = HTMLDialogElement::FromNodeOrNull(node)) {
       nsAutoString eventType;
       aEvent->GetType(eventType);
       if (eventType.EqualsLiteral("cancel")) {
+        
+        
+        
         bool defaultAction = true;
         auto cancelable =
             aEvent->Cancelable() ? Cancelable::eYes : Cancelable::eNo;
@@ -64,9 +68,13 @@ class DialogCloseWatcherListener : public nsIDOMEventListener {
           aEvent->PreventDefault();
         }
       } else if (eventType.EqualsLiteral("close")) {
+        
+        
+        
         Optional<nsAString> retValue;
         dialog->GetRequestCloseReturnValue(retValue);
-        dialog->Close(retValue);
+        RefPtr<Element> source = dialog->GetRequestCloseSourceElement();
+        dialog->Close(source, retValue);
       }
     }
     return NS_OK;
@@ -137,7 +145,7 @@ bool HTMLDialogElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
 
 
 void HTMLDialogElement::Close(
-    const mozilla::dom::Optional<nsAString>& aReturnValue) {
+    Element* aSource, const mozilla::dom::Optional<nsAString>& aReturnValue) {
   
   if (!Open()) {
     return;
@@ -146,7 +154,7 @@ void HTMLDialogElement::Close(
   
   
   
-  FireToggleEvent(u"open"_ns, u"closed"_ns, u"beforetoggle"_ns);
+  FireToggleEvent(u"open"_ns, u"closed"_ns, u"beforetoggle"_ns, aSource);
 
   
   if (!Open()) {
@@ -155,7 +163,7 @@ void HTMLDialogElement::Close(
 
   
   
-  QueueToggleEventTask();
+  QueueToggleEventTask(aSource);
 
   
   SetOpen(false, IgnoreErrors());
@@ -176,7 +184,7 @@ void HTMLDialogElement::Close(
   ClearRequestCloseReturnValue();
 
   
-  
+  mRequestCloseSourceElement = nullptr;
 
   MOZ_ASSERT(!OwnerDoc()->DialogIsInOpenDialogsList(*this),
              "Dialog should not being in Open Dialog List");
@@ -210,9 +218,8 @@ void HTMLDialogElement::Close(
 
 
 void HTMLDialogElement::RequestClose(
-    const mozilla::dom::Optional<nsAString>& aReturnValue) {
+    Element* aSource, const mozilla::dom::Optional<nsAString>& aReturnValue) {
   RefPtr closeWatcher = mCloseWatcher;
-
   
   if (!Open()) {
     return;
@@ -243,7 +250,7 @@ void HTMLDialogElement::RequestClose(
   }
 
   
-  
+  mRequestCloseSourceElement = do_GetWeakReference(aSource);
 
   
   if (StaticPrefs::dom_closewatcher_enabled()) {
@@ -260,6 +267,10 @@ void HTMLDialogElement::RequestClose(
     
     SetCloseWatcherEnabledState();
   }
+}
+
+RefPtr<Element> HTMLDialogElement::GetRequestCloseSourceElement() {
+  return do_QueryReferent(mRequestCloseSourceElement);
 }
 
 
@@ -281,7 +292,7 @@ void HTMLDialogElement::Show(ErrorResult& aError) {
   
   
   
-  if (FireToggleEvent(u"closed"_ns, u"open"_ns, u"beforetoggle"_ns)) {
+  if (FireToggleEvent(u"closed"_ns, u"open"_ns, u"beforetoggle"_ns, nullptr)) {
     return;
   }
 
@@ -291,7 +302,7 @@ void HTMLDialogElement::Show(ErrorResult& aError) {
   }
 
   
-  QueueToggleEventTask();
+  QueueToggleEventTask(nullptr);
 
   
   SetOpen(true, IgnoreErrors());
@@ -408,7 +419,7 @@ void HTMLDialogElement::UnbindFromTree(UnbindContext& aContext) {
 }
 
 
-void HTMLDialogElement::ShowModal(ErrorResult& aError) {
+void HTMLDialogElement::ShowModal(Element* aSource, ErrorResult& aError) {
   
   
   if (Open()) {
@@ -446,7 +457,7 @@ void HTMLDialogElement::ShowModal(ErrorResult& aError) {
   
   
   
-  if (FireToggleEvent(u"closed"_ns, u"open"_ns, u"beforetoggle"_ns)) {
+  if (FireToggleEvent(u"closed"_ns, u"open"_ns, u"beforetoggle"_ns, aSource)) {
     return;
   }
 
@@ -458,7 +469,7 @@ void HTMLDialogElement::ShowModal(ErrorResult& aError) {
   }
 
   
-  QueueToggleEventTask();
+  QueueToggleEventTask(aSource);
 
   
   SetOpen(true, aError);
@@ -613,7 +624,8 @@ void HTMLDialogElement::RunCancelDialogSteps() {
   if (defaultAction) {
     Optional<nsAString> retValue;
     GetRequestCloseReturnValue(retValue);
-    Close(retValue);
+    RefPtr<Element> source = GetRequestCloseSourceElement();
+    Close(source, retValue);
   }
 }
 
@@ -643,23 +655,23 @@ bool HTMLDialogElement::HandleCommandInternal(Element* aSource,
       }
     }
     if (aCommand == Command::Close) {
-      Close(retValueOpt);
+      Close(aSource, retValueOpt);
     } else {
       MOZ_ASSERT(aCommand == Command::RequestClose);
-      RequestClose(retValueOpt);
+      RequestClose(aSource, retValueOpt);
     }
     return true;
   }
 
   if (IsInComposedDoc() && !Open() && aCommand == Command::ShowModal) {
-    ShowModal(aRv);
+    ShowModal(aSource, aRv);
     return true;
   }
 
   return false;
 }
 
-void HTMLDialogElement::QueueToggleEventTask() {
+void HTMLDialogElement::QueueToggleEventTask(Element* aSource) {
   nsAutoString oldState;
   auto newState = Open() ? u"closed"_ns : u"open"_ns;
   if (mToggleEventDispatcher) {
@@ -670,8 +682,8 @@ void HTMLDialogElement::QueueToggleEventTask() {
   } else {
     oldState.Assign(Open() ? u"open"_ns : u"closed"_ns);
   }
-  RefPtr<ToggleEvent> toggleEvent =
-      CreateToggleEvent(u"toggle"_ns, oldState, newState, Cancelable::eNo);
+  RefPtr<ToggleEvent> toggleEvent = CreateToggleEvent(
+      u"toggle"_ns, oldState, newState, Cancelable::eNo, aSource);
   mToggleEventDispatcher = new AsyncEventDispatcher(this, toggleEvent.forget());
   mToggleEventDispatcher->PostDOMEvent();
 }
