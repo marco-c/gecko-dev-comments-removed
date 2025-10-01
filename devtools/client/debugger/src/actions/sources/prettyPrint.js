@@ -188,8 +188,18 @@ async function prettyPrintHtmlFile({
       sourceInfo.sourceStartLine > 1
         ? allLineBreaks[sourceInfo.sourceStartLine - 2].index + 1
         : 0;
-    const startIndex =
+
+    
+    
+    
+    const startColumn =
       indexAfterPreviousLineBreakInHtml + sourceInfo.sourceStartColumn;
+    const htmlBeforeStr = htmlFileText.substring(0, startColumn);
+    const codeUnitLength = htmlBeforeStr.length,
+      codePointLength = [...htmlBeforeStr].length;
+    const extraCharsWithForStrTwoCodeUnits = codeUnitLength - codePointLength;
+
+    const startIndex = startColumn + extraCharsWithForStrTwoCodeUnits;
     const endIndex = startIndex + sourceInfo.sourceLength;
     const scriptText = htmlFileText.substring(startIndex, endIndex);
     DevToolsUtils.assert(
