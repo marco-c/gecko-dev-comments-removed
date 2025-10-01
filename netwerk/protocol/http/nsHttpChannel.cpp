@@ -374,7 +374,7 @@ CookieObserver::Observe(nsISupports* aSubject, const char* aTopic,
 void MaybeInitializeCookieProcessingGuard(
     nsHttpChannel* aChannel, CookieServiceParent::CookieProcessingGuard& aGuard,
     RefPtr<CookieObserver>& aCookieObserver,
-    RefPtr<HttpChannelParent>& aHttpChannelParent) {
+    RefPtr<HttpChannelParent>& aHttpChannelParent, uint32_t aHttpStatus) {
   nsCOMPtr<nsIParentChannel> parentChannel;
   NS_QueryNotificationCallbacks(aChannel, parentChannel);
   aHttpChannelParent = do_QueryObject(parentChannel);
@@ -394,6 +394,13 @@ void MaybeInitializeCookieProcessingGuard(
   CookieServiceParent* cookieServiceParent =
       static_cast<CookieServiceParent*>(csParent);
   if (!cookieServiceParent) {
+    return;
+  }
+
+  
+  
+  
+  if (nsHttpChannel::IsRedirectStatus(aHttpStatus)) {
     return;
   }
 
@@ -1242,8 +1249,8 @@ nsresult nsHttpChannel::HandleOverrideResponse() {
     RefPtr<CookieObserver> cookieObserver;
 
     CookieServiceParent::CookieProcessingGuard cookieProcessingGuard;
-    MaybeInitializeCookieProcessingGuard(this, cookieProcessingGuard,
-                                         cookieObserver, httpParent);
+    MaybeInitializeCookieProcessingGuard(
+        this, cookieProcessingGuard, cookieObserver, httpParent, statusCode);
 
     
     CookieVisitor cookieVisitor(mResponseHead.get());
@@ -2980,7 +2987,8 @@ nsresult nsHttpChannel::ContinueProcessResponse1(
         
 
         MaybeInitializeCookieProcessingGuard(this, cookieProcessingGuard,
-                                             cookieObserver, httpParent);
+                                             cookieObserver, httpParent,
+                                             httpStatus);
       }
 
       CookieVisitor cookieVisitor(mResponseHead.get());
