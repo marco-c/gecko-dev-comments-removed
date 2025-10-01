@@ -1,3 +1,11 @@
+add_setup(async function setup() {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["sidebar.revamp", false]],
+  });
+});
+
 add_task(async function test() {
   let sidebar = document.getElementById("sidebar");
 
