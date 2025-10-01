@@ -604,8 +604,15 @@ pub mod specified {
 pub enum TypedValue {
     
     
-    Placeholder,
+    
+    
+    
+    Keyword(CssString),
 }
+
+
+
+
 
 
 
