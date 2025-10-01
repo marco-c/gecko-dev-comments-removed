@@ -1725,29 +1725,45 @@ class HTMLEditUtils final {
     
     ClosestBlockElement,
     
+    
     ClosestContainerElement,
+    
+    
+    
+    
+    
     
     
     MostDistantInlineElementInBlock,
     
     IgnoreHRElement,
     
+    ClosestButtonElement,
     
-    ButtonElement,
+    
+    StopAtClosestButtonElement,
     
     
-    AllowRootOrAncestorLimiterElement,
+    
+    
+    
+    ReturnAncestorLimiterIfNoProperAncestor,
 
     
     
     EditableElement,
   };
   using AncestorTypes = EnumSet<AncestorType>;
+
+  friend std::ostream& operator<<(std::ostream& aStream,
+                                  const AncestorType& aType);
+  friend std::ostream& operator<<(std::ostream& aStream,
+                                  const AncestorTypes& aTypes);
+
   constexpr static AncestorTypes
       ClosestEditableBlockElementOrInlineEditingHost = {
-          AncestorType::ClosestBlockElement,
-          AncestorType::MostDistantInlineElementInBlock,
-          AncestorType::EditableElement};
+          AncestorType::ClosestBlockElement, AncestorType::EditableElement,
+          AncestorType::ReturnAncestorLimiterIfNoProperAncestor};
   constexpr static AncestorTypes ClosestBlockElement = {
       AncestorType::ClosestBlockElement};
   constexpr static AncestorTypes ClosestEditableBlockElement = {
@@ -1759,7 +1775,23 @@ class HTMLEditUtils final {
       AncestorType::EditableElement};
   constexpr static AncestorTypes ClosestEditableBlockElementOrButtonElement = {
       AncestorType::ClosestBlockElement, AncestorType::EditableElement,
-      AncestorType::ButtonElement};
+      AncestorType::ClosestButtonElement};
+  
+  constexpr static AncestorTypes
+      MostDistantEditableInlineElementInBlockOrButton = {
+          AncestorType::MostDistantInlineElementInBlock,
+          AncestorType::StopAtClosestButtonElement};
+  
+  
+  
+  
+  constexpr static AncestorTypes
+      MostDistantEditableInlineElementInBlockOrClosestButton = {
+          AncestorType::MostDistantInlineElementInBlock,
+          AncestorType::ClosestButtonElement};
+  constexpr static AncestorTypes ClosestContainerElementOrVoidAncestorLimiter =
+      {AncestorType::ClosestContainerElement,
+       AncestorType::ReturnAncestorLimiterIfNoProperAncestor};
   static Element* GetAncestorElement(const nsIContent& aContent,
                                      const AncestorTypes& aAncestorTypes,
                                      BlockInlineCheck aBlockInlineCheck,

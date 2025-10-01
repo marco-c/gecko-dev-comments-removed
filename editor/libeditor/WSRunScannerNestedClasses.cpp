@@ -98,13 +98,13 @@ NS_INSTANTIATE_METHOD_RETURNING_ANY_EDITOR_DOM_POINT(
     IgnoreNonEditableNodes aIgnoreNonEditableNodes,
     const nsIContent* aPrecedingLimiterContent);
 
+
 constexpr static const AncestorTypes kScanAnyRootAncestorTypes = {
     
     AncestorType::ClosestBlockElement,
     
     
-    
-    AncestorType::AllowRootOrAncestorLimiterElement,
+    AncestorType::ReturnAncestorLimiterIfNoProperAncestor,
     
     
     
@@ -114,7 +114,7 @@ constexpr static const AncestorTypes kScanEditableRootAncestorTypes = {
     AncestorType::EditableElement,
     
     AncestorType::ClosestBlockElement,
-    AncestorType::AllowRootOrAncestorLimiterElement,
+    AncestorType::ReturnAncestorLimiterIfNoProperAncestor,
     AncestorType::IgnoreHRElement};
 
 template <typename EditorDOMPointType>

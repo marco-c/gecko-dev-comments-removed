@@ -2356,12 +2356,21 @@ Element* HTMLEditUtils::GetAncestorElement(
       aAncestorTypes.contains(AncestorType::ClosestBlockElement) ||
       aAncestorTypes.contains(AncestorType::ClosestContainerElement) ||
       aAncestorTypes.contains(AncestorType::MostDistantInlineElementInBlock) ||
-      aAncestorTypes.contains(AncestorType::ButtonElement) ||
-      aAncestorTypes.contains(AncestorType::AllowRootOrAncestorLimiterElement));
-
-  if (&aContent == aAncestorLimiter) {
-    return nullptr;
-  }
+      aAncestorTypes.contains(AncestorType::ClosestButtonElement) ||
+      aAncestorTypes.contains(
+          AncestorType::ReturnAncestorLimiterIfNoProperAncestor));
+  MOZ_ASSERT_IF(
+      aAncestorTypes.contains(AncestorType::ClosestBlockElement),
+      !aAncestorTypes.contains(AncestorType::MostDistantInlineElementInBlock));
+  MOZ_ASSERT_IF(
+      aAncestorTypes.contains(AncestorType::ClosestContainerElement),
+      !aAncestorTypes.contains(AncestorType::MostDistantInlineElementInBlock));
+  MOZ_ASSERT_IF(
+      aAncestorTypes.contains(AncestorType::StopAtClosestButtonElement),
+      !aAncestorTypes.contains(AncestorType::ClosestButtonElement));
+  MOZ_ASSERT_IF(
+      aAncestorTypes.contains(AncestorType::ClosestButtonElement),
+      !aAncestorTypes.contains(AncestorType::StopAtClosestButtonElement));
 
   const Element* theBodyElement = aContent.OwnerDoc()->GetBody();
   const Element* theDocumentElement = aContent.OwnerDoc()->GetDocumentElement();
@@ -2374,16 +2383,27 @@ Element* HTMLEditUtils::GetAncestorElement(
       aAncestorTypes.contains(AncestorType::ClosestContainerElement);
   const bool lookingForMostDistantInlineElementInBlock =
       aAncestorTypes.contains(AncestorType::MostDistantInlineElementInBlock);
+  const bool stopAtClosestBlockElement =
+      lookingForClosestBlockElement ||
+      lookingForMostDistantInlineElementInBlock;
+  const bool fallbackToLimiter = aAncestorTypes.contains(
+      AncestorType::ReturnAncestorLimiterIfNoProperAncestor);
+  const bool stopAtButton =
+      aAncestorTypes.contains(AncestorType::StopAtClosestButtonElement);
+  const bool lookingForButtonElement =
+      aAncestorTypes.contains(AncestorType::ClosestButtonElement);
   const bool ignoreHRElement =
       aAncestorTypes.contains(AncestorType::IgnoreHRElement);
-  const bool lookingForButtonElement =
-      aAncestorTypes.contains(AncestorType::ButtonElement);
-  const bool lookingForAnyElement =
-      aAncestorTypes.contains(AncestorType::AllowRootOrAncestorLimiterElement);
-  const auto IsSearchingElementType = [&](const nsIContent& aContent) -> bool {
-    if (lookingForAnyElement) {
-      return aContent.IsElement();
-    }
+  const auto IsLimiter = [&](const nsIContent& aContent) -> bool {
+    return &aContent == aAncestorLimiter ||
+           
+           
+           (editableElementOnly &&
+            (&aContent == theBodyElement || &aContent == theDocumentElement ||
+             aContent.IsEditingHost()));
+  };
+  const auto IsSearchingElementTypeExceptFallbackToRoot =
+      [&](const nsIContent& aContent) -> bool {
     if (!aContent.IsElement() ||
         (ignoreHRElement && aContent.IsHTMLElement(nsGkAtoms::hr))) {
       return false;
@@ -2401,21 +2421,25 @@ Element* HTMLEditUtils::GetAncestorElement(
            (lookingForButtonElement &&
             aContent.IsHTMLElement(nsGkAtoms::button));
   };
+  if (IsLimiter(aContent)) {
+    return nullptr;
+  }
   for (Element* element : aContent.AncestorsOfType<Element>()) {
     if (editableElementOnly &&
         !EditorUtils::IsEditableContent(*element, EditorType::HTML)) {
-      return lastAncestorElement && IsSearchingElementType(*lastAncestorElement)
-                 ? lastAncestorElement  
-                 : nullptr;
+      return lastAncestorElement;  
     }
     if (ignoreHRElement && element->IsHTMLElement(nsGkAtoms::hr)) {
-      if (element == aAncestorLimiter) {
-        if (lookingForAnyElement) {
+      if (IsLimiter(*element)) {
+        if (fallbackToLimiter && !lastAncestorElement) {
           lastAncestorElement = element;
         }
-        break;
+        return lastAncestorElement;
       }
       continue;
+    }
+    if (stopAtButton && element->IsHTMLElement(nsGkAtoms::button)) {
+      return lastAncestorElement;
     }
     if (lookingForButtonElement && element->IsHTMLElement(nsGkAtoms::button)) {
       return element;  
@@ -2424,27 +2448,30 @@ Element* HTMLEditUtils::GetAncestorElement(
         HTMLEditUtils::IsContainerNode(*element)) {
       return element;  
     }
-    if (HTMLEditUtils::IsBlockElement(*element, aBlockInlineCheck)) {
+    if (stopAtClosestBlockElement &&
+        HTMLEditUtils::IsBlockElement(*element, aBlockInlineCheck)) {
       if (lookingForClosestBlockElement) {
         return element;  
       }
       MOZ_ASSERT_IF(lastAncestorElement,
                     HTMLEditUtils::IsInlineContent(*lastAncestorElement,
                                                    aBlockInlineCheck));
+      if (!lastAncestorElement && fallbackToLimiter && IsLimiter(*element)) {
+        return element;  
+      }
       return lastAncestorElement;  
     }
-    if (element == aAncestorLimiter || element == theBodyElement ||
-        element == theDocumentElement) {
-      if (lookingForAnyElement) {
+    if (IsSearchingElementTypeExceptFallbackToRoot(*element)) {
+      lastAncestorElement = element;
+    }
+    if (IsLimiter(*element)) {
+      if (fallbackToLimiter && !lastAncestorElement) {
         lastAncestorElement = element;
       }
-      break;
+      return lastAncestorElement;
     }
-    lastAncestorElement = element;
   }
-  return lastAncestorElement && IsSearchingElementType(*lastAncestorElement)
-             ? lastAncestorElement
-             : nullptr;
+  return lastAncestorElement;
 }
 
 
@@ -2456,8 +2483,21 @@ Element* HTMLEditUtils::GetInclusiveAncestorElement(
       aAncestorTypes.contains(AncestorType::ClosestBlockElement) ||
       aAncestorTypes.contains(AncestorType::ClosestContainerElement) ||
       aAncestorTypes.contains(AncestorType::MostDistantInlineElementInBlock) ||
-      aAncestorTypes.contains(AncestorType::ButtonElement) ||
-      aAncestorTypes.contains(AncestorType::AllowRootOrAncestorLimiterElement));
+      aAncestorTypes.contains(AncestorType::ClosestButtonElement) ||
+      aAncestorTypes.contains(
+          AncestorType::ReturnAncestorLimiterIfNoProperAncestor));
+  MOZ_ASSERT_IF(
+      aAncestorTypes.contains(AncestorType::ClosestBlockElement),
+      !aAncestorTypes.contains(AncestorType::MostDistantInlineElementInBlock));
+  MOZ_ASSERT_IF(
+      aAncestorTypes.contains(AncestorType::ClosestContainerElement),
+      !aAncestorTypes.contains(AncestorType::MostDistantInlineElementInBlock));
+  MOZ_ASSERT_IF(
+      aAncestorTypes.contains(AncestorType::StopAtClosestButtonElement),
+      !aAncestorTypes.contains(AncestorType::ClosestButtonElement));
+  MOZ_ASSERT_IF(
+      aAncestorTypes.contains(AncestorType::ClosestButtonElement),
+      !aAncestorTypes.contains(AncestorType::StopAtClosestButtonElement));
 
   const Element* theBodyElement = aContent.OwnerDoc()->GetBody();
   const Element* theDocumentElement = aContent.OwnerDoc()->GetDocumentElement();
@@ -2469,16 +2509,29 @@ Element* HTMLEditUtils::GetInclusiveAncestorElement(
       aAncestorTypes.contains(AncestorType::ClosestContainerElement);
   const bool lookingForMostDistantInlineElementInBlock =
       aAncestorTypes.contains(AncestorType::MostDistantInlineElementInBlock);
+  const bool stopAtClosestBlockElement =
+      lookingForClosestBlockElement ||
+      lookingForMostDistantInlineElementInBlock;
+  const bool stopAtButton =
+      aAncestorTypes.contains(AncestorType::StopAtClosestButtonElement);
   const bool lookingForButtonElement =
-      aAncestorTypes.contains(AncestorType::ButtonElement);
+      aAncestorTypes.contains(AncestorType::ClosestButtonElement);
   const bool ignoreHRElement =
       aAncestorTypes.contains(AncestorType::IgnoreHRElement);
-  const bool lookingForAnyElement =
-      aAncestorTypes.contains(AncestorType::AllowRootOrAncestorLimiterElement);
-  auto IsSearchingElementType = [&](const nsIContent& aContent) -> bool {
-    if (lookingForAnyElement) {
-      return aContent.IsElement();
-    }
+  const bool fallbackToLimiter = aAncestorTypes.contains(
+      AncestorType::ReturnAncestorLimiterIfNoProperAncestor);
+  const bool lookingForMostDistantElement =
+      lookingForMostDistantInlineElementInBlock;
+  const auto IsLimiter = [&](const nsIContent& aContent) -> bool {
+    return &aContent == aAncestorLimiter || !aContent.GetParent() ||
+           
+           
+           (editableElementOnly &&
+            (&aContent == theBodyElement || &aContent == theDocumentElement ||
+             aContent.IsEditingHost()));
+  };
+  const auto IsSearchingElementTypeExceptFallbackToRoot =
+      [&](const nsIContent& aContent) -> bool {
     if (!aContent.IsElement() ||
         (ignoreHRElement && aContent.IsHTMLElement(nsGkAtoms::hr))) {
       return false;
@@ -2497,15 +2550,15 @@ Element* HTMLEditUtils::GetInclusiveAncestorElement(
             aContent.IsHTMLElement(nsGkAtoms::button));
   };
 
-  if (&aContent == aAncestorLimiter && lookingForAnyElement) {
-    return const_cast<Element*>(aAncestorLimiter);
+  if (IsLimiter(aContent)) {
+    return fallbackToLimiter ||
+                   IsSearchingElementTypeExceptFallbackToRoot(aContent)
+               ? const_cast<Element*>(aContent.AsElement())
+               : nullptr;
   }
 
-  
-  
-  if (editableElementOnly &&
-      (&aContent == theBodyElement || &aContent == theDocumentElement)) {
-    return IsSearchingElementType(aContent)
+  if (stopAtButton && aContent.IsHTMLElement(nsGkAtoms::button)) {
+    return IsSearchingElementTypeExceptFallbackToRoot(aContent)
                ? const_cast<Element*>(aContent.AsElement())
                : nullptr;
   }
@@ -2516,45 +2569,33 @@ Element* HTMLEditUtils::GetInclusiveAncestorElement(
 
   if (lookingForClosestContainerElement && aContent.IsElement() &&
       HTMLEditUtils::IsContainerNode(aContent)) {
-    return const_cast<Element*>(aContent.AsElement());
+    return IsSearchingElementTypeExceptFallbackToRoot(aContent)
+               ? const_cast<Element*>(aContent.AsElement())
+               : nullptr;
   }
 
   
   
-  if ((lookingForClosestBlockElement ||
-       lookingForMostDistantInlineElementInBlock) &&
+  if (stopAtClosestBlockElement &&
       HTMLEditUtils::IsBlockElement(aContent, aBlockInlineCheck) &&
       !(ignoreHRElement && aContent.IsHTMLElement(nsGkAtoms::hr))) {
-    return IsSearchingElementType(aContent)
+    return IsSearchingElementTypeExceptFallbackToRoot(aContent)
                ? const_cast<Element*>(aContent.AsElement())
                : nullptr;
   }
 
+  Element* const result = HTMLEditUtils::GetAncestorElement(
+      aContent, aAncestorTypes, aBlockInlineCheck, aAncestorLimiter);
   
   
   
-  if (!aContent.GetParent() ||
-      (editableElementOnly && !EditorUtils::IsEditableContent(
-                                  *aContent.GetParent(), EditorType::HTML)) ||
-      (!lookingForClosestBlockElement && !lookingForClosestContainerElement &&
-       HTMLEditUtils::IsBlockElement(*aContent.GetParent(),
-                                     aBlockInlineCheck) &&
-       !(ignoreHRElement &&
-         aContent.GetParent()->IsHTMLElement(nsGkAtoms::hr)))) {
-    return IsSearchingElementType(aContent)
-               ? const_cast<Element*>(aContent.AsElement())
-               : nullptr;
+  if (lookingForMostDistantElement &&
+      (!result || (result != &aContent && IsLimiter(*result) &&
+                   !IsSearchingElementTypeExceptFallbackToRoot(*result))) &&
+      IsSearchingElementTypeExceptFallbackToRoot(aContent)) {
+    return const_cast<Element*>(aContent.AsElement());
   }
-
-  if (&aContent == aAncestorLimiter) {
-    return aAncestorTypes.contains(
-               AncestorType::AllowRootOrAncestorLimiterElement)
-               ? Element::FromNode(const_cast<nsIContent&>(aContent))
-               : nullptr;
-  }
-
-  return HTMLEditUtils::GetAncestorElement(aContent, aAncestorTypes,
-                                           aBlockInlineCheck, aAncestorLimiter);
+  return result;
 }
 
 
@@ -3178,6 +3219,35 @@ bool HTMLEditUtils::IsTransparentCSSColor(const nsAString& aColor) {
 
 
 
+
+std::ostream& operator<<(std::ostream& aStream,
+                         const HTMLEditUtils::AncestorType& aType) {
+  constexpr static const char* names[] = {
+      "ClosestBlockElement",
+      "ClosestContainerElement",
+      "MostDistantInlineElementInBlock",
+      "IgnoreHRElement",
+      "ClosestButtonElement",
+      "StopAtClosestButtonElement",
+      "ReturnAncestorLimiterIfNoProperAncestor",
+      "EditableElement",
+  };
+  return aStream << names[static_cast<uint32_t>(aType)];
+}
+
+std::ostream& operator<<(std::ostream& aStream,
+                         const HTMLEditUtils::AncestorTypes& aTypes) {
+  aStream << "{";
+  bool first = true;
+  for (const auto t : aTypes) {
+    if (!first) {
+      aStream << ", ";
+    }
+    aStream << ToString(t).c_str();
+    first = false;
+  }
+  return aStream << "}";
+}
 
 std::ostream& operator<<(std::ostream& aStream,
                          const HTMLEditUtils::EditablePointOption& aOption) {
