@@ -26,7 +26,6 @@
 #include "modules/desktop_capture/desktop_capture_metadata.h"
 #endif  
 #include "modules/desktop_capture/desktop_capture_types.h"
-#include "modules/desktop_capture/desktop_frame.h"
 #include "modules/desktop_capture/shared_memory.h"
 #include "rtc_base/system/rtc_export.h"
 
@@ -36,6 +35,7 @@ void RTC_EXPORT LogDesktopCapturerFullscreenDetectorUsage();
 
 class DesktopCaptureOptions;
 class DesktopFrame;
+class DesktopVector;
 
 
 class RTC_EXPORT DesktopCapturer {
