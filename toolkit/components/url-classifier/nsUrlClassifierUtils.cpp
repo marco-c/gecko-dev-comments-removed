@@ -342,8 +342,25 @@ static const struct {
   const char* mLocalListName;
   const char* mServerListName;
 } THREAT_NAME_CONV_TABLE_V5[] = {
-    {"goog-malware-proto", "mw-4b"},           {"googpub-phish-proto", "se-4b"},
-    {"goog-unwanted-proto", "uws-4b"},         {"goog-harmful-proto", "pha-4b"},
+    {"goog-malware-proto", "mw-4b"},
+
+
+
+
+
+#ifdef MOZILLA_OFFICIAL
+    {"goog-phish-proto", "se-4b"},
+#else
+    {"googpub-phish-proto", "se-4b"},
+#endif
+
+
+#ifndef MOZ_WIDGET_ANDROID
+    {"goog-unwanted-proto", "uws-4b"},
+#else
+    {"goog-unwanted-proto", "uwsa-4b"},
+#endif
+    {"goog-harmful-proto", "pha-4b"},
     {"test-google5-malware-proto", "test-4b"},
 };
 

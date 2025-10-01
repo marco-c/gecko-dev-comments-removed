@@ -274,8 +274,13 @@ TEST(UrlClassifierUtils, MakeUpdateRequestV5)
   
   
   
+#ifndef MOZ_WIDGET_ANDROID
   ASSERT_TRUE(request.EqualsLiteral(
       "&names=uws-4b&version=Cg0IAxAGGAEiAzAwMTABEMfKERoCGAm5biH4"));
+#else
+  ASSERT_TRUE(request.EqualsLiteral(
+      "&names=uwsa-4b&version=Cg0IAxAGGAEiAzAwMTABEMfKERoCGAm5biH4"));
+#endif
 }
 
 TEST(UrlClassifierUtils, makeFindFullHashRequestV5)
