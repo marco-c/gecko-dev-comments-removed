@@ -512,7 +512,18 @@ typedef enum JSGCParamKey {
   
 
 
+
+
+
+
+
+
+
+
+
+
   JSGC_STORE_BUFFER_ENTRIES = 58,
+  JSGC_STORE_BUFFER_SCALING = 59,
 } JSGCParamKey;
 
 
