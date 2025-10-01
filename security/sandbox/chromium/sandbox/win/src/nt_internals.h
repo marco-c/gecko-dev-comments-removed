@@ -42,10 +42,7 @@ typedef NTSTATUS(WINAPI* NtCloseFunction)(IN HANDLE Handle);
 
 #if !defined(__MINGW32__)
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wenum-constexpr-conversion"
-constexpr auto FileRenameInformation = static_cast<FILE_INFORMATION_CLASS>(10);
-#pragma clang diagnostic push
+const auto FileRenameInformation = static_cast<FILE_INFORMATION_CLASS>(10);
 
 typedef struct _FILE_RENAME_INFORMATION {
   BOOLEAN ReplaceIfExists;
@@ -178,10 +175,7 @@ typedef NTSTATUS(WINAPI* NtSetInformationThreadFunction)(
     IN ULONG ThreadInformationLength);
 
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wenum-constexpr-conversion"
-constexpr auto ProcessHandleTable = static_cast<PROCESSINFOCLASS>(58);
-#pragma clang diagnostic pop
+const auto ProcessHandleTable = static_cast<PROCESSINFOCLASS>(58);
 
 
 
