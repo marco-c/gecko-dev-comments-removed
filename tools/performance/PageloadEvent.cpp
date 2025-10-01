@@ -32,11 +32,17 @@ namespace mozilla::performance::pageload_event {
 
 
 
-#ifdef NIGHTLY_BUILD
-static constexpr uint64_t kNormalSamplingInterval = 1;   
-static constexpr uint64_t kDomainSamplingInterval = 10;  
+
+#ifdef EARLY_BETA_OR_EARLIER
+static constexpr uint64_t kNormalSamplingInterval = 1;  
 #else
 static constexpr uint64_t kNormalSamplingInterval = 10;  
+#endif
+
+
+#ifdef NIGHTLY_BUILD
+static constexpr uint64_t kDomainSamplingInterval = 10;  
+#else
 static constexpr uint64_t kDomainSamplingInterval =
     1000;  
 #endif
