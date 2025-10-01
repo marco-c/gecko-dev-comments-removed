@@ -385,10 +385,8 @@ exp2(double x)
 
 	
 	if(k >= -(1021 << 20)) {
-		if (k == 1024 << 20) {
-			double const_0x1p1023 = pow(2, 1023);
-			return (r * 2.0 * const_0x1p1023);
-		}
+		if (k == 1024 << 20)
+			return (r * 2.0 * 0x1p1023);
 		return (r * twopk);
 	} else {
 		return (r * twopkp1000 * twom1000);
