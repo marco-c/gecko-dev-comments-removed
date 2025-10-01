@@ -56,13 +56,64 @@ def save_patch_stack(
     merge_base = stdout_lines[0]
 
     
-    cmd = f"git format-patch --keep-subject --no-signature --output-directory {patch_directory} {merge_base}..{github_branch}"
-    run_git(cmd, github_path)
+    
+    cmd = f"cd {github_path} ; git log --oneline {merge_base}..{github_branch}"
+    stdout_lines = run_shell(cmd)
+    base_commit_summary = "Bug 1376873 - Rollup of local modifications"
+    found_lines = [s for s in stdout_lines if base_commit_summary in s]
+    base_commit_sha = found_lines[0].split(" ")[0]
+    print(f"Found base_commit_sha: {base_commit_sha}")
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    cmd = f"git format-patch --keep-subject --no-signature --output-directory {patch_directory} {merge_base}..{base_commit_sha}^"
+    stdout_lines = run_git(cmd, github_path)
+
+    
     
     patches_to_rename = os.listdir(patch_directory)
     for file in patches_to_rename:
-        shortened_name = re.sub(r"^(\d\d\d\d)-.*\.patch", "\\1.patch", file)
+        shortened_name = re.sub(r"^(\d\d\d\d)-.*\.patch", "p\\1.patch", file)
+        os.rename(
+            os.path.join(patch_directory, file),
+            os.path.join(patch_directory, shortened_name),
+        )
+
+    
+    cmd = f"git format-patch --keep-subject --no-signature --output-directory {patch_directory} {base_commit_sha}^..{github_branch}"
+    run_git(cmd, github_path)
+
+    
+    
+    patches_to_rename = os.listdir(patch_directory)
+    for file in patches_to_rename:
+        shortened_name = re.sub(r"^(\d\d\d\d)-.*\.patch", "s\\1.patch", file)
         os.rename(
             os.path.join(patch_directory, file),
             os.path.join(patch_directory, shortened_name),
