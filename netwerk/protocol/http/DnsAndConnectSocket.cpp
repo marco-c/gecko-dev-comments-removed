@@ -659,7 +659,8 @@ nsresult DnsAndConnectSocket::SetupConn(bool isPrimary, nsresult status) {
     
     
     
-    if (!connTCP ||
+    
+    if (!connTCP || ent->mConnInfo->GetFallbackConnection() ||
         (ent->mConnInfo->FirstHopSSL() && !ent->UrgentStartQueueLength() &&
          !ent->PendingQueueLength() && !ent->mConnInfo->UsingConnect())) {
       LOG(

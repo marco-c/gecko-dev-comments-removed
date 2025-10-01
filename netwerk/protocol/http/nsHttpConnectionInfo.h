@@ -115,7 +115,11 @@ class nsHttpConnectionInfo final : public ARefBase {
   
   already_AddRefed<nsHttpConnectionInfo> CloneAndAdoptHTTPSSVCRecord(
       nsISVCBRecord* aRecord) const;
-  void CloneAsDirectRoute(nsHttpConnectionInfo** outCI);
+  void CloneAsDirectRoute(nsHttpConnectionInfo** outCI,
+                          nsProxyInfo* aProxyInfo = nullptr);
+
+  already_AddRefed<nsHttpConnectionInfo> CreateConnectUDPFallbackConnInfo();
+
   [[nodiscard]] nsresult CreateWildCard(nsHttpConnectionInfo** outParam);
 
   const char* ProxyHost() const {

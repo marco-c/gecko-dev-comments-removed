@@ -500,13 +500,15 @@ nsHttpConnectionInfo::DeserializeHttpConnectionInfoCloneArgs(
   return cinfo.forget();
 }
 
-void nsHttpConnectionInfo::CloneAsDirectRoute(nsHttpConnectionInfo** outCI) {
+void nsHttpConnectionInfo::CloneAsDirectRoute(nsHttpConnectionInfo** outCI,
+                                              nsProxyInfo* aProxyInfo) {
   
   
   RefPtr<nsHttpConnectionInfo> clone = new nsHttpConnectionInfo(
       mOrigin, mOriginPort,
       (mRoutedHost.IsEmpty() && !mIsHttp3) ? mNPNToken : ""_ns, mUsername,
-      mProxyInfo, mOriginAttributes, mEndToEndSSL, false, mWebTransport);
+      aProxyInfo ? aProxyInfo : mProxyInfo.get(), mOriginAttributes,
+      mEndToEndSSL, false, mWebTransport);
   
   clone->SetAnonymous(GetAnonymous());
   clone->SetPrivate(GetPrivate());
@@ -524,6 +526,18 @@ void nsHttpConnectionInfo::CloneAsDirectRoute(nsHttpConnectionInfo** outCI) {
   clone->SetEchConfig(GetEchConfig());
 
   clone.forget(outCI);
+}
+
+already_AddRefed<nsHttpConnectionInfo>
+nsHttpConnectionInfo::CreateConnectUDPFallbackConnInfo() {
+  if (!mProxyInfo || !mProxyInfo->IsConnectUDP()) {
+    return nullptr;
+  }
+
+  RefPtr<nsProxyInfo> proxyInfo = mProxyInfo->CreateFallbackProxyInfo();
+  RefPtr<nsHttpConnectionInfo> clone;
+  CloneAsDirectRoute(getter_AddRefs(clone), proxyInfo);
+  return clone.forget();
 }
 
 nsresult nsHttpConnectionInfo::CreateWildCard(nsHttpConnectionInfo** outParam) {
