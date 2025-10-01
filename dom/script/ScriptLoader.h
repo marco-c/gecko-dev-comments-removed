@@ -784,9 +784,6 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
                              const JS::TranscodeBuffer& aSRI,
                              JS::Stencil* aStencil);
 
-  void StoreCacheInfo(JS::loader::LoadedScript* aLoadedScript,
-                      ScriptLoadRequest* aRequest);
-
   
 
 

@@ -231,11 +231,11 @@ class LoadedScript : public nsIMemoryReporter {
     
     
     MOZ_ASSERT(CanHaveBytecode());
-    return mScriptBytecode;
+    return mSRIAndBytecode;
   }
   TranscodeRange Bytecode() const {
     MOZ_ASSERT(IsBytecode());
-    const auto& bytecode = mScriptBytecode;
+    const auto& bytecode = mSRIAndBytecode;
     auto offset = mBytecodeOffset;
     return TranscodeRange(bytecode.begin() + offset,
                           bytecode.length() - offset);
@@ -252,7 +252,7 @@ class LoadedScript : public nsIMemoryReporter {
 
   void DropBytecode() {
     MOZ_ASSERT(CanHaveBytecode());
-    mScriptBytecode.clearAndFree();
+    mSRIAndBytecode.clearAndFree();
   }
 
   bool HasStencil() const { return mStencil; }
@@ -317,7 +317,10 @@ class LoadedScript : public nsIMemoryReporter {
   
   
   
-  TranscodeBuffer mScriptBytecode;
+  
+  
+  
+  TranscodeBuffer mSRIAndBytecode;
 
   
   RefPtr<Stencil> mStencil;
@@ -328,9 +331,6 @@ class LoadedScript : public nsIMemoryReporter {
   
   
   nsCOMPtr<nsICacheInfoChannel> mCacheInfo;
-
-  
-  JS::TranscodeBuffer mSRI;
 };
 
 
