@@ -336,16 +336,38 @@ add_task(
 
         await closeToolboxForTab(tab);
 
-        
-        
-        
-        
         is(
           gBrowser.selectedBrowser.browsingContext.customUserAgent,
           "",
           "The flag on the browsing context was reset"
         );
-        await checkUserAgent(CUSTOM_USER_AGENT);
+
+        
+        
+        
+        const contexts =
+          gBrowser.selectedBrowser.browsingContext.getAllBrowsingContextsInSubtree();
+
+        for (const context of contexts) {
+          const url = context.currentURI?.spec?.replace(
+            context.currentURI?.query,
+            "…"
+          );
+          info(
+            `Checking user agent on ${url} (remoteType: ${context.currentRemoteType}), (${context.id})`
+          );
+          await SpecialPowers.spawn(
+            context,
+            [initialUserAgent],
+            async _expectedUA => {
+              is(
+                content.navigator.userAgent,
+                _expectedUA,
+                `expected navigator.userAgent value`
+              );
+            }
+          );
+        }
         await BrowserTestUtils.reloadTab(tab, {
           includeSubFrames: true,
         });

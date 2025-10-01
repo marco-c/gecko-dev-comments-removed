@@ -170,14 +170,10 @@ add_task(async function () {
   targetCommand.destroy();
   await commands.destroy();
 
-  
-  
-  
-  
   is(
     await getTopLevelUserAgent(),
-    CUSTOM_USER_AGENT,
-    "The custom user agent is still set on the page after destroying the first commands instance. Bug 1705326 will fix that and make it equal to `initialUserAgent`"
+    initialUserAgent,
+    "The user agent was reset on the page after destroying the first commands instance."
   );
 
   await BrowserTestUtils.reloadTab(tab, {
