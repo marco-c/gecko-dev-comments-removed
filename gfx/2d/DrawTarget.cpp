@@ -269,11 +269,7 @@ void DrawTarget::Blur(const GaussianBlur& aBlur) {
     return;
   }
 
-  
-  MOZ_ASSERT(format == aBlur.GetFormat());
-  MOZ_ASSERT(size == aBlur.GetSize());
-  MOZ_ASSERT(stride == aBlur.GetStride());
-  aBlur.Blur(data);
+  aBlur.Blur(data, stride, size, format);
 
   ReleaseBits(data);
 }
