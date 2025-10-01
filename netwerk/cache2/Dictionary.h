@@ -60,6 +60,7 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
   DictionaryCacheEntry(const char* aKey);
   DictionaryCacheEntry(const nsACString& aKey, const nsACString& aPattern,
                        nsTArray<nsCString>& aMatchDest, const nsACString& aId,
+                       uint32_t aExpiration = 0,
                        const Maybe<nsCString>& aHash = Nothing());
 
   static void ConvertMatchDestToEnumArray(
@@ -71,7 +72,7 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
 
   
   bool Match(const nsACString& aFilePath, ExtContentPolicyType aType,
-             uint32_t& aLongest);
+             uint32_t aNow, uint32_t& aLongest);
 
   
   
@@ -174,12 +175,14 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
   void UnblockAddEntry(DictionaryOrigin* aOrigin);
 
  private:
-  nsCString mURI;  
+  
+  nsCString mURI;
+  
+  uint32_t mExpiration{0};
+
   nsCString mPattern;
   nsCString mId;  
   nsTArray<dom::RequestDestination> mMatchDest;
-  
-
   
   
   
@@ -227,7 +230,32 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
 
 
 
+class DictionaryCache;
 
+class DictionaryOriginReader final : public nsICacheEntryOpenCallback,
+                                     public nsIStreamListener {
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSICACHEENTRYOPENCALLBACK
+  NS_DECL_NSIREQUESTOBSERVER
+  NS_DECL_NSISTREAMLISTENER
+
+  DictionaryOriginReader() {}
+
+  void Start(
+      DictionaryOrigin* aOrigin, nsACString& aKey, nsIURI* aURI,
+      ExtContentPolicyType aType, DictionaryCache* aCache,
+      const std::function<nsresult(bool, DictionaryCacheEntry*)>& aCallback);
+  void FinishMatch();
+
+ private:
+  ~DictionaryOriginReader() {}
+
+  RefPtr<DictionaryOrigin> mOrigin;
+  nsCOMPtr<nsIURI> mURI;
+  ExtContentPolicyType mType;
+  std::function<nsresult(bool, DictionaryCacheEntry*)> mCallback;
+  RefPtr<DictionaryCache> mCache;
+};
 
 
 using DictCacheList = nsTArray<RefPtr<DictionaryCacheEntry>>;
@@ -236,6 +264,7 @@ using DictCacheList = nsTArray<RefPtr<DictionaryCacheEntry>>;
 
 class DictionaryOrigin : public nsICacheEntryMetaDataVisitor {
   friend class DictionaryCache;
+  friend class DictionaryOriginReader;
 
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
@@ -245,7 +274,7 @@ class DictionaryOrigin : public nsICacheEntryMetaDataVisitor {
       : mOrigin(aOrigin), mEntry(aEntry) {}
 
   void SetCacheEntry(nsICacheEntry* aEntry);
-  void Write(DictionaryCacheEntry* aDictEntry);
+  nsresult Write(DictionaryCacheEntry* aDictEntry);
   already_AddRefed<DictionaryCacheEntry> AddEntry(
       DictionaryCacheEntry* aDictEntry, bool aNewEntry);
   nsresult RemoveEntry(const nsACString& aKey);
@@ -265,10 +294,14 @@ class DictionaryOrigin : public nsICacheEntryMetaDataVisitor {
   
   DictCacheList mPendingEntries;
   
+  
+  DictCacheList mPendingRemove;
+  
   bool mDeferredWrites{false};
-};
 
-class DictionaryOriginReader;
+  
+  nsTArray<RefPtr<DictionaryOriginReader>> mWaitingCacheRead;
+};
 
 
 class DictionaryCache final {
@@ -292,7 +325,8 @@ class DictionaryCache final {
   nsresult AddEntry(nsIURI* aURI, const nsACString& aKey,
                     const nsACString& aPattern, nsTArray<nsCString>& aMatchDest,
                     const nsACString& aId, const Maybe<nsCString>& aHash,
-                    bool aNewEntry, DictionaryCacheEntry** aDictEntry);
+                    bool aNewEntry, uint32_t aExpiration,
+                    DictionaryCacheEntry** aDictEntry);
 
   already_AddRefed<DictionaryCacheEntry> AddEntry(
       nsIURI* aURI, bool aNewEntry, DictionaryCacheEntry* aDictEntry);
@@ -312,8 +346,8 @@ class DictionaryCache final {
 
   
   void GetDictionaryFor(
-      nsIURI* aURI, ExtContentPolicyType aType,
-      const std::function<nsresult(DictionaryCacheEntry*)>& aCallback);
+      nsIURI* aURI, ExtContentPolicyType aType, bool& aAsync,
+      const std::function<nsresult(bool, DictionaryCacheEntry*)>& aCallback);
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
     
