@@ -42,20 +42,9 @@ add_setup(async function () {
   
   
   gTestProvider = new TestProvider({
-    results: [
-      new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
-        payload: {
-          url: "https://example.com/",
-          isBlockable: true,
-        },
-        
-        
-        suggestedIndex: 1,
-        isSuggestedIndexRelativeToGroup: true,
-      }),
-    ],
+    
+    
+    results: [makeResult({ suggestedIndex: 1 })],
   });
 
   gTestProvider.commandCount = {};
@@ -166,8 +155,7 @@ add_task(async function acknowledgeDismissal_all() {
 add_task(async function acknowledgeDismissal_rowLabel() {
   
   
-  let { suggestedIndex } = gTestProvider.results[0];
-  gTestProvider.results[0].suggestedIndex = 0;
+  gTestProvider.results[0] = makeResult({ suggestedIndex: 0 });
 
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
@@ -179,8 +167,6 @@ add_task(async function acknowledgeDismissal_rowLabel() {
     shouldBeSelected: false,
     expectedLabelOnOriginalRow: "Firefox Suggest",
   });
-
-  gTestProvider.results[0].suggestedIndex = suggestedIndex;
 });
 
 
@@ -188,8 +174,7 @@ add_task(async function acknowledgeDismissal_rowLabel() {
 add_task(async function acknowledgeDismissal_hideRowLabel() {
   
   
-  let { suggestedIndex } = gTestProvider.results[0];
-  gTestProvider.results[0].suggestedIndex = 0;
+  gTestProvider.results[0] = makeResult({ suggestedIndex: 0 });
 
   
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -200,7 +185,10 @@ add_task(async function acknowledgeDismissal_hideRowLabel() {
   await UrlbarTestUtils.promisePopupClose(window);
 
   
-  gTestProvider.results[0].hideRowLabel = true;
+  gTestProvider.results[0] = makeResult({
+    suggestedIndex: 0,
+    hideRowLabel: true,
+  });
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: "test",
@@ -216,9 +204,6 @@ add_task(async function acknowledgeDismissal_hideRowLabel() {
     expectedLabelOnOriginalRow: null,
     expectedLabelOnReplacementRow: "Firefox Suggest",
   });
-
-  gTestProvider.results[0].suggestedIndex = suggestedIndex;
-  delete gTestProvider.results[0].hideRowLabel;
 });
 
 
@@ -483,4 +468,17 @@ async function checkRowLabel(resultIndex, expectedLabel) {
       "Row should not have a label attribute"
     );
   }
+}
+
+function makeResult(resultParams) {
+  return new UrlbarResult({
+    type: UrlbarUtils.RESULT_TYPE.URL,
+    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    payload: {
+      url: "https://example.com/",
+      isBlockable: true,
+    },
+    isSuggestedIndexRelativeToGroup: true,
+    ...resultParams,
+  });
 }
