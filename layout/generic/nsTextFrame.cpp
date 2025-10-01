@@ -105,6 +105,22 @@ using namespace mozilla;
 using namespace mozilla::dom;
 using namespace mozilla::gfx;
 
+static bool NeedsToMaskPassword(const nsTextFrame* aFrame) {
+  MOZ_ASSERT(aFrame);
+  MOZ_ASSERT(aFrame->GetContent());
+  if (!aFrame->GetContent()->HasFlag(NS_MAYBE_MASKED)) {
+    return false;
+  }
+  
+  
+  
+  const nsIFrame* frame = nsLayoutUtils::GetClosestFrameOfType(
+      const_cast<nsTextFrame*>(aFrame), LayoutFrameType::TextInput);
+  MOZ_ASSERT(frame, "How do we have a masked text node without a text input?");
+  return !frame || !frame->GetContent()->AsElement()->State().HasState(
+                       ElementState::REVEALED);
+}
+
 namespace mozilla {
 
 bool TextAutospace::ShouldSuppressLetterNumeralSpacing(const nsIFrame* aFrame) {
@@ -129,7 +145,7 @@ bool TextAutospace::ShouldSuppressLetterNumeralSpacing(const nsIFrame* aFrame) {
 }
 
 bool TextAutospace::Enabled(const StyleTextAutospace& aStyleTextAutospace,
-                            const nsIFrame* aFrame) {
+                            const nsTextFrame* aFrame) {
   if (aStyleTextAutospace == StyleTextAutospace::NO_AUTOSPACE) {
     return false;
   }
@@ -142,6 +158,12 @@ bool TextAutospace::Enabled(const StyleTextAutospace& aStyleTextAutospace,
   }
 
   if (ShouldSuppressLetterNumeralSpacing(aFrame)) {
+    
+    
+    return false;
+  }
+
+  if (NeedsToMaskPassword(aFrame)) {
     
     
     return false;
@@ -246,19 +268,6 @@ TextAutospace::BoundarySet TextAutospace::InitBoundarySet(
 }
 
 }  
-
-static bool NeedsToMaskPassword(nsTextFrame* aFrame) {
-  MOZ_ASSERT(aFrame);
-  MOZ_ASSERT(aFrame->GetContent());
-  if (!aFrame->GetContent()->HasFlag(NS_MAYBE_MASKED)) {
-    return false;
-  }
-  nsIFrame* frame =
-      nsLayoutUtils::GetClosestFrameOfType(aFrame, LayoutFrameType::TextInput);
-  MOZ_ASSERT(frame, "How do we have a masked text node without a text input?");
-  return !frame || !frame->GetContent()->AsElement()->State().HasState(
-                       ElementState::REVEALED);
-}
 
 struct TabWidth {
   TabWidth(uint32_t aOffset, uint32_t aWidth)
