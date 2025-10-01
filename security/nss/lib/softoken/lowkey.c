@@ -15,6 +15,7 @@ SEC_ASN1_MKSUB(SEC_AnyTemplate)
 SEC_ASN1_MKSUB(SEC_BitStringTemplate)
 SEC_ASN1_MKSUB(SEC_ObjectIDTemplate)
 SEC_ASN1_MKSUB(SECOID_AlgorithmIDTemplate)
+SEC_ASN1_MKSUB(SEC_OctetStringTemplate)
 
 const SEC_ASN1Template nsslowkey_AttributeTemplate[] = {
     { SEC_ASN1_SEQUENCE,
@@ -89,6 +90,24 @@ const SEC_ASN1Template nsslowkey_DSAPrivateKeyTemplate[] = {
     { SEC_ASN1_SEQUENCE, 0, NULL, sizeof(NSSLOWKEYPrivateKey) },
     { SEC_ASN1_INTEGER, offsetof(NSSLOWKEYPrivateKey, u.dsa.publicValue) },
     { SEC_ASN1_INTEGER, offsetof(NSSLOWKEYPrivateKey, u.dsa.privateValue) },
+    { 0 }
+};
+
+const SEC_ASN1Template nsslowkey_PQBothSeedAndPrivateKeyTemplate[] = {
+    { SEC_ASN1_SEQUENCE, 0, NULL, sizeof(NSSLOWKEYPrivateKey) },
+    { SEC_ASN1_OCTET_STRING, offsetof(NSSLOWKEYPrivateKey, u.genpq.seedItem) },
+    { SEC_ASN1_OCTET_STRING, offsetof(NSSLOWKEYPrivateKey, u.genpq.keyItem) },
+    { 0 }
+};
+
+const SEC_ASN1Template nsslowkey_PQSeedTemplate[] = {
+    { SEC_ASN1_CONTEXT_SPECIFIC | 0,
+      offsetof(NSSLOWKEYPrivateKey, u.genpq.seedItem),
+      SEC_ASN1_SUB(SEC_OctetStringTemplate) },
+    { 0 }
+};
+const SEC_ASN1Template nsslowkey_PQPrivateKeyTemplate[] = {
+    { SEC_ASN1_OCTET_STRING, offsetof(NSSLOWKEYPrivateKey, u.genpq.keyItem) },
     { 0 }
 };
 
@@ -423,6 +442,44 @@ nsslowkey_ConvertToPublicKey(NSSLOWKEYPrivateKey *privk)
                     return pubk;
             }
             break;
+        case NSSLOWKEYMLDSAKey:
+            pubk = (NSSLOWKEYPublicKey *)PORT_ArenaZAlloc(arena,
+                                                          sizeof(NSSLOWKEYPublicKey));
+            if (pubk != NULL) {
+                SECStatus rv;
+                SECItem seed = { siBuffer, NULL, 0 };
+                MLDSAPrivateKey newPrivKey;
+
+                pubk->arena = arena;
+                pubk->keyType = privk->keyType;
+
+                
+                
+                
+
+
+
+
+
+
+
+
+                if (privk->u.mldsa.seedLen == 0) {
+                    PORT_SetError(SEC_ERROR_PKCS11_FUNCTION_FAILED);
+                    rv = SECFailure;
+                    break;
+                }
+                seed.data = privk->u.mldsa.seed;
+                seed.len = privk->u.mldsa.seedLen;
+                rv = MLDSA_NewKey(privk->u.mldsa.paramSet, &seed,
+                                  &newPrivKey, &pubk->u.mldsa);
+                if (rv != SECSuccess) {
+                    break;
+                }
+                PORT_SafeZero(&newPrivKey, sizeof(newPrivKey));
+                return pubk;
+            }
+            break;
         
 
         default:
@@ -558,6 +615,10 @@ nsslowkey_CopyPrivateKey(NSSLOWKEYPrivateKey *privKey)
                                &(privKey->u.ec.ecParams));
             if (rv != SECSuccess)
                 break;
+            break;
+        case NSSLOWKEYMLDSAKey:
+            returnKey->u.mldsa = privKey->u.mldsa;
+            rv = SECSuccess;
             break;
         default:
             rv = SECFailure;

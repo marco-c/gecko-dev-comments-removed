@@ -602,7 +602,7 @@ SGN_Digest(SECKEYPrivateKey *privKey,
     }
     
     enctag = sec_GetEncAlgFromSigAlg(
-        SEC_GetSignatureAlgorithmOidTag(privKey->keyType, algtag));
+        SEC_GetSignatureAlgorithmOidTagByKey(privKey, NULL, algtag));
     if ((enctag == SEC_OID_UNKNOWN) ||
         (NSS_GetAlgorithmPolicy(enctag, &policyFlags) == SECFailure) ||
         !(policyFlags & NSS_USE_ALG_IN_ANY_SIGNATURE)) {
@@ -675,6 +675,9 @@ SEC_GetSignatureAlgorithmOidTag(KeyType keyType, SECOidTag hashAlgTag)
     SECOidTag sigTag = SEC_OID_UNKNOWN;
 
     switch (keyType) {
+        case rsaPssKey:
+            sigTag = SEC_OID_PKCS1_RSA_PSS_SIGNATURE;
+            break;
         case rsaKey:
             switch (hashAlgTag) {
                 case SEC_OID_MD2:
@@ -746,23 +749,44 @@ SEC_GetSignatureAlgorithmOidTag(KeyType keyType, SECOidTag hashAlgTag)
     return sigTag;
 }
 
-static SECItem *
+SECOidTag
+SEC_GetSignatureAlgorithmOidTagByKey(const SECKEYPrivateKey *privKey, const SECKEYPublicKey *pubKey, SECOidTag hashAlgTag)
+{
+    KeyType keyType = nullKey;
+    
+    if ((privKey && pubKey) || (!privKey && !pubKey)) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return SEC_OID_UNKNOWN;
+    }
+    
+    if (privKey) {
+        if (pubKey) {
+            PORT_SetError(SEC_ERROR_INVALID_ARGS);
+            return SEC_OID_UNKNOWN;
+        }
+        keyType = privKey->keyType;
+    } else {
+        
+        PORT_Assert(pubKey != NULL);
+        PORT_Assert(privKey == NULL);
+        keyType = pubKey->keyType;
+    }
+    
+    return SEC_GetSignatureAlgorithmOidTag(keyType, hashAlgTag);
+}
+
+SECItem *
 sec_CreateRSAPSSParameters(PLArenaPool *arena,
                            SECItem *result,
                            SECOidTag hashAlgTag,
                            const SECItem *params,
-                           const SECKEYPrivateKey *key)
+                           int modBytes)
 {
     SECKEYRSAPSSParams pssParams;
-    int modBytes, hashLength;
+    int hashLength;
     unsigned long saltLength;
     PRBool defaultSHA1 = PR_FALSE;
     SECStatus rv;
-
-    if (key->keyType != rsaKey && key->keyType != rsaPssKey) {
-        PORT_SetError(SEC_ERROR_INVALID_ALGORITHM);
-        return NULL;
-    }
 
     PORT_Memset(&pssParams, 0, sizeof(pssParams));
 
@@ -795,9 +819,21 @@ sec_CreateRSAPSSParameters(PLArenaPool *arena,
         }
     }
 
-    modBytes = PK11_GetPrivateModulusLen((SECKEYPrivateKey *)key);
-
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     if (hashAlgTag != SEC_OID_UNKNOWN) {
         SECOidTag tag = SEC_OID_UNKNOWN;
@@ -829,6 +865,7 @@ sec_CreateRSAPSSParameters(PLArenaPool *arena,
         }
     }
 
+    
     if (hashAlgTag != SEC_OID_SHA1 && hashAlgTag != SEC_OID_SHA224 &&
         hashAlgTag != SEC_OID_SHA256 && hashAlgTag != SEC_OID_SHA384 &&
         hashAlgTag != SEC_OID_SHA512) {
@@ -963,6 +1000,47 @@ sec_CreateRSAPSSParameters(PLArenaPool *arena,
 }
 
 SECItem *
+SEC_CreateRSAPSSParameters(PLArenaPool *arena,
+                           SECItem *result,
+                           SECOidTag hashAlgTag,
+                           const SECItem *params,
+                           const SECKEYPrivateKey *privKey,
+                           const SECKEYPublicKey *pubKey)
+{
+    
+    int modBytes = (HASH_LENGTH_MAX * 2) + 2;
+
+    
+
+    if (!privKey && !pubKey && !params && (hashAlgTag == SEC_OID_UNKNOWN)) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return NULL;
+    }
+    
+    if (privKey && pubKey) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return NULL;
+    }
+    if (privKey) {
+        if (privKey->keyType != rsaKey && privKey->keyType != rsaPssKey) {
+            PORT_SetError(SEC_ERROR_INVALID_ALGORITHM);
+            return NULL;
+        }
+        
+
+        modBytes = PK11_GetPrivateModulusLen((SECKEYPrivateKey *)privKey);
+    } else if (pubKey) {
+        if (pubKey->keyType != rsaKey && pubKey->keyType != rsaPssKey) {
+            PORT_SetError(SEC_ERROR_INVALID_ALGORITHM);
+            return NULL;
+        }
+        modBytes = pubKey->u.rsa.modulus.len;
+    }
+    return sec_CreateRSAPSSParameters(arena, result, hashAlgTag,
+                                      params, modBytes);
+}
+
+SECItem *
 SEC_CreateSignatureAlgorithmParameters(PLArenaPool *arena,
                                        SECItem *result,
                                        SECOidTag signAlgTag,
@@ -970,18 +1048,102 @@ SEC_CreateSignatureAlgorithmParameters(PLArenaPool *arena,
                                        const SECItem *params,
                                        const SECKEYPrivateKey *key)
 {
+    PORT_SetError(0);
     switch (signAlgTag) {
         case SEC_OID_PKCS1_RSA_PSS_SIGNATURE:
-            return sec_CreateRSAPSSParameters(arena, result,
-                                              hashAlgTag, params, key);
+            return SEC_CreateRSAPSSParameters(arena, result,
+                                              hashAlgTag, params, key, NULL);
 
         default:
             if (params == NULL)
                 return NULL;
             if (result == NULL)
                 result = SECITEM_AllocItem(arena, NULL, 0);
+            if (result == NULL) {
+                return NULL;
+            }
             if (SECITEM_CopyItem(arena, result, params) != SECSuccess)
                 return NULL;
             return result;
     }
+}
+
+SECItem *
+SEC_CreateVerifyAlgorithmParameters(PLArenaPool *arena,
+                                    SECItem *result,
+                                    SECOidTag signAlgTag,
+                                    SECOidTag hashAlgTag,
+                                    const SECItem *params,
+                                    const SECKEYPublicKey *key)
+{
+    PORT_SetError(0);
+    switch (signAlgTag) {
+        case SEC_OID_PKCS1_RSA_PSS_SIGNATURE:
+            return SEC_CreateRSAPSSParameters(arena, result,
+                                              hashAlgTag, params, NULL, key);
+
+        default:
+            if (params == NULL)
+                return NULL;
+            if (result == NULL)
+                result = SECITEM_AllocItem(arena, NULL, 0);
+            if (result == NULL) {
+                return NULL;
+            }
+            if (SECITEM_CopyItem(arena, result, params) != SECSuccess)
+                return NULL;
+            return result;
+    }
+}
+
+SECStatus
+SEC_CreateSignatureAlgorithmID(PLArenaPool *arena,
+                               SECAlgorithmID *signAlgID,
+                               SECOidTag signAlgTag,
+                               SECOidTag hashAlgTag,
+                               const SECItem *params,
+                               const SECKEYPrivateKey *privKey,
+                               const SECKEYPublicKey *pubKey)
+{
+    SECItem *newParams = NULL;
+
+    if (signAlgTag == SEC_OID_UNKNOWN) {
+        signAlgTag = SEC_GetSignatureAlgorithmOidTagByKey(privKey, pubKey,
+                                                          hashAlgTag);
+    } else {
+        
+
+        if ((privKey && pubKey) || (!privKey && !pubKey)) {
+            PORT_SetError(SEC_ERROR_INVALID_ARGS);
+            return SECFailure;
+        }
+    }
+
+    if (signAlgTag == SEC_OID_UNKNOWN) {
+        
+        return SECFailure;
+    }
+
+    if (privKey) {
+        newParams = SEC_CreateSignatureAlgorithmParameters(arena, NULL,
+                                                           signAlgTag,
+                                                           hashAlgTag,
+                                                           params,
+                                                           privKey);
+    } else {
+        
+        newParams = SEC_CreateVerifyAlgorithmParameters(arena, NULL,
+                                                        signAlgTag,
+                                                        hashAlgTag,
+                                                        params,
+                                                        pubKey);
+    }
+
+    
+
+    if (!newParams && PORT_GetError() != 0) {
+        return SECFailure;
+    }
+
+    return SECOID_SetAlgorithmID(arena, signAlgID, signAlgTag, newParams);
 }

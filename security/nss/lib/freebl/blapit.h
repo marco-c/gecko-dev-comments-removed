@@ -12,6 +12,8 @@
 #include "prlink.h"
 #include "plarena.h"
 #include "ecl-exp.h"
+#include "pkcs11t.h"
+#include "ml_dsat.h"
 
 
 #define NSS_RC2 0
@@ -156,7 +158,7 @@ typedef int __BLAPI_DEPRECATED __attribute__((deprecated));
 
 
 
-#define MAX_SIGNATURE_LEN ((RSA_MAX_MODULUS_BITS + 7) / 8)
+#define MAX_SIGNATURE_LEN MAX_ML_DSA_SIGNATURE_LEN
 
 
 
@@ -360,6 +362,26 @@ struct DSAPrivateKeyStr {
     SECItem privateValue;
 };
 typedef struct DSAPrivateKeyStr DSAPrivateKey;
+
+
+typedef struct MLDSAPrivateKeyStr MLDSAPrivateKey;
+typedef struct MLDSAPublicKeyStr MLDSAPublicKey;
+typedef struct MLDSAContextStr MLDSAContext;
+
+
+struct MLDSAPrivateKeyStr {
+    CK_ML_DSA_PARAMETER_SET_TYPE paramSet;
+    unsigned char keyVal[MAX_ML_DSA_PRIVATE_KEY_LEN];
+    unsigned int keyValLen;
+    unsigned char seed[ML_DSA_SEED_LEN];
+    unsigned int seedLen;
+};
+
+struct MLDSAPublicKeyStr {
+    CK_ML_DSA_PARAMETER_SET_TYPE paramSet;
+    unsigned char keyVal[MAX_ML_DSA_PUBLIC_KEY_LEN];
+    unsigned int keyValLen;
+};
 
 
 

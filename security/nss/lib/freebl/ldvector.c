@@ -449,6 +449,16 @@ static const struct FREEBLVectorStr vector = {
 
     EC_DerivePublicKey,
     
+
+    MLDSA_NewKey,
+    MLDSA_SignInit,
+    MLDSA_SignUpdate,
+    MLDSA_SignFinal,
+    MLDSA_VerifyInit,
+    MLDSA_VerifyUpdate,
+    MLDSA_VerifyFinal,
+    
+
 };
 
 const FREEBLVector*

@@ -22,6 +22,7 @@
 #include "sslexp.h"
 #include "ssl3prot.h"
 #include "hasht.h"
+#include "cryptohi.h"
 #include "nssilock.h"
 #include "pkcs11t.h"
 #if defined(XP_UNIX)
@@ -46,6 +47,7 @@ typedef struct sslPskStr sslPsk;
 typedef struct sslDelegatedCredentialStr sslDelegatedCredential;
 typedef struct sslEphemeralKeyPairStr sslEphemeralKeyPair;
 typedef struct TLS13KeyShareEntryStr TLS13KeyShareEntry;
+typedef struct tlsSignOrVerifyContextStr tlsSignOrVerifyContext;
 
 #include "sslencode.h"
 #include "sslexp.h"
@@ -135,6 +137,22 @@ typedef enum { SSLAppOpRead = 0,
 
 #define SSL_MAX_DH_KEY_BITS 8192
 #define SSL_MAX_RSA_KEY_BITS 8192
+
+
+typedef enum {
+    sig_verify = 0,
+    sig_sign,
+} sslSignOrVerify;
+
+
+struct tlsSignOrVerifyContextStr {
+    sslSignOrVerify type;
+    union {
+        SGNContext *sig;
+        VFYContext *vfy;
+        void *ptr;
+    } u;
+};
 
 
 typedef enum {
@@ -1622,20 +1640,28 @@ extern SECStatus ssl_ParseSignatureSchemes(const sslSocket *ss, PLArenaPool *are
                                            unsigned int *len);
 extern SECStatus ssl_ConsumeSignatureScheme(
     sslSocket *ss, PRUint8 **b, PRUint32 *length, SSLSignatureScheme *out);
-extern SECStatus ssl3_SignHashesWithPrivKey(SSL3Hashes *hash,
-                                            SECKEYPrivateKey *key,
-                                            SSLSignatureScheme scheme,
-                                            PRBool isTls,
-                                            SECItem *buf);
 extern SECStatus ssl3_SignHashes(sslSocket *ss, SSL3Hashes *hash,
                                  SECKEYPrivateKey *key, SECItem *buf);
-extern SECStatus ssl_VerifySignedHashesWithPubKey(sslSocket *ss,
-                                                  SECKEYPublicKey *spki,
-                                                  SSLSignatureScheme scheme,
-                                                  SSL3Hashes *hash,
-                                                  SECItem *buf);
 extern SECStatus ssl3_VerifySignedHashes(sslSocket *ss, SSLSignatureScheme scheme,
                                          SSL3Hashes *hash, SECItem *buf);
+
+
+
+
+
+
+
+
+extern tlsSignOrVerifyContext tls_CreateSignOrVerifyContext(
+    SECKEYPrivateKey *privKey,
+    SECKEYPublicKey *pubKey,
+    SSLSignatureScheme scheme, sslSignOrVerify type,
+    SECItem *signature, void *pwArg);
+SECStatus tls_SignOrVerifyUpdate(tlsSignOrVerifyContext ctx,
+                                 const unsigned char *buf, int len);
+SECStatus tls_SignOrVerifyEnd(tlsSignOrVerifyContext ctx, SECItem *sig);
+void tls_DestroySignOrVerifyContext(tlsSignOrVerifyContext ctx);
+
 extern SECStatus ssl3_CacheWrappedSecret(sslSocket *ss, sslSessionID *sid,
                                          PK11SymKey *secret);
 extern void ssl3_FreeSniNameArray(TLSExtensionData *xtnData);

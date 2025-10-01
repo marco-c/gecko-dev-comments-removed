@@ -836,7 +836,7 @@ tls13_HandleKEMKey(sslSocket *ss,
         goto loser;
     }
 
-    PK11SlotInfo *slot = PK11_GetBestSlot(CKM_NSS_KYBER, ss->pkcs11PinArg);
+    PK11SlotInfo *slot = PK11_GetBestSlot(CKM_ML_KEM, ss->pkcs11PinArg);
     if (!slot) {
         goto loser;
     }
@@ -4320,12 +4320,14 @@ tls13_HandleCertificate(sslSocket *ss, PRUint8 *b, PRUint32 length, PRBool alrea
 
 
 SECStatus
-tls13_AddContextToHashes(sslSocket *ss, const SSL3Hashes *hashes,
-                         SSLHashType algorithm, PRBool sending,
-                         SSL3Hashes *tbsHash)
+tls13_SignOrVerifyHashWithContext(sslSocket *ss, const SSL3Hashes *hashes,
+                                  SECKEYPrivateKey *privKey, SECKEYPublicKey *pubKey,
+                                  SSLSignatureScheme scheme, sslSignOrVerify direction,
+                                  SECItem *signature)
 {
     SECStatus rv = SECSuccess;
-    PK11Context *ctx;
+    tlsSignOrVerifyContext ctx = { sig_verify, { NULL } };
+    void *pwArg = ss->pkcs11PinArg;
     const unsigned char context_padding[] = {
         0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
         0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
@@ -4339,44 +4341,53 @@ tls13_AddContextToHashes(sslSocket *ss, const SSL3Hashes *hashes,
 
     const char *client_cert_verify_string = "TLS 1.3, client CertificateVerify";
     const char *server_cert_verify_string = "TLS 1.3, server CertificateVerify";
-    const char *context_string = (sending ^ ss->sec.isServer) ? client_cert_verify_string
-                                                              : server_cert_verify_string;
-    unsigned int hashlength;
+    const char *context_string = ((direction == sig_sign && ss->sec.isServer) ||
+                                  (direction == sig_verify && !ss->sec.isServer))
+                                     ? server_cert_verify_string
+                                     : client_cert_verify_string;
 
     
     PORT_Assert(hashes->len == tls13_GetHashSize(ss));
 
-    ctx = PK11_CreateDigestContext(ssl3_HashTypeToOID(algorithm));
-    if (!ctx) {
-        PORT_SetError(SEC_ERROR_NO_MEMORY);
+    PRINT_BUF(50, (ss, "TLS 1.3 hash without context", hashes->u.raw, hashes->len));
+    PRINT_BUF(50, (ss, "Context string", context_string, strlen(context_string)));
+
+    ctx = tls_CreateSignOrVerifyContext(privKey, pubKey, scheme,
+                                        direction, signature, pwArg);
+    if (ctx.u.ptr == NULL) {
+        goto loser;
+    }
+    rv = tls_SignOrVerifyUpdate(ctx, context_padding, sizeof(context_padding));
+    if (rv != SECSuccess) {
+        goto loser;
+    }
+    rv = tls_SignOrVerifyUpdate(ctx, (const unsigned char *)context_string,
+                                
+                                strlen(context_string) + 1);
+    if (rv != SECSuccess) {
+        goto loser;
+    }
+    rv = tls_SignOrVerifyUpdate(ctx, hashes->u.raw, hashes->len);
+    if (rv != SECSuccess) {
+        goto loser;
+    }
+    rv = tls_SignOrVerifyEnd(ctx, signature);
+    if (rv) {
         goto loser;
     }
 
-    PORT_Assert(SECFailure);
-    PORT_Assert(!SECSuccess);
-
-    PRINT_BUF(50, (ss, "TLS 1.3 hash without context", hashes->u.raw, hashes->len));
-    PRINT_BUF(50, (ss, "Context string", context_string, strlen(context_string)));
-    rv |= PK11_DigestBegin(ctx);
-    rv |= PK11_DigestOp(ctx, context_padding, sizeof(context_padding));
-    rv |= PK11_DigestOp(ctx, (unsigned char *)context_string,
-                        strlen(context_string) + 1); 
-    rv |= PK11_DigestOp(ctx, hashes->u.raw, hashes->len);
     
-    rv |= PK11_DigestFinal(ctx, tbsHash->u.raw, &hashlength, sizeof(tbsHash->u.raw));
-    PK11_DestroyContext(ctx, PR_TRUE);
-    PRINT_BUF(50, (ss, "TLS 1.3 hash with context", tbsHash->u.raw, hashlength));
-
-    tbsHash->len = hashlength;
-    tbsHash->hashAlg = algorithm;
-
-    if (rv) {
-        ssl_MapLowLevelError(SSL_ERROR_SHA_DIGEST_FAILURE);
-        goto loser;
+    
+    if ((direction == sig_sign && ss->sec.isServer) ||
+        (direction == sig_verify && !ss->sec.isServer)) {
+        ss->sec.signatureScheme = scheme;
+        ss->sec.authType = ssl_SignatureSchemeToAuthType(scheme);
     }
     return SECSuccess;
 
 loser:
+    tls_DestroySignOrVerifyContext(ctx);
+    ssl_MapLowLevelError(SSL_ERROR_SIGN_HASHES_FAILURE);
     return SECFailure;
 }
 
@@ -5181,9 +5192,7 @@ tls13_SendCertificateVerify(sslSocket *ss, SECKEYPrivateKey *privKey)
     SECStatus rv = SECFailure;
     SECItem buf = { siBuffer, NULL, 0 };
     unsigned int len;
-    SSLHashType hashAlg;
     SSL3Hashes hash;
-    SSL3Hashes tbsHash; 
 
     PORT_Assert(ss->opt.noLocks || ssl_HaveXmitBufLock(ss));
     PORT_Assert(ss->opt.noLocks || ssl_HaveSSL3HandshakeLock(ss));
@@ -5204,14 +5213,10 @@ tls13_SendCertificateVerify(sslSocket *ss, SECKEYPrivateKey *privKey)
         PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
         return SECFailure;
     }
-    hashAlg = ssl_SignatureSchemeToHashType(ss->ssl3.hs.signatureScheme);
-    rv = tls13_AddContextToHashes(ss, &hash, hashAlg,
-                                  PR_TRUE, &tbsHash);
-    if (rv != SECSuccess) {
-        return SECFailure;
-    }
 
-    rv = ssl3_SignHashes(ss, &tbsHash, privKey, &buf);
+    rv = tls13_SignOrVerifyHashWithContext(ss, &hash, privKey, NULL,
+                                           ss->ssl3.hs.signatureScheme,
+                                           sig_sign, &buf);
     if (rv == SECSuccess && !ss->sec.isServer) {
         
 
@@ -5269,8 +5274,6 @@ tls13_HandleCertificateVerify(sslSocket *ss, PRUint8 *b, PRUint32 length)
     SECItem signed_hash = { siBuffer, NULL, 0 };
     SECStatus rv;
     SSLSignatureScheme sigScheme;
-    SSLHashType hashAlg;
-    SSL3Hashes tbsHash;
     SSL3Hashes hashes;
 
     SSL_TRC(3, ("%d: TLS13[%d]: handle certificate_verify handshake",
@@ -5344,13 +5347,6 @@ tls13_HandleCertificateVerify(sslSocket *ss, PRUint8 *b, PRUint32 length)
         FATAL_ERROR(ss, PORT_GetError(), illegal_parameter);
         return SECFailure;
     }
-    hashAlg = ssl_SignatureSchemeToHashType(sigScheme);
-
-    rv = tls13_AddContextToHashes(ss, &hashes, hashAlg, PR_FALSE, &tbsHash);
-    if (rv != SECSuccess) {
-        FATAL_ERROR(ss, SSL_ERROR_DIGEST_FAILURE, internal_error);
-        return SECFailure;
-    }
 
     rv = ssl3_ConsumeHandshakeVariable(ss, &signed_hash, 2, &b, &length);
     if (rv != SECSuccess) {
@@ -5369,8 +5365,8 @@ tls13_HandleCertificateVerify(sslSocket *ss, PRUint8 *b, PRUint32 length)
         return SECFailure;
     }
 
-    rv = ssl_VerifySignedHashesWithPubKey(ss, pubKey, sigScheme,
-                                          &tbsHash, &signed_hash);
+    rv = tls13_SignOrVerifyHashWithContext(ss, &hashes, NULL, pubKey,
+                                           sigScheme, sig_verify, &signed_hash);
     if (rv != SECSuccess) {
         FATAL_ERROR(ss, PORT_GetError(), decrypt_error);
         goto loser;

@@ -380,7 +380,8 @@ static const struct mechanismList mechanisms[] = {
     { CKM_SHA256_RSA_PKCS_PSS, { RSA_MIN_MODULUS_BITS, CK_MAX, CKF_SN_VR }, PR_TRUE },
     { CKM_SHA384_RSA_PKCS_PSS, { RSA_MIN_MODULUS_BITS, CK_MAX, CKF_SN_VR }, PR_TRUE },
     { CKM_SHA512_RSA_PKCS_PSS, { RSA_MIN_MODULUS_BITS, CK_MAX, CKF_SN_VR }, PR_TRUE },
-    
+
+#ifndef NSS_DISABLE_DSA
     { CKM_DSA_KEY_PAIR_GEN, { DSA_MIN_P_BITS, DSA_MAX_P_BITS, CKF_GENERATE_KEY_PAIR }, PR_TRUE },
     { CKM_DSA, { DSA_MIN_P_BITS, DSA_MAX_P_BITS, CKF_SN_VR }, PR_TRUE },
     { CKM_DSA_PARAMETER_GEN, { DSA_MIN_P_BITS, DSA_MAX_P_BITS, CKF_GENERATE }, PR_TRUE },
@@ -389,6 +390,7 @@ static const struct mechanismList mechanisms[] = {
     { CKM_DSA_SHA256, { DSA_MIN_P_BITS, DSA_MAX_P_BITS, CKF_SN_VR }, PR_TRUE },
     { CKM_DSA_SHA384, { DSA_MIN_P_BITS, DSA_MAX_P_BITS, CKF_SN_VR }, PR_TRUE },
     { CKM_DSA_SHA512, { DSA_MIN_P_BITS, DSA_MAX_P_BITS, CKF_SN_VR }, PR_TRUE },
+#endif
     
     
     { CKM_DH_PKCS_KEY_PAIR_GEN, { DH_MIN_P_BITS, DH_MAX_P_BITS, CKF_GENERATE_KEY_PAIR }, PR_TRUE },
@@ -601,6 +603,8 @@ static const struct mechanismList mechanisms[] = {
       PR_FALSE },
     { CKM_TLS_MASTER_KEY_DERIVE_DH, { 8, 128, CKF_DERIVE }, PR_FALSE },
     { CKM_TLS12_MASTER_KEY_DERIVE_DH, { 8, 128, CKF_DERIVE }, PR_FALSE },
+    { CKM_TLS12_EXTENDED_MASTER_KEY_DERIVE, { 48, 128, CKF_DERIVE }, PR_FALSE },
+    { CKM_TLS12_EXTENDED_MASTER_KEY_DERIVE_DH, { 48, 128, CKF_DERIVE }, PR_FALSE },
     { CKM_NSS_TLS_MASTER_KEY_DERIVE_DH_SHA256,
       { 8, 128, CKF_DERIVE },
       PR_FALSE },
@@ -683,6 +687,11 @@ static const struct mechanismList mechanisms[] = {
     { CKM_NSS_ML_KEM, { 0, 0, CKF_KEM }, PR_TRUE },
     { CKM_ML_KEM_KEY_PAIR_GEN, { 0, 0, CKF_GENERATE_KEY_PAIR }, PR_TRUE },
     { CKM_ML_KEM, { 0, 0, CKF_KEM }, PR_TRUE },
+
+#ifdef NSS_ENABLE_ML_DSA
+    { CKM_ML_DSA_KEY_PAIR_GEN, { ML_DSA_44_PUBLICKEY_LEN, ML_DSA_87_PUBLICKEY_LEN, CKF_GENERATE }, PR_TRUE },
+    { CKM_ML_DSA, { ML_DSA_44_PUBLICKEY_LEN, ML_DSA_87_PUBLICKEY_LEN, CKF_SN_VR }, PR_TRUE },
+#endif
 };
 static const CK_ULONG mechanismCount = sizeof(mechanisms) / sizeof(mechanisms[0]);
 
@@ -1107,6 +1116,7 @@ sftk_handlePublicKeyObject(SFTKSession *session, SFTKObject *object,
     CK_BBOOL derive = CK_FALSE;
     CK_BBOOL verify = CK_TRUE;
     CK_BBOOL encapsulate = CK_FALSE;
+    CK_ULONG paramSet = 0;
     CK_RV crv;
 
     switch (key_type) {
@@ -1197,6 +1207,25 @@ sftk_handlePublicKeyObject(SFTKSession *session, SFTKObject *object,
             wrap = CK_FALSE;
             encapsulate = CK_TRUE;
             break;
+        case CKK_ML_DSA:
+            if (!sftk_hasAttribute(object, CKA_PARAMETER_SET)) {
+                return CKR_TEMPLATE_INCOMPLETE;
+            }
+            crv = sftk_GetULongAttribute(object, CKA_PARAMETER_SET,
+                                         &paramSet);
+            if (crv != CKR_OK) {
+                return crv;
+            }
+            if (sftk_MLDSAGetSigLen(paramSet) == 0) {
+                return CKR_ATTRIBUTE_VALUE_INVALID;
+            }
+            derive = CK_FALSE;
+            verify = CK_TRUE;
+            encrypt = CK_FALSE;
+            recover = CK_FALSE;
+            wrap = CK_FALSE;
+            encapsulate = CK_FALSE;
+            break;
         default:
             return CKR_ATTRIBUTE_VALUE_INVALID;
     }
@@ -1279,6 +1308,7 @@ sftk_handlePrivateKeyObject(SFTKSession *session, SFTKObject *object, CK_KEY_TYP
     CK_BBOOL derive = CK_TRUE;
     CK_BBOOL decapsulate = CK_FALSE;
     CK_BBOOL ckfalse = CK_FALSE;
+    CK_ULONG paramSet = 0;
     PRBool createObjectInfo = PR_TRUE;
     PRBool fillPrivateKey = PR_FALSE;
     int missing_rsa_mod_component = 0;
@@ -1424,6 +1454,83 @@ sftk_handlePrivateKeyObject(SFTKSession *session, SFTKObject *object, CK_KEY_TYP
             encrypt = sign = recover = wrap = CK_FALSE;
             decapsulate = CK_TRUE;
             break;
+        case CKK_ML_DSA:
+            if (!sftk_hasAttribute(object, CKA_KEY_TYPE)) {
+                return CKR_TEMPLATE_INCOMPLETE;
+            }
+            
+            if (!sftk_hasAttribute(object, CKA_PARAMETER_SET)) {
+                return CKR_TEMPLATE_INCOMPLETE;
+            }
+            
+            crv = sftk_GetULongAttribute(object, CKA_PARAMETER_SET,
+                                         &paramSet);
+            if (crv != CKR_OK) {
+                return crv;
+            }
+            if (sftk_MLDSAGetSigLen(paramSet) == 0) {
+                return CKR_ATTRIBUTE_VALUE_INVALID;
+            }
+            
+
+
+
+            if (sftk_hasAttribute(object, CKA_SEED)) {
+                PRBool seedOK = sftk_hasAttribute(object, CKA_NSS_SEED_OK);
+                SFTKAttribute *seedAttribute = sftk_FindAttribute(object,
+                                                                  CKA_SEED);
+                PORT_Assert(seedAttribute);
+                crv = CKR_OK;
+                if (seedAttribute->attrib.ulValueLen != 0) {
+                    SFTKAttribute *valueAttribute =
+                        sftk_FindAttribute(object, CKA_VALUE);
+                    unsigned int valueLen = valueAttribute ? valueAttribute->attrib.ulValueLen : 0;
+                    if (!seedOK || valueLen == 0) {
+                        MLDSAPrivateKey privKey;
+                        MLDSAPublicKey pubKey;
+                        SECItem seedItem;
+
+                        seedItem.data = seedAttribute->attrib.pValue;
+                        seedItem.len = seedAttribute->attrib.ulValueLen;
+                        rv = MLDSA_NewKey(paramSet, &seedItem, &privKey,
+                                          &pubKey);
+                        if (rv != SECSuccess) {
+                            crv = CKR_ATTRIBUTE_VALUE_INVALID;
+                        } else if (valueLen == 0) {
+                            crv = sftk_forceAttribute(object, CKA_VALUE,
+                                                      privKey.keyVal,
+                                                      privKey.keyValLen);
+                        } else {
+                            
+
+                            PORT_Assert(!seedOK);
+                            if ((privKey.keyValLen != valueLen) ||
+                                (PORT_Memcmp(valueAttribute->attrib.pValue,
+                                             privKey.keyVal, valueLen) != 0)) {
+                                crv = CKR_ATTRIBUTE_VALUE_INVALID;
+                            }
+                        }
+                        PORT_SafeZero(&privKey, sizeof(privKey));
+                        PORT_SafeZero(&pubKey, sizeof(pubKey));
+                    }
+                    if (valueAttribute)
+                        sftk_FreeAttribute(valueAttribute);
+                }
+                sftk_FreeAttribute(seedAttribute);
+                if (crv != CKR_OK) {
+                    return crv;
+                }
+            }
+            sftk_DeleteAttributeType(object, CKA_NSS_SEED_OK);
+            
+
+            if (!sftk_hasAttribute(object, CKA_VALUE)) {
+                return CKR_TEMPLATE_INCOMPLETE;
+            }
+            encrypt = decapsulate = recover = wrap = CK_FALSE;
+            sign = CK_TRUE;
+            break;
+
         default:
             return CKR_ATTRIBUTE_VALUE_INVALID;
     }
@@ -2122,6 +2229,19 @@ sftk_GetPubKey(SFTKObject *object, CK_KEY_TYPE key_type,
         case CKK_ML_KEM:
             crv = CKR_OK;
             break;
+        case CKK_ML_DSA:
+            pubKey->keyType = NSSLOWKEYMLDSAKey;
+            crv = sftk_ReadAttribute(object, CKA_VALUE,
+                                     pubKey->u.mldsa.keyVal,
+                                     sizeof(pubKey->u.mldsa.keyVal),
+                                     &pubKey->u.mldsa.keyValLen);
+            if (crv != CKR_OK) {
+                break;
+            }
+            crv = sftk_GetULongAttribute(object, CKA_PARAMETER_SET,
+                                         &pubKey->u.mldsa.paramSet);
+
+            break;
         default:
             crv = CKR_KEY_TYPE_INCONSISTENT;
             break;
@@ -2293,6 +2413,29 @@ sftk_mkPrivKey(SFTKObject *object, CK_KEY_TYPE key_type, CK_RV *crvp)
 #endif
         case CKK_NSS_ML_KEM:
         case CKK_ML_KEM:
+            break;
+
+        case CKK_ML_DSA:
+            privKey->keyType = NSSLOWKEYMLDSAKey;
+            crv = sftk_ReadAttribute(object, CKA_VALUE,
+                                     privKey->u.mldsa.keyVal,
+                                     sizeof(privKey->u.mldsa.keyVal),
+                                     &privKey->u.mldsa.keyValLen);
+            if (crv != CKR_OK) {
+                break;
+            }
+            crv = sftk_ReadAttribute(object, CKA_SEED,
+                                     privKey->u.mldsa.seed,
+                                     sizeof(privKey->u.mldsa.seed),
+                                     &privKey->u.mldsa.seedLen);
+            if (crv != CKR_OK) {
+                
+
+                privKey->u.mldsa.seedLen = 0;
+            }
+            crv = sftk_GetULongAttribute(object, CKA_PARAMETER_SET,
+                                         &privKey->u.mldsa.paramSet);
+
             break;
 
         default:
@@ -2545,6 +2688,19 @@ sftk_PutPubKey(SFTKObject *publicKey, SFTKObject *privateKey, CK_KEY_TYPE keyTyp
             crv = sftk_AddAttributeType(publicKey, CKA_VALUE,
                                         sftk_item_expand(&pubKey->u.dsa.publicValue));
             break;
+        case CKK_ML_DSA:
+            sftk_DeleteAttributeType(publicKey, CKA_VALUE);
+            sftk_DeleteAttributeType(publicKey, CKA_PARAMETER_SET);
+            crv = sftk_AddAttributeType(publicKey, CKA_VALUE,
+                                        pubKey->u.mldsa.keyVal,
+                                        pubKey->u.mldsa.keyValLen);
+            if (crv != CKR_OK) {
+                break;
+            }
+            crv = sftk_AddAttributeType(publicKey, CKA_PARAMETER_SET,
+                                        (unsigned char *)&pubKey->u.mldsa.paramSet,
+                                        sizeof(pubKey->u.mldsa.paramSet));
+            break;
         case CKK_DH:
             sftk_DeleteAttributeType(publicKey, CKA_PRIME);
             sftk_DeleteAttributeType(publicKey, CKA_BASE);
@@ -2605,6 +2761,12 @@ sftk_PutPubKey(SFTKObject *publicKey, SFTKObject *privateKey, CK_KEY_TYPE keyTyp
     }
     if (sftk_isTrue(privateKey, CKA_SIGN_RECOVER)) {
         crv = sftk_forceAttribute(publicKey, CKA_VERIFY_RECOVER, &cktrue, sizeof(CK_BBOOL));
+        if (crv != CKR_OK) {
+            return crv;
+        }
+    }
+    if (sftk_isTrue(privateKey, CKA_DECAPSULATE)) {
+        crv = sftk_forceAttribute(publicKey, CKA_ENCAPSULATE, &cktrue, sizeof(CK_BBOOL));
         if (crv != CKR_OK) {
             return crv;
         }

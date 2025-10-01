@@ -362,7 +362,7 @@ static const CK_MECHANISM_TYPE auth_alg_defs[] = {
     CKM_ECDH1_DERIVE,      
     CKM_RSA_PKCS,          
     CKM_RSA_PKCS_PSS,      
-    CKM_NSS_HKDF_SHA256,   
+    CKM_HKDF_DATA,         
     CKM_INVALID_MECHANISM  
 };
 PR_STATIC_ASSERT(PR_ARRAY_SIZE(auth_alg_defs) == ssl_auth_size);
@@ -1389,7 +1389,8 @@ ssl3_GetNewRandom(SSL3Random random)
     return rv;
 }
 
-SECStatus
+
+static SECStatus
 ssl3_SignHashesWithPrivKey(SSL3Hashes *hash, SECKEYPrivateKey *key,
                            SSLSignatureScheme scheme, PRBool isTls, SECItem *buf)
 {
@@ -1451,6 +1452,7 @@ ssl3_SignHashesWithPrivKey(SSL3Hashes *hash, SECKEYPrivateKey *key,
             goto done;
         }
         
+
 
         rv = NSS_OptionGet(NSS_KEY_SIZE_POLICY_FLAGS, &optval);
         if ((rv == SECSuccess) &&
@@ -1527,7 +1529,8 @@ ssl3_SignHashes(sslSocket *ss, SSL3Hashes *hash, SECKEYPrivateKey *key,
 }
 
 
-SECStatus
+
+static SECStatus
 ssl_VerifySignedHashesWithPubKey(sslSocket *ss, SECKEYPublicKey *key,
                                  SSLSignatureScheme scheme,
                                  SSL3Hashes *hash, SECItem *buf)
@@ -3755,7 +3758,7 @@ tls_ComputeExtendedMasterSecretInt(sslSocket *ss, PK11SymKey *pms,
                                    PK11SymKey **msp)
 {
     ssl3CipherSpec *pwSpec = ss->ssl3.pwSpec;
-    CK_NSS_TLS_EXTENDED_MASTER_KEY_DERIVE_PARAMS extended_master_params;
+    CK_TLS12_EXTENDED_MASTER_KEY_DERIVE_PARAMS extended_master_params;
     SSL3Hashes hashes;
 
     
@@ -3783,9 +3786,9 @@ tls_ComputeExtendedMasterSecretInt(sslSocket *ss, PK11SymKey *pms,
     }
 
     if (isDH) {
-        master_derive = CKM_NSS_TLS_EXTENDED_MASTER_KEY_DERIVE_DH;
+        master_derive = CKM_TLS12_EXTENDED_MASTER_KEY_DERIVE_DH;
     } else {
-        master_derive = CKM_NSS_TLS_EXTENDED_MASTER_KEY_DERIVE;
+        master_derive = CKM_TLS12_EXTENDED_MASTER_KEY_DERIVE;
         pms_version_ptr = &pms_version;
     }
 

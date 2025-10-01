@@ -197,6 +197,17 @@ extern SECOidTag SEC_GetSignatureAlgorithmOidTag(KeyType keyType,
 
 
 
+extern SECOidTag SEC_GetSignatureAlgorithmOidTagByKey(const SECKEYPrivateKey *privKey,
+                                                      const SECKEYPublicKey *pubKey,
+                                                      SECOidTag hashAlgTag);
+
+
+
+
+
+
+
+
 
 
 
@@ -206,6 +217,42 @@ extern SECItem *SEC_CreateSignatureAlgorithmParameters(PLArenaPool *arena,
                                                        SECOidTag hashAlgTag,
                                                        const SECItem *params,
                                                        const SECKEYPrivateKey *key);
+
+
+
+
+
+
+
+
+
+
+
+extern SECItem *SEC_CreateVerifyAlgorithmParameters(PLArenaPool *arena,
+                                                    SECItem *result,
+                                                    SECOidTag signAlgTag,
+                                                    SECOidTag hashAlgTag,
+                                                    const SECItem *params,
+                                                    const SECKEYPublicKey *key);
+
+
+
+
+
+
+
+
+
+
+
+
+extern SECStatus SEC_CreateSignatureAlgorithmID(PLArenaPool *arena,
+                                                SECAlgorithmID *sigAlgID,
+                                                SECOidTag sigAlgTag,
+                                                SECOidTag hashAlgTag,
+                                                const SECItem *params,
+                                                const SECKEYPrivateKey *privKey,
+                                                const SECKEYPublicKey *pubKey);
 
 
 
