@@ -3357,6 +3357,7 @@ void nsWindow::RecomputeBounds(MayChangeCsdMargin aMayChangeCsdMargin) {
     mClientMargin =
         LayoutDeviceIntRect(LayoutDeviceIntPoint(), mBounds.Size()) -
         roundedClientRect;
+    mClientMargin.EnsureAtLeast(LayoutDeviceIntMargin());
   } else {
     
   }
