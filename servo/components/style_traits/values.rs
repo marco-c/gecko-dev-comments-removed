@@ -580,7 +580,12 @@ pub mod specified {
 
 
 #[derive(Clone, Debug)]
-pub enum TypedValue {}
+#[repr(C)]
+pub enum TypedValue {
+    
+    
+    Placeholder,
+}
 
 
 

@@ -7,6 +7,7 @@
 #ifndef LAYOUT_STYLE_TYPEDOM_CSSUNSUPPORTEDVALUE_H_
 #define LAYOUT_STYLE_TYPEDOM_CSSUNSUPPORTEDVALUE_H_
 
+#include "mozilla/RefPtr.h"
 #include "mozilla/dom/CSSStyleValue.h"
 #include "nsString.h"
 
@@ -16,18 +17,29 @@ class nsISupports;
 
 namespace mozilla {
 
+class DeclarationBlock;
+
 namespace dom {
+
+
+
+
+
+
 
 class CSSUnsupportedValue final : public CSSStyleValue {
  public:
-  CSSUnsupportedValue(nsCOMPtr<nsISupports> aParent, const nsACString& aValue);
+  CSSUnsupportedValue(nsCOMPtr<nsISupports> aParent,
+                      const nsACString& aProperty,
+                      RefPtr<DeclarationBlock> aDeclarations);
 
-  const nsACString& GetValue() const { return mValue; }
+  nsCString GetValue() const;
 
  private:
   virtual ~CSSUnsupportedValue() = default;
 
-  nsCString mValue;
+  nsCString mProperty;
+  RefPtr<DeclarationBlock> mDeclarations;
 };
 
 }  

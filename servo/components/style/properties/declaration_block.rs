@@ -42,7 +42,7 @@ use smallvec::SmallVec;
 use std::fmt::{self, Write};
 use std::iter::Zip;
 use std::slice::Iter;
-use style_traits::{CssWriter, ParseError, ParsingMode, StyleParseErrorKind, ToCss};
+use style_traits::{CssWriter, ParseError, ParsingMode, StyleParseErrorKind, ToCss, TypedValue};
 use thin_vec::ThinVec;
 
 
@@ -111,6 +111,25 @@ impl Importance {
             Self::Important => true,
         }
     }
+}
+
+
+
+
+
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub enum PropertyTypedValue {
+    
+    None,
+
+    
+    
+    
+    Unsupported,
+
+    
+    Typed(TypedValue),
 }
 
 
@@ -573,6 +592,32 @@ impl PropertyDeclarationBlock {
                 
                 self.get(longhand_or_custom)
                     .map_or(Importance::Normal, |(_, importance)| importance)
+            },
+        }
+    }
+
+    
+    pub fn property_value_to_typed(&self, property: &PropertyId) -> PropertyTypedValue {
+        match property.as_shorthand() {
+            Ok(shorthand) => {
+                if shorthand
+                    .longhands()
+                    .all(|longhand| self.contains(PropertyDeclarationId::Longhand(longhand)))
+                {
+                    PropertyTypedValue::Unsupported
+                } else {
+                    PropertyTypedValue::None
+                }
+            },
+            Err(longhand_or_custom) => match self.get(longhand_or_custom) {
+                Some((value, _importance)) => {
+                    if let Some(typed_value) = value.to_typed() {
+                        PropertyTypedValue::Typed(typed_value)
+                    } else {
+                        PropertyTypedValue::Unsupported
+                    }
+                },
+                None => PropertyTypedValue::None,
             },
         }
     }
