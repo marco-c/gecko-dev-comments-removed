@@ -274,6 +274,37 @@ add_task(async function test_backup_private_browsing() {
 
 
 
+
+
+async function checkPrefsJsHasValidRecoveryTime(prefsJsPath) {
+  Assert.equal(
+    Services.prefs.getPrefType("browser.backup.profile-restoration-date"),
+    Services.prefs.PREF_INVALID,
+    "Restoration pref not set since current profile was not restored"
+  );
+
+  
+  
+  const contents = await IOUtils.readUTF8(prefsJsPath);
+  const dateRegex =
+    /pref\("browser\.backup\.profile-restoration-date", (\d+)\);/;
+  let restoreDate = contents.match(dateRegex);
+  Assert.equal(restoreDate.length, 2, "found the restoration date");
+
+  const kOneWeekAgoInSec =
+    60  * 60  * 24  * 7; 
+  const nowInSeconds = Math.round(Date.now() / 1000);
+  Assert.lessOrEqual(
+    Math.abs(nowInSeconds - Number(restoreDate[1])),
+    kOneWeekAgoInSec,
+    "timestamp was within one week of now"
+  );
+}
+
+
+
+
+
 add_task(async function test_recover() {
   let sandbox = sinon.createSandbox();
   let preferencesBackupResource = new PreferencesBackupResource();
@@ -368,6 +399,9 @@ add_task(async function test_recover() {
   );
 
   await assertFilesExist(destProfilePath, simpleCopyFiles);
+  await checkPrefsJsHasValidRecoveryTime(
+    PathUtils.join(destProfilePath, "prefs.js")
+  );
 
   
   
