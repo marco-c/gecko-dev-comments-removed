@@ -33,17 +33,13 @@
 
 
 
-
-#define _USE_MATH_DEFINES
-
-#include <math.h>
-#include <stdio.h>
-
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <map>
 #include <memory>
+#include <numbers>
 #include <optional>
 #include <string>
 #include <utility>
@@ -108,7 +104,8 @@ std::unique_ptr<MockWavReaderFactory> CreateMockWavReaderFactory() {
 void CreateSineWavFile(absl::string_view filepath,
                        const MockWavReaderFactory::Params& params,
                        float frequency_hz = 440.0f) {
-  const double phase_step = 2 * M_PI * frequency_hz / params.sample_rate;
+  const double phase_step =
+      2 * std::numbers::pi * frequency_hz / params.sample_rate;
   double phase = 0.0;
   std::vector<int16_t> samples(params.num_samples);
   for (size_t i = 0; i < params.num_samples; ++i) {

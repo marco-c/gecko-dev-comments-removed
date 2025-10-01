@@ -8,12 +8,11 @@
 
 
 
-#define _USE_MATH_DEFINES
-
 #include "common_audio/window_generator.h"
 
 #include <cmath>
 #include <complex>
+#include <cstddef>
 
 #include "rtc_base/checks.h"
 

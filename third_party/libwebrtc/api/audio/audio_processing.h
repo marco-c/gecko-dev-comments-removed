@@ -11,18 +11,11 @@
 #ifndef API_AUDIO_AUDIO_PROCESSING_H_
 #define API_AUDIO_AUDIO_PROCESSING_H_
 
-
-#ifndef _USE_MATH_DEFINES
-#define _USE_MATH_DEFINES
-#endif
-
-#include <math.h>
-#include <stddef.h>  
-#include <stdio.h>   
-#include <string.h>
-
 #include <array>
+#include <cstddef>
 #include <cstdint>
+#include <cstdio>
+#include <cstring>
 #include <memory>
 #include <optional>
 #include <string>
