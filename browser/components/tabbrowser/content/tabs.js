@@ -244,14 +244,13 @@
 
     handleEvent(aEvent) {
       switch (aEvent.type) {
-        case "mouseout": {
+        case "mouseout":
           
           
           let relatedTarget = aEvent.relatedTarget;
           if (relatedTarget && relatedTarget.ownerDocument == document) {
             break;
           }
-        }
         
         case "mousemove":
           if (
@@ -264,14 +263,13 @@
         case "mouseleave":
           this.previewPanel?.deactivate();
           break;
-        default: {
+        default:
           let methodName = `on_${aEvent.type}`;
           if (methodName in this) {
             this[methodName](aEvent);
           } else {
             throw new Error(`Unexpected event ${aEvent.type}`);
           }
-        }
       }
     }
 
@@ -1100,7 +1098,7 @@
 
     observe(aSubject, aTopic) {
       switch (aTopic) {
-        case "nsPref:changed": {
+        case "nsPref:changed":
           
           
           
@@ -1167,7 +1165,6 @@
           }
 
           break;
-        }
       }
     }
 

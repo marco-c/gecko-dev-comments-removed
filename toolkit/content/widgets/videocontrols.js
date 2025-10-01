@@ -912,12 +912,11 @@ this.VideoControlsImplWidget = class {
               case this.controlsSpacer:
                 this.clickToPlayClickHandler(aEvent);
                 break;
-              case this.textTrackList: {
+              case this.textTrackList:
                 const index = +aEvent.originalTarget.getAttribute("index");
                 this.changeTextTrack(index);
                 this.closedCaptionButton.focus();
                 break;
-              }
               case this.videocontrols:
                 
                 aEvent.stopPropagation();
@@ -927,7 +926,7 @@ this.VideoControlsImplWidget = class {
           case "dblclick":
             this.toggleFullscreen();
             break;
-          case "resizevideocontrols": {
+          case "resizevideocontrols":
             
             
             
@@ -952,7 +951,6 @@ this.VideoControlsImplWidget = class {
             }
             this.updatePictureInPictureToggleDisplay();
             break;
-          }
           case "fullscreenchange":
             this.onFullscreenChange();
             break;

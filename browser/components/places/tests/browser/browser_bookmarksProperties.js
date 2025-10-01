@@ -119,7 +119,7 @@ gTests.push({
               .getElementById("bookmarkpropertiesdialog")
               .cancelDialog();
             break;
-          case "popupshown": {
+          case "popupshown":
             tagsField.popup.removeEventListener("popupshown", this, true);
             
             
@@ -140,7 +140,6 @@ gTests.push({
             richlistbox.focus();
             EventUtils.synthesizeKey("VK_RETURN", {}, self.window);
             break;
-          }
           default:
             Assert.ok(false, "unknown event: " + aEvent.type);
         }
@@ -248,7 +247,7 @@ gTests.push({
               .getElementById("bookmarkpropertiesdialog")
               .cancelDialog();
             break;
-          case "popupshown": {
+          case "popupshown":
             tagsField.popup.removeEventListener("popupshown", this, true);
             
             
@@ -269,7 +268,6 @@ gTests.push({
             richlistbox.focus();
             EventUtils.synthesizeKey("VK_ESCAPE", {}, self.window);
             break;
-          }
           default:
             Assert.ok(false, "unknown event: " + aEvent.type);
         }
