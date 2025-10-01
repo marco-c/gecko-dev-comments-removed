@@ -941,22 +941,15 @@ bool Navigation::FireTraverseNavigateEvent(
 
 bool Navigation::FirePushReplaceReloadNavigateEvent(
     JSContext* aCx, NavigationType aNavigationType, nsIURI* aDestinationURL,
-    bool aIsSameDocument, bool aIsSync,
-    Maybe<UserNavigationInvolvement> aUserInvolvement, Element* aSourceElement,
-    already_AddRefed<FormData> aFormDataEntryList,
+    bool aIsSameDocument, Maybe<UserNavigationInvolvement> aUserInvolvement,
+    Element* aSourceElement, already_AddRefed<FormData> aFormDataEntryList,
     nsIStructuredCloneContainer* aNavigationAPIState,
     nsIStructuredCloneContainer* aClassicHistoryAPIState) {
   
   
   
 
-  
-  
-  if (aIsSync) {
-    while (HasOngoingNavigateEvent()) {
-      AbortOngoingNavigation(aCx);
-    }
-  }
+  InnerInformAboutAbortingNavigation(aCx);
 
   
   RefPtr<NavigationDestination> destination =
@@ -1621,6 +1614,16 @@ void Navigation::PromoteUpcomingAPIMethodTrackerToOngoing(
       navigation->mUpcomingTraverseAPIMethodTrackers.Contains(*key));
 
   navigation->mUpcomingTraverseAPIMethodTrackers.Remove(*key);
+}
+
+
+void Navigation::InnerInformAboutAbortingNavigation(JSContext* aCx) {
+  
+  
+  
+  while (HasOngoingNavigateEvent()) {
+    AbortOngoingNavigation(aCx);
+  }
 }
 
 

@@ -3970,8 +3970,7 @@ nsresult nsDocShell::ReloadNavigable(
     if (navigation &&
         !navigation->FirePushReplaceReloadNavigateEvent(
             *aCx, NavigationType::Reload, destinationURL,
-             false,  false,
-            Some(aUserInvolvement),
+             false, Some(aUserInvolvement),
              nullptr,  nullptr,
             destinationNavigationAPIState,
              nullptr)) {
@@ -8955,7 +8954,7 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
         
         bool shouldContinue = navigation->FirePushReplaceReloadNavigateEvent(
             jsapi.cx(), aLoadState->GetNavigationType(), newURI,
-             true,  true,
+             true,
             Some(aLoadState->UserNavigationInvolvement()), sourceElement,
              nullptr,
              destinationNavigationAPIState,
@@ -9721,7 +9720,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
           
           bool shouldContinue = navigation->FirePushReplaceReloadNavigateEvent(
               jsapi.cx(), aLoadState->GetNavigationType(), destinationURL,
-               false,  false,
+               false,
               Some(aLoadState->UserNavigationInvolvement()), sourceElement,
               formData.forget(), navigationAPIStateForFiring,
                nullptr);
@@ -11835,7 +11834,7 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
       bool shouldContinue = navigation->FirePushReplaceReloadNavigateEvent(
           aCx, aReplace ? NavigationType::Replace : NavigationType::Push,
           newURI,
-           true,  true,
+           true,
            Nothing(),
            nullptr,  nullptr,
            nullptr, scContainer);
@@ -14509,18 +14508,14 @@ void nsDocShell::InformNavigationAPIAboutAbortingNavigation() {
     return;
   }
 
-  
-  if (!navigation->HasOngoingNavigateEvent()) {
-    return;
-  }
-
   AutoJSAPI jsapi;
   if (!jsapi.Init(navigation->GetOwnerGlobal())) {
     return;
   }
 
   
-  navigation->AbortOngoingNavigation(jsapi.cx());
+  
+  navigation->InnerInformAboutAbortingNavigation(jsapi.cx());
 }
 
 
