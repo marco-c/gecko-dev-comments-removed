@@ -6197,11 +6197,16 @@ static void CollapseWasmFrameSlow(MacroAssembler& masm,
   masm.append(desc, CodeOffset(data.trampolineOffset));
 #else
 
-#  if defined(JS_CODEGEN_MIPS64) || defined(JS_CODEGEN_LOONG64)
+#  if defined(JS_CODEGEN_MIPS64)
   
   masm.mov(&data.trampoline, ScratchRegister);
   
   masm.mov(ScratchRegister, tempForRA);
+#  elif defined(JS_CODEGEN_LOONG64)
+  
+  masm.mov(&data.trampoline, SavedScratchRegister);
+  
+  masm.mov(SavedScratchRegister, tempForRA);
 #  else
   masm.mov(&data.trampoline, tempForRA);
 #  endif
