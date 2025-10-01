@@ -57,7 +57,7 @@ class MOZ_STACK_CLASS TextAutospace final {
 
   
   static bool Enabled(const StyleTextAutospace& aStyleTextAutospace,
-                      const nsTextFrame* aFrame);
+                      const nsIFrame* aFrame);
 
   TextAutospace(const StyleTextAutospace& aStyleTextAutospace,
                 nscoord aSpacing);
@@ -67,10 +67,6 @@ class MOZ_STACK_CLASS TextAutospace final {
   
   
   bool ShouldApplySpacing(CharClass aPrevClass, CharClass aCurrClass) const;
-
-  
-  
-  static bool ShouldSuppressLetterNumeralSpacing(const nsIFrame* aFrame);
 
   
   

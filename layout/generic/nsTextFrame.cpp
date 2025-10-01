@@ -105,47 +105,20 @@ using namespace mozilla;
 using namespace mozilla::dom;
 using namespace mozilla::gfx;
 
-static bool NeedsToMaskPassword(const nsTextFrame* aFrame) {
-  MOZ_ASSERT(aFrame);
-  MOZ_ASSERT(aFrame->GetContent());
-  if (!aFrame->GetContent()->HasFlag(NS_MAYBE_MASKED)) {
-    return false;
-  }
-  
-  
-  
-  const nsIFrame* frame = nsLayoutUtils::GetClosestFrameOfType(
-      const_cast<nsTextFrame*>(aFrame), LayoutFrameType::TextInput);
-  MOZ_ASSERT(frame, "How do we have a masked text node without a text input?");
-  return !frame || !frame->GetContent()->AsElement()->State().HasState(
-                       ElementState::REVEALED);
-}
-
 namespace mozilla {
 
-bool TextAutospace::ShouldSuppressLetterNumeralSpacing(const nsIFrame* aFrame) {
-  const auto wm = aFrame->GetWritingMode();
-  if (wm.IsVertical() && !wm.IsVerticalSideways() &&
-      aFrame->StyleVisibility()->mTextOrientation ==
-          StyleTextOrientation::Upright) {
-    
-    
-    return true;
-  }
-  if (aFrame->Style()->IsTextCombined()) {
-    
-    return true;
-  }
-  if (aFrame->StyleText()->mTextTransform & StyleTextTransform::FULL_WIDTH) {
-    
-    
-    return true;
-  }
-  return false;
+
+
+static bool IsVerticalUpright(const nsIFrame* aFrame) {
+  return (aFrame->GetWritingMode().IsVertical() &&
+          !aFrame->GetWritingMode().IsVerticalSideways() &&
+          aFrame->StyleVisibility()->mTextOrientation ==
+              StyleTextOrientation::Upright) ||
+         aFrame->Style()->IsTextCombined();
 }
 
 bool TextAutospace::Enabled(const StyleTextAutospace& aStyleTextAutospace,
-                            const nsTextFrame* aFrame) {
+                            const nsIFrame* aFrame) {
   if (aStyleTextAutospace == StyleTextAutospace::NO_AUTOSPACE) {
     return false;
   }
@@ -157,13 +130,9 @@ bool TextAutospace::Enabled(const StyleTextAutospace& aStyleTextAutospace,
     return false;
   }
 
-  if (ShouldSuppressLetterNumeralSpacing(aFrame)) {
+  if (IsVerticalUpright(aFrame)) {
     
     
-    return false;
-  }
-
-  if (NeedsToMaskPassword(aFrame)) {
     
     
     return false;
@@ -268,6 +237,19 @@ TextAutospace::BoundarySet TextAutospace::InitBoundarySet(
 }
 
 }  
+
+static bool NeedsToMaskPassword(nsTextFrame* aFrame) {
+  MOZ_ASSERT(aFrame);
+  MOZ_ASSERT(aFrame->GetContent());
+  if (!aFrame->GetContent()->HasFlag(NS_MAYBE_MASKED)) {
+    return false;
+  }
+  nsIFrame* frame =
+      nsLayoutUtils::GetClosestFrameOfType(aFrame, LayoutFrameType::TextInput);
+  MOZ_ASSERT(frame, "How do we have a masked text node without a text input?");
+  return !frame || !frame->GetContent()->AsElement()->State().HasState(
+                       ElementState::REVEALED);
+}
 
 struct TabWidth {
   TabWidth(uint32_t aOffset, uint32_t aWidth)
@@ -3904,9 +3886,6 @@ static Maybe<TextAutospace::CharClass> LastNonMarkCharClass(
 static Maybe<TextAutospace::CharClass> LastNonMarkCharClassInFrame(
     nsTextFrame* aFrame) {
   using CharClass = TextAutospace::CharClass;
-  if (!aFrame->GetContentLength()) {
-    return Nothing();
-  }
   gfxSkipCharsIterator iter = aFrame->EnsureTextRun(nsTextFrame::eInflated);
   iter.SetOriginalOffset(aFrame->GetContentEnd());
   Maybe<CharClass> prevClass =
@@ -3928,16 +3907,9 @@ static Maybe<TextAutospace::CharClass> LastNonMarkCharClassInFrame(
 static Maybe<TextAutospace::CharClass> GetPrecedingCharClassFromMappedFlows(
     const nsTextFrame* aFrame, const gfxTextRun* aTextRun) {
   using CharClass = TextAutospace::CharClass;
-
-  if (aTextRun->GetFlags2() & nsTextFrameUtils::Flags::IsSimpleFlow) {
-    return Nothing();
-  }
-
-  auto data = static_cast<TextRunUserData*>(aTextRun->GetUserData());
-  if (!data) {
-    return Nothing();
-  }
   TextRunMappedFlow* mappedFlows = GetMappedFlows(aTextRun);
+  auto data = static_cast<TextRunUserData*>(aTextRun->GetUserData());
+  MOZ_ASSERT(mappedFlows && data, "missing mapped-flow data!");
 
   
   uint32_t i = 0;
@@ -3985,7 +3957,9 @@ static Maybe<TextAutospace::CharClass> GetPrecedingCharClassFromFrameTree(
       if (prevClass) {
         if ((*prevClass == CharClass::NonIdeographicLetter ||
              *prevClass == CharClass::NonIdeographicNumeral) &&
-            TextAutospace::ShouldSuppressLetterNumeralSpacing(f)) {
+            IsVerticalUpright(f)) {
+          
+          
           return Some(CharClass::Other);
         }
         return prevClass;
@@ -4077,7 +4051,10 @@ void nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
           
           
           
-          prevClass = GetPrecedingCharClassFromMappedFlows(mFrame, mTextRun);
+          if (!(mTextRun->GetFlags2() &
+                nsTextFrameUtils::Flags::IsSimpleFlow)) {
+            prevClass = GetPrecedingCharClassFromMappedFlows(mFrame, mTextRun);
+          }
           
           
           if (!prevClass) {
