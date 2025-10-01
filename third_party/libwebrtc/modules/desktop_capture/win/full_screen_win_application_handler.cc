@@ -20,7 +20,6 @@
 #include "absl/strings/match.h"
 #include "modules/desktop_capture/win/screen_capture_utils.h"
 #include "modules/desktop_capture/win/window_capture_utils.h"
-#include "rtc_base/arraysize.h"
 #include "rtc_base/logging.h"  
 #include "rtc_base/string_utils.h"
 
