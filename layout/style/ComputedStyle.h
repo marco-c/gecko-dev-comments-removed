@@ -71,6 +71,12 @@ class ComputedStyle {
   }
 
   
+  bool GetPropertyTypedValue(const nsACString& aProperty,
+                             StylePropertyTypedValueResult& aOut) const {
+    return Servo_GetComputedTypedValue(this, &aProperty, &aOut);
+  }
+
+  
   
   
   

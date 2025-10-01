@@ -25,9 +25,11 @@ class RefPtr;
 namespace mozilla {
 
 class ErrorResult;
+struct StylePropertyTypedValueResult;
 
 namespace dom {
 
+class Element;
 class OwningUndefinedOrCSSStyleValue;
 
 class StylePropertyMapReadOnly : public nsISupports, public nsWrapperCache {
@@ -43,9 +45,11 @@ class StylePropertyMapReadOnly : public nsISupports, public nsWrapperCache {
 
   
 
+  
   void Get(const nsACString& aProperty, OwningUndefinedOrCSSStyleValue& aRetVal,
            ErrorResult& aRv) const;
 
+  
   void GetAll(const nsACString& aProperty,
               nsTArray<RefPtr<CSSStyleValue>>& aRetVal, ErrorResult& aRv) const;
 
@@ -68,8 +72,23 @@ class StylePropertyMapReadOnly : public nsISupports, public nsWrapperCache {
  protected:
   virtual ~StylePropertyMapReadOnly() = default;
 
+  class Declarations {
+   public:
+    explicit Declarations(bool aComputed) : mComputed(aComputed) {}
+
+    
+    
+    StylePropertyTypedValueResult Get(Element* aElement,
+                                      const nsACString& aProperty,
+                                      ErrorResult& aRv) const;
+
+   private:
+    const bool mComputed;
+  };
+
+  
   nsCOMPtr<nsISupports> mParent;
-  const bool mComputed;
+  const Declarations mDeclarations;
 };
 
 }  

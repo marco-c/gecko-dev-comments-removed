@@ -118,7 +118,6 @@ impl Importance {
 
 
 #[derive(Clone, Debug)]
-#[repr(C)]
 pub enum PropertyTypedValue {
     
     None,
