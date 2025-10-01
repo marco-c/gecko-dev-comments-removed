@@ -291,15 +291,15 @@ class MacroAssemblerMIPS64Compat : public MacroAssemblerMIPS64 {
   void mov(Address src, Register dest) { MOZ_CRASH("NYI-IC"); }
 
   void writeDataRelocation(const Value& val) {
+    MOZ_ASSERT(val.isGCThing(), "only called for gc-things");
+
     
     
-    if (val.isGCThing()) {
-      gc::Cell* cell = val.toGCThing();
-      if (cell && gc::IsInsideNursery(cell)) {
-        embedsNurseryPointers_ = true;
-      }
-      dataRelocations_.writeUnsigned(currentOffset());
+    gc::Cell* cell = val.toGCThing();
+    if (cell && gc::IsInsideNursery(cell)) {
+      embedsNurseryPointers_ = true;
     }
+    dataRelocations_.writeUnsigned(currentOffset());
   }
 
   void branch(JitCode* c) {
@@ -442,14 +442,6 @@ class MacroAssemblerMIPS64Compat : public MacroAssemblerMIPS64 {
     as_xor(dest, src, ScratchRegister);
   }
 
-  template <typename T>
-  void unboxObjectOrNull(const T& src, Register dest) {
-    unboxNonDouble(src, dest, JSVAL_TYPE_OBJECT);
-    static_assert(JS::detail::ValueObjectOrNullBit ==
-                  (uint64_t(0x8) << JSVAL_TAG_SHIFT));
-    ma_dins(dest, zero, Imm32(JSVAL_TAG_SHIFT + 3), Imm32(1));
-  }
-
   void unboxGCThingForGCBarrier(const Address& src, Register dest) {
     loadPtr(src, dest);
     ma_dext(dest, dest, Imm32(0), Imm32(JSVAL_TAG_SHIFT));
@@ -521,7 +513,12 @@ class MacroAssemblerMIPS64Compat : public MacroAssemblerMIPS64 {
 
   
   void boxDouble(FloatRegister src, const ValueOperand& dest, FloatRegister);
-  void boxNonDouble(JSValueType type, Register src, const ValueOperand& dest);
+  void boxNonDouble(JSValueType type, Register src, const ValueOperand& dest) {
+    boxValue(type, src, dest.valueReg());
+  }
+  void boxNonDouble(Register type, Register src, const ValueOperand& dest) {
+    boxValue(type, src, dest.valueReg());
+  }
 
   
   
@@ -583,63 +580,8 @@ class MacroAssemblerMIPS64Compat : public MacroAssemblerMIPS64 {
     }
   }
 
-  void storeUnboxedPayload(ValueOperand value, BaseIndex address, size_t nbytes,
-                           JSValueType type) {
-    switch (nbytes) {
-      case 8:
-        if (type == JSVAL_TYPE_OBJECT) {
-          unboxObjectOrNull(value, SecondScratchReg);
-        } else {
-          unboxNonDouble(value, SecondScratchReg, type);
-        }
-        computeEffectiveAddress(address, ScratchRegister);
-        as_sd(SecondScratchReg, ScratchRegister, 0);
-        return;
-      case 4:
-        store32(value.valueReg(), address);
-        return;
-      case 1:
-        store8(value.valueReg(), address);
-        return;
-      default:
-        MOZ_CRASH("Bad payload width");
-    }
-  }
-
-  void storeUnboxedPayload(ValueOperand value, Address address, size_t nbytes,
-                           JSValueType type) {
-    switch (nbytes) {
-      case 8:
-        if (type == JSVAL_TYPE_OBJECT) {
-          unboxObjectOrNull(value, SecondScratchReg);
-        } else {
-          unboxNonDouble(value, SecondScratchReg, type);
-        }
-        storePtr(SecondScratchReg, address);
-        return;
-      case 4:
-        store32(value.valueReg(), address);
-        return;
-      case 1:
-        store8(value.valueReg(), address);
-        return;
-      default:
-        MOZ_CRASH("Bad payload width");
-    }
-  }
-
-  void boxValue(JSValueType type, Register src, Register dest) {
-    MOZ_ASSERT(src != dest);
-
-    JSValueTag tag = (JSValueTag)JSVAL_TYPE_TO_TAG(type);
-    ma_li(dest, Imm32(tag));
-    ma_dsll(dest, dest, Imm32(JSVAL_TAG_SHIFT));
-    if (type == JSVAL_TYPE_INT32 || type == JSVAL_TYPE_BOOLEAN) {
-      ma_dins(dest, src, Imm32(0), Imm32(32));
-    } else {
-      ma_dins(dest, src, Imm32(0), Imm32(JSVAL_TAG_SHIFT));
-    }
-  }
+  void boxValue(JSValueType type, Register src, Register dest);
+  void boxValue(Register type, Register src, Register dest);
 
   void storeValue(ValueOperand val, Operand dst);
   void storeValue(ValueOperand val, const BaseIndex& dest);
