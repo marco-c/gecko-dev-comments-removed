@@ -6,13 +6,12 @@
 
 
 
-import { prettyPrintSource, prettyPrintAndSelectSource } from "./prettyPrint";
-import { addTab, closeTabForSource } from "../tabs";
+import { prettyPrintSource } from "./prettyPrint";
+import { addTab } from "../tabs";
 import { loadSourceText } from "./loadSourceText";
 import { setBreakableLines } from "./breakableLines";
-
 import { prefs } from "../../utils/prefs";
-import { isMinified } from "../../utils/source";
+
 import { createLocation } from "../../utils/location";
 import {
   getRelatedMapLocation,
@@ -24,15 +23,13 @@ import {
   getSource,
   getFirstSourceActorForGeneratedSource,
   getSourceByURL,
-  getPrettySource,
   getSelectedLocation,
   getShouldSelectOriginalLocation,
-  canPrettyPrintSource,
-  getSourceTextContentForLocation,
   tabExists,
   hasSource,
   hasSourceActor,
   isPrettyPrinted,
+  isPrettyPrintedDisabled,
   isSourceActorWithSourceMap,
   getSelectedTraceIndex,
 } from "../../selectors/index";
@@ -145,13 +142,27 @@ async function mayBeSelectMappedSource(location, keepContext, thunkArgs) {
   
   
   const sourceIsPrettyPrinted = isPrettyPrinted(getState(), location.source);
-  if (!location.source.isOriginal && sourceIsPrettyPrinted) {
+  const shouldPrettyPrint =
+    !location.source.isOriginal &&
+    (sourceIsPrettyPrinted ||
+      (prefs.autoPrettyPrint &&
+        !isPrettyPrintedDisabled(getState(), location.source)));
+
+  if (shouldPrettyPrint) {
+    const isAutoPrettyPrinting =
+      !sourceIsPrettyPrinted && prefs.autoPrettyPrint;
     
     
     
     const prettyPrintedSource = await dispatch(
-      prettyPrintSource(location.source)
+      prettyPrintSource({ source: location.source, isAutoPrettyPrinting })
     );
+
+    
+    if (!prettyPrintedSource) {
+      return { shouldSelectOriginalLocation, newLocation: location };
+    }
+
     
     
     if (location.line == 0 && !location.column) {
@@ -310,22 +321,6 @@ export function selectLocation(
     if (!loadedSource) {
       
       return;
-    }
-
-    const sourceTextContent = getSourceTextContentForLocation(
-      getState(),
-      location
-    );
-
-    if (
-      keepContext &&
-      prefs.autoPrettyPrint &&
-      !getPrettySource(getState(), loadedSource.id) &&
-      canPrettyPrintSource(getState(), location) &&
-      isMinified(source, sourceTextContent)
-    ) {
-      await dispatch(prettyPrintAndSelectSource(loadedSource));
-      dispatch(closeTabForSource(loadedSource));
     }
 
     

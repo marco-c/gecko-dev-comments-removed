@@ -27,3 +27,11 @@ export function tabExists(state, source) {
 export function isPrettyPrinted(state, source) {
   return source.url && state.tabs.prettyPrintedURLs.has(source.url);
 }
+
+
+
+
+
+export function isPrettyPrintedDisabled(state, source) {
+  return source.url && state.tabs.prettyPrintedDisabledURLs.has(source.url);
+}

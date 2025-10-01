@@ -29,8 +29,7 @@ add_task(async function () {
     "The source map button is disabled"
   );
 
-  clickElement(dbg, "prettyPrintButton");
-  await waitForSelectedSource(dbg, "bundle.js:formatted");
+  await togglePrettyPrint(dbg);
   ok(true, "Pretty printed source shown");
 
   const toggled = waitForDispatch(dbg.store, "TOGGLE_SOURCE_MAPS_ENABLED");
@@ -40,8 +39,8 @@ add_task(async function () {
 
   is(
     footerButton.textContent,
-    "original file",
-    "The source map button now reports the pretty printed file as original file"
+    "bundle file",
+    "The source map button now reports the pretty printed file as bundle file (as we don't support toggling source map before reloading the page)"
   );
   ok(
     !footerButton.classList.contains("disabled"),
