@@ -915,7 +915,6 @@ bool VoiceChannel::SetLocalContent_w(const MediaContentDescription* content,
       }
     }
   }
-
   last_recv_params_ = recv_params;
 
   if (!UpdateLocalStreams_w(content->streams(), type, error_desc)) {
@@ -1042,7 +1041,6 @@ bool VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
   media_send_channel()->SetExtmapAllowMixed(content->extmap_allow_mixed());
 
   VideoReceiverParameters recv_params = last_recv_params_;
-
   MediaChannelParametersFromMediaDescription(
       content, header_extensions,
       RtpTransceiverDirectionHasRecv(content->direction()), &recv_params);
@@ -1117,7 +1115,12 @@ bool VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
 
   last_recv_params_ = recv_params;
 
+  
+  needs_send_params_update |=
+      (last_send_params_.extensions != header_extensions &&
+       !send_params.codecs.empty());
   if (needs_send_params_update) {
+    send_params.extensions = header_extensions;
     if (!media_send_channel()->SetSenderParameters(send_params)) {
       error_desc = StringFormat(
           "Failed to set send parameters for m-section with mid='%s'.",
@@ -1228,7 +1231,11 @@ bool VideoChannel::SetRemoteContent_w(const MediaContentDescription* content,
       media_send_channel()->SendCodecRtxTime());
   last_send_params_ = send_params;
 
+  needs_recv_params_update |=
+      (recv_params.extensions != send_params.extensions &&
+       !recv_params.codecs.empty());
   if (needs_recv_params_update) {
+    recv_params.extensions = send_params.extensions;
     if (!media_receive_channel()->SetReceiverParameters(recv_params)) {
       error_desc = StringFormat(
           "Failed to set recv parameters for m-section with mid='%s'.",
