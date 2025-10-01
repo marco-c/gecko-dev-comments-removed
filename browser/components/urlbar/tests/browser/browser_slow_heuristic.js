@@ -12,12 +12,12 @@ add_task(async function test_slow_heuristic() {
   Assert.greater(UrlbarEventBufferer.DEFERRING_TIMEOUT_MS, timeout);
 
   
-  let heuristicResult = new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
-    heuristic: true,
-    payload: { url: "https://example.com/" },
-  });
+  let heuristicResult = new UrlbarResult(
+    UrlbarUtils.RESULT_TYPE.URL,
+    UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    { url: "https://example.com/" }
+  );
+  heuristicResult.heuristic = true;
   let heuristicProvider = new UrlbarTestUtils.TestProvider({
     results: [heuristicResult],
     name: "heuristicProvider",
@@ -53,12 +53,12 @@ add_task(async function test_fast_heuristic() {
   });
 
   
-  let heuristicResult = new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
-    heuristic: true,
-    payload: { url: "https://example.com/" },
-  });
+  let heuristicResult = new UrlbarResult(
+    UrlbarUtils.RESULT_TYPE.URL,
+    UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    { url: "https://example.com/" }
+  );
+  heuristicResult.heuristic = true;
   let heuristicProvider = new UrlbarTestUtils.TestProvider({
     results: [heuristicResult],
     name: "heuristicProvider",

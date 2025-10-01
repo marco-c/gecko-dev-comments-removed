@@ -41,15 +41,14 @@ add_task(async function mouse_help() {
 
 
 add_task(async function mouse_insideTipButNotOnButtons() {
-  
-  
-  
-  let results = [
-    makeTipResult({ buttonUrl: TIP_URL, helpUrl: HELP_URL, heuristic: true }),
-  ];
+  let results = [makeTipResult({ buttonUrl: TIP_URL, helpUrl: HELP_URL })];
   let provider = new UrlbarTestUtils.TestProvider({ results, priority: 1 });
   UrlbarProvidersManager.registerProvider(provider);
 
+  
+  
+  
+  results[0].heuristic = true;
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     value: "test",
     window,
@@ -149,12 +148,11 @@ async function doTest({ click, buttonUrl = undefined, helpUrl = undefined }) {
   }
 }
 
-function makeTipResult({ buttonUrl, helpUrl, heuristic }) {
-  return new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.TIP,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
-    heuristic,
-    payload: {
+function makeTipResult({ buttonUrl, helpUrl }) {
+  return new UrlbarResult(
+    UrlbarUtils.RESULT_TYPE.TIP,
+    UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    {
       type: "test",
       titleL10n: { id: "urlbar-search-tips-confirm" },
       buttons: [
@@ -167,6 +165,6 @@ function makeTipResult({ buttonUrl, helpUrl, heuristic }) {
       helpL10n: {
         id: "urlbar-result-menu-tip-get-help",
       },
-    },
-  });
+    }
+  );
 }

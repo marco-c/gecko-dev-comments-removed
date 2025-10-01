@@ -11,15 +11,15 @@ add_task(async function () {
   
   
   
-  let result = new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
-    heuristic: true,
-    
-    
-    testForceNewContent: true,
-    payload: { url: "https://example.com/1", title: "example" },
-  });
+  let result = new UrlbarResult(
+    UrlbarUtils.RESULT_TYPE.URL,
+    UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    { url: "https://example.com/1", title: "example" }
+  );
+  result.heuristic = true;
+  
+  
+  result.testForceNewContent = true;
 
   let receivedResults = false;
   let firstSelectedElement;
