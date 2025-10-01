@@ -136,14 +136,14 @@ nsresult FetchPageInfo(const RefPtr<Database>& aDB, PageData& _page) {
       
       
       return NS_ERROR_NOT_AVAILABLE;
-    } else {
-      
-      
-      if (!_page.bookmarkedSpec.Equals(_page.spec)) {
-        _page.spec = _page.bookmarkedSpec;
-        rv = FetchPageInfo(aDB, _page);
-        NS_ENSURE_SUCCESS(rv, rv);
-      }
+    }
+
+    
+    
+    if (!_page.bookmarkedSpec.Equals(_page.spec)) {
+      _page.spec = _page.bookmarkedSpec;
+      rv = FetchPageInfo(aDB, _page);
+      NS_ENSURE_SUCCESS(rv, rv);
     }
   }
 
