@@ -786,9 +786,6 @@ pref("browser.urlbar.yelpRealtime.minKeywordLength", 0);
 pref("browser.altClickSave", false);
 
 
-pref("browser.download.loglevel", "Error");
-
-
 
 
 
