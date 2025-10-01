@@ -116,6 +116,7 @@ function getControlInstance(control = "moz-checkbox") {
 const KNOWN_OPTIONS = new Map([
   ["moz-radio-group", literal`moz-radio`],
   ["moz-select", literal`moz-option`],
+  ["moz-visual-picker", literal`moz-visual-picker-item`],
 ]);
 
 /**
@@ -185,6 +186,10 @@ export class SettingControl extends MozLitElement {
     this.hidden = !this.setting.visible;
   }
 
+  updated() {
+    this.controlRef?.value?.requestUpdate();
+  }
+
   /**
    * The default properties that controls and options accept.
    */
@@ -197,6 +202,8 @@ export class SettingControl extends MozLitElement {
         : undefined,
       ".iconSrc": config.iconSrc,
       ".supportPage": config.supportPage,
+      ".setting": this.setting,
+      ".control": this,
       "data-subcategory": config.subcategory,
       ...config.controlAttrs,
     };
@@ -261,13 +268,13 @@ export class SettingControl extends MozLitElement {
   }
 
   async disableExtension() {
-    this.setting.disableControllingExtension();
+    await this.setting.disableControllingExtension();
   }
 
   isControlledByExtension() {
     return (
-      this.setting.controllingExtensionInfo.id &&
-      this.setting.controllingExtensionInfo.name
+      this.setting.controllingExtensionInfo?.id &&
+      this.setting.controllingExtensionInfo?.name
     );
   }
 
@@ -327,6 +334,11 @@ export class SettingControl extends MozLitElement {
         .messageL10nId=${this.extensionMessageId}
         .messageL10nArgs=${args}
       >
+        <moz-button
+          slot="actions"
+          @click=${this.disableExtension}
+          data-l10n-id="disable-extension"
+        ></moz-button>
       </moz-message-bar>`;
     }
     return staticHtml`
