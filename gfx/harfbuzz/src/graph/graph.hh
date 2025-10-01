@@ -470,8 +470,12 @@ struct graph_t
     num_roots_for_space_.push (1);
     bool removed_nil = false;
     vertices_.alloc (objects.length);
-    vertices_scratch_.alloc (objects.length);
+    ordering_.resize (objects.length);
+    ordering_scratch_.alloc (objects.length);
+
     unsigned count = objects.length;
+    unsigned order = objects.length;
+    unsigned skip = 0;
     for (unsigned i = 0; i < count; i++)
     {
       
@@ -479,6 +483,9 @@ struct graph_t
       if (i == 0 && !objects.arrayZ[i])
       {
         removed_nil = true;
+        order--;
+        ordering_.resize(objects.length - 1);
+        skip++;
         continue;
       }
 
@@ -487,6 +494,12 @@ struct graph_t
         v->obj = *objects.arrayZ[i];
 
       check_success (v->link_positions_valid (count, removed_nil));
+
+      
+      
+      
+      unsigned obj_idx = i - skip;
+      ordering_[--order] = obj_idx;
 
       if (!removed_nil) continue;
       
@@ -508,10 +521,10 @@ struct graph_t
   }
 
   void print () const {
-    for (int i = vertices_.length - 1; i >= 0; i--)
+    for (unsigned id : ordering_)
     {
-      const auto& v = vertices_[i];
-      printf("%d: %u [", i, (unsigned int)v.table_size());
+      const auto& v = vertices_[id];
+      printf("%u: %u [", id, (unsigned int)v.table_size());
       for (const auto &l : v.obj.real_links) {
         printf("%u, ", l.objidx);
       }
@@ -533,6 +546,7 @@ struct graph_t
   {
     return !successful ||
         vertices_.in_error () ||
+        ordering_.in_error() ||
         num_roots_for_space_.in_error ();
   }
 
@@ -546,7 +560,7 @@ struct graph_t
     
     
     
-    return vertices_.length - 1;
+    return ordering_[0];
   }
 
   const hb_serialize_context_t::object_t& object (unsigned i) const
@@ -604,55 +618,51 @@ struct graph_t
 
     hb_priority_queue_t<int64_t> queue;
     queue.alloc (vertices_.length);
-    hb_vector_t<vertex_t> &sorted_graph = vertices_scratch_;
-    if (unlikely (!check_success (sorted_graph.resize (vertices_.length)))) return;
-    hb_vector_t<unsigned> id_map;
-    if (unlikely (!check_success (id_map.resize (vertices_.length)))) return;
+    hb_vector_t<unsigned> &new_ordering = ordering_scratch_;
+    if (unlikely (!check_success (new_ordering.resize (vertices_.length)))) return;
 
     hb_vector_t<unsigned> removed_edges;
     if (unlikely (!check_success (removed_edges.resize (vertices_.length)))) return;
     update_parents ();
 
     queue.insert (root ().modified_distance (0), root_idx ());
-    int new_id = root_idx ();
     unsigned order = 1;
+    unsigned pos = 0;
     while (!queue.in_error () && !queue.is_empty ())
     {
       unsigned next_id = queue.pop_minimum().second;
 
-      sorted_graph[new_id] = std::move (vertices_[next_id]);
-      const vertex_t& next = sorted_graph[new_id];
-
-      if (unlikely (!check_success(new_id >= 0))) {
+      if (unlikely (!check_success(pos < new_ordering.length))) {
         
         
         DEBUG_MSG (SUBSET_REPACK, nullptr, "Invalid graph. Contains cycle.");
         return;
       }
-
-      id_map[next_id] = new_id--;
+      new_ordering[pos++] = next_id;
+      const vertex_t& next = vertices_[next_id];
 
       for (const auto& link : next.obj.all_links ()) {
         removed_edges[link.objidx]++;
-        if (!(vertices_[link.objidx].incoming_edges () - removed_edges[link.objidx]))
+        const auto& v = vertices_[link.objidx];
+        if (!(v.incoming_edges () - removed_edges[link.objidx]))
           
           
           
           
           
-          queue.insert (vertices_[link.objidx].modified_distance (order++),
+          queue.insert (v.modified_distance (order++),
                         link.objidx);
       }
     }
 
     check_success (!queue.in_error ());
-    check_success (!sorted_graph.in_error ());
+    check_success (!new_ordering.in_error ());
 
-    check_success (remap_all_obj_indices (id_map, &sorted_graph));
-    vertices_ = std::move (sorted_graph);
+    hb_swap (ordering_, new_ordering);
 
-    if (!check_success (new_id == -1))
+    if (!check_success (pos == vertices_.length)) {
       print_orphaned_nodes ();
+    }
   }
 
   
@@ -662,8 +672,8 @@ struct graph_t
 
   void find_space_roots (hb_set_t& visited, hb_set_t& roots)
   {
-    int root_index = (int) root_idx ();
-    for (int i = root_index; i >= 0; i--)
+    unsigned root_index = root_idx ();
+    for (unsigned i : ordering_)
     {
       if (visited.has (i)) continue;
 
@@ -846,7 +856,6 @@ struct graph_t
     if (subgraph.in_error ())
       return false;
 
-    unsigned original_root_idx = root_idx ();
     hb_map_t index_map;
     bool made_changes = false;
     for (auto entry : subgraph.iter ())
@@ -868,14 +877,6 @@ struct graph_t
 
     if (!made_changes)
       return false;
-
-    if (original_root_idx != root_idx ()
-        && parents.has (original_root_idx))
-    {
-      
-      parents.add (root_idx ());
-      parents.del (original_root_idx);
-    }
 
     auto new_subgraph =
         + subgraph.keys ()
@@ -1065,8 +1066,11 @@ struct graph_t
     distance_invalid = true;
 
     auto* clone = vertices_.push ();
+    unsigned clone_idx = vertices_.length - 1;
+    ordering_.push(clone_idx);
+
     auto& child = vertices_[node_idx];
-    if (vertices_.in_error ()) {
+    if (vertices_.in_error () || ordering_.in_error()) {
       return -1;
     }
 
@@ -1076,7 +1080,6 @@ struct graph_t
     clone->space = child.space;
     clone->reset_parents ();
 
-    unsigned clone_idx = vertices_.length - 2;
     for (const auto& l : child.obj.real_links)
     {
       clone->obj.real_links.push (l);
@@ -1090,15 +1093,6 @@ struct graph_t
 
     check_success (!clone->obj.real_links.in_error ());
     check_success (!clone->obj.virtual_links.in_error ());
-
-    
-    
-    
-    hb_swap (vertices_[vertices_.length - 2], *clone);
-
-    
-    for (const auto& l : root ().obj.all_links ())
-      vertices_[l.objidx].remap_parent (root_idx () - 1, root_idx ());
 
     return clone_idx;
   }
@@ -1249,7 +1243,10 @@ struct graph_t
     distance_invalid = true;
 
     auto* clone = vertices_.push ();
-    if (vertices_.in_error ()) {
+    unsigned clone_idx = vertices_.length - 1;
+    ordering_.push(clone_idx);
+
+    if (vertices_.in_error () || ordering_.in_error()) {
       return -1;
     }
 
@@ -1257,17 +1254,6 @@ struct graph_t
     clone->obj.tail = tail;
     clone->distance = 0;
     clone->space = 0;
-
-    unsigned clone_idx = vertices_.length - 2;
-
-    
-    
-    
-    hb_swap (vertices_[vertices_.length - 2], *clone);
-
-    
-    for (const auto& l : root ().obj.all_links ())
-      vertices_[l.objidx].remap_parent (root_idx () - 1, root_idx ());
 
     return clone_idx;
   }
@@ -1430,7 +1416,8 @@ struct graph_t
     size_t total_size = 0;
     unsigned count = vertices_.length;
     for (unsigned i = 0; i < count; i++) {
-      size_t size = vertices_.arrayZ[i].obj.tail - vertices_.arrayZ[i].obj.head;
+      const auto& obj = vertices_.arrayZ[i].obj;
+      size_t size = obj.tail - obj.head;
       total_size += size;
     }
     return total_size;
@@ -1503,7 +1490,7 @@ struct graph_t
     if (!positions_invalid) return;
 
     unsigned current_pos = 0;
-    for (int i = root_idx (); i >= 0; i--)
+    for (unsigned i : ordering_)
     {
       auto& v = vertices_[i];
       v.start = current_pos;
@@ -1535,11 +1522,11 @@ struct graph_t
     unsigned count = vertices_.length;
     for (unsigned i = 0; i < count; i++)
       vertices_.arrayZ[i].distance = hb_int_max (int64_t);
-    vertices_.tail ().distance = 0;
+    vertices_[root_idx ()].distance = 0;
 
     hb_priority_queue_t<int64_t> queue;
     queue.alloc (count);
-    queue.insert (0, vertices_.length - 1);
+    queue.insert (0, root_idx ());
 
     hb_vector_t<bool> visited;
     visited.resize (vertices_.length);
@@ -1549,22 +1536,23 @@ struct graph_t
       unsigned next_idx = queue.pop_minimum ().second;
       if (visited[next_idx]) continue;
       const auto& next = vertices_[next_idx];
-      int64_t next_distance = vertices_[next_idx].distance;
+      int64_t next_distance = next.distance;
       visited[next_idx] = true;
 
       for (const auto& link : next.obj.all_links ())
       {
         if (visited[link.objidx]) continue;
 
-        const auto& child = vertices_.arrayZ[link.objidx].obj;
+        auto& child_v = vertices_.arrayZ[link.objidx];
+        const auto& child = child_v.obj;
         unsigned link_width = link.width ? link.width : 4; 
         int64_t child_weight = (child.tail - child.head) +
-                               ((int64_t) 1 << (link_width * 8)) * (vertices_.arrayZ[link.objidx].space + 1);
+                               ((int64_t) 1 << (link_width * 8)) * (child_v.space + 1);
         int64_t child_distance = next_distance + child_weight;
 
-        if (child_distance < vertices_.arrayZ[link.objidx].distance)
+        if (child_distance < child_v.distance)
         {
-          vertices_.arrayZ[link.objidx].distance = child_distance;
+          child_v.distance = child_distance;
           queue.insert (child_distance, link.objidx);
         }
       }
@@ -1607,9 +1595,10 @@ struct graph_t
     if (!id_map) return;
     for (unsigned i : subgraph)
     {
-      unsigned num_real = vertices_[i].obj.real_links.length;
+      auto& obj = vertices_[i].obj;
+      unsigned num_real = obj.real_links.length;
       unsigned count = 0;
-      for (auto& link : vertices_[i].obj.all_links_writer ())
+      for (auto& link : obj.all_links_writer ())
       {
         count++;
         const uint32_t *v;
@@ -1619,25 +1608,6 @@ struct graph_t
         reassign_link (link, i, *v, count > num_real);
       }
     }
-  }
-
-  
-
-
-  bool remap_all_obj_indices (const hb_vector_t<unsigned>& id_map,
-                              hb_vector_t<vertex_t>* sorted_graph) const
-  {
-    unsigned count = sorted_graph->length;
-    for (unsigned i = 0; i < count; i++)
-    {
-      if (!(*sorted_graph)[i].remap_parents (id_map))
-        return false;
-      for (auto& link : sorted_graph->arrayZ[i].obj.all_links_writer ())
-      {
-        link.objidx = id_map[link.objidx];
-      }
-    }
-    return true;
   }
 
   
@@ -1675,7 +1645,16 @@ struct graph_t
  public:
   
   hb_vector_t<vertex_t> vertices_;
-  hb_vector_t<vertex_t> vertices_scratch_;
+
+  
+  
+  
+  
+  
+  
+  hb_vector_t<unsigned> ordering_;
+  hb_vector_t<unsigned> ordering_scratch_;
+
  private:
   bool parents_invalid;
   bool distance_invalid;
