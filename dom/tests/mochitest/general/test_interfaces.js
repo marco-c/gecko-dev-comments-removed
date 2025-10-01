@@ -260,6 +260,10 @@ let interfaceNamesInGlobalScope = [
   
   { name: "CSSPageRule", insecureContext: true },
   
+  { name: "CSSPositionTryDescriptors", insecureContext: true, nightly: true },
+  
+  { name: "CSSPositionTryRule", insecureContext: true, nightly: true },
+  
   { name: "CSSPropertyRule", insecureContext: true },
   
   { name: "CSSPseudoElement", insecureContext: true, disabled: true },
