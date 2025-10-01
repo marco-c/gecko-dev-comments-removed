@@ -397,6 +397,22 @@ class InactivePropertyHelper {
       
       {
         invalidProperties: [
+          "overflow",
+          "overflow-block",
+          "overflow-inline",
+          "overflow-x",
+          "overflow-y",
+        ],
+        when: () =>
+          !this.isBlockContainer() &&
+          !this.flexContainer &&
+          !this.gridContainer,
+        fixId: "inactive-css-not-block-flex-grid-container-fix",
+        msgId: "inactive-css-not-block-flex-grid-container",
+      },
+      
+      {
+        invalidProperties: [
           "shape-image-threshold",
           "shape-margin",
           "shape-outside",
