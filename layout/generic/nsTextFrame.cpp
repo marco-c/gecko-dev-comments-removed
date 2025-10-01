@@ -4029,9 +4029,13 @@ void nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
     using CharClass = TextAutospace::CharClass;
     
     Maybe<CharClass> prevClass;
-    if (mTextAutospace) {
+
+    
+    
+    
+    auto findPrecedingClass = [&]() -> CharClass {
       
-      
+      Maybe<CharClass> prevClass;
       if (aRange.start > 0) {
         gfxSkipCharsIterator iter = start;
         prevClass = LastNonMarkCharClass(iter, mTextRun, mCharacterDataBuffer);
@@ -4058,7 +4062,11 @@ void nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
           }
         }
       }
-    }
+      
+      
+      return prevClass.valueOr(CharClass::Other);
+    };
+
     while (run.NextRun()) {
       uint32_t runOffsetInSubstring = run.GetSkippedOffset() - aRange.start;
       gfxSkipCharsIterator iter = run.GetPos();
@@ -4096,11 +4104,17 @@ void nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
           
           
           if (currClass != CharClass::CombiningMark) {
-            if (!atStart && prevClass &&
-                mTextAutospace->ShouldApplySpacing(*prevClass, currClass)) {
+            
+            
+            if (!atStart && currClass != CharClass::Other &&
+                mTextAutospace->ShouldApplySpacing(
+                    prevClass.valueOr(findPrecedingClass()), currClass)) {
               aSpacing[runOffsetInSubstring + i].mBefore +=
                   mTextAutospace->InterScriptSpacing();
             }
+            
+            
+            
             prevClass = Some(currClass);
           }
         }
