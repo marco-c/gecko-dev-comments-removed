@@ -340,8 +340,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   nsContainerFrame* GetContentInsertionFrameFor(nsIContent* aContent);
 
   
-  
-  
   nsContainerFrame* GetRootElementFrame() { return mRootElementFrame; }
   
   
@@ -1132,7 +1130,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
           mIsAllInline(false),
           mIsBlock(false),
           mIsPopup(false),
-          mIsLineParticipant(false),
           mIsRenderedLegend(false) {
       MOZ_COUNT_CTOR(FrameConstructionItem);
     }
@@ -1203,8 +1200,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
     
     
     bool mIsPopup : 1;
-    
-    bool mIsLineParticipant : 1;
     
     bool mIsRenderedLegend : 1;
 
