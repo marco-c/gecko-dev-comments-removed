@@ -5854,7 +5854,11 @@ void WorkerPrivate::ReportError(JSContext* aCx,
   }
 
   JS::ExceptionStack exnStack(aCx);
-  if (JS_IsExceptionPending(aCx)) {
+  
+  
+  
+  if (!aReport || !aReport->isWarning()) {
+    MOZ_ASSERT(JS_IsExceptionPending(aCx));
     if (!JS::StealPendingExceptionStack(aCx, &exnStack)) {
       JS_ClearPendingException(aCx);
       return;
@@ -5868,10 +5872,6 @@ void WorkerPrivate::ReportError(JSContext* aCx,
       JSAutoRealm ar(aCx, stackGlobal);
       report->SerializeWorkerStack(aCx, this, stack);
     }
-  } else {
-    
-    
-    MOZ_ASSERT(aReport && aReport->isWarning());
   }
 
   if (report->mMessage.IsEmpty() && aToStringResult) {
