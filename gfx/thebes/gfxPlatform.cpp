@@ -1271,7 +1271,7 @@ void gfxPlatform::Shutdown() {
   
   gfxFontCache::Shutdown();
   gfxGradientCache::Shutdown();
-  gfxGaussianBlur::ShutdownBlurCache();
+  gfxAlphaBoxBlur::ShutdownBlurCache();
   gfxGraphiteShaper::Shutdown();
   gfxPlatformFontList::Shutdown();
   gfxFontMissingGlyphs::Shutdown();

@@ -42,15 +42,16 @@ class DrawTarget;
 
 
 
-class gfxGaussianBlur final {
+
+class gfxAlphaBoxBlur final {
   typedef mozilla::gfx::sRGBColor sRGBColor;
   typedef mozilla::gfx::DrawTarget DrawTarget;
   typedef mozilla::gfx::RectCornerRadii RectCornerRadii;
 
  public:
-  gfxGaussianBlur() = default;
+  gfxAlphaBoxBlur() = default;
 
-  ~gfxGaussianBlur();
+  ~gfxAlphaBoxBlur();
 
   
 
@@ -71,25 +72,25 @@ class gfxGaussianBlur final {
 
 
 
-  mozilla::UniquePtr<gfxContext> Init(
-      gfxContext* aDestinationCtx, const gfxRect& aRect,
-      const mozilla::gfx::IntSize& aSpreadRadius,
-      const mozilla::gfx::Point& aBlurSigma, const gfxRect* aDirtyRect,
-      const gfxRect* aSkipRect, bool aClamp = false);
+
+
+
+
 
   mozilla::UniquePtr<gfxContext> Init(
       gfxContext* aDestinationCtx, const gfxRect& aRect,
       const mozilla::gfx::IntSize& aSpreadRadius,
       const mozilla::gfx::IntSize& aBlurRadius, const gfxRect* aDirtyRect,
-      const gfxRect* aSkipRect, bool aClamp = false);
+      const gfxRect* aSkipRect, bool aUseHardwareAccel = true);
 
   already_AddRefed<DrawTarget> InitDrawTarget(
       const mozilla::gfx::DrawTarget* aReferenceDT,
       const mozilla::gfx::Rect& aRect,
       const mozilla::gfx::IntSize& aSpreadRadius,
-      const mozilla::gfx::Point& aBlurSigma,
+      const mozilla::gfx::IntSize& aBlurRadius,
       const mozilla::gfx::Rect* aDirtyRect = nullptr,
-      const mozilla::gfx::Rect* aSkipRect = nullptr, bool aClamp = false);
+      const mozilla::gfx::Rect* aSkipRect = nullptr,
+      bool aUseHardwareAccel = true);
 
   
 
@@ -117,8 +118,6 @@ class gfxGaussianBlur final {
 
   static mozilla::gfx::IntSize CalculateBlurRadius(
       const gfxPoint& aStandardDeviation);
-  static mozilla::gfx::Point CalculateBlurSigma(
-      const mozilla::gfx::IntSize& aBlurRadius);
 
   
 
@@ -193,7 +192,12 @@ class gfxGaussianBlur final {
   
 
 
-  mozilla::gfx::GaussianBlur mBlur;
+  mozilla::gfx::AlphaBoxBlur mBlur;
+
+  
+
+
+  bool mAccelerated = false;
 };
 
 #endif 

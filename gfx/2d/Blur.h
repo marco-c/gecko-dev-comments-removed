@@ -9,15 +9,10 @@
 
 #include "mozilla/gfx/Rect.h"
 #include "mozilla/gfx/Point.h"
-#include "mozilla/gfx/Types.h"
 #include "mozilla/CheckedInt.h"
-
-class SkSurface;
 
 namespace mozilla {
 namespace gfx {
-
-class DrawTargetSkia;
 
 #ifdef _MSC_VER
 #  pragma warning(disable : 4251)
@@ -39,7 +34,9 @@ class DrawTargetSkia;
 
 
 
-class GFX2D_API GaussianBlur final {
+
+
+class GFX2D_API AlphaBoxBlur final {
  public:
   
 
@@ -59,32 +56,25 @@ class GFX2D_API GaussianBlur final {
 
 
 
-  GaussianBlur(const Rect& aRect, const IntSize& aSpreadRadius,
-               const Point& aSigma, const Rect* aDirtyRect,
-               const Rect* aSkipRect, SurfaceFormat aFormat = SurfaceFormat::A8,
-               bool aClamp = false);
+  AlphaBoxBlur(const Rect& aRect, const IntSize& aSpreadRadius,
+               const IntSize& aBlurRadius, const Rect* aDirtyRect,
+               const Rect* aSkipRect);
 
-  GaussianBlur(const Rect& aRect, int32_t aStride, const Point& aSigma,
-               SurfaceFormat aFormat = SurfaceFormat::A8, bool aClamp = false);
+  AlphaBoxBlur(const Rect& aRect, int32_t aStride, float aSigmaX,
+               float aSigmaY);
 
-  GaussianBlur();
+  AlphaBoxBlur();
 
   void Init(const Rect& aRect, const IntSize& aSpreadRadius,
-            const Point& aBlurSigma, const Rect* aDirtyRect,
-            const Rect* aSkipRect, SurfaceFormat aFormat = SurfaceFormat::A8,
-            bool aClamp = false);
+            const IntSize& aBlurRadius, const Rect* aDirtyRect,
+            const Rect* aSkipRect);
 
-  ~GaussianBlur();
+  ~AlphaBoxBlur();
 
   
 
 
   IntSize GetSize() const;
-
-  
-
-
-  SurfaceFormat GetFormat() const;
 
   
 
@@ -110,17 +100,7 @@ class GFX2D_API GaussianBlur final {
   
 
 
-  Point GetBlurSigma() const { return mBlurSigma; }
-
-  
-
-
   IntSize GetBlurRadius() const { return mBlurRadius; }
-
-  
-
-
-  IntRect GetSkipRect() const { return mSkipRect; }
 
   
 
@@ -148,6 +128,25 @@ class GFX2D_API GaussianBlur final {
   static Float CalculateBlurSigma(int32_t aBlurRadius);
 
  private:
+  void BoxBlur_C(uint8_t* aData, int32_t aLeftLobe, int32_t aRightLobe,
+                 int32_t aTopLobe, int32_t aBottomLobe,
+                 uint32_t* aIntegralImage, size_t aIntegralImageStride) const;
+  void BoxBlur_SSE2(uint8_t* aData, int32_t aLeftLobe, int32_t aRightLobe,
+                    int32_t aTopLobe, int32_t aBottomLobe,
+                    uint32_t* aIntegralImage,
+                    size_t aIntegralImageStride) const;
+  void BoxBlur_NEON(uint8_t* aData, int32_t aLeftLobe, int32_t aRightLobe,
+                    int32_t aTopLobe, int32_t aBottomLobe,
+                    uint32_t* aIntegralImage,
+                    size_t aIntegralImageStride) const;
+#ifdef _MIPS_ARCH_LOONGSON3A
+  void BoxBlur_LS3(uint8_t* aData, int32_t aLeftLobe, int32_t aRightLobe,
+                   int32_t aTopLobe, int32_t aBottomLobe,
+                   uint32_t* aIntegralImage, size_t aIntegralImageStride) const;
+#endif
+
+  static CheckedInt<int32_t> RoundUpToMultipleOf4(int32_t aVal);
+
   
 
 
@@ -175,43 +174,22 @@ class GFX2D_API GaussianBlur final {
   
 
 
-  Point mBlurSigma;
-
-  
-
-
   IntSize mBlurRadius;
 
   
 
 
-  SurfaceFormat mFormat = SurfaceFormat::A8;
+  int32_t mStride;
 
   
 
 
-  bool mClamp = false;
+  size_t mSurfaceAllocationSize;
 
   
 
 
-  int32_t mStride = 0;
-
-  
-
-
-  size_t mSurfaceAllocationSize = 0;
-
-  
-
-
-  bool mHasDirtyRect = false;
-
-  bool Spread(uint8_t* aData) const;
-
-  friend class DrawTargetSkia;
-
-  bool BlurSkSurface(SkSurface* aSurface) const;
+  bool mHasDirtyRect;
 };
 
 }  
