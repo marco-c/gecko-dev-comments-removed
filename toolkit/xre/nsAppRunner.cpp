@@ -6016,6 +6016,17 @@ int XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig) {
     greDir->GetParent(getter_AddRefs(parent));
     greDir = parent.forget();
     greDir->AppendNative("Resources"_ns);
+#elif defined(XP_IOS)
+    
+    
+    
+    
+    rv = greDir->AppendNative("Frameworks"_ns);
+    NS_ENSURE_SUCCESS(rv, 2);
+    rv = greDir->AppendNative("GeckoView.framework"_ns);
+    NS_ENSURE_SUCCESS(rv, 2);
+    rv = greDir->AppendNative("Frameworks"_ns);
+    NS_ENSURE_SUCCESS(rv, 2);
 #endif
 
     mAppData->xreDirectory = greDir;
@@ -6367,9 +6378,7 @@ void SetupErrorHandling(const char* progname) {
   SetProcessDEPPolicyFunc _SetProcessDEPPolicy =
       (SetProcessDEPPolicyFunc)GetProcAddress(kernel32, "SetProcessDEPPolicy");
   if (_SetProcessDEPPolicy) _SetProcessDEPPolicy(PROCESS_DEP_ENABLE);
-#endif
 
-#ifdef XP_WIN
   
   
   

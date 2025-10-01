@@ -29,9 +29,12 @@ static nsresult GetGREDir(nsIFile** aResult) {
   nsresult rv = XRE_GetBinaryPath(getter_AddRefs(current));
   NS_ENSURE_SUCCESS(rv, rv);
 
-#ifdef XP_DARWIN
+#if defined(XP_MACOSX)
   
   const int depth = 4;
+#elif defined(XP_IOS)
+  
+  const int depth = 3;
 #else
   const int depth = 1;
 #endif
@@ -45,8 +48,19 @@ static nsresult GetGREDir(nsIFile** aResult) {
     NS_ENSURE_TRUE(current, NS_ERROR_UNEXPECTED);
   }
 
-#ifdef XP_DARWIN
+#if defined(XP_MACOSX)
   rv = current->SetNativeLeafName("Resources"_ns);
+  NS_ENSURE_SUCCESS(rv, rv);
+#elif defined(XP_IOS)
+  
+  
+  
+  
+  rv = current->AppendNative("Frameworks"_ns);
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = current->AppendNative("GeckoView.framework"_ns);
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = current->AppendNative("Frameworks"_ns);
   NS_ENSURE_SUCCESS(rv, rv);
 #endif
 
