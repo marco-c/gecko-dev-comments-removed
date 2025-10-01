@@ -118,8 +118,18 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
 
   const Kind mKind;
 
+  void SetErroredLoadingImports() {
+    MOZ_ASSERT(IsDynamicImport());
+    MOZ_ASSERT(IsFetching());
+    mErroredLoadingImports = true;
+  }
+
   
   const ModuleType mModuleType;
+
+  
+  
+  bool mErroredLoadingImports;
 
   
   
