@@ -37,7 +37,7 @@ class NotificationObserver final : public nsIObserver {
 
   NS_IMETHODIMP Observe(nsISupports* aSubject, const char* aTopic,
                         const char16_t* aData) override {
-    AlertTopic topic = ToAlertTopic(aTopic);
+    AlertTopic topic = ToAlertTopic(aTopic, aData);
 
     
     if (topic == AlertTopic::Disable) {
@@ -78,7 +78,8 @@ class NotificationObserver final : public nsIObserver {
       return NS_OK;
     }
 
-    MOZ_ASSERT(topic == AlertTopic::Click || topic == AlertTopic::Finished);
+    MOZ_ASSERT(topic == AlertTopic::Click || topic == AlertTopic::Finished ||
+               topic == AlertTopic::Closed);
 
     if (topic == AlertTopic::Click) {
       nsCOMPtr<nsIAlertAction> action = do_QueryInterface(aSubject);
@@ -97,7 +98,7 @@ class NotificationObserver final : public nsIObserver {
     nsAutoCString originSuffix;
     MOZ_TRY(mPrincipal->GetOriginSuffix(originSuffix));
 
-    MOZ_ASSERT(topic == AlertTopic::Finished);
+    MOZ_ASSERT(topic == AlertTopic::Finished || topic == AlertTopic::Closed);
     (void)NS_WARN_IF(NS_FAILED(
         AdjustPushQuota(mPrincipal, NotificationStatusChange::Closed)));
     (void)NS_WARN_IF(
@@ -110,7 +111,7 @@ class NotificationObserver final : public nsIObserver {
  private:
   virtual ~NotificationObserver() = default;
 
-  static AlertTopic ToAlertTopic(const char* aTopic) {
+  static AlertTopic ToAlertTopic(const char* aTopic, const char16_t* aData) {
     if (!strcmp("alertdisablecallback", aTopic)) {
       return AlertTopic::Disable;
     }
@@ -124,6 +125,14 @@ class NotificationObserver final : public nsIObserver {
       return AlertTopic::Show;
     }
     if (!strcmp("alertfinished", aTopic)) {
+      if (aData && nsDependentString(aData) == u"close"_ns) {
+        
+        
+        
+        
+        
+        return AlertTopic::Closed;
+      }
       return AlertTopic::Finished;
     }
     MOZ_ASSERT_UNREACHABLE("Unknown alert topic");
@@ -165,8 +174,11 @@ nsresult NotificationParent::HandleAlertTopic(AlertTopic aTopic) {
     mResolver.take().value()(CopyableErrorResult());
     return NS_OK;
   }
-  if (aTopic == AlertTopic::Finished) {
-    if (mResolver) {
+  if (mResolver) {
+    if (aTopic == AlertTopic::Closed) {
+      
+      mResolver.take().value()(CopyableErrorResult());
+    } else if (aTopic == AlertTopic::Finished) {
       
       
       
@@ -179,7 +191,9 @@ nsresult NotificationParent::HandleAlertTopic(AlertTopic aTopic) {
           "not have the corresponding OS-level permission."_ns);
       mResolver.take().value()(rv);
     }
+  }
 
+  if (aTopic == AlertTopic::Finished || aTopic == AlertTopic::Closed) {
     
     mDangling = true;
     Close();
