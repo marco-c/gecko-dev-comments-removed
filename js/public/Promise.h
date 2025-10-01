@@ -63,6 +63,16 @@ class JS_PUBLIC_API JobQueue {
 
 
 
+  virtual bool getHostDefinedGlobal(
+      JSContext* cx, JS::MutableHandle<JSObject*> data) const = 0;
+
+  
+
+
+
+
+
+
 
 
 
