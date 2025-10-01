@@ -1,0 +1,5 @@
+
+
+
+
+TEST_KINDS = ("mochitest", "test")
