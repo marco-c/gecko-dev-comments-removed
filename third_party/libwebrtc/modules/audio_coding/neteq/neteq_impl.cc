@@ -751,20 +751,17 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame,
   tick_timer_->Increment();
 
   
+  
+  RTC_DCHECK_LE(output_size_samples_ * sync_buffer_->Channels(),
+                AudioFrame::kMaxDataSizeSamples);
+
+  
   if (enable_muted_state_ && expand_->Muted() && packet_buffer_->Empty()) {
     RTC_DCHECK_EQ(last_mode_, Mode::kExpand);
     audio_frame->Reset();
     RTC_DCHECK(audio_frame->muted());  
     playout_timestamp_ += static_cast<uint32_t>(output_size_samples_);
     audio_frame->sample_rate_hz_ = fs_hz_;
-    
-    if (output_size_samples_ * sync_buffer_->Channels() >
-        AudioFrame::kMaxDataSizeSamples) {
-      
-      
-      RTC_DCHECK_NOTREACHED();
-      return kSampleUnderrun;
-    }
     audio_frame->samples_per_channel_ = output_size_samples_;
     audio_frame->timestamp_ =
         first_packet_
@@ -886,23 +883,12 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame,
   sync_buffer_->PushBack(*algorithm_buffer_);
 
   
-  size_t num_output_samples_per_channel = output_size_samples_;
-  size_t num_output_samples = output_size_samples_ * sync_buffer_->Channels();
-  if (num_output_samples > AudioFrame::kMaxDataSizeSamples) {
-    
-    
-    RTC_DCHECK_NOTREACHED();
-    RTC_LOG(LS_WARNING) << "Output array is too short. "
-                        << AudioFrame::kMaxDataSizeSamples << " < "
-                        << output_size_samples_ << " * "
-                        << sync_buffer_->Channels();
-    num_output_samples = AudioFrame::kMaxDataSizeSamples;
-    num_output_samples_per_channel =
-        AudioFrame::kMaxDataSizeSamples / sync_buffer_->Channels();
-  }
-  sync_buffer_->GetNextAudioInterleaved(num_output_samples_per_channel,
-                                        audio_frame);
-  audio_frame->sample_rate_hz_ = fs_hz_;
+  audio_frame->ResetWithoutMuting();
+  audio_frame->SetSampleRateAndChannelSize(fs_hz_);
+  InterleavedView<int16_t> view =
+      audio_frame->mutable_data(output_size_samples_, sync_buffer_->Channels());
+  bool got_audio = sync_buffer_->GetNextAudioInterleaved(view);
+
   
   
   
@@ -920,7 +906,8 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame,
     sync_buffer_->set_next_index(sync_buffer_->next_index() -
                                  missing_lookahead_samples);
   }
-  if (audio_frame->samples_per_channel_ != output_size_samples_) {
+
+  if (!got_audio) {
     RTC_LOG(LS_ERROR) << "audio_frame->samples_per_channel_ ("
                       << audio_frame->samples_per_channel_
                       << ") != output_size_samples_ (" << output_size_samples_

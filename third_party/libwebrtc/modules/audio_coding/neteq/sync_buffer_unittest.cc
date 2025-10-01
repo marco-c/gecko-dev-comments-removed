@@ -149,19 +149,18 @@ TEST(SyncBuffer, GetNextAudioInterleaved) {
   
   
   
+  const size_t samples = kNewLen / 2;
   AudioFrame output1;
-  sync_buffer.GetNextAudioInterleaved(kNewLen / 2, &output1);
-  EXPECT_EQ(kChannels, output1.num_channels_);
-  EXPECT_EQ(kNewLen / 2, output1.samples_per_channel_);
+  EXPECT_TRUE(sync_buffer.GetNextAudioInterleaved(
+      output1.mutable_data(samples, kChannels)));
 
   AudioFrame output2;
-  sync_buffer.GetNextAudioInterleaved(kNewLen / 2, &output2);
-  EXPECT_EQ(kChannels, output2.num_channels_);
-  EXPECT_EQ(kNewLen / 2, output2.samples_per_channel_);
+  EXPECT_TRUE(sync_buffer.GetNextAudioInterleaved(
+      output2.mutable_data(samples, kChannels)));
 
   
   const int16_t* output_ptr = output1.data();
-  for (size_t i = 0; i < kNewLen / 2; ++i) {
+  for (size_t i = 0; i < samples; ++i) {
     for (size_t channel = 0; channel < kChannels; ++channel) {
       EXPECT_EQ(new_data[channel][i], *output_ptr);
       ++output_ptr;

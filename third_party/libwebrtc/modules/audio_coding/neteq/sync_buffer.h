@@ -16,7 +16,7 @@
 
 #include <vector>
 
-#include "api/audio/audio_frame.h"
+#include "api/audio/audio_view.h"
 #include "modules/audio_coding/neteq/audio_multi_vector.h"
 #include "modules/audio_coding/neteq/audio_vector.h"
 #include "rtc_base/buffer.h"
@@ -80,7 +80,13 @@ class SyncBuffer final : public AudioMultiVector {
   
   
   
-  void GetNextAudioInterleaved(size_t requested_len, AudioFrame* output);
+  
+  
+  
+  
+  
+  
+  bool GetNextAudioInterleaved(InterleavedView<int16_t> audio);
 
   
   void IncreaseEndTimestamp(uint32_t increment);
