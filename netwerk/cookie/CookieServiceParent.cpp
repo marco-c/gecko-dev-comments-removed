@@ -338,10 +338,18 @@ IPCResult CookieServiceParent::SetCookies(
   
   CookieProcessingGuard guard(this);
 
-  bool ok = mCookieService->SetCookiesFromIPC(aBaseDomain, aOriginAttributes,
-                                              aHost, aFromHttp, aIsThirdParty,
-                                              aCookies, aBrowsingContext);
-  return ok ? IPC_OK() : IPC_FAIL(this, "Invalid cookie received.");
+  nsICookieValidation::ValidationError error =
+      mCookieService->SetCookiesFromIPC(aBaseDomain, aOriginAttributes, aHost,
+                                        aFromHttp, aIsThirdParty, aCookies,
+                                        aBrowsingContext);
+  MOZ_DIAGNOSTIC_ASSERT(error == nsICookieValidation::eOK);
+
+  if (error != nsICookieValidation::eOK) {
+    MOZ_LOG(gCookieLog, LogLevel::Warning,
+            ("Invalid cookie submission from the content process: %d", error));
+  }
+
+  return IPC_OK();
 }
 
 }  
