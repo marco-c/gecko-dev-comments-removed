@@ -1241,7 +1241,7 @@ void P2PTransportChannel::AddRemoteCandidate(const Candidate& candidate) {
 P2PTransportChannel::CandidateAndResolver::CandidateAndResolver(
     const Candidate& candidate,
     std::unique_ptr<AsyncDnsResolverInterface>&& resolver)
-    : candidate_(candidate), resolver_(std::move(resolver)) {}
+    : candidate(candidate), resolver(std::move(resolver)) {}
 
 P2PTransportChannel::CandidateAndResolver::~CandidateAndResolver() {}
 
@@ -1250,20 +1250,19 @@ void P2PTransportChannel::OnCandidateResolved(
   RTC_DCHECK_RUN_ON(network_thread_);
   auto p =
       absl::c_find_if(resolvers_, [resolver](const CandidateAndResolver& cr) {
-        return cr.resolver_.get() == resolver;
+        return cr.resolver.get() == resolver;
       });
   if (p == resolvers_.end()) {
     RTC_LOG(LS_ERROR) << "Unexpected AsyncDnsResolver return";
     RTC_DCHECK_NOTREACHED();
     return;
   }
-  Candidate candidate = p->candidate_;
+  Candidate candidate = p->candidate;
   AddRemoteCandidateWithResult(candidate, resolver->result());
   
   
   
-  std::unique_ptr<AsyncDnsResolverInterface> to_delete =
-      std::move(p->resolver_);
+  std::unique_ptr<AsyncDnsResolverInterface> to_delete = std::move(p->resolver);
   
   network_thread_->PostTask([to_delete = std::move(to_delete)] {});
   resolvers_.erase(p);
