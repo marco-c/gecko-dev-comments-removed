@@ -2,6 +2,7 @@
 
 
 
+import copy
 import logging
 
 
@@ -50,3 +51,14 @@ class LoggingMixin:
                 'User login: {username}')
         """
         self._logger.log(level, format_str, extra={"action": action, "params": params})
+
+    def log_record(self, action, record):
+        """Log a LogRecord as a structured log event.
+
+        The action string is as defined for `log`.
+        """
+        record = copy.copy(record)
+        record.action = action
+        record.params = {"msg": record.getMessage()}
+        record.msg = "{msg}"
+        self._logger.handle(record)
