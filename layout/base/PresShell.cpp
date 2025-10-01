@@ -12327,12 +12327,45 @@ void PresShell::UpdateAnchorPosLayoutForScroll(
       
       continue;
     }
+
+    const auto* stylePos = positioned->StylePosition();
+    if (!stylePos->mPositionAnchor.IsIdent()) {
+      
+      
+      continue;
+    }
+
     const auto* referencedAnchors =
         positioned->GetProperty(nsIFrame::AnchorPosReferences());
     if (!referencedAnchors || referencedAnchors->IsEmpty()) {
+      
+      
       continue;
     }
+
+    const nsAtom* defaultAnchorName =
+        stylePos->mPositionAnchor.AsIdent().AsAtom();
+    
+    
+    
+    auto* defaultAnchorFrame =
+        GetAnchorPosAnchor(defaultAnchorName, positioned);
+    if (!defaultAnchorFrame) {
+      continue;
+    }
+    auto* nearestScrollToDefaultAnchor =
+        FindScrollContainerFrameOf(defaultAnchorFrame);
+
     auto* absoluteContainingBlock = positioned->GetParent();
+
+    if (UnderScrollContainer(absoluteContainingBlock,
+                             nearestScrollToDefaultAnchor)) {
+      
+      
+      
+      continue;
+    }
+
     for (const auto& entry : affectedAnchors) {
       const auto* anchorName = entry.mAnchorName;
       const auto& anchors = entry.mFrames;
@@ -12340,7 +12373,10 @@ void PresShell::UpdateAnchorPosLayoutForScroll(
       if (!data) {
         continue;
       }
-      const auto* anchorFrame = GetAnchorPosAnchor(anchorName, positioned);
+      const auto* anchorFrame =
+          anchorName == defaultAnchorName
+              ? defaultAnchorFrame
+              : GetAnchorPosAnchor(anchorName, positioned);
       const auto idx = anchors.IndexOf(anchorFrame, 0, Comparator{});
       if (idx == anchors.NoIndex) {
         
@@ -12349,10 +12385,7 @@ void PresShell::UpdateAnchorPosLayoutForScroll(
       }
       auto* anchorScrollContainer =
           anchors.ElementAt(idx).mNearestScrollContainer;
-      if (UnderScrollContainer(absoluteContainingBlock,
-                               anchorScrollContainer)) {
-        
-        
+      if (anchorScrollContainer != nearestScrollToDefaultAnchor) {
         
         continue;
       }
