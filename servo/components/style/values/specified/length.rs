@@ -2048,8 +2048,7 @@ impl Parse for Size {
 }
 
 macro_rules! parse_size_non_length {
-    ($size:ident, $input:expr, $allow_webkit_fill_available:expr,
-     $auto_or_none:expr => $auto_or_none_ident:ident) => {{
+    ($size:ident, $input:expr, $auto_or_none:expr => $auto_or_none_ident:ident) => {{
         let size = $input.try_parse(|input| {
             Ok(try_match_ident_ignore_ascii_case! { input,
                 "min-content" | "-moz-min-content" => $size::MinContent,
@@ -2058,7 +2057,7 @@ macro_rules! parse_size_non_length {
                 #[cfg(feature = "gecko")]
                 "-moz-available" => $size::MozAvailable,
                 #[cfg(feature = "gecko")]
-                "-webkit-fill-available" if $allow_webkit_fill_available => $size::WebkitFillAvailable,
+                "-webkit-fill-available" if is_webkit_fill_available_keyword_enabled() => $size::WebkitFillAvailable,
                 "stretch" if is_stretch_enabled() => $size::Stretch,
                 $auto_or_none => $size::$auto_or_none_ident,
             })
@@ -2070,29 +2069,9 @@ macro_rules! parse_size_non_length {
 }
 
 #[cfg(feature = "gecko")]
-fn is_webkit_fill_available_enabled_in_width_and_height() -> bool {
+fn is_webkit_fill_available_keyword_enabled() -> bool {
     static_prefs::pref!("layout.css.webkit-fill-available.enabled")
 }
-
-#[cfg(feature = "gecko")]
-fn is_webkit_fill_available_enabled_in_all_size_properties() -> bool {
-    
-    
-    
-    static_prefs::pref!("layout.css.webkit-fill-available.enabled")
-        && static_prefs::pref!("layout.css.webkit-fill-available.all-size-properties.enabled")
-}
-
-#[cfg(feature = "servo")]
-fn is_webkit_fill_available_enabled_in_width_and_height() -> bool {
-    false
-}
-
-#[cfg(feature = "servo")]
-fn is_webkit_fill_available_enabled_in_all_size_properties() -> bool {
-    false
-}
-
 fn is_stretch_enabled() -> bool {
     static_prefs::pref!("layout.css.stretch-size-keyword.enabled")
 }
@@ -2123,22 +2102,7 @@ impl Size {
         input: &mut Parser<'i, 't>,
         allow_quirks: AllowQuirks,
     ) -> Result<Self, ParseError<'i>> {
-        let allow_webkit_fill_available = is_webkit_fill_available_enabled_in_all_size_properties();
-        Self::parse_quirky_internal(context, input, allow_quirks, allow_webkit_fill_available)
-    }
-
-    
-    
-    
-    
-    fn parse_quirky_internal<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-        allow_quirks: AllowQuirks,
-        allow_webkit_fill_available: bool,
-    ) -> Result<Self, ParseError<'i>> {
-        parse_size_non_length!(Size, input, allow_webkit_fill_available,
-                               "auto" => Auto);
+        parse_size_non_length!(Size, input, "auto" => Auto);
         parse_fit_content_function!(Size, input, context, allow_quirks);
 
         match input
@@ -2162,33 +2126,6 @@ impl Size {
         Ok(Self::AnchorSizeFunction(Box::new(
             GenericAnchorSizeFunction::parse(context, input)?,
         )))
-    }
-
-    
-    
-    
-    
-    
-    pub fn parse_size_for_width_or_height_quirky<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-        allow_quirks: AllowQuirks,
-    ) -> Result<Self, ParseError<'i>> {
-        let allow_webkit_fill_available = is_webkit_fill_available_enabled_in_width_and_height();
-        Self::parse_quirky_internal(context, input, allow_quirks, allow_webkit_fill_available)
-    }
-
-    
-    
-    
-    
-    
-    pub fn parse_size_for_width_or_height<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
-        let allow_webkit_fill_available = is_webkit_fill_available_enabled_in_width_and_height();
-        Self::parse_quirky_internal(context, input, AllowQuirks::No, allow_webkit_fill_available)
     }
 
     
@@ -2217,9 +2154,7 @@ impl MaxSize {
         input: &mut Parser<'i, 't>,
         allow_quirks: AllowQuirks,
     ) -> Result<Self, ParseError<'i>> {
-        let allow_webkit_fill_available = is_webkit_fill_available_enabled_in_all_size_properties();
-        parse_size_non_length!(MaxSize, input, allow_webkit_fill_available,
-                               "none" => None);
+        parse_size_non_length!(MaxSize, input, "none" => None);
         parse_fit_content_function!(MaxSize, input, context, allow_quirks);
 
         match input
