@@ -17,6 +17,7 @@
 #  include <mach/mach_traps.h>
 #  include "base/rand_util.h"
 #  include "chrome/common/mach_ipc_mac.h"
+#  include "mozilla/StaticPrefs_layers.h"
 #  include "mozilla/StaticPrefs_media.h"
 #endif
 #ifdef MOZ_WIDGET_COCOA
@@ -199,13 +200,11 @@ class BaseProcessLauncher {
   virtual ~BaseProcessLauncher() = default;
 
   RefPtr<ProcessLaunchPromise> PerformAsyncLaunch();
-  RefPtr<ProcessLaunchPromise> FinishLaunch();
 
   
   
   virtual Result<Ok, LaunchError> DoSetup();
-  virtual RefPtr<ProcessHandlePromise> DoLaunch() = 0;
-  virtual Result<Ok, LaunchError> DoFinishLaunch();
+  virtual RefPtr<ProcessLaunchPromise> DoLaunch() = 0;
 
   void MapChildLogging();
 
@@ -240,7 +239,6 @@ class BaseProcessLauncher {
   bool mDisableOSActivityMode;
 #endif
   LaunchResults mResults = LaunchResults();
-  TimeStamp mStartTimeStamp = TimeStamp::Now();
   char mInitialChannelIdString[NSID_LENGTH];
   char mChildIDString[32];
 
@@ -258,8 +256,7 @@ class WindowsProcessLauncher : public BaseProcessLauncher {
 
  protected:
   virtual Result<Ok, LaunchError> DoSetup() override;
-  virtual RefPtr<ProcessHandlePromise> DoLaunch() override;
-  virtual Result<Ok, LaunchError> DoFinishLaunch() override;
+  virtual RefPtr<ProcessLaunchPromise> DoLaunch() override;
 
   mozilla::Maybe<CommandLine> mCmdLine;
 #  ifdef MOZ_SANDBOX
@@ -281,7 +278,7 @@ class PosixProcessLauncher : public BaseProcessLauncher {
 
  protected:
   virtual Result<Ok, LaunchError> DoSetup() override;
-  virtual RefPtr<ProcessHandlePromise> DoLaunch() override;
+  virtual RefPtr<ProcessLaunchPromise> DoLaunch() override;
 
   nsCOMPtr<nsIFile> mProfileDir;
 };
@@ -302,7 +299,7 @@ class MacProcessLauncher : public PosixProcessLauncher {
   }
 
  protected:
-  virtual Result<Ok, LaunchError> DoFinishLaunch() override;
+  virtual RefPtr<ProcessLaunchPromise> DoLaunch() override;
 
   std::string mMachConnectionName;
   
@@ -320,7 +317,7 @@ class AndroidProcessLauncher : public PosixProcessLauncher {
       : PosixProcessLauncher(aHost, std::move(aExtraOpts)) {}
 
  protected:
-  virtual RefPtr<ProcessHandlePromise> DoLaunch() override;
+  virtual RefPtr<ProcessLaunchPromise> DoLaunch() override;
   RefPtr<ProcessHandlePromise> LaunchAndroidService(
       const GeckoProcessType aType, const geckoargs::ChildProcessArgs& args);
 };
@@ -348,7 +345,7 @@ class IosProcessLauncher : public PosixProcessLauncher {
       : PosixProcessLauncher(aHost, std::move(aExtraOpts)) {}
 
  protected:
-  virtual RefPtr<ProcessHandlePromise> DoLaunch() override;
+  virtual RefPtr<ProcessLaunchPromise> DoLaunch() override;
 
   DarwinObjectPtr<xpc_object_t> mBootstrapMessage;
 };
@@ -533,9 +530,16 @@ mozilla::BinPathType BaseProcessLauncher::GetPathToBinary(
   std::string executableLeafName;
   if (processType == GeckoProcessType_GMPlugin &&
       mozilla::StaticPrefs::media_plugin_helper_process_enabled()) {
+    
     bundleName = MOZ_EME_PROCESS_BUNDLENAME;
     executableLeafName = MOZ_EME_PROCESS_NAME_BRANDED;
+  } else if (processType == GeckoProcessType_GPU &&
+             mozilla::StaticPrefs::layers_gpu_process_executable_enabled()) {
+    
+    bundleName = MOZ_GPU_PROCESS_BUNDLENAME;
+    executableLeafName = MOZ_GPU_PROCESS_NAME_BRANDED;
   } else {
+    
     bundleName = MOZ_CHILD_PROCESS_BUNDLENAME;
     executableLeafName = MOZ_CHILD_PROCESS_NAME;
   }
@@ -725,6 +729,7 @@ bool GeckoChildProcessHost::AsyncLaunch(
 
   RefPtr<BaseProcessLauncher> launcher =
       new ProcessLauncher(this, std::move(aExtraOpts));
+  TimeStamp startTimeStamp = TimeStamp::Now();
 #ifdef ALLOW_GECKO_CHILD_PROCESS_ARCH
   launcher->SetLaunchArchitecture(mLaunchArch);
 #endif
@@ -739,7 +744,7 @@ bool GeckoChildProcessHost::AsyncLaunch(
           &BaseProcessLauncher::Launch, this)
           ->Then(
               XRE_GetAsyncIOEventTarget(), __func__,
-              [this](LaunchResults&& aResults) {
+              [this, startTimeStamp](LaunchResults&& aResults) {
                 {
                   {
                     mozilla::AutoWriteLock handleLock(mHandleLock);
@@ -786,6 +791,9 @@ bool GeckoChildProcessHost::AsyncLaunch(
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
                   this->mSandboxBroker = std::move(aResults.mSandboxBroker);
 #endif
+
+                  glean::process::child_launch.AccumulateRawDuration(
+                      TimeStamp::Now() - startTimeStamp);
 
                   MonitorAutoLock lock(mMonitor);
                   
@@ -1080,15 +1088,20 @@ RefPtr<ProcessLaunchPromise> BaseProcessLauncher::PerformAsyncLaunch() {
   if (aError.isErr()) {
     return ProcessLaunchPromise::CreateAndReject(aError.unwrapErr(), __func__);
   }
-  RefPtr<BaseProcessLauncher> self = this;
   return DoLaunch()->Then(
       mLaunchThread, __func__,
-      [self](base::ProcessHandle aHandle) {
-        self->mResults.mHandle = aHandle;
-        return self->FinishLaunch();
-      },
-      [](LaunchError aError) {
-        return ProcessLaunchPromise::CreateAndReject(aError, __func__);
+      [self =
+           RefPtr{this}](ProcessLaunchPromise::ResolveOrRejectValue&& aResult) {
+        
+        
+        
+        
+        
+        
+        
+        self->mChildArgs = {};
+        return ProcessLaunchPromise::CreateAndResolveOrReject(
+            std::move(aResult), __func__);
       });
 }
 
@@ -1163,16 +1176,6 @@ void BaseProcessLauncher::MapChildLogging() {
     mLaunchOptions->env_map[ENVIRONMENT_LITERAL("RUST_LOG")] =
         ENVIRONMENT_STRING(childRustLog.get());
   }
-}
-
-Result<Ok, LaunchError> BaseProcessLauncher::DoFinishLaunch() {
-  
-  
-  
-  
-  mChildArgs.mFiles.clear();
-
-  return Ok();
 }
 
 #if defined(MOZ_WIDGET_GTK)
@@ -1334,35 +1337,44 @@ Result<Ok, LaunchError> PosixProcessLauncher::DoSetup() {
 #endif  
 
 #if defined(MOZ_WIDGET_ANDROID)
-RefPtr<ProcessHandlePromise> AndroidProcessLauncher::DoLaunch() {
-  return LaunchAndroidService(mProcessType, mChildArgs);
+RefPtr<ProcessLaunchPromise> AndroidProcessLauncher::DoLaunch() {
+  return LaunchAndroidService(mProcessType, mChildArgs)
+      ->Then(
+          mLaunchThread, __func__,
+          [self = RefPtr{this}](ProcessHandle aHandle) {
+            self->mResults.mHandle = aHandle;
+            return ProcessLaunchPromise::CreateAndResolve(
+                std::move(self->mResults), __func__);
+          },
+          [](LaunchError aError) {
+            return ProcessLaunchPromise::CreateAndReject(aError, __func__);
+          });
 }
 #endif  
 
 #ifdef XP_UNIX
-RefPtr<ProcessHandlePromise> PosixProcessLauncher::DoLaunch() {
-  ProcessHandle handle = 0;
+RefPtr<ProcessLaunchPromise> PosixProcessLauncher::DoLaunch() {
   Result<Ok, LaunchError> result = Err(LaunchError{"Launch not attempted"});
 #  ifdef MOZ_ENABLE_FORKSERVER
   if (mProcessType != GeckoProcessType_ForkServer && ForkServiceChild::Get()) {
     result = ForkServiceChild::Get()->SendForkNewSubprocess(
-        std::move(mChildArgs), std::move(*mLaunchOptions), &handle);
+        std::move(mChildArgs), std::move(*mLaunchOptions), &mResults.mHandle);
   } else
 #  endif
   {
-    result =
-        base::LaunchApp(mChildArgs.mArgs, std::move(*mLaunchOptions), &handle);
+    result = base::LaunchApp(mChildArgs.mArgs, std::move(*mLaunchOptions),
+                             &mResults.mHandle);
   }
 
   if (result.isErr()) {
-    return ProcessHandlePromise::CreateAndReject(result.unwrapErr(), __func__);
+    return ProcessLaunchPromise::CreateAndReject(result.unwrapErr(), __func__);
   }
-  return ProcessHandlePromise::CreateAndResolve(handle, __func__);
+  return ProcessLaunchPromise::CreateAndResolve(std::move(mResults), __func__);
 }
 #endif  
 
 #ifdef XP_IOS
-RefPtr<ProcessHandlePromise> IosProcessLauncher::DoLaunch() {
+RefPtr<ProcessLaunchPromise> IosProcessLauncher::DoLaunch() {
   ExtensionKitProcess::Kind kind = ExtensionKitProcess::Kind::WebContent;
   if (mProcessType == GeckoProcessType_GPU) {
     kind = ExtensionKitProcess::Kind::Rendering;
@@ -1421,7 +1433,7 @@ RefPtr<ProcessHandlePromise> IosProcessLauncher::DoLaunch() {
   xpc_dictionary_set_value(bootstrapMessage.get(), "sendRights",
                            sendRightsArray.get());
 
-  auto promise = MakeRefPtr<ProcessHandlePromise::Private>(__func__);
+  auto promise = MakeRefPtr<ProcessLaunchPromise::Private>(__func__);
   ExtensionKitProcess::StartProcess(kind, [self = RefPtr{this}, promise,
                                            bootstrapMessage =
                                                std::move(bootstrapMessage)](
@@ -1500,7 +1512,8 @@ RefPtr<ProcessHandlePromise> IosProcessLauncher::DoLaunch() {
             return;
           }
 
-          promise->Resolve(pid, __func__);
+          self->mResults.mHandle = pid;
+          promise->Resolve(std::move(self->mResults), __func__);
         });
   });
 
@@ -1509,22 +1522,33 @@ RefPtr<ProcessHandlePromise> IosProcessLauncher::DoLaunch() {
 #endif
 
 #ifdef XP_MACOSX
-Result<Ok, LaunchError> MacProcessLauncher::DoFinishLaunch() {
-  Result<Ok, LaunchError> aError = PosixProcessLauncher::DoFinishLaunch();
-  if (aError.isErr()) {
-    return aError;
-  }
-
-  MOZ_ASSERT(mParentRecvPort, "should have been configured during DoSetup()");
-
-  
-  
-  const int kTimeoutMs = 10000;
-  MOZ_TRY(MachHandleProcessCheckIn(
-      mParentRecvPort.get(), base::GetProcId(mResults.mHandle), kTimeoutMs,
-      mChildArgs.mSendRights, &mResults.mChildTask));
-
-  return Ok();
+RefPtr<ProcessLaunchPromise> MacProcessLauncher::DoLaunch() {
+  return PosixProcessLauncher::DoLaunch()->Then(
+      XRE_GetAsyncIOEventTarget(), __func__,
+      [self = RefPtr{this}](
+          LaunchResults&& aResults) -> RefPtr<ProcessLaunchPromise> {
+        
+        
+        
+        return MachHandleProcessCheckIn(std::move(self->mParentRecvPort),
+                                        base::GetProcId(aResults.mHandle),
+                                        mozilla::TimeDuration::FromSeconds(10),
+                                        std::move(self->mChildArgs.mSendRights))
+            ->Then(
+                XRE_GetAsyncIOEventTarget(), __func__,
+                [self, results = std::move(aResults)](task_t aTask) mutable {
+                  results.mChildTask = aTask;
+                  return ProcessLaunchPromise::CreateAndResolve(
+                      std::move(results), __func__);
+                },
+                [](LaunchError aError) {
+                  return ProcessLaunchPromise::CreateAndReject(aError,
+                                                               __func__);
+                });
+      },
+      [](LaunchError aError) {
+        return ProcessLaunchPromise::CreateAndReject(aError, __func__);
+      });
 }
 #endif  
 
@@ -1690,8 +1714,7 @@ Result<Ok, LaunchError> WindowsProcessLauncher::DoSetup() {
   return Ok();
 }
 
-RefPtr<ProcessHandlePromise> WindowsProcessLauncher::DoLaunch() {
-  ProcessHandle handle = 0;
+RefPtr<ProcessLaunchPromise> WindowsProcessLauncher::DoLaunch() {
 #  ifdef MOZ_SANDBOX
   if (mUseSandbox) {
     const IMAGE_THUNK_DATA* cachedNtdllThunk =
@@ -1699,50 +1722,28 @@ RefPtr<ProcessHandlePromise> WindowsProcessLauncher::DoLaunch() {
     Result<Ok, LaunchError> err = mResults.mSandboxBroker->LaunchApp(
         mCmdLine->program().c_str(), mCmdLine->command_line_string().c_str(),
         mLaunchOptions->env_map, mProcessType, mEnableSandboxLogging,
-        cachedNtdllThunk, &handle);
+        cachedNtdllThunk, &mResults.mHandle);
     if (err.isOk()) {
       EnvironmentLog("MOZ_PROCESS_LOG")
           .print("==> process %d launched child process %d (%S)\n",
-                 base::GetCurrentProcId(), base::GetProcId(handle),
+                 base::GetCurrentProcId(), base::GetProcId(mResults.mHandle),
                  mCmdLine->command_line_string().c_str());
-      return ProcessHandlePromise::CreateAndResolve(handle, __func__);
+      return ProcessLaunchPromise::CreateAndResolve(std::move(mResults),
+                                                    __func__);
     }
-    return ProcessHandlePromise::CreateAndReject(err.unwrapErr(), __func__);
+    return ProcessLaunchPromise::CreateAndReject(err.unwrapErr(), __func__);
   }
 #  endif  
 
   Result<Ok, LaunchError> launchErr =
-      base::LaunchApp(mCmdLine.ref(), *mLaunchOptions, &handle);
+      base::LaunchApp(mCmdLine.ref(), *mLaunchOptions, &mResults.mHandle);
   if (launchErr.isErr()) {
-    return ProcessHandlePromise::CreateAndReject(launchErr.unwrapErr(),
+    return ProcessLaunchPromise::CreateAndReject(launchErr.unwrapErr(),
                                                  __func__);
   }
-  return ProcessHandlePromise::CreateAndResolve(handle, __func__);
-}
-
-Result<Ok, LaunchError> WindowsProcessLauncher::DoFinishLaunch() {
-  Result<Ok, LaunchError> err = BaseProcessLauncher::DoFinishLaunch();
-  if (err.isErr()) {
-    return err;
-  }
-
-  return Ok();
-}
-#endif  
-
-RefPtr<ProcessLaunchPromise> BaseProcessLauncher::FinishLaunch() {
-  Result<Ok, LaunchError> aError = DoFinishLaunch();
-  if (aError.isErr()) {
-    return ProcessLaunchPromise::CreateAndReject(aError.unwrapErr(), __func__);
-  }
-
-  MOZ_DIAGNOSTIC_ASSERT(mResults.mHandle);
-
-  glean::process::child_launch.AccumulateRawDuration(TimeStamp::Now() -
-                                                     mStartTimeStamp);
-
   return ProcessLaunchPromise::CreateAndResolve(std::move(mResults), __func__);
 }
+#endif  
 
 bool GeckoChildProcessHost::OpenPrivilegedHandle(base::ProcessId aPid) {
   if (mChildProcessHandle) {
