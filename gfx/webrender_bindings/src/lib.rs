@@ -2,6 +2,7 @@
 
 
 
+#![allow(unknown_lints, mismatched_lifetime_syntaxes)]
 #![deny(warnings)]
 
 extern crate app_units;
