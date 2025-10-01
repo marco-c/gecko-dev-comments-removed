@@ -35,6 +35,8 @@ interface nsIProxyInfo : nsISupports
 
 
 
+
+
   readonly attribute ACString type;
 
   
@@ -90,6 +92,11 @@ interface nsIProxyInfo : nsISupports
 
 
   readonly attribute ACString connectionIsolationKey;
+
+  
+
+
+  attribute AUTF8String pathTemplate;
 
   
 
