@@ -660,20 +660,22 @@ void nsTextControlFrame::ReflowTextControlChild(
   const LogicalSize paddingBoxSize = contentBoxSize + parentPadding.Size(wm);
   const LogicalSize borderBoxSize =
       paddingBoxSize + aReflowInput.ComputedLogicalBorder(wm).Size(wm);
-  LogicalSize availSize = paddingBoxSize;
-  availSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
-
+  const bool singleLine = IsSingleLineTextControl();
   const bool isButtonBox = IsButtonBox(aKid);
-
+  LogicalSize availSize =
+      !isButtonBox && singleLine ? contentBoxSize : paddingBoxSize;
+  availSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
   ReflowInput kidReflowInput(aPresContext, aReflowInput, aKid, availSize,
                              Nothing(), ReflowInput::InitFlag::CallerWillInit);
 
   
   
   auto overridePadding = isButtonBox ? Nothing() : Some(parentPadding);
-  if (!isButtonBox && aButtonBoxISize) {
+  if (!isButtonBox && singleLine) {
     
-    overridePadding->IEnd(outerWM) = 0;
+    
+    
+    overridePadding->IStart(outerWM) = overridePadding->IEnd(outerWM) = 0;
   }
 
   
@@ -697,6 +699,9 @@ void nsTextControlFrame::ReflowTextControlChild(
     
     position.B(wm) = border.BStart(wm);
     position.I(wm) = border.IStart(wm);
+    if (singleLine) {
+      position.I(wm) += parentPadding.IStart(wm);
+    }
 
     
     
