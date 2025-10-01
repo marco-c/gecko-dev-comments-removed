@@ -96,6 +96,14 @@ struct AnchorPositioningUtils {
       const nsIFrame* aAbsoluteContainingBlock, const nsIFrame* aAnchor,
       bool aCBRectIsvalid,
       Maybe<AnchorPosResolutionData>* aReferencedAnchorsEntry);
+
+  
+
+
+
+  static nsRect AdjustAbsoluteContainingBlockRectForPositionArea(
+      nsIFrame* aPositionedFrame, nsIFrame* aContainingBlock,
+      const nsRect& aCBRect, AnchorPosReferenceData* aAnchorPosReferenceData);
 };
 
 }  

@@ -390,6 +390,8 @@ struct AnchorPosResolutionParams {
   
   mozilla::StylePositionProperty mPosition;
   
+  mozilla::StylePositionArea mPositionArea;
+  
   
   mozilla::AnchorPosReferenceData* const mAnchorPosReferenceData = nullptr;
 
@@ -805,6 +807,12 @@ struct AnchorResolvedInsetHelper {
       const mozilla::StyleInset& aValue, mozilla::Side aSide,
       const AnchorPosOffsetResolutionParams& aParams) {
     if (!aValue.HasAnchorPositioningFunction()) {
+      
+      
+      if (aValue.IsAuto() && !aParams.mBaseParams.mPositionArea.IsNone()) {
+        return AnchorResolvedInset::UniquelyOwning(
+            new mozilla::StyleInset(mozilla::LengthPercentage::Zero()));
+      }
       return AnchorResolvedInset::NonOwning(&aValue);
     }
     return ResolveAnchor(aValue, mozilla::ToStylePhysicalSide(aSide), aParams);
