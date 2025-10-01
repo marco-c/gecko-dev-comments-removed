@@ -213,7 +213,12 @@ class HTMLEditUtils final {
 
   static bool IsVisibleElementEvenIfLeafNode(const nsIContent& aContent);
 
-  static bool IsInlineStyle(nsINode* aNode);
+  
+
+
+
+
+  [[nodiscard]] static bool IsInlineStyleElement(const nsIContent& aContent);
 
   
 
@@ -323,24 +328,109 @@ class HTMLEditUtils final {
     return IsFormatTagForParagraphStateCommand(*tagName);
   }
 
-  static bool IsNodeThatCanOutdent(nsINode* aNode);
-  static bool IsHeader(nsINode& aNode);
-  static bool IsListItem(const nsINode* aNode);
-  static bool IsTable(const nsINode* aNode);
-  static bool IsTableRow(nsINode* aNode);
-  static bool IsAnyTableElement(const nsINode* aNode);
-  static bool IsAnyTableElementButNotTable(const nsINode* aNode);
-  static bool IsTableCell(const nsINode* aNode);
-  static bool IsTableCellOrCaption(nsINode& aNode);
-  static bool IsAnyListElement(const nsINode* aNode);
-  static bool IsPre(const nsINode* aNode);
-  static bool IsImage(nsINode* aNode);
-  static bool IsLink(const nsINode* aNode);
-  static bool IsNamedAnchor(const nsINode* aNode);
-  static bool IsMozDiv(const nsINode* aNode);
-  static bool IsMailCite(const Element& aElement);
-  static bool IsFormWidget(const nsINode* aNode);
-  static bool SupportsAlignAttr(nsINode& aNode);
+  
+
+
+
+  [[nodiscard]] static bool IsOutdentable(const nsIContent& aContent);
+
+  
+
+
+  [[nodiscard]] static bool IsHeadingElement(const nsIContent& aContent);
+
+  
+
+
+  [[nodiscard]] static bool IsListItemElement(const nsIContent& aContent);
+  [[nodiscard]] static bool IsListItemElement(const nsIContent* aContent) {
+    return aContent && IsListItemElement(*aContent);
+  }
+
+  
+
+
+  [[nodiscard]] static bool IsTableRowElement(const nsIContent& aContent);
+  [[nodiscard]] static bool IsTableRowElement(const nsIContent* aContent) {
+    return aContent && IsTableRowElement(*aContent);
+  }
+
+  
+
+
+
+  [[nodiscard]] static bool IsAnyTableElementExceptColumnElement(
+      const nsIContent& aContent);
+
+  
+
+
+
+  [[nodiscard]] static bool IsAnyTableElementExceptTableElementAndColumElement(
+      const nsIContent& aContent);
+
+  
+
+
+  [[nodiscard]] static bool IsTableCellElement(const nsIContent& aContent);
+  [[nodiscard]] static bool IsTableCellElement(const nsIContent* aContent) {
+    return aContent && IsTableCellElement(*aContent);
+  }
+
+  
+
+
+
+  [[nodiscard]] static bool IsTableCellOrCaptionElement(
+      const nsIContent& aContent);
+
+  
+
+
+  [[nodiscard]] static bool IsListElement(const nsIContent& aContent);
+  [[nodiscard]] static bool IsListElement(const nsIContent* aContent) {
+    return aContent && IsListElement(*aContent);
+  }
+
+  
+
+
+
+
+  [[nodiscard]] static bool IsImageElement(const nsIContent& aContent);
+
+  
+
+
+
+  [[nodiscard]] static bool IsHyperlinkElement(const nsIContent& aContent);
+
+  
+
+
+
+  [[nodiscard]] static bool IsNamedAnchorElement(const nsIContent& aContent);
+
+  
+
+
+  [[nodiscard]] static bool IsMozDivElement(const nsIContent& aContent);
+
+  
+
+
+  [[nodiscard]] static bool IsMailCiteElement(const Element& aElement);
+
+  
+
+
+
+  [[nodiscard]] static bool IsFormWidgetElement(const nsIContent& aContent);
+
+  
+
+
+  [[nodiscard]] static bool IsAlignAttrSupported(const nsIContent& aContent);
 
   static bool CanNodeContain(const nsINode& aParent, const nsIContent& aChild) {
     switch (aParent.NodeType()) {
@@ -495,8 +585,9 @@ class HTMLEditUtils final {
 
 
 
-  static bool IsNonListSingleLineContainer(const nsINode& aNode);
-  static bool IsSingleLineContainer(const nsINode& aNode);
+  [[nodiscard]] static bool IsNonListSingleLineContainer(
+      const nsIContent& aContent);
+  [[nodiscard]] static bool IsSingleLineContainer(const nsIContent& aContent);
 
   
 
@@ -731,11 +822,11 @@ class HTMLEditUtils final {
 
 
   [[nodiscard]] static bool IsEmptyAnyListElement(const Element& aListElement) {
-    MOZ_ASSERT(HTMLEditUtils::IsAnyListElement(&aListElement));
+    MOZ_ASSERT(HTMLEditUtils::IsListElement(aListElement));
     bool foundListItem = false;
     for (nsIContent* child = aListElement.GetFirstChild(); child;
          child = child->GetNextSibling()) {
-      if (HTMLEditUtils::IsListItem(child)) {
+      if (HTMLEditUtils::IsListItemElement(*child)) {
         if (foundListItem) {
           return false;  
         }
@@ -763,10 +854,10 @@ class HTMLEditUtils final {
   [[nodiscard]] static bool IsValidListElement(
       const Element& aListElement,
       TreatSubListElementAs aTreatSubListElementAs) {
-    MOZ_ASSERT(HTMLEditUtils::IsAnyListElement(&aListElement));
+    MOZ_ASSERT(HTMLEditUtils::IsListElement(aListElement));
     for (nsIContent* child = aListElement.GetFirstChild(); child;
          child = child->GetNextSibling()) {
-      if (HTMLEditUtils::IsAnyListElement(child)) {
+      if (HTMLEditUtils::IsListElement(*child)) {
         if (aTreatSubListElementAs == TreatSubListElementAs::Invalid) {
           return false;
         }
@@ -854,10 +945,11 @@ class HTMLEditUtils final {
     
     bool maybeStartOfAnchor = aPoint.IsStartOfContainer();
     for (EditorRawDOMPoint point(aPoint.template ContainerAs<nsIContent>());
-         point.IsSet() && (maybeStartOfAnchor ? point.IsStartOfContainer()
-                                              : point.IsAtLastContent());
+         point.IsInContentNode() &&
+         (maybeStartOfAnchor ? point.IsStartOfContainer()
+                             : point.IsAtLastContent());
          point = point.ParentPoint()) {
-      if (HTMLEditUtils::IsLink(point.GetContainer())) {
+      if (HTMLEditUtils::IsHyperlinkElement(*point.ContainerAs<nsIContent>())) {
         
         if (aFoundLinkElement) {
           *aFoundLinkElement =
@@ -881,7 +973,7 @@ class HTMLEditUtils final {
       *aFoundLinkElement = nullptr;
     }
     for (Element* element : aContent.InclusiveAncestorsOfType<Element>()) {
-      if (HTMLEditUtils::IsLink(element)) {
+      if (HTMLEditUtils::IsHyperlinkElement(*element)) {
         if (aFoundLinkElement) {
           *aFoundLinkElement = do_AddRef(element).take();
         }
@@ -1171,7 +1263,7 @@ class HTMLEditUtils final {
     
     while (editableContent && !editableContent->IsText() &&
            !editableContent->IsHTMLElement(nsGkAtoms::br) &&
-           !HTMLEditUtils::IsImage(editableContent)) {
+           !HTMLEditUtils::IsImageElement(*editableContent)) {
       if (aWalkTreeDirection == WalkTreeDirection::Backward) {
         editableContent = HTMLEditUtils::GetPreviousContent(
             *editableContent, {WalkTreeOption::IgnoreNonEditableNode},
@@ -1814,7 +1906,7 @@ class HTMLEditUtils final {
       return nullptr;
     }
     for (Element* element : aContent.InclusiveAncestorsOfType<Element>()) {
-      if (HTMLEditUtils::IsTable(element)) {
+      if (element->IsHTMLElement(nsGkAtoms::table)) {
         return element;
       }
     }
@@ -1824,7 +1916,7 @@ class HTMLEditUtils final {
   static Element* GetInclusiveAncestorAnyTableElement(
       const nsIContent& aContent) {
     for (Element* parent : aContent.InclusiveAncestorsOfType<Element>()) {
-      if (HTMLEditUtils::IsAnyTableElement(parent)) {
+      if (HTMLEditUtils::IsAnyTableElementExceptColumnElement(*parent)) {
         return parent;
       }
     }
@@ -1845,15 +1937,15 @@ class HTMLEditUtils final {
     MOZ_ASSERT_IF(aAncestorLimit,
                   aContent.IsInclusiveDescendantOf(aAncestorLimit));
 
-    if (HTMLEditUtils::IsListItem(&aContent)) {
+    if (HTMLEditUtils::IsListItemElement(aContent)) {
       return const_cast<Element*>(aContent.AsElement());
     }
 
     for (Element* parentElement : aContent.AncestorsOfType<Element>()) {
-      if (HTMLEditUtils::IsAnyTableElement(parentElement)) {
+      if (HTMLEditUtils::IsAnyTableElementExceptColumnElement(*parentElement)) {
         return nullptr;
       }
-      if (HTMLEditUtils::IsListItem(parentElement)) {
+      if (HTMLEditUtils::IsListItemElement(*parentElement)) {
         return parentElement;
       }
       if (parentElement == aAncestorLimit) {
@@ -1872,7 +1964,7 @@ class HTMLEditUtils final {
   template <typename EditorDOMRangeType>
   static EditorDOMRangeType GetRangeSelectingAllContentInAllListItems(
       const Element& aListElement) {
-    MOZ_ASSERT(HTMLEditUtils::IsAnyListElement(&aListElement));
+    MOZ_ASSERT(HTMLEditUtils::IsListElement(aListElement));
     Element* firstListItem =
         HTMLEditUtils::GetFirstListItemElement(aListElement);
     Element* lastListItem = HTMLEditUtils::GetLastListItemElement(aListElement);
@@ -1891,11 +1983,11 @@ class HTMLEditUtils final {
 
 
   static Element* GetFirstListItemElement(const Element& aListElement) {
-    MOZ_ASSERT(HTMLEditUtils::IsAnyListElement(&aListElement));
+    MOZ_ASSERT(HTMLEditUtils::IsListElement(aListElement));
     for (nsIContent* maybeFirstListItem = aListElement.GetFirstChild();
          maybeFirstListItem;
          maybeFirstListItem = maybeFirstListItem->GetNextNode(&aListElement)) {
-      if (HTMLEditUtils::IsListItem(maybeFirstListItem)) {
+      if (HTMLEditUtils::IsListItemElement(*maybeFirstListItem)) {
         return maybeFirstListItem->AsElement();
       }
     }
@@ -1908,10 +2000,10 @@ class HTMLEditUtils final {
 
 
   static Element* GetLastListItemElement(const Element& aListElement) {
-    MOZ_ASSERT(HTMLEditUtils::IsAnyListElement(&aListElement));
+    MOZ_ASSERT(HTMLEditUtils::IsListElement(aListElement));
     for (nsIContent* maybeLastListItem = aListElement.GetLastChild();
          maybeLastListItem;) {
-      if (HTMLEditUtils::IsListItem(maybeLastListItem)) {
+      if (HTMLEditUtils::IsListItemElement(*maybeLastListItem)) {
         return maybeLastListItem->AsElement();
       }
       if (maybeLastListItem->HasChildren()) {
@@ -1945,16 +2037,16 @@ class HTMLEditUtils final {
   static Element* GetFirstTableCellElementChild(
       const Element& aTableRowElement) {
     MOZ_ASSERT(aTableRowElement.IsHTMLElement(nsGkAtoms::tr));
-    Element* firstElementChild = aTableRowElement.GetFirstElementChild();
-    return firstElementChild && HTMLEditUtils::IsTableCell(firstElementChild)
+    Element* const firstElementChild = aTableRowElement.GetFirstElementChild();
+    return HTMLEditUtils::IsTableCellElement(firstElementChild)
                ? firstElementChild
                : nullptr;
   }
   static Element* GetLastTableCellElementChild(
       const Element& aTableRowElement) {
     MOZ_ASSERT(aTableRowElement.IsHTMLElement(nsGkAtoms::tr));
-    Element* lastElementChild = aTableRowElement.GetLastElementChild();
-    return lastElementChild && HTMLEditUtils::IsTableCell(lastElementChild)
+    Element* const lastElementChild = aTableRowElement.GetLastElementChild();
+    return HTMLEditUtils::IsTableCellElement(lastElementChild)
                ? lastElementChild
                : nullptr;
   }
@@ -1968,10 +2060,9 @@ class HTMLEditUtils final {
       const nsIContent& aChildOfTableRow) {
     MOZ_ASSERT(aChildOfTableRow.GetParentNode());
     MOZ_ASSERT(aChildOfTableRow.GetParentNode()->IsHTMLElement(nsGkAtoms::tr));
-    Element* previousElementSibling =
+    Element* const previousElementSibling =
         aChildOfTableRow.GetPreviousElementSibling();
-    return previousElementSibling &&
-                   HTMLEditUtils::IsTableCell(previousElementSibling)
+    return HTMLEditUtils::IsTableCellElement(previousElementSibling)
                ? previousElementSibling
                : nullptr;
   }
@@ -1979,8 +2070,9 @@ class HTMLEditUtils final {
       const nsIContent& aChildOfTableRow) {
     MOZ_ASSERT(aChildOfTableRow.GetParentNode());
     MOZ_ASSERT(aChildOfTableRow.GetParentNode()->IsHTMLElement(nsGkAtoms::tr));
-    Element* nextElementSibling = aChildOfTableRow.GetNextElementSibling();
-    return nextElementSibling && HTMLEditUtils::IsTableCell(nextElementSibling)
+    Element* const nextElementSibling =
+        aChildOfTableRow.GetNextElementSibling();
+    return HTMLEditUtils::IsTableCellElement(nextElementSibling)
                ? nextElementSibling
                : nullptr;
   }
@@ -2109,7 +2201,7 @@ class HTMLEditUtils final {
   static Element* GetTableCellElementIfOnlyOneSelected(
       const AbstractRange& aRange) {
     Element* element = HTMLEditUtils::GetElementIfOnlyOneSelected(aRange);
-    return element && HTMLEditUtils::IsTableCell(element) ? element : nullptr;
+    return HTMLEditUtils::IsTableCellElement(element) ? element : nullptr;
   }
 
   
@@ -2708,15 +2800,16 @@ class HTMLEditUtils final {
     }
 
     [[nodiscard]] bool ShouldStopScanningAt(const nsIContent& aContent) const {
-      if (HTMLEditUtils::IsAnyListElement(&aContent)) {
+      if (HTMLEditUtils::IsListElement(aContent)) {
         return mStopAtListElement;
       }
-      if (HTMLEditUtils::IsListItem(&aContent)) {
+      if (HTMLEditUtils::IsListItemElement(aContent)) {
         return mStopAtListItemElement;
       }
-      if (HTMLEditUtils::IsAnyTableElement(&aContent)) {
+      if (HTMLEditUtils::IsAnyTableElementExceptColumnElement(aContent)) {
         return mStopAtAnyTableElement ||
-               (mStopAtTableElement && HTMLEditUtils::IsTable(&aContent));
+               (mStopAtTableElement &&
+                aContent.IsHTMLElement(nsGkAtoms::table));
       }
       return false;
     }
@@ -2957,7 +3050,7 @@ class HTMLEditUtils final {
                                       TableBoundary aHowToTreatTableBoundary) {
     const bool cannotCrossBoundary =
         (aHowToTreatTableBoundary == TableBoundary::NoCrossAnyTableElement &&
-         HTMLEditUtils::IsAnyTableElement(&aContent)) ||
+         HTMLEditUtils::IsAnyTableElementExceptColumnElement(aContent)) ||
         (aHowToTreatTableBoundary == TableBoundary::NoCrossTableElement &&
          aContent.IsHTMLElement(nsGkAtoms::table));
     return !cannotCrossBoundary;

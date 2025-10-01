@@ -136,9 +136,10 @@ bool EditorInlineStyle::IsRepresentedBy(const nsIContent& aContent) const {
     return !mAttribute || element.HasAttr(mAttribute);
   }
   
-  if ((mHTMLProperty == nsGkAtoms::href && HTMLEditUtils::IsLink(&element)) ||
+  if ((mHTMLProperty == nsGkAtoms::href &&
+       HTMLEditUtils::IsHyperlinkElement(element)) ||
       (mHTMLProperty == nsGkAtoms::name &&
-       HTMLEditUtils::IsNamedAnchor(&element))) {
+       HTMLEditUtils::IsNamedAnchorElement(element))) {
     return true;
   }
   

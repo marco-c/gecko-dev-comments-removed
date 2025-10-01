@@ -344,7 +344,8 @@ nsresult HTMLEditorEventListener::HandleSecondaryMouseButtonDown(
 
   
   
-  if (HTMLEditUtils::IsImage(eventTargetElement)) {
+  if (eventTargetElement &&
+      HTMLEditUtils::IsImageElement(*eventTargetElement)) {
     
     DebugOnly<nsresult> rvIgnored =
         aHTMLEditor.SelectElement(MOZ_KnownLive(eventTargetElement));
