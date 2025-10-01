@@ -812,6 +812,31 @@ void nsIFrame::HandlePrimaryFrameStyleChange(ComputedStyle* aOldStyle) {
     }
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aOldStyle && HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) &&
+      HasProperty(LastSuccessfulPositionFallback())) {
+    const auto* pos = StylePosition();
+    const auto* oldPos = aOldStyle->StylePosition();
+    if (pos->mPositionTryFallbacks != oldPos->mPositionTryFallbacks ||
+        pos->mPositionTryOrder != oldPos->mPositionTryOrder) {
+      RemoveProperty(LastSuccessfulPositionFallback());
+    }
+  }
+
   const auto cv = disp->ContentVisibility(*this);
   if (!oldDisp || oldDisp->ContentVisibility(*this) != cv) {
     if (cv == StyleContentVisibility::Auto) {

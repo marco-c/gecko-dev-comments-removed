@@ -154,9 +154,6 @@ static bool IsSnapshotContainingBlock(const nsIFrame* aFrame) {
          PseudoStyleType::mozSnapshotContainingBlock;
 }
 
-
-NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(LastSuccessfulPositionFallback, uint32_t);
-
 void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
                                      nsPresContext* aPresContext,
                                      const ReflowInput& aReflowInput,
@@ -882,13 +879,14 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
   
   if (aAnchorPosReferenceData) {
     bool found = false;
-    uint32_t index =
-        aKidFrame->GetProperty(LastSuccessfulPositionFallback(), &found);
+    uint32_t index = aKidFrame->GetProperty(
+        nsIFrame::LastSuccessfulPositionFallback(), &found);
     if (found) {
       if (index >= fallbacks.Length()) {
         
         
-        aKidFrame->RemoveProperty(LastSuccessfulPositionFallback());
+        MOZ_ASSERT_UNREACHABLE("invalid LastSuccessfulPositionFallback");
+        aKidFrame->RemoveProperty(nsIFrame::LastSuccessfulPositionFallback());
       } else {
         currentFallbackIndex.emplace(index);
       }
@@ -1168,7 +1166,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
   } while (true);
 
   if (currentFallbackIndex) {
-    aKidFrame->SetProperty(LastSuccessfulPositionFallback(),
+    aKidFrame->SetProperty(nsIFrame::LastSuccessfulPositionFallback(),
                            *currentFallbackIndex);
   }
 
