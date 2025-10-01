@@ -4407,40 +4407,39 @@ static bool NeedsKeepAlive(MInstruction* slotsOrElements, MInstruction* use) {
     return true;
   }
 
-  
-  if (use->type() == MIRType::BigInt) {
-    return true;
-  }
-  if (use->isLoadTypedArrayElementHole() &&
-      Scalar::isBigIntType(use->toLoadTypedArrayElementHole()->arrayType())) {
-    return true;
-  }
-
   MBasicBlock* block = use->block();
   MInstructionIterator iter(block->begin(slotsOrElements));
   MOZ_ASSERT(*iter == slotsOrElements);
   ++iter;
 
   while (true) {
-    if (*iter == use) {
-      return false;
-    }
-
-    switch (iter->op()) {
+    MInstruction* ins = *iter;
+    switch (ins->op()) {
       case MDefinition::Opcode::Nop:
       case MDefinition::Opcode::Constant:
       case MDefinition::Opcode::KeepAliveObject:
       case MDefinition::Opcode::Unbox:
       case MDefinition::Opcode::LoadDynamicSlot:
+      case MDefinition::Opcode::LoadDynamicSlotAndUnbox:
       case MDefinition::Opcode::StoreDynamicSlot:
       case MDefinition::Opcode::LoadFixedSlot:
+      case MDefinition::Opcode::LoadFixedSlotAndUnbox:
       case MDefinition::Opcode::StoreFixedSlot:
       case MDefinition::Opcode::LoadElement:
       case MDefinition::Opcode::LoadElementAndUnbox:
       case MDefinition::Opcode::LoadElementHole:
       case MDefinition::Opcode::StoreElement:
       case MDefinition::Opcode::StoreHoleValueElement:
+      case MDefinition::Opcode::LoadUnboxedScalar:
+      case MDefinition::Opcode::StoreUnboxedScalar:
+      case MDefinition::Opcode::StoreTypedArrayElementHole:
+      case MDefinition::Opcode::LoadDataViewElement:
+      case MDefinition::Opcode::StoreDataViewElement:
+      case MDefinition::Opcode::AtomicTypedArrayElementBinop:
+      case MDefinition::Opcode::AtomicExchangeTypedArrayElement:
+      case MDefinition::Opcode::CompareExchangeTypedArrayElement:
       case MDefinition::Opcode::InitializedLength:
+      case MDefinition::Opcode::SetInitializedLength:
       case MDefinition::Opcode::ArrayLength:
       case MDefinition::Opcode::BoundsCheck:
       case MDefinition::Opcode::GuardElementNotHole:
@@ -4449,11 +4448,25 @@ static bool NeedsKeepAlive(MInstruction* slotsOrElements, MInstruction* use) {
       case MDefinition::Opcode::SpectreMaskIndex:
       case MDefinition::Opcode::DebugEnterGCUnsafeRegion:
       case MDefinition::Opcode::DebugLeaveGCUnsafeRegion:
-        iter++;
         break;
+      case MDefinition::Opcode::LoadTypedArrayElementHole: {
+        
+        auto* loadIns = ins->toLoadTypedArrayElementHole();
+        if (Scalar::isBigIntType(loadIns->arrayType())) {
+          return true;
+        }
+        break;
+      }
       default:
         return true;
     }
+
+    if (ins == use) {
+      
+      
+      return false;
+    }
+    iter++;
   }
 
   MOZ_CRASH("Unreachable");
@@ -4512,13 +4525,6 @@ bool jit::AddKeepAliveInstructions(MIRGraph& graph) {
 
         if (!NeedsKeepAlive(ins, use)) {
 #ifdef DEBUG
-          
-          
-          
-          if (use->isApplyArray() || use->isConstructArray()) {
-            continue;
-          }
-
           if (!graph.alloc().ensureBallast()) {
             return false;
           }
