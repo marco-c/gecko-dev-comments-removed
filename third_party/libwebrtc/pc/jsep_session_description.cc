@@ -225,12 +225,10 @@ bool JsepSessionDescription::AddCandidate(const IceCandidate* candidate) {
   if (!GetMediasectionIndex(candidate, &mediasection_index)) {
     return false;
   }
-  if (mediasection_index >= number_of_mediasections())
-    return false;
-  const std::string& content_name =
+  const std::string& mediasection_mid =
       description_->contents()[mediasection_index].mid();
   const TransportInfo* transport_info =
-      description_->GetTransportInfoByName(content_name);
+      description_->GetTransportInfoByName(mediasection_mid);
   if (!transport_info) {
     return false;
   }
@@ -243,10 +241,17 @@ bool JsepSessionDescription::AddCandidate(const IceCandidate* candidate) {
     updated_candidate.set_password(transport_info->description.ice_pwd);
   }
 
-  std::unique_ptr<JsepIceCandidate> updated_candidate_wrapper(
-      new JsepIceCandidate(candidate->sdp_mid(),
-                           static_cast<int>(mediasection_index),
-                           updated_candidate));
+  
+  
+  
+  
+  RTC_DCHECK(candidate->sdp_mid().empty() ||
+             candidate->sdp_mid() == mediasection_mid)
+      << "sdp_mid='" << candidate->sdp_mid() << "' mediasection_mid='"
+      << mediasection_mid << "'";
+  auto updated_candidate_wrapper = std::make_unique<IceCandidate>(
+      mediasection_mid, static_cast<int>(mediasection_index),
+      updated_candidate);
   if (!candidate_collection_[mediasection_index].HasCandidate(
           updated_candidate_wrapper.get())) {
     candidate_collection_[mediasection_index].add(
