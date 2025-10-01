@@ -1078,6 +1078,9 @@ class PropertyRestrictions:
             [
                 "color",
                 "text-combine-upright",
+                "text-emphasis-color",
+                "text-emphasis-position",
+                "text-emphasis-style",
                 "text-transform",
                 "unicode-bidi",
                 "direction",
