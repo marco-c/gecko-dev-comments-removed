@@ -441,6 +441,12 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "telemetry.surfaceId",
+    {
+      title: "surface id",
+    },
+  ],
+  [
     "telemetry.privatePing.redactNewtabPing.enabled",
     {
       title: "Redacts content interaction ids from original New Tab ping",
@@ -928,6 +934,20 @@ export const PREFS_CONFIG = new Map([
       title:
         "Boolean flag for determining if a user has interacted with the lists widget",
       value: false,
+    },
+  ],
+  [
+    "widgets.lists.badge.enabled",
+    {
+      title: "Show badge on lists widget to indicate new/beta feature",
+      value: false,
+    },
+  ],
+  [
+    "widgets.lists.badge.label",
+    {
+      title: "Label type for lists widget badge (New or Beta)",
+      value: "",
     },
   ],
   [
