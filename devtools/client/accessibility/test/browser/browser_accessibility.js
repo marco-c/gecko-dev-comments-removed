@@ -5,6 +5,8 @@
 
 
 
+const ACCESSIBILITY_FORCED_DISABLED_PREF = "accessibility.force_disabled";
+
 const TEST_URI = `data:text/html,<meta charset=utf8>
   <head>
     <title>TopLevel</title>
@@ -30,16 +32,53 @@ add_task(async () => {
     "Before disabling the panel via the pref, the panel's description isn't visible"
   );
 
-  await pushPref("accessibility.force_disabled", 1);
+  await pushPref(ACCESSIBILITY_FORCED_DISABLED_PREF, 1);
   await waitFor(
     () => doc.querySelector(".description"),
     "After disabling via the pref, the panel's description is visible"
   );
 
-  await pushPref("accessibility.force_disabled", 0);
+  await pushPref(ACCESSIBILITY_FORCED_DISABLED_PREF, 0);
   await waitFor(
     () => !doc.querySelector(".description"),
     "After enabling via the pref, the panel's description is removed"
+  );
+
+  await checkTree(env, [
+    {
+      role: "document",
+      name: `"TopLevel"`,
+    },
+  ]);
+
+  await closeTabToolboxAccessibility(env.tab);
+});
+
+add_task(async function checkStartingWithDisabledAccessibilityService() {
+  await pushPref(ACCESSIBILITY_FORCED_DISABLED_PREF, 1);
+  const env = await addTestTab(TEST_URI, {
+    
+    
+    waitUntilDocumentAccessibleInState: false,
+  });
+  const { doc, store } = env;
+
+  ok(
+    doc.querySelector(".description"),
+    "Starting the panel when the service is disabled, the panel's description is visible"
+  );
+
+  await pushPref(ACCESSIBILITY_FORCED_DISABLED_PREF, 0);
+  await waitFor(
+    () => !doc.querySelector(".description"),
+    "After enabling via the pref, the panel's description is removed"
+  );
+
+  await waitUntilState(
+    store,
+    state =>
+      state.accessibles.size === 1 &&
+      state.details.accessible?.role === "document"
   );
 
   await checkTree(env, [

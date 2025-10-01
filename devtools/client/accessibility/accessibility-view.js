@@ -160,9 +160,16 @@ AccessibilityView.prototype = {
     thunkOptions.options.toggleDisplayTabbingOrder = toggleDisplayTabbingOrder;
     
     const provider = createElement(Provider, { store: this.store }, mainFrame);
-    window.once(EVENTS.PROPERTIES_UPDATED).then(() => {
+
+    
+    
+    if (!this.store.getState().ui.canBeEnabled) {
       window.emit(EVENTS.INITIALIZED);
-    });
+    } else {
+      window.once(EVENTS.PROPERTIES_UPDATED).then(() => {
+        window.emit(EVENTS.INITIALIZED);
+      });
+    }
     this.mainFrame = ReactDOM.render(provider, container);
   },
 
