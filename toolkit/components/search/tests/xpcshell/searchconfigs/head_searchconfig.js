@@ -21,6 +21,10 @@ ChromeUtils.defineESModuleGetters(this, {
   updateAppInfo: "resource://testing-common/AppInfo.sys.mjs",
 });
 
+
+
+
+
 const GLOBAL_SCOPE = this;
 const TEST_DEBUG = Services.env.get("TEST_DEBUG");
 
@@ -44,6 +48,9 @@ async function maybeSetupConfig() {
     SearchTestUtils.setRemoteSettingsConfig(config.data);
   }
 }
+
+
+
 
 
 
@@ -203,6 +210,14 @@ class SearchConfigTest {
     }
   }
 
+  
+
+
+
+
+
+
+
   async _getEngines(region, locale) {
     let configs = await this.#engineSelector.fetchEngineConfiguration({
       locale,
@@ -227,7 +242,10 @@ class SearchConfigTest {
     if (TEST_DEBUG) {
       return new Set(["by", "cn", "kz", "us", "ru", "tr", null]);
     }
-    return [...Services.intl.getAvailableLocaleDisplayNames("region"), null];
+    return new Set([
+      ...Services.intl.getAvailableLocaleDisplayNames("region"),
+      null,
+    ]);
   }
 
   
@@ -311,6 +329,7 @@ class SearchConfigTest {
 
 
 
+
   _assertEngineRules(engines, region, locale, section) {
     const infoString = `region: "${region}" locale: "${locale}"`;
     const testSection = this.#testDetails[section];
@@ -370,7 +389,11 @@ class SearchConfigTest {
 
   _assertDefaultEngines(region, locale) {
     this._assertEngineRules(
-      [Services.search.appDefaultEngine],
+      [
+         (
+          Services.search.appDefaultEngine
+        ),
+      ],
       region,
       locale,
       "default"
@@ -378,7 +401,11 @@ class SearchConfigTest {
     
     
     this._assertEngineRules(
-      [Services.search.appPrivateDefaultEngine],
+      [
+         (
+          Services.search.appPrivateDefaultEngine
+        ),
+      ],
       region,
       locale,
       "default"
@@ -537,11 +564,11 @@ class SearchConfigTest {
         `Expected "${rule.searchUrlCode}" in search url "${submission.uri.spec}"`
       );
     }
-    if (rule.searchUrlCodeNotInQuery) {
+    if (rule.searchUrlParamNotInQuery) {
       const submission = engine.getSubmission("test", URLTYPE_SEARCH_HTML);
       this.assertOk(
-        submission.uri.query.includes(rule.searchUrlCodeNotInQuery),
-        `Expected "${rule.searchUrlCodeNotInQuery}" in search url "${submission.uri.spec}"`
+        !submission.uri.query.includes(rule.searchUrlParamNotInQuery),
+        `Expected "${rule.searchUrlParamNotInQuery}" should not be in search url "${submission.uri.spec}"`
       );
     }
     if (rule.suggestUrlCode) {
