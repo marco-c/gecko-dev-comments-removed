@@ -66,6 +66,7 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
 
   
   
+  
   nsresult Prefetch(nsILoadContextInfo* aLoadContextInfo, bool& aShouldSuspend,
                     const std::function<void()>& aFunc);
 
@@ -199,6 +200,9 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
 
   
   bool mShouldSuspend{false};
+
+  
+  bool mNotCached{false};
 
   
   bool mBlocked{false};
