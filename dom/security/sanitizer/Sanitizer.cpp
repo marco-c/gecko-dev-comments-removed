@@ -537,6 +537,17 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
       for (const CanonicalElementWithAttributes& elem : mElements->Values()) {
         
         
+        if (elem.mAttributes && elem.mAttributes->HasDuplicates()) {
+          aRv.ThrowTypeError("Duplicate attribute in local 'attributes'");
+          return;
+        }
+        if (elem.mRemoveAttributes && elem.mRemoveAttributes->HasDuplicates()) {
+          aRv.ThrowTypeError("Duplicate attribute in local 'removeAttributes'");
+          return;
+        }
+
+        
+        
         if (elem.mAttributes) {
           for (const CanonicalName& name : mAttributes->Values()) {
             if (elem.mAttributes->Contains(name)) {
@@ -560,6 +571,9 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
           }
         }
 
+        MOZ_ASSERT(mDataAttributes.isSome(),
+                   "mDataAttributes exists iff mAttributes exists");
+
         
         if (*mDataAttributes && elem.mAttributes) {
           
@@ -575,6 +589,9 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
         }
       }
     }
+
+    MOZ_ASSERT(mDataAttributes.isSome(),
+               "mDataAttributes exists iff mAttributes exists");
 
     
     if (*mDataAttributes) {
@@ -629,8 +646,7 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
     if (mDataAttributes) {
       aRv.ThrowTypeError(
           "'removeAttributes' and 'dataAttributes' aren't allowed at the "
-          "same "
-          "time");
+          "same time");
     }
   }
 }
@@ -767,73 +783,92 @@ bool Sanitizer::AllowElement(
       CanonicalizeElementWithAttributes(aElement);
 
   
-  
-  bool modified = mReplaceWithChildrenElements
-                      ? mReplaceWithChildrenElements->Remove(element)
-                      : false;
-
-  
   if (mElements) {
+    
+    
+    bool modified = mReplaceWithChildrenElements
+                        ? mReplaceWithChildrenElements->Remove(element)
+                        : false;
+
     
     
 
     
     if (element.mAttributes) {
-      
-      if (mAttributes) {
+      nsTArray<CanonicalName> attributes;
+      for (const CanonicalName& attr : element.mAttributes->Values()) {
         
         
-        for (const CanonicalName& attr : mAttributes->Values()) {
-          element.mAttributes->Remove(attr);
+        if (attributes.Contains(attr)) {
+          continue;
         }
 
         
-        
-        if (mDataAttributes && *mDataAttributes) {
-          element.mAttributes->Values().RemoveElementsBy(
-              [](const CanonicalName& aName) {
-                return aName.IsDataAttribute();
-              });
+        if (mAttributes) {
+          
+          
+          if (mAttributes->Contains(attr)) {
+            continue;
+          }
+
+          MOZ_ASSERT(mDataAttributes.isSome(),
+                     "mDataAttributes exists iff mAttributes");
+
+          
+          if (*mDataAttributes) {
+            
+            
+            if (attr.IsDataAttribute()) {
+              continue;
+            }
+          }
         }
 
         
+        if (mRemoveAttributes) {
+          
+          
+          if (mRemoveAttributes->Contains(attr)) {
+            continue;
+          }
+        }
+
+        attributes.AppendElement(attr.Clone());
       }
-
-      
-      if (mRemoveAttributes) {
-        
-        
-        for (const CanonicalName& attr : mRemoveAttributes->Values()) {
-          element.mAttributes->Remove(attr);
-        }
-      }
+      element.mAttributes = Some(ListSet(std::move(attributes)));
     }
 
     
     if (element.mRemoveAttributes) {
-      
-      if (mAttributes) {
+      nsTArray<CanonicalName> removeAttributes;
+      for (const CanonicalName& attr : element.mRemoveAttributes->Values()) {
         
         
-        nsTArray<CanonicalName> removeAttributes;
-        for (const CanonicalName& attr : element.mRemoveAttributes->Values()) {
-          if (mAttributes->Contains(attr)) {
-            removeAttributes.AppendElement(attr.Clone());
+        if (removeAttributes.Contains(attr)) {
+          continue;
+        }
+
+        
+        if (mAttributes) {
+          
+          
+          if (!mAttributes->Contains(attr)) {
+            continue;
           }
         }
-        element.mRemoveAttributes = Some(ListSet(std::move(removeAttributes)));
-      }
 
-      
-      if (mRemoveAttributes) {
         
-        
-        for (const CanonicalName& attr : mRemoveAttributes->Values()) {
-          element.mRemoveAttributes->Remove(attr);
+        if (mRemoveAttributes) {
+          
+          
+          if (mRemoveAttributes->Contains(attr)) {
+            continue;
+          }
         }
-      }
 
-      
+        removeAttributes.AppendElement(attr.Clone());
+      }
+      element.mRemoveAttributes = Some(ListSet(std::move(removeAttributes)));
     }
 
     
@@ -873,7 +908,21 @@ bool Sanitizer::AllowElement(
 
   
   
+  if (element.mAttributes || element.mRemoveAttributes) {
+    
+    
+    LogLocalizedString("SanitizerAllowElementIgnroed", {},
+                       nsIScriptError::warningFlag);
+
+    
+    return false;
+  }
+
   
+  
+  bool modified = mReplaceWithChildrenElements
+                      ? mReplaceWithChildrenElements->Remove(element)
+                      : false;
 
   
   if (!mRemoveElements->Contains(element)) {
@@ -1002,10 +1051,12 @@ bool Sanitizer::AllowAttribute(
     
     
 
+    MOZ_ASSERT(mDataAttributes.isSome(),
+               "mDataAttributes exists iff mAttributes exists");
+
     
     
-    
-    if (mDataAttributes && *mDataAttributes && attribute.IsDataAttribute()) {
+    if (*mDataAttributes && attribute.IsDataAttribute()) {
       return false;
     }
 
@@ -1086,9 +1137,6 @@ bool Sanitizer::RemoveAttributeCanonical(CanonicalName&& aAttribute) {
     }
 
     
-    mAttributes->Remove(aAttribute);
-
-    
 
     
     if (mElements) {
@@ -1104,6 +1152,9 @@ bool Sanitizer::RemoveAttributeCanonical(CanonicalName&& aAttribute) {
         }
       }
     }
+
+    
+    mAttributes->Remove(aAttribute);
 
     
     return true;
@@ -1176,14 +1227,14 @@ bool Sanitizer::SetDataAttributes(bool aAllow) {
     return false;
   }
 
-  
-  
-  if (mDataAttributes && *mDataAttributes == aAllow) {
-    return false;
-  }
+  MOZ_ASSERT(mDataAttributes.isSome(),
+             "mDataAttributes exists iff mAttributes exists (or in the default "
+             "config)");
 
   
-  mDataAttributes = Some(aAllow);
+  if (*mDataAttributes == aAllow) {
+    return false;
+  }
 
   
   if (!mIsDefaultConfig && aAllow) {
@@ -1211,6 +1262,9 @@ bool Sanitizer::SetDataAttributes(bool aAllow) {
       }
     }
   }
+
+  
+  mDataAttributes = Some(aAllow);
 
   
   return true;
@@ -1629,6 +1683,8 @@ void Sanitizer::SanitizeAttributes(Element* aChild,
       
       
       
+      MOZ_ASSERT(mDataAttributes.isSome(),
+                 "mDataAttributes exists iff mAttributes exists");
       if (!mAttributes->Contains(attrName) &&
           !(elementWithAttributes && elementWithAttributes->mAttributes &&
             elementWithAttributes->mAttributes->Contains(attrName)) &&
@@ -1705,6 +1761,8 @@ void Sanitizer::SanitizeDefaultConfigAttributes(
     bool remove = false;
     
     
+    MOZ_ASSERT(mDataAttributes.isSome(),
+               "mDataAttributes always exists in the default config");
     if (attrNs != kNameSpaceID_None ||
         (!sDefaultAttributes->Contains(attrLocalName) &&
          !(aElementAttributes && aElementAttributes->Contains(attrLocalName)) &&
