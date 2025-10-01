@@ -1,10 +1,11 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* global browser */
 
-import ConditionBase from "./base.mjs";
+
+
+
+
+
+
 
 class ConditionCookie extends ConditionBase {
   static STORAGE_KEY = "cookies-";
@@ -67,4 +68,4 @@ class ConditionCookie extends ConditionBase {
   }
 }
 
-export default ConditionCookie;
+globalThis.ConditionCookie = ConditionCookie;

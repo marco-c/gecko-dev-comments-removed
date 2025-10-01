@@ -1,10 +1,11 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* global browser */
 
-import { ConditionFactory } from "./conditions/factory.mjs";
+
+
+
+
+
+
 
 class IPPAddonActivator {
   #initialized = false;
@@ -39,12 +40,12 @@ class IPPAddonActivator {
         return;
       }
 
-      // Initialize only when IPP is active, keep in sync with activation.
+      
       if (await browser.ippActivator.isIPPActive()) {
         this.#init();
       }
 
-      // IPP start event: initialize when service starts.
+      
       browser.ippActivator.onIPPActivated.addListener(async () => {
         if (await browser.ippActivator.isIPPActive()) {
           this.#init();
@@ -60,7 +61,7 @@ class IPPAddonActivator {
       return;
     }
 
-    // Register only the listeners that are needed for existing breakages.
+    
     this.#registerListeners();
 
     this.#initialized = true;
@@ -128,7 +129,7 @@ class IPPAddonActivator {
       ...dynamicWr,
     ];
 
-    // Adjust listeners if we've already initialized.
+    
     if (this.#initialized) {
       this.#registerListeners();
     }
@@ -144,14 +145,14 @@ class IPPAddonActivator {
       !!this.#webrequestBreakages.length;
     const needActivation = needTabUpdated || needWebRequest;
 
-    // tabs.onUpdated (only if there are tab breakages)
+    
     if (needTabUpdated) {
       browser.tabs.onUpdated.addListener(this.tabUpdated, {
         properties: ["url", "status"],
       });
     }
 
-    // webRequest.onBeforeRequest (only if there are webRequest breakages)
+    
     if (needWebRequest) {
       browser.webRequest.onBeforeRequest.addListener(
         this.onRequest,
@@ -163,7 +164,7 @@ class IPPAddonActivator {
       );
     }
 
-    // tabs.onActivated and tabs.onRemoved are needed when either above is needed
+    
     if (needActivation) {
       browser.tabs.onActivated.addListener(this.tabActivated);
       browser.tabs.onRemoved.addListener(this.tabRemoved);
@@ -192,15 +193,15 @@ class IPPAddonActivator {
   }
 
   async #tabUpdated(tabId, changeInfo, tab) {
-    // React only to URL changes and to load completion; avoid showing during 'loading'
+    
     if (!("url" in changeInfo) && changeInfo.status !== "complete") {
       return;
     }
 
-    // If the tab URL changed, reset any pending web requests for this tab
+    
     if ("url" in changeInfo) {
       try {
-        // If we had a notification for a different base domain, hide it
+        
         const info = await browser.ippActivator.getBaseDomainFromURL(
           changeInfo.url || tab?.url || ""
         );
@@ -210,12 +211,12 @@ class IPPAddonActivator {
           this.#shownDomainByTab.delete(tabId);
         }
       } catch (_) {
-        // ignore lookup issues
+        
       }
       this.#pendingWebRequests.delete(tabId);
     }
 
-    // If we haven't reached load completion yet, wait for later events
+    
     if (changeInfo.status && changeInfo.status !== "complete") {
       if (!tab.active) {
         this.#pendingTabs.add(tabId);
@@ -223,8 +224,8 @@ class IPPAddonActivator {
       return;
     }
 
-    // At this point, either the URL changed and load already completed, or
-    // we received the 'complete' status: handle only if tab is active
+    
+    
     if (!tab.active) {
       this.#pendingTabs.add(tabId);
       return;
@@ -253,7 +254,7 @@ class IPPAddonActivator {
         return;
       }
     } catch (_) {
-      // Tab might have been closed; ignore.
+      
       return;
     }
 
@@ -277,7 +278,7 @@ class IPPAddonActivator {
       return false;
     }
 
-    // Do not show the same notification again for the same base domain.
+    
     const shown = await browser.ippActivator.getNotifiedDomains();
     if (
       info.baseDomain &&
@@ -303,7 +304,7 @@ class IPPAddonActivator {
     }
 
     await browser.ippActivator.showMessage(breakage.message, tab.id);
-    // Track which base domain this tab is showing a notification for
+    
     this.#shownDomainByTab.set(tab.id, info.baseDomain);
 
     await browser.ippActivator.addNotifiedDomain(info.baseDomain);
@@ -335,17 +336,17 @@ class IPPAddonActivator {
         this.#pendingWebRequests.set(details.tabId, set);
       }
     } catch (_) {
-      // tab may not exist
+      
     }
   }
 
   async #tabRemoved(tabId, _removeInfo) {
-    // Clean up any pending state associated with the closed tab
+    
     this.#pendingTabs.delete(tabId);
     this.#pendingWebRequests.delete(tabId);
     this.#shownDomainByTab.delete(tabId);
   }
 }
 
-/* This object is kept alive by listeners */
+
 new IPPAddonActivator();

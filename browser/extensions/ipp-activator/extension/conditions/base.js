@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+class ConditionBase {
+  constructor(factory, desc) {
+    this.factory = factory;
+    this.desc = desc;
+  }
+
+  async init() {
+    
+  }
+
+  check() {
+    throw new Error("Check is not implemented!");
+  }
+}
+
+globalThis.ConditionBase = ConditionBase;
