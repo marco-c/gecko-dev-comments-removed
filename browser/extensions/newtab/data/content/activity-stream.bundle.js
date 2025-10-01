@@ -296,6 +296,7 @@ for (const type of [
   "WEATHER_QUERY_UPDATE",
   "WEATHER_SEARCH_ACTIVE",
   "WEATHER_UPDATE",
+  "WEATHER_USER_OPT_IN_LOCATION",
   "WEBEXT_CLICK",
   "WEBEXT_DISMISS",
   "WIDGETS_LISTS_CHANGE_SELECTED",
@@ -11582,9 +11583,13 @@ function LocationSearch({
   const [selectedLocation, setSelectedLocation] = (0,external_React_namespaceObject.useState)("");
   const suggestedLocations = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Weather.suggestedLocations);
   const locationSearchString = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Weather.locationSearchString);
+  const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
+  const showWeatherOptIn = prefs["system.showWeatherOptIn"];
+  const optInAccepted = prefs["weather.optInAccepted"];
   const [userInput, setUserInput] = (0,external_React_namespaceObject.useState)(locationSearchString || "");
   const inputRef = (0,external_React_namespaceObject.useRef)(null);
   const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
+  const canUseUserLocation = showWeatherOptIn && optInAccepted;
   (0,external_React_namespaceObject.useEffect)(() => {
     if (selectedLocation) {
       dispatch(actionCreators.AlsoToMain({
@@ -11607,11 +11612,30 @@ function LocationSearch({
   (0,external_React_namespaceObject.useEffect)(() => {
     inputRef?.current?.focus();
   }, [inputRef]);
+  function handleOptInLocation() {
+    (0,external_ReactRedux_namespaceObject.batch)(() => {
+      dispatch(actionCreators.AlsoToMain({
+        type: actionTypes.WEATHER_USER_OPT_IN_LOCATION
+      }));
+      dispatch(actionCreators.BroadcastToContent({
+        type: actionTypes.WEATHER_SEARCH_ACTIVE,
+        data: false
+      }));
+    });
+  }
   function handleChange(event) {
     const {
       value
     } = event.target;
     setUserInput(value);
+
+    
+    
+    if (value === "Use my location") {
+      handleOptInLocation();
+      return;
+    }
+
     
     
     if (value.length < 3 && suggestedLocations.length) {
@@ -11668,10 +11692,13 @@ function LocationSearch({
     onClick: handleCloseSearch
   }), external_React_default().createElement("datalist", {
     id: "merino-location-list"
-  }, (suggestedLocations || []).map(merinoLcation => external_React_default().createElement("option", {
-    value: merinoLcation.key,
-    key: merinoLcation.key
-  }, merinoLcation.localized_name, ",", " ", merinoLcation.administrative_area.localized_name)))));
+  }, canUseUserLocation && external_React_default().createElement("option", {
+    value: "Use my location",
+    selected: true
+  }, "Use my location"), (suggestedLocations || []).map(merinoLocation => external_React_default().createElement("option", {
+    value: merinoLocation.key,
+    key: merinoLocation.key
+  }, merinoLocation.localized_name, ",", " ", merinoLocation.administrative_area.localized_name)))));
 }
 
 ;
@@ -11856,8 +11883,14 @@ class _Weather extends (external_React_default()).PureComponent {
     this.props.dispatch(actionCreators.SetPref("weather.optInDisplayed", false));
   };
   handleAcceptOptIn = () => {
-    this.props.dispatch(actionCreators.SetPref("weather.optInAccepted", true));
-    this.props.dispatch(actionCreators.SetPref("weather.optInDisplayed", false));
+    (0,external_ReactRedux_namespaceObject.batch)(() => {
+      this.props.dispatch(actionCreators.SetPref("weather.optInAccepted", true));
+      this.props.dispatch(actionCreators.SetPref("weather.optInDisplayed", false));
+      this.props.dispatch(actionCreators.BroadcastToContent({
+        type: actionTypes.WEATHER_SEARCH_ACTIVE,
+        data: true
+      }));
+    });
   };
   render() {
     
