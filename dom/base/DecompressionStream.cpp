@@ -223,7 +223,9 @@ class ZLibDecompressionStreamAlgorithms : public DecompressionStreamAlgorithms {
       }
 
       
-      MOZ_ASSERT(!mZStream.avail_in || !mZStream.avail_out);
+      
+      MOZ_ASSERT(!mZStream.avail_in || !mZStream.avail_out ||
+                 mObservedStreamEnd);
 
       size_t written = kBufferSize - mZStream.avail_out;
       if (!written) {
