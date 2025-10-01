@@ -656,51 +656,75 @@ nsresult nsHttpHandler::InitConnectionMgr() {
 
 nsresult nsHttpHandler::AddAcceptAndDictionaryHeaders(
     nsIURI* aURI, nsHttpRequestHead* aRequest, bool aSecure,
-    RefPtr<DictionaryCacheEntry>& aDict) {
+    const std::function<void(DictionaryCacheEntry*)>& aCallback) {
   LOG(("Adding Dictionary headers"));
-  nsresult rv;
+  nsresult rv = NS_OK;
   
   if (aSecure) {
     
     
     
     
-    if (StaticPrefs::network_http_dictionaries_enable() &&
-        (aDict = mDictionaryCache->GetDictionaryFor(aURI))) {
-      rv = aRequest->SetHeader(nsHttp::Accept_Encoding,
-                               mDictionaryAcceptEncodings, false,
-                               nsHttpHeaderArray::eVarietyRequestOverride);
-      if (NS_FAILED(rv)) {
-        return rv;
-      }
-      LOG(("Setting Accept-Encoding: %s", mDictionaryAcceptEncodings.get()));
+    if (StaticPrefs::network_http_dictionaries_enable()) {
+      mDictionaryCache->GetDictionaryFor(
+          aURI, [self = RefPtr(this), aRequest,
+                 aCallback](DictionaryCacheEntry* aDict) {
+            nsresult rv;
+            if (aDict) {
+              rv = aRequest->SetHeader(
+                  nsHttp::Accept_Encoding, self->mDictionaryAcceptEncodings,
+                  false, nsHttpHeaderArray::eVarietyRequestOverride);
+              if (NS_FAILED(rv)) {
+                (aCallback)(nullptr);
+                return rv;
+              }
+              LOG_DICTIONARIES(("Setting Accept-Encoding: %s",
+                                self->mDictionaryAcceptEncodings.get()));
 
-      nsAutoCStringN<64> encodedHash = ":"_ns + aDict->GetHash() + ":"_ns;
+              nsAutoCStringN<64> encodedHash =
+                  ":"_ns + aDict->GetHash() + ":"_ns;
 
-      LOG(("Setting Available-Dictionary: %s", encodedHash.get()));
-      rv = aRequest->SetHeader(nsHttp::Available_Dictionary, encodedHash, false,
-                               nsHttpHeaderArray::eVarietyRequestOverride);
-      if (NS_FAILED(rv)) {
-        return rv;
-      }
-      if (!aDict->GetId().IsEmpty()) {
-        rv = aRequest->SetHeader(nsHttp::Dictionary_Id, aDict->GetId(), false,
-                                 nsHttpHeaderArray::eVarietyRequestOverride);
-        if (NS_FAILED(rv)) {
-          return rv;
-        }
-        LOG(("Setting Dictionary-Id: %s", aDict->GetId().get()));
-      }
-      
-      
-      
-      
-      
-      aRequest->SetDictionary(aDict);
+              LOG_DICTIONARIES(
+                  ("Setting Available-Dictionary: %s", encodedHash.get()));
+              rv = aRequest->SetHeader(
+                  nsHttp::Available_Dictionary, encodedHash, false,
+                  nsHttpHeaderArray::eVarietyRequestOverride);
+              if (NS_FAILED(rv)) {
+                (aCallback)(nullptr);
+                return rv;
+              }
+              if (!aDict->GetId().IsEmpty()) {
+                rv = aRequest->SetHeader(
+                    nsHttp::Dictionary_Id, aDict->GetId(), false,
+                    nsHttpHeaderArray::eVarietyRequestOverride);
+                if (NS_FAILED(rv)) {
+                  (aCallback)(nullptr);
+                  return rv;
+                }
+                LOG_DICTIONARIES(
+                    ("Setting Dictionary-Id: %s", aDict->GetId().get()));
+              }
+              
+              
+              
+              
+              
+              
+              aRequest->SetDictionary(aDict);
+              (aCallback)(aDict);
+              return NS_OK;
+            }
+            rv = aRequest->SetHeader(
+                nsHttp::Accept_Encoding, self->mHttpsAcceptEncodings, false,
+                nsHttpHeaderArray::eVarietyRequestOverride);
+            (aCallback)(nullptr);
+            return rv;
+          });
     } else {
       rv = aRequest->SetHeader(nsHttp::Accept_Encoding, mHttpsAcceptEncodings,
                                false,
                                nsHttpHeaderArray::eVarietyRequestOverride);
+      (aCallback)(nullptr);
     }
   } else {
     
@@ -712,6 +736,7 @@ nsresult nsHttpHandler::AddAcceptAndDictionaryHeaders(
                                false,
                                nsHttpHeaderArray::eVarietyRequestOverride);
     }
+    (aCallback)(nullptr);
   }
 
   return rv;
