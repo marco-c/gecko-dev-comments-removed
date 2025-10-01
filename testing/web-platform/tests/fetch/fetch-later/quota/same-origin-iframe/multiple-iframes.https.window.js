@@ -48,15 +48,15 @@ promise_test(async _ => {
   
   
   
-  assert_throws_dom(
-      'QuotaExceededError',
+  assert_throws_quotaexceedederror(
       () => fetchLater(requestUrl, {
         method: 'POST',
         body: generatePayload(
             getRemainingQuota(QUOTA_PER_ORIGIN, requestUrl, headers), dataType),
         
         referrer: '',
-      }));
+      }),
+      null, null);
 
   
   for (const element of document.querySelectorAll('iframe')) {
