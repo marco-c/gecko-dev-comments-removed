@@ -2763,29 +2763,11 @@ bool nsIFrame::ComputeOverflowClipRectRelativeToSelf(
   
   
   
-  const auto* disp = StyleDisplay();
   MOZ_ASSERT(!aClipAxes.isEmpty());
-  MOZ_ASSERT(ShouldApplyOverflowClipping(disp) == aClipAxes);
+  MOZ_ASSERT(ShouldApplyOverflowClipping(StyleDisplay()) == aClipAxes);
   
-  auto wm = GetWritingMode();
-  bool cbH = (wm.IsVertical() ? disp->mOverflowClipBoxBlock
-                              : disp->mOverflowClipBoxInline) ==
-             StyleOverflowClipBox::ContentBox;
-  bool cbV = (wm.IsVertical() ? disp->mOverflowClipBoxInline
-                              : disp->mOverflowClipBoxBlock) ==
-             StyleOverflowClipBox::ContentBox;
-
-  nsMargin boxMargin = -GetUsedPadding();
-  if (!cbH) {
-    boxMargin.left = boxMargin.right = nscoord(0);
-  }
-  if (!cbV) {
-    boxMargin.top = boxMargin.bottom = nscoord(0);
-  }
-
+  nsMargin boxMargin = -GetUsedBorder();
   auto clipMargin = OverflowClipMargin(aClipAxes);
-
-  boxMargin -= GetUsedBorder();
   boxMargin += nsMargin(clipMargin.height, clipMargin.width, clipMargin.height,
                         clipMargin.width);
   boxMargin.ApplySkipSides(GetSkipSides());
