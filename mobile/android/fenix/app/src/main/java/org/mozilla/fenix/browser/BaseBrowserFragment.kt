@@ -145,9 +145,9 @@ import mozilla.components.ui.widgets.withCenterAlignedButtons
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.FeatureFlags
-import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.GleanMetrics.MediaState
 import org.mozilla.fenix.GleanMetrics.PullToRefreshInBrowser
+import org.mozilla.fenix.GleanMetrics.Toolbar
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.IntentReceiverActivity
 import org.mozilla.fenix.NavGraphDirections
@@ -233,6 +233,8 @@ import org.mozilla.fenix.snackbar.FenixSnackbarDelegate
 import org.mozilla.fenix.snackbar.SnackbarBinding
 import org.mozilla.fenix.tabstray.Page
 import org.mozilla.fenix.tabstray.ext.toDisplayTitle
+import org.mozilla.fenix.telemetry.ACTION_SECURITY_INDICATOR_CLICKED
+import org.mozilla.fenix.telemetry.SOURCE_ADDRESS_BAR
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.ThemeManager
 import org.mozilla.fenix.utils.allowUndo
@@ -653,7 +655,9 @@ abstract class BaseBrowserFragment :
 
         (browserToolbarView as? BrowserToolbarView)?.toolbar?.display?.setOnSiteInfoClickedListener {
             showQuickSettingsDialog()
-            Events.browserToolbarSecurityIndicatorTapped.record()
+            Toolbar.buttonTapped.record(
+                Toolbar.ButtonTappedExtra(source = SOURCE_ADDRESS_BAR, item = ACTION_SECURITY_INDICATOR_CLICKED),
+            )
         }
 
         contextMenuFeature.set(
@@ -2096,8 +2100,10 @@ abstract class BaseBrowserFragment :
 
     private suspend fun bookmarkTapped(sessionUrl: String, sessionTitle: String) = withContext(IO) {
         val bookmarksStorage = requireComponents.core.bookmarksStorage
-        val existing =
-            bookmarksStorage.getBookmarksWithUrl(sessionUrl).firstOrNull { it.url == sessionUrl }
+        val existing = bookmarksStorage
+            .getBookmarksWithUrl(sessionUrl)
+            .getOrDefault(listOf())
+            .firstOrNull { it.url == sessionUrl }
         if (existing != null) {
             // Bookmark exists, go to edit fragment
             withContext(Main) {
@@ -2112,11 +2118,12 @@ abstract class BaseBrowserFragment :
                 val parentNode = Result.runCatching {
                     val parentGuid = bookmarksStorage
                         .getRecentBookmarks(1)
+                        .getOrDefault(listOf())
                         .firstOrNull()
                         ?.parentGuid
                         ?: BookmarkRoot.Mobile.id
 
-                    bookmarksStorage.getBookmark(parentGuid)!!
+                    bookmarksStorage.getBookmark(parentGuid).getOrNull()!!
                 }.getOrElse {
                     // this should be a temporary hack until the menu redesign is completed
                     // see MenuDialogMiddleware for the updated version
@@ -2128,7 +2135,7 @@ abstract class BaseBrowserFragment :
                     url = sessionUrl,
                     title = sessionTitle,
                     position = null,
-                )
+                ).getOrThrow()
 
                 MetricsUtils.recordBookmarkAddMetric(Source.PAGE_ACTION_MENU, requireComponents.nimbus.events)
                 showBookmarkSavedSnackbar(
