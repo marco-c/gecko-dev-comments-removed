@@ -39,6 +39,7 @@ use std::{
 };
 use style_traits::{
     CssString, CssWriter, KeywordsCollectFn, ParseError, ParsingMode, SpecifiedValueInfo, ToCss,
+    ToTyped, TypedValue,
 };
 
 bitflags! {
@@ -76,7 +77,9 @@ bitflags! {
 }
 
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
+#[derive(
+    Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
+)]
 pub enum CSSWideKeyword {
     
     Initial,
@@ -128,12 +131,20 @@ impl CSSWideKeyword {
 }
 
 
-#[derive(Clone, PartialEq, ToCss, ToShmem, MallocSizeOf, ToTyped)]
+#[derive(Clone, PartialEq, ToCss, ToShmem, MallocSizeOf)]
 pub struct WideKeywordDeclaration {
     #[css(skip)]
     id: LonghandId,
     
     pub keyword: CSSWideKeyword,
+}
+
+
+
+impl ToTyped for WideKeywordDeclaration {
+    fn to_typed(&self) -> Option<TypedValue> {
+        self.keyword.to_typed()
+    }
 }
 
 
