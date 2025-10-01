@@ -251,9 +251,6 @@ var allowlist = [
   { file: "resource://pdf.js/web/debugger.css" },
 
   
-  { file: "resource://builtin-addons/ipp-activator/breakages/tab.json" },
-
-  
   
   {
     file: "chrome://browser/locale/taskbar.properties",
