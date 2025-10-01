@@ -7,6 +7,14 @@ const { TelemetryEnvironment } = ChromeUtils.importESModule(
   "resource://gre/modules/TelemetryEnvironment.sys.mjs"
 );
 
+const { AMTelemetry } = ChromeUtils.importESModule(
+  "resource://gre/modules/AddonManager.sys.mjs"
+);
+
+add_setup(() => {
+  Services.fog.testResetFOG();
+});
+
 
 
 add_task(async function test_shutdown_immediately_after_startup() {
@@ -14,13 +22,20 @@ add_task(async function test_shutdown_immediately_after_startup() {
   Services.prefs.setCharPref("extensions.lastAppVersion", "42");
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "42");
 
+  Assert.deepEqual(
+    Glean.addons.activeAddons.testGetValue(),
+    undefined,
+    "Expect Glean addons.activeAddons to not be set yet"
+  );
+  Assert.equal(
+    AMTelemetry.telemetryAddonBuilder,
+    undefined,
+    "Expect telemetryAddonBuilder to not be initialized yet"
+  );
+
   Cc["@mozilla.org/addons/integration;1"]
     .getService(Ci.nsIObserver)
     .observe(null, "addons-startup", null);
-
-  
-  
-  equal(AddonManagerPrivate.isDBLoaded(), false, "DB not loaded synchronously");
 
   let shutdownCount = 0;
   AddonManager.beforeShutdown.addBlocker("count", async () => ++shutdownCount);
@@ -32,12 +47,31 @@ add_task(async function test_shutdown_immediately_after_startup() {
 
   
   
+  equal(AddonManagerPrivate.isDBLoaded(), false, "DB not loaded synchronously");
+
   
-  equal(
-    TelemetryEnvironment.currentEnvironment.addons,
-    undefined,
-    "TelemetryEnvironment.currentEnvironment.addons is uninitialized"
-  );
+  
+  
+  
+  
+  
+  
+  
+  if (AppConstants.platform !== "android") {
+    
+    
+    
+    equal(
+      TelemetryEnvironment.currentEnvironment.addons,
+      undefined,
+      "TelemetryEnvironment.currentEnvironment.addons is uninitialized"
+    );
+  } else {
+    Assert.ok(
+      AMTelemetry.telemetryAddonBuilder,
+      "Expect telemetryAddonBuilder to have been initialized"
+    );
+  }
 
   info("Immediate exit at startup, without quit-application-granted");
   Services.startup.advanceShutdownPhase(
@@ -55,8 +89,15 @@ add_task(async function test_shutdown_immediately_after_startup() {
   equal(AddonManagerPrivate.isDBLoaded(), false, "DB unloaded after shutdown");
 
   Assert.deepEqual(
-    TelemetryEnvironment.currentEnvironment.addons.activeAddons,
-    {},
-    "TelemetryEnvironment.currentEnvironment.addons is initialized"
+    Glean.addons.activeAddons.testGetValue(),
+    [],
+    "Expect Glean addons.activeAddons to have been set"
   );
+  if (AppConstants.platform !== "android") {
+    Assert.deepEqual(
+      TelemetryEnvironment.currentEnvironment.addons.activeAddons,
+      {},
+      "TelemetryEnvironment.currentEnvironment.addons is initialized"
+    );
+  }
 });
