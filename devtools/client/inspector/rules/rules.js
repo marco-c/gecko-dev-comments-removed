@@ -838,78 +838,96 @@ CssRuleView.prototype = {
   
 
 
+
+
   _onFilterStyles() {
     if (this._filterChangedTimeout) {
       clearTimeout(this._filterChangedTimeout);
     }
 
-    const filterTimeout = this.searchValue.length ? FILTER_CHANGED_TIMEOUT : 0;
-    this.searchClearButton.hidden = this.searchValue.length === 0;
+    const isSearchEmpty = this.searchValue.length === 0;
+    this.searchClearButton.hidden = isSearchEmpty;
 
-    this._filterChangedTimeout = setTimeout(() => {
-      this.searchData = {
-        searchPropertyMatch: FILTER_PROP_RE.exec(this.searchValue),
-        searchPropertyName: this.searchValue,
-        searchPropertyValue: this.searchValue,
-        strictSearchValue: "",
-        strictSearchPropertyName: false,
-        strictSearchPropertyValue: false,
-        strictSearchAllValues: false,
-      };
+    
+    
+    if (isSearchEmpty) {
+      this._doFilterStyles();
+    } else {
+      this._filterChangedTimeout = setTimeout(
+        () => this._doFilterStyles(),
+        FILTER_CHANGED_TIMEOUT
+      );
+    }
+  },
 
-      if (this.searchData.searchPropertyMatch) {
-        
-        
-        
-        
-        if (FILTER_STRICT_RE.test(this.searchData.searchPropertyMatch[1])) {
-          this.searchData.strictSearchPropertyName = true;
-          this.searchData.searchPropertyName = FILTER_STRICT_RE.exec(
-            this.searchData.searchPropertyMatch[1]
-          )[1];
-        } else {
-          this.searchData.searchPropertyName =
-            this.searchData.searchPropertyMatch[1];
-        }
+  
 
-        if (FILTER_STRICT_RE.test(this.searchData.searchPropertyMatch[2])) {
-          this.searchData.strictSearchPropertyValue = true;
-          this.searchData.searchPropertyValue = FILTER_STRICT_RE.exec(
-            this.searchData.searchPropertyMatch[2]
-          )[1];
-        } else {
-          this.searchData.searchPropertyValue =
-            this.searchData.searchPropertyMatch[2];
-        }
 
-        
-        
-        
-        if (FILTER_STRICT_RE.test(this.searchValue)) {
-          this.searchData.strictSearchValue = FILTER_STRICT_RE.exec(
-            this.searchValue
-          )[1];
-        }
-      } else if (FILTER_STRICT_RE.test(this.searchValue)) {
-        
-        
-        
-        
-        const searchValue = FILTER_STRICT_RE.exec(this.searchValue)[1];
-        this.searchData.strictSearchAllValues = true;
-        this.searchData.searchPropertyName = searchValue;
-        this.searchData.searchPropertyValue = searchValue;
-        this.searchData.strictSearchValue = searchValue;
+
+
+  _doFilterStyles() {
+    this.searchData = {
+      searchPropertyMatch: FILTER_PROP_RE.exec(this.searchValue),
+      searchPropertyName: this.searchValue,
+      searchPropertyValue: this.searchValue,
+      strictSearchValue: "",
+      strictSearchPropertyName: false,
+      strictSearchPropertyValue: false,
+      strictSearchAllValues: false,
+    };
+
+    if (this.searchData.searchPropertyMatch) {
+      
+      
+      
+      
+      if (FILTER_STRICT_RE.test(this.searchData.searchPropertyMatch[1])) {
+        this.searchData.strictSearchPropertyName = true;
+        this.searchData.searchPropertyName = FILTER_STRICT_RE.exec(
+          this.searchData.searchPropertyMatch[1]
+        )[1];
+      } else {
+        this.searchData.searchPropertyName =
+          this.searchData.searchPropertyMatch[1];
       }
 
-      this._clearHighlight(this.element);
-      this._clearRules();
-      this._createEditors();
+      if (FILTER_STRICT_RE.test(this.searchData.searchPropertyMatch[2])) {
+        this.searchData.strictSearchPropertyValue = true;
+        this.searchData.searchPropertyValue = FILTER_STRICT_RE.exec(
+          this.searchData.searchPropertyMatch[2]
+        )[1];
+      } else {
+        this.searchData.searchPropertyValue =
+          this.searchData.searchPropertyMatch[2];
+      }
 
-      this.inspector.emit("ruleview-filtered");
+      
+      
+      
+      if (FILTER_STRICT_RE.test(this.searchValue)) {
+        this.searchData.strictSearchValue = FILTER_STRICT_RE.exec(
+          this.searchValue
+        )[1];
+      }
+    } else if (FILTER_STRICT_RE.test(this.searchValue)) {
+      
+      
+      
+      
+      const searchValue = FILTER_STRICT_RE.exec(this.searchValue)[1];
+      this.searchData.strictSearchAllValues = true;
+      this.searchData.searchPropertyName = searchValue;
+      this.searchData.searchPropertyValue = searchValue;
+      this.searchData.strictSearchValue = searchValue;
+    }
 
-      this._filterChangeTimeout = null;
-    }, filterTimeout);
+    this._clearHighlight(this.element);
+    this._clearRules();
+    this._createEditors();
+
+    this.inspector.emit("ruleview-filtered");
+
+    this._filterChangeTimeout = null;
   },
 
   
