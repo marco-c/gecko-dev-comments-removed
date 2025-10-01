@@ -65,7 +65,7 @@ class DialogCloseWatcherListener : public nsIDOMEventListener {
         }
       } else if (eventType.EqualsLiteral("close")) {
         Optional<nsAString> retValue;
-        retValue = &dialog->RequestCloseReturnValue();
+        dialog->GetRequestCloseReturnValue(retValue);
         dialog->Close(retValue);
       }
     }
@@ -134,54 +134,85 @@ bool HTMLDialogElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
                                               aMaybeScriptedPrincipal, aResult);
 }
 
+
+
 void HTMLDialogElement::Close(
     const mozilla::dom::Optional<nsAString>& aReturnValue) {
+  
   if (!Open()) {
     return;
   }
 
+  
+  
+  
   FireToggleEvent(u"open"_ns, u"closed"_ns, u"beforetoggle"_ns);
+
+  
   if (!Open()) {
     return;
   }
+
+  
+  
   QueueToggleEventTask();
 
+  
+  SetOpen(false, IgnoreErrors());
+
+  
+  
+  
+  
+  RemoveFromTopLayerIfNeeded();
+
+  
+  
   if (aReturnValue.WasPassed()) {
     SetReturnValue(aReturnValue.Value());
   }
 
-  SetOpen(false, IgnoreErrors());
+  
+  ClearRequestCloseReturnValue();
 
-  RemoveFromTopLayerIfNeeded();
+  
+  
 
   MOZ_ASSERT(!OwnerDoc()->DialogIsInOpenDialogsList(*this),
              "Dialog should not being in Open Dialog List");
 
+  
+  
   RefPtr<Element> previouslyFocusedElement =
       do_QueryReferent(mPreviouslyFocusedElement);
 
   if (previouslyFocusedElement) {
+    
     mPreviouslyFocusedElement = nullptr;
 
+    
+    
+    
+    
     FocusOptions options;
     options.mPreventScroll = true;
     previouslyFocusedElement->Focus(options, CallerType::NonSystem,
                                     IgnoredErrorResult());
   }
 
+  
+  
   RefPtr<AsyncEventDispatcher> eventDispatcher =
       new AsyncEventDispatcher(this, u"close"_ns, CanBubble::eNo);
   eventDispatcher->PostDOMEvent();
-
-  if (mCloseWatcher) {
-    mCloseWatcher->Destroy();
-    mCloseWatcher = nullptr;
-  }
 }
+
 
 
 void HTMLDialogElement::RequestClose(
     const mozilla::dom::Optional<nsAString>& aReturnValue) {
+  RefPtr closeWatcher = mCloseWatcher;
+
   
   if (!Open()) {
     return;
@@ -189,28 +220,46 @@ void HTMLDialogElement::RequestClose(
 
   
   
-  
-  
-  
-  
-  
-
-  
-  
-
-  
-  
-  if (aReturnValue.WasPassed()) {
-    mRequestCloseReturnValue = aReturnValue.Value();
-  } else {
-    mRequestCloseReturnValue.SetIsVoid(true);
+  if (!IsInComposedDoc() || !OwnerDoc()->IsFullyActive()) {
+    return;
   }
 
   
-  RunCancelDialogSteps();
+  if (StaticPrefs::dom_closewatcher_enabled()) {
+    MOZ_ASSERT(closeWatcher, "RequestClose needs mCloseWatcher");
+  }
+
+  
+  if (StaticPrefs::dom_closewatcher_enabled()) {
+    
+    
+    
+    closeWatcher->SetEnabled(true);
+  }
+
+  
+  if (aReturnValue.WasPassed()) {
+    SetRequestCloseReturnValue(aReturnValue.Value());
+  }
 
   
   
+
+  
+  if (StaticPrefs::dom_closewatcher_enabled()) {
+    closeWatcher->RequestToClose(false);
+  } else {
+    RunCancelDialogSteps();
+  }
+
+  
+  if (closeWatcher) {
+    
+    
+    
+    
+    SetCloseWatcherEnabledState();
+  }
 }
 
 
@@ -248,20 +297,6 @@ void HTMLDialogElement::Show(ErrorResult& aError) {
   SetOpen(true, IgnoreErrors());
 
   
-  
-  
-  
-  
-  
-  
-  
-
-  
-  if (StaticPrefs::dom_closewatcher_enabled()) {
-    SetDialogCloseWatcherIfNeeded();
-  }
-
-  
   StorePreviouslyFocusedElement();
 
   
@@ -272,6 +307,9 @@ void HTMLDialogElement::Show(ErrorResult& aError) {
 
   
   
+  
+  
+
   
   if (!hideUntil) {
     hideUntil = OwnerDoc();
@@ -295,12 +333,17 @@ bool HTMLDialogElement::IsInTopLayer() const {
 }
 
 void HTMLDialogElement::AddToTopLayerIfNeeded() {
-  MOZ_ASSERT(IsInComposedDoc());
+  MOZ_ASSERT(IsInComposedDoc(), "AddToTopLayerIfNeeded needs IsInComposedDoc");
   if (IsInTopLayer()) {
     return;
   }
 
   OwnerDoc()->AddModalDialog(*this);
+
+  
+  
+  
+  SetCloseWatcherEnabledState();
 }
 
 void HTMLDialogElement::RemoveFromTopLayerIfNeeded() {
@@ -308,6 +351,11 @@ void HTMLDialogElement::RemoveFromTopLayerIfNeeded() {
     return;
   }
   OwnerDoc()->RemoveModalDialog(*this);
+
+  
+  
+  
+  SetCloseWatcherEnabledState();
 }
 
 void HTMLDialogElement::StorePreviouslyFocusedElement() {
@@ -330,20 +378,22 @@ nsresult HTMLDialogElement::BindToTree(BindContext& aContext,
 
   
   
-  if (Open() && !aContext.IsMove()) {
-    
+  
+  
+  if (Open() && IsInComposedDoc() && OwnerDoc()->IsFullyActive() &&
+      !aContext.IsMove()) {
     SetupSteps();
   }
 
   return NS_OK;
 }
 
+
 void HTMLDialogElement::UnbindFromTree(UnbindContext& aContext) {
   if (!aContext.IsMove()) {
     
     
     if (Open()) {
-      
       CleanupSteps();
     }
 
@@ -414,38 +464,29 @@ void HTMLDialogElement::ShowModal(ErrorResult& aError) {
   SetOpen(true, aError);
 
   
+  if (StaticPrefs::dom_closewatcher_enabled()) {
+    MOZ_ASSERT(mCloseWatcher, "ShowModal needs mCloseWatcher");
+  }
 
   
   
-  
-  
-  
-  
-  
-  
-  
-
-  
-
   
   
   AddToTopLayerIfNeeded();
-
-  if (StaticPrefs::dom_closewatcher_enabled()) {
-    
-    SetDialogCloseWatcherIfNeeded();
-  }
 
   
   StorePreviouslyFocusedElement();
 
   
-  
-  
-  
+
   
   
   RefPtr<nsINode> hideUntil = GetTopmostPopoverAncestor(nullptr, false);
+
+  
+  
+  
+  
 
   
   if (!hideUntil) {
@@ -461,6 +502,7 @@ void HTMLDialogElement::ShowModal(ErrorResult& aError) {
   aError.SuppressException();
 }
 
+
 void HTMLDialogElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                                      const nsAttrValue* aValue,
                                      const nsAttrValue* aOldValue,
@@ -468,8 +510,6 @@ void HTMLDialogElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                                      bool aNotify) {
   nsGenericHTMLElement::AfterSetAttr(aNameSpaceID, aName, aValue, aOldValue,
                                      aMaybeScriptedPrincipal, aNotify);
-  
-  
   
   if (aNameSpaceID != kNameSpaceID_None) {
     return;
@@ -483,10 +523,7 @@ void HTMLDialogElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
   
   
   if (aName == nsGkAtoms::closedby) {
-    if (StaticPrefs::dom_closewatcher_enabled() && IsInComposedDoc() &&
-        Open()) {
-      SetDialogCloseWatcherIfNeeded();
-    }
+    SetCloseWatcherEnabledState();
   }
 
   
@@ -501,9 +538,19 @@ void HTMLDialogElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
   SetStates(ElementState::OPEN, isOpen);
 
   
+  if (!OwnerDoc()->IsFullyActive()) {
+    return;
+  }
+
+  
   
   if (!isOpen && wasOpen) {
     CleanupSteps();
+  }
+
+  
+  if (!IsInComposedDoc()) {
+    return;
   }
 
   
@@ -565,9 +612,7 @@ void HTMLDialogElement::RunCancelDialogSteps() {
   
   if (defaultAction) {
     Optional<nsAString> retValue;
-    if (!RequestCloseReturnValue().IsEmpty()) {
-      retValue = &RequestCloseReturnValue();
-    }
+    GetRequestCloseReturnValue(retValue);
     Close(retValue);
   }
 }
@@ -601,9 +646,6 @@ bool HTMLDialogElement::HandleCommandInternal(Element* aSource,
       Close(retValueOpt);
     } else {
       MOZ_ASSERT(aCommand == Command::RequestClose);
-      if (retValueOpt.WasPassed()) {
-        SetReturnValue(retValueOpt.Value());
-      }
       RequestClose(retValueOpt);
     }
     return true;
@@ -637,19 +679,14 @@ void HTMLDialogElement::QueueToggleEventTask() {
 
 void HTMLDialogElement::SetDialogCloseWatcherIfNeeded() {
   MOZ_ASSERT(StaticPrefs::dom_closewatcher_enabled(), "CloseWatcher enabled");
-  if (mCloseWatcher) {
-    SetCloseWatcherEnabledState();
-    return;
-  }
+  
+  MOZ_ASSERT(!mCloseWatcher);
 
+  
+  
   RefPtr<Document> doc = OwnerDoc();
   RefPtr window = doc->GetInnerWindow();
-  
-  
-  
-  if (!window) {
-    return;
-  }
+  MOZ_ASSERT(Open() && window && window->IsFullyActive());
 
   
   
@@ -673,45 +710,43 @@ void HTMLDialogElement::SetDialogCloseWatcherIfNeeded() {
   
   
   
+  
+  
+  
+  
+  
+  
   SetCloseWatcherEnabledState();
 
   mCloseWatcher->AddToWindowsCloseWatcherManager();
 }
 
 
-
-
 void HTMLDialogElement::SetupSteps() {
   
-  if (StaticPrefs::dom_closewatcher_enabled()) {
-    SetDialogCloseWatcherIfNeeded();
-  }
+  MOZ_ASSERT(Open());
 
   
-  if (!IsInComposedDoc()) {
-    return;
-  }
+  MOZ_ASSERT(IsInComposedDoc(), "Dialog SetupSteps needs IsInComposedDoc");
 
-  
-  
   
   
   MOZ_ASSERT(!OwnerDoc()->DialogIsInOpenDialogsList(*this));
 
   
-  
-  
   OwnerDoc()->AddOpenDialog(*this);
-}
 
-void HTMLDialogElement::SetCloseWatcherEnabledState() {
+  
   if (StaticPrefs::dom_closewatcher_enabled()) {
-    MOZ_ASSERT(mCloseWatcher);
-    mCloseWatcher->SetEnabled(GetClosedBy() != ClosedBy::None);
+    SetDialogCloseWatcherIfNeeded();
   }
 }
 
-
+void HTMLDialogElement::SetCloseWatcherEnabledState() {
+  if (StaticPrefs::dom_closewatcher_enabled() && mCloseWatcher) {
+    mCloseWatcher->SetEnabled(GetClosedBy() != ClosedBy::None);
+  }
+}
 
 
 void HTMLDialogElement::CleanupSteps() {
