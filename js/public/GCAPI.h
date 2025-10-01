@@ -508,6 +508,11 @@ typedef enum JSGCParamKey {
 
 
   JSGC_NURSERY_MAX_TIME_GOAL_MS = 57,
+
+  
+
+
+  JSGC_STORE_BUFFER_ENTRIES = 58,
 } JSGCParamKey;
 
 
