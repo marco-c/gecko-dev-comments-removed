@@ -24,8 +24,6 @@ PLATFORM_RENAMES = {
 }
 
 BALROG_PLATFORM_MAP = {
-    "linux": ["Linux_x86-gcc3"],
-    "linux32": ["Linux_x86-gcc3"],
     "linux64": ["Linux_x86_64-gcc3"],
     "linux64-aarch64": ["Linux_aarch64-gcc3"],
     "linux64-asan-reporter": ["Linux_x86_64-gcc3-asan"],
@@ -148,7 +146,7 @@ def get_sorted_releases(product, branch):
         "name_prefix": f"{product}-{branch}-nightly-2",
         "names_only": True,
     }
-    req = _retry_on_http_errors(url=url, verify=True, params=params, errors=[500])
+    req = _retry_on_http_errors(url=url, verify=True, params=params, errors=[500, 502])
     releases = req.json()["names"]
     releases = sorted(releases, reverse=True)
     return releases
@@ -156,7 +154,7 @@ def get_sorted_releases(product, branch):
 
 def get_release_builds(release, branch):
     url = f"{_get_balrog_api_root(branch)}/releases/{release}"
-    req = _retry_on_http_errors(url=url, verify=True, params=None, errors=[500])
+    req = _retry_on_http_errors(url=url, verify=True, params=None, errors=[500, 502])
     return req.json()
 
 
