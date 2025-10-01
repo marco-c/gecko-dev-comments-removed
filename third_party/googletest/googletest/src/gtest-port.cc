@@ -320,13 +320,13 @@ Mutex::~Mutex() {
   }
 }
 
-void Mutex::Lock() {
+void Mutex::lock() {
   ThreadSafeLazyInit();
   ::EnterCriticalSection(critical_section_);
   owner_thread_id_ = ::GetCurrentThreadId();
 }
 
-void Mutex::Unlock() {
+void Mutex::unlock() {
   ThreadSafeLazyInit();
   
   

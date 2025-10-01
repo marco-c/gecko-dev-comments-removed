@@ -1385,9 +1385,9 @@ class GTEST_API_ Mutex {
   Mutex();
   ~Mutex();
 
-  void Lock();
+  void lock();
 
-  void Unlock();
+  void unlock();
 
   
   
@@ -1424,9 +1424,9 @@ class GTEST_API_ Mutex {
 
 class GTestMutexLock {
  public:
-  explicit GTestMutexLock(Mutex* mutex) : mutex_(mutex) { mutex_->Lock(); }
+  explicit GTestMutexLock(Mutex* mutex) : mutex_(mutex) { mutex_->lock(); }
 
-  ~GTestMutexLock() { mutex_->Unlock(); }
+  ~GTestMutexLock() { mutex_->unlock(); }
 
  private:
   Mutex* const mutex_;
@@ -1641,14 +1641,14 @@ class ThreadLocal : public ThreadLocalBase {
 class MutexBase {
  public:
   
-  void Lock() {
+  void lock() {
     GTEST_CHECK_POSIX_SUCCESS_(pthread_mutex_lock(&mutex_));
     owner_ = pthread_self();
     has_owner_ = true;
   }
 
   
-  void Unlock() {
+  void unlock() {
     
     
     
@@ -1716,9 +1716,9 @@ class Mutex : public MutexBase {
 
 class GTestMutexLock {
  public:
-  explicit GTestMutexLock(MutexBase* mutex) : mutex_(mutex) { mutex_->Lock(); }
+  explicit GTestMutexLock(MutexBase* mutex) : mutex_(mutex) { mutex_->lock(); }
 
-  ~GTestMutexLock() { mutex_->Unlock(); }
+  ~GTestMutexLock() { mutex_->unlock(); }
 
  private:
   MutexBase* const mutex_;
@@ -1864,8 +1864,8 @@ class GTEST_API_ ThreadLocal {
 class Mutex {
  public:
   Mutex() {}
-  void Lock() {}
-  void Unlock() {}
+  void lock() {}
+  void unlock() {}
   void AssertHeld() const {}
 };
 
