@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_layers_ActiveElementManager_h
-#define mozilla_layers_ActiveElementManager_h
+#ifndef mozilla_layers_ElementStateManager_h
+#define mozilla_layers_ElementStateManager_h
 
 #include "nsCOMPtr.h"
 #include "nsISupportsImpl.h"
@@ -32,13 +32,13 @@ enum class SingleTapState : uint8_t;
 
 
 
-class ActiveElementManager final {
-  ~ActiveElementManager();
+class ElementStateManager final {
+  ~ElementStateManager();
 
  public:
-  NS_INLINE_DECL_REFCOUNTING(ActiveElementManager)
+  NS_INLINE_DECL_REFCOUNTING(ElementStateManager)
 
-  ActiveElementManager();
+  ElementStateManager();
 
   
 
