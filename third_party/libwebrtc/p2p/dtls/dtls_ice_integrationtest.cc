@@ -126,7 +126,7 @@ class DtlsIceIntegrationTest : public ::testing::TestWithParam<std::tuple<
         {.time_mode = webrtc::TimeMode::kSimulated});
 
     BuiltInNetworkBehaviorConfig networkBehavior;
-    networkBehavior.link_capacity = webrtc::DataRate::KilobitsPerSec(200);
+    networkBehavior.link_capacity = webrtc::DataRate::KilobitsPerSec(220);
     
     
     

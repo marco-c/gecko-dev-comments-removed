@@ -461,7 +461,7 @@ bool DtlsTransportInternalImpl::SetupDtls() {
     
     
     
-    const int kDtlsMtu = 800;
+    const int kDtlsMtu = 900;
     dtls_->SetMTU(kDtlsMtu);
   }
 
