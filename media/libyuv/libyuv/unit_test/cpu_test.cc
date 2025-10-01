@@ -427,7 +427,13 @@ TEST_F(LibYUVBaseTest, DISABLED_TestLinuxRVV) {
 #endif
 }
 
-TEST_F(LibYUVBaseTest, TestSetCpuFlags) {
+#ifdef _WIN32
+
+#define MAYBE_TestSetCpuFlags DISABLED_TestSetCpuFlags
+#else
+#define MAYBE_TestSetCpuFlags TestSetCpuFlags
+#endif
+TEST_F(LibYUVBaseTest, MAYBE_TestSetCpuFlags) {
   
   MaskCpuFlags(0);
 
