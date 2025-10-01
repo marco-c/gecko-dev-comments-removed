@@ -414,7 +414,7 @@
 }
 
 #protections-popup-not-blocking-section-why {
-  border-radius: 2px;
+  border-radius: var(--border-radius-xsmall);
 
   &:hover {
     outline: 4px solid var(--button-background-color-ghost-hover);
@@ -693,6 +693,11 @@
 #geo-access-indicator-item {
   margin-top: -2px;
   margin-inline-start: 16px;
+}
+
+#blocked-popup-indicator-item,
+#blocked-popup-indicator-item > label {
+  display: block;
 }
 
 #geo-access-indicator-item {

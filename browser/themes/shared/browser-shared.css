@@ -38,10 +38,17 @@ body {
 :root {
   --window-min-width: 500px;
   /* Vertical tabs need extra room in the nav bar for window controls,
-     drag space, and the sidebar button. */
-  --window-min-width-increase-for-vertical-tabs: 197px;
+     drag space, and the sidebar button.
+     FIXME: Only the window controls' size should be platform-specific, we
+            should be able to share the rest. */
+  --window-min-width-increase-for-vertical-tabs: 161px;
   @media (-moz-platform: macos) {
-    --window-min-width-increase-for-vertical-tabs: 135px;
+    --window-min-width-increase-for-vertical-tabs: 99px;
+  }
+  @media (-moz-platform: linux) {
+    /* FIXME: Use --titlebar-button-* variables to calculate the window
+              controls' size. */
+    --window-min-width-increase-for-vertical-tabs: 138px;
   }
 
   user-select: none;
@@ -793,7 +800,7 @@ menupopup::part(drop-indicator) {
 
   &:hover {
     background-color: hsla(0, 0%, 70%, 0.2);
-    border-radius: 2px;
+    border-radius: var(--border-radius-xsmall);
   }
 }
 
@@ -878,7 +885,7 @@ menupopup::part(drop-indicator) {
       background-color: rgba(216, 216, 216, 0.2);
       color: white;
       border: none;
-      border-radius: 2px;
+      border-radius: var(--border-radius-xsmall);
       margin: 4px;
       padding: 3px 12px;
       flex: 1;
@@ -908,7 +915,7 @@ menupopup::part(drop-indicator) {
     .popup-notification-secondary-button {
       margin: 3px;
       border: none;
-      border-radius: 2px;
+      border-radius: var(--border-radius-xsmall);
       background-image: url(chrome://global/skin/icons/close.svg);
       background-color: transparent;
       background-repeat: no-repeat;
