@@ -267,6 +267,12 @@ nsresult CacheEntry::HashingKey(const nsACString& aStorageID,
 }
 
 
+
+
+
+
+
+
 nsresult CacheEntry::HashingKey(const nsACString& aStorageID,
                                 const nsACString& aEnhanceID,
                                 const nsACString& aURISpec,
