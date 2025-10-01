@@ -2,4 +2,4 @@
 
 
 
-TEST_KINDS = ("mochitest", "test")
+TEST_KINDS = ("mochitest", "reftest", "test")
