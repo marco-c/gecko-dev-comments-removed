@@ -967,14 +967,20 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   std::tuple<nsCOMPtr<nsIPrincipal>, nsCOMPtr<nsIPrincipal>>
   GetTriggeringAndInheritPrincipalsForCurrentLoad();
 
+  
   MOZ_CAN_RUN_SCRIPT
   void HistoryGo(int32_t aOffset, uint64_t aHistoryEpoch,
                  bool aRequireUserInteraction, bool aUserActivation,
                  std::function<void(Maybe<int32_t>&&)>&& aResolver);
 
+  
+  
+  
+  
+  
   MOZ_CAN_RUN_SCRIPT
   void NavigationTraverse(const nsID& aKey, uint64_t aHistoryEpoch,
-                          bool aUserActivation,
+                          bool aUserActivation, bool aCheckForCancelation,
                           std::function<void(nsresult)>&& aResolver);
 
   bool ShouldUpdateSessionHistory(uint32_t aLoadType);
