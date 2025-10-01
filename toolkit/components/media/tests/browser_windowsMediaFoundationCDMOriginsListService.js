@@ -94,8 +94,6 @@ add_task(async function testCheckCreateKeySystemAccess() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["media.wmf.media-engine.enabled", 2],
-      
-      ["media.eme.playready.istypesupportedex", false],
       ["media.eme.wmf.use-mock-cdm-for-external-cdms", true],
     ],
   });
