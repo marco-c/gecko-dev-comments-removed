@@ -381,7 +381,8 @@ enum StatusFlags {
   SVENotLastFlag = CFlag
 };
 
-enum Shift {
+
+enum Shift : int8_t {
   NO_SHIFT = -1,
   LSL = 0x0,
   LSR = 0x1,
@@ -390,7 +391,8 @@ enum Shift {
   MSL = 0x4
 };
 
-enum Extend {
+
+enum Extend : int8_t {
   NO_EXTEND = -1,
   UXTB      = 0,
   UXTH      = 1,
