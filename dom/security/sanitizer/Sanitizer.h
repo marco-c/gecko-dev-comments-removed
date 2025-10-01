@@ -7,6 +7,7 @@
 #ifndef mozilla_dom_Sanitizer_h
 #define mozilla_dom_Sanitizer_h
 
+#include "mozilla/Maybe.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/DocumentFragment.h"
 #include "mozilla/dom/SanitizerBinding.h"
@@ -15,10 +16,6 @@
 #include "nsIGlobalObject.h"
 #include "nsIParserUtils.h"
 #include "nsString.h"
-
-
-
-#include "mozilla/dom/Document.h"
 
 class nsISupports;
 
@@ -56,19 +53,16 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
 
   void Get(SanitizerConfig& aConfig);
 
-  template <typename SanitizerElementWithAttributes>
-  void AllowElement(const SanitizerElementWithAttributes& aElement);
-  template <typename SanitizerElement>
-  void RemoveElement(const SanitizerElement& aElement);
-  template <typename SanitizerElement>
-  void ReplaceElementWithChildren(const SanitizerElement& aElement);
-  template <typename SanitizerAttribute>
-  void AllowAttribute(const SanitizerAttribute& aAttribute);
-  template <typename SanitizerAttribute>
-  void RemoveAttribute(const SanitizerAttribute& aAttribute);
-  void SetComments(bool aAllow);
-  void SetDataAttributes(bool aAllow);
-  void RemoveUnsafe();
+  bool AllowElement(
+      const StringOrSanitizerElementNamespaceWithAttributes& aElement);
+  bool RemoveElement(const StringOrSanitizerElementNamespace& aElement);
+  bool ReplaceElementWithChildren(
+      const StringOrSanitizerElementNamespace& aElement);
+  bool AllowAttribute(const StringOrSanitizerAttributeNamespace& aAttribute);
+  bool RemoveAttribute(const StringOrSanitizerAttributeNamespace& aAttribute);
+  bool SetComments(bool aAllow);
+  bool SetDataAttributes(bool aAllow);
+  bool RemoveUnsafe();
 
   
 
@@ -82,14 +76,18 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
  private:
   ~Sanitizer() = default;
 
+  void CanonicalizeConfiguration(const SanitizerConfig& aConfig,
+                                 bool aAllowCommentsAndDataAttributes);
+  void IsValid(ErrorResult& aRv);
+
   void SetDefaultConfig();
   void SetConfig(const SanitizerConfig& aConfig,
                  bool aAllowCommentsAndDataAttributes, ErrorResult& aRv);
 
   void MaybeMaterializeDefaultConfig();
 
-  void RemoveElementCanonical(sanitizer::CanonicalName&& aElement);
-  void RemoveAttributeCanonical(sanitizer::CanonicalName&& aAttribute);
+  bool RemoveElementCanonical(sanitizer::CanonicalName&& aElement);
+  bool RemoveAttributeCanonical(sanitizer::CanonicalName&& aAttribute);
 
   template <bool IsDefaultConfig>
   void SanitizeChildren(nsINode* aNode, bool aSafe);
@@ -119,25 +117,33 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
   static void LogMessage(const nsAString& aMessage, uint32_t aFlags,
                          uint64_t aInnerWindowID, bool aFromPrivateWindow);
 
+  void AssertIsValid();
+
   void AssertNoLists() {
-    MOZ_ASSERT(mElements.IsEmpty());
-    MOZ_ASSERT(mRemoveElements.IsEmpty());
-    MOZ_ASSERT(mReplaceWithChildrenElements.IsEmpty());
-    MOZ_ASSERT(mAttributes.IsEmpty());
-    MOZ_ASSERT(mRemoveAttributes.IsEmpty());
+    MOZ_ASSERT(!mElements);
+    MOZ_ASSERT(!mRemoveElements);
+    MOZ_ASSERT(!mReplaceWithChildrenElements);
+    MOZ_ASSERT(!mAttributes);
+    MOZ_ASSERT(!mRemoveAttributes);
   }
 
   RefPtr<nsIGlobalObject> mGlobal;
 
-  sanitizer::ListSet<sanitizer::CanonicalElementWithAttributes> mElements;
-  sanitizer::ListSet<sanitizer::CanonicalName> mRemoveElements;
-  sanitizer::ListSet<sanitizer::CanonicalName> mReplaceWithChildrenElements;
+  Maybe<sanitizer::ListSet<sanitizer::CanonicalElementWithAttributes>>
+      mElements;
+  Maybe<sanitizer::ListSet<sanitizer::CanonicalName>> mRemoveElements;
+  Maybe<sanitizer::ListSet<sanitizer::CanonicalName>>
+      mReplaceWithChildrenElements;
 
-  sanitizer::ListSet<sanitizer::CanonicalName> mAttributes;
-  sanitizer::ListSet<sanitizer::CanonicalName> mRemoveAttributes;
+  Maybe<sanitizer::ListSet<sanitizer::CanonicalName>> mAttributes;
+  Maybe<sanitizer::ListSet<sanitizer::CanonicalName>> mRemoveAttributes;
 
   bool mComments = false;
-  bool mDataAttributes = false;
+  
+  
+  Maybe<bool> mDataAttributes;
+
+  
   
   
   bool mIsDefaultConfig = false;
