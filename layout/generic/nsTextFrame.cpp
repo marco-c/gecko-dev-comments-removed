@@ -3928,9 +3928,16 @@ static Maybe<TextAutospace::CharClass> LastNonMarkCharClassInFrame(
 static Maybe<TextAutospace::CharClass> GetPrecedingCharClassFromMappedFlows(
     const nsTextFrame* aFrame, const gfxTextRun* aTextRun) {
   using CharClass = TextAutospace::CharClass;
-  TextRunMappedFlow* mappedFlows = GetMappedFlows(aTextRun);
+
+  if (aTextRun->GetFlags2() & nsTextFrameUtils::Flags::IsSimpleFlow) {
+    return Nothing();
+  }
+
   auto data = static_cast<TextRunUserData*>(aTextRun->GetUserData());
-  MOZ_ASSERT(mappedFlows && data, "missing mapped-flow data!");
+  if (!data) {
+    return Nothing();
+  }
+  TextRunMappedFlow* mappedFlows = GetMappedFlows(aTextRun);
 
   
   uint32_t i = 0;
@@ -4070,10 +4077,7 @@ void nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
           
           
           
-          if (!(mTextRun->GetFlags2() &
-                nsTextFrameUtils::Flags::IsSimpleFlow)) {
-            prevClass = GetPrecedingCharClassFromMappedFlows(mFrame, mTextRun);
-          }
+          prevClass = GetPrecedingCharClassFromMappedFlows(mFrame, mTextRun);
           
           
           if (!prevClass) {
