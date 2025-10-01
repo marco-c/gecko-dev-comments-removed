@@ -10,13 +10,13 @@
 
 #include "modules/desktop_capture/differ_block.h"
 
-#include <string.h>
+#include <cstdint>
+#include <cstring>
 
 #include "rtc_base/cpu_info.h"
+
+
 #include "rtc_base/system/arch.h"
-
-
-
 #if defined(WEBRTC_ARCH_X86_FAMILY)
 #include "modules/desktop_capture/differ_vector_sse2.h"
 #endif

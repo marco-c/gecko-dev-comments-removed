@@ -8,6 +8,8 @@
 
 
 
+#include <memory>
+
 #include "modules/desktop_capture/desktop_capturer.h"
 
 namespace webrtc {
