@@ -3906,18 +3906,68 @@ static Maybe<TextAutospace::CharClass> LastNonMarkCharClass(
 }
 
 
+
+
+static Maybe<TextAutospace::CharClass> LastNonMarkCharClass(
+    const nsTextFrame* aFrame) {
+  using CharClass = TextAutospace::CharClass;
+  bool trimSpace = aFrame->HasAnyStateBits(TEXT_TRIMMED_TRAILING_WHITESPACE);
+  const auto& buffer = aFrame->CharacterDataBuffer();
+  const uint32_t startOffset = aFrame->GetContentOffset();
+  uint32_t i = aFrame->GetContentEnd();
+  while (i > startOffset) {
+    
+    char32_t ch = buffer.CharAt(--i);
+    if (NS_IS_LOW_SURROGATE(ch) && i > startOffset) {
+      
+      char32 hi = buffer.CharAt(i - 1);
+      if (NS_IS_HIGH_SURROGATE(hi)) {
+        ch = SURROGATE_TO_UCS4(hi, ch);
+        --i;
+      }
+    }
+    
+    if (trimSpace) {
+      if (IsTrimmableSpace(ch)) {
+        continue;
+      }
+      trimSpace = false;
+    }
+    
+    auto cls = TextAutospace::GetCharClass(ch);
+    if (cls != CharClass::CombiningMark) {
+      return Some(cls);
+    }
+  }
+  
+  return Nothing();
+}
+
+
 static Maybe<TextAutospace::CharClass> LastNonMarkCharClassInFrame(
     nsTextFrame* aFrame) {
   using CharClass = TextAutospace::CharClass;
   if (!aFrame->GetContentLength()) {
     return Nothing();
   }
-  gfxSkipCharsIterator iter = aFrame->EnsureTextRun(nsTextFrame::eInflated);
-  iter.SetOriginalOffset(aFrame->GetContentEnd());
-  Maybe<CharClass> prevClass =
-      LastNonMarkCharClass(iter, aFrame->GetContentOffset(),
-                           aFrame->GetTextRun(nsTextFrame::eInflated),
-                           aFrame->CharacterDataBuffer());
+  Maybe<CharClass> prevClass;
+  if (aFrame->GetTextRun(nsTextFrame::eInflated)) {
+    
+    
+    gfxSkipCharsIterator iter = aFrame->EnsureTextRun(nsTextFrame::eInflated);
+    iter.SetOriginalOffset(aFrame->GetContentEnd());
+    prevClass = LastNonMarkCharClass(iter, aFrame->GetContentOffset(),
+                                     aFrame->GetTextRun(nsTextFrame::eInflated),
+                                     aFrame->CharacterDataBuffer());
+  } else {
+    
+    
+    
+    
+    
+    
+    prevClass = LastNonMarkCharClass(aFrame);
+  }
   if (prevClass) {
     return prevClass;
   }
