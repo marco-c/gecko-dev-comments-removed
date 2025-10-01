@@ -75,6 +75,15 @@ class ExtensionKitProcess {
   void* mProcessObject;
 };
 
+enum class ExtensionKitSandboxRevision {
+  
+  Revision1,
+};
+
+
+
+void LockdownExtensionKitProcess(ExtensionKitSandboxRevision aRevision);
+
 }  
 
 #endif  
