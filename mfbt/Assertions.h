@@ -179,17 +179,7 @@ MOZ_ReportAssertionFailure(const char* aStr, const char* aFilename,
 
 
 
-#if defined(__clang__) || defined(__GNUC__)
-#  define MOZ_ASSUME_UNREACHABLE_MARKER() __builtin_unreachable()
-#elif defined(_MSC_VER)
-#  define MOZ_ASSUME_UNREACHABLE_MARKER() __assume(0)
-#else
-#  ifdef __cplusplus
-#    define MOZ_ASSUME_UNREACHABLE_MARKER() ::abort()
-#  else
-#    define MOZ_ASSUME_UNREACHABLE_MARKER() abort()
-#  endif
-#endif
+#define MOZ_ASSUME_UNREACHABLE_MARKER() __builtin_unreachable()
 
 
 
@@ -821,5 +811,7 @@ static inline T MakeCompilerAssumeUnreachableFakeValue() {
 }
 }  
 #endif  
+
+#undef MOZ_GET_PID
 
 #endif 
