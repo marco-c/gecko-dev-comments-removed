@@ -59,6 +59,8 @@ using namespace mozilla;
 namespace mozilla {
 namespace net {
 
+
+
 LazyLogModule gDictionaryLog("CompressionDictionaries");
 
 #define DICTIONARY_LOG(args) \
@@ -146,8 +148,9 @@ void DictionaryCacheEntry::UseCompleted() {
 }
 
 
-bool DictionaryCacheEntry::Prefetch(nsILoadContextInfo* aLoadContextInfo,
-                                    const std::function<void()>& aFunc) {
+nsresult DictionaryCacheEntry::Prefetch(nsILoadContextInfo* aLoadContextInfo,
+                                        bool& aShouldSuspend,
+                                        const std::function<void()>& aFunc) {
   DICTIONARY_LOG(("Prefetch for %s", mURI.get()));
   
   
@@ -159,28 +162,36 @@ bool DictionaryCacheEntry::Prefetch(nsILoadContextInfo* aLoadContextInfo,
       nsCOMPtr<nsICacheStorageService> cacheStorageService(
           components::CacheStorage::Service());
       if (!cacheStorageService) {
-        return false;
+        aShouldSuspend = false;
+        return NS_ERROR_FAILURE;
       }
       nsCOMPtr<nsICacheStorage> cacheStorage;
       nsresult rv = cacheStorageService->DiskCacheStorage(
           aLoadContextInfo, getter_AddRefs(cacheStorage));
       if (NS_FAILED(rv)) {
-        return false;
+        aShouldSuspend = false;
+        return NS_ERROR_FAILURE;
       }
-      
+      if (NS_FAILED(cacheStorage->AsyncOpenURIString(
+              mURI, ""_ns, nsICacheStorage::OPEN_READONLY, this))) {
+        
+        aShouldSuspend = false;
+        return NS_ERROR_FAILURE;
+      }
       mWaitingPrefetch.AppendElement(aFunc);
-      cacheStorage->AsyncOpenURIString(mURI, ""_ns,
-                                       nsICacheStorage::OPEN_READONLY, this);
       DICTIONARY_LOG(("Started Prefetch for %s, anonymous=%d", mURI.get(),
                       aLoadContextInfo->IsAnonymous()));
-      return true;
+      aShouldSuspend = true;
+      return NS_OK;
     }
     DICTIONARY_LOG(("Prefetch for %s - already have data in memory (%u users)",
                     mURI.get(), mUsers));
-    return false;
+    aShouldSuspend = false;
+    return NS_OK;
   }
   DICTIONARY_LOG(("Prefetch for %s - already waiting", mURI.get()));
-  return true;
+  aShouldSuspend = true;
+  return NS_OK;
 }
 
 void DictionaryCacheEntry::AccumulateHash(const char* aBuf, int32_t aCount) {
@@ -620,7 +631,6 @@ NS_IMETHODIMP
 DictionaryOriginReader::OnDataAvailable(nsIRequest* request,
                                         nsIInputStream* aInputStream,
                                         uint64_t aOffset, uint32_t aCount) {
-  uint32_t n;
   DICTIONARY_LOG(
       ("DictionaryOriginReader %p OnDataAvailable %u", this, aCount));
   return NS_OK;
