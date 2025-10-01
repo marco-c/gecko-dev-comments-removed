@@ -593,17 +593,6 @@ inline already_AddRefed<T> do_AddRef(const RefPtr<T>& aObj) {
 
 namespace mozilla {
 
-template <typename T>
-class AlignmentFinder;
-
-
-
-template <typename T>
-class AlignmentFinder<RefPtr<T>> {
- public:
-  static const size_t alignment = alignof(T*);
-};
-
 
 
 
