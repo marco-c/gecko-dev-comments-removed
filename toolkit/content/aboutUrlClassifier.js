@@ -346,15 +346,6 @@ var Provider = {
   
   
   isActiveProvider(provider) {
-    if (
-      provider === "google5" &&
-      !Services.prefs.getBoolPref(
-        "browser.safebrowsing.provider.google5.enabled"
-      )
-    ) {
-      return false;
-    }
-
     let listmanager = Cc[
       "@mozilla.org/url-classifier/listmanager;1"
     ].getService(Ci.nsIUrlListManager);
