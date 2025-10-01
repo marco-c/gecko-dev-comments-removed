@@ -865,17 +865,6 @@ class MacroAssemblerARMCompat : public MacroAssemblerARM {
   void unboxObject(const BaseIndex& src, Register dest) {
     unboxNonDouble(src, dest, JSVAL_TYPE_OBJECT);
   }
-  void unboxObjectOrNull(const ValueOperand& src, Register dest) {
-    
-    
-    unboxNonDouble(src, dest, JSVAL_TYPE_OBJECT);
-  }
-  void unboxObjectOrNull(const Address& src, Register dest) {
-    unboxNonDouble(src, dest, JSVAL_TYPE_OBJECT);
-  }
-  void unboxObjectOrNull(const BaseIndex& src, Register dest) {
-    unboxNonDouble(src, dest, JSVAL_TYPE_OBJECT);
-  }
   void unboxDouble(const ValueOperand& src, FloatRegister dest);
   void unboxDouble(const Address& src, FloatRegister dest);
   void unboxDouble(const BaseIndex& src, FloatRegister dest);
@@ -911,6 +900,7 @@ class MacroAssemblerARMCompat : public MacroAssemblerARM {
   
   void boxDouble(FloatRegister src, const ValueOperand& dest, FloatRegister);
   void boxNonDouble(JSValueType type, Register src, const ValueOperand& dest);
+  void boxNonDouble(Register type, Register src, const ValueOperand& dest);
 
   
   
@@ -970,21 +960,6 @@ class MacroAssemblerARMCompat : public MacroAssemblerARM {
       loadInt32OrDouble(address.base, address.index, dest.fpu(), address.scale);
     } else {
       load32(address, dest.gpr());
-    }
-  }
-
-  template <typename T>
-  void storeUnboxedPayload(ValueOperand value, T address, size_t nbytes,
-                           JSValueType) {
-    switch (nbytes) {
-      case 4:
-        storePtr(value.payloadReg(), address);
-        return;
-      case 1:
-        store8(value.payloadReg(), address);
-        return;
-      default:
-        MOZ_CRASH("Bad payload width");
     }
   }
 
@@ -1107,7 +1082,9 @@ class MacroAssemblerARMCompat : public MacroAssemblerARM {
   
   void loadUnalignedValue(const Address& src, ValueOperand dest);
 
-  void tagValue(JSValueType type, Register payload, ValueOperand dest);
+  void tagValue(JSValueType type, Register payload, ValueOperand dest) {
+    boxNonDouble(type, payload, dest);
+  }
 
   void pushValue(ValueOperand val);
   void popValue(ValueOperand val);
