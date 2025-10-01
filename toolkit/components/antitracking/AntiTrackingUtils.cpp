@@ -522,7 +522,8 @@ AntiTrackingUtils::GetStoragePermissionStateInParent(nsIChannel* aChannel) {
       BasePrincipal::CreateContentPrincipal(trackingURI,
                                             loadInfo->GetOriginAttributes());
 
-  if (IsThirdPartyChannel(aChannel)) {
+  bool isThirdParty = IsThirdPartyChannel(aChannel);
+  if (isThirdParty) {
     nsAutoCString targetOrigin;
     nsAutoCString trackingOrigin;
     if (NS_FAILED(targetPrincipal->GetOriginNoSuffix(targetOrigin)) ||
@@ -639,10 +640,33 @@ AntiTrackingUtils::GetStoragePermissionStateInParent(nsIChannel* aChannel) {
     }
   }
 
-  bool isThirdParty = false;
-  rv = framePrincipal->IsThirdPartyURI(trackingURI, &isThirdParty);
-  if (NS_FAILED(rv) || isThirdParty) {
-    return nsILoadInfo::DisabledStoragePermission;
+  if (isThirdParty) {
+    if (RefPtr<net::nsHttpChannel> httpChannel = do_QueryObject(aChannel)) {
+      
+      bool isAB = true;
+      rv = targetPrincipal->IsThirdPartyURI(trackingURI, &isAB);
+      if (NS_FAILED(rv)) {
+        return nsILoadInfo::NoStoragePermission;
+      }
+      if (isAB) {
+        
+        
+        return nsILoadInfo::DisabledStoragePermission;
+      } else {
+        if (httpChannel->StorageAccessReloadedChannel()) {
+          
+          
+          
+          return nsILoadInfo::HasStoragePermission;
+        } else {
+          
+          
+          
+          
+          return nsILoadInfo::InactiveStoragePermission;
+        }
+      }
+    }
   }
 
   return nsILoadInfo::NoStoragePermission;
