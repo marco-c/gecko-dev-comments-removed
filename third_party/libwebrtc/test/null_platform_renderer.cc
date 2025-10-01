@@ -8,6 +8,8 @@
 
 
 
+#include <cstddef>
+
 #include "test/video_renderer.h"
 
 namespace webrtc {

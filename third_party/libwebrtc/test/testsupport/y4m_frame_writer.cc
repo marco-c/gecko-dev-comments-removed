@@ -8,8 +8,8 @@
 
 
 
-#include <stdio.h>
-
+#include <cstdint>
+#include <cstdio>
 #include <string>
 
 #include "rtc_base/logging.h"
