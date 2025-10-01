@@ -65,8 +65,12 @@ bool DoTrialInlining(JSContext* cx, BaselineFrame* frame) {
   }
 
   
-  MOZ_ASSERT_IF(JitOptions.limitScriptSize,
-                script->length() <= JitOptions.ionMaxScriptSize);
+  if (JitOptions.limitScriptSize &&
+      script->length() > JitOptions.ionMaxScriptSize) {
+    
+    MOZ_ASSERT(frame->runningInInterpreter());
+    return true;
+  }
 
   const uint32_t MAX_INLINING_DEPTH = 4;
   if (icScript->depth() > MAX_INLINING_DEPTH) {
