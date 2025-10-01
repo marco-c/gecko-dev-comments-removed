@@ -229,6 +229,8 @@ class HttpBaseChannel : public nsHashPropertyBag,
   NS_IMETHOD SetRequestContextID(uint64_t aRCID) override;
   NS_IMETHOD GetIsMainDocumentChannel(bool* aValue) override;
   NS_IMETHOD SetIsMainDocumentChannel(bool aValue) override;
+  NS_IMETHOD GetIsUserAgentHeaderOutdated(bool* aValue) override;
+  NS_IMETHOD SetIsUserAgentHeaderOutdated(bool aValue) override;
   NS_IMETHOD GetProtocolVersion(nsACString& aProtocolVersion) override;
   NS_IMETHOD GetChannelId(uint64_t* aChannelId) override;
   NS_IMETHOD SetChannelId(uint64_t aChannelId) override;
@@ -985,7 +987,11 @@ class HttpBaseChannel : public nsHashPropertyBag,
 
     
     
-    (uint32_t, IsUserAgentHeaderModified, 1)
+    (uint32_t, IsUserAgentHeaderModified, 1),
+
+    
+    
+    (uint32_t, IsUserAgentHeaderOutdated, 1)
   ))
   
 
