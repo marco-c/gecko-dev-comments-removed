@@ -33,9 +33,11 @@ export interface TranslationModelRecord {
   
   name: string;
   
-  fromLang: string;
+  sourceLanguage: string;
   
-  toLang: string;
+  targetLanguage: string;
+  
+  architecture: string;
   
   
   variant?: string;
@@ -43,6 +45,10 @@ export interface TranslationModelRecord {
   version: string;
   
   fileType: string;
+  
+  decompressedHash: string;
+  
+  decompressedSize: number;
   
   attachment: Attachment;
   
@@ -70,6 +76,10 @@ export interface WasmRecord {
   license: string;
   
   version: string;
+  
+  decompressedHash: string;
+  
+  decompressedSize: number;
   
   attachment: Attachment;
   
