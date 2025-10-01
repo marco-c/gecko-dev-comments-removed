@@ -806,9 +806,9 @@ Result<Ok, PreXULSkeletonUIError> DrawSkeletonUI(
     return Err(PreXULSkeletonUIError::OOM);
   }
 
-  int placeholderBorderRadius = CSSToDevPixels(8, sCSSToDevPixelScaling);
+  int placeholderBorderRadius = CSSToDevPixels(4, sCSSToDevPixelScaling);
   
-  int urlbarBorderRadius = CSSToDevPixels(8, sCSSToDevPixelScaling);
+  int urlbarBorderRadius = CSSToDevPixels(4, sCSSToDevPixelScaling);
 
   
   ColorRect tabBar = {};
