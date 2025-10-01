@@ -285,6 +285,39 @@ static StyleRect<T> StyleRectWithAllSides(const T& aSide) {
   return {aSide, aSide, aSide, aSide};
 }
 
+AnchorPosReferencedAnchors::Result AnchorPosReferencedAnchors::InsertOrModify(
+    const nsAtom* aAnchorName, bool aNeedOffset) {
+  bool exists = true;
+  auto* result = &mMap.LookupOrInsertWith(aAnchorName, [&exists]() {
+    exists = false;
+    return Nothing{};
+  });
+
+  if (!exists) {
+    return {false, result};
+  }
+
+  
+  if (result->isNothing()) {
+    
+    return {true, result};
+  }
+  
+  if (!aNeedOffset) {
+    
+    return {true, result};
+  }
+
+  
+  
+  return {result->ref().mOrigin.isSome(), result};
+}
+
+const AnchorPosReferencedAnchors::Value* AnchorPosReferencedAnchors::Lookup(
+    const nsAtom* aAnchorName) const {
+  return mMap.Lookup(aAnchorName).DataPtrOrNull();
+}
+
 AnchorResolvedMargin AnchorResolvedMarginHelper::ResolveAnchor(
     const StyleMargin& aValue, StylePhysicalAxis aAxis,
     const AnchorPosResolutionParams& aParams) {

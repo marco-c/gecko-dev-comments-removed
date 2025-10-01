@@ -9,8 +9,8 @@
 
 #include "mozilla/Maybe.h"
 #include "nsRect.h"
-#include "nsTHashMap.h"
 
+struct AnchorPosResolutionData;
 class nsAtom;
 class nsIFrame;
 
@@ -24,57 +24,6 @@ struct AnchorPosInfo {
   
   nsRect mRect;
   const nsIFrame* mContainingBlock;
-};
-
-
-struct AnchorPosResolutionData {
-  
-  nsSize mSize;
-  
-  
-  
-  
-  mozilla::Maybe<nsPoint> mOrigin;
-};
-
-
-
-
-
-
-
-
-
-class AnchorPosReferenceData {
- private:
-  using Map =
-      nsTHashMap<RefPtr<const nsAtom>, mozilla::Maybe<AnchorPosResolutionData>>;
-
- public:
-  using Value = mozilla::Maybe<AnchorPosResolutionData>;
-
-  AnchorPosReferenceData() = default;
-  AnchorPosReferenceData(const AnchorPosReferenceData&) = delete;
-  AnchorPosReferenceData(AnchorPosReferenceData&&) = default;
-
-  AnchorPosReferenceData& operator=(const AnchorPosReferenceData&) = delete;
-  AnchorPosReferenceData& operator=(AnchorPosReferenceData&&) = default;
-
-  struct Result {
-    bool mAlreadyResolved;
-    Value* mEntry;
-  };
-
-  Result InsertOrModify(const nsAtom* aAnchorName, bool aNeedOffset);
-  const Value* Lookup(const nsAtom* aAnchorName) const;
-
-  bool IsEmpty() const { return mMap.IsEmpty(); }
-
-  Map::const_iterator begin() const { return mMap.cbegin(); }
-  Map::const_iterator end() const { return mMap.cend(); }
-
- private:
-  Map mMap;
 };
 
 

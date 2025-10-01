@@ -44,7 +44,6 @@ namespace mozilla {
 class ComputedStyle;
 struct IntrinsicSize;
 struct ReflowInput;
-class AnchorPosReferenceData;
 
 }  
 
@@ -383,6 +382,52 @@ using AnchorResolvedMargin =
     mozilla::UniqueOrNonOwningPtr<const mozilla::StyleMargin>;
 
 
+struct AnchorPosResolutionData {
+  
+  nsSize mSize;
+  
+  
+  
+  
+  mozilla::Maybe<nsPoint> mOrigin;
+};
+
+
+
+class AnchorPosReferencedAnchors {
+ private:
+  using Map =
+      nsTHashMap<RefPtr<const nsAtom>, mozilla::Maybe<AnchorPosResolutionData>>;
+
+ public:
+  using Value = mozilla::Maybe<AnchorPosResolutionData>;
+
+  AnchorPosReferencedAnchors() = default;
+  AnchorPosReferencedAnchors(const AnchorPosReferencedAnchors&) = delete;
+  AnchorPosReferencedAnchors(AnchorPosReferencedAnchors&&) = default;
+
+  AnchorPosReferencedAnchors& operator=(const AnchorPosReferencedAnchors&) =
+      delete;
+  AnchorPosReferencedAnchors& operator=(AnchorPosReferencedAnchors&&) = default;
+
+  struct Result {
+    bool mAlreadyResolved;
+    Value* mEntry;
+  };
+
+  Result InsertOrModify(const nsAtom* aAnchorName, bool aNeedOffset);
+  const Value* Lookup(const nsAtom* aAnchorName) const;
+
+  bool IsEmpty() const { return mMap.IsEmpty(); }
+
+  Map::const_iterator begin() const { return mMap.cbegin(); }
+  Map::const_iterator end() const { return mMap.cend(); }
+
+ private:
+  Map mMap;
+};
+
+
 struct AnchorPosResolutionParams {
   
   
@@ -391,13 +436,13 @@ struct AnchorPosResolutionParams {
   mozilla::StylePositionProperty mPosition;
   
   
-  mozilla::AnchorPosReferenceData* const mAnchorPosReferenceData = nullptr;
+  AnchorPosReferencedAnchors* const mReferencedAnchors = nullptr;
 
   
   
   static inline AnchorPosResolutionParams From(
       const nsIFrame* aFrame,
-      mozilla::AnchorPosReferenceData* aAnchorPosReferenceData = nullptr);
+      AnchorPosReferencedAnchors* aReferencedAnchors = nullptr);
   static inline AnchorPosResolutionParams From(const mozilla::ReflowInput* aRI);
   static inline AnchorPosResolutionParams From(
       const nsComputedDOMStyle* aComputedDOMStyle);

@@ -119,7 +119,7 @@ class nsAbsoluteContainingBlock {
 
   bool FrameDependsOnContainer(
       nsIFrame* aFrame, bool aCBWidthChanged, bool aCBHeightChanged,
-      AnchorPosReferenceData* aAnchorPosReferenceData = nullptr);
+      AnchorPosReferencedAnchors* aReferencedAnchors = nullptr);
 
   
 
@@ -156,7 +156,7 @@ class nsAbsoluteContainingBlock {
       const ReflowInput& aReflowInput, const nsRect& aContainingBlockRect,
       AbsPosReflowFlags aFlags, nsIFrame* aKidFrame, nsReflowStatus& aStatus,
       mozilla::OverflowAreas* aOverflowAreas,
-      AnchorPosReferenceData* aAnchorPosReferenceData = nullptr);
+      AnchorPosReferencedAnchors* aReferencedAnchors = nullptr);
 
   
 

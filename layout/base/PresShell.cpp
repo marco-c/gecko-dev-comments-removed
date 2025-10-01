@@ -12213,20 +12213,20 @@ PresShell::AnchorPosUpdateResult PresShell::UpdateAnchorPosLayout() {
   for (auto* positioned : mAnchorPosPositioned) {
     MOZ_ASSERT(positioned->IsAbsolutelyPositioned(),
                "Anchor positioned frame is not absolutely positioned?");
-    const auto* anchorPosReferenceData =
+    const auto* referencedAnchors =
         positioned->GetProperty(nsIFrame::AnchorPosReferences());
     
     
     
     
-    if (!anchorPosReferenceData || anchorPosReferenceData->IsEmpty()) {
+    if (!referencedAnchors || referencedAnchors->IsEmpty()) {
       continue;
     }
     if (positioned->HasAnyStateBits(NS_FRAME_IS_DIRTY)) {
       
       continue;
     }
-    for (const auto& kv : *anchorPosReferenceData) {
+    for (const auto& kv : *referencedAnchors) {
       const auto& data = kv.GetData();
       const auto& anchorName = kv.GetKey();
       const auto* anchor = GetAnchorPosAnchor(anchorName, positioned);
@@ -12335,9 +12335,9 @@ void PresShell::UpdateAnchorPosLayoutForScroll(
       continue;
     }
 
-    const auto* anchorPosReferenceData =
+    const auto* referencedAnchors =
         positioned->GetProperty(nsIFrame::AnchorPosReferences());
-    if (!anchorPosReferenceData || anchorPosReferenceData->IsEmpty()) {
+    if (!referencedAnchors || referencedAnchors->IsEmpty()) {
       
       
       continue;
@@ -12369,7 +12369,7 @@ void PresShell::UpdateAnchorPosLayoutForScroll(
     for (const auto& entry : affectedAnchors) {
       const auto* anchorName = entry.mAnchorName;
       const auto& anchors = entry.mFrames;
-      const auto* data = anchorPosReferenceData->Lookup(anchorName);
+      const auto* data = referencedAnchors->Lookup(anchorName);
       if (!data) {
         continue;
       }
