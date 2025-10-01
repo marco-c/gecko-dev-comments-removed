@@ -25,56 +25,56 @@ let itemIdCounter = 0;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function AutocompletePopup(toolboxDoc, options = {}) {
-  EventEmitter.decorate(this);
-
-  this._document = toolboxDoc;
-  this.autoSelect = options.autoSelect || false;
-  this.listId = options.listId || null;
-  this.position = options.position || "bottom";
-  this.useXulWrapper = options.useXulWrapper || false;
-
-  this.onSelectCallback = options.onSelect;
-  this.onClickCallback = options.onClick;
-
+class AutocompletePopup extends EventEmitter {
   
-  this.items = [];
-  
-  this.elements = new WeakMap();
 
-  this.selectedIndex = -1;
 
-  this.onClick = this.onClick.bind(this);
-  this.onInputKeyDown = this.onInputKeyDown.bind(this);
-  this.onInputBlur = this.onInputBlur.bind(this);
 
-  if (options.input) {
-    this.input = options.input;
-    options.input.addEventListener("keydown", this.onInputKeyDown);
-    options.input.addEventListener("blur", this.onInputBlur);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  constructor(toolboxDoc, options = {}) {
+    super();
+
+    this._document = toolboxDoc;
+    this.autoSelect = options.autoSelect || false;
+    this.listId = options.listId || null;
+    this.position = options.position || "bottom";
+    this.useXulWrapper = options.useXulWrapper || false;
+
+    this.onSelectCallback = options.onSelect;
+    this.onClickCallback = options.onClick;
+
+    
+    this.items = [];
+    
+    this.elements = new WeakMap();
+
+    this.selectedIndex = -1;
+
+    this.onClick = this.onClick.bind(this);
+    this.onInputKeyDown = this.onInputKeyDown.bind(this);
+    this.onInputBlur = this.onInputBlur.bind(this);
+
+    if (options.input) {
+      this.input = options.input;
+      options.input.addEventListener("keydown", this.onInputKeyDown);
+      options.input.addEventListener("blur", this.onInputBlur);
+    }
   }
-}
 
-AutocompletePopup.prototype = {
-  _document: null,
+  _document = null;
 
   get list() {
     if (this._list) {
@@ -110,7 +110,7 @@ AutocompletePopup.prototype = {
     this._list.addEventListener("click", this.onClick);
 
     return this._list;
-  },
+  }
 
   get tooltip() {
     if (this._tooltip) {
@@ -129,7 +129,7 @@ AutocompletePopup.prototype = {
     this._tooltip.setContentSize({ height: "auto" });
 
     return this._tooltip;
-  },
+  }
 
   onInputKeyDown(event) {
     
@@ -182,20 +182,20 @@ AutocompletePopup.prototype = {
       event.preventDefault();
       event.stopPropagation();
     }
-  },
+  }
 
   onInputBlur() {
     if (this.isOpen) {
       this.clearItems();
       this.hidePopup();
     }
-  },
+  }
 
   onSelect(e) {
     if (this.onSelectCallback) {
       this.onSelectCallback(e);
     }
-  },
+  }
 
   onClick(e) {
     const itemEl = e.target.closest(".autocomplete-item");
@@ -214,7 +214,7 @@ AutocompletePopup.prototype = {
       const item = index !== null ? this.items[index] : null;
       this.onClickCallback(e, item);
     }
-  },
+  }
 
   
 
@@ -263,7 +263,7 @@ AutocompletePopup.prototype = {
     }
 
     this.emit("popup-opened");
-  },
+  }
 
   
 
@@ -310,7 +310,7 @@ AutocompletePopup.prototype = {
       
       this.onSelectCallback(item);
     }
-  },
+  }
 
   
 
@@ -324,14 +324,14 @@ AutocompletePopup.prototype = {
     this._clearActiveDescendant();
     this._activeElement = null;
     this.tooltip.hide();
-  },
+  }
 
   
 
 
   get isOpen() {
     return !!this._tooltip && this.tooltip.isVisible();
-  },
+  }
 
   
 
@@ -366,7 +366,7 @@ AutocompletePopup.prototype = {
     }
 
     this._document = null;
-  },
+  }
 
   
 
@@ -378,7 +378,7 @@ AutocompletePopup.prototype = {
 
   getItemAtIndex(index) {
     return this.items[index];
-  },
+  }
 
   
 
@@ -388,7 +388,7 @@ AutocompletePopup.prototype = {
   getItems() {
     
     return this.items.slice(0);
-  },
+  }
 
   
 
@@ -452,7 +452,7 @@ AutocompletePopup.prototype = {
     this._listClone.appendChild(fragmentClone);
 
     this.selectItemAtIndex(selectedIndex, options);
-  },
+  }
 
   _scrollElementIntoViewIfNeeded(element) {
     const quads = element.getBoxQuads({
@@ -472,7 +472,7 @@ AutocompletePopup.prototype = {
       
       element.scrollIntoView(false);
     }
-  },
+  }
 
   
 
@@ -488,7 +488,7 @@ AutocompletePopup.prototype = {
     this.items = [];
     this.elements = new WeakMap();
     this.selectItemAtIndex(-1);
-  },
+  }
 
   
 
@@ -496,7 +496,7 @@ AutocompletePopup.prototype = {
 
   get selectedItem() {
     return this.items[this.selectedIndex];
-  },
+  }
 
   
 
@@ -509,7 +509,7 @@ AutocompletePopup.prototype = {
     if (index !== -1 && this.isOpen) {
       this.selectItemAtIndex(index);
     }
-  },
+  }
 
   
 
@@ -533,7 +533,7 @@ AutocompletePopup.prototype = {
     }
 
     this._activeElement.setAttribute("aria-activedescendant", id);
-  },
+  }
 
   
 
@@ -544,7 +544,7 @@ AutocompletePopup.prototype = {
     }
 
     this._activeElement.removeAttribute("aria-activedescendant");
-  },
+  }
 
   createListItem(item, index, selected) {
     const listItem = this._document.createElementNS(HTML_NS, "li");
@@ -597,7 +597,7 @@ AutocompletePopup.prototype = {
     }
 
     return listItem;
-  },
+  }
 
   
 
@@ -605,7 +605,7 @@ AutocompletePopup.prototype = {
 
   get itemCount() {
     return this.items.length;
-  },
+  }
 
   
 
@@ -620,7 +620,7 @@ AutocompletePopup.prototype = {
       return Math.floor(listHeight / elementHeight);
     }
     return 0;
-  },
+  }
 
   
 
@@ -635,7 +635,7 @@ AutocompletePopup.prototype = {
       this.selectItemAtIndex(0);
     }
     return this.selectedItem;
-  },
+  }
 
   
 
@@ -651,7 +651,7 @@ AutocompletePopup.prototype = {
     }
 
     return this.selectedItem;
-  },
+  }
 
   
 
@@ -664,7 +664,7 @@ AutocompletePopup.prototype = {
     const nextPageIndex = this.selectedIndex + this._itemsPerPane + 1;
     this.selectItemAtIndex(Math.min(nextPageIndex, this.itemCount - 1));
     return this.selectedItem;
-  },
+  }
 
   
 
@@ -677,7 +677,7 @@ AutocompletePopup.prototype = {
     const prevPageIndex = this.selectedIndex - this._itemsPerPane - 1;
     this.selectItemAtIndex(Math.max(prevPageIndex, 0));
     return this.selectedItem;
-  },
+  }
 
   
 
@@ -689,21 +689,21 @@ AutocompletePopup.prototype = {
   _isValidColor(color) {
     const colorObj = new colorUtils.CssColor(color);
     return colorObj.valid && !colorObj.specialValue;
-  },
+  }
 
   
 
 
   get _panel() {
     return this.tooltip.panel;
-  },
+  }
 
   
 
 
   get _window() {
     return this._document.defaultView;
-  },
-};
+  }
+}
 
 module.exports = AutocompletePopup;
