@@ -67,6 +67,9 @@
 #include "nscore.h"
 #include "prenv.h"
 #include "skia/include/core/SkGraphics.h"
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
+#  include "mozilla/SandboxSettings.h"
+#endif
 #if defined(XP_WIN)
 #  include <dwrite.h>
 #  include <process.h>
@@ -211,7 +214,21 @@ bool GPUParent::Init(mozilla::ipc::UntypedEndpoint&& aEndpoint,
   apz::InitializeGlobalState();
   LayerTreeOwnerTracker::Initialize();
   CompositorBridgeParent::InitializeStatics();
+
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
+  
+  
+  
+  
+  
+  if (!IsGPUSandboxEnabled()) {
+    mozilla::ipc::SetThisProcessName("");
+  }
+#elif defined(XP_MACOSX)
+  mozilla::ipc::SetThisProcessName("");
+#else
   mozilla::ipc::SetThisProcessName("GPU Process");
+#endif  
 
   return true;
 }

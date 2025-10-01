@@ -39,6 +39,8 @@ bool GetLlvmProfileDir(std::string& parentPath);
 
 bool IsContentSandboxEnabled();
 
+bool IsGPUSandboxEnabled();
+
 const char* ContentWin32kLockdownStateToString(
     nsIXULRuntime::ContentWin32kLockdownState aValue);
 

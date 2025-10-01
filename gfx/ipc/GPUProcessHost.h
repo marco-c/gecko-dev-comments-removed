@@ -118,6 +118,10 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   java::CompositorSurfaceManager::Param GetCompositorSurfaceManager();
 #endif
 
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
+  static MacSandboxType GetMacSandboxType() { return MacSandboxType_GPU; };
+#endif
+
  private:
   ~GPUProcessHost();
 
@@ -135,6 +139,14 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   void KillHard(bool aGenerateMinidump);
 
   void DestroyProcess();
+
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
+  static bool sLaunchWithMacSandbox;
+  bool IsMacSandboxLaunchEnabled() override { return sLaunchWithMacSandbox; }
+
+  
+  bool FillMacSandboxInfo(MacSandboxInfo& aInfo) override;
+#endif
 
   DISALLOW_COPY_AND_ASSIGN(GPUProcessHost);
 
