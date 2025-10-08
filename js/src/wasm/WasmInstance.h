@@ -167,9 +167,6 @@ class alignas(16) Instance {
   const JSClass* valueBoxClass_;
 
   
-  void* jsJitArgsRectifier_;
-
-  
   void* jsJitExceptionHandler_;
 
   
@@ -348,9 +345,6 @@ class alignas(16) Instance {
   }
   static constexpr size_t sizeOfBaselineScratchWords() {
     return sizeof(baselineScratchWords_);
-  }
-  static constexpr size_t offsetOfJSJitArgsRectifier() {
-    return offsetof(Instance, jsJitArgsRectifier_);
   }
   static constexpr size_t offsetOfJSJitExceptionHandler() {
     return offsetof(Instance, jsJitExceptionHandler_);
