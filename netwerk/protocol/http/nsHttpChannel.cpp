@@ -633,12 +633,16 @@ nsresult nsHttpChannel::PrepareToConnect() {
   
   
   
-  bool async;
+  bool async = false;
   AUTO_PROFILER_FLOW_MARKER("nsHttpHandler::AddAcceptAndDictionaryHeaders",
                             NETWORK, Flow::FromPointer(this));
+  
+  
+  
+  bool aAsync;
   nsresult rv = gHttpHandler->AddAcceptAndDictionaryHeaders(
       mURI, mLoadInfo->GetExternalContentPolicyType(), &mRequestHead, IsHTTPS(),
-      async,
+      aAsync, this, nsHttpChannel::StaticSuspend,
       [self = RefPtr(this)](bool aNeedsResume, DictionaryCacheEntry* aDict) {
         self->mDictDecompress = aDict;
         if (aNeedsResume) {
@@ -7142,6 +7146,9 @@ nsHttpChannel::Suspend() {
 
   return NS_FAILED(rvTransaction) ? rvTransaction : rvCache;
 }
+
+
+void nsHttpChannel::StaticSuspend(nsHttpChannel* aChan) { aChan->Suspend(); }
 
 NS_IMETHODIMP
 nsHttpChannel::Resume() {
