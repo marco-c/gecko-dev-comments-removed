@@ -35,6 +35,7 @@ static const uint32_t METADATA_DICTIONARY_VERSION = 1;
 namespace mozilla {
 namespace net {
 
+class nsHttpChannel;
 class DictionaryOrigin;
 
 
@@ -341,6 +342,7 @@ class DictionaryCache final {
   
   void GetDictionaryFor(
       nsIURI* aURI, ExtContentPolicyType aType, bool& aAsync,
+      nsHttpChannel* aChan, void (*aSuspend)(nsHttpChannel*),
       const std::function<nsresult(bool, DictionaryCacheEntry*)>& aCallback);
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {

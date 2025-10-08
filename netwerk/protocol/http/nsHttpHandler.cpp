@@ -655,9 +655,12 @@ nsresult nsHttpHandler::InitConnectionMgr() {
 
 
 
+
+
 nsresult nsHttpHandler::AddAcceptAndDictionaryHeaders(
     nsIURI* aURI, ExtContentPolicyType aType, nsHttpRequestHead* aRequest,
-    bool aSecure, bool& aAsync,
+    bool aSecure, bool& aAsync, nsHttpChannel* aChan,
+    void (*aSuspend)(nsHttpChannel*),
     const std::function<bool(bool, DictionaryCacheEntry*)>& aCallback) {
   LOG(("Adding Dictionary headers"));
   auto guard = MakeScopeExit([&]() { (aCallback)(false, nullptr); });
@@ -671,7 +674,7 @@ nsresult nsHttpHandler::AddAcceptAndDictionaryHeaders(
       
       guard.release();
       mDictionaryCache->GetDictionaryFor(
-          aURI, aType, aAsync,
+          aURI, aType, aAsync, aChan, aSuspend,
           [self = RefPtr(this), aRequest, aCallback](
               bool aNeedsResume, DictionaryCacheEntry* aDict) {
             if (!aDict) {
