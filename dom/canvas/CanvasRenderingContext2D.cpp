@@ -6531,14 +6531,14 @@ nsresult CanvasRenderingContext2D::GetImageDataArray(
   mBufferProvider->ReturnSnapshot(snapshot.forget());
 
   
-  CanvasUtils::ImageExtraction permission =
+  CanvasUtils::ImageExtraction extractionBehavior =
       CanvasUtils::ImageExtraction::Unrestricted;
   if (mCanvasElement) {
-    permission = CanvasUtils::ImageExtractionResult(mCanvasElement, aCx,
-                                                    &aSubjectPrincipal);
+    extractionBehavior = CanvasUtils::ImageExtractionResult(mCanvasElement, aCx,
+                                                            &aSubjectPrincipal);
   } else if (mOffscreenCanvas) {
-    permission = CanvasUtils::ImageExtractionResult(mOffscreenCanvas, aCx,
-                                                    &aSubjectPrincipal);
+    extractionBehavior = CanvasUtils::ImageExtractionResult(
+        mOffscreenCanvas, aCx, &aSubjectPrincipal);
   }
 
   
@@ -6547,7 +6547,7 @@ nsresult CanvasRenderingContext2D::GetImageDataArray(
   
   
   
-  if (permission == CanvasUtils::ImageExtraction::Randomize) {
+  if (extractionBehavior == CanvasUtils::ImageExtraction::Randomize) {
     if (readback) {
       readback = CreateDataSourceSurfaceByCloning(readback);
     }
@@ -6560,12 +6560,12 @@ nsresult CanvasRenderingContext2D::GetImageDataArray(
 
   do {
     uint8_t* randomData;
-    if (permission == CanvasUtils::ImageExtraction::Placeholder) {
+    if (extractionBehavior == CanvasUtils::ImageExtraction::Placeholder) {
       
       
       
       randomData = TryToGenerateRandomDataForPlaceholderCanvasData();
-    } else if (permission == CanvasUtils::ImageExtraction::Randomize) {
+    } else if (extractionBehavior == CanvasUtils::ImageExtraction::Randomize) {
       
       
       
@@ -6582,7 +6582,7 @@ nsresult CanvasRenderingContext2D::GetImageDataArray(
     uint8_t* data = JS_GetUint8ClampedArrayData(darray, &isShared, nogc);
     MOZ_ASSERT(!isShared);  
 
-    if (permission == CanvasUtils::ImageExtraction::Placeholder) {
+    if (extractionBehavior == CanvasUtils::ImageExtraction::Placeholder) {
       FillPlaceholderCanvas(randomData, len.value(), data);
       break;
     }
