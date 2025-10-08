@@ -540,6 +540,9 @@ function clearWarningMessage() {
 
 
 async function showSummarizeWarning(length) {
+  
+  clearWarningMessage();
+
   const messageContainer = document.getElementById("message-container");
   const warningEl = lazy.GenAI.createWarningEl(document, null, true);
 
