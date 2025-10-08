@@ -701,9 +701,6 @@ struct ReflowInput : public SizeComputationInput {
 
   static constexpr float kNormalLineHeightFactor = 1.2f;
 
-  LogicalSize ComputeContainingBlockRectangle(
-      nsPresContext* aPresContext, const ReflowInput* aContainingBlockRI) const;
-
   
 
 
@@ -854,6 +851,15 @@ struct ReflowInput : public SizeComputationInput {
                        const Maybe<LogicalMargin>& aBorder,
                        const Maybe<LogicalMargin>& aPadding,
                        LayoutFrameType aFrameType);
+
+  
+
+
+
+
+
+  LogicalSize ComputeContainingBlockRectangle(
+      nsPresContext* aPresContext, const ReflowInput* aContainingBlockRI) const;
 
   
   

@@ -2138,14 +2138,18 @@ static nscoord CalcQuirkContainingBlockHeight(
   return std::max(result, 0);
 }
 
-
-
 LogicalSize ReflowInput::ComputeContainingBlockRectangle(
     nsPresContext* aPresContext, const ReflowInput* aContainingBlockRI) const {
-  
-  
-  LogicalSize cbSize = aContainingBlockRI->ComputedSize();
+  MOZ_ASSERT(!mFrame->IsAbsolutelyPositioned(mStyleDisplay) ||
+                 
+                 
+                 
+                 
+                 mFrame->GetPrevInFlow(),
+             "AbsoluteContainingBlock always provides a containing-block size "
+             "when creating ReflowInput for its children!");
 
+  LogicalSize cbSize = aContainingBlockRI->ComputedSize();
   WritingMode wm = aContainingBlockRI->GetWritingMode();
 
   if (aContainingBlockRI->mFlags.mTreatBSizeAsIndefinite) {
@@ -2157,57 +2161,24 @@ LogicalSize ReflowInput::ComputeContainingBlockRectangle(
     cbSize.BSize(wm) = *aContainingBlockRI->mPercentageBasisInBlockAxis;
   }
 
-  if (((mFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) &&
-        
-        
-        !mFrame->GetPrevInFlow()) ||
-       (mFrame->IsTableFrame() &&
-        mFrame->GetParent()->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW))) &&
-      mStyleDisplay->IsAbsolutelyPositioned(mFrame)) {
-    
-    const auto computedPadding = aContainingBlockRI->ComputedLogicalPadding(wm);
-    if (aContainingBlockRI->mStyleDisplay->IsInlineOutsideStyle()) {
-      
-      
-      
-      
-      
-      
-
-      LogicalMargin computedBorder =
-          aContainingBlockRI->ComputedLogicalBorderPadding(wm) -
-          computedPadding;
-      cbSize.ISize(wm) =
-          aContainingBlockRI->mFrame->ISize(wm) - computedBorder.IStartEnd(wm);
-      NS_ASSERTION(cbSize.ISize(wm) >= 0, "Negative containing block isize!");
-      cbSize.BSize(wm) =
-          aContainingBlockRI->mFrame->BSize(wm) - computedBorder.BStartEnd(wm);
-      NS_ASSERTION(cbSize.BSize(wm) >= 0, "Negative containing block bsize!");
-    } else {
-      
-      
-      cbSize += computedPadding.Size(wm);
-    }
-  } else {
-    auto IsQuirky = [](const StyleSize& aSize) -> bool {
-      return aSize.ConvertsToPercentage();
-    };
-    const auto anchorResolutionParams = AnchorPosResolutionParams::From(this);
-    
-    
-    
-    
-    if (!wm.IsVertical() && NS_UNCONSTRAINEDSIZE == cbSize.BSize(wm)) {
-      if (eCompatibility_NavQuirks == aPresContext->CompatibilityMode() &&
-          !aContainingBlockRI->mFrame->IsFlexOrGridItem() &&
-          (IsQuirky(*mStylePosition->GetHeight(anchorResolutionParams)) ||
-           (mFrame->IsTableWrapperFrame() &&
-            IsQuirky(*mFrame->PrincipalChildList()
-                          .FirstChild()
-                          ->StylePosition()
-                          ->GetHeight(anchorResolutionParams))))) {
-        cbSize.BSize(wm) = CalcQuirkContainingBlockHeight(aContainingBlockRI);
-      }
+  auto IsQuirky = [](const StyleSize& aSize) -> bool {
+    return aSize.ConvertsToPercentage();
+  };
+  const auto anchorResolutionParams = AnchorPosResolutionParams::From(this);
+  
+  
+  
+  
+  if (!wm.IsVertical() && NS_UNCONSTRAINEDSIZE == cbSize.BSize(wm)) {
+    if (eCompatibility_NavQuirks == aPresContext->CompatibilityMode() &&
+        !aContainingBlockRI->mFrame->IsFlexOrGridItem() &&
+        (IsQuirky(*mStylePosition->GetHeight(anchorResolutionParams)) ||
+         (mFrame->IsTableWrapperFrame() &&
+          IsQuirky(*mFrame->PrincipalChildList()
+                        .FirstChild()
+                        ->StylePosition()
+                        ->GetHeight(anchorResolutionParams))))) {
+      cbSize.BSize(wm) = CalcQuirkContainingBlockHeight(aContainingBlockRI);
     }
   }
 
