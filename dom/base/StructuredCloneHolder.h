@@ -172,6 +172,7 @@ class MessagePort;
 class MessagePortIdentifier;
 struct VideoFrameSerializedData;
 struct AudioDataSerializedData;
+struct RTCEncodedVideoFrameData;
 
 class StructuredCloneHolder : public StructuredCloneHolderBase {
  public:
@@ -214,15 +215,16 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
   
   
   
-#define CLONED_DATA_MEMBERS  \
-  STMT(mBlobImplArray);      \
-  STMT(mWasmModuleArray);    \
-  STMT(mInputStreamArray);   \
-  STMT(mClonedSurfaces);     \
-  STMT(mVideoFrames);        \
-  STMT(mAudioData);          \
-  STMT(mEncodedVideoChunks); \
-  STMT(mEncodedAudioChunks); \
+#define CLONED_DATA_MEMBERS     \
+  STMT(mBlobImplArray);         \
+  STMT(mWasmModuleArray);       \
+  STMT(mInputStreamArray);      \
+  STMT(mClonedSurfaces);        \
+  STMT(mVideoFrames);           \
+  STMT(mAudioData);             \
+  STMT(mEncodedVideoChunks);    \
+  STMT(mEncodedAudioChunks);    \
+  STMT(mRtcEncodedVideoFrames); \
   STMT(mPortIdentifiers);
 
   
@@ -300,6 +302,10 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
 
   nsTArray<EncodedAudioChunkData>& EncodedAudioChunks() {
     return mEncodedAudioChunks;
+  }
+
+  nsTArray<RTCEncodedVideoFrameData>& RtcEncodedVideoFrames() {
+    return mRtcEncodedVideoFrames;
   }
 
   
@@ -415,6 +421,9 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
 
   
   nsTArray<EncodedAudioChunkData> mEncodedAudioChunks;
+
+  
+  nsTArray<RTCEncodedVideoFrameData> mRtcEncodedVideoFrames;
 
   
   nsIGlobalObject* MOZ_NON_OWNING_REF mGlobal;
