@@ -866,6 +866,7 @@ long AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
 
   if (mAudioStreamState.compareExchange(AudioStreamState::Starting,
                                         AudioStreamState::Running)) {
+    MOZ_ASSERT(mScratchBuffer.IsEmpty());
     LOG(LogLevel::Verbose, ("%p: AudioCallbackDriver %p First audio callback "
                             "close the Fallback driver",
                             Graph(), this));
@@ -1296,6 +1297,13 @@ void AudioCallbackDriver::FallbackToSystemClockDriver() {
   LOG(LogLevel::Debug,
       ("%p: AudioCallbackDriver %p Falling back to SystemClockDriver.", Graph(),
        this));
+  
+  
+  
+  
+  
+  mScratchBuffer.Empty();
+
   mNextReInitBackoffStep =
       TimeDuration::FromMilliseconds(AUDIO_INITIAL_FALLBACK_BACKOFF_STEP_MS);
   mNextReInitAttempt = TimeStamp::Now() + mNextReInitBackoffStep;
