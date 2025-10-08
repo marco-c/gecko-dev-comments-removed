@@ -7,7 +7,7 @@
 
 
 add_setup(async function () {
-  Services.prefs.setIntPref("network.http.speculative-parallel-limit", 20);
+  Services.prefs.setIntPref("network.http.speculative-parallel-limit", 0);
 
   await setup_http3_proxy();
 });
