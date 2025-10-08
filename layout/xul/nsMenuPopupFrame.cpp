@@ -500,6 +500,9 @@ void nsMenuPopupFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
 
 nscoord nsMenuPopupFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
                                          IntrinsicISizeType aType) {
+  if (CanSkipLayout()) {
+    return 0;
+  }
   nscoord iSize = nsBlockFrame::IntrinsicISize(aInput, aType);
   if (!ShouldExpandToInflowParentOrAnchor()) {
     return iSize;
@@ -566,6 +569,18 @@ void nsMenuPopupFrame::EnsureActiveMenuListItemIsVisible() {
       ScrollFlags::ScrollOverflowHidden | ScrollFlags::ScrollFirstAncestorOnly);
 }
 
+bool nsMenuPopupFrame::CanSkipLayout() const {
+  
+  
+  
+  
+  
+  
+  
+  
+  return !IsVisibleOrShowing() && !IsMenuList();
+}
+
 void nsMenuPopupFrame::LayoutPopup(nsPresContext* aPresContext,
                                    ReflowOutput& aDesiredSize,
                                    const ReflowInput& aReflowInput,
@@ -577,21 +592,9 @@ void nsMenuPopupFrame::LayoutPopup(nsPresContext* aPresContext,
   SchedulePaint();
 
   const bool isOpen = IsOpen();
-  if (!isOpen) {
-    
-    
-    
-    
-    
-    
-    
-    
-    const bool needsLayout = mPopupState == ePopupShowing ||
-                             mPopupState == ePopupPositioning || IsMenuList();
-    if (!needsLayout) {
-      RemoveStateBits(NS_FRAME_FIRST_REFLOW);
-      return;
-    }
+  if (CanSkipLayout()) {
+    RemoveStateBits(NS_FRAME_FIRST_REFLOW);
+    return;
   }
 
   
