@@ -16213,7 +16213,7 @@ function WallpaperFeatureHighlight({
     messageData
   } = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Messages);
   return external_React_default().createElement("div", {
-    className: "wallpaper-feature-highlight"
+    className: `wallpaper-feature-highlight ${messageData.content?.darkModeDismiss ? "is-inverted-dark-dismiss-button" : ""}`
   }, external_React_default().createElement(FeatureHighlight, {
     position: position,
     "data-l10n-id": "feature-highlight-wallpaper",
@@ -16221,23 +16221,38 @@ function WallpaperFeatureHighlight({
     dispatch: dispatch,
     message: external_React_default().createElement("div", {
       className: "wallpaper-feature-highlight-content"
-    }, external_React_default().createElement("img", {
-      src: "chrome://newtab/content/data/content/assets/custom-wp-highlight.png",
-      alt: "",
+    }, external_React_default().createElement("picture", {
+      className: "follow-section-button-highlight-image"
+    }, external_React_default().createElement("source", {
+      srcSet: messageData.content?.darkModeImageURL || "chrome://newtab/content/data/content/assets/highlights/omc-newtab-wallpapers.svg",
+      media: "(prefers-color-scheme: dark)"
+    }), external_React_default().createElement("source", {
+      srcSet: messageData.content?.imageURL || "chrome://newtab/content/data/content/assets/highlights/omc-newtab-wallpapers.svg",
+      media: "(prefers-color-scheme: light)"
+    }), external_React_default().createElement("img", {
       width: "320",
-      height: "195"
-    }), external_React_default().createElement("p", {
+      height: "195",
+      alt: ""
+    })), messageData.content?.cardTitle ? external_React_default().createElement("p", {
+      className: "title"
+    }, messageData.content.cardTitle) : external_React_default().createElement("p", {
       className: "title",
-      "data-l10n-id": messageData.content.title
-    }), external_React_default().createElement("p", {
+      "data-l10n-id": messageData.content.title || "newtab-new-user-custom-wallpaper-title"
+    }), messageData.content?.cardMessage ? external_React_default().createElement("p", {
+      className: "subtitle"
+    }, messageData.content.cardMessage) : external_React_default().createElement("p", {
       className: "subtitle",
-      "data-l10n-id": messageData.content.subtitle
+      "data-l10n-id": messageData.content.subtitle || "newtab-new-user-custom-wallpaper-subtitle"
     }), external_React_default().createElement("span", {
       className: "button-wrapper"
-    }, external_React_default().createElement("moz-button", {
+    }, messageData.content?.cardCta ? external_React_default().createElement("moz-button", {
       type: "default",
       onClick: () => onToggleClick("open-customize-menu"),
-      "data-l10n-id": messageData.content.cta
+      label: messageData.content.cardCta
+    }) : external_React_default().createElement("moz-button", {
+      type: "default",
+      onClick: () => onToggleClick("open-customize-menu"),
+      "data-l10n-id": messageData.content.cta || "newtab-new-user-custom-wallpaper-cta"
     }))),
     toggle: external_React_default().createElement("div", {
       className: "icon icon-help"
