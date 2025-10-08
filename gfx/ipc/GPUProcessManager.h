@@ -284,6 +284,11 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   bool FallbackFromAcceleration(wr::WebRenderError aError,
                                 const nsCString& aMsg);
 
+  
+  
+  
+  void MaybeCrashIfGpuProcessOnceStable();
+
   void ResetProcessStable();
 
   
@@ -385,6 +390,7 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   GPUProcessHost* mProcess;
   uint64_t mProcessToken;
   bool mProcessStable;
+  bool mProcessStableOnce = false;
   Maybe<wr::WebRenderError> mLastError;
   Maybe<nsCString> mLastErrorMsg;
   GPUChild* mGPUChild;
