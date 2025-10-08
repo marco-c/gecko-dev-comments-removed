@@ -322,6 +322,8 @@ class MOZ_STACK_CLASS RangeUpdater final {
   bool mLocked;
 };
 
+enum class StopTracking : bool { No, Yes };
+
 
 
 
@@ -369,11 +371,13 @@ class MOZ_STACK_CLASS AutoTrackDOMPoint final {
 
   ~AutoTrackDOMPoint() { FlushAndStopTracking(); }
 
-  void FlushAndStopTracking() {
+  void Flush(StopTracking aStopTracking) {
     if (!mIsTracking) {
       return;
     }
-    mIsTracking = false;
+    if (static_cast<bool>(aStopTracking)) {
+      mIsTracking = false;
+    }
     if (mPoint.isSome()) {
       mRangeUpdater.DropRangeItem(mRangeItem);
       
@@ -415,6 +419,8 @@ class MOZ_STACK_CLASS AutoTrackDOMPoint final {
       *mOffset = 0;
     }
   }
+
+  void FlushAndStopTracking() { Flush(StopTracking::Yes); }
 
   void StopTracking() { mIsTracking = false; }
 
