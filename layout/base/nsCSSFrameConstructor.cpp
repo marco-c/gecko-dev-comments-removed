@@ -8475,9 +8475,13 @@ void nsCSSFrameConstructor::RecreateFramesForContent(
   MOZ_ASSERT(aContent->GetParentNode());
   const bool didReconstruct =
       ContentWillBeRemoved(aContent, REMOVE_FOR_RECONSTRUCTION);
-
-  if (!didReconstruct) {
-    if (aInsertionKind == InsertionKind::Async && aContent->IsElement()) {
+  if (didReconstruct) {
+    
+    
+    return;
+  }
+  if (aContent->IsElement()) {
+    if (aInsertionKind == InsertionKind::Async) {
       
       
       
@@ -8487,14 +8491,16 @@ void nsCSSFrameConstructor::RecreateFramesForContent(
       
       RestyleManager()->PostRestyleEvent(aContent->AsElement(), RestyleHint{0},
                                          nsChangeHint_ReconstructFrame);
-    } else {
-      
-      
-      
-      ContentRangeInserted(aContent, aContent->GetNextSibling(),
-                           aInsertionKind);
+      return;
+    }
+    
+    
+    if (Servo_Element_IsDisplayNone(aContent->AsElement())) {
+      return;
     }
   }
+  
+  ContentRangeInserted(aContent, aContent->GetNextSibling(), aInsertionKind);
 }
 
 bool nsCSSFrameConstructor::DestroyFramesFor(nsIContent* aContent) {
