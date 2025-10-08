@@ -20,6 +20,13 @@ class EventEmitter {
 
 
 
+  static decorate(target) {
+    const descriptors = Object.getOwnPropertyDescriptors(this.prototype);
+    delete descriptors.constructor;
+    return Object.defineProperties(target, descriptors);
+  }
+
+  
 
 
 
@@ -27,7 +34,13 @@ class EventEmitter {
 
 
 
-  static on(target, type, listener, { signal } = {}) {
+
+
+
+
+
+
+  on(type, listener, { signal } = {}) {
     if (typeof listener !== "function") {
       throw new Error(BAD_LISTENER);
     }
@@ -38,11 +51,11 @@ class EventEmitter {
       return () => {};
     }
 
-    if (!(eventListeners in target)) {
-      target[eventListeners] = new Map();
+    if (!(eventListeners in this)) {
+      this[eventListeners] = new Map();
     }
 
-    const events = target[eventListeners];
+    const events = this[eventListeners];
 
     if (events.has(type)) {
       events.get(type).add(listener);
@@ -50,7 +63,7 @@ class EventEmitter {
       events.set(type, new Set([listener]));
     }
 
-    const offFn = () => EventEmitter.off(target, type, listener);
+    const offFn = () => this.off(type, listener);
 
     if (signal) {
       signal.addEventListener("abort", offFn, { once: true });
@@ -68,19 +81,15 @@ class EventEmitter {
 
 
 
-
-
-
-  static off(target, type, listener) {
+  off(type, listener) {
     const length = arguments.length;
-    const events = target[eventListeners];
+    const events = this[eventListeners];
 
     if (!events) {
       return;
     }
 
-    if (length >= 3) {
-      
+    if (length >= 2) {
       
       const listenersForType = events.get(type);
 
@@ -94,20 +103,20 @@ class EventEmitter {
         listenersForType.delete(listener);
         delete listener[onceResolvers];
       }
-    } else if (length === 2) {
+    } else if (length === 1) {
       
       
       if (events.has(type)) {
         events.delete(type);
       }
-    } else if (length === 1) {
+    } else if (length === 0) {
       
       events.clear();
     }
   }
 
-  static clearEvents(target) {
-    const events = target[eventListeners];
+  clearEvents() {
+    const events = this[eventListeners];
     if (!events) {
       return;
     }
@@ -129,24 +138,28 @@ class EventEmitter {
 
 
 
-
-
-  static once(target, type, listener = function () {}, options) {
+  once(type, listener = function () {}, options) {
     const { promise, resolve } = Promise.withResolvers();
     if (!listener[onceResolvers]) {
       listener[onceResolvers] = [];
     }
     listener[onceResolvers].push(resolve);
-    EventEmitter.on(target, type, listener, options);
+    this.on(type, listener, options);
     return promise;
   }
 
-  static emit(target, type, ...rest) {
-    EventEmitter._emit(target, type, false, rest);
+  emit(type, ...rest) {
+    this._emit(type, false, rest);
   }
 
-  static emitAsync(target, type, ...rest) {
-    return EventEmitter._emit(target, type, true, rest);
+  emitAsync(type, ...rest) {
+    return this._emit(type, true, rest);
+  }
+
+  emitForTests(type, ...rest) {
+    if (flags.testing) {
+      this.emit(type, ...rest);
+    }
   }
 
   
@@ -163,14 +176,12 @@ class EventEmitter {
 
 
 
-
-
-  static _emit(target, type, async, args) {
+  _emit(type, async, args) {
     if (loggingEnabled) {
       logEvent(type, args);
     }
 
-    const targetEventListeners = target[eventListeners];
+    const targetEventListeners = this[eventListeners];
     if (!targetEventListeners) {
       return undefined;
     }
@@ -186,7 +197,7 @@ class EventEmitter {
     
     for (const listener of new Set(listeners)) {
       
-      if (!(eventListeners in target)) {
+      if (!(eventListeners in this)) {
         break;
       }
 
@@ -199,9 +210,9 @@ class EventEmitter {
           
           const resolvers = listener[onceResolvers];
           if (resolvers) {
-            EventEmitter.off(target, type, listener);
+            this.off(type, listener);
           }
-          const promise = listener.apply(target, args);
+          const promise = listener.apply(this, args);
           
           
           if (resolvers) {
@@ -246,12 +257,9 @@ class EventEmitter {
 
 
 
-
-
-
-  static count(target, type) {
-    if (eventListeners in target) {
-      const listenersForType = target[eventListeners].get(type);
+  count(type) {
+    if (eventListeners in this) {
+      const listenersForType = this[eventListeners].get(type);
 
       if (listenersForType) {
         return listenersForType.size;
@@ -259,55 +267,6 @@ class EventEmitter {
     }
 
     return 0;
-  }
-
-  
-
-
-
-
-
-
-
-
-  static decorate(target) {
-    const descriptors = Object.getOwnPropertyDescriptors(this.prototype);
-    delete descriptors.constructor;
-    return Object.defineProperties(target, descriptors);
-  }
-
-  on(...args) {
-    return EventEmitter.on(this, ...args);
-  }
-
-  off(...args) {
-    EventEmitter.off(this, ...args);
-  }
-
-  clearEvents() {
-    EventEmitter.clearEvents(this);
-  }
-
-  once(...args) {
-    return EventEmitter.once(this, ...args);
-  }
-
-  emit(...args) {
-    EventEmitter.emit(this, ...args);
-  }
-
-  emitAsync(...args) {
-    return EventEmitter.emitAsync(this, ...args);
-  }
-
-  emitForTests(...args) {
-    if (flags.testing) {
-      EventEmitter.emit(this, ...args);
-    }
-  }
-
-  count(...args) {
-    return EventEmitter.count(this, ...args);
   }
 }
 
