@@ -35,6 +35,9 @@ const { KeyCodes } = require("resource://devtools/client/shared/keycodes.js");
 const {
   FluentL10n,
 } = require("resource://devtools/client/shared/fluent-l10n/fluent-l10n.js");
+const {
+  START_IGNORE_ACTION,
+} = require("resource://devtools/client/shared/redux/middleware/ignore.js");
 
 var Startup = Cc["@mozilla.org/devtools/startup-clh;1"].getService(
   Ci.nsISupports
@@ -4482,7 +4485,12 @@ Toolbox.prototype = {
             this._removeWindowListeners();
             this._removeChromeEventHandlerEvents();
 
-            this._store = null;
+            if (this._store) {
+              
+              
+              this._store.dispatch(START_IGNORE_ACTION);
+              this._store = null;
+            }
 
             
             
