@@ -2123,7 +2123,8 @@ void CacheFile::RemoveOutput(CacheFileOutputStream* aOutput, nsresult aStatus) {
 
   
   if (mDict) {
-    mDict->FinishFile();
+    mDict->FinishHash();
+    mDict = nullptr;
   }
 
   mOutput = nullptr;  
