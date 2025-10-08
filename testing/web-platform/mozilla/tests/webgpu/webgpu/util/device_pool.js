@@ -7,7 +7,7 @@ import {
   assertReject,
   unreachable } from
 '../../common/util/util.js';
-import { getDefaultLimits, kLimits } from '../capability_info.js';
+import { getDefaultLimits, kPossibleLimits } from '../capability_info.js';
 
 
 
@@ -112,14 +112,8 @@ export class DevicePool {
       
       if (!(ex instanceof TestFailedButDeviceReusable)) {
         this.holders.delete(holder);
-        if ('destroy' in holder.device) {
-          holder.device.destroy();
-          
-          await holder.device.lost;
-        }
-
         
-        holder.releaseGPUDevice();
+        await holder.device.lost;
 
         
         if (ex instanceof TestOOMedShouldAttemptGC) {
@@ -142,6 +136,17 @@ export class DevicePool {
       holder.state = 'free';
     }
   }
+
+  
+
+
+
+  destroy() {
+    if (this.holders instanceof DescriptorToHolderMap) {
+      this.holders.clear();
+    }
+    this.holders = 'failed';
+  }
 }
 
 
@@ -156,6 +161,7 @@ class DescriptorToHolderMap {
   delete(holder) {
     for (const [k, v] of this.holders) {
       if (v === holder) {
+        holder.device.destroy();
         this.holders.delete(k);
         return;
       }
@@ -216,17 +222,29 @@ class DescriptorToHolderMap {
   }
 
   
+
+
+
   insertAndCleanUp(key, value) {
     this.holders.set(key, value);
 
     const kMaxEntries = 5;
     if (this.holders.size > kMaxEntries) {
       
-      for (const [key] of this.holders) {
+      for (const [key, value] of this.holders) {
+        value.device.destroy();
         this.holders.delete(key);
-        return;
+        break;
       }
     }
+  }
+
+  
+  clear() {
+    for (const [, value] of this.holders) {
+      value.device.destroy();
+    }
+    this.holders.clear();
   }
 }
 
@@ -261,16 +279,13 @@ desc)
   
 
   const limitsCanonicalized = {};
-  
-  const adapterOptions = getDefaultRequestAdapterOptions();
-
-
-  const featureLevel = adapterOptions?.compatibilityMode ? 'compatibility' : 'core';
+  const featureLevel = getDefaultRequestAdapterOptions()?.featureLevel ?? 'core';
+  assert(featureLevel === 'compatibility' || featureLevel === 'core');
   const defaultLimits = getDefaultLimits(featureLevel);
   if (desc.requiredLimits) {
-    for (const limit of kLimits) {
+    for (const limit of kPossibleLimits) {
       const requestedValue = desc.requiredLimits[limit];
-      const defaultValue = defaultLimits[limit].default;
+      const defaultValue = defaultLimits[limit]?.default;
       
       if (requestedValue !== undefined && requestedValue !== defaultValue) {
         limitsCanonicalized[limit] = requestedValue;
@@ -410,7 +425,7 @@ class DeviceHolder {
       this.device.popErrorScope()]
       );
     } catch (ex) {
-      assert(this.lostInfo !== undefined, 'popErrorScope failed; did beginTestScope get missed?');
+      assert(this.lostInfo !== undefined, 'popErrorScope failed; did the test body steal it?');
       throw ex;
     }
 
@@ -443,13 +458,5 @@ class DeviceHolder {
         `Unexpected validation error occurred: ${gpuValidationError.message}`
       );
     }
-  }
-
-  
-
-
-
-  releaseGPUDevice() {
-    this._device = undefined;
   }
 }

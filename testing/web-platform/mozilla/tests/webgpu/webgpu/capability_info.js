@@ -740,6 +740,8 @@ const [kLimitInfoKeys, kLimitInfoDefaults, kLimitInfoData] =
   'maxDynamicStorageBuffersPerPipelineLayout': [, 4, 4],
   'maxSampledTexturesPerShaderStage': [, 16, 16],
   'maxSamplersPerShaderStage': [, 16, 16],
+  'maxStorageBuffersInFragmentStage': [, 8, 4],
+  'maxStorageBuffersInVertexStage': [, 8, 0],
   'maxStorageBuffersPerShaderStage': [, 8, 8],
   'maxStorageTexturesInFragmentStage': [, 4, 4],
   'maxStorageTexturesInVertexStage': [, 4, 0],
@@ -767,6 +769,14 @@ const [kLimitInfoKeys, kLimitInfoDefaults, kLimitInfoData] =
   'maxComputeWorkgroupSizeZ': [, 64, 64],
   'maxComputeWorkgroupsPerDimension': [, 65535, 65535]
 }];
+
+
+const kCompatOnlyLimits = [
+'maxStorageTexturesInFragmentStage',
+'maxStorageTexturesInVertexStage',
+'maxStorageBuffersInFragmentStage',
+'maxStorageBuffersInVertexStage'];
+
 
 
 
@@ -805,7 +815,14 @@ export const kLimitClasses = Object.fromEntries(
 );
 
 export function getDefaultLimits(featureLevel) {
-  return kLimitInfos[featureLevel];
+  return Object.fromEntries(
+    Object.entries(kLimitInfos[featureLevel]).filter(([k]) => {
+      
+      return featureLevel === 'core' ?
+      !kCompatOnlyLimits.includes(k) :
+      true;
+    })
+  );
 }
 
 
@@ -863,7 +880,7 @@ e)
 }
 
 
-export const kLimits = keysOf(kLimitInfoCore);
+export const kPossibleLimits = keysOf(kLimitInfoCore);
 
 
 

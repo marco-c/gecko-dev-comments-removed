@@ -57,19 +57,20 @@ expectedName,
 p,
 { allowMissingStack = false, message } = {})
 {
-  try {
-    await p;
-    unreachable(message);
-  } catch (ex) {
-    
-    if (!allowMissingStack) {
-      const m = message ? ` (${message})` : '';
-      assert(
-        ex instanceof Error && typeof ex.stack === 'string',
-        'threw as expected, but missing stack' + m
-      );
+  await p.then(
+    () => {
+      unreachable(message);
+    },
+    (ex) => {
+      assert(ex instanceof Error, 'rejected with a non-Error object');
+      assert(ex.name === expectedName, `rejected with name ${ex.name} instead of ${expectedName}`);
+      
+      if (!allowMissingStack) {
+        const m = message ? ` (${message})` : '';
+        assert(typeof ex.stack === 'string', 'threw as expected, but missing stack' + m);
+      }
     }
-  }
+  );
 }
 
 
@@ -300,6 +301,16 @@ export function reorder(order, arr) {
         return shiftByHalf(arr);
       }
   }
+}
+
+
+
+
+
+export function typedEntries(obj) {
+  
+  
+  return Object.entries(obj);
 }
 
 const TypedArrayBufferViewInstances = [

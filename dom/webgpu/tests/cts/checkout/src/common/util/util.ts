@@ -57,19 +57,20 @@ export async function assertReject(
   p: Promise<unknown>,
   { allowMissingStack = false, message }: ExceptionCheckOptions = {}
 ): Promise<void> {
-  try {
-    await p;
-    unreachable(message);
-  } catch (ex) {
-    
-    if (!allowMissingStack) {
-      const m = message ? ` (${message})` : '';
-      assert(
-        ex instanceof Error && typeof ex.stack === 'string',
-        'threw as expected, but missing stack' + m
-      );
+  await p.then(
+    () => {
+      unreachable(message);
+    },
+    ex => {
+      assert(ex instanceof Error, 'rejected with a non-Error object');
+      assert(ex.name === expectedName, `rejected with name ${ex.name} instead of ${expectedName}`);
+      
+      if (!allowMissingStack) {
+        const m = message ? ` (${message})` : '';
+        assert(typeof ex.stack === 'string', 'threw as expected, but missing stack' + m);
+      }
     }
-  }
+  );
 }
 
 
@@ -300,6 +301,16 @@ export function reorder<R>(order: ReorderOrder, arr: R[]): R[] {
       return shiftByHalf(arr);
     }
   }
+}
+
+
+
+
+
+export function typedEntries<T extends Record<string, any>>(obj: T): Array<[keyof T, T[keyof T]]> {
+  
+  
+  return Object.entries(obj) as Array<[keyof T, T[keyof T]]>;
 }
 
 const TypedArrayBufferViewInstances = [
