@@ -151,7 +151,7 @@ nsIntPoint UIEvent::GetLayerPoint() const {
   }
   
   
-  RelativeTo root{mPresContext->PresShell()->GetRootFrame()};
+  RelativeTo root{targetFrame->PresShell()->GetRootFrame()};
   const nsPoint rootPoint =
       nsLayoutUtils::GetEventCoordinatesRelativeTo(mEvent, root);
   nsIFrame* layer = nsLayoutUtils::GetClosestLayer(targetFrame);
