@@ -275,6 +275,11 @@ class MOZ_STACK_CLASS CallSetup {
 
  private:
   
+  CallSetup(ErrorResult& aRv,
+            CallbackObjectBase::ExceptionHandling aExceptionHandling,
+            JS::Realm* aRealm, bool aIsMainThread);
+
+  
   CallSetup(const CallSetup&) = delete;
 
   bool ShouldRethrowException(JS::Handle<JS::Value> aException);
