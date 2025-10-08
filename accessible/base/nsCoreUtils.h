@@ -369,6 +369,7 @@ class nsCoreUtils {
 
 
 
+
   static nsIFrame* GetPositionedFrameForAnchor(const PresShell* aPresShell,
                                                const nsIFrame* aAnchorFrame);
 };
