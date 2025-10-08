@@ -1984,7 +1984,7 @@ static bool commitRadialGradientFromStops(sampler2D sampler, int offsetsAddress,
   int32_t initialIndex = stopCount - 1;
   
   
-  float initialOffset = 2.0;
+  float initialOffset = 2.0f;
   for (int t = 0; t < span;) {
     
     Float offset = fastSqrt<true>(dotPos) - startRadius;
@@ -2003,8 +2003,8 @@ static bool commitRadialGradientFromStops(sampler2D sampler, int offsetsAddress,
     
     float intercept = -1;
     int32_t stopIndex = 0;
-    float prevOffset = 0.0;
-    float nextOffset = 0.0;
+    float prevOffset = 0.0f;
+    float nextOffset = 0.0f;
     if (offset.x < 0) {
       
       
@@ -2049,7 +2049,7 @@ static bool commitRadialGradientFromStops(sampler2D sampler, int offsetsAddress,
       }
     }
     
-    endT = max(ceil(endT), t + 1.0);
+    endT = max(ceil(endT), t + 1.0f);
 
     
     
@@ -2059,16 +2059,15 @@ static bool commitRadialGradientFromStops(sampler2D sampler, int offsetsAddress,
     auto maxColorF = stopColors[stopIndex + 1].zyxw * 255.0f;
     
     auto deltaOffset = nextOffset - prevOffset;
-    Float deltaColorF;
-    if (deltaOffset == 0.0) {
-      
-      
-      
-      
-      deltaColorF = Float(0.0);
-    } else {
-      deltaColorF = (maxColorF - minColorF) / deltaOffset;
-    }
+    Float deltaColorF =
+        deltaOffset == 0.0f
+            ?
+            
+            
+            
+            
+            Float(0.0f)
+            : (maxColorF - minColorF) / deltaOffset;
     
     
     Float colorF =
@@ -2117,7 +2116,7 @@ static bool commitRadialGradientFromStops(sampler2D sampler, int offsetsAddress,
       
       
       
-      float partialDeltaDelta2 = deltaDelta2 * 0.25 * float(remainder);
+      float partialDeltaDelta2 = deltaDelta2 * 0.25f * float(remainder);
       dotPosDelta += partialDeltaDelta2;
 
       
@@ -2126,19 +2125,15 @@ static bool commitRadialGradientFromStops(sampler2D sampler, int offsetsAddress,
 
       
       
-      float singlePxDeltaDelta2 = deltaDelta2 * 0.0625;
+      float singlePxDeltaDelta2 = deltaDelta2 * 0.0625f;
       
       
       float dotPosDeltaFirst = dotPos.y - dotPos.x;
       
       
-      
-      
-      Float pxOffsets = Float(0.0f);
-      pxOffsets.y = 1.0;
-      pxOffsets.z = 2.0;
-      pxOffsets.w = 3.0;
-      Float partialDotPosDelta = Float(dotPosDeltaFirst) + Float(singlePxDeltaDelta2) * pxOffsets;
+      Float pxOffsets = {0.0f, 1.0f, 2.0f, 3.0f};
+      Float partialDotPosDelta =
+          pxOffsets * singlePxDeltaDelta2 + dotPosDeltaFirst;
 
       
       for (int i = 0; i < remainder; ++i) {
