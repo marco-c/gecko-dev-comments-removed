@@ -1204,6 +1204,7 @@ enum TitleBarHeightOption : int32_t {
 }  
 }  
 
+#ifndef __MINGW32__
 static StaticRefPtr<winrt::Microsoft::UI::Windowing::IAppWindowStatics>
     sAppWindowStatics;
 using GetWindowIdFromWindowType = HRESULT(STDAPICALLTYPE*)(
@@ -1303,8 +1304,10 @@ bool InitializeWindowsAppSDKStatics() {
   }
   return true;
 }
+#endif
 
 void WindowsUIUtils::SetIsTitlebarCollapsed(HWND aWnd, bool aIsCollapsed) {
+#ifndef __MINGW32__
   
   MOZ_ASSERT(NS_IsMainThread());
   
@@ -1427,4 +1430,5 @@ void WindowsUIUtils::SetIsTitlebarCollapsed(HWND aWnd, bool aIsCollapsed) {
       return;
     }
   }
+#endif
 }

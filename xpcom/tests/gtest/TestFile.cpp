@@ -64,6 +64,8 @@ static auto GetSecurityInfoStructured(nsIFile* aFile) {
                          std::move(secDesc));
 }
 
+
+#  if !defined(__MINGW32__)
 static void AddAcesForRandomSidToDir(nsIFile* aDir) {
   auto [dirPath, pDirDacl, secDesc] = GetSecurityInfoStructured(aDir);
 
@@ -96,6 +98,7 @@ static void AddAcesForRandomSidToDir(nsIFile* aDir) {
                                     newDacl.get(), nullptr),
             (ULONG)ERROR_SUCCESS);
 }
+#  endif
 #endif
 
 static already_AddRefed<nsIFile> NewFile(nsIFile* aBase) {
@@ -599,7 +602,8 @@ static void SetupAndTestFunctions(const nsAString& aDirName,
   
   ASSERT_TRUE(TestMove(subdir, base, "file2.txt", "file4.txt"));
 
-#ifdef XP_WIN
+  
+#if defined(XP_WIN) && !defined(__MINGW32__)
   
   
   
