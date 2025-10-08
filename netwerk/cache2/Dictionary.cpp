@@ -141,7 +141,7 @@ void DictionaryCacheEntry::UseCompleted() {
 
 
 bool DictionaryCacheEntry::Prefetch(nsILoadContextInfo* aLoadContextInfo,
-                                    const std::function<nsresult()>& aFunc) {
+                                    const std::function<void()>& aFunc) {
   DICTIONARY_LOG(("Prefetch for %s", mURI.get()));
   
   
@@ -424,14 +424,16 @@ nsresult DictionaryCache::RemoveEntry(nsIURI* aURI, const nsACString& aKey) {
 }
 
 
-already_AddRefed<DictionaryCacheEntry> DictionaryCache::GetDictionaryFor(
-    nsIURI* aURI) {
+void DictionaryCache::GetDictionaryFor(
+    nsIURI* aURI,
+    const std::function<nsresult(DictionaryCacheEntry*)>& aCallback) {
   
   
   
   nsCString prepath;
   if (NS_FAILED(aURI->GetPrePath(prepath))) {
-    return nullptr;
+    (aCallback)(nullptr);
+    return;
   }
   if (auto origin = mDictionaryCache.Lookup(prepath)) {
     
@@ -450,7 +452,8 @@ already_AddRefed<DictionaryCacheEntry> DictionaryCache::GetDictionaryFor(
       result->removeFrom(*(origin->get()));
       origin->get()->insertFront(result);
     }
-    return result.forget();
+    (aCallback)(result);
+    return;
   }
   
   
@@ -465,7 +468,7 @@ already_AddRefed<DictionaryCacheEntry> DictionaryCache::GetDictionaryFor(
   
   
 
-  return nullptr;
+  (aCallback)(nullptr);
 }
 
 static void MakeMetadataEntry() {
