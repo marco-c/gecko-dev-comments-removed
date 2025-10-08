@@ -2583,7 +2583,11 @@ static bool AddToFoldedStub(JSContext* cx, const CacheIRWriter& writer,
   }
 
   
+  
   if (foldedShapes->length() == MaxFoldedShapes) {
+    MOZ_ASSERT(fallback->state().mode() != ICState::Mode::Generic);
+    fallback->state().forceTransition();
+    fallback->discardStubs(cx->zone(), icEntry);
     return false;
   }
 
