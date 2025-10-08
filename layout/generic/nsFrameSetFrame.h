@@ -185,8 +185,6 @@ class nsHTMLFramesetFrame final : public nsContainerFrame {
   nsTArray<nscoord> mRowSizes;  
   nsTArray<nscoord> mColSizes;  
   mozilla::LayoutDeviceIntPoint mFirstDragPoint;
-  int32_t mNumRows;
-  int32_t mNumCols;
   int32_t mNonBorderChildCount;
   int32_t mNonBlankChildCount;
   int32_t mEdgeVisibility;
