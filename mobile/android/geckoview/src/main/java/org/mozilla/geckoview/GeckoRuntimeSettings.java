@@ -789,7 +789,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
    final Pref<Boolean> mCookieBehaviorOptInPartitioningPBM =
       new Pref<Boolean>("network.cookie.cookieBehavior.optInPartitioning.pbmode", false);
    final Pref<Integer> mCertificateTransparencyMode =
-      new Pref<Integer>("security.pki.certificate_transparency.mode", 0);
+      new Pref<Integer>("security.pki.certificate_transparency.mode", 1);
    final PrefWithoutDefault<Boolean> mPostQuantumKeyExchangeTLSEnabled =
       new PrefWithoutDefault<Boolean>("security.tls.enable_kyber");
    final PrefWithoutDefault<Boolean> mPostQuantumKeyExchangeHttp3Enabled =
@@ -805,6 +805,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new Pref<String>("network.security.ports.banned", "");
    final PrefWithoutDefault<Boolean> mRemoteSettingCrashPullNeverShowAgain =
       new PrefWithoutDefault<Boolean>("browser.crashReports.requestedNeverShowAgain");
+   final PrefWithoutDefault<String> mCrliteChannel =
+      new PrefWithoutDefault<String>("security.pki.crlite_channel");
 
    int mPreferredColorScheme = COLOR_SCHEME_SYSTEM;
 
@@ -2289,6 +2291,27 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
   public @NonNull String getBannedPorts() {
     return mBannedPorts.get();
+  }
+
+  
+
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setCrliteChannel(final @NonNull String channel) {
+    mCrliteChannel.commit(channel);
+    return this;
+  }
+
+  
+
+
+
+
+  public @NonNull String getCrliteChannel() {
+    return mCrliteChannel.get();
   }
 
   

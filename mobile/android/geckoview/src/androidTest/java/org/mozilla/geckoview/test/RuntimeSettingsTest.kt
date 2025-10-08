@@ -718,9 +718,9 @@ class RuntimeSettingsTest : BaseSessionTest() {
         val geckoRuntimeSettings = sessionRule.runtime.settings
 
         assertThat(
-            "Certificate Transparency mode should default to 0",
+            "Certificate Transparency mode should default to 1",
             geckoRuntimeSettings.certificateTransparencyMode,
-            equalTo(0),
+            equalTo(1),
         )
 
         geckoRuntimeSettings.setCertificateTransparencyMode(2)
@@ -1005,6 +1005,34 @@ class RuntimeSettingsTest : BaseSessionTest() {
             "Pref value should match setting",
             ports,
             equalTo("12345,23456"),
+        )
+    }
+
+    @Test
+    fun switchCRLiteChannel() {
+        val geckoRuntimeSettings = sessionRule.runtime.settings
+        val crliteChannel = "test"
+
+        assertThat(
+            "CRLite channel should not be set",
+            geckoRuntimeSettings.crliteChannel,
+            equalTo(null),
+        )
+
+        geckoRuntimeSettings.setCrliteChannel(crliteChannel)
+
+        assertThat(
+            "Runtime settings crliteChannel should match the string passed above",
+            geckoRuntimeSettings.crliteChannel,
+            equalTo(crliteChannel),
+        )
+
+        val crlitePreference =
+            (sessionRule.getPrefs("security.pki.crlite_channel").get(0)) as String
+        assertThat(
+            "The security.pki.crlite_channel preference should be set to the correct string",
+            crlitePreference,
+            equalTo(crliteChannel),
         )
     }
 }
