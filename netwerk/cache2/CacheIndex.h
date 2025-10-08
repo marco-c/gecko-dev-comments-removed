@@ -748,7 +748,8 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
 
   
   static nsresult RemoveEntry(const SHA1Sum::Hash* aHash,
-                              const nsACString& aKey);
+                              const nsACString& aKey,
+                              bool aClearDictionary = true);
 
   
   
@@ -761,6 +762,11 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
                               const uint16_t* aOnStopTime,
                               const uint8_t* aContentType,
                               const uint32_t* aSize);
+
+  
+  
+  static void EvictByContext(const nsAString& aOrigin,
+                             const nsAString& aBaseDomain);
 
   
   static nsresult RemoveAll();

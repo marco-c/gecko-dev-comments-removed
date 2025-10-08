@@ -822,7 +822,7 @@ void CacheFileContextEvictor::EvictEntries() {
 
     LOG(("CacheFileContextEvictor::EvictEntries - Removing entry."));
     file->Remove(false);
-    CacheIndex::RemoveEntry(&hash, metadata->GetKey());
+    CacheIndex::RemoveEntry(&hash, metadata->GetKey(), false);
   }
 
   MOZ_ASSERT_UNREACHABLE("We should never get here");
