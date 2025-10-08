@@ -9,42 +9,13 @@
 #ifndef mozilla_CheckedInt_h
 #define mozilla_CheckedInt_h
 
-#include <stdint.h>
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/IntegerTypeTraits.h"
+
+#include <cstdint>
 #include <limits>
 #include <type_traits>
-
-#define MOZILLA_CHECKEDINT_COMPARABLE_VERSION(major, minor, patch) \
-  (major << 16 | minor << 8 | patch)
-
-
-
-
-
-
-#if defined(HAVE_64BIT_BUILD)
-#  if defined(__has_builtin) &&                                        \
-      (!defined(__clang_major__) ||                                    \
-       (!defined(__apple_build_version__) && __clang_major__ >= 7) ||  \
-       (defined(__apple_build_version__) &&                            \
-        MOZILLA_CHECKEDINT_COMPARABLE_VERSION(                         \
-            __clang_major__, __clang_minor__, __clang_patchlevel__) >= \
-            MOZILLA_CHECKEDINT_COMPARABLE_VERSION(10, 0, 1)))
-#    define MOZ_HAS_BUILTIN_OP_OVERFLOW (__has_builtin(__builtin_add_overflow))
-#  elif defined(__GNUC__)
-
-
-#    define MOZ_HAS_BUILTIN_OP_OVERFLOW (__GNUC__ >= 5)
-#  else
-#    define MOZ_HAS_BUILTIN_OP_OVERFLOW (0)
-#  endif
-#else
-#  define MOZ_HAS_BUILTIN_OP_OVERFLOW (0)
-#endif
-
-#undef MOZILLA_CHECKEDINT_COMPARABLE_VERSION
 
 namespace mozilla {
 
@@ -63,8 +34,6 @@ namespace detail {
 
 
 
-
-struct UnsupportedType {};
 
 template <typename IntegerType>
 struct IsSupportedPass2 {
@@ -177,33 +146,6 @@ struct IsSupportedPass2<unsigned long long> {
 
 
 
-template <typename IntegerType, size_t Size = sizeof(IntegerType)>
-struct TwiceBiggerType {
-  typedef typename detail::StdintTypeForSizeAndSignedness<
-      sizeof(IntegerType) * 2, std::is_signed_v<IntegerType>>::Type Type;
-};
-
-template <typename IntegerType>
-struct TwiceBiggerType<IntegerType, 8> {
-  typedef UnsupportedType Type;
-};
-
-template <typename T>
-constexpr bool HasSignBit(T aX) {
-  
-  
-  
-  
-  return bool(std::make_unsigned_t<T>(aX) >> PositionOfSignBit<T>::value);
-}
-
-
-
-template <typename T>
-constexpr T BinaryComplement(T aX) {
-  return ~aX;
-}
-
 template <typename T, typename U, bool IsTSigned = std::is_signed_v<T>,
           bool IsUSigned = std::is_signed_v<U>>
 struct DoesRangeContainRange {};
@@ -267,95 +209,6 @@ struct IsInRangeImpl<T, U, false, true, false> {
 template <typename T, typename U>
 constexpr bool IsInRange(U aX) {
   return IsInRangeImpl<T, U>::run(aX);
-}
-
-template <typename T>
-constexpr bool IsAddValid(T aX, T aY) {
-#if MOZ_HAS_BUILTIN_OP_OVERFLOW
-  T dummy;
-  return !__builtin_add_overflow(aX, aY, &dummy);
-#else
-  
-  
-  
-  
-  
-
-  std::make_unsigned_t<T> ux = aX;
-  std::make_unsigned_t<T> uy = aY;
-  std::make_unsigned_t<T> result = ux + uy;
-  return std::is_signed_v<T>
-             ? HasSignBit(BinaryComplement(T((result ^ aX) & (result ^ aY))))
-             : BinaryComplement(aX) >= aY;
-#endif
-}
-
-template <typename T>
-constexpr bool IsSubValid(T aX, T aY) {
-#if MOZ_HAS_BUILTIN_OP_OVERFLOW
-  T dummy;
-  return !__builtin_sub_overflow(aX, aY, &dummy);
-#else
-  
-  
-  
-  std::make_unsigned_t<T> ux = aX;
-  std::make_unsigned_t<T> uy = aY;
-  std::make_unsigned_t<T> result = ux - uy;
-
-  return std::is_signed_v<T>
-             ? HasSignBit(BinaryComplement(T((result ^ aX) & (aX ^ aY))))
-             : aX >= aY;
-#endif
-}
-
-template <typename T, bool IsTSigned = std::is_signed_v<T>,
-          bool TwiceBiggerTypeIsSupported =
-              IsSupported<typename TwiceBiggerType<T>::Type>::value>
-struct IsMulValidImpl {};
-
-template <typename T, bool IsTSigned>
-struct IsMulValidImpl<T, IsTSigned, true> {
-  static constexpr bool run(T aX, T aY) {
-    typedef typename TwiceBiggerType<T>::Type TwiceBiggerType;
-    TwiceBiggerType product = TwiceBiggerType(aX) * TwiceBiggerType(aY);
-    return IsInRange<T>(product);
-  }
-};
-
-template <typename T>
-struct IsMulValidImpl<T, true, false> {
-  static constexpr bool run(T aX, T aY) {
-    const T max = std::numeric_limits<T>::max();
-    const T min = std::numeric_limits<T>::min();
-
-    if (aX == 0 || aY == 0) {
-      return true;
-    }
-    if (aX > 0) {
-      return aY > 0 ? aX <= max / aY : aY >= min / aX;
-    }
-
-    
-    return aY > 0 ? aX >= min / aY : aY >= max / aX;
-  }
-};
-
-template <typename T>
-struct IsMulValidImpl<T, false, false> {
-  static constexpr bool run(T aX, T aY) {
-    return aY == 0 || aX <= std::numeric_limits<T>::max() / aY;
-  }
-};
-
-template <typename T>
-constexpr bool IsMulValid(T aX, T aY) {
-#if MOZ_HAS_BUILTIN_OP_OVERFLOW
-  T dummy;
-  return !__builtin_mul_overflow(aX, aY, &dummy);
-#else
-  return IsMulValidImpl<T>::run(aX, aY);
-#endif
 }
 
 template <typename T>
@@ -684,34 +537,28 @@ class CheckedInt {
       return CheckedInt<T>(T(0), false);                                    \
     }                                                                       \
     /* For some T, arithmetic ops automatically promote to a wider type, so \
-     * explitly do the narrowing cast here.  The narrowing cast is valid    \
+     * explicitly do the narrowing cast here.  The narrowing cast is valid  \
      * because we did the "Is##NAME##Valid" check above. */                 \
     return CheckedInt<T>(T(aLhs.mValue OP aRhs.mValue),                     \
                          aLhs.mIsValid && aRhs.mIsValid);                   \
   }
 
-#if MOZ_HAS_BUILTIN_OP_OVERFLOW
-#  define MOZ_CHECKEDINT_BASIC_BINARY_OPERATOR2(NAME, OP, FUN)       \
-    template <typename T>                                            \
-    constexpr CheckedInt<T> operator OP(const CheckedInt<T>& aLhs,   \
-                                        const CheckedInt<T>& aRhs) { \
-      auto result = T{};                                             \
-      if (FUN(aLhs.mValue, aRhs.mValue, &result)) {                  \
-        static_assert(detail::IsInRange<T>(0),                       \
-                      "Integer type can't represent 0");             \
-        return CheckedInt<T>(T(0), false);                           \
-      }                                                              \
-      return CheckedInt<T>(result, aLhs.mIsValid && aRhs.mIsValid);  \
-    }
+#define MOZ_CHECKEDINT_BASIC_BINARY_OPERATOR2(NAME, OP, FUN)       \
+  template <typename T>                                            \
+  constexpr CheckedInt<T> operator OP(const CheckedInt<T>& aLhs,   \
+                                      const CheckedInt<T>& aRhs) { \
+    auto result = T{};                                             \
+    if (FUN(aLhs.mValue, aRhs.mValue, &result)) {                  \
+      static_assert(detail::IsInRange<T>(0),                       \
+                    "Integer type can't represent 0");             \
+      return CheckedInt<T>(T(0), false);                           \
+    }                                                              \
+    return CheckedInt<T>(result, aLhs.mIsValid && aRhs.mIsValid);  \
+  }
 MOZ_CHECKEDINT_BASIC_BINARY_OPERATOR2(Add, +, __builtin_add_overflow)
 MOZ_CHECKEDINT_BASIC_BINARY_OPERATOR2(Sub, -, __builtin_sub_overflow)
 MOZ_CHECKEDINT_BASIC_BINARY_OPERATOR2(Mul, *, __builtin_mul_overflow)
-#  undef MOZ_CHECKEDINT_BASIC_BINARY_OPERATOR2
-#else
-MOZ_CHECKEDINT_BASIC_BINARY_OPERATOR(Add, +)
-MOZ_CHECKEDINT_BASIC_BINARY_OPERATOR(Sub, -)
-MOZ_CHECKEDINT_BASIC_BINARY_OPERATOR(Mul, *)
-#endif
+#undef MOZ_CHECKEDINT_BASIC_BINARY_OPERATOR2
 
 MOZ_CHECKEDINT_BASIC_BINARY_OPERATOR(Div, /)
 MOZ_CHECKEDINT_BASIC_BINARY_OPERATOR(Mod, %)

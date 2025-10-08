@@ -41,7 +41,6 @@
 #include "mozilla/EditorDOMPoint.h"
 #include "mozilla/intl/BidiEmbeddingLevel.h"
 #include "mozilla/BasePrincipal.h"            
-#include "mozilla/CheckedInt.h"               
 #include "mozilla/ComposerCommandsUpdater.h"  
 #include "mozilla/ContentEvents.h"            
 #include "mozilla/DebugOnly.h"                

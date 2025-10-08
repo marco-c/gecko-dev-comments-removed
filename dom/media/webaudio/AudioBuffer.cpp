@@ -14,7 +14,6 @@
 #include "js/ArrayBuffer.h"             
 #include "js/experimental/TypedData.h"  
 #include "jsfriendapi.h"
-#include "mozilla/CheckedInt.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/MemoryReporting.h"
