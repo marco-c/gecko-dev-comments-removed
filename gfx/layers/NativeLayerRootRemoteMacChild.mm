@@ -132,7 +132,7 @@ bool NativeLayerRootRemoteMacChild::CommitToScreen() {
   if (!commands.IsEmpty()) {
     
     MOZ_ASSERT(mRemoteChild);
-    mRemoteChild->SendCommitNativeLayerCommands(commands);
+    mRemoteChild->SendCommitNativeLayerCommands(std::move(commands));
   }
   return true;
 }

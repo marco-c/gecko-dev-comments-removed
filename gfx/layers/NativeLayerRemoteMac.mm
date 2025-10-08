@@ -247,18 +247,15 @@ void NativeLayerRemoteMac::FlushDirtyLayerInfoToCommandQueue() {
   auto ID = reinterpret_cast<uint64_t>(this);
 
   if (mDirtyChangedSurface) {
-    uint32_t surfaceID = 0;
+    IOSurfacePort surfacePort;
     auto surfaceWithInvalidRegion = FrontSurface();
     if (surfaceWithInvalidRegion) {
-      
-      
-      
-      IOSurfaceRef surfaceRef = surfaceWithInvalidRegion->mSurface.get();
-      surfaceID = IOSurfaceGetID(surfaceRef);
+      surfacePort =
+          IOSurfacePort::FromSurface(surfaceWithInvalidRegion->mSurface);
     }
 
     mCommandQueue->AppendCommand(mozilla::layers::CommandChangedSurface(
-        ID, surfaceID, IsDRM(), IsHDR(), GetSize()));
+        ID, std::move(surfacePort), IsDRM(), IsHDR(), GetSize()));
     mDirtyChangedSurface = false;
   }
 
