@@ -126,8 +126,6 @@ add_setup(async function () {
       ["browser.toolbars.keyboard_navigation", true],
       ["accessibility.tabfocus", 7],
       
-      ["extensions.pocket.enabled", true],
-      
       
       
       

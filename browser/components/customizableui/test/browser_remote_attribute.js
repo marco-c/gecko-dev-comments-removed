@@ -4,13 +4,6 @@
 
 "use strict";
 
-add_setup(async () => {
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["extensions.pocket.enabled", true]],
-  });
-});
-
 
 
 
