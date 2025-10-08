@@ -467,6 +467,10 @@ class NativeLayerCA : public NativeLayer {
   
   Mutex mMutex MOZ_UNANNOTATED;
 
+  
+  
+  
+  
   CFTypeRefPtr<IOSurfaceRef> mSurfaceToPresent;
 
   Maybe<NativeLayerMacSurfaceHandler> mSurfaceHandler;
