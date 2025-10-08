@@ -30,6 +30,7 @@
 #include "nsIPermission.h"
 #include "nsIURI.h"
 #include "nsNetUtil.h"
+#include "nsMixedContentBlocker.h"
 #include "nsPIDOMWindow.h"
 #include "nsQueryObject.h"
 #include "nsRFPService.h"
@@ -624,6 +625,14 @@ AntiTrackingUtils::GetStoragePermissionStateInParent(nsIChannel* aChannel) {
   
   
   
+  
+  if(!nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(trackingURI)) {
+    return nsILoadInfo::NoStoragePermission;
+  }
+
+  
+  
+  
   uint32_t result = 0;
   rv = AntiTrackingUtils::TestStoragePermissionInParent(
       targetPrincipal, trackingPrincipal, &result);
@@ -640,6 +649,8 @@ AntiTrackingUtils::GetStoragePermissionStateInParent(nsIChannel* aChannel) {
     }
   }
 
+  
+  
   if (isThirdParty) {
     if (RefPtr<net::nsHttpChannel> httpChannel = do_QueryObject(aChannel)) {
       
