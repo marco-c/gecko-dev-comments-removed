@@ -2676,19 +2676,11 @@ class Document : public nsINode,
 
 
   bool IsShowing() const { return mIsShowing; }
-
   
 
 
 
   bool IsVisible() const { return mVisible; }
-
-  
-
-
-
-
-  bool IsCompletelyLoaded() const { return mIsCompletelyLoaded; }
 
   void SetSuppressedEventListener(EventListener* aListener);
 
@@ -4845,10 +4837,6 @@ class Document : public nsINode,
   
   
   bool mVisible : 1;
-
-  
-  
-  bool mIsCompletelyLoaded : 1;
 
   
   
