@@ -4357,6 +4357,22 @@ nsresult HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak(
     
     
     
+    if (IsPlaintextMailComposer()) {
+      const WSScanResult nextThing =
+          WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
+              WSRunScanner::Scan::All,
+              unnecessaryLineBreak->After<EditorRawDOMPoint>(),
+              BlockInlineCheck::UseComputedDisplayOutsideStyle);
+      if (nextThing.ReachedOtherBlockElement() &&
+          HTMLEditUtils::IsMailCiteElement(*nextThing.ElementPtr()) &&
+          HTMLEditUtils::IsInlineContent(
+              *nextThing.ElementPtr(), BlockInlineCheck::UseHTMLDefaultStyle)) {
+        return NS_OK;
+      }
+    }
+    
+    
+    
     if (HTMLEditUtils::GetMostDistantAncestorEditableEmptyInlineElement(
             unnecessaryLineBreak->BRElementRef(),
             BlockInlineCheck::UseComputedDisplayStyle)) {
