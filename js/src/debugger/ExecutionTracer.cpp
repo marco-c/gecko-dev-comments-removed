@@ -169,6 +169,7 @@ bool ExecutionTracer::writeFunctionFrame(JSContext* cx,
     inlineData_.write(uint32_t(0));  
     inlineData_.write(uint32_t(0));  
     inlineData_.write(uint32_t(0));  
+    inlineData_.write(uint64_t(0));  
   }
 
   JS::Rooted<JSAtom*> functionName(cx);
