@@ -1001,6 +1001,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
         
         
         
+        
         nsIFrame* placeholder = aKidFrame->GetPlaceholderFrame();
         if (placeholder && placeholder->GetParent() == aDelegatingFrame) {
           return true;
