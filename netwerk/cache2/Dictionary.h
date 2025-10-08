@@ -48,6 +48,8 @@ class DictionaryOrigin;
 
 class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
                                    public nsIStreamListener {
+  friend class DictionaryOrigin;
+
  private:
   ~DictionaryCacheEntry() { MOZ_ASSERT(mUsers == 0); }
 
@@ -279,6 +281,7 @@ class DictionaryOrigin : public nsICacheEntryMetaDataVisitor {
   DictionaryCacheEntry* Match(const nsACString& path,
                               ExtContentPolicyType aType);
   void FinishAddEntry(DictionaryCacheEntry* aEntry);
+  void DumpEntries();
   void Clear();
 
  private:
