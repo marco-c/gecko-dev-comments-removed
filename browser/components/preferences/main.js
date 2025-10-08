@@ -11,6 +11,7 @@
 
 
 
+
 ChromeUtils.defineESModuleGetters(this, {
   BackgroundUpdate: "resource://gre/modules/BackgroundUpdate.sys.mjs",
   UpdateListener: "resource://gre/modules/UpdateListener.sys.mjs",
@@ -851,6 +852,198 @@ Preferences.addSetting({
 });
 
 
+
+
+const DefaultBrowserHelper = {
+  
+
+
+  _backoffIndex: 0,
+
+  
+
+
+  _pollingTimer: undefined,
+
+  
+
+
+
+
+
+  _lastPolledIsDefault: undefined,
+
+  
+
+
+  get shellSvc() {
+    return AppConstants.HAVE_SHELL_SERVICE && getShellService();
+  },
+
+  
+
+
+
+
+
+  pollForDefaultChanges(hasChanged) {
+    if (this._pollingTimer) {
+      return;
+    }
+    this._lastPolledIsDefault = this.isBrowserDefault;
+
+    
+    
+    const backoffTimes = [
+      1000, 1000, 1000, 1000, 2000, 2000, 2000, 5000, 5000, 10000,
+    ];
+
+    const pollForDefaultBrowser = () => {
+      if (
+        (location.hash == "" || location.hash == "#general") &&
+        document.visibilityState == "visible"
+      ) {
+        const { isBrowserDefault } = this;
+        if (isBrowserDefault !== this._lastPolledIsDefault) {
+          this._lastPolledIsDefault = isBrowserDefault;
+          hasChanged();
+        }
+      }
+
+      if (!this._pollingTimer) {
+        return;
+      }
+
+      
+      this._pollingTimer = window.setTimeout(
+        () => {
+          window.requestIdleCallback(pollForDefaultBrowser);
+        },
+        backoffTimes[
+          this._backoffIndex + 1 < backoffTimes.length
+            ? this._backoffIndex++
+            : backoffTimes.length - 1
+        ]
+      );
+    };
+
+    this._pollingTimer = window.setTimeout(() => {
+      window.requestIdleCallback(pollForDefaultBrowser);
+    }, backoffTimes[this._backoffIndex]);
+  },
+
+  
+
+
+  clearPollingForDefaultChanges() {
+    if (this._pollingTimer) {
+      clearTimeout(this._pollingTimer);
+      this._pollingTimer = undefined;
+    }
+  },
+
+  
+
+
+  get isBrowserDefault() {
+    if (!this.canCheck) {
+      return false;
+    }
+    return this.shellSvc?.isDefaultBrowser(false, true);
+  },
+
+  
+
+
+
+
+
+  async setDefaultBrowser() {
+    
+    this._backoffIndex = 0;
+
+    try {
+      await this.shellSvc?.setDefaultBrowser(false);
+    } catch (e) {
+      console.error(e);
+    }
+  },
+
+  
+
+
+
+  get canCheck() {
+    return (
+      this.shellSvc &&
+      
+
+
+      !gGIOService?.isRunningUnderFlatpak
+    );
+  },
+};
+
+Preferences.addSetting({
+  id: "alwaysCheckDefault",
+  pref: "browser.shell.checkDefaultBrowser",
+  setup: emitChange => {
+    if (!DefaultBrowserHelper.canCheck) {
+      return;
+    }
+    DefaultBrowserHelper.pollForDefaultChanges(emitChange);
+    
+    return () => DefaultBrowserHelper.clearPollingForDefaultChanges();
+  },
+  
+
+
+
+  visible: () => DefaultBrowserHelper.canCheck,
+  disabled: (deps, setting) =>
+    !DefaultBrowserHelper.canCheck ||
+    setting.locked ||
+    DefaultBrowserHelper.isBrowserDefault,
+});
+
+Preferences.addSetting({
+  id: "isDefaultPane",
+  deps: ["alwaysCheckDefault"],
+  visible: () =>
+    DefaultBrowserHelper.canCheck && DefaultBrowserHelper.isBrowserDefault,
+});
+
+Preferences.addSetting({
+  id: "isNotDefaultPane",
+  deps: ["alwaysCheckDefault"],
+  visible: () =>
+    DefaultBrowserHelper.canCheck && !DefaultBrowserHelper.isBrowserDefault,
+  onUserClick: (e, { alwaysCheckDefault }) => {
+    if (!DefaultBrowserHelper.canCheck) {
+      return;
+    }
+    const setDefaultButton =  (e.target);
+
+    if (!setDefaultButton) {
+      return;
+    }
+    if (setDefaultButton.disabled) {
+      return;
+    }
+
+    
+
+
+
+    setDefaultButton.disabled = true;
+    alwaysCheckDefault.value = true;
+    DefaultBrowserHelper.setDefaultBrowser().finally(() => {
+      setDefaultButton.disabled = false;
+    });
+  },
+});
+
+
 Preferences.addSetting({
   id: "contentProcessCount",
   pref: "dom.ipc.processCount",
@@ -933,6 +1126,31 @@ let SETTINGS_CONFIG = {
         controlAttrs: {
           l10nId: "startup-windows-launch-on-login-profile-disabled",
         },
+      },
+      {
+        id: "alwaysCheckDefault",
+        l10nId: "always-check-default",
+      },
+      {
+        id: "isDefaultPane",
+        l10nId: "is-default-browser",
+        control: "moz-promo",
+      },
+      {
+        id: "isNotDefaultPane",
+        l10nId: "is-not-default-browser",
+        control: "moz-promo",
+        options: [
+          {
+            control: "moz-button",
+            l10nId: "set-as-my-default-browser",
+            id: "setDefaultButton",
+            controlAttrs: {
+              slot: "actions",
+              type: "primary",
+            },
+          },
+        ],
       },
     ],
   },
@@ -1365,8 +1583,6 @@ var gMainPane = {
     return (this._filter = document.getElementById("filter"));
   },
 
-  _backoffIndex: 0,
-
   
 
 
@@ -1375,47 +1591,6 @@ var gMainPane = {
       document
         .getElementById(aId)
         .addEventListener(aEventType, aCallback.bind(gMainPane));
-    }
-
-    if (AppConstants.HAVE_SHELL_SERVICE) {
-      this.updateSetDefaultBrowser();
-      let win = Services.wm.getMostRecentWindow("navigator:browser");
-
-      
-      
-      let backoffTimes = [
-        1000, 1000, 1000, 1000, 2000, 2000, 2000, 5000, 5000, 10000,
-      ];
-
-      let pollForDefaultBrowser = () => {
-        let uri = win.gBrowser.currentURI.spec;
-
-        if (
-          (uri == "about:preferences" ||
-            uri == "about:preferences#general" ||
-            uri == "about:settings" ||
-            uri == "about:settings#general") &&
-          document.visibilityState == "visible"
-        ) {
-          this.updateSetDefaultBrowser();
-        }
-
-        
-        window.setTimeout(
-          () => {
-            window.requestIdleCallback(pollForDefaultBrowser);
-          },
-          backoffTimes[
-            this._backoffIndex + 1 < backoffTimes.length
-              ? this._backoffIndex++
-              : backoffTimes.length - 1
-          ]
-        );
-      };
-
-      window.setTimeout(() => {
-        window.requestIdleCallback(pollForDefaultBrowser);
-      }, backoffTimes[this._backoffIndex]);
     }
 
     this.initBrowserContainers();
@@ -1522,13 +1697,6 @@ var gMainPane = {
       });
     }
 
-    if (AppConstants.HAVE_SHELL_SERVICE) {
-      setEventListener(
-        "setDefaultButton",
-        "command",
-        gMainPane.setDefaultBrowser
-      );
-    }
     setEventListener(
       "disableContainersExtension",
       "command",
@@ -2706,77 +2874,6 @@ var gMainPane = {
   writeLinkTarget() {
     var linkTargeting = document.getElementById("linkTargeting");
     return linkTargeting.checked ? 3 : 2;
-  },
-  
-
-
-
-
-
-
-
-  
-
-
-
-  updateSetDefaultBrowser() {
-    if (AppConstants.HAVE_SHELL_SERVICE) {
-      let shellSvc = getShellService();
-      let defaultBrowserBox = document.getElementById("defaultBrowserBox");
-      let isInFlatpak = gGIOService?.isRunningUnderFlatpak;
-      
-      if (!shellSvc || isInFlatpak) {
-        defaultBrowserBox.hidden = true;
-        return;
-      }
-      let isDefault = shellSvc.isDefaultBrowser(false, true);
-      let setDefaultPane = document.getElementById("setDefaultPane");
-      setDefaultPane.classList.toggle("is-default", isDefault);
-      let alwaysCheck = document.getElementById("alwaysCheckDefault");
-      let alwaysCheckPref = Preferences.get(
-        "browser.shell.checkDefaultBrowser"
-      );
-      alwaysCheck.disabled = alwaysCheckPref.locked || isDefault;
-    }
-  },
-
-  
-
-
-  async setDefaultBrowser() {
-    if (AppConstants.HAVE_SHELL_SERVICE) {
-      let alwaysCheckPref = Preferences.get(
-        "browser.shell.checkDefaultBrowser"
-      );
-      alwaysCheckPref.value = true;
-
-      
-      this._backoffIndex = 0;
-
-      let shellSvc = getShellService();
-      if (!shellSvc) {
-        return;
-      }
-
-      
-      
-      let setDefaultButton = document.getElementById("setDefaultButton");
-      setDefaultButton.disabled = true;
-
-      try {
-        await shellSvc.setDefaultBrowser(false);
-      } catch (ex) {
-        console.error(ex);
-        return;
-      } finally {
-        
-        setDefaultButton.disabled = false;
-      }
-
-      let isDefault = shellSvc.isDefaultBrowser(false, true);
-      let setDefaultPane = document.getElementById("setDefaultPane");
-      setDefaultPane.classList.toggle("is-default", isDefault);
-    }
   },
 
   
