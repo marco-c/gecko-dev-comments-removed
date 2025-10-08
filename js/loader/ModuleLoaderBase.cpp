@@ -806,10 +806,11 @@ void ModuleLoaderBase::OnFetchSucceeded(ModuleLoadRequest* aRequest) {
 
 void ModuleLoaderBase::OnFetchFailed(ModuleLoadRequest* aRequest) {
   MOZ_ASSERT(aRequest->IsErrored());
-  
-  if (aRequest->IsDynamicImport()) {
+  AutoJSAPI jsapi;
+  if (!jsapi.Init(mGlobalObject)) {
     return;
   }
+  JSContext* cx = jsapi.cx();
 
   if (aRequest->IsTopLevel()) {
     
@@ -822,49 +823,65 @@ void ModuleLoaderBase::OnFetchFailed(ModuleLoadRequest* aRequest) {
       LOG(("ScriptLoadRequest (%p): found parse error", aRequest));
       aRequest->mModuleScript->SetErrorToRethrow(parseError);
     }
-  } else {
-    
-    AutoJSAPI jsapi;
-    if (!jsapi.Init(mGlobalObject)) {
-      return;
-    }
-    JSContext* cx = jsapi.cx();
 
-    MOZ_ASSERT(!aRequest->mPayload.isUndefined());
-    Rooted<Value> statePrivate(cx, aRequest->mPayload);
-    Rooted<Value> error(cx);
+    return;
+  }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!aRequest->mModuleScript) {
-      error = UndefinedValue();
-    } else {
-      
-      
-      
-      
-      
-      
-      MOZ_ASSERT(aRequest->mModuleScript->HasParseError());
-      error = aRequest->mModuleScript->ParseError();
-    }
+  
+  MOZ_ASSERT(aRequest->IsStaticImport() || aRequest->IsDynamicImport());
+  MOZ_ASSERT(!aRequest->mPayload.isUndefined());
+  Rooted<Value> payload(cx, aRequest->mPayload);
 
-    LOG(("ScriptLoadRequest (%p): FinishLoadingImportedModuleFailed",
+  
+  
+  
+  
+  
+  if (!aRequest->mModuleScript) {
+    LOG(
+        ("ScriptLoadRequest (%p): FinishLoadingImportedModule: module script "
+         "is null",
          aRequest));
+
     
     
-    MOZ_ASSERT(!statePrivate.isUndefined());
-    FinishLoadingImportedModuleFailed(cx, statePrivate, error);
+    
+    
+    
+    
+    
+    
+    if (aRequest->GetRootModule()->IsDynamicImport()) {
+      nsAutoCString url;
+      aRequest->mURI->GetSpec(url);
+      JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,
+                                JSMSG_DYNAMIC_IMPORT_FAILED, url.get());
+      FinishLoadingImportedModuleFailedWithPendingException(cx, payload);
+    } else {
+      Rooted<Value> error(cx, UndefinedValue());
+      FinishLoadingImportedModuleFailed(cx, payload, error);
+    }
 
     aRequest->ClearImport();
+    return;
   }
+
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(aRequest->mModuleScript->HasParseError());
+  Rooted<Value> parseError(cx, aRequest->mModuleScript->ParseError());
+  LOG(
+      ("ScriptLoadRequest (%p): FinishLoadingImportedModule: found parse "
+       "error",
+       aRequest));
+  
+  
+  FinishLoadingImportedModuleFailed(cx, payload, parseError);
+  aRequest->ClearImport();
 }
 
 class ModuleErroredRunnable : public MicroTaskRunnable {
