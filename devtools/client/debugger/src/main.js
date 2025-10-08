@@ -27,6 +27,11 @@ import { initialEventListenerState } from "./reducers/event-listeners";
 const {
   sanitizeBreakpoints,
 } = require("resource://devtools/client/shared/thread-utils.js");
+const {
+  START_IGNORE_ACTION,
+} = require("resource://devtools/client/shared/redux/middleware/ignore.js");
+
+let gStore;
 
 async function syncBreakpoints() {
   const breakpoints = await asyncStore.pendingBreakpoints;
@@ -128,6 +133,7 @@ export async function bootstrap({
     panel,
     initialState
   );
+  gStore = store;
 
   const connected = firefox.onConnect(
     commands,
@@ -159,7 +165,18 @@ export async function bootstrap({
 }
 
 export async function destroy() {
+  
+  if (gStore) {
+    gStore.dispatch(START_IGNORE_ACTION);
+    gStore = null;
+  }
+
+  
   firefox.onDisconnect();
+
+  
   unmountRoot();
+
+  
   teardownWorkers();
 }

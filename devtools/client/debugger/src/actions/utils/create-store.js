@@ -8,7 +8,6 @@
 
 
 
-
 import {
   createStore,
   applyMiddleware,
@@ -20,10 +19,9 @@ import { thunk } from "./middleware/thunk";
 import { timing } from "./middleware/timing";
 import { context } from "./middleware/context";
 
-
-
-
-
+const {
+  ignore,
+} = require("resource://devtools/client/shared/redux/middleware/ignore.js");
 
 
 
@@ -43,6 +41,7 @@ const configureStore = (opts = {}) => {
     thunk(opts.makeThunkArgs),
     context,
     promise,
+    ignore,
 
     
     
