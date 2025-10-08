@@ -1195,6 +1195,16 @@ function getCodeMirrorValue(monitor) {
 
 
 
+
+
+
+async function waitForEditorScrolling(monitor) {
+  return getCMEditor(monitor).once("cm-editor-scrolled");
+}
+
+
+
+
 function openSettingsMenu(monitor) {
   const { document } = monitor.panelWin;
   document.querySelector(".netmonitor-settings-menu-button").click();

@@ -275,6 +275,18 @@ async function waitForMessageByType(hud, text, typeSelector) {
 
 
 
+async function waitForSourceEditor(panel) {
+  return waitUntil(() => {
+    return !!panel.querySelector(".cm-editor");
+  });
+}
+
+
+
+
+
+
+
 function execute(hud, input) {
   return hud.ui.wrapper.dispatchEvaluateExpression(input);
 }
