@@ -1210,6 +1210,53 @@ impl Stylist {
     }
 
     
+    pub fn resolve_position_try<E>(
+        &self,
+        style: &ComputedValues,
+        guards: &StylesheetGuards,
+        element: E,
+        name: &Atom,
+    ) -> Option<Arc<ComputedValues>>
+    where
+        E: TElement,
+    {
+        let fallback_rule = self.lookup_position_try(name, element)?;
+        let fallback_block = &fallback_rule.read_with(guards.author).block;
+        let pseudo = style
+            .pseudo()
+            .or_else(|| element.implemented_pseudo_element());
+        let inputs = {
+            let mut inputs = CascadeInputs::new_from_style(style);
+            
+            inputs.visited_rules = None;
+            let rules = inputs.rules.as_ref().unwrap_or(self.rule_tree.root());
+            let mut important_rules_changed = false;
+            inputs.rules = self.rule_tree.update_rule_at_level(
+                CascadeLevel::PositionFallback,
+                LayerOrder::root(),
+                Some(fallback_block.borrow_arc()),
+                rules,
+                guards,
+                &mut important_rules_changed,
+            );
+            inputs
+        };
+        crate::style_resolver::with_default_parent_styles(element, |parent_style, layout_parent_style| {
+            Some(self.cascade_style_and_visited(
+                Some(element),
+                pseudo.as_ref(),
+                inputs,
+                guards,
+                parent_style,
+                layout_parent_style,
+                FirstLineReparenting::No,
+                 None,
+                &mut RuleCacheConditions::default(),
+            ))
+        })
+    }
+
+    
     
     
     
@@ -1564,7 +1611,7 @@ impl Stylist {
 
     
     #[inline]
-    pub fn lookup_position_try<'a, E>(
+    fn lookup_position_try<'a, E>(
         &'a self,
         name: &Atom,
         element: E,
