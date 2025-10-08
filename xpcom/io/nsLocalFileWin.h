@@ -14,6 +14,7 @@
 #include "nsIFile.h"
 #include "nsILocalFileWin.h"
 #include "nsIClassInfoImpl.h"
+#include "nsWindowsHelpers.h"
 #include "prio.h"
 
 #include "mozilla/Attributes.h"
@@ -51,6 +52,21 @@ class nsLocalFile final : public nsILocalFileWin {
   
   
   static bool CheckForReservedFileName(const nsString& aFileName);
+
+  
+
+
+
+
+
+
+
+
+
+
+  static bool ChildAclMatchesAclInheritedFromParent(
+      const mozilla::NotNull<ACL*> aChildDacl, bool aIsChildDir,
+      const AutoFreeSecurityDescriptor& aChildSecDesc, nsIFile* aParentDir);
 
   
   struct FileInfo {

@@ -328,6 +328,19 @@ struct CloseHandleDeleter {
   }
 };
 
+using AutoFreeSecurityDescriptor =
+    mozilla::UniquePtr<SECURITY_DESCRIPTOR, LocalFreeDeleter>;
+
+struct DestroyPrivateObjectSecurityDeleter {
+  void operator()(PSECURITY_DESCRIPTOR aSecDescPtr) {
+    ::DestroyPrivateObjectSecurity(&aSecDescPtr);
+  }
+};
+
+using AutoDestroySecurityDescriptor =
+    mozilla::UniquePtr<SECURITY_DESCRIPTOR,
+                       DestroyPrivateObjectSecurityDeleter>;
+
 
 
 
