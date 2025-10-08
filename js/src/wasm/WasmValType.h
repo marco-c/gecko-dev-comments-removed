@@ -446,6 +446,17 @@ class RefType {
 
   
   
+  
+  
+  
+  static bool valuesMightAlias(RefType a, RefType b) {
+    MOZ_RELEASE_ASSERT(a.hierarchy() == b.hierarchy());
+    
+    return RefType::isSubTypeOf(a, b) || RefType::isSubTypeOf(b, a);
+  }
+
+  
+  
   RefType topType() const;
 
   
