@@ -429,6 +429,13 @@ static void AppendTextToAttributedString(
 
 static RefPtr<AccAttributes> GetTextAttributes(TextLeafPoint aPoint) {
   RefPtr<AccAttributes> attrs = aPoint.GetTextAttributes();
+  if (!attrs) {
+    
+    
+    
+    
+    return nullptr;
+  }
   
   
   
