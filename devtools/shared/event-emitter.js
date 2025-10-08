@@ -4,13 +4,10 @@
 
 "use strict";
 
-const BAD_LISTENER =
-  "The event listener must be a function, or an object that has " +
-  "`EventEmitter.handler` Symbol.";
+const BAD_LISTENER = "The event listener must be a function.";
 
 const eventListeners = Symbol("EventEmitter/listeners");
 const onceOriginalListener = Symbol("EventEmitter/once-original-listener");
-const handler = Symbol("EventEmitter/event-handler");
 loader.lazyRequireGetter(this, "flags", "resource://devtools/shared/flags.js");
 
 class EventEmitter {
@@ -31,7 +28,7 @@ class EventEmitter {
 
 
   static on(target, type, listener, { signal } = {}) {
-    if (typeof listener !== "function" && !isEventHandler(listener)) {
+    if (typeof listener !== "function") {
       throw new Error(BAD_LISTENER);
     }
 
@@ -158,16 +155,7 @@ class EventEmitter {
 
         let rv;
         if (listener) {
-          if (isEventHandler(listener)) {
-            
-            
-            
-            
-            rv = listener[handler](type, first, ...rest);
-          } else {
-            
-            rv = listener.call(target, first, ...rest);
-          }
+          rv = listener.call(target, first, ...rest);
         }
 
         
@@ -235,12 +223,7 @@ class EventEmitter {
       
       if (listeners && listeners.has(listener)) {
         try {
-          let promise;
-          if (isEventHandler(listener)) {
-            promise = listener[handler](type, ...args);
-          } else {
-            promise = listener.apply(target, args);
-          }
+          const promise = listener.apply(target, args);
           if (async) {
             
             
@@ -306,10 +289,6 @@ class EventEmitter {
     return Object.defineProperties(target, descriptors);
   }
 
-  static get handler() {
-    return handler;
-  }
-
   on(...args) {
     return EventEmitter.on(this, ...args);
   }
@@ -346,9 +325,6 @@ class EventEmitter {
 }
 
 module.exports = EventEmitter;
-
-const isEventHandler = listener =>
-  listener && handler in listener && typeof listener[handler] === "function";
 
 const {
   getNthPathExcluding,
