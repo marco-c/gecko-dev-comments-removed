@@ -659,6 +659,9 @@ nsresult nsHttpChannel::PrepareToConnect() {
           PROFILER_MARKER("Dictionary Prefetch", NETWORK,
                           MarkerTiming::IntervalStart(), FlowMarker,
                           Flow::FromPointer(self));
+          
+          
+          
           return NS_SUCCEEDED(self->mDictDecompress->Prefetch(
               GetLoadContextInfo(self), self->mShouldSuspendForDictionary,
               [self]() {

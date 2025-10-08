@@ -2437,7 +2437,8 @@ nsresult CacheFileIOManager::DoomFile(CacheFileHandle* aHandle,
 }
 
 nsresult CacheFileIOManager::DoomFileInternal(
-    CacheFileHandle* aHandle, PinningDoomRestriction aPinningDoomRestriction) {
+    CacheFileHandle* aHandle, PinningDoomRestriction aPinningDoomRestriction,
+    bool aClearDictionary) {
   LOG(("CacheFileIOManager::DoomFileInternal() [handle=%p]", aHandle));
   aHandle->Log();
 
@@ -2515,7 +2516,7 @@ nsresult CacheFileIOManager::DoomFileInternal(
   if (!aHandle->IsSpecialFile()) {
     
     RefPtr<CacheFileHandle> handle(aHandle);
-    CacheIndex::RemoveEntry(aHandle->Hash(), aHandle->Key());
+    CacheIndex::RemoveEntry(aHandle->Hash(), aHandle->Key(), aClearDictionary);
   }
 
   aHandle->mIsDoomed = true;
@@ -3415,6 +3416,14 @@ nsresult CacheFileIOManager::EvictByContext(
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
+  
+  
+  
+  
+  
+  
+  
+  CacheIndex::EvictByContext(aOrigin, aBaseDomain);
 
   return NS_OK;
 }
@@ -3448,6 +3457,9 @@ nsresult CacheFileIOManager::EvictByContextInternal(
     
     
     
+
+    
+    
     if (!aLoadContextInfo) {
       RefPtr<EvictionNotifierRunnable> r = new EvictionNotifierRunnable();
       NS_DispatchToMainThread(r);
@@ -3469,6 +3481,9 @@ nsresult CacheFileIOManager::EvictByContextInternal(
   NS_ConvertUTF16toUTF8 origin(aOrigin);
   NS_ConvertUTF16toUTF8 baseDomain(aBaseDomain);
 
+  
+  
+  
   
   nsTArray<RefPtr<CacheFileHandle>> handles;
   mHandles.GetActiveHandles(&handles);
@@ -3553,7 +3568,8 @@ nsresult CacheFileIOManager::EvictByContextInternal(
     
     rv = DoomFileInternal(handle,
                           aPinned ? CacheFileIOManager::DOOM_WHEN_PINNED
-                                  : CacheFileIOManager::DOOM_WHEN_NON_PINNED);
+                                  : CacheFileIOManager::DOOM_WHEN_NON_PINNED,
+                          false);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       LOG(
           ("CacheFileIOManager::EvictByContextInternal() - Cannot doom handle"

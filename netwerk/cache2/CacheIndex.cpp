@@ -17,6 +17,7 @@
 #include "prinrval.h"
 #include "nsIFile.h"
 #include "nsITimer.h"
+#include "nsNetUtil.h"
 #include "mozilla/AutoRestore.h"
 #include <algorithm>
 #include "mozilla/StaticPrefs_network.h"
@@ -841,14 +842,28 @@ nsresult CacheIndex::InitEntry(const SHA1Sum::Hash* aHash,
 
 
 nsresult CacheIndex::RemoveEntry(const SHA1Sum::Hash* aHash,
-                                 const nsACString& aKey) {
-  LOG(("CacheIndex::RemoveEntry() [hash=%08x%08x%08x%08x%08x] key=%s",
-       LOGSHA1(aHash), PromiseFlatCString(aKey).get()));
+                                 const nsACString& aKey,
+                                 bool aClearDictionary) {
+  LOG(
+      ("CacheIndex::RemoveEntry() [hash=%08x%08x%08x%08x%08x] key=%s "
+       "clear_dictionary=%d",
+       LOGSHA1(aHash), PromiseFlatCString(aKey).get(), aClearDictionary));
 
   MOZ_ASSERT(CacheFileIOManager::IsOnIOThread());
 
   
-  DictionaryCache::RemoveDictionaryFor(aKey);
+  
+
+  
+  
+  
+
+  
+  
+  
+  if (aClearDictionary) {
+    DictionaryCache::RemoveDictionaryFor(aKey);
+  }
 
   StaticMutexAutoLock lock(sLock);
 
@@ -1081,6 +1096,32 @@ nsresult CacheIndex::UpdateEntry(const SHA1Sum::Hash* aHash,
   index->WriteIndexToDiskIfNeeded(lock);
 
   return NS_OK;
+}
+
+
+
+
+
+
+
+
+void CacheIndex::EvictByContext(const nsAString& aOrigin,
+                                const nsAString& aBaseDomain) {
+  StaticMutexAutoLock lock(sLock);
+
+  RefPtr<CacheIndex> index = gInstance;
+
+  
+  
+  
+  if (!aOrigin.IsEmpty() && aBaseDomain.IsEmpty()) {
+    
+    nsCOMPtr<nsIURI> uri;
+    if (NS_SUCCEEDED(NS_NewURI(getter_AddRefs(uri), aOrigin))) {
+      
+      DictionaryCache::RemoveDictionariesForOrigin(uri);
+    }
+  }
 }
 
 
