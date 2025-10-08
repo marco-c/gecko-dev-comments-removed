@@ -31,7 +31,6 @@ impl ContextIDComponent {
     
     
     #[uniffi::constructor]
-
     pub fn new(
         init_context_id: &str,
         creation_timestamp_s: i64,

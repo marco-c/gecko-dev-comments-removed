@@ -14,8 +14,6 @@ use tracing_subscriber::{
 
 
 pub fn init_from_env() {
-    
-    
     tracing_subscriber::registry()
         .with(fmt::layer())
         .with(build_targets_from_env(LevelFilter::ERROR, None))
@@ -25,8 +23,6 @@ pub fn init_from_env() {
 
 pub fn init_from_env_with_level(level: crate::Level) {
     let level_filter = LevelFilter::from_level(level.into());
-    
-    
     tracing_subscriber::registry()
         .with(fmt::layer())
         .with(build_targets_from_env(level_filter, None))
@@ -35,8 +31,6 @@ pub fn init_from_env_with_level(level: crate::Level) {
 
 
 pub fn init_from_env_with_default(default_env: &str) {
-    
-    
     tracing_subscriber::registry()
         .with(fmt::layer())
         .with(build_targets_from_env(LevelFilter::OFF, Some(default_env)))
