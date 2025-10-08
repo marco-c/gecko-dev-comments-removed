@@ -8,7 +8,6 @@
 
 
 
-
 function closingPopupEndsDrag(popup) {
   if (!popup.isWaylandPopup) {
     return false;

@@ -7,8 +7,6 @@
 
 
 
-
-
 ChromeUtils.defineESModuleGetters(this, {
   LanguageDetector:
     "resource://gre/modules/translations/LanguageDetector.sys.mjs",

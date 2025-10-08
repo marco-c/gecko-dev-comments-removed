@@ -8,8 +8,6 @@
 
 
 
-
-
 ChromeUtils.defineESModuleGetters(this, {
   PageActions: "resource:///modules/PageActions.sys.mjs",
   TranslationsUtils:

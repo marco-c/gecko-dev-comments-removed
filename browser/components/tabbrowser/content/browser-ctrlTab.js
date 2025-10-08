@@ -5,9 +5,6 @@
 
 
 
-
-
-
 var tabPreviews = {
   get aspectRatio() {
     let { PageThumbUtils } = ChromeUtils.importESModule(

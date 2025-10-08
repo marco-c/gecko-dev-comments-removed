@@ -2,9 +2,6 @@
 
 
 
-
-
-
 ChromeUtils.defineESModuleGetters(this, {
   BrowserUsageTelemetry: "resource:///modules/BrowserUsageTelemetry.sys.mjs",
   GroupsPanel: "moz-src:///browser/components/tabbrowser/GroupsList.sys.mjs",
