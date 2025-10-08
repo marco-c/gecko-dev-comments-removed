@@ -47,8 +47,6 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
     StaticImport,
 
     
-    
-    
     DynamicImport,
   };
 
@@ -59,9 +57,9 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
                     LoadContextBase* aContext, Kind aKind,
                     ModuleLoaderBase* aLoader, ModuleLoadRequest* aRootModule);
 
-  bool IsTopLevel() const override { return mIsTopLevel; }
-
-  bool IsDynamicImport() const { return mIsDynamicImport; }
+  bool IsTopLevel() const override { return mKind == Kind::TopLevel; }
+  bool IsStaticImport() const { return mKind == Kind::StaticImport; }
+  bool IsDynamicImport() const { return mKind == Kind::DynamicImport; }
 
   bool IsErrored() const;
 
@@ -113,14 +111,10 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
     mReferrerPolicy = aReferrerPolicy;
   }
 
-  
-  const bool mIsTopLevel;
+  const Kind mKind;
 
   
   const ModuleType mModuleType;
-
-  
-  const bool mIsDynamicImport;
 
   
   
