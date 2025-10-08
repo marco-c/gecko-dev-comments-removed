@@ -255,8 +255,11 @@ void nsHTMLFramesetFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   static_assert(NS_MAX_FRAMESET_SPEC_COUNT < UINT_MAX / sizeof(nsBorderColor) /
                                                  NS_MAX_FRAMESET_SPEC_COUNT,
                 "Should not overflow numCells");
-  mChildFrameborder = MakeUnique<nsFrameborder[]>(numCells);
-  mChildBorderColors = MakeUnique<nsBorderColor[]>(numCells);
+  mNeedFirstReflowWork = true;
+  mChildFrameborder.Clear();
+  mChildFrameborder.SetLength(numCells);
+  mChildBorderColors.Clear();
+  mChildBorderColors.SetLength(numCells);
 
   
   mChildCount = 0;  
@@ -783,8 +786,11 @@ void nsHTMLFramesetFrame::Reflow(nsPresContext* aPresContext,
   
   
   
-  MOZ_ASSERT(!mChildFrameborder == !mChildBorderColors);
-  bool firstTime = !!mChildFrameborder;
+  
+  
+  MOZ_ASSERT_IF(!mChildFrameborder.IsEmpty(), mNeedFirstReflowWork);
+  MOZ_ASSERT_IF(!mChildBorderColors.IsEmpty(), mNeedFirstReflowWork);
+  bool firstTime = mNeedFirstReflowWork;
 
   
   
@@ -1043,8 +1049,9 @@ void nsHTMLFramesetFrame::Reflow(nsPresContext* aPresContext,
       }
     }
 
-    mChildFrameborder.reset();
-    mChildBorderColors.reset();
+    mNeedFirstReflowWork = false;
+    mChildFrameborder.Clear();
+    mChildBorderColors.Clear();
   }
 
   mDrag.UnSet();

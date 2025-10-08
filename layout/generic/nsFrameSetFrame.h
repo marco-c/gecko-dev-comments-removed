@@ -176,9 +176,9 @@ class nsHTMLFramesetFrame final : public nsContainerFrame {
   nsHTMLFramesetFrame* mTopLevelFrameset;
   nsTArray<nsHTMLFramesetBorderFrame*> mVerBorders;  
   nsTArray<nsHTMLFramesetBorderFrame*> mHorBorders;  
-  UniquePtr<nsFrameborder[]>
+  nsTArray<nsFrameborder>
       mChildFrameborder;  
-  UniquePtr<nsBorderColor[]> mChildBorderColors;
+  nsTArray<nsBorderColor> mChildBorderColors;
   nsTArray<nscoord> mRowSizes;  
   nsTArray<nscoord> mColSizes;  
   mozilla::LayoutDeviceIntPoint mFirstDragPoint;
@@ -188,6 +188,9 @@ class nsHTMLFramesetFrame final : public nsContainerFrame {
   int32_t mNonBlankChildCount;
   int32_t mEdgeVisibility;
   nsFrameborder mParentFrameborder;
+  
+  
+  bool mNeedFirstReflowWork = false;
   nscolor mParentBorderColor;
   int32_t mParentBorderWidth;
   int32_t mPrevNeighborOrigSize;  
