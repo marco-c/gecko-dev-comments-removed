@@ -730,8 +730,40 @@ async function perfTest({
 
 
 
-function isEqualWithTolerance(A, B, epsilon = 0.000001) {
-  return Math.abs(Math.abs(A) - Math.abs(B)) < epsilon;
+
+
+
+
+
+function isEqualWithTolerance(a, b, epsilon = 0.000001) {
+  return Math.abs(Math.abs(a) - Math.abs(b)) < epsilon;
+}
+
+
+
+
+
+
+
+
+
+function assertFloatArraysMatch(a, b, message, epsilon) {
+  const raise = () => {
+    
+    
+    console.log("a:", [...a]);
+    console.log("b:", [...b]);
+    throw new Error(message);
+  };
+  if (a.length !== b.length) {
+    raise();
+  }
+  for (let i = 0; i < a.length; i++) {
+    if (!isEqualWithTolerance(a[i], b[i], epsilon)) {
+      raise();
+    }
+  }
+  ok(true, message);
 }
 
 
