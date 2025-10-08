@@ -8,7 +8,7 @@
 
 #include <algorithm>
 
-#include "gc/Marking.h"
+#include "gc/Tracer.h"
 #include "js/CharacterEncoding.h"
 #include "js/friend/ErrorMessages.h"  
 #include "js/PropertySpec.h"
@@ -33,111 +33,6 @@
 
 using namespace js;
 using namespace wasm;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -371,6 +266,15 @@ void WasmArrayObject::obj_trace(JSTracer* trc, JSObject* object) {
   WasmArrayObject& arrayObj = object->as<WasmArrayObject>();
   uint8_t* data = arrayObj.data_;
 
+  if (!arrayObj.isDataInline()) {
+    uint8_t* outlineAlloc = (uint8_t*)dataHeaderFromDataPointer(arrayObj.data_);
+    uint8_t* prior = outlineAlloc;
+    TraceBufferEdge(trc, &arrayObj, &outlineAlloc, "WasmArrayObject storage");
+    if (outlineAlloc != prior) {
+      arrayObj.data_ = (uint8_t*)(((DataHeader*)outlineAlloc) + 1);
+    }
+  }
+
   const auto& typeDef = arrayObj.typeDef();
   const auto& arrayType = typeDef.arrayType();
   if (!arrayType.elementType().isRefRepr()) {
@@ -382,34 +286,6 @@ void WasmArrayObject::obj_trace(JSTracer* trc, JSObject* object) {
   for (uint32_t i = 0; i < numElements; i++) {
     AnyRef* elementPtr = reinterpret_cast<AnyRef*>(data + i * elemSize);
     TraceManuallyBarrieredEdge(trc, elementPtr, "wasm-array-element");
-  }
-}
-
-
-void WasmArrayObject::obj_finalize(JS::GCContext* gcx, JSObject* object) {
-  
-  
-  
-  WasmArrayObject& arrayObj = object->as<WasmArrayObject>();
-  if (!arrayObj.isDataInline()) {
-    
-    
-    
-    js_free(arrayObj.dataHeader());
-    
-    
-    const TypeDef& typeDef = arrayObj.typeDef();
-    MOZ_ASSERT(typeDef.isArrayType());
-    
-    
-    size_t trailerSize = calcStorageBytesUnchecked(
-        typeDef.arrayType().elementType().size(), arrayObj.numElements_);
-    
-    MOZ_RELEASE_ASSERT(trailerSize <= size_t(MaxArrayPayloadBytes));
-    gcx->removeCellMemory(&arrayObj, trailerSize + TrailerBlockOverhead,
-                          MemoryUse::WasmTrailerBlock);
-    
-    arrayObj.data_ = nullptr;
   }
 }
 
@@ -437,9 +313,13 @@ size_t WasmArrayObject::obj_moved(JSObject* obj, JSObject* old) {
           typeDef.arrayType().elementType().size(), arrayObj.numElements_);
       
       MOZ_RELEASE_ASSERT(trailerSize <= size_t(MaxArrayPayloadBytes));
-      nursery.trackTrailerOnPromotion(arrayObj.dataHeader(), obj, trailerSize,
-                                      TrailerBlockOverhead,
-                                      MemoryUse::WasmTrailerBlock);
+      uint8_t* outlineAlloc =
+          (uint8_t*)dataHeaderFromDataPointer(arrayObj.data_);
+      uint8_t* prior = outlineAlloc;
+      nursery.maybeMoveBufferOnPromotion(&outlineAlloc, obj, trailerSize);
+      if (outlineAlloc != prior) {
+        arrayObj.data_ = (uint8_t*)(((DataHeader*)outlineAlloc) + 1);
+      }
     }
   }
 
@@ -471,11 +351,11 @@ static const JSClassOps WasmArrayObjectClassOps = {
     nullptr, 
     nullptr, 
     WasmGcObject::obj_newEnumerate,
-    nullptr,                       
-    nullptr,                       
-    WasmArrayObject::obj_finalize, 
-    nullptr,                       
-    nullptr,                       
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    nullptr, 
     WasmArrayObject::obj_trace,
 };
 static const ClassExtension WasmArrayObjectClassExt = {
@@ -483,8 +363,7 @@ static const ClassExtension WasmArrayObjectClassExt = {
 };
 const JSClass WasmArrayObject::class_ = {
     "WasmArrayObject",
-    JSClass::NON_NATIVE | JSCLASS_DELAY_METADATA_BUILDER |
-        JSCLASS_BACKGROUND_FINALIZE | JSCLASS_SKIP_NURSERY_FINALIZE,
+    JSClass::NON_NATIVE | JSCLASS_DELAY_METADATA_BUILDER,
     &WasmArrayObjectClassOps,
     JS_NULL_CLASS_SPEC,
     &WasmArrayObjectClassExt,

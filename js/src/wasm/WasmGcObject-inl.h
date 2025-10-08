@@ -193,32 +193,23 @@ MOZ_ALWAYS_INLINE WasmArrayObject* WasmArrayObject::createArrayOOL(
   
   MOZ_ASSERT(storageBytes > WasmArrayObject_MaxInlineBytes);
 
-  
-  
-  
-  Nursery& nursery = cx->nursery();
-  PointerAndUint7 outlineAlloc(nullptr, 0);
-  outlineAlloc = nursery.mallocedBlockCache().alloc(storageBytes);
-  if (MOZ_UNLIKELY(!outlineAlloc.pointer())) {
-    ReportOutOfMemory(cx);
-    return nullptr;
-  }
-
-  
-  
-  
-  Rooted<WasmArrayObject*> arrayObj(cx);
-  arrayObj = (WasmArrayObject*)cx->newCell<WasmGcObject>(
+  auto* arrayObj = (WasmArrayObject*)cx->newCell<WasmGcObject>(
       allocKind, initialHeap, typeDefData->clasp, allocSite);
   if (MOZ_UNLIKELY(!arrayObj)) {
     ReportOutOfMemory(cx);
-    if (outlineAlloc.pointer()) {
-      nursery.mallocedBlockCache().free(outlineAlloc);
-    }
     return nullptr;
   }
 
-  DataHeader* outlineHeader = (DataHeader*)outlineAlloc.pointer();
+  uint8_t* outlineAlloc = AllocateCellBuffer<uint8_t>(
+      cx, arrayObj, storageBytes, MaxNurseryTrailerSize);
+  if (MOZ_UNLIKELY(!outlineAlloc)) {
+    arrayObj->numElements_ = 0;
+    arrayObj->data_ = nullptr;
+    ReportOutOfMemory(cx);
+    return nullptr;
+  }
+
+  DataHeader* outlineHeader = (DataHeader*)outlineAlloc;
   uint8_t* outlineData = (uint8_t*)(outlineHeader + 1);
   *outlineHeader = DataIsOOL;
 
@@ -233,25 +224,6 @@ MOZ_ALWAYS_INLINE WasmArrayObject* WasmArrayObject::createArrayOOL(
   }
 
   MOZ_ASSERT(!arrayObj->isDataInline());
-
-  if (MOZ_LIKELY(js::gc::IsInsideNursery(arrayObj))) {
-    
-    
-    
-    
-    
-    if (MOZ_UNLIKELY(!nursery.registerTrailer(outlineAlloc, storageBytes))) {
-      nursery.mallocedBlockCache().free(outlineAlloc);
-      ReportOutOfMemory(cx);
-      return nullptr;
-    }
-  } else {
-    MOZ_ASSERT(arrayObj->isTenured());
-    
-    
-    AddCellMemory(arrayObj, storageBytes + wasm::TrailerBlockOverhead,
-                  MemoryUse::WasmTrailerBlock);
-  }
 
   MOZ_ASSERT(typeDefData->clasp->shouldDelayMetadataBuilder());
   cx->realm()->setObjectPendingMetadata(arrayObj);
