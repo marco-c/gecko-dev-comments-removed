@@ -4,7 +4,7 @@
 
 
 
-DIRS += ["abridged_certs"]
+DIRS += ["abridged_certs", "qwac_trust_anchors"]
 
 TEST_DIRS += ["tests"]
 
@@ -104,7 +104,6 @@ UNIFIED_SOURCES += [
     "md4.c",
     "nsCertOverrideService.cpp",
     "nsCertTree.cpp",
-    "nsClientAuthRemember.cpp",
     "nsNSSCallbacks.cpp",
     "nsNSSCertHelper.cpp",
     "nsNSSCertificate.cpp",
@@ -131,6 +130,8 @@ UNIFIED_SOURCES += [
     "PKCS11ModuleDB.cpp",
     "PSMRunnable.cpp",
     "PublicKeyPinningService.cpp",
+    "QWACs.cpp",
+    "QWACTrustDomain.cpp",
     "RootCertificateTelemetryUtils.cpp",
     "SecretDecoderRing.cpp",
     "SSLServerCertVerification.cpp",
@@ -140,6 +141,18 @@ UNIFIED_SOURCES += [
     "VerifySSLServerCertParent.cpp",
     "X509CertValidity.cpp",
 ]
+
+if CONFIG["OS_ARCH"] == "Darwin":
+    
+    
+    
+    SOURCES += [
+        "nsClientAuthRemember.cpp",
+    ]
+else:
+    UNIFIED_SOURCES += [
+        "nsClientAuthRemember.cpp",
+    ]
 
 if CONFIG["OS_ARCH"] == "WINNT":
     

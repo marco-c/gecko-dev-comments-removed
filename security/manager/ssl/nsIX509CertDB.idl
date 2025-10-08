@@ -368,4 +368,13 @@ interface nsIX509CertDB : nsISupports {
 
   [must_use]
   nsIX509Cert getAndroidCertificateFromAlias(in AString alias);
+
+  
+
+
+
+
+
+  [implicit_jscontext]
+  Promise asyncVerify1QWAC(in nsIX509Cert cert, in Array<nsIX509Cert> collectedCerts);
 };
