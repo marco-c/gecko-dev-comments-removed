@@ -178,6 +178,16 @@ class nsDocShellLoadState final {
 
   void SetIsFormSubmission(bool aIsFormSubmission);
 
+  bool NeedsCompletelyLoadedDocument() const;
+
+  void SetNeedsCompletelyLoadedDocument(bool aNeedsCompletelyLoadedDocument);
+
+  mozilla::Maybe<mozilla::dom::NavigationHistoryBehavior> HistoryBehavior()
+      const;
+
+  void SetHistoryBehavior(
+      mozilla::dom::NavigationHistoryBehavior aHistoryBehavior);
+
   uint32_t LoadType() const;
 
   void SetLoadType(uint32_t aLoadType);
@@ -544,10 +554,6 @@ class nsDocShellLoadState final {
 
   
   
-  bool mShouldNotForceReplaceInOnLoad;
-
-  
-  
   
   
   
@@ -584,6 +590,18 @@ class nsDocShellLoadState final {
   
   
   bool mIsFormSubmission;
+
+  
+  
+  bool mShouldNotForceReplaceInOnLoad;
+
+  
+  
+  bool mNeedsCompletelyLoadedDocument;
+
+  
+  
+  mozilla::Maybe<mozilla::dom::NavigationHistoryBehavior> mHistoryBehavior;
 
   
   

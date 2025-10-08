@@ -2064,7 +2064,7 @@ bool nsWindowWatcher::HaveSpecifiedSize(const WindowFeatures& features) {
 
 
 already_AddRefed<nsDocShellLoadState> nsWindowWatcher::CreateLoadState(
-    nsIURI* aUri, nsPIDOMWindowOuter* aParent) {
+    nsIURI* aUri, nsPIDOMWindowOuter* aParent, bool aIsWindowOpen) {
   MOZ_ASSERT(aUri);
 
   RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(aUri);
@@ -2092,6 +2092,13 @@ already_AddRefed<nsDocShellLoadState> nsWindowWatcher::CreateLoadState(
       loadState->SetTriggeringClassificationFlags(
           parentDoc->GetScriptTrackingFlags());
     }
+  }
+
+  
+  
+  if (aIsWindowOpen) {
+    loadState->SetHistoryBehavior(NavigationHistoryBehavior::Auto);
+    loadState->SetShouldNotForceReplaceInOnLoad(true);
   }
 
   return loadState.forget();
