@@ -3494,7 +3494,8 @@ class Document : public nsINode,
   
   MOZ_CAN_RUN_SCRIPT void HidePopover(Element& popover,
                                       bool aFocusPreviousElement,
-                                      bool aFireEvents, ErrorResult& aRv);
+                                      bool aFireEvents, Element* aSource,
+                                      ErrorResult& aRv);
 
   
   
