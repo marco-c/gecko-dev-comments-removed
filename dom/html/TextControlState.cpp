@@ -2468,26 +2468,8 @@ void TextControlState::GetValue(nsAString& aValue, bool aForDisplay) const {
     }
 
     aValue.Truncate();  
-
-    uint32_t flags = nsIDocumentEncoder::OutputLFLineBreak |
-                     nsIDocumentEncoder::OutputPreformatted |
-                     nsIDocumentEncoder::OutputPersistNBSP |
-                     nsIDocumentEncoder::OutputBodyOnly;
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     if (mEditorInitialized) {
-      AutoNoJSAPI nojsapi;
-      DebugOnly<nsresult> rv = mTextEditor->ComputeTextValue(flags, aValue);
+      DebugOnly<nsresult> rv = mTextEditor->ComputeTextValue(aValue);
       MOZ_ASSERT(aValue.FindChar(u'\r') == -1);
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to get value");
     }
@@ -2829,7 +2811,7 @@ bool TextControlState::SetValueWithTextEditor(
     IMEContentObserver* observer = GetIMEContentObserver();
     if (observer && observer->WasInitializedWith(*textEditor)) {
       nsAutoString currentValue;
-      textEditor->ComputeTextValue(0, currentValue);
+      textEditor->ComputeTextValue(currentValue);
       observer->OnTextControlValueChangedWhileNotObservable(currentValue);
     }
   }
