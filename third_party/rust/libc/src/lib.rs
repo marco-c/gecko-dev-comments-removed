@@ -4,18 +4,24 @@
 #![allow(
     renamed_and_removed_lints, 
     unknown_lints, 
-    bad_style,
+    nonstandard_style,
     overflowing_literals,
-    improper_ctypes,
-    
-    redundant_semicolon,
-    redundant_semicolons,
     unused_macros,
     unused_macro_rules,
+)]
+#![warn(
+    missing_copy_implementations,
+    missing_debug_implementations,
+    safe_packed_borrows
+)]
+
+#![warn(rust_2024_compatibility)]
+
+#![allow(
+    missing_unsafe_on_extern,
+    edition_2024_expr_fragment_specifier,
     
-    
-    
-    dead_code,
+    unsafe_op_in_unsafe_fn
 )]
 #![cfg_attr(libc_deny_warnings, deny(warnings))]
 
@@ -24,14 +30,12 @@
 #![cfg_attr(feature = "rustc-dep-of-std", allow(internal_features))]
 
 #![cfg_attr(feature = "rustc-dep-of-std", allow(static_mut_refs))]
-
-#![cfg_attr(feature = "extra_traits", deny(missing_debug_implementations))]
-#![deny(missing_copy_implementations, safe_packed_borrows)]
 #![cfg_attr(not(feature = "rustc-dep-of-std"), no_std)]
 #![cfg_attr(feature = "rustc-dep-of-std", no_core)]
 
 #[macro_use]
 mod macros;
+mod new;
 
 cfg_if! {
     if #[cfg(feature = "rustc-dep-of-std")] {
@@ -40,6 +44,9 @@ cfg_if! {
 }
 
 pub use core::ffi::c_void;
+
+#[allow(unused_imports)] 
+pub use new::*;
 
 cfg_if! {
     if #[cfg(windows)] {

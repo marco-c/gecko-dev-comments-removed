@@ -9,18 +9,6 @@ use crate::prelude::*;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 macro_rules! haiku_constant {
     ($a:tt, $b:tt, $c:tt, $d:tt) => {
         (($a as u32) << 24) + (($b as u32) << 16) + (($c as u32) << 8) + ($d as u32)
@@ -46,7 +34,7 @@ pub type thread_func = extern "C" fn(*mut c_void) -> status_t;
 
 pub type image_id = i32;
 
-e! {
+c_enum! {
     // kernel/OS.h
     pub enum thread_state {
         B_THREAD_RUNNING = 1,
@@ -403,11 +391,14 @@ s! {
     }
 
     // kernel/image.h
+    // FIXME(1.0): This should not implement `PartialEq`
+    #[allow(unpredictable_function_pointer_comparisons)]
     pub struct image_info {
         pub id: image_id,
         pub image_type: c_int,
         pub sequence: i32,
         pub init_order: i32,
+        // FIXME(1.0): these should be made optional
         pub init_routine: extern "C" fn(),
         pub term_routine: extern "C" fn(),
         pub device: crate::dev_t,
@@ -520,15 +511,6 @@ cfg_if! {
         }
 
         impl Eq for cpu_topology_node_info {}
-        impl fmt::Debug for cpu_topology_node_info {
-            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                f.debug_struct("cpu_topology_node_info")
-                    .field("id", &self.id)
-                    .field("type", &self.type_)
-                    .field("level", &self.level)
-                    .finish()
-            }
-        }
     }
 }
 
@@ -1304,17 +1286,12 @@ extern "C" {
 
 #[inline]
 pub unsafe fn get_cpu_info(firstCPU: u32, cpuCount: u32, info: *mut cpu_info) -> status_t {
-    _get_cpu_info_etc(
-        firstCPU,
-        cpuCount,
-        info,
-        core::mem::size_of::<cpu_info>() as size_t,
-    )
+    _get_cpu_info_etc(firstCPU, cpuCount, info, size_of::<cpu_info>() as size_t)
 }
 
 #[inline]
 pub unsafe fn get_area_info(id: area_id, info: *mut area_info) -> status_t {
-    _get_area_info(id, info, core::mem::size_of::<area_info>() as usize)
+    _get_area_info(id, info, size_of::<area_info>() as usize)
 }
 
 #[inline]
@@ -1323,17 +1300,12 @@ pub unsafe fn get_next_area_info(
     cookie: *mut isize,
     info: *mut area_info,
 ) -> status_t {
-    _get_next_area_info(
-        team,
-        cookie,
-        info,
-        core::mem::size_of::<area_info>() as usize,
-    )
+    _get_next_area_info(team, cookie, info, size_of::<area_info>() as usize)
 }
 
 #[inline]
 pub unsafe fn get_port_info(port: port_id, buf: *mut port_info) -> status_t {
-    _get_port_info(port, buf, core::mem::size_of::<port_info>() as size_t)
+    _get_port_info(port, buf, size_of::<port_info>() as size_t)
 }
 
 #[inline]
@@ -1342,12 +1314,7 @@ pub unsafe fn get_next_port_info(
     cookie: *mut i32,
     portInfo: *mut port_info,
 ) -> status_t {
-    _get_next_port_info(
-        port,
-        cookie,
-        portInfo,
-        core::mem::size_of::<port_info>() as size_t,
-    )
+    _get_next_port_info(port, cookie, portInfo, size_of::<port_info>() as size_t)
 }
 
 #[inline]
@@ -1360,7 +1327,7 @@ pub unsafe fn get_port_message_info_etc(
     _get_port_message_info_etc(
         port,
         info,
-        core::mem::size_of::<port_message_info>() as size_t,
+        size_of::<port_message_info>() as size_t,
         flags,
         timeout,
     )
@@ -1368,42 +1335,32 @@ pub unsafe fn get_port_message_info_etc(
 
 #[inline]
 pub unsafe fn get_sem_info(id: sem_id, info: *mut sem_info) -> status_t {
-    _get_sem_info(id, info, core::mem::size_of::<sem_info>() as size_t)
+    _get_sem_info(id, info, size_of::<sem_info>() as size_t)
 }
 
 #[inline]
 pub unsafe fn get_next_sem_info(team: team_id, cookie: *mut i32, info: *mut sem_info) -> status_t {
-    _get_next_sem_info(
-        team,
-        cookie,
-        info,
-        core::mem::size_of::<sem_info>() as size_t,
-    )
+    _get_next_sem_info(team, cookie, info, size_of::<sem_info>() as size_t)
 }
 
 #[inline]
 pub unsafe fn get_team_info(team: team_id, info: *mut team_info) -> status_t {
-    _get_team_info(team, info, core::mem::size_of::<team_info>() as size_t)
+    _get_team_info(team, info, size_of::<team_info>() as size_t)
 }
 
 #[inline]
 pub unsafe fn get_next_team_info(cookie: *mut i32, info: *mut team_info) -> status_t {
-    _get_next_team_info(cookie, info, core::mem::size_of::<team_info>() as size_t)
+    _get_next_team_info(cookie, info, size_of::<team_info>() as size_t)
 }
 
 #[inline]
 pub unsafe fn get_team_usage_info(team: team_id, who: i32, info: *mut team_usage_info) -> status_t {
-    _get_team_usage_info(
-        team,
-        who,
-        info,
-        core::mem::size_of::<team_usage_info>() as size_t,
-    )
+    _get_team_usage_info(team, who, info, size_of::<team_usage_info>() as size_t)
 }
 
 #[inline]
 pub unsafe fn get_thread_info(id: thread_id, info: *mut thread_info) -> status_t {
-    _get_thread_info(id, info, core::mem::size_of::<thread_info>() as size_t)
+    _get_thread_info(id, info, size_of::<thread_info>() as size_t)
 }
 
 #[inline]
@@ -1412,18 +1369,13 @@ pub unsafe fn get_next_thread_info(
     cookie: *mut i32,
     info: *mut thread_info,
 ) -> status_t {
-    _get_next_thread_info(
-        team,
-        cookie,
-        info,
-        core::mem::size_of::<thread_info>() as size_t,
-    )
+    _get_next_thread_info(team, cookie, info, size_of::<thread_info>() as size_t)
 }
 
 
 #[inline]
 pub unsafe fn get_image_info(image: image_id, info: *mut image_info) -> status_t {
-    _get_image_info(image, info, core::mem::size_of::<image_info>() as size_t)
+    _get_image_info(image, info, size_of::<image_info>() as size_t)
 }
 
 #[inline]
@@ -1432,10 +1384,5 @@ pub unsafe fn get_next_image_info(
     cookie: *mut i32,
     info: *mut image_info,
 ) -> status_t {
-    _get_next_image_info(
-        team,
-        cookie,
-        info,
-        core::mem::size_of::<image_info>() as size_t,
-    )
+    _get_next_image_info(team, cookie, info, size_of::<image_info>() as size_t)
 }

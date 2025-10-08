@@ -4,7 +4,7 @@ use std::{env, str};
 
 
 
-const ALLOWED_CFGS: &'static [&'static str] = &[
+const ALLOWED_CFGS: &[&str] = &[
     "emscripten_old_stat_abi",
     "espidf_time32",
     "freebsd10",
@@ -14,23 +14,28 @@ const ALLOWED_CFGS: &'static [&'static str] = &[
     "freebsd14",
     "freebsd15",
     
-    "libc_const_extern_fn",
+    "gnu_file_offset_bits64",
+    
+    "gnu_time_bits64",
     "libc_deny_warnings",
     "libc_thread_local",
-    "libc_ctest",
     
     "linux_time_bits64",
+    "musl_v1_2_3",
 ];
 
 
-const CHECK_CFG_EXTRA: &'static [(&'static str, &'static [&'static str])] = &[
+const CHECK_CFG_EXTRA: &[(&str, &[&str])] = &[
     (
         "target_os",
         &[
             "switch", "aix", "ohos", "hurd", "rtems", "visionos", "nuttx", "cygwin",
         ],
     ),
-    ("target_env", &["illumos", "wasi", "aix", "ohos"]),
+    (
+        "target_env",
+        &["illumos", "wasi", "aix", "ohos", "nto71_iosock", "nto80"],
+    ),
     (
         "target_arch",
         &["loongarch64", "mips32r6", "mips64r6", "csky"],
@@ -44,6 +49,10 @@ fn main() {
     let (rustc_minor_ver, _is_nightly) = rustc_minor_nightly();
     let rustc_dep_of_std = env::var("CARGO_FEATURE_RUSTC_DEP_OF_STD").is_ok();
     let libc_ci = env::var("LIBC_CI").is_ok();
+    let target_env = env::var("CARGO_CFG_TARGET_ENV").unwrap_or_default();
+    let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
+    let target_ptr_width = env::var("CARGO_CFG_TARGET_POINTER_WIDTH").unwrap_or_default();
+    let target_arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_default();
 
     
     
@@ -57,11 +66,9 @@ fn main() {
         println!("cargo:warning=setting FreeBSD version to {vers}");
         vers
     } else if libc_ci {
-        which_freebsd().unwrap_or(11)
-    } else if rustc_dep_of_std {
-        12
+        which_freebsd().unwrap_or(12)
     } else {
-        11
+        12
     };
 
     match which_freebsd {
@@ -80,10 +87,55 @@ fn main() {
         _ => (),
     }
 
+    let musl_v1_2_3 = env::var("RUST_LIBC_UNSTABLE_MUSL_V1_2_3").is_ok();
+    println!("cargo:rerun-if-env-changed=RUST_LIBC_UNSTABLE_MUSL_V1_2_3");
+    
+    if musl_v1_2_3 || target_arch == "loongarch64" || target_env == "ohos" {
+        
+        set_cfg("musl_v1_2_3");
+    }
     let linux_time_bits64 = env::var("RUST_LIBC_UNSTABLE_LINUX_TIME_BITS64").is_ok();
     println!("cargo:rerun-if-env-changed=RUST_LIBC_UNSTABLE_LINUX_TIME_BITS64");
     if linux_time_bits64 {
         set_cfg("linux_time_bits64");
+    }
+    println!("cargo:rerun-if-env-changed=RUST_LIBC_UNSTABLE_GNU_FILE_OFFSET_BITS");
+    println!("cargo:rerun-if-env-changed=RUST_LIBC_UNSTABLE_GNU_TIME_BITS");
+    if target_env == "gnu"
+        && target_os == "linux"
+        && target_ptr_width == "32"
+        && target_arch != "riscv32"
+        && target_arch != "x86_64"
+    {
+        let defaultbits = "32".to_string();
+        let (timebits, filebits) = match (
+            env::var("RUST_LIBC_UNSTABLE_GNU_TIME_BITS"),
+            env::var("RUST_LIBC_UNSTABLE_GNU_FILE_OFFSET_BITS"),
+        ) {
+            (Ok(_), Ok(_)) => panic!("Do not set both RUST_LIBC_UNSTABLE_GNU_TIME_BITS and RUST_LIBC_UNSTABLE_GNU_FILE_OFFSET_BITS"),
+            (Err(_), Err(_)) => (defaultbits.clone(), defaultbits.clone()),
+            (Ok(tb), Err(_)) if tb == "64" => (tb.clone(), tb.clone()),
+            (Ok(tb), Err(_)) if tb == "32" => (tb, defaultbits.clone()),
+            (Ok(_), Err(_)) => panic!("Invalid value for RUST_LIBC_UNSTABLE_GNU_TIME_BITS, must be 32 or 64"),
+            (Err(_), Ok(fb)) if fb == "32" || fb == "64" => (defaultbits.clone(), fb),
+            (Err(_), Ok(_)) => panic!("Invalid value for RUST_LIBC_UNSTABLE_GNU_FILE_OFFSET_BITS, must be 32 or 64"),
+        };
+        let valid_bits = ["32", "64"];
+        assert!(
+            valid_bits.contains(&filebits.as_str()) && valid_bits.contains(&timebits.as_str()),
+            "Invalid value for RUST_LIBC_UNSTABLE_GNU_TIME_BITS or RUST_LIBC_UNSTABLE_GNU_FILE_OFFSET_BITS, must be 32, 64 or unset"
+        );
+        assert!(
+            !(filebits == "32" && timebits == "64"),
+            "RUST_LIBC_UNSTABLE_GNU_FILE_OFFSET_BITS must be 64 or unset if RUST_LIBC_UNSTABLE_GNU_TIME_BITS is 64"
+        );
+        if timebits == "64" {
+            set_cfg("linux_time_bits64");
+            set_cfg("gnu_time_bits64");
+        }
+        if filebits == "64" {
+            set_cfg("gnu_file_offset_bits64");
+        }
     }
 
     
@@ -97,24 +149,21 @@ fn main() {
     }
 
     
-    set_cfg("libc_const_extern_fn");
-
-    
     
     if rustc_minor_ver >= 80 {
         for cfg in ALLOWED_CFGS {
             if rustc_minor_ver >= 75 {
-                println!("cargo:rustc-check-cfg=cfg({})", cfg);
+                println!("cargo:rustc-check-cfg=cfg({cfg})");
             } else {
-                println!("cargo:rustc-check-cfg=values({})", cfg);
+                println!("cargo:rustc-check-cfg=values({cfg})");
             }
         }
         for &(name, values) in CHECK_CFG_EXTRA {
             let values = values.join("\",\"");
             if rustc_minor_ver >= 75 {
-                println!("cargo:rustc-check-cfg=cfg({},values(\"{}\"))", name, values);
+                println!("cargo:rustc-check-cfg=cfg({name},values(\"{values}\"))");
             } else {
-                println!("cargo:rustc-check-cfg=values({},\"{}\")", name, values);
+                println!("cargo:rustc-check-cfg=values({name},\"{values}\")");
             }
         }
     }
@@ -143,12 +192,11 @@ fn rustc_version_cmd(is_clippy_driver: bool) -> Output {
 
     let output = cmd.output().expect("Failed to get rustc version");
 
-    if !output.status.success() {
-        panic!(
-            "failed to run rustc: {}",
-            String::from_utf8_lossy(output.stderr.as_slice())
-        );
-    }
+    assert!(
+        output.status.success(),
+        "failed to run rustc: {}",
+        String::from_utf8_lossy(output.stderr.as_slice())
+    );
 
     output
 }
@@ -175,9 +223,11 @@ fn rustc_minor_nightly() -> (u32, bool) {
 
     let mut pieces = version.split('.');
 
-    if pieces.next() != Some("rustc 1") {
-        panic!("Failed to get rustc version");
-    }
+    assert_eq!(
+        pieces.next(),
+        Some("rustc 1"),
+        "Failed to get rustc version"
+    );
 
     let minor = pieces.next();
 
@@ -187,9 +237,9 @@ fn rustc_minor_nightly() -> (u32, bool) {
     
     
     let nightly_raw = otry!(pieces.next()).split('-').nth(1);
-    let nightly = nightly_raw
-        .map(|raw| raw.starts_with("dev") || raw.starts_with("nightly"))
-        .unwrap_or(false);
+    let nightly = nightly_raw.map_or(false, |raw| {
+        raw.starts_with("dev") || raw.starts_with("nightly")
+    });
     let minor = otry!(otry!(minor).parse().ok());
 
     (minor, nightly)
@@ -215,7 +265,13 @@ fn which_freebsd() -> Option<i32> {
 }
 
 fn emcc_version_code() -> Option<u64> {
-    let output = Command::new("emcc").arg("-dumpversion").output().ok()?;
+    let emcc = if cfg!(target_os = "windows") {
+        "emcc.bat"
+    } else {
+        "emcc"
+    };
+
+    let output = Command::new(emcc).arg("-dumpversion").output().ok()?;
     if !output.status.success() {
         return None;
     }
@@ -234,8 +290,9 @@ fn emcc_version_code() -> Option<u64> {
 }
 
 fn set_cfg(cfg: &str) {
-    if !ALLOWED_CFGS.contains(&cfg) {
-        panic!("trying to set cfg {}, but it is not in ALLOWED_CFGS", cfg);
-    }
-    println!("cargo:rustc-cfg={}", cfg);
+    assert!(
+        ALLOWED_CFGS.contains(&cfg),
+        "trying to set cfg {cfg}, but it is not in ALLOWED_CFGS",
+    );
+    println!("cargo:rustc-cfg={cfg}");
 }
