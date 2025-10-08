@@ -163,7 +163,7 @@ nsresult HTMLFrameSetElement::ParseRowCol(const nsAttrValue& aValue,
   static_assert(NS_MAX_FRAMESET_SPEC_COUNT * sizeof(nsFramesetSpec) < (1 << 30),
                 "Too many frameset specs allowed to allocate");
   int32_t commaX = spec.FindChar(sComma);
-  int32_t count = 1;
+  size_t count = 1;
   while (commaX != kNotFound && count < NS_MAX_FRAMESET_SPEC_COUNT) {
     count++;
     commaX = spec.FindChar(sComma, commaX + 1);
@@ -181,15 +181,15 @@ nsresult HTMLFrameSetElement::ParseRowCol(const nsAttrValue& aValue,
 
   
 
-  int32_t start = 0;
-  int32_t specLen = spec.Length();
+  size_t start = 0;
+  size_t specLen = spec.Length();
 
-  for (int32_t i = 0; i < count; i++) {
+  for (size_t i = 0; i < count; i++) {
     
     commaX = spec.FindChar(sComma, start);
-    NS_ASSERTION(i == count - 1 || commaX != kNotFound,
-                 "Failed to find comma, somehow");
-    int32_t end = (commaX == kNotFound) ? specLen : commaX;
+    MOZ_ASSERT(i == count - 1 || commaX != kNotFound,
+               "Failed to find comma, somehow");
+    size_t end = (commaX == kNotFound) ? specLen : commaX;
 
     
     
@@ -197,7 +197,7 @@ nsresult HTMLFrameSetElement::ParseRowCol(const nsAttrValue& aValue,
     specs[i].mUnit = eFramesetUnit_Fixed;
     specs[i].mValue = 0;
     if (end > start) {
-      int32_t numberEnd = end;
+      size_t numberEnd = end;
       char16_t ch = spec.CharAt(numberEnd - 1);
       if (sAster == ch) {
         specs[i].mUnit = eFramesetUnit_Relative;
@@ -240,18 +240,6 @@ nsresult HTMLFrameSetElement::ParseRowCol(const nsAttrValue& aValue,
       }
 
       
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-
-      
       if (specs[i].mValue < 0) {
         specs[i].mValue = 0;
       }
@@ -259,7 +247,7 @@ nsresult HTMLFrameSetElement::ParseRowCol(const nsAttrValue& aValue,
     }
   }
 
-  aNumSpecs = count;
+  aNumSpecs = static_cast<int32_t>(count);
   
   *aSpecs = std::move(specs);
 
