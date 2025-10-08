@@ -3435,6 +3435,11 @@ pref("browser.backup.errorCode", 0);
 pref("browser.backup.backup-retry-limit", 100);
 pref("browser.backup.disabled-on-idle-backup-retry", false);
 
+
+
+
+pref("browser.backup.max-num-unremovable-staging-items", 5);
+
 #ifdef NIGHTLY_BUILD
   
   pref("browser.profiles.enabled", true);
