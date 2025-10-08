@@ -500,10 +500,10 @@ class TranslationsBencher {
 
 
   static #PAGE_DATA = {
-    [ENGLISH_BENCHMARK_PAGE_URL]: {
-      pageLanguage: "en",
-      tokenCount: 12955,
-      wordCount: 9575,
+    [SPANISH_BENCHMARK_PAGE_URL]: {
+      pageLanguage: "es",
+      tokenCount: 10966,
+      wordCount: 6944,
     },
   };
 
@@ -689,12 +689,10 @@ class TranslationsBencher {
 
 
 
-
   static async benchmarkTranslation({
     page,
     sourceLanguage,
     targetLanguage,
-    architecture,
     speedBenchCount,
     memoryBenchCount,
     memorySampleInterval = 10,
@@ -745,7 +743,6 @@ class TranslationsBencher {
       journal,
       sourceLanguage,
       targetLanguage,
-      architecture,
       memoryBenchCount,
       memorySampleInterval,
     });
@@ -755,7 +752,6 @@ class TranslationsBencher {
       journal,
       sourceLanguage,
       targetLanguage,
-      architecture,
       wordCount,
       tokenCount,
       speedBenchCount,
@@ -778,13 +774,11 @@ class TranslationsBencher {
 
 
 
-
   static async #benchmarkTranslationMemory({
     page,
     journal,
     sourceLanguage,
     targetLanguage,
-    architecture,
     memoryBenchCount,
     memorySampleInterval,
   }) {
@@ -796,7 +790,6 @@ class TranslationsBencher {
           { fromLang: sourceLanguage, toLang: "en" },
           { fromLang: "en", toLang: targetLanguage },
         ],
-        architecture,
         prefs: [["browser.translations.logLevel", "Error"]],
         contentEagerMode: true,
       });
@@ -810,8 +803,12 @@ class TranslationsBencher {
         runInPage
       );
 
+      await FullPageTranslationsTestUtils.assertTranslationsButton(
+        { button: true, circleArrows: false, locale: false, icon: true },
+        "The button is available."
+      );
+
       await FullPageTranslationsTestUtils.openPanel({
-        openFromAppMenu: true,
         onOpenPanel: FullPageTranslationsTestUtils.assertPanelViewIntro,
       });
 
@@ -903,13 +900,11 @@ class TranslationsBencher {
 
 
 
-
   static async #benchmarkTranslationSpeed({
     page,
     journal,
     sourceLanguage,
     targetLanguage,
-    architecture,
     wordCount,
     tokenCount,
     speedBenchCount,
@@ -922,7 +917,6 @@ class TranslationsBencher {
           { fromLang: sourceLanguage, toLang: "en" },
           { fromLang: "en", toLang: targetLanguage },
         ],
-        architecture,
         prefs: [["browser.translations.logLevel", "Error"]],
         contentEagerMode: true,
       });
@@ -931,8 +925,12 @@ class TranslationsBencher {
         runInPage
       );
 
+      await FullPageTranslationsTestUtils.assertTranslationsButton(
+        { button: true, circleArrows: false, locale: false, icon: true },
+        "The button is available."
+      );
+
       await FullPageTranslationsTestUtils.openPanel({
-        openFromAppMenu: true,
         onOpenPanel: FullPageTranslationsTestUtils.assertPanelViewIntro,
       });
 
