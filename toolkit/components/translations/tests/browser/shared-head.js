@@ -203,6 +203,11 @@ async function openAboutTranslations({
   await loadNewPage(tab.linkedBrowser, "about:translations");
 
   
+  
+  await ensureWindowSize(window, 1600 * Math.SQRT1_2, 900 * Math.SQRT1_2);
+  FullZoom.setZoom(Math.SQRT1_2, tab.linkedBrowser);
+
+  
 
 
   const resolveDownloads = async count => {
@@ -2814,6 +2819,13 @@ class AboutTranslationsTestUtils {
 
 
     static TranslationComplete = "AboutTranslations:TranslationComplete";
+
+    
+
+
+
+
+    static PageOrientationChanged = "AboutTranslations:PageOrientationChanged";
 
     
 

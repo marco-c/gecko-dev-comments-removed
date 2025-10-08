@@ -1,0 +1,240 @@
+
+
+
+"use strict";
+
+
+
+const expandingInput = `\
+ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß \
+ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß \
+ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß \
+ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß \
+ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß \
+ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß \
+ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß \
+ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß \
+ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß \
+ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß \
+ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß \
+ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß ß`;
+
+
+
+
+
+add_task(
+  async function test_about_translations_horizontal_orientation_zoom_changes() {
+    const { aboutTranslationsTestUtils, cleanup } = await openAboutTranslations(
+      {
+        languagePairs: [
+          { fromLang: "de", toLang: "en" },
+          { fromLang: "en", toLang: "de" },
+        ],
+        autoDownloadFromRemoteSettings: true,
+      }
+    );
+
+    info(
+      "The text areas should expand when a large input is pasted as the source."
+    );
+    await aboutTranslationsTestUtils.assertEvents(
+      {
+        expected: [
+          [
+            AboutTranslationsTestUtils.Events.TranslationRequested,
+            { translationId: 1 },
+          ],
+          [AboutTranslationsTestUtils.Events.ShowTranslatingPlaceholder],
+          [
+            AboutTranslationsTestUtils.Events.TranslationComplete,
+            { translationId: 1 },
+          ],
+          [
+            AboutTranslationsTestUtils.Events.TextAreaHeightsChanged,
+            {
+              textAreaHeights: "increased",
+            },
+          ],
+        ],
+        unexpected: [AboutTranslationsTestUtils.Events.PageOrientationChanged],
+      },
+      async () => {
+        await aboutTranslationsTestUtils.setSourceLanguageSelectorValue("de");
+        await aboutTranslationsTestUtils.setTargetLanguageSelectorValue("en");
+        await aboutTranslationsTestUtils.setSourceTextAreaValue(expandingInput);
+      }
+    );
+
+    await aboutTranslationsTestUtils.assertTranslatedText({
+      sourceLanguage: "de",
+      targetLanguage: "en",
+      sourceText: expandingInput,
+    });
+
+    info(
+      "The text area height should not change when the horizontal orientation is made wider, but remains horizontal."
+    );
+    await aboutTranslationsTestUtils.assertEvents(
+      {
+        unexpected: [
+          AboutTranslationsTestUtils.Events.TextAreaHeightsChanged,
+          AboutTranslationsTestUtils.Events.PageOrientationChanged,
+        ],
+      },
+      () => {
+        FullZoom.setZoom(0.9 * Math.SQRT1_2);
+      }
+    );
+
+    info(
+      "The text area height should not change when the horizontal orientation is made narrower, but remains horizontal."
+    );
+    await aboutTranslationsTestUtils.assertEvents(
+      {
+        unexpected: [
+          AboutTranslationsTestUtils.Events.TextAreaHeightsChanged,
+          AboutTranslationsTestUtils.Events.PageOrientationChanged,
+        ],
+      },
+      () => {
+        FullZoom.setZoom(1.1 * Math.SQRT1_2);
+      }
+    );
+
+    await cleanup();
+  }
+);
+
+
+
+
+
+
+add_task(
+  async function test_about_translations_vertical_orientation_zoom_changes() {
+    const { aboutTranslationsTestUtils, cleanup } = await openAboutTranslations(
+      {
+        languagePairs: [
+          { fromLang: "de", toLang: "en" },
+          { fromLang: "en", toLang: "de" },
+        ],
+        autoDownloadFromRemoteSettings: true,
+      }
+    );
+
+    info(
+      "The text-area heights should not change when transitioning to a vertical orientation with no content."
+    );
+    await aboutTranslationsTestUtils.assertEvents(
+      {
+        expected: [
+          [
+            AboutTranslationsTestUtils.Events.PageOrientationChanged,
+            { orientation: "vertical" },
+          ],
+        ],
+        unexpected: [AboutTranslationsTestUtils.Events.TextAreaHeightsChanged],
+      },
+      () => {
+        FullZoom.setZoom(1.5 * Math.SQRT1_2);
+      }
+    );
+
+    info(
+      "The text areas should expand when a large input is pasted as the source."
+    );
+    await aboutTranslationsTestUtils.assertEvents(
+      {
+        expected: [
+          [
+            AboutTranslationsTestUtils.Events.TranslationRequested,
+            { translationId: 1 },
+          ],
+          [AboutTranslationsTestUtils.Events.ShowTranslatingPlaceholder],
+          [
+            AboutTranslationsTestUtils.Events.TranslationComplete,
+            { translationId: 1 },
+          ],
+          [
+            AboutTranslationsTestUtils.Events.TextAreaHeightsChanged,
+            {
+              textAreaHeights: "increased",
+            },
+          ],
+        ],
+        unexpected: [AboutTranslationsTestUtils.Events.PageOrientationChanged],
+      },
+      async () => {
+        await aboutTranslationsTestUtils.setSourceLanguageSelectorValue("de");
+        await aboutTranslationsTestUtils.setTargetLanguageSelectorValue("en");
+        await aboutTranslationsTestUtils.setSourceTextAreaValue(expandingInput);
+      }
+    );
+
+    await aboutTranslationsTestUtils.assertTranslatedText({
+      sourceLanguage: "de",
+      targetLanguage: "en",
+      sourceText: expandingInput,
+    });
+
+    info(
+      "The text-area heights should increase when making the vertical orientation narrower."
+    );
+    await aboutTranslationsTestUtils.assertEvents(
+      {
+        expected: [
+          [
+            AboutTranslationsTestUtils.Events.TextAreaHeightsChanged,
+            { textAreaHeights: "increased" },
+          ],
+        ],
+        unexpected: [AboutTranslationsTestUtils.Events.PageOrientationChanged],
+      },
+      () => {
+        FullZoom.setZoom(4 * Math.SQRT1_2);
+      }
+    );
+
+    info(
+      "The text-area heights should decrease when making the vertical orientation wider."
+    );
+    await aboutTranslationsTestUtils.assertEvents(
+      {
+        expected: [
+          [
+            AboutTranslationsTestUtils.Events.TextAreaHeightsChanged,
+            { textAreaHeights: "decreased" },
+          ],
+        ],
+        unexpected: [AboutTranslationsTestUtils.Events.PageOrientationChanged],
+      },
+      () => {
+        FullZoom.setZoom(1.5 * Math.SQRT1_2);
+      }
+    );
+
+    info(
+      "The text-area heights should increase when transitioning from vertical to horizontal orientation with content."
+    );
+    await aboutTranslationsTestUtils.assertEvents(
+      {
+        expected: [
+          [
+            AboutTranslationsTestUtils.Events.PageOrientationChanged,
+            { orientation: "horizontal" },
+          ],
+          [
+            AboutTranslationsTestUtils.Events.TextAreaHeightsChanged,
+            { textAreaHeights: "increased" },
+          ],
+        ],
+      },
+      () => {
+        FullZoom.setZoom(1.0 * Math.SQRT1_2);
+      }
+    );
+
+    await cleanup();
+  }
+);
