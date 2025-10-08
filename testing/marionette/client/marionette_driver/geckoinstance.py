@@ -45,6 +45,8 @@ class GeckoInstance:
         
         "apz.content_response_timeout": 60000,
         
+        "browser.discovery.enabled": False,
+        
         "browser.http.blank_page_with_error_response.enabled": True,
         
         "browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features": False,
@@ -60,6 +62,8 @@ class GeckoInstance:
         "browser.region.network.url": "",
         
         "browser.topsites.contile.enabled": False,
+        
+        "browser.translations.enable": False,
         
         "browser.uitour.enabled": False,
         
@@ -100,6 +104,9 @@ class GeckoInstance:
         
         "extensions.autoDisableScopes": 0,
         "extensions.enabledScopes": 5,
+        
+        "extensions.formautofill.addresses.enabled": False,
+        "extensions.formautofill.creditCards.enabled": False,
         
         "extensions.getAddons.cache.enabled": False,
         
@@ -159,6 +166,7 @@ class GeckoInstance:
         "network.dns.native_https_query": False,
         
         "privacy.trackingprotection.enabled": False,
+        "privacy.trackingprotection.pbmode.enabled": False,
         
         "remote.prefs.recommended": False,
         
@@ -174,6 +182,9 @@ class GeckoInstance:
         
         
         "signon.rememberSignons": False,
+        
+        "signon.management.page.breach-alerts.enabled": False,
+        "signon.management.page.vulnerable-passwords.enabled": False,
         
         
         "termsofuse.bypassNotification": True,
