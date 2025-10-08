@@ -1,4 +1,4 @@
-use std::{
+use core::{
     cmp::{Eq, Ordering},
     hash::{Hash, Hasher},
     iter::FromIterator,
@@ -20,9 +20,9 @@ use super::Value;
 pub struct Map(pub(crate) MapInner);
 
 #[cfg(not(feature = "indexmap"))]
-type MapInner = std::collections::BTreeMap<Value, Value>;
+type MapInner = alloc::collections::BTreeMap<Value, Value>;
 #[cfg(feature = "indexmap")]
-type MapInner = indexmap::IndexMap<Value, Value>;
+type MapInner = indexmap::IndexMap<Value, Value, std::collections::hash_map::RandomState>;
 
 impl Map {
     
@@ -181,6 +181,8 @@ impl Hash for Map {
 
 #[cfg(test)]
 mod tests {
+    use alloc::{vec, vec::Vec};
+
     use super::{Map, Value};
 
     #[test]
@@ -241,6 +243,7 @@ mod tests {
         assert_eq!(map.remove(&Value::from("a")), None);
     }
 
+    #[cfg(feature = "std")]
     #[test]
     fn map_hash() {
         assert_same_hash(&Map::new(), &Map::new());
@@ -254,13 +257,14 @@ mod tests {
         );
     }
 
+    #[cfg(feature = "std")]
     fn assert_same_hash(a: &Map, b: &Map) {
+        use core::hash::{Hash, Hasher};
         use std::collections::hash_map::DefaultHasher;
-        use std::hash::{Hash, Hasher};
 
         assert_eq!(a, b);
         assert!(a.cmp(b).is_eq());
-        assert_eq!(a.partial_cmp(b), Some(std::cmp::Ordering::Equal));
+        assert_eq!(a.partial_cmp(b), Some(core::cmp::Ordering::Equal));
 
         let mut hasher = DefaultHasher::new();
         a.hash(&mut hasher);

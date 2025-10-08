@@ -5365,7 +5365,7 @@ bitflags::bitflags! {
 }
 
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct BufferTransition<T> {
     
     pub buffer: T,
@@ -5668,7 +5668,7 @@ bitflags::bitflags! {
 }
 
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct TextureTransition<T> {
     
     pub texture: T,

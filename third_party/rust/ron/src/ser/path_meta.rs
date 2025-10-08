@@ -98,9 +98,15 @@
 
 
 
-use std::collections::HashMap;
+use alloc::string::String;
 
 use serde_derive::{Deserialize, Serialize};
+
+#[cfg(feature = "std")]
+use std::collections::HashMap as FieldsInner;
+
+#[cfg(not(feature = "std"))]
+use alloc::collections::BTreeMap as FieldsInner;
 
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -234,7 +240,7 @@ impl Field {
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct Fields {
-    fields: HashMap<String, Field>,
+    fields: FieldsInner<String, Field>,
 }
 
 impl Fields {

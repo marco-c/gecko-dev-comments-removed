@@ -462,6 +462,10 @@ pub struct Surface {
 }
 
 impl Surface {
+    pub unsafe fn raw_handle(&self) -> vk::SurfaceKHR {
+        self.raw
+    }
+
     
     
     
@@ -959,6 +963,13 @@ impl Texture {
     pub unsafe fn raw_handle(&self) -> vk::Image {
         self.raw
     }
+
+    
+    
+    
+    pub unsafe fn external_memory(&self) -> Option<vk::DeviceMemory> {
+        self.external_memory
+    }
 }
 
 #[derive(Debug)]
@@ -1001,13 +1012,25 @@ pub struct Sampler {
 
 impl crate::DynSampler for Sampler {}
 
+
+
+
+#[derive(Copy, Clone, Debug)]
+struct BindingInfo {
+    binding: u32,
+    binding_array_size: Option<NonZeroU32>,
+}
+
 #[derive(Debug)]
 pub struct BindGroupLayout {
     raw: vk::DescriptorSetLayout,
     desc_count: gpu_descriptor::DescriptorTotalCount,
-    types: Box<[(vk::DescriptorType, u32)]>,
     
-    binding_arrays: Vec<(u32, NonZeroU32)>,
+    entries: Box<[wgt::BindGroupLayoutEntry]>,
+    
+    
+    binding_map: Vec<(u32, BindingInfo)>,
+    contains_binding_arrays: bool,
 }
 
 impl crate::DynBindGroupLayout for BindGroupLayout {}
@@ -1015,7 +1038,7 @@ impl crate::DynBindGroupLayout for BindGroupLayout {}
 #[derive(Debug)]
 pub struct PipelineLayout {
     raw: vk::PipelineLayout,
-    binding_arrays: naga::back::spv::BindingMap,
+    binding_map: naga::back::spv::BindingMap,
 }
 
 impl crate::DynPipelineLayout for PipelineLayout {}

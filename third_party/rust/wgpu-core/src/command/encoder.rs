@@ -1,22 +1,45 @@
 use alloc::{sync::Arc, vec::Vec};
 
 use crate::{
-    command::memory_init::CommandBufferTextureMemoryActions, device::Device,
-    init_tracker::BufferInitTrackerAction, ray_tracing::AsAction, snatch::SnatchGuard,
+    command::memory_init::CommandBufferTextureMemoryActions,
+    device::{queue::TempResource, Device},
+    init_tracker::BufferInitTrackerAction,
+    ray_tracing::AsAction,
+    snatch::SnatchGuard,
     track::Tracker,
 };
 
 
 
-pub(crate) struct EncodingState<'snatch_guard, 'cmd_enc, 'raw_encoder> {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/// cbindgen:ignore
+pub(crate) struct EncodingState<'snatch_guard, 'cmd_enc, E: ?Sized = dyn hal::DynCommandEncoder> {
     pub(crate) device: &'cmd_enc Arc<Device>,
 
-    pub(crate) raw_encoder: &'raw_encoder mut dyn hal::DynCommandEncoder,
+    pub(crate) raw_encoder: &'cmd_enc mut E,
 
     pub(crate) tracker: &'cmd_enc mut Tracker,
     pub(crate) buffer_memory_init_actions: &'cmd_enc mut Vec<BufferInitTrackerAction>,
     pub(crate) texture_memory_actions: &'cmd_enc mut CommandBufferTextureMemoryActions,
     pub(crate) as_actions: &'cmd_enc mut Vec<AsAction>,
+    pub(crate) temp_resources: &'cmd_enc mut Vec<TempResource>,
     pub(crate) indirect_draw_validation_resources:
         &'cmd_enc mut crate::indirect_validation::DrawResources,
 

@@ -119,9 +119,8 @@ pub struct BindTarget {
     pub mutable: bool,
 }
 
-#[cfg(any(feature = "serialize", feature = "deserialize"))]
-#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
-#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+#[cfg(feature = "deserialize")]
+#[derive(serde::Deserialize)]
 struct BindingMapSerialization {
     resource_binding: crate::ResourceBinding,
     bind_target: BindTarget,
@@ -419,6 +418,17 @@ pub enum VertexFormat {
 }
 
 
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+pub enum VertexBufferStepMode {
+    Constant,
+    #[default]
+    ByVertex,
+    ByInstance,
+}
+
+
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
@@ -447,8 +457,7 @@ pub struct VertexBufferMapping {
     
     pub stride: u32,
     
-    
-    pub indexed_by_vertex: bool,
+    pub step_mode: VertexBufferStepMode,
     
     pub attributes: Vec<AttributeMapping>,
 }

@@ -87,6 +87,7 @@ impl Writer {
             constant_ids: HandleVec::new(),
             cached_constants: crate::FastHashMap::default(),
             global_variables: HandleVec::new(),
+            fake_missing_bindings: options.fake_missing_bindings,
             binding_map: options.binding_map.clone(),
             saved_cached: CachedExpressions::default(),
             gl450_ext_inst_id,
@@ -149,6 +150,7 @@ impl Writer {
             force_loop_bounding: self.force_loop_bounding,
             use_storage_input_output_16: self.use_storage_input_output_16,
             capabilities_available: take(&mut self.capabilities_available),
+            fake_missing_bindings: self.fake_missing_bindings,
             binding_map: take(&mut self.binding_map),
 
             
@@ -467,6 +469,26 @@ impl Writer {
             | crate::TypeInner::Struct { .. }
             | crate::TypeInner::BindingArray { .. } => return None,
         })
+    }
+
+    
+    
+    
+    
+    
+    fn resolve_resource_binding(
+        &self,
+        res_binding: &crate::ResourceBinding,
+    ) -> Result<BindingInfo, Error> {
+        match self.binding_map.get(res_binding) {
+            Some(target) => Ok(*target),
+            None if self.fake_missing_bindings => Ok(BindingInfo {
+                descriptor_set: res_binding.group,
+                binding: res_binding.binding,
+                binding_array_size: None,
+            }),
+            None => Err(Error::MissingBinding(*res_binding)),
+        }
     }
 
     
@@ -2241,13 +2263,11 @@ impl Writer {
         
         let mut substitute_inner_type_lookup = None;
         if let Some(ref res_binding) = global_variable.binding {
-            self.decorate(id, Decoration::DescriptorSet, &[res_binding.group]);
-            self.decorate(id, Decoration::Binding, &[res_binding.binding]);
+            let bind_target = self.resolve_resource_binding(res_binding)?;
+            self.decorate(id, Decoration::DescriptorSet, &[bind_target.descriptor_set]);
+            self.decorate(id, Decoration::Binding, &[bind_target.binding]);
 
-            if let Some(&BindingInfo {
-                binding_array_size: Some(remapped_binding_array_size),
-            }) = self.binding_map.get(res_binding)
-            {
+            if let Some(remapped_binding_array_size) = bind_target.binding_array_size {
                 if let crate::TypeInner::BindingArray { base, .. } =
                     ir_module.types[global_variable.ty].inner
                 {

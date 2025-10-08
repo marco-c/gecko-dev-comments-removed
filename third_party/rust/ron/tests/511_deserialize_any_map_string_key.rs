@@ -17,7 +17,7 @@ fn test_map_custom_deserialize() {
                 type Value = CustomMap;
 
                 
-                fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                fn expecting(&self, formatter: &mut core::fmt::Formatter) -> core::fmt::Result {
                     write!(formatter, "a map with string keys and values")
                 }
                 
