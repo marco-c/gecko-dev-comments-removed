@@ -592,6 +592,8 @@ add_task(async function test_too_long_dictionary_url() {
   [req, data] = await channelOpenPromise(chan);
 
   try {
+    
+    
     let headerValue = req.getRequestHeader("Available-Dictionary");
     Assert.ok(false, "Too-long dictionary was offered in Available-Dictionary");
   } catch (e) {
