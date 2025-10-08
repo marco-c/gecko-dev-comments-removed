@@ -1,0 +1,9 @@
+
+
+
+
+pub use crate::*;
+
+extern "C" {
+    pub fn CERT_ExtractPublicKey(cert: *mut CERTCertificate) -> *mut SECKEYPublicKey;
+}
