@@ -88,6 +88,8 @@ struct WindowProcMarker {
   static MarkerSchema MarkerTypeDisplay() {
     using MS = MarkerSchema;
     MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
+    schema.AddKeyFormat("messageLoop", MS::Format::String,
+                        MS::PayloadFlags::Hidden);
     schema.AddKeyFormat("uMsg", MS::Format::Integer);
     
     schema.AddKeyFormat("name", MS::Format::String, MS::PayloadFlags::Hidden);
