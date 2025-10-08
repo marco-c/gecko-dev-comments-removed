@@ -19,7 +19,6 @@
 #include "nsProxyRelease.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/Mutex.h"
-#include "mozilla/StaticMutex.h"
 #include "mozilla/AtomicBitfields.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/TimeStamp.h"
@@ -112,7 +111,7 @@ class CacheStorageService final : public nsICacheStorageService,
   static bool IsRunning() { return sSelf && !sSelf->mShutdown; }
   static bool IsOnManagementThread();
   already_AddRefed<nsIEventTarget> Thread() const;
-  StaticMutex& Lock() { return sLock; }
+  mozilla::Mutex& Lock() { return sLock; }
 
   
   struct ForcedValidData {
@@ -288,9 +287,7 @@ class CacheStorageService final : public nsICacheStorageService,
 
 
 
-
-  void CacheFileDoomed(const nsACString& aKey,
-                       nsILoadContextInfo* aLoadContextInfo,
+  void CacheFileDoomed(nsILoadContextInfo* aLoadContextInfo,
                        const nsACString& aIdExtension,
                        const nsACString& aURISpec);
 
@@ -347,7 +344,7 @@ class CacheStorageService final : public nsICacheStorageService,
 
   static CacheStorageService* sSelf;
 
-  static StaticMutex sLock;
+  static mozilla::Mutex sLock;
   mozilla::Mutex mForcedValidEntriesLock{
       "CacheStorageService.mForcedValidEntriesLock"};
 

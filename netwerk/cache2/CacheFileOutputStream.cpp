@@ -127,12 +127,6 @@ CacheFileOutputStream::Write(const char* aBuf, uint32_t aCount,
 
   *_retval = aCount;
 
-  if (mDict) {
-    
-    
-    mDict->AccumulateHash(aBuf, aCount);
-  }
-
   while (aCount) {
     EnsureCorrectChunk(false);
     if (NS_FAILED(mStatus)) {
