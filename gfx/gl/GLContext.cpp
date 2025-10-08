@@ -668,7 +668,6 @@ bool GLContext::InitImpl() {
       "NVIDIA Tegra",
       "Android Emulator",
       "Gallium 0.4 on llvmpipe",
-      "Intel HD Graphics 3000 OpenGL Engine",
       "Microsoft Basic Render Driver",
       "Samsung Xclipse",
       "Unknown"};
@@ -1748,15 +1747,6 @@ void GLContext::InitExtensions() {
     }
 
 #ifdef XP_MACOSX
-    
-    
-    
-    
-    
-    if (Renderer() == GLRenderer::IntelHD3000) {
-      MarkExtensionUnsupported(EXT_texture_compression_s3tc);
-    }
-
     
     
     
