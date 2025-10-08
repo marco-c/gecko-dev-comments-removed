@@ -1720,24 +1720,7 @@ nsresult TextControlState::PrepareEditor(const nsAString* aValue) {
     
     newTextEditor = new TextEditor();
     preDestroyer.Init(newTextEditor);
-
-    
-    
-    nsresult rv = mBoundFrame->UpdateValueDisplay(true);
-    if (NS_FAILED(rv)) {
-      NS_WARNING("nsTextControlFrame::UpdateValueDisplay() failed");
-      return rv;
-    }
   } else {
-    if (aValue || !mEditorInitialized) {
-      
-      nsresult rv = mBoundFrame->UpdateValueDisplay(true, aValue);
-      if (NS_FAILED(rv)) {
-        NS_WARNING("nsTextControlFrame::UpdateValueDisplay() failed");
-        return rv;
-      }
-    }
-
     newTextEditor = mTextEditor;  
 
     
