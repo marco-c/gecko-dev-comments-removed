@@ -354,8 +354,8 @@ void nsHTMLFramesetFrame::SetInitialChildList(ChildListID aListID,
 
 
 void nsHTMLFramesetFrame::Scale(nscoord aDesired, int32_t aNumIndicies,
-                                int32_t* aIndicies, int32_t aNumItems,
-                                nsTArray<int32_t>& aItems) {
+                                const nsTArray<int32_t>& aIndicies,
+                                int32_t aNumItems, nsTArray<int32_t>& aItems) {
   int32_t actual = 0;
   
   for (int32_t i = 0; i < aNumIndicies; i++) {
@@ -409,16 +409,15 @@ void nsHTMLFramesetFrame::CalculateRowCol(nsPresContext* aPresContext,
 
   int32_t fixedTotal = 0;
   int32_t numFixed = 0;
-  auto fixed = MakeUnique<int32_t[]>(aNumSpecs);
+  nsTArray<int32_t> fixed;
+  fixed.SetLength(aNumSpecs);
   int32_t numPercent = 0;
-  auto percent = MakeUnique<int32_t[]>(aNumSpecs);
+  nsTArray<int32_t> percent;
+  percent.SetLength(aNumSpecs);
   int32_t relativeSums = 0;
   int32_t numRelative = 0;
-  auto relative = MakeUnique<int32_t[]>(aNumSpecs);
-
-  if (MOZ_UNLIKELY(!fixed || !percent || !relative)) {
-    return;  
-  }
+  nsTArray<int32_t> relative;
+  relative.SetLength(aNumSpecs);
 
   
   
@@ -447,7 +446,7 @@ void nsHTMLFramesetFrame::CalculateRowCol(nsPresContext* aPresContext,
   
   if ((fixedTotal > aSize) ||
       ((fixedTotal < aSize) && (0 == numPercent) && (0 == numRelative))) {
-    Scale(aSize, numFixed, fixed.get(), aNumSpecs, aValues);
+    Scale(aSize, numFixed, fixed, aNumSpecs, aValues);
     return;
   }
 
@@ -466,7 +465,7 @@ void nsHTMLFramesetFrame::CalculateRowCol(nsPresContext* aPresContext,
   
   if ((percentTotal > percentMax) ||
       ((percentTotal < percentMax) && (0 == numRelative))) {
-    Scale(percentMax, numPercent, percent.get(), aNumSpecs, aValues);
+    Scale(percentMax, numPercent, percent, aNumSpecs, aValues);
     return;
   }
 
@@ -483,7 +482,7 @@ void nsHTMLFramesetFrame::CalculateRowCol(nsPresContext* aPresContext,
 
   
   if (relativeTotal != relativeMax) {
-    Scale(relativeMax, numRelative, relative.get(), aNumSpecs, aValues);
+    Scale(relativeMax, numRelative, relative, aNumSpecs, aValues);
   }
 }
 
