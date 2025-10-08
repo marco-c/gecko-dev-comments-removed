@@ -88,7 +88,7 @@ function connectToContentProcess(connection, mm, onDestroy) {
         onMessageManagerClose,
         "message-manager-close"
       );
-      EventEmitter.off(connection, "closed", onClose);
+      connection.off("closed", onClose);
       if (childTransport) {
         
         
@@ -116,7 +116,7 @@ function connectToContentProcess(connection, mm, onDestroy) {
     });
     Services.obs.addObserver(onMessageManagerClose, "message-manager-close");
 
-    EventEmitter.on(connection, "closed", onClose);
+    connection.on("closed", onClose);
   });
 }
 
