@@ -12242,7 +12242,7 @@ function CardSection({
     className: "section-context-wrapper"
   }, external_React_default().createElement("div", {
     className: following ? "section-follow following" : "section-follow"
-  }, !anySectionsFollowed && sectionPosition === 1 && shouldShowOMCHighlight(messageData, "FollowSectionButtonHighlight") && external_React_default().createElement(MessageWrapper, {
+  }, !anySectionsFollowed && sectionPosition === 0 && shouldShowOMCHighlight(messageData, "FollowSectionButtonHighlight") && external_React_default().createElement(MessageWrapper, {
     dispatch: dispatch
   }, external_React_default().createElement(FollowSectionButtonHighlight, {
     verticalPosition: "inset-block-center",
@@ -12250,7 +12250,7 @@ function CardSection({
     dispatch: dispatch,
     feature: "FEATURE_FOLLOW_SECTION_BUTTON",
     messageData: messageData
-  })), !anySectionsFollowed && sectionPosition === 1 && shouldShowOMCHighlight(messageData, "FollowSectionButtonAltHighlight") && external_React_default().createElement(MessageWrapper, {
+  })), !anySectionsFollowed && sectionPosition === 0 && shouldShowOMCHighlight(messageData, "FollowSectionButtonAltHighlight") && external_React_default().createElement(MessageWrapper, {
     dispatch: dispatch
   }, external_React_default().createElement(FollowSectionButtonHighlight, {
     verticalPosition: "inset-block-center",
