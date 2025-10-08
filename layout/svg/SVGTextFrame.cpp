@@ -409,13 +409,14 @@ struct TextRenderedRun {
 
 
 
-  TextRenderedRun(nsTextFrame* aFrame, const gfxPoint& aPosition,
-                  float aLengthAdjustScaleFactor, double aRotate,
-                  float aFontSizeScaleFactor, nscoord aBaseline,
+  TextRenderedRun(nsTextFrame* aFrame, SVGTextFrame* aSVGTextFrame,
+                  const gfxPoint& aPosition, float aLengthAdjustScaleFactor,
+                  double aRotate, float aFontSizeScaleFactor, nscoord aBaseline,
                   uint32_t aTextFrameContentOffset,
                   uint32_t aTextFrameContentLength,
                   uint32_t aTextElementCharIndex)
       : mFrame(aFrame),
+        mRoot(aSVGTextFrame),
         mPosition(aPosition),
         mLengthAdjustScaleFactor(aLengthAdjustScaleFactor),
         mRotate(static_cast<float>(aRotate)),
@@ -660,6 +661,11 @@ struct TextRenderedRun {
 
 
   nsTextFrame* mFrame;
+
+  
+
+
+  SVGTextFrame* mRoot;
 
   
 
@@ -964,13 +970,41 @@ void TextRenderedRun::GetClipEdges(nscoord& aVisIStartEdge,
 
   
   
-  nscoord startEdge = textRun->GetAdvanceWidth(
-      Range(frameRange.start, runRange.start), &provider);
+  auto MeasureUsingCache = [&](SVGTextFrame::CachedMeasuredRange& aCachedRange,
+                               const Range& aRange) -> nscoord {
+    if (aRange.Intersects(aCachedRange.mRange)) {
+      
+      
+      
+      if (aRange.start < aCachedRange.mRange.start) {
+        aCachedRange.mAdvance += textRun->GetAdvanceWidth(
+            Range(aRange.start, aCachedRange.mRange.start), &provider);
+      } else if (aRange.start > aCachedRange.mRange.start) {
+        aCachedRange.mAdvance -= textRun->GetAdvanceWidth(
+            Range(aCachedRange.mRange.start, aRange.start), &provider);
+      }
+      if (aRange.end > aCachedRange.mRange.end) {
+        aCachedRange.mAdvance += textRun->GetAdvanceWidth(
+            Range(aCachedRange.mRange.end, aRange.end), &provider);
+      } else if (aRange.end < aCachedRange.mRange.end) {
+        aCachedRange.mAdvance -= textRun->GetAdvanceWidth(
+            Range(aRange.end, aCachedRange.mRange.end), &provider);
+      }
+    } else {
+      
+      aCachedRange.mAdvance = textRun->GetAdvanceWidth(aRange, &provider);
+    }
+    aCachedRange.mRange = aRange;
+    return aCachedRange.mAdvance;
+  };
 
-  
-  
+  mRoot->SetCurrentFrameForCaching(mFrame);
+  nscoord startEdge =
+      MeasureUsingCache(mRoot->CachedRange(SVGTextFrame::WhichRange::Before),
+                        Range(frameRange.start, runRange.start));
   nscoord endEdge =
-      textRun->GetAdvanceWidth(Range(runRange.end, frameRange.end), &provider);
+      MeasureUsingCache(mRoot->CachedRange(SVGTextFrame::WhichRange::After),
+                        Range(runRange.end, frameRange.end));
 
   if (textRun->IsRightToLeft()) {
     aVisIStartEdge = endEdge;
@@ -1900,9 +1934,9 @@ TextRenderedRun TextRenderedRunIterator::Next() {
     }
   }
 
-  mCurrent = TextRenderedRun(frame, pt, Root()->mLengthAdjustScaleFactor,
-                             rotate, mFontSizeScaleFactor, baseline, offset,
-                             length, charIndex);
+  mCurrent = TextRenderedRun(
+      frame, Root(), pt, Root()->mLengthAdjustScaleFactor, rotate,
+      mFontSizeScaleFactor, baseline, offset, length, charIndex);
   return mCurrent;
 }
 
@@ -5107,6 +5141,9 @@ void SVGTextFrame::DoReflow() {
     
     RemoveStateBits(NS_FRAME_IS_DIRTY | NS_FRAME_HAS_DIRTY_CHILDREN);
   }
+
+  
+  mFrameForCachedRanges = nullptr;
 
   nsPresContext* presContext = PresContext();
   nsIFrame* kid = PrincipalChildList().FirstChild();
