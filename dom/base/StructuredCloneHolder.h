@@ -173,6 +173,7 @@ class MessagePortIdentifier;
 struct VideoFrameSerializedData;
 struct AudioDataSerializedData;
 struct RTCEncodedVideoFrameData;
+struct RTCEncodedAudioFrameData;
 
 class StructuredCloneHolder : public StructuredCloneHolderBase {
  public:
@@ -225,6 +226,7 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
   STMT(mEncodedVideoChunks);    \
   STMT(mEncodedAudioChunks);    \
   STMT(mRtcEncodedVideoFrames); \
+  STMT(mRtcEncodedAudioFrames); \
   STMT(mPortIdentifiers);
 
   
@@ -306,6 +308,10 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
 
   nsTArray<RTCEncodedVideoFrameData>& RtcEncodedVideoFrames() {
     return mRtcEncodedVideoFrames;
+  }
+
+  nsTArray<RTCEncodedAudioFrameData>& RtcEncodedAudioFrames() {
+    return mRtcEncodedAudioFrames;
   }
 
   
@@ -424,6 +430,9 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
 
   
   nsTArray<RTCEncodedVideoFrameData> mRtcEncodedVideoFrames;
+
+  
+  nsTArray<RTCEncodedAudioFrameData> mRtcEncodedAudioFrames;
 
   
   nsIGlobalObject* MOZ_NON_OWNING_REF mGlobal;
