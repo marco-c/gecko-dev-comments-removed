@@ -43,6 +43,7 @@ nsHtml5Parser::nsHtml5Parser()
       mBlocked(0),
       mDocWriteSpeculatorActive(false),
       mScriptNestingLevel(0),
+      mTerminationStarted(false),
       mDocumentClosed(false),
       mInDocumentWrite(false),
       mInsertionPointPermanentlyUndefined(false),
@@ -206,7 +207,7 @@ nsresult nsHtml5Parser::Parse(const nsAString& aSourceBuffer, void* aKey,
       return NS_OK;
     }
     mDocumentClosed = true;
-    if (!mBlocked && !mInDocumentWrite) {
+    if (!mBlocked && !mInDocumentWrite && !executor->IsFlushing()) {
       return ParseUntilBlocked();
     }
     return NS_OK;
@@ -468,8 +469,14 @@ nsresult nsHtml5Parser::Parse(const nsAString& aSourceBuffer, void* aKey,
 
 NS_IMETHODIMP
 nsHtml5Parser::Terminate() {
+  if (mTerminationStarted) {
+    return NS_OK;
+  }
   
-  mDocumentClosed = true;
+  
+  
+  
+  mTerminationStarted = true;
   
   
   if (mExecutor->IsComplete()) {
@@ -533,7 +540,7 @@ bool nsHtml5Parser::IsScriptCreated() { return !GetStreamParser(); }
 nsresult nsHtml5Parser::ParseUntilBlocked() {
   nsresult rv = mExecutor->IsBroken();
   NS_ENSURE_SUCCESS(rv, rv);
-  if (mBlocked || mInsertionPointPermanentlyUndefined ||
+  if (mBlocked || mInsertionPointPermanentlyUndefined || mTerminationStarted ||
       mExecutor->IsComplete()) {
     return NS_OK;
   }
