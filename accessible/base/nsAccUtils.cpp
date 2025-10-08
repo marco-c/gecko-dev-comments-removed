@@ -651,3 +651,29 @@ bool nsAccUtils::IsEditableARIACombobox(const LocalAccessible* aAccessible) {
   return aAccessible->IsTextField() ||
          aAccessible->Elm()->State().HasState(dom::ElementState::READWRITE);
 }
+
+bool nsAccUtils::IsValidDetailsTargetForAnchor(const Accessible* aTarget,
+                                               const Accessible* aAnchor) {
+  if (aAnchor->IsAncestorOf(aTarget)) {
+    
+    
+    return false;
+  }
+
+  Accessible* nextSibling = aAnchor->NextSibling();
+  if (nextSibling && nextSibling->IsTextLeaf()) {
+    nsAutoString text;
+    nextSibling->Name(text);
+    if (nsCoreUtils::IsWhitespaceString(text)) {
+      nextSibling = nextSibling->NextSibling();
+    }
+  }
+
+  if (nextSibling == aTarget) {
+    
+    
+    return false;
+  }
+
+  return true;
+}
