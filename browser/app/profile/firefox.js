@@ -2645,6 +2645,9 @@ pref("browser.tabs.fadeOutExplicitlyUnloadedTabs", true);
 pref("browser.tabs.fadeOutUnloadedTabs", false);
 
 
+pref("browser.tabs.splitView.enabled", false);
+
+
 
 pref("extensions.experiments.enabled", false);
 
