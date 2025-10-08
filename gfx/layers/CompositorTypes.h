@@ -14,7 +14,6 @@
 #include "nsXULAppAPI.h"  
 #include "mozilla/gfx/Types.h"
 #include "mozilla/layers/SyncObject.h"
-#include "mozilla/EnumSet.h"
 
 #include "mozilla/TypedEnumBits.h"
 
