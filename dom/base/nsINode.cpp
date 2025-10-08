@@ -2391,53 +2391,62 @@ static bool IsDoctypeOrHasFollowingDoctype(nsINode* aNode) {
 
 
 void nsINode::MoveBefore(nsINode& aNode, nsINode* aChild, ErrorResult& aRv) {
-  nsINode* referenceChild = aChild;
-  if (referenceChild == &aNode) {
-    referenceChild = aNode.GetNextSibling();
-  }
+  const auto ComputeReferenceChild = [&]() -> nsINode* {
+    return &aNode == aChild ? aNode.GetNextSibling() : aChild;
+  };
+  nsINode* referenceChild = ComputeReferenceChild();
 
-  
   
   
   nsINode& newParent = *this;
-  GetRootNodeOptions options;
-  options.mComposed = true;
-  if (newParent.GetRootNode(options) != aNode.GetRootNode(options)) {
-    aRv.ThrowHierarchyRequestError("Different root node.");
-    return;
-  }
+  const auto EnsureValidMoveRequest = [&newParent](nsINode& aNode,
+                                                   nsINode* aReferenceChild,
+                                                   ErrorResult& aRv) -> void {
+    
+    GetRootNodeOptions options;
+    options.mComposed = true;
+    if (newParent.GetRootNode(options) != aNode.GetRootNode(options)) {
+      aRv.ThrowHierarchyRequestError("Different root node.");
+      return;
+    }
 
-  
-  if (nsContentUtils::ContentIsHostIncludingDescendantOf(&newParent, &aNode)) {
-    aRv.ThrowHierarchyRequestError("Node is an ancestor of the new parent.");
-    return;
-  }
+    
+    if (nsContentUtils::ContentIsHostIncludingDescendantOf(&newParent,
+                                                           &aNode)) {
+      aRv.ThrowHierarchyRequestError("Node is an ancestor of the new parent.");
+      return;
+    }
 
-  
-  if (referenceChild && referenceChild->GetParentNode() != &newParent) {
-    aRv.ThrowNotFoundError("Wrong reference child.");
-    return;
-  }
+    
+    if (aReferenceChild && aReferenceChild->GetParentNode() != &newParent) {
+      aRv.ThrowNotFoundError("Wrong reference child.");
+      return;
+    }
 
-  
-  if (!aNode.IsElement() && !aNode.IsCharacterData()) {
-    aRv.ThrowHierarchyRequestError("Wrong type of node.");
-    return;
-  }
+    
+    if (!aNode.IsElement() && !aNode.IsCharacterData()) {
+      aRv.ThrowHierarchyRequestError("Wrong type of node.");
+      return;
+    }
 
-  
-  if (aNode.IsText() && newParent.IsDocument()) {
-    aRv.ThrowHierarchyRequestError(
-        "Can't move a text node to be a child of a document.");
-    return;
-  }
+    
+    if (aNode.IsText() && newParent.IsDocument()) {
+      aRv.ThrowHierarchyRequestError(
+          "Can't move a text node to be a child of a document.");
+      return;
+    }
 
-  
-  if (newParent.IsDocument() && aNode.IsElement() &&
-      (newParent.AsDocument()->GetRootElement() ||
-       IsDoctypeOrHasFollowingDoctype(referenceChild))) {
-    aRv.ThrowHierarchyRequestError(
-        "Can't move an element to be a child of the document.");
+    
+    if (newParent.IsDocument() && aNode.IsElement() &&
+        (newParent.AsDocument()->GetRootElement() ||
+         IsDoctypeOrHasFollowingDoctype(aReferenceChild))) {
+      aRv.ThrowHierarchyRequestError(
+          "Can't move an element to be a child of the document.");
+      return;
+    }
+  };
+  EnsureValidMoveRequest(aNode, referenceChild, aRv);
+  if (MOZ_UNLIKELY(aRv.Failed())) {
     return;
   }
 
@@ -2446,6 +2455,27 @@ void nsINode::MoveBefore(nsINode& aNode, nsINode* aChild, ErrorResult& aRv) {
 
   
   MOZ_ASSERT(oldParent);
+
+  
+  
+  if (MOZ_UNLIKELY(
+          aNode.MaybeNeedsToNotifyDevToolsOfNodeRemovalsInOwnerDoc())) {
+    nsMutationGuard guard;
+    nsContentUtils::NotifyDevToolsOfNodeRemoval(aNode);
+    
+    if (MOZ_UNLIKELY(guard.Mutated(0))) {
+      referenceChild = ComputeReferenceChild();
+      
+      EnsureValidMoveRequest(aNode, referenceChild, aRv);
+      if (aRv.Failed()) {
+        return;
+      }
+      
+      oldParent = aNode.GetParentNode();
+      
+      MOZ_ASSERT(oldParent);
+    }
+  }
 
   
   
