@@ -1222,8 +1222,10 @@ class XPCShellTests:
                 )
                 sys.exit(1)
 
-        if len(self.alltests) == 1 and not verify:
-            self.singleFile = os.path.basename(self.alltests[0]["path"])
+        
+        enabled_tests = [t for t in self.alltests if "disabled" not in t]
+        if len(enabled_tests) == 1 and not verify:
+            self.singleFile = os.path.basename(enabled_tests[0]["path"])
         else:
             self.singleFile = None
 
