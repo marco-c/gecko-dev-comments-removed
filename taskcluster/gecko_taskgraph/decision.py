@@ -117,6 +117,10 @@ PER_PROJECT_PARAMETERS = {
         "target_tasks_method": "mozilla_central_tasks",
     },
     
+    "staging-firefox": {
+        "target_tasks_method": "default",
+    },
+    
     "default": {
         "target_tasks_method": "default",
     },

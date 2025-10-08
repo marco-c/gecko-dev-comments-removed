@@ -163,6 +163,10 @@ task_description_schema = Schema(
         
         
         
+        Optional("run-on-repo-type"): [str],
+        
+        
+        
         Optional("run-on-projects"): optionally_keyed_by("build-platform", [str]),
         
         Optional("run-on-hg-branches"): optionally_keyed_by("project", [str]),
@@ -2344,6 +2348,7 @@ def build_task(config, tasks):
             item_name=task["label"],
             **{"build-platform": build_platform},
         )
+        attributes["run_on_repo_type"] = task.get("run-on-repo-type", ["hg"])
         attributes["run_on_projects"] = task.get("run-on-projects", ["all"])
         attributes["always_target"] = task["always-target"]
         
