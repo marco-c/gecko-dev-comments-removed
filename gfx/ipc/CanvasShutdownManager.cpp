@@ -13,9 +13,11 @@
 #include "mozilla/gfx/CanvasManagerChild.h"
 #include "mozilla/layers/PersistentBufferProvider.h"
 
-using namespace mozilla::dom;
-
 namespace mozilla::gfx {
+
+using dom::CanvasRenderingContext2D;
+using dom::WorkerPrivate;
+using dom::StrongWorkerRef;
 
 StaticMutex CanvasShutdownManager::sManagersMutex;
 MOZ_RUNINIT std::set<CanvasShutdownManager*> CanvasShutdownManager::sManagers;
@@ -26,7 +28,7 @@ MOZ_RUNINIT std::set<CanvasShutdownManager*> CanvasShutdownManager::sManagers;
 MOZ_THREAD_LOCAL(CanvasShutdownManager*) CanvasShutdownManager::sLocalManager;
 
 CanvasShutdownManager::CanvasShutdownManager(StrongWorkerRef* aWorkerRef)
-    : mWorkerRef(new ThreadSafeWorkerRef(aWorkerRef)) {}
+    : mWorkerRef(new dom::ThreadSafeWorkerRef(aWorkerRef)) {}
 
 CanvasShutdownManager::CanvasShutdownManager() = default;
 CanvasShutdownManager::~CanvasShutdownManager() = default;
@@ -75,7 +77,7 @@ void CanvasShutdownManager::Destroy() {
     return managerWeak;
   }
 
-  if (WorkerPrivate* worker = GetCurrentThreadWorkerPrivate()) {
+  if (WorkerPrivate* worker = dom::GetCurrentThreadWorkerPrivate()) {
     
     
     
@@ -174,7 +176,7 @@ void CanvasShutdownManager::OnRemoteCanvasReset(
  void CanvasShutdownManager::OnCompositorManagerRestored() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  class RestoreRunnable final : public MainThreadWorkerRunnable {
+  class RestoreRunnable final : public dom::MainThreadWorkerRunnable {
    public:
     RestoreRunnable()
         : MainThreadWorkerRunnable("CanvasShutdownManager::RestoreRunnable") {}

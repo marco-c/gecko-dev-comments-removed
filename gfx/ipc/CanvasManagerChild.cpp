@@ -18,10 +18,9 @@
 #include "mozilla/layers/CompositorManagerChild.h"
 #include "mozilla/webgpu/WebGPUChild.h"
 
-using namespace mozilla::dom;
-using namespace mozilla::layers;
-
 namespace mozilla::gfx {
+
+using namespace layers;
 
 
 
@@ -31,7 +30,7 @@ MOZ_THREAD_LOCAL(CanvasManagerChild*) CanvasManagerChild::sLocalManager;
 
 Atomic<uint32_t> CanvasManagerChild::sNextId(1);
 
-CanvasManagerChild::CanvasManagerChild(ThreadSafeWorkerRef* aWorkerRef,
+CanvasManagerChild::CanvasManagerChild(dom::ThreadSafeWorkerRef* aWorkerRef,
                                        uint32_t aId)
     : mWorkerRef(aWorkerRef), mId(aId) {}
 
@@ -106,7 +105,7 @@ void CanvasManagerChild::Destroy() {
   }
 
   
-  WorkerPrivate* worker = GetCurrentThreadWorkerPrivate();
+  dom::WorkerPrivate* worker = dom::GetCurrentThreadWorkerPrivate();
   MOZ_ASSERT_IF(!worker, NS_IsMainThread());
 
   ipc::Endpoint<PCanvasManagerParent> parentEndpoint;
