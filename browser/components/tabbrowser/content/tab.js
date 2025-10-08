@@ -109,7 +109,6 @@
     #lastGroup;
     connectedCallback() {
       this.#updateOnTabGrouped();
-      this.#updateOnTabSplit();
       this.#lastGroup = this.group;
 
       this.initialize();
@@ -117,7 +116,6 @@
 
     disconnectedCallback() {
       this.#updateOnTabUngrouped();
-      this.#updateOnTabUnsplit();
     }
 
     initialize() {
@@ -766,33 +764,6 @@
         
         this.removeAttribute("aria-posinset");
         this.removeAttribute("aria-setsize");
-      }
-    }
-
-    #updateOnTabSplit() {
-      if (this.splitview) {
-        this.setAttribute("aria-level", 2);
-
-        
-        let splitViewLabel = gBrowser.tabLocalization.formatValueSync(
-          "tabbrowser-tab-label-tab-split-view"
-        );
-        this.setAttribute(
-          "aria-label",
-          `${this.getAttribute("label")}, ${splitViewLabel}`
-        );
-      }
-    }
-
-    #updateOnTabUnsplit() {
-      if (this.splitview) {
-        this.setAttribute("aria-level", 1);
-        
-        
-        
-        this.removeAttribute("aria-posinset");
-        this.removeAttribute("aria-setsize");
-        this.removeAttribute("aria-label");
       }
     }
   }
