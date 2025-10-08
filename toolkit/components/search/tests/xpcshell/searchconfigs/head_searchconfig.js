@@ -131,6 +131,28 @@ async function maybeSetupConfig() {
 
 
 
+
+
+
+
+async function getEngines(engineSelector, region, locale) {
+  let configs = await engineSelector.fetchEngineConfiguration({
+    locale,
+    region,
+    channel: SearchUtils.MODIFIED_APP_CHANNEL,
+  });
+
+  return {
+    engines: await SearchTestUtils.searchConfigToEngines(configs.engines),
+    appDefaultEngineId: configs.appDefaultEngineId,
+  };
+}
+
+
+
+
+
+
 class SearchConfigTest {
   
 
@@ -146,11 +168,8 @@ class SearchConfigTest {
 
 
 
-
   constructor(testDetails) {
-    this.#testDetails = Array.isArray(testDetails)
-      ? testDetails
-      : [testDetails];
+    this.#testDetails = testDetails;
   }
 
   
@@ -169,20 +188,6 @@ class SearchConfigTest {
 
     await maybeSetupConfig();
 
-    
-    Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", false);
-
-    
-    
-    Services.prefs.setBoolPref(
-      SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
-      true
-    );
-    Services.prefs.setBoolPref(
-      SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
-      true
-    );
-
     this.#engineSelector = new SearchEngineSelector();
   }
 
@@ -197,7 +202,8 @@ class SearchConfigTest {
     
     for (let region of regions) {
       for (let locale of locales) {
-        const { engines, appDefaultEngineId } = await this._getEngines(
+        const { engines, appDefaultEngineId } = await getEngines(
+          this.#engineSelector,
           region,
           locale
         );
@@ -228,38 +234,13 @@ class SearchConfigTest {
   
 
 
-
-
-
-
-
-  async _getEngines(region, locale) {
-    let configs = await this.#engineSelector.fetchEngineConfiguration({
-      locale,
-      region: region || "default",
-      channel: SearchUtils.MODIFIED_APP_CHANNEL,
-    });
-
-    return {
-      engines: await SearchTestUtils.searchConfigToEngines(configs.engines),
-      appDefaultEngineId: configs.appDefaultEngineId,
-    };
-  }
-
-  
-
-
   get _regions() {
-    
-    
-    
-    
     if (TEST_DEBUG) {
-      return new Set(["by", "cn", "kz", "us", "ru", "tr", null]);
+      return new Set(["by", "cn", "kz", "us", "ru", "tr", "default"]);
     }
     return new Set([
       ...Services.intl.getAvailableLocaleDisplayNames("region"),
-      null,
+      "default",
     ]);
   }
 
