@@ -689,10 +689,12 @@ class TranslationsBencher {
 
 
 
+
   static async benchmarkTranslation({
     page,
     sourceLanguage,
     targetLanguage,
+    architecture,
     speedBenchCount,
     memoryBenchCount,
     memorySampleInterval = 10,
@@ -743,6 +745,7 @@ class TranslationsBencher {
       journal,
       sourceLanguage,
       targetLanguage,
+      architecture,
       memoryBenchCount,
       memorySampleInterval,
     });
@@ -752,6 +755,7 @@ class TranslationsBencher {
       journal,
       sourceLanguage,
       targetLanguage,
+      architecture,
       wordCount,
       tokenCount,
       speedBenchCount,
@@ -774,11 +778,13 @@ class TranslationsBencher {
 
 
 
+
   static async #benchmarkTranslationMemory({
     page,
     journal,
     sourceLanguage,
     targetLanguage,
+    architecture,
     memoryBenchCount,
     memorySampleInterval,
   }) {
@@ -790,6 +796,7 @@ class TranslationsBencher {
           { fromLang: sourceLanguage, toLang: "en" },
           { fromLang: "en", toLang: targetLanguage },
         ],
+        architecture,
         prefs: [["browser.translations.logLevel", "Error"]],
         contentEagerMode: true,
       });
@@ -900,11 +907,13 @@ class TranslationsBencher {
 
 
 
+
   static async #benchmarkTranslationSpeed({
     page,
     journal,
     sourceLanguage,
     targetLanguage,
+    architecture,
     wordCount,
     tokenCount,
     speedBenchCount,
@@ -917,6 +926,7 @@ class TranslationsBencher {
           { fromLang: sourceLanguage, toLang: "en" },
           { fromLang: "en", toLang: targetLanguage },
         ],
+        architecture,
         prefs: [["browser.translations.logLevel", "Error"]],
         contentEagerMode: true,
       });
