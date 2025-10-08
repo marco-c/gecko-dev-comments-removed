@@ -367,7 +367,12 @@ class ThreadedDriver : public GraphDriver {
   class IterationWaitHelper {
     Monitor mMonitor MOZ_UNANNOTATED;
     
-    bool mNeedAnotherIteration = false;
+
+    
+    
+    
+    
+    bool mNeedAnotherIteration = true;
     TimeStamp mWakeTime;
 
    public:
