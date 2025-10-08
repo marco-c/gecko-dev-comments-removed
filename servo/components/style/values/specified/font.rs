@@ -1526,6 +1526,7 @@ impl Parse for FontLanguageOverride {
     Copy,
     Debug,
     Eq,
+    Hash,
     MallocSizeOf,
     Parse,
     PartialEq,
@@ -1536,6 +1537,7 @@ impl Parse for FontLanguageOverride {
     ToShmem,
     ToTyped,
 )]
+#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 pub enum FontSynthesis {
     
     Auto,
