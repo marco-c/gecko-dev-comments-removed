@@ -12,6 +12,8 @@ use core::slice;
 use core::{hint, ptr};
 
 mod alloc;
+#[cfg(test)]
+pub(crate) use self::alloc::AllocError;
 pub(crate) use self::alloc::{do_alloc, Allocator, Global};
 
 #[inline]
@@ -98,16 +100,51 @@ impl ProbeSeq {
 
 #[cfg_attr(target_os = "emscripten", inline(never))]
 #[cfg_attr(not(target_os = "emscripten"), inline)]
-fn capacity_to_buckets(cap: usize) -> Option<usize> {
+fn capacity_to_buckets(cap: usize, table_layout: TableLayout) -> Option<usize> {
     debug_assert_ne!(cap, 0);
 
     
     
-    if cap < 8 {
+    if cap < 15 {
         
         
         
-        return Some(if cap < 4 { 4 } else { 8 });
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        
+        
+        let min_cap = match (Group::WIDTH, table_layout.size) {
+            (16, 0..=1) => 14,
+            (16, 2..=3) => 7,
+            (8, 0..=1) => 7,
+            _ => 3,
+        };
+        let cap = min_cap.max(cap);
+        
+        
+        
+        return Some(if cap < 4 {
+            4
+        } else if cap < 8 {
+            8
+        } else {
+            16
+        });
     }
 
     
@@ -849,7 +886,7 @@ impl<T, A: Allocator> RawTable<T, A> {
         
         
         
-        let min_buckets = match capacity_to_buckets(min_size) {
+        let min_buckets = match capacity_to_buckets(min_size, Self::TABLE_LAYOUT) {
             Some(buckets) => buckets,
             None => return,
         };
@@ -966,12 +1003,6 @@ impl<T, A: Allocator> RawTable<T, A> {
         }
     }
 
-    
-    
-    
-    
-    
-    
     
     
     
@@ -1477,8 +1508,8 @@ impl RawTableInner {
             
             
             unsafe {
-                let buckets =
-                    capacity_to_buckets(capacity).ok_or_else(|| fallibility.capacity_overflow())?;
+                let buckets = capacity_to_buckets(capacity, table_layout)
+                    .ok_or_else(|| fallibility.capacity_overflow())?;
 
                 let mut result =
                     Self::new_uninitialized(alloc, table_layout, buckets, fallibility)?;
@@ -1687,18 +1718,20 @@ impl RawTableInner {
                 insert_slot = self.find_insert_slot_in_group(&group, &probe_seq);
             }
 
-            
-            
-            if likely(group.match_empty().any_bit_set()) {
+            if let Some(insert_slot) = insert_slot {
                 
                 
-                
-                unsafe {
+                if likely(group.match_empty().any_bit_set()) {
                     
                     
                     
-                    
-                    return Err(self.fix_insert_slot(insert_slot.unwrap_unchecked()));
+                    unsafe {
+                        
+                        
+                        
+                        
+                        return Err(self.fix_insert_slot(insert_slot));
+                    }
                 }
             }
 
@@ -4135,6 +4168,26 @@ impl<T, A: Allocator> RawExtractIf<'_, T, A> {
 mod test_map {
     use super::*;
 
+    #[test]
+    fn test_minimum_capacity_for_small_types() {
+        #[track_caller]
+        fn test_t<T>() {
+            let raw_table: RawTable<T> = RawTable::with_capacity(1);
+            let actual_buckets = raw_table.buckets();
+            let min_buckets = Group::WIDTH / core::mem::size_of::<T>();
+            assert!(
+                actual_buckets >= min_buckets,
+                "expected at least {min_buckets} buckets, got {actual_buckets} buckets"
+            );
+        }
+
+        test_t::<u8>();
+
+        
+        
+        test_t::<u16>();
+    }
+
     fn rehash_in_place<T>(table: &mut RawTable<T>, hasher: impl Fn(&T) -> u64) {
         unsafe {
             table.table.rehash_in_place(
@@ -4238,9 +4291,9 @@ mod test_map {
     
     #[test]
     fn test_catch_panic_clone_from() {
+        use super::{AllocError, Allocator, Global};
         use ::alloc::sync::Arc;
         use ::alloc::vec::Vec;
-        use allocator_api2::alloc::{AllocError, Allocator, Global};
         use core::sync::atomic::{AtomicI8, Ordering};
         use std::thread;
 

@@ -1,9 +1,33 @@
 
-
-#[cfg(not(feature = "nightly"))]
-pub(crate) use core::convert::{identity as likely, identity as unlikely};
 #[cfg(feature = "nightly")]
 pub(crate) use core::intrinsics::{likely, unlikely};
+
+#[cfg(not(feature = "nightly"))]
+#[inline(always)]
+#[cold]
+fn cold_path() {}
+
+#[cfg(not(feature = "nightly"))]
+#[inline(always)]
+pub(crate) fn likely(b: bool) -> bool {
+    if b {
+        true
+    } else {
+        cold_path();
+        false
+    }
+}
+
+#[cfg(not(feature = "nightly"))]
+#[inline(always)]
+pub(crate) fn unlikely(b: bool) -> bool {
+    if b {
+        cold_path();
+        true
+    } else {
+        false
+    }
+}
 
 
 
