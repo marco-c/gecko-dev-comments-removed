@@ -206,9 +206,18 @@ class Path(TryConfig):
                 "help": "Run tasks containing tests under the specified path(s).",
             },
         ],
+        [
+            ["--allow-testfile-path"],
+            {
+                "dest": "allow_testfile_path",
+                "action": "store_true",
+                "default": None,
+                "help": "Opt in to pass a specific testfile path (ie not only a folder)",
+            },
+        ],
     ]
 
-    def try_config(self, paths, **kwargs):
+    def try_config(self, paths, allow_testfile_path, **kwargs):
         if not paths:
             return
 
@@ -220,10 +229,10 @@ class Path(TryConfig):
             
             
             
-            if os.path.isfile(p):
+            if os.path.isfile(p) and not allow_testfile_path:
                 parent = os.path.dirname(p)
                 print(
-                    f"warning: paths to individual tests don't work, re-writing to {parent}"
+                    f"warning: paths to individual tests may not work, re-writing to {parent}. Pass --allow-testfile-path to override"
                 )
                 paths[i] = parent
 
@@ -279,13 +288,22 @@ class Environment(TryConfig):
                 "help": "Get a screen recording of the tests where possible.",
             },
         ],
+        [
+            ["--profiler"],
+            {
+                "action": "store_true",
+                "help": "Enable the profiler by setting MOZ_PROFILER_STARTUP=1.",
+            },
+        ],
     ]
 
-    def try_config(self, env, record, **kwargs):
+    def try_config(self, env, record, profiler, **kwargs):
         if env is None:
             env = []
         if record:
             env.append("MOZ_RECORD_TEST=1")
+        if profiler:
+            env.append("MOZ_PROFILER_STARTUP=1")
         if not env:
             return
         return {
