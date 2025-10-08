@@ -677,18 +677,12 @@ already_AddRefed<dom::Promise> StyleSheet::Replace(const nsACString& aText,
     return promise.forget();
   }
 
-  if (!mConstructorDocument || !mConstructorDocument->GetCSSLoader()) {
-    promise->MaybeRejectWithNotAllowedError(
-        "Must not use this on documents loaded as data.");
-    return promise.forget();
-  }
-
   
   SetModificationDisallowed(true);
 
   
   
-  auto* loader = mConstructorDocument->GetCSSLoader();
+  auto* loader = mConstructorDocument->CSSLoader();
   auto loadData = MakeRefPtr<css::SheetLoadData>(
       loader,  nullptr, this, css::SyncLoad::No,
       css::Loader::UseSystemPrincipal::No, css::StylePreloadKind::None,
@@ -731,14 +725,9 @@ void StyleSheet::ReplaceSync(const nsACString& aText, ErrorResult& aRv) {
         "Can only be called on modifiable style sheets");
   }
 
-  if (!mConstructorDocument->GetCSSLoader()) {
-    return aRv.ThrowNotAllowedError(
-        "Must not use this on documents loaded as data");
-  }
-
   
   
-  auto* loader = mConstructorDocument->GetCSSLoader();
+  auto* loader = mConstructorDocument->CSSLoader();
   RefPtr<const StyleStylesheetContents> rawContent =
       Servo_StyleSheet_FromUTF8Bytes(
           loader, this,
@@ -1350,12 +1339,9 @@ void StyleSheet::ReparseSheet(const nsACString& aInput, ErrorResult& aRv) {
   
   RefPtr<css::Loader> loader;
   if (Document* doc = GetAssociatedDocument()) {
-    loader = doc->GetCSSLoader();
-    MOZ_ASSERT(loader,
-               "Should not come here without a CSS loader, i.e. in the "
-               "loadedAsData case");
-  }
-  if (!loader) {
+    loader = doc->CSSLoader();
+    NS_ASSERTION(loader, "Document with no CSS loader!");
+  } else {
     loader = new css::Loader;
   }
 

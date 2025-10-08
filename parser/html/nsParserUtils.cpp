@@ -92,14 +92,11 @@ nsParserUtils::ParseFragment(const nsAString& aFragment, uint32_t aFlags,
 
   nsAutoScriptBlockerSuppressNodeRemoved autoBlocker;
 
-  bool scripts_enabled = false;
   
-  RefPtr<ScriptLoader> loader = document->GetScriptLoader();
-  if (loader) {
-    scripts_enabled = loader->GetEnabled();
-    if (scripts_enabled) {
-      loader->SetEnabled(false);
-    }
+  RefPtr<ScriptLoader> loader = document->ScriptLoader();
+  bool scripts_enabled = loader->GetEnabled();
+  if (scripts_enabled) {
+    loader->SetEnabled(false);
   }
 
   

@@ -1362,8 +1362,7 @@ void Document::Shutdown() {
   }
 }
 
-Document::Document(const char* aContentType,
-                   mozilla::dom::LoadedAsData aLoadedAsData)
+Document::Document(const char* aContentType)
     : nsINode(nullptr),
       DocumentOrShadowRoot(this),
       mCharacterSet(WINDOWS_1252_ENCODING),
@@ -1374,7 +1373,6 @@ Document::Document(const char* aContentType,
 #ifdef DEBUG
       mStyledLinksCleared(false),
 #endif
-      mLoadedAsData(aLoadedAsData),
       mCachedStateObjectValid(false),
       mBlockAllMixedContent(false),
       mBlockAllMixedContentPreloads(false),
@@ -1387,6 +1385,7 @@ Document::Document(const char* aContentType,
       mIsInitialDocumentInWindow(false),
       mIsEverInitialDocumentInWindow(false),
       mIgnoreDocGroupMismatches(false),
+      mLoadedAsData(false),
       mAddedToMemoryReportingAsDataDocument(false),
       mMayStartLayout(true),
       mHaveFiredTitleChange(false),
@@ -2055,8 +2054,8 @@ void Document::LoadEventFired() {
 
   
   
-  if (mScriptLoader) {
-    mScriptLoader->LoadEventFired();
+  if (ScriptLoader()) {
+    ScriptLoader()->LoadEventFired();
   }
 }
 
@@ -3035,9 +3034,7 @@ nsresult Document::Init(nsIPrincipal* aPrincipal,
 
   
   mOnloadBlocker = new OnloadBlocker();
-  if (mLoadedAsData != LoadedAsData::AsData) {
-    mStyleImageLoader = new css::ImageLoader(this);
-  }
+  mStyleImageLoader = new css::ImageLoader(this);
 
   mNodeInfoManager = new nsNodeInfoManager(this, aPrincipal);
 
@@ -3049,11 +3046,9 @@ nsresult Document::Init(nsIPrincipal* aPrincipal,
 
   NS_ASSERTION(OwnerDoc() == this, "Our nodeinfo is busted!");
 
-  if (mLoadedAsData != LoadedAsData::AsData) {
-    mCSSLoader = new css::Loader(this);
-    
-    mCSSLoader->SetCompatibilityMode(eCompatibility_FullStandards);
-  }
+  mCSSLoader = new css::Loader(this);
+  
+  mCSSLoader->SetCompatibilityMode(eCompatibility_FullStandards);
 
   
   
@@ -3065,9 +3060,7 @@ nsresult Document::Init(nsIPrincipal* aPrincipal,
   mScopeObject = do_GetWeakReference(global);
   MOZ_ASSERT(mScopeObject);
 
-  if (mLoadedAsData == LoadedAsData::No) {
-    mScriptLoader = new dom::ScriptLoader(this);
-  }
+  mScriptLoader = new dom::ScriptLoader(this);
 
   
   
@@ -3538,10 +3531,7 @@ void Document::FillStyleSetDocumentSheets() {
 
 void Document::CompatibilityModeChanged() {
   MOZ_ASSERT(IsHTMLOrXHTML());
-  if (!mCSSLoader) {
-    return;
-  }
-  mCSSLoader->SetCompatibilityMode(mCompatMode);
+  CSSLoader()->SetCompatibilityMode(mCompatMode);
 
   if (mStyleSet) {
     mStyleSet->CompatibilityModeChanged();
@@ -3708,16 +3698,21 @@ nsresult Document::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
   SetReadyStateInternal(READYSTATE_LOADING);
 
   if (nsCRT::strcmp(kLoadAsData, aCommand) == 0) {
-    MOZ_RELEASE_ASSERT(mLoadedAsData != LoadedAsData::No);
+    mLoadedAsData = true;
     SetLoadedAsData(true,  true);
     
     
     
+
+    
+    ScriptLoader()->SetEnabled(false);
+
+    
+    CSSLoader()->SetEnabled(
+        false);  
   } else if (nsCRT::strcmp("external-resource", aCommand) == 0) {
     
-    
-    MOZ_ASSERT(mScriptLoader);
-    mScriptLoader->SetEnabled(false);
+    ScriptLoader()->SetEnabled(false);
   }
 
   mMayStartLayout = false;
@@ -3894,11 +3889,7 @@ nsresult Document::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
 
 void Document::SetLoadedAsData(bool aLoadedAsData,
                                bool aConsiderForMemoryReporting) {
-  if (aLoadedAsData) {
-    MOZ_RELEASE_ASSERT(mLoadedAsData != LoadedAsData::No);
-  } else {
-    MOZ_RELEASE_ASSERT(mLoadedAsData == LoadedAsData::No);
-  }
+  mLoadedAsData = aLoadedAsData;
   if (aConsiderForMemoryReporting) {
     nsIGlobalObject* global = GetScopeObject();
     if (global) {
@@ -4035,7 +4026,7 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
              "Policy container must be initialized before CSP!");
 
   
-  if (mLoadedAsData != LoadedAsData::No) {
+  if (mLoadedAsData) {
     return NS_OK;
   }
 
@@ -4628,24 +4619,16 @@ void Document::SetPrincipals(nsIPrincipal* aNewPrincipal,
     }
   }
 
-  if (mScriptLoader) {
-    mScriptLoader->DeregisterFromCache();
-  }
-  if (mCSSLoader) {
-    mCSSLoader->DeregisterFromSheetCache();
-  }
+  mScriptLoader->DeregisterFromCache();
+  mCSSLoader->DeregisterFromSheetCache();
 
   mNodeInfoManager->SetDocumentPrincipal(aNewPrincipal);
   mPartitionedPrincipal = aNewPartitionedPrincipal;
 
   mCachedURLData = nullptr;
 
-  if (mCSSLoader) {
-    mCSSLoader->RegisterInSheetCache();
-  }
-  if (mScriptLoader) {
-    mScriptLoader->RegisterToCache();
-  }
+  mCSSLoader->RegisterInSheetCache();
+  mScriptLoader->RegisterToCache();
 
   RecomputeResistFingerprinting();
 
@@ -7291,10 +7274,7 @@ Element* Document::GetActiveElement() {
 }
 
 Element* Document::GetCurrentScript() {
-  if (!mScriptLoader) {
-    return nullptr;
-  }
-  nsCOMPtr<Element> el(do_QueryInterface(mScriptLoader->GetCurrentScript()));
+  nsCOMPtr<Element> el(do_QueryInterface(ScriptLoader()->GetCurrentScript()));
   return el;
 }
 
@@ -9431,9 +9411,6 @@ void Document::EnableStyleSheetsForSet(const nsAString& aSheetSet) {
 
 void Document::EnableStyleSheetsForSetInternal(const nsAString& aSheetSet,
                                                bool aUpdateCSSLoader) {
-  if (!GetCSSLoader()) {
-    return;
-  }
   size_t count = SheetCount();
   nsAutoString title;
   for (size_t index = 0; index < count; index++) {
@@ -9446,7 +9423,7 @@ void Document::EnableStyleSheetsForSetInternal(const nsAString& aSheetSet,
     }
   }
   if (aUpdateCSSLoader) {
-    GetCSSLoader()->DocumentStyleSheetSetChanged();
+    CSSLoader()->DocumentStyleSheetSetChanged();
   }
   if (EnsureStyleSet().StyleSheetsHaveChanged()) {
     ApplicableStylesChanged();
@@ -10126,9 +10103,7 @@ SMILAnimationController* Document::GetAnimationController() {
   
   if (mAnimationController) return mAnimationController;
   
-  if (mLoadedAsData != LoadedAsData::No) {
-    return nullptr;
-  }
+  if (mLoadedAsData) return nullptr;
 
   mAnimationController = new SMILAnimationController(this);
 
@@ -12261,9 +12236,8 @@ void Document::Destroy() {
     mASMJSExecutionTimer = nullptr;
     RecordExecutionTimeForAsmJS(this);
   }
-  if (mScriptLoader) {
-    mScriptLoader->Destroy();
-  }
+
+  ScriptLoader()->Destroy();
   SetScriptGlobalObject(nullptr);
   RemovedFromDocShell();
 
@@ -12987,10 +12961,8 @@ void Document::SuppressEventHandling(uint32_t aIncrease) {
       wgc->BlockBFCacheFor(BFCacheStatus::EVENT_HANDLING_SUPPRESSED);
     }
   }
-  if (mScriptLoader) {
-    for (uint32_t i = 0; i < aIncrease; ++i) {
-      mScriptLoader->AddExecuteBlocker();
-    }
+  for (uint32_t i = 0; i < aIncrease; ++i) {
+    ScriptLoader()->AddExecuteBlocker();
   }
 
   EnumerateSubDocuments([aIncrease](Document& aSubDoc) {
@@ -13295,9 +13267,6 @@ SheetPreloadStatus Document::PreloadStyle(
     const nsAString& aIntegrity, css::StylePreloadKind aKind,
     uint64_t aEarlyHintPreloaderId, const nsAString& aFetchPriority) {
   MOZ_ASSERT(aKind != css::StylePreloadKind::None);
-  if (!mCSSLoader) {
-    return SheetPreloadStatus::Errored;
-  }
 
   
   nsCOMPtr<nsICSSLoaderObserver> obs = new StubCSSLoaderObserver();
@@ -13306,7 +13275,7 @@ SheetPreloadStatus Document::PreloadStyle(
       ReferrerInfo::CreateFromDocumentAndPolicyOverride(this, aReferrerPolicy);
 
   
-  auto result = GetCSSLoader()->LoadSheet(
+  auto result = CSSLoader()->LoadSheet(
       uri, aKind, aEncoding, referrerInfo, obs, aEarlyHintPreloaderId,
       Element::StringToCORSMode(aCrossOriginAttr), aNonce, aIntegrity,
       nsGenericHTMLElement::ToFetchPriority(aFetchPriority));
@@ -13318,6 +13287,12 @@ SheetPreloadStatus Document::PreloadStyle(
     return SheetPreloadStatus::AlreadyComplete;
   }
   return SheetPreloadStatus::InProgress;
+}
+
+RefPtr<StyleSheet> Document::LoadChromeSheetSync(nsIURI* uri) {
+  return CSSLoader()
+      ->LoadSheetSync(uri, css::eAuthorSheetFeatures)
+      .unwrapOr(nullptr);
 }
 
 void Document::ResetDocumentDirection() {
@@ -13378,9 +13353,7 @@ static void GetAndUnsuppressSubDocuments(
     Document& aDocument, nsTArray<nsCOMPtr<Document>>& aDocuments) {
   if (aDocument.EventHandlingSuppressed() > 0) {
     aDocument.DecreaseEventSuppression();
-    if (dom::ScriptLoader* loader = aDocument.GetScriptLoader()) {
-      loader->RemoveExecuteBlocker();
-    }
+    aDocument.ScriptLoader()->RemoveExecuteBlocker();
   }
   aDocuments.AppendElement(&aDocument);
   aDocument.EnumerateSubDocuments([&aDocuments](Document& aSubDoc) {
@@ -13530,8 +13503,8 @@ Document* Document::GetTemplateContentsOwner() {
         u""_ns,   
         nullptr,  
         Document::GetDocumentURI(), Document::GetDocBaseURI(), NodePrincipal(),
-        LoadedAsData::AsData,  
-        scriptObject,          
+        true,          
+        scriptObject,  
         IsHTMLDocument() ? DocumentFlavor::HTML : DocumentFlavor::XML);
     NS_ENSURE_SUCCESS(rv, nullptr);
 
@@ -17032,10 +17005,9 @@ already_AddRefed<Document> Document::Constructor(const GlobalObject& aGlobal,
   }
 
   nsCOMPtr<Document> doc;
-  nsresult res =
-      NS_NewDOMDocument(getter_AddRefs(doc), VoidString(), u""_ns, nullptr, uri,
-                        uri, prin->GetPrincipal(), LoadedAsData::AsData, global,
-                        DocumentFlavor::Plain);
+  nsresult res = NS_NewDOMDocument(getter_AddRefs(doc), VoidString(), u""_ns,
+                                   nullptr, uri, uri, prin->GetPrincipal(),
+                                   true, global, DocumentFlavor::Plain);
   if (NS_FAILED(res)) {
     rv.Throw(res);
     return nullptr;
@@ -17090,7 +17062,7 @@ WindowContext* Document::GetTopLevelWindowContext() const {
 Document* Document::GetTopLevelContentDocumentIfSameProcess() {
   Document* parent;
 
-  if (mLoadedAsData == LoadedAsData::No) {
+  if (!mLoadedAsData) {
     parent = this;
   } else {
     nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(GetScopeObject());
@@ -20658,9 +20630,9 @@ static already_AddRefed<Document> CreateHTMLDocument(GlobalObject& aGlobal,
   }
 
   nsCOMPtr<Document> doc;
-  aError =
-      NS_NewHTMLDocument(getter_AddRefs(doc), aGlobal.GetSubjectPrincipal(),
-                         aGlobal.GetSubjectPrincipal(), LoadedAsData::AsData);
+  aError = NS_NewHTMLDocument(
+      getter_AddRefs(doc), aGlobal.GetSubjectPrincipal(),
+      aGlobal.GetSubjectPrincipal(),  true);
   if (aError.Failed()) {
     return nullptr;
   }

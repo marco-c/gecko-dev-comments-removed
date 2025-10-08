@@ -82,9 +82,7 @@ void FontFaceSetDocumentImpl::Initialize() {
     CheckLoadingFinished();
   }
 
-  if (mDocument->GetCSSLoader()) {
-    mDocument->GetCSSLoader()->AddObserver(this);
-  }
+  mDocument->CSSLoader()->AddObserver(this);
 
   mStandardFontLoadPrincipal = MakeRefPtr<gfxFontSrcPrincipal>(
       mDocument->NodePrincipal(), mDocument->PartitionedPrincipal());
@@ -93,11 +91,11 @@ void FontFaceSetDocumentImpl::Initialize() {
 void FontFaceSetDocumentImpl::Destroy() {
   RemoveDOMContentLoadedListener();
 
-  if (mDocument && mDocument->GetCSSLoader()) {
+  if (mDocument && mDocument->CSSLoader()) {
     
     
     
-    mDocument->GetCSSLoader()->RemoveObserver(this);
+    mDocument->CSSLoader()->RemoveObserver(this);
   }
 
   mRuleFaces.Clear();
@@ -714,8 +712,7 @@ bool FontFaceSetDocumentImpl::MightHavePendingFontLoads() {
 
   
   
-  if (mDocument->GetCSSLoader() &&
-      mDocument->GetCSSLoader()->HasPendingLoads()) {
+  if (mDocument->CSSLoader()->HasPendingLoads()) {
     return true;
   }
 

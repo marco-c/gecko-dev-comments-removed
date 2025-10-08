@@ -2220,9 +2220,7 @@ void PresShell::SetIgnoreFrameDestruction(bool aIgnore) {
   if (mDocument) {
     
     
-    if (css::ImageLoader* loader = mDocument->GetStyleImageLoader()) {
-      loader->ClearFrames(mPresContext);
-    }
+    mDocument->StyleImageLoader()->ClearFrames(mPresContext);
   }
   mIgnoreFrameDestruction = aIgnore;
 }
@@ -2235,9 +2233,7 @@ void PresShell::NotifyDestroyingFrame(nsIFrame* aFrame) {
 
   if (!mIgnoreFrameDestruction) {
     if (aFrame->HasImageRequest()) {
-      if (css::ImageLoader* loader = mDocument->GetStyleImageLoader()) {
-        loader->DropRequestsForFrame(aFrame);
-      }
+      mDocument->StyleImageLoader()->DropRequestsForFrame(aFrame);
     }
 
     mFrameConstructor->NotifyDestroyingFrame(aFrame);
