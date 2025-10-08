@@ -1489,15 +1489,23 @@ let interfaceNamesInGlobalScope = [
   
   { name: "TreeWalker", insecureContext: true },
   
-  { name: "TrustedHTML", nightly: true, insecureContext: true },
+  { name: "TrustedHTML", earlyBetaOrEarlier: true, insecureContext: true },
   
-  { name: "TrustedScript", nightly: true, insecureContext: true },
+  { name: "TrustedScript", earlyBetaOrEarlier: true, insecureContext: true },
   
-  { name: "TrustedScriptURL", nightly: true, insecureContext: true },
+  { name: "TrustedScriptURL", earlyBetaOrEarlier: true, insecureContext: true },
   
-  { name: "TrustedTypePolicy", nightly: true, insecureContext: true },
+  {
+    name: "TrustedTypePolicy",
+    earlyBetaOrEarlier: true,
+    insecureContext: true,
+  },
   
-  { name: "TrustedTypePolicyFactory", nightly: true, insecureContext: true },
+  {
+    name: "TrustedTypePolicyFactory",
+    earlyBetaOrEarlier: true,
+    insecureContext: true,
+  },
   
   { name: "U2F", insecureContext: false, disabled: true },
   
@@ -2088,7 +2096,7 @@ let interfaceNamesInGlobalScope = [
   
   { name: "top", insecureContext: true },
   
-  { name: "trustedTypes", nightly: true, insecureContext: true },
+  { name: "trustedTypes", earlyBetaOrEarlier: true, insecureContext: true },
   
   { name: "u2f", insecureContext: false, disabled: true },
   
