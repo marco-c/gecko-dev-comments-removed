@@ -470,6 +470,12 @@ class nsPresContext : public nsISupports,
 
   bool HasPaginatedScrolling() const { return mCanPaginatedScroll; }
 
+  uint32_t LastScrollGeneration() { return mLastScrollGeneration; }
+  void UpdateLastScrollGeneration() { mLastScrollGeneration += 1; }
+  bool HasBeenScrolledSince(const uint32_t& mPreviousScrollGeneration) const {
+    return mPreviousScrollGeneration < mLastScrollGeneration;
+  }
+
   
 
 
@@ -1286,6 +1292,11 @@ class nsPresContext : public nsISupports,
   mozilla::TimeStamp mFirstKeyTime;
   mozilla::TimeStamp mFirstMouseMoveTime;
   mozilla::TimeStamp mFirstScrollTime;
+
+  
+  
+  
+  uint32_t mLastScrollGeneration;
 
   
   mozilla::TimeStamp mLastStyleUpdateForAllAnimations;

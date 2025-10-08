@@ -2729,7 +2729,8 @@ class Document : public nsINode,
 
 
 
-  bool HasBeenScrolled() const;
+  bool HasBeenScrolledSince(const uint32_t& aLastScrollGeneration) const;
+  uint32_t LastScrollGeneration() const;
 
   
 

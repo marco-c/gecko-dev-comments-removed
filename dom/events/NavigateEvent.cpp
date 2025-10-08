@@ -230,6 +230,9 @@ void NavigateEvent::InitNavigateEvent(const NavigateEventInit& aEventInitDict) {
   mInfo = aEventInitDict.mInfo;
   mHasUAVisualTransition = aEventInitDict.mHasUAVisualTransition;
   mSourceElement = aEventInitDict.mSourceElement;
+  if (RefPtr document = GetDocument()) {
+    mLastScrollGeneration = document->LastScrollGeneration();
+  }
 }
 
 void NavigateEvent::SetCanIntercept(bool aCanIntercept) {
@@ -412,8 +415,12 @@ static void ScrollToBeginningOfDocument(Document& aDocument) {
 }
 
 
-static void RestoreScrollPositionData(Document* aDocument) {
-  if (!aDocument || aDocument->HasBeenScrolled()) {
+static void RestoreScrollPositionData(Document* aDocument,
+                                      const uint32_t& aLastScrollGeneration) {
+  
+  
+  
+  if (!aDocument || aDocument->HasBeenScrolledSince(aLastScrollGeneration)) {
     return;
   }
 
@@ -433,7 +440,7 @@ void NavigateEvent::ProcessScrollBehavior() {
   if (mNavigationType == NavigationType::Traverse ||
       mNavigationType == NavigationType::Reload) {
     RefPtr<Document> document = GetDocument();
-    RestoreScrollPositionData(document);
+    RestoreScrollPositionData(document, mLastScrollGeneration);
     return;
   }
 

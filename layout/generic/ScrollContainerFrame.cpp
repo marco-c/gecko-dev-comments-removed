@@ -2688,6 +2688,12 @@ void ScrollContainerFrame::MarkEverScrolled() {
   
   
   mHasBeenScrolled = true;
+
+  
+  
+  if (mIsRoot) {
+    PresContext()->UpdateLastScrollGeneration();
+  }
 }
 
 void ScrollContainerFrame::MarkNotRecentlyScrolled() {
