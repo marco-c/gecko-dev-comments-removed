@@ -5,6 +5,7 @@
 
 
 #include "mozilla/Assertions.h"
+#include "mozilla/CheckedArithmetic.h"
 #include "mozilla/Likely.h"
 #include "mozilla/ScopeExit.h"
 
@@ -256,7 +257,7 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
     MOZ_ASSERT(header_ != nullptr);
     size_t newSize;
 
-    if (MOZ_UNLIKELY(__builtin_mul_overflow(bufferTotal_, 2, &newSize))) {
+    if (MOZ_UNLIKELY(!mozilla::SafeMul(bufferTotal_, size_t(2), &newSize))) {
       ReportOutOfMemory(cx_);
       return false;
     }

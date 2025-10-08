@@ -7,6 +7,7 @@
 
 
 #include "mozilla/BufferList.h"
+#include "mozilla/CheckedArithmetic.h"
 
 
 
@@ -15,7 +16,7 @@ class InfallibleAllocPolicy {
   template <typename T>
   T* pod_malloc(size_t aNumElems) {
     size_t size;
-    if (__builtin_mul_overflow(aNumElems, sizeof(T), &size)) {
+    if (!mozilla::SafeMul(aNumElems, sizeof(T), &size)) {
       MOZ_CRASH("TestBufferList.cpp: overflow");
     }
     T* rv = static_cast<T*>(malloc(size));

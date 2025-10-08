@@ -17,6 +17,7 @@
 #include "mozilla/ArrayUtils.h"  
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/CheckedArithmetic.h"
 #include "mozilla/Likely.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/MemoryReporting.h"
@@ -88,7 +89,7 @@ inline size_t GrowEltsByDoubling(size_t aOldElts, size_t aIncr) {
 
 
     [[maybe_unused]] size_t tmp;
-    if (MOZ_UNLIKELY(__builtin_mul_overflow(aOldElts, 4 * EltSize, &tmp))) {
+    if (MOZ_UNLIKELY(!mozilla::SafeMul(aOldElts, 4 * EltSize, &tmp))) {
       return 0;
     }
 
@@ -111,7 +112,7 @@ inline size_t GrowEltsByDoubling(size_t aOldElts, size_t aIncr) {
 
   [[maybe_unused]] size_t tmp;
   if (MOZ_UNLIKELY(newMinCap < aOldElts ||
-                   __builtin_mul_overflow(newMinCap, 4 * EltSize, &tmp))) {
+                   !mozilla::SafeMul(newMinCap, 4 * EltSize, &tmp))) {
     return 0;
   }
 
