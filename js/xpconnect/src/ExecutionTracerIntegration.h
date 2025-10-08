@@ -59,6 +59,17 @@ namespace mozilla {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 class ExecutionTracerIntegration {
  public:
   
@@ -70,6 +81,7 @@ class ExecutionTracerIntegration {
   enum class SummaryKind : uint8_t {
     Other,
     Node,
+    Exception,
     
   };
 
@@ -88,6 +100,10 @@ class ExecutionTracerIntegration {
 
   static bool WriteNodeSummary(JSContext* aCx, nsINode* aNode, bool aNested,
                                JS_TracerSummaryWriter* aWriter);
+
+  static bool WriteExceptionSummary(JSContext* aCx, JS::Handle<JSObject*> aObj,
+                                    bool aNested,
+                                    JS_TracerSummaryWriter* aWriter);
 };
 }  
 #endif
