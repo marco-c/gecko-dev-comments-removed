@@ -549,14 +549,14 @@ void HTMLDialogElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
   SetStates(ElementState::OPEN, isOpen);
 
   
-  if (!OwnerDoc()->IsFullyActive()) {
-    return;
-  }
-
-  
   
   if (!isOpen && wasOpen) {
     CleanupSteps();
+  }
+
+  
+  if (!OwnerDoc()->IsFullyActive()) {
+    return;
   }
 
   
