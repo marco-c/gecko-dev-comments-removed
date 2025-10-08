@@ -68,6 +68,7 @@ LazyLogModule gDictionaryLog("CompressionDictionaries");
 
 
 StaticRefPtr<DictionaryCache> gDictionaryCache;
+nsCOMPtr<nsICacheStorage> DictionaryCache::sCacheStorage;
 
 DictionaryCacheEntry::DictionaryCacheEntry(const nsACString& aURI,
                                            const nsACString& aPattern,
@@ -147,6 +148,7 @@ bool DictionaryCacheEntry::Prefetch(nsILoadContextInfo* aLoadContextInfo,
   
   if (mWaitingPrefetch.IsEmpty()) {
     if (mDictionaryData.empty()) {
+      
       
       
       nsCOMPtr<nsICacheStorageService> cacheStorageService(
@@ -250,6 +252,8 @@ DictionaryCacheEntry::OnDataAvailable(nsIRequest* request,
                                       nsIInputStream* aInputStream,
                                       uint64_t aOffset, uint32_t aCount) {
   uint32_t n;
+  DICTIONARY_LOG(
+      ("DictionaryCacheEntry %s OnDataAvailable %u", mURI.get(), aCount));
   return aInputStream->ReadSegments(&DictionaryCacheEntry::ReadCacheData, this,
                                     aCount, &n);
 }
@@ -271,6 +275,10 @@ DictionaryCacheEntry::OnStopRequest(nsIRequest* request, nsresult result) {
   if (NS_SUCCEEDED(result)) {
     FinishFile();
   } else {
+    
+    
+    
+    
     
   }
   return NS_OK;
@@ -320,6 +328,54 @@ DictionaryCacheEntry::OnCacheEntryAvailable(nsICacheEntry* entry, bool isNew,
 }
 
 
+
+class DictionaryOriginReader final : public nsICacheEntryOpenCallback {
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSICACHEENTRYOPENCALLBACK
+
+  DictionaryOriginReader() {}
+
+  
+  
+  void Init(nsACString& aURI,
+            const std::function<nsresult(DictionaryCacheEntry*)>& aCallback) {
+    mCallback = aCallback;
+    mSelf = this;  
+    DictionaryCache::sCacheStorage->AsyncOpenURIString(
+        aURI, ""_ns, nsICacheStorage::OPEN_READONLY, this);
+  }
+
+ private:
+  ~DictionaryOriginReader() {}
+
+  std::function<nsresult(DictionaryCacheEntry*)> mCallback;
+  RefPtr<DictionaryOriginReader> mSelf;
+};
+
+NS_IMPL_ISUPPORTS(DictionaryOriginReader, nsICacheEntryOpenCallback)
+
+NS_IMETHODIMP DictionaryOriginReader::OnCacheEntryCheck(nsICacheEntry* entry,
+                                                        uint32_t* result) {
+  *result = nsICacheEntryOpenCallback::ENTRY_WANTED;
+  DICTIONARY_LOG(
+      ("DictionaryOriginReader::OnCacheEntryCheck this=%p for entry %p", this,
+       entry));
+  return NS_OK;
+}
+
+NS_IMETHODIMP DictionaryOriginReader::OnCacheEntryAvailable(
+    nsICacheEntry* entry, bool isNew, nsresult result) {
+  MOZ_ASSERT(NS_IsMainThread(), "Got cache entry off main thread!");
+  DICTIONARY_LOG(
+      ("Dictionary::OnCacheEntryAvailable this=%p for entry %p", this, entry));
+  
+
+  (mCallback)(nullptr);
+  mSelf = nullptr;  
+  return NS_OK;
+}
+
+
 already_AddRefed<DictionaryCache> DictionaryCache::GetInstance() {
   if (!gDictionaryCache) {
     gDictionaryCache = new DictionaryCache();
@@ -328,7 +384,20 @@ already_AddRefed<DictionaryCache> DictionaryCache::GetInstance() {
   return do_AddRef(gDictionaryCache);
 }
 
-nsresult DictionaryCache::Init() { return NS_OK; }
+nsresult DictionaryCache::Init() {
+  nsCOMPtr<nsICacheStorageService> cacheStorageService(
+      components::CacheStorage::Service());
+  if (!cacheStorageService) {
+    return NS_ERROR_FAILURE;
+  }
+  nsresult rv = cacheStorageService->DiskCacheStorage(
+      nullptr, getter_AddRefs(sCacheStorage));  
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  DICTIONARY_LOG(("Inited DictionaryCache %p", sCacheStorage.get()));
+  return NS_OK;
+}
 
 nsresult DictionaryCache::AddEntry(nsIURI* aURI, const nsACString& aKey,
                                    const nsACString& aPattern,
@@ -458,17 +527,18 @@ void DictionaryCache::GetDictionaryFor(
   
   
   
+
   
+  if (!sCacheStorage) {  
+    return;
+  }
 
   
   
   
-  
-  
-  
-  
-
-  (aCallback)(nullptr);
+  nsCString key("dict:"_ns + prepath);
+  RefPtr<DictionaryOriginReader> reader = new DictionaryOriginReader();
+  reader->Init(key, aCallback);
 }
 
 static void MakeMetadataEntry() {
