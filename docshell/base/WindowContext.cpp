@@ -625,9 +625,10 @@ bool WindowContext::HasValidTransientUserGestureActivation() {
 
 bool WindowContext::ConsumeTransientUserGestureActivation() {
   MOZ_ASSERT(IsInProcess());
-  MOZ_ASSERT(IsCurrent());
-
   
+  if (!IsCurrent()) {
+    return false;
+  }
 
   if (!HasValidTransientUserGestureActivation()) {
     return false;
