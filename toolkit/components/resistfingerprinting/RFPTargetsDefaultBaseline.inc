@@ -3,15 +3,3 @@
 
 
 
-
-
-
-#ifdef NIGHTLY_BUILD
-DESKTOP_DEFAULT(ScreenAvailToResolution)
-DESKTOP_DEFAULT(MaxTouchPointsCollapse)
-#endif
-
-#ifdef NIGHTLY_BUILD
-ANDROID_DEFAULT(ScreenAvailToResolution)
-ANDROID_DEFAULT(MaxTouchPointsCollapse)
-#endif
