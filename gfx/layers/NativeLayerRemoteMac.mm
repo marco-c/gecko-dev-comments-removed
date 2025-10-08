@@ -240,7 +240,7 @@ void NativeLayerRemoteMac::FlushDirtyLayerInfoToCommandQueue() {
       
       
       
-      auto surfaceRef = surfaceWithInvalidRegion->mSurface.get();
+      IOSurfaceRef surfaceRef = surfaceWithInvalidRegion->mSurface.get();
       surfaceID = IOSurfaceGetID(surfaceRef);
     }
 
