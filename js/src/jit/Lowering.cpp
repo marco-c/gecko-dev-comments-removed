@@ -4234,33 +4234,15 @@ void LIRGenerator::visitStoreDynamicSlot(MStoreDynamicSlot* ins) {
   }
 }
 
-
-
-static bool IsNonNurseryConstant(MDefinition* def) {
-  if (!def->isConstant()) {
-    return false;
-  }
-  Value v = def->toConstant()->toJSValue();
-  return !v.isGCThing() || !IsInsideNursery(v.toGCThing());
-}
-
 void LIRGenerator::visitPostWriteBarrier(MPostWriteBarrier* ins) {
   MOZ_ASSERT(ins->object()->type() == MIRType::Object);
-
-  
-  
-  
-  
-  bool useConstantObject = IsNonNurseryConstant(ins->object());
 
   switch (ins->value()->type()) {
     case MIRType::Object: {
       LDefinition tmp =
           needTempForPostBarrier() ? temp() : LDefinition::BogusTemp();
-      LPostWriteBarrierO* lir = new (alloc())
-          LPostWriteBarrierO(useConstantObject ? useOrConstant(ins->object())
-                                               : useRegister(ins->object()),
-                             useRegister(ins->value()), tmp);
+      LPostWriteBarrierO* lir = new (alloc()) LPostWriteBarrierO(
+          useRegisterOrConstant(ins->object()), useRegister(ins->value()), tmp);
       add(lir, ins);
       assignSafepoint(lir, ins);
       break;
@@ -4268,10 +4250,8 @@ void LIRGenerator::visitPostWriteBarrier(MPostWriteBarrier* ins) {
     case MIRType::String: {
       LDefinition tmp =
           needTempForPostBarrier() ? temp() : LDefinition::BogusTemp();
-      LPostWriteBarrierS* lir = new (alloc())
-          LPostWriteBarrierS(useConstantObject ? useOrConstant(ins->object())
-                                               : useRegister(ins->object()),
-                             useRegister(ins->value()), tmp);
+      LPostWriteBarrierS* lir = new (alloc()) LPostWriteBarrierS(
+          useRegisterOrConstant(ins->object()), useRegister(ins->value()), tmp);
       add(lir, ins);
       assignSafepoint(lir, ins);
       break;
@@ -4279,10 +4259,8 @@ void LIRGenerator::visitPostWriteBarrier(MPostWriteBarrier* ins) {
     case MIRType::BigInt: {
       LDefinition tmp =
           needTempForPostBarrier() ? temp() : LDefinition::BogusTemp();
-      auto* lir = new (alloc())
-          LPostWriteBarrierBI(useConstantObject ? useOrConstant(ins->object())
-                                                : useRegister(ins->object()),
-                              useRegister(ins->value()), tmp);
+      auto* lir = new (alloc()) LPostWriteBarrierBI(
+          useRegisterOrConstant(ins->object()), useRegister(ins->value()), tmp);
       add(lir, ins);
       assignSafepoint(lir, ins);
       break;
@@ -4290,10 +4268,8 @@ void LIRGenerator::visitPostWriteBarrier(MPostWriteBarrier* ins) {
     case MIRType::Value: {
       LDefinition tmp =
           needTempForPostBarrier() ? temp() : LDefinition::BogusTemp();
-      LPostWriteBarrierV* lir = new (alloc())
-          LPostWriteBarrierV(useConstantObject ? useOrConstant(ins->object())
-                                               : useRegister(ins->object()),
-                             useBox(ins->value()), tmp);
+      LPostWriteBarrierV* lir = new (alloc()) LPostWriteBarrierV(
+          useRegisterOrConstant(ins->object()), useBox(ins->value()), tmp);
       add(lir, ins);
       assignSafepoint(lir, ins);
       break;
@@ -4309,22 +4285,13 @@ void LIRGenerator::visitPostWriteElementBarrier(MPostWriteElementBarrier* ins) {
   MOZ_ASSERT(ins->object()->type() == MIRType::Object);
   MOZ_ASSERT(ins->index()->type() == MIRType::Int32);
 
-  
-  
-  
-  
-  bool useConstantObject =
-      ins->object()->isConstant() &&
-      !IsInsideNursery(&ins->object()->toConstant()->toObject());
-
   switch (ins->value()->type()) {
     case MIRType::Object: {
       LDefinition tmp =
           needTempForPostBarrier() ? temp() : LDefinition::BogusTemp();
       LPostWriteElementBarrierO* lir = new (alloc()) LPostWriteElementBarrierO(
-          useConstantObject ? useOrConstant(ins->object())
-                            : useRegister(ins->object()),
-          useRegister(ins->value()), useRegister(ins->index()), tmp);
+          useRegisterOrConstant(ins->object()), useRegister(ins->value()),
+          useRegister(ins->index()), tmp);
       add(lir, ins);
       assignSafepoint(lir, ins);
       break;
@@ -4333,9 +4300,8 @@ void LIRGenerator::visitPostWriteElementBarrier(MPostWriteElementBarrier* ins) {
       LDefinition tmp =
           needTempForPostBarrier() ? temp() : LDefinition::BogusTemp();
       LPostWriteElementBarrierS* lir = new (alloc()) LPostWriteElementBarrierS(
-          useConstantObject ? useOrConstant(ins->object())
-                            : useRegister(ins->object()),
-          useRegister(ins->value()), useRegister(ins->index()), tmp);
+          useRegisterOrConstant(ins->object()), useRegister(ins->value()),
+          useRegister(ins->index()), tmp);
       add(lir, ins);
       assignSafepoint(lir, ins);
       break;
@@ -4344,9 +4310,8 @@ void LIRGenerator::visitPostWriteElementBarrier(MPostWriteElementBarrier* ins) {
       LDefinition tmp =
           needTempForPostBarrier() ? temp() : LDefinition::BogusTemp();
       auto* lir = new (alloc()) LPostWriteElementBarrierBI(
-          useConstantObject ? useOrConstant(ins->object())
-                            : useRegister(ins->object()),
-          useRegister(ins->value()), useRegister(ins->index()), tmp);
+          useRegisterOrConstant(ins->object()), useRegister(ins->value()),
+          useRegister(ins->index()), tmp);
       add(lir, ins);
       assignSafepoint(lir, ins);
       break;
@@ -4355,9 +4320,8 @@ void LIRGenerator::visitPostWriteElementBarrier(MPostWriteElementBarrier* ins) {
       LDefinition tmp =
           needTempForPostBarrier() ? temp() : LDefinition::BogusTemp();
       LPostWriteElementBarrierV* lir = new (alloc()) LPostWriteElementBarrierV(
-          useConstantObject ? useOrConstant(ins->object())
-                            : useRegister(ins->object()),
-          useRegister(ins->index()), useBox(ins->value()), tmp);
+          useRegisterOrConstant(ins->object()), useRegister(ins->index()),
+          useBox(ins->value()), tmp);
       add(lir, ins);
       assignSafepoint(lir, ins);
       break;
@@ -6241,7 +6205,7 @@ void LIRGenerator::visitSetPropertyCache(MSetPropertyCache* ins) {
   
   bool useConstId =
       id->type() == MIRType::String || id->type() == MIRType::Symbol;
-  bool useConstValue = IsNonNurseryConstant(ins->value());
+  bool useConstValue = ins->value()->isConstant();
 
   
   
