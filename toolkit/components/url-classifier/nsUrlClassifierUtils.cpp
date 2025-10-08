@@ -443,8 +443,9 @@ nsUrlClassifierUtils::GetTelemetryProvider(const nsACString& aTableName,
   
   
   if (!"mozilla"_ns.Equals(aProvider) && !"google"_ns.Equals(aProvider) &&
-      !"google4"_ns.Equals(aProvider) && !"baidu"_ns.Equals(aProvider) &&
-      !"mozcn"_ns.Equals(aProvider) && !"yandex"_ns.Equals(aProvider) &&
+      !"google4"_ns.Equals(aProvider) && !"google5"_ns.Equals(aProvider) &&
+      !"baidu"_ns.Equals(aProvider) && !"mozcn"_ns.Equals(aProvider) &&
+      !"yandex"_ns.Equals(aProvider) &&
       !nsLiteralCString(TESTING_TABLE_PROVIDER_NAME).Equals(aProvider)) {
     aProvider.AssignLiteral("other");
   }
