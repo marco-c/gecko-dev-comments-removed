@@ -157,7 +157,8 @@ class Nursery {
   
   void* allocNurseryOrMallocBuffer(JS::Zone* zone, gc::Cell* owner,
                                    size_t nbytes, arena_id_t arenaId);
-  void* allocateBuffer(JS::Zone* zone, gc::Cell* owner, size_t nbytes);
+  void* allocateBuffer(JS::Zone* zone, gc::Cell* owner, size_t nbytes,
+                       size_t maxNurserySize);
 
   
   
@@ -178,7 +179,8 @@ class Nursery {
 
   
   void* reallocateBuffer(JS::Zone* zone, gc::Cell* cell, void* oldBuffer,
-                         size_t oldBytes, size_t newBytes);
+                         size_t oldBytes, size_t newBytes,
+                         size_t maxNurserySize);
 
   
   void freeBuffer(JS::Zone* zone, gc::Cell* cell, void* buffer, size_t bytes);
