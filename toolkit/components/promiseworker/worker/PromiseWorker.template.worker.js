@@ -39,6 +39,20 @@ importScripts("resource://gre/modules/workers/require.js");
 
 
 
+const EXCEPTION_NAMES = {
+  EvalError: "EvalError",
+  InternalError: "InternalError",
+  RangeError: "RangeError",
+  ReferenceError: "ReferenceError",
+  SyntaxError: "SyntaxError",
+  TypeError: "TypeError",
+  URIError: "URIError",
+};
+
+
+
+
+
 
 
 
@@ -90,17 +104,6 @@ function AbstractWorker(agent) {
   this._agent = agent;
   this._deferredJobs = new Map();
   this._deferredJobId = 0;
-  
-  
-  this._exceptionNames = {
-    EvalError: "EvalError",
-    InternalError: "InternalError",
-    RangeError: "RangeError",
-    ReferenceError: "ReferenceError",
-    SyntaxError: "SyntaxError",
-    TypeError: "TypeError",
-    URIError: "URIError",
-  };
 }
 
 AbstractWorker.prototype = {
@@ -222,7 +225,7 @@ AbstractWorker.prototype = {
         message: exn.message,
       };
       this.postMessage({ fail: error, id, durationMs });
-    } else if (exn.constructor.name in this._exceptionNames) {
+    } else if (exn.constructor.name in EXCEPTION_NAMES) {
       
       
       
