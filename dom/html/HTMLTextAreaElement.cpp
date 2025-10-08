@@ -29,6 +29,7 @@
 #include "nsIMutationObserver.h"
 #include "nsLayoutUtils.h"
 #include "nsLinebreakConverter.h"
+#include "nsPlainTextSerializer.h"
 #include "nsPresContext.h"
 #include "nsReadableUtils.h"
 #include "nsStyleConsts.h"
@@ -128,6 +129,26 @@ void HTMLTextAreaElement::SelectAll() {
   }
 }
 
+enum class Wrap {
+  Off,
+  Hard,
+  Soft,
+};
+
+static Wrap WrapValue(const HTMLTextAreaElement& aElement) {
+  static mozilla::dom::Element::AttrValuesArray strings[] = {
+      nsGkAtoms::HARD, nsGkAtoms::OFF, nullptr};
+  switch (aElement.FindAttrValueIn(kNameSpaceID_None, nsGkAtoms::wrap, strings,
+                                   eIgnoreCase)) {
+    case 0:
+      return Wrap::Hard;
+    case 1:
+      return Wrap::Off;
+    default:
+      return Wrap::Soft;
+  }
+}
+
 bool HTMLTextAreaElement::IsHTMLFocusable(IsFocusableFlags aFlags,
                                           bool* aIsFocusable,
                                           int32_t* aTabIndex) {
@@ -148,14 +169,13 @@ void HTMLTextAreaElement::GetType(nsAString& aType) {
 }
 
 void HTMLTextAreaElement::GetValue(nsAString& aValue) {
-  GetValueInternal(aValue, true);
+  GetValueInternal(aValue);
   MOZ_ASSERT(aValue.FindChar(static_cast<char16_t>('\r')) == -1);
 }
 
-void HTMLTextAreaElement::GetValueInternal(nsAString& aValue,
-                                           bool aIgnoreWrap) const {
+void HTMLTextAreaElement::GetValueInternal(nsAString& aValue) const {
   MOZ_ASSERT(mState);
-  mState->GetValue(aValue, aIgnoreWrap,  true);
+  mState->GetValue(aValue,  true);
 }
 
 nsIEditor* HTMLTextAreaElement::GetEditorForBindings() {
@@ -254,7 +274,7 @@ void HTMLTextAreaElement::SetValue(const nsAString& aValue,
   
   
   nsAutoString currentValue;
-  GetValueInternal(currentValue, true);
+  GetValueInternal(currentValue);
 
   nsresult rv = SetValueInternal(
       aValue,
@@ -266,7 +286,7 @@ void HTMLTextAreaElement::SetValue(const nsAString& aValue,
   }
 
   if (mFocusedValue.Equals(currentValue)) {
-    GetValueInternal(mFocusedValue, true);
+    GetValueInternal(mFocusedValue);
   }
 }
 
@@ -448,7 +468,7 @@ nsresult HTMLTextAreaElement::PreHandleEvent(EventChainVisitor& aVisitor) {
 
 void HTMLTextAreaElement::FireChangeEventIfNeeded() {
   nsString value;
-  GetValueInternal(value, true);
+  GetValueInternal(value);
 
   
   
@@ -472,7 +492,7 @@ nsresult HTMLTextAreaElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
     mHandlingSelect = false;
   }
   if (aVisitor.mEvent->mMessage == eFocus) {
-    GetValueInternal(mFocusedValue, true);
+    GetValueInternal(mFocusedValue);
   }
   return NS_OK;
 }
@@ -606,7 +626,7 @@ void HTMLTextAreaElement::SetRangeText(const nsAString& aReplacement,
 }
 
 void HTMLTextAreaElement::GetValueFromSetRangeText(nsAString& aValue) {
-  GetValueInternal(aValue, false);
+  GetValueInternal(aValue);
 }
 
 nsresult HTMLTextAreaElement::SetValueFromSetRangeText(
@@ -640,13 +660,19 @@ HTMLTextAreaElement::SubmitNamesValues(FormData* aFormData) {
   }
 
   
-  
-  
   nsAutoString value;
-  GetValueInternal(value, false);
+  GetValueInternal(value);
+  if (WrapValue(*this) == Wrap::Hard) {
+    if (auto cols = GetWrapCols(); cols > 0) {
+      int32_t flags = nsIDocumentEncoder::OutputLFLineBreak |
+                      nsIDocumentEncoder::OutputPreformatted |
+                      nsIDocumentEncoder::OutputPersistNBSP |
+                      nsIDocumentEncoder::OutputBodyOnly |
+                      nsIDocumentEncoder::OutputWrap;
+      nsPlainTextSerializer::HardWrapString(value, cols, flags);
+    }
+  }
 
-  
-  
   
   const nsresult rv = aFormData->AddNameValuePair(name, value);
   if (NS_FAILED(rv)) {
@@ -664,7 +690,7 @@ void HTMLTextAreaElement::SaveState() {
     state = GetPrimaryPresState();
     if (state) {
       nsAutoString value;
-      GetValueInternal(value, true);
+      GetValueInternal(value);
 
       if (NS_FAILED(nsLinebreakConverter::ConvertStringLineBreaks(
               value, nsLinebreakConverter::eLinebreakPlatform,
@@ -887,7 +913,7 @@ nsresult HTMLTextAreaElement::CopyInnerTo(Element* aDest) {
     auto* dest = static_cast<HTMLTextAreaElement*>(aDest);
 
     nsAutoString value;
-    GetValueInternal(value, true);
+    GetValueInternal(value);
 
     
     
@@ -1035,13 +1061,9 @@ Maybe<int32_t> HTMLTextAreaElement::GetCols() {
 }
 
 int32_t HTMLTextAreaElement::GetWrapCols() {
-  nsHTMLTextWrap wrapProp;
-  TextControlElement::GetWrapPropertyEnum(this, wrapProp);
-  if (wrapProp == TextControlElement::eHTMLTextWrap_Off) {
-    
+  if (WrapValue(*this) == Wrap::Off) {
     return 0;
   }
-
   
   return GetColsOrDefault();
 }
@@ -1064,7 +1086,7 @@ bool HTMLTextAreaElement::ValueChanged() const { return mValueChanged; }
 
 void HTMLTextAreaElement::GetTextEditorValue(nsAString& aValue) const {
   MOZ_ASSERT(mState);
-  mState->GetValue(aValue,  true,  true);
+  mState->GetValue(aValue,  true);
 }
 
 void HTMLTextAreaElement::InitializeKeyboardEventListeners() {

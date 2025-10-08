@@ -1667,7 +1667,7 @@ void HTMLInputElement::GetNonFileValueInternal(nsAString& aValue) const {
     case VALUE_MODE_VALUE:
       if (IsSingleLineTextControl(false)) {
         if (mInputData.mState) {
-          mInputData.mState->GetValue(aValue, true,  false);
+          mInputData.mState->GetValue(aValue,  false);
         } else {
           
           aValue.Truncate();
@@ -7065,7 +7065,7 @@ bool HTMLInputElement::ValueChanged() const { return mValueChanged; }
 
 void HTMLInputElement::GetTextEditorValue(nsAString& aValue) const {
   if (TextControlState* state = GetEditorState()) {
-    state->GetValue(aValue,  true,  true);
+    state->GetValue(aValue,  true);
   }
 }
 

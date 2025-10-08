@@ -335,10 +335,7 @@ class HTMLTextAreaElement final : public TextControlElement,
 
 
 
-
-
-
-  void GetValueInternal(nsAString& aValue, bool aIgnoreWrap) const;
+  void GetValueInternal(nsAString& aValue) const;
 
   
 

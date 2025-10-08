@@ -223,16 +223,6 @@ class TextControlElement : public nsGenericHTMLFormControlElementWithState {
   inline static constexpr int32_t DEFAULT_UNDO_CAP = 1000;
 
   
-  typedef enum {
-    eHTMLTextWrap_Off = 1,   
-    eHTMLTextWrap_Hard = 2,  
-    eHTMLTextWrap_Soft = 3   
-  } nsHTMLTextWrap;
-
-  static bool GetWrapPropertyEnum(nsIContent* aContent,
-                                  nsHTMLTextWrap& aWrapProp);
-
-  
 
 
 
