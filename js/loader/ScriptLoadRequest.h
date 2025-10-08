@@ -87,7 +87,7 @@ class ScriptLoadRequest : public nsISupports,
   friend class ScriptLoadRequestList;
 
  protected:
-  virtual ~ScriptLoadRequest() {}
+  virtual ~ScriptLoadRequest();
 
  public:
   using SRIMetadata = mozilla::dom::SRIMetadata;
@@ -187,11 +187,13 @@ class ScriptLoadRequest : public nsISupports,
   void SetPendingFetchingError();
 
   bool PassedConditionForDiskCache() const {
-    return mDiskCachingPlan == CachingPlan::PassedCondition;
+    return mDiskCachingPlan == CachingPlan::PassedCondition ||
+           mDiskCachingPlan == CachingPlan::MarkedForCache;
   }
 
   bool PassedConditionForMemoryCache() const {
-    return mMemoryCachingPlan == CachingPlan::PassedCondition;
+    return mMemoryCachingPlan == CachingPlan::PassedCondition ||
+           mMemoryCachingPlan == CachingPlan::MarkedForCache;
   }
 
   bool PassedConditionForEitherCache() const {
@@ -225,7 +227,34 @@ class ScriptLoadRequest : public nsISupports,
     mMemoryCachingPlan = CachingPlan::PassedCondition;
   }
 
+  bool IsMarkedForDiskCache() const {
+    return mDiskCachingPlan == CachingPlan::MarkedForCache;
+  }
+
+  bool IsMarkedForMemoryCache() const {
+    return mMemoryCachingPlan == CachingPlan::MarkedForCache;
+  }
+
+  bool IsMarkedForEitherCache() const {
+    return IsMarkedForDiskCache() || IsMarkedForMemoryCache();
+  }
+
+ protected:
+  void MarkForCache() {
+    MOZ_ASSERT(mDiskCachingPlan == CachingPlan::PassedCondition ||
+               mMemoryCachingPlan == CachingPlan::PassedCondition);
+
+    if (mDiskCachingPlan == CachingPlan::PassedCondition) {
+      mDiskCachingPlan = CachingPlan::MarkedForCache;
+    }
+    if (mMemoryCachingPlan == CachingPlan::PassedCondition) {
+      mMemoryCachingPlan = CachingPlan::MarkedForCache;
+    }
+  }
+
  public:
+  void MarkScriptForCache(JSScript* aScript);
+
   mozilla::CORSMode CORSMode() const { return mFetchOptions->mCORSMode; }
 
   bool HasLoadContext() const { return mLoadContext; }
@@ -272,6 +301,10 @@ class ScriptLoadRequest : public nsISupports,
 
     
     PassedCondition,
+
+    
+    
+    MarkedForCache,
   };
   CachingPlan mDiskCachingPlan = CachingPlan::Uninitialized;
   CachingPlan mMemoryCachingPlan = CachingPlan::Uninitialized;
@@ -322,6 +355,12 @@ class ScriptLoadRequest : public nsISupports,
   
   
   RefPtr<LoadedScript> mLoadedScript;
+
+  
+  
+  
+  
+  JS::Heap<JSScript*> mScriptForCache;
 
   
   

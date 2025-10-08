@@ -714,8 +714,18 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
   
   
+  void MaybePrepareForCacheBeforeExecute(ScriptLoadRequest* aRequest,
+                                         JS::Handle<JSScript*> aScript);
+
+  
+  
+  
+  
   nsresult MaybePrepareForCacheAfterExecute(ScriptLoadRequest* aRequest,
                                             nsresult aRv);
+
+  void MaybePrepareModuleForCacheBeforeExecute(
+      JSContext* aCx, ModuleLoadRequest* aRequest) override;
 
   
   
@@ -760,6 +770,12 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
 
   void UpdateCache();
+
+  
+
+
+  void FinishCollectingDelazifications(JSContext* aCx,
+                                       ScriptLoadRequest* aRequest);
 
   
 

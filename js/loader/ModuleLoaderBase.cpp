@@ -1585,6 +1585,9 @@ nsresult ModuleLoaderBase::EvaluateModuleInContext(
 
   Rooted<Value> rval(aCx);
 
+  
+  mLoader->MaybePrepareModuleForCacheBeforeExecute(aCx, aRequest);
+
   bool ok = ModuleEvaluate(aCx, module, &rval);
 
   
@@ -1612,7 +1615,6 @@ nsresult ModuleLoaderBase::EvaluateModuleInContext(
     LOG(("ScriptLoadRequest (%p):   evaluation failed on throw", aRequest));
   }
 
-  
   rv = mLoader->MaybePrepareModuleForCacheAfterExecute(aRequest, NS_OK);
 
   mLoader->MaybeUpdateCache();

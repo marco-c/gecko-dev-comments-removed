@@ -3321,9 +3321,18 @@ nsCString& ScriptLoader::BytecodeMimeTypeFor(
   return nsContentUtils::JSScriptBytecodeMimeType();
 }
 
+void ScriptLoader::MaybePrepareForCacheBeforeExecute(
+    ScriptLoadRequest* aRequest, JS::Handle<JSScript*> aScript) {
+  if (!aRequest->PassedConditionForEitherCache()) {
+    return;
+  }
+
+  aRequest->MarkScriptForCache(aScript);
+}
+
 nsresult ScriptLoader::MaybePrepareForCacheAfterExecute(
     ScriptLoadRequest* aRequest, nsresult aRv) {
-  if (aRequest->PassedConditionForEitherCache()) {
+  if (aRequest->IsMarkedForEitherCache()) {
     TRACE_FOR_TEST(aRequest, "scriptloader_encode");
     
     
@@ -3348,6 +3357,30 @@ nsresult ScriptLoader::MaybePrepareForCacheAfterExecute(
   aRequest->getLoadedScript()->DropDiskCacheReference();
 
   return aRv;
+}
+
+void ScriptLoader::MaybePrepareModuleForCacheBeforeExecute(
+    JSContext* aCx, ModuleLoadRequest* aRequest) {
+  if (aRequest->IsMarkedForEitherCache()) {
+    
+    return;
+  }
+
+  if (aRequest->PassedConditionForEitherCache()) {
+    aRequest->MarkModuleForCache();
+  }
+
+  for (auto* r = mCacheableDependencyModules.getFirst(); r; r = r->getNext()) {
+    auto* dep = r->AsModuleRequest();
+    MOZ_ASSERT(dep->PassedConditionForEitherCache());
+
+    if (dep->GetRootModule() != aRequest) {
+      continue;
+    }
+    MOZ_ASSERT(!dep->IsMarkedForEitherCache());
+
+    dep->MarkModuleForCache();
+  }
 }
 
 nsresult ScriptLoader::MaybePrepareModuleForCacheAfterExecute(
@@ -3465,13 +3498,17 @@ nsresult ScriptLoader::EvaluateScript(nsIGlobalObject* aGlobalObject,
                                   classicScriptValue, introductionScript, erv);
 
   if (!erv.Failed()) {
-    LOG(("ScriptLoadRequest (%p): Evaluate Script", aRequest));
-    AUTO_PROFILER_MARKER_TEXT("ScriptExecution", JS,
-                              MarkerInnerWindowIdFromJSContext(cx),
-                              profilerLabelString);
+    MaybePrepareForCacheBeforeExecute(aRequest, script);
 
-    MOZ_ASSERT(options.noScriptRval);
-    ExecuteCompiledScript(cx, classicScript, script, erv);
+    {
+      LOG(("ScriptLoadRequest (%p): Evaluate Script", aRequest));
+      AUTO_PROFILER_MARKER_TEXT("ScriptExecution", JS,
+                                MarkerInnerWindowIdFromJSContext(cx),
+                                profilerLabelString);
+
+      MOZ_ASSERT(options.noScriptRval);
+      ExecuteCompiledScript(cx, classicScript, script, erv);
+    }
   }
   rv = EvaluationExceptionToNSResult(erv);
 
@@ -3503,8 +3540,8 @@ LoadedScript* ScriptLoader::GetActiveScript(JSContext* aCx) {
 }
 
 void ScriptLoader::RegisterForCache(ScriptLoadRequest* aRequest) {
-  MOZ_ASSERT(aRequest->PassedConditionForEitherCache());
-  MOZ_ASSERT_IF(aRequest->PassedConditionForDiskCache(),
+  MOZ_ASSERT(aRequest->IsMarkedForEitherCache());
+  MOZ_ASSERT_IF(aRequest->IsMarkedForDiskCache(),
                 aRequest->getLoadedScript()->HasDiskCacheReference());
   MOZ_DIAGNOSTIC_ASSERT(!aRequest->isInList());
   mCachingQueue.AppendElement(aRequest);
@@ -3600,11 +3637,13 @@ void ScriptLoader::UpdateCache() {
     MOZ_ASSERT(!IsWebExtensionRequest(request),
                "Bytecode for web extension content scrips is not cached");
 
+    FinishCollectingDelazifications(aes.cx(), request);
+
     
     
     
     
-    if (request->PassedConditionForDiskCache() &&
+    if (request->IsMarkedForDiskCache() &&
         request->getLoadedScript()->HasDiskCacheReference()) {
       EncodeBytecodeAndSave(aes.cx(), request->getLoadedScript());
     }
@@ -3612,6 +3651,29 @@ void ScriptLoader::UpdateCache() {
     request->DropBytecode();
     request->getLoadedScript()->DropDiskCacheReference();
   }
+}
+
+void ScriptLoader::FinishCollectingDelazifications(
+    JSContext* aCx, ScriptLoadRequest* aRequest) {
+  RefPtr<JS::Stencil> stencil;
+  bool result;
+  if (aRequest->IsModuleRequest()) {
+    aRequest->mScriptForCache = nullptr;
+    ModuleScript* moduleScript = aRequest->AsModuleRequest()->mModuleScript;
+    JS::Rooted<JSObject*> module(aCx, moduleScript->ModuleRecord());
+    result = JS::FinishCollectingDelazifications(aCx, module,
+                                                 getter_AddRefs(stencil));
+  } else {
+    JS::Rooted<JSScript*> script(aCx, aRequest->mScriptForCache);
+    aRequest->mScriptForCache = nullptr;
+    result = JS::FinishCollectingDelazifications(aCx, script,
+                                                 getter_AddRefs(stencil));
+  }
+  if (!result) {
+    JS_ClearPendingException(aCx);
+    return;
+  }
+  MOZ_ASSERT(stencil == aRequest->GetStencil());
 }
 
 void ScriptLoader::EncodeBytecodeAndSave(
@@ -3695,11 +3757,38 @@ void ScriptLoader::GiveUpCaching() {
   
   mGiveUpCaching = true;
 
+  
+  
+  
+  
+  nsCOMPtr<nsIScriptGlobalObject> globalObject = GetScriptGlobalObject();
+  AutoAllowLegacyScriptExecution exemption;
+  Maybe<AutoEntryScript> aes;
+
+  if (globalObject) {
+    nsCOMPtr<nsIScriptContext> context = globalObject->GetScriptContext();
+    if (context) {
+      aes.emplace(globalObject, "give-up bytecode encoding", true);
+    }
+  }
+
   while (!mCachingQueue.isEmpty()) {
     RefPtr<ScriptLoadRequest> request = mCachingQueue.StealFirst();
     LOG(("ScriptLoadRequest (%p): Cannot serialize bytecode", request.get()));
     TRACE_FOR_TEST_NONE(request, "scriptloader_bytecode_failed");
     MOZ_ASSERT(!IsWebExtensionRequest(request));
+
+    if (aes.isSome()) {
+      if (request->IsModuleRequest()) {
+        ModuleScript* moduleScript = request->AsModuleRequest()->mModuleScript;
+        JS::Rooted<JSObject*> module(aes->cx(), moduleScript->ModuleRecord());
+        JS::AbortCollectingDelazifications(module);
+      } else {
+        JS::Rooted<JSScript*> script(aes->cx(), request->mScriptForCache);
+        request->mScriptForCache = nullptr;
+        JS::AbortCollectingDelazifications(script);
+      }
+    }
 
     request->getLoadedScript()->DropDiskCacheReference();
   }
