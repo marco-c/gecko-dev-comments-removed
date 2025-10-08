@@ -148,6 +148,10 @@ impl<'a> RequestBuilder<'a> {
         cmd.args(["--backgroundtask", "crashreporterNetworkBackend"]);
         cmd.arg(url);
         cmd.arg(user_agent());
+        
+        
+        cmd.env("MOZ_CRASHREPORTER_DISABLE", "1")
+            .env_remove("MOZ_CRASHREPORTER");
 
         let mut file = TempRequestFile::new()?;
         serde_json::to_writer(&mut *file, self)?;
