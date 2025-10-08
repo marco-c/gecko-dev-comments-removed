@@ -198,9 +198,16 @@ class nsHttpResponseHead {
   }
 
   bool NoCache_locked() const MOZ_REQUIRES(mRecursiveMutex) {
-    
     MOZ_ASSERT_IF(mCacheControlNoCache, mHasCacheControl);
-    return mHasCacheControl ? mCacheControlNoCache : mPragmaNoCache;
+    
+    
+    
+    
+    
+    
+    
+    
+    return (mPragmaNoCache && !mCacheControlImmutable) || mCacheControlNoCache;
   }
 
  private:
