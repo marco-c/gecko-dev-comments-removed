@@ -14,9 +14,12 @@ Services.scriptloader.loadSubScript(
 
 
 
+
+
 loadScripts(
   { name: "common.js", dir: MOCHITESTS_DIR },
-  { name: "promisified-events.js", dir: MOCHITESTS_DIR }
+  { name: "promisified-events.js", dir: MOCHITESTS_DIR },
+  { name: "role.js", dir: MOCHITESTS_DIR }
 );
 
 const { CommonUtils } = ChromeUtils.importESModule(
@@ -78,10 +81,18 @@ async function testChildAtPoint(dpr, x, y, container, child, grandChild) {
 
 
 async function hitTest(browser, container, child, grandChild) {
-  const [childX, childY] = await getContentBoundsForDOMElm(
-    browser,
-    getAccessibleDOMNodeID(child)
-  );
+  let domEl = getAccessibleDOMNodeID(child);
+  if (!domEl) {
+    
+    
+    
+    if (child.parent.role == ROLE_DETAILS) {
+      
+      
+      domEl = getAccessibleDOMNodeID(child.firstChild);
+    }
+  }
+  const [childX, childY] = await getContentBoundsForDOMElm(browser, domEl);
   const x = childX + 1;
   const y = childY + 1;
 
