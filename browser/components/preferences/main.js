@@ -414,7 +414,9 @@ Preferences.addSetting({
 });
 Preferences.addSetting({
   id: "useOnScreenKeyboard",
-  pref: "ui.osk.enabled",
+  
+  
+  pref: AppConstants.platform == "win" ? "ui.osk.enabled" : undefined,
   visible: () => AppConstants.platform == "win",
 });
 Preferences.addSetting({
