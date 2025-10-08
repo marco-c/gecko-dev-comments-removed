@@ -21,7 +21,7 @@ fn get_timezone() -> Option<String> {
 
     if name.is_empty() || name.len() > MAX_LEN {
         
-        return None;
+        None
     } else {
         Some(name.to_owned())
     }
