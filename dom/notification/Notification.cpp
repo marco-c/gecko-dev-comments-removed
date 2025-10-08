@@ -134,6 +134,8 @@ NotificationPermissionRequest::Run() {
                  PermissionCheckPurpose::PermissionRequest,
                  mWindow->GetExtantDoc())) {
     mPermission = NotificationPermission::Denied;
+  } else if (!mPrincipal->Subsumes(mTopLevelPrincipal)) {
+    mPermission = NotificationPermission::Denied;
   }
 
   
