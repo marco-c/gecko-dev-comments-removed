@@ -40,6 +40,7 @@ class ImageEncoder {
   static nsresult ExtractData(nsAString& aType, const nsAString& aOptions,
                               const CSSIntSize aSize,
                               CanvasUtils::ImageExtraction aExtractionBehavior,
+                              const nsCString& aRandomizationKey,
                               nsICanvasRenderingContextInternal* aContext,
                               OffscreenCanvasDisplayHelper* aOffscreenDisplay,
                               nsIInputStream** aStream);
@@ -59,6 +60,7 @@ class ImageEncoder {
       nsAString& aType, const nsAString& aOptions, bool aUsingCustomOptions,
       UniquePtr<uint8_t[]> aImageBuffer, int32_t aFormat,
       const CSSIntSize aSize, CanvasUtils::ImageExtraction aExtractionBehavior,
+      const nsCString& aRandomizationKey,
       EncodeCompleteCallback* aEncodeCallback);
 
   
@@ -69,6 +71,7 @@ class ImageEncoder {
   static nsresult ExtractDataFromLayersImageAsync(
       nsAString& aType, const nsAString& aOptions, bool aUsingCustomOptions,
       layers::Image* aImage, CanvasUtils::ImageExtraction aExtractionBehavior,
+      const nsCString& aRandomizationKey,
       EncodeCompleteCallback* aEncodeCallback);
 
   
@@ -78,6 +81,7 @@ class ImageEncoder {
                                  uint8_t* aImageBuffer, int32_t aFormat,
                                  imgIEncoder* aEncoder,
                                  const nsAString& aEncoderOptions,
+                                 const nsACString& aRandomizationKey,
                                  nsIInputStream** aStream);
 
  private:
@@ -85,7 +89,8 @@ class ImageEncoder {
   static nsresult ExtractDataInternal(
       const nsAString& aType, const nsAString& aOptions, uint8_t* aImageBuffer,
       int32_t aFormat, const CSSIntSize aSize,
-      CanvasUtils::ImageExtraction aExtractionBehavior, layers::Image* aImage,
+      CanvasUtils::ImageExtraction aExtractionBehavior,
+      const nsCString& aRandomizationKey, layers::Image* aImage,
       nsICanvasRenderingContextInternal* aContext,
       OffscreenCanvasDisplayHelper* aOffscreenDisplay, nsIInputStream** aStream,
       imgIEncoder* aEncoder);

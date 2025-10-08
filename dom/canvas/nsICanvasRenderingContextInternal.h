@@ -122,10 +122,10 @@ class nsICanvasRenderingContextInternal : public nsISupports,
   
   
   
-  NS_IMETHOD GetInputStream(const char* mimeType,
-                            const nsAString& encoderOptions,
-                            mozilla::CanvasUtils::ImageExtraction spoofing,
-                            nsIInputStream** stream) = 0;
+  NS_IMETHOD GetInputStream(
+      const char* mimeType, const nsAString& encoderOptions,
+      mozilla::CanvasUtils::ImageExtraction extractionBehavior,
+      const nsACString& randomizationKey, nsIInputStream** stream) = 0;
 
   
   
