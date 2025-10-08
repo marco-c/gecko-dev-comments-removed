@@ -10,7 +10,8 @@
 #include "ModuleLoader.h"
 #include "SharedScriptCache.h"
 #include "js/TypeDecls.h"
-#include "js/Utility.h"  
+#include "js/Utility.h"                     
+#include "js/experimental/CompileScript.h"  
 #include "js/loader/LoadedScript.h"
 #include "js/loader/ModuleLoaderBase.h"
 #include "js/loader/ScriptKind.h"
@@ -764,7 +765,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
 
 
-  void EncodeBytecodeAndSave(JSContext* aCx,
+  void EncodeBytecodeAndSave(JS::FrontendContext* aFc,
                              JS::loader::LoadedScript* aLoadedScript);
 
   
