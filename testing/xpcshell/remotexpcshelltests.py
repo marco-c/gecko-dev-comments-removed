@@ -21,6 +21,7 @@ import mozfile
 import mozinfo
 import runxpcshelltests as xpcshell
 from mozdevice import ADBDevice, ADBDeviceFactory, ADBTimeoutError
+from mozinfo.platforminfo import android_api_to_os_version
 from mozlog import commandline
 from xpcshellcommandline import parser_remote
 
@@ -400,7 +401,12 @@ class XPCShellRemote(xpcshell.XPCShellTests):
         self.remoteLogFolder = posixpath.join(self.remoteTestRoot, "logs")
         
         
-        mozinfo.info["android_version"] = str(self.device.version)
+        android_version = str(self.device.version)
+        os_version = android_api_to_os_version(android_version)
+        self.log.info(
+            f"Android sdk version '{android_version}' corresponds to os_version '{os_version}'; use os_version to filter manifests"
+        )
+        mozinfo.info["os_version"] = os_version
         mozinfo.info["is_emulator"] = self.device._device_serial.startswith("emulator-")
 
         self.localBin = options["localBin"]
