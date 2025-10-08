@@ -155,11 +155,16 @@ void JsepTrack::RecvTrackSetRemote(const Sdp& aSdp,
   
   SetCNAME(helper.GetCNAME(aMsection));
   mSsrcs.clear();
+  
+  
+  
+  std::set<uint32_t> ssrcsSet;
   if (aMsection.GetAttributeList().HasAttribute(SdpAttribute::kSsrcAttribute)) {
-    for (const auto& ssrcAttr : aMsection.GetAttributeList().GetSsrc().mSsrcs) {
-      mSsrcs.push_back(ssrcAttr.ssrc);
+    for (const auto& s : aMsection.GetAttributeList().GetSsrc().mSsrcs) {
+      ssrcsSet.insert(s.ssrc);
     }
   }
+  mSsrcs.assign(ssrcsSet.begin(), ssrcsSet.end());
 
   
   

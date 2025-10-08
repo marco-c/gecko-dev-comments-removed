@@ -316,6 +316,7 @@ class JsepTrack {
   
   std::vector<std::string> mRids;
   UniquePtr<JsepTrackNegotiatedDetails> mNegotiatedDetails;
+  
   std::vector<uint32_t> mSsrcs;
   std::map<uint32_t, uint32_t> mSsrcToRtxSsrc;
   bool mActive;
