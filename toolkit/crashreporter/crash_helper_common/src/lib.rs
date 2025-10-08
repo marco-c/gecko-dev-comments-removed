@@ -18,9 +18,14 @@ use errors::MessageError;
 
 pub use crate::breakpad::{BreakpadChar, BreakpadData, BreakpadRawData, Pid};
 pub use crate::ipc_channel::{IPCChannel, IPCClientChannel};
-pub use crate::ipc_connector::{AncillaryData, IPCConnector, IPCEvent, INVALID_ANCILLARY_DATA};
+pub use crate::ipc_connector::{
+    AncillaryData, IPCConnector, IPCEvent, RawAncillaryData, INVALID_ANCILLARY_DATA,
+};
 pub use crate::ipc_listener::IPCListener;
-pub use crate::platform::{server_addr, ProcessHandle};
+pub use crate::platform::ProcessHandle;
+
+#[cfg(target_os = "windows")]
+pub use crate::platform::server_addr;
 
 
 
@@ -53,6 +58,11 @@ pub trait BreakpadString {
     
     
     unsafe fn from_raw(ptr: *mut BreakpadChar) -> OsString;
+}
+
+
+pub trait IntoRawAncillaryData {
+    fn into_raw(self) -> RawAncillaryData;
 }
 
 pub const IO_TIMEOUT: u16 = 2 * 1000;
