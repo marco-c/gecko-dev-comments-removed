@@ -267,20 +267,19 @@ void ThreadedDriver::WaitForNextIteration() {
   mWaitHelper.WaitForNextIterationAtLeast(WaitInterval());
 }
 
+TimeDuration ThreadedDriver::IterationDuration() {
+  return TimeDuration::FromMilliseconds(MEDIA_GRAPH_TARGET_PERIOD_MS);
+}
+
 TimeDuration SystemClockDriver::WaitInterval() {
   MOZ_ASSERT(mThread);
   MOZ_ASSERT(OnThread());
   TimeStamp now = TimeStamp::Now();
-  int64_t timeoutMS =
-      IterationDuration() - int64_t((now - mCurrentTimeStamp).ToMilliseconds());
-  
-  
-  timeoutMS = std::max<int64_t>(0, std::min<int64_t>(timeoutMS, 60 * 1000));
+  TimeDuration timeout = IterationDuration() - (now - mCurrentTimeStamp);
   LOG(LogLevel::Verbose,
       ("%p: Waiting for next iteration; at %f, timeout=%f", Graph(),
-       (now - mInitialTimeStamp).ToSeconds(), timeoutMS / 1000.0));
-
-  return TimeDuration::FromMilliseconds(timeoutMS);
+       (now - mInitialTimeStamp).ToSeconds(), timeout.ToSeconds()));
+  return timeout;
 }
 
 OfflineClockDriver::OfflineClockDriver(GraphInterface* aGraphInterface,
@@ -1243,11 +1242,11 @@ void AudioCallbackDriver::DeviceChangedCallback() {
 #endif
 }
 
-uint32_t AudioCallbackDriver::IterationDuration() {
+TimeDuration AudioCallbackDriver::IterationDuration() {
   MOZ_ASSERT(InIteration());
   
   
-  return mIterationDurationMS;
+  return TimeDuration::FromMilliseconds(mIterationDurationMS);
 }
 
 void AudioCallbackDriver::EnsureNextIteration() {

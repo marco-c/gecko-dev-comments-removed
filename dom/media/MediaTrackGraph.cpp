@@ -1200,8 +1200,7 @@ bool MediaTrackGraphImpl::ShouldUpdateMainThread() {
   TimeStamp now = TimeStamp::Now();
   
   
-  if ((now - mLastMainThreadUpdate).ToMilliseconds() >
-          CurrentDriver()->IterationDuration() ||
+  if (now - mLastMainThreadUpdate > CurrentDriver()->IterationDuration() ||
       mStateComputedTime >= mEndTime) {
     mLastMainThreadUpdate = now;
     return true;

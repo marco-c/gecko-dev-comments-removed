@@ -282,7 +282,7 @@ class GraphDriver {
 
 
 
-  virtual uint32_t IterationDuration() = 0;
+  virtual TimeDuration IterationDuration() = 0;
   
 
 
@@ -436,7 +436,7 @@ class ThreadedDriver : public GraphDriver {
 
   virtual void RunThread();
   friend class MediaTrackGraphInitThreadRunnable;
-  uint32_t IterationDuration() override { return MEDIA_GRAPH_TARGET_PERIOD_MS; }
+  TimeDuration IterationDuration() override;
 
   nsIThread* Thread() const { return mThread; }
 
@@ -589,7 +589,7 @@ class AudioCallbackDriver final : public GraphDriver,
   void StateCallback(cubeb_state aState);
   
 
-  uint32_t IterationDuration() override;
+  TimeDuration IterationDuration() override;
   
 
 
