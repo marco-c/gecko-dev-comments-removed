@@ -158,22 +158,22 @@ class NativeLayerRootCA : public NativeLayerRoot {
   explicit NativeLayerRootCA(CALayer* aLayer);
   ~NativeLayerRootCA() override;
 
-  struct Representation {
-    explicit Representation(CALayer* aRootCALayer);
-    ~Representation();
-    void Commit(WhichRepresentation aRepresentation,
-                const nsTArray<RefPtr<NativeLayerCA>>& aSublayers,
-                bool aWindowIsFullscreen);
-    CALayer* mRootCALayer = nullptr;  
-    bool mMutatedLayerStructure = false;
-  };
+  
+  
+  
+  
+  
+  void CommitRepresentation(WhichRepresentation aRepresentation,
+                            CALayer* aRootCALayer,
+                            const nsTArray<RefPtr<NativeLayerCA>>& aSublayers,
+                            bool aMutatedLayerStructure,
+                            bool aWindowIsFullscreen);
 
-  template <typename F>
-  void ForAllRepresentations(F aFn);
+  void SetMutatedLayerStructure();
 
-  Mutex mMutex MOZ_UNANNOTATED;  
-  Representation mOnscreenRepresentation;
-  Representation mOffscreenRepresentation;
+  Mutex mMutex MOZ_UNANNOTATED;              
+  CALayer* mOnscreenRootCALayer = nullptr;   
+  CALayer* mOffscreenRootCALayer = nullptr;  
 #ifdef XP_MACOSX
   NativeLayerRootSnapshotterCA* mWeakSnapshotter = nullptr;
 #endif
@@ -196,6 +196,10 @@ class NativeLayerRootCA : public NativeLayerRoot {
   
   
   bool mWindowIsFullscreen = false;
+
+  
+  bool mMutatedOnscreenLayerStructure = false;
+  bool mMutatedOffscreenLayerStructure = false;
 
   
   
