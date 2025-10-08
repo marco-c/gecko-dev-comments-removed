@@ -120,10 +120,8 @@ class LookAndFeel {
     
 
 
-    MacRTL,
 
-    
-    MacTitlebarHeight,
+    MacTahoeTheme,
 
     
 
