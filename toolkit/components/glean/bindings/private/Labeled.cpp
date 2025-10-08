@@ -12,9 +12,6 @@
 #include "mozilla/glean/bindings/MetricTypes.h"
 #include "mozilla/glean/bindings/ScalarGIFFTMap.h"
 #include "nsString.h"
-#include "nsXULAppAPI.h"
-#include "mozilla/dom/ContentChild.h"
-#include "mozilla/dom/RemoteType.h"
 
 namespace mozilla::glean {
 
@@ -54,30 +51,5 @@ bool GleanLabeled::NameIsEnumerable(const nsAString& aName) { return false; }
 void GleanLabeled::GetSupportedNames(nsTArray<nsString>& aNames) {
   
 }
-
-namespace impl {
-
-
-nsCString GetProcessTypeForTelemetry() {
-  nsCString processType(XRE_GetProcessTypeString());
-
-  
-  if (processType.EqualsLiteral("tab")) {
-    auto* cc = mozilla::dom::ContentChild::GetSingleton();
-    if (cc) {
-      const nsACString& remoteType = cc->GetRemoteType();
-      if (remoteType == EXTENSION_REMOTE_TYPE) {
-        processType.AssignLiteral("extension");
-      } else if (remoteType == INFERENCE_REMOTE_TYPE) {
-        processType.AssignLiteral("inference");
-      }
-      
-    }
-  }
-
-  return processType;
-}
-
-}  
 
 }  
