@@ -8,6 +8,7 @@
 #define HTMLFrameSetElement_h
 
 #include "mozilla/Attributes.h"
+#include "mozilla/Span.h"
 #include "mozilla/UniquePtr.h"
 #include "nsGenericHTMLElement.h"
 
@@ -92,17 +93,13 @@ class HTMLFrameSetElement final : public nsGenericHTMLElement {
 
 
 
-
-
-  nsresult GetRowSpec(int32_t* aNumValues, const nsFramesetSpec** aSpecs);
+  Span<const nsFramesetSpec> GetRowSpec() MOZ_LIFETIME_BOUND;
   
 
 
 
 
-
-
-  nsresult GetColSpec(int32_t* aNumValues, const nsFramesetSpec** aSpecs);
+  Span<const nsFramesetSpec> GetColSpec() MOZ_LIFETIME_BOUND;
 
   bool ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
                       const nsAString& aValue,
