@@ -62,7 +62,7 @@ exports.allocationTracker = function ({
   watchAllGlobals,
   watchDevToolsGlobals,
 } = {}) {
-  dump("DEVTOOLS ALLOCATION: Start logging allocations\n");
+  logTracker("Start logging allocations");
   let dbg = new global.Debugger();
 
   
@@ -84,7 +84,7 @@ exports.allocationTracker = function ({
     acceptGlobal = g => {
       
       if (g.class == "self-hosting-global") {
-        dump("TRACKER NEW GLOBAL: - : " + g.class + "\n");
+        logTracker("NEW GLOBAL: - : " + g.class);
         return false;
       }
       let ref = g.unsafeDereference();
@@ -107,9 +107,7 @@ exports.allocationTracker = function ({
         accept = false;
       }
 
-      dump(
-        "TRACKER NEW GLOBAL: " + (accept ? "+" : "-") + " : " + location + "\n"
-      );
+      logTracker("NEW GLOBAL: " + (accept ? "+" : "-") + " : " + location);
       return accept;
     };
   }
@@ -336,12 +334,11 @@ exports.allocationTracker = function ({
         })
         
         .filter(({ count }) => count > 0);
-      dump(
+      logTracker(
         "DEVTOOLS ALLOCATION: " +
           message +
           ":\n" +
-          JSON.stringify(allocationList, null, 2) +
-          "\n"
+          JSON.stringify(allocationList, null, 2)
       );
       return allocationList;
     },
@@ -413,10 +410,9 @@ exports.allocationTracker = function ({
     },
 
     logCount() {
-      dump(
+      logTracker(
         "DEVTOOLS ALLOCATION: Javascript object allocations: " +
-          this.countAllocations() +
-          "\n"
+          this.countAllocations()
       );
     },
 
@@ -516,47 +512,103 @@ exports.allocationTracker = function ({
       }
       const snapshot = ChromeUtils.readHeapSnapshot(snapshotFile);
 
-      function getObjectClass(id) {
+      function getObjectDescription(id, prefix = 0) {
+        prefix = "  ".repeat(prefix);
         if (!id) {
-          return "<null>";
+          return prefix + "<null>";
         }
         try {
           let stack = [...snapshot.describeNode({ by: "allocationStack" }, id)];
-          let line;
           if (stack) {
             stack = stack.find(([src]) => src != "noStack");
             if (stack) {
-              line = stack[0].line;
-              stack = stack[0].source;
-              if (stack) {
-                const pstack = stack;
-                stack = stack.match(/\/([^\/]+)$/);
-                if (stack) {
-                  stack = stack[1];
-                } else {
-                  stack = pstack;
+              const { line, column, source } = stack[0];
+              if (source) {
+                const lines = getFileContent(source);
+                const lineBefore = lines[line - 2];
+                const lineText = lines[line - 1];
+                const lineAfter = lines[line];
+                const filename = source.substr(source.lastIndexOf("/") + 1);
+
+                stack = "allocated at " + source + ":\n";
+                
+                if (lineBefore.trim().length) {
+                  stack += prefix + `  ${filename} @ ${line - 1}   \u007C`;
+                  stack += "\x1b[2m" + lineBefore + "\n";
+                }
+                stack += prefix + `  ${filename} @ ${line} > \u007C`;
+                
+                
+                stack +=
+                  "\x1b[2m" +
+                  lineText.substr(0, column - 1) +
+                  "\x1b[0m" +
+                  "\u21A6 " +
+                  lineText.substr(column - 1) +
+                  "\n";
+                if (lineAfter.trim().length) {
+                  stack += prefix + `  ${filename} @ ${line + 1}   \u007C`;
+                  stack += lineAfter;
                 }
               } else {
-                stack = "no-source";
+                stack = "(missing source)";
               }
             } else {
-              stack = "no-stack";
+              stack = "(without allocation stack)";
             }
           } else {
-            stack = "no-desc";
+            stack = "(without description)";
           }
-          return (
-            Object.entries(
-              snapshot.describeNode({ by: "objectClass" }, id)
-            )[0][0] + (stack ? "@" + stack + ":" + line : "")
-          );
+          let objectClass = Object.entries(
+            snapshot.describeNode({ by: "objectClass" }, id)
+          )[0][0];
+          if (objectClass == "other") {
+            objectClass = Object.entries(
+              snapshot.describeNode({ by: "internalType" }, id)
+            )[0][0];
+          }
+          const arrow = prefix > 0 ? "\\--> " : "";
+          return prefix + arrow + objectClass + " " + stack;
         } catch (e) {
           if (e.name == "NS_ERROR_ILLEGAL_VALUE") {
-            return "<not-in-memory-snapshot:is-from-untracked-global?>";
+            return (
+              prefix + "<not-in-memory-snapshot:is-from-untracked-global?>"
+            );
           }
-          return "<invalid:" + id + ":" + e + ">";
+          return prefix + "<invalid:" + id + ":" + e + ">";
         }
       }
+
+      const fileContents = new Map();
+
+      function getFileContent(url) {
+        let content = fileContents.get(url);
+        if (content) {
+          return content;
+        }
+        content = readURI(url).split("\n");
+        fileContents.set(url, content);
+        return content;
+      }
+
+      function readURI(uri) {
+        const { NetUtil } = ChromeUtils.importESModule(
+          "resource://gre/modules/NetUtil.sys.mjs",
+          { global: "contextual" }
+        );
+        const stream = NetUtil.newChannel({
+          uri: NetUtil.newURI(uri, "UTF-8"),
+          loadUsingSystemPrincipal: true,
+        }).open();
+        const count = stream.available();
+        const data = NetUtil.readInputStreamToString(stream, count, {
+          charset: "UTF-8",
+        });
+
+        stream.close();
+        return data;
+      }
+
       function printPath(src, dst) {
         let paths;
         try {
@@ -564,39 +616,45 @@ exports.allocationTracker = function ({
         } catch (e) {}
         if (paths && paths.has(dst)) {
           let pathLength = Infinity;
+          let n = 0;
           for (const path of paths.get(dst)) {
+            n++;
             
             
-            if (path.length > pathLength) {
+            if (path.length > pathLength + 1) {
               continue;
             }
             pathLength = path.length;
-            dump(
-              "- " +
+            logTracker(
+              `Path #${n}:\n` +
                 path
-                  .map(
-                    ({ predecessor, edge }) =>
-                      getObjectClass(predecessor) + "." + edge
-                  )
-                  .join("\n \\--> ") +
-                "\n \\--> " +
-                getObjectClass(dst) +
-                "\n"
+                  .map(({ predecessor, edge }, i) => {
+                    return (
+                      getObjectDescription(predecessor, i) +
+                      "\n" +
+                      "  ".repeat(i) +
+                      "Holds the following object via '" +
+                      edge +
+                      "' attribute:\n"
+                    );
+                  })
+                  .join("") +
+                getObjectDescription(dst, path.length)
             );
           }
         } else {
-          dump("NO-PATH\n");
+          logTracker("NO-PATH");
         }
       }
 
       const tree = snapshot.computeDominatorTree();
       for (const objectNodeId of objects) {
-        dump(" # Tracing: " + getObjectClass(objectNodeId) + "\n");
+        logTracker(" # Tracing object #" + objectNodeId + "\n");
 
         
         
         
-        dump("### Path(s) from root:\n");
+        logTracker("### Path(s) from root:");
         printPath(tree.root, objectNodeId);
 
         
@@ -629,10 +687,14 @@ exports.allocationTracker = function ({
     },
 
     stop() {
-      dump("DEVTOOLS ALLOCATION: Stop logging allocations\n");
+      logTracker("Stop logging allocations");
       dbg.onNewGlobalObject = undefined;
       dbg.removeAllDebuggees();
       dbg = null;
     },
   };
 };
+
+function logTracker(message) {
+  dump(` \x1b[2m[TRACKER]\x1b[0m ${message}\n`);
+}
