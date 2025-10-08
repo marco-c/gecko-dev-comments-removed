@@ -42,6 +42,7 @@ const TASKS = [
   "question-answering",
   "fill-mask",
   "summarization",
+  "static-embeddings",
   "translation",
   "text2text-generation",
   "text-generation",
@@ -309,6 +310,54 @@ const INFERENCE_PAD_PRESETS = {
     dtype: "q8",
     device: "cpu",
     backend: "onnx",
+  },
+  "static-embeddings": {
+    inputArgs: [
+      "This is an example of encoding",
+      "The quick brown fox jumps over the lazy dog.",
+      "Curaçao, naïve fiancé, jalapeño, déjà vu.",
+      "Привет, как дела?",
+      "Бързата кафява лисица прескача мързеливото куче.",
+      "Γρήγορη καφέ αλεπού πηδάει πάνω από τον τεμπέλη σκύλο.",
+      "اللغة العربية جميلة وغنية بالتاريخ.",
+      "مرحبا بالعالم!",
+      "Simplified: 快速的棕色狐狸跳过懒狗。",
+      "Traditional: 快速的棕色狐狸跳過懶狗。",
+      "素早い茶色の狐が怠け者の犬を飛び越える。",
+      "コンピュータープログラミング",
+      "빠른 갈색 여우가 게으른 개를 뛰어넘습니다.",
+      "तेज़ भूरी लोमड़ी आलसी कुत्ते के ऊपर कूदती है।",
+      "দ্রুত বাদামী শিয়াল অলস কুকুরের উপর দিয়ে লাফ দেয়।",
+      "வேகமான பழுப்பு நரி சோம்பேறி நாயின் மேல் குதிக்கிறது.",
+      "สุนัขจิ้งจอกสีน้ำตาลกระโดดข้ามสุนัขขี้เกียจ.",
+      "ብሩክ ቡናማ ቀበሮ ሰነፍ ውሻን ተዘልሏል።",
+      
+      "Hello 世界 مرحبا 🌍",
+      "123, αβγ, абв, العربية, 中文, हिन्दी.",
+    ],
+    runOptions: {
+      
+      
+      pooling: "mean",
+      
+      normalize: true,
+    },
+    task: "static-embeddings",
+    modelHub: "mozilla",
+    modelId: "mozilla/static-embeddings",
+    modelRevision: "v1.0.0",
+    backend: "static-embeddings",
+    staticEmbeddingsOptions: {
+      
+      
+      subfolder: "models/minishlab/potion-retrieval-32M",
+      
+      dtype: "fp8_e4m3",
+      
+      dimensions: 128,
+      
+      compression: true,
+    },
   },
   "link-preview": {
     inputArgs: `Summarize this: ${TINY_ARTICLE}`,
@@ -664,6 +713,10 @@ async function displayInfo() {
   await refreshPage();
 }
 
+
+
+
+
 function setSelectOption(selectId, optionValue) {
   const selectElement = document.getElementById(selectId);
   if (!selectElement) {
@@ -684,7 +737,9 @@ function setSelectOption(selectId, optionValue) {
     }
   }
 
-  console.warn(`No option found with value: ${optionValue}`);
+  console.warn(
+    `No option found for "${selectId}" with value: "${optionValue}"`
+  );
 }
 
 function loadExample(name) {
@@ -793,6 +848,13 @@ async function runInference() {
       useMlock: false,
       useMmap: true,
       kvCacheDtype: "q8_0",
+    };
+  }
+
+  if (taskName == "static-embeddings") {
+    const config = INFERENCE_PAD_PRESETS["static-embeddings"];
+    additionalEngineOptions = {
+      staticEmbeddingsOptions: config.staticEmbeddingsOptions,
     };
   }
 
