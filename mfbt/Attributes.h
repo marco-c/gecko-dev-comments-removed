@@ -58,6 +58,7 @@
 
 
 #  define MOZ_HAVE_NEVER_INLINE __declspec(noinline)
+#  define MOZ_HAVE_NORETURN __declspec(noreturn)
 #elif defined(__clang__)
 
 
@@ -71,8 +72,12 @@
 #  if __has_attribute(noinline)
 #    define MOZ_HAVE_NEVER_INLINE __attribute__((noinline))
 #  endif
+#  if __has_attribute(noreturn)
+#    define MOZ_HAVE_NORETURN __attribute__((noreturn))
+#  endif
 #elif defined(__GNUC__)
 #  define MOZ_HAVE_NEVER_INLINE __attribute__((noinline))
+#  define MOZ_HAVE_NORETURN __attribute__((noreturn))
 #  define MOZ_HAVE_NORETURN_PTR __attribute__((noreturn))
 #endif
 
@@ -165,6 +170,22 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+#if defined(MOZ_HAVE_NORETURN)
+#  define MOZ_NORETURN MOZ_HAVE_NORETURN
+#else
+#  define MOZ_NORETURN
+#endif
 #if defined(MOZ_HAVE_NORETURN_PTR)
 #  define MOZ_NORETURN_PTR MOZ_HAVE_NORETURN_PTR
 #else

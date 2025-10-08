@@ -18,10 +18,11 @@
 
 
 
-extern "C"
+extern "C" MFBT_API
 #if !defined(__arm__)
-    [[noreturn]]
+    MOZ_NORETURN
 #endif
-    MFBT_API void mozalloc_abort(const char* const msg);
+    void
+    mozalloc_abort(const char* const msg);
 
 #endif 
