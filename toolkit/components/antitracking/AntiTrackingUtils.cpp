@@ -699,7 +699,16 @@ nsresult AntiTrackingUtils::ActivateStoragePermissionStateInParent(
     return NS_ERROR_FAILURE;
   }
 
+#ifdef DEBUG
   
+  
+  nsILoadInfo::StoragePermissionState currentStorageAccess =
+      loadInfo->GetStoragePermission();
+  MOZ_ASSERT(currentStorageAccess == nsILoadInfo::InactiveStoragePermission);
+#endif
+
+  
+  MOZ_TRY(loadInfo->SetStoragePermission(nsILoadInfo::HasStoragePermission));
   MOZ_TRY(wc->SetUsingStorageAccess(true));
 
   return NS_OK;
