@@ -59,6 +59,12 @@ class NativeLayerRootRemoteMacChild final : public NativeLayerRoot {
     virtual void UpdateSnapshotterLayers(CALayer* aRootCALayer) override {
       mLayerRoot->CommitForSnapshot(aRootCALayer);
     }
+    virtual bool DoCustomReadbackForReftestsIfDesired(
+        const gfx::IntSize& aReadbackSize, gfx::SurfaceFormat aReadbackFormat,
+        const Range<uint8_t>& aReadbackBuffer) override {
+      return mLayerRoot->ReadbackPixelsFromParent(
+          aReadbackSize, aReadbackFormat, aReadbackBuffer);
+    }
     virtual void OnSnapshotterDestroyed(
         NativeLayerRootSnapshotterCA* aSnapshotter) override {
       mLayerRoot->OnNativeLayerRootSnapshotterDestroyed(aSnapshotter);
@@ -74,8 +80,24 @@ class NativeLayerRootRemoteMacChild final : public NativeLayerRoot {
   bool mNativeLayersChanged = false;
   bool mNativeLayersChangedForSnapshot = false;
 
-  bool ReadbackPixels(const gfx::IntSize& aSize, gfx::SurfaceFormat aFormat,
-                      const Range<uint8_t>& aBuffer);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool ReadbackPixelsFromParent(const gfx::IntSize& aSize,
+                                gfx::SurfaceFormat aFormat,
+                                const Range<uint8_t>& aBuffer);
 };
 
 }  
