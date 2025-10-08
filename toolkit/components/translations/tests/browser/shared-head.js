@@ -2820,6 +2820,13 @@ class AboutTranslationsTestUtils {
 
 
 
+    static TextAreaHeightsChanged = "AboutTranslations:TextAreaHeightsChanged";
+
+    
+
+
+
+
     static ClearTargetText = "AboutTranslations:ClearTargetText";
   };
 
