@@ -94,6 +94,10 @@ bool DictionaryCacheEntry::Match(const nsACString& aFilePath,
     
     return false;
   }
+  if (mNotCached) {
+    
+    return false;
+  }
   
   
   if (mPattern.Length() > aLongest) {
@@ -172,10 +176,20 @@ nsresult DictionaryCacheEntry::Prefetch(nsILoadContextInfo* aLoadContextInfo,
         aShouldSuspend = false;
         return NS_ERROR_FAILURE;
       }
+      
+      
+      
+      
       if (NS_FAILED(cacheStorage->AsyncOpenURIString(
-              mURI, ""_ns, nsICacheStorage::OPEN_READONLY, this))) {
+              mURI, ""_ns,
+              nsICacheStorage::OPEN_READONLY |
+                  nsICacheStorage::OPEN_COMPLETE_ONLY,
+              this)) ||
+          mNotCached) {
+        
         
         aShouldSuspend = false;
+        
         return NS_ERROR_FAILURE;
       }
       mWaitingPrefetch.AppendElement(aFunc);
@@ -494,9 +508,7 @@ DictionaryCacheEntry::OnCacheEntryAvailable(nsICacheEntry* entry, bool isNew,
   } else {
     
     
-    
-    
-    
+    mNotCached = true;  
     DICTIONARY_LOG(("Prefetched cache entry not available!"));
   }
 
