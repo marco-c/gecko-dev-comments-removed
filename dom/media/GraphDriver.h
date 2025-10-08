@@ -493,7 +493,6 @@ class SystemClockDriver : public ThreadedDriver {
   
   TimeStamp mInitialTimeStamp;
   TimeStamp mCurrentTimeStamp;
-  TimeStamp mLastTimeStamp;
 };
 
 
