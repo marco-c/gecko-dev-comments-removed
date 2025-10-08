@@ -7,6 +7,7 @@
 
 
 
+
 var interventions, shims;
 
 const AVAILABLE_INTERVENTIONS =
@@ -36,3 +37,5 @@ try {
 } catch (e) {
   console.error("about:compat broker failed to start", e);
 }
+
+listenForRemoteSettingsUpdates(interventions, shims);

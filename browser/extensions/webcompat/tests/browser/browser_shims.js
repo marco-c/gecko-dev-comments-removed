@@ -3,10 +3,15 @@
 registerCleanupFunction(() => {
   UrlClassifierTestUtils.cleanupTestTrackers();
   Services.prefs.clearUserPref(TRACKING_PREF);
+  
+  Services.prefs.clearUserPref(
+    "privacy.trackingprotection.allow_list.hasUserInteractedWithETPSettings"
+  );
 });
 
 add_setup(async function () {
   await UrlClassifierTestUtils.addTestTrackers();
+  await generateTestShims();
 });
 
 add_task(async function test_shim_disabled_by_own_pref() {

@@ -5,19 +5,22 @@
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
-    set: [["test.wait300msAfterTabSwitch", true]],
+    set: [
+      ["test.wait300msAfterTabSwitch", true],
+
+      
+      
+      [SEC_DELAY_PREF, 1000],
+      [TRACKING_PREF, true],
+      [SMARTBLOCK_EMBEDS_ENABLED_PREF, true],
+    ],
   });
 
   await UrlClassifierTestUtils.addTestTrackers();
-  
-  
-  Services.prefs.setIntPref(SEC_DELAY_PREF, 1000);
-  Services.prefs.setBoolPref(TRACKING_PREF, true);
-  Services.prefs.setBoolPref(SMARTBLOCK_EMBEDS_ENABLED_PREF, true);
+  await generateTestShims();
 
   registerCleanupFunction(() => {
     UrlClassifierTestUtils.cleanupTestTrackers();
-    Services.prefs.clearUserPref(TRACKING_PREF);
   });
 
   Services.fog.testResetFOG();
