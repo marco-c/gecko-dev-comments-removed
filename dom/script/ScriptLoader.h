@@ -774,12 +774,6 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
 
 
-  void FinishCollectingDelazifications(JSContext* aCx,
-                                       ScriptLoadRequest* aRequest);
-
-  
-
-
   void EncodeBytecodeAndSave(JSContext* aCx,
                              JS::loader::LoadedScript* aLoadedScript);
 
