@@ -1360,7 +1360,10 @@ class MockedA11yUtils {
 
 
 async function ensureWindowSize(win, width, height) {
-  if (win.outerWidth < width + 50 && win.outerHeight < height + 50) {
+  if (
+    Math.abs(win.outerWidth - width) < 1 &&
+    Math.abs(win.outerHeight - height) < 1
+  ) {
     return;
   }
 
@@ -3155,9 +3158,14 @@ class AboutTranslationsTestUtils {
       const unexpectedEventMap = {};
       for (const eventName of unexpected) {
         unexpectedEventMap[eventName] = false;
-        this.waitForEvent(eventName).then(() => {
-          unexpectedEventMap[eventName] = true;
-        });
+        this.waitForEvent(eventName)
+          .then(() => {
+            unexpectedEventMap[eventName] = true;
+          })
+          .catch(() => {
+            
+            
+          });
       }
 
       await callback();
