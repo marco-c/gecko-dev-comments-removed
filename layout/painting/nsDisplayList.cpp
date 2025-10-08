@@ -5428,6 +5428,63 @@ bool nsDisplayViewTransitionCapture::CreateWebRenderCommands(
   wr::StackingContextParams params;
   params.clip =
       wr::WrStackingContextClip::ClipChain(aBuilder.CurrentClipChainId());
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  wr::WrTransformInfo info;
+  if (mFrame->IsTransformed()) {
+    
+    
+    params.mTransformPtr = [&]() {
+      info.transform = wr::ToLayoutTransform(gfx::Matrix4x4());
+      info.key = wr::SpatialKey(uint64_t(mFrame), GetPerFrameKey(),
+                                wr::SpatialKeyKind::ViewTransition);
+      return &info;
+    }();
+    params.reference_frame_kind = wr::WrReferenceFrameKind::Transform;
+  }
+
   if (key) {
     vt->UpdateActiveRectForCapturedFrame(capturedFrame, aSc.GetInheritedScale(),
                                          captureRect);

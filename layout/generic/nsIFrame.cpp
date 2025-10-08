@@ -3430,7 +3430,8 @@ void nsIFrame::BuildDisplayListForStackingContext(
   
   ContainerItemType clipCapturedBy = ContainerItemType::None;
   if (capturedByViewTransition) {
-    clipCapturedBy = ContainerItemType::ViewTransitionCapture;
+    clipCapturedBy = isTransformed ? ContainerItemType::Transform
+                                   : ContainerItemType::ViewTransitionCapture;
   } else if (useFixedPosition) {
     clipCapturedBy = ContainerItemType::FixedPosition;
   } else if (isTransformed) {
@@ -3732,7 +3733,37 @@ void nsIFrame::BuildDisplayListForStackingContext(
   
   
   
-  if (isTransformed && !capturedByViewTransition) {
+  
+  
+  
+  
+  if (capturedByViewTransition) {
+    resultList.AppendNewToTop<nsDisplayViewTransitionCapture>(
+        aBuilder, this, &resultList, nullptr, false);
+    createdContainer = true;
+    MarkAsIsolated();
+    
+    
+    if (clipCapturedBy == ContainerItemType::ViewTransitionCapture) {
+      clipState.Restore();
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (isTransformed) {
     if (extend3DContext) {
       
       
@@ -3929,18 +3960,6 @@ void nsIFrame::BuildDisplayListForStackingContext(
         nsDisplayItem::ContainerASRType::AncestorOfContained, false);
     createdContainer = true;
     MarkAsIsolated();
-  }
-
-  if (capturedByViewTransition) {
-    resultList.AppendNewToTop<nsDisplayViewTransitionCapture>(
-        aBuilder, this, &resultList, nullptr,  false);
-    createdContainer = true;
-    MarkAsIsolated();
-    
-    
-    if (clipCapturedBy == ContainerItemType::ViewTransitionCapture) {
-      clipState.Restore();
-    }
   }
 
   if (!isolated && localIsolationReasons != StackingContextBits::None) {
