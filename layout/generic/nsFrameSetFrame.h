@@ -174,8 +174,8 @@ class nsHTMLFramesetFrame final : public nsContainerFrame {
   nsBorderColor mEdgeColors;
   nsHTMLFramesetBorderFrame* mDragger;
   nsHTMLFramesetFrame* mTopLevelFrameset;
-  UniquePtr<nsHTMLFramesetBorderFrame*[]> mVerBorders;  
-  UniquePtr<nsHTMLFramesetBorderFrame*[]> mHorBorders;  
+  nsTArray<nsHTMLFramesetBorderFrame*> mVerBorders;  
+  nsTArray<nsHTMLFramesetBorderFrame*> mHorBorders;  
   UniquePtr<nsFrameborder[]>
       mChildFrameborder;  
   UniquePtr<nsBorderColor[]> mChildBorderColors;
