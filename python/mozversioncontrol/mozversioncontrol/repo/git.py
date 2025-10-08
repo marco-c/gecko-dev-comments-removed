@@ -72,7 +72,10 @@ class GitRepository(Repository):
         try:
             
             self._run(
-                "cat-file", "-e", "2ca566cd74d5d0863ba7ef0529a4f88b2823eb43^{commit}"
+                "cat-file",
+                "-e",
+                "2ca566cd74d5d0863ba7ef0529a4f88b2823eb43^{commit}",
+                stderr=subprocess.DEVNULL,
             )
         except subprocess.CalledProcessError:
             output = self._run("for-each-ref")
@@ -113,7 +116,11 @@ class GitRepository(Repository):
             )
 
         for line in remotes:
-            name, url, action = line.split()
+            parts = line.split()
+            if len(parts) < 3:
+                continue
+
+            name, url, action, *_ = parts
 
             
             if action != "(fetch)":
