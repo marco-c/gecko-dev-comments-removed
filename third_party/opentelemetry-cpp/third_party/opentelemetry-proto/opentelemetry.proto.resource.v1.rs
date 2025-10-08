@@ -6,16 +6,6 @@ pub struct Resource {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     #[prost(message, repeated, tag = "1")]
     pub attributes: ::prost::alloc::vec::Vec<super::super::common::v1::KeyValue>,
     

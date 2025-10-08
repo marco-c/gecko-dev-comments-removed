@@ -160,14 +160,6 @@ pub struct Span {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
     #[prost(message, repeated, tag = "9")]
     pub attributes: ::prost::alloc::vec::Vec<super::super::common::v1::KeyValue>,
     
@@ -212,16 +204,6 @@ pub mod span {
         
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         #[prost(message, repeated, tag = "3")]
         pub attributes: ::prost::alloc::vec::Vec<
             super::super::super::common::v1::KeyValue,
@@ -248,16 +230,6 @@ pub mod span {
         
         #[prost(string, tag = "3")]
         pub trace_state: ::prost::alloc::string::String,
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         
         
         
