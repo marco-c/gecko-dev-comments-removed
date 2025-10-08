@@ -962,10 +962,11 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  void SetComputedStyleWithoutNotification(ComputedStyle* aStyle) {
-    if (aStyle != mComputedStyle) {
-      mComputedStyle = aStyle;
-    }
+
+
+  RefPtr<ComputedStyle> SetComputedStyleWithoutNotification(
+      RefPtr<ComputedStyle> aStyle) {
+    return std::exchange(mComputedStyle, std::move(aStyle));
   }
 
  protected:
