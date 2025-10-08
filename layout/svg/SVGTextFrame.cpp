@@ -409,14 +409,13 @@ struct TextRenderedRun {
 
 
 
-  TextRenderedRun(nsTextFrame* aFrame, SVGTextFrame* aSVGTextFrame,
-                  const gfxPoint& aPosition, float aLengthAdjustScaleFactor,
-                  double aRotate, float aFontSizeScaleFactor, nscoord aBaseline,
+  TextRenderedRun(nsTextFrame* aFrame, const gfxPoint& aPosition,
+                  float aLengthAdjustScaleFactor, double aRotate,
+                  float aFontSizeScaleFactor, nscoord aBaseline,
                   uint32_t aTextFrameContentOffset,
                   uint32_t aTextFrameContentLength,
                   uint32_t aTextElementCharIndex)
       : mFrame(aFrame),
-        mRoot(aSVGTextFrame),
         mPosition(aPosition),
         mLengthAdjustScaleFactor(aLengthAdjustScaleFactor),
         mRotate(static_cast<float>(aRotate)),
@@ -665,11 +664,6 @@ struct TextRenderedRun {
   
 
 
-  SVGTextFrame* mRoot;
-
-  
-
-
 
 
 
@@ -835,6 +829,7 @@ SVGBBox TextRenderedRun::GetRunUserSpaceRect(nsPresContext* aContext,
       vertical ? -self.y : -self.x);
 
   gfxSkipCharsIterator it = mFrame->EnsureTextRun(nsTextFrame::eInflated);
+  gfxSkipCharsIterator start = it;
   gfxTextRun* textRun = mFrame->GetTextRun(nsTextFrame::eInflated);
 
   
@@ -844,7 +839,10 @@ SVGBBox TextRenderedRun::GetRunUserSpaceRect(nsPresContext* aContext,
     return r;
   }
 
-  auto& provider = mRoot->PropertyProviderFor(mFrame);
+  
+  
+  
+  nsTextFrame::PropertyProvider provider(mFrame, start);
 
   
   gfxTextRun::Metrics metrics = textRun->MeasureText(
@@ -942,7 +940,7 @@ void TextRenderedRun::GetClipEdges(nscoord& aVisIStartEdge,
 
   gfxSkipCharsIterator it = mFrame->EnsureTextRun(nsTextFrame::eInflated);
   gfxTextRun* textRun = mFrame->GetTextRun(nsTextFrame::eInflated);
-  auto& provider = mRoot->PropertyProviderFor(mFrame);
+  nsTextFrame::PropertyProvider provider(mFrame, it);
 
   
   
@@ -966,41 +964,13 @@ void TextRenderedRun::GetClipEdges(nscoord& aVisIStartEdge,
 
   
   
-  auto MeasureUsingCache = [&](SVGTextFrame::CachedMeasuredRange& aCachedRange,
-                               const Range& aRange) -> nscoord {
-    if (aRange.Intersects(aCachedRange.mRange)) {
-      
-      
-      
-      if (aRange.start < aCachedRange.mRange.start) {
-        aCachedRange.mAdvance += textRun->GetAdvanceWidth(
-            Range(aRange.start, aCachedRange.mRange.start), &provider);
-      } else if (aRange.start > aCachedRange.mRange.start) {
-        aCachedRange.mAdvance -= textRun->GetAdvanceWidth(
-            Range(aCachedRange.mRange.start, aRange.start), &provider);
-      }
-      if (aRange.end > aCachedRange.mRange.end) {
-        aCachedRange.mAdvance += textRun->GetAdvanceWidth(
-            Range(aCachedRange.mRange.end, aRange.end), &provider);
-      } else if (aRange.end < aCachedRange.mRange.end) {
-        aCachedRange.mAdvance -= textRun->GetAdvanceWidth(
-            Range(aRange.end, aCachedRange.mRange.end), &provider);
-      }
-    } else {
-      
-      aCachedRange.mAdvance = textRun->GetAdvanceWidth(aRange, &provider);
-    }
-    aCachedRange.mRange = aRange;
-    return aCachedRange.mAdvance;
-  };
+  nscoord startEdge = textRun->GetAdvanceWidth(
+      Range(frameRange.start, runRange.start), &provider);
 
-  mRoot->SetCurrentFrameForCaching(mFrame);
-  nscoord startEdge =
-      MeasureUsingCache(mRoot->CachedRange(SVGTextFrame::WhichRange::Before),
-                        Range(frameRange.start, runRange.start));
+  
+  
   nscoord endEdge =
-      MeasureUsingCache(mRoot->CachedRange(SVGTextFrame::WhichRange::After),
-                        Range(runRange.end, frameRange.end));
+      textRun->GetAdvanceWidth(Range(runRange.end, frameRange.end), &provider);
 
   if (textRun->IsRightToLeft()) {
     aVisIStartEdge = endEdge;
@@ -1014,7 +984,7 @@ void TextRenderedRun::GetClipEdges(nscoord& aVisIStartEdge,
 nscoord TextRenderedRun::GetAdvanceWidth() const {
   gfxSkipCharsIterator it = mFrame->EnsureTextRun(nsTextFrame::eInflated);
   gfxTextRun* textRun = mFrame->GetTextRun(nsTextFrame::eInflated);
-  auto& provider = mRoot->PropertyProviderFor(mFrame);
+  nsTextFrame::PropertyProvider provider(mFrame, it);
 
   Range range = ConvertOriginalToSkipped(it, mTextFrameContentOffset,
                                          mTextFrameContentLength);
@@ -1064,7 +1034,7 @@ int32_t TextRenderedRun::GetCharNumAtPosition(nsPresContext* aContext,
 
   gfxSkipCharsIterator it = mFrame->EnsureTextRun(nsTextFrame::eInflated);
   gfxTextRun* textRun = mFrame->GetTextRun(nsTextFrame::eInflated);
-  auto& provider = mRoot->PropertyProviderFor(mFrame);
+  nsTextFrame::PropertyProvider provider(mFrame, it);
 
   
   
@@ -1930,9 +1900,9 @@ TextRenderedRun TextRenderedRunIterator::Next() {
     }
   }
 
-  mCurrent = TextRenderedRun(
-      frame, Root(), pt, Root()->mLengthAdjustScaleFactor, rotate,
-      mFontSizeScaleFactor, baseline, offset, length, charIndex);
+  mCurrent = TextRenderedRun(frame, pt, Root()->mLengthAdjustScaleFactor,
+                             rotate, mFontSizeScaleFactor, baseline, offset,
+                             length, charIndex);
   return mCurrent;
 }
 
@@ -2351,7 +2321,10 @@ gfxFloat CharIterator::GetAdvance(nsPresContext* aContext) const {
   float cssPxPerDevPx =
       nsPresContext::AppUnitsToFloatCSSPixels(aContext->AppUnitsPerDevPixel());
 
-  auto& provider = mFrameIterator.Root()->PropertyProviderFor(TextFrame());
+  gfxSkipCharsIterator start =
+      TextFrame()->EnsureTextRun(nsTextFrame::eInflated);
+  nsTextFrame::PropertyProvider provider(TextFrame(), start);
+
   uint32_t offset = mSkipCharsIterator.GetSkippedOffset();
   gfxFloat advance =
       mTextRun->GetAdvanceWidth(Range(offset, offset + 1), &provider);
@@ -3707,7 +3680,7 @@ float SVGTextFrame::GetSubStringLengthFastPath(nsIContent* aContent,
 
       gfxSkipCharsIterator it = frame->EnsureTextRun(nsTextFrame::eInflated);
       gfxTextRun* textRun = frame->GetTextRun(nsTextFrame::eInflated);
-      auto& provider = PropertyProviderFor(frame);
+      nsTextFrame::PropertyProvider provider(frame, it);
 
       Range range = ConvertOriginalToSkipped(it, offset, trimmedLength);
 
@@ -3775,7 +3748,7 @@ float SVGTextFrame::GetSubStringLengthSlowFallback(nsIContent* aContent,
       gfxSkipCharsIterator it =
           run.mFrame->EnsureTextRun(nsTextFrame::eInflated);
       gfxTextRun* textRun = run.mFrame->GetTextRun(nsTextFrame::eInflated);
-      auto& provider = PropertyProviderFor(run.mFrame);
+      nsTextFrame::PropertyProvider provider(run.mFrame, it);
 
       Range range = ConvertOriginalToSkipped(it, offset, length);
 
@@ -4330,7 +4303,7 @@ void SVGTextFrame::DetermineCharPositions(nsTArray<nsPoint>& aPositions) {
   for (nsTextFrame* frame = frit.Current(); frame; frame = frit.Next()) {
     gfxSkipCharsIterator it = frame->EnsureTextRun(nsTextFrame::eInflated);
     gfxTextRun* textRun = frame->GetTextRun(nsTextFrame::eInflated);
-    auto& provider = PropertyProviderFor(frame);
+    nsTextFrame::PropertyProvider provider(frame, it);
 
     
     position = frit.Position();
@@ -5134,10 +5107,6 @@ void SVGTextFrame::DoReflow() {
     
     RemoveStateBits(NS_FRAME_IS_DIRTY | NS_FRAME_HAS_DIRTY_CHILDREN);
   }
-
-  
-  mFrameForCachedRanges = nullptr;
-  mCachedProvider.reset();
 
   nsPresContext* presContext = PresContext();
   nsIFrame* kid = PrincipalChildList().FirstChild();

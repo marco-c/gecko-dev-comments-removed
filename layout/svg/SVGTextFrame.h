@@ -11,7 +11,6 @@
 #include "gfxRect.h"
 #include "gfxTextRun.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/PresShellForwards.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/SVGContainerFrame.h"
@@ -587,47 +586,6 @@ class SVGTextFrame final : public SVGDisplayContainerFrame {
 
 
   float mLengthAdjustScaleFactor = 1.0f;
-
- public:
-  struct CachedMeasuredRange {
-    Range mRange;
-    nscoord mAdvance;
-  };
-
-  void SetCurrentFrameForCaching(const nsTextFrame* aFrame) {
-    if (mFrameForCachedRanges != aFrame) {
-      PodArrayZero(mCachedRanges);
-      mFrameForCachedRanges = aFrame;
-    }
-  }
-
-  enum WhichRange {
-    Before,
-    After,
-    CachedRangeCount,
-  };
-
-  CachedMeasuredRange& CachedRange(WhichRange aWhichRange) {
-    return mCachedRanges[aWhichRange];
-  }
-
-  
-  
-  
-  nsTextFrame::PropertyProvider& PropertyProviderFor(nsTextFrame* aFrame) {
-    if (!mCachedProvider || aFrame != mCachedProvider->GetFrame()) {
-      mCachedProvider.reset();
-      mCachedProvider.emplace(aFrame,
-                              aFrame->EnsureTextRun(nsTextFrame::eInflated));
-    }
-    return mCachedProvider.ref();
-  }
-
- private:
-  const nsTextFrame* mFrameForCachedRanges = nullptr;
-  CachedMeasuredRange mCachedRanges[CachedRangeCount];
-
-  Maybe<nsTextFrame::PropertyProvider> mCachedProvider;
 };
 
 }  

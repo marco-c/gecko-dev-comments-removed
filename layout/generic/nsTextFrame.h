@@ -113,11 +113,8 @@ class nsTextFrame : public nsIFrame {
 
 
 
-
-
-
-
-  class PropertyProvider final : public gfxTextRun::PropertyProvider {
+  class MOZ_STACK_CLASS PropertyProvider final
+      : public gfxTextRun::PropertyProvider {
     using HyphenType = gfxTextRun::HyphenType;
 
    public:
