@@ -74,6 +74,14 @@ class IPPAddonActivator {
 
     this.#unregisterListeners();
 
+    
+    const uniqueDomains = new Set(this.#shownDomainByTab.values());
+    await Promise.allSettled(
+      Array.from(uniqueDomains).map(d =>
+        browser.ippActivator.addNotifiedDomain(d)
+      )
+    );
+
     const ids = Array.from(this.#shownDomainByTab.keys());
     await Promise.allSettled(
       ids.map(id => browser.ippActivator.hideMessage(id))
@@ -206,7 +214,11 @@ class IPPAddonActivator {
           changeInfo.url || tab?.url || ""
         );
         const shownBase = this.#shownDomainByTab.get(tabId);
-        if (shownBase && shownBase !== info.baseDomain) {
+        if (
+          shownBase &&
+          shownBase !== info.baseDomain &&
+          shownBase !== info.host
+        ) {
           await browser.ippActivator.hideMessage(tabId);
           this.#shownDomainByTab.delete(tabId);
         }
@@ -278,22 +290,24 @@ class IPPAddonActivator {
       return false;
     }
 
-    
-    const shown = await browser.ippActivator.getNotifiedDomains();
-    if (
-      info.baseDomain &&
-      Array.isArray(shown) &&
-      shown.includes(info.baseDomain)
-    ) {
-      return false;
-    }
-
-    const breakage = breakages.find(
-      b =>
-        Array.isArray(b.domains) &&
-        (b.domains.includes(info.baseDomain) || b.domains.includes(info.host))
+    let domain = info.baseDomain;
+    let breakage = breakages.find(
+      b => Array.isArray(b.domains) && b.domains.includes(info.baseDomain)
     );
     if (!breakage) {
+      breakage = breakages.find(
+        b => Array.isArray(b.domains) && b.domains.includes(info.host)
+      );
+      if (!breakage) {
+        return false;
+      }
+
+      domain = info.host;
+    }
+
+    
+    const shown = await browser.ippActivator.getNotifiedDomains();
+    if (Array.isArray(shown) && shown.includes(domain)) {
       return false;
     }
 
@@ -303,11 +317,37 @@ class IPPAddonActivator {
       return false;
     }
 
-    await browser.ippActivator.showMessage(breakage.message, tab.id);
     
-    this.#shownDomainByTab.set(tab.id, info.baseDomain);
+    this.#shownDomainByTab.set(tab.id, domain);
 
-    await browser.ippActivator.addNotifiedDomain(info.baseDomain);
+    
+    
+    browser.ippActivator
+      .showMessage(breakage.message, tab.id)
+      .then(async dismissed => {
+        if (!dismissed) {
+          return;
+        }
+
+        await browser.ippActivator.addNotifiedDomain(domain);
+
+        
+        
+        const toClose = [];
+        for (const [tid, base] of this.#shownDomainByTab.entries()) {
+          if (base === domain) {
+            toClose.push(tid);
+          }
+        }
+
+        await Promise.allSettled(
+          toClose.map(id => browser.ippActivator.hideMessage(id))
+        );
+
+        for (const id of toClose) {
+          this.#shownDomainByTab.delete(id);
+        }
+      });
 
     return true;
   }

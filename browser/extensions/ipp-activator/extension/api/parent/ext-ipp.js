@@ -180,7 +180,7 @@ this.ippActivator = class extends ExtensionAPI {
             const browser = tab?.linkedBrowser;
             const win = browser?.ownerGlobal;
             if (!browser || !win || !win.gBrowser) {
-              return;
+              return Promise.resolve(false);
             }
 
             const nbox = win.gBrowser.getNotificationBox(browser);
@@ -215,22 +215,37 @@ this.ippActivator = class extends ExtensionAPI {
 
             const label = buildLabel(message);
 
-            const notification = await nbox.appendNotification(
-              id,
-              {
-                
-                
-                label,
-                priority: nbox.PRIORITY_WARNING_HIGH,
-              },
-              []
-            );
+            
+            let resolveDismiss;
+            const dismissedPromise = new Promise(resolve => {
+              resolveDismiss = resolve;
+            });
 
             
-            
-            notification.persistence = -1;
+            nbox
+              .appendNotification(
+                id,
+                {
+                  
+                  
+                  label,
+                  priority: nbox.PRIORITY_WARNING_HIGH,
+                  eventCallback: param => {
+                    resolveDismiss(param === "dismissed");
+                  },
+                },
+                []
+              )
+              .then(notification => {
+                
+                
+                notification.persistence = -1;
+              });
+
+            return dismissedPromise;
           } catch (e) {
             console.warn("Unable to show the message", e);
+            return Promise.resolve(false);
           }
         },
         onDynamicTabBreakagesUpdated: new ExtensionCommon.EventManager({
