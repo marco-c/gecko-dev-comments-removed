@@ -1961,8 +1961,8 @@ nsresult nsHttpChannel::SetupChannelForTransaction() {
     
     
     rv = gHttpHandler->AddAcceptAndDictionaryHeaders(
-        mURI, &mRequestHead, IsHTTPS(),
-        [self = RefPtr(this)](DictionaryCacheEntry* aDict) {
+        mURI, mLoadInfo->GetExternalContentPolicyType(), &mRequestHead,
+        IsHTTPS(), [self = RefPtr(this)](DictionaryCacheEntry* aDict) {
           self->mDictDecompress = aDict;
           if (self->mDictDecompress) {
             LOG_DICTIONARIES(
@@ -6016,11 +6016,13 @@ bool nsHttpChannel::ParseDictionary(nsICacheEntry* aEntry,
     RefPtr<DictionaryCache> dicts(DictionaryCache::GetInstance());
     LOG_DICTIONARIES(
         ("Adding DictionaryCache entry for %s: key %s, matchval %s, id=%s, "
-         "type=%s",
+         "match-dest[0]=%s, type=%s",
          mURI->GetSpecOrDefault().get(), key.get(), matchVal.get(),
-         matchIdVal.get(), typeVal.get()));
-    dicts->AddEntry(mURI, key, matchVal, matchIdVal, Some(hash), aModified,
-                    getter_AddRefs(mDictSaving));
+         matchIdVal.get(),
+         matchDestItems.Length() > 0 ? matchDestItems[0].get() : "<none>",
+         typeVal.get()));
+    dicts->AddEntry(mURI, key, matchVal, matchDestItems, matchIdVal, Some(hash),
+                    aModified, getter_AddRefs(mDictSaving));
     
     
     
