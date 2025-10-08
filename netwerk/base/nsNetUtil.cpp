@@ -4052,7 +4052,7 @@ bool NS_ParseUseAsDictionary(const nsACString& aValue, nsACString& aMatch,
   
   
   
-
+  
 
   nsCOMPtr<nsISFVService> sfv = GetSFVService();
 
