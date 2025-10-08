@@ -277,6 +277,80 @@ class NativeLayerRootSnapshotterCA final : public NativeLayerRootSnapshotter {
 #endif
 
 
+struct NativeLayerCARepresentation {
+  using UpdateType = NativeLayerCAUpdateType;
+
+  NativeLayerCARepresentation();
+  ~NativeLayerCARepresentation();
+
+  
+  CALayer* UnderlyingCALayer() {
+    return mWrappingCALayerHasExtent ? mWrappingCALayer : nullptr;
+  }
+
+  bool EnqueueSurface(IOSurfaceRef aSurfaceRef);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool ApplyChanges(NativeLayerCAUpdateType aUpdate, const gfx::IntSize& aSize,
+                    bool aIsOpaque, const gfx::IntPoint& aPosition,
+                    const gfx::Matrix4x4& aTransform,
+                    const gfx::IntRect& aDisplayRect,
+                    const Maybe<gfx::IntRect>& aClipRect,
+                    const Maybe<gfx::RoundedRect>& aRoundedClip,
+                    float aBackingScale, bool aSurfaceIsFlipped,
+                    gfx::SamplingFilter aSamplingFilter, bool aSpecializeVideo,
+                    CFTypeRefPtr<IOSurfaceRef> aFrontSurface,
+                    CFTypeRefPtr<CGColorRef> aColor, bool aIsDRM,
+                    bool aIsVideo);
+
+  
+  
+  
+  
+  
+  NativeLayerCAUpdateType HasUpdate(bool aIsVideo);
+
+  
+  
+  
+  
+  
+  CALayer* mWrappingCALayer = nullptr;      
+  CALayer* mRoundedClipCALayer = nullptr;   
+  CALayer* mContentCALayer = nullptr;       
+  CALayer* mOpaquenessTintLayer = nullptr;  
+
+#ifdef NIGHTLY_BUILD
+  bool mLogNextVideoSurface = false;
+#endif
+
+  bool mWrappingCALayerHasExtent : 1;
+
+  
+  bool mMutatedPosition : 1;
+  bool mMutatedTransform : 1;
+  bool mMutatedDisplayRect : 1;
+  bool mMutatedClipRect : 1;
+  bool mMutatedRoundedClipRect : 1;
+  bool mMutatedBackingScale : 1;
+  bool mMutatedSize : 1;
+  bool mMutatedSurfaceIsFlipped : 1;
+  bool mMutatedFrontSurface : 1;
+  bool mMutatedSamplingFilter : 1;
+  bool mMutatedSpecializeVideo : 1;
+  bool mMutatedIsDRM : 1;
+  
+};
+
+
 
 
 
@@ -330,8 +404,10 @@ class NativeLayerCA : public NativeLayer {
 
  protected:
   friend class NativeLayerRootCA;
+  friend struct NativeLayerCARepresentation;
   using UpdateType = NativeLayerCAUpdateType;
   using WhichRepresentation = NativeLayerRootCA::WhichRepresentation;
+  using Representation = NativeLayerCARepresentation;
 
   NativeLayerCA(const gfx::IntSize& aSize, bool aIsOpaque,
                 SurfacePoolHandleCA* aSurfacePoolHandle);
@@ -377,75 +453,6 @@ class NativeLayerCA : public NativeLayer {
       const gfx::IntSize& aSize, const gfx::IntPoint& aPosition,
       const gfx::Matrix4x4& aTransform, const gfx::IntRect& aDisplayRect,
       const Maybe<gfx::IntRect>& aClipRect, float aBackingScale);
-
-  
-  struct Representation {
-    Representation();
-    ~Representation();
-
-    
-    CALayer* UnderlyingCALayer() {
-      return mWrappingCALayerHasExtent ? mWrappingCALayer : nullptr;
-    }
-
-    bool EnqueueSurface(IOSurfaceRef aSurfaceRef);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool ApplyChanges(
-        UpdateType aUpdate, const gfx::IntSize& aSize, bool aIsOpaque,
-        const gfx::IntPoint& aPosition, const gfx::Matrix4x4& aTransform,
-        const gfx::IntRect& aDisplayRect, const Maybe<gfx::IntRect>& aClipRect,
-        const Maybe<gfx::RoundedRect>& aRoundedClip, float aBackingScale,
-        bool aSurfaceIsFlipped, gfx::SamplingFilter aSamplingFilter,
-        bool aSpecializeVideo, CFTypeRefPtr<IOSurfaceRef> aFrontSurface,
-        CFTypeRefPtr<CGColorRef> aColor, bool aIsDRM, bool aIsVideo);
-
-    
-    
-    
-    
-    
-    UpdateType HasUpdate(bool aIsVideo);
-
-    
-    
-    
-    
-    
-    CALayer* mWrappingCALayer = nullptr;      
-    CALayer* mRoundedClipCALayer = nullptr;   
-    CALayer* mContentCALayer = nullptr;       
-    CALayer* mOpaquenessTintLayer = nullptr;  
-
-#ifdef NIGHTLY_BUILD
-    bool mLogNextVideoSurface = false;
-#endif
-
-    bool mWrappingCALayerHasExtent : 1;
-
-    
-    bool mMutatedPosition : 1;
-    bool mMutatedTransform : 1;
-    bool mMutatedDisplayRect : 1;
-    bool mMutatedClipRect : 1;
-    bool mMutatedRoundedClipRect : 1;
-    bool mMutatedBackingScale : 1;
-    bool mMutatedSize : 1;
-    bool mMutatedSurfaceIsFlipped : 1;
-    bool mMutatedFrontSurface : 1;
-    bool mMutatedSamplingFilter : 1;
-    bool mMutatedSpecializeVideo : 1;
-    bool mMutatedIsDRM : 1;
-    
-  };
 
   Representation& GetRepresentation(WhichRepresentation aRepresentation);
   template <typename F>
