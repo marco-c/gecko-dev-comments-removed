@@ -428,10 +428,7 @@ already_AddRefed<Promise> RTCRtpScriptTransformer::OnTransformedFrame(
   if (aFrame->GetCounter() > mLastReceivedFrameCounter &&
       aFrame->CheckOwner(this) && mProxy) {
     mLastReceivedFrameCounter = aFrame->GetCounter();
-    
-    if (auto frame = aFrame->TakeFrame()) {
-      mProxy->OnTransformedFrame(std::move(frame));
-    }
+    mProxy->OnTransformedFrame(aFrame->TakeFrame());
   }
 
   return Promise::CreateResolvedWithUndefined(GetParentObject(), aError);
