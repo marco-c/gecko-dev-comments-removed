@@ -493,6 +493,7 @@ nsresult CacheFile::OnFileOpened(CacheFileHandle* aHandle, nsresult aResult) {
 
     if (mDict && OutputStreamExists(false)) {
       mOutput->SetDictionary(mDict);
+      
     }
 
     autoDoom.mListener.swap(mDoomAfterOpenListener);

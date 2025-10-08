@@ -747,7 +747,8 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
                             bool aPinned);
 
   
-  static nsresult RemoveEntry(const SHA1Sum::Hash* aHash);
+  static nsresult RemoveEntry(const SHA1Sum::Hash* aHash,
+                              const nsACString& aKey);
 
   
   
