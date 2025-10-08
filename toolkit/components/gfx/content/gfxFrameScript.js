@@ -2,8 +2,6 @@
 
 
 
-
-
 const gfxFrameScript = {
   domUtils: null,
 

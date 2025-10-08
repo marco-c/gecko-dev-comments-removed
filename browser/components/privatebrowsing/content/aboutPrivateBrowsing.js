@@ -7,8 +7,6 @@
 
 
 
-
-
 function translateElements(items) {
   items.forEach(([element, value]) => {
     

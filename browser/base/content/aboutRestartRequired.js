@@ -2,8 +2,6 @@
 
 
 
-
-
 var AboutRestartRequired = {
   
 

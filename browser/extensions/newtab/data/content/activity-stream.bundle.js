@@ -16962,8 +16962,6 @@ const external_Redux_namespaceObject = Redux;
 
 
 
-
-
 const MERGE_STORE_ACTION = "NEW_TAB_INITIAL_STATE";
 const OUTGOING_MESSAGE_NAME = "ActivityStream:ContentToMain";
 const INCOMING_MESSAGE_NAME = "ActivityStream:MainToContent";

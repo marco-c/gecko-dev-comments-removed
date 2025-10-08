@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const searchParams = new URLSearchParams(document.documentURI.split("?")[1]);

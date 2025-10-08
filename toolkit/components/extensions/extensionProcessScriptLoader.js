@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 ChromeUtils.importESModule(
