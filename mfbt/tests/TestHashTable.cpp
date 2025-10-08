@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/CompactPair.h"
 #include "mozilla/HashTable.h"
 #include "mozilla/PairHash.h"
 
