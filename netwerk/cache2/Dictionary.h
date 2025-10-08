@@ -40,12 +40,21 @@ namespace net {
 
 
 class DictionaryCacheEntry final
-    : public LinkedListElement<RefPtr<DictionaryCacheEntry>> {
+    : public LinkedListElement<RefPtr<DictionaryCacheEntry>>,
+      public nsICacheEntryOpenCallback,
+      public nsIStreamListener {
  private:
-  ~DictionaryCacheEntry() { MOZ_ASSERT(mUsers == 0); }
+  ~DictionaryCacheEntry() {
+    MOZ_ASSERT(mUsers == 0);
+    MOZ_ASSERT(!isInList());
+  }
 
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DictionaryCacheEntry)
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSICACHEENTRYOPENCALLBACK
+  NS_DECL_NSIREQUESTOBSERVER
+  NS_DECL_NSISTREAMLISTENER
+
   DictionaryCacheEntry(const nsACString& aKey, const nsACString& aPattern,
                        const nsACString& aId,
                        const Maybe<nsCString>& aHash = Nothing());
@@ -53,7 +62,10 @@ class DictionaryCacheEntry final
   
   bool Match(const nsACString& aFilePath, uint32_t& aLongest);
 
-  void Prefetch();
+  
+  
+  bool Prefetch(nsILoadContextInfo* aLoadContextInfo,
+                const std::function<nsresult()>& aFunc);
 
   const nsACString& GetHash() const {
     MOZ_ASSERT(NS_IsMainThread());
@@ -65,19 +77,11 @@ class DictionaryCacheEntry final
     mHash = aHash;
   }
 
-  bool Valid() const { return !mHash.IsEmpty(); }
-
   const nsCString& GetId() const { return mId; }
 
   
-  void InUse() { mUsers++; }
-  void UseCompleted() {
-    MOZ_ASSERT(mUsers > 0);
-    mUsers--;
-    
-    
-    
-  }
+  void InUse();
+  void UseCompleted();
 
   const nsACString& GetURI() const { return mURI; }
 
@@ -85,6 +89,8 @@ class DictionaryCacheEntry final
     MOZ_ASSERT(NS_IsMainThread());
     mHash.Truncate(0);
     mDictionaryData.clear();
+    mDictionaryDataComplete = false;
+    MOZ_ASSERT(mWaitingPrefetch.IsEmpty());
   }
 
   const Vector<uint8_t>& GetDictionary() const { return mDictionaryData; }
@@ -100,10 +106,16 @@ class DictionaryCacheEntry final
     return (uint8_t*)mDictionaryData.begin();
   }
 
+  bool DictionaryReady() const { return mDictionaryDataComplete; }
+
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
     
     return mallocSizeOf(this);
   }
+
+  static nsresult ReadCacheData(nsIInputStream* aInStream, void* aClosure,
+                                const char* aFromSegment, uint32_t aToOffset,
+                                uint32_t aCount, uint32_t* aWriteCount);
 
  private:
   nsCString mURI;  
@@ -122,6 +134,9 @@ class DictionaryCacheEntry final
 
   
   nsCOMPtr<nsICryptoHash> mCrypto;
+
+  
+  nsTArray<std::function<void()>> mWaitingPrefetch;
 };
 
 
