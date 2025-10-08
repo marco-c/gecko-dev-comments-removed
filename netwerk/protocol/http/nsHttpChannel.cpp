@@ -3461,6 +3461,7 @@ void nsHttpChannel::UpdateCacheDisposition(bool aSuccessfulReval,
   ReportHttpResponseVersion(mResponseHead->Version());
 }
 
+
 nsresult nsHttpChannel::ContinueProcessResponse4(nsresult rv) {
   bool doNotRender = DoNotRender3xxBody(rv);
 
@@ -3549,17 +3550,45 @@ nsresult nsHttpChannel::ContinueProcessNormal(nsresult rv) {
   
   
   
-
   
+  
+  
+  
+  bool isDictionaryCompressed = false;
+  nsAutoCString contentEncoding;
+  Unused << mResponseHead->GetHeader(nsHttp::Content_Encoding, contentEncoding);
+  
+  if (contentEncoding.Equals("dcb") || contentEncoding.Equals("dcz")) {
+    isDictionaryCompressed = true;
+  }
+
   if (mCacheEntry && !LoadCacheEntryIsReadOnly()) {
-    rv = InstallCacheListener();
-    if (NS_FAILED(rv)) return rv;
-  } else {
     
-    nsAutoCString contentEncoding;
-    Unused << mResponseHead->GetHeader(nsHttp::Content_Encoding,
-                                       contentEncoding);
-    if (contentEncoding.Equals("dcb") || contentEncoding.Equals("dcz")) {
+    
+    
+    nsAutoCString dictionary;
+    if (StaticPrefs::network_http_dictionaries_enable() && IsHTTPS()) {
+      Unused << mResponseHead->GetHeader(nsHttp::Use_As_Dictionary, dictionary);
+      if (!dictionary.IsEmpty()) {
+        if (!ParseDictionary(mCacheEntry, mResponseHead.get(), true)) {
+          LOG_DICTIONARIES(("Failed to parse use-as-dictionary"));
+        } else {
+          MOZ_ASSERT(mDictSaving);
+
+          
+          mCacheEntry->SetDictionary(mDictSaving);
+        }
+      }
+    }
+
+    if (isDictionaryCompressed || mDictSaving) {
+      LOG(("Decompressing before saving into cache [channel=%p]", this));
+      rv = DoInstallCacheListener(isDictionaryCompressed, &dictionary, 0);
+    }
+  } else {
+    if (isDictionaryCompressed) {
+      
+      
       LOG_DICTIONARIES(
           ("Removing Content-Encoding %s for %p", contentEncoding.get(), this));
       nsCOMPtr<nsIStreamListener> listener;
@@ -3581,7 +3610,7 @@ nsresult nsHttpChannel::ContinueProcessNormal(nsresult rv) {
         LOG_DICTIONARIES(("Didn't install decompressor without cache tee"));
       }
     }
-  }
+  }  
 
   
   if (LoadResuming()) {
@@ -3624,6 +3653,15 @@ nsresult nsHttpChannel::ContinueProcessNormal(nsresult rv) {
   rv = CallOnStartRequest();
   if (NS_FAILED(rv)) return rv;
 
+  
+  
+  if (!isDictionaryCompressed && !mDictSaving) {
+    
+    if (mCacheEntry && !LoadCacheEntryIsReadOnly()) {
+      rv = InstallCacheListener();
+      if (NS_FAILED(rv)) return rv;
+    }
+  }
   return NS_OK;
 }
 
@@ -5890,8 +5928,9 @@ nsresult nsHttpChannel::InitCacheEntry() {
   
   mCacheEntry->SetMetaDataElement("strongly-framed", "0");
 
-  
-  
+  rv = AddCacheEntryHeaders(mCacheEntry, false);
+  if (NS_FAILED(rv)) return rv;
+
   StoreInitedCacheEntry(true);
 
   
@@ -5951,66 +5990,8 @@ nsresult DoAddCacheEntryHeaders(nsHttpChannel* self, nsICacheEntry* entry,
   rv = StoreAuthorizationMetaData(entry, requestHead);
   if (NS_FAILED(rv)) return rv;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  {
-    nsAutoCString buf, metaKey;
-    Unused << responseHead->GetHeader(nsHttp::Vary, buf);
-
-    constexpr auto prefix = "request-"_ns;
-
-    for (const nsACString& token :
-         nsCCharSeparatedTokenizer(buf, NS_HTTP_HEADER_SEP).ToRange()) {
-      LOG(
-          ("nsHttpChannel::AddCacheEntryHeaders [this=%p] "
-           "processing %s",
-           self, nsPromiseFlatCString(token).get()));
-      if (!token.EqualsLiteral("*")) {
-        nsHttpAtom atom = nsHttp::ResolveAtom(token);
-        nsAutoCString val;
-        nsAutoCString hash;
-        if (NS_SUCCEEDED(requestHead->GetHeader(atom, val))) {
-          
-          if (atom == nsHttp::Cookie) {
-            LOG(
-                ("nsHttpChannel::AddCacheEntryHeaders [this=%p] "
-                 "cookie-value %s",
-                 self, val.get()));
-            rv = Hash(val.get(), hash);
-            
-            
-            if (NS_FAILED(rv)) {
-              val = "<hash failed>"_ns;
-            } else {
-              val = hash;
-            }
-
-            LOG(("   hashed to %s\n", val.get()));
-          }
-
-          
-          metaKey = prefix + token;
-          entry->SetMetaDataElement(metaKey.get(), val.get());
-        } else {
-          LOG(
-              ("nsHttpChannel::AddCacheEntryHeaders [this=%p] "
-               "clearing metadata for %s",
-               self, nsPromiseFlatCString(token).get()));
-          metaKey = prefix + token;
-          entry->SetMetaDataElement(metaKey.get(), nullptr);
-        }
-      }
-    }
-  }
+  rv = self->ProcessVaryCacheEntryHeaders(entry, nullptr);
+  if (NS_FAILED(rv)) return rv;
 
   
   
@@ -6026,6 +6007,92 @@ nsresult DoAddCacheEntryHeaders(nsHttpChannel* self, nsICacheEntry* entry,
   
   rv = entry->MetaDataReady();
 
+  return rv;
+}
+
+nsresult nsHttpChannel::AddCacheEntryHeaders(nsICacheEntry* entry,
+                                             bool aModified) {
+  return DoAddCacheEntryHeaders(this, entry, &mRequestHead, mResponseHead.get(),
+                                mSecurityInfo, aModified);
+}
+
+nsresult nsHttpChannel::ProcessVaryCacheEntryHeaders(nsICacheEntry* entry,
+                                                     const nsHttpAtom* aAtom) {
+  nsresult rv = NS_OK;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  {
+    nsAutoCString buf, metaKey;
+    Unused << mResponseHead->GetHeader(nsHttp::Vary, buf);
+
+    constexpr auto prefix = "request-"_ns;
+
+    for (const nsACString& token :
+         nsCCharSeparatedTokenizer(buf, NS_HTTP_HEADER_SEP).ToRange()) {
+      LOG(
+          ("nsHttpChannel::ProcessVaryCacheEntryHeaders [this=%p] "
+           "processing %s",
+           this, nsPromiseFlatCString(token).get()));
+      if (!token.EqualsLiteral("*")) {
+        nsHttpAtom atom = nsHttp::ResolveAtom(token);
+        if (!aAtom || atom == *aAtom) {
+          nsAutoCString val;
+          nsAutoCString hash;
+          if (NS_SUCCEEDED(mRequestHead.GetHeader(atom, val))) {
+            
+            if (atom == nsHttp::Cookie) {
+              LOG(
+                  ("nsHttpChannel::ProcessVaryCacheEntryHeaders [this=%p] "
+                   "cookie-value %s",
+                   this, val.get()));
+              rv = Hash(val.get(), hash);
+              
+              
+              if (NS_FAILED(rv)) {
+                val = "<hash failed>"_ns;
+              } else {
+                val = hash;
+              }
+
+              LOG(("   hashed to %s\n", val.get()));
+            }
+
+            
+            metaKey = prefix + token;
+            entry->SetMetaDataElement(metaKey.get(), val.get());
+          } else {
+            LOG(
+                ("nsHttpChannel::ProcessVaryCacheEntryHeaders [this=%p] "
+                 "clearing metadata for %s",
+                 this, nsPromiseFlatCString(token).get()));
+            metaKey = prefix + token;
+            entry->SetMetaDataElement(metaKey.get(), nullptr);
+          }
+        }
+      }
+    }
+  }
+  return rv;
+}
+
+nsresult nsHttpChannel::ModifiedCacheEntryHeaders(nsICacheEntry* entry,
+                                                  const nsHttpAtom& aAtom) {
+  nsresult rv = ProcessVaryCacheEntryHeaders(entry, &aAtom);
+  if (NS_SUCCEEDED(rv)) {
+    
+    
+    rv = entry->MetaDataReady();
+  }
   return rv;
 }
 
@@ -6084,12 +6151,6 @@ bool nsHttpChannel::ParseDictionary(nsICacheEntry* aEntry,
   return true;  
 }
 
-nsresult nsHttpChannel::AddCacheEntryHeaders(nsICacheEntry* entry,
-                                             bool aModified) {
-  return DoAddCacheEntryHeaders(this, entry, &mRequestHead, mResponseHead.get(),
-                                mSecurityInfo, aModified);
-}
-
 inline void GetAuthType(const char* challenge, nsCString& authType) {
   const char* p;
 
@@ -6137,9 +6198,19 @@ nsresult nsHttpChannel::FinalizeCacheEntry() {
   return NS_OK;
 }
 
-
-
 nsresult nsHttpChannel::InstallCacheListener(int64_t offset) {
+  return DoInstallCacheListener(false, nullptr, offset);
+}
+
+
+
+
+
+
+
+nsresult nsHttpChannel::DoInstallCacheListener(bool aIsDictionaryCompressed,
+                                               nsACString* aDictionary,
+                                               int64_t offset) {
   nsresult rv;
 
   LOG(("Preparing to write data into the cache [uri=%s]\n", mSpec.get()));
@@ -6149,24 +6220,6 @@ nsresult nsHttpChannel::InstallCacheListener(int64_t offset) {
              mRaceCacheWithNetwork);
   MOZ_ASSERT(mListener);
 
-  
-  
-  
-  nsAutoCString dictionary;
-  if (StaticPrefs::network_http_dictionaries_enable() && IsHTTPS()) {
-    Unused << mResponseHead->GetHeader(nsHttp::Use_As_Dictionary, dictionary);
-    if (!dictionary.IsEmpty()) {
-      
-      if (!ParseDictionary(mCacheEntry, mResponseHead.get(), true)) {
-        LOG_DICTIONARIES(("Failed to parse use-as-dictionary"));
-      } else {
-        MOZ_ASSERT(mDictSaving);
-      }
-    }
-
-    
-    mCacheEntry->SetDictionary(mDictSaving);
-  }
   LOG(("Trading cache input stream for output stream [channel=%p]", this));
 
   
@@ -6178,10 +6231,6 @@ nsresult nsHttpChannel::InstallCacheListener(int64_t offset) {
   if (predictedSize != -1) {
     predictedSize -= offset;
   }
-
-  nsCOMPtr<nsIStreamListenerTee> tee =
-      do_CreateInstance(kStreamListenerTeeCID, &rv);
-  if (NS_FAILED(rv)) return rv;
 
   nsCOMPtr<nsIOutputStream> out;
   rv =
@@ -6218,6 +6267,10 @@ nsresult nsHttpChannel::InstallCacheListener(int64_t offset) {
     if (NS_FAILED(rv)) return rv;
 #endif
 
+  nsCOMPtr<nsIStreamListenerTee> tee =
+      do_CreateInstance(kStreamListenerTeeCID, &rv);
+  if (NS_FAILED(rv)) return rv;
+
   rv = tee->Init(mListener, out, nullptr);
   LOG(("nsHttpChannel::InstallCacheListener sync tee %p rv=%" PRIx32, tee.get(),
        static_cast<uint32_t>(rv)));
@@ -6234,52 +6287,49 @@ nsresult nsHttpChannel::InstallCacheListener(int64_t offset) {
   
   
   
-  nsAutoCString contentEncoding;
-  Unused << mResponseHead->GetHeader(nsHttp::Content_Encoding, contentEncoding);
-  LOG_DICTIONARIES(
-      ("Content-Encoding for %p: %s", this, contentEncoding.get()));
-  if (!dictionary.IsEmpty() || contentEncoding.Equals("dcb") ||
-      contentEncoding.Equals("dcz")) {
-    if (!contentEncoding.IsEmpty()) {
-      LOG_DICTIONARIES(
-          ("Removing Content-Encoding %s for %p", contentEncoding.get(), this));
-      nsCOMPtr<nsIStreamListener> listener;
-      
-      SetApplyConversion(true);
-      rv = DoApplyContentConversions(mListener, getter_AddRefs(listener),
-                                     nullptr);
-      if (NS_FAILED(rv)) {
-        return rv;
-      }
-      if (listener) {
-        LOG_DICTIONARIES(
-            ("Installed nsHTTPCompressConv %p before tee", listener.get()));
-        mListener = listener;
-        mCompressListener = listener;
-        StoreHasAppliedConversion(true);
-
-      } else {
-        LOG_DICTIONARIES(("Didn't install decompressor before tee"));
-      }
+  bool removedEncoding = false;
+  
+  
+  if (aDictionary || aIsDictionaryCompressed) {
+    nsCOMPtr<nsIStreamListener> listener;
+    
+    SetApplyConversion(true);
+    rv =
+        DoApplyContentConversions(mListener, getter_AddRefs(listener), nullptr);
+    if (NS_FAILED(rv)) {
+      return rv;
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    RemoveFromVary(mResponseHead.get(), "available-dictionary"_ns);
-    RemoveFromVary(mResponseHead.get(), "accept-encoding"_ns);
+    if (listener) {
+      LOG_DICTIONARIES(
+          ("Installed nsHTTPCompressConv %p before tee", listener.get()));
+      mListener = listener;
+      mCompressListener = listener;
+      StoreHasAppliedConversion(true);
+      removedEncoding = true;
+    } else {
+      LOG_DICTIONARIES(("Didn't install decompressor before tee"));
+    }
+    if (removedEncoding) {
+      
+      
+      
+      
+      
+      
+      
+      
+      RemoveFromVary(mResponseHead.get(), "available-dictionary"_ns);
+      RemoveFromVary(mResponseHead.get(), "accept-encoding"_ns);
+    }
   }
 
-  
-  
-  rv = AddCacheEntryHeaders(mCacheEntry, true);
-  if (NS_FAILED(rv)) {
-    mCacheEntry->AsyncDoom(nullptr);
-    return rv;
+  if (removedEncoding) {
+    
+    rv = ModifiedCacheEntryHeaders(mCacheEntry, nsHttp::Content_Encoding);
+    if (NS_FAILED(rv)) {
+      mCacheEntry->AsyncDoom(nullptr);
+      return rv;
+    }
   }
   return NS_OK;
 }
