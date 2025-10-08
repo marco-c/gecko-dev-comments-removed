@@ -2407,61 +2407,75 @@ nsresult nsSHistory::LoadEntry(int32_t aIndex, long aLoadType,
   return NS_OK;
 }
 
+namespace {
 
 
 
-static nsISHEntry* FindLowestAncestor(Span<nsISHEntry*> aInclusiveAncestors,
-                                      nsISHEntry* aSubtreeRoot) {
-  if (!aSubtreeRoot || aInclusiveAncestors.IsEmpty()) {
+
+
+SessionHistoryEntry* FindParent(Span<SessionHistoryEntry*> aAncestors,
+                                SessionHistoryEntry* aSubtreeRoot) {
+  if (!aSubtreeRoot || aAncestors.IsEmpty() ||
+      !aAncestors[0]->Info().SharesDocumentWith(aSubtreeRoot->Info())) {
     return nullptr;
   }
-  if (aInclusiveAncestors[0]->GetID() != aSubtreeRoot->GetID()) {
-    return nullptr;
+  if (aAncestors.Length() == 1) {
+    return aSubtreeRoot;
   }
   for (int32_t i = 0, childCount = aSubtreeRoot->GetChildCount();
-       aInclusiveAncestors.Length() > 1 && i < childCount; i++) {
+       i < childCount; i++) {
     nsCOMPtr<nsISHEntry> child;
     aSubtreeRoot->GetChildAt(i, getter_AddRefs(child));
-    if (auto* lowestFoundAncestor =
-            FindLowestAncestor(aInclusiveAncestors.From(1), child)) {
-      return lowestFoundAncestor;
+    if (auto* foundParent =
+            FindParent(aAncestors.From(1),
+                       static_cast<SessionHistoryEntry*>(child.get()))) {
+      return foundParent;
     }
   }
-  return aInclusiveAncestors[0];
+  return nullptr;
 }
+
+class SessionHistoryEntryIDComparator {
+ public:
+  static bool Equals(const RefPtr<SessionHistoryEntry>& aLhs,
+                     const RefPtr<SessionHistoryEntry>& aRhs) {
+    return aLhs->GetID() == aRhs->GetID();
+  }
+};
+
+}  
 
 mozilla::dom::SessionHistoryEntry* nsSHistory::FindAdjacentContiguousEntryFor(
     mozilla::dom::SessionHistoryEntry* aEntry, int32_t aSearchDirection) {
   MOZ_ASSERT(aSearchDirection == 1 || aSearchDirection == -1);
 
-  RefPtr<BrowsingContext> bc = GetBrowsingContext();
-  if (!bc) {
-    return {};
+  
+  
+  nsCOMPtr<nsISHEntry> ancestor = aEntry->GetParent();
+  nsTArray<SessionHistoryEntry*> ancestors;
+  while (ancestor) {
+    ancestors.AppendElement(static_cast<SessionHistoryEntry*>(ancestor.get()));
+    ancestor = ancestor->GetParent();
   }
+  ancestors.Reverse();
 
-  nsCOMPtr<nsISHEntry> parent = aEntry;
-  nsTArray<nsISHEntry*> inclusiveAncestors;
-  while (parent) {
-    inclusiveAncestors.AppendElement(parent);
-    parent = parent->GetParent();
-  }
-  inclusiveAncestors.Reverse();
-
-  nsCOMPtr<nsISHEntry> entry = inclusiveAncestors[0];
+  nsCOMPtr<nsISHEntry> rootEntry = ancestors.IsEmpty() ? aEntry : ancestors[0];
   nsCOMPtr<nsISHEntry> nextEntry;
-  nsISHEntry* lowestFoundAncestor = nullptr;
-  for (int32_t i = GetIndexOfEntry(entry) + aSearchDirection;
+  SessionHistoryEntry* foundParent = nullptr;
+  for (int32_t i = GetIndexOfEntry(rootEntry) + aSearchDirection;
        i >= 0 && i < Length(); i += aSearchDirection) {
     GetEntryAtIndex(i, getter_AddRefs(nextEntry));
-    if ((lowestFoundAncestor =
-             FindLowestAncestor(inclusiveAncestors, nextEntry)) != aEntry) {
+    foundParent = FindParent(
+        ancestors, static_cast<SessionHistoryEntry*>(nextEntry.get()));
+    if (!foundParent || !foundParent->Children().Contains(
+                            aEntry, SessionHistoryEntryIDComparator())) {
       break;
     }
-    entry = nextEntry;
+    rootEntry = nextEntry;
   }
 
-  if (!nextEntry || entry == nextEntry ||
-      lowestFoundAncestor != nsCOMPtr(aEntry->GetParent())) {
+  if (!nextEntry || rootEntry == nextEntry ||
+      (nsCOMPtr(aEntry->GetParent()) && !foundParent)) {
     
     
     
@@ -2470,8 +2484,10 @@ mozilla::dom::SessionHistoryEntry* nsSHistory::FindAdjacentContiguousEntryFor(
   }
 
   nsISHEntry* foundEntry = nullptr;
+
+  RefPtr bc = GetBrowsingContext();
   bool differenceFound = ForEachDifferingEntry(
-      entry, nextEntry, bc,
+      rootEntry, nextEntry, bc,
       [&foundEntry](nsISHEntry* differingEntry,
                     [[maybe_unused]] BrowsingContext* parent) {
         
