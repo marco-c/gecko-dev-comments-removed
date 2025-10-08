@@ -22,6 +22,7 @@
 #include "mozilla/Components.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/Document.h"
 
 #include "nsArrayEnumerator.h"
 #include "nsEnumeratorUtils.h"
@@ -228,6 +229,16 @@ void nsFilePicker::ReadValuesFromNonPortalFileChooser(
 void nsFilePicker::InitNative(nsIWidget* aParent, const nsAString& aTitle) {
   mParentWidget = aParent;
   mTitle.Assign(aTitle);
+
+  if (mParentWidget) {
+    auto window = static_cast<nsWindow*>(mParentWidget.get());
+    if (GtkWidget* widget = window->GetGtkWidget()) {
+      if (auto* title = gtk_window_get_title(GTK_WINDOW(widget))) {
+        mTitle.AppendLiteral(" - ");
+        mTitle.Append(NS_ConvertUTF8toUTF16(title));
+      }
+    }
+  }
 }
 
 NS_IMETHODIMP
@@ -617,27 +628,19 @@ void nsFilePicker::ClearPortalState() {
 void nsFilePicker::DonePortal(GVariant* aResult) {
   LOG("nsFilePicker::DonePortal(%s)\n",
       GUniquePtr<char>(g_variant_print(aResult, TRUE)).get());
-  auto result = [&]() -> Maybe<ResultCode> {
+  ResultCode result = [&] {
     RefPtr<GVariant> resultCode =
         dont_AddRef(g_variant_get_child_value(aResult, 0));
     switch (g_variant_get_uint32(resultCode)) {
       case 0:
-        return Some(ResultCode::returnOK);
+        return ResultCode::returnOK;
       case 1:
-        return Some(ResultCode::returnCancel);
       default:
-        return Nothing();
+        return ResultCode::returnCancel;
     }
   }();
 
-  if (!result) {
-    
-    
-    ClearPortalState();
-    return OpenNonPortal();
-  }
-
-  if (*result == returnOK) {
+  if (result == returnOK) {
     RefPtr<GVariant> results =
         dont_AddRef(g_variant_get_child_value(aResult, 1));
     GVariantIter iter;
@@ -666,7 +669,7 @@ void nsFilePicker::DonePortal(GVariant* aResult) {
   }
 
   ClearPortalState();
-  DoneCommon(*result);
+  DoneCommon(result);
 }
 #endif
 
