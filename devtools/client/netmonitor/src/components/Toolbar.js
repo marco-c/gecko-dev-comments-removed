@@ -294,7 +294,7 @@ class Toolbar extends Component {
   onSearchBoxFocusKeyboardShortcut(event) {
     
     
-    return !!event.target.closest(".CodeMirror");
+    return !!event.target.closest(".cm-editor");
   }
 
   onSearchBoxFocus() {

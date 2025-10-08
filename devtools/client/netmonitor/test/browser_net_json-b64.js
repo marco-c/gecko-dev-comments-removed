@@ -59,7 +59,7 @@ add_task(async function () {
   );
 
   
-  wait = waitForDOM(document, "#response-panel .CodeMirror-code");
+  wait = waitForDOM(document, "#response-panel .cm-content");
   const header = document.querySelector(
     "#response-panel .raw-data-toggle-input .devtools-checkbox-toggle"
   );
@@ -84,7 +84,7 @@ add_task(async function () {
     "The raw response toggle should be on."
   );
   is(
-    tabpanel.querySelector(".CodeMirror-code") === null,
+    tabpanel.querySelector(".cm-content") === null,
     false,
     "The response editor has the intended visibility."
   );
