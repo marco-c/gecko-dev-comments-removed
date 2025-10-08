@@ -900,12 +900,7 @@ void HttpConnectionUDP::CloseTransaction(nsAHttpTransaction* trans,
        "]\n",
        this, trans, static_cast<uint32_t>(reason)));
 
-  
-  
-  
-  bool transInQueue = mQueuedTransaction.Contains(trans);
-  MOZ_ASSERT(trans == mHttp3Session ||
-             (transInQueue && IsProxyConnectInProgress()));
+  MOZ_ASSERT(trans == mHttp3Session);
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
   if (NS_SUCCEEDED(reason) || (reason == NS_BASE_STREAM_CLOSED)) {
@@ -924,7 +919,7 @@ void HttpConnectionUDP::CloseTransaction(nsAHttpTransaction* trans,
   if (mHttp3Session) {
     
     
-    mHttp3Session->SetCleanShutdown(aIsShutdown || transInQueue ||
+    mHttp3Session->SetCleanShutdown(aIsShutdown ||
                                     (mIsInTunnel && !mProxyConnectSucceeded));
     mHttp3Session->Close(reason);
     if (!mHttp3Session->IsClosed()) {
