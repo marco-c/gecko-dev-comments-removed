@@ -11,7 +11,6 @@ prefs = [
   "app.normandy.run_interval_seconds=0", # This turns off the update interval for fetching recipes from Remote Settings
   "messaging-system.log=all", # Enable all Nimbus logging.
 ]
-run-sequentially = "very high failure rate in parallel"
 
 ["test_Enrollments.js"]
 
@@ -34,6 +33,7 @@ run-sequentially = "very high failure rate in parallel"
 ["test_ExperimentManager_lifecycle.js"]
 
 ["test_ExperimentManager_prefs.js"]
+skip-if = ["os == 'win' && msix"] # Bug 1991153
 
 ["test_ExperimentManager_unenroll.js"]
 
@@ -50,7 +50,10 @@ run-sequentially = "very high failure rate in parallel"
 ["test_RemoteSettingsExperimentLoader_updateRecipes.js"]
 
 ["test_TargetingContextRecorder.js"]
-skip-if = ["artifact"]
+skip-if = [
+  "artifact",
+  "os == 'win' && msix", # Bug 1991153
+]
 
 ["test_localization.js"]
 
@@ -59,6 +62,9 @@ skip-if = ["artifact"]
 ["test_policy.js"]
 
 ["test_prefFlips.js"]
-skip-if = ["os == 'mac' && os_version == '15.30' && arch == 'aarch64'"] # Bug 1960885
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1960885
+  "os == 'win' && msix", # Bug 1991153
+]
 
 ["test_schema_uris.js"]
