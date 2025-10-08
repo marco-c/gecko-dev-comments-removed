@@ -7,7 +7,7 @@
 const BAD_LISTENER = "The event listener must be a function.";
 
 const eventListeners = Symbol("EventEmitter/listeners");
-const onceOriginalListener = Symbol("EventEmitter/once-original-listener");
+const onceResolvers = Symbol("EventEmitter/once-resolvers");
 loader.lazyRequireGetter(this, "flags", "resource://devtools/shared/flags.js");
 
 class EventEmitter {
@@ -92,21 +92,7 @@ class EventEmitter {
       
       if (listenersForType.has(listener)) {
         listenersForType.delete(listener);
-      } else {
-        
-        
-        
-        
-        
-        for (const value of listenersForType.values()) {
-          if (
-            onceOriginalListener in value &&
-            value[onceOriginalListener] === listener
-          ) {
-            listenersForType.delete(value);
-            break;
-          }
-        }
+        delete listener[onceResolvers];
       }
     } else if (length === 2) {
       
@@ -145,29 +131,14 @@ class EventEmitter {
 
 
 
-  static once(target, type, listener, options) {
-    return new Promise(resolve => {
-      
-      
-      const newListener = (first, ...rest) => {
-        
-        EventEmitter.off(target, type, newListener);
-
-        let rv;
-        if (listener) {
-          rv = listener.call(target, first, ...rest);
-        }
-
-        
-        resolve(first);
-
-        
-        return rv;
-      };
-
-      newListener[onceOriginalListener] = listener;
-      EventEmitter.on(target, type, newListener, options);
-    });
+  static once(target, type, listener = function () {}, options) {
+    const { promise, resolve } = Promise.withResolvers();
+    if (!listener[onceResolvers]) {
+      listener[onceResolvers] = [];
+    }
+    listener[onceResolvers].push(resolve);
+    EventEmitter.on(target, type, listener, options);
+    return promise;
   }
 
   static emit(target, type, ...rest) {
@@ -223,7 +194,23 @@ class EventEmitter {
       
       if (listeners && listeners.has(listener)) {
         try {
+          
+          
+          
+          const resolvers = listener[onceResolvers];
+          if (resolvers) {
+            EventEmitter.off(target, type, listener);
+          }
           const promise = listener.apply(target, args);
+          
+          
+          if (resolvers) {
+            for (const resolver of resolvers) {
+              
+              
+              resolver(args[0]);
+            }
+          }
           if (async) {
             
             
