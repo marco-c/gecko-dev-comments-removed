@@ -12,8 +12,10 @@
 
 
 
+
+const bug = location.origin.includes("mirage.decart.ai") ? 1987351 : 1928941;
 console.info(
-  "window.chrome has been shimmed for compatibility reasons. https://bugzilla.mozilla.org/show_bug.cgi?id=1928941 for details."
+  `window.chrome has been shimmed for compatibility reasons. https://bugzilla.mozilla.org/show_bug.cgi?id=${bug} for details.`
 );
 
 window.wrappedJSObject.chrome = new window.wrappedJSObject.Object();
