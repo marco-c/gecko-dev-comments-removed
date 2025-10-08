@@ -190,20 +190,6 @@ function assertCursorPosition(dbg, expectedLine, expectedColumn, message) {
   is(cursor.from.ch + 1, expectedColumn, message + " (actual cursor column)");
 }
 
-async function waitForCursorPosition(dbg, expectedLine) {
-  return waitFor(() => {
-    const cursorPosition = findElementWithSelector(dbg, ".cursor-position");
-    if (!cursorPosition) {
-      return false;
-    }
-    const { innerText } = cursorPosition;
-    
-    
-    const line = innerText.substring(1, innerText.indexOf(","));
-    return parseInt(line, 10) == expectedLine;
-  });
-}
-
 
 
 
