@@ -128,6 +128,13 @@ class Fifo {
   }
 
   
+  
+  template <typename... Args>
+  [[nodiscard]] bool emplaceFront(Args&&... args) {
+    return front_.emplaceBack(std::forward<Args>(args)...);
+  }
+
+  
   T& front() {
     MOZ_ASSERT(!empty());
     return front_.back();
