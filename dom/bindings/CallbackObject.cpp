@@ -368,6 +368,41 @@ CallSetup::CallSetup(CallbackObjectBase* aCallback, ErrorResult& aRv,
                     webIDLCallerPrincipal, aExecutionReason, aRv);
 }
 
+CallSetup::CallSetup(JS::Handle<JSObject*> aCallbackGlobal,
+                     nsIGlobalObject* aIncumbentGlobal,
+                     JS::Handle<JSObject*> aCreationStack, ErrorResult& aRv,
+                     const char* aExecutionReason,
+                     CallbackObjectBase::ExceptionHandling aExceptionHandling,
+                     JS::Realm* aRealm)
+    : mCx(nullptr),
+      mRealm(aRealm),
+      mErrorResult(aRv),
+      mExceptionHandling(aExceptionHandling),
+      mIsMainThread(NS_IsMainThread()) {
+  MOZ_ASSERT_IF(aExceptionHandling == CallbackFunction::eReportExceptions ||
+                    aExceptionHandling == CallbackFunction::eRethrowExceptions,
+                !aRealm);
+
+  MOZ_RELEASE_ASSERT(aCallbackGlobal);
+  nsIGlobalObject* globalObject = GetActiveGlobalObjectForCall(
+      aCallbackGlobal, mIsMainThread, false, aRv);
+  if (!globalObject) {
+    MOZ_ASSERT(aRv.Failed());
+    return;
+  }
+
+  
+  if (!CheckBeforeExecution(globalObject, aCallbackGlobal,
+                            false, aRv)) {
+    return;
+  }
+
+  
+  SetupForExecution(globalObject, aIncumbentGlobal, aCallbackGlobal,
+                    aCallbackGlobal, aCreationStack,
+                    nullptr, aExecutionReason, aRv);
+}
+
 bool CallSetup::ShouldRethrowException(JS::Handle<JS::Value> aException) {
   if (mExceptionHandling == CallbackObjectBase::eRethrowExceptions) {
     MOZ_ASSERT(!mRealm);
