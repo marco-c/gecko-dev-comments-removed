@@ -62,10 +62,18 @@ import { assert } from '../util/util.js';
 
 
 
+
+
+
+
+
+
+
 export const globalTestConfig = {
   enableDebugLogs: false,
   maxSubcasesInFlight: 100,
   subcasesBetweenAttemptingGC: 5000,
+  casesBetweenReplacingDevice: Infinity,
   testHeartbeatCallback: () => {},
   noRaceWithRejectOnTimeout: false,
   unrollConstEvalLoops: false,

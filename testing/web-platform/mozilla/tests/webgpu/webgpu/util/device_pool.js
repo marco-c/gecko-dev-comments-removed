@@ -1,6 +1,7 @@
 
 
-import { SkipTestCase } from '../../common/framework/fixture.js';import { attemptGarbageCollection } from '../../common/util/collect_garbage.js';import { getGPU, getDefaultRequestAdapterOptions } from '../../common/util/navigator_gpu.js';
+import { SkipTestCase } from '../../common/framework/fixture.js';import { globalTestConfig } from '../../common/framework/test_config.js';import { attemptGarbageCollection } from '../../common/util/collect_garbage.js';
+import { getGPU, getDefaultRequestAdapterOptions } from '../../common/util/navigator_gpu.js';
 import {
   assert,
   raceWithRejectOnTimeout,
@@ -97,41 +98,46 @@ export class DevicePool {
     assert(holder instanceof DeviceHolder, 'DeviceProvider should always be a DeviceHolder');
 
     assert(holder.state === 'acquired', 'trying to release a device while already released');
+    let deviceNeedsReplacement = false;
     try {
       await holder.endTestScope();
 
-      
-      
-      
-      assert(
-        holder.lostInfo === undefined,
-        `Device was unexpectedly lost. Reason: ${holder.lostInfo?.reason}, Message: ${holder.lostInfo?.message}`
-      );
+      if (holder.expectedLostReason) {
+        deviceNeedsReplacement = true;
+        assert(holder.lostInfo !== undefined, 'Device expected to be lost, but was not lost');
+        assert(
+          holder.lostInfo.reason === holder.expectedLostReason,
+          `Expected device loss reason "${holder.expectedLostReason}", got "${holder.lostInfo?.reason}"`
+        );
+      } else {
+        
+        
+        
+        assert(holder.lostInfo === undefined, 'Device lost unexpectedly during test');
+      }
     } catch (ex) {
       
       
       if (!(ex instanceof TestFailedButDeviceReusable)) {
-        this.holders.delete(holder);
-        
-        await holder.device.lost;
+        deviceNeedsReplacement = true;
 
+        
+        
+        
         
         if (ex instanceof TestOOMedShouldAttemptGC) {
           await attemptGarbageCollection();
         }
       }
-      
-      
-      
-      
-      const expectedDeviceLost =
-      holder.expectedLostReason !== undefined &&
-      holder.lostInfo !== undefined &&
-      holder.expectedLostReason === holder.lostInfo.reason;
-      if (!expectedDeviceLost) {
-        throw ex;
-      }
     } finally {
+      const deviceDueForReplacement =
+      holder.testCaseUseCounter >= globalTestConfig.casesBetweenReplacingDevice;
+      if (deviceNeedsReplacement || deviceDueForReplacement) {
+        this.holders.delete(holder);
+        holder.device.destroy();
+        await holder.device.lost;
+      }
+
       
       holder.state = 'free';
     }
@@ -340,6 +346,8 @@ class DeviceHolder {
 
   
 
+  
+  testCaseUseCounter = 0;
 
   
   
@@ -374,13 +382,13 @@ class DeviceHolder {
   }
 
   get device() {
-    assert(this._device !== undefined);
     return this._device;
   }
 
   
   beginTestScope() {
     assert(this.state === 'acquired');
+    this.testCaseUseCounter++;
     this.device.pushErrorScope('validation');
     this.device.pushErrorScope('internal');
     this.device.pushErrorScope('out-of-memory');
@@ -415,7 +423,9 @@ class DeviceHolder {
     let gpuOutOfMemoryError;
 
     
-    this.device.queue.submit([]);
+    
+    
+    await this.device.queue.onSubmittedWorkDone();
 
     try {
       
@@ -425,19 +435,15 @@ class DeviceHolder {
       this.device.popErrorScope()]
       );
     } catch (ex) {
-      assert(this.lostInfo !== undefined, 'popErrorScope failed; did the test body steal it?');
-      throw ex;
+      unreachable('popErrorScope failed. Did the test body pop too many scopes?');
     }
 
-    
-    if (this.device.queue.onSubmittedWorkDone) {
-      await this.device.queue.onSubmittedWorkDone();
+    if (!this.expectedLostReason) {
+      await assertReject('OperationError', this.device.popErrorScope(), {
+        allowMissingStack: true,
+        message: 'There was an extra error scope on the stack after a test'
+      });
     }
-
-    await assertReject('OperationError', this.device.popErrorScope(), {
-      allowMissingStack: true,
-      message: 'There was an extra error scope on the stack after a test'
-    });
 
     if (gpuOutOfMemoryError !== null) {
       assert(gpuOutOfMemoryError instanceof GPUOutOfMemoryError);

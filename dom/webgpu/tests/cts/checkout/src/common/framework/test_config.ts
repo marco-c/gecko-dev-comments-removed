@@ -18,6 +18,12 @@ export type TestConfig = {
 
   subcasesBetweenAttemptingGC: number;
 
+  
+
+
+
+  casesBetweenReplacingDevice: number;
+
   testHeartbeatCallback: () => void;
 
   noRaceWithRejectOnTimeout: boolean;
@@ -62,10 +68,12 @@ export type TestConfig = {
   logToWebSocket: boolean;
 };
 
+
 export const globalTestConfig: TestConfig = {
   enableDebugLogs: false,
   maxSubcasesInFlight: 100,
   subcasesBetweenAttemptingGC: 5000,
+  casesBetweenReplacingDevice: Infinity,
   testHeartbeatCallback: () => {},
   noRaceWithRejectOnTimeout: false,
   unrollConstEvalLoops: false,
