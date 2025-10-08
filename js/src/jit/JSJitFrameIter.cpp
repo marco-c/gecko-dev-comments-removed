@@ -386,10 +386,6 @@ void JSJitFrameIter::dump() const {
       fprintf(stderr, " Baseline Interpreter Entry frame\n");
       fprintf(stderr, "  Caller frame ptr: %p\n", current()->callerFramePtr());
       break;
-    case FrameType::Rectifier:
-      fprintf(stderr, " Rectifier frame\n");
-      fprintf(stderr, "  Caller frame ptr: %p\n", current()->callerFramePtr());
-      break;
     case FrameType::TrampolineNative:
       fprintf(stderr, " TrampolineNative frame\n");
       fprintf(stderr, "  Caller frame ptr: %p\n", current()->callerFramePtr());
@@ -650,8 +646,6 @@ void JSJitProfilingFrameIterator::moveToNextFrame(CommonFrameLayout* frame) {
 
 
 
-
-
   while (true) {
     
     if (frame->prevType() == FrameType::BaselineInterpreterEntry) {
@@ -660,22 +654,10 @@ void JSJitProfilingFrameIterator::moveToNextFrame(CommonFrameLayout* frame) {
     }
 
     
-    if (frame->prevType() == FrameType::Rectifier) {
-      frame = GetPreviousRawFrame<RectifierFrameLayout*>(frame);
-      MOZ_ASSERT(frame->prevType() == FrameType::IonJS ||
-                 frame->prevType() == FrameType::BaselineStub ||
-                 frame->prevType() == FrameType::TrampolineNative ||
-                 frame->prevType() == FrameType::WasmToJSJit ||
-                 frame->prevType() == FrameType::CppToJSJit);
-      continue;
-    }
-
-    
     if (frame->prevType() == FrameType::TrampolineNative) {
       frame = GetPreviousRawFrame<TrampolineNativeFrameLayout*>(frame);
       MOZ_ASSERT(frame->prevType() == FrameType::IonJS ||
                  frame->prevType() == FrameType::BaselineStub ||
-                 frame->prevType() == FrameType::Rectifier ||
                  frame->prevType() == FrameType::WasmToJSJit ||
                  frame->prevType() == FrameType::CppToJSJit);
       continue;
@@ -730,7 +712,6 @@ void JSJitProfilingFrameIterator::moveToNextFrame(CommonFrameLayout* frame) {
       return;
 
     case FrameType::BaselineInterpreterEntry:
-    case FrameType::Rectifier:
     case FrameType::TrampolineNative:
     case FrameType::Exit:
     case FrameType::Bailout:

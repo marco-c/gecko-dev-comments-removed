@@ -47,10 +47,6 @@ enum class FrameType {
   BaselineInterpreterEntry,
 
   
-  
-  Rectifier,
-
-  
   IonICCall,
 
   
@@ -91,7 +87,6 @@ class BaselineFrame;
 class JitActivation;
 class SafepointIndex;
 class OsiIndex;
-
 
 
 
@@ -170,7 +165,6 @@ class JSJitFrameIter {
   bool isBaselineInterpreterEntry() const {
     return type_ == FrameType::BaselineInterpreterEntry;
   }
-  bool isRectifier() const { return type_ == FrameType::Rectifier; }
   bool isTrampolineNative() const {
     return type_ == FrameType::TrampolineNative;
   }
