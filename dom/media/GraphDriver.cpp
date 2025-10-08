@@ -399,8 +399,6 @@ class AudioCallbackDriver::FallbackWrapper : public GraphInterface {
     MOZ_ASSERT(result.IsStillProcessing() || result.IsStop() ||
                result.IsSwitchDriver());
 
-    
-    
     IterationResult stopFallback =
         IterationResult::CreateStop(NS_NewRunnableFunction(
             "AudioCallbackDriver::FallbackDriverStopped",
@@ -433,6 +431,8 @@ class AudioCallbackDriver::FallbackWrapper : public GraphInterface {
                 }
               }
               mOwner = nullptr;
+              
+              
               NS_DispatchBackgroundTask(NS_NewRunnableFunction(
                   "AudioCallbackDriver::FallbackDriverStopped::Release",
                   [fallback = std::move(self->mFallbackDriver)] {}));
