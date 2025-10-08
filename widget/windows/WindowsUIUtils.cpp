@@ -1318,6 +1318,22 @@ void WindowsUIUtils::SetIsTitlebarCollapsed(HWND aWnd, bool aIsCollapsed) {
         ("Skipping SetIsTitlebarCollapsed() because mica is not available"));
     return;
   }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!StaticPrefs::widget_windows_windowsappsdk_enabled()) {
+    MOZ_LOG(gWindowsLog, LogLevel::Info,
+            ("Skipping SetIsTitlebarCollapsed() because "
+             "widget.windows.windowsappsdk.enabled is false"));
+    return;
+  }
   if (!InitializeWindowsAppSDKStatics()) {
     return;
   }
