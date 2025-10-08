@@ -41,23 +41,6 @@ static const int MEDIA_GRAPH_TARGET_PERIOD_MS = 10;
 
 
 
-static const int SCHEDULE_SAFETY_MARGIN_MS = 10;
-
-
-
-
-
-
-
-
-
-static const int AUDIO_TARGET_MS =
-    2 * MEDIA_GRAPH_TARGET_PERIOD_MS + SCHEDULE_SAFETY_MARGIN_MS;
-
-
-
-
-
 static const int AUDIO_INITIAL_FALLBACK_BACKOFF_STEP_MS = 10;
 
 
@@ -328,10 +311,14 @@ class GraphDriver {
   
   virtual bool ThreadRunning() const = 0;
 
-  double MediaTimeToSeconds(GraphTime aTime) const {
+  double MediaTimeToSeconds(MediaTime aTime) const {
     NS_ASSERTION(aTime > -TRACK_TIME_MAX && aTime <= TRACK_TIME_MAX,
                  "Bad time");
     return static_cast<double>(aTime) / mSampleRate;
+  }
+
+  TimeDuration MediaTimeToTimeDuration(MediaTime aTime) const {
+    return TimeDuration::FromSeconds(MediaTimeToSeconds(aTime));
   }
 
   GraphTime SecondsToMediaTime(double aS) const {
@@ -451,10 +438,9 @@ class ThreadedDriver : public GraphDriver {
   void WaitForNextIteration();
   
 
-  virtual TimeDuration WaitInterval() = 0;
+
+  virtual TimeDuration NextIterationWaitDuration() = 0;
   
-
-
 
   virtual MediaTime GetIntervalForIteration() = 0;
 
@@ -485,14 +471,17 @@ class SystemClockDriver final : public ThreadedDriver {
 
  protected:
   
-  TimeDuration WaitInterval() override;
+  TimeDuration NextIterationWaitDuration() override;
   MediaTime GetIntervalForIteration() override;
 
  private:
   
   
   TimeStamp mInitialTimeStamp;
-  TimeStamp mCurrentTimeStamp;
+  
+  
+  
+  TimeStamp mTargetIterationTimeStamp;
 };
 
 
@@ -512,7 +501,7 @@ class OfflineClockDriver final : public ThreadedDriver {
   void RunThread() override;
 
  protected:
-  TimeDuration WaitInterval() override { return TimeDuration(); }
+  TimeDuration NextIterationWaitDuration() override { return TimeDuration(); }
   MediaTime GetIntervalForIteration() override;
 
  private:
