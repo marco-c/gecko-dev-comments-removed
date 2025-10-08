@@ -25,7 +25,6 @@
 class nsICacheStorage;
 class nsIIOService;
 class nsILoadContextInfo;
-class nsITimer;
 
 
 static const uint32_t METADATA_DICTIONARY_VERSION = 1;
@@ -34,6 +33,7 @@ static const uint32_t METADATA_DICTIONARY_VERSION = 1;
 namespace mozilla {
 namespace net {
 
+class DictionaryOrigin;
 
 
 
@@ -43,15 +43,11 @@ namespace net {
 
 
 
-class DictionaryCacheEntry final
-    : public LinkedListElement<RefPtr<DictionaryCacheEntry>>,
-      public nsICacheEntryOpenCallback,
-      public nsIStreamListener {
+
+class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
+                                   public nsIStreamListener {
  private:
-  ~DictionaryCacheEntry() {
-    MOZ_ASSERT(mUsers == 0);
-    MOZ_ASSERT(!isInList());
-  }
+  ~DictionaryCacheEntry() { MOZ_ASSERT(mUsers == 0); }
 
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
@@ -59,6 +55,7 @@ class DictionaryCacheEntry final
   NS_DECL_NSIREQUESTOBSERVER
   NS_DECL_NSISTREAMLISTENER
 
+  DictionaryCacheEntry(const char* aKey);
   DictionaryCacheEntry(const nsACString& aKey, const nsACString& aPattern,
                        const nsACString& aId,
                        const Maybe<nsCString>& aHash = Nothing());
@@ -73,16 +70,43 @@ class DictionaryCacheEntry final
 
   const nsACString& GetHash() const { return mHash; }
 
+  bool HasHash() {
+    
+    
+    return !mHash.IsEmpty();
+  }
+
   void SetHash(const nsACString& aHash) {
     MOZ_ASSERT(NS_IsMainThread());
     mHash = aHash;
   }
+
+  void WriteOnHash(DictionaryOrigin* aOrigin);
 
   const nsCString& GetId() const { return mId; }
 
   
   void InUse();
   void UseCompleted();
+  bool IsReading() const { return mUsers > 0 && !mWaitingPrefetch.IsEmpty(); }
+
+  void SetReplacement(DictionaryCacheEntry* aEntry, DictionaryOrigin* aOrigin) {
+    mReplacement = aEntry;
+    mOrigin = aOrigin;
+    if (mReplacement) {
+      mReplacement->mShouldSuspend = true;
+      mReplacement->mBlocked = true;
+    }
+  }
+
+  bool ShouldSuspendUntilCacheRead() const { return mShouldSuspend; }
+
+  
+  
+  void CallbackOnCacheRead(const std::function<void()>& aFunc) {
+    
+    mWaitingPrefetch.AppendElement(aFunc);
+  }
 
   const nsACString& GetURI() const { return mURI; }
 
@@ -96,10 +120,9 @@ class DictionaryCacheEntry final
 
   const Vector<uint8_t>& GetDictionary() const { return mDictionaryData; }
 
+  
   void AccumulateHash(const char* aBuf, int32_t aCount);
-  void AccumulateFile(const char* aBuf, int32_t aCount);
-
-  void FinishFile();
+  void FinishHash();
 
   
   uint8_t* DictionaryData(size_t* aLength) const {
@@ -118,10 +141,32 @@ class DictionaryCacheEntry final
                                 const char* aFromSegment, uint32_t aToOffset,
                                 uint32_t aCount, uint32_t* aWriteCount);
 
+  void MakeMetadataEntry(nsCString& aNewValue);
+
+  nsresult Write(nsICacheEntry* aEntry);
+
+  nsresult RemoveEntry(nsICacheEntry* aCacheEntry);
+
+  
+  bool ParseMetadata(const char* aSrc);
+
+  void CopyFrom(DictionaryCacheEntry* aOther) {
+    mURI = aOther->mURI;
+    mPattern = aOther->mPattern;
+    mId = aOther->mId;
+    
+    
+  }
+
+  void UnblockAddEntry(DictionaryOrigin* aOrigin);
+
  private:
   nsCString mURI;  
   nsCString mPattern;
   nsCString mId;  
+                  
+                  
+
   
   
   
@@ -138,6 +183,24 @@ class DictionaryCacheEntry final
 
   
   nsTArray<std::function<void()>> mWaitingPrefetch;
+
+  
+  
+  RefPtr<DictionaryOrigin> mOrigin;
+  
+  bool mStopReceived{false};
+
+  
+  
+  
+  
+  RefPtr<DictionaryCacheEntry> mReplacement;
+
+  
+  bool mShouldSuspend{false};
+
+  
+  bool mBlocked{false};
 };
 
 
@@ -150,21 +213,54 @@ class DictionaryCacheEntry final
 
 
 
-using DictCacheList = AutoCleanLinkedList<RefPtr<DictionaryCacheEntry>>;
+
+using DictCacheList = nsTArray<RefPtr<DictionaryCacheEntry>>;
+
+
+
+class DictionaryOrigin : public nsICacheEntryMetaDataVisitor {
+  friend class DictionaryCache;
+
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSICACHEENTRYMETADATAVISITOR
+
+  DictionaryOrigin(const nsACString& aOrigin, nsICacheEntry* aEntry)
+      : mOrigin(aOrigin), mEntry(aEntry) {}
+
+  void SetCacheEntry(nsICacheEntry* aEntry) { mEntry = aEntry; }
+  void Write(DictionaryCacheEntry* aDictEntry);
+  already_AddRefed<DictionaryCacheEntry> AddEntry(
+      DictionaryCacheEntry* aDictEntry, bool aNewEntry);
+  nsresult RemoveEntry(const nsACString& aKey);
+  void RemoveEntry(DictionaryCacheEntry* aEntry);
+  DictionaryCacheEntry* Match(const nsACString& path);
+  void FinishAddEntry(DictionaryCacheEntry* aEntry);
+
+ private:
+  virtual ~DictionaryOrigin() {}
+
+  nsCString mOrigin;
+  nsCOMPtr<nsICacheEntry> mEntry;
+  DictCacheList mEntries;
+  
+  
+  DictCacheList mPendingEntries;
+};
 
 class DictionaryOriginReader;
 
 
 class DictionaryCache final {
  private:
-  DictionaryCache() { Init(); };
-  ~DictionaryCache() {};
+  DictionaryCache() { Init(); }
+  ~DictionaryCache() {}
 
   friend class DictionaryOriginReader;
   friend class DictionaryCacheEntry;
 
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DictionaryCache)
+  NS_INLINE_DECL_REFCOUNTING(DictionaryCache)
 
   static already_AddRefed<DictionaryCache> GetInstance();
 
@@ -172,10 +268,11 @@ class DictionaryCache final {
 
   nsresult AddEntry(nsIURI* aURI, const nsACString& aKey,
                     const nsACString& aPattern, const nsACString& aId,
-                    const Maybe<nsCString>& aHash,
+                    const Maybe<nsCString>& aHash, bool aNewEntry,
                     DictionaryCacheEntry** aDictEntry);
 
-  nsresult AddEntry(nsIURI* aURI, DictionaryCacheEntry* aDictEntry);
+  already_AddRefed<DictionaryCacheEntry> AddEntry(
+      nsIURI* aURI, bool aNewEntry, DictionaryCacheEntry* aDictEntry);
 
   nsresult RemoveEntry(nsIURI* aURI, const nsACString& aKey);
 
@@ -190,10 +287,6 @@ class DictionaryCache final {
   }
 
  private:
-  bool ParseMetaDataEntry(const char* key, const char* value, nsCString& uri,
-                          uint32_t& hitCount, uint32_t& lastHit,
-                          uint32_t& flags);
-
   static nsCOMPtr<nsICacheStorage> sCacheStorage;
 
   
@@ -202,7 +295,7 @@ class DictionaryCache final {
   
   
   
-  nsTHashMap<nsCStringHashKey, UniquePtr<DictCacheList>> mDictionaryCache;
+  nsTHashMap<nsCStringHashKey, RefPtr<DictionaryOrigin>> mDictionaryCache;
 };
 
 }  
