@@ -495,6 +495,9 @@ document.addEventListener(
           ToolbarContextMenu.updateDownloadsAlwaysOpenPanel(event.target);
           ToolbarContextMenu.updateExtensionsButtonContextMenu(event.target);
           ToolbarContextMenu.updateExtension(event.target);
+          
+          
+          ToolbarContextMenu.hideLeadingSeparatorIfNeeded(event.target);
           break;
         case "pageActionContextMenu":
           BrowserPageActions.onContextMenuShowing(event, event.target);
