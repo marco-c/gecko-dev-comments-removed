@@ -556,9 +556,10 @@ static Maybe<nsRect> ComputeTheIntersection(
 
     intersectionRect = intersectionRectRelativeToRoot.EdgeInclusiveIntersection(
         *aRemoteDocumentVisibleRect);
-    if (intersectionRect.isNothing()) {
-      return Nothing();
-    }
+  } else if (aTarget->HasAnyStateBits(NS_FRAME_IN_POPUP)) {
+    
+    
+    intersectionRect = Some(intersectionRectRelativeToRoot);
   } else {
     intersectionRect =
         intersectionRectRelativeToRoot.EdgeInclusiveIntersection(aRootBounds);
