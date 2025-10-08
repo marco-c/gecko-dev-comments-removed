@@ -20,7 +20,6 @@
 #include "js/Warnings.h"  
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/EnumTypeTraits.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/dom/GPUUncapturedErrorEvent.h"
 #include "mozilla/dom/Promise.h"

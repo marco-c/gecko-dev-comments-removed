@@ -17,7 +17,6 @@
 #include "mozilla/layers/TextureHost.h"      
 #include "mozilla/mozalloc.h"                
 #include "nscore.h"                          
-#include "mozilla/EnumeratedArray.h"
 
 namespace mozilla {
 namespace layers {
