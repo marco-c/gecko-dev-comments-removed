@@ -22,10 +22,10 @@ function ignore({ getState }) {
 
     if (getState()[IGNORING]) {
       
-      
-      
-      console.warn("IGNORED REDUX ACTION:", action.type);
-      return null;
+      throw new Error(
+        "[REDUX_MIDDLEWARE_IGNORED_REDUX_ACTION] Dispatching '" + action.type ||
+          action + "' action after panel's closing"
+      );
     }
 
     return next(action);
