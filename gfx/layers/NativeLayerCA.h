@@ -68,6 +68,17 @@ enum class VideoLowPowerType {
 
 
 
+enum class NativeLayerCAUpdateType {
+  None,
+  OnlyVideo,
+  All,
+};
+
+
+
+
+
+
 
 
 
@@ -170,6 +181,12 @@ class NativeLayerRootCA : public NativeLayerRoot {
                             bool aWindowIsFullscreen);
 
   void SetMutatedLayerStructure();
+
+  using UpdateType = NativeLayerCAUpdateType;
+  UpdateType GetMaxUpdateRequired(
+      WhichRepresentation aRepresentation,
+      const nsTArray<RefPtr<NativeLayerCA>>& aSublayers,
+      bool aMutatedLayerStructure) const;
 
   Mutex mMutex MOZ_UNANNOTATED;              
   CALayer* mOnscreenRootCALayer = nullptr;   
@@ -294,6 +311,8 @@ class NativeLayerCA : public NativeLayer {
 
  protected:
   friend class NativeLayerRootCA;
+  using UpdateType = NativeLayerCAUpdateType;
+  using WhichRepresentation = NativeLayerRootCA::WhichRepresentation;
 
   NativeLayerCA(const gfx::IntSize& aSize, bool aIsOpaque,
                 SurfacePoolHandleCA* aSurfacePoolHandle);
@@ -306,16 +325,9 @@ class NativeLayerCA : public NativeLayer {
   ~NativeLayerCA() override;
 
   
-  typedef NativeLayerRootCA::WhichRepresentation WhichRepresentation;
   CALayer* UnderlyingCALayer(WhichRepresentation aRepresentation);
 
-  enum class UpdateType {
-    None,       
-    OnlyVideo,  
-    All,
-  };
-
-  UpdateType HasUpdate(WhichRepresentation aRepresentation);
+  NativeLayerCAUpdateType HasUpdate(WhichRepresentation aRepresentation);
 
   
   
