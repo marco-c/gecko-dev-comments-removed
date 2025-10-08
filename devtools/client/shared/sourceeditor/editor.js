@@ -275,11 +275,6 @@ class Editor extends EventEmitter {
       cssProperties: null,
       
       disableSearchAddon: false,
-      
-      
-      
-      
-      useSearchAddonPanel: true,
       maxHighlightLength: 1000,
       
       cursorBlinkRate: 0,
@@ -744,7 +739,7 @@ class Editor extends EventEmitter {
         placeholder,
       },
       codemirrorState: { EditorState, Compartment, Prec },
-      codemirrorSearch: { search, searchKeymap, highlightSelectionMatches },
+      codemirrorSearch: { highlightSelectionMatches },
       codemirrorLanguage: {
         syntaxTreeAvailable,
         indentUnit,
@@ -849,13 +844,6 @@ class Editor extends EventEmitter {
       
       codemirror.minimalSetup,
     ];
-
-    if (!this.config.disableSearchAddon && this.config.useSearchAddonPanel) {
-      this.config.keyMap = this.config.keyMap
-        ? [...this.config.keyMap, ...searchKeymap]
-        : [...searchKeymap];
-      extensions.push(search({ top: true }));
-    }
 
     if (this.config.placeholder) {
       extensions.push(placeholder(this.config.placeholder));

@@ -40,7 +40,7 @@ add_task(async function () {
     "The request params doesn't have the indended visibility."
   );
   is(
-    tabpanel.querySelector(".cm-content") === null,
+    tabpanel.querySelector(".CodeMirror-code") === null,
     true,
     "The request post data doesn't have the indended visibility."
   );
@@ -68,7 +68,7 @@ add_task(async function () {
   is(values[0].textContent, "1", "The JSON var value was incorrect.");
 
   
-  waitForContent = waitForDOM(document, "#request-panel .cm-content");
+  waitForContent = waitForDOM(document, "#request-panel .CodeMirror-code");
   const rawDataToggle = document.querySelector(
     "#request-panel .raw-data-toggle-input .devtools-checkbox-toggle"
   );
@@ -93,7 +93,7 @@ add_task(async function () {
   );
   
   ok(
-    tabpanel.querySelector(".cm-content"),
+    tabpanel.querySelector(".CodeMirror-code"),
     "The request post data doesn't have the indended visibility."
   );
   ok(

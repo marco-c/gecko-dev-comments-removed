@@ -56,7 +56,7 @@ add_task(async function () {
   clickOnSidebarTab(document, "response");
   await wait;
 
-  wait = waitForDOM(document, "#response-panel .cm-content");
+  wait = waitForDOM(document, "#response-panel .CodeMirror-code");
   const header = document.querySelector(
     "#response-panel .raw-data-toggle-input .devtools-checkbox-toggle"
   );
@@ -65,7 +65,7 @@ add_task(async function () {
 
   
   
-  const text = getCodeMirrorValue(monitor);
+  const text = document.querySelector(".CodeMirror").CodeMirror.getValue();
 
   ok(
     text.includes("\u0411\u0440\u0430\u0442\u0430\u043d"),

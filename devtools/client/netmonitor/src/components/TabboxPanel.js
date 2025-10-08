@@ -109,11 +109,6 @@ class TabboxPanel extends Component {
   closeOnEsc(event) {
     if (event.key == "Escape") {
       event.preventDefault();
-      
-      
-      if (event.target.closest(".cm-search")) {
-        return;
-      }
       this.props.openNetworkDetails(false);
     }
   }

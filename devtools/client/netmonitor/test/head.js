@@ -1157,9 +1157,9 @@ async function selectIndexAndWaitForSourceEditor(monitor, index) {
     document.querySelectorAll(".request-list-item")[index]
   );
   
-  const editor = document.querySelector("#response-panel .cm-content");
+  const editor = document.querySelector("#response-panel .CodeMirror-code");
   if (!editor) {
-    const waitDOM = waitForDOM(document, "#response-panel .cm-content");
+    const waitDOM = waitForDOM(document, "#response-panel .CodeMirror-code");
     document.querySelector("#response-tab").click();
     await waitDOM;
   }
@@ -1181,15 +1181,12 @@ async function performRequests(monitor, tab, count) {
   await wait;
 }
 
-function getCMEditor(monitor) {
-  return monitor.panelWin.codeMirrorSourceEditorTestInstance;
-}
-
 
 
 
 function getCodeMirrorValue(monitor) {
-  return getCMEditor(monitor).getText();
+  const { document } = monitor.panelWin;
+  return document.querySelector(".CodeMirror")?.CodeMirror.getValue();
 }
 
 
