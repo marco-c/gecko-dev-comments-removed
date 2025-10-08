@@ -577,7 +577,7 @@ async function testOpenPDFPreview({
         contextMenu = uiWindow.document.querySelector("#downloadsContextMenu");
 
         break;
-      case "allDownloads":
+      case "allDownloads": {
         
         uiWindow = await openLibrary("Downloads");
 
@@ -595,7 +595,8 @@ async function testOpenPDFPreview({
         contextMenu = uiWindow.document.querySelector("#downloadsContextMenu");
 
         break;
-      case "aboutDownloads":
+      }
+      case "aboutDownloads": {
         info("Preparing about:downloads browser window");
 
         
@@ -657,6 +658,7 @@ async function testOpenPDFPreview({
           }
         );
         break;
+      }
     }
 
     if (contextMenu) {
