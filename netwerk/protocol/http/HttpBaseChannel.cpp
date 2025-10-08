@@ -376,6 +376,13 @@ nsresult HttpBaseChannel::Init(nsIURI* aURI, uint32_t aCaps,
   rv = mRequestHead.SetHeader(nsHttp::Host, hostLine);
   if (NS_FAILED(rv)) return rv;
 
+  rv = gHttpHandler->AddAcceptAndDictionaryHeaders(aURI, &mRequestHead, isHTTPS,
+                                                   mDict);
+  if (NS_FAILED(rv)) return rv;
+  if (mDict) {
+    mDict->InUse();
+  }
+
   
   ExtContentPolicy contentPolicyType =
       mLoadInfo->GetExternalContentPolicyType();
@@ -395,7 +402,7 @@ nsresult HttpBaseChannel::Init(nsIURI* aURI, uint32_t aCaps,
   }
 
   rv = gHttpHandler->AddStandardRequestHeaders(
-      &mRequestHead, isHTTPS, aURI, contentPolicyType,
+      &mRequestHead, aURI, contentPolicyType,
       nsContentUtils::ShouldResistFingerprinting(this,
                                                  RFPTarget::HttpUserAgent));
   if (NS_FAILED(rv)) return rv;
@@ -1472,6 +1479,23 @@ HttpBaseChannel::DoApplyContentConversions(nsIStreamListener* aNextListener,
 
   LOG(("HttpBaseChannel::DoApplyContentConversions [this=%p]\n", this));
 
+#ifdef DEBUG
+  {
+    nsAutoCString contentEncoding;
+    nsresult rv =
+        mResponseHead->GetHeader(nsHttp::Content_Encoding, contentEncoding);
+    if (NS_SUCCEEDED(rv) && !contentEncoding.IsEmpty()) {
+      nsAutoCString newEncoding;
+      char* cePtr = contentEncoding.BeginWriting();
+      while (char* val = nsCRT::strtok(cePtr, HTTP_LWS ",", &cePtr)) {
+        if (strcmp(val, "dcb") == 0 || strcmp(val, "dcz") == 0) {
+          MOZ_ASSERT(LoadApplyConversion() && !LoadHasAppliedConversion());
+        }
+      }
+    }
+  }
+#endif
+
   if (!LoadApplyConversion()) {
     LOG(("not applying conversion per ApplyConversion\n"));
     return NS_OK;
@@ -1502,11 +1526,11 @@ HttpBaseChannel::DoApplyContentConversions(nsIStreamListener* aNextListener,
   
   
 
+  nsAutoCString newEncoding;
   char* cePtr = contentEncoding.BeginWriting();
   uint32_t count = 0;
   while (char* val = nsCRT::strtok(cePtr, HTTP_LWS ",", &cePtr)) {
     if (++count > 16) {
-      
       
       
       LOG(("Too many Content-Encodings. Ignoring remainder.\n"));
@@ -1543,8 +1567,15 @@ HttpBaseChannel::DoApplyContentConversions(nsIStreamListener* aNextListener,
       nextListener = converter;
     } else {
       if (val) LOG(("Unknown content encoding '%s', ignoring\n", val));
+      
+      
+      
+      newEncoding += val;
     }
   }
+
+  rv = mResponseHead->SetHeader(nsHttp::Content_Encoding, newEncoding);
+
   *aNewNextListener = do_AddRef(nextListener).take();
   return NS_OK;
 }
