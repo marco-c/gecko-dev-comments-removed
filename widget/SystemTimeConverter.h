@@ -8,7 +8,9 @@
 
 #include <limits>
 #include <type_traits>
+#include "mozilla/ThreadSafety.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/RWLock.h"
 
 namespace mozilla {
 
@@ -31,6 +33,7 @@ class SystemTimeConverter {
   SystemTimeConverter()
       : mReferenceTime(Time(0)),
         mLastBackwardsSkewCheck(Time(0)),
+        mReferenceTimeLock("SystemTimeConverter::mReferenceTimeLock"),
         kTimeRange(std::numeric_limits<Time>::max()),
         kTimeHalfRange(kTimeRange / 2),
         kBackwardsSkewCheckInterval(Time(2000)) {
@@ -44,7 +47,20 @@ class SystemTimeConverter {
 
     
     
-    if (mReferenceTimeStamp.IsNull()) {
+    bool referenceTimeStampIsNull;
+    {
+      
+      
+      
+      
+      
+      
+      
+      
+      AutoReadLock lock(mReferenceTimeLock);
+      referenceTimeStampIsNull = mReferenceTimeStamp.IsNull();
+    }
+    if (referenceTimeStampIsNull) {
       
       
       if (!aTime) return roughlyNow;
@@ -183,12 +199,26 @@ class SystemTimeConverter {
 
   void UpdateReferenceTime(Time aReferenceTime,
                            const TimeStamp& aReferenceTimeStamp) {
+    
+    
+    AutoWriteLock lock(mReferenceTimeLock);
     mReferenceTime = aReferenceTime;
     mReferenceTimeStamp = aReferenceTimeStamp;
   }
 
   bool IsTimeNewerThanTimestamp(Time aTime, TimeStamp aTimeStamp,
                                 TimeStamp* aTimeAsTimeStamp) {
+    AutoReadLock lock(mReferenceTimeLock);
+    if (mReferenceTimeStamp.IsNull()) {
+      
+      MOZ_ASSERT_UNREACHABLE("mReferenceTimeStamp should have been set by now");
+      
+      
+      if (aTimeAsTimeStamp) {
+        *aTimeAsTimeStamp = aTimeStamp;
+      }
+      return false;
+    }
     Time timeDelta = aTime - mReferenceTime;
 
     
@@ -237,9 +267,10 @@ class SystemTimeConverter {
     return isNewer;
   }
 
-  Time mReferenceTime;
-  TimeStamp mReferenceTimeStamp;
+  Time mReferenceTime MOZ_GUARDED_BY(mReferenceTimeLock);
+  TimeStamp mReferenceTimeStamp MOZ_GUARDED_BY(mReferenceTimeLock);
   Time mLastBackwardsSkewCheck;
+  mozilla::RWLock mReferenceTimeLock;
 
   const Time kTimeRange;
   const Time kTimeHalfRange;
