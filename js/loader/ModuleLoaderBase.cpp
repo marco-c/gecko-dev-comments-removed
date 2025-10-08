@@ -281,7 +281,6 @@ bool ModuleLoaderBase::HostLoadImportedModule(JSContext* aCx,
         JS_ReportErrorNumberASCII(aCx, js::GetErrorMessage, nullptr,
                                   JSMSG_DYNAMIC_IMPORT_FAILED, url.get());
       } else {
-        request->LoadFailed();
         loader->OnFetchFailed(request);
         return true;
       }
@@ -698,8 +697,6 @@ void ModuleLoaderBase::ResumeWaitingRequest(ModuleLoadRequest* aRequest,
                                             bool aSuccess) {
   if (aSuccess) {
     aRequest->ModuleLoaded();
-  } else {
-    aRequest->LoadFailed();
   }
 
   if (!aRequest->IsErrored()) {
@@ -823,6 +820,7 @@ void ModuleLoaderBase::OnFetchFailed(ModuleLoadRequest* aRequest) {
       LOG(("ScriptLoadRequest (%p): found parse error", aRequest));
       aRequest->mModuleScript->SetErrorToRethrow(parseError);
     }
+    DispatchModuleErrored(aRequest);
 
     return;
   }
@@ -862,6 +860,7 @@ void ModuleLoaderBase::OnFetchFailed(ModuleLoadRequest* aRequest) {
       FinishLoadingImportedModuleFailed(cx, payload, error);
     }
 
+    aRequest->ModuleErrored();
     aRequest->ClearImport();
     return;
   }
@@ -881,6 +880,7 @@ void ModuleLoaderBase::OnFetchFailed(ModuleLoadRequest* aRequest) {
   
   
   FinishLoadingImportedModuleFailed(cx, payload, parseError);
+  aRequest->ModuleErrored();
   aRequest->ClearImport();
 }
 
@@ -898,7 +898,13 @@ class ModuleErroredRunnable : public MicroTaskRunnable {
 };
 
 void ModuleLoaderBase::DispatchModuleErrored(ModuleLoadRequest* aRequest) {
-  if (aRequest->HasScriptLoadContext()) {
+  if (aRequest->HasScriptLoadContext() &&
+      aRequest->GetScriptLoadContext()->mIsInline) {
+    
+    
+    
+    
+    
     CycleCollectedJSContext* context = CycleCollectedJSContext::Get();
     RefPtr<ModuleErroredRunnable> runnable =
         new ModuleErroredRunnable(aRequest);
@@ -998,7 +1004,6 @@ nsresult ModuleLoaderBase::CreateModuleScript(ModuleLoadRequest* aRequest) {
       }
 
       moduleScript->SetParseError(error);
-      DispatchModuleErrored(aRequest);
       return NS_OK;
     }
 
@@ -1014,7 +1019,6 @@ nsresult ModuleLoaderBase::CreateModuleScript(ModuleLoadRequest* aRequest) {
         aRequest->mModuleScript = nullptr;
         return rv;
       }
-      DispatchModuleErrored(aRequest);
       return NS_OK;
     }
   }
