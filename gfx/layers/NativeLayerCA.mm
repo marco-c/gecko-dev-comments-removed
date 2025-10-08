@@ -203,32 +203,8 @@ NativeLayerRootCA::CreateForCALayer(CALayer* aLayer) {
   return layerRoot.forget();
 }
 
-
-static CALayer* MakeOffscreenRootCALayer() {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  AutoCATransaction transaction;
-  CALayer* layer = [CALayer layer];
-  layer.position = CGPointZero;
-  layer.bounds = CGRectZero;
-  layer.anchorPoint = CGPointZero;
-  layer.contentsGravity = kCAGravityTopLeft;
-  layer.masksToBounds = YES;
-  layer.geometryFlipped = YES;
-  return layer;
-}
-
 NativeLayerRootCA::NativeLayerRootCA(CALayer* aLayer)
-    : mMutex("NativeLayerRootCA"),
-      mOnscreenRootCALayer([aLayer retain]),
-      mOffscreenRootCALayer([MakeOffscreenRootCALayer() retain]) {}
+    : mMutex("NativeLayerRootCA"), mOnscreenRootCALayer([aLayer retain]) {}
 
 NativeLayerRootCA::~NativeLayerRootCA() {
   MOZ_RELEASE_ASSERT(
@@ -240,11 +216,9 @@ NativeLayerRootCA::~NativeLayerRootCA() {
     
     AutoCATransaction transaction;
     mOnscreenRootCALayer.sublayers = @[];
-    mOffscreenRootCALayer.sublayers = @[];
   }
 
   [mOnscreenRootCALayer release];
-  [mOffscreenRootCALayer release];
 }
 
 already_AddRefed<NativeLayer> NativeLayerRootCA::CreateLayer(
@@ -408,7 +382,7 @@ UniquePtr<NativeLayerRootSnapshotter> NativeLayerRootCA::CreateSnapshotter() {
                      "No NativeLayerRootSnapshotter for this NativeLayerRoot "
                      "should exist when this is called");
 
-  auto cr = NativeLayerRootSnapshotterCA::Create(this, mOffscreenRootCALayer);
+  auto cr = NativeLayerRootSnapshotterCA::Create(this);
   if (cr) {
     mWeakSnapshotter = cr.get();
   }
@@ -427,11 +401,10 @@ void NativeLayerRootCA::OnNativeLayerRootSnapshotterDestroyed(
 }
 #endif
 
-void NativeLayerRootCA::CommitOffscreen() {
+void NativeLayerRootCA::CommitOffscreen(CALayer* aRootCALayer) {
   MutexAutoLock lock(mMutex);
-  CommitRepresentation(WhichRepresentation::OFFSCREEN, mOffscreenRootCALayer,
-                       mSublayers, mMutatedOffscreenLayerStructure,
-                       mWindowIsFullscreen);
+  CommitRepresentation(WhichRepresentation::OFFSCREEN, aRootCALayer, mSublayers,
+                       mMutatedOffscreenLayerStructure, mWindowIsFullscreen);
   mMutatedOffscreenLayerStructure = false;
 }
 
@@ -507,8 +480,7 @@ void NativeLayerRootCA::CommitRepresentation(
 
 #ifdef XP_MACOSX
  UniquePtr<NativeLayerRootSnapshotterCA>
-NativeLayerRootSnapshotterCA::Create(NativeLayerRootCA* aLayerRoot,
-                                     CALayer* aRootCALayer) {
+NativeLayerRootSnapshotterCA::Create(NativeLayerRootCA* aLayerRoot) {
   if (NS_IsMainThread()) {
     
     
@@ -529,8 +501,7 @@ NativeLayerRootSnapshotterCA::Create(NativeLayerRootCA* aLayerRoot,
   }
 
   return UniquePtr<NativeLayerRootSnapshotterCA>(
-      new NativeLayerRootSnapshotterCA(aLayerRoot, std::move(gl),
-                                       aRootCALayer));
+      new NativeLayerRootSnapshotterCA(aLayerRoot, std::move(gl)));
 }
 #endif
 
@@ -694,19 +665,17 @@ VideoLowPowerType NativeLayerRootCA::CheckVideoLowPower(
 
 #ifdef XP_MACOSX
 NativeLayerRootSnapshotterCA::NativeLayerRootSnapshotterCA(
-    NativeLayerRootCA* aLayerRoot, RefPtr<GLContext>&& aGL,
-    CALayer* aRootCALayer)
-    : mLayerRoot(aLayerRoot), mGL(aGL) {
-  AutoCATransaction transaction;
-  mRenderer = [[CARenderer
-      rendererWithCGLContext:gl::GLContextCGL::Cast(mGL)->GetCGLContext()
-                     options:nil] retain];
-  mRenderer.layer = aRootCALayer;
-}
+    NativeLayerRootCA* aLayerRoot, RefPtr<GLContext>&& aGL)
+    : mLayerRoot(aLayerRoot), mGL(aGL) {}
 
 NativeLayerRootSnapshotterCA::~NativeLayerRootSnapshotterCA() {
   mLayerRoot->OnNativeLayerRootSnapshotterDestroyed(this);
-  [mRenderer release];
+
+  if (mRenderer) {
+    AutoCATransaction transaction;
+    mRenderer.layer.sublayers = @[];
+    [mRenderer release];
+  }
 }
 
 already_AddRefed<profiler_screenshots::RenderSource>
@@ -721,18 +690,42 @@ void NativeLayerRootSnapshotterCA::UpdateSnapshot(const IntSize& aSize) {
   {
     
     
-    
-    
-    
-    
     AutoCATransaction transaction;
+    if (!mRenderer) {
+      mRenderer = [[CARenderer
+          rendererWithCGLContext:gl::GLContextCGL::Cast(mGL)->GetCGLContext()
+                         options:nil] retain];
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      AutoCATransaction transaction;
+      CALayer* layer = [CALayer layer];
+      layer.position = CGPointZero;
+      layer.anchorPoint = CGPointZero;
+      layer.contentsGravity = kCAGravityTopLeft;
+      layer.masksToBounds = YES;
+      layer.geometryFlipped = YES;
+      mRenderer.layer = layer;
+    }
+
+    
+    
+    
+    
+    
     mRenderer.layer.bounds = bounds;
     float scale = mLayerRoot->BackingScale();
     mRenderer.layer.sublayerTransform = CATransform3DMakeScale(scale, scale, 1);
     mRenderer.bounds = bounds;
   }
 
-  mLayerRoot->CommitOffscreen();
+  mLayerRoot->CommitOffscreen(mRenderer.layer);
 
   mGL->MakeCurrent();
 
