@@ -1635,16 +1635,15 @@ auto MediaTrackGraphImpl::OneIteration(GraphTime aStateTime,
                                        MixerCallbackReceiver* aMixerReceiver)
     -> IterationResult {
   if (mGraphRunner) {
-    return mGraphRunner->OneIteration(aStateTime, aIterationEnd,
-                                      aMixerReceiver);
+    return mGraphRunner->OneIteration(aStateTime, aMixerReceiver);
   }
 
-  return OneIterationImpl(aStateTime, aIterationEnd, aMixerReceiver);
+  return OneIterationImpl(aStateTime, aMixerReceiver);
 }
 
 auto MediaTrackGraphImpl::OneIterationImpl(
-    GraphTime aStateTime, GraphTime aIterationEnd,
-    MixerCallbackReceiver* aMixerReceiver) -> IterationResult {
+    GraphTime aStateTime, MixerCallbackReceiver* aMixerReceiver)
+    -> IterationResult {
   TRACE("MTG::OneIterationImpl");
   TRACE_AUDIO_CALLBACK_FRAME_COUNT(
       "MTG graph advance", aStateTime - mStateComputedTime, mSampleRate);

@@ -302,7 +302,6 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
   IterationResult OneIterationImpl(GraphTime aStateTime,
-                                   GraphTime aIterationEnd,
                                    MixerCallbackReceiver* aMixerReceiver);
 
   
@@ -312,10 +311,6 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
   void SignalMainThreadCleanup();
-
-  
-
-  GraphTime IterationEnd() const;
 
   
 
