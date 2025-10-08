@@ -7,8 +7,6 @@
 
 
 
-
-
 const { DevToolsStartup } = ChromeUtils.importESModule(
   "resource:///modules/DevToolsStartup.sys.mjs"
 );

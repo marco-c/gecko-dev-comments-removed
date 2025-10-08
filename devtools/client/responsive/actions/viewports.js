@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const asyncStorage = require("resource://devtools/shared/async-storage.js");

@@ -2,7 +2,6 @@
 
 
 
-
 "use strict";
 (function () {
   const { require } = ChromeUtils.importESModule(
