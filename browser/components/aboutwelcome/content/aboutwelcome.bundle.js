@@ -151,7 +151,7 @@ __webpack_require__.r(__webpack_exports__);
  var _MultiStageProtonScreen__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(6);
  var _LanguageSwitcher__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(7);
  var _SubmenuButton__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(12);
- var _lib_addUtmParams_mjs__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(24);
+ var _lib_addUtmParams_mjs__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(26);
 
 
 
@@ -259,7 +259,7 @@ const MultiStageAboutWelcome = props => {
   }, [transition]);
 
   
-  const handleTransition = () => {
+  const handleTransition = goBack => {
     
     if (transition === "out") {
       return;
@@ -270,7 +270,10 @@ const MultiStageAboutWelcome = props => {
 
     
     setTimeout(() => {
-      if (index < screens.length - 1) {
+      if (goBack) {
+        setTransition(props.transitions ? "in" : "");
+        setScreenIndex(prevState => prevState - 1);
+      } else if (index < screens.length - 1) {
         setTransition(props.transitions ? "in" : "");
         setScreenIndex(prevState => prevState + 1);
       } else {
@@ -675,7 +678,7 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
     }
   }
   resolveActionFromContent(value, event, props) {
-    if (value === "submenu_button" && event.action) {
+    if ((value === "submenu_button" || value === "tile_button") && event.action) {
       return event.action;
     }
     const {
@@ -772,7 +775,7 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
       return false;
     };
     if (shouldDoBehavior(action.navigate)) {
-      props.navigate();
+      props.navigate(action.goBack);
     }
 
     
@@ -2249,13 +2252,13 @@ __webpack_require__.r(__webpack_exports__);
  var _MSLocalized__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
  var _AddonsPicker__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(15);
  var _SingleSelect__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(17);
- var _MobileDownloads__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(18);
- var _MultiSelect__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(19);
- var _EmbeddedMigrationWizard__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(20);
- var _ActionChecklist__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(21);
- var _EmbeddedBrowser__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(22);
+ var _MobileDownloads__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(20);
+ var _MultiSelect__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(21);
+ var _EmbeddedMigrationWizard__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(22);
+ var _ActionChecklist__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(23);
+ var _EmbeddedBrowser__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(24);
  var _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(3);
- var _EmbeddedBackupRestore__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(23);
+ var _EmbeddedBackupRestore__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(25);
 
 
 
@@ -2757,7 +2760,11 @@ __webpack_require__.r(__webpack_exports__);
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
  var _MSLocalized__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
- var _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(3);
+ var _TileButton__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(18);
+ var _TileList__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(19);
+ var _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(3);
+
+
 
 
 
@@ -2828,14 +2835,17 @@ const SingleSelect = ({
     className: "sr-only"
   })), content.tiles.data.map(({
     description,
+    inert,
     icon,
     id,
     label = "",
+    body = "",
     theme,
     tooltip,
     type = "",
     flair,
-    style
+    style,
+    tilebutton
   }) => {
     const value = id || theme;
     let inputName = "select-item";
@@ -2865,7 +2875,7 @@ const SingleSelect = ({
       title: value,
       onKeyDown: e => handleKeyDown(e),
       style: {
-        ..._lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.getValidStyle(style, CONFIGURABLE_STYLES),
+        ..._lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_4__.AboutWelcomeUtils.getValidStyle(style, CONFIGURABLE_STYLES),
         ...(icon?.width ? {
           minWidth: icon.width
         } : {})
@@ -2873,7 +2883,7 @@ const SingleSelect = ({
     }, flair ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
       text: valOrObj(flair.text)
     }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", {
-      className: "flair"
+      className: `flair ${flair.centered ? "centered" : ""} ${flair.spacer ? "spacer" : ""} ${type}`
     })) : "", react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
       text: valOrObj(description)
     }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("input", {
@@ -2882,16 +2892,127 @@ const SingleSelect = ({
       name: inputName,
       checked: selected,
       className: "sr-only input",
+      disabled: inert,
       onClick: e => handleClick(e)
     })), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: `icon ${selected ? " selected" : ""} ${value}`,
-      style: _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.getValidStyle(icon, CONFIGURABLE_STYLES)
+      style: _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_4__.AboutWelcomeUtils.getValidStyle(icon, CONFIGURABLE_STYLES)
     }), react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
       text: label
     }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-      className: "text"
-    }))));
+      className: "text label-text"
+    })), body.items ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_TileList__WEBPACK_IMPORTED_MODULE_3__.TileList, {
+      content: body
+    }) : react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+      text: body
+    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+      className: "text body-text"
+    })), tilebutton ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_TileButton__WEBPACK_IMPORTED_MODULE_2__.TileButton, {
+      content: tilebutton,
+      handleAction: handleAction,
+      inputName: inputName
+    }) : ""));
   }))));
+};
+
+ }),
+
+ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, {
+   TileButton: () => ( TileButton)
+ });
+ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
+ var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+ var _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3);
+ var _MSLocalized__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5);
+
+
+
+
+
+
+
+const TileButton = props => {
+  const {
+    content,
+    handleAction,
+    inputName
+  } = props;
+  const ref = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
+  if (!content) {
+    return null;
+  }
+  const CONFIGURABLE_STYLES = ["background", "borderRadius", "height", "marginBlock", "marginBlockStart", "marginBlockEnd", "marginInline", "paddingBlock", "paddingBlockStart", "paddingBlockEnd", "paddingInline", "paddingInlineStart", "paddingInlineEnd", "width"];
+  function onClick(event) {
+    let mockEvent = {
+      currentTarget: ref.current,
+      source: event.target.id,
+      name: "command",
+      action: content.action
+    };
+    handleAction(mockEvent);
+  }
+  return react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_2__.Localized, {
+    text: content.label
+  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("button", {
+    id: `tile-button-${inputName}`,
+    onClick: onClick,
+    value: "tile_button",
+    ref: ref,
+    className: `${content.style} tile-button slim`,
+    style: _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_1__.AboutWelcomeUtils.getValidStyle(content, CONFIGURABLE_STYLES)
+  }));
+};
+
+ }),
+
+ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, {
+   TileList: () => ( TileList)
+ });
+ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
+ var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+ var _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3);
+ var _MSLocalized__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5);
+
+
+
+
+
+
+
+const TileList = props => {
+  const {
+    content
+  } = props;
+  if (!content) {
+    return null;
+  }
+  const CONFIGURABLE_STYLES = ["background", "borderRadius", "height", "marginBlock", "marginBlockStart", "marginBlockEnd", "marginInline", "paddingBlock", "paddingBlockStart", "paddingBlockEnd", "paddingInline", "paddingInlineStart", "paddingInlineEnd", "width"];
+  return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    className: "tile-list-container"
+  }, content.items.map(({
+    icon,
+    text
+  }, index) => react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    key: index,
+    className: "tile-list-item"
+  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    className: "tile-list-icon-wrapper"
+  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    className: "tile-list-icon",
+    style: _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_1__.AboutWelcomeUtils.getValidStyle(icon, CONFIGURABLE_STYLES)
+  })), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    className: "tile-list-text"
+  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_2__.Localized, {
+    text: text
+  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    className: "text body-text"
+  }))))));
 };
 
  }),
