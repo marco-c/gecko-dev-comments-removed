@@ -1169,9 +1169,6 @@ pref("network.http.accept-encoding", "gzip, deflate");
 pref("network.http.accept-encoding.secure", "gzip, deflate, br, zstd");
 
 
-pref("network.http.accept-encoding.dictionary", "dcb, dcz");
-
-
 pref("network.http.prompt-temp-redirect", false);
 
 

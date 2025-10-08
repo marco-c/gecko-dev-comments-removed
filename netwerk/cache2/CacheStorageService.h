@@ -19,7 +19,6 @@
 #include "nsProxyRelease.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/Mutex.h"
-#include "mozilla/StaticMutex.h"
 #include "mozilla/AtomicBitfields.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/TimeStamp.h"
@@ -42,7 +41,6 @@ class CacheStorageService;
 class CacheStorage;
 class CacheEntry;
 class CacheEntryHandle;
-class CacheEntryTable;
 
 class CacheMemoryConsumer {
  private:
@@ -75,22 +73,11 @@ class CacheMemoryConsumer {
   void DoMemoryReport(uint32_t aCurrentSize);
 };
 
-using GlobalEntryTables = nsClassHashtable<nsCStringHashKey, CacheEntryTable>;
-class WalkMemoryCacheRunnable;
-
-namespace CacheStorageServiceInternal {
-class WalkMemoryCacheRunnable;
-class WalkDiskCacheRunnable;
-}  
-
 class CacheStorageService final : public nsICacheStorageService,
                                   public nsIMemoryReporter,
                                   public nsITimerCallback,
                                   public nsICacheTesting,
                                   public nsINamed {
-  friend class CacheStorageServiceInternal::WalkMemoryCacheRunnable;
-  friend class CacheStorageServiceInternal::WalkDiskCacheRunnable;
-
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSICACHESTORAGESERVICE
@@ -112,7 +99,7 @@ class CacheStorageService final : public nsICacheStorageService,
   static bool IsRunning() { return sSelf && !sSelf->mShutdown; }
   static bool IsOnManagementThread();
   already_AddRefed<nsIEventTarget> Thread() const;
-  StaticMutex& Lock() { return sLock; }
+  mozilla::Mutex& Lock() { return mLock; }
 
   
   struct ForcedValidData {
@@ -157,16 +144,6 @@ class CacheStorageService final : public nsICacheStorageService,
  private:
   virtual ~CacheStorageService();
   void ShutdownBackground();
-
-  
-
-
-
-
-
-
-
-  static GlobalEntryTables* sGlobalEntryTables MOZ_GUARDED_BY(sLock);
 
  private:
   
@@ -288,9 +265,7 @@ class CacheStorageService final : public nsICacheStorageService,
 
 
 
-
-  void CacheFileDoomed(const nsACString& aKey,
-                       nsILoadContextInfo* aLoadContextInfo,
+  void CacheFileDoomed(nsILoadContextInfo* aLoadContextInfo,
                        const nsACString& aIdExtension,
                        const nsACString& aURISpec);
 
@@ -347,7 +322,7 @@ class CacheStorageService final : public nsICacheStorageService,
 
   static CacheStorageService* sSelf;
 
-  static StaticMutex sLock;
+  mozilla::Mutex mLock MOZ_UNANNOTATED{"CacheStorageService.mLock"};
   mozilla::Mutex mForcedValidEntriesLock{
       "CacheStorageService.mForcedValidEntriesLock"};
 

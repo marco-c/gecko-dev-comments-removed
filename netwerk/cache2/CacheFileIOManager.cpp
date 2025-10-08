@@ -1314,7 +1314,6 @@ nsresult CacheFileIOManager::Shutdown() {
   }
 
   CacheIndex::Shutdown();
-  DictionaryCache::Shutdown();
 
   if (CacheObserver::ClearCacheOnShutdown()) {
     auto totalTimer =
@@ -1361,7 +1360,7 @@ void CacheFileIOManager::ShutdownInternal() {
     
 
     if (!h->IsSpecialFile() && !h->mIsDoomed && !h->mFileExists) {
-      CacheIndex::RemoveEntry(h->Hash(), h->Key());
+      CacheIndex::RemoveEntry(h->Hash());
     }
 
     
@@ -1821,7 +1820,7 @@ nsresult CacheFileIOManager::OpenFileInternal(const SHA1Sum::Hash* aHash,
     NS_ENSURE_SUCCESS(rv, rv);
 
     if (exists) {
-      CacheIndex::RemoveEntry(aHash, handle->Key());
+      CacheIndex::RemoveEntry(aHash);
 
       LOG(
           ("CacheFileIOManager::OpenFileInternal() - Removing old file from "
@@ -2034,7 +2033,7 @@ void CacheFileIOManager::CloseHandleInternal(CacheFileHandle* aHandle) {
 
   if (!aHandle->IsSpecialFile() && !aHandle->mIsDoomed &&
       (aHandle->mInvalid || !aHandle->mFileExists)) {
-    CacheIndex::RemoveEntry(aHandle->Hash(), aHandle->Key());
+    CacheIndex::RemoveEntry(aHandle->Hash());
   }
 
   
@@ -2437,8 +2436,7 @@ nsresult CacheFileIOManager::DoomFile(CacheFileHandle* aHandle,
 }
 
 nsresult CacheFileIOManager::DoomFileInternal(
-    CacheFileHandle* aHandle, PinningDoomRestriction aPinningDoomRestriction,
-    bool aClearDictionary) {
+    CacheFileHandle* aHandle, PinningDoomRestriction aPinningDoomRestriction) {
   LOG(("CacheFileIOManager::DoomFileInternal() [handle=%p]", aHandle));
   aHandle->Log();
 
@@ -2514,9 +2512,7 @@ nsresult CacheFileIOManager::DoomFileInternal(
   }
 
   if (!aHandle->IsSpecialFile()) {
-    
-    RefPtr<CacheFileHandle> handle(aHandle);
-    CacheIndex::RemoveEntry(aHandle->Hash(), aHandle->Key(), aClearDictionary);
+    CacheIndex::RemoveEntry(aHandle->Hash());
   }
 
   aHandle->mIsDoomed = true;
@@ -2529,7 +2525,7 @@ nsresult CacheFileIOManager::DoomFileInternal(
           CacheFileUtils::ParseKey(aHandle->Key(), &idExtension, &url);
       MOZ_ASSERT(info);
       if (info) {
-        storageService->CacheFileDoomed(aHandle->mKey, info, idExtension, url);
+        storageService->CacheFileDoomed(info, idExtension, url);
       }
     }
   }
@@ -2611,15 +2607,7 @@ nsresult CacheFileIOManager::DoomFileByKeyInternal(const SHA1Sum::Hash* aHash) {
          static_cast<uint32_t>(rv)));
   }
 
-  
-  
-  RefPtr<CacheFileMetadata> metadata = new CacheFileMetadata();
-  rv = metadata->SyncReadMetadata(file);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    CacheIndex::RemoveEntry(aHash, ""_ns);
-  } else {
-    CacheIndex::RemoveEntry(aHash, metadata->GetKey());
-  }
+  CacheIndex::RemoveEntry(aHash);
 
   return NS_OK;
 }
@@ -3246,8 +3234,7 @@ nsresult CacheFileIOManager::OverLimitEvictionInternal() {
       
 
       
-      
-      CacheIndex::RemoveEntry(&hash, ""_ns);
+      CacheIndex::RemoveEntry(&hash);
       consecutiveFailures = 0;
     } else {
       
@@ -3397,7 +3384,6 @@ nsresult CacheFileIOManager::EvictByContext(
   LOG(("CacheFileIOManager::EvictByContext() [loadContextInfo=%p]",
        aLoadContextInfo));
 
-  
   nsresult rv;
   RefPtr<CacheFileIOManager> ioMan = gInstance;
 
@@ -3416,14 +3402,6 @@ nsresult CacheFileIOManager::EvictByContext(
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
-  
-  
-  
-  
-  
-  
-  
-  CacheIndex::EvictByContext(aOrigin, aBaseDomain);
 
   return NS_OK;
 }
@@ -3457,9 +3435,6 @@ nsresult CacheFileIOManager::EvictByContextInternal(
     
     
     
-
-    
-    
     if (!aLoadContextInfo) {
       RefPtr<EvictionNotifierRunnable> r = new EvictionNotifierRunnable();
       NS_DispatchToMainThread(r);
@@ -3481,9 +3456,6 @@ nsresult CacheFileIOManager::EvictByContextInternal(
   NS_ConvertUTF16toUTF8 origin(aOrigin);
   NS_ConvertUTF16toUTF8 baseDomain(aBaseDomain);
 
-  
-  
-  
   
   nsTArray<RefPtr<CacheFileHandle>> handles;
   mHandles.GetActiveHandles(&handles);
@@ -3542,8 +3514,7 @@ nsresult CacheFileIOManager::EvictByContextInternal(
       }
 
       
-      if (!origin.IsEmpty()) {  
-                                
+      if (!origin.IsEmpty()) {
         RefPtr<MozURL> url;
         rv = MozURL::Init(getter_AddRefs(url), uriSpec);
         if (NS_FAILED(rv)) {
@@ -3568,8 +3539,7 @@ nsresult CacheFileIOManager::EvictByContextInternal(
     
     rv = DoomFileInternal(handle,
                           aPinned ? CacheFileIOManager::DOOM_WHEN_PINNED
-                                  : CacheFileIOManager::DOOM_WHEN_NON_PINNED,
-                          false);
+                                  : CacheFileIOManager::DOOM_WHEN_NON_PINNED);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       LOG(
           ("CacheFileIOManager::EvictByContextInternal() - Cannot doom handle"
