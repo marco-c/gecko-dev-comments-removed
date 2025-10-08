@@ -4,7 +4,6 @@
 
 
 
-
 var gTimeoutSeconds = Services.prefs.getIntPref(
   "testing.browserTestHarness.timeout"
 );

@@ -32,9 +32,6 @@
 
 
 
-
-
-
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
   "SHOW_PAGE_SETUP_MENU",
