@@ -6569,7 +6569,7 @@
       }
 
       this.#handleTabMove(aTab, () =>
-        aSplitViewWrapper.wrapper.appendChild(aTab)
+        aSplitViewWrapper.container.appendChild(aTab)
       );
       this.removeFromMultiSelectedTabs(aTab);
       this.tabContainer._notifyBackgroundTab(aTab);
@@ -7468,7 +7468,6 @@
         }
       }
 
-      
       
       let containerName = tab.userContextId
         ? ContextualIdentityService.getUserContextLabel(tab.userContextId)
