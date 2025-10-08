@@ -1547,6 +1547,11 @@ void RasterImage::DoError() {
 
   
   auto dirtyRect = OrientedIntRect({0, 0}, mSize);
+  
+  
+  if (dirtyRect.IsEmpty()) {
+    dirtyRect.width = dirtyRect.height = 1;
+  }
   NotifyProgress(NoProgress, dirtyRect);
 
   MOZ_LOG(gImgLog, LogLevel::Error,
