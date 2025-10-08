@@ -475,7 +475,7 @@ class ThreadedDriver : public GraphDriver {
 
 
 
-class SystemClockDriver : public ThreadedDriver {
+class SystemClockDriver final : public ThreadedDriver {
  public:
   SystemClockDriver(GraphInterface* aGraphInterface,
                     GraphDriver* aPreviousDriver, uint32_t aSampleRate);
@@ -499,7 +499,7 @@ class SystemClockDriver : public ThreadedDriver {
 
 
 
-class OfflineClockDriver : public ThreadedDriver {
+class OfflineClockDriver final : public ThreadedDriver {
  public:
   OfflineClockDriver(GraphInterface* aGraphInterface, uint32_t aSampleRate,
                      GraphTime aSlice);
@@ -547,7 +547,8 @@ struct AudioInputProcessingParamsRequest {
 
 
 
-class AudioCallbackDriver : public GraphDriver, public MixerCallbackReceiver {
+class AudioCallbackDriver final : public GraphDriver,
+                                  public MixerCallbackReceiver {
   using IterationResult = GraphInterface::IterationResult;
   enum class FallbackDriverState;
   class FallbackWrapper;

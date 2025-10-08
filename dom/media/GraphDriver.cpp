@@ -271,8 +271,8 @@ TimeDuration SystemClockDriver::WaitInterval() {
   MOZ_ASSERT(mThread);
   MOZ_ASSERT(OnThread());
   TimeStamp now = TimeStamp::Now();
-  int64_t timeoutMS = MEDIA_GRAPH_TARGET_PERIOD_MS -
-                      int64_t((now - mCurrentTimeStamp).ToMilliseconds());
+  int64_t timeoutMS =
+      IterationDuration() - int64_t((now - mCurrentTimeStamp).ToMilliseconds());
   
   
   timeoutMS = std::max<int64_t>(0, std::min<int64_t>(timeoutMS, 60 * 1000));
