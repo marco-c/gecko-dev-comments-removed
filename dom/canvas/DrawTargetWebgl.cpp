@@ -1767,6 +1767,92 @@ bool SharedContextWebgl::CreateShaders() {
     UniformData(LOCAL_GL_INT, mBlurProgramSampler, Array<int32_t, 1>{0});
     UniformData(LOCAL_GL_INT, mBlurProgramClipMask, Array<int32_t, 1>{1});
   }
+  if (!mFilterProgram) {
+    auto vsSource =
+        "uniform vec2 u_viewport;\n"
+        "uniform vec4 u_clipbounds;\n"
+        "uniform vec4 u_transform;\n"
+        "uniform vec4 u_texmatrix;\n"
+        "attribute vec3 a_vertex;\n"
+        "varying vec2 v_cliptc;\n"
+        "varying vec2 v_texcoord;\n"
+        "varying vec4 v_clipdist;\n"
+        "void main() {\n"
+        "  vec2 vertex = u_transform.xy * a_vertex.xy + u_transform.zw;\n"
+        "  gl_Position = vec4(vertex * 2.0 / u_viewport - 1.0, 0.0, 1.0);\n"
+        "  v_cliptc = vertex / u_viewport;\n"
+        "  v_clipdist = vec4(vertex - u_clipbounds.xy,\n"
+        "                    u_clipbounds.zw - vertex);\n"
+        "  v_texcoord = u_texmatrix.xy * a_vertex.xy + u_texmatrix.zw;\n"
+        "}\n";
+    auto fsSource =
+        "precision mediump float;\n"
+        "uniform vec4 u_texbounds;\n"
+        "uniform mat4 u_colormatrix;\n"
+        "uniform vec4 u_coloroffset;\n"
+        "uniform sampler2D u_sampler;\n"
+        "uniform sampler2D u_clipmask;\n"
+        "varying highp vec2 v_cliptc;\n"
+        "varying highp vec2 v_texcoord;\n"
+        "varying vec4 v_clipdist;\n"
+        "bool check_bounds(vec2 tc) {\n"
+        "  return all(greaterThanEqual(\n"
+        "             vec4(tc, u_texbounds.zw), vec4(u_texbounds.xy, tc)));\n"
+        "}\n"
+        "void main() {\n"
+        "  vec4 color = check_bounds(v_texcoord) ?\n"
+        "      texture2D(u_sampler, v_texcoord) : vec4(0.0);\n"
+        "  if (color.a != 0.0) color.rgb /= color.a;\n"
+        "  color = clamp(u_colormatrix * color + u_coloroffset, 0.0, 1.0);\n"
+        "  color.rgb *= color.a;\n"
+        "  float clip = texture2D(u_clipmask, v_cliptc).r;\n"
+        "  vec2 dist = min(v_clipdist.xy, v_clipdist.zw);\n"
+        "  float aa = clamp(min(dist.x, dist.y), 0.0, 1.0);\n"
+        "  gl_FragColor = clip * aa * color;\n"
+        "}\n";
+    RefPtr<WebGLShader> vsId = mWebgl->CreateShader(LOCAL_GL_VERTEX_SHADER);
+    mWebgl->ShaderSource(*vsId, vsSource);
+    mWebgl->CompileShader(*vsId);
+    if (!mWebgl->GetCompileResult(*vsId).success) {
+      return false;
+    }
+    RefPtr<WebGLShader> fsId = mWebgl->CreateShader(LOCAL_GL_FRAGMENT_SHADER);
+    mWebgl->ShaderSource(*fsId, fsSource);
+    mWebgl->CompileShader(*fsId);
+    if (!mWebgl->GetCompileResult(*fsId).success) {
+      return false;
+    }
+    mFilterProgram = mWebgl->CreateProgram();
+    mWebgl->AttachShader(*mFilterProgram, *vsId);
+    mWebgl->AttachShader(*mFilterProgram, *fsId);
+    mWebgl->BindAttribLocation(*mFilterProgram, 0, "a_vertex");
+    mWebgl->LinkProgram(*mFilterProgram);
+    if (!mWebgl->GetLinkResult(*mFilterProgram).success) {
+      return false;
+    }
+    mFilterProgramViewport = GetUniformLocation(mFilterProgram, "u_viewport");
+    mFilterProgramTransform = GetUniformLocation(mFilterProgram, "u_transform");
+    mFilterProgramTexMatrix = GetUniformLocation(mFilterProgram, "u_texmatrix");
+    mFilterProgramTexBounds = GetUniformLocation(mFilterProgram, "u_texbounds");
+    mFilterProgramColorMatrix =
+        GetUniformLocation(mFilterProgram, "u_colormatrix");
+    mFilterProgramColorOffset =
+        GetUniformLocation(mFilterProgram, "u_coloroffset");
+    mFilterProgramSampler = GetUniformLocation(mFilterProgram, "u_sampler");
+    mFilterProgramClipMask = GetUniformLocation(mFilterProgram, "u_clipmask");
+    mFilterProgramClipBounds =
+        GetUniformLocation(mFilterProgram, "u_clipbounds");
+    if (!mFilterProgramViewport || !mFilterProgramTransform ||
+        !mFilterProgramTexMatrix || !mFilterProgramTexBounds ||
+        !mFilterProgramColorMatrix || !mFilterProgramColorOffset ||
+        !mFilterProgramSampler || !mFilterProgramClipMask ||
+        !mFilterProgramClipBounds) {
+      return false;
+    }
+    mWebgl->UseProgram(mFilterProgram);
+    UniformData(LOCAL_GL_INT, mFilterProgramSampler, Array<int32_t, 1>{0});
+    UniformData(LOCAL_GL_INT, mFilterProgramClipMask, Array<int32_t, 1>{1});
+  }
   return true;
 }
 
@@ -2446,7 +2532,7 @@ void SharedContextWebgl::BindScratchFramebuffer(TextureHandle* aHandle,
 
 already_AddRefed<TextureHandle> SharedContextWebgl::AllocateTextureHandle(
     SurfaceFormat aFormat, const IntSize& aSize, bool aAllowShared,
-    bool aRenderable, BackingTexture* aAvoid) {
+    bool aRenderable, const WebGLTexture* aAvoid) {
   RefPtr<TextureHandle> handle;
   
   
@@ -2463,7 +2549,8 @@ already_AddRefed<TextureHandle> SharedContextWebgl::AllocateTextureHandle(
     
     for (auto& shared : mSharedTextures) {
       if (shared->GetFormat() == aFormat &&
-          shared->IsRenderable() == aRenderable && shared != aAvoid) {
+          shared->IsRenderable() == aRenderable &&
+          shared->GetWebGLTexture() != aAvoid) {
         bool wasEmpty = !shared->HasAllocatedHandles();
         handle = shared->Allocate(aSize);
         if (handle) {
@@ -2946,6 +3033,16 @@ bool SharedContextWebgl::DrawRectAccel(
                                          nullptr);
         }
       }
+      if (handle) {
+        BackingTexture* backing = handle->GetBackingTexture();
+        if (!tex) {
+          tex = backing->GetWebGLTexture();
+        }
+        bounds = bounds.IsEmpty() ? handle->GetBounds()
+                                  : handle->GetBounds().SafeIntersect(
+                                        bounds + handle->GetBounds().TopLeft());
+        backingSize = backing->GetSize();
+      }
 
       
       
@@ -3008,16 +3105,6 @@ bool SharedContextWebgl::DrawRectAccel(
                        mImageProgramUniformState.mSwizzle);
 
       
-      if (handle) {
-        BackingTexture* backing = handle->GetBackingTexture();
-        if (!tex) {
-          tex = backing->GetWebGLTexture();
-        }
-        bounds = bounds.IsEmpty() ? handle->GetBounds()
-                                  : handle->GetBounds().SafeIntersect(
-                                        bounds + handle->GetBounds().TopLeft());
-        backingSize = backing->GetSize();
-      }
       if (mLastTexture != tex) {
         mWebgl->BindTexture(LOCAL_GL_TEXTURE_2D, tex);
         mLastTexture = tex;
@@ -3098,13 +3185,10 @@ bool SharedContextWebgl::DrawRectAccel(
 }
 
 
-bool SharedContextWebgl::BlurRectPass(
-    const Rect& aDestRect, const Point& aSigma, bool aHorizontal,
+already_AddRefed<WebGLTexture> SharedContextWebgl::GetFilterInputTexture(
     const RefPtr<SourceSurface>& aSurface, const IntRect& aSourceRect,
-    const DrawOptions& aOptions, Maybe<DeviceColor> aMaskColor,
-    RefPtr<TextureHandle>* aHandle, RefPtr<TextureHandle>* aTargetHandle,
-    bool aFilter) {
-  
+    RefPtr<TextureHandle>* aHandle, IntPoint& aOffset, SurfaceFormat& aFormat,
+    IntRect& aBounds, IntSize& aBackingSize) {
   
   
   RefPtr<SourceSurface> underlyingSurface =
@@ -3132,7 +3216,7 @@ bool SharedContextWebgl::BlurRectPass(
     if (!underlyingSurface) {
       
       
-      return false;
+      return nullptr;
     }
     texSize = underlyingSurface->GetSize();
     format = underlyingSurface->GetFormat();
@@ -3160,7 +3244,7 @@ bool SharedContextWebgl::BlurRectPass(
     
     RefPtr<DataSourceSurface> data = underlyingSurface->GetDataSurface();
     if (!data) {
-      return false;
+      return nullptr;
     }
     
     
@@ -3168,7 +3252,7 @@ bool SharedContextWebgl::BlurRectPass(
     handle = AllocateTextureHandle(format, texSize);
     if (!handle) {
       MOZ_ASSERT(false);
-      return false;
+      return nullptr;
     }
     UploadSurfaceToHandle(data, offset, handle);
     
@@ -3181,6 +3265,229 @@ bool SharedContextWebgl::BlurRectPass(
     }
   }
 
+  if (handle) {
+    BackingTexture* backing = handle->GetBackingTexture();
+    if (!tex) {
+      tex = backing->GetWebGLTexture();
+    }
+    bounds = bounds.IsEmpty() ? handle->GetBounds()
+                              : handle->GetBounds().SafeIntersect(
+                                    bounds + handle->GetBounds().TopLeft());
+    backingSize = backing->GetSize();
+  }
+
+  aOffset = offset;
+  aFormat = format;
+  aBounds = bounds;
+  aBackingSize = backingSize;
+  return tex.forget();
+}
+
+
+bool SharedContextWebgl::FilterRect(const Rect& aDestRect,
+                                    const Matrix5x4& aColorMatrix,
+                                    const RefPtr<SourceSurface>& aSurface,
+                                    const IntRect& aSourceRect,
+                                    const DrawOptions& aOptions,
+                                    RefPtr<TextureHandle>* aHandle,
+                                    RefPtr<TextureHandle>* aTargetHandle) {
+  if (!aTargetHandle && !mCurrentTarget->MarkChanged()) {
+    return false;
+  }
+
+  IntPoint offset;
+  SurfaceFormat format;
+  IntRect bounds;
+  IntSize backingSize;
+  RefPtr<WebGLTexture> tex = GetFilterInputTexture(
+      aSurface, aSourceRect, aHandle, offset, format, bounds, backingSize);
+  if (!tex) {
+    return false;
+  }
+
+  IntSize viewportSize = mViewportSize;
+  bool needTarget = !!aTargetHandle;
+  if (needTarget) {
+    IntSize targetSize = IntSize::Ceil(aDestRect.Size());
+    viewportSize = targetSize;
+    
+    
+    
+    
+    
+    RefPtr<TextureHandle> targetHandle =
+        AllocateTextureHandle(format, targetSize, true, true, tex);
+    if (!targetHandle) {
+      MOZ_ASSERT(false);
+      return false;
+    }
+
+    *aTargetHandle = targetHandle;
+
+    BindScratchFramebuffer(targetHandle, true, targetSize);
+
+    SetBlendState(CompositionOp::OP_OVER);
+  } else {
+    
+    if (!mClipRect.Contains(IntRect(IntPoint(), mViewportSize))) {
+      EnableScissor(mClipRect);
+    } else {
+      DisableScissor();
+    }
+
+    
+    SetBlendState(aOptions.mCompositionOp);
+  }
+
+  
+  if (mLastProgram != mFilterProgram) {
+    mWebgl->UseProgram(mFilterProgram);
+    mLastProgram = mFilterProgram;
+  }
+
+  Array<float, 2> viewportData = {float(viewportSize.width),
+                                  float(viewportSize.height)};
+  MaybeUniformData(LOCAL_GL_FLOAT_VEC2, mFilterProgramViewport, viewportData,
+                   mFilterProgramUniformState.mViewport);
+
+  Rect xformRect;
+  if (needTarget) {
+    
+    
+    xformRect = Rect(IntRect(IntPoint(), viewportSize));
+  } else {
+    
+    xformRect = aDestRect;
+  }
+  Array<float, 4> xformData = {xformRect.width, xformRect.height, xformRect.x,
+                               xformRect.y};
+  MaybeUniformData(LOCAL_GL_FLOAT_VEC4, mFilterProgramTransform, xformData,
+                   mFilterProgramUniformState.mTransform);
+
+  Rect clipRect;
+  if (needTarget) {
+    
+    clipRect = xformRect;
+  } else {
+    clipRect = mClipAARect;
+  }
+  
+  
+  clipRect.Inflate(0.5f);
+  Array<float, 4> clipData = {clipRect.x, clipRect.y, clipRect.XMost(),
+                              clipRect.YMost()};
+  MaybeUniformData(LOCAL_GL_FLOAT_VEC4, mFilterProgramClipBounds, clipData,
+                   mFilterProgramUniformState.mClipBounds);
+
+  Array<float, 16> colorMatData = {
+      aColorMatrix._11, aColorMatrix._12, aColorMatrix._13, aColorMatrix._14,
+      aColorMatrix._21, aColorMatrix._22, aColorMatrix._23, aColorMatrix._24,
+      aColorMatrix._31, aColorMatrix._32, aColorMatrix._33, aColorMatrix._34,
+      aColorMatrix._41, aColorMatrix._42, aColorMatrix._43, aColorMatrix._44};
+  MaybeUniformData(LOCAL_GL_FLOAT_MAT4, mFilterProgramColorMatrix, colorMatData,
+                   mFilterProgramUniformState.mColorMatrix);
+  Array<float, 4> colorOffData = {aColorMatrix._51, aColorMatrix._52,
+                                  aColorMatrix._53, aColorMatrix._54};
+  MaybeUniformData(LOCAL_GL_FLOAT_MAT4, mFilterProgramColorOffset, colorOffData,
+                   mFilterProgramUniformState.mColorOffset);
+
+  
+  if (mLastTexture != tex) {
+    mWebgl->BindTexture(LOCAL_GL_TEXTURE_2D, tex);
+    mLastTexture = tex;
+  }
+
+  
+  
+  Size backingSizeF(backingSize);
+  Rect uvXform((bounds.x - offset.x) / backingSizeF.width,
+               (bounds.y - offset.y) / backingSizeF.height,
+               xformRect.width / backingSizeF.width,
+               xformRect.height / backingSizeF.height);
+  Array<float, 4> uvData = {uvXform.width, uvXform.height, uvXform.x,
+                            uvXform.y};
+  MaybeUniformData(LOCAL_GL_FLOAT_VEC4, mFilterProgramTexMatrix, uvData,
+                   mFilterProgramUniformState.mTexMatrix);
+
+  
+  
+  Array<float, 4> texBounds = {
+      bounds.x / backingSizeF.width,
+      bounds.y / backingSizeF.height,
+      bounds.XMost() / backingSizeF.width,
+      bounds.YMost() / backingSizeF.height,
+  };
+  MaybeUniformData(LOCAL_GL_FLOAT_VEC4, mFilterProgramTexBounds, texBounds,
+                   mFilterProgramUniformState.mTexBounds);
+
+  RefPtr<WebGLTexture> prevClipMask;
+  if (needTarget) {
+    
+    prevClipMask = mLastClipMask;
+    SetNoClipMask();
+  }
+
+  DrawQuad();
+
+  if (needTarget) {
+    
+    RestoreCurrentTarget(prevClipMask);
+  }
+
+  return true;
+}
+
+
+bool DrawTargetWebgl::FilterSurface(const Matrix5x4& aColorMatrix,
+                                    SourceSurface* aSurface,
+                                    const IntRect& aSourceRect,
+                                    const Point& aDest,
+                                    const DrawOptions& aOptions) {
+  if (ShouldAccelPath(aOptions, nullptr)) {
+    IntRect sourceRect =
+        aSourceRect.IsEmpty() ? aSurface->GetRect() : aSourceRect;
+    if (mTransform.IsTranslation() &&
+        !mSharedContext->RequiresMultiStageBlend(aOptions, this)) {
+      
+      
+      return mSharedContext->FilterRect(
+          Rect(aDest + mTransform.GetTranslation(), Size(sourceRect.Size())),
+          aColorMatrix, aSurface, sourceRect, aOptions, nullptr, nullptr);
+    }
+    
+    
+    RefPtr<TextureHandle> resultHandle;
+    if (mSharedContext->FilterRect(Rect(Point(0, 0), Size(sourceRect.Size())),
+                                   aColorMatrix, aSurface, sourceRect,
+                                   DrawOptions(), nullptr, &resultHandle) &&
+        resultHandle) {
+      SurfacePattern filterPattern(nullptr, ExtendMode::CLAMP,
+                                   Matrix::Translation(aDest));
+      return mSharedContext->DrawRectAccel(
+          Rect(aDest, Size(resultHandle->GetSize())), filterPattern, aOptions,
+          Nothing(), &resultHandle, true, true, true);
+    }
+  }
+  return false;
+}
+
+
+bool SharedContextWebgl::BlurRectPass(
+    const Rect& aDestRect, const Point& aSigma, bool aHorizontal,
+    const RefPtr<SourceSurface>& aSurface, const IntRect& aSourceRect,
+    const DrawOptions& aOptions, Maybe<DeviceColor> aMaskColor,
+    RefPtr<TextureHandle>* aHandle, RefPtr<TextureHandle>* aTargetHandle,
+    bool aFilter) {
+  IntPoint offset;
+  SurfaceFormat format;
+  IntRect bounds;
+  IntSize backingSize;
+  RefPtr<WebGLTexture> tex = GetFilterInputTexture(
+      aSurface, aSourceRect, aHandle, offset, format, bounds, backingSize);
+  if (!tex) {
+    return false;
+  }
+
   IntSize viewportSize = mViewportSize;
   IntSize blurRadius(BLUR_ACCEL_RADIUS(aSigma.x), BLUR_ACCEL_RADIUS(aSigma.y));
   bool needTarget = !!aTargetHandle;
@@ -3190,21 +3497,16 @@ bool SharedContextWebgl::BlurRectPass(
     
     IntSize targetSize(
         int(ceil(aDestRect.width)) + blurRadius.width * 2,
-        aHorizontal ? texSize.height
+        aHorizontal ? bounds.height
                     : int(ceil(aDestRect.height)) + blurRadius.height * 2);
     viewportSize = targetSize;
     
     
     
-    BackingTexture* avoid =
-        aHandle && aHandle->get()
-            ? aHandle->get()->GetBackingTexture()
-            : (handle ? handle->GetBackingTexture() : nullptr);
     
     
-    RefPtr<TextureHandle> targetHandle =
-        AllocateTextureHandle(aFilter ? handle->GetFormat() : SurfaceFormat::A8,
-                              targetSize, true, true, avoid);
+    RefPtr<TextureHandle> targetHandle = AllocateTextureHandle(
+        aFilter ? format : SurfaceFormat::A8, targetSize, true, true, tex);
     if (!targetHandle) {
       MOZ_ASSERT(false);
       return false;
@@ -3281,16 +3583,6 @@ bool SharedContextWebgl::BlurRectPass(
                    mBlurProgramUniformState.mSwizzle);
 
   
-  if (handle) {
-    BackingTexture* backing = handle->GetBackingTexture();
-    if (!tex) {
-      tex = backing->GetWebGLTexture();
-    }
-    bounds = bounds.IsEmpty() ? handle->GetBounds()
-                              : handle->GetBounds().SafeIntersect(
-                                    bounds + handle->GetBounds().TopLeft());
-    backingSize = backing->GetSize();
-  }
   if (mLastTexture != tex) {
     mWebgl->BindTexture(LOCAL_GL_TEXTURE_2D, tex);
     mLastTexture = tex;
@@ -3399,8 +3691,7 @@ already_AddRefed<SourceSurface> SharedContextWebgl::DownscaleBlurInput(
       IntSize halfSize = (sourceRect.Size() + IntSize(1, 1)) / 2;
       
       RefPtr<TextureHandle> halfHandle = AllocateTextureHandle(
-          aSurface->GetFormat(), halfSize, true, true,
-          fullHandle ? fullHandle->GetBackingTexture() : nullptr);
+          aSurface->GetFormat(), halfSize, true, true, fullTex);
       if (!halfHandle) {
         break;
       }
@@ -4969,8 +5260,11 @@ void DrawTargetWebgl::Mask(const Pattern& aSource, const Pattern& aMask,
     return;
   }
 
-  DrawRect(Rect(IntRect(IntPoint(), maskPattern.mSurface->GetSize())),
-           maskPattern, aOptions, Some(sourceColor));
+  IntRect samplingRect = !maskPattern.mSamplingRect.IsEmpty()
+                             ? maskPattern.mSamplingRect
+                             : maskPattern.mSurface->GetRect();
+  DrawRect(maskPattern.mMatrix.TransformBounds(Rect(samplingRect)), maskPattern,
+           aOptions, Some(sourceColor));
 }
 
 void DrawTargetWebgl::MaskSurface(const Pattern& aSource, SourceSurface* aMask,
