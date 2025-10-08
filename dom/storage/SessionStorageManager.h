@@ -43,16 +43,6 @@ bool RecvLoadSessionStorageData(
 bool RecvClearStoragesForOrigin(const nsACString& aOriginAttrs,
                                 const nsACString& aOriginKey);
 
-
-
-
-
-
-
-
-
-enum class DomainMatchingMode { PREFIX_MATCH, EXACT_MATCH };
-
 class BrowsingContext;
 class ContentParent;
 class SSSetItemInfo;
@@ -100,9 +90,8 @@ class SessionStorageManagerBase {
     FlippedOnce<false> mLoaded;
   };
 
-  void ClearStoragesInternal(
-      const OriginAttributesPattern& aPattern, const nsACString& aOriginScope,
-      DomainMatchingMode aMode = DomainMatchingMode::PREFIX_MATCH);
+  void ClearStoragesInternal(const OriginAttributesPattern& aPattern,
+                             const nsACString& aOriginScope);
 
   void ClearStoragesForOriginInternal(const nsACString& aOriginAttrs,
                                       const nsACString& aOriginKey);
@@ -164,9 +153,8 @@ class SessionStorageManager final : public SessionStorageManagerBase,
                                         SessionStorageCache* aCloneFrom,
                                         RefPtr<SessionStorageCache>* aRetVal);
 
-  void ClearStorages(
-      const OriginAttributesPattern& aPattern, const nsACString& aOriginScope,
-      DomainMatchingMode aMode = DomainMatchingMode::PREFIX_MATCH);
+  void ClearStorages(const OriginAttributesPattern& aPattern,
+                     const nsACString& aOriginScope);
 
   SessionStorageCacheChild* EnsureCache(nsIPrincipal& aPrincipal,
                                         const nsACString& aOriginKey,
@@ -225,9 +213,8 @@ class BackgroundSessionStorageManager final : public SessionStorageManagerBase {
   void UpdateData(const nsACString& aOriginAttrs, const nsACString& aOriginKey,
                   const nsTArray<SSSetItemInfo>& aData);
 
-  void ClearStorages(
-      const OriginAttributesPattern& aPattern, const nsACString& aOriginScope,
-      DomainMatchingMode aMode = DomainMatchingMode::PREFIX_MATCH);
+  void ClearStorages(const OriginAttributesPattern& aPattern,
+                     const nsACString& aOriginScope);
 
   void ClearStoragesForOrigin(const nsACString& aOriginAttrs,
                               const nsACString& aOriginKey);
