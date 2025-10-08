@@ -487,39 +487,19 @@ void NativeLayerRootCA::CommitRepresentation(
   
   
   
+  
   AutoCATransaction transaction;
-  nsTArray<NativeLayerCA*> sublayersWithExtent;
-  for (auto layer : aSublayers) {
+  NSMutableArray<CALayer*>* sublayers =
+      [NSMutableArray arrayWithCapacity:aSublayers.Length()];
+  for (const auto& layer : aSublayers) {
     layer->ApplyChanges(aRepresentation, NativeLayerCA::UpdateType::All,
                         &mustRebuild);
-    CALayer* caLayer = layer->UnderlyingCALayer(aRepresentation);
-    if (!caLayer.masksToBounds || !CGRectIsEmpty(caLayer.bounds)) {
-      
-      mustRebuild |= !layer->HasExtent();
-      layer->SetHasExtent(true);
-      sublayersWithExtent.AppendElement(layer);
-    } else {
-      
-      mustRebuild |= layer->HasExtent();
-      layer->SetHasExtent(false);
+    if (CALayer* caLayer = layer->UnderlyingCALayer(aRepresentation)) {
+      [sublayers addObject:caLayer];
     }
-
-    
-    
-    
-    
-    
-    mustRebuild =
-        mustRebuild || ![aRootCALayer.sublayers containsObject:caLayer];
   }
 
   if (mustRebuild) {
-    uint32_t sublayersCount = sublayersWithExtent.Length();
-    NSMutableArray<CALayer*>* sublayers =
-        [NSMutableArray arrayWithCapacity:sublayersCount];
-    for (auto layer : sublayersWithExtent) {
-      [sublayers addObject:layer->UnderlyingCALayer(aRepresentation)];
-    }
     aRootCALayer.sublayers = sublayers;
   }
 }
@@ -622,22 +602,25 @@ VideoLowPowerType NativeLayerRootCA::CheckVideoLowPower(
   
 
   uint32_t videoLayerCount = 0;
-  NativeLayerCA* topLayer = nullptr;
+  DebugOnly<RefPtr<NativeLayerCA>> topLayer;
   CALayer* topCALayer = nil;
   CALayer* secondCALayer = nil;
   bool topLayerIsVideo = false;
 
   for (auto layer : mSublayers) {
     
-    if (layer->HasExtent()) {
-      topLayer = layer;
-
-      secondCALayer = topCALayer;
-      topCALayer = topLayer->UnderlyingCALayer(WhichRepresentation::ONSCREEN);
-      topLayerIsVideo = topLayer->IsVideo(aProofOfLock);
-      if (topLayerIsVideo) {
+    CALayer* caLayer = layer->UnderlyingCALayer(WhichRepresentation::ONSCREEN);
+    if (caLayer) {
+      bool isVideo = layer->IsVideo(aProofOfLock);
+      if (isVideo) {
         ++videoLayerCount;
       }
+
+      secondCALayer = topCALayer;
+
+      topLayer = layer;
+      topCALayer = caLayer;
+      topLayerIsVideo = isVideo;
     }
   }
 
@@ -1369,7 +1352,8 @@ void NativeLayerCA::SetSurfaceToPresent(CFTypeRefPtr<IOSurfaceRef> aSurfaceRef,
 }
 
 NativeLayerCA::Representation::Representation()
-    : mMutatedPosition(true),
+    : mWrappingCALayerHasExtent(false),
+      mMutatedPosition(true),
       mMutatedTransform(true),
       mMutatedDisplayRect(true),
       mMutatedClipRect(true),
@@ -1514,13 +1498,19 @@ bool NativeLayerCA::ApplyChanges(WhichRepresentation aRepresentation,
   }
 
   auto& r = GetRepresentation(aRepresentation);
-  if (r.mMutatedSpecializeVideo || !r.UnderlyingCALayer()) {
+  if (r.mMutatedSpecializeVideo) {
     *aMustRebuild = true;
   }
-  return r.ApplyChanges(aUpdate, size, mIsOpaque, mPosition, mTransform,
-                        displayRect, mClipRect, mRoundedClipRect, mBackingScale,
-                        surfaceIsFlipped, mSamplingFilter, mSpecializeVideo,
-                        surface, mColor, mIsDRM, IsVideo(lock));
+  bool hadExtentBeforeUpdate = r.UnderlyingCALayer() != nullptr;
+  bool updateSucceeded = r.ApplyChanges(
+      aUpdate, size, mIsOpaque, mPosition, mTransform, displayRect, mClipRect,
+      mRoundedClipRect, mBackingScale, surfaceIsFlipped, mSamplingFilter,
+      mSpecializeVideo, surface, mColor, mIsDRM, IsVideo(lock));
+  bool hasExtentAfterUpdate = r.UnderlyingCALayer() != nullptr;
+  if (hasExtentAfterUpdate != hadExtentBeforeUpdate) {
+    *aMustRebuild = true;
+  }
+  return updateSucceeded;
 }
 
 CALayer* NativeLayerCA::UnderlyingCALayer(WhichRepresentation aRepresentation) {
@@ -1919,6 +1909,8 @@ bool NativeLayerCA::Representation::ApplyChanges(
     mWrappingCALayer.bounds =
         CGRectMake(0, 0, useClipRect.size.width, useClipRect.size.height);
     mWrappingCALayer.masksToBounds = scaledClipRect.isSome();
+    mWrappingCALayerHasExtent =
+        scaledClipRect.isNothing() || !CGRectIsEmpty(useClipRect);
 
     
     
