@@ -30,6 +30,7 @@
 #include "mozilla/Monitor.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/StaticPrefs_javascript.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/AtomList.h"
 #include "mozilla/dom/BindingUtils.h"
@@ -989,35 +990,61 @@ class WorkerJSContext final : public mozilla::CycleCollectedJSContext {
     MOZ_ASSERT(!NS_IsMainThread());
     MOZ_ASSERT(runnable);
 
-    std::deque<RefPtr<MicroTaskRunnable>>* microTaskQueue = nullptr;
-
     JSContext* cx = Context();
     NS_ASSERTION(cx, "This should never be null!");
 
     JS::Rooted<JSObject*> global(cx, JS::CurrentGlobalOrNull(cx));
     NS_ASSERTION(global, "This should never be null!");
 
-    
-    
-    
-    
-    if (IsWorkerGlobal(global) || IsShadowRealmGlobal(global)) {
-      microTaskQueue = &GetMicroTaskQueue();
-    } else {
-      MOZ_ASSERT(IsWorkerDebuggerGlobal(global) ||
-                 IsWorkerDebuggerSandbox(global));
-
-      microTaskQueue = &GetDebuggerMicroTaskQueue();
-    }
-
     JS::JobQueueMayNotBeEmpty(cx);
-    if (!runnable->isInList()) {
+    if (StaticPrefs::javascript_options_use_js_microtask_queue()) {
+      PROFILER_MARKER_FLOW_ONLY("WorkerJSContext::DispatchToMicroTask", OTHER,
+                                {}, FlowMarker,
+                                Flow::FromPointer(runnable.get()));
+
       
-      mMicrotasksToTrace.insertBack(runnable);
+      
+      
+      
+      if (IsWorkerGlobal(global) || IsShadowRealmGlobal(global)) {
+        if (!EnqueueMicroTask(cx, runnable.forget())) {
+          
+          
+          MOZ_CRASH("Failed to enqueue micro task from worker.");
+        }
+      } else {
+        MOZ_ASSERT(IsWorkerDebuggerGlobal(global) ||
+                   IsWorkerDebuggerSandbox(global));
+        if (!EnqueueDebugMicroTask(cx, runnable.forget())) {
+          
+          
+          MOZ_CRASH("Failed to enqueue debugger micro task from worker.");
+        }
+      }
+    } else {
+      std::deque<RefPtr<MicroTaskRunnable>>* microTaskQueue = nullptr;
+      
+      
+      
+      
+      if (IsWorkerGlobal(global) || IsShadowRealmGlobal(global)) {
+        microTaskQueue = &GetMicroTaskQueue();
+      } else {
+        MOZ_ASSERT(IsWorkerDebuggerGlobal(global) ||
+                   IsWorkerDebuggerSandbox(global));
+
+        microTaskQueue = &GetDebuggerMicroTaskQueue();
+      }
+
+      if (!runnable->isInList()) {
+        
+        mMicrotasksToTrace.insertBack(runnable);
+      }
+      PROFILER_MARKER_FLOW_ONLY("WorkerJSContext::DispatchToMicroTask", OTHER,
+                                {}, FlowMarker,
+                                Flow::FromPointer(runnable.get()));
+      microTaskQueue->push_back(std::move(runnable));
     }
-    PROFILER_MARKER_FLOW_ONLY("WorkerJSContext::DispatchToMicroTask", OTHER, {},
-                              FlowMarker, Flow::FromPointer(runnable.get()));
-    microTaskQueue->push_back(std::move(runnable));
   }
 
   bool IsSystemCaller() const override {
