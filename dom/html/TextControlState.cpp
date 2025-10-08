@@ -1751,7 +1751,7 @@ nsresult TextControlState::PrepareEditor(const nsAString* aValue) {
 
     
     
-    nsresult rv = mBoundFrame->UpdateValueDisplay(true, true);
+    nsresult rv = mBoundFrame->UpdateValueDisplay(true);
     if (NS_FAILED(rv)) {
       NS_WARNING("nsTextControlFrame::UpdateValueDisplay() failed");
       return rv;
@@ -1759,8 +1759,7 @@ nsresult TextControlState::PrepareEditor(const nsAString* aValue) {
   } else {
     if (aValue || !mEditorInitialized) {
       
-      nsresult rv =
-          mBoundFrame->UpdateValueDisplay(true, !mEditorInitialized, aValue);
+      nsresult rv = mBoundFrame->UpdateValueDisplay(true, aValue);
       if (NS_FAILED(rv)) {
         NS_WARNING("nsTextControlFrame::UpdateValueDisplay() failed");
         return rv;

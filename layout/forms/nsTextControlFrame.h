@@ -248,8 +248,7 @@ class nsTextControlFrame : public nsContainerFrame,
 
 
 
-  nsresult UpdateValueDisplay(bool aNotify, bool aBeforeEditorInit = false,
-                              const nsAString* aValue = nullptr);
+  nsresult UpdateValueDisplay(bool aNotify, const nsAString* aValue = nullptr);
 
   
 
