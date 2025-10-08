@@ -234,10 +234,9 @@ void JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm,
     
     
     masm.loadPtr(Address(fpScratch, CallerFPOffset), fpScratch);
-    emitAssertPrevFrameType(
-        fpScratch, scratch,
-        {FrameType::IonJS, FrameType::BaselineStub, FrameType::CppToJSJit,
-         FrameType::WasmToJSJit});
+    emitAssertPrevFrameType(fpScratch, scratch,
+                            {FrameType::IonJS, FrameType::BaselineStub,
+                             FrameType::CppToJSJit, FrameType::WasmToJSJit});
     masm.jump(&again);
   }
 
@@ -246,11 +245,10 @@ void JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm,
     {
       
       masm.loadPtr(Address(fpScratch, CallerFPOffset), fpScratch);
-      emitAssertPrevFrameType(
-          fpScratch, scratch,
-          {FrameType::IonJS, FrameType::BaselineJS, FrameType::BaselineStub,
-           FrameType::CppToJSJit, FrameType::WasmToJSJit,
-           FrameType::IonICCall});
+      emitAssertPrevFrameType(fpScratch, scratch,
+                              {FrameType::IonJS, FrameType::BaselineJS,
+                               FrameType::BaselineStub, FrameType::CppToJSJit,
+                               FrameType::WasmToJSJit, FrameType::IonICCall});
       masm.jump(&again);
     }
   }
