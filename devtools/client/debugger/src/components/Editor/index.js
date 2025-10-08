@@ -648,7 +648,7 @@ class Editor extends PureComponent {
     if (this.props.shouldHighlightSelectedLocation) {
       editor.focus();
     }
-
+    
     await editor.setCursorAt(line, column);
   }
 

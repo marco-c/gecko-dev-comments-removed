@@ -111,7 +111,6 @@ class SourcePreview extends Component {
       
       
       if (this.editor) {
-        await this.editor.scrollTo(line, 0);
         await this.editor.setCursorAt(line, 0);
 
         

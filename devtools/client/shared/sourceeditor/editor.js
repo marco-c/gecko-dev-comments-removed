@@ -3632,7 +3632,9 @@ class Editor extends EventEmitter {
 
 
 
-  setCursorAt(line, column) {
+
+  async setCursorAt(line, column) {
+    await this.scrollTo(line, column);
     const cm = editors.get(this);
     const { lines } = cm.state.doc;
     if (line > lines) {
