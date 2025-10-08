@@ -440,44 +440,47 @@ void NativeLayerRootCA::SetMutatedLayerStructure() {
   mMutatedOffscreenLayerStructure = true;
 }
 
+NativeLayerCAUpdateType NativeLayerRootCA::GetMaxUpdateRequired(
+    WhichRepresentation aRepresentation,
+    const nsTArray<RefPtr<NativeLayerCA>>& aSublayers,
+    bool aMutatedLayerStructure) const {
+  if (aMutatedLayerStructure) {
+    return UpdateType::All;
+  }
+
+  UpdateType maxUpdateRequired = UpdateType::None;
+  for (const auto& layer : aSublayers) {
+    UpdateType updateRequired = layer->HasUpdate(aRepresentation);
+    if (updateRequired == UpdateType::All) {
+      return UpdateType::All;
+    }
+    
+    maxUpdateRequired = std::max(maxUpdateRequired, updateRequired);
+  }
+  return maxUpdateRequired;
+}
+
 void NativeLayerRootCA::CommitRepresentation(
     WhichRepresentation aRepresentation, CALayer* aRootCALayer,
     const nsTArray<RefPtr<NativeLayerCA>>& aSublayers,
     bool aMutatedLayerStructure, bool aWindowIsFullscreen) {
-  bool mustRebuild = aMutatedLayerStructure;
-  if (!mustRebuild) {
+  UpdateType updateRequired =
+      GetMaxUpdateRequired(aRepresentation, aSublayers, aMutatedLayerStructure);
+  if (updateRequired == NativeLayerCA::UpdateType::OnlyVideo) {
     
-    NativeLayerCA::UpdateType updateRequired = NativeLayerCA::UpdateType::None;
+    
+    bool allUpdatesSucceeded =
+        std::all_of(aSublayers.begin(), aSublayers.end(),
+                    [=](const RefPtr<NativeLayerCA>& layer) {
+                      bool ignoredMustRebuild = false;
+                      return layer->ApplyChanges(
+                          aRepresentation, NativeLayerCA::UpdateType::OnlyVideo,
+                          &ignoredMustRebuild);
+                    });
 
-    for (auto layer : aSublayers) {
-      
-      
-      updateRequired =
-          std::max(updateRequired, layer->HasUpdate(aRepresentation));
-      if (updateRequired == NativeLayerCA::UpdateType::All) {
-        break;
-      }
-    }
-
-    if (updateRequired == NativeLayerCA::UpdateType::None) {
+    if (allUpdatesSucceeded) {
       
       return;
-    }
-
-    if (updateRequired == NativeLayerCA::UpdateType::OnlyVideo) {
-      bool allUpdatesSucceeded = std::all_of(
-          aSublayers.begin(), aSublayers.end(),
-          [=](const RefPtr<NativeLayerCA>& layer) {
-            bool ignoredMustRebuild = false;
-            return layer->ApplyChanges(aRepresentation,
-                                       NativeLayerCA::UpdateType::OnlyVideo,
-                                       &ignoredMustRebuild);
-          });
-
-      if (allUpdatesSucceeded) {
-        
-        return;
-      }
     }
   }
 
@@ -488,6 +491,7 @@ void NativeLayerRootCA::CommitRepresentation(
   AutoCATransaction transaction;
   NSMutableArray<CALayer*>* sublayers =
       [NSMutableArray arrayWithCapacity:aSublayers.Length()];
+  bool mustRebuild = updateRequired == UpdateType::All;
   for (const auto& layer : aSublayers) {
     layer->ApplyChanges(aRepresentation, NativeLayerCA::UpdateType::All,
                         &mustRebuild);
