@@ -36,6 +36,7 @@
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/gfx/gfxVars.h"
+#include "mozilla/gfx/Logging.h"
 #include "mozilla/intl/OSPreferences.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
 #include "mozilla/java/GeckoAppShellNatives.h"
@@ -322,14 +323,15 @@ class GeckoAppShellSupport final
 
   static void NotifyAlertListener(jni::String::Param aName,
                                   jni::String::Param aTopic,
-                                  jni::String::Param aAction) {
-    if (!aName || !aTopic) {
+                                  jni::String::Param aAction,
+                                  jni::String::Param aOrigin) {
+    if (!aName || !aTopic || !aOrigin) {
       return;
     }
 
     widget::AndroidAlerts::NotifyListener(
         aName->ToString(), aTopic->ToCString().get(),
-        aAction ? Some(aAction->ToString()) : Nothing());
+        aAction ? Some(aAction->ToString()) : Nothing(), aOrigin->ToCString());
   }
 
   static bool IsParentProcess() { return XRE_IsParentProcess(); }
@@ -360,6 +362,11 @@ class GeckoAppShellSupport final
     }
 
     nsBaseAppShell::OnSystemTimezoneChange();
+  }
+
+  static void LogGpuProcessLaunchFailure(jni::String::Param aMessage) {
+    gfxCriticalNote << "Error launching GPU process: "
+                    << aMessage->ToCString().get();
   }
 };
 
