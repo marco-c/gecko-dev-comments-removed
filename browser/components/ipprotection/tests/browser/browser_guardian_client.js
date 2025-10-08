@@ -37,6 +37,16 @@ const testcases = [
       ok: true,
       error: undefined,
     },
+    experimentType: "alpha",
+  },
+  {
+    name: "Successful enrollment with custom experiment",
+    responseURL: "/oauth/success?code=abc123",
+    expects: {
+      ok: true,
+      error: undefined,
+    },
+    experimentType: "beta",
   },
   {
     name: "Failed enrollment - error in success URL",
@@ -45,12 +55,13 @@ const testcases = [
       ok: false,
       error: "generic_error",
     },
+    experimentType: "alpha",
   },
 ];
 
 
 testcases
-  .map(({ name, responseURL, expects }) => {
+  .map(({ name, responseURL, expects, experimentType }) => {
     return async () => {
       requestLongerTimeout(2); 
       info(`Running test case: ${name}`);
@@ -59,6 +70,18 @@ testcases
       const server = makeGuardianServer({
         enroll: (request, response) => {
           info(`Handling enroll request, redirecting to ${responseURL}`);
+
+          
+          const queryParams = new URLSearchParams(request.queryString);
+          Assert.ok(
+            queryParams.has("experiment"),
+            "Request should include 'experiment' query parameter"
+          );
+          Assert.equal(
+            queryParams.get("experiment"),
+            experimentType,
+            `Experiment type should be '${experimentType}'`
+          );
 
           
           response.setStatusLine(request.httpVersion, 302, "Found");
@@ -77,7 +100,7 @@ testcases
 
       try {
         
-        const result = await client.enroll();
+        const result = await client.enroll(experimentType);
 
         
         Assert.equal(
