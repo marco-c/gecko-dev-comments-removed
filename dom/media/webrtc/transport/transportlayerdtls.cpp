@@ -593,59 +593,36 @@ bool TransportLayerDtls::Setup() {
     return false;
   }
 
-  
-  
-  bool enable_mlkem =
-      maxVersion_ >= Version::DTLS_1_3 &&
-      Preferences::GetBool("media.peerconnection.dtls.enable_pq_hybrid_kex");
+  unsigned int additional_shares =
+      StaticPrefs::security_tls_client_hello_send_p256_keyshare();
 
-  bool send_mlkem =
-      Preferences::GetBool("media.peerconnection.dtls.send_mlkem_keyshare");
+  const SSLNamedGroup namedGroups[] = {
+      ssl_grp_ec_curve25519, ssl_grp_ec_secp256r1, ssl_grp_ec_secp384r1,
+      ssl_grp_ffdhe_2048, ssl_grp_ffdhe_3072,
+      
 
-  if (!enable_mlkem && send_mlkem) {
-    MOZ_MTLOG(ML_NOTICE,
-              "The PQ preferences are inconsistent. ML-KEM support will not be "
-              "advertised, nor will the ML-KEM key share be sent.");
+      
+      
+      ssl_grp_kem_mlkem768x25519};
+
+  size_t numGroups = std::size(namedGroups);
+  if (!(StaticPrefs::security_tls_enable_kyber() &&
+        StaticPrefs::media_webrtc_enable_pq_dtls() &&
+        maxVersion_ >= Version::DTLS_1_3)) {
+    
+    numGroups -= 1;
   }
 
-  std::vector<SSLNamedGroup> namedGroups;
-
-  if (enable_mlkem && send_mlkem) {
-    
-    
-    
-    
-    namedGroups = {ssl_grp_kem_mlkem768x25519, ssl_grp_ec_curve25519,
-                   ssl_grp_ec_secp256r1,       ssl_grp_ec_secp384r1,
-                   ssl_grp_ffdhe_2048,         ssl_grp_ffdhe_3072};
-
-    if (SECSuccess != SSL_SendAdditionalKeyShares(ssl_fd.get(), 1)) {
-      MOZ_MTLOG(ML_ERROR, "Couldn't set up additional key shares");
-      return false;
-    }
-  }
-  
-  else if (enable_mlkem && !send_mlkem) {
-    
-    
-    
-    namedGroups = {ssl_grp_ec_curve25519, ssl_grp_kem_mlkem768x25519,
-                   ssl_grp_ec_secp256r1,  ssl_grp_ec_secp384r1,
-                   ssl_grp_ffdhe_2048,    ssl_grp_ffdhe_3072};
-  }
-  
-  
-  else {
-    namedGroups = {ssl_grp_ec_curve25519, ssl_grp_ec_secp256r1,
-                   ssl_grp_ec_secp384r1, ssl_grp_ffdhe_2048,
-                   ssl_grp_ffdhe_3072};
-  }
-
-  rv = SSL_NamedGroupConfig(ssl_fd.get(), namedGroups.data(),
-                            std::size(namedGroups));
+  rv = SSL_NamedGroupConfig(ssl_fd.get(), namedGroups, numGroups);
 
   if (rv != SECSuccess) {
     MOZ_MTLOG(ML_ERROR, "Couldn't set named groups");
+    return false;
+  }
+
+  if (SECSuccess !=
+      SSL_SendAdditionalKeyShares(ssl_fd.get(), additional_shares)) {
+    MOZ_MTLOG(ML_ERROR, "Couldn't set up additional key shares");
     return false;
   }
 
