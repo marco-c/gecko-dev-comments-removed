@@ -30,6 +30,8 @@ const olderthansixmonths = today - DAY_MICROSEC * 31 * 7;
 
 
 
+
+
 async function task_populateDB(aArray) {
   
   for (let arrayItem of aArray) {
@@ -154,6 +156,8 @@ async function task_populateDB(aArray) {
 
 
 
+
+
 function queryData(obj) {
   this.isVisit = obj.isVisit ? obj.isVisit : false;
   this.isBookmark = obj.isBookmark ? obj.isBookmark : false;
@@ -193,6 +197,9 @@ function queryData(obj) {
 
 
 queryData.prototype = {};
+
+
+
 
 
 
@@ -282,6 +289,8 @@ function compareArrayToResult(aArray, aRoot) {
 
 
 
+
+
 function nodeInResult(aQueryData, aRoot) {
   var rv = null;
   var uri;
@@ -310,6 +319,8 @@ function nodeInResult(aQueryData, aRoot) {
   }
   return rv;
 }
+
+
 
 
 

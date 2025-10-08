@@ -3,6 +3,10 @@ var conn = PlacesUtils.history.DBConnection;
 
 
 
+
+
+
+
 function getColumn(table, column, url) {
   var stmt = conn.createStatement(
     `SELECT ${column} FROM ${table} WHERE url_hash = hash(:val) AND url = :val`

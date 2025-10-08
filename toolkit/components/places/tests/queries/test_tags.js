@@ -611,6 +611,10 @@ function queryURI(aQuery, aQueryOpts) {
 
 
 
+
+
+
+
 function setsAreEqual(aArr1, aArr2, aIsOrdered) {
   Assert.equal(aArr1.length, aArr2.length);
   if (aIsOrdered) {

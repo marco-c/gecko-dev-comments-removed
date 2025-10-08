@@ -1,6 +1,8 @@
 
 
 
+
+
 class CounterTracker {
   constructor() {
     this.tracked = new Map();
@@ -66,6 +68,8 @@ async function checkSyncFields(guid, expected) {
     );
   }
 }
+
+
 
 
 class TestCases {
@@ -285,6 +289,8 @@ class TestCases {
 
 
 
+
+
 class SyncTestCases extends TestCases {
   async createFolder(parentGuid, title, index) {
     let parentId = await PlacesTestUtils.promiseItemId(parentGuid);
@@ -330,6 +336,8 @@ async function findTagFolder(tag) {
   );
   return results.length ? results[0].getResultByName("guid") : null;
 }
+
+
 
 
 class AsyncTestCases extends TestCases {

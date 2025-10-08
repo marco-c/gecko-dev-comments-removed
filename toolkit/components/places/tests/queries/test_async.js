@@ -143,6 +143,9 @@ Test.prototype = {
 
 
 
+
+
+
   checkStateChanged(aState, aExpectedMin, aExpectedMax) {
     print(aState + " state change observed");
     if (!this.stateCounts.hasOwnProperty(aState)) {

@@ -11,6 +11,8 @@ const FINAL_URL =
 
 
 
+
+
 function promiseObserve(name) {
   return new Promise(resolve => {
     Services.obs.addObserver(function observer(subject) {

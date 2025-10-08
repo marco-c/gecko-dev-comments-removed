@@ -128,6 +128,9 @@ function notifyPlacesEvent(guid) {
   ]);
 }
 
+
+
+
 class Observer {
   constructor() {
     this.notifications = [];

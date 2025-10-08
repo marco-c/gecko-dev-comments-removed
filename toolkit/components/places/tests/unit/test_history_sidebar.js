@@ -137,6 +137,8 @@ add_task(async function task_fill_history() {
 
 
 
+
+
 function check_visit(aOffset) {
   let root = openRootForResultType(
     Ci.nsINavHistoryQueryOptions.RESULTS_AS_DATE_SITE_QUERY
@@ -341,6 +343,8 @@ add_task(async function test_RESULTS_AS_SITE_QUERY() {
   
   await PlacesUtils.bookmarks.remove(bookmark.guid);
 });
+
+
 
 
 

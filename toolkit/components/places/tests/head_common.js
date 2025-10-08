@@ -135,6 +135,7 @@ function DBConn(aForceNewConnection) {
 
 
 
+
 function readInputStreamData(aStream) {
   let bistream = Cc["@mozilla.org/binaryinputstream;1"].createInstance(
     Ci.nsIBinaryInputStream
@@ -725,6 +726,8 @@ function checkBookmarkObject(info) {
 
 
 
+
+
 async function foreign_count(url) {
   if (url instanceof Ci.nsIURI) {
     url = url.spec;
@@ -752,6 +755,10 @@ function compareAscending(a, b) {
 function sortBy(array, prop) {
   return array.sort((a, b) => compareAscending(a[prop], b[prop]));
 }
+
+
+
+
 
 
 

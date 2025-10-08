@@ -5,6 +5,8 @@
 
 
 
+
+
 function promiseVisitAdded(callback) {
   return new Promise(resolve => {
     async function listener(events) {
@@ -17,6 +19,10 @@ function promiseVisitAdded(callback) {
     PlacesObservers.addListener(["page-visited"], listener);
   });
 }
+
+
+
+
 
 
 
