@@ -42,17 +42,17 @@ const TEST_URI = "<h1 style='color: red'>Header</h1>";
 
 add_task(async function () {
   await addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
-  const { toolbox, inspector, view } = await openRuleView();
+  const { inspector, view } = await openRuleView();
 
   info("Test autocompletion after 1st page load");
-  await runAutocompletionTest(toolbox, inspector, view);
+  await runAutocompletionTest(inspector, view);
 
   info("Test autocompletion after page navigation");
   await reloadBrowser();
-  await runAutocompletionTest(toolbox, inspector, view);
+  await runAutocompletionTest(inspector, view);
 });
 
-async function runAutocompletionTest(toolbox, inspector, view) {
+async function runAutocompletionTest(inspector, view) {
   info("Selecting the test node");
   await selectNode("h1", inspector);
 
@@ -75,40 +75,39 @@ async function testCompletion(
   editor,
   view
 ) {
-  info("Pressing key " + key);
-  info("Expecting " + completion);
-  info("Is popup opened: " + open);
-  info("Is item selected: " + selected);
+  info(
+    `Pressing key "${key}", expecting "${completion}", popup opened: ${open}, item selected: ${selected}`
+  );
 
-  let onDone;
+  const promises = [];
+
   if (change) {
     
     
     
-    onDone = view.once("ruleview-changed");
-  } else {
+    promises.push(view.once("ruleview-changed"));
+  } else if (key !== "VK_RIGHT" && key !== "VK_BACK_SPACE") {
     
-    
-    onDone =
-      key !== "VK_RIGHT" && key !== "VK_BACK_SPACE"
-        ? editor.once("after-suggest")
-        : null;
+    promises.push(editor.once("after-suggest"));
   }
 
-  info("Synthesizing key " + key + ", modifiers: " + Object.keys(modifiers));
+  if (editor.popup.isOpen !== open) {
+    
+    
+    
+    promises.push(editor.popup.once(open ? "popup-opened" : "popup-closed"));
+  }
 
-  
-  const popupEvent = open ? "popup-opened" : "popup-closed";
-  const onPopupEvent =
-    editor.popup.isOpen !== open ? once(editor.popup, popupEvent) : null;
-
+  info(
+    `Synthesizing key "${key}", modifiers: ${JSON.stringify(Object.keys(modifiers))}`
+  );
   EventUtils.synthesizeKey(key, modifiers, view.styleWindow);
 
   
   view.debounce.flush();
 
-  await onDone;
-  await onPopupEvent;
+  
+  await Promise.all(promises);
 
   
   
@@ -116,6 +115,11 @@ async function testCompletion(
 
   info("Checking the state");
   if (completion !== null) {
+    try {
+      await waitFor(() => editor.input.value === completion);
+    } catch (e) {
+      
+    }
     is(editor.input.value, completion, "Correct value is autocompleted");
   }
 
