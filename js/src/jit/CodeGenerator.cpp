@@ -6957,8 +6957,61 @@ void CodeGenerator::emitCallInvokeFunction(T* apply) {
 
 
 
-void CodeGenerator::emitAllocateSpaceForApply(Register argcreg,
+template <typename T>
+void CodeGenerator::emitAllocateSpaceForApply(T* apply, Register calleeReg,
+                                              Register argcreg,
                                               Register scratch) {
+  Label* oolRejoin = nullptr;
+  bool canUnderflow =
+      !apply->hasSingleTarget() || apply->getSingleTarget()->nargs() > 0;
+
+  if (canUnderflow) {
+    auto* ool = new (alloc()) LambdaOutOfLineCode([=](OutOfLineCode& ool) {
+      
+      
+      
+      
+      if (apply->hasSingleTarget()) {
+        uint32_t nargs = apply->getSingleTarget()->nargs();
+        uint32_t numSlots = JitStackValueAlignment == 1 ? nargs : nargs | 1;
+        masm.subFromStackPtr(Imm32((numSlots) * sizeof(Value)));
+        masm.move32(Imm32(nargs), scratch);
+      } else {
+        
+        if (JitStackValueAlignment > 1) {
+          masm.orPtr(Imm32(1), scratch);
+        }
+        masm.lshiftPtr(Imm32(ValueShift), scratch);
+        masm.subFromStackPtr(scratch);
+        masm.rshiftPtr(Imm32(ValueShift), scratch);
+      }
+
+      
+      Label loop;
+      masm.bind(&loop);
+      masm.sub32(Imm32(1), scratch);
+      masm.storeValue(UndefinedValue(),
+                      BaseValueIndex(masm.getStackPointer(), scratch));
+      masm.branch32(Assembler::Above, scratch, argcreg, &loop);
+      masm.jump(ool.rejoin());
+    });
+    addOutOfLineCode(ool, apply->mir());
+    oolRejoin = ool->rejoin();
+
+    Label noUnderflow;
+    if (apply->hasSingleTarget()) {
+      masm.branch32(Assembler::AboveOrEqual, argcreg,
+                    Imm32(apply->getSingleTarget()->nargs()), &noUnderflow);
+    } else {
+      masm.branchTestObjIsFunction(Assembler::NotEqual, calleeReg, scratch,
+                                   calleeReg, &noUnderflow);
+      masm.loadFunctionArgCount(calleeReg, scratch);
+      masm.branch32(Assembler::AboveOrEqual, argcreg, scratch, &noUnderflow);
+    }
+    masm.branchIfFunctionHasJitEntry(calleeReg, ool->entry());
+    masm.bind(&noUnderflow);
+  }
+
   
   masm.movePtr(argcreg, scratch);
 
@@ -7001,6 +7054,10 @@ void CodeGenerator::emitAllocateSpaceForApply(Register argcreg,
     masm.bind(&noPaddingNeeded);
   }
 #endif
+
+  if (canUnderflow) {
+    masm.bind(oolRejoin);
+  }
 }
 
 
@@ -7123,13 +7180,14 @@ void CodeGenerator::emitPushArguments(Register argcreg, Register scratch,
 
 void CodeGenerator::emitPushArguments(LApplyArgsGeneric* apply) {
   
+  Register funcreg = ToRegister(apply->getFunction());
   Register argcreg = ToRegister(apply->getArgc());
   Register copyreg = ToRegister(apply->getTempObject());
   Register scratch = ToRegister(apply->getTempForArgCopy());
   uint32_t extraFormals = apply->numExtraFormals();
 
   
-  emitAllocateSpaceForApply(argcreg, scratch);
+  emitAllocateSpaceForApply(apply, funcreg, argcreg, scratch);
 
   emitPushArguments(argcreg, scratch, copyreg, extraFormals);
 
@@ -7138,6 +7196,7 @@ void CodeGenerator::emitPushArguments(LApplyArgsGeneric* apply) {
 }
 
 void CodeGenerator::emitPushArguments(LApplyArgsObj* apply) {
+  Register function = ToRegister(apply->getFunction());
   Register argsObj = ToRegister(apply->getArgsObj());
   Register tmpArgc = ToRegister(apply->getTempObject());
   Register scratch = ToRegister(apply->getTempForArgCopy());
@@ -7149,7 +7208,7 @@ void CodeGenerator::emitPushArguments(LApplyArgsObj* apply) {
   masm.loadArgumentsObjectLength(argsObj, tmpArgc);
 
   
-  emitAllocateSpaceForApply(tmpArgc, scratch);
+  emitAllocateSpaceForApply(apply, function, tmpArgc, scratch);
 
   
   masm.loadPrivate(Address(argsObj, ArgumentsObject::getDataSlotOffset()),
@@ -7215,6 +7274,7 @@ void CodeGenerator::emitPushArrayAsArguments(Register tmpArgc,
 }
 
 void CodeGenerator::emitPushArguments(LApplyArrayGeneric* apply) {
+  Register function = ToRegister(apply->getFunction());
   Register elements = ToRegister(apply->getElements());
   Register tmpArgc = ToRegister(apply->getTempObject());
   Register scratch = ToRegister(apply->getTempForArgCopy());
@@ -7230,7 +7290,7 @@ void CodeGenerator::emitPushArguments(LApplyArrayGeneric* apply) {
   masm.load32(Address(elements, ObjectElements::offsetOfLength()), tmpArgc);
 
   
-  emitAllocateSpaceForApply(tmpArgc, scratch);
+  emitAllocateSpaceForApply(apply, function, tmpArgc, scratch);
 
   
   size_t elementsOffset = 0;
@@ -7362,33 +7422,36 @@ void CodeGenerator::emitApplyGeneric(T* apply) {
     masm.PushCalleeToken(calleereg, constructing);
     masm.PushFrameDescriptorForJitCall(FrameType::IonJS, argcreg, scratch);
 
-    Label underflow, rejoin;
-
     
-    if (!apply->hasSingleTarget()) {
-      Register nformals = scratch;
-      masm.loadFunctionArgCount(calleereg, nformals);
-      masm.branch32(Assembler::Below, argcreg, nformals, &underflow);
-    } else {
-      masm.branch32(Assembler::Below, argcreg,
-                    Imm32(apply->getSingleTarget()->nargs()), &underflow);
-    }
-
-    
-    
-    masm.jump(&rejoin);
-
-    
-    {
-      masm.bind(&underflow);
+    if (constructing) {
+      Label underflow, rejoin;
 
       
-      TrampolinePtr argumentsRectifier =
-          gen->jitRuntime()->getArgumentsRectifier();
-      masm.movePtr(argumentsRectifier, objreg);
-    }
+      if (!apply->hasSingleTarget()) {
+        Register nformals = scratch;
+        masm.loadFunctionArgCount(calleereg, nformals);
+        masm.branch32(Assembler::Below, argcreg, nformals, &underflow);
+      } else {
+        masm.branch32(Assembler::Below, argcreg,
+                      Imm32(apply->getSingleTarget()->nargs()), &underflow);
+      }
 
-    masm.bind(&rejoin);
+      
+      
+      masm.jump(&rejoin);
+
+      
+      {
+        masm.bind(&underflow);
+
+        
+        TrampolinePtr argumentsRectifier =
+            gen->jitRuntime()->getArgumentsRectifier();
+        masm.movePtr(argumentsRectifier, objreg);
+      }
+
+      masm.bind(&rejoin);
+    }
 
     
     
