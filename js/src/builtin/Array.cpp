@@ -5550,14 +5550,14 @@ ArrayObject* js::NewDenseCopiedArray(
 
 
 ArrayObject* js::NewDenseCopiedArray(
-    JSContext* cx, uint32_t length, JSLinearString** values,
+    JSContext* cx, uint32_t length, IteratorProperty* props,
     NewObjectKind newKind ) {
   ArrayObject* arr = NewArray<UINT32_MAX>(cx, length, newKind);
   if (!arr) {
     return nullptr;
   }
 
-  arr->initDenseElements(values, length);
+  arr->initDenseElements(props, length);
   return arr;
 }
 

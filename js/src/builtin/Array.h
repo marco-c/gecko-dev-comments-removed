@@ -22,6 +22,7 @@ class TrampolineNativeFrameLayout;
 }
 
 class ArrayObject;
+class IteratorProperty;
 
 MOZ_ALWAYS_INLINE bool IdIsIndex(jsid id, uint32_t* indexp) {
   if (id.isInt()) {
@@ -80,7 +81,7 @@ extern ArrayObject* NewDenseCopiedArray(JSContext* cx, uint32_t length,
 
 
 extern ArrayObject* NewDenseCopiedArray(JSContext* cx, uint32_t length,
-                                        JSLinearString** values,
+                                        IteratorProperty* props,
                                         NewObjectKind newKind = GenericObject);
 
 

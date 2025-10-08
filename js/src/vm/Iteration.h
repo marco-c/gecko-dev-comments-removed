@@ -214,6 +214,34 @@ enum class NativeIteratorIndices : uint32_t {
   Valid = 3
 };
 
+class IteratorProperty {
+  uintptr_t raw_ = 0;
+
+ public:
+  static constexpr uintptr_t DeletedBit = 0x1;
+
+  
+  
+  
+  
+  IteratorProperty(const IteratorProperty&) = delete;
+
+  IteratorProperty() = default;
+  explicit IteratorProperty(JSLinearString* str) : raw_(uintptr_t(str)) {}
+  IteratorProperty(JSLinearString* str, bool deleted)
+      : raw_(uintptr_t(str) | (deleted ? DeletedBit : 0)) {}
+
+  JSLinearString* asString() const {
+    return reinterpret_cast<JSLinearString*>(raw_ & ~DeletedBit);
+  }
+
+  bool deleted() const { return raw_ & DeletedBit; }
+  void markDeleted() { raw_ |= DeletedBit; }
+  void clearDeleted() { raw_ &= ~DeletedBit; }
+
+  void traceString(JSTracer* trc);
+} JS_HAZ_GC_POINTER;
+
 struct NativeIterator : public NativeIteratorListNode {
  private:
   
@@ -234,14 +262,18 @@ struct NativeIterator : public NativeIteratorListNode {
   
   
   
-  GCPtr<JSLinearString*>* propertyCursor_;  
+  
+  
+  
+  
+  
+  IteratorProperty* propertyCursor_;  
 
   
   
   
   
-  
-  GCPtr<JSLinearString*>* propertiesEnd_;  
+  IteratorProperty* propertiesEnd_;  
 
   HashNumber shapesHash_;  
 
@@ -361,15 +393,15 @@ struct NativeIterator : public NativeIteratorListNode {
     return mozilla::PointerRangeSize(shapesBegin(), shapesEnd());
   }
 
-  GCPtr<JSLinearString*>* propertiesBegin() const {
+  IteratorProperty* propertiesBegin() const {
     static_assert(
-        alignof(GCPtr<Shape*>) >= alignof(GCPtr<JSLinearString*>),
-        "GCPtr<JSLinearString*>s for properties must be able to appear "
+        alignof(GCPtr<Shape*>) >= alignof(IteratorProperty),
+        "IteratorPropertys for properties must be able to appear "
         "directly after any GCPtr<Shape*>s after this NativeIterator, "
         "with no padding space required for correct alignment");
     static_assert(
-        alignof(NativeIterator) >= alignof(GCPtr<JSLinearString*>),
-        "GCPtr<JSLinearString*>s for properties must be able to appear "
+        alignof(NativeIterator) >= alignof(IteratorProperty),
+        "IteratorPropertys for properties must be able to appear "
         "directly after this NativeIterator when no GCPtr<Shape*>s are "
         "present, with no padding space required for correct "
         "alignment");
@@ -383,17 +415,17 @@ struct NativeIterator : public NativeIteratorListNode {
                "isn't necessarily the start of properties and instead "
                "|propertyCursor_| is");
 
-    return reinterpret_cast<GCPtr<JSLinearString*>*>(shapesEnd_);
+    return reinterpret_cast<IteratorProperty*>(shapesEnd_);
   }
 
-  GCPtr<JSLinearString*>* propertiesEnd() const { return propertiesEnd_; }
+  IteratorProperty* propertiesEnd() const { return propertiesEnd_; }
 
-  GCPtr<JSLinearString*>* nextProperty() const { return propertyCursor_; }
+  IteratorProperty* nextProperty() const { return propertyCursor_; }
 
   PropertyIndex* indicesBegin() const {
     
     
-    static_assert(alignof(GCPtr<JSLinearString*>) >= alignof(PropertyIndex));
+    static_assert(alignof(IteratorProperty) >= alignof(PropertyIndex));
     return reinterpret_cast<PropertyIndex*>(propertiesEnd_);
   }
 
@@ -403,14 +435,17 @@ struct NativeIterator : public NativeIteratorListNode {
   }
 
   MOZ_ALWAYS_INLINE JS::Value nextIteratedValueAndAdvance() {
-    if (propertyCursor_ >= propertiesEnd_) {
-      MOZ_ASSERT(propertyCursor_ == propertiesEnd_);
-      return JS::MagicValue(JS_NO_ITER_VALUE);
+    while (propertyCursor_ < propertiesEnd_) {
+      IteratorProperty& prop = *propertyCursor_;
+      incCursor();
+      if (prop.deleted()) {
+        continue;
+      }
+      return JS::StringValue(prop.asString());
     }
 
-    JSLinearString* str = *propertyCursor_;
-    incCursor();
-    return JS::StringValue(str);
+    MOZ_ASSERT(propertyCursor_ == propertiesEnd_);
+    return JS::MagicValue(JS_NO_ITER_VALUE);
   }
 
   void resetPropertyCursorForReuse() {
@@ -422,30 +457,27 @@ struct NativeIterator : public NativeIteratorListNode {
     
 
     
+    if (hasUnvisitedPropertyDeletion()) {
+      for (IteratorProperty* prop = propertiesBegin(); prop < propertiesEnd();
+           prop++) {
+        prop->clearDeleted();
+      }
+      unmarkHasUnvisitedPropertyDeletion();
+    }
+
+    
     
     propertyCursor_ = propertiesBegin();
   }
 
   bool previousPropertyWas(JS::Handle<JSLinearString*> str) {
     MOZ_ASSERT(isInitialized());
-    return propertyCursor_ > propertiesBegin() && propertyCursor_[-1] == str;
+    return propertyCursor_ > propertiesBegin() &&
+           propertyCursor_[-1].asString() == str;
   }
 
   size_t numKeys() const {
     return mozilla::PointerRangeSize(propertiesBegin(), propertiesEnd());
-  }
-
-  void trimLastProperty() {
-    MOZ_ASSERT(isInitialized());
-    propertiesEnd_--;
-
-    
-    
-    
-    *propertiesEnd_ = nullptr;
-
-    
-    disableIndices();
   }
 
   JSObject* iterObj() const { return iterObj_; }
@@ -566,6 +598,20 @@ struct NativeIterator : public NativeIteratorListNode {
     MOZ_ASSERT(!isEmptyIteratorSingleton());
 
     flagsAndCount_ |= Flags::HasUnvisitedPropertyDeletion;
+  }
+
+  void unmarkHasUnvisitedPropertyDeletion() {
+    MOZ_ASSERT(isInitialized());
+    MOZ_ASSERT(!isEmptyIteratorSingleton());
+    MOZ_ASSERT(hasUnvisitedPropertyDeletion());
+
+    flagsAndCount_ &= ~Flags::HasUnvisitedPropertyDeletion;
+  }
+
+  bool hasUnvisitedPropertyDeletion() const {
+    MOZ_ASSERT(isInitialized());
+
+    return flags() & Flags::HasUnvisitedPropertyDeletion;
   }
 
   bool hasValidIndices() const {

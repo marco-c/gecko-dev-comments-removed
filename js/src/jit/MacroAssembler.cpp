@@ -9510,7 +9510,8 @@ void MacroAssembler::iteratorMore(Register obj, ValueOperand output,
 
   
   
-  Label iterDone;
+  Label iterDone, restart;
+  bind(&restart);
   Address cursorAddr(outputScratch, NativeIterator::offsetOfPropertyCursor());
   Address cursorEndAddr(outputScratch, NativeIterator::offsetOfPropertiesEnd());
   loadPtr(cursorAddr, temp);
@@ -9520,7 +9521,11 @@ void MacroAssembler::iteratorMore(Register obj, ValueOperand output,
   loadPtr(Address(temp, 0), temp);
 
   
-  addPtr(Imm32(sizeof(GCPtr<JSLinearString*>)), cursorAddr);
+  addPtr(Imm32(sizeof(IteratorProperty)), cursorAddr);
+
+  
+  branchTestPtr(Assembler::NonZero, temp,
+                Imm32(uint32_t(IteratorProperty::DeletedBit)), &restart);
 
   tagValue(JSVAL_TYPE_STRING, temp, output);
   jump(&done);
@@ -9535,16 +9540,13 @@ void MacroAssembler::iteratorClose(Register obj, Register temp1, Register temp2,
                                    Register temp3) {
   LoadNativeIterator(*this, obj, temp1);
 
+  Address flagsAddr(temp1, NativeIterator::offsetOfFlagsAndCount());
+
   
   
   Label done;
-  branchTest32(Assembler::NonZero,
-               Address(temp1, NativeIterator::offsetOfFlagsAndCount()),
+  branchTest32(Assembler::NonZero, flagsAddr,
                Imm32(NativeIterator::Flags::IsEmptyIteratorSingleton), &done);
-
-  
-  and32(Imm32(~NativeIterator::Flags::Active),
-        Address(temp1, NativeIterator::offsetOfFlagsAndCount()));
 
   
   Address iterObjAddr(temp1, NativeIterator::offsetOfObjectBeingIterated());
@@ -9554,6 +9556,26 @@ void MacroAssembler::iteratorClose(Register obj, Register temp1, Register temp2,
   
   loadPtr(Address(temp1, NativeIterator::offsetOfShapesEnd()), temp2);
   storePtr(temp2, Address(temp1, NativeIterator::offsetOfPropertyCursor()));
+
+  
+  Label clearDeletedLoopStart, clearDeletedLoopEnd;
+  branchTest32(Assembler::Zero, flagsAddr,
+               Imm32(NativeIterator::Flags::HasUnvisitedPropertyDeletion),
+               &clearDeletedLoopEnd);
+
+  loadPtr(Address(temp1, NativeIterator::offsetOfPropertiesEnd()), temp3);
+
+  bind(&clearDeletedLoopStart);
+  and32(Imm32(~uint32_t(IteratorProperty::DeletedBit)), Address(temp2, 0));
+  addPtr(Imm32(sizeof(IteratorProperty)), temp2);
+  branchPtr(Assembler::Below, temp2, temp3, &clearDeletedLoopStart);
+
+  bind(&clearDeletedLoopEnd);
+
+  
+  and32(Imm32(~(NativeIterator::Flags::Active |
+                NativeIterator::Flags::HasUnvisitedPropertyDeletion)),
+        flagsAddr);
 
   
   const Register next = temp2;
