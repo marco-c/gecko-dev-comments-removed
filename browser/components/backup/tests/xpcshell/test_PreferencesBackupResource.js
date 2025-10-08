@@ -276,6 +276,8 @@ add_task(async function test_backup_private_browsing() {
 
 
 
+
+
 async function checkPrefsJsHasValidRecoveryTime(prefsJsPath) {
   Assert.equal(
     Services.prefs.getPrefType("browser.backup.profile-restoration-date"),
