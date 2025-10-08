@@ -1204,6 +1204,14 @@ Relation RemoteAccessible::RelationByType(RelationType aType) const {
 
       if (auto maybeIds = aAcc->mCachedFields->GetAttribute<nsTArray<uint64_t>>(
               data.mAtom)) {
+        if (data.mAtom == nsGkAtoms::target) {
+          if (!maybeIds->IsEmpty() &&
+              !nsAccUtils::IsValidDetailsTargetForAnchor(
+                  aAcc->mDoc->GetAccessible(maybeIds->ElementAt(0)), aAcc)) {
+            continue;
+          }
+        }
+
         
         
         return maybeIds;

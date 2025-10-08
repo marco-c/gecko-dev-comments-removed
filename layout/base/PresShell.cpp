@@ -12126,6 +12126,12 @@ void PresShell::RemoveAnchorPosAnchor(const nsAtom* aName, nsIFrame* aFrame) {
     return;  
   }
 
+#ifdef ACCESSIBILITY
+  if (nsAccessibilityService* accService = GetAccService()) {
+    accService->NotifyAnchorRemoved(this, aFrame);
+  }
+#endif
+
   auto& anchorArray = entry.Data();
 
   

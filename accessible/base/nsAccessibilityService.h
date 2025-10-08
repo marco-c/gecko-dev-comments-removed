@@ -270,6 +270,23 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
 
 
 
+
+
+  void NotifyAnchorPositionedRemoved(mozilla::PresShell* aPresShell,
+                                     nsIFrame* aFrame);
+
+  
+
+
+
+
+
+  void NotifyAnchorRemoved(mozilla::PresShell* aPresShell, nsIFrame* aFrame);
+
+  
+
+
+
   void NotifyAttrElementWillChange(mozilla::dom::Element* aElement,
                                    nsAtom* aAttr);
 
