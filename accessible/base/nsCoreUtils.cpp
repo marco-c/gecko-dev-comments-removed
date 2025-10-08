@@ -725,6 +725,12 @@ nsIFrame* nsCoreUtils::GetPositionedFrameForAnchor(
         
         const auto* referencedAnchors =
             frame->GetProperty(nsIFrame::AnchorPosReferences());
+        if (!referencedAnchors) {
+          
+          
+          
+          continue;
+        }
         const auto* data = referencedAnchors->Lookup(name.AsAtom());
         if (data && *data && data->ref().mOrigin) {
           if (aAnchorFrame ==
