@@ -2,7 +2,9 @@
 
 
 
-import { PROMISE } from "../utils/middleware/promise";
+const {
+  PROMISE,
+} = require("resource://devtools/client/shared/redux/middleware/promise.js");
 import {
   getSourceTextContentForSource,
   getSettledSourceTextContent,
