@@ -164,4 +164,7 @@ MOZ_JEMALLOC_API void GetPHCStats(PHCStats& aStats);
 }  
 }  
 
+
+void phc_init();
+
 #endif 

@@ -1446,7 +1446,6 @@ PtrKind PHC::GetPtrKind(const void* aPtr) {
 
 
 
-
 alignas(kCacheLineSize) PHCRegion PHC::sRegion;
 PHC* PHC::sPHC;
 
@@ -1484,13 +1483,19 @@ class AutoDisableOnCurrentThread {
 
 
 
-static bool phc_init() {
+
+
+
+void phc_init() {
+  
+  MOZ_ASSERT(!PHC::sPHC);
+
   if (GetKernelPageSize() != kPageSize) {
-    return false;
+    return;
   }
 
   if (!PHC::sRegion.AllocVirtualAddresses()) {
-    return false;
+    return;
   }
 
   
@@ -1502,20 +1507,6 @@ static bool phc_init() {
   
   pthread_atfork(PHC::prefork, PHC::postfork_parent, PHC::postfork_child);
 #endif
-
-  return true;
-}
-
-static inline bool maybe_init() {
-  
-  
-  if (MOZ_UNLIKELY(!PHC::sPHC)) {
-    
-    static bool sInitSuccess = []() { return phc_init(); }();
-    return sInitSuccess;
-  }
-
-  return true;
 }
 
 
@@ -1526,7 +1517,7 @@ static inline bool maybe_init() {
 
 
 static MOZ_ALWAYS_INLINE bool ShouldPageAllocHot(size_t aReqSize) {
-  if (MOZ_UNLIKELY(!maybe_init())) {
+  if (MOZ_UNLIKELY(!PHC::sPHC)) {
     return false;
   }
 
@@ -1741,7 +1732,7 @@ inline void* MozJemallocPHC::calloc(size_t aNum, size_t aReqSize) {
 }
 
 MOZ_ALWAYS_INLINE static bool FastIsPHCPtr(const void* aPtr) {
-  if (MOZ_UNLIKELY(!maybe_init())) {
+  if (MOZ_UNLIKELY(!PHC::sPHC)) {
     return false;
   }
 
@@ -2016,7 +2007,7 @@ inline void MozJemallocPHC::jemalloc_stats_internal(
     jemalloc_stats_t* aStats, jemalloc_bin_stats_t* aBinStats) {
   MozJemalloc::jemalloc_stats_internal(aStats, aBinStats);
 
-  if (!maybe_init()) {
+  if (!PHC::sPHC) {
     
     
     return;
@@ -2210,7 +2201,7 @@ void SetPHCSize(size_t aSizeBytes) {
 }
 
 void GetPHCStats(PHCStats& aStats) {
-  if (!maybe_init()) {
+  if (!PHC::sPHC) {
     aStats = PHCStats();
     return;
   }
@@ -2221,7 +2212,7 @@ void GetPHCStats(PHCStats& aStats) {
 
 
 void SetPHCState(PHCState aState) {
-  if (!maybe_init()) {
+  if (!PHC::sPHC) {
     return;
   }
 
@@ -2230,7 +2221,7 @@ void SetPHCState(PHCState aState) {
 
 void SetPHCProbabilities(int64_t aAvgDelayFirst, int64_t aAvgDelayNormal,
                          int64_t aAvgDelayPageReuse) {
-  if (!maybe_init()) {
+  if (!PHC::sPHC) {
     return;
   }
 

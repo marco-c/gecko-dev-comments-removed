@@ -4084,6 +4084,11 @@ static bool malloc_init_hard() {
                  _malloc_postfork_child);
 #endif
 
+#ifdef MOZ_PHC
+  
+  phc_init();
+#endif
+
   return true;
 }
 
