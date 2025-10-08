@@ -942,10 +942,6 @@ long AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
   GraphTime nextStateComputedTime =
       MediaTrackGraphImpl::RoundUpToEndOfAudioBlock(mStateComputedTime +
                                                     mBuffer.Available());
-  TRACE_AUDIO_CALLBACK_FRAME_COUNT("AudioCallbackDriver graph advance",
-                                   nextStateComputedTime - mStateComputedTime,
-                                   mSampleRate);
-
   auto iterationStart = mIterationEnd;
   
   
