@@ -3589,7 +3589,6 @@ void nsHttpTransaction::OnFastFallbackTimer() {
 void nsHttpTransaction::HandleFallback(
     nsHttpConnectionInfo* aFallbackConnInfo) {
   if (mConnection) {
-    MOZ_ASSERT(mActivated);
     
     
     mConnection->CloseTransaction(this, NS_ERROR_NET_RESET);
