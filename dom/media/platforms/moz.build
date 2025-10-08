@@ -111,8 +111,6 @@ if CONFIG["MOZ_APPLEMEDIA"]:
         
         
         "-Wl,-U,_VTRegisterSupplementalVideoDecoderIfAvailable",
-        
-        "-Wl,-U,_VTIsHardwareDecodeSupported",
     ]
 
 include("/ipc/chromium/chromium-config.mozbuild")

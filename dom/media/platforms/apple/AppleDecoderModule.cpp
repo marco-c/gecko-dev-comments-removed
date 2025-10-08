@@ -24,8 +24,6 @@ extern "C" {
 
 extern void VTRegisterSupplementalVideoDecoderIfAvailable(
     CMVideoCodecType codecType) __attribute__((weak_import));
-extern Boolean VTIsHardwareDecodeSupported(CMVideoCodecType codecType)
-    __attribute__((weak_import));
 }
 
 namespace mozilla {
@@ -240,10 +238,6 @@ bool AppleDecoderModule::IsVideoSupported(
 bool AppleDecoderModule::CanCreateHWDecoder(const MediaCodec& aCodec) {
   
   if (!gfx::gfxVars::CanUseHardwareVideoDecoding() || XRE_IsUtilityProcess()) {
-    return false;
-  }
-
-  if (!VTIsHardwareDecodeSupported) {
     return false;
   }
 
