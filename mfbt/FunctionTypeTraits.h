@@ -8,7 +8,6 @@
 #define mozilla_FunctionTypeTraits_h
 
 #include <cstddef> 
-#include <tuple>
 
 namespace mozilla {
 
@@ -40,73 +39,71 @@ struct FunctionTypeTraits;
 
 
 template <typename T>
-struct FunctionTypeTraits<T&> : public FunctionTypeTraits<T> {};
+struct FunctionTypeTraits<T&> : FunctionTypeTraits<T> {};
 template <typename T>
-struct FunctionTypeTraits<T&&> : public FunctionTypeTraits<T> {};
+struct FunctionTypeTraits<T&&> : FunctionTypeTraits<T> {};
 template <typename T>
-struct FunctionTypeTraits<T*> : public FunctionTypeTraits<T> {};
+struct FunctionTypeTraits<T*> : FunctionTypeTraits<T> {};
 
 
 template <typename T>
-struct FunctionTypeTraits
-    : public FunctionTypeTraits<decltype(&T::operator())> {};
+struct FunctionTypeTraits : FunctionTypeTraits<decltype(&T::operator())> {};
 
 namespace detail {
-
-
-
-template <bool safe, size_t N, typename... As>
-struct TupleElementSafe;
 template <size_t N, typename... As>
-struct TupleElementSafe<true, N, As...> {
-  using Type = typename std::tuple_element<N, std::tuple<As...>>::type;
-};
-template <size_t N, typename... As>
-struct TupleElementSafe<false, N, As...> {
-  using Type = void;
+struct SafePackElement;
+
+template <size_t N>
+struct SafePackElement<N> {
+  using type = void;
 };
 
-template <typename R, typename... As>
-struct FunctionTypeTraitsHelper {
-  using ReturnType = R;
-  static constexpr size_t arity = sizeof...(As);
-  template <size_t N>
-  using ParameterType =
-      typename TupleElementSafe<(N < sizeof...(As)), N, As...>::Type;
+template <typename A, typename... As>
+struct SafePackElement<0, A, As...> {
+  using type = A;
 };
+
+template <size_t N, typename A, typename... As>
+struct SafePackElement<N, A, As...> : SafePackElement<N - 1, As...> {};
+
+template <size_t N, typename... As>
+using SafePackElementType = typename SafePackElement<N, As...>::type;
 
 }  
 
 
 template <typename R, typename... As>
-struct FunctionTypeTraits<R(As...)>
-    : detail::FunctionTypeTraitsHelper<R, As...> {};
+struct FunctionTypeTraits<R(As...)> {
+  using ReturnType = R;
+  static constexpr size_t arity = sizeof...(As);
+  template <size_t N>
+  using ParameterType = detail::SafePackElementType<N, As...>;
+};
 
 
 template <typename C, typename R, typename... As>
-struct FunctionTypeTraits<R (C::*)(As...)>
-    : detail::FunctionTypeTraitsHelper<R, As...> {};
+struct FunctionTypeTraits<R (C::*)(As...)> : FunctionTypeTraits<R(As...)> {};
 
 
 template <typename C, typename R, typename... As>
 struct FunctionTypeTraits<R (C::*)(As...) const>
-    : detail::FunctionTypeTraitsHelper<R, As...> {};
+    : FunctionTypeTraits<R(As...)> {};
 
 #ifdef NS_HAVE_STDCALL
 
 template <typename R, typename... As>
-struct FunctionTypeTraits<R NS_STDCALL(As...)>
-    : detail::FunctionTypeTraitsHelper<R, As...> {};
+struct FunctionTypeTraits<R NS_STDCALL(As...)> : FunctionTypeTraits<R(As...)> {
+};
 
 
 template <typename C, typename R, typename... As>
 struct FunctionTypeTraits<R (NS_STDCALL C::*)(As...)>
-    : detail::FunctionTypeTraitsHelper<R, As...> {};
+    : FunctionTypeTraits<R(As...)> {};
 
 
 template <typename C, typename R, typename... As>
 struct FunctionTypeTraits<R (NS_STDCALL C::*)(As...) const>
-    : detail::FunctionTypeTraitsHelper<R, As...> {};
+    : FunctionTypeTraits<R(As...)> {};
 #endif  
 
 }  
