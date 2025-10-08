@@ -543,9 +543,9 @@ void nsHttpChannel::ReleaseMainThreadOnlyReferences() {
 nsresult nsHttpChannel::Init(nsIURI* uri, uint32_t caps, nsProxyInfo* proxyInfo,
                              uint32_t proxyResolveFlags, nsIURI* proxyURI,
                              uint64_t channelId, nsILoadInfo* aLoadInfo) {
+  LOG1(("nsHttpChannel::Init [this=%p]\n", this));
   nsresult rv = HttpBaseChannel::Init(uri, caps, proxyInfo, proxyResolveFlags,
                                       proxyURI, channelId, aLoadInfo);
-  LOG1(("nsHttpChannel::Init [this=%p]\n", this));
 
   return rv;
 }
@@ -629,6 +629,64 @@ bool nsHttpChannel::StorageAccessReloadedChannel() {
 
 nsresult nsHttpChannel::PrepareToConnect() {
   LOG(("nsHttpChannel::PrepareToConnect [this=%p]\n", this));
+
+  
+  
+  
+  bool async;
+  AUTO_PROFILER_FLOW_MARKER("nsHttpHandler::AddAcceptAndDictionaryHeaders",
+                            NETWORK, Flow::FromPointer(this));
+  nsresult rv = gHttpHandler->AddAcceptAndDictionaryHeaders(
+      mURI, mLoadInfo->GetExternalContentPolicyType(), &mRequestHead, IsHTTPS(),
+      async,
+      [self = RefPtr(this)](bool aNeedsResume, DictionaryCacheEntry* aDict) {
+        self->mDictDecompress = aDict;
+        if (aNeedsResume) {
+          LOG_DICTIONARIES(("Resuming after getting Dictionary headers"));
+          self->Resume();
+        }
+        if (self->mDictDecompress) {
+          LOG_DICTIONARIES(
+              ("Added dictionary header for %p, DirectoryCacheEntry %p",
+               self.get(), aDict));
+          AUTO_PROFILER_FLOW_MARKER(
+              "nsHttpHandler::AddAcceptAndDictionaryHeaders Add "
+              "Available-Dictionary",
+              NETWORK, Flow::FromPointer(self));
+          
+          self->mDictDecompress->InUse();
+          self->mUsingDictionary = true;
+          PROFILER_MARKER("Dictionary Prefetch", NETWORK,
+                          MarkerTiming::IntervalStart(), FlowMarker,
+                          Flow::FromPointer(self));
+          return NS_SUCCEEDED(self->mDictDecompress->Prefetch(
+              GetLoadContextInfo(self), self->mShouldSuspendForDictionary,
+              [self]() {
+                
+                
+                MOZ_ASSERT(self->mDictDecompress->DictionaryReady());
+                if (self->mSuspendedForDictionary) {
+                  LOG(
+                      ("nsHttpChannel::SetupChannelForTransaction [this=%p] "
+                       "Resuming channel "
+                       "suspended for Dictionary",
+                       self.get()));
+                  self->mSuspendedForDictionary = false;
+                  self->Resume();
+                }
+                PROFILER_MARKER("Dictionary Prefetch", NETWORK,
+                                MarkerTiming::IntervalEnd(), FlowMarker,
+                                Flow::FromPointer(self));
+              }));
+        }
+        return true;
+      });
+  if (NS_FAILED(rv)) return rv;
+  if (async) {
+    
+    LOG_DICTIONARIES(("Suspending to get Dictionary headers"));
+    Suspend();
+  }
 
   
   gHttpHandler->OnModifyRequestBeforeCookies(this);
@@ -1958,52 +2016,6 @@ nsresult nsHttpChannel::SetupChannelForTransaction() {
                                     Substring(++slash, end));
         MOZ_ASSERT(NS_SUCCEEDED(rv));
       }
-    }
-  } else {
-    
-    
-    
-    bool async;
-    rv = gHttpHandler->AddAcceptAndDictionaryHeaders(
-        mURI, mLoadInfo->GetExternalContentPolicyType(), &mRequestHead,
-        IsHTTPS(), async,
-        [self = RefPtr(this)](bool aNeedsResume, DictionaryCacheEntry* aDict) {
-          self->mDictDecompress = aDict;
-          if (aNeedsResume) {
-            LOG_DICTIONARIES(("Resuming after getting Dictionary headers"));
-            self->Resume();
-          }
-          if (self->mDictDecompress) {
-            LOG_DICTIONARIES(
-                ("Added dictionary header for %p, DirectoryCacheEntry %p",
-                 self.get(), aDict));
-            
-            self->mDictDecompress->InUse();
-            self->mUsingDictionary = true;
-            return NS_SUCCEEDED(self->mDictDecompress->Prefetch(
-                GetLoadContextInfo(self), self->mShouldSuspendForDictionary,
-                [self]() {
-                  
-                  
-                  MOZ_ASSERT(self->mDictDecompress->DictionaryReady());
-                  if (self->mSuspendedForDictionary) {
-                    LOG(
-                        ("nsHttpChannel::SetupChannelForTransaction [this=%p] "
-                         "Resuming channel "
-                         "suspended for Dictionary",
-                         self.get()));
-                    self->mSuspendedForDictionary = false;
-                    self->Resume();
-                  }
-                }));
-          }
-          return true;
-        });
-    if (NS_FAILED(rv)) return rv;
-    if (async) {
-      
-      LOG_DICTIONARIES(("Suspending to get Dictionary headers"));
-      Suspend();
     }
   }
 
