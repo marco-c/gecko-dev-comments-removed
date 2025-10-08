@@ -89,6 +89,8 @@ struct WindowProcMarker {
     using MS = MarkerSchema;
     MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
     schema.AddKeyFormat("uMsg", MS::Format::Integer);
+    
+    schema.AddKeyFormat("name", MS::Format::String, MS::PayloadFlags::Hidden);
     schema.SetChartLabel(
         "{marker.data.messageLoop} | {marker.data.name} ({marker.data.uMsg})");
     schema.SetTableLabel(
@@ -110,6 +112,20 @@ AutoProfilerMessageMarker::AutoProfilerMessageMarker(
     Span<const char> aMsgLoopName, HWND hWnd, UINT msg, WPARAM wParam,
     LPARAM lParam)
     : mMsgLoopName(aMsgLoopName), mMsg(msg), mWParam(wParam), mLParam(lParam) {
+  
+  
+  if (msg == WM_CHAR || msg == WM_SYSCHAR || msg == WM_IME_CHAR) {
+    mWParam = 0;
+  } else if (msg == WM_KEYDOWN || msg == WM_KEYUP) {
+    
+    if ((wParam >= 0x30 && wParam <= 0x39) ||  
+        (wParam >= 0x41 && wParam <= 0x5A) ||  
+        (wParam >= 0xBA && wParam <= 0xE4) ||  
+        (wParam == 0x20)) {                    
+      mWParam = 0;
+    }
+  }
+
   if (profiler_thread_is_being_profiled_for_markers()) {
     mOptions.emplace(MarkerOptions(MarkerTiming::IntervalStart()));
     nsWindow* win = WinUtils::GetNSWindowPtr(hWnd);
@@ -179,7 +195,7 @@ NativeEventLogger::NativeEventLogger(Span<const char> aMsgLoopName, HWND hwnd,
       mMsgLoopName(aMsgLoopName.data()),
       mHwnd(hwnd),
       mMsg(msg),
-      mWParam(wParam),
+      mWParam(mProfilerMarker.WParam()),
       mLParam(lParam),
       mResult(mozilla::Nothing()),
       mShouldLogPostCall(false) {
