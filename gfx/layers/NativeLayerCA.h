@@ -316,8 +316,12 @@ class NativeLayerCA : public NativeLayer {
   };
 
   UpdateType HasUpdate(WhichRepresentation aRepresentation);
-  bool WillUpdateAffectLayers(WhichRepresentation aRepresentation);
-  bool ApplyChanges(WhichRepresentation aRepresentation, UpdateType aUpdate);
+
+  
+  
+  
+  bool ApplyChanges(WhichRepresentation aRepresentation, UpdateType aUpdate,
+                    bool* aMustRebuild);
 
   void SetBackingScale(float aBackingScale);
 
