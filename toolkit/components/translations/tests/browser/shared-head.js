@@ -2773,7 +2773,7 @@ class AboutTranslationsTestUtils {
 
 
     static DetectedLanguageUpdated =
-      "AboutTranslations:DetectedLanguageUpdated";
+      "AboutTranslationsTest:DetectedLanguageUpdated";
 
     
 
@@ -2781,7 +2781,7 @@ class AboutTranslationsTestUtils {
 
 
     static SwapLanguagesButtonDisabled =
-      "AboutTranslations:SwapLanguagesButtonDisabled";
+      "AboutTranslationsTest:SwapLanguagesButtonDisabled";
 
     
 
@@ -2789,7 +2789,7 @@ class AboutTranslationsTestUtils {
 
 
     static SwapLanguagesButtonEnabled =
-      "AboutTranslations:SwapLanguagesButtonEnabled";
+      "AboutTranslationsTest:SwapLanguagesButtonEnabled";
 
     
 
@@ -2797,49 +2797,51 @@ class AboutTranslationsTestUtils {
 
 
     static ShowTranslatingPlaceholder =
-      "AboutTranslations:ShowTranslatingPlaceholder";
+      "AboutTranslationsTest:ShowTranslatingPlaceholder";
 
     
 
 
 
 
-    static URLUpdatedFromUI = "AboutTranslations:URLUpdatedFromUI";
+    static URLUpdatedFromUI = "AboutTranslationsTest:URLUpdatedFromUI";
 
     
 
 
 
 
-    static TranslationRequested = "AboutTranslations:TranslationRequested";
+    static TranslationRequested = "AboutTranslationsTest:TranslationRequested";
 
     
 
 
 
 
-    static TranslationComplete = "AboutTranslations:TranslationComplete";
+    static TranslationComplete = "AboutTranslationsTest:TranslationComplete";
 
     
 
 
 
 
-    static PageOrientationChanged = "AboutTranslations:PageOrientationChanged";
+    static PageOrientationChanged =
+      "AboutTranslationsTest:PageOrientationChanged";
 
     
 
 
 
 
-    static TextAreaHeightsChanged = "AboutTranslations:TextAreaHeightsChanged";
+    static TextAreaHeightsChanged =
+      "AboutTranslationsTest:TextAreaHeightsChanged";
 
     
 
 
 
 
-    static ClearTargetText = "AboutTranslations:ClearTargetText";
+    static ClearTargetText = "AboutTranslationsTest:ClearTargetText";
   };
 
   
