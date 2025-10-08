@@ -21,7 +21,6 @@ const toolsNameMap = {
   viewBookmarksSidebar: "bookmarks",
   viewCPMSidebar: "passwords",
 };
-const EXPAND_ON_HOVER_DEBOUNCE_RATE_MS = 200;
 const EXPAND_ON_HOVER_DEBOUNCE_TIMEOUT_MS = 1000;
 const LAUNCHER_SPLITTER_WIDTH = 4;
 
@@ -1414,13 +1413,7 @@ var SidebarController = {
 
   async _removeHoverStateBlocker() {
     if (this._hoverBlockerCount == 1) {
-      
-      let isHovered;
-      MousePosTracker._callListener({
-        onMouseEnter: () => (isHovered = true),
-        onMouseLeave: () => (isHovered = false),
-        getMouseTargetRect: () => this.getMouseTargetRect(),
-      });
+      let isHovered = this._checkIsHoveredOverLauncher();
 
       
       if (this._state.launcherExpanded && !isHovered) {
@@ -2109,6 +2102,20 @@ var SidebarController = {
   
 
 
+  _checkIsHoveredOverLauncher() {
+    
+    let isHovered;
+    MousePosTracker._callListener({
+      onMouseEnter: () => (isHovered = true),
+      onMouseLeave: () => (isHovered = false),
+      getMouseTargetRect: () => this.getMouseTargetRect(),
+    });
+    return isHovered;
+  },
+
+  
+
+
 
 
 
@@ -2232,9 +2239,14 @@ var SidebarController = {
     this._mouseEnterDeferred = Promise.withResolvers();
     this.mouseEnterTask = new DeferredTask(
       () => {
-        this.debouncedMouseEnter();
+        let isHovered = this._checkIsHoveredOverLauncher();
+
+        
+        if (isHovered) {
+          this.debouncedMouseEnter();
+        }
       },
-      EXPAND_ON_HOVER_DEBOUNCE_RATE_MS,
+      this._animationExpandOnHoverDelayDurationMs,
       EXPAND_ON_HOVER_DEBOUNCE_TIMEOUT_MS
     );
     this.mouseEnterTask?.arm();
@@ -2423,6 +2435,12 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "_animationExpandOnHoverDurationMs",
   "sidebar.animation.expand-on-hover.duration-ms",
   400
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  SidebarController,
+  "_animationExpandOnHoverDelayDurationMs",
+  "sidebar.animation.expand-on-hover.delay-duration-ms",
+  200
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   SidebarController,
