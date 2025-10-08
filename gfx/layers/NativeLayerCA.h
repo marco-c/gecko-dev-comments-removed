@@ -216,8 +216,9 @@ class NativeLayerRootCA final : public NativeLayerRoot {
     RefPtr<NativeLayerRootCA> mLayerRoot;
   };
 
-  Mutex mMutex MOZ_UNANNOTATED;             
-  CALayer* mOnscreenRootCALayer = nullptr;  
+  Mutex mMutex MOZ_UNANNOTATED;              
+  CALayer* mOnscreenRootCALayer = nullptr;   
+  CALayer* mOffscreenRootCALayer = nullptr;  
   NativeLayerRootSnapshotterCA* mWeakSnapshotter = nullptr;
   nsTArray<RefPtr<NativeLayerCA>> mSublayers;  
   float mBackingScale = 1.0f;
