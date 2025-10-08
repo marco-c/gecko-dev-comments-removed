@@ -626,7 +626,7 @@ AntiTrackingUtils::GetStoragePermissionStateInParent(nsIChannel* aChannel) {
   
   
   
-  if(!nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(trackingURI)) {
+  if (!nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(trackingURI)) {
     return nsILoadInfo::NoStoragePermission;
   }
 
