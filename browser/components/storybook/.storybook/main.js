@@ -16,6 +16,8 @@ module.exports = {
     
     
     
+    `../**/component-status.stories.mjs`,
+    
     "../**/README.storybook.stories.md",
     
     "../**/README.*.stories.md",
