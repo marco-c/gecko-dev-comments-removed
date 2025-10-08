@@ -35,10 +35,6 @@ pub const SHADER_STAGE_COUNT: usize = hal::MAX_CONCURRENT_SHADER_STAGES;
 
 pub(crate) const ZERO_BUFFER_SIZE: BufferAddress = 512 << 10;
 
-
-
-const CLEANUP_WAIT_MS: u32 = 60000;
-
 pub(crate) const ENTRYPOINT_FAILURE_ERROR: &str = "The given EntryPoint is Invalid";
 
 pub type DeviceDescriptor<'a> = wgt::DeviceDescriptor<Label<'a>>;

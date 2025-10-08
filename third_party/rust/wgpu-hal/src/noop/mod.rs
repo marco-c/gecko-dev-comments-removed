@@ -429,7 +429,7 @@ impl crate::Device for Context {
         &self,
         fence: &Fence,
         value: crate::FenceValue,
-        timeout_ms: u32,
+        timeout: Option<Duration>,
     ) -> DeviceResult<bool> {
         
         

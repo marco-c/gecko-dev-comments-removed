@@ -1,7 +1,7 @@
 
 
 
-#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![allow(
     
     clippy::match_like_matches_macro,
@@ -16,13 +16,14 @@ extern crate alloc;
 
 use alloc::borrow::Cow;
 use alloc::{string::String, vec, vec::Vec};
-use core::cmp::Ordering;
 use core::{
+    cmp::Ordering,
     fmt,
     hash::{Hash, Hasher},
     mem,
     num::NonZeroU32,
     ops::Range,
+    time::Duration,
 };
 
 use bytemuck::{Pod, Zeroable};
@@ -4502,37 +4503,42 @@ pub enum PollType<T> {
     
     
     
-    WaitForSubmissionIndex(T),
-    
-    Wait,
+    Wait {
+        
+        
+        
+        
+        submission_index: Option<T>,
+
+        
+        
+        
+        
+        timeout: Option<Duration>,
+    },
+
     
     Poll,
 }
 
 impl<T> PollType<T> {
     
-    #[must_use]
-    pub fn wait() -> Self {
-        
-        
-        
-        Self::Wait
-    }
-
+    
+    
     
     #[must_use]
-    pub fn wait_for(submission_index: T) -> Self {
-        
-        
-        
-        Self::WaitForSubmissionIndex(submission_index)
+    pub const fn wait_indefinitely() -> Self {
+        Self::Wait {
+            submission_index: None,
+            timeout: None,
+        }
     }
 
     
     #[must_use]
     pub fn is_wait(&self) -> bool {
         match *self {
-            Self::WaitForSubmissionIndex(..) | Self::Wait => true,
+            Self::Wait { .. } => true,
             Self::Poll => false,
         }
     }
@@ -4544,8 +4550,13 @@ impl<T> PollType<T> {
         F: FnOnce(T) -> U,
     {
         match self {
-            Self::WaitForSubmissionIndex(i) => PollType::WaitForSubmissionIndex(func(i)),
-            Self::Wait => PollType::Wait,
+            Self::Wait {
+                submission_index,
+                timeout,
+            } => PollType::Wait {
+                submission_index: submission_index.map(func),
+                timeout,
+            },
             Self::Poll => PollType::Poll,
         }
     }
@@ -7824,7 +7835,7 @@ pub struct ShaderRuntimeChecks {
 impl ShaderRuntimeChecks {
     
     #[must_use]
-    pub fn checked() -> Self {
+    pub const fn checked() -> Self {
         unsafe { Self::all(true) }
     }
 
@@ -7835,7 +7846,7 @@ impl ShaderRuntimeChecks {
     
     
     #[must_use]
-    pub fn unchecked() -> Self {
+    pub const fn unchecked() -> Self {
         unsafe { Self::all(false) }
     }
 
@@ -7847,7 +7858,7 @@ impl ShaderRuntimeChecks {
     
     
     #[must_use]
-    pub unsafe fn all(all_checks: bool) -> Self {
+    pub const unsafe fn all(all_checks: bool) -> Self {
         Self {
             bounds_checks: all_checks,
             force_loop_bounding: all_checks,

@@ -183,9 +183,9 @@ impl Drop for Queue {
                     fence.as_ref(),
                     last_successful_submission_index,
                     #[cfg(not(target_arch = "wasm32"))]
-                    timeout_ms,
+                    Some(core::time::Duration::from_millis(timeout_ms)),
                     #[cfg(target_arch = "wasm32")]
-                    0, 
+                    Some(core::time::Duration::ZERO), 
                 )
             };
             

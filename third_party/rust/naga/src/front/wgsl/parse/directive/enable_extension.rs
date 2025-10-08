@@ -71,6 +71,7 @@ impl EnableExtension {
     const CLIP_DISTANCES: &'static str = "clip_distances";
     const DUAL_SOURCE_BLENDING: &'static str = "dual_source_blending";
     const SUBGROUPS: &'static str = "subgroups";
+    const PRIMITIVE_INDEX: &'static str = "primitive_index";
 
     
     pub(crate) fn from_ident(word: &str, span: Span) -> Result<'_, Self> {
@@ -81,6 +82,9 @@ impl EnableExtension {
                 Self::Implemented(ImplementedEnableExtension::DualSourceBlending)
             }
             Self::SUBGROUPS => Self::Unimplemented(UnimplementedEnableExtension::Subgroups),
+            Self::PRIMITIVE_INDEX => {
+                Self::Unimplemented(UnimplementedEnableExtension::PrimitiveIndex)
+            }
             _ => return Err(Box::new(Error::UnknownEnableExtension(span, word))),
         })
     }
@@ -95,6 +99,7 @@ impl EnableExtension {
             },
             Self::Unimplemented(kind) => match kind {
                 UnimplementedEnableExtension::Subgroups => Self::SUBGROUPS,
+                UnimplementedEnableExtension::PrimitiveIndex => Self::PRIMITIVE_INDEX,
             },
         }
     }
@@ -132,12 +137,19 @@ pub enum UnimplementedEnableExtension {
     
     
     Subgroups,
+    
+    
+    
+    
+    
+    PrimitiveIndex,
 }
 
 impl UnimplementedEnableExtension {
     pub(crate) const fn tracking_issue_num(self) -> u16 {
         match self {
             Self::Subgroups => 5555,
+            Self::PrimitiveIndex => 8236,
         }
     }
 }

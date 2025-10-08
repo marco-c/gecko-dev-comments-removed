@@ -203,7 +203,7 @@
 
 
 #![no_std]
-#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![allow(
     
     clippy::arc_with_non_send_sync,
@@ -985,11 +985,14 @@ pub trait Device: WasmNotSendSync {
     
     
     
+    
+    
+    
     unsafe fn wait(
         &self,
         fence: &<Self::A as Api>::Fence,
         value: FenceValue,
-        timeout_ms: u32,
+        timeout: Option<core::time::Duration>,
     ) -> Result<bool, DeviceError>;
 
     
