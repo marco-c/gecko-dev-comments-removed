@@ -3321,18 +3321,9 @@ nsCString& ScriptLoader::BytecodeMimeTypeFor(
   return nsContentUtils::JSScriptBytecodeMimeType();
 }
 
-void ScriptLoader::MaybePrepareForCacheBeforeExecute(
-    ScriptLoadRequest* aRequest) {
-  if (!aRequest->PassedConditionForEitherCache()) {
-    return;
-  }
-
-  aRequest->MarkForCache();
-}
-
 nsresult ScriptLoader::MaybePrepareForCacheAfterExecute(
     ScriptLoadRequest* aRequest, nsresult aRv) {
-  if (aRequest->IsMarkedForEitherCache()) {
+  if (aRequest->PassedConditionForEitherCache()) {
     TRACE_FOR_TEST(aRequest, "scriptloader_encode");
     
     
@@ -3357,30 +3348,6 @@ nsresult ScriptLoader::MaybePrepareForCacheAfterExecute(
   aRequest->getLoadedScript()->DropDiskCacheReference();
 
   return aRv;
-}
-
-void ScriptLoader::MaybePrepareModuleForCacheBeforeExecute(
-    JSContext* aCx, ModuleLoadRequest* aRequest) {
-  if (aRequest->IsMarkedForEitherCache()) {
-    
-    return;
-  }
-
-  if (aRequest->PassedConditionForEitherCache()) {
-    aRequest->MarkForCache();
-  }
-
-  for (auto* r = mCacheableDependencyModules.getFirst(); r; r = r->getNext()) {
-    auto* dep = r->AsModuleRequest();
-    MOZ_ASSERT(dep->PassedConditionForEitherCache());
-
-    if (dep->GetRootModule() != aRequest) {
-      continue;
-    }
-    MOZ_ASSERT(!dep->IsMarkedForEitherCache());
-
-    dep->MarkForCache();
-  }
 }
 
 nsresult ScriptLoader::MaybePrepareModuleForCacheAfterExecute(
@@ -3498,17 +3465,13 @@ nsresult ScriptLoader::EvaluateScript(nsIGlobalObject* aGlobalObject,
                                   classicScriptValue, introductionScript, erv);
 
   if (!erv.Failed()) {
-    MaybePrepareForCacheBeforeExecute(aRequest);
+    LOG(("ScriptLoadRequest (%p): Evaluate Script", aRequest));
+    AUTO_PROFILER_MARKER_TEXT("ScriptExecution", JS,
+                              MarkerInnerWindowIdFromJSContext(cx),
+                              profilerLabelString);
 
-    {
-      LOG(("ScriptLoadRequest (%p): Evaluate Script", aRequest));
-      AUTO_PROFILER_MARKER_TEXT("ScriptExecution", JS,
-                                MarkerInnerWindowIdFromJSContext(cx),
-                                profilerLabelString);
-
-      MOZ_ASSERT(options.noScriptRval);
-      ExecuteCompiledScript(cx, classicScript, script, erv);
-    }
+    MOZ_ASSERT(options.noScriptRval);
+    ExecuteCompiledScript(cx, classicScript, script, erv);
   }
   rv = EvaluationExceptionToNSResult(erv);
 
@@ -3540,8 +3503,8 @@ LoadedScript* ScriptLoader::GetActiveScript(JSContext* aCx) {
 }
 
 void ScriptLoader::RegisterForCache(ScriptLoadRequest* aRequest) {
-  MOZ_ASSERT(aRequest->IsMarkedForEitherCache());
-  MOZ_ASSERT_IF(aRequest->IsMarkedForDiskCache(),
+  MOZ_ASSERT(aRequest->PassedConditionForEitherCache());
+  MOZ_ASSERT_IF(aRequest->PassedConditionForDiskCache(),
                 aRequest->getLoadedScript()->HasDiskCacheReference());
   MOZ_DIAGNOSTIC_ASSERT(!aRequest->isInList());
   mCachingQueue.AppendElement(aRequest);
@@ -3641,7 +3604,7 @@ void ScriptLoader::UpdateCache() {
     
     
     
-    if (request->IsMarkedForDiskCache() &&
+    if (request->PassedConditionForDiskCache() &&
         request->getLoadedScript()->HasDiskCacheReference()) {
       EncodeBytecodeAndSave(aes.cx(), request->getLoadedScript());
     }

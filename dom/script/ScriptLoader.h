@@ -713,17 +713,9 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
   
   
-  void MaybePrepareForCacheBeforeExecute(ScriptLoadRequest* aRequest);
-
-  
-  
-  
   
   nsresult MaybePrepareForCacheAfterExecute(ScriptLoadRequest* aRequest,
                                             nsresult aRv);
-
-  void MaybePrepareModuleForCacheBeforeExecute(
-      JSContext* aCx, ModuleLoadRequest* aRequest) override;
 
   
   
