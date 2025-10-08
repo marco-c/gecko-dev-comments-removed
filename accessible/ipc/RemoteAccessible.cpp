@@ -1193,25 +1193,68 @@ Relation RemoteAccessible::RelationByType(RelationType aType) const {
     return rel;
   }
 
-  for (const auto& data : kRelationTypeAtoms) {
-    if (data.mType != aType ||
-        (data.mValidTag && TagName() != data.mValidTag)) {
-      continue;
+  auto GetDirectRelationFromCache =
+      [](const RemoteAccessible* aAcc,
+         RelationType aRelType) -> Maybe<const nsTArray<uint64_t>&> {
+    for (const auto& data : kRelationTypeAtoms) {
+      if (data.mType != aRelType ||
+          (data.mValidTag && aAcc->TagName() != data.mValidTag)) {
+        continue;
+      }
+
+      if (auto maybeIds = aAcc->mCachedFields->GetAttribute<nsTArray<uint64_t>>(
+              data.mAtom)) {
+        
+        
+        return maybeIds;
+      }
     }
 
-    if (auto maybeIds =
-            mCachedFields->GetAttribute<nsTArray<uint64_t>>(data.mAtom)) {
-      rel.AppendIter(new RemoteAccIterator(*maybeIds, Document()));
-    }
-    
-    
-    
-    break;
+    return Nothing();
+  };
+
+  if (auto maybeIds = GetDirectRelationFromCache(this, aType)) {
+    rel.AppendIter(new RemoteAccIterator(*maybeIds, Document()));
   }
 
   if (auto accRelMapEntry = mDoc->mReverseRelations.Lookup(ID())) {
-    if (auto reverseIdsEntry = accRelMapEntry.Data().Lookup(aType)) {
-      rel.AppendIter(new RemoteAccIterator(reverseIdsEntry.Data(), Document()));
+    
+    
+    
+    nsTArray<uint64_t> relationCandidateIds;
+    for (const auto& data : kRelationTypeAtoms) {
+      if (data.mReverseType != aType) {
+        continue;
+      }
+
+      auto reverseIdsEntry = accRelMapEntry.Data().Lookup(&data);
+      if (!reverseIdsEntry) {
+        continue;
+      }
+
+      for (auto id : *reverseIdsEntry) {
+        if (relationCandidateIds.Contains(id)) {
+          
+          
+          
+          continue;
+        }
+        relationCandidateIds.AppendElement(id);
+
+        RemoteAccessible* relatedAcc = mDoc->GetAccessible(id);
+        if (!relatedAcc) {
+          continue;
+        }
+
+        if (auto maybeIds =
+                GetDirectRelationFromCache(relatedAcc, data.mType)) {
+          if (maybeIds->Contains(ID())) {
+            
+            
+            rel.AppendTarget(relatedAcc);
+          }
+        }
+      }
     }
   }
 
@@ -1346,7 +1389,7 @@ nsTArray<bool> RemoteAccessible::PreProcessRelations(AccAttributes* aFields) {
             
             
             nsTArray<uint64_t>& reverseRelIDs =
-                reverseRels->LookupOrInsert(data.mReverseType);
+                reverseRels->LookupOrInsert(&data);
             
             
             DebugOnly<bool> removed = reverseRelIDs.RemoveElement(ID());
@@ -1379,9 +1422,8 @@ void RemoteAccessible::PostProcessRelations(const nsTArray<bool>& aToUpdate) {
       const nsTArray<uint64_t>& newIDs =
           *mCachedFields->GetAttribute<nsTArray<uint64_t>>(data.mAtom);
       for (uint64_t id : newIDs) {
-        nsTHashMap<RelationType, nsTArray<uint64_t>>& relations =
-            Document()->mReverseRelations.LookupOrInsert(id);
-        nsTArray<uint64_t>& ids = relations.LookupOrInsert(data.mReverseType);
+        auto& relations = Document()->mReverseRelations.LookupOrInsert(id);
+        nsTArray<uint64_t>& ids = relations.LookupOrInsert(&data);
         ids.AppendElement(ID());
       }
     }
@@ -1395,7 +1437,7 @@ void RemoteAccessible::PruneRelationsOnShutdown() {
   }
   for (auto const& data : kRelationTypeAtoms) {
     
-    auto reverseTargetList = reverseRels->Lookup(data.mReverseType);
+    auto reverseTargetList = reverseRels->Lookup(&data);
     if (!reverseTargetList) {
       continue;
     }
