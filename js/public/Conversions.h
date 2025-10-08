@@ -10,7 +10,6 @@
 #define js_Conversions_h
 
 #include "mozilla/Casting.h"
-#include "mozilla/Compiler.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/WrappingOperations.h"
@@ -377,9 +376,7 @@ inline SignedInteger ToSignedInteger(double d) {
   return mozilla::WrapToSigned(u);
 }
 
-
-
-#if defined(__arm__) && MOZ_IS_GCC
+#if defined(__arm__)
 
 template <>
 inline int32_t ToSignedInteger<int32_t>(double d) {
