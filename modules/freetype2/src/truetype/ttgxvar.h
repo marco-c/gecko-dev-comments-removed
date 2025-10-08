@@ -264,6 +264,10 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
+
   typedef struct  GX_BlendRec_
   {
     FT_UInt         num_axis;
@@ -293,6 +297,7 @@ FT_BEGIN_HEADER
 
     FT_UInt         tuplecount;
     FT_Fixed*       tuplecoords;      
+    FT_Fixed*       tuplescalars;     
 
     FT_UInt         gv_glyphcnt;
     FT_ULong*       glyphoffsets;         

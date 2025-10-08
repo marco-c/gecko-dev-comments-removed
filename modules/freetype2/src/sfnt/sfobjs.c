@@ -579,6 +579,9 @@
     if ( face_instance_index < 0 && face_index > 0 )
       face_index--;
 
+    
+    
+    
     if ( face_index >= face->ttc_header.count )
     {
       if ( face_instance_index >= 0 )
@@ -1127,9 +1130,9 @@
         flags |= FT_FACE_FLAG_VERTICAL;
 
       
-      if ( TT_FACE_HAS_KERNING( face )
+      if ( face->kern_avail_bits
 #ifdef TT_CONFIG_OPTION_GPOS_KERNING
-           || face->gpos_kerning_available
+           || face->num_gpos_lookups_kerning
 #endif
          )
         flags |= FT_FACE_FLAG_KERNING;

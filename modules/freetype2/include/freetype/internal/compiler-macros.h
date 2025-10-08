@@ -129,7 +129,7 @@ FT_BEGIN_HEADER
 
 
   
-#if defined( _WIN32 )
+#if defined( _WIN32 ) || defined( __CYGWIN__ )
 #define FT_INTERNAL_FUNCTION_ATTRIBUTE
 
 

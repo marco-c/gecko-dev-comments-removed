@@ -564,6 +564,7 @@
 
 
 
+
   FT_LOCAL_DEF( FT_Error )
   tt_face_load_any( TT_Face    face,
                     FT_ULong   tag,
@@ -577,7 +578,29 @@
     FT_ULong   size;
 
 
-    if ( tag != 0 )
+    if ( tag == 0 )
+    {
+      
+      size = face->root.stream->size;
+    }
+    else if ( tag == 1 )
+    {
+      
+      
+      
+      
+      
+      
+      FT_Long  idx = face->root.face_index & 0xFFFF;
+
+
+      if ( idx >= face->ttc_header.count )
+        idx = 0;
+
+      offset += face->ttc_header.offsets[idx];
+      size    = 4 + 8 + 16 * face->num_tables;
+    }
+    else
     {
       
       table = tt_face_lookup_table( face, tag );
@@ -590,9 +613,6 @@
       offset += table->Offset;
       size    = table->Length;
     }
-    else
-      
-      size = face->root.stream->size;
 
     if ( length && *length == 0 )
     {

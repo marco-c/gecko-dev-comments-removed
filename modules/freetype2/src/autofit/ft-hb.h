@@ -16,18 +16,8 @@
 
 
 
-
-
-
-
-
-
-
-
 #ifndef FT_HB_H
 #define FT_HB_H
-
-#include <hb.h>
 
 #include <freetype/internal/compiler-macros.h>
 #include <freetype/freetype.h>
@@ -35,9 +25,53 @@
 
 FT_BEGIN_HEADER
 
-FT_LOCAL(hb_font_t *)
-hb_ft_font_create_ (FT_Face           ft_face,
-                    hb_destroy_func_t destroy);
+#ifdef FT_CONFIG_OPTION_USE_HARFBUZZ
+
+#  include "ft-hb-types.h"
+
+#  ifdef FT_CONFIG_OPTION_USE_HARFBUZZ_DYNAMIC
+
+#    define HB_EXTERN( ret, name, args ) \
+              typedef ret (*ft_ ## name ## _func_t) args;
+#    include "ft-hb-decls.h"
+#    undef HB_EXTERN
+
+  typedef struct ft_hb_funcs_t
+  {
+#    define HB_EXTERN( ret, name, args ) \
+              ft_ ## name ## _func_t  name;
+#    include "ft-hb-decls.h"
+#    undef HB_EXTERN
+  } ft_hb_funcs_t;
+
+  struct  AF_ModuleRec_;
+
+  FT_LOCAL( void )
+  ft_hb_funcs_init( struct AF_ModuleRec_  *af_module );
+
+  FT_LOCAL( void )
+  ft_hb_funcs_done( struct AF_ModuleRec_  *af_module );
+
+#    define hb( x )  globals->module->hb_funcs->hb_ ## x
+
+#  else 
+
+#    define HB_EXTERN( ret, name, args ) \
+              ret name args;
+#    include "ft-hb-decls.h"
+#    undef HB_EXTERN
+
+#    define hb( x )  hb_ ## x
+
+#  endif 
+
+#endif 
+
+
+  struct AF_FaceGlobalsRec_;
+
+  FT_LOCAL( FT_Bool )
+  ft_hb_enabled( struct AF_FaceGlobalsRec_  *globals );
 
 
 FT_END_HEADER

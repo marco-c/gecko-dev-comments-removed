@@ -905,7 +905,6 @@
     FT_Library    library;
     FT_Bool       autohint = FALSE;
     FT_Module     hinter;
-    TT_Face       ttface = (TT_Face)face;
 
 
     if ( !face || !face->size || !face->glyph )
@@ -983,6 +982,7 @@
       {
         FT_Render_Mode  mode = FT_LOAD_TARGET_MODE( load_flags );
         FT_Bool         is_light_type1;
+        TT_Face         ttface = (TT_Face)face;
 
 
         
@@ -997,15 +997,13 @@
         
         
         
-        
         if ( ( mode == FT_RENDER_MODE_LIGHT           &&
                ( !FT_DRIVER_HINTS_LIGHTLY( driver ) &&
                  !is_light_type1                    ) )         ||
              ( FT_IS_SFNT( face )                             &&
                ttface->num_locations                          &&
-               ttface->max_profile.maxSizeOfInstructions == 0 &&
                ttface->font_program_size == 0                 &&
-               ttface->cvt_program_size == 0                  ) )
+               ttface->cvt_program_size <= 7                  ) )
           autohint = TRUE;
       }
     }
@@ -1172,9 +1170,9 @@
     }
 
 #ifdef FT_DEBUG_LEVEL_TRACE
-    FT_TRACE5(( "FT_Load_Glyph: index %d, flags 0x%x\n",
+    FT_TRACE5(( "FT_Load_Glyph: index %u, flags 0x%x\n",
                 glyph_index, load_flags ));
-    FT_TRACE5(( "  bitmap %dx%d %s, %s (mode %d)\n",
+    FT_TRACE5(( "  bitmap %ux%u %s, %s (mode %d)\n",
                 slot->bitmap.width,
                 slot->bitmap.rows,
                 slot->outline.points ?
@@ -1254,12 +1252,12 @@
 
 
     
-    if ( size->generic.finalizer )
-      size->generic.finalizer( size );
-
-    
     if ( driver->clazz->done_size )
       driver->clazz->done_size( size );
+
+    
+    if ( size->generic.finalizer )
+      size->generic.finalizer( size );
 
     FT_FREE( size->internal );
     FT_FREE( size );
@@ -1323,10 +1321,6 @@
     face->size = NULL;
 
     
-    if ( face->generic.finalizer )
-      face->generic.finalizer( face );
-
-    
     destroy_charmaps( face, memory );
 
     
@@ -1339,6 +1333,10 @@
       ( face->face_flags & FT_FACE_FLAG_EXTERNAL_STREAM ) != 0 );
 
     face->stream = NULL;
+
+    
+    if ( face->generic.finalizer )
+      face->generic.finalizer( face );
 
     
     if ( face->internal )
@@ -1361,19 +1359,7 @@
 
   
 
-
-
-
-
-
-
-
-
-
-
-
-
-  static FT_Error
+  FT_BASE_DEF( FT_Error )
   find_unicode_charmap( FT_Face  face )
   {
     FT_CharMap*  first;
@@ -2125,7 +2111,7 @@
       if ( pfb_pos > pfb_len || pfb_pos + rlen > pfb_len )
         goto Exit2;
 
-      FT_TRACE3(( "    Load POST fragment #%d (%ld byte) to buffer"
+      FT_TRACE3(( "    Load POST fragment #%d (%lu byte) to buffer"
                   " %p + 0x%08lx\n",
                   i, rlen, (void*)pfb_data, pfb_pos ));
 
@@ -2398,7 +2384,7 @@
       is_darwin_vfs = ft_raccess_rule_by_darwin_vfs( library, i );
       if ( is_darwin_vfs && vfs_rfork_has_no_font )
       {
-        FT_TRACE3(( "Skip rule %d: darwin vfs resource fork"
+        FT_TRACE3(( "Skip rule %u: darwin vfs resource fork"
                     " is already checked and"
                     " no font is found\n",
                     i ));
@@ -2407,7 +2393,7 @@
 
       if ( errors[i] )
       {
-        FT_TRACE3(( "Error 0x%x has occurred in rule %d\n",
+        FT_TRACE3(( "Error 0x%x has occurred in rule %u\n",
                     errors[i], i ));
         continue;
       }
@@ -2415,7 +2401,7 @@
       args2.flags    = FT_OPEN_PATHNAME;
       args2.pathname = file_names[i] ? file_names[i] : args->pathname;
 
-      FT_TRACE3(( "Try rule %d: %s (offset=%ld) ...",
+      FT_TRACE3(( "Try rule %u: %s (offset=%ld) ...",
                   i, args2.pathname, offsets[i] ));
 
       error = FT_Stream_New( library, &args2, &stream2 );
@@ -5044,9 +5030,9 @@
   static void
   Destroy_Module( FT_Module  module )
   {
-    FT_Memory         memory  = module->memory;
-    FT_Module_Class*  clazz   = module->clazz;
-    FT_Library        library = module->library;
+    const FT_Module_Class*  clazz   = module->clazz;
+    FT_Library              library = module->library;
+    FT_Memory               memory  = module->memory;
 
 
     if ( library && library->auto_hinter == module )
@@ -5125,9 +5111,9 @@
       goto Exit;
 
     
+    module->clazz   = clazz;
     module->library = library;
     module->memory  = memory;
-    module->clazz   = (FT_Module_Class*)clazz;
 
     
     

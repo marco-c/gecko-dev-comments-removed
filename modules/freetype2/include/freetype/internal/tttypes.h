@@ -1409,10 +1409,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
-
-
   typedef struct  TT_FaceRec_
   {
     FT_FaceRec            root;
@@ -1521,10 +1517,6 @@ FT_BEGIN_HEADER
     FT_ULong              cvt_size;
     FT_Int32*             cvt;
 
-    
-    
-    TT_Interpreter        interpreter;
-
 
     
 
@@ -1582,11 +1574,6 @@ FT_BEGIN_HEADER
     FT_UInt32             kern_avail_bits;
     FT_UInt32             kern_order_bits;
 
-#ifdef TT_CONFIG_OPTION_GPOS_KERNING
-    FT_Byte*              gpos_table;
-    FT_Bool               gpos_kerning_available;
-#endif
-
 #ifdef TT_CONFIG_OPTION_BDF
     TT_BDFRec             bdf;
 #endif 
@@ -1607,6 +1594,15 @@ FT_BEGIN_HEADER
 
     
     void*                 svg;
+
+#ifdef TT_CONFIG_OPTION_GPOS_KERNING
+    
+    FT_Byte*              gpos_table;
+    
+    
+    FT_UInt32*            gpos_lookups_kerning;
+    FT_UInt               num_gpos_lookups_kerning;
+#endif
 
   } TT_FaceRec;
 
@@ -1642,20 +1638,8 @@ FT_BEGIN_HEADER
 
 
 
-
-
-
-
-
-
-
-
-
   typedef struct  TT_GlyphZoneRec_
   {
-    FT_Memory   memory;
-    FT_UShort   max_points;
-    FT_UShort   max_contours;
     FT_UShort   n_points;    
     FT_UShort   n_contours;  
 
@@ -1714,7 +1698,6 @@ FT_BEGIN_HEADER
     TT_GlyphZoneRec  zone;
 
     TT_ExecContext   exec;
-    FT_Byte*         instructions;
     FT_ULong         ins_pos;
 
     

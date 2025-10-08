@@ -121,7 +121,20 @@
     kerning->y = 0;
 
     if ( sfnt )
-      kerning->x = sfnt->get_kerning( cffface, left_glyph, right_glyph );
+    {
+      
+      
+      if ( cffface->kern_avail_bits )
+        kerning->x = sfnt->get_kerning( cffface,
+                                        left_glyph,
+                                        right_glyph );
+#ifdef TT_CONFIG_OPTION_GPOS_KERNING
+      else if ( cffface->num_gpos_lookups_kerning )
+        kerning->x = sfnt->get_gpos_kerning( cffface,
+                                             left_glyph,
+                                             right_glyph );
+#endif
+    }
 
     return FT_Err_Ok;
   }
@@ -168,25 +181,7 @@
     CFF_Size       cffsize = (CFF_Size)size;
 
 
-    if ( !cffslot )
-      return FT_THROW( Invalid_Slot_Handle );
-
-    FT_TRACE1(( "cff_glyph_load: glyph index %d\n", glyph_index ));
-
-    
-    if ( !cffsize )
-      load_flags |= FT_LOAD_NO_SCALE | FT_LOAD_NO_HINTING;
-
-    
-    if ( load_flags & FT_LOAD_NO_SCALE )
-      size = NULL;
-
-    if ( size )
-    {
-      
-      if ( size->face != slot->face )
-        return FT_THROW( Invalid_Face_Handle );
-    }
+    FT_TRACE1(( "cff_glyph_load: glyph index %u\n", glyph_index ));
 
     
     error = cff_slot_load( cffslot, cffsize, glyph_index, load_flags );
@@ -205,105 +200,70 @@
                     FT_Int32   flags,
                     FT_Fixed*  advances )
   {
-    FT_UInt       nn;
-    FT_Error      error = FT_Err_Ok;
-    FT_GlyphSlot  slot  = face->glyph;
+    CFF_Face  cffface = (CFF_Face)face;
+    FT_Bool   horz;
+    FT_UInt   nn;
 
 
-    if ( FT_IS_SFNT( face ) )
+    if ( !FT_IS_SFNT( face ) )
+      return FT_THROW( Unimplemented_Feature );
+
+    horz = !( flags & FT_LOAD_VERTICAL_LAYOUT );
+
+    if ( horz )
     {
       
       
       
+      if ( !cffface->horizontal.number_Of_HMetrics )
+        return FT_THROW( Unimplemented_Feature );
 
-      CFF_Face  cffface = (CFF_Face)face;
-      FT_Short  dummy;
-
-
-      if ( flags & FT_LOAD_VERTICAL_LAYOUT )
-      {
 #ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
-        
-        if ( ( FT_IS_NAMED_INSTANCE( face ) || FT_IS_VARIATION( face ) ) &&
-             !( cffface->variation_support & TT_FACE_FLAG_VAR_VADVANCE ) )
-          return FT_THROW( Unimplemented_Feature );
+      
+      if ( ( FT_IS_NAMED_INSTANCE( face ) || FT_IS_VARIATION( face ) ) &&
+           !( cffface->variation_support & TT_FACE_FLAG_VAR_HADVANCE ) )
+        return FT_THROW( Unimplemented_Feature );
 #endif
+    }
+    else  
+    {
+      
+      
+      
+      
+      if ( !cffface->vertical_info )
+        return FT_THROW( Unimplemented_Feature );
 
-        
-        
-        
-        
-        if ( !cffface->vertical_info )
-          goto Missing_Table;
-
-        for ( nn = 0; nn < count; nn++ )
-        {
-          FT_UShort  ah;
-
-
-          ( (SFNT_Service)cffface->sfnt )->get_metrics( cffface,
-                                                        1,
-                                                        start + nn,
-                                                        &dummy,
-                                                        &ah );
-
-          FT_TRACE5(( "  idx %d: advance height %d font unit%s\n",
-                      start + nn,
-                      ah,
-                      ah == 1 ? "" : "s" ));
-          advances[nn] = ah;
-        }
-      }
-      else
-      {
 #ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
-        
-        if ( ( FT_IS_NAMED_INSTANCE( face ) || FT_IS_VARIATION( face ) ) &&
-             !( cffface->variation_support & TT_FACE_FLAG_VAR_HADVANCE ) )
-          return FT_THROW( Unimplemented_Feature );
+      
+      if ( ( FT_IS_NAMED_INSTANCE( face ) || FT_IS_VARIATION( face ) ) &&
+           !( cffface->variation_support & TT_FACE_FLAG_VAR_VADVANCE ) )
+        return FT_THROW( Unimplemented_Feature );
 #endif
-
-        
-        if ( !cffface->horizontal.number_Of_HMetrics )
-          goto Missing_Table;
-
-        for ( nn = 0; nn < count; nn++ )
-        {
-          FT_UShort  aw;
-
-
-          ( (SFNT_Service)cffface->sfnt )->get_metrics( cffface,
-                                                        0,
-                                                        start + nn,
-                                                        &dummy,
-                                                        &aw );
-
-          FT_TRACE5(( "  idx %d: advance width %d font unit%s\n",
-                      start + nn,
-                      aw,
-                      aw == 1 ? "" : "s" ));
-          advances[nn] = aw;
-        }
-      }
-
-      return error;
     }
 
-  Missing_Table:
-    flags |= (FT_UInt32)FT_LOAD_ADVANCE_ONLY;
-
+    
     for ( nn = 0; nn < count; nn++ )
     {
-      error = cff_glyph_load( slot, face->size, start + nn, flags );
-      if ( error )
-        break;
+      FT_UShort  aw;
+      FT_Short   dummy;
 
-      advances[nn] = ( flags & FT_LOAD_VERTICAL_LAYOUT )
-                     ? slot->linearVertAdvance
-                     : slot->linearHoriAdvance;
+
+      ( (SFNT_Service)cffface->sfnt )->get_metrics( cffface,
+                                                    !horz,
+                                                    start + nn,
+                                                    &dummy,
+                                                    &aw );
+
+      FT_TRACE5(( "  idx %u: advance %s %d font unit%s\n",
+                  start + nn,
+                  horz ? "width" : "height",
+                  aw,
+                  aw == 1 ? "" : "s" ));
+      advances[nn] = aw;
     }
 
-    return error;
+    return FT_Err_Ok;
   }
 
 

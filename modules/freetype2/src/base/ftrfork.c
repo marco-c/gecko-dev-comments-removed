@@ -271,12 +271,6 @@
 
 
 
-          if ( temp < 0 )
-          {
-            error = FT_THROW( Invalid_Table );
-            goto Exit;
-          }
-
           ref[j].offset = temp & 0xFFFFFFL;
 
           FT_TRACE3(( "             [%d]:"

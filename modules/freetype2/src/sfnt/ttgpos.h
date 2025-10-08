@@ -16,7 +16,6 @@
 
 
 
-
 #ifndef TTGPOS_H_
 #define TTGPOS_H_
 
@@ -39,8 +38,8 @@ FT_BEGIN_HEADER
 
   FT_LOCAL( FT_Int )
   tt_face_get_gpos_kerning( TT_Face  face,
-                            FT_UInt  left_glyph,
-                            FT_UInt  right_glyph );
+                            FT_UInt  first_glyph,
+                            FT_UInt  second_glyph );
 
 #endif 
 

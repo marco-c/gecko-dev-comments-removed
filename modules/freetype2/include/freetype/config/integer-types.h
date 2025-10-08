@@ -17,13 +17,15 @@
 #ifndef FREETYPE_CONFIG_INTEGER_TYPES_H_
 #define FREETYPE_CONFIG_INTEGER_TYPES_H_
 
+FT_BEGIN_HEADER
 
-
-
-
-
-
-
+  
+  
+  
+  
+  
+  
+  
 
 #ifndef FT_CHAR_BIT
 #define FT_CHAR_BIT  CHAR_BIT
@@ -242,9 +244,34 @@
 #endif 
 
 #ifdef FT_INT64
+
   typedef FT_INT64   FT_Int64;
   typedef FT_UINT64  FT_UInt64;
-#endif
 
+#  define FT_INT64_ZERO  0
+
+#else  
+
+  
+
+  typedef struct  FT_Int64_
+  {
+    FT_UInt32  lo;
+    FT_UInt32  hi;
+
+  } FT_Int64;
+
+  typedef struct  FT_UInt64_
+  {
+    FT_UInt32  lo;
+    FT_UInt32  hi;
+
+  } FT_UInt64;
+
+#  define FT_INT64_ZERO  { 0, 0 }
+
+#endif 
+
+FT_END_HEADER
 
 #endif  

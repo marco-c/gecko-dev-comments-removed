@@ -63,7 +63,7 @@ FT_BEGIN_HEADER
 
 
   
-#if defined( _WIN32 )
+#if defined( _WIN32 ) || defined( __CYGWIN__ )
 
 #if defined( FT2_BUILD_LIBRARY ) && defined( DLL_EXPORT )
 #define FT_PUBLIC_FUNCTION_ATTRIBUTE  __declspec( dllexport )

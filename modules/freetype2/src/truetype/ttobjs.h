@@ -53,6 +53,8 @@ FT_BEGIN_HEADER
   typedef FT_GlyphSlot  TT_GlyphSlot;
 
 
+#ifdef TT_USE_BYTECODE_INTERPRETER
+
   
 
 
@@ -67,21 +69,27 @@ FT_BEGIN_HEADER
     FT_UShort      rp1;
     FT_UShort      rp2;
 
+    FT_UShort      gep0;
+    FT_UShort      gep1;
+    FT_UShort      gep2;
+
     FT_UnitVector  dualVector;
     FT_UnitVector  projVector;
     FT_UnitVector  freeVector;
 
     FT_Long        loop;
-    FT_F26Dot6     minimum_distance;
     FT_Int         round_state;
+    FT_F26Dot6     compensation[4];   
 
-    FT_Bool        auto_flip;
+    
+    FT_F26Dot6     minimum_distance;
     FT_F26Dot6     control_value_cutin;
     FT_F26Dot6     single_width_cutin;
     FT_F26Dot6     single_width_value;
     FT_UShort      delta_base;
     FT_UShort      delta_shift;
 
+    FT_Bool        auto_flip;
     FT_Byte        instruct_control;
     
     
@@ -90,17 +98,12 @@ FT_BEGIN_HEADER
     FT_Bool        scan_control;
     FT_Int         scan_type;
 
-    FT_UShort      gep0;
-    FT_UShort      gep1;
-    FT_UShort      gep2;
-
   } TT_GraphicsState;
 
 
-#ifdef TT_USE_BYTECODE_INTERPRETER
-
   FT_LOCAL( void )
-  tt_glyphzone_done( TT_GlyphZone  zone );
+  tt_glyphzone_done( FT_Memory     memory,
+                     TT_GlyphZone  zone );
 
   FT_LOCAL( FT_Error )
   tt_glyphzone_new( FT_Memory     memory,
@@ -110,73 +113,6 @@ FT_BEGIN_HEADER
 
 #endif 
 
-
-
-  
-
-
-
-
-
-
-
-
-#define TT_MAX_CODE_RANGES  3
-
-
-  
-
-
-
-
-
-
-  typedef enum  TT_CodeRange_Tag_
-  {
-    tt_coderange_none = 0,
-    tt_coderange_font,
-    tt_coderange_cvt,
-    tt_coderange_glyph
-
-  } TT_CodeRange_Tag;
-
-
-  typedef struct  TT_CodeRange_
-  {
-    FT_Byte*  base;
-    FT_Long   size;
-
-  } TT_CodeRange;
-
-  typedef TT_CodeRange  TT_CodeRangeTable[TT_MAX_CODE_RANGES];
-
-
-  
-
-
-
-  typedef struct  TT_DefRecord_
-  {
-    FT_Int    range;          
-    FT_Long   start;          
-    FT_Long   end;            
-    FT_UInt   opc;            
-    FT_Bool   active;         
-
-  } TT_DefRecord, *TT_DefArray;
-
-
-  
-
-
-
-  typedef struct  TT_Transform_
-  {
-    FT_Fixed    xx, xy;     
-    FT_Fixed    yx, yy;
-    FT_F26Dot6  ox, oy;     
-
-  } TT_Transform;
 
 
   
@@ -251,13 +187,9 @@ FT_BEGIN_HEADER
     FT_Long     x_ratio;
     FT_Long     y_ratio;
 
-    FT_UShort   ppem;               
     FT_Long     ratio;              
     FT_Fixed    scale;
-
-    FT_F26Dot6  compensations[4];   
-
-    FT_Bool     valid;
+    FT_UShort   ppem;               
 
     FT_Bool     rotated;            
     FT_Bool     stretched;          
@@ -288,26 +220,7 @@ FT_BEGIN_HEADER
 
     FT_Long            point_size;    
 
-    FT_UInt            num_function_defs; 
-    FT_UInt            max_function_defs;
-    TT_DefArray        function_defs;     
-
-    FT_UInt            num_instruction_defs;  
-    FT_UInt            max_instruction_defs;
-    TT_DefArray        instruction_defs;      
-
-    FT_UInt            max_func;
-    FT_UInt            max_ins;
-
-    TT_CodeRangeTable  codeRangeTable;
-
     TT_GraphicsState   GS;
-
-    FT_ULong           cvt_size;      
-    FT_Long*           cvt;
-
-    FT_UShort          storage_size; 
-    FT_Long*           storage;      
 
     TT_GlyphZoneRec    twilight;     
 
@@ -375,20 +288,18 @@ FT_BEGIN_HEADER
 #ifdef TT_USE_BYTECODE_INTERPRETER
 
   FT_LOCAL( FT_Error )
-  tt_size_run_fpgm( TT_Size  size,
-                    FT_Bool  pedantic );
+  tt_size_run_fpgm( TT_Size  size );
 
   FT_LOCAL( FT_Error )
-  tt_size_run_prep( TT_Size  size,
-                    FT_Bool  pedantic );
+  tt_size_run_prep( TT_Size  size );
 
   FT_LOCAL( FT_Error )
-  tt_size_ready_bytecode( TT_Size  size,
-                          FT_Bool  pedantic );
+  tt_size_init_bytecode( TT_Size  size,
+                         FT_Bool  pedantic );
 
 #endif 
 
-  FT_LOCAL( FT_Error )
+  FT_LOCAL( void )
   tt_size_reset_height( FT_Size  size );
 
   FT_LOCAL( FT_Error )

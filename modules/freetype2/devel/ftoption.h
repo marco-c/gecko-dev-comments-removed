@@ -306,6 +306,31 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
+
+
+
+
+
+
+#define FT_CONFIG_OPTION_USE_HARFBUZZ_DYNAMIC
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define FT_CONFIG_OPTION_USE_BROTLI
 
 

@@ -461,7 +461,7 @@
     FT_ULong    bytes;
 
 
-    FT_TRACE1(( "PCF_Glyph_Load: glyph index %d\n", glyph_index ));
+    FT_TRACE1(( "PCF_Glyph_Load: glyph index %u\n", glyph_index ));
 
     if ( !face )
     {

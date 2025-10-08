@@ -848,10 +848,22 @@
                     FT_Int  y_offset,
                     FT_Int  width )
   {
+#if USE_SQUARED_DISTANCES
+    FT_16D16      edge_threshold = ONE / 4;
+#else
+    FT_16D16      edge_threshold = ONE / 2;
+#endif
     ED*           to_check;
     FT_16D16      dist;
     FT_16D16_Vec  dist_vec;
 
+
+    
+
+
+
+    if ( current->dist <= edge_threshold )
+      return;
 
     to_check = current + ( y_offset * width ) + x_offset;
 

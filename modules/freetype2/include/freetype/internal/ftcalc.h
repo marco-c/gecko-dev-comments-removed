@@ -33,11 +33,81 @@ FT_BEGIN_HEADER
 
 
 
-#ifndef  FT_CONFIG_OPTION_NO_ASSEMBLER
+
+
+
+#define ADD_INT( a, b )                           \
+          (FT_Int)( (FT_UInt)(a) + (FT_UInt)(b) )
+#define SUB_INT( a, b )                           \
+          (FT_Int)( (FT_UInt)(a) - (FT_UInt)(b) )
+#define MUL_INT( a, b )                           \
+          (FT_Int)( (FT_UInt)(a) * (FT_UInt)(b) )
+#define NEG_INT( a )                              \
+          (FT_Int)( (FT_UInt)0 - (FT_UInt)(a) )
+
+#define ADD_LONG( a, b )                             \
+          (FT_Long)( (FT_ULong)(a) + (FT_ULong)(b) )
+#define SUB_LONG( a, b )                             \
+          (FT_Long)( (FT_ULong)(a) - (FT_ULong)(b) )
+#define MUL_LONG( a, b )                             \
+          (FT_Long)( (FT_ULong)(a) * (FT_ULong)(b) )
+#define NEG_LONG( a )                                \
+          (FT_Long)( (FT_ULong)0 - (FT_ULong)(a) )
+
+#define ADD_INT32( a, b )                               \
+          (FT_Int32)( (FT_UInt32)(a) + (FT_UInt32)(b) )
+#define SUB_INT32( a, b )                               \
+          (FT_Int32)( (FT_UInt32)(a) - (FT_UInt32)(b) )
+#define MUL_INT32( a, b )                               \
+          (FT_Int32)( (FT_UInt32)(a) * (FT_UInt32)(b) )
+#define NEG_INT32( a )                                  \
+          (FT_Int32)( (FT_UInt32)0 - (FT_UInt32)(a) )
+
+#ifdef FT_INT64
+
+#define ADD_INT64( a, b )                               \
+          (FT_Int64)( (FT_UInt64)(a) + (FT_UInt64)(b) )
+#define SUB_INT64( a, b )                               \
+          (FT_Int64)( (FT_UInt64)(a) - (FT_UInt64)(b) )
+#define MUL_INT64( a, b )                               \
+          (FT_Int64)( (FT_UInt64)(a) * (FT_UInt64)(b) )
+#define NEG_INT64( a )                                  \
+          (FT_Int64)( (FT_UInt64)0 - (FT_UInt64)(a) )
+
+#endif 
+
+
+  
+
+
+
+
+
+#ifdef FT_CONFIG_OPTION_INLINE_MULFIX
+
+#ifdef FT_INT64
+
+  static inline FT_Long
+  FT_MulFix_64( FT_Long  a,
+                FT_Long  b )
+  {
+    FT_Int64  ab = MUL_INT64( a, b );
+
+
+    ab = ADD_INT64( ab, 0x8000 + ( ab >> 63 ) );  
+
+    return (FT_Long)( ab >> 16 );
+  }
+
+
+#define FT_MulFix( a, b )  FT_MulFix_64( a, b )
+
+#elif !defined( FT_CONFIG_OPTION_NO_ASSEMBLER )
   
   
 
-#if defined( __CC_ARM ) || defined( __ARMCC__ )  
+#if defined( __arm__ )                                 && \
+    ( defined( __thumb2__ ) || !defined( __thumb__ ) )
 
 #define FT_MULFIX_ASSEMBLER  FT_MulFix_arm
 
@@ -49,6 +119,7 @@ FT_BEGIN_HEADER
   {
     FT_Int32  t, t2;
 
+#if defined( __CC_ARM ) || defined( __ARMCC__ )  
 
     __asm
     {
@@ -60,28 +131,8 @@ FT_BEGIN_HEADER
       mov   a,  t2, lsr #16         
       orr   a,  a,  t,  lsl #16     
     }
-    return a;
-  }
 
-#endif 
-
-
-#ifdef __GNUC__
-
-#if defined( __arm__ )                                 && \
-    ( !defined( __thumb__ ) || defined( __thumb2__ ) ) && \
-    !( defined( __CC_ARM ) || defined( __ARMCC__ ) )
-
-#define FT_MULFIX_ASSEMBLER  FT_MulFix_arm
-
-  
-
-  static __inline__ FT_Int32
-  FT_MulFix_arm( FT_Int32  a,
-                 FT_Int32  b )
-  {
-    FT_Int32  t, t2;
-
+#elif defined( __GNUC__ )
 
     __asm__ __volatile__ (
       "smull  %1, %2, %4, %3\n\t"       
@@ -98,26 +149,25 @@ FT_BEGIN_HEADER
       : "=r"(a), "=&r"(t2), "=&r"(t)
       : "r"(a), "r"(b)
       : "cc" );
+
+#endif
+
     return a;
   }
 
-#endif 
-       
-       
-
-
-#if defined( __i386__ )
+#elif defined( __i386__ ) || defined( _M_IX86 )
 
 #define FT_MULFIX_ASSEMBLER  FT_MulFix_i386
 
   
 
-  static __inline__ FT_Int32
+  static __inline FT_Int32
   FT_MulFix_i386( FT_Int32  a,
                   FT_Int32  b )
   {
     FT_Int32  result;
 
+#if defined( __GNUC__ )
 
     __asm__ __volatile__ (
       "imul  %%edx\n"
@@ -132,27 +182,8 @@ FT_BEGIN_HEADER
       : "=a"(result), "=d"(b)
       : "a"(a), "d"(b)
       : "%ecx", "cc" );
-    return result;
-  }
 
-#endif 
-
-#endif 
-
-
-#ifdef _MSC_VER 
-
-#ifdef _M_IX86
-
-#define FT_MULFIX_ASSEMBLER  FT_MulFix_i386
-
-  
-
-  static __inline FT_Int32
-  FT_MulFix_i386( FT_Int32  a,
-                  FT_Int32  b )
-  {
-    FT_Int32  result;
+#elif defined( _MSC_VER )
 
     __asm
     {
@@ -169,81 +200,21 @@ FT_BEGIN_HEADER
       add eax, edx
       mov result, eax
     }
+
+#endif
+
     return result;
   }
 
 #endif 
 
-#endif 
-
-
-#if defined( __GNUC__ ) && defined( __x86_64__ )
-
-#define FT_MULFIX_ASSEMBLER  FT_MulFix_x86_64
-
-  static __inline__ FT_Int32
-  FT_MulFix_x86_64( FT_Int32  a,
-                    FT_Int32  b )
-  {
-    
-    
-#if __GNUC__ > 4 || ( __GNUC__ == 4 && __GNUC_MINOR__ >= 6 )
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wlong-long"
-#endif
-
-#if 1
-    
-    
-    long long  ret, tmp;
-
-
-    ret  = (long long)a * b;
-    tmp  = ret >> 63;
-    ret += 0x8000 + tmp;
-
-    return (FT_Int32)( ret >> 16 );
-#else
-
-    
-    
-    
-    
-    
-    
-    long long  wide_a = (long long)a;
-    long long  wide_b = (long long)b;
-    long long  result;
-
-
-    __asm__ __volatile__ (
-      "imul %2, %1\n"
-      "mov %1, %0\n"
-      "sar $63, %0\n"
-      "lea 0x8000(%1, %0), %0\n"
-      "sar $16, %0\n"
-      : "=&r"(result), "=&r"(wide_a)
-      : "r"(wide_b)
-      : "cc" );
-
-    return (FT_Int32)result;
-#endif
-
-#if __GNUC__ > 4 || ( __GNUC__ == 4 && __GNUC_MINOR__ >= 6 )
-#pragma GCC diagnostic pop
-#endif
-  }
-
-#endif 
-
-#endif 
-
-
-#ifdef FT_CONFIG_OPTION_INLINE_MULFIX
 #ifdef FT_MULFIX_ASSEMBLER
 #define FT_MulFix( a, b )  FT_MULFIX_ASSEMBLER( (FT_Int32)(a), (FT_Int32)(b) )
 #endif
-#endif
+
+#endif 
+
+#endif 
 
 
   
@@ -276,40 +247,6 @@ FT_BEGIN_HEADER
   FT_MulDiv_No_Round( FT_Long  a,
                       FT_Long  b,
                       FT_Long  c );
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  FT_BASE( FT_Int32 )
-  FT_MulAddFix( FT_Fixed*  s,
-                FT_Int32*  f,
-                FT_UInt    count );
 
 
   
@@ -455,6 +392,10 @@ FT_BEGIN_HEADER
 
 #define FT_MSB( x )  FT_MSB_i386( x )
 
+#elif defined( __CC_ARM )
+
+#define FT_MSB( x )  ( 31 - __clz( x ) )
+
 #elif defined( __SunOS_5_11 )
 
 #include <string.h>
@@ -525,55 +466,6 @@ FT_BEGIN_HEADER
 #define FIXED_TO_INT( x )      ( FT_RoundFix( x ) >> 16 )
 
 #define ROUND_F26DOT6( x )     ( ( (x) + 32 - ( x < 0 ) ) & -64 )
-
-  
-
-
-
-
-
-
-
-
-#define ADD_INT( a, b )                           \
-          (FT_Int)( (FT_UInt)(a) + (FT_UInt)(b) )
-#define SUB_INT( a, b )                           \
-          (FT_Int)( (FT_UInt)(a) - (FT_UInt)(b) )
-#define MUL_INT( a, b )                           \
-          (FT_Int)( (FT_UInt)(a) * (FT_UInt)(b) )
-#define NEG_INT( a )                              \
-          (FT_Int)( (FT_UInt)0 - (FT_UInt)(a) )
-
-#define ADD_LONG( a, b )                             \
-          (FT_Long)( (FT_ULong)(a) + (FT_ULong)(b) )
-#define SUB_LONG( a, b )                             \
-          (FT_Long)( (FT_ULong)(a) - (FT_ULong)(b) )
-#define MUL_LONG( a, b )                             \
-          (FT_Long)( (FT_ULong)(a) * (FT_ULong)(b) )
-#define NEG_LONG( a )                                \
-          (FT_Long)( (FT_ULong)0 - (FT_ULong)(a) )
-
-#define ADD_INT32( a, b )                               \
-          (FT_Int32)( (FT_UInt32)(a) + (FT_UInt32)(b) )
-#define SUB_INT32( a, b )                               \
-          (FT_Int32)( (FT_UInt32)(a) - (FT_UInt32)(b) )
-#define MUL_INT32( a, b )                               \
-          (FT_Int32)( (FT_UInt32)(a) * (FT_UInt32)(b) )
-#define NEG_INT32( a )                                  \
-          (FT_Int32)( (FT_UInt32)0 - (FT_UInt32)(a) )
-
-#ifdef FT_INT64
-
-#define ADD_INT64( a, b )                               \
-          (FT_Int64)( (FT_UInt64)(a) + (FT_UInt64)(b) )
-#define SUB_INT64( a, b )                               \
-          (FT_Int64)( (FT_UInt64)(a) - (FT_UInt64)(b) )
-#define MUL_INT64( a, b )                               \
-          (FT_Int64)( (FT_UInt64)(a) * (FT_UInt64)(b) )
-#define NEG_INT64( a )                                  \
-          (FT_Int64)( (FT_UInt64)0 - (FT_UInt64)(a) )
-
-#endif 
 
 
 FT_END_HEADER

@@ -73,9 +73,11 @@
   {
     AF_UNIRANGE_REC(  0x0600,  0x06FF ),  
     AF_UNIRANGE_REC(  0x0750,  0x07FF ),  
+    AF_UNIRANGE_REC(  0x0870,  0x089F ),  
     AF_UNIRANGE_REC(  0x08A0,  0x08FF ),  
     AF_UNIRANGE_REC(  0xFB50,  0xFDFF ),  
     AF_UNIRANGE_REC(  0xFE70,  0xFEFF ),  
+    AF_UNIRANGE_REC( 0x10EC0, 0x10EFF ),  
     AF_UNIRANGE_REC( 0x1EE00, 0x1EEFF ),  
     AF_UNIRANGE_REC(       0,       0 )
   };
@@ -90,8 +92,9 @@
     AF_UNIRANGE_REC(  0x06DF,  0x06E4 ),
     AF_UNIRANGE_REC(  0x06E7,  0x06E8 ),
     AF_UNIRANGE_REC(  0x06EA,  0x06ED ),
-    AF_UNIRANGE_REC(  0x08D4,  0x08E1 ),
-    AF_UNIRANGE_REC(  0x08D3,  0x08FF ),
+    AF_UNIRANGE_REC(  0x0897,  0x089F ),
+    AF_UNIRANGE_REC(  0x08CA,  0x08E1 ),
+    AF_UNIRANGE_REC(  0x08E3,  0x08FF ),
     AF_UNIRANGE_REC(  0xFBB2,  0xFBC1 ),
     AF_UNIRANGE_REC(  0xFE70,  0xFE70 ),
     AF_UNIRANGE_REC(  0xFE72,  0xFE72 ),
@@ -101,6 +104,7 @@
     AF_UNIRANGE_REC(  0xFE7A,  0xFE7A ),
     AF_UNIRANGE_REC(  0xFE7C,  0xFE7C ),
     AF_UNIRANGE_REC(  0xFE7E,  0xFE7E ),
+    AF_UNIRANGE_REC( 0x10EFD, 0x10EFF ),
     AF_UNIRANGE_REC(       0,       0 )
   };
 
@@ -200,6 +204,7 @@
   {
     AF_UNIRANGE_REC(  0x1400,  0x167F ), 
     AF_UNIRANGE_REC(  0x18B0,  0x18FF ), 
+    AF_UNIRANGE_REC( 0x11AB0, 0x11ABF ), 
     AF_UNIRANGE_REC(       0,       0 )
   };
 
@@ -259,6 +264,9 @@
   };
 
 
+  
+  
+  
   const AF_Script_UniRangeRec  af_cyrl_uniranges[] =
   {
     AF_UNIRANGE_REC(  0x0400,  0x04FF ),  
@@ -266,6 +274,7 @@
     AF_UNIRANGE_REC(  0x2DE0,  0x2DFF ),  
     AF_UNIRANGE_REC(  0xA640,  0xA69F ),  
     AF_UNIRANGE_REC(  0x1C80,  0x1C8F ),  
+    AF_UNIRANGE_REC( 0x1E030, 0x1E08F ),  
     AF_UNIRANGE_REC(       0,       0 )
   };
 
@@ -294,6 +303,7 @@
     AF_UNIRANGE_REC(  0x0966,  0x097F ),  
     AF_UNIRANGE_REC(  0x20B9,  0x20B9 ),  
     AF_UNIRANGE_REC(  0xA8E0,  0xA8FF ),  
+    AF_UNIRANGE_REC( 0x11B00, 0x11B5F ),  
     AF_UNIRANGE_REC(       0,       0 )
   };
 
@@ -329,6 +339,7 @@
     AF_UNIRANGE_REC(  0x1380,  0x139F ),  
     AF_UNIRANGE_REC(  0x2D80,  0x2DDF ),  
     AF_UNIRANGE_REC(  0xAB00,  0xAB2F ),  
+    AF_UNIRANGE_REC( 0x1E7E0, 0x1E7FF ),  
     AF_UNIRANGE_REC(       0,       0 )
   };
 
@@ -534,7 +545,7 @@
   {
     AF_UNIRANGE_REC(  0x0EB1,  0x0EB1 ),
     AF_UNIRANGE_REC(  0x0EB4,  0x0EBC ),
-    AF_UNIRANGE_REC(  0x0EC8,  0x0ECD ),
+    AF_UNIRANGE_REC(  0x0EC8,  0x0ECE ),
     AF_UNIRANGE_REC(       0,       0 )
   };
 
@@ -567,12 +578,15 @@
     AF_UNIRANGE_REC(  0x2C7E,  0x2C7F ),  
     AF_UNIRANGE_REC(  0x2E00,  0x2E7F ),  
     AF_UNIRANGE_REC(  0xA720,  0xA76F ),  
-    AF_UNIRANGE_REC(  0xA771,  0xA7F7 ),  
+    AF_UNIRANGE_REC(  0xA771,  0xA7F0 ),  
+    AF_UNIRANGE_REC(  0xA7F2,  0xA7F7 ),  
     AF_UNIRANGE_REC(  0xA7FA,  0xA7FF ),  
     AF_UNIRANGE_REC(  0xAB30,  0xAB5B ),  
-    AF_UNIRANGE_REC(  0xAB60,  0xAB6F ),  
+    AF_UNIRANGE_REC(  0xAB60,  0xAB68 ),  
+    AF_UNIRANGE_REC(  0xAB6A,  0xAB6F ),  
     AF_UNIRANGE_REC(  0xFB00,  0xFB06 ),  
     AF_UNIRANGE_REC( 0x1D400, 0x1D7FF ),  
+    AF_UNIRANGE_REC( 0x1DF00, 0x1DFFF ),  
     AF_UNIRANGE_REC(       0,       0 )
   };
 
@@ -588,7 +602,7 @@
     AF_UNIRANGE_REC(  0x02B9,  0x02DF ),
     AF_UNIRANGE_REC(  0x02E5,  0x02FF ),
     AF_UNIRANGE_REC(  0x0300,  0x036F ),
-    AF_UNIRANGE_REC(  0x1AB0,  0x1ABE ),
+    AF_UNIRANGE_REC(  0x1AB0,  0x1AEB ),
     AF_UNIRANGE_REC(  0x1DC0,  0x1DFF ),
     AF_UNIRANGE_REC(  0x2017,  0x2017 ),
     AF_UNIRANGE_REC(  0x203E,  0x203E ),
@@ -625,8 +639,11 @@
     AF_UNIRANGE_REC(  0x2070,  0x207F ),  
     AF_UNIRANGE_REC(  0x2C7D,  0x2C7D ),  
     AF_UNIRANGE_REC(  0xA770,  0xA770 ),  
+    AF_UNIRANGE_REC(  0xA7F1,  0xA7F1 ),  
     AF_UNIRANGE_REC(  0xA7F8,  0xA7F9 ),  
     AF_UNIRANGE_REC(  0xAB5C,  0xAB5F ),  
+    AF_UNIRANGE_REC(  0xAB69,  0xAB69 ),  
+    AF_UNIRANGE_REC( 0x10780, 0x107FB ),  
     AF_UNIRANGE_REC(       0,       0 )
   };
 
@@ -639,6 +656,7 @@
   const AF_Script_UniRangeRec  af_lisu_uniranges[] =
   {
     AF_UNIRANGE_REC(  0xA4D0,  0xA4FF ),    
+    AF_UNIRANGE_REC( 0x11FB0, 0x11FBF ),    
     AF_UNIRANGE_REC(       0,       0 )
   };
 
@@ -696,6 +714,7 @@
     AF_UNIRANGE_REC(  0x1000,  0x109F ),    
     AF_UNIRANGE_REC(  0xA9E0,  0xA9FF ),    
     AF_UNIRANGE_REC(  0xAA60,  0xAA7F ),    
+    AF_UNIRANGE_REC( 0x116D0, 0x116FF ),    
     AF_UNIRANGE_REC(       0,       0 )
   };
 
@@ -836,6 +855,7 @@
 
   const AF_Script_UniRangeRec  af_sinh_nonbase_uniranges[] =
   {
+    AF_UNIRANGE_REC(  0x0D81,  0x0D81 ),
     AF_UNIRANGE_REC(  0x0DCA,  0x0DCA ),
     AF_UNIRANGE_REC(  0x0DD2,  0x0DD6 ),
     AF_UNIRANGE_REC(       0,       0 )
@@ -860,6 +880,7 @@
   const AF_Script_UniRangeRec  af_taml_uniranges[] =
   {
     AF_UNIRANGE_REC(  0x0B80,  0x0BFF ),  
+    AF_UNIRANGE_REC( 0x11FC0, 0x11FFF ),  
     AF_UNIRANGE_REC(       0,       0 )
   };
 
@@ -899,6 +920,7 @@
   {
     AF_UNIRANGE_REC(  0x0C00,  0x0C00 ),
     AF_UNIRANGE_REC(  0x0C04,  0x0C04 ),
+    AF_UNIRANGE_REC(  0x0C3C,  0x0C3C ),
     AF_UNIRANGE_REC(  0x0C3E,  0x0C40 ),
     AF_UNIRANGE_REC(  0x0C46,  0x0C56 ),
     AF_UNIRANGE_REC(  0x0C62,  0x0C63 ),
@@ -992,6 +1014,7 @@
     AF_UNIRANGE_REC(  0xA806,  0xA806 ),
     AF_UNIRANGE_REC(  0xA80B,  0xA80B ),
     AF_UNIRANGE_REC(  0xA825,  0xA826 ),
+    AF_UNIRANGE_REC(  0xA82C,  0xA82C ),
     AF_UNIRANGE_REC(       0,       0 )
   };
 
@@ -1048,15 +1071,21 @@
     AF_UNIRANGE_REC(  0xFE10,  0xFE1F ),  
     AF_UNIRANGE_REC(  0xFE30,  0xFE4F ),  
     AF_UNIRANGE_REC(  0xFF00,  0xFFEF ),  
+    AF_UNIRANGE_REC( 0x1AFF0, 0x1AFFF ),  
     AF_UNIRANGE_REC( 0x1B000, 0x1B0FF ),  
     AF_UNIRANGE_REC( 0x1B100, 0x1B12F ),  
+    AF_UNIRANGE_REC( 0x1B130, 0x1B16F ),  
     AF_UNIRANGE_REC( 0x1D300, 0x1D35F ),  
     AF_UNIRANGE_REC( 0x20000, 0x2A6DF ),  
     AF_UNIRANGE_REC( 0x2A700, 0x2B73F ),  
     AF_UNIRANGE_REC( 0x2B740, 0x2B81F ),  
     AF_UNIRANGE_REC( 0x2B820, 0x2CEAF ),  
     AF_UNIRANGE_REC( 0x2CEB0, 0x2EBEF ),  
+    AF_UNIRANGE_REC( 0x2EBF0, 0x2EE5D ),  
     AF_UNIRANGE_REC( 0x2F800, 0x2FA1F ),  
+    AF_UNIRANGE_REC( 0x30000, 0x3134A ),  
+    AF_UNIRANGE_REC( 0x31350, 0x323AF ),  
+    AF_UNIRANGE_REC( 0x323B0, 0x33479 ),  
     AF_UNIRANGE_REC(       0,       0 )
   };
 

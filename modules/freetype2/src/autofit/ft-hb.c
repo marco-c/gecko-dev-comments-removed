@@ -16,100 +16,182 @@
 
 
 
-
-
-
-
-
-
-
+#if !defined( _WIN32 ) && !defined( _GNU_SOURCE )
+#  define _GNU_SOURCE  1  /* for RTLD_DEFAULT */
+#endif
 
 #include <freetype/freetype.h>
-#include <freetype/tttables.h>
+#include <freetype/internal/ftmemory.h>
 
-#ifdef FT_CONFIG_OPTION_USE_HARFBUZZ
+#include "afglobal.h"
 
 #include "ft-hb.h"
 
 
+#if defined( FT_CONFIG_OPTION_USE_HARFBUZZ )         && \
+    defined( FT_CONFIG_OPTION_USE_HARFBUZZ_DYNAMIC )
 
+#ifndef FT_LIBHARFBUZZ
+#  ifdef _WIN32
+#    define FT_LIBHARFBUZZ "libharfbuzz-0.dll"
+#  else
+#    ifdef __APPLE__
+#      define FT_LIBHARFBUZZ "libharfbuzz.0.dylib"
+#    else
+#      define FT_LIBHARFBUZZ "libharfbuzz.so.0"
+#    endif
+#  endif
+#endif
 
+#ifdef _WIN32
 
-static hb_blob_t *
-hb_ft_reference_table_ (hb_face_t *face, hb_tag_t tag, void *user_data)
-{
-  FT_Face ft_face = (FT_Face) user_data;
-  FT_Byte *buffer;
-  FT_ULong  length = 0;
-  FT_Error error;
-
-  FT_UNUSED (face);
-
-  
-
-  error = FT_Load_Sfnt_Table (ft_face, tag, 0, NULL, &length);
-  if (error)
-    return NULL;
-
-  buffer = (FT_Byte *) ft_smalloc (length);
-  if (!buffer)
-    return NULL;
-
-  error = FT_Load_Sfnt_Table (ft_face, tag, 0, buffer, &length);
-  if (error)
-  {
-    free (buffer);
-    return NULL;
-  }
-
-  return hb_blob_create ((const char *) buffer, length,
-                         HB_MEMORY_MODE_WRITABLE,
-                         buffer, ft_sfree);
-}
-
-static hb_face_t *
-hb_ft_face_create_ (FT_Face           ft_face,
-                    hb_destroy_func_t destroy)
-{
-  hb_face_t *face;
-
-  if (!ft_face->stream->read) {
-    hb_blob_t *blob;
-
-    blob = hb_blob_create ((const char *) ft_face->stream->base,
-                           (unsigned int) ft_face->stream->size,
-                           HB_MEMORY_MODE_READONLY,
-                           ft_face, destroy);
-    face = hb_face_create (blob, ft_face->face_index);
-    hb_blob_destroy (blob);
-  } else {
-    face = hb_face_create_for_tables (hb_ft_reference_table_, ft_face, destroy);
-  }
-
-  hb_face_set_index (face, ft_face->face_index);
-  hb_face_set_upem (face, ft_face->units_per_EM);
-
-  return face;
-}
-
-FT_LOCAL_DEF(hb_font_t *)
-hb_ft_font_create_ (FT_Face           ft_face,
-                    hb_destroy_func_t destroy)
-{
-  hb_font_t *font;
-  hb_face_t *face;
-
-  face = hb_ft_face_create_ (ft_face, destroy);
-  font = hb_font_create (face);
-  hb_face_destroy (face);
-  return font;
-}
+#  include <windows.h>
 
 #else 
 
+#  include <dlfcn.h>
 
-typedef int  ft_hb_dummy_;
+  
+  
+  
+  
+#  if defined( __GNUC__ )
+#    pragma GCC diagnostic push
+#    ifndef __cplusplus
+#      pragma GCC diagnostic ignored "-Wpedantic"
+#    endif
+#  endif
 
 #endif 
+
+
+  FT_LOCAL_DEF( void )
+  ft_hb_funcs_init( struct AF_ModuleRec_  *af_module )
+  {
+    FT_Memory  memory = af_module->root.memory;
+    FT_Error   error;
+
+    ft_hb_funcs_t                *funcs           = NULL;
+    ft_hb_version_atleast_func_t  version_atleast = NULL;
+
+#ifdef _WIN32
+    HANDLE  lib;
+#  define DLSYM( lib, name ) \
+            (ft_ ## name ## _func_t)GetProcAddress( lib, #name )
+#else
+    void  *lib;
+#  define DLSYM( lib, name ) \
+            (ft_ ## name ## _func_t)dlsym( lib, #name )
+#endif
+
+
+    af_module->hb_funcs = NULL;
+
+    if ( FT_NEW( funcs ) )
+      return;
+    FT_ZERO( funcs );
+
+#ifdef _WIN32
+
+    lib = LoadLibraryA( FT_LIBHARFBUZZ );
+    if ( !lib )
+      goto Fail;
+    version_atleast = DLSYM( lib, hb_version_atleast );
+
+#else 
+
+#  ifdef RTLD_DEFAULT
+#    define FT_RTLD_FLAGS RTLD_LAZY | RTLD_GLOBAL
+    lib             = RTLD_DEFAULT;
+    version_atleast = DLSYM( lib, hb_version_atleast );
+#  else
+#    define FT_RTLD_FLAGS RTLD_LAZY
+#  endif
+
+    if ( !version_atleast )
+    {
+      
+
+
+
+
+
+
+
+
+      lib = dlopen( FT_LIBHARFBUZZ, FT_RTLD_FLAGS );
+      if ( !lib )
+        goto Fail;
+      version_atleast = DLSYM( lib, hb_version_atleast );
+    }
+
+#endif 
+
+    if ( !version_atleast )
+      goto Fail;
+
+    
+#define HB_EXTERN( ret, name, args )  \
+  {                                   \
+    funcs->name = DLSYM( lib, name ); \
+    if ( !funcs->name )               \
+      goto Fail;                      \
+  }
+#include "ft-hb-decls.h"
+#undef HB_EXTERN
+
+#undef DLSYM
+
+    af_module->hb_funcs = funcs;
+    return;
+
+  Fail:
+    if ( funcs )
+      FT_FREE( funcs );
+  }
+
+
+  FT_LOCAL_DEF( void )
+  ft_hb_funcs_done( struct AF_ModuleRec_  *af_module )
+  {
+    FT_Memory  memory = af_module->root.memory;
+
+
+    if ( af_module->hb_funcs )
+    {
+      FT_FREE( af_module->hb_funcs );
+      af_module->hb_funcs = NULL;
+    }
+  }
+
+
+  FT_LOCAL_DEF( FT_Bool )
+  ft_hb_enabled( struct AF_FaceGlobalsRec_  *globals )
+  {
+    return globals->module->hb_funcs != NULL;
+  }
+
+#ifndef _WIN32
+#  if defined( __GNUC__ )
+#    pragma GCC diagnostic pop
+#  endif
+#endif
+
+#else 
+
+  FT_LOCAL_DEF( FT_Bool )
+  ft_hb_enabled( struct AF_FaceGlobalsRec_  *globals )
+  {
+    FT_UNUSED( globals );
+
+#ifdef FT_CONFIG_OPTION_USE_HARFBUZZ
+    return TRUE;
+#else
+    return FALSE;
+#endif
+  }
+
+#endif 
+
 
 

@@ -3495,6 +3495,8 @@ FT_BEGIN_HEADER
 
 
 
+
+
 #define FT_LOAD_DEFAULT                      0x0
 #define FT_LOAD_NO_SCALE                     ( 1L << 0  )
 #define FT_LOAD_NO_HINTING                   ( 1L << 1  )
@@ -3805,6 +3807,8 @@ FT_BEGIN_HEADER
 
 
   
+
+
 
 
 
@@ -5173,8 +5177,8 @@ FT_BEGIN_HEADER
 
 
 #define FREETYPE_MAJOR  2
-#define FREETYPE_MINOR  13
-#define FREETYPE_PATCH  3
+#define FREETYPE_MINOR  14
+#define FREETYPE_PATCH  1
 
 
   

@@ -751,6 +751,9 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
   FT_EXPORT( FT_Error )
   FT_Load_Sfnt_Table( FT_Face    face,
                       FT_ULong   tag,

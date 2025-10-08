@@ -150,7 +150,6 @@ FT_BEGIN_HEADER
 
 
 
-
 #define FT_WinFNT_ID_CP1252    0
 #define FT_WinFNT_ID_DEFAULT   1
 #define FT_WinFNT_ID_SYMBOL    2

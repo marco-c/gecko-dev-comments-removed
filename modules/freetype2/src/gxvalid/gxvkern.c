@@ -884,7 +884,7 @@
 
     for ( i = 0; i < nTables; i++ )
     {
-      GXV_TRACE(( "validating subtable %d/%lu\n", i, nTables ));
+      GXV_TRACE(( "validating subtable %u/%lu\n", i, nTables ));
       
       gxv_kern_subtable_validate( p, 0, gxvalid );
       p += gxvalid->subtable_length;

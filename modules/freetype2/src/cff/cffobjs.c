@@ -554,7 +554,9 @@
       {
         
         error = sfnt->load_cmap( face, stream );
-        if ( error )
+
+        
+        if ( FT_ERR_NEQ( error, Table_Missing ) && FT_ERR_NEQ( error, Ok ) )
           goto Exit;
       }
 
@@ -651,7 +653,7 @@
         {
           s = cff_index_get_sid_string( cff, idx );
           if ( s )
-            FT_TRACE4(( "  %5d %s\n", idx, s ));
+            FT_TRACE4(( "  %5u %s\n", idx, s ));
         }
 
         
@@ -666,7 +668,7 @@
           FT_PtrDist  l;
 
 
-          FT_TRACE4(( "  %5d ", idx + 390 ));
+          FT_TRACE4(( "  %5u ", idx + 390 ));
           for ( l = 0; l < s1len; l++ )
             FT_TRACE4(( "%c", s1[l] ));
           FT_TRACE4(( "\n" ));
@@ -681,7 +683,7 @@
           FT_PtrDist  l;
 
 
-          FT_TRACE4(( "  %5d ", cff->num_strings + 390 ));
+          FT_TRACE4(( "  %5u ", cff->num_strings + 390 ));
           for ( l = 0; l < s1len; l++ )
             FT_TRACE4(( "%c", s1[l] ));
           FT_TRACE4(( "\n" ));

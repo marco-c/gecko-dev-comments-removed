@@ -47,11 +47,65 @@ FT_BEGIN_HEADER
 
 
 
+
+#define TT_MAX_CODE_RANGES  3
+
+
+  
+
+
+
+
+
+
+  typedef enum  TT_CodeRange_Tag_
+  {
+    tt_coderange_none = 0,
+    tt_coderange_font,
+    tt_coderange_cvt,
+    tt_coderange_glyph
+
+  } TT_CodeRange_Tag;
+
+
+  typedef struct  TT_CodeRange_
+  {
+    FT_Byte*  base;
+    FT_Long   size;
+
+  } TT_CodeRange;
+
+  typedef TT_CodeRange  TT_CodeRangeTable[TT_MAX_CODE_RANGES];
+
+
+  
+
+
+
+  typedef struct  TT_DefRecord_
+  {
+    FT_Int    range;          
+    FT_Long   start;          
+    FT_Long   end;            
+    FT_UInt   opc;            
+    FT_Bool   active;         
+
+  } TT_DefRecord, *TT_DefArray;
+
+
+  
+
+
+
+
+
+
+
   
   typedef FT_F26Dot6
   (*TT_Round_Func)( TT_ExecContext  exc,
                     FT_F26Dot6      distance,
-                    FT_Int          color );
+                    FT_F26Dot6      compensation );
 
   
   typedef void
@@ -111,6 +165,7 @@ FT_BEGIN_HEADER
     TT_Face            face;       
     TT_Size            size;       
     FT_Memory          memory;
+    TT_Interpreter     interpreter;
 
     
 
@@ -145,8 +200,6 @@ FT_BEGIN_HEADER
     FT_Byte            opcode;    
     FT_Int             length;    
 
-    FT_Bool            step_ins;  
-                                  
     FT_ULong           cvtSize;   
     FT_Long*           cvt;       
     FT_ULong           glyfCvtSize;
@@ -189,16 +242,14 @@ FT_BEGIN_HEADER
     FT_Bool            instruction_trap; 
                                          
 
-    TT_GraphicsState   default_GS;       
-                                         
     FT_Bool            is_composite;     
     FT_Bool            pedantic_hinting; 
 
     
 
-    FT_Long            F_dot_P;    
-                                   
-    TT_Round_Func      func_round; 
+    TT_Round_Func      func_round;     
+
+    FT_Vector          moveVector;     
 
     TT_Project_Func    func_project,   
                        func_dualproj,  
@@ -328,33 +379,12 @@ FT_BEGIN_HEADER
 
 
     
+    
+    
+    FT_Int             backward_compatibility;
 
-    
-    
-    FT_Bool            subpixel_hinting_lean;
+    FT_Render_Mode     mode;  
 
-    
-    
-    
-    FT_Bool            vertical_lcd_lean;
-
-    
-    
-    
-    FT_Bool            backward_compatibility;
-
-    
-    
-    FT_Bool            iupx_called;
-    FT_Bool            iupy_called;
-
-    
-    
-    
-    
-    
-    
-    FT_Bool            grayscale_cleartype;
 #endif 
 
     
@@ -371,22 +401,15 @@ FT_BEGIN_HEADER
   extern const TT_GraphicsState  tt_default_graphics_state;
 
 
-#ifdef TT_USE_BYTECODE_INTERPRETER
-  FT_LOCAL( void )
-  TT_Goto_CodeRange( TT_ExecContext  exec,
-                     FT_Int          range,
-                     FT_Long         IP );
-
   FT_LOCAL( void )
   TT_Set_CodeRange( TT_ExecContext  exec,
                     FT_Int          range,
-                    void*           base,
+                    FT_Byte*        base,
                     FT_Long         length );
 
   FT_LOCAL( void )
   TT_Clear_CodeRange( TT_ExecContext  exec,
                       FT_Int          range );
-#endif 
 
 
   
@@ -413,7 +436,6 @@ FT_BEGIN_HEADER
   TT_New_Context( TT_Driver  driver );
 
 
-#ifdef TT_USE_BYTECODE_INTERPRETER
   FT_LOCAL( void )
   TT_Done_Context( TT_ExecContext  exec );
 
@@ -424,11 +446,11 @@ FT_BEGIN_HEADER
 
   FT_LOCAL( void )
   TT_Save_Context( TT_ExecContext  exec,
-                   TT_Size         ins );
+                   TT_Size         size );
 
   FT_LOCAL( FT_Error )
-  TT_Run_Context( TT_ExecContext  exec );
-#endif 
+  TT_Run_Context( TT_ExecContext  exec,
+                  TT_Size         size );
 
 
   

@@ -238,24 +238,12 @@
     else if ( glyph_index >= cff->num_glyphs )
       return FT_THROW( Invalid_Argument );
 
-    if ( load_flags & FT_LOAD_NO_RECURSE )
-      load_flags |= FT_LOAD_NO_SCALE | FT_LOAD_NO_HINTING;
-
-    glyph->x_scale = 0x10000L;
-    glyph->y_scale = 0x10000L;
-    if ( size )
-    {
-      glyph->x_scale = size->root.metrics.x_scale;
-      glyph->y_scale = size->root.metrics.y_scale;
-    }
-
 #ifdef TT_CONFIG_OPTION_EMBEDDED_BITMAPS
 
     
     
     
     
-    if ( size )
     {
       CFF_Face      cff_face = (CFF_Face)size->root.face;
       SFNT_Service  sfnt     = (SFNT_Service)cff_face->sfnt;
@@ -283,9 +271,6 @@
           FT_UShort  advance;
           FT_Short   dummy;
 
-
-          glyph->root.outline.n_points   = 0;
-          glyph->root.outline.n_contours = 0;
 
           glyph->root.metrics.width  = (FT_Pos)metrics.width  * 64;
           glyph->root.metrics.height = (FT_Pos)metrics.height * 64;
@@ -425,6 +410,25 @@
 
     
     
+    hinting = FT_BOOL( ( load_flags & FT_LOAD_NO_HINTING ) == 0 );
+    scaled  = FT_BOOL( ( load_flags & FT_LOAD_NO_SCALE   ) == 0 );
+
+    glyph->hint        = hinting;
+    glyph->scaled      = scaled;
+
+    if ( scaled )
+    {
+      glyph->x_scale = size->root.metrics.x_scale;
+      glyph->y_scale = size->root.metrics.y_scale;
+    }
+    else
+    {
+      glyph->x_scale = 0x10000L;
+      glyph->y_scale = 0x10000L;
+    }
+
+    
+    
 
     
     if ( cff->num_subfonts )
@@ -456,18 +460,6 @@
       font_matrix = cff->top_font.font_dict.font_matrix;
       font_offset = cff->top_font.font_dict.font_offset;
     }
-
-    glyph->root.outline.n_points   = 0;
-    glyph->root.outline.n_contours = 0;
-
-    
-    
-    hinting = FT_BOOL( ( load_flags & FT_LOAD_NO_HINTING ) == 0 );
-    scaled  = FT_BOOL( ( load_flags & FT_LOAD_NO_SCALE   ) == 0 );
-
-    glyph->hint        = hinting;
-    glyph->scaled      = scaled;
-    glyph->root.format = FT_GLYPH_FORMAT_OUTLINE;  
 
     {
 #ifdef CFF_CONFIG_OPTION_OLD_ENGINE
@@ -603,8 +595,6 @@
       
       
       
-
-      
       
       if ( load_flags & FT_LOAD_NO_RECURSE )
       {
@@ -623,6 +613,12 @@
         FT_Glyph_Metrics*  metrics = &glyph->root.metrics;
         FT_Bool            has_vertical_info;
 
+
+        glyph->root.format = FT_GLYPH_FORMAT_OUTLINE;
+
+        glyph->root.outline.flags = FT_OUTLINE_REVERSE_FILL;
+        if ( size && size->root.metrics.y_ppem < 24 )
+          glyph->root.outline.flags |= FT_OUTLINE_HIGH_PRECISION;
 
         if ( face->horizontal.number_Of_HMetrics )
         {
@@ -677,14 +673,6 @@
 
         glyph->root.linearVertAdvance = metrics->vertAdvance;
 
-        glyph->root.format = FT_GLYPH_FORMAT_OUTLINE;
-
-        glyph->root.outline.flags = 0;
-        if ( size && size->root.metrics.y_ppem < 24 )
-          glyph->root.outline.flags |= FT_OUTLINE_HIGH_PRECISION;
-
-        glyph->root.outline.flags |= FT_OUTLINE_REVERSE_FILL;
-
         
         if ( font_matrix.xx != 0x10000L || font_matrix.yy != 0x10000L ||
              font_matrix.xy != 0        || font_matrix.yx != 0        )
@@ -707,7 +695,7 @@
           metrics->vertAdvance += font_offset.y;
         }
 
-        if ( ( load_flags & FT_LOAD_NO_SCALE ) == 0 || force_scaling )
+        if ( scaled || force_scaling )
         {
           
           FT_Int       n;

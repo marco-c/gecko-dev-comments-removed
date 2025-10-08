@@ -275,6 +275,28 @@ FT_BEGIN_HEADER
                   FT_GlyphSlot    slot,
                   FT_Render_Mode  mode );
 
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  FT_BASE( FT_Error )
+  find_unicode_charmap( FT_Face  face );
+
+
 #ifdef FT_CONFIG_OPTION_SUBPIXEL_RENDERING
 
   typedef void  (*FT_Bitmap_LcdFilterFunc)( FT_Bitmap*      bitmap,
@@ -498,9 +520,9 @@ FT_BEGIN_HEADER
 
   typedef struct  FT_ModuleRec_
   {
-    FT_Module_Class*  clazz;
-    FT_Library        library;
-    FT_Memory         memory;
+    const FT_Module_Class*  clazz;
+    FT_Library              library;
+    FT_Memory               memory;
 
   } FT_ModuleRec;
 

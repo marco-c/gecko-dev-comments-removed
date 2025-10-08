@@ -74,7 +74,7 @@ FT_BEGIN_HEADER
 #define AF_SCRIPT_DEFAULT    AF_SCRIPT_LATN
 
   
-#define AF_STYLE_MASK        0x3FFF
+#define AF_STYLE_MASK        0x1FFF
   
 #define AF_STYLE_UNASSIGNED  AF_STYLE_MASK
 
@@ -82,6 +82,8 @@ FT_BEGIN_HEADER
 #define AF_DIGIT             0x8000U
   
 #define AF_NONBASE           0x4000U
+  
+#define AF_HAS_CMAP_ENTRY    0x2000U
 
   
 #define AF_PROP_INCREASE_X_HEIGHT_MIN  6
@@ -111,6 +113,11 @@ FT_BEGIN_HEADER
 #ifdef FT_CONFIG_OPTION_USE_HARFBUZZ
     hb_font_t*       hb_font;
     hb_buffer_t*     hb_buf;           
+
+    
+    FT_Byte*         gsub;
+    
+    FT_UInt32*       gsub_lookups_single_alternate;
 #endif
 
     

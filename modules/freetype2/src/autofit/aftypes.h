@@ -35,6 +35,7 @@
 
 #include <freetype/freetype.h>
 #include <freetype/ftoutln.h>
+#include <freetype/internal/fthash.h>
 #include <freetype/internal/ftobjs.h>
 #include <freetype/internal/ftdebug.h>
 
@@ -406,6 +407,7 @@ extern void*  af_debug_hints_;
 
   typedef struct AF_FaceGlobalsRec_*  AF_FaceGlobals;
 
+
   
   
   
@@ -417,6 +419,8 @@ extern void*  af_debug_hints_;
     FT_Bool         digits_have_same_width;
 
     AF_FaceGlobals  globals;    
+
+    FT_Hash  reverse_charmap;
 
   } AF_StyleMetricsRec;
 
