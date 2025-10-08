@@ -1,4 +1,4 @@
-use super::{Bucket, Entries, IndexSet, IntoIter, Iter};
+use super::{Bucket, IndexSet, IntoIter, Iter};
 use crate::util::{slice_eq, try_simplify_range};
 
 use alloc::boxed::Box;
@@ -85,6 +85,7 @@ impl<T> Slice<T> {
     
     
     
+    #[track_caller]
     pub fn split_at(&self, index: usize) -> (&Self, &Self) {
         let (first, second) = self.entries.split_at(index);
         (Self::from_slice(first), Self::from_slice(second))
@@ -157,6 +158,53 @@ impl<T> Slice<T> {
         B: Ord,
     {
         self.binary_search_by(|k| f(k).cmp(b))
+    }
+
+    
+    #[inline]
+    pub fn is_sorted(&self) -> bool
+    where
+        T: PartialOrd,
+    {
+        
+        self.is_sorted_by(T::le)
+    }
+
+    
+    #[inline]
+    pub fn is_sorted_by<'a, F>(&'a self, mut cmp: F) -> bool
+    where
+        F: FnMut(&'a T, &'a T) -> bool,
+    {
+        
+        let mut iter = self.entries.iter();
+        match iter.next() {
+            Some(mut prev) => iter.all(move |next| {
+                let sorted = cmp(&prev.key, &next.key);
+                prev = next;
+                sorted
+            }),
+            None => true,
+        }
+    }
+
+    
+    #[inline]
+    pub fn is_sorted_by_key<'a, F, K>(&'a self, mut sort_key: F) -> bool
+    where
+        F: FnMut(&'a T) -> K,
+        K: PartialOrd,
+    {
+        
+        let mut iter = self.entries.iter().map(move |a| sort_key(&a.key));
+        match iter.next() {
+            Some(mut prev) => iter.all(move |next| {
+                let sorted = prev <= next;
+                prev = next;
+                sorted
+            }),
+            None => true,
+        }
     }
 
     

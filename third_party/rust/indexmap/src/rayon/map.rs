@@ -7,8 +7,8 @@ use super::collect;
 use rayon::iter::plumbing::{Consumer, ProducerCallback, UnindexedConsumer};
 use rayon::prelude::*;
 
-use crate::vec::Vec;
 use alloc::boxed::Box;
+use alloc::vec::Vec;
 use core::cmp::Ordering;
 use core::fmt;
 use core::hash::{BuildHasher, Hash};
@@ -16,7 +16,6 @@ use core::ops::RangeBounds;
 
 use crate::map::Slice;
 use crate::Bucket;
-use crate::Entries;
 use crate::IndexMap;
 
 impl<K, V, S> IntoParallelIterator for IndexMap<K, V, S>
@@ -447,6 +446,18 @@ where
     }
 
     
+    
+    pub fn par_sort_by_key<T, F>(&mut self, sort_key: F)
+    where
+        T: Ord,
+        F: Fn(&K, &V) -> T + Sync,
+    {
+        self.with_entries(move |entries| {
+            entries.par_sort_by_key(move |a| sort_key(&a.key, &a.value));
+        });
+    }
+
+    
     pub fn par_sort_unstable_keys(&mut self)
     where
         K: Ord,
@@ -479,6 +490,18 @@ where
         let mut entries = self.into_entries();
         entries.par_sort_unstable_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value));
         IntoParIter { entries }
+    }
+
+    
+    
+    pub fn par_sort_unstable_by_key<T, F>(&mut self, sort_key: F)
+    where
+        T: Ord,
+        F: Fn(&K, &V) -> T + Sync,
+    {
+        self.with_entries(move |entries| {
+            entries.par_sort_unstable_by_key(move |a| sort_key(&a.key, &a.value));
+        });
     }
 
     

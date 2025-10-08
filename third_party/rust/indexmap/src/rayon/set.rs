@@ -7,15 +7,14 @@ use super::collect;
 use rayon::iter::plumbing::{Consumer, ProducerCallback, UnindexedConsumer};
 use rayon::prelude::*;
 
-use crate::vec::Vec;
 use alloc::boxed::Box;
+use alloc::vec::Vec;
 use core::cmp::Ordering;
 use core::fmt;
 use core::hash::{BuildHasher, Hash};
 use core::ops::RangeBounds;
 
 use crate::set::Slice;
-use crate::Entries;
 use crate::IndexSet;
 
 type Bucket<T> = crate::Bucket<T, ()>;
@@ -518,6 +517,17 @@ where
     }
 
     
+    pub fn par_sort_by_key<K, F>(&mut self, sort_key: F)
+    where
+        K: Ord,
+        F: Fn(&T) -> K + Sync,
+    {
+        self.with_entries(move |entries| {
+            entries.par_sort_by_key(move |a| sort_key(&a.key));
+        });
+    }
+
+    
     pub fn par_sort_unstable(&mut self)
     where
         T: Ord,
@@ -546,6 +556,17 @@ where
         let mut entries = self.into_entries();
         entries.par_sort_unstable_by(move |a, b| cmp(&a.key, &b.key));
         IntoParIter { entries }
+    }
+
+    
+    pub fn par_sort_unstable_by_key<K, F>(&mut self, sort_key: F)
+    where
+        K: Ord,
+        F: Fn(&T) -> K + Sync,
+    {
+        self.with_entries(move |entries| {
+            entries.par_sort_unstable_by_key(move |a| sort_key(&a.key));
+        });
     }
 
     

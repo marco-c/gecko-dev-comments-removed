@@ -100,7 +100,6 @@
 
 
 
-
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
 extern crate alloc;
@@ -109,8 +108,6 @@ extern crate alloc;
 #[macro_use]
 extern crate std;
 
-use alloc::vec::{self, Vec};
-
 mod arbitrary;
 #[macro_use]
 mod macros;
@@ -118,6 +115,8 @@ mod macros;
 mod borsh;
 #[cfg(feature = "serde")]
 mod serde;
+#[cfg(feature = "sval")]
+mod sval;
 mod util;
 
 pub mod map;
@@ -204,16 +203,6 @@ impl<K, V> Bucket<K, V> {
     }
 }
 
-trait Entries {
-    type Entry;
-    fn into_entries(self) -> Vec<Self::Entry>;
-    fn as_entries(&self) -> &[Self::Entry];
-    fn as_entries_mut(&mut self) -> &mut [Self::Entry];
-    fn with_entries<F>(&mut self, f: F)
-    where
-        F: FnOnce(&mut [Self::Entry]);
-}
-
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct TryReserveError {
@@ -269,3 +258,33 @@ impl core::fmt::Display for TryReserveError {
 #[cfg(feature = "std")]
 #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for TryReserveError {}
+
+
+
+
+
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum GetDisjointMutError {
+    
+    IndexOutOfBounds,
+    
+    OverlappingIndices,
+}
+
+impl core::fmt::Display for GetDisjointMutError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let msg = match self {
+            GetDisjointMutError::IndexOutOfBounds => "an index is out of bounds",
+            GetDisjointMutError::OverlappingIndices => "there were overlapping indices",
+        };
+
+        core::fmt::Display::fmt(msg, f)
+    }
+}
+
+#[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+impl std::error::Error for GetDisjointMutError {}

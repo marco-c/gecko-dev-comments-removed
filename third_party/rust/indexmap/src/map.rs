@@ -16,7 +16,8 @@ mod tests;
 pub use self::core::raw_entry_v1::{self, RawEntryApiV1};
 pub use self::core::{Entry, IndexedEntry, OccupiedEntry, VacantEntry};
 pub use self::iter::{
-    Drain, IntoIter, IntoKeys, IntoValues, Iter, IterMut, IterMut2, Keys, Splice, Values, ValuesMut,
+    Drain, ExtractIf, IntoIter, IntoKeys, IntoValues, Iter, IterMut, IterMut2, Keys, Splice,
+    Values, ValuesMut,
 };
 pub use self::mutable::MutableEntryKey;
 pub use self::mutable::MutableKeys;
@@ -36,9 +37,9 @@ use alloc::vec::Vec;
 #[cfg(feature = "std")]
 use std::collections::hash_map::RandomState;
 
-use self::core::IndexMapCore;
+pub(crate) use self::core::{ExtractCore, IndexMapCore};
 use crate::util::{third, try_simplify_range};
-use crate::{Bucket, Entries, Equivalent, HashValue, TryReserveError};
+use crate::{Bucket, Equivalent, GetDisjointMutError, HashValue, TryReserveError};
 
 
 
@@ -113,32 +114,6 @@ where
     }
 }
 
-impl<K, V, S> Entries for IndexMap<K, V, S> {
-    type Entry = Bucket<K, V>;
-
-    #[inline]
-    fn into_entries(self) -> Vec<Self::Entry> {
-        self.core.into_entries()
-    }
-
-    #[inline]
-    fn as_entries(&self) -> &[Self::Entry] {
-        self.core.as_entries()
-    }
-
-    #[inline]
-    fn as_entries_mut(&mut self) -> &mut [Self::Entry] {
-        self.core.as_entries_mut()
-    }
-
-    fn with_entries<F>(&mut self, f: F)
-    where
-        F: FnOnce(&mut [Self::Entry]),
-    {
-        self.core.with_entries(f);
-    }
-}
-
 impl<K, V, S> fmt::Debug for IndexMap<K, V, S>
 where
     K: fmt::Debug,
@@ -203,6 +178,28 @@ impl<K, V, S> IndexMap<K, V, S> {
             core: IndexMapCore::new(),
             hash_builder,
         }
+    }
+
+    #[inline]
+    pub(crate) fn into_entries(self) -> Vec<Bucket<K, V>> {
+        self.core.into_entries()
+    }
+
+    #[inline]
+    pub(crate) fn as_entries(&self) -> &[Bucket<K, V>] {
+        self.core.as_entries()
+    }
+
+    #[inline]
+    pub(crate) fn as_entries_mut(&mut self) -> &mut [Bucket<K, V>] {
+        self.core.as_entries_mut()
+    }
+
+    pub(crate) fn with_entries<F>(&mut self, f: F)
+    where
+        F: FnOnce(&mut [Bucket<K, V>]),
+    {
+        self.core.with_entries(f);
     }
 
     
@@ -305,6 +302,55 @@ impl<K, V, S> IndexMap<K, V, S> {
         R: RangeBounds<usize>,
     {
         Drain::new(self.core.drain(range))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
+    pub fn extract_if<F, R>(&mut self, range: R, pred: F) -> ExtractIf<'_, K, V, F>
+    where
+        F: FnMut(&K, &mut V) -> bool,
+        R: RangeBounds<usize>,
+    {
+        ExtractIf::new(&mut self.core, range, pred)
     }
 
     
@@ -445,6 +491,53 @@ where
             Ok(i) => (i, Some(mem::replace(&mut self[i], value))),
             Err(i) => self.insert_before(i, key, value),
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn insert_sorted_by<F>(&mut self, key: K, value: V, mut cmp: F) -> (usize, Option<V>)
+    where
+        F: FnMut(&K, &V, &K, &V) -> Ordering,
+    {
+        let (Ok(i) | Err(i)) = self.binary_search_by(|k, v| cmp(k, v, &key, &value));
+        self.insert_before(i, key, value)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn insert_sorted_by_key<B, F>(
+        &mut self,
+        key: K,
+        value: V,
+        mut sort_key: F,
+    ) -> (usize, Option<V>)
+    where
+        B: Ord,
+        F: FnMut(&K, &V) -> B,
+    {
+        let search_key = sort_key(&key, &value);
+        let (Ok(i) | Err(i)) = self.binary_search_by_key(&search_key, sort_key);
+        self.insert_before(i, key, value)
     }
 
     
@@ -610,6 +703,37 @@ where
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
+    pub fn replace_index(&mut self, index: usize, key: K) -> Result<K, (usize, K)> {
+        
+        let entry = &mut self.as_entries_mut()[index];
+        if key == entry.key {
+            return Ok(mem::replace(&mut entry.key, key));
+        }
+
+        let hash = self.hash(&key);
+        if let Some(i) = self.core.get_index_of(hash, &key) {
+            debug_assert_ne!(i, index);
+            return Err((i, key));
+        }
+        Ok(self.core.replace_index_unique(index, hash, key))
+    }
+
+    
+    
+    
+    
     pub fn entry(&mut self, key: K) -> Entry<'_, K, V> {
         let hash = self.hash(&key);
         self.core.entry(hash, key)
@@ -737,6 +861,9 @@ where
     }
 
     
+    
+    
+    
     pub fn get_full<Q>(&self, key: &Q) -> Option<(usize, &K, &V)>
     where
         Q: ?Sized + Hash + Equivalent<K>,
@@ -766,6 +893,10 @@ where
         }
     }
 
+    
+    
+    
+    
     pub fn get_mut<Q>(&mut self, key: &Q) -> Option<&mut V>
     where
         Q: ?Sized + Hash + Equivalent<K>,
@@ -778,6 +909,26 @@ where
         }
     }
 
+    
+    
+    
+    
+    pub fn get_key_value_mut<Q>(&mut self, key: &Q) -> Option<(&K, &mut V)>
+    where
+        Q: ?Sized + Hash + Equivalent<K>,
+    {
+        if let Some(i) = self.get_index_of(key) {
+            let entry = &mut self.as_entries_mut()[i];
+            Some((&entry.key, &mut entry.value))
+        } else {
+            None
+        }
+    }
+
+    
+    
+    
+    
     pub fn get_full_mut<Q>(&mut self, key: &Q) -> Option<(usize, &K, &mut V)>
     where
         Q: ?Sized + Hash + Equivalent<K>,
@@ -787,6 +938,32 @@ where
             Some((i, &entry.key, &mut entry.value))
         } else {
             None
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn get_disjoint_mut<Q, const N: usize>(&mut self, keys: [&Q; N]) -> [Option<&mut V>; N]
+    where
+        Q: ?Sized + Hash + Equivalent<K>,
+    {
+        let indices = keys.map(|key| self.get_index_of(key));
+        match self.as_mut_slice().get_disjoint_opt_mut(indices) {
+            Err(GetDisjointMutError::IndexOutOfBounds) => {
+                unreachable!(
+                    "Internal error: indices should never be OOB as we got them from get_index_of"
+                );
+            }
+            Err(GetDisjointMutError::OverlappingIndices) => {
+                panic!("duplicate keys found");
+            }
+            Ok(key_values) => key_values.map(|kv_opt| kv_opt.map(|kv| kv.1)),
         }
     }
 
@@ -1023,6 +1200,20 @@ impl<K, V, S> IndexMap<K, V, S> {
     
     
     
+    pub fn sort_by_key<T, F>(&mut self, mut sort_key: F)
+    where
+        T: Ord,
+        F: FnMut(&K, &V) -> T,
+    {
+        self.with_entries(move |entries| {
+            entries.sort_by_key(move |a| sort_key(&a.key, &a.value));
+        });
+    }
+
+    
+    
+    
+    
     pub fn sort_unstable_keys(&mut self)
     where
         K: Ord,
@@ -1061,6 +1252,20 @@ impl<K, V, S> IndexMap<K, V, S> {
         let mut entries = self.into_entries();
         entries.sort_unstable_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value));
         IntoIter::new(entries)
+    }
+
+    
+    
+    
+    
+    pub fn sort_unstable_by_key<T, F>(&mut self, mut sort_key: F)
+    where
+        T: Ord,
+        F: FnMut(&K, &V) -> T,
+    {
+        self.with_entries(move |entries| {
+            entries.sort_unstable_by_key(move |a| sort_key(&a.key, &a.value));
+        });
     }
 
     
@@ -1122,6 +1327,34 @@ impl<K, V, S> IndexMap<K, V, S> {
         B: Ord,
     {
         self.as_slice().binary_search_by_key(b, f)
+    }
+
+    
+    #[inline]
+    pub fn is_sorted(&self) -> bool
+    where
+        K: PartialOrd,
+    {
+        self.as_slice().is_sorted()
+    }
+
+    
+    #[inline]
+    pub fn is_sorted_by<'a, F>(&'a self, cmp: F) -> bool
+    where
+        F: FnMut(&'a K, &'a V, &'a K, &'a V) -> bool,
+    {
+        self.as_slice().is_sorted_by(cmp)
+    }
+
+    
+    #[inline]
+    pub fn is_sorted_by_key<'a, F, T>(&'a self, sort_key: F) -> bool
+    where
+        F: FnMut(&'a K, &'a V) -> T,
+        T: PartialOrd,
+    {
+        self.as_slice().is_sorted_by_key(sort_key)
     }
 
     
@@ -1194,6 +1427,23 @@ impl<K, V, S> IndexMap<K, V, S> {
             return None;
         }
         Some(IndexedEntry::new(&mut self.core, index))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn get_disjoint_indices_mut<const N: usize>(
+        &mut self,
+        indices: [usize; N],
+    ) -> Result<[(&K, &mut V); N], GetDisjointMutError> {
+        self.as_mut_slice().get_disjoint_mut(indices)
     }
 
     
@@ -1431,14 +1681,14 @@ impl<K, V, S> Index<usize> for IndexMap<K, V, S> {
     
     
     fn index(&self, index: usize) -> &V {
-        self.get_index(index)
-            .unwrap_or_else(|| {
-                panic!(
-                    "index out of bounds: the len is {len} but the index is {index}",
-                    len = self.len()
-                );
-            })
-            .1
+        if let Some((_, value)) = self.get_index(index) {
+            value
+        } else {
+            panic!(
+                "index out of bounds: the len is {len} but the index is {index}",
+                len = self.len()
+            );
+        }
     }
 }
 
@@ -1478,11 +1728,11 @@ impl<K, V, S> IndexMut<usize> for IndexMap<K, V, S> {
     fn index_mut(&mut self, index: usize) -> &mut V {
         let len: usize = self.len();
 
-        self.get_index_mut(index)
-            .unwrap_or_else(|| {
-                panic!("index out of bounds: the len is {len} but the index is {index}");
-            })
-            .1
+        if let Some((_, value)) = self.get_index_mut(index) {
+            value
+        } else {
+            panic!("index out of bounds: the len is {len} but the index is {index}");
+        }
     }
 }
 

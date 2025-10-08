@@ -8,7 +8,7 @@ mod slice;
 mod tests;
 
 pub use self::iter::{
-    Difference, Drain, Intersection, IntoIter, Iter, Splice, SymmetricDifference, Union,
+    Difference, Drain, ExtractIf, Intersection, IntoIter, Iter, Splice, SymmetricDifference, Union,
 };
 pub use self::mutable::MutableValues;
 pub use self::slice::Slice;
@@ -28,7 +28,7 @@ use core::fmt;
 use core::hash::{BuildHasher, Hash};
 use core::ops::{BitAnd, BitOr, BitXor, Index, RangeBounds, Sub};
 
-use super::{Entries, Equivalent, IndexMap};
+use super::{Equivalent, IndexMap};
 
 type Bucket<T> = super::Bucket<T, ()>;
 
@@ -105,32 +105,6 @@ where
     }
 }
 
-impl<T, S> Entries for IndexSet<T, S> {
-    type Entry = Bucket<T>;
-
-    #[inline]
-    fn into_entries(self) -> Vec<Self::Entry> {
-        self.map.into_entries()
-    }
-
-    #[inline]
-    fn as_entries(&self) -> &[Self::Entry] {
-        self.map.as_entries()
-    }
-
-    #[inline]
-    fn as_entries_mut(&mut self) -> &mut [Self::Entry] {
-        self.map.as_entries_mut()
-    }
-
-    fn with_entries<F>(&mut self, f: F)
-    where
-        F: FnOnce(&mut [Self::Entry]),
-    {
-        self.map.with_entries(f);
-    }
-}
-
 impl<T, S> fmt::Debug for IndexSet<T, S>
 where
     T: fmt::Debug,
@@ -187,6 +161,23 @@ impl<T, S> IndexSet<T, S> {
         IndexSet {
             map: IndexMap::with_hasher(hash_builder),
         }
+    }
+
+    #[inline]
+    pub(crate) fn into_entries(self) -> Vec<Bucket<T>> {
+        self.map.into_entries()
+    }
+
+    #[inline]
+    pub(crate) fn as_entries(&self) -> &[Bucket<T>] {
+        self.map.as_entries()
+    }
+
+    pub(crate) fn with_entries<F>(&mut self, f: F)
+    where
+        F: FnOnce(&mut [Bucket<T>]),
+    {
+        self.map.with_entries(f);
     }
 
     
@@ -256,6 +247,52 @@ impl<T, S> IndexSet<T, S> {
         R: RangeBounds<usize>,
     {
         Drain::new(self.map.core.drain(range))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
+    pub fn extract_if<F, R>(&mut self, range: R, pred: F) -> ExtractIf<'_, T, F>
+    where
+        F: FnMut(&T) -> bool,
+        R: RangeBounds<usize>,
+    {
+        ExtractIf::new(&mut self.map.core, range, pred)
     }
 
     
@@ -397,6 +434,49 @@ where
     
     
     
+    pub fn insert_sorted_by<F>(&mut self, value: T, mut cmp: F) -> (usize, bool)
+    where
+        F: FnMut(&T, &T) -> Ordering,
+    {
+        let (index, existing) = self
+            .map
+            .insert_sorted_by(value, (), |a, (), b, ()| cmp(a, b));
+        (index, existing.is_none())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn insert_sorted_by_key<B, F>(&mut self, value: T, mut sort_key: F) -> (usize, bool)
+    where
+        B: Ord,
+        F: FnMut(&T) -> B,
+    {
+        let (index, existing) = self.map.insert_sorted_by_key(value, (), |k, _| sort_key(k));
+        (index, existing.is_none())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -511,6 +591,22 @@ where
             (i, Some((replaced, ()))) => (i, Some(replaced)),
             (i, None) => (i, None),
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
+    pub fn replace_index(&mut self, index: usize, value: T) -> Result<T, (usize, T)> {
+        self.map.replace_index(index, value)
     }
 
     
@@ -843,7 +939,7 @@ impl<T, S> IndexSet<T, S> {
     where
         F: FnMut(&T, &T) -> Ordering,
     {
-        self.map.sort_by(move |a, _, b, _| cmp(a, b));
+        self.map.sort_by(move |a, (), b, ()| cmp(a, b));
     }
 
     
@@ -857,6 +953,19 @@ impl<T, S> IndexSet<T, S> {
         let mut entries = self.into_entries();
         entries.sort_by(move |a, b| cmp(&a.key, &b.key));
         IntoIter::new(entries)
+    }
+
+    
+    
+    
+    pub fn sort_by_key<K, F>(&mut self, mut sort_key: F)
+    where
+        K: Ord,
+        F: FnMut(&T) -> K,
+    {
+        self.with_entries(move |entries| {
+            entries.sort_by_key(move |a| sort_key(&a.key));
+        });
     }
 
     
@@ -888,6 +997,19 @@ impl<T, S> IndexSet<T, S> {
         let mut entries = self.into_entries();
         entries.sort_unstable_by(move |a, b| cmp(&a.key, &b.key));
         IntoIter::new(entries)
+    }
+
+    
+    
+    
+    pub fn sort_unstable_by_key<K, F>(&mut self, mut sort_key: F)
+    where
+        K: Ord,
+        F: FnMut(&T) -> K,
+    {
+        self.with_entries(move |entries| {
+            entries.sort_unstable_by_key(move |a| sort_key(&a.key));
+        });
     }
 
     
@@ -949,6 +1071,34 @@ impl<T, S> IndexSet<T, S> {
         B: Ord,
     {
         self.as_slice().binary_search_by_key(b, f)
+    }
+
+    
+    #[inline]
+    pub fn is_sorted(&self) -> bool
+    where
+        T: PartialOrd,
+    {
+        self.as_slice().is_sorted()
+    }
+
+    
+    #[inline]
+    pub fn is_sorted_by<'a, F>(&'a self, cmp: F) -> bool
+    where
+        F: FnMut(&'a T, &'a T) -> bool,
+    {
+        self.as_slice().is_sorted_by(cmp)
+    }
+
+    
+    #[inline]
+    pub fn is_sorted_by_key<'a, F, K>(&'a self, sort_key: F) -> bool
+    where
+        F: FnMut(&'a T) -> K,
+        K: PartialOrd,
+    {
+        self.as_slice().is_sorted_by_key(sort_key)
     }
 
     
@@ -1106,12 +1256,14 @@ impl<T, S> Index<usize> for IndexSet<T, S> {
     
     
     fn index(&self, index: usize) -> &T {
-        self.get_index(index).unwrap_or_else(|| {
+        if let Some(value) = self.get_index(index) {
+            value
+        } else {
             panic!(
                 "index out of bounds: the len is {len} but the index is {index}",
                 len = self.len()
             );
-        })
+        }
     }
 }
 

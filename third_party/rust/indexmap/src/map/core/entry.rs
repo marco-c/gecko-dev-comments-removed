@@ -1,5 +1,6 @@
 use super::{equivalent, Entries, IndexMapCore, RefMut};
 use crate::HashValue;
+use core::cmp::Ordering;
 use core::{fmt, mem};
 use hashbrown::hash_table;
 
@@ -308,6 +309,7 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
     
     
     
+    #[track_caller]
     pub fn swap_indices(self, other: usize) {
         let index = self.index();
         self.into_ref_mut().swap_indices(index, other);
@@ -407,10 +409,60 @@ impl<'a, K, V> VacantEntry<'a, K, V> {
     
     
     
+    
+    
+    
+    pub fn insert_sorted_by<F>(self, value: V, mut cmp: F) -> (usize, &'a mut V)
+    where
+        F: FnMut(&K, &V, &K, &V) -> Ordering,
+    {
+        let slice = crate::map::Slice::from_slice(self.map.entries);
+        let (Ok(i) | Err(i)) = slice.binary_search_by(|k, v| cmp(k, v, &self.key, &value));
+        (i, self.shift_insert(i, value))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn insert_sorted_by_key<B, F>(self, value: V, mut sort_key: F) -> (usize, &'a mut V)
+    where
+        B: Ord,
+        F: FnMut(&K, &V) -> B,
+    {
+        let search_key = sort_key(&self.key, &value);
+        let slice = crate::map::Slice::from_slice(self.map.entries);
+        let (Ok(i) | Err(i)) = slice.binary_search_by_key(&search_key, sort_key);
+        (i, self.shift_insert(i, value))
+    }
+
+    
+    
+    
+    
+    
+    
+    #[track_caller]
     pub fn shift_insert(mut self, index: usize, value: V) -> &'a mut V {
         self.map
             .shift_insert_unique(index, self.hash, self.key, value);
         &mut self.map.entries[index].value
+    }
+
+    
+    
+    
+    
+    
+    
+    #[track_caller]
+    pub fn replace_index(self, index: usize) -> (K, OccupiedEntry<'a, K, V>) {
+        self.map.replace_index_unique(index, self.hash, self.key)
     }
 }
 
@@ -546,6 +598,7 @@ impl<'a, K, V> IndexedEntry<'a, K, V> {
     
     
     
+    #[track_caller]
     pub fn swap_indices(mut self, other: usize) {
         self.map.swap_indices(self.index, other);
     }

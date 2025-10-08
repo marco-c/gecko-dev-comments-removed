@@ -18,8 +18,8 @@
 
 
 
-use serde::de::{Deserialize, Deserializer, SeqAccess, Visitor};
-use serde::ser::{Serialize, Serializer};
+use serde_core::de::{Deserialize, Deserializer, SeqAccess, Visitor};
+use serde_core::ser::{Serialize, Serializer};
 
 use core::fmt::{self, Formatter};
 use core::hash::{BuildHasher, Hash};
