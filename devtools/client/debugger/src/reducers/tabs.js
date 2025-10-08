@@ -6,7 +6,12 @@
 
 
 
-export function initialTabState({ urls = [], prettyPrintedURLs = [] } = {}) {
+import { prefs } from "../utils/prefs";
+
+export function initialTabState({
+  urls = [],
+  prettyPrintedURLs = new Set(),
+} = {}) {
   return {
     
     
@@ -21,6 +26,12 @@ export function initialTabState({ urls = [], prettyPrintedURLs = [] } = {}) {
     
     
     prettyPrintedURLs,
+
+    
+    
+    
+    
+    prettyPrintedDisabledURLs: new Set(),
 
     
     
@@ -76,9 +87,20 @@ function update(state = initialTabState(), action) {
 
 
 function removePrettyPrintedSource(state, source) {
+  const generatedSourceURL = source.isPrettyPrinted
+    ? source.generatedSource.url
+    : source.url;
   const prettyPrintedURLs = new Set(state.prettyPrintedURLs);
-  prettyPrintedURLs.delete(source.generatedSource.url);
-  return { ...state, prettyPrintedURLs };
+  prettyPrintedURLs.delete(generatedSourceURL);
+
+  let prettyPrintedDisabledURLs = state.prettyPrintedDisabledURLs;
+  
+  if (prefs.autoPrettyPrint) {
+    prettyPrintedDisabledURLs = new Set(prettyPrintedDisabledURLs);
+    prettyPrintedDisabledURLs.add(generatedSourceURL);
+  }
+
+  return { ...state, prettyPrintedURLs, prettyPrintedDisabledURLs };
 }
 
 
@@ -96,7 +118,8 @@ function removePrettyPrintedSource(state, source) {
 
 
 function updateTabsWithNewActiveSource(state, sources, forceAdding = false) {
-  let { urls, openedSources, prettyPrintedURLs } = state;
+  let { urls, openedSources, prettyPrintedURLs, prettyPrintedDisabledURLs } =
+    state;
   for (let source of sources) {
     
     
@@ -110,6 +133,7 @@ function updateTabsWithNewActiveSource(state, sources, forceAdding = false) {
         prettyPrintedURLs = new Set(prettyPrintedURLs);
       }
       prettyPrintedURLs.add(source.url);
+      prettyPrintedDisabledURLs.delete(source.url);
     }
 
     const { url } = source;
@@ -167,9 +191,16 @@ function updateTabsWithNewActiveSource(state, sources, forceAdding = false) {
   if (
     openedSources != state.openedSources ||
     urls != state.urls ||
-    prettyPrintedURLs != state.prettyPrintedURLs
+    prettyPrintedURLs != state.prettyPrintedURLs ||
+    prettyPrintedDisabledURLs != state.prettyPrintedDisabledURLs
   ) {
-    return { ...state, urls, openedSources, prettyPrintedURLs };
+    return {
+      ...state,
+      urls,
+      openedSources,
+      prettyPrintedURLs,
+      prettyPrintedDisabledURLs,
+    };
   }
   return state;
 }
