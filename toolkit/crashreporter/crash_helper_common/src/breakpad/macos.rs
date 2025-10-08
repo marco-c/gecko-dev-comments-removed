@@ -23,6 +23,11 @@ pub struct BreakpadData {
 }
 
 impl BreakpadData {
+    
+    
+    
+    
+    
     pub unsafe fn new(raw: BreakpadRawData) -> BreakpadData {
         BreakpadData {
             data: <OsString as BreakpadString>::from_ptr(raw),
