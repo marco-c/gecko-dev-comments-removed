@@ -256,9 +256,8 @@ class Bootstrapper:
         if sys.platform.startswith("linux"):
             
             
-            dist_id, version, codename = distro.linux_distribution(
-                full_distribution_name=False
-            )
+            dist_id = distro.id()
+            version = distro.version()
 
             if dist_id in FEDORA_DISTROS:
                 cls = CentOSFedoraBootstrapper
@@ -266,7 +265,6 @@ class Bootstrapper:
             elif dist_id in DEBIAN_DISTROS:
                 cls = DebianBootstrapper
                 args["distro"] = dist_id
-                args["codename"] = codename
             elif dist_id in ("gentoo", "funtoo"):
                 cls = GentooBootstrapper
             elif dist_id in ("solus"):
@@ -340,11 +338,6 @@ class Bootstrapper:
 
     def check_code_submission(self, checkout_root: Path):
         if self.instance.no_interactive or which("moz-phab"):
-            return
-
-        
-        
-        if sys.platform.startswith("darwin") and platform.machine() == "arm64":
             return
 
         if not self.instance.prompt_yesno("Will you be submitting commits to Mozilla?"):
