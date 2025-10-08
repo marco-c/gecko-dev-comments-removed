@@ -7721,6 +7721,7 @@ static const NSString* kStateCollectionBehavior = @"collectionBehavior";
   mDrawsIntoWindowFrame = aState;
   if (changed) {
     [self reflowTitlebarElements];
+    [self updateTitlebarTransparency];
   }
 }
 
@@ -7848,6 +7849,32 @@ static const NSString* kStateCollectionBehavior = @"collectionBehavior";
   if ([frameView respondsToSelector:@selector(_tileTitlebarAndRedisplay:)]) {
     [frameView _tileTitlebarAndRedisplay:NO];
   }
+}
+
+- (void)updateTitlebarTransparency {
+  if (self.drawsContentsIntoWindowFrame) {
+    
+    self.titlebarAppearsTransparent = true;
+    return;
+  }
+
+  if (@available(macOS 26.0, *)) {
+    
+    
+    
+    if (self.titlebarSeparatorStyle == NSTitlebarSeparatorStyleNone) {
+      self.titlebarAppearsTransparent = true;
+      return;
+    }
+  }
+
+  
+  self.titlebarAppearsTransparent = false;
+}
+
+- (void)setTitlebarSeparatorStyle:(NSTitlebarSeparatorStyle)aStyle {
+  [super setTitlebarSeparatorStyle:aStyle];
+  [self updateTitlebarTransparency];
 }
 
 - (BOOL)respondsToSelector:(SEL)aSelector {
@@ -8166,8 +8193,6 @@ static CGFloat DefaultTitlebarHeight() {
   BOOL stateChanged = self.drawsContentsIntoWindowFrame != aState;
   [super setDrawsContentsIntoWindowFrame:aState];
   if (stateChanged && [self.delegate isKindOfClass:[WindowDelegate class]]) {
-    
-    self.titlebarAppearsTransparent = aState;
     self.titleVisibility = aState ? NSWindowTitleHidden : NSWindowTitleVisible;
 
     
