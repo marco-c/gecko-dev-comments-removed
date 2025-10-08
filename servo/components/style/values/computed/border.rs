@@ -25,6 +25,9 @@ pub type LineWidth = Au;
 pub type BorderSideWidth = Au;
 
 
+pub type BorderSideOffset = Au;
+
+
 pub type BorderImageWidth = Rect<BorderImageSideWidth>;
 
 

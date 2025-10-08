@@ -703,7 +703,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleOutline {
   
   
   nscoord mOutlineWidth;
-  mozilla::Length mOutlineOffset;
+  mozilla::StyleAu mOutlineOffset;
   mozilla::StyleColor mOutlineColor;
   mozilla::StyleOutlineStyle mOutlineStyle;
 

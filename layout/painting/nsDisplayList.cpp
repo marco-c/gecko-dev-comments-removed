@@ -4116,15 +4116,11 @@ bool nsDisplayOutline::HasRadius() const {
 }
 
 bool nsDisplayOutline::IsInvisibleInRect(const nsRect& aRect) const {
-  const nsStyleOutline* outline = mFrame->StyleOutline();
   nsRect borderBox(ToReferenceFrame(), mFrame->GetSize());
-  if (borderBox.Contains(aRect) && !HasRadius() &&
-      outline->mOutlineOffset.ToCSSPixels() >= 0.0f) {
-    
-    
-    return true;
-  }
-  return false;
+  
+  
+  return borderBox.Contains(aRect) && !HasRadius() &&
+         mFrame->StyleOutline()->mOutlineOffset >= 0;
 }
 
 void nsDisplayEventReceiver::HitTest(nsDisplayListBuilder* aBuilder,
