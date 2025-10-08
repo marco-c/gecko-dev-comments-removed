@@ -7062,40 +7062,111 @@ void CodeGenerator::emitAllocateSpaceForApply(T* apply, Register calleeReg,
 
 
 
+template <typename T>
 void CodeGenerator::emitAllocateSpaceForConstructAndPushNewTarget(
-    Register argcreg, Register newTargetAndScratch) {
-  
-  
-  
-  
-  if (JitStackValueAlignment > 1) {
-    MOZ_ASSERT(frameSize() % JitStackAlignment == 0,
-               "Stack padding assumes that the frameSize is correct");
-    MOZ_ASSERT(JitStackValueAlignment == 2);
-
-    Label noPaddingNeeded;
-    
-    
-    
-    
-    
-    
-    
-    masm.branchTestPtr(Assembler::Zero, argcreg, Imm32(1), &noPaddingNeeded);
-    masm.pushValue(MagicValue(JS_ARG_POISON));
-    masm.bind(&noPaddingNeeded);
-  }
-
+    T* construct, Register calleeReg, Register argcreg,
+    Register newTargetAndScratch) {
   
   masm.pushValue(JSVAL_TYPE_OBJECT, newTargetAndScratch);
+  if (JitStackValueAlignment > 1) {
+    
+    
+    
+    
+    masm.pushValue(JSVAL_TYPE_OBJECT, newTargetAndScratch);
+  }
+  Register scratch = newTargetAndScratch;
+
+  Label* oolRejoin = nullptr;
+  bool canUnderflow = !construct->hasSingleTarget() ||
+                      construct->getSingleTarget()->nargs() > 0;
+  if (canUnderflow) {
+    auto* ool = new (alloc()) LambdaOutOfLineCode([=](OutOfLineCode& ool) {
+      
+      
+      
+      if (construct->hasSingleTarget()) {
+        uint32_t nargs = construct->getSingleTarget()->nargs();
+        uint32_t numSlots =
+            JitStackValueAlignment == 1 ? nargs : ((nargs + 1) & ~1) - 1;
+        masm.subFromStackPtr(Imm32((numSlots) * sizeof(Value)));
+        masm.move32(Imm32(nargs), scratch);
+      } else {
+        
+        if (JitStackValueAlignment > 1) {
+          
+          masm.addPtr(Imm32(1), scratch);
+          masm.andPtr(Imm32(~1), scratch);
+          masm.subPtr(Imm32(1), scratch);
+        }
+        masm.lshiftPtr(Imm32(ValueShift), scratch);
+        masm.subFromStackPtr(scratch);
+        masm.rshiftPtr(Imm32(ValueShift), scratch);
+      }
+
+      
+      Label loop;
+      masm.bind(&loop);
+      masm.sub32(Imm32(1), scratch);
+      masm.storeValue(UndefinedValue(),
+                      BaseValueIndex(masm.getStackPointer(), scratch));
+      masm.branch32(Assembler::Above, scratch, argcreg, &loop);
+      masm.jump(ool.rejoin());
+    });
+    addOutOfLineCode(ool, construct->mir());
+    oolRejoin = ool->rejoin();
+
+    Label noUnderflow;
+    if (construct->hasSingleTarget()) {
+      masm.branch32(Assembler::AboveOrEqual, argcreg,
+                    Imm32(construct->getSingleTarget()->nargs()), &noUnderflow);
+    } else {
+      masm.branchTestObjIsFunction(Assembler::NotEqual, calleeReg, scratch,
+                                   calleeReg, &noUnderflow);
+      masm.loadFunctionArgCount(calleeReg, scratch);
+      masm.branch32(Assembler::AboveOrEqual, argcreg, scratch, &noUnderflow);
+    }
+    masm.branchIfFunctionHasJitEntry(calleeReg, ool->entry());
+    masm.bind(&noUnderflow);
+  }
 
   
   masm.movePtr(argcreg, newTargetAndScratch);
 
   
+  if (JitStackValueAlignment > 1) {
+    MOZ_ASSERT(frameSize() % JitStackAlignment == 0,
+               "Stack padding assumes that the frameSize is correct");
+    MOZ_ASSERT(JitStackValueAlignment == 2);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    masm.addPtr(Imm32(1), scratch);
+    masm.andPtr(Imm32(~1), scratch);
+    masm.subPtr(Imm32(1), scratch);
+  }
+
+  
   NativeObject::elementsSizeMustNotOverflow();
   masm.lshiftPtr(Imm32(ValueShift), newTargetAndScratch);
   masm.subFromStackPtr(newTargetAndScratch);
+
+  if (canUnderflow) {
+    masm.bind(oolRejoin);
+  }
 }
 
 
@@ -7303,6 +7374,7 @@ void CodeGenerator::emitPushArguments(LApplyArrayGeneric* apply) {
 void CodeGenerator::emitPushArguments(LConstructArgsGeneric* construct) {
   
   Register argcreg = ToRegister(construct->getArgc());
+  Register function = ToRegister(construct->getFunction());
   Register copyreg = ToRegister(construct->getTempObject());
   Register scratch = ToRegister(construct->getTempForArgCopy());
   uint32_t extraFormals = construct->numExtraFormals();
@@ -7312,7 +7384,8 @@ void CodeGenerator::emitPushArguments(LConstructArgsGeneric* construct) {
 
   
   
-  emitAllocateSpaceForConstructAndPushNewTarget(argcreg, scratch);
+  emitAllocateSpaceForConstructAndPushNewTarget(construct, function, argcreg,
+                                                scratch);
 
   emitPushArguments(argcreg, scratch, copyreg, extraFormals);
 
@@ -7321,6 +7394,7 @@ void CodeGenerator::emitPushArguments(LConstructArgsGeneric* construct) {
 }
 
 void CodeGenerator::emitPushArguments(LConstructArrayGeneric* construct) {
+  Register function = ToRegister(construct->getFunction());
   Register elements = ToRegister(construct->getElements());
   Register tmpArgc = ToRegister(construct->getTempObject());
   Register scratch = ToRegister(construct->getTempForArgCopy());
@@ -7340,7 +7414,8 @@ void CodeGenerator::emitPushArguments(LConstructArrayGeneric* construct) {
 
   
   
-  emitAllocateSpaceForConstructAndPushNewTarget(tmpArgc, scratch);
+  emitAllocateSpaceForConstructAndPushNewTarget(construct, function, tmpArgc,
+                                                scratch);
 
   
   size_t elementsOffset = 0;
@@ -7422,38 +7497,6 @@ void CodeGenerator::emitApplyGeneric(T* apply) {
     masm.PushCalleeToken(calleereg, constructing);
     masm.PushFrameDescriptorForJitCall(FrameType::IonJS, argcreg, scratch);
 
-    
-    if (constructing) {
-      Label underflow, rejoin;
-
-      
-      if (!apply->hasSingleTarget()) {
-        Register nformals = scratch;
-        masm.loadFunctionArgCount(calleereg, nformals);
-        masm.branch32(Assembler::Below, argcreg, nformals, &underflow);
-      } else {
-        masm.branch32(Assembler::Below, argcreg,
-                      Imm32(apply->getSingleTarget()->nargs()), &underflow);
-      }
-
-      
-      
-      masm.jump(&rejoin);
-
-      
-      {
-        masm.bind(&underflow);
-
-        
-        TrampolinePtr argumentsRectifier =
-            gen->jitRuntime()->getArgumentsRectifier();
-        masm.movePtr(argumentsRectifier, objreg);
-      }
-
-      masm.bind(&rejoin);
-    }
-
-    
     
     ensureOsiSpace();
     uint32_t callOffset = masm.callJit(objreg);
