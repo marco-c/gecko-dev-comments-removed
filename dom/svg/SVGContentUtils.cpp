@@ -464,7 +464,7 @@ static gfx::Matrix GetCTMInternal(SVGElement* aElement, CTMType aCTMType,
     matrix *= getLocalTransformHelper(element, true);
     if (aCTMType == CTMType::NearestViewport) {
       if (element->IsSVGElement(nsGkAtoms::foreignObject)) {
-        return gfx::Matrix(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);  
+        return {};
       }
       if (EstablishesViewport(element)) {
         
@@ -475,11 +475,11 @@ static gfx::Matrix GetCTMInternal(SVGElement* aElement, CTMType aCTMType,
   }
   if (aCTMType == CTMType::NearestViewport) {
     
-    return gfx::Matrix(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);  
+    return {};
   }
   if (!element->IsSVGElement(nsGkAtoms::svg)) {
     
-    return gfx::Matrix(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);  
+    return {};
   }
   if (element == aElement && !aHaveRecursed) {
     
