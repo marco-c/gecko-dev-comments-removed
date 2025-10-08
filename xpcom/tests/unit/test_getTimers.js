@@ -26,6 +26,10 @@ function newTimer(name, delay, type) {
 const ignoredTimers = [
   "BackgroundHangThread_timer", 
   "CCGCScheduler::EnsureGCRunner", 
+  "IdleMemoryCleanupWantsLaterCheck", 
+  "dom::IdleGCTimerCallback", 
+  "dom::PeriodicGCTimerCallback", 
+  "IdleRunnableWrapper::SetTimer", 
 ];
 if (AppConstants.platform == "win") {
   
@@ -50,19 +54,21 @@ function getTimers() {
     .filter(t => !ignoredTimers.includes(t.name.replace(/\[.*/, "")));
 }
 
-function run_test() {
-  {
-    let timers = getTimers();
-    for (let timer of timers) {
-      
-      info(`${timer.name}: ${timer.delay}ms, ${timer.type}`);
-    }
-    Assert.equal(
-      timers.length,
-      0,
-      "there should be no timer at xpcshell startup"
-    );
+function getTimersVerbose() {
+  let timers = getTimers();
+  for (let timer of timers) {
+    
+    info(`${timer.name}: ${timer.delay}ms, ${timer.type}`);
   }
+  return timers;
+}
+
+add_task(function test_nsITimerManager_getTimers() {
+  Assert.equal(
+    getTimersVerbose().length,
+    0,
+    "there should be no timer at xpcshell startup"
+  );
 
   let timerData = [
     ["t1", 500, Ci.nsITimer.TYPE_ONE_SHOT],
@@ -96,4 +102,48 @@ function run_test() {
     timers.pop().cancel();
   }
   Assert.equal(getTimers().length, 0, "no timer left after cancelling");
-}
+});
+
+add_task(async function test_getTimers_with_active_worker_thread() {
+  let worker = new ChromeWorker("resource://test/data/test_timers.worker.js");
+
+  async function queryWorker(cmd, ...args) {
+    return new Promise(resolve => {
+      
+      worker.addEventListener(
+        "message",
+        e => {
+          Assert.equal(e.data.replyToCmd, cmd, "Got reply from worker");
+          resolve(e.data.returnValue);
+        },
+        { once: true }
+      );
+      worker.postMessage([cmd, ...args]);
+    });
+  }
+
+  
+  const VERY_LONG_TIMEOUT_MS = 3_600_000;
+
+  Assert.equal(getTimersVerbose().length, 0, "no timers before");
+  const handle = await queryWorker("do_call_setTimeout", VERY_LONG_TIMEOUT_MS);
+
+  let timers = getTimersVerbose();
+  Assert.equal(timers.length, 1, "one timer after?");
+  Assert.equal(timers[0].name, "TimeoutExecutor Runnable", "Got timer name");
+
+  
+  
+  
+  Assert.less(
+    Math.abs(VERY_LONG_TIMEOUT_MS - timers[0].delay),
+    60_000,
+    `Should match the expected timer delay: ${timers[0].delay}`
+  );
+  Assert.equal(Ci.nsITimer.TYPE_ONE_SHOT, timers[0].type, "Got timer type");
+
+  await queryWorker("do_call_clearTimeout", handle);
+
+  Assert.equal(getTimersVerbose().length, 0, "no timer left after cancelling");
+  worker.terminate();
+});
