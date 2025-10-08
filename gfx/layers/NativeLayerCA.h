@@ -43,7 +43,9 @@ class RenderMacIOSurfaceTextureHost;
 
 namespace layers {
 
+#ifdef XP_MACOSX
 class NativeLayerRootSnapshotterCA;
+#endif
 
 enum class VideoLowPowerType {
   
@@ -66,26 +68,6 @@ enum class VideoLowPowerType {
 
 
 
-enum class NativeLayerCAUpdateType {
-  None,
-  OnlyVideo,
-  All,
-};
-
-class SnapshotterCADelegate {
- public:
-  virtual ~SnapshotterCADelegate();
-
-  virtual float BackingScale() const { return 1.0f; }
-  virtual bool DoCustomReadbackForReftestsIfDesired(
-      const gfx::IntSize& aReadbackSize, gfx::SurfaceFormat aReadbackFormat,
-      const Range<uint8_t>& aReadbackBuffer) {
-    return false;
-  }
-  virtual void UpdateSnapshotterLayers(CALayer* aRootCALayer) = 0;
-  virtual void OnSnapshotterDestroyed(
-      NativeLayerRootSnapshotterCA* aSnapshotter) {}
-};
 
 
 
@@ -113,13 +95,7 @@ class SnapshotterCADelegate {
 
 
 
-
-
-
-
-
-
-class NativeLayerRootCA final : public NativeLayerRoot {
+class NativeLayerRootCA : public NativeLayerRoot {
  public:
   static already_AddRefed<NativeLayerRootCA> CreateForCALayer(CALayer* aLayer);
 
@@ -130,9 +106,11 @@ class NativeLayerRootCA final : public NativeLayerRoot {
   
   bool CommitToScreen() override;
 
-  void CommitOffscreen(CALayer* aRootCALayer);
+  void CommitOffscreen();
+#ifdef XP_MACOSX
   void OnNativeLayerRootSnapshotterDestroyed(
       NativeLayerRootSnapshotterCA* aNativeLayerRootSnapshotter);
+#endif
 
   
   
@@ -180,45 +158,25 @@ class NativeLayerRootCA final : public NativeLayerRoot {
   explicit NativeLayerRootCA(CALayer* aLayer);
   ~NativeLayerRootCA() override;
 
-  
-  
-  
-  
-  
-  void CommitRepresentation(WhichRepresentation aRepresentation,
-                            CALayer* aRootCALayer,
-                            const nsTArray<RefPtr<NativeLayerCA>>& aSublayers,
-                            bool aMutatedLayerStructure,
-                            bool aWindowIsFullscreen);
-
-  void SetMutatedLayerStructure();
-
-  using UpdateType = NativeLayerCAUpdateType;
-  UpdateType GetMaxUpdateRequired(
-      WhichRepresentation aRepresentation,
-      const nsTArray<RefPtr<NativeLayerCA>>& aSublayers,
-      bool aMutatedLayerStructure) const;
-
-  
-  struct SnapshotterDelegate final : public SnapshotterCADelegate {
-    explicit SnapshotterDelegate(NativeLayerRootCA* aLayerRoot);
-    virtual ~SnapshotterDelegate() override;
-    virtual float BackingScale() const override {
-      return mLayerRoot->BackingScale();
-    }
-    virtual void UpdateSnapshotterLayers(CALayer* aRootCALayer) override {
-      mLayerRoot->CommitOffscreen(aRootCALayer);
-    }
-    virtual void OnSnapshotterDestroyed(
-        NativeLayerRootSnapshotterCA* aSnapshotter) override {
-      mLayerRoot->OnNativeLayerRootSnapshotterDestroyed(aSnapshotter);
-    }
-    RefPtr<NativeLayerRootCA> mLayerRoot;
+  struct Representation {
+    explicit Representation(CALayer* aRootCALayer);
+    ~Representation();
+    void Commit(WhichRepresentation aRepresentation,
+                const nsTArray<RefPtr<NativeLayerCA>>& aSublayers,
+                bool aWindowIsFullscreen);
+    CALayer* mRootCALayer = nullptr;  
+    bool mMutatedLayerStructure = false;
   };
 
-  Mutex mMutex MOZ_UNANNOTATED;             
-  CALayer* mOnscreenRootCALayer = nullptr;  
+  template <typename F>
+  void ForAllRepresentations(F aFn);
+
+  Mutex mMutex MOZ_UNANNOTATED;  
+  Representation mOnscreenRepresentation;
+  Representation mOffscreenRepresentation;
+#ifdef XP_MACOSX
   NativeLayerRootSnapshotterCA* mWeakSnapshotter = nullptr;
+#endif
   nsTArray<RefPtr<NativeLayerCA>> mSublayers;  
   float mBackingScale = 1.0f;
   bool mMutated = false;
@@ -240,10 +198,6 @@ class NativeLayerRootCA final : public NativeLayerRoot {
   bool mWindowIsFullscreen = false;
 
   
-  bool mMutatedOnscreenLayerStructure = false;
-  bool mMutatedOffscreenLayerStructure = false;
-
-  
   
   unsigned int mTelemetryCommitCount = 0;
 };
@@ -254,7 +208,7 @@ class RenderSourceNLRS;
 class NativeLayerRootSnapshotterCA final : public NativeLayerRootSnapshotter {
  public:
   static UniquePtr<NativeLayerRootSnapshotterCA> Create(
-      UniquePtr<SnapshotterCADelegate>&& aDelegate);
+      NativeLayerRootCA* aLayerRoot, CALayer* aRootCALayer);
   virtual ~NativeLayerRootSnapshotterCA();
 
   bool ReadbackPixels(const gfx::IntSize& aReadbackSize,
@@ -268,11 +222,12 @@ class NativeLayerRootSnapshotterCA final : public NativeLayerRootSnapshotter {
   CreateAsyncReadbackBuffer(const gfx::IntSize& aSize) override;
 
  protected:
-  NativeLayerRootSnapshotterCA(UniquePtr<SnapshotterCADelegate>&& aDelegate,
-                               RefPtr<gl::GLContext>&& aGL);
+  NativeLayerRootSnapshotterCA(NativeLayerRootCA* aLayerRoot,
+                               RefPtr<gl::GLContext>&& aGL,
+                               CALayer* aRootCALayer);
   void UpdateSnapshot(const gfx::IntSize& aSize);
 
-  UniquePtr<SnapshotterCADelegate> mDelegate;
+  RefPtr<NativeLayerRootCA> mLayerRoot;
   RefPtr<gl::GLContext> mGL;
 
   
@@ -280,80 +235,6 @@ class NativeLayerRootSnapshotterCA final : public NativeLayerRootSnapshotter {
   CARenderer* mRenderer = nullptr;  
 };
 #endif
-
-
-struct NativeLayerCARepresentation {
-  using UpdateType = NativeLayerCAUpdateType;
-
-  NativeLayerCARepresentation();
-  ~NativeLayerCARepresentation();
-
-  
-  CALayer* UnderlyingCALayer() {
-    return mWrappingCALayerHasExtent ? mWrappingCALayer : nullptr;
-  }
-
-  bool EnqueueSurface(IOSurfaceRef aSurfaceRef);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool ApplyChanges(NativeLayerCAUpdateType aUpdate, const gfx::IntSize& aSize,
-                    bool aIsOpaque, const gfx::IntPoint& aPosition,
-                    const gfx::Matrix4x4& aTransform,
-                    const gfx::IntRect& aDisplayRect,
-                    const Maybe<gfx::IntRect>& aClipRect,
-                    const Maybe<gfx::RoundedRect>& aRoundedClip,
-                    float aBackingScale, bool aSurfaceIsFlipped,
-                    gfx::SamplingFilter aSamplingFilter, bool aSpecializeVideo,
-                    const CFTypeRefPtr<IOSurfaceRef>& aFrontSurface,
-                    const Maybe<gfx::DeviceColor>& aColor, bool aIsDRM,
-                    bool aIsVideo);
-
-  
-  
-  
-  
-  
-  NativeLayerCAUpdateType HasUpdate(bool aIsVideo);
-
-  
-  
-  
-  
-  
-  CALayer* mWrappingCALayer = nullptr;      
-  CALayer* mRoundedClipCALayer = nullptr;   
-  CALayer* mContentCALayer = nullptr;       
-  CALayer* mOpaquenessTintLayer = nullptr;  
-
-#ifdef NIGHTLY_BUILD
-  bool mLogNextVideoSurface = false;
-#endif
-
-  bool mWrappingCALayerHasExtent : 1;
-
-  
-  bool mMutatedPosition : 1;
-  bool mMutatedTransform : 1;
-  bool mMutatedDisplayRect : 1;
-  bool mMutatedClipRect : 1;
-  bool mMutatedRoundedClipRect : 1;
-  bool mMutatedBackingScale : 1;
-  bool mMutatedSize : 1;
-  bool mMutatedSurfaceIsFlipped : 1;
-  bool mMutatedFrontSurface : 1;
-  bool mMutatedSamplingFilter : 1;
-  bool mMutatedSpecializeVideo : 1;
-  bool mMutatedIsDRM : 1;
-  
-};
 
 
 
@@ -409,10 +290,6 @@ class NativeLayerCA : public NativeLayer {
 
  protected:
   friend class NativeLayerRootCA;
-  friend struct NativeLayerCARepresentation;
-  using UpdateType = NativeLayerCAUpdateType;
-  using WhichRepresentation = NativeLayerRootCA::WhichRepresentation;
-  using Representation = NativeLayerCARepresentation;
 
   NativeLayerCA(const gfx::IntSize& aSize, bool aIsOpaque,
                 SurfacePoolHandleCA* aSurfacePoolHandle);
@@ -425,15 +302,18 @@ class NativeLayerCA : public NativeLayer {
   ~NativeLayerCA() override;
 
   
+  typedef NativeLayerRootCA::WhichRepresentation WhichRepresentation;
   CALayer* UnderlyingCALayer(WhichRepresentation aRepresentation);
 
-  NativeLayerCAUpdateType HasUpdate(WhichRepresentation aRepresentation);
+  enum class UpdateType {
+    None,       
+    OnlyVideo,  
+    All,
+  };
 
-  
-  
-  
-  bool ApplyChanges(WhichRepresentation aRepresentation, UpdateType aUpdate,
-                    bool* aMustRebuild);
+  UpdateType HasUpdate(WhichRepresentation aRepresentation);
+  bool WillUpdateAffectLayers(WhichRepresentation aRepresentation);
+  bool ApplyChanges(WhichRepresentation aRepresentation, UpdateType aUpdate);
 
   void SetBackingScale(float aBackingScale);
 
@@ -450,6 +330,8 @@ class NativeLayerCA : public NativeLayer {
 
   bool IsVideo(const MutexAutoLock& aProofOfLock);
   bool ShouldSpecializeVideo(const MutexAutoLock& aProofOfLock);
+  bool HasExtent() const { return mHasExtent; }
+  void SetHasExtent(bool aHasExtent) { mHasExtent = aHasExtent; }
 
   
   
@@ -458,6 +340,68 @@ class NativeLayerCA : public NativeLayer {
       const gfx::IntSize& aSize, const gfx::IntPoint& aPosition,
       const gfx::Matrix4x4& aTransform, const gfx::IntRect& aDisplayRect,
       const Maybe<gfx::IntRect>& aClipRect, float aBackingScale);
+
+  
+  struct Representation {
+    Representation();
+    ~Representation();
+
+    CALayer* UnderlyingCALayer() { return mWrappingCALayer; }
+
+    bool EnqueueSurface(IOSurfaceRef aSurfaceRef);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool ApplyChanges(
+        UpdateType aUpdate, const gfx::IntSize& aSize, bool aIsOpaque,
+        const gfx::IntPoint& aPosition, const gfx::Matrix4x4& aTransform,
+        const gfx::IntRect& aDisplayRect, const Maybe<gfx::IntRect>& aClipRect,
+        const Maybe<gfx::RoundedRect>& aRoundedClip, float aBackingScale,
+        bool aSurfaceIsFlipped, gfx::SamplingFilter aSamplingFilter,
+        bool aSpecializeVideo, CFTypeRefPtr<IOSurfaceRef> aFrontSurface,
+        CFTypeRefPtr<CGColorRef> aColor, bool aIsDRM, bool aIsVideo);
+
+    
+    
+    
+    
+    
+    UpdateType HasUpdate(bool aIsVideo);
+
+    
+    
+    
+    
+    
+    CALayer* mWrappingCALayer = nullptr;      
+    CALayer* mRoundedClipCALayer = nullptr;   
+    CALayer* mContentCALayer = nullptr;       
+    CALayer* mOpaquenessTintLayer = nullptr;  
+
+#ifdef NIGHTLY_BUILD
+    bool mLogNextVideoSurface = false;
+#endif
+
+    bool mMutatedPosition : 1;
+    bool mMutatedTransform : 1;
+    bool mMutatedDisplayRect : 1;
+    bool mMutatedClipRect : 1;
+    bool mMutatedRoundedClipRect : 1;
+    bool mMutatedBackingScale : 1;
+    bool mMutatedSize : 1;
+    bool mMutatedSurfaceIsFlipped : 1;
+    bool mMutatedFrontSurface : 1;
+    bool mMutatedSamplingFilter : 1;
+    bool mMutatedSpecializeVideo : 1;
+    bool mMutatedIsDRM : 1;
+  };
 
   Representation& GetRepresentation(WhichRepresentation aRepresentation);
   template <typename F>
@@ -482,13 +426,14 @@ class NativeLayerCA : public NativeLayer {
   gfx::IntSize mSize;
   Maybe<gfx::IntRect> mClipRect;
   Maybe<gfx::RoundedRect> mRoundedClipRect;
-  Maybe<gfx::DeviceColor> mColor;
   gfx::SamplingFilter mSamplingFilter = gfx::SamplingFilter::POINT;
   float mBackingScale = 1.0f;
   bool mSurfaceIsFlipped = false;
+  CFTypeRefPtr<CGColorRef> mColor;
   const bool mIsOpaque = false;
   bool mRootWindowIsFullscreen = false;
   bool mSpecializeVideo = false;
+  bool mHasExtent = false;
   bool mIsDRM = false;
   bool mIsHDR = false;
 

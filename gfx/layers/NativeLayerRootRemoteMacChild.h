@@ -6,9 +6,9 @@
 #ifndef mozilla_layers_NativeLayerRootRemoteMacChild_h
 #define mozilla_layers_NativeLayerRootRemoteMacChild_h
 
+#include "mozilla/layers/NativeLayer.h"
 #include "mozilla/layers/NativeLayerCommandQueue.h"
 #include "mozilla/layers/NativeLayerRemoteChild.h"
-#include "mozilla/layers/NativeLayerRemoteMac.h"
 
 namespace mozilla {
 namespace layers {
@@ -47,57 +47,15 @@ class NativeLayerRootRemoteMacChild final : public NativeLayerRoot {
 
   virtual ~NativeLayerRootRemoteMacChild();
 
-  void CommitForSnapshot(CALayer* aRootCALayer);
-  void OnNativeLayerRootSnapshotterDestroyed(
-      NativeLayerRootSnapshotterCA* aNativeLayerRootSnapshotter);
-
-  
-  
-  struct SnapshotterDelegate final : public SnapshotterCADelegate {
-    explicit SnapshotterDelegate(NativeLayerRootRemoteMacChild* aLayerRoot);
-    virtual ~SnapshotterDelegate() override;
-    virtual void UpdateSnapshotterLayers(CALayer* aRootCALayer) override {
-      mLayerRoot->CommitForSnapshot(aRootCALayer);
-    }
-    virtual bool DoCustomReadbackForReftestsIfDesired(
-        const gfx::IntSize& aReadbackSize, gfx::SurfaceFormat aReadbackFormat,
-        const Range<uint8_t>& aReadbackBuffer) override {
-      return mLayerRoot->ReadbackPixelsFromParent(
-          aReadbackSize, aReadbackFormat, aReadbackBuffer);
-    }
-    virtual void OnSnapshotterDestroyed(
-        NativeLayerRootSnapshotterCA* aSnapshotter) override {
-      mLayerRoot->OnNativeLayerRootSnapshotterDestroyed(aSnapshotter);
-    }
-    RefPtr<NativeLayerRootRemoteMacChild> mLayerRoot;
-  };
-
   RefPtr<NativeLayerRemoteChild> mRemoteChild;
   RefPtr<NativeLayerCommandQueue> mCommandQueue;
-  nsTArray<RefPtr<NativeLayerRemoteMac>> mNativeLayers;
-  NativeLayerRootSnapshotterCA* mWeakSnapshotter = nullptr;
+  nsTArray<RefPtr<NativeLayer>> mNativeLayers;
+  NativeLayerRootSnapshotter* mWeakSnapshotter = nullptr;
 
   bool mNativeLayersChanged = false;
-  bool mNativeLayersChangedForSnapshot = false;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool ReadbackPixelsFromParent(const gfx::IntSize& aSize,
-                                gfx::SurfaceFormat aFormat,
-                                const Range<uint8_t>& aBuffer);
+  bool ReadbackPixels(const gfx::IntSize& aSize, gfx::SurfaceFormat aFormat,
+                      const Range<uint8_t>& aBuffer);
 };
 
 }  
