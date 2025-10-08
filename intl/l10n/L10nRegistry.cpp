@@ -380,9 +380,13 @@ nsresult L10nRegistry::LoadSync(const nsACString& aPath, void** aData,
       nsIRequest::LOAD_NORMAL);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  
+  
+  
   nsCOMPtr<nsIInputStream> input;
-  rv = channel->Open(getter_AddRefs(input));
-  NS_ENSURE_SUCCESS(rv, NS_ERROR_INVALID_ARG);
+  if (NS_FAILED(channel->Open(getter_AddRefs(input)))) {
+    return NS_ERROR_INVALID_ARG;
+  }
 
   return NS_ReadInputStreamToBuffer(input, aData, -1, aSize);
 }
