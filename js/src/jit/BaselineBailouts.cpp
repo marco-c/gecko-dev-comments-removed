@@ -195,10 +195,12 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
 
   [[nodiscard]] bool prepareForNextFrame(HandleValueVector savedCallerArgs);
   [[nodiscard]] bool finishOuterFrame();
+
+  template <typename GetSlot>
+  [[nodiscard]] bool buildStubFrameArgs(uint32_t actualArgs, bool constructing,
+                                        GetSlot getSlot);
   [[nodiscard]] bool buildStubFrame(uint32_t frameSize,
                                     HandleValueVector savedCallerArgs);
-  [[nodiscard]] bool buildRectifierFrame(uint32_t actualArgc,
-                                         size_t endOfBaselineStubArgs);
 
 #ifdef DEBUG
   [[nodiscard]] bool validateFrame();
@@ -972,6 +974,64 @@ bool BaselineStackBuilder::finishOuterFrame() {
   return writePtr(retAddr, "ReturnAddr");
 }
 
+template <typename GetSlot>
+bool BaselineStackBuilder::buildStubFrameArgs(uint32_t actualArgc,
+                                              bool constructing,
+                                              GetSlot getSlot) {
+  const uint32_t CalleeOffset = 0;
+  const uint32_t ThisOffset = 1;
+  const uint32_t ArgsOffset = 2;  
+
+  Value callee = getSlot(CalleeOffset);
+  JSFunction* calleeFun = &callee.toObject().as<JSFunction>();
+
+  bool hasUnderflow = actualArgc < calleeFun->nargs();
+  uint32_t argsPushed = hasUnderflow ? calleeFun->nargs() : actualArgc;
+  uint32_t afterFrameSize =
+      (1 + argsPushed + constructing) * sizeof(Value) + JitFrameLayout::Size();
+  if (!maybeWritePadding(JitStackAlignment, afterFrameSize, "Padding")) {
+    return false;
+  }
+
+  if (constructing) {
+    Value newTarget = getSlot(ArgsOffset + actualArgc);
+    if (!writeValue(newTarget, "NewTarget")) {
+      return false;
+    }
+  }
+
+  if (hasUnderflow) {
+    uint32_t numUndef = argsPushed - actualArgc;
+    for (uint32_t i = 0; i < numUndef; i++) {
+      if (!writeValue(UndefinedValue(), "UndefArgVal")) {
+        return false;
+      }
+    }
+  }
+
+  for (int32_t arg = actualArgc - 1; arg >= 0; arg--) {
+    Value v = getSlot(ArgsOffset + arg);  
+    if (!writeValue(v, "ArgVal")) {
+      return false;
+    }
+  }
+
+  Value v = getSlot(ThisOffset);  
+  if (!writeValue(v, "ThisVal")) {
+    return false;
+  }
+
+  
+  JitSpew(JitSpew_BaselineBailouts, "      Callee = %016" PRIx64,
+          callee.asRawBits());
+
+  if (!writePtr(CalleeToToken(calleeFun, constructing), "CalleeToken")) {
+    return false;
+  }
+
+  return true;
+}
+
 bool BaselineStackBuilder::buildStubFrame(uint32_t frameSize,
                                           HandleValueVector savedCallerArgs) {
   
@@ -1018,48 +1078,41 @@ bool BaselineStackBuilder::buildStubFrame(uint32_t frameSize,
   
   
   MOZ_ASSERT(IsIonInlinableOp(op_));
-  bool pushedNewTarget = IsConstructPC(pc_);
+  bool constructing = IsConstructPC(pc_);
   unsigned actualArgc;
   Value callee;
   if (needToSaveCallerArgs()) {
-    
-    
+    MOZ_ASSERT(!constructing);
     callee = savedCallerArgs[0];
     actualArgc = IsSetPropOp(op_) ? 1 : 0;
 
     
-    size_t afterFrameSize =
-        (actualArgc + 1) * sizeof(Value) + JitFrameLayout::Size();
-    if (!maybeWritePadding(JitStackAlignment, afterFrameSize, "Padding")) {
-      return false;
-    }
-
     
-    MOZ_ASSERT(actualArgc + 2 <= exprStackSlots());
-    MOZ_ASSERT(savedCallerArgs.length() == actualArgc + 2);
-    for (unsigned i = 0; i < actualArgc + 1; i++) {
-      size_t arg = savedCallerArgs.length() - (i + 1);
-      if (!writeValue(savedCallerArgs[arg], "ArgVal")) {
-        return false;
-      }
+    if (!buildStubFrameArgs(actualArgc, constructing, [&](uint32_t idx) {
+          return savedCallerArgs[idx];
+        })) {
+      return false;
     }
   } else if (resumeMode() == ResumeMode::InlinedFunCall && GET_ARGC(pc_) == 0) {
     
     
-    MOZ_ASSERT(!pushedNewTarget);
+    MOZ_ASSERT(!constructing);
     actualArgc = 0;
-    
-    size_t afterFrameSize = sizeof(Value) + JitFrameLayout::Size();
-    if (!maybeWritePadding(JitStackAlignment, afterFrameSize, "Padding")) {
-      return false;
-    }
-    
-    if (!writeValue(UndefinedValue(), "ThisValue")) {
-      return false;
-    }
+
     size_t calleeSlot = blFrame()->numValueSlots(frameSize) - 1;
     callee = *blFrame()->valueSlot(calleeSlot);
-
+    if (!buildStubFrameArgs(actualArgc, constructing, [&](uint32_t idx) {
+          switch (idx) {
+            case 0:
+              return callee;
+            case 1:
+              return UndefinedValue();  
+            default:
+              MOZ_CRASH("unreachable");
+          }
+        })) {
+      return false;
+    }
   } else {
     MOZ_ASSERT(resumeMode() == ResumeMode::InlinedStandardCall ||
                resumeMode() == ResumeMode::InlinedFunCall);
@@ -1070,43 +1123,17 @@ bool BaselineStackBuilder::buildStubFrame(uint32_t frameSize,
       actualArgc--;
     }
 
-    
-    
-    uint32_t numArguments = actualArgc + 1 + pushedNewTarget;
-
-    
-    size_t afterFrameSize =
-        numArguments * sizeof(Value) + JitFrameLayout::Size();
-    if (!maybeWritePadding(JitStackAlignment, afterFrameSize, "Padding")) {
+    size_t valueSlot = blFrame()->numValueSlots(frameSize) - 1;
+    size_t calleeSlot = valueSlot - actualArgc - 1 - constructing;
+    if (!buildStubFrameArgs(actualArgc, constructing, [&](uint32_t idx) {
+          return *blFrame()->valueSlot(calleeSlot + idx);
+        })) {
       return false;
     }
-
-    
-    size_t valueSlot = blFrame()->numValueSlots(frameSize) - 1;
-    size_t calleeSlot = valueSlot - numArguments;
-
-    for (size_t i = valueSlot; i > calleeSlot; i--) {
-      Value v = *blFrame()->valueSlot(i);
-      if (!writeValue(v, "ArgVal")) {
-        return false;
-      }
-    }
-
     callee = *blFrame()->valueSlot(calleeSlot);
   }
 
-  
-  
-  size_t endOfBaselineStubArgs = framePushed();
-
-  
-  JitSpew(JitSpew_BaselineBailouts, "      Callee = %016" PRIx64,
-          callee.asRawBits());
-
   JSFunction* calleeFun = &callee.toObject().as<JSFunction>();
-  if (!writePtr(CalleeToToken(calleeFun, pushedNewTarget), "CalleeToken")) {
-    return false;
-  }
   const ICEntry& icScriptEntry = icScript_->icEntryFromPCOffset(pcOff);
   ICFallbackStub* icScriptFallback =
       icScript_->fallbackStubForICEntry(&icScriptEntry);
@@ -1123,109 +1150,6 @@ bool BaselineStackBuilder::buildStubFrame(uint32_t frameSize,
   void* baselineCallReturnAddr = getStubReturnAddress();
   MOZ_ASSERT(baselineCallReturnAddr);
   if (!writePtr(baselineCallReturnAddr, "ReturnAddr")) {
-    return false;
-  }
-
-  
-  MOZ_ASSERT((framePushed() + sizeof(void*)) % JitStackAlignment == 0);
-
-  
-  if (actualArgc < calleeFun->nargs() &&
-      !buildRectifierFrame(actualArgc, endOfBaselineStubArgs)) {
-    return false;
-  }
-
-  return true;
-}
-
-bool BaselineStackBuilder::buildRectifierFrame(uint32_t actualArgc,
-                                               size_t endOfBaselineStubArgs) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  JitSpew(JitSpew_BaselineBailouts, "      [RECTIFIER FRAME]");
-  bool pushedNewTarget = IsConstructPC(pc_);
-
-  if (!writePtr(prevFramePtr(), "PrevFramePtr")) {
-    return false;
-  }
-  prevFramePtr_ = virtualPointerAtStackOffset(0);
-
-  
-  size_t afterFrameSize =
-      (nextCallee()->nargs() + 1 + pushedNewTarget) * sizeof(Value) +
-      RectifierFrameLayout::Size();
-  if (!maybeWritePadding(JitStackAlignment, afterFrameSize, "Padding")) {
-    return false;
-  }
-
-  
-  if (pushedNewTarget) {
-    size_t newTargetOffset = (framePushed() - endOfBaselineStubArgs) +
-                             (actualArgc + 1) * sizeof(Value);
-    Value newTargetValue = *valuePointerAtStackOffset(newTargetOffset);
-    if (!writeValue(newTargetValue, "CopiedNewTarget")) {
-      return false;
-    }
-  }
-
-  
-  for (unsigned i = 0; i < (nextCallee()->nargs() - actualArgc); i++) {
-    if (!writeValue(UndefinedValue(), "FillerVal")) {
-      return false;
-    }
-  }
-
-  
-  if (!subtract((actualArgc + 1) * sizeof(Value), "CopiedArgs")) {
-    return false;
-  }
-  BufferPointer<uint8_t> stubArgsEnd =
-      pointerAtStackOffset<uint8_t>(framePushed() - endOfBaselineStubArgs);
-  JitSpew(JitSpew_BaselineBailouts, "      MemCpy from %p", stubArgsEnd.get());
-  memcpy(pointerAtStackOffset<uint8_t>(0).get(), stubArgsEnd.get(),
-         (actualArgc + 1) * sizeof(Value));
-
-  
-  if (!writePtr(CalleeToToken(nextCallee(), pushedNewTarget), "CalleeToken")) {
-    return false;
-  }
-
-  
-  size_t rectifierFrameDescr =
-      MakeFrameDescriptorForJitCall(FrameType::Rectifier, actualArgc);
-  if (!writeWord(rectifierFrameDescr, "Descriptor")) {
-    return false;
-  }
-
-  
-  
-  void* rectReturnAddr =
-      cx_->runtime()->jitRuntime()->getArgumentsRectifierReturnAddr().value;
-  MOZ_ASSERT(rectReturnAddr);
-  if (!writePtr(rectReturnAddr, "ReturnAddr")) {
     return false;
   }
 
@@ -1578,14 +1502,12 @@ bool jit::BailoutIonToBaseline(JSContext* cx, JitActivation* activation,
   
   
   
-  
   MOZ_ASSERT(iter.isBailoutJS());
 #if defined(DEBUG) || defined(JS_JITSPEW)
   FrameType prevFrameType = iter.prevType();
   MOZ_ASSERT(JSJitFrameIter::isEntry(prevFrameType) ||
              prevFrameType == FrameType::IonJS ||
              prevFrameType == FrameType::BaselineStub ||
-             prevFrameType == FrameType::Rectifier ||
              prevFrameType == FrameType::TrampolineNative ||
              prevFrameType == FrameType::IonICCall ||
              prevFrameType == FrameType::BaselineJS ||
