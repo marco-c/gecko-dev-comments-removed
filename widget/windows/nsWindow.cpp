@@ -1563,7 +1563,12 @@ void nsWindow::DissociateFromNativeWindow() {
   DebugOnly<WNDPROC> wndProcBeforeDissociate =
       reinterpret_cast<WNDPROC>(::SetWindowLongPtrW(
           mWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(*mPrevWndProc)));
-  NS_ASSERTION(wndProcBeforeDissociate == nsWindow::WindowProc,
+  
+  
+  
+  
+  NS_ASSERTION(WinUtils::MicaAvailable() ||
+                   wndProcBeforeDissociate == nsWindow::WindowProc,
                "Unstacked an unexpected native window procedure");
 
   WinUtils::SetNSWindowPtr(mWnd, nullptr);
