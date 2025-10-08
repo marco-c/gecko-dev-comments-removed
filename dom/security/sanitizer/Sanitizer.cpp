@@ -223,18 +223,12 @@ static CanonicalName CanonicalizeElement(const SanitizerElement& aElement) {
   }
 
   
+  
   const auto& elem = GetAsSanitizerElementNamespace(aElement);
   MOZ_ASSERT(!elem.mName.IsVoid());
 
+  
   RefPtr<nsAtom> namespaceAtom;
-  
-  
-  
-  
-  
-  
-  
-  
   if (!elem.mNamespace.IsEmpty()) {
     namespaceAtom = NS_AtomizeMainThread(elem.mNamespace);
   }
@@ -266,16 +260,12 @@ static CanonicalName CanonicalizeAttribute(
   }
 
   
+  
   const auto& attr = aAttribute.GetAsSanitizerAttributeNamespace();
   MOZ_ASSERT(!attr.mName.IsVoid());
 
+  
   RefPtr<nsAtom> namespaceAtom;
-  
-  
-  
-
-  
-  
   if (!attr.mNamespace.IsEmpty()) {
     namespaceAtom = NS_AtomizeMainThread(attr.mNamespace);
   }
