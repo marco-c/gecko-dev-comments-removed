@@ -147,9 +147,9 @@ class RemoteAccessible : public Accessible, public HyperTextAccessibleBase {
   
 
 
-  virtual role Role() const override { return mRole; }
-
-  virtual role NativeRole() const override { return role::NOTHING; }
+  virtual mozilla::a11y::role NativeRole() const override {
+    return mNativeRole;
+  }
 
   
 
@@ -436,7 +436,7 @@ class RemoteAccessible : public Accessible, public HyperTextAccessibleBase {
         mWrapper(0),
         mID(aID),
         mCachedFields(nullptr),
-        mRole(aRole) {
+        mNativeRole(aRole) {
     MOZ_COUNT_CTOR(RemoteAccessible);
   }
 
@@ -446,7 +446,7 @@ class RemoteAccessible : public Accessible, public HyperTextAccessibleBase {
         mWrapper(0),
         mID(0),
         mCachedFields(nullptr),
-        mRole(roles::DOCUMENT) {
+        mNativeRole(roles::DOCUMENT) {
     mGenericTypes = eDocument | eHyperText;
     MOZ_COUNT_CTOR(RemoteAccessible);
   }
@@ -535,7 +535,7 @@ class RemoteAccessible : public Accessible, public HyperTextAccessibleBase {
 
   
   
-  role mRole : 27;
+  role mNativeRole : 27;
 };
 
 

@@ -169,11 +169,6 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
-  virtual mozilla::a11y::role Role() const override;
-
-  
-
-
 
   inline mozilla::a11y::role ARIARole();
 

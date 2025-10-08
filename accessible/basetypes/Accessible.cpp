@@ -43,6 +43,16 @@ void Accessible::StaticAsserts() const {
       "Accessible::mGenericType was oversized by eLastAccGenericType!");
 }
 
+mozilla::a11y::role Accessible::Role() const {
+  const nsRoleMapEntry* roleMapEntry = ARIARoleMap();
+  mozilla::a11y::role r =
+      (!roleMapEntry || roleMapEntry->roleRule != kUseMapRole)
+          ? NativeRole()
+          : roleMapEntry->role;
+  r = ARIATransformRole(r);
+  return GetMinimumRole(r);
+}
+
 bool Accessible::IsBefore(const Accessible* aAcc) const {
   
   const Accessible* thisP = this;
