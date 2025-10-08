@@ -785,8 +785,15 @@ OpenDatabaseAndHandleBusy(mozIStorageService& aStorageService,
     
     const TimeStamp start = TimeStamp::NowLoRes();
 
+    
+    uint32_t sleepMs = 1;
+    constexpr uint32_t kMaxSleepMs = 100;
+
     do {
-      PR_Sleep(PR_MillisecondsToInterval(100));
+      PR_Sleep(PR_MillisecondsToInterval(sleepMs));
+
+      
+      sleepMs = std::min(sleepMs * 2, kMaxSleepMs);
 
       QM_TRY_UNWRAP(connection,
                     QM_OR_ELSE_WARN_IF(
