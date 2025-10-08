@@ -513,6 +513,9 @@ async function expectNoConsoleErrors(task) {
 
 
 async function doTestWithSemantic(results, task, embeddingSize = 16) {
+  
+
+
   class MockMLEngine {
     async run(request) {
       const texts = request.args[0];

@@ -280,6 +280,15 @@
 
 
 
+
+
+
+
+
+
+
+
+
     handleOneOffSearch(event, engine, where, params) {
       this.searchbar.handleSearchCommandWhere(event, engine, where, params);
     }
