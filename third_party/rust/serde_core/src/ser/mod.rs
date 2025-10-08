@@ -139,6 +139,12 @@ macro_rules! declare_error_trait {
         /// type appropriate for a basic JSON data format.
         ///
         /// [example data format]: https://serde.rs/data-format.html
+        #[cfg_attr(
+            not(no_diagnostic_namespace),
+            diagnostic::on_unimplemented(
+                message = "the trait bound `{Self}: serde::ser::Error` is not satisfied",
+            )
+        )]
         pub trait Error: Sized $(+ $($supertrait)::+)* {
             /// Used when a [`Serialize`] implementation encounters any error
             /// while serializing a type.
@@ -218,6 +224,9 @@ declare_error_trait!(Error: Sized + Debug + Display);
 #[cfg_attr(
     not(no_diagnostic_namespace),
     diagnostic::on_unimplemented(
+        
+        
+        message = "the trait bound `{Self}: serde::Serialize` is not satisfied",
         note = "for local types consider adding `#[derive(serde::Serialize)]` to your `{Self}` type",
         note = "for types from other crates check whether the crate offers a `serde` feature flag",
     )
@@ -337,6 +346,12 @@ pub trait Serialize {
 
 
 
+#[cfg_attr(
+    not(no_diagnostic_namespace),
+    diagnostic::on_unimplemented(
+        message = "the trait bound `{Self}: serde::Serializer` is not satisfied",
+    )
+)]
 pub trait Serializer: Sized {
     
     
@@ -1494,6 +1509,12 @@ pub trait Serializer: Sized {
 
 
 
+#[cfg_attr(
+    not(no_diagnostic_namespace),
+    diagnostic::on_unimplemented(
+        message = "the trait bound `{Self}: serde::ser::SerializeSeq` is not satisfied",
+    )
+)]
 pub trait SerializeSeq {
     
     type Ok;
@@ -1594,6 +1615,12 @@ pub trait SerializeSeq {
 
 
 
+#[cfg_attr(
+    not(no_diagnostic_namespace),
+    diagnostic::on_unimplemented(
+        message = "the trait bound `{Self}: serde::ser::SerializeTuple` is not satisfied",
+    )
+)]
 pub trait SerializeTuple {
     
     type Ok;
@@ -1639,6 +1666,12 @@ pub trait SerializeTuple {
 
 
 
+#[cfg_attr(
+    not(no_diagnostic_namespace),
+    diagnostic::on_unimplemented(
+        message = "the trait bound `{Self}: serde::ser::SerializeTupleStruct` is not satisfied",
+    )
+)]
 pub trait SerializeTupleStruct {
     
     type Ok;
@@ -1697,6 +1730,12 @@ pub trait SerializeTupleStruct {
 
 
 
+#[cfg_attr(
+    not(no_diagnostic_namespace),
+    diagnostic::on_unimplemented(
+        message = "the trait bound `{Self}: serde::ser::SerializeTupleVariant` is not satisfied",
+    )
+)]
 pub trait SerializeTupleVariant {
     
     type Ok;
@@ -1763,6 +1802,12 @@ pub trait SerializeTupleVariant {
 
 
 
+#[cfg_attr(
+    not(no_diagnostic_namespace),
+    diagnostic::on_unimplemented(
+        message = "the trait bound `{Self}: serde::ser::SerializeMap` is not satisfied",
+    )
+)]
 pub trait SerializeMap {
     
     type Ok;
@@ -1853,6 +1898,12 @@ pub trait SerializeMap {
 
 
 
+#[cfg_attr(
+    not(no_diagnostic_namespace),
+    diagnostic::on_unimplemented(
+        message = "the trait bound `{Self}: serde::ser::SerializeStruct` is not satisfied",
+    )
+)]
 pub trait SerializeStruct {
     
     type Ok;
@@ -1917,6 +1968,12 @@ pub trait SerializeStruct {
 
 
 
+#[cfg_attr(
+    not(no_diagnostic_namespace),
+    diagnostic::on_unimplemented(
+        message = "the trait bound `{Self}: serde::ser::SerializeStructVariant` is not satisfied",
+    )
+)]
 pub trait SerializeStructVariant {
     
     type Ok;

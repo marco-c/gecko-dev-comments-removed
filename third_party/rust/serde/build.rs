@@ -1,6 +1,17 @@
 use std::env;
+use std::fs;
+use std::path::PathBuf;
 use std::process::Command;
 use std::str;
+
+const PRIVATE: &str = "\
+#[doc(hidden)]
+pub mod __private$$ {
+    #[doc(hidden)]
+    pub use crate::private::*;
+}
+use serde_core::__private$$ as serde_core_private;
+";
 
 
 
@@ -8,67 +19,32 @@ use std::str;
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
 
+    if env::var_os("DOCS_RS").is_some() {
+        println!("cargo:rustc-cfg=no_serde_core");
+    }
+
+    let out_dir = PathBuf::from(env::var_os("OUT_DIR").unwrap());
+    let patch_version = env::var("CARGO_PKG_VERSION_PATCH").unwrap();
+    let module = PRIVATE.replace("$$", &patch_version);
+    fs::write(out_dir.join("private.rs"), module).unwrap();
+
     let minor = match rustc_minor_version() {
         Some(minor) => minor,
         None => return,
     };
 
     if minor >= 77 {
+        println!("cargo:rustc-check-cfg=cfg(feature, values(\"result\"))");
         println!("cargo:rustc-check-cfg=cfg(no_core_cstr)");
         println!("cargo:rustc-check-cfg=cfg(no_core_error)");
         println!("cargo:rustc-check-cfg=cfg(no_core_net)");
         println!("cargo:rustc-check-cfg=cfg(no_core_num_saturating)");
-        println!("cargo:rustc-check-cfg=cfg(no_core_try_from)");
         println!("cargo:rustc-check-cfg=cfg(no_diagnostic_namespace)");
-        println!("cargo:rustc-check-cfg=cfg(no_float_copysign)");
-        println!("cargo:rustc-check-cfg=cfg(no_num_nonzero_signed)");
-        println!("cargo:rustc-check-cfg=cfg(no_relaxed_trait_bounds)");
+        println!("cargo:rustc-check-cfg=cfg(no_serde_core)");
         println!("cargo:rustc-check-cfg=cfg(no_serde_derive)");
         println!("cargo:rustc-check-cfg=cfg(no_std_atomic)");
         println!("cargo:rustc-check-cfg=cfg(no_std_atomic64)");
-        println!("cargo:rustc-check-cfg=cfg(no_systemtime_checked_add)");
         println!("cargo:rustc-check-cfg=cfg(no_target_has_atomic)");
-    }
-
-    let target = env::var("TARGET").unwrap();
-    let emscripten = target == "asmjs-unknown-emscripten" || target == "wasm32-unknown-emscripten";
-
-    
-    
-    
-    
-    if minor < 34 {
-        println!("cargo:rustc-cfg=no_core_try_from");
-        println!("cargo:rustc-cfg=no_num_nonzero_signed");
-        println!("cargo:rustc-cfg=no_systemtime_checked_add");
-        println!("cargo:rustc-cfg=no_relaxed_trait_bounds");
-    }
-
-    
-    
-    if minor < 35 {
-        println!("cargo:rustc-cfg=no_float_copysign");
-    }
-
-    
-    if minor < 60 {
-        println!("cargo:rustc-cfg=no_target_has_atomic");
-        
-        
-        let has_atomic64 = target.starts_with("x86_64")
-            || target.starts_with("i686")
-            || target.starts_with("aarch64")
-            || target.starts_with("powerpc64")
-            || target.starts_with("sparc64")
-            || target.starts_with("mips64el")
-            || target.starts_with("riscv64");
-        let has_atomic32 = has_atomic64 || emscripten;
-        if minor < 34 || !has_atomic64 {
-            println!("cargo:rustc-cfg=no_std_atomic64");
-        }
-        if minor < 34 || !has_atomic32 {
-            println!("cargo:rustc-cfg=no_std_atomic");
-        }
     }
 
     
@@ -78,32 +54,8 @@ fn main() {
 
     
     
-    if minor < 64 {
-        println!("cargo:rustc-cfg=no_core_cstr");
-    }
-
-    
-    
-    if minor < 74 {
-        println!("cargo:rustc-cfg=no_core_num_saturating");
-    }
-
-    
-    
-    if minor < 77 {
-        println!("cargo:rustc-cfg=no_core_net");
-    }
-
-    
-    
     if minor < 78 {
         println!("cargo:rustc-cfg=no_diagnostic_namespace");
-    }
-
-    
-    
-    if minor < 81 {
-        println!("cargo:rustc-cfg=no_core_error");
     }
 }
 

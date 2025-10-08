@@ -5,6 +5,7 @@ use crate::de::{Deserialize, DeserializeSeed, Deserializer};
 
 pub struct InPlaceSeed<'a, T: 'a>(pub &'a mut T);
 
+#[cfg_attr(not(no_diagnostic_namespace), diagnostic::do_not_recommend)]
 impl<'a, 'de, T> DeserializeSeed<'de> for InPlaceSeed<'a, T>
 where
     T: Deserialize<'de>,
