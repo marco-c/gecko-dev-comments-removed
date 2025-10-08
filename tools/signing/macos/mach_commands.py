@@ -348,6 +348,7 @@ def macos_sign(
             verbose_arg,
             signing_groups,
             entitlements_arg,
+            entitlements_key,
             channel,
             app,
             p12_file_arg,
@@ -360,11 +361,40 @@ def macos_sign(
             signing_groups,
             signing_identity,
             entitlements_arg,
+            entitlements_key,
             channel,
             app,
         )
 
     verify_result(command_context, app, verbose_arg)
+
+
+def entitlement_repo_path(entitlements_key, entitlement_file):
+    """Translates an entitlement file path from the config to a path
+    in the repo.
+
+    The entitlements file contains the path to a file at the location
+    used by the signers such as public/build/security/foo.xml.
+    We need to get the leaf name of the entitlement file (foo.xml)
+    and, depending on entitlements key (production or default), use
+    the appropriate base dir to generate the local path to the
+    entitlement file such as
+    security/mac/hardenedruntime/production/foo.xml
+    """
+
+    entitlement_leaf_name = os.path.basename(entitlement_file)
+    translated_entitlement_file = None
+
+    if entitlements_key == "production":
+        translated_entitlement_file = os.path.join(
+            "security/mac/hardenedruntime/production/", entitlement_leaf_name
+        )
+    elif entitlements_key == "default":
+        translated_entitlement_file = os.path.join(
+            "security/mac/hardenedruntime/developer/", entitlement_leaf_name
+        )
+
+    return translated_entitlement_file
 
 
 def auto_detect_channel(ctx, app):
@@ -418,13 +448,25 @@ def auto_detect_channel(ctx, app):
             logging.ERROR,
             "macos-sign",
             {"plist": info_plist},
-            "Couldn't read bundle ID from {plist}",
+            (
+                "Couldn't read bundle ID from {plist} or bundle ID "
+                f"({bundleid}) not in [{NIGHTLY_BUNDLEID}, {DEVEDITION_BUNDLEID}"
+                f", {RELEASE_BUNDLEID}]. You can try to specify the channel"
+                " manually with -c $CHANNEL"
+            ),
         )
         sys.exit(1)
 
 
 def sign_with_codesign(
-    ctx, verbose_arg, signing_groups, signing_identity, entitlements_arg, channel, app
+    ctx,
+    verbose_arg,
+    signing_groups,
+    signing_identity,
+    entitlements_arg,
+    entitlements_key,
+    channel,
+    app,
 ):
     
     
@@ -477,6 +519,9 @@ def sign_with_codesign(
                     ]["default"]["by-project"]["default"]
                 else:
                     raise ("Unexpected channel")
+
+            
+            entitlement_file = entitlement_repo_path(entitlements_key, entitlement_file)
 
             
             
@@ -544,6 +589,7 @@ def sign_with_rcodesign(
     verbose_arg,
     signing_groups,
     entitlements_arg,
+    entitlements_key,
     channel,
     app,
     p12_file_arg,
@@ -609,6 +655,9 @@ def sign_with_rcodesign(
                     ]["default"]["by-project"]["default"]
                 else:
                     raise ("Unexpected channel")
+
+            
+            entitlement_file = entitlement_repo_path(entitlements_key, entitlement_file)
 
             
             
