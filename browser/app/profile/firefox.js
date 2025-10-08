@@ -1242,6 +1242,9 @@ pref("privacy.globalprivacycontrol.functionality.enabled",  true);
 
 pref("privacy.globalprivacycontrol.pbmode.enabled", true);
 
+
+pref("privacy.wallet_schemes", "openid4vp,mdoc,mdoc-openid4vp,haip,eudi-wallet,eudi-openid4vp,openid-credential-offer");
+
 pref("network.proxy.share_proxy_settings",  false); 
 
 
