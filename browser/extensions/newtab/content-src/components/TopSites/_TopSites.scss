@@ -52,15 +52,16 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
   margin: 0 calc(var(--space-large) * -1);
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, auto);
+  justify-content: center; // Center shortcuts when fewer than max number of sites per row
   row-gap: var(--space-small);
 
   @media (min-width: $break-point-layout-variant) {
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(6, auto);
   }
 
   @media (min-width: $break-point-widest) {
-    grid-template-columns: repeat(8, 1fr);
+    grid-template-columns: repeat(8, auto);
   }
 
   a {
@@ -264,8 +265,20 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
 
     &:focus-visible {
       background-color: var(--newtab-button-focus-background);
-      border-color: var(--newtab-button-focus-border);
+      outline: var(--focus-outline); // Backup for when wallpaper is not set
       opacity: 1;
+
+      .lightWallpaper &,
+      .darkWallpaper & {
+        &::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: var(--border-radius-small);
+          outline: var(--focus-outline);
+          color-scheme: initial; // Override wallpaper-contrast-fix for focus outline color
+        }
+      }
     }
   }
 
@@ -285,6 +298,14 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
 
     &:focus + div .context-menu-button {
       opacity: 1;
+    }
+
+    &:focus .tile {
+      .lightWallpaper &,
+      .darkWallpaper & {
+        outline: var(--focus-outline);
+        color-scheme: initial;
+      }
     }
   }
 
