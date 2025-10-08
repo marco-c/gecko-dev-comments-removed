@@ -713,9 +713,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
   
   
-  
-  void MaybePrepareForCacheBeforeExecute(ScriptLoadRequest* aRequest,
-                                         JS::Handle<JSScript*> aScript);
+  void MaybePrepareForCacheBeforeExecute(ScriptLoadRequest* aRequest);
 
   
   
