@@ -180,8 +180,6 @@ static sandbox::BrokerServices* InitializeBrokerServices() {
   
   Unused << brokerServices->CreateAlternateDesktop(
       sandbox::Desktop::kAlternateWinstation);
-  Unused << brokerServices->CreateAlternateDesktop(
-      sandbox::Desktop::kAlternateDesktop);
 
   
   mozilla::sandboxing::ApplyParentProcessMitigations();
