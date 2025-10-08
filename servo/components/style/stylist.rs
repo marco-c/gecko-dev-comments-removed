@@ -1618,7 +1618,6 @@ impl Stylist {
 
     
     #[inline]
-    #[cfg(feature = "gecko")]
     fn lookup_position_try<'a, E>(
         &'a self,
         name: &Atom,
