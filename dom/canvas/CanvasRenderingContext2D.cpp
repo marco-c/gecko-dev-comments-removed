@@ -2293,7 +2293,7 @@ NS_IMETHODIMP
 CanvasRenderingContext2D::GetInputStream(
     const char* aMimeType, const nsAString& aEncoderOptions,
     mozilla::CanvasUtils::ImageExtraction aExtractionBehavior,
-    const nsACString& aRandomizationKey, nsIInputStream** aStream) {
+    nsIInputStream** aStream) {
   nsCString enccid("@mozilla.org/image/encoder;2?type=");
   enccid += aMimeType;
   nsCOMPtr<imgIEncoder> encoder = do_CreateInstance(enccid.get());
@@ -2309,9 +2309,9 @@ CanvasRenderingContext2D::GetInputStream(
     return NS_ERROR_FAILURE;
   }
 
-  return ImageEncoder::GetInputStream(
-      imageSize.width, imageSize.height, imageBuffer.get(), format, encoder,
-      aEncoderOptions, aRandomizationKey, aStream);
+  return ImageEncoder::GetInputStream(imageSize.width, imageSize.height,
+                                      imageBuffer.get(), format, encoder,
+                                      aEncoderOptions, aStream);
 }
 
 already_AddRefed<mozilla::gfx::SourceSurface>
@@ -6531,14 +6531,14 @@ nsresult CanvasRenderingContext2D::GetImageDataArray(
   mBufferProvider->ReturnSnapshot(snapshot.forget());
 
   
-  CanvasUtils::ImageExtraction extractionBehavior =
+  CanvasUtils::ImageExtraction permission =
       CanvasUtils::ImageExtraction::Unrestricted;
   if (mCanvasElement) {
-    extractionBehavior = CanvasUtils::ImageExtractionResult(mCanvasElement, aCx,
-                                                            &aSubjectPrincipal);
+    permission = CanvasUtils::ImageExtractionResult(mCanvasElement, aCx,
+                                                    &aSubjectPrincipal);
   } else if (mOffscreenCanvas) {
-    extractionBehavior = CanvasUtils::ImageExtractionResult(
-        mOffscreenCanvas, aCx, &aSubjectPrincipal);
+    permission = CanvasUtils::ImageExtractionResult(mOffscreenCanvas, aCx,
+                                                    &aSubjectPrincipal);
   }
 
   
@@ -6547,7 +6547,7 @@ nsresult CanvasRenderingContext2D::GetImageDataArray(
   
   
   
-  if (extractionBehavior == CanvasUtils::ImageExtraction::Randomize) {
+  if (permission == CanvasUtils::ImageExtraction::Randomize) {
     if (readback) {
       readback = CreateDataSourceSurfaceByCloning(readback);
     }
@@ -6560,12 +6560,12 @@ nsresult CanvasRenderingContext2D::GetImageDataArray(
 
   do {
     uint8_t* randomData;
-    if (extractionBehavior == CanvasUtils::ImageExtraction::Placeholder) {
+    if (permission == CanvasUtils::ImageExtraction::Placeholder) {
       
       
       
       randomData = TryToGenerateRandomDataForPlaceholderCanvasData();
-    } else if (extractionBehavior == CanvasUtils::ImageExtraction::Randomize) {
+    } else if (permission == CanvasUtils::ImageExtraction::Randomize) {
       
       
       
@@ -6582,7 +6582,7 @@ nsresult CanvasRenderingContext2D::GetImageDataArray(
     uint8_t* data = JS_GetUint8ClampedArrayData(darray, &isShared, nogc);
     MOZ_ASSERT(!isShared);  
 
-    if (extractionBehavior == CanvasUtils::ImageExtraction::Placeholder) {
+    if (permission == CanvasUtils::ImageExtraction::Placeholder) {
       FillPlaceholderCanvas(randomData, len.value(), data);
       break;
     }

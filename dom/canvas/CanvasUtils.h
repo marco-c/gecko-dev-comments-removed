@@ -75,7 +75,6 @@ enum class ImageExtraction {
   Unrestricted,
   Placeholder,
   Randomize,
-  EfficientRandomize,
 };
 
 

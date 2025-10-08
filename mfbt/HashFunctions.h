@@ -327,8 +327,7 @@ template <typename WCharT, typename = typename std::enable_if<
 
 
 [[nodiscard]] extern MFBT_API HashNumber HashBytes(const void* bytes,
-                                                   size_t aLength,
-                                                   HashNumber startingHash = 0);
+                                                   size_t aLength);
 
 
 
