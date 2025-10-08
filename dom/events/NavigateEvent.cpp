@@ -9,6 +9,7 @@
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/dom/AbortController.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/NavigateEventBinding.h"
 #include "mozilla/dom/Navigation.h"
@@ -424,8 +425,16 @@ static void RestoreScrollPositionData(Document* aDocument,
     return;
   }
 
+  RefPtr<nsDocShell> docShell = nsDocShell::Cast(aDocument->GetDocShell());
+  if (!docShell) {
+    return;
+  }
+
   
   
+  
+  
+  docShell->RestoreScrollPosFromActiveSHE();
 }
 
 
