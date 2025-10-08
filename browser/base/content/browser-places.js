@@ -2,9 +2,6 @@
 
 
 
-
-
-
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
   "NEWTAB_ENABLED",

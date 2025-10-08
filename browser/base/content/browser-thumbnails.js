@@ -5,9 +5,6 @@
 
 
 
-
-
-
 var gBrowserThumbnails = {
   
 

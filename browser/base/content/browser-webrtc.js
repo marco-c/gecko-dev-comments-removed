@@ -5,8 +5,6 @@
 
 
 
-
-
 var gSharedTabWarning = {
   
 

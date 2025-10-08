@@ -2,8 +2,6 @@
 
 
 
-
-
 ChromeUtils.defineESModuleGetters(this, {
   ExtensionUtils: "resource://gre/modules/ExtensionUtils.sys.mjs",
 });

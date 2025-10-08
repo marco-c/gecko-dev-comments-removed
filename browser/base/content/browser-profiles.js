@@ -2,9 +2,6 @@
 
 
 
-
-
-
 var gProfiles = {
   async init() {
     this.createNewProfile = this.createNewProfile.bind(this);

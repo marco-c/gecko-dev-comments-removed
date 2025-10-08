@@ -2,9 +2,6 @@
 
 
 
-
-
-
 const {
   FX_MONITOR_OAUTH_CLIENT_ID,
   FX_RELAY_OAUTH_CLIENT_ID,

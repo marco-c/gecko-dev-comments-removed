@@ -5,9 +5,6 @@
 
 
 
-
-
-
 var gGfxUtils = {
   _isRecording: false,
   _isTransactionLogging: false,

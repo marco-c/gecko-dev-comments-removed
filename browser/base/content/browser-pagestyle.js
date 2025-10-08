@@ -3,8 +3,6 @@
 
 
 
-
-
 var gPageStyleMenu = {
   _getStyleSheetInfo(browser) {
     let actor =

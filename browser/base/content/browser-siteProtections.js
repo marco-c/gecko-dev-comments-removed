@@ -2,8 +2,6 @@
 
 
 
-
-
 ChromeUtils.defineESModuleGetters(this, {
   ContentBlockingAllowList:
     "resource://gre/modules/ContentBlockingAllowList.sys.mjs",

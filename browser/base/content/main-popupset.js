@@ -3,8 +3,6 @@
 
 
 
-
-
 document.addEventListener(
   "DOMContentLoaded",
   () => {
