@@ -1167,6 +1167,13 @@ void WarnIgnoredPreload(const mozilla::dom::Document&, nsIURI&);
 
 
 
+bool NS_ParseUseAsDictionary(const nsACString& aValue, nsACString& aMatch,
+                             nsACString& aMatchId,
+                             nsTArray<nsCString>& aMatchDestItems,
+                             nsACString& aType);
+
+
+
 
 
 
