@@ -89,6 +89,17 @@ class DictionaryCacheEntry final
 
   const Vector<uint8_t>& GetDictionary() const { return mDictionaryData; }
 
+  void AccumulateHash(const char* aBuf, int32_t aCount);
+  void AccumulateFile(const char* aBuf, int32_t aCount);
+
+  void FinishFile();
+
+  
+  uint8_t* DictionaryData(size_t* aLength) const {
+    *aLength = mDictionaryData.length();
+    return (uint8_t*)mDictionaryData.begin();
+  }
+
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
     
     return mallocSizeOf(this);
@@ -107,6 +118,7 @@ class DictionaryCacheEntry final
   uint32_t mUsers{0};  
   
   Vector<uint8_t> mDictionaryData;
+  bool mDictionaryDataComplete{false};
 
   
   nsCOMPtr<nsICryptoHash> mCrypto;
