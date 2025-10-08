@@ -233,6 +233,10 @@ HB_END_DECLS
 
 
 
+
+
+
+
 typedef enum
 {
   HB_SCRIPT_COMMON			= HB_TAG ('Z','y','y','y'), 
@@ -460,6 +464,14 @@ typedef enum
   HB_SCRIPT_SUNUWAR			= HB_TAG ('S','u','n','u'), 
   HB_SCRIPT_TODHRI			= HB_TAG ('T','o','d','r'), 
   HB_SCRIPT_TULU_TIGALARI		= HB_TAG ('T','u','t','g'), 
+
+  
+
+
+  HB_SCRIPT_BERIA_ERFE			= HB_TAG ('B','e','r','f'), 
+  HB_SCRIPT_SIDETIC			= HB_TAG ('S','i','d','t'), 
+  HB_SCRIPT_TAI_YO			= HB_TAG ('T','a','y','o'), 
+  HB_SCRIPT_TOLONG_SIKI			= HB_TAG ('T','o','l','s'), 
 
   
   HB_SCRIPT_INVALID			= HB_TAG_NONE,
