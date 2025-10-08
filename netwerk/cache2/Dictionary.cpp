@@ -220,53 +220,56 @@ nsresult DictionaryCacheEntry::Prefetch(nsILoadContextInfo* aLoadContextInfo,
     
     
     
-    if (!mDictionaryDataComplete) {
-      
-      
-      
-      nsCOMPtr<nsICacheStorageService> cacheStorageService(
-          components::CacheStorage::Service());
-      if (!cacheStorageService) {
-        aShouldSuspend = false;
-        return NS_ERROR_FAILURE;
-      }
-      nsCOMPtr<nsICacheStorage> cacheStorage;
-      nsresult rv = cacheStorageService->DiskCacheStorage(
-          aLoadContextInfo, getter_AddRefs(cacheStorage));
-      if (NS_FAILED(rv)) {
-        aShouldSuspend = false;
-        return NS_ERROR_FAILURE;
-      }
-      
-      
-      
-      
-      if (NS_FAILED(cacheStorage->AsyncOpenURIString(
-              mURI, ""_ns,
-              nsICacheStorage::OPEN_READONLY |
-                  nsICacheStorage::OPEN_COMPLETE_ONLY |
-                  nsICacheStorage::CHECK_MULTITHREADED,
-              this)) ||
-          mNotCached) {
-        
-        
-        aShouldSuspend = false;
-        
-        if (mOrigin) {
-          mOrigin->RemoveEntry(this);
-          mOrigin = nullptr;
-        }
-        return NS_ERROR_FAILURE;
-      }
-      mWaitingPrefetch.AppendElement(aFunc);
-      DICTIONARY_LOG(("Started Prefetch for %s, anonymous=%d", mURI.get(),
-                      aLoadContextInfo->IsAnonymous()));
-      aShouldSuspend = true;
+    if (mDictionaryDataComplete) {
+      DICTIONARY_LOG(
+          ("Prefetch for %s - already have data in memory (%u users)",
+           mURI.get(), mUsers));
+      aShouldSuspend = false;
       return NS_OK;
     }
-    DICTIONARY_LOG(("Prefetch for %s - already have data in memory (%u users)",
-                    mURI.get(), mUsers));
-    aShouldSuspend = false;
+
+    
+    
+    
+    nsCOMPtr<nsICacheStorageService> cacheStorageService(
+        components::CacheStorage::Service());
+    if (!cacheStorageService) {
+      aShouldSuspend = false;
+      return NS_ERROR_FAILURE;
+    }
+    nsCOMPtr<nsICacheStorage> cacheStorage;
+    nsresult rv = cacheStorageService->DiskCacheStorage(
+        aLoadContextInfo, getter_AddRefs(cacheStorage));
+    if (NS_FAILED(rv)) {
+      aShouldSuspend = false;
+      return NS_ERROR_FAILURE;
+    }
+    
+    
+    
+    
+    if (NS_FAILED(cacheStorage->AsyncOpenURIString(
+            mURI, ""_ns,
+            nsICacheStorage::OPEN_READONLY |
+                nsICacheStorage::OPEN_COMPLETE_ONLY |
+                nsICacheStorage::CHECK_MULTITHREADED,
+            this)) ||
+        mNotCached) {
+      DICTIONARY_LOG(("AsyncOpenURIString failed for %s", mURI.get()));
+      
+      
+      aShouldSuspend = false;
+      
+      if (mOrigin) {
+        mOrigin->RemoveEntry(this);
+        mOrigin = nullptr;
+      }
+      return NS_ERROR_FAILURE;
+    }
+    mWaitingPrefetch.AppendElement(aFunc);
+    DICTIONARY_LOG(("Started Prefetch for %s, anonymous=%d", mURI.get(),
+                    aLoadContextInfo->IsAnonymous()));
+    aShouldSuspend = true;
     return NS_OK;
   }
   DICTIONARY_LOG(("Prefetch for %s - already waiting", mURI.get()));
