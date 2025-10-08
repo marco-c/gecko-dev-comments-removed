@@ -190,7 +190,7 @@ def mozharness_test_on_docker(config, job, taskdesc):
     if not test["checkout"]:
         
         
-        support_vcs_checkout(config, job, taskdesc)
+        support_vcs_checkout(config, job, taskdesc, config.repo_configs)
 
     
     
