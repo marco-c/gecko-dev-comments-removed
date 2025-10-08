@@ -294,6 +294,35 @@ JS_PUBLIC_API JSObject* JS::CompileJsonModule(
   return moduleObject;
 }
 
+JS_PUBLIC_API JSObject* JS::CreateCssModule(
+    JSContext* cx, const ReadOnlyCompileOptions& options,
+    const Value& cssValue) {
+  Rooted<ExportNameVector> exportNames(cx);
+  if (!exportNames.append(cx->names().default_)) {
+    ReportOutOfMemory(cx);
+    return nullptr;
+  }
+
+  Rooted<ModuleObject*> moduleObject(
+      cx, ModuleObject::createSynthetic(cx, &exportNames));
+  if (!moduleObject) {
+    return nullptr;
+  }
+
+  RootedVector<Value> exportValues(cx);
+  if (!exportValues.append(cssValue)) {
+    ReportOutOfMemory(cx);
+    return nullptr;
+  }
+
+  if (!ModuleObject::createSyntheticEnvironment(cx, moduleObject,
+                                                exportValues)) {
+    return nullptr;
+  }
+
+  return moduleObject;
+}
+
 JS_PUBLIC_API void JS::SetModulePrivate(JSObject* module, const Value& value) {
   JSRuntime* rt = module->zone()->runtimeFromMainThread();
   module->as<ModuleObject>().scriptSourceObject()->setPrivate(rt, value);
@@ -2492,18 +2521,8 @@ void js::AsyncModuleExecutionRejected(JSContext* cx,
   
   MOZ_ASSERT(module->status() == ModuleStatus::Evaluated);
 
+  
   module->clearAsyncEvaluatingPostOrder();
-
-  
-  
-  Rooted<ListObject*> parents(cx, module->asyncParentModules());
-  Rooted<ModuleObject*> parent(cx);
-  for (uint32_t i = 0; i < parents->length(); i++) {
-    parent = &parents->get(i).toObject().as<ModuleObject>();
-
-    
-    AsyncModuleExecutionRejected(cx, parent, error);
-  }
 
   
   if (module->hasTopLevelCapability()) {
@@ -2516,6 +2535,17 @@ void js::AsyncModuleExecutionRejected(JSContext* cx,
       
       cx->clearPendingException();
     }
+  }
+
+  
+  
+  Rooted<ListObject*> parents(cx, module->asyncParentModules());
+  Rooted<ModuleObject*> parent(cx);
+  for (uint32_t i = 0; i < parents->length(); i++) {
+    parent = &parents->get(i).toObject().as<ModuleObject>();
+
+    
+    AsyncModuleExecutionRejected(cx, parent, error);
   }
 
   
