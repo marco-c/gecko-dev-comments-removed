@@ -39,10 +39,6 @@
 
 namespace mozilla::net {
 
-
-GlobalEntryTables* CacheStorageService::sGlobalEntryTables = nullptr;
-mozilla::Mutex CacheStorageService::sLock{"CacheStorageService.sLock"};
-
 namespace {
 
 void AppendMemoryStorageTag(nsAutoCString& key) {
@@ -53,6 +49,21 @@ void AppendMemoryStorageTag(nsAutoCString& key) {
 }
 
 }  
+
+
+
+
+using GlobalEntryTables = nsClassHashtable<nsCStringHashKey, CacheEntryTable>;
+
+
+
+
+
+
+
+
+
+static GlobalEntryTables* sGlobalEntryTables;
 
 CacheMemoryConsumer::CacheMemoryConsumer(uint32_t aFlags) {
   StoreFlags(aFlags);
@@ -122,7 +133,7 @@ CacheStorageService::~CacheStorageService() {
 }
 
 void CacheStorageService::Shutdown() {
-  mozilla::MutexAutoLock lock(sLock);
+  mozilla::MutexAutoLock lock(mLock);
 
   if (mShutdown) return;
 
@@ -150,7 +161,7 @@ void CacheStorageService::ShutdownBackground() {
   MOZ_ASSERT(IsOnManagementThread());
 
   {
-    mozilla::MutexAutoLock lock(sLock);
+    mozilla::MutexAutoLock lock(mLock);
 
     
     if (mPurgeTimer) {
@@ -169,7 +180,7 @@ void CacheStorageService::ShutdownBackground() {
 
 
 
-namespace CacheStorageServiceInternal {
+namespace {
 
 
 
@@ -226,14 +237,13 @@ class WalkMemoryCacheRunnable : public WalkCacheRunnable {
       LOG(("WalkMemoryCacheRunnable::Run - collecting [this=%p]", this));
       
 
-      mozilla::MutexAutoLock lock(CacheStorageService::sLock);
+      mozilla::MutexAutoLock lock(CacheStorageService::Self()->Lock());
 
       if (!CacheStorageService::IsRunning()) return NS_ERROR_NOT_INITIALIZED;
 
       
       size_t numEntries = 0;
-      for (const auto& entries :
-           CacheStorageService::sGlobalEntryTables->Values()) {
+      for (const auto& entries : sGlobalEntryTables->Values()) {
         if (entries->Type() != CacheEntryTable::MEMORY_ONLY) {
           continue;
         }
@@ -242,8 +252,7 @@ class WalkMemoryCacheRunnable : public WalkCacheRunnable {
       mEntryArray.SetCapacity(numEntries);
 
       
-      for (const auto& entries :
-           CacheStorageService::sGlobalEntryTables->Values()) {
+      for (const auto& entries : sGlobalEntryTables->Values()) {
         if (entries->Type() != CacheEntryTable::MEMORY_ONLY) {
           continue;
         }
@@ -522,7 +531,7 @@ class WalkDiskCacheRunnable : public WalkCacheRunnable {
 }  
 
 void CacheStorageService::DropPrivateBrowsingEntries() {
-  mozilla::MutexAutoLock lock(sLock);
+  mozilla::MutexAutoLock lock(mLock);
 
   if (mShutdown) return;
 
@@ -664,7 +673,7 @@ NS_IMETHODIMP CacheStorageService::Clear() {
   
   CacheIndex::OnAsyncEviction(true);
 
-  mozilla::MutexAutoLock lock(sLock);
+  mozilla::MutexAutoLock lock(mLock);
 
   {
     mozilla::MutexAutoLock forcedValidEntriesLock(mForcedValidEntriesLock);
@@ -747,8 +756,9 @@ static bool RemoveExactEntry(CacheEntryTable* aEntries, nsACString const& aKey,
 
 NS_IMETHODIMP CacheStorageService::ClearBaseDomain(
     const nsAString& aBaseDomain) {
-  mozilla::MutexAutoLock lock(sLock);
   if (sGlobalEntryTables) {
+    mozilla::MutexAutoLock lock(mLock);
+
     if (mShutdown) return NS_ERROR_NOT_AVAILABLE;
 
     nsCString cBaseDomain = NS_ConvertUTF16toUTF8(aBaseDomain);
@@ -835,7 +845,7 @@ nsresult CacheStorageService::ClearOriginInternal(
     return NS_ERROR_FAILURE;
   }
 
-  mozilla::MutexAutoLock lock(sLock);
+  mozilla::MutexAutoLock lock(mLock);
 
   if (sGlobalEntryTables) {
     for (const auto& globalEntry : *sGlobalEntryTables) {
@@ -968,9 +978,8 @@ NS_IMETHODIMP CacheStorageService::AsyncVisitAllStorages(
   NS_ENSURE_FALSE(mShutdown, NS_ERROR_NOT_INITIALIZED);
 
   
-  RefPtr<CacheStorageServiceInternal::WalkDiskCacheRunnable> event =
-      new CacheStorageServiceInternal::WalkDiskCacheRunnable(
-          nullptr, aVisitEntries, aVisitor);
+  RefPtr<WalkDiskCacheRunnable> event =
+      new WalkDiskCacheRunnable(nullptr, aVisitEntries, aVisitor);
   return event->Walk();
 }
 
@@ -1032,7 +1041,7 @@ bool CacheStorageService::RemoveEntry(CacheEntry* aEntry,
     return false;
   }
 
-  mozilla::MutexAutoLock lock(sLock);
+  mozilla::MutexAutoLock lock(mLock);
 
   if (mShutdown) {
     LOG(("  after shutdown"));
@@ -1080,7 +1089,7 @@ void CacheStorageService::RecordMemoryOnlyEntry(CacheEntry* aEntry,
   
   
 
-  sLock.AssertCurrentThreadOwns();
+  mLock.AssertCurrentThreadOwns();
 
   if (mShutdown) {
     LOG(("  after shutdown"));
@@ -1282,7 +1291,7 @@ bool CacheStorageService::MemoryPool::OnMemoryConsumptionChange(
 void CacheStorageService::SchedulePurgeOverMemoryLimit() {
   LOG(("CacheStorageService::SchedulePurgeOverMemoryLimit"));
 
-  mozilla::MutexAutoLock lock(sLock);
+  mozilla::MutexAutoLock lock(mLock);
 
   if (mShutdown) {
     LOG(("  past shutdown"));
@@ -1309,7 +1318,7 @@ NS_IMETHODIMP
 CacheStorageService::Notify(nsITimer* aTimer) {
   LOG(("CacheStorageService::Notify"));
 
-  mozilla::MutexAutoLock lock(sLock);
+  mozilla::MutexAutoLock lock(mLock);
 
   if (aTimer == mPurgeTimer) {
 #ifdef MOZ_TSAN
@@ -1583,7 +1592,7 @@ nsresult CacheStorageService::AddStorageEntry(
   RefPtr<CacheEntryHandle> handle;
 
   {
-    mozilla::MutexAutoLock lock(sLock);
+    mozilla::MutexAutoLock lock(mLock);
 
     NS_ENSURE_FALSE(mShutdown, NS_ERROR_NOT_INITIALIZED);
 
@@ -1679,7 +1688,7 @@ nsresult CacheStorageService::CheckStorageEntry(CacheStorage const* aStorage,
        aURI.BeginReading(), aIdExtension.BeginReading(), contextKey.get()));
 
   {
-    mozilla::MutexAutoLock lock(sLock);
+    mozilla::MutexAutoLock lock(mLock);
 
     NS_ENSURE_FALSE(mShutdown, NS_ERROR_NOT_INITIALIZED);
 
@@ -1840,7 +1849,7 @@ nsresult CacheStorageService::DoomStorageEntry(
 
   RefPtr<CacheEntry> entry;
   {
-    mozilla::MutexAutoLock lock(sLock);
+    mozilla::MutexAutoLock lock(mLock);
 
     NS_ENSURE_FALSE(mShutdown, NS_ERROR_NOT_INITIALIZED);
 
@@ -1927,7 +1936,7 @@ nsresult CacheStorageService::DoomStorageEntries(
   nsAutoCString contextKey;
   CacheFileUtils::AppendKeyPrefix(aStorage->LoadInfo(), contextKey);
 
-  mozilla::MutexAutoLock lock(sLock);
+  mozilla::MutexAutoLock lock(mLock);
 
   return DoomStorageEntries(contextKey, aStorage->LoadInfo(),
                             aStorage->WriteToDisk(), aStorage->Pinning(),
@@ -1940,7 +1949,7 @@ nsresult CacheStorageService::DoomStorageEntries(
   LOG(("CacheStorageService::DoomStorageEntries [context=%s]",
        aContextKey.BeginReading()));
 
-  sLock.AssertCurrentThreadOwns();
+  mLock.AssertCurrentThreadOwns();
 
   NS_ENSURE_TRUE(!mShutdown, NS_ERROR_NOT_INITIALIZED);
 
@@ -2045,15 +2054,13 @@ nsresult CacheStorageService::WalkStorageEntries(
   NS_ENSURE_ARG(aStorage);
 
   if (aStorage->WriteToDisk()) {
-    RefPtr<CacheStorageServiceInternal::WalkDiskCacheRunnable> event =
-        new CacheStorageServiceInternal::WalkDiskCacheRunnable(
-            aStorage->LoadInfo(), aVisitEntries, aVisitor);
+    RefPtr<WalkDiskCacheRunnable> event = new WalkDiskCacheRunnable(
+        aStorage->LoadInfo(), aVisitEntries, aVisitor);
     return event->Walk();
   }
 
-  RefPtr<CacheStorageServiceInternal::WalkMemoryCacheRunnable> event =
-      new CacheStorageServiceInternal::WalkMemoryCacheRunnable(
-          aStorage->LoadInfo(), aVisitEntries, aVisitor);
+  RefPtr<WalkMemoryCacheRunnable> event = new WalkMemoryCacheRunnable(
+      aStorage->LoadInfo(), aVisitEntries, aVisitor);
   return event->Walk();
 }
 
@@ -2066,7 +2073,7 @@ void CacheStorageService::CacheFileDoomed(nsILoadContextInfo* aLoadContextInfo,
   nsAutoCString entryKey;
   CacheEntry::HashingKey(""_ns, aIdExtension, aURISpec, entryKey);
 
-  mozilla::MutexAutoLock lock(sLock);
+  mozilla::MutexAutoLock lock(mLock);
 
   if (mShutdown) {
     return;
@@ -2103,7 +2110,7 @@ bool CacheStorageService::GetCacheEntryInfo(
 
   RefPtr<CacheEntry> entry;
   {
-    mozilla::MutexAutoLock lock(sLock);
+    mozilla::MutexAutoLock lock(mLock);
 
     if (mShutdown) {
       return false;
@@ -2262,7 +2269,7 @@ void CacheStorageService::TelemetryRecordEntryRemoval(CacheEntry* entry) {
 
 size_t CacheStorageService::SizeOfExcludingThis(
     mozilla::MallocSizeOf mallocSizeOf) const {
-  sLock.AssertCurrentThreadOwns();
+  CacheStorageService::Self()->Lock().AssertCurrentThreadOwns();
 
   size_t n = 0;
   
@@ -2285,7 +2292,7 @@ size_t CacheStorageService::SizeOfIncludingThis(
 NS_IMETHODIMP
 CacheStorageService::CollectReports(nsIHandleReportCallback* aHandleReport,
                                     nsISupports* aData, bool aAnonymize) {
-  MutexAutoLock lock(sLock);
+  MutexAutoLock lock(mLock);
   MOZ_COLLECT_REPORT("explicit/network/cache2/io", KIND_HEAP, UNITS_BYTES,
                      CacheFileIOManager::SizeOfIncludingThis(MallocSizeOf),
                      "Memory used by the cache IO manager.");
