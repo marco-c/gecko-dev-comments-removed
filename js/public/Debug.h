@@ -181,6 +181,7 @@ struct ValueSummary {
   
   
   
+  
   static const uint32_t VERSION = 2;
 
   
