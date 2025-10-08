@@ -1360,7 +1360,7 @@ void CacheFileIOManager::ShutdownInternal() {
     
 
     if (!h->IsSpecialFile() && !h->mIsDoomed && !h->mFileExists) {
-      CacheIndex::RemoveEntry(h->Hash());
+      CacheIndex::RemoveEntry(h->Hash(), h->Key());
     }
 
     
@@ -1820,7 +1820,7 @@ nsresult CacheFileIOManager::OpenFileInternal(const SHA1Sum::Hash* aHash,
     NS_ENSURE_SUCCESS(rv, rv);
 
     if (exists) {
-      CacheIndex::RemoveEntry(aHash);
+      CacheIndex::RemoveEntry(aHash, handle->Key());
 
       LOG(
           ("CacheFileIOManager::OpenFileInternal() - Removing old file from "
@@ -2033,7 +2033,7 @@ void CacheFileIOManager::CloseHandleInternal(CacheFileHandle* aHandle) {
 
   if (!aHandle->IsSpecialFile() && !aHandle->mIsDoomed &&
       (aHandle->mInvalid || !aHandle->mFileExists)) {
-    CacheIndex::RemoveEntry(aHandle->Hash());
+    CacheIndex::RemoveEntry(aHandle->Hash(), aHandle->Key());
   }
 
   
@@ -2513,11 +2513,8 @@ nsresult CacheFileIOManager::DoomFileInternal(
 
   if (!aHandle->IsSpecialFile()) {
     
-    if (!mDictionaryCache) {
-      
-    }
-    
-    CacheIndex::RemoveEntry(aHandle->Hash());
+    RefPtr<CacheFileHandle> handle(aHandle);
+    CacheIndex::RemoveEntry(aHandle->Hash(), aHandle->Key());
   }
 
   aHandle->mIsDoomed = true;
@@ -2612,7 +2609,15 @@ nsresult CacheFileIOManager::DoomFileByKeyInternal(const SHA1Sum::Hash* aHash) {
          static_cast<uint32_t>(rv)));
   }
 
-  CacheIndex::RemoveEntry(aHash);
+  
+  
+  RefPtr<CacheFileMetadata> metadata = new CacheFileMetadata();
+  rv = metadata->SyncReadMetadata(file);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    CacheIndex::RemoveEntry(aHash, ""_ns);
+  } else {
+    CacheIndex::RemoveEntry(aHash, metadata->GetKey());
+  }
 
   return NS_OK;
 }
@@ -3239,7 +3244,8 @@ nsresult CacheFileIOManager::OverLimitEvictionInternal() {
       
 
       
-      CacheIndex::RemoveEntry(&hash);
+      
+      CacheIndex::RemoveEntry(&hash, ""_ns);
       consecutiveFailures = 0;
     } else {
       
