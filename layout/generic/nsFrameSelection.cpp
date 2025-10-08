@@ -1733,7 +1733,9 @@ nsresult nsFrameSelection::RepaintSelection(SelectionType aSelectionType) {
   if (!sel) {
     return NS_ERROR_INVALID_ARG;
   }
-  NS_ENSURE_STATE(mPresShell);
+  if (!mPresShell) {
+    return NS_ERROR_UNEXPECTED;
+  }
 
 
 
