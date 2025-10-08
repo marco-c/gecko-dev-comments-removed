@@ -722,6 +722,15 @@ export const NimbusTestUtils = {
       `,
       { profileId }
     );
+
+    await conn.execute(
+      `
+        DELETE FROM NimbusSyncTimestamps
+        WHERE
+          profileId = :profileId;
+      `,
+      { profileId }
+    );
   },
 
   /**
@@ -1170,8 +1179,17 @@ export const NimbusTestUtils = {
       .stub(loader.remoteSettingsClients.experiments, "get")
       .resolves(Array.isArray(experiments) ? experiments : []);
     sandbox
+      .stub(loader.remoteSettingsClients.experiments.db, "getLastModified")
+      .resolves(0);
+    sandbox
       .stub(loader.remoteSettingsClients.secureExperiments, "get")
       .resolves(Array.isArray(secureExperiments) ? secureExperiments : []);
+    sandbox
+      .stub(
+        loader.remoteSettingsClients.secureExperiments.db,
+        "getLastModified"
+      )
+      .resolves(0);
 
     if (migrationState) {
       for (const [phase, value] of Object.entries(migrationState)) {
@@ -1289,6 +1307,7 @@ export const NimbusTestUtils = {
   async waitForActiveEnrollments(expectedSlugs) {
     const profileId = ExperimentAPI.profileId;
 
+    await this.flushStore();
     await lazy.TestUtils.waitForCondition(async () => {
       const conn = await lazy.ProfilesDatastoreService.getConnection();
       const slugs = await conn
@@ -1312,6 +1331,7 @@ export const NimbusTestUtils = {
   async waitForInactiveEnrollment(slug) {
     const profileId = ExperimentAPI.profileId;
 
+    await this.flushStore();
     await lazy.TestUtils.waitForCondition(async () => {
       const conn = await lazy.ProfilesDatastoreService.getConnection();
       const result = await conn.execute(
@@ -1333,6 +1353,7 @@ export const NimbusTestUtils = {
   async waitForAllUnenrollments() {
     const profileId = ExperimentAPI.profileId;
 
+    await this.flushStore();
     await lazy.TestUtils.waitForCondition(async () => {
       const conn = await lazy.ProfilesDatastoreService.getConnection();
       const slugs = await conn
