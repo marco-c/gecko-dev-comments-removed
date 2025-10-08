@@ -178,7 +178,7 @@ struct ValueSummary {
   
   
   
-  static const uint32_t VERSION = 2;
+  static const uint32_t VERSION = 1;
 
   
   
@@ -265,14 +265,6 @@ struct ValueSummary {
 
 
 
-
-
-
-
-
-
-
-
 struct ObjectSummary {
   
   
@@ -287,7 +279,6 @@ struct ObjectSummary {
     GenericObject,
     ProxyObject,
     External,
-    Error,
   };
 
   Kind kind;
