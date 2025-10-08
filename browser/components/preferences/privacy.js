@@ -2357,41 +2357,6 @@ var gPrivacyPane = {
   
 
 
-  updateNonTechnicalPrivacySectionVisibility() {
-    let allDisabled =
-      !Preferences.get("privacy.globalprivacycontrol.functionality.enabled")
-        .value && !Preferences.get("privacy.donottrackheader.enabled").value;
-    let nonTechnicalPrivacyGroup = document.getElementById(
-      "nonTechnicalPrivacyGroup"
-    );
-    if (allDisabled) {
-      nonTechnicalPrivacyGroup.style.display = "none";
-    } else {
-      nonTechnicalPrivacyGroup.style.display = "";
-    }
-  },
-
-  
-
-
-  initNonTechnicalPrivacySection() {
-    
-    
-    Preferences.get("privacy.globalprivacycontrol.functionality.enabled").on(
-      "change",
-      gPrivacyPane.updateNonTechnicalPrivacySectionVisibility.bind(gPrivacyPane)
-    );
-    Preferences.get("privacy.donottrackheader.enabled").on(
-      "change",
-      gPrivacyPane.updateNonTechnicalPrivacySectionVisibility.bind(gPrivacyPane)
-    );
-    
-    gPrivacyPane.updateNonTechnicalPrivacySectionVisibility();
-  },
-
-  
-
-
 
   init() {
     initSettingGroup("nonTechnicalPrivacy");
@@ -2402,8 +2367,6 @@ var gPrivacyPane = {
     initSettingGroup("browsingProtection");
     initSettingGroup("cookiesAndSiteData");
     initSettingGroup("certificates");
-
-    this.initNonTechnicalPrivacySection();
 
     this._updateSanitizeSettingsButton();
     this.initializeHistoryMode();
