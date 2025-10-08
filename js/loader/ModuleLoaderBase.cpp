@@ -1337,6 +1337,11 @@ bool ModuleLoaderBase::OnLoadRequestedModulesRejected(
     JSContext* aCx, ModuleLoadRequest* aRequest, Handle<Value> error) {
   ModuleScript* moduleScript = aRequest->mModuleScript;
 
+  if (aRequest->IsCanceled()) {
+    aRequest->Release();
+    return true;
+  }
+
   
   if (aRequest->IsDynamicImport()) {
     LOG(
