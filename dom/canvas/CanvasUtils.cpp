@@ -383,8 +383,10 @@ ImageExtraction ImageExtractionResult(dom::HTMLCanvasElement* aCanvasElement,
     return ImageExtraction::Placeholder;
   }
 
-  if (ownerDoc->ShouldResistFingerprinting(RFPTarget::CanvasRandomization) ||
-      ownerDoc->ShouldResistFingerprinting(RFPTarget::WebGLRandomization)) {
+  if ((ownerDoc->ShouldResistFingerprinting(RFPTarget::CanvasRandomization) ||
+       ownerDoc->ShouldResistFingerprinting(RFPTarget::WebGLRandomization)) &&
+      GetCanvasExtractDataPermission(aPrincipal) !=
+          nsIPermissionManager::ALLOW_ACTION) {
     return ImageExtraction::Randomize;
   }
 
@@ -460,7 +462,8 @@ bool IsImageExtractionAllowed(dom::OffscreenCanvas* aOffscreenCanvas,
 
     if (!XRE_IsContentProcess()) {
       MOZ_ASSERT_UNREACHABLE(
-          "Who's calling this from the parent process without a chrome window "
+          "Who's calling this from the parent process without a chrome "
+          "window "
           "(it would have been exempt from the RFP targets)?");
       return;
     }
