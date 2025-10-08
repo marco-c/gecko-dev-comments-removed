@@ -319,7 +319,7 @@ pref("media.videocontrols.keyboard-tab-to-all-controls", true);
   
   pref("media.peerconnection.dtls.version.min", 771);
   pref("media.peerconnection.dtls.version.max", 772);
-
+  
   pref("media.peerconnection.sctp.default_max_streams", 2048);
 
 #if defined(XP_MACOSX)
