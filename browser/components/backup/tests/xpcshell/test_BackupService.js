@@ -518,8 +518,44 @@ add_task(async function test_createBackup_signed_in() {
 
 
 
+
+
+
+async function makeFolderReadonly(folderpath, isReadonly) {
+  if (AppConstants.platform !== "win") {
+    await IOUtils.setPermissions(folderpath, isReadonly ? 0o444 : 0o666);
+    let folder = await IOUtils.getFile(folderpath);
+    Assert.equal(
+      folder.isWritable(),
+      !isReadonly,
+      `folder is ${isReadonly ? "" : "not "}read-only`
+    );
+  } else if (isReadonly) {
+    
+    
+    
+    let tempFilename = await IOUtils.createUniqueFile(
+      folderpath,
+      "readonlyfile",
+      0o444
+    );
+    let file = await IOUtils.getFile(tempFilename);
+    Assert.equal(file.isWritable(), false, "file in folder is read-only");
+  } else {
+    
+    let attrs = await IOUtils.getWindowsAttributes(folderpath);
+    attrs.readonly = false;
+    await IOUtils.setWindowsAttributes(folderpath, attrs, true );
+  }
+}
+
+
+
+
+
 add_task(
   {
+    
     
     skip_if: () => AppConstants.platform == "win",
   },
@@ -544,9 +580,9 @@ add_task(
     
     let inaccessibleProfilePath = await IOUtils.createUniqueDirectory(
       PathUtils.tempDir,
-      "createBackupErrorInaccessible"
+      "createBackupErrorReadonly"
     );
-    IOUtils.setPermissions(inaccessibleProfilePath, 0o444);
+    await makeFolderReadonly(inaccessibleProfilePath, true);
 
     const bs = new BackupService({});
 
@@ -569,7 +605,62 @@ add_task(
         
       })
       .finally(async () => {
+        await makeFolderReadonly(inaccessibleProfilePath, false);
         await IOUtils.remove(inaccessibleProfilePath, { recursive: true });
+        sandbox.restore();
+      });
+  }
+);
+
+
+
+
+
+add_task(
+  {
+    skip_if: () => AppConstants.platform !== "win",
+  },
+  async function test_createBackup_override_readonly() {
+    let sandbox = sinon.createSandbox();
+
+    const TEST_UID = "ThisIsMyTestUID";
+    const TEST_EMAIL = "foxy@mozilla.org";
+
+    sandbox.stub(UIState, "get").returns({
+      status: UIState.STATUS_SIGNED_IN,
+      uid: TEST_UID,
+      email: TEST_EMAIL,
+    });
+
+    
+    
+    
+    let inaccessibleProfilePath = await IOUtils.createUniqueDirectory(
+      PathUtils.tempDir,
+      "createBackupErrorReadonly"
+    );
+    await makeFolderReadonly(inaccessibleProfilePath, true);
+    await Assert.rejects(
+      IOUtils.remove(inaccessibleProfilePath),
+      /Could not remove/,
+      "folder is not removable"
+    );
+
+    const bs = new BackupService({});
+
+    await bs
+      .createBackup({ profilePath: inaccessibleProfilePath })
+      .then(result => {
+        Assert.notEqual(result, null, "Should not return null on success");
+      })
+      .catch(e => {
+        console.error(e);
+        Assert.ok(false, "Should not have bubbled up an error");
+      })
+      .finally(async () => {
+        await makeFolderReadonly(inaccessibleProfilePath, false);
+        await IOUtils.remove(inaccessibleProfilePath, { recursive: true });
+        await bs.deleteLastBackup();
         sandbox.restore();
       });
   }

@@ -188,7 +188,8 @@ class IOUtils final {
 
   static already_AddRefed<dom::Promise> SetWindowsAttributes(
       dom::GlobalObject& aGlobal, const nsAString& aPath,
-      const mozilla::dom::WindowsFileAttributes& aAttrs, ErrorResult& aError);
+      const mozilla::dom::WindowsFileAttributes& aAttrs, bool aRecursive,
+      ErrorResult& aError);
 #elif defined(XP_MACOSX)
   static already_AddRefed<dom::Promise> HasMacXAttr(dom::GlobalObject& aGlobal,
                                                     const nsAString& aPath,
@@ -543,8 +544,12 @@ class IOUtils final {
 
 
 
+
+
+
   static Result<Ok, IOError> SetWindowsAttributesSync(
-      nsIFile* aFile, const uint32_t aSetAttrs, const uint32_t aClearAttrs);
+      nsIFile* aFile, const uint32_t aSetAttrs, const uint32_t aClearAttrs,
+      bool aRecursive);
 #elif defined(XP_MACOSX)
   static Result<bool, IOError> HasMacXAttrSync(nsIFile* aFile,
                                                const nsCString& aAttr);
