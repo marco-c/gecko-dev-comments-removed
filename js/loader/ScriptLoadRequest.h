@@ -87,7 +87,7 @@ class ScriptLoadRequest : public nsISupports,
   friend class ScriptLoadRequestList;
 
  protected:
-  virtual ~ScriptLoadRequest();
+  virtual ~ScriptLoadRequest() {}
 
  public:
   using SRIMetadata = mozilla::dom::SRIMetadata;
@@ -303,7 +303,6 @@ class ScriptLoadRequest : public nsISupports,
     PassedCondition,
 
     
-    
     MarkedForCache,
   };
   CachingPlan mDiskCachingPlan = CachingPlan::Uninitialized;
@@ -355,12 +354,6 @@ class ScriptLoadRequest : public nsISupports,
   
   
   RefPtr<LoadedScript> mLoadedScript;
-
-  
-  
-  
-  
-  JS::Heap<JSScript*> mScriptForCache;
 
   
   
