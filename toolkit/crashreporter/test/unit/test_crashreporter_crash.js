@@ -16,6 +16,10 @@ add_task(async function run_test() {
     is_win7_or_newer = true;
   }
 
+  registerCleanupFunction(async () => {
+    Services.prefs.clearUserPref("termsofuse.bypassNotification");
+  });
+
   
   await do_content_crash(null, function (mdump, extra) {
     Assert.ok(mdump.exists());
@@ -108,6 +112,7 @@ add_task(async function run_test() {
     function () {
       
       
+      Services.prefs.setBoolPref("termsofuse.bypassNotification", true);
       Services.prefs.setBoolPref(
         "datareporting.policy.dataSubmissionPolicyBypassNotification",
         true
@@ -178,6 +183,7 @@ add_task(async function run_test() {
         "datareporting.policy.dataSubmissionPolicyBypassNotification",
         true
       );
+      Services.prefs.setBoolPref("termsofuse.bypassNotification", true);
       Services.prefs.setBoolPref(
         "datareporting.healthreport.uploadEnabled",
         false
