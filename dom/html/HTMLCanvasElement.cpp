@@ -902,12 +902,12 @@ already_AddRefed<CanvasCaptureMediaStream> HTMLCanvasElement::CaptureStream(
   
   
   
-  CanvasUtils::ImageExtraction spoofing =
+  CanvasUtils::ImageExtraction extractionBehaviour =
       CanvasUtils::ImageExtractionResult(this, nullptr, &aSubjectPrincipal);
 
   rv = RegisterFrameCaptureListener(
       stream->FrameCaptureListener(),
-      spoofing == CanvasUtils::ImageExtraction::Placeholder);
+      extractionBehaviour == CanvasUtils::ImageExtraction::Placeholder);
   if (NS_FAILED(rv)) {
     aRv.Throw(rv);
     return nullptr;
@@ -923,10 +923,10 @@ nsresult HTMLCanvasElement::ExtractData(JSContext* aCx,
                                         nsIInputStream** aStream) {
   
   
-  CanvasUtils::ImageExtraction spoofing =
+  CanvasUtils::ImageExtraction extractionBehaviour =
       CanvasUtils::ImageExtractionResult(this, aCx, &aSubjectPrincipal);
 
-  if (spoofing != CanvasUtils::ImageExtraction::Placeholder) {
+  if (extractionBehaviour != CanvasUtils::ImageExtraction::Placeholder) {
     auto size = GetWidthHeight();
     CanvasContextType type = GetCurrentContextType();
     CanvasFeatureUsage featureUsage = CanvasFeatureUsage::None;
@@ -1036,7 +1036,7 @@ void HTMLCanvasElement::ToBlob(JSContext* aCx, BlobCallback& aCallback,
 
   
   
-  CanvasUtils::ImageExtraction spoofing =
+  CanvasUtils::ImageExtraction extractionBehaviour =
       CanvasUtils::ImageExtractionResult(this, aCx, &aSubjectPrincipal);
 
   
@@ -1090,8 +1090,8 @@ void HTMLCanvasElement::ToBlob(JSContext* aCx, BlobCallback& aCallback,
       global, &aCallback, recheckCanRead ? mOffscreenDisplay.get() : nullptr,
       recheckCanRead ? &aSubjectPrincipal : nullptr);
 
-  CanvasRenderingContextHelper::ToBlob(aCx, callback, aType, aParams, spoofing,
-                                       aRv);
+  CanvasRenderingContextHelper::ToBlob(aCx, callback, aType, aParams,
+                                       extractionBehaviour, aRv);
 }
 
 OffscreenCanvas* HTMLCanvasElement::TransferControlToOffscreen(
