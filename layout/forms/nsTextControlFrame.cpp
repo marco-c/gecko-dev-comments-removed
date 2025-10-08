@@ -451,22 +451,6 @@ bool nsTextControlFrame::ShouldInitializeEagerly() const {
     }
   }
 
-  
-  
-  
-  
-  if (nsCOMPtr<nsIDragSession> dragSession =
-          nsContentUtils::GetDragSession(PresContext())) {
-    if (dragSession->IsDraggingTextInTextControl()) {
-      nsCOMPtr<nsINode> sourceNode;
-      if (NS_SUCCEEDED(
-              dragSession->GetSourceNode(getter_AddRefs(sourceNode))) &&
-          sourceNode == textControlElement) {
-        return true;
-      }
-    }
-  }
-
   return false;
 }
 
