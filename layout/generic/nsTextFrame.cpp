@@ -4054,6 +4054,18 @@ static Maybe<TextAutospace::CharClass> GetPrecedingCharClassFromFrameTree(
   return Nothing();
 }
 
+static bool HasCJKGlyphRun(const gfxTextRun* aTextRun) {
+  uint32_t numGlyphRuns;
+  const gfxTextRun::GlyphRun* run = aTextRun->GetGlyphRuns(&numGlyphRuns);
+  while (numGlyphRuns-- > 0) {
+    if (run->mIsCJK) {
+      return true;
+    }
+    run++;
+  }
+  return false;
+}
+
 void nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
                                                        Spacing* aSpacing,
                                                        bool aIgnoreTabs) const {
@@ -4066,15 +4078,8 @@ void nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
   }
 
   
-  gfxSkipCharsIterator start(mStart);
-  start.SetSkippedOffset(aRange.start);
-
-  
   
   if (mWordSpacing || mLetterSpacing || mTextAutospace) {
-    
-    nsSkipCharsRunIterator run(
-        start, nsSkipCharsRunIterator::LENGTH_UNSKIPPED_ONLY, aRange.Length());
     bool newlineIsSignificant = mTextStyle->NewlineIsSignificant(mFrame);
     
     
@@ -4101,6 +4106,10 @@ void nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
         after = mLetterSpacing - before;
         break;
     }
+
+    
+    gfxSkipCharsIterator start(mStart);
+    start.SetSkippedOffset(aRange.start);
     bool atStart = mStartOfLineOffset == start.GetSkippedOffset() &&
                    !mFrame->IsInSVGTextSubtree();
 
@@ -4143,6 +4152,14 @@ void nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
       return prevClass.valueOr(CharClass::Other);
     };
 
+    
+    
+    bool textIncludesCJK = mTextAutospace && mCharacterDataBuffer.Is2b() &&
+                           HasCJKGlyphRun(mTextRun);
+
+    
+    nsSkipCharsRunIterator run(
+        start, nsSkipCharsRunIterator::LENGTH_UNSKIPPED_ONLY, aRange.Length());
     while (run.NextRun()) {
       uint32_t runOffsetInSubstring = run.GetSkippedOffset() - aRange.start;
       gfxSkipCharsIterator iter = run.GetPos();
@@ -4172,8 +4189,9 @@ void nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
         
         
         
+        
         if (mTextAutospace &&
-            (mCharacterDataBuffer.Is2b() ||
+            (textIncludesCJK ||
              run.GetOriginalOffset() + i == mFrame->GetContentOffset()) &&
             mTextRun->IsClusterStart(run.GetSkippedOffset() + i)) {
           const char32_t currScalar =
