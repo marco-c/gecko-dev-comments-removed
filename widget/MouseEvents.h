@@ -341,6 +341,11 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
     }
   }
 
+  WidgetMouseEvent(const WidgetMouseEvent& aEvent)
+      : WidgetMouseEventBase(aEvent), WidgetPointerHelper(aEvent) {
+    AssignMouseEventDataOnly(aEvent);
+  }
+
 #ifdef DEBUG
   virtual ~WidgetMouseEvent() { AssertContextMenuEventButtonConsistency(); }
 #endif
@@ -400,10 +405,22 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
   
   RefPtr<dom::Event> mTriggerEvent;
 
+  
+
+
+
+
+  Maybe<uint64_t> mCallbackId;
+
   void AssignMouseEventData(const WidgetMouseEvent& aEvent, bool aCopyTargets) {
     AssignMouseEventBaseData(aEvent, aCopyTargets);
     AssignPointerHelperData(aEvent,  true);
+    AssignMouseEventDataOnly(aEvent);
+  }
 
+  void AssignMouseEventDataOnly(const WidgetMouseEvent& aEvent) {
+    
+    
     mReason = aEvent.mReason;
     mContextMenuTrigger = aEvent.mContextMenuTrigger;
     mExitFrom = aEvent.mExitFrom;
@@ -411,7 +428,12 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
     mIgnoreRootScrollFrame = aEvent.mIgnoreRootScrollFrame;
     mIgnoreCapturingContent = aEvent.mIgnoreCapturingContent;
     mClickEventPrevented = aEvent.mClickEventPrevented;
+    
+    
+    
     mTriggerEvent = aEvent.mTriggerEvent;
+    
+    
   }
 
   
