@@ -393,8 +393,10 @@ nsresult GPUProcessManager::EnsureGPUReady(
       if (!mProcess->WaitForLaunch()) {
         
         
-        MOZ_ASSERT(!mProcess && !mGPUChild);
-        return NS_ERROR_FAILURE;
+        
+        MOZ_ASSERT(!mProcess);
+        MOZ_ASSERT(!mGPUChild);
+        continue;
       }
     }
 
@@ -574,11 +576,25 @@ GPUProcessManager::CreateUiCompositorController(nsBaseWidget* aWidget,
 void GPUProcessManager::OnProcessLaunchComplete(GPUProcessHost* aHost) {
   MOZ_ASSERT(mProcess && mProcess == aHost);
 
+  
+  
+  
   if (!mProcess->IsConnected()) {
-    DisableGPUProcess("Failed to connect GPU process");
+    ++mLaunchProcessAttempts;
+    if (mLaunchProcessAttempts >
+        uint32_t(StaticPrefs::layers_gpu_process_max_launch_attempts())) {
+      char disableMessage[64];
+      SprintfLiteral(disableMessage,
+                     "Failed to launch GPU process after %d attempts",
+                     mLaunchProcessAttempts);
+      DisableGPUProcess(disableMessage);
+    } else {
+      DestroyProcess( true);
+    }
     return;
   }
 
+  mLaunchProcessAttempts = 0;
   mGPUChild = mProcess->GetActor();
   mProcessToken = mProcess->GetProcessToken();
 #if defined(XP_WIN)
