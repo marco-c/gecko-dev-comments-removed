@@ -2398,24 +2398,9 @@ sec_asn1d_absorb_child(sec_asn1d_state *state)
 
 
         if (state->pending != state->child->consumed) {
-            if (state->pending < state->child->consumed) {
-                PORT_SetError(SEC_ERROR_BAD_DER);
-                state->top->status = decodeError;
-                return;
-            }
-            
-
-
-
-
-
-
-
-
-
-
-
-            state->consumed += (state->pending - state->child->consumed);
+            PORT_SetError(SEC_ERROR_BAD_DER);
+            state->top->status = decodeError;
+            return;
         }
         state->pending = 0;
     }
