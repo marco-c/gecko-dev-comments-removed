@@ -181,7 +181,7 @@ class LocalAccessible : public nsISupports, public Accessible {
 
 
 
-  virtual mozilla::a11y::role NativeRole() const;
+  virtual mozilla::a11y::role NativeRole() const override;
 
   virtual uint64_t State() override;
 
@@ -868,11 +868,6 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
   
-
-
-  mozilla::a11y::role ARIATransformRole(mozilla::a11y::role aRole) const;
-
-  
   
 
   
@@ -1034,17 +1029,6 @@ class LocalAccessible : public nsISupports, public Accessible {
 
 
   nsIFrame* FindNearestAccessibleAncestorFrame();
-
-  
-
-
-
-
-
-
-
-  role FindNextValidARIARole(
-      std::initializer_list<nsStaticAtom*> aRolesToSkip) const;
 
   LocalAccessible* GetCommandForDetailsRelation() const;
 

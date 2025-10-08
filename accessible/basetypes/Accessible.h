@@ -183,6 +183,8 @@ class Accessible {
 
   virtual role Role() const = 0;
 
+  virtual role NativeRole() const = 0;
+
   
 
 
@@ -829,11 +831,28 @@ class Accessible {
 
   mozilla::a11y::role GetMinimumRole(mozilla::a11y::role aRole) const;
 
+  
+
+
+
+  mozilla::a11y::role ARIATransformRole(mozilla::a11y::role aRole) const;
+
  private:
   static const uint8_t kTypeBits = 6;
   static const uint8_t kGenericTypesBits = 18;
 
   void StaticAsserts() const;
+
+  
+
+
+
+
+
+
+
+  role FindNextValidARIARole(
+      std::initializer_list<nsStaticAtom*> aRolesToSkip) const;
 
  protected:
   uint32_t mType : kTypeBits;
