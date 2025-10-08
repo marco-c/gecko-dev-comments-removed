@@ -9547,8 +9547,9 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
       
       if (bSizeForResolvingRowSizes == NS_UNCONSTRAINEDSIZE &&
           !IsMasonry(LogicalAxis::Block)) {
-        bSizeForResolvingRowSizes = gridRI.mReflowInput->ApplyMinMaxBSize(
-            gridRI.mRows.TotalTrackSizeWithoutAlignment(this));
+        bSizeForResolvingRowSizes =
+            std::max(gridRI.mRows.TotalTrackSizeWithoutAlignment(this),
+                     gridRI.mReflowInput->ComputedMinBSize());
 
         NS_ASSERTION(bSizeForResolvingRowSizes != NS_UNCONSTRAINEDSIZE,
                      "The block-size for re-resolving the row sizes should be "
