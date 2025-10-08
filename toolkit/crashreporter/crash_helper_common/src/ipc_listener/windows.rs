@@ -77,7 +77,7 @@ impl IPCListener {
         
         self.listen()?;
 
-        IPCConnector::from_ancillary(connected_pipe)
+        IPCConnector::new(connected_pipe)
     }
 
     

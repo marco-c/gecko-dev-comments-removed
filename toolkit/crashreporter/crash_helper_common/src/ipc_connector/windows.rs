@@ -6,12 +6,11 @@ use crate::{
     errors::IPCError,
     messages::{self, Message},
     platform::windows::{create_manual_reset_event, get_last_error, OverlappedOperation},
-    IntoRawAncillaryData, IO_TIMEOUT,
+    ProcessHandle, IO_TIMEOUT,
 };
 
 use std::{
-    ffi::{CStr, OsString},
-    io::Error,
+    ffi::{c_void, CStr, OsString},
     os::windows::io::{AsRawHandle, FromRawHandle, IntoRawHandle, OwnedHandle, RawHandle},
     ptr::null_mut,
     str::FromStr,
@@ -34,24 +33,17 @@ use windows_sys::Win32::{
     },
 };
 
-pub type AncillaryData = OwnedHandle;
-pub type RawAncillaryData = HANDLE;
-
-impl IntoRawAncillaryData for AncillaryData {
-    fn into_raw(self) -> RawAncillaryData {
-        self.into_raw_handle() as HANDLE
-    }
-}
+pub type AncillaryData = HANDLE;
 
 
-pub const INVALID_ANCILLARY_DATA: RawAncillaryData = 0;
+pub const INVALID_ANCILLARY_DATA: AncillaryData = 0;
 
 const HANDLE_SIZE: usize = size_of::<HANDLE>();
 
 
 
 
-fn extract_buffer_and_handle(buffer: Vec<u8>) -> Result<(Vec<u8>, Option<OwnedHandle>), IPCError> {
+fn extract_buffer_and_handle(buffer: Vec<u8>) -> Result<(Vec<u8>, Option<HANDLE>), IPCError> {
     let handle_bytes = &buffer[0..HANDLE_SIZE];
     let data = &buffer[HANDLE_SIZE..];
     let handle_bytes: Result<[u8; HANDLE_SIZE], _> = handle_bytes.try_into();
@@ -60,50 +52,31 @@ fn extract_buffer_and_handle(buffer: Vec<u8>) -> Result<(Vec<u8>, Option<OwnedHa
     };
     let handle = match HANDLE::from_ne_bytes(handle_bytes) {
         INVALID_ANCILLARY_DATA => None,
-        handle => Some(unsafe { OwnedHandle::from_raw_handle(handle as RawHandle) }),
+        handle => Some(handle),
     };
 
     Ok((data.to_vec(), handle))
 }
 
 pub struct IPCConnector {
-    
     handle: OwnedHandle,
-    
     event: OwnedHandle,
-    
     overlapped: Option<OverlappedOperation>,
-    
-    
-    process: Option<OwnedHandle>,
 }
 
 impl IPCConnector {
-    pub fn from_ancillary(handle: OwnedHandle) -> Result<IPCConnector, IPCError> {
+    pub fn new(handle: OwnedHandle) -> Result<IPCConnector, IPCError> {
         let event = create_manual_reset_event()?;
 
         Ok(IPCConnector {
             handle,
             event,
             overlapped: None,
-            process: None,
         })
     }
 
-    
-    
-    
-    
-    
-    
-    pub unsafe fn from_raw_ancillary(
-        ancillary_data: RawAncillaryData,
-    ) -> Result<IPCConnector, IPCError> {
-        IPCConnector::from_ancillary(OwnedHandle::from_raw_handle(ancillary_data as RawHandle))
-    }
-
-    pub fn set_process(&mut self, process: OwnedHandle) {
-        self.process = Some(process);
+    pub fn from_ancillary(ancillary_data: AncillaryData) -> Result<IPCConnector, IPCError> {
+        IPCConnector::new(unsafe { OwnedHandle::from_raw_handle(ancillary_data as RawHandle) })
     }
 
     pub fn as_raw(&self) -> HANDLE {
@@ -189,7 +162,8 @@ impl IPCConnector {
         }
 
         
-        unsafe { IPCConnector::from_raw_ancillary(pipe) }
+        let handle = unsafe { OwnedHandle::from_raw_handle(pipe as RawHandle) };
+        IPCConnector::new(handle)
     }
 
     
@@ -204,28 +178,78 @@ impl IPCConnector {
     pub fn deserialize(string: &CStr) -> Result<IPCConnector, IPCError> {
         let string = string.to_str().map_err(|_e| IPCError::ParseError)?;
         let handle = usize::from_str(string).map_err(|_e| IPCError::ParseError)?;
+        let handle = handle as *mut c_void;
         
-        unsafe { IPCConnector::from_raw_ancillary(handle as HANDLE) }
+        let handle = unsafe { OwnedHandle::from_raw_handle(handle) };
+        IPCConnector::new(handle)
     }
 
-    pub fn into_ancillary(self) -> Result<AncillaryData, IPCError> {
-        Ok(self.handle)
+    pub fn into_ancillary(
+        self,
+        dst_process: &Option<ProcessHandle>,
+    ) -> Result<AncillaryData, IPCError> {
+        let mut dst_handle: HANDLE = INVALID_ANCILLARY_DATA;
+
+        if let Some(dst_process) = dst_process.as_ref() {
+            let res = unsafe {
+                DuplicateHandle(
+                    GetCurrentProcess(),
+                    self.handle.into_raw_handle() as HANDLE,
+                    dst_process.as_raw_handle() as HANDLE,
+                    &mut dst_handle,
+                     0,
+                     FALSE,
+                    DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS,
+                )
+            };
+
+            if res > 0 {
+                Ok(dst_handle)
+            } else {
+                Err(IPCError::System(get_last_error()))
+            }
+        } else {
+            Ok(self.handle.into_raw_handle() as HANDLE)
+        }
     }
 
-    pub fn into_raw_ancillary(self) -> Result<RawAncillaryData, IPCError> {
-        Ok(self.handle.into_raw())
+    
+    
+    pub fn as_ancillary(
+        &self,
+        dst_process: &Option<ProcessHandle>,
+    ) -> Result<AncillaryData, IPCError> {
+        let mut dst_handle: HANDLE = INVALID_ANCILLARY_DATA;
+
+        if let Some(dst_process) = dst_process.as_ref() {
+            let res = unsafe {
+                DuplicateHandle(
+                    GetCurrentProcess(),
+                    self.handle.as_raw_handle() as HANDLE,
+                    dst_process.as_raw_handle() as HANDLE,
+                    &mut dst_handle,
+                     0,
+                     FALSE,
+                    DUPLICATE_SAME_ACCESS,
+                )
+            };
+
+            if res > 0 {
+                Ok(dst_handle)
+            } else {
+                Err(IPCError::System(get_last_error()))
+            }
+        } else {
+            Ok(self.handle.as_raw_handle() as HANDLE)
+        }
     }
 
-    pub fn send_message<T>(&self, message: T) -> Result<(), IPCError>
-    where
-        T: Message,
-    {
+    pub fn send_message(&self, message: &dyn Message) -> Result<(), IPCError> {
         
         self.send(&message.header(), None)?;
 
         
-        let (payload, ancillary_data) = message.into_payload();
-        self.send(&payload, ancillary_data)?;
+        self.send(&message.payload(), message.ancillary_payload())?;
 
         Ok(())
     }
@@ -275,14 +299,8 @@ impl IPCConnector {
     }
 
     pub fn send(&self, buff: &[u8], handle: Option<AncillaryData>) -> Result<(), IPCError> {
-        let handle = if let Some(handle) = handle {
-            self.clone_handle(handle)?
-        } else {
-            INVALID_ANCILLARY_DATA
-        };
-
         let mut buffer = Vec::<u8>::with_capacity(HANDLE_SIZE + buff.len());
-        buffer.extend(handle.to_ne_bytes());
+        buffer.extend(handle.unwrap_or(INVALID_ANCILLARY_DATA).to_ne_bytes());
         buffer.extend(buff);
 
         let overlapped = OverlappedOperation::sched_send(
@@ -305,36 +323,6 @@ impl IPCConnector {
         )?;
         let buffer = overlapped.collect_recv( true)?;
         extract_buffer_and_handle(buffer)
-    }
-
-    
-    
-    
-    
-    fn clone_handle(&self, handle: OwnedHandle) -> Result<HANDLE, IPCError> {
-        let Some(dst_process) = self.process.as_ref() else {
-            return Err(IPCError::MissingProcessHandle);
-        };
-        let mut dst_handle: HANDLE = INVALID_ANCILLARY_DATA;
-        let res = unsafe {
-            DuplicateHandle(
-                GetCurrentProcess(),
-                handle.as_raw_handle() as HANDLE,
-                dst_process.as_raw_handle() as HANDLE,
-                &mut dst_handle,
-                 0,
-                 FALSE,
-                DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS,
-            )
-        };
-
-        if res == 0 {
-            return Err(IPCError::CloneHandleFailed(Error::from_raw_os_error(
-                get_last_error() as i32,
-            )));
-        }
-
-        Ok(dst_handle)
     }
 }
 
