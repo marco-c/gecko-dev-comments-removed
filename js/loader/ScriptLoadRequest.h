@@ -303,7 +303,6 @@ class ScriptLoadRequest : public nsISupports,
     PassedCondition,
 
     
-    
     MarkedForCache,
   };
   CachingPlan mDiskCachingPlan = CachingPlan::Uninitialized;
@@ -355,12 +354,6 @@ class ScriptLoadRequest : public nsISupports,
   
   
   RefPtr<LoadedScript> mLoadedScript;
-
-  
-  
-  
-  
-  JS::Heap<JSScript*> mScriptForCache;
 
   
   
