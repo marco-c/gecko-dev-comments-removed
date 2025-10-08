@@ -405,6 +405,7 @@ nsresult nsHTTPCompressConv::BrotliHandler(nsIInputStream* stream,
   }
 
   
+  
   if (self->mBrotli->mDictionary && self->mBrotli->mEaten < 36) {
     uint8_t header_needed = 36 - self->mBrotli->mEaten;
     if (avail >= header_needed) {
@@ -453,7 +454,7 @@ nsresult nsHTTPCompressConv::BrotliHandler(nsIInputStream* stream,
     self->mBrotli->mTotalOut = totalOut;
     self->mBrotli->mBrotliStateIsStreamEnd =
         BrotliDecoderIsFinished(&self->mBrotli->mState);
-    LOG(("nsHttpCompresssConv %p brotlihandler decompress rv=%" PRIx32
+    LOG(("nsHttpCompressConv %p brotlihandler decompress rv=%" PRIx32
          " out=%zu\n",
          self, static_cast<uint32_t>(res), outSize));
 
