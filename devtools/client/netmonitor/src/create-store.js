@@ -10,20 +10,23 @@ const {
 } = require("resource://devtools/client/shared/vendor/redux.js");
 
 const {
-  waitUntilService,
-} = require("resource://devtools/client/shared/redux/middleware/wait-service.js");
-
-const {
   MIN_COLUMN_WIDTH,
   DEFAULT_COLUMN_WIDTH,
 } = require("resource://devtools/client/netmonitor/src/constants.js");
 
 
-const batching = require("resource://devtools/client/netmonitor/src/middleware/batching.js");
-const prefs = require("resource://devtools/client/netmonitor/src/middleware/prefs.js");
+const {
+  ignore,
+} = require("resource://devtools/client/shared/redux/middleware/ignore.js");
 const {
   thunk,
 } = require("resource://devtools/client/shared/redux/middleware/thunk.js");
+const {
+  waitUntilService,
+} = require("resource://devtools/client/shared/redux/middleware/wait-service.js");
+
+const batching = require("resource://devtools/client/netmonitor/src/middleware/batching.js");
+const prefs = require("resource://devtools/client/netmonitor/src/middleware/prefs.js");
 const throttling = require("resource://devtools/client/netmonitor/src/middleware/throttling.js");
 const eventTelemetry = require("resource://devtools/client/netmonitor/src/middleware/event-telemetry.js");
 const requestBlocking = require("resource://devtools/client/netmonitor/src/middleware/request-blocking.js");
@@ -78,6 +81,9 @@ function configureStore(connector, commands, telemetry) {
 
   
   const middleware = applyMiddleware(
+    
+    ignore,
+
     requestBlocking(commands),
     thunk({ connector, commands }),
     prefs,
