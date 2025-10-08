@@ -691,7 +691,7 @@ trait PrivateMatchMethods: TElement {
         new_values: &Arc<ComputedValues>,
         pseudo_element: Option<PseudoElement>,
     ) -> bool {
-        use crate::animation::{self, AnimationSetKey, AnimationState};
+        use crate::animation::{AnimationSetKey, AnimationState};
 
         
         
