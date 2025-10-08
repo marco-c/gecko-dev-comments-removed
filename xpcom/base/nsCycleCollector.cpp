@@ -3611,6 +3611,7 @@ void nsCycleCollector::ShutdownCollect() {
     
     ccJSContext->PerformMicroTaskCheckPoint(true);
     ccJSContext->ProcessStableStateQueue();
+    ccJSContext->ClearUncaughtRejectionObservers();
   }
 
   
