@@ -56,3 +56,7 @@
     opacity: 100;
   }
 }
+
+#tabgroup-panel-content > toolbarbutton.active-tab {
+  font-weight: var(--font-weight-bold);
+}
