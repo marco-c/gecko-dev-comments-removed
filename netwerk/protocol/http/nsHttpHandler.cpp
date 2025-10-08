@@ -656,14 +656,11 @@ nsresult nsHttpHandler::InitConnectionMgr() {
 
 nsresult nsHttpHandler::AddAcceptAndDictionaryHeaders(
     nsIURI* aURI, nsHttpRequestHead* aRequest, bool aSecure,
-    const std::function<void(DictionaryCacheEntry*)>& aCallback) {
+    const std::function<bool(DictionaryCacheEntry*)>& aCallback) {
   LOG(("Adding Dictionary headers"));
   nsresult rv = NS_OK;
   
   if (aSecure) {
-    
-    
-    
     
     if (StaticPrefs::network_http_dictionaries_enable()) {
       mDictionaryCache->GetDictionaryFor(
@@ -684,26 +681,6 @@ nsresult nsHttpHandler::AddAcceptAndDictionaryHeaders(
               nsAutoCStringN<64> encodedHash =
                   ":"_ns + aDict->GetHash() + ":"_ns;
 
-              LOG_DICTIONARIES(
-                  ("Setting Available-Dictionary: %s", encodedHash.get()));
-              rv = aRequest->SetHeader(
-                  nsHttp::Available_Dictionary, encodedHash, false,
-                  nsHttpHeaderArray::eVarietyRequestOverride);
-              if (NS_FAILED(rv)) {
-                (aCallback)(nullptr);
-                return rv;
-              }
-              if (!aDict->GetId().IsEmpty()) {
-                LOG_DICTIONARIES(("Setting Dictionary-Id: %s",
-                                  PromiseFlatCString(aDict->GetId()).get()));
-                rv = aRequest->SetHeader(
-                    nsHttp::Dictionary_Id, aDict->GetId(), false,
-                    nsHttpHeaderArray::eVarietyRequestOverride);
-                if (NS_FAILED(rv)) {
-                  (aCallback)(nullptr);
-                  return rv;
-                }
-              }
               
               
               
@@ -711,7 +688,34 @@ nsresult nsHttpHandler::AddAcceptAndDictionaryHeaders(
               
               
               aRequest->SetDictionary(aDict);
-              (aCallback)(aDict);
+
+              
+              
+              
+              
+              
+              
+              
+              
+              if ((aCallback)(aDict)) {
+                LOG_DICTIONARIES(
+                    ("Setting Available-Dictionary: %s", encodedHash.get()));
+                rv = aRequest->SetHeader(
+                    nsHttp::Available_Dictionary, encodedHash, false,
+                    nsHttpHeaderArray::eVarietyRequestOverride);
+                if (NS_FAILED(rv)) {
+                  return rv;
+                }
+                if (!aDict->GetId().IsEmpty()) {
+                  nsCString id(nsPrintfCString("\"%s\"", aDict->GetId().get()));
+                  rv = aRequest->SetHeader(
+                      nsHttp::Dictionary_Id, aDict->GetId(), false,
+                      nsHttpHeaderArray::eVarietyRequestOverride);
+                  if (NS_FAILED(rv)) {
+                    return rv;
+                  }
+                }
+              }
               return NS_OK;
             }
             rv = aRequest->SetHeader(

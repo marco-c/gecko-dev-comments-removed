@@ -287,7 +287,9 @@ class CacheStorageService final : public nsICacheStorageService,
 
 
 
-  void CacheFileDoomed(nsILoadContextInfo* aLoadContextInfo,
+
+  void CacheFileDoomed(const nsACString& aKey,
+                       nsILoadContextInfo* aLoadContextInfo,
                        const nsACString& aIdExtension,
                        const nsACString& aURISpec);
 
