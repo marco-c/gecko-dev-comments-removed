@@ -748,7 +748,7 @@ add_task(async function update_softblocked_to_unblocked() {
 add_task(async function update_softblocked_to_hardblocked() {
   
   
-  await AMTelemetry.uninit();
+  AMTelemetry.telemetrySetupDone = false;
   AMTelemetry.onStartup();
 
   Services.fog.testResetFOG();
