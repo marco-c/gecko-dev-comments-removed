@@ -16,7 +16,6 @@ const TEST_URI = `
     scrollbar-color: gold;
     user-modify: read-only;
     object-view-box: inset(0% 19% -33% 57%);
-    overflow-clip-box: padding-box;
   }
   div {
     overflow-anchor: auto;
@@ -52,13 +51,6 @@ const TEST_DATA_SELECTED = [
     experimental: true,
   },
   
-  
-
-
-
-
-
-
 ];
 
 const TEST_DATA_ALL = [

@@ -86,13 +86,7 @@ void nsCSSProps::RecomputeEnabledState(const char* aPref, void*) {
       }
 #ifdef FUZZING
       
-      
-      
-      if (pref->mPropID != eCSSProperty_overflow_clip_box &&
-          pref->mPropID != eCSSProperty_overflow_clip_box_block &&
-          pref->mPropID != eCSSProperty_overflow_clip_box_inline) {
-        gPropertyEnabled[pref->mPropID] = true;
-      }
+      gPropertyEnabled[pref->mPropID] = true;
 #endif
     }
   }
