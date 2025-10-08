@@ -4237,6 +4237,15 @@ void LIRGenerator::visitStoreDynamicSlot(MStoreDynamicSlot* ins) {
 void LIRGenerator::visitPostWriteBarrier(MPostWriteBarrier* ins) {
   MOZ_ASSERT(ins->object()->type() == MIRType::Object);
 
+  
+  
+  
+  MConstant* constValue = ins->value()->maybeConstantValue();
+  if (constValue) {
+    MOZ_ASSERT(JS::GCPolicy<Value>::isTenured(constValue->toJSValue()));
+    return;
+  }
+
   switch (ins->value()->type()) {
     case MIRType::Object: {
       LDefinition tmp =
@@ -4277,6 +4286,7 @@ void LIRGenerator::visitPostWriteBarrier(MPostWriteBarrier* ins) {
     default:
       
       
+      MOZ_ASSERT(!NeedsPostBarrier(ins->value()->type()));
       break;
   }
 }
@@ -4284,6 +4294,15 @@ void LIRGenerator::visitPostWriteBarrier(MPostWriteBarrier* ins) {
 void LIRGenerator::visitPostWriteElementBarrier(MPostWriteElementBarrier* ins) {
   MOZ_ASSERT(ins->object()->type() == MIRType::Object);
   MOZ_ASSERT(ins->index()->type() == MIRType::Int32);
+
+  
+  
+  
+  MConstant* constValue = ins->value()->maybeConstantValue();
+  if (constValue) {
+    MOZ_ASSERT(JS::GCPolicy<Value>::isTenured(constValue->toJSValue()));
+    return;
+  }
 
   switch (ins->value()->type()) {
     case MIRType::Object: {
@@ -4329,6 +4348,7 @@ void LIRGenerator::visitPostWriteElementBarrier(MPostWriteElementBarrier* ins) {
     default:
       
       
+      MOZ_ASSERT(!NeedsPostBarrier(ins->value()->type()));
       break;
   }
 }
