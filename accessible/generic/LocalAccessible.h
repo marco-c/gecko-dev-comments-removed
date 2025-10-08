@@ -432,6 +432,8 @@ class LocalAccessible : public nsISupports, public Accessible {
 
   virtual bool IsScrollable() const override;
 
+  virtual bool IsPopover() const override;
+
   
 
 
@@ -864,12 +866,6 @@ class LocalAccessible : public nsISupports, public Accessible {
 
 
   mozilla::a11y::role ARIATransformRole(mozilla::a11y::role aRole) const;
-
-  
-
-
-
-  mozilla::a11y::role GetMinimumRole(mozilla::a11y::role aRole) const;
 
   
   
