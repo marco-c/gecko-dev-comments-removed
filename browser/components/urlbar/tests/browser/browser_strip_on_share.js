@@ -12,7 +12,6 @@ add_setup(async function () {
     set: [
       ["privacy.query_stripping.strip_list", "stripParam"],
       ["privacy.query_stripping.enabled", false],
-      ["privacy.query_stripping.strip_on_share.canDisable", false],
     ],
   });
 
@@ -26,22 +25,20 @@ add_setup(async function () {
 
 
 add_task(async function testInvalidURI() {
-  await testMenuItemDisabled(
-    "https://www.example.com/?stripParam=1234",
-    true,
-    false,
-    true
-  );
+  await testMenuItemDisabled({
+    url: "https://www.example.com/?stripParam=1234",
+    prefEnabled: true,
+    selection: true,
+  });
 });
 
 
 add_task(async function testPrefDisabled() {
-  await testMenuItemDisabled(
-    "https://www.example.com/?stripParam=1234",
-    false,
-    false,
-    false
-  );
+  await testMenuItemDisabled({
+    url: "https://www.example.com/?stripParam=1234",
+    prefEnabled: false,
+    selection: false,
+  });
 });
 
 
@@ -53,8 +50,7 @@ add_task(async function testQueryParamIsStripped() {
     validUrl: originalUrl,
     strippedUrl: shortenedUrl,
     useTestList: false,
-    canDisable: false,
-    isDisabled: false,
+    expectedDisabled: false,
   });
 });
 
@@ -67,28 +63,12 @@ add_task(async function testQueryParamIsStrippedSelectURL() {
     validUrl: originalUrl,
     strippedUrl: shortenedUrl,
     useTestList: false,
-    canDisable: false,
-    isDisabled: false,
+    expectedDisabled: false,
   });
 });
 
 
-
-add_task(async function testQueryParamIsStrippedWithDisabletPref() {
-  let originalUrl = "https://www.example.com/?stripParam=1234";
-  let shortenedUrl = "https://www.example.com/";
-  await testMenuItemEnabled({
-    selectWholeUrl: true,
-    validUrl: originalUrl,
-    strippedUrl: shortenedUrl,
-    useTestList: false,
-    canDisable: true,
-    isDisabled: false,
-  });
-});
-
-
-add_task(async function testQueryParamIsStrippedWithDisabletPref() {
+add_task(async function testQueryParamIsStrippedWithOtherParam() {
   let originalUrl = "https://www.example.com/?keepParameter=1&stripParam=1234";
   let shortenedUrl = "https://www.example.com/?keepParameter=1";
   await testMenuItemEnabled({
@@ -96,20 +76,18 @@ add_task(async function testQueryParamIsStrippedWithDisabletPref() {
     validUrl: originalUrl,
     strippedUrl: shortenedUrl,
     useTestList: false,
-    canDisable: true,
-    isDisabled: false,
+    expectedDisabled: false,
   });
 });
 
 
-add_task(async function testQueryParamIsStrippedWithDisabletPref() {
+add_task(async function testQueryParamIsStrippedAfterInvalid() {
   
-  await testMenuItemDisabled(
-    "https://www.example.com/?stripParam=1234",
-    true,
-    true,
-    true
-  );
+  await testMenuItemDisabled({
+    url: "https://www.example.com/?stripParam=1234",
+    prefEnabled: true,
+    selection: true,
+  });
   
   let originalUrl = "https://www.example.com/?stripParam=1234";
   let shortenedUrl = "https://www.example.com/";
@@ -118,8 +96,7 @@ add_task(async function testQueryParamIsStrippedWithDisabletPref() {
     validUrl: originalUrl,
     strippedUrl: shortenedUrl,
     useTestList: false,
-    canDisable: true,
-    isDisabled: false,
+    expectedDisabled: false,
   });
 });
 
@@ -132,22 +109,7 @@ add_task(async function testURLIsCopiedWithNoParams() {
     validUrl: originalUrl,
     strippedUrl: shortenedUrl,
     useTestList: false,
-    canDisable: false,
-    isDisabled: false,
-  });
-});
-
-
-add_task(async function testURLIsCopiedWithNoParams() {
-  let originalUrl = "https://www.example.com/";
-  let shortenedUrl = "https://www.example.com/";
-  await testMenuItemEnabled({
-    selectWholeUrl: true,
-    validUrl: originalUrl,
-    strippedUrl: shortenedUrl,
-    useTestList: false,
-    canDisable: true,
-    isDisabled: true,
+    expectedDisabled: true,
   });
 });
 
@@ -160,8 +122,7 @@ add_task(async function testQueryParamIsStrippedForSiteSpecific() {
     validUrl: originalUrl,
     strippedUrl: shortenedUrl,
     useTestList: true,
-    canDisable: false,
-    isDisabled: false,
+    expectedDisabled: false,
   });
 });
 
@@ -174,8 +135,7 @@ add_task(async function testQueryParamIsNotStrippedForWrongSiteSpecific() {
     validUrl: originalUrl,
     strippedUrl: shortenedUrl,
     useTestList: true,
-    canDisable: false,
-    isDisabled: false,
+    expectedDisabled: true,
   });
 });
 
@@ -189,14 +149,13 @@ add_task(async function testQueryParamIsStrippedWhenParamIsCapitalized() {
     validUrl: originalUrl,
     strippedUrl: shortenedUrl,
     useTestList: true,
-    canDisable: false,
-    isDisabled: false,
+    expectedDisabled: false,
   });
 });
 
 
 
-add_task(async function testQueryParamIsStrippedWhenParamIsCapitalized() {
+add_task(async function testQueryParamIsStrippedWhenParamIsLowercase() {
   let originalUrl = "https://www.example.com/?test_5=1234";
   let shortenedUrl = "https://www.example.com/";
   await testMenuItemEnabled({
@@ -204,8 +163,7 @@ add_task(async function testQueryParamIsStrippedWhenParamIsCapitalized() {
     validUrl: originalUrl,
     strippedUrl: shortenedUrl,
     useTestList: true,
-    canDisable: false,
-    isDisabled: false,
+    expectedDisabled: false,
   });
 });
 
@@ -217,12 +175,9 @@ add_task(async function testQueryParamIsStrippedWhenParamIsCapitalized() {
 
 
 
-async function testMenuItemDisabled(url, prefEnabled, canDisable, selection) {
+async function testMenuItemDisabled({ url, prefEnabled, selection }) {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["privacy.query_stripping.strip_on_share.enabled", prefEnabled],
-      ["privacy.query_stripping.strip_on_share.canDisable", canDisable],
-    ],
+    set: [["privacy.query_stripping.strip_on_share.enabled", prefEnabled]],
   });
 
   await BrowserTestUtils.withNewTab(url, async function () {
@@ -257,20 +212,17 @@ async function testMenuItemDisabled(url, prefEnabled, canDisable, selection) {
 
 
 
-
 async function testMenuItemEnabled({
   selectWholeUrl,
   validUrl,
   strippedUrl,
   useTestList,
-  canDisable,
-  isDisabled,
+  expectedDisabled,
 }) {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["privacy.query_stripping.strip_on_share.enabled", true],
       ["privacy.query_stripping.strip_on_share.enableTestMode", useTestList],
-      ["privacy.query_stripping.strip_on_share.canDisable", canDisable],
     ],
   });
 
@@ -298,13 +250,10 @@ async function testMenuItemEnabled({
     if (selectWholeUrl) {
       gURLBar.select();
     }
+
     let menuitem = await promiseContextualMenuitem("strip-on-share");
     Assert.ok(BrowserTestUtils.isVisible(menuitem), "Menu item is visible");
-    if (isDisabled) {
-      Assert.ok(menuitem.getAttribute("disabled"), "Menu item is greyed out");
-    } else {
-      Assert.ok(!menuitem.getAttribute("disabled"), "Menu item is interactive");
-    }
+    Assert.equal(menuitem.disabled, expectedDisabled, "Menu item is disabled");
 
     let hidePromise = BrowserTestUtils.waitForEvent(
       menuitem.parentElement,
