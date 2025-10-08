@@ -2048,10 +2048,10 @@ static bool commitRadialGradientFromStops(sampler2D sampler, int offsetsAddress,
         endT = min(endT, middleT);
       }
     }
+    
+    endT = max(ceil(endT), t + 1.0);
 
     
-    endT = max(endT, t + 1.0);
-
     
     int inside = int(endT - t) & ~3;
     
@@ -2114,9 +2114,37 @@ static bool commitRadialGradientFromStops(sampler2D sampler, int offsetsAddress,
       buf += remainder;
       t += remainder;
 
-      float f = float(remainder) * 0.25;
-      dotPos += dotPosDelta * f;
-      dotPosDelta += deltaDelta2 * f;
+      
+      
+      
+      float partialDeltaDelta2 = deltaDelta2 * 0.25 * float(remainder);
+      dotPosDelta += partialDeltaDelta2;
+
+      
+      
+      
+
+      
+      
+      float singlePxDeltaDelta2 = deltaDelta2 * 0.0625;
+      
+      
+      float dotPosDeltaFirst = dotPos.y - dotPos.x;
+      
+      
+      
+      
+      Float pxOffsets = Float(0.0f);
+      pxOffsets.y = 1.0;
+      pxOffsets.z = 2.0;
+      pxOffsets.w = 3.0;
+      Float partialDotPosDelta = Float(dotPosDeltaFirst) + Float(singlePxDeltaDelta2) * pxOffsets;
+
+      
+      for (int i = 0; i < remainder; ++i) {
+          dotPos += partialDotPosDelta;
+          partialDotPosDelta += singlePxDeltaDelta2;
+      }
     }
   }
   return true;
