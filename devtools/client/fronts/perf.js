@@ -22,72 +22,29 @@ class PerfFront extends FrontClassWithSpec(perfSpec) {
     this.formAttributeName = "perfActor";
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   async getProfileAndStopProfiler() {
+    const handle = await this.startCaptureAndStopProfiler();
+
     
+    const profilePromise = this.getPreviouslyCapturedProfileDataBulk(handle);
+    const additionalInformationPromise =
+      this.getPreviouslyRetrievedAdditionalInformation(handle);
+
     
-    const { useBulkTransferForPerformanceProfile } = this.conn.mainRoot.traits;
-    if (useBulkTransferForPerformanceProfile) {
-      const handle = await this.startCaptureAndStopProfiler();
+    const [profileResult, additionalInformationResult] =
+      await Promise.allSettled([profilePromise, additionalInformationPromise]);
 
-      
-      const profilePromise = this.getPreviouslyCapturedProfileDataBulk(handle);
-      const additionalInformationPromise =
-        this.getPreviouslyRetrievedAdditionalInformation(handle);
-
-      
-      const [profileResult, additionalInformationResult] =
-        await Promise.allSettled([
-          profilePromise,
-          additionalInformationPromise,
-        ]);
-
-      if (profileResult.status === "rejected") {
-        throw profileResult.reason;
-      }
-
-      if (additionalInformationResult.status === "rejected") {
-        throw additionalInformationResult.reason;
-      }
-
-      return {
-        profile: profileResult.value,
-        additionalInformation: additionalInformationResult.value,
-      };
+    if (profileResult.status === "rejected") {
+      throw profileResult.reason;
     }
 
-    
-
-
-
-
-
-    function sharedLibrariesFromProfile(processProfile) {
-      return processProfile.libs.concat(
-        ...processProfile.processes.map(sharedLibrariesFromProfile)
-      );
+    if (additionalInformationResult.status === "rejected") {
+      throw additionalInformationResult.reason;
     }
 
-    const profileAsJson = await super.getProfileAndStopProfiler();
     return {
-      profile: profileAsJson,
-      additionalInformation: {
-        sharedLibraries: sharedLibrariesFromProfile(profileAsJson),
-      },
+      profile: profileResult.value,
+      additionalInformation: additionalInformationResult.value,
     };
   }
 

@@ -46,11 +46,6 @@ export interface Commands {
   client: any;
   targetCommand: {
     targetFront: {
-      
-      
-      getTrait(
-        traitName: "useBulkTransferForPerformanceProfile"
-      ): boolean | undefined;
       getTrait(traitName: string): unknown;
     };
   };
@@ -59,24 +54,15 @@ export interface Commands {
 
 
 
-
-
-export interface ProfileAndAdditionalInformation {
-  profile: ArrayBuffer | MinimallyTypedGeckoProfile;
-  additionalInformation?: MockedExports.ProfileGenerationAdditionalInformation;
-}
-
-
-
-
 export interface PerfFront {
   startProfiler: (options: RecordingSettings) => Promise<boolean>;
-  getProfileAndStopProfiler: () => Promise<ProfileAndAdditionalInformation>;
+  getProfileAndStopProfiler: () => Promise<MockedExports.ProfileAndAdditionalInformation>;
 
   
 
 
 
+  
   
   
   stopProfilerAndDiscardProfile: () => Promise<void>;
@@ -106,13 +92,6 @@ export interface PreferenceFront {
 }
 
 export interface RootTraits {
-  
-  
-  
-  
-  useBulkTransferForPerformanceProfile?: boolean;
-
-  
   
 }
 
@@ -190,17 +169,6 @@ export interface Library {
   arch: string;
 }
 
-
-
-
-
-
-
-export interface MinimallyTypedGeckoProfile {
-  libs: Library[];
-  processes: MinimallyTypedGeckoProfile[];
-}
-
 export type GetSymbolTableCallback = (
   debugName: string,
   breakpadId: string
@@ -216,7 +184,7 @@ export interface SymbolicationService {
 
 
 export type OnProfileReceived = (
-  profileAndAdditionalInformation: ProfileAndAdditionalInformation | null,
+  profileAndAdditionalInformation: MockedExports.ProfileAndAdditionalInformation | null,
   error?: Error | string
 ) => void;
 
@@ -605,9 +573,7 @@ type StatusQueryResponse = {
 };
 type EnableMenuButtonResponse = void;
 
-
-
-type GetProfileResponse = ArrayBuffer | MinimallyTypedGeckoProfile;
+type GetProfileResponse = ArrayBuffer;
 type GetExternalMarkersResponse = Array<object>;
 type GetExternalPowerTracksResponse = Array<object>;
 type GetSymbolTableResponse = SymbolTableAsTuple;
@@ -651,9 +617,7 @@ export type ProfilerBrowserInfo = {
 export type ProfileCaptureResult =
   | {
       type: "SUCCESS";
-      
-
-      profile: MinimallyTypedGeckoProfile | ArrayBuffer;
+      profile: ArrayBuffer;
     }
   | {
       type: "ERROR";

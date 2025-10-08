@@ -29,7 +29,6 @@ const selectors = require("resource://devtools/client/performance-new/store/sele
 
 
 
-
 exports.reportProfilerReady = isActive => ({
   type: "REPORT_PROFILER_READY",
   isActive,

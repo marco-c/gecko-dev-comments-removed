@@ -46,15 +46,6 @@ const perfDescription = {
       response: { value: RetVal("boolean") },
     },
 
-    
-
-
-
-    getProfileAndStopProfiler: {
-      request: {},
-      response: RetVal("nullable:json"),
-    },
-
     startCaptureAndStopProfiler: {
       request: {},
       response: { value: RetVal("number") },
