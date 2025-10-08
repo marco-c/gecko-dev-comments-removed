@@ -950,32 +950,17 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
     nscoord availISize = logicalCBSize.ISize(wm);
 
     ReflowInput::InitFlags initFlags;
-    const bool staticPosIsCBOrigin = [&] {
-      if (aFlags.contains(AbsPosReflowFlag::IsGridContainerCB)) {
-        
-        
-        
-        
-        
-        
-        
-        nsIFrame* placeholder = aKidFrame->GetPlaceholderFrame();
-        if (placeholder && placeholder->GetParent() == aDelegatingFrame) {
-          return true;
-        }
+    if (aFlags.contains(AbsPosReflowFlag::IsGridContainerCB)) {
+      
+      
+      
+      
+      
+      
+      nsIFrame* placeholder = aKidFrame->GetPlaceholderFrame();
+      if (placeholder && placeholder->GetParent() == aDelegatingFrame) {
+        initFlags += ReflowInput::InitFlag::StaticPosIsCBOrigin;
       }
-      if (aKidFrame->IsMenuPopupFrame()) {
-        
-        return true;
-      }
-      
-      
-      
-      return false;
-    }();
-
-    if (staticPosIsCBOrigin) {
-      initFlags += ReflowInput::InitFlag::StaticPosIsCBOrigin;
     }
 
     const bool kidFrameMaySplit =
