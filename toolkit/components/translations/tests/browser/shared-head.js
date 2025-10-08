@@ -3169,6 +3169,9 @@ class AboutTranslationsTestUtils {
 
 
   async assertEvents({ expected = [], unexpected = [] } = {}, callback) {
+    
+    await doubleRaf(document);
+
     try {
       const expectedEventWaiters = Object.fromEntries(
         expected.map(([eventName]) => [eventName, this.waitForEvent(eventName)])
@@ -3211,6 +3214,9 @@ class AboutTranslationsTestUtils {
     } catch (error) {
       AboutTranslationsTestUtils.#reportTestFailure(error);
     }
+
+    
+    await doubleRaf(document);
   }
 
   
@@ -3227,6 +3233,9 @@ class AboutTranslationsTestUtils {
     showsPlaceholder,
     scriptDirection,
   } = {}) {
+    
+    await doubleRaf(document);
+
     let pageResult = {};
     try {
       pageResult = await this.#runInPage(
@@ -3292,6 +3301,9 @@ class AboutTranslationsTestUtils {
     showsPlaceholder,
     scriptDirection,
   } = {}) {
+    
+    await doubleRaf(document);
+
     let pageResult = {};
     try {
       pageResult = await this.#runInPage(
@@ -3357,6 +3369,9 @@ class AboutTranslationsTestUtils {
     options,
     detectedLanguage,
   } = {}) {
+    
+    await doubleRaf(document);
+
     let pageResult = {};
     try {
       pageResult = await this.#runInPage(selectors => {
@@ -3427,6 +3442,9 @@ class AboutTranslationsTestUtils {
 
 
   async assertTargetLanguageSelector({ value, options } = {}) {
+    
+    await doubleRaf(document);
+
     let pageResult = {};
     try {
       pageResult = await this.#runInPage(
@@ -3488,6 +3506,9 @@ class AboutTranslationsTestUtils {
     defaultValue,
     language,
   } = {}) {
+    
+    await doubleRaf(document);
+
     if (language !== undefined && defaultValue) {
       throw new Error(
         "assertDetectLanguageOption: `language` and `defaultValue: true` are mutually exclusive."
@@ -3568,6 +3589,9 @@ class AboutTranslationsTestUtils {
 
 
   async assertSwapLanguagesButton({ enabled } = {}) {
+    
+    await doubleRaf(document);
+
     let pageResult = {};
     try {
       pageResult = await this.#runInPage(
@@ -3602,6 +3626,9 @@ class AboutTranslationsTestUtils {
 
 
   async assertTranslatingPlaceholder() {
+    
+    await doubleRaf(document);
+
     let actualValue;
     try {
       actualValue = await this.#runInPage(selectors => {
@@ -3637,6 +3664,9 @@ class AboutTranslationsTestUtils {
     targetLanguage,
     sourceText,
   }) {
+    
+    await doubleRaf(document);
+
     if (sourceLanguage !== undefined && detectedLanguage !== undefined) {
       throw new Error(
         "assertTranslatedText: sourceLanguage and detectedLanguage are mutually exclusive assertion options."
@@ -3694,6 +3724,9 @@ class AboutTranslationsTestUtils {
     targetLanguage = "",
     sourceText = "",
   } = {}) {
+    
+    await doubleRaf(document);
+
     try {
       
       await this.assertSourceLanguageSelector({ value: sourceLanguage });
@@ -3787,6 +3820,9 @@ class AboutTranslationsTestUtils {
     unsupportedInfoMessage = false,
     languageLoadErrorMessage = false,
   } = {}) {
+    
+    await doubleRaf(document);
+
     try {
       const visibilityMap = await this.#runInPage(selectors => {
         const { document, window } = content;
