@@ -320,11 +320,6 @@ class Spectrum {
       return;
     }
 
-    
-    while (this.contrastLabel.firstChild) {
-      this.contrastLabel.firstChild.remove();
-    }
-
     const largeTextStr = L10N.getStr("accessibility.contrast.large.text");
     const contrastLabelStr = L10N.getFormatStr(
       "colorPickerTooltip.contrast.large.title",
@@ -344,9 +339,7 @@ class Spectrum {
     contents.splice(1, 0, largeTextIndicator);
 
     
-    for (const content of contents) {
-      this.contrastLabel.appendChild(content);
-    }
+    this.contrastLabel.replaceChildren(...contents);
   }
 
   

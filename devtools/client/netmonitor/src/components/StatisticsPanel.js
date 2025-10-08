@@ -234,11 +234,7 @@ class StatisticsPanel extends Component {
     const container = this.refs[id];
 
     
-    while (container.hasChildNodes()) {
-      container.firstChild.remove();
-    }
-
-    container.appendChild(chart.node);
+    container.replaceChildren(chart.node);
   }
 
   onLayoutChange() {

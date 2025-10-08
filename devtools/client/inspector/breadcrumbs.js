@@ -666,9 +666,7 @@ HTMLBreadcrumbs.prototype = {
 
 
   empty() {
-    while (this.container.hasChildNodes()) {
-      this.container.firstChild.remove();
-    }
+    this.container.replaceChildren();
   },
 
   
@@ -826,10 +824,7 @@ HTMLBreadcrumbs.prototype = {
       }
 
       
-      while (button.hasChildNodes()) {
-        button.firstChild.remove();
-      }
-      button.appendChild(this.prettyPrintNodeAsXHTML(node));
+      button.replaceChildren(this.prettyPrintNodeAsXHTML(node));
       button.setAttribute("title", textOutput);
 
       this.nodeHierarchy[i].currentPrettyPrintText = textOutput;

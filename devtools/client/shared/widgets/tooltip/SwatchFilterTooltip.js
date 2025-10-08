@@ -72,16 +72,12 @@ class SwatchFilterTooltip extends SwatchBasedEditorTooltip {
     }
 
     
-    
-    while (this.currentFilterValue.firstChild) {
-      this.currentFilterValue.firstChild.remove();
-    }
     const node = this._parser.parseCssProperty(
       "filter",
       filters,
       this._options
     );
-    this.currentFilterValue.appendChild(node);
+    this.currentFilterValue.replaceChildren(node);
 
     this.preview();
   }
