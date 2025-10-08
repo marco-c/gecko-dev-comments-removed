@@ -438,11 +438,6 @@ nsresult nsTextControlFrame::CreateAnonymousContent(
 
 bool nsTextControlFrame::ShouldInitializeEagerly() const {
   
-  if (!IsSingleLineTextControl()) {
-    return true;
-  }
-
-  
   
   TextControlElement* textControlElement = ControlElement();
   if (textControlElement->HasCachedSelection()) {
@@ -456,6 +451,7 @@ bool nsTextControlFrame::ShouldInitializeEagerly() const {
     }
   }
 
+  
   
   
   
@@ -955,7 +951,9 @@ nsresult nsTextControlFrame::AttributeChanged(int32_t aNameSpaceID,
                                               nsAtom* aAttribute,
                                               AttrModType aModType) {
   if (aAttribute == nsGkAtoms::value && !mEditorHasBeenInitialized) {
-    UpdateValueDisplay(true);
+    if (IsSingleLineTextControl()) {
+      UpdateValueDisplay(true);
+    }
     return NS_OK;
   }
 
@@ -1055,10 +1053,6 @@ void nsTextControlFrame::SetInitialChildList(ChildListID aListID,
 nsresult nsTextControlFrame::UpdateValueDisplay(bool aNotify,
                                                 bool aBeforeEditorInit,
                                                 const nsAString* aValue) {
-  if (!IsSingleLineTextControl()) {  
-    return NS_OK;
-  }
-
   MOZ_ASSERT(mRootNode, "Must have a div content\n");
   MOZ_ASSERT(!mEditorHasBeenInitialized,
              "Do not call this after editor has been initialized");
