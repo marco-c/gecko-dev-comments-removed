@@ -210,10 +210,24 @@ class Toolbar extends Component {
       this.props.toggleSearchPanel();
     });
 
-    this.shortcuts.on(COPY_KEY_SHORTCUT, () => {
-      if (this.props.selectedRequest && this.props.selectedRequest.url) {
-        copyString(this.props.selectedRequest.url);
+    
+    this.shortcuts.on(COPY_KEY_SHORTCUT, e => {
+      if (!this.props.selectedRequest?.url) {
+        return;
       }
+
+      const selection = window.getSelection();
+      if (
+        
+        (!selection.isCollapsed && selection.toString()) ||
+        
+        
+        e.target.matches("input, textarea")
+      ) {
+        return;
+      }
+
+      copyString(this.props.selectedRequest.url);
     });
   }
 
@@ -280,7 +294,7 @@ class Toolbar extends Component {
   onSearchBoxFocusKeyboardShortcut(event) {
     
     
-    return !!event.target.closest(".CodeMirror");
+    return !!event.target.closest(".cm-editor");
   }
 
   onSearchBoxFocus() {

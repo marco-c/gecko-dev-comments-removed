@@ -31,12 +31,13 @@ class SourcePreview extends Component {
       
       
       resetTargetSearchResult: PropTypes.func,
+      url: PropTypes.string,
     };
   }
 
   componentDidMount() {
-    const { mimeType, text } = this.props;
-    this.loadEditor(mimeType, text);
+    this.loadEditor();
+    this.updateEditor();
   }
 
   shouldComponentUpdate(nextProps) {
@@ -48,11 +49,10 @@ class SourcePreview extends Component {
   }
 
   componentDidUpdate(prevProps) {
-    const { mimeType, targetSearchResult, text } = this.props;
-
+    const { targetSearchResult, text } = this.props;
     if (prevProps.text !== text) {
       
-      this.updateEditor(mimeType, text);
+      this.updateEditor();
     } else if (prevProps.targetSearchResult !== targetSearchResult) {
       this.findSearchResult();
     }
@@ -67,115 +67,94 @@ class SourcePreview extends Component {
     return Editor.modes[lang];
   }
 
-  loadEditor(mimeType, text) {
+  loadEditor() {
     this.editor = new Editor({
+      cm6: true,
       lineNumbers: true,
       lineWrapping: false,
       mode: null, 
       readOnly: true,
       theme: "mozilla",
-      value: text,
+      value: "",
     });
 
+    this.editor.appendToLocalElement(this.refs.editorElement);
     
-    this.editorTimeout = setTimeout(() => {
-      this.editorTimeout = null;
-      this.editor.appendToLocalElement(this.refs.editorElement);
-
-      
-      
-      
-      this.editorSetModeTimeout = setTimeout(() => {
-        this.editorSetModeTimeout = null;
-        const mode = this.getSourceEditorModeForMimetype(mimeType);
-        this.editor.setMode(mode);
-        this.findSearchResult();
-      });
-    });
+    window.codeMirrorSourceEditorTestInstance = this.editor;
   }
 
-  updateEditor(mimeType, text) {
-    
-    
+  async updateEditor() {
+    const { mimeType, text, url } = this.props;
     if (this?.editor?.hasCodeMirror) {
-      this.editor.setMode(null);
-      this.editor.setText(text);
-    }
-
-    if (this.editorSetModeTimeout) {
-      clearTimeout(this.editorSetModeTimeout);
-    }
-
-    
-    
-    
-    this.editorSetModeTimeout = setTimeout(() => {
-      this.editorSetModeTimeout = null;
       const mode = this.getSourceEditorModeForMimetype(mimeType);
-      this.editor.setMode(mode);
-      this.findSearchResult();
-    });
+      await this.editor.setMode(mode);
+      await this.editor.setText(text, url);
+      
+      
+      await this.findSearchResult();
+    }
   }
 
   unloadEditor() {
-    clearTimeout(this.editorTimeout);
-    clearTimeout(this.editorSetModeTimeout);
     if (this.editor) {
       this.editor.destroy();
       this.editor = null;
     }
   }
 
-  findSearchResult() {
+  async findSearchResult() {
     const { targetSearchResult, resetTargetSearchResult } = this.props;
-
     if (targetSearchResult?.line) {
       const { line } = targetSearchResult;
       
       
       if (this.editor) {
-        this.editor.setCursor({ line: line - 1 }, "center");
+        await this.editor.scrollTo(line, 0);
+        await this.editor.setCursorAt(line - 1, 0);
+
+        
+        this.editor.setLineContentMarker({
+          id: this.editor.markerTypes.HIGHLIGHT_LINE_MARKER,
+          lineClassName: "highlight-line",
+          lines: [{ line }],
+        });
+        this.clearHighlightLineAfterDuration();
       }
     }
 
     resetTargetSearchResult();
   }
 
-  
-  scrollToLine(element) {
-    const { targetSearchResult, resetTargetSearchResult } = this.props;
+  clearHighlightLineAfterDuration() {
+    const editorContainer = document.querySelector(".editor-row-container");
 
-    
-    
-    
-    
-    
-    if (element && targetSearchResult && targetSearchResult.line) {
-      const child = element.children[targetSearchResult.line - 1];
-      if (child) {
-        const range = document.createRange();
-        range.selectNode(child);
-        document.getSelection().addRange(range);
-        child.scrollIntoView({ block: "center" });
-      }
-      resetTargetSearchResult();
+    if (editorContainer === null) {
+      return;
     }
+
+    const duration = parseInt(
+      getComputedStyle(editorContainer).getPropertyValue(
+        "--highlight-line-duration"
+      ),
+      10
+    );
+
+    const highlightTimeout = setTimeout(() => {
+      if (!this.editor) {
+        return;
+      }
+      clearTimeout(highlightTimeout);
+      this.editor.removeLineContentMarker("highlight-line-marker");
+    }, duration);
   }
 
-  renderEditor() {
+  render() {
     return div(
       { className: "editor-row-container" },
       div({
         ref: "editorElement",
         className: "source-editor-mount devtools-monospace",
       })
-    );
-  }
-
-  render() {
-    return div(
-      { key: "EDITOR_CONFIG", className: "editor-row-container" },
-      this.renderEditor()
     );
   }
 }
