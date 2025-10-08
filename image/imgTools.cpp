@@ -131,7 +131,14 @@ class ImageDecoderListener final : public nsIStreamListener,
     }
   }
 
-  virtual void OnLoadComplete(bool aLastPart) override {}
+  virtual void OnLoadComplete(bool aLastPart) override {
+    
+    
+    if (mObserver) {
+      mObserver->Notify(nullptr, imgINotificationObserver::LOAD_COMPLETE,
+                        nullptr);
+    }
+  }
 
   
   virtual void SetHasImage() override {}
