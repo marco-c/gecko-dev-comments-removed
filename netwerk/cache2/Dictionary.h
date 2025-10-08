@@ -235,7 +235,7 @@ class DictionaryOrigin : public nsICacheEntryMetaDataVisitor {
   DictionaryOrigin(const nsACString& aOrigin, nsICacheEntry* aEntry)
       : mOrigin(aOrigin), mEntry(aEntry) {}
 
-  void SetCacheEntry(nsICacheEntry* aEntry) { mEntry = aEntry; }
+  void SetCacheEntry(nsICacheEntry* aEntry);
   void Write(DictionaryCacheEntry* aDictEntry);
   already_AddRefed<DictionaryCacheEntry> AddEntry(
       DictionaryCacheEntry* aDictEntry, bool aNewEntry);
@@ -254,6 +254,8 @@ class DictionaryOrigin : public nsICacheEntryMetaDataVisitor {
   
   
   DictCacheList mPendingEntries;
+  
+  bool mDeferredWrites{false};
 };
 
 class DictionaryOriginReader;
