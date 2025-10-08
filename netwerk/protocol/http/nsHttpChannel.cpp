@@ -4166,6 +4166,39 @@ bool nsHttpChannel::ResponseWouldVary(nsICacheEntry* entry) {
 }
 
 
+void RemoveFromVary(nsHttpResponseHead* aResponseHead,
+                    const nsACString& aRemove) {
+  nsAutoCString buf;
+  Unused << aResponseHead->GetHeader(nsHttp::Vary, buf);
+
+  bool remove = false;
+  for (const nsACString& token :
+       nsCCharSeparatedTokenizer(buf, NS_HTTP_HEADER_SEP).ToRange()) {
+    if (token.Equals(aRemove)) {
+      
+      remove = true;
+      break;
+    }
+  }
+  if (!remove) {
+    return;
+  }
+  nsAutoCString newValue;
+  for (const nsACString& token :
+       nsCCharSeparatedTokenizer(buf, NS_HTTP_HEADER_SEP).ToRange()) {
+    if (!token.Equals(aRemove)) {
+      if (!newValue.IsEmpty()) {
+        newValue += ","_ns;
+      }
+      newValue += token;
+    }
+  }
+  LOG(("RemoveFromVary %s removed, new value -> %s",
+       PromiseFlatCString(aRemove).get(), newValue.get()));
+  Unused << aResponseHead->SetHeaderOverride(nsHttp::Vary, newValue);
+}
+
+
 
 
 void nsHttpChannel::HandleAsyncAbort() {
@@ -6199,30 +6232,46 @@ nsresult nsHttpChannel::InstallCacheListener(int64_t offset) {
   
   
   
+  
+  
   nsAutoCString contentEncoding;
   Unused << mResponseHead->GetHeader(nsHttp::Content_Encoding, contentEncoding);
   LOG_DICTIONARIES(
       ("Content-Encoding for %p: %s", this, contentEncoding.get()));
   if (!dictionary.IsEmpty() || contentEncoding.Equals("dcb") ||
       contentEncoding.Equals("dcz")) {
-    LOG_DICTIONARIES(
-        ("Removing Content-Encoding %s for %p", contentEncoding.get(), this));
-    nsCOMPtr<nsIStreamListener> listener;
-    
-    SetApplyConversion(true);
-    rv =
-        DoApplyContentConversions(mListener, getter_AddRefs(listener), nullptr);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-    if (listener) {
+    if (!contentEncoding.IsEmpty()) {
       LOG_DICTIONARIES(
-          ("Installed nsHTTPCompressConv %p before tee", listener.get()));
-      mListener = listener;
-      mCompressListener = listener;
-      StoreHasAppliedConversion(true);
-    } else
-      LOG_DICTIONARIES(("Didn't install decompressor before tee"));
+          ("Removing Content-Encoding %s for %p", contentEncoding.get(), this));
+      nsCOMPtr<nsIStreamListener> listener;
+      
+      SetApplyConversion(true);
+      rv = DoApplyContentConversions(mListener, getter_AddRefs(listener),
+                                     nullptr);
+      if (NS_FAILED(rv)) {
+        return rv;
+      }
+      if (listener) {
+        LOG_DICTIONARIES(
+            ("Installed nsHTTPCompressConv %p before tee", listener.get()));
+        mListener = listener;
+        mCompressListener = listener;
+        StoreHasAppliedConversion(true);
+
+      } else {
+        LOG_DICTIONARIES(("Didn't install decompressor before tee"));
+      }
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    RemoveFromVary(mResponseHead.get(), "available-dictionary"_ns);
+    RemoveFromVary(mResponseHead.get(), "accept-encoding"_ns);
   }
 
   
@@ -6232,8 +6281,6 @@ nsresult nsHttpChannel::InstallCacheListener(int64_t offset) {
     mCacheEntry->AsyncDoom(nullptr);
     return rv;
   }
-
-  
   return NS_OK;
 }
 
