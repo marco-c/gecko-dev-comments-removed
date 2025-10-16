@@ -6,9 +6,8 @@
 extern crate byteorder;
 extern crate pkcs11_bindings;
 
-pub mod error;
+pub mod cryptoki;
 pub mod manager;
-pub mod util;
 
 
 #[macro_export]
