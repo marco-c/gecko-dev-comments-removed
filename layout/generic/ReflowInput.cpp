@@ -405,19 +405,28 @@ WritingMode ReflowInput::GetCBWritingMode() const {
                         : mFrame->GetContainingBlock()->GetWritingMode();
 }
 
+
+
+static nsSize BorderBoxSizeAsContainerIfConstrained(
+    WritingMode aWM, const LogicalSize& aContentBoxSize,
+    const LogicalMargin& aBorderPadding) {
+  LogicalSize size = aContentBoxSize;
+  if (size.ISize(aWM) == NS_UNCONSTRAINEDSIZE) {
+    size.ISize(aWM) = 0;
+  } else {
+    size.ISize(aWM) += aBorderPadding.IStartEnd(aWM);
+  }
+  if (size.BSize(aWM) == NS_UNCONSTRAINEDSIZE) {
+    size.BSize(aWM) = 0;
+  } else {
+    size.BSize(aWM) += aBorderPadding.BStartEnd(aWM);
+  }
+  return size.GetPhysicalSize(aWM);
+}
+
 nsSize ReflowInput::ComputedSizeAsContainerIfConstrained() const {
-  LogicalSize size = ComputedSize();
-  if (size.ISize(mWritingMode) == NS_UNCONSTRAINEDSIZE) {
-    size.ISize(mWritingMode) = 0;
-  } else {
-    size.ISize(mWritingMode) += mComputedBorderPadding.IStartEnd(mWritingMode);
-  }
-  if (size.BSize(mWritingMode) == NS_UNCONSTRAINEDSIZE) {
-    size.BSize(mWritingMode) = 0;
-  } else {
-    size.BSize(mWritingMode) += mComputedBorderPadding.BStartEnd(mWritingMode);
-  }
-  return size.GetPhysicalSize(mWritingMode);
+  return BorderBoxSizeAsContainerIfConstrained(mWritingMode, ComputedSize(),
+                                               mComputedBorderPadding);
 }
 
 bool ReflowInput::ShouldReflowAllKids() const {
@@ -1423,10 +1432,8 @@ void ReflowInput::CalculateHypotheticalPosition(
   
   
   
-  nsSize blockContainerSize =
-      blockContainer->HasAnyStateBits(NS_FRAME_IN_REFLOW)
-          ? aCBReflowInput->ComputedSizeAsContainerIfConstrained()
-          : blockContainer->GetSize();
+  const nsSize blockContainerSize = BorderBoxSizeAsContainerIfConstrained(
+      wm, blockContainerContentBoxSize, blockContainerBP);
   LogicalPoint placeholderOffset(
       wm, aPlaceholderFrame->GetOffsetToIgnoringScrolling(blockContainer),
       blockContainerSize);
