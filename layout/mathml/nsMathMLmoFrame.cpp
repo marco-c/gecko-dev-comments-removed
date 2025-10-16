@@ -144,21 +144,6 @@ void nsMathMLmoFrame::ProcessTextData() {
   mFlags |= allFlags & NS_MATHML_OPERATOR_ACCENT;
   mFlags |= allFlags & NS_MATHML_OPERATOR_MOVABLELIMITS;
 
-  if (!StaticPrefs::mathml_centered_operators_disabled()) {
-    
-    
-    if (1 == length) {
-      if ((ch == '+') || (ch == '=') || (ch == '*') ||
-          (ch == 0x2212) ||  
-          (ch == 0x2264) ||  
-          (ch == 0x2265) ||  
-          (ch == 0x00D7)) {  
-        mFlags |= NS_MATHML_OPERATOR_CENTERED;
-        mFlags |= NS_MATHML_OPERATOR_FORCE_MATHML_CHAR;
-      }
-    }
-  }
-
   
   mMathMLChar.SetData(data);
 
@@ -197,8 +182,8 @@ void nsMathMLmoFrame::ProcessOperatorData() {
   
   
   mFlags &= NS_MATHML_OPERATOR_MUTABLE | NS_MATHML_OPERATOR_ACCENT |
-            NS_MATHML_OPERATOR_MOVABLELIMITS | NS_MATHML_OPERATOR_CENTERED |
-            NS_MATHML_OPERATOR_INVISIBLE | NS_MATHML_OPERATOR_FORCE_MATHML_CHAR;
+            NS_MATHML_OPERATOR_MOVABLELIMITS | NS_MATHML_OPERATOR_INVISIBLE |
+            NS_MATHML_OPERATOR_FORCE_MATHML_CHAR;
 
   if (!mEmbellishData.coreFrame) {
     
@@ -623,7 +608,6 @@ nsMathMLmoFrame::Stretch(DrawTarget* aDrawTarget,
   
   
   
-  
   bool useMathMLChar = UseMathMLChar();
 
   nsBoundingMetrics charSize;
@@ -764,20 +748,17 @@ nsMathMLmoFrame::Stretch(DrawTarget* aDrawTarget,
 
     
     
-    if (mMathMLChar.GetStretchDirection() != NS_STRETCH_DIRECTION_UNSUPPORTED ||
-        NS_MATHML_OPERATOR_IS_CENTERED(mFlags)) {
+    if (mMathMLChar.GetStretchDirection() != NS_STRETCH_DIRECTION_UNSUPPORTED) {
       bool largeopOnly = (NS_STRETCH_LARGEOP & stretchHint) != 0 &&
                          (NS_STRETCH_VARIABLE_MASK & stretchHint) == 0;
 
-      if (isVertical || NS_MATHML_OPERATOR_IS_CENTERED(mFlags)) {
+      if (isVertical) {
         
         
         
 
         height = mBoundingMetrics.ascent + mBoundingMetrics.descent;
-        if (NS_MATHML_OPERATOR_IS_SYMMETRIC(mFlags) ||
-            NS_MATHML_OPERATOR_IS_CENTERED(mFlags)) {
-          
+        if (NS_MATHML_OPERATOR_IS_SYMMETRIC(mFlags)) {
           
           
           mBoundingMetrics.descent = height / 2 - axisHeight;
