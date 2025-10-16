@@ -156,6 +156,10 @@ const embedHelperLib = (() => {
       
       const placeholderDiv = document.createElement("div");
 
+      
+      
+      disableSetPointerCaptureFor(placeholderDiv);
+
       if (isTestShim) {
         
         placeholderDiv.classList.add("shimmed-embedded-content");
@@ -252,6 +256,31 @@ const embedHelperLib = (() => {
         newEmbedObserver.disconnect();
       }
     }, SMARTBLOCK_EMBED_OBSERVER_TIMEOUT_MS);
+  }
+
+  
+
+
+
+
+
+  function disableSetPointerCaptureFor(el) {
+    const pageEl = el.wrappedJSObject;
+
+    Object.defineProperty(pageEl, "setPointerCapture", {
+      configurable: true,
+      writable: true,
+      enumerable: false,
+      
+      value: exportFunction(function (_pointerId) {
+        console.warn(
+          "Blocked setPointerCapture on SmartBlock embed placeholder.",
+          this,
+          _pointerId
+        );
+        
+      }, window),
+    });
   }
 
   
