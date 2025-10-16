@@ -1384,6 +1384,9 @@ function getSmallIncrementKey() {
 
 
 
+
+
+
 function checkRuleViewContent(view, expectedElements) {
   const rulesInView = Array.from(view.element.children);
   is(
@@ -1469,6 +1472,11 @@ function checkRuleViewContent(view, expectedElements) {
         ),
         !!expectedDeclaration?.valid,
         `"${selector}" ${propName.innerText} is ${expectedDeclaration?.valid === false ? "not valid" : "valid"}`
+      );
+      is(
+        !!ruleViewPropertyElement.hasAttribute("dirty"),
+        !!expectedDeclaration?.dirty,
+        `"${selector}" ${propName.innerText} is ${expectedDeclaration?.dirty ? "dirty" : "not dirty"}`
       );
     }
   }

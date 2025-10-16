@@ -300,6 +300,9 @@ class Rule {
 
     this.applyProperties(modifications => {
       modifications.createProperty(ind, name, value, priority, enabled);
+
+      this.store.userProperties.setProperty(this.domRule, name, value);
+
       
       
       prop.updateEditor();
