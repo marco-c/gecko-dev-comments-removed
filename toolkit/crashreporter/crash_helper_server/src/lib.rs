@@ -11,13 +11,15 @@ mod ipc_server;
 mod logging;
 mod phc;
 
-use crash_helper_common::{BreakpadData, BreakpadRawData, IPCConnector, IPCListener, Pid};
+#[cfg(not(target_os = "android"))]
+use crash_helper_common::Pid;
+#[cfg(target_os = "android")]
+use crash_helper_common::RawAncillaryData;
+use crash_helper_common::{BreakpadData, BreakpadRawData, IPCConnector, IPCListener};
 use std::ffi::{c_char, CStr, OsString};
 
 use crash_generation::CrashGenerator;
 use ipc_server::{IPCServer, IPCServerState};
-#[cfg(target_os = "android")]
-use std::os::fd::{FromRawFd, OwnedFd, RawFd};
 
 
 
@@ -85,15 +87,12 @@ pub unsafe extern "C" fn crash_generator_logic_desktop(
 
 
 
-
 #[cfg(target_os = "android")]
 #[no_mangle]
 pub unsafe extern "C" fn crash_generator_logic_android(
-    client_pid: Pid,
     breakpad_data: BreakpadRawData,
     minidump_path: *const c_char,
-    listener: RawFd,
-    pipe: RawFd,
+    pipe: RawAncillaryData,
 ) {
     logging::init();
 
@@ -110,14 +109,10 @@ pub unsafe extern "C" fn crash_generator_logic_android(
         })
         .unwrap();
 
-    let listener = unsafe { OwnedFd::from_raw_fd(listener) };
-    let listener = IPCListener::from_fd(client_pid, listener)
-        .map_err(|error| {
-            log::error!("Could not use the listener (error: {error})");
-        })
-        .unwrap();
-    let pipe = unsafe { OwnedFd::from_raw_fd(pipe) };
-    let connector = IPCConnector::from_fd(pipe)
+    let listener = IPCListener::new(0).unwrap();
+    
+    
+    let connector = unsafe { IPCConnector::from_raw_ancillary(pipe) }
         .map_err(|error| {
             log::error!("Could not use the pipe (error: {error})");
         })
