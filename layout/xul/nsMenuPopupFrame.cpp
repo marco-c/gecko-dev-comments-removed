@@ -329,6 +329,9 @@ void nsMenuPopupFrame::CreateWidget() {
     return;
   }
   mWidget->SetWidgetListener(this);
+  
+  
+  mWidget->SetTransparencyMode(mode);
   PropagateStyleToWidget();
 }
 
