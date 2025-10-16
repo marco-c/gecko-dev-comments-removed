@@ -2634,10 +2634,7 @@ var gUnifiedExtensions = {
         ) {
           let viewID;
           if (
-            Services.prefs.getBoolPref("extensions.getAddons.showPane", true) &&
-            
-            
-            !AddonManager.shouldShowBlocklistAttention()
+            Services.prefs.getBoolPref("extensions.getAddons.showPane", true)
           ) {
             viewID = "addons://discover/";
           } else {
