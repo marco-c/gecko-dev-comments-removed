@@ -7588,9 +7588,13 @@ static NSMutableSet* gSwizzledFrameViewClasses = nil;
   return self;
 }
 
+static CGFloat GetMenuCornerRadius() {
+  return nsCocoaFeatures::OnTahoeOrLater() ? 12.0f : 6.0f;
+}
+
 
 static NSImage* GetMenuMaskImage() {
-  const CGFloat radius = 6.0f;
+  const CGFloat radius = GetMenuCornerRadius();
   const NSSize maskSize = {radius * 3.0f, radius * 3.0f};
   NSImage* maskImage = [NSImage imageWithSize:maskSize
                                       flipped:FALSE
@@ -7616,7 +7620,7 @@ static NSImage* GetMenuMaskImage() {
         
         auto* effectView =
             [[NSGlassEffectView alloc] initWithFrame:self.contentView.frame];
-        effectView.cornerRadius = 12.0f;
+        effectView.cornerRadius = GetMenuCornerRadius();
         return effectView;
       }
     }
