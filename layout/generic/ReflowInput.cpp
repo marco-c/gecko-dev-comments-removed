@@ -1349,10 +1349,10 @@ void ReflowInput::CalculateHypotheticalPosition(
                "mOriginalDisplay has not been properly initialized");
 
   WritingMode cbwm = aCBReflowInput->GetWritingMode();
-  const auto [containingBlock, blockContainerBP, blockContentSize] =
+  const auto [blockContainer, blockContainerBP, blockContainerContentBoxSize] =
       GetHypotheticalBoxContainer(aPlaceholderFrame);
-  WritingMode wm = containingBlock->GetWritingMode();
-  const nscoord blockIStartContentEdge = blockContainerBP.IStart(wm);
+  WritingMode wm = blockContainer->GetWritingMode();
+  const nscoord blockContainerContentIStart = blockContainerBP.IStart(wm);
 
   const auto anchorResolutionParams = AnchorPosResolutionParams::From(this);
   const auto styleISize = mStylePosition->ISize(wm, anchorResolutionParams);
@@ -1382,7 +1382,7 @@ void ReflowInput::CalculateHypotheticalPosition(
     
     nscoord contentEdgeToBoxSizingISize, boxSizingToMarginEdgeISize;
     CalculateBorderPaddingMargin(
-        LogicalAxis::Inline, blockContentSize.ISize(wm),
+        LogicalAxis::Inline, blockContainerContentBoxSize.ISize(wm),
         &contentEdgeToBoxSizingISize, &boxSizingToMarginEdgeISize);
 
     if (mFlags.mIsReplaced && isAutoISize) {
@@ -1395,20 +1395,20 @@ void ReflowInput::CalculateHypotheticalPosition(
       }
     } else if (isAutoISize) {
       
-      boxISize.emplace(blockContentSize.ISize(wm));
+      boxISize.emplace(blockContainerContentBoxSize.ISize(wm));
     } else {
       
       
       
       nscoord contentEdgeToBoxSizingBSize, dummy;
       CalculateBorderPaddingMargin(LogicalAxis::Block,
-                                   blockContentSize.ISize(wm),
+                                   blockContainerContentBoxSize.ISize(wm),
                                    &contentEdgeToBoxSizingBSize, &dummy);
 
       const auto contentISize =
           mFrame
               ->ComputeISizeValue(
-                  mRenderingContext, wm, blockContentSize,
+                  mRenderingContext, wm, blockContainerContentBoxSize,
                   LogicalSize(wm, contentEdgeToBoxSizingISize,
                               contentEdgeToBoxSizingBSize),
                   boxSizingToMarginEdgeISize, *styleISize,
@@ -1423,27 +1423,26 @@ void ReflowInput::CalculateHypotheticalPosition(
   
   
   
-  
-  nsSize containerSize =
-      containingBlock->HasAnyStateBits(NS_FRAME_IN_REFLOW)
+  nsSize blockContainerSize =
+      blockContainer->HasAnyStateBits(NS_FRAME_IN_REFLOW)
           ? aCBReflowInput->ComputedSizeAsContainerIfConstrained()
-          : containingBlock->GetSize();
+          : blockContainer->GetSize();
   LogicalPoint placeholderOffset(
-      wm, aPlaceholderFrame->GetOffsetToIgnoringScrolling(containingBlock),
-      containerSize);
+      wm, aPlaceholderFrame->GetOffsetToIgnoringScrolling(blockContainer),
+      blockContainerSize);
 
   
   
   
   
   nsBlockFrame* blockFrame =
-      do_QueryFrame(containingBlock->GetContentInsertionFrame());
+      do_QueryFrame(blockContainer->GetContentInsertionFrame());
   if (blockFrame) {
     
     
     const nsSize nullContainerSize;
     LogicalPoint blockOffset(
-        wm, blockFrame->GetOffsetToIgnoringScrolling(containingBlock),
+        wm, blockFrame->GetOffsetToIgnoringScrolling(blockContainer),
         nullContainerSize);
     bool isValid;
     nsBlockInFlowLineIterator iter(blockFrame, aPlaceholderFrame, &isValid);
@@ -1520,7 +1519,6 @@ void ReflowInput::CalculateHypotheticalPosition(
   } else {
     
     
-    
     aHypotheticalPos.mBStart = placeholderOffset.B(wm);
   }
 
@@ -1534,14 +1532,14 @@ void ReflowInput::CalculateHypotheticalPosition(
     
     aHypotheticalPos.mIStart = placeholderOffset.I(wm);
   } else {
-    aHypotheticalPos.mIStart = blockIStartContentEdge;
+    aHypotheticalPos.mIStart = blockContainerContentIStart;
   }
 
   
   
   
   const nsIFrame* cbFrame = aCBReflowInput->mFrame;
-  nsPoint cbOffset = containingBlock->GetOffsetToIgnoringScrolling(cbFrame);
+  nsPoint cbOffset = blockContainer->GetOffsetToIgnoringScrolling(cbFrame);
   if (cbFrame->IsViewportFrame()) {
     
     
@@ -1560,8 +1558,8 @@ void ReflowInput::CalculateHypotheticalPosition(
     }
   }
 
-  nsSize reflowSize = aCBReflowInput->ComputedSizeAsContainerIfConstrained();
-  LogicalPoint logCBOffs(wm, cbOffset, reflowSize - containerSize);
+  nsSize cbSize = aCBReflowInput->ComputedSizeAsContainerIfConstrained();
+  LogicalPoint logCBOffs(wm, cbOffset, cbSize - blockContainerSize);
   aHypotheticalPos.mIStart += logCBOffs.I(wm);
   aHypotheticalPos.mBStart += logCBOffs.B(wm);
 
@@ -1606,13 +1604,14 @@ void ReflowInput::CalculateHypotheticalPosition(
     
     
     nscoord insideBoxSizing, outsideBoxSizing;
-    CalculateBorderPaddingMargin(LogicalAxis::Block, blockContentSize.BSize(wm),
+    CalculateBorderPaddingMargin(LogicalAxis::Block,
+                                 blockContainerContentBoxSize.BSize(wm),
                                  &insideBoxSizing, &outsideBoxSizing);
 
     nscoord boxBSize;
     const auto styleBSize = mStylePosition->BSize(wm, anchorResolutionParams);
-    const bool isAutoBSize =
-        nsLayoutUtils::IsAutoBSize(*styleBSize, blockContentSize.BSize(wm));
+    const bool isAutoBSize = nsLayoutUtils::IsAutoBSize(
+        *styleBSize, blockContainerContentBoxSize.BSize(wm));
     if (isAutoBSize) {
       if (mFlags.mIsReplaced && intrinsicSize) {
         
@@ -1626,7 +1625,7 @@ void ReflowInput::CalculateHypotheticalPosition(
         boxBSize = 0;
       }
     } else if (styleBSize->BehavesLikeStretchOnBlockAxis()) {
-      MOZ_ASSERT(blockContentSize.BSize(wm) != NS_UNCONSTRAINEDSIZE,
+      MOZ_ASSERT(blockContainerContentBoxSize.BSize(wm) != NS_UNCONSTRAINEDSIZE,
                  "If we're 'stretch' with unconstrained size, isAutoBSize "
                  "should be true which should make us skip this code");
       
@@ -1634,13 +1633,14 @@ void ReflowInput::CalculateHypotheticalPosition(
       
       
       boxBSize = nsLayoutUtils::ComputeStretchContentBoxBSize(
-          blockContentSize.BSize(wm), outsideBoxSizing, insideBoxSizing);
+          blockContainerContentBoxSize.BSize(wm), outsideBoxSizing,
+          insideBoxSizing);
     } else {
       
       
       
       boxBSize = nsLayoutUtils::ComputeBSizeValue(
-                     blockContentSize.BSize(wm), insideBoxSizing,
+                     blockContainerContentBoxSize.BSize(wm), insideBoxSizing,
                      styleBSize->AsLengthPercentage()) +
                  insideBoxSizing + outsideBoxSizing;
     }
@@ -1649,7 +1649,7 @@ void ReflowInput::CalculateHypotheticalPosition(
 
     LogicalPoint origin(wm, aHypotheticalPos.mIStart, aHypotheticalPos.mBStart);
     origin = origin.ConvertRectOriginTo(cbwm, wm, boxSize.GetPhysicalSize(wm),
-                                        reflowSize);
+                                        cbSize);
 
     aHypotheticalPos.mIStart = origin.I(cbwm);
     aHypotheticalPos.mBStart = origin.B(cbwm);
