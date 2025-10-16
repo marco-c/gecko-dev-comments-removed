@@ -466,7 +466,7 @@ void DocAccessible::QueueCacheUpdateForDependentRelations(
     QueueCacheUpdate(relatedAcc, CacheDomain::Relations);
   }
 
-  if (nsIFrame* anchorFrame = nsCoreUtils::GetAnchorForPositionedFrame(
+  if (const nsIFrame* anchorFrame = nsCoreUtils::GetAnchorForPositionedFrame(
           mPresShell, aAcc->GetFrame())) {
     
     

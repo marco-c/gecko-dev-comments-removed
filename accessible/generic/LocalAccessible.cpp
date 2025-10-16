@@ -2408,8 +2408,9 @@ Relation LocalAccessible::RelationByType(RelationType aType) const {
       
       
       if (Role() != roles::TOOLTIP) {
-        if (nsIFrame* anchorFrame = nsCoreUtils::GetAnchorForPositionedFrame(
-                mDoc->PresShellPtr(), GetFrame())) {
+        if (const nsIFrame* anchorFrame =
+                nsCoreUtils::GetAnchorForPositionedFrame(mDoc->PresShellPtr(),
+                                                         GetFrame())) {
           LocalAccessible* anchorAcc =
               mDoc->GetAccessible(anchorFrame->GetContent());
           if (anchorAcc->GetAnchorPositionTargetDetailsRelation() == this &&
