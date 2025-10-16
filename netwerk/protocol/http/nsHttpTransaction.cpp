@@ -3767,6 +3767,13 @@ bool nsHttpTransaction::AllowedToConnectToIpAddressSpace(
   
   
 
+  
+  if (StaticPrefs::network_lna_local_network_to_localhost_skip_checks() &&
+      mParentIPAddressSpace == nsILoadInfo::IPAddressSpace::Private &&
+      aTargetIpAddressSpace == nsILoadInfo::IPAddressSpace::Local) {
+    return true;  
+  }
+
   if (mozilla::net::IsLocalOrPrivateNetworkAccess(mParentIPAddressSpace,
                                                   aTargetIpAddressSpace)) {
     if (aTargetIpAddressSpace == nsILoadInfo::IPAddressSpace::Local &&
