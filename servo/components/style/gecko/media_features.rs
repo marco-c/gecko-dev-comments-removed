@@ -614,6 +614,13 @@ fn eval_moz_mac_rtl(context: &Context) -> bool {
     unsafe { bindings::Gecko_MediaFeatures_MacRTL(context.device().document()) }
 }
 
+fn eval_moz_native_theme(context: &Context) -> bool {
+    if context.device().document().mForceNonNativeTheme() {
+        return false;
+    }
+    static_prefs::pref!("browser.theme.native-theme")
+}
+
 fn get_lnf_int(int_id: i32) -> i32 {
     unsafe { bindings::Gecko_GetLookAndFeelInt(int_id) }
 }
@@ -645,7 +652,7 @@ macro_rules! lnf_int_feature {
 
 
 
-pub static MEDIA_FEATURES: [QueryFeatureDescription; 59] = [
+pub static MEDIA_FEATURES: [QueryFeatureDescription; 60] = [
     feature!(
         atom!("width"),
         AllowsRanges::Yes,
@@ -923,6 +930,12 @@ pub static MEDIA_FEATURES: [QueryFeatureDescription; 59] = [
         atom!("-moz-mac-rtl"),
         AllowsRanges::No,
         Evaluator::BoolInteger(eval_moz_mac_rtl),
+        FeatureFlags::CHROME_AND_UA_ONLY,
+    ),
+    feature!(
+        atom!("-moz-native-theme"),
+        AllowsRanges::No,
+        Evaluator::BoolInteger(eval_moz_native_theme),
         FeatureFlags::CHROME_AND_UA_ONLY,
     ),
     lnf_int_feature!(

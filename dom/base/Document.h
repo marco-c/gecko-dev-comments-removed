@@ -3619,6 +3619,9 @@ class Document : public nsINode,
   void SetPausedByDevTools(bool aValue) { mPausedByDevTools = aValue; }
   bool PausedByDevTools() const { return mPausedByDevTools; }
 
+  void SetForceNonNativeTheme(bool);
+  bool ForceNonNativeTheme() const { return mForceNonNativeTheme; }
+
   already_AddRefed<Promise> BlockParsing(Promise& aPromise,
                                          const BlockParsingOptions& aOptions,
                                          ErrorResult& aRv);
@@ -4910,7 +4913,8 @@ class Document : public nsINode,
   
   
   bool mPausedByDevTools : 1;
-
+  
+  bool mForceNonNativeTheme : 1;
   
   bool mIsSrcdocDocument : 1;
 
