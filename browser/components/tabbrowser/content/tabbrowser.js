@@ -2873,6 +2873,12 @@
 
 
 
+
+
+
+
+
+
     addTab(
       uriString,
       {
@@ -3080,7 +3086,11 @@
 
       if (insertTab) {
         
-        this._fireTabOpen(t, eventDetail);
+        const tabOpenDetail = {
+          ...eventDetail,
+          fromExternal,
+        };
+        this._fireTabOpen(t, tabOpenDetail);
 
         this._kickOffBrowserLoad(b, {
           uri,
