@@ -2237,7 +2237,11 @@ var gUnifiedExtensions = {
 
 
 
-  getActivePolicies() {
+
+
+
+
+  getActivePolicies(skipPBMCheck = false) {
     let policies = WebExtensionPolicy.getActiveExtensions();
     policies = policies.filter(policy => {
       let { extension } = policy;
@@ -2250,7 +2254,12 @@ var gUnifiedExtensions = {
       
       
       
-      if (extension.isHidden || !policy.canAccessWindow(window)) {
+      if (
+        extension.isHidden ||
+        
+        
+        (!skipPBMCheck && !policy.canAccessWindow(window))
+      ) {
         return false;
       }
 
@@ -2267,8 +2276,10 @@ var gUnifiedExtensions = {
 
 
 
-  hasExtensionsInPanel() {
-    const policies = this.getActivePolicies();
+
+
+
+  hasExtensionsInPanel(policies = this.getActivePolicies()) {
     return policies.some(policy => {
       let widget = this.browserActionFor(policy)?.widget;
       return (
@@ -2277,6 +2288,14 @@ var gUnifiedExtensions = {
         widget.forWindow(window).overflowed
       );
     });
+  },
+
+  isPrivateWindowMissingExtensionsWithoutPBMAccess() {
+    if (!PrivateBrowsingUtils.isWindowPrivate(window)) {
+      return false;
+    }
+    const policies = this.getActivePolicies( true);
+    return policies.some(p => !p.privateBrowsingAllowed);
   },
 
   handleEvent(event) {
@@ -2352,6 +2371,24 @@ var gUnifiedExtensions = {
       const item = document.createElement("unified-extensions-item");
       item.setExtension(policy.extension);
       list.appendChild(item);
+    }
+
+    const emptyStateBox = panelview.querySelector(
+      "#unified-extensions-empty-state"
+    );
+    if (this.hasExtensionsInPanel(policies)) {
+      
+      emptyStateBox.hidden = true;
+    } else if (this.isPrivateWindowMissingExtensionsWithoutPBMAccess()) {
+      document.l10n.setAttributes(
+        emptyStateBox.querySelector("h2"),
+        "unified-extensions-empty-reason-private-browsing-not-allowed"
+      );
+      document.l10n.setAttributes(
+        emptyStateBox.querySelector("description"),
+        "unified-extensions-empty-content-explain-enable"
+      );
+      emptyStateBox.hidden = false;
     }
 
     const container = panelview.querySelector(
@@ -2569,7 +2606,11 @@ var gUnifiedExtensions = {
 
         
         
-        if (!this.hasExtensionsInPanel()) {
+        
+        if (
+          !this.hasExtensionsInPanel() &&
+          !this.isPrivateWindowMissingExtensionsWithoutPBMAccess()
+        ) {
           let viewID;
           if (
             Services.prefs.getBoolPref("extensions.getAddons.showPane", true) &&

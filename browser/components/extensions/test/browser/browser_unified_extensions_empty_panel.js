@@ -33,6 +33,14 @@ add_setup(async function () {
   fakeHideExtension("special-powers@mozilla.org");
 });
 
+function getEmptyStateContainer(win) {
+  let emptyStateBox = win.gUnifiedExtensions.panel.querySelector(
+    "#unified-extensions-empty-state"
+  );
+  ok(emptyStateBox, "Got container for empty panel state");
+  return emptyStateBox;
+}
+
 add_task(async function test_button_opens_discopane_when_no_extension() {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:robots" },
@@ -154,6 +162,9 @@ add_task(async function test_button_click_in_pbm_without_any_extensions() {
 
 
 
+
+
+
 add_task(async function test_button_click_in_pbm_without_private_extensions() {
   const extensions = createExtensions([{ name: "Without private access" }]);
   await Promise.all(extensions.map(extension => extension.startup()));
@@ -161,22 +172,101 @@ add_task(async function test_button_click_in_pbm_without_private_extensions() {
   const win = await BrowserTestUtils.openNewBrowserWindow({ private: true });
 
   
-  
-  const tabLoadedPromise = BrowserTestUtils.browserStopped(
-    win.gBrowser.selectedBrowser,
-    "about:addons"
-  );
+  await openExtensionsPanel(win);
 
-  win.gUnifiedExtensions.button.click();
-
-  await tabLoadedPromise;
+  let emptyStateBox = getEmptyStateContainer(win);
+  ok(BrowserTestUtils.isVisible(emptyStateBox), "Empty state is visible");
   is(
-    win.gBrowser.currentURI.spec,
-    "about:addons",
-    "expected about:addons to be open"
+    emptyStateBox.querySelector("h2").getAttribute("data-l10n-id"),
+    "unified-extensions-empty-reason-private-browsing-not-allowed",
+    "Has header 'You have extensions installed, but not enabled in private windows'"
+  );
+  is(
+    emptyStateBox.querySelector("description").getAttribute("data-l10n-id"),
+    "unified-extensions-empty-content-explain-enable",
+    "Has description pointing to Manage extensions button."
   );
 
+  await BrowserTestUtils.closeWindow(win);
+
+  await Promise.all(extensions.map(extension => extension.unload()));
+});
+
+
+
+
+add_task(async function test_empty_state_is_hidden_when_panel_is_non_empty() {
+  const extensions = [
+    ...createExtensions([{ name: "Without private access" }]),
+    ...createExtensions(
+      [
+        {
+          name: "Ext with private browsing access",
+          browser_specific_settings: { gecko: { id: "@ext-with-pbm-access" } },
+        },
+      ],
+      { incognitoOverride: "spanning" }
+    ),
+  ];
+  await Promise.all(extensions.map(extension => extension.startup()));
+
+  const win = await BrowserTestUtils.openNewBrowserWindow({ private: true });
+
   
+  await openExtensionsPanel(win);
+
+  let emptyStateBox = getEmptyStateContainer(win);
+  ok(BrowserTestUtils.isHidden(emptyStateBox), "Empty state is hidden");
+
+  
+  
+  ok(
+    getUnifiedExtensionsItem(extensions[1].id, win),
+    "Found extension with access to PBM in panel in private window"
+  );
+
+  await BrowserTestUtils.closeWindow(win);
+
+  await Promise.all(extensions.map(extension => extension.unload()));
+});
+
+
+
+add_task(async function test_button_click_in_pbm_pinned_and_no_access() {
+  const extensions = [
+    ...createExtensions([{ name: "Without private access" }]),
+    ...createExtensions(
+      [
+        {
+          name: "Pinned ext with private browsing access",
+          browser_action: {
+            default_area: "navbar", 
+          },
+          browser_specific_settings: { gecko: { id: "@pin-with-pbm-access" } },
+        },
+      ],
+      { incognitoOverride: "spanning" }
+    ),
+  ];
+  await Promise.all(extensions.map(extension => extension.startup()));
+  const win = await BrowserTestUtils.openNewBrowserWindow({ private: true });
+
+  
+  await openExtensionsPanel(win);
+
+  let emptyStateBox = getEmptyStateContainer(win);
+  ok(BrowserTestUtils.isVisible(emptyStateBox), "Empty state is visible");
+  is(
+    emptyStateBox.querySelector("h2").getAttribute("data-l10n-id"),
+    "unified-extensions-empty-reason-private-browsing-not-allowed",
+    "Has header 'You have extensions installed, but not enabled in private windows'"
+  );
+  is(
+    emptyStateBox.querySelector("description").getAttribute("data-l10n-id"),
+    "unified-extensions-empty-content-explain-enable",
+    "Has description pointing to Manage extensions button."
+  );
+
   await BrowserTestUtils.closeWindow(win);
 
   await Promise.all(extensions.map(extension => extension.unload()));
