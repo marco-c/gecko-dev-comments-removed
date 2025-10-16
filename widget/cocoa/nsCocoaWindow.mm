@@ -974,30 +974,6 @@ void nsCocoaWindow::DestroyCompositor() {
   nsBaseWidget::DestroyCompositor();
 }
 
-void nsCocoaWindow::NotifyCompositorSessionLost(
-    mozilla::layers::CompositorSession* aSession) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  const double kTriggerPaintDelayAfterGpuProcessCrash = 0.4;  
-  [mChildView performSelector:@selector(markLayerForDisplay)
-                   withObject:nil
-                   afterDelay:kTriggerPaintDelayAfterGpuProcessCrash];
-
-  nsBaseWidget::NotifyCompositorSessionLost(aSession);
-}
-
 void nsCocoaWindow::SetCompositorWidgetDelegate(
     mozilla::widget::CompositorWidgetDelegate* aDelegate) {
   if (aDelegate) {
