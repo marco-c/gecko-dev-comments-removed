@@ -8957,19 +8957,20 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
     return NS_OK;
   }
 
+  
+  
+  RefPtr<nsIStructuredCloneContainer> destinationNavigationAPIState =
+      mActiveEntry ? mActiveEntry->GetNavigationState() : nullptr;
+  
+  if (auto* navigationAPIState = aLoadState->GetNavigationAPIState()) {
+    destinationNavigationAPIState = navigationAPIState;
+  }
+
   if (nsCOMPtr<nsPIDOMWindowInner> window = doc->GetInnerWindow();
       window && !aState.mHistoryNavBetweenSameDoc) {
     
     
     if (RefPtr<Navigation> navigation = window->Navigation()) {
-      
-      RefPtr<nsIStructuredCloneContainer> destinationNavigationAPIState =
-          mActiveEntry ? mActiveEntry->GetNavigationState() : nullptr;
-      
-      if (aLoadState->GetNavigationAPIState()) {
-        destinationNavigationAPIState = aLoadState->GetNavigationAPIState();
-      }
-
       AutoJSAPI jsapi;
       if (jsapi.Init(window)) {
         RefPtr<Element> sourceElement = aLoadState->GetSourceElement();
@@ -9316,6 +9317,10 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
       if (scrollRestorationIsManual.isSome()) {
         mActiveEntry->SetScrollRestorationIsManual(
             scrollRestorationIsManual.value());
+      }
+
+      if (destinationNavigationAPIState) {
+        mActiveEntry->SetNavigationState(destinationNavigationAPIState);
       }
 
       if (LOAD_TYPE_HAS_FLAGS(mLoadType, LOAD_FLAGS_REPLACE_HISTORY)) {
