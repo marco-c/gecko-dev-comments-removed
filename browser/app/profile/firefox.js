@@ -780,6 +780,9 @@ pref("browser.urlbar.suggest.yelpRealtime", true);
 pref("browser.urlbar.yelpRealtime.minKeywordLength", 0);
 
 
+pref("browser.urlbar.flightStatus.featureGate", false);
+
+
 
 
 pref("browser.urlbar.lastUrlbarSearchSeconds", 0);
