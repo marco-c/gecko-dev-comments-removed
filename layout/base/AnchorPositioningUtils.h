@@ -110,6 +110,32 @@ struct AnchorPositioningUtils {
       const nsRect& aCBRect, AnchorPosReferenceData* aAnchorPosReferenceData,
       const StylePositionArea& aPositionArea,
       const StylePositionTryFallbacksTryTactic* aFallbackTactic);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  static const nsAtom* GetUsedAnchorName(const nsIFrame* aPositioned,
+                                         const nsAtom* aAnchorName);
+
+  
+
+
+
+
+
+
+
+
+  static const nsIFrame* GetAnchorPosImplicitAnchor(const nsIFrame* aFrame);
 };
 
 }  

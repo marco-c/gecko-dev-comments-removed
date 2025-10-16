@@ -440,6 +440,11 @@ bool ComputedStyle::HasAnchorPosReference() const {
     return true;
   }
 
+  if (!pos->mPositionArea.IsNone()) {
+    
+    return true;
+  }
+
   
   
   

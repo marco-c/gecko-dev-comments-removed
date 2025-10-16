@@ -2518,6 +2518,8 @@ STATIC_ATOMS = [
     Atom("_ua_view_transition_fade_in", "-ua-view-transition-fade-in"),
     Atom("_ua_mix_blend_mode_plus_lighter", "-ua-mix-blend-mode-plus-lighter"),
     
+    Atom("AnchorPosImplicitAnchor", "AnchorPosImplicitAnchor"),
+    
     
     PseudoElementAtom("PseudoElement_after", ":after"),
     PseudoElementAtom("PseudoElement_before", ":before"),
