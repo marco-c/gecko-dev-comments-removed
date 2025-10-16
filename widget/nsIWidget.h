@@ -47,6 +47,12 @@
 
 
 
+#ifdef MOZ_IS_GCC
+#  include "mozilla/layers/NativeLayer.h"
+#endif
+
+
+
 
 #define TOUCH_INJECT_MAX_POINTS 256
 
