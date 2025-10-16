@@ -81,6 +81,7 @@
 #include "mozilla/StaticPrefs_javascript.h"
 #include "mozilla/glean/XpcomMetrics.h"
 #include "mozilla/Unused.h"
+#include "mozilla/UseCounter.h"
 #include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/DOMJSClass.h"
 #include "mozilla/dom/JSExecutionManager.h"
@@ -1754,6 +1755,8 @@ bool CycleCollectedJSRuntime::UsefulToMergeZones() const { return false; }
 void CycleCollectedJSRuntime::FixWeakMappingGrayBits() const {
   MOZ_ASSERT(!JS::IsIncrementalGCInProgress(mJSRuntime),
              "Don't call FixWeakMappingGrayBits during a GC.");
+  MOZ_ASSERT(AreGCGrayBitsValid());
+
   FixWeakMappingGrayBitsTracer fixer(mJSRuntime);
   fixer.FixAll();
 }

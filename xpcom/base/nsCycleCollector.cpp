@@ -3456,6 +3456,25 @@ void nsCycleCollector::CheckThreadSafety() {
 #endif
 }
 
+static void SendNeedGCTelemetry(bool needGC) {
+  if (NS_IsMainThread()) {
+    glean::cycle_collector::need_gc
+        .EnumGet(static_cast<glean::cycle_collector::NeedGcLabel>(needGC))
+        .Add();
+    return;
+  }
+
+  glean::cycle_collector::worker_need_gc
+      .EnumGet(static_cast<glean::cycle_collector::WorkerNeedGcLabel>(needGC))
+      .Add();
+}
+
+
+
+
+
+
+
 
 
 
@@ -3469,52 +3488,34 @@ void nsCycleCollector::FixGrayBits(bool aIsShutdown, TimeLog& aTimeLog) {
     return;
   }
 
-  
-  
-  if (!(aIsShutdown || (mLogger && mLogger->IsAllTraces()))) {
-    mCCJSRuntime->FixWeakMappingGrayBits();
-    aTimeLog.Checkpoint("FixWeakMappingGrayBits");
+  bool grayBitsInvalid = !mCCJSRuntime->AreGCGrayBitsValid();
 
-    bool needGC = !mCCJSRuntime->AreGCGrayBitsValid();
+  bool wantAllTraces = mLogger && mLogger->IsAllTraces();
+
+  if (!aIsShutdown && !wantAllTraces) {
+    SendNeedGCTelemetry(grayBitsInvalid);
+  }
+
+  if (!aIsShutdown && !wantAllTraces && !grayBitsInvalid) {
     
-    if (NS_IsMainThread()) {
-      glean::cycle_collector::need_gc
-          .EnumGet(static_cast<glean::cycle_collector::NeedGcLabel>(needGC))
-          .Add();
-    } else {
-      glean::cycle_collector::worker_need_gc
-          .EnumGet(
-              static_cast<glean::cycle_collector::WorkerNeedGcLabel>(needGC))
-          .Add();
-    }
-
-    if (!needGC) {
-      return;
-    }
+    mCCJSRuntime->FixWeakMappingGrayBits();
+    aTimeLog.Checkpoint("FixGrayBits::FixWeakMappingGrayBits");
+    return;
   }
 
   mResults.mForcedGC = true;
 
-  uint32_t count = 0;
-  do {
-    if (aIsShutdown) {
-      mCCJSRuntime->GarbageCollect(JS::GCOptions::Shutdown,
-                                   JS::GCReason::SHUTDOWN_CC);
-    } else {
-      mCCJSRuntime->GarbageCollect(JS::GCOptions::Normal,
-                                   JS::GCReason::CC_FORCED);
-    }
+  JS::GCOptions options = JS::GCOptions::Normal;
+  JS::GCReason reason = JS::GCReason::CC_FORCED;
+  if (aIsShutdown) {
+    options = JS::GCOptions::Shutdown;
+    reason = JS::GCReason::SHUTDOWN_CC;
+  }
 
-    mCCJSRuntime->FixWeakMappingGrayBits();
+  mCCJSRuntime->GarbageCollect(options, reason);
+  MOZ_ASSERT(mCCJSRuntime->AreGCGrayBitsValid());
 
-    
-    
-    
-    MOZ_RELEASE_ASSERT(count < 2);
-    count++;
-  } while (!mCCJSRuntime->AreGCGrayBitsValid());
-
-  aTimeLog.Checkpoint("FixGrayBits");
+  aTimeLog.Checkpoint("FixGrayBits::GarbageCollect");
 }
 
 bool nsCycleCollector::IsIncrementalGCInProgress() {
