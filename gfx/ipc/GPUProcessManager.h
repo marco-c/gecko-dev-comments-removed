@@ -196,7 +196,7 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
 
   
   
-  void StopObserving();
+  void StopBatteryObserving();
 
   
   void CrashProcess();
@@ -232,8 +232,6 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   RefPtr<PGPUChild::TestTriggerMetricsPromise> TestTriggerMetrics();
 
  private:
-  
-  void OnXPCOMShutdown();
   void OnPreferenceChange(const char16_t* aData);
   void ScreenInformationChanged();
 
@@ -303,7 +301,7 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   bool IsProcessStable(const TimeStamp& aNow);
 
   
-  void CleanShutdown();
+  void ShutdownInternal();
   
   
   
@@ -339,33 +337,32 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
 
   DISALLOW_COPY_AND_ASSIGN(GPUProcessManager);
 
+  void NotifyObserve(const char* aTopic, const char16_t* aData);
   void NotifyBatteryInfo(const hal::BatteryInformation& aBatteryInfo);
 
   class Observer final : public nsIObserver {
    public:
     NS_DECL_ISUPPORTS
     NS_DECL_NSIOBSERVER
-    explicit Observer(GPUProcessManager* aManager);
+
+    Observer();
+    void Shutdown();
 
    protected:
     virtual ~Observer() = default;
-
-    GPUProcessManager* mManager;
   };
   friend class Observer;
 
   class BatteryObserver final : public hal::BatteryObserver {
    public:
     NS_INLINE_DECL_REFCOUNTING(BatteryObserver)
-    explicit BatteryObserver(GPUProcessManager* aManager);
 
+    BatteryObserver();
     void Notify(const hal::BatteryInformation& aBatteryInfo) override;
-    void ShutDown();
+    void Shutdown();
 
    protected:
-    virtual ~BatteryObserver();
-
-    GPUProcessManager* mManager;
+    ~BatteryObserver() override = default;
   };
 
  private:
