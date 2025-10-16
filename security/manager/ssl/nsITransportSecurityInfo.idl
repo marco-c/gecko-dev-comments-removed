@@ -40,17 +40,10 @@ interface nsITransportSecurityInfo : nsISupports {
 
 
 
-    readonly attribute Array<nsIX509Cert> handshakeCertificates;
 
-    
-
+    readonly attribute Array<nsIX509Cert> failedCertChain;
 
     readonly attribute nsIX509Cert serverCert;
-
-    
-
-
-
     readonly attribute Array<nsIX509Cert> succeededCertChain;
 
     [must_use]

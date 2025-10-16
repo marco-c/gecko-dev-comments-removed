@@ -87,7 +87,7 @@ class CommonSocketControl : public nsITLSSocketControl {
                nsITransportSecurityInfo::OverridableErrorCategory::ERROR_UNSET;
   }
   void SetSucceededCertChain(nsTArray<nsTArray<uint8_t>>&& certList);
-  void SetHandshakeCertificates(nsTArray<nsTArray<uint8_t>>&& certList);
+  void SetFailedCertChain(nsTArray<nsTArray<uint8_t>>&& certList);
   void SetIsBuiltCertChainRootBuiltInRoot(
       bool aIsBuiltCertChainRootBuiltInRoot) {
     COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
@@ -157,10 +157,8 @@ class CommonSocketControl : public nsITLSSocketControl {
   uint32_t mSecurityState;
   PRErrorCode mErrorCode;
   
-  nsTArray<RefPtr<nsIX509Cert>> mHandshakeCertificates;
-  
+  nsTArray<RefPtr<nsIX509Cert>> mFailedCertChain;
   nsCOMPtr<nsIX509Cert> mServerCert;
-  
   nsTArray<RefPtr<nsIX509Cert>> mSucceededCertChain;
   mozilla::Maybe<uint16_t> mCipherSuite;
   mozilla::Maybe<nsCString> mKeaGroupName;

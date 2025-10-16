@@ -23,12 +23,10 @@ function run_test() {
     PRErrorCodeSuccess,
     null,
     function withSecurityInfo(aSecInfo) {
-      ok(
-        areCertArraysEqual(
-          aSecInfo.handshakeCertificates,
-          build_cert_chain(["default-ee", "test-ca"])
-        ),
-        "handshakeCertificates for a successful connection should be as expected"
+      equal(
+        aSecInfo.failedCertChain.length,
+        0,
+        "failedCertChain for a successful connection should be empty"
       );
       ok(
         areCertArraysEqual(
@@ -54,52 +52,23 @@ function run_test() {
       );
       ok(
         areCertArraysEqual(
-          aSecInfo.handshakeCertificates,
+          aSecInfo.failedCertChain,
           build_cert_chain(["expired-ee", "test-ca"])
         ),
-        "handshakeCertificates for a failed connection should be as expected"
+        "failedCertChain for a failed connection should be as expected"
       );
     }
   );
 
   
-  add_connection_test(
-    "inadequatekeyusage.example.com",
-    SEC_ERROR_INADEQUATE_KEY_USAGE,
-    null,
-    function withSecurityInfo(securityInfo) {
-      ok(
-        areCertArraysEqual(
-          securityInfo.handshakeCertificates,
-          build_cert_chain(["inadequatekeyusage-ee", "test-ca"])
-        ),
-        "handshakeCertificates for a non-overridable error should be as expected"
-      );
-    }
-  );
-
-  
-  
-  add_cert_override_test("expired.example.com", SEC_ERROR_EXPIRED_CERTIFICATE);
-  
-  add_connection_test(
+  let overrideStatus = {
+    failedCertChain: build_cert_chain(["expired-ee", "test-ca"]),
+  };
+  add_cert_override_test(
     "expired.example.com",
-    PRErrorCodeSuccess,
-    null,
-    function withSecurityInfo(aSecInfo) {
-      equal(
-        aSecInfo.succeededCertChain.length,
-        0,
-        "succeededCertChain for a connection with a certificate error override should be null"
-      );
-      ok(
-        areCertArraysEqual(
-          aSecInfo.handshakeCertificates,
-          build_cert_chain(["expired-ee", "test-ca"])
-        ),
-        "handshakeCertificates for a connection with a certificate error override should be as expected"
-      );
-    }
+    SEC_ERROR_EXPIRED_CERTIFICATE,
+    undefined,
+    overrideStatus
   );
 
   run_next_test();
