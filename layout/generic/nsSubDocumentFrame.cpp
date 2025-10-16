@@ -232,16 +232,6 @@ void nsSubDocumentFrame::CreateView() {
                            insertBefore != nullptr);
 
   
-  
-  
-  
-  
-  
-  
-  
-  ReparentFrameViewTo(viewManager, view);
-
-  
   SetView(view);
 
   NS_FRAME_LOG(NS_FRAME_TRACE_CALLS,

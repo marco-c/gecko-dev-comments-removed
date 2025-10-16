@@ -437,11 +437,6 @@ void nsFirstLetterFrame::DrainOverflowFrames(nsPresContext* aPresContext) {
                                     prevInFlow->StealOverflowFrames());
     if (overflowFrames) {
       NS_ASSERTION(mFrames.IsEmpty(), "bad overflow list");
-
-      
-      
-      nsContainerFrame::ReparentFrameViewList(*overflowFrames, prevInFlow,
-                                              this);
       mFrames.InsertFrames(this, nullptr, std::move(*overflowFrames));
     }
   }

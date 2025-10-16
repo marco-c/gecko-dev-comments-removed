@@ -1517,32 +1517,6 @@ void nsIFrame::AssertNewStyleIsSane(ComputedStyle& aNewStyle) {
 }
 #endif
 
-void nsIFrame::ReparentFrameViewTo(nsViewManager* aViewManager,
-                                   nsView* aNewParentView) {
-  if (auto* view = GetView()) {
-    if (IsMenuPopupFrame()) {
-      
-      return;
-    }
-    aViewManager->RemoveChild(view);
-
-    
-    
-    nsView* insertBefore =
-        nsLayoutUtils::FindSiblingViewFor(aNewParentView, this);
-    aViewManager->InsertChild(aNewParentView, view, insertBefore,
-                              insertBefore != nullptr);
-  } else if (HasAnyStateBits(NS_FRAME_HAS_CHILD_WITH_VIEW)) {
-    for (const auto& childList : ChildLists()) {
-      
-      
-      for (nsIFrame* child : childList.mList) {
-        child->ReparentFrameViewTo(aViewManager, aNewParentView);
-      }
-    }
-  }
-}
-
 void nsIFrame::SyncFrameViewProperties(nsView* aView) {
   if (!aView) {
     aView = GetView();

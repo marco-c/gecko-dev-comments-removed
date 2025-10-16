@@ -153,14 +153,6 @@ class nsContainerFrame : public nsSplittableFrame {
   
   static void PositionFrameView(nsIFrame* aKidFrame);
 
-  static void ReparentFrameView(nsIFrame* aChildFrame,
-                                nsIFrame* aOldParentFrame,
-                                nsIFrame* aNewParentFrame);
-
-  static void ReparentFrameViewList(const nsFrameList& aChildFrameList,
-                                    nsIFrame* aOldParentFrame,
-                                    nsIFrame* aNewParentFrame);
-
   
 
 

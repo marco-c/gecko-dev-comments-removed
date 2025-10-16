@@ -317,11 +317,6 @@ void nsInlineFrame::Reflow(nsPresContext* aPresContext,
     if (prevOverflowFrames) {
       
       
-      nsContainerFrame::ReparentFrameViewList(*prevOverflowFrames, prevInFlow,
-                                              this);
-
-      
-      
       
       
       
@@ -459,9 +454,6 @@ void nsInlineFrame::PullOverflowsFromPrevInFlow() {
     AutoFrameListPtr prevOverflowFrames(presContext,
                                         prevInFlow->StealOverflowFrames());
     if (prevOverflowFrames) {
-      
-      nsContainerFrame::ReparentFrameViewList(*prevOverflowFrames, prevInFlow,
-                                              this);
       mFrames.InsertFrames(this, nullptr, std::move(*prevOverflowFrames));
     }
   }
@@ -786,7 +778,6 @@ nsIFrame* nsInlineFrame::PullOneFrame(nsPresContext* aPresContext,
       if (irs.mLineLayout) {
         irs.mLineLayout->SetDirtyNextLine();
       }
-      nsContainerFrame::ReparentFrameView(frame, nextInFlow, this);
       break;
     }
     nextInFlow = static_cast<nsInlineFrame*>(nextInFlow->GetNextInFlow());

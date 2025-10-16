@@ -420,7 +420,6 @@ void nsCanvasFrame::Reflow(nsPresContext* aPresContext,
     if (overflow) {
       NS_ASSERTION(overflow->OnlyChild(),
                    "must have doc root as canvas frame's only child");
-      nsContainerFrame::ReparentFrameViewList(*overflow, prevCanvasFrame, this);
       
       
       

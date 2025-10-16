@@ -851,7 +851,6 @@ class nsIFrame : public nsQueryFrame {
   template <class Source>
   friend class do_QueryFrameHelper;  
   friend class nsBlockFrame;         
-  friend class nsContainerFrame;     
 
   virtual ~nsIFrame();
 
@@ -5222,11 +5221,6 @@ class nsIFrame : public nsQueryFrame {
   void HandleLastRememberedSize();
 
  protected:
-  
-
-
-  void ReparentFrameViewTo(nsViewManager* aViewManager, nsView* aNewParentView);
-
   
   nsRect mRect;
   nsCOMPtr<nsIContent> mContent;

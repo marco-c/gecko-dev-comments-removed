@@ -593,125 +593,6 @@ void nsContainerFrame::PositionFrameView(nsIFrame* aKidFrame) {
   vm->MoveViewTo(view, pt.x, pt.y);
 }
 
-void nsContainerFrame::ReparentFrameView(nsIFrame* aChildFrame,
-                                         nsIFrame* aOldParentFrame,
-                                         nsIFrame* aNewParentFrame) {
-#ifdef DEBUG
-  MOZ_ASSERT(aChildFrame, "null child frame pointer");
-  MOZ_ASSERT(aOldParentFrame, "null old parent frame pointer");
-  MOZ_ASSERT(aNewParentFrame, "null new parent frame pointer");
-  MOZ_ASSERT(aOldParentFrame != aNewParentFrame,
-             "same old and new parent frame");
-
-  
-  while (!aOldParentFrame->GetView() && !aNewParentFrame->GetView()) {
-    
-    
-    
-    
-    
-    
-    
-    aOldParentFrame = aOldParentFrame->GetParent();
-    aNewParentFrame = aNewParentFrame->GetParent();
-
-    
-    
-    NS_ASSERTION(aOldParentFrame && aNewParentFrame, "didn't find view");
-
-    
-    if (aOldParentFrame == aNewParentFrame) {
-      break;
-    }
-  }
-
-  
-  if (aOldParentFrame == aNewParentFrame) {
-    
-    
-    
-    
-    return;
-  }
-
-  
-  
-  nsView* oldParentView = aOldParentFrame->GetClosestView();
-  nsView* newParentView = aNewParentFrame->GetClosestView();
-
-  
-  
-  
-  if (oldParentView != newParentView) {
-    MOZ_ASSERT_UNREACHABLE("can't move frames between views");
-    
-    aChildFrame->ReparentFrameViewTo(oldParentView->GetViewManager(),
-                                     newParentView);
-  }
-#endif
-}
-
-void nsContainerFrame::ReparentFrameViewList(const nsFrameList& aChildFrameList,
-                                             nsIFrame* aOldParentFrame,
-                                             nsIFrame* aNewParentFrame) {
-#ifdef DEBUG
-  MOZ_ASSERT(aChildFrameList.NotEmpty(), "empty child frame list");
-  MOZ_ASSERT(aOldParentFrame, "null old parent frame pointer");
-  MOZ_ASSERT(aNewParentFrame, "null new parent frame pointer");
-  MOZ_ASSERT(aOldParentFrame != aNewParentFrame,
-             "same old and new parent frame");
-
-  
-  while (!aOldParentFrame->GetView() && !aNewParentFrame->GetView()) {
-    
-    
-    
-    
-    
-    
-    
-    aOldParentFrame = aOldParentFrame->GetParent();
-    aNewParentFrame = aNewParentFrame->GetParent();
-
-    
-    
-    NS_ASSERTION(aOldParentFrame && aNewParentFrame, "didn't find view");
-
-    
-    if (aOldParentFrame == aNewParentFrame) {
-      break;
-    }
-  }
-
-  
-  if (aOldParentFrame == aNewParentFrame) {
-    
-    
-    
-    
-    return;
-  }
-
-  
-  
-  nsView* oldParentView = aOldParentFrame->GetClosestView();
-  nsView* newParentView = aNewParentFrame->GetClosestView();
-
-  
-  
-  
-  if (oldParentView != newParentView) {
-    MOZ_ASSERT_UNREACHABLE("can't move frames between views");
-    nsViewManager* viewManager = oldParentView->GetViewManager();
-
-    
-    for (nsIFrame* f : aChildFrameList) {
-      f->ReparentFrameViewTo(viewManager, newParentView);
-    }
-  }
-#endif
-}
-
 void nsContainerFrame::ReparentFrame(nsIFrame* aFrame,
                                      nsContainerFrame* aOldParent,
                                      nsContainerFrame* aNewParent) {
@@ -719,10 +600,6 @@ void nsContainerFrame::ReparentFrame(nsIFrame* aFrame,
                "Parent not consistent with expectations");
 
   aFrame->SetParent(aNewParent);
-
-  
-  
-  ReparentFrameView(aFrame, aOldParent, aNewParent);
 }
 
 void nsContainerFrame::ReparentFrames(nsFrameList& aFrameList,
@@ -1798,10 +1675,6 @@ bool nsContainerFrame::MoveOverflowToChildList() {
       
       
       NS_ASSERTION(mFrames.IsEmpty() || IsTableFrame(), "bad overflow list");
-      
-      
-      nsContainerFrame::ReparentFrameViewList(*prevOverflowFrames, prevInFlow,
-                                              this);
       mFrames.AppendFrames(this, std::move(*prevOverflowFrames));
       result = true;
     }
@@ -1972,10 +1845,6 @@ bool nsContainerFrame::MoveInlineOverflowToChildList(nsIFrame* aLineContainer) {
                                      prevOverflowFrames->FirstChild(), true);
       }
       
-      
-      nsContainerFrame::ReparentFrameViewList(*prevOverflowFrames, prevInFlow,
-                                              this);
-      
       mFrames.InsertFrames(this, nullptr, std::move(*prevOverflowFrames));
       result = true;
     }
@@ -2026,7 +1895,6 @@ nsFrameList* nsContainerFrame::DrainExcessOverflowContainersList(
                                   prev->StealExcessOverflowContainers());
     if (excessFrames) {
       excessFrames->ApplySetParent(this);
-      nsContainerFrame::ReparentFrameViewList(*excessFrames, prev, this);
       if (overflowContainers) {
         
         
@@ -2118,9 +1986,6 @@ nsIFrame* nsContainerFrame::PullNextInFlowChild(
 
     
     mFrames.AppendFrame(this, frame);
-    
-    
-    nsContainerFrame::ReparentFrameView(frame, nextInFlow, this);
   }
   return frame;
 }
@@ -2879,8 +2744,6 @@ nsresult nsOverflowContinuationTracker::Insert(nsIFrame* aOverflowCont,
       SetUpListWalker();
     }
     if (aOverflowCont->GetParent() != mParent) {
-      nsContainerFrame::ReparentFrameView(aOverflowCont,
-                                          aOverflowCont->GetParent(), mParent);
       reparented = true;
     }
 
