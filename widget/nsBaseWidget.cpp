@@ -1459,12 +1459,11 @@ already_AddRefed<WebRenderLayerManager> nsBaseWidget::CreateCompositorSession(
   do {
     CreateCompositorVsyncDispatcher();
 
-    gfx::GPUProcessManager* gpu = gfx::GPUProcessManager::Get();
     
     
     
-    nsresult rv = gpu->EnsureGPUReady();
-    if (NS_WARN_IF(rv == NS_ERROR_ILLEGAL_DURING_SHUTDOWN)) {
+    gfx::GPUProcessManager* gpm = gfx::GPUProcessManager::Get();
+    if (NS_WARN_IF(!gpm || NS_FAILED(gpm->EnsureGPUReady()))) {
       return nullptr;
     }
 
@@ -1517,7 +1516,7 @@ already_AddRefed<WebRenderLayerManager> nsBaseWidget::CreateCompositorSession(
     }
 
     bool retry = false;
-    mCompositorSession = gpu->CreateTopLevelCompositor(
+    mCompositorSession = gpm->CreateTopLevelCompositor(
         this, lm, GetDefaultScale(), options, UseExternalCompositingSurface(),
         gfx::IntSize(aWidth, aHeight), innerWindowId, &retry);
 
