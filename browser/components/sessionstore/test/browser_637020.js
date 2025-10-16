@@ -46,6 +46,9 @@ add_task(async function test() {
   let backupState = SessionStore.getBrowserState();
   SessionStore.setBrowserState(JSON.stringify(TEST_STATE));
   let win = await promiseWindow;
+  let delayedStartupFinished = new Promise(resolve =>
+    whenDelayedStartupFinished(win, resolve)
+  );
   let restoring = promiseWindowRestoring(win);
   let restored = promiseWindowRestored(win);
   await restoring;
@@ -58,7 +61,7 @@ add_task(async function test() {
 
   
   
-  await new Promise(resolve => whenDelayedStartupFinished(win, resolve));
+  await delayedStartupFinished;
   info("the delayed startup has finished");
   checkWindows();
 

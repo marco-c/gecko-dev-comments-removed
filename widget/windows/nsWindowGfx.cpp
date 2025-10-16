@@ -317,7 +317,8 @@ void nsWindow::NotifyOcclusionState(mozilla::widget::OcclusionState aState) {
   if (mFrameState->GetSizeMode() == nsSizeMode_Minimized) {
     isFullyOccluded = false;
   }
-  if (isFullyOccluded && !mHasBeenShown) {
+  if (isFullyOccluded && (!mHasBeenShown || nsWindow::sIsRestoringSession)) {
+    
     
     
     isFullyOccluded = false;
