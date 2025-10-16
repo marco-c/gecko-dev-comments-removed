@@ -34,17 +34,14 @@ load(libdir + "codegen-test-common.js");
 var RIPR = `0x${HEXES}`;
 
 
-var RIPRADDR = `${HEX}{2} ${HEX}{2} ${HEX}{2} ${HEX}{2}`;
-
-
 
 var x64_prefix = `
-48 89 e5                  mov %rsp, %rbp(
-4c 89 75 .0               movq %r14, (0x10|0x30)\\(%rbp\\))?
+mov %rsp, %rbp(
+movq %r14, (0x10|0x30)\\(%rbp\\))?
 `
 
 
-var x64_suffix = `5d                        pop %rbp`;
+var x64_suffix = `pop %rbp`;
 
 
 
@@ -166,7 +163,7 @@ function codegenTestX64_adhoc(module_text, export_name, expected, options = {}) 
     if (!options.no_suffix)
         expected = expected + '\n' + x64_suffix;
     const expected_pretty = striplines(expected);
-    expected = fixlines(expected);
+    expected = fixlines(expected, `(?:${HEX}{2} )*`);
 
     const success = output.match(new RegExp(expected)) != null;
     if (options.log || !success) {

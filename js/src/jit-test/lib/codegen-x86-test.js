@@ -10,27 +10,24 @@ load(libdir + "codegen-test-common.js");
 var ABS = `0x${HEXES}`;
 
 
-var ABSADDR = `${HEX}{2} ${HEX}{2} ${HEX}{2} ${HEX}{2}`;
-
-
 
 
 
 
 
 var x86_prefix = `
-8b ec            mov %esp, %ebp(
-89 75 08         movl %esi, 0x08\\(%rbp\\))?(
-b8 ef be ad de   mov \\$-0x21524111, %eax)?
+mov %esp, %ebp(
+movl %esi, 0x08\\(%rbp\\))?(
+mov \\$-0x21524111, %eax)?
 `
 
 
 var x86_loadarg0 = `
-f3 0f 6f 45 ${HEX}{2}            movdqux 0x${HEXES}\\(%.bp\\), %xmm0
+movdqux 0x${HEXES}\\(%.bp\\), %xmm0
 `;
 
 
-var x86_suffix = `5d      pop %.bp`;
+var x86_suffix = `pop %.bp`;
 
 
 
@@ -60,7 +57,7 @@ function codegenTestX86_adhoc(module_text, export_name, expected, options = {}) 
         expected = x86_prefix + '\n' + expected;
     if (!options.no_suffix)
         expected = expected + '\n' + x86_suffix;
-    expected = fixlines(expected);
+    expected = fixlines(expected, `(?:${HEX}{2} )*`);
 
     const output_matches_expected = output.match(new RegExp(expected)) != null;
     if (!output_matches_expected) {

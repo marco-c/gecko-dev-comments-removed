@@ -61,42 +61,46 @@ const requiredArchs = ["x64", "x86", "arm64"];
 
 
 
-const prefixAndSuffix =
+const archOptions =
       {x64: {
+           encoding: `(?:${HEX}{2} )*`,
            
            
-           prefix: `48 89 e5        mov %rsp, %rbp(
-                    4c 89 75 .0     movq %r14, (0x10|0x30)\\(%rbp\\))?`,
-           suffix: `5d              pop %rbp`
+           prefix: `mov %rsp, %rbp(
+                    movq %r14, (0x10|0x30)\\(%rbp\\))?`,
+           suffix: `pop %rbp`
        },
        x86: {
+           encoding: `(?:${HEX}{2} )*`,
            
            
            
            
            
-           prefix: `8b ec           mov %esp, %ebp(
-                    89 75 08        movl %esi, 0x08\\(%rbp\\))?(
-                    b. ef be ad de  mov \\$0xDEADBEEF, %e.x)?`,
+           prefix: `mov %esp, %ebp(
+                    movl %esi, 0x08\\(%rbp\\))?(
+                    mov \\$0xDEADBEEF, %e.x)?`,
            
-           suffix: `5d              pop %.bp`
+           suffix: `pop %.bp`
        },
        arm64: {
+           encoding: `${HEX}{8}`,
            
            
-           prefix: `910003fd        mov x29, sp
-                    910003fc        mov x28, sp(
-                    f9000bb7        str x23, \\[x29, #16\\])?`,
-           suffix: `f94007fe        ldr x30, \\[sp, #8\\]
-                    f94003fd        ldr x29, \\[sp\\]`
+           prefix: `mov x29, sp
+                    mov x28, sp(
+                    str x23, \\[x29, #16\\])?`,
+           suffix: `ldr x30, \\[sp, #8\\]
+                    ldr x29, \\[sp\\]`
        },
        arm: {
+           encoding: `${HEX}{8} ${HEX}{8}`,
            
            
-           prefix: `e52db004        str fp, \\[sp, #-4\\]!
-                    e1a0b00d        mov fp, sp(
-                    e58b9008        str r9, \\[fp, #\\+8\\])?`,
-           suffix: `e49db004        ldr fp, \\[sp\\], #\\+4`
+           prefix: `str fp, \\[sp, #-4\\]!
+                    mov fp, sp(
+                    str r9, \\[fp, #\\+8\\])?`,
+           suffix: `ldr fp, \\[sp\\], #\\+4`
        }
       };
 
@@ -187,11 +191,13 @@ function codegenTestMultiplatform_adhoc(module_text, export_name,
     options = promoteArchSpecificOptions(options, archName);
 
     
-    assertEq(true, prefixAndSuffix.hasOwnProperty(archName));
-    let prefix = prefixAndSuffix[archName].prefix;
-    let suffix = prefixAndSuffix[archName].suffix;
-    assertEq(true, prefix.length >= 10);
-    assertEq(true, suffix.length >= 10);
+    assertEq(true, archOptions.hasOwnProperty(archName));
+    let encoding = archOptions[archName].encoding;
+    let prefix = archOptions[archName].prefix;
+    let suffix = archOptions[archName].suffix;
+    assertEq(true, encoding.length > 0, `bad instruction encoding: ${encoding}`);
+    assertEq(true, prefix.length > 0, `bad prefix: ${prefix}`);
+    assertEq(true, suffix.length > 0, `bad suffix: ${suffix}`);
 
     
     
@@ -238,7 +244,7 @@ function codegenTestMultiplatform_adhoc(module_text, export_name,
         }
         expected = newExpected;
     }
-    expected = fixlines(expected);
+    expected = fixlines(expected, encoding);
 
     
     let ins = wasmEvalText(module_text, {}, options.features);
