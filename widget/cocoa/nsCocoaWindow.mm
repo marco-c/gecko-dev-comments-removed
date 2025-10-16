@@ -885,6 +885,11 @@ void nsCocoaWindow::CreateCompositor(int aWidth, int aHeight) {
 
   
   
+  auto completionScope =
+      MakeScopeExit([&] { nsBaseWidget::CreateCompositor(aWidth, aHeight); });
+
+  
+  
   
   
   
@@ -921,41 +926,44 @@ void nsCocoaWindow::CreateCompositor(int aWidth, int aHeight) {
   auto rv = PNativeLayerRemote::CreateEndpoints(
       mozilla::ipc::EndpointProcInfo::Current(), childProcessInfo,
       &parentEndpoint, &mChildEndpoint);
-  MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv));
-  MOZ_RELEASE_ASSERT(parentEndpoint.IsValid());
-  MOZ_RELEASE_ASSERT(mChildEndpoint.IsValid());
+  MOZ_ASSERT(parentEndpoint.IsValid());
+  MOZ_ASSERT(mChildEndpoint.IsValid());
 
-  
-  mNativeLayerRootRemoteMacParent =
-      new NativeLayerRootRemoteMacParent(mNativeLayerRoot);
+  if (NS_SUCCEEDED(rv)) {
+    
+    mNativeLayerRootRemoteMacParent =
+        new NativeLayerRootRemoteMacParent(mNativeLayerRoot);
 
-  
-  MOZ_ASSERT(CompositorThread());
-  RefPtr<NativeLayerRootRemoteMacParent> nativeLayerRemoteParent(
-      mNativeLayerRootRemoteMacParent);
-  Monitor monitor("nsCocoaWindow::CreateCompositor") MOZ_UNANNOTATED;
-  bool didBindParentEndpoint = false;
+    
+    RefPtr<NativeLayerRootRemoteMacParent> nativeLayerRemoteParent(
+        mNativeLayerRootRemoteMacParent);
 
-  CompositorThread()->Dispatch(NS_NewRunnableFunction(
-      "nsCocoaWindow::CreateCompositor bind endpoint", [&]() {
-        
-        
-        MOZ_ALWAYS_TRUE(parentEndpoint.Bind(nativeLayerRemoteParent));
-        MonitorAutoLock lock(monitor);
-        didBindParentEndpoint = true;
-        lock.Notify();
-      }));
-
-  
-  
-  
-  MonitorAutoLock lock(monitor);
-  while (!didBindParentEndpoint) {
-    lock.Wait();
+    
+    MOZ_ASSERT(CompositorThread());
+    CompositorThread()->Dispatch(NewRunnableFunction(
+        "nsCocoaWindow::FinishCreateCompositor",
+        &nsCocoaWindow::FinishCreateCompositor, aWidth, aHeight,
+        std::move(parentEndpoint), nativeLayerRemoteParent));
   }
+}
+
+
+void nsCocoaWindow::FinishCreateCompositor(
+    int aWidth, int aHeight,
+    mozilla::ipc::Endpoint<mozilla::layers::PNativeLayerRemoteParent>&&
+        aParentEndpoint,
+    RefPtr<NativeLayerRootRemoteMacParent> aNativeLayerRootRemoteMacParent) {
+  MOZ_ASSERT(aNativeLayerRootRemoteMacParent);
+  MOZ_ALWAYS_TRUE(aParentEndpoint.Bind(aNativeLayerRootRemoteMacParent));
+  
+  
 
   
-  nsBaseWidget::CreateCompositor(aWidth, aHeight);
+  
+  
+  
+  
+  
 }
 
 void nsCocoaWindow::DestroyCompositor() {
