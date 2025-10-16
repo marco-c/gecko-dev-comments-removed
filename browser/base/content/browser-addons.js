@@ -2237,16 +2237,13 @@ var gUnifiedExtensions = {
 
 
 
-
-
-
-
-
-  getActivePolicies(all = true) {
+  getActivePolicies() {
     let policies = WebExtensionPolicy.getActiveExtensions();
     policies = policies.filter(policy => {
       let { extension } = policy;
-      if (!policy.active || extension?.type !== "extension") {
+      if (extension?.type !== "extension") {
+        
+        
         return false;
       }
 
@@ -2257,10 +2254,9 @@ var gUnifiedExtensions = {
         return false;
       }
 
-      return all || !extension.hasBrowserActionUI;
+      return true;
     });
 
-    policies.sort((a, b) => a.name.localeCompare(b.name));
     return policies;
   },
 
@@ -2273,16 +2269,14 @@ var gUnifiedExtensions = {
 
   hasExtensionsInPanel() {
     const policies = this.getActivePolicies();
-
-    return !!policies
-      .map(policy => this.browserActionFor(policy)?.widget)
-      .filter(widget => {
-        return (
-          !widget ||
-          widget?.areaType !== CustomizableUI.TYPE_TOOLBAR ||
-          widget?.forWindow(window).overflowed
-        );
-      }).length;
+    return policies.some(policy => {
+      let widget = this.browserActionFor(policy)?.widget;
+      return (
+        !widget ||
+        widget.areaType !== CustomizableUI.TYPE_TOOLBAR ||
+        widget.forWindow(window).overflowed
+      );
+    });
   },
 
   handleEvent(event) {
@@ -2343,11 +2337,18 @@ var gUnifiedExtensions = {
   },
 
   onPanelViewShowing(panelview) {
+    const policies = this.getActivePolicies();
+
+    
+    
+    
+    const policiesForList = policies.filter(
+      p => !p.extension.hasBrowserActionUI
+    );
+    policiesForList.sort((a, b) => a.name.localeCompare(b.name));
+
     const list = panelview.querySelector(".unified-extensions-list");
-    
-    
-    
-    for (const policy of this.getActivePolicies( false)) {
+    for (const policy of policiesForList) {
       const item = document.createElement("unified-extensions-item");
       item.setExtension(policy.extension);
       list.appendChild(item);
