@@ -915,7 +915,7 @@ void Performance::InsertUserEntry(PerformanceEntry* aEntry) {
 
 
 
-void Performance::BufferEvent() {
+void Performance::ResourceTimingBufferFullEvent() {
   
 
 
@@ -1049,7 +1049,8 @@ void Performance::InsertResourceEntry(PerformanceEntry* aEntry) {
 
 
     NS_DispatchToCurrentThread(NewCancelableRunnableMethod(
-        "Performance::BufferEvent", this, &Performance::BufferEvent));
+        "Performance::ResourceTimingBufferFullEvent", this,
+        &Performance::ResourceTimingBufferFullEvent));
   }
   
 
