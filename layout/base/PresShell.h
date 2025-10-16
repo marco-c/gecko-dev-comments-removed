@@ -965,7 +965,7 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-  nscolor ComputeBackstopColor(nsView* aDisplayRoot);
+  nscolor ComputeBackstopColor(nsIFrame* aDisplayRoot);
 
   void ObserveNativeAnonMutationsForPrint(bool aObserve) {
     mObservesMutationsForPrint = aObserve;
@@ -1367,14 +1367,15 @@ class PresShell final : public nsStubDocumentObserver,
 
 
   MOZ_CAN_RUN_SCRIPT
-  void PaintAndRequestComposite(nsView* aView, PaintFlags aFlags);
+  void PaintAndRequestComposite(nsIFrame* aFrame, WindowRenderer* aRenderer,
+                                PaintFlags aFlags);
 
   
 
 
 
   MOZ_CAN_RUN_SCRIPT
-  void SyncPaintFallback(nsView* aView);
+  void SyncPaintFallback(nsIFrame* aFrame, WindowRenderer* aRenderer);
 
   
 
@@ -1868,7 +1869,8 @@ class PresShell final : public nsStubDocumentObserver,
   bool ComputeActiveness() const;
 
   MOZ_CAN_RUN_SCRIPT
-  void PaintInternal(nsView* aViewToPaint, PaintInternalFlags aFlags);
+  void PaintInternal(nsIFrame* aFrame, WindowRenderer* aRenderer,
+                     PaintInternalFlags aFlags);
 
   
   void ScheduleFlush();
