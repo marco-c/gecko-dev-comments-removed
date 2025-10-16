@@ -459,7 +459,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   void Navigate(nsIURI* aURI, nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv,
                 NavigationHistoryBehavior aHistoryHandling =
                     NavigationHistoryBehavior::Auto,
-                bool aNeedsCompletelyLoadedDocument = false);
+                bool aNeedsCompletelyLoadedDocument = false,
+                nsIStructuredCloneContainer* aNavigationAPIState = nullptr);
 
   
   
