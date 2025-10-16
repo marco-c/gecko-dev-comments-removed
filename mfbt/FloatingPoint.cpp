@@ -9,6 +9,7 @@
 #include "mozilla/FloatingPoint.h"
 
 #include <cfloat>  
+#include <cmath>
 
 namespace mozilla {
 

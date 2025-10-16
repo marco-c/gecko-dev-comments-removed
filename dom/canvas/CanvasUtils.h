@@ -11,7 +11,6 @@
 #include "js/PropertyAndElement.h"  
 #include "jsapi.h"
 #include "mozilla/CheckedInt.h"
-#include "mozilla/FloatingPoint.h"
 #include "mozilla/dom/ToJSValue.h"
 
 class nsIPrincipal;

@@ -6,7 +6,6 @@
 
 #include "frontend/ParseNode.h"
 
-#include "mozilla/FloatingPoint.h"
 #include "mozilla/Try.h"  
 
 #include "jsnum.h"

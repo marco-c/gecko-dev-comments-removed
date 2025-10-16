@@ -17,9 +17,9 @@
 #include "mozilla/Types.h"
 
 #include <algorithm>
-#include <climits>
+#include <cstdint>
 #include <limits>
-#include <stdint.h>
+#include <type_traits>
 
 namespace mozilla {
 
@@ -37,8 +37,6 @@ namespace mozilla {
 
 
 
-
-namespace detail {
 
 
 
@@ -67,8 +65,6 @@ struct FloatingPointTrait<double> {
   static constexpr unsigned kSignificandWidth = 52;
 };
 
-}  
-
 
 
 
@@ -96,9 +92,9 @@ struct FloatingPointTrait<double> {
 
 
 template <typename T>
-struct FloatingPoint final : private detail::FloatingPointTrait<T> {
+struct FloatingPoint final : private FloatingPointTrait<T> {
  private:
-  using Base = detail::FloatingPointTrait<T>;
+  using Base = FloatingPointTrait<T>;
 
  public:
   
