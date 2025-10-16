@@ -149,6 +149,10 @@ class nsDocShellLoadState final {
 
   void SetNotifiedBeforeUnloadListeners(bool aNotifiedBeforeUnloadListeners);
 
+  bool ShouldNotForceReplaceInOnLoad() const;
+
+  void SetShouldNotForceReplaceInOnLoad(bool aShouldNotForceReplaceInOnLoad);
+
   bool ForceAllowDataURI() const;
 
   void SetForceAllowDataURI(bool aForceAllowDataURI);
@@ -173,18 +177,6 @@ class nsDocShellLoadState final {
   bool IsFormSubmission() const;
 
   void SetIsFormSubmission(bool aIsFormSubmission);
-
-  bool NeedsCompletelyLoadedDocument() const;
-
-  void SetNeedsCompletelyLoadedDocument(bool aNeedsCompletelyLoadedDocument);
-
-  mozilla::Maybe<mozilla::dom::NavigationHistoryBehavior> HistoryBehavior()
-      const;
-
-  void SetHistoryBehavior(
-      mozilla::dom::NavigationHistoryBehavior aHistoryBehavior);
-
-  void ResetHistoryBehavior();
 
   uint32_t LoadType() const;
 
@@ -552,6 +544,10 @@ class nsDocShellLoadState final {
 
   
   
+  bool mShouldNotForceReplaceInOnLoad;
+
+  
+  
   
   
   
@@ -588,14 +584,6 @@ class nsDocShellLoadState final {
   
   
   bool mIsFormSubmission;
-
-  
-  
-  bool mNeedsCompletelyLoadedDocument;
-
-  
-  
-  mozilla::Maybe<mozilla::dom::NavigationHistoryBehavior> mHistoryBehavior;
 
   
   

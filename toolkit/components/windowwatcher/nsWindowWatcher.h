@@ -77,9 +77,8 @@ class nsWindowWatcher : public nsIWindowWatcher,
 
 
 
-
   static already_AddRefed<nsDocShellLoadState> CreateLoadState(
-      nsIURI* aUri, nsPIDOMWindowOuter* aParent, bool aIsWindowOpen = false);
+      nsIURI* aUri, nsPIDOMWindowOuter* aParent);
 
  protected:
   virtual ~nsWindowWatcher();
