@@ -579,7 +579,7 @@ pref("browser.urlbar.quicksuggest.mlInitDelaySeconds", 0);
 
 
 
-pref("browser.urlbar.quicksuggest.settingsUi", 0);
+pref("browser.urlbar.quicksuggest.settingsUi", 1);
 
 
 pref("browser.urlbar.unitConversion.enabled", true);
