@@ -1730,9 +1730,7 @@ class GPUMemoryReporter : public MemoryReportingProcess {
  private:
   GPUChild* GetChild() const {
     if (GPUProcessManager* gpm = GPUProcessManager::Get()) {
-      if (GPUChild* child = gpm->GetGPUChild()) {
-        return child;
-      }
+      return gpm->GetGPUChild();
     }
     return nullptr;
   }
@@ -1744,10 +1742,12 @@ class GPUMemoryReporter : public MemoryReportingProcess {
 RefPtr<MemoryReportingProcess> GPUProcessManager::GetProcessMemoryReporter() {
   
   
-  if (!mProcess || NS_FAILED(EnsureGPUReady())) {
+  
+  if (!mProcess || AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdown) ||
+      !mProcess->WaitForLaunch()) {
     return nullptr;
   }
-  return new GPUMemoryReporter();
+  return MakeRefPtr<GPUMemoryReporter>();
 }
 
 void GPUProcessManager::SetAppInForeground(bool aInForeground) {
