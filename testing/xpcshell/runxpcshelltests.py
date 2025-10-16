@@ -744,7 +744,9 @@ class XPCShellTestThread(Thread):
         """
         if not self.output_lines:
             return
-        self.log.info(f">>>>>>> Begin of full log for {self.test_object['id']}")
+        log_message = f"full log for {self.test_object['id']}"
+        self.log.info(f">>>>>>> Begin of {log_message}")
+        self.log.group_start("replaying " + log_message)
         for timestamp, line in self.output_lines:
             if isinstance(line, dict):
                 
@@ -768,7 +770,8 @@ class XPCShellTestThread(Thread):
                 
                 
                 self.log_line(line, time=timestamp)
-        self.log.info(f"<<<<<<< End of full log for {self.test_object['id']}")
+        self.log.info(f"<<<<<<< End of {log_message}")
+        self.log.group_end("replaying " + log_message)
         self.output_lines = []
 
     def report_message(self, message):
