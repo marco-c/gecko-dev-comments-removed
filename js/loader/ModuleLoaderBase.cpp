@@ -543,11 +543,11 @@ nsresult ModuleLoaderBase::StartOrRestartModuleLoad(ModuleLoadRequest* aRequest,
   
   
   
-  bool isStencil = aRequest->IsStencil();
+  bool isCachedStencil = aRequest->IsCachedStencil();
 
-  MOZ_ASSERT_IF(isStencil, aRestart == RestartRequest::No);
+  MOZ_ASSERT_IF(isCachedStencil, aRestart == RestartRequest::No);
 
-  if (!isStencil) {
+  if (!isCachedStencil) {
     aRequest->SetUnknownDataType();
   }
 
@@ -582,7 +582,7 @@ nsresult ModuleLoaderBase::StartOrRestartModuleLoad(ModuleLoadRequest* aRequest,
   rv = StartFetch(aRequest);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (isStencil) {
+  if (isCachedStencil) {
     MOZ_ASSERT(
         IsModuleFetched(ModuleMapKey(aRequest->mURI, aRequest->mModuleType)));
     return NS_OK;
@@ -770,6 +770,15 @@ nsresult ModuleLoaderBase::OnFetchComplete(ModuleLoadRequest* aRequest,
   bool success = bool(aRequest->mModuleScript);
   MOZ_ASSERT(NS_SUCCEEDED(rv) == success);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (!aRequest->IsErrored()) {
     OnFetchSucceeded(aRequest);
   } else {
@@ -1622,9 +1631,6 @@ nsresult ModuleLoaderBase::EvaluateModuleInContext(
 
   Rooted<Value> rval(aCx);
 
-  
-  mLoader->MaybePrepareModuleForCacheBeforeExecute(aCx, aRequest);
-
   bool ok = ModuleEvaluate(aCx, module, &rval);
 
   
@@ -1652,6 +1658,7 @@ nsresult ModuleLoaderBase::EvaluateModuleInContext(
     LOG(("ScriptLoadRequest (%p):   evaluation failed on throw", aRequest));
   }
 
+  
   rv = mLoader->MaybePrepareModuleForCacheAfterExecute(aRequest, NS_OK);
 
   mLoader->MaybeUpdateCache();
