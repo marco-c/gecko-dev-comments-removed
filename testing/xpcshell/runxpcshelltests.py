@@ -773,6 +773,8 @@ class XPCShellTestThread(Thread):
                     r"ERROR: ((Address|Leak)Sanitizer)", r"ERROR (will retry): \1", line
                 )
                 
+                line = re.sub(r"fatal error", r"error", line)
+                
                 
                 self.log_line(line, time=timestamp)
         self.log.info(f"<<<<<<< End of {log_message}")
