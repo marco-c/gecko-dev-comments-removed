@@ -1170,7 +1170,17 @@ nsDragSession::GetData(nsITransferable* aTransferable, uint32_t aItemIndex) {
 
     
     
-    if (requestedFlavor == sURLMimeAtom) {
+    if (requestedFlavor == sURLMimeAtom || requestedFlavor == sFileMimeAtom) {
+      LOGDRAGSERVICE("  try portals first\n");
+      dragData = GetDragData(sPortalFileAtom);
+      if (!dragData) {
+        dragData = GetDragData(sPortalFileTransferAtom);
+      }
+    }
+
+    
+    
+    if (!dragData && requestedFlavor == sURLMimeAtom) {
       LOGDRAGSERVICE("  conversion %s => %s", gTextUriListType, kURLMime);
       dragData = GetDragData(sTextUriListTypeAtom);
       if (dragData) {
@@ -1197,25 +1207,15 @@ nsDragSession::GetData(nsITransferable* aTransferable, uint32_t aItemIndex) {
     
     
     if (!dragData && requestedFlavor == sFileMimeAtom) {
+      LOGDRAGSERVICE(
+          "  file not found, proceed with conversion %s => %s flavor\n",
+          gTextUriListType, kFileMime);
       
-      dragData = GetDragData(sPortalFileAtom);
-
-      
-      if (!dragData) {
-        dragData = GetDragData(sPortalFileTransferAtom);
-      }
-
-      if (!dragData) {
-        LOGDRAGSERVICE(
-            "  file not found, proceed with conversion %s => %s flavor\n",
-            gTextUriListType, kFileMime);
-        
-        dragData = GetDragData(sTextUriListTypeAtom);
+      dragData = GetDragData(sTextUriListTypeAtom);
+      if (dragData) {
+        dragData = dragData->ConvertToFile();
         if (dragData) {
-          dragData = dragData->ConvertToFile();
-          if (dragData) {
-            mCachedDragData.InsertOrUpdate(dragData->GetFlavor(), dragData);
-          }
+          mCachedDragData.InsertOrUpdate(dragData->GetFlavor(), dragData);
         }
       }
     }
