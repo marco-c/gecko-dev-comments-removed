@@ -22,22 +22,6 @@
 #include "wasm/WasmTypeDef.h"
 #include "wasm/WasmValType.h"
 
-namespace js::wasm {
-
-
-
-
-
-
-
-
-
-
-
-static const size_t TrailerBlockOverhead = (16 / 2) + (1 * sizeof(void*));
-
-}  
-
 namespace js {
 
 
@@ -214,10 +198,7 @@ class WasmArrayObject : public WasmGcObject,
   static inline constexpr uint32_t maxInlineElementsForElemSize(
       uint32_t elemSize);
 
-  static void addSizeOfExcludingThis(JSObject* obj,
-                                     mozilla::MallocSizeOf mallocSizeOf,
-                                     JS::ClassInfo* info,
-                                     JS::RuntimeSizes* runtimeSizes);
+  size_t sizeOfExcludingThis() const;
 
   using DataHeader = uintptr_t;
   static const DataHeader DataIsIL = 0;
@@ -357,10 +338,7 @@ class WasmStructObject : public WasmGcObject,
     return n;
   }
 
-  static void addSizeOfExcludingThis(JSObject* obj,
-                                     mozilla::MallocSizeOf mallocSizeOf,
-                                     JS::ClassInfo* info,
-                                     JS::RuntimeSizes* runtimeSizes);
+  size_t sizeOfExcludingThis() const;
 
   static const JSClass* classForTypeDef(const wasm::TypeDef* typeDef);
   static js::gc::AllocKind allocKindForTypeDef(const wasm::TypeDef* typeDef);
