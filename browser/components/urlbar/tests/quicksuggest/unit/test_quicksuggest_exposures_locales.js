@@ -182,7 +182,7 @@ async function doLocaleTest({
         
         
         info("Reinitializing Suggest");
-        await QuickSuggest._test_reinit();
+        await QuickSuggest._test_reset();
         info("Done reinitializing Suggest");
 
         
@@ -231,7 +231,7 @@ async function doLocaleTest({
 
   
   
-  await QuickSuggest._test_reinit();
+  await QuickSuggest._test_reset();
 }
 
 function assertSuggestPrefs(expectedEnabled) {

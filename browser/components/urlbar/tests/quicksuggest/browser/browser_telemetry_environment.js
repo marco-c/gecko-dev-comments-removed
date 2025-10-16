@@ -55,7 +55,8 @@ function doToggleTest(pref) {
 
 
 add_task(async function telemetryEnvironmentOnStartup() {
-  await QuickSuggest._test_reinit();
+  await TelemetryEnvironment.onInitialized();
+  await QuickSuggest._test_reset();
 
   
   
@@ -108,7 +109,8 @@ add_task(async function telemetryEnvironmentOnStartup() {
 
   
   
-  await QuickSuggest._test_reinit({
+  await TelemetryEnvironment.onInitialized();
+  await QuickSuggest._test_reset({
     defaultPrefs: Object.fromEntries(
       Object.entries(defaultValues).map(([p, value]) => [p, !value])
     ),
@@ -135,7 +137,8 @@ add_task(async function telemetryEnvironmentOnStartup() {
   environmentInitPromise =
     TelemetryEnvironment.testCleanRestart().onInitialized();
 
-  await QuickSuggest._test_reinit();
+  await TelemetryEnvironment.onInitialized();
+  await QuickSuggest._test_reset();
 
   await environmentInitPromise;
 
