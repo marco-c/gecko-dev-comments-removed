@@ -22,15 +22,14 @@ namespace detail {
 
 
 
-template <typename Value, bool IsPtr = std::is_pointer<Value>::value>
-struct EmptyChecker {
-  static bool IsNotEmpty(const Value&) { return true; }
-};
-
 template <typename Value>
-struct EmptyChecker<Value, true> {
-  static bool IsNotEmpty(const Value& aVal) { return aVal != nullptr; }
-};
+constexpr bool IsNotEmpty(const Value& aVal) {
+  if constexpr (!std::is_pointer_v<Value>) {
+    return true;
+  } else {
+    return aVal != nullptr;
+  }
+}
 
 }  
 
@@ -145,10 +144,8 @@ class MruCache {
   
   
   Entry Lookup(const KeyType& aKey) {
-    using EmptyChecker = detail::EmptyChecker<ValueType>;
-
     auto entry = RawEntry(aKey);
-    bool match = EmptyChecker::IsNotEmpty(*entry) && Cache::Match(aKey, *entry);
+    bool match = detail::IsNotEmpty(*entry) && Cache::Match(aKey, *entry);
     return Entry(entry, match);
   }
 
