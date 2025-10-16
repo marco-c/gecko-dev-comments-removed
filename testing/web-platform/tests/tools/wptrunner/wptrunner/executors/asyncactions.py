@@ -177,13 +177,13 @@ class BidiEmulationSetGeolocationOverrideAction:
                 "Params `error` and `coordinates` are mutually exclusive")
 
         
-        
-        
-        error = payload['error'] if 'error' in payload else None
-        
-        
-        coordinates = payload['coordinates'] if 'coordinates' in payload else (
-            None if error is None else webdriver.bidi.undefined.UNDEFINED)
+        error = payload['error'] if 'error' in payload else webdriver.bidi.undefined.UNDEFINED
+        coordinates = webdriver.bidi.undefined.UNDEFINED
+        if 'coordinates' in payload:
+            coordinates = payload['coordinates']
+        elif error is webdriver.bidi.undefined.UNDEFINED:
+            
+            coordinates = None
 
         if "contexts" not in payload:
             raise ValueError("Missing required parameter: contexts")
