@@ -1738,14 +1738,7 @@ void nsWindow::LogPopupHierarchy() {
 #endif
 
 nsWindow* nsWindow::GetTopmostWindow() {
-  if (nsView* view = nsView::GetViewFor(this)) {
-    if (nsView* parentView = view->GetParent()) {
-      if (nsIWidget* parentWidget = parentView->GetNearestWidget(nullptr)) {
-        return static_cast<nsWindow*>(parentWidget);
-      }
-    }
-  }
-  return nullptr;
+  return static_cast<nsWindow*>(GetTopLevelWidget());
 }
 
 
