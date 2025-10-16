@@ -225,17 +225,6 @@ void GPUProcessManager::ResetProcessStable() {
 }
 
 bool GPUProcessManager::IsProcessStable(const TimeStamp& aNow) {
-#ifdef MOZ_WIDGET_ANDROID
-  
-  
-  
-  
-  
-  if (!mAppInForeground) {
-    return true;
-  }
-#endif
-
   if (mTotalProcessAttempts > 0) {
     auto delta = (int32_t)(aNow - mProcessAttemptLastTime).ToMilliseconds();
     if (delta < StaticPrefs::layers_gpu_process_stable_min_uptime_ms()) {
@@ -739,7 +728,7 @@ bool GPUProcessManager::DisableWebRenderConfig(wr::WebRenderError aError,
   
   
   
-  if (IsProcessStable(TimeStamp::Now())) {
+  if (IsProcessStable(TimeStamp::Now()) || (kIsAndroid && !mAppInForeground)) {
     if (mProcess) {
       mProcess->KillProcess( false);
     } else {
@@ -948,6 +937,13 @@ void GPUProcessManager::OnProcessUnexpectedShutdown(GPUProcessHost* aHost) {
   
   if (IsProcessStable(TimeStamp::Now())) {
     mProcessStableOnce = true;
+    mUnstableProcessAttempts = 0;
+  } else if (kIsAndroid && !mAppInForeground) {
+    
+    
+    
+    
+    
     mUnstableProcessAttempts = 0;
   } else {
     mUnstableProcessAttempts++;
