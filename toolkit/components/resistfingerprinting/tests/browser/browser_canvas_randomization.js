@@ -417,7 +417,9 @@ function runExtractCanvasData(test, tab) {
 
 async function runTest(enabled) {
   
-  let RFPOverrides = enabled ? "+CanvasRandomization" : "-CanvasRandomization";
+  let RFPOverrides = enabled
+    ? "+CanvasRandomization,-EfficientCanvasRandomization"
+    : "-CanvasRandomization,-EfficientCanvasRandomization";
   await SpecialPowers.pushPrefEnv({
     set: [
       ["privacy.fingerprintingProtection", true],
