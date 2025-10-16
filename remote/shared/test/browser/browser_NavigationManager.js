@@ -2,11 +2,8 @@
 
 
 
-const { NavigationManager } = ChromeUtils.importESModule(
-  "chrome://remote/content/shared/NavigationManager.sys.mjs"
-);
-const { TabManager } = ChromeUtils.importESModule(
-  "chrome://remote/content/shared/TabManager.sys.mjs"
+const { NavigableManager } = ChromeUtils.importESModule(
+  "chrome://remote/content/shared/NavigableManager.sys.mjs"
 );
 
 const FIRST_URL = "https://example.com/document-builder.sjs?html=first";
@@ -26,11 +23,10 @@ add_task(async function test_simpleNavigation() {
   navigationManager.on("navigation-started", onEvent);
   navigationManager.on("navigation-stopped", onEvent);
 
-  const tab = addTab(gBrowser, FIRST_URL);
+  const tab = await addTabAndWaitForNavigated(gBrowser, FIRST_URL);
   const browser = tab.linkedBrowser;
-  await BrowserTestUtils.browserLoaded(browser);
 
-  const navigableId = TabManager.getIdForBrowser(browser);
+  const navigableId = NavigableManager.getIdForBrowser(browser);
 
   navigationManager.startMonitoring();
   is(
@@ -101,12 +97,12 @@ add_task(async function test_loadTwoTabsSimultaneously() {
   info("Add two tabs simultaneously");
   const tab1 = addTab(gBrowser, FIRST_URL);
   const browser1 = tab1.linkedBrowser;
-  const navigableId1 = TabManager.getIdForBrowser(browser1);
+  const navigableId1 = NavigableManager.getIdForBrowser(browser1);
   const onLoad1 = BrowserTestUtils.browserLoaded(browser1, false, FIRST_URL);
 
   const tab2 = addTab(gBrowser, SECOND_URL);
   const browser2 = tab2.linkedBrowser;
-  const navigableId2 = TabManager.getIdForBrowser(browser2);
+  const navigableId2 = NavigableManager.getIdForBrowser(browser2);
   const onLoad2 = BrowserTestUtils.browserLoaded(browser2, false, SECOND_URL);
 
   info("Wait for the tabs to load");
@@ -183,7 +179,7 @@ add_task(async function test_loadPageWithIframes() {
   for (const context of contexts) {
     const navigation =
       navigationManager.getNavigationForBrowsingContext(context);
-    const navigable = TabManager.getIdForBrowsingContext(context);
+    const navigable = NavigableManager.getIdForBrowsingContext(context);
 
     const url = context.currentWindowGlobal.documentURI.spec;
     assertNavigation(navigation, url);
@@ -201,7 +197,7 @@ add_task(async function test_loadPageWithIframes() {
   for (const context of newContexts) {
     const navigation =
       navigationManager.getNavigationForBrowsingContext(context);
-    const navigable = TabManager.getIdForBrowsingContext(context);
+    const navigable = NavigableManager.getIdForBrowsingContext(context);
 
     const url = context.currentWindowGlobal.documentURI.spec;
     assertNavigation(navigation, url);
@@ -216,9 +212,8 @@ add_task(async function test_loadPageWithIframes() {
 });
 
 add_task(async function test_loadPageWithCoop() {
-  const tab = addTab(gBrowser, FIRST_COOP_URL);
+  const tab = await addTabAndWaitForNavigated(gBrowser, FIRST_COOP_URL);
   const browser = tab.linkedBrowser;
-  await BrowserTestUtils.browserLoaded(browser, false, FIRST_COOP_URL);
 
   const events = [];
   const onEvent = (name, data) => events.push({ name, data });
@@ -229,7 +224,7 @@ add_task(async function test_loadPageWithCoop() {
 
   navigationManager.startMonitoring();
 
-  const navigableId = TabManager.getIdForBrowser(browser);
+  const navigableId = NavigableManager.getIdForBrowser(browser);
   await loadURL(browser, SECOND_COOP_URL);
   await BrowserTestUtils.waitForCondition(() => events.length === 2);
 
@@ -262,12 +257,11 @@ add_task(async function test_sameDocumentNavigation() {
   navigationManager.on("same-document-changed", onEvent);
 
   const url = "https://example.com/document-builder.sjs?html=test";
-  const tab = addTab(gBrowser, url);
+  const tab = await addTabAndWaitForNavigated(gBrowser, url);
   const browser = tab.linkedBrowser;
-  await BrowserTestUtils.browserLoaded(browser);
 
   navigationManager.startMonitoring();
-  const navigableId = TabManager.getIdForBrowser(browser);
+  const navigableId = NavigableManager.getIdForBrowser(browser);
 
   is(events.length, 0, "No event recorded");
 
@@ -358,9 +352,8 @@ add_task(async function test_startNavigationAndCloseTab() {
   navigationManager.on("navigation-started", onEvent);
   navigationManager.on("navigation-stopped", onEvent);
 
-  const tab = addTab(gBrowser, FIRST_URL);
+  const tab = await addTabAndWaitForNavigated(gBrowser, FIRST_URL);
   const browser = tab.linkedBrowser;
-  await BrowserTestUtils.browserLoaded(browser);
 
   navigationManager.startMonitoring();
   loadURL(browser, SECOND_URL);
