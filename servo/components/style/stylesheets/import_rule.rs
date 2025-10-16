@@ -19,16 +19,12 @@ use std::fmt::{self, Write};
 use style_traits::{CssStringWriter, CssWriter, ToCss};
 use to_shmem::{SharedMemoryBuilder, ToShmem};
 
+
 #[cfg(feature = "gecko")]
-type StyleSheet = crate::gecko::data::GeckoStyleSheet;
-#[cfg(feature = "servo")]
-type StyleSheet = ::servo_arc::Arc<crate::stylesheets::Stylesheet>;
-
-
 #[derive(Debug)]
 pub enum ImportSheet {
     
-    Sheet(StyleSheet),
+    Sheet(crate::gecko::data::GeckoStyleSheet),
 
     
     
@@ -38,9 +34,10 @@ pub enum ImportSheet {
     Refused,
 }
 
+#[cfg(feature = "gecko")]
 impl ImportSheet {
     
-    pub fn new(sheet: StyleSheet) -> Self {
+    pub fn new(sheet: crate::gecko::data::GeckoStyleSheet) -> Self {
         ImportSheet::Sheet(sheet)
     }
 
@@ -55,9 +52,9 @@ impl ImportSheet {
     }
 
     
-    pub fn as_sheet(&self) -> Option<&StyleSheet> {
+    
+    pub fn as_sheet(&self) -> Option<&crate::gecko::data::GeckoStyleSheet> {
         match *self {
-            #[cfg(feature = "gecko")]
             ImportSheet::Sheet(ref s) => {
                 debug_assert!(!s.hack_is_null());
                 if s.hack_is_null() {
@@ -65,8 +62,6 @@ impl ImportSheet {
                 }
                 Some(s)
             },
-            #[cfg(feature = "servo")]
-            ImportSheet::Sheet(ref s) => Some(s),
             ImportSheet::Refused | ImportSheet::Pending => None,
         }
     }
@@ -85,21 +80,75 @@ impl ImportSheet {
     }
 }
 
+#[cfg(feature = "gecko")]
+impl DeepCloneWithLock for ImportSheet {
+    fn deep_clone_with_lock(&self, _lock: &SharedRwLock, _guard: &SharedRwLockReadGuard) -> Self {
+        use crate::gecko::data::GeckoStyleSheet;
+        use crate::gecko_bindings::bindings;
+        match *self {
+            ImportSheet::Sheet(ref s) => {
+                let clone = unsafe { bindings::Gecko_StyleSheet_Clone(s.raw() as *const _) };
+                ImportSheet::Sheet(unsafe { GeckoStyleSheet::from_addrefed(clone) })
+            },
+            ImportSheet::Pending => ImportSheet::Pending,
+            ImportSheet::Refused => ImportSheet::Refused,
+        }
+    }
+}
+
+
+#[cfg(feature = "servo")]
+#[derive(Debug)]
+pub enum ImportSheet {
+    
+    Sheet(::servo_arc::Arc<crate::stylesheets::Stylesheet>),
+
+    
+    Refused,
+}
+
+#[cfg(feature = "servo")]
+impl ImportSheet {
+    
+    pub fn new(sheet: ::servo_arc::Arc<crate::stylesheets::Stylesheet>) -> Self {
+        ImportSheet::Sheet(sheet)
+    }
+
+    
+    pub fn new_refused() -> Self {
+        ImportSheet::Refused
+    }
+
+    
+    pub fn as_sheet(&self) -> Option<&::servo_arc::Arc<crate::stylesheets::Stylesheet>> {
+        match *self {
+            ImportSheet::Sheet(ref s) => Some(s),
+            ImportSheet::Refused => None,
+        }
+    }
+
+    
+    pub fn media<'a>(&'a self, guard: &'a SharedRwLockReadGuard) -> Option<&'a MediaList> {
+        self.as_sheet().and_then(|s| s.media(guard))
+    }
+
+    
+    pub fn rules<'a>(&'a self, guard: &'a SharedRwLockReadGuard) -> &'a [CssRule] {
+        match self.as_sheet() {
+            Some(s) => s.rules(guard),
+            None => &[],
+        }
+    }
+}
+
+#[cfg(feature = "servo")]
 impl DeepCloneWithLock for ImportSheet {
     fn deep_clone_with_lock(&self, _lock: &SharedRwLock, _guard: &SharedRwLockReadGuard) -> Self {
         match *self {
-            #[cfg(feature = "gecko")]
-            ImportSheet::Sheet(ref s) => {
-                use crate::gecko_bindings::bindings;
-                let clone = unsafe { bindings::Gecko_StyleSheet_Clone(s.raw() as *const _) };
-                ImportSheet::Sheet(unsafe { StyleSheet::from_addrefed(clone) })
-            },
-            #[cfg(feature = "servo")]
             ImportSheet::Sheet(ref s) => {
                 use servo_arc::Arc;
                 ImportSheet::Sheet(Arc::new((&**s).clone()))
             },
-            ImportSheet::Pending => ImportSheet::Pending,
             ImportSheet::Refused => ImportSheet::Refused,
         }
     }
