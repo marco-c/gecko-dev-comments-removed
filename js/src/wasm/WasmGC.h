@@ -46,17 +46,24 @@ using ExitStubMapVector = Vector<bool, 32, SystemAllocPolicy>;
 struct StackMapHeader {
   explicit StackMapHeader(uint32_t numMappedWords = 0)
       : numMappedWords(numMappedWords),
+#ifdef DEBUG
         numExitStubWords(0),
+#endif
         frameOffsetFromTop(0),
-        hasDebugFrameWithLiveRefs(0) {}
+        hasDebugFrameWithLiveRefs(0) {
+    MOZ_ASSERT(numMappedWords <= maxMappedWords);
+  }
 
   
-  static constexpr size_t MappedWordsBits = 30;
+  static constexpr size_t MappedWordsBits = 18;
+  static_assert(((1 << MappedWordsBits) - 1) * sizeof(void*) >= MaxFrameSize);
   uint32_t numMappedWords : MappedWordsBits;
 
   
   static constexpr size_t ExitStubWordsBits = 6;
+#ifdef DEBUG
   uint32_t numExitStubWords : ExitStubWordsBits;
+#endif
 
   
   
@@ -71,8 +78,11 @@ struct StackMapHeader {
   
   uint32_t hasDebugFrameWithLiveRefs : 1;
 
-  WASM_CHECK_CACHEABLE_POD(numMappedWords, numExitStubWords, frameOffsetFromTop,
-                           hasDebugFrameWithLiveRefs);
+  WASM_CHECK_CACHEABLE_POD(numMappedWords,
+#ifdef DEBUG
+                           numExitStubWords,
+#endif
+                           frameOffsetFromTop, hasDebugFrameWithLiveRefs);
 
   static constexpr uint32_t maxMappedWords = (1 << MappedWordsBits) - 1;
   static constexpr uint32_t maxExitStubWords = (1 << ExitStubWordsBits) - 1;
@@ -93,9 +103,11 @@ struct StackMapHeader {
 
 WASM_DECLARE_CACHEABLE_POD(StackMapHeader);
 
+#ifndef DEBUG
 
-static_assert(sizeof(StackMapHeader) == 8,
+static_assert(sizeof(StackMapHeader) == 4,
               "wasm::StackMapHeader has unexpected size");
+#endif
 
 
 
@@ -182,10 +194,12 @@ struct StackMap final {
   
   
   void setExitStubWords(uint32_t nWords) {
-    MOZ_ASSERT(header.numExitStubWords == 0);
     MOZ_RELEASE_ASSERT(nWords <= header.maxExitStubWords);
+#ifdef DEBUG
+    MOZ_ASSERT(header.numExitStubWords == 0);
     MOZ_ASSERT(nWords <= header.numMappedWords);
     header.numExitStubWords = nWords;
+#endif
   }
 
   
@@ -241,8 +255,10 @@ struct StackMap final {
   }
 };
 
+#ifndef DEBUG
 
-static_assert(sizeof(StackMap) == 12, "wasm::StackMap has unexpected size");
+static_assert(sizeof(StackMap) == 8, "wasm::StackMap has unexpected size");
+#endif
 
 
 using StackMapHashMap =
