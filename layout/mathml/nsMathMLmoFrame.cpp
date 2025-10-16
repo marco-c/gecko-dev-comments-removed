@@ -595,18 +595,6 @@ nsMathMLmoFrame::Stretch(DrawTarget* aDrawTarget,
 
   
   
-  const nscoord leading = [&fm] {
-    if (StaticPrefs::
-            mathml_top_bottom_spacing_for_stretchy_operators_disabled()) {
-      return 0;
-    }
-    nscoord em;
-    GetEmHeight(fm, em);
-    return NSToCoordRound(0.2f * (float)em);
-  }();
-
-  
-  
   
   bool useMathMLChar = UseMathMLChar();
 
@@ -798,9 +786,9 @@ nsMathMLmoFrame::Stretch(DrawTarget* aDrawTarget,
   }
   if (isAccent && firstChild) {
     
-    nscoord dy = aDesiredStretchSize.BlockStartAscent() -
-                 (mBoundingMetrics.ascent + leading);
-    aDesiredStretchSize.SetBlockStartAscent(mBoundingMetrics.ascent + leading);
+    nscoord dy =
+        aDesiredStretchSize.BlockStartAscent() - (mBoundingMetrics.ascent);
+    aDesiredStretchSize.SetBlockStartAscent(mBoundingMetrics.ascent);
     aDesiredStretchSize.Height() =
         aDesiredStretchSize.BlockStartAscent() + mBoundingMetrics.descent;
 
@@ -809,10 +797,9 @@ nsMathMLmoFrame::Stretch(DrawTarget* aDrawTarget,
     nscoord ascent = fm->MaxAscent();
     nscoord descent = fm->MaxDescent();
     aDesiredStretchSize.SetBlockStartAscent(
-        std::max(mBoundingMetrics.ascent + leading, ascent));
-    aDesiredStretchSize.Height() =
-        aDesiredStretchSize.BlockStartAscent() +
-        std::max(mBoundingMetrics.descent + leading, descent);
+        std::max(mBoundingMetrics.ascent, ascent));
+    aDesiredStretchSize.Height() = aDesiredStretchSize.BlockStartAscent() +
+                                   std::max(mBoundingMetrics.descent, descent);
   }
   aDesiredStretchSize.Width() = mBoundingMetrics.width;
   aDesiredStretchSize.mBoundingMetrics = mBoundingMetrics;
