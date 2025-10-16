@@ -117,26 +117,7 @@ class LoadedScript : public nsIMemoryReporter {
 
   
   
-  enum class DataType : uint8_t {
-    
-    eUnknown,
-
-    
-    
-    
-    
-    eTextSource,
-
-    
-    
-    
-    eBytecode,
-
-    
-    
-    
-    eCachedStencil
-  };
+  enum class DataType : uint8_t { eUnknown, eTextSource, eBytecode, eStencil };
 
   
   
@@ -151,7 +132,7 @@ class LoadedScript : public nsIMemoryReporter {
   bool IsTextSource() const { return mDataType == DataType::eTextSource; }
   bool IsSource() const { return IsTextSource(); }
   bool IsBytecode() const { return mDataType == DataType::eBytecode; }
-  bool IsCachedStencil() const { return mDataType == DataType::eCachedStencil; }
+  bool IsStencil() const { return mDataType == DataType::eStencil; }
 
   void SetUnknownDataType() {
     mDataType = DataType::eUnknown;
@@ -169,10 +150,10 @@ class LoadedScript : public nsIMemoryReporter {
     mDataType = DataType::eBytecode;
   }
 
-  void ConvertToCachedStencil() {
-    MOZ_ASSERT(HasStencil());
+  void SetStencil(already_AddRefed<Stencil> aStencil) {
     SetUnknownDataType();
-    mDataType = DataType::eCachedStencil;
+    mDataType = DataType::eStencil;
+    mStencil = aStencil;
   }
 
   bool IsUTF16Text() const {
@@ -223,7 +204,7 @@ class LoadedScript : public nsIMemoryReporter {
   }
 
   bool CanHaveBytecode() const {
-    return IsBytecode() || IsSource() || IsCachedStencil();
+    return IsBytecode() || IsSource() || IsStencil();
   }
 
   TranscodeBuffer& SRIAndBytecode() {
@@ -231,11 +212,11 @@ class LoadedScript : public nsIMemoryReporter {
     
     
     MOZ_ASSERT(CanHaveBytecode());
-    return mSRIAndBytecode;
+    return mScriptBytecode;
   }
   TranscodeRange Bytecode() const {
     MOZ_ASSERT(IsBytecode());
-    const auto& bytecode = mSRIAndBytecode;
+    const auto& bytecode = mScriptBytecode;
     auto offset = mBytecodeOffset;
     return TranscodeRange(bytecode.begin() + offset,
                           bytecode.length() - offset);
@@ -252,36 +233,17 @@ class LoadedScript : public nsIMemoryReporter {
 
   void DropBytecode() {
     MOZ_ASSERT(CanHaveBytecode());
-    mSRIAndBytecode.clearAndFree();
+    mScriptBytecode.clearAndFree();
   }
-
-  bool HasStencil() const { return mStencil; }
 
   Stencil* GetStencil() const {
-    MOZ_ASSERT(!IsUnknownDataType());
-    MOZ_ASSERT(HasStencil());
+    MOZ_ASSERT(IsStencil());
     return mStencil;
   }
-
-  void SetStencil(Stencil* aStencil) {
-    MOZ_ASSERT(aStencil);
-    MOZ_ASSERT(!HasStencil());
-    mStencil = aStencil;
-  }
-
-  void ClearStencil() { mStencil = nullptr; }
-
-  
-  
-  bool HasDiskCacheReference() const { return !!mCacheInfo; }
-
-  
-  void DropDiskCacheReference() { mCacheInfo = nullptr; }
 
  public:
   
 
-  
   
   DataType mDataType;
 
@@ -319,20 +281,15 @@ class LoadedScript : public nsIMemoryReporter {
   
   
   
-  
-  
-  
-  TranscodeBuffer mSRIAndBytecode;
+  TranscodeBuffer mScriptBytecode;
 
-  
   RefPtr<Stencil> mStencil;
 
   
-  
-  
-  
-  
   nsCOMPtr<nsICacheInfoChannel> mCacheInfo;
+
+  
+  JS::TranscodeBuffer mSRI;
 };
 
 
@@ -365,7 +322,7 @@ class LoadedScriptDelegate {
   bool IsTextSource() const { return GetLoadedScript()->IsTextSource(); }
   bool IsSource() const { return GetLoadedScript()->IsSource(); }
   bool IsBytecode() const { return GetLoadedScript()->IsBytecode(); }
-  bool IsCachedStencil() const { return GetLoadedScript()->IsCachedStencil(); }
+  bool IsStencil() const { return GetLoadedScript()->IsStencil(); }
 
   void SetUnknownDataType() { GetLoadedScript()->SetUnknownDataType(); }
 
@@ -375,7 +332,9 @@ class LoadedScriptDelegate {
 
   void SetBytecode() { GetLoadedScript()->SetBytecode(); }
 
-  void ConvertToCachedStencil() { GetLoadedScript()->ConvertToCachedStencil(); }
+  void SetStencil(already_AddRefed<Stencil> aStencil) {
+    GetLoadedScript()->SetStencil(std::move(aStencil));
+  }
 
   bool IsUTF16Text() const { return GetLoadedScript()->IsUTF16Text(); }
   bool IsUTF8Text() const { return GetLoadedScript()->IsUTF8Text(); }
@@ -426,12 +385,7 @@ class LoadedScriptDelegate {
 
   void DropBytecode() { GetLoadedScript()->DropBytecode(); }
 
-  bool HasStencil() const { return GetLoadedScript()->HasStencil(); }
   Stencil* GetStencil() const { return GetLoadedScript()->GetStencil(); }
-  void SetStencil(Stencil* aStencil) {
-    GetLoadedScript()->SetStencil(aStencil);
-  }
-  void ClearStencil() { GetLoadedScript()->ClearStencil(); }
 };
 
 class ClassicScript final : public LoadedScript {
