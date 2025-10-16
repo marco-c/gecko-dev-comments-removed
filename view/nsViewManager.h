@@ -260,9 +260,7 @@ class nsViewManager final {
 
 
 
-
-
-  void GetLastUserEventTime(uint32_t& aTime);
+  static uint32_t GetLastUserEventTime() { return gLastUserEventTime; }
 
   
 
