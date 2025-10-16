@@ -533,10 +533,18 @@ bool IsEastAsianPunctuation(uint32_t u) {
   
   
   constexpr uint32_t kFullwidthTilde = 0xFF5E;
+  
+  
+  
+  
+  
+  
+  
+  constexpr uint32_t kIdeographicSpace = 0x3000;
   return intl::UnicodeProperties::IsEastAsianWidthFHW(u) &&
          ((intl::UnicodeProperties::IsPunctuation(u) &&
            u != kWonCurrencySign) ||
-          u == kFullwidthTilde);
+          u == kFullwidthTilde || u == kIdeographicSpace);
 }
 
 bool IsPunctuationForWordSelect(char16_t aCh) {
