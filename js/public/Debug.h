@@ -280,7 +280,7 @@ struct ValueSummary {
 struct ObjectSummary {
   
   
-  static const uint8_t GETTER_SETTER_MAGIC = 0x0f;
+  static const uint8_t GETTER_SETTER_MAGIC = 0xf0;
 
   enum class Kind : uint8_t {
     NotImplemented,
