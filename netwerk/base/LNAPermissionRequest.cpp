@@ -13,6 +13,8 @@
 #include "mozilla/glean/NetwerkMetrics.h"
 
 #include "mozilla/dom/WindowGlobalParent.h"
+#include "nsIIOService.h"
+#include "nsIOService.h"
 
 namespace mozilla::net {
 
@@ -105,6 +107,18 @@ nsresult LNAPermissionRequest::RequestPermission() {
   
   if (!CheckPermissionDelegate()) {
     return Cancel();
+  }
+
+  
+  if (mPrincipal && gIOService) {
+    nsAutoCString origin;
+    nsresult rv = mPrincipal->GetAsciiHost(origin);
+    if (NS_SUCCEEDED(rv) && !origin.IsEmpty()) {
+      if (gIOService->ShouldSkipDomainForLNA(origin)) {
+        
+        return Allow(JS::UndefinedHandleValue);
+      }
+    }
   }
 
   PromptResult pr = CheckPromptPrefs();
