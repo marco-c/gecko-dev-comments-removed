@@ -389,6 +389,7 @@ where
             parent_style,
             layout_parent_style,
             FirstLineReparenting::No,
+             Default::default(),
             Some(&self.context.thread_local.rule_cache),
             &mut conditions,
         );
