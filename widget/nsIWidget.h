@@ -15,7 +15,6 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/Compiler.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
@@ -48,7 +47,7 @@
 
 
 
-#if MOZ_IS_GCC
+#ifdef MOZ_IS_GCC
 #  include "mozilla/layers/NativeLayer.h"
 #endif
 
