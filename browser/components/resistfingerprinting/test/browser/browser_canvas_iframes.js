@@ -69,22 +69,6 @@ let expectedResults = {};
 var UNMODIFIED_CANVAS_DATA = undefined;
 
 add_setup(async function () {
-  registerCleanupFunction(async function () {
-    Services.prefs.clearUserPref(
-      "privacy.trackingprotection.allow_list.hasUserInteractedWithETPSettings"
-    );
-  });
-
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      [
-        "privacy.fingerprintingProtection.overrides",
-        "-EfficientCanvasRandomization,+CanvasRandomization",
-      ],
-    ],
-  });
-
   
   await SpecialPowers.pushPrefEnv({
     set: [
