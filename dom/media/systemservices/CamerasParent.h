@@ -212,8 +212,8 @@ class CamerasParent final : public PCamerasParent {
   
   int DeliverFrameOverIPC(CaptureEngine aCapEngine, int aCaptureId,
                           const Span<const int>& aStreamId,
-                          const TrackingId& aTrackingId, ShmemBuffer aBuffer,
-                          unsigned char* aAltBuffer,
+                          const TrackingId& aTrackingId,
+                          Variant<ShmemBuffer, webrtc::VideoFrame>&& aBuffer,
                           const VideoFrameProperties& aProps);
 
   CamerasParent();
