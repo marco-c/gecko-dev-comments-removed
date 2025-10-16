@@ -41,6 +41,7 @@
 #include "mozilla/dom/JSWindowActorBinding.h"
 #include "mozilla/dom/JSWindowActorParent.h"
 #include "mozilla/dom/MediaController.h"
+#include "mozilla/dom/Navigation.h"
 #include "mozilla/dom/NavigatorLogin.h"
 #include "mozilla/dom/PBackgroundSessionStorageCache.h"
 #include "mozilla/dom/UseCounterMetrics.h"
@@ -833,9 +834,17 @@ class CheckPermitUnloadRequest final : public PromiseNativeHandler,
     
     
     if (aInfo) {
+      MOZ_DIAGNOSTIC_ASSERT(Navigation::IsAPIEnabled());
       ContentParent* cp = mWGP->GetContentParent();
       mPendingRequests++;
-      cp->SendDispatchBeforeUnloadToSubtree(bc, aInfo, resolve, reject);
+      
+      
+      if (mAction ==
+          nsIDocumentViewer::PermitUnloadAction::eDontPromptAndUnload) {
+        cp->SendDispatchNavigateToTraversable(bc, aInfo, resolve, reject);
+      } else {
+        cp->SendDispatchBeforeUnloadToSubtree(bc, aInfo, resolve, reject);
+      }
     } else {
       bc->PreOrderWalk([&](dom::BrowsingContext* aBC) {
         if (WindowGlobalParent* wgp =

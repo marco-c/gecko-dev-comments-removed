@@ -1465,43 +1465,40 @@ static bool MaybeCheckUnloadingIsCanceled(
     return false;
   }
 
-  
-  auto found =
-      std::find_if(aLoadResults.begin(), aLoadResults.end(),
-                   [traversable = RefPtr{aTraversable}](const auto& result) {
-                     return result.mBrowsingContext->Id() == traversable->Id();
-                   });
-  
-  bool needsBeforeUnload = found != aLoadResults.end();
-
-  
-  
-  
-  RefPtr<nsDocShellLoadState> loadState =
-      needsBeforeUnload ? found->mLoadState : nullptr;
-  RefPtr<CanonicalBrowsingContext> browsingContext = aTraversable->Canonical();
-  MOZ_DIAGNOSTIC_ASSERT(!needsBeforeUnload ||
-                        found->mBrowsingContext == browsingContext);
-
-  nsCOMPtr<SessionHistoryEntry> currentEntry =
-      browsingContext->GetActiveSessionHistoryEntry();
-  
-  
-  nsCOMPtr<SessionHistoryEntry> targetEntry =
-      loadState ? do_QueryInterface(loadState->SHEntry()) : currentEntry;
-
-  
-  if (!currentEntry || currentEntry->GetID() == targetEntry->GetID()) {
-    return false;
-  }
+  RefPtr<CanonicalBrowsingContext> traversable = aTraversable->Canonical();
 
   RefPtr<WindowGlobalParent> windowGlobalParent =
-      browsingContext->GetCurrentWindowGlobal();
+      traversable->GetCurrentWindowGlobal();
   
   
   
   if (!windowGlobalParent || (!windowGlobalParent->NeedsBeforeUnload() &&
                               !windowGlobalParent->GetNeedsTraverse())) {
+    return false;
+  }
+
+  
+  auto found =
+      std::find_if(aLoadResults.begin(), aLoadResults.end(),
+                   [traversable](const auto& result) {
+                     return result.mBrowsingContext->Id() == traversable->Id();
+                   });
+
+  
+  if (found == aLoadResults.end()) {
+    return false;
+  }
+
+  
+  nsCOMPtr<SessionHistoryEntry> targetEntry =
+      do_QueryInterface(found->mLoadState->SHEntry());
+
+  nsCOMPtr<SessionHistoryEntry> currentEntry =
+      traversable->GetActiveSessionHistoryEntry();
+
+  
+  if (!currentEntry || !targetEntry ||
+      currentEntry->GetID() == targetEntry->GetID()) {
     return false;
   }
 
@@ -1520,6 +1517,17 @@ static bool MaybeCheckUnloadingIsCanceled(
 
   
   
+  
+  
+  
+  
+  
+  bool needsBeforeUnload =
+      windowGlobalParent->NeedsBeforeUnload() &&
+      currentEntry->SharedInfo() != targetEntry->SharedInfo();
+
+  
+  
 
   
   
@@ -1528,7 +1536,7 @@ static bool MaybeCheckUnloadingIsCanceled(
   
   
   nsIDocumentViewer::PermitUnloadAction action =
-      windowGlobalParent->NeedsBeforeUnload()
+      needsBeforeUnload
           ? nsIDocumentViewer::PermitUnloadAction::ePrompt
           : nsIDocumentViewer::PermitUnloadAction::eDontPromptAndUnload;
   windowGlobalParent->PermitUnloadTraversable(
@@ -1536,8 +1544,18 @@ static bool MaybeCheckUnloadingIsCanceled(
       [action, loadResults = CopyableTArray(std::move(aLoadResults)),
        windowGlobalParent,
        aResolver](nsIDocumentViewer::PermitUnloadResult aResult) mutable {
-        if (aResult != nsIDocumentViewer::eContinue) {
+        if (aResult != nsIDocumentViewer::PermitUnloadResult::eContinue) {
           aResolver(loadResults, aResult);
+          return;
+        }
+
+        
+        
+        
+        if (action ==
+            nsIDocumentViewer::PermitUnloadAction::eDontPromptAndUnload) {
+          aResolver(loadResults,
+                    nsIDocumentViewer::PermitUnloadResult::eContinue);
           return;
         }
 
