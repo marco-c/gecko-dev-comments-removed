@@ -5,6 +5,7 @@
 
 #include "base/message_loop.h"
 
+#include "js/Initialization.h"
 #include "nsBaseAppShell.h"
 #include "nsExceptionHandler.h"
 #include "nsJSUtils.h"
@@ -97,7 +98,10 @@ void nsBaseAppShell::NativeEventCallback() {
 }
 
 void nsBaseAppShell::OnSystemTimezoneChange() {
-  nsJSUtils::ResetTimeZone();
+  
+  if (JS_IsInitialized()) {
+    nsJSUtils::ResetTimeZone();
+  }
 
   nsCOMPtr<nsIObserverService> obsSvc = mozilla::services::GetObserverService();
   if (obsSvc) {
