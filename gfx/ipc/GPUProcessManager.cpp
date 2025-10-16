@@ -1687,12 +1687,25 @@ void GPUProcessManager::RemoveListener(GPUProcessListener* aListener) {
 }
 
 bool GPUProcessManager::NotifyGpuObservers(const char* aTopic) {
-  if (NS_FAILED(EnsureGPUReady())) {
-    return false;
+  if (mGPUChild) {
+    nsCString topic(aTopic);
+    mGPUChild->SendNotifyGpuObservers(topic);
+    return true;
   }
-  nsCString topic(aTopic);
-  mGPUChild->SendNotifyGpuObservers(topic);
-  return true;
+
+  if (!gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {
+    nsCOMPtr<nsIObserverService> obsSvc =
+        mozilla::services::GetObserverService();
+    MOZ_ASSERT(obsSvc);
+    if (obsSvc) {
+      obsSvc->NotifyObservers(nullptr, aTopic, nullptr);
+    }
+    return true;
+  }
+
+  
+  
+  return false;
 }
 
 class GPUMemoryReporter : public MemoryReportingProcess {

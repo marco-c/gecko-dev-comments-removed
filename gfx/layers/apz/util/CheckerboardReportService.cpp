@@ -201,15 +201,19 @@ void CheckerboardReportService::SetRecordingEnabled(bool aEnabled) {
 
 void CheckerboardReportService::FlushActiveReports() {
   MOZ_ASSERT(XRE_IsParentProcess());
-  gfx::GPUProcessManager* gpu = gfx::GPUProcessManager::Get();
-  if (gpu && gpu->NotifyGpuObservers("APZ:FlushActiveCheckerboard")) {
+  gfx::GPUProcessManager* gpm = gfx::GPUProcessManager::Get();
+  if (gpm && gpm->NotifyGpuObservers("APZ:FlushActiveCheckerboard")) {
     return;
   }
 
+  
+  
+  
   nsCOMPtr<nsIObserverService> obsSvc = mozilla::services::GetObserverService();
   MOZ_ASSERT(obsSvc);
   if (obsSvc) {
-    obsSvc->NotifyObservers(nullptr, "APZ:FlushActiveCheckerboard", nullptr);
+    obsSvc->NotifyObservers(nullptr, "APZ:FlushActiveCheckerboard:Done",
+                            nullptr);
   }
 }
 
