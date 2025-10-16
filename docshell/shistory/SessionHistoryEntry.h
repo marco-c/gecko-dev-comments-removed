@@ -198,6 +198,7 @@ class SessionHistoryInfo {
   
   nsID mNavigationKey = nsID::GenerateUUID();
   nsID mNavigationId = nsID::GenerateUUID();
+  RefPtr<nsStructuredCloneContainer> mNavigationState;
 
   bool mLoadReplace = false;
   bool mURIWasModified = false;
