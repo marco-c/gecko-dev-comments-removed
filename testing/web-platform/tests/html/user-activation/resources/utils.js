@@ -32,6 +32,9 @@ async function consumeTransientActivation() {
   }
 }
 
+
+
+
 function receiveMessage(type) {
   return new Promise((resolve) => {
     window.addEventListener("message", function listener(event) {
