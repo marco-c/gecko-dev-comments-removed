@@ -1188,47 +1188,31 @@ void ReflowInput::ApplyRelativePositioning(
   *aPosition = LogicalPoint(aWritingMode, pos, aContainerSize - frameSize);
 }
 
-nsIFrame* ReflowInput::GetHypotheticalBoxContainer(nsIFrame* aFrame,
-                                                   nscoord& aCBIStartEdge,
-                                                   LogicalSize& aCBSize) const {
-  aFrame = aFrame->GetContainingBlock();
-  NS_ASSERTION(aFrame != mFrame, "How did that happen?");
+ReflowInput::HypotheticalBoxContainerInfo
+ReflowInput::GetHypotheticalBoxContainer(const nsIFrame* aFrame) const {
+  nsIFrame* cb = aFrame->GetContainingBlock();
+  NS_ASSERTION(cb != mFrame, "How did that happen?");
 
   
-
-  
-
-  const ReflowInput* reflowInput;
-  if (aFrame->HasAnyStateBits(NS_FRAME_IN_REFLOW)) {
-    for (reflowInput = mParentReflowInput;
-         reflowInput && reflowInput->mFrame != aFrame;
-         reflowInput = reflowInput->mParentReflowInput) {
-      
+  const ReflowInput* ri = nullptr;
+  if (cb->HasAnyStateBits(NS_FRAME_IN_REFLOW)) {
+    ri = mParentReflowInput;
+    while (ri && ri->mFrame != cb) {
+      ri = ri->mParentReflowInput;
     }
-  } else {
-    reflowInput = nullptr;
   }
 
-  if (reflowInput) {
-    WritingMode wm = reflowInput->GetWritingMode();
-    NS_ASSERTION(wm == aFrame->GetWritingMode(), "unexpected writing mode");
-    aCBIStartEdge = reflowInput->ComputedLogicalBorderPadding(wm).IStart(wm);
-    aCBSize = reflowInput->ComputedSize(wm);
-  } else {
-    
-
-
-    NS_ASSERTION(!aFrame->HasAnyStateBits(NS_FRAME_IN_REFLOW),
-                 "aFrame shouldn't be in reflow; we'll lie if it is");
-    WritingMode wm = aFrame->GetWritingMode();
-    
-    
-    const auto& bp = aFrame->GetLogicalUsedBorderAndPadding(wm);
-    aCBIStartEdge = bp.IStart(wm);
-    aCBSize = aFrame->GetLogicalSize(wm) - bp.Size(wm);
+  const WritingMode wm = cb->GetWritingMode();
+  if (ri) {
+    return {cb, ri->ComputedLogicalBorderPadding(wm), ri->ComputedSize(wm)};
   }
 
-  return aFrame;
+  
+  
+  
+  NS_ASSERTION(!cb->HasAnyStateBits(NS_FRAME_IN_REFLOW),
+               "cb shouldn't be in reflow; we'll lie if it is");
+  return {cb, cb->GetLogicalUsedBorderAndPadding(wm), cb->ContentSize(wm)};
 }
 
 struct nsHypotheticalPosition {
@@ -1364,22 +1348,15 @@ void ReflowInput::CalculateHypotheticalPosition(
   NS_ASSERTION(mStyleDisplay->mOriginalDisplay != StyleDisplay::None,
                "mOriginalDisplay has not been properly initialized");
 
-  
-  
-  nscoord blockIStartContentEdge;
-  
-  
   WritingMode cbwm = aCBReflowInput->GetWritingMode();
-  LogicalSize blockContentSize(cbwm);
-  nsIFrame* containingBlock = GetHypotheticalBoxContainer(
-      aPlaceholderFrame, blockIStartContentEdge, blockContentSize);
-  
-
-  
-  
-  
+  const auto [containingBlock, blockContainerBP, blockContentSize] =
+      GetHypotheticalBoxContainer(aPlaceholderFrame);
   WritingMode wm = containingBlock->GetWritingMode();
+  const nscoord blockIStartContentEdge = blockContainerBP.IStart(wm);
 
+  
+  
+  
   const auto anchorResolutionParams = AnchorPosResolutionParams::From(this);
   const auto styleISize = mStylePosition->ISize(wm, anchorResolutionParams);
   bool isAutoISize = styleISize->IsAuto();

@@ -860,13 +860,17 @@ struct ReflowInput : public SizeComputationInput {
       nsPresContext* aPresContext, const ReflowInput* aContainingBlockRI) const;
 
   
+  struct HypotheticalBoxContainerInfo {
+    nsIFrame* mBoxContainer;
+    LogicalMargin mBorderPadding;
+    LogicalSize mContentBoxSize;
+  };
+
   
   
   
-  
-  nsIFrame* GetHypotheticalBoxContainer(nsIFrame* aFrame,
-                                        nscoord& aCBIStartEdge,
-                                        LogicalSize& aCBSize) const;
+  HypotheticalBoxContainerInfo GetHypotheticalBoxContainer(
+      const nsIFrame* aFrame) const;
 
   
   
