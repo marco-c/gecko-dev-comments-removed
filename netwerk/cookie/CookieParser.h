@@ -72,8 +72,8 @@ class CookieParser final {
 
   
   bool GetExpiry(CookieStruct& aCookieData, const nsACString& aExpires,
-                 const nsACString& aMaxage, int64_t aCurrentTime,
-                 const nsACString& aDateHeader, bool aFromHttp);
+                 const nsACString& aMaxage, const nsACString& aDateHeader,
+                 bool aFromHttp);
 
   static bool CheckAttributeSize(const nsACString& currentValue,
                                  const char* aAttribute,

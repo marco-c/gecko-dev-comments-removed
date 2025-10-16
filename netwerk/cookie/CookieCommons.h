@@ -185,7 +185,7 @@ class CookieCommons final {
 
   
   
-  static int64_t GetCurrentTimeFromChannel(nsIChannel* aChannel);
+  static int64_t GetCurrentTimeInUSecFromChannel(nsIChannel* aChannel);
 };
 
 }  
