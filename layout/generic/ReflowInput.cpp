@@ -1353,6 +1353,7 @@ static bool BlockPolarityFlipped(WritingMode aThisWm, WritingMode aOtherWm) {
 
 void ReflowInput::CalculateHypotheticalPosition(
     nsPlaceholderFrame* aPlaceholderFrame, const ReflowInput* aCBReflowInput,
+    const LogicalSize& aCBPaddingBoxSize,
     nsHypotheticalPosition& aHypotheticalPos) const {
   NS_ASSERTION(mStyleDisplay->mOriginalDisplay != StyleDisplay::None,
                "mOriginalDisplay has not been properly initialized");
@@ -1547,6 +1548,7 @@ void ReflowInput::CalculateHypotheticalPosition(
   
   const nsIFrame* cbFrame = aCBReflowInput->mFrame;
   nsPoint cbOffset = blockContainer->GetOffsetToIgnoringScrolling(cbFrame);
+  nsSize cbSize;
   if (cbFrame->IsViewportFrame()) {
     
     
@@ -1563,9 +1565,14 @@ void ReflowInput::CalculateHypotheticalPosition(
       const nsMargin scrollbarSizes = sf->GetActualScrollbarSizes();
       cbOffset.MoveBy(-scrollbarSizes.left, -scrollbarSizes.top);
     }
+
+    
+    
+    cbSize = aCBPaddingBoxSize.GetPhysicalSize(cbwm);
+  } else {
+    cbSize = aCBReflowInput->ComputedSizeAsContainerIfConstrained();
   }
 
-  nsSize cbSize = aCBReflowInput->ComputedSizeAsContainerIfConstrained();
   LogicalPoint logCBOffs(wm, cbOffset, cbSize - blockContainerSize);
   aHypotheticalPos.mIStart += logCBOffs.I(wm);
   aHypotheticalPos.mBStart += logCBOffs.B(wm);
@@ -1736,7 +1743,7 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
       }
     } else {
       
-      CalculateHypotheticalPosition(placeholderFrame, aCBReflowInput,
+      CalculateHypotheticalPosition(placeholderFrame, aCBReflowInput, aCBSize,
                                     hypotheticalPos);
       if (aCBReflowInput->mFrame->IsGridContainerFrame()) {
         

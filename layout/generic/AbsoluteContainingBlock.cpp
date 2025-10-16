@@ -1036,30 +1036,10 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
                                border.ConvertTo(wm, outerWM).BStart(wm)
                          : NS_UNCONSTRAINEDSIZE;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    Maybe<ReflowInput> parentReflowInput;
-    if (const ViewportFrame* viewport = do_QueryFrame(aDelegatingFrame)) {
-      parentReflowInput.emplace(aReflowInput);
-      
-      
-      Unused << viewport->AdjustReflowInputForScrollbars(
-          parentReflowInput.ref());
-    }
-    ReflowInput kidReflowInput(
-        aPresContext, parentReflowInput.refOr(aReflowInput), aKidFrame,
-        LogicalSize(wm, availISize, availBSize), Some(logicalCBSize), initFlags,
-        {}, {}, aAnchorPosReferenceData);
+    ReflowInput kidReflowInput(aPresContext, aReflowInput, aKidFrame,
+                               LogicalSize(wm, availISize, availBSize),
+                               Some(logicalCBSize), initFlags, {}, {},
+                               aAnchorPosReferenceData);
 
     if (nscoord kidAvailBSize = kidReflowInput.AvailableBSize();
         kidAvailBSize != NS_UNCONSTRAINEDSIZE) {

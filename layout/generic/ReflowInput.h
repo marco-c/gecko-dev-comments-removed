@@ -883,10 +883,9 @@ struct ReflowInput : public SizeComputationInput {
   
   
   
-  
-  
   void CalculateHypotheticalPosition(
       nsPlaceholderFrame* aPlaceholderFrame, const ReflowInput* aCBReflowInput,
+      const LogicalSize& aCBPaddingBoxSize,
       nsHypotheticalPosition& aHypotheticalPos) const;
 
   void InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
