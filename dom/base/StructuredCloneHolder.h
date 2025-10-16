@@ -174,6 +174,7 @@ struct VideoFrameSerializedData;
 struct AudioDataSerializedData;
 #ifdef MOZ_WEBRTC
 struct RTCEncodedVideoFrameData;
+struct RTCEncodedAudioFrameData;
 #endif
 
 class StructuredCloneHolder : public StructuredCloneHolderBase {
@@ -233,6 +234,7 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
   STMT(mEncodedVideoChunks);               \
   STMT(mEncodedAudioChunks);               \
   IF_WEBRTC(STMT(mRtcEncodedVideoFrames);) \
+  IF_WEBRTC(STMT(mRtcEncodedAudioFrames);) \
   STMT(mPortIdentifiers);
 
   
@@ -315,6 +317,10 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
 #ifdef MOZ_WEBRTC
   nsTArray<RTCEncodedVideoFrameData>& RtcEncodedVideoFrames() {
     return mRtcEncodedVideoFrames;
+  }
+
+  nsTArray<RTCEncodedAudioFrameData>& RtcEncodedAudioFrames() {
+    return mRtcEncodedAudioFrames;
   }
 #endif
 
@@ -435,6 +441,9 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
 #ifdef MOZ_WEBRTC
   
   nsTArray<RTCEncodedVideoFrameData> mRtcEncodedVideoFrames;
+
+  
+  nsTArray<RTCEncodedAudioFrameData> mRtcEncodedAudioFrames;
 #endif
 
   
