@@ -374,7 +374,6 @@ void gfxWindowsPlatform::InitAcceleration() {
   DeviceManagerDx::Init();
 
   InitializeConfig();
-  InitGPUProcessSupport();
   
   
   
@@ -501,7 +500,6 @@ bool gfxWindowsPlatform::HandleDeviceReset() {
   InitializeConfig();
   
   if (mInitializedDevices) {
-    InitGPUProcessSupport();
     InitializeDevices();
   }
   UpdateANGLEConfig();
@@ -1669,26 +1667,6 @@ void gfxWindowsPlatform::InitializeD2D() {
 
   MOZ_ASSERT(d2d1.IsEnabled());
   d2d1_1.SetSuccessful();
-}
-
-void gfxWindowsPlatform::InitGPUProcessSupport() {
-  FeatureState& gpuProc = gfxConfig::GetFeature(Feature::GPU_PROCESS);
-
-  if (!gpuProc.IsEnabled()) {
-    return;
-  }
-
-  if (!gfxConfig::IsEnabled(Feature::D3D11_COMPOSITING)) {
-    
-    
-    if (StaticPrefs::layers_gpu_process_allow_software_AtStartup()) {
-      return;
-    }
-    gpuProc.Disable(FeatureStatus::Unavailable,
-                    "Not using GPU Process since D3D11 is unavailable",
-                    "FEATURE_FAILURE_NO_D3D11"_ns);
-  }
-  
 }
 
 class D3DVsyncSource final : public VsyncSource {
