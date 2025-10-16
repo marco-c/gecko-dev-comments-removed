@@ -89,22 +89,27 @@ class PageloadEventData {
   
   mozilla::Maybe<nsCString> mDomain;
 
+  
+  static uint32_t sPageLoadEventCounter;
+
  public:
   
   FOR_EACH_PAGELOAD_METRIC(DEFINE_SETTER)
 
   bool MaybeSetPublicRegistrableDomain(nsCOMPtr<nsIURI> aURI,
                                        nsIChannel* aChannel);
-  bool HasDomain() { return mDomain.isSome() && !mDomain.value().IsEmpty(); }
+  bool HasDomain() const {
+    return mDomain.isSome() && !mDomain.value().IsEmpty();
+  }
 
-  bool HasLoadTime() { return loadTime.isSome(); }
+  bool HasLoadTime() const { return loadTime.isSome(); }
 
   
   void SetUserFeature(UserFeature aFeature);
   void SetDocumentFeature(DocumentFeature aFeature);
 
-  mozilla::glean::perf::PageLoadExtra ToPageLoadExtra() const;
-  mozilla::glean::perf::PageLoadDomainExtra ToPageLoadDomainExtra() const;
+  void SendAsPageLoadEvent();
+  void SendAsPageLoadDomainEvent();
 };
 #undef DEFINE_METRIC
 #undef DEFINE_SETTER

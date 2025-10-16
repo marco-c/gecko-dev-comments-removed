@@ -431,9 +431,6 @@ uint32_t ContentParent::sMaxContentProcesses = 0;
 
 LogModule* ContentParent::GetLog() { return gProcessLog; }
 
-
-uint32_t ContentParent::sPageLoadEventCounter = 0;
-
 #define NS_IPC_IOSERVICE_SET_OFFLINE_TOPIC "ipc:network:set-offline"
 #define NS_IPC_IOSERVICE_SET_CONNECTIVITY_TOPIC "ipc:network:set-connectivity"
 
@@ -6340,34 +6337,9 @@ mozilla::ipc::IPCResult ContentParent::RecvRecordPageLoadEvent(
   
   
   if (aPageloadEventData.HasDomain()) {
-    
-    mozilla::glean::perf::PageLoadDomainExtra extra =
-        aPageloadEventData.ToPageLoadDomainExtra();
-    mozilla::glean::perf::page_load_domain.Record(mozilla::Some(extra));
-
-    
-    
-    NS_SUCCEEDED(NS_DispatchToMainThreadQueue(
-        NS_NewRunnableFunction(
-            "PageloadBaseDomainPingIdleTask",
-            [] {
-              mozilla::glean_pings::PageloadBaseDomain.Submit("pageload"_ns);
-            }),
-        EventQueuePriority::Idle));
+    aPageloadEventData.SendAsPageLoadDomainEvent();
   } else {
-    mozilla::glean::perf::PageLoadExtra extra =
-        aPageloadEventData.ToPageLoadExtra();
-    mozilla::glean::perf::page_load.Record(mozilla::Some(extra));
-
-    
-    if (++sPageLoadEventCounter >= 10) {
-      NS_SUCCEEDED(NS_DispatchToMainThreadQueue(
-          NS_NewRunnableFunction(
-              "PageLoadPingIdleTask",
-              [] { mozilla::glean_pings::Pageload.Submit("threshold"_ns); }),
-          EventQueuePriority::Idle));
-      sPageLoadEventCounter = 0;
-    }
+    aPageloadEventData.SendAsPageLoadEvent();
   }
   return IPC_OK();
 }

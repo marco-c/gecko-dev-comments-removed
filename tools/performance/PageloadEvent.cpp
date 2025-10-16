@@ -10,18 +10,23 @@
 #include "mozilla/RandomNum.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/glean/DomMetrics.h"
+#include "mozilla/glean/GleanPings.h"
 
 #include "nsIChannel.h"
 #include "nsIEffectiveTLDService.h"
 #include "nsITransportSecurityInfo.h"
 #include "nsIURI.h"
 #include "nsIX509Cert.h"
+#include "nsThreadUtils.h"
 
 #include "ScopedNSSTypes.h"
 #include "cert.h"
 #include "portreg.h"
 
 namespace mozilla::performance::pageload_event {
+
+
+uint32_t PageloadEventData::sPageLoadEventCounter = 0;
 
 
 
@@ -253,13 +258,24 @@ bool PageloadEventData::MaybeSetPublicRegistrableDomain(nsCOMPtr<nsIURI> aURI,
   return true;
 }
 
-mozilla::glean::perf::PageLoadExtra PageloadEventData::ToPageLoadExtra() const {
-  mozilla::glean::perf::PageLoadExtra out;
+void PageloadEventData::SendAsPageLoadEvent() {
+  mozilla::glean::perf::PageLoadExtra extra;
 
-#define COPY_METRIC(name, type) out.name = this->name;
+#define COPY_METRIC(name, type) extra.name = this->name;
   FOR_EACH_PAGELOAD_METRIC(COPY_METRIC)
 #undef COPY_METRIC
-  return out;
+
+  mozilla::glean::perf::page_load.Record(mozilla::Some(extra));
+
+  
+  if (++sPageLoadEventCounter >= 10) {
+    NS_SUCCEEDED(NS_DispatchToMainThreadQueue(
+        NS_NewRunnableFunction(
+            "PageLoadPingIdleTask",
+            [] { mozilla::glean_pings::Pageload.Submit("threshold"_ns); }),
+        EventQueuePriority::Idle));
+    sPageLoadEventCounter = 0;
+  }
 }
 
 static mozilla::Maybe<uint32_t> AddMultiplicativeNoise(
@@ -281,19 +297,31 @@ static mozilla::Maybe<uint32_t> AddMultiplicativeNoise(
   return mozilla::Some(output);
 }
 
-mozilla::glean::perf::PageLoadDomainExtra
-PageloadEventData::ToPageLoadDomainExtra() const {
-  mozilla::glean::perf::PageLoadDomainExtra out;
-  out.domain = this->mDomain;
-  out.httpVer = this->httpVer;
-  out.sameOriginNav = this->sameOriginNav;
-  out.documentFeatures = this->documentFeatures;
-  out.loadType = this->loadType;
+void PageloadEventData::SendAsPageLoadDomainEvent() {
+  MOZ_ASSERT(HasDomain());
+
+  mozilla::glean::perf::PageLoadDomainExtra extra;
+  extra.domain = this->mDomain;
+  extra.httpVer = this->httpVer;
+  extra.sameOriginNav = this->sameOriginNav;
+  extra.documentFeatures = this->documentFeatures;
+  extra.loadType = this->loadType;
 
   
-  out.lcpTime = AddMultiplicativeNoise(this->lcpTime);
+  extra.lcpTime = AddMultiplicativeNoise(this->lcpTime);
 
-  return out;
+  
+  mozilla::glean::perf::page_load_domain.Record(mozilla::Some(extra));
+
+  
+  
+  NS_SUCCEEDED(NS_DispatchToMainThreadQueue(
+      NS_NewRunnableFunction("PageloadBaseDomainPingIdleTask",
+                             [] {
+                               mozilla::glean_pings::PageloadBaseDomain.Submit(
+                                   "pageload"_ns);
+                             }),
+      EventQueuePriority::Idle));
 }
 
 }  
