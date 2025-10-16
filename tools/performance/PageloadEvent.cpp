@@ -310,6 +310,12 @@ void PageloadEventData::SendAsPageLoadDomainEvent() {
   
   extra.lcpTime = AddMultiplicativeNoise(this->lcpTime);
 
+#ifdef NIGHTLY_BUILD
+  extra.channel = mozilla::Some("nightly"_ns);
+#else
+  extra.channel = mozilla::Some("release"_ns);
+#endif
+
   
   mozilla::glean::perf::page_load_domain.Record(mozilla::Some(extra));
 
