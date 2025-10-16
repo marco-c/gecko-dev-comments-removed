@@ -191,7 +191,7 @@ static bool IsAsciiAlpha(const JSLinearString* str) {
   return IsAsciiAlpha<char16_t>(str->twoByteRange(nogc));
 }
 
-JS::Result<JSString*> js::intl::ParseStandaloneISO639LanguageTag(
+JS::Result<JSLinearString*> js::intl::ParseStandaloneISO639LanguageTag(
     JSContext* cx, Handle<JSLinearString*> str) {
   
   size_t length = str->length();
@@ -229,7 +229,7 @@ JS::Result<JSString*> js::intl::ParseStandaloneISO639LanguageTag(
   }
 
   
-  JSString* result;
+  JSLinearString* result;
   if (mozilla::intl::Locale::LanguageMapping(languageTag) || !isLowerCase) {
     result = NewStringCopy<CanGC>(cx, languageTag.Span());
   } else {

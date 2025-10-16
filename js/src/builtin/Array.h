@@ -115,6 +115,13 @@ extern bool GetElements(JSContext* cx, HandleObject aobj, uint32_t length,
 
 
 
+
+
+extern bool HasAndGetElement(JSContext* cx, HandleObject obj, uint64_t index,
+                             bool* hole, MutableHandleValue vp);
+
+
+
 extern bool array_includes(JSContext* cx, unsigned argc, js::Value* vp);
 extern bool array_indexOf(JSContext* cx, unsigned argc, js::Value* vp);
 extern bool array_lastIndexOf(JSContext* cx, unsigned argc, js::Value* vp);

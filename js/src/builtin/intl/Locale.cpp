@@ -20,6 +20,7 @@
 #include <string.h>
 #include <utility>
 
+#include "builtin/Array.h"
 #include "builtin/Boolean.h"
 #include "builtin/intl/CommonFunctions.h"
 #include "builtin/intl/FormatBuffer.h"
@@ -1396,6 +1397,70 @@ const ClassSpec LocaleObject::classSpec_ = {
     ClassSpec::DontDefineConstructor,
 };
 
+static JSLinearString* ValidateAndCanonicalizeLanguageTag(
+    JSContext* cx, Handle<JSLinearString*> string) {
+  
+  
+  
+  
+  
+  JSLinearString* language;
+  JS_TRY_VAR_OR_RETURN_NULL(cx, language,
+                            intl::ParseStandaloneISO639LanguageTag(cx, string));
+  if (language) {
+    return language;
+  }
+
+  mozilla::intl::Locale tag;
+  if (!intl::ParseLocale(cx, string, tag)) {
+    return nullptr;
+  }
+
+  auto result = tag.Canonicalize();
+  if (result.isErr()) {
+    if (result.unwrapErr() ==
+        mozilla::intl::Locale::CanonicalizationError::DuplicateVariant) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_DUPLICATE_VARIANT_SUBTAG);
+    } else {
+      intl::ReportInternalError(cx);
+    }
+    return nullptr;
+  }
+
+  intl::FormatBuffer<char, intl::INITIAL_CHAR_BUFFER_SIZE> buffer(cx);
+  if (auto result = tag.ToString(buffer); result.isErr()) {
+    intl::ReportInternalError(cx, result.unwrapErr());
+    return nullptr;
+  }
+
+  return buffer.toAsciiString(cx);
+}
+
+static JSLinearString* ValidateAndCanonicalizeLanguageTag(
+    JSContext* cx, Handle<Value> tagValue) {
+  if (tagValue.isObject()) {
+    JSString* tagStr;
+    JS_TRY_VAR_OR_RETURN_NULL(
+        cx, tagStr,
+        LanguageTagFromMaybeWrappedLocale(cx, &tagValue.toObject()));
+    if (tagStr) {
+      return tagStr->ensureLinear(cx);
+    }
+  }
+
+  JSString* tagStr = ToString(cx, tagValue);
+  if (!tagStr) {
+    return nullptr;
+  }
+
+  Rooted<JSLinearString*> tagLinearStr(cx, tagStr->ensureLinear(cx));
+  if (!tagLinearStr) {
+    return nullptr;
+  }
+  return ValidateAndCanonicalizeLanguageTag(cx, tagLinearStr);
+}
+
 bool js::intl_ValidateAndCanonicalizeLanguageTag(JSContext* cx, unsigned argc,
                                                  Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -1420,57 +1485,10 @@ bool js::intl_ValidateAndCanonicalizeLanguageTag(JSContext* cx, unsigned argc,
     return true;
   }
 
-  JSString* tagStr = ToString(cx, tagValue);
-  if (!tagStr) {
-    return false;
-  }
-
-  Rooted<JSLinearString*> tagLinearStr(cx, tagStr->ensureLinear(cx));
-  if (!tagLinearStr) {
-    return false;
-  }
-
-  
-  
-  
-  
-  
-  JSString* language;
-  JS_TRY_VAR_OR_RETURN_FALSE(
-      cx, language, intl::ParseStandaloneISO639LanguageTag(cx, tagLinearStr));
-  if (language) {
-    args.rval().setString(language);
-    return true;
-  }
-
-  mozilla::intl::Locale tag;
-  if (!intl::ParseLocale(cx, tagLinearStr, tag)) {
-    return false;
-  }
-
-  auto result = tag.Canonicalize();
-  if (result.isErr()) {
-    if (result.unwrapErr() ==
-        mozilla::intl::Locale::CanonicalizationError::DuplicateVariant) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_DUPLICATE_VARIANT_SUBTAG);
-    } else {
-      intl::ReportInternalError(cx);
-    }
-    return false;
-  }
-
-  intl::FormatBuffer<char, intl::INITIAL_CHAR_BUFFER_SIZE> buffer(cx);
-  if (auto result = tag.ToString(buffer); result.isErr()) {
-    intl::ReportInternalError(cx, result.unwrapErr());
-    return false;
-  }
-
-  JSString* resultStr = buffer.toAsciiString(cx);
+  auto* resultStr = ValidateAndCanonicalizeLanguageTag(cx, tagValue);
   if (!resultStr) {
     return false;
   }
-
   args.rval().setString(resultStr);
   return true;
 }
@@ -1615,5 +1633,99 @@ bool js::intl_ValidateAndCanonicalizeUnicodeExtensionType(JSContext* cx,
   }
 
   args.rval().setString(result);
+  return true;
+}
+
+
+
+
+
+
+bool js::intl::CanonicalizeLocaleList(JSContext* cx, Handle<Value> locales,
+                                      MutableHandle<LocalesList> result) {
+  MOZ_ASSERT(result.empty());
+
+  
+  if (locales.isUndefined()) {
+    return true;
+  }
+
+  
+  if (locales.isString()) {
+    Rooted<JSLinearString*> linear(cx, locales.toString()->ensureLinear(cx));
+    if (!linear) {
+      return false;
+    }
+
+    auto* languageTag = ValidateAndCanonicalizeLanguageTag(cx, linear);
+    if (!languageTag) {
+      return false;
+    }
+    return result.append(languageTag);
+  }
+
+  if (locales.isObject()) {
+    JSString* languageTag;
+    JS_TRY_VAR_OR_RETURN_FALSE(
+        cx, languageTag,
+        LanguageTagFromMaybeWrappedLocale(cx, &locales.toObject()));
+    if (languageTag) {
+      auto* linear = languageTag->ensureLinear(cx);
+      if (!linear) {
+        return false;
+      }
+      return result.append(linear);
+    }
+  }
+
+  
+
+  
+  Rooted<JSObject*> obj(cx, ToObject(cx, locales));
+  if (!obj) {
+    return false;
+  }
+
+  
+  uint64_t length;
+  if (!GetLengthProperty(cx, obj, &length)) {
+    return false;
+  }
+
+  
+  Rooted<Value> value(cx);
+  for (uint64_t k = 0; k < length; k++) {
+    
+    bool hole;
+    if (!CheckForInterrupt(cx) ||
+        !HasAndGetElement(cx, obj, k, &hole, &value)) {
+      return false;
+    }
+
+    if (!hole) {
+      
+      if (!value.isString() && !value.isObject()) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                  JSMSG_INVALID_LOCALES_ELEMENT);
+        return false;
+      }
+
+      
+      JSLinearString* tag = ValidateAndCanonicalizeLanguageTag(cx, value);
+      if (!tag) {
+        return false;
+      }
+
+      
+      bool addToResult =
+          std::none_of(result.begin(), result.end(),
+                       [tag](auto* other) { return EqualStrings(tag, other); });
+      if (addToResult && !result.append(tag)) {
+        return false;
+      }
+    }
+  }
+
+  
   return true;
 }
