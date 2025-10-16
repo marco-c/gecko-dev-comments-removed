@@ -113,9 +113,13 @@ class ServoWebDriverBrowser(WebDriverBrowser):
         if headless:
             args += ["--headless"]
 
+        
+        args += ["--prefs-file", self.find_wpt_prefs(logger)]
+
         super().__init__(logger, binary=binary, webdriver_binary=binary,
                          webdriver_args=args, host=webdriver_host, env=env,
                          supports_pac=False, **kwargs)
+
         self.hosts_path = hosts_path
 
     def make_command(self):
@@ -124,3 +128,17 @@ class ServoWebDriverBrowser(WebDriverBrowser):
     def cleanup(self):
         super().cleanup()
         os.remove(self.hosts_path)
+
+    def find_wpt_prefs(self, logger):
+        default_path = os.path.join("resources", "wpt-prefs.json")
+        
+        
+        
+        
+        
+        for dir in [".", "./_venv3/servo"]:
+            candidate = os.path.abspath(os.path.join(dir, default_path))
+            if os.path.isfile(candidate):
+                return candidate
+        logger.error("Unable to find wpt-prefs.json")
+        return default_path
