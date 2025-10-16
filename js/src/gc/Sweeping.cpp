@@ -615,6 +615,31 @@ IncrementalProgress GCRuntime::markWeakReferences(
   auto leaveOnExit =
       mozilla::MakeScopeExit([&] { marker().leaveWeakMarkingMode(); });
 
+  
+  
+  
+  
+  
+  double progressBeforeEnterWMM = budget.progress();
+  auto checkSlowEnter = mozilla::MakeScopeExit([&] {
+    
+    if (budget.progress() - progressBeforeEnterWMM > 0.8) {
+      
+      
+      
+      
+      finishMarkingDuringSweeping = true;
+    }
+  });
+
+  
+  
+  
+  if (!budget.isUnlimited() && finishMarkingDuringSweeping) {
+    JS_LOG(gc, Info, "enterWeakMarkingMode finishing marking in next slice");
+    budget.keepGoing = true;
+  }
+
   if (marker().enterWeakMarkingMode()) {
     
     
@@ -659,6 +684,7 @@ IncrementalProgress GCRuntime::markWeakReferences(
   }
 
   assertNoMarkingWork();
+  checkSlowEnter.release();  
 
   return Finished;
 }
@@ -1283,6 +1309,9 @@ IncrementalProgress GCRuntime::endMarkingSweepGroup(JS::GCContext* gcx,
   
   safeToYield = false;
 
+  
+  budget.keepGoing = false;
+
   MaybeCheckWeakMapMarking(this);
 
   return Finished;
@@ -1609,6 +1638,7 @@ IncrementalProgress GCRuntime::beginSweepingSweepGroup(JS::GCContext* gcx,
   using namespace gcstats;
 
   AutoSCC scc(stats(), sweepGroupIndex);
+  finishMarkingDuringSweeping = false;
 
   bool sweepingAtoms = false;
   for (SweepGroupZonesIter zone(this); !zone.done(); zone.next()) {
