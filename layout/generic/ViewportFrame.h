@@ -72,13 +72,6 @@ class ViewportFrame : public nsContainerFrame {
 
 
 
-
-  nsRect AdjustReflowInputAsContainingBlock(ReflowInput& aReflowInput) const;
-
-  
-
-
-
   nsRect GetContainingBlockAdjustedForScrollbars(
       const ReflowInput& aReflowInput) const;
 
@@ -100,15 +93,6 @@ class ViewportFrame : public nsContainerFrame {
 #ifdef DEBUG_FRAME_DUMP
   virtual nsresult GetFrameName(nsAString& aResult) const override;
 #endif
-
-  
-
-
-
-
-
-
-  nsPoint AdjustReflowInputForScrollbars(ReflowInput& aReflowInput) const;
 
  protected:
   ViewportFrame(ComputedStyle* aStyle, nsPresContext* aPresContext, ClassID aID)
