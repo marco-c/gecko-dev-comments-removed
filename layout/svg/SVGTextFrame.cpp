@@ -3613,6 +3613,7 @@ void SVGTextFrame::SelectSubString(nsIContent* aContent, uint32_t charnum,
 
   RefPtr<nsIContent> content;
 
+  
   {
     
     
