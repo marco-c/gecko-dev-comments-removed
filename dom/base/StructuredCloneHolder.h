@@ -172,6 +172,9 @@ class MessagePort;
 class MessagePortIdentifier;
 struct VideoFrameSerializedData;
 struct AudioDataSerializedData;
+#ifdef MOZ_WEBRTC
+struct RTCEncodedVideoFrameData;
+#endif
 
 class StructuredCloneHolder : public StructuredCloneHolderBase {
  public:
@@ -211,18 +214,25 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
             JS::MutableHandle<JS::Value> aValue,
             const JS::CloneDataPolicy& aCloneDataPolicy, ErrorResult& aRv);
 
-  
-  
-  
-#define CLONED_DATA_MEMBERS  \
-  STMT(mBlobImplArray);      \
-  STMT(mWasmModuleArray);    \
-  STMT(mInputStreamArray);   \
-  STMT(mClonedSurfaces);     \
-  STMT(mVideoFrames);        \
-  STMT(mAudioData);          \
-  STMT(mEncodedVideoChunks); \
-  STMT(mEncodedAudioChunks); \
+#ifdef MOZ_WEBRTC
+#  define IF_WEBRTC(x) x
+#else
+#  define IF_WEBRTC(x)
+#endif
+
+
+
+
+#define CLONED_DATA_MEMBERS                \
+  STMT(mBlobImplArray);                    \
+  STMT(mWasmModuleArray);                  \
+  STMT(mInputStreamArray);                 \
+  STMT(mClonedSurfaces);                   \
+  STMT(mVideoFrames);                      \
+  STMT(mAudioData);                        \
+  STMT(mEncodedVideoChunks);               \
+  STMT(mEncodedAudioChunks);               \
+  IF_WEBRTC(STMT(mRtcEncodedVideoFrames);) \
   STMT(mPortIdentifiers);
 
   
@@ -301,6 +311,12 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
   nsTArray<EncodedAudioChunkData>& EncodedAudioChunks() {
     return mEncodedAudioChunks;
   }
+
+#ifdef MOZ_WEBRTC
+  nsTArray<RTCEncodedVideoFrameData>& RtcEncodedVideoFrames() {
+    return mRtcEncodedVideoFrames;
+  }
+#endif
 
   
   
@@ -415,6 +431,11 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
 
   
   nsTArray<EncodedAudioChunkData> mEncodedAudioChunks;
+
+#ifdef MOZ_WEBRTC
+  
+  nsTArray<RTCEncodedVideoFrameData> mRtcEncodedVideoFrames;
+#endif
 
   
   nsIGlobalObject* MOZ_NON_OWNING_REF mGlobal;

@@ -14,11 +14,16 @@
 
 namespace mozilla::dom {
 
+struct RTCEncodedAudioFrameData : RTCEncodedFrameState {
+  RTCEncodedAudioFrameMetadata mMetadata;
+};
 
 
 
 
-class RTCEncodedAudioFrame final : public RTCEncodedFrameBase {
+
+class RTCEncodedAudioFrame final : public RTCEncodedAudioFrameData,
+                                   public RTCEncodedFrameBase {
  public:
   explicit RTCEncodedAudioFrame(
       nsIGlobalObject* aGlobal,
@@ -42,10 +47,23 @@ class RTCEncodedAudioFrame final : public RTCEncodedFrameBase {
 
   bool IsVideo() const override { return false; }
 
+  
+  static already_AddRefed<RTCEncodedAudioFrame> ReadStructuredClone(
+      JSContext* aCx, nsIGlobalObject* aGlobal,
+      JSStructuredCloneReader* aReader);
+  bool WriteStructuredClone(JSContext* aCx,
+                            JSStructuredCloneWriter* aWriter) const;
+
  private:
   virtual ~RTCEncodedAudioFrame();
+
+  
+  RTCEncodedAudioFrame(const RTCEncodedAudioFrame&) = delete;
+  RTCEncodedAudioFrame& operator=(const RTCEncodedAudioFrame&) = delete;
+  RTCEncodedAudioFrame(RTCEncodedAudioFrame&&) = delete;
+  RTCEncodedAudioFrame& operator=(RTCEncodedAudioFrame&&) = delete;
+
   RefPtr<RTCRtpScriptTransformer> mOwner;
-  RTCEncodedAudioFrameMetadata mMetadata;
 };
 
 }  
