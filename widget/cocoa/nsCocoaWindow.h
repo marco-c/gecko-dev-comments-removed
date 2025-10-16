@@ -562,8 +562,6 @@ class nsCocoaWindow final : public nsBaseWidget {
   RefPtr<mozilla::layers::NativeLayerRootCA> mNativeLayerRoot;
   RefPtr<mozilla::layers::NativeLayerRootRemoteMacParent>
       mNativeLayerRootRemoteMacParent;
-  mozilla::ipc::Endpoint<mozilla::layers::PNativeLayerRemoteChild>
-      mChildEndpoint;
 
   
   
