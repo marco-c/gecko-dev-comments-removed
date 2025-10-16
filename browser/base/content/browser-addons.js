@@ -10,6 +10,7 @@ var { XPCOMUtils } = ChromeUtils.importESModule(
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
   AMBrowserExtensionsImport: "resource://gre/modules/AddonManager.sys.mjs",
   AbuseReporter: "resource://gre/modules/AbuseReporter.sys.mjs",
   ExtensionCommon: "resource://gre/modules/ExtensionCommon.sys.mjs",
@@ -2298,9 +2299,44 @@ var gUnifiedExtensions = {
     return policies.some(p => !p.privateBrowsingAllowed);
   },
 
-  async isAtLeastOneExtensionDisabled() {
+  
+
+
+
+
+
+
+
+
+
+  async isAtLeastOneExtensionWithPBMOptIn() {
     const addons = await AddonManager.getAddonsByTypes(["extension"]);
-    return addons.some(a => !a.hidden && !a.isActive);
+    return addons.some(addon => {
+      if (
+        
+        addon.hidden ||
+        
+        !(
+          addon.permissions &
+          lazy.AddonManager.PERM_CAN_CHANGE_PRIVATEBROWSING_ACCESS
+        )
+      ) {
+        return false;
+      }
+      const policy = WebExtensionPolicy.getByID(addon.id);
+      
+      return policy && !policy.privateBrowsingAllowed;
+    });
+  },
+
+  async getDisabledExtensionsInfo() {
+    let addons = await AddonManager.getAddonsByTypes(["extension"]);
+    addons = addons.filter(a => !a.hidden && !a.isActive);
+    const isAnyDisabled = !!addons.length;
+    const isAnyEnableable = addons.some(
+      a => a.permissions & lazy.AddonManager.PERM_CAN_ENABLE
+    );
+    return { isAnyDisabled, isAnyEnableable };
   },
 
   handleEvent(event) {
@@ -2394,17 +2430,29 @@ var gUnifiedExtensions = {
         "unified-extensions-empty-content-explain-enable"
       );
       emptyStateBox.hidden = false;
+      this.isAtLeastOneExtensionWithPBMOptIn().then(result => {
+        
+        
+        if (!result) {
+          document.l10n.setAttributes(
+            emptyStateBox.querySelector("description"),
+            "unified-extensions-empty-content-explain-manage"
+          );
+        }
+      });
     } else {
       emptyStateBox.hidden = true;
-      this.isAtLeastOneExtensionDisabled().then(result => {
-        if (result) {
+      this.getDisabledExtensionsInfo().then(disabledExtensionsInfo => {
+        if (disabledExtensionsInfo.isAnyDisabled) {
           document.l10n.setAttributes(
             emptyStateBox.querySelector("h2"),
             "unified-extensions-empty-reason-extension-not-enabled"
           );
           document.l10n.setAttributes(
             emptyStateBox.querySelector("description"),
-            "unified-extensions-empty-content-explain-enable"
+            disabledExtensionsInfo.isAnyEnableable
+              ? "unified-extensions-empty-content-explain-enable"
+              : "unified-extensions-empty-content-explain-manage"
           );
           emptyStateBox.hidden = false;
         } else if (!policies.length) {
@@ -2658,7 +2706,7 @@ var gUnifiedExtensions = {
           policies.length &&
           !this.hasExtensionsInPanel(policies) &&
           !this.isPrivateWindowMissingExtensionsWithoutPBMAccess() &&
-          !(await this.isAtLeastOneExtensionDisabled())
+          !(await this.getDisabledExtensionsInfo()).isAnyDisabled
         ) {
           
           

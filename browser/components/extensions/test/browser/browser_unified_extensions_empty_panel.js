@@ -36,14 +36,17 @@ add_setup(async function () {
   
   
   
-  function fakeHideExtension(extensionId) {
+  async function fakeHideExtension(extensionId) {
     const { extension } = WebExtensionPolicy.getByID(extensionId);
     
     
     sandbox.stub(extension, "isHidden").get(() => true);
+
+    const addon = await AddonManager.getAddonByID(extensionId);
+    sandbox.stub(addon.__AddonInternal__, "hidden").get(() => true);
   }
-  fakeHideExtension("mochikit@mozilla.org");
-  fakeHideExtension("special-powers@mozilla.org");
+  await fakeHideExtension("mochikit@mozilla.org");
+  await fakeHideExtension("special-powers@mozilla.org");
 });
 
 function getEmptyStateContainer(win) {
@@ -356,6 +359,36 @@ add_task(async function test_empty_state_is_hidden_when_panel_is_non_empty() {
 
 
 
+add_task(async function test_button_click_in_pbm_and_incognito_not_allowed() {
+  const extensions = createExtensions([
+    { name: "ext with incognito:not_allowed", incognito: "not_allowed" },
+  ]);
+  await Promise.all(extensions.map(extension => extension.startup()));
+  const win = await BrowserTestUtils.openNewBrowserWindow({ private: true });
+
+  
+  await openExtensionsPanel(win);
+
+  let emptyStateBox = getEmptyStateContainer(win);
+  ok(BrowserTestUtils.isVisible(emptyStateBox), "Empty state is visible");
+  is(
+    emptyStateBox.querySelector("h2").getAttribute("data-l10n-id"),
+    "unified-extensions-empty-reason-private-browsing-not-allowed",
+    "Has header 'You have extensions installed, but not enabled in private windows'"
+  );
+  is(
+    emptyStateBox.querySelector("description").getAttribute("data-l10n-id"),
+    "unified-extensions-empty-content-explain-manage",
+    "Has description pointing to Manage extensions button with text MANAGE, not ENABLE"
+  );
+
+  await BrowserTestUtils.closeWindow(win);
+
+  await Promise.all(extensions.map(extension => extension.unload()));
+});
+
+
+
 add_task(async function test_button_click_in_pbm_pinned_and_no_access() {
   const extensions = [
     ...createExtensions([{ name: "Without private access" }]),
@@ -475,7 +508,9 @@ add_task(async function test_no_empty_state_with_disabled_non_extension() {
 
 
 
-add_task(async function test_empty_state_with_blocklisted_addon() {
+
+
+async function do_test_empty_state_with_blocklisted_addon(isSoftBlock) {
   const addonId = "@extension-that-is-blocked";
   const addon = await promiseInstallWebExtension({
     manifest: {
@@ -487,7 +522,9 @@ add_task(async function test_empty_state_with_blocklisted_addon() {
   let promiseBlocklistAttentionUpdated = AddonTestUtils.promiseManagerEvent(
     "onBlocklistAttentionUpdated"
   );
-  const cleanupBlocklist = await loadBlocklistRawData({ blocked: [addon] });
+  const cleanupBlocklist = await loadBlocklistRawData({
+    [isSoftBlock ? "softblocked" : "blocked"]: [addon],
+  });
   info("Wait for onBlocklistAttentionUpdated manager listener call");
   await promiseBlocklistAttentionUpdated;
 
@@ -500,7 +537,9 @@ add_task(async function test_empty_state_with_blocklisted_addon() {
   Assert.deepEqual(
     window.document.l10n.getAttributes(messages[0]),
     {
-      id: "unified-extensions-mb-blocklist-error-single",
+      id: isSoftBlock
+        ? "unified-extensions-mb-blocklist-warning-single"
+        : "unified-extensions-mb-blocklist-error-single",
       args: {
         extensionName: "Name of the blocked ext",
         extensionsCount: 1,
@@ -516,11 +555,19 @@ add_task(async function test_empty_state_with_blocklisted_addon() {
     "unified-extensions-empty-reason-extension-not-enabled",
     "Has header 'You have extensions installed, but not enabled'"
   );
-  is(
-    emptyStateBox.querySelector("description").getAttribute("data-l10n-id"),
-    "unified-extensions-empty-content-explain-enable",
-    "Has description pointing to Manage extensions button."
-  );
+  if (isSoftBlock) {
+    is(
+      emptyStateBox.querySelector("description").getAttribute("data-l10n-id"),
+      "unified-extensions-empty-content-explain-enable",
+      "Has description pointing to Manage extensions button with text ENABLE"
+    );
+  } else {
+    is(
+      emptyStateBox.querySelector("description").getAttribute("data-l10n-id"),
+      "unified-extensions-empty-content-explain-manage",
+      "Has description pointing to Manage extensions button with text MANAGE, not ENABLE"
+    );
+  }
 
   await closeExtensionsPanel(window);
 
@@ -538,4 +585,12 @@ add_task(async function test_empty_state_with_blocklisted_addon() {
   await closeExtensionsPanel(window);
 
   await addon.uninstall();
+}
+
+add_task(async function test_empty_state_with_blocklisted_addon_hardblock() {
+  await do_test_empty_state_with_blocklisted_addon( false);
+});
+
+add_task(async function test_empty_state_with_blocklisted_addon_softblock() {
+  await do_test_empty_state_with_blocklisted_addon( true);
 });
