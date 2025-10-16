@@ -4,11 +4,9 @@
 "use strict";
 
 const REMOTE_SETTINGS_RECORDS = [
-  
   {
     type: "dynamic-suggestions",
     suggestion_type: "important_dates",
-    filter_expression: "env.country == 'US' && env.locale == 'en-US'",
     attachment: [
       {
         keywords: [["event", [" 1"]]],
@@ -39,50 +37,6 @@ const REMOTE_SETTINGS_RECORDS = [
       },
     ],
   },
-
-  
-  {
-    type: "dynamic-suggestions",
-    suggestion_type: "important_dates",
-    filter_expression: "env.country == 'DE' && env.locale == 'de'",
-    attachment: [
-      {
-        keywords: ["de de event"],
-        data: {
-          result: {
-            isImportantDate: true,
-            payload: {
-              dates: ["2026-01-01"],
-              name: "DE de Event",
-            },
-          },
-        },
-      },
-    ],
-  },
-
-  
-  {
-    type: "dynamic-suggestions",
-    suggestion_type: "important_dates",
-    filter_expression: "env.country == 'DE' && env.locale == 'en-US'",
-    attachment: [
-      {
-        keywords: ["de en-us event"],
-        data: {
-          result: {
-            isImportantDate: true,
-            payload: {
-              dates: ["2026-01-02"],
-              name: "DE en-US Event",
-            },
-          },
-        },
-      },
-    ],
-  },
-
-  
   {
     type: "dynamic-suggestions",
     suggestion_type: "other_suggestions",
@@ -130,15 +84,11 @@ let SystemDate;
 add_setup(async function () {
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
     remoteSettingsRecords: REMOTE_SETTINGS_RECORDS,
-    prefs: [["quicksuggest.dynamicSuggestionTypes", "other_suggestions"]],
+    prefs: [
+      ["importantDates.featureGate", true],
+      ["quicksuggest.dynamicSuggestionTypes", "other_suggestions"],
+    ],
   });
-
-  
-  await QuickSuggestTestUtils.setRegionAndLocale({
-    region: "US",
-    locale: "en-US",
-  });
-
   await Services.search.init();
 
   SystemDate = Cu.getGlobalForObject(QuickSuggestTestUtils).Date;
@@ -369,106 +319,6 @@ add_task(async function testTwoSuggestions() {
 
   UrlbarPrefs.clear("suggest.quicksuggest.nonsponsored");
   await QuickSuggestTestUtils.forceSync();
-});
-
-add_task(async function otherRegionsAndLocales() {
-  let tests = [
-    
-    {
-      region: "DE",
-      locale: "de",
-      matchingQuery: "de de event",
-      expectedResultData: {
-        date: "Donnerstag, 1. Januar 2026",
-        description: "DE de Event",
-      },
-      nonMatchingQueries: [
-        "de en-US event", 
-        "event 1", 
-      ],
-    },
-
-    
-    {
-      region: "DE",
-      locale: "en-US",
-      matchingQuery: "de en-us event",
-      expectedResultData: {
-        date: "Friday, January 2, 2026",
-        description: "DE en-US Event",
-      },
-      nonMatchingQueries: [
-        "de de event", 
-        "event 1", 
-      ],
-    },
-
-    
-    {
-      region: "XX",
-      locale: "en-US",
-      matchingQuery: null,
-      nonMatchingQueries: [
-        "de de event", 
-        "de en-us event", 
-        "event 1", 
-      ],
-    },
-
-    
-    {
-      region: "US",
-      locale: "de",
-      matchingQuery: null,
-      nonMatchingQueries: [
-        "de de event", 
-        "de en-us event", 
-        "event 1", 
-      ],
-    },
-  ];
-
-  for (let {
-    region,
-    locale,
-    matchingQuery,
-    expectedResultData,
-    nonMatchingQueries,
-  } of tests) {
-    info("Doing subtest: " + JSON.stringify({ region, locale }));
-
-    await QuickSuggestTestUtils.withRegionAndLocale({
-      region,
-      locale,
-      callback: async () => {
-        Assert.equal(
-          UrlbarPrefs.get("quickSuggestEnabled"),
-          !!matchingQuery,
-          "quickSuggestEnabled should be enabled as expected"
-        );
-        Assert.equal(
-          UrlbarPrefs.get("importantDates.featureGate"),
-          !!matchingQuery,
-          "importantDates.featureGate should be enabled as expected"
-        );
-
-        setTime("2025-03-01T00:00");
-
-        if (matchingQuery) {
-          info("Checking matching query: " + matchingQuery);
-          await checkDatesResults(
-            matchingQuery,
-            makeExpectedResult(expectedResultData)
-          );
-        }
-
-        for (let query of nonMatchingQueries) {
-          info("Checking non-matching query: " + query);
-          await checkDatesResults(query, null);
-        }
-      },
-    });
-  }
 });
 
 

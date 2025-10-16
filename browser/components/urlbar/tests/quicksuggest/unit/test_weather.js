@@ -298,12 +298,8 @@ async function doLocaleTest({ shouldRunTask, osUnit, unitsByLocale }) {
 
   
   for (let [locale, temperatureUnit] of Object.entries(unitsByLocale)) {
-    await QuickSuggestTestUtils.withRegionAndLocale({
-      locale,
-      
-      
-      
-      skipSuggestReset: true,
+    await QuickSuggestTestUtils.withLocales({
+      locales: [locale],
       callback: async () => {
         info("Checking locale: " + locale);
         await check_results({
@@ -449,13 +445,9 @@ add_task(async function queryOutsideNorthAmerica_clientOutsideNorthAmerica() {
 });
 
 async function doRegionTest({ homeRegion, locale, query, expectedTitleL10n }) {
-  await QuickSuggestTestUtils.withRegionAndLocale({
-    locale,
-    region: homeRegion,
-    
-    
-    
-    skipSuggestReset: true,
+  await QuickSuggestTestUtils.withLocales({
+    homeRegion,
+    locales: [locale],
     callback: async () => {
       info(
         "Doing region test: " + JSON.stringify({ homeRegion, locale, query })
