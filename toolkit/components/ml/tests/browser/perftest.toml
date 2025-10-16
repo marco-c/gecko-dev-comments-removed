@@ -3,6 +3,13 @@ support-files = [
     "head.js",
     "shared-head.js"
 ]
+prefs = [
+    # Ignoring the blocklist is necessary to run tests in CI on old Mesa versions
+    # (https://bugzilla.mozilla.org/show_bug.cgi?id=1985348) or against beta and
+    # release builds on old MacOS versions
+    # (https://bugzilla.mozilla.org/show_bug.cgi?id=1993341).
+    "gfx.webgpu.ignore-blocklist=true",
+]
 
 ["browser_ml_autofill_perf.js"]
 disabled = "Disabled as we want to run this only as perftest, not regular CI"
