@@ -15,7 +15,6 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/Compiler.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
@@ -45,12 +44,6 @@
 #include "nsWeakReference.h"
 #include "mozilla/widget/InitData.h"
 #include "nsXULAppAPI.h"
-
-
-
-#if MOZ_IS_GCC
-#  include "mozilla/layers/NativeLayer.h"
-#endif
 
 
 
@@ -1362,7 +1355,7 @@ class nsIWidget : public nsSupportsWeakReference {
     return true;
   }
   virtual void PostRender(mozilla::widget::WidgetRenderingContext* aContext) {}
-  virtual RefPtr<mozilla::layers::NativeLayerRoot> GetNativeLayerRoot() {
+  virtual mozilla::layers::NativeLayerRoot* GetNativeLayerRoot() {
     return nullptr;
   }
   virtual already_AddRefed<DrawTarget> StartRemoteDrawing();

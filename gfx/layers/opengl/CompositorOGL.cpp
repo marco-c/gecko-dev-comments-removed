@@ -198,11 +198,9 @@ CompositorOGL::CompositorOGL(widget::CompositorWidget* aWidget,
       mFrameInProgress(false),
       mDestroyed(false),
       mViewportSize(0, 0) {
-  if (aWidget->GetNativeLayerRoot()) {
-    
-    
-    mCanRenderToDefaultFramebuffer = false;
-  }
+  
+  
+  mCanRenderToDefaultFramebuffer = !aWidget->GetNativeLayerRoot();
   MOZ_COUNT_CTOR(CompositorOGL);
 }
 

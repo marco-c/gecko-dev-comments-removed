@@ -12,11 +12,6 @@
 #include "mozilla/layers/CompositorOptions.h"
 #include "mozilla/layers/LayersTypes.h"
 
-#ifdef MOZ_IS_GCC
-#  include "mozilla/layers/NativeLayer.h"
-#endif
-
-class nsIWidget;
 class nsIWidget;
 
 namespace mozilla {
@@ -122,9 +117,7 @@ class CompositorWidget {
 
 
 
-  virtual RefPtr<layers::NativeLayerRoot> GetNativeLayerRoot() {
-    return nullptr;
-  }
+  virtual layers::NativeLayerRoot* GetNativeLayerRoot() { return nullptr; }
 
   
 
