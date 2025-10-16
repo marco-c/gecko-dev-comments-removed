@@ -72,6 +72,7 @@
 #include "mozilla/dom/Navigation.h"
 #include "mozilla/dom/NavigationBinding.h"
 #include "mozilla/dom/NavigationHistoryEntry.h"
+#include "mozilla/dom/NavigationUtils.h"
 #include "mozilla/dom/PerformanceNavigation.h"
 #include "mozilla/dom/PermissionMessageUtils.h"
 #include "mozilla/dom/PolicyContainer.h"
@@ -981,7 +982,8 @@ bool nsDocShell::MaybeHandleSubframeHistory(
   nsCOMPtr<nsIDocShell> parentDS(do_QueryInterface(parentAsItem));
 
   if (!parentDS || parentDS == static_cast<nsIDocShell*>(this)) {
-    if (mBrowsingContext && mBrowsingContext->IsTop()) {
+    if (mBrowsingContext && mBrowsingContext->IsTop() &&
+        !aLoadState->HistoryBehavior()) {
       
       
       
@@ -1137,7 +1139,7 @@ bool nsDocShell::MaybeHandleSubframeHistory(
   if (mCurrentURI &&
       (!NS_IsAboutBlank(mCurrentURI) || currentChildEntry || mLoadingEntry ||
        mActiveEntry) &&
-      !aLoadState->ShouldNotForceReplaceInOnLoad()) {
+      !aLoadState->HistoryBehavior()) {
     
     
     
@@ -8742,6 +8744,7 @@ struct SameDocumentNavigationState {
   bool mSameExceptHashes = false;
   bool mSecureUpgradeURI = false;
   bool mHistoryNavBetweenSameDoc = false;
+  bool mIdentical = false;
 };
 
 bool nsDocShell::IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
@@ -8846,6 +8849,12 @@ bool nsDocShell::IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
                                 &aState.mHistoryNavBetweenSameDoc);
     }
   }
+
+  
+  
+  aState.mIdentical = aState.mSameExceptHashes &&
+                      (aState.mNewURIHasRef == aState.mCurrentURIHasRef) &&
+                      aState.mCurrentHash.Equals(aState.mNewHash);
 
   
   
@@ -9394,10 +9403,8 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
       
       navigation->UpdateEntriesForSameDocumentNavigation(
           mActiveEntry.get(),
-          LOAD_TYPE_HAS_FLAGS(mLoadType, LOAD_FLAGS_REPLACE_HISTORY)
-              ? NavigationType::Replace
-          : aLoadState->LoadIsFromSessionHistory() ? NavigationType::Traverse
-                                                   : NavigationType::Push);
+          NavigationUtils::NavigationTypeFromLoadType(mLoadType).valueOr(
+              NavigationType::Push));
     }
 
     
@@ -9478,6 +9485,51 @@ uint32_t nsDocShell::GetLoadTypeForFormSubmission(
              : LOAD_LINK;
 }
 
+static void MaybeConvertToReplaceLoad(nsDocShellLoadState* aLoadState,
+                                      Document* aExtantDocument,
+                                      bool aIdenticalURI,
+                                      bool aHasActiveEntry) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!aExtantDocument || !aHasActiveEntry ||
+      !mozilla::SessionHistoryInParent() || !aLoadState->HistoryBehavior()) {
+    aLoadState->ResetHistoryBehavior();
+    return;
+  }
+
+  bool convertToReplaceLoad = aLoadState->NeedsCompletelyLoadedDocument() &&
+                              !aExtantDocument->IsCompletelyLoaded();
+  if (const auto& historyBehavior = aLoadState->HistoryBehavior();
+      !convertToReplaceLoad && historyBehavior &&
+      *historyBehavior == NavigationHistoryBehavior::Auto) {
+    convertToReplaceLoad = aIdenticalURI;
+    if (convertToReplaceLoad && aExtantDocument->GetPrincipal()) {
+      aExtantDocument->GetPrincipal()->Equals(aLoadState->TriggeringPrincipal(),
+                                              &convertToReplaceLoad);
+    }
+  }
+
+  convertToReplaceLoad =
+      convertToReplaceLoad || nsContentUtils::NavigationMustBeAReplace(
+                                  *aLoadState->URI(), *aExtantDocument);
+
+  if (convertToReplaceLoad) {
+    MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug,
+                "Convert to replace when navigating from {} to {}",
+                *aExtantDocument->GetDocumentURI(), *aLoadState->URI());
+    aLoadState->SetLoadType(MaybeAddLoadFlags(
+        aLoadState->LoadType(), nsIWebNavigation::LOAD_FLAGS_REPLACE_HISTORY));
+  }
+}
+
 
 
 nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
@@ -9537,6 +9589,13 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   bool sameDocument =
       IsSameDocumentNavigation(aLoadState, sameDocumentNavigationState) &&
       !aLoadState->GetPendingRedirectedChannel();
+
+  if (mLoadType != LOAD_ERROR_PAGE &&
+      !aLoadState->HasLoadFlags(LOAD_FLAGS_FROM_EXTERNAL)) {
+    MaybeConvertToReplaceLoad(aLoadState, GetExtantDocument(),
+                              sameDocumentNavigationState.mIdentical,
+                              !!mActiveEntry);
+  }
 
   
   
