@@ -8655,6 +8655,8 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState) {
       loadState->SetPostDataStream(aLoadState->PostDataStream());
       loadState->SetIsFormSubmission(aLoadState->IsFormSubmission());
 
+      loadState->SetNavigationAPIState(aLoadState->GetNavigationAPIState());
+
       rv = win->Open(spec,
                      aLoadState->Target(),  
                      u""_ns,                
