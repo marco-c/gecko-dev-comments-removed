@@ -826,24 +826,8 @@ where
         selector_iter, element
     );
 
-    let matches_compound_selector = {
-        let result = matches_compound_selector(&mut selector_iter, element, context, rightmost);
-        
-        
-        
-        if result == KleeneValue::Unknown && first_subject_compound == SubjectOrPseudoElement::No {
-            debug_assert!(
-                context
-                    .matching_for_invalidation_comparison()
-                    .unwrap_or(false),
-                "How did we return unknown?"
-            );
-            
-            KleeneValue::from(!context.in_negation())
-        } else {
-            result
-        }
-    };
+    let matches_compound_selector =
+        matches_compound_selector(&mut selector_iter, element, context, rightmost);
 
     let Some(combinator) = selector_iter.next_sequence() else {
         return match matches_compound_selector {
