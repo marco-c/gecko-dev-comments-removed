@@ -9,6 +9,7 @@
 #include <algorithm>
 
 #include "LayoutConstants.h"
+#include "WindowRenderer.h"
 #include "X11UndefineNone.h"
 #include "XULButtonElement.h"
 #include "XULPopupElement.h"
@@ -171,10 +172,6 @@ void nsMenuPopupFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
                             nsIFrame* aPrevInFlow) {
   nsBlockFrame::Init(aContent, aParent, aPrevInFlow);
 
-  CreatePopupView();
-
-  nsView* ourView = GetView();
-
   const auto& el = PopupElement();
   mPopupType = PopupType::Panel;
   if (el.IsMenu()) {
@@ -198,8 +195,10 @@ void nsMenuPopupFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
     }
   }
 
-  if (!ourView->HasWidget() && ShouldHaveWidgetWhenHidden()) {
-    CreateWidgetForView(ourView);
+  
+  
+  if (!mWidget && ShouldHaveWidgetWhenHidden()) {
+    CreateWidget();
   }
 
   AddStateBits(NS_FRAME_IN_POPUP);
@@ -262,19 +261,15 @@ void nsMenuPopupFrame::PrepareWidget(bool aForceRecreate) {
   if (mExpirationState.IsTracked()) {
     PopupExpirationTracker::Get()->RemoveObject(this);
   }
-  nsView* ourView = GetView();
   if (auto* widget = GetWidget()) {
     nsCOMPtr<nsIWidget> parent = ComputeParentWidget();
     if (aForceRecreate || widget->GetParent() != parent ||
         widget->NeedsRecreateToReshow()) {
-      
-      
-      widget->ClearCachedWebrenderResources();
-      ourView->DestroyWidget();
+      DestroyWidget();
     }
   }
-  if (!ourView->HasWidget()) {
-    CreateWidgetForView(ourView);
+  if (!mWidget) {
+    CreateWidget();
   } else {
     PropagateStyleToWidget();
   }
@@ -302,13 +297,13 @@ already_AddRefed<nsIWidget> nsMenuPopupFrame::ComputeParentWidget() const {
       parentWidget = baseWindow->GetMainWidget();
     }
   }
-  if (!parentWidget && mView && mView->GetParent()) {
-    parentWidget = mView->GetParent()->GetNearestWidget(nullptr);
+  if (!parentWidget) {
+    parentWidget = GetParent()->GetNearestWidget();
   }
   return parentWidget.forget();
 }
 
-nsresult nsMenuPopupFrame::CreateWidgetForView(nsView* aView) {
+void nsMenuPopupFrame::CreateWidget() {
   
   widget::InitData widgetData;
   widgetData.mWindowType = widget::WindowType::Popup;
@@ -326,21 +321,36 @@ nsresult nsMenuPopupFrame::CreateWidgetForView(nsView* aView) {
 
   nsCOMPtr<nsIWidget> parentWidget = ComputeParentWidget();
   if (NS_WARN_IF(!parentWidget)) {
-    return NS_ERROR_FAILURE;
+    return;
   }
 
-  nsresult rv = aView->CreateWidgetForPopup(&widgetData, parentWidget);
-  if (NS_FAILED(rv)) {
-    return rv;
+  mWidget = parentWidget->CreateChild(CalcWidgetBounds(), widgetData);
+  if (NS_WARN_IF(!mWidget)) {
+    return;
   }
-
-  nsIWidget* widget = aView->GetWidget();
-  MOZ_ASSERT(widget->GetParent() == parentWidget);
-
-  widget->SetTransparencyMode(mode);
+  mWidget->SetWidgetListener(this);
   PropagateStyleToWidget();
+}
 
-  return NS_OK;
+LayoutDeviceIntRect nsMenuPopupFrame::CalcWidgetBounds() const {
+  return nsView::CalcWidgetBounds(
+      GetRect(), PresContext()->AppUnitsPerDevPixel(),
+      PresShell()->GetViewManager()->GetRootView(), nullptr,
+      widget::WindowType::Popup,
+      nsLayoutUtils::GetFrameTransparency(this, this));
+}
+
+void nsMenuPopupFrame::DestroyWidget() {
+  RefPtr widget = mWidget.forget();
+  if (!widget) {
+    return;
+  }
+  
+  
+  widget->ClearCachedWebrenderResources();
+  widget->SetWidgetListener(nullptr);
+  NS_DispatchToMainThread(
+      NewRunnableMethod("DestroyWidget", widget, &nsIWidget::Destroy));
 }
 
 void nsMenuPopupFrame::PropagateStyleToWidget(WidgetStyleFlags aFlags) const {
@@ -647,20 +657,17 @@ void nsMenuPopupFrame::LayoutPopup(nsPresContext* aPresContext,
                          aStatus);
   }
 
+  if (mIsOpenChanged || !mRect.IsEqualEdges(constraints.mUsedRect)) {
+    SchedulePendingWidgetMoveResize();
+  }
+
   
   SetRect(constraints.mUsedRect);
 
-  nsView* view = GetView();
   if (isOpen) {
-    nsViewManager* viewManager = view->GetViewManager();
-    viewManager->ResizeView(view,
-                            nsRect(nsPoint(), constraints.mUsedRect.Size()));
     if (mPopupState == ePopupOpening) {
       mPopupState = ePopupVisible;
     }
-
-    viewManager->SetViewVisibility(view, ViewVisibility::Show);
-    SyncFrameViewProperties(view);
   }
 
   
@@ -980,6 +987,7 @@ void nsMenuPopupFrame::ShowPopup(bool aIsContextMenu) {
   mIsContextMenu = aIsContextMenu;
 
   InvalidateFrameSubtree();
+  SchedulePendingWidgetMoveResize();
 
   if (mPopupState == ePopupShowing || mPopupState == ePopupPositioning) {
     mPopupState = ePopupOpening;
@@ -1074,12 +1082,11 @@ void nsMenuPopupFrame::HidePopup(bool aDeselectMenu, nsPopupState aNewState,
     if (!aFromFrameDestruction && !ShouldHaveWidgetWhenHidden()) {
       PopupExpirationTracker::GetOrCreate().AddObject(this);
     }
+    NS_DispatchToMainThread(
+        NewRunnableMethod<bool>("HideWidget", widget, &nsIWidget::Show, false));
   }
 
-  nsView* view = GetView();
-  nsViewManager* viewManager = view->GetViewManager();
-  viewManager->SetViewVisibility(view, ViewVisibility::Hide);
-
+  ClearPendingWidgetMoveResize();
   RefPtr popup = &PopupElement();
   
   
@@ -1091,6 +1098,14 @@ void nsMenuPopupFrame::HidePopup(bool aDeselectMenu, nsPopupState aNewState,
     esm->SetContentState(nullptr, dom::ElementState::HOVER);
   }
   popup->PopupClosed(aDeselectMenu);
+}
+
+void nsMenuPopupFrame::SchedulePendingWidgetMoveResize() {
+  if (mPendingWidgetMoveResize) {
+    return;
+  }
+  mPendingWidgetMoveResize = true;
+  SchedulePaint();
 }
 
 nsPoint nsMenuPopupFrame::AdjustPositionForAnchorAlign(
@@ -1456,9 +1471,6 @@ auto nsMenuPopupFrame::GetRects(const nsSize& aPrefSize) const -> Rects {
 
   nsPresContext* pc = PresContext();
   nsIFrame* rootFrame = pc->PresShell()->GetRootFrame();
-  NS_ASSERTION(rootFrame->GetView() && GetView() &&
-                   rootFrame->GetView() == GetView()->GetParent(),
-               "rootFrame's view is not our view's parent???");
 
   
   FlipStyle hFlip = FlipStyle::None;
@@ -1558,10 +1570,7 @@ auto nsMenuPopupFrame::GetRects(const nsSize& aPrefSize) const -> Rects {
 
   const int32_t a2d = pc->AppUnitsPerDevPixel();
 
-  nsView* view = GetView();
-  NS_ASSERTION(view, "popup with no view");
-
-  nsIWidget* widget = view->GetWidget();
+  nsIWidget* widget = mWidget;
 
   
   
@@ -1723,12 +1732,13 @@ void nsMenuPopupFrame::PerformMove(const Rects& aRects) {
   auto* ps = PresShell();
 
   
-  ps->GetViewManager()->MoveViewTo(GetView(), aRects.mViewPoint.x,
-                                   aRects.mViewPoint.y);
-
-  
-  nsBlockFrame::SetPosition(aRects.mViewPoint -
-                            GetParent()->GetOffsetTo(ps->GetRootFrame()));
+  const nsPoint oldPos = mRect.TopLeft();
+  const nsPoint newPos =
+      aRects.mViewPoint - GetParent()->GetOffsetTo(ps->GetRootFrame());
+  nsBlockFrame::SetPosition(newPos);
+  if (oldPos != newPos) {
+    SchedulePendingWidgetMoveResize();
+  }
 
   
   
@@ -2081,9 +2091,7 @@ XULButtonElement* nsMenuPopupFrame::FindMenuWithShortcut(
   return nullptr;
 }
 
-nsIWidget* nsMenuPopupFrame::GetWidget() const {
-  return mView ? mView->GetWidget() : nullptr;
-}
+nsIWidget* nsMenuPopupFrame::GetWidget() const { return mWidget.get(); }
 
 
 
@@ -2158,7 +2166,6 @@ void nsMenuPopupFrame::Destroy(DestroyContext& aContext) {
   
   HidePopup( false, ePopupClosed,
              true);
-
   if (mExpirationState.IsTracked()) {
     PopupExpirationTracker::Get()->RemoveObject(this);
   }
@@ -2167,6 +2174,7 @@ void nsMenuPopupFrame::Destroy(DestroyContext& aContext) {
     pm->PopupDestroyed(this);
   }
 
+  DestroyWidget();
   nsBlockFrame::Destroy(aContext);
 }
 
@@ -2210,9 +2218,7 @@ void nsMenuPopupFrame::DestroyWidgetIfNeeded() {
     MOZ_ASSERT_UNREACHABLE("Shouldn't be tracked while visible");
     return;
   }
-  if (auto* view = GetView()) {
-    view->DestroyWidget();
-  }
+  DestroyWidget();
 }
 
 void nsMenuPopupFrame::MoveTo(const CSSPoint& aPos, bool aUpdateAttrs,
@@ -2340,37 +2346,6 @@ int8_t nsMenuPopupFrame::GetAlignmentPosition() const {
   return position;
 }
 
-
-
-
-
-void nsMenuPopupFrame::CreatePopupView() {
-  if (mView) {
-    return;
-  }
-
-  nsViewManager* viewManager = PresContext()->GetPresShell()->GetViewManager();
-  NS_ASSERTION(viewManager, "null view manager");
-
-  
-  nsView* parentView = viewManager->GetRootView();
-  auto visibility = ViewVisibility::Hide;
-
-  NS_ASSERTION(parentView, "no parent view");
-
-  
-  nsView* view = viewManager->CreateView(GetRect(), parentView, visibility);
-  
-  viewManager->InsertChild(parentView, view, nullptr, true);
-
-  
-  SetView(view);
-
-  NS_FRAME_LOG(
-      NS_FRAME_TRACE_CALLS,
-      ("nsMenuPopupFrame::CreatePopupView: frame=%p view=%p", this, view));
-}
-
 bool nsMenuPopupFrame::ShouldFollowAnchor() const {
   if (mAnchorType != MenuPopupAnchorType::Node || !mAnchorContent) {
     return false;
@@ -2457,8 +2432,7 @@ void nsMenuPopupFrame::CheckForAnchorChange(nsRect& aRect) {
   }
 
   if (shouldHide) {
-    nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-    if (pm) {
+    if (nsXULPopupManager* pm = nsXULPopupManager::GetInstance()) {
       
       
       pm->HidePopup(mContent->AsElement(),
@@ -2475,4 +2449,116 @@ void nsMenuPopupFrame::CheckForAnchorChange(nsRect& aRect) {
     aRect = anchorRect;
     SetPopupPosition(true);
   }
+}
+
+bool nsMenuPopupFrame::WindowMoved(nsIWidget* aWidget, int32_t aX, int32_t aY,
+                                   ByMoveToRect aByMoveToRect) {
+  MOZ_ASSERT(aWidget == mWidget);
+
+  if (!IsVisibleOrShowing()) {
+    return true;
+  }
+
+  LayoutDeviceIntPoint point(aX, aY);
+
+  
+  
+  LayoutDeviceIntRect curDevBounds = CalcWidgetBounds();
+  if (curDevBounds.TopLeft() == point &&
+      aWidget->GetClientOffset() == GetLastClientOffset()) {
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  if (IsAnchored() && GetPopupLevel() == widget::PopupLevel::Parent &&
+      aByMoveToRect == ByMoveToRect::No) {
+    SetPopupPosition(true);
+  } else {
+    CSSPoint cssPos = point / PresContext()->CSSToDevPixelScale();
+    MoveTo(cssPos, false, aByMoveToRect == ByMoveToRect::Yes);
+  }
+  return true;
+}
+
+bool nsMenuPopupFrame::WindowResized(nsIWidget* aWidget, int32_t aWidth,
+                                     int32_t aHeight) {
+  MOZ_ASSERT(aWidget == mWidget);
+  if (!IsVisibleOrShowing()) {
+    return true;
+  }
+
+  LayoutDeviceIntSize size(aWidth, aHeight);
+  const LayoutDeviceIntRect curDevBounds = CalcWidgetBounds();
+  
+  if (curDevBounds.Size() == size) {
+    return true;
+  }
+
+  RefPtr<Element> popup = &PopupElement();
+
+  
+  if (!popup->HasAttr(nsGkAtoms::width) || !popup->HasAttr(nsGkAtoms::height)) {
+    return true;
+  }
+
+  
+  
+  nsPresContext* presContext = PresContext();
+
+  CSSIntSize newCSS(presContext->DevPixelsToIntCSSPixels(size.width),
+                    presContext->DevPixelsToIntCSSPixels(size.height));
+
+  nsAutoString width, height;
+  width.AppendInt(newCSS.width);
+  height.AppendInt(newCSS.height);
+  popup->SetAttr(kNameSpaceID_None, nsGkAtoms::width, width, true);
+  popup->SetAttr(kNameSpaceID_None, nsGkAtoms::height, height, true);
+  return true;
+}
+
+bool nsMenuPopupFrame::RequestWindowClose(nsIWidget* aWidget) {
+  MOZ_ASSERT(aWidget == mWidget);
+  if (nsXULPopupManager* pm = nsXULPopupManager::GetInstance()) {
+    pm->HidePopup(&PopupElement(), {HidePopupOption::DeselectMenu});
+    return true;
+  }
+  return false;
+}
+
+nsEventStatus nsMenuPopupFrame::HandleEvent(mozilla::WidgetGUIEvent* aEvent,
+                                            bool aUseAttachedEvents) {
+  MOZ_ASSERT(aEvent->mWidget);
+  MOZ_ASSERT(aEvent->mWidget == mWidget);
+  nsEventStatus status = nsEventStatus_eIgnore;
+  RefPtr ps = PresShell();
+  ps->HandleEvent(this, aEvent, false, &status);
+  return status;
+}
+
+bool nsMenuPopupFrame::PaintWindow(nsIWidget* aWidget, LayoutDeviceIntRegion) {
+  MOZ_ASSERT(aWidget == mWidget);
+  nsAutoScriptBlocker scriptBlocker;
+  RefPtr ps = PresShell();
+  RefPtr<WindowRenderer> renderer = aWidget->GetWindowRenderer();
+  if (!renderer->NeedsWidgetInvalidation()) {
+    renderer->FlushRendering(wr::RenderReasons::WIDGET);
+  } else {
+    ps->SyncPaintFallback(this, renderer);
+  }
+  return true;
+}
+
+void nsMenuPopupFrame::DidCompositeWindow(
+    mozilla::layers::TransactionId aTransactionId,
+    const TimeStamp& aCompositeStart, const TimeStamp& aCompositeEnd) {
+  RefPtr rootPc = PresContext()->GetRootPresContext();
+  if (!rootPc) {
+    return;
+  }
+  nsAutoScriptBlocker scriptBlocker;
+  rootPc->NotifyDidPaintForSubtree(aTransactionId, aCompositeEnd);
 }

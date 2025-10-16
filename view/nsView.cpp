@@ -172,83 +172,76 @@ void nsView::SetPosition(nscoord aX, nscoord aY) {
 
   NS_ASSERTION(GetParent() || (aX == 0 && aY == 0),
                "Don't try to move the root widget to something non-zero");
-
-  ResetWidgetBounds(true, false);
-}
-
-void nsView::ResetWidgetBounds(bool aRecurse, bool aForceSync) {
-  if (mWindow) {
-    if (!aForceSync) {
-      
-      
-      mViewManager->PostPendingUpdate();
-    } else {
-      DoResetWidgetBounds(false, true);
-    }
-    return;
-  }
-
-  if (aRecurse) {
-    
-    for (nsView* v = GetFirstChild(); v; v = v->GetNextSibling()) {
-      v->ResetWidgetBounds(true, aForceSync);
-    }
-  }
 }
 
 bool nsView::IsEffectivelyVisible() {
   for (nsView* v = this; v; v = v->mParent) {
-    if (v->GetVisibility() == ViewVisibility::Hide) return false;
+    if (v->GetVisibility() == ViewVisibility::Hide) {
+      return false;
+    }
   }
   return true;
+}
+
+struct WidgetViewBounds {
+  nsRect mBounds;
+  int32_t mRoundTo = 1;
+};
+
+static WidgetViewBounds CalcWidgetViewBounds(
+    const nsRect& aBounds, int32_t aAppUnitsPerDevPixel, nsView* aParentView,
+    nsIWidget* aThisWidget, WindowType aType, TransparencyMode aTransparency) {
+  nsRect viewBounds(aBounds);
+  nsIWidget* parentWidget = nullptr;
+  if (aParentView) {
+    nsPoint offset;
+    parentWidget = aParentView->GetNearestWidget(&offset, aAppUnitsPerDevPixel);
+    
+    viewBounds += offset;
+
+    if (parentWidget && aType == WindowType::Popup) {
+      
+      LayoutDeviceIntPoint screenPoint = parentWidget->WidgetToScreenOffset();
+      viewBounds +=
+          nsPoint(NSIntPixelsToAppUnits(screenPoint.x, aAppUnitsPerDevPixel),
+                  NSIntPixelsToAppUnits(screenPoint.y, aAppUnitsPerDevPixel));
+    }
+  }
+
+  nsIWidget* widget = parentWidget ? parentWidget : aThisWidget;
+  int32_t roundTo = widget ? widget->RoundsWidgetCoordinatesTo() : 1;
+  return {viewBounds, roundTo};
+}
+
+static LayoutDeviceIntRect WidgetViewBoundsToDevicePixels(
+    const WidgetViewBounds& aViewBounds, int32_t aAppUnitsPerDevPixel,
+    WindowType aType, TransparencyMode aTransparency) {
+  
+  
+  
+  if (aType != WindowType::Popup) {
+    return LayoutDeviceIntRect::FromUnknownRect(
+        aViewBounds.mBounds.ToNearestPixels(aAppUnitsPerDevPixel));
+  }
+  
+  
+  
+  const bool opaque = aTransparency == TransparencyMode::Opaque;
+  const auto idealBounds = LayoutDeviceIntRect::FromUnknownRect(
+      opaque ? aViewBounds.mBounds.ToNearestPixels(aAppUnitsPerDevPixel)
+             : aViewBounds.mBounds.ToOutsidePixels(aAppUnitsPerDevPixel));
+
+  return nsIWidget::MaybeRoundToDisplayPixels(idealBounds, aTransparency,
+                                              aViewBounds.mRoundTo);
 }
 
 LayoutDeviceIntRect nsView::CalcWidgetBounds(WindowType aType,
                                              TransparencyMode aTransparency) {
   int32_t p2a = mViewManager->AppUnitsPerDevPixel();
-
-  nsRect viewBounds(mDimBounds);
-
-  nsView* parent = GetParent();
-  nsIWidget* parentWidget = nullptr;
-  if (parent) {
-    nsPoint offset;
-    parentWidget = parent->GetNearestWidget(&offset, p2a);
-    
-    viewBounds += offset;
-
-    if (parentWidget && aType == WindowType::Popup && IsEffectivelyVisible()) {
-      
-      LayoutDeviceIntPoint screenPoint = parentWidget->WidgetToScreenOffset();
-      viewBounds += nsPoint(NSIntPixelsToAppUnits(screenPoint.x, p2a),
-                            NSIntPixelsToAppUnits(screenPoint.y, p2a));
-    }
-  }
-
-  
-  const LayoutDeviceIntRect newBounds = [&] {
-    
-    
-    if (aType != WindowType::Popup) {
-      return LayoutDeviceIntRect::FromUnknownRect(
-          viewBounds.ToNearestPixels(p2a));
-    }
-    
-    
-    
-    const bool opaque = aTransparency == TransparencyMode::Opaque;
-    const auto idealBounds = LayoutDeviceIntRect::FromUnknownRect(
-        opaque ? viewBounds.ToNearestPixels(p2a)
-               : viewBounds.ToOutsidePixels(p2a));
-
-    nsIWidget* widget = parentWidget ? parentWidget : mWindow.get();
-    if (!widget) {
-      return idealBounds;
-    }
-    const int32_t round = widget->RoundsWidgetCoordinatesTo();
-    return nsIWidget::MaybeRoundToDisplayPixels(idealBounds, aTransparency,
-                                                round);
-  }();
+  auto viewBounds = CalcWidgetViewBounds(mDimBounds, p2a, GetParent(),
+                                         mWindow.get(), aType, aTransparency);
+  auto newBounds =
+      WidgetViewBoundsToDevicePixels(viewBounds, p2a, aType, aTransparency);
 
   
   
@@ -261,9 +254,18 @@ LayoutDeviceIntRect nsView::CalcWidgetBounds(WindowType aType,
   
   
   mViewToWidgetOffset = nsPoint(mPosX, mPosY) - mDimBounds.TopLeft() +
-                        viewBounds.TopLeft() - roundedOffset;
-
+                        viewBounds.mBounds.TopLeft() - roundedOffset;
   return newBounds;
+}
+
+LayoutDeviceIntRect nsView::CalcWidgetBounds(
+    const nsRect& aBounds, int32_t aAppUnitsPerDevPixel, nsView* aParentView,
+    nsIWidget* aThisWidget, WindowType aType, TransparencyMode aTransparency) {
+  auto viewBounds =
+      CalcWidgetViewBounds(aBounds, aAppUnitsPerDevPixel, aParentView,
+                           aThisWidget, aType, aTransparency);
+  return WidgetViewBoundsToDevicePixels(viewBounds, aAppUnitsPerDevPixel, aType,
+                                        aTransparency);
 }
 
 LayoutDeviceIntRect nsView::RecalcWidgetBounds() {
@@ -272,87 +274,7 @@ LayoutDeviceIntRect nsView::RecalcWidgetBounds() {
                           mWindow->GetTransparencyMode());
 }
 
-void nsView::DoResetWidgetBounds(bool aMoveOnly, bool aInvalidateChangedSize) {
-  
-  
-  if (mViewManager->GetRootView() == this) {
-    return;
-  }
-
-  MOZ_ASSERT(mWindow, "Why was this called??");
-
-  
-  nsCOMPtr<nsIWidget> widget = mWindow;
-
-  
-  
-  LayoutDeviceIntRect newBounds;
-
-  WindowType type = widget->GetWindowType();
-
-  LayoutDeviceIntRect curBounds = widget->GetClientBounds();
-  bool invisiblePopup = type == WindowType::Popup &&
-                        ((curBounds.IsEmpty() && mDimBounds.IsEmpty()) ||
-                         mVis == ViewVisibility::Hide);
-
-  if (invisiblePopup) {
-    
-  } else {
-    newBounds = CalcWidgetBounds(type, widget->GetTransparencyMode());
-    invisiblePopup = newBounds.IsEmpty();
-  }
-
-  bool curVisibility = widget->IsVisible();
-  bool newVisibility = !invisiblePopup && IsEffectivelyVisible();
-  if (curVisibility && !newVisibility) {
-    widget->Show(false);
-  }
-
-  if (invisiblePopup) {
-    
-    
-    
-    
-    
-    
-    return;
-  }
-
-  
-  widget->ConstrainSize(&newBounds.width, &newBounds.height);
-
-  bool changedPos = curBounds.TopLeft() != newBounds.TopLeft();
-  bool changedSize = curBounds.Size() != newBounds.Size();
-
-  
-
-  
-  
-  
-  
-
-  DesktopToLayoutDeviceScale scale = widget->GetDesktopToDeviceScaleByScreen();
-
-  DesktopRect deskRect = newBounds / scale;
-  if (changedPos) {
-    if (changedSize && !aMoveOnly) {
-      widget->ResizeClient(deskRect, aInvalidateChangedSize);
-    } else {
-      widget->MoveClient(deskRect.TopLeft());
-    }
-  } else {
-    if (changedSize && !aMoveOnly) {
-      widget->ResizeClient(deskRect.Size(), aInvalidateChangedSize);
-    }  
-  }
-
-  if (!curVisibility && newVisibility) {
-    widget->Show(true);
-  }
-}
-
-void nsView::SetDimensions(const nsRect& aRect, bool aPaint,
-                           bool aResizeWidget) {
+void nsView::SetDimensions(const nsRect& aRect) {
   nsRect dims = aRect;
   dims.MoveBy(mPosX, mPosY);
 
@@ -365,10 +287,6 @@ void nsView::SetDimensions(const nsRect& aRect, bool aPaint,
   }
 
   mDimBounds = dims;
-
-  if (aResizeWidget) {
-    ResetWidgetBounds(false, false);
-  }
 }
 
 void nsView::NotifyEffectiveVisibilityChanged(bool aEffectivelyVisible) {
@@ -377,10 +295,6 @@ void nsView::NotifyEffectiveVisibilityChanged(bool aEffectivelyVisible) {
   }
 
   SetForcedRepaint(true);
-
-  if (mWindow) {
-    ResetWidgetBounds(false, false);
-  }
 
   for (nsView* child = mFirstChild; child; child = child->mNextSibling) {
     if (child->mVis == ViewVisibility::Hide) {
@@ -398,10 +312,13 @@ void nsView::SetVisibility(ViewVisibility aVisibility) {
 }
 
 void nsView::InvalidateHierarchy() {
-  if (mViewManager->GetRootView() == this) mViewManager->InvalidateHierarchy();
+  if (mViewManager->GetRootView() == this) {
+    mViewManager->InvalidateHierarchy();
+  }
 
-  for (nsView* child = mFirstChild; child; child = child->GetNextSibling())
+  for (nsView* child = mFirstChild; child; child = child->GetNextSibling()) {
     child->InvalidateHierarchy();
+  }
 }
 
 void nsView::InsertChild(nsView* aChild, nsView* aSibling) {
@@ -498,24 +415,6 @@ nsresult nsView::CreateWidget(nsIWidget* aParent, bool aEnableDragDrop,
   return NS_OK;
 }
 
-nsresult nsView::CreateWidgetForPopup(widget::InitData* aWidgetInitData,
-                                      nsIWidget* aParent) {
-  AssertNoWindow();
-  MOZ_ASSERT(aWidgetInitData, "Widget init data required");
-  MOZ_ASSERT(aWidgetInitData->mWindowType == WindowType::Popup,
-             "Use one of the other CreateWidget methods");
-  MOZ_ASSERT(aParent);
-
-  LayoutDeviceIntRect trect = CalcWidgetBounds(
-      aWidgetInitData->mWindowType, aWidgetInitData->mTransparencyMode);
-  mWindow = aParent->CreateChild(trect, *aWidgetInitData);
-  if (!mWindow) {
-    return NS_ERROR_FAILURE;
-  }
-  InitializeWindow( true,  true);
-  return NS_OK;
-}
-
 void nsView::InitializeWindow(bool aEnableDragDrop, bool aResetVisibility) {
   MOZ_ASSERT(mWindow, "Must have a window to initialize");
 
@@ -545,10 +444,8 @@ nsresult nsView::AttachToTopLevelWidget(nsIWidget* aWidget) {
 
   
   
-  nsIWidgetListener* listener = aWidget->GetAttachedWidgetListener();
-  if (listener) {
-    nsView* oldView = listener->GetView();
-    if (oldView) {
+  if (nsIWidgetListener* listener = aWidget->GetAttachedWidgetListener()) {
+    if (nsView* oldView = listener->GetView()) {
       oldView->DetachFromTopLevelWidget();
     }
   }
@@ -577,11 +474,12 @@ nsresult nsView::DetachFromTopLevelWidget() {
   MOZ_ASSERT(mWindow, "null mWindow for DetachFromTopLevelWidget!");
 
   mWindow->SetAttachedWidgetListener(nullptr);
-  nsIWidgetListener* listener = mWindow->GetPreviouslyAttachedWidgetListener();
-
-  if (listener && listener->GetView()) {
-    
-    listener->GetView()->SetPreviousWidget(nullptr);
+  if (nsIWidgetListener* listener =
+          mWindow->GetPreviouslyAttachedWidgetListener()) {
+    if (nsView* view = listener->GetView()) {
+      
+      view->SetPreviousWidget(nullptr);
+    }
   }
 
   
@@ -774,63 +672,40 @@ bool nsView::IsRoot() const {
   return mViewManager->GetRootView() == this;
 }
 
-static bool IsPopupWidget(nsIWidget* aWidget) {
-  return aWidget->GetWindowType() == WindowType::Popup;
-}
-
 PresShell* nsView::GetPresShell() { return GetViewManager()->GetPresShell(); }
-
-bool nsView::WindowMoved(nsIWidget* aWidget, int32_t x, int32_t y,
-                         ByMoveToRect aByMoveToRect) {
-  nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-  if (pm && IsPopupWidget(aWidget)) {
-    pm->PopupMoved(mFrame, LayoutDeviceIntPoint(x, y),
-                   aByMoveToRect == ByMoveToRect::Yes);
-    return true;
-  }
-
-  return false;
-}
 
 bool nsView::WindowResized(nsIWidget* aWidget, int32_t aWidth,
                            int32_t aHeight) {
   
   
   SetForcedRepaint(true);
-  if (this == mViewManager->GetRootView()) {
-    RefPtr<nsDeviceContext> devContext = mViewManager->GetDeviceContext();
-    
-    
-    devContext->CheckDPIChange();
-    int32_t p2a = devContext->AppUnitsPerDevPixel();
-    if (auto* frame = GetFrame()) {
-      
-      
-      
-      frame->InvalidateFrame();
-    }
-
-    mViewManager->SetWindowDimensions(NSIntPixelsToAppUnits(aWidth, p2a),
-                                      NSIntPixelsToAppUnits(aHeight, p2a));
-
-    if (nsXULPopupManager* pm = nsXULPopupManager::GetInstance()) {
-      PresShell* presShell = mViewManager->GetPresShell();
-      if (presShell && presShell->GetDocument()) {
-        pm->AdjustPopupsOnWindowChange(presShell);
-      }
-    }
-
-    return true;
+  if (this != mViewManager->GetRootView()) {
+    return false;
   }
-  if (IsPopupWidget(aWidget)) {
-    nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-    if (pm) {
-      pm->PopupResized(mFrame, LayoutDeviceIntSize(aWidth, aHeight));
-      return true;
+
+  RefPtr<nsDeviceContext> devContext = mViewManager->GetDeviceContext();
+  
+  
+  devContext->CheckDPIChange();
+  int32_t p2a = devContext->AppUnitsPerDevPixel();
+  if (auto* frame = GetFrame()) {
+    
+    
+    
+    frame->InvalidateFrame();
+  }
+
+  mViewManager->SetWindowDimensions(NSIntPixelsToAppUnits(aWidth, p2a),
+                                    NSIntPixelsToAppUnits(aHeight, p2a));
+
+  if (nsXULPopupManager* pm = nsXULPopupManager::GetInstance()) {
+    PresShell* presShell = mViewManager->GetPresShell();
+    if (presShell && presShell->GetDocument()) {
+      pm->AdjustPopupsOnWindowChange(presShell);
     }
   }
 
-  return false;
+  return true;
 }
 
 #ifdef MOZ_WIDGET_ANDROID
@@ -894,18 +769,6 @@ void nsView::AndroidPipModeChanged(bool aPipMode) {
 }
 #endif
 
-bool nsView::RequestWindowClose(nsIWidget* aWidget) {
-  if (mFrame && IsPopupWidget(aWidget) && mFrame->IsMenuPopupFrame()) {
-    if (nsXULPopupManager* pm = nsXULPopupManager::GetInstance()) {
-      pm->HidePopup(mFrame->GetContent()->AsElement(),
-                    {HidePopupOption::DeselectMenu});
-      return true;
-    }
-  }
-
-  return false;
-}
-
 void nsView::WillPaintWindow(nsIWidget* aWidget) {
   RefPtr<nsViewManager> vm = mViewManager;
   vm->WillPaintWindow(aWidget);
@@ -942,12 +805,6 @@ void nsView::DidCompositeWindow(mozilla::layers::TransactionId aTransactionId,
 
   mozilla::StartupTimeline::RecordOnce(mozilla::StartupTimeline::FIRST_PAINT2,
                                        aCompositeEnd);
-
-  
-  
-  if (aCompositeStart == aCompositeEnd) {
-    return;
-  }
 }
 
 void nsView::RequestRepaint() {

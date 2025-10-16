@@ -7,6 +7,7 @@
 #include "nsXULPopupManager.h"
 
 #include "PopupQueue.h"
+#include "WindowRenderer.h"
 #include "XULButtonElement.h"
 #include "mozilla/AnimationUtils.h"
 #include "mozilla/Assertions.h"
@@ -672,105 +673,6 @@ void nsXULPopupManager::AdjustPopupsOnWindowChange(PresShell* aPresShell) {
   if (aPresShell->GetDocument()) {
     AdjustPopupsOnWindowChange(aPresShell->GetDocument()->GetWindow());
   }
-}
-
-static nsMenuPopupFrame* GetPopupToMoveOrResize(nsIFrame* aFrame) {
-  nsMenuPopupFrame* menuPopupFrame = do_QueryFrame(aFrame);
-  if (!menuPopupFrame) {
-    return nullptr;
-  }
-
-  
-  if (!menuPopupFrame->IsVisible()) {
-    return nullptr;
-  }
-
-  nsIWidget* widget = menuPopupFrame->GetWidget();
-  if (widget && !widget->IsVisible()) {
-    return nullptr;
-  }
-
-  return menuPopupFrame;
-}
-
-void nsXULPopupManager::PopupMoved(nsIFrame* aFrame,
-                                   const LayoutDeviceIntPoint& aPoint,
-                                   bool aByMoveToRect) {
-  nsMenuPopupFrame* menuPopupFrame = GetPopupToMoveOrResize(aFrame);
-  if (!menuPopupFrame) {
-    return;
-  }
-
-  nsView* view = menuPopupFrame->GetView();
-  if (!view) {
-    return;
-  }
-
-  
-  
-  LayoutDeviceIntRect curDevBounds = view->RecalcWidgetBounds();
-  nsIWidget* widget = menuPopupFrame->GetWidget();
-  if (curDevBounds.TopLeft() == aPoint &&
-      (!widget ||
-       widget->GetClientOffset() == menuPopupFrame->GetLastClientOffset())) {
-    return;
-  }
-
-  
-  
-  
-  
-  
-  if (menuPopupFrame->IsAnchored() &&
-      menuPopupFrame->GetPopupLevel() == widget::PopupLevel::Parent &&
-      !aByMoveToRect) {
-    menuPopupFrame->SetPopupPosition(true);
-  } else {
-    CSSPoint cssPos =
-        aPoint / menuPopupFrame->PresContext()->CSSToDevPixelScale();
-    menuPopupFrame->MoveTo(cssPos, false, aByMoveToRect);
-  }
-}
-
-void nsXULPopupManager::PopupResized(nsIFrame* aFrame,
-                                     const LayoutDeviceIntSize& aSize) {
-  nsMenuPopupFrame* menuPopupFrame = GetPopupToMoveOrResize(aFrame);
-  if (!menuPopupFrame) {
-    return;
-  }
-
-  nsView* view = menuPopupFrame->GetView();
-  if (!view) {
-    return;
-  }
-
-  const LayoutDeviceIntRect curDevBounds = view->RecalcWidgetBounds();
-  
-  if (curDevBounds.Size() == aSize) {
-    return;
-  }
-
-  Element* popup = menuPopupFrame->GetContent()->AsElement();
-
-  
-  if (!popup->HasAttr(nsGkAtoms::width) || !popup->HasAttr(nsGkAtoms::height)) {
-    return;
-  }
-
-  
-  
-  nsPresContext* presContext = menuPopupFrame->PresContext();
-
-  CSSIntSize newCSS(presContext->DevPixelsToIntCSSPixels(aSize.width),
-                    presContext->DevPixelsToIntCSSPixels(aSize.height));
-
-  nsAutoString width, height;
-  width.AppendInt(newCSS.width);
-  height.AppendInt(newCSS.height);
-  
-  
-  popup->SetAttr(kNameSpaceID_None, nsGkAtoms::width, width, false);
-  popup->SetAttr(kNameSpaceID_None, nsGkAtoms::height, height, true);
 }
 
 nsMenuPopupFrame* nsXULPopupManager::GetPopupFrameForContent(
@@ -1698,8 +1600,76 @@ void nsXULPopupManager::HidePopupsInDocShell(
 
 void nsXULPopupManager::UpdatePopupPositions(nsRefreshDriver* aRefreshDriver) {
   for (nsMenuChainItem* item = mPopups.get(); item; item = item->GetParent()) {
-    if (item->Frame()->PresContext()->RefreshDriver() == aRefreshDriver) {
-      item->CheckForAnchorChange();
+    nsMenuPopupFrame* frame = item->Frame();
+    if (frame->PresContext()->RefreshDriver() != aRefreshDriver) {
+      continue;
+    }
+    item->CheckForAnchorChange();
+  }
+}
+
+void nsXULPopupManager::PaintPopups(nsRefreshDriver* aRefreshDriver) {
+  if (!mPopups) {
+    return;
+  }
+
+  AutoTArray<std::pair<RefPtr<nsIWidget>, WeakFrame>, 32> visiblePopups;
+  for (nsMenuChainItem* item = mPopups.get(); item; item = item->GetParent()) {
+    nsMenuPopupFrame* frame = item->Frame();
+    if (!frame->IsVisible() ||
+        frame->PresContext()->GetRootPresContext()->RefreshDriver() !=
+            aRefreshDriver) {
+      continue;
+    }
+    if (nsIWidget* widget = frame->GetWidget()) {
+      visiblePopups.AppendElement(std::make_pair(widget, frame));
+    }
+  }
+
+  for (const auto& visiblePopup : Reversed(visiblePopups)) {
+    nsIWidget* widget = visiblePopup.first;
+    nsMenuPopupFrame* frame = do_QueryFrame(visiblePopup.second.GetFrame());
+    if (!frame) {
+      continue;
+    }
+    if (frame->PendingWidgetMoveResize()) {
+      frame->ClearPendingWidgetMoveResize();
+
+      LayoutDeviceIntRect curBounds = widget->GetClientBounds();
+      auto newBounds = frame->CalcWidgetBounds();
+      widget->ConstrainSize(&newBounds.width, &newBounds.height);
+      const bool changedPos = curBounds.TopLeft() != newBounds.TopLeft();
+      const bool changedSize = curBounds.Size() != newBounds.Size();
+
+      if (changedPos || changedSize) {
+        DesktopToLayoutDeviceScale scale = widget->GetDesktopToDeviceScale();
+        DesktopRect deskRect = newBounds / scale;
+        if (changedPos) {
+          if (changedSize) {
+            widget->ResizeClient(deskRect, true);
+          } else {
+            widget->MoveClient(deskRect.TopLeft());
+          }
+        } else if (changedSize) {
+          widget->ResizeClient(deskRect.Size(), true);
+        }
+      }
+    }
+    if (!widget->IsVisible()) {
+      widget->Show(true);
+    }
+    if (!visiblePopup.second.IsAlive() || !widget->NeedsPaint()) {
+      continue;
+    }
+    nsAutoScriptBlocker scriptBlocker;
+    RefPtr<PresShell> ps = frame->PresShell();
+    RefPtr<WindowRenderer> renderer = widget->GetWindowRenderer();
+    if (renderer->AsFallback()) {
+      
+      
+      widget->Invalidate(LayoutDeviceIntRect({}, widget->GetBounds().Size()));
+    } else {
+      ps->PaintAndRequestComposite(frame, renderer, PaintFlags::None);
     }
   }
 }

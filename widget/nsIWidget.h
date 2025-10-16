@@ -558,14 +558,6 @@ class nsIWidget : public nsISupports {
 
   virtual mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScale() = 0;
 
-  
-
-
-
-
-  virtual mozilla::DesktopToLayoutDeviceScale
-  GetDesktopToDeviceScaleByScreen() = 0;
-
   virtual void DynamicToolbarOffsetChanged(mozilla::ScreenIntCoord aOffset) = 0;
 
   

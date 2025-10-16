@@ -4146,20 +4146,6 @@ void PresShell::SchedulePaint() {
   }
 }
 
-void PresShell::DispatchSynthMouseOrPointerMove(
-    WidgetMouseEvent* aMouseOrPointerMoveEvent) {
-  AUTO_PROFILER_TRACING_MARKER_DOCSHELL("Paint",
-                                        "DispatchSynthMouseOrPointerMove",
-                                        GRAPHICS, mPresContext->GetDocShell());
-  nsEventStatus status = nsEventStatus_eIgnore;
-  nsView* targetView = nsView::GetViewFor(aMouseOrPointerMoveEvent->mWidget);
-  if (!targetView) {
-    return;
-  }
-  RefPtr<nsViewManager> viewManager = targetView->GetViewManager();
-  viewManager->DispatchEvent(aMouseOrPointerMoveEvent, targetView, &status);
-}
-
 void PresShell::ClearMouseCaptureOnView(nsView* aView) {
   if (nsIContent* capturingContent = GetCapturingContent()) {
     if (aView) {
@@ -5910,15 +5896,13 @@ void PresShell::SynthesizeMouseMove(bool aFromScroll) {
   }
 }
 
-static nsView* FindFloatingViewContaining(nsPresContext* aRootPresContext,
-                                          nsIWidget* aRootWidget,
-                                          const LayoutDeviceIntPoint& aPt) {
-  nsIFrame* popupFrame = nsLayoutUtils::GetPopupFrameForPoint(
+static nsMenuPopupFrame* FindPopupFrame(nsPresContext* aRootPresContext,
+                                        nsIWidget* aRootWidget,
+                                        const LayoutDeviceIntPoint& aPt) {
+  return nsLayoutUtils::GetPopupFrameForPoint(
       aRootPresContext, aRootWidget, aPt,
       nsLayoutUtils::GetPopupFrameForPointFlags::OnlyReturnFramesWithWidgets);
-  return popupFrame ? popupFrame->GetView() : nullptr;
 }
-
 
 
 
@@ -6125,72 +6109,67 @@ void PresShell::ProcessSynthMouseOrPointerMoveEvent(
 
   
   
-  
-  
-  nsView* view = nullptr;
-
-  
-  int32_t viewAPD;
-
-  
-  
   nsPoint refpoint(0, 0);
-
-  
-  
-  nsViewManager* pointVM = nullptr;
 
   nsView* const rootView = mViewManager ? mViewManager->GetRootView() : nullptr;
   if (!rootView || !rootView->HasWidget()) {
     return;
   }
-#ifdef DEBUG
-  nsCOMPtr<nsIDragSession> dragSession =
-      nsContentUtils::GetDragSession(rootView->GetWidget());
-  MOZ_ASSERT(!dragSession);
-#endif
+  MOZ_ASSERT(!nsCOMPtr{nsContentUtils::GetDragSession(rootView->GetWidget())});
 
+  
+  
+  
+  
+  nsCOMPtr<nsIWidget> widget;
+  
+  
+  RefPtr<PresShell> pointShell;
+  
+  int32_t widgetAPD;
+  
+  
+  RefPtr<BrowserBridgeChild> bbc;
+
+  
+  nsMenuPopupFrame* popupFrame = nullptr;
   if (rootView->GetFrame()) {
-    view =
-        FindFloatingViewContaining(mPresContext, rootView->GetWidget(),
-                                   LayoutDeviceIntPoint::FromAppUnitsToNearest(
-                                       aPointerInfo.mLastRefPointInRootDoc +
-                                           rootView->ViewToWidgetOffset(),
-                                       APD));
+    popupFrame = FindPopupFrame(mPresContext, rootView->GetWidget(),
+                                LayoutDeviceIntPoint::FromAppUnitsToNearest(
+                                    aPointerInfo.mLastRefPointInRootDoc +
+                                        rootView->ViewToWidgetOffset(),
+                                    APD));
+    if (popupFrame) {
+      pointShell = popupFrame->PresShell();
+      widget = popupFrame->GetWidget();
+      widgetAPD = popupFrame->PresContext()->AppUnitsPerDevPixel();
+      refpoint = aPointerInfo.mLastRefPointInRootDoc;
+      DebugOnly<nsLayoutUtils::TransformResult> result =
+          nsLayoutUtils::TransformPoint(
+              RelativeTo{rootView->GetFrame(), ViewportType::Visual},
+              RelativeTo{popupFrame, ViewportType::Layout}, refpoint);
+      MOZ_ASSERT(result == nsLayoutUtils::TRANSFORM_SUCCEEDED);
+    }
   }
-
-  nsView* pointView = view;
-  if (!view) {
-    view = rootView;
+  if (!widget) {
+    widget = rootView->GetWidget();
+    widgetAPD = APD;
+    nsView* pointView = rootView;
     if (rootView->GetFrame()) {
       pointView = FindViewContaining(rootView, ViewportType::Visual, rootView,
                                      aPointerInfo.mLastRefPointInRootDoc);
-    } else {
-      pointView = rootView;
     }
     
-    pointVM = (pointView ? pointView : view)->GetViewManager();
+    pointShell = (pointView ? pointView : rootView)->GetPresShell();
+    bbc = GetChildBrowser(pointView);
     refpoint =
         aPointerInfo.mLastRefPointInRootDoc + rootView->ViewToWidgetOffset();
-    viewAPD = APD;
-  } else {
-    pointVM = view->GetViewManager();
-    nsIFrame* frame = view->GetFrame();
-    NS_ASSERTION(frame, "floating views can't be anonymous");
-    viewAPD = frame->PresContext()->AppUnitsPerDevPixel();
-    refpoint = aPointerInfo.mLastRefPointInRootDoc;
-    DebugOnly<nsLayoutUtils::TransformResult> result =
-        nsLayoutUtils::TransformPoint(
-            RelativeTo{rootView->GetFrame(), ViewportType::Visual},
-            RelativeTo{frame, ViewportType::Layout}, refpoint);
-    MOZ_ASSERT(result == nsLayoutUtils::TRANSFORM_SUCCEEDED);
-    refpoint += view->ViewToWidgetOffset();
   }
-  NS_ASSERTION(view->GetWidget(), "view should have a widget here");
+  NS_ASSERTION(widget, "view should have a widget here");
   Maybe<WidgetMouseEvent> mouseMoveEvent;
   Maybe<WidgetPointerEvent> pointerMoveEvent;
   if (aMoveMessage == eMouseMove) {
-    mouseMoveEvent.emplace(true, eMouseMove, view->GetWidget(),
+    mouseMoveEvent.emplace(true, eMouseMove, widget,
                            WidgetMouseEvent::eSynthesized);
     mouseMoveEvent->mButton = MouseButton::ePrimary;
     
@@ -6198,7 +6177,7 @@ void PresShell::ProcessSynthMouseOrPointerMoveEvent(
     
     mouseMoveEvent->convertToPointer = false;
   } else {
-    pointerMoveEvent.emplace(true, ePointerMove, view->GetWidget());
+    pointerMoveEvent.emplace(true, ePointerMove, widget);
     pointerMoveEvent->mButton = MouseButton::eNotPressed;
     pointerMoveEvent->mReason = WidgetMouseEvent::eSynthesized;
   }
@@ -6214,13 +6193,13 @@ void PresShell::ProcessSynthMouseOrPointerMoveEvent(
   event.mFlags.mIsSynthesizedForTests = aPointerInfo.mIsSynthesizedForTests;
 
   event.mRefPoint =
-      LayoutDeviceIntPoint::FromAppUnitsToNearest(refpoint, viewAPD);
+      LayoutDeviceIntPoint::FromAppUnitsToNearest(refpoint, widgetAPD);
   event.mButtons = aPointerInfo.mLastButtons;
   event.mInputSource = aPointerInfo.mInputSource;
   event.pointerId = aPointerId;
   event.mModifiers = PresShell::GetCurrentModifiers();
 
-  if (BrowserBridgeChild* bbc = GetChildBrowser(pointView)) {
+  if (bbc) {
     
     
     
@@ -6237,7 +6216,7 @@ void PresShell::ProcessSynthMouseOrPointerMoveEvent(
     return;
   }
 
-  if (RefPtr<PresShell> presShell = pointVM->GetPresShell()) {
+  if (pointShell) {
     
     
     
@@ -6246,7 +6225,16 @@ void PresShell::ProcessSynthMouseOrPointerMoveEvent(
     
     InputAPZContext apzContext(aPointerInfo.mLastTargetGuid, 0,
                                nsEventStatus_eIgnore);
-    presShell->DispatchSynthMouseOrPointerMove(&event);
+    AUTO_PROFILER_TRACING_MARKER_DOCSHELL(
+        "Paint", "DispatchSynthMouseOrPointerMove", GRAPHICS,
+        pointShell->GetPresContext()->GetDocShell());
+    nsEventStatus status = nsEventStatus_eIgnore;
+    if (popupFrame) {
+      pointShell->HandleEvent(popupFrame, &event, false, &status);
+    } else {
+      RefPtr<nsViewManager> viewManager = rootView->GetViewManager();
+      viewManager->DispatchEvent(&event, rootView, &status);
+    }
   }
 }
 

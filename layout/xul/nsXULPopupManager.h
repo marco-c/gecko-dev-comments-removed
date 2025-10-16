@@ -551,6 +551,8 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
 
   void UpdatePopupPositions(nsRefreshDriver* aRefreshDriver);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  void PaintPopups(nsRefreshDriver* aRefreshDriver);
 
   
 
@@ -628,20 +630,6 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
 
   bool MayShowPopup(nsMenuPopupFrame* aFrame);
-
-  
-
-
-
-  void PopupMoved(nsIFrame* aFrame, const mozilla::LayoutDeviceIntPoint& aPoint,
-                  bool aByMoveToRect);
-
-  
-
-
-
-  void PopupResized(nsIFrame* aFrame,
-                    const mozilla::LayoutDeviceIntSize& aSize);
 
   
 

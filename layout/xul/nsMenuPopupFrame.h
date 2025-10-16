@@ -21,6 +21,7 @@
 #include "nsCOMPtr.h"
 #include "nsExpirationState.h"
 #include "nsIDOMEventListener.h"
+#include "nsIWidgetListener.h"
 #include "nsXULPopupManager.h"
 
 class nsIWidget;
@@ -102,7 +103,6 @@ enum class MenuPopupAnchorType : uint8_t {
 nsIFrame* NS_NewMenuPopupFrame(mozilla::PresShell* aPresShell,
                                mozilla::ComputedStyle* aStyle);
 
-class nsView;
 class nsMenuPopupFrame;
 
 
@@ -128,7 +128,7 @@ class nsXULPopupShownEvent final : public mozilla::Runnable,
   const RefPtr<nsPresContext> mPresContext;
 };
 
-class nsMenuPopupFrame final : public nsBlockFrame {
+class nsMenuPopupFrame final : public nsBlockFrame, public nsIWidgetListener {
   using PopupLevel = mozilla::widget::PopupLevel;
   using PopupType = mozilla::widget::PopupType;
 
@@ -198,6 +198,23 @@ class nsMenuPopupFrame final : public nsBlockFrame {
                             AttrModType aModType) override;
 
   
+  mozilla::PresShell* GetPresShell() override { return PresShell(); }
+  nsMenuPopupFrame* GetAsMenuPopupFrame() override { return this; }
+  bool WindowMoved(nsIWidget*, int32_t aX, int32_t aY, ByMoveToRect) override;
+  bool WindowResized(nsIWidget*, int32_t aWidth, int32_t aHeight) override;
+  bool RequestWindowClose(nsIWidget*) override;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  nsEventStatus HandleEvent(mozilla::WidgetGUIEvent* aEvent,
+                            bool aUseAttachedEvents) override;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  bool PaintWindow(nsIWidget* aWidget, mozilla::LayoutDeviceIntRegion) override;
+  void DidCompositeWindow(mozilla::layers::TransactionId aTransactionId,
+                          const mozilla::TimeStamp& aCompositeStart,
+                          const mozilla::TimeStamp& aCompositeEnd) override;
+  bool ShouldNotBeVisible() override { return !IsOpen(); }
+  using nsIFrame::HandleEvent;  
+
+  
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void Destroy(DestroyContext&) override;
 
   bool HasRemoteContent() const;
@@ -225,7 +242,8 @@ class nsMenuPopupFrame final : public nsBlockFrame {
 
   MOZ_CAN_RUN_SCRIPT void EnsureActiveMenuListItemIsVisible();
 
-  nsresult CreateWidgetForView(nsView* aView);
+  void CreateWidget();
+  void DestroyWidget();
   mozilla::WindowShadow GetShadowStyle() const;
 
   void DidSetComputedStyle(ComputedStyle* aOldStyle) override;
@@ -282,6 +300,10 @@ class nsMenuPopupFrame final : public nsBlockFrame {
 
   bool IsDragSource() const { return mIsDragSource; }
   void SetIsDragSource(bool aIsDragSource) { mIsDragSource = aIsDragSource; }
+
+  bool PendingWidgetMoveResize() const { return mPendingWidgetMoveResize; }
+  void ClearPendingWidgetMoveResize() { mPendingWidgetMoveResize = false; }
+  void SchedulePendingWidgetMoveResize();
 
   static nsIContent* GetTriggerContent(nsMenuPopupFrame* aMenuPopupFrame);
   void ClearTriggerContent() { mTriggerContent = nullptr; }
@@ -405,6 +427,8 @@ class nsMenuPopupFrame final : public nsBlockFrame {
     return mLastClientOffset;
   }
 
+  mozilla::LayoutDeviceIntRect CalcWidgetBounds() const;
+
   
   int8_t GetAlignmentPosition() const;
 
@@ -502,13 +526,6 @@ class nsMenuPopupFrame final : public nsBlockFrame {
 
   
   
-  void CreatePopupView();
-
-  nsView* GetViewInternal() const override { return mView; }
-  void SetViewInternal(nsView* aView) override { mView = aView; }
-
-  
-  
   
   
   
@@ -573,7 +590,7 @@ class nsMenuPopupFrame final : public nsBlockFrame {
   
   nsCOMPtr<nsIContent> mTriggerContent;
 
-  nsView* mView = nullptr;
+  RefPtr<nsIWidget> mWidget;
 
   RefPtr<nsXULPopupShownEvent> mPopupShownDispatcher;
 
@@ -654,6 +671,9 @@ class nsMenuPopupFrame final : public nsBlockFrame {
   bool mIsDragSource = false;
 
   
+  bool mPendingWidgetMoveResize = false;
+
+  
   
   
   
@@ -666,7 +686,6 @@ class nsMenuPopupFrame final : public nsBlockFrame {
   nsRect mOverrideConstraintRect;
 
   nsExpirationState mExpirationState;
-
   static mozilla::TimeStamp sLastKeyTime;
 };  
 
