@@ -633,7 +633,6 @@ void nsIFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
                  (NS_FRAME_GENERATED_CONTENT |
                   NS_FRAME_OUT_OF_FLOW |
                   NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN |
-                  NS_FRAME_INDEPENDENT_SELECTION |
                   NS_FRAME_PART_OF_IBSPLIT |
                   NS_FRAME_MAY_BE_TRANSFORMED |
                   NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR));
@@ -662,7 +661,6 @@ void nsIFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
     
     AddStateBits(GetParent()->GetStateBits() &
                  (NS_FRAME_GENERATED_CONTENT |
-                  NS_FRAME_INDEPENDENT_SELECTION |
                   NS_FRAME_IS_SVG_TEXT |
                   NS_FRAME_IN_POPUP |
                   NS_FRAME_IS_NONDISPLAY));
@@ -2397,6 +2395,22 @@ already_AddRefed<ComputedStyle> nsIFrame::ComputeTargetTextStyle() const {
     return nullptr;
   }
   return pseudoStyle.forget();
+}
+
+nsTextControlFrame* nsIFrame::GetContainingTextControlFrame() const {
+  const nsIFrame* cur = this;
+  do {
+    if (const nsTextControlFrame* tc = do_QueryFrame(cur)) {
+      return const_cast<nsTextControlFrame*>(tc);
+    }
+    auto* content = cur->GetContent();
+    if (!content || !content->IsInNativeAnonymousSubtree()) {
+      
+      return nullptr;
+    }
+    cur = cur->GetParent();
+  } while (cur);
+  return nullptr;
 }
 
 bool nsIFrame::CanBeDynamicReflowRoot() const {
@@ -5681,19 +5695,9 @@ static bool FrameContentCanHaveParentSelectionRange(nsIFrame* aFrame) {
   
   
   
-  
   if (aFrame->IsTextInputFrame()) {
-    MOZ_ASSERT(aFrame->HasAnyStateBits(NS_FRAME_INDEPENDENT_SELECTION));
     return false;
   }
-
-  
-  
-  
-  MOZ_ASSERT_IF(
-      aFrame->HasAnyStateBits(NS_FRAME_INDEPENDENT_SELECTION),
-      aFrame->GetParent()->HasAnyStateBits(NS_FRAME_INDEPENDENT_SELECTION));
-
   return !aFrame->IsGeneratedContentFrame();
 }
 
@@ -9111,15 +9115,9 @@ nsresult nsIFrame::GetSelectionController(nsPresContext* aPresContext,
   if (!aPresContext || !aSelCon) {
     return NS_ERROR_INVALID_ARG;
   }
-
-  nsIFrame* frame = this;
-  while (frame && frame->HasAnyStateBits(NS_FRAME_INDEPENDENT_SELECTION)) {
-    if (nsTextControlFrame* tcf = do_QueryFrame(frame)) {
-      return tcf->GetOwnedSelectionController(aSelCon);
-    }
-    frame = frame->GetParent();
+  if (nsTextControlFrame* tcf = GetContainingTextControlFrame()) {
+    return tcf->GetOwnedSelectionController(aSelCon);
   }
-
   *aSelCon = do_AddRef(aPresContext->PresShell()).take();
   return NS_OK;
 }
@@ -9131,14 +9129,9 @@ already_AddRefed<nsFrameSelection> nsIFrame::GetFrameSelection() {
 }
 
 const nsFrameSelection* nsIFrame::GetConstFrameSelection() const {
-  nsIFrame* frame = const_cast<nsIFrame*>(this);
-  while (frame && frame->HasAnyStateBits(NS_FRAME_INDEPENDENT_SELECTION)) {
-    if (nsTextControlFrame* tcf = do_QueryFrame(frame)) {
-      return tcf->GetOwnedFrameSelection();
-    }
-    frame = frame->GetParent();
+  if (nsTextControlFrame* tcf = GetContainingTextControlFrame()) {
+    return tcf->GetOwnedFrameSelection();
   }
-
   return PresShell()->ConstFrameSelection();
 }
 

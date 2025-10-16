@@ -112,6 +112,7 @@ class nsFrameSelection;
 class nsIWidget;
 class nsISelectionController;
 class nsILineIterator;
+class nsTextControlFrame;
 class gfxSkipChars;
 class gfxSkipCharsIterator;
 class gfxContext;
@@ -738,8 +739,7 @@ class nsIFrame : public nsQueryFrame {
   NS_DECL_QUERYFRAME
   NS_DECL_QUERYFRAME_TARGET(nsIFrame)
 
-  explicit nsIFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
-                    ClassID aID)
+  nsIFrame(ComputedStyle* aStyle, nsPresContext* aPresContext, ClassID aID)
       : mContent(nullptr),
         mComputedStyle(aStyle),
         mPresContext(aPresContext),
@@ -1049,6 +1049,11 @@ class nsIFrame : public nsQueryFrame {
   nsContainerFrame* GetParent() const { return mParent; }
 
   bool CanBeDynamicReflowRoot() const;
+
+  
+  
+  nsTextControlFrame* GetContainingTextControlFrame() const;
+  bool IsInsideTextControl() const { return !!GetContainingTextControlFrame(); }
 
   
 
