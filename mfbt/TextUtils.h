@@ -269,7 +269,7 @@ constexpr bool IsAsciiAlphanumeric(Char aChar) {
 
 
 template <typename Char>
-uint8_t AsciiAlphanumericToNumber(Char aChar) {
+constexpr uint8_t AsciiAlphanumericToNumber(Char aChar) {
   using UnsignedChar = typename detail::MakeUnsignedChar<Char>::Type;
   auto uc = static_cast<UnsignedChar>(aChar);
 
@@ -281,11 +281,7 @@ uint8_t AsciiAlphanumericToNumber(Char aChar) {
     return uc - 'A' + 10;
   }
 
-  
-  
-  
-  
-  MOZ_ASSERT('a' <= uc && uc <= 'z',
+  MOZ_ASSERT(IsAsciiLowercaseAlpha(aChar),
              "non-ASCII alphanumeric character can't be converted to number");
   return uc - 'a' + 10;
 }
