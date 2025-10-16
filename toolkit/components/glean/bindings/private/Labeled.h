@@ -28,39 +28,8 @@ namespace mozilla::glean {
 
 namespace impl {
 
-template <typename T, typename E>
-class Labeled {
- public:
-  constexpr explicit Labeled(uint32_t id) : mId(id) {}
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  T Get(const nsACString& aLabel) const;
-
-  
-
-
-
-
-  T EnumGet(E aLabel) const;
-
- private:
-  const uint32_t mId;
-};
+nsCString GetProcessTypeForTelemetry();
 
 static inline void UpdateLabeledMirror(Telemetry::ScalarID aMirrorId,
                                        uint32_t aSubmetricId,
@@ -82,333 +51,114 @@ static inline void UpdateLabeledDistributionMirror(
   });
 }
 
-template <typename E>
-class Labeled<BooleanMetric, E> {
+template <typename T>
+inline uint32_t fog_labeled_get(uint32_t aId, const nsACString* aLabel);
+template <typename T>
+inline uint32_t fog_labeled_enum_get(uint32_t aId, uint16_t aLabel);
+
+#define FOG_LABEL_TYPE_MAP(type, name)                                        \
+  template <>                                                                 \
+  inline uint32_t fog_labeled_get<type>(uint32_t aId,                         \
+                                        const nsACString* aLabel) {           \
+    return fog_labeled_##name##_get(aId, aLabel);                             \
+  }                                                                           \
+  template <>                                                                 \
+  inline uint32_t fog_labeled_enum_get<type>(uint32_t aId, uint16_t aLabel) { \
+    return fog_labeled_##name##_enum_get(aId, aLabel);                        \
+  }
+
+FOG_LABEL_TYPE_MAP(BooleanMetric, boolean)
+FOG_LABEL_TYPE_MAP(QuantityMetric, quantity)
+FOG_LABEL_TYPE_MAP(StringMetric, string)
+FOG_LABEL_TYPE_MAP(CounterMetric<CounterType::eBaseOrLabeled>, counter)
+FOG_LABEL_TYPE_MAP(CustomDistributionMetric, custom_distribution)
+FOG_LABEL_TYPE_MAP(MemoryDistributionMetric, memory_distribution)
+FOG_LABEL_TYPE_MAP(TimingDistributionMetric, timing_distribution)
+
+template <typename T, typename E>
+class Labeled {
  public:
   constexpr explicit Labeled(uint32_t id) : mId(id) {}
 
-  BooleanMetric Get(const nsACString& aLabel) const {
-    auto submetricId = fog_labeled_boolean_get(mId, &aLabel);
-    
-    
-    auto mirrorId = ScalarIdForMetric(mId);
-    if (mirrorId) {
-      UpdateLabeledMirror(mirrorId.extract(), submetricId, aLabel);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  T Get(const nsACString& aLabel) const {
+    uint32_t submetricId = fog_labeled_get<T>(mId, &aLabel);
+
+    Maybe<ScalarID> mirrorId;
+    if constexpr (MayBeScalarMirror()) {
+      mirrorId = ScalarIdForMetric(mId);
+      if (mirrorId) {
+        UpdateLabeledMirror(mirrorId.extract(), submetricId, aLabel);
+      }
     }
-    return BooleanMetric(submetricId);
-  }
-
-  BooleanMetric EnumGet(E aLabel) const {
-    auto submetricId =
-        fog_labeled_boolean_enum_get(mId, static_cast<uint16_t>(aLabel));
-    auto mirrorId = ScalarIdForMetric(mId);
-    if (mirrorId) {
-      
-      
-      nsCString label;
-      fog_labeled_enum_to_str(mId, static_cast<uint16_t>(aLabel), &label);
-      UpdateLabeledMirror(mirrorId.extract(), submetricId, label);
+    if constexpr (MayBeDistributionMirror()) {
+      if (!mirrorId) {
+        if (Maybe<HistogramID> mirrorHgramId = HistogramIdForMetric(mId)) {
+          UpdateLabeledDistributionMirror(mirrorHgramId.extract(), submetricId,
+                                          aLabel);
+        }
+      }
     }
-    return BooleanMetric(submetricId);
+    return T(submetricId);
   }
 
- private:
-  const uint32_t mId;
-};
+  
 
-template <typename E>
-class Labeled<CounterMetric<CounterType::eBaseOrLabeled>, E> {
- public:
-  constexpr explicit Labeled(uint32_t id) : mId(id) {}
 
-  CounterMetric<CounterType::eBaseOrLabeled> Get(
-      const nsACString& aLabel) const {
-    auto submetricId = fog_labeled_counter_get(mId, &aLabel);
-    
-    
-    auto mirrorId = ScalarIdForMetric(mId);
-    if (mirrorId) {
-      UpdateLabeledMirror(mirrorId.extract(), submetricId, aLabel);
-    } else if (auto mirrorHgramId = HistogramIdForMetric(mId)) {
-      UpdateLabeledDistributionMirror(mirrorHgramId.extract(), submetricId,
-                                      aLabel);
+
+
+  template <typename U = T>
+  std::enable_if_t<!std::is_same_v<U, DynamicLabel>, T> EnumGet(
+      E aLabel) const {
+    uint32_t submetricId =
+        fog_labeled_enum_get<T>(mId, static_cast<uint16_t>(aLabel));
+
+    Maybe<ScalarID> mirrorId;
+    if constexpr (MayBeScalarMirror()) {
+      mirrorId = ScalarIdForMetric(mId);
+      if (mirrorId) {
+        
+        
+        nsCString label;
+        fog_labeled_enum_to_str(mId, static_cast<uint16_t>(aLabel), &label);
+        UpdateLabeledMirror(mirrorId.extract(), submetricId, label);
+      }
     }
-    return CounterMetric<CounterType::eBaseOrLabeled>(submetricId);
-  }
-
-  CounterMetric<CounterType::eBaseOrLabeled> EnumGet(E aLabel) const {
-    auto submetricId =
-        fog_labeled_counter_enum_get(mId, static_cast<uint16_t>(aLabel));
-    auto mirrorId = ScalarIdForMetric(mId);
-    if (mirrorId) {
-      
-      
-      nsCString label;
-      fog_labeled_enum_to_str(mId, static_cast<uint16_t>(aLabel), &label);
-      UpdateLabeledMirror(mirrorId.extract(), submetricId, label);
-    } else if (auto mirrorHgramId = HistogramIdForMetric(mId)) {
-      nsCString label;
-      fog_labeled_enum_to_str(mId, static_cast<uint16_t>(aLabel), &label);
-      UpdateLabeledDistributionMirror(mirrorHgramId.extract(), submetricId,
-                                      label);
+    if constexpr (MayBeDistributionMirror()) {
+      if (!mirrorId) {
+        if (Maybe<HistogramID> mirrorHgramId = HistogramIdForMetric(mId)) {
+          nsCString label;
+          fog_labeled_enum_to_str(mId, static_cast<uint16_t>(aLabel), &label);
+          UpdateLabeledDistributionMirror(mirrorHgramId.extract(), submetricId,
+                                          label);
+        }
+      }
     }
-    return CounterMetric<CounterType::eBaseOrLabeled>(submetricId);
+    return T(submetricId);
   }
 
- private:
-  const uint32_t mId;
-};
-
-template <typename E>
-class Labeled<CustomDistributionMetric, E> {
- public:
-  constexpr explicit Labeled(uint32_t id) : mId(id) {}
-
-  CustomDistributionMetric Get(const nsACString& aLabel) const {
-    auto submetricId = fog_labeled_custom_distribution_get(mId, &aLabel);
-    
-    
-    auto mirrorId = HistogramIdForMetric(mId);
-    if (mirrorId) {
-      UpdateLabeledDistributionMirror(mirrorId.extract(), submetricId, aLabel);
-    }
-    return CustomDistributionMetric(submetricId);
-  }
-
-  CustomDistributionMetric EnumGet(E aLabel) const {
-    auto submetricId = fog_labeled_custom_distribution_enum_get(
-        mId, static_cast<uint16_t>(aLabel));
-    auto mirrorId = HistogramIdForMetric(mId);
-    if (mirrorId) {
-      
-      
-      nsCString label;
-      fog_labeled_enum_to_str(mId, static_cast<uint16_t>(aLabel), &label);
-      UpdateLabeledDistributionMirror(mirrorId.extract(), submetricId, label);
-    }
-    return CustomDistributionMetric(submetricId);
-  }
-
- private:
-  const uint32_t mId;
-};
-
-template <typename E>
-class Labeled<MemoryDistributionMetric, E> {
- public:
-  constexpr explicit Labeled(uint32_t id) : mId(id) {}
-
-  MemoryDistributionMetric Get(const nsACString& aLabel) const {
-    auto submetricId = fog_labeled_memory_distribution_get(mId, &aLabel);
-    
-    
-    auto mirrorId = HistogramIdForMetric(mId);
-    if (mirrorId) {
-      UpdateLabeledDistributionMirror(mirrorId.extract(), submetricId, aLabel);
-    }
-    return MemoryDistributionMetric(submetricId);
-  }
-
-  MemoryDistributionMetric EnumGet(E aLabel) const {
-    auto submetricId = fog_labeled_memory_distribution_enum_get(
-        mId, static_cast<uint16_t>(aLabel));
-    auto mirrorId = HistogramIdForMetric(mId);
-    if (mirrorId) {
-      
-      
-      nsCString label;
-      fog_labeled_enum_to_str(mId, static_cast<uint16_t>(aLabel), &label);
-      UpdateLabeledDistributionMirror(mirrorId.extract(), submetricId, label);
-    }
-    return MemoryDistributionMetric(submetricId);
-  }
-
- private:
-  const uint32_t mId;
-};
-
-template <typename E>
-class Labeled<QuantityMetric, E> {
- public:
-  constexpr explicit Labeled(uint32_t id) : mId(id) {}
-
-  QuantityMetric Get(const nsACString& aLabel) const {
-    auto submetricId = fog_labeled_quantity_get(mId, &aLabel);
-    
-    
-    auto mirrorId = ScalarIdForMetric(mId);
-    if (mirrorId) {
-      UpdateLabeledMirror(mirrorId.extract(), submetricId, aLabel);
-    }
-    return QuantityMetric(submetricId);
-  }
-
-  QuantityMetric EnumGet(E aLabel) const {
-    auto submetricId =
-        fog_labeled_quantity_enum_get(mId, static_cast<uint16_t>(aLabel));
-    auto mirrorId = ScalarIdForMetric(mId);
-    if (mirrorId) {
-      
-      
-      nsCString label;
-      fog_labeled_enum_to_str(mId, static_cast<uint16_t>(aLabel), &label);
-      UpdateLabeledMirror(mirrorId.extract(), submetricId, label);
-    }
-    return QuantityMetric(submetricId);
-  }
-
- private:
-  const uint32_t mId;
-};
-
-template <typename E>
-class Labeled<StringMetric, E> {
- public:
-  constexpr explicit Labeled(uint32_t id) : mId(id) {}
-
-  StringMetric Get(const nsACString& aLabel) const {
-    auto submetricId = fog_labeled_string_get(mId, &aLabel);
-    
-    
-    return StringMetric(submetricId);
-  }
-
-  StringMetric EnumGet(E aLabel) const {
-    auto submetricId =
-        fog_labeled_string_enum_get(mId, static_cast<uint16_t>(aLabel));
-    
-    
-    return StringMetric(submetricId);
-  }
-
- private:
-  const uint32_t mId;
-};
-
-template <typename E>
-class Labeled<TimingDistributionMetric, E> {
- public:
-  constexpr explicit Labeled(uint32_t id) : mId(id) {}
-
-  TimingDistributionMetric Get(const nsACString& aLabel) const {
-    auto submetricId = fog_labeled_timing_distribution_get(mId, &aLabel);
-    
-    
-    auto mirrorId = HistogramIdForMetric(mId);
-    if (mirrorId) {
-      UpdateLabeledDistributionMirror(mirrorId.extract(), submetricId, aLabel);
-    }
-    return TimingDistributionMetric(submetricId);
-  }
-
-  TimingDistributionMetric EnumGet(E aLabel) const {
-    auto submetricId = fog_labeled_timing_distribution_enum_get(
-        mId, static_cast<uint16_t>(aLabel));
-    auto mirrorId = HistogramIdForMetric(mId);
-    if (mirrorId) {
-      
-      
-      nsCString label;
-      fog_labeled_enum_to_str(mId, static_cast<uint16_t>(aLabel), &label);
-      UpdateLabeledDistributionMirror(mirrorId.extract(), submetricId, label);
-    }
-    return TimingDistributionMetric(submetricId);
-  }
-
- private:
-  const uint32_t mId;
-};
-
-template <>
-class Labeled<BooleanMetric, DynamicLabel> {
- public:
-  constexpr explicit Labeled(uint32_t id) : mId(id) {}
-
-  BooleanMetric Get(const nsACString& aLabel) const {
-    auto submetricId = fog_labeled_boolean_get(mId, &aLabel);
-    
-    
-    auto mirrorId = ScalarIdForMetric(mId);
-    if (mirrorId) {
-      UpdateLabeledMirror(mirrorId.extract(), submetricId, aLabel);
-    }
-    return BooleanMetric(submetricId);
-  }
-
-  BooleanMetric EnumGet(DynamicLabel aLabel) const = delete;
-
- private:
-  const uint32_t mId;
-};
-
-template <>
-class Labeled<CounterMetric<CounterType::eBaseOrLabeled>, DynamicLabel> {
- public:
-  constexpr explicit Labeled(uint32_t id) : mId(id) {}
-
-  CounterMetric<CounterType::eBaseOrLabeled> Get(
-      const nsACString& aLabel) const {
-    auto submetricId = fog_labeled_counter_get(mId, &aLabel);
-    
-    
-    auto mirrorId = ScalarIdForMetric(mId);
-    if (mirrorId) {
-      UpdateLabeledMirror(mirrorId.extract(), submetricId, aLabel);
-    } else if (auto mirrorHgramId = HistogramIdForMetric(mId)) {
-      UpdateLabeledDistributionMirror(mirrorHgramId.extract(), submetricId,
-                                      aLabel);
-    }
-    return CounterMetric<CounterType::eBaseOrLabeled>(submetricId);
-  }
-
-  CounterMetric<CounterType::eBaseOrLabeled> EnumGet(
-      DynamicLabel aLabel) const = delete;
-
- private:
-  const uint32_t mId;
-};
-
-template <>
-class Labeled<CustomDistributionMetric, DynamicLabel> {
- public:
-  constexpr explicit Labeled(uint32_t id) : mId(id) {}
-
-  CustomDistributionMetric Get(const nsACString& aLabel) const {
-    auto submetricId = fog_labeled_custom_distribution_get(mId, &aLabel);
-    
-    
-    auto mirrorId = HistogramIdForMetric(mId);
-    if (mirrorId) {
-      UpdateLabeledDistributionMirror(mirrorId.extract(), submetricId, aLabel);
-    }
-    return CustomDistributionMetric(submetricId);
-  }
-
-  CustomDistributionMetric EnumGet(DynamicLabel aLabel) const = delete;
-
- private:
-  const uint32_t mId;
-};
-
-template <>
-class Labeled<TimingDistributionMetric, DynamicLabel> {
- public:
-  constexpr explicit Labeled(uint32_t id) : mId(id) {}
-
-  TimingDistributionMetric Get(const nsACString& aLabel) const {
-    auto submetricId = fog_labeled_memory_distribution_get(mId, &aLabel);
-    
-    
-    auto mirrorId = HistogramIdForMetric(mId);
-    if (mirrorId) {
-      UpdateLabeledDistributionMirror(mirrorId.extract(), submetricId, aLabel);
-    }
-    return TimingDistributionMetric(submetricId);
-  }
-
-  TimingDistributionMetric EnumGet(DynamicLabel aLabel) const = delete;
-
-  TimingDistributionMetric MaybeTruncateAndGet(const nsACString& aLabel) const {
+  
+  
+  template <typename U = T, typename V = E>
+  std::enable_if_t<std::is_same_v<U, TimingDistributionMetric> &&
+                       std::is_same_v<V, DynamicLabel>,
+                   T>
+  MaybeTruncateAndGet(const nsACString& aLabel) const {
     
     if (aLabel.Length() < 112) {
       return Get(aLabel);
@@ -419,70 +169,31 @@ class Labeled<TimingDistributionMetric, DynamicLabel> {
     return Get(truncated);
   }
 
+  
+
+
+
+
+
+
+  T ProcessGet() const { return Get(GetProcessTypeForTelemetry()); }
+
+ protected:
+  uint32_t mId;
+
  private:
-  const uint32_t mId;
-};
-
-template <>
-class Labeled<QuantityMetric, DynamicLabel> {
- public:
-  constexpr explicit Labeled(uint32_t id) : mId(id) {}
-
-  QuantityMetric Get(const nsACString& aLabel) const {
-    auto submetricId = fog_labeled_quantity_get(mId, &aLabel);
-    
-    
-    auto mirrorId = ScalarIdForMetric(mId);
-    if (mirrorId) {
-      UpdateLabeledMirror(mirrorId.extract(), submetricId, aLabel);
-    }
-    return QuantityMetric(submetricId);
+  static constexpr bool MayBeScalarMirror() {
+    return std::is_same_v<T, BooleanMetric> ||
+           std::is_same_v<T, CounterMetric<CounterType::eBaseOrLabeled>> ||
+           std::is_same_v<T, QuantityMetric>;
   }
 
-  QuantityMetric EnumGet(DynamicLabel aLabel) const = delete;
-
- private:
-  const uint32_t mId;
-};
-
-template <>
-class Labeled<StringMetric, DynamicLabel> {
- public:
-  constexpr explicit Labeled(uint32_t id) : mId(id) {}
-
-  StringMetric Get(const nsACString& aLabel) const {
-    auto submetricId = fog_labeled_string_get(mId, &aLabel);
-    
-    
-    return StringMetric(submetricId);
+  static constexpr bool MayBeDistributionMirror() {
+    return std::is_same_v<T, CounterMetric<CounterType::eBaseOrLabeled>> ||
+           std::is_same_v<T, CustomDistributionMetric> ||
+           std::is_same_v<T, MemoryDistributionMetric> ||
+           std::is_same_v<T, TimingDistributionMetric>;
   }
-
-  StringMetric EnumGet(DynamicLabel aLabel) const = delete;
-
- private:
-  const uint32_t mId;
-};
-
-template <>
-class Labeled<MemoryDistributionMetric, DynamicLabel> {
- public:
-  constexpr explicit Labeled(uint32_t id) : mId(id) {}
-
-  MemoryDistributionMetric Get(const nsACString& aLabel) const {
-    auto submetricId = fog_labeled_timing_distribution_get(mId, &aLabel);
-    
-    
-    auto mirrorId = HistogramIdForMetric(mId);
-    if (mirrorId) {
-      UpdateLabeledDistributionMirror(mirrorId.extract(), submetricId, aLabel);
-    }
-    return MemoryDistributionMetric(submetricId);
-  }
-
-  MemoryDistributionMetric EnumGet(DynamicLabel aLabel) const = delete;
-
- private:
-  const uint32_t mId;
 };
 
 }  
