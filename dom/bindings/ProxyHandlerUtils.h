@@ -14,7 +14,6 @@
 #include "js/TypeDecls.h"
 #include "jsfriendapi.h"  
 #include "mozilla/Likely.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/TextUtils.h"
 
 namespace mozilla::dom {
