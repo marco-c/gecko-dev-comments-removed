@@ -13,7 +13,6 @@ add_setup(async function () {
     set: [
       ["test.wait300msAfterTabSwitch", true],
       ["privacy.query_stripping.strip_list", "stripParam"],
-      ["privacy.query_stripping.strip_on_share.canDisable", false],
     ],
   });
 
@@ -38,8 +37,7 @@ add_task(async function testPrefDisabled() {
     strippedURI: shortenedUrl,
     prefEnabled: false,
     useTestList: false,
-    canDisable: false,
-    menuItemVisible: false,
+    expectedDisabled: true,
   });
 });
 
@@ -52,8 +50,7 @@ add_task(async function testQueryParamIsStrippedSelectURL() {
     strippedURI: shortenedUrl,
     prefEnabled: true,
     useTestList: false,
-    canDisable: false,
-    menuItemVisible: true,
+    expectedDisabled: false,
   });
 });
 
@@ -66,8 +63,7 @@ add_task(async function testQueryParamIsStripped() {
     strippedURI: shortenedUrl,
     prefEnabled: true,
     useTestList: false,
-    canDisable: false,
-    menuItemVisible: true,
+    expectedDisabled: false,
   });
 });
 
@@ -80,8 +76,7 @@ add_task(async function testURLIsCopiedWithNoParams() {
     strippedURI: shortenedUrl,
     prefEnabled: true,
     useTestList: false,
-    canDisable: false,
-    menuItemVisible: true,
+    expectedDisabled: true,
   });
 });
 
@@ -94,8 +89,7 @@ add_task(async function testQueryParamIsStrippedForSiteSpecific() {
     strippedURI: shortenedUrl,
     prefEnabled: true,
     useTestList: true,
-    canDisable: false,
-    menuItemVisible: true,
+    expectedDisabled: false,
   });
 });
 
@@ -108,8 +102,7 @@ add_task(async function testQueryParamIsNotStrippedForWrongSiteSpecific() {
     strippedURI: shortenedUrl,
     prefEnabled: true,
     useTestList: true,
-    canDisable: false,
-    menuItemVisible: true,
+    expectedDisabled: true,
   });
 });
 
@@ -122,27 +115,12 @@ add_task(async function testMagneticLinks() {
     strippedURI: shortenedUrl,
     prefEnabled: true,
     useTestList: true,
-    canDisable: false,
-    menuItemVisible: true,
+    expectedDisabled: true,
   });
 });
 
 
-add_task(async function testMagneticLinks() {
-  let validUrl = "magnet:?xt=urn:btih:somesha1hash";
-  let shortenedUrl = "magnet:?xt=urn:btih:somesha1hash";
-  await testStripOnShare({
-    originalURI: validUrl,
-    strippedURI: shortenedUrl,
-    prefEnabled: true,
-    useTestList: true,
-    canDisable: true,
-    menuItemVisible: false,
-  });
-});
-
-
-add_task(async function testMagneticLinks() {
+add_task(async function testAboutLinks() {
   let validUrl = "about:blank";
   let shortenedUrl = "about:blank";
   await testStripOnShare({
@@ -150,22 +128,20 @@ add_task(async function testMagneticLinks() {
     strippedURI: shortenedUrl,
     prefEnabled: true,
     useTestList: true,
-    canDisable: true,
-    menuItemVisible: false,
+    expectedDisabled: true,
   });
 });
 
 
 add_task(async function testStripNothingDisabled() {
   let validUrl = "https://example.com";
-  let shortenedUrl = "https://example.com";
+  let shortenedUrl = "https://example.com/";
   await testStripOnShare({
     originalURI: validUrl,
     strippedURI: shortenedUrl,
     prefEnabled: true,
     useTestList: true,
-    canDisable: true,
-    menuItemVisible: false,
+    expectedDisabled: true,
   });
 });
 
@@ -181,38 +157,7 @@ add_task(async function testErrorHandlingForNestedLinks() {
     strippedURI: shortenedUrl,
     prefEnabled: true,
     useTestList: true,
-    canDisable: false,
-    menuItemVisible: true,
-  });
-});
-
-
-
-add_task(async function testNoParamToStripWithCanDisablePref() {
-  let validUrl = "https://www.example.com/";
-  let shortenedUrl = "https://www.example.com/";
-  await testStripOnShare({
-    originalURI: validUrl,
-    strippedURI: shortenedUrl,
-    prefEnabled: true,
-    useTestList: false,
-    canDisable: true,
-    menuItemVisible: false,
-  });
-});
-
-
-
-add_task(async function testQueryParamIsStrippedWithCanDisablePref() {
-  let validUrl = "https://www.example.com/?stripParam=1234";
-  let shortenedUrl = "https://www.example.com/";
-  await testStripOnShare({
-    originalURI: validUrl,
-    strippedURI: shortenedUrl,
-    prefEnabled: true,
-    useTestList: false,
-    canDisable: true,
-    menuItemVisible: true,
+    expectedDisabled: false,
   });
 });
 
@@ -232,14 +177,12 @@ async function testStripOnShare({
   strippedURI,
   prefEnabled,
   useTestList,
-  canDisable,
-  menuItemVisible,
+  expectedDisabled,
 }) {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["privacy.query_stripping.strip_on_share.enabled", prefEnabled],
       ["privacy.query_stripping.strip_on_share.enableTestMode", useTestList],
-      ["privacy.query_stripping.strip_on_share.canDisable", canDisable],
     ],
   });
 
@@ -287,29 +230,25 @@ async function testStripOnShare({
       browser
     );
     await awaitPopupShown;
+
+    let menuItem = contextMenu.querySelector("#context-stripOnShareLink");
+    Assert.equal(
+      BrowserTestUtils.isVisible(menuItem),
+      prefEnabled,
+      "Menu item is visible"
+    );
+    Assert.equal(menuItem.disabled, expectedDisabled, "Menu item is disabled");
+
     let awaitPopupHidden = BrowserTestUtils.waitForEvent(
       contextMenu,
       "popuphidden"
     );
-    let stripOnShare = contextMenu.querySelector("#context-stripOnShareLink");
-    if (menuItemVisible) {
-      Assert.ok(
-        BrowserTestUtils.isVisible(stripOnShare),
-        "Menu item is visible"
-      );
+    if (prefEnabled) {
       
       await SimpleTest.promiseClipboardChange(strippedURI, () => {
-        contextMenu.activateItem(stripOnShare);
+        contextMenu.activateItem(menuItem);
       });
     } else {
-      if (canDisable) {
-        Assert.ok(stripOnShare.disabled, "Menu item is disabled");
-      } else {
-        Assert.ok(
-          !BrowserTestUtils.isVisible(stripOnShare),
-          "Menu item is not visible"
-        );
-      }
       contextMenu.hidePopup();
     }
     await awaitPopupHidden;
