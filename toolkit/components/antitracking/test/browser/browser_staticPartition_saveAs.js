@@ -384,10 +384,13 @@ add_task(async function testPageInfoMediaSaveAs() {
       imageTree.focus();
 
       
-      await BrowserTestUtils.waitForEvent(
-        pageInfo,
-        "page-info-mediapreview-load"
-      );
+      let preview = pageInfo.document.getElementById("thepreviewimage");
+      let mediaType = pageInfo.gImageView.data[i][1]; 
+      if (mediaType == "Image") {
+        await BrowserTestUtils.waitForEvent(preview, "load");
+      } else if (mediaType == "Video") {
+        await BrowserTestUtils.waitForEvent(preview, "canplaythrough");
+      }
 
       let url = pageInfo.gImageView.data[i][0]; 
       info(`Start to save the media item with URL: ${url}`);
@@ -439,10 +442,10 @@ add_task(async function testPageInfoMediaMultipleSelectedSaveAs() {
 
     
     
-    await BrowserTestUtils.waitForEvent(
-      pageInfo,
-      "page-info-mediapreview-load"
-    );
+    let preview = pageInfo.document.getElementById("thepreviewimage");
+    await BrowserTestUtils.waitForCondition(() => {
+      return preview.complete;
+    });
 
     let imageTree = pageInfo.document.getElementById("imagetree");
     let imageRowsNum = imageTree.view.rowCount;

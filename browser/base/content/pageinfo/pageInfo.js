@@ -447,30 +447,6 @@ async function loadPageInfo(browsingContext, imageElement, browser) {
 }
 
 
-function createPreviewBrowserElement(browser, docInfo) {
-  const previewBrowser = document.createXULElement("browser");
-  previewBrowser.setAttribute("id", "mediaBrowser");
-  previewBrowser.setAttribute("type", "content");
-  previewBrowser.setAttribute("remote", "true");
-  previewBrowser.setAttribute("remoteType", browser.remoteType);
-  previewBrowser.setAttribute("maychangeremoteness", "true");
-  previewBrowser.setAttribute("disableglobalhistory", "true");
-  previewBrowser.setAttribute("nodefaultsrc", "true");
-  previewBrowser.setAttribute("disablecontextmenu", "true");
-  previewBrowser.setAttribute(
-    "initialBrowsingContextGroupId",
-    browser.browsingContext.group.id
-  );
-
-  let { userContextId } = docInfo.principal.originAttributes;
-  if (userContextId) {
-    previewBrowser.setAttribute("usercontextid", userContextId);
-  }
-
-  document.getElementById("mediaBrowser").replaceWith(previewBrowser);
-}
-
-
 
 
 
@@ -491,8 +467,6 @@ async function onNonMediaPageInfoLoad(browser, pageInfoData, imageInfo) {
   document
     .getElementById("main-window")
     .setAttribute("relatedUrl", docInfo.location);
-
-  createPreviewBrowserElement(browser, docInfo);
 
   await makeGeneralTab(pageInfoData.metaViewRows, docInfo);
   if (
@@ -970,6 +944,7 @@ function makePreview(row) {
   var item = gImageView.data[row][COL_IMAGE_NODE];
   var url = gImageView.data[row][COL_IMAGE_ADDRESS];
   var isBG = gImageView.data[row][COL_IMAGE_BG];
+  var isAudio = false;
 
   setItemValue("imageurltext", url);
   setItemValue("imagetext", item.imageText);
@@ -977,7 +952,7 @@ function makePreview(row) {
 
   
   var cacheKey = url.replace(/#.*$/, "");
-  openCacheEntry(cacheKey, async function (cacheEntry) {
+  openCacheEntry(cacheKey, function (cacheEntry) {
     
     if (cacheEntry) {
       let imageSize = cacheEntry.dataSize;
@@ -1025,25 +1000,19 @@ function makePreview(row) {
       element.removeAttribute("data-l10n-id");
     }
 
-    let forceMediaDocument = null;
-    let message = {
-      width: undefined,
-      height: undefined,
-    };
+    var imageContainer = document.getElementById("theimagecontainer");
+    var oldImage = document.getElementById("thepreviewimage");
 
-    let isAllowed = checkProtocol(gImageView.data[row]);
-    if (isAllowed) {
-      try {
-        Services.scriptSecurityManager.checkLoadURIWithPrincipal(
-          gDocInfo.principal,
-          Services.io.newURI(url),
-          0
-        );
-      } catch {
-        isAllowed = false;
-      }
-    }
+    var isProtocolAllowed = checkProtocol(gImageView.data[row]);
 
+    var newImage = new Image();
+    newImage.id = "thepreviewimage";
+    var physWidth = 0,
+      physHeight = 0;
+    var width = 0,
+      height = 0;
+
+    let triggeringPrinStr = E10SUtils.serializePrincipal(gDocInfo.principal);
     if (
       (item.HTMLLinkElement ||
         item.HTMLInputElement ||
@@ -1051,129 +1020,117 @@ function makePreview(row) {
         item.SVGImageElement ||
         (item.HTMLObjectElement && mimeType && mimeType.startsWith("image/")) ||
         isBG) &&
-      isAllowed
+      isProtocolAllowed
     ) {
-      forceMediaDocument = "image";
+      function loadOrErrorListener() {
+        newImage.removeEventListener("load", loadOrErrorListener);
+        newImage.removeEventListener("error", loadOrErrorListener);
+        physWidth = newImage.width || 0;
+        physHeight = newImage.height || 0;
 
-      if (item.SVGImageElement) {
-        message.width = item.SVGImageElementWidth;
-        message.height = item.SVGImageElementHeight;
-      } else if (!isBG) {
-        if ("width" in item && item.width) {
-          message.width = item.width;
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (!isBG) {
+          newImage.width =
+            ("width" in item && item.width) || newImage.naturalWidth;
+          newImage.height =
+            ("height" in item && item.height) || newImage.naturalHeight;
+        } else {
+          
+          
+          newImage.width = item.naturalWidth || newImage.naturalWidth;
+          newImage.height = item.naturalHeight || newImage.naturalHeight;
         }
-        if ("height" in item && item.height) {
-          message.height = item.height;
+
+        if (item.SVGImageElement) {
+          newImage.width = item.SVGImageElementWidth;
+          newImage.height = item.SVGImageElementHeight;
+        }
+
+        width = newImage.width;
+        height = newImage.height;
+
+        document.getElementById("theimagecontainer").collapsed = false;
+        document.getElementById("brokenimagecontainer").collapsed = true;
+
+        if (url) {
+          if (width != physWidth || height != physHeight) {
+            document.l10n.setAttributes(
+              document.getElementById("imagedimensiontext"),
+              "media-dimensions-scaled",
+              {
+                dimx: formatNumber(physWidth),
+                dimy: formatNumber(physHeight),
+                scaledx: formatNumber(width),
+                scaledy: formatNumber(height),
+              }
+            );
+          } else {
+            document.l10n.setAttributes(
+              document.getElementById("imagedimensiontext"),
+              "media-dimensions",
+              { dimx: formatNumber(width), dimy: formatNumber(height) }
+            );
+          }
         }
       }
 
-      document.getElementById("theimagecontainer").collapsed = false;
-      document.getElementById("brokenimagecontainer").collapsed = true;
-    } else if (item.HTMLVideoElement && isAllowed) {
-      forceMediaDocument = "video";
+      
+      newImage.addEventListener("load", loadOrErrorListener);
+      newImage.addEventListener("error", loadOrErrorListener);
 
-      document.getElementById("theimagecontainer").collapsed = false;
-      document.getElementById("brokenimagecontainer").collapsed = true;
-
-      document.l10n.setAttributes(
-        document.getElementById("imagedimensiontext"),
-        "media-dimensions",
-        {
-          dimx: formatNumber(item.videoWidth),
-          dimy: formatNumber(item.videoHeight),
-        }
-      );
-    } else if (item.HTMLAudioElement && isAllowed) {
-      forceMediaDocument = "video"; 
-
-      document.getElementById("theimagecontainer").collapsed = false;
-      document.getElementById("brokenimagecontainer").collapsed = true;
+      newImage.setAttribute("triggeringprincipal", triggeringPrinStr);
+      newImage.setAttribute("src", url);
     } else {
       
-      
-      document.getElementById("brokenimagecontainer").collapsed = false;
-      document.getElementById("theimagecontainer").collapsed = true;
-      return;
-    }
+      if (item.HTMLVideoElement && isProtocolAllowed) {
+        newImage = document.createElement("video");
+        newImage.id = "thepreviewimage";
+        newImage.setAttribute("triggeringprincipal", triggeringPrinStr);
+        newImage.src = url;
+        newImage.controls = true;
+        width = physWidth = item.videoWidth;
+        height = physHeight = item.videoHeight;
 
-    const mediaBrowser = document.getElementById("mediaBrowser");
+        document.getElementById("theimagecontainer").collapsed = false;
+        document.getElementById("brokenimagecontainer").collapsed = true;
+      } else if (item.HTMLAudioElement && isProtocolAllowed) {
+        newImage = new Audio();
+        newImage.id = "thepreviewimage";
+        newImage.setAttribute("triggeringprincipal", triggeringPrinStr);
+        newImage.src = url;
+        newImage.controls = true;
+        isAudio = true;
 
-    const options = {
-      triggeringPrincipal: gDocInfo.principal,
-      forceMediaDocument,
-    };
-    mediaBrowser.loadURI(Services.io.newURI(url), options);
-
-    await new Promise(resolve => {
-      let webProgressListener = {
-        onStateChange(webProgress, request, aStateFlags) {
-          if (aStateFlags & Ci.nsIWebProgressListener.STATE_STOP) {
-            mediaBrowser.webProgress?.removeProgressListener(
-              webProgressListener
-            );
-            resolve();
-          }
-        },
-
-        QueryInterface: ChromeUtils.generateQI([
-          "nsIWebProgressListener2",
-          "nsIWebProgressListener",
-          "nsISupportsWeakReference",
-        ]),
-      };
-      mediaBrowser.addProgressListener(
-        webProgressListener,
-        Ci.nsIWebProgress.NOTIFY_STATE_WINDOW
-      );
-    });
-
-    try {
-      const actor =
-        mediaBrowser.browsingContext.currentWindowGlobal.getActor(
-          "PageInfoPreview"
-        );
-
-      let data = await actor.sendQuery("PageInfoPreview:resize", message);
-      if (!data) {
-        return;
-      }
-
-      let tree = document.getElementById("imagetree");
-      let activeRow = getSelectedRows(tree)[0];
-
-      
-      
-      if (url !== gImageView.data[activeRow][COL_IMAGE_ADDRESS]) {
-        return;
-      }
-
-      if (data.width != data.physWidth || data.height != data.physHeight) {
-        document.l10n.setAttributes(
-          document.getElementById("imagedimensiontext"),
-          "media-dimensions-scaled",
-          {
-            dimx: formatNumber(data.physWidth),
-            dimy: formatNumber(data.physHeight),
-            scaledx: formatNumber(data.width),
-            scaledy: formatNumber(data.height),
-          }
-        );
+        document.getElementById("theimagecontainer").collapsed = false;
+        document.getElementById("brokenimagecontainer").collapsed = true;
       } else {
+        
+        
+        document.getElementById("brokenimagecontainer").collapsed = false;
+        document.getElementById("theimagecontainer").collapsed = true;
+      }
+
+      if (url && !isAudio) {
         document.l10n.setAttributes(
           document.getElementById("imagedimensiontext"),
           "media-dimensions",
-          {
-            dimx: formatNumber(data.width),
-            dimy: formatNumber(data.height),
-          }
+          { dimx: formatNumber(width), dimy: formatNumber(height) }
         );
       }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      
-      window.dispatchEvent(new Event("page-info-mediapreview-load"));
     }
+
+    imageContainer.removeChild(oldImage);
+    imageContainer.appendChild(newImage);
   });
 }
 
