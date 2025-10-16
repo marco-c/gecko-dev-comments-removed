@@ -73,8 +73,8 @@ class CompositorSession {
   
   
   void SetUiCompositorControllerChild(
-      RefPtr<UiCompositorControllerChild> aUiController) {
-    mUiCompositorControllerChild = aUiController;
+      RefPtr<UiCompositorControllerChild>&& aUiController) {
+    mUiCompositorControllerChild = std::move(aUiController);
   }
 
   RefPtr<UiCompositorControllerChild> GetUiCompositorControllerChild() {

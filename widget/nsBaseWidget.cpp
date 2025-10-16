@@ -1464,7 +1464,7 @@ already_AddRefed<WebRenderLayerManager> nsBaseWidget::CreateCompositorSession(
     
     
     nsresult rv = gpu->EnsureGPUReady();
-    if (NS_WARN_IF(rv == NS_ERROR_ILLEGAL_DURING_SHUTDOWN)) {
+    if (NS_WARN_IF(NS_FAILED(rv))) {
       return nullptr;
     }
 
