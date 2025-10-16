@@ -2407,6 +2407,28 @@ var gUnifiedExtensions = {
             "unified-extensions-empty-content-explain-enable"
           );
           emptyStateBox.hidden = false;
+        } else if (!policies.length) {
+          document.l10n.setAttributes(
+            emptyStateBox.querySelector("h2"),
+            "unified-extensions-empty-reason-zero-extensions-onboarding"
+          );
+          document.l10n.setAttributes(
+            emptyStateBox.querySelector("description"),
+            "unified-extensions-empty-content-explain-extensions-onboarding"
+          );
+          emptyStateBox.hidden = false;
+
+          
+          
+          
+          const discoverButton = this._createDiscoverButton(panelview);
+
+          const manageExtensionsButton = panelview.querySelector(
+            "#unified-extensions-manage-extensions"
+          );
+          
+          
+          manageExtensionsButton.previousElementSibling.before(discoverButton);
         }
       });
     }
@@ -2458,6 +2480,10 @@ var gUnifiedExtensions = {
     while (list.lastChild) {
       list.lastChild.remove();
     }
+    panelview
+      .querySelector("#unified-extensions-discover-extensions")
+      ?.remove();
+
     
     requestAnimationFrame(() => this.updateAttention());
   },
@@ -2627,8 +2653,10 @@ var gUnifiedExtensions = {
         
         
         
+        const policies = this.getActivePolicies();
         if (
-          !this.hasExtensionsInPanel() &&
+          policies.length &&
+          !this.hasExtensionsInPanel(policies) &&
           !this.isPrivateWindowMissingExtensionsWithoutPBMAccess() &&
           !(await this.isAtLeastOneExtensionDisabled())
         ) {
@@ -3114,6 +3142,36 @@ var gUnifiedExtensions = {
     }
 
     return messageBar;
+  },
+
+  _createDiscoverButton() {
+    const discoverButton = document.createElement("moz-button");
+    discoverButton.id = "unified-extensions-discover-extensions";
+    discoverButton.type = "primary";
+    discoverButton.className = "subviewbutton panel-subview-footer-button";
+    document.l10n.setAttributes(
+      discoverButton,
+      "unified-extensions-discover-extensions"
+    );
+
+    discoverButton.addEventListener("click", () => {
+      if (
+        
+        
+        
+        
+        
+        Services.prefs.getBoolPref("extensions.getAddons.showPane", true)
+      ) {
+        BrowserAddonUI.openAddonsMgr("addons://list/discover");
+      } else {
+        BrowserAddonUI.openAddonsMgr("addons://list/extension");
+      }
+      
+      this.togglePanel();
+    });
+
+    return discoverButton;
   },
 
   _shouldShowQuarantinedNotification() {

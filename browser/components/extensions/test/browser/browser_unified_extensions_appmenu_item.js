@@ -109,6 +109,7 @@ add_task(async function test_appmenu_extensions_opens_panel() {
 
 
 
+
 add_task(async function test_appmenu_extensions_opens_when_no_extensions() {
   
   
@@ -122,29 +123,11 @@ add_task(async function test_appmenu_extensions_opens_when_no_extensions() {
   });
   await gCUITestUtils.openMainMenu();
 
-  const listener = () => {
-    ok(false, "Extensions Panel should not be shown");
-  };
-  gUnifiedExtensions.panel.addEventListener("popupshowing", listener);
-
-  
-  
-  
-  await BrowserTestUtils.withNewTab(
-    { gBrowser, url: "about:robots" },
-    async () => {
-      let tabPromise = BrowserTestUtils.waitForNewTab(gBrowser, "about:addons");
-
-      assertExtensionsButtonHidden();
-      menuItemThatOpensExtensionsPanel().click();
-      assertExtensionsButtonHidden();
-      info("Verifying that about:addons is opened");
-      BrowserTestUtils.removeTab(await tabPromise);
-    }
-  );
-
   assertExtensionsButtonHidden();
-  gUnifiedExtensions.panel.removeEventListener("popupshowing", listener);
+  menuItemThatOpensExtensionsPanel().click();
+  is(PanelUI.panel.state, "closed", "Menu closed after clicking Extensions");
+  
+  
 
   Assert.deepEqual(
     Glean.extensionsButton.openViaAppMenu.testGetValue().map(e => e.extra),
@@ -156,6 +139,32 @@ add_task(async function test_appmenu_extensions_opens_when_no_extensions() {
     ],
     "extensions_button.open_via_app_menu telemetry on menu click"
   );
+
+  const listView = getListView();
+  await BrowserTestUtils.waitForEvent(listView, "ViewShown");
+  ok(PanelView.forNode(listView).active, "Extensions panel is shown");
+
+  
+  
+  
+  const emptyStateBox = gUnifiedExtensions.panel.querySelector(
+    "#unified-extensions-empty-state"
+  );
+  ok(emptyStateBox, "Got container for empty panel state");
+  ok(BrowserTestUtils.isVisible(emptyStateBox), "Empty state is visible");
+  is(
+    emptyStateBox.querySelector("h2").getAttribute("data-l10n-id"),
+    "unified-extensions-empty-reason-zero-extensions-onboarding",
+    "Has header when the user does not have any extensions installed"
+  );
+
+  assertExtensionsButtonVisible();
+  assertExtensionsButtonTelemetry({ extensions_panel_showing: 1 });
+  await closeExtensionsPanel();
+  assertExtensionsButtonHidden();
+
+  
+  assertExtensionsButtonTelemetry({ extensions_panel_showing: 1 });
 
   await SpecialPowers.popPrefEnv();
 
