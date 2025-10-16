@@ -40,6 +40,10 @@ class NativeLayerRootRemoteMacChild final : public NativeLayerRoot {
   
   bool CommitToScreen() override;
 
+  
+  
+  void WaitUntilCommitToScreenHasBeenProcessed() override;
+
   RefPtr<NativeLayerRemoteChild> GetRemoteChild() { return mRemoteChild; }
 
  protected:

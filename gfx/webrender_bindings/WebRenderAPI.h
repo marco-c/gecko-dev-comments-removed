@@ -348,8 +348,8 @@ class WebRenderAPI final {
                wr::WebRenderAPI* aRootDocumentApi = nullptr);
 
   ~WebRenderAPI();
-  
-  void WaitFlushed();
+
+  void WaitUntilPresentationFlushed();
 
   void UpdateDebugFlags(uint32_t aFlags);
   bool CheckIsRemoteTextureReady(layers::RemoteTextureInfoList* aList,

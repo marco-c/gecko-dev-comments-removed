@@ -1682,7 +1682,7 @@ void WebRenderBridgeParent::FlushFramePresentation() {
   
   
   
-  mApi->WaitFlushed();
+  mApi->WaitUntilPresentationFlushed();
 }
 
 void WebRenderBridgeParent::DisableNativeCompositor() {

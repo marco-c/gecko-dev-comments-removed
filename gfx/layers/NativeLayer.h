@@ -77,6 +77,10 @@ class NativeLayerRoot {
 
   
   
+  virtual void WaitUntilCommitToScreenHasBeenProcessed() {}
+
+  
+  
   
   
   

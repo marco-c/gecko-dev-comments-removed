@@ -61,6 +61,12 @@ class RenderCompositor {
 
   
   
+  
+  
+  virtual void WaitUntilPresentationFlushed() {}
+
+  
+  
   virtual RenderedFrameId GetLastCompletedFrameId() {
     return mLatestRenderFrameId.Prev();
   }

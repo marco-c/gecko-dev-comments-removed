@@ -119,6 +119,12 @@ mozilla::ipc::IPCResult NativeLayerRootRemoteMacParent::RecvRequestReadback(
   return IPC_OK();
 }
 
+mozilla::ipc::IPCResult NativeLayerRootRemoteMacParent::RecvFlush() {
+  
+  
+  return IPC_OK();
+}
+
 void NativeLayerRootRemoteMacParent::HandleCreateLayer(uint64_t aID,
                                                        IntSize aSize,
                                                        bool aOpaque) {

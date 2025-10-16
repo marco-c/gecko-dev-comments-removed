@@ -78,6 +78,12 @@ sync protocol PNativeLayerRemote
 parent:
   async CommitNativeLayerCommands(NativeLayerCommand[] commands);
   sync RequestReadback(IntSize size) returns (Shmem pixels);
+
+  
+  
+  
+  
+  sync Flush();
 };
 
 } 
