@@ -21,9 +21,11 @@ from .util import normsep
 
 
 def _match(exprs, strict, **values):
-    if any(parse(e, strict=strict, **values) for e in exprs.splitlines() if e):
-        return True
-    return False
+    """Return the first matching expression, or None if no match."""
+    for e in exprs.splitlines():
+        if e and parse(e, strict=strict, **values):
+            return e
+    return None
 
 
 def skip_if(tests, values, strict=False):
@@ -33,8 +35,10 @@ def skip_if(tests, values, strict=False):
     """
     tag = "skip-if"
     for test in tests:
-        if tag in test and _match(test[tag], strict, **values):
-            test.setdefault("disabled", f"{tag}: {test[tag]}")
+        if tag in test:
+            matching_expr = _match(test[tag], strict, **values)
+            if matching_expr:
+                test.setdefault("disabled", f"{tag}: {matching_expr}")
         yield test
 
 
@@ -47,10 +51,10 @@ def run_if(tests, values, strict=False):
     for test in tests:
         if tag in test:
             
-            if not all(
-                parse(e, strict=strict, **values) for e in test[tag].splitlines() if e
-            ):
-                test.setdefault("disabled", f"{tag}: {test[tag]}")
+            for e in test[tag].splitlines():
+                if e and not parse(e, strict=strict, **values):
+                    test.setdefault("disabled", f"{tag}: {e}")
+                    break
         yield test
 
 
