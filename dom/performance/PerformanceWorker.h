@@ -100,7 +100,7 @@ class PerformanceWorker final : public Performance {
 
   void InsertUserEntry(PerformanceEntry* aEntry) override;
 
-  void DispatchBufferFullEvent() override {
+  void DispatchResourceTimingBufferFullEvent() override {
     
   }
 };

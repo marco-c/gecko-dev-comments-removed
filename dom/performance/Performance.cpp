@@ -936,7 +936,7 @@ void Performance::ResourceTimingBufferFullEvent() {
 
 
     if (!CanAddResourceTimingEntry()) {
-      DispatchBufferFullEvent();
+      DispatchResourceTimingBufferFullEvent();
     }
 
     
