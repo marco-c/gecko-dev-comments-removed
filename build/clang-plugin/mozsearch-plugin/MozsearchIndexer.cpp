@@ -1253,6 +1253,40 @@ public:
     return true;
   }
 
+  
+  bool hasTemplateInHierarchy(const CXXRecordDecl* cxxDecl) {
+    if (cxxDecl->isDependentType()) {
+      
+      return true;
+    }
+
+
+    if (dyn_cast<const ClassTemplateSpecializationDecl>(cxxDecl)) {
+      
+      return true;
+    }
+
+    for (const CXXBaseSpecifier &Base : cxxDecl->bases()) {
+      const CXXRecordDecl *BaseDecl = Base.getType()->getAsCXXRecordDecl();
+      if (!BaseDecl) {
+        
+        return true;
+      }
+
+      const Type* ty = Base.getType().getTypePtr();
+      if (dyn_cast<const SubstTemplateTypeParmType>(ty)) {
+        
+        return true;
+      }
+
+      if (hasTemplateInHierarchy(BaseDecl)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   enum {
     
     
@@ -1271,10 +1305,23 @@ public:
     Heuristic = 1 << 3,
   };
 
+  enum class LayoutHandling {
+    
+    
+    UseLayout,
+
+    
+    
+    LayoutOnly,
+  };
+
   void emitStructuredRecordInfo(llvm::json::OStream &J, SourceLocation Loc,
-                                const RecordDecl *decl) {
-    J.attribute("kind",
-                TypeWithKeyword::getTagTypeKindName(decl->getTagKind()));
+                                const RecordDecl *decl,
+                                LayoutHandling layoutHandling = LayoutHandling::UseLayout) {
+    if (layoutHandling != LayoutHandling::LayoutOnly) {
+      J.attribute("kind",
+                  TypeWithKeyword::getTagTypeKindName(decl->getTagKind()));
+    }
 
     const ASTContext &C = *AstContext;
     const ASTRecordLayout &Layout = C.getASTRecordLayout(decl);
@@ -1298,10 +1345,20 @@ public:
                     C.getTypeSizeInChars(ptrType).getQuantity());
       }
 
+      bool hasTemplate = hasTemplateInHierarchy(cxxDecl);
+
       J.attributeBegin("supers");
       J.arrayBegin();
       for (const CXXBaseSpecifier &Base : cxxDecl->bases()) {
         const CXXRecordDecl *BaseDecl = Base.getType()->getAsCXXRecordDecl();
+
+        if (!BaseDecl) {
+          
+          
+          
+          
+          continue;
+        }
 
         J.objectBegin();
 
@@ -1323,54 +1380,80 @@ public:
         J.arrayEnd();
         J.attributeEnd();
 
+        if (hasTemplate) {
+          
+          
+          
+          
+
+          J.attributeBegin("layout");
+          J.objectBegin();
+
+          
+          
+          
+          
+          
+          
+          
+          J.attribute("pretty", getQualifiedName(BaseDecl));
+
+          emitStructuredRecordInfo(J, Loc, BaseDecl,
+                                   LayoutHandling::LayoutOnly);
+          J.objectEnd();
+          J.attributeEnd();
+        }
+
         J.objectEnd();
       }
       J.arrayEnd();
       J.attributeEnd();
 
-      J.attributeBegin("methods");
-      J.arrayBegin();
-      for (const CXXMethodDecl *MethodDecl : cxxDecl->methods()) {
-        J.objectBegin();
-
-        J.attribute("pretty", getQualifiedName(MethodDecl));
-        J.attribute("sym", getMangledName(CurMangleContext, MethodDecl));
-
-        
-        
-        
-        
-
-        J.attributeBegin("props");
+      if (layoutHandling != LayoutHandling::LayoutOnly) {
+        J.attributeBegin("methods");
         J.arrayBegin();
-        if (MethodDecl->isStatic()) {
-          J.value("static");
-        }
-        if (MethodDecl->isInstance()) {
-          J.value("instance");
-        }
-        if (MethodDecl->isVirtual()) {
-          J.value("virtual");
-        }
-        if (MethodDecl->isUserProvided()) {
-          J.value("user");
-        }
-        if (MethodDecl->isDefaulted()) {
-          J.value("defaulted");
-        }
-        if (MethodDecl->isDeleted()) {
-          J.value("deleted");
-        }
-        if (MethodDecl->isConstexpr()) {
-          J.value("constexpr");
+        for (const CXXMethodDecl *MethodDecl : cxxDecl->methods()) {
+          J.objectBegin();
+
+          J.attribute("pretty", getQualifiedName(MethodDecl));
+          J.attribute("sym", getMangledName(CurMangleContext, MethodDecl));
+
+          
+          
+          
+          
+
+          J.attributeBegin("props");
+          J.arrayBegin();
+          if (MethodDecl->isStatic()) {
+            J.value("static");
+          }
+          if (MethodDecl->isInstance()) {
+            J.value("instance");
+          }
+          if (MethodDecl->isVirtual()) {
+            J.value("virtual");
+          }
+          if (MethodDecl->isUserProvided()) {
+            J.value("user");
+          }
+          if (MethodDecl->isDefaulted()) {
+            J.value("defaulted");
+          }
+          if (MethodDecl->isDeleted()) {
+            J.value("deleted");
+          }
+          if (MethodDecl->isConstexpr()) {
+            J.value("constexpr");
+          }
+          J.arrayEnd();
+          J.attributeEnd();
+
+          J.objectEnd();
         }
         J.arrayEnd();
         J.attributeEnd();
-
-        J.objectEnd();
       }
-      J.arrayEnd();
-      J.attributeEnd();
     }
 
     FileID structFileID = SM.getFileID(Loc);
@@ -1413,6 +1496,7 @@ public:
       if (tagDecl) {
         J.attribute("typesym", getMangledName(CurMangleContext, tagDecl));
       }
+
       J.attribute("offsetBytes", localOffsetBytes.getQuantity());
       if (Field.isBitField()) {
         J.attributeBegin("bitPositions");
@@ -1607,7 +1691,8 @@ public:
     emitBindingAttributes(J, *decl);
   }
 
-  void emitStructuredInfo(SourceLocation Loc, const NamedDecl *decl) {
+  void emitStructuredInfo(SourceLocation Loc, const NamedDecl *decl,
+                          LayoutHandling layoutHandling = LayoutHandling::UseLayout) {
     std::string json_str;
     llvm::raw_string_ostream ros(json_str);
     llvm::json::OStream J(ros);
@@ -1623,7 +1708,7 @@ public:
     J.attribute("sym", getMangledName(CurMangleContext, decl));
 
     if (const RecordDecl *RD = dyn_cast<RecordDecl>(decl)) {
-      emitStructuredRecordInfo(J, Loc, RD);
+      emitStructuredRecordInfo(J, Loc, RD, layoutHandling);
     } else if (const EnumDecl *ED = dyn_cast<EnumDecl>(decl)) {
       emitStructuredEnumInfo(J, ED);
     } else if (const EnumConstantDecl *ECD = dyn_cast<EnumConstantDecl>(decl)) {
@@ -2164,12 +2249,17 @@ public:
           
           
           
+          
+          
+          
+          
+          
           !D2->isDependentType() && !TemplateStack) {
         if (auto *D3 = dyn_cast<CXXRecordDecl>(D2)) {
           findBindingToJavaClass(*AstContext, *D3);
           findBoundAsJavaClasses(*AstContext, *D3);
         }
-        emitStructuredInfo(ExpansionLoc, D2);
+        emitStructuredInfo(ExpansionLoc, D2, LayoutHandling::UseLayout);
       }
     }
     if (EnumDecl *D2 = dyn_cast<EnumDecl>(D)) {
