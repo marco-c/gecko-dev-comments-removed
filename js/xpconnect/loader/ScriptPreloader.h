@@ -31,10 +31,9 @@
 #include "nsITimer.h"
 
 #include "js/CompileOptions.h"  
-#include "js/experimental/CompileScript.h"  
-#include "js/experimental/JSStencil.h"      
-#include "js/GCAnnotations.h"               
-#include "js/RootingAPI.h"                  
+#include "js/experimental/JSStencil.h"  
+#include "js/GCAnnotations.h"           
+#include "js/RootingAPI.h"              
 #include "js/Transcoding.h"  
 #include "js/TypeDecls.h"  
 
@@ -274,7 +273,7 @@ class ScriptPreloader : public nsIObserver,
 
     
     
-    bool XDREncode(JS::FrontendContext* cx);
+    bool XDREncode(JSContext* cx);
 
     
     

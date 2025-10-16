@@ -10,8 +10,7 @@
 #include "ModuleLoader.h"
 #include "SharedScriptCache.h"
 #include "js/TypeDecls.h"
-#include "js/Utility.h"                     
-#include "js/experimental/CompileScript.h"  
+#include "js/Utility.h"  
 #include "js/loader/LoadedScript.h"
 #include "js/loader/ModuleLoaderBase.h"
 #include "js/loader/ScriptKind.h"
@@ -527,7 +526,8 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   CacheBehavior GetCacheBehavior(ScriptLoadRequest* aRequest);
 
-  void TryCacheRequest(ScriptLoadRequest* aRequest);
+  void TryCacheRequest(ScriptLoadRequest* aRequest,
+                       RefPtr<JS::Stencil>& aStencil);
 
   JS::loader::ScriptLoadRequest* LookupPreloadRequest(
       nsIScriptElement* aElement, JS::loader::ScriptKind aScriptKind,
@@ -695,6 +695,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   void InstantiateClassicScriptFromMaybeEncodedSource(
       JSContext* aCx, JS::CompileOptions& aCompileOptions,
       ScriptLoadRequest* aRequest, JS::MutableHandle<JSScript*> aScript,
+      RefPtr<JS::Stencil>& aStencilOut,
       JS::Handle<JS::Value> aDebuggerPrivateValue,
       JS::Handle<JSScript*> aDebuggerIntroductionScript, ErrorResult& aRv);
 
@@ -708,8 +709,13 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
       JS::Handle<JSScript*> aDebuggerIntroductionScript, ErrorResult& aRv);
 
   static nsCString& BytecodeMimeTypeFor(ScriptLoadRequest* aRequest);
-  static nsCString& BytecodeMimeTypeFor(
-      JS::loader::LoadedScript* aLoadedScript);
+
+  
+  
+  
+  
+  void MaybePrepareForCacheBeforeExecute(ScriptLoadRequest* aRequest,
+                                         JS::Handle<JSScript*> aScript);
 
   
   
@@ -717,6 +723,9 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
   nsresult MaybePrepareForCacheAfterExecute(ScriptLoadRequest* aRequest,
                                             nsresult aRv);
+
+  void MaybePrepareModuleForCacheBeforeExecute(
+      JSContext* aCx, ModuleLoadRequest* aRequest) override;
 
   
   
@@ -765,8 +774,20 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
 
 
-  void EncodeBytecodeAndSave(JS::FrontendContext* aFc,
-                             JS::loader::LoadedScript* aLoadedScript);
+  already_AddRefed<JS::Stencil> FinishCollectingDelazifications(
+      JSContext* aCx, ScriptLoadRequest* aRequest);
+
+  
+
+
+  void EncodeBytecodeAndSave(JSContext* aCx, ScriptLoadRequest* aRequest,
+                             nsCOMPtr<nsICacheInfoChannel>& aCacheInfo,
+                             nsCString& aMimeType,
+                             const JS::TranscodeBuffer& aSRI,
+                             JS::Stencil* aStencil);
+
+  void StoreCacheInfo(JS::loader::LoadedScript* aLoadedScript,
+                      ScriptLoadRequest* aRequest);
 
   
 
