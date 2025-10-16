@@ -167,7 +167,7 @@ var gBrowserInit = {
     if (Services.prefs.getBoolPref("browser.search.widget.new", false)) {
       new UrlbarInput({
         textbox: document.getElementById("searchbar-new"),
-        eventTelemetryCategory: "searchbar",
+        sapName: "searchbar",
       });
     }
 
@@ -199,7 +199,10 @@ var gBrowserInit = {
 
   onLoad() {
     gBrowser.addEventListener("DOMUpdateBlockedPopups", e =>
-      PopupBlockerObserver.handleEvent(e)
+      PopupAndRedirectBlockerObserver.handleEvent(e)
+    );
+    gBrowser.addEventListener("DOMUpdateBlockedRedirect", e =>
+      PopupAndRedirectBlockerObserver.handleEvent(e)
     );
     gBrowser.addEventListener(
       "TranslationsParent:LanguageState",
