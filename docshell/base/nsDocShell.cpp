@@ -3958,7 +3958,7 @@ nsresult nsDocShell::ReloadNavigable(
         aNavigationAPIState;
     if (!destinationNavigationAPIState) {
       destinationNavigationAPIState =
-          mActiveEntry ? mActiveEntry->GetNavigationState() : nullptr;
+          mActiveEntry ? mActiveEntry->GetNavigationAPIState() : nullptr;
     }
 
     
@@ -8960,7 +8960,7 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
   
   
   RefPtr<nsIStructuredCloneContainer> destinationNavigationAPIState =
-      mActiveEntry ? mActiveEntry->GetNavigationState() : nullptr;
+      mActiveEntry ? mActiveEntry->GetNavigationAPIState() : nullptr;
   
   if (auto* navigationAPIState = aLoadState->GetNavigationAPIState()) {
     destinationNavigationAPIState = navigationAPIState;
@@ -9320,7 +9320,7 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
       }
 
       if (destinationNavigationAPIState) {
-        mActiveEntry->SetNavigationState(destinationNavigationAPIState);
+        mActiveEntry->SetNavigationAPIState(destinationNavigationAPIState);
       }
 
       if (LOAD_TYPE_HAS_FLAGS(mLoadType, LOAD_FLAGS_REPLACE_HISTORY)) {

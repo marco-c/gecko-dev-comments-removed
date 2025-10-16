@@ -93,8 +93,7 @@ struct NavigationAPIMethodTracker final : public nsISupports {
     mCommittedToEntry = aNHE;
     if (mSerializedState) {
       
-      aNHE->SetState(
-          static_cast<nsStructuredCloneContainer*>(mSerializedState.get()));
+      aNHE->SetNavigationAPIState(mSerializedState);
       
       
       mSerializedState = nullptr;
@@ -244,7 +243,7 @@ void Navigation::UpdateCurrentEntry(
     return;
   }
 
-  currentEntry->SetState(serializedState);
+  currentEntry->SetNavigationAPIState(serializedState);
 
   NavigationCurrentEntryChangeEventInit init;
   init.mFrom = currentEntry;
@@ -741,7 +740,7 @@ void Navigation::Reload(JSContext* aCx, const NavigationReloadOptions& aOptions,
     
     
     if (RefPtr<NavigationHistoryEntry> current = GetCurrentEntry()) {
-      serializedState = current->GetNavigationState();
+      serializedState = current->GetNavigationAPIState();
     }
   }
   
@@ -921,8 +920,8 @@ bool Navigation::FireTraverseNavigateEvent(
       FindNavigationHistoryEntry(aDestinationSessionHistoryInfo);
 
   
-  RefPtr<nsStructuredCloneContainer> state =
-      destinationNHE ? destinationNHE->GetNavigationState() : nullptr;
+  RefPtr<nsIStructuredCloneContainer> state =
+      destinationNHE ? destinationNHE->GetNavigationAPIState() : nullptr;
 
   
   bool isSameDocument =
