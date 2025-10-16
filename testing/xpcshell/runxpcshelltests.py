@@ -769,6 +769,11 @@ class XPCShellTestThread(Thread):
             else:
                 
                 
+                line = re.sub(
+                    r"ERROR: ((Address|Leak)Sanitizer)", r"ERROR (will retry): \1", line
+                )
+                
+                
                 self.log_line(line, time=timestamp)
         self.log.info(f"<<<<<<< End of {log_message}")
         self.log.group_end("replaying " + log_message)
