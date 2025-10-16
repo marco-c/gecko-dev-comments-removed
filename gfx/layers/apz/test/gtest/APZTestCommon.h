@@ -280,7 +280,6 @@ class TestAPZCTreeManager : public APZCTreeManager {
 
   SampleTime GetFrameTime() override { return mcc->GetSampleTime(); }
 
- private:
   RefPtr<MockContentControllerDelayed> mcc;
 };
 
@@ -399,6 +398,11 @@ class TestAsyncPanZoomController : public AsyncPanZoomController {
   void AssertInWheelScroll() {
     RecursiveMutexAutoLock lock(mRecursiveMutex);
     EXPECT_TRUE(InScrollAnimation(ScrollAnimationKind::Wheel));
+  }
+
+  void AssertInKeyboardScroll() {
+    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    EXPECT_TRUE(InScrollAnimation(ScrollAnimationKind::Keyboard));
   }
 
   void AssertStateIsAutoscroll() {

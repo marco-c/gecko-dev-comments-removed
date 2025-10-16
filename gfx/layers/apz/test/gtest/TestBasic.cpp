@@ -8,8 +8,8 @@
 #include "APZTestCommon.h"
 
 #include "InputUtils.h"
-
-static ScrollGenerationCounter sGenerationCounter;
+#include "mozilla/ScrollPositionUpdate.h"
+#include "mozilla/layers/ScrollableLayerGuid.h"
 
 TEST_F(APZCBasicTester, Overzoom) {
   
@@ -208,6 +208,8 @@ TEST_F(APZCBasicTester, Fling) {
 }
 
 #ifndef MOZ_WIDGET_ANDROID  
+static ScrollGenerationCounter sGenerationCounter;
+
 TEST_F(APZCBasicTester, ResumeInterruptedTouchDrag_Bug1592435) {
   
   SCOPED_GFX_PREF_FLOAT("apz.touch_start_tolerance", 1.0f / 1000.0f);
@@ -621,7 +623,7 @@ class APZCSmoothScrollTester : public APZCBasicTester {
 
   
   
-  void TestEventWithFutureStamp() {
+  void TestWheelEventWithFutureStamp() {
     
     ScrollMetadata metadata;
     FrameMetrics& metrics = metadata.GetMetrics();
@@ -649,6 +651,59 @@ class APZCSmoothScrollTester : public APZCBasicTester {
     SmoothWheel(apzc, ScreenIntPoint(50, 50), ScreenPoint(0, 5),
                 futureTimeStamp);
     apzc->AssertInWheelScroll();
+
+    
+    
+    for (int i = 0; i < 10; ++i) {
+      SampleAnimationOneFrame();
+    }
+
+    
+    
+    
+    ASSERT_GT(apzc->GetFrameMetrics().GetVisualScrollOffset().y, 0);
+
+    
+    apzc->AdvanceAnimationsUntilEnd();
+  }
+
+  
+  
+  void TestKeyEventWithFutureStamp() {
+    
+    ScrollMetadata metadata;
+    FrameMetrics& metrics = metadata.GetMetrics();
+    metrics.SetScrollableRect(CSSRect(0, 0, 1000, 10000));
+    metrics.SetLayoutViewport(CSSRect(0, 0, 1000, 1000));
+    metrics.SetZoom(CSSToParentLayerScale(1.0));
+    metrics.SetCompositionBounds(ParentLayerRect(0, 0, 1000, 1000));
+    metrics.SetVisualScrollOffset(CSSPoint(0, 0));
+    metrics.SetScrollId(ScrollableLayerGuid::START_SCROLL_ID);
+    metrics.SetIsRootContent(true);
+    
+    
+    metadata.SetLineScrollAmount({100, 100});
+    apzc->SetScrollMetadata(metadata);
+
+    
+    
+
+    
+    
+    WidgetKeyboardEvent keyEvent(true, eKeyDown, nullptr);
+    
+    
+    
+    
+    TimeStamp futureTimeStamp = mcc->Time() + TimeDuration::FromSeconds(60);
+    keyEvent.mTimeStamp = futureTimeStamp;
+    KeyboardInput keyInput(keyEvent);
+    
+    
+    
+    keyInput.mAction = {KeyboardScrollAction::eScrollLine, true};
+    Unused << apzc->ReceiveInputEvent(keyInput);
+    apzc->AssertInKeyboardScroll();
 
     
     
@@ -702,16 +757,28 @@ TEST_F(APZCSmoothScrollTester, ContentShiftDoesNotCauseOvershootMsd) {
   TestContentShiftDoesNotCauseOvershoot();
 }
 
-TEST_F(APZCSmoothScrollTester, FutureTimestampBezier) {
+TEST_F(APZCSmoothScrollTester, FutureWheelTimestampBezier) {
   SCOPED_GFX_PREF_BOOL("general.smoothScroll", true);
   SCOPED_GFX_PREF_BOOL("general.smoothScroll.msdPhysics.enabled", false);
-  TestEventWithFutureStamp();
+  TestWheelEventWithFutureStamp();
 }
 
-TEST_F(APZCSmoothScrollTester, FutureTimestampMsd) {
+TEST_F(APZCSmoothScrollTester, FutureWheelTimestampMsd) {
   SCOPED_GFX_PREF_BOOL("general.smoothScroll", true);
   SCOPED_GFX_PREF_BOOL("general.smoothScroll.msdPhysics.enabled", true);
-  TestEventWithFutureStamp();
+  TestWheelEventWithFutureStamp();
+}
+
+TEST_F(APZCSmoothScrollTester, FutureKeyTimestampBezier) {
+  SCOPED_GFX_PREF_BOOL("general.smoothScroll", true);
+  SCOPED_GFX_PREF_BOOL("general.smoothScroll.msdPhysics.enabled", false);
+  TestKeyEventWithFutureStamp();
+}
+
+TEST_F(APZCSmoothScrollTester, FutureKeyTimestampMsd) {
+  SCOPED_GFX_PREF_BOOL("general.smoothScroll", true);
+  SCOPED_GFX_PREF_BOOL("general.smoothScroll.msdPhysics.enabled", true);
+  TestKeyEventWithFutureStamp();
 }
 
 TEST_F(APZCBasicTester, ZoomAndScrollableRectChangeAfterZoomChange) {
@@ -888,4 +955,66 @@ TEST_F(APZCBasicTester, StartTolerance) {
   
   mcc->AdvanceByMillis(1);
   TouchUp(apzc, {50, 90}, mcc->Time());
+}
+
+
+
+
+
+
+
+class APZCFrameTimeTester : public APZCBasicTester {
+  class FrameTimeAPZCTreeManager : public TestAPZCTreeManager {
+   public:
+    explicit FrameTimeAPZCTreeManager(MockContentControllerDelayed* aMcc)
+        : TestAPZCTreeManager(aMcc) {}
+
+   protected:
+    SampleTime GetFrameTime() override {
+      SampleTime result = mcc->GetSampleTime();
+      mcc->AdvanceByMillis(1);
+      return result;
+    }
+  };
+
+ protected:
+  TestAPZCTreeManager* CreateTreeManager() override {
+    return new FrameTimeAPZCTreeManager(mcc);
+  }
+};
+
+TEST_F(APZCFrameTimeTester, ImmediatelyInterruptedSmoothScroll_Bug1984589) {
+  
+  
+  ScrollMetadata metadata;
+  FrameMetrics& metrics = metadata.GetMetrics();
+  metrics.SetScrollableRect(CSSRect(0, 0, 100, 1000));
+  metrics.SetLayoutViewport(CSSRect(0, 900, 100, 100));
+  metrics.SetZoom(CSSToParentLayerScale(1.0));
+  metrics.SetCompositionBounds(ParentLayerRect(0, 0, 100, 100));
+  metrics.SetVisualScrollOffset(CSSPoint(0, 900));
+  metrics.SetIsRootContent(true);
+  apzc->SetFrameMetrics(metrics);
+
+  
+  
+  
+  nsTArray<ScrollPositionUpdate> scrollUpdates;
+  scrollUpdates.AppendElement(ScrollPositionUpdate::NewSmoothScroll(
+      ScrollMode::SmoothMsd, ScrollOrigin::Other,
+      CSSPoint::ToAppUnits(CSSPoint(0, 0)), ScrollTriggeredByScript::Yes,
+      nullptr, ViewportType::Layout));
+  scrollUpdates.AppendElement(ScrollPositionUpdate::NewSmoothScroll(
+      ScrollMode::SmoothMsd, ScrollOrigin::Other,
+      CSSPoint::ToAppUnits(CSSPoint(0, 900)), ScrollTriggeredByScript::Yes,
+      nullptr, ViewportType::Layout));
+  metadata.SetScrollUpdates(scrollUpdates);
+  metrics.SetScrollGeneration(scrollUpdates.LastElement().GetGeneration());
+  apzc->NotifyLayersUpdated(metadata, false, true);
+
+  
+  
+  do {
+    ASSERT_EQ(apzc->GetFrameMetrics().GetVisualScrollOffset().y, 900);
+  } while (SampleAnimationOneFrame());
 }
