@@ -13,7 +13,7 @@
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/GeckoContentController.h"
 #include "mozilla/Unused.h"
-#include "nsBaseWidget.h"
+#include "nsIWidget.h"
 #if defined(MOZ_WIDGET_ANDROID)
 #  include "mozilla/layers/UiCompositorControllerChild.h"
 #endif  
@@ -25,7 +25,7 @@ using namespace gfx;
 using namespace widget;
 
 RemoteCompositorSession::RemoteCompositorSession(
-    nsBaseWidget* aWidget, CompositorBridgeChild* aChild,
+    nsIWidget* aWidget, CompositorBridgeChild* aChild,
     CompositorWidgetDelegate* aWidgetDelegate, APZCTreeManagerChild* aAPZ,
     const LayersId& aRootLayerTreeId)
     : CompositorSession(aWidget, aWidgetDelegate, aChild, aRootLayerTreeId),
@@ -48,7 +48,7 @@ RemoteCompositorSession::~RemoteCompositorSession() {
 void RemoteCompositorSession::NotifySessionLost() {
   
   
-  RefPtr<nsBaseWidget> widget(mWidget);
+  RefPtr<nsIWidget> widget(mWidget);
   
   
   

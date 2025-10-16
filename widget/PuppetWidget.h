@@ -17,7 +17,7 @@
 
 #include "mozilla/gfx/2D.h"
 #include "mozilla/RefPtr.h"
-#include "nsBaseWidget.h"
+#include "nsIWidget.h"
 #include "nsCOMArray.h"
 #include "nsThreadUtils.h"
 #include "mozilla/Attributes.h"
@@ -25,6 +25,8 @@
 #include "mozilla/EventForwards.h"
 #include "mozilla/TextEventDispatcherListener.h"
 #include "mozilla/layers/MemoryPressureObserver.h"
+
+class nsRefreshDriver;
 
 namespace mozilla {
 enum class NativeKeyBindingsType : uint8_t;
@@ -41,7 +43,7 @@ namespace widget {
 
 struct AutoCacheNativeKeyCommands;
 
-class PuppetWidget final : public nsBaseWidget,
+class PuppetWidget final : public nsIWidget,
                            public TextEventDispatcherListener,
                            public layers::MemoryPressureListener {
   typedef mozilla::CSSRect CSSRect;
@@ -54,7 +56,7 @@ class PuppetWidget final : public nsBaseWidget,
   typedef mozilla::widget::TextEventDispatcherListener
       TextEventDispatcherListener;
 
-  typedef nsBaseWidget Base;
+  typedef nsIWidget Base;
 
   
  public:
@@ -68,7 +70,7 @@ class PuppetWidget final : public nsBaseWidget,
 
   
   
-  using nsBaseWidget::Create;  
+  using nsIWidget::Create;  
   nsresult Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
                   widget::InitData* aInitData = nullptr) override;
   void InfallibleCreate(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
@@ -284,7 +286,7 @@ class PuppetWidget final : public nsBaseWidget,
   nsresult GetSystemFont(nsCString& aFontName) override;
 
   
-  using nsBaseWidget::NotifyIME;
+  using nsIWidget::NotifyIME;
   NS_IMETHOD NotifyIME(TextEventDispatcher* aTextEventDispatcher,
                        const IMENotification& aNotification) override;
   NS_IMETHOD_(IMENotificationRequests) GetIMENotificationRequests() override;

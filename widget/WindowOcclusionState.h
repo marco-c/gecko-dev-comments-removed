@@ -7,12 +7,14 @@
 #ifndef widget_WindowOcclusionState_h
 #define widget_WindowOcclusionState_h
 
+#include <cstdint>
+
 namespace mozilla {
 namespace widget {
 
 
 
-enum class OcclusionState {
+enum class OcclusionState : uint8_t {
   
   
   UNKNOWN = 0,

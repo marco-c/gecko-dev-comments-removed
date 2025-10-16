@@ -395,7 +395,7 @@ void nsWindow::MaybeEnableWindowOcclusion(bool aEnable) {
 
 
 void nsWindow::CreateCompositor() {
-  nsBaseWidget::CreateCompositor();
+  nsIWidget::CreateCompositor();
 
   MaybeEnableWindowOcclusion( true);
 
@@ -407,7 +407,7 @@ void nsWindow::CreateCompositor() {
 void nsWindow::DestroyCompositor() {
   MaybeEnableWindowOcclusion( false);
 
-  nsBaseWidget::DestroyCompositor();
+  nsIWidget::DestroyCompositor();
 }
 
 void nsWindow::RequestFxrOutput() {

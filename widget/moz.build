@@ -164,7 +164,6 @@ EXPORTS += [
     "nsBaseColorPicker.h",
     "nsBaseDragService.h",
     "nsBaseFilePicker.h",
-    "nsBaseWidget.h",
     "nsDragServiceProxy.h",
     "nsIDeviceContextSpec.h",
     "nsIRollupListener.h",
@@ -327,7 +326,7 @@ if CONFIG["NS_PRINTING"]:
 
 SOURCES += [
     "nsBaseDragService.cpp",
-    "nsBaseWidget.cpp",
+    "nsIWidget.cpp",
     "ScreenManager.cpp",
 ]
 

@@ -20,7 +20,7 @@
 #include "Units.h"
 #include "nsThreadUtils.h"
 
-class nsBaseWidget;
+class nsIWidget;
 struct IVirtualDesktopManager;
 class WinWindowOcclusionTrackerTest;
 class WinWindowOcclusionTrackerInteractiveTest;
@@ -60,14 +60,14 @@ class WinWindowOcclusionTracker final {
 
   
   
-  void Enable(nsBaseWidget* aWindow, HWND aHwnd);
+  void Enable(nsIWidget* aWindow, HWND aHwnd);
 
   
   
-  void Disable(nsBaseWidget* aWindow, HWND aHwnd);
+  void Disable(nsIWidget* aWindow, HWND aHwnd);
 
   
-  void OnWindowVisibilityChanged(nsBaseWidget* aWindow, bool aVisible);
+  void OnWindowVisibilityChanged(nsIWidget* aWindow, bool aVisible);
 
   SerializedTaskDispatcher* GetSerializedTaskDispatcher() {
     return mSerializedTaskDispatcher;

@@ -135,10 +135,6 @@ MOZ_RUNINIT static nsTArray<nsWindow*> gTopLevelWindows;
 
 static bool sFailedToCreateGLContext = false;
 
-
-static const double SWIPE_MAX_PINCH_DELTA_INCHES = 0.4;
-static const double SWIPE_MIN_DISTANCE_INCHES = 0.6;
-
 static const double kTouchResampleVsyncAdjustMs = 5.0;
 
 static const int32_t INPUT_RESULT_UNHANDLED =
@@ -2294,7 +2290,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
 void nsWindow::Destroy() {
   MutexAutoLock lock(mDestroyMutex);
 
-  nsBaseWidget::mOnDestroyCalled = true;
+  nsIWidget::mOnDestroyCalled = true;
 
   
   mGeckoViewSupport.Detach();
@@ -2304,15 +2300,15 @@ void nsWindow::Destroy() {
 
   
   
-  nsBaseWidget::DestroyCompositor();
+  nsIWidget::DestroyCompositor();
 
-  nsBaseWidget::Destroy();
+  nsIWidget::Destroy();
 
   if (IsTopLevel()) {
     gTopLevelWindows.RemoveElement(this);
   }
 
-  nsBaseWidget::OnDestroy();
+  nsIWidget::OnDestroy();
 
 #ifdef DEBUG_ANDROID_WIDGET
   DumpWindows();
@@ -2713,7 +2709,7 @@ void nsWindow::CreateLayerManager() {
 
 void nsWindow::NotifyCompositorSessionLost(
     mozilla::layers::CompositorSession* aSession) {
-  nsBaseWidget::NotifyCompositorSessionLost(aSession);
+  nsIWidget::NotifyCompositorSessionLost(aSession);
 
   DispatchToUiThread("nsWindow::NotifyCompositorSessionLost",
                      [lvs = mLayerViewSupport] {
@@ -3261,7 +3257,7 @@ uint32_t nsWindow::GetMaxTouchPoints() const {
 void nsWindow::UpdateZoomConstraints(
     const uint32_t& aPresShellId, const ScrollableLayerGuid::ViewID& aViewId,
     const mozilla::Maybe<ZoomConstraints>& aConstraints) {
-  nsBaseWidget::UpdateZoomConstraints(aPresShellId, aViewId, aConstraints);
+  nsIWidget::UpdateZoomConstraints(aPresShellId, aViewId, aConstraints);
 }
 
 CompositorBridgeChild* nsWindow::GetCompositorBridgeChild() const {

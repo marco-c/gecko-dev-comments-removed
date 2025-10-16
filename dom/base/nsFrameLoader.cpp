@@ -74,7 +74,6 @@
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/toolkit/library/buildid_reader_ffi.h"
 #include "nsAppRunner.h"
-#include "nsBaseWidget.h"
 #include "nsContentUtils.h"
 #include "nsDirectoryService.h"
 #include "nsDirectoryServiceDefs.h"
@@ -107,6 +106,7 @@
 #include "nsIURI.h"
 #include "nsIWebNavigation.h"
 #include "nsIWebProgress.h"
+#include "nsIWidget.h"
 #include "nsIXULRuntime.h"
 #include "nsLayoutUtils.h"
 #include "nsNameSpaceManager.h"
@@ -1107,7 +1107,7 @@ bool nsFrameLoader::ShowRemoteFrame(nsSubDocumentFrame* aFrame) {
 
     
     nsIWidget* widget = nsContentUtils::WidgetForContent(mOwnerContent);
-    if (!widget || static_cast<nsBaseWidget*>(widget)->IsSmallPopup()) {
+    if (!widget || widget->IsSmallPopup()) {
       return false;
     }
 
@@ -3626,9 +3626,6 @@ void nsFrameLoader::SetWillChangeProcess() {
 }
 
 static mozilla::Result<bool, nsresult> BuildIDMismatchMemoryAndDisk() {
-  nsresult rv;
-  nsCOMPtr<nsIFile> file;
-
   if (const char* forceMismatch = PR_GetEnv("MOZ_FORCE_BUILDID_MISMATCH")) {
     if (forceMismatch[0] == '1') {
       NS_WARNING("Forcing a buildid mismatch");
@@ -3640,9 +3637,9 @@ static mozilla::Result<bool, nsresult> BuildIDMismatchMemoryAndDisk() {
   
   
   return false;
-#endif  
+#else
 
-#if defined(XP_WIN)
+#  if defined(XP_WIN)
   {
     
     nsCOMPtr<nsIPropertyBag2> infoService =
@@ -3656,7 +3653,10 @@ static mozilla::Result<bool, nsresult> BuildIDMismatchMemoryAndDisk() {
       }
     }
   }
-#endif
+#  endif  
+
+  nsresult rv;
+  nsCOMPtr<nsIFile> file;
 
   rv = NS_GetSpecialDirectory(NS_GRE_BIN_DIR, getter_AddRefs(file));
   MOZ_TRY(rv);
@@ -3674,6 +3674,7 @@ static mozilla::Result<bool, nsresult> BuildIDMismatchMemoryAndDisk() {
   MOZ_TRY(rv);
 
   return (installedBuildID != PlatformBuildID());
+#endif    
 }
 
 void nsFrameLoader::MaybeNotifyCrashed(BrowsingContext* aBrowsingContext,

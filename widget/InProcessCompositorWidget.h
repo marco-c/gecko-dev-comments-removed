@@ -15,7 +15,7 @@ namespace widget {
 class InProcessCompositorWidget : public CompositorWidget {
  public:
   InProcessCompositorWidget(const layers::CompositorOptions& aOptions,
-                            nsBaseWidget* aWidget);
+                            nsIWidget* aWidget);
 
   bool PreRender(WidgetRenderingContext* aManager) override;
   void PostRender(WidgetRenderingContext* aManager) override;
@@ -39,12 +39,12 @@ class InProcessCompositorWidget : public CompositorWidget {
   nsIWidget* RealWidget() override;
 
  protected:
-  nsBaseWidget* mWidget;
+  nsIWidget* mWidget;
   
   
   static const char* CANARY_VALUE;
   const char* mCanary;
-  nsBaseWidget* mWidgetSanity;
+  nsIWidget* mWidgetSanity;
   void CheckWidgetSanity();
 };
 

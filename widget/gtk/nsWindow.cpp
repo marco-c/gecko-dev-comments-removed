@@ -48,6 +48,7 @@
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/layers/APZInputBridge.h"
 #include "mozilla/layers/IAPZCTreeManager.h"
+#include "mozilla/widget/WindowOcclusionState.h"
 #include "mozilla/Likely.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MiscEvents.h"
@@ -645,10 +646,10 @@ void nsWindow::OnDestroy(void) {
   nsCOMPtr<nsIWidget> kungFuDeathGrip = this;
 
   
-  nsBaseWidget::OnDestroy();
+  nsIWidget::OnDestroy();
 
   
-  nsBaseWidget::Destroy();
+  nsIWidget::Destroy();
 
   NotifyWindowDestroyed();
 }
@@ -692,7 +693,7 @@ void nsWindow::Destroy() {
     }
   }
 
-  nsIRollupListener* rollupListener = nsBaseWidget::GetActiveRollupListener();
+  nsIRollupListener* rollupListener = nsIWidget::GetActiveRollupListener();
   if (rollupListener) {
     nsCOMPtr<nsIWidget> rollupWidget = rollupListener->GetRollupWidget();
     if (static_cast<nsIWidget*>(this) == rollupWidget) {
@@ -931,7 +932,7 @@ void nsWindow::ConstrainSize(int* aWidth, int* aHeight) {
   
   *aWidth -= mClientMargin.LeftRight();
   *aHeight -= mClientMargin.TopBottom();
-  nsBaseWidget::ConstrainSize(aWidth, aHeight);
+  nsIWidget::ConstrainSize(aWidth, aHeight);
   *aWidth += mClientMargin.LeftRight();
   *aHeight += mClientMargin.TopBottom();
 }
@@ -3862,8 +3863,8 @@ void nsWindow::CreateCompositorVsyncDispatcher() {
   if (!mWaylandVsyncSource) {
     LOG_VSYNC(
         "  mWaylandVsyncSource is missing, create "
-        "nsBaseWidget::CompositorVsyncDispatcher()");
-    nsBaseWidget::CreateCompositorVsyncDispatcher();
+        "nsIWidget::CompositorVsyncDispatcher()");
+    nsIWidget::CreateCompositorVsyncDispatcher();
     return;
   }
   if (!mCompositorVsyncDispatcherLock) {
@@ -8828,7 +8829,7 @@ nsIWidget::WindowRenderer* nsWindow::GetWindowRenderer() {
     return mWindowRenderer;
   }
 
-  return nsBaseWidget::GetWindowRenderer();
+  return nsIWidget::GetWindowRenderer();
 }
 
 void nsWindow::DidGetNonBlankPaint() {

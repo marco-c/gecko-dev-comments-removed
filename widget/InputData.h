@@ -25,6 +25,8 @@ template <class E>
 struct already_AddRefed;
 class nsIWidget;
 
+enum TouchPointerState : uint8_t;
+
 namespace mozilla {
 
 namespace layers {
@@ -836,6 +838,18 @@ class KeyboardInput : public InputData {
 
   KeyboardInput();
 };
+
+
+
+
+
+
+
+
+MultiTouchInput UpdateSynthesizedTouchState(
+    MultiTouchInput* aState, TimeStamp aTimeStamp, uint32_t aPointerId,
+    TouchPointerState aPointerState, LayoutDeviceIntPoint aPoint,
+    double aPointerPressure, uint32_t aPointerOrientation);
 
 }  
 
