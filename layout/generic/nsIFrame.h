@@ -630,7 +630,7 @@ struct MOZ_RAII FrameDestroyContext {
 
 
 
-enum class LayoutFrameClassFlags : uint16_t {
+enum class LayoutFrameClassFlags : uint32_t {
   None = 0,
   Leaf = 1 << 0,
   LeafDynamic = 1 << 1,
@@ -663,6 +663,8 @@ enum class LayoutFrameClassFlags : uint16_t {
   BlockFormattingContext = 1 << 14,
   
   SVGRenderingObserverContainer = 1 << 15,
+  
+  MayHaveView = 1 << 16,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(LayoutFrameClassFlags)
@@ -3302,11 +3304,6 @@ class nsIFrame : public nsQueryFrame {
     return false;
   }
 
-  
-  
-  
-  bool HasView() const { return !!(mState & NS_FRAME_HAS_VIEW); }
-
   template <typename SizeOrMaxSize>
   static inline bool IsIntrinsicKeyword(const SizeOrMaxSize& aSize) {
     
@@ -3334,12 +3331,10 @@ class nsIFrame : public nsQueryFrame {
 
  public:
   nsView* GetView() const {
-    if (MOZ_LIKELY(!HasView())) {
+    if (MOZ_LIKELY(!MayHaveView())) {
       return nullptr;
     }
-    nsView* view = GetViewInternal();
-    MOZ_ASSERT(view, "GetViewInternal() should agree with HasView()");
-    return view;
+    return GetViewInternal();
   }
   void SetView(nsView* aView);
 
@@ -3594,6 +3589,7 @@ class nsIFrame : public nsQueryFrame {
   CLASS_FLAG_METHOD(IsBidiInlineContainer, BidiInlineContainer);
   CLASS_FLAG_METHOD(IsLineParticipant, LineParticipant);
   CLASS_FLAG_METHOD(HasReplacedSizing, ReplacedSizing);
+  CLASS_FLAG_METHOD(MayHaveView, MayHaveView);
   CLASS_FLAG_METHOD(IsTablePart, TablePart);
   CLASS_FLAG_METHOD0(CanContainOverflowContainers)
   CLASS_FLAG_METHOD0(SupportsCSSTransforms);

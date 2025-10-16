@@ -4874,7 +4874,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
   
   
   
-  if (originalPosition != frame->GetPosition() && !frame->HasView()) {
+  if (originalPosition != frame->GetPosition() && !frame->GetView()) {
     nsContainerFrame::PositionChildViews(frame);
   }
 
@@ -7581,10 +7581,10 @@ void nsBlockFrame::ReflowFloat(BlockReflowState& aState, ReflowInput& aFloatRI,
   
   WritingMode metricsWM = metrics.GetWritingMode();
   aFloat->SetSize(metricsWM, metrics.Size(metricsWM));
-  if (aFloat->HasView()) {
-    nsContainerFrame::SyncFrameViewAfterReflow(
-        aState.mPresContext, aFloat, aFloat->GetView(), metrics.InkOverflow(),
-        ReflowChildFlags::NoMoveView);
+  if (auto* view = aFloat->GetView()) {
+    nsContainerFrame::SyncFrameViewAfterReflow(aState.mPresContext, aFloat,
+                                               view, metrics.InkOverflow(),
+                                               ReflowChildFlags::NoMoveView);
   }
   aFloat->DidReflow(aState.mPresContext, &aFloatRI);
 }

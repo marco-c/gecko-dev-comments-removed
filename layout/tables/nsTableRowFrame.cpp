@@ -380,11 +380,6 @@ void nsTableRowFrame::DidResize(ForceAlignTopForTableCell aForceAlignTop) {
     
   }
   FinishAndStoreOverflow(&desiredSize);
-  if (HasView()) {
-    nsContainerFrame::SyncFrameViewAfterReflow(PresContext(), this, GetView(),
-                                               desiredSize.InkOverflow(),
-                                               ReflowChildFlags::Default);
-  }
   
 }
 

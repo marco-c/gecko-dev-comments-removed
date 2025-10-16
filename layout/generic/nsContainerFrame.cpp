@@ -225,8 +225,8 @@ void nsContainerFrame::SafelyDestroyFrameListProp(
 
 void nsContainerFrame::Destroy(DestroyContext& aContext) {
   
-  if (HasView()) {
-    GetView()->SetFrame(nullptr);
+  if (auto* view = GetView()) {
+    view->SetFrame(nullptr);
   }
 
   DestroyAbsoluteFrames(aContext);
@@ -565,12 +565,18 @@ nsIFrame::FrameSearchResult nsContainerFrame::PeekOffsetCharacter(
 
 
 void nsContainerFrame::PositionFrameView(nsIFrame* aKidFrame) {
+  if (MOZ_LIKELY(!aKidFrame->MayHaveView())) {
+    return;
+  }
   nsIFrame* parentFrame = aKidFrame->GetParent();
-  if (!aKidFrame->HasView() || !parentFrame) {
+  if (!parentFrame) {
+    return;
+  }
+  auto* view = aKidFrame->GetView();
+  if (!view) {
     return;
   }
 
-  nsView* view = aKidFrame->GetView();
   nsViewManager* vm = view->GetViewManager();
   nsPoint pt;
   nsView* ancestorView = parentFrame->GetClosestView(&pt);
@@ -598,7 +604,7 @@ void nsContainerFrame::ReparentFrameView(nsIFrame* aChildFrame,
              "same old and new parent frame");
 
   
-  while (!aOldParentFrame->HasView() && !aNewParentFrame->HasView()) {
+  while (!aOldParentFrame->GetView() && !aNewParentFrame->GetView()) {
     
     
     
@@ -656,7 +662,7 @@ void nsContainerFrame::ReparentFrameViewList(const nsFrameList& aChildFrameList,
              "same old and new parent frame");
 
   
-  while (!aOldParentFrame->HasView() && !aNewParentFrame->HasView()) {
+  while (!aOldParentFrame->GetView() && !aNewParentFrame->GetView()) {
     
     
     
@@ -983,11 +989,7 @@ void nsContainerFrame::PositionChildViews(nsIFrame* aFrame) {
     for (nsIFrame* childFrame : list) {
       
       
-      if (childFrame->HasView()) {
-        PositionFrameView(childFrame);
-      } else {
-        PositionChildViews(childFrame);
-      }
+      PlaceFrameView(childFrame);
     }
   }
 }
@@ -1030,21 +1032,16 @@ void nsContainerFrame::FinishReflowChild(
     aKidFrame->SetSize(aWM, convertedSize);
   }
 
-  if (aKidFrame->HasView()) {
-    nsView* view = aKidFrame->GetView();
+  if (nsView* view = aKidFrame->GetView()) {
     
     
     SyncFrameViewAfterReflow(aPresContext, aKidFrame, view,
                              aDesiredSize.InkOverflow(), aFlags);
-  }
-
-  nsPoint newOrigin = aKidFrame->GetPosition();
-  if (!(aFlags & ReflowChildFlags::NoMoveView) && curOrigin != newOrigin) {
-    if (!aKidFrame->HasView()) {
-      
-      
-      PositionChildViews(aKidFrame);
-    }
+  } else if (!(aFlags & ReflowChildFlags::NoMoveView) &&
+             curOrigin != aKidFrame->GetPosition()) {
+    
+    
+    PositionChildViews(aKidFrame);
   }
 
   aKidFrame->DidReflow(aPresContext, aReflowInput);
@@ -1076,20 +1073,15 @@ void nsContainerFrame::FinishReflowChild(nsIFrame* aKidFrame,
     aKidFrame->SetSize(size);
   }
 
-  if (aKidFrame->HasView()) {
-    nsView* view = aKidFrame->GetView();
+  if (nsView* view = aKidFrame->GetView()) {
     
     
     SyncFrameViewAfterReflow(aPresContext, aKidFrame, view,
                              aDesiredSize.InkOverflow(), aFlags);
-  }
-
-  if (!(aFlags & ReflowChildFlags::NoMoveView) && curOrigin != pos) {
-    if (!aKidFrame->HasView()) {
-      
-      
-      PositionChildViews(aKidFrame);
-    }
+  } else if (!(aFlags & ReflowChildFlags::NoMoveView) && curOrigin != pos) {
+    
+    
+    PositionChildViews(aKidFrame);
   }
 
   aKidFrame->DidReflow(aPresContext, aReflowInput);

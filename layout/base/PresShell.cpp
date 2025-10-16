@@ -10885,9 +10885,9 @@ bool PresShell::DoReflow(nsIFrame* target, bool aInterruptible,
   
   
   
-  if (target->HasView()) {
-    nsContainerFrame::SyncFrameViewAfterReflow(
-        mPresContext, target, target->GetView(), boundsRelativeToTarget);
+  if (auto* view = target->GetView()) {
+    nsContainerFrame::SyncFrameViewAfterReflow(mPresContext, target, view,
+                                               boundsRelativeToTarget);
   }
 
   target->DidReflow(mPresContext, nullptr);

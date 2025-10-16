@@ -824,7 +824,7 @@ static bool RecomputePosition(nsIFrame* aFrame) {
   
   
   
-  if (aFrame->HasView() ||
+  if (aFrame->GetView() ||
       aFrame->HasAnyStateBits(NS_FRAME_HAS_CHILD_WITH_VIEW)) {
     return false;
   }
