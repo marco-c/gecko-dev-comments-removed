@@ -295,7 +295,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  IterationResult OneIteration(GraphTime aStateTime, GraphTime aIterationEnd,
+  IterationResult OneIteration(GraphTime aStateTime,
                                MixerCallbackReceiver* aMixerReceiver) override;
 
   

@@ -175,8 +175,7 @@ struct GraphInterface : public nsISupports {
   
 
   virtual IterationResult OneIteration(
-      GraphTime aStateComputedEnd, GraphTime aIterationEnd,
-      MixerCallbackReceiver* aMixerReceiver) = 0;
+      GraphTime aStateComputedEnd, MixerCallbackReceiver* aMixerReceiver) = 0;
 #ifdef DEBUG
   
 
@@ -297,8 +296,17 @@ class GraphDriver {
 
 
 
-  void SetState(const nsACString& aStreamName, GraphTime aIterationEnd,
-                GraphTime aStateComputedTime);
+
+
+
+
+
+
+
+
+
+  void SetState(const nsACString& aStreamName, GraphTime aStateComputedTime,
+                TimeStamp aIterationTimeStamp);
 
   GraphInterface* Graph() const { return mGraphInterface; }
 
@@ -335,9 +343,18 @@ class GraphDriver {
   
   nsCString mStreamName;
   
-  GraphTime mIterationEnd = 0;
-  
   GraphTime mStateComputedTime = 0;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  TimeStamp mTargetIterationTimeStamp;
   
   const RefPtr<GraphInterface> mGraphInterface;
   
@@ -473,6 +490,9 @@ class SystemClockDriver final : public ThreadedDriver {
   virtual ~SystemClockDriver();
   SystemClockDriver* AsSystemClockDriver() override { return this; }
   const SystemClockDriver* AsSystemClockDriver() const override { return this; }
+  const TimeStamp& IterationTimeStamp() const {
+    return mTargetIterationTimeStamp;
+  }
 
  protected:
   
@@ -483,10 +503,6 @@ class SystemClockDriver final : public ThreadedDriver {
   
   
   TimeStamp mInitialTimeStamp;
-  
-  
-  
-  TimeStamp mTargetIterationTimeStamp;
 };
 
 
@@ -678,8 +694,8 @@ class AudioCallbackDriver final : public GraphDriver,
 
 
 
-  void FallbackDriverStopped(GraphTime aIterationEnd,
-                             GraphTime aStateComputedTime,
+  void FallbackDriverStopped(GraphTime aStateComputedTime,
+                             TimeStamp aIterationTimeStamp,
                              FallbackDriverState aState);
 
   
@@ -717,6 +733,10 @@ class AudioCallbackDriver final : public GraphDriver,
 
   const CubebUtils::AudioDeviceID mOutputDeviceID;
   const CubebUtils::AudioDeviceID mInputDeviceID;
+  
+
+
+  MOZ_INIT_OUTSIDE_CTOR bool mFirstCallbackIteration;
   
 
 

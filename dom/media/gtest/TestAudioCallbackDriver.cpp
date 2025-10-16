@@ -42,7 +42,7 @@ class MockGraphInterface : public GraphInterface {
 #endif
   
 
-  IterationResult OneIteration(GraphTime aStateComputedTime, GraphTime,
+  IterationResult OneIteration(GraphTime aStateComputedTime,
                                MixerCallbackReceiver* aMixerReceiver) {
     GraphDriver* driver = mCurrentDriver;
     if (aMixerReceiver) {
