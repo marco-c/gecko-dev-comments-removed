@@ -26,8 +26,15 @@ function test() {
   CustomizableUIInternal.loadSavedState();
 
   CustomizableUIInternal.updateForNewVersion();
-  is(gFuturePlacements.size, 0, "No change to future placements initially.");
-
+  
+  let includesSidebarButton =
+    Services.prefs.getBoolPref("sidebar.revamp", false) &&
+    gFuturePlacements.get("nav-bar")?.has("sidebar-button");
+  is(
+    gFuturePlacements.size,
+    includesSidebarButton ? 1 : 0,
+    "No unexpected future placements initially."
+  );
   
   let testWidgetNew = {
     id: "test-messing-with-default-placements-new-pref",
