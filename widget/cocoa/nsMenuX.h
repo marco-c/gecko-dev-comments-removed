@@ -180,6 +180,7 @@ class nsMenuX final : public nsMenuParentX,
 
   static bool IsXULHelpMenu(nsIContent* aMenuContent);
   static bool IsXULWindowMenu(nsIContent* aMenuContent);
+  static bool IsXULEditMenu(nsIContent* aMenuContent);
 
   
   

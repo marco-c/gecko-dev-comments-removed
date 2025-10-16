@@ -492,7 +492,15 @@ nsresult nsMenuBarX::Paint() {
   NS_OBJC_END_TRY_ABORT_BLOCK;
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
-  RemoveProblematicMenuItems(mNativeMenu);
+  
+  
+  
+  
+  
+  
+  if (nsMenuBarX::sLastGeckoMenuBarPainted != this) {
+    RemoveProblematicMenuItems(mNativeMenu);
+  }
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
