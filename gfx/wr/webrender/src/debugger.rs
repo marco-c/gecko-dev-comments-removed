@@ -1,49 +1,23 @@
 
 
 
-
-use crate::{DebugCommand, RenderApi, ApiMsg};
+ 
+use crate::{DebugCommand, RenderApi};
 use crate::profiler::Profiler;
 use crate::composite::CompositeState;
 use std::collections::HashMap;
-use std::convert::Infallible;
 use api::crossbeam_channel;
-use api::channel::{Sender, unbounded_channel};
 use api::DebugFlags;
 use api::debugger::{DebuggerMessage, SetDebugFlagsMessage, ProfileCounterDescriptor};
 use api::debugger::{UpdateProfileCountersMessage, InitProfileCountersMessage, ProfileCounterId};
 use api::debugger::{CompositorDebugInfo, CompositorDebugTile};
 use std::thread;
+use tiny_http::{Server, Response, ReadWrite, Method};
 use base64::prelude::*;
+use api::channel::Sender;
 use sha1::{Sha1, Digest};
-use hyper::{Request, Response, Body, service::{make_service_fn, service_fn}, Server};
-use tokio::io::AsyncWriteExt;
 
 
-#[derive(Clone)]
-struct DebugRenderApi {
-    api_sender: Sender<ApiMsg>,
-}
-
-impl DebugRenderApi {
-    fn new(api: &RenderApi) -> Self {
-        Self {
-            api_sender: api.get_api_sender(),
-        }
-    }
-
-    fn get_debug_flags(&self) -> DebugFlags {
-        let (tx, rx) = unbounded_channel();
-        let msg = ApiMsg::DebugCommand(DebugCommand::GetDebugFlags(tx));
-        self.api_sender.send(msg).unwrap();
-        rx.recv().unwrap()
-    }
-
-    fn send_debug_cmd(&self, cmd: DebugCommand) {
-        let msg = ApiMsg::DebugCommand(cmd);
-        self.api_sender.send(msg).unwrap();
-    }
-}
 
 
 
@@ -76,7 +50,7 @@ pub struct DebugQuery {
 
 
 pub struct DebuggerClient {
-    tx: tokio::sync::mpsc::UnboundedSender<Vec<u8>>,
+    stream: Box<dyn ReadWrite + Send>,
 }
 
 impl DebuggerClient {
@@ -88,7 +62,13 @@ impl DebuggerClient {
         let data = serde_json::to_string(&msg).expect("bug");
         let data = construct_server_ws_frame(&data);
 
-        self.tx.send(data).is_ok()
+        if let Ok(..) = self.stream.write(&data) {
+            if let Ok(..) = self.stream.flush() {
+                return true;
+            }
+        }
+
+        false
     }
 }
 
@@ -157,7 +137,7 @@ impl Debugger {
                     clients_to_keep.push(client);
                 }
             }
-        }
+        }   
 
         self.clients = clients_to_keep;
     }
@@ -165,187 +145,138 @@ impl Debugger {
 
 
 pub fn start(api: RenderApi) {
-    let address = "127.0.0.1:3583";
+    let address = "localhost:3583";
+    let base_url = url::Url::parse(&format!("http://{}", address)).expect("bad url");
 
-    println!("Start WebRender debugger server on http://{}", address);
-
-    let api = DebugRenderApi::new(&api);
+    println!("Start debug server on {}", base_url);
 
     thread::spawn(move || {
-        let runtime = match tokio::runtime::Runtime::new() {
-            Ok(rt) => rt,
-            Err(e) => {
-                println!("\tUnable to create tokio runtime for the webrender debugger: {}", e);
+        let server = match Server::http(address) {
+            Ok(server) => server,
+            Err(..) => {
+                println!("\tUnable to bind WR debug server (another process may already be listening)");
                 return;
             }
         };
 
-        runtime.block_on(async {
-            let make_svc = make_service_fn(move |_conn| {
-                let api = api.clone();
-                async move {
-                    Ok::<_, Infallible>(service_fn(move |req| {
-                        handle_request(req, api.clone())
-                    }))
+        for mut request in server.incoming_requests() {
+            let url = base_url.join(request.url()).expect("bad url");
+            let args: HashMap<String, String> = url.query_pairs().into_owned().collect();
+
+            match url.path() {
+                "/ping" => {
+                    
+                    request.respond(Response::from_string("pong")).ok();
                 }
-            });
+                "/debug-flags" => {
+                    
+                    match request.method() {
+                        Method::Get => {
+                            let debug_flags = api.get_debug_flags();
+                            let result = serde_json::to_string(&debug_flags).unwrap();
+                            request.respond(Response::from_string(result)).ok();
+                        }
+                        Method::Post => {
+                            let mut content = String::new();
+                            request.as_reader().read_to_string(&mut content).unwrap();
 
-            let addr = address.parse().unwrap();
-            let server = match Server::try_bind(&addr) {
-                Ok(s) => s,
-                Err(e) => {
-                    eprintln!("WebRender debugger could not bind: {addr}: {e:?}");
-                    return;
-                }
-            };
-
-            if let Err(e) = server.serve(make_svc).await {
-                eprintln!("WebRender debugger error: {:?}", e);
-            }
-        });
-    });
-}
-
-async fn request_to_string(request: Request<Body>) -> Result<String, hyper::Error> {
-    let body_bytes = hyper::body::to_bytes(request.into_body()).await?;
-    Ok(String::from_utf8_lossy(&body_bytes).to_string())
-}
-
-fn string_response<S: Into<String>>(string: S) -> Response<Body> {
-    Response::new(Body::from(string.into()))
-}
-
-fn status_response(status: u16) -> Response<Body> {
-    Response::builder().status(status).body(Body::from("")).unwrap()
-}
-
-async fn handle_request(
-    request: Request<Body>,
-    api: DebugRenderApi,
-) -> Result<Response<Body>, Infallible> {
-    let path = request.uri().path();
-    let query = request.uri().query().unwrap_or("");
-    let args: HashMap<String, String> = url::form_urlencoded::parse(query.as_bytes())
-        .into_owned()
-        .collect();
-
-    match path {
-        "/ping" => {
-            
-            Ok(string_response("pong"))
-        }
-        "/debug-flags" => {
-            
-            match request.method() {
-                &hyper::Method::GET => {
-                    let debug_flags = api.get_debug_flags();
-                    let result = serde_json::to_string(&debug_flags).unwrap();
-                    Ok(string_response(result))
-                }
-                &hyper::Method::POST => {
-                    let content = request_to_string(request).await.unwrap();
-                    let flags = serde_json::from_str(&content).expect("bug");
-                    api.send_debug_cmd(
-                        DebugCommand::SetFlags(flags)
-                    );
-                    Ok(string_response(format!("flags = {:?}", flags)))
-                }
-                _ => {
-                    Ok(status_response(403))
-                }
-            }
-        }
-        "/generate-frame" => {
-            
-            api.send_debug_cmd(
-                DebugCommand::GenerateFrame
-            );
-            Ok(status_response(200))
-        }
-        "/query" => {
-            
-            let (tx, rx) = crossbeam_channel::unbounded();
-
-            let kind = match args.get("type").map(|s| s.as_str()) {
-                Some("spatial-tree") => DebugQueryKind::SpatialTree {},
-                Some("composite-view") => DebugQueryKind::CompositorView {},
-                Some("composite-config") => DebugQueryKind::CompositorConfig {},
-                _ => {
-                    return Ok(string_response("Unknown query"));
-                }
-            };
-
-            let query = DebugQuery {
-                result: tx,
-                kind,
-            };
-            api.send_debug_cmd(
-                DebugCommand::Query(query)
-            );
-            let result = match rx.recv() {
-                Ok(result) => result,
-                Err(..) => "No response received from WR".into(),
-            };
-            Ok(string_response(result))
-        }
-        "/debugger-socket" => {
-            
-            
-
-            let upgrade_header = request.headers().get("upgrade");
-            if upgrade_header.is_none() || upgrade_header.unwrap() != "websocket" {
-                return Ok(status_response(404));
-            }
-
-            let key = match request.headers().get("sec-websocket-key") {
-                Some(k) => k.to_str().unwrap_or(""),
-                None => {
-                    return Ok(status_response(400));
-                }
-            };
-
-            let accept_key = convert_ws_key(key);
-
-            tokio::spawn(async move {
-                match hyper::upgrade::on(request).await {
-                    Ok(upgraded) => {
-                        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<Vec<u8>>();
-
-                        
-                        tokio::spawn(async move {
-                            let mut stream = upgraded;
-                            while let Some(data) = rx.recv().await {
-                                if stream.write_all(&data).await.is_err() {
-                                    break;
-                                }
-                                if stream.flush().await.is_err() {
-                                    break;
-                                }
-                            }
-                        });
-
-                        api.send_debug_cmd(
-                            DebugCommand::AddDebugClient(DebuggerClient {
-                                tx,
-                            })
-                        );
+                            let flags = serde_json::from_str(&content).expect("bug");
+                            api.send_debug_cmd(
+                                DebugCommand::SetFlags(flags)
+                            );
+                            request.respond(Response::from_string(format!("flags = {:?}", flags))).ok();
+                        }
+                        _ => {
+                            request.respond(Response::empty(403)).ok();
+                        }
                     }
-                    Err(e) => eprintln!("Upgrade error: {}", e),
                 }
-            });
+                "/generate-frame" => {
+                    
+                    api.send_debug_cmd(
+                        DebugCommand::GenerateFrame
+                    );
+                    request.respond(Response::empty(200)).ok();
+                }
+                "/query" => {
+                    
+                    let (tx, rx) = crossbeam_channel::unbounded();
 
-            Ok(Response::builder()
-                .status(101)
-                .header("upgrade", "websocket")
-                .header("connection", "upgrade")
-                .header("sec-websocket-accept", accept_key)
-                .body(Body::from(""))
-                .unwrap())
+                    let kind = match args.get("type").map(|s| s.as_str()) {
+                        Some("spatial-tree") => DebugQueryKind::SpatialTree {},
+                        Some("composite-view") => DebugQueryKind::CompositorView {},
+                        Some("composite-config") => DebugQueryKind::CompositorConfig {},
+                        _ => {
+                            request.respond(Response::from_string("Unknown query")).ok();
+                            return;
+                        }
+                    };
+
+                    let query = DebugQuery {
+                        result: tx,
+                        kind,
+                    };
+                    api.send_debug_cmd(
+                        DebugCommand::Query(query)
+                    );
+                    let result = match rx.recv() {
+                        Ok(result) => result,
+                        Err(..) => "No response received from WR".into(),
+                    };
+                    request.respond(Response::from_string(result)).ok();
+                }
+                "/debugger-socket" => {
+                    
+                    
+
+                    match request
+                        .headers()
+                        .iter()
+                        .find(|h| h.field.equiv(&"Upgrade")) {
+                        Some(h) if h.value == "websocket" => {}
+                        _ => {
+                            request.respond(Response::empty(404)).ok();
+                            return;
+                        }
+                    }
+
+                    let key = match request
+                        .headers()
+                        .iter()
+                        .find(|h| h.field.equiv(&"Sec-WebSocket-Key"))
+                        .map(|h| &h.value)
+                    {
+                        Some(k) => k,
+                        None => {
+                            request.respond(Response::empty(400)).ok();
+                            return;
+                        }
+                    };
+
+                    
+                    let response = tiny_http::Response::new_empty(tiny_http::StatusCode(101))
+                        .with_header("Upgrade: websocket".parse::<tiny_http::Header>().unwrap())
+                        .with_header("Connection: Upgrade".parse::<tiny_http::Header>().unwrap())
+                        .with_header(
+                            format!("Sec-WebSocket-Accept: {}", convert_ws_key(key.as_str()))
+                                .parse::<tiny_http::Header>()
+                                .unwrap(),
+                        );
+                    let stream = request.upgrade("websocket", response);
+
+                    
+                    api.send_debug_cmd(
+                        DebugCommand::AddDebugClient(DebuggerClient {
+                            stream,
+                        })
+                    );
+                }
+                _ => {
+                    request.respond(Response::empty(404)).ok();
+                }
+            }
         }
-        _ => {
-            Ok(status_response(404))
-        }
-    }
+    });
 }
 
 
