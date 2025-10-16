@@ -147,12 +147,10 @@ async function doTest({ locale, region, expectSuggestToBeEnabled }) {
   }
 
   
-  await QuickSuggestTestUtils.withLocales({
-    homeRegion: region,
-    locales: [locale],
+  await QuickSuggestTestUtils.withRegionAndLocale({
+    region,
+    locale,
     callback: async () => {
-      await QuickSuggest._test_reset();
-
       for (let [name, value] of Object.entries(expectedPrefs)) {
         
         Assert.strictEqual(
