@@ -798,6 +798,14 @@ struct JSRuntime {
   const char* getDefaultLocale();
 
   
+
+
+
+  const char* getDefaultLocaleIfInitialized() const {
+    return defaultLocale.ref().get();
+  }
+
+  
   js::gc::GCRuntime gc;
 
   

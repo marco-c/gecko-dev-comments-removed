@@ -10,6 +10,7 @@
 #include "mozilla/CheckedInt.h"
 #include "mozilla/Compiler.h"
 #if JS_HAS_INTL_API
+#  include "mozilla/intl/Locale.h"
 #  include "mozilla/intl/String.h"
 #endif
 #include "mozilla/Likely.h"
@@ -944,17 +945,70 @@ static bool str_toLowerCase(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 #if JS_HAS_INTL_API
-static const char* CaseMappingLocale(JSLinearString* locale) {
-  MOZ_ASSERT(locale->length() >= 2, "locale is a valid language tag");
+
+static constexpr char LanguagesWithSpecialCasing[][3] = {"lt", "tr", "az"};
+
+bool js::LocaleHasDefaultCaseMapping(const char* locale) {
+  MOZ_ASSERT(locale);
+
+  size_t languageSubtagLength;
+  if (auto* sep = strchr(locale, '-')) {
+    languageSubtagLength = sep - locale;
+  } else {
+    languageSubtagLength = std::strlen(locale);
+  }
 
   
-  static const char languagesWithSpecialCasing[][3] = {"lt", "tr", "az"};
+  
+  mozilla::Span<const char> span{locale, languageSubtagLength};
+  {
+    
+    JS::AutoSuppressGCAnalysis nogc;
+    if (!mozilla::intl::IsStructurallyValidLanguageTag(span)) {
+      return true;
+    }
+  }
+
+  mozilla::intl::LanguageSubtag subtag{span};
+
+  
+  {
+    
+    JS::AutoSuppressGCAnalysis nogc;
+
+    subtag.ToLowerCase();
+  }
+
+  
+  
+  
+  {
+    
+    JS::AutoSuppressGCAnalysis nogc;
+
+    (void)mozilla::intl::Locale::LanguageMapping(subtag);
+  }
+
+  
+  for (const auto& language : LanguagesWithSpecialCasing) {
+    if (subtag.EqualTo(language)) {
+      return false;
+    }
+  }
+
+  
+  
+  return true;
+}
+
+static const char* CaseMappingLocale(JSLinearString* locale) {
+  MOZ_ASSERT(locale->length() >= 2, "locale is a valid language tag");
 
   
   
   
   if (locale->length() == 2 || locale->latin1OrTwoByteChar(2) == '-') {
-    for (const auto& language : languagesWithSpecialCasing) {
+    for (const auto& language : LanguagesWithSpecialCasing) {
       if (locale->latin1OrTwoByteChar(0) == language[0] &&
           locale->latin1OrTwoByteChar(1) == language[1]) {
         return language;
