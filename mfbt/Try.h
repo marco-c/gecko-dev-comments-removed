@@ -35,13 +35,4 @@
     mozTryVarTempResult.unwrap();                         \
   })
 
-
-
-
-
-
-
-
-#define MOZ_TRY_VAR(target, expr) (target) = MOZ_TRY(expr);
-
 #endif  

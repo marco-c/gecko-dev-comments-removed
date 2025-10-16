@@ -217,15 +217,13 @@ nsresult nsUrlClassifierStreamUpdater::FetchUpdate(
         "timeout. Disabling these update timeouts.");
     return NS_OK;
   }
-  MOZ_TRY_VAR(mResponseTimeoutTimer,
-              NS_NewTimerWithCallback(
-                  this, StaticPrefs::urlclassifier_update_response_timeout_ms(),
-                  nsITimer::TYPE_ONE_SHOT));
+  mResponseTimeoutTimer = MOZ_TRY(NS_NewTimerWithCallback(
+      this, StaticPrefs::urlclassifier_update_response_timeout_ms(),
+      nsITimer::TYPE_ONE_SHOT));
 
-  MOZ_TRY_VAR(mTimeoutTimer,
-              NS_NewTimerWithCallback(
-                  this, StaticPrefs::urlclassifier_update_timeout_ms(),
-                  nsITimer::TYPE_ONE_SHOT));
+  mTimeoutTimer = MOZ_TRY(NS_NewTimerWithCallback(
+      this, StaticPrefs::urlclassifier_update_timeout_ms(),
+      nsITimer::TYPE_ONE_SHOT));
 
   if (StaticPrefs::urlclassifier_update_timeout_ms() < MIN_TIMEOUT_MS) {
     LOG(("Download update timeout %d ms (< %d ms) would be too small",
@@ -327,9 +325,8 @@ nsUrlClassifierStreamUpdater::DownloadUpdates(
 
     
     
-    MOZ_TRY_VAR(mFetchNextRequestTimer,
-                NS_NewTimerWithCallback(this, FETCH_NEXT_REQUEST_RETRY_DELAY_MS,
-                                        nsITimer::TYPE_ONE_SHOT));
+    mFetchNextRequestTimer = MOZ_TRY(NS_NewTimerWithCallback(
+        this, FETCH_NEXT_REQUEST_RETRY_DELAY_MS, nsITimer::TYPE_ONE_SHOT));
 
     return NS_OK;
   }

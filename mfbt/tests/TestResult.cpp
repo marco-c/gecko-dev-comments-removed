@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include <stdint.h>
 #include <string.h>
@@ -26,7 +26,7 @@ enum struct TestUnusedZeroEnum : int16_t { Ok = 0, NotOk = 1 };
 namespace mozilla::detail {
 template <>
 struct UnusedZero<TestUnusedZeroEnum> : UnusedZeroEnum<TestUnusedZeroEnum> {};
-}  // namespace mozilla::detail
+}  
 
 struct Failed {};
 
@@ -49,10 +49,10 @@ struct UnusedZero<Failed> {
   }
 };
 
-}  // namespace mozilla::detail
+}  
 
-// V is trivially default-constructible, and E has UnusedZero<E>::value == true,
-// for a reference type and for a non-reference type
+
+
 static_assert(mozilla::detail::SelectResultImpl<uintptr_t, Failed>::value ==
               mozilla::detail::PackingStrategy::NullIsOk);
 static_assert(
@@ -118,7 +118,7 @@ FailTestUnusedZeroEnum() {
 
 static constexpr Result<Ok, Failed> Task1(bool pass) {
   if (!pass) {
-    return Fail();  // implicit conversion from GenericErrorResult to Result
+    return Fail();  
   }
   return Ok();
 }
@@ -126,33 +126,26 @@ static constexpr Result<Ok, Failed> Task1(bool pass) {
 static constexpr Result<Ok, TestUnusedZeroEnum> Task1UnusedZeroEnumErr(
     bool pass) {
   if (!pass) {
-    return FailTestUnusedZeroEnum();  // implicit conversion from
-                                      // GenericErrorResult to Result
+    return FailTestUnusedZeroEnum();  
+                                      
   }
   return Ok();
 }
 
 static constexpr Result<int, Failed> Task2(bool pass, int value) {
   MOZ_TRY(
-      Task1(pass));  // converts one type of result to another in the error case
-  return value;      // implicit conversion from T to Result<T, E>
+      Task1(pass));  
+  return value;      
 }
 
 static constexpr Result<int, TestUnusedZeroEnum> Task2UnusedZeroEnumErr(
     bool pass, int value) {
   MOZ_TRY(Task1UnusedZeroEnumErr(
-      pass));    // converts one type of result to another in the error case
-  return value;  // implicit conversion from T to Result<T, E>
+      pass));    
+  return value;  
 }
 
 static Result<int, Failed> Task3(bool pass1, bool pass2, int value) {
-  int x, y;
-  MOZ_TRY_VAR(x, Task2(pass1, value));
-  MOZ_TRY_VAR(y, Task2(pass2, value));
-  return x + y;
-}
-
-static Result<int, Failed> Task4(bool pass1, bool pass2, int value) {
   auto x = MOZ_TRY(Task2(pass1, value));
   auto y = MOZ_TRY(Task2(pass2, value));
   return x + y;
@@ -173,7 +166,7 @@ static void BasicTests() {
   MOZ_STATIC_AND_RELEASE_ASSERT(TestUnusedZeroEnum::NotOk ==
                                 Task1UnusedZeroEnumErr(false).unwrapErr());
 
-  // MOZ_TRY works.
+  
   MOZ_RELEASE_ASSERT(Task2(true, 3).isOk());
   MOZ_RELEASE_ASSERT(Task2(true, 3).unwrap() == 3);
   MOZ_RELEASE_ASSERT(Task2(true, 3).unwrapOr(6) == 3);
@@ -187,20 +180,13 @@ static void BasicTests() {
   MOZ_RELEASE_ASSERT(Task2UnusedZeroEnumErr(false, 3).isErr());
   MOZ_RELEASE_ASSERT(Task2UnusedZeroEnumErr(false, 3).unwrapOr(6) == 6);
 
-  MOZ_RELEASE_ASSERT(Task4(true, true, 3).isOk());
-  MOZ_RELEASE_ASSERT(Task4(true, true, 3).unwrap() == 6);
-  MOZ_RELEASE_ASSERT(Task4(true, false, 3).isErr());
-  MOZ_RELEASE_ASSERT(Task4(false, true, 3).isErr());
-  MOZ_RELEASE_ASSERT(Task4(false, true, 3).unwrapOr(6) == 6);
-
-  // MOZ_TRY_VAR works.
   MOZ_RELEASE_ASSERT(Task3(true, true, 3).isOk());
   MOZ_RELEASE_ASSERT(Task3(true, true, 3).unwrap() == 6);
   MOZ_RELEASE_ASSERT(Task3(true, false, 3).isErr());
   MOZ_RELEASE_ASSERT(Task3(false, true, 3).isErr());
   MOZ_RELEASE_ASSERT(Task3(false, true, 3).unwrapOr(6) == 6);
 
-  // Lvalues should work too.
+  
   {
     constexpr Result<Ok, Failed> res1 = Task1(true);
     MOZ_STATIC_AND_RELEASE_ASSERT(res1.isOk());
@@ -220,7 +206,7 @@ static void BasicTests() {
     MOZ_RELEASE_ASSERT(res.isErr());
   }
 
-  // Some tests for pointer tagging.
+  
   {
     int i = 123;
 
@@ -249,7 +235,7 @@ struct NonCopyableNonMovable {
 
 static void InPlaceConstructionTests() {
   {
-    // PackingStrategy == NullIsOk
+    
     static_assert(mozilla::detail::SelectResultImpl<NonCopyableNonMovable,
                                                     Failed>::value ==
                   mozilla::detail::PackingStrategy::NullIsOk);
@@ -258,7 +244,7 @@ static void InPlaceConstructionTests() {
   }
 
   {
-    // PackingStrategy == Variant
+    
     static_assert(
         mozilla::detail::SelectResultImpl<NonCopyableNonMovable, int>::value ==
         mozilla::detail::PackingStrategy::Variant);
@@ -267,7 +253,7 @@ static void InPlaceConstructionTests() {
   }
 }
 
-/* * */
+
 
 struct Snafu : Failed {};
 
@@ -277,7 +263,7 @@ static Result<Ok, Snafu*> Explode() {
 }
 
 static Result<Ok, Failed*> ErrorGeneralization() {
-  MOZ_TRY(Explode());  // change error type from Snafu* to more general Failed*
+  MOZ_TRY(Explode());  
   return Ok();
 }
 
@@ -311,7 +297,7 @@ static void MapTest() {
     explicit MyError(int y) : x(y) {}
   };
 
-  // Mapping over success values, to the same success type.
+  
   {
     Result<int, MyError> res(5);
     bool invoked = false;
@@ -325,7 +311,7 @@ static void MapTest() {
     MOZ_RELEASE_ASSERT(res2.unwrap() == 6);
   }
 
-  // Mapping over success values, to a different success type.
+  
   {
     Result<int, MyError> res(5);
     bool invoked = false;
@@ -339,7 +325,7 @@ static void MapTest() {
     MOZ_RELEASE_ASSERT(strcmp(res2.unwrap(), "hello") == 0);
   }
 
-  // Mapping over success values (constexpr).
+  
   {
     constexpr uint64_t kValue = 42u;
     constexpr auto res2a = Result<int32_t, Failed>{5}.map([](int32_t x) {
@@ -350,7 +336,7 @@ static void MapTest() {
     MOZ_STATIC_AND_RELEASE_ASSERT(kValue == res2a.inspect());
   }
 
-  // Mapping over error values.
+  
   {
     MyError err(1);
     Result<char, MyError> res(err);
@@ -363,7 +349,7 @@ static void MapTest() {
     MOZ_RELEASE_ASSERT(res2.unwrapErr().x == err.x);
   }
 
-  // Function pointers instead of lambdas as the mapping function.
+  
   {
     Result<const char*, MyError> res("hello");
     auto res2 = res.map(strlen);
@@ -385,7 +371,7 @@ static void MapErrTest() {
     explicit MyError2(int b) : a(b) {}
   };
 
-  // Mapping over error values, to the same error type.
+  
   {
     MyError err(1);
     Result<char, MyError> res(err);
@@ -401,7 +387,7 @@ static void MapErrTest() {
     MOZ_RELEASE_ASSERT(res2.unwrapErr().x == 2);
   }
 
-  // Mapping over error values, to a different error type.
+  
   {
     MyError err(1);
     Result<char, MyError> res(err);
@@ -417,7 +403,7 @@ static void MapErrTest() {
     MOZ_RELEASE_ASSERT(res2.unwrapErr().a == 2);
   }
 
-  // Mapping over success values.
+  
   {
     Result<int, MyError> res(5);
     auto res2 = res.mapErr([](const auto err) {
@@ -428,7 +414,7 @@ static void MapErrTest() {
     MOZ_RELEASE_ASSERT(res2.unwrap() == 5);
   }
 
-  // Function pointers instead of lambdas as the mapping function.
+  
   {
     Result<Ok, const char*> res("hello");
     auto res2 = res.mapErr(strlen);
@@ -454,8 +440,8 @@ static void OrElseTest() {
     explicit constexpr MyError2(int b) : a(b) {}
   };
 
-  // `orElse`ing over error values, to Result<V, E> (the same error type) error
-  // variant.
+  
+  
   {
     MyError err(1);
     Result<char, MyError> res(err);
@@ -474,8 +460,8 @@ static void OrElseTest() {
     MOZ_RELEASE_ASSERT(res2.unwrapErr().x == 2);
   }
 
-  // `orElse`ing over error values, to Result<V, E> (the same error type)
-  // success variant.
+  
+  
   {
     MyError err(42);
     Result<char, MyError> res(err);
@@ -494,8 +480,8 @@ static void OrElseTest() {
     MOZ_RELEASE_ASSERT(res2.unwrap() == 'a');
   }
 
-  // `orElse`ing over error values, to Result<V, E2> (a different error type)
-  // error variant.
+  
+  
   {
     MyError err(1);
     Result<char, MyError> res(err);
@@ -515,8 +501,8 @@ static void OrElseTest() {
     MOZ_RELEASE_ASSERT(res2.unwrapErr().a == 2);
   }
 
-  // `orElse`ing over error values, to Result<V, E2> (a different error type)
-  // success variant.
+  
+  
   {
     MyError err(42);
     Result<char, MyError> res(err);
@@ -536,7 +522,7 @@ static void OrElseTest() {
     MOZ_RELEASE_ASSERT(res2.unwrap() == 'a');
   }
 
-  // `orElse`ing over success values.
+  
   {
     Result<int, MyError> res(5);
     auto res2 = res.orElse([](const auto err) -> Result<int, MyError> {
@@ -547,7 +533,7 @@ static void OrElseTest() {
     MOZ_RELEASE_ASSERT(res2.unwrap() == 5);
   }
 
-  // Function pointers instead of lambdas as the `orElse`ing function.
+  
   {
     Result<Ok, const char*> res("hello");
     auto res2 = res.orElse(strlen_ResultWrapper);
@@ -557,7 +543,7 @@ static void OrElseTest() {
 }
 
 static void AndThenTest() {
-  // `andThen`ing over success results.
+  
   {
     Result<int, const char*> r1(10);
     Result<int, const char*> r2 =
@@ -566,7 +552,7 @@ static void AndThenTest() {
     MOZ_RELEASE_ASSERT(r2.unwrap() == 11);
   }
 
-  // `andThen`ing over success results (constexpr).
+  
   {
     constexpr Result<int, Failed> r2a = Result<int, Failed>{10}.andThen(
         [](int x) { return Result<int, Failed>(x + 1); });
@@ -574,7 +560,7 @@ static void AndThenTest() {
     MOZ_STATIC_AND_RELEASE_ASSERT(r2a.inspect() == 11);
   }
 
-  // `andThen`ing over error results.
+  
   {
     Result<int, const char*> r3("error");
     Result<int, const char*> r4 = r3.andThen([](int x) {
@@ -585,7 +571,7 @@ static void AndThenTest() {
     MOZ_RELEASE_ASSERT(r3.unwrapErr() == r4.unwrapErr());
   }
 
-  // andThen with a function accepting an rvalue
+  
   {
     Result<int, const char*> r1(10);
     Result<int, const char*> r2 =
@@ -594,7 +580,7 @@ static void AndThenTest() {
     MOZ_RELEASE_ASSERT(r2.unwrap() == 11);
   }
 
-  // `andThen`ing over error results (constexpr).
+  
   {
     constexpr Result<int, Failed> r4a =
         Result<int, Failed>{Failed{}}.andThen([](int x) {
@@ -908,7 +894,7 @@ void EqualityTest() {
   }
 }
 
-/* * */
+
 
 int main() {
   BasicTests();

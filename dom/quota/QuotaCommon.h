@@ -1182,8 +1182,7 @@ auto CollectEach(Step aStep, const Body& aBody)
           typename std::invoke_result_t<Body, StepResultType&&>::ok_type>);
 
   while (true) {
-    StepResultType element;
-    MOZ_TRY_VAR(element, aStep());
+    StepResultType element = MOZ_TRY(aStep());
 
     if (!static_cast<bool>(element)) {
       break;
@@ -1211,7 +1210,7 @@ auto ReduceEach(InputGenerator aInputGenerator, T aInit,
       [&res, &aBinaryOp](const auto& element)
           -> Result<Ok,
                     typename std::invoke_result_t<InputGenerator>::err_type> {
-        MOZ_TRY_VAR(res, aBinaryOp(std::move(res), element));
+        res = MOZ_TRY(aBinaryOp(std::move(res), element));
 
         return Ok{};
       }));

@@ -169,49 +169,48 @@ GleanPing::TestSubmission(nsIGleanPingTestCallback* aTestCallback,
   RefPtr<dom::Promise> submitPromise;
   MOZ_TRY(aSubmitCallback->Call(getter_AddRefs(submitPromise)));
 
-  RefPtr<dom::Promise> thenPromise;
-  MOZ_TRY_VAR(thenPromise,
-              submitPromise->ThenWithCycleCollectedArgs(
-                  [aSubmitTimeoutMs](JSContext*, JS::Handle<JS::Value>,
-                                     ErrorResult& aRv,
-                                     RefPtr<dom::Promise> aSubmittedPromise)
-                      -> already_AddRefed<dom::Promise> {
-                    
-                    
-                    if (aSubmitTimeoutMs) {
-                      
-                      
-                      
-                      
-                      
-                      
-                      
-                      nsresult rv = NS_DelayedDispatchToCurrentThread(
-                          NS_NewRunnableFunction(
-                              __func__,
-                              [submittedPromise = RefPtr(aSubmittedPromise)]() {
-                                submittedPromise->MaybeRejectWithTimeoutError(
-                                    "Ping was not submitted after timeout");
-                              }),
-                          aSubmitTimeoutMs);
+  RefPtr<dom::Promise> thenPromise =
+      MOZ_TRY(submitPromise->ThenWithCycleCollectedArgs(
+          [aSubmitTimeoutMs](JSContext*, JS::Handle<JS::Value>,
+                             ErrorResult& aRv,
+                             RefPtr<dom::Promise> aSubmittedPromise)
+              -> already_AddRefed<dom::Promise> {
+            
+            
+            if (aSubmitTimeoutMs) {
+              
+              
+              
+              
+              
+              
+              
+              nsresult rv = NS_DelayedDispatchToCurrentThread(
+                  NS_NewRunnableFunction(
+                      __func__,
+                      [submittedPromise = RefPtr(aSubmittedPromise)]() {
+                        submittedPromise->MaybeRejectWithTimeoutError(
+                            "Ping was not submitted after timeout");
+                      }),
+                  aSubmitTimeoutMs);
 
-                      if (NS_FAILED(rv)) {
-                        aSubmittedPromise->MaybeReject(rv);
-                      }
-                    } else {
-                      
-                      
-                      
-                      
-                      aSubmittedPromise->MaybeRejectWithOperationError(
-                          "Ping did not submit immediately");
-                    }
+              if (NS_FAILED(rv)) {
+                aSubmittedPromise->MaybeReject(rv);
+              }
+            } else {
+              
+              
+              
+              
+              aSubmittedPromise->MaybeRejectWithOperationError(
+                  "Ping did not submit immediately");
+            }
 
-                    
-                    
-                    return aSubmittedPromise.forget();
-                  },
-                  std::move(submittedPromise)));
+            
+            
+            return aSubmittedPromise.forget();
+          },
+          std::move(submittedPromise)));
 
   thenPromise.forget(aOutPromise);
   return NS_OK;

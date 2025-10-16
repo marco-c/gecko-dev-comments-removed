@@ -1569,9 +1569,8 @@ nsresult nsTreeBodyFrame::CreateTimer(const LookAndFeel::IntID aID,
   
   
   if (delay > 0) {
-    MOZ_TRY_VAR(timer,
-                NS_NewTimerWithFuncCallback(aFunc, this, delay, aType, aName,
-                                            GetMainThreadSerialEventTarget()));
+    timer = MOZ_TRY(NS_NewTimerWithFuncCallback(
+        aFunc, this, delay, aType, aName, GetMainThreadSerialEventTarget()));
   }
 
   timer.forget(aTimer);

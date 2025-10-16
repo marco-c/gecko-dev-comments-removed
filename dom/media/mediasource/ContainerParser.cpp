@@ -430,12 +430,9 @@ class MP4ContainerParser : public ContainerParser,
       };
 
       while (reader.Remaining() >= 8) {
-        uint32_t tmp;
-        MOZ_TRY_VAR(tmp, reader.ReadU32());
-        uint64_t size = tmp;
+        uint64_t size = MOZ_TRY(reader.ReadU32());
         const uint8_t* typec = reader.Peek(4);
-        MOZ_TRY_VAR(tmp, reader.ReadU32());
-        AtomType type(tmp);
+        AtomType type(MOZ_TRY(reader.ReadU32()));
         
         
         if (isprint(typec[0]) && isprint(typec[1]) && isprint(typec[2]) &&
@@ -470,7 +467,7 @@ class MP4ContainerParser : public ContainerParser,
         }
         if (size == 1) {
           
-          MOZ_TRY_VAR(size, reader.ReadU64());
+          size = MOZ_TRY(reader.ReadU64());
         } else if (size == 0) {
           
           

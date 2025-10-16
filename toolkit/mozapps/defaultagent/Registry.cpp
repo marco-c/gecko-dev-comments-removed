@@ -92,8 +92,7 @@ MaybeStringResult RegistryGetValueString(
   }
 
   
-  std::string narrowData;
-  MOZ_TRY_VAR(narrowData, Utf16ToUtf8(wideData.Elements()));
+  std::string narrowData = MOZ_TRY(Utf16ToUtf8(wideData.Elements()));
 
   return mozilla::Some(narrowData);
 }
@@ -113,8 +112,7 @@ VoidResult RegistrySetValueString(IsPrefixed isPrefixed,
   std::wstring keyName = MakeKeyName(subKey);
 
   
-  std::wstring wideValue;
-  MOZ_TRY_VAR(wideValue, Utf8ToUtf16(newValue));
+  std::wstring wideValue = MOZ_TRY(Utf8ToUtf16(newValue));
 
   
   LSTATUS ls = RegSetKeyValueW(HKEY_CURRENT_USER, keyName.c_str(),

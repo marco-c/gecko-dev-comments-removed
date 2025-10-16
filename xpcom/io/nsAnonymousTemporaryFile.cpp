@@ -164,8 +164,8 @@ class nsAnonTempFileRemover final : public nsIObserver, public nsINamed {
     
     
     
-    MOZ_TRY_VAR(mTimer, NS_NewTimerWithObserver(this, SCHEDULE_TIMEOUT_MS,
-                                                nsITimer::TYPE_ONE_SHOT));
+    mTimer = MOZ_TRY(NS_NewTimerWithObserver(this, SCHEDULE_TIMEOUT_MS,
+                                             nsITimer::TYPE_ONE_SHOT));
 
     
     
