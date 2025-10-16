@@ -381,16 +381,6 @@ class WindowGlobalTargetActor extends BaseTargetActor {
         configurable: false,
         writable: false,
       });
-      Object.defineProperty(this, "window", {
-        value: this.window,
-        configurable: false,
-        writable: false,
-      });
-      Object.defineProperty(this, "chromeEventHandler", {
-        value: this.chromeEventHandler,
-        configurable: false,
-        writable: false,
-      });
     }
 
     
@@ -475,6 +465,19 @@ class WindowGlobalTargetActor extends BaseTargetActor {
 
   get chromeEventHandler() {
     return getDocShellChromeEventHandler(this.docShell);
+  }
+
+  
+
+
+  get messageManager() {
+    try {
+      return this.docShell.messageManager;
+    } catch (e) {
+      
+      
+      return null;
+    }
   }
 
   

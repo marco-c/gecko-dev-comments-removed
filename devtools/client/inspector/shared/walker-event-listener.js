@@ -60,17 +60,7 @@ class WalkerEventListener {
   }
 
   async _onTargetAvailable({ targetFront }) {
-    let inspectorFront;
-    try {
-      inspectorFront = await targetFront.getFront("inspector");
-    } catch (e) {
-      
-      
-      if (targetFront.isDestroyed()) {
-        return;
-      }
-      throw e;
-    }
+    const inspectorFront = await targetFront.getFront("inspector");
     
     
     if (inspectorFront.isDestroyed() || !this._listenerMap) {
