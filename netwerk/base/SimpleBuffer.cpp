@@ -5,6 +5,7 @@
 
 
 #include "SimpleBuffer.h"
+#include "mozilla/fallible.h"
 #include <algorithm>
 
 namespace mozilla {
