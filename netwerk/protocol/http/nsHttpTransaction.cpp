@@ -63,7 +63,6 @@
 #include "nsTransportUtils.h"
 #include "sslerr.h"
 #include "SpeculativeTransaction.h"
-#include "mozilla/Preferences.h"
 
 
 
@@ -3738,14 +3737,7 @@ nsILoadInfo::IPAddressSpace nsHttpTransaction::GetTargetIPAddressSpace() {
 bool nsHttpTransaction::AllowedToConnectToIpAddressSpace(
     nsILoadInfo::IPAddressSpace aTargetIpAddressSpace) {
   
-
   if (!StaticPrefs::network_lna_enabled()) {
-    return true;
-  }
-
-  
-  if (mConnInfo && gIOService &&
-      gIOService->ShouldSkipDomainForLNA(mConnInfo->GetOrigin())) {
     return true;
   }
 
