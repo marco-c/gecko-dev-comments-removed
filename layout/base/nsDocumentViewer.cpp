@@ -1340,6 +1340,12 @@ nsDocumentViewer::PageHide(bool aIsUnload) {
                             StaticPrefs::javascript_options_gc_delay() * 2));
   }
 
+  
+  
+  
+  
+  IgnoreOpensDuringUnload ignoreOpens(mDocument);
+
   mDocument->OnPageHide(!aIsUnload, nullptr);
 
   
@@ -1361,12 +1367,6 @@ nsDocumentViewer::PageHide(bool aIsUnload) {
       NS_WARNING("window not set for document!");
       return NS_ERROR_NULL_POINTER;
     }
-
-    
-    
-    
-    
-    IgnoreOpensDuringUnload ignoreOpens(mDocument);
 
     
     nsEventStatus status = nsEventStatus_eIgnore;

@@ -770,6 +770,20 @@ void Navigation::Reload(JSContext* aCx, const NavigationReloadOptions& aOptions,
   MOZ_ASSERT(docShell);
   docShell->ReloadNavigable(Some(WrapNotNullUnchecked(aCx)),
                             nsIWebNavigation::LOAD_FLAGS_NONE, serializedState);
+  
+  
+  
+  
+  
+  
+  
+  if (mUpcomingNonTraverseAPIMethodTracker == apiMethodTracker) {
+    mUpcomingNonTraverseAPIMethodTracker = nullptr;
+    ErrorResult rv;
+    rv.ThrowAbortError("Reload aborted.");
+    SetEarlyErrorResult(aCx, aResult, std::move(rv));
+    return;
+  }
 
   
   
@@ -1621,9 +1635,20 @@ void Navigation::InnerInformAboutAbortingNavigation(JSContext* aCx) {
   
   
   
+
+  
+  
+  
+  
+  
+  RefPtr upcomingNonTraverseAPIMethodTracker =
+      std::move(mUpcomingNonTraverseAPIMethodTracker);
   while (HasOngoingNavigateEvent()) {
     AbortOngoingNavigation(aCx);
   }
+  MOZ_DIAGNOSTIC_ASSERT(!mUpcomingNonTraverseAPIMethodTracker);
+  mUpcomingNonTraverseAPIMethodTracker =
+      std::move(upcomingNonTraverseAPIMethodTracker);
 }
 
 
