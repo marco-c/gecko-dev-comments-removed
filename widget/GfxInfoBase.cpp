@@ -1353,7 +1353,6 @@ const nsCString& GfxInfoBase::GetApplicationVersion() {
     
     
     case nsIGfxInfo::FEATURE_GPU_PROCESS:
-      return kIsAndroid;
     
     case nsIGfxInfo::FEATURE_DIRECT3D_11_ANGLE:
     
