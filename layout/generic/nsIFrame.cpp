@@ -5682,7 +5682,7 @@ static bool FrameContentCanHaveParentSelectionRange(nsIFrame* aFrame) {
   
   
   
-  if (aFrame->IsTextInputFrame() || aFrame->IsListControlFrame()) {
+  if (aFrame->IsTextInputFrame()) {
     MOZ_ASSERT(aFrame->HasAnyStateBits(NS_FRAME_INDEPENDENT_SELECTION));
     return false;
   }
