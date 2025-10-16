@@ -58,11 +58,29 @@ class UnmarkGrayTracer;
 
 
 
-struct EphemeronEdge {
-  MarkColor color;
-  Cell* target;
 
-  EphemeronEdge(MarkColor color_, Cell* cell) : color(color_), target(cell) {}
+
+
+
+
+class EphemeronEdge {
+  static constexpr uintptr_t ColorMask = 0x3;
+  static_assert(uintptr_t(MarkColor::Gray) <= ColorMask);
+  static_assert(uintptr_t(MarkColor::Black) <= ColorMask);
+  static_assert(ColorMask < CellAlignBytes);
+
+  uintptr_t taggedTarget;
+
+ public:
+  EphemeronEdge(MarkColor color, Cell* cell)
+      : taggedTarget(uintptr_t(cell) | uintptr_t(color)) {
+    MOZ_ASSERT((uintptr_t(cell) & ColorMask) == 0);
+  }
+
+  MarkColor color() const { return MarkColor(taggedTarget & ColorMask); }
+  Cell* target() const {
+    return reinterpret_cast<Cell*>(taggedTarget & ~ColorMask);
+  }
 };
 
 using EphemeronEdgeVector = Vector<EphemeronEdge, 2, js::SystemAllocPolicy>;
