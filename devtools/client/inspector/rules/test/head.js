@@ -1387,8 +1387,6 @@ function getSmallIncrementKey() {
 
 
 
-
-
 function checkRuleViewContent(view, expectedElements) {
   const rulesInView = Array.from(view.element.children);
   is(
@@ -1443,7 +1441,7 @@ function checkRuleViewContent(view, expectedElements) {
     is(
       declarations.length,
       expectedElement.declarations.length,
-      `Got the expected number of declarations for expected element #${i} (${selector})`
+      "Got the expected number of declarations"
     );
     for (let j = 0; j < declarations.length; j++) {
       const expectedDeclaration = expectedElement.declarations[j];
@@ -1458,12 +1456,6 @@ function checkRuleViewContent(view, expectedElements) {
         expectedDeclaration?.name,
         "Got expected property name"
       );
-      if (propName.innerText !== expectedDeclaration?.name) {
-        
-        
-        continue;
-      }
-
       is(
         propValue.innerText,
         expectedDeclaration?.value,
@@ -1485,11 +1477,6 @@ function checkRuleViewContent(view, expectedElements) {
         !!ruleViewPropertyElement.hasAttribute("dirty"),
         !!expectedDeclaration?.dirty,
         `"${selector}" ${propName.innerText} is ${expectedDeclaration?.dirty ? "dirty" : "not dirty"}`
-      );
-      is(
-        ruleViewPropertyElement.querySelector(".ruleview-highlight") !== null,
-        !!expectedDeclaration?.highlighted,
-        `"${selector}" ${propName.innerText} is ${expectedDeclaration?.highlighted ? "highlighted" : "not highlighted"} `
       );
     }
   }
