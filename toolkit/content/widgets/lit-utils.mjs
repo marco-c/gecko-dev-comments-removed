@@ -161,7 +161,14 @@ export class MozLitElement extends LitElement {
       this.#l10nRootConnected = true;
 
       if (this.constructor.fluentProperties?.length) {
-        this.dataset.l10nAttrs = this.constructor.fluentProperties.join(",");
+        let { fluentProperties } = this.constructor;
+        if (this.dataset.l10nAttrs) {
+          // Not worrying about duplication since this may happen a lot and we
+          // could avoid it by not providing the duplicates manually.
+          // Copy the fluentProperties since they're stored on our class.
+          fluentProperties = fluentProperties.concat(this.dataset.l10nAttrs);
+        }
+        this.dataset.l10nAttrs = fluentProperties.join(",");
         if (this.dataset.l10nId) {
           this.#l10n.translateElements([this]);
         }
@@ -235,8 +242,8 @@ export class MozLitElement extends LitElement {
  * @property {boolean} parentDisabled - When this element is nested under another input and that
  *     input is disabled or unchecked/unpressed the parent will set this property to true so this
  *     element can be disabled.
- * @property {string} ariaLabel
- *  The aria-label text for cases where there is no visible label.
+ * @property {string} ariaLabel - The aria-label text when there is no visible label.
+ * @property {string} ariaDescription - The aria-description text when there is no visible description.
  */
 export class MozBaseInputElement extends MozLitElement {
   #internals;
@@ -253,6 +260,7 @@ export class MozBaseInputElement extends MozLitElement {
     accessKey: { type: String, mapped: true, fluent: true },
     parentDisabled: { type: Boolean, state: true },
     ariaLabel: { type: String, mapped: true },
+    ariaDescription: { type: String, mapped: true },
   };
   static inputLayout = "inline";
 
