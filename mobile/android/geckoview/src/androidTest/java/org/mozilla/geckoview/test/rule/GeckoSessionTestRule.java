@@ -2830,6 +2830,11 @@ public class GeckoSessionTestRule implements TestRule {
   }
 
   
+  public void notifyUserGestureActivation(final GeckoSession session) {
+    webExtensionApiCall(session, "NotifyUserGestureActivation", null);
+  }
+
+  
 
 
 

@@ -278,6 +278,19 @@ this.test = class extends ExtensionAPI {
           );
           return Schemas.getPermissionNames(typeNames);
         },
+
+        async teardownAlertsService() {
+          const alertsService = Cc["@mozilla.org/alerts-service;1"].getService(
+            Ci.nsIAlertsService
+          );
+          alertsService.teardown();
+        },
+
+        async notifyUserGestureActivation(tabId) {
+          return getActorForTab(tabId, "TestSupport").sendQuery(
+            "NotifyUserGestureActivation"
+          );
+        },
       },
     };
   }
