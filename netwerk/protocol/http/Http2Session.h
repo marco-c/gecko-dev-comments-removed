@@ -655,6 +655,7 @@ class Http2Session final : public ASpdySession,
  private:
   TimeStamp mLastTRRResponseTime;  
   uint32_t mTrrStreams;
+  nsCString mTrrHost;
 
   
   bool mEnableWebsockets = false;
