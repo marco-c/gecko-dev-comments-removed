@@ -52,6 +52,9 @@ const ICON_URL_APP =
 
 const APP_ICON_ATTR_NAME = "appHandlerIcon";
 
+const OPEN_EXTERNAL_LINK_NEXT_TO_ACTIVE_TAB_VALUE =
+  Ci.nsIBrowserDOMWindow.OPEN_NEWTAB_AFTER_CURRENT;
+
 Preferences.addAll([
   
   { id: "browser.startup.page", type: "int" },
@@ -88,7 +91,12 @@ Preferences.addAll([
 
 
 
+
+
+
+
   { id: "browser.link.open_newwindow", type: "int" },
+  { id: "browser.link.open_newwindow.override.external", type: "int" },
   { id: "browser.tabs.loadInBackground", type: "bool", inverted: true },
   { id: "browser.tabs.warnOnClose", type: "bool" },
   { id: "browser.warnOnQuitShortcut", type: "bool" },
@@ -1647,6 +1655,11 @@ var gMainPane = {
 
 
   init() {
+    
+
+
+
+
     function setEventListener(aId, aEventType, aCallback) {
       document
         .getElementById(aId)
@@ -2031,6 +2044,14 @@ var gMainPane = {
     Preferences.addSyncToPrefListener(
       document.getElementById("linkTargeting"),
       () => this.writeLinkTarget()
+    );
+    Preferences.addSyncFromPrefListener(
+      document.getElementById("openAppLinksNextToActiveTab"),
+      () => this.readExternalLinkNextToActiveTab()
+    );
+    Preferences.addSyncToPrefListener(
+      document.getElementById("openAppLinksNextToActiveTab"),
+      inputElement => this.writeExternalLinkNextToActiveTab(inputElement)
     );
     Preferences.addSyncFromPrefListener(
       document.getElementById("browserContainersCheckbox"),
@@ -2930,6 +2951,44 @@ var gMainPane = {
   writeLinkTarget() {
     var linkTargeting = document.getElementById("linkTargeting");
     return linkTargeting.checked ? 3 : 2;
+  },
+
+  
+
+
+
+
+
+
+  readExternalLinkNextToActiveTab() {
+    const externalLinkOpenOverride = Preferences.get(
+      "browser.link.open_newwindow.override.external"
+    );
+
+    return (
+      externalLinkOpenOverride.value ==
+      Ci.nsIBrowserDOMWindow.OPEN_NEWTAB_AFTER_CURRENT
+    );
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  writeExternalLinkNextToActiveTab(inputElement) {
+    const externalLinkOpenOverride = Preferences.get(
+      "browser.link.open_newwindow.override.external"
+    );
+
+    return inputElement.checked
+      ? Ci.nsIBrowserDOMWindow.OPEN_NEWTAB_AFTER_CURRENT
+      : externalLinkOpenOverride.defaultValue;
   },
 
   
