@@ -150,11 +150,6 @@ class LocalMediaDevice final : public nsIMediaDevice {
   nsresult Stop();
   nsresult Deallocate();
 
-  
-
-
-  already_AddRefed<LocalMediaDevice> Clone() const;
-
   void GetSettings(dom::MediaTrackSettings& aOutSettings);
   void GetCapabilities(dom::MediaTrackCapabilities& aOutCapabilities);
   MediaEngineSource* Source();
@@ -169,7 +164,6 @@ class LocalMediaDevice final : public nsIMediaDevice {
   dom::MediaDeviceKind Kind() const { return mRawDevice->mKind; }
   bool IsFake() const { return mRawDevice->mIsFake; }
   const nsString& RawID() { return mRawDevice->mRawID; }
-  const dom::MediaTrackConstraints& Constraints() const;
 
  private:
   virtual ~LocalMediaDevice() = default;
@@ -192,8 +186,6 @@ class LocalMediaDevice final : public nsIMediaDevice {
 
  private:
   RefPtr<MediaEngineSource> mSource;
-  
-  dom::MediaTrackConstraints mConstraints;
 };
 
 typedef nsRefPtrHashtable<nsUint64HashKey, GetUserMediaWindowListener>
