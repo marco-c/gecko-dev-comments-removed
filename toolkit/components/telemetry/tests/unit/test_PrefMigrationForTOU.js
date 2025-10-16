@@ -38,13 +38,6 @@ const skipIfNotBrowser = () => ({
   skip_if: () => AppConstants.MOZ_BUILD_APP != "browser",
 });
 
-add_setup(() => {
-  
-  
-  const TOS_ENABLED_PREF = "browser.preonboarding.enabled";
-  Services.prefs.clearUserPref(TOS_ENABLED_PREF);
-});
-
 function setupLegacyAndRolloutPrefs({
   acceptedVersion,
   notifiedTime,
