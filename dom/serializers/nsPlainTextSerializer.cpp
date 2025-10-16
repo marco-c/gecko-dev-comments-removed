@@ -230,8 +230,11 @@ uint32_t nsPlainTextSerializer::OutputManager::GetOutputLength() const {
 
 nsPlainTextSerializer::nsPlainTextSerializer()
     : mFloatingLines(-1),
+      mLineBreakDue(false),
       kSpace(u" "_ns)  
 {
+  mHeadLevel = 0;
+  mHasWrittenCiteBlockquote = false;
   mSpanLevel = 0;
   for (int32_t i = 0; i <= 6; i++) {
     mHeaderCounter[i] = 0;
@@ -252,6 +255,8 @@ nsPlainTextSerializer::nsPlainTextSerializer()
   mIgnoreAboveIndex = (uint32_t)kNotFound;
 
   mULCount = 0;
+
+  mIgnoredChildNodeLevel = 0;
 }
 
 nsPlainTextSerializer::~nsPlainTextSerializer() {
@@ -453,21 +458,6 @@ nsPlainTextSerializer::AppendText(Text* aText, int32_t aStartOffset,
     return NS_OK;
   }
 
-  
-  if (!DoOutput()) {
-    return NS_OK;
-  }
-
-  if (mLineBreakDue) {
-    EnsureVerticalSpace(mFloatingLines);
-  }
-
-  
-  
-  if (MustSuppressLeaf()) {
-    return NS_OK;
-  }
-
   nsAutoString textstr;
   if (characterDataBuffer->Is2b()) {
     textstr.Assign(characterDataBuffer->Get2b() + aStartOffset, length);
@@ -489,11 +479,11 @@ nsPlainTextSerializer::AppendText(Text* aText, int32_t aStartOffset,
   while (offset != kNotFound) {
     if (offset > start) {
       
-      DoAddText(Substring(textstr, start, offset - start));
+      DoAddText(false, Substring(textstr, start, offset - start));
     }
 
     
-    DoAddLineBreak();
+    DoAddText();
 
     start = offset + 1;
     offset = textstr.FindCharInSet(u"\n\r", start);
@@ -502,9 +492,9 @@ nsPlainTextSerializer::AppendText(Text* aText, int32_t aStartOffset,
   
   if (start < length) {
     if (start) {
-      DoAddText(Substring(textstr, start, length - start));
+      DoAddText(false, Substring(textstr, start, length - start));
     } else {
-      DoAddText(textstr);
+      DoAddText(false, textstr);
     }
   }
 
@@ -1118,37 +1108,43 @@ bool nsPlainTextSerializer::MustSuppressLeaf() const {
   return false;
 }
 
-void nsPlainTextSerializer::DoAddLineBreak() {
-  MOZ_ASSERT(DoOutput());
-  MOZ_ASSERT(!mLineBreakDue);
-  MOZ_ASSERT(mIgnoreAboveIndex == (uint32_t)kNotFound);
-  MOZ_ASSERT(!MustSuppressLeaf());
+void nsPlainTextSerializer::DoAddText() { DoAddText(true, u""_ns); }
 
+void nsPlainTextSerializer::DoAddText(bool aIsLineBreak,
+                                      const nsAString& aText) {
   
-  
-  
-  
-  
-  
-  if (mSettings.HasFlag(nsIDocumentEncoder::OutputPreformatted) ||
-      (mPreFormattedMail && !mSettings.GetWrapColumn()) ||
-      IsElementPreformatted()) {
-    EnsureVerticalSpace(mEmptyLines + 1);
-  } else if (!mInWhitespace) {
-    Write(kSpace);
-    mInWhitespace = true;
+  if (!DoOutput()) {
+    return;
   }
-}
 
-void nsPlainTextSerializer::DoAddText(const nsAString& aText) {
-  MOZ_ASSERT(DoOutput());
-  MOZ_ASSERT(!mLineBreakDue);
-  MOZ_ASSERT(mIgnoreAboveIndex == (uint32_t)kNotFound);
-  MOZ_ASSERT(!MustSuppressLeaf());
+  if (!aIsLineBreak) {
+    
+    mHasWrittenCiteBlockquote = false;
+  }
 
-  
-  
-  mHasWrittenCiteBlockquote = false;
+  if (mLineBreakDue) EnsureVerticalSpace(mFloatingLines);
+
+  if (MustSuppressLeaf()) {
+    return;
+  }
+
+  if (aIsLineBreak) {
+    
+    
+    
+    
+    
+    
+    if (mSettings.HasFlag(nsIDocumentEncoder::OutputPreformatted) ||
+        (mPreFormattedMail && !mSettings.GetWrapColumn()) ||
+        IsElementPreformatted()) {
+      EnsureVerticalSpace(mEmptyLines + 1);
+    } else if (!mInWhitespace) {
+      Write(kSpace);
+      mInWhitespace = true;
+    }
+    return;
+  }
 
   Write(aText);
 }

@@ -123,8 +123,9 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   void CloseContainerForOutputFormatted(const nsAtom* aTag);
   nsresult DoAddLeaf(const nsAtom* aTag);
 
-  void DoAddText(const nsAString& aText);
-  void DoAddLineBreak();
+  void DoAddText();
+  
+  void DoAddText(bool aIsLineBreak, const nsAString& aText);
 
   inline bool DoOutput() const { return mHeadLevel == 0; }
 
@@ -149,7 +150,7 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   static bool IsCssBlockLevelElement(mozilla::dom::Element* aElement);
 
  private:
-  uint32_t mHeadLevel = 0;
+  uint32_t mHeadLevel;
 
   class Settings {
    public:
@@ -322,7 +323,7 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   
   
   
-  bool mHasWrittenCiteBlockquote = false;
+  bool mHasWrittenCiteBlockquote;
 
   int32_t mFloatingLines;  
 
@@ -342,7 +343,7 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   
   
   
-  bool mLineBreakDue = false;
+  bool mLineBreakDue;
 
   bool mPreformattedBlockBoundary;
 
@@ -390,7 +391,7 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   
   
   
-  uint32_t mIgnoredChildNodeLevel = 0;
+  uint32_t mIgnoredChildNodeLevel;
 };
 
 nsresult NS_NewPlainTextSerializer(nsIContentSerializer** aSerializer);
