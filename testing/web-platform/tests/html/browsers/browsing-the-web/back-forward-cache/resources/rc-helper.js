@@ -110,11 +110,16 @@ async function assertNotRestoredFromBFCache(
 
   
   const collectReason = (node) => {
-    for (let reason of node.reasons) {
-      notRestoredReasonsSet.add(reason.reason);
+    
+    if (node.reasons) {
+      for (let reason of node.reasons) {
+        notRestoredReasonsSet.add(reason.reason);
+      }
     }
-    for (let child of node.children) {
-      collectReason(child);
+    if (node.children) {
+      for (let child of node.children) {
+        collectReason(child);
+      }
     }
   };
   collectReason(result);
