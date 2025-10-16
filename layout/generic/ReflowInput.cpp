@@ -1354,15 +1354,15 @@ void ReflowInput::CalculateHypotheticalPosition(
   WritingMode wm = containingBlock->GetWritingMode();
   const nscoord blockIStartContentEdge = blockContainerBP.IStart(wm);
 
-  
-  
-  
   const auto anchorResolutionParams = AnchorPosResolutionParams::From(this);
   const auto styleISize = mStylePosition->ISize(wm, anchorResolutionParams);
   bool isAutoISize = styleISize->IsAuto();
+
+  
+  
+  
   Maybe<nsSize> intrinsicSize;
   if (mFlags.mIsReplaced && isAutoISize) {
-    
     intrinsicSize = mFrame->GetIntrinsicSize().ToSize();
   }
 
