@@ -130,7 +130,11 @@ def add_command_arguments(config, tasks):
         task["worker"]["env"]["UPSTREAM_TASKIDS"] = {
             
             "task-reference": " ".join(
-                [f"<{dep}>" for dep in task["dependencies"] if "signing" in dep]
+                [
+                    f"<{dep}>"
+                    for dep in task["dependencies"]
+                    if ("signing" in dep or "notarization" in dep)
+                ]
             )
         }
 
