@@ -2441,12 +2441,6 @@ void TextControlState::UnbindFromFrame(nsTextControlFrame* aFrame) {
     DebugOnly<bool> ok = SetValue(value, ValueSetterOption::ByInternalAPI);
     
     NS_WARNING_ASSERTION(ok, "SetValue() couldn't allocate memory");
-    
-    
-    if (IsSelectionCached()) {
-      SelectionProperties& props = GetSelectionProperties();
-      props.SetIsDirty();
-    }
   }
 }
 
