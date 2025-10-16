@@ -1034,7 +1034,7 @@ class WebDriverProtocol(Protocol):
             
             
             
-            self.webdriver.send_session_command("GET", "window", timeout=2)
+            self.webdriver.send_session_command("GET", "window/handles", timeout=2)
         except (OSError, webdriver_error.WebDriverException, socket.timeout,
                 webdriver_error.UnknownErrorException,
                 webdriver_error.InvalidSessionIdException):
