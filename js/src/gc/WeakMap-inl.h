@@ -92,8 +92,8 @@ static inline JSObject* GetDelegate(const T& key) {
 
 
 
-template <class K, class V>
-void WeakMap<K, V>::assertMapIsSameZoneWithValue(const BarrieredValue& v) {
+template <class K, class V, class AP>
+void WeakMap<K, V, AP>::assertMapIsSameZoneWithValue(const BarrieredValue& v) {
 #ifdef DEBUG
   gc::Cell* cell = gc::ToMarkable(v);
   if (cell) {
@@ -103,12 +103,12 @@ void WeakMap<K, V>::assertMapIsSameZoneWithValue(const BarrieredValue& v) {
 #endif
 }
 
-template <class K, class V>
-WeakMap<K, V>::WeakMap(JSContext* cx, JSObject* memOf)
+template <class K, class V, class AP>
+WeakMap<K, V, AP>::WeakMap(JSContext* cx, JSObject* memOf)
     : WeakMap(cx->zone(), memOf) {}
 
-template <class K, class V>
-WeakMap<K, V>::WeakMap(JS::Zone* zone, JSObject* memOf)
+template <class K, class V, class AP>
+WeakMap<K, V, AP>::WeakMap(JS::Zone* zone, JSObject* memOf)
     : WeakMapBase(memOf, zone), map_(zone) {
   static_assert(std::is_same_v<typename RemoveBarrier<K>::Type, K>);
   static_assert(std::is_same_v<typename RemoveBarrier<V>::Type, V>);
@@ -129,8 +129,8 @@ WeakMap<K, V>::WeakMap(JS::Zone* zone, JSObject* memOf)
   }
 }
 
-template <class K, class V>
-WeakMap<K, V>::~WeakMap() {
+template <class K, class V, class AP>
+WeakMap<K, V, AP>::~WeakMap() {
 #ifdef DEBUG
   
   
@@ -162,10 +162,10 @@ WeakMap<K, V>::~WeakMap() {
 
 
 
-template <class K, class V>
-bool WeakMap<K, V>::markEntry(GCMarker* marker, gc::CellColor mapColor,
-                              BarrieredKey& key, BarrieredValue& value,
-                              bool populateWeakKeysTable) {
+template <class K, class V, class AP>
+bool WeakMap<K, V, AP>::markEntry(GCMarker* marker, gc::CellColor mapColor,
+                                  BarrieredKey& key, BarrieredValue& value,
+                                  bool populateWeakKeysTable) {
 #ifdef DEBUG
   MOZ_ASSERT(IsMarked(mapColor));
   if (marker->isParallelMarking()) {
@@ -253,8 +253,8 @@ bool WeakMap<K, V>::markEntry(GCMarker* marker, gc::CellColor mapColor,
   return marked;
 }
 
-template <class K, class V>
-void WeakMap<K, V>::trace(JSTracer* trc) {
+template <class K, class V, class AP>
+void WeakMap<K, V, AP>::trace(JSTracer* trc) {
   MOZ_ASSERT(isInList());
 
   TraceNullableEdge(trc, &memberOf, "WeakMap owner");
@@ -286,8 +286,8 @@ void WeakMap<K, V>::trace(JSTracer* trc) {
   }
 }
 
-template <class K, class V>
-bool WeakMap<K, V>::markEntries(GCMarker* marker) {
+template <class K, class V, class AP>
+bool WeakMap<K, V, AP>::markEntries(GCMarker* marker) {
   
   
   
@@ -321,8 +321,10 @@ bool WeakMap<K, V>::markEntries(GCMarker* marker) {
   return markedAny;
 }
 
-template <class K, class V>
-void WeakMap<K, V>::traceWeakEdges(JSTracer* trc) {
+template <class K, class V, class AP>
+void WeakMap<K, V, AP>::traceWeakEdges(JSTracer* trc) {
+  MOZ_ASSERT(zone()->isGCSweeping());
+
   
   
   mayHaveSymbolKeys = false;
@@ -343,8 +345,8 @@ void WeakMap<K, V>::traceWeakEdges(JSTracer* trc) {
 }
 
 
-template <class K, class V>
-void WeakMap<K, V>::traceMappings(WeakMapTracer* tracer) {
+template <class K, class V, class AP>
+void WeakMap<K, V, AP>::traceMappings(WeakMapTracer* tracer) {
   for (Range r = all(); !r.empty(); r.popFront()) {
     gc::Cell* key = gc::ToMarkable(r.front().key());
     gc::Cell* value = gc::ToMarkable(r.front().value());
@@ -355,8 +357,8 @@ void WeakMap<K, V>::traceMappings(WeakMapTracer* tracer) {
   }
 }
 
-template <class K, class V>
-bool WeakMap<K, V>::findSweepGroupEdges(Zone* atomsZone) {
+template <class K, class V, class AP>
+bool WeakMap<K, V, AP>::findSweepGroupEdges(Zone* atomsZone) {
   
   
 
@@ -404,14 +406,15 @@ bool WeakMap<K, V>::findSweepGroupEdges(Zone* atomsZone) {
   return true;
 }
 
-template <class K, class V>
-size_t WeakMap<K, V>::sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) {
+template <class K, class V, class AP>
+size_t WeakMap<K, V, AP>::sizeOfIncludingThis(
+    mozilla::MallocSizeOf mallocSizeOf) {
   return mallocSizeOf(this) + shallowSizeOfExcludingThis(mallocSizeOf);
 }
 
 #if DEBUG
-template <class K, class V>
-void WeakMap<K, V>::assertEntriesNotAboutToBeFinalized() {
+template <class K, class V, class AP>
+void WeakMap<K, V, AP>::assertEntriesNotAboutToBeFinalized() {
   for (Range r = all(); !r.empty(); r.popFront()) {
     K k = r.front().key();
     MOZ_ASSERT(!gc::IsAboutToBeFinalizedUnbarriered(k));
@@ -426,8 +429,8 @@ void WeakMap<K, V>::assertEntriesNotAboutToBeFinalized() {
 #endif
 
 #ifdef JS_GC_ZEAL
-template <class K, class V>
-bool WeakMap<K, V>::checkMarking() const {
+template <class K, class V, class AP>
+bool WeakMap<K, V, AP>::checkMarking() const {
   bool ok = true;
   for (Range r = all(); !r.empty(); r.popFront()) {
     gc::Cell* key = gc::ToMarkable(r.front().key());
@@ -442,8 +445,8 @@ bool WeakMap<K, V>::checkMarking() const {
 #endif
 
 #ifdef JSGC_HASH_TABLE_CHECKS
-template <class K, class V>
-void WeakMap<K, V>::checkAfterMovingGC() const {
+template <class K, class V, class AP>
+void WeakMap<K, V, AP>::checkAfterMovingGC() const {
   for (Range r = all(); !r.empty(); r.popFront()) {
     gc::Cell* key = gc::ToMarkable(r.front().key());
     gc::Cell* value = gc::ToMarkable(r.front().value());
