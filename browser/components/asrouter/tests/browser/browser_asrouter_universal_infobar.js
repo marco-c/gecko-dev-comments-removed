@@ -28,9 +28,15 @@ const UNIVERSAL_MESSAGE = {
   },
 };
 
+
+
 const cleanupInfobars = () => {
   InfoBar._universalInfobars = [];
   InfoBar._activeInfobar = null;
+  if (InfoBar._observingWindowOpened) {
+    InfoBar._observingWindowOpened = false;
+    Services.obs.removeObserver(InfoBar, "domwindowopened");
+  }
 };
 
 const makeFakeWin = ({
@@ -305,6 +311,7 @@ add_task(async function removeObserver_on_removeUniversalInfobars() {
 
   
   Services.obs = origObs;
+  InfoBar._observingWindowOpened = true;
   cleanupInfobars();
   sandbox.restore();
 });
