@@ -853,11 +853,9 @@ struct ReflowInput : public SizeComputationInput {
                        LayoutFrameType aFrameType);
 
   
-
-
-
-
-
+  
+  
+  
   LogicalSize ComputeContainingBlockRectangle(
       nsPresContext* aPresContext, const ReflowInput* aContainingBlockRI) const;
 
