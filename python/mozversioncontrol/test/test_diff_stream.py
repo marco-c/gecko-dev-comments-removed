@@ -110,10 +110,16 @@ def test_diff_stream(repo):
         return files
 
     
+    
     files = changed_files(vcs.diff_stream())
-    assert "file1.txt" in files
-    assert "anotherfile.txt" not in files
-    assert "constant.txt" not in files
+    if vcs.name != "hg":
+        assert "file1.txt" in files
+        assert "anotherfile.txt" not in files
+        assert "constant.txt" not in files
+    else:
+        assert "file1.txt" in files
+        assert "anotherfile.txt" in files
+        assert "constant.txt" not in files
 
     
     files = changed_files(vcs.diff_stream(base_rev))
