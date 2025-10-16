@@ -48,7 +48,7 @@
 class nsIBidiKeyboard;
 class nsIRollupListener;
 class nsIContent;
-class ViewWrapper;
+class nsMenuPopupFrame;
 class nsIRunnable;
 
 namespace mozilla {
@@ -2037,6 +2037,11 @@ class nsIWidget : public nsISupports {
 #endif
 
   static already_AddRefed<nsIBidiKeyboard> CreateBidiKeyboard();
+
+  
+  nsMenuPopupFrame* GetPopupFrame() const;
+  
+  nsIFrame* GetFrame() const;
 
   
 
