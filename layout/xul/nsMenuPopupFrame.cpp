@@ -2116,15 +2116,11 @@ nsresult nsMenuPopupFrame::AttributeChanged(int32_t aNameSpaceID,
 
   if (aAttribute == nsGkAtoms::label) {
     
-    nsView* view = GetView();
-    if (view) {
-      nsIWidget* widget = view->GetWidget();
-      if (widget) {
-        nsAutoString title;
-        mContent->AsElement()->GetAttr(nsGkAtoms::label, title);
-        if (!title.IsEmpty()) {
-          widget->SetTitle(title);
-        }
+    if (nsIWidget* widget = GetWidget()) {
+      nsAutoString title;
+      mContent->AsElement()->GetAttr(nsGkAtoms::label, title);
+      if (!title.IsEmpty()) {
+        widget->SetTitle(title);
       }
     }
   } else if (aAttribute == nsGkAtoms::ignorekeys) {
