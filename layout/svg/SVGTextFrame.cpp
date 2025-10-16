@@ -1137,20 +1137,20 @@ class TextNodeIterator {
         mSubtreePosition(mSubtree ? eBeforeSubtree : eWithinSubtree) {
     NS_ASSERTION(aRoot, "expected non-null root");
     if (!aRoot->IsText()) {
-      Next();
+      GetNext();
     }
   }
 
   
 
 
-  Text* Current() const { return mCurrent ? mCurrent->AsText() : nullptr; }
+  Text* GetCurrent() const { return mCurrent ? mCurrent->AsText() : nullptr; }
 
   
 
 
 
-  Text* Next();
+  Text* GetNext();
 
   
 
@@ -1187,7 +1187,7 @@ class TextNodeIterator {
   SubtreePosition mSubtreePosition;
 };
 
-Text* TextNodeIterator::Next() {
+Text* TextNodeIterator::GetNext() {
   
   
   
@@ -1328,7 +1328,7 @@ void TextNodeCorrespondenceRecorder::RecordCorrespondence(SVGTextFrame* aRoot) {
 }
 
 void TextNodeCorrespondenceRecorder::Record(SVGTextFrame* aRoot) {
-  if (!mNodeIterator.Current()) {
+  if (!mNodeIterator.GetCurrent()) {
     
     return;
   }
@@ -1339,7 +1339,7 @@ void TextNodeCorrespondenceRecorder::Record(SVGTextFrame* aRoot) {
 
   
   uint32_t undisplayed = 0;
-  if (mNodeIterator.Current()) {
+  if (mNodeIterator.GetCurrent()) {
     if (mPreviousNode && mPreviousNode->TextLength() != mNodeCharIndex) {
       
       
@@ -1349,7 +1349,7 @@ void TextNodeCorrespondenceRecorder::Record(SVGTextFrame* aRoot) {
       undisplayed += mPreviousNode->TextLength() - mNodeCharIndex;
     }
     
-    for (Text* textNode = mNodeIterator.Current(); textNode;
+    for (Text* textNode = mNodeIterator.GetCurrent(); textNode;
          textNode = NextNode()) {
       undisplayed += textNode->TextLength();
     }
@@ -1361,10 +1361,10 @@ void TextNodeCorrespondenceRecorder::Record(SVGTextFrame* aRoot) {
 }
 
 Text* TextNodeCorrespondenceRecorder::NextNode() {
-  mPreviousNode = mNodeIterator.Current();
+  mPreviousNode = mNodeIterator.GetCurrent();
   Text* next;
   do {
-    next = mNodeIterator.Next();
+    next = mNodeIterator.GetNext();
   } while (next && next->TextLength() == 0);
   return next;
 }
@@ -1395,15 +1395,15 @@ void TextNodeCorrespondenceRecorder::TraverseAndRecord(nsIFrame* aFrame) {
     NS_ASSERTION(mNodeCharIndex == 0,
                  "incorrect tracking of undisplayed "
                  "characters in text nodes");
-    if (!mNodeIterator.Current()) {
+    if (!mNodeIterator.GetCurrent()) {
       MOZ_ASSERT_UNREACHABLE(
           "incorrect tracking of correspondence between "
           "text frames and text nodes");
     } else {
       
       
-      while (mNodeIterator.Current() != node) {
-        undisplayed += mNodeIterator.Current()->TextLength();
+      while (mNodeIterator.GetCurrent() != node) {
+        undisplayed += mNodeIterator.GetCurrent()->TextLength();
         NextNode();
       }
       
@@ -1434,8 +1434,8 @@ void TextNodeCorrespondenceRecorder::TraverseAndRecord(nsIFrame* aFrame) {
     }
     
     
-    while (mNodeIterator.Current() && mNodeIterator.Current() != node) {
-      undisplayed += mNodeIterator.Current()->TextLength();
+    while (mNodeIterator.GetCurrent() && mNodeIterator.GetCurrent() != node) {
+      undisplayed += mNodeIterator.GetCurrent()->TextLength();
       NextNode();
     }
     
@@ -1507,12 +1507,13 @@ class MOZ_STACK_CLASS TextFrameIterator {
   
 
 
-  SVGTextFrame* Root() const { return mRootFrame; }
+
+  SVGTextFrame* GetRoot() const { return mRootFrame; }
 
   
 
 
-  nsTextFrame* Current() const { return do_QueryFrame(mCurrentFrame); }
+  nsTextFrame* GetCurrent() const { return do_QueryFrame(mCurrentFrame); }
 
   
 
@@ -1529,7 +1530,8 @@ class MOZ_STACK_CLASS TextFrameIterator {
   
 
 
-  nsTextFrame* Next();
+
+  nsTextFrame* GetNext();
 
   
 
@@ -1571,7 +1573,7 @@ class MOZ_STACK_CLASS TextFrameIterator {
     }
 
     mBaselines.AppendElement(mRootFrame->StyleSVG()->mDominantBaseline);
-    Next();
+    GetNext();
   }
 
   
@@ -1637,7 +1639,7 @@ uint32_t TextFrameIterator::UndisplayedCharacters() const {
   return GetUndisplayedCharactersBeforeFrame(frame);
 }
 
-nsTextFrame* TextFrameIterator::Next() {
+nsTextFrame* TextFrameIterator::GetNext() {
   
   
   
@@ -1709,7 +1711,7 @@ nsTextFrame* TextFrameIterator::Next() {
     } while (mCurrentFrame && !IsNonEmptyTextFrame(mCurrentFrame));
   }
 
-  return Current();
+  return GetCurrent();
 }
 
 void TextFrameIterator::PushBaseline(nsIFrame* aNextFrame) {
@@ -1786,7 +1788,7 @@ class TextRenderedRunIterator {
 
 
   ~TextRenderedRunIterator() {
-    if (auto* root = mFrameIterator.Root()) {
+    if (auto* root = mFrameIterator.GetRoot()) {
       root->ForgetCachedProvider();
     }
   }
@@ -1805,7 +1807,7 @@ class TextRenderedRunIterator {
   
 
 
-  SVGTextFrame* Root() const { return mFrameIterator.Root(); }
+  SVGTextFrame* GetRoot() const { return mFrameIterator.GetRoot(); }
 
   
 
@@ -1846,7 +1848,7 @@ class TextRenderedRunIterator {
 };
 
 TextRenderedRun TextRenderedRunIterator::Next() {
-  if (!mFrameIterator.Current()) {
+  if (!mFrameIterator.GetCurrent()) {
     
     
     mCurrent = TextRenderedRun();
@@ -1871,7 +1873,7 @@ TextRenderedRun TextRenderedRunIterator::Next() {
       return mCurrent;
     }
 
-    frame = mFrameIterator.Current();
+    frame = mFrameIterator.GetCurrent();
 
     charIndex = mTextElementCharIndex;
 
@@ -1882,8 +1884,8 @@ TextRenderedRun TextRenderedRunIterator::Next() {
         runEnd;  
     runStart = mTextElementCharIndex;
     runEnd = runStart + 1;
-    while (runEnd < Root()->mPositions.Length() &&
-           !Root()->mPositions[runEnd].mRunBoundary) {
+    while (runEnd < GetRoot()->mPositions.Length() &&
+           !GetRoot()->mPositions[runEnd].mRunBoundary) {
       runEnd++;
     }
 
@@ -1920,12 +1922,12 @@ TextRenderedRun TextRenderedRunIterator::Next() {
 
     
     
-    pt = Root()->mPositions[charIndex].mPosition;
-    rotate = Root()->mPositions[charIndex].mAngle;
+    pt = GetRoot()->mPositions[charIndex].mPosition;
+    rotate = GetRoot()->mPositions[charIndex].mAngle;
 
     
     bool skip = !mFrameIterator.IsWithinSubtree() ||
-                Root()->mPositions[mTextElementCharIndex].mHidden;
+                GetRoot()->mPositions[mTextElementCharIndex].mHidden;
     if (mFilter == eVisibleFrames) {
       skip = skip || !frame->StyleVisibility()->IsVisible();
     }
@@ -1937,12 +1939,12 @@ TextRenderedRun TextRenderedRunIterator::Next() {
     
     
     if (offset + untrimmedLength >= contentEnd) {
-      mFrameIterator.Next();
+      mFrameIterator.GetNext();
       mTextElementCharIndex += mFrameIterator.UndisplayedCharacters();
       mFrameStartTextElementCharIndex = mTextElementCharIndex;
     }
 
-    if (!mFrameIterator.Current()) {
+    if (!mFrameIterator.GetCurrent()) {
       if (skip) {
         
         
@@ -1959,17 +1961,17 @@ TextRenderedRun TextRenderedRunIterator::Next() {
     }
   }
 
-  mCurrent = TextRenderedRun(frame, Root(), pt, rotate, mFontSizeScaleFactor,
+  mCurrent = TextRenderedRun(frame, GetRoot(), pt, rotate, mFontSizeScaleFactor,
                              baseline, offset, length, charIndex);
   return mCurrent;
 }
 
 TextRenderedRun TextRenderedRunIterator::First() {
-  if (!mFrameIterator.Current()) {
+  if (!mFrameIterator.GetCurrent()) {
     return TextRenderedRun();
   }
 
-  if (Root()->mPositions.IsEmpty()) {
+  if (GetRoot()->mPositions.IsEmpty()) {
     mFrameIterator.Close();
     return TextRenderedRun();
   }
@@ -2024,7 +2026,7 @@ class MOZ_STACK_CLASS CharIterator {
 
 
   ~CharIterator() {
-    if (auto* root = mFrameIterator.Root()) {
+    if (auto* root = mFrameIterator.GetRoot()) {
       root->ForgetCachedProvider();
     }
   }
@@ -2032,7 +2034,7 @@ class MOZ_STACK_CLASS CharIterator {
   
 
 
-  bool AtEnd() const { return !mFrameIterator.Current(); }
+  bool AtEnd() const { return !mFrameIterator.GetCurrent(); }
 
   
 
@@ -2079,7 +2081,8 @@ class MOZ_STACK_CLASS CharIterator {
   
 
 
-  nsTextFrame* TextFrame() const { return mFrameIterator.Current(); }
+
+  nsTextFrame* GetTextFrame() const { return mFrameIterator.GetCurrent(); }
 
   
 
@@ -2271,8 +2274,8 @@ CharIterator::CharIterator(SVGTextFrame* aSVGTextFrame,
       mLengthAdjustScaleFactor(aSVGTextFrame->mLengthAdjustScaleFactor),
       mPostReflow(aPostReflow) {
   if (!AtEnd()) {
-    mSkipCharsIterator = TextFrame()->EnsureTextRun(nsTextFrame::eInflated);
-    mTextRun = TextFrame()->GetTextRun(nsTextFrame::eInflated);
+    mSkipCharsIterator = GetTextFrame()->EnsureTextRun(nsTextFrame::eInflated);
+    mTextRun = GetTextFrame()->GetTextRun(nsTextFrame::eInflated);
     mTextElementCharIndex = mFrameIterator.UndisplayedCharacters();
     UpdateGlyphStartTextElementCharIndex();
     if (!MatchesFilter()) {
@@ -2323,12 +2326,12 @@ bool CharIterator::AdvanceToCharacter(uint32_t aTextElementCharIndex) {
 
 bool CharIterator::AdvancePastCurrentFrame() {
   
-  nsTextFrame* currentFrame = TextFrame();
+  nsTextFrame* currentFrame = GetTextFrame();
   do {
     if (!Next()) {
       return false;
     }
-  } while (TextFrame() == currentFrame);
+  } while (GetTextFrame() == currentFrame);
   return true;
 }
 
@@ -2358,10 +2361,10 @@ bool CharIterator::AdvanceToSubtree() {
 }
 
 bool CharIterator::IsOriginalCharTrimmed() const {
-  if (mFrameForTrimCheck != TextFrame()) {
+  if (mFrameForTrimCheck != GetTextFrame()) {
     
     
-    mFrameForTrimCheck = TextFrame();
+    mFrameForTrimCheck = GetTextFrame();
     uint32_t offset = mFrameForTrimCheck->GetContentOffset();
     uint32_t length = mFrameForTrimCheck->GetContentLength();
     nsTextFrame::TrimmedOffsets trim = mFrameForTrimCheck->GetTrimmedOffsets(
@@ -2388,7 +2391,8 @@ gfxFloat CharIterator::GetAdvance(nsPresContext* aContext) const {
   float cssPxPerDevPx =
       nsPresContext::AppUnitsToFloatCSSPixels(aContext->AppUnitsPerDevPixel());
 
-  auto& provider = mFrameIterator.Root()->PropertyProviderFor(TextFrame());
+  auto& provider =
+      mFrameIterator.GetRoot()->PropertyProviderFor(GetTextFrame());
   uint32_t offset = mSkipCharsIterator.GetSkippedOffset();
   gfxFloat advance =
       mTextRun->GetAdvanceWidth(Range(offset, offset + 1), &provider);
@@ -2405,26 +2409,27 @@ bool CharIterator::NextCharacter() {
 
   
   mSkipCharsIterator.AdvanceOriginal(1);
-  if (mSkipCharsIterator.GetOriginalOffset() < TextFrame()->GetContentEnd()) {
+  if (mSkipCharsIterator.GetOriginalOffset() <
+      GetTextFrame()->GetContentEnd()) {
     
     UpdateGlyphStartTextElementCharIndex();
     return true;
   }
 
   
-  mFrameIterator.Next();
+  mFrameIterator.GetNext();
 
   
   uint32_t undisplayed = mFrameIterator.UndisplayedCharacters();
   mTextElementCharIndex += undisplayed;
-  if (!TextFrame()) {
+  if (!GetTextFrame()) {
     
     mSkipCharsIterator = gfxSkipCharsIterator();
     return false;
   }
 
-  mSkipCharsIterator = TextFrame()->EnsureTextRun(nsTextFrame::eInflated);
-  mTextRun = TextFrame()->GetTextRun(nsTextFrame::eInflated);
+  mSkipCharsIterator = GetTextFrame()->EnsureTextRun(nsTextFrame::eInflated);
+  mTextRun = GetTextFrame()->GetTextRun(nsTextFrame::eInflated);
   UpdateGlyphStartTextElementCharIndex();
   return true;
 }
@@ -3497,7 +3502,7 @@ static bool HasTextContent(nsIContent* aContent) {
   NS_ASSERTION(aContent, "expected non-null aContent");
 
   TextNodeIterator it(aContent);
-  for (Text* text = it.Current(); text; text = it.Next()) {
+  for (Text* text = it.GetCurrent(); text; text = it.GetNext()) {
     if (text->TextLength() != 0) {
       return true;
     }
@@ -3513,7 +3518,7 @@ static uint32_t GetTextContentLength(nsIContent* aContent) {
 
   uint32_t length = 0;
   TextNodeIterator it(aContent);
-  for (Text* text = it.Current(); text; text = it.Next()) {
+  for (Text* text = it.GetCurrent(); text; text = it.GetNext()) {
     length += text->TextLength();
   }
   return length;
@@ -3625,7 +3630,7 @@ void SVGTextFrame::SelectSubString(nsIContent* aContent, uint32_t charnum,
     return;
   }
   charnum = chit.TextElementCharIndex();
-  const RefPtr<nsIContent> content = chit.TextFrame()->GetContent();
+  const RefPtr<nsIContent> content = chit.GetTextFrame()->GetContent();
   chit.NextWithinSubtree(nchars);
   nchars = chit.TextElementCharIndex() - charnum;
 
@@ -3656,8 +3661,8 @@ void SVGTextFrame::SelectSubString(nsIContent* aContent, uint32_t charnum,
 
 bool SVGTextFrame::RequiresSlowFallbackForSubStringLength() {
   TextFrameIterator frameIter(this);
-  for (nsTextFrame* frame = frameIter.Current(); frame;
-       frame = frameIter.Next()) {
+  for (nsTextFrame* frame = frameIter.GetCurrent(); frame;
+       frame = frameIter.GetNext()) {
     if (frameIter.TextPathFrame() || frame->GetNextContinuation()) {
       return true;
     }
@@ -3710,7 +3715,7 @@ float SVGTextFrame::GetSubStringLengthFastPath(nsIContent* aContent,
   uint32_t frameStartTextElementCharIndex = 0;
   uint32_t textElementCharIndex;
 
-  for (nsTextFrame* frame = frit.Current(); frame; frame = frit.Next()) {
+  for (nsTextFrame* frame = frit.GetCurrent(); frame; frame = frit.GetNext()) {
     frameStartTextElementCharIndex += frit.UndisplayedCharacters();
     textElementCharIndex = frameStartTextElementCharIndex;
 
@@ -4021,7 +4026,7 @@ already_AddRefed<SVGRect> SVGTextFrame::GetExtentOfChar(nsIContent* aContent,
   float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(
       presContext->AppUnitsPerDevPixel());
 
-  nsTextFrame* textFrame = it.TextFrame();
+  nsTextFrame* textFrame = it.GetTextFrame();
   uint32_t startIndex = it.GlyphStartTextElementCharIndex();
   bool isRTL = it.TextRun()->IsRightToLeft();
   bool isVertical = it.TextRun()->IsVertical();
@@ -4364,7 +4369,7 @@ void SVGTextFrame::DetermineCharPositions(nsTArray<nsPoint>& aPositions) {
   nsPoint position;
 
   TextFrameIterator frit(this);
-  for (nsTextFrame* frame = frit.Current(); frame; frame = frit.Next()) {
+  for (nsTextFrame* frame = frit.GetCurrent(); frame; frame = frit.GetNext()) {
     gfxSkipCharsIterator it = frame->EnsureTextRun(nsTextFrame::eInflated);
     gfxTextRun* textRun = frame->GetTextRun(nsTextFrame::eInflated);
     auto& provider = PropertyProviderFor(frame);
@@ -4505,7 +4510,7 @@ void SVGTextFrame::AdjustChunksForLineBreaks() {
 
   CharIterator it(this, CharIterator::eOriginal,  nullptr);
   while (!it.AtEnd() && line != block->LinesEnd()) {
-    if (it.TextFrame() == line->mFirstChild) {
+    if (it.GetTextFrame() == line->mFirstChild) {
       mPositions[it.TextElementCharIndex()].mStartOfChunk = true;
       line++;
     }
@@ -4829,7 +4834,7 @@ void SVGTextFrame::DoAnchoring() {
   for (uint32_t start = it.TextElementCharIndex(); start < mPositions.Length();
        start = it.TextElementCharIndex()) {
     it.AdvanceToCharacter(start);
-    nsTextFrame* chunkFrame = it.TextFrame();
+    nsTextFrame* chunkFrame = it.GetTextFrame();
 
     
     
@@ -5233,7 +5238,7 @@ bool SVGTextFrame::UpdateFontSizeScaleFactor() {
   
   
   TextFrameIterator it(this);
-  nsTextFrame* f = it.Current();
+  nsTextFrame* f = it.GetCurrent();
   while (f) {
     if (!geometricPrecision) {
       
@@ -5247,7 +5252,7 @@ bool SVGTextFrame::UpdateFontSizeScaleFactor() {
       max = std::max(max, fontSize.ToCSSPixels());
       anyText = true;
     }
-    f = it.Next();
+    f = it.GetNext();
   }
 
   if (!anyText) {
