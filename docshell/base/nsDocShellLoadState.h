@@ -439,7 +439,6 @@ class nsDocShellLoadState final {
   already_AddRefed<mozilla::dom::Element> GetSourceElement() const;
 
   
-  
   nsIStructuredCloneContainer* GetNavigationAPIState() const;
   void SetNavigationAPIState(nsIStructuredCloneContainer* aNavigationAPIState);
 
@@ -728,7 +727,7 @@ class nsDocShellLoadState final {
 
   nsWeakPtr mSourceElement;
 
-  nsCOMPtr<nsIStructuredCloneContainer> mNavigationAPIState;
+  RefPtr<nsStructuredCloneContainer> mNavigationAPIState;
 
   RefPtr<mozilla::dom::FormData> mFormDataEntryList;
 

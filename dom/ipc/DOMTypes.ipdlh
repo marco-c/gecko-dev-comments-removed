@@ -236,6 +236,9 @@ struct DocShellLoadStateInit
   HTTPSUpgradeTelemetryType HttpsUpgradeTelemetry;
 
   
+  ClonedMessageData? NavigationAPIState; 
+
+  
   
   
   
