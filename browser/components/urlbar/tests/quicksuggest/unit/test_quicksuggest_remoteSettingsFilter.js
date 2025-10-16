@@ -241,19 +241,14 @@ add_task(async function () {
 
 async function doTests({ locales, homeRegion, tests }) {
   for (let locale of locales) {
-    
-    
-    info("Disabling Suggest: " + JSON.stringify({ locales, homeRegion }));
-    UrlbarPrefs.set("quicksuggest.enabled", false);
-
-    await QuickSuggestTestUtils.withLocales({
-      homeRegion,
-      locales: [locale],
+    await QuickSuggestTestUtils.withRegionAndLocale({
+      locale,
+      region: homeRegion,
+      
+      
+      
+      skipSuggestReset: true,
       callback: async () => {
-        info("Reenabling Suggest: " + JSON.stringify({ locale, homeRegion }));
-        UrlbarPrefs.set("quicksuggest.enabled", true);
-        await QuickSuggestTestUtils.forceSync();
-
         for (let { expected, queries } of tests) {
           for (let query of queries) {
             info(

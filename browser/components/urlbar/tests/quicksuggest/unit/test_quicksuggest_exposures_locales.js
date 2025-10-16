@@ -175,16 +175,10 @@ async function doLocaleTest({
     info("Doing locale test: " + JSON.stringify({ homeRegion, locale }));
 
     
-    await QuickSuggestTestUtils.withLocales({
-      homeRegion,
-      locales: [locale],
+    await QuickSuggestTestUtils.withRegionAndLocale({
+      locale,
+      region: homeRegion,
       callback: async () => {
-        
-        
-        info("Reinitializing Suggest");
-        await QuickSuggest._test_reset();
-        info("Done reinitializing Suggest");
-
         
         
         assertSuggestPrefs(expectedQuickSuggestEnabled);
@@ -228,10 +222,6 @@ async function doLocaleTest({
       },
     });
   }
-
-  
-  
-  await QuickSuggest._test_reset();
 }
 
 function assertSuggestPrefs(expectedEnabled) {
