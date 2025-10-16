@@ -1785,7 +1785,11 @@ class TextRenderedRunIterator {
   
 
 
-  ~TextRenderedRunIterator() { mFrameIterator.Root()->ForgetCachedProvider(); }
+  ~TextRenderedRunIterator() {
+    if (auto* root = mFrameIterator.Root()) {
+      root->ForgetCachedProvider();
+    }
+  }
 
   
 
@@ -2019,7 +2023,11 @@ class MOZ_STACK_CLASS CharIterator {
   
 
 
-  ~CharIterator() { mFrameIterator.Root()->ForgetCachedProvider(); }
+  ~CharIterator() {
+    if (auto* root = mFrameIterator.Root()) {
+      root->ForgetCachedProvider();
+    }
+  }
 
   
 
