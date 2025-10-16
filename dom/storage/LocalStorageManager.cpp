@@ -376,7 +376,8 @@ nsresult LocalStorageManager::Observe(const char* aTopic,
     return NS_OK;
   }
 
-  if (!strcmp(aTopic, "browser:purge-sessionStorage")) {
+  if (!strcmp(aTopic, "browser:purge-sessionStorage") ||
+      !strcmp(aTopic, "extension:purge-sessionStorage")) {
     
     return NS_OK;
   }
