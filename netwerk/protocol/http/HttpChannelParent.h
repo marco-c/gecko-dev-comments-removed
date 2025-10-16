@@ -243,6 +243,12 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   
   bool NeedFlowControl();
 
+  
+  
+  
+  
+  nsCOMPtr<nsISerialEventTarget> GetEventTargetForBgParentWait();
+
   bool IsRedirectDueToAuthRetry(uint32_t redirectFlags);
 
   int32_t mSendWindowSize;
