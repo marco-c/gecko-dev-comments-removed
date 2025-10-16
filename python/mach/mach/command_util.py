@@ -307,7 +307,7 @@ class DecoratorVisitor(ast.NodeVisitor):
                     
                     continue
 
-                kwarg_dict[keyword.arg] = getattr(keyword.value, "s", "")
+                kwarg_dict[keyword.arg] = keyword.value.value
 
             command = kwarg_dict.pop("command")
             self.results.setdefault(command, {})
