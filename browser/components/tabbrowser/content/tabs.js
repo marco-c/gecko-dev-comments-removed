@@ -334,12 +334,20 @@
       this.previewPanel?.deactivate(event.target);
     }
 
-    on_TabGroupLabelHoverStart(event) {
+    cancelTabGroupPreview() {
+      this.previewPanel?.panelOpener.clear();
+    }
+
+    showTabGroupPreview(group) {
       if (!this._showTabGroupHoverPreview) {
         return;
       }
       this.ensureTabPreviewPanelLoaded();
-      this.previewPanel.activate(event.target.group);
+      this.previewPanel.activate(group);
+    }
+
+    on_TabGroupLabelHoverStart(event) {
+      this.showTabGroupPreview(event.target.group);
     }
 
     on_TabGroupLabelHoverEnd(event) {
@@ -644,12 +652,23 @@
           this.ariaFocusedItem = this.selectedItem;
         }
       }
+      let focusReturnedFromGroupPanel = event.relatedTarget?.classList.contains(
+        "group-preview-button"
+      );
+      if (
+        !focusReturnedFromGroupPanel &&
+        this.tablistHasFocus &&
+        isTabGroupLabel(this.ariaFocusedItem)
+      ) {
+        this.showTabGroupPreview(this.ariaFocusedItem.group);
+      }
     }
 
     
 
 
     on_focusout(event) {
+      this.cancelTabGroupPreview();
       if (event.target == this.selectedItem) {
         this.tablistHasFocus = false;
       }
@@ -934,6 +953,12 @@
 
       let itemToFocus = this.ariaFocusableItems[newIndex];
       this.ariaFocusedItem = itemToFocus;
+
+      
+      
+      if (isTabGroupLabel(this.ariaFocusedItem)) {
+        this.showTabGroupPreview(this.ariaFocusedItem.group);
+      }
     }
 
     _invalidateCachedTabs() {
@@ -967,6 +992,17 @@
 
 
     advanceSelectedItem(aDir, aWrap) {
+      let groupPanel = this.previewPanel?.tabGroupPanel;
+      if (groupPanel && groupPanel.isActive) {
+        
+        
+        groupPanel.focusPanel(aDir);
+        return;
+      }
+
+      
+      this.cancelTabGroupPreview();
+
       let { ariaFocusableItems, ariaFocusedIndex } = this;
 
       
@@ -1003,6 +1039,12 @@
         this._selectNewTab(newItem, aDir, aWrap);
       }
       this.ariaFocusedItem = newItem;
+
+      
+      
+      if (isTabGroupLabel(this.ariaFocusedItem)) {
+        this.showTabGroupPreview(this.ariaFocusedItem.group);
+      }
     }
 
     ensureTabPreviewPanelLoaded() {
