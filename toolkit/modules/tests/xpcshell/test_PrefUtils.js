@@ -4,7 +4,7 @@
 "use strict";
 
 const { PrefUtils } = ChromeUtils.importESModule(
-  "resource://normandy/lib/PrefUtils.sys.mjs"
+  "moz-src:///toolkit/modules/PrefUtils.sys.mjs"
 );
 
 add_task(function getPrefGetsValues() {
