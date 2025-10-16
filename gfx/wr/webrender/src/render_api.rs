@@ -1115,6 +1115,12 @@ impl RenderApi {
     }
 
     
+    #[allow(unused)]
+    pub(crate) fn get_api_sender(&self) -> Sender<ApiMsg> {
+        self.api_sender.clone()
+    }
+
+    
     pub fn create_sender(&self) -> RenderApiSender {
         RenderApiSender::new(
             self.api_sender.clone(),
