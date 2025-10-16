@@ -216,10 +216,7 @@ const clearLocalStorage = async function (options) {
         Ci.nsIClearBySiteEntry
       );
 
-      
-      
       entry.schemelessSite = hostname || "";
-
       entry.patternJSON = cookieStoreId
         ? JSON.stringify(
             getOriginAttributesPatternForCookieStoreId(cookieStoreId)
