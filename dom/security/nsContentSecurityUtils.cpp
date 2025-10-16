@@ -1403,8 +1403,7 @@ static nsLiteralCString sImgSrcAddonsAllowList[] = {
 
 
 static nsLiteralCString sImgSrcWildcardAllowList[] = {
-    "about:reader"_ns,
-    "chrome://browser/content/syncedtabs/sidebar.xhtml"_ns,
+    "about:reader"_ns, "chrome://browser/content/syncedtabs/sidebar.xhtml"_ns,
     
 };
 
