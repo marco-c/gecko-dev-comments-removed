@@ -183,7 +183,7 @@ class InspectorCommand {
 
 
 
-  async findNodeFrontFromSelectors(nodeSelectors, timeoutInMs = 5000) {
+  async findNodeFrontFromSelectors(nodeSelectors, timeoutInMs = 1000) {
     if (
       !nodeSelectors ||
       !Array.isArray(nodeSelectors) ||
