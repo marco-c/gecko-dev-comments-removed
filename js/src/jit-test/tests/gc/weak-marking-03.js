@@ -28,11 +28,18 @@ function reportMarks(prefix = "") {
   return markstr;
 }
 
-function startGCMarking() {
+function startGCMarking(untilQueuePos) {
   startgc(100000);
   while (gcstate() === "Prepare" || gcstate() === "MarkRoots") {
     gcslice(100000);
   }
+  
+  
+  
+  while (currentgc().queuePos < untilQueuePos) {
+    gcslice(1000);
+  }
+
 }
 
 function purgeKey() {
@@ -54,7 +61,7 @@ function purgeKey() {
 
   vals.key = vals.val = null;
 
-  startGCMarking();
+  startGCMarking(2);
   
   assertEq(getMarks().join("/"), "black/unmarked/unmarked",
            "marked the map black");
@@ -94,7 +101,7 @@ function removeKey() {
   enqueueMark(m);
   enqueueMark("yield");
 
-  startGCMarking();
+  startGCMarking(2);
   reportMarks("first: ");
   var marks = getMarks();
   assertEq(marks[0], "black", "map is black");
@@ -112,7 +119,7 @@ function removeKey() {
   
   m.set(vals.key, vals.val);
   vals.key = vals.val = null;
-  startGCMarking();
+  startGCMarking(2);
   marks = getMarks();
   assertEq(marks[0], "black", "map is black");
   assertEq(marks[1], "unmarked", "key not marked yet");
@@ -314,7 +321,7 @@ function grayMarkingMapFirst() {
   };
 
   print("Starting incremental GC");
-  startGCMarking();
+  startGCMarking(2);
   
   showmarks();
   var marks = getMarks();
@@ -406,7 +413,7 @@ function grayMarkingMapLast() {
   };
 
   print("Starting incremental GC");
-  startGCMarking();
+  startGCMarking(3);
   
   showmarks();
   var marks = labeledMarks();
@@ -471,7 +478,7 @@ function grayMapKey() {
 
   vals.key = vals.val = null;
 
-  startGCMarking();
+  startGCMarking(4);
   assertEq(getMarks().join("/"), "gray/unmarked/unmarked",
            "marked the map gray");
 
@@ -604,7 +611,7 @@ function blackDuringGray() {
   };
 
   print("Starting incremental GC");
-  startGCMarking();
+  startGCMarking(2);
   
   showmarks();
   var marks = getMarks();
@@ -666,7 +673,7 @@ function blackDuringGrayImplicit() {
   };
 
   print("Starting incremental GC");
-  startGCMarking();
+  startGCMarking(3);
   
   showmarks();
   var marks = getMarks();
