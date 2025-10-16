@@ -319,6 +319,9 @@ newtab-custom-pocket-subtitle = Uitzonderlijke inhoud, samengesteld door { -pock
 newtab-custom-stories-toggle =
     .label = Aanbevolen verhalen
     .description = Uitzonderlijke inhoud, verzameld door de { -brand-product-name }-familie
+newtab-custom-stories-personalized-toggle =
+    .label = Verhalen
+newtab-custom-stories-personalized-checkbox-label = Gepersonaliseerde verhalen op basis van uw activiteit
 newtab-custom-pocket-sponsored = Gesponsorde verhalen
 newtab-custom-pocket-show-recent-saves = Onlangs opgeslagen items tonen
 newtab-custom-recent-title = Recente activiteit
@@ -354,6 +357,7 @@ newtab-wallpaper-custom-color = Kies een kleur
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = De afbeelding heeft de bestandsgroottelimiet van { $file_size } MB overschreden. Probeer een kleiner bestand te uploaden.
+newtab-wallpaper-error-upload-file-type = We konden uw bestand niet uploaden. Probeer het opnieuw met een afbeeldingsbestand.
 newtab-wallpaper-error-file-type = We konden uw bestand niet uploaden. Probeer het opnieuw met een ander bestandstype.
 newtab-wallpaper-light-red-panda = Rode panda
 newtab-wallpaper-light-mountain = Witte berg
@@ -474,8 +478,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = Wisselen naar Fahrenhe
 newtab-weather-menu-change-temperature-units-celsius = Wisselen naar Celsius
 newtab-weather-menu-hide-weather = Weer op nieuw tabblad verbergen
 newtab-weather-menu-learn-more = Meer info
+newtab-weather-menu-detect-my-location = Mijn locatie detecteren
 # This message is shown if user is working offline
 newtab-weather-error-not-available = Weergegevens zijn momenteel niet beschikbaar.
+newtab-weather-opt-in-see-weather = Wilt u het weer voor uw locatie zien?
+newtab-weather-opt-in-not-now =
+    .label = Niet nu
+newtab-weather-opt-in-yes =
+    .label = Ja
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = New York
 
 ## Topic Labels
 
@@ -642,6 +654,9 @@ newtab-widget-lists-input-menu-move-up = Omhoog verplaatsen
 newtab-widget-lists-input-menu-move-down = Omlaag verplaatsen
 newtab-widget-lists-input-menu-delete = Verwijderen
 newtab-widget-lists-input-menu-edit = Bewerken
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + Een nieuwe lijst aanmaken
 newtab-widget-lists-name-label-default =
     .label = Takenlijst
 newtab-widget-lists-name-placeholder-default =
@@ -665,6 +680,10 @@ newtab-widget-timer-play =
     .title = Afspelen
 newtab-widget-timer-pause =
     .title = Pauzeren
+newtab-widget-timer-label-play =
+    .label = Afspelen
+newtab-widget-timer-label-pause =
+    .label = Pauzeren
 newtab-widget-timer-reset =
     .title = Herinitialiseren
 newtab-widget-timer-menu-notifications = Notificaties uitschakelen

@@ -318,6 +318,9 @@ newtab-custom-pocket-subtitle = გამორჩეული მასალ�
 newtab-custom-stories-toggle =
     .label = შემოთავაზებული ამბები
     .description = გამორჩეული მასალები, რომელთაც შეგირჩევთ { -brand-product-name }
+newtab-custom-stories-personalized-toggle =
+    .label = ამბები
+newtab-custom-stories-personalized-checkbox-label = თქვენს საქმიანობაზე მორგებული ამბები
 newtab-custom-pocket-sponsored = ამბები დამკვეთებისგან
 newtab-custom-pocket-show-recent-saves = ბოლოს შენახულის ჩვენება
 newtab-custom-recent-title = ბოლო მოქმედებები
@@ -353,6 +356,7 @@ newtab-wallpaper-custom-color = ფერის არჩევა
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = სურათის ფაილის ზომა აღემატება ზღვარს { $file_size }ᲛᲑ. გთხოვთ, სცადოთ უფრო მცირე ფაილის ატვირთვა.
+newtab-wallpaper-error-upload-file-type = ვერ მოხერხდა თქვენი ფაილის ატვირთვა. გთხოვთ, კვლავ სცადოთ სურათის ფაილით.
 newtab-wallpaper-error-file-type = ვერ მოხერხდა თქვენი ფაილის ატვირთვა. გთხოვთ, კვლავ სცადოთ სხვა სახის ფაილით.
 newtab-wallpaper-light-red-panda = წითელი პანდა
 newtab-wallpaper-light-mountain = თეთრი მთა
@@ -473,8 +477,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = ფარენჰა�
 newtab-weather-menu-change-temperature-units-celsius = ცელსიუსზე გადართვა
 newtab-weather-menu-hide-weather = ამინდის დამალვა ახალ ჩანართში
 newtab-weather-menu-learn-more = ვრცლად
+newtab-weather-menu-detect-my-location = ჩემი მდებარეობის დადგენა
 # This message is shown if user is working offline
 newtab-weather-error-not-available = ამინდის მონაცემები მიუწვდომელია ახლა.
+newtab-weather-opt-in-see-weather = გსურთ ამინდის ნახვა თქვენი ადგილმდებარეობის მიხედვით?
+newtab-weather-opt-in-not-now =
+    .label = ახლა არა
+newtab-weather-opt-in-yes =
+    .label = დიახ
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = ნიუ-იორკი
 
 ## Topic Labels
 
@@ -641,6 +653,9 @@ newtab-widget-lists-input-menu-move-up = აწევა
 newtab-widget-lists-input-menu-move-down = ჩამოწევა
 newtab-widget-lists-input-menu-delete = წაშლა
 newtab-widget-lists-input-menu-edit = ჩასწორება
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + ახალი სიის შექმნა
 newtab-widget-lists-name-label-default =
     .label = დავალებების სია
 newtab-widget-lists-name-placeholder-default =
@@ -664,6 +679,10 @@ newtab-widget-timer-play =
     .title = გაშვება
 newtab-widget-timer-pause =
     .title = შეჩერება
+newtab-widget-timer-label-play =
+    .label = გაშვება
+newtab-widget-timer-label-pause =
+    .label = შეჩერება
 newtab-widget-timer-reset =
     .title = განულება
 newtab-widget-timer-menu-notifications = შეტყობინებების გამორთვა

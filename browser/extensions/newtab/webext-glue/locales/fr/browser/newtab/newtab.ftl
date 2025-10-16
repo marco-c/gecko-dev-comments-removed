@@ -315,6 +315,9 @@ newtab-custom-pocket-subtitle = Contenu exceptionnel sélectionné par { -pocket
 newtab-custom-stories-toggle =
     .label = Articles recommandés
     .description = Contenu exceptionnel sélectionné par les membres de la gamme de produits { -brand-product-name }
+newtab-custom-stories-personalized-toggle =
+    .label = Articles
+newtab-custom-stories-personalized-checkbox-label = Articles personnalisés en fonction de votre activité
 newtab-custom-pocket-sponsored = Articles sponsorisés
 newtab-custom-pocket-show-recent-saves = Afficher les éléments enregistrés récemment
 newtab-custom-recent-title = Activité récente
@@ -350,6 +353,7 @@ newtab-wallpaper-custom-color = Choisir une couleur
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = La taille de l’image dépasse la limite de { $file_size } Mo. Veuillez essayer d’envoyer un fichier plus petit.
+newtab-wallpaper-error-upload-file-type = Nous n’avons pas pu envoyer votre fichier. Veuillez réessayer avec un fichier image.
 newtab-wallpaper-error-file-type = Nous n’avons pas pu envoyer votre fichier. Veuillez réessayer avec un type de fichier différent.
 newtab-wallpaper-light-red-panda = Panda roux
 newtab-wallpaper-light-mountain = Montagne blanche
@@ -470,8 +474,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = Passer en Fahrenheit
 newtab-weather-menu-change-temperature-units-celsius = Passer en Celsius
 newtab-weather-menu-hide-weather = Masquer la météo sur la page Nouvel onglet
 newtab-weather-menu-learn-more = En savoir plus
+newtab-weather-menu-detect-my-location = Détecter ma localisation
 # This message is shown if user is working offline
 newtab-weather-error-not-available = Les données météo ne sont pas disponibles pour le moment.
+newtab-weather-opt-in-see-weather = Voulez-vous voir la météo pour votre localisation ?
+newtab-weather-opt-in-not-now =
+    .label = Plus tard
+newtab-weather-opt-in-yes =
+    .label = Oui
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = New York
 
 ## Topic Labels
 
@@ -638,6 +650,9 @@ newtab-widget-lists-input-menu-move-up = Déplacer vers le haut
 newtab-widget-lists-input-menu-move-down = Déplacer vers le bas
 newtab-widget-lists-input-menu-delete = Supprimer
 newtab-widget-lists-input-menu-edit = Modifier
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + Créer une nouvelle liste
 newtab-widget-lists-name-label-default =
     .label = Liste de tâches
 newtab-widget-lists-name-placeholder-default =
@@ -661,6 +676,10 @@ newtab-widget-timer-play =
     .title = Démarrer
 newtab-widget-timer-pause =
     .title = Pause
+newtab-widget-timer-label-play =
+    .label = Démarrer
+newtab-widget-timer-label-pause =
+    .label = Pause
 newtab-widget-timer-reset =
     .title = Réinitialiser
 newtab-widget-timer-menu-notifications = Désactiver les notifications

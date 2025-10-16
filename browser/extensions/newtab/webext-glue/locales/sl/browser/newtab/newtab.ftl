@@ -320,6 +320,9 @@ newtab-custom-pocket-subtitle = Izjemna vsebina, ki jo pripravlja { -pocket-bran
 newtab-custom-stories-toggle =
     .label = Priporočene zgodbe
     .description = Izjemna vsebina, ki jo pripravlja družina { -brand-product-name }
+newtab-custom-stories-personalized-toggle =
+    .label = Zgodbe
+newtab-custom-stories-personalized-checkbox-label = Zgodbe, izbrane na podlagi vaše dejavnosti
 newtab-custom-pocket-sponsored = Zgodbe oglaševalcev
 newtab-custom-pocket-show-recent-saves = Prikaži nedavno shranjene strani
 newtab-custom-recent-title = Nedavna dejavnost
@@ -337,7 +340,7 @@ newtab-custom-widget-trending-search-toggle =
 newtab-custom-widget-lists-toggle =
     .label = Seznami
 newtab-custom-widget-timer-toggle =
-    .label = Odštevalnik
+    .label = Časovnik
 newtab-custom-widget-section-title = Pripomočki
 # Tooltip for close button
 newtab-custom-close-menu-button =
@@ -355,6 +358,7 @@ newtab-wallpaper-custom-color = Izberite barvo
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Največja dovoljena velikost slike je { $file_size } MB. Poskusite naložiti manjšo datoteko.
+newtab-wallpaper-error-upload-file-type = Datoteke ni bilo mogoče naložiti. Poskusite znova s slikovno datoteko.
 newtab-wallpaper-error-file-type = Datoteke ni bilo mogoče naložiti. Poskusite znova z drugo vrsto datoteke.
 newtab-wallpaper-light-red-panda = Mačji panda
 newtab-wallpaper-light-mountain = Bela gora
@@ -666,6 +670,10 @@ newtab-widget-timer-play =
     .title = Predvajaj
 newtab-widget-timer-pause =
     .title = Ustavi
+newtab-widget-timer-label-play =
+    .label = Predvajaj
+newtab-widget-timer-label-pause =
+    .label = Ustavi
 newtab-widget-timer-reset =
     .title = Ponastavi
 newtab-widget-timer-menu-notifications = Izklopi obvestila

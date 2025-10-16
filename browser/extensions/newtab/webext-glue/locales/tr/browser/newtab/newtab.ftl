@@ -315,6 +315,9 @@ newtab-custom-pocket-subtitle = { -brand-product-name } ailesinin bir parçası 
 newtab-custom-stories-toggle =
     .label = Önerilen makaleler
     .description = { -brand-product-name } ailesinin seçtiği harika içerikler
+newtab-custom-stories-personalized-toggle =
+    .label = Haberler
+newtab-custom-stories-personalized-checkbox-label = Etkinliğinize göre kişiselleştirilmiş haberler
 newtab-custom-pocket-sponsored = Sponsorlu haberler
 newtab-custom-pocket-show-recent-saves = Son kaydedilenleri göster
 newtab-custom-recent-title = Son etkinlikler
@@ -350,6 +353,7 @@ newtab-wallpaper-custom-color = Renk seç
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Bu resim, izin verilen { $file_size } MB boyut sınırını aşıyor. Lütfen daha küçük bir dosya yüklemeyi deneyin.
+newtab-wallpaper-error-upload-file-type = Dosyanızı yükleyemedik. Lütfen bir resim dosyasıyla yeniden deneyin.
 newtab-wallpaper-error-file-type = Dosyanızı yükleyemedik. Lütfen farklı bir dosya türüyle tekrar deneyin.
 newtab-wallpaper-light-red-panda = Kızıl panda
 newtab-wallpaper-light-mountain = Beyaz dağ
@@ -470,8 +474,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = Fahrenhayta geç
 newtab-weather-menu-change-temperature-units-celsius = Celsius’a geç
 newtab-weather-menu-hide-weather = Yeni sekmede hava durumunu gizle
 newtab-weather-menu-learn-more = Daha fazla bilgi al
+newtab-weather-menu-detect-my-location = Konumumu tespit et
 # This message is shown if user is working offline
 newtab-weather-error-not-available = Hava durumu verileri şu anda mevcut değil.
+newtab-weather-opt-in-see-weather = Bulunduğunuz yerin hava durumunu görmek ister misiniz?
+newtab-weather-opt-in-not-now =
+    .label = Şimdi değil
+newtab-weather-opt-in-yes =
+    .label = Evet
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = New York City
 
 ## Topic Labels
 
@@ -638,6 +650,9 @@ newtab-widget-lists-input-menu-move-up = Yukarı taşı
 newtab-widget-lists-input-menu-move-down = Aşağı taşı
 newtab-widget-lists-input-menu-delete = Sil
 newtab-widget-lists-input-menu-edit = Düzenle
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + Yeni liste oluştur
 newtab-widget-lists-name-label-default =
     .label = Görev listesi
 newtab-widget-lists-name-placeholder-default =
@@ -661,6 +676,10 @@ newtab-widget-timer-play =
     .title = Başlat
 newtab-widget-timer-pause =
     .title = Duraklat
+newtab-widget-timer-label-play =
+    .label = Başlat
+newtab-widget-timer-label-pause =
+    .label = Duraklat
 newtab-widget-timer-reset =
     .title = Sıfırla
 newtab-widget-timer-menu-notifications = Bildirimleri kapat

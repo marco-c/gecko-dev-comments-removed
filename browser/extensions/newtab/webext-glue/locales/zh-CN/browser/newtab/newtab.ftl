@@ -314,6 +314,9 @@ newtab-custom-pocket-subtitle = 由 { -brand-product-name } 旗下 { -pocket-bra
 newtab-custom-stories-toggle =
     .label = 推荐文章
     .description = 由 { -brand-product-name } 推荐的精选内容
+newtab-custom-stories-personalized-toggle =
+    .label = 文章
+newtab-custom-stories-personalized-checkbox-label = 根据您的阅读记录为您推荐文章
 newtab-custom-pocket-sponsored = 赞助内容
 newtab-custom-pocket-show-recent-saves = 显示近期保存内容
 newtab-custom-recent-title = 近期动态
@@ -349,6 +352,7 @@ newtab-wallpaper-custom-color = 选择颜色
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = 图像超出文件大小上限（{ $file_size }MB），请尝试上传较小的文件。
+newtab-wallpaper-error-upload-file-type = 无法上传文件，请尝试使用图像文件。
 newtab-wallpaper-error-file-type = 无法上传文件，请尝试使用其他文件类型。
 newtab-wallpaper-light-red-panda = 小熊猫
 newtab-wallpaper-light-mountain = 白山山脉
@@ -469,8 +473,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = 切换为华氏度
 newtab-weather-menu-change-temperature-units-celsius = 切换为摄氏度
 newtab-weather-menu-hide-weather = 隐藏新标签页上的天气信息
 newtab-weather-menu-learn-more = 详细了解
+newtab-weather-menu-detect-my-location = 检测我的位置
 # This message is shown if user is working offline
 newtab-weather-error-not-available = 目前无法获取天气数据。
+newtab-weather-opt-in-see-weather = 您想看到当前位置的天气信息吗？
+newtab-weather-opt-in-not-now =
+    .label = 暂时不要
+newtab-weather-opt-in-yes =
+    .label = 好的
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = 纽约市
 
 ## Topic Labels
 
@@ -637,6 +649,9 @@ newtab-widget-lists-input-menu-move-up = 上移
 newtab-widget-lists-input-menu-move-down = 下移
 newtab-widget-lists-input-menu-delete = 删除
 newtab-widget-lists-input-menu-edit = 编辑
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + 创建新清单
 newtab-widget-lists-name-label-default =
     .label = 任务清单
 newtab-widget-lists-name-placeholder-default =
@@ -660,6 +675,10 @@ newtab-widget-timer-play =
     .title = 开始
 newtab-widget-timer-pause =
     .title = 暂停
+newtab-widget-timer-label-play =
+    .label = 开始
+newtab-widget-timer-label-pause =
+    .label = 暂停
 newtab-widget-timer-reset =
     .title = 重置
 newtab-widget-timer-menu-notifications = 关闭通知
@@ -668,6 +687,9 @@ newtab-widget-timer-menu-hide = 隐藏计时器
 newtab-widget-timer-menu-learn-more = 详细了解
 # Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
 newtab-widget-keep-scrolling = 滚动浏览更多
+newtab-widget-message-title = 借助清单和内置计时器，聚焦重点、保持专注。
+# to-dos stands for "things to do".
+newtab-widget-message-copy = 从快捷提醒到日常待办，从专注时段到放松片刻，既能帮您管理任务，又可助您把握时间。
 newtab-promo-card-title = 支持 { -brand-product-name }
 newtab-promo-card-body = 建设一个更好的互联网的使命，离不开我们赞助商的支持
 newtab-promo-card-cta = 详细了解

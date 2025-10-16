@@ -313,6 +313,9 @@ newtab-custom-pocket-subtitle = תוכן יוצא דופן שנבחר בקפיד
 newtab-custom-stories-toggle =
     .label = סיפורים מומלצים
     .description = תוכן יוצא דופן שנבחר בקפידה על־ידי משפחת { -brand-product-name }
+newtab-custom-stories-personalized-toggle =
+    .label = סיפורים
+newtab-custom-stories-personalized-checkbox-label = סיפורים מותאמים אישית המבוססים על הפעילות שלך
 newtab-custom-pocket-sponsored = סיפורים ממומנים
 newtab-custom-pocket-show-recent-saves = הצגת שמירות אחרונות
 newtab-custom-recent-title = פעילות אחרונה
@@ -348,6 +351,7 @@ newtab-wallpaper-custom-color = בחירת צבע
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = התמונה חרגה ממגבלת גודל הקובץ של { $file_size } מ״ב. נא לנסות להעלות קובץ קטן יותר.
+newtab-wallpaper-error-upload-file-type = לא הצלחנו להעלות את הקובץ שלך. נא לנסות שוב עם קובץ תמונה.
 newtab-wallpaper-error-file-type = לא הצלחנו להעלות את הקובץ שלך. נא לנסות שוב עם סוג קובץ אחר.
 newtab-wallpaper-light-red-panda = פנדה אדומה
 newtab-wallpaper-light-mountain = הר לבן
@@ -468,8 +472,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = מעבר לפרנהי�
 newtab-weather-menu-change-temperature-units-celsius = מעבר לצלזיוס
 newtab-weather-menu-hide-weather = הסתרת מזג האוויר בלשונית החדשה
 newtab-weather-menu-learn-more = מידע נוסף
+newtab-weather-menu-detect-my-location = זיהוי המיקום שלי
 # This message is shown if user is working offline
 newtab-weather-error-not-available = נתוני מזג האוויר אינם זמינים כעת.
+newtab-weather-opt-in-see-weather = האם ברצונך לראות את מזג האוויר עבור המיקום שלך?
+newtab-weather-opt-in-not-now =
+    .label = לא כעת
+newtab-weather-opt-in-yes =
+    .label = כן
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = New York City
 
 ## Topic Labels
 
@@ -636,6 +648,9 @@ newtab-widget-lists-input-menu-move-up = להזיז מעלה
 newtab-widget-lists-input-menu-move-down = להזיז מטה
 newtab-widget-lists-input-menu-delete = מחיקה
 newtab-widget-lists-input-menu-edit = עריכה
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + יצירת רשימה חדשה
 newtab-widget-lists-name-label-default =
     .label = רשימת משימות
 newtab-widget-lists-name-placeholder-default =
@@ -659,6 +674,10 @@ newtab-widget-timer-play =
     .title = הפעלה
 newtab-widget-timer-pause =
     .title = השהייה
+newtab-widget-timer-label-play =
+    .label = הפעלה
+newtab-widget-timer-label-pause =
+    .label = השהייה
 newtab-widget-timer-reset =
     .title = איפוס
 newtab-widget-timer-menu-notifications = כיבוי התרעות

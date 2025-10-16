@@ -320,6 +320,9 @@ newtab-custom-pocket-subtitle = Interessant indhold udvalgt af { -pocket-brand-n
 newtab-custom-stories-toggle =
     .label = Anbefalede historier
     .description = Interessant indhold udvalgt af { -brand-product-name }-holdet
+newtab-custom-stories-personalized-toggle =
+    .label = Historier
+newtab-custom-stories-personalized-checkbox-label = Tilpassede historier baseret på din aktivitet
 newtab-custom-pocket-sponsored = Sponsorerede historier
 newtab-custom-pocket-show-recent-saves = Vis seneste gemte
 newtab-custom-recent-title = Seneste aktivitet
@@ -355,6 +358,7 @@ newtab-wallpaper-custom-color = Vælg en farve
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Billedet overskrider grænsen for filstørrelse på { $file_size } MB. Prøv at uploade en mindre fil.
+newtab-wallpaper-error-upload-file-type = Vi kunne ikke uploade din fil. Prøv igen med en billedfil.
 newtab-wallpaper-error-file-type = Vi kunne ikke uploade din fil. Prøv igen med en anden filtype.
 newtab-wallpaper-light-red-panda = Rød panda
 newtab-wallpaper-light-mountain = Hvidt bjerg
@@ -475,8 +479,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = Skift til Fahrenheit
 newtab-weather-menu-change-temperature-units-celsius = Skift til Celsius
 newtab-weather-menu-hide-weather = Skjul vejr på Nyt faneblad
 newtab-weather-menu-learn-more = Læs mere
+newtab-weather-menu-detect-my-location = Registrer min placering
 # This message is shown if user is working offline
 newtab-weather-error-not-available = Vejrdata er ikke tilgængelige lige nu.
+newtab-weather-opt-in-see-weather = Vil du se vejrudsigter for din placering?
+newtab-weather-opt-in-not-now =
+    .label = Ikke nu
+newtab-weather-opt-in-yes =
+    .label = Ja
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = New York City
 
 ## Topic Labels
 
@@ -643,6 +655,9 @@ newtab-widget-lists-input-menu-move-up = Flyt op
 newtab-widget-lists-input-menu-move-down = Flyt ned
 newtab-widget-lists-input-menu-delete = Slet
 newtab-widget-lists-input-menu-edit = Rediger
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + Opret en ny liste
 newtab-widget-lists-name-label-default =
     .label = Opgaveliste
 newtab-widget-lists-name-placeholder-default =
@@ -666,6 +681,10 @@ newtab-widget-timer-play =
     .title = Afspil
 newtab-widget-timer-pause =
     .title = Pause
+newtab-widget-timer-label-play =
+    .label = Afspil
+newtab-widget-timer-label-pause =
+    .label = Pause
 newtab-widget-timer-reset =
     .title = Nulstil
 newtab-widget-timer-menu-notifications = Slå notifikationer fra

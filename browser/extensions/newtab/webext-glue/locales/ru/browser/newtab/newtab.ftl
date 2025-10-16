@@ -320,6 +320,9 @@ newtab-custom-pocket-subtitle = Особый контент, курируемы�
 newtab-custom-stories-toggle =
     .label = Рекомендуемые истории
     .description = Исключительный контент, курируемый семейством { -brand-product-name }
+newtab-custom-stories-personalized-toggle =
+    .label = Истории
+newtab-custom-stories-personalized-checkbox-label = Персонализированные истории на основе вашей активности
 newtab-custom-pocket-sponsored = Статьи спонсоров
 newtab-custom-pocket-show-recent-saves = Отображать последние сохранения
 newtab-custom-recent-title = Последние действия
@@ -355,6 +358,7 @@ newtab-wallpaper-custom-color = Выберите цвет
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Размер файла изображения превысил лимит в { $file_size }МБ. Пожалуйста, попробуйте загрузить файл меньшего размера.
+newtab-wallpaper-error-upload-file-type = Мы не смогли загрузить ваш файл. Пожалуйста, попробуйте ещё раз с файлом изображения.
 newtab-wallpaper-error-file-type = Мы не смогли загрузить ваш файл. Пожалуйста, попробуйте ещё раз с другим типом файла.
 newtab-wallpaper-light-red-panda = Красная панда
 newtab-wallpaper-light-mountain = Белая гора
@@ -475,8 +479,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = Переключить
 newtab-weather-menu-change-temperature-units-celsius = Переключиться на градусы Цельсия
 newtab-weather-menu-hide-weather = Скрыть погоду на новой вкладке
 newtab-weather-menu-learn-more = Подробнее
+newtab-weather-menu-detect-my-location = Определить моё местоположение
 # This message is shown if user is working offline
 newtab-weather-error-not-available = Данные о погоде сейчас недоступны.
+newtab-weather-opt-in-see-weather = Хотите видеть погоду для вашего местоположения?
+newtab-weather-opt-in-not-now =
+    .label = Не сейчас
+newtab-weather-opt-in-yes =
+    .label = Да
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = Нью-Йорк
 
 ## Topic Labels
 
@@ -643,6 +655,9 @@ newtab-widget-lists-input-menu-move-up = Вверх
 newtab-widget-lists-input-menu-move-down = Вниз
 newtab-widget-lists-input-menu-delete = Удалить
 newtab-widget-lists-input-menu-edit = Изменить
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + Создать новый список
 newtab-widget-lists-name-label-default =
     .label = Список задач
 newtab-widget-lists-name-placeholder-default =
@@ -666,6 +681,10 @@ newtab-widget-timer-play =
     .title = Воспроизвести
 newtab-widget-timer-pause =
     .title = Приостановить
+newtab-widget-timer-label-play =
+    .label = Воспроизвести
+newtab-widget-timer-label-pause =
+    .label = Приостановить
 newtab-widget-timer-reset =
     .title = Сбросить
 newtab-widget-timer-menu-notifications = Отключить уведомления

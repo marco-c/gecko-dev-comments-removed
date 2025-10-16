@@ -319,6 +319,9 @@ newtab-custom-pocket-subtitle = Exceptional content curated by { -pocket-brand-n
 newtab-custom-stories-toggle =
     .label = Recommended stories
     .description = Exceptional content curated by the { -brand-product-name } family
+newtab-custom-stories-personalized-toggle =
+    .label = Stories
+newtab-custom-stories-personalized-checkbox-label = Personalised stories based on your activity
 newtab-custom-pocket-sponsored = Sponsored stories
 newtab-custom-pocket-show-recent-saves = Show recent saves
 newtab-custom-recent-title = Recent activity
@@ -354,6 +357,7 @@ newtab-wallpaper-custom-color = Choose a colour
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = The image exceeded the file size limit of { $file_size }MB. Please try uploading a smaller file.
+newtab-wallpaper-error-upload-file-type = We couldn’t upload your file. Please try again with an image file.
 newtab-wallpaper-error-file-type = We couldn’t upload your file. Please try again with different file type.
 newtab-wallpaper-light-red-panda = Red panda
 newtab-wallpaper-light-mountain = White mountain
@@ -474,8 +478,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = Switch to Fahrenheit
 newtab-weather-menu-change-temperature-units-celsius = Switch to Celsius
 newtab-weather-menu-hide-weather = Hide weather on New Tab
 newtab-weather-menu-learn-more = Learn more
+newtab-weather-menu-detect-my-location = Detect my location
 # This message is shown if user is working offline
 newtab-weather-error-not-available = Weather data is not available right now.
+newtab-weather-opt-in-see-weather = Do you want to see the weather for your location?
+newtab-weather-opt-in-not-now =
+    .label = Not now
+newtab-weather-opt-in-yes =
+    .label = Yes
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = New York City
 
 ## Topic Labels
 
@@ -642,6 +654,9 @@ newtab-widget-lists-input-menu-move-up = Move up
 newtab-widget-lists-input-menu-move-down = Move down
 newtab-widget-lists-input-menu-delete = Delete
 newtab-widget-lists-input-menu-edit = Edit
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + Create a new list
 newtab-widget-lists-name-label-default =
     .label = Task list
 newtab-widget-lists-name-placeholder-default =
@@ -665,6 +680,10 @@ newtab-widget-timer-play =
     .title = Play
 newtab-widget-timer-pause =
     .title = Pause
+newtab-widget-timer-label-play =
+    .label = Play
+newtab-widget-timer-label-pause =
+    .label = Pause
 newtab-widget-timer-reset =
     .title = Reset
 newtab-widget-timer-menu-notifications = Turn off notifications

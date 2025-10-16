@@ -326,6 +326,9 @@ newtab-custom-pocket-subtitle = Výjimečný obsah vybraný službou { -pocket-b
 newtab-custom-stories-toggle =
     .label = Doporučené články
     .description = Výjimečný obsah spravovaný rodinou { -brand-product-name(case: "gen") }
+newtab-custom-stories-personalized-toggle =
+    .label = Články
+newtab-custom-stories-personalized-checkbox-label = Personalizované příběhy na základě vaší aktivity
 newtab-custom-pocket-sponsored = Sponzorované články
 newtab-custom-pocket-show-recent-saves = Zobrazit nedávno uložené
 newtab-custom-recent-title = Nedávná aktivita
@@ -361,6 +364,7 @@ newtab-wallpaper-custom-color = Vybrat barvu
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Obrázek překročil limit velikosti souboru { $file_size } MB. Zkuste nahrát menší soubor.
+newtab-wallpaper-error-upload-file-type = Váš soubor se nám nepodařilo nahrát. Zkuste to prosím znovu se souborem obrázku.
 newtab-wallpaper-error-file-type = Váš soubor se nám nepodařilo nahrát. Zkuste to prosím znovu s jiným typem souboru.
 newtab-wallpaper-light-red-panda = Panda červená
 newtab-wallpaper-light-mountain = Bílá hora
@@ -481,8 +485,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = Přepnout na stupně F
 newtab-weather-menu-change-temperature-units-celsius = Přepnout na stupně Celsia
 newtab-weather-menu-hide-weather = Skrýt počasí na novém panelu
 newtab-weather-menu-learn-more = Zjistit více
+newtab-weather-menu-detect-my-location = Zjistit mou polohu
 # This message is shown if user is working offline
 newtab-weather-error-not-available = Údaje o počasí nejsou momentálně dostupné.
+newtab-weather-opt-in-see-weather = Chcete vidět počasí pro vaši oblast?
+newtab-weather-opt-in-not-now =
+    .label = Teď ne
+newtab-weather-opt-in-yes =
+    .label = Ano
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = New York
 
 ## Topic Labels
 
@@ -644,7 +656,7 @@ newtab-trending-searches-title = Trendy ve vyhledávání
 ## Strings for task / to-do list productivity widget
 
 # "Add one" means adding a new task to the list (e.g., "Walk the dog")
-newtab-widget-lists-empty-cta = Možnosti jsou nekonečné. Přidat další.
+newtab-widget-lists-empty-cta = Možnosti jsou nekonečné. Přidejte si svoji.
 # A simple label next to the default list name letting users know this is a new / beta feature
 newtab-widget-lists-label-new =
     .label = Nový
@@ -663,11 +675,15 @@ newtab-widget-lists-menu-hide = Skrýt všechny seznamy
 newtab-widget-lists-menu-learn-more = Zjistit více
 newtab-widget-lists-input-add-an-item =
     .placeholder = Přidat položku
+newtab-widget-lists-input-error = Položku přidáte zadáním textu.
 newtab-widget-lists-input-menu-open-link = Otevřít odkaz
 newtab-widget-lists-input-menu-move-up = Posunout výše
 newtab-widget-lists-input-menu-move-down = Posunout níže
 newtab-widget-lists-input-menu-delete = Smazat
 newtab-widget-lists-input-menu-edit = Upravit
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + Vytvořit nový seznam
 newtab-widget-lists-name-label-default =
     .label = Seznam úkolů
 newtab-widget-lists-name-placeholder-default =
@@ -691,6 +707,10 @@ newtab-widget-timer-play =
     .title = Přehrát
 newtab-widget-timer-pause =
     .title = Pozastavit
+newtab-widget-timer-label-play =
+    .label = Přehrát
+newtab-widget-timer-label-pause =
+    .label = Pozastavit
 newtab-widget-timer-reset =
     .title = Obnovit
 newtab-widget-timer-menu-notifications = Vypnout oznámení

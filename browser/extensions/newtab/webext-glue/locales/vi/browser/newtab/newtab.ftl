@@ -318,6 +318,9 @@ newtab-custom-pocket-subtitle = Nội dung đặc biệt do { -pocket-brand-name
 newtab-custom-stories-toggle =
     .label = Câu chuyện được đề xuất
     .description = Nội dung đặc biệt được quản lý bởi gia đình { -brand-product-name }
+newtab-custom-stories-personalized-toggle =
+    .label = Câu chuyện
+newtab-custom-stories-personalized-checkbox-label = Câu chuyện được cá nhân hóa dựa trên hoạt động của bạn
 newtab-custom-pocket-sponsored = Câu chuyện được tài trợ
 newtab-custom-pocket-show-recent-saves = Hiển thị các lần lưu gần đây
 newtab-custom-recent-title = Hoạt động gần đây
@@ -353,6 +356,7 @@ newtab-wallpaper-custom-color = Chọn màu
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Hình ảnh vượt quá giới hạn kích thước tập tin { $file_size }MB. Vui lòng thử tải lên một tập tin nhỏ hơn.
+newtab-wallpaper-error-upload-file-type = Chúng tôi không thể tải tập tin của bạn lên. Vui lòng thử lại với tập tin hình ảnh.
 newtab-wallpaper-error-file-type = Chúng tôi không thể tải lên tập tin của bạn. Vui lòng thử lại với loại tập tin khác.
 newtab-wallpaper-light-red-panda = Gấu trúc đỏ
 newtab-wallpaper-light-mountain = Núi trắng
@@ -473,8 +477,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = Chuyển sang độ F
 newtab-weather-menu-change-temperature-units-celsius = Chuyển sang độ C
 newtab-weather-menu-hide-weather = Ẩn thời tiết trên thẻ mới
 newtab-weather-menu-learn-more = Tìm hiểu thêm
+newtab-weather-menu-detect-my-location = Phát hiện vị trí của tôi
 # This message is shown if user is working offline
 newtab-weather-error-not-available = Dữ liệu thời tiết hiện không có sẵn.
+newtab-weather-opt-in-see-weather = Bạn có muốn xem thời tiết ở nơi bạn ở không?
+newtab-weather-opt-in-not-now =
+    .label = Không phải bây giờ
+newtab-weather-opt-in-yes =
+    .label = Đồng ý
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = Thành phố New York
 
 ## Topic Labels
 
@@ -641,6 +653,9 @@ newtab-widget-lists-input-menu-move-up = Di chuyển lên
 newtab-widget-lists-input-menu-move-down = Di chuyển xuống
 newtab-widget-lists-input-menu-delete = Xóa
 newtab-widget-lists-input-menu-edit = Chỉnh sửa
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + Tạo một danh sách mới
 newtab-widget-lists-name-label-default =
     .label = Danh sách nhiệm vụ
 newtab-widget-lists-name-placeholder-default =
@@ -664,6 +679,10 @@ newtab-widget-timer-play =
     .title = Bắt đầu
 newtab-widget-timer-pause =
     .title = Tạm dừng
+newtab-widget-timer-label-play =
+    .label = Bắt đầu
+newtab-widget-timer-label-pause =
+    .label = Tạm dừng
 newtab-widget-timer-reset =
     .title = Đặt lại
 newtab-widget-timer-menu-notifications = Tắt thông báo

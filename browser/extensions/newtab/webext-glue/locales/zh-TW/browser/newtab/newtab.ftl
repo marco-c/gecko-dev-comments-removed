@@ -315,6 +315,9 @@ newtab-custom-pocket-subtitle = 由 { -brand-product-name } 的姊妹作 { -pock
 newtab-custom-stories-toggle =
     .label = 推薦的文章
     .description = 由 { -brand-product-name } 產品家族精選的內容文章
+newtab-custom-stories-personalized-toggle =
+    .label = 文章
+newtab-custom-stories-personalized-checkbox-label = 依照您的上網行為，提供個人化文章推薦
 newtab-custom-pocket-sponsored = 贊助內容
 newtab-custom-pocket-show-recent-saves = 顯示近期儲存項目
 newtab-custom-recent-title = 近期動態
@@ -350,6 +353,7 @@ newtab-wallpaper-custom-color = 選擇一種色彩
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = 圖片超過 { $file_size }MB 的檔案大小限制。請嘗試上傳小一點的檔案。
+newtab-wallpaper-error-upload-file-type = 無法上傳您的檔案，請稍後再重新上傳圖片。
 newtab-wallpaper-error-file-type = 無法上傳您的檔案，請稍後再以不同格式檔案上傳。
 newtab-wallpaper-light-red-panda = 小貓熊
 newtab-wallpaper-light-mountain = 白色山脈
@@ -470,8 +474,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = 切換為華氏溫度
 newtab-weather-menu-change-temperature-units-celsius = 切換為攝氏溫度
 newtab-weather-menu-hide-weather = 隱藏新分頁的天氣資訊
 newtab-weather-menu-learn-more = 更多資訊
+newtab-weather-menu-detect-my-location = 偵測我的所在位置
 # This message is shown if user is working offline
 newtab-weather-error-not-available = 目前暫時無法提供天氣資訊。
+newtab-weather-opt-in-see-weather = 您想看到目前所在位置的天氣資訊嗎？
+newtab-weather-opt-in-not-now =
+    .label = 現在不要
+newtab-weather-opt-in-yes =
+    .label = 好的
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = 紐約市
 
 ## Topic Labels
 
@@ -638,6 +650,9 @@ newtab-widget-lists-input-menu-move-up = 上移
 newtab-widget-lists-input-menu-move-down = 下移
 newtab-widget-lists-input-menu-delete = 刪除
 newtab-widget-lists-input-menu-edit = 編輯
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + 新增清單
 newtab-widget-lists-name-label-default =
     .label = 任務清單
 newtab-widget-lists-name-placeholder-default =
@@ -661,6 +676,10 @@ newtab-widget-timer-play =
     .title = 播放
 newtab-widget-timer-pause =
     .title = 暫停
+newtab-widget-timer-label-play =
+    .label = 播放
+newtab-widget-timer-label-pause =
+    .label = 暫停
 newtab-widget-timer-reset =
     .title = 重設
 newtab-widget-timer-menu-notifications = 關閉通知

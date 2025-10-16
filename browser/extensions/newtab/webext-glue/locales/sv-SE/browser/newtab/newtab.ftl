@@ -319,6 +319,9 @@ newtab-custom-pocket-subtitle = Särskilt innehåll valt av { -pocket-brand-name
 newtab-custom-stories-toggle =
     .label = Rekommenderade berättelser
     .description = Exceptionellt innehåll kurerat av { -brand-product-name }-familjen
+newtab-custom-stories-personalized-toggle =
+    .label = Berättelser
+newtab-custom-stories-personalized-checkbox-label = Personliga berättelser baserade på din aktivitet
 newtab-custom-pocket-sponsored = Sponsrade berättelser
 newtab-custom-pocket-show-recent-saves = Visa senast sparade
 newtab-custom-recent-title = Senaste aktivitet
@@ -354,6 +357,7 @@ newtab-wallpaper-custom-color = Välj en färg
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Bilden överskred gränsen för filstorleken på { $file_size } MB. Prova att ladda upp en mindre fil.
+newtab-wallpaper-error-upload-file-type = Vi kunde inte ladda upp din fil. Försök igen med en bildfil.
 newtab-wallpaper-error-file-type = Vi kunde inte ladda upp din fil. Försök igen med en annan filtyp.
 newtab-wallpaper-light-red-panda = Röd panda
 newtab-wallpaper-light-mountain = Vita berg
@@ -474,8 +478,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = Byt till Fahrenheit
 newtab-weather-menu-change-temperature-units-celsius = Byt till Celsius
 newtab-weather-menu-hide-weather = Dölj väder på ny flik
 newtab-weather-menu-learn-more = Läs mer
+newtab-weather-menu-detect-my-location = Identifiera min plats
 # This message is shown if user is working offline
 newtab-weather-error-not-available = Väderdata är inte tillgänglig just nu.
+newtab-weather-opt-in-see-weather = Vill du se vädret för din plats?
+newtab-weather-opt-in-not-now =
+    .label = Inte nu
+newtab-weather-opt-in-yes =
+    .label = Ja
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = New York
 
 ## Topic Labels
 
@@ -642,6 +654,9 @@ newtab-widget-lists-input-menu-move-up = Flytta upp
 newtab-widget-lists-input-menu-move-down = Flytta ned
 newtab-widget-lists-input-menu-delete = Ta bort
 newtab-widget-lists-input-menu-edit = Redigera
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + Skapa en ny lista
 newtab-widget-lists-name-label-default =
     .label = Uppgiftslista
 newtab-widget-lists-name-placeholder-default =
@@ -665,6 +680,10 @@ newtab-widget-timer-play =
     .title = Spela
 newtab-widget-timer-pause =
     .title = Pausa
+newtab-widget-timer-label-play =
+    .label = Spela
+newtab-widget-timer-label-pause =
+    .label = Pausa
 newtab-widget-timer-reset =
     .title = Återställ
 newtab-widget-timer-menu-notifications = Stäng av aviseringar

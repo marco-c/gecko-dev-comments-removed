@@ -321,6 +321,9 @@ newtab-custom-pocket-subtitle = Wósebne wopśimjeśe, wubrane pśez { -pocket-b
 newtab-custom-stories-toggle =
     .label = Dopórucone tšojeńka
     .description = Wuwześowe wopśimjeśe, kótarež se pśez swójźbu { -brand-product-name } wótwardujo
+newtab-custom-stories-personalized-toggle =
+    .label = Tšojenja
+newtab-custom-stories-personalized-checkbox-label = Personalizěrowane tšojenja na zakłaźe wašeje aktiwity
 newtab-custom-pocket-sponsored = Sponserowane tšojeńka
 newtab-custom-pocket-show-recent-saves = Nejnowše składowanja pokazaś
 newtab-custom-recent-title = Nejnowša aktiwita
@@ -356,6 +359,7 @@ newtab-wallpaper-custom-color = Barwu wubraś
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Wobraz jo pśekšocył limit datajoweje wjelikosći { $file_size }. Nagrajśo pšosym mjeńšu dataju.
+newtab-wallpaper-error-upload-file-type = Njejsmy mógli wašu dataju nagraś. Wopytajśo pšosym z wobrazoweju dataju hyšći raz.
 newtab-wallpaper-error-file-type = Njejsmy mógli wašu dataju nagraś. Wopytajśo pšosym z drugim datajowym typom hyšći raz.
 newtab-wallpaper-light-red-panda = Cerwjeny panda
 newtab-wallpaper-light-mountain = Běła góra
@@ -476,8 +480,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = Fahrenheit wužywaś
 newtab-weather-menu-change-temperature-units-celsius = Celsius wužywaś
 newtab-weather-menu-hide-weather = Wjedro na nowem rejtariku schowaś
 newtab-weather-menu-learn-more = Dalšne informacije
+newtab-weather-menu-detect-my-location = Mójo stojnišćo namakaś
 # This message is shown if user is working offline
 newtab-weather-error-not-available = Wjedrowe daty njejsu tuchylu k dispoziciji
+newtab-weather-opt-in-see-weather = Cośo wjedro za swóje stojnišćo wiźeś?
+newtab-weather-opt-in-not-now =
+    .label = Nic něnto
+newtab-weather-opt-in-yes =
+    .label = Jo
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = New York City
 
 ## Topic Labels
 
@@ -644,6 +656,9 @@ newtab-widget-lists-input-menu-move-up = Górjej
 newtab-widget-lists-input-menu-move-down = Dołoj
 newtab-widget-lists-input-menu-delete = Lašowaś
 newtab-widget-lists-input-menu-edit = Wobźěłaś
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + Nowu lisćinu napóraś
 newtab-widget-lists-name-label-default =
     .label = Lisćiny nadawkow
 newtab-widget-lists-name-placeholder-default =
@@ -667,6 +682,10 @@ newtab-widget-timer-play =
     .title = Wótgraś
 newtab-widget-timer-pause =
     .title = Pawza
+newtab-widget-timer-label-play =
+    .label = Wótgraś
+newtab-widget-timer-label-pause =
+    .label = Pawza
 newtab-widget-timer-reset =
     .title = Slědk stajiś
 newtab-widget-timer-menu-notifications = Zdźělenja znjemóžniś
