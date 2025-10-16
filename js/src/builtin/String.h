@@ -40,26 +40,6 @@ extern bool str_codePointAt(JSContext* cx, unsigned argc, Value* vp);
 
 extern bool str_endsWith(JSContext* cx, unsigned argc, Value* vp);
 
-#if JS_HAS_INTL_API
-
-
-
-
-
-
-[[nodiscard]] extern bool intl_toLocaleLowerCase(JSContext* cx, unsigned argc,
-                                                 Value* vp);
-
-
-
-
-
-
-
-[[nodiscard]] extern bool intl_toLocaleUpperCase(JSContext* cx, unsigned argc,
-                                                 Value* vp);
-#endif
-
 ArrayObject* StringSplitString(JSContext* cx, HandleString str,
                                HandleString sep, uint32_t limit);
 
