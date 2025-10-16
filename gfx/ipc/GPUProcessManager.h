@@ -103,10 +103,7 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   
   
   
-  
-  
-  
-  nsresult EnsureGPUReady(bool aRetryAfterFallback = true);
+  nsresult EnsureGPUReady();
 
   already_AddRefed<CompositorSession> CreateTopLevelCompositor(
       nsIWidget* aWidget, WebRenderLayerManager* aLayerManager,

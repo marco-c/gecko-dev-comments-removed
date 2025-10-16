@@ -1567,8 +1567,7 @@ already_AddRefed<WebRenderLayerManager> nsIWidget::CreateCompositorSession(
         retry = true;
         DestroyCompositor();
         
-        gfx::GPUProcessManager::Get()->DisableWebRender(
-            wr::WebRenderError::INITIALIZE, error);
+        gpm->DisableWebRender(wr::WebRenderError::INITIALIZE, error);
       }
     }
 
