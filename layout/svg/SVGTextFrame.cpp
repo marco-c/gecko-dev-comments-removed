@@ -3163,25 +3163,14 @@ void SVGTextFrame::PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
     return;
   }
 
-  nsPresContext* presContext = PresContext();
+  if (IsSubtreeDirty()) {
+    return;
+  }
 
   if (HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
     
     
-    
-    
-    if (presContext->PresShell()->InDrawWindowNotFlushing() &&
-        IsSubtreeDirty()) {
-      return;
-    }
-    
-    
     UpdateGlyphPositioning();
-  } else if (IsSubtreeDirty()) {
-    
-    
-    
-    return;
   }
 
   const float epsilon = 0.0001;
@@ -3203,6 +3192,7 @@ void SVGTextFrame::PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
   
   
   
+  nsPresContext* presContext = PresContext();
   auto auPerDevPx = presContext->AppUnitsPerDevPixel();
   float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(auPerDevPx);
   gfxMatrix canvasTMForChildren = aTransform;
