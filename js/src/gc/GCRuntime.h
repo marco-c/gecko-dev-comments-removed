@@ -1055,9 +1055,6 @@ class GCRuntime {
   GCSchedulingTunables tunables;
   GCSchedulingState schedulingState;
   MainThreadData<bool> fullGCRequested;
-  
-  
-  MainThreadData<bool> finishMarkingDuringSweeping;
 
   
   MainThreadData<double> helperThreadRatio;
