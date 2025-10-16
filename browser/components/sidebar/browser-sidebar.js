@@ -2294,12 +2294,18 @@ var SidebarController = {
     switch (e.type) {
       case "popupshown":
         
-        if (e.composedTarget.id !== "tab-preview-panel") {
+        if (
+          e.composedTarget.id !== "tab-preview-panel" &&
+          e.composedTarget.tagName !== "tooltip"
+        ) {
           this._addHoverStateBlocker();
         }
         break;
       case "popuphidden":
-        if (e.composedTarget.id !== "tab-preview-panel") {
+        if (
+          e.composedTarget.id !== "tab-preview-panel" &&
+          e.composedTarget.tagName !== "tooltip"
+        ) {
           await this._removeHoverStateBlocker();
         }
         break;
