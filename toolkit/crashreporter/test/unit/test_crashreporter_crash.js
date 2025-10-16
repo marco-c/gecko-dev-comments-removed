@@ -113,6 +113,7 @@ add_task(async function run_test() {
       
       
       Services.prefs.setBoolPref("termsofuse.bypassNotification", true);
+      Services.prefs.setBoolPref("browser.preonboarding.enabled", false);
       Services.prefs.setBoolPref(
         "datareporting.policy.dataSubmissionPolicyBypassNotification",
         true
