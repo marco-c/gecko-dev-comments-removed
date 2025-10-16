@@ -158,5 +158,11 @@ JS_PUBLIC_API JSObject* MaybeGetHostDefinedGlobalFromJSMicroTask(
 
 JS_PUBLIC_API JSObject* MaybeGetPromiseFromJSMicroTask(const MicroTask& entry);
 
+
+
+
+JS_PUBLIC_API bool GetFlowIdFromJSMicroTask(const MicroTask& entry,
+                                            uint64_t* uid);
+
 }  
 #endif 
