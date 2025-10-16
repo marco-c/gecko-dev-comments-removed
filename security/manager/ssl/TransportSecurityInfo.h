@@ -33,7 +33,7 @@ class TransportSecurityInfo : public nsITransportSecurityInfo {
  public:
   TransportSecurityInfo(
       uint32_t aSecurityState, PRErrorCode aErrorCode,
-      nsTArray<RefPtr<nsIX509Cert>>&& aFailedCertChain,
+      nsTArray<RefPtr<nsIX509Cert>>&& aHandshakeCertificates,
       nsCOMPtr<nsIX509Cert>& aServerCert,
       nsTArray<RefPtr<nsIX509Cert>>&& aSucceededCertChain,
       Maybe<uint16_t> aCipherSuite, Maybe<nsCString> aKeaGroupName,
@@ -61,8 +61,10 @@ class TransportSecurityInfo : public nsITransportSecurityInfo {
   const uint32_t mSecurityState;
   const PRErrorCode mErrorCode;
   
-  const nsTArray<RefPtr<nsIX509Cert>> mFailedCertChain;
+  const nsTArray<RefPtr<nsIX509Cert>> mHandshakeCertificates;
+  
   const nsCOMPtr<nsIX509Cert> mServerCert;
+  
   const nsTArray<RefPtr<nsIX509Cert>> mSucceededCertChain;
   const mozilla::Maybe<uint16_t> mCipherSuite;
   const mozilla::Maybe<nsCString> mKeaGroupName;
