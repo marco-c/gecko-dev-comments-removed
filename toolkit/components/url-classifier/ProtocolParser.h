@@ -219,6 +219,18 @@ class ProtocolParserProtobufV5 final : public ProtocolParser {
                                  const v5::RiceDeltaEncoded32Bit& aAddition);
 
   
+  nsresult ProcessAddition8Bytes(TableUpdateV4& aTableUpdate,
+                                 const v5::RiceDeltaEncoded64Bit& aAddition);
+
+  
+  nsresult ProcessAddition16Bytes(TableUpdateV4& aTableUpdate,
+                                  const v5::RiceDeltaEncoded128Bit& aAddition);
+
+  
+  nsresult ProcessAddition32Bytes(TableUpdateV4& aTableUpdate,
+                                  const v5::RiceDeltaEncoded256Bit& aAddition);
+
+  
   nsresult ProcessRemoval(TableUpdateV4& aTableUpdate,
                           const v5::RiceDeltaEncoded32Bit& aRemoval);
 };
