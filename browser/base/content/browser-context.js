@@ -315,7 +315,7 @@ document.addEventListener(
           
           
           
-          if (gContextMenu.textDirectiveTarget) {
+          if (gContextMenu.isContentSelected || gContextMenu.hasTextFragments) {
             gContextMenu.getTextDirective();
           }
           break;
