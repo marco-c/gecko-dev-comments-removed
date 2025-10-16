@@ -62,8 +62,7 @@
 
 
 
-#include <stddef.h>
-
+#include <cstddef>
 #include <type_traits>
 #include <utility>
 
@@ -434,15 +433,15 @@ constexpr bool operator!=(const T& aLhs, const NotNull<U>& aRhs) {
 
 
 template <typename T>
-bool operator==(const NotNull<T>&, decltype(nullptr)) = delete;
+bool operator==(const NotNull<T>&, std::nullptr_t) = delete;
 template <typename T>
-bool operator!=(const NotNull<T>&, decltype(nullptr)) = delete;
+bool operator!=(const NotNull<T>&, std::nullptr_t) = delete;
 
 
 template <typename T>
-bool operator==(decltype(nullptr), const NotNull<T>&) = delete;
+bool operator==(std::nullptr_t, const NotNull<T>&) = delete;
 template <typename T>
-bool operator!=(decltype(nullptr), const NotNull<T>&) = delete;
+bool operator!=(std::nullptr_t, const NotNull<T>&) = delete;
 
 }  
 
