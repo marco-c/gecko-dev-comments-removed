@@ -243,10 +243,6 @@ class CanvasTranslator final : public gfx::InlineTranslator,
 
   void AddSourceSurface(gfx::ReferencePtr aRefPtr,
                         gfx::SourceSurface* aSurface) final {
-    if (mMappedSurface == aRefPtr) {
-      mPreparedMap = nullptr;
-      mMappedSurface = nullptr;
-    }
     RemoveDataSurface(aRefPtr);
     InlineTranslator::AddSourceSurface(aRefPtr, aSurface);
   }
@@ -258,10 +254,6 @@ class CanvasTranslator final : public gfx::InlineTranslator,
 
 
   void RemoveSourceSurface(gfx::ReferencePtr aRefPtr) final {
-    if (mMappedSurface == aRefPtr) {
-      mPreparedMap = nullptr;
-      mMappedSurface = nullptr;
-    }
     RemoveDataSurface(aRefPtr);
     InlineTranslator::RemoveSourceSurface(aRefPtr);
   }
@@ -300,24 +292,6 @@ class CanvasTranslator final : public gfx::InlineTranslator,
 
 
   void RemoveDataSurface(gfx::ReferencePtr aRefPtr);
-
-  
-
-
-
-
-
-  void SetPreparedMap(gfx::ReferencePtr aSurface,
-                      UniquePtr<gfx::DataSourceSurface::ScopedMap> aMap);
-
-  
-
-
-
-
-
-  UniquePtr<gfx::DataSourceSurface::ScopedMap> GetPreparedMap(
-      gfx::ReferencePtr aSurface);
 
   void PrepareShmem(const RemoteTextureOwnerId aTextureOwnerId);
 
@@ -600,8 +574,6 @@ class CanvasTranslator final : public gfx::InlineTranslator,
   void RemoveTextureKeepAlive(const RemoteTextureOwnerId& aId);
 
   nsRefPtrHashtable<nsPtrHashKey<void>, gfx::DataSourceSurface> mDataSurfaces;
-  gfx::ReferencePtr mMappedSurface;
-  UniquePtr<gfx::DataSourceSurface::ScopedMap> mPreparedMap;
   Atomic<bool> mDeactivated{false};
   Atomic<bool> mBlocked{false};
   Atomic<bool> mIPDLClosed{false};
