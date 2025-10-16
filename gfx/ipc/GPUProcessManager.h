@@ -97,6 +97,15 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
   nsresult EnsureGPUReady(bool aRetryAfterFallback = true);
 
   already_AddRefed<CompositorSession> CreateTopLevelCompositor(
@@ -231,6 +240,8 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   void OnPreferenceChange(const char16_t* aData);
   void ScreenInformationChanged();
 
+  bool IsGPUReady() const;
+
   bool CreateContentCompositorManager(
       mozilla::ipc::EndpointProcInfo aOtherProcess,
       dom::ContentParentId aChildId, uint32_t aNamespace,
@@ -319,7 +330,7 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
 #endif
 
 #if defined(MOZ_WIDGET_ANDROID)
-  already_AddRefed<UiCompositorControllerChild> CreateUiCompositorController(
+  RefPtr<UiCompositorControllerChild> CreateUiCompositorController(
       nsBaseWidget* aWidget, const LayersId aId);
 #endif  
 
