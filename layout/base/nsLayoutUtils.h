@@ -2166,8 +2166,8 @@ class nsLayoutUtils {
 
 
   using TransparencyMode = mozilla::widget::TransparencyMode;
-  static TransparencyMode GetFrameTransparency(nsIFrame* aBackgroundFrame,
-                                               nsIFrame* aCSSRootFrame);
+  static TransparencyMode GetFrameTransparency(const nsIFrame* aBackgroundFrame,
+                                               const nsIFrame* aCSSRootFrame);
 
   
 
