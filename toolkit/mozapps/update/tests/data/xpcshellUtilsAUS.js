@@ -154,6 +154,7 @@ const APP_UPDATE_SJS_HOST = "http://127.0.0.1";
 const APP_UPDATE_SJS_PATH = "/" + REL_PATH_DATA + "app_update.sjs";
 
 var gIncrementalDownloadErrorType;
+var gIncrementalDownloadCancelOk = false;
 
 var gResponseBody;
 
@@ -5174,7 +5175,13 @@ IncrementalDownload.prototype = {
 
   
   cancel(_aStatus) {
-    throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
+    
+    
+    
+    
+    if (!gIncrementalDownloadCancelOk) {
+      throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
+    }
   },
   suspend() {
     throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
@@ -5713,12 +5720,19 @@ const EXIT_CODE = ${JSON.stringify(TestUpdateMutexCrossProcess.EXIT_CODE)};
 
 
 
+
+
+
+
+
+
 async function downloadUpdate({
   appUpdateAuto = true,
   checkWithAUS,
   expectDownloadRestriction,
   expectedCheckResult,
   expectedDownloadResult = Cr.NS_OK,
+  expectedDownloadStartResult = Ci.nsIApplicationUpdateService.DOWNLOAD_SUCCESS,
   incrementalDownloadErrorType = 3,
   onDownloadStartCallback,
   slowDownload,
@@ -5736,7 +5750,10 @@ async function downloadUpdate({
         "update-download-restriction-hit"
       );
     });
-  } else {
+  } else if (
+    expectedDownloadStartResult ==
+    Ci.nsIApplicationUpdateService.DOWNLOAD_SUCCESS
+  ) {
     downloadFinishedPromise = new Promise(resolve =>
       gAUS.addDownloadListener({
         onStartRequest: _aRequest => {},
@@ -5800,6 +5817,9 @@ async function downloadUpdate({
 
     initMockIncrementalDownload();
     gIncrementalDownloadErrorType = incrementalDownloadErrorType;
+    gIncrementalDownloadCancelOk =
+      expectedDownloadStartResult !=
+      Ci.nsIApplicationUpdateService.DOWNLOAD_SUCCESS;
 
     update = await gAUS.selectUpdate(updates);
   }
@@ -5824,9 +5844,12 @@ async function downloadUpdate({
     const result = await gAUS.downloadUpdate(update);
     Assert.equal(
       result,
-      Ci.nsIApplicationUpdateService.DOWNLOAD_SUCCESS,
-      "nsIApplicationUpdateService:downloadUpdate should succeed"
+      expectedDownloadStartResult,
+      "nsIApplicationUpdateService:downloadUpdate status should be correct"
     );
+    if (result != Ci.nsIApplicationUpdateService.DOWNLOAD_SUCCESS) {
+      return;
+    }
   }
 
   if (waitToStartPromise) {
@@ -5855,4 +5878,61 @@ async function downloadUpdate({
     
     await TestUtils.waitForTick();
   }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function holdFileOpen(file, shareMode) {
+  const testHelper = getTestDirFile("test_file_hold_open.exe", false);
+
+  const args = [file.path];
+  if (shareMode) {
+    args.push(shareMode);
+  }
+
+  const proc = await Subprocess.call({
+    command: testHelper.path,
+    arguments: args,
+  });
+  const isLocked = await proc.stdout.readString();
+
+  if (isLocked.trim() != "Locked") {
+    throw new Error("Expected status to be Locked, found " + isLocked);
+  }
+
+  return async () => {
+    await proc.stdin.write("q");
+    const rc = await proc.wait(1000);
+    Assert.equal(rc.exitCode, 0, "Expected process to have successful exit");
+  };
+}
+
+async function setFileModifiedAge(outfile, ageInSeconds) {
+  const outfilePath = outfile.path;
+  const testHelper = getTestDirFile("test_file_update_mtime.exe");
+
+  let proc = await Subprocess.call({
+    command: testHelper.path,
+    arguments: [outfilePath, ageInSeconds],
+  });
+
+  let stdout;
+  while ((stdout = await proc.stdout.readString())) {
+    logTestInfo(stdout);
+  }
+
+  const rc = await proc.wait(1000); 
+  Assert.equal(rc.exitCode, 0, "Expected process to have successful exit");
 }
