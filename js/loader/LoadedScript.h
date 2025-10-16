@@ -269,9 +269,14 @@ class LoadedScript : public nsIMemoryReporter {
     mStencil = aStencil;
   }
 
-  void ClearStencil() {
-    mStencil = nullptr;
-  }
+  void ClearStencil() { mStencil = nullptr; }
+
+  
+  
+  bool HasDiskCacheReference() const { return !!mCacheInfo; }
+
+  
+  void DropDiskCacheReference() { mCacheInfo = nullptr; }
 
  public:
   
@@ -319,6 +324,10 @@ class LoadedScript : public nsIMemoryReporter {
   
   RefPtr<Stencil> mStencil;
 
+  
+  
+  
+  
   
   nsCOMPtr<nsICacheInfoChannel> mCacheInfo;
 
@@ -422,9 +431,7 @@ class LoadedScriptDelegate {
   void SetStencil(Stencil* aStencil) {
     GetLoadedScript()->SetStencil(aStencil);
   }
-  void ClearStencil() {
-    GetLoadedScript()->ClearStencil();
-  }
+  void ClearStencil() { GetLoadedScript()->ClearStencil(); }
 };
 
 class ClassicScript final : public LoadedScript {
