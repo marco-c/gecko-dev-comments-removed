@@ -135,7 +135,7 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
   struct BufferMapData {
-    std::shared_ptr<ipc::SharedMemoryMapping> mShmem;
+    ipc::SharedMemoryMapping mShmem;
     
     bool mHasMapFlags;
     uint64_t mMappedOffset;
@@ -219,7 +219,7 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
 
   void ReportError(RawId aDeviceId, GPUErrorFilter, const nsCString& message);
 
-  nsTArray<std::shared_ptr<ipc::SharedMemoryMapping>> mTempMappings;
+  nsTArray<Maybe<ipc::shared_memory::MutableMapping>> mTempMappings;
 
   
   
