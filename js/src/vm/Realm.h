@@ -807,9 +807,7 @@ class JS::Realm : public JS::shadow::Realm {
 
   
   
-  void setLocaleOverride(const char* locale) {
-    behaviors_.setLocaleOverride(locale);
-  }
+  void setLocaleOverride(const char* locale);
 
   
   

@@ -8823,6 +8823,106 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringToUpperCase() {
   return AttachDecision::Attach;
 }
 
+AttachDecision InlinableNativeIRGenerator::tryAttachStringToLocaleLowerCase() {
+#if JS_HAS_INTL_API
+  
+  if (args_.length() != 0) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (!thisval_.isString()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (cx_->realm()->behaviors().localeOverride()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (!cx_->runtime()
+           ->runtimeFuses.ref()
+           .defaultLocaleHasDefaultCaseMappingFuse.intact()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  Int32OperandId argcId = initializeInputOperand();
+
+  
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
+
+  
+  ValOperandId thisValId = loadThis(calleeId);
+  StringOperandId strId = writer.guardToString(thisValId);
+
+  
+  writer.guardRuntimeFuse(
+      RuntimeFuses::FuseIndex::DefaultLocaleHasDefaultCaseMappingFuse);
+
+  
+  writer.stringToLowerCaseResult(strId);
+  writer.returnFromIC();
+
+  trackAttached("StringToLocaleLowerCase");
+  return AttachDecision::Attach;
+#else
+  
+  return AttachDecision::Attach;
+#endif
+}
+
+AttachDecision InlinableNativeIRGenerator::tryAttachStringToLocaleUpperCase() {
+#if JS_HAS_INTL_API
+  
+  if (args_.length() != 0) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (!thisval_.isString()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (cx_->realm()->behaviors().localeOverride()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (!cx_->runtime()
+           ->runtimeFuses.ref()
+           .defaultLocaleHasDefaultCaseMappingFuse.intact()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  Int32OperandId argcId = initializeInputOperand();
+
+  
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
+
+  
+  ValOperandId thisValId = loadThis(calleeId);
+  StringOperandId strId = writer.guardToString(thisValId);
+
+  
+  writer.guardRuntimeFuse(
+      RuntimeFuses::FuseIndex::DefaultLocaleHasDefaultCaseMappingFuse);
+
+  
+  writer.stringToUpperCaseResult(strId);
+  writer.returnFromIC();
+
+  trackAttached("StringToLocaleUpperCase");
+  return AttachDecision::Attach;
+#else
+  
+  return AttachDecision::Attach;
+#endif
+}
+
 AttachDecision InlinableNativeIRGenerator::tryAttachStringTrim() {
   
   if (args_.length() != 0) {
@@ -13126,6 +13226,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachStringToLowerCase();
     case InlinableNative::StringToUpperCase:
       return tryAttachStringToUpperCase();
+    case InlinableNative::StringToLocaleLowerCase:
+      return tryAttachStringToLocaleLowerCase();
+    case InlinableNative::StringToLocaleUpperCase:
+      return tryAttachStringToLocaleUpperCase();
     case InlinableNative::StringTrim:
       return tryAttachStringTrim();
     case InlinableNative::StringTrimStart:
