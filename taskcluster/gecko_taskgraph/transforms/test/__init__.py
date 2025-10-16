@@ -108,7 +108,9 @@ test_description_schema = Schema(
         
         
         
-        Optional("test-manifest-loader"): Any(None, *list(manifest_loaders)),
+        Optional("test-manifest-loader"): optionally_keyed_by(
+            "test-platform", Any(None, *list(manifest_loaders))
+        ),
         
         
         Optional("expires-after"): str,
@@ -403,6 +405,7 @@ def resolve_keys(config, tasks):
         "run-without-variant",
         "suite",
         "suite.name",
+        "test-manifest-loader",
         "use-caches",
     )
     for task in tasks:
