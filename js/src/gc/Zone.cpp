@@ -144,7 +144,7 @@ void js::TrackedAllocPolicy<kind>::decMemory(size_t nbytes) {
     
     
     JS::GCContext* gcx = TlsGCContext.get();
-    updateRetainedSize = gcx->isFinalizing();
+    updateRetainedSize = gcx->isSweeping() || gcx->isFinalizing();
   }
 
   zone_->decNonGCMemory(this, nbytes, MemoryUse::TrackedAllocPolicy,
