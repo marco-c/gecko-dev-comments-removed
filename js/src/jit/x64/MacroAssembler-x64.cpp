@@ -874,10 +874,12 @@ void MacroAssemblerX64::convertDoubleToPtr(FloatRegister src, Register dest,
 
 
 
-void MacroAssemblerX64::flexibleDivMod64(Register rhs, Register lhsOutput,
-                                         bool isUnsigned, bool isDiv) {
-  if (lhsOutput == rhs) {
-    movq(ImmWord(isDiv ? 1 : 0), lhsOutput);
+
+void MacroAssemblerX64::flexibleDivMod64(Register lhs, Register rhs,
+                                         Register output, bool isUnsigned,
+                                         bool isDiv) {
+  if (lhs == rhs) {
+    movq(ImmWord(isDiv ? 1 : 0), output);
     return;
   }
 
@@ -890,14 +892,16 @@ void MacroAssemblerX64::flexibleDivMod64(Register rhs, Register lhsOutput,
   LiveGeneralRegisterSet preserve;
   preserve.add(rdx);
   preserve.add(rax);
-  preserve.add(regForRhs);
+  if (rhs != regForRhs) {
+    preserve.add(regForRhs);
+  }
 
-  preserve.takeUnchecked(lhsOutput);
+  preserve.takeUnchecked(output);
 
   asMasm().PushRegsInMask(preserve);
 
   
-  asMasm().moveRegPair(lhsOutput, rhs, rax, regForRhs);
+  asMasm().moveRegPair(lhs, rhs, rax, regForRhs);
   if (oom()) {
     return;
   }
@@ -912,8 +916,8 @@ void MacroAssemblerX64::flexibleDivMod64(Register rhs, Register lhsOutput,
   }
 
   Register result = isDiv ? rax : rdx;
-  if (result != lhsOutput) {
-    movq(result, lhsOutput);
+  if (result != output) {
+    movq(result, output);
   }
 
   asMasm().PopRegsInMask(preserve);
@@ -1048,15 +1052,15 @@ void MacroAssembler::moveValue(const Value& src, const ValueOperand& dest) {
 
 
 void MacroAssembler::flexibleQuotientPtr(
-    Register rhs, Register srcDest, bool isUnsigned,
+    Register lhs, Register rhs, Register dest, bool isUnsigned,
     const LiveRegisterSet& volatileLiveRegs) {
-  flexibleDivMod64(rhs, srcDest, isUnsigned,  true);
+  flexibleDivMod64(lhs, rhs, dest, isUnsigned,  true);
 }
 
 void MacroAssembler::flexibleRemainderPtr(
-    Register rhs, Register srcDest, bool isUnsigned,
+    Register lhs, Register rhs, Register dest, bool isUnsigned,
     const LiveRegisterSet& volatileLiveRegs) {
-  flexibleDivMod64(rhs, srcDest, isUnsigned,  false);
+  flexibleDivMod64(lhs, rhs, dest, isUnsigned,  false);
 }
 
 

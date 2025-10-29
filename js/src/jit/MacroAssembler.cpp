@@ -1996,8 +1996,7 @@ void MacroAssembler::loadInt32ToStringWithBase(
   branch32(Assembler::AboveOrEqual, input, scratch1, fail);
   {
     
-    move32(input, scratch1);
-    flexibleDivMod32(base, scratch1, scratch2, true, volatileRegs);
+    flexibleDivMod32(input, base, scratch1, scratch2, true, volatileRegs);
 
     
     toChar(scratch1);
