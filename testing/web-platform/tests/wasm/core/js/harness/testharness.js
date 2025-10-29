@@ -12,9 +12,8 @@
 
 
 
-(function ()
+(function (global_scope)
 {
-    var debug = false;
     
     var settings = {
         output:true,
@@ -23,15 +22,13 @@
             "long":60000
         },
         test_timeout:null,
-        message_events: ["start", "test_state", "result", "completion"]
+        message_events: ["start", "test_state", "result", "completion"],
+        debug: false,
     };
 
     var xhtml_ns = "http://www.w3.org/1999/xhtml";
 
     
-
-
-
 
 
 
@@ -66,6 +63,7 @@
         this.all_loaded = false;
         var this_obj = this;
         this.message_events = [];
+        this.dispatched_messages = [];
 
         this.message_functions = {
             start: [add_start_callback, remove_start_callback,
@@ -88,23 +86,43 @@
                                              test: test.structured_clone()});
                      }],
             completion: [add_completion_callback, remove_completion_callback,
-                         function (tests, harness_status) {
+                         function (tests, harness_status, asserts) {
                              var cloned_tests = map(tests, function(test) {
                                  return test.structured_clone();
                              });
                              this_obj._dispatch("completion_callback", [tests, harness_status],
                                                 {type: "complete",
                                                  tests: cloned_tests,
-                                                 status: harness_status.structured_clone()});
+                                                 status: harness_status.structured_clone(),
+                                                 asserts: asserts.map(assert => assert.structured_clone())});
                          }]
-        }
+        };
 
         on_event(window, 'load', function() {
+          setTimeout(() => {
             this_obj.all_loaded = true;
+            if (tests.all_done()) {
+              tests.complete();
+            }
+          },0);
+        });
+
+        on_event(window, 'message', function(event) {
+            if (event.data && event.data.type === "getmessages" && event.source) {
+                
+                
+                
+                
+                for (var i = 0; i < this_obj.dispatched_messages.length; ++i)
+                {
+                    event.source.postMessage(this_obj.dispatched_messages[i], "*");
+                }
+            }
         });
     }
 
     WindowTestEnvironment.prototype._dispatch = function(selector, callback_args, message_arg) {
+        this.dispatched_messages.push(message_arg);
         this._forEach_windows(
                 function(w, same_origin) {
                     if (same_origin) {
@@ -118,14 +136,10 @@
                         if (has_selector) {
                             try {
                                 w[selector].apply(undefined, callback_args);
-                            } catch (e) {
-                                if (debug) {
-                                    throw e;
-                                }
-                            }
+                            } catch (e) {}
                         }
                     }
-                    if (supports_post_message(w) && w !== self) {
+                    if (w !== self) {
                         w.postMessage(message_arg, "*");
                     }
                 });
@@ -142,33 +156,14 @@
             var w = self;
             var i = 0;
             var so;
-            var origins = location.ancestorOrigins;
             while (w != w.parent) {
                 w = w.parent;
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                if (origins) {
-                    so = (location.origin == origins[i]);
-                } else {
-                    so = is_same_origin(w);
-                }
+                so = is_same_origin(w);
                 cache.push([w, so]);
                 i++;
             }
             w = window.opener;
             if (w) {
-                
-                
-                
                 cache.push([w, is_same_origin(w)]);
             }
             this.window_cache = cache;
@@ -198,8 +193,8 @@
             this_obj.output_handler.show_status();
         });
 
-        add_completion_callback(function (tests, harness_status) {
-            this_obj.output_handler.show_results(tests, harness_status);
+        add_completion_callback(function (tests, harness_status, asserts_run) {
+            this_obj.output_handler.show_results(tests, harness_status, asserts_run);
         });
         this.setup_messages(settings.message_events);
     };
@@ -216,15 +211,12 @@
             }
         });
         this.message_events = new_events;
-    }
+    };
 
     WindowTestEnvironment.prototype.next_default_test_name = function() {
-        
-        var title = document.getElementsByTagName("title")[0];
-        var prefix = (title && title.firstChild && title.firstChild.data) || "Untitled";
         var suffix = this.name_counter > 0 ? " " + this.name_counter : "";
         this.name_counter++;
-        return prefix + suffix;
+        return get_title() + suffix;
     };
 
     WindowTestEnvironment.prototype.on_new_harness_properties = function(properties) {
@@ -241,18 +233,14 @@
     WindowTestEnvironment.prototype.test_timeout = function() {
         var metas = document.getElementsByTagName("meta");
         for (var i = 0; i < metas.length; i++) {
-            if (metas[i].name == "timeout") {
-                if (metas[i].content == "long") {
+            if (metas[i].name === "timeout") {
+                if (metas[i].content === "long") {
                     return settings.harness_timeout.long;
                 }
                 break;
             }
         }
         return settings.harness_timeout.normal;
-    };
-
-    WindowTestEnvironment.prototype.global_scope = function() {
-        return window;
     };
 
     
@@ -298,7 +286,7 @@
     WorkerTestEnvironment.prototype.next_default_test_name = function() {
         var suffix = this.name_counter > 0 ? " " + this.name_counter : "";
         this.name_counter++;
-        return "Untitled" + suffix;
+        return get_title() + suffix;
     };
 
     WorkerTestEnvironment.prototype.on_new_harness_properties = function() {};
@@ -327,14 +315,15 @@
                     });
                 });
         add_completion_callback(
-                function(tests, harness_status) {
+                function(tests, harness_status, asserts) {
                     this_obj._dispatch({
                         type: "complete",
                         tests: map(tests,
                             function(test) {
                                 return test.structured_clone();
                             }),
-                        status: harness_status.structured_clone()
+                        status: harness_status.structured_clone(),
+                        asserts: asserts.map(assert => assert.structured_clone()),
                     });
                 });
     };
@@ -345,10 +334,6 @@
         
         
         return null;
-    };
-
-    WorkerTestEnvironment.prototype.global_scope = function() {
-        return self;
     };
 
     
@@ -389,7 +374,7 @@
         self.addEventListener("connect",
                 function(message_event) {
                     this_obj._add_message_port(message_event.source);
-                });
+                }, false);
     }
     SharedWorkerTestEnvironment.prototype = Object.create(WorkerTestEnvironment.prototype);
 
@@ -414,37 +399,34 @@
         var this_obj = this;
         self.addEventListener("message",
                 function(event) {
-                    if (event.data.type && event.data.type === "connect") {
-                        if (event.ports && event.ports[0]) {
-                            
-                            
-                            
-                            
-                            
-                            this_obj._add_message_port(event.ports[0]);
-                            event.ports[0].start();
-                        } else {
-                            
-                            
-                            
-                            this_obj._add_message_port(event.source);
-                        }
+                    if (event.data && event.data.type && event.data.type === "connect") {
+                        this_obj._add_message_port(event.source);
                     }
-                });
+                }, false);
 
         
         
         
         
         
-        on_event(self, "install",
-                function(event) {
-                    this_obj.all_loaded = true;
-                    if (this_obj.on_loaded_callback) {
-                        this_obj.on_loaded_callback();
-                    }
-                });
+        
+        
+        
+        
+        
+        
+        on_event(self, "install", on_all_loaded);
+        on_event(self, "message", on_all_loaded);
+        function on_all_loaded() {
+            if (this_obj.all_loaded)
+                return;
+            this_obj.all_loaded = true;
+            if (this_obj.on_loaded_callback) {
+              this_obj.on_loaded_callback();
+            }
+        }
     }
+
     ServiceWorkerTestEnvironment.prototype = Object.create(WorkerTestEnvironment.prototype);
 
     ServiceWorkerTestEnvironment.prototype.add_on_loaded_callback = function(callback) {
@@ -455,101 +437,345 @@
         }
     };
 
+    
+
+
+
+
+
+
+    function ShadowRealmTestEnvironment() {
+        WorkerTestEnvironment.call(this);
+        this.all_loaded = false;
+        this.on_loaded_callback = null;
+    }
+
+    ShadowRealmTestEnvironment.prototype = Object.create(WorkerTestEnvironment.prototype);
+
+    
+
+
+
+
+
+
+
+
+
+
+    ShadowRealmTestEnvironment.prototype.begin = function(message_destination) {
+        if (this.all_loaded) {
+            throw new Error("Tried to start a shadow realm test environment after it has already started");
+        }
+        var fakeMessagePort = {};
+        fakeMessagePort.postMessage = message_destination;
+        this._add_message_port(fakeMessagePort);
+        this.all_loaded = true;
+        if (this.on_loaded_callback) {
+            this.on_loaded_callback();
+        }
+    };
+
+    ShadowRealmTestEnvironment.prototype.add_on_loaded_callback = function(callback) {
+        if (this.all_loaded) {
+            callback();
+        } else {
+            this.on_loaded_callback = callback;
+        }
+    };
+
+    
+
+
+
+
+
+    function ShellTestEnvironment() {
+        this.name_counter = 0;
+        this.all_loaded = false;
+        this.on_loaded_callback = null;
+        Promise.resolve().then(function() {
+            this.all_loaded = true;
+            if (this.on_loaded_callback) {
+                this.on_loaded_callback();
+            }
+        }.bind(this));
+        this.message_list = [];
+        this.message_ports = [];
+    }
+
+    ShellTestEnvironment.prototype.next_default_test_name = function() {
+        var suffix = this.name_counter > 0 ? " " + this.name_counter : "";
+        this.name_counter++;
+        return get_title() + suffix;
+    };
+
+    ShellTestEnvironment.prototype.on_new_harness_properties = function() {};
+
+    ShellTestEnvironment.prototype.on_tests_ready = function() {};
+
+    ShellTestEnvironment.prototype.add_on_loaded_callback = function(callback) {
+        if (this.all_loaded) {
+            callback();
+        } else {
+            this.on_loaded_callback = callback;
+        }
+    };
+
+    ShellTestEnvironment.prototype.test_timeout = function() {
+        
+        
+        return null;
+    };
+
     function create_test_environment() {
-        if ('document' in self) {
+        if ('document' in global_scope) {
             return new WindowTestEnvironment();
         }
-        if ('DedicatedWorkerGlobalScope' in self &&
-            self instanceof DedicatedWorkerGlobalScope) {
+        if ('DedicatedWorkerGlobalScope' in global_scope &&
+            global_scope instanceof DedicatedWorkerGlobalScope) {
             return new DedicatedWorkerTestEnvironment();
         }
-        if ('SharedWorkerGlobalScope' in self &&
-            self instanceof SharedWorkerGlobalScope) {
+        if ('SharedWorkerGlobalScope' in global_scope &&
+            global_scope instanceof SharedWorkerGlobalScope) {
             return new SharedWorkerTestEnvironment();
         }
-        if ('ServiceWorkerGlobalScope' in self &&
-            self instanceof ServiceWorkerGlobalScope) {
+        if ('ServiceWorkerGlobalScope' in global_scope &&
+            global_scope instanceof ServiceWorkerGlobalScope) {
             return new ServiceWorkerTestEnvironment();
         }
-        if ('WorkerGlobalScope' in self &&
-            self instanceof WorkerGlobalScope) {
+        if ('WorkerGlobalScope' in global_scope &&
+            global_scope instanceof WorkerGlobalScope) {
             return new DedicatedWorkerTestEnvironment();
         }
+        
 
-        throw new Error("Unsupported test environment");
+
+
+
+
+        if (global_scope.GLOBAL && global_scope.GLOBAL.isShadowRealm()) {
+            return new ShadowRealmTestEnvironment();
+        }
+
+        return new ShellTestEnvironment();
     }
 
     var test_environment = create_test_environment();
 
     function is_shared_worker(worker) {
-        return 'SharedWorker' in self && worker instanceof SharedWorker;
+        return 'SharedWorker' in global_scope && worker instanceof SharedWorker;
     }
 
     function is_service_worker(worker) {
-        return 'ServiceWorker' in self && worker instanceof ServiceWorker;
+        
+        
+        return 'ServiceWorker' in global_scope &&
+            Object.prototype.toString.call(worker) === '[object ServiceWorker]';
+    }
+
+    var seen_func_name = Object.create(null);
+
+    function get_test_name(func, name)
+    {
+        if (name) {
+            return name;
+        }
+
+        if (func) {
+            var func_code = func.toString();
+
+            
+            var arrow = func_code.match(/^\(\)\s*=>\s*(?:{(.*)}\s*|(.*))$/);
+
+            
+            if (arrow !== null && !/[\u000A\u000D\u2028\u2029]/.test(func_code)) {
+                var trimmed = (arrow[1] !== undefined ? arrow[1] : arrow[2]).trim();
+                
+                trimmed = trimmed.replace(/^([^;]*)(;\s*)+$/, "$1");
+
+                if (trimmed) {
+                    let name = trimmed;
+                    if (seen_func_name[trimmed]) {
+                        
+                        name += " " + seen_func_name[trimmed];
+                    } else {
+                        seen_func_name[trimmed] = 0;
+                    }
+                    seen_func_name[trimmed] += 1;
+                    return name;
+                }
+            }
+        }
+
+        return test_environment.next_default_test_name();
     }
 
     
+
+
+
+
+
+
+    
+
+
+
+
+
+
+
 
 
 
     function test(func, name, properties)
     {
-        var test_name = name ? name : test_environment.next_default_test_name();
-        properties = properties ? properties : {};
+        if (tests.promise_setup_called) {
+            tests.status.status = tests.status.ERROR;
+            tests.status.message = '`test` invoked after `promise_setup`';
+            tests.complete();
+        }
+        var test_name = get_test_name(func, name);
         var test_obj = new Test(test_name, properties);
-        test_obj.step(func, test_obj, test_obj);
+        var value = test_obj.step(func, test_obj, test_obj);
+
+        if (value !== undefined) {
+            var msg = 'Test named "' + test_name +
+                '" passed a function to `test` that returned a value.';
+
+            try {
+                if (value && typeof value.then === 'function') {
+                    msg += ' Consider using `promise_test` instead when ' +
+                        'using Promises or async/await.';
+                }
+            } catch (err) {}
+
+            tests.status.status = tests.status.ERROR;
+            tests.status.message = msg;
+        }
+
         if (test_obj.phase === test_obj.phases.STARTED) {
             test_obj.done();
         }
     }
 
+    
+
+
+
+
+
+
+
+
+
+
     function async_test(func, name, properties)
     {
+        if (tests.promise_setup_called) {
+            tests.status.status = tests.status.ERROR;
+            tests.status.message = '`async_test` invoked after `promise_setup`';
+            tests.complete();
+        }
         if (typeof func !== "function") {
             properties = name;
             name = func;
             func = null;
         }
-        var test_name = name ? name : test_environment.next_default_test_name();
-        properties = properties ? properties : {};
+        var test_name = get_test_name(func, name);
         var test_obj = new Test(test_name, properties);
         if (func) {
-            test_obj.step(func, test_obj, test_obj);
+            var value = test_obj.step(func, test_obj, test_obj);
+
+            
+            
+            
+            
+            
+            
+            
+            
+            if (value !== undefined) {
+                var msg = 'Test named "' + test_name +
+                    '" passed a function to `async_test` that returned a value.';
+
+                try {
+                    if (value && typeof value.then === 'function') {
+                        msg += ' Consider using `promise_test` instead when ' +
+                            'using Promises or async/await.';
+                    }
+                } catch (err) {}
+
+                tests.set_status(tests.status.ERROR, msg);
+                tests.complete();
+            }
         }
         return test_obj;
     }
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
     function promise_test(func, name, properties) {
-        var test = async_test(name, properties);
+        if (typeof func !== "function") {
+            properties = name;
+            name = func;
+            func = null;
+        }
+        var test_name = get_test_name(func, name);
+        var test = new Test(test_name, properties);
+        test._is_promise_test = true;
+
         
         if (!tests.promise_tests) {
             tests.promise_tests = Promise.resolve();
         }
         tests.promise_tests = tests.promise_tests.then(function() {
-            var promise = test.step(func, test, test);
-            test.step(function() {
-                assert_not_equals(promise, undefined);
-            });
-            return Promise.resolve(promise)
-                .then(
-                    function() {
-                        test.done();
-                    })
-                .catch(test.step_func(
-                    function(value) {
-                        if (value instanceof AssertionError) {
-                            throw value;
-                        }
-                        assert(false, "promise_test", null,
-                               "Unhandled rejection with value: ${value}", {value:value});
-                    }));
-        });
-    }
+            return new Promise(function(resolve) {
+                var promise = test.step(func, test, test);
 
-    function promise_rejects(test, expected, promise, description) {
-        return promise.then(test.unreached_func("Should have rejected: " + description)).catch(function(e) {
-            assert_throws(expected, function() { throw e }, description);
+                test.step(function() {
+                    assert(!!promise, "promise_test", null,
+                           "test body must return a 'thenable' object (received ${value})",
+                           {value:promise});
+                    assert(typeof promise.then === "function", "promise_test", null,
+                           "test body must return a 'thenable' object (received an object with no `then` method)",
+                           null);
+                });
+
+                
+                
+                
+                
+                
+                
+                
+                add_test_done_callback(test, resolve);
+
+                Promise.resolve(promise)
+                    .catch(test.step_func(
+                        function(value) {
+                            if (value instanceof AssertionError) {
+                                throw value;
+                            }
+                            assert(false, "promise_test", null,
+                                   "Unhandled rejection with value: ${value}", {value:value});
+                        }))
+                    .then(function() {
+                        test.done();
+                    });
+                });
         });
     }
 
@@ -558,13 +784,194 @@
 
 
 
-    function EventWatcher(test, watchedNode, eventTypes)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    function bring_promise_to_current_realm(promise) {
+        return new Promise(promise.then.bind(promise));
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    function promise_rejects_js(test, constructor, promise, description) {
+        return bring_promise_to_current_realm(promise)
+            .then(test.unreached_func("Should have rejected: " + description))
+            .catch(function(e) {
+                assert_throws_js_impl(constructor, function() { throw e; },
+                                      description, "promise_rejects_js");
+            });
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    function promise_rejects_dom(test, type, promiseOrConstructor, descriptionOrPromise, maybeDescription) {
+        let constructor, promise, description;
+        if (typeof promiseOrConstructor === "function" &&
+            promiseOrConstructor.name === "DOMException") {
+            constructor = promiseOrConstructor;
+            promise = descriptionOrPromise;
+            description = maybeDescription;
+        } else {
+            constructor = self.DOMException;
+            promise = promiseOrConstructor;
+            description = descriptionOrPromise;
+            assert(maybeDescription === undefined,
+                   "Too many args passed to no-constructor version of promise_rejects_dom, or accidentally explicitly passed undefined");
+        }
+        return bring_promise_to_current_realm(promise)
+            .then(test.unreached_func("Should have rejected: " + description))
+            .catch(function(e) {
+                assert_throws_dom_impl(type, function() { throw e; }, description,
+                                       "promise_rejects_dom", constructor);
+            });
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    function promise_rejects_quotaexceedederror(test, promiseOrConstructor, requestedOrPromise, quotaOrRequested, descriptionOrQuota, maybeDescription)
     {
-        if (typeof eventTypes == 'string') {
+        let constructor, promise, requested, quota, description;
+        if (typeof promiseOrConstructor === "function" &&
+            promiseOrConstructor.name === "QuotaExceededError") {
+            constructor = promiseOrConstructor;
+            promise = requestedOrPromise;
+            requested = quotaOrRequested;
+            quota = descriptionOrQuota;
+            description = maybeDescription;
+        } else {
+            constructor = self.QuotaExceededError;
+            promise = promiseOrConstructor;
+            requested = requestedOrPromise;
+            quota = quotaOrRequested;
+            description = descriptionOrQuota;
+            assert(maybeDescription === undefined,
+                   "Too many args passed to no-constructor version of promise_rejects_quotaexceedederror");
+        }
+        return bring_promise_to_current_realm(promise)
+            .then(test.unreached_func("Should have rejected: " + description))
+            .catch(function(e) {
+                assert_throws_quotaexceedederror_impl(function() { throw e; }, requested, quota, description, "promise_rejects_quotaexceedederror", constructor);
+            });
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    function promise_rejects_exactly(test, exception, promise, description) {
+        return bring_promise_to_current_realm(promise)
+            .then(test.unreached_func("Should have rejected: " + description))
+            .catch(function(e) {
+                assert_throws_exactly_impl(exception, function() { throw e; },
+                                           description, "promise_rejects_exactly");
+            });
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    function EventWatcher(test, watchedNode, eventTypes, timeoutPromise)
+    {
+        if (typeof eventTypes === 'string') {
             eventTypes = [eventTypes];
         }
 
         var waitingFor = null;
+
+        
+        
+        var recordedEvents = null;
 
         var eventHandler = test.step_func(function(evt) {
             assert_true(!!waitingFor,
@@ -572,6 +979,11 @@
             assert_equals(evt.type, waitingFor.types[0],
                           'Expected ' + waitingFor.types[0] + ' event, but got ' +
                           evt.type + ' event instead');
+
+            if (Array.isArray(recordedEvents)) {
+                recordedEvents.push(evt);
+            }
+
             if (waitingFor.types.length > 1) {
                 
                 waitingFor.types.shift();
@@ -582,25 +994,68 @@
             
             var resolveFunc = waitingFor.resolve;
             waitingFor = null;
-            resolveFunc(evt);
+            
+            var result = recordedEvents || evt;
+            recordedEvents = null;
+            resolveFunc(result);
         });
 
         for (var i = 0; i < eventTypes.length; i++) {
-            watchedNode.addEventListener(eventTypes[i], eventHandler);
+            watchedNode.addEventListener(eventTypes[i], eventHandler, false);
         }
 
         
 
 
 
-        this.wait_for = function(types) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        this.wait_for = function(types, options) {
             if (waitingFor) {
                 return Promise.reject('Already waiting for an event or events');
             }
-            if (typeof types == 'string') {
+            if (typeof types === 'string') {
                 types = [types];
             }
+            if (options && options.record && options.record === 'all') {
+                recordedEvents = [];
+            }
             return new Promise(function(resolve, reject) {
+                var timeout = test.step_func(function() {
+                    
+                    
+                    if (!waitingFor || waitingFor.resolve !== resolve)
+                        return;
+
+                    
+                    
+                    assert_true(waitingFor.types.length === 0,
+                                'Timed out waiting for ' + waitingFor.types.join(', '));
+                    var result = recordedEvents;
+                    recordedEvents = null;
+                    var resolveFunc = waitingFor.resolve;
+                    waitingFor = null;
+                    resolveFunc(result);
+                });
+
+                if (timeoutPromise) {
+                    timeoutPromise().then(timeout);
+                }
+
                 waitingFor = {
                     types: types,
                     resolve: resolve,
@@ -609,17 +1064,60 @@
             });
         };
 
-        function stop_watching() {
+        
+
+
+        this.stop_watching = function() {
             for (var i = 0; i < eventTypes.length; i++) {
-                watchedNode.removeEventListener(eventTypes[i], eventHandler);
+                watchedNode.removeEventListener(eventTypes[i], eventHandler, false);
             }
         };
 
-        test.add_cleanup(stop_watching);
+        test._add_cleanup(this.stop_watching);
 
         return this;
     }
     expose(EventWatcher, 'EventWatcher');
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+
+
+
 
     function setup(func_or_properties, maybe_properties)
     {
@@ -637,15 +1135,99 @@
         test_environment.on_new_harness_properties(properties);
     }
 
+    
+
+
+
+
+
+
+
+
+
+
+    function promise_setup(func, properties={})
+    {
+        if (typeof func !== "function") {
+            tests.set_status(tests.status.ERROR,
+                             "`promise_setup` invoked without a function");
+            tests.complete();
+            return;
+        }
+        tests.promise_setup_called = true;
+
+        if (!tests.promise_tests) {
+            tests.promise_tests = Promise.resolve();
+        }
+
+        tests.promise_tests = tests.promise_tests
+            .then(function()
+                  {
+                      var result;
+
+                      tests.setup(null, properties);
+                      result = func();
+                      test_environment.on_new_harness_properties(properties);
+
+                      if (!result || typeof result.then !== "function") {
+                          throw "Non-thenable returned by function passed to `promise_setup`";
+                      }
+                      return result;
+                  })
+            .catch(function(e)
+                   {
+                       tests.set_status(tests.status.ERROR,
+                                        String(e),
+                                        e && e.stack);
+                       tests.complete();
+                   });
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
     function done() {
         if (tests.tests.length === 0) {
-            tests.set_file_is_test();
+            
+            
+            
+            if (tests.status.status === null) {
+                tests.status.status = tests.status.ERROR;
+                tests.status.message = "done() was called without first defining any tests";
+            }
+
+            tests.complete();
+            return;
         }
         if (tests.file_is_test) {
+            
+            
             tests.tests[0].done();
         }
         tests.end_wait();
     }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
 
     function generate_tests(func, args, properties) {
         forEach(args, function(x, i)
@@ -660,25 +1242,65 @@
                 });
     }
 
+    
+
+
+
+
+
+
+
+
+
     function on_event(object, event, callback)
     {
         object.addEventListener(event, callback, false);
     }
 
-    function step_timeout(f, t) {
+    
+    
+    
+    function fake_set_timeout(callback, delay) {
+        var p = Promise.resolve();
+        var start = Date.now();
+        var end = start + delay;
+        function check() {
+            if ((end - Date.now()) > 0) {
+                p.then(check);
+            } else {
+                callback();
+            }
+        }
+        p.then(check);
+    }
+
+    
+
+
+
+
+
+
+
+    function step_timeout(func, timeout) {
         var outer_this = this;
         var args = Array.prototype.slice.call(arguments, 2);
-        return setTimeout(function() {
-            f.apply(outer_this, args);
-        }, t * tests.timeout_multiplier);
+        var local_set_timeout = typeof global_scope.setTimeout === "undefined" ? fake_set_timeout : setTimeout;
+        return local_set_timeout(function() {
+            func.apply(outer_this, args);
+        }, timeout * tests.timeout_multiplier);
     }
 
     expose(test, 'test');
     expose(async_test, 'async_test');
     expose(promise_test, 'promise_test');
-    expose(promise_rejects, 'promise_rejects');
+    expose(promise_rejects_js, 'promise_rejects_js');
+    expose(promise_rejects_dom, 'promise_rejects_dom');
+    expose(promise_rejects_quotaexceedederror, 'promise_rejects_quotaexceedederror');
+    expose(promise_rejects_exactly, 'promise_rejects_exactly');
     expose(generate_tests, 'generate_tests');
     expose(setup, 'setup');
+    expose(promise_setup, 'promise_setup');
     expose(done, 'done');
     expose(on_event, 'on_event');
     expose(step_timeout, 'step_timeout');
@@ -765,7 +1387,38 @@
         "0xffff": "uffff",
     };
 
+    const formatEscapeMap = {
+        "\\": "\\\\",
+        '"': '\\"'
+    };
+    for (const p in replacements) {
+        formatEscapeMap[String.fromCharCode(p)] = "\\" + replacements[p];
+    }
+    const formatEscapePattern = new RegExp(`[${Object.keys(formatEscapeMap).map(k => k === "\\" ? "\\\\" : k).join("")}]`, "g");
+
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     function format_value(val, seen)
@@ -780,17 +1433,20 @@
             seen.push(val);
         }
         if (Array.isArray(val)) {
-            return "[" + val.map(function(x) {return format_value(x, seen);}).join(", ") + "]";
+            let output = "[";
+            if (val.beginEllipsis !== undefined) {
+                output += "…, ";
+            }
+            output += val.map(function(x) {return format_value(x, seen);}).join(", ");
+            if (val.endEllipsis !== undefined) {
+                output += ", …";
+            }
+            return output + "]";
         }
 
         switch (typeof val) {
         case "string":
-            val = val.replace("\\", "\\\\");
-            for (var p in replacements) {
-                var replace = "\\" + replacements[p];
-                val = val.replace(RegExp(String.fromCharCode(p), "g"), replace);
-            }
-            return '"' + val.replace(/"/g, '\\"') + '"';
+            return '"' + val.replace(formatEscapePattern, match => formatEscapeMap[match]) + '"';
         case "boolean":
         case "undefined":
             return String(val);
@@ -801,6 +1457,8 @@
                 return "-0";
             }
             return String(val);
+        case "bigint":
+            return String(val) + 'n';
         case "object":
             if (val === null) {
                 return "null";
@@ -824,11 +1482,11 @@
                 case Node.COMMENT_NODE:
                     return "Comment node <!--" + truncate(val.data, 60) + "-->";
                 case Node.DOCUMENT_NODE:
-                    return "Document node with " + val.childNodes.length + (val.childNodes.length == 1 ? " child" : " children");
+                    return "Document node with " + val.childNodes.length + (val.childNodes.length === 1 ? " child" : " children");
                 case Node.DOCUMENT_TYPE_NODE:
                     return "DocumentType node";
                 case Node.DOCUMENT_FRAGMENT_NODE:
-                    return "DocumentFragment node with " + val.childNodes.length + (val.childNodes.length == 1 ? " child" : " children");
+                    return "DocumentFragment node with " + val.childNodes.length + (val.childNodes.length === 1 ? " child" : " children");
                 default:
                     return "Node object of unknown type";
                 }
@@ -850,19 +1508,65 @@
 
 
 
+    function expose_assert(f, name) {
+        function assert_wrapper(...args) {
+            let status = Test.statuses.TIMEOUT;
+            let stack = null;
+            let new_assert_index = null;
+            try {
+                if (settings.debug) {
+                    console.debug("ASSERT", name, tests.current_test && tests.current_test.name, args);
+                }
+                if (tests.output) {
+                    tests.set_assert(name, args);
+                    
+                    
+                    new_assert_index = tests.asserts_run.length - 1;
+                }
+                const rv = f.apply(undefined, args);
+                status = Test.statuses.PASS;
+                return rv;
+            } catch(e) {
+                status = Test.statuses.FAIL;
+                stack = e.stack ? e.stack : null;
+                throw e;
+            } finally {
+                if (tests.output && !stack) {
+                    stack = get_stack();
+                }
+                if (tests.output) {
+                    tests.set_assert_status(new_assert_index, status, stack);
+                }
+            }
+        }
+        expose(assert_wrapper, name);
+    }
+
+    
+
+
+
+
+
     function assert_true(actual, description)
     {
         assert(actual === true, "assert_true", description,
                                 "expected true got ${actual}", {actual:actual});
     }
-    expose(assert_true, "assert_true");
+    expose_assert(assert_true, "assert_true");
+
+    
+
+
+
+
 
     function assert_false(actual, description)
     {
         assert(actual === false, "assert_false", description,
                                  "expected false got ${actual}", {actual:actual});
     }
-    expose(assert_false, "assert_false");
+    expose_assert(assert_false, "assert_false");
 
     function same_value(x, y) {
         if (y !== y) {
@@ -875,6 +1579,17 @@
         }
         return x === y;
     }
+
+    
+
+
+
+
+
+
+
+
+
 
     function assert_equals(actual, expected, description)
     {
@@ -892,19 +1607,33 @@
                                              "expected ${expected} but got ${actual}",
                                              {expected:expected, actual:actual});
     }
-    expose(assert_equals, "assert_equals");
+    expose_assert(assert_equals, "assert_equals");
+
+    
+
+
+
+
+
+
+
 
     function assert_not_equals(actual, expected, description)
     {
-         
-
-
-
         assert(!same_value(actual, expected), "assert_not_equals", description,
                                               "got disallowed value ${actual}",
                                               {actual:actual});
     }
-    expose(assert_not_equals, "assert_not_equals");
+    expose_assert(assert_not_equals, "assert_not_equals");
+
+    
+
+
+
+
+
+
+
 
     function assert_in_array(actual, expected, description)
     {
@@ -912,10 +1641,27 @@
                                                "value ${actual} not in array ${expected}",
                                                {actual:actual, expected:expected});
     }
-    expose(assert_in_array, "assert_in_array");
+    expose_assert(assert_in_array, "assert_in_array");
+
+    
+    
+    
+
+
+
+
+
+
+
+
+
+
 
     function assert_object_equals(actual, expected, description)
     {
+         assert(typeof actual === "object" && actual !== null, "assert_object_equals", description,
+                                                               "value is ${actual}, expected object",
+                                                               {actual: actual});
          
          function check_equal(actual, expected, stack)
          {
@@ -933,7 +1679,7 @@
                  } else {
                      assert(same_value(actual[p], expected[p]), "assert_object_equals", description,
                                                        "property ${p} expected ${expected} got ${actual}",
-                                                       {p:p, expected:expected, actual:actual});
+                                                       {p:p, expected:expected[p], actual:actual[p]});
                  }
              }
              for (p in expected) {
@@ -945,28 +1691,118 @@
          }
          check_equal(actual, expected, []);
     }
-    expose(assert_object_equals, "assert_object_equals");
+    expose_assert(assert_object_equals, "assert_object_equals");
+
+    
+
+
+
+
+
+
 
     function assert_array_equals(actual, expected, description)
     {
+        const max_array_length = 20;
+        function shorten_array(arr, offset = 0) {
+            
+            
+            if (arr.length < max_array_length + 2) {
+                return arr;
+            }
+            
+            
+            
+            const length_after_offset = Math.floor(max_array_length / 2);
+            let upper_bound = Math.min(length_after_offset + offset, arr.length);
+            const lower_bound = Math.max(upper_bound - max_array_length, 0);
+
+            if (lower_bound === 0) {
+                upper_bound = max_array_length;
+            }
+
+            const output = arr.slice(lower_bound, upper_bound);
+            if (lower_bound > 0) {
+                output.beginEllipsis = true;
+            }
+            if (upper_bound < arr.length) {
+                output.endEllipsis = true;
+            }
+            return output;
+        }
+
+        assert(typeof actual === "object" && actual !== null && "length" in actual,
+               "assert_array_equals", description,
+               "value is ${actual}, expected array",
+               {actual:actual});
         assert(actual.length === expected.length,
                "assert_array_equals", description,
+               "lengths differ, expected array ${expected} length ${expectedLength}, got ${actual} length ${actualLength}",
+               {expected:shorten_array(expected, expected.length - 1), expectedLength:expected.length,
+                actual:shorten_array(actual, actual.length - 1), actualLength:actual.length
+               });
+
+        for (var i = 0; i < actual.length; i++) {
+            assert(actual.hasOwnProperty(i) === expected.hasOwnProperty(i),
+                   "assert_array_equals", description,
+                   "expected property ${i} to be ${expected} but was ${actual} (expected array ${arrayExpected} got ${arrayActual})",
+                   {i:i, expected:expected.hasOwnProperty(i) ? "present" : "missing",
+                    actual:actual.hasOwnProperty(i) ? "present" : "missing",
+                    arrayExpected:shorten_array(expected, i), arrayActual:shorten_array(actual, i)});
+            assert(same_value(expected[i], actual[i]),
+                   "assert_array_equals", description,
+                   "expected property ${i} to be ${expected} but got ${actual} (expected array ${arrayExpected} got ${arrayActual})",
+                   {i:i, expected:expected[i], actual:actual[i],
+                    arrayExpected:shorten_array(expected, i), arrayActual:shorten_array(actual, i)});
+        }
+    }
+    expose_assert(assert_array_equals, "assert_array_equals");
+
+    
+
+
+
+
+
+
+
+
+
+    function assert_array_approx_equals(actual, expected, epsilon, description)
+    {
+        
+
+
+        assert(actual.length === expected.length,
+               "assert_array_approx_equals", description,
                "lengths differ, expected ${expected} got ${actual}",
                {expected:expected.length, actual:actual.length});
 
         for (var i = 0; i < actual.length; i++) {
             assert(actual.hasOwnProperty(i) === expected.hasOwnProperty(i),
-                   "assert_array_equals", description,
+                   "assert_array_approx_equals", description,
                    "property ${i}, property expected to be ${expected} but was ${actual}",
                    {i:i, expected:expected.hasOwnProperty(i) ? "present" : "missing",
-                   actual:actual.hasOwnProperty(i) ? "present" : "missing"});
-            assert(same_value(expected[i], actual[i]),
-                   "assert_array_equals", description,
-                   "property ${i}, expected ${expected} but got ${actual}",
-                   {i:i, expected:expected[i], actual:actual[i]});
+                    actual:actual.hasOwnProperty(i) ? "present" : "missing"});
+            assert(typeof actual[i] === "number",
+                   "assert_array_approx_equals", description,
+                   "property ${i}, expected a number but got a ${type_actual}",
+                   {i:i, type_actual:typeof actual[i]});
+            assert(Math.abs(actual[i] - expected[i]) <= epsilon,
+                   "assert_array_approx_equals", description,
+                   "property ${i}, expected ${expected} +/- ${epsilon}, expected ${expected} but got ${actual}",
+                   {i:i, expected:expected[i], actual:actual[i], epsilon:epsilon});
         }
     }
-    expose(assert_array_equals, "assert_array_equals");
+    expose_assert(assert_array_approx_equals, "assert_array_approx_equals");
+
+    
+
+
+
+
+
+
 
     function assert_approx_equals(actual, expected, epsilon, description)
     {
@@ -978,56 +1814,105 @@
                "expected a number but got a ${type_actual}",
                {type_actual:typeof actual});
 
-        assert(Math.abs(actual - expected) <= epsilon,
-               "assert_approx_equals", description,
-               "expected ${expected} +/- ${epsilon} but got ${actual}",
-               {expected:expected, actual:actual, epsilon:epsilon});
+        
+        
+        if (isFinite(actual) || isFinite(expected)) {
+            assert(Math.abs(actual - expected) <= epsilon,
+                   "assert_approx_equals", description,
+                   "expected ${expected} +/- ${epsilon} but got ${actual}",
+                   {expected:expected, actual:actual, epsilon:epsilon});
+        } else {
+            assert_equals(actual, expected);
+        }
     }
-    expose(assert_approx_equals, "assert_approx_equals");
+    expose_assert(assert_approx_equals, "assert_approx_equals");
+
+    
+
+
+
+
+
 
     function assert_less_than(actual, expected, description)
     {
         
 
 
-        assert(typeof actual === "number",
+        assert(typeof actual === "number" || typeof actual === "bigint",
                "assert_less_than", description,
                "expected a number but got a ${type_actual}",
                {type_actual:typeof actual});
+
+        assert(typeof actual === typeof expected,
+               "assert_less_than", description,
+               "expected a ${type_expected} but got a ${type_actual}",
+               {type_expected:typeof expected, type_actual:typeof actual});
 
         assert(actual < expected,
                "assert_less_than", description,
                "expected a number less than ${expected} but got ${actual}",
                {expected:expected, actual:actual});
     }
-    expose(assert_less_than, "assert_less_than");
+    expose_assert(assert_less_than, "assert_less_than");
+
+    
+
+
+
+
+
 
     function assert_greater_than(actual, expected, description)
     {
         
 
 
-        assert(typeof actual === "number",
+        assert(typeof actual === "number" || typeof actual === "bigint",
                "assert_greater_than", description,
                "expected a number but got a ${type_actual}",
                {type_actual:typeof actual});
+
+        assert(typeof actual === typeof expected,
+               "assert_greater_than", description,
+               "expected a ${type_expected} but got a ${type_actual}",
+               {type_expected:typeof expected, type_actual:typeof actual});
 
         assert(actual > expected,
                "assert_greater_than", description,
                "expected a number greater than ${expected} but got ${actual}",
                {expected:expected, actual:actual});
     }
-    expose(assert_greater_than, "assert_greater_than");
+    expose_assert(assert_greater_than, "assert_greater_than");
+
+    
+
+
+
+
+
+
+
 
     function assert_between_exclusive(actual, lower, upper, description)
     {
         
 
 
-        assert(typeof actual === "number",
+        assert(typeof lower === typeof upper,
+               "assert_between_exclusive", description,
+               "expected lower (${type_lower}) and upper (${type_upper}) types to match (test error)",
+               {type_lower:typeof lower, type_upper:typeof upper});
+
+        assert(typeof actual === "number" || typeof actual === "bigint",
                "assert_between_exclusive", description,
                "expected a number but got a ${type_actual}",
                {type_actual:typeof actual});
+
+        assert(typeof actual === typeof lower,
+               "assert_between_exclusive", description,
+               "expected a ${type_lower} but got a ${type_actual}",
+               {type_lower:typeof lower, type_actual:typeof actual});
 
         assert(actual > lower && actual < upper,
                "assert_between_exclusive", description,
@@ -1035,51 +1920,96 @@
                "and less than ${upper} but got ${actual}",
                {lower:lower, upper:upper, actual:actual});
     }
-    expose(assert_between_exclusive, "assert_between_exclusive");
+    expose_assert(assert_between_exclusive, "assert_between_exclusive");
+
+    
+
+
+
+
+
+
 
     function assert_less_than_equal(actual, expected, description)
     {
         
 
 
-        assert(typeof actual === "number",
+        assert(typeof actual === "number" || typeof actual === "bigint",
                "assert_less_than_equal", description,
                "expected a number but got a ${type_actual}",
                {type_actual:typeof actual});
+
+        assert(typeof actual === typeof expected,
+               "assert_less_than_equal", description,
+               "expected a ${type_expected} but got a ${type_actual}",
+               {type_expected:typeof expected, type_actual:typeof actual});
 
         assert(actual <= expected,
                "assert_less_than_equal", description,
                "expected a number less than or equal to ${expected} but got ${actual}",
                {expected:expected, actual:actual});
     }
-    expose(assert_less_than_equal, "assert_less_than_equal");
+    expose_assert(assert_less_than_equal, "assert_less_than_equal");
+
+    
+
+
+
+
+
+
 
     function assert_greater_than_equal(actual, expected, description)
     {
         
 
 
-        assert(typeof actual === "number",
+        assert(typeof actual === "number" || typeof actual === "bigint",
                "assert_greater_than_equal", description,
                "expected a number but got a ${type_actual}",
                {type_actual:typeof actual});
+
+        assert(typeof actual === typeof expected,
+               "assert_greater_than_equal", description,
+               "expected a ${type_expected} but got a ${type_actual}",
+               {type_expected:typeof expected, type_actual:typeof actual});
 
         assert(actual >= expected,
                "assert_greater_than_equal", description,
                "expected a number greater than or equal to ${expected} but got ${actual}",
                {expected:expected, actual:actual});
     }
-    expose(assert_greater_than_equal, "assert_greater_than_equal");
+    expose_assert(assert_greater_than_equal, "assert_greater_than_equal");
+
+    
+
+
+
+
+
+
+
 
     function assert_between_inclusive(actual, lower, upper, description)
     {
         
 
 
-        assert(typeof actual === "number",
+        assert(typeof lower === typeof upper,
+               "assert_between_inclusive", description,
+               "expected lower (${type_lower}) and upper (${type_upper}) types to match (test error)",
+               {type_lower:typeof lower, type_upper:typeof upper});
+
+        assert(typeof actual === "number" || typeof actual === "bigint",
                "assert_between_inclusive", description,
                "expected a number but got a ${type_actual}",
                {type_actual:typeof actual});
+
+        assert(typeof actual === typeof lower,
+               "assert_between_inclusive", description,
+               "expected a ${type_lower} but got a ${type_actual}",
+               {type_lower:typeof lower, type_actual:typeof actual});
 
         assert(actual >= lower && actual <= upper,
                "assert_between_inclusive", description,
@@ -1087,7 +2017,14 @@
                "and less than or equal to ${upper} but got ${actual}",
                {lower:lower, upper:upper, actual:actual});
     }
-    expose(assert_between_inclusive, "assert_between_inclusive");
+    expose_assert(assert_between_inclusive, "assert_between_inclusive");
+
+    
+
+
+
+
+
 
     function assert_regexp_match(actual, expected, description) {
         
@@ -1098,38 +2035,60 @@
                "expected ${expected} but got ${actual}",
                {expected:expected, actual:actual});
     }
-    expose(assert_regexp_match, "assert_regexp_match");
+    expose_assert(assert_regexp_match, "assert_regexp_match");
+
+    
+
+
+
+
+
+
 
     function assert_class_string(object, class_string, description) {
-        assert_equals({}.toString.call(object), "[object " + class_string + "]",
-                      description);
+        var actual = {}.toString.call(object);
+        var expected = "[object " + class_string + "]";
+        assert(same_value(actual, expected), "assert_class_string", description,
+                                             "expected ${expected} but got ${actual}",
+                                             {expected:expected, actual:actual});
     }
-    expose(assert_class_string, "assert_class_string");
+    expose_assert(assert_class_string, "assert_class_string");
+
+    
 
 
-    function _assert_own_property(name) {
-        return function(object, property_name, description)
-        {
-            assert(object.hasOwnProperty(property_name),
-                   name, description,
-                   "expected property ${p} missing", {p:property_name});
-        };
+
+
+
+
+    function assert_own_property(object, property_name, description) {
+        assert(object.hasOwnProperty(property_name),
+               "assert_own_property", description,
+               "expected property ${p} missing", {p:property_name});
     }
-    expose(_assert_own_property("assert_exists"), "assert_exists");
-    expose(_assert_own_property("assert_own_property"), "assert_own_property");
+    expose_assert(assert_own_property, "assert_own_property");
 
-    function assert_not_exists(object, property_name, description)
-    {
+    
+
+
+
+
+
+
+    function assert_not_own_property(object, property_name, description) {
         assert(!object.hasOwnProperty(property_name),
-               "assert_not_exists", description,
-               "unexpected property ${p} found", {p:property_name});
+               "assert_not_own_property", description,
+               "unexpected property ${p} is found on object", {p:property_name});
     }
-    expose(assert_not_exists, "assert_not_exists");
+    expose_assert(assert_not_own_property, "assert_not_own_property");
 
     function _assert_inherits(name) {
         return function (object, property_name, description)
         {
-            assert(typeof object === "object" || typeof object === "function",
+            assert((typeof object === "object" && object !== null) ||
+                   typeof object === "function" ||
+                   
+                   String(object) === "[object HTMLAllCollection]",
                    name, description,
                    "provided value is not an object");
 
@@ -1148,50 +2107,234 @@
                    {p:property_name});
         };
     }
-    expose(_assert_inherits("assert_inherits"), "assert_inherits");
-    expose(_assert_inherits("assert_idl_attribute"), "assert_idl_attribute");
+
+    
+
+
+
+
+
+
+
+    function assert_inherits(object, property_name, description) {
+        return _assert_inherits("assert_inherits")(object, property_name, description);
+    }
+    expose_assert(assert_inherits, "assert_inherits");
+
+    
+
+
+
+
+
+
+    function assert_idl_attribute(object, property_name, description) {
+        return _assert_inherits("assert_idl_attribute")(object, property_name, description);
+    }
+    expose_assert(assert_idl_attribute, "assert_idl_attribute");
+
+
+    
+
+
+
+
+
 
     function assert_readonly(object, property_name, description)
     {
-         var initial_value = object[property_name];
-         try {
-             
-             
-             object[property_name] = initial_value + "a"; 
-             assert(same_value(object[property_name], initial_value),
-                    "assert_readonly", description,
-                    "changing property ${p} succeeded",
-                    {p:property_name});
-         } finally {
-             object[property_name] = initial_value;
-         }
-    }
-    expose(assert_readonly, "assert_readonly");
+        assert(property_name in object,
+               "assert_readonly", description,
+               "property ${p} not found",
+               {p:property_name});
 
-    function assert_throws(code, func, description)
+        let desc;
+        while (object && (desc = Object.getOwnPropertyDescriptor(object, property_name)) === undefined) {
+            object = Object.getPrototypeOf(object);
+        }
+
+        assert(desc !== undefined,
+               "assert_readonly", description,
+               "could not find a descriptor for property ${p}",
+               {p:property_name});
+
+        if (desc.hasOwnProperty("value")) {
+            
+            assert(desc.writable === false, "assert_readonly", description,
+                   "descriptor [[Writable]] expected false got ${actual}", {actual:desc.writable});
+        } else if (desc.hasOwnProperty("get") || desc.hasOwnProperty("set")) {
+            
+            assert(desc.set === undefined, "assert_readonly", description,
+                   "property ${p} is an accessor property with a [[Set]] attribute, cannot test readonly-ness",
+                   {p:property_name});
+        } else {
+            
+            
+            
+            
+            assert(false, "assert_readonly", description,
+                   "Object.getOwnPropertyDescriptor must return a fully populated property descriptor");
+        }
+    }
+    expose_assert(assert_readonly, "assert_readonly");
+
+    
+
+
+
+
+
+
+    function assert_throws_js(constructor, func, description)
+    {
+        assert_throws_js_impl(constructor, func, description,
+                              "assert_throws_js");
+    }
+    expose_assert(assert_throws_js, "assert_throws_js");
+
+    
+
+
+
+    function assert_throws_js_impl(constructor, func, description,
+                                   assertion_type)
     {
         try {
             func.call(this);
-            assert(false, "assert_throws", description,
+            assert(false, assertion_type, description,
                    "${func} did not throw", {func:func});
         } catch (e) {
             if (e instanceof AssertionError) {
                 throw e;
             }
-            if (code === null) {
-                return;
+
+            
+            assert(typeof e === "object",
+                   assertion_type, description,
+                   "${func} threw ${e} with type ${type}, not an object",
+                   {func:func, e:e, type:typeof e});
+
+            assert(e !== null,
+                   assertion_type, description,
+                   "${func} threw null, not an object",
+                   {func:func});
+
+            
+            assert(typeof constructor === "function",
+                   assertion_type, description,
+                   "${constructor} is not a constructor",
+                   {constructor:constructor});
+            var obj = constructor;
+            while (obj) {
+                if (typeof obj === "function" &&
+                    obj.name === "Error") {
+                    break;
+                }
+                obj = Object.getPrototypeOf(obj);
             }
-            if (typeof code === "object") {
-                assert(typeof e == "object" && "name" in e && e.name == code.name,
-                       "assert_throws", description,
-                       "${func} threw ${actual} (${actual_name}) expected ${expected} (${expected_name})",
-                                    {func:func, actual:e, actual_name:e.name,
-                                     expected:code,
-                                     expected_name:code.name});
-                return;
+            assert(obj != null,
+                   assertion_type, description,
+                   "${constructor} is not an Error subtype",
+                   {constructor:constructor});
+
+            
+            assert(e.constructor === constructor &&
+                   e.name === constructor.name,
+                   assertion_type, description,
+                   "${func} threw ${actual} (${actual_name}) expected instance of ${expected} (${expected_name})",
+                   {func:func, actual:e, actual_name:e.name,
+                    expected:constructor,
+                    expected_name:constructor.name});
+        }
+    }
+
+    
+    
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    function assert_throws_dom(type, funcOrConstructor, descriptionOrFunc, maybeDescription)
+    {
+        let constructor, func, description;
+        if (funcOrConstructor.name === "DOMException") {
+            constructor = funcOrConstructor;
+            func = descriptionOrFunc;
+            description = maybeDescription;
+        } else {
+            constructor = self.DOMException;
+            func = funcOrConstructor;
+            description = descriptionOrFunc;
+            assert(maybeDescription === undefined,
+                   "Too many args passed to no-constructor version of assert_throws_dom, or accidentally explicitly passed undefined");
+        }
+        assert_throws_dom_impl(type, func, description, "assert_throws_dom", constructor);
+    }
+    expose_assert(assert_throws_dom, "assert_throws_dom");
+
+    
+
+
+
+
+
+    function assert_throws_dom_impl(type, func, description, assertion_type, constructor)
+    {
+        try {
+            func.call(this);
+            assert(false, assertion_type, description,
+                   "${func} did not throw", {func:func});
+        } catch (e) {
+            if (e instanceof AssertionError) {
+                throw e;
             }
 
-            var code_name_map = {
+            
+            assert(typeof e === "object",
+                   assertion_type, description,
+                   "${func} threw ${e} with type ${type}, not an object",
+                   {func:func, e:e, type:typeof e});
+
+            assert(e !== null,
+                   assertion_type, description,
+                   "${func} threw null, not an object",
+                   {func:func});
+
+            
+            assert(typeof type === "number" ||
+                   typeof type === "string",
+                   assertion_type, description,
+                   "${type} is not a number or string",
+                   {type:type});
+
+            var codename_name_map = {
                 INDEX_SIZE_ERR: 'IndexSizeError',
                 HIERARCHY_REQUEST_ERR: 'HierarchyRequestError',
                 WRONG_DOCUMENT_ERR: 'WrongDocumentError',
@@ -1214,8 +2357,6 @@
                 INVALID_NODE_TYPE_ERR: 'InvalidNodeTypeError',
                 DATA_CLONE_ERR: 'DataCloneError'
             };
-
-            var name = code in code_name_map ? code_name_map[code] : code;
 
             var name_code_map = {
                 IndexSizeError: 1,
@@ -1249,53 +2390,274 @@
                 ReadOnlyError: 0,
                 VersionError: 0,
                 OperationError: 0,
-                NotAllowedError: 0
+                NotAllowedError: 0,
+                OptOutError: 0
             };
 
-            if (!(name in name_code_map)) {
-                throw new AssertionError('Test bug: unrecognized DOMException code "' + code + '" passed to assert_throws()');
+            var code_name_map = {};
+            for (var key in name_code_map) {
+                if (name_code_map[key] > 0) {
+                    code_name_map[name_code_map[key]] = key;
+                }
             }
 
-            var required_props = { code: name_code_map[name] };
+            var required_props = {};
+            var name;
+
+            if (typeof type === "number") {
+                if (type === 0) {
+                    throw new AssertionError('Test bug: ambiguous DOMException code 0 passed to assert_throws_dom()');
+                }
+                if (type === 22) {
+                    throw new AssertionError('Test bug: QuotaExceededError needs to be tested for using assert_throws_quotaexceedederror()');
+                }
+                if (!(type in code_name_map)) {
+                    throw new AssertionError('Test bug: unrecognized DOMException code "' + type + '" passed to assert_throws_dom()');
+                }
+                name = code_name_map[type];
+                required_props.code = type;
+            } else if (typeof type === "string") {
+                if (name === "QuotaExceededError") {
+                    throw new AssertionError('Test bug: QuotaExceededError needs to be tested for using assert_throws_quotaexceedederror()');
+                }
+                name = type in codename_name_map ? codename_name_map[type] : type;
+                if (!(name in name_code_map)) {
+                    throw new AssertionError('Test bug: unrecognized DOMException code name or name "' + type + '" passed to assert_throws_dom()');
+                }
+
+                required_props.code = name_code_map[name];
+            }
 
             if (required_props.code === 0 ||
-               (typeof e == "object" &&
-                "name" in e &&
+               ("name" in e &&
                 e.name !== e.name.toUpperCase() &&
                 e.name !== "DOMException")) {
                 
                 required_props.name = name;
             }
 
-            
-            
-            
-            
-
-            assert(typeof e == "object",
-                   "assert_throws", description,
-                   "${func} threw ${e} with type ${type}, not an object",
-                   {func:func, e:e, type:typeof e});
-
             for (var prop in required_props) {
-                assert(typeof e == "object" && prop in e && e[prop] == required_props[prop],
-                       "assert_throws", description,
-                       "${func} threw ${e} that is not a DOMException " + code + ": property ${prop} is equal to ${actual}, expected ${expected}",
+                assert(prop in e && e[prop] == required_props[prop],
+                       assertion_type, description,
+                       "${func} threw ${e} that is not a DOMException " + type + ": property ${prop} is equal to ${actual}, expected ${expected}",
                        {func:func, e:e, prop:prop, actual:e[prop], expected:required_props[prop]});
             }
+
+            
+            
+            
+            assert(e.constructor === constructor,
+                   assertion_type, description,
+                   "${func} threw an exception from the wrong global",
+                   {func});
+
         }
     }
-    expose(assert_throws, "assert_throws");
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    function assert_throws_quotaexceedederror(funcOrConstructor, requestedOrFunc, quotaOrRequested, descriptionOrQuota, maybeDescription)
+    {
+        let constructor, func, requested, quota, description;
+        if (funcOrConstructor.name === "QuotaExceededError") {
+            constructor = funcOrConstructor;
+            func = requestedOrFunc;
+            requested = quotaOrRequested;
+            quota = descriptionOrQuota;
+            description = maybeDescription;
+        } else {
+            constructor = self.QuotaExceededError;
+            func = funcOrConstructor;
+            requested = requestedOrFunc;
+            quota = quotaOrRequested;
+            description = descriptionOrQuota;
+            assert(maybeDescription === undefined,
+                   "Too many args passed to no-constructor version of assert_throws_quotaexceedederror");
+        }
+        assert_throws_quotaexceedederror_impl(func, requested, quota, description, "assert_throws_quotaexceedederror", constructor);
+    }
+    expose_assert(assert_throws_quotaexceedederror, "assert_throws_quotaexceedederror");
+
+    
+
+
+
+
+
+
+
+    function assert_throws_quotaexceedederror_impl(func, requested, quota, description, assertion_type, constructor)
+    {
+        try {
+            func.call(this);
+            assert(false, assertion_type, description, "${func} did not throw",
+                   {func});
+        } catch (e) {
+            if (e instanceof AssertionError) {
+                throw e;
+            }
+
+            
+            assert(typeof e === "object",
+                   assertion_type, description,
+                   "${func} threw ${e} with type ${type}, not an object",
+                   {func, e, type:typeof e});
+
+            assert(e !== null,
+                   assertion_type, description,
+                   "${func} threw null, not an object",
+                   {func});
+
+            
+            assert(requested === null ||
+                   typeof requested === "number" ||
+                   typeof requested === "function",
+                   assertion_type, description,
+                   "${requested} is not null, a number, or a function",
+                   {requested});
+            assert(quota === null ||
+                   typeof quota === "number" ||
+                   typeof quota === "function",
+                   assertion_type, description,
+                   "${quota} is not null or a number",
+                   {quota});
+
+            const required_props = {
+                code: 22,
+                name: "QuotaExceededError"
+            };
+            if (typeof requested !== "function") {
+                required_props.requested = requested;
+            }
+            if (typeof quota !== "function") {
+                required_props.quota = quota;
+            }
+
+            for (const [prop, expected] of Object.entries(required_props)) {
+                assert(prop in e && e[prop] == expected,
+                       assertion_type, description,
+                       "${func} threw ${e} that is not a correct QuotaExceededError: property ${prop} is equal to ${actual}, expected ${expected}",
+                       {func, e, prop, actual:e[prop], expected});
+            }
+
+            if (typeof requested === "function") {
+                assert(requested(e.requested),
+                       assertion_type, description,
+                       "${func} threw ${e} that is not a correct QuotaExceededError: requested value ${requested} did not pass the requested predicate",
+                       {func, e, requested});
+            }
+            if (typeof quota === "function") {
+                assert(quota(e.quota),
+                       assertion_type, description,
+                       "${func} threw ${e} that is not a correct QuotaExceededError: quota value ${quota} did not pass the quota predicate",
+                       {func, e, quota});
+            }
+
+            
+            
+            
+            assert(e.constructor === constructor,
+                   assertion_type, description,
+                   "${func} threw an exception from the wrong global",
+                   {func});
+        }
+    }
+
+    
+
+
+
+
+
+
+    function assert_throws_exactly(exception, func, description)
+    {
+        assert_throws_exactly_impl(exception, func, description,
+                                   "assert_throws_exactly");
+    }
+    expose_assert(assert_throws_exactly, "assert_throws_exactly");
+
+    
+
+
+
+    function assert_throws_exactly_impl(exception, func, description,
+                                        assertion_type)
+    {
+        try {
+            func.call(this);
+            assert(false, assertion_type, description,
+                   "${func} did not throw", {func:func});
+        } catch (e) {
+            if (e instanceof AssertionError) {
+                throw e;
+            }
+
+            assert(same_value(e, exception), assertion_type, description,
+                   "${func} threw ${e} but we expected it to throw ${exception}",
+                   {func:func, e:e, exception:exception});
+        }
+    }
+
+    
+
+
+
+
 
     function assert_unreached(description) {
          assert(false, "assert_unreached", description,
                 "Reached unreachable code");
     }
-    expose(assert_unreached, "assert_unreached");
+    expose_assert(assert_unreached, "assert_unreached");
 
-    function assert_any(assert_func, actual, expected_array)
+    
+
+
+
+
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    function assert_any(assert_func, actual, expected_array, ...args)
     {
-        var args = [].slice.call(arguments, 3);
         var errors = [];
         var passed = false;
         forEach(expected_array,
@@ -1312,44 +2674,122 @@
             throw new AssertionError(errors.join("\n\n"));
         }
     }
+    
+    
+    
     expose(assert_any, "assert_any");
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    function assert_implements(condition, description) {
+        assert(!!condition, "assert_implements", description);
+    }
+    expose_assert(assert_implements, "assert_implements");
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    function assert_implements_optional(condition, description) {
+        if (!condition) {
+            throw new OptionalFeatureUnsupportedError(description);
+        }
+    }
+    expose_assert(assert_implements_optional, "assert_implements_optional");
+
+    
+
+
+
+
+
+
+
+
 
     function Test(name, properties)
     {
         if (tests.file_is_test && tests.tests.length) {
             throw new Error("Tried to create a test with file_is_test");
         }
+        
         this.name = name;
 
-        this.phase = this.phases.INITIAL;
+        this.phase = (tests.is_aborted || tests.phase === tests.phases.COMPLETE) ?
+            this.phases.COMPLETE : this.phases.INITIAL;
 
+        
         this.status = this.NOTRUN;
         this.timeout_id = null;
         this.index = null;
 
-        this.properties = properties;
-        var timeout = properties.timeout ? properties.timeout : settings.test_timeout;
-        if (timeout !== null) {
-            this.timeout_length = timeout * tests.timeout_multiplier;
-        } else {
-            this.timeout_length = null;
+        this.properties = properties || {};
+        this.timeout_length = settings.test_timeout;
+        if (this.timeout_length !== null) {
+            this.timeout_length *= tests.timeout_multiplier;
         }
 
+        
         this.message = null;
+        
         this.stack = null;
 
         this.steps = [];
+        this._is_promise_test = false;
 
         this.cleanup_callbacks = [];
+        this._user_defined_cleanup_count = 0;
+        this._done_callbacks = [];
+
+        if (typeof AbortController === "function") {
+            this._abortController = new AbortController();
+        }
+
+        
+        
+        
+        if (tests.phase === tests.phases.COMPLETE) {
+            return;
+        }
 
         tests.push(this);
     }
+
+    
+
+
+
+
+
+
+
+
 
     Test.statuses = {
         PASS:0,
         FAIL:1,
         TIMEOUT:2,
-        NOTRUN:3
+        NOTRUN:3,
+        PRECONDITION_FAILED:4
     };
 
     Test.prototype = merge({}, Test.statuses);
@@ -1358,7 +2798,20 @@
         INITIAL:0,
         STARTED:1,
         HAS_RESULT:2,
-        COMPLETE:3
+        CLEANING:3,
+        COMPLETE:4
+    };
+
+    Test.prototype.status_formats = {
+        0: "Pass",
+        1: "Fail",
+        2: "Timeout",
+        3: "Not Run",
+        4: "Optional Feature Unsupported",
+    };
+
+    Test.prototype.format_status = function() {
+        return this.status_formats[this.status];
     };
 
     Test.prototype.structured_clone = function()
@@ -1369,25 +2822,41 @@
             this._structured_clone = merge({
                 name:String(this.name),
                 properties:merge({}, this.properties),
+                phases:merge({}, this.phases)
             }, Test.statuses);
         }
         this._structured_clone.status = this.status;
         this._structured_clone.message = this.message;
         this._structured_clone.stack = this.stack;
         this._structured_clone.index = this.index;
+        this._structured_clone.phase = this.phase;
         return this._structured_clone;
     };
+
+    
+
+
+
+
+
+
+
 
     Test.prototype.step = function(func, this_obj)
     {
         if (this.phase > this.phases.STARTED) {
             return;
         }
+
+        if (settings.debug && this.phase !== this.phases.STARTED) {
+            console.log("TEST START", this.name);
+        }
         this.phase = this.phases.STARTED;
         
         this.set_status(this.TIMEOUT, "Test timed out");
 
         tests.started = true;
+        tests.current_test = this;
         tests.notify_test_state(this);
 
         if (this.timeout_id === null) {
@@ -1400,20 +2869,47 @@
             this_obj = this;
         }
 
+        if (settings.debug) {
+            console.debug("TEST STEP", this.name);
+        }
+
         try {
             return func.apply(this_obj, Array.prototype.slice.call(arguments, 2));
         } catch (e) {
             if (this.phase >= this.phases.HAS_RESULT) {
                 return;
             }
+            var status = e instanceof OptionalFeatureUnsupportedError ? this.PRECONDITION_FAILED : this.FAIL;
             var message = String((typeof e === "object" && e !== null) ? e.message : e);
             var stack = e.stack ? e.stack : null;
 
-            this.set_status(this.FAIL, message, stack);
+            this.set_status(status, message, stack);
             this.phase = this.phases.HAS_RESULT;
             this.done();
+        } finally {
+            this.current_test = null;
         }
     };
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     Test.prototype.step_func = function(func, this_obj)
     {
@@ -1429,6 +2925,18 @@
                 Array.prototype.slice.call(arguments)));
         };
     };
+
+    
+
+
+
+
+
+
+
+
+
+
 
     Test.prototype.step_func_done = function(func, this_obj)
     {
@@ -1448,6 +2956,14 @@
         };
     };
 
+    
+
+
+
+
+
+
+
     Test.prototype.unreached_func = function(description)
     {
         return this.step_func(function() {
@@ -1455,21 +2971,183 @@
         });
     };
 
-    Test.prototype.step_timeout = function(f, timeout) {
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    Test.prototype.step_timeout = function(func, timeout) {
         var test_this = this;
         var args = Array.prototype.slice.call(arguments, 2);
-        return setTimeout(this.step_func(function() {
-            return f.apply(test_this, args);
+        var local_set_timeout = typeof global_scope.setTimeout === "undefined" ? fake_set_timeout : setTimeout;
+        return local_set_timeout(this.step_func(function() {
+            return func.apply(test_this, args);
         }), timeout * tests.timeout_multiplier);
-    }
+    };
 
-    Test.prototype.add_cleanup = function(callback) {
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    Test.prototype.step_wait_func = function(cond, func, description,
+                                             timeout=3000, interval=100) {
+        var timeout_full = timeout * tests.timeout_multiplier;
+        var remaining = Math.ceil(timeout_full / interval);
+        var test_this = this;
+        var local_set_timeout = typeof global_scope.setTimeout === 'undefined' ? fake_set_timeout : setTimeout;
+
+        const step = test_this.step_func((result) => {
+            if (result) {
+                func();
+            } else {
+                if (remaining === 0) {
+                    assert(false, "step_wait_func", description,
+                           "Timed out waiting on condition");
+                }
+                remaining--;
+                local_set_timeout(wait_for_inner, interval);
+            }
+        });
+
+        var wait_for_inner = test_this.step_func(() => {
+            Promise.resolve(cond()).then(
+                step,
+                test_this.unreached_func("step_wait_func"));
+        });
+
+        wait_for_inner();
+    };
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    Test.prototype.step_wait_func_done = function(cond, func, description,
+                                                  timeout=3000, interval=100) {
+         this.step_wait_func(cond, () => {
+            if (func) {
+                func();
+            }
+            this.done();
+         }, description, timeout, interval);
+    };
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    Test.prototype.step_wait = function(cond, description, timeout=3000, interval=100) {
+        return new Promise(resolve => {
+            this.step_wait_func(cond, resolve, description, timeout, interval);
+        });
+    };
+
+    
+
+
+
+
+
+    Test.prototype._add_cleanup = function(callback) {
         this.cleanup_callbacks.push(callback);
     };
 
-    Test.prototype.force_timeout = function() {
-        this.set_status(this.TIMEOUT);
-        this.phase = this.phases.HAS_RESULT;
+    
+
+
+
+
+
+
+
+
+
+
+    Test.prototype.add_cleanup = function(callback) {
+        this._user_defined_cleanup_count += 1;
+        this._add_cleanup(callback);
     };
 
     Test.prototype.set_timeout = function()
@@ -1490,6 +3168,9 @@
         this.stack = stack ? stack : null;
     };
 
+    
+
+
     Test.prototype.timeout = function()
     {
         this.timeout_id = null;
@@ -1498,9 +3179,28 @@
         this.done();
     };
 
+    
+
+
+
+
+    Test.prototype.force_timeout = function() {
+        return this.timeout();
+    };
+
+    
+
+
+
+
+
+
+
+
+
     Test.prototype.done = function()
     {
-        if (this.phase == this.phases.COMPLETE) {
+        if (this.phase >= this.phases.CLEANING) {
             return;
         }
 
@@ -1508,18 +3208,153 @@
             this.set_status(this.PASS, null);
         }
 
-        this.phase = this.phases.COMPLETE;
+        if (global_scope.clearTimeout) {
+            clearTimeout(this.timeout_id);
+        }
 
-        clearTimeout(this.timeout_id);
-        tests.result(this);
+        if (settings.debug) {
+            console.log("TEST DONE",
+                        this.status,
+                        this.name);
+        }
+
         this.cleanup();
     };
 
+    function add_test_done_callback(test, callback)
+    {
+        if (test.phase === test.phases.COMPLETE) {
+            callback();
+            return;
+        }
+
+        test._done_callbacks.push(callback);
+    }
+
+    
+
+
+
+
     Test.prototype.cleanup = function() {
+        var errors = [];
+        var bad_value_count = 0;
+        function on_error(e) {
+            errors.push(e);
+            
+            
+            tests.abort();
+        }
+        var this_obj = this;
+        var results = [];
+
+        this.phase = this.phases.CLEANING;
+
+        if (this._abortController) {
+            this._abortController.abort("Test cleanup");
+        }
+
         forEach(this.cleanup_callbacks,
                 function(cleanup_callback) {
-                    cleanup_callback();
+                    var result;
+
+                    try {
+                        result = cleanup_callback();
+                    } catch (e) {
+                        on_error(e);
+                        return;
+                    }
+
+                    if (!is_valid_cleanup_result(this_obj, result)) {
+                        bad_value_count += 1;
+                        
+                        
+                        tests.abort();
+                    }
+
+                    results.push(result);
                 });
+
+        if (!this._is_promise_test) {
+            cleanup_done(this_obj, errors, bad_value_count);
+        } else {
+            all_async(results,
+                      function(result, done) {
+                          if (result && typeof result.then === "function") {
+                              result
+                                  .then(null, on_error)
+                                  .then(done);
+                          } else {
+                              done();
+                          }
+                      },
+                      function() {
+                          cleanup_done(this_obj, errors, bad_value_count);
+                      });
+        }
+    };
+
+    
+
+
+
+
+    function is_valid_cleanup_result(test, result) {
+        if (result === undefined) {
+            return true;
+        }
+
+        if (test._is_promise_test) {
+            return result && typeof result.then === "function";
+        }
+
+        return false;
+    }
+
+    function cleanup_done(test, errors, bad_value_count) {
+        if (errors.length || bad_value_count) {
+            var total = test._user_defined_cleanup_count;
+
+            tests.status.status = tests.status.ERROR;
+            tests.status.stack = null;
+            tests.status.message = "Test named '" + test.name +
+                "' specified " + total +
+                " 'cleanup' function" + (total > 1 ? "s" : "");
+
+            if (errors.length) {
+                tests.status.message += ", and " + errors.length + " failed";
+                tests.status.stack = ((typeof errors[0] === "object" &&
+                                       errors[0].hasOwnProperty("stack")) ?
+                                      errors[0].stack : null);
+            }
+
+            if (bad_value_count) {
+                var type = test._is_promise_test ?
+                   "non-thenable" : "non-undefined";
+                tests.status.message += ", and " + bad_value_count +
+                    " returned a " + type + " value";
+            }
+
+            tests.status.message += ".";
+        }
+
+        test.phase = test.phases.COMPLETE;
+        tests.result(test);
+        forEach(test._done_callbacks,
+                function(callback) {
+                    callback();
+                });
+        test._done_callbacks.length = 0;
+    }
+
+    
+
+
+    Test.prototype.get_signal = function() {
+        if (!this._abortController) {
+            throw new Error("AbortController is not supported in this browser");
+        }
+        return this._abortController.signal;
     };
 
     
@@ -1538,6 +3373,7 @@
         this.index = null;
         this.phase = this.phases.INITIAL;
         this.update_state_from(clone);
+        this._done_callbacks = [];
         tests.push(this);
     }
 
@@ -1545,17 +3381,40 @@
         var clone = {};
         Object.keys(this).forEach(
                 (function(key) {
-                    if (typeof(this[key]) === "object") {
-                        clone[key] = merge({}, this[key]);
+                    var value = this[key];
+                    
+                    
+                    
+                    
+                    
+                    
+                    if (key === '_done_callbacks' ) {
+                        return;
+                    }
+
+                    if (typeof value === "object" && value !== null) {
+                        clone[key] = merge({}, value);
                     } else {
-                        clone[key] = this[key];
+                        clone[key] = value;
                     }
                 }).bind(this));
         clone.phases = merge({}, this.phases);
         return clone;
     };
 
-    RemoteTest.prototype.cleanup = function() {};
+    
+
+
+
+
+
+
+
+
+
+    RemoteTest.prototype.cleanup = function() {
+        this.done();
+    };
     RemoteTest.prototype.phases = Test.prototype.phases;
     RemoteTest.prototype.update_state_from = function(clone) {
         this.status = clone.status;
@@ -1567,76 +3426,103 @@
     };
     RemoteTest.prototype.done = function() {
         this.phase = this.phases.COMPLETE;
-    }
+
+        forEach(this._done_callbacks,
+                function(callback) {
+                    callback();
+                });
+    };
+
+    RemoteTest.prototype.format_status = function() {
+        return Test.prototype.status_formats[this.status];
+    };
 
     
 
 
 
 
-    function RemoteWorker(worker) {
+
+
+
+
+    function RemoteContext(remote, message_target, message_filter) {
         this.running = true;
+        this.started = false;
         this.tests = new Array();
+        this.early_exception = null;
 
         var this_obj = this;
-        worker.onerror = function(error) { this_obj.worker_error(error); };
-
-        var message_port;
-
-        if (is_service_worker(worker)) {
-            if (window.MessageChannel) {
-                
-                
-                
-                
-                
-                
-                var message_channel = new MessageChannel();
-                message_port = message_channel.port1;
-                message_port.start();
-                worker.postMessage({type: "connect"}, [message_channel.port2]);
-            } else {
-                
-                
-                
-                message_port = navigator.serviceWorker;
-                worker.postMessage({type: "connect"});
-            }
-        } else if (is_shared_worker(worker)) {
-            message_port = worker.port;
-        } else {
-            message_port = worker;
+        
+        
+        try {
+          remote.onerror = function(error) { this_obj.remote_error(error); };
+        } catch (e) {
+          
         }
 
         
         
         
-        this.worker = worker;
+        this.remote = remote;
+        this.message_target = message_target;
+        this.message_handler = function(message) {
+            var passesFilter = !message_filter || message_filter(message);
+            
+            
+            
+            
+            
+            if (this_obj.running && message.data && passesFilter &&
+                (message.data.type in this_obj.message_handlers)) {
+                this_obj.message_handlers[message.data.type].call(this_obj, message.data);
+            }
+        };
 
-        message_port.onmessage =
-            function(message) {
-                if (this_obj.running && (message.data.type in this_obj.message_handlers)) {
-                    this_obj.message_handlers[message.data.type].call(this_obj, message.data);
-                }
-            };
+        if (self.Promise) {
+            this.done = new Promise(function(resolve) {
+                this_obj.doneResolve = resolve;
+            });
+        }
+
+        this.message_target.addEventListener("message", this.message_handler);
     }
 
-    RemoteWorker.prototype.worker_error = function(error) {
+    RemoteContext.prototype.remote_error = function(error) {
+        if (error.preventDefault) {
+            error.preventDefault();
+        }
+
+        
+        
+        
+        if (!this.started) {
+            this.early_exception = error;
+        } else if (!this.allow_uncaught_exception) {
+            this.report_uncaught(error);
+        }
+    };
+
+    RemoteContext.prototype.report_uncaught = function(error) {
         var message = error.message || String(error);
         var filename = (error.filename ? " " + error.filename: "");
         
         
-        this.worker_done({
-            status: {
-                status: tests.status.ERROR,
-                message: "Error in worker" + filename + ": " + message,
-                stack: error.stack
-            }
-        });
-        error.preventDefault();
+        tests.set_status(tests.status.ERROR,
+                         "Error in remote" + filename + ": " + message,
+                         error.stack);
     };
 
-    RemoteWorker.prototype.test_state = function(data) {
+    RemoteContext.prototype.start = function(data) {
+        this.started = true;
+        this.allow_uncaught_exception = data.properties.allow_uncaught_exception;
+
+        if (this.early_exception && !this.allow_uncaught_exception) {
+            this.report_uncaught(this.early_exception);
+        }
+    };
+
+    RemoteContext.prototype.test_state = function(data) {
         var remote_test = this.tests[data.test.index];
         if (!remote_test) {
             remote_test = new RemoteTest(data.test);
@@ -1646,31 +3532,56 @@
         tests.notify_test_state(remote_test);
     };
 
-    RemoteWorker.prototype.test_done = function(data) {
+    RemoteContext.prototype.test_done = function(data) {
         var remote_test = this.tests[data.test.index];
         remote_test.update_state_from(data.test);
         remote_test.done();
         tests.result(remote_test);
     };
 
-    RemoteWorker.prototype.worker_done = function(data) {
+    RemoteContext.prototype.remote_done = function(data) {
         if (tests.status.status === null &&
             data.status.status !== data.status.OK) {
-            tests.status.status = data.status.status;
-            tests.status.message = data.status.message;
-            tests.status.stack = data.status.stack;
+            tests.set_status(data.status.status, data.status.message, data.status.stack);
         }
+
+        for (let assert of data.asserts) {
+            var record = new AssertRecord();
+            record.assert_name = assert.assert_name;
+            record.args = assert.args;
+            record.test = assert.test != null ? this.tests[assert.test.index] : null;
+            record.status = assert.status;
+            record.stack = assert.stack;
+            tests.asserts_run.push(record);
+        }
+
+        this.message_target.removeEventListener("message", this.message_handler);
         this.running = false;
-        this.worker = null;
+
+        
+        
+        try {
+          this.remote.onerror = null;
+        } catch (e) {
+          
+        }
+
+        this.remote = null;
+        this.message_target = null;
+        if (this.doneResolve) {
+            this.doneResolve();
+        }
+
         if (tests.all_done()) {
             tests.complete();
         }
     };
 
-    RemoteWorker.prototype.message_handlers = {
-        test_state: RemoteWorker.prototype.test_state,
-        result: RemoteWorker.prototype.test_done,
-        complete: RemoteWorker.prototype.worker_done
+    RemoteContext.prototype.message_handlers = {
+        start: RemoteContext.prototype.start,
+        test_state: RemoteContext.prototype.test_state,
+        result: RemoteContext.prototype.test_done,
+        complete: RemoteContext.prototype.remote_done
     };
 
     
@@ -1679,18 +3590,38 @@
 
     function TestsStatus()
     {
+        
         this.status = null;
+        
         this.message = null;
+        
         this.stack = null;
     }
+
+    
+
+
+
+
+
+
+
 
     TestsStatus.statuses = {
         OK:0,
         ERROR:1,
-        TIMEOUT:2
+        TIMEOUT:2,
+        PRECONDITION_FAILED:3
     };
 
     TestsStatus.prototype = merge({}, TestsStatus.statuses);
+
+    TestsStatus.prototype.formats = {
+        0: "OK",
+        1: "Error",
+        2: "Timeout",
+        3: "Optional Feature Unsupported"
+    };
 
     TestsStatus.prototype.structured_clone = function()
     {
@@ -1704,6 +3635,39 @@
             }, TestsStatus.statuses);
         }
         return this._structured_clone;
+    };
+
+    TestsStatus.prototype.format_status = function() {
+        return this.formats[this.status];
+    };
+
+    
+
+
+
+
+
+
+
+    function AssertRecord(test, assert_name, args = []) {
+        
+        this.assert_name = assert_name;
+        
+        this.test = test;
+        
+        
+        this.args = args.map(x => format_value(x).replace(/\n/g, " "));
+        
+        this.status = null;
+    }
+
+    AssertRecord.prototype.structured_clone = function() {
+        return {
+            assert_name: this.assert_name,
+            test: this.test ? this.test.structured_clone() : null,
+            args: this.args,
+            status: this.status,
+        };
     };
 
     function Tests()
@@ -1728,6 +3692,10 @@
         this.allow_uncaught_exception = false;
 
         this.file_is_test = false;
+        
+        
+        this.promise_tests = null;
+        this.promise_setup_called = false;
 
         this.timeout_multiplier = 1;
         this.timeout_length = test_environment.test_timeout();
@@ -1738,7 +3706,20 @@
         this.test_done_callbacks = [];
         this.all_done_callbacks = [];
 
-        this.pending_workers = [];
+        this.hide_test_state = false;
+        this.remotes = [];
+
+        this.current_test = null;
+        this.asserts_run = [];
+
+        
+        
+        
+        
+        
+        
+        
+        this.output = settings.output && 'document' in global_scope;
 
         this.status = new TestsStatus();
 
@@ -1768,18 +3749,29 @@
         for (var p in properties) {
             if (properties.hasOwnProperty(p)) {
                 var value = properties[p];
-                if (p == "allow_uncaught_exception") {
+                if (p === "allow_uncaught_exception") {
                     this.allow_uncaught_exception = value;
-                } else if (p == "explicit_done" && value) {
+                } else if (p === "explicit_done" && value) {
                     this.wait_for_finish = true;
-                } else if (p == "explicit_timeout" && value) {
+                } else if (p === "explicit_timeout" && value) {
                     this.timeout_length = null;
                     if (this.timeout_id)
                     {
                         clearTimeout(this.timeout_id);
                     }
-                } else if (p == "timeout_multiplier") {
+                } else if (p === "single_test" && value) {
+                    this.set_file_is_test();
+                } else if (p === "timeout_multiplier") {
                     this.timeout_multiplier = value;
+                    if (this.timeout_length) {
+                         this.timeout_length *= this.timeout_multiplier;
+                    }
+                } else if (p === "hide_test_state") {
+                    this.hide_test_state = value;
+                } else if (p === "output") {
+                    this.output = value;
+                } else if (p === "debug") {
+                    settings.debug = value;
                 }
             }
         }
@@ -1788,9 +3780,10 @@
             try {
                 func();
             } catch (e) {
-                this.status.status = this.status.ERROR;
+                this.status.status = e instanceof OptionalFeatureUnsupportedError ? this.status.PRECONDITION_FAILED : this.status.ERROR;
                 this.status.message = String(e);
                 this.status.stack = e.stack ? e.stack : null;
+                this.complete();
             }
         }
         this.set_timeout();
@@ -1803,23 +3796,58 @@
         this.wait_for_finish = true;
         this.file_is_test = true;
         
-        async_test();
+        tests.current_test = async_test();
+    };
+
+    Tests.prototype.set_status = function(status, message, stack)
+    {
+        this.status.status = status;
+        this.status.message = message;
+        this.status.stack = stack ? stack : null;
     };
 
     Tests.prototype.set_timeout = function() {
-        var this_obj = this;
-        clearTimeout(this.timeout_id);
-        if (this.timeout_length !== null) {
-            this.timeout_id = setTimeout(function() {
-                                             this_obj.timeout();
-                                         }, this.timeout_length);
+        if (global_scope.clearTimeout) {
+            var this_obj = this;
+            clearTimeout(this.timeout_id);
+            if (this.timeout_length !== null) {
+                this.timeout_id = setTimeout(function() {
+                                                 this_obj.timeout();
+                                             }, this.timeout_length);
+            }
         }
     };
 
     Tests.prototype.timeout = function() {
+        var test_in_cleanup = null;
+
         if (this.status.status === null) {
-            this.status.status = this.status.TIMEOUT;
+            forEach(this.tests,
+                    function(test) {
+                        
+                        
+                        if (test.phase === test.phases.CLEANING) {
+                            test_in_cleanup = test;
+                        }
+
+                        test.phase = test.phases.COMPLETE;
+                    });
+
+            
+            
+            
+            
+            
+            if (test_in_cleanup) {
+                this.status.status = this.status.ERROR;
+                this.status.message = "Timeout while running cleanup for " +
+                    "test named \"" + test_in_cleanup.name + "\".";
+                tests.status.stack = null;
+            } else {
+                this.status.status = this.status.TIMEOUT;
+            }
         }
+
         this.complete();
     };
 
@@ -1833,11 +3861,14 @@
 
     Tests.prototype.push = function(test)
     {
+        if (this.phase === this.phases.COMPLETE) {
+            return;
+        }
         if (this.phase < this.phases.HAVE_TESTS) {
             this.start();
         }
         this.num_pending++;
-        test.index = this.tests.push(test);
+        test.index = this.tests.push(test) - 1;
         this.notify_test_state(test);
     };
 
@@ -1850,10 +3881,11 @@
     };
 
     Tests.prototype.all_done = function() {
-        return (this.tests.length > 0 && test_environment.all_loaded &&
-                this.num_pending === 0 && !this.wait_for_finish &&
+        return (this.tests.length > 0 || this.remotes.length > 0) &&
+                test_environment.all_loaded &&
+                (this.num_pending === 0 || this.is_aborted) && !this.wait_for_finish &&
                 !this.processing_callbacks &&
-                !this.pending_workers.some(function(w) { return w.running; }));
+                !this.remotes.some(function(w) { return w.running; });
     };
 
     Tests.prototype.start = function() {
@@ -1872,10 +3904,11 @@
 
     Tests.prototype.result = function(test)
     {
-        if (this.phase > this.phases.HAVE_RESULTS) {
-            return;
+        
+        
+        if (this.phase <= this.phases.HAVE_RESULTS) {
+            this.phase = this.phases.HAVE_RESULTS;
         }
-        this.phase = this.phases.HAVE_RESULTS;
         this.num_pending--;
         this.notify_result(test);
     };
@@ -1898,32 +3931,182 @@
         if (this.phase === this.phases.COMPLETE) {
             return;
         }
-        this.phase = this.phases.COMPLETE;
         var this_obj = this;
-        this.tests.forEach(
-            function(x)
-            {
-                if (x.phase < x.phases.COMPLETE) {
-                    this_obj.notify_result(x);
-                    x.cleanup();
-                    x.phase = x.phases.COMPLETE;
-                }
-            }
-        );
-        this.notify_complete();
+        var all_complete = function() {
+            this_obj.phase = this_obj.phases.COMPLETE;
+            this_obj.notify_complete();
+        };
+        var incomplete = filter(this.tests,
+                                function(test) {
+                                    return test.phase < test.phases.COMPLETE;
+                                });
+
+        
+
+
+
+        if (incomplete.length === 0) {
+            all_complete();
+            return;
+        }
+
+        all_async(incomplete,
+                  function(test, testDone)
+                  {
+                      if (test.phase === test.phases.INITIAL) {
+                          test.phase = test.phases.HAS_RESULT;
+                          test.done();
+                          testDone();
+                      } else {
+                          add_test_done_callback(test, testDone);
+                          test.cleanup();
+                      }
+                  },
+                  all_complete);
     };
+
+    Tests.prototype.set_assert = function(assert_name, args) {
+        this.asserts_run.push(new AssertRecord(this.current_test, assert_name, args));
+    };
+
+    Tests.prototype.set_assert_status = function(index, status, stack) {
+        let assert_record = this.asserts_run[index];
+        assert_record.status = status;
+        assert_record.stack = stack;
+    };
+
+    
+
+
+
+
+    Tests.prototype.abort = function() {
+        this.status.status = this.status.ERROR;
+        this.is_aborted = true;
+
+        forEach(this.tests,
+                function(test) {
+                    if (test.phase === test.phases.INITIAL) {
+                        test.phase = test.phases.COMPLETE;
+                    }
+                });
+    };
+
+    
+
+
+
+    Tests.prototype.find_duplicates = function() {
+        var names = Object.create(null);
+        var duplicates = [];
+
+        forEach (this.tests,
+                 function(test)
+                 {
+                     if (test.name in names && duplicates.indexOf(test.name) === -1) {
+                        duplicates.push(test.name);
+                     }
+                     names[test.name] = true;
+                 });
+
+        return duplicates;
+    };
+
+    function code_unit_str(char) {
+        return 'U+' + char.charCodeAt(0).toString(16);
+    }
+
+    function sanitize_unpaired_surrogates(str) {
+        return str.replace(
+            /([\ud800-\udbff]+)(?![\udc00-\udfff])|(^|[^\ud800-\udbff])([\udc00-\udfff]+)/g,
+            function(_, low, prefix, high) {
+                var output = prefix || "";  
+                var string = low || high;  
+                for (var i = 0; i < string.length; i++) {
+                    output += code_unit_str(string[i]);
+                }
+                return output;
+            });
+    }
+
+    function sanitize_all_unpaired_surrogates(tests) {
+        forEach (tests,
+                 function (test)
+                 {
+                     var sanitized = sanitize_unpaired_surrogates(test.name);
+
+                     if (test.name !== sanitized) {
+                         test.name = sanitized;
+                         delete test._structured_clone;
+                     }
+                 });
+    }
 
     Tests.prototype.notify_complete = function() {
         var this_obj = this;
+        var duplicates;
+
         if (this.status.status === null) {
-            this.status.status = this.status.OK;
+            duplicates = this.find_duplicates();
+
+            
+            
+            
+            sanitize_all_unpaired_surrogates(this.tests);
+
+            
+            
+            
+            
+            if (duplicates.length) {
+                this.status.status = this.status.ERROR;
+                this.status.message =
+                   duplicates.length + ' duplicate test name' +
+                   (duplicates.length > 1 ? 's' : '') + ': "' +
+                   duplicates.join('", "') + '"';
+            } else {
+                this.status.status = this.status.OK;
+            }
         }
 
         forEach (this.all_done_callbacks,
                  function(callback)
                  {
-                     callback(this_obj.tests, this_obj.status);
+                     callback(this_obj.tests, this_obj.status, this_obj.asserts_run);
                  });
+    };
+
+    
+
+
+    Tests.prototype.create_remote_worker = function(worker) {
+        var message_port;
+
+        if (is_service_worker(worker)) {
+            message_port = navigator.serviceWorker;
+            worker.postMessage({type: "connect"});
+        } else if (is_shared_worker(worker)) {
+            message_port = worker.port;
+            message_port.start();
+        } else {
+            message_port = worker;
+        }
+
+        return new RemoteContext(worker, message_port);
+    };
+
+    
+
+
+    Tests.prototype.create_remote_window = function(remote) {
+        remote.postMessage({type: "getmessages"}, "*");
+        return new RemoteContext(
+            remote,
+            window,
+            function(msg) {
+                return msg.source === remote;
+            }
+        );
     };
 
     Tests.prototype.fetch_tests_from_worker = function(worker) {
@@ -1931,13 +4114,95 @@
             return;
         }
 
-        this.pending_workers.push(new RemoteWorker(worker));
+        var remoteContext = this.create_remote_worker(worker);
+        this.remotes.push(remoteContext);
+        return remoteContext.done;
     };
 
+    
+
+
+
+
+
+
+
     function fetch_tests_from_worker(port) {
-        tests.fetch_tests_from_worker(port);
+        return tests.fetch_tests_from_worker(port);
     }
     expose(fetch_tests_from_worker, 'fetch_tests_from_worker');
+
+    Tests.prototype.fetch_tests_from_window = function(remote) {
+        if (this.phase >= this.phases.COMPLETE) {
+            return;
+        }
+
+        var remoteContext = this.create_remote_window(remote);
+        this.remotes.push(remoteContext);
+        return remoteContext.done;
+    };
+
+    
+
+
+
+
+
+
+
+
+
+
+    function fetch_tests_from_window(window) {
+        return tests.fetch_tests_from_window(window);
+    }
+    expose(fetch_tests_from_window, 'fetch_tests_from_window');
+
+    
+
+
+
+
+
+    function fetch_tests_from_shadow_realm(realm) {
+        var chan = new MessageChannel();
+        function receiveMessage(msg_json) {
+            chan.port1.postMessage(JSON.parse(msg_json));
+        }
+        var done = tests.fetch_tests_from_worker(chan.port2);
+        realm.evaluate("begin_shadow_realm_tests")(receiveMessage);
+        chan.port2.start();
+        return done;
+    }
+    expose(fetch_tests_from_shadow_realm, 'fetch_tests_from_shadow_realm');
+
+    
+
+
+
+
+
+
+
+
+
+    function begin_shadow_realm_tests(postMessage) {
+        if (!(test_environment instanceof ShadowRealmTestEnvironment)) {
+            throw new Error("begin_shadow_realm_tests called in non-Shadow Realm environment");
+        }
+
+        test_environment.begin(function (msg) {
+            postMessage(JSON.stringify(msg));
+        });
+    }
+    expose(begin_shadow_realm_tests, 'begin_shadow_realm_tests');
+
+    
+
+
+
+
+
 
     function timeout() {
         if (tests.timeout_length === null) {
@@ -1946,17 +4211,48 @@
     }
     expose(timeout, 'timeout');
 
+    
+
+
+
+
+
     function add_start_callback(callback) {
         tests.start_callbacks.push(callback);
     }
+
+    
+
+
+
+
 
     function add_test_state_callback(callback) {
         tests.test_state_callbacks.push(callback);
     }
 
+    
+
+
+
+
+
     function add_result_callback(callback) {
         tests.test_done_callbacks.push(callback);
     }
+
+    
+
+
+
+
+
+
+
+
+
+
+
 
     function add_completion_callback(callback) {
         tests.all_done_callbacks.push(callback);
@@ -2031,6 +4327,9 @@
 
     Output.prototype.resolve_log = function() {
         var output_document;
+        if (this.output_node) {
+            return;
+        }
         if (typeof this.output_document === "function") {
             output_document = this.output_document.apply(undefined);
         } else {
@@ -2041,12 +4340,34 @@
         }
         var node = output_document.getElementById("log");
         if (!node) {
-            if (!document.body || document.readyState == "loading") {
+            if (output_document.readyState === "loading") {
                 return;
             }
-            node = output_document.createElement("div");
+            node = output_document.createElementNS("http://www.w3.org/1999/xhtml", "div");
             node.id = "log";
-            output_document.body.appendChild(node);
+            if (output_document.body) {
+                output_document.body.appendChild(node);
+            } else {
+                var root = output_document.documentElement;
+                var is_html = (root &&
+                               root.namespaceURI === "http://www.w3.org/1999/xhtml" &&
+                               root.localName === "html");
+                var is_svg = (output_document.defaultView &&
+                              "SVGSVGElement" in output_document.defaultView &&
+                              root instanceof output_document.defaultView.SVGSVGElement);
+                if (is_svg) {
+                    var foreignObject = output_document.createElementNS("http://www.w3.org/2000/svg", "foreignObject");
+                    foreignObject.setAttribute("width", "100%");
+                    foreignObject.setAttribute("height", "100%");
+                    root.appendChild(foreignObject);
+                    foreignObject.appendChild(node);
+                } else if (is_html) {
+                    root.appendChild(output_document.createElementNS("http://www.w3.org/1999/xhtml", "body"))
+                        .appendChild(node);
+                } else {
+                    root.appendChild(node);
+                }
+            }
         }
         this.output_document = output_document;
         this.output_node = node;
@@ -2054,17 +4375,17 @@
 
     Output.prototype.show_status = function() {
         if (this.phase < this.STARTED) {
-            this.init();
+            this.init({});
         }
-        if (!this.enabled) {
+        if (!this.enabled || this.phase === this.COMPLETE) {
             return;
         }
+        this.resolve_log();
         if (this.phase < this.HAVE_RESULTS) {
-            this.resolve_log();
             this.phase = this.HAVE_RESULTS;
         }
         var done_count = tests.tests.length - tests.num_pending;
-        if (this.output_node) {
+        if (this.output_node && !tests.hide_test_state) {
             if (done_count < 100 ||
                 (done_count < 1000 && done_count % 100 === 0) ||
                 done_count % 1000 === 0) {
@@ -2075,7 +4396,7 @@
         }
     };
 
-    Output.prototype.show_results = function (tests, harness_status) {
+    Output.prototype.show_results = function (tests, harness_status, asserts_run) {
         if (this.phase >= this.COMPLETE) {
             return;
         }
@@ -2097,32 +4418,17 @@
             log.removeChild(log.lastChild);
         }
 
-        var harness_url = get_harness_url();
-        if (harness_url !== null) {
-            var stylesheet = output_document.createElementNS(xhtml_ns, "link");
-            stylesheet.setAttribute("rel", "stylesheet");
-            stylesheet.setAttribute("href", harness_url + "testharness.css");
-            var heads = output_document.getElementsByTagName("head");
-            if (heads.length) {
-                heads[0].appendChild(stylesheet);
-            }
+        var stylesheet = output_document.createElementNS(xhtml_ns, "style");
+        stylesheet.textContent = stylesheetContent;
+        var heads = output_document.getElementsByTagName("head");
+        if (heads.length) {
+            heads[0].appendChild(stylesheet);
         }
-
-        var status_text_harness = {};
-        status_text_harness[harness_status.OK] = "OK";
-        status_text_harness[harness_status.ERROR] = "Error";
-        status_text_harness[harness_status.TIMEOUT] = "Timeout";
-
-        var status_text = {};
-        status_text[Test.prototype.PASS] = "Pass";
-        status_text[Test.prototype.FAIL] = "Fail";
-        status_text[Test.prototype.TIMEOUT] = "Timeout";
-        status_text[Test.prototype.NOTRUN] = "Not Run";
 
         var status_number = {};
         forEach(tests,
                 function(test) {
-                    var status = status_text[test.status];
+                    var status = test.format_status();
                     if (status_number.hasOwnProperty(status)) {
                         status_number[status] += 1;
                     } else {
@@ -2139,15 +4445,15 @@
                                 ["h2", {}, "Summary"],
                                 function()
                                 {
-
-                                    var status = status_text_harness[harness_status.status];
+                                    var status = harness_status.format_status();
                                     var rv = [["section", {},
                                                ["p", {},
                                                 "Harness status: ",
                                                 ["span", {"class":status_class(status)},
                                                  status
                                                 ],
-                                               ]
+                                               ],
+                                               ["button", {"id":"rerun"}, "Rerun"]
                                               ]];
 
                                     if (harness_status.status === harness_status.ERROR) {
@@ -2162,13 +4468,14 @@
                                 function() {
                                     var rv = [["div", {}]];
                                     var i = 0;
-                                    while (status_text.hasOwnProperty(i)) {
-                                        if (status_number.hasOwnProperty(status_text[i])) {
-                                            var status = status_text[i];
-                                            rv[0].push(["div", {"class":status_class(status)},
+                                    while (Test.prototype.status_formats.hasOwnProperty(i)) {
+                                        if (status_number.hasOwnProperty(Test.prototype.status_formats[i])) {
+                                            var status = Test.prototype.status_formats[i];
+                                            rv[0].push(["div", {},
                                                         ["label", {},
                                                          ["input", {type:"checkbox", checked:"checked"}],
-                                                         status_number[status] + " " + status]]);
+                                                         status_number[status] + " ",
+                                                         ["span", {"class":status_class(status)}, status]]]);
                                         }
                                         i++;
                                     }
@@ -2177,6 +4484,13 @@
                                ];
 
         log.appendChild(render(summary_template, {num_tests:tests.length}, output_document));
+
+        output_document.getElementById("rerun").addEventListener("click",
+            function() {
+                let evt = new Event('__test_restart');
+                let canceled = !window.dispatchEvent(evt);
+                if (!canceled) { location.reload(); }
+            });
 
         forEach(output_document.querySelectorAll("section#summary label"),
                 function(element)
@@ -2188,31 +4502,19 @@
                                      e.preventDefault();
                                      return;
                                  }
-                                 var result_class = element.parentNode.getAttribute("class");
+                                 var result_class = element.querySelector("span[class]").getAttribute("class");
                                  var style_element = output_document.querySelector("style#hide-" + result_class);
                                  var input_element = element.querySelector("input");
                                  if (!style_element && !input_element.checked) {
                                      style_element = output_document.createElementNS(xhtml_ns, "style");
                                      style_element.id = "hide-" + result_class;
-                                     style_element.textContent = "table#results > tbody > tr."+result_class+"{display:none}";
+                                     style_element.textContent = "table#results > tbody > tr.overall-"+result_class+"{display:none}";
                                      output_document.body.appendChild(style_element);
                                  } else if (style_element && input_element.checked) {
                                      style_element.parentNode.removeChild(style_element);
                                  }
                              });
                 });
-
-        
-        
-        
-        
-        function escape_html(s)
-        {
-            return s.replace(/\&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#39;");
-        }
 
         function has_assertions()
         {
@@ -2235,37 +4537,72 @@
             return '';
         }
 
-        log.appendChild(document.createElementNS(xhtml_ns, "section"));
+        var asserts_run_by_test = new Map();
+        asserts_run.forEach(assert => {
+            if (!asserts_run_by_test.has(assert.test)) {
+                asserts_run_by_test.set(assert.test, []);
+            }
+            asserts_run_by_test.get(assert.test).push(assert);
+        });
+
+        function get_asserts_output(test) {
+            const asserts_output = render(
+                ["details", {},
+                    ["summary", {}, "Asserts run"],
+                    ["table", {}, ""] ]);
+
+            var asserts = asserts_run_by_test.get(test);
+            if (!asserts) {
+                asserts_output.querySelector("summary").insertAdjacentText("afterend", "No asserts ran");
+                return asserts_output;
+            }
+
+            const table = asserts_output.querySelector("table");
+            for (const assert of asserts) {
+                const status_class_name = status_class(Test.prototype.status_formats[assert.status]);
+                var output_fn = "(" + assert.args.join(", ") + ")";
+                if (assert.stack) {
+                    output_fn += "\n";
+                    output_fn += assert.stack.split("\n", 1)[0].replace(/@?\w+:\/\/[^ "\/]+(?::\d+)?/g, " ");
+                }
+                table.appendChild(render(
+                    ["tr", {"class":"overall-" + status_class_name},
+                        ["td", {"class":status_class_name}, Test.prototype.status_formats[assert.status]],
+                        ["td", {}, ["pre", {}, ["strong", {}, assert.assert_name], output_fn]] ]));
+            }
+            return asserts_output;
+        }
+
         var assertions = has_assertions();
-        var html = "<h2>Details</h2><table id='results' " + (assertions ? "class='assertions'" : "" ) + ">" +
-            "<thead><tr><th>Result</th><th>Test Name</th>" +
-            (assertions ? "<th>Assertion</th>" : "") +
-            "<th>Message</th></tr></thead>" +
-            "<tbody>";
-        for (var i = 0; i < tests.length; i++) {
-            html += '<tr class="' +
-                escape_html(status_class(status_text[tests[i].status])) +
-                '"><td>' +
-                escape_html(status_text[tests[i].status]) +
-                "</td><td>" +
-                escape_html(tests[i].name) +
-                "</td><td>" +
-                (assertions ? escape_html(get_assertion(tests[i])) + "</td><td>" : "") +
-                escape_html(tests[i].message ? tests[i].message : " ") +
-                (tests[i].stack ? "<pre>" +
-                 escape_html(tests[i].stack) +
-                 "</pre>": "") +
-                "</td></tr>";
+        const section = render(
+            ["section", {},
+                ["h2", {}, "Details"],
+                ["table", {"id":"results", "class":(assertions ? "assertions" : "")},
+                    ["thead", {},
+                        ["tr", {},
+                            ["th", {}, "Result"],
+                            ["th", {}, "Test Name"],
+                            (assertions ? ["th", {}, "Assertion"] : ""),
+                            ["th", {}, "Message" ]]],
+                    ["tbody", {}]]]);
+
+        const tbody = section.querySelector("tbody");
+        for (const test of tests) {
+            const status = test.format_status();
+            const status_class_name = status_class(status);
+            tbody.appendChild(render(
+                ["tr", {"class":"overall-" + status_class_name},
+                    ["td", {"class":status_class_name}, status],
+                    ["td", {}, test.name],
+                    (assertions ? ["td", {}, get_assertion(test)] : ""),
+                    ["td", {},
+                        test.message ?? "",
+                        ["pre", {}, test.stack ?? ""]]]));
+            if (!(test instanceof RemoteTest)) {
+                tbody.lastChild.lastChild.appendChild(get_asserts_output(test));
+            }
         }
-        html += "</tbody></table>";
-        try {
-            log.lastChild.innerHTML = html;
-        } catch (e) {
-            log.appendChild(document.createElementNS(xhtml_ns, "p"))
-               .textContent = "Setting innerHTML for the log threw an exception.";
-            log.appendChild(document.createElementNS(xhtml_ns, "pre"))
-               .textContent = html;
-        }
+        log.appendChild(section);
     };
 
     
@@ -2330,13 +4667,20 @@
     {
         var substitution_re = /\$\{([^ }]*)\}/g;
 
-        function do_substitution(input) {
+        function do_substitution(input)
+        {
             var components = input.split(substitution_re);
             var rv = [];
-            for (var i = 0; i < components.length; i += 2) {
-                rv.push(components[i]);
-                if (components[i + 1]) {
-                    rv.push(String(substitutions[components[i + 1]]));
+            if (components.length === 1) {
+                rv = components;
+            } else if (substitutions) {
+                for (var i = 0; i < components.length; i += 2) {
+                    if (components[i]) {
+                        rv.push(components[i]);
+                    }
+                    if (substitutions[components[i + 1]]) {
+                        rv.push(String(substitutions[components[i + 1]]));
+                    }
                 }
             }
             return rv;
@@ -2437,9 +4781,6 @@
 
     function assert(expected_true, function_name, description, error, substitutions)
     {
-        if (tests.tests.length === 0) {
-            tests.set_file_is_test();
-        }
         if (expected_true !== true) {
             var msg = make_message(function_name, description,
                                    error, substitutions);
@@ -2447,24 +4788,26 @@
         }
     }
 
+    
+
+
+
+
+
     function AssertionError(message)
     {
+        if (typeof message === "string") {
+            message = sanitize_unpaired_surrogates(message);
+        }
         this.message = message;
-        this.stack = this.get_stack();
+        this.stack = get_stack();
     }
+    expose(AssertionError, "AssertionError");
 
     AssertionError.prototype = Object.create(Error.prototype);
 
-    AssertionError.prototype.get_stack = function() {
+    const get_stack = function() {
         var stack = new Error().stack;
-        
-        if (!stack) {
-            try {
-                throw new Error();
-            } catch (e) {
-                stack = e.stack;
-            }
-        }
 
         
         if (!stack) {
@@ -2499,7 +4842,14 @@
         }
 
         return lines.slice(i).join("\n");
+    };
+
+    function OptionalFeatureUnsupportedError(message)
+    {
+        AssertionError.call(this, message);
     }
+    OptionalFeatureUnsupportedError.prototype = Object.create(AssertionError.prototype);
+    expose(OptionalFeatureUnsupportedError, "OptionalFeatureUnsupportedError");
 
     function make_message(function_name, description, error, substitutions)
     {
@@ -2554,6 +4904,59 @@
         }
     }
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    function all_async(values, iter_callback, done_callback)
+    {
+        var remaining = values.length;
+
+        if (remaining === 0) {
+            done_callback();
+        }
+
+        forEach(values,
+                function(element) {
+                    var invoked = false;
+                    var elDone = function() {
+                        if (invoked) {
+                            return;
+                        }
+
+                        invoked = true;
+                        remaining -= 1;
+
+                        if (remaining === 0) {
+                            done_callback();
+                        }
+                    };
+
+                    iter_callback(element, elDone);
+                });
+    }
+
     function merge(a,b)
     {
         var rv = {};
@@ -2570,7 +4973,7 @@
     function expose(object, name)
     {
         var components = name.split(".");
-        var target = test_environment.global_scope();
+        var target = global_scope;
         for (var i = 0; i < components.length - 1; i++) {
             if (!(components[i] in target)) {
                 target[components[i]] = {};
@@ -2592,7 +4995,7 @@
     
     function get_script_url()
     {
-        if (!('document' in self)) {
+        if (!('document' in global_scope)) {
             return undefined;
         }
 
@@ -2615,50 +5018,32 @@
     }
 
     
-
-    function get_harness_url()
+    function get_title()
     {
-        var script_url = get_script_url();
-
-        
-        return script_url ? script_url.slice(0, script_url.lastIndexOf('/') + 1) : undefined;
+        if ('document' in global_scope) {
+            
+            var title = document.getElementsByTagName("title")[0];
+            if (title && title.firstChild && title.firstChild.data) {
+                return title.firstChild.data;
+            }
+        }
+        if ('META_TITLE' in global_scope && META_TITLE) {
+            return META_TITLE;
+        }
+        if ('location' in global_scope && 'pathname' in location) {
+            var filename = location.pathname.substring(location.pathname.lastIndexOf('/') + 1);
+            return filename.substring(0, filename.indexOf('.'));
+        }
+        return "Untitled";
     }
 
-    function supports_post_message(w)
-    {
-        var supports;
-        var type;
-        
-        
-        
-        
-        
-        
-        
-        
-        try {
-            type = typeof w.postMessage;
-            if (type === "function") {
-                supports = true;
-            }
-
-            
-            
-            else if (type === "object") {
-                supports = true;
-            }
-
-            
-            
-            else {
-                supports = false;
-            }
-        } catch (e) {
-            
-            
-            supports = false;
-        }
-        return supports;
+    
+    async function fetch_json(resource) {
+        const response = await fetch(resource);
+        return await response.json();
+    }
+    if (!global_scope.GLOBAL || !global_scope.GLOBAL.isShadowRealm()) {
+        expose(fetch_json, 'fetch_json');
     }
 
     
@@ -2667,24 +5052,164 @@
 
     var tests = new Tests();
 
-    addEventListener("error", function(e) {
-        if (tests.file_is_test) {
-            var test = tests.tests[0];
-            if (test.phase >= test.phases.HAS_RESULT) {
-                return;
+    if (global_scope.addEventListener) {
+        var error_handler = function(error, message, stack) {
+            var optional_unsupported = error instanceof OptionalFeatureUnsupportedError;
+            if (tests.file_is_test) {
+                var test = tests.tests[0];
+                if (test.phase >= test.phases.HAS_RESULT) {
+                    return;
+                }
+                var status = optional_unsupported ? test.PRECONDITION_FAILED : test.FAIL;
+                test.set_status(status, message, stack);
+                test.phase = test.phases.HAS_RESULT;
+            } else if (!tests.allow_uncaught_exception) {
+                var status = optional_unsupported ? tests.status.PRECONDITION_FAILED : tests.status.ERROR;
+                tests.status.status = status;
+                tests.status.message = message;
+                tests.status.stack = stack;
             }
-            test.set_status(test.FAIL, e.message, e.stack);
-            test.phase = test.phases.HAS_RESULT;
-            test.done();
-            done();
-        } else if (!tests.allow_uncaught_exception) {
-            tests.status.status = tests.status.ERROR;
-            tests.status.message = e.message;
-            tests.status.stack = e.stack;
-        }
-    });
+
+            
+            
+            
+            
+            if (!tests.allow_uncaught_exception) {
+                done();
+            }
+        };
+
+        addEventListener("error", function(e) {
+            var message = e.message;
+            var stack;
+            if (e.error && e.error.stack) {
+                stack = e.error.stack;
+            } else {
+                stack = e.filename + ":" + e.lineno + ":" + e.colno;
+            }
+            error_handler(e.error, message, stack);
+        }, false);
+
+        addEventListener("unhandledrejection", function(e) {
+            var message;
+            if (e.reason && e.reason.message) {
+                message = "Unhandled rejection: " + e.reason.message;
+            } else {
+                message = "Unhandled rejection";
+            }
+            var stack;
+            if (e.reason && e.reason.stack) {
+                stack = e.reason.stack;
+            }
+            error_handler(e.reason, message, stack);
+        }, false);
+    }
 
     test_environment.on_tests_ready();
 
-})();
+    
+
+
+     var stylesheetContent = "\
+html {\
+    font-family:DejaVu Sans, Bitstream Vera Sans, Arial, Sans;\
+}\
+\
+#log .warning,\
+#log .warning a {\
+  color: black;\
+  background: yellow;\
+}\
+\
+#log .error,\
+#log .error a {\
+  color: white;\
+  background: red;\
+}\
+\
+section#summary {\
+    margin-bottom:1em;\
+}\
+\
+table#results {\
+    border-collapse:collapse;\
+    table-layout:fixed;\
+    width:100%;\
+}\
+\
+table#results > thead > tr > th:first-child,\
+table#results > tbody > tr > td:first-child {\
+    width:8em;\
+}\
+\
+table#results > thead > tr > th:last-child,\
+table#results > thead > tr > td:last-child {\
+    width:50%;\
+}\
+\
+table#results.assertions > thead > tr > th:last-child,\
+table#results.assertions > tbody > tr > td:last-child {\
+    width:35%;\
+}\
+\
+table#results > thead > > tr > th {\
+    padding:0;\
+    padding-bottom:0.5em;\
+    border-bottom:medium solid black;\
+}\
+\
+table#results > tbody > tr> td {\
+    padding:1em;\
+    padding-bottom:0.5em;\
+    border-bottom:thin solid black;\
+}\
+\
+.pass {\
+    color:green;\
+}\
+\
+.fail {\
+    color:red;\
+}\
+\
+tr.timeout {\
+    color:red;\
+}\
+\
+tr.notrun {\
+    color:blue;\
+}\
+\
+tr.optionalunsupported {\
+    color:blue;\
+}\
+\
+.ok {\
+    color:green;\
+}\
+\
+.error {\
+    color:red;\
+}\
+\
+.pass, .fail, .timeout, .notrun, .optionalunsupported .ok, .timeout, .error {\
+    font-variant:small-caps;\
+}\
+\
+table#results span {\
+    display:block;\
+}\
+\
+table#results span.expected {\
+    font-family:DejaVu Sans Mono, Bitstream Vera Sans Mono, Monospace;\
+    white-space:pre;\
+}\
+\
+table#results span.actual {\
+    font-family:DejaVu Sans Mono, Bitstream Vera Sans Mono, Monospace;\
+    white-space:pre;\
+}\
+";
+
+})(self);
 
