@@ -100,16 +100,6 @@ interface nsILocalFileMac : nsIFile
 
 
 
-
-
-   readonly attribute int64_t fileSizeWithResFork;
-
-   
-
-
-
-
-
    [noscript] attribute OSType fileType;
    [noscript] attribute OSType fileCreator;
 
@@ -130,19 +120,6 @@ interface nsILocalFileMac : nsIFile
 
 
 
-
-
-
-
-
-   void openDocWithApp(in nsIFile aAppToOpenWith, in boolean aLaunchInBackground);
-
-   
-
-
-
-
-
    boolean isPackage();
 
    
@@ -152,22 +129,6 @@ interface nsILocalFileMac : nsIFile
 
 
    readonly attribute AString bundleDisplayName;
-
-   
-
-
-
-
-   readonly attribute AUTF8String bundleIdentifier;
-
-    
-
-
-
-
-
-
-    readonly attribute int64_t bundleContentsLastModifiedTime;
 
     
 

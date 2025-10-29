@@ -303,12 +303,6 @@ interface nsIFile : nsISupports
     readonly attribute PRTime creationTime;
     readonly attribute PRTime creationTimeOfLink;
 
-    
-
-
-
-
-
     attribute int64_t fileSize;
     readonly attribute int64_t fileSizeOfLink;
 
