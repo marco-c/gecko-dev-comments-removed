@@ -301,7 +301,11 @@ bool Navigation::HasEntriesAndEventsDisabled() const {
          
          
          SupportsInterface<nsIMultiPartChannel>(doc->GetChannel()) ||
-         SupportsInterface<nsIScriptChannel>(doc->GetChannel());
+         SupportsInterface<nsIScriptChannel>(doc->GetChannel()) ||
+         
+         
+         !doc->GetBrowsingContext() ||
+         doc->GetBrowsingContext()->IsEmbedderTypeObjectOrEmbed();
 }
 
 
