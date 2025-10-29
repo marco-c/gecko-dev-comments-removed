@@ -281,7 +281,7 @@ gfxTextRun::LigatureData gfxTextRun::ComputeLigatureData(
   }
   result.mRange.end = i;
 
-  int32_t ligatureWidth = GetAdvanceForGlyphs(result.mRange);
+  nscoord ligatureWidth = GetAdvanceForGlyphs(result.mRange);
   
   uint32_t totalClusterCount = 0;
   uint32_t partClusterIndex = 0;
@@ -307,7 +307,7 @@ gfxTextRun::LigatureData gfxTextRun::ComputeLigatureData(
   
   
   if (aPartRange.end == result.mRange.end) {
-    gfxFloat allParts = totalClusterCount * (ligatureWidth / totalClusterCount);
+    nscoord allParts = totalClusterCount * (ligatureWidth / totalClusterCount);
     result.mPartWidth += ligatureWidth - allParts;
   }
 
@@ -329,44 +329,51 @@ gfxTextRun::LigatureData gfxTextRun::ComputeLigatureData(
   if (aProvider && (mFlags & gfx::ShapedTextFlags::TEXT_ENABLE_SPACING)) {
     gfxFont::Spacing spacing;
     if (aPartRange.start == result.mRange.start) {
-      aProvider->GetSpacing(Range(aPartRange.start, aPartRange.start + 1),
-                            &spacing);
-      result.mPartWidth += spacing.mBefore;
+      if (aProvider->GetSpacing(Range(aPartRange.start, aPartRange.start + 1),
+                                &spacing)) {
+        result.mPartWidth =
+            NSCoordSaturatingAdd(result.mPartWidth, spacing.mBefore);
+      }
     }
     if (aPartRange.end == result.mRange.end) {
-      aProvider->GetSpacing(Range(aPartRange.end - 1, aPartRange.end),
-                            &spacing);
-      result.mPartWidth += spacing.mAfter;
+      if (aProvider->GetSpacing(Range(aPartRange.end - 1, aPartRange.end),
+                                &spacing)) {
+        result.mPartWidth =
+            NSCoordSaturatingAdd(result.mPartWidth, spacing.mAfter);
+      }
     }
   }
 
   return result;
 }
 
-gfxFloat gfxTextRun::ComputePartialLigatureWidth(
+nscoord gfxTextRun::ComputePartialLigatureWidth(
     Range aPartRange, const PropertyProvider* aProvider) const {
-  if (aPartRange.start >= aPartRange.end) return 0;
+  if (aPartRange.start >= aPartRange.end) {
+    return 0;
+  }
   LigatureData data = ComputeLigatureData(aPartRange, aProvider);
   return data.mPartWidth;
 }
 
-int32_t gfxTextRun::GetAdvanceForGlyphs(Range aRange) const {
-  int32_t advance = 0;
+nscoord gfxTextRun::GetAdvanceForGlyphs(Range aRange) const {
+  nscoord advance = 0;
   for (auto i = aRange.start; i < aRange.end; ++i) {
-    advance += GetAdvanceForGlyph(i);
+    advance = NSCoordSaturatingAdd(advance, GetAdvanceForGlyph(i));
   }
   return advance;
 }
 
-static void GetAdjustedSpacing(
+
+static bool GetAdjustedSpacing(
     const gfxTextRun* aTextRun, gfxTextRun::Range aRange,
     const gfxTextRun::PropertyProvider& aProvider,
     gfxTextRun::PropertyProvider::Spacing* aSpacing) {
   if (aRange.start >= aRange.end) {
-    return;
+    return false;
   }
 
-  aProvider.GetSpacing(aRange, aSpacing);
+  bool result = aProvider.GetSpacing(aRange, aSpacing);
 
 #ifdef DEBUG
   
@@ -385,6 +392,8 @@ static void GetAdjustedSpacing(
     }
   }
 #endif
+
+  return result;
 }
 
 bool gfxTextRun::GetAdjustedSpacingArray(
@@ -398,8 +407,11 @@ bool gfxTextRun::GetAdjustedSpacingArray(
   }
   auto spacingOffset = aSpacingRange.start - aRange.start;
   memset(aSpacing->Elements(), 0, sizeof(gfxFont::Spacing) * spacingOffset);
-  GetAdjustedSpacing(this, aSpacingRange, *aProvider,
-                     aSpacing->Elements() + spacingOffset);
+  if (!GetAdjustedSpacing(this, aSpacingRange, *aProvider,
+                          aSpacing->Elements() + spacingOffset)) {
+    aSpacing->Clear();
+    return false;
+  }
   memset(aSpacing->Elements() + spacingOffset + aSpacingRange.Length(), 0,
          sizeof(gfxFont::Spacing) * (aRange.end - aSpacingRange.end));
   return true;
@@ -967,19 +979,19 @@ uint32_t gfxTextRun::BreakAndMeasureText(
     }
   }
 
-  gfxFloat width = 0;
-  gfxFloat advance = 0;
+  nscoord width = 0;
+  nscoord advance = 0;
   
   uint32_t trimmableChars = 0;
   
-  gfxFloat trimmableAdvance = 0;
+  nscoord trimmableAdvance = 0;
   int32_t lastBreak = -1;
   int32_t lastBreakTrimmableChars = -1;
-  gfxFloat lastBreakTrimmableAdvance = -1;
+  nscoord lastBreakTrimmableAdvance = -1;
   
   int32_t lastCandidateBreak = -1;
   int32_t lastCandidateBreakTrimmableChars = -1;
-  gfxFloat lastCandidateBreakTrimmableAdvance = -1;
+  nscoord lastCandidateBreakTrimmableAdvance = -1;
   bool lastCandidateBreakUsedHyphenation = false;
   gfxBreakPriority lastCandidateBreakPriority = gfxBreakPriority::eNoBreak;
   bool aborted = false;
@@ -1091,7 +1103,7 @@ uint32_t gfxTextRun::BreakAndMeasureText(
                                : gfxBreakPriority::eWordWrapBreak;
         }
 
-        width += advance;
+        width = NSCoordSaturatingAdd(width, advance);
         advance = 0;
         if (width - trimmableAdvance > aWidth) {
           
@@ -1127,23 +1139,24 @@ uint32_t gfxTextRun::BreakAndMeasureText(
       continue;
     }
 
-    gfxFloat charAdvance;
+    nscoord charAdvance;
     if (i >= ligatureRange.start && i < ligatureRange.end) {
       charAdvance = GetAdvanceForGlyphs(Range(i, i + 1));
       if (haveSpacing) {
         PropertyProvider::Spacing* space =
             &spacingBuffer[i - bufferRange.start];
-        charAdvance += space->mBefore + space->mAfter;
+        charAdvance =
+            NSCoordSaturatingAdd(charAdvance, space->mBefore + space->mAfter);
       }
     } else {
       charAdvance = ComputePartialLigatureWidth(Range(i, i + 1), &aProvider);
     }
 
-    advance += charAdvance;
+    advance = NSCoordSaturatingAdd(advance, charAdvance);
     if (aOutTrimmableWhitespace) {
       if (mCharacterGlyphs[i].CharIsSpace()) {
         ++trimmableChars;
-        trimmableAdvance += charAdvance;
+        trimmableAdvance = NSCoordSaturatingAdd(trimmableAdvance, charAdvance);
       } else {
         trimmableAdvance = 0;
         trimmableChars = 0;
@@ -1152,7 +1165,7 @@ uint32_t gfxTextRun::BreakAndMeasureText(
   }
 
   if (!aborted) {
-    width += advance;
+    width = NSCoordSaturatingAdd(width, advance);
   }
 
   
@@ -1202,20 +1215,20 @@ uint32_t gfxTextRun::BreakAndMeasureText(
   return charsFit;
 }
 
-gfxFloat gfxTextRun::GetAdvanceWidth(
-    Range aRange, const PropertyProvider* aProvider,
-    PropertyProvider::Spacing* aSpacing) const {
+nscoord gfxTextRun::GetAdvanceWidth(Range aRange,
+                                    const PropertyProvider* aProvider,
+                                    PropertyProvider::Spacing* aSpacing) const {
   NS_ASSERTION(aRange.end <= GetLength(), "Substring out of range");
 
   Range ligatureRange = aRange;
   bool adjusted = ShrinkToLigatureBoundaries(&ligatureRange);
 
-  gfxFloat result =
+  nscoord result =
       adjusted ? ComputePartialLigatureWidth(
                      Range(aRange.start, ligatureRange.start), aProvider) +
                      ComputePartialLigatureWidth(
                          Range(ligatureRange.end, aRange.end), aProvider)
-               : 0.0;
+               : 0;
 
   if (aSpacing) {
     aSpacing->mBefore = aSpacing->mAfter = 0;
@@ -1227,46 +1240,48 @@ gfxFloat gfxTextRun::GetAdvanceWidth(
     uint32_t i;
     AutoTArray<PropertyProvider::Spacing, 200> spacingBuffer;
     if (spacingBuffer.AppendElements(aRange.Length(), fallible)) {
-      GetAdjustedSpacing(this, ligatureRange, *aProvider,
-                         spacingBuffer.Elements());
-      for (i = 0; i < ligatureRange.Length(); ++i) {
-        PropertyProvider::Spacing* space = &spacingBuffer[i];
-        result += space->mBefore + space->mAfter;
-      }
-      if (aSpacing) {
-        aSpacing->mBefore = spacingBuffer[0].mBefore;
-        aSpacing->mAfter = spacingBuffer.LastElement().mAfter;
+      if (GetAdjustedSpacing(this, ligatureRange, *aProvider,
+                             spacingBuffer.Elements())) {
+        for (i = 0; i < ligatureRange.Length(); ++i) {
+          PropertyProvider::Spacing* space = &spacingBuffer[i];
+          result = NSCoordSaturatingAdd(result, space->mBefore + space->mAfter);
+        }
+        if (aSpacing) {
+          aSpacing->mBefore = spacingBuffer[0].mBefore;
+          aSpacing->mAfter = spacingBuffer.LastElement().mAfter;
+        }
       }
     }
   }
 
-  return result + GetAdvanceForGlyphs(ligatureRange);
+  return NSCoordSaturatingAdd(result, GetAdvanceForGlyphs(ligatureRange));
 }
 
-gfxFloat gfxTextRun::GetMinAdvanceWidth(Range aRange) {
+nscoord gfxTextRun::GetMinAdvanceWidth(Range aRange) {
   MOZ_ASSERT(aRange.end <= GetLength(), "Substring out of range");
 
   Range ligatureRange = aRange;
   bool adjusted = ShrinkToLigatureBoundaries(&ligatureRange);
 
-  gfxFloat result =
+  nscoord result =
       adjusted
           ? std::max(ComputePartialLigatureWidth(
                          Range(aRange.start, ligatureRange.start), nullptr),
                      ComputePartialLigatureWidth(
                          Range(ligatureRange.end, aRange.end), nullptr))
-          : 0.0;
+          : 0;
 
   
   
-  gfxFloat clusterAdvance = 0;
+  nscoord clusterAdvance = 0;
   for (uint32_t i = ligatureRange.start; i < ligatureRange.end; ++i) {
     if (mCharacterGlyphs[i].CharIsSpace()) {
       
       
       continue;
     }
-    clusterAdvance += GetAdvanceForGlyph(i);
+    clusterAdvance =
+        NSCoordSaturatingAdd(clusterAdvance, GetAdvanceForGlyph(i));
     if (i + 1 == ligatureRange.end || IsClusterStart(i + 1)) {
       result = std::max(result, clusterAdvance);
       clusterAdvance = 0;

@@ -338,10 +338,10 @@ class gfxTextRun : public gfxShapedText {
 
 
 
-  gfxFloat GetAdvanceWidth(Range aRange, const PropertyProvider* aProvider,
-                           PropertyProvider::Spacing* aSpacing = nullptr) const;
+  nscoord GetAdvanceWidth(Range aRange, const PropertyProvider* aProvider,
+                          PropertyProvider::Spacing* aSpacing = nullptr) const;
 
-  gfxFloat GetAdvanceWidth() const {
+  nscoord GetAdvanceWidth() const {
     return GetAdvanceWidth(Range(this), nullptr);
   }
 
@@ -349,7 +349,7 @@ class gfxTextRun : public gfxShapedText {
 
 
 
-  gfxFloat GetMinAdvanceWidth(Range aRange);
+  nscoord GetMinAdvanceWidth(Range aRange);
 
   
 
@@ -724,11 +724,11 @@ class gfxTextRun : public gfxShapedText {
     Range mRange;
     
     
-    gfxFloat mPartAdvance;
+    nscoord mPartAdvance;
     
     
     
-    gfxFloat mPartWidth;
+    nscoord mPartWidth;
 
     bool mClipBeforePart;
     bool mClipAfterPart;
@@ -822,7 +822,7 @@ class gfxTextRun : public gfxShapedText {
   
 
   
-  int32_t GetAdvanceForGlyphs(Range aRange) const;
+  nscoord GetAdvanceForGlyphs(Range aRange) const;
 
   
   
@@ -844,8 +844,8 @@ class gfxTextRun : public gfxShapedText {
   
   LigatureData ComputeLigatureData(Range aPartRange,
                                    const PropertyProvider* aProvider) const;
-  gfxFloat ComputePartialLigatureWidth(Range aPartRange,
-                                       const PropertyProvider* aProvider) const;
+  nscoord ComputePartialLigatureWidth(Range aPartRange,
+                                      const PropertyProvider* aProvider) const;
   void DrawPartialLigature(gfxFont* aFont, Range aRange,
                            mozilla::gfx::Point* aPt,
                            const PropertyProvider* aProvider,
@@ -856,9 +856,6 @@ class gfxTextRun : public gfxShapedText {
   
   
   bool ShrinkToLigatureBoundaries(Range* aRange) const;
-  
-  gfxFloat GetPartialLigatureWidth(Range aRange,
-                                   const PropertyProvider* aProvider) const;
   void AccumulatePartialLigatureMetrics(
       gfxFont* aFont, Range aRange, gfxFont::BoundingBoxType aBoundingBoxType,
       DrawTarget* aRefDrawTarget, const PropertyProvider* aProvider,
