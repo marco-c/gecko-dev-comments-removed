@@ -935,20 +935,30 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
     
     fn adjust_for_try_tactic(&mut self, tactic: PositionTryFallbacksTryTactic) {
         debug_assert!(!tactic.is_empty());
-        let horizontal = self.style.writing_mode.is_horizontal();
+        
+        let wm = self.style.writing_mode;
         
         for tactic in tactic.into_iter() {
+            use PositionTryFallbacksTryTacticKeyword::*;
             match tactic {
-                PositionTryFallbacksTryTacticKeyword::None => break,
-                PositionTryFallbacksTryTacticKeyword::FlipBlock => {
+                None => break,
+                FlipBlock => {
                     self.flip_self_alignment( true);
-                    self.flip_insets_and_margins(!horizontal);
+                    self.flip_insets_and_margins( wm.is_vertical());
                 },
-                PositionTryFallbacksTryTacticKeyword::FlipInline => {
+                FlipInline => {
                     self.flip_self_alignment( false);
-                    self.flip_insets_and_margins(horizontal);
+                    self.flip_insets_and_margins( wm.is_horizontal());
                 },
-                PositionTryFallbacksTryTacticKeyword::FlipStart => {
+                FlipX => {
+                    self.flip_self_alignment( wm.is_vertical());
+                    self.flip_insets_and_margins( true);
+                },
+                FlipY => {
+                    self.flip_self_alignment( wm.is_horizontal());
+                    self.flip_insets_and_margins( false);
+                },
+                FlipStart => {
                     self.flip_start();
                 },
             }
