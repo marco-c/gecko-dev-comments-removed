@@ -15,10 +15,10 @@
 #include <stddef.h>  
 #include <stdint.h>  
 
-#include "gc/Barrier.h"                  
-#include "gc/ZoneAllocator.h"            
-#include "js/Class.h"                    
-#include "js/ColumnNumber.h"             
+#include "gc/Barrier.h"        
+#include "gc/ZoneAllocator.h"  
+#include "js/Class.h"          
+#include "js/ColumnNumber.h"   
 #include "js/GCVector.h"
 #include "js/Id.h"  
 #include "js/Modules.h"
