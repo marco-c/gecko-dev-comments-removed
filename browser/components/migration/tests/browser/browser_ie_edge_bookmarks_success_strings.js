@@ -3,6 +3,13 @@
 
 "use strict";
 
+add_setup(async () => {
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.migrate.ie.enabled", true]],
+  });
+});
+
 
 
 
