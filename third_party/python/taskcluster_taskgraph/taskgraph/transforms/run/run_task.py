@@ -184,7 +184,8 @@ def script_url(config, script):
         raise Exception("TASK_ID must be defined to use run-task on generic-worker")
     task_id = os.environ.get("TASK_ID", "<TASK_ID>")
     
-    tc_url = taskcluster.get_root_url()
+    
+    tc_url = taskcluster.get_root_url(False)
     
     return f"{tc_url}/api/queue/v1/task/{task_id}/artifacts/public/{script}"
 
