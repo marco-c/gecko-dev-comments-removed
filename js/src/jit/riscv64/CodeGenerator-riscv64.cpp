@@ -2076,15 +2076,25 @@ void CodeGenerator::visitUDivOrMod(LUDivOrMod* ins) {
     }
   }
 
-  masm.ma_modu32(output, lhs, rhs);
-
   
   if (ins->mir()->isDiv()) {
-    if (!ins->mir()->toDiv()->canTruncateRemainder()) {
-      bailoutCmp32(Assembler::NonZero, output, output, ins->snapshot());
+    if (ins->mir()->toDiv()->canTruncateRemainder()) {
+      masm.ma_divu32(output, lhs, rhs);
+    } else {
+      MOZ_ASSERT(lhs != output && rhs != output);
+
+      UseScratchRegisterScope temps(&masm);
+      Register scratch = temps.Acquire();
+
+      
+      
+      masm.ma_divu32(output, lhs, rhs);
+      masm.ma_modu32(scratch, lhs, rhs);
+
+      bailoutCmp32(Assembler::NonZero, scratch, scratch, ins->snapshot());
     }
-    
-    masm.ma_divu32(output, lhs, rhs);
+  } else {
+    masm.ma_modu32(output, lhs, rhs);
   }
 
   if (!ins->mir()->isTruncated()) {
