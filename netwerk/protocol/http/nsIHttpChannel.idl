@@ -408,15 +408,6 @@ interface nsIHttpChannel : nsIIdentChannel
 
 
 
-    [must_use] boolean isPrivateResponse();
-
-    
-
-
-
-
-
-
 
 
 
