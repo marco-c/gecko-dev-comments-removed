@@ -1512,6 +1512,79 @@ static ALWAYS_INLINE WideRGBA8 dither(WideRGBA8 color, int32_t fragCoordX,
 
 
 
+
+
+
+
+
+
+
+
+
+
+static int32_t findGradientStopPair(float offset, float* stops,
+                                    int32_t numStops, int32_t& initialIndex,
+                                    float& initialOffset, float& prevOffset,
+                                    float& nextOffset) {
+  int32_t index = initialIndex;
+
+  
+  
+  if (offset >= initialOffset) {
+    
+    float next = stops[initialIndex];
+    float prev = stops[max(initialIndex - 1, 0)];
+    while (index < numStops) {
+      if (next > offset) {
+        break;
+      }
+
+      index += 1;
+      prev = next;
+      next = stops[index];
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    index -= 1;
+
+    prevOffset = prev;
+    nextOffset = next;
+  } else {
+    
+    float next = stops[initialIndex];
+    float prev = stops[min(initialIndex + 1, numStops - 1)];
+    while (index > 0) {
+      if (next < offset) {
+        break;
+      }
+
+      index -= 1;
+      prev = next;
+      next = stops[index];
+    }
+
+    
+    prevOffset = next;
+    nextOffset = prev;
+  }
+
+  index = clamp(index, 0, numStops - 2);
+
+  initialIndex = index;
+  initialOffset = prevOffset;
+
+  return index;
+}
+
+
+
+
 template <bool BLEND, bool DITHER>
 static bool commitLinearGradient(sampler2D sampler, int address, float size,
                                  bool tileRepeat, bool gradientRepeat, vec2 pos,
@@ -2021,79 +2094,6 @@ static bool commitRadialGradient(sampler2D sampler, int address, float size,
     dotPosDelta += deltaDelta2;
   }
   return true;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static int32_t findGradientStopPair(float offset, float* stops,
-                                    int32_t numStops, int32_t& initialIndex,
-                                    float& initialOffset, float& prevOffset,
-                                    float& nextOffset) {
-  int32_t index = initialIndex;
-
-  
-  
-  if (offset >= initialOffset) {
-    
-    float next = stops[initialIndex];
-    float prev = stops[max(initialIndex - 1, 0)];
-    while (index < numStops) {
-      if (next > offset) {
-        break;
-      }
-
-      index += 1;
-      prev = next;
-      next = stops[index];
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    index -= 1;
-
-    prevOffset = prev;
-    nextOffset = next;
-  } else {
-    
-    float next = stops[initialIndex];
-    float prev = stops[min(initialIndex + 1, numStops - 1)];
-    while (index > 0) {
-      if (next < offset) {
-        break;
-      }
-
-      index -= 1;
-      prev = next;
-      next = stops[index];
-    }
-
-    
-    prevOffset = next;
-    nextOffset = prev;
-  }
-
-  index = clamp(index, 0, numStops - 2);
-
-  initialIndex = index;
-  initialOffset = prevOffset;
-
-  return index;
 }
 
 
