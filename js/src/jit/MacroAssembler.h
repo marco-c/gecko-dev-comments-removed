@@ -1212,46 +1212,41 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
-  inline void quotient32(Register lhs, Register rhs, Register dest,
-                         bool isUnsigned)
+  inline void quotient32(Register rhs, Register srcDest, bool isUnsigned)
       DEFINED_ON(mips64, arm, arm64, loong64, riscv64, wasm32);
 
-  inline void quotient64(Register lhs, Register rhs, Register dest,
-                         bool isUnsigned)
+  inline void quotient64(Register rhs, Register srcDest, bool isUnsigned)
       DEFINED_ON(arm64, loong64, mips64, riscv64);
 
   
-  inline void quotient32(Register lhs, Register rhs, Register dest,
-                         Register tempEdx, bool isUnsigned)
-      DEFINED_ON(x86_shared);
+  inline void quotient32(Register rhs, Register srcDest, Register tempEdx,
+                         bool isUnsigned) DEFINED_ON(x86_shared);
 
   
   
   
   
-  inline void remainder32(Register lhs, Register rhs, Register dest,
-                          bool isUnsigned)
+  inline void remainder32(Register rhs, Register srcDest, bool isUnsigned)
       DEFINED_ON(mips64, arm, arm64, loong64, riscv64, wasm32);
 
-  inline void remainder64(Register lhs, Register rhs, Register dest,
-                          bool isUnsigned)
+  inline void remainder64(Register rhs, Register srcDest, bool isUnsigned)
       DEFINED_ON(arm64, loong64, mips64, riscv64);
 
   
-  inline void remainder32(Register lhs, Register rhs, Register dest,
-                          Register tempEdx, bool isUnsigned)
-      DEFINED_ON(x86_shared);
+  inline void remainder32(Register rhs, Register srcDest, Register tempEdx,
+                          bool isUnsigned) DEFINED_ON(x86_shared);
 
   
   
   
   
   
-  void flexibleRemainder32(
-      Register lhs, Register rhs, Register dest, bool isUnsigned,
-      const LiveRegisterSet& volatileLiveRegs) PER_SHARED_ARCH;
-  void flexibleRemainderPtr(Register lhs, Register rhs, Register dest,
-                            bool isUnsigned,
+  
+  
+  void flexibleRemainder32(Register rhs, Register srcDest, bool isUnsigned,
+                           const LiveRegisterSet& volatileLiveRegs)
+      PER_SHARED_ARCH;
+  void flexibleRemainderPtr(Register rhs, Register srcDest, bool isUnsigned,
                             const LiveRegisterSet& volatileLiveRegs) PER_ARCH;
 
   
@@ -1259,11 +1254,12 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
-  void flexibleQuotient32(
-      Register lhs, Register rhs, Register dest, bool isUnsigned,
-      const LiveRegisterSet& volatileLiveRegs) PER_SHARED_ARCH;
-  void flexibleQuotientPtr(Register lhs, Register rhs, Register dest,
-                           bool isUnsigned,
+  
+  
+  void flexibleQuotient32(Register rhs, Register srcDest, bool isUnsigned,
+                          const LiveRegisterSet& volatileLiveRegs)
+      PER_SHARED_ARCH;
+  void flexibleQuotientPtr(Register rhs, Register srcDest, bool isUnsigned,
                            const LiveRegisterSet& volatileLiveRegs) PER_ARCH;
 
   
@@ -1274,10 +1270,9 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
-  
   void flexibleDivMod32(
-      Register lhs, Register rhs, Register divOutput, Register remOutput,
-      bool isUnsigned, const LiveRegisterSet& volatileLiveRegs) PER_SHARED_ARCH;
+      Register rhs, Register srcDest, Register remOutput, bool isUnsigned,
+      const LiveRegisterSet& volatileLiveRegs) PER_SHARED_ARCH;
 
   inline void divFloat32(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
   inline void divDouble(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
