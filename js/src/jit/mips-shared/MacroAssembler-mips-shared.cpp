@@ -3163,301 +3163,274 @@ void MacroAssembler::speculationBarrier() { MOZ_CRASH(); }
 void MacroAssembler::floorFloat32ToInt32(FloatRegister src, Register dest,
                                          Label* fail) {
   ScratchFloat32Scope fscratch(*this);
-  UseScratchRegisterScope temps(*this);
-  Register scratch2 = temps.Acquire();
-
-  Label skipCheck, done;
 
   
-  loadConstantFloat32(0.0f, fscratch);
-  ma_bc1s(src, fscratch, &skipCheck, Assembler::DoubleNotEqual, ShortJump);
+  as_floorls(fscratch, src);
+  moveFromDouble(fscratch, dest);
 
   
-  moveFromDoubleLo(src, scratch2);
-  branch32(Assembler::NotEqual, scratch2, Imm32(0), fail);
+  {
+    UseScratchRegisterScope temps(*this);
+    Register scratch = temps.Acquire();
+
+    move32SignExtendToPtr(dest, scratch);
+    branchPtr(Assembler::NotEqual, dest, scratch, fail);
+  }
 
   
-  move32(Imm32(0), dest);
-  ma_b(&done, ShortJump);
-
-  bind(&skipCheck);
-  as_floorws(fscratch, src);
-  moveFromDoubleLo(fscratch, dest);
-
-  branch32(Assembler::Equal, dest, Imm32(INT_MIN), fail);
-  branch32(Assembler::Equal, dest, Imm32(INT_MAX), fail);
-
-  bind(&done);
+  Label notZero;
+  ma_b(dest, zero, &notZero, Assembler::NotEqual, ShortJump);
+  {
+    
+    moveFromFloat32(src, dest);
+    ma_srl(dest, dest, Imm32(30));
+    branch32(Assembler::NotEqual, dest, zero, fail);
+  }
+  bind(&notZero);
 }
 
 void MacroAssembler::floorDoubleToInt32(FloatRegister src, Register dest,
                                         Label* fail) {
   ScratchDoubleScope dscratch(*this);
-  UseScratchRegisterScope temps(*this);
-  Register scratch2 = temps.Acquire();
-
-  Label skipCheck, done;
 
   
-  loadConstantDouble(0.0, dscratch);
-  ma_bc1d(src, dscratch, &skipCheck, Assembler::DoubleNotEqual, ShortJump);
+  as_floorld(dscratch, src);
+  moveFromDouble(dscratch, dest);
 
   
-  moveFromDoubleHi(src, scratch2);
-  branch32(Assembler::NotEqual, scratch2, Imm32(0), fail);
+  {
+    UseScratchRegisterScope temps(*this);
+    Register scratch = temps.Acquire();
+
+    move32SignExtendToPtr(dest, scratch);
+    branchPtr(Assembler::NotEqual, dest, scratch, fail);
+  }
 
   
-  move32(Imm32(0), dest);
-  ma_b(&done, ShortJump);
-
-  bind(&skipCheck);
-  as_floorwd(dscratch, src);
-  moveFromDoubleLo(dscratch, dest);
-
-  branch32(Assembler::Equal, dest, Imm32(INT_MIN), fail);
-  branch32(Assembler::Equal, dest, Imm32(INT_MAX), fail);
-
-  bind(&done);
+  Label notZero;
+  ma_b(dest, zero, &notZero, Assembler::NotEqual, ShortJump);
+  {
+    
+    moveFromDouble(src, dest);
+    ma_dsrl(dest, dest, Imm32(62));
+    branchPtr(Assembler::NotEqual, dest, zero, fail);
+  }
+  bind(&notZero);
 }
 
 void MacroAssembler::ceilFloat32ToInt32(FloatRegister src, Register dest,
                                         Label* fail) {
   ScratchFloat32Scope fscratch(*this);
-  UseScratchRegisterScope temps(*this);
-  Register scratch2 = temps.Acquire();
-
-  Label performCeil, done;
 
   
-  loadConstantFloat32(0.0f, fscratch);
-  branchFloat(Assembler::DoubleGreaterThan, src, fscratch, &performCeil);
-  loadConstantFloat32(-1.0f, fscratch);
-  branchFloat(Assembler::DoubleLessThanOrEqual, src, fscratch, &performCeil);
+  as_ceills(fscratch, src);
+  moveFromDouble(fscratch, dest);
 
   
-  moveFromFloat32(src, scratch2);
-  branch32(Assembler::NotEqual, scratch2, Imm32(0), fail);
+  {
+    UseScratchRegisterScope temps(*this);
+    Register scratch = temps.Acquire();
+
+    move32SignExtendToPtr(dest, scratch);
+    branchPtr(Assembler::NotEqual, dest, scratch, fail);
+  }
 
   
-  move32(Imm32(0), dest);
-  ma_b(&done, ShortJump);
-
-  bind(&performCeil);
-  as_ceilws(fscratch, src);
-  moveFromFloat32(fscratch, dest);
-
-  branch32(Assembler::Equal, dest, Imm32(INT_MIN), fail);
-  branch32(Assembler::Equal, dest, Imm32(INT_MAX), fail);
-
-  bind(&done);
+  Label notZero;
+  ma_b(dest, zero, &notZero, Assembler::NotEqual, ShortJump);
+  {
+    
+    moveFromFloat32(src, dest);
+    branch32(Assembler::NotEqual, dest, zero, fail);
+  }
+  bind(&notZero);
 }
 
 void MacroAssembler::ceilDoubleToInt32(FloatRegister src, Register dest,
                                        Label* fail) {
   ScratchDoubleScope dscratch(*this);
-  UseScratchRegisterScope temps(*this);
-  Register scratch2 = temps.Acquire();
-
-  Label performCeil, done;
 
   
-  loadConstantDouble(0, dscratch);
-  branchDouble(Assembler::DoubleGreaterThan, src, dscratch, &performCeil);
-  loadConstantDouble(-1, dscratch);
-  branchDouble(Assembler::DoubleLessThanOrEqual, src, dscratch, &performCeil);
+  as_ceilld(dscratch, src);
+  moveFromDouble(dscratch, dest);
 
   
-  moveFromDoubleHi(src, scratch2);
-  branch32(Assembler::NotEqual, scratch2, Imm32(0), fail);
+  {
+    UseScratchRegisterScope temps(*this);
+    Register scratch = temps.Acquire();
+
+    move32SignExtendToPtr(dest, scratch);
+    branchPtr(Assembler::NotEqual, dest, scratch, fail);
+  }
 
   
-  move32(Imm32(0), dest);
-  ma_b(&done, ShortJump);
-
-  bind(&performCeil);
-  as_ceilwd(dscratch, src);
-  moveFromDoubleLo(dscratch, dest);
-
-  branch32(Assembler::Equal, dest, Imm32(INT_MIN), fail);
-  branch32(Assembler::Equal, dest, Imm32(INT_MAX), fail);
-
-  bind(&done);
+  Label notZero;
+  ma_b(dest, zero, &notZero, Assembler::NotEqual, ShortJump);
+  {
+    
+    moveFromDouble(src, dest);
+    branchPtr(Assembler::NotEqual, dest, zero, fail);
+  }
+  bind(&notZero);
 }
 
 void MacroAssembler::roundFloat32ToInt32(FloatRegister src, Register dest,
                                          FloatRegister temp, Label* fail) {
   ScratchFloat32Scope fscratch(*this);
-  UseScratchRegisterScope temps(*this);
-  Register scratch2 = temps.Acquire();
 
-  Label negative, end, skipCheck;
-
-  
-  loadConstantFloat32(GetBiggestNumberLessThan(0.5f), temp);
+  Label negative, end, performRound;
 
   
   loadConstantFloat32(0.0f, fscratch);
   ma_bc1s(src, fscratch, &negative, Assembler::DoubleLessThan, ShortJump);
 
   
-  ma_bc1s(src, fscratch, &skipCheck, Assembler::DoubleNotEqual, ShortJump);
-
-  
-  moveFromFloat32(src, scratch2);
-  branch32(Assembler::NotEqual, scratch2, Imm32(0), fail);
-
-  
-  move32(Imm32(0), dest);
-  ma_b(&end, ShortJump);
-
-  bind(&skipCheck);
-  as_adds(fscratch, src, temp);
-  as_floorws(fscratch, fscratch);
-
-  moveFromFloat32(fscratch, dest);
-
-  branch32(Assembler::Equal, dest, Imm32(INT_MAX), fail);
-
-  jump(&end);
+  ma_bc1s(src, fscratch, &performRound, Assembler::DoubleNotEqual, ShortJump);
+  {
+    
+    moveFromFloat32(src, dest);
+    branch32(Assembler::NotEqual, dest, zero, fail);
+    ma_b(&end, ShortJump);
+  }
 
   
   bind(&negative);
+  {
+    
+    loadConstantFloat32(-0.5f, fscratch);
+    branchFloat(Assembler::DoubleGreaterThanOrEqual, src, fscratch, fail);
+  }
 
-  
-  
-  Label loadJoin;
-  loadConstantFloat32(-0.5f, fscratch);
-  branchFloat(Assembler::DoubleLessThan, src, fscratch, &loadJoin);
-  loadConstantFloat32(0.5f, temp);
-  bind(&loadJoin);
+  bind(&performRound);
+  {
+    
+    loadConstantFloat32(GetBiggestNumberLessThan(0.5f), temp);
 
-  as_adds(temp, src, temp);
+    
+    as_adds(fscratch, src, temp);
 
-  
-  
-  branchFloat(Assembler::DoubleGreaterThanOrEqual, temp, fscratch, fail);
+    
+    as_floorls(fscratch, fscratch);
+    moveFromDouble(fscratch, dest);
 
-  
-  
-  as_floorws(fscratch, temp);
-  moveFromFloat32(fscratch, dest);
+    
+    {
+      UseScratchRegisterScope temps(*this);
+      Register scratch = temps.Acquire();
 
-  
-  
-  
-  branch32(Assembler::Equal, dest, Imm32(INT_MIN), fail);
-  branch32(Assembler::Equal, dest, Imm32(INT_MAX), fail);
-
+      move32SignExtendToPtr(dest, scratch);
+      branchPtr(Assembler::NotEqual, dest, scratch, fail);
+    }
+  }
   bind(&end);
 }
 
 void MacroAssembler::roundDoubleToInt32(FloatRegister src, Register dest,
                                         FloatRegister temp, Label* fail) {
   ScratchDoubleScope dscratch(*this);
-  UseScratchRegisterScope temps(*this);
-  Register scratch2 = temps.Acquire();
 
-  Label negative, end, skipCheck;
-
-  
-  loadConstantDouble(GetBiggestNumberLessThan(0.5), temp);
+  Label negative, end, performRound;
 
   
   loadConstantDouble(0.0, dscratch);
   ma_bc1d(src, dscratch, &negative, Assembler::DoubleLessThan, ShortJump);
 
   
-  ma_bc1d(src, dscratch, &skipCheck, Assembler::DoubleNotEqual, ShortJump);
-
-  
-  moveFromDoubleHi(src, scratch2);
-  branch32(Assembler::NotEqual, scratch2, Imm32(0), fail);
-
-  
-  move32(Imm32(0), dest);
-  ma_b(&end, ShortJump);
-
-  bind(&skipCheck);
-  as_addd(dscratch, src, temp);
-  as_floorwd(dscratch, dscratch);
-
-  moveFromDoubleLo(dscratch, dest);
-
-  branch32(Assembler::Equal, dest, Imm32(INT_MAX), fail);
-
-  jump(&end);
+  ma_bc1d(src, dscratch, &performRound, Assembler::DoubleNotEqual, ShortJump);
+  {
+    
+    moveFromDouble(src, dest);
+    branchPtr(Assembler::NotEqual, dest, zero, fail);
+    ma_b(&end, ShortJump);
+  }
 
   
   bind(&negative);
+  {
+    
+    loadConstantDouble(-0.5, dscratch);
+    branchDouble(Assembler::DoubleGreaterThanOrEqual, src, dscratch, fail);
+  }
 
-  
-  
-  Label loadJoin;
-  loadConstantDouble(-0.5, dscratch);
-  branchDouble(Assembler::DoubleLessThan, src, dscratch, &loadJoin);
-  loadConstantDouble(0.5, temp);
-  bind(&loadJoin);
+  bind(&performRound);
+  {
+    
+    loadConstantDouble(GetBiggestNumberLessThan(0.5), temp);
 
-  addDouble(src, temp);
+    
+    as_addd(dscratch, src, temp);
 
-  
-  
-  branchDouble(Assembler::DoubleGreaterThanOrEqual, temp, dscratch, fail);
+    
+    as_floorld(dscratch, dscratch);
+    moveFromDouble(dscratch, dest);
 
-  
-  
-  as_floorwd(dscratch, temp);
-  moveFromDoubleLo(dscratch, dest);
+    
+    {
+      UseScratchRegisterScope temps(*this);
+      Register scratch = temps.Acquire();
 
-  
-  
-  
-  branch32(Assembler::Equal, dest, Imm32(INT_MIN), fail);
-  branch32(Assembler::Equal, dest, Imm32(INT_MAX), fail);
-
+      move32SignExtendToPtr(dest, scratch);
+      branchPtr(Assembler::NotEqual, dest, scratch, fail);
+    }
+  }
   bind(&end);
 }
 
 void MacroAssembler::truncFloat32ToInt32(FloatRegister src, Register dest,
                                          Label* fail) {
-  UseScratchRegisterScope temps(*this);
-  Register scratch = temps.Acquire();
-  Label notZero;
-  
-  as_truncws(ScratchFloat32Reg, src);
-  
-  as_cfc1(scratch, Assembler::FCSR);
-  ma_ext(scratch, scratch, Assembler::CauseV, 1);
-  branch32(Assembler::NotEqual, scratch, Imm32(0), fail);
+  ScratchFloat32Scope fscratch(*this);
 
-  moveFromFloat32(ScratchFloat32Reg, dest);
-  ma_b(dest, Imm32(0), &notZero, Assembler::NotEqual, ShortJump);
-  moveFromFloat32(src, scratch);
   
-  as_slt(scratch, scratch, zero);
-  branch32(Assembler::NotEqual, scratch, Imm32(0), fail);
+  as_truncls(fscratch, src);
+  moveFromDouble(fscratch, dest);
+
+  
+  {
+    UseScratchRegisterScope temps(*this);
+    Register scratch = temps.Acquire();
+
+    move32SignExtendToPtr(dest, scratch);
+    branchPtr(Assembler::NotEqual, dest, scratch, fail);
+  }
+
+  
+  Label notZero;
+  ma_b(dest, zero, &notZero, Assembler::NotEqual, ShortJump);
+  {
+    
+    moveFromFloat32(src, dest);
+    ma_srl(dest, dest, Imm32(30));
+    branch32(Assembler::NotEqual, dest, zero, fail);
+  }
   bind(&notZero);
 }
 
 void MacroAssembler::truncDoubleToInt32(FloatRegister src, Register dest,
                                         Label* fail) {
-  UseScratchRegisterScope temps(*this);
-  Register scratch = temps.Acquire();
-  Label notZero;
-  
-  as_truncwd(ScratchFloat32Reg, src);
-  
-  as_cfc1(scratch, Assembler::FCSR);
-  ma_ext(scratch, scratch, Assembler::CauseV, 1);
-  branch32(Assembler::NotEqual, scratch, Imm32(0), fail);
+  ScratchDoubleScope dscratch(*this);
 
   
-  moveFromFloat32(ScratchFloat32Reg, dest);
-  ma_b(dest, Imm32(0), &notZero, Assembler::NotEqual, ShortJump);
-  moveFromDoubleHi(src, scratch);
+  as_truncld(dscratch, src);
+  moveFromDouble(dscratch, dest);
+
   
-  as_slt(scratch, scratch, zero);
-  branch32(Assembler::NotEqual, scratch, Imm32(0), fail);
+  {
+    UseScratchRegisterScope temps(*this);
+    Register scratch = temps.Acquire();
+
+    move32SignExtendToPtr(dest, scratch);
+    branchPtr(Assembler::NotEqual, dest, scratch, fail);
+  }
+
+  
+  Label notZero;
+  ma_b(dest, zero, &notZero, Assembler::NotEqual, ShortJump);
+  {
+    
+    moveFromDouble(src, dest);
+    ma_dsrl(dest, dest, Imm32(62));
+    branchPtr(Assembler::NotEqual, dest, zero, fail);
+  }
   bind(&notZero);
 }
 
