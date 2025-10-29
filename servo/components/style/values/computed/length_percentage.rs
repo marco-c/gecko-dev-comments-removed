@@ -451,16 +451,6 @@ impl LengthPercentage {
 
     
     #[inline]
-    pub fn is_definitely_zero(&self) -> bool {
-        match self.unpack() {
-            Unpacked::Length(l) => l.px() == 0.0,
-            Unpacked::Percentage(p) => p.0 == 0.0,
-            Unpacked::Calc(..) => false,
-        }
-    }
-
-    
-    #[inline]
     pub fn resolve(&self, basis: Length) -> Length {
         match self.unpack() {
             Unpacked::Length(l) => l,
@@ -657,16 +647,21 @@ impl Zero for LengthPercentage {
         LengthPercentage::new_length(Length::zero())
     }
 
+    
     #[inline]
     fn is_zero(&self) -> bool {
-        self.is_definitely_zero()
+        match self.unpack() {
+            Unpacked::Length(l) => l.px() == 0.0,
+            Unpacked::Percentage(p) => p.0 == 0.0,
+            Unpacked::Calc(..) => false,
+        }
     }
 }
 
 impl ZeroNoPercent for LengthPercentage {
     #[inline]
     fn is_zero_no_percent(&self) -> bool {
-        self.is_definitely_zero() && !self.has_percentage()
+        self.to_length().is_some_and(|l| l.px() == 0.0)
     }
 }
 
@@ -1322,12 +1317,6 @@ impl ToAnimatedValue for NonNegativeLengthPercentage {
 }
 
 impl NonNegativeLengthPercentage {
-    
-    #[inline]
-    pub fn is_definitely_zero(&self) -> bool {
-        self.0.is_definitely_zero()
-    }
-
     
     #[inline]
     pub fn to_used_value(&self, containing_length: Au) -> Au {
