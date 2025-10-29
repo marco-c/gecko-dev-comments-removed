@@ -240,10 +240,7 @@ class ObjectRealm {
   
   
   
-  using NonSyntacticLexialEnvironmentsMap =
-      WeakMap<JSObject*, JSObject*, ZoneAllocPolicy>;
-  js::UniquePtr<NonSyntacticLexialEnvironmentsMap>
-      nonSyntacticLexicalEnvironments_;
+  js::UniquePtr<js::ObjectWeakMap> nonSyntacticLexicalEnvironments_;
 
   ObjectRealm(const ObjectRealm&) = delete;
   void operator=(const ObjectRealm&) = delete;
@@ -254,8 +251,7 @@ class ObjectRealm {
 
   
   
-  using ObjectMetadataTable = WeakMap<JSObject*, JSObject*, ZoneAllocPolicy>;
-  js::UniquePtr<ObjectMetadataTable> objectMetadataTable;
+  js::UniquePtr<js::ObjectWeakMap> objectMetadataTable;
 
   using IteratorCache =
       js::HashSet<js::PropertyIteratorObject*, js::IteratorHashPolicy,

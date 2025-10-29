@@ -37,7 +37,8 @@ using namespace js;
     return true;
   }
 
-  if (Map* map = args.thisv().toObject().as<WeakMapObject>().getMap()) {
+  if (ValueValueWeakMap* map =
+          args.thisv().toObject().as<WeakMapObject>().getMap()) {
     Value key = args[0];
     if (map->has(key)) {
       args.rval().setBoolean(true);
@@ -59,7 +60,7 @@ bool WeakMapObject::has(JSContext* cx, unsigned argc, Value* vp) {
 
 bool WeakMapObject::hasObject(WeakMapObject* weakMap, JSObject* obj) {
   AutoUnsafeCallWithABI unsafe;
-  Map* map = weakMap->getMap();
+  ValueValueWeakMap* map = weakMap->getMap();
   return map && map->has(ObjectValue(*obj));
 }
 
@@ -72,9 +73,10 @@ bool WeakMapObject::hasObject(WeakMapObject* weakMap, JSObject* obj) {
     return true;
   }
 
-  if (Map* map = args.thisv().toObject().as<WeakMapObject>().getMap()) {
+  if (ValueValueWeakMap* map =
+          args.thisv().toObject().as<WeakMapObject>().getMap()) {
     Value key = args[0];
-    if (Map::Ptr ptr = map->lookup(key)) {
+    if (ValueValueWeakMap::Ptr ptr = map->lookup(key)) {
       args.rval().set(ptr->value());
       return true;
     }
@@ -95,8 +97,8 @@ bool WeakMapObject::get(JSContext* cx, unsigned argc, Value* vp) {
 void WeakMapObject::getObject(WeakMapObject* weakMap, JSObject* obj,
                               Value* result) {
   AutoUnsafeCallWithABI unsafe;
-  if (Map* map = weakMap->getMap()) {
-    if (Map::Ptr ptr = map->lookup(ObjectValue(*obj))) {
+  if (ValueValueWeakMap* map = weakMap->getMap()) {
+    if (ValueValueWeakMap::Ptr ptr = map->lookup(ObjectValue(*obj))) {
       *result = ptr->value();
       return;
     }
@@ -113,12 +115,13 @@ void WeakMapObject::getObject(WeakMapObject* weakMap, JSObject* obj,
     return true;
   }
 
-  if (Map* map = args.thisv().toObject().as<WeakMapObject>().getMap()) {
+  if (ValueValueWeakMap* map =
+          args.thisv().toObject().as<WeakMapObject>().getMap()) {
     Value key = args[0];
     
     
     
-    if (Map::Ptr ptr = map->lookupUnbarriered(key)) {
+    if (ValueValueWeakMap::Ptr ptr = map->lookupUnbarriered(key)) {
       map->remove(ptr);
       args.rval().setBoolean(true);
       return true;
@@ -184,8 +187,8 @@ static bool GetOrAddWeakMapEntry(JSContext* cx, Handle<WeakMapObject*> mapObj,
     return false;
   }
 
-  WeakCollectionObject::Map* map = mapObj->getMap();
-  auto addPtr = map->lookupForAdd(key);
+  ValueValueWeakMap* map = mapObj->getMap();
+  ValueValueWeakMap::AddPtr addPtr = map->lookupForAdd(key);
   if (!addPtr) {
     if (!PreserveReflectorAndAssertValidEntry(cx, mapObj, key, value)) {
       return false;
@@ -216,12 +219,12 @@ bool WeakMapObject::getOrInsert(JSContext* cx, unsigned argc, Value* vp) {
 
 size_t WeakCollectionObject::sizeOfExcludingThis(
     mozilla::MallocSizeOf aMallocSizeOf) {
-  Map* map = getMap();
+  ValueValueWeakMap* map = getMap();
   return map ? map->sizeOfIncludingThis(aMallocSizeOf) : 0;
 }
 
 size_t WeakCollectionObject::nondeterministicGetSize() {
-  Map* map = getMap();
+  ValueValueWeakMap* map = getMap();
   if (!map) {
     return 0;
   }
@@ -235,10 +238,10 @@ bool WeakCollectionObject::nondeterministicGetKeys(
   if (!arr) {
     return false;
   }
-  if (Map* map = obj->getMap()) {
+  if (ValueValueWeakMap* map = obj->getMap()) {
     
     gc::AutoSuppressGC suppress(cx);
-    for (Map::Range r = map->all(); !r.empty(); r.popFront()) {
+    for (ValueValueWeakMap::Range r = map->all(); !r.empty(); r.popFront()) {
       const auto& key = r.front().key();
       MOZ_ASSERT(key.isObject() || key.isSymbol());
       JS::ExposeValueToActiveJS(key);
@@ -267,16 +270,14 @@ JS_PUBLIC_API bool JS_NondeterministicGetWeakMapKeys(JSContext* cx,
       cx, obj.as<WeakCollectionObject>(), ret);
 }
 
-
-void WeakCollectionObject::trace(JSTracer* trc, JSObject* obj) {
-  if (Map* map = obj->as<WeakCollectionObject>().getMap()) {
+static void WeakCollection_trace(JSTracer* trc, JSObject* obj) {
+  if (ValueValueWeakMap* map = obj->as<WeakCollectionObject>().getMap()) {
     map->trace(trc);
   }
 }
 
-
-void WeakCollectionObject::finalize(JS::GCContext* gcx, JSObject* obj) {
-  if (Map* map = obj->as<WeakCollectionObject>().getMap()) {
+static void WeakCollection_finalize(JS::GCContext* gcx, JSObject* obj) {
+  if (ValueValueWeakMap* map = obj->as<WeakCollectionObject>().getMap()) {
     gcx->delete_(obj, map, MemoryUse::WeakMapObject);
   }
 }
@@ -300,12 +301,12 @@ JS_PUBLIC_API bool JS::GetWeakMapEntry(JSContext* cx, HandleObject mapObj,
     return true;
   }
 
-  WeakMapObject::Map* map = mapObj->as<WeakMapObject>().getMap();
+  ValueValueWeakMap* map = mapObj->as<WeakMapObject>().getMap();
   if (!map) {
     return true;
   }
 
-  if (auto ptr = map->lookup(key)) {
+  if (ValueValueWeakMap::Ptr ptr = map->lookup(key)) {
     rval.set(ptr->value());
   }
   return true;
@@ -409,16 +410,16 @@ bool WeakMapObject::construct(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 const JSClassOps WeakCollectionObject::classOps_ = {
-    nullptr,    
-    nullptr,    
-    nullptr,    
-    nullptr,    
-    nullptr,    
-    nullptr,    
-    &finalize,  
-    nullptr,    
-    nullptr,    
-    &trace,     
+    nullptr,                  
+    nullptr,                  
+    nullptr,                  
+    nullptr,                  
+    nullptr,                  
+    nullptr,                  
+    WeakCollection_finalize,  
+    nullptr,                  
+    nullptr,                  
+    WeakCollection_trace,     
 };
 
 const ClassSpec WeakMapObject::classSpec_ = {

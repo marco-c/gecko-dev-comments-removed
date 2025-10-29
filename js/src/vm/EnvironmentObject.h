@@ -1470,8 +1470,7 @@ class DebugEnvironments {
   Zone* zone_;
 
   
-  using ProxiedEnvironmentsMap = WeakMap<JSObject*, JSObject*, ZoneAllocPolicy>;
-  ProxiedEnvironmentsMap proxiedEnvs;
+  ObjectWeakMap proxiedEnvs;
 
   
 
