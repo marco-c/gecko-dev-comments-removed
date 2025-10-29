@@ -308,7 +308,9 @@ class HighlighterEnvironment extends EventEmitter {
     if (this._targetActor && this._targetActor.isRootActor) {
       return this.window;
     }
-    return this.docShell && this.docShell.chromeEventHandler;
+    return (
+      this._targetActor?.chromeEventHandler || this.docShell.chromeEventHandler
+    );
   }
 
   relayTargetEvent(name, data) {
