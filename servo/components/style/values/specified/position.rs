@@ -21,6 +21,7 @@ use crate::values::generics::position::ZIndex as GenericZIndex;
 use crate::values::generics::position::{AspectRatio as GenericAspectRatio, GenericAnchorSide};
 use crate::values::generics::position::{GenericAnchorFunction, GenericInset};
 use crate::values::specified;
+use crate::values::specified::align::AlignFlags;
 use crate::values::specified::{AllowQuirks, Integer, LengthPercentage, NonNegativeNumber};
 use crate::values::DashedIdent;
 use crate::{Atom, Zero};
@@ -1183,6 +1184,28 @@ impl PositionAreaKeyword {
         };
         let new_track = old_track.flip();
         Self::from_u8((self as u8 & !TRACK_MASK) | new_track as u8).unwrap()
+    }
+
+    
+    
+    
+    
+    pub fn to_self_alignment(self) -> Option<AlignFlags> {
+        self.track().map(|track| match track {
+            
+            PositionAreaTrack::Center => AlignFlags::CENTER,
+            
+            PositionAreaTrack::SpanAll => AlignFlags::ANCHOR_CENTER,
+            
+            
+            _ => {
+                if track.start() {
+                    AlignFlags::END
+                } else {
+                    AlignFlags::START
+                }
+            },
+        })
     }
 }
 

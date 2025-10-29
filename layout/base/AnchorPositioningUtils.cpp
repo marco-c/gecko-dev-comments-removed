@@ -504,7 +504,8 @@ static StylePositionArea ToPhysicalPositionArea(StylePositionArea aPosArea,
 
 nsRect AnchorPositioningUtils::AdjustAbsoluteContainingBlockRectForPositionArea(
     const nsRect& aAnchorRect, const nsRect& aCBRect, WritingMode aPositionedWM,
-    WritingMode aCBWM, const StylePositionArea& aPosArea) {
+    WritingMode aCBWM, const StylePositionArea& aPosArea,
+    StylePositionArea* aOutResolvedArea) {
   
   
   
@@ -536,6 +537,7 @@ nsRect AnchorPositioningUtils::AdjustAbsoluteContainingBlockRectForPositionArea(
   
   StylePositionArea posArea =
       ToPhysicalPositionArea(aPosArea, aCBWM, aPositionedWM);
+  *aOutResolvedArea = posArea;
 
   nscoord right = ltrEdges[3];
   if (posArea.first == StylePositionAreaKeyword::Left) {
