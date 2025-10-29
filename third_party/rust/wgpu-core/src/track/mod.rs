@@ -224,7 +224,6 @@ impl SharedTrackerIndexAllocator {
 pub(crate) struct TrackerIndexAllocators {
     pub buffers: Arc<SharedTrackerIndexAllocator>,
     pub textures: Arc<SharedTrackerIndexAllocator>,
-    pub texture_views: Arc<SharedTrackerIndexAllocator>,
     pub external_textures: Arc<SharedTrackerIndexAllocator>,
     pub samplers: Arc<SharedTrackerIndexAllocator>,
     pub bind_groups: Arc<SharedTrackerIndexAllocator>,
@@ -241,7 +240,6 @@ impl TrackerIndexAllocators {
         TrackerIndexAllocators {
             buffers: Arc::new(SharedTrackerIndexAllocator::new()),
             textures: Arc::new(SharedTrackerIndexAllocator::new()),
-            texture_views: Arc::new(SharedTrackerIndexAllocator::new()),
             external_textures: Arc::new(SharedTrackerIndexAllocator::new()),
             samplers: Arc::new(SharedTrackerIndexAllocator::new()),
             bind_groups: Arc::new(SharedTrackerIndexAllocator::new()),
@@ -614,12 +612,32 @@ impl DeviceTracker {
 
 
 pub(crate) struct Tracker {
+    
+    
+    
+    
     pub buffers: BufferTracker,
+
+    
+    
+    
+    
     pub textures: TextureTracker,
+
     pub blas_s: BlasTracker,
     pub tlas_s: StatelessTracker<resource::Tlas>,
     pub views: StatelessTracker<resource::TextureView>,
+
+    
+    
+    
+    
+    
+    
+    
+    
     pub bind_groups: StatelessTracker<binding_model::BindGroup>,
+
     pub compute_pipelines: StatelessTracker<pipeline::ComputePipeline>,
     pub render_pipelines: StatelessTracker<pipeline::RenderPipeline>,
     pub bundles: StatelessTracker<command::RenderBundle>,
@@ -660,24 +678,12 @@ impl Tracker {
     
     
     
-    
-    
-    
-    
-    pub unsafe fn set_and_remove_from_usage_scope_sparse(
-        &mut self,
-        scope: &mut UsageScope,
-        bind_group: &BindGroupStates,
-    ) {
-        unsafe {
-            self.buffers.set_and_remove_from_usage_scope_sparse(
-                &mut scope.buffers,
-                bind_group.buffers.used_tracker_indices(),
-            )
-        };
-        unsafe {
-            self.textures
-                .set_and_remove_from_usage_scope_sparse(&mut scope.textures, &bind_group.views)
-        };
+    pub fn set_from_bind_group(&mut self, scope: &mut UsageScope, bind_group: &BindGroupStates) {
+        self.buffers.set_multiple(
+            &mut scope.buffers,
+            bind_group.buffers.used_tracker_indices(),
+        );
+        self.textures
+            .set_multiple(&mut scope.textures, &bind_group.views);
     }
 }

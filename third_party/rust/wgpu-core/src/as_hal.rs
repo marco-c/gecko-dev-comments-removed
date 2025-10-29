@@ -333,6 +333,12 @@ impl Global {
     
     
     
+    
+    
+    
+    
+    
+    
     pub unsafe fn command_encoder_as_hal_mut<
         A: hal::Api,
         F: FnOnce(Option<&mut A::CommandEncoder>) -> R,

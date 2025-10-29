@@ -615,8 +615,7 @@ impl TextureTracker {
     
     
     
-    
-    pub unsafe fn set_and_remove_from_usage_scope_sparse(
+    pub fn set_multiple(
         &mut self,
         scope: &mut TextureUsageScope,
         bind_group_state: &TextureViewBindGroupState,
@@ -628,12 +627,15 @@ impl TextureTracker {
 
         for (view, _) in bind_group_state.views.iter() {
             let index = view.parent.tracker_index().as_usize();
-            scope.tracker_assert_in_bounds(index);
 
-            if unsafe { !scope.metadata.contains_unchecked(index) } {
-                continue;
+            scope.tracker_assert_in_bounds(index);
+            unsafe {
+                assert!(scope.metadata.contains_unchecked(index));
             }
+
             let texture_selector = &view.parent.full_range;
+            
+            
             unsafe {
                 insert_or_barrier_update(
                     texture_selector,
@@ -649,8 +651,6 @@ impl TextureTracker {
                     &mut self.temp,
                 )
             };
-
-            unsafe { scope.metadata.remove(index) };
         }
     }
 }

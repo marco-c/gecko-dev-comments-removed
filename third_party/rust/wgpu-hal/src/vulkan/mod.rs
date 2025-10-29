@@ -390,6 +390,8 @@ struct Swapchain {
     functor: khr::swapchain::Device,
     device: Arc<DeviceShared>,
     images: Vec<vk::Image>,
+    
+    fence: vk::Fence,
     config: crate::SurfaceConfiguration,
 
     

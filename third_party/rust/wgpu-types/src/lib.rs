@@ -4566,21 +4566,32 @@ impl<T> PollType<T> {
 
 
 #[derive(Debug)]
-#[cfg_attr(feature = "std", derive(thiserror::Error))]
 pub enum PollError {
     
-    #[cfg_attr(
-        feature = "std",
-        error("The requested Wait timed out before the submission was completed.")
-    )]
     Timeout,
     
-    #[cfg_attr(
-        feature = "std",
-        error("Tried to wait using a submission index ({0}) that has not been returned by a successful submission (last successful submission: {1})")
-    )]
     WrongSubmissionIndex(u64, u64),
 }
+
+
+
+impl fmt::Display for PollError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            PollError::Timeout => {
+                f.write_str("The requested Wait timed out before the submission was completed.")
+            }
+            PollError::WrongSubmissionIndex(requested, successful) => write!(
+                f,
+                "Tried to wait using a submission index ({requested}) \
+                that has not been returned by a successful submission \
+                (last successful submission: {successful}"
+            ),
+        }
+    }
+}
+
+impl core::error::Error for PollError {}
 
 
 #[derive(Debug, PartialEq, Eq)]

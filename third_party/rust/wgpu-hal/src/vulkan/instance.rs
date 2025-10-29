@@ -187,6 +187,8 @@ impl super::Swapchain {
             };
         };
 
+        unsafe { device.destroy_fence(self.fence, None) }
+
         
         for semaphore in self.acquire_semaphores.drain(..) {
             let arc_removed = Arc::into_inner(semaphore).expect(
@@ -1115,7 +1117,7 @@ impl crate::Surface for super::Surface {
                 swapchain.raw,
                 timeout_ns,
                 acquire_semaphore_guard.acquire,
-                vk::Fence::null(),
+                swapchain.fence,
             )
         } {
             
@@ -1137,6 +1139,30 @@ impl crate::Surface for super::Surface {
                 };
             }
         };
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        unsafe {
+            swapchain
+                .device
+                .raw
+                .wait_for_fences(&[swapchain.fence], false, timeout_ns)
+                .map_err(super::map_host_device_oom_and_lost_err)?;
+
+            swapchain
+                .device
+                .raw
+                .reset_fences(&[swapchain.fence])
+                .map_err(super::map_host_device_oom_and_lost_err)?;
+        }
 
         drop(acquire_semaphore_guard);
         
