@@ -223,12 +223,14 @@ void ScriptLoadRequest::CacheEntryFound(LoadedScript* aLoadedScript) {
   }
 }
 
-void ScriptLoadRequest::NoCacheEntryFound() {
+void ScriptLoadRequest::NoCacheEntryFound(
+    mozilla::dom::ReferrerPolicy aReferrerPolicy) {
   MOZ_ASSERT(IsCheckingCache());
   MOZ_ASSERT(mURI);
   
   
   
+  MOZ_ASSERT(mReferrerPolicy == aReferrerPolicy);
   switch (mKind) {
     case ScriptKind::eClassic:
       mLoadedScript = new ClassicScript(mReferrerPolicy, mFetchOptions, mURI);

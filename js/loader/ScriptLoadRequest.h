@@ -177,7 +177,7 @@ class ScriptLoadRequest : public nsISupports,
   
   
   
-  void NoCacheEntryFound();
+  void NoCacheEntryFound(mozilla::dom::ReferrerPolicy aReferrerPolicy);
 
   bool PassedConditionForDiskCache() const {
     return mDiskCachingPlan == CachingPlan::PassedCondition;
