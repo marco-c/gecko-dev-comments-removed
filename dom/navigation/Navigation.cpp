@@ -1726,31 +1726,47 @@ void Navigation::AbortOngoingNavigation(JSContext* aCx,
   }
 
   
-  event->AbortController()->Abort(aCx, error);
+  AbortNavigateEvent(aCx, event, error);
+}
+
+
+void Navigation::AbortNavigateEvent(JSContext* aCx, NavigateEvent* aEvent,
+                                    JS::Handle<JS::Value> aReason) {
+  
+  
+
+  
+  aEvent->AbortController()->Abort(aCx, aReason);
+
+  
+  RootedDictionary<ErrorEventInit> init(aCx);
+  ExtractErrorInformation(aCx, aReason, init);
 
   
   mOngoingNavigateEvent = nullptr;
 
   
-  RootedDictionary<ErrorEventInit> init(aCx);
-  ExtractErrorInformation(aCx, error, init);
-
   
   if (mOngoingAPIMethodTracker) {
-    mOngoingAPIMethodTracker->RejectFinishedPromise(error);
+    mOngoingAPIMethodTracker->RejectFinishedPromise(aReason);
   }
 
+  
   
   FireErrorEvent(u"navigateerror"_ns, init);
 
   
-  if (mTransition) {
-    
-    mTransition->Finished()->MaybeReject(error);
-
-    
-    mTransition = nullptr;
+  if (!mTransition) {
+    return;
   }
+
+  
+  mTransition->Committed()->MaybeReject(aReason);
+  
+  mTransition->Finished()->MaybeReject(aReason);
+
+  
+  mTransition = nullptr;
 }
 
 
