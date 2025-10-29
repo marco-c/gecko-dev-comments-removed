@@ -546,7 +546,6 @@ static void WebRenderDebugPrefChangeCallback(const char* aPrefName, void*) {
   GFX_WEBRENDER_DEBUG(".picture-borders", wr::DebugFlags::PICTURE_BORDERS)
   GFX_WEBRENDER_DEBUG(".force-picture-invalidation",
                       wr::DebugFlags::FORCE_PICTURE_INVALIDATION)
-  GFX_WEBRENDER_DEBUG(".primitives", wr::DebugFlags::PRIMITIVE_DBG)
   
   
   GFX_WEBRENDER_DEBUG(".small-screen", wr::DebugFlags::SMALL_SCREEN)
@@ -4164,9 +4163,11 @@ void gfxPlatform::BuildContentDeviceData(
     mozilla::gfx::ContentDeviceData* aOut) {
   MOZ_ASSERT(XRE_IsParentProcess());
 
-  
-  DebugOnly<nsresult> rv = GPUProcessManager::Get()->EnsureGPUReady();
-  MOZ_ASSERT(NS_SUCCEEDED(rv));
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  if (auto* gpm = GPUProcessManager::Get()) {
+    MOZ_DIAGNOSTIC_ASSERT(gpm->IsGPUReady());
+  }
+#endif
 
   aOut->prefs().hwCompositing() = gfxConfig::GetValue(Feature::HW_COMPOSITING);
   aOut->prefs().oglCompositing() =

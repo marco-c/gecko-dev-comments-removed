@@ -77,7 +77,7 @@ class UtilityMediaServiceChild final : public PUtilityMediaServiceChild,
 
   
   
-  bool CreateVideoBridge();
+  bool CreateVideoBridge(mozilla::ipc::EndpointProcInfo aOtherProcess);
 #endif
 
 #ifdef MOZ_WMF_CDM

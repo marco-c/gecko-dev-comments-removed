@@ -2787,6 +2787,9 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
   }
 
   
+  GPUProcessManager* gpm = GPUProcessManager::Get();
+  gpm->EnsureGPUReady();
+  
   gfxPlatform::GetPlatform()->BuildContentDeviceData(
       &xpcomInit.contentDeviceData());
   
@@ -2905,8 +2908,6 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
   
   
   
-  GPUProcessManager* gpm = GPUProcessManager::Get();
-
   Endpoint<PCompositorManagerChild> compositor;
   Endpoint<PImageBridgeChild> imageBridge;
   Endpoint<PVRManagerChild> vrBridge;
