@@ -5,7 +5,6 @@
 
 
 #include "BaseVFS.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "nsIFile.h"

@@ -3,7 +3,6 @@
 
 
 #include "jsctypes-test.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/Types.h"
 
 #define EXPORT_CDECL(type) MOZ_EXPORT type

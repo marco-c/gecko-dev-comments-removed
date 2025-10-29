@@ -8,7 +8,6 @@
 
 #include "nscore.h"
 #include "prio.h"
-#include "plstr.h"
 #include "mozilla/Logging.h"
 #include "prinrval.h"
 
@@ -26,7 +25,6 @@
 #include "nsZipArchive.h"
 #include "nsWeakReference.h"
 #include "nsIObserver.h"
-#include "mozilla/Attributes.h"
 
 class nsZipReaderCache;
 

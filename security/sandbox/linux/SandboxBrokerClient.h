@@ -10,8 +10,6 @@
 #include "broker/SandboxBrokerCommon.h"
 #include "broker/SandboxBrokerUtils.h"
 
-#include "mozilla/Attributes.h"
-
 
 
 

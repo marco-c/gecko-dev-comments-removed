@@ -8,7 +8,6 @@
 
 #include "xpcprivate.h"
 #include "mozilla/dom/BindingUtils.h"
-#include "mozilla/Attributes.h"
 #include "js/Object.h"              
 #include "js/PropertyAndElement.h"  
 #include "js/Symbol.h"

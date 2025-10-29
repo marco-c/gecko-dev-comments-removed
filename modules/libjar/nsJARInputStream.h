@@ -10,7 +10,6 @@
 #include "nsIInputStream.h"
 #include "nsJAR.h"
 #include "nsTArray.h"
-#include "mozilla/Attributes.h"
 
 
 

@@ -13,8 +13,6 @@
 
 #include <utility>
 
-#include "mozilla/Attributes.h"
-
 namespace mozilla {
 
 

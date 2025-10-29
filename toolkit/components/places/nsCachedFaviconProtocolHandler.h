@@ -11,7 +11,6 @@
 #include "nsIURI.h"
 #include "nsString.h"
 #include "nsWeakReference.h"
-#include "mozilla/Attributes.h"
 
 
 #define NS_CACHEDFAVICONPROTOCOLHANDLER_CID \

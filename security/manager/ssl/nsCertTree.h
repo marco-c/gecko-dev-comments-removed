@@ -12,7 +12,6 @@
 #include "nsNSSComponent.h"
 #include "nsTArray.h"
 #include "PLDHashTable.h"
-#include "mozilla/Attributes.h"
 
 
 
