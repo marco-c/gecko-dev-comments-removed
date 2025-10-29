@@ -49,6 +49,9 @@ if not CONFIG["MOZ_CODE_COVERAGE"]:
     
     if CONFIG["OS_TARGET"] != "WINNT":
         RUST_TESTS += ["style"]
+        
+        
+        RUST_TESTS += ["dom_fragmentdirectives"]
 
 if CONFIG["TARGET_CPU"] != "x86":
     
