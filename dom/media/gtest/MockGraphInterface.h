@@ -27,8 +27,10 @@ class MockGraphInterface : public GraphInterface {
 #endif
   
 
+  MOCK_METHOD(void, MockIteration, (GraphTime aStateComputedTime), ());
   IterationResult OneIteration(GraphTime aStateComputedTime,
                                MixerCallbackReceiver* aMixerReceiver) {
+    MockIteration(aStateComputedTime);
     GraphDriver* driver = mCurrentDriver;
     if (aMixerReceiver) {
       mMixer.StartMixing();
