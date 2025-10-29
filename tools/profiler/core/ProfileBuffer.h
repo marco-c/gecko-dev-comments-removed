@@ -59,7 +59,9 @@ class ProfileBuffer final {
   
   void AddJITInfoForRange(uint64_t aRangeStart, ProfilerThreadId aThreadId,
                           JSContext* aContext, JITFrameInfo& aJITFrameInfo,
-                          mozilla::ProgressLogger aProgressLogger) const;
+                          mozilla::ProgressLogger aProgressLogger,
+                          const nsTHashMap<SourceId, IndexIntoSourceTable>*
+                              aSourceIdToIndexMap = nullptr) const;
 
   
   
