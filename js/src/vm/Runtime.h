@@ -1077,11 +1077,14 @@ struct JSRuntime {
   
   
   
-  
-  
-  
-  
   js::MainThreadData<uint32_t> moduleAsyncEvaluatingPostOrder;
+
+  
+  
+  
+  
+  
+  js::MainThreadData<uint32_t> pendingAsyncModuleEvaluations;
 
   
   js::MainThreadData<JS::ModuleLoadHook> moduleLoadHook;

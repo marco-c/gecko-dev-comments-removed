@@ -691,25 +691,26 @@ void ModuleNamespaceObject::ProxyHandler::finalize(JS::GCContext* gcx,
   }
 }
 
+
+
 static uint32_t IncrementModuleAsyncEvaluationCount(JSRuntime* rt) {
+  if (rt->pendingAsyncModuleEvaluations == 0) {
+    
+    
+    
+    rt->moduleAsyncEvaluatingPostOrder = 0;
+  }
+
   uint32_t ordinal = rt->moduleAsyncEvaluatingPostOrder;
   MOZ_ASSERT(ordinal != ASYNC_EVALUATING_POST_ORDER_DONE);
   MOZ_ASSERT(ordinal != ASYNC_EVALUATING_POST_ORDER_UNSET);
   MOZ_ASSERT(ordinal < ASYNC_EVALUATING_POST_ORDER_MAX_VALUE);
   rt->moduleAsyncEvaluatingPostOrder++;
+
+  MOZ_ASSERT(rt->pendingAsyncModuleEvaluations < MAX_UINT32);
+  rt->pendingAsyncModuleEvaluations++;
+
   return ordinal;
-}
-
-
-
-
-
-
-static void MaybeResetPostOrderCounter(JSRuntime* rt,
-                                       uint32_t finishedPostOrder) {
-  if (rt->moduleAsyncEvaluatingPostOrder == finishedPostOrder + 1) {
-    rt->moduleAsyncEvaluatingPostOrder = 0;
-  }
 }
 
 bool AsyncEvaluationOrder::isUnset() const {
@@ -736,7 +737,8 @@ void AsyncEvaluationOrder::set(JSRuntime* rt) {
 
 void AsyncEvaluationOrder::setDone(JSRuntime* rt) {
   MOZ_ASSERT(isInteger());
-  MaybeResetPostOrderCounter(rt, value);
+  MOZ_ASSERT(rt->pendingAsyncModuleEvaluations > 0);
+  rt->pendingAsyncModuleEvaluations--;
   value = ASYNC_EVALUATING_POST_ORDER_DONE;
 }
 
