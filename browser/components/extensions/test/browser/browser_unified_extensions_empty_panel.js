@@ -629,3 +629,51 @@ add_task(async function test_empty_state_with_blocklisted_addon_hardblock() {
 add_task(async function test_empty_state_with_blocklisted_addon_softblock() {
   await do_test_empty_state_with_blocklisted_addon( true);
 });
+
+add_task(async function test_safe_mode_notice() {
+  const sandbox = sinon.createSandbox();
+  registerCleanupFunction(() => sandbox.restore());
+
+  
+  
+  
+  
+  const win = await BrowserTestUtils.openNewBrowserWindow({ private: true });
+  
+  
+  
+  const appinfoStub = new Proxy(Services.appinfo, {
+    get(target, propertyKey) {
+      if (propertyKey === "inSafeMode") {
+        return true;
+      }
+      return Reflect.get(target, propertyKey, target);
+    },
+  });
+  sandbox.stub(Services, "appinfo").get(() => appinfoStub);
+  await openExtensionsPanel(win);
+
+  const messages = getMessageBars(win);
+  is(messages.length, 1, "Got one message bar");
+  const bar = messages[0];
+  is(bar.getAttribute("type"), "info", "Bar is informational notice");
+  ok(!bar.hasAttribute("dismissable"), "Bar is not dismissable");
+
+  
+  
+  
+  let emptyStateBox = getEmptyStateContainer(win);
+  ok(BrowserTestUtils.isVisible(emptyStateBox), "Empty state is visible");
+
+  await closeExtensionsPanel(win);
+
+  
+  await openExtensionsPanel(win);
+  is(getMessageBars(win).length, 1, "Still one bar");
+  await closeExtensionsPanel(win);
+
+  sandbox.restore();
+  is(Services.appinfo.inSafeMode, false, "Restored original inSafeMode");
+
+  await BrowserTestUtils.closeWindow(win);
+});

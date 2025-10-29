@@ -2485,6 +2485,14 @@ var gUnifiedExtensions = {
       "#unified-extensions-messages-container"
     );
 
+    if (Services.appinfo.inSafeMode) {
+      this._messageBarSafemode ??= this._makeMessageBar({
+        messageBarFluentId: "unified-extensions-notice-safe-mode",
+        type: "info",
+      });
+      container.prepend(this._messageBarSafemode);
+    } 
+
     if (this.blocklistAttentionInfo?.shouldShow) {
       this._messageBarBlocklist = this._createBlocklistMessageBar(container);
     } else {
