@@ -8,7 +8,6 @@
 
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/DelayedRunnable.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"  
 #include "mozilla/ProfilerRunnable.h"
 #include "mozilla/StateWatching.h"  

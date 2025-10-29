@@ -5,6 +5,7 @@
 
 
 #include "mozilla/Components.h"
+#include "mozilla/HelperMacros.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PageloadEvent.h"
 #include "mozilla/RandomNum.h"

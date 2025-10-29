@@ -18,7 +18,6 @@
 #include <stddef.h>  
 #include <stdint.h>  
 
-#include "mozilla/HelperMacros.h"  
 #include "mozilla/RefCountType.h"
 
 

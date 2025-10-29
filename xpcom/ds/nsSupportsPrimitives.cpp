@@ -5,7 +5,6 @@
 
 
 #include "nsSupportsPrimitives.h"
-#include "mozilla/Assertions.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Sprintf.h"
 #include <algorithm>

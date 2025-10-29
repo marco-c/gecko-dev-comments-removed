@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/HelperMacros.h"
 #include "mozilla/Tokenizer.h"
 #include "mozilla/IncrementalTokenizer.h"
 #include "gtest/gtest.h"

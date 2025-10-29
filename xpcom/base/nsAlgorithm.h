@@ -8,7 +8,6 @@
 #define nsAlgorithm_h___
 
 #include <cstdint>
-#include "mozilla/Assertions.h"
 
 
 
