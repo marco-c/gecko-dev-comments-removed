@@ -80,7 +80,6 @@ class AbsoluteContainingBlock {
 
 
 
-
   void Reflow(nsContainerFrame* aDelegatingFrame, nsPresContext* aPresContext,
               const ReflowInput& aReflowInput, nsReflowStatus& aReflowStatus,
               const nsRect& aContainingBlock, AbsPosReflowFlags aFlags,

@@ -3196,11 +3196,6 @@ class nsIFrame : public nsQueryFrame {
   virtual void DidReflow(nsPresContext* aPresContext,
                          const ReflowInput* aReflowInput);
 
-  void FinishReflowWithAbsoluteFrames(nsPresContext* aPresContext,
-                                      ReflowOutput& aDesiredSize,
-                                      const ReflowInput& aReflowInput,
-                                      nsReflowStatus& aStatus);
-
   
 
 
@@ -4612,16 +4607,6 @@ class nsIFrame : public nsQueryFrame {
 
 
   bool DoesClipChildrenInBothAxes() const;
-
-  
-
-
-
-
-  void ReflowAbsoluteFrames(nsPresContext* aPresContext,
-                            ReflowOutput& aDesiredSize,
-                            const ReflowInput& aReflowInput,
-                            nsReflowStatus& aStatus);
 
  private:
   nscoord ComputeISizeValueFromAspectRatio(

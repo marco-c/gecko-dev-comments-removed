@@ -284,6 +284,27 @@ class nsContainerFrame : public nsSplittableFrame {
   static void PositionChildViews(nsIFrame* aFrame);
 
   
+
+
+
+
+
+
+  void ReflowAbsoluteFrames(nsPresContext* aPresContext,
+                            ReflowOutput& aDesiredSize,
+                            const ReflowInput& aReflowInput,
+                            nsReflowStatus& aStatus);
+
+  
+
+
+
+  void FinishReflowWithAbsoluteFrames(nsPresContext* aPresContext,
+                                      ReflowOutput& aDesiredSize,
+                                      const ReflowInput& aReflowInput,
+                                      nsReflowStatus& aStatus);
+
+  
   
 
 
