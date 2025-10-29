@@ -6188,7 +6188,33 @@ void MacroAssembler::nearbyIntFloat32(RoundingMode mode, FloatRegister src,
 
 void MacroAssembler::copySignDouble(FloatRegister lhs, FloatRegister rhs,
                                     FloatRegister output) {
-  MOZ_CRASH("not supported on this platform");
+  ScratchRegisterScope scratch(*this);
+
+  
+  as_vxfer(scratch, InvalidReg, rhs, Assembler::FloatToCore, Assembler::Always,
+           1);
+
+  
+  ma_vabs(lhs, output);
+
+  
+  as_cmp(scratch, Imm8(0));
+  ma_vneg(output, output, Assembler::LessThan);
+}
+
+void MacroAssembler::copySignFloat32(FloatRegister lhs, FloatRegister rhs,
+                                     FloatRegister output) {
+  ScratchRegisterScope scratch(*this);
+
+  
+  ma_vxfer(rhs, scratch);
+
+  
+  ma_vabs_f32(lhs, output);
+
+  
+  as_cmp(scratch, Imm8(0));
+  ma_vneg_f32(output, output, Assembler::LessThan);
 }
 
 void MacroAssembler::shiftIndex32AndAdd(Register indexTemp32, int shift,
