@@ -15,7 +15,7 @@
 namespace mozilla::dom {
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(NavigationTransition, mGlobalObject,
-                                      mFrom, mFinished)
+                                      mFrom, mCommitted, mFinished)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(NavigationTransition)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(NavigationTransition)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(NavigationTransition)
@@ -26,8 +26,12 @@ NS_INTERFACE_MAP_END
 NavigationTransition::NavigationTransition(nsIGlobalObject* aGlobalObject,
                                            enum NavigationType aNavigationType,
                                            NavigationHistoryEntry* aFrom,
+                                           Promise* aCommitted,
                                            Promise* aFinished)
-    : mNavigationType(aNavigationType), mFrom(aFrom), mFinished(aFinished) {}
+    : mNavigationType(aNavigationType),
+      mFrom(aFrom),
+      mCommitted(aCommitted),
+      mFinished(aFinished) {}
 
 
 enum NavigationType NavigationTransition::NavigationType() const {
@@ -36,6 +40,9 @@ enum NavigationType NavigationTransition::NavigationType() const {
 
 
 NavigationHistoryEntry* NavigationTransition::From() const { return mFrom; }
+
+
+Promise* NavigationTransition::Committed() const { return mCommitted; }
 
 
 Promise* NavigationTransition::Finished() const { return mFinished; }

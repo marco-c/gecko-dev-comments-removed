@@ -29,10 +29,14 @@ class NavigationTransition final : public nsISupports, public nsWrapperCache {
 
   NavigationTransition(nsIGlobalObject* aGlobalObject,
                        NavigationType aNavigationType,
-                       NavigationHistoryEntry* aFrom, Promise* aFinished);
+                       NavigationHistoryEntry* aFrom, Promise* aCommitted,
+                       Promise* aFinished);
 
   enum NavigationType NavigationType() const;
   NavigationHistoryEntry* From() const;
+
+  Promise* Committed() const;
+
   Promise* Finished() const;
 
   JSObject* WrapObject(JSContext* aCx,
@@ -49,6 +53,9 @@ class NavigationTransition final : public nsISupports, public nsWrapperCache {
 
   
   RefPtr<NavigationHistoryEntry> mFrom;
+
+  
+  RefPtr<Promise> mCommitted;
 
   
   RefPtr<Promise> mFinished;
