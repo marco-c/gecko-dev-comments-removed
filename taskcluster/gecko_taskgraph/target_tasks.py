@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 
 import requests
 from redo import retry
+from taskcluster.exceptions import TaskclusterRestFailure
 from taskgraph import create
 from taskgraph.target_tasks import filter_for_git_branch, register_target_task
 from taskgraph.util.attributes import attrmatch
@@ -77,7 +78,9 @@ def index_exists(index_path, reason=""):
         task_id = find_task_id(index_path)
         print(f"Index {index_path} exists: taskId {task_id}")
         return True
-    except KeyError:
+    except (KeyError, TaskclusterRestFailure) as e:
+        if isinstance(e, TaskclusterRestFailure) and e.status_code != 404:
+            raise
         print(f"Index {index_path} doesn't exist.")
         return False
 
@@ -1095,9 +1098,12 @@ def target_tasks_searchfox(full_task_graph, parameters, graph_config):
             insert_index(index_path, os.environ["TASK_ID"], use_proxy=True)
 
     return [
+        "searchfox-linux64-searchfox/opt",
         "searchfox-linux64-searchfox/debug",
         "searchfox-macosx64-searchfox/debug",
+        "searchfox-macosx64-aarch64-searchfox/opt",
         "searchfox-macosx64-aarch64-searchfox/debug",
+        "searchfox-win64-searchfox/opt",
         "searchfox-win64-searchfox/debug",
         "searchfox-android-aarch64-searchfox/debug",
         "searchfox-ios-searchfox/debug",
