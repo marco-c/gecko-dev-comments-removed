@@ -504,6 +504,12 @@ nsresult nsTypeAheadFind::FindItNow(uint32_t aMode, bool aIsLinksOnly,
       mSelectionController = do_GetWeakReference(selectionController);
 
       
+      
+      if (RefPtr startNode = returnRange->GetStartContainer()) {
+        startNode->QueueAncestorRevealingAlgorithm();
+      }
+
+      
       if (selection) {
         selection->RemoveAllRanges(IgnoreErrors());
         selection->AddRangeAndSelectFramesAndNotifyListeners(*returnRange,

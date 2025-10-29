@@ -634,6 +634,11 @@ nsresult nsWebBrowserFind::SearchInFrame(nsPIDOMWindowOuter* aWindow,
 
   if (NS_SUCCEEDED(rv) && foundRange) {
     *aDidFind = true;
+    
+    
+    if (RefPtr startNode = foundRange->GetStartContainer()) {
+      startNode->QueueAncestorRevealingAlgorithm();
+    }
     sel->RemoveAllRanges(IgnoreErrors());
     
     

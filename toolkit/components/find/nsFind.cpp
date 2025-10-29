@@ -1010,13 +1010,6 @@ already_AddRefed<nsRange> nsFind::FindFromRangeBoundaries(
           if (!rv.Failed()) {
             range->SetEnd(*endParent, matchEndOffset, rv);
           }
-          
-          NS_DispatchToMainThread(NS_NewRunnableFunction(
-              "RevealHiddenUntilFound",
-              [node = RefPtr(startParent)]()
-                  MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
-                    node->AncestorRevealingAlgorithm(IgnoreErrors());
-                  }));
           if (!rv.Failed()) {
             return range.forget();
           }
