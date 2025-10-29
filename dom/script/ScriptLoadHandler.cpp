@@ -135,7 +135,7 @@ NS_IMETHODIMP
 ScriptLoadHandler::OnStartRequest(nsIRequest* aRequest) {
   mRequest->SetMinimumExpirationTime(
       nsContentUtils::GetSubresourceCacheExpirationTime(aRequest,
-                                                        mRequest->mURI));
+                                                        mRequest->URI()));
 
   return NS_OK;
 }
@@ -368,7 +368,7 @@ ScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
   nsresult rv = NS_OK;
   if (LOG_ENABLED()) {
     nsAutoCString url;
-    mRequest->mURI->GetAsciiSpec(url);
+    mRequest->URI()->GetAsciiSpec(url);
     LOG(("ScriptLoadRequest (%p): Stream complete (url = %s)", mRequest.get(),
          url.get()));
   }
@@ -469,9 +469,9 @@ ScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
   
   if (NS_SUCCEEDED(rv) && mRequest->IsSource() &&
       StaticPrefs::dom_script_loader_bytecode_cache_enabled()) {
-    mRequest->mCacheInfo = do_QueryInterface(channelRequest);
+    mRequest->getLoadedScript()->mCacheInfo = do_QueryInterface(channelRequest);
     LOG(("ScriptLoadRequest (%p): nsICacheInfoChannel = %p", mRequest.get(),
-         mRequest->mCacheInfo.get()));
+         mRequest->getLoadedScript()->mCacheInfo.get()));
   }
 
   
@@ -480,7 +480,7 @@ ScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
 
   
   if (NS_FAILED(rv)) {
-    mRequest->DropDiskCacheReference();
+    mRequest->getLoadedScript()->DropDiskCacheReference();
   }
 
   return rv;
@@ -499,7 +499,7 @@ nsresult ScriptLoadHandler::AsyncOnChannelRedirect(
     nsIChannel* aOld, nsIChannel* aNew, uint32_t aFlags,
     nsIAsyncVerifyRedirectCallback* aCallback) {
   mRequest->SetMinimumExpirationTime(
-      nsContentUtils::GetSubresourceCacheExpirationTime(aOld, mRequest->mURI));
+      nsContentUtils::GetSubresourceCacheExpirationTime(aOld, mRequest->URI()));
 
   aCallback->OnRedirectVerifyCallback(NS_OK);
 
