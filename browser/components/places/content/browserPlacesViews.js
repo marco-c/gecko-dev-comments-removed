@@ -795,6 +795,15 @@ class PlacesViewBase {
     }
 
     if (popup._placesNode && PlacesUIUtils.getViewForNode(popup) == this) {
+      if (this.#isPopupForRecursiveFolderShortcut(popup)) {
+        
+        
+        
+        this._setEmptyPopupStatus(popup, true);
+        popup._built = true;
+        return;
+      }
+
       if (!popup._placesNode.containerOpen) {
         popup._placesNode.containerOpen = true;
       }
@@ -816,6 +825,33 @@ class PlacesViewBase {
     for (let i = 0; i < aEventNames.length; i++) {
       aObject.removeEventListener(aEventNames[i], this, aCapturing);
     }
+  }
+
+  
+
+
+
+
+
+
+  #isPopupForRecursiveFolderShortcut(popup) {
+    if (
+      !popup._placesNode ||
+      !PlacesUtils.nodeIsFolderOrShortcut(popup._placesNode)
+    ) {
+      return false;
+    }
+    let guid = PlacesUtils.getConcreteItemGuid(popup._placesNode);
+    for (
+      let parentView = popup.parentNode?.parentNode;
+      parentView?._placesNode;
+      parentView = parentView.parentNode?.parentNode
+    ) {
+      if (PlacesUtils.getConcreteItemGuid(parentView._placesNode) == guid) {
+        return true;
+      }
+    }
+    return false;
   }
 }
 
