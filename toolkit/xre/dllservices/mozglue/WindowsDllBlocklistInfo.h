@@ -28,6 +28,7 @@ enum DllBlockInfoFlags : uint32_t {
   SOCKET_PROCESSES_ONLY = 1 << 5,
   GPU_PROCESSES_ONLY = 1 << 6,
   GMPLUGIN_PROCESSES_ONLY = 1 << 7,
+  RDD_PROCESSES_ONLY = 1 << 8,
 };
 
 constexpr DllBlockInfoFlags operator|(const DllBlockInfoFlags a,
