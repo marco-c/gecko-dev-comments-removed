@@ -16,11 +16,8 @@ MOZ_CONSTINIT BaseAlloc sBaseAlloc;
 void BaseAlloc::Init() MOZ_REQUIRES(gInitLock) { mMutex.Init(); }
 
 bool BaseAlloc::pages_alloc(size_t minsize) MOZ_REQUIRES(mMutex) {
-  size_t csize;
-  size_t pminsize;
-
   MOZ_ASSERT(minsize != 0);
-  csize = CHUNK_CEILING(minsize);
+  size_t csize = CHUNK_CEILING(minsize);
   void* base_pages = chunk_alloc(csize, kChunkSize, true);
   if (!base_pages) {
     return false;
@@ -29,7 +26,7 @@ bool BaseAlloc::pages_alloc(size_t minsize) MOZ_REQUIRES(mMutex) {
   mPastAddr = (void*)((uintptr_t)base_pages + csize);
   
   
-  pminsize = PAGE_CEILING(minsize);
+  size_t pminsize = PAGE_CEILING(minsize);
   mNextDecommitted = (void*)((uintptr_t)base_pages + pminsize);
   if (pminsize < csize) {
     pages_decommit(mNextDecommitted, csize - pminsize);
@@ -41,11 +38,8 @@ bool BaseAlloc::pages_alloc(size_t minsize) MOZ_REQUIRES(mMutex) {
 }
 
 void* BaseAlloc::alloc(size_t aSize) {
-  void* ret;
-  size_t csize;
-
   
-  csize = CACHELINE_CEILING(aSize);
+  size_t csize = CACHELINE_CEILING(aSize);
 
   MutexAutoLock lock(mMutex);
   
@@ -55,7 +49,7 @@ void* BaseAlloc::alloc(size_t aSize) {
     }
   }
   
-  ret = mNextAddr;
+  void* ret = mNextAddr;
   mNextAddr = (void*)((uintptr_t)mNextAddr + csize);
   
   if ((uintptr_t)mNextAddr > (uintptr_t)mNextDecommitted) {
