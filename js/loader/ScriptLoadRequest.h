@@ -251,13 +251,13 @@ class ScriptLoadRequest : public nsISupports,
   State mState;
 
   
-  bool mFetchSourceOnly;
+  bool mFetchSourceOnly : 1;
 
   
   
   
   
-  bool mHasSourceMapURL_;
+  bool mHasSourceMapURL_ : 1;
 
   enum class CachingPlan : uint8_t {
     
@@ -269,8 +269,8 @@ class ScriptLoadRequest : public nsISupports,
     
     PassedCondition,
   };
-  CachingPlan mDiskCachingPlan = CachingPlan::Uninitialized;
-  CachingPlan mMemoryCachingPlan = CachingPlan::Uninitialized;
+  CachingPlan mDiskCachingPlan : 2;
+  CachingPlan mMemoryCachingPlan : 2;
 
   CacheExpirationTime mExpirationTime = CacheExpirationTime::Never();
 
