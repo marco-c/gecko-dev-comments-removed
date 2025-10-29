@@ -1207,6 +1207,11 @@ bool CycleCollectedJSContext::PerformMicroTaskCheckPoint(bool aForce) {
 
           mSuppressedMicroTaskList->mSuppressedMicroTaskRunnables.get().append(
               std::move(job.get()));
+        } else {
+          
+          RefPtr<MicroTaskRunnable> refToDrop(
+              MaybeUnwrapTaskToOwnedRunnable(&job));
+          MOZ_ASSERT(refToDrop);
         }
       } else {
         
