@@ -7,7 +7,9 @@
 
 
 
-use crate::values::computed::{Integer, LengthPercentage, NonNegativeNumber, Percentage};
+use crate::values::computed::{
+    Context, Integer, LengthPercentage, NonNegativeNumber, Percentage, ToComputedValue,
+};
 use crate::values::generics::position::Position as GenericPosition;
 use crate::values::generics::position::PositionComponent as GenericPositionComponent;
 use crate::values::generics::position::PositionOrAuto as GenericPositionOrAuto;
@@ -18,7 +20,8 @@ use crate::values::generics::position::{
 use crate::values::generics::position::{AspectRatio as GenericAspectRatio, GenericInset};
 pub use crate::values::specified::position::{
     AnchorName, AnchorScope, DashedIdentAndOrTryTactic, PositionAnchor, PositionArea,
-    PositionAreaKeyword, PositionTryFallbacks, PositionTryOrder, PositionVisibility,
+    PositionAreaAxis, PositionAreaKeyword, PositionAreaType, PositionTryFallbacks,
+    PositionTryOrder, PositionVisibility,
 };
 pub use crate::values::specified::position::{GridAutoFlow, GridTemplateAreas, MasonryAutoFlow};
 use crate::Zero;
@@ -135,6 +138,71 @@ impl GenericPositionComponent for LengthPercentage {
             Some(Percentage(per)) => per == 0.5,
             _ => false,
         }
+    }
+}
+
+#[inline]
+fn block_or_inline_to_inferred(keyword: PositionAreaKeyword) -> PositionAreaKeyword {
+    if matches!(
+        keyword.axis(),
+        PositionAreaAxis::Block | PositionAreaAxis::Inline
+    ) {
+        keyword.with_axis(PositionAreaAxis::Inferred)
+    } else {
+        keyword
+    }
+}
+
+#[inline]
+fn inferred_to_block(keyword: PositionAreaKeyword) -> PositionAreaKeyword {
+    keyword.with_inferred_axis(PositionAreaAxis::Block)
+}
+
+#[inline]
+fn inferred_to_inline(keyword: PositionAreaKeyword) -> PositionAreaKeyword {
+    keyword.with_inferred_axis(PositionAreaAxis::Inline)
+}
+
+
+
+
+
+
+
+impl ToComputedValue for PositionArea {
+    type ComputedValue = Self;
+
+    fn to_computed_value(&self, _context: &Context) -> Self {
+        let mut computed = self.clone();
+        let pair_type = self.get_type();
+        if pair_type == PositionAreaType::Logical || pair_type == PositionAreaType::SelfLogical {
+            if computed.second != PositionAreaKeyword::None {
+                computed.first = block_or_inline_to_inferred(computed.first);
+                computed.second = block_or_inline_to_inferred(computed.second);
+            }
+        } else if pair_type == PositionAreaType::Inferred
+            || pair_type == PositionAreaType::SelfInferred
+        {
+            if computed.second == PositionAreaKeyword::SpanAll {
+                
+                
+                computed.first = inferred_to_block(computed.first);
+                computed.second = PositionAreaKeyword::None;
+            } else if computed.first == PositionAreaKeyword::SpanAll {
+                computed.first = computed.second;
+                computed.first = inferred_to_inline(computed.first);
+                computed.second = PositionAreaKeyword::None;
+            }
+        }
+
+        if computed.first == computed.second {
+            computed.second = PositionAreaKeyword::None;
+        }
+        computed
+    }
+
+    fn from_computed_value(computed: &Self) -> Self {
+        computed.clone()
     }
 }
 
