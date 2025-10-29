@@ -11,13 +11,13 @@
 const DEFAULT_PREFS = {
   "quicksuggest.enabled": true,
   "quicksuggest.dataCollection.enabled": false,
-  "quicksuggest.settingsUi": QuickSuggest.SETTINGS_UI.OFFLINE_ONLY,
+  "quicksuggest.settingsUi": QuickSuggest.SETTINGS_UI.FULL,
   "suggest.quicksuggest.nonsponsored": true,
   "suggest.quicksuggest.sponsored": true,
 };
 
 const TEST_OVERRIDES = {
-  migrationVersion: 3,
+  migrationVersion: 4,
   defaultPrefs: DEFAULT_PREFS,
 };
 
