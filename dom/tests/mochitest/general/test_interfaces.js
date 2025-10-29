@@ -1415,7 +1415,7 @@ let interfaceNamesInGlobalScope = [
   
   { name: "SVGViewElement", insecureContext: true },
   
-  { name: "Sanitizer", disabled: true },
+  { name: "Sanitizer", insecureContext: true, nightly: true },
   
   { name: "Scheduler", insecureContext: true },
   
