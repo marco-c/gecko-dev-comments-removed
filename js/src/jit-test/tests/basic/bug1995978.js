@@ -1,0 +1,4 @@
+
+
+setBaselineHint("a");
+assertEq(hasBaselineHint("a"), false);
