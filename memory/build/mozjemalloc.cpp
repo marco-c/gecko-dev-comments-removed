@@ -113,14 +113,6 @@
 
 
 
-
-
-
-
-
-
-
-
 #include "mozmemory_wrap.h"
 #include "mozjemalloc.h"
 #include "mozjemalloc_types.h"
@@ -216,25 +208,25 @@ static Atomic<bool, MemoryOrdering::Relaxed> malloc_initialized;
 #endif
 
 
-StaticMutex gInitLock MOZ_UNANNOTATED = {STATIC_MUTEX_INIT};
+MOZ_CONSTINIT StaticMutex gInitLock MOZ_UNANNOTATED;
 
 
 
 
 struct arena_stats_t {
   
-  size_t mapped;
+  size_t mapped = 0;
 
   
-  size_t committed;
+  size_t committed = 0;
 
   
-  size_t allocated_small;
+  size_t allocated_small = 0;
 
-  size_t allocated_large;
+  size_t allocated_large = 0;
 
   
-  uint64_t operations;
+  uint64_t operations = 0;
 };
 
 
@@ -243,7 +235,6 @@ struct arena_stats_t {
 class SizeClass {
  public:
   enum ClassType {
-    Tiny,
     Quantum,
     QuantumWide,
     SubPage,
@@ -251,10 +242,12 @@ class SizeClass {
   };
 
   explicit inline SizeClass(size_t aSize) {
-    if (aSize <= kMaxTinyClass) {
-      mType = Tiny;
-      mSize = std::max(RoundUpPow2(aSize), kMinTinyClass);
-    } else if (aSize <= kMaxQuantumClass) {
+    
+    
+    MOZ_ASSERT(aSize > 0);
+    static_assert(kQuantum >= kMinQuantumClass);
+
+    if (aSize <= kMaxQuantumClass) {
       mType = Quantum;
       mSize = QUANTUM_CEILING(aSize);
     } else if (aSize <= kMaxQuantumWideClass) {
@@ -473,8 +466,8 @@ enum PurgeCondition { PurgeIfThreshold, PurgeUnconditional };
 
 struct arena_t {
 #if defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
-  uint32_t mMagic;
 #  define ARENA_MAGIC 0x947d3d24
+  uint32_t mMagic = ARENA_MAGIC;
 #endif
 
   
@@ -485,7 +478,7 @@ struct arena_t {
   
   
   
-  arena_id_t mId;
+  arena_id_t mId = 0;
 
   
   
@@ -528,7 +521,7 @@ struct arena_t {
   
   
   
-  arena_chunk_t* mSpare MOZ_GUARDED_BY(mLock);
+  arena_chunk_t* mSpare MOZ_GUARDED_BY(mLock) = nullptr;
 
   
   
@@ -537,8 +530,9 @@ struct arena_t {
   
   
   
-  mozilla::non_crypto::XorShift128PlusRNG* mPRNG MOZ_GUARDED_BY(mLock);
-  bool mIsPRNGInitializing MOZ_GUARDED_BY(mLock);
+  mozilla::non_crypto::XorShift128PlusRNG* mPRNG MOZ_GUARDED_BY(mLock) =
+      nullptr;
+  bool mIsPRNGInitializing MOZ_GUARDED_BY(mLock) = false;
 
  public:
   
@@ -555,23 +549,23 @@ struct arena_t {
   
   
   
-  size_t mNumDirty MOZ_GUARDED_BY(mLock);
+  size_t mNumDirty MOZ_GUARDED_BY(mLock) = 0;
 
   
   size_t mMaxDirty MOZ_GUARDED_BY(mLock);
 
   
   
-  size_t mNumMAdvised MOZ_GUARDED_BY(mLock);
-  size_t mNumFresh MOZ_GUARDED_BY(mLock);
+  size_t mNumMAdvised MOZ_GUARDED_BY(mLock) = 0;
+  size_t mNumFresh MOZ_GUARDED_BY(mLock) = 0;
 
   
   
   size_t mMaxDirtyBase;
 
   
-  int32_t mMaxDirtyIncreaseOverride;
-  int32_t mMaxDirtyDecreaseOverride;
+  int32_t mMaxDirtyIncreaseOverride = 0;
+  int32_t mMaxDirtyDecreaseOverride = 0;
 
   
   
@@ -595,7 +589,7 @@ struct arena_t {
   
   
   
-  bool mIsPurgePending MOZ_GUARDED_BY(mLock);
+  bool mIsPurgePending MOZ_GUARDED_BY(mLock) = false;
 
   
   
@@ -609,7 +603,7 @@ struct arena_t {
   
   
   static constexpr size_t LABEL_MAX_CAPACITY = 128;
-  char mLabel[LABEL_MAX_CAPACITY];
+  char mLabel[LABEL_MAX_CAPACITY] = {};
 
  private:
   
@@ -918,14 +912,9 @@ struct ArenaTreeTrait {
 
 class ArenaCollection {
  public:
+  constexpr ArenaCollection() {}
+
   bool Init() MOZ_REQUIRES(gInitLock) MOZ_EXCLUDES(mLock) {
-    MOZ_PUSH_IGNORE_THREAD_SAFETY
-    mArenas.Init();
-    mPrivateArenas.Init();
-#ifndef NON_RANDOM_ARENA_IDS
-    mMainThreadArenas.Init();
-#endif
-    MOZ_POP_THREAD_SAFETY
     arena_params_t params;
     
     params.mMaxDirty = opt_dirty_max;
@@ -1194,8 +1183,8 @@ class ArenaCollection {
     return aArenaId & MAIN_THREAD_ARENA_BIT;
   }
 
-  arena_t* mDefaultArena;
-  arena_id_t mLastPublicArenaId MOZ_GUARDED_BY(mLock);
+  arena_t* mDefaultArena = nullptr;
+  arena_id_t mLastPublicArenaId MOZ_GUARDED_BY(mLock) = 0;
 
   
   Tree mArenas MOZ_GUARDED_BY(mLock);
@@ -1235,7 +1224,7 @@ class ArenaCollection {
   Atomic<bool> mIsDeferredPurgeEnabled;
 };
 
-MOZ_RUNINIT static ArenaCollection gArenas;
+MOZ_CONSTINIT static ArenaCollection gArenas;
 
 
 static Mutex huge_mtx;
@@ -2574,6 +2563,8 @@ void arena_bin_t::Init(SizeClass aSizeClass) {
   
   static const size_t kFixedHeaderSize = offsetof(arena_run_t, mRegionsMask);
 
+  new (&mNonFullRuns) DoublyLinkedList<arena_run_t>();
+
   MOZ_ASSERT(aSizeClass.Size() <= gMaxBinClass);
 
   try_run_size = gPageSize;
@@ -2696,25 +2687,18 @@ void* arena_t::MallocSmall(size_t aSize, bool aZero) {
   aSize = sizeClass.Size();
 
   switch (sizeClass.Type()) {
-    case SizeClass::Tiny:
-      bin = &mBins[FloorLog2(aSize / kMinTinyClass)];
-      break;
     case SizeClass::Quantum:
       
       
-      
-      bin = &mBins[kNumTinyClasses + (aSize / kQuantum) -
-                   (kMinQuantumClass / kQuantum)];
+      bin = &mBins[(aSize / kQuantum) - (kMinQuantumClass / kQuantum)];
       break;
     case SizeClass::QuantumWide:
-      bin =
-          &mBins[kNumTinyClasses + kNumQuantumClasses + (aSize / kQuantumWide) -
-                 (kMinQuantumWideClass / kQuantumWide)];
+      bin = &mBins[kNumQuantumClasses + (aSize / kQuantumWide) -
+                   (kMinQuantumWideClass / kQuantumWide)];
       break;
     case SizeClass::SubPage:
-      bin =
-          &mBins[kNumTinyClasses + kNumQuantumClasses + kNumQuantumWideClasses +
-                 (FloorLog2(aSize) - LOG2(kMinSubPageClass))];
+      bin = &mBins[kNumQuantumClasses + kNumQuantumWideClasses +
+                   (FloorLog2(aSize) - LOG2(kMinSubPageClass))];
       break;
     default:
       MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Unexpected size class type");
@@ -3501,21 +3485,15 @@ void arena_t::operator delete(void* aPtr) {
   TypedBaseAlloc<arena_t>::dealloc((arena_t*)aPtr);
 }
 
-arena_t::arena_t(arena_params_t* aParams, bool aIsPrivate) {
-  unsigned i;
-
-  memset(&mLink, 0, sizeof(mLink));
-  memset(&mStats, 0, sizeof(arena_stats_t));
-  mId = 0;
-
-  
-  mChunksDirty.Init();
-#ifdef MALLOC_DOUBLE_PURGE
-  new (&mChunksMAdvised) DoublyLinkedList<arena_chunk_t>();
-#endif
-  mSpare = nullptr;
-
-  mRandomizeSmallAllocations = opt_randomize_small;
+arena_t::arena_t(arena_params_t* aParams, bool aIsPrivate)
+    : mRandomizeSmallAllocations(opt_randomize_small),
+      mIsPrivate(aIsPrivate),
+      
+      
+      mMaxDirtyBase((aParams && aParams->mMaxDirty) ? aParams->mMaxDirty
+                                                    : (opt_dirty_max / 8)),
+      mLastSignificantReuseNS(GetTimestampNS()),
+      mIsDeferredPurgeEnabled(gArenas.IsDeferredPurgeEnabled()) {
   MaybeMutex::DoLock doLock = MaybeMutex::MUST_LOCK;
   if (aParams) {
     uint32_t randFlags = aParams->mFlags & ARENA_FLAG_RANDOMIZE_SMALL_MASK;
@@ -3563,41 +3541,17 @@ arena_t::arena_t(arena_params_t* aParams, bool aIsPrivate) {
           mLabel[LABEL_MAX_CAPACITY - 2 - i] = '.';
         }
       }
-    } else {
-      mLabel[0] = 0;
     }
-  } else {
-    mMaxDirtyIncreaseOverride = 0;
-    mMaxDirtyDecreaseOverride = 0;
-
-    mLabel[0] = 0;
   }
-
-  mLastSignificantReuseNS = GetTimestampNS();
-  mIsPurgePending = false;
-  mIsDeferredPurgeEnabled = gArenas.IsDeferredPurgeEnabled();
 
   MOZ_RELEASE_ASSERT(mLock.Init(doLock));
 
-  mPRNG = nullptr;
-  mIsPRNGInitializing = false;
-
-  mIsPrivate = aIsPrivate;
-
-  mNumDirty = 0;
-  mNumFresh = 0;
-  mNumMAdvised = 0;
-  
-  
-  mMaxDirtyBase = (aParams && aParams->mMaxDirty) ? aParams->mMaxDirty
-                                                  : (opt_dirty_max / 8);
   UpdateMaxDirty();
-
-  mRunsAvail.Init();
 
   
   SizeClass sizeClass(1);
 
+  unsigned i;
   for (i = 0;; i++) {
     arena_bin_t& bin = mBins[i];
     bin.Init(sizeClass);
@@ -3609,10 +3563,6 @@ arena_t::arena_t(arena_params_t* aParams, bool aIsPrivate) {
     sizeClass = sizeClass.Next();
   }
   MOZ_ASSERT(i == NUM_SMALL_CLASSES - 1);
-
-#if defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
-  mMagic = ARENA_MAGIC;
-#endif
 }
 
 arena_t::~arena_t() {
@@ -3732,7 +3682,6 @@ arena_id_t ArenaCollection::MakeRandArenaId(bool aIsMainThreadOnly) const {
 static void huge_init() MOZ_REQUIRES(gInitLock) {
   huge_mtx.Init();
   MOZ_PUSH_IGNORE_THREAD_SAFETY
-  huge.Init();
   huge_allocated = 0;
   huge_mapped = 0;
   huge_operations = 0;
@@ -4249,7 +4198,9 @@ inline void* MozJemalloc::valloc(size_t aSize) {
 
 
 inline size_t MozJemalloc::malloc_good_size(size_t aSize) {
-  if (aSize <= gMaxLargeClass) {
+  if (aSize == 0) {
+    aSize = SizeClass(1).Size();
+  } else if (aSize <= gMaxLargeClass) {
     
     aSize = SizeClass(aSize).Size();
   } else {
