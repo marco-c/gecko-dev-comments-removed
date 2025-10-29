@@ -117,6 +117,18 @@ impl Headers {
 
     
     
+    
+    
+    pub fn try_from_hashmap(map: HashMap<String, String>) -> Result<Self, crate::ViaductError> {
+        let mut headers = Headers::new();
+        for (name, value) in map {
+            headers.insert(name, value)?;
+        }
+        Ok(headers)
+    }
+
+    
+    
     pub fn with_capacity(c: usize) -> Self {
         Self {
             headers: Vec::with_capacity(c),
@@ -391,6 +403,7 @@ pub mod consts {
         (ACCEPT_ENCODING, "accept-encoding"),
         (ACCEPT, "accept"),
         (AUTHORIZATION, "authorization"),
+        (CACHE_CONTROL, "cache-control"),
         (CONTENT_TYPE, "content-type"),
         (ETAG, "etag"),
         (IF_NONE_MATCH, "if-none-match"),

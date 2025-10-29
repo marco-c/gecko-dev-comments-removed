@@ -96,7 +96,6 @@ where
         if let Some(entry) = &*MIN_LEVEL_SINK.read() {
             if entry.level >= *event.metadata().level() {
                 entry.send_event(event);
-                return;
             }
         }
 
