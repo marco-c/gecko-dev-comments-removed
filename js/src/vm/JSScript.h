@@ -376,6 +376,11 @@ struct SourceTypeTraits<char16_t> {
 
 
 
+using SubstringCharsResult =
+    mozilla::Variant<JS::UniqueChars, JS::UniqueTwoByteChars>;
+
+
+
 
 
 
@@ -418,7 +423,10 @@ class ScriptSource {
     const Unit* units_;
 
    public:
-    PinnedUnits(JSContext* cx, ScriptSource* source,
+    
+    
+    
+    PinnedUnits(JSContext* maybeCx, ScriptSource* source,
                 UncompressedSourceCache::AutoHoldEntry& holder, size_t begin,
                 size_t len);
 
@@ -615,8 +623,13 @@ class ScriptSource {
   
   static mozilla::Atomic<uint32_t, mozilla::SequentiallyConsistent> idCount_;
 
+  
+  
+  
+  
+  
   template <typename Unit>
-  const Unit* chunkUnits(JSContext* cx,
+  const Unit* chunkUnits(JSContext* maybeCx,
                          UncompressedSourceCache::AutoHoldEntry& holder,
                          size_t chunk);
 
@@ -625,9 +638,13 @@ class ScriptSource {
   
   
   
+  
+  
+  
   template <typename Unit>
-  const Unit* units(JSContext* cx, UncompressedSourceCache::AutoHoldEntry& asp,
-                    size_t begin, size_t len);
+  const Unit* units(JSContext* maybeCx,
+                    UncompressedSourceCache::AutoHoldEntry& asp, size_t begin,
+                    size_t len);
 
   template <typename Unit>
   const Unit* uncompressedUnits(size_t begin, size_t len);
@@ -663,7 +680,9 @@ class ScriptSource {
                                                   UniqueTwoByteChars&& str);
 
  private:
+  class LoadSourceMatcherBase;
   class LoadSourceMatcher;
+  class SourcePropertiesGetter;
 
  public:
   
@@ -671,6 +690,16 @@ class ScriptSource {
   
   
   static bool loadSource(JSContext* cx, ScriptSource* ss, bool* loaded);
+
+  
+  
+  
+  
+  
+  
+  
+  static void getSourceProperties(ScriptSource* ss, bool* hasSourceText,
+                                  bool* retrievable);
 
   
   template <typename Unit>
@@ -881,6 +910,18 @@ class ScriptSource {
   JSLinearString* substring(JSContext* cx, size_t start, size_t stop);
   JSLinearString* substringDontDeflate(JSContext* cx, size_t start,
                                        size_t stop);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  SubstringCharsResult substringChars(size_t start, size_t stop);
 
   [[nodiscard]] bool appendSubstring(JSContext* cx, js::StringBuilder& buf,
                                      size_t start, size_t stop);
@@ -889,8 +930,26 @@ class ScriptSource {
     parameterListEnd_ = parameterListEnd;
   }
 
-  bool isFunctionBody() { return parameterListEnd_ != 0; }
+  bool isFunctionBody() const { return parameterListEnd_ != 0; }
   JSLinearString* functionBodyString(JSContext* cx);
+
+  
+  
+  
+  SubstringCharsResult functionBodyStringChars(size_t* outLength);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  bool shouldUnwrapEventHandlerBody() const {
+    return hasIntroductionType() &&
+           strcmp(introductionType(), "eventHandler") == 0 && isFunctionBody();
+  }
 
   void addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
                               JS::ScriptSourceInfo* info) const;

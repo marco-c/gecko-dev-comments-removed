@@ -217,16 +217,7 @@ class DebuggerSourceGetTextMatcher {
       return NewStringCopyZ<CanGC>(cx_, "[no source]");
     }
 
-    
-    
-    
-    
-    
-    
-    
-    if (ss->hasIntroductionType() &&
-        strcmp(ss->introductionType(), "eventHandler") == 0 &&
-        ss->isFunctionBody()) {
+    if (ss->shouldUnwrapEventHandlerBody()) {
       return ss->functionBodyString(cx_);
     }
 
