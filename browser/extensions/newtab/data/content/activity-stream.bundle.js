@@ -11729,34 +11729,31 @@ class _Weather extends (external_React_default()).PureComponent {
     const WEATHER_SUGGESTION = Weather.suggestions?.[0];
     const outerClassName = ["weather", Weather.searchActive && "search", props.isInSection && "section-weather"].filter(v => v).join(" ");
     const showDetailedView = Prefs.values["weather.display"] === "detailed";
-    const isOptInEnabled = Prefs.values["system.showWeatherOptIn"];
+    const weatherOptIn = Prefs.values["system.showWeatherOptIn"];
+    const nimbusWeatherOptInEnabled = Prefs.values.trainhopConfig?.weather?.weatherOptInEnabled;
     const optInDisplayed = Prefs.values["weather.optInDisplayed"];
-    const nimbusOptInDisplayed = Prefs.values.trainhopConfig?.weather?.optInDisplayed;
     const optInUserChoice = Prefs.values["weather.optInAccepted"];
-    const nimbusOptInUserChoice = Prefs.values.trainhopConfig?.weather?.optInAccepted;
     const staticWeather = Prefs.values["weather.staticData.enabled"];
-    const nimbusStaticWeather = Prefs.values.trainhopConfig?.weather?.staticDataEnabled;
-    const optInPrompt = nimbusOptInDisplayed ?? optInDisplayed ?? false;
-    const userChoice = nimbusOptInUserChoice ?? optInUserChoice ?? false;
-    const isUserWeatherEnabled = Prefs.values.showWeather;
-    const staticDataEnabled = nimbusStaticWeather ?? staticWeather ?? false;
+
+    
+    const isOptInEnabled = weatherOptIn || nimbusWeatherOptInEnabled;
 
     
     
     
     
     
-    const shouldShowOptInDialog = isUserWeatherEnabled && isOptInEnabled && optInPrompt && !userChoice;
+    const shouldShowOptInDialog = isOptInEnabled && optInDisplayed && !optInUserChoice;
 
     
     
     
     
-    const showStaticData = isUserWeatherEnabled && isOptInEnabled && staticDataEnabled;
+    const showStaticData = isOptInEnabled && staticWeather;
 
     
-    const WEATHER_SOURCE_CONTEXT_MENU_OPTIONS = [...(Prefs.values["weather.locationSearchEnabled"] ? ["ChangeWeatherLocation"] : []), ...(Prefs.values["system.showWeatherOptIn"] ? ["DetectLocation"] : []), ...(Prefs.values["weather.temperatureUnits"] === "f" ? ["ChangeTempUnitCelsius"] : ["ChangeTempUnitFahrenheit"]), ...(Prefs.values["weather.display"] === "simple" ? ["ChangeWeatherDisplayDetailed"] : ["ChangeWeatherDisplaySimple"]), "HideWeather", "OpenLearnMoreURL"];
-    const WEATHER_SOURCE_SHORTENED_CONTEXT_MENU_OPTIONS = [...(Prefs.values["weather.locationSearchEnabled"] ? ["ChangeWeatherLocation"] : []), ...(Prefs.values["system.showWeatherOptIn"] ? ["DetectLocation"] : []), "HideWeather", "OpenLearnMoreURL"];
+    const WEATHER_SOURCE_CONTEXT_MENU_OPTIONS = [...(Prefs.values["weather.locationSearchEnabled"] ? ["ChangeWeatherLocation"] : []), ...(isOptInEnabled ? ["DetectLocation"] : []), ...(Prefs.values["weather.temperatureUnits"] === "f" ? ["ChangeTempUnitCelsius"] : ["ChangeTempUnitFahrenheit"]), ...(Prefs.values["weather.display"] === "simple" ? ["ChangeWeatherDisplayDetailed"] : ["ChangeWeatherDisplaySimple"]), "HideWeather", "OpenLearnMoreURL"];
+    const WEATHER_SOURCE_SHORTENED_CONTEXT_MENU_OPTIONS = [...(Prefs.values["weather.locationSearchEnabled"] ? ["ChangeWeatherLocation"] : []), ...(isOptInEnabled ? ["DetectLocation"] : []), "HideWeather", "OpenLearnMoreURL"];
     const contextMenu = contextOpts => external_React_default().createElement("div", {
       className: "weatherButtonContextMenuWrapper"
     }, external_React_default().createElement("button", {
