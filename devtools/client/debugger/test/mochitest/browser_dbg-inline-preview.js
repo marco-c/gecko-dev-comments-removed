@@ -158,6 +158,14 @@ add_task(async function testInlinePreviews() {
     ],
   });
 
+  await invokeFunctionAndAssertInlinePreview({
+    dbg,
+    fnName: "innerBlockHoistedFuncDecl",
+    expectedInlinePreviews: [
+      { previews: [{ identifier: "foo:", value: "function foo()" }], line: 90 },
+    ],
+  });
+
   
   await invokeFunctionAndAssertInlinePreview({
     dbg,

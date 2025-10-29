@@ -79,3 +79,18 @@ function protoVar() {
   const __proto__ = "lemon";
   debugger;
 }
+
+
+
+
+
+
+function innerBlockHoistedFuncDecl() {
+  {
+    function foo() {
+      console.trace();
+    }
+    foo();
+    debugger;
+  }
+}
