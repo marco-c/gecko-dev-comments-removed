@@ -7,7 +7,7 @@ XPCOMUtils.defineLazyServiceGetter(
   this,
   "gMIMEService",
   "@mozilla.org/mime;1",
-  Ci.nsIMIMEService
+  "nsIMIMEService"
 );
 
 

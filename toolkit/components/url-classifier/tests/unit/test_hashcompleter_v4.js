@@ -56,7 +56,7 @@ XPCOMUtils.defineLazyServiceGetter(
   this,
   "gUrlUtil",
   "@mozilla.org/url-classifier/utils;1",
-  Ci.nsIUrlClassifierUtils
+  "nsIUrlClassifierUtils"
 );
 
 

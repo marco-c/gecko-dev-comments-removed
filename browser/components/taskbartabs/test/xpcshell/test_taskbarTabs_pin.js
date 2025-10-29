@@ -15,7 +15,7 @@ ChromeUtils.defineESModuleGetters(this, {
 });
 
 XPCOMUtils.defineLazyServiceGetters(this, {
-  imgTools: ["@mozilla.org/image/tools;1", Ci.imgITools],
+  imgTools: ["@mozilla.org/image/tools;1", "imgITools"],
 });
 
 
