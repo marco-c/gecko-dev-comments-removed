@@ -5,7 +5,7 @@
 
 import logging
 
-import requests
+from taskcluster.exceptions import TaskclusterRestFailure
 from taskgraph.util.taskcluster import cancel_task
 
 from .registry import register_callback_action
@@ -25,9 +25,9 @@ def cancel_action(parameters, graph_config, input, task_group_id, task_id):
     
     
     try:
-    except requests.HTTPError as e:
-        if e.response.status_code == 409:
         cancel_task(task_id)
+    except TaskclusterRestFailure as e:
+        if e.status_code == 409:
             
             
             
