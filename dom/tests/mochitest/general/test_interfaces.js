@@ -1012,6 +1012,12 @@ let interfaceNamesInGlobalScope = [
   
   { name: "NavigationHistoryEntry", insecureContext: true, disabled: true },
   
+  {
+    name: "NavigationPrecommitController",
+    insecureContext: true,
+    disabled: true,
+  },
+  
   "NavigationPreloadManager",
   
   { name: "NavigationTransition", insecureContext: true, disabled: true },
