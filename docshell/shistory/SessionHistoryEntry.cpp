@@ -420,6 +420,8 @@ LoadingSessionHistoryInfo::LoadingSessionHistoryInfo(
 LoadingSessionHistoryInfo::LoadingSessionHistoryInfo(
     SessionHistoryEntry* aEntry, const LoadingSessionHistoryInfo* aInfo)
     : mInfo(aEntry->Info()),
+      mTriggeringEntry(aInfo->mTriggeringEntry),
+      mTriggeringNavigationType(aInfo->mTriggeringNavigationType),
       mLoadId(aInfo->mLoadId),
       mLoadIsFromSessionHistory(aInfo->mLoadIsFromSessionHistory),
       mOffset(aInfo->mOffset),
@@ -943,6 +945,30 @@ SessionHistoryEntry::GetDocshellID(nsID& aDocshellID) {
 NS_IMETHODIMP
 SessionHistoryEntry::SetDocshellID(const nsID& aDocshellID) {
   SharedInfo()->mDocShellID = aDocshellID;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+SessionHistoryEntry::GetNavigationKey(nsID& aNavigationKey) {
+  aNavigationKey = mInfo->NavigationKey();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+SessionHistoryEntry::SetNavigationKey(const nsID& aNavigationKey) {
+  mInfo->mNavigationKey = aNavigationKey;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+SessionHistoryEntry::GetNavigationId(nsID& aNavigationId) {
+  aNavigationId = mInfo->NavigationId();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+SessionHistoryEntry::SetNavigationId(const nsID& aNavigationId) {
+  mInfo->mNavigationId = aNavigationId;
   return NS_OK;
 }
 

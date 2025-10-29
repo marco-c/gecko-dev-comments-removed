@@ -478,4 +478,15 @@ interface nsISHEntry : nsISupports
 
 
     [implicit_jscontext] attribute jsval wireframe;
+
+    
+
+
+
+    attribute nsIDRef navigationKey;
+    
+
+
+
+    attribute nsIDRef navigationId;
 };
