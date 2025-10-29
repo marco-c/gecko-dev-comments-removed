@@ -8,7 +8,6 @@
 
 #include <algorithm>
 
-#include "AncestorIterator.h"
 #include "BrowserChild.h"
 #include "ChildIterator.h"
 #include "ContentParent.h"
@@ -911,45 +910,6 @@ void nsFocusManager::ContentAppended(nsIContent* aFirstNewContent,
   FocusedElementMayHaveMoved(aFirstNewContent, aInfo.mOldParent);
 }
 
-static void UpdateFocusWithinState(Element* aElement,
-                                   nsIContent* aCommonAncestor,
-                                   bool aGettingFocus) {
-  for (nsIContent* content = aElement; content && content != aCommonAncestor;
-       content = content->GetFlattenedTreeParent()) {
-    Element* element = Element::FromNode(content);
-    if (!element) {
-      continue;
-    }
-
-    if (aGettingFocus) {
-      if (element->State().HasState(ElementState::FOCUS_WITHIN)) {
-        break;
-      }
-      element->AddStates(ElementState::FOCUS_WITHIN);
-    } else {
-      element->RemoveStates(ElementState::FOCUS_WITHIN);
-    }
-  }
-}
-
-static void MaybeFixUpFocusWithinState(Element* aElementToFocus,
-                                       Element* aFocusedElement) {
-  if (!aElementToFocus || aElementToFocus == aFocusedElement ||
-      !aElementToFocus->IsInComposedDoc()) {
-    return;
-  }
-  
-  auto* commonAncestor = [&]() -> nsIContent* {
-    if (!aFocusedElement ||
-        aElementToFocus->OwnerDoc() != aFocusedElement->OwnerDoc()) {
-      return nullptr;
-    }
-    return nsContentUtils::GetCommonFlattenedTreeAncestor(aFocusedElement,
-                                                          aElementToFocus);
-  }();
-  UpdateFocusWithinState(aElementToFocus, commonAncestor, false);
-}
-
 nsresult nsFocusManager::ContentRemoved(Document* aDocument,
                                         nsIContent* aContent,
                                         const ContentRemoveInfo& aInfo) {
@@ -966,37 +926,22 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
     return NS_OK;
   }
 
-  Element* focusWithinElement = [&]() -> Element* {
-    if (auto* el = Element::FromNode(aContent)) {
-      return el;
-    }
-    if (auto* shadow = ShadowRoot::FromNode(aContent)) {
-      
-      
-      
-      return shadow->Host();
-    }
-    
-    return nullptr;
-  }();
-  if (!focusWithinElement ||
-      !focusWithinElement->State().HasAtLeastOneOfStates(
-          ElementState::FOCUS | ElementState::FOCUS_WITHIN)) {
+  
+  
+  
+  Element* previousFocusedElementPtr = windowPtr->GetFocusedElement();
+  if (!previousFocusedElementPtr) {
     return NS_OK;
   }
 
-  
-  
-  
-  RefPtr previousFocusedElement = windowPtr->GetFocusedElement();
-  if (!previousFocusedElement) {
-    
-    
-    UpdateFocusWithinState(focusWithinElement, nullptr, false);
+  if (!nsContentUtils::ContentIsHostIncludingDescendantOf(
+          previousFocusedElementPtr, aContent)) {
     return NS_OK;
   }
 
   RefPtr<nsPIDOMWindowOuter> window = windowPtr;
+  RefPtr<Element> previousFocusedElement = previousFocusedElementPtr;
+
   RefPtr<Element> newFocusedElement = [&]() -> Element* {
     if (auto* sr = ShadowRoot::FromNode(aContent)) {
       if (sr->IsUAWidget() && sr->Host()->IsHTMLElement(nsGkAtoms::input)) {
@@ -1069,7 +1014,7 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
   }
 
   if (!newFocusedElement) {
-    NotifyFocusStateChange(previousFocusedElement, nullptr, 0,
+    NotifyFocusStateChange(previousFocusedElement, newFocusedElement, 0,
                             false, false);
   } else {
     
@@ -1511,7 +1456,22 @@ void nsFocusManager::NotifyFocusStateChange(Element* aElement,
     }
   }
 
-  UpdateFocusWithinState(aElement, commonAncestor, aGettingFocus);
+  for (nsIContent* content = aElement; content && content != commonAncestor;
+       content = content->GetFlattenedTreeParent()) {
+    Element* element = Element::FromNode(content);
+    if (!element) {
+      continue;
+    }
+
+    if (aGettingFocus) {
+      if (element->State().HasState(ElementState::FOCUS_WITHIN)) {
+        break;
+      }
+      element->AddStates(ElementState::FOCUS_WITHIN);
+    } else {
+      element->RemoveStates(ElementState::FOCUS_WITHIN);
+    }
+  }
 }
 
 
@@ -1917,7 +1877,6 @@ Maybe<uint64_t> nsFocusManager::SetFocusInner(Element* aNewContent,
                                   : nullptr),
                 commonAncestor, focusMovesToDifferentBC, aAdjustWidget,
                 remainActive, actionId, elementToFocus)) {
-        MaybeFixUpFocusWithinState(elementToFocus, mFocusedElement);
         return Some(actionId);
       }
     }
@@ -2869,9 +2828,6 @@ void nsFocusManager::Focus(
       }
     }
   } else {
-    
-    
-    MaybeFixUpFocusWithinState(elementToFocus, mFocusedElement);
     if (!mFocusedElement && mFocusedWindow == aWindow) {
       
       
