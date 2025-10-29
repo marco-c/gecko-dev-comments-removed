@@ -16,7 +16,7 @@
 #include <sys/sysctl.h>
 #endif
 
-#if !CONFIG_RUNTIME_CPU_DETECT
+#if !CONFIG_RUNTIME_CPU_DETECT || defined(__OpenBSD__)
 
 static int arm_get_cpu_caps(void) {
   
