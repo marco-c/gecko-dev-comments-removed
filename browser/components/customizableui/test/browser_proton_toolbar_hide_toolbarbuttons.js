@@ -191,6 +191,12 @@ add_task(async function testNullSavedState() {
   let CustomizableUIInternal = CustomizableUI.getTestOnlyInternalProp(
     "CustomizableUIInternal"
   );
+  
+  
+  Services.obs.removeObserver(
+    CustomizableUIInternal,
+    "browser-set-toolbar-visibility"
+  );
   CustomizableUIInternal.initialize();
 
   Assert.greaterOrEqual(
@@ -224,7 +230,12 @@ add_task(async function testNullSavedState() {
   
   CustomizableUI.setTestOnlyInternalProp("gSavedState", oldState);
   await SpecialPowers.popPrefEnv();
+
   
+  Services.obs.removeObserver(
+    CustomizableUIInternal,
+    "browser-set-toolbar-visibility"
+  );
   CustomizableUIInternal.initialize();
 });
 
