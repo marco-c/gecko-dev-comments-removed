@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <map>
+#include <vector>
 
 #include "nscore.h"
 #include "mozilla/Unused.h"
@@ -113,6 +114,7 @@ const int16_t CRASH_EXC_GUARD = 25;
 #ifndef XP_WIN
 const int16_t CRASH_STACK_OVERFLOW = 26;
 #endif
+const int16_t CRASH_STL_VECTOR_OOB = 27;
 
 #if XP_WIN && HAVE_64BIT_BUILD && defined(_M_X64) && !defined(__MINGW32__)
 
@@ -318,6 +320,21 @@ extern "C" NS_EXPORT void Crash(int16_t how) {
       break;  
     }
 #endif  
+    case CRASH_STL_VECTOR_OOB: {
+      
+      
+      
+      
+      
+      std::vector<int32_t> v;
+      const size_t initSize = 8;
+      v.resize(initSize, 9);
+      v.pop_back();
+      
+      printf("CRASH_STL_VECTOR_OOB: %d\n", v[initSize - 1]);
+      
+      break;
+    }
     default:
       break;
   }
