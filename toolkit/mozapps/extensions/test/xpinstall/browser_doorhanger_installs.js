@@ -655,6 +655,12 @@ describe("Add-on installation doorhangers", function () {
         ["extensions.postDownloadThirdPartyPrompt", true],
         
         ["xpinstall.signatures.dev-root", true],
+        
+        
+        
+        
+        
+        ["extensions.blocklist.enabled", false],
       ],
     });
 
