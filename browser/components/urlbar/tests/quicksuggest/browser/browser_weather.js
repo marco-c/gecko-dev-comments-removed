@@ -23,6 +23,7 @@ add_setup(async function () {
     ],
   });
   await MerinoTestUtils.initWeather();
+  GeolocationTestUtils.stubGeolocation();
 });
 
 
