@@ -15,6 +15,30 @@
 #define DOWNLOAD_PAGE L"https://www.mozilla.org/firefox/new/"
 #define STUB_INSTALLER_ARGS L"/Prompt /LaunchedBy:desktoplauncher"
 
+
+
+
+
+
+
+
+
+
+
+
+
+static bool ExecuteAndWaitForIdle(const std::wstring& path,
+                                  const wchar_t* params) {
+  SHELLEXECUTEINFOW sei = {0};
+  sei.cbSize = sizeof(sei);
+  sei.fMask = SEE_MASK_WAITFORINPUTIDLE | SEE_MASK_NOASYNC;
+  sei.lpFile = path.c_str();
+  sei.lpParameters = params;
+  sei.nShow = SW_SHOWNORMAL;
+  ShellExecuteExW(&sei);
+  return (uintptr_t)sei.hInstApp > 32;
+}
+
 int wmain() {
   
   
@@ -30,12 +54,7 @@ int wmain() {
   if (firefox_path.has_value()) {
     std::wcout << L"Found Firefox at path " << firefox_path.value()
                << std::endl;
-    HINSTANCE hinst =
-        ShellExecuteW(nullptr, nullptr, firefox_path.value().c_str(), nullptr,
-                      nullptr, SW_SHOWNORMAL);
-    if ((INT_PTR)hinst > 32) {
-      
-      
+    if (ExecuteAndWaitForIdle(firefox_path.value(), nullptr)) {
       std::wcout << L"Firefox launched" << std::endl;
       return 0;
     }
@@ -55,25 +74,14 @@ int wmain() {
   }
   
   if (download_completed) {
-    SHELLEXECUTEINFOW sei = {0};
-    sei.cbSize = sizeof(sei);
-    sei.fMask = SEE_MASK_WAITFORINPUTIDLE | SEE_MASK_NOASYNC;
-    sei.lpFile = tempfileName.value().c_str();
-    sei.lpParameters = STUB_INSTALLER_ARGS;
-    sei.nShow = SW_SHOWNORMAL;
-    ShellExecuteExW(&sei);
-
-    if ((INT_PTR)sei.hInstApp > 32) {
-      
+    if (ExecuteAndWaitForIdle(tempfileName.value(), STUB_INSTALLER_ARGS)) {
       std::wcout << L"Firefox installer launched" << std::endl;
       return 0;
     }
   }
+
   
-  HINSTANCE default_browser_hinst = ShellExecuteW(
-      nullptr, nullptr, DOWNLOAD_PAGE, nullptr, nullptr, SW_SHOWNORMAL);
-  if ((INT_PTR)default_browser_hinst > 32) {
-    
+  if (ExecuteAndWaitForIdle(DOWNLOAD_PAGE, nullptr)) {
     std::wcout << L"Opened default browser to the download page" << std::endl;
   }
   return 0;
