@@ -2163,7 +2163,9 @@ void Http3Session::CloseStreamInternal(Http3StreamBase* aStream,
   
   
   
-  if ((mShouldClose || mGoawayReceived) && HasNoActiveStreams()) {
+  if ((mShouldClose || mGoawayReceived) &&
+      (!mStreamTransactionHash.Count() && mWebTransportSessions.IsEmpty() &&
+       mWebTransportStreams.IsEmpty() && mTunnelStreams.IsEmpty())) {
     MOZ_ASSERT(!IsClosing());
     Close(NS_OK);
   }
@@ -2238,7 +2240,7 @@ void Http3Session::DontReuse() {
   }
 
   mShouldClose = true;
-  if (HasNoActiveStreams()) {
+  if (!mStreamTransactionHash.Count()) {
     
     
     
