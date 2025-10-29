@@ -51,18 +51,6 @@ AccessibleData DocAccessibleChild::SerializeAcc(LocalAccessible* aAcc) {
     
     genericTypes |= eNumericValue;
   }
-  if (aAcc->IsTextLeaf() || aAcc->IsImage()) {
-    
-    
-    
-    
-    
-    if (aAcc->ActionCount()) {
-      genericTypes |= eActionable;
-    }
-  } else if (aAcc->HasPrimaryAction()) {
-    genericTypes |= eActionable;
-  }
 
   RefPtr<AccAttributes> fields;
   
