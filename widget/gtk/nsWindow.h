@@ -180,7 +180,7 @@ class nsWindow final : public nsIWidget {
   using nsIWidget::Create;  
   [[nodiscard]] nsresult Create(nsIWidget* aParent,
                                 const LayoutDeviceIntRect& aRect,
-                                InitData* aInitData) override;
+                                const InitData&) override;
   void Destroy() override;
   float GetDPI() override;
   double GetDefaultScaleInternal() override;

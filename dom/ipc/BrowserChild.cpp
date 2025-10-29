@@ -463,9 +463,8 @@ nsresult BrowserChild::Init(mozIDOMWindowProxy* aParent,
     NS_ERROR("couldn't create fake widget");
     return NS_ERROR_FAILURE;
   }
-  mPuppetWidget->InfallibleCreate(nullptr,  
-                                  LayoutDeviceIntRect(0, 0, 0, 0),
-                                  nullptr);  
+  mPuppetWidget->InfallibleCreate(nullptr, LayoutDeviceIntRect(),
+                                  widget::InitData());
 
   mWebBrowser = nsWebBrowser::Create(this, mPuppetWidget, mBrowsingContext,
                                      aInitialWindowChild);

@@ -71,10 +71,10 @@ class PuppetWidget final : public nsIWidget,
   
   
   using nsIWidget::Create;  
-  nsresult Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
-                  widget::InitData* aInitData = nullptr) override;
-  void InfallibleCreate(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
-                        widget::InitData* aInitData = nullptr);
+  nsresult Create(nsIWidget* aParent, const LayoutDeviceIntRect&,
+                  const widget::InitData&) override;
+  void InfallibleCreate(nsIWidget* aParent, const LayoutDeviceIntRect&,
+                        const widget::InitData&);
 
   void InitIMEState();
 

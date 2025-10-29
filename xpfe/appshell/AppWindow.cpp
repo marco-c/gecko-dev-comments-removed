@@ -213,7 +213,7 @@ nsresult AppWindow::Initialize(nsIAppWindow* aParent, nsIAppWindow* aOpener,
   mWindow->SetWidgetListener(&mWidgetListenerDelegate);
   rv = mWindow->Create(parentWidget.get(),  
                        deskRect,            
-                       &widgetInitData);    
+                       widgetInitData);     
   NS_ENSURE_SUCCESS(rv, rv);
 
   LayoutDeviceIntRect r = mWindow->GetClientBounds();
@@ -1573,7 +1573,8 @@ void AppWindow::SyncAttributesToWidget() {
   }
 
   
-  mWindow->SetDrawsTitle(windowElement->GetBoolAttr(nsGkAtoms::drawtitle));
+  mWindow->SetHideTitlebarSeparator(
+      windowElement->GetBoolAttr(nsGkAtoms::hidetitlebarseparator));
   NS_ENSURE_TRUE_VOID(mWindow);
 
   

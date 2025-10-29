@@ -508,7 +508,7 @@ class nsIWidget : public nsSupportsWeakReference {
 
   [[nodiscard]] virtual nsresult Create(nsIWidget* aParent,
                                         const LayoutDeviceIntRect& aRect,
-                                        InitData* = nullptr) = 0;
+                                        const InitData&) = 0;
 
   
 
@@ -520,7 +520,7 @@ class nsIWidget : public nsSupportsWeakReference {
 
   [[nodiscard]] virtual nsresult Create(nsIWidget* aParent,
                                         const DesktopIntRect& aRect,
-                                        InitData* aInitData = nullptr) {
+                                        const InitData& aInitData) {
     LayoutDeviceIntRect devPixRect =
         RoundedToInt(aRect * GetDesktopToDeviceScale());
     return Create(aParent, devPixRect, aInitData);
@@ -538,7 +538,7 @@ class nsIWidget : public nsSupportsWeakReference {
 
 
   already_AddRefed<nsIWidget> CreateChild(const LayoutDeviceIntRect& aRect,
-                                          InitData&);
+                                          const InitData&);
 
   
 
@@ -1383,7 +1383,7 @@ class nsIWidget : public nsSupportsWeakReference {
   void ResolveIconName(const nsAString& aIconName, const nsAString& aIconSuffix,
                        nsIFile** aResult);
   virtual void OnDestroy();
-  void BaseCreate(nsIWidget* aParent, InitData* aInitData);
+  void BaseCreate(nsIWidget* aParent, const InitData& aInitData);
 
   virtual void ConfigureAPZCTreeManager();
   virtual void ConfigureAPZControllerThread();
