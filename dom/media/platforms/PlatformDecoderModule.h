@@ -645,6 +645,31 @@ class MediaDataDecoder : public DecoderDoctorLifeLogger<MediaDataDecoder> {
   virtual ConversionRequired NeedsConversion() const {
     return ConversionRequired::kNeedNone;
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_DEFINE_ENUM_CLASS_WITH_TOSTRING_AT_CLASS_SCOPE(PropertyName,
+                                                     (MaxNumVideoBuffers,
+                                                      MinNumVideoBuffers,
+                                                      MaxNumCurrentImages));
+  
+  
+  using PropertyValue = Variant<uint32_t>;
+  virtual Maybe<PropertyValue> GetDecodeProperty(PropertyName aName) const {
+    return Nothing();
+  }
 };
 
 }  

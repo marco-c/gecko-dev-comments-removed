@@ -75,6 +75,9 @@ RefPtr<MediaDataDecoder::InitPromise> RemoteDecoderChild::Init() {
             mConversion = initResponse.conversion();
             mShouldDecoderAlwaysBeRecycled =
                 initResponse.shouldDecoderAlwaysBeRecycled();
+            for (auto p : initResponse.decodeProperties()) {
+              mDecodeProperties[p.name()] = Some(p.value());
+            }
             
             
             mInitPromise.Resolve(initResponse.type(), __func__);
