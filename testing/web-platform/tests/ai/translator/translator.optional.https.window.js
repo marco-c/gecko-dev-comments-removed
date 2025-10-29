@@ -8,6 +8,7 @@
 
 
 
+
 'use strict';
 
 
@@ -49,15 +50,15 @@ promise_test(async () => {
   const translator =
       await createTranslator({sourceLanguage: 'en', targetLanguage: 'ja'});
   const streamingResponse = translator.translateStreaming('hello');
-  gc();
+  garbageCollect();
   assert_equals(Object.prototype.toString.call(streamingResponse),
                 '[object ReadableStream]');
   let result = '';
   for await (const value of streamingResponse) {
     result += value;
-    gc();
+    garbageCollect();
   }
-assert_greater_than(result.length, 0, 'The result should not be empty.');
+  assert_greater_than(result.length, 0, 'The result should not be empty.');
 }, 'Translate Streaming API must continue even after GC has been performed.');
 
 promise_test(async t => {

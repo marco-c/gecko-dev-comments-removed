@@ -3,6 +3,7 @@
 
 
 
+
 'use strict';
 
 promise_test(async t => {
@@ -51,13 +52,13 @@ promise_test(async () => {
 promise_test(async t => {
   const summarizer = await createSummarizer();
   const streamingResponse = summarizer.summarizeStreaming(kTestPrompt);
-  gc();
+  garbageCollect();
   assert_equals(Object.prototype.toString.call(streamingResponse),
                 '[object ReadableStream]');
   let result = '';
   for await (const value of streamingResponse) {
     result += value;
-    gc();
+    garbageCollect();
   }
 assert_greater_than(result.length, 0, 'The result should not be empty.');
 }, 'Summarize Streaming API must continue even after GC has been performed.');
