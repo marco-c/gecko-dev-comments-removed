@@ -4,7 +4,6 @@
 
 
 #include "ReferrerInfo.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/Encoding.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/Document.h"
