@@ -5,6 +5,7 @@
 
 
 #include "mozilla/Assertions.h"
+#include "mozilla/DebugOnly.h"
 #include "mozilla/PlatformMutex.h"
 
 #include <windows.h>
