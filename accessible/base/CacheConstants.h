@@ -95,6 +95,8 @@ static constexpr RelationData kRelationTypeAtoms[] = {
      RelationType::DETAILS_FOR},
     {nsGkAtoms::aria_errormessage, nullptr, RelationType::ERRORMSG,
      RelationType::ERRORMSG_FOR},
+    {nsGkAtoms::aria_actions, nullptr, RelationType::ACTION,
+     RelationType::ACTION_FOR},
 };
 
 
@@ -176,6 +178,9 @@ class CacheKey {
   
   
   static constexpr nsStaticAtom* HyperTextOffsets = nsGkAtoms::offset;
+  
+  
+  static constexpr nsStaticAtom* HasActions = nsGkAtoms::hasActions;
   
   
   static constexpr nsStaticAtom* HasLongdesc = nsGkAtoms::longdesc;
