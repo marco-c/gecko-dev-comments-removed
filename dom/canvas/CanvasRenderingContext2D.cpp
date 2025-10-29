@@ -4736,8 +4736,10 @@ struct MOZ_STACK_CLASS CanvasBidiProcessor final
     
     
     if (mDoMeasureBoundingBox) {
-      textRunMetrics.mBoundingBox.Scale(1.0 / mAppUnitsPerDevPixel);
-      mBoundingBox = mBoundingBox.Union(textRunMetrics.mBoundingBox);
+      
+      gfxRect bbox = nsLayoutUtils::RectToGfxRect(textRunMetrics.mBoundingBox,
+                                                  mAppUnitsPerDevPixel);
+      mBoundingBox = mBoundingBox.Union(bbox);
     }
 
     return textRunMetrics.mAdvanceWidth;
@@ -5233,7 +5235,7 @@ UniquePtr<TextMetrics> CanvasRenderingContext2D::DrawOrMeasureText(
   
   if (!doCalculateBounds) {
     processor.mBoundingBox.width = totalWidth;
-    processor.mBoundingBox.MoveBy(gfxPoint(processor.mPt.x, processor.mPt.y));
+    processor.mBoundingBox.MoveBy(processor.mPt.x, processor.mPt.y);
   }
 
   processor.mPt.x *= processor.mAppUnitsPerDevPixel;
@@ -5286,7 +5288,8 @@ UniquePtr<TextMetrics> CanvasRenderingContext2D::DrawOrMeasureText(
 
   if (aOp == CanvasRenderingContext2D::TextDrawOperation::FILL &&
       !doCalculateBounds) {
-    RedrawUser(boundingBox);
+    RedrawUser(gfxRect(boundingBox.x, boundingBox.y, boundingBox.width,
+                       boundingBox.height));
   } else {
     Redraw();
   }

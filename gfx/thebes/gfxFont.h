@@ -1658,6 +1658,7 @@ class gfxFont {
     nscoord mBefore;
     nscoord mAfter;
   };
+
   
 
 
@@ -1671,8 +1672,8 @@ class gfxFont {
     nscoord mAdvanceWidth = 0;
 
     
-    gfxFloat mAscent = 0.0;   
-    gfxFloat mDescent = 0.0;  
+    nscoord mAscent = 0;   
+    nscoord mDescent = 0;  
 
     
     
@@ -1680,7 +1681,7 @@ class gfxFont {
     
     
     
-    gfxRect mBoundingBox;
+    nsRect mBoundingBox;
   };
 
   
@@ -1956,7 +1957,7 @@ class gfxFont {
                      DrawTarget* aRefDrawTarget, Spacing* aSpacing,
                      gfxGlyphExtents* aExtents, bool aIsRTL,
                      bool aNeedsGlyphExtents, RunMetrics& aMetrics,
-                     gfxFloat* aAdvanceMin, gfxFloat* aAdvanceMax);
+                     nscoord* aAdvanceMin, nscoord* aAdvanceMax);
 
   bool MeasureGlyphs(const gfxTextRun* aTextRun, uint32_t aStart, uint32_t aEnd,
                      BoundingBoxType aBoundingBoxType,
