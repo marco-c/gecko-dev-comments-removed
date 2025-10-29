@@ -32,8 +32,10 @@ use style_traits::{CssWriter, ToCss};
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(u8)]
+#[typed_value(derive_fields)]
 pub enum ShapeGeometryBox {
     
     
@@ -83,6 +85,7 @@ fn is_default_box_for_clip_path(b: &ShapeGeometryBox) -> bool {
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(u8)]
 pub enum ShapeBox {
@@ -117,11 +120,17 @@ impl Default for ShapeBox {
 )]
 #[animation(no_bound(U))]
 #[repr(u8)]
+#[typed_value(derive_fields)]
 pub enum GenericClipPath<BasicShape, U> {
     #[animation(error)]
     None,
     #[animation(error)]
+    
+    
+    
+    #[typed_value(todo)]
     Url(U),
+    #[typed_value(skip)]
     Shape(
         Box<BasicShape>,
         #[css(skip_if = "is_default_box_for_clip_path")] ShapeGeometryBox,
