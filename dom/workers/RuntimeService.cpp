@@ -20,7 +20,6 @@
 #include "js/experimental/CTypes.h"  
 #include "js/friend/ErrorMessages.h"  
 #include "jsfriendapi.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/CycleCollectedJSContext.h"

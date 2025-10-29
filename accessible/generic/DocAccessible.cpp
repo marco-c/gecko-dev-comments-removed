@@ -38,7 +38,6 @@
 #include "nsIWebNavigation.h"
 #include "nsFocusManager.h"
 #include "mozilla/AppShutdown.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Components.h"  
 #include "mozilla/EditorBase.h"

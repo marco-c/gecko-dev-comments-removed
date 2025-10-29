@@ -3,7 +3,6 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/FontPropertyTypes.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/intl/OSPreferences.h"
@@ -34,7 +33,9 @@
 
 #include "harfbuzz/hb.h"
 
+#define StandardFonts
 #include "StandardFonts-win10.inc"
+#undef StandardFonts
 
 using namespace mozilla;
 using namespace mozilla::gfx;
@@ -1156,6 +1157,9 @@ FontVisibility gfxDWriteFontList::GetVisibilityForFamily(
     return FontVisibility::Base;
   }
   if (FamilyInList(aName, kLangPackFonts)) {
+    return FontVisibility::LangPack;
+  }
+  if (nsRFPService::FontIsAllowedByLocale(aName)) {
     return FontVisibility::LangPack;
   }
   return FontVisibility::User;

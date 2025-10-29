@@ -5,7 +5,6 @@
 
 
 #include "nsWindowsDllInterceptor.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/ImportDir.h"
 #include "mozilla/NativeNt.h"
 #include "mozilla/PolicyChecks.h"

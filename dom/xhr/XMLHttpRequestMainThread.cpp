@@ -20,7 +20,6 @@
 #include "js/Value.h"       
 #include "jsapi.h"          
 #include "mozilla/AppShutdown.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/CheckedInt.h"

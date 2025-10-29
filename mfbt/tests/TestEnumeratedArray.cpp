@@ -4,7 +4,6 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/EnumTypeTraits.h"
 

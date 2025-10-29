@@ -5,7 +5,6 @@
 
 
 #include "mozilla/Algorithm.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
 
 #include <iterator>

@@ -5,8 +5,6 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
-
 #include "GfxInfoBase.h"
 
 #include <mutex>  

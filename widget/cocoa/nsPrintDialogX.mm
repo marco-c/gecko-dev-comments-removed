@@ -3,7 +3,6 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/gfx/PrintTargetCG.h"
 #include "mozilla/Preferences.h"
 

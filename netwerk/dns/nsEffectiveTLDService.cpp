@@ -8,7 +8,6 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Components.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/HashFunctions.h"

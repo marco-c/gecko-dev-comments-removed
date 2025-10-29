@@ -4,9 +4,9 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/TextUtils.h"
 #include "mozilla/UniquePtrExtensions.h"
@@ -1868,8 +1868,10 @@ nsresult nsLocalFile::MoveOrCopyAsSingleFileOrDir(nsIFile* aDestParent,
   }
 
   
-  bool isDir = false;
-  MOZ_ALWAYS_SUCCEEDS(IsDirectory(&isDir));
+  auto isDir = Some(false);
+  if (NS_FAILED(IsDirectory(isDir.ptr()))) {
+    isDir.reset();
+  }
 
   int copyOK = 0;
   if (move) {
@@ -1936,7 +1938,8 @@ nsresult nsLocalFile::MoveOrCopyAsSingleFileOrDir(nsIFile* aDestParent,
       
       
       
-      if (!ChildAclMatchesAclInheritedFromParent(WrapNotNull(childDacl), isDir,
+      if (isDir.isNothing() ||
+          !ChildAclMatchesAclInheritedFromParent(WrapNotNull(childDacl), *isDir,
                                                  childSecDesc, aDestParent)) {
         
         MOZ_ALWAYS_TRUE(

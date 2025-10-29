@@ -4,7 +4,6 @@
 
 
 #include "base/basictypes.h"
-#include "mozilla/ArrayUtils.h"
 
 #include "nsAboutProtocolHandler.h"
 #include "nsIURI.h"

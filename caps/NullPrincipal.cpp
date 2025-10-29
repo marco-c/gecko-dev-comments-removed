@@ -10,8 +10,6 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
-
 #include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "nsDocShell.h"

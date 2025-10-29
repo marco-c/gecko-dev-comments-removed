@@ -15,7 +15,6 @@
 #include "HTMLEditHelpers.h"       
 #include "WSRunScanner.h"          
 
-#include "mozilla/ArrayUtils.h"  
 #include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"
 #include "mozilla/StaticPrefs_editor.h"       

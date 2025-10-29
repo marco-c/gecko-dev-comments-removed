@@ -3,7 +3,6 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
 #include "gfxCoreTextShaper.h"
 #include "gfxMacFont.h"
 #include "gfxFontUtils.h"

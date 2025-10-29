@@ -4,8 +4,6 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include "nsString.h"

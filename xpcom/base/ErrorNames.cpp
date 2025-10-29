@@ -4,7 +4,6 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/ErrorNames.h"
 #include "nsString.h"
 #include "prerror.h"

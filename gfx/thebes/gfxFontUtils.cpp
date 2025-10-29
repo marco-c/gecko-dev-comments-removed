@@ -3,8 +3,6 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
-
 #include "gfxFontUtils.h"
 #include "gfxFontEntry.h"
 #include "gfxFontVariations.h"

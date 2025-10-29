@@ -8,7 +8,6 @@
 #include <shlobj.h>  
 #include <timeapi.h>
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/CmdLineAndEnvUtils.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Result.h"

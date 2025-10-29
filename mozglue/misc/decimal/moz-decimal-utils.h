@@ -11,7 +11,6 @@
 
 
 #include "double-conversion/double-conversion.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Casting.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/Span.h"

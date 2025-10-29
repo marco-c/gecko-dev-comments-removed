@@ -5,7 +5,6 @@
 
 
 #include "mozilla/Attributes.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/CmdLineAndEnvUtils.h"
 #include "nsWindowsDllInterceptor.h"
 #include "nsWindowsHelpers.h"

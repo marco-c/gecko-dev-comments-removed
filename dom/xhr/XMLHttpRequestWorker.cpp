@@ -16,7 +16,6 @@
 #include "js/TracingAPI.h"
 #include "js/Value.h"  
 #include "jsfriendapi.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/Event.h"

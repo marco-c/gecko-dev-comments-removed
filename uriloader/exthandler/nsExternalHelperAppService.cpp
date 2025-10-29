@@ -7,7 +7,6 @@
 #include "base/basictypes.h"
 
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Base64.h"
 #include "mozilla/ResultExtensions.h"
 

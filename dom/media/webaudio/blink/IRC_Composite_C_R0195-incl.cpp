@@ -18,8 +18,6 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
-
 const int16_t irc_composite_c_r0195_p315[][256] =
     {
      {-37,   37,   -38,  39,    -39,   40,    -41,  42,   -42,   43,    -43,

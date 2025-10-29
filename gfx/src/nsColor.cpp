@@ -4,8 +4,7 @@
 
 
 
-#include "mozilla/ArrayUtils.h"  
-#include "mozilla/mozalloc.h"    
+#include "mozilla/mozalloc.h"  
 #include "mozilla/MathAlgorithms.h"
 
 #include "nsColor.h"

@@ -4,8 +4,6 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
-
 #include "nsArrayEnumerator.h"
 #include "nsCOMArray.h"
 #include "nsCOMPtr.h"

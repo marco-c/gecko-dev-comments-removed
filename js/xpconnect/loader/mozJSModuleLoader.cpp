@@ -7,7 +7,6 @@
 #include "ScriptLoadRequest.h"
 #include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/RefPtr.h"  
 #include "mozilla/Utf8.h"    
 

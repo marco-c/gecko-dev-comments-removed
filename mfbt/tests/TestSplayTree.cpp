@@ -4,9 +4,10 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/SplayTree.h"
+
+#include <array>
 
 using mozilla::SplayTree;
 using mozilla::SplayTreeNode;

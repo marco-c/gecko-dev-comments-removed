@@ -4,8 +4,6 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
-
 #include "mozStorageSQLFunctions.h"
 #include "nsTArray.h"
 #include "nsUnicharUtils.h"

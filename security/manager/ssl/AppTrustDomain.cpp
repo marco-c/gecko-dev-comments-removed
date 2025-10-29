@@ -13,7 +13,6 @@
 #include "certt.h"
 
 #include "certdb.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Casting.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
@@ -253,7 +252,6 @@ pkix::Result AppTrustDomain::DigestBuf(Input item, DigestAlgorithm digestAlg,
 
 pkix::Result AppTrustDomain::CheckRevocation(EndEntityOrCA, const CertID&, Time,
                                              Duration,
-                                              const Input*,
                                               const Input*,
                                               const Input*) {
   

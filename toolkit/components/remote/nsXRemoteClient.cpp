@@ -7,7 +7,6 @@
 
 
 #include "nsDebug.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Sprintf.h"
 #include "nsXRemoteClient.h"

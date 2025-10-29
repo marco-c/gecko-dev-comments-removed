@@ -4,7 +4,6 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/TimeStamp.h"
 
 #include <stdlib.h>

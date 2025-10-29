@@ -4,7 +4,6 @@
 
 #include "nsPrintSettingsWin.h"
 
-#include "mozilla/ArrayUtils.h"
 #include "nsCRT.h"
 #include "nsDeviceContextSpecWin.h"
 #include "nsPrintSettingsImpl.h"

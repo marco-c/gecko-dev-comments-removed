@@ -3,8 +3,6 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
-
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/RWLock.h"
 #include "nscore.h"

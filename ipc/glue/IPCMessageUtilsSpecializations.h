@@ -51,8 +51,7 @@
 
 
 
-#include "base/string_util.h"    
-#include "mozilla/ArrayUtils.h"  
+#include "base/string_util.h"  
 
 #ifdef _MSC_VER
 #  pragma warning(disable : 4800)

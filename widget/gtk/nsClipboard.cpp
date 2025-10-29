@@ -5,8 +5,6 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
-
 #include "nsArrayUtils.h"
 #include "nsClipboard.h"
 #if defined(MOZ_X11)

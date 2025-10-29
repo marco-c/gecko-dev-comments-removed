@@ -5,8 +5,6 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
-
 #include "AsyncGtkClipboardRequest.h"
 #include "nsClipboardX11.h"
 #include "mozilla/RefPtr.h"

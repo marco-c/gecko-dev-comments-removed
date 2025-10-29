@@ -27,7 +27,6 @@
 #include <winternl.h>  
 
 #include "nsDebug.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/UniquePtr.h"
 #include "nsWindowsHelpers.h"
 

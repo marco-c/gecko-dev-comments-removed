@@ -3,7 +3,6 @@
 
 
 #include "js/SliceBudget.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/IdleTaskRunner.h"
 #include "mozilla/MainThreadIdlePeriod.h"

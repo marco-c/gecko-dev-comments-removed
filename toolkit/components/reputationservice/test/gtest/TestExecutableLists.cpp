@@ -2,7 +2,6 @@
 
 
 #include "gtest/gtest.h"
-#include "mozilla/ArrayUtils.h"
 #include "nsLocalFileCommon.h"
 #include "ApplicationReputation.h"
 

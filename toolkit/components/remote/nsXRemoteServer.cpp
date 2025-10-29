@@ -5,8 +5,6 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
-
 #include "nsXRemoteServer.h"
 #include "nsCOMPtr.h"
 #include "nsICommandLine.h"

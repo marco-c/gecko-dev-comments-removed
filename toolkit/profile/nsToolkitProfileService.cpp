@@ -3,7 +3,6 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/ScopeExit.h"

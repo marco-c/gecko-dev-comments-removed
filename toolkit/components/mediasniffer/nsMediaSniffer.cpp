@@ -5,7 +5,6 @@
 
 
 #include "ADTSDemuxer.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Logging.h"
 #include "mozilla/ModuleUtils.h"
 #include "mozilla/ScopeExit.h"

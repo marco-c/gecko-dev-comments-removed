@@ -3,7 +3,6 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
 #include "RiceDeltaDecoder.h"
 
 #include "Common.h"

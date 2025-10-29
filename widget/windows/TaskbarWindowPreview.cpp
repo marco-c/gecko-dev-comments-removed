@@ -5,8 +5,6 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
-
 #include <nsITaskbarPreviewController.h>
 #include "TaskbarWindowPreview.h"
 #include "WindowHook.h"

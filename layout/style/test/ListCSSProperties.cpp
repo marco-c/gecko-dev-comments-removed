@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "mozilla/ArrayUtils.h"
+#include <array>
 
 
 #define CSS_PROP_LIST_EXCLUDE_NOT_IN_STYLE

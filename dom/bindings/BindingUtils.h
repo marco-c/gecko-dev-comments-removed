@@ -22,7 +22,6 @@
 #include "js/friend/WindowProxy.h"  
 #include "jsfriendapi.h"
 #include "mozilla/Array.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/DeferredFinalize.h"
 #include "mozilla/EnumTypeTraits.h"

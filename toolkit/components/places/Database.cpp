@@ -2,7 +2,6 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/ScopeExit.h"

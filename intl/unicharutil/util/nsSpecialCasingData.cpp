@@ -6,8 +6,8 @@
 
 
 #include "nsSpecialCasingData.h"
-#include "mozilla/ArrayUtils.h" 
 #include <stdlib.h>       
+#include <array>
 
 
 

@@ -3,7 +3,6 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/TextUtils.h"
 
 #include <ole2.h>

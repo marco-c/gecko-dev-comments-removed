@@ -16,7 +16,6 @@
 #  include <unistd.h>  
 #endif
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/BasePrincipal.h"
