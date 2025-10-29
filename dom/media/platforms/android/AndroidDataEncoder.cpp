@@ -11,7 +11,6 @@
 #include "MediaInfo.h"
 #include "libyuv/convert_from.h"
 #include "mozilla/Logging.h"
-#include "mozilla/Unused.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla {
@@ -145,7 +144,7 @@ RefPtr<MediaDataEncoder::InitPromise> AndroidDataEncoder::ProcessInit() {
   mIsHardwareAccelerated = mJavaEncoder->IsHardwareAccelerated();
   mDrainState = DrainState::DRAINABLE;
 
-  return InitPromise::CreateAndResolve(TrackInfo::kVideoTrack, __func__);
+  return InitPromise::CreateAndResolve(true, __func__);
 }
 
 RefPtr<MediaDataEncoder::EncodePromise> AndroidDataEncoder::Encode(
@@ -153,9 +152,26 @@ RefPtr<MediaDataEncoder::EncodePromise> AndroidDataEncoder::Encode(
   RefPtr<AndroidDataEncoder> self = this;
   MOZ_ASSERT(aSample != nullptr);
 
-  RefPtr<const MediaData> sample(aSample);
+  return InvokeAsync(
+      mTaskQueue, __func__,
+      [self, sample = RefPtr<MediaData>(const_cast<MediaData*>(aSample))]() {
+        return self->ProcessEncode({sample});
+      });
+}
+
+
+
+
+
+RefPtr<MediaDataEncoder::EncodePromise> AndroidDataEncoder::Encode(
+    nsTArray<RefPtr<MediaData>>&& aSamples) {
+  RefPtr<AndroidDataEncoder> self = this;
+  MOZ_ASSERT(!aSamples.IsEmpty());
+
   return InvokeAsync(mTaskQueue, __func__,
-                     [self, sample]() { return self->ProcessEncode(sample); });
+                     [self, samples = std::move(aSamples)]() mutable {
+                       return self->ProcessEncode(std::move(samples));
+                     });
 }
 
 static jni::ByteBuffer::LocalRef ConvertI420ToNV12Buffer(
@@ -193,35 +209,40 @@ static jni::ByteBuffer::LocalRef ConvertI420ToNV12Buffer(
 }
 
 RefPtr<MediaDataEncoder::EncodePromise> AndroidDataEncoder::ProcessEncode(
-    const RefPtr<const MediaData>& aSample) {
+    nsTArray<RefPtr<MediaData>>&& aSamples) {
   AssertOnTaskQueue();
 
   REJECT_IF_ERROR();
 
-  RefPtr<const VideoData> sample(aSample->As<const VideoData>());
-  MOZ_ASSERT(sample);
-
-  mInputSampleDuration = aSample->mDuration;
-
   
   
-  jni::ByteBuffer::LocalRef buffer = ConvertI420ToNV12Buffer(
-      sample, mYUVBuffer, mJavaEncoder->GetInputFormatStride(),
-      mJavaEncoder->GetInputFormatYPlaneHeight());
-  if (!buffer) {
-    return EncodePromise::CreateAndReject(NS_ERROR_ILLEGAL_INPUT, __func__);
-  }
+  
+  for (auto& s : aSamples) {
+    RefPtr<const VideoData> sample(s->As<const VideoData>());
+    MOZ_ASSERT(sample);
 
-  if (aSample->mKeyframe) {
-    mInputBufferInfo->Set(0, AssertedCast<int32_t>(mYUVBuffer->Length()),
-                          aSample->mTime.ToMicroseconds(),
-                          java::sdk::MediaCodec::BUFFER_FLAG_SYNC_FRAME);
-  } else {
-    mInputBufferInfo->Set(0, AssertedCast<int32_t>(mYUVBuffer->Length()),
-                          aSample->mTime.ToMicroseconds(), 0);
-  }
+    mInputSampleDuration = s->mDuration;
 
-  mJavaEncoder->Input(buffer, mInputBufferInfo, nullptr);
+    
+    
+    jni::ByteBuffer::LocalRef buffer = ConvertI420ToNV12Buffer(
+        sample, mYUVBuffer, mJavaEncoder->GetInputFormatStride(),
+        mJavaEncoder->GetInputFormatYPlaneHeight());
+    if (!buffer) {
+      return EncodePromise::CreateAndReject(NS_ERROR_ILLEGAL_INPUT, __func__);
+    }
+
+    if (s->mKeyframe) {
+      mInputBufferInfo->Set(0, AssertedCast<int32_t>(mYUVBuffer->Length()),
+                            s->mTime.ToMicroseconds(),
+                            java::sdk::MediaCodec::BUFFER_FLAG_SYNC_FRAME);
+    } else {
+      mInputBufferInfo->Set(0, AssertedCast<int32_t>(mYUVBuffer->Length()),
+                            s->mTime.ToMicroseconds(), 0);
+    }
+
+    mJavaEncoder->Input(buffer, mInputBufferInfo, nullptr);
+  }
 
   if (mEncodedData.Length() > 0) {
     EncodedData pending = std::move(mEncodedData);
@@ -285,7 +306,7 @@ void AndroidDataEncoder::ProcessOutput(
             &AndroidDataEncoder::ProcessOutput, std::move(aSample),
             std::move(aBuffer)));
     MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-    Unused << rv;
+    (void)rv;
     return;
   }
   AssertOnTaskQueue();
@@ -476,7 +497,7 @@ void AndroidDataEncoder::Error(const MediaResult& aError) {
     nsresult rv = mTaskQueue->Dispatch(NewRunnableMethod<MediaResult>(
         "AndroidDataEncoder::Error", this, &AndroidDataEncoder::Error, aError));
     MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-    Unused << rv;
+    (void)rv;
     return;
   }
   AssertOnTaskQueue();

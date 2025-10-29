@@ -231,8 +231,7 @@ bool a11y::LocalizeString(const nsAString& aToken, nsAString& aLocalized) {
 }
 
 uint64_t a11y::GetCacheDomainsForKnownClients(uint64_t aCacheDomains) {
-  Unused << aCacheDomains;
-
+  (void)aCacheDomains;
   
   
   return CacheDomain::All;

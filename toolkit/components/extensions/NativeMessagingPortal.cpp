@@ -304,7 +304,7 @@ void NativeMessagingPortal::OnCreateSessionDone(GObject* source,
         subscription_id_ptr.get(), [](gpointer aUserData) {
           UniquePtr<guint> release(reinterpret_cast<guint*>(aUserData));
         });
-    Unused << subscription_id_ptr.release();  
+    (void)subscription_id_ptr.release();  
 
     callbackData->promise->MaybeResolve(nsDependentCString(value, length));
   } else {

@@ -1945,7 +1945,7 @@ void SurfaceCache::ReleaseImageOnMainThread(
   
   
   if (AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdownFinal)) {
-    Unused << aImage;
+    (void)aImage;
     return;
   }
 

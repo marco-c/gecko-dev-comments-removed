@@ -44,7 +44,6 @@
 #include "mozilla/ipc/FileDescriptorUtils.h"
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/TextUtils.h"
-#include "mozilla/Unused.h"
 
 #include "base/eintr_wrapper.h"
 
@@ -1514,7 +1513,7 @@ class LoadCmapsRunnable final : public IdleRunnable,
         continue;
       }
       
-      Unused << pfl->InitializeFamily(&family, true);
+      (void)pfl->InitializeFamily(&family, true);
       
       
       
@@ -2100,7 +2099,7 @@ void gfxPlatformFontList::MaybeRemoveCmap(gfxCharacterMap* aCharMap) {
   if (found && found->GetKey() == aCharMap && aCharMap->RefCount() == 1) {
     
     
-    Unused << found->mCharMap.forget();
+    found->mCharMap.forget().leak();
 
     
     delete aCharMap;
@@ -3236,7 +3235,7 @@ void gfxPlatformFontList::InitializeFamily(uint32_t aGeneration,
   }
   fontlist::Family* family = list->Families() + aFamilyIndex;
   if (!family->IsInitialized() || aLoadCmaps) {
-    Unused << InitializeFamily(family, aLoadCmaps);
+    (void)InitializeFamily(family, aLoadCmaps);
   }
 }
 

@@ -391,8 +391,8 @@ static void AddLLVMProfilePathDirectoryToPolicy(
     sandbox::TargetConfig* aConfig) {
   std::wstring parentPath;
   if (GetLlvmProfileDir(parentPath)) {
-    Unused << aConfig->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
-                                       parentPath.c_str());
+    (void)aConfig->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
+                                   parentPath.c_str());
   }
 }
 #endif
@@ -1970,8 +1970,8 @@ void SandboxBroker::ApplyLoggingConfig() {
   
   
   
-  Unused << config->AllowNamedPipes(L"dummy");
-  Unused << config->AllowRegistryRead(L"HKEY_CURRENT_USER\\dummy");
+  (void)config->AllowNamedPipes(L"dummy");
+  (void)config->AllowRegistryRead(L"HKEY_CURRENT_USER\\dummy");
 }
 
 SandboxBroker::~SandboxBroker() = default;

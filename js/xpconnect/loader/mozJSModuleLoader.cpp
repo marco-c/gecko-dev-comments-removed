@@ -75,7 +75,6 @@
 #include "mozilla/dom/WorkerPrivate.h"  
 #include "mozilla/dom/WorkerRef.h"  
 #include "mozilla/dom/WorkerRunnable.h"  
-#include "mozilla/Unused.h"
 
 using namespace mozilla;
 using namespace mozilla::scache;

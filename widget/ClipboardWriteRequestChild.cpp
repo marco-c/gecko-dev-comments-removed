@@ -49,7 +49,7 @@ NS_IMETHODIMP ClipboardWriteRequestChild::Abort(nsresult aReason) {
 
   
   MaybeNotifyCallback(aReason);
-  Unused << PClipboardWriteRequestChild::Send__delete__(this, aReason);
+  (void)PClipboardWriteRequestChild::Send__delete__(this, aReason);
   return NS_OK;
 }
 

@@ -1869,13 +1869,13 @@ void Http3Session::StreamReadyToWrite(Http3StreamBase* aStream) {
   mReadyForWrite.Push(aStream);
   aStream->SetInTxQueue(true);
   if (CanSendData() && mConnection) {
-    Unused << mConnection->ResumeSend();
+    (void)mConnection->ResumeSend();
   }
 }
 
 void Http3Session::MaybeResumeSend() {
   if ((mReadyForWrite.GetSize() > 0) && CanSendData() && mConnection) {
-    Unused << mConnection->ResumeSend();
+    (void)mConnection->ResumeSend();
   }
 }
 
@@ -1962,7 +1962,7 @@ void Http3Session::Close(nsresult aReason) {
   }
   if (mConnection) {
     
-    Unused << mConnection->ResumeSend();
+    (void)mConnection->ResumeSend();
   }
 }
 
@@ -2090,7 +2090,7 @@ void Http3Session::CloseTransaction(nsAHttpTransaction* aTransaction,
        stream.get()));
   CloseStream(stream, aResult);
   if (mConnection) {
-    Unused << mConnection->ResumeSend();
+    (void)mConnection->ResumeSend();
   }
 }
 
@@ -2342,7 +2342,7 @@ void Http3Session::StreamHasDataToWrite(Http3StreamBase* aStream) {
   
   
   
-  Unused << ForceSend();
+  (void)ForceSend();
 }
 
 void Http3Session::TransactionHasDataToRecv(nsAHttpTransaction* caller) {
@@ -2367,7 +2367,7 @@ void Http3Session::ConnectSlowConsumer(Http3StreamBase* stream) {
   LOG3(("Http3Session::ConnectSlowConsumer %p 0x%" PRIx64 "\n", this,
         stream->StreamId()));
   mSlowConsumersReadyForRead.AppendElement(stream);
-  Unused << ForceRecv();
+  (void)ForceRecv();
 }
 
 bool Http3Session::TestJoinConnection(const nsACString& hostname,
@@ -2497,7 +2497,7 @@ void Http3Session::CallCertVerification(Maybe<nsCString> aEchPublicName) {
 
   uint32_t providerFlags;
   
-  Unused << mSocketControl->GetProviderFlags(&providerFlags);
+  (void)mSocketControl->GetProviderFlags(&providerFlags);
 
   nsCString echConfig;
   nsresult nsrv = mSocketControl->GetEchConfig(echConfig);
@@ -2906,7 +2906,7 @@ void Http3Session::SendDatagram(Http3WebTransportSession* aSession,
 
 uint64_t Http3Session::MaxDatagramSize(uint64_t aSessionId) {
   uint64_t size = 0;
-  Unused << mHttp3Connection->WebTransportMaxDatagramSize(aSessionId, &size);
+  (void)mHttp3Connection->WebTransportMaxDatagramSize(aSessionId, &size);
   return size;
 }
 
@@ -2915,8 +2915,7 @@ void Http3Session::SendHTTPDatagram(uint64_t aStreamId,
                                     uint64_t aTrackingId) {
   LOG(("Http3Session::SendHTTPDatagram %p length=%zu aTrackingId=%" PRIx64,
        this, aData.Length(), aTrackingId));
-  Unused << mHttp3Connection->ConnectUdpSendDatagram(aStreamId, aData,
-                                                     aTrackingId);
+  (void)mHttp3Connection->ConnectUdpSendDatagram(aStreamId, aData, aTrackingId);
 }
 
 void Http3Session::SetSendOrder(Http3StreamBase* aStream,
@@ -2925,7 +2924,7 @@ void Http3Session::SetSendOrder(Http3StreamBase* aStream,
     nsresult rv = mHttp3Connection->WebTransportSetSendOrder(
         aStream->StreamId(), aSendOrder);
     MOZ_ASSERT(NS_SUCCEEDED(rv));
-    Unused << rv;
+    (void)rv;
   }
 }
 

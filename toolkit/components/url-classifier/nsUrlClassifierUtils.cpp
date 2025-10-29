@@ -361,6 +361,8 @@ static const struct {
     {"goog-unwanted-proto", "uwsa-4b"},
 #endif
     {"goog-harmful-proto", "pha-4b"},
+    {"goog-badbinurl-proto", "mwb-4b"},
+    {"goog-downloadwhite-proto", "csdda-32b"},
     {"test-google5-malware-proto", "test-4b"},
 };
 
@@ -820,7 +822,7 @@ static nsresult AddTabThreatSources(ThreatHit& aHit, nsIChannel* aChannel) {
   
   rv = AddThreatSourceFromChannel(aHit, topChannel,
                                   ThreatHit_ThreatSourceType_TAB_URL);
-  Unused << NS_WARN_IF(NS_FAILED(rv));
+  (void)NS_WARN_IF(NS_FAILED(rv));
 
   
   nsCOMPtr<nsILoadInfo> topLoadInfo = topChannel->LoadInfo();
@@ -867,10 +869,10 @@ nsUrlClassifierUtils::MakeThreatHitReport(nsIChannel* aChannel,
   
   rv = AddThreatSourceFromChannel(hit, aChannel,
                                   ThreatHit_ThreatSourceType_MATCHING_URL);
-  Unused << NS_WARN_IF(NS_FAILED(rv));
+  (void)NS_WARN_IF(NS_FAILED(rv));
   
   rv = AddTabThreatSources(hit, aChannel);
-  Unused << NS_WARN_IF(NS_FAILED(rv));
+  (void)NS_WARN_IF(NS_FAILED(rv));
 
   hit.set_allocated_client_info(CreateClientInfo());
 
@@ -1020,15 +1022,22 @@ nsresult nsUrlClassifierUtils::ReadProvidersFromPrefs(ProviderDictType& aDict) {
     providers.Insert(provider);
   }
 
+  
+  
+  nsTArray<nsCString> sortedProviders;
+  for (auto& provider : providers) {
+    sortedProviders.AppendElement(provider);
+  }
+  sortedProviders.Sort();
+
   bool isGoogle5Enabled = mozilla::Preferences::GetBool(
       "browser.safebrowsing.provider.google5.enabled");
 
   
   
   
-  for (const auto& provider : providers) {
-    nsPrintfCString owninListsPref("%s.lists",
-                                   nsPromiseFlatCString{provider}.get());
+  for (const auto& provider : sortedProviders) {
+    nsPrintfCString owninListsPref("%s.lists", provider.get());
 
     nsAutoCString owningLists;
     nsresult rv = prefBranch->GetCharPref(owninListsPref.get(), owningLists);

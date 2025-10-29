@@ -7,7 +7,6 @@
 #include "MediaSystemResourceService.h"
 
 #include "MediaSystemResourceManagerParent.h"
-#include "mozilla/Unused.h"
 #include "mozilla/layers/CompositorThread.h"
 
 using namespace mozilla::layers;
@@ -65,7 +64,7 @@ void MediaSystemResourceService::Acquire(
   if (!resource || resource->mResourceCount == 0) {
     
     
-    mozilla::Unused << aParent->SendResponse(aId, false );
+    (void)aParent->SendResponse(aId, false );
     return;
   }
 
@@ -75,14 +74,14 @@ void MediaSystemResourceService::Acquire(
     resource->mAcquiredRequests.push_back(
         MediaSystemResourceRequest(aParent, aId));
     
-    mozilla::Unused << aParent->SendResponse(aId, true );
+    (void)aParent->SendResponse(aId, true );
     return;
   }
 
   if (!aWillWait) {
     
     
-    mozilla::Unused << aParent->SendResponse(aId, false );
+    (void)aParent->SendResponse(aId, false );
     return;
   }
   
@@ -211,8 +210,7 @@ void MediaSystemResourceService::UpdateRequests(
     MediaSystemResourceRequest& request = waitingRequests.front();
     MOZ_ASSERT(request.mParent);
     
-    mozilla::Unused << request.mParent->SendResponse(request.mId,
-                                                     true );
+    (void)request.mParent->SendResponse(request.mId, true );
     
     acquiredRequests.push_back(waitingRequests.front());
     waitingRequests.pop_front();

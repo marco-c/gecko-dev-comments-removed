@@ -245,7 +245,7 @@ bool IsFirstPartialResponse(nsHttpResponseHead& aResponseHead) {
   MOZ_ASSERT(aResponseHead.Status() == 206);
 
   nsAutoCString contentRange;
-  Unused << aResponseHead.GetHeader(nsHttp::Content_Range, contentRange);
+  (void)aResponseHead.GetHeader(nsHttp::Content_Range, contentRange);
 
   auto rangeOrErr = ParseContentRangeHeaderString(contentRange);
   if (rangeOrErr.isErr()) {
@@ -330,7 +330,7 @@ OpaqueResponseBlocker::OnStartRequest(nsIRequest* aRequest) {
   LOGORB();
 
   if (mState == State::Sniffing) {
-    Unused << EnsureOpaqueResponseIsAllowedAfterSniff(aRequest);
+    (void)EnsureOpaqueResponseIsAllowedAfterSniff(aRequest);
   }
 
   
@@ -559,8 +559,7 @@ nsresult OpaqueResponseBlocker::ValidateJavaScript(HttpBaseChannel* aChannel,
             self->AllowResponse();
             break;
           case OpaqueResponse::Block:
-            
-            self->AllowResponse();
+            self->BlockResponse(channel, NS_ERROR_FAILURE);
             break;
           default:
             MOZ_ASSERT_UNREACHABLE(
@@ -578,7 +577,7 @@ nsresult OpaqueResponseBlocker::ValidateJavaScript(HttpBaseChannel* aChannel,
         RecordTelemetry(startOfValidation, self->mStartOfJavaScriptValidation,
                         aResult);
 
-        Unused << dom::PJSValidatorParent::Send__delete__(self->mJSValidator);
+        (void)dom::PJSValidatorParent::Send__delete__(self->mJSValidator);
         self->mJSValidator = nullptr;
       });
 
@@ -620,18 +619,10 @@ void OpaqueResponseBlocker::FilterResponse() {
 
 void OpaqueResponseBlocker::ResolveAndProcessData(
     HttpBaseChannel* aChannel, bool aAllowed, Maybe<ipc::Shmem>& aSharedData) {
-  if (!aAllowed) {
-    
-    mNext = new OpaqueResponseFilter(mNext);
-  }
-
   nsresult rv = OnStartRequest(aChannel);
 
   if (!aAllowed || NS_FAILED(rv)) {
-    MOZ_ASSERT_IF(!aAllowed, mState == State::Allowed);
-    
-    
-    
+    MOZ_ASSERT_IF(!aAllowed, mState == State::Blocked);
     
     MaybeRunOnStopRequest(aChannel);
     return;

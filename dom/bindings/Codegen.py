@@ -6468,7 +6468,7 @@ def getJSToNativeConversionInfo(
                 
                 
                 default = CGGeneric(
-                    "Unused << %s.RawSetAs%s(%s);\n" % (value, name, ctorArgs)
+                    "(void)%s.RawSetAs%s(%s);\n" % (value, name, ctorArgs)
                 )
             elif defaultValue.type.isEnum():
                 name = getUnionMemberName(defaultValue.type)

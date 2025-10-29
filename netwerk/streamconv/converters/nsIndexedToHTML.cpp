@@ -25,7 +25,6 @@
 #include "nsContentUtils.h"
 #include <algorithm>
 #include "nsIChannel.h"
-#include "mozilla/Unused.h"
 #include "nsIURIMutator.h"
 #include "nsITextToSubURI.h"
 
@@ -136,7 +135,8 @@ nsresult nsIndexedToHTML::DoOnStartRequest(nsIRequest* request,
 
   
   
-  if (!uri->SchemeIs("resource")) {
+  
+  if (!uri->SchemeIs("resource") && !uri->SchemeIs("moz-extension")) {
     rv = channel->GetURI(getter_AddRefs(uri));
     if (NS_FAILED(rv)) return rv;
   }
@@ -222,7 +222,7 @@ nsresult nsIndexedToHTML::DoOnStartRequest(nsIRequest* request,
     if (baseUri.Last() != '/') {
       baseUri.Append('/');
       path.Append('/');
-      mozilla::Unused << NS_MutateURI(uri).SetPathQueryRef(path).Finalize(uri);
+      (void)NS_MutateURI(uri).SetPathQueryRef(path).Finalize(uri);
     }
     if (!path.EqualsLiteral("/")) {
       rv = uri->Resolve(".."_ns, parentStr);

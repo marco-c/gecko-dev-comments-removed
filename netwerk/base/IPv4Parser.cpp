@@ -29,7 +29,7 @@ bool EndsInANumber(const nsCString& input) {
     if (parts.Length() == 1) {
       return false;
     }
-    Unused << parts.PopLastElement();
+    (void)parts.PopLastElement();
   }
 
   

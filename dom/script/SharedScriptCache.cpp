@@ -9,7 +9,6 @@
 #include "ScriptLoadHandler.h"          
 #include "ScriptLoader.h"               
 #include "mozilla/Maybe.h"              
-#include "mozilla/Unused.h"             
 #include "mozilla/dom/ContentParent.h"  
 #include "nsIMemoryReporter.h"  
 #include "nsIPrefBranch.h"   
@@ -92,7 +91,7 @@ ScriptLoadData::ScriptLoadData(ScriptLoader* aLoader,
       mLoadedScript(aRequest->getLoadedScript()),
       mNetworkMetadata(aRequest->mNetworkMetadata) {}
 
-NS_IMPL_ISUPPORTS(SharedScriptCache, nsIMemoryReporter, nsIObserver)
+NS_IMPL_ISUPPORTS(SharedScriptCache, nsIMemoryReporter)
 
 MOZ_DEFINE_MALLOC_SIZE_OF(SharedScriptCacheMallocSizeOf)
 
@@ -106,11 +105,10 @@ void SharedScriptCache::Init() {
   
   
   
-  nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
-  if (prefs) {
-    prefs->AddObserver("urlclassifier", this, false);
-    prefs->AddObserver("privacy.trackingprotection.enabled", this, false);
-  }
+  auto ClearCache = [](const char*, void*) { Clear(); };
+  Preferences::RegisterPrefixCallback(ClearCache, "urlclassifier.");
+  Preferences::RegisterCallback(ClearCache,
+                                "privacy.trackingprotection.enabled");
 }
 
 SharedScriptCache::~SharedScriptCache() { UnregisterWeakMemoryReporter(this); }
@@ -129,16 +127,6 @@ SharedScriptCache::CollectReports(nsIHandleReportCallback* aHandleReport,
   return NS_OK;
 }
 
-NS_IMETHODIMP
-SharedScriptCache::Observe(nsISupports* aSubject, const char* aTopic,
-                           const char16_t* aData) {
-  if (strcmp(aTopic, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID) == 0) {
-    SharedScriptCache::Clear();
-  }
-
-  return NS_OK;
-}
-
 void SharedScriptCache::Clear(const Maybe<bool>& aChrome,
                               const Maybe<nsCOMPtr<nsIPrincipal>>& aPrincipal,
                               const Maybe<nsCString>& aSchemelessSite,
@@ -148,8 +136,8 @@ void SharedScriptCache::Clear(const Maybe<bool>& aChrome,
 
   if (XRE_IsParentProcess()) {
     for (auto* cp : ContentParent::AllProcesses(ContentParent::eLive)) {
-      Unused << cp->SendClearScriptCache(aChrome, aPrincipal, aSchemelessSite,
-                                         aPattern, aURL);
+      (void)cp->SendClearScriptCache(aChrome, aPrincipal, aSchemelessSite,
+                                     aPattern, aURL);
     }
   }
 

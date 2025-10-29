@@ -27,7 +27,6 @@
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/Try.h"
-#include "mozilla/Unused.h"
 
 #include "GeckoProfiler.h"
 #include "prprf.h"
@@ -989,8 +988,7 @@ static nsresult RemoveIncompleteStartupFile() {
         if (NS_WARN_IF(incompleteStartup.isErr())) {
           return;
         }
-        Unused << NS_WARN_IF(
-            NS_FAILED(incompleteStartup.unwrap()->Remove(false)));
+        (void)NS_WARN_IF(NS_FAILED(incompleteStartup.unwrap()->Remove(false)));
       }));
 }
 
@@ -1009,7 +1007,7 @@ nsAppStartup::TrackStartupCrashEnd() {
 
   
   
-  Unused << NS_WARN_IF(NS_FAILED(RemoveIncompleteStartupFile()));
+  (void)NS_WARN_IF(NS_FAILED(RemoveIncompleteStartupFile()));
 
   
   

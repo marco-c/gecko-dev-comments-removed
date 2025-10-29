@@ -106,7 +106,7 @@ void VideoFrameContainer::SetCurrentFrames(
   
   
   
-  Unused << NS_WARN_IF(aImages.Length() > 1);
+  (void)NS_WARN_IF(aImages.Length() > 1);
   for (auto& image : aImages) {
     NotifySetCurrent(image.mImage);
   }

@@ -1108,7 +1108,7 @@ nsresult nsContentSecurityManager::CheckAllowLoadInSystemPrivilegedContext(
 nsresult nsContentSecurityManager::CheckAllowLoadInPrivilegedAboutContext(
     nsIChannel* aChannel) {
   
-  if (StaticPrefs::security_disallow_privilegedabout_remote_script_loads()) {
+  if (!StaticPrefs::security_disallow_privilegedabout_remote_script_loads()) {
     return NS_OK;
   }
 
@@ -1538,7 +1538,7 @@ nsContentSecurityManager::AsyncOnChannelRedirect(
       aOldChannel, getter_AddRefs(oldPrincipal));
 
   nsCOMPtr<nsIURI> newURI;
-  Unused << NS_GetFinalChannelURI(aNewChannel, getter_AddRefs(newURI));
+  (void)NS_GetFinalChannelURI(aNewChannel, getter_AddRefs(newURI));
   NS_ENSURE_STATE(oldPrincipal && newURI);
 
   

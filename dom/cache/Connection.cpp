@@ -37,7 +37,7 @@ Connection::Close() {
 
   
   
-  Unused << NS_WARN_IF(NS_FAILED(db::IncrementalVacuum(*this)));
+  (void)NS_WARN_IF(NS_FAILED(db::IncrementalVacuum(*this)));
 
   return mBase->Close();
 }

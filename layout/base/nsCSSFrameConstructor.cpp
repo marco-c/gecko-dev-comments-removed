@@ -39,7 +39,6 @@
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/StaticPrefs_mathml.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/CharacterData.h"
@@ -4605,9 +4604,6 @@ nsCSSFrameConstructor::FindMathMLData(const Element& aElement,
   if (const auto* data = FindDataByTag(aElement, aStyle, sMathMLData,
                                        std::size(sMathMLData))) {
     return data;
-  }
-  if (!StaticPrefs::mathml_unknown_mrow_enabled()) {
-    return nullptr;
   }
   
   

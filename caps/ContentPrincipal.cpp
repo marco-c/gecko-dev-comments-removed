@@ -577,7 +577,7 @@ ContentPrincipal::Deserializer::Read(nsIObjectInputStream* aStream) {
   
   
   
-  Unused << NS_ReadOptionalObject(aStream, true, getter_AddRefs(supports));
+  (void)NS_ReadOptionalObject(aStream, true, getter_AddRefs(supports));
 
   nsAutoCString originNoSuffix;
   rv = GenerateOriginNoSuffixFromURI(principalURI, originNoSuffix);

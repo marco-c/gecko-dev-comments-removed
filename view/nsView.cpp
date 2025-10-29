@@ -820,11 +820,11 @@ void nsView::SafeAreaInsetsChanged(
   
   
   
-  CallOnAllRemoteChildren([windowSafeAreaInsets](
-                              dom::BrowserParent* aBrowserParent) -> CallState {
-    Unused << aBrowserParent->SendSafeAreaInsetsChanged(windowSafeAreaInsets);
-    return CallState::Continue;
-  });
+  CallOnAllRemoteChildren(
+      [windowSafeAreaInsets](dom::BrowserParent* aBrowserParent) -> CallState {
+        (void)aBrowserParent->SendSafeAreaInsetsChanged(windowSafeAreaInsets);
+        return CallState::Continue;
+      });
 }
 
 bool nsView::IsPrimaryFramePaintSuppressed() {

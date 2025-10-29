@@ -187,11 +187,12 @@ static nsresult UnescapeFragment(const nsACString& aFragment, nsIURI* aURI,
   return rv;
 }
 
+#if !defined(ANDROID)
 static Result<nsCOMPtr<nsIFile>, nsresult> GetOsTmpDownloadDirectory() {
   nsCOMPtr<nsIFile> dir;
   MOZ_TRY(NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(dir)));
 
-#if !defined(XP_MACOSX) && defined(XP_UNIX)
+#  if !defined(XP_MACOSX) && defined(XP_UNIX)
   
   
   
@@ -256,7 +257,7 @@ static Result<nsCOMPtr<nsIFile>, nsresult> GetOsTmpDownloadDirectory() {
     }
   }
 
-#endif
+#  endif
   NS_ASSERTION(dir, "Somehow we didn't get a download directory!");
   return dir;
 }
@@ -272,6 +273,7 @@ static nsresult EnsureDirectoryExists(nsIFile* aDir) {
   }
   return rv;
 };
+#endif  
 
 
 
@@ -285,8 +287,7 @@ static Result<nsCOMPtr<nsIFile>, nsresult> GetPreferredDownloadsDirectory(
     bool aSkipChecks = false) {
 #if defined(ANDROID)
   return Err(NS_ERROR_FAILURE);
-#endif
-
+#else
   nsresult rv;
   
   switch (Preferences::GetInt(NS_PREF_DOWNLOAD_FOLDERLIST, -1)) {
@@ -376,6 +377,7 @@ static Result<nsCOMPtr<nsIFile>, nsresult> GetPreferredDownloadsDirectory(
   }
 
   return dir;
+#endif  
 }
 
 NS_IMETHODIMP nsExternalHelperAppService::GetPreferredDownloadsDirectory(
@@ -397,13 +399,13 @@ static Result<nsCOMPtr<nsIFile>, nsresult> GetInitialDownloadDirectory(
     bool aSkipChecks = false) {
 #if defined(ANDROID)
   return Err(NS_ERROR_FAILURE);
-#endif
-
+#else
   if (StaticPrefs::browser_download_start_downloads_in_tmp_dir()) {
     return GetOsTmpDownloadDirectory();
   }
 
   return GetPreferredDownloadsDirectory(aSkipChecks);
+#endif
 }
 
 
@@ -3165,7 +3167,7 @@ nsresult nsExternalHelperAppService::FillMIMEInfoForMimeTypeFromExtras(
       extensions.EndReading(end);
       while (start != end) {
         nsACString::const_iterator cursor = start;
-        mozilla::Unused << FindCharInReadable(',', cursor, end);
+        (void)FindCharInReadable(',', cursor, end);
         aMIMEInfo->AppendExtension(Substring(start, cursor));
         
         start = cursor != end ? ++cursor : cursor;

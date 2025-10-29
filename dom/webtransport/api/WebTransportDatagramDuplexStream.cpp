@@ -280,7 +280,7 @@ already_AddRefed<Promise> OutgoingDatagramStreamAlgorithms::WriteCallbackImpl(
   
 
   nsTArray<uint8_t> data;
-  Unused << AppendTypedArrayDataTo(arrayBuffer, data);
+  (void)AppendTypedArrayDataTo(arrayBuffer, data);
 
   
   

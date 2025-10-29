@@ -888,7 +888,7 @@ class MediaDecoderStateMachine::LoopingDecodingState
 
     
     if (mIsReachingAudioEOS || mIsReachingVideoEOS) {
-      Unused << DetermineOriginalDecodedDurationIfNeeded();
+      (void)DetermineOriginalDecodedDurationIfNeeded();
     }
 
     
@@ -2345,7 +2345,7 @@ class MediaDecoderStateMachine::NextFrameSeekingState
     RefPtr<Runnable> r = mAsyncSeekTask = new AysncNextFrameSeekTask(this);
     nsresult rv = OwnerThread()->Dispatch(r.forget());
     MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-    Unused << rv;
+    (void)rv;
   }
 
  private:
@@ -3496,12 +3496,12 @@ void MediaDecoderStateMachine::AudioAudibleChanged(bool aAudible) {
 MediaSink* MediaDecoderStateMachine::CreateAudioSink() {
   if (mOutputCaptureState != MediaDecoder::OutputCaptureState::None) {
     DecodedStream* stream = new DecodedStream(
-        OwnerThread(),
+        this,
         mOutputCaptureState == MediaDecoder::OutputCaptureState::Capture
             ? mOutputDummyTrack.Ref()
             : nullptr,
-        mOutputTracks, CanonicalOutputPrincipal(), mVolume, mPlaybackRate,
-        mPreservesPitch, mAudioQueue, mVideoQueue);
+        mOutputTracks, mVolume, mPlaybackRate, mPreservesPitch, mAudioQueue,
+        mVideoQueue, mSinkDevice.Ref());
     mAudibleListener.DisconnectIfExists();
     mAudibleListener = stream->AudibleEvent().Connect(
         OwnerThread(), this, &MediaDecoderStateMachine::AudioAudibleChanged);
@@ -4374,7 +4374,7 @@ void MediaDecoderStateMachine::ScheduleStateMachine() {
       NewRunnableMethod("MediaDecoderStateMachine::RunStateMachine", this,
                         &MediaDecoderStateMachine::RunStateMachine));
   MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-  Unused << rv;
+  (void)rv;
 }
 
 void MediaDecoderStateMachine::ScheduleStateMachineIn(const TimeUnit& aTime) {
@@ -4520,7 +4520,7 @@ void MediaDecoderStateMachine::InvokeSuspendMediaSink() {
       NewRunnableMethod("MediaDecoderStateMachine::SuspendMediaSink", this,
                         &MediaDecoderStateMachine::SuspendMediaSink));
   MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-  Unused << rv;
+  (void)rv;
 }
 
 void MediaDecoderStateMachine::SuspendMediaSink() {
@@ -4543,7 +4543,7 @@ void MediaDecoderStateMachine::InvokeResumeMediaSink() {
       NewRunnableMethod("MediaDecoderStateMachine::ResumeMediaSink", this,
                         &MediaDecoderStateMachine::ResumeMediaSink));
   MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-  Unused << rv;
+  (void)rv;
 }
 
 void MediaDecoderStateMachine::ResumeMediaSink() {
@@ -4701,7 +4701,7 @@ RefPtr<GenericPromise> MediaDecoderStateMachine::RequestDebugInfo(
                              }),
       AbstractThread::TailDispatch);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
-  Unused << rv;
+  (void)rv;
   return p;
 }
 

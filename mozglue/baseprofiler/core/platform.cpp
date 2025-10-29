@@ -2451,7 +2451,7 @@ void profiler_init(void* aStackTop) {
     
     CorePS::Create(lock);
 
-    Unused << locked_register_thread(lock, kMainThreadName, aStackTop);
+    (void)locked_register_thread(lock, kMainThreadName, aStackTop);
 
     
     PlatformInit(lock);

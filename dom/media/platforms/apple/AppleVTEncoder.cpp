@@ -809,7 +809,7 @@ void AppleVTEncoder::ProcessOutput(RefPtr<MediaRawData>&& aOutput,
             "AppleVTEncoder::ProcessOutput", this,
             &AppleVTEncoder::ProcessOutput, std::move(aOutput), aResult));
     MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-    Unused << rv;
+    (void)rv;
     return;
   }
 
@@ -869,6 +869,25 @@ RefPtr<MediaDataEncoder::EncodePromise> AppleVTEncoder::Encode(
     ProcessEncode(sample);
     return p;
   });
+}
+
+
+
+
+
+RefPtr<MediaDataEncoder::EncodePromise> AppleVTEncoder::Encode(
+    nsTArray<RefPtr<MediaData>>&& aSamples) {
+  MOZ_ASSERT(!aSamples.IsEmpty());
+
+  RefPtr<AppleVTEncoder> self = this;
+  return InvokeAsync(
+      mTaskQueue, __func__, [self, samples = std::move(aSamples)]() mutable {
+        MOZ_ASSERT(self->mEncodeBatchPromise.IsEmpty(),
+                   "Encode should not be called again before getting results");
+        RefPtr<EncodePromise> p = self->mEncodeBatchPromise.Ensure(__func__);
+        self->EncodeNextSample(std::move(samples), EncodedData());
+        return p;
+      });
 }
 
 RefPtr<MediaDataEncoder::ReconfigurationPromise> AppleVTEncoder::Reconfigure(
@@ -1269,6 +1288,39 @@ void AppleVTEncoder::ForceOutputIfNeeded() {
     return;
   }
   mTimer = r.unwrap();
+}
+
+void AppleVTEncoder::EncodeNextSample(
+    nsTArray<RefPtr<MediaData>>&& aInputs,
+    MediaDataEncoder::EncodedData&& aOutputs) {
+  AssertOnTaskQueue();
+  MOZ_ASSERT(!mEncodeBatchPromise.IsEmpty());
+  MOZ_ASSERT(!mEncodeBatchRequest.Exists());
+
+  if (aInputs.IsEmpty()) {
+    LOGV("All samples processed. Resolving the encode promise");
+    mEncodeBatchPromise.Resolve(std::move(aOutputs), __func__);
+    return;
+  }
+
+  LOGV("Processing next sample out of %zu remaining", aInputs.Length());
+  Encode(aInputs[0])
+      ->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [self = RefPtr{this}, inputs = std::move(aInputs),
+           outputs = std::move(aOutputs)](
+              MediaDataEncoder::EncodedData&& aData) mutable {
+            self->mEncodeBatchRequest.Complete();
+            inputs.RemoveElementAt(0);
+            outputs.AppendElements(aData);
+            self->EncodeNextSample(std::move(inputs), std::move(outputs));
+          },
+          [self = RefPtr{this}](const MediaResult& aError) {
+            self->mEncodeBatchRequest.Complete();
+            LOGE("EncodeNextSample failed: %s", aError.Description().get());
+            self->mEncodeBatchPromise.Reject(aError, __func__);
+          })
+      ->Track(mEncodeBatchRequest);
 }
 
 #undef LOGE

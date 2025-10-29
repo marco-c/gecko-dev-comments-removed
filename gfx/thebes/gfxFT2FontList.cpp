@@ -32,7 +32,9 @@
 #include "gfxUserFontSet.h"
 #include "gfxFontUtils.h"
 #include "SharedFontList-impl.h"
+#define StandardFonts
 #include "StandardFonts-android.inc"
+#undef StandardFonts
 #include "harfbuzz/hb-ot.h"  
 
 #include "nsServiceManagerUtils.h"
@@ -136,7 +138,7 @@ already_AddRefed<SharedFTFace> FT2FontEntry::GetFTFace(bool aCommit) {
   if (aCommit) {
     if (mFTFace.compareExchange(nullptr, face.get())) {
       
-      Unused << face.forget();
+      face.forget().leak();
     } else {
       
     }
@@ -457,7 +459,7 @@ nsresult FT2FontEntry::ReadCMAP(FontInfoData* aFontInfoData) {
   if (setCharMap) {
     if (mCharacterMap.compareExchange(nullptr, charmap.get())) {
       
-      Unused << charmap.forget();
+      charmap.forget().leak();
     }
   }
 
@@ -1345,7 +1347,7 @@ gfxFT2FontList::GetFilteredPlatformFontLists() {
   static Device fontVisibilityDevice = Device::Unassigned;
   if (fontVisibilityDevice == Device::Unassigned) {
     nsCOMPtr<nsIGfxInfo> gfxInfo = components::GfxInfo::Service();
-    Unused << gfxInfo->GetFontVisibilityDetermination(&fontVisibilityDevice);
+    (void)gfxInfo->GetFontVisibilityDetermination(&fontVisibilityDevice);
   }
 
   nsTArray<std::pair<const char**, uint32_t>> fontLists;

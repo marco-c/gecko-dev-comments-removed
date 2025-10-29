@@ -19,7 +19,6 @@
 #include "mozilla/Monitor.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/Sprintf.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/AudioDeviceInfo.h"
 #include "nsNativeCharsetUtils.h"
 #include "nsPrintfCString.h"
@@ -530,6 +529,10 @@ void AudioStream::GetTimeStretched(AudioBufferWriter& aWriter) {
   uint32_t toPopFrames =
       ceil(aWriter.Available() * mAudioClock.GetPlaybackRate());
 
+  if (!mTimeStretcher) {
+    return;
+  }
+
   
   
   
@@ -593,6 +596,10 @@ void AudioStream::UpdatePlaybackRateIfNeeded() {
 
   mAudioClock.SetPlaybackRate(mPlaybackRate);
   mAudioClock.SetPreservesPitch(mPreservesPitch);
+
+  if (!mTimeStretcher) {
+    return;
+  }
 
   if (mPreservesPitch) {
     mTimeStretcher->setTempo(mPlaybackRate);
