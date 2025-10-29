@@ -940,7 +940,8 @@ bool IonCacheIRCompiler::emitLoadFixedSlotResult(ObjOperandId objId,
 bool IonCacheIRCompiler::emitLoadFixedSlotTypedResult(ObjOperandId objId,
                                                       uint32_t offsetOffset,
                                                       ValueType) {
-  MOZ_CRASH("Call ICs not used in ion");
+  
+  return emitLoadFixedSlotResult(objId, offsetOffset);
 }
 
 bool IonCacheIRCompiler::emitLoadDynamicSlotResult(ObjOperandId objId,
