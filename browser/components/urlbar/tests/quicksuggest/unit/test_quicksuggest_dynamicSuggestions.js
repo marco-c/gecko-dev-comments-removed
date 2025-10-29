@@ -5,6 +5,7 @@
 
 
 const REMOTE_SETTINGS_RECORDS = [
+  
   {
     type: "dynamic-suggestions",
     suggestion_type: "aaa",
@@ -23,6 +24,8 @@ const REMOTE_SETTINGS_RECORDS = [
       },
     ],
   },
+
+  
   {
     type: "dynamic-suggestions",
     suggestion_type: "bbb",
@@ -48,6 +51,50 @@ const REMOTE_SETTINGS_RECORDS = [
       },
     ],
   },
+
+  
+  {
+    type: "dynamic-suggestions",
+    suggestion_type: "ccc",
+    score: 0.9,
+    attachment: [
+      {
+        keywords: ["ccc keyword", "ccc ddd keyword"],
+        data: {
+          result: {
+            bypassSuggestAll: true,
+            payload: {
+              title: "ccc title",
+              url: "https://example.com/ccc",
+            },
+          },
+        },
+      },
+    ],
+  },
+
+  
+  {
+    type: "dynamic-suggestions",
+    suggestion_type: "ddd",
+    score: 0.9,
+    attachment: [
+      {
+        keywords: ["ddd keyword", "ccc ddd keyword"],
+        data: {
+          result: {
+            bypassSuggestAll: true,
+            payload: {
+              title: "ddd title",
+              url: "https://example.com/ddd",
+              isSponsored: true,
+            },
+          },
+        },
+      },
+    ],
+  },
+
   {
     type: QuickSuggestTestUtils.RS_TYPE.WIKIPEDIA,
     attachment: [QuickSuggestTestUtils.wikipediaRemoteSettings()],
@@ -73,13 +120,28 @@ const EXPECTED_BBB_RESULT = makeExpectedResult({
   isRichSuggestion: true,
 });
 
+const EXPECTED_CCC_RESULT = makeExpectedResult({
+  title: "ccc title",
+  url: "https://example.com/ccc",
+  telemetryType: "ccc",
+  suggestionType: "ccc",
+});
+
+const EXPECTED_DDD_RESULT = makeExpectedResult({
+  title: "ddd title",
+  url: "https://example.com/ddd",
+  isSponsored: true,
+  telemetryType: "ddd",
+  suggestionType: "ddd",
+});
+
 add_setup(async function () {
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
     remoteSettingsRecords: REMOTE_SETTINGS_RECORDS,
     prefs: [
-      ["quicksuggest.dynamicSuggestionTypes", "aaa,bbb"],
+      ["quicksuggest.dynamicSuggestionTypes", "aaa,bbb,ccc,ddd"],
+      ["suggest.quicksuggest.all", true],
       ["suggest.quicksuggest.sponsored", true],
-      ["suggest.quicksuggest.nonsponsored", true],
       ["quicksuggest.ampTopPickCharThreshold", 0],
     ],
   });
@@ -135,6 +197,19 @@ add_task(async function basic() {
       
       expected: [EXPECTED_AAA_RESULT],
     },
+    {
+      query: "ccc keyword",
+      expected: [EXPECTED_CCC_RESULT],
+    },
+    {
+      query: "ddd keyword",
+      expected: [EXPECTED_DDD_RESULT],
+    },
+    {
+      query: "ccc ddd keyword",
+      
+      expected: [EXPECTED_CCC_RESULT],
+    },
   ];
 
   await doQueries(queries);
@@ -180,27 +255,46 @@ add_task(async function disabled() {
 
 
 
-add_task(async function sponsoredDisabled() {
-  UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
+add_task(async function allDisabled() {
+  UrlbarPrefs.set("suggest.quicksuggest.all", false);
 
   
-  await withSuggestionTypesPref("aaa,bbb", async () => {
-    await doQueries([
-      {
-        query: "aaa keyword",
-        expected: [EXPECTED_AAA_RESULT],
-      },
-      {
-        query: "bbb keyword",
-        expected: [],
-      },
-      {
-        query: "aaa bbb keyword",
-        expected: [EXPECTED_AAA_RESULT],
-      },
-    ]);
-  });
+  for (let sponsoredEnabled of [true, false]) {
+    UrlbarPrefs.set("suggest.quicksuggest.sponsored", sponsoredEnabled);
 
+    await withSuggestionTypesPref("aaa,bbb,ccc,ddd", async () => {
+      await doQueries([
+        {
+          query: "aaa keyword",
+          expected: [],
+        },
+        {
+          query: "bbb keyword",
+          expected: [],
+        },
+        {
+          query: "aaa bbb keyword",
+          expected: [],
+        },
+
+        {
+          query: "ccc keyword",
+          expected: [EXPECTED_CCC_RESULT],
+        },
+        {
+          query: "ddd keyword",
+          expected: [EXPECTED_DDD_RESULT],
+        },
+        {
+          query: "ccc ddd keyword",
+          
+          expected: [EXPECTED_CCC_RESULT],
+        },
+      ]);
+    });
+  }
+
+  UrlbarPrefs.set("suggest.quicksuggest.all", true);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
   await QuickSuggestTestUtils.forceSync();
 });
@@ -208,27 +302,41 @@ add_task(async function sponsoredDisabled() {
 
 
 add_task(async function sponsoredDisabled() {
-  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
+  UrlbarPrefs.set("suggest.quicksuggest.all", true);
+  UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
 
-  
-  await withSuggestionTypesPref("aaa,bbb", async () => {
+  await withSuggestionTypesPref("aaa,bbb,ccc,ddd", async () => {
     await doQueries([
       {
         query: "aaa keyword",
-        expected: [],
+        expected: [EXPECTED_AAA_RESULT],
       },
       {
         query: "bbb keyword",
-        expected: [EXPECTED_BBB_RESULT],
+        expected: [],
       },
       {
         query: "aaa bbb keyword",
-        expected: [EXPECTED_BBB_RESULT],
+        expected: [EXPECTED_AAA_RESULT],
+      },
+
+      {
+        query: "ccc keyword",
+        expected: [EXPECTED_CCC_RESULT],
+      },
+      {
+        query: "ddd keyword",
+        expected: [EXPECTED_DDD_RESULT],
+      },
+      {
+        query: "ccc ddd keyword",
+        
+        expected: [EXPECTED_CCC_RESULT],
       },
     ]);
   });
 
-  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
+  UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
   await QuickSuggestTestUtils.forceSync();
 });
 
