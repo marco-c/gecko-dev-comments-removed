@@ -170,18 +170,12 @@ export const v3 = 10;
 import {v2} from 'k'
 import {v1} from 'j'
 `));
-assertEq(j.dfsIndex, undefined);
 assertEq(j.dfsAncestorIndex, undefined);
-assertEq(k.dfsIndex, undefined);
 assertEq(k.dfsAncestorIndex, undefined);
-assertEq(l.dfsIndex, undefined);
 assertEq(l.dfsAncestorIndex, undefined);
 moduleLink(l);
-assertEq(j.dfsIndex, 2);
 assertEq(j.dfsAncestorIndex, 1);
-assertEq(k.dfsIndex, 1);
 assertEq(k.dfsAncestorIndex, 1);
-assertEq(l.dfsIndex, 0);
 assertEq(l.dfsAncestorIndex, 0);
 
 

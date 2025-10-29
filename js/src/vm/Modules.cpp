@@ -1734,7 +1734,7 @@ static bool ModuleLink(JSContext* cx, Handle<ModuleObject*> module) {
       MOZ_ASSERT(m->status() == ModuleStatus::Linking);
       
       m->setStatus(ModuleStatus::Unlinked);
-      m->clearDfsIndexes();
+      m->clearDfsAncestorIndex();
     }
 
     
@@ -1798,7 +1798,7 @@ static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
   module->setStatus(ModuleStatus::Linking);
 
   
-  module->setDfsIndex(index);
+  size_t moduleIndex = index;
 
   
   module->setDfsAncestorIndex(index);
@@ -1866,10 +1866,10 @@ static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
   MOZ_ASSERT(CountElements(stack, module) == 1);
 
   
-  MOZ_ASSERT(module->dfsAncestorIndex() <= module->dfsIndex());
+  MOZ_ASSERT(module->dfsAncestorIndex() <= moduleIndex);
 
   
-  if (module->dfsAncestorIndex() == module->dfsIndex()) {
+  if (module->dfsAncestorIndex() == moduleIndex) {
     
     bool done = false;
 
@@ -2101,7 +2101,7 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
   module->setStatus(ModuleStatus::Evaluating);
 
   
-  module->setDfsIndex(index);
+  size_t moduleIndex = index;
 
   
   module->setDfsAncestorIndex(index);
@@ -2216,10 +2216,10 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
   MOZ_ASSERT(CountElements(stack, module) == 1);
 
   
-  MOZ_ASSERT(module->dfsAncestorIndex() <= module->dfsIndex());
+  MOZ_ASSERT(module->dfsAncestorIndex() <= moduleIndex);
 
   
-  if (module->dfsAncestorIndex() == module->dfsIndex()) {
+  if (module->dfsAncestorIndex() == moduleIndex) {
     
     bool done = false;
 
