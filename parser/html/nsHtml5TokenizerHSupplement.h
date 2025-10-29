@@ -2,13 +2,47 @@
 
 
 
-friend struct nsHtml5ViewSourcePolicy;
-friend struct nsHtml5LineColPolicy;
-friend struct nsHtml5FastestPolicy;
+friend struct nsHtml5ViewSourcePolicySIMD;
+friend struct nsHtml5ViewSourcePolicyALU;
+friend struct nsHtml5LineColPolicySIMD;
+friend struct nsHtml5LineColPolicyALU;
+friend struct nsHtml5FastestPolicySIMD;
+friend struct nsHtml5FastestPolicyALU;
 
 private:
 int32_t col;
 bool nextCharOnNewLine;
+
+
+
+
+
+
+
+
+int32_t StateLoopFastestSIMD(int32_t state, char16_t c, int32_t pos,
+                             char16_t* buf, bool reconsume, int32_t returnState,
+                             int32_t endPos);
+
+int32_t StateLoopFastestALU(int32_t state, char16_t c, int32_t pos,
+                            char16_t* buf, bool reconsume, int32_t returnState,
+                            int32_t endPos);
+
+int32_t StateLoopLineColSIMD(int32_t state, char16_t c, int32_t pos,
+                             char16_t* buf, bool reconsume, int32_t returnState,
+                             int32_t endPos);
+
+int32_t StateLoopLineColALU(int32_t state, char16_t c, int32_t pos,
+                            char16_t* buf, bool reconsume, int32_t returnState,
+                            int32_t endPos);
+
+int32_t StateLoopViewSourceSIMD(int32_t state, char16_t c, int32_t pos,
+                                char16_t* buf, bool reconsume,
+                                int32_t returnState, int32_t endPos);
+
+int32_t StateLoopViewSourceALU(int32_t state, char16_t c, int32_t pos,
+                               char16_t* buf, bool reconsume,
+                               int32_t returnState, int32_t endPos);
 
 public:
 inline int32_t getColumnNumber() { return col; }
