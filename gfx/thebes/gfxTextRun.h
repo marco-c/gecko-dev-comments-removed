@@ -230,7 +230,7 @@ class gfxTextRun : public gfxShapedText {
 
     
     
-    virtual gfxFloat GetHyphenWidth() const = 0;
+    virtual nscoord GetHyphenWidth() const = 0;
 
     
     virtual mozilla::gfx::ShapedTextFlags GetShapedTextFlags() const = 0;
@@ -243,7 +243,9 @@ class gfxTextRun : public gfxShapedText {
 
 
 
-    virtual void GetSpacing(Range aRange, Spacing* aSpacing) const = 0;
+
+
+    virtual bool GetSpacing(Range aRange, Spacing* aSpacing) const = 0;
 
     
     

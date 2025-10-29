@@ -89,7 +89,7 @@ class StubPropertyProvider final : public gfxTextRun::PropertyProvider {
         "This shouldn't be called because we never call BreakAndMeasureText");
     return mozilla::StyleHyphens::None;
   }
-  gfxFloat GetHyphenWidth() const override {
+  nscoord GetHyphenWidth() const override {
     NS_ERROR("This shouldn't be called because we never enable hyphens");
     return 0;
   }
@@ -101,8 +101,9 @@ class StubPropertyProvider final : public gfxTextRun::PropertyProvider {
     NS_ERROR("This shouldn't be called because we never enable hyphens");
     return 60;
   }
-  void GetSpacing(gfxTextRun::Range aRange, Spacing* aSpacing) const override {
+  bool GetSpacing(gfxTextRun::Range aRange, Spacing* aSpacing) const override {
     NS_ERROR("This shouldn't be called because we never enable spacing");
+    return false;
   }
   gfx::ShapedTextFlags GetShapedTextFlags() const override {
     NS_ERROR("This shouldn't be called because we never enable hyphens");
@@ -404,7 +405,7 @@ static nsBoundingMetrics GetTextBoundingMetrics(
     m.rightBearing = NSToCoordCeil(theMetrics.mBoundingBox.XMost());
     m.ascent = NSToCoordCeil(-theMetrics.mBoundingBox.Y());
     m.descent = NSToCoordCeil(theMetrics.mBoundingBox.YMost());
-    m.width = NSToCoordRound(theMetrics.mAdvanceWidth);
+    m.width = theMetrics.mAdvanceWidth;
   }
   return m;
 }

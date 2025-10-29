@@ -1662,19 +1662,17 @@ class gfxFont {
 
 
   struct RunMetrics {
-    RunMetrics() { mAdvanceWidth = mAscent = mDescent = 0.0; }
-
     void CombineWith(const RunMetrics& aOther, bool aOtherIsOnLeft);
 
     
     
     
     
-    gfxFloat mAdvanceWidth;
+    nscoord mAdvanceWidth = 0;
 
     
-    gfxFloat mAscent;   
-    gfxFloat mDescent;  
+    gfxFloat mAscent = 0.0;   
+    gfxFloat mDescent = 0.0;  
 
     
     
