@@ -1670,44 +1670,13 @@ void nsLayoutUtils::GetContainerAndOffsetAtEvent(PresShell* aPresShell,
   }
 }
 
-void nsLayoutUtils::ConstrainToCoordValues(float& aStart, float& aSize) {
-  MOZ_ASSERT(aSize >= 0);
-
-  
-  
-
-  
-  
-  
-  float end = aStart + aSize;
-  aStart = std::clamp(aStart, float(nscoord_MIN), float(nscoord_MAX));
-  end = std::clamp(end, float(nscoord_MIN), float(nscoord_MAX));
-
-  aSize = end - aStart;
-
-  
-  
-  
-  
-  if (MOZ_UNLIKELY(std::isnan(aSize))) {
-    
-    aStart = 0.0f;
-    aSize = float(nscoord_MAX);
-  } else if (aSize > float(nscoord_MAX)) {
-    float excess = aSize - float(nscoord_MAX);
-    excess /= 2;
-    aStart += excess;
-    aSize = float(nscoord_MAX);
-  }
-}
 
 
 
 
 
 
-
-static void ConstrainToCoordValues(gfxFloat& aVal) {
+static void ConstrainToCoordValues(double& aVal) {
   if (aVal <= nscoord_MIN) {
     aVal = nscoord_MIN;
   } else if (aVal >= nscoord_MAX) {
@@ -1715,28 +1684,42 @@ static void ConstrainToCoordValues(gfxFloat& aVal) {
   }
 }
 
-void nsLayoutUtils::ConstrainToCoordValues(gfxFloat& aStart, gfxFloat& aSize) {
-  gfxFloat max = aStart + aSize;
+ void nsLayoutUtils::ConstrainToCoordValues(double& aStart,
+                                                        double& aSize) {
+  MOZ_ASSERT(std::isnan(aSize) || aSize >= 0);
+
+  double max = aStart + aSize;
 
   
   ::ConstrainToCoordValues(aStart);
   ::ConstrainToCoordValues(max);
+
+  
+  
+
+  
+  
+  
+  
 
   aSize = max - aStart;
   
   
   if (MOZ_UNLIKELY(std::isnan(aSize))) {
     
+    
+    
+    
     aStart = 0.0f;
     aSize = nscoord_MAX;
   } else if (aSize > nscoord_MAX) {
-    gfxFloat excess = aSize - nscoord_MAX;
+    double excess = aSize - nscoord_MAX;
     excess /= 2;
 
     aStart += excess;
     aSize = nscoord_MAX;
   } else if (aSize < nscoord_MIN) {
-    gfxFloat excess = aSize - nscoord_MIN;
+    double excess = aSize - nscoord_MIN;
     excess /= 2;
 
     aStart -= excess;
