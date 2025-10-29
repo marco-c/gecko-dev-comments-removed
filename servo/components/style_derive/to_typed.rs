@@ -3,11 +3,11 @@
 
 
 use crate::cg;
-use crate::to_css::CssVariantAttrs;
+use crate::to_css::{CssFieldAttrs, CssInputAttrs, CssVariantAttrs};
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{Data, DataEnum, DeriveInput, Fields};
-use synstructure::Structure;
+use syn::{Data, DataEnum, DeriveInput, Fields, WhereClause};
+use synstructure::{BindingInfo, Structure};
 
 
 
@@ -34,48 +34,96 @@ use synstructure::Structure;
 
 
 
-pub fn derive(input: DeriveInput) -> TokenStream {
+
+
+
+
+
+
+
+
+pub fn derive(mut input: DeriveInput) -> TokenStream {
     
-    let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
-    let name = &input.ident;
-
     
-    let body = if let Data::Enum(DataEnum { variants, .. }) = &input.data {
+    
+    
+    
+    
+    
+    let mut where_clause = input.generics.where_clause.take();
+
+    let css_input_attrs = cg::parse_input_attrs::<CssInputAttrs>(&input);
+
+    let input_attrs = cg::parse_input_attrs::<TypedValueInputAttrs>(&input);
+
+    let body = match &input.data {
         
-        let all_unit = variants.iter().all(|v| matches!(v.fields, Fields::Unit));
+        Data::Enum(DataEnum { variants, .. }) => {
+            
+            let all_unit = variants.iter().all(|v| matches!(v.fields, Fields::Unit));
 
-        if all_unit {
-            
-            
-            
-            
-            quote! {
-                fn to_typed(&self) -> Option<style_traits::TypedValue> {
-                  let s = style_traits::ToCss::to_css_cssstring(self);
-                  Some(style_traits::TypedValue::Keyword(s))
+            if all_unit {
+                
+                
+                
+                
+                quote! {
+                    fn to_typed(&self) -> Option<style_traits::TypedValue> {
+                      let s = style_traits::ToCss::to_css_cssstring(self);
+                      Some(style_traits::TypedValue::Keyword(s))
+                    }
                 }
-            }
-        } else {
-            
-            
-            
-            
-            let s = Structure::new(&input);
-            let match_body = s.each_variant(|variant| derive_variant_arm(variant));
+            } else {
+                
+                
+                
+                
+                let s = Structure::new(&input);
+                let match_body = s.each_variant(|variant| {
+                    derive_variant_arm(variant, input_attrs.derive_fields, &mut where_clause)
+                });
 
-            quote! {
-                fn to_typed(&self) -> Option<style_traits::TypedValue> {
-                    match *self {
-                        #match_body
+                quote! {
+                    fn to_typed(&self) -> Option<style_traits::TypedValue> {
+                        match *self {
+                            #match_body
+                        }
                     }
                 }
             }
-        }
-    } else {
+        },
+
+        
+        Data::Struct(_) => {
+            if css_input_attrs.bitflags.is_none() {
+                let s = Structure::new(&input);
+                let match_body = s.each_variant(|variant| {
+                    derive_variant_arm(variant, input_attrs.derive_fields, &mut where_clause)
+                });
+
+                quote! {
+                    fn to_typed(&self) -> Option<style_traits::TypedValue> {
+                        match *self {
+                            #match_body
+                        }
+                    }
+                }
+            } else {
+                quote! {}
+            }
+        },
+
         
         
-        quote! {}
+        _ => quote! {},
     };
+
+    input.generics.where_clause = where_clause;
+
+    let name = &input.ident;
+
+    
+    let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
 
     
     quote! {
@@ -98,27 +146,46 @@ pub fn derive(input: DeriveInput) -> TokenStream {
 
 
 
-fn derive_variant_arm(variant: &synstructure::VariantInfo) -> TokenStream {
+
+
+
+fn derive_variant_arm(
+    variant: &synstructure::VariantInfo,
+    derive_fields: bool,
+    where_clause: &mut Option<WhereClause>,
+) -> TokenStream {
+    let bindings = variant.bindings();
     
     let ast = variant.ast();
     let identifier = &ast.ident;
 
     
-    let variant_attrs = cg::parse_variant_attrs_from_ast::<CssVariantAttrs>(&ast);
+    let css_variant_attrs = cg::parse_variant_attrs_from_ast::<CssVariantAttrs>(&ast);
+
+    
+    let variant_attrs = cg::parse_variant_attrs_from_ast::<TypedValueVariantAttrs>(&ast);
 
     
     
-    if variant_attrs.skip {
+    if css_variant_attrs.skip {
         return quote!(None);
     }
 
     assert!(
-        variant_attrs.keyword.is_none(),
+        css_variant_attrs.keyword.is_none(),
         "Unhandled keyword attribute"
     );
 
     
-    if ast.fields.is_empty() {
+    
+    
+    if variant_attrs.skip || variant_attrs.todo {
+        return quote!(None);
+    }
+
+    
+    
+    if bindings.is_empty() {
         
         
         let keyword = cg::to_css_identifier(&identifier.to_string());
@@ -129,11 +196,99 @@ fn derive_variant_arm(variant: &synstructure::VariantInfo) -> TokenStream {
                 style_traits::CssString::from(#keyword)
             ))
         }
+    } else if derive_fields {
+        derive_variant_fields_expr(bindings, where_clause)
     } else {
+        
         
         
         quote! {
             None
         }
     }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+fn derive_variant_fields_expr(
+    bindings: &[BindingInfo],
+    where_clause: &mut Option<WhereClause>,
+) -> TokenStream {
+    
+    
+    let mut iter = bindings
+        .iter()
+        .filter_map(|binding| {
+            let css_field_attrs = cg::parse_field_attrs::<CssFieldAttrs>(&binding.ast());
+            if css_field_attrs.skip {
+                return None;
+            }
+            Some((binding, css_field_attrs))
+        })
+        .peekable();
+
+    
+    let (first, css_field_attrs) = match iter.next() {
+        Some(pair) => pair,
+        None => return quote! { None },
+    };
+
+    
+    
+    
+    if !css_field_attrs.iterable && iter.peek().is_none() {
+        let ty = &first.ast().ty;
+        cg::add_predicate(where_clause, parse_quote!(#ty: style_traits::ToTyped));
+
+        return quote! { style_traits::ToTyped::to_typed(#first) };
+    }
+
+    
+    
+    quote! {
+        None
+    }
+}
+
+#[derive(Default, FromDeriveInput)]
+#[darling(attributes(typed_value), default)]
+pub struct TypedValueInputAttrs {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub derive_fields: bool,
+}
+
+#[derive(Default, FromVariant)]
+#[darling(attributes(typed_value), default)]
+pub struct TypedValueVariantAttrs {
+    
+    
+    
+    pub derive_fields: bool,
+
+    
+    
+    pub skip: bool,
+
+    
+    
+    
+    pub todo: bool,
 }
