@@ -19,7 +19,7 @@ namespace jit {
 static constexpr Register CallTempReg4 = a4;
 static constexpr Register CallTempReg5 = a5;
 
-static constexpr Register CallTempNonArgRegs[] = {t4, t5, t6, t7};
+static constexpr Register CallTempNonArgRegs[] = {t0, t1, t2, t3};
 static const uint32_t NumCallTempNonArgRegs = std::size(CallTempNonArgRegs);
 
 class ABIArgGenerator : public ABIArgGeneratorShared {
@@ -35,10 +35,10 @@ class ABIArgGenerator : public ABIArgGeneratorShared {
 };
 
 
-static constexpr Register ABINonArgReg0 = t4;
-static constexpr Register ABINonArgReg1 = t5;
-static constexpr Register ABINonArgReg2 = t6;
-static constexpr Register ABINonArgReg3 = t7;
+static constexpr Register ABINonArgReg0 = t0;
+static constexpr Register ABINonArgReg1 = t1;
+static constexpr Register ABINonArgReg2 = t2;
+static constexpr Register ABINonArgReg3 = t3;
 
 
 
@@ -47,14 +47,14 @@ static constexpr FloatRegister ABINonArgDoubleReg{FloatRegisters::f21,
 
 
 
-static constexpr Register ABINonArgReturnReg0 = t4;
-static constexpr Register ABINonArgReturnReg1 = t5;
+static constexpr Register ABINonArgReturnReg0 = t0;
+static constexpr Register ABINonArgReturnReg1 = t1;
 static constexpr Register ABINonVolatileReg = s0;
 
 
 
 
-static constexpr Register ABINonArgReturnVolatileReg = t4;
+static constexpr Register ABINonArgReturnVolatileReg = t0;
 
 
 
@@ -82,9 +82,9 @@ static constexpr Register WasmTailCallFPScratchReg = ABINonArgReg3;
 
 
 
-static constexpr Register WasmJitEntryReturnScratch = t5;
+static constexpr Register WasmJitEntryReturnScratch = t1;
 
-static constexpr Register InterpreterPCReg = a5;
+static constexpr Register InterpreterPCReg = t5;
 
 static constexpr Register JSReturnReg = v1;
 static constexpr Register JSReturnReg_Type = JSReturnReg;
