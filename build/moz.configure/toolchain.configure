@@ -3894,35 +3894,6 @@ set_config(
 )
 
 
-@depends(target, c_compiler)
-def htmlaccel_config(target, c_compiler):
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if target.cpu != "x86_64":
-        return []
-    if c_compiler.type == "gcc":
-        return ["-mavx", "-mbmi", "-flax-vector-conversions"]
-    return ["-mavx", "-mbmi"]
-
-
-set_config("HTML_ACCEL_FLAGS", htmlaccel_config)
-
-
 
 option("--enable-dtrace", help="Build with dtrace support")
 

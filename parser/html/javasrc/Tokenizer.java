@@ -932,7 +932,7 @@ public class Tokenizer implements Locator, Locator2 {
 
     
 
-    @Inline HtmlAttributes emptyAttributes() {
+    HtmlAttributes emptyAttributes() {
         
         if (newAttributesEachTime) {
             return new HtmlAttributes(mappingLangToXmlLang);
@@ -944,7 +944,7 @@ public class Tokenizer implements Locator, Locator2 {
         
     }
 
-    private void appendCharRefBuf(char c) {
+    @Inline private void appendCharRefBuf(char c) {
         
         
         charRefBuf[charRefBufLen++] = c;
@@ -982,7 +982,7 @@ public class Tokenizer implements Locator, Locator2 {
 
 
 
-    private void appendStrBuf(char c) {
+    @Inline private void appendStrBuf(char c) {
         
         
         
@@ -1000,7 +1000,7 @@ public class Tokenizer implements Locator, Locator2 {
 
 
 
-    @Inline protected String strBufToString() {
+    protected String strBufToString() {
         String str = Portability.newStringFromBuffer(strBuf, 0, strBufLen
             
         );
@@ -1014,7 +1014,7 @@ public class Tokenizer implements Locator, Locator2 {
 
 
 
-    @Inline private void strBufToDoctypeName() {
+    private void strBufToDoctypeName() {
         doctypeName = Portability.newLocalNameFromBuffer(strBuf, strBufLen, interner);
         clearStrBufAfterUse();
     }
@@ -1025,7 +1025,7 @@ public class Tokenizer implements Locator, Locator2 {
 
 
 
-    @Inline private void emitStrBuf() throws SAXException {
+    private void emitStrBuf() throws SAXException {
         if (strBufLen > 0) {
             tokenHandler.characters(strBuf, 0, strBufLen);
             clearStrBufAfterUse();
@@ -1455,6 +1455,12 @@ public class Tokenizer implements Locator, Locator2 {
 
         int pos = start - 1;
 
+        
+
+
+
+
+
         switch (state) {
             case DATA:
             case RCDATA:
@@ -1481,15 +1487,10 @@ public class Tokenizer implements Locator, Locator2 {
         }
 
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
+
+
+
+
         
         
         
@@ -1546,7 +1547,7 @@ public class Tokenizer implements Locator, Locator2 {
     }
     
 
-    @SuppressWarnings("unused") @Inline private int stateLoop(int state, char c,
+    @SuppressWarnings("unused") private int stateLoop(int state, char c,
             int pos, @NoLength char[] buf, boolean reconsume, int returnState,
             int endPos) throws SAXException {
         boolean reportedConsecutiveHyphens = false;
@@ -1622,127 +1623,54 @@ public class Tokenizer implements Locator, Locator2 {
             switch (state) {
                 case DATA:
                     dataloop: for (;;) {
-                        
-                        
-                        
                         if (reconsume) {
                             reconsume = false;
-                            
-                            
-                            switch (c) {
-                                case '&':
-                                    
-
-
-
-                                    flushChars(buf, pos);
-                                    assert charRefBufLen == 0: "charRefBufLen not reset after previous use!";
-                                    appendCharRefBuf(c);
-                                    setAdditionalAndRememberAmpersandLocation('\u0000');
-                                    returnState = state;
-                                    state = transition(state, Tokenizer.CONSUME_CHARACTER_REFERENCE, reconsume, pos);
-                                    continue stateloop;
-                                case '<':
-                                    
-
-
-
-                                    flushChars(buf, pos);
-
-                                    state = transition(state, Tokenizer.TAG_OPEN, reconsume, pos);
-                                    
-                                    break dataloop;
-                                case '\u0000':
-                                    maybeEmitReplacementCharacter(buf, pos);
-                                    break;
-                                case '\r':
-                                    emitCarriageReturn(buf, pos);
-                                    break stateloop;
-                                case '\n':
-                                    silentLineFeed();
-                                    
-                                default:
-                                    
-
-
-
-
-
-                                    break;
+                        } else {
+                            if (++pos == endPos) {
+                                break stateloop;
                             }
+                            c = checkChar(buf, pos);
                         }
-                        datamiddle: for (;;) {
-                            ++pos;
-                            
-                            
-                            
-                            for (;;) {
-                                if (pos == endPos) {
-                                    break stateloop;
-                                }
-                                c = checkChar(buf, pos);
+                        switch (c) {
+                            case '&':
                                 
-                                switch (c) {
-                                    case '&':
-                                        
 
 
 
-                                        flushChars(buf, pos);
-                                        assert charRefBufLen == 0: "charRefBufLen not reset after previous use!";
-                                        appendCharRefBuf(c);
-                                        setAdditionalAndRememberAmpersandLocation('\u0000');
-                                        returnState = state;
-                                        state = transition(state, Tokenizer.CONSUME_CHARACTER_REFERENCE, reconsume, pos);
-                                        continue stateloop;
-                                    case '<':
-                                        
+                                flushChars(buf, pos);
+                                assert charRefBufLen == 0: "charRefBufLen not reset after previous use!";
+                                appendCharRefBuf(c);
+                                setAdditionalAndRememberAmpersandLocation('\u0000');
+                                returnState = state;
+                                state = transition(state, Tokenizer.CONSUME_CHARACTER_REFERENCE, reconsume, pos);
+                                continue stateloop;
+                            case '<':
+                                
 
 
 
-                                        flushChars(buf, pos);
+                                flushChars(buf, pos);
 
-                                        state = transition(state, Tokenizer.TAG_OPEN, reconsume, pos);
-                                        
-                                        break dataloop;
-                                    case '\u0000':
-                                        maybeEmitReplacementCharacter(buf, pos);
-                                        
-                                        continue datamiddle;
-                                    case '\r':
-                                        emitCarriageReturn(buf, pos);
-                                        break stateloop;
-                                    case '\n':
-                                        silentLineFeed();
-                                        
-                                        continue datamiddle;
-                                    default:
-                                        
+                                state = transition(state, Tokenizer.TAG_OPEN, reconsume, pos);
+                                
+                                break dataloop;
+                            case '\u0000':
+                                maybeEmitReplacementCharacter(buf, pos);
+                                continue;
+                            case '\r':
+                                emitCarriageReturn(buf, pos);
+                                break stateloop;
+                            case '\n':
+                                silentLineFeed();
+                                
+                            default:
+                                
 
 
 
 
 
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        ++pos;
-                                        continue;
-                                }
-                            }
+                                continue;
                         }
                     }
                     
@@ -4074,122 +4002,52 @@ public class Tokenizer implements Locator, Locator2 {
                     
                 case RCDATA:
                     rcdataloop: for (;;) {
-                        
-                        
-                        
                         if (reconsume) {
                             reconsume = false;
-                            
-                            
-                            switch (c) {
-                                case '&':
-                                    
-
-
-
-                                    flushChars(buf, pos);
-                                    assert charRefBufLen == 0: "charRefBufLen not reset after previous use!";
-                                    appendCharRefBuf(c);
-                                    setAdditionalAndRememberAmpersandLocation('\u0000');
-                                    returnState = state;
-                                    state = transition(state, Tokenizer.CONSUME_CHARACTER_REFERENCE, reconsume, pos);
-                                    continue stateloop;
-                                case '<':
-                                    
-
-
-
-                                    flushChars(buf, pos);
-
-                                    state = transition(state, Tokenizer.RAWTEXT_RCDATA_LESS_THAN_SIGN, reconsume, pos);
-                                    continue stateloop;
-                                case '\u0000':
-                                    maybeEmitReplacementCharacter(buf, pos);
-                                    break;
-                                case '\r':
-                                    emitCarriageReturn(buf, pos);
-                                    break stateloop;
-                                case '\n':
-                                    silentLineFeed();
-                                    
-                                default:
-                                    
-
-
-
-                                    break;
+                        } else {
+                            if (++pos == endPos) {
+                                break stateloop;
                             }
+                            c = checkChar(buf, pos);
                         }
-                        rcdatamiddle: for (;;) {
-                            ++pos;
-                            
-                            
-                            
-                            
-                            for (;;) {
-                                if (pos == endPos) {
-                                    break stateloop;
-                                }
-                                c = checkChar(buf, pos);
+                        switch (c) {
+                            case '&':
                                 
-                                switch (c) {
-                                    case '&':
-                                        
 
 
 
-                                        flushChars(buf, pos);
-                                        assert charRefBufLen == 0: "charRefBufLen not reset after previous use!";
-                                        appendCharRefBuf(c);
-                                        setAdditionalAndRememberAmpersandLocation('\u0000');
-                                        returnState = state;
-                                        state = transition(state, Tokenizer.CONSUME_CHARACTER_REFERENCE, reconsume, pos);
-                                        continue stateloop;
-                                    case '<':
-                                        
+                                flushChars(buf, pos);
+                                assert charRefBufLen == 0: "charRefBufLen not reset after previous use!";
+                                appendCharRefBuf(c);
+                                setAdditionalAndRememberAmpersandLocation('\u0000');
+                                returnState = state;
+                                state = transition(state, Tokenizer.CONSUME_CHARACTER_REFERENCE, reconsume, pos);
+                                continue stateloop;
+                            case '<':
+                                
 
 
 
-                                        flushChars(buf, pos);
+                                flushChars(buf, pos);
 
-                                        state = transition(state, Tokenizer.RAWTEXT_RCDATA_LESS_THAN_SIGN, reconsume, pos);
-                                        continue stateloop;
-                                    case '\u0000':
-                                        maybeEmitReplacementCharacter(buf, pos);
-                                        
-                                        continue rcdatamiddle;
-                                    case '\r':
-                                        emitCarriageReturn(buf, pos);
-                                        break stateloop;
-                                    case '\n':
-                                        silentLineFeed();
-                                        
-                                        continue rcdatamiddle;
-                                    default:
-                                        
-
+                                returnState = state;
+                                state = transition(state, Tokenizer.RAWTEXT_RCDATA_LESS_THAN_SIGN, reconsume, pos);
+                                continue stateloop;
+                            case '\u0000':
+                                emitReplacementCharacter(buf, pos);
+                                continue;
+                            case '\r':
+                                emitCarriageReturn(buf, pos);
+                                break stateloop;
+                            case '\n':
+                                silentLineFeed();
+                                
+                            default:
+                                
 
 
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        ++pos;
-                                        continue;
-                                }
-                            }
+
+                                continue;
                         }
                     }
                     
@@ -6490,24 +6348,24 @@ public class Tokenizer implements Locator, Locator2 {
         forceQuirks = false;
     }
 
-    @Inline private void adjustDoubleHyphenAndAppendToStrBufCarriageReturn()
+    private void adjustDoubleHyphenAndAppendToStrBufCarriageReturn()
             throws SAXException {
         silentCarriageReturn();
         adjustDoubleHyphenAndAppendToStrBufAndErr('\n', false);
     }
 
-    @Inline private void adjustDoubleHyphenAndAppendToStrBufLineFeed()
+    private void adjustDoubleHyphenAndAppendToStrBufLineFeed()
             throws SAXException {
         silentLineFeed();
         adjustDoubleHyphenAndAppendToStrBufAndErr('\n', false);
     }
 
-    @Inline private void appendStrBufLineFeed() {
+    private void appendStrBufLineFeed() {
         silentLineFeed();
         appendStrBuf('\n');
     }
 
-    @Inline private void appendStrBufCarriageReturn() {
+    private void appendStrBufCarriageReturn() {
         silentCarriageReturn();
         appendStrBuf('\n');
     }
@@ -6525,7 +6383,7 @@ public class Tokenizer implements Locator, Locator2 {
 
     
 
-    @Inline private void emitCarriageReturn(@NoLength char[] buf, int pos)
+    private void emitCarriageReturn(@NoLength char[] buf, int pos)
             throws SAXException {
         silentCarriageReturn();
         flushChars(buf, pos);
@@ -6554,7 +6412,7 @@ public class Tokenizer implements Locator, Locator2 {
         cstart = pos + 1;
     }
 
-    @Inline private void setAdditionalAndRememberAmpersandLocation(char add) {
+    private void setAdditionalAndRememberAmpersandLocation(char add) {
         additional = add;
         
         ampersandLocation = new LocatorImpl(this);
@@ -7219,7 +7077,7 @@ public class Tokenizer implements Locator, Locator2 {
 
 
 
-    @Inline private void suspendIfRequestedAfterCurrentNonTextToken() {
+    private void suspendIfRequestedAfterCurrentNonTextToken() {
         if (suspendAfterCurrentNonTextToken) {
             suspendAfterCurrentNonTextToken = false;
             shouldSuspend = true;
@@ -7363,7 +7221,7 @@ public class Tokenizer implements Locator, Locator2 {
 
 
 
-    @Inline private void emitOrAppendTwo(@Const @NoLength char[] val, int returnState)
+    private void emitOrAppendTwo(@Const @NoLength char[] val, int returnState)
             throws SAXException {
         if ((returnState & DATA_AND_RCDATA_MASK) != 0) {
             appendStrBuf(val[0]);
@@ -7373,7 +7231,7 @@ public class Tokenizer implements Locator, Locator2 {
         }
     }
 
-    @Inline private void emitOrAppendOne(@Const @NoLength char[] val, int returnState)
+    private void emitOrAppendOne(@Const @NoLength char[] val, int returnState)
             throws SAXException {
         if ((returnState & DATA_AND_RCDATA_MASK) != 0) {
             appendStrBuf(val[0]);
@@ -7410,7 +7268,7 @@ public class Tokenizer implements Locator, Locator2 {
         }
     }
 
-    @Inline public void requestSuspension() {
+    public void requestSuspension() {
         shouldSuspend = true;
     }
 
@@ -7453,7 +7311,7 @@ public class Tokenizer implements Locator, Locator2 {
 
     
 
-    @Inline public boolean isInDataState() {
+    public boolean isInDataState() {
         return (stateSave == DATA);
     }
 
