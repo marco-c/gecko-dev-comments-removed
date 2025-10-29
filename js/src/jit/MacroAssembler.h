@@ -1329,7 +1329,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
                       FloatRegister output) PER_SHARED_ARCH;
   void copySignFloat32(FloatRegister lhs, FloatRegister rhs,
                        FloatRegister output)
-      DEFINED_ON(arm, arm64, riscv64, x86_shared);
+      DEFINED_ON(arm, arm64, loong64, riscv64, x86_shared);
 
   
   
