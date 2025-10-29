@@ -222,7 +222,7 @@ static void OnSettingsChange(WPARAM wParam, LPARAM lParam) {
   if (lParamString == u"UserInteractionMode"_ns) {
     
     
-    (void)NS_WARN_IF(mozilla::IsWin11OrLater());
+    Unused << NS_WARN_IF(mozilla::IsWin11OrLater());
     WindowsUIUtils::UpdateInWin10TabletMode();
     NotifyThemeChanged(widget::ThemeChangeKind::MediaQueriesOnly);
     return;
@@ -230,7 +230,7 @@ static void OnSettingsChange(WPARAM wParam, LPARAM lParam) {
 
   if (lParamString == u"ConvertibleSlateMode"_ns) {
     
-    (void)NS_WARN_IF(!mozilla::IsWin11OrLater());
+    Unused << NS_WARN_IF(!mozilla::IsWin11OrLater());
     WindowsUIUtils::UpdateInWin11TabletMode();
     NotifyThemeChanged(widget::ThemeChangeKind::MediaQueriesOnly);
     return;

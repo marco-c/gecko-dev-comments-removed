@@ -9,6 +9,7 @@
 #include "js/PropertyAndElement.h"  
 #include "mozilla/Telemetry.h"
 #include "mozilla/TelemetryProcessEnums.h"
+#include "mozilla/Unused.h"
 #include "nsJSUtils.h"  
 #include "nsThreadUtils.h"
 #include "TelemetryFixture.h"
@@ -29,7 +30,7 @@ TEST_F(TelemetryTestFixture, ScalarUnsigned) {
   AutoJSContextWithGlobal cx(mCleanGlobal);
 
   
-  (void)mTelemetry->ClearScalars();
+  Unused << mTelemetry->ClearScalars();
 
   
   const uint32_t kInitialValue = 1172015;
@@ -64,7 +65,7 @@ TEST_F(TelemetryTestFixture, ScalarUnsigned) {
 TEST_F(TelemetryTestFixture, ScalarBoolean) {
   AutoJSContextWithGlobal cx(mCleanGlobal);
 
-  (void)mTelemetry->ClearScalars();
+  Unused << mTelemetry->ClearScalars();
 
   
   TelemetryScalar::Set(Telemetry::ScalarID::TELEMETRY_TEST_BOOLEAN_KIND, true);
@@ -90,7 +91,7 @@ TEST_F(TelemetryTestFixture, ScalarBoolean) {
 TEST_F(TelemetryTestFixture, ScalarString) {
   AutoJSContextWithGlobal cx(mCleanGlobal);
 
-  (void)mTelemetry->ClearScalars();
+  Unused << mTelemetry->ClearScalars();
 
   
   TelemetryScalar::Set(Telemetry::ScalarID::TELEMETRY_TEST_STRING_KIND,
@@ -116,7 +117,7 @@ TEST_F(TelemetryTestFixture, ScalarString) {
 TEST_F(TelemetryTestFixture, KeyedScalarUnsigned) {
   AutoJSContextWithGlobal cx(mCleanGlobal);
 
-  (void)mTelemetry->ClearScalars();
+  Unused << mTelemetry->ClearScalars();
 
   
   const char* kScalarName = "telemetry.test.keyed_unsigned_int";
@@ -153,7 +154,7 @@ TEST_F(TelemetryTestFixture, KeyedScalarUnsigned) {
 TEST_F(TelemetryTestFixture, KeyedScalarBoolean) {
   AutoJSContextWithGlobal cx(mCleanGlobal);
 
-  (void)mTelemetry->ClearScalars();
+  Unused << mTelemetry->ClearScalars();
 
   
   TelemetryScalar::Set(Telemetry::ScalarID::TELEMETRY_TEST_KEYED_BOOLEAN_KIND,
@@ -186,7 +187,7 @@ TEST_F(TelemetryTestFixture, KeyedScalarBoolean) {
 TEST_F(TelemetryTestFixture, NonMainThreadAdd) {
   AutoJSContextWithGlobal cx(mCleanGlobal);
 
-  (void)mTelemetry->ClearScalars();
+  Unused << mTelemetry->ClearScalars();
 
   
   nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
@@ -215,7 +216,7 @@ TEST_F(TelemetryTestFixture, ScalarUnknownID) {
   AutoJSContextWithGlobal cx(mCleanGlobal);
 
   
-  (void)mTelemetry->ClearScalars();
+  Unused << mTelemetry->ClearScalars();
 
 
 #ifndef DEBUG
@@ -255,7 +256,7 @@ TEST_F(TelemetryTestFixture, ScalarEventSummary) {
   AutoJSContextWithGlobal cx(mCleanGlobal);
 
   
-  (void)mTelemetry->ClearScalars();
+  Unused << mTelemetry->ClearScalars();
 
   const char* kScalarName = "telemetry.event_counts";
 
@@ -306,7 +307,7 @@ TEST_F(TelemetryTestFixture, ScalarEventSummary) {
 TEST_F(TelemetryTestFixture, TestKeyedScalarAllowedKeys) {
   AutoJSContextWithGlobal cx(mCleanGlobal);
   
-  (void)mTelemetry->ClearScalars();
+  Unused << mTelemetry->ClearScalars();
 
   const uint32_t kExpectedUint = 1172017;
 
@@ -347,7 +348,7 @@ TEST_F(TelemetryTestFixture, TooLongKey) {
   AutoJSContextWithGlobal cx(mCleanGlobal);
 
   
-  (void)mTelemetry->ClearScalars();
+  Unused << mTelemetry->ClearScalars();
 
 
 #ifndef DEBUG
@@ -382,7 +383,7 @@ TEST_F(TelemetryTestFixture, EmptyKey) {
   AutoJSContextWithGlobal cx(mCleanGlobal);
 
   
-  (void)mTelemetry->ClearScalars();
+  Unused << mTelemetry->ClearScalars();
 
 
 #ifndef DEBUG
@@ -416,7 +417,7 @@ TEST_F(TelemetryTestFixture, TooManyKeys) {
   AutoJSContextWithGlobal cx(mCleanGlobal);
 
   
-  (void)mTelemetry->ClearScalars();
+  Unused << mTelemetry->ClearScalars();
 
 
 #ifndef DEBUG

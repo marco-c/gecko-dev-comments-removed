@@ -3229,7 +3229,7 @@ static PreRecordedMetaInformation PreRecordMetaInformation(
   if (nsCOMPtr<nsIHttpProtocolHandler> http =
           do_GetService(NS_NETWORK_PROTOCOL_CONTRACTID_PREFIX "http", &res);
       !NS_FAILED(res) && http) {
-    (void)http->GetPlatform(info.mHttpPlatform);
+    Unused << http->GetPlatform(info.mHttpPlatform);
 
 #if defined(XP_MACOSX)
     
@@ -3267,7 +3267,7 @@ static PreRecordedMetaInformation PreRecordMetaInformation(
     } else
 #endif
     {
-      (void)http->GetOscpu(info.mHttpOscpu);
+      Unused << http->GetOscpu(info.mHttpOscpu);
     }
 
     
@@ -3279,16 +3279,16 @@ static PreRecordedMetaInformation PreRecordMetaInformation(
   if (nsCOMPtr<nsIXULRuntime> runtime =
           do_GetService("@mozilla.org/xre/runtime;1");
       runtime) {
-    (void)runtime->GetXPCOMABI(info.mRuntimeABI);
-    (void)runtime->GetWidgetToolkit(info.mRuntimeToolkit);
+    Unused << runtime->GetXPCOMABI(info.mRuntimeABI);
+    Unused << runtime->GetWidgetToolkit(info.mRuntimeToolkit);
   }
 
   if (nsCOMPtr<nsIXULAppInfo> appInfo =
           do_GetService("@mozilla.org/xre/app-info;1");
       appInfo) {
-    (void)appInfo->GetName(info.mAppInfoProduct);
-    (void)appInfo->GetAppBuildID(info.mAppInfoAppBuildID);
-    (void)appInfo->GetSourceURL(info.mAppInfoSourceURL);
+    Unused << appInfo->GetName(info.mAppInfoProduct);
+    Unused << appInfo->GetAppBuildID(info.mAppInfoAppBuildID);
+    Unused << appInfo->GetSourceURL(info.mAppInfoSourceURL);
   }
 
   ProcessInfo processInfo = {};  
@@ -5707,9 +5707,8 @@ static void profiler_start_signal_handler(int signal, siginfo_t* info,
   
   if (sAsyncSignalControlWriteFd != -1) {
     char signalControlCharacter = sAsyncSignalControlCharStart;
-    [[maybe_unused]] ssize_t _ =
-        write(sAsyncSignalControlWriteFd, &signalControlCharacter,
-              sizeof(signalControlCharacter));
+    Unused << write(sAsyncSignalControlWriteFd, &signalControlCharacter,
+                    sizeof(signalControlCharacter));
   }
 }
 
@@ -5724,9 +5723,8 @@ static void profiler_stop_signal_handler(int signal, siginfo_t* info,
   
   if (sAsyncSignalControlWriteFd != -1) {
     char signalControlCharacter = sAsyncSignalControlCharStop;
-    [[maybe_unused]] ssize_t _ =
-        write(sAsyncSignalControlWriteFd, &signalControlCharacter,
-              sizeof(signalControlCharacter));
+    Unused << write(sAsyncSignalControlWriteFd, &signalControlCharacter,
+                    sizeof(signalControlCharacter));
   }
 }
 #endif
@@ -5820,7 +5818,7 @@ void profiler_start_from_signal() {
       
       NS_DispatchToMainThread(
           NS_NewRunnableFunction("StartProfilerInChildProcesses", [=] {
-            (void)NotifyProfilerStarted(
+            Unused << NotifyProfilerStarted(
                 PROFILER_DEFAULT_SIGHANDLE_ENTRIES, Nothing(),
                 PROFILER_DEFAULT_INTERVAL, features,
                 const_cast<const char**>(filters), std::size(filters), 0);
@@ -6178,8 +6176,8 @@ void profiler_init(void* aStackTop) {
 
   
   
-  (void)NotifyProfilerStarted(capacity, duration, interval, features,
-                              filters.begin(), filters.length(), 0);
+  Unused << NotifyProfilerStarted(capacity, duration, interval, features,
+                                  filters.begin(), filters.length(), 0);
 }
 
 static void locked_profiler_save_profile_to_file(
@@ -6243,7 +6241,7 @@ void profiler_shutdown(IsFastShutdown aIsFastShutdown) {
   
   
   if (samplerThread) {
-    (void)ProfilerParent::ProfilerStopped();
+    Unused << ProfilerParent::ProfilerStopped();
     NotifyObservers("profiler-stopped");
     delete samplerThread;
   }
@@ -6479,7 +6477,7 @@ static void locked_profiler_save_profile_to_file(
     SpliceableJSONWriter w(sw, FailureLatchInfallibleSource::Singleton());
     w.Start();
     {
-      (void)locked_profiler_stream_json_for_this_process(
+      Unused << locked_profiler_stream_json_for_this_process(
           aLock, w,  0, aPreRecordedMetaInformation,
           aIsShuttingDown, nullptr, ProgressLogger{});
 
@@ -6810,7 +6808,7 @@ RefPtr<GenericPromise> profiler_start(PowerOfTwo32 aCapacity, double aInterval,
   
   
   if (samplerThread) {
-    (void)ProfilerParent::ProfilerStopped();
+    Unused << ProfilerParent::ProfilerStopped();
     NotifyObservers("profiler-stopped");
     delete samplerThread;
   }
@@ -6863,7 +6861,7 @@ void profiler_ensure_started(PowerOfTwo32 aCapacity, double aInterval,
   
   
   if (samplerThread) {
-    (void)ProfilerParent::ProfilerStopped();
+    Unused << ProfilerParent::ProfilerStopped();
     NotifyObservers("profiler-stopped");
     delete samplerThread;
   }
@@ -6871,8 +6869,8 @@ void profiler_ensure_started(PowerOfTwo32 aCapacity, double aInterval,
   if (startedProfiler) {
     invoke_profiler_state_change_callbacks(ProfilingState::Started);
 
-    (void)NotifyProfilerStarted(aCapacity, aDuration, aInterval, aFeatures,
-                                aFilters, aFilterCount, aActiveTabID);
+    Unused << NotifyProfilerStarted(aCapacity, aDuration, aInterval, aFeatures,
+                                    aFilters, aFilterCount, aActiveTabID);
   }
 }
 

@@ -105,7 +105,7 @@ void nsHTTPSOnlyUtils::PotentiallyFireHttpRequestToShortenTimout(
 
   
   nsAutoCString method;
-  (void)httpChannel->GetRequestMethod(method);
+  mozilla::Unused << httpChannel->GetRequestMethod(method);
   if (!method.EqualsLiteral("GET")) {
     return;
   }
@@ -1051,7 +1051,7 @@ TestHTTPAnswerRunnable::OnStartRequest(nsIRequest* aRequest) {
     nsCOMPtr<nsIHttpChannelInternal> httpChannelInternal =
         do_QueryInterface(httpsOnlyChannel);
     bool isAuthChannel = false;
-    (void)httpChannelInternal->GetIsAuthChannel(&isAuthChannel);
+    mozilla::Unused << httpChannelInternal->GetIsAuthChannel(&isAuthChannel);
     
     
     
@@ -1119,7 +1119,7 @@ TestHTTPAnswerRunnable::Run() {
         do_QueryInterface(origChannel);
     uint32_t caps;
     if (NS_SUCCEEDED(internalChannel->GetCaps(&caps))) {
-      (void)resolver->FetchHTTPSSVC(
+      mozilla::Unused << resolver->FetchHTTPSSVC(
           caps & NS_HTTP_REFRESH_DNS, false,
           [self = RefPtr{this}](nsIDNSHTTPSSVCRecord* aRecord) {
             self->mHasHTTPSRR = (aRecord != nullptr);

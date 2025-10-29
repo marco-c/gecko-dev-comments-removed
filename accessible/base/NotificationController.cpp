@@ -1066,7 +1066,7 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
       
       
       
-      (void)mDocument->IPCDoc()->SendRequestAckMutationEvents();
+      Unused << mDocument->IPCDoc()->SendRequestAckMutationEvents();
     }
   }
 

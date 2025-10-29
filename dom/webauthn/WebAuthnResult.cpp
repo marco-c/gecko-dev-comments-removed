@@ -161,7 +161,7 @@ WebAuthnRegisterResult::HasIdentifyingAttestation(
                                                      false,
                                                     getter_AddRefs(attObj));
   if (NS_SUCCEEDED(rv)) {
-    (void)attObj->IsIdentifying(&isIdentifying);
+    Unused << attObj->IsIdentifying(&isIdentifying);
   }
 
   *aHasIdentifyingAttestation = isIdentifying;

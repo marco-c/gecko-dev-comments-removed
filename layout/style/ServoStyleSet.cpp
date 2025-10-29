@@ -323,7 +323,7 @@ void ServoStyleSet::PreTraverseSync() {
   
   
   
-  (void)mDocument->GetRootElement();
+  Unused << mDocument->GetRootElement();
 
   
   

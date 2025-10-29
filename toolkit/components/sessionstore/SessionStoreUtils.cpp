@@ -282,7 +282,7 @@ void SessionStoreUtils::RestoreDocShellCapabilities(
   if (!mozilla::SessionHistoryInParent()) {
     
     BrowsingContext* bc = aDocShell->GetBrowsingContext();
-    (void)bc->SetAllowJavascript(allowJavascript);
+    Unused << bc->SetAllowJavascript(allowJavascript);
   }
 }
 
@@ -457,7 +457,7 @@ static void AppendValueToCollectedData(Document& aDocument, nsINode* aNode,
     
     if (aId.EqualsLiteral("sessionData")) {
       nsAutoCString url;
-      (void)aDocument.GetDocumentURI()->GetSpecIgnoringRef(url);
+      Unused << aDocument.GetDocumentURI()->GetSpecIgnoringRef(url);
       if (url.EqualsLiteral("about:sessionrestore") ||
           url.EqualsLiteral("about:welcomeback")) {
         JS::Rooted<JS::Value> jsval(aCx);
@@ -1367,7 +1367,7 @@ bool SessionStoreUtils::RestoreFormData(const GlobalObject& aGlobal,
   
   
   nsAutoCString url;
-  (void)aDocument.GetDocumentURI()->GetSpecIgnoringRef(url);
+  Unused << aDocument.GetDocumentURI()->GetSpecIgnoringRef(url);
   if (!aData.mUrl.Value().Equals(url)) {
     return false;
   }
@@ -1720,7 +1720,7 @@ already_AddRefed<Promise> SessionStoreUtils::RestoreDocShellState(
     }
   }
 
-  (void)aContext.SetAllowJavascript(allowJavascript);
+  Unused << aContext.SetAllowJavascript(allowJavascript);
 
   DocShellRestoreState state = {uri, aDocShellCaps};
 

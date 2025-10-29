@@ -122,10 +122,10 @@ void GVAutoplayPermissionRequest::SetRequestStatus(RStatus aStatus) {
   AssertIsOnMainThread();
   if (mType == RType::eAUDIBLE) {
     
-    (void)mContext->SetGVAudibleAutoplayRequestStatus(aStatus);
+    Unused << mContext->SetGVAudibleAutoplayRequestStatus(aStatus);
   } else {
     
-    (void)mContext->SetGVInaudibleAutoplayRequestStatus(aStatus);
+    Unused << mContext->SetGVInaudibleAutoplayRequestStatus(aStatus);
   }
 }
 

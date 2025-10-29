@@ -1268,7 +1268,7 @@ nsresult CacheFileIOManager::Init() {
   
   nsCOMPtr<nsIEventTarget> target =
       do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID, &rv);
-  (void)target;
+  Unused << target;
 
   return NS_OK;
 }

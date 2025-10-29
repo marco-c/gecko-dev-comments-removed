@@ -8,6 +8,7 @@
 
 
 
+#include "mozilla/Unused.h"
 #include "FuzzerDefs.h"
 #include "FuzzerExtFunctions.h"
 #include "FuzzerIO.h"
@@ -73,7 +74,7 @@ void WriteToFile(const uint8_t *Data, size_t Size, const std::string &Path) {
   
   FILE *Out = fopen(Path.c_str(), "wb");
   if (!Out) return;
-  (void)fwrite(Data, sizeof(Data[0]), Size, Out);
+  mozilla::Unused << fwrite(Data, sizeof(Data[0]), Size, Out);
   fclose(Out);
 }
 

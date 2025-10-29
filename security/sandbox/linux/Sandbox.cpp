@@ -44,6 +44,7 @@
 #include "mozilla/StackWalk.h"
 #include "mozilla/Span.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/Unused.h"
 #include "mozilla/ipc/UtilityProcessSandboxing.h"
 #include "prenv.h"
 #include "base/posix/eintr_wrapper.h"
@@ -188,7 +189,7 @@ static void InstallSigSysHandler(void) {
   struct sigaction act;
 
   
-  (void)sandbox::Trap::Registry();
+  Unused << sandbox::Trap::Registry();
 
   
   
@@ -483,7 +484,7 @@ static void BroadcastSetThreadSandbox(const sock_fprog* aFilter) {
     MOZ_CRASH("handler for the signal was changed to another");
   }
   gSeccompTsyncBroadcastSignum = 0;
-  (void)closedir(taskdp);
+  Unused << closedir(taskdp);
   
   SetThreadSandbox();
   gSetSandboxFilter = nullptr;

@@ -19,7 +19,7 @@ void ScriptCacheChild::Init(const Maybe<FileDescriptor>& cacheFile,
   mWantCacheData = wantCacheData;
 
   auto& cache = ScriptPreloader::GetChildSingleton();
-  (void)cache.InitCache(cacheFile, this);
+  Unused << cache.InitCache(cacheFile, this);
 
   if (!wantCacheData) {
     

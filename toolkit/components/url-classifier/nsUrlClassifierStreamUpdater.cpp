@@ -872,7 +872,7 @@ nsUrlClassifierStreamUpdater::Notify(nsITimer* timer) {
   if (updateFailed) {
     
     if (mChannel) {
-      (void)mChannel->Cancel(NS_ERROR_ABORT);
+      mozilla::Unused << mChannel->Cancel(NS_ERROR_ABORT);
       mChannel = nullptr;
     }
     mTelemetryClockStart = 0;

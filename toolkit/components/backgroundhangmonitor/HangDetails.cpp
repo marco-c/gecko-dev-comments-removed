@@ -16,6 +16,7 @@
 #include "mozilla/dom/ContentParent.h"  
 #include "mozilla/FileUtils.h"
 #include "mozilla/SchedulerGroup.h"
+#include "mozilla/Unused.h"
 #include "mozilla/GfxMessageUtils.h"  
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/Try.h"
@@ -296,14 +297,14 @@ void nsHangDetails::Submit() {
               
               hangDetails->mDetails.remoteType().Assign(
                   dom::RemoteTypePrefix(cc->GetRemoteType()));
-              (void)cc->SendBHRThreadHang(hangDetails->mDetails);
+              Unused << cc->SendBHRThreadHang(hangDetails->mDetails);
             }
             break;
           }
           case GeckoProcessType_GPU: {
             auto gp = gfx::GPUParent::GetSingleton();
             if (gp) {
-              (void)gp->SendBHRThreadHang(hangDetails->mDetails);
+              Unused << gp->SendBHRThreadHang(hangDetails->mDetails);
             }
             break;
           }
@@ -715,7 +716,7 @@ SubmitPersistedPermahangRunnable::Run() {
     
     
     
-    (void)mPermahangFile->Remove(false);
+    Unused << mPermahangFile->Remove(false);
     return hangDetailsResult.unwrapErr();
   }
   RefPtr<nsHangDetails> hangDetails =

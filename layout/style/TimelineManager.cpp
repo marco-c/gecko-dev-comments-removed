@@ -106,7 +106,7 @@ static auto BuildTimelines(nsPresContext* aPresContext, Element* aElement,
     MOZ_ASSERT(dest);
 
     
-    (void)result.InsertOrUpdate(timeline.GetName(), dest);
+    Unused << result.InsertOrUpdate(timeline.GetName(), dest);
   }
   return result;
 }

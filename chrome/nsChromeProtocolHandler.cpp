@@ -70,7 +70,7 @@ nsChromeProtocolHandler::AllowPort(int32_t port, const char* scheme,
   
 
   rv = nsChromeRegistry::Canonify(surl);
-  (void)NS_WARN_IF(NS_FAILED(rv));
+  mozilla::Unused << NS_WARN_IF(NS_FAILED(rv));
 
   surl.forget(result);
   return NS_OK;

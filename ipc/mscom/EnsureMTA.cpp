@@ -83,7 +83,7 @@ EnsureMTA::EnsureMTA() {
   if (SUCCEEDED(hr)) {
     if (NS_SUCCEEDED(rv)) {
       
-      (void)GetPersistentMTAThread();
+      Unused << GetPersistentMTAThread();
     }
 
     return;

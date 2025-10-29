@@ -47,6 +47,7 @@ using mozilla::fallible;
 using mozilla::LogLevel;
 using mozilla::MakeStringSpan;
 using mozilla::Maybe;
+using mozilla::Unused;
 using mozilla::dom::Document;
 
 
@@ -1085,7 +1086,7 @@ nsresult nsExpatDriver::HandleError() {
   nsCOMPtr<nsIURI> baseURI;
   if (expatBase && (baseURI = GetBaseURI(expatBase.get()))) {
     
-    (void)CopyUTF8toUTF16(baseURI->GetSpecOrDefault(), uri, fallible);
+    Unused << CopyUTF8toUTF16(baseURI->GetSpecOrDefault(), uri, fallible);
   }
   nsAutoString errorText;
   CreateErrorText(description.get(), uri.get(), lineNumber, colNumber,

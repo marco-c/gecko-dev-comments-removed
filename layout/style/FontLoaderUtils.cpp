@@ -65,7 +65,7 @@ namespace mozilla {
       MOZ_ASSERT(aFontFaceSrc);
 
       rv = aHttpChannel->SetReferrerInfo(aFontFaceSrc->mReferrerInfo);
-      (void)NS_WARN_IF(NS_FAILED(rv));
+      Unused << NS_WARN_IF(NS_FAILED(rv));
 
       
       

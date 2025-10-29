@@ -27,6 +27,7 @@
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_accessibility.h"
 #include "mozilla/StaticPrefs_full_screen_api.h"
+#include "mozilla/Unused.h"
 #include "mozilla/dom/BrowserBridgeChild.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/ContentChild.h"
@@ -1552,7 +1553,7 @@ void LogWarningFullscreenWindowRaise(Element* aElement) {
 
   NS_ENSURE_SUCCESS_VOID(rv);
 
-  (void)nsContentUtils::ReportToConsoleByWindowID(
+  Unused << nsContentUtils::ReportToConsoleByWindowID(
       localizedMsg, nsIScriptError::warningFlag, "DOM"_ns,
       windowGlobalParent->InnerWindowId(),
       SourceLocation(windowGlobalParent->GetDocumentURI()));
@@ -2242,7 +2243,7 @@ Element* nsFocusManager::FlushAndCheckIfFocusable(Element* aElement,
       if (BrowsingContext* bc = flo->GetExtantBrowsingContext()) {
         
         
-        (void)bc->GetDocument();
+        Unused << bc->GetDocument();
       }
     }
   }
@@ -4753,8 +4754,8 @@ bool nsFocusManager::TryDocumentNavigation(nsIContent* aCurrentContent,
     
     if (!rootElementForChildDocument->IsHTMLElement(nsGkAtoms::frameset)) {
       *aCheckSubDocument = false;
-      (void)FocusFirst(rootElementForChildDocument, aResultContent,
-                       false );
+      Unused << FocusFirst(rootElementForChildDocument, aResultContent,
+                           false );
       return *aResultContent != nullptr;
     }
   } else {
@@ -5418,7 +5419,7 @@ static void RemoveContentInitiatedActionsUntil(
   while (i < aUntil) {
     auto [actionProc, actionId] =
         nsContentUtils::SplitProcessSpecificId(aPendingActions[i]);
-    (void)actionId;
+    Unused << actionId;
     if (actionProc) {
       aPendingActions.RemoveElementAt(i);
       --aUntil;
@@ -5443,7 +5444,7 @@ bool nsFocusManager::ProcessPendingActiveBrowsingContextActionId(
   }
   auto [actionProc, actionId] =
       nsContentUtils::SplitProcessSpecificId(aActionId);
-  (void)actionId;
+  Unused << actionId;
   if (actionProc) {
     
     
@@ -5467,7 +5468,7 @@ bool nsFocusManager::ProcessPendingFocusedBrowsingContextActionId(
 
   auto [actionProc, actionId] =
       nsContentUtils::SplitProcessSpecificId(aActionId);
-  (void)actionId;
+  Unused << actionId;
   if (actionProc) {
     
     

@@ -692,7 +692,7 @@ nsresult nsHttpConnection::AddTransaction(nsAHttpTransaction* httpTransaction,
     }
   }
 
-  (void)ResumeSend();
+  Unused << ResumeSend();
   return NS_OK;
 }
 
@@ -1017,7 +1017,7 @@ nsresult nsHttpConnection::OnHeadersAvailable(nsAHttpTransaction* trans,
   bool foundKeepAliveMax = false;
   if (mKeepAlive) {
     nsAutoCString keepAlive;
-    (void)responseHead->GetHeader(nsHttp::Keep_Alive, keepAlive);
+    Unused << responseHead->GetHeader(nsHttp::Keep_Alive, keepAlive);
 
     if (mUsingSpdyVersion == SpdyVersion::NONE) {
       const char* cp = nsCRT::strcasestr(keepAlive.get(), "timeout=");
@@ -1422,7 +1422,7 @@ nsresult nsHttpConnection::ResumeRecv() {
         if (hasDataToRecv && NS_SUCCEEDED(ForceRecv())) {
           return NS_OK;
         }
-        (void)mSocketIn->AsyncWait(this, 0, 0, nullptr);
+        Unused << mSocketIn->AsyncWait(this, 0, 0, nullptr);
         
         
         return NS_BASE_STREAM_WOULD_BLOCK;
@@ -1852,7 +1852,7 @@ nsresult nsHttpConnection::OnSocketReadable() {
     
     
     mKeepAliveMask = false;
-    (void)gHttpHandler->ProcessPendingQ(mConnInfo);
+    Unused << gHttpHandler->ProcessPendingQ(mConnInfo);
   }
 
   
@@ -2222,7 +2222,7 @@ nsHttpConnection::OnInputStreamReady(nsIAsyncInputStream* in) {
 
     if (!CanReuse()) {
       LOG(("Server initiated close of idle conn %p\n", this));
-      (void)gHttpHandler->ConnMgr()->CloseIdleConnection(this);
+      Unused << gHttpHandler->ConnMgr()->CloseIdleConnection(this);
       return NS_OK;
     }
 
@@ -2536,7 +2536,7 @@ void nsHttpConnection::HandshakeDoneInternal() {
     if (mSocketIn) {
       mSocketIn->AsyncWait(nullptr, 0, 0, nullptr);
     }
-    (void)ResumeSend();
+    Unused << ResumeSend();
   }
 
   int16_t tlsVersion;
@@ -2595,7 +2595,7 @@ void nsHttpConnection::HandshakeDoneInternal() {
   }
 
   mTlsHandshaker->FinishNPNSetup(true, true);
-  (void)ResumeSend();
+  Unused << ResumeSend();
 }
 
 void nsHttpConnection::SetTunnelSetupDone() {

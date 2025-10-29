@@ -152,7 +152,7 @@ void JSActorManager::ReceiveRawMessage(
   
   ErrorResult error;
   auto autoSetException =
-      MakeScopeExit([&] { (void)error.MaybeSetPendingException(cx); });
+      MakeScopeExit([&] { Unused << error.MaybeSetPendingException(cx); });
 
   
   JS::Rooted<JSObject*> stack(cx);

@@ -1100,7 +1100,7 @@ nsSocketTransportService::Run() {
   
 
   char ignoredStackBuffer[255];
-  (void)gethostname(ignoredStackBuffer, 255);
+  Unused << gethostname(ignoredStackBuffer, 255);
 #endif
 
   psm::InitializeSSLServerCertVerificationThreads();

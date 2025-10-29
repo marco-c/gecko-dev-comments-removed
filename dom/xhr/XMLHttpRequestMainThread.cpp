@@ -1020,7 +1020,7 @@ void XMLHttpRequestMainThread::GetStatusText(nsACString& aStatusText,
 
   nsCOMPtr<nsIHttpChannel> httpChannel = GetCurrentHttpChannel();
   if (httpChannel) {
-    (void)httpChannel->GetResponseStatusText(aStatusText);
+    Unused << httpChannel->GetResponseStatusText(aStatusText);
   } else {
     aStatusText.AssignLiteral("OK");
   }
@@ -1207,8 +1207,8 @@ bool XMLHttpRequestMainThread::IsSafeHeader(
   nsAutoCString headerVal;
   
   
-  (void)aHttpChannel->GetResponseHeader("Access-Control-Expose-Headers"_ns,
-                                        headerVal);
+  Unused << aHttpChannel->GetResponseHeader("Access-Control-Expose-Headers"_ns,
+                                            headerVal);
   bool isSafe = false;
   for (const nsACString& token :
        nsCCharSeparatedTokenizer(headerVal, ',').ToRange()) {
@@ -1629,7 +1629,7 @@ void XMLHttpRequestMainThread::Open(const nsACString& aMethod,
     if (!aPassword.IsVoid()) {
       mutator.SetPassword(aPassword);
     }
-    (void)mutator.Finalize(parsedURL);
+    Unused << mutator.Finalize(parsedURL);
   }
 
   
@@ -2756,7 +2756,7 @@ nsresult XMLHttpRequestMainThread::InitiateFetch(
       nsCOMPtr<Document> doc = owner ? owner->GetExtantDoc() : nullptr;
       nsCOMPtr<nsIReferrerInfo> referrerInfo =
           ReferrerInfo::CreateForFetch(mPrincipal, doc);
-      (void)httpChannel->SetReferrerInfoWithoutClone(referrerInfo);
+      Unused << httpChannel->SetReferrerInfoWithoutClone(referrerInfo);
     }
 
     if (uploadStream) {
@@ -3044,7 +3044,7 @@ nsresult XMLHttpRequestMainThread::MaybeSilentSendFailure(nsresult aRv) {
 
   
   
-  (void)NS_WARN_IF(
+  Unused << NS_WARN_IF(
       NS_FAILED(DispatchToMainThread(NewRunnableMethod<ErrorProgressEventType>(
           "dom::XMLHttpRequestMainThread::CloseRequestWithError", this,
           &XMLHttpRequestMainThread::CloseRequestWithError, Events::error))));
@@ -3550,8 +3550,8 @@ nsresult XMLHttpRequestMainThread::OnRedirectVerifyCallback(nsresult result,
     bool rewriteToGET = false;
     nsCOMPtr<nsIHttpChannel> oldHttpChannel = GetCurrentHttpChannel();
     
-    (void)oldHttpChannel->ShouldStripRequestBodyHeader(mRequestMethod,
-                                                       &rewriteToGET);
+    Unused << oldHttpChannel->ShouldStripRequestBodyHeader(mRequestMethod,
+                                                           &rewriteToGET);
 
     mChannel = mNewRedirectChannel;
 

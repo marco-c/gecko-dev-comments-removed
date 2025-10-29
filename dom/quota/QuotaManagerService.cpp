@@ -30,6 +30,7 @@
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/Unused.h"
 #include "mozilla/Variant.h"
 #include "mozilla/dom/quota/PQuota.h"
 #include "mozilla/dom/quota/PersistenceType.h"
@@ -480,7 +481,7 @@ void QuotaManagerService::PerformIdleMaintenance() {
 
   if (QuotaManager::IsRunningXPCShellTests()) {
     
-    (void)Observe(nullptr, OBSERVER_TOPIC_IDLE, nullptr);
+    Unused << Observe(nullptr, OBSERVER_TOPIC_IDLE, nullptr);
   } else if (!mIdleObserverRegistered) {
     nsCOMPtr<nsIUserIdleService> idleService =
         do_GetService(kIdleServiceContractId);
@@ -504,7 +505,7 @@ void QuotaManagerService::RemoveIdleObserver() {
 
     
     
-    (void)idleService->RemoveIdleObserver(this, kIdleObserverTimeSec);
+    Unused << idleService->RemoveIdleObserver(this, kIdleObserverTimeSec);
 
     mIdleObserverRegistered = false;
   }

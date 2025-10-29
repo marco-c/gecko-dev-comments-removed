@@ -80,19 +80,19 @@ class ExternalEngineStateMachine final
 
   void NotifyEvent(ExternalEngineEvent aEvent) {
     
-    (void)OwnerThread()->Dispatch(NS_NewRunnableFunction(
+    Unused << OwnerThread()->Dispatch(NS_NewRunnableFunction(
         "ExternalEngineStateMachine::NotifyEvent",
         [self = RefPtr{this}, aEvent] { self->NotifyEventInternal(aEvent); }));
   }
   void NotifyError(const MediaResult& aError) {
     
-    (void)OwnerThread()->Dispatch(NS_NewRunnableFunction(
+    Unused << OwnerThread()->Dispatch(NS_NewRunnableFunction(
         "ExternalEngineStateMachine::NotifyError",
         [self = RefPtr{this}, aError] { self->NotifyErrorInternal(aError); }));
   }
   void NotifyResizing(uint32_t aWidth, uint32_t aHeight) {
     
-    (void)OwnerThread()->Dispatch(
+    Unused << OwnerThread()->Dispatch(
         NS_NewRunnableFunction("ExternalEngineStateMachine::NotifyResizing",
                                [self = RefPtr{this}, aWidth, aHeight] {
                                  self->NotifyResizingInternal(aWidth, aHeight);

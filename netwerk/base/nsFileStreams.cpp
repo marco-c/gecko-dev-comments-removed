@@ -22,6 +22,7 @@
 #include "nsIClassInfoImpl.h"
 #include "mozilla/ipc/InputStreamUtils.h"
 #include "mozilla/ipc/RandomAccessStreamParams.h"
+#include "mozilla/Unused.h"
 #include "mozilla/FileUtils.h"
 #include "mozilla/UniquePtr.h"
 #include "nsNetCID.h"
@@ -336,7 +337,7 @@ nsresult nsFileStreamBase::DoOpen() {
     
     
     if (parent) {
-      (void)parent->Create(nsIFile::DIRECTORY_TYPE, 0755);
+      mozilla::Unused << parent->Create(nsIFile::DIRECTORY_TYPE, 0755);
     }
   }
 

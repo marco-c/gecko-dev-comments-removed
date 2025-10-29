@@ -9,6 +9,7 @@
 #include "mozilla/NotNull.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/Unused.h"
 
 using mozilla::MakeNotNull;
 using mozilla::NotNull;
@@ -272,12 +273,12 @@ void TestNotNullWithRefPtr() {
   
 
   RefPtr<MyRefType> r4 = r2;
-  (void)r4;
+  mozilla::Unused << r4;
 
   
 
   RefPtr<MyRefType> r5 = r3.get();
-  (void)r5;
+  mozilla::Unused << r5;
 
   
 
@@ -288,7 +289,7 @@ void TestNotNullWithRefPtr() {
   
 
   NotNull<RefPtr<MyRefType>> r6 = std::move(r2);
-  (void)r6;
+  mozilla::Unused << r6;
 
   CHECK(r2.get());
   CHECK(r6.get());
@@ -353,7 +354,7 @@ void TestMakeNotNull() {
   static_assert(std::is_same_v<NotNull<RefPtr<MyRefType>>, decltype(nnr)>,
                 "MakeNotNull<RefPtr<MyRefType>> should return "
                 "NotNull<RefPtr<MyRefType>>");
-  (void)nnr;
+  mozilla::Unused << nnr;
 }
 
 mozilla::MovingNotNull<UniquePtr<int>> CreateNotNullUniquePtr() {

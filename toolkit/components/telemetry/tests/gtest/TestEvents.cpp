@@ -9,6 +9,7 @@
 #include "js/PropertyAndElement.h"  
 #include "mozilla/Maybe.h"
 #include "mozilla/Telemetry.h"
+#include "mozilla/Unused.h"
 #include "mozilla/glean/fog_ffi_generated.h"
 #include "mozilla/glean/GleanTestsTestMetrics.h"
 #include "TelemetryFixture.h"
@@ -22,7 +23,7 @@ TEST_F(TelemetryTestFixture, RecordEventNative) {
   AutoJSContextWithGlobal cx(mCleanGlobal);
 
   
-  (void)mTelemetry->ClearEvents();
+  Unused << mTelemetry->ClearEvents();
 
   const nsLiteralCString category("telemetry.test");
   const nsLiteralCString method("test1");
@@ -119,7 +120,7 @@ TEST_F(TelemetryTestFixture, GIFFTValue) {
   mozilla::glean::impl::fog_test_reset(&empty, &empty);
 
   
-  (void)mTelemetry->ClearEvents();
+  Unused << mTelemetry->ClearEvents();
 
   
   const nsCString category("telemetry.test");
