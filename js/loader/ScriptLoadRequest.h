@@ -128,7 +128,6 @@ class ScriptLoadRequest : public nsISupports,
 
   enum class State : uint8_t {
     CheckingCache,
-    PendingFetchingError,
     Fetching,
     Compiling,
     Ready,
@@ -146,10 +145,6 @@ class ScriptLoadRequest : public nsISupports,
   bool IsFetching() const { return mState == State::Fetching; }
   bool IsCompiling() const { return mState == State::Compiling; }
   bool IsCanceled() const { return mState == State::Canceled; }
-
-  bool IsPendingFetchingError() const {
-    return mState == State::PendingFetchingError;
-  }
 
   
   
@@ -183,8 +178,6 @@ class ScriptLoadRequest : public nsISupports,
   
   
   void NoCacheEntryFound();
-
-  void SetPendingFetchingError();
 
   bool PassedConditionForDiskCache() const {
     return mDiskCachingPlan == CachingPlan::PassedCondition;
