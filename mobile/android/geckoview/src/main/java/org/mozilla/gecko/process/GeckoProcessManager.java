@@ -864,7 +864,12 @@ public final class GeckoProcessManager extends IProcessManager.Stub {
 
     if (error instanceof StartException) {
       final StartException startError = (StartException) error;
-      if (startError.errorCode == IChildProcess.STARTED_BUSY) {
+      if (isContent(info.type) && startError.errorCode == IChildProcess.STARTED_BUSY) {
+        
+        
+        
+        
+        
         
         
         
