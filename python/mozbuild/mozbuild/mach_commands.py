@@ -1097,7 +1097,8 @@ def gtest(
     
     
     
-    gtest_env = {"GTEST_FILTER": gtest_filter}
+    gtest_env = dict(os.environ)
+    gtest_env["GTEST_FILTER"] = gtest_filter
 
     
     
