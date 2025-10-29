@@ -365,7 +365,7 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
       break;
 
     case IntID::PrimaryPointerCapabilities:
-      aResult = java::GeckoAppShell::GetAllPointerCapabilities();
+      aResult = java::GeckoSystemStateListener::GetAllPointerCapabilities();
 
       
       
@@ -376,7 +376,7 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
       break;
 
     case IntID::AllPointerCapabilities:
-      aResult = java::GeckoAppShell::GetAllPointerCapabilities();
+      aResult = java::GeckoSystemStateListener::GetAllPointerCapabilities();
       break;
 
     case IntID::SystemUsesDarkTheme: {
@@ -397,7 +397,7 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
       break;
 
     case IntID::PointingDeviceKinds:
-      aResult = java::GeckoAppShell::GetPointingDeviceKinds();
+      aResult = java::GeckoSystemStateListener::GetPointingDeviceKinds();
       break;
 
     default:

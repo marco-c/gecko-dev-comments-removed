@@ -1438,9 +1438,8 @@ public class GeckoAppShell {
     return result;
   }
 
-  @WrapForJNI(calledFrom = "gecko")
   
-  private static int getAllPointerCapabilities() {
+   static int getAllPointerCapabilities() {
     int result = NO_POINTER;
 
     for (final int deviceId : InputDevice.getDeviceIds()) {
@@ -1490,9 +1489,8 @@ public class GeckoAppShell {
     return result;
   }
 
-  @WrapForJNI(calledFrom = "gecko")
   
-  private static int getPointingDeviceKinds() {
+   static int getPointingDeviceKinds() {
     int result = POINTING_DEVICE_NONE;
 
     for (final int deviceId : InputDevice.getDeviceIds()) {
