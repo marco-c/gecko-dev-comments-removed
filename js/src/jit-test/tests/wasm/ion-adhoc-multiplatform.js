@@ -41,17 +41,7 @@ codegenTestMultiplatform_adhoc(
        (i64.mul (i64.const 0) (local.get $p1))))`,
     "mul64_zeroL",
     
-    {x64:   
-            
-            
-            
-            
-            
-            
-            
-            `mov %rdi, %rcx
-             mov %rcx, %rax
-             xor %rax, %rax`,
+    {x64:   `xor %rax, %rax`,     
      x86:   `xor %eax, %eax
              xor %edx, %edx`,
      arm64: `mov x0, xzr`,
@@ -64,7 +54,14 @@ codegenTestMultiplatform_adhoc(
     `(module (func (export "mul32_oneL") (param $p1 i32) (result i32)
        (i32.mul (i32.const 1) (local.get $p1))))`,
     "mul32_oneL",
-    {x64:   `mov %edi, %ecx
+    {x64:   
+            
+            
+            
+            
+            
+            
+            `mov %edi, %ecx
              mov %ecx, %eax`,
      x86:   `movl 0x10\\(%rbp\\), %eax`,
      arm64: ``,
@@ -125,9 +122,7 @@ codegenTestMultiplatform_adhoc(
     `(module (func (export "mul64_twoL") (param $p1 i64) (result i64)
        (i64.mul (i64.const 2) (local.get $p1))))`,
     "mul64_twoL",
-    {x64:   `mov %rdi, %rcx
-             mov %rcx, %rax
-             add %rax, %rax`,
+    {x64:   `lea \\(%rdi,%rdi,1\\), %rax`,
      x86:   `movl 0x14\\(%rbp\\), %edx
              movl 0x10\\(%rbp\\), %eax
              add %eax, %eax
@@ -153,9 +148,7 @@ codegenTestMultiplatform_adhoc(
     `(module (func (export "mul64_fourL") (param $p1 i64) (result i64)
        (i64.mul (i64.const 4) (local.get $p1))))`,
     "mul64_fourL",
-    {x64:   `mov %rdi, %rcx
-             mov %rcx, %rax
-             shl \\$0x02, %rax`,
+    {x64:   `lea \\(,%rdi,4\\), %rax`,
      x86:   `movl 0x14\\(%rbp\\), %edx
              movl 0x10\\(%rbp\\), %eax
              shld \\$0x02, %eax, %edx
@@ -189,9 +182,7 @@ codegenTestMultiplatform_adhoc(
     `(module (func (export "mul64_zeroR") (param $p1 i64) (result i64)
        (i64.mul (local.get $p1) (i64.const 0))))`,
     "mul64_zeroR",
-    {x64:   `mov %rdi, %rcx
-             mov %rcx, %rax
-             xor %rax, %rax`,     
+    {x64:   `xor %rax, %rax`,     
      x86:   `xor %eax, %eax
              xor %edx, %edx`,
      arm64: `mov x0, xzr`,
@@ -265,9 +256,7 @@ codegenTestMultiplatform_adhoc(
     `(module (func (export "mul64_twoR") (param $p1 i64) (result i64)
        (i64.mul (local.get $p1) (i64.const 2))))`,
     "mul64_twoR",
-    {x64:   `mov %rdi, %rcx
-             mov %rcx, %rax
-             add %rax, %rax`,
+    {x64:   `lea \\(%rdi,%rdi,1\\), %rax`,
      x86:   `movl 0x14\\(%rbp\\), %edx
              movl 0x10\\(%rbp\\), %eax
              add %eax, %eax
@@ -293,9 +282,7 @@ codegenTestMultiplatform_adhoc(
     `(module (func (export "mul64_fourR") (param $p1 i64) (result i64)
        (i64.mul (local.get $p1) (i64.const 4))))`,
     "mul64_fourR",
-    {x64:   `mov %rdi, %rcx
-             mov %rcx, %rax
-             shl \\$0x02, %rax`,
+    {x64:   `lea \\(,%rdi,4\\), %rax`,
      x86:   `movl 0x14\\(%rbp\\), %edx
              movl 0x10\\(%rbp\\), %eax
              shld \\$0x02, %eax, %edx
