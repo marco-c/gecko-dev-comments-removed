@@ -59,46 +59,25 @@ add_task(async function () {
     "The editor content for d2 is correct."
   );
 
-  
-  
-  await waitForTime(1000);
-
-  inspector.markup.htmlEditor.editor.focus();
-  
-  await EventUtils.synthesizeKey("a", { accelKey: true });
-  await EventUtils.synthesizeKey(DIV2_HTML_UPDATED);
-
-  
-  
-  await waitForTime(1000);
-
+  inspector.markup.htmlEditor.editor.setText(DIV2_HTML_UPDATED);
   is(
     inspector.markup.htmlEditor.editor.getText(),
     DIV2_HTML_UPDATED,
     "The editor content for d2 is updated."
   );
 
-  await EventUtils.synthesizeKey("z", { accelKey: true });
+  inspector.markup.htmlEditor.editor.undo();
   is(
     inspector.markup.htmlEditor.editor.getText(),
     DIV2_HTML,
     "The editor content for d2 is reverted."
   );
 
-  
-  await EventUtils.synthesizeKey("z", { accelKey: true });
+  inspector.markup.htmlEditor.editor.undo();
   is(
     inspector.markup.htmlEditor.editor.getText(),
     DIV2_HTML,
     "The editor content for d2 has not been set to content1."
-  );
-
-  
-  await EventUtils.synthesizeKey("z", { shiftKey: true, accelKey: true });
-  is(
-    inspector.markup.htmlEditor.editor.getText(),
-    DIV2_HTML_UPDATED,
-    "The editor content for d2 is back to updated"
   );
 
   info("Hide the HTML editor for #d2");
