@@ -101,8 +101,9 @@ void LIRGenerator::visitReturnImpl(MDefinition* opd, bool isGenerator) {
 
 void LIRGeneratorARM64::lowerForALU(LInstructionHelper<1, 1, 0>* ins,
                                     MDefinition* mir, MDefinition* input) {
-  ins->setOperand(
-      0, ins->snapshot() ? useRegister(input) : useRegisterAtStart(input));
+  
+  
+  ins->setOperand(0, useRegisterAtStart(input));
   define(ins, mir);
 }
 
@@ -110,10 +111,10 @@ void LIRGeneratorARM64::lowerForALU(LInstructionHelper<1, 1, 0>* ins,
 void LIRGeneratorARM64::lowerForALU(LInstructionHelper<1, 2, 0>* ins,
                                     MDefinition* mir, MDefinition* lhs,
                                     MDefinition* rhs) {
-  ins->setOperand(0,
-                  ins->snapshot() ? useRegister(lhs) : useRegisterAtStart(lhs));
-  ins->setOperand(1, ins->snapshot() ? useRegisterOrConstant(rhs)
-                                     : useRegisterOrConstantAtStart(rhs));
+  
+  
+  ins->setOperand(0, useRegisterAtStart(lhs));
+  ins->setOperand(1, useRegisterOrConstantAtStart(rhs));
   define(ins, mir);
 }
 
@@ -264,6 +265,16 @@ void LIRGeneratorARM64::lowerMulI(MMul* mul, MDefinition* lhs,
   if (mul->fallible()) {
     assignSnapshot(lir, mul->bailoutKind());
   }
+
+  
+  
+  if (mul->canBeNegativeZero() && !rhs->isConstant()) {
+    lir->setOperand(0, useRegister(lhs));
+    lir->setOperand(1, useRegister(rhs));
+    define(lir, mul);
+    return;
+  }
+
   lowerForALU(lir, mul, lhs, rhs);
 }
 
