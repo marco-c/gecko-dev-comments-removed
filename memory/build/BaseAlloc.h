@@ -7,16 +7,49 @@
 
 #include "Mutex.h"
 
-extern Mutex base_mtx;
 
-extern size_t base_mapped MOZ_GUARDED_BY(base_mtx);
-extern size_t base_committed MOZ_GUARDED_BY(base_mtx);
 
-void base_init() MOZ_REQUIRES(gInitLock);
+class BaseAlloc {
+ public:
+  constexpr BaseAlloc() {};
 
-void* base_alloc(size_t aSize);
+  void Init() MOZ_REQUIRES(gInitLock);
 
-void* base_calloc(size_t aNumber, size_t aSize);
+  void* alloc(size_t aSize);
+
+  void* calloc(size_t aNumber, size_t aSize);
+
+  Mutex base_mtx;
+
+  struct Stats {
+    size_t mapped = 0;
+    size_t committed = 0;
+  };
+  Stats GetStats() MOZ_EXCLUDES(base_mtx) {
+    MutexAutoLock lock(base_mtx);
+
+    MOZ_ASSERT(mStats.mapped >= mStats.committed);
+    return mStats;
+  }
+
+ private:
+  
+  bool pages_alloc(size_t minsize) MOZ_REQUIRES(base_mtx);
+
+  
+  
+  
+  void* base_pages MOZ_GUARDED_BY(base_mtx) = nullptr;
+  void* base_next_addr MOZ_GUARDED_BY(base_mtx) = nullptr;
+
+  void* base_next_decommitted MOZ_GUARDED_BY(base_mtx) = nullptr;
+  
+  void* base_past_addr MOZ_GUARDED_BY(base_mtx) = nullptr;
+
+  Stats mStats MOZ_GUARDED_BY(base_mtx);
+};
+
+extern BaseAlloc sBaseAlloc;
 
 
 template <typename T>
@@ -28,21 +61,21 @@ struct TypedBaseAlloc {
   static T* alloc() {
     T* ret;
 
-    base_mtx.Lock();
+    sBaseAlloc.base_mtx.Lock();
     if (sFirstFree) {
       ret = sFirstFree;
       sFirstFree = *(T**)ret;
-      base_mtx.Unlock();
+      sBaseAlloc.base_mtx.Unlock();
     } else {
-      base_mtx.Unlock();
-      ret = (T*)base_alloc(size_of());
+      sBaseAlloc.base_mtx.Unlock();
+      ret = (T*)sBaseAlloc.alloc(size_of());
     }
 
     return ret;
   }
 
   static void dealloc(T* aNode) {
-    MutexAutoLock lock(base_mtx);
+    MutexAutoLock lock(sBaseAlloc.base_mtx);
     *(T**)aNode = sFirstFree;
     sFirstFree = aNode;
   }
