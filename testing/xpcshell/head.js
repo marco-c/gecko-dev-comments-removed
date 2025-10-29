@@ -1427,6 +1427,31 @@ function do_get_profile(notifyProfileAfterChange = false) {
         "profile-after-change",
         "xpcshell-do-get-profile"
       );
+
+      
+      
+      
+      
+
+      
+      
+      
+      let filterServices = new Set([
+        "@mozilla.org/profile-after-change-gate;1",
+      ]);
+
+      for (let entry of Services.catMan.enumerateCategory(
+        "profile-after-change"
+      )) {
+        if (!filterServices.has(entry.value)) {
+          continue;
+        }
+        try {
+          Cc[entry.value]
+            ?.getService(Ci.nsIObserver)
+            ?.observe(null, "profile-after-change", "");
+        } catch (e) {}
+      }
     }
   }
 
