@@ -12,6 +12,9 @@ macro_rules! include_proto {
 }
 
 pub mod opentelemetry {
+    
+    
+    #[allow(warnings)]
     pub mod proto {
         pub mod common {
             pub mod v1 {
