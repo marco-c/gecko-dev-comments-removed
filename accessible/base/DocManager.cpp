@@ -443,16 +443,16 @@ DocAccessible* DocManager::CreateDocOrRootAccessible(Document* aDocument) {
     return nullptr;
   }
 
-  nsIWidget* widget = nsContentUtils::WidgetForDocument(aDocument);
-  if (!widget || widget->GetWindowType() == widget::WindowType::Invisible) {
-    return nullptr;
-  }
-
   
   
   
   PresShell* presShell = aDocument->GetPresShell();
   if (!presShell || presShell->IsDestroying()) {
+    return nullptr;
+  }
+
+  nsIWidget* widget = presShell->GetRootWidget();
+  if (!widget || widget->GetWindowType() == widget::WindowType::Invisible) {
     return nullptr;
   }
 
