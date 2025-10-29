@@ -604,6 +604,10 @@ export class ProfilerWebChannel {
   ) => void;
 }
 
+type JSSources = Partial<{
+  [sourceUuid: string]: string;
+}>;
+
 
 
 
@@ -612,6 +616,7 @@ export class ProfilerWebChannel {
 export type ProfilerBrowserInfo = {
   profileCaptureResult: ProfileCaptureResult;
   symbolicationService: SymbolicationService | null;
+  jsSources: JSSources | null;
 };
 
 export type ProfileCaptureResult =
