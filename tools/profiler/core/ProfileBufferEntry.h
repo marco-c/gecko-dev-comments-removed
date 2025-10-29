@@ -177,7 +177,9 @@ class JITFrameInfo final {
   void AddInfoForRange(
       uint64_t aRangeStart, uint64_t aRangeEnd, JSContext* aCx,
       const std::function<void(const std::function<void(void*)>&)>&
-          aJITAddressProvider);
+          aJITAddressProvider,
+      const nsTHashMap<SourceId, IndexIntoSourceTable>* aSourceIdToIndexMap =
+          nullptr);
 
   
   
