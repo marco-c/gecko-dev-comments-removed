@@ -53,11 +53,18 @@ const mockAddonRepository = ({ addons = [] }) => {
   };
 };
 
+
+
+
+
 const assertWarningShown = async (
   win,
   stack,
-  expectedWarningType = "imported-addons",
-  expectAction = true
+  {
+    expectedWarningType = "imported-addons",
+    expectedWarningL10nId,
+    expectAction = true,
+  } = {}
 ) => {
   Assert.equal(stack.childElementCount, 1, "expected a global warning");
   const messageBar = stack.firstElementChild;
@@ -68,7 +75,7 @@ const assertWarningShown = async (
   );
   Assert.equal(
     messageBar.getAttribute("data-l10n-id"),
-    `extensions-warning-${expectedWarningType}2`,
+    expectedWarningL10nId || `extensions-warning-${expectedWarningType}2`,
     "expected correct l10n ID"
   );
   await win.document.l10n.translateElements([messageBar]);
@@ -160,12 +167,11 @@ add_task(async function test_aboutaddons_global_message() {
   info("Verify safe-mode is not hidden by an imported-addons messagebar");
   stack.inSafeMode = true;
   stack.refresh();
-  await assertWarningShown(
-    win,
-    stack,
-    "safe-mode",
-    false 
-  );
+  await assertWarningShown(win, stack, {
+    expectedWarningType: "safe-mode",
+    expectedWarningL10nId: "extensions-warning-safe-mode3",
+    expectAction: false,
+  });
   stack.inSafeMode = false;
 
   info(
@@ -173,7 +179,9 @@ add_task(async function test_aboutaddons_global_message() {
   );
   AddonManager.checkCompatibility = false;
   stack.refresh();
-  await assertWarningShown(win, stack, "check-compatibility");
+  await assertWarningShown(win, stack, {
+    expectedWarningType: "check-compatibility",
+  });
   AddonManager.checkCompatibility = true;
 
   info("Verify update-security is not hidden by an imported-addons messagebar");
@@ -181,7 +189,9 @@ add_task(async function test_aboutaddons_global_message() {
     set: [["extensions.checkUpdateSecurity", false]],
   });
   stack.refresh();
-  await assertWarningShown(win, stack, "update-security");
+  await assertWarningShown(win, stack, {
+    expectedWarningType: "update-security",
+  });
   await SpecialPowers.popPrefEnv();
 
   
@@ -190,7 +200,9 @@ add_task(async function test_aboutaddons_global_message() {
     "Verify pending imported addons can be completed from the messagebar action"
   );
   stack.refresh();
-  await assertWarningShown(win, stack, "imported-addons");
+  await assertWarningShown(win, stack, {
+    expectedWarningType: "imported-addons",
+  });
 
   
   
