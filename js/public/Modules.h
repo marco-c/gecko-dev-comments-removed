@@ -42,8 +42,9 @@ enum class ModuleType : uint32_t {
   Unknown = 0,
   JavaScript,
   JSON,
+  CSS,
 
-  Limit = JSON,
+  Limit = CSS,
 };
 
 
@@ -78,7 +79,8 @@ enum class ModuleType : uint32_t {
 using ModuleLoadHook = bool (*)(JSContext* cx, Handle<JSScript*> referrer,
                                 Handle<JSObject*> moduleRequest,
                                 Handle<Value> hostDefined,
-                                Handle<Value> payload);
+                                Handle<Value> payload, uint32_t lineNumber,
+                                JS::ColumnNumberOneOrigin columnNumber);
 
 
 
@@ -192,6 +194,15 @@ extern JS_PUBLIC_API JSObject* CompileJsonModule(
 extern JS_PUBLIC_API JSObject* CompileJsonModule(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     SourceText<mozilla::Utf8Unit>& srcBuf);
+
+
+
+
+
+
+extern JS_PUBLIC_API JSObject* CreateCssModule(
+    JSContext* cx, const ReadOnlyCompileOptions& options,
+    const Value& cssValue);
 
 
 
