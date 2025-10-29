@@ -2197,6 +2197,12 @@ nsresult nsHttpChannel::InitTransaction() {
     }
   }
 
+  
+  
+  if (bc && bc->GetIsCaptivePortalTab()) {
+    mLNAPermission.mLocalNetworkPermission = LNAPermission::Granted;
+  }
+
   rv = mTransaction->Init(
       mCaps, mConnectionInfo, &mRequestHead, mUploadStream, mReqContentLength,
       LoadUploadStreamHasHeaders(), GetCurrentSerialEventTarget(), callbacks,

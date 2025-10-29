@@ -464,6 +464,10 @@ class nsDocShellLoadState final {
   uint32_t GetAppLinkLaunchType() const;
   void SetAppLinkLaunchType(uint32_t aAppLinkLaunchType);
 
+  
+  bool GetIsCaptivePortalTab() const;
+  void SetIsCaptivePortalTab(bool aIsCaptivePortalTab);
+
  protected:
   
   
@@ -744,6 +748,9 @@ class nsDocShellLoadState final {
 
   
   uint32_t mAppLinkLaunchType = 0;
+
+  
+  bool mIsCaptivePortalTab = false;
 };
 
 #endif 
