@@ -536,6 +536,10 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
   
   
   
+  
+  
+  
+  
 
   
   
@@ -575,6 +579,11 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
       for (const auto& entry : *mElements) {
         const CanonicalElementAttributes& elemAttributes = entry.GetData();
 
+        
+        
+        
+        
+        
         
         
 
@@ -656,6 +665,23 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
     if (mElements) {
       for (const auto& entry : *mElements) {
         const CanonicalElementAttributes& elemAttributes = entry.GetData();
+
+        
+        
+        if (elemAttributes.mAttributes && elemAttributes.mRemoveAttributes) {
+          return aRv.ThrowTypeError(
+              nsFmtCString(FMT_STRING("Element {} can't have both 'attributes' "
+                                      "and 'removeAttributes'."),
+                           entry.GetKey()));
+        }
+
+        
+        
+        
+        
+        
+        
+        
 
         
         
@@ -886,25 +912,24 @@ bool Sanitizer::AllowElement(
     
 
     
-    if (elementAttributes.mAttributes) {
-      CanonicalNameSet attributes;
-      for (const CanonicalName& attr : *elementAttributes.mAttributes) {
-        
-        
-        MOZ_ASSERT(!attributes.Contains(attr));
+    if (mAttributes) {
+      
+      if (elementAttributes.mAttributes) {
+        CanonicalNameSet attributes;
+        for (const CanonicalName& attr : *elementAttributes.mAttributes) {
+          
+          
+          MOZ_ASSERT(!attributes.Contains(attr));
 
-        
-        if (mAttributes) {
           
           
           if (mAttributes->Contains(attr)) {
             continue;
           }
 
+          
           MOZ_ASSERT(mDataAttributes.isSome(),
                      "mDataAttributes exists iff mAttributes");
-
-          
           if (*mDataAttributes) {
             
             
@@ -912,51 +937,85 @@ bool Sanitizer::AllowElement(
               continue;
             }
           }
-        }
 
-        
-        if (mRemoveAttributes) {
-          
-          
-          if (mRemoveAttributes->Contains(attr)) {
-            continue;
-          }
+          attributes.Insert(attr.Clone());
         }
-
-        attributes.Insert(attr.Clone());
+        elementAttributes.mAttributes = Some(std::move(attributes));
       }
-      elementAttributes.mAttributes = Some(std::move(attributes));
-    }
 
-    
-    if (elementAttributes.mRemoveAttributes) {
-      CanonicalNameSet removeAttributes;
-      for (const CanonicalName& attr : *elementAttributes.mRemoveAttributes) {
-        
-        
-        MOZ_ASSERT(!removeAttributes.Contains(attr));
+      
+      if (elementAttributes.mRemoveAttributes) {
+        CanonicalNameSet removeAttributes;
+        for (const CanonicalName& attr : *elementAttributes.mRemoveAttributes) {
+          
+          
+          
+          
+          MOZ_ASSERT(!removeAttributes.Contains(attr));
 
-        
-        if (mAttributes) {
           
           
           if (!mAttributes->Contains(attr)) {
             continue;
           }
-        }
 
-        
-        if (mRemoveAttributes) {
+          removeAttributes.Insert(attr.Clone());
+        }
+        elementAttributes.mRemoveAttributes = Some(std::move(removeAttributes));
+      }
+    } else {
+      
+
+      
+      if (elementAttributes.mAttributes) {
+        CanonicalNameSet attributes;
+        for (const CanonicalName& attr : *elementAttributes.mAttributes) {
+          
+          
+          
+          
+          MOZ_ASSERT(!attributes.Contains(attr));
+
+          
+          
+          
+          if (elementAttributes.mRemoveAttributes &&
+              elementAttributes.mRemoveAttributes->Contains(attr)) {
+            continue;
+          }
+
           
           
           if (mRemoveAttributes->Contains(attr)) {
             continue;
           }
-        }
 
-        removeAttributes.Insert(attr.Clone());
+          attributes.Insert(attr.Clone());
+        }
+        elementAttributes.mAttributes = Some(std::move(attributes));
+
+        
+        elementAttributes.mRemoveAttributes = Nothing();
       }
-      elementAttributes.mRemoveAttributes = Some(std::move(removeAttributes));
+
+      
+      if (elementAttributes.mRemoveAttributes) {
+        CanonicalNameSet removeAttributes;
+        for (const CanonicalName& attr : *elementAttributes.mRemoveAttributes) {
+          
+          
+          MOZ_ASSERT(!removeAttributes.Contains(attr));
+
+          
+          
+          if (mRemoveAttributes->Contains(attr)) {
+            continue;
+          }
+
+          removeAttributes.Insert(attr.Clone());
+        }
+        elementAttributes.mRemoveAttributes = Some(std::move(removeAttributes));
+      }
     }
 
     
