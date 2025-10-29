@@ -26,7 +26,6 @@ const { PREFS_CONFIG } = ChromeUtils.importESModule(
 
 
 
-
 async function withFullyLoadedAboutHome(taskFn) {
   
   
@@ -75,13 +74,6 @@ async function withFullyLoadedAboutHome(taskFn) {
     sandbox.restore();
   });
 }
-
-
-
-
-
-
-
 
 
 
@@ -212,7 +204,6 @@ async function simulateRestart(
 
 
 
-
 async function injectIntoCache(page, script) {
   if (!page || !script) {
     throw new Error("Cannot injectIntoCache with falsey values");
@@ -286,7 +277,6 @@ function assertCacheResultScalar(cacheResultScalar) {
 
 
 
-
 async function ensureCachedAboutHome(browser) {
   await SpecialPowers.spawn(browser, [], async () => {
     let syncScripts = Array.from(
@@ -316,7 +306,6 @@ async function ensureCachedAboutHome(browser) {
     AboutHomeStartupCache.CACHE_RESULT_SCALARS.VALID_AND_USED
   );
 }
-
 
 
 
