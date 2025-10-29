@@ -255,7 +255,11 @@ void SetUnclonedSelfHostedCanonicalName(JSFunction* fun, JSAtom* name);
 
 bool IsCallSelfHostedNonGenericMethod(NativeImpl impl);
 
-bool ReportIncompatibleSelfHostedMethod(JSContext* cx, Handle<Value> thisValue);
+enum class IncompatibleContext { Regular, RegExpExec };
+
+bool ReportIncompatibleSelfHostedMethod(
+    JSContext* cx, Handle<Value> thisValue,
+    IncompatibleContext incompatibleContext);
 
 
 void FillSelfHostingCompileOptions(JS::CompileOptions& options);

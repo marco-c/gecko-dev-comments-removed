@@ -2212,7 +2212,8 @@ bool js::RegExpExec(JSContext* cx, Handle<JSObject*> regexp,
     
     if (!regexp->canUnwrapAs<RegExpObject>()) {
       Rooted<Value> thisv(cx, ObjectValue(*regexp));
-      return ReportIncompatibleSelfHostedMethod(cx, thisv);
+      return ReportIncompatibleSelfHostedMethod(
+          cx, thisv, IncompatibleContext::RegExpExec);
     }
 
     
