@@ -16,6 +16,9 @@ registerCleanupFunction(() => {
 
 
 add_task(async function test_show_chat() {
+  
+  Services.prefs.setBoolPref("sidebar.revamp", false);
+
   Assert.ok(!GenAI.canShowChatEntrypoint, "Default no");
 
   Services.prefs.setBoolPref("browser.ml.chat.enabled", true);
