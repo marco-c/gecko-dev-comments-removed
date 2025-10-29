@@ -121,6 +121,18 @@
       "type": "boolean"
     },
 
+    "BrowserDataBackup": {
+      "type": ["boolean", "object"],
+      "properties": {
+        "AllowBackup": {
+          "type": "boolean"
+        },
+        "AllowRestore": {
+          "type": "boolean"
+        }
+      }
+    },
+
     "BlockAboutAddons": {
       "type": "boolean"
     },
@@ -1010,6 +1022,12 @@
         },
         "EnablePrompting": {
           "type": "boolean"
+        },
+        "SkipDomains": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "Locked": {
           "type": "boolean"
