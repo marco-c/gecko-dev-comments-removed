@@ -3,6 +3,7 @@
 
 
 use crate::{DebugFlags, PictureRect, DeviceRect};
+use crate::image::ImageFormat;
 
 
 
@@ -55,4 +56,14 @@ pub struct CompositorDebugTile {
 pub struct CompositorDebugInfo {
     pub enabled_z_layers: u64,
     pub tiles: Vec<CompositorDebugTile>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DebuggerTextureContent {
+    pub name: String,
+    pub category: crate::TextureCacheCategory,
+    pub width: u32,
+    pub height: u32,
+    pub format: ImageFormat,
+    pub data: Vec<u8>,
 }

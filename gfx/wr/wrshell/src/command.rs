@@ -3,6 +3,7 @@
 
 
 use std::collections::BTreeMap;
+use webrender_api::debugger::DebuggerTextureContent;
 use crate::net;
 
 
@@ -44,6 +45,7 @@ pub enum CommandOutput {
         kind: String,
         content: String,
     },
+    Textures(Vec<DebuggerTextureContent>),
 }
 
 pub struct ParamDescriptor {

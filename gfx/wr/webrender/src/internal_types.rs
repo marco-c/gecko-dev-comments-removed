@@ -4,7 +4,7 @@
 
 use api::{ColorF, DocumentId, ExternalImageId, PrimitiveFlags, Parameter, RenderReasons};
 use api::{ImageFormat, NotificationRequest, Shadow, FilterOpGraphPictureBufferId, FilterOpGraphPictureReference, FilterOpGraphNode, FilterOp, ImageBufferKind};
-use api::FramePublishId;
+use api::{FramePublishId, TextureCacheCategory};
 use api::units::*;
 use crate::render_api::DebugCommand;
 use crate::composite::NativeSurfaceOperation;
@@ -17,7 +17,7 @@ use crate::profiler::TransactionProfile;
 use crate::spatial_tree::SpatialNodeIndex;
 use crate::prim_store::PrimitiveInstanceIndex;
 use crate::filterdata::FilterDataHandle;
-use fxhash::FxHasher;
+use rustc_hash::FxHasher;
 use plane_split::BspSplitter;
 use smallvec::SmallVec;
 use std::{usize, i32};
@@ -1111,17 +1111,6 @@ pub struct TextureCacheAllocation {
     pub id: CacheTextureId,
     
     pub kind: TextureCacheAllocationKind,
-}
-
-
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub enum TextureCacheCategory {
-    Atlas,
-    Standalone,
-    PictureTile,
-    RenderTarget,
 }
 
 

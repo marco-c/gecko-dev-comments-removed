@@ -849,3 +849,14 @@ impl<'a> Drop for CrashAnnotatorGuard<'a> {
         }
     }
 }
+
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+pub enum TextureCacheCategory {
+    Atlas,
+    Standalone,
+    PictureTile,
+    RenderTarget,
+}
