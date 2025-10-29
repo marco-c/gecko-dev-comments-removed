@@ -20,7 +20,6 @@
 #  include "nsDebug.h"
 #endif
 #include "2D.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "Point.h"
 #include "BaseRect.h"
@@ -615,35 +614,14 @@ class Log final {
   }
   Log& operator<<(SurfaceFormat aFormat) {
     if (MOZ_UNLIKELY(LogIt())) {
-      switch (aFormat) {
-        case SurfaceFormat::B8G8R8A8:
-          mMessage << "SurfaceFormat::B8G8R8A8";
-          break;
-        case SurfaceFormat::B8G8R8X8:
-          mMessage << "SurfaceFormat::B8G8R8X8";
-          break;
-        case SurfaceFormat::R8G8B8A8:
-          mMessage << "SurfaceFormat::R8G8B8A8";
-          break;
-        case SurfaceFormat::R8G8B8X8:
-          mMessage << "SurfaceFormat::R8G8B8X8";
-          break;
-        case SurfaceFormat::R5G6B5_UINT16:
-          mMessage << "SurfaceFormat::R5G6B5_UINT16";
-          break;
-        case SurfaceFormat::A8:
-          mMessage << "SurfaceFormat::A8";
-          break;
-        case SurfaceFormat::YUV420:
-          mMessage << "SurfaceFormat::YUV420";
-          break;
-        case SurfaceFormat::UNKNOWN:
-          mMessage << "SurfaceFormat::UNKNOWN";
-          break;
-        default:
-          mMessage << "Invalid SurfaceFormat (" << (int)aFormat << ")";
-          break;
-      }
+      mMessage << aFormat;
+    }
+    return *this;
+  }
+
+  Log& operator<<(ColorDepth aColorDepth) {
+    if (MOZ_UNLIKELY(LogIt())) {
+      mMessage << aColorDepth;
     }
     return *this;
   }

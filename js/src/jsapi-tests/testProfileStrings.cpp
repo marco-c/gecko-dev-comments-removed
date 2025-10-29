@@ -7,8 +7,6 @@
 
 
 
-#include "mozilla/Atomics.h"
-
 #include "js/CallAndConstruct.h"
 #include "js/ContextOptions.h"
 #include "js/GlobalObject.h"

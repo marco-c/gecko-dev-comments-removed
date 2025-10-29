@@ -7,9 +7,8 @@
 #ifndef MOZILLA_GFX_COMPOSITORMANAGERCHILD_H
 #define MOZILLA_GFX_COMPOSITORMANAGERCHILD_H
 
-#include <stddef.h>  
-#include <stdint.h>  
-#include "mozilla/Atomics.h"
+#include <stddef.h>                                
+#include <stdint.h>                                
 #include "mozilla/RefPtr.h"                        
 #include "mozilla/StaticPtr.h"                     
 #include "mozilla/layers/CompositableForwarder.h"  

@@ -19,7 +19,6 @@
 #include "js/loader/ScriptKind.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
@@ -206,12 +205,6 @@ class ScriptLoadContext : public JS::loader::LoadContextBase,
   
   
   inline nsIScriptElement* GetScriptElementForTrace() const {
-    return mScriptElement;
-  }
-
-  
-  inline nsIScriptElement* GetScriptElementForExecuteEvents() const {
-    MOZ_ASSERT(mScriptElement);
     return mScriptElement;
   }
 

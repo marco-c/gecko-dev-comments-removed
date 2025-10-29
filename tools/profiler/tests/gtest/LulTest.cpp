@@ -4,7 +4,6 @@
 
 
 #include "gtest/gtest.h"
-#include "mozilla/Atomics.h"
 #include "LulMain.h"
 #include "GeckoProfiler.h"       
 #include "platform-linux-lul.h"  
