@@ -219,15 +219,23 @@ class Interventions {
         ) {
           continue;
         }
-        if (!(await InterventionHelpers.checkPlatformMatches(intervention))) {
-          continue;
-        }
         if (
           InterventionHelpers.isMissingCustomFunctions(
             intervention,
             customFunctionNames
           )
         ) {
+          continue;
+        }
+        if (!(await InterventionHelpers.checkPlatformMatches(intervention))) {
+          
+          if (
+            intervention.platforms &&
+            !intervention.platforms.length &&
+            !intervention.not_platforms
+          ) {
+            config.availableOnPlatform = true;
+          }
           continue;
         }
         intervention.enabled = true;
@@ -247,7 +255,7 @@ class Interventions {
     }
 
     if (skipped.length) {
-      console.warn(
+      console.debug(
         "Skipping",
         skipped.length,
         "un-needed interventions",
@@ -264,9 +272,9 @@ class Interventions {
     resolveReady();
   }
 
-  async enableIntervention(config) {
+  async enableIntervention(config, force = false) {
     return navigator.locks.request("intervention_lock", async () => {
-      await this._enableInterventionNow(config);
+      await this._enableInterventionNow(config, force);
     });
   }
 
@@ -276,7 +284,7 @@ class Interventions {
     });
   }
 
-  async _enableInterventionNow(config) {
+  async _enableInterventionNow(config, force = false) {
     if (config.active) {
       return;
     }
@@ -291,8 +299,9 @@ class Interventions {
       .flat()
       .filter(v => v !== undefined);
 
+    let somethingWasEnabled = false;
     for (const intervention of config.interventions) {
-      if (!intervention.enabled) {
+      if (!intervention.enabled && !force) {
         continue;
       }
 
@@ -307,21 +316,27 @@ class Interventions {
       }
       await this._enableUAOverrides(label, intervention, matches);
       await this._enableRequestBlocks(label, intervention, blocks);
+      somethingWasEnabled = true;
+      intervention.enabled = true;
     }
 
     if (!this._getActiveInterventionById(config.id)) {
       this._availableInterventions.push(config);
-      console.info("Added webcompat intervention", config.id, config);
+      console.debug("Added webcompat intervention", config.id, config);
     } else {
       for (const [index, oldConfig] of this._availableInterventions.entries()) {
         if (oldConfig.id === config.id && oldConfig !== config) {
-          console.info("Replaced webcompat intervention", oldConfig.id, config);
+          console.debug(
+            "Replaced webcompat intervention",
+            oldConfig.id,
+            config
+          );
           this._availableInterventions[index] = config;
         }
       }
     }
 
-    config.active = true;
+    config.active = somethingWasEnabled;
   }
 
   async _disableInterventionNow(_config) {
@@ -431,7 +446,7 @@ class Interventions {
 
     listeners.onBeforeSendHeaders = listener;
 
-    console.info(`Enabled UA override for ${label}`);
+    console.debug(`Enabled UA override for ${label}`);
   }
 
   async _enableRequestBlocks(label, intervention, blocks) {
@@ -454,7 +469,7 @@ class Interventions {
     ]);
 
     listeners.onBeforeRequest = listener;
-    console.info(`Blocking requests as specified for ${label}`);
+    console.debug(`Blocking requests as specified for ${label}`);
   }
 
   async _enableContentScripts(bug, label, intervention, matches) {
@@ -482,7 +497,7 @@ class Interventions {
         ({ id }) => !alreadyReggedIds.includes(id)
       );
       await browser.scripting.registerContentScripts(stillNeeded);
-      console.info(
+      console.debug(
         `Registered still-not-active content scripts for ${label}`,
         stillNeeded
       );
