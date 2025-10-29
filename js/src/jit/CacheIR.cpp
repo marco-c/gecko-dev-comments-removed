@@ -13765,13 +13765,6 @@ AttachDecision CallIRGenerator::tryAttachCallScripted(
     return AttachDecision::NoAction;
   }
 
-  if (isConstructing && !calleeFunc->hasJitScript()) {
-    
-    
-    
-    return AttachDecision::TemporarilyUnoptimizable;
-  }
-
   
   if (isSpread && args_.length() > JIT_ARGS_LENGTH_MAX) {
     return AttachDecision::NoAction;
