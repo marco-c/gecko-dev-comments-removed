@@ -3879,8 +3879,8 @@ static gfxFloat ComputeTabWidthAppUnits(const nsIFrame* aFrame) {
   RefPtr font = fm->GetThebesFontGroup()->GetFirstValidFont(' ');
   auto metrics = font->GetMetrics(vertical ? nsFontMetrics::eVertical
                                            : nsFontMetrics::eHorizontal);
-  nscoord spaceWidth = nscoord(
-      NS_round(metrics.spaceWidth * cb->PresContext()->AppUnitsPerDevPixel()));
+  nscoord spaceWidth = NSToCoordRound(metrics.spaceWidth *
+                                      cb->PresContext()->AppUnitsPerDevPixel());
   return spaces *
          (spaceWidth + styleText->mLetterSpacing.Resolve(fm->EmHeight()) +
           styleText->mWordSpacing.Resolve(spaceWidth));
@@ -4091,24 +4091,24 @@ bool nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
     
     
     
-    gfxFloat before, after;
+    nscoord before, after;
     switch (StaticPrefs::layout_css_letter_spacing_model()) {
       default:  
       case 0:
-        before = 0.0;
+        before = 0;
         after = mLetterSpacing;
         break;
       case 1:
         if (mTextRun->IsRightToLeft()) {
           before = mLetterSpacing;
-          after = 0.0;
+          after = 0;
         } else {
-          before = 0.0;
+          before = 0;
           after = mLetterSpacing;
         }
         break;
       case 2:
-        before = mLetterSpacing / 2.0;
+        before = NSToCoordRound(mLetterSpacing * 0.5);
         after = mLetterSpacing - before;
         break;
     }
@@ -4170,12 +4170,12 @@ bool nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
       uint32_t runOffsetInSubstring = run.GetSkippedOffset() - aRange.start;
       gfxSkipCharsIterator iter = run.GetPos();
       for (int32_t i = 0; i < run.GetRunLength(); ++i) {
-        if (!atStart && before != 0.0 &&
+        if (!atStart && before != 0 &&
             CanAddSpacingBefore(mTextRun, run.GetSkippedOffset() + i,
                                 newlineIsSignificant)) {
           aSpacing[runOffsetInSubstring + i].mBefore += before;
         }
-        if (after != 0.0 &&
+        if (after != 0 &&
             CanAddSpacingAfter(mTextRun, run.GetSkippedOffset() + i,
                                newlineIsSignificant)) {
           
