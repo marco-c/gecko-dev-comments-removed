@@ -13,7 +13,6 @@
 
 #include "base/port.h"  
 
-#include "mozilla/Assertions.h"
 #include "mozilla/IntegerPrintfMacros.h"
 
 
