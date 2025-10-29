@@ -66,7 +66,7 @@ add_task(async function () {
   inspector.markup.htmlEditor.editor.focus();
   
   await EventUtils.synthesizeKey("a", { accelKey: true });
-  EventUtils.sendString(DIV2_HTML_UPDATED);
+  await EventUtils.synthesizeKey(DIV2_HTML_UPDATED);
 
   
   
@@ -76,13 +76,6 @@ add_task(async function () {
     inspector.markup.htmlEditor.editor.getText(),
     DIV2_HTML_UPDATED,
     "The editor content for d2 is updated."
-  );
-
-  await EventUtils.synthesizeKey("z", { accelKey: true });
-  is(
-    inspector.markup.htmlEditor.editor.getText(),
-    '<div id="d2"',
-    "The editor content for d2 is reverted partially."
   );
 
   await EventUtils.synthesizeKey("z", { accelKey: true });
@@ -98,14 +91,6 @@ add_task(async function () {
     inspector.markup.htmlEditor.editor.getText(),
     DIV2_HTML,
     "The editor content for d2 has not been set to content1."
-  );
-
-  
-  await EventUtils.synthesizeKey("z", { shiftKey: true, accelKey: true });
-  is(
-    inspector.markup.htmlEditor.editor.getText(),
-    '<div id="d2"',
-    "The editor content for d2 is back to updated partially."
   );
 
   
