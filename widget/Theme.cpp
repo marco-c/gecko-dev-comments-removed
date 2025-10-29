@@ -1234,21 +1234,18 @@ bool Theme::DoDrawWidgetBackground(PaintBackendData& aPaintData,
     case StyleAppearance::ScrollbarbuttonDown:
     case StyleAppearance::ScrollbarbuttonLeft:
     case StyleAppearance::ScrollbarbuttonRight: {
-      
-      if (!ScrollbarDrawing::IsScrollbarWidthThin(aFrame)) {
-        if constexpr (std::is_same_v<PaintBackendData, WebRenderBackendData>) {
-          
-          return false;
-        } else {
-          bool isHorizontal =
-              aAppearance == StyleAppearance::ScrollbarbuttonLeft ||
-              aAppearance == StyleAppearance::ScrollbarbuttonRight;
-          auto kind = ComputeScrollbarKind(aFrame, isHorizontal);
-          GetScrollbarDrawing().PaintScrollbarButton(
-              aPaintData, aAppearance, devPxRect, kind, aFrame,
-              *nsLayoutUtils::StyleForScrollbar(aFrame), elementState, colors,
-              dpiRatio);
-        }
+      if constexpr (std::is_same_v<PaintBackendData, WebRenderBackendData>) {
+        
+        return false;
+      } else {
+        bool isHorizontal =
+            aAppearance == StyleAppearance::ScrollbarbuttonLeft ||
+            aAppearance == StyleAppearance::ScrollbarbuttonRight;
+        auto kind = ComputeScrollbarKind(aFrame, isHorizontal);
+        GetScrollbarDrawing().PaintScrollbarButton(
+            aPaintData, aAppearance, devPxRect, kind, aFrame,
+            *nsLayoutUtils::StyleForScrollbar(aFrame), elementState, colors,
+            dpiRatio);
       }
       break;
     }
