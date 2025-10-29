@@ -5,17 +5,23 @@
 
 
 
+
+
 'use strict';
+
+const idlTestObjects = {};
 
 idl_test(
   ['webrtc-encoded-transform'],
   ['webrtc', 'streams', 'html', 'dom'],
   async idlArray => {
     idlArray.add_objects({
-      
-      
       RTCRtpSender: [`new RTCPeerConnection().addTransceiver('audio').sender`],
       RTCRtpReceiver: [`new RTCPeerConnection().addTransceiver('audio').receiver`],
+      RTCEncodedVideoFrame: [`idlTestObjects.videoFrame`],
+      RTCEncodedAudioFrame: [`idlTestObjects.audioFrame`],
     });
+    idlTestObjects.videoFrame = await createRTCEncodedFrameFromScratch("video");
+    idlTestObjects.audioFrame = await createRTCEncodedFrameFromScratch("audio");
   }
 );
