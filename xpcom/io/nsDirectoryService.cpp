@@ -29,10 +29,6 @@
 #  include <stdlib.h>
 #  include <sys/param.h>
 #  include "prenv.h"
-#  ifdef MOZ_WIDGET_COCOA
-#    include <CoreServices/CoreServices.h>
-#    include <Carbon/Carbon.h>
-#  endif
 #endif
 
 #include "SpecialSystemDirectory.h"
@@ -41,10 +37,7 @@
 
 using namespace mozilla;
 
-
-nsresult nsDirectoryService::GetCurrentProcessDirectory(nsIFile** aFile)
-
-{
+nsresult nsDirectoryService::GetCurrentProcessDirectory(nsIFile** aFile) {
   if (NS_WARN_IF(!aFile)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -79,7 +72,7 @@ nsresult nsDirectoryService::GetCurrentProcessDirectory(nsIFile** aFile)
 #endif
   }
   return mXCurProcD->Clone(aFile);
-}  
+}
 
 StaticRefPtr<nsDirectoryService> nsDirectoryService::gService;
 
@@ -318,7 +311,6 @@ nsDirectoryService::UnregisterProvider(nsIDirectoryServiceProvider* aProv) {
   mProviders.RemoveElement(aProv);
   return NS_OK;
 }
-
 
 
 
