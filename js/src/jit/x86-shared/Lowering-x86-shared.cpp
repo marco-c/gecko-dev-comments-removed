@@ -153,8 +153,15 @@ void LIRGeneratorX86Shared::lowerForALU(LInstructionHelper<1, 2, 0>* ins,
 
 void LIRGeneratorX86Shared::lowerForFPU(LInstructionHelper<1, 1, 0>* ins,
                                         MDefinition* mir, MDefinition* input) {
-  ins->setOperand(0, useRegisterAtStart(input));
-  defineReuseInput(ins, mir, 0);
+  
+  
+  if (!Assembler::HasAVX()) {
+    ins->setOperand(0, useRegisterAtStart(input));
+    defineReuseInput(ins, mir, 0);
+  } else {
+    ins->setOperand(0, useRegisterAtStart(input));
+    define(ins, mir);
+  }
 }
 
 void LIRGeneratorX86Shared::lowerForFPU(LInstructionHelper<1, 2, 0>* ins,

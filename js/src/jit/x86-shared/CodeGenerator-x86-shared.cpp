@@ -1868,16 +1868,24 @@ void CodeGenerator::visitNegI64(LNegI64* ins) {
 
 void CodeGenerator::visitNegD(LNegD* ins) {
   FloatRegister input = ToFloatRegister(ins->input());
-  MOZ_ASSERT(input == ToFloatRegister(ins->output()));
+  FloatRegister output = ToFloatRegister(ins->output());
 
-  masm.negateDouble(input);
+  ScratchDoubleScope scratch(masm);
+  masm.loadConstantDouble(-0.0, scratch);
+
+  
+  masm.vxorpd(scratch, input, output);  
 }
 
 void CodeGenerator::visitNegF(LNegF* ins) {
   FloatRegister input = ToFloatRegister(ins->input());
-  MOZ_ASSERT(input == ToFloatRegister(ins->output()));
+  FloatRegister output = ToFloatRegister(ins->output());
 
-  masm.negateFloat(input);
+  ScratchDoubleScope scratch(masm);
+  masm.loadConstantFloat32(-0.0f, scratch);
+
+  
+  masm.vxorpd(scratch, input, output);  
 }
 
 void CodeGenerator::visitCompareExchangeTypedArrayElement(
