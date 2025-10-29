@@ -194,8 +194,7 @@ add_task(async function test_BackupService_location_on_device() {
 
   Services.telemetry.clearScalars();
   
-  
-  bs.setParentDirPath(BackupService.DEFAULT_PARENT_DIR_PATH);
+  bs.setParentDirPath(Services.dirsvc.get("Docs", Ci.nsIFile).path);
 
   await bs.takeMeasurements();
   Assert.equal(

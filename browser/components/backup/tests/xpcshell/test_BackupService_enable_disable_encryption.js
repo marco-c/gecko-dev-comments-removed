@@ -3,6 +3,10 @@
 
 "use strict";
 
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
+);
+
 const TEST_PASSWORD = "This is some test password.";
 
 add_setup(async () => {

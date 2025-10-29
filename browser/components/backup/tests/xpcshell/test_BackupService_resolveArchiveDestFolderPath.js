@@ -3,6 +3,10 @@
 
 "use strict";
 
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
+);
+
 const HOME_KEY = "Home";
 let gTestRoot;
 let gFakeHomePath;
