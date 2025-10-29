@@ -101,7 +101,7 @@ static LONGLONG sGTCResolutionThreshold;
 
 static const uint32_t kHardFailureLimit = 2000;
 
-static uint64_t sHardFailureLimit;
+static LONGLONG sHardFailureLimit;
 
 
 static LONGLONG sFailureFreeInterval;
@@ -268,7 +268,6 @@ MFBT_API TimeStampValue& TimeStampValue::operator-=(const int64_t aOther) {
 
 
 MFBT_API uint64_t TimeStampValue::CheckQPC(const TimeStampValue& aOther) const {
-  MOZ_ASSERT(mGTC >= aOther.mGTC);
   uint64_t deltaGTC = mGTC - aOther.mGTC;
 
   if (!mHasQPC || !aOther.mHasQPC) {  
@@ -282,15 +281,13 @@ MFBT_API uint64_t TimeStampValue::CheckQPC(const TimeStampValue& aOther) const {
   }
 
   
-  uint64_t diff =
-      deltaQPC > deltaGTC ? deltaQPC - deltaGTC : deltaGTC - deltaQPC;
-  MOZ_ASSERT(sGTCResolutionThreshold >= 0);
-  if (diff <= (uint64_t)sGTCResolutionThreshold) {
+  int64_t diff = DeprecatedAbs(int64_t(deltaQPC) - int64_t(deltaGTC));
+  if (diff <= sGTCResolutionThreshold) {
     return deltaQPC;
   }
 
   
-  uint64_t duration = deltaGTC;
+  int64_t duration = DeprecatedAbs(int64_t(deltaGTC));
   int64_t overflow = diff - sGTCResolutionThreshold;
 
   LOG(("TimeStamp: QPC check after %llums with overflow %1.4fms",
