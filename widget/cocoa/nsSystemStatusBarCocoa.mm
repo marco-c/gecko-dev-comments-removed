@@ -45,7 +45,6 @@ nsSystemStatusBarCocoa::StatusItem::StatusItem(NativeMenuMac* aMenu)
   mStatusItem = [[NSStatusBar.systemStatusBar
       statusItemWithLength:NSSquareStatusItemLength] retain];
   mStatusItem.menu = mMenu->NativeNSMenu();
-  mStatusItem.highlightMode = YES;
 
   
   
