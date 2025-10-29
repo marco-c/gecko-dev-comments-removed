@@ -34,6 +34,7 @@
 #include "nsCycleCollectionParticipant.h"
 #include "nsDocShell.h"
 #include "nsGlobalWindowInner.h"
+#include "nsIMultiPartChannel.h"
 #include "nsIPrincipal.h"
 #include "nsISHistory.h"
 #include "nsIScriptChannel.h"
@@ -282,6 +283,12 @@ NavigationTransition* Navigation::GetTransition() const { return mTransition; }
 
 NavigationActivation* Navigation::GetActivation() const { return mActivation; }
 
+template <typename I>
+bool SupportsInterface(nsISupports* aSupports) {
+  nsCOMPtr<I> ptr = do_QueryInterface(aSupports);
+  return ptr;
+}
+
 
 bool Navigation::HasEntriesAndEventsDisabled() const {
   Document* doc = GetAssociatedDocument();
@@ -289,11 +296,12 @@ bool Navigation::HasEntriesAndEventsDisabled() const {
          doc->GetInitialStatus() == Document::InitialStatus::IsInitial ||
          doc->GetInitialStatus() ==
              Document::InitialStatus::IsInitialButExplicitlyOpened ||
-         doc->GetPrincipal()->GetIsNullPrincipal() || [&doc]() {
-           nsCOMPtr<nsIScriptChannel> channel =
-               do_QueryInterface(doc->GetChannel());
-           return channel;
-         }();
+         doc->GetPrincipal()->GetIsNullPrincipal() ||
+         
+         
+         
+         SupportsInterface<nsIMultiPartChannel>(doc->GetChannel()) ||
+         SupportsInterface<nsIScriptChannel>(doc->GetChannel());
 }
 
 
