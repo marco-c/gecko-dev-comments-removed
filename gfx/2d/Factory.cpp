@@ -240,7 +240,7 @@ StaticMutex Factory::mDeviceLock;
 StaticMutex Factory::mDTDependencyLock;
 #endif
 
-bool Factory::mBGRSubpixelOrder = false;
+SubpixelOrder Factory::mSubpixelOrder = SubpixelOrder::UNKNOWN;
 
 mozilla::gfx::Config* Factory::sConfig = nullptr;
 
@@ -542,7 +542,8 @@ uint32_t Factory::GetMaxSurfaceSize(BackendType aType) {
 }
 
 already_AddRefed<NativeFontResource> Factory::CreateNativeFontResource(
-    uint8_t* aData, uint32_t aSize, FontType aFontType, void* aFontContext) {
+    const uint8_t* aData, uint32_t aSize, FontType aFontType,
+    void* aFontContext) {
   switch (aFontType) {
 #ifdef WIN32
     case FontType::DWRITE:
@@ -626,9 +627,11 @@ already_AddRefed<ScaledFont> Factory::CreateScaledFontForFreeTypeFont(
 }
 #endif
 
-void Factory::SetBGRSubpixelOrder(bool aBGR) { mBGRSubpixelOrder = aBGR; }
+void Factory::SetSubpixelOrder(SubpixelOrder aOrder) {
+  mSubpixelOrder = aOrder;
+}
 
-bool Factory::GetBGRSubpixelOrder() { return mBGRSubpixelOrder; }
+SubpixelOrder Factory::GetSubpixelOrder() { return mSubpixelOrder; }
 
 #ifdef MOZ_ENABLE_FREETYPE
 SharedFTFace::SharedFTFace(FT_Face aFace, SharedFTFaceData* aData)

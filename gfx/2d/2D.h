@@ -2243,7 +2243,7 @@ class GFX2D_API Factory {
 
 
   static already_AddRefed<NativeFontResource> CreateNativeFontResource(
-      uint8_t* aData, uint32_t aSize, FontType aFontType,
+      const uint8_t* aData, uint32_t aSize, FontType aFontType,
       void* aFontContext = nullptr);
 
   
@@ -2317,11 +2317,11 @@ class GFX2D_API Factory {
 
   static bool DoesBackendSupportDataDrawtarget(BackendType aType);
 
-  static void SetBGRSubpixelOrder(bool aBGR);
-  static bool GetBGRSubpixelOrder();
+  static void SetSubpixelOrder(SubpixelOrder aOrder);
+  static SubpixelOrder GetSubpixelOrder();
 
  private:
-  static bool mBGRSubpixelOrder;
+  static SubpixelOrder mSubpixelOrder;
 
  public:
   static already_AddRefed<DrawTarget> CreateDrawTargetWithSkCanvas(

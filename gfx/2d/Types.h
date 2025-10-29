@@ -122,6 +122,14 @@ enum class SurfaceFormat : int8_t {
   OS_RGBX = X8R8G8B8_UINT32
 };
 
+enum class SubpixelOrder : uint8_t {
+  UNKNOWN,
+  RGB,
+  BGR,
+  VRGB,
+  VBGR,
+};
+
 struct SurfaceFormatInfo {
   bool hasColor;
   bool hasAlpha;
@@ -478,6 +486,8 @@ enum class ColorDepth : uint8_t {
   _First = COLOR_8,
   _Last = COLOR_16,
 };
+
+std::ostream& operator<<(std::ostream& aOut, const ColorDepth& aColorDepth);
 
 enum class TransferFunction : uint8_t {
   BT709,
