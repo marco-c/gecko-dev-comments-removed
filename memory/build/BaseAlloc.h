@@ -19,33 +19,36 @@ class BaseAlloc {
 
   void* calloc(size_t aNumber, size_t aSize);
 
-  Mutex base_mtx;
+  Mutex mMutex;
 
   struct Stats {
-    size_t mapped = 0;
-    size_t committed = 0;
+    size_t mMapped = 0;
+    size_t mCommitted = 0;
   };
-  Stats GetStats() MOZ_EXCLUDES(base_mtx) {
-    MutexAutoLock lock(base_mtx);
+  Stats GetStats() MOZ_EXCLUDES(mMutex) {
+    MutexAutoLock lock(mMutex);
 
-    MOZ_ASSERT(mStats.mapped >= mStats.committed);
+    MOZ_ASSERT(mStats.mMapped >= mStats.mCommitted);
     return mStats;
   }
 
  private:
   
-  bool pages_alloc(size_t minsize) MOZ_REQUIRES(base_mtx);
+  bool pages_alloc(size_t minsize) MOZ_REQUIRES(mMutex);
 
   
   
   
-  void* base_next_addr MOZ_GUARDED_BY(base_mtx) = nullptr;
-
-  void* base_next_decommitted MOZ_GUARDED_BY(base_mtx) = nullptr;
   
-  void* base_past_addr MOZ_GUARDED_BY(base_mtx) = nullptr;
+  
+  
+  
+  void* mNextAddr MOZ_GUARDED_BY(mMutex) = nullptr;
+  void* mNextDecommitted MOZ_GUARDED_BY(mMutex) = nullptr;
+  
+  void* mPastAddr MOZ_GUARDED_BY(mMutex) = nullptr;
 
-  Stats mStats MOZ_GUARDED_BY(base_mtx);
+  Stats mStats MOZ_GUARDED_BY(mMutex);
 };
 
 extern BaseAlloc sBaseAlloc;
@@ -60,13 +63,13 @@ struct TypedBaseAlloc {
   static T* alloc() {
     T* ret;
 
-    sBaseAlloc.base_mtx.Lock();
+    sBaseAlloc.mMutex.Lock();
     if (sFirstFree) {
       ret = sFirstFree;
       sFirstFree = *(T**)ret;
-      sBaseAlloc.base_mtx.Unlock();
+      sBaseAlloc.mMutex.Unlock();
     } else {
-      sBaseAlloc.base_mtx.Unlock();
+      sBaseAlloc.mMutex.Unlock();
       ret = (T*)sBaseAlloc.alloc(size_of());
     }
 
@@ -74,7 +77,7 @@ struct TypedBaseAlloc {
   }
 
   static void dealloc(T* aNode) {
-    MutexAutoLock lock(sBaseAlloc.base_mtx);
+    MutexAutoLock lock(sBaseAlloc.mMutex);
     *(T**)aNode = sFirstFree;
     sFirstFree = aNode;
   }
