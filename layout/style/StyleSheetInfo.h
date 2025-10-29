@@ -41,17 +41,10 @@ struct StyleSheetInfo final {
 
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
-  
-  
-  nsCOMPtr<nsIURI> mSheetURI;          
-  nsCOMPtr<nsIURI> mOriginalSheetURI;  
-  nsCOMPtr<nsIURI> mBaseURI;           
-  nsCOMPtr<nsIPrincipal> mPrincipal;
   const CORSMode mCORSMode;
-  
-  
-  nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
   dom::SRIMetadata mIntegrity;
+  
+  bool mOriginClean = true;
 
   
   
@@ -66,15 +59,6 @@ struct StyleSheetInfo final {
   nsCString mSourceMapURL;
 
   RefPtr<const StyleStylesheetContents> mContents;
-
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<URLExtraData> mURLData;
 
   
   
