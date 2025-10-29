@@ -4320,56 +4320,6 @@ TypedArrayObject* js::TypedArraySubarrayRecover(JSContext* cx,
 using ByteVector =
     js::Vector<uint8_t, FixedLengthTypedArrayObject::INLINE_BUFFER_LIMIT>;
 
-class ByteSink final {
-  ByteVector& bytes_;
-
- public:
-  explicit ByteSink(ByteVector& bytes) : bytes_(bytes) {
-    MOZ_ASSERT(bytes.empty());
-  }
-
-  constexpr bool canAppend(size_t n = 1) const { return true; }
-
-  template <typename... Args>
-  bool append(Args... args) {
-    if (!bytes_.reserve(bytes_.length() + sizeof...(args))) {
-      return false;
-    }
-    (bytes_.infallibleAppend(args), ...);
-    return true;
-  }
-};
-
-class TypedArraySink final {
-  Handle<TypedArrayObject*> typedArray_;
-  size_t maxLength_;
-  size_t index_ = 0;
-
- public:
-  TypedArraySink(Handle<TypedArrayObject*> typedArray, size_t maxLength)
-      : typedArray_(typedArray), maxLength_(maxLength) {
-    MOZ_ASSERT(typedArray->type() == Scalar::Uint8);
-
-    
-    
-    
-    MOZ_ASSERT(!typedArray->hasDetachedBuffer());
-    MOZ_ASSERT(typedArray->length().valueOr(0) >= maxLength);
-  }
-
-  size_t written() const { return index_; }
-
-  bool canAppend(size_t n = 1) const { return maxLength_ - index_ >= n; }
-
-  template <typename... Args>
-  bool append(Args... args) {
-    MOZ_ASSERT(canAppend(sizeof...(args)));
-    (TypedArrayObjectTemplate<uint8_t>::setIndex(*typedArray_, index_++, args),
-     ...);
-    return true;
-  }
-};
-
 static UniqueChars QuoteString(JSContext* cx, char16_t ch) {
   Sprinter sprinter(cx);
   if (!sprinter.init()) {
@@ -4632,73 +4582,134 @@ enum class LastChunkHandling {
   StopBeforePartial,
 };
 
+enum class Base64Error {
+  None,
+  BadChar,
+  BadCharAfterPadding,
+  IncompleteChunk,
+  MissingPadding,
+  ExtraBits,
+};
 
+struct Base64Result {
+  Base64Error error;
+  size_t index;
+  size_t written;
 
+  bool isError() const { return error != Base64Error::None; }
 
-
-
-template <class Sink>
-static bool FromBase64(JSContext* cx, Handle<JSString*> string,
-                       Alphabet alphabet, LastChunkHandling lastChunkHandling,
-                       Sink& sink, size_t* readLength) {
-  
-
-  
-  if (!sink.canAppend()) {
-    *readLength = 0;
-    return true;
+  static auto Ok(size_t index, size_t written) {
+    return Base64Result{Base64Error::None, index, written};
   }
 
-  JSLinearString* linear = string->ensureLinear(cx);
-  if (!linear) {
-    return false;
+  static auto Error(Base64Error error) {
+    MOZ_ASSERT(error != Base64Error::None);
+    return Base64Result{error, 0, 0};
   }
+
+  static auto ErrorAt(Base64Error error, size_t index) {
+    MOZ_ASSERT(error != Base64Error::None);
+    return Base64Result{error, index, 0};
+  }
+};
+
+static void ReportBase64Error(JSContext* cx, Base64Result result,
+                              JSLinearString* string) {
+  MOZ_ASSERT(result.isError());
+  switch (result.error) {
+    case Base64Error::None:
+      break;
+    case Base64Error::BadChar:
+      if (auto str =
+              QuoteString(cx, string->latin1OrTwoByteChar(result.index))) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                  JSMSG_TYPED_ARRAY_BAD_BASE64_CHAR, str.get());
+      }
+      return;
+    case Base64Error::BadCharAfterPadding:
+      if (auto str =
+              QuoteString(cx, string->latin1OrTwoByteChar(result.index))) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                  JSMSG_TYPED_ARRAY_BAD_BASE64_AFTER_PADDING,
+                                  str.get());
+      }
+      return;
+    case Base64Error::IncompleteChunk:
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_TYPED_ARRAY_BAD_INCOMPLETE_CHUNK);
+      return;
+    case Base64Error::MissingPadding:
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_TYPED_ARRAY_MISSING_BASE64_PADDING);
+      return;
+    case Base64Error::ExtraBits:
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_TYPED_ARRAY_EXTRA_BASE64_BITS);
+      return;
+  }
+  MOZ_CRASH("unexpected base64 error");
+}
+
+
+
+
+
+
+template <class Ops, typename CharT>
+static auto FromBase64(const CharT* chars, size_t length, Alphabet alphabet,
+                       LastChunkHandling lastChunkHandling,
+                       SharedMem<uint8_t*> data, size_t maxLength) {
+  const SharedMem<uint8_t*> dataBegin = data;
+  const SharedMem<uint8_t*> dataEnd = data + maxLength;
+
+  auto canAppend = [&](size_t n) { return data + n <= dataEnd; };
+
+  auto written = [&]() { return data.unwrap() - dataBegin.unwrap(); };
 
   
   
   
   auto decodeChunk = [&](uint32_t chunk) {
     MOZ_ASSERT(chunk <= 0xffffff);
-    return sink.append(chunk >> 16, chunk >> 8, chunk);
+    MOZ_ASSERT(canAppend(3));
+    Ops::store(data++, uint8_t(chunk >> 16));
+    Ops::store(data++, uint8_t(chunk >> 8));
+    Ops::store(data++, uint8_t(chunk));
   };
 
   
   
   
-  auto decodeChunk3 = [&](uint32_t chunk, bool throwOnExtraBits) {
+  auto decodeChunk3 = [&](uint32_t chunk) {
     MOZ_ASSERT(chunk <= 0x3ffff);
-
-    if (throwOnExtraBits && (chunk & 0x3) != 0) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_TYPED_ARRAY_EXTRA_BASE64_BITS);
-      return false;
-    }
-    return sink.append(chunk >> 10, chunk >> 2);
+    MOZ_ASSERT(canAppend(2));
+    Ops::store(data++, uint8_t(chunk >> 10));
+    Ops::store(data++, uint8_t(chunk >> 2));
   };
 
   
   
   
-  auto decodeChunk2 = [&](uint32_t chunk, bool throwOnExtraBits) {
+  auto decodeChunk2 = [&](uint32_t chunk) {
     MOZ_ASSERT(chunk <= 0xfff);
-
-    if (throwOnExtraBits && (chunk & 0xf) != 0) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_TYPED_ARRAY_EXTRA_BASE64_BITS);
-      return false;
-    }
-    return sink.append(chunk >> 4);
+    MOZ_ASSERT(canAppend(1));
+    Ops::store(data++, uint8_t(chunk >> 4));
   };
 
   
   
   
-  auto decodePartialChunk = [&](uint32_t chunk, uint32_t chunkLength,
-                                bool throwOnExtraBits = false) {
+  auto decodePartialChunk = [&](uint32_t chunk, uint32_t chunkLength) {
     MOZ_ASSERT(chunkLength == 2 || chunkLength == 3);
-    return chunkLength == 2 ? decodeChunk2(chunk, throwOnExtraBits)
-                            : decodeChunk3(chunk, throwOnExtraBits);
+    chunkLength == 2 ? decodeChunk2(chunk) : decodeChunk3(chunk);
   };
+
+  
+
+  
+  if (maxLength == 0) {
+    return Base64Result::Ok(0, 0);
+  }
 
   
   
@@ -4723,7 +4734,6 @@ static bool FromBase64(JSContext* cx, Handle<JSString*> string,
   size_t index = 0;
 
   
-  size_t length = linear->length();
 
   const auto& decode = alphabet == Alphabet::Base64 ? Base64::Decode::Base64
                                                     : Base64::Decode::Base64Url;
@@ -4731,7 +4741,7 @@ static bool FromBase64(JSContext* cx, Handle<JSString*> string,
   
   for (; index < length; index++) {
     
-    char16_t ch = linear->latin1OrTwoByteChar(index);
+    auto ch = chars[index];
 
     
     if (mozilla::IsAsciiWhitespace(ch)) {
@@ -4753,19 +4763,14 @@ static bool FromBase64(JSContext* cx, Handle<JSString*> string,
       value = decode[ch];
     }
     if (MOZ_UNLIKELY(value == Base64::InvalidChar)) {
-      if (auto str = QuoteString(cx, ch)) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                  JSMSG_TYPED_ARRAY_BAD_BASE64_CHAR, str.get());
-      }
-      return false;
+      return Base64Result::ErrorAt(Base64Error::BadChar, index);
     }
 
     
 
     
-    if (chunkLength > 1 && !sink.canAppend(chunkLength)) {
-      *readLength = read;
-      return true;
+    if (chunkLength > 1 && !canAppend(chunkLength)) {
+      return Base64Result::Ok(read, written());
     }
 
     
@@ -4777,9 +4782,7 @@ static bool FromBase64(JSContext* cx, Handle<JSString*> string,
     
     if (chunkLength == 4) {
       
-      if (!decodeChunk(chunk)) {
-        return false;
-      }
+      decodeChunk(chunk);
 
       
       chunk = 0;
@@ -4793,9 +4796,8 @@ static bool FromBase64(JSContext* cx, Handle<JSString*> string,
       read = index + 1;
 
       
-      if (!sink.canAppend()) {
-        *readLength = read;
-        return true;
+      if (!canAppend(1)) {
+        return Base64Result::Ok(read, written());
       }
     }
   }
@@ -4806,55 +4808,45 @@ static bool FromBase64(JSContext* cx, Handle<JSString*> string,
     if (chunkLength > 0) {
       
       if (lastChunkHandling == LastChunkHandling::StopBeforePartial) {
-        *readLength = read;
-        return true;
+        return Base64Result::Ok(read, written());
       }
 
       
       if (lastChunkHandling == LastChunkHandling::Loose) {
         
         if (chunkLength == 1) {
-          JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                    JSMSG_TYPED_ARRAY_BAD_INCOMPLETE_CHUNK);
-          return false;
+          return Base64Result::Error(Base64Error::IncompleteChunk);
         }
         MOZ_ASSERT(chunkLength == 2 || chunkLength == 3);
 
         
-        if (!decodePartialChunk(chunk, chunkLength)) {
-          return false;
-        }
+        decodePartialChunk(chunk, chunkLength);
       } else {
         
         MOZ_ASSERT(lastChunkHandling == LastChunkHandling::Strict);
 
         
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                  JSMSG_TYPED_ARRAY_BAD_INCOMPLETE_CHUNK);
-        return false;
+        return Base64Result::Error(Base64Error::IncompleteChunk);
       }
     }
 
     
-    *readLength = length;
-    return true;
+    return Base64Result::Ok(length, written());
   }
 
   
   MOZ_ASSERT(index < length);
-  MOZ_ASSERT(linear->latin1OrTwoByteChar(index) == '=');
+  MOZ_ASSERT(chars[index] == '=');
 
   
   if (chunkLength < 2) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_TYPED_ARRAY_BAD_INCOMPLETE_CHUNK);
-    return false;
+    return Base64Result::Error(Base64Error::IncompleteChunk);
   }
   MOZ_ASSERT(chunkLength == 2 || chunkLength == 3);
 
   
   while (++index < length) {
-    char16_t ch = linear->latin1OrTwoByteChar(index);
+    auto ch = chars[index];
     if (!mozilla::IsAsciiWhitespace(ch)) {
       break;
     }
@@ -4866,24 +4858,21 @@ static bool FromBase64(JSContext* cx, Handle<JSString*> string,
     if (index == length) {
       
       if (lastChunkHandling == LastChunkHandling::StopBeforePartial) {
-        *readLength = read;
-        return true;
+        return Base64Result::Ok(read, written());
       }
 
       
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_TYPED_ARRAY_MISSING_BASE64_PADDING);
-      return false;
+      return Base64Result::Error(Base64Error::MissingPadding);
     }
 
     
-    char16_t ch = linear->latin1OrTwoByteChar(index);
+    auto ch = chars[index];
 
     
     if (ch == '=') {
       
       while (++index < length) {
-        char16_t ch = linear->latin1OrTwoByteChar(index);
+        auto ch = chars[index];
         if (!mozilla::IsAsciiWhitespace(ch)) {
           break;
         }
@@ -4893,26 +4882,79 @@ static bool FromBase64(JSContext* cx, Handle<JSString*> string,
 
   
   if (index < length) {
-    char16_t ch = linear->latin1OrTwoByteChar(index);
-    if (auto str = QuoteString(cx, ch)) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_TYPED_ARRAY_BAD_BASE64_AFTER_PADDING,
-                                str.get());
+    return Base64Result::ErrorAt(Base64Error::BadCharAfterPadding, index);
+  }
+
+  
+  if (lastChunkHandling == LastChunkHandling::Strict) {
+    uint32_t extraBitsMask = chunkLength == 2 ? 0xf : 0x3;
+    if ((chunk & extraBitsMask) != 0) {
+      return Base64Result::Error(Base64Error::ExtraBits);
     }
-    return false;
   }
 
   
-  bool throwOnExtraBits = lastChunkHandling == LastChunkHandling::Strict;
+  decodePartialChunk(chunk, chunkLength);
 
   
-  if (!decodePartialChunk(chunk, chunkLength, throwOnExtraBits)) {
-    return false;
+  return Base64Result::Ok(length, written());
+}
+
+
+
+
+
+
+template <class Ops>
+static auto FromBase64(JSLinearString* string, Alphabet alphabet,
+                       LastChunkHandling lastChunkHandling,
+                       SharedMem<uint8_t*> data, size_t maxLength) {
+  JS::AutoCheckCannotGC nogc;
+  if (string->hasLatin1Chars()) {
+    return FromBase64<Ops>(string->latin1Chars(nogc), string->length(),
+                           alphabet, lastChunkHandling, data, maxLength);
   }
+  return FromBase64<Ops>(string->twoByteChars(nogc), string->length(), alphabet,
+                         lastChunkHandling, data, maxLength);
+}
+
+
+
+
+
+
+static auto FromBase64(JSLinearString* string, Alphabet alphabet,
+                       LastChunkHandling lastChunkHandling,
+                       TypedArrayObject* tarray, size_t maxLength) {
+  MOZ_ASSERT(tarray->type() == Scalar::Uint8);
 
   
-  *readLength = length;
-  return true;
+  
+  
+  MOZ_ASSERT(!tarray->hasDetachedBuffer());
+  MOZ_ASSERT(tarray->length().valueOr(0) >= maxLength);
+
+  auto data = tarray->dataPointerEither().cast<uint8_t*>();
+
+  if (tarray->isSharedMemory()) {
+    return FromBase64<SharedOps>(string, alphabet, lastChunkHandling, data,
+                                 maxLength);
+  }
+  return FromBase64<UnsharedOps>(string, alphabet, lastChunkHandling, data,
+                                 maxLength);
+}
+
+
+
+
+
+
+static auto FromBase64(JSLinearString* string, Alphabet alphabet,
+                       LastChunkHandling lastChunkHandling, ByteVector& bytes) {
+  auto data = SharedMem<uint8_t*>::unshared(bytes.begin());
+  size_t maxLength = bytes.length();
+  return FromBase64<UnsharedOps>(string, alphabet, lastChunkHandling, data,
+                                 maxLength);
 }
 
 
@@ -5064,16 +5106,37 @@ static bool uint8array_fromBase64(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
+  
+  auto outLength = mozilla::CheckedInt<size_t>{string->length()};
+  outLength += 3;
+  outLength /= 4;
+  outLength *= 3;
+  MOZ_ASSERT(outLength.isValid(), "can't overflow");
+
+  static_assert(JSString::MAX_LENGTH <= TypedArrayObject::ByteLengthLimit,
+                "string length doesn't exceed maximum typed array length");
+
+  
   ByteVector bytes(cx);
-  ByteSink sink{bytes};
-  size_t unusedReadLength;
-  if (!FromBase64(cx, string, alphabet, lastChunkHandling, sink,
-                  &unusedReadLength)) {
+  if (!bytes.resizeUninitialized(outLength.value())) {
     return false;
   }
 
+  JSLinearString* linear = string->ensureLinear(cx);
+  if (!linear) {
+    return false;
+  }
+
+  auto result = FromBase64(linear, alphabet, lastChunkHandling, bytes);
+  if (MOZ_UNLIKELY(result.isError())) {
+    ReportBase64Error(cx, result, linear);
+    return false;
+  }
+  MOZ_ASSERT(result.index <= linear->length());
+  MOZ_ASSERT(result.written <= bytes.length());
+
   
-  size_t resultLength = bytes.length();
+  size_t resultLength = result.written;
 
   
   auto* tarray =
@@ -5190,15 +5253,26 @@ static bool uint8array_setFromBase64(JSContext* cx, const CallArgs& args) {
   }
 
   
-  ByteVector bytes(cx);
-  TypedArraySink sink{tarray, *length};
-  size_t readLength;
-  if (!FromBase64(cx, string, alphabet, lastChunkHandling, sink, &readLength)) {
-    return false;
-  }
+  size_t readLength = 0;
+  size_t written = 0;
+  if (*length > 0) {
+    JSLinearString* linear = string->ensureLinear(cx);
+    if (!linear) {
+      return false;
+    }
 
-  
-  size_t written = sink.written();
+    auto result =
+        FromBase64(linear, alphabet, lastChunkHandling, tarray, *length);
+    if (MOZ_UNLIKELY(result.isError())) {
+      ReportBase64Error(cx, result, linear);
+      return false;
+    }
+    MOZ_ASSERT(result.index <= linear->length());
+    MOZ_ASSERT(result.written <= *length);
+
+    readLength = result.index;
+    written = result.written;
+  }
 
   
 
