@@ -1,82 +1,119 @@
-/* Any copyright is dedicated to the Public Domain.
- * http://creativecommons.org/publicdomain/zero/1.0/ */
+
+
 
 "use strict";
 
-// This is testing the aboutCertError page (Bug 1207107).
+
 
 const GOOD_PAGE = "https://example.com/";
 const GOOD_PAGE_2 = "https://example.org/";
 const BAD_CERT = "https://expired.example.com/";
-const UNKNOWN_ISSUER = "https://self-signed.example.com ";
+const UNKNOWN_ISSUER = "https://self-signed.example.com";
 const BAD_STS_CERT =
   "https://badchain.include-subdomains.pinning.example.com:443";
 const { TabStateFlusher } = ChromeUtils.importESModule(
   "resource:///modules/sessionstore/TabStateFlusher.sys.mjs"
 );
 
+
+
 add_task(async function checkReturnToAboutHome() {
   info(
     "Loading a bad cert page directly and making sure 'return to previous page' goes to about:home"
   );
-  for (let useFrame of [false, true]) {
-    let tab = await openErrorPage(BAD_CERT, useFrame);
-    let browser = tab.linkedBrowser;
-    await SpecialPowers.spawn(browser, [], () => {
-      content.document.notifyUserGestureActivation();
-    });
+  for (let toggleFeltPrivacy of [
+    setSecurityCertErrorsFeltPrivacyToFalse,
+    setSecurityCertErrorsFeltPrivacyToTrue,
+  ]) {
+    await toggleFeltPrivacy();
 
-    is(browser.webNavigation.canGoBack, false, "!webNavigation.canGoBack");
-    is(
-      browser.webNavigation.canGoForward,
-      false,
-      "!webNavigation.canGoForward"
-    );
+    for (let useFrame of [false, true]) {
+      let tab = await openErrorPage(BAD_CERT, useFrame);
+      let browser = tab.linkedBrowser;
+      await SpecialPowers.spawn(browser, [], () => {
+        content.document.notifyUserGestureActivation();
+      });
 
-    // Populate the shistory entries manually, since it happens asynchronously
-    // and the following tests will be too soon otherwise.
-    await TabStateFlusher.flush(browser);
-    let { entries } = JSON.parse(SessionStore.getTabState(tab));
-    is(entries.length, 1, "there is one shistory entry");
+      is(browser.webNavigation.canGoBack, false, "!webNavigation.canGoBack");
+      is(
+        browser.webNavigation.canGoForward,
+        false,
+        "!webNavigation.canGoForward"
+      );
 
-    info("Clicking the go back button on about:certerror");
-    let bc = browser.browsingContext;
-    if (useFrame) {
-      bc = bc.children[0];
-    }
-    let locationChangePromise = BrowserTestUtils.waitForLocationChange(
-      gBrowser,
-      "about:home"
-    );
-    await SpecialPowers.spawn(bc, [useFrame], async function (subFrame) {
-      let returnButton = content.document.getElementById("returnButton");
-      if (!subFrame) {
-        if (!Services.focus.focusedElement == returnButton) {
-          await ContentTaskUtils.waitForEvent(returnButton, "focus");
-        }
-        Assert.ok(true, "returnButton has focus");
+      
+      
+      await TabStateFlusher.flush(browser);
+      let { entries } = JSON.parse(SessionStore.getTabState(tab));
+      is(entries.length, 1, "there is one shistory entry");
+
+      info("Clicking the go back button on about:certerror");
+      let bc = browser.browsingContext;
+      if (useFrame) {
+        bc = bc.children[0];
       }
-      // Note that going back to about:newtab might cause a process flip, if
-      // the browser is configured to run about:newtab in its own special
-      // content process.
-      returnButton.click();
-    });
+      let locationChangePromise = BrowserTestUtils.waitForLocationChange(
+        gBrowser,
+        "about:home"
+      );
 
-    await locationChangePromise;
+      if (Services.prefs.getBoolPref("security.certerrors.felt-privacy-v1")) {
+        info("Felt Privacy enabled - using net-error-card");
 
-    is(browser.webNavigation.canGoBack, true, "webNavigation.canGoBack");
-    is(
-      browser.webNavigation.canGoForward,
-      false,
-      "!webNavigation.canGoForward"
-    );
-    is(gBrowser.currentURI.spec, "about:home", "Went back");
+        await SpecialPowers.spawn(bc, [useFrame], async function (subFrame) {
+          const netErrorCard =
+            content.document.querySelector("net-error-card").wrappedJSObject;
+          await netErrorCard.getUpdateComplete();
+          const returnButton = netErrorCard.returnButton;
 
-    BrowserTestUtils.removeTab(gBrowser.selectedTab);
+          if (!subFrame) {
+            if (!Services.focus.focusedElement == returnButton) {
+              await ContentTaskUtils.waitForEvent(returnButton, "focus");
+            }
+            Assert.ok(true, "returnButton has focus");
+          }
+          
+          
+          
+          returnButton.scrollIntoView(true);
+          EventUtils.synthesizeMouseAtCenter(returnButton, {}, content);
+        });
+      } else {
+        info("Felt Privacy disabled - using aboutNetError");
+        await SpecialPowers.spawn(bc, [useFrame], async function (subFrame) {
+          let returnButton = content.document.getElementById("returnButton");
+          if (!subFrame) {
+            if (!Services.focus.focusedElement == returnButton) {
+              await ContentTaskUtils.waitForEvent(returnButton, "focus");
+            }
+            Assert.ok(true, "returnButton has focus");
+          }
+          
+          
+          
+          returnButton.click();
+        });
+      }
+
+      await locationChangePromise;
+
+      is(browser.webNavigation.canGoBack, true, "webNavigation.canGoBack");
+      is(
+        browser.webNavigation.canGoForward,
+        false,
+        "!webNavigation.canGoForward"
+      );
+      is(gBrowser.currentURI.spec, "about:home", "Went back");
+
+      BrowserTestUtils.removeTab(gBrowser.selectedTab);
+    }
+    SpecialPowers.popPrefEnv();
   }
 });
 
-add_task(async function checkReturnToPreviousPage() {
+
+add_task(async function checkReturnToPreviousPage_feltPrivacyToFalse() {
+  await setSecurityCertErrorsFeltPrivacyToFalse();
   info(
     "Loading a bad cert page and making sure 'return to previous page' goes back"
   );
@@ -113,8 +150,8 @@ add_task(async function checkReturnToPreviousPage() {
       "!webNavigation.canGoForward"
     );
 
-    // Populate the shistory entries manually, since it happens asynchronously
-    // and the following tests will be too soon otherwise.
+    
+    
     await TabStateFlusher.flush(browser);
     let { entries } = JSON.parse(SessionStore.getTabState(tab));
     is(entries.length, 2, "there are two shistory entries");
@@ -144,20 +181,22 @@ add_task(async function checkReturnToPreviousPage() {
   }
 });
 
-// This checks that the appinfo.appBuildID starts with a date string,
-// which is required for the misconfigured system time check.
+
+
+
 add_task(async function checkAppBuildIDIsDate() {
   let appBuildID = Services.appinfo.appBuildID;
   let year = parseInt(appBuildID.substr(0, 4), 10);
   let month = parseInt(appBuildID.substr(4, 2), 10);
   let day = parseInt(appBuildID.substr(6, 2), 10);
 
-  ok(year >= 2016 && year <= 2100, "appBuildID contains a valid year");
-  ok(month >= 1 && month <= 12, "appBuildID contains a valid month");
-  ok(day >= 1 && day <= 31, "appBuildID contains a valid day");
+  Assert.ok(year >= 2016 && year <= 2100, "appBuildID contains a valid year");
+  Assert.ok(month >= 1 && month <= 12, "appBuildID contains a valid month");
+  Assert.ok(day >= 1 && day <= 31, "appBuildID contains a valid day");
 });
 
-add_task(async function checkAdvancedDetails() {
+add_task(async function checkAdvancedDetails_feltPrivacyToFalse() {
+  await setSecurityCertErrorsFeltPrivacyToFalse();
   info(
     "Loading a bad cert page and verifying the main error and advanced details section"
   );
@@ -195,7 +234,7 @@ add_task(async function checkAdvancedDetails() {
       let advancedButton = doc.getElementById("advancedButton");
       advancedButton.click();
 
-      // Wait until fluent sets the errorCode inner text.
+      
       let errorCode;
       await ContentTaskUtils.waitForCondition(() => {
         errorCode = doc.getElementById("errorCode");
@@ -256,7 +295,8 @@ add_task(async function checkAdvancedDetails() {
   }
 });
 
-add_task(async function checkAdvancedDetailsForHSTS() {
+add_task(async function checkAdvancedDetailsForHSTS_feltPrivacyToFalse() {
+  await setSecurityCertErrorsFeltPrivacyToFalse();
   info(
     "Loading a bad STS cert page and verifying the advanced details section"
   );
@@ -274,7 +314,7 @@ add_task(async function checkAdvancedDetailsForHSTS() {
       let advancedButton = doc.getElementById("advancedButton");
       advancedButton.click();
 
-      // Wait until fluent sets the errorCode inner text.
+      
       let ec;
       await ContentTaskUtils.waitForCondition(() => {
         ec = doc.getElementById("errorCode");
@@ -340,7 +380,8 @@ add_task(async function checkAdvancedDetailsForHSTS() {
   }
 });
 
-add_task(async function checkUnknownIssuerLearnMoreLink() {
+add_task(async function checkUnknownIssuerLearnMoreLink_feltPrivacyToFalse() {
+  await setSecurityCertErrorsFeltPrivacyToFalse();
   info(
     "Loading a cert error for self-signed pages and checking the correct link is shown"
   );
@@ -363,11 +404,12 @@ add_task(async function checkUnknownIssuerLearnMoreLink() {
   }
 });
 
-add_task(async function checkViewCertificate() {
+add_task(async function checkViewCertificate_feltPrivacyToFalse() {
+  await setSecurityCertErrorsFeltPrivacyToFalse();
   info("Loading a cert error and checking that the certificate can be shown.");
   for (let useFrame of [true, false]) {
     if (useFrame) {
-      // Bug #1573502
+      
       continue;
     }
     let tab = await openErrorPage(UNKNOWN_ISSUER, useFrame);
@@ -385,7 +427,7 @@ add_task(async function checkViewCertificate() {
     });
     await loaded;
 
-    let spec = gBrowser.selectedTab.linkedBrowser.documentURI.spec;
+    let spec = gBrowser.currentURI.spec;
     Assert.ok(
       spec.startsWith("about:certificate"),
       "about:certificate is the new opened tab"
@@ -423,12 +465,13 @@ add_task(async function checkViewCertificate() {
         );
       }
     );
-    BrowserTestUtils.removeTab(gBrowser.selectedTab); // closes about:certificate
+    BrowserTestUtils.removeTab(gBrowser.selectedTab); 
     BrowserTestUtils.removeTab(gBrowser.selectedTab);
   }
 });
 
-add_task(async function checkBadStsCertHeadline() {
+add_task(async function checkBadStsCertHeadline_feltPrivacyToFalse() {
+  await setSecurityCertErrorsFeltPrivacyToFalse();
   info(
     "Loading a bad sts cert error page and checking that the correct headline is shown"
   );
@@ -453,7 +496,8 @@ add_task(async function checkBadStsCertHeadline() {
   }
 });
 
-add_task(async function checkSandboxedIframe() {
+add_task(async function checkSandboxedIframe_feltPrivacyToFalse() {
+  await setSecurityCertErrorsFeltPrivacyToFalse();
   info(
     "Loading a bad sts cert error in a sandboxed iframe and check that the correct headline is shown"
   );
@@ -491,7 +535,8 @@ add_task(async function checkSandboxedIframe() {
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
-add_task(async function checkViewSource() {
+add_task(async function checkViewSource_feltPrivacyToFalse() {
+  await setSecurityCertErrorsFeltPrivacyToFalse();
   info(
     "Loading a bad sts cert error in a sandboxed iframe and check that the correct headline is shown"
   );
@@ -564,9 +609,9 @@ add_task(async function testCertificateTransparency() {
   info(
     "Test that when certificate transparency is enforced, the right error page is shown."
   );
-  // Enforce certificate transparency for certificates issued by our test root.
-  // This is only possible in debug builds, hence skipping this test in
-  // non-debug builds (see below).
+  
+  
+  
   await SpecialPowers.pushPrefEnv({
     set: [
       ["security.pki.certificate_transparency.mode", 2],
@@ -578,8 +623,21 @@ add_task(async function testCertificateTransparency() {
   });
 
   for (let useFrame of [false, true]) {
-    let tab = await openErrorPage(GOOD_PAGE, useFrame);
-    let browser = tab.linkedBrowser;
+    let tab;
+    let browser;
+    if (useFrame) {
+      tab = await BrowserTestUtils.openNewForegroundTab(
+        gBrowser,
+        "about:blank"
+      );
+      browser = tab.linkedBrowser;
+
+      
+      await injectErrorPageFrame(tab, GOOD_PAGE, useFrame);
+    } else {
+      tab = await openErrorPage(GOOD_PAGE, useFrame);
+      browser = tab.linkedBrowser;
+    }
 
     let bc = browser.browsingContext;
     if (useFrame) {
@@ -587,20 +645,19 @@ add_task(async function testCertificateTransparency() {
     }
 
     let message = await SpecialPowers.spawn(bc, [], async function () {
-      let doc = content.document;
-
+      const doc = content.document;
       const shortDesc = doc.getElementById("errorShortDesc");
       const sdArgs = JSON.parse(shortDesc.dataset.l10nArgs);
-      is(
+      Assert.equal(
         sdArgs.hostname,
         "example.com",
         "Should list hostname in error message."
       );
+      const advancedButton = doc.getElementById("advancedButton");
+      advancedButton.scrollIntoView(true);
+      EventUtils.synthesizeMouseAtCenter(advancedButton, {}, content);
 
-      let advancedButton = doc.getElementById("advancedButton");
-      advancedButton.click();
-
-      // Wait until fluent sets the errorCode inner text.
+      
       let errorCode;
       await ContentTaskUtils.waitForCondition(() => {
         errorCode = doc.getElementById("errorCode");
@@ -612,29 +669,483 @@ add_task(async function testCertificateTransparency() {
         tagName: errorCode.tagName.toLowerCase(),
       };
     });
-    is(
+
+    Assert.equal(
       message.textContent,
       "MOZILLA_PKIX_ERROR_INSUFFICIENT_CERTIFICATE_TRANSPARENCY",
       "Correct error message found"
     );
-    is(message.tagName, "a", "Error message is a link");
+    Assert.equal(message.tagName, "a", "Error message is a link");
 
     message = await SpecialPowers.spawn(bc, [], async function () {
-      let doc = content.document;
-      let errorCode = doc.getElementById("errorCode");
-      errorCode.click();
-      let text = doc.getElementById("certificateErrorText");
+      const doc = content.document;
+      const errorCode = doc.getElementById("errorCode");
+      errorCode.scrollIntoView(true);
+      EventUtils.synthesizeMouseAtCenter(errorCode, {}, content);
+      const text = doc.getElementById("certificateErrorText");
       return {
         text: text.textContent,
       };
     });
-    ok(message.text.includes(GOOD_PAGE), "Correct URL found");
+    Assert.ok(message.text.includes(GOOD_PAGE), "Correct URL found");
 
     BrowserTestUtils.removeTab(gBrowser.selectedTab);
+    BrowserTestUtils.removeTab(tab);
   }
 
   await SpecialPowers.popPrefEnv();
 
-  // Certificate transparency can only be enforced for our test certificates in
-  // debug builds.
+  
+  
 }).skip(!AppConstants.DEBUG);
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function assertNetErrorPage({
+  expectedUrl,
+  expectedHostname,
+  expectedErrorCode,
+  expectedInfo,
+  expectedErrorMessage,
+  expectedHpkp,
+}) {
+  await setSecurityCertErrorsFeltPrivacyToTrue();
+  info(`${expectedInfo}`);
+
+  for (let useFrame of [false, true]) {
+    let tab = await openErrorPage(expectedUrl, useFrame);
+    let browser = tab.linkedBrowser;
+    let bc = browser.browsingContext;
+    if (useFrame) {
+      bc = bc.children[0];
+    }
+
+    const newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser, null, true);
+    const contentData = await SpecialPowers.spawn(
+      bc,
+      [expectedHostname, expectedErrorCode],
+      async function (hostname, errorCode) {
+        const netErrorCard =
+          content.document.querySelector("net-error-card").wrappedJSObject;
+        await netErrorCard.getUpdateComplete();
+
+        
+        Assert.ok(
+          netErrorCard.certErrorBodyTitle,
+          "The error page title should exist."
+        );
+
+        const shortDesc = netErrorCard.certErrorIntro;
+        const shortDescArgs = JSON.parse(shortDesc.dataset.l10nArgs);
+        Assert.equal(
+          shortDescArgs.hostname,
+          hostname,
+          "Should list hostname in error message."
+        );
+
+        
+        Assert.ok(
+          !netErrorCard.advancedContainer,
+          "The Advanced container should NOT be found in shadow DOM before click."
+        );
+        const advancedButton = netErrorCard.advancedButton;
+        Assert.ok(advancedButton, "The advanced button should exist.");
+        Assert.equal(
+          advancedButton.dataset.l10nId,
+          "fp-certerror-advanced-button",
+          "Button should have the 'advanced' l10n ID."
+        );
+
+        advancedButton.scrollIntoView(true);
+        EventUtils.synthesizeMouseAtCenter(advancedButton, {}, content);
+        await ContentTaskUtils.waitForCondition(
+          () =>
+            netErrorCard.exceptionButton &&
+            !netErrorCard.exceptionButton.disabled,
+          "Wait for the exception button to be created."
+        );
+
+        Assert.ok(
+          !netErrorCard.exceptionButton.disabled,
+          "The exception button is now enabled."
+        );
+        Assert.equal(
+          advancedButton.dataset.l10nId,
+          "fp-certerror-hide-advanced-button",
+          "Button should have the 'hide-advanced' l10n ID."
+        );
+        Assert.ok(
+          netErrorCard.advancedShowing,
+          "Advanced showing attribute should be true"
+        );
+
+        
+        const certErrorCodeLink = netErrorCard.errorCode;
+        Assert.equal(
+          certErrorCodeLink.textContent,
+          `Error Code: ${errorCode}`,
+          "Error code text is as expected"
+        );
+        Assert.equal(
+          certErrorCodeLink.tagName.toLowerCase(),
+          "a",
+          "Error code is a link"
+        );
+
+        certErrorCodeLink.scrollIntoView(true);
+        EventUtils.synthesizeMouseAtCenter(certErrorCodeLink, {}, content);
+        await ContentTaskUtils.waitForMutationCondition(
+          netErrorCard,
+          { attributeFilter: ["certErrorDebugInfoShowing"] },
+          () => netErrorCard.certErrorDebugInfoShowing
+        );
+        Assert.ok(
+          netErrorCard.certErrorDebugInfoShowing,
+          "The 'certErrorDebugInfoShowing' boolean should be toggled (to true) after Advance button click on assertAdvancedButton."
+        );
+        Assert.ok(netErrorCard.certErrorText, "Error Code Detail should exist");
+
+        
+        info("Clicking the View Certificate button in advanced panel");
+        netErrorCard.viewCertificate.scrollIntoView(true);
+        EventUtils.synthesizeMouseAtCenter(
+          netErrorCard.viewCertificate,
+          {},
+          content
+        );
+
+        
+        const failedCertChain =
+          content.docShell.failedChannel.securityInfo.handshakeCertificates.map(
+            cert => cert.getBase64DERString()
+          );
+
+        return {
+          errorText: netErrorCard.certErrorText.textContent,
+          rawCertChain: failedCertChain,
+        };
+      }
+    );
+
+    Assert.ok(
+      contentData.errorText.includes(expectedHostname),
+      "Correct URL found"
+    );
+    Assert.ok(
+      contentData.errorText.includes(expectedErrorMessage),
+      "Correct error message exists"
+    );
+    Assert.ok(
+      contentData.errorText.includes("HTTP Strict Transport Security: false"),
+      "Correct HSTS value exists"
+    );
+    Assert.ok(
+      contentData.errorText.includes(
+        `HTTP Public Key Pinning: ${expectedHpkp}`
+      ),
+      "Correct HPKP value exists"
+    );
+
+    info("Loading the about:certificate page");
+    let newTab = await newTabPromise;
+
+    
+    const spec = gBrowser.currentURI.spec;
+    Assert.ok(
+      spec.startsWith("about:certificate"),
+      "about:certificate is the new opened tab"
+    );
+
+    await SpecialPowers.spawn(
+      gBrowser.selectedTab.linkedBrowser,
+      [expectedHostname],
+      async function (hostname) {
+        const doc = content.document;
+        const certificateSection = await ContentTaskUtils.waitForCondition(
+          () => {
+            
+            Assert.ok(
+              !doc.documentURI.startsWith("about:certerror"),
+              "We are now in a new tab with content including: about:certificate"
+            );
+            return doc.querySelector("certificate-section");
+          },
+          "Certificate section found"
+        );
+
+        const infoGroup =
+          certificateSection.shadowRoot.querySelector("info-group");
+        Assert.ok(infoGroup, "infoGroup found");
+
+        const items = infoGroup.shadowRoot.querySelectorAll("info-item");
+        const commonNameID = items[items.length - 1].shadowRoot
+          .querySelector("label")
+          .getAttribute("data-l10n-id");
+        Assert.equal(
+          commonNameID,
+          "certificate-viewer-common-name",
+          "The correct item was selected"
+        );
+
+        const commonNameValue =
+          items[items.length - 1].shadowRoot.querySelector(".info").textContent;
+
+        
+        
+        
+        
+        
+        
+        Assert.ok(
+          hostname.includes(commonNameValue),
+          "Error text should include the expected hostname"
+        );
+      }
+    );
+
+    BrowserTestUtils.removeTab(newTab);
+    BrowserTestUtils.removeTab(tab);
+  }
+}
+
+
+
+
+
+
+
+
+
+async function assertViewSourceNetErrorPage({
+  expectedHostname,
+  expectedUrl,
+  expectedInfo,
+}) {
+  await setSecurityCertErrorsFeltPrivacyToTrue();
+  info(`${expectedInfo}`);
+
+  let tab = await openErrorPage(expectedUrl);
+  const browser = tab.linkedBrowser;
+  const loaded = BrowserTestUtils.browserLoaded(browser, false, expectedUrl);
+
+  await SpecialPowers.spawn(browser, [], async function () {
+    const netErrorCard =
+      content.document.querySelector("net-error-card").wrappedJSObject;
+    await netErrorCard.getUpdateComplete();
+    
+    const advancedButton = netErrorCard.advancedButton;
+    advancedButton.scrollIntoView(true);
+    EventUtils.synthesizeMouseAtCenter(advancedButton, {}, content);
+    await ContentTaskUtils.waitForCondition(
+      () =>
+        netErrorCard.exceptionButton && !netErrorCard.exceptionButton.disabled,
+      "Wait for the exception button to be created."
+    );
+
+    info("Clicking the Proceed Risky button in advanced panel");
+    netErrorCard.exceptionButton.scrollIntoView(true);
+    EventUtils.synthesizeMouseAtCenter(
+      netErrorCard.exceptionButton,
+      {},
+      content
+    );
+  });
+
+  info("Loading the url after proceeding with risk");
+  await loaded;
+
+  
+  const certOverrideService = Cc[
+    "@mozilla.org/security/certoverride;1"
+  ].getService(Ci.nsICertOverrideService);
+  certOverrideService.clearValidityOverride(expectedHostname, -1, {});
+
+  
+  info("Reloading to ensure the certificate override was cleared.");
+  const errorPageLoaded = BrowserTestUtils.waitForErrorPage(browser);
+
+  BrowserCommands.reloadSkipCache();
+  await errorPageLoaded;
+
+  info("Override cleared and error page is shown again.");
+  BrowserTestUtils.removeTab(tab);
+}
+
+
+add_task(async function checkReturnToPreviousPage_feltPrivacyToTrue() {
+  await setSecurityCertErrorsFeltPrivacyToTrue();
+  info(
+    "Loading a bad cert page and making sure 'return to previous page' goes back"
+  );
+  for (let useFrame of [false, true]) {
+    let tab;
+    let browser;
+    if (useFrame) {
+      tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, GOOD_PAGE);
+      browser = tab.linkedBrowser;
+      await SpecialPowers.spawn(browser, [], () => {
+        content.document.notifyUserGestureActivation();
+      });
+
+      BrowserTestUtils.startLoadingURIString(browser, GOOD_PAGE_2);
+      await BrowserTestUtils.browserLoaded(browser, false, GOOD_PAGE_2);
+      await injectErrorPageFrame(tab, BAD_CERT);
+    } else {
+      tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, GOOD_PAGE);
+      browser = gBrowser.selectedBrowser;
+      await SpecialPowers.spawn(browser, [], () => {
+        content.document.notifyUserGestureActivation();
+      });
+
+      info("Loading and waiting for the cert error");
+      const certErrorLoaded = BrowserTestUtils.waitForErrorPage(browser);
+      BrowserTestUtils.startLoadingURIString(browser, BAD_CERT);
+      await certErrorLoaded;
+    }
+
+    Assert.ok(browser.webNavigation.canGoBack, "webNavigation.canGoBack");
+    Assert.ok(
+      !browser.webNavigation.canGoForward,
+      "!webNavigation.canGoForward"
+    );
+
+    
+    
+    await TabStateFlusher.flush(browser);
+    const { entries } = JSON.parse(SessionStore.getTabState(tab));
+    Assert.equal(entries.length, 2, "there are two history entries");
+
+    info("Clicking the go back button on about:certerror");
+    let bc = browser.browsingContext;
+    if (useFrame) {
+      bc = bc.children[0];
+    }
+
+    const pageShownPromise = BrowserTestUtils.waitForContentEvent(
+      browser,
+      "pageshow",
+      true
+    );
+    await SpecialPowers.spawn(bc, [useFrame], async function () {
+      const netErrorCard =
+        content.document.querySelector("net-error-card").wrappedJSObject;
+      await netErrorCard.getUpdateComplete();
+      const returnButton = netErrorCard.returnButton;
+      returnButton.scrollIntoView(true);
+      EventUtils.synthesizeMouseAtCenter(returnButton, {}, content);
+    });
+    await pageShownPromise;
+
+    Assert.ok(!browser.webNavigation.canGoBack, "!webNavigation.canGoBack");
+    Assert.ok(browser.webNavigation.canGoForward, "webNavigation.canGoForward");
+    Assert.equal(gBrowser.currentURI.spec, GOOD_PAGE, "Went back");
+
+    BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  }
+});
+
+add_task(async function checkAdvancedDetails_feltPrivacyToTrue() {
+  
+  await assertNetErrorPage({
+    expectedUrl: BAD_CERT,
+    expectedHostname: new URL(BAD_CERT).hostname,
+    expectedErrorCode: "SEC_ERROR_EXPIRED_CERTIFICATE",
+    expectedInfo:
+      "Loading a bad cert page and verifying the main error and advanced details section",
+    expectedErrorMessage: "Certificate has expired",
+    expectedHpkp: false,
+  });
+});
+
+add_task(async function checkAdvancedDetailsForHSTS_feltPrivacyToTrue() {
+  
+  await assertNetErrorPage({
+    expectedUrl: BAD_STS_CERT,
+    expectedHostname: new URL(BAD_STS_CERT).hostname,
+    expectedErrorCode: "SSL_ERROR_BAD_CERT_DOMAIN",
+    expectedInfo:
+      "Loading a bad STS cert page and verifying the advanced details section",
+    expectedErrorMessage:
+      "requested domain name does not match the server\u2019s certificate", 
+    expectedHpkp: true,
+  });
+});
+
+add_task(async function checkUnknownIssuerDetails_feltPrivacyToTrue() {
+  
+  await assertNetErrorPage({
+    expectedUrl: UNKNOWN_ISSUER,
+    expectedHostname: new URL(UNKNOWN_ISSUER).hostname,
+    expectedErrorCode: "MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT",
+    expectedInfo:
+      "Loading a cert error for self-signed pages and checking the correct link is shown",
+    expectedErrorMessage:
+      "The certificate is not trusted because it is self-signed.",
+    expectedHpkp: false,
+  });
+});
+
+add_task(async function checkViewSource_feltPrivacyToTrue() {
+  await assertViewSourceNetErrorPage({
+    expectedHostname: new URL(BAD_CERT).hostname,
+    expectedUrl: "view-source:" + BAD_CERT,
+    expectedInfo:
+      "Loading a bad sts cert error in a sandboxed iframe and check that the correct headline is shown",
+  });
+});
+
+add_task(async function checkSandboxedIframe_feltPrivacyToTrue() {
+  await setSecurityCertErrorsFeltPrivacyToTrue();
+  info(
+    "Loading a bad sts cert error in a sandboxed iframe and check that the correct headline is shown"
+  );
+  let useFrame = true;
+  let sandboxed = true;
+  let tab = await openErrorPage(BAD_CERT, useFrame, sandboxed);
+  let browser = tab.linkedBrowser;
+
+  let bc = browser.browsingContext.children[0];
+  await SpecialPowers.spawn(bc, [], async function () {
+    const netErrorCard =
+      content.document.querySelector("net-error-card").wrappedJSObject;
+    await netErrorCard.getUpdateComplete();
+
+    
+    Assert.ok(
+      netErrorCard.certErrorBodyTitle,
+      "The error page title should exist."
+    );
+    const advancedButton = netErrorCard.advancedButton;
+    advancedButton.scrollIntoView(true);
+    EventUtils.synthesizeMouseAtCenter(advancedButton, {}, content);
+    await ContentTaskUtils.waitForCondition(
+      () =>
+        netErrorCard.exceptionButton && !netErrorCard.exceptionButton.disabled,
+      "Wait for the exception button to be created."
+    );
+
+    
+    const certErrorCodeLink = netErrorCard.errorCode;
+    Assert.equal(
+      certErrorCodeLink.textContent,
+      `Error Code: SEC_ERROR_EXPIRED_CERTIFICATE`,
+      "Error Code is as expected"
+    );
+    Assert.equal(
+      certErrorCodeLink.tagName.toLowerCase(),
+      "a",
+      "Error Code is a link"
+    );
+  });
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
