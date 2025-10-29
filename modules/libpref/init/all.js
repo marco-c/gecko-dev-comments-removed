@@ -397,15 +397,9 @@ pref("gfx.downloadable_fonts.fallback_delay_short", 100);
   pref("gfx.font_rendering.directwrite.use_gdi_table_loading", true);
 #endif
 
-#if defined(XP_WIN)
-  
-  
-  pref("gfx.canvas.azure.backends", "direct2d1.1,skia");
-#elif defined(XP_MACOSX)
-  pref("gfx.canvas.azure.backends", "skia");
-#else
-  pref("gfx.canvas.azure.backends", "skia");
-#endif
+
+
+pref("gfx.canvas.azure.backends", "skia");
 pref("gfx.content.azure.backends", "skia");
 
 #ifdef XP_WIN

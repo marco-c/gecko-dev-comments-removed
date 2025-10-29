@@ -864,10 +864,6 @@ void gfxPlatform::Init() {
     nsAutoCString forcedPrefs;
     
     forcedPrefs.AppendPrintf(
-        "FP(D%d%d", StaticPrefs::gfx_direct2d_disabled_AtStartup(),
-        StaticPrefs::gfx_direct2d_force_enabled_AtStartup());
-    
-    forcedPrefs.AppendPrintf(
         "-L%d%d%d%d",
         StaticPrefs::layers_amd_switchable_gfx_enabled_AtStartup(),
         StaticPrefs::layers_acceleration_disabled_AtStartup_DoNotUseDirectly(),
@@ -1796,8 +1792,6 @@ already_AddRefed<DrawTarget> gfxPlatform::CreateDrawTargetForData(
 BackendType gfxPlatform::BackendTypeForName(const nsCString& aName) {
   if (aName.EqualsLiteral("cairo")) return BackendType::CAIRO;
   if (aName.EqualsLiteral("skia")) return BackendType::SKIA;
-  if (aName.EqualsLiteral("direct2d")) return BackendType::DIRECT2D;
-  if (aName.EqualsLiteral("direct2d1.1")) return BackendType::DIRECT2D1_1;
   return BackendType::NONE;
 }
 
@@ -2494,20 +2488,9 @@ void gfxPlatform::InitAcceleration() {
                       "FEATURE_REMOTE_CANVAS_NO_GPU_PROCESS"_ns);
     }
 
-#ifdef XP_WIN
-    
-    
-    if (StaticPrefs::gfx_direct2d_disabled_AtStartup() &&
-        !StaticPrefs::gfx_direct2d_force_enabled_AtStartup()) {
-      gfxConfig::ForceDisable(Feature::REMOTE_CANVAS, FeatureStatus::Blocked,
-                              "Disabled without Direct2D",
-                              "FEATURE_REMOTE_CANVAS_NO_DIRECT2D"_ns);
-    }
-#else
     gfxConfig::ForceDisable(Feature::REMOTE_CANVAS, FeatureStatus::Blocked,
-                            "Platform not supported",
-                            "FEATURE_REMOTE_CANVAS_NOT_WINDOWS"_ns);
-#endif
+                            "Remote Canvas not supported",
+                            "FEATURE_REMOTE_CANVAS_NOT_SUPPORTED"_ns);
 
     gfxVars::SetRemoteCanvasEnabled(feature.IsEnabled());
   }
