@@ -1669,7 +1669,7 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
   LOG(("ScriptLoadRequest (%p): Created request for inline script",
        request.get()));
 
-  request->mBaseURL = mDocument->GetDocBaseURI();
+  request->SetBaseURL(mDocument->GetDocBaseURI());
 
   if (request->IsModuleRequest()) {
     
@@ -3392,20 +3392,6 @@ nsresult ScriptLoader::EvaluateScript(nsIGlobalObject* aGlobalObject,
 
   
   MOZ_ASSERT(aRequest->mLoadedScript->IsClassicScript());
-
-  if (aRequest->IsCachedStencil()) {
-#ifdef DEBUG
-    
-    if (aRequest->mBaseURL) {
-      bool equals;
-      (void)aRequest->mLoadedScript->BaseURL()->Equals(aRequest->mBaseURL,
-                                                       &equals);
-      MOZ_ASSERT(equals);
-    }
-#endif
-  } else {
-    aRequest->mLoadedScript->SetBaseURL(aRequest->mBaseURL);
-  }
 
   RefPtr<ClassicScript> classicScript =
       aRequest->mLoadedScript->AsClassicScript();

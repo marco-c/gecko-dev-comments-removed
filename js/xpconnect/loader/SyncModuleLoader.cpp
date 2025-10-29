@@ -131,7 +131,7 @@ bool SyncModuleLoader::CanStartLoad(ModuleLoadRequest* aRequest,
 nsresult SyncModuleLoader::StartFetch(ModuleLoadRequest* aRequest) {
   MOZ_ASSERT(aRequest->HasLoadContext());
 
-  aRequest->mBaseURL = aRequest->URI();
+  aRequest->SetBaseURL(aRequest->URI());
 
   
   

@@ -15,6 +15,7 @@
 #include "jsfriendapi.h"
 #include "js/Modules.h"       
 #include "LoadContextBase.h"  
+#include "nsIChannel.h"       
 
 namespace JS::loader {
 
@@ -208,6 +209,22 @@ nsresult LoadedScript::GetScriptSource(JSContext* aCx,
 
   aMaybeSource->construct<SourceText<Utf8Unit>>(std::move(srcBuf));
   return NS_OK;
+}
+
+static bool IsInternalURIScheme(nsIURI* uri) {
+  return uri->SchemeIs("moz-extension") || uri->SchemeIs("resource") ||
+         uri->SchemeIs("moz-src") || uri->SchemeIs("chrome");
+}
+
+void LoadedScript::SetBaseURLFromChannelAndOriginalURI(nsIChannel* aChannel,
+                                                       nsIURI* aOriginalURI) {
+  
+  
+  if (aOriginalURI && IsInternalURIScheme(aOriginalURI)) {
+    mBaseURL = aOriginalURI;
+  } else {
+    aChannel->GetURI(getter_AddRefs(mBaseURL));
+  }
 }
 
 inline void CheckModuleScriptPrivate(LoadedScript* script,

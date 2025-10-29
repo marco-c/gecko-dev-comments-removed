@@ -97,10 +97,7 @@ class LoadedScript : public nsIMemoryReporter {
   }
 
   nsIURI* GetURI() const { return mURI; }
-  void SetBaseURL(nsIURI* aBaseURL) {
-    MOZ_ASSERT(!mBaseURL);
-    mBaseURL = aBaseURL;
-  }
+  void SetBaseURL(nsIURI* aBaseURL) { mBaseURL = aBaseURL; }
   nsIURI* BaseURL() const { return mBaseURL; }
 
   void AssociateWithScript(JSScript* aScript);
@@ -278,6 +275,13 @@ class LoadedScript : public nsIMemoryReporter {
   
   void DropDiskCacheReference() { mCacheInfo = nullptr; }
 
+  
+
+
+
+  void SetBaseURLFromChannelAndOriginalURI(nsIChannel* aChannel,
+                                           nsIURI* aOriginalURI);
+
  public:
   
 
@@ -306,6 +310,8 @@ class LoadedScript : public nsIMemoryReporter {
  private:
   RefPtr<ScriptFetchOptions> mFetchOptions;
   nsCOMPtr<nsIURI> mURI;
+
+  
   nsCOMPtr<nsIURI> mBaseURL;
 
  public:
@@ -376,6 +382,14 @@ class LoadedScriptDelegate {
   }
 
   nsIURI* URI() const { return GetLoadedScript()->GetURI(); }
+
+  nsIURI* BaseURL() const { return GetLoadedScript()->BaseURL(); }
+  void SetBaseURL(nsIURI* aBaseURL) { GetLoadedScript()->SetBaseURL(aBaseURL); }
+  void SetBaseURLFromChannelAndOriginalURI(nsIChannel* aChannel,
+                                           nsIURI* aOriginalURI) {
+    GetLoadedScript()->SetBaseURLFromChannelAndOriginalURI(aChannel,
+                                                           aOriginalURI);
+  }
 
   bool IsUnknownDataType() const {
     return GetLoadedScript()->IsUnknownDataType();
