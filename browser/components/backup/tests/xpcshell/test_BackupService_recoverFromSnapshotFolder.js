@@ -3,9 +3,6 @@
 
 "use strict";
 
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
 const { ArchiveUtils } = ChromeUtils.importESModule(
   "resource:///modules/backup/ArchiveUtils.sys.mjs"
 );

@@ -15,6 +15,7 @@ ChromeUtils.defineESModuleGetters(this, {
   MockRegistrar: "resource://testing-common/MockRegistrar.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   AppConstants: "resource://gre/modules/AppConstants.sys.mjs",
+  setTimeout: "resource://gre/modules/Timer.sys.mjs",
 });
 
 const HISTORY_ENABLED_PREF = "places.history.enabled";
@@ -47,6 +48,10 @@ add_setup(async () => {
     await OSKeyStoreTestUtils.cleanup();
     MockRegistrar.unregister(osKeyStoreCID);
   });
+
+  
+  
+  Cc["@mozilla.org/xre/directory-provider;1"].getService(Ci.nsIXREDirProvider);
 });
 
 const BYTES_IN_KB = 1000;
@@ -202,17 +207,58 @@ async function assertFilesExist(parentPath, testFilesArray) {
 
 
 
-async function maybeRemovePath(path) {
-  try {
-    await IOUtils.remove(path, { ignoreAbsent: true, recursive: true });
-  } catch (error) {
-    
-    
-    if (error.name != "NS_ERROR_FILE_IS_LOCKED") {
+
+
+
+
+
+
+
+
+
+
+
+async function doFileRemovalOperation(removalFn) {
+  const kMaxRetries = 5;
+  let nRetries = 0;
+  let lastException;
+  while (nRetries < kMaxRetries) {
+    nRetries++;
+    try {
+      await removalFn();
       
-      console.error(error);
+      return;
+    } catch (error) {
+      if (
+        AppConstants.platform !== "win" ||
+        !/NS_ERROR_FILE_IS_LOCKED/.test(error.message)
+      ) {
+        throw error;
+      }
+      lastException = error;
     }
+    await new Promise(res => setTimeout(res, 100));
   }
+
+  
+  Assert.ok(false, `doRemovalOperation failed after ${nRetries} attempts`);
+  throw lastException;
+}
+
+
+
+
+
+
+
+
+async function maybeRemovePath(path) {
+  let nAttempts = 0;
+  await doFileRemovalOperation(async () => {
+    nAttempts++;
+    await IOUtils.remove(path, { ignoreAbsent: true, recursive: true });
+    Assert.ok(true, `Removed ${path} on attempt #${nAttempts}`);
+  });
 }
 
 

@@ -3,9 +3,6 @@
 
 "use strict";
 
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
 const { BasePromiseWorker } = ChromeUtils.importESModule(
   "resource://gre/modules/PromiseWorker.sys.mjs"
 );
@@ -340,7 +337,7 @@ async function testCreateBackupHelper(sandbox, taskFn) {
       "initiated recovery"
   );
 
-  taskFn(bs, manifest);
+  await taskFn(bs, manifest);
 
   await maybeRemovePath(backupFilePath);
   await maybeRemovePath(fakeProfilePath);
@@ -409,7 +406,11 @@ async function testDeleteLastBackupHelper(taskFn) {
       await taskFn(LAST_BACKUP_FILE_PATH);
     }
 
-    await bs.deleteLastBackup();
+    
+    
+    
+    
+    await doFileRemovalOperation(async () => await bs.deleteLastBackup());
 
     Assert.equal(
       bs.state.lastBackupDate,
