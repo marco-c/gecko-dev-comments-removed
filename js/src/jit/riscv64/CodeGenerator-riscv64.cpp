@@ -1116,15 +1116,11 @@ void CodeGenerator::visitDivPowTwoI(LDivPowTwoI* ins) {
 }
 
 void CodeGenerator::visitModI(LModI* ins) {
-  
   Register lhs = ToRegister(ins->lhs());
   Register rhs = ToRegister(ins->rhs());
   Register dest = ToRegister(ins->output());
-  Register callTemp = ToRegister(ins->temp0());
   MMod* mir = ins->mir();
   Label done;
-
-  masm.move32(lhs, callTemp);
 
   
   
@@ -1174,8 +1170,10 @@ void CodeGenerator::visitModI(LModI* ins) {
   
   if (mir->canBeNegativeDividend() && !mir->isTruncated()) {
     MOZ_ASSERT(mir->fallible());
+    MOZ_ASSERT(lhs != dest);
+
     masm.ma_b(dest, Imm32(0), &done, Assembler::NotEqual, ShortJump);
-    bailoutCmp32(Assembler::Signed, callTemp, callTemp, ins->snapshot());
+    bailoutCmp32(Assembler::Signed, lhs, lhs, ins->snapshot());
   }
   masm.bind(&done);
 }
