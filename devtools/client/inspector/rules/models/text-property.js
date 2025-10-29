@@ -76,6 +76,7 @@ class TextProperty {
 
     this.updateComputed();
     this.updateUsedVariables();
+    this.updateIsUnusedVariable();
   }
 
   get computedProperties() {
@@ -167,6 +168,22 @@ class TextProperty {
     for (const variable of getCSSVariables(this.value)) {
       this.usedVariables.add(variable);
     }
+  }
+
+  
+
+
+  updateIsUnusedVariable() {
+    this.isUnusedVariable =
+      this.name.startsWith("--") &&
+      
+      !this.editor &&
+      
+      
+      
+      !this.userProperties.containsName(this.name) &&
+      this.elementStyle.usedVariables &&
+      !this.elementStyle.usedVariables.has(this.name);
   }
 
   

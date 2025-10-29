@@ -39,6 +39,12 @@ loader.lazyRequireGetter(
   "resource://devtools/client/definitions.js",
   true
 );
+loader.lazyRequireGetter(
+  this,
+  "PluralForm",
+  "resource://devtools/shared/plural-form.js",
+  true
+);
 
 const STYLE_INSPECTOR_PROPERTIES =
   "devtools/shared/locales/styleinspector.properties";
@@ -52,8 +58,11 @@ loader.lazyGetter(this, "NEW_PROPERTY_NAME_INPUT_LABEL", function () {
   return STYLE_INSPECTOR_L10N.getStr("rule.newPropertyName.label");
 });
 
+const UNUSED_CSS_PROPERTIES_HIDE_THRESHOLD = 10;
 const INDENT_SIZE = 2;
 const INDENT_STR = " ".repeat(INDENT_SIZE);
+
+
 
 
 
@@ -91,6 +100,8 @@ function RuleEditor(ruleView, rule, options = {}) {
   this._onToolChanged = this._onToolChanged.bind(this);
   this._updateLocation = this._updateLocation.bind(this);
   this._onSourceClick = this._onSourceClick.bind(this);
+  this._onShowUnusedCustomCssPropertiesButtonClick =
+    this._onShowUnusedCustomCssPropertiesButtonClick.bind(this);
 
   this.rule.domRule.on("location-changed", this._locationChanged);
   this.toolbox.on("tool-registered", this._onToolChanged);
@@ -103,6 +114,12 @@ RuleEditor.prototype = {
   destroy() {
     for (const prop of this.rule.textProps) {
       prop.editor?.destroy();
+    }
+
+    this._unusedCssVariableDeclarations = null;
+
+    if (this._showUnusedCustomCssPropertiesButton) {
+      this._nullifyShowUnusedCustomCssProperties({ removeFromDom: false });
     }
 
     this.rule.domRule.off("location-changed");
@@ -322,11 +339,11 @@ RuleEditor.prototype = {
       this.ancestorDataEl.append(ancestorsFrag);
     }
 
-    const code = createChild(this.element, "div", {
+    this.ruleviewCodeEl = createChild(this.element, "div", {
       class: "ruleview-code",
     });
 
-    const header = createChild(code, "div", {});
+    const header = createChild(this.ruleviewCodeEl, "div", {});
 
     createChild(header, "span", {
       class: "ruleview-rule-indent",
@@ -397,14 +414,14 @@ RuleEditor.prototype = {
 
     
     
-    this.propertyList = createChild(code, "div", {
+    this.propertyList = createChild(this.ruleviewCodeEl, "div", {
       class: "ruleview-propertylist",
       role: "list",
     });
 
     this.populate();
 
-    this.closeBrace = createChild(code, "div", {
+    this.closeBrace = createChild(this.ruleviewCodeEl, "div", {
       class: "ruleview-ruleclose",
       tabindex: this.isEditable ? "0" : "-1",
     });
@@ -425,7 +442,7 @@ RuleEditor.prototype = {
         }
         closingBracketsText += "}\n";
       }
-      createChild(code, "div", {
+      createChild(this.ruleviewCodeEl, "div", {
         class: "ruleview-ancestor-ruleclose",
         textContent: closingBracketsText,
       });
@@ -437,11 +454,11 @@ RuleEditor.prototype = {
       
       this._ruleViewIsEditing = false;
 
-      code.addEventListener("mousedown", () => {
+      this.ruleviewCodeEl.addEventListener("mousedown", () => {
         this._ruleViewIsEditing = this.ruleView.isEditing;
       });
 
-      code.addEventListener("click", () => {
+      this.ruleviewCodeEl.addEventListener("click", () => {
         const selection = this.doc.defaultView.getSelection();
         if (selection.isCollapsed && !this._ruleViewIsEditing) {
           this.newProperty();
@@ -662,7 +679,27 @@ RuleEditor.prototype = {
       this.propertyList.replaceChildren();
     }
 
+    this._unusedCssVariableDeclarations =
+      this._getUnusedCssVariableDeclarations();
+    const hideUnusedCssVariableDeclarations =
+      this._unusedCssVariableDeclarations.size >=
+      
+      
+      (this._showUnusedCustomCssPropertiesButton
+        ? 1
+        : UNUSED_CSS_PROPERTIES_HIDE_THRESHOLD);
+
+    
+    
+    
+    if (!hideUnusedCssVariableDeclarations) {
+      this._unusedCssVariableDeclarations.clear();
+    }
+
     for (const prop of this.rule.textProps) {
+      if (hideUnusedCssVariableDeclarations && prop.isUnusedVariable) {
+        continue;
+      }
       if (!prop.editor && !prop.invisible) {
         const editor = new TextPropertyEditor(this, prop, {
           elementsWithPendingClicks: this.options.elementsWithPendingClicks,
@@ -673,6 +710,29 @@ RuleEditor.prototype = {
         
         this.propertyList.appendChild(prop.editor.element);
       }
+    }
+
+    if (hideUnusedCssVariableDeclarations) {
+      if (!this._showUnusedCustomCssPropertiesButton) {
+        this._showUnusedCustomCssPropertiesButton =
+          this.doc.createElement("button");
+        this._showUnusedCustomCssPropertiesButton.classList.add(
+          "devtools-button",
+          "devtools-button-standalone",
+          "ruleview-show-unused-custom-css-properties"
+        );
+        this._showUnusedCustomCssPropertiesButton.addEventListener(
+          "click",
+          this._onShowUnusedCustomCssPropertiesButtonClick
+        );
+      }
+      this.ruleviewCodeEl.insertBefore(
+        this._showUnusedCustomCssPropertiesButton,
+        this.closeBrace
+      );
+      this._updateShowUnusedCustomCssPropertiesButtonText();
+    } else if (this._showUnusedCustomCssPropertiesButton) {
+      this._nullifyShowUnusedCustomCssProperties();
     }
 
     
@@ -687,6 +747,175 @@ RuleEditor.prototype = {
         }, 0);
       }
     }
+  },
+
+  updateUnusedCssVariables() {
+    if (
+      !this._unusedCssVariableDeclarations ||
+      !this._unusedCssVariableDeclarations.size
+    ) {
+      return;
+    }
+
+    
+    const previouslyUnused = Array.from(this._unusedCssVariableDeclarations);
+    
+    this._unusedCssVariableDeclarations =
+      this._getUnusedCssVariableDeclarations();
+
+    for (const prop of previouslyUnused) {
+      if (this._unusedCssVariableDeclarations.has(prop)) {
+        continue;
+      }
+
+      
+      this.showUnusedCssVariable(prop, {
+        updateButton: false,
+      });
+    }
+
+    this._updateShowUnusedCustomCssPropertiesButtonText();
+  },
+
+  
+
+
+
+
+
+
+
+
+  showUnusedCssVariable(prop, { updateButton = true } = {}) {
+    if (prop.editor) {
+      return null;
+    }
+
+    this._unusedCssVariableDeclarations.delete(prop);
+
+    const editor = new TextPropertyEditor(this, prop, {
+      elementsWithPendingClicks: this.options.elementsWithPendingClicks,
+    });
+    const declarationIndex = this.rule.textProps.indexOf(prop);
+    
+    
+    let nextSibling;
+    for (let i = declarationIndex + 1; i < this.rule.textProps.length; i++) {
+      const currentProp = this.rule.textProps[i];
+      if (currentProp.editor) {
+        nextSibling = currentProp.editor.element;
+        break;
+      }
+    }
+    
+    
+    this.propertyList.insertBefore(editor.element, nextSibling || null);
+
+    if (updateButton) {
+      this._updateShowUnusedCustomCssPropertiesButtonText();
+    }
+
+    return editor;
+  },
+
+  
+
+
+
+
+
+  _getUnusedCssVariableDeclarations() {
+    const unusedCssVariableDeclarations = new Set();
+
+    
+    if (!this.options.shouldHideUnusedCustomCssProperties) {
+      return unusedCssVariableDeclarations;
+    }
+
+    
+    
+    for (const prop of this.rule.textProps) {
+      if (prop.isUnusedVariable) {
+        unusedCssVariableDeclarations.add(prop);
+      }
+    }
+
+    return unusedCssVariableDeclarations;
+  },
+
+  
+
+
+
+
+  _onShowUnusedCustomCssPropertiesButtonClick(e) {
+    e.stopPropagation();
+
+    this._nullifyShowUnusedCustomCssProperties();
+
+    for (const prop of this._unusedCssVariableDeclarations) {
+      if (!prop.invisible) {
+        const editor = new TextPropertyEditor(this, prop, {
+          elementsWithPendingClicks: this.options.elementsWithPendingClicks,
+        });
+        
+        this.propertyList.insertBefore(
+          editor.element,
+          this.propertyList.childNodes[this.rule.textProps.indexOf(prop)] ||
+            null
+        );
+      }
+    }
+    if (typeof this.options.onShowUnusedCustomCssProperties === "function") {
+      this.options.onShowUnusedCustomCssProperties();
+    }
+  },
+
+  
+
+
+
+  _updateShowUnusedCustomCssPropertiesButtonText() {
+    if (!this._showUnusedCustomCssPropertiesButton) {
+      return;
+    }
+
+    const unusedVariablesCount = this._unusedCssVariableDeclarations.size;
+    if (!unusedVariablesCount) {
+      this._nullifyShowUnusedCustomCssProperties();
+      return;
+    }
+
+    const label = PluralForm.get(
+      unusedVariablesCount,
+      STYLE_INSPECTOR_L10N.getStr("rule.showUnusedCssVariable")
+    ).replace("#1", unusedVariablesCount);
+
+    this._showUnusedCustomCssPropertiesButton.replaceChildren(label);
+  },
+
+  
+
+
+
+
+
+
+
+  _nullifyShowUnusedCustomCssProperties({ removeFromDom = true } = {}) {
+    if (!this._showUnusedCustomCssPropertiesButton) {
+      return;
+    }
+
+    this._showUnusedCustomCssPropertiesButton.removeEventListener(
+      "click",
+      this._onShowUnusedCustomCssPropertiesButtonClick
+    );
+
+    if (removeFromDom) {
+      this._showUnusedCustomCssPropertiesButton.remove();
+    }
+    this._showUnusedCustomCssPropertiesButton = null;
   },
 
   
@@ -870,8 +1099,13 @@ RuleEditor.prototype = {
 
     
     
-    
     this.closeBrace.removeAttribute("tabindex");
+    
+    
+    
+    if (this._showUnusedCustomCssPropertiesButton) {
+      this._showUnusedCustomCssPropertiesButton.setAttribute("tabindex", "-1");
+    }
 
     this.newPropItem = createChild(this.propertyList, "div", {
       class: "ruleview-property ruleview-newproperty",
@@ -946,6 +1180,9 @@ RuleEditor.prototype = {
   _newPropertyDestroy() {
     
     this.closeBrace.setAttribute("tabindex", "0");
+    if (this._showUnusedCustomCssPropertiesButton) {
+      this._showUnusedCustomCssPropertiesButton.removeAttribute("tabindex");
+    }
 
     this.propertyList.removeChild(this.newPropItem);
     delete this.newPropItem;

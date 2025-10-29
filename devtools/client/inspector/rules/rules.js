@@ -150,7 +150,9 @@ function CssRuleView(inspector, document, store) {
   this.cssProperties = inspector.cssProperties;
   this.styleDocument = document;
   this.styleWindow = this.styleDocument.defaultView;
-  this.store = store || {};
+  this.store = store || {
+    expandedUnusedCustomCssPropertiesRuleActorIds: new Set(),
+  };
 
   
   this.debounce = debounce;
@@ -1500,8 +1502,18 @@ CssRuleView.prototype = {
 
       
       if (!rule.editor) {
+        const ruleActorID = rule.domRule.actorID;
         rule.editor = new RuleEditor(this, rule, {
           elementsWithPendingClicks: this._elementsWithPendingClicks,
+          onShowUnusedCustomCssProperties: () => {
+            this.store.expandedUnusedCustomCssPropertiesRuleActorIds.add(
+              ruleActorID
+            );
+          },
+          shouldHideUnusedCustomCssProperties:
+            !this.store.expandedUnusedCustomCssPropertiesRuleActorIds.has(
+              ruleActorID
+            ),
         });
         editorReadyPromises.push(rule.editor.once("source-link-updated"));
       }
@@ -1809,15 +1821,18 @@ CssRuleView.prototype = {
 
 
   _highlightRuleProperty(textProperty) {
+    const propertyName = textProperty.name.toLowerCase();
     
-    const propertyName = textProperty.editor.prop.name.toLowerCase();
-    const propertyValue =
-      textProperty.editor.valueSpan.textContent.toLowerCase();
+    
+    const propertyValue = textProperty.editor
+      ? textProperty.editor.valueSpan.textContent.toLowerCase()
+      : textProperty.value.toLowerCase();
 
     return this._highlightMatches({
-      element: textProperty.editor.container,
+      element: textProperty.editor?.container,
       propertyName,
       propertyValue,
+      textProperty,
     });
   },
 
@@ -1832,6 +1847,10 @@ CssRuleView.prototype = {
 
 
   _highlightComputedProperty(textProperty) {
+    if (!textProperty.editor) {
+      return false;
+    }
+
     let isComputedHighlighted = false;
 
     
@@ -1846,6 +1865,7 @@ CssRuleView.prototype = {
           element: computed.element,
           propertyName: computedName,
           propertyValue: computedValue,
+          textProperty,
         })
           ? true
           : isComputedHighlighted;
@@ -1870,7 +1890,10 @@ CssRuleView.prototype = {
 
 
 
-  _highlightMatches({ element, propertyName, propertyValue }) {
+
+
+
+  _highlightMatches({ element, propertyName, propertyValue, textProperty }) {
     const {
       searchPropertyName,
       searchPropertyValue,
@@ -1909,11 +1932,26 @@ CssRuleView.prototype = {
         );
     }
 
-    if (matches) {
-      element.classList.add("ruleview-highlight");
+    if (!matches) {
+      return false;
     }
 
-    return matches;
+    
+    if (!element && textProperty?.isUnusedVariable) {
+      const editor =
+        textProperty.rule.editor.showUnusedCssVariable(textProperty);
+
+      
+      if (!editor) {
+        return false;
+      }
+
+      element = editor.container;
+    }
+
+    element.classList.add("ruleview-highlight");
+
+    return true;
   },
 
   
@@ -2198,6 +2236,12 @@ CssRuleView.prototype = {
             
             scrollBehavior = "auto";
             this._togglePseudoElementRuleContainer();
+          }
+
+          
+          
+          if (!textProp.editor && textProp.isUnusedVariable) {
+            textProp.rule.editor.showUnusedCssVariable(textProp);
           }
 
           this._highlightElementInRule(
@@ -2717,6 +2761,7 @@ class RuleViewTool {
       this.document =
       this.inspector =
       this.readyPromise =
+      this.store =
       this.#abortController =
         null;
   }

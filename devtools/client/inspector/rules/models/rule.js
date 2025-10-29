@@ -811,7 +811,8 @@ class Rule {
 
     if (direction === Services.focus.MOVEFOCUS_FORWARD) {
       for (++index; index < this.textProps.length; ++index) {
-        if (!this.textProps[index].invisible) {
+        
+        if (this.textProps[index].editor) {
           break;
         }
       }
@@ -822,7 +823,8 @@ class Rule {
       }
     } else if (direction === Services.focus.MOVEFOCUS_BACKWARD) {
       for (--index; index >= 0; --index) {
-        if (!this.textProps[index].invisible) {
+        
+        if (this.textProps[index].editor) {
           break;
         }
       }
