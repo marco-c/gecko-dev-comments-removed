@@ -942,6 +942,17 @@ bool GLContext::InitImpl() {
 
   mMaxTexOrRbSize = std::min(mMaxTextureSize, mMaxRenderbufferSize);
 
+#ifdef MOZ_WIDGET_ANDROID
+  if (Renderer() == GLRenderer::SamsungXclipse && jni::GetAPIVersion() >= 35) {
+    
+    
+    
+    GLint maxVertexAttribStride;
+    raw_fGetIntegerv(LOCAL_GL_MAX_VERTEX_ATTRIB_STRIDE, &maxVertexAttribStride);
+    mVertexBufferExtraPadding = Some(maxVertexAttribStride);
+  }
+#endif
+
   
 
   
