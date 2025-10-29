@@ -6986,7 +6986,15 @@ void CodeGenerator::emitAllocateSpaceForApply(T* apply, Register calleeReg,
         }
         masm.lshiftPtr(Imm32(ValueShift), scratch);
         masm.subFromStackPtr(scratch);
-        masm.rshiftPtr(Imm32(ValueShift), scratch);
+
+        
+        
+        
+        if (JitStackValueAlignment > 1) {
+          masm.loadFunctionArgCount(calleeReg, scratch);
+        } else {
+          masm.rshiftPtr(Imm32(ValueShift), scratch);
+        }
       }
 
       
@@ -7104,7 +7112,15 @@ void CodeGenerator::emitAllocateSpaceForConstructAndPushNewTarget(
         }
         masm.lshiftPtr(Imm32(ValueShift), scratch);
         masm.subFromStackPtr(scratch);
-        masm.rshiftPtr(Imm32(ValueShift), scratch);
+
+        
+        
+        
+        if (JitStackValueAlignment > 1) {
+          masm.loadFunctionArgCount(calleeReg, scratch);
+        } else {
+          masm.rshiftPtr(Imm32(ValueShift), scratch);
+        }
       }
 
       
