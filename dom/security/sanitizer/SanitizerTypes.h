@@ -5,14 +5,24 @@
 #ifndef mozilla_dom_SanitizerTypes_h
 #define mozilla_dom_SanitizerTypes_h
 
+#include "fmt/format.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/dom/SanitizerBinding.h"
+#include "nsHashtablesFwd.h"
+#include "nsTHashSet.h"
 
 namespace mozilla::dom::sanitizer {
 
+struct CanonicalElementAttributes;
 
-class CanonicalName {
+
+class CanonicalName : public PLDHashEntryHdr {
  public:
+  using KeyType = const CanonicalName&;
+  using KeyTypePointer = const CanonicalName*;
+
+  explicit CanonicalName(KeyTypePointer aKey)
+      : mLocalName(aKey->mLocalName), mNamespace(aKey->mNamespace) {}
   CanonicalName(CanonicalName&&) = default;
   CanonicalName(RefPtr<nsAtom> aLocalName, RefPtr<nsAtom> aNamespace)
       : mLocalName(std::move(aLocalName)), mNamespace(std::move(aNamespace)) {}
@@ -20,85 +30,138 @@ class CanonicalName {
       : mLocalName(aLocalName), mNamespace(aNamespace) {}
   ~CanonicalName() = default;
 
+  KeyType GetKey() const { return *this; }
+  bool KeyEquals(KeyTypePointer aKey) const {
+    return mLocalName == aKey->mLocalName && mNamespace == aKey->mNamespace;
+  }
+
+  static KeyTypePointer KeyToPointer(KeyType aKey) { return &aKey; }
+  static PLDHashNumber HashKey(KeyTypePointer aKey) {
+    return mozilla::HashGeneric(aKey->mLocalName.get(), aKey->mNamespace.get());
+  }
+
+  enum { ALLOW_MEMMOVE = true };
+
   
   
   bool IsDataAttribute() const;
 
-  bool operator==(const CanonicalName& aOther) const {
-    return mLocalName == aOther.mLocalName && mNamespace == aOther.mNamespace;
-  }
-
-  SanitizerElementNamespace ToSanitizerElementNamespace() const;
   SanitizerAttributeNamespace ToSanitizerAttributeNamespace() const;
+  SanitizerElementNamespace ToSanitizerElementNamespace() const;
+  SanitizerElementNamespaceWithAttributes
+  ToSanitizerElementNamespaceWithAttributes(
+      const CanonicalElementAttributes& aElementAttributes) const;
 
   CanonicalName Clone() const { return CanonicalName(mLocalName, mNamespace); }
 
  protected:
+  friend std::ostream& operator<<(std::ostream& aStream,
+                                  const CanonicalName& aName);
+
+  template <typename SanitizerName>
+  void SetSanitizerName(SanitizerName& aName) const;
+
   RefPtr<nsAtom> mLocalName;
   
   RefPtr<nsAtom> mNamespace;
 };
 
+std::ostream& operator<<(std::ostream& aStream, const CanonicalName& aName);
 
-template <typename ValueType>
-class ListSet {
- public:
-  ListSet() = default;
+using CanonicalNameSet = nsTHashSet<CanonicalName>;
 
-  explicit ListSet(nsTArray<ValueType>&& aValues)
-      : mValues(std::move(aValues)) {}
+struct CanonicalElementAttributes {
+  Maybe<CanonicalNameSet> mAttributes;
+  Maybe<CanonicalNameSet> mRemoveAttributes;
 
-  void Insert(ValueType&& aValue) {
-    if (Contains(aValue)) {
-      return;
-    }
-
-    mValues.AppendElement(std::move(aValue));
-  }
-  bool Remove(const CanonicalName& aValue) {
-    return mValues.RemoveElement(aValue);
-  }
-  bool Contains(const CanonicalName& aValue) const {
-    return mValues.Contains(aValue);
-  }
-  bool IsEmpty() const { return mValues.IsEmpty(); }
-
-  ValueType* Get(const CanonicalName& aValue) {
-    auto index = mValues.IndexOf(aValue);
-    if (index == mValues.NoIndex) {
-      return nullptr;
-    }
-    return &mValues[index];
-  }
-
-  const nsTArray<ValueType>& Values() const { return mValues; }
-  nsTArray<ValueType>& Values() { return mValues; }
-
-  bool HasDuplicates() const;
-
- private:
-  nsTArray<ValueType> mValues;
+  bool Equals(const CanonicalElementAttributes& aOther) const;
 };
 
-class CanonicalElementWithAttributes : public CanonicalName {
- public:
-  explicit CanonicalElementWithAttributes(CanonicalName&& aName)
-      : CanonicalName(std::move(aName)) {}
-
-  bool EqualAttributes(const CanonicalElementWithAttributes& aOther) const;
-
-  SanitizerElementNamespaceWithAttributes
-  ToSanitizerElementNamespaceWithAttributes() const;
-
-  CanonicalElementWithAttributes Clone() const;
-
-  Maybe<ListSet<CanonicalName>> mAttributes;
-  Maybe<ListSet<CanonicalName>> mRemoveAttributes;
-};
+using CanonicalElementMap =
+    nsTHashMap<CanonicalName, CanonicalElementAttributes>;
 
 nsTArray<OwningStringOrSanitizerAttributeNamespace> ToSanitizerAttributes(
-    const ListSet<CanonicalName>& aList);
+    const CanonicalNameSet& aSet);
+
+inline const auto& GetAsDictionary(
+    const OwningStringOrSanitizerAttributeNamespace& aOwning) {
+  return aOwning.GetAsSanitizerAttributeNamespace();
+}
+
+inline const auto& GetAsDictionary(
+    const OwningStringOrSanitizerElementNamespace& aOwning) {
+  return aOwning.GetAsSanitizerElementNamespace();
+}
+
+inline const auto& GetAsDictionary(
+    const OwningStringOrSanitizerElementNamespaceWithAttributes& aOwning) {
+  return aOwning.GetAsSanitizerElementNamespaceWithAttributes();
+}
+
+inline const auto& GetAsDictionary(
+    const StringOrSanitizerElementNamespace& aElement) {
+  return aElement.GetAsSanitizerElementNamespace();
+}
+
+inline const auto& GetAsDictionary(
+    const StringOrSanitizerElementNamespaceWithAttributes& aElement) {
+  return aElement.GetAsSanitizerElementNamespaceWithAttributes();
+}
+
+template <typename SanitizerNameNamespace>
+class MOZ_STACK_CLASS SanitizerComparator final {
+ public:
+  bool Equals(const SanitizerNameNamespace& aItemA,
+              const SanitizerNameNamespace& aItemB) const {
+    const auto& itemA = GetAsDictionary(aItemA);
+    const auto& itemB = GetAsDictionary(aItemB);
+
+    return itemA.mNamespace.IsVoid() == itemB.mNamespace.IsVoid() &&
+           itemA.mNamespace == itemB.mNamespace && itemA.mName == itemB.mName;
+  }
+
+  
+  bool LessThan(const SanitizerNameNamespace& aItemA,
+                const SanitizerNameNamespace& aItemB) const {
+    const auto& itemA = GetAsDictionary(aItemA);
+    const auto& itemB = GetAsDictionary(aItemB);
+
+    
+    if (itemA.mNamespace.IsVoid()) {
+      
+      if (!itemB.mNamespace.IsVoid()) {
+        return true;
+      }
+    } else {
+      
+      
+      if (itemB.mNamespace.IsVoid()) {
+        return false;
+      }
+
+      int result = Compare(itemA.mNamespace, itemB.mNamespace);
+      
+      
+      if (result < 0) {
+        return true;
+      }
+      
+      
+      
+      if (result != 0) {
+        return false;
+      }
+    }
+
+    
+    return itemA.mName < itemB.mName;
+  }
+};
 
 }  
+
+template <>
+struct fmt::formatter<mozilla::dom::sanitizer::CanonicalName>
+    : ostream_formatter {};
 
 #endif
