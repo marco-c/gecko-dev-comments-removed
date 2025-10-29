@@ -1499,9 +1499,19 @@ Result<size_t, nsresult> CacheStorageService::MemoryPool::PurgeByFrecency(
     for (const auto& entry : mManagedEntries) {
       
       
-      if (!entry->IsReferenced() && entry->GetFrecency() > 0.0) {
+      
+      
+      
+      if (!entry->IsReferenced() && entry->GetFrecency() > 0.0 &&
+          (!entry->GetEnhanceID().EqualsLiteral("dict:") ||
+           entry->GetMetadataMemoryConsumption() == 0)) {
         mayPurgeEntry copy(entry);
         mayPurgeSorted.AppendElement(std::move(copy));
+      } else {
+        if (entry->GetEnhanceID().EqualsLiteral("dict:")) {
+          LOG(("*** Entry is a dictionary origin, metadata size %d",
+               entry->GetMetadataMemoryConsumption()));
+        }
       }
     }
   }
