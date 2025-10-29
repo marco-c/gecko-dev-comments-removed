@@ -2320,7 +2320,7 @@ void LIRGenerator::visitSub(MSub* ins) {
 
     
     if (lhs->isConstant() && lhs->toConstant()->toInt64() == 0) {
-      lowerNegI64(ins, rhs);
+      lowerForALUInt64(new (alloc()) LNegI64, ins, rhs);
       return;
     }
 
@@ -2380,7 +2380,7 @@ void LIRGenerator::visitMul(MMul* ins) {
 
     
     if (rhs->isConstant() && rhs->toConstant()->toInt64() == -1) {
-      lowerNegI64(ins, lhs);
+      lowerForALUInt64(new (alloc()) LNegI64, ins, lhs);
       return;
     }
 
