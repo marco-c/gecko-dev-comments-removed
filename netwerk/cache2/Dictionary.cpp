@@ -1301,10 +1301,16 @@ void DictionaryOrigin::DumpEntries() {
 void DictionaryOrigin::Clear() {
   mEntries.Clear();
   mPendingEntries.Clear();
+  mPendingRemove.Clear();
   
-  NS_DispatchBackgroundTask(NS_NewRunnableFunction(
-      "DictionaryOrigin::Clear",
-      [entry = mEntry]() { entry->AsyncDoom(nullptr); }));
+  if (mEntry) {
+    
+    
+    NS_DispatchBackgroundTask(NS_NewRunnableFunction(
+        "DictionaryOrigin::Clear",
+        [entry = mEntry]() { entry->AsyncDoom(nullptr); }));
+  }
+  DictionaryCache::RemoveOriginFor(mOrigin);  
 }
 
 
