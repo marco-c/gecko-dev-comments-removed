@@ -13,9 +13,6 @@
 - (NSNumber*)moxInsertionPointLineNumber;
 
 
-- (NSString*)moxRole;
-
-
 - (NSNumber*)moxNumberOfCharacters;
 
 

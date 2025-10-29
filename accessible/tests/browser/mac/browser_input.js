@@ -133,6 +133,36 @@ addAccessibleTask(
 
 
 addAccessibleTask(
+  `<div aria-label="Name" id="no-role-editable" contenteditable>
+     <p>Elmer Fudd</p>
+   </div>
+   <div aria-label="Name" id="no-role-editable-single-line" aria-multiline="false" contenteditable>
+     <p>Elmer Fudd</p>
+   </div>`,
+  async (browser, accDoc) => {
+    const noRoleEditable = getNativeInterface(accDoc, "no-role-editable");
+    is(
+      noRoleEditable.getAttributeValue("AXRole"),
+      "AXTextArea",
+      "Correct role for multi-line contenteditable with no role"
+    );
+
+    const noRoleEditableSingleLine = getNativeInterface(
+      accDoc,
+      "no-role-editable-single-line"
+    );
+    is(
+      noRoleEditableSingleLine.getAttributeValue("AXRole"),
+      "AXTextField",
+      "Correct role for single-line contenteditable with no role"
+    );
+  }
+);
+
+
+
+
+addAccessibleTask(
   `<div aria-label="Name" tabindex="0" role="textbox" aria-multiline="true" id="input" contenteditable>
      <p>Elmer Fudd</p>
    </div>`,
