@@ -335,13 +335,14 @@ void ProfilerChild::GatherProfileThreadFunction(
 
   auto writer =
       MakeUnique<SpliceableChunkedJSONWriter>(parameters->failureLatchSource);
-  if (!profiler_get_profile_json(
-          *writer,
-           0,
-           false,
-          progressLogger.CreateSubLoggerFromTo(
-              1_pc, "profiler_get_profile_json started", 99_pc,
-              "profiler_get_profile_json done"))) {
+  auto rv =
+      profiler_get_profile_json(*writer,
+                                 0,
+                                 false,
+                                progressLogger.CreateSubLoggerFromTo(
+                                    1_pc, "profiler_get_profile_json started",
+                                    99_pc, "profiler_get_profile_json done"));
+  if (rv.isErr()) {
     
     
     writer.reset();
@@ -355,7 +356,7 @@ void ProfilerChild::GatherProfileThreadFunction(
                
                
                progressLogger = std::move(progressLogger),
-               writer = std::move(writer)]() mutable {
+               writer = std::move(writer), rv = std::move(rv)]() mutable {
                 
                 
                 
@@ -424,12 +425,10 @@ void ProfilerChild::GatherProfileThreadFunction(
                   }
                 }
 
-                SharedLibraryInfo sharedLibraryInfo =
-                    SharedLibraryInfo::GetInfoForSelf();
+                Maybe<ProfileGenerationAdditionalInformation> additionalInfo =
+                    rv.isOk() ? Some(rv.unwrap()) : Nothing();
                 parameters->resolver(IPCProfileAndAdditionalInformation{
-                    std::move(shmem),
-                    Some(ProfileGenerationAdditionalInformation{
-                        std::move(sharedLibraryInfo)})});
+                    std::move(shmem), std::move(additionalInfo)});
                 
                 
                 
