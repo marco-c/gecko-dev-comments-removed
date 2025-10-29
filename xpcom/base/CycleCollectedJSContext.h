@@ -9,6 +9,7 @@
 
 #include <deque>
 
+#include "js/TracingAPI.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/MemoryReporting.h"
@@ -105,6 +106,145 @@ class SuppressedMicroTasks : public MicroTaskRunnable {
   std::deque<RefPtr<MicroTaskRunnable>> mSuppressedMicroTaskRunnables;
 };
 
+
+
+
+class MustConsumeMicroTask {
+ public:
+  
+  MustConsumeMicroTask() = default;
+
+  
+  
+  friend MustConsumeMicroTask DequeueNextMicroTask(JSContext* aCx);
+  friend MustConsumeMicroTask DequeueNextRegularMicroTask(JSContext* aCx);
+  friend MustConsumeMicroTask DequeueNextDebuggerMicroTask(JSContext* aCx);
+
+  ~MustConsumeMicroTask() {
+    if (!mMicroTask.isUndefined()) {
+      MOZ_CRASH("Didn't consume MicroTask");
+    }
+  }
+
+  
+  MustConsumeMicroTask(const MustConsumeMicroTask&) = delete;
+  MustConsumeMicroTask& operator=(const MustConsumeMicroTask&) = delete;
+  MustConsumeMicroTask(MustConsumeMicroTask&& other) {
+    mMicroTask = other.mMicroTask;
+    other.mMicroTask.setUndefined();
+  }
+  MustConsumeMicroTask& operator=(MustConsumeMicroTask&& other) noexcept {
+    if (this != &other) {
+      mMicroTask = other.mMicroTask;
+      other.mMicroTask.setUndefined();
+    }
+    return *this;
+  }
+
+  
+  bool IsConsumed() const { return mMicroTask.isUndefined(); }
+
+  
+  explicit operator bool() const { return !IsConsumed(); }
+
+  
+  
+  
+  bool IsJSMicroTask() const { return JS::IsJSMicroTask(mMicroTask); }
+
+  
+  
+  
+  
+  
+  MicroTaskRunnable* MaybeUnwrapTaskToRunnable() const;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  already_AddRefed<MicroTaskRunnable> MaybeConsumeAsOwnedRunnable();
+
+  
+  
+  void IgnoreJSMicroTask() {
+    MOZ_ASSERT(IsJSMicroTask());
+    mMicroTask.setUndefined();
+  }
+
+  
+  
+  void ConsumeByPrependToQueue(JSContext* aCx) {
+    MOZ_ASSERT(!IsConsumed(), "Attempting to consume an already-consumed task");
+    if (!JS::PrependMicroTask(aCx, mMicroTask)) {
+      
+      NS_ABORT_OOM(0);
+    }
+    mMicroTask.setUndefined();
+  }
+
+  
+  
+  JSObject* GetExecutionGlobalFromJSMicroTask(JSContext* aCx) const {
+    MOZ_ASSERT(IsJSMicroTask());
+    JS::Rooted<JS::MicroTask> task(aCx, mMicroTask);
+    return JS::GetExecutionGlobalFromJSMicroTask(task);
+  }
+
+  
+  
+  
+  
+
+  bool GetFlowIdFromJSMicroTask(uint64_t* aFlowId) {
+    MOZ_ASSERT(IsJSMicroTask());
+    return JS::GetFlowIdFromJSMicroTask(mMicroTask, aFlowId);
+  }
+
+  JSObject* MaybeGetPromiseFromJSMicroTask() {
+    MOZ_ASSERT(IsJSMicroTask());
+    return JS::MaybeGetPromiseFromJSMicroTask(mMicroTask);
+  }
+
+  JSObject* MaybeGetHostDefinedDataFromJSMicroTask() {
+    return JS::MaybeGetHostDefinedDataFromJSMicroTask(mMicroTask);
+  }
+
+  JSObject* MaybeGetAllocationSiteFromJSMicroTask() {
+    return JS::MaybeGetAllocationSiteFromJSMicroTask(mMicroTask);
+  }
+
+  JSObject* MaybeGetHostDefinedGlobalFromJSMicroTask() {
+    return JS::MaybeGetHostDefinedGlobalFromJSMicroTask(mMicroTask);
+  }
+
+  bool RunAndConsumeJSMicroTask(JSContext* aCx) {
+    JS::Rooted<JS::Value> rootedTask(aCx, mMicroTask);
+    bool v = JS::RunJSMicroTask(aCx, rootedTask);
+    mMicroTask.setUndefined();
+    return v;
+  }
+
+  void trace(JSTracer* aTrc) {
+    TraceEdge(aTrc, &mMicroTask, "MustConsumeMicroTask value");
+  }
+
+ private:
+  explicit MustConsumeMicroTask(JS::MicroTask&& aMicroTask)
+      : mMicroTask(aMicroTask) {}
+
+  JS::Heap<JS::MicroTask> mMicroTask;
+};
+
 class SuppressedMicroTaskList final : public MicroTaskRunnable {
  public:
   SuppressedMicroTaskList() = delete;
@@ -118,7 +258,7 @@ class SuppressedMicroTaskList final : public MicroTaskRunnable {
 
   CycleCollectedJSContext* mContext = nullptr;
   uint64_t mSuppressionGeneration = 0;
-  JS::PersistentRooted<JS::GCVector<JS::MicroTask>>
+  JS::PersistentRooted<JS::GCVector<MustConsumeMicroTask>>
       mSuppressedMicroTaskRunnables;
 
  private:
@@ -163,6 +303,10 @@ bool EnqueueMicroTask(JSContext* aCx,
                       already_AddRefed<MicroTaskRunnable> aRunnable);
 bool EnqueueDebugMicroTask(JSContext* aCx,
                            already_AddRefed<MicroTaskRunnable> aRunnable);
+
+MustConsumeMicroTask DequeueNextMicroTask(JSContext* aCx);
+MustConsumeMicroTask DequeueNextRegularMicroTask(JSContext* aCx);
+MustConsumeMicroTask DequeueNextDebuggerMicroTask(JSContext* aCx);
 
 class CycleCollectedJSContext : dom::PerThreadAtomCache, public JS::JobQueue {
   friend class CycleCollectedJSRuntime;
