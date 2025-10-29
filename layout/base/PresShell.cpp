@@ -8262,6 +8262,14 @@ bool PresShell::EventHandler::MaybeHandleEventWithAccessibleCaret(
     return false;
   }
 
+  
+  
+  
+  
+  
+  
+  AccessibleCaretEventHub* alreadyHandledEventHub = nullptr;
+
   AutoEventTargetPointResetter autoEventTargetPointResetter(aGUIEvent);
   
   
@@ -8281,6 +8289,7 @@ bool PresShell::EventHandler::MaybeHandleEventWithAccessibleCaret(
     if (!eventHub) {
       break;
     }
+    alreadyHandledEventHub = eventHub.get();
 
     *aEventStatus = eventHub->HandleEvent(aGUIEvent);
     if (*aEventStatus != nsEventStatus_eConsumeNoDefault) {
@@ -8310,7 +8319,7 @@ bool PresShell::EventHandler::MaybeHandleEventWithAccessibleCaret(
 
   RefPtr<AccessibleCaretEventHub> eventHub =
       presShell->GetAccessibleCaretEventHub();
-  if (!eventHub) {
+  if (!eventHub || eventHub.get() == alreadyHandledEventHub) {
     return false;
   }
   *aEventStatus = eventHub->HandleEvent(aGUIEvent);

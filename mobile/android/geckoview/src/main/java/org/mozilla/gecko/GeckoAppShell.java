@@ -45,6 +45,7 @@ import android.os.Debug;
 import android.os.LocaleList;
 import android.os.Looper;
 import android.os.PowerManager;
+import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
@@ -203,9 +204,9 @@ public class GeckoAppShell {
   private static Float sScreenRefreshRate;
 
   
-  private static boolean sVibrationMaybePlaying;
 
-  
+
+
 
 
   private static long sVibrationEndTime;
@@ -962,16 +963,24 @@ public class GeckoAppShell {
   private static void performHapticFeedback(final boolean aIsLongPress) {
     
     
-    if (!sVibrationMaybePlaying || System.nanoTime() >= sVibrationEndTime) {
-      final int[] pattern;
-      if (aIsLongPress) {
-        pattern = new int[] {0, 1, 20, 21};
+    if (System.nanoTime() >= sVibrationEndTime) {
+      final VibrationEffect effect;
+      if (Build.VERSION.SDK_INT >= 29) {
+        
+        
+        if (aIsLongPress) {
+          effect = VibrationEffect.createPredefined(VibrationEffect.EFFECT_HEAVY_CLICK);
+        } else {
+          effect = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK);
+        }
       } else {
-        pattern = new int[] {0, 10, 20, 30};
+        if (aIsLongPress) {
+          effect = VibrationEffect.createWaveform(new long[] {0, 1, 20, 21}, -1);
+        } else {
+          effect = VibrationEffect.createWaveform(new long[] {0, 10, 20, 30}, -1);
+        }
       }
-      vibrateOnHapticFeedbackEnabled(pattern);
-      sVibrationMaybePlaying = false;
-      sVibrationEndTime = 0;
+      vibrateOnHapticFeedbackEnabled(effect);
     }
   }
 
@@ -980,25 +989,20 @@ public class GeckoAppShell {
   }
 
   
-  private static long[] convertIntToLongArray(final int[] input) {
-    final long[] output = new long[input.length];
-    for (int i = 0; i < input.length; i++) {
-      output[i] = input[i];
-    }
-    return output;
-  }
-
-  
-  private static void vibrateOnHapticFeedbackEnabled(final int[] milliseconds) {
+  @SuppressLint("MissingPermission")
+  private static void vibrateOnHapticFeedbackEnabled(final VibrationEffect effect) {
     if (Settings.System.getInt(
             getApplicationContext().getContentResolver(),
             Settings.System.HAPTIC_FEEDBACK_ENABLED,
             0)
         > 0) {
-      if (milliseconds.length == 1) {
-        vibrate(milliseconds[0]);
-      } else {
-        vibrate(convertIntToLongArray(milliseconds), -1);
+      
+      
+      
+      try {
+        vibrator().vibrate(effect);
+      } catch (final SecurityException ignore) {
+        Log.w(LOGTAG, "No VIBRATE permission");
       }
     }
   }
@@ -1007,7 +1011,6 @@ public class GeckoAppShell {
   @WrapForJNI(calledFrom = "gecko")
   private static void vibrate(final long milliseconds) {
     sVibrationEndTime = System.nanoTime() + milliseconds * 1000000;
-    sVibrationMaybePlaying = true;
     try {
       vibrator().vibrate(milliseconds);
     } catch (final SecurityException ignore) {
@@ -1027,7 +1030,6 @@ public class GeckoAppShell {
     }
 
     sVibrationEndTime = System.nanoTime() + vibrationDuration * 1000000;
-    sVibrationMaybePlaying = true;
     try {
       vibrator().vibrate(pattern, repeat);
     } catch (final SecurityException ignore) {
@@ -1038,7 +1040,6 @@ public class GeckoAppShell {
   @SuppressLint("MissingPermission")
   @WrapForJNI(calledFrom = "gecko")
   private static void cancelVibrate() {
-    sVibrationMaybePlaying = false;
     sVibrationEndTime = 0;
     try {
       vibrator().cancel();
