@@ -1225,7 +1225,9 @@ struct NavigationWaitForAllScope final : public nsISupports,
     
     if (AutoJSAPI jsapi; !NS_WARN_IF(!jsapi.Init(mEvent->GetParentObject()))) {
       RefPtr navigation = mNavigation;
-      navigation->AbortNavigateEvent(jsapi.cx(), event, aRejectionReason);
+      navigation->AbortNavigateEvent(
+          jsapi.cx(), event, aRejectionReason,
+          true);
     }
   }
   
@@ -1807,17 +1809,24 @@ void Navigation::AbortOngoingNavigation(JSContext* aCx,
   }
 
   
-  AbortNavigateEvent(aCx, event, error);
+  AbortNavigateEvent(aCx, event, error,
+                     false);
 }
 
 
-void Navigation::AbortNavigateEvent(JSContext* aCx, NavigateEvent* aEvent,
-                                    JS::Handle<JS::Value> aReason) {
+void Navigation::AbortNavigateEvent(
+    JSContext* aCx, NavigateEvent* aEvent, JS::Handle<JS::Value> aReason,
+    bool aIsCalledFromNavigateFiringFailureSteps) {
   
   
 
   
-  aEvent->AbortController()->Abort(aCx, aReason);
+  if (!aIsCalledFromNavigateFiringFailureSteps ||
+      aEvent->InterceptionState() ==
+          NavigateEvent::InterceptionState::Intercepted) {
+    
+    aEvent->AbortController()->Abort(aCx, aReason);
+  }
 
   
   RootedDictionary<ErrorEventInit> init(aCx);
