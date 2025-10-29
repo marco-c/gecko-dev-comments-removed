@@ -1178,7 +1178,8 @@ RefPtr<nsProfiler::GatheringPromise> nsProfiler::StartGathering(
   }
 
   
-  mProfileGenerationAdditionalInformation.emplace();
+  mProfileGenerationAdditionalInformation.emplace(
+      SharedLibraryInfo::GetInfoForSelf());
 
   
   
@@ -1214,8 +1215,6 @@ RefPtr<nsProfiler::GatheringPromise> nsProfiler::StartGathering(
     ResetGathering(NS_ERROR_NOT_AVAILABLE);
     return GatheringPromise::CreateAndReject(NS_ERROR_NOT_AVAILABLE, __func__);
   }
-
-  mProfileGenerationAdditionalInformation->Append(rv.unwrap());
 
   LogEvent([&](Json::Value& aEvent) {
     aEvent.append(

@@ -4,8 +4,7 @@
 
 
 using class mozilla::TimeStamp from "mozilla/TimeStamp.h";
-[MoveOnly] using struct mozilla::ProfileGenerationAdditionalInformation from
-    "ProfileAdditionalInformation.h";
+using struct mozilla::ProfileGenerationAdditionalInformation from "ProfileAdditionalInformation.h";
 
 namespace mozilla {
 

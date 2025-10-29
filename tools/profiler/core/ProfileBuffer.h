@@ -13,12 +13,9 @@
 #include "mozilla/PowerOfTwo.h"
 #include "mozilla/ProfileBufferChunkManagerSingle.h"
 #include "mozilla/ProfileChunkedBuffer.h"
-#include "nsTHashMap.h"
 
 class ProcessStreamingContext;
 class RunningTimes;
-
-struct ProfilerJSSourceData;
 
 
 
@@ -46,8 +43,7 @@ class ProfileBuffer final {
 
   void CollectCodeLocation(
       const char* aLabel, const char* aStr, uint32_t aFrameFlags,
-      uint64_t aInnerWindowID, uint32_t aSourceId,
-      const mozilla::Maybe<uint32_t>& aLineNumber,
+      uint64_t aInnerWindowID, const mozilla::Maybe<uint32_t>& aLineNumber,
       const mozilla::Maybe<uint32_t>& aColumnNumber,
       const mozilla::Maybe<JS::ProfilingCategoryPair>& aCategoryPair);
 
@@ -59,9 +55,7 @@ class ProfileBuffer final {
   
   void AddJITInfoForRange(uint64_t aRangeStart, ProfilerThreadId aThreadId,
                           JSContext* aContext, JITFrameInfo& aJITFrameInfo,
-                          mozilla::ProgressLogger aProgressLogger,
-                          const nsTHashMap<SourceId, IndexIntoSourceTable>*
-                              aSourceIdToIndexMap = nullptr) const;
+                          mozilla::ProgressLogger aProgressLogger) const;
 
   
   
@@ -101,12 +95,6 @@ class ProfileBuffer final {
                             const mozilla::TimeStamp& aProcessStartTime,
                             double aSinceTime,
                             mozilla::ProgressLogger aProgressLogger) const;
-
-  
-  
-  nsTHashMap<SourceId, IndexIntoSourceTable> StreamSourceTableToJSON(
-      SpliceableJSONWriter& aWriter,
-      const nsTArray<mozilla::JSSourceEntry>& aJSSourceEntries) const;
 
   
   

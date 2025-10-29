@@ -77,9 +77,7 @@ class ProfiledThreadData final {
       const ProfileBuffer& aBuffer, JSContext* aCx,
       mozilla::FailureLatch& aFailureLatch,
       ProfilerCodeAddressService* aService,
-      mozilla::ProgressLogger aProgressLogger,
-      const nsTHashMap<SourceId, IndexIntoSourceTable>* aSourceIdToIndexMap =
-          nullptr);
+      mozilla::ProgressLogger aProgressLogger);
 
   void StreamJSON(const ProfileBuffer& aBuffer, JSContext* aCx,
                   SpliceableJSONWriter& aWriter, const nsACString& aProcessName,
@@ -168,9 +166,7 @@ struct ThreadStreamingContext {
                          const ProfileBuffer& aBuffer, JSContext* aCx,
                          mozilla::FailureLatch& aFailureLatch,
                          ProfilerCodeAddressService* aService,
-                         mozilla::ProgressLogger aProgressLogger,
-                         const nsTHashMap<SourceId, IndexIntoSourceTable>*
-                             aSourceIdToIndexMap = nullptr);
+                         mozilla::ProgressLogger aProgressLogger);
 
   void FinalizeWriter();
 };
@@ -188,12 +184,10 @@ class ProcessStreamingContext final : public mozilla::FailureLatch {
 
   
   
-  void AddThreadStreamingContext(
-      ProfiledThreadData& aProfiledThreadData, const ProfileBuffer& aBuffer,
-      JSContext* aCx, ProfilerCodeAddressService* aService,
-      mozilla::ProgressLogger aProgressLogger,
-      const nsTHashMap<SourceId, IndexIntoSourceTable>* aSourceIdToIndexMap =
-          nullptr);
+  void AddThreadStreamingContext(ProfiledThreadData& aProfiledThreadData,
+                                 const ProfileBuffer& aBuffer, JSContext* aCx,
+                                 ProfilerCodeAddressService* aService,
+                                 mozilla::ProgressLogger aProgressLogger);
 
   
   
