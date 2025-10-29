@@ -165,6 +165,7 @@ class MOZ_RAII IRGenerator {
 class MOZ_RAII GetPropIRGenerator : public IRGenerator {
   HandleValue val_;
   HandleValue idVal_;
+  HandleValue receiverVal_;
 
   friend class InlinableNativeIRGenerator;
 
@@ -298,7 +299,7 @@ class MOZ_RAII GetPropIRGenerator : public IRGenerator {
  public:
   GetPropIRGenerator(JSContext* cx, HandleScript script, jsbytecode* pc,
                      ICState state, CacheKind cacheKind, HandleValue val,
-                     HandleValue idVal);
+                     HandleValue idVal, HandleValue receiverVal);
 
   AttachDecision tryAttachStub();
 };
@@ -1133,7 +1134,8 @@ inline bool BytecodeCallOpCanHaveInlinableNative(JSOp op) {
 
 
 inline bool BytecodeGetOpCanHaveInlinableNative(JSOp op) {
-  return op == JSOp::GetProp || op == JSOp::GetElem;
+  return op == JSOp::GetProp || op == JSOp::GetElem ||
+         op == JSOp::GetPropSuper || op == JSOp::GetElemSuper;
 }
 
 inline bool BytecodeOpCanHaveAllocSite(JSOp op) {
