@@ -49,8 +49,6 @@ add_task(async function test_corrupt_database() {
 
 
 
-
-
 var database_check = async function () {
   
   let root = PlacesUtils.getFolderContents(PlacesUtils.bookmarks.menuGuid).root;
