@@ -192,7 +192,7 @@ void Sanitizer::SetDefaultConfig() {
 
 
 template <typename SanitizerElement>
-static CanonicalName CanonicalizeElement(const SanitizerElement& aElement) {
+static CanonicalElement CanonicalizeElement(const SanitizerElement& aElement) {
   
   
 
@@ -203,7 +203,7 @@ static CanonicalName CanonicalizeElement(const SanitizerElement& aElement) {
   
   if (aElement.IsString()) {
     RefPtr<nsAtom> nameAtom = NS_AtomizeMainThread(aElement.GetAsString());
-    return CanonicalName(nameAtom, nsGkAtoms::nsuri_xhtml);
+    return CanonicalElement(nameAtom, nsGkAtoms::nsuri_xhtml);
   }
 
   
@@ -223,12 +223,12 @@ static CanonicalName CanonicalizeElement(const SanitizerElement& aElement) {
   
   
   RefPtr<nsAtom> nameAtom = NS_AtomizeMainThread(elem.mName);
-  return CanonicalName(nameAtom, namespaceAtom);
+  return CanonicalElement(nameAtom, namespaceAtom);
 }
 
 
 template <typename SanitizerAttribute>
-static CanonicalName CanonicalizeAttribute(
+static CanonicalAttribute CanonicalizeAttribute(
     const SanitizerAttribute& aAttribute) {
   
   
@@ -240,7 +240,7 @@ static CanonicalName CanonicalizeAttribute(
   
   if (aAttribute.IsString()) {
     RefPtr<nsAtom> nameAtom = NS_AtomizeMainThread(aAttribute.GetAsString());
-    return CanonicalName(nameAtom, nullptr);
+    return CanonicalAttribute(nameAtom, nullptr);
   }
 
   
@@ -260,7 +260,7 @@ static CanonicalName CanonicalizeAttribute(
   
   
   RefPtr<nsAtom> nameAtom = NS_AtomizeMainThread(attr.mName);
-  return CanonicalName(nameAtom, namespaceAtom);
+  return CanonicalAttribute(nameAtom, namespaceAtom);
 }
 
 
@@ -284,13 +284,13 @@ static CanonicalElementAttributes CanonicalizeElementAttributes(
     
     if (elem.mAttributes.WasPassed()) {
       
-      CanonicalNameSet attributes;
+      CanonicalAttributeSet attributes;
 
       
       for (const auto& attribute : elem.mAttributes.Value()) {
         
         
-        CanonicalName canonicalAttr = CanonicalizeAttribute(attribute);
+        CanonicalAttribute canonicalAttr = CanonicalizeAttribute(attribute);
         if (!attributes.EnsureInserted(canonicalAttr)) {
           if (aErrorMsg) {
             aErrorMsg->Assign(nsFmtCString(
@@ -308,13 +308,13 @@ static CanonicalElementAttributes CanonicalizeElementAttributes(
     
     if (elem.mRemoveAttributes.WasPassed()) {
       
-      CanonicalNameSet attributes;
+      CanonicalAttributeSet attributes;
 
       
       for (const auto& attribute : elem.mRemoveAttributes.Value()) {
         
         
-        CanonicalName canonicalAttr = CanonicalizeAttribute(attribute);
+        CanonicalAttribute canonicalAttr = CanonicalizeAttribute(attribute);
         if (!attributes.EnsureInserted(canonicalAttr)) {
           if (aErrorMsg) {
             aErrorMsg->Assign(nsFmtCString(
@@ -335,7 +335,7 @@ static CanonicalElementAttributes CanonicalizeElementAttributes(
   
   if (!result.mAttributes && !result.mRemoveAttributes) {
     
-    CanonicalNameSet set{};
+    CanonicalAttributeSet set{};
     result.mRemoveAttributes = Some(std::move(set));
   }
 
@@ -375,7 +375,7 @@ void Sanitizer::CanonicalizeConfiguration(const SanitizerConfig& aConfig,
     for (const auto& element : aConfig.mElements.Value()) {
       
       
-      CanonicalName elementName = CanonicalizeElement(element);
+      CanonicalElement elementName = CanonicalizeElement(element);
       if (elements.Contains(elementName)) {
         aRv.ThrowTypeError(nsFmtCString(
             FMT_STRING("Duplicate element {} in 'elements'."), elementName));
@@ -399,13 +399,13 @@ void Sanitizer::CanonicalizeConfiguration(const SanitizerConfig& aConfig,
   
   if (aConfig.mRemoveElements.WasPassed()) {
     
-    CanonicalNameSet elements;
+    CanonicalElementSet elements;
 
     
     for (const auto& element : aConfig.mRemoveElements.Value()) {
       
       
-      CanonicalName canonical = CanonicalizeElement(element);
+      CanonicalElement canonical = CanonicalizeElement(element);
       if (!elements.EnsureInserted(canonical)) {
         aRv.ThrowTypeError(nsFmtCString(
             FMT_STRING("Duplicate element {} in 'removeElements'."),
@@ -421,14 +421,14 @@ void Sanitizer::CanonicalizeConfiguration(const SanitizerConfig& aConfig,
   
   if (aConfig.mReplaceWithChildrenElements.WasPassed()) {
     
-    CanonicalNameSet elements;
+    CanonicalElementSet elements;
 
     
     
     for (const auto& element : aConfig.mReplaceWithChildrenElements.Value()) {
       
       
-      CanonicalName canonical = CanonicalizeElement(element);
+      CanonicalElement canonical = CanonicalizeElement(element);
       if (!elements.EnsureInserted(canonical)) {
         aRv.ThrowTypeError(nsFmtCString(
             FMT_STRING(
@@ -445,13 +445,13 @@ void Sanitizer::CanonicalizeConfiguration(const SanitizerConfig& aConfig,
   
   if (aConfig.mAttributes.WasPassed()) {
     
-    CanonicalNameSet attributes;
+    CanonicalAttributeSet attributes;
 
     
     for (const auto& attribute : aConfig.mAttributes.Value()) {
       
       
-      CanonicalName canonical = CanonicalizeAttribute(attribute);
+      CanonicalAttribute canonical = CanonicalizeAttribute(attribute);
       if (!attributes.EnsureInserted(canonical)) {
         aRv.ThrowTypeError(nsFmtCString(
             FMT_STRING("Duplicate attribute {} in 'attributes'."), canonical));
@@ -466,13 +466,13 @@ void Sanitizer::CanonicalizeConfiguration(const SanitizerConfig& aConfig,
   
   if (aConfig.mRemoveAttributes.WasPassed()) {
     
-    CanonicalNameSet attributes;
+    CanonicalAttributeSet attributes;
 
     
     for (const auto& attribute : aConfig.mRemoveAttributes.Value()) {
       
       
-      CanonicalName canonical = CanonicalizeAttribute(attribute);
+      CanonicalAttribute canonical = CanonicalizeAttribute(attribute);
       if (!attributes.EnsureInserted(canonical)) {
         aRv.ThrowTypeError(nsFmtCString(
             FMT_STRING("Duplicate attribute {} in 'removeAttributes'."),
@@ -545,7 +545,7 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
   
   
   if (mElements && mReplaceWithChildrenElements) {
-    for (const CanonicalName& name : mElements->Keys()) {
+    for (const CanonicalElement& name : mElements->Keys()) {
       if (mReplaceWithChildrenElements->Contains(name)) {
         aRv.ThrowTypeError(
             nsFmtCString(FMT_STRING("Element {} can't be in both 'elements' "
@@ -560,7 +560,7 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
   
   
   if (mRemoveElements && mReplaceWithChildrenElements) {
-    for (const CanonicalName& name : *mRemoveElements) {
+    for (const CanonicalElement& name : *mRemoveElements) {
       if (mReplaceWithChildrenElements->Contains(name)) {
         aRv.ThrowTypeError(nsFmtCString(
             FMT_STRING("Element {} can't be in both 'removeElements' and "
@@ -590,7 +590,7 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
         
         
         if (elemAttributes.mAttributes) {
-          for (const CanonicalName& name : *elemAttributes.mAttributes) {
+          for (const CanonicalAttribute& name : *elemAttributes.mAttributes) {
             if (mAttributes->Contains(name)) {
               aRv.ThrowTypeError(nsFmtCString(
                   FMT_STRING(
@@ -605,7 +605,8 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
         
         
         if (elemAttributes.mRemoveAttributes) {
-          for (const CanonicalName& name : *elemAttributes.mRemoveAttributes) {
+          for (const CanonicalAttribute& name :
+               *elemAttributes.mRemoveAttributes) {
             if (!mAttributes->Contains(name)) {
               aRv.ThrowTypeError(nsFmtCString(
                   FMT_STRING(
@@ -625,7 +626,7 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
           
           
           
-          for (const CanonicalName& name : *elemAttributes.mAttributes) {
+          for (const CanonicalAttribute& name : *elemAttributes.mAttributes) {
             if (name.IsDataAttribute()) {
               aRv.ThrowTypeError(nsFmtCString(
                   FMT_STRING(
@@ -646,7 +647,7 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
     if (*mDataAttributes) {
       
       
-      for (const CanonicalName& name : *mAttributes) {
+      for (const CanonicalAttribute& name : *mAttributes) {
         if (name.IsDataAttribute()) {
           aRv.ThrowTypeError(nsFmtCString(
               FMT_STRING("Data attribute {} in the global 'attributes' is "
@@ -686,7 +687,7 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
         
         
         if (elemAttributes.mAttributes) {
-          for (const CanonicalName& name : *elemAttributes.mAttributes) {
+          for (const CanonicalAttribute& name : *elemAttributes.mAttributes) {
             if (mRemoveAttributes->Contains(name)) {
               aRv.ThrowTypeError(nsFmtCString(
                   FMT_STRING(
@@ -701,7 +702,8 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
         
         
         if (elemAttributes.mRemoveAttributes) {
-          for (const CanonicalName& name : *elemAttributes.mRemoveAttributes) {
+          for (const CanonicalAttribute& name :
+               *elemAttributes.mRemoveAttributes) {
             if (mRemoveAttributes->Contains(name)) {
               aRv.ThrowTypeError(nsFmtCString(
                   FMT_STRING("Attribute {} can't be part of both the "
@@ -773,15 +775,16 @@ void Sanitizer::MaybeMaterializeDefaultConfig() {
       CanonicalElementAttributes elementAttributes{};
 
       if (name == aElementWithAttributes[i]) {
-        CanonicalNameSet attributes;
+        CanonicalAttributeSet attributes;
         while (aElementWithAttributes[++i]) {
-          attributes.Insert(CanonicalName(aElementWithAttributes[i], nullptr));
+          attributes.Insert(
+              CanonicalAttribute(aElementWithAttributes[i], nullptr));
         }
         i++;
         elementAttributes.mAttributes = Some(std::move(attributes));
       }
 
-      CanonicalName elementName = CanonicalName(name, aNamespace);
+      CanonicalElement elementName(name, aNamespace);
       elements.InsertOrUpdate(elementName, std::move(elementAttributes));
     }
   };
@@ -793,9 +796,9 @@ void Sanitizer::MaybeMaterializeDefaultConfig() {
                  kSVGElementWithAttributes);
   mElements = Some(std::move(elements));
 
-  CanonicalNameSet attributes;
+  CanonicalAttributeSet attributes;
   for (nsStaticAtom* name : kDefaultAttributes) {
-    attributes.Insert(CanonicalName(name, nullptr));
+    attributes.Insert(CanonicalAttribute(name, nullptr));
   }
   mAttributes = Some(std::move(attributes));
 
@@ -835,7 +838,7 @@ void Sanitizer::Get(SanitizerConfig& aConfig) {
     
     
     nsTArray<OwningStringOrSanitizerElementNamespace> removeElements;
-    for (const CanonicalName& canonical : *mRemoveElements) {
+    for (const CanonicalElement& canonical : *mRemoveElements) {
       OwningStringOrSanitizerElementNamespace owning;
       owning.SetAsSanitizerElementNamespace() =
           canonical.ToSanitizerElementNamespace();
@@ -852,7 +855,7 @@ void Sanitizer::Get(SanitizerConfig& aConfig) {
     
     nsTArray<OwningStringOrSanitizerElementNamespace>
         replaceWithChildrenElements;
-    for (const CanonicalName& canonical : *mReplaceWithChildrenElements) {
+    for (const CanonicalElement& canonical : *mReplaceWithChildrenElements) {
       OwningStringOrSanitizerElementNamespace owning;
       owning.SetAsSanitizerElementNamespace() =
           canonical.ToSanitizerElementNamespace();
@@ -894,7 +897,7 @@ bool Sanitizer::AllowElement(
 
   
   
-  CanonicalName elementName = CanonicalizeElement(aElement);
+  CanonicalElement elementName = CanonicalizeElement(aElement);
   
   CanonicalElementAttributes elementAttributes =
       CanonicalizeElementAttributes(aElement);
@@ -915,8 +918,8 @@ bool Sanitizer::AllowElement(
     if (mAttributes) {
       
       if (elementAttributes.mAttributes) {
-        CanonicalNameSet attributes;
-        for (const CanonicalName& attr : *elementAttributes.mAttributes) {
+        CanonicalAttributeSet attributes;
+        for (const CanonicalAttribute& attr : *elementAttributes.mAttributes) {
           
           
           MOZ_ASSERT(!attributes.Contains(attr));
@@ -945,8 +948,9 @@ bool Sanitizer::AllowElement(
 
       
       if (elementAttributes.mRemoveAttributes) {
-        CanonicalNameSet removeAttributes;
-        for (const CanonicalName& attr : *elementAttributes.mRemoveAttributes) {
+        CanonicalAttributeSet removeAttributes;
+        for (const CanonicalAttribute& attr :
+             *elementAttributes.mRemoveAttributes) {
           
           
           
@@ -968,8 +972,8 @@ bool Sanitizer::AllowElement(
 
       
       if (elementAttributes.mAttributes) {
-        CanonicalNameSet attributes;
-        for (const CanonicalName& attr : *elementAttributes.mAttributes) {
+        CanonicalAttributeSet attributes;
+        for (const CanonicalAttribute& attr : *elementAttributes.mAttributes) {
           
           
           
@@ -1000,8 +1004,9 @@ bool Sanitizer::AllowElement(
 
       
       if (elementAttributes.mRemoveAttributes) {
-        CanonicalNameSet removeAttributes;
-        for (const CanonicalName& attr : *elementAttributes.mRemoveAttributes) {
+        CanonicalAttributeSet removeAttributes;
+        for (const CanonicalAttribute& attr :
+             *elementAttributes.mRemoveAttributes) {
           
           
           MOZ_ASSERT(!removeAttributes.Contains(attr));
@@ -1099,12 +1104,12 @@ bool Sanitizer::RemoveElement(
 
   
   
-  CanonicalName element = CanonicalizeElement(aElement);
+  CanonicalElement element = CanonicalizeElement(aElement);
 
   return RemoveElementCanonical(std::move(element));
 }
 
-bool Sanitizer::RemoveElementCanonical(CanonicalName&& aElement) {
+bool Sanitizer::RemoveElementCanonical(CanonicalElement&& aElement) {
   
   
   bool modified = mReplaceWithChildrenElements
@@ -1159,7 +1164,7 @@ bool Sanitizer::ReplaceElementWithChildren(
 
   
   
-  CanonicalName element = CanonicalizeElement(aElement);
+  CanonicalElement element = CanonicalizeElement(aElement);
 
   
   if (mReplaceWithChildrenElements &&
@@ -1193,7 +1198,7 @@ bool Sanitizer::AllowAttribute(
 
   
   
-  CanonicalName attribute = CanonicalizeAttribute(aAttribute);
+  CanonicalAttribute attribute = CanonicalizeAttribute(aAttribute);
 
   
   if (mAttributes) {
@@ -1271,12 +1276,12 @@ bool Sanitizer::RemoveAttribute(
 
   
   
-  CanonicalName attribute = CanonicalizeAttribute(aAttribute);
+  CanonicalAttribute attribute = CanonicalizeAttribute(aAttribute);
 
   return RemoveAttributeCanonical(std::move(attribute));
 }
 
-bool Sanitizer::RemoveAttributeCanonical(CanonicalName&& aAttribute) {
+bool Sanitizer::RemoveAttributeCanonical(CanonicalAttribute&& aAttribute) {
   
   if (mAttributes) {
     
@@ -1397,7 +1402,7 @@ bool Sanitizer::SetDataAttributes(bool aAllow) {
 
     
     
-    mAttributes->RemoveIf([](const CanonicalName& aAttribute) {
+    mAttributes->RemoveIf([](const CanonicalAttribute& aAttribute) {
       return aAttribute.IsDataAttribute();
     });
 
@@ -1411,7 +1416,7 @@ bool Sanitizer::SetDataAttributes(bool aAllow) {
           
           
           elemAttributes.mAttributes->RemoveIf(
-              [](const CanonicalName& aAttribute) {
+              [](const CanonicalAttribute& aAttribute) {
                 return aAttribute.IsDataAttribute();
               });
         }
@@ -1451,11 +1456,11 @@ bool Sanitizer::RemoveUnsafe() {
   
   
 #define ELEMENT(_, NSURI, LOCAL_NAME)
-         \
-  if (RemoveElementCanonical(                                                \
-          CanonicalName(nsGkAtoms::LOCAL_NAME, nsGkAtoms::nsuri_##NSURI))) { \
-    /* Step 3.2. If the call returned true, set result to true. */           \
-    result = true;                                                           \
+        \
+  if (RemoveElementCanonical(CanonicalElement(nsGkAtoms::LOCAL_NAME,        \
+                                              nsGkAtoms::nsuri_##NSURI))) { \
+    /* Step 3.2. If the call returned true, set result to true. */          \
+    result = true;                                                          \
   }
 
   FOR_EACH_BASELINE_REMOVE_ELEMENT(ELEMENT)
@@ -1472,7 +1477,8 @@ bool Sanitizer::RemoveUnsafe() {
       EventNameType_All & ~EventNameType_XUL,
       [self = MOZ_KnownLive(this), &result](nsAtom* aName) {
         
-        if (self->RemoveAttributeCanonical(CanonicalName(aName, nullptr))) {
+        if (self->RemoveAttributeCanonical(
+                CanonicalAttribute(aName, nullptr))) {
           
           result = true;
         }
@@ -1575,7 +1581,7 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
     nsAtom* nameAtom = child->NodeInfo()->NameAtom();
     int32_t namespaceID = child->NodeInfo()->NamespaceID();
     
-    Maybe<CanonicalName> elementName;
+    Maybe<CanonicalElement> elementName;
     
     [[maybe_unused]] StaticAtomSet* elementAttributes = nullptr;
     if constexpr (!IsDefaultConfig) {
@@ -1790,7 +1796,7 @@ static bool RemoveJavascriptNavigationURLAttribute(Element* aElement,
 }
 
 void Sanitizer::SanitizeAttributes(Element* aChild,
-                                   const CanonicalName& aElementName,
+                                   const CanonicalElement& aElementName,
                                    bool aSafe) {
   MOZ_ASSERT(!mIsDefaultConfig);
 
@@ -1813,7 +1819,7 @@ void Sanitizer::SanitizeAttributes(Element* aChild,
     const nsAttrName* attr = aChild->GetAttrNameAt(i);
     RefPtr<nsAtom> attrLocalName = attr->LocalName();
     int32_t attrNs = attr->NamespaceID();
-    CanonicalName attrName(attrLocalName, ToNamespace(attrNs));
+    CanonicalAttribute attrName(attrLocalName, ToNamespace(attrNs));
 
     bool remove = false;
     
