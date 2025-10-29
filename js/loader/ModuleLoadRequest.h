@@ -104,16 +104,21 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
 
   void LoadFinished();
 
-  const Kind mKind;
-
   void SetErroredLoadingImports() {
     MOZ_ASSERT(IsDynamicImport());
     MOZ_ASSERT(IsFetching() || IsCompiling());
     mErroredLoadingImports = true;
   }
 
+ public:
+  
+  const Kind mKind;
+
   
   const ModuleType mModuleType;
+
+  
+  const bool mIsDynamicImport;
 
   
   

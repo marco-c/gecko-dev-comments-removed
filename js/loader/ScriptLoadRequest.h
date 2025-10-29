@@ -212,7 +212,6 @@ class ScriptLoadRequest : public nsISupports,
     mMemoryCachingPlan = CachingPlan::PassedCondition;
   }
 
- public:
   mozilla::CORSMode CORSMode() const { return FetchOptions()->mCORSMode; }
 
   bool HasLoadContext() const { return mLoadContext; }
@@ -231,11 +230,28 @@ class ScriptLoadRequest : public nsISupports,
   const LoadedScript* getLoadedScript() const { return mLoadedScript.get(); }
   LoadedScript* getLoadedScript() { return mLoadedScript.get(); }
 
-  const ScriptKind mKind;  
-                           
+  bool HasSourceMapURL() const { return mHasSourceMapURL_; }
+  const nsString& GetSourceMapURL() const {
+    MOZ_ASSERT(mHasSourceMapURL_);
+    return mMaybeSourceMapURL_;
+  }
+  void SetSourceMapURL(const nsString& aSourceMapURL) {
+    MOZ_ASSERT(!mHasSourceMapURL_);
+    mMaybeSourceMapURL_ = aSourceMapURL;
+    mHasSourceMapURL_ = true;
+  }
 
-  State mState;           
-  bool mFetchSourceOnly;  
+ public:
+  
+
+  
+  const ScriptKind mKind;
+
+  
+  State mState;
+
+  
+  bool mFetchSourceOnly;
 
   
   
@@ -267,17 +283,6 @@ class ScriptLoadRequest : public nsISupports,
   
   
   nsString mMaybeSourceMapURL_;
-
-  bool HasSourceMapURL() const { return mHasSourceMapURL_; }
-  const nsString& GetSourceMapURL() const {
-    MOZ_ASSERT(mHasSourceMapURL_);
-    return mMaybeSourceMapURL_;
-  }
-  void SetSourceMapURL(const nsString& aSourceMapURL) {
-    MOZ_ASSERT(!mHasSourceMapURL_);
-    mMaybeSourceMapURL_ = aSourceMapURL;
-    mHasSourceMapURL_ = true;
-  }
 
   nsCOMPtr<nsIPrincipal> mOriginPrincipal;
 
