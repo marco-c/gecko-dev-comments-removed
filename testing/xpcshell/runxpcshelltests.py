@@ -2282,6 +2282,17 @@ class XPCShellTests:
                     else:
                         tests_queue.append(test)
 
+            
+            
+            if tests_queue:
+                tests_queue = deque(
+                    sorted(
+                        tests_queue,
+                        key=lambda t: int(t.test_object.get("requesttimeoutfactor", 1)),
+                        reverse=True,
+                    )
+                )
+
             status = self.runTestList(
                 tests_queue, sequential_tests, testClass, mobileArgs, **kwargs
             )
