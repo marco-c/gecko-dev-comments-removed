@@ -1677,6 +1677,16 @@ AttachDecision GetPropIRGenerator::tryAttachScriptedProxy(
     }
   }
 
+  
+  
+  
+  
+  
+  
+  if (idVal_.isSymbol() && idVal_.toSymbol()->isPrivateName()) {
+    return AttachDecision::NoAction;
+  }
+
   JSObject* handlerObj = ScriptedProxyHandler::handlerObject(obj);
   if (!handlerObj) {
     return AttachDecision::NoAction;
