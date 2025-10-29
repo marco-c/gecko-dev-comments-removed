@@ -467,21 +467,9 @@ ScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
 
   
   
-  if (NS_SUCCEEDED(rv) && mRequest->IsSource() &&
-      StaticPrefs::dom_script_loader_bytecode_cache_enabled()) {
-    mRequest->getLoadedScript()->mCacheInfo = do_QueryInterface(channelRequest);
-    LOG(("ScriptLoadRequest (%p): nsICacheInfoChannel = %p", mRequest.get(),
-         mRequest->getLoadedScript()->mCacheInfo.get()));
-  }
-
   
   rv = mScriptLoader->OnStreamComplete(aLoader, mRequest, aStatus, mSRIStatus,
                                        mSRIDataVerifier.get());
-
-  
-  if (NS_FAILED(rv)) {
-    mRequest->getLoadedScript()->DropDiskCacheReference();
-  }
 
   return rv;
 }
