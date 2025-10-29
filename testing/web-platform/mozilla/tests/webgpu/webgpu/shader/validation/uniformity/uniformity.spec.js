@@ -185,7 +185,14 @@ function generateOp(op) {
   }
 }
 
-function generateConditionalStatement(statement, condition, op) {
+const kStatementKinds = ['if', 'for', 'while', 'switch', 'break-if'];
+
+
+function generateConditionalStatement(
+statement,
+condition,
+op)
+{
   const code = ``;
   switch (statement) {
     case 'if':{
@@ -215,8 +222,19 @@ function generateConditionalStatement(statement, condition, op) {
       }
       `;
       }
-    default:{
-        unreachable(`Unhandled statement`);
+    case 'break-if':{
+        
+        
+        
+        
+        return `loop {
+        if ${generateCondition('uniform_storage_ro')} { break; }
+        ${generateOp(op)}
+        continuing {
+          break if ${generateCondition(condition)};
+        }
+      }
+      `;
       }
   }
 
@@ -227,7 +245,7 @@ g.test('basics').
 desc(`Test collective operations in simple uniform or non-uniform control flow.`).
 params((u) =>
 u.
-combine('statement', ['if', 'for', 'while', 'switch']).
+combine('statement', kStatementKinds).
 beginSubcases().
 combineWithParams(kConditions).
 combineWithParams(kCollectiveOps)
@@ -315,7 +333,7 @@ g.test('basics,subgroups').
 desc(`Test subgroup operations in simple uniform or non-uniform control flow.`).
 params((u) =>
 u.
-combine('statement', ['if', 'for', 'while', 'switch']).
+combine('statement', kStatementKinds).
 beginSubcases().
 combineWithParams(kConditions).
 combine('op', kSubgroupOps).
