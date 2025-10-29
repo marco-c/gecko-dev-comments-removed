@@ -1119,6 +1119,16 @@ void GetPropIRGenerator::emitCallGetterResult(NativeGetPropKind kind,
                                               ObjOperandId objId,
                                               ValOperandId receiverId) {
   emitCallGetterResultGuards(obj, holder, id, prop, objId);
+
+  if (kind == NativeGetPropKind::NativeGetter &&
+      mode_ == ICState::Mode::Specialized) {
+    auto attached = tryAttachInlinableNativeGetter(holder, prop, receiverId);
+    if (attached != AttachDecision::NoAction) {
+      MOZ_ASSERT(attached == AttachDecision::Attach);
+      return;
+    }
+  }
+
   emitCallGetterResultNoGuards(kind, obj, holder, prop, receiverId);
 }
 
@@ -2430,6 +2440,31 @@ AttachDecision GetPropIRGenerator::tryAttachObjectLength(HandleObject obj,
   }
 
   return AttachDecision::NoAction;
+}
+
+AttachDecision GetPropIRGenerator::tryAttachInlinableNativeGetter(
+    NativeObject* holder, PropertyInfo prop, ValOperandId receiverId) {
+  MOZ_ASSERT(mode_ == ICState::Mode::Specialized);
+
+  
+  if (isSuper()) {
+    return AttachDecision::NoAction;
+  }
+
+  Rooted<JSFunction*> target(cx_, &holder->getGetter(prop)->as<JSFunction>());
+  MOZ_ASSERT(target->isNativeWithoutJitEntry());
+
+  Handle<Value> thisValue = val_;
+
+  bool isSpread = false;
+  bool isSameRealm = cx_->realm() == target->realm();
+  bool isConstructing = false;
+  CallFlags flags(isConstructing, isSpread, isSameRealm);
+
+  
+  InlinableNativeIRGenerator nativeGen(*this, target, thisValue, flags,
+                                       receiverId);
+  return nativeGen.tryAttachStub();
 }
 
 AttachDecision GetPropIRGenerator::tryAttachTypedArray(HandleObject obj,
@@ -6534,6 +6569,15 @@ ObjOperandId InlinableNativeIRGenerator::emitNativeCalleeGuard(
   
   MOZ_ASSERT(target_->isNativeWithoutJitEntry());
 
+  
+  if (isAccessorOp()) {
+    MOZ_ASSERT(flags_.getArgFormat() == CallFlags::Standard);
+    MOZ_ASSERT(!flags_.isConstructing());
+    MOZ_ASSERT(!isCalleeBoundFunction());
+    MOZ_ASSERT(!isTargetBoundFunction());
+    return ObjOperandId();
+  }
+
   ValOperandId calleeValId;
   switch (flags_.getArgFormat()) {
     case CallFlags::Standard:
@@ -6697,7 +6741,9 @@ ObjOperandId InlinableNativeIRGenerator::emitLoadArgsArray() {
   }
 
   MOZ_ASSERT(flags_.getArgFormat() == CallFlags::FunApplyArray);
-  return generator_.emitFunApplyArgsGuard(flags_.getArgFormat()).ref();
+  return gen_.as<CallIRGenerator*>()
+      ->emitFunApplyArgsGuard(flags_.getArgFormat())
+      .ref();
 }
 
 ValOperandId InlinableNativeIRGenerator::loadBoundArgument(
@@ -6719,6 +6765,15 @@ ValOperandId InlinableNativeIRGenerator::loadBoundArgument(
 }
 
 ValOperandId InlinableNativeIRGenerator::loadThis(ObjOperandId calleeId) {
+  
+  if (isAccessorOp()) {
+    MOZ_ASSERT(flags_.getArgFormat() == CallFlags::Standard);
+    MOZ_ASSERT(!isTargetBoundFunction());
+    MOZ_ASSERT(!isCalleeBoundFunction());
+    MOZ_ASSERT(receiverId_.valid());
+    return receiverId_;
+  }
+
   switch (flags_.getArgFormat()) {
     case CallFlags::Standard:
     case CallFlags::Spread:
@@ -6798,6 +6853,7 @@ ValOperandId InlinableNativeIRGenerator::loadArgument(ObjOperandId calleeId,
              flags_.getArgFormat() == CallFlags::FunApplyNullUndefined);
   MOZ_ASSERT_IF(flags_.getArgFormat() == CallFlags::FunApplyNullUndefined,
                 isTargetBoundFunction() && hasBoundArguments());
+  MOZ_ASSERT(!isAccessorOp(), "get property operations don't have arguments");
 
   
   bool thisFromBoundArgs = flags_.getArgFormat() == CallFlags::FunCall &&
@@ -12062,6 +12118,11 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectConstructor() {
   PlainObject* templateObj = nullptr;
   if (args_.length() == 0) {
     
+    if (!BytecodeOpCanHaveAllocSite(op())) {
+      return AttachDecision::NoAction;
+    }
+
+    
     if (cx_->realm()->hasAllocationMetadataBuilder()) {
       return AttachDecision::NoAction;
     }
@@ -12112,6 +12173,11 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectConstructor() {
 }
 
 AttachDecision InlinableNativeIRGenerator::tryAttachArrayConstructor() {
+  
+  if (!BytecodeOpCanHaveAllocSite(op())) {
+    return AttachDecision::NoAction;
+  }
+
   
   
   if (args_.length() > 1) {
@@ -12925,7 +12991,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
   MOZ_ASSERT(target_->isNativeWithoutJitEntry());
 
   
-  if (!BytecodeCallOpCanHaveInlinableNative(op())) {
+  if (!BytecodeCallOpCanHaveInlinableNative(op()) &&
+      !BytecodeGetOpCanHaveInlinableNative(op())) {
     return AttachDecision::NoAction;
   }
 
