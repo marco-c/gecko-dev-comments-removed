@@ -437,6 +437,9 @@ class JujutsuRepository(Repository):
                 p = self.path / Path(path)
                 p.parent.mkdir(parents=True, exist_ok=True)
                 p.write_text(content)
+                
+                
+                self._run("file", "track", p)
             
             self._snapshot()
             yield self._resolve_to_change("@")
