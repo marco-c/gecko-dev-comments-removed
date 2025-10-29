@@ -2216,7 +2216,7 @@ void nsDocumentViewer::MakeWindow(const nsSize& aSize, nsView* aContainerView) {
   mViewManager = new nsViewManager(mPresContext->DeviceContext());
 
   
-  nsRect tbounds(nsPoint(0, 0), aSize);
+  nsRect tbounds(nsPoint(), aSize);
   
   nsView* view = mViewManager->CreateView(tbounds, aContainerView);
   MOZ_ASSERT(view);
@@ -2226,10 +2226,13 @@ void nsDocumentViewer::MakeWindow(const nsSize& aSize, nsView* aContainerView) {
   
   
   
-  if (!mDocument->IsResourceDoc() && mParentWidget) {
-    
-    view->AttachToTopLevelWidget(mParentWidget);
-    mAttachedToParent = true;
+  if (!mDocument->IsResourceDoc()) {
+    MOZ_ASSERT_IF(!aContainerView, mParentWidget);
+    if (mParentWidget) {
+      
+      view->AttachToTopLevelWidget(mParentWidget);
+      mAttachedToParent = true;
+    }
   }
 
   
