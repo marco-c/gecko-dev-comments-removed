@@ -1348,8 +1348,6 @@ pref("accessibility.typeaheadfind.linksonly", false);
 pref("accessibility.typeaheadfind.flashBar", 1);
 
 
-pref("browser.preferences.experimental", true);
-
 pref("browser.preferences.experimental.hidden", false);
 
 pref("browser.preferences.moreFromMozilla", true);
