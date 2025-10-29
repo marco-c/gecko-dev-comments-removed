@@ -134,10 +134,6 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
 
   
   
-  void MapLayerTreeId(LayersId aLayersId, base::ProcessId aOwningId);
-
-  
-  
   
   void UnmapLayerTreeId(LayersId aLayersId, base::ProcessId aOwningId);
 
@@ -155,6 +151,9 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   
   uint32_t AllocateNamespace();
 
+  
+  
+  
   
   
   

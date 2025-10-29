@@ -1592,23 +1592,6 @@ nsresult GPUProcessManager::EnsureVideoBridge(
   return NS_OK;
 }
 
-void GPUProcessManager::MapLayerTreeId(LayersId aLayersId,
-                                       base::ProcessId aOwningId) {
-  if (NS_WARN_IF(NS_FAILED(EnsureGPUReady()))) {
-    return;
-  }
-
-  if (mGPUChild) {
-    mGPUChild->SendAddLayerTreeIdMapping(
-        LayerTreeIdMapping(aLayersId, aOwningId));
-  }
-
-  
-  
-  
-  LayerTreeOwnerTracker::Get()->Map(aLayersId, aOwningId);
-}
-
 void GPUProcessManager::UnmapLayerTreeId(LayersId aLayersId,
                                          base::ProcessId aOwningId) {
   
@@ -1673,26 +1656,40 @@ uint32_t GPUProcessManager::AllocateNamespace() {
 bool GPUProcessManager::AllocateAndConnectLayerTreeId(
     PCompositorBridgeChild* aCompositorBridge, base::ProcessId aOtherPid,
     LayersId* aOutLayersId, CompositorOptions* aOutCompositorOptions) {
+  MOZ_ASSERT(aOutLayersId);
+
   LayersId layersId = AllocateLayerTreeId();
   *aOutLayersId = layersId;
 
-  if (!mGPUChild || !aCompositorBridge) {
-    
-    
-    
-    
-    MapLayerTreeId(layersId, aOtherPid);
-    if (!aCompositorBridge) {
-      return false;
+  
+  
+  
+  LayerTreeOwnerTracker::Get()->Map(layersId, aOtherPid);
+
+  if (NS_WARN_IF(NS_FAILED(EnsureGPUReady()))) {
+    return false;
+  }
+
+  
+  
+  
+  
+  if (aCompositorBridge) {
+    if (mGPUChild) {
+      return aCompositorBridge->SendMapAndNotifyChildCreated(
+          layersId, aOtherPid, aOutCompositorOptions);
     }
     return aCompositorBridge->SendNotifyChildCreated(layersId,
                                                      aOutCompositorOptions);
   }
 
   
-  LayerTreeOwnerTracker::Get()->Map(layersId, aOtherPid);
-  return aCompositorBridge->SendMapAndNotifyChildCreated(layersId, aOtherPid,
-                                                         aOutCompositorOptions);
+  
+  if (mGPUChild) {
+    mGPUChild->SendAddLayerTreeIdMapping(
+        LayerTreeIdMapping(layersId, aOtherPid));
+  }
+  return false;
 }
 
 void GPUProcessManager::EnsureVsyncIOThread() {
