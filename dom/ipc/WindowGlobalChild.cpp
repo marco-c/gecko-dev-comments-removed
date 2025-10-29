@@ -318,7 +318,7 @@ bool WindowGlobalChild::IsProcessRoot() {
 void WindowGlobalChild::BeforeUnloadAdded() {
   
   if (mBeforeUnloadListeners == 0 && CanSend()) {
-    Unused << mWindowContext->SetNeedsBeforeUnload(true);
+    (void)mWindowContext->SetNeedsBeforeUnload(true);
   }
 
   mBeforeUnloadListeners++;
@@ -332,7 +332,7 @@ void WindowGlobalChild::BeforeUnloadRemoved() {
   MOZ_ASSERT(mBeforeUnloadListeners >= 0);
 
   if (mBeforeUnloadListeners == 0) {
-    Unused << mWindowContext->SetNeedsBeforeUnload(false);
+    (void)mWindowContext->SetNeedsBeforeUnload(false);
   }
 }
 

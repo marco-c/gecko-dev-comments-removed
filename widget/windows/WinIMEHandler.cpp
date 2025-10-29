@@ -19,7 +19,6 @@
 #include "mozilla/StaticPrefs_intl.h"
 #include "mozilla/StaticPrefs_ui.h"
 #include "mozilla/TextEvents.h"
-#include "mozilla/Unused.h"
 #include "mozilla/WindowsVersion.h"
 #ifdef ACCESSIBILITY
 #  include "nsAccessibilityService.h"
@@ -124,7 +123,7 @@ bool IMEHandler::ProcessRawKeyMessage(const MSG& aMsg) {
     
     
     
-    Unused << KeyboardLayout::GetInstance();
+    (void)KeyboardLayout::GetInstance();
   }
   if (IsTSFAvailable()) {
     return TSFTextStore::ProcessRawKeyMessage(aMsg);

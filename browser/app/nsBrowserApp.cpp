@@ -61,7 +61,6 @@
 
 #ifdef MOZ_LINUX_32_SSE2_STARTUP_ERROR
 #  include <cpuid.h>
-#  include "mozilla/Unused.h"
 
 static bool IsSSE2Available() {
   
@@ -92,7 +91,7 @@ __attribute__((constructor)) static void SSE2Check() {
   
   
   
-  MOZ_UNUSED(write(STDERR_FILENO, sSSE2Message, std::size(sSSE2Message) - 1));
+  (void)write(STDERR_FILENO, sSSE2Message, std::size(sSSE2Message) - 1);
   
   _exit(255);
 }
@@ -270,7 +269,7 @@ static void ReserveDefaultFileDescriptors() {
   
   int fd = open("/dev/null", O_RDONLY);
   for (int i = 0; i < 2; i++) {
-    mozilla::Unused << dup(fd);
+    (void)dup(fd);
   }
 }
 #endif

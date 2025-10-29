@@ -35,7 +35,7 @@ NS_IMETHODIMP
 TlsHandshaker::CertVerificationDone() {
   LOG(("TlsHandshaker::CertVerificationDone mOwner=%p", mOwner.get()));
   if (mOwner) {
-    Unused << mOwner->ResumeSend();
+    (void)mOwner->ResumeSend();
   }
   return NS_OK;
 }
@@ -44,7 +44,7 @@ NS_IMETHODIMP
 TlsHandshaker::ClientAuthCertificateSelected() {
   LOG(("TlsHandshaker::ClientAuthCertificateSelected mOwner=%p", mOwner.get()));
   if (mOwner) {
-    Unused << mOwner->ResumeSend();
+    (void)mOwner->ResumeSend();
   }
   return NS_OK;
 }
@@ -289,7 +289,7 @@ void TlsHandshaker::Check0RttEnabled(nsITLSSocketControl* ssl) {
         mEarlyDataState = EarlyData::CANNOT_BE_USED;
         
         
-        Unused << mOwner->ResumeRecv();
+        (void)mOwner->ResumeRecv();
       }
     } else {
       

@@ -32,7 +32,7 @@ class MaybeLeakRefPtr : public RefPtr<T> {
     if (!mAutoRelease) {
       
       
-      (void)RefPtr<T>::forget().take();
+      RefPtr<T>::forget().leak();
     }
   }
 

@@ -5,7 +5,6 @@
 
 
 #include "CrossProcessSemaphore.h"
-#include "mozilla/Unused.h"
 #include "nsDebug.h"
 #include "nsISupportsImpl.h"
 #include <errno.h>
@@ -103,7 +102,7 @@ CrossProcessSemaphore::~CrossProcessSemaphore() {
 
   if (oldCount == 0) {
     
-    Unused << sem_destroy(mSemaphore);
+    (void)sem_destroy(mSemaphore);
   }
 
   MOZ_COUNT_DTOR(CrossProcessSemaphore);

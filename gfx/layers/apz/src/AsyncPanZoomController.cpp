@@ -76,7 +76,6 @@
 #include "mozilla/layers/APZPublicUtils.h"   
 #include "mozilla/webrender/WebRenderAPI.h"  
 #include "mozilla/mozalloc.h"                
-#include "mozilla/Unused.h"                  
 #include "mozilla/webrender/WebRenderTypes.h"
 #include "nsCOMPtr.h"  
 #include "nsDebug.h"   

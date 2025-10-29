@@ -689,7 +689,7 @@ void StartupCache::EnsureShutdownWriteComplete() {
   
 
   auto writeResult = WriteToDisk();
-  Unused << NS_WARN_IF(writeResult.isErr());
+  (void)NS_WARN_IF(writeResult.isErr());
   
   
   
@@ -775,7 +775,7 @@ void StartupCache::MaybeWriteOffMainThread() {
       NS_NewRunnableFunction("StartupCache::Write", [self]() mutable {
         MutexAutoLock lock(self->mTableLock);
         auto result = self->WriteToDisk();
-        Unused << NS_WARN_IF(result.isErr());
+        (void)NS_WARN_IF(result.isErr());
       });
   NS_DispatchBackgroundTask(runnable.forget(), NS_DISPATCH_EVENT_MAY_BLOCK);
 }

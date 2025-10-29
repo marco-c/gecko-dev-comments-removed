@@ -1374,7 +1374,7 @@ static nsresult GetMatchingShortcut(int aCSIDL, const nsAString& aAUMID,
   WIN32_FIND_DATAW findData = {};
   HANDLE hFindFile = FindFirstFileW(pattern.get(), &findData);
   if (hFindFile == INVALID_HANDLE_VALUE) {
-    Unused << NS_WARN_IF(GetLastError() != ERROR_FILE_NOT_FOUND);
+    (void)NS_WARN_IF(GetLastError() != ERROR_FILE_NOT_FOUND);
     return NS_ERROR_FILE_NOT_FOUND;
   }
   
@@ -1637,7 +1637,7 @@ static bool IsCurrentAppPinnedToTaskbarSync(const nsAString& aumid) {
   WIN32_FIND_DATAW findData = {};
   HANDLE hFindFile = FindFirstFileW(pattern.get(), &findData);
   if (hFindFile == INVALID_HANDLE_VALUE) {
-    Unused << NS_WARN_IF(GetLastError() != ERROR_FILE_NOT_FOUND);
+    (void)NS_WARN_IF(GetLastError() != ERROR_FILE_NOT_FOUND);
     return false;
   }
   

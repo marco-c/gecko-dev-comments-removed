@@ -178,7 +178,7 @@ static sandbox::BrokerServices* InitializeBrokerServices() {
   
   
   
-  Unused << brokerServices->CreateAlternateDesktop(
+  (void)brokerServices->CreateAlternateDesktop(
       sandbox::Desktop::kAlternateWinstation);
 
   

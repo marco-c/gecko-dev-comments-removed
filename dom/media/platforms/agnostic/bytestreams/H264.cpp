@@ -1029,19 +1029,19 @@ uint32_t H264::ComputeMaxRefFrames(const mozilla::MediaByteBuffer* aExtraData) {
     uint32_t nalLen = 0;
     switch (nalLenSize) {
       case 1:
-        Unused << reader.ReadU8().map(
+        (void)reader.ReadU8().map(
             [&](uint8_t x) mutable { return nalLen = x; });
         break;
       case 2:
-        Unused << reader.ReadU16().map(
+        (void)reader.ReadU16().map(
             [&](uint16_t x) mutable { return nalLen = x; });
         break;
       case 3:
-        Unused << reader.ReadU24().map(
+        (void)reader.ReadU24().map(
             [&](uint32_t x) mutable { return nalLen = x; });
         break;
       case 4:
-        Unused << reader.ReadU32().map(
+        (void)reader.ReadU32().map(
             [&](uint32_t x) mutable { return nalLen = x; });
         break;
       default:
@@ -1364,9 +1364,9 @@ void H264::WriteExtraData(MediaByteBuffer* aDestExtraData,
   avcc.mAVCProfileIndication = reader.ReadBits(8);
   avcc.mProfileCompatibility = reader.ReadBits(8);
   avcc.mAVCLevelIndication = reader.ReadBits(8);
-  Unused << reader.ReadBits(6);  
+  (void)reader.ReadBits(6);  
   avcc.mLengthSizeMinusOne = reader.ReadBits(2);
-  Unused << reader.ReadBits(3);  
+  (void)reader.ReadBits(3);  
   const uint8_t numSPS = reader.ReadBits(5);
   for (uint8_t idx = 0; idx < numSPS; idx++) {
     if (reader.BitsLeft() < 16) {
@@ -1426,11 +1426,11 @@ void H264::WriteExtraData(MediaByteBuffer* aDestExtraData,
   
   if (avcc.mAVCProfileIndication != 66 && avcc.mAVCProfileIndication != 77 &&
       avcc.mAVCProfileIndication != 88 && reader.BitsLeft() >= 32) {
-    Unused << reader.ReadBits(6);  
+    (void)reader.ReadBits(6);  
     avcc.mChromaFormat = Some(reader.ReadBits(2));
-    Unused << reader.ReadBits(5);  
+    (void)reader.ReadBits(5);  
     avcc.mBitDepthLumaMinus8 = Some(reader.ReadBits(3));
-    Unused << reader.ReadBits(5);  
+    (void)reader.ReadBits(5);  
     avcc.mBitDepthChromaMinus8 = Some(reader.ReadBits(3));
     const uint8_t numOfSequenceParameterSetExt = reader.ReadBits(8);
     for (uint8_t idx = 0; idx < numOfSequenceParameterSetExt; idx++) {
@@ -1512,8 +1512,8 @@ H264NALU::H264NALU(const uint8_t* aData, uint32_t aByteCount)
     : mNALU(aData, aByteCount) {
   
   BitReader reader(aData, aByteCount * 8);
-  Unused << reader.ReadBit();    
-  Unused << reader.ReadBits(2);  
+  (void)reader.ReadBit();    
+  (void)reader.ReadBits(2);  
   mNalUnitType = reader.ReadBits(5);
 }
 

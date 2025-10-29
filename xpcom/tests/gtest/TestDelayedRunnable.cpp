@@ -96,7 +96,7 @@ TEST(DelayedRunnable, BackgroundTaskQueueShutdownTask)
 
   
   nsISerialEventTarget* tq = taskQueue.forget().take();
-  mozilla::Unused << tq;
+  (void)tq;
 }
 
 
@@ -112,7 +112,7 @@ TEST(DelayedRunnable, nsThreadShutdownTask)
 
   
   nsIThread* t = thread.forget().take();
-  mozilla::Unused << t;
+  (void)t;
 }
 
 TEST(DelayedRunnable, TimerFiresBeforeRunnableRuns)

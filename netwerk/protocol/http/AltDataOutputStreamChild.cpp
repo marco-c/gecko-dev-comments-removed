@@ -5,7 +5,6 @@
 
 
 #include "mozilla/net/AltDataOutputStreamChild.h"
-#include "mozilla/Unused.h"
 #include "nsIInputStream.h"
 #include "nsStreamUtils.h"
 
@@ -159,7 +158,7 @@ AltDataOutputStreamChild::CloseWithStatus(nsresult aStatus) {
   if (NS_FAILED(mError)) {
     return mError;
   }
-  Unused << SendClose(aStatus);
+  (void)SendClose(aStatus);
 
   return NS_OK;
 }

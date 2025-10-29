@@ -2434,7 +2434,7 @@ nsresult nsWebBrowserPersist::URIData::GetLocalURI(nsIURI* targetBaseURI,
   }
 
   
-  Unused << NS_MutateURI(fileAsURI).SetUserPass(""_ns).Finalize(fileAsURI);
+  (void)NS_MutateURI(fileAsURI).SetUserPass(""_ns).Finalize(fileAsURI);
 
   
   

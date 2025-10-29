@@ -14,7 +14,6 @@
 #include "nsIObserverService.h"
 #include "nsServiceManagerUtils.h"
 #include "mozilla/Services.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/KeyboardEventBinding.h"
 #include "mozilla/dom/Event.h"
 
@@ -110,7 +109,7 @@ nsAutoCompleteController::SetInput(nsIAutoCompleteInput* aInput) {
   
   if (mInput == aInput) return NS_OK;
 
-  Unused << ResetInternalState();
+  (void)ResetInternalState();
   if (mInput) {
     mSearches.Clear();
     ClosePopup();
@@ -139,8 +138,8 @@ nsAutoCompleteController::ResetInternalState() {
     nsAutoString value;
     mInput->GetTextValue(value);
     
-    Unused << StopSearch();
-    Unused << ClearResults();
+    (void)StopSearch();
+    (void)ClearResults();
     SetSearchStringInternal(value);
   }
 
@@ -437,7 +436,7 @@ nsAutoCompleteController::HandleKeyNavigation(uint32_t aKey, bool* _retval) {
       
       
       
-      Unused << StopSearch();
+      (void)StopSearch();
 
       
       popup->SelectBy(reverse, page);

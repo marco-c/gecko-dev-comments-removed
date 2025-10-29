@@ -531,7 +531,7 @@ void nsHtml5TreeOpExecutor::RunFlushLoop() {
   if (mParser) {
     streamParserGrip = GetParser()->GetStreamParser();
   }
-  Unused << streamParserGrip;  
+  (void)streamParserGrip;  
 
   
   (void)nsContentSink::WillParseImpl();
@@ -742,12 +742,12 @@ nsresult nsHtml5TreeOpExecutor::FlushDocumentWrite() {
   
   RefPtr<nsHtml5TreeOpExecutor> kungFuDeathGrip(this);
   RefPtr<nsParserBase> parserKungFuDeathGrip(mParser);
-  Unused << parserKungFuDeathGrip;  
+  (void)parserKungFuDeathGrip;  
   RefPtr<nsHtml5StreamParser> streamParserGrip;
   if (mParser) {
     streamParserGrip = GetParser()->GetStreamParser();
   }
-  Unused << streamParserGrip;  
+  (void)streamParserGrip;  
 
   MOZ_RELEASE_ASSERT(!mReadingFromStage,
                      "Got doc write flush when reading from stage");

@@ -33,7 +33,6 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/StaticPrefs_fission.h"
-#include "mozilla/Unused.h"
 #include "mozilla/WebBrowserPersistLocalDocument.h"
 #include "mozilla/dom/BrowserBridgeChild.h"
 #include "mozilla/dom/BrowserBridgeHost.h"
@@ -735,7 +734,7 @@ nsresult nsFrameLoader::ReallyStartLoadingInternal() {
 
     if (!mRemoteBrowserShown) {
       
-      Unused << ShowRemoteFrame(
+      (void)ShowRemoteFrame(
            do_QueryFrame(GetPrimaryFrameOfOwningContent()));
     }
 
@@ -1029,7 +1028,7 @@ bool nsFrameLoader::Show(nsSubDocumentFrame* aFrame) {
         
         
         RefPtr<HTMLEditor> htmlEditor = GetDocShell()->GetHTMLEditor();
-        Unused << htmlEditor;
+        (void)htmlEditor;
         htmlDoc->SetDesignMode(u"off"_ns, Nothing(), IgnoreErrors());
 
         htmlDoc->SetDesignMode(u"on"_ns, Nothing(), IgnoreErrors());
@@ -1390,9 +1389,9 @@ nsresult nsFrameLoader::SwapWithOtherRemoteLoader(
     return rv;
   }
 
-  Unused << browserParent->SendSwappedWithOtherRemoteLoader(
+  (void)browserParent->SendSwappedWithOtherRemoteLoader(
       ourContext.AsIPCTabContext());
-  Unused << otherBrowserParent->SendSwappedWithOtherRemoteLoader(
+  (void)otherBrowserParent->SendSwappedWithOtherRemoteLoader(
       otherContext.AsIPCTabContext());
   
   
@@ -2124,7 +2123,7 @@ void nsFrameLoader::SetOwnerContent(Element* aContent) {
     JSAutoRealm ar(jsapi.cx(), wrapper);
     IgnoredErrorResult rv;
     UpdateReflectorGlobal(jsapi.cx(), wrapper, rv);
-    Unused << NS_WARN_IF(rv.Failed());
+    (void)NS_WARN_IF(rv.Failed());
   }
 }
 
@@ -2299,7 +2298,7 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
   
   if (mIsTopLevelContent &&
       mPendingBrowsingContext->GetMessageManagerGroup() == u"browsers"_ns) {
-    Unused << mDocShell->GetDocument();
+    (void)mDocShell->GetDocument();
   }
 
   return NS_OK;
@@ -2459,7 +2458,7 @@ void nsFrameLoader::PropagateIsUnderHiddenEmbedderElement(
   BrowsingContext* browsingContext = GetExtantBrowsingContext();
   if (browsingContext && browsingContext->IsUnderHiddenEmbedderElement() !=
                              isUnderHiddenEmbedderElement) {
-    Unused << browsingContext->SetIsUnderHiddenEmbedderElement(
+    (void)browsingContext->SetIsUnderHiddenEmbedderElement(
         isUnderHiddenEmbedderElement);
   }
 }
@@ -2740,7 +2739,7 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
     if (mOwnerContent->AttrValueIs(kNameSpaceID_None,
                                    nsGkAtoms::allowscriptstoclose,
                                    nsGkAtoms::_true, eCaseMatters)) {
-      Unused << browserParent->SendAllowScriptsToClose();
+      (void)browserParent->SendAllowScriptsToClose();
     }
   }
 
@@ -2874,7 +2873,7 @@ nsresult nsFrameLoader::FinishStaticClone(
   NS_ENSURE_STATE(docShell);
 
   nsCOMPtr<Document> kungFuDeathGrip = docShell->GetDocument();
-  Unused << kungFuDeathGrip;
+  (void)kungFuDeathGrip;
 
   nsCOMPtr<nsIDocumentViewer> viewer;
   docShell->GetDocViewer(getter_AddRefs(viewer));
@@ -3233,7 +3232,7 @@ void nsFrameLoader::RequestEpochUpdate(uint32_t aEpoch) {
   BrowsingContext* context = GetExtantBrowsingContext();
   if (context) {
     BrowsingContext* top = context->Top();
-    Unused << top->SetSessionStoreEpoch(aEpoch);
+    (void)top->SetSessionStoreEpoch(aEpoch);
   }
 }
 
@@ -3245,7 +3244,7 @@ void nsFrameLoader::RequestSHistoryUpdate() {
 
   
   if (auto* browserParent = GetBrowserParent()) {
-    Unused << browserParent->SendUpdateSHistory();
+    (void)browserParent->SendUpdateSHistory();
   }
 }
 
@@ -3396,7 +3395,7 @@ already_AddRefed<Promise> nsFrameLoader::PrintPreview(
 void nsFrameLoader::ExitPrintPreview() {
 #ifdef NS_PRINTING
   if (auto* browserParent = GetBrowserParent()) {
-    Unused << browserParent->SendExitPrintPreview();
+    (void)browserParent->SendExitPrintPreview();
     return;
   }
   if (NS_WARN_IF(!GetExistingDocShell())) {
@@ -3428,9 +3427,9 @@ already_AddRefed<nsILoadContext> nsFrameLoader::GetLoadContext() {
 BrowsingContext* nsFrameLoader::GetBrowsingContext() {
   if (!mInitialized) {
     if (IsRemoteFrame()) {
-      Unused << EnsureRemoteBrowser();
+      (void)EnsureRemoteBrowser();
     } else if (mOwnerContent) {
-      Unused << MaybeCreateDocShell();
+      (void)MaybeCreateDocShell();
     }
   }
   MOZ_ASSERT(mInitialized || mDestroyCalled);
@@ -3611,10 +3610,10 @@ void nsFrameLoader::SetWillChangeProcess() {
         bc->SetCurrentBrowserParent(nullptr);
       }
       
-      Unused << browserParent->SendWillChangeProcess();
+      (void)browserParent->SendWillChangeProcess();
     } else if (auto* browserBridgeChild = GetBrowserBridgeChild()) {
       
-      Unused << browserBridgeChild->SendWillChangeProcess();
+      (void)browserBridgeChild->SendWillChangeProcess();
     }
     return;
   }

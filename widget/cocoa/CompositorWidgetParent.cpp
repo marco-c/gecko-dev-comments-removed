@@ -4,7 +4,6 @@
 
 
 #include "CompositorWidgetParent.h"
-#include "mozilla/Unused.h"
 #include "mozilla/widget/PlatformWidgetTypes.h"
 
 namespace mozilla {
@@ -29,9 +28,9 @@ void CompositorWidgetParent::ObserveVsync(VsyncObserver* aObserver) {
   }
 
   if (aObserver) {
-    Unused << SendObserveVsync();
+    (void)SendObserveVsync();
   } else {
-    Unused << SendUnobserveVsync();
+    (void)SendUnobserveVsync();
   }
   mVsyncObserver = aObserver;
 }

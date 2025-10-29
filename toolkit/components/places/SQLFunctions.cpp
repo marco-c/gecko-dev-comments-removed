@@ -1513,12 +1513,12 @@ SetShouldStartFrecencyRecalculationFunction::OnFunctionCall(
   
   
   if (!nsNavHistory::sShouldStartFrecencyRecalculation.exchange(true)) {
-    mozilla::Unused << NS_DispatchToMainThread(NS_NewRunnableFunction(
+    (void)NS_DispatchToMainThread(NS_NewRunnableFunction(
         "SetShouldStartFrecencyRecalculationFunction::Notify", [] {
           nsCOMPtr<nsIObserverService> os = services::GetObserverService();
           if (os) {
-            mozilla::Unused << os->NotifyObservers(
-                nullptr, "frecency-recalculation-needed", nullptr);
+            (void)os->NotifyObservers(nullptr, "frecency-recalculation-needed",
+                                      nullptr);
           }
         }));
   }

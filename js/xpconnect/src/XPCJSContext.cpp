@@ -72,7 +72,6 @@
 #include "mozilla/TaskController.h"
 #include "mozilla/ThreadLocal.h"
 #include "mozilla/UniquePtrExtensions.h"
-#include "mozilla/Unused.h"
 #include "AccessCheck.h"
 #include "nsGlobalWindowInner.h"
 #include "nsAboutProtocolUtils.h"
@@ -207,7 +206,7 @@ class Watchdog {
       
       
       nsCOMPtr<nsIDebug2> dbg = do_GetService("@mozilla.org/xpcom/debug;1");
-      Unused << dbg;
+      (void)dbg;
     }
 
     {
@@ -528,7 +527,7 @@ static void WatchdogMain(void* arg) {
   AUTO_PROFILER_REGISTER_THREAD("JS Watchdog");
   
   
-  Unused << NS_GetCurrentThread();
+  (void)NS_GetCurrentThread();
   NS_SetCurrentThreadName("JS Watchdog");
 
   Watchdog* self = static_cast<Watchdog*>(arg);

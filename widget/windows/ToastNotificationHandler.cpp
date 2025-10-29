@@ -22,7 +22,6 @@
 #include "mozilla/Result.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Tokenizer.h"
-#include "mozilla/Unused.h"
 #include "mozilla/WindowsVersion.h"
 #include "mozilla/intl/Localization.h"
 #include "nsAppDirectoryServiceDefs.h"
@@ -313,7 +312,7 @@ nsresult ToastNotificationHandler::InitAlertAsync() {
     
     
     
-    Unused << NS_WARN_IF(!gfxPlatform::GetPlatform());
+    (void)NS_WARN_IF(!gfxPlatform::GetPlatform());
   }
 #endif
 
@@ -851,15 +850,15 @@ ToastNotificationHandler::OnActivate(
 
             while (parse.ReadUntil(Tokenizer16::Token::NewLine(), token)) {
               if (token == nsDependentString(kLaunchArgAction)) {
-                Unused << parse.ReadUntil(Tokenizer16::Token::EndOfFile(),
-                                          actionString);
+                (void)parse.ReadUntil(Tokenizer16::Token::EndOfFile(),
+                                      actionString);
               } else {
                 
                 parse.SkipUntil(Tokenizer16::Token::NewLine());
               }
               
               Tokenizer16::Token unused;
-              Unused << parse.Next(unused);
+              (void)parse.Next(unused);
             }
           }
         }

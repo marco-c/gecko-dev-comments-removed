@@ -98,7 +98,7 @@ static already_AddRefed<Screen> MakeScreenGtk(unsigned int aMonitor,
       
       nsWaylandDisplay::MonitorConfig* config =
           WaylandDisplayGet()->GetMonitorConfig(workarea.x, workarea.y);
-      Unused << NS_WARN_IF(!config);
+      (void)NS_WARN_IF(!config);
       if (config && workarea.width > config->pixelWidth / geometryScaleFactor &&
           workarea.height > config->pixelHeight / geometryScaleFactor) {
         float fractionalScale = (float)config->pixelWidth / workarea.width;

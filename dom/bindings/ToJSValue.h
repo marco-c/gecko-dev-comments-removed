@@ -22,7 +22,6 @@
 #include "jsapi.h"                  
 #include "mozilla/Assertions.h"  
 #include "mozilla/UniquePtr.h"         
-#include "mozilla/Unused.h"            
 #include "mozilla/dom/BindingUtils.h"  
 #include "mozilla/dom/CallbackObject.h"  
 #include "mozilla/dom/Record.h"
@@ -187,7 +186,7 @@ ToJSValue(JSContext* aCx, UniquePtr<T>&& aArgument,
   }
 
   
-  Unused << aArgument.release();
+  (void)aArgument.release();
   return true;
 }
 

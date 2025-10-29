@@ -706,13 +706,13 @@ TEST_F(APZCAxisLockTester, TouchScrollWithStickyAxisLocking) {
   
   
   QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID);
-  Unused << TouchDown(apzc, ScreenIntPoint(50, 50), mcc->Time());
+  (void)TouchDown(apzc, ScreenIntPoint(50, 50), mcc->Time());
   mcc->AdvanceByMillis(50);
 
-  Unused << TouchMove(apzc, ScreenIntPoint(50, 60), mcc->Time());
+  (void)TouchMove(apzc, ScreenIntPoint(50, 60), mcc->Time());
   mcc->AdvanceByMillis(400);
 
-  Unused << TouchMove(apzc, ScreenIntPoint(50, 70), mcc->Time());
+  (void)TouchMove(apzc, ScreenIntPoint(50, 70), mcc->Time());
   mcc->AdvanceByMillis(400);
 
   apzc->AssertStateIsPanningLockedY();
@@ -723,7 +723,7 @@ TEST_F(APZCAxisLockTester, TouchScrollWithStickyAxisLocking) {
 
   
   
-  Unused << TouchMove(apzc, ScreenIntPoint(55, 60), mcc->Time());
+  (void)TouchMove(apzc, ScreenIntPoint(55, 60), mcc->Time());
   mcc->AdvanceByMillis(200);
 
   
@@ -734,7 +734,7 @@ TEST_F(APZCAxisLockTester, TouchScrollWithStickyAxisLocking) {
   lastOffset = currentOffset;
   apzc->AssertStateIsPanningLockedY();
 
-  Unused << TouchMove(apzc, ScreenIntPoint(60, 50), mcc->Time());
+  (void)TouchMove(apzc, ScreenIntPoint(60, 50), mcc->Time());
   mcc->AdvanceByMillis(200);
 
   
@@ -745,7 +745,7 @@ TEST_F(APZCAxisLockTester, TouchScrollWithStickyAxisLocking) {
   apzc->AssertStateIsPanningLockedY();
   lastOffset = currentOffset;
 
-  Unused << TouchMove(apzc, ScreenIntPoint(60, 40), mcc->Time());
+  (void)TouchMove(apzc, ScreenIntPoint(60, 40), mcc->Time());
   mcc->AdvanceByMillis(200);
 
   currentOffset = apzc->GetCurrentAsyncScrollOffset(
@@ -755,7 +755,7 @@ TEST_F(APZCAxisLockTester, TouchScrollWithStickyAxisLocking) {
   apzc->AssertStateIsPanningLockedY();
   lastOffset = currentOffset;
 
-  Unused << TouchUp(apzc, ScreenIntPoint(65, 40), mcc->Time());
+  (void)TouchUp(apzc, ScreenIntPoint(65, 40), mcc->Time());
 }
 #endif
 
@@ -778,13 +778,13 @@ TEST_F(APZCAxisLockTester, TouchScrollWithStickyAxisLockingBug1915260) {
   
   
   QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID);
-  Unused << TouchDown(apzc, ScreenIntPoint(50, 50), mcc->Time());
+  (void)TouchDown(apzc, ScreenIntPoint(50, 50), mcc->Time());
   mcc->AdvanceByMillis(10);
 
-  Unused << TouchMove(apzc, ScreenIntPoint(50, 60), mcc->Time());
+  (void)TouchMove(apzc, ScreenIntPoint(50, 60), mcc->Time());
   mcc->AdvanceByMillis(200);
 
-  Unused << TouchMove(apzc, ScreenIntPoint(50, 70), mcc->Time());
+  (void)TouchMove(apzc, ScreenIntPoint(50, 70), mcc->Time());
   mcc->AdvanceByMillis(200);
 
   
@@ -795,13 +795,13 @@ TEST_F(APZCAxisLockTester, TouchScrollWithStickyAxisLockingBug1915260) {
   
   
   
-  Unused << TouchMove(apzc, ScreenIntPoint(60, 60), mcc->Time());
+  (void)TouchMove(apzc, ScreenIntPoint(60, 60), mcc->Time());
   mcc->AdvanceByMillis(100);
   
   
   
 
-  Unused << TouchUp(apzc, ScreenIntPoint(65, 45), mcc->Time());
+  (void)TouchUp(apzc, ScreenIntPoint(65, 45), mcc->Time());
 }
 #endif
 

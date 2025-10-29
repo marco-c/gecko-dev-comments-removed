@@ -3784,7 +3784,7 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
       
       
       
-      Unused << oldDoc->PropertyTable().TransferOrRemoveAllPropertiesFor(
+      (void)oldDoc->PropertyTable().TransferOrRemoveAllPropertiesFor(
           aNode, newDoc->PropertyTable());
     }
 
@@ -3886,7 +3886,7 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
           if (hadProperties) {
             
             
-            Unused << newDoc->PropertyTable().TransferOrRemoveAllPropertiesFor(
+            (void)newDoc->PropertyTable().TransferOrRemoveAllPropertiesFor(
                 aNode, oldDoc->PropertyTable());
           }
           aNode->mNodeInfo.swap(newNodeInfo);

@@ -402,5 +402,5 @@ void nsAsyncStreamCopier::AsyncCopyInternal() {
     return;  
   }
 
-  Unused << self.forget();  
+  self.forget().leak();  
 }

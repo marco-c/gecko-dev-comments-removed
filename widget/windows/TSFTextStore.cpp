@@ -610,7 +610,7 @@ void TSFTextStore::MaybeFlushPendingNotifications() {
   
   
   RefPtr<TSFTextStore> kungFuDeathGrip = this;
-  Unused << kungFuDeathGrip;
+  (void)kungFuDeathGrip;
   if (mContentForTSF.isNothing()) {
     if (mPendingTextChangeData.IsValid()) {
       MOZ_LOG(gIMELog, LogLevel::Info,

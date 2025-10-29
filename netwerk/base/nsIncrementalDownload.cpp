@@ -618,7 +618,7 @@ nsIncrementalDownload::OnStartRequest(nsIRequest* aRequest) {
     
     rv = http->GetURI(getter_AddRefs(mFinalURI));
     if (NS_FAILED(rv)) return rv;
-    Unused << http->GetResponseHeader("Etag"_ns, mPartialValidator);
+    (void)http->GetResponseHeader("Etag"_ns, mPartialValidator);
     if (StringBeginsWith(mPartialValidator, "W/"_ns)) {
       mPartialValidator.Truncate();  
     }
@@ -859,7 +859,7 @@ nsIncrementalDownload::AsyncOnChannelRedirect(
 
   
   nsAutoCString rangeVal;
-  Unused << http->GetRequestHeader(rangeHdr, rangeVal);
+  (void)http->GetRequestHeader(rangeHdr, rangeVal);
   if (!rangeVal.IsEmpty()) {
     rv = newHttpChannel->SetRequestHeader(rangeHdr, rangeVal, false);
     NS_ENSURE_SUCCESS(rv, rv);

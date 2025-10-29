@@ -314,7 +314,7 @@ void PDMFactory::EnsureInit() {
     
     gfx::gfxVars::Initialize();
     
-    Unused << BrowserTabsRemoteAutostart();
+    (void)BrowserTabsRemoteAutostart();
   };
   
   if (!gfx::gfxVars::IsInitialized()) {

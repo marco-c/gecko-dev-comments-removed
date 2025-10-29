@@ -702,7 +702,7 @@ class APZCSmoothScrollTester : public APZCBasicTester {
     
     
     keyInput.mAction = {KeyboardScrollAction::eScrollLine, true};
-    Unused << apzc->ReceiveInputEvent(keyInput);
+    (void)apzc->ReceiveInputEvent(keyInput);
     apzc->AssertInKeyboardScroll();
 
     

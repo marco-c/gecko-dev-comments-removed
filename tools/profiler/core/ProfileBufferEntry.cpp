@@ -2509,7 +2509,7 @@ bool ProfileBuffer::DuplicateLastSample(ProfilerThreadId aThreadId,
 void ProfileBuffer::DiscardSamplesBeforeTime(double aTime) {
   
   
-  Unused << aTime;
+  (void)aTime;
 }
 
 

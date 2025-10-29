@@ -860,7 +860,7 @@ void InitLibrary() {
 
   
   
-  Unused << CallbackThreadRegistry::Get();
+  (void)CallbackThreadRegistry::Get();
 }
 
 void ShutdownLibrary() {

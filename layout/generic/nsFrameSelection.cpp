@@ -30,7 +30,6 @@
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/TextEvents.h"
-#include "mozilla/Unused.h"
 #include "mozilla/intl/BidiEmbeddingLevel.h"
 #include "nsBidiPresUtils.h"
 #include "nsCCUncollectableMarker.h"
@@ -2153,7 +2152,7 @@ void nsFrameSelection::EndBatchChanges(const char* aRequesterFuncName,
       
       
       
-      Unused << NotifySelectionListeners(selectionType, IsBatchingEnd::Yes);
+      (void)NotifySelectionListeners(selectionType, IsBatchingEnd::Yes);
     }
   }
 }
@@ -3093,7 +3092,7 @@ void nsFrameSelection::SetAncestorLimiter(Element* aLimiter) {
         const nsresult rv =
             TakeFocus(*limiter, 0, 0, CaretAssociationHint::Before,
                       FocusMode::kCollapseToNewPoint);
-        Unused << NS_WARN_IF(NS_FAILED(rv));
+        (void)NS_WARN_IF(NS_FAILED(rv));
         
       }
     }
