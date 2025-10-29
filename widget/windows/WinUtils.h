@@ -217,6 +217,7 @@ class WinUtils {
 
   static double SystemScaleFactor();
 
+  static bool IsPerMonitorDPIAware();
   
 
 
