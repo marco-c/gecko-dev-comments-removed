@@ -13,7 +13,6 @@
 #include "mozilla/webrender/WebRenderTypes.h"  
 #include "mozilla/TimeStamp.h"                 
 #include "mozilla/TimingParams.h"
-#include "mozilla/Types.h"  
 #include "X11UndefineNone.h"
 #include <unordered_map>
 

@@ -5,7 +5,6 @@
 
 
 
-#include "mozilla/Types.h"
 #include "prlink.h"
 
 #include <xf86drm.h>

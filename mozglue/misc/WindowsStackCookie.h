@@ -14,8 +14,6 @@
 
 #  include <cstdint>
 
-#  include "mozilla/Types.h"
-
 namespace mozilla {
 
 
