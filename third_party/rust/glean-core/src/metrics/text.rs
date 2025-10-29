@@ -131,7 +131,9 @@ impl TextMetric {
     }
 }
 
-impl TestGetValue<String> for TextMetric {
+impl TestGetValue for TextMetric {
+    type Output = String;
+
     
     
     

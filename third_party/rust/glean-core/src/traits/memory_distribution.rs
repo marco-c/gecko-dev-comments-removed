@@ -10,7 +10,7 @@ use crate::{ErrorType, TestGetValue};
 
 
 
-pub trait MemoryDistribution: TestGetValue<DistributionData> {
+pub trait MemoryDistribution: TestGetValue<Output = DistributionData> {
     
     
     

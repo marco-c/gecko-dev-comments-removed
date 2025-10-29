@@ -124,19 +124,7 @@ impl<B: Bucketing> Histogram<B> {
     
     
     pub fn snapshot_values(&self) -> HashMap<u64, u64> {
-        let mut res = self.values.clone();
-
-        let max_bucket = self.values.keys().max().cloned().unwrap_or(0);
-
-        for &min_bucket in self.bucketing.ranges() {
-            
-            let _ = res.entry(min_bucket).or_insert(0);
-            
-            if min_bucket > max_bucket {
-                break;
-            }
-        }
-        res
+        self.values.clone()
     }
 
     

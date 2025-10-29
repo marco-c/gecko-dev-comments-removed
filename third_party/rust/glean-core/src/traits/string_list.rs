@@ -8,7 +8,7 @@ use crate::{ErrorType, TestGetValue};
 
 
 
-pub trait StringList: TestGetValue<Vec<String>> {
+pub trait StringList: TestGetValue<Output = Vec<String>> {
     
     
     

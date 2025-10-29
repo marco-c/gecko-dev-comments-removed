@@ -56,7 +56,7 @@ impl TimespanMetric {
     
     
     pub fn start(&self) {
-        let start_time = zeitstempel::now();
+        let start_time = zeitstempel::now_awake();
 
         let metric = self.clone();
         crate::launch_with_glean(move |glean| metric.set_start(glean, start_time));
@@ -88,7 +88,7 @@ impl TimespanMetric {
     
     
     pub fn stop(&self) {
-        let stop_time = zeitstempel::now();
+        let stop_time = zeitstempel::now_awake();
 
         let metric = self.clone();
         crate::launch_with_glean(move |glean| metric.set_stop(glean, stop_time));
@@ -285,7 +285,8 @@ impl TimespanMetric {
     }
 }
 
-impl TestGetValue<i64> for TimespanMetric {
+impl TestGetValue for TimespanMetric {
+    type Output = i64;
     
     
     

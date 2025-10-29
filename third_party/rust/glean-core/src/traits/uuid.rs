@@ -8,7 +8,7 @@ use crate::{ErrorType, TestGetValue};
 
 
 
-pub trait Uuid: TestGetValue<uuid::Uuid> {
+pub trait Uuid: TestGetValue<Output = uuid::Uuid> {
     
     
     

@@ -9,7 +9,7 @@ use std::time::Duration;
 
 
 
-pub trait Timespan: TestGetValue<u64> {
+pub trait Timespan: TestGetValue<Output = u64> {
     
     
     

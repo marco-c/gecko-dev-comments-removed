@@ -270,7 +270,10 @@ pub trait MetricIdentifier<'a> {
 }
 
 
-pub trait TestGetValue<T> {
+pub trait TestGetValue {
+    
+    type Output;
+
     
     
     
@@ -285,7 +288,7 @@ pub trait TestGetValue<T> {
     
     
     
-    fn test_get_value(&self, ping_name: Option<String>) -> Option<T>;
+    fn test_get_value(&self, ping_name: Option<String>) -> Option<Self::Output>;
 }
 
 

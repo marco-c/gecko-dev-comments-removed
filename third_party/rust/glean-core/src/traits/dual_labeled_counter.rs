@@ -9,7 +9,7 @@ use std::collections::HashMap;
 
 
 
-pub trait DualLabeledCounter: TestGetValue<HashMap<String, HashMap<String, i32>>> {
+pub trait DualLabeledCounter: TestGetValue<Output = HashMap<String, HashMap<String, i32>>> {
     
     
     

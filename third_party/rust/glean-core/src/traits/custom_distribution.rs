@@ -9,7 +9,7 @@ use crate::{DistributionData, ErrorType, TestGetValue};
 
 
 
-pub trait CustomDistribution: TestGetValue<DistributionData> {
+pub trait CustomDistribution: TestGetValue<Output = DistributionData> {
     
     
     

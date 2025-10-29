@@ -3,8 +3,7 @@
 
 
 use std::io::Read;
-use std::sync::{Arc, Barrier, Mutex};
-use std::thread::{self, ThreadId};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use crossbeam_channel::RecvTimeoutError;
@@ -1386,76 +1385,6 @@ fn test_text_can_hold_long_string() {
 
     let result = metric.test_get_num_recorded_errors(ErrorType::InvalidOverflow);
     assert_eq!(result, 0);
-}
-
-#[test]
-fn signaling_done() {
-    let _lock = lock_test();
-
-    
-    
-    #[derive(Debug)]
-    pub struct FakeUploader {
-        barrier: Arc<Barrier>,
-        counter: Arc<Mutex<HashMap<ThreadId, u32>>>,
-    }
-    impl net::PingUploader for FakeUploader {
-        fn upload(&self, _upload_request: net::CapablePingUploadRequest) -> net::UploadResult {
-            let mut map = self.counter.lock().unwrap();
-            *map.entry(thread::current().id()).or_insert(0) += 1;
-
-            
-            self.barrier.wait();
-
-            
-            net::UploadResult::done()
-        }
-    }
-
-    
-    let dir = tempfile::tempdir().unwrap();
-    let tmpname = dir.path().to_path_buf();
-
-    
-    let barrier = Arc::new(Barrier::new(2));
-    
-    let call_count = Arc::new(Mutex::default());
-
-    let cfg = ConfigurationBuilder::new(true, tmpname, GLOBAL_APPLICATION_ID)
-        .with_server_endpoint("invalid-test-host")
-        .with_uploader(FakeUploader {
-            barrier: Arc::clone(&barrier),
-            counter: Arc::clone(&call_count),
-        })
-        .build();
-
-    let _t = new_glean(Some(cfg), true);
-
-    
-    const PING_NAME: &str = "test-ping";
-    let custom_ping = new_test_ping(PING_NAME);
-    custom_ping.submit(None);
-    custom_ping.submit(None);
-
-    
-    barrier.wait();
-
-    
-    custom_ping.submit(None);
-
-    
-    
-    barrier.wait();
-
-    
-    
-    std::thread::sleep(std::time::Duration::from_millis(100));
-
-    let map = call_count.lock().unwrap();
-    assert_eq!(2, map.len(), "should have launched 2 uploader threads");
-    for &count in map.values() {
-        assert_eq!(1, count, "each thread should call upload only once");
-    }
 }
 
 #[test]

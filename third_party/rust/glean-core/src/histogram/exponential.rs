@@ -57,7 +57,7 @@ fn exponential_range(min: u64, max: u64, bucket_count: usize) -> Vec<u64> {
 
 
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, MallocSizeOf)]
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, MallocSizeOf)]
 pub struct PrecomputedExponential {
     
     
@@ -66,6 +66,14 @@ pub struct PrecomputedExponential {
     pub(crate) min: u64,
     pub(crate) max: u64,
     pub(crate) bucket_count: usize,
+}
+
+impl PartialEq for PrecomputedExponential {
+    fn eq(&self, other: &Self) -> bool {
+        
+        
+        self.min == other.min && self.max == other.max && self.bucket_count == other.bucket_count
+    }
 }
 
 impl Bucketing for PrecomputedExponential {

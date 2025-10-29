@@ -8,7 +8,7 @@ use crate::{ErrorType, TestGetValue};
 
 
 
-pub trait Quantity: TestGetValue<i64> {
+pub trait Quantity: TestGetValue<Output = i64> {
     
     
     

@@ -8,7 +8,7 @@ use crate::{ErrorType, TestGetValue};
 
 
 
-pub trait Url: TestGetValue<String> {
+pub trait Url: TestGetValue<Output = String> {
     
     
     

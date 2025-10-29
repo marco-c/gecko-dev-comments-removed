@@ -145,7 +145,9 @@ impl UuidMetric {
     }
 }
 
-impl TestGetValue<String> for UuidMetric {
+impl TestGetValue for UuidMetric {
+    type Output = String;
+
     
     
     

@@ -212,7 +212,9 @@ impl EventMetric {
     }
 }
 
-impl TestGetValue<Vec<RecordedEvent>> for EventMetric {
+impl TestGetValue for EventMetric {
+    type Output = Vec<RecordedEvent>;
+
     
     
     

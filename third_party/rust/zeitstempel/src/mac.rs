@@ -5,6 +5,7 @@ extern "C" {
 }
 
 const CLOCK_MONOTONIC_RAW: clockid_t = 4;
+const CLOCK_UPTIME_RAW: clockid_t = 8;
 
 
 
@@ -14,4 +15,13 @@ const CLOCK_MONOTONIC_RAW: clockid_t = 4;
 
 pub fn now_including_suspend() -> u64 {
     unsafe { clock_gettime_nsec_np(CLOCK_MONOTONIC_RAW) }
+}
+
+
+
+
+
+
+pub fn now_awake() -> u64 {
+    unsafe { clock_gettime_nsec_np(CLOCK_UPTIME_RAW) }
 }

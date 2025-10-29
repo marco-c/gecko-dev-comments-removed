@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::hash::Hash;
 
 use crate::event_database::RecordedEvent;
-use crate::{ErrorType, TestGetValue};
+use crate::TestGetValue;
 
 
 
@@ -76,7 +76,7 @@ impl TryFrom<&str> for NoExtraKeys {
 
 
 
-pub trait Event: TestGetValue<Vec<RecordedEvent>> {
+pub trait Event: TestGetValue<Output = Vec<RecordedEvent>> {
     
     type Extra: ExtraKeys;
 
@@ -86,17 +86,4 @@ pub trait Event: TestGetValue<Vec<RecordedEvent>> {
     
     
     fn record<M: Into<Option<Self::Extra>>>(&self, extra: M);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn test_get_num_recorded_errors(&self, error: ErrorType) -> i32;
 }

@@ -146,7 +146,9 @@ impl UrlMetric {
     }
 }
 
-impl TestGetValue<String> for UrlMetric {
+impl TestGetValue for UrlMetric {
+    type Output = String;
+
     
     
     

@@ -303,7 +303,9 @@ impl CustomDistributionMetric {
     }
 }
 
-impl TestGetValue<DistributionData> for CustomDistributionMetric {
+impl TestGetValue for CustomDistributionMetric {
+    type Output = DistributionData;
+
     
     
     

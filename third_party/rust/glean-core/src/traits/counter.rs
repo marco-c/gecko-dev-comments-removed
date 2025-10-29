@@ -8,7 +8,7 @@ use crate::{ErrorType, TestGetValue};
 
 
 
-pub trait Counter: TestGetValue<i32> {
+pub trait Counter: TestGetValue<Output = i32> {
     
     
     

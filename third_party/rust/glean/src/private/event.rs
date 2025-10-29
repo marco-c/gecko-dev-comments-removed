@@ -71,8 +71,28 @@ impl<K: traits::ExtraKeys> EventMetric<K> {
     }
 }
 
+
+impl<K> EventMetric<K> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn test_get_num_recorded_errors(&self, error: ErrorType) -> i32 {
+        self.inner.test_get_num_recorded_errors(error)
+    }
+}
+
 #[inherent]
-impl<K> TestGetValue<Vec<RecordedEvent>> for EventMetric<K> {
+impl<K> TestGetValue for EventMetric<K> {
+    type Output = Vec<RecordedEvent>;
+
     pub fn test_get_value(&self, ping_name: Option<String>) -> Option<Vec<RecordedEvent>> {
         self.inner.test_get_value(ping_name)
     }
@@ -88,10 +108,6 @@ impl<K: traits::ExtraKeys> traits::Event for EventMetric<K> {
             .map(|e| e.into_ffi_extra())
             .unwrap_or_else(HashMap::new);
         self.inner.record(extra);
-    }
-
-    pub fn test_get_num_recorded_errors(&self, error: ErrorType) -> i32 {
-        self.inner.test_get_num_recorded_errors(error)
     }
 }
 

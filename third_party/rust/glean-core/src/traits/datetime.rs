@@ -10,7 +10,7 @@ use crate::{ErrorType, TestGetValue};
 
 
 
-pub trait Datetime: TestGetValue<crate::metrics::Datetime> {
+pub trait Datetime: TestGetValue<Output = crate::metrics::Datetime> {
     
     
     

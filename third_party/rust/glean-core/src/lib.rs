@@ -193,6 +193,12 @@ fn block_on_dispatcher() {
 }
 
 
+pub fn get_awake_timestamp_ms() -> u64 {
+    const NANOS_PER_MILLI: u64 = 1_000_000;
+    zeitstempel::now_awake() / NANOS_PER_MILLI
+}
+
+
 pub fn get_timestamp_ms() -> u64 {
     const NANOS_PER_MILLI: u64 = 1_000_000;
     zeitstempel::now() / NANOS_PER_MILLI
@@ -649,7 +655,7 @@ fn uploader_shutdown() {
     
     let result = rx.recv_timeout(Duration::from_secs(30));
 
-    let stop_time = zeitstempel::now();
+    let stop_time = zeitstempel::now_awake();
     core::with_glean(|glean| {
         glean
             .additional_metrics
@@ -725,7 +731,7 @@ pub fn shutdown() {
     let blocked = dispatcher::block_on_queue_timeout(Duration::from_secs(10));
 
     
-    let stop_time = zeitstempel::now();
+    let stop_time = zeitstempel::now_awake();
     core::with_glean(|glean| {
         glean
             .additional_metrics
@@ -748,7 +754,7 @@ pub fn shutdown() {
     
     core::with_glean(|glean| {
         if let Err(e) = glean.persist_ping_lifetime_data() {
-            log::error!("Can't persist ping lifetime data: {:?}", e);
+            log::info!("Can't persist ping lifetime data: {:?}", e);
         }
     });
 }

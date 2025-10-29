@@ -277,7 +277,9 @@ impl DatetimeMetric {
     }
 }
 
-impl TestGetValue<Datetime> for DatetimeMetric {
+impl TestGetValue for DatetimeMetric {
+    type Output = Datetime;
+
     
     
     

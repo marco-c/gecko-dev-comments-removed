@@ -186,7 +186,9 @@ impl StringListMetric {
     }
 }
 
-impl TestGetValue<Vec<String>> for StringListMetric {
+impl TestGetValue for StringListMetric {
+    type Output = Vec<String>;
+
     
     
     

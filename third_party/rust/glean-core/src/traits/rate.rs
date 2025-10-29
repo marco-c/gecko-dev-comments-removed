@@ -7,7 +7,7 @@ use crate::{ErrorType, TestGetValue};
 
 
 
-pub trait Rate: TestGetValue<crate::Rate> {
+pub trait Rate: TestGetValue<Output = crate::Rate> {
     
     
     

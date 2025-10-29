@@ -12,7 +12,7 @@ use std::time::Duration;
 
 
 
-pub trait TimingDistribution: TestGetValue<DistributionData> {
+pub trait TimingDistribution: TestGetValue<Output = DistributionData> {
     
     
     

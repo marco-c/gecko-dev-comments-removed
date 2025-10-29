@@ -151,7 +151,9 @@ impl ObjectMetric {
     }
 }
 
-impl TestGetValue<JsonValue> for ObjectMetric {
+impl TestGetValue for ObjectMetric {
+    type Output = JsonValue;
+
     
     
     

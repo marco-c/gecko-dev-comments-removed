@@ -8,7 +8,7 @@ use crate::{ErrorType, TestGetValue};
 
 
 
-pub trait String: TestGetValue<std::string::String> {
+pub trait String: TestGetValue<Output = std::string::String> {
     
     
     
