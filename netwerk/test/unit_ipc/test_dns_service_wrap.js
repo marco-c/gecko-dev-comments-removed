@@ -2,6 +2,14 @@
 
 
 
+const overrideService = Cc[
+  "@mozilla.org/network/native-dns-override;1"
+].getService(Ci.nsINativeDNSResolverOverride);
+
+
+
+overrideService.addIPOverride("xn--bcher-kva.org", "127.0.0.1");
+
 function run_test() {
   run_test_in_child("../unit/test_dns_service.js");
 }
