@@ -291,17 +291,27 @@ bool NavigateEvent::IsBeingDispatched() const {
 
 
 void NavigateEvent::Finish(bool aDidFulfill) {
-  switch (mInterceptionState) {
+  
+  MOZ_DIAGNOSTIC_ASSERT(mInterceptionState != InterceptionState::Finished);
+
+  
+  if (mInterceptionState == InterceptionState::Intercepted) {
     
-    case InterceptionState::Intercepted:
-    case InterceptionState::Finished:
-      MOZ_DIAGNOSTIC_ASSERT(false);
-      break;
-      
-    case InterceptionState::None:
-      return;
-    default:
-      break;
+    MOZ_DIAGNOSTIC_ASSERT(!aDidFulfill);
+
+    
+    MOZ_DIAGNOSTIC_ASSERT(!mNavigationPrecommitHandlerList.IsEmpty());
+
+    
+    mInterceptionState = InterceptionState::Finished;
+
+    
+    return;
+  }
+
+  
+  if (mInterceptionState == InterceptionState::None) {
+    return;
   }
 
   
