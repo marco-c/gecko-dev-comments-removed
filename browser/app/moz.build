@@ -77,7 +77,6 @@ if CONFIG["OS_ARCH"] == "WINNT":
     RCINCLUDE = "splash.rc"
     DIRS += [
         "installation_dir_layout",
-        "desktop-launcher",
         "pbproxy",
         "winlauncher",
     ]
@@ -113,6 +112,11 @@ if CONFIG["OS_ARCH"] == "WINNT":
     
     
     LINK_FLAGS["CETCOMPAT"] = []
+
+if CONFIG["DESKTOP_LAUNCHER_ENABLED"]:
+    DIRS += [
+        "desktop-launcher",
+    ]
 
 if CONFIG["OS_ARCH"] == "Darwin":
     OS_LIBS += [
