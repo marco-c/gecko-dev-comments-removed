@@ -3990,35 +3990,25 @@ static void SkipInk(nsIFrame* aFrame, DrawTarget& aDrawTarget,
   nsCSSRendering::PaintDecorationLineParams clipParams = aParams;
   const unsigned length = aIntercepts.Length();
 
-  
-  
-  const Float relativeTextStart =
-      aParams.vertical ? aParams.pt.y : aParams.pt.x;
-  const Float relativeTextEnd = relativeTextStart + aParams.lineSize.width;
-  
-  
-  
-  const Float absoluteLineStart = relativeTextStart - aParams.icoordInFrame;
+  Float lineStart = aParams.vertical ? aParams.pt.y : aParams.pt.x;
+  Float lineEnd = lineStart + aParams.lineSize.width;
 
   
-  const Float trimLineDrawAreaStart =
-      relativeTextStart + (aParams.trimLeft - aPadding);
-  const Float trimLineDrawAreaEnd =
-      relativeTextEnd - (aParams.trimRight - aPadding);
+  const Float trimLineStart = lineStart + (aParams.trimLeft - aPadding);
+  const Float trimLineEnd = lineEnd - (aParams.trimRight - aPadding);
 
   for (unsigned i = 0; i <= length; i += 2) {
     
     
     
     
-    SkScalar startIntercept = trimLineDrawAreaStart;
+    SkScalar startIntercept = trimLineStart;
     if (i > 0) {
-      startIntercept =
-          std::max(aIntercepts[i - 1] + absoluteLineStart, startIntercept);
+      startIntercept = std::max(aIntercepts[i - 1] + lineStart, startIntercept);
     }
-    SkScalar endIntercept = trimLineDrawAreaEnd;
+    SkScalar endIntercept = trimLineEnd;
     if (i < length) {
-      endIntercept = std::min(aIntercepts[i] + absoluteLineStart, endIntercept);
+      endIntercept = std::min(aIntercepts[i] + lineStart, endIntercept);
     }
 
     
@@ -4039,10 +4029,9 @@ static void SkipInk(nsIFrame* aFrame, DrawTarget& aDrawTarget,
     
     
     if (aParams.vertical) {
-      clipParams.pt.y =
-          aParams.sidewaysLeft
-              ? relativeTextEnd - (endIntercept - relativeTextStart) + aPadding
-              : startIntercept + aPadding;
+      clipParams.pt.y = aParams.sidewaysLeft
+                            ? lineEnd - (endIntercept - lineStart) + aPadding
+                            : startIntercept + aPadding;
       aRect.y = std::floor(clipParams.pt.y + 0.5);
       aRect.SetBottomEdge(
           std::floor(clipParams.pt.y + clipParams.lineSize.width + 0.5));
@@ -4078,8 +4067,10 @@ void nsCSSRendering::PaintDecorationLine(
 
   
   
+  mozilla::StyleTextDecorationSkipInk skipInk =
+      aFrame->StyleText()->mTextDecorationSkipInk;
   bool skipInkEnabled =
-      aParams.skipInk != mozilla::StyleTextDecorationSkipInk::None &&
+      skipInk != mozilla::StyleTextDecorationSkipInk::None &&
       aParams.decoration != StyleTextDecorationLine::LINE_THROUGH &&
       aParams.allowInkSkipping && aFrame->IsTextFrame();
 
@@ -4139,7 +4130,7 @@ void nsCSSRendering::PaintDecorationLine(
     if (iter.GlyphRun()->mOrientation ==
             mozilla::gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_UPRIGHT ||
         (iter.GlyphRun()->mIsCJK &&
-         aParams.skipInk == mozilla::StyleTextDecorationSkipInk::Auto)) {
+         skipInk == mozilla::StyleTextDecorationSkipInk::Auto)) {
       
       
       
