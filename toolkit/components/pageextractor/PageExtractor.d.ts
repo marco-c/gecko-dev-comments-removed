@@ -2,9 +2,13 @@
 
 
 
-export interface GetTextOptions {
+export type GetTextOptions = Partial<{
+  
+  
+  
+  sufficientLength: number;
   
   removeBoilerplate: boolean;
   
   justViewport: boolean;
-}
+}>;
