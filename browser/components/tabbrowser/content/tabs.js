@@ -1347,7 +1347,7 @@
           tab.style.setProperty("max-width", aTabWidth, "important");
           if (!isEndTab) {
             
-            tab.style.transition = "none";
+            tab.animationsEnabled = false;
             tabsToReset.push(tab);
           }
         }
@@ -1358,7 +1358,7 @@
             .then(() => {
               window.requestAnimationFrame(() => {
                 for (let tab of tabsToReset) {
-                  tab.style.transition = "";
+                  tab.animationsEnabled = true;
                 }
               });
             });

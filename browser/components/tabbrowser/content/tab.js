@@ -273,6 +273,14 @@
       gBrowser._tabAttrModified(this, ["undiscardable"]);
     }
 
+    get animationsEnabled() {
+      return this.style.transition == "";
+    }
+
+    set animationsEnabled(val) {
+      this.style.transition = val ? "" : "none";
+    }
+
     get isEmpty() {
       
       
@@ -374,10 +382,7 @@
     }
 
     get group() {
-      if (this.parentElement?.tagName == "tab-group") {
-        return this.parentElement;
-      }
-      return null;
+      return this.closest("tab-group");
     }
 
     get splitview() {
