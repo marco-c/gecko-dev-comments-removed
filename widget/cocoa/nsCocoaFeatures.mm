@@ -34,10 +34,12 @@
 #include "nsDebug.h"
 #include "nsObjCExceptions.h"
 
+#include <atomic>
 #import <Cocoa/Cocoa.h>
 #include <sys/sysctl.h>
 
- int32_t nsCocoaFeatures::mOSVersion = 0;
+
+static std::atomic<int32_t> sOSVersion = 0;
 
 
 inline int32_t AssembleVersion(int32_t aMajor, int32_t aMinor,
@@ -117,8 +119,8 @@ int32_t nsCocoaFeatures::GetVersion(int32_t aMajor, int32_t aMinor,
   return macOSVersion;
 }
 
- void nsCocoaFeatures::InitializeVersionNumbers() {
-  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
+ int32_t nsCocoaFeatures::ComputeVersion() {
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   
   
@@ -126,19 +128,25 @@ int32_t nsCocoaFeatures::GetVersion(int32_t aMajor, int32_t aMinor,
 
   int major, minor, bugfix;
   GetSystemVersion(major, minor, bugfix);
-  mOSVersion = GetVersion(major, minor, bugfix);
+  return GetVersion(major, minor, bugfix);
 
-  NS_OBJC_END_TRY_IGNORE_BLOCK;
+  NS_OBJC_END_TRY_BLOCK_RETURN(0);
 }
 
  int32_t nsCocoaFeatures::macOSVersion() {
-  
-  MOZ_ASSERT((mOSVersion & MACOS_VERSION_MASK) >= 0);
-  if (!mOSVersion) {
-    mOSVersion = -1;
-    InitializeVersionNumbers();
+  int32_t version = sOSVersion.load(std::memory_order_relaxed);
+  if (version != 0) {
+    return version;
   }
-  return mOSVersion;
+
+  
+  
+  version = ComputeVersion();
+  if (version != 0) {
+    sOSVersion.store(version, std::memory_order_relaxed);
+  }
+
+  return version;
 }
 
  int32_t nsCocoaFeatures::macOSVersionMajor() {

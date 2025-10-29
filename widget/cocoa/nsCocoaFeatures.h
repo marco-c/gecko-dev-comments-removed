@@ -42,9 +42,7 @@ class nsCocoaFeatures {
 
  private:
   nsCocoaFeatures() = delete;  
-  static void InitializeVersionNumbers();
-
-  static int32_t mOSVersion;
+  static int32_t ComputeVersion();
 };
 
 #endif  
