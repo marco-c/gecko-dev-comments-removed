@@ -4523,10 +4523,10 @@ static bool FromHex(JSContext* cx, JSString* string, size_t maxLength,
 }
 
 namespace Base64 {
-static constexpr uint8_t InvalidChar = UINT8_MAX;
+static constexpr int8_t InvalidChar = -1;
 
 static constexpr auto DecodeTable(const char (&alphabet)[65]) {
-  std::array<uint8_t, 128> result = {};
+  std::array<int8_t, 256> result = {};
 
   
   for (auto& e : result) {
@@ -4554,12 +4554,12 @@ static_assert(std::char_traits<char>::length(Base64Url) == 64);
 
 namespace Base64::Decode {
 static constexpr auto Base64 = DecodeTable(Base64::Encode::Base64);
-static_assert(Base64.size() == 128,
-              "128 elements to allow access through ASCII characters");
+static_assert(Base64.size() == 256,
+              "256 elements to allow access through Latin-1 characters");
 
 static constexpr auto Base64Url = DecodeTable(Base64::Encode::Base64Url);
-static_assert(Base64Url.size() == 128,
-              "128 elements to allow access through ASCII characters");
+static_assert(Base64Url.size() == 256,
+              "256 elements to allow access through Latin-1 characters");
 }  
 
 enum class Alphabet {
@@ -4719,11 +4719,118 @@ static auto FromBase64(const CharT* chars, size_t length, Alphabet alphabet,
   if (maxLength == 0) {
     return Base64Result::Ok(0, 0);
   }
+  MOZ_ASSERT(canAppend(1), "can append at least one byte if maxLength > 0");
 
   
   
   
-  size_t read = 0;
+  size_t index = 0;
+
+  
+
+  static_assert(std::size(Base64::Decode::Base64) == 256 &&
+                    std::size(Base64::Decode::Base64Url) == 256,
+                "can access decode tables using Latin-1 character");
+
+  const auto& decode = alphabet == Alphabet::Base64 ? Base64::Decode::Base64
+                                                    : Base64::Decode::Base64Url;
+
+  auto decodeChar = [&](CharT ch) -> int32_t {
+    if constexpr (sizeof(CharT) == 1) {
+      return decode[ch];
+    } else {
+      return ch <= 255 ? decode[ch] : Base64::InvalidChar;
+    }
+  };
+
+  auto decode4Chars = [&](const CharT* chars) {
+    return (decodeChar(chars[0]) << 18) | (decodeChar(chars[1]) << 12) |
+           (decodeChar(chars[2]) << 6) | (decodeChar(chars[3]));
+  };
+
+  
+  
+  
+
+  size_t alignedLength = length & ~0x3;
+  while (canAppend(3) && index < alignedLength) {
+    
+
+    
+
+    
+
+    
+    uint32_t chunk = decode4Chars(chars + index);
+
+    
+
+    
+    if (MOZ_LIKELY(int32_t(chunk) >= 0)) {
+      
+      decodeChunk(chunk);
+
+      
+      index += 4;
+      continue;
+    }
+
+    
+
+    
+    CharT part[4];
+    size_t i = index;
+    size_t j = 0;
+    while (i < length && j < 4) {
+      auto ch = chars[i++];
+
+      
+      if (mozilla::IsAsciiWhitespace(ch)) {
+        continue;
+      }
+
+      
+      part[j++] = ch;
+    }
+
+    
+    if (MOZ_LIKELY(j == 4)) {
+      
+      uint32_t chunk = decode4Chars(part);
+
+      
+
+      
+      if (MOZ_LIKELY(int32_t(chunk) >= 0)) {
+        
+        decodeChunk(chunk);
+
+        
+        index = i;
+        continue;
+      }
+    }
+
+    
+    
+    break;
+  }
+
+  
+  if (index == length) {
+    return Base64Result::Ok(length, written());
+  }
+
+  
+  
+  
+  size_t read = index;
+
+  
+  if (!canAppend(1)) {
+    MOZ_ASSERT(written() > 0);
+    return Base64Result::Ok(read, written());
+  }
 
   
 
@@ -4736,16 +4843,6 @@ static auto FromBase64(const CharT* chars, size_t length, Alphabet alphabet,
   
   
   size_t chunkLength = 0;
-
-  
-  
-  
-  size_t index = 0;
-
-  
-
-  const auto& decode = alphabet == Alphabet::Base64 ? Base64::Decode::Base64
-                                                    : Base64::Decode::Base64Url;
 
   
   for (; index < length; index++) {
@@ -4767,13 +4864,11 @@ static auto FromBase64(const CharT* chars, size_t length, Alphabet alphabet,
     }
 
     
-    uint8_t value = Base64::InvalidChar;
-    if (mozilla::IsAscii(ch)) {
-      value = decode[ch];
-    }
-    if (MOZ_UNLIKELY(value == Base64::InvalidChar)) {
+    uint32_t value = decodeChar(ch);
+    if (MOZ_UNLIKELY(int32_t(value) < 0)) {
       return Base64Result::ErrorAt(Base64Error::BadChar, index);
     }
+    MOZ_ASSERT(value <= 0x7f);
 
     
 
@@ -4789,26 +4884,7 @@ static auto FromBase64(const CharT* chars, size_t length, Alphabet alphabet,
     chunkLength += 1;
 
     
-    if (chunkLength == 4) {
-      
-      decodeChunk(chunk);
-
-      
-      chunk = 0;
-
-      
-      chunkLength = 0;
-
-      
-      
-      
-      read = index + 1;
-
-      
-      if (!canAppend(1)) {
-        return Base64Result::Ok(read, written());
-      }
-    }
+    MOZ_ASSERT(chunkLength < 4);
   }
 
   
