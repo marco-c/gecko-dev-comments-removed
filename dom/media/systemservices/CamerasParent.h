@@ -28,25 +28,56 @@ namespace mozilla::camera {
 class CamerasParent;
 class VideoEngine;
 
-class CallbackHelper : public webrtc::VideoSinkInterface<webrtc::VideoFrame> {
- public:
-  CallbackHelper(CaptureEngine aCapEng, int aStreamId, CamerasParent* aParent)
-      : mCapEngine(aCapEng),
-        mStreamId(aStreamId),
-        mTrackingId(CaptureEngineToTrackingSourceStr(aCapEng), aStreamId),
-        mParent(aParent),
-        mConfiguration("CallbackHelper::mConfiguration") {}
 
-  void SetConfiguration(const webrtc::VideoCaptureCapability& aCapability,
-                        const NormalizedConstraints& aConstraints,
-                        const dom::VideoResizeModeEnum& aResizeMode);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class AggregateCapturer final
+    : public webrtc::VideoSinkInterface<webrtc::VideoFrame> {
+ public:
+  static std::unique_ptr<AggregateCapturer> Create(
+      nsISerialEventTarget* aVideoCaptureThread, CaptureEngine aCapEng,
+      VideoEngine* aEngine, const nsCString& aUniqueId, uint64_t aWindowId,
+      nsTArray<webrtc::VideoCaptureCapability>&& aCapabilities,
+      CamerasParent* aParent);
+
+  ~AggregateCapturer();
+
+  void AddStream(CamerasParent* aParent, int aStreamId, uint64_t aWindowId);
+  struct RemoveStreamResult {
+    size_t mNumRemainingStreams;
+    size_t mNumRemainingStreamsForParent;
+  };
+  RemoveStreamResult RemoveStream(int aStreamId);
+  RemoveStreamResult RemoveStreamsFor(CamerasParent* aParent);
+  Maybe<int> CaptureIdFor(int aStreamId);
+  void SetConfigurationFor(int aStreamId,
+                           const webrtc::VideoCaptureCapability& aCapability,
+                           const NormalizedConstraints& aConstraints,
+                           const dom::VideoResizeModeEnum& aResizeMode,
+                           bool aStarted);
+  webrtc::VideoCaptureCapability CombinedCapability();
 
   void OnCaptureEnded();
   void OnFrame(const webrtc::VideoFrame& aVideoFrame) override;
 
-  friend CamerasParent;
-
- private:
   struct Configuration {
     webrtc::VideoCaptureCapability mCapability;
     NormalizedConstraints mConstraints;
@@ -54,15 +85,55 @@ class CallbackHelper : public webrtc::VideoSinkInterface<webrtc::VideoFrame> {
     
     dom::VideoResizeModeEnum mResizeMode{};
   };
-  const CaptureEngine mCapEngine;
-  const int mStreamId;
-  const TrackingId mTrackingId;
-  CamerasParent* const mParent;
-  MediaEventListener mCaptureEndedListener;
-  bool mConnectedToCaptureEnded = false;
-  DataMutex<Configuration> mConfiguration;
   
-  media::TimeUnit mLastFrameTime = media::TimeUnit::FromNegativeInfinity();
+  
+  struct Stream {
+    
+    
+    CamerasParent* const mParent;
+    
+    
+    const int mId{-1};
+    
+    const uint64_t mWindowId{};
+    
+    Configuration mConfiguration;
+    
+    
+    
+    bool mStarted{false};
+    
+    media::TimeUnit mLastFrameTime{media::TimeUnit::FromNegativeInfinity()};
+  };
+  
+  const nsCOMPtr<nsISerialEventTarget> mVideoCaptureThread;
+  
+  
+  const CaptureEngine mCapEngine;
+  
+  
+  const RefPtr<VideoEngine> mEngine;
+  
+  const nsCString mUniqueId;
+  
+  
+  const int mCaptureId;
+  
+  const TrackingId mTrackingId;
+  
+  
+  const nsTArray<webrtc::VideoCaptureCapability> mCapabilities;
+  
+  
+  DataMutex<nsTArray<std::unique_ptr<Stream>>> mStreams;
+
+ private:
+  AggregateCapturer(nsISerialEventTarget* aVideoCaptureThread,
+                    CaptureEngine aCapEng, VideoEngine* aEngine,
+                    const nsCString& aUniqueId, int aCaptureId,
+                    nsTArray<webrtc::VideoCaptureCapability>&& aCapabilities);
+
+  MediaEventListener mCaptureEndedListener;
 };
 
 class DeliverFrameRunnable;
@@ -127,6 +198,7 @@ class CamerasParent final : public PCamerasParent {
   mozilla::ipc::IPCResult RecvEnsureInitialized(
       const CaptureEngine& aCapEngine) override;
 
+  bool IsWindowCapturing(uint64_t aWindowId, const nsACString& aUniqueId) const;
   nsIEventTarget* GetBackgroundEventTarget() {
     return mPBackgroundEventTarget;
   };
@@ -138,7 +210,8 @@ class CamerasParent final : public PCamerasParent {
   ShmemBuffer GetBuffer(size_t aSize);
 
   
-  int DeliverFrameOverIPC(CaptureEngine aCapEngine, int aStreamId,
+  int DeliverFrameOverIPC(CaptureEngine aCapEngine,
+                          const Span<const int>& aStreamId,
                           const TrackingId& aTrackingId, ShmemBuffer aBuffer,
                           unsigned char* aAltBuffer,
                           const VideoFrameProperties& aProps);
@@ -148,9 +221,18 @@ class CamerasParent final : public PCamerasParent {
  private:
   virtual ~CamerasParent();
 
-  
-  void StopCapture(const CaptureEngine& aCapEngine, int aStreamId);
-  int ReleaseCapture(const CaptureEngine& aCapEngine, int aStreamId);
+  struct GetOrCreateCapturerResult {
+    AggregateCapturer* mCapturer{};
+    int mStreamId{};
+  };
+  GetOrCreateCapturerResult GetOrCreateCapturer(
+      CaptureEngine aEngine, uint64_t aWindowId, const nsCString& aUniqueId,
+      nsTArray<webrtc::VideoCaptureCapability>&& aCapabilities);
+  AggregateCapturer* GetCapturer(CaptureEngine aEngine, int aStreamId);
+  int ReleaseStream(CaptureEngine aEngine, int aStreamId);
+
+  nsTArray<webrtc::VideoCaptureCapability> const* EnsureCapabilitiesPopulated(
+      CaptureEngine aEngine, const nsCString& aUniqueId);
 
   void OnDeviceChange();
 
@@ -167,7 +249,6 @@ class CamerasParent final : public PCamerasParent {
 
   void OnShutdown();
 
-  nsTArray<UniquePtr<CallbackHelper>> mCallbacks;
   
   
   const UniquePtr<media::ShutdownBlockingTicket> mShutdownBlocker;
@@ -182,6 +263,13 @@ class CamerasParent final : public PCamerasParent {
 
   
   
+  
+  const RefPtr<
+      media::Refcountable<nsTArray<std::unique_ptr<AggregateCapturer>>>>
+      mCapturers;
+
+  
+  
   const RefPtr<VideoCaptureFactory> mVideoCaptureFactory;
 
   
@@ -193,7 +281,7 @@ class CamerasParent final : public PCamerasParent {
   
   bool mDestroyed;
 
-  std::map<nsCString, std::map<int, webrtc::VideoCaptureCapability>>
+  std::map<nsCString, nsTArray<webrtc::VideoCaptureCapability>>
       mAllCandidateCapabilities;
 
   
