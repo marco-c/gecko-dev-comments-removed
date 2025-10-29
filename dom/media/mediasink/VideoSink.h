@@ -73,6 +73,10 @@ class VideoSink : public MediaSink {
 
   void GetDebugInfo(dom::MediaSinkDebugInfo& aInfo) override;
 
+  void SetVideoQueueSendToCompositorSize(const uint32_t aSize) override {
+    mVideoQueueSendToCompositorSize = aSize;
+  }
+
  private:
   virtual ~VideoSink();
 
@@ -150,7 +154,7 @@ class VideoSink : public MediaSink {
 
   
   
-  const uint32_t mVideoQueueSendToCompositorSize;
+  uint32_t mVideoQueueSendToCompositorSize;
 
 #ifdef XP_WIN
   
