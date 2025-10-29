@@ -173,7 +173,8 @@ class XULTreeGridCellAccessible : public LeafAccessible,
   
 
 
-  bool IsEditable() const;
+
+  bool IsEditableCell() const;
 
   enum { eAction_Click = 0 };
 
