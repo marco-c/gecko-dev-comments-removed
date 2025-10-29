@@ -297,9 +297,9 @@ void CodeGenerator::visitMulI(LMulI* ins) {
 
     if (constant > 0) {
       uint32_t shift = mozilla::FloorLog2(constant);
+
       if (!mul->canOverflow()) {
         
-        uint32_t rest = constant - (1 << shift);
 
         
         
@@ -311,10 +311,14 @@ void CodeGenerator::visitMulI(LMulI* ins) {
         
         
         
+        uint32_t rest = constant - (1 << shift);
         uint32_t shift_rest = mozilla::FloorLog2(rest);
-        if (lhs != dest && (1u << shift_rest) == rest) {
-          masm.ma_sll(dest, lhs, Imm32(shift - shift_rest));
-          masm.add32(lhs, dest);
+        if ((1u << shift_rest) == rest) {
+          UseScratchRegisterScope temps(masm);
+          Register scratch = temps.Acquire();
+
+          masm.ma_sll(scratch, lhs, Imm32(shift - shift_rest));
+          masm.as_addu(dest, scratch, lhs);
           if (shift_rest != 0) {
             masm.ma_sll(dest, dest, Imm32(shift_rest));
           }
@@ -322,17 +326,18 @@ void CodeGenerator::visitMulI(LMulI* ins) {
         }
       } else {
         
-        
-        if (lhs != dest && (1 << shift) == constant) {
+        if ((1 << shift) == constant) {
           UseScratchRegisterScope temps(masm);
           Register scratch = temps.Acquire();
+
           
-          masm.ma_sll(dest, lhs, Imm32(shift));
+          masm.ma_dsll(dest, lhs, Imm32(shift));
+
           
           
           
-          masm.ma_sra(scratch, dest, Imm32(shift));
-          bailoutCmp32(Assembler::NotEqual, lhs, scratch, ins->snapshot());
+          masm.ma_sll(scratch, dest, Imm32(0));
+          bailoutCmp32(Assembler::NotEqual, dest, scratch, ins->snapshot());
           return;
         }
       }

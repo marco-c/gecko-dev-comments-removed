@@ -800,41 +800,44 @@ void CodeGenerator::visitMulI(LMulI* ins) {
 
       if (!mul->canOverflow()) {
         
-        uint32_t rest = constant - (1 << shift);
 
         
         
         if ((1 << shift) == constant) {
-          masm.as_slli_w(dest, lhs, shift % 32);
+          masm.as_slli_w(dest, lhs, shift);
           return;
         }
 
         
         
         
+        uint32_t rest = constant - (1 << shift);
         uint32_t shift_rest = mozilla::FloorLog2(rest);
-        if (lhs != dest && (1u << shift_rest) == rest) {
-          masm.as_slli_w(dest, lhs, (shift - shift_rest) % 32);
-          masm.add32(lhs, dest);
+        if ((1u << shift_rest) == rest) {
+          UseScratchRegisterScope temps(masm);
+          Register scratch = temps.Acquire();
+
+          masm.as_slli_w(scratch, lhs, (shift - shift_rest));
+          masm.as_add_w(dest, scratch, lhs);
           if (shift_rest != 0) {
-            masm.as_slli_w(dest, dest, shift_rest % 32);
+            masm.as_slli_w(dest, dest, shift_rest);
           }
           return;
         }
       } else {
         
-        
-        if (lhs != dest && (1 << shift) == constant) {
+        if ((1 << shift) == constant) {
           UseScratchRegisterScope temps(masm);
           Register scratch = temps.Acquire();
+
           
-          masm.as_slli_w(dest, lhs, shift % 32);
+          masm.as_slli_d(dest, lhs, shift);
+
           
           
           
-          masm.as_srai_w(scratch, dest, shift % 32);
-          bailoutCmp32(Assembler::NotEqual, lhs, Register(scratch),
-                       ins->snapshot());
+          masm.as_slli_w(scratch, dest, 0);
+          bailoutCmp32(Assembler::NotEqual, dest, scratch, ins->snapshot());
           return;
         }
       }
