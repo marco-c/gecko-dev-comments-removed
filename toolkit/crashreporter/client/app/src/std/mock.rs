@@ -268,3 +268,15 @@ pub trait MockUnwrap {
 pub fn unwrap<T: MockUnwrap>(value: T) -> T::Inner {
     value.unwrap()
 }
+
+
+
+
+macro_rules! mocked_static {
+    ( $(#[$m:meta])* $vis:vis static $name:ident: $T:ty = $init:expr ; $($item:item)*) => {
+        mock_key! { $(#[$m])* #[allow(non_camel_case_types)] pub(crate) struct $name => std::sync::Arc<$T> }
+        $($item)*
+    };
+}
+
+pub(crate) use mocked_static;

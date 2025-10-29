@@ -7,6 +7,17 @@
 
 
 
+
+macro_rules! mocked_static {
+    ( $(#[$m:meta])* $vis:vis static $name:ident: $T:ty = $init:expr ; $($item:item)* ) => {
+        $(#[$m])* $vis static $name: $T = $init;
+    }
+}
+
+pub(crate) use mocked_static;
+
+
+
 #[inline(always)]
 pub fn hook<T: std::any::Any + Send + Sync + Clone>(normally: T, _name: &'static str) -> T {
     normally

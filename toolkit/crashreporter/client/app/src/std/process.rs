@@ -214,7 +214,9 @@ impl std::io::Write for ChildStdin {
 #[cfg(unix)]
 pub fn exit_status(status: i32) -> ExitStatus {
     use std::os::unix::process::ExitStatusExt;
-    ExitStatus::from_raw(status)
+    
+    
+    ExitStatus::from_raw(status << 8)
 }
 
 #[cfg(windows)]
